@@ -108,7 +108,7 @@ pxPassthrough_init(px_state_t *pxs)
     int code;
 
     if (gs_debug_c('i'))
-        dprintf("passthrough: initalizing global pcl state\n");
+        dprintf("passthrough: initializing global pcl state\n");
     global_pcs = pcl_get_gstate(pxs->pcls);
 
     /* default to pcl5c */
@@ -184,7 +184,7 @@ pxPassthrough(px_args_t *par, px_state_t *pxs)
        spec this should already be open, in practice it is not. */
     if ( !pxs->data_source_open ) {
         if (gs_debug_c('i')) 
-            dprintf("passtrough: data source not open upon entry\n");
+            dprintf("passthrough: data source not open upon entry\n");
         pxs->data_source_open = true;
         pxs->data_source_big_endian = true;
     }
@@ -194,7 +194,7 @@ pxPassthrough(px_args_t *par, px_state_t *pxs)
     if ( par->source.available == 0 ) {
         if (par->source.phase == 0) {
             if (gs_debug_c('i')) 
-                dprintf("passtrough starting getting more data\n");
+                dprintf("passthrough starting getting more data\n");
 
             if ( !global_pcs )
                 pxPassthrough_init(pxs);

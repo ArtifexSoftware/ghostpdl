@@ -216,3 +216,20 @@ different initialization routines for gl/2 depending on whether it was
 invoked from pcl or pclxl.  We do not think this is desirable nor is
 it what HP intended.
 
+C705.BIN page 3.  Merge control problem in passthrough mode.  This
+problem is a PCL5C problem and is not related to PCLXL.  The HP 4600
+produces incorrect results for MC mode 1 for some colors.  Below is a
+simple example.  Using the default palette the blue (pen 5 0x0000ff)
+is used to fill a simple rectangle.  Pen 6 (magenta 0xff00ff) is used
+to paint a box above the blue box.  The default raster operation with
+Merge Control 1 is 168 which (after simplification) "and's" the
+current paint value with the destination's value.  The predicted paint
+value for the second box is 0xff00ff & 0x0000ff = 0x0000ff (blue).
+The HP produces magenta and the artifex interpreter the expected blue.
+
+example (quoted printable)
+
+=1BE=1B%1BIN;SP1;PA150,4900;SD3,12;IP150,4900,4075,9750;SC0,100,0,100;P=
+A5,90;SP5;MC1;SP5;PA20,25;RA40,45;FT;LT6;SP6;PA23,28;RA37,42=1B%1B=1BE=
+
+

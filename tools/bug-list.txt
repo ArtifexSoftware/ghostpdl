@@ -89,12 +89,12 @@ dictionary which will be a considerable amount of work.
 0162 DeviceDependent Device must support number of pages, no raster devices do this.
 0163 FIXED 36-02 p 20 verified r2685 r2700
 0163 OPEN 36-02 p 22 macro returning -1 is leaking char size out of the macro
-0321 NF C705 p 19 passthrough missing wedges.
+0321 NF C705 p 19 passthrough missing wedges (see pxcet.txt).
 0322 FIXED r2680 C425 p 33 Set Char Bold
 0323 FIXED r2680 C426 p 42 Set Char Bold
 0431 OPEN C705 p 49 text white source transparency
 0433 NF C605 p 1-4 vivid treatment is device dependent
-0434 OPEN C705 p 3 merge control in passthrough context.
+0434 NF C705 p 3 merge control in passthrough context (see pxcet.txt).
 0438 OPEN 30-19 p 22 LB char size
 0439 OPEN 30-23 p 13 char size placement.
 0440 OPEN 33-01 p 9 polygon fill difference MC or winding.
