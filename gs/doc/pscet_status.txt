@@ -3392,13 +3392,17 @@ Test	 Status	Comments
 
 15-15-1  OK	Minor rasterizing differences. -Tor
 
-16-01-1  DIFF	Tiny gaps between almost adjoining black
-                rectangles; output will vary from device to device to
-                device, and our rendering is valid. Glyphs
-                207, 208: reverse video in Adobe output, needs more
-                analysis. Remaining issues : assign: Igor.
+16-01-1  AOK	glyphs 19-22 : Tiny gaps between almost adjoining black rectangles; 
+		output will vary from device to device to device, and our rendering is valid. 
+		Glyphs 207, 208: reverse video in Adobe output, likely Adobe bug.
+		Simplified tests are placed at 
+		peeves:/home/igor/pscet/mytests/16-01/ 
+                A patch for emulating such behavior is placed at
+                peeves:/home/igor/pscet/mypatches/16-01-Igor-01.txt 
+                We won't commit that patch.
+                Suggesting to give the patch to the customer as a separate product.
 
-16-02-1  DIFF	Same as 16-01-1 assign: Igor.
+16-02-1  AOK	Same as 16-01-1.
 
 16-03-1  OK	Fixed by rev 7172.
 
@@ -3431,12 +3435,11 @@ Test	 Status	Comments
 
 16-09-1  DIFF	Distorted shapes, may be similar to 16-03-2. Needs further analysis - Raph
 
-16-10-1  DIFF	DIFF	Same as 16-01-1 assign: Igor.
+16-10-1  AOK	Same as 16-01-1.
 
-16-10-2  DIFF	DIFF	Same as 16-01-1 assign: Igor.
+16-10-2  AOK	Same as 16-01-1.
 
-16-10-3  DIFF	many instances of glyph 208, similar to 16-01-1, glyph 208
-		Remaining issues : assig: Igor.
+16-10-3  AOK	Same as 16-01-1.
 
 16-11-1  OK	Fixed by rev 7172.
 
