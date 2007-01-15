@@ -10,6 +10,15 @@
 
 typedef struct xps_context_s xps_context_t;
 typedef struct xps_part_s xps_part_t;
+typedef struct xps_relation_s xps_relation_t;
+
+void *xps_alloc(xps_context_t *ctx, int size);
+void *xps_realloc(xps_context_t *ctx, void *ptr, int size);
+void xps_free(xps_context_t *ctx, void *ptr);
+char *xps_strdup(xps_context_t *ctx, const char *str);
+
+int xps_process_data(xps_context_t *ctx, stream_cursor_read *buf);
+int xps_process_part(xps_context_t *ctx, xps_part_t *part);
 
 struct xps_context_s
 {
@@ -31,11 +40,45 @@ struct xps_context_s
     char zip_file_name[2048];
 };
 
-void *xps_alloc(xps_context_t *ctx, int size);
-void *xps_realloc(xps_context_t *ctx, void *ptr, int size);
-void xps_free(xps_context_t *ctx, void *ptr);
+struct xps_part_s
+{
+    char *name;
+    int size;
+    int capacity;
+    int complete;
+    byte *data;
+    void *resource;
+    void (*free)(xps_context_t*,void*);
+    xps_part_t *next;
+};
 
-char *xps_strdup(xps_context_t *ctx, const char *str);
+struct xps_relation_s
+{
+    char *source;
+    char *type;
+    char *target;
+    xps_relation_t *next;
+};
 
-int xps_process_data(xps_context_t *ctx, stream_cursor_read *buf);
+typedef struct xps_parser_s xps_parser_t;
+typedef struct xps_item_s xps_item_t;
+typedef struct xps_mark_s xps_mark_t;
+
+struct xps_mark_s
+{
+    /* this is opaque state to save/restore the parser location */
+    xps_item_t *head;
+    int downed;
+    int nexted;
+};
+
+xps_parser_t * xps_new_parser(xps_context_t *ctx, char *buf, int len);
+void xps_free_parser(xps_parser_t *parser);
+xps_item_t * xps_next(xps_parser_t *parser);
+void xps_down(xps_parser_t *parser);
+void xps_up(xps_parser_t *parser);
+char * xps_tag(xps_item_t *item);
+char * xps_att(xps_item_t *item, char *att);
+xps_mark_t xps_mark(xps_parser_t *parser);
+void xps_goto(xps_parser_t *parser, xps_mark_t mark);
 

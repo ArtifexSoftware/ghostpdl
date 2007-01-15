@@ -3,28 +3,6 @@
 #define ZIP_LOCAL_FILE_SIG 0x04034b50
 #define ZIP_DATA_DESC_SIG 0x08074b50
 
-typedef struct xps_relation_s xps_relation_t;
-
-struct xps_relation_s
-{
-    char *source;
-    char *type;
-    char *target;
-    xps_relation_t *next;
-};
-
-struct xps_part_s
-{
-    char *name;
-    int size;
-    int capacity;
-    int complete;
-    byte *data;
-    void *resource;
-    void (*free)(xps_context_t*,void*);
-    xps_part_t *next;
-};
-
 void xps_debug_parts(xps_context_t *ctx)
 {
     xps_part_t *part = ctx->root;
@@ -371,6 +349,7 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 	    ctx->zip_state ++;
 
 	case 3: /* extra field */
+
 	    if (buf->limit - buf->ptr < ctx->zip_extra_length)
 		return 0;
 	    buf->ptr += ctx->zip_extra_length;
@@ -395,6 +374,7 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 	    }
 
 	case 5: /* data descriptor */
+
 	    if (ctx->zip_general & 4)
 	    {
 		dputs("data descriptor by flag\n");
@@ -404,7 +384,15 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		unsigned int dd_csize = read4(ctx, buf);
 		unsigned int dd_usize = read4(ctx, buf);
 	    }
+
 	    ctx->zip_state = 0;
+
+	    /* Process contents of part.
+	     * This is the entrance to the real parser.
+	     */
+	    code = xps_process_part(ctx, ctx->last);
+	    if (code < 0)
+		return gs_rethrow(code, "cannot handle part");
 	}
     }
 

@@ -27,6 +27,11 @@ $(XPSOBJ)xpsmem.$(OBJ): $(XPSSRC)xpsmem.c $(XPSINCLUDES)
 $(XPSOBJ)xpszip.$(OBJ): $(XPSSRC)xpszip.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpszip.c $(XPSO_)xpszip.$(OBJ)
 
+$(XPSOBJ)xpsxml.$(OBJ): $(XPSSRC)xpsxml.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xpsxml.c $(XPSO_)xpsxml.$(OBJ)
+
+$(XPSOBJ)xpsdoc.$(OBJ): $(XPSSRC)xpsdoc.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xpsdoc.c $(XPSO_)xpsdoc.$(OBJ)
 
 $(XPS_TOP_OBJ): $(XPSSRC)xpstop.c $(pltop_h) $(XPSINCLUDES)
 	$(CP_) $(XPSGEN)pconf.h $(XPSGEN)pconfig.h
@@ -35,6 +40,8 @@ $(XPS_TOP_OBJ): $(XPSSRC)xpstop.c $(pltop_h) $(XPSINCLUDES)
 XPS_OBJS=\
     $(XPSOBJ)xpsmem.$(OBJ) \
     $(XPSOBJ)xpszip.$(OBJ) \
+    $(XPSOBJ)xpsxml.$(OBJ) \
+    $(XPSOBJ)xpsdoc.$(OBJ) \
 
 $(XPSOBJ)xps.dev: $(XPS_MAK) $(ECHOGS_XE) $(XPS_OBJS)
 	$(SETMOD) $(XPSOBJ)xps $(XPS_OBJS)
