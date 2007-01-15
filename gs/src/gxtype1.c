@@ -249,7 +249,7 @@ gs_type1_seac(gs_type1_state * pcis, const fixed * cstack, fixed asb,
     /* Save away all the operands. */
     pcis->seac_accent = fixed2int_var(cstack[3]);
     pcis->asb = asb;
-    pcis->save_lsb = pcis->lsb;
+    pcis->compound_lsb = pcis->lsb;
     pcis->save_adxy.x = cstack[0];
     pcis->save_adxy.y = cstack[1];
     pcis->os_count = 0;		/* clear */
@@ -286,7 +286,7 @@ gs_type1_endchar(gs_type1_state * pcis)
 	agdata.memory = pfont->memory;
 	pcis->seac_accent = -1;
 	/* Reset the coordinate system origin */
-	pcis->asb_diff = pcis->asb - pcis->save_lsb.x;
+	pcis->asb_diff = pcis->asb - pcis->compound_lsb.x;
 	pcis->adxy = pcis->save_adxy;
 	pcis->os_count = 0;	/* clear */
 	/* Clear the ipstack, in case the base character */

@@ -115,13 +115,15 @@ struct gs_type1_state_s {
     bool seac_flag;		/* true if executing the accent */
     /* (Type 2 charstrings only) */
     int num_hints;		/* number of hints (Type 2 only) */
-    gs_fixed_point lsb;		/* left side bearing (char coords) */
-    gs_fixed_point width;	/* character width (char coords) */
+    gs_fixed_point lsb;		/* left side bearing (design coords) */
+    gs_fixed_point width;	/* character width (design coords) */
     int seac_accent;		/* accent character code for seac, or -1 */
-    fixed asb;			/* seac asb */
-    gs_fixed_point save_lsb;	/* save seac accented lsb */
-    gs_fixed_point save_adxy;	/* save seac adx/ady */
-    fixed asb_diff;		/* asb - save_lsb.x, */
+    fixed asb;			/* the asb parameter of seac */
+    gs_fixed_point compound_lsb;/* lsb of the compound character 
+				   (i.e. of the accented character 
+				   defined with seac). */
+    gs_fixed_point save_adxy;	/* passes seac adx/ady across the base character. */
+    fixed asb_diff;		/* asb - compound_lsb.x, */
 				/* needed to adjust Flex endpoint
 				   when processing the accent character;
 				   Zero when processing the base character. */

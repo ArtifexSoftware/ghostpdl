@@ -305,7 +305,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    code = t1_hinter__sbw(h, sbx, sby, wx, wy);
 		} else {
 		    fixed accent_lsb = cs0;
-		    fixed overall_x_offset = pcis->save_lsb.x + pcis->adxy.x - pcis->asb + accent_lsb - pcis->base_lsb;
+		    fixed overall_x_offset = pcis->compound_lsb.x + pcis->adxy.x - pcis->asb + accent_lsb - pcis->base_lsb;
 
                     code = t1_hinter__sbw_seac(h, overall_x_offset, pcis->adxy.y);
 		}
