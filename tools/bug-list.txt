@@ -27,7 +27,6 @@ dictionary which will be a considerable amount of work.
 0071 OPEN 22-05 p 13 HP not supporting 3bit per index ? double check.
 0072 NF 22-08 p 7 The 4600 moves the pattern anchor incorrectly when print direction is 180.
 0073 OPEN 22-09 p 15 overlay off page?
-0074 OPEN 22-13 p 22 monochrome mode text is red not BW
 0076 OPEN 22-18 p 5 palette selection error.
 0077 OPEN 22-22 p 5 raster scaling height leading to text reflow.
 0078 OPEN 23-02 p 11 transparency-rop error.

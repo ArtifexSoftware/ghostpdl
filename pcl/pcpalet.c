@@ -23,6 +23,7 @@
 #include "gsparam.h"
 #include "gsdevice.h"
 #include "gxcmap.h"
+#include "gzstate.h"
 
 /* GC routines */
 private_st_palette_t();
@@ -500,7 +501,6 @@ pcl_palette_set_color(
 					      false);
 	}
     }
-    
     return code;
 }
 
@@ -942,6 +942,7 @@ pcl_update_mono(pcl_state_t *pcs)
             swapped_device_color_procs = false;
         }
     }
+    gx_unset_dev_color(pcs->pgs);
     return 0;
 }
             
