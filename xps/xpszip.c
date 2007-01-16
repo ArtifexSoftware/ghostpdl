@@ -27,8 +27,6 @@ xps_new_part(xps_context_t *ctx)
     part->capacity = 0;
     part->complete = 0;
     part->data = NULL;
-    part->resource = NULL;
-    part->free = NULL;
     part->next = NULL;
 
     return part;
@@ -39,8 +37,6 @@ xps_free_part(xps_context_t *ctx, xps_part_t *part)
 {
     if (part->name) xps_free(ctx, part->name);
     if (part->data) xps_free(ctx, part->data);
-    if (part->resource && part->free)
-	part->free(ctx, part->resource);
     xps_free(ctx, part);
 }
 
