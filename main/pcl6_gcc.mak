@@ -23,7 +23,12 @@ GLSRCDIR?=../gs/src
 PCLSRCDIR?=../pcl
 PLSRCDIR?=../pl
 PXLSRCDIR?=../pxl
+ifeq ($(MET_INCLUDED), TRUE)
 XPSSRCDIR?=../met
+else
+XPSSRCDIR?=../xps
+endif
+
 COMMONDIR?=../common
 MAINSRCDIR?=../main
 
@@ -68,19 +73,29 @@ XPSOBJDIR?=$(GENDIR)
 ifeq ($(XPS_INCLUDED), TRUE)
 TARGET_DEVS?=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev $(XPSOBJDIR)/xps.dev
 else 
+ifeq ($(MET_INCLUDED), TRUE)
+TARGET_DEVS?=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev $(XPSOBJDIR)/xps.dev
+else 
 TARGET_DEVS?=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev 
+endif
 endif
 TARGET_XE?=$(GENDIR)/pcl6
 TARGET_LIB?=$(GENDIR)/pcl6.a
 MAIN_OBJ?=$(PLOBJDIR)/plmain.$(OBJ) $(PLOBJDIR)/plimpl.$(OBJ)
 PCL_TOP_OBJ?=$(PCLOBJDIR)/pctop.$(OBJ)
 PXL_TOP_OBJ?=$(PXLOBJDIR)/pxtop.$(OBJ)
+ifeq ($(MET_INCLUDED), TRUE)
 XPS_TOP_OBJ?=$(XPSOBJDIR)/mettop.$(OBJ)
+TOP_OBJ+= $(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(XPS_TOP_OBJ)
+XCFLAGS?=-DXPS_INCLUDED
+else
 ifeq ($(XPS_INCLUDED), TRUE)
+XPS_TOP_OBJ?=$(XPSOBJDIR)/xpstop.$(OBJ)
 TOP_OBJ+= $(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(XPS_TOP_OBJ)
 XCFLAGS?=-DXPS_INCLUDED
 else
 TOP_OBJ+= $(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
+endif 
 endif
 
 # note agfa gives its libraries incompatible names so they cannot be
@@ -140,11 +155,14 @@ endif
 endif
 
 
+ifeq ($(MET_INCLUDED), TRUE)
+# include the xml parser library
+EXTRALIBS+=-lexpat
+endif 
 ifeq ($(XPS_INCLUDED), TRUE)
 # include the xml parser library
 EXTRALIBS+=-lexpat
 endif 
-
 # a 64 bit type is needed for devicen color space/model support but
 # carries a performance burden.  Use this definition (uncomment) for
 # devicen support.
@@ -215,8 +233,11 @@ include $(COMMONDIR)/ugcc_top.mak
 include $(PLSRCDIR)/pl.mak
 include $(PXLSRCDIR)/pxl.mak
 include $(PCLSRCDIR)/pcl.mak
-ifeq ($(XPS_INCLUDED), TRUE)
+ifeq ($(MET_INCLUDED), TRUE)
 include $(XPSSRCDIR)/met.mak
+endif
+ifeq ($(XPS_INCLUDED), TRUE)
+include $(XPSSRCDIR)/xps.mak
 endif
 
 # Main program.

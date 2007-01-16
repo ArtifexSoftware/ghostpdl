@@ -65,11 +65,13 @@ private int
 PathFigure_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
 {
     CT_PathFigure *aPathFigure = 
-        (CT_PathFigure *)gs_alloc_bytes(ms->memory,
-                                     sizeof(CT_PathFigure),
-                                       "PathFigure_cook");
+        (CT_PathFigure *)XPS_ALLOC(ms, sizeof(CT_PathFigure));
+
     int i;
     memset(aPathFigure, 0, sizeof(CT_PathFigure));
+
+    
+
     /* parse attributes, filling in the zeroed out C struct */
     for(i = 0; attr[i]; i += 2) {
         if (!strcmp(attr[i], "IsClosed"))
@@ -1016,5 +1018,36 @@ const met_element_t met_element_procs_PolyQuadraticBezierSegment = {
         PolyQuadraticBezierSegment_cook,
         PolyQuadraticBezierSegment_action,
         PolyQuadraticBezierSegment_done
+    }
+};
+
+/* Path.Data has no attributes, must contain a PathGeometry 
+ */
+Path_Data_cook(void **ppdata, met_state_t *ms, const char *el, const char **attr)
+{
+    *ppdata = NULL;
+    return 0;
+}
+
+private int
+Path_Data_action(void *data, met_state_t *ms)
+{
+    return 0;
+}
+
+private int
+Path_Data_done(void *data, met_state_t *ms)
+{
+    if (data != 0)
+	return gs_throw(-1, "bad food"); 
+    return 0; 
+}
+
+const met_element_t met_element_procs_Path_Data = {
+    "Path_Data",
+    {
+        Path_Data_cook,
+        Path_Data_action,
+        Path_Data_done
     }
 };

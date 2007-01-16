@@ -81,8 +81,8 @@ Canvas_Clip_done(void *data, met_state_t *ms)
     gs_state *pgs = ms->pgs;
     int code;
 
-    if((code = gs_clippath(pgs)) < 0)
-       return gs_rethrow(code, "Canvas_Clip failed");
+    //  if((code = gs_clippath(pgs)) < 0)
+    //   return gs_rethrow(code, "Canvas_Clip failed");
 
     gs_free_object(ms->memory, data, "Canvas_Clip_done");
     return 0; /* incomplete */

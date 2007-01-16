@@ -3,7 +3,9 @@ XPSGEN      = $(XPSGENDIR)$(D)
 XPSOBJ      = $(XPSOBJDIR)$(D)
 XPSO_       = $(O_)$(XPSOBJ)
 
-XPSCCC  = $(CC_) $(I_)$(XPSSRCDIR)$(_I) $(I_)$(XPSGENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(C_) $(I_)$(EXPATINCDIR)$(_I)
+XPSCCC  = $(CC_) $(I_)$(XPSSRCDIR)$(_I) $(I_)$(XPSGENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(C_) 
+
+# $(I_)$(EXPATINCDIR)$(_I)
 
 # Define the name of this makefile.
 XPS_MAK     = $(XPSSRC)xps.mak

@@ -49,7 +49,7 @@ UNDONE_STUB(LinkTarget);
 UNDONE_STUB(PageContent);
 UNDONE_STUB(PageContent_LinkTargets);
 UNDONE_STUB(Path_Clip);
-UNDONE_STUB(Path_Data);
+//UNDONE_STUB(Path_Data);
 UNDONE_STUB(Path_OpacityMask);
 UNDONE_STUB(Path_RenderTransform);
 UNDONE_STUB(PathGeometry_Transform);

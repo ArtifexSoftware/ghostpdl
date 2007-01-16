@@ -34,6 +34,9 @@ xps_debug:
 
 xps: 
 	make -C main -f pcl6_gcc.mak XPS_INCLUDED=TRUE 
+
+met: 
+	make -C main -f pcl6_gcc.mak MET_INCLUDED=TRUE 
 ####  UFST LIBRARY DEPENDENCY RULES ####
 
 ufst:
