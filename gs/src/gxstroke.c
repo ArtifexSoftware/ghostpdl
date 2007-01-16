@@ -14,7 +14,6 @@
 /* $Id$ */
 /* Path stroking procedures for Ghostscript library */
 #include "math_.h"
-#include "memory_.h"		/* for memcpy */
 #include "gx.h"
 #include "gpcheck.h"
 #include "gserrors.h"
@@ -218,7 +217,7 @@ private int line_join_points(const gx_line_params * pgs_lp,
 private void compute_caps(pl_ptr);
 private int add_points(gx_path *, const gs_fixed_point *,
 		       int, bool);
-private int add_round_cap(gx_path *, const_ep_ptr, bool last_line);
+private int add_round_cap(gx_path *, const_ep_ptr);
 private int cap_points(gs_line_cap, const_ep_ptr,
 		       gs_fixed_point * /*[3] */ );
 
@@ -1062,7 +1061,7 @@ stroke_fill(gx_path * ppath, int first, register pl_ptr plp, pl_ptr nplp,
 	    && (pis->fill_adjust.x | pis->fill_adjust.y) == 0
 	    && lop_is_idempotent(pis->log_op)
 	    ) {
-	    gs_fixed_point points[14];
+	    gs_fixed_point points[6];
 	    int npoints, code;
 	    fixed ax, ay, bx, by;
 
@@ -1140,10 +1139,10 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 	   bool reflected)
 {
     const gx_line_params *pgs_lp = gs_currentlineparams_inline(pis);
-    gs_fixed_point points[16];
-    int npoints = 0, initial_cap_points = 0;
-    const int initial_cap_offset = 7; /* gs_join_triangle generates 5 points. */
+    gs_fixed_point points[8];
+    int npoints;
     int code;
+    bool moveto_first = true;
 
     if (plp->thin) {
 	/* We didn't set up the endpoint parameters before, */
@@ -1152,71 +1151,49 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 	adjust_stroke(plp, pis, true, first == 0 && nplp == 0);
 	compute_caps(plp);
     }
+    /* Create an initial cap if desired. */
     if (first == 0 && pgs_lp->cap == gs_cap_round) {
-	/* Initial moveto. */
-	code = gx_path_add_point(ppath, plp->o.ce.x, plp->o.ce.y);
-	if (code < 0)
+	vd_moveto(plp->o.co.x, plp->o.co.y);
+	if ((code = gx_path_add_point(ppath, plp->o.co.x, plp->o.co.y)) < 0 ||
+	    (code = add_round_cap(ppath, &plp->o)) < 0
+	    )
 	    return code;
-	vd_moveto(plp->o.ce.x, plp->o.ce.y);
+	npoints = 0;
+	moveto_first = false;
     } else {
-	/* With initial non-round cap the path must start with
-	   the cap's point for CPSI compatibility. So first compute
-	   the initial cap points and store them temporary at the end of array. */
-	int last_point_index; 
-
-	code = cap_points((first == 0 ? pgs_lp->cap : gs_cap_butt), &plp->o, points + initial_cap_offset);
-	if (code < 0)
-	    return code;
-	initial_cap_points = code;
-	last_point_index = initial_cap_offset + initial_cap_points - 1;
-	/* Initial moveto. */
-	code = gx_path_add_point(ppath, points[last_point_index].x, points[last_point_index].y);
-	if (code < 0)
-	    return code;
-	vd_moveto(points[last_point_index].x, points[last_point_index].y);
+	if ((npoints = cap_points((first == 0 ? pgs_lp->cap : gs_cap_butt), &plp->o, points)) < 0)
+	    return npoints;
     }
-    /* The end cap. */
-    if ((nplp == 0 && pgs_lp->cap == gs_cap_round) || (nplp != 0 && join == gs_join_round)) {
-	/* The right side. */
-	code = gx_path_add_line(ppath, plp->e.co.x, plp->e.co.y);
-	if (code < 0)
+    if (nplp == 0) {
+	/* Add a final cap. */
+	if (pgs_lp->cap == gs_cap_round) {
+	    ASSIGN_POINT(&points[npoints], plp->e.co);
+	    vd_lineto(points[npoints].x, points[npoints].y);
+	    ++npoints;
+	    if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
+		return code;
+	    code = add_round_cap(ppath, &plp->e);
+	    goto done;
+	}
+	code = cap_points(pgs_lp->cap, &plp->e, points + npoints);
+    } else if (join == gs_join_round) {
+	ASSIGN_POINT(&points[npoints], plp->e.co);
+	vd_lineto(points[npoints].x, points[npoints].y);
+	++npoints;
+	if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
 	    return code;
-	vd_lineto(plp->e.co.x, plp->e.co.y);
-	/* The end cap. */
-	code = add_round_cap(ppath, &plp->e, true);
-    } else if (nplp == 0) {
-	code = cap_points(pgs_lp->cap, &plp->e, points);
+	code = add_round_cap(ppath, &plp->e);
+	goto done;
     } else if (nplp->thin)	/* no join */
-	code = cap_points(gs_cap_butt, &plp->e, points);
+	code = cap_points(gs_cap_butt, &plp->e, points + npoints);
     else			/* non-round join */
 	code = line_join_points(pgs_lp, plp, nplp, points + npoints,
 				(uniform ? (gs_matrix *) 0 : &ctm_only(pis)),
 				join, reflected);
     if (code < 0)
 	return code;
-    npoints += code;
-    /* Create an initial cap if desired. */
-    if (first == 0 && pgs_lp->cap == gs_cap_round) {
-	/* Left side. */
-	ASSIGN_POINT(&points[npoints], plp->o.co);
-	npoints++;
-	vd_lineto(plp->e.co.x, plp->e.co.y);
-	code = add_points(ppath, points, npoints, false);
-	if (code < 0)
-	    return code;
-	/* The initial cap. */
-	/* Skip the last line because closepath below works instead it. */
-	code = add_round_cap(ppath, &plp->o, false);
-	if (code < 0)
-	    return code;
-	npoints = 0;
-    } else if (initial_cap_points > 1) {
-	/* Skip the last point because closepath below works instead it. */
-	if (npoints < initial_cap_offset)
-	    memcpy(points + npoints, points + initial_cap_offset, sizeof(*points) * (initial_cap_points - 1));
-	npoints += initial_cap_points - 1;
-    }
-    code = add_points(ppath, points, npoints, false);
+    code = add_points(ppath, points, npoints + code, moveto_first);
+  done:
     if (code < 0)
 	return code;
     vd_closepath;
@@ -1293,24 +1270,8 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 	(double)(nplp->width.x) /* x2 */ * (plp->width.y) /* y1 */;
     bool ccw0 = ccw;
     p_ptr outp, np;
-    bool jp1Reassigned = false;
-    int  totalPoints = 0;
-    int  i;
-
 
     ccw ^= reflected;
-#ifdef DEBUG
-       if_debug4('O', "[o]In line_join_points co=(%f,%f) ce=(%f,%f)\n",
-                 fixed2float(plp->e.co.x), fixed2float(plp->e.co.y),
-                 fixed2float(plp->e.ce.x), fixed2float(plp->e.ce.y));
-
-       if_debug4('O', "[o]In line_join_points nplp=(%f,%f) ce=(%f,%f)\n",
-                 fixed2float(nplp->o.co.x), fixed2float(nplp->o.co.y),
-                 fixed2float(nplp->o.p.x), fixed2float(nplp->o.p.y));
-
-       if_debug2('O', "[o]In line_join_points nplp->o.ce=(%f,%f)\n",
-                 fixed2float(nplp->o.ce.x), fixed2float(nplp->o.ce.y));
-#endif
 
     /* Initialize for a bevel join. */
     ASSIGN_POINT(&jp1, plp->e.co);
@@ -1349,10 +1310,8 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 	    ASSIGN_POINT(&np2, np1);
 	    np1.x = tpx, np1.y = tpy;
 	}
-        totalPoints = 5;
-    } else
-        totalPoints = 4;
-
+	return 5;
+    }
     /*
      * Don't bother with the miter check if the two
      * points to be joined are very close together,
@@ -1466,35 +1425,9 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 			       &nplp->o.cdelta, &mpt) == 0
 		)
 		ASSIGN_POINT(outp, mpt);
-
-            jp1Reassigned = ccw;
 	}
     }
-
-    if ( jp1Reassigned ) {
-       /* New line segment goes at end in this case */
-       join_points[4] = plp->e.co;
-       join_points[5] = join_points[3];
-    } else {
-       /* Make room for line segment insertion */
-       for ( i = totalPoints + 1; i > 2; i-- )
-           join_points[i] = join_points[i-2];
-       join_points[1] = plp->e.ce;
-       join_points[2] = plp->e.co;
-    }
-
-    totalPoints +=2;
-
-#ifdef DEBUG
-    if (gs_debug_c('O'))
-       for ( i=0; i<totalPoints; i++ )
-           dlprintf3("[o]join_points num=%ld x=%f, y=%f\n", i,
-                     fixed2float(join_points[i].x),
-                     fixed2float(join_points[i].y));
-#endif
-
-    return totalPoints;
-
+    return 4;
 }
 /* ---------------- Cap computations ---------------- */
 
@@ -1537,7 +1470,7 @@ compute_caps(pl_ptr plp)
 /* Add a round cap to a path. */
 /* Assume the current point is the cap origin (endp->co). */
 private int
-add_round_cap(gx_path * ppath, const_ep_ptr endp, bool last_line)
+add_round_cap(gx_path * ppath, const_ep_ptr endp)
 {
     int code;
 
@@ -1556,7 +1489,7 @@ add_round_cap(gx_path * ppath, const_ep_ptr endp, bool last_line)
 	(code = gx_path_add_partial_arc(ppath, xo, yo, xo - cdx, yo - cdy,
 					quarter_arc_fraction)) < 0 ||
 	/* The final point must be (xe,ye). */
-	(last_line && (code = gx_path_add_line(ppath, xe, ye)) < 0)
+	(code = gx_path_add_line(ppath, xe, ye)) < 0
 	)
 	return code;
     vd_lineto(xe, ye);
@@ -1576,12 +1509,9 @@ cap_points(gs_line_cap type, const_ep_ptr endp, gs_fixed_point *pts /*[3]*/)
 	    PUT_POINT(1, xe, ye);
 	    return 2;
 	case gs_cap_square:
-           PUT_POINT(0, xo, yo);
-           PUT_POINT(1, xe, ye);
-           PUT_POINT(2, xo, yo);
-           PUT_POINT(3, xo + cdx, yo + cdy);
-           PUT_POINT(4, xe + cdx, ye + cdy);
-           return 5;
+	    PUT_POINT(0, xo + cdx, yo + cdy);
+	    PUT_POINT(1, xe + cdx, ye + cdy);
+	    return 2;
 	case gs_cap_triangle:	/* (not supported by PostScript) */
 	    PUT_POINT(0, xo, yo);
 	    PUT_POINT(1, px + cdx, py + cdy);
