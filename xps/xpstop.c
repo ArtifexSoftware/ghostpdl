@@ -208,7 +208,6 @@ xps_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *pcursor)
 {
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;    
     xps_context_t *ctx = instance->ctx;
-    dputs("xps_imp_process!\n");
     return xps_process_data(ctx, pcursor);
 }
 

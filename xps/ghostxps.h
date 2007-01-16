@@ -10,6 +10,7 @@
 
 typedef struct xps_context_s xps_context_t;
 typedef struct xps_part_s xps_part_t;
+typedef struct xps_type_map_s xps_type_map_t;
 typedef struct xps_relation_s xps_relation_t;
 
 void *xps_alloc(xps_context_t *ctx, int size);
@@ -20,6 +21,13 @@ char *xps_strdup(xps_context_t *ctx, const char *str);
 int xps_process_data(xps_context_t *ctx, stream_cursor_read *buf);
 int xps_process_part(xps_context_t *ctx, xps_part_t *part);
 
+struct xps_type_map_s
+{
+    char *name;
+    char *type;
+    xps_type_map_t *next;
+};
+
 struct xps_context_s
 {
     void *instance;
@@ -28,6 +36,9 @@ struct xps_context_s
 
     xps_part_t *root;
     xps_part_t *last;
+
+    xps_type_map_t *defaults;
+    xps_type_map_t *overrides;
 
     unsigned int zip_state;
     unsigned int zip_general;
@@ -47,8 +58,7 @@ struct xps_part_s
     int capacity;
     int complete;
     byte *data;
-    void *resource;
-    void (*free)(xps_context_t*,void*);
+    xps_relation_t *rels;
     xps_part_t *next;
 };
 
