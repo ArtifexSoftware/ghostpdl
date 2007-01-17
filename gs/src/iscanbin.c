@@ -662,8 +662,7 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		    break;
 		/* This is actually a name; look it up now. */
 		{
-		    uint attrs =
-		    (r_has_attr(op, a_executable) ? a_executable : 0);
+		    uint attrs = r_type_attrs(op) & (a_read | a_executable);
 
 		    code = name_ref(imemory, op->value.bytes, r_size(op), op, 1);
 		    if (code < 0)
