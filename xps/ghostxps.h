@@ -13,10 +13,14 @@ typedef struct xps_part_s xps_part_t;
 typedef struct xps_type_map_s xps_type_map_t;
 typedef struct xps_relation_s xps_relation_t;
 
-void *xps_alloc(xps_context_t *ctx, int size);
-void *xps_realloc(xps_context_t *ctx, void *ptr, int size);
-void xps_free(xps_context_t *ctx, void *ptr);
-char *xps_strdup(xps_context_t *ctx, const char *str);
+#define xps_alloc(ctx, size) \
+    gs_alloc_bytes(ctx->memory, size, __FUNCTION__);
+#define xps_realloc(ctx, ptr, size) \
+    gs_resize_object(ctx->memory, ptr, size, __FUNCTION__);
+#define xps_strdup(ctx, str) \
+    xps_strdup_imp(ctx, str, __FUNCTION__);
+#define xps_free(ctx, ptr) \
+    gs_free_object(ctx->memory, ptr, __FUNCTION__);
 
 int xps_process_data(xps_context_t *ctx, stream_cursor_read *buf);
 int xps_process_part(xps_context_t *ctx, xps_part_t *part);

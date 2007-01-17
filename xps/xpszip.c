@@ -73,9 +73,15 @@ readall(xps_context_t *ctx, stream_cursor_read *buf, byte *str, int n)
 }
 
 static void *
-xps_alloc_items(xps_context_t *ctx, int items, int size)
+xps_zip_alloc_items(xps_context_t *ctx, int items, int size)
 {
     return xps_alloc(ctx, items * size);
+}
+
+static void 
+xps_zip_free(xps_context_t *ctx, void *ptr)
+{
+    xps_free(ctx, ptr);
 }
 
 static xps_part_t *
@@ -192,8 +198,8 @@ xps_prepare_part(xps_context_t *ctx)
     if (ctx->zip_method == 8)
     {
 	memset(&ctx->zip_stream, 0, sizeof(z_stream));
-	ctx->zip_stream.zalloc = (alloc_func)xps_alloc_items;
-	ctx->zip_stream.zfree = (free_func)xps_free;
+	ctx->zip_stream.zalloc = (alloc_func)xps_zip_alloc_items;
+	ctx->zip_stream.zfree = (free_func)xps_zip_free;
 	ctx->zip_stream.opaque = ctx;
 
 	code = inflateInit2(&ctx->zip_stream, -15);
