@@ -29,7 +29,6 @@
 #include "estack.h"		/* for filenameforall, .execfile */
 #include "ialloc.h"
 #include "ilevel.h"		/* %names only work in Level 2 */
-#include "interp.h"		/* gs_errorinfo_put_string prototype */
 #include "iname.h"
 #include "isave.h"		/* for restore */
 #include "idict.h"

@@ -319,7 +319,7 @@ $(PSOBJ)zfile.$(OBJ) : $(PSSRC)zfile.c $(OP)\
  $(memory__h) $(string__h) $(unistd__h) $(gp_h) $(gpmisc_h)\
  $(gscdefs_h) $(gsfname_h) $(gsstruct_h) $(gsutil_h) $(gxalloc_h) $(gxiodev_h)\
  $(dstack_h) $(estack_h) $(files_h)\
- $(ialloc_h) $(idict_h) $(ilevel_h) $(iname_h) $(interp_h) $(iutil_h)\
+ $(ialloc_h) $(idict_h) $(ilevel_h) $(iname_h) $(iutil_h)\
  $(isave_h) $(main_h) $(sfilter_h) $(stream_h) $(strimpl_h) $(store_h)
 	$(PSCC) $(PSO_)zfile.$(OBJ) $(C_) $(PSSRC)zfile.c
 
