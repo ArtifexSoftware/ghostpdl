@@ -1262,6 +1262,10 @@ end
 
 /drawwidget {			% <scalefactor> <annot> drawwidget -
   dup /AP knownoget {
+    dup /N known not {
+      (   **** Appearance dictionary (AP) lacks the mandatory normal (N) appearance.\n)
+      pdfformaterror
+    } if
     false
     [/N /R /D] {
 	% stack: scale annot appearance false key

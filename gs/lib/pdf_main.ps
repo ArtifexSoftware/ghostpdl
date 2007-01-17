@@ -1397,12 +1397,13 @@ end readonly def
    false exch			% Assume no transparency
    /Annots knownoget {		% Get Annots array
      { oforce /AP knownoget {	% Get appearance dict for the annoation
-         /N oget		% Get the /N (i.e. normal) appearance stream
-	 /Resources knownoget {
-	   /ExtGState knownoget {
-	     extgstateusestransparency { pop true exit} if
-	   } if			% If ExtGState known
-	 } if			% If Resources known
+	/N knownoget { 	% Get the /N (i.e. normal) appearance stream
+	  /Resources knownoget {
+	    /ExtGState knownoget {
+	       extgstateusestransparency { pop true exit} if
+	     } if		% If ExtGState known
+	   } if			% If Resources known
+	 } if			% If annotation has a normal appearance
        } if			% If AP dict known
      } forall			% For all annots on the page
    } if
