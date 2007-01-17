@@ -27,6 +27,10 @@
  * Most of the state is only used if scanning is suspended because of
  * an interrupt or a callout.
  *
+ * Note that the scanner state includes a reference to the stream being
+ * scanned.  We do this primarily for Adobe compatibility, so that we can
+ * remove the source object from the operand stack after the initial checks.
+ *
  * We expose the entire state definition to the caller so that
  * the state can normally be allocated on the stack.
  */
@@ -59,7 +63,7 @@ typedef dynamic_area *da_ptr;
 /* Define state specific to binary tokens and binary object sequences. */
 typedef struct scan_binary_state_s {
     int num_format;
-    int (*cont)(i_ctx_t *, stream *, ref *, scanner_state *);
+    int (*cont)(i_ctx_t *, ref *, scanner_state *);
     ref bin_array;
     uint index;
     uint max_array_index;	/* largest legal index in objects */
@@ -70,6 +74,7 @@ typedef struct scan_binary_state_s {
 
 /* Define the scanner state. */
 struct scanner_state_s {
+    ref s_file;			/* source file */
     uint s_pstack;		/* stack depth when starting current */
 				/* procedure, after pushing old pstack */
     uint s_pdepth;		/* pstack for very first { encountered, */
@@ -115,13 +120,14 @@ extern_st(st_scanner_state);
 #define SCAN_PDF_INV_NUM 32	/* Adobe ignores invalid numbers */
 				/* This is for compatibility with Adobe */
 				/* Acrobat Reader			*/
-void scanner_state_init_options(scanner_state *sstate, int options);
-#define scanner_state_init_check(pstate, from_string, check_only)\
-  scanner_state_init_options(pstate,\
-			     (from_string ? SCAN_FROM_STRING : 0) |\
-			     (check_only ? SCAN_CHECK_ONLY : 0))
-#define scanner_state_init(pstate, from_string)\
-  scanner_state_init_check(pstate, from_string, false)
+void scanner_init_options(scanner_state *sstate, const ref *fop,
+			  int options);
+#define scanner_init(sstate, fop)\
+  scanner_init_options(sstate, fop, 0)
+void scanner_init_stream_options(scanner_state *sstate, stream *s,
+				 int options);
+#define scanner_init_stream(sstate, s)\
+  scanner_init_stream_options(sstate, s, 0)
 
 /*
  * Read a token from a stream.  As usual, 0 is a normal return,
@@ -132,8 +138,7 @@ void scanner_state_init_options(scanner_state *sstate, int options);
 #define scan_Refill 3		/* get more input data, then call again */
 #define scan_Comment 4		/* comment, non-DSC if processing DSC */
 #define scan_DSC_Comment 5	/* DSC comment */
-int scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref,
-	       scanner_state * pstate);
+int scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate);
 
 /*
  * Read a token from a string.  Return like scan_token, but also
@@ -149,9 +154,8 @@ int scan_string_token_options(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
  * This may return o_push_estack, 0 (meaning just call scan_token again),
  * or an error code.
  */
-int scan_handle_refill(i_ctx_t *i_ctx_p, const ref * fop,
-		       scanner_state * pstate, bool save, bool push_file,
-		       op_proc_t cont);
+int scan_handle_refill(i_ctx_t *i_ctx_p, scanner_state * pstate,
+		       bool save, op_proc_t cont);
 
 /*
  * Define the procedure "hook" for parsing DSC comments.  If not NULL,

@@ -172,23 +172,28 @@ CLEAR_MARKS_PROC(scanner_clear_marks)
 {
     scanner_state *const ssptr = vptr;
 
+    r_clear_attrs(&ssptr->s_file, l_mark);
     r_clear_attrs(&ssarray, l_mark);
 }
 private 
 ENUM_PTRS_WITH(scanner_enum_ptrs, scanner_state *ssptr) return 0;
 case 0:
+    ENUM_RETURN_REF(&ssptr->s_file);
+case 1:
     if (ssptr->s_scan_type == scanning_none ||
 	!ssptr->s_da.is_dynamic
 	)
 	ENUM_RETURN(0);
     return ENUM_STRING2(ssptr->s_da.base, da_size(&ssptr->s_da));
-case 1:
+case 2:
     if (ssptr->s_scan_type != scanning_binary)
 	return 0;
     ENUM_RETURN_REF(&ssarray);
 ENUM_PTRS_END
 private RELOC_PTRS_WITH(scanner_reloc_ptrs, scanner_state *ssptr)
 {
+    RELOC_REF_VAR(ssptr->s_file);
+    r_clear_attrs(&ssptr->s_file, l_mark);
     if (ssptr->s_scan_type != scanning_none && ssptr->s_da.is_dynamic) {
 	gs_string sda;
 
@@ -210,20 +215,34 @@ public_st_scanner_state();
 
 /* Initialize a scanner. */
 void
-scanner_state_init_options(scanner_state *sstate, int options)
+scanner_init_options(scanner_state *sstate, const ref *fop, int options)
 {
+    ref_assign(&sstate->s_file, fop);
     sstate->s_scan_type = scanning_none;
     sstate->s_pstack = 0;
     sstate->s_options = options;
+}
+void scanner_init_stream_options(scanner_state *sstate, stream *s,
+				 int options)
+{
+    /*
+     * The file 'object' will never be accessed, but it must be in correct
+     * form for the GC.
+     */
+    ref fobj;
+
+    make_file(&fobj, a_read, 0, s);
+    scanner_init_options(sstate, &fobj, options);
 }
 
 /* Handle a scan_Refill return from scan_token. */
 /* This may return o_push_estack, 0 (meaning just call scan_token again), */
 /* or an error code. */
 int
-scan_handle_refill(i_ctx_t *i_ctx_p, const ref * fop, scanner_state * sstate,
-		   bool save, bool push_file, op_proc_t cont)
+scan_handle_refill(i_ctx_t *i_ctx_p, scanner_state * sstate,
+		   bool save, op_proc_t cont)
 {
+    const ref *const fop = &sstate->s_file;
     stream *s = fptr(fop);
     uint avail = sbufavailable(s);
     int status;
@@ -247,9 +266,8 @@ scan_handle_refill(i_ctx_t *i_ctx_p, const ref * fop, scanner_state * sstate,
 	case INTC:
 	case CALLC:
 	    {
-		ref rstate[2];
+		ref rstate[1];
 		scanner_state *pstate;
-		int nstate = (push_file ? 2 : 1);
 
 		if (save) {
 		    pstate =
@@ -260,16 +278,9 @@ scan_handle_refill(i_ctx_t *i_ctx_p, const ref * fop, scanner_state * sstate,
 		    *pstate = *sstate;
 		} else
 		    pstate = sstate;
-		/* If push_file is true, we want to push the file on the */
-		/* o-stack before the state, for the continuation proc. */
-		/* Since the refs passed to s_handle_read_exception */
-		/* are pushed on the e-stack, we must ensure they are */
-		/* literal, and also pass them in the opposite order! */
 		make_istruct(&rstate[0], 0, pstate);
-		rstate[1] = *fop;
-		r_clear_attrs(&rstate[1], a_executable);
 		return s_handle_read_exception(i_ctx_p, status, fop,
-					       rstate, nstate, cont);
+					       rstate, 1, cont);
 	    }
     }
     /* No more data available, but no exception.  How can this be? */
@@ -355,8 +366,8 @@ scan_string_token_options(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
 	return_error(e_invalidaccess);
     s_init(s, NULL);
     sread_string(s, pstr->value.bytes, r_size(pstr));
-    scanner_state_init_options(&state, options | SCAN_FROM_STRING);
-    switch (code = scan_token(i_ctx_p, s, pref, &state)) {
+    scanner_init_stream_options(&state, s, options | SCAN_FROM_STRING);
+    switch (code = scan_token(i_ctx_p, pref, &state)) {
 	default:		/* error or comment */
 	    if (code < 0)
 		break;
@@ -387,8 +398,9 @@ scan_string_token_options(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
  * as well as for scan_Refill.
  */
 int
-scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
+scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
 {
+    stream *const s = pstate->s_file.value.pfile;
     ref *myref = pref;
     int retcode = 0;
     int c;
@@ -473,7 +485,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 	switch (scan_type) {
 	    case scanning_binary:
 		retcode = (*sstate.s_ss.binary.cont)
-		    (i_ctx_p, s, myref, &sstate);
+		    (i_ctx_p, myref, &sstate);
 		scan_begin_inline();
 		if (retcode == scan_Refill)
 		    goto pause;
@@ -493,6 +505,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
     /* scan_type == scanning_none. */
     pstack = pstate->s_pstack;
     pdepth = pstate->s_pdepth;
+    ref_assign(&sstate.s_file, &pstate->s_file);
     sstate.s_options = pstate->s_options;
     scan_begin_inline();
     /*
@@ -878,7 +891,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 #undef case4
 	    if (recognize_btokens()) {
 		scan_end_inline();
-		retcode = scan_binary_token(i_ctx_p, s, myref, &sstate);
+		retcode = scan_binary_token(i_ctx_p, myref, &sstate);
 		scan_begin_inline();
 		if (retcode == scan_Refill)
 		    goto pause;

@@ -325,10 +325,10 @@ cfont_ref_from_string(i_ctx_t *i_ctx_p, ref * pref, const char *str, uint len)
     stream s;
     int code;
 
-    scanner_state_init(&sstate, false);
     s_init(&s, imemory);
     sread_string(&s, (const byte *)str, len);
-    code = scan_token(i_ctx_p, &s, pref, &sstate);
+    scanner_init_stream(&sstate, &s);
+    code = scan_token(i_ctx_p, pref, &sstate);
     return (code <= 0 ? code : gs_note_error(e_Fatal));
 }
 

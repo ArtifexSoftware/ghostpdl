@@ -1291,7 +1291,7 @@ remap:		    if (iesp + 2 >= estop) {
 		    goto top;
 	    }
 	case exec(t_file):
-	    {			/* Executable file.  Read the next token and interpret it. */
+	    {	/* Executable file.  Read the next token and interpret it. */
 		stream *s;
 		scanner_state sstate;
 
@@ -1300,9 +1300,9 @@ remap:		    if (iesp + 2 >= estop) {
 		if (iosp >= ostop)	/* check early */
 		    return_with_stackoverflow_iref();
 		osp = iosp;	/* scan_token uses ostack */
-		scanner_state_init_options(&sstate, i_ctx_p->scanner_options);
+		scanner_init_options(&sstate, IREF, i_ctx_p->scanner_options);
 	    again:
-		code = scan_token(i_ctx_p, s, &token, &sstate);
+		code = scan_token(i_ctx_p, &token, &sstate);
 		iosp = osp;	/* ditto */
 		switch (code) {
 		    case 0:	/* read a token */
@@ -1358,8 +1358,7 @@ remap:		    if (iesp + 2 >= estop) {
 			ref_assign_inline(iesp, &token);
 			esp = iesp;
 			osp = iosp;
-			code = scan_handle_refill(i_ctx_p, &token, &sstate,
-						  true, true,
+			code = scan_handle_refill(i_ctx_p, &sstate, true,
 						  ztokenexec_continue);
 		scan_cont:
 			iosp = osp;
@@ -1390,7 +1389,7 @@ remap:		    if (iesp + 2 >= estop) {
 			ref_assign_inline(iesp, &file_token);
 			esp = iesp;
 			osp = iosp;
-			code = ztoken_handle_comment(i_ctx_p, &file_token,
+			code = ztoken_handle_comment(i_ctx_p,
 						     &sstate, &token,
 						     code, true, true,
 						     ztokenexec_continue);
@@ -1405,11 +1404,11 @@ remap:		    if (iesp + 2 >= estop) {
 		stream ss;
 		scanner_state sstate;
 
-		scanner_state_init_options(&sstate, SCAN_FROM_STRING);
 		s_init(&ss, NULL);
 		sread_string(&ss, IREF->value.bytes, r_size(IREF));
+		scanner_init_stream_options(&sstate, &ss, SCAN_FROM_STRING);
 		osp = iosp;	/* scan_token uses ostack */
-		code = scan_token(i_ctx_p, &ss, &token, &sstate);
+		code = scan_token(i_ctx_p, &token, &sstate);
 		iosp = osp;	/* ditto */
 		switch (code) {
 		    case 0:	/* read a token */

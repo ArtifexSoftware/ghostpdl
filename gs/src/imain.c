@@ -448,9 +448,8 @@ gs_run_init_file(gs_main_instance * minst, int *pexit_code, ref * perror_object)
     }
     /* Check to make sure the first token is an integer */
     /* (for the version number check.) */
-    scanner_state_init(&state, false);
-    code = scan_token(i_ctx_p, ifile.value.pfile, &first_token,
-		      &state);
+    scanner_init(&state, &ifile);
+    code = scan_token(i_ctx_p, &first_token, &state);
     if (code != 0 || !r_has_type(&first_token, t_integer)) {
 	eprintf1("Initialization file %s does not begin with an integer.\n", gs_init_file);
 	*pexit_code = 255;

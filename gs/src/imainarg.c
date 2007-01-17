@@ -582,9 +582,8 @@ run_stdin:
 			s_init(&astream, NULL);
 			sread_string(&astream,
 				     (const byte *)eqp, strlen(eqp));
-			scanner_state_init(&state, false);
-			code = scan_token(minst->i_ctx_p, &astream, &value,
-					  &state);
+			scanner_init_stream(&state, &astream);
+			code = scan_token(minst->i_ctx_p, &value, &state);
 			if (code) {
 			    puts(minst->heap, "-dname= must be followed by a valid token");
 			    return e_Fatal;

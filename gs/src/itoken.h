@@ -30,7 +30,7 @@ int ztokenexec_continue(i_ctx_t *i_ctx_p);
 #  define scanner_state_DEFINED
 typedef struct scanner_state_s scanner_state;
 #endif
-int ztoken_handle_comment(i_ctx_t *i_ctx_p, const ref *fop,
+int ztoken_handle_comment(i_ctx_t *i_ctx_p,
 			  scanner_state *sstate, const ref *ptoken,
 			  int scan_code, bool save, bool push_file,
 			  op_proc_t cont);

@@ -133,19 +133,19 @@ typedef enum {
 
 /* Forward references */
 private int scan_bin_get_name(const gs_memory_t *mem, const ref *, int, ref *);
-private int scan_bin_num_array_continue(i_ctx_t *, stream *, ref *, scanner_state *);
-private int scan_bin_string_continue(i_ctx_t *, stream *, ref *, scanner_state *);
-private int scan_bos_continue(i_ctx_t *, stream *, ref *, scanner_state *);
+private int scan_bin_num_array_continue(i_ctx_t *, ref *, scanner_state *);
+private int scan_bin_string_continue(i_ctx_t *, ref *, scanner_state *);
+private int scan_bos_continue(i_ctx_t *, ref *, scanner_state *);
 private byte *scan_bos_resize(i_ctx_t *, scanner_state *, uint, uint);
-private int scan_bos_string_continue(i_ctx_t *, stream *, ref *, scanner_state *);
+private int scan_bos_string_continue(i_ctx_t *, ref *, scanner_state *);
 
 /* Scan a binary token.  Called from the main scanner */
 /* when it encounters an ASCII code 128-159, */
 /* if binary tokens are being recognized (object format != 0). */
 int
-scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
-		  scanner_state *pstate)
+scan_binary_token(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
 {
+    stream *const s = pstate->s_file.value.pfile;
     scan_binary_state *const pbs = &pstate->s_ss.binary;
 
     s_declare_inline(s, p, rlimit);
@@ -217,7 +217,7 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 		pstate->s_da.is_dynamic = false;
 		pstate->s_da.base = pstate->s_da.next =
 		    pstate->s_da.limit = pstate->s_da.buf;
-		code = scan_bos_continue(i_ctx_p, s, pref, pstate);
+		code = scan_bos_continue(i_ctx_p, pref, pstate);
 		if (code == scan_Refill || code < 0) {
 		    /* Clean up array for GC. */
 		    uint index = pbs->index;
@@ -298,7 +298,7 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 		s_end_inline(s, p, rlimit);
 		pstate->s_da.base = pstate->s_da.next = str;
 		pstate->s_da.limit = str + arg;
-		code = scan_bin_string_continue(i_ctx_p, s, pref, pstate);
+		code = scan_bin_string_continue(i_ctx_p, pref, pstate);
 		if (code == scan_Refill || code < 0) {
 		    pstate->s_da.is_dynamic = true;
 		    make_null(&pbs->bin_array);		/* clean up for GC */
@@ -344,7 +344,7 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 	    pbs->index = 0;
 	    p += 3;
 	    s_end_inline(s, p, rlimit);
-	    code = scan_bin_num_array_continue(i_ctx_p, s, pref, pstate);
+	    code = scan_bin_num_array_continue(i_ctx_p, pref, pstate);
 	    if (code == scan_Refill || code < 0) {
 		/* Make sure the array is clean for the GC. */
 		refset_null(pbs->bin_array.value.refs + pbs->index,
@@ -368,9 +368,9 @@ scan_bin_get_name(const gs_memory_t *mem, const ref *pnames /*t_array*/, int ind
 
 /* Continue collecting a binary string. */
 private int
-scan_bin_string_continue(i_ctx_t *i_ctx_p, stream * s, ref * pref,
-			 scanner_state * pstate)
+scan_bin_string_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
 {
+    stream *const s = pstate->s_file.value.pfile;
     byte *q = pstate->s_da.next;
     uint wanted = pstate->s_da.limit - q;
     uint rcnt;
@@ -394,9 +394,10 @@ scan_bin_string_continue(i_ctx_t *i_ctx_p, stream * s, ref * pref,
 
 /* Continue scanning a binary number array. */
 private int
-scan_bin_num_array_continue(i_ctx_t *i_ctx_p, stream * s, ref * pref,
+scan_bin_num_array_continue(i_ctx_t *i_ctx_p, ref * pref,
 			    scanner_state * pstate)
 {
+    stream *const s = pstate->s_file.value.pfile;
     scan_binary_state *const pbs = &pstate->s_ss.binary;
     uint index = pbs->index;
     ref *np = pbs->bin_array.value.refs + index;
@@ -437,9 +438,9 @@ scan_bin_num_array_continue(i_ctx_t *i_ctx_p, stream * s, ref * pref,
  * all the pointers.
  */
 private int
-scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
-		  scanner_state * pstate)
+scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
 {
+    stream *const s = pstate->s_file.value.pfile;
     scan_binary_state *const pbs = &pstate->s_ss.binary;
     s_declare_inline(s, p, rlimit);
     uint max_array_index = pbs->max_array_index;
@@ -602,7 +603,7 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
     pbs->index = max_array_index;
     iresize_ref_array(&pbs->bin_array, max_array_index,
 		      "binary object sequence(objects)");
-    code = scan_bos_string_continue(i_ctx_p, s, pref, pstate);
+    code = scan_bos_string_continue(i_ctx_p, pref, pstate);
     if (code == scan_Refill)
 	pbs->cont = scan_bos_string_continue;
     return code;
@@ -637,13 +638,13 @@ scan_bos_resize(i_ctx_t *i_ctx_p, scanner_state * pstate, uint new_size,
 
 /* Continue reading the strings for a binary object sequence. */
 private int
-scan_bos_string_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
+scan_bos_string_continue(i_ctx_t *i_ctx_p, ref * pref,
 			 scanner_state * pstate)
 {
     scan_binary_state *const pbs = &pstate->s_ss.binary;
     ref rstr;
     ref *op;
-    int code = scan_bin_string_continue(i_ctx_p, s, &rstr, pstate);
+    int code = scan_bin_string_continue(i_ctx_p, &rstr, pstate);
     uint space = ialloc_space(idmemory);
     bool rescan = false;
     uint i;

@@ -245,8 +245,8 @@ rd:
 	s_init(ts, NULL);
 	sread_string(ts, buf->data, count);
 sc:
-	scanner_state_init_check(&state, false, true);
-	code = scan_token(i_ctx_p, ts, &ignore_value, &state);
+	scanner_init_stream_options(&state, ts, SCAN_CHECK_ONLY);
+	code = scan_token(i_ctx_p, &ignore_value, &state);
 	ref_stack_pop_to(&o_stack, depth);
 	if (code < 0)
 	    code = scan_EOF;	/* stop on scanner error */
