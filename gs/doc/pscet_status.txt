@@ -4089,7 +4089,16 @@ Test	 Status	Comments
 		methods". GS differs by 1 to 5 in results (hope that's close enough)
 		RJJ
 
-23-12E-2  DIFF	GS gets 'ioerror' and wrong value (5331 vs. 5308). assign: Peter
+23-12E-2  AOK	(Peter) 7605 fixes ioerror and incorrect output problems.
+                -
+                "There are still discrepancies in the length of the
+                compressed data, for the same reason as 23-12A-3 et
+                al.  In this case, gs's implementation is slightly
+                inferior to Adobe's (about 6% larger compressed data
+                in the worst case on the CET page), probably because
+                in the mixed 1- and 2-D case, we don't bother to
+                compress each line both ways and use whichever method
+                produces the smaller output."
 
 23-12E-3  OK	Device Dependent: minor position/stairstep differences, but visually
 		equivalent to Tek. RJJ.
