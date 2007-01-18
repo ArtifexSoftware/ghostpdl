@@ -327,7 +327,10 @@ pl_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     if ( ptr != NULL ) {
 	uint header_size = round_up_to_align(1) + round_up_to_align(1);
 	byte *bptr = (byte *)ptr - header_size;
-
+        gs_memory_type_ptr_t ptype = get_type((byte *)ptr);
+        void (*finalize)(void *ptr) = ptype->finalize;
+        if ( finalize != NULL )
+            finalize(ptr);
 #ifdef DEBUG
 	if ( gs_debug_c('@') )
 	    memset(bptr, 0xee, header_size + get_size(ptr));
