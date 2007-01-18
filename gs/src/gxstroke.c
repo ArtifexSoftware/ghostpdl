@@ -260,7 +260,11 @@ gx_default_stroke_path(gx_device * dev, const gs_imager_state * pis,
 typedef stroke_line_proc((*stroke_line_proc_t));
 
 private stroke_line_proc(stroke_add);
+private stroke_line_proc(stroke_add_compat);
 private stroke_line_proc(stroke_fill);
+private int stroke_add_initial_cap_compat(gx_path * ppath, pl_ptr plp, bool adlust_longitude,
+	   const gx_device_color * pdevc, gx_device * dev,
+	   const gs_imager_state * pis);
 
 /* Define the orientations we handle specially. */
 typedef enum {
@@ -282,8 +286,9 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	       const gs_imager_state * pis, const gx_stroke_params * params,
 		 const gx_device_color * pdevc, const gx_clip_path * pcpath)
 {
+    extern bool CPSI_mode;
     stroke_line_proc_t line_proc =
-	(to_path == 0 ? stroke_fill : stroke_add);
+	(to_path == 0 ? stroke_fill : CPSI_mode ? stroke_add_compat : stroke_add);
     gs_fixed_rect ibox, cbox;
     gx_device_clip cdev;
     gx_device *dev = pdev;
@@ -765,6 +770,13 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	    if (code < 0)
 		goto exit;
 	    FILL_STROKE_PATH(always_thin);
+	    if (CPSI_mode && lptr == 0 && pgs_lp->cap != gs_cap_butt) {
+		/* Create the initial cap at last. */
+		code = stroke_add_initial_cap_compat(to_path, &pl_first, index == 1, pdevc, dev, pis);
+		if (code < 0)
+		    goto exit;
+		FILL_STROKE_PATH(always_thin);
+	    }
 	}
 	psub = (const subpath *)pseg;
     }
@@ -1155,8 +1167,7 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
     if (first == 0 && pgs_lp->cap == gs_cap_round) {
 	vd_moveto(plp->o.co.x, plp->o.co.y);
 	if ((code = gx_path_add_point(ppath, plp->o.co.x, plp->o.co.y)) < 0 ||
-	    (code = add_round_cap(ppath, &plp->o)) < 0
-	    )
+	    (code = add_round_cap(ppath, &plp->o)) < 0)
 	    return code;
 	npoints = 0;
 	moveto_first = false;
@@ -1198,6 +1209,149 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 	return code;
     vd_closepath;
     return gx_path_close_subpath(ppath);
+}
+
+/* Add a CPSI-compatible segment to the path.  This handles all the complex cases. */
+private int
+stroke_add_compat(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
+	   const gx_device_color * pdevc, gx_device * dev,
+	   const gs_imager_state * pis, const gx_stroke_params * params,
+	   const gs_fixed_rect * ignore_pbbox, int uniform, gs_line_join join,
+	   bool reflected)
+{
+    /* Actually it adds 2 contours : one for the segment itself,
+       and another one for line join or for the ending cap. 
+       Note CPSI creates negative contours. */
+    const gx_line_params *pgs_lp = gs_currentlineparams_inline(pis);
+    gs_fixed_point points[5];
+    int npoints;
+    bool const moveto_first = true; /* Keeping this code closer to "stroke_add". */
+    int code;
+
+    if (plp->thin) {
+	/* We didn't set up the endpoint parameters before, */
+	/* because the line was thin.  Do it now. */
+	set_thin_widths(plp);
+	adjust_stroke(plp, pis, true, first == 0 && nplp == 0);
+	compute_caps(plp);
+    }
+    /* The segment itself : */
+    ASSIGN_POINT(&points[0], plp->o.ce);
+    ASSIGN_POINT(&points[1], plp->e.co);
+    ASSIGN_POINT(&points[2], plp->e.ce);
+    ASSIGN_POINT(&points[3], plp->o.co);
+    code = add_points(ppath, points, 4, moveto_first);
+    if (code < 0)
+	return code;
+    code = gx_path_close_subpath(ppath);
+    if (code < 0)
+	return code;
+    vd_closepath;
+    npoints = 0;
+    if (nplp == 0) {
+	/* Add a final cap. */
+	if (pgs_lp->cap == gs_cap_butt)
+	    return 0;
+	if (pgs_lp->cap == gs_cap_round) {
+	    ASSIGN_POINT(&points[npoints], plp->e.co);
+	    vd_lineto(points[npoints].x, points[npoints].y);
+	    ++npoints;
+	    if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
+		return code;
+	    return add_round_cap(ppath, &plp->e);
+	}
+	ASSIGN_POINT(&points[0], plp->e.ce);
+	++npoints;
+	ASSIGN_POINT(&points[npoints], plp->e.co);
+	++npoints;
+	code = cap_points(pgs_lp->cap, &plp->e, points + npoints);
+	if (code < 0)
+	    return code;
+	npoints += code;
+    } else if (join == gs_join_round) {
+	ASSIGN_POINT(&points[npoints], plp->e.co);
+	vd_lineto(points[npoints].x, points[npoints].y);
+	++npoints;
+	if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
+	    return code;
+	return add_round_cap(ppath, &plp->e);
+    } else if (nplp->thin) {	/* no join */
+	npoints = 0;
+    } else {			/* non-round join */
+	bool ccw =
+	    (double)(plp->width.x) /* x1 */ * (nplp->width.y) /* y2 */ >
+	    (double)(nplp->width.x) /* x2 */ * (plp->width.y) /* y1 */;
+
+	if (ccw ^ reflected) {
+	    ASSIGN_POINT(&points[0], plp->e.co);
+	    vd_lineto(points[0].x, points[0].y);
+	    ++npoints;
+	    code = line_join_points(pgs_lp, plp, nplp, points + npoints,
+				    (uniform ? (gs_matrix *) 0 : &ctm_only(pis)),
+				    join, reflected);
+	    if (code < 0)
+		return code;
+	    code--; /* Drop the last point of the non-compatible mode. */
+	    npoints += code;
+	} else {
+	    code = line_join_points(pgs_lp, plp, nplp, points,
+				    (uniform ? (gs_matrix *) 0 : &ctm_only(pis)),
+				    join, reflected);
+	    if (code < 0)
+		return code;
+	    ASSIGN_POINT(&points[0], plp->e.ce); /* Replace the starting point of the non-compatible mode. */
+	    npoints = code;
+	}
+    }
+    code = add_points(ppath, points, npoints, moveto_first);
+    if (code < 0)
+	return code;
+    code = gx_path_close_subpath(ppath);
+    vd_closepath;
+    return code;
+}
+
+/* Add a CPSI-compatible segment to the path.  This handles all the complex cases. */
+private int
+stroke_add_initial_cap_compat(gx_path * ppath, pl_ptr plp, bool adlust_longitude,
+	   const gx_device_color * pdevc, gx_device * dev,
+	   const gs_imager_state * pis)
+{
+    const gx_line_params *pgs_lp = gs_currentlineparams_inline(pis);
+    gs_fixed_point points[4];
+    int npoints = 0;
+    int code;
+
+    if (pgs_lp->cap == gs_cap_butt)
+	return 0;
+    if (plp->thin) {
+	/* We didn't set up the endpoint parameters before, */
+	/* because the line was thin.  Do it now. */
+	set_thin_widths(plp);
+	adjust_stroke(plp, pis, true, adlust_longitude);
+	compute_caps(plp);
+    }
+    /* Create an initial cap if desired. */
+    if (pgs_lp->cap == gs_cap_round) {
+	vd_moveto(plp->o.co.x, plp->o.co.y);
+	if ((code = gx_path_add_point(ppath, plp->o.co.x, plp->o.co.y)) < 0 ||
+	    (code = add_round_cap(ppath, &plp->o)) < 0
+	    )
+	    return code;
+	return 0;
+    } else {
+	ASSIGN_POINT(&points[0], plp->o.co);
+	++npoints;
+	if ((code = cap_points(pgs_lp->cap, &plp->o, points + npoints)) < 0)
+	    return npoints;
+	npoints += code;
+	ASSIGN_POINT(&points[npoints], plp->o.ce);
+	++npoints;
+	code = add_points(ppath, points, npoints, true);
+	if (code < 0)
+	    return code;
+	return gx_path_close_subpath(ppath);
+    }
 }
 
 /* Add lines with a possible initial moveto. */
