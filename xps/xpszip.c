@@ -224,17 +224,17 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
     xps_part_t *part = ctx->last;
     int code;
 
-    if (part->size >= part->capacity)
-    {
-	/* dprintf2("growing buffer (%d/%d)\n", part->size, part->capacity); */
-	part->capacity += 8192;
-	part->data = xps_realloc(ctx, part->data, part->capacity);
-	if (!part->data)
-	    return gs_throw(-1, "out of memory");
-    }
-
     if (ctx->zip_method == 8)
     {
+	if (part->size >= part->capacity)
+	{
+	    /* dprintf2("growing buffer (%d/%d)\n", part->size, part->capacity); */
+	    part->capacity += 8192;
+	    part->data = xps_realloc(ctx, part->data, part->capacity);
+	    if (!part->data)
+		return gs_throw(-1, "out of memory");
+	}
+
 	ctx->zip_stream.next_in = buf->ptr + 1;
 	ctx->zip_stream.avail_in = buf->limit - buf->ptr;
 	ctx->zip_stream.next_out = part->data + part->size;
@@ -254,12 +254,16 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 	else
 	    return gs_throw(-1, "inflate() error");
     }
+
     else
     {
 	/* dprintf1("stored data of known size: %d\n", ctx->zip_uncompressed_size); */
-	int avail = buf->limit - buf->ptr;
-	int remain = part->capacity - part->size;
-	int count = avail;
+	int input = buf->limit - buf->ptr;
+	int output = part->capacity - part->size;
+	int remain = ctx->zip_uncompressed_size - part->size;
+	int count = input;
+	if (count > output)
+	    count = output;
 	if (count > remain)
 	    count = remain;
 	/* dprintf1("  reading %d bytes\n", count); */
