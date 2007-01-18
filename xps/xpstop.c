@@ -286,6 +286,8 @@ xps_imp_deallocate_interp_instance(pl_interp_instance_t *pinstance)
 dputs("xps_imp_deallocate_interp_instance!\n");
 
     xps_debug_parts(ctx);
+    xps_debug_type_map(ctx, "Default", ctx->defaults);
+    xps_debug_type_map(ctx, "Override", ctx->overrides);
 
     // free gstate?
     gs_free_object(mem, ctx, "xps_imp_deallocate_interp_instance");

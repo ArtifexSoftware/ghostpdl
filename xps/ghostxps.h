@@ -29,7 +29,17 @@ struct xps_type_map_s
 {
     char *name;
     char *type;
-    xps_type_map_t *next;
+    xps_type_map_t *left;
+    xps_type_map_t *right;
+};
+
+struct xps_relation_s
+{
+    char *source;
+    char *target;
+    char *type;
+    xps_relation_t *left;
+    xps_relation_t *right;
 };
 
 struct xps_context_s
@@ -43,6 +53,7 @@ struct xps_context_s
 
     xps_type_map_t *defaults;
     xps_type_map_t *overrides;
+    xps_relation_t *relations;
 
     unsigned int zip_state;
     unsigned int zip_general;
@@ -61,17 +72,8 @@ struct xps_part_s
     int size;
     int capacity;
     int complete;
-    byte *data;
-    xps_relation_t *rels;
+    char *data;
     xps_part_t *next;
-};
-
-struct xps_relation_s
-{
-    char *source;
-    char *type;
-    char *target;
-    xps_relation_t *next;
 };
 
 typedef struct xps_parser_s xps_parser_t;
