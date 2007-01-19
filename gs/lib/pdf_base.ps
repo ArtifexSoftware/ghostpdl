@@ -232,6 +232,23 @@ pdfdict begin
   count pdfemptycount sub
 } bind def
 
+% Read a token, but simply return false (no token read) in the case of an
+% error.  This is messy because 'token' either may or may not pop its operand
+% if an error occurs, and because the return values are different depending
+% on whether the source is a file or a string.
+/token_nofail {		% <file|string> token_nofail false
+			% <file> token_nofail <token> true
+			% <string> token_nofail <post> <token> true
+  null 1 index			% stack: source null source
+  { token } .internalstopped {	% stack: source null [source]
+    null ne { pop } if pop false
+  } {				% stack: source null ([post] token true | false)
+    { 1 index null eq { 3 1 } { 4 2 } ifelse roll pop pop true }
+    { pop pop false }
+    ifelse
+  } ifelse
+} bind def
+
 % ================================ Objects ================================ %
 
 % Since we may have more than 64K objects, we have to use a 2-D array to
@@ -753,11 +770,7 @@ pdfdict begin
     } if
     1 index exch /File exch put
   } ifelse
-  PDFsource {token} stopped {
-    pop null
-  } {
-    not { null } if
-  } ifelse
+  PDFsource token_nofail not { null } if
   dup /endobj eq {
     % Another case that Acrobat Reader handles -- 'endobj' without 'endstream'.
     (   **** Warning: stream missing 'endstream'.\n) pdfformaterror

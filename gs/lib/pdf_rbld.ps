@@ -29,7 +29,7 @@
 % if true --> we have an object with duplicate object and generation numbers.
 /dup_obj_gen_num false def
 
-% Note:  This routine is also used by non-rebuild code.
+% Note:  This procedure is also used by non-rebuild code.
 % Store a line in the xref array (Actually Objects and Generations arrays)
 % <obj num> (strm num> <obj loc> <gen num>  setxrefentry <obj num> strm num>
 % 						 	 <obj loc> <gen num>
@@ -89,14 +89,6 @@
   } for
   flush
 } bind def
-
-% This is the same as the postscript token operator except that
-% errors are ignored.
-/token_nofail
-{
-  { token } .internalstopped
-  { pop false } if
-} bind odef
 
 % Get token from string and check its type
 %   <string> <type> typed_token <false>		% no token or not match
