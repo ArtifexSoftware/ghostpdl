@@ -13,7 +13,7 @@
 0056 NF 19-10 p 10 font selection lineprinter instead of courier.
 This requires redesigning the alias facility in the shared language
 dictionary which will be a considerable amount of work.
-0060 OPEN 20-01 p 36 'V' from Park Avenue font is missing.
+0060 FIXED 20-01 p 36 'V' from Park Avenue font is missing.
 0061 NF 20-02 p 2 Unstyled character substitution is not supported.
 0062 OPEN 20-07 p 9 symbol set selection.
 0063 OPEN 20-07 p 18 char color black instead of red.
