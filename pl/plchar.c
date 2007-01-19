@@ -13,6 +13,8 @@
 
 /* plchar.c */
 /* PCL font handling library -- operations on individual characters */
+#include "assert.h"
+
 #include "math_.h"
 #include "memory_.h"
 #include "stdio_.h"             /* for gdebug.h */
@@ -1186,93 +1188,263 @@ pl_intelli_merge_box(float wbox[6], const pl_font_t *plfont, gs_glyph glyph)
         return true;
 }
 
-/* Do the work for rendering an Intellifont character. */
-/* The caller has done the setcachedevice. */
+#if 0
+#define DEBUG_INTELLIFONT_SHOW_CHAR /* debug print the points inside the bounding box */
+#define DEBUG_INTELLIFONT_SHOW_CHAR_ALL /* debug print all points */
+#endif
+
+/* render an Intellifont character. */
+/* The caller has called setcachedevice. */
 private int
 pl_intelli_show_char(gs_state *pgs, const pl_font_t *plfont, gs_glyph glyph)
-{       const byte *cdata = pl_font_lookup_glyph(plfont, glyph)->data;
+{
+  const byte *cdata;
+  pl_font_glyph_t *font_glyph;
+  const intelli_metrics_t *metrics;
+  client_name_t cname = (client_name_t)"pl_intelli_show_char";
+  font_glyph = pl_font_lookup_glyph(plfont, glyph);
+  cdata = font_glyph->data;
 
-        if ( cdata == 0 )
-          return 0;
-        if ( cdata[3] == 4 )
-          { /* Compound character */
-            gs_matrix save_ctm;
-            int i;
+  if ( cdata == 0 )
+  {
+    if_debug1('1', "[1] no character data for glyph %i\n",glyph);
+    return 0;
+  }
 
-            gs_currentmatrix(pgs, &save_ctm);
-            for ( i = 0; i < cdata[6]; ++i )
-              { const byte *edata = cdata + 8 + i * 6;
-                floatp x_offset = pl_get_int16(edata + 2);
-                floatp y_offset = pl_get_int16(edata + 4);
-                int code;
+	if ( cdata[3] == 4 ) /* Compound character */
+  {
+    gs_matrix save_ctm;
+    int i;
+    gs_currentmatrix(pgs, &save_ctm);
+    for ( i = 0; i < cdata[6]; ++i )
+    {
+      const byte *edata = cdata + 8 + i * 6;
+      floatp x_offset = pl_get_int16(edata + 2);
+      floatp y_offset = pl_get_int16(edata + 4);
+      int code;
 
-                gs_translate(pgs, x_offset, y_offset);
-                code = pl_intelli_show_char(pgs, plfont, pl_get_uint16(edata));
-                gs_setmatrix(pgs, &save_ctm);
-                if ( code < 0 )
-                  return code;
-              }
-            return 0;
-          }
-        cdata += 4;             /* skip PCL character header */
-        { const byte *outlines = cdata + pl_get_uint16(cdata + 6);
-          uint num_loops = pl_get_uint16(outlines);
-          uint i;
-          int code;
+      gs_translate(pgs, x_offset, y_offset);
+      code = pl_intelli_show_char(pgs, plfont, pl_get_uint16(edata));
+      gs_setmatrix(pgs, &save_ctm);
+      if ( code < 0 )
+        return code;
+    }
+    return 0;
+  } /* compound character */
 
-          if_debug2('1', "[1]ifont glyph %lu: loops=%u\n",
-                    (ulong)glyph, num_loops);
-          for ( i = 0; i < num_loops; ++i )
-            { const byte *xyc = cdata + pl_get_uint16(outlines + 4 + i * 8);
-              uint num_points = pl_get_uint16(xyc);
-              uint num_aux_points = pl_get_uint16(xyc + 2);
-              const byte *x_coords = xyc + 4;
-              const byte *y_coords = x_coords + num_points * 2;
-              const byte *x_aux_coords = y_coords + num_points * 2;
-              const byte *y_aux_coords = x_aux_coords + num_aux_points;
-              int x_prev, y_prev;
-              uint j;
+  else  /* not compound character */
+  {
+    const byte *outlines;
+    uint num_loops;
+    uint i;
+    int code;
 
-              if ( num_aux_points == 0xffff ) {
-                if_debug1('1', "[1]corrupt intellifont font glyph %ld\n", glyph );
-                return 0;
-              }
-              if_debug2('1', "[1]num_points=%u num_aux_points=%u\n",
-                        num_points, num_aux_points);
-              /* For the moment, just draw straight lines. */
-              for ( j = 0; j < num_points; x_coords += 2, y_coords += 2, ++j )
-                { int x = pl_get_uint16(x_coords) & 0x3fff;
-                  int y = pl_get_uint16(y_coords) & 0x3fff;
+    cdata += 4;             /* skip PCL character header */
+    outlines = cdata + pl_get_uint16(cdata + 6);
+    num_loops = pl_get_uint16(outlines);
 
-                  if_debug4('1', "[1]%s (%d,%d) %s\n",
-                            (*x_coords & 0x80 ? " line" : "curve"), x, y,
-                            (*y_coords & 0x80 ? " line" : "curve"));
-                  if ( j == 0 )
-                    code = gs_moveto(pgs, (floatp)x, (floatp)y);
-                  else
-                    code = gs_lineto(pgs, (floatp)x, (floatp)y);
-                  if ( code < 0 )
-                    return code;
-                  if ( num_aux_points && (!(*x_coords & 0x80) && j != 0) )
-                    { /* The auxiliary dx and dy values are signed. */
-                      int dx = (*x_aux_coords++ ^ 0x80) - 0x80;
-                      int dy = (*y_aux_coords++ ^ 0x80) - 0x80;
+#ifdef DEBUG_INTELLIFONT_SHOW_CHAR
+    dprintf1("glyph: %i\n",glyph);
+    dprintf1("contour    size: %i\n", pl_get_uint16(cdata + 0));
+    dprintf1("metric   offset: %i\n", pl_get_uint16(cdata + 2));
+    dprintf1("intelli  offset: %i\n", pl_get_uint16(cdata + 4));
+    dprintf1("outlines offset: %i\n", pl_get_uint16(cdata + 6));
+    dprintf1("xy data  offset: %i\n", pl_get_uint16(cdata + 8));
+    dprintf1("num_loops: %i\n",num_loops);
+#endif
 
-                      if_debug2('1', "[1]... aux (%d,%d)\n", dx, dy);
-                      code = gs_lineto(pgs, (x + x_prev) / 2 + dx,
-                                       (y + y_prev) / 2 + dy);
-                      if ( code < 0 )
-                        return code;
-                    }
-                  x_prev = x, y_prev = y;
-                }
-              /****** HANDLE FINAL AUX POINT ******/
-              code = gs_closepath(pgs);
-              if ( code < 0 )
-                return code;
-            }
-        }
-        return 0;
+    if_debug2('1', "[1]ifont glyph %lu: loops=%u\n",(ulong)glyph, num_loops);
+
+    for ( i = 0; i < num_loops; ++i )
+    {
+      int xyc_offset = pl_get_uint16(outlines + 4 + i * 8);
+      const byte *xyc = cdata + pl_get_uint16(outlines + 4 + i * 8);
+      uint num_points;
+      uint num_aux_points;
+      const byte *x_coords, *y_coords, *x_coords_last;
+      const byte *x_aux_coords, *y_aux_coords, *x_aux_coords_last;
+      int llx, lly, urx, ury; /* character bounding box */
+      uint j;
+      int x, y;
+      int xAux, yAux;
+      int first_point_moved;
+      int *xBuffer, *yBuffer, *xLimit, *yLimit;
+      int *xScan, *yScan, *xLast;
+      int pointBufferSize;
+
+      num_points = pl_get_uint16(xyc);
+      num_aux_points = pl_get_uint16(xyc + 2);
+
+      x_coords = xyc + 4;
+      y_coords = x_coords + num_points * 2;
+      x_coords_last = y_coords;
+
+      metrics = (const intelli_metrics_t *)(cdata + pl_get_uint16(cdata + 2));
+      llx = pl_get_int16(metrics->charSymbolBox[0]);
+      lly = pl_get_int16(metrics->charSymbolBox[1]);
+      urx = pl_get_int16(metrics->charSymbolBox[2]);
+      ury = pl_get_int16(metrics->charSymbolBox[3]);
+
+      pointBufferSize = num_points; /* allocate enough to hold all points */
+      if ( num_aux_points != 0xffff ) 
+      {
+        pointBufferSize += num_aux_points;
+        x_aux_coords = y_coords + num_points * 2;
+        y_aux_coords = x_aux_coords + num_aux_points;
+        x_aux_coords_last = y_coords;
+      }
+      else
+      {
+        x_aux_coords = NULL;
+        y_aux_coords = NULL;
+        x_aux_coords_last = NULL;
+      }
+      xBuffer = (int *)gs_alloc_byte_array(pgs->memory, pointBufferSize, sizeof(int), cname);
+      yBuffer = (int *)gs_alloc_byte_array(pgs->memory, pointBufferSize, sizeof(int), cname);
+      if (xBuffer == 0 || yBuffer == 0)
+      {
+        if_debug1('1', "[1]cannot allocate point buffers %i\n",pointBufferSize * sizeof(int));
+        return_error(gs_error_VMerror);
+      }
+			xLimit = xBuffer + pointBufferSize;
+			yLimit = yBuffer + pointBufferSize;
+			xLast = NULL;
+
+      if_debug2('1', "[1]num_points=%u num_aux_points=%u\n", num_points, num_aux_points);
+
+#ifdef DEBUG_INTELLIFONT_SHOW_CHAR
+      dprintf1("num_points: %i\n",num_points);
+      dprintf1("num_aux_points: %i\n",num_aux_points);
+      dprintf4("bounding box: (%05i,%05i), (%05i,%05i)\n",
+               llx,lly,urx,ury);
+      dprintf4("bounding box: (%03i,%03i), (%03i,%03i)\n",
+               (int)llx/100,(int)lly/100, (int)urx/100,(int)ury/100);
+#endif
+
+      /* collect the points in the buffers, since we need to clean them up later */
+      /* only points inside the bounding box are allowed */
+      /* aux points are points inserted between two points, making the outline smoother */
+      /* the aux points could be used for curve fitting, but we add line segments */
+      for ( xScan = xBuffer, yScan = yBuffer; x_coords < x_coords_last; x_coords += 2, y_coords += 2 )
+      {
+        x = pl_get_uint16(x_coords) & 0x3fff;
+        y = pl_get_uint16(y_coords) & 0x3fff;
+
+#ifdef DEBUG_INTELLIFONT_SHOW_CHAR_ALL
+        dprintf4("%s (%d,%d) %s\n",
+                 (*x_coords & 0x80 ? " line" : "curve"), x, y,
+                 (*y_coords & 0x80 ? " line" : "curve"));
+#endif
+        if_debug4('1', "[1]%s (%d,%d) %s\n",
+                  (*x_coords & 0x80 ? " line" : "curve"), x, y,
+                  (*y_coords & 0x80 ? " line" : "curve"));
+
+        if (xScan > xBuffer) /* not first point, therefore aux is possible */
+        {
+          if ( x_coords < x_aux_coords_last &&!(*x_coords & 0x80) ) /* use an aux point */
+          {
+            /* The auxiliary dx and dy values are signed. */
+            int dx = (*x_aux_coords++ ^ 0x80) - 0x80;
+            int dy = (*y_aux_coords++ ^ 0x80) - 0x80;
+
+            if_debug2('1', "[1]... aux (%d,%d)\n", dx, dy);
+
+            xAux = (x + *(xScan-1)) / 2 + dx;
+            yAux = (y + *(yScan-1)) / 2 + dy;
+            if ((xAux >= llx && xAux <= urx) && (yAux >= lly && yAux <= ury)) /* aux point is inside bounding box */
+            {
+              *xScan++ = xAux;
+              *yScan++ = yAux;
+							if ( !(xScan <= xLimit && yScan <= yLimit) )
+							{
+								dprintf("limit exceeded\n");
+							}
+							assert(xScan <= xLimit && yScan <= yLimit);
+#ifdef DEBUG_INTELLIFONT_SHOW_CHAR
+              dprintf2("%05i, %05i",xAux,yAux);
+              dprintf("\n");
+#endif
+            } /* end point inside bounding box */
+            /* what do points outside the bounding box mean? */
+
+
+#ifdef DEBUG_INTELLIFONT_SHOW_CHAR_ALL
+#ifndef DEBUG_INTELLIFONT_SHOW_CHAR
+            dprintf2("[%05i,%05i]",xAux,yAux);
+            dprintf2("  delta  {%05i,%05i}",dx,dy);
+            if ( !(xAux >= llx && xAux <= urx) || !(yAux >= lly && yAux <= ury) )
+              dprintf(" ****** ");
+#endif
+#endif
+          } /* use an aux point */
+        } /* not first point */
+
+        if ( (x >= llx && x <= urx) && (y >= lly && y <= ury) ) /* point inside bounding box */
+        {
+#ifdef DEBUG_INTELLIFONT_SHOW_CHAR
+          dprintf2("%05i, %05i",x,y);
+          dprintf("\n");
+#endif
+          *xScan++ = x;
+          *yScan++ = y;
+					if ( !(xScan <= xLimit && yScan <= yLimit) )
+					{
+						dprintf("limit exceeded\n");
+					}
+					assert(xScan <= xLimit && yScan <= yLimit);
+
+        } /* point inside bounding box */
+#ifdef DEBUG_INTELLIFONT_SHOW_CHAR_ALL
+#ifndef DEBUG_INTELLIFONT_SHOW_CHAR
+        dprintf2("(%05i,%05i)",x,y);
+        dprintf2("             (%03i,%03i)",(int)x/100,(int)y/100);
+        if ( !(x >= llx && x <= urx) || !(y >= lly && y <= ury))
+          dprintf(" ****** ");
+#endif
+#endif
+
+      } /* for num_points - first time through */
+
+#ifdef DEBUG_INTELLIFONT_SHOW_CHAR
+      dprintf("\n");
+      dprintf("\n");
+#endif
+
+      if ( num_aux_points != 0xffff ) 
+				xLast = xScan;
+			else
+				xLast = xScan - 1; /* discard the last point */
+
+      xScan = xBuffer;
+      yScan = yBuffer;
+      if (xLast > xBuffer) 
+      {
+        code = gs_moveto(pgs, (floatp)*xScan++, (floatp)*yScan++);
+        if ( code < 0 )
+          return code;
+				assert(xScan <= xLimit && yScan <= yLimit);
+      }
+
+      for (; xScan < xLast; )
+      {
+        code = gs_lineto(pgs, (floatp)*xScan++, (floatp)*yScan++);
+        if ( code < 0 )
+          return code;
+				assert(xScan <= xLimit && yScan <= yLimit);
+      }
+      /* close the path of this loop */
+      code = gs_closepath(pgs);
+      if ( code < 0 )
+        return code;
+
+      gs_free_object(pgs->memory, xBuffer, "x point buffer");
+      gs_free_object(pgs->memory, yBuffer, "y point buffer");
+
+    } /* for num_loops */
+    
+  } /* end not compound */
+
+  return 0;
 }
 
 /* Get character existence and escapement for an Intellifont. */
