@@ -573,9 +573,7 @@ pl_main_universe_dnit(
 	/* ps allocator retain's the device, pl_alloc doesn't */
 	gx_device_retain(universe->curr_device, false);
 	universe->curr_device = NULL;
-#else
-	gx_device_finalize(universe->curr_device);
-        /* finalize closes, frees stype, now free the rest of the device */
+#else	
 	gs_free_object(universe->mem, universe->curr_device,
 		       "pl_main_universe_dnit(gx_device)");
 #endif
