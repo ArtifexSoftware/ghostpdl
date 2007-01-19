@@ -242,13 +242,19 @@ def
 } bind odef
 /resourcestatus {	% <key> <category> resourcestatus <status> <size> true
 			% <key> <category> resourcestatus false
-  0 .argindex type /nametype ne {
-    % CET 23-26 wants typecheck here, not undefineresource that happens
-    % without the check.
-    /resourcestatus cvx /typecheck signaloperror
+  {
+    0 .argindex type /nametype ne {
+      % CET 23-26 wants typecheck here, not undefineresource that happens
+      % without the check.
+      /resourcestatus cvx /typecheck signalerror
+    } if
+    2 copy .findcategory /ResourceStatus .resourceexec
+    { 4 2 roll pop pop true } { pop pop false } ifelse
+  } stopped {
+    % Although resourcestatus is an operator, Adobe uses executable name
+    % for error reporting. CET 23-26
+    /resourcestatus cvx $error /errorname get signalerror
   } if
-  2 copy .findcategory /ResourceStatus .resourceexec
-  { 4 2 roll pop pop true } { pop pop false } ifelse
 } bind odef
 /undefineresource {	% <key> <category> undefineresource -
     1 .argindex 1 index		% catch stackunderflow

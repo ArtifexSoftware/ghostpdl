@@ -4248,9 +4248,8 @@ Test	 Status	Comments
 23-26-3  AOK	Device Dependent: GS has more entries for Filter, ColorSpace
 		page fills before ImageType and PatternType shown. Same as 23-13-2.
 
-23-26-4  DIFF	A difference in stack content on a resoursestatus error :
-		Likely CPSI places an executable name but GS does the operator.
-		Tek matches CPSI. Assign: Alex.
+23-26-4  OK	Adobe interpreters have resoursestatus as an operator but report errors
+		in the executable name. Since rev. 7619 we do the same. - Alex
 
 23-26-5  OK	
 
@@ -4297,8 +4296,7 @@ Test	 Status	Comments
 
 23-33-4  DIFF	'undefineresource' error inconformity. assign: Alex.
 
-23-33-5  DIFF   'resourcestatus' error inconformity. assign: Alex.
-		PLRM3: "However, the resource category must exist, or else an undefined error occurs."
+23-33-5  OK     Fixed in rev. 7619; See 23-26-4 for details. - Alex.
 
 23-33-6  OK	
 
