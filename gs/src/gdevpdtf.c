@@ -411,10 +411,12 @@ pdf_assign_font_object_id(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 	if (pdfont->FontType == 0) {
 	    pdf_font_resource_t *pdfont1 = pdfont->u.type0.DescendantFont;
 
-	    pdf_reserve_object_id(pdev, (pdf_resource_t *)pdfont1, 0);
-	    code = pdf_mark_font_descriptor_used(pdev, pdfont1->FontDescriptor);
-	    if (code < 0)
-		return code;
+	    if (pdf_font_id(pdfont1) == -1) {
+		pdf_reserve_object_id(pdev, (pdf_resource_t *)pdfont1, 0);
+		code = pdf_mark_font_descriptor_used(pdev, pdfont1->FontDescriptor);
+		if (code < 0)
+		    return code;
+	    }
 	}
     }
     return 0;
