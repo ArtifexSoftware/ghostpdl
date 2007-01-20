@@ -4285,16 +4285,15 @@ Test	 Status	Comments
 
 23-32-6  OK	
 
-23-33-1  DIFF	GS shows '--undefineresource--' Tek and CPSI return 'undefineresource'.
-		Assign: Alex
-		Device Dependent: status and number of Fonts and Encodings pre-loaded
-		differs between CPSI and Tek (this is not a problem).
+23-33-1  AOK	Device Dependent: status and number of Font, Encoding, and
+		ColorSpaceFamily resources pre-loaded differs between CPSI and
+                Tek and Ghostscript. (this is not a problem).
 
 23-33-2  OK	
 
-23-33-3  DIFF	Same as 23-25-2.  Assign: Ray
+23-33-3  OK  	Fixed in rev. 7620 - Alex
 
-23-33-4  DIFF	'undefineresource' error inconformity. assign: Alex.
+23-33-4  OK	Fixed in rev. 7620 - Alex
 
 23-33-5  OK     Fixed in rev. 7619; See 23-26-4 for details. - Alex.
 

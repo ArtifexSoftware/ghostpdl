@@ -257,8 +257,17 @@ def
   } if
 } bind odef
 /undefineresource {	% <key> <category> undefineresource -
-    1 .argindex 1 index		% catch stackunderflow
-    .findcategory /UndefineResource .resourceexec pop pop
+  0 .argindex type /nametype ne {
+    /undefinedresource cvx /typecheck signaloperror
+  } if
+  1 .argindex 1 index		% catch stackunderflow
+
+  { .findcategory /UndefineResource .resourceexec pop pop
+  } stopped {
+    % Although undefineresource is an operator, Adobe uses executable name
+    % here but uses operator for the errors above. CET 23-33
+    /undefineresource cvx $error /errorname get signalerror
+  } if
 } bind odef
 
 % Define the system parameters used for the Generic implementation of
