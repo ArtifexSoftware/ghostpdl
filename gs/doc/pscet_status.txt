@@ -4758,7 +4758,7 @@ Test	 Status	Comments
 		.
 		Here is a simplified test :
 		gswin32c.exe -r300 -dBATCH gs_cet.ps -c currenthalftone /SpotFunction get rcheck ==
-		It prints 'false' with -r20 or greater, and 'true' with -r144 or smaller.
+		It prints 'false' with -r200 or greater, and 'true' with -r144 or smaller.
 		.
 		Assign: Raph.
 
