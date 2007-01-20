@@ -2798,10 +2798,7 @@ Test	 Status	Comments
 
 13-03-7  OK	Color corrected by rev 7172.
 
-13-03-8  DIFF	gs has an extra 2 in column 1 and 7.  Squinting
-                x's overwrite o's row 1 col. 30 and a few other places
-                best to look at a digital diff.
-                assign: Igor.
+13-03-8  DIFF	Same as 11-19-6. assign: Igor.
 
 13-04-1  AOK	Analyzed by Igor.
 		CPSI prints an incomplete page.
@@ -3049,7 +3046,7 @@ Test	 Status	Comments
 
 13-24-5  OK	Minor differences visually reviewed by Igor.
 
-13-24-6  DIFF	A different glyph placement - strokepath - Assign: Igor.
+13-24-6  DIFF	Same as 11-19-6 - strokepath - Assign: Igor.
 
 13-25-1  OK	
 
