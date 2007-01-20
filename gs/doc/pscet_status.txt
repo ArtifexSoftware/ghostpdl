@@ -4754,9 +4754,13 @@ Test	 Status	Comments
                 assign: Alex.
 
 29-05-1  DIFF  	Rev 7595 MSVC8 debug build fails with no output pages.
-		Error: /invalidaccess in --forall--, likely in a halftone.
-		Alex can't reproduce.
-		Assign: Igor.
+		Error: /invalidaccess in --forall--, while copying a halftone with 'Gcopy'.
+		.
+		Here is a simplified test :
+		gswin32c.exe -r300 -dBATCH gs_cet.ps -c currenthalftone /SpotFunction get rcheck ==
+		It prints 'false' with -r20 or greater, and 'true' with -r144 or smaller.
+		.
+		Assign: Raph.
 
 29-05-2  OK	
 
