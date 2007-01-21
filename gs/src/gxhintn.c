@@ -1140,7 +1140,7 @@ private void t1_hinter__fix_missed_flex(t1_hinter * this)
 	return;
     contour_beg = this->contour[this->contour_count -1];
     contour_end = this->pole_count - 1; /* the last contour's 'closepath'. */
-    if (contour_beg + 8 >= contour_end)
+    if (contour_beg >= contour_end)
 	return;
     for (k = 0; k < 2; k++) {
         t1_glyph_space_coord *p_gc = (!k ? &this->pole[0].gx : &this->pole[0].gy);
