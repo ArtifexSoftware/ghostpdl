@@ -827,7 +827,9 @@ end readonly def
   dup /BaseFont oget
   /Repaired true store	% flag that we had warnings
   TTFWarnList 1 index true put	% Add fontname to the list
-  dup TTfonts exch .knownget {
+  dup /Font resourcestatus dup { exch pop exch pop } if not
+  TTfonts 2 index known and {
+    dup TTfonts exch get
     QUIET not {
       (Substituting font ) print dup =only
       ( for ) print 1 index =only (.) = flush
