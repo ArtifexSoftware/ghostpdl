@@ -116,7 +116,7 @@ zrsdparams(i_ctx_t *i_ctx_p)
  * ordinary file or string streams.
  */
 private int make_rss(i_ctx_t *i_ctx_p, os_ptr op, const byte * data,
-		     uint size, int space, long offset, long length,
+		     uint size, uint space, long offset, long length,
 		     bool is_bytestring);
 private int make_rfs(i_ctx_t *i_ctx_p, os_ptr op, stream *fs,
 		     long offset, long length);
@@ -201,14 +201,15 @@ rs:
 /* Make a reusable string stream. */
 private int
 make_rss(i_ctx_t *i_ctx_p, os_ptr op, const byte * data, uint size,
-	 int string_space, long offset, long length, bool is_bytestring)
+	 uint string_space, long offset, long length, bool is_bytestring)
 {
+    uint save_space = icurrent_space;
     stream *s;
     long left = min(length, size - offset);
 
-    if (icurrent_space < string_space)
-	return_error(e_invalidaccess);
+    ialloc_set_space(idmemory, string_space);
     s = file_alloc_stream(imemory, "make_rss");
+    ialloc_set_space(idmemory, save_space);
     if (s == 0)
 	return_error(e_VMerror);
     sread_string_reusable(s, data + offset, max(left, 0));
@@ -222,6 +223,8 @@ make_rss(i_ctx_t *i_ctx_p, os_ptr op, const byte * data, uint size,
 private int
 make_rfs(i_ctx_t *i_ctx_p, os_ptr op, stream *fs, long offset, long length)
 {
+    uint save_space = icurrent_space;
+    uint stream_space = imemory_space((const gs_ref_memory_t *)fs->memory);
     gs_const_string fname;
     gs_parsed_file_name_t pname;
     stream *s;
@@ -237,9 +240,11 @@ make_rfs(i_ctx_t *i_ctx_p, os_ptr op, stream *fs, long offset, long length)
     if (pname.iodev == NULL)
 	pname.iodev = iodev_default;
     /* Open the file again, to be independent of the source. */
+    ialloc_set_space(idmemory, stream_space);
     code = file_open_stream((const char *)pname.fname, pname.len, "r",
 			    fs->cbsize, &s, pname.iodev,
 			    pname.iodev->procs.fopen, imemory);
+    ialloc_set_space(idmemory, save_space);
     if (code < 0)
 	return code;
     if (sread_subfile(s, offset, length) < 0) {
