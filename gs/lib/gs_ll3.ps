@@ -254,7 +254,9 @@ systemdict /.reuseparamdict mark
   dup /DataSource .knownget {
     dup type /filetype eq {
       //.reuseparamdict /ReusableStreamDecode filter
-      .currentglobal 1 index gcheck .setglobal
+      % Copy the dictionary to replace the DataSource, but make sure the
+      % copy is in the same VM as the original.
+      .currentglobal 2 index gcheck .setglobal
 		% Stack: shdict rsdfile saveglobal
       2 index dup length dict copy exch .setglobal
       dup /DataSource 4 -1 roll put exch pop
