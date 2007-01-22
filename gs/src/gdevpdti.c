@@ -487,8 +487,6 @@ pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int
 	    (float)pw[3], (float)pw[4], (float)pw[5]);
 	pdfont->u.simple.s.type3.cached[ch >> 3] |= 0x80 >> (ch & 7);
     }
-    pdev->font3 = (pdf_resource_t *)pdfont;
-    pdev->substream_Resources = pdfont->u.simple.s.type3.Resources;
     return 0;
 }
 

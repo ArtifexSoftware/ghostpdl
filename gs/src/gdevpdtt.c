@@ -182,7 +182,6 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	       fallbacks to default implementations of graphic objects. 
 	       Hopely such fallbacks are rare. */
 	    pdev->clip_path_id = gx_get_clip_path_id(penum_s->pgs);
-	    penum->charproc_accum = true;
 	    return code;
 	} else {
 	    gs_matrix m;
@@ -206,6 +205,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	       changes, which the charproc possibly did. */
 	    gs_matrix_multiply((gs_matrix *)&pdev->charproc_ctm, (gs_matrix *)&penum->pis->ctm, &m);
 	    gs_matrix_fixed_from_matrix(&penum->pis->ctm, &m);
+	    penum->charproc_accum = false;
 	}
     }
     if (penum->pte_default) {
@@ -2440,6 +2440,7 @@ pdf_text_process(gs_text_enum_t *pte)
 		/* The condition above must be consistent with one in pdf_text_set_cache,
 		   which decides to apply pdf_set_charproc_attrs. */
 		gs_matrix m;
+		pdf_font_resource_t *pdfont;
 
 		code = pdf_start_charproc_accum(pdev);
 		if (code < 0)
@@ -2466,6 +2467,12 @@ pdf_text_process(gs_text_enum_t *pte)
 		code = pdf_choose_output_char_code(pdev, penum, &penum->output_char_code);
 		if (code < 0)
 		    return code;
+		code = pdf_attached_font_resource(pdev, penum->current_font, &pdfont, NULL, NULL, NULL, NULL);
+		if (code < 0)
+		    return code;
+		pdev->font3 = (pdf_resource_t *)pdfont;
+		pdev->substream_Resources = pdfont->u.simple.s.type3.Resources;
+		penum->charproc_accum = true;
 		return TEXT_PROCESS_RENDER;
 	    } else
 		code += 0; /* A fgood place for breakpoint. */
