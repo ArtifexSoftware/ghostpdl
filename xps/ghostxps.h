@@ -14,7 +14,7 @@ typedef struct xps_type_map_s xps_type_map_t;
 typedef struct xps_relation_s xps_relation_t;
 
 #define xps_alloc(ctx, size) \
-    gs_alloc_bytes(ctx->memory, size, __FUNCTION__);
+    ((void*)gs_alloc_bytes(ctx->memory, size, __FUNCTION__));
 #define xps_realloc(ctx, ptr, size) \
     gs_resize_object(ctx->memory, ptr, size, __FUNCTION__);
 #define xps_strdup(ctx, str) \
@@ -24,6 +24,9 @@ typedef struct xps_relation_s xps_relation_t;
 
 int xps_process_data(xps_context_t *ctx, stream_cursor_read *buf);
 int xps_process_part(xps_context_t *ctx, xps_part_t *part);
+
+char *xps_strdup_imp(xps_context_t *ctx, const char *str, const char *function);
+char *xps_clean_path(char *name);
 
 struct xps_type_map_s
 {

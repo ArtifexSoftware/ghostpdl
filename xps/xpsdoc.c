@@ -3,18 +3,10 @@
 #include <expat.h>
 
 /*
- * Parse incomplete Content_Type and relationship parts and add entries
- * to the type map lists and relation ship maps.
+ * Content types are stored in two separate binary trees.
+ * One lists Override entries, which map a part name to a type.
+ * The other lists Default entries, which map a file extension to a type.
  */
-
-static inline int
-xps_compare_relation(xps_relation_t *a, xps_relation_t *b)
-{
-    int cmp = strcmp(a->source, b->source);
-    if (cmp == 0)
-	cmp = strcmp(a->target, b->target);
-    return cmp;
-}
 
 void xps_debug_type_map(xps_context_t *ctx, char *label, xps_type_map_t *node)
 {
@@ -103,14 +95,116 @@ xps_add_default(xps_context_t *ctx, char *extension, char *content_type)
 	xps_add_type_map(ctx, ctx->defaults, extension, content_type);
 }
 
-static void
-xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type)
+/*
+ * Relationships are stored in a binary tree indexed by the source and target pair.
+ */
+
+void xps_debug_relations(xps_context_t *ctx, xps_relation_t *node)
 {
-    dprintf3("Relation source=%s target=%s type=%s\n", source, target, type);
+    if (node)
+    {
+	if (node->left)
+	    xps_debug_relations(ctx, node->left);
+	dprintf3("Relation source=%s target=%s type=%s\n", node->source, node->target, node->type);
+	if (node->right)
+	    xps_debug_relations(ctx, node->right);
+    }
+}
+
+static inline int
+xps_compare_relation(xps_relation_t *a, char *b_source, char *b_target)
+{
+    int cmp = strcmp(a->source, b_source);
+    if (cmp == 0)
+	cmp = strcmp(a->target, b_target);
+    return cmp;
+}
+
+static xps_relation_t *
+xps_new_relation(xps_context_t *ctx, char *source, char *target, char *type)
+{
+    xps_relation_t *node;
+
+    node = xps_alloc(ctx, sizeof(xps_relation_t));
+    if (!node)
+	goto cleanup;
+
+    node->source = xps_strdup(ctx, source);
+    node->target = xps_strdup(ctx, target);
+    node->type = xps_strdup(ctx, type);
+    node->left = NULL;
+    node->right = NULL;
+
+    if (!node->source)
+	goto cleanup;
+    if (!node->target)
+	goto cleanup;
+    if (!node->type)
+	goto cleanup;
+
+    return node;
+
+cleanup:
+    if (node)
+    {
+	if (node->source) xps_free(ctx, node->source);
+	if (node->target) xps_free(ctx, node->target);
+	if (node->type) xps_free(ctx, node->type);
+	xps_free(ctx, node);
+    }
+    return NULL;
+}
+
+
+static void
+xps_add_relation_imp(xps_context_t *ctx, xps_relation_t *node, char *source, char *target, char *type)
+{
+    int cmp = xps_compare_relation(node, source, target);
+    if (cmp < 0)
+    {
+	if (node->left)
+	    xps_add_relation_imp(ctx, node->left, source, target, type);
+	else
+	    node->left = xps_new_relation(ctx, source, target, type);
+    }
+    else if (cmp > 0)
+    {
+	if (node->right)
+	    xps_add_relation_imp(ctx, node->right, source, target, type);
+	else
+	    node->right = xps_new_relation(ctx, source, target, type);
+    }
+    else
+    {
+	/* it's a duplicate so we don't do anything */
+    }
 }
 
 static void
-xps_handle_metadata(void *zp, const char *name, const char **atts)
+xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type)
+{
+    /* dprintf3("Relation source=%s target=%s type=%s\n", source, target, type); */
+    if (ctx->relations == NULL)
+	ctx->relations = xps_new_relation(ctx, source, target, type);
+    else
+	xps_add_relation_imp(ctx, ctx->relations, source, target, type);
+}
+
+/*
+ * Parse the metadata [Content_Types.xml] and _rels/XXX.rels parts.
+ * These should be parsed eagerly as they are interleaved, so the
+ * parsing needs to be able to cope with incomplete xml.
+ *
+ * We re-parse the part every time a new part of the piece comes in.
+ * The binary trees in xps_context_t make sure that the information
+ * is not duplicated (since the entries are often parsed many times).
+ *
+ * We hook up unique expat handlers for this, and ignore any expat
+ * errors that occur.
+ */
+
+static void
+xps_handle_metadata(void *zp, char *name, char **atts)
 {
     xps_context_t *ctx = zp;
     int i;
@@ -190,6 +284,10 @@ xps_process_metadata(xps_context_t *ctx, xps_part_t *part)
     return 0;
 }
 
+/*
+ * The document sequence bla bla bla.
+ */
+
 int
 xps_process_fpage(xps_context_t *ctx, xps_part_t *part)
 {
@@ -219,11 +317,6 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
     if (part->complete)
     {
 	dprintf1("complete part '%s'.\n", part->name);
-	if (strstr(part->name, ".fpage"))
-	{
-	    dprintf("  a page!\n");
-	    xps_process_fpage(ctx, part);
-	}
     }
     else
     {
