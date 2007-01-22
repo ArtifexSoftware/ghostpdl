@@ -40,6 +40,7 @@
 #include "pltop.h"
 #include "gzstate.h"
 #include "uconfig.h"	/* for UFSTFONTDIR */
+
 /* Forward decls */
 
 /************************************************************/
@@ -107,9 +108,6 @@ ps_impl_allocate_interp(
     return 0;   /* success */
 }
 
-/* NB FIX ME fold into the instance like other languages. */
-// ps_interp_instance_t *global_psi = NULL;
-
 /* defaults for locations of font collection objects (fco's) and
    plugins the root data directory.  These are internally separated with
    ':' but environment variable use the gp separator */
@@ -135,10 +133,13 @@ ps_impl_allocate_interp_instance(
 	const char *argv[MAX_ARGS] = { 
 	    "",
 	    "-dNOPAUSE",
+#ifndef DEBUG
 	    "-dQUIET",
-	    "-dJOBSERVER", 
+#else
 	    "-dOSTACKPRINT", // NB: debuggging postscript Needs to be removed. 
 	    "-dESTACKPRINT", // NB: debuggging postscript Needs to be removed. 
+#endif
+	    "-dJOBSERVER", 
 	    "-sUFST_PlugIn=" UFSTFONTDIR "mtfonts/pcl45/mt3/plug__xi.fco",
             "-sFCOfontfile=" UFSTFONTDIR "mtfonts/pclps2/mt3/pclp2_xj.fco",
             "-sFCOfontfile2=" UFSTFONTDIR "mtfonts/pcl45/mt3/wd____xh.fco",
@@ -146,7 +147,11 @@ ps_impl_allocate_interp_instance(
 	    "-sFAPIconfig=FAPIconfig-FCO",
 	    0
 	};
-	int argc = 11;
+#ifndef DEBUG
+	int argc = 9;
+#else
+	int argc = 10;
+#endif
 #ifdef DEBUG_WITH_EXPERIMENTAL_GSOPTIONS_FILE
 	char argbuf[1024];
 #endif
