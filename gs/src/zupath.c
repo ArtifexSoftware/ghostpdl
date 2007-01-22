@@ -592,7 +592,7 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs, bool upath_compat
 	return_error(e_typecheck);
     check_read(*oppath);
     gs_newpath(igs);
-/****** ROUND tx AND ty ******/
+    /****** ROUND tx AND ty ******/
     
     if ( r_size(oppath) == 2 &&
 	 array_get(imemory, oppath, 1, &opcodes) >= 0 &&
@@ -622,7 +622,7 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs, bool upath_compat
 	    else {		/* operator */
 		const up_data_t data = up_data[opx];
 
-		*pnargs = data.num_args; /* in case of error */
+		*pnargs = 0;	/* in case of error */
 		if (upath_compat && opx == upath_op_ucache) {
 		    /* CPSI does not complain about incorrect ucache
 		       placement, even though PLRM3 says it's illegal. */
@@ -638,6 +638,7 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs, bool upath_compat
 
 		    while (opargs--) {
 			push(1);
+			*pnargs++; /* in case of error */
 			code = num_array_get(imemory, &operands, format, i++, op);
 			switch (code) {
 			    case t_integer:
@@ -721,8 +722,10 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs, bool upath_compat
 		    return_error(e_typecheck);
 	    }
 	}
-	if (argcount)
+	if (argcount) {
+	    *pnargs = argcount;
 	    return_error(e_typecheck);	/* leftover args */
+	}
     }
     if (ups < UPS_SETBBOX)
 	return_error(e_typecheck);	/* no setbbox */
