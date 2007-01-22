@@ -239,6 +239,7 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 	ctx->zip_stream.avail_in = buf->limit - buf->ptr;
 	ctx->zip_stream.next_out = part->data + part->size;
 	ctx->zip_stream.avail_out = part->capacity - part->size;
+
 	code = inflate(&ctx->zip_stream, Z_NO_FLUSH);
 	buf->ptr = ctx->zip_stream.next_in - 1;
 	part->size = part->capacity - ctx->zip_stream.avail_out;
@@ -247,12 +248,13 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 	{
 	    return 1;
 	}
-	else if (code == Z_OK)
+	else if (code == Z_OK || code == Z_BUF_ERROR)
 	{
 	    return 0;
 	}
 	else
-	    return gs_throw(-1, "inflate() error");
+	    return gs_throw2(-1, "inflate returned %d (%s)", code,
+		    ctx->zip_stream.msg ? ctx->zip_stream.msg : "no error message");
     }
 
     else
