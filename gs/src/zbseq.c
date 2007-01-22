@@ -111,7 +111,7 @@ zsetobjectformat(i_ctx_t *i_ctx_p)
  * representation, doing the dirty work of printobject and writeobject.
  * (The main control is in PostScript code, so that we don't have to worry
  * about interrupts or callouts in the middle of writing the various data
- * items.)  Note that this may or may not modify the 'unused' field.
+ * items.)  See encode_binary_token for more details.
  */
 
 private int

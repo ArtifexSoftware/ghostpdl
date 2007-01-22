@@ -751,6 +751,11 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, ref * pref,
 
 /* ---------------- Writing ---------------- */
 
+/*
+ * Encode a single object for a binary object sequence, for printobject and
+ * write object.  Note that this does not modify the always-unused byte (1),
+ * but it always write bytes 0 and 2-7.
+ */
 int
 encode_binary_token(i_ctx_t *i_ctx_p, const ref *obj, long *ref_offset,
 		    long *char_offset, byte *str)
@@ -758,16 +763,16 @@ encode_binary_token(i_ctx_t *i_ctx_p, const ref *obj, long *ref_offset,
     bin_seq_type_t type;
     uint size = 0;
     int format = (int)ref_binary_object_format.value.intval;
-    long value;
+    long value = 0;
     ref nstr;
 
     switch (r_type(obj)) {
 	case t_null:
 	    type = BS_TYPE_NULL;
-	    goto tx;
+	    break;		/* always set all fields */
 	case t_mark:
 	    type = BS_TYPE_MARK;
-	    goto tx;
+	    break;		/* always set all fields */
 	case t_integer:
 	    type = BS_TYPE_INTEGER;
 	    value = obj->value.intval;

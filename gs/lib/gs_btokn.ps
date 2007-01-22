@@ -201,7 +201,7 @@ cntdict /dicttype {
   } {
 	% Use the long header format: tag 0(1) toplen(2) totlen(4)
     exch 8 add exch
-    0 0 4 2 roll .bosobject exch pop exch pop	% store with byte swapping
+     0 0 4 2 roll .bosobject exch pop exch pop	% store with byte swapping
   } ifelse		% Stack: shortlen str
   exch dup -8 bitshift exch 255 and	% str hibyte lobyte
   currentobjectformat 1 and 0 eq {	% lsb first
@@ -245,7 +245,7 @@ cntdict /dicttype {
 	3 index exch writestring
       } forall
     } {
-      { (xxxxxxxx) .bosobject
+      { (x\000xxxxxx) .bosobject
 	dup 1 6 index put
 	3 index exch writestring
 	4 -1 roll pop 0 4 1 roll	% clear tag
