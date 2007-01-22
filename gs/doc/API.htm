@@ -343,19 +343,22 @@ The only exception is <b><tt>gsapi_run_string_continue()</tt></b>
 which will return <b><tt>e_NeedInput</tt></b> if all is well.
 See below for <a href="#return_codes">return codes</a>.
 <p>
-The address passed in <tt>pexit_code</tt> will be used to return the 
+The address passed in <b><tt>pexit_code</tt></b> will be used to return the 
 exit code for the interpreter in case of a quit or fatal error. The 
-<tt>user_errors</tt>  argument is normally set to zero to indicate that 
+<b><tt>user_errors</tt></b>  argument is normally set to zero to indicate that 
 errors should be handled through the normal mechanisms within the 
 interpreted code. If set to a negative value, the functions will return 
 an error code directly to the caller, bypassing the interpreted 
-language. A positive <tt>user_errors</tt> is treated the same as zero.
+language. The interpreted language's error handler is bypassed, regardless of 
+<b><tt>user_errors</tt></b> parameter, for the <b><tt>e_interrupt</tt></b> 
+generated when <a href="#set_poll">the polling callback</a> returns a negative 
+value. A positive <b><tt>user_errors</tt></b> is treated the same as zero.
 <p>
 There is a 64 KB length limit on any buffer submitted to a 
-<tt>gsapi_run_*</tt> function for processing. If you have more
+<b><tt>gsapi_run_*</tt></b> function for processing. If you have more
 than 65535 bytes of input then you must split it into smaller 
 pieces and submit each in a separate 
-<tt>gsapi_run_string_continue()</tt> call.
+<b><tt>gsapi_run_string_continue()</tt></b> call.
 </blockquote>
 
 <h3><a name="exit"></a><b><tt>gsapi_exit()</tt></b></h3>
@@ -396,6 +399,10 @@ The <b><tt>gsapi_init_with_args</tt></b>, <b><tt>gsapi_run_*</tt></b> and
 	<td>"<b><tt>quit</tt></b>" has been executed.
 	This is not an error.
 	<b><tt>gsapi_exit()</tt></b> must be called next.
+<tr valign=top>	<td align=left>e_interrupt
+	<td>&nbsp;
+	<td><a href="#set_poll">The polling callback function</a> 
+	returned a negative value, requesting Ghostscript to abort.
 <tr valign=top>	<td align=left>e_NeedInput
 	<td>&nbsp;
 	<td>More input is needed by

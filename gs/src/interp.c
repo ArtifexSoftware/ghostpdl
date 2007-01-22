@@ -525,6 +525,7 @@ again:
 	    epref = &doref;
 	    goto again;
 	case e_NeedInput:
+	case e_interrupt:
 	    return code;
     }
     /* Adjust osp in case of operand stack underflow */
