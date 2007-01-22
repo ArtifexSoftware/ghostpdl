@@ -638,7 +638,7 @@ upath_append_aux(os_ptr oppath, i_ctx_t *i_ctx_p, int *pnargs, bool upath_compat
 
 		    while (opargs--) {
 			push(1);
-			*pnargs++; /* in case of error */
+			(*pnargs)++; /* in case of error */
 			code = num_array_get(imemory, &operands, format, i++, op);
 			switch (code) {
 			    case t_integer:
