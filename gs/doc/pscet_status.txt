@@ -1286,7 +1286,7 @@ Test	 Status	Comments
 09-56-2  OK	revisin 7234 (peter)
 
 09-56-3  DIFF	Device Dependent: GS missing '1' for GRAY 33. Tek has '1' for
-		MEMO 3 & 4 (GS and CPSI do not). further analysis. assign: Ray
+		MEMO 3 & 4 (GS and CPSI do not). further analysis. assign: Peter
 
 09-57-1  AOK	Fixed by rev 7169.; GS has a better smoothing.
 
@@ -1803,7 +1803,7 @@ Test	 Status	Comments
 11-20-3  OK	Minor differences visually reviewed by RJJ
 
 11-20-4  DIFF	show operator doesn't restore the stack
-                assign Raph.
+                assign Peter.
 
 11-20-5  DIFF	Analyzed by Igor.
 		I believe it is CPSI problem.
@@ -2784,7 +2784,7 @@ Test	 Status	Comments
 
 13-03-2  DIFF	show error incomformity. assign: Alex.
 		{{/a /b add } (abc) cshow} stopped
-                returns only true on the stack. assign: Alex
+                returns only true on the stack. assign: Peter
 
 13-03-3  OK	Minor differences visually reviewed by RJJ
 
@@ -2819,7 +2819,7 @@ Test	 Status	Comments
                 anyway. Fixing this problem using .force* operations requires
                 multiple changes in the resource machinery. Perhaps, we can add
                 an operator that increases the access rights.  rev. 7165 - Alex
-                Assign: Ray.
+                Assign: Peter.
 
 13-05-4  OK	Minor differences visually reviewed by HAS
 
@@ -2837,10 +2837,10 @@ Test	 Status	Comments
 13-07-3  OK	
 
 13-08-1  DIFF	font directory writable in gs
-                assign Alex.
+                assign Peter.
 
 13-09-1  DIFF	GlobalFontDirectory wcheck : GS not conforming. : Analyzed by Igor.
-                assign Alex
+                assign Peter.
 
 13-10-1  OK	
 
@@ -3014,7 +3014,7 @@ Test	 Status	Comments
 
 13-21-1  DIFF	CPSI indicates [F] for ( SharedFontDirectory xcheck).  GS
 		indicates [T]. - ADC
-                assign Alex.
+                assign Peter.
 
 13-22-1  OK
 
@@ -3051,7 +3051,7 @@ Test	 Status	Comments
 13-25-1  OK	
 
 13-25-2  DIFF	GS reports [T] for three tests.  CPSI reports [F]. - ADC
-                assign Alex.
+                assign Peter.
 
 13-25-3  OK	
 
@@ -3430,8 +3430,7 @@ Test	 Status	Comments
 
 17-01-2  OK	Fixed as of rev 7598.
 
-17-01-3  DIFF	GS leaves extra '2' on the stack from "1 [ 2 ] ineofill"
-		'in_path' calls 'num_params' which gets confused by the array.
+17-01-3  OK	Fixed in rev 7630 (Peter)
 
 17-01-4  OK	Fixed as of rev 7598.
 
@@ -3447,7 +3446,7 @@ Test	 Status	Comments
 
 17-02-2  OK	Fixed as of rev. 7598.
 
-17-02-3  DIFF	Same as 17-01-3: GS leaves extra '2' on the stack from "1 [ 2 ] ineofill"
+17-02-3  OK	Same as 17-01-3
 
 17-02-4  OK	Fixed as of rev 7598.
 
@@ -3466,7 +3465,7 @@ Test	 Status	Comments
 		This is not identified as "Device Dependent" in the test.
 		curve flatness used to draw lines.
 
-17-03-3  DIFF	Same as 17-01-3: GS leaves extra '2' on the stack from "1 [ 2 ] ineofill"
+17-03-3  OK	Same as 17-01-3
 
 17-03-4  OK	Minor differences visually reviewed by RJJ
 
@@ -3480,7 +3479,7 @@ Test	 Status	Comments
 		Note Tek has _different_ pattern of dots, but is more similar to CPSI than
 		to GS.  This is not identified as "Device Dependent" in the test.
 
-17-04-3  DIFF	same as 17-02-3
+17-04-3  OK	same as 17-02-3
 
 17-04-4  OK	
 
@@ -3490,7 +3489,7 @@ Test	 Status	Comments
 
 17-05-2  DIFF	Same as 17-04-2
 
-17-05-3  DIFF	Same as 17-01-3
+17-05-3  OK	Same as 17-01-3
 
 17-05-4  OK	
 
@@ -3754,11 +3753,11 @@ Test	 Status	Comments
 
 20-10-2  OK	
 
-20-11-1  DIFF	Different checksum. The mark on invalidcontext and invalidid is [T] in GS and [F] in CPSI. -Tor
+20-11-1  OK	fixed incidentally.
 
-20-11-2  DIFF	GS has extra error names: invalidcontext, invalidid, ... page says device dependent.
+20-11-2  OK	fixed incidentally.
 
-20-11-3  OK	
+20-11-3  OK	fixed incidentally.
 
 20-12-1  OK	Looks okay. -Tor
 
@@ -3770,6 +3769,7 @@ Test	 Status	Comments
 
 20-14-1  DIFF	Different checksum. (globaldict dup /op1 /show load put Q) fails with invalidaccess in CPSI 
 		but gives "7" in GS. Many other tests fail with undefined GlobLen in CPSI but give numbers with GS.
+                assign: Peter
 
 20-14-2  OK	Color corrected by rev 7172.
 
@@ -3808,6 +3808,7 @@ Test	 Status	Comments
 20-22-3  OK	
 
 20-23-1  DIFF	Different checksum. GS has [T] where CPSI has [F] for (systemdict /deviceinfo known).
+                assign peter.
 
 20-23-2  OK	
 
@@ -3894,6 +3895,7 @@ Test	 Status	Comments
 21-11-5  OK	
 
 21-11-6  DIFF	Differences in error messages - ADC
+                assign Peter
 
 21-11-7  OK	Corrected by 7152 and 7162.  ADC
 
@@ -4042,7 +4044,7 @@ Test	 Status	Comments
 23-12A-4  AOK	same resolution as 23-12A-3.
 
 23-12B-1  DIFF	GS gets "-file- ( ioerror --readstring--" on FAX_6 test. Last
-		image of top row missing, others may be shifted. assign: Ray
+		image of top row missing, others may be shifted. assign: Peter
 
 23-12C-1  OK	
 
@@ -4050,17 +4052,13 @@ Test	 Status	Comments
 
 23-12C-3  OK	
 
-23-12D-1  DIFF	GS gets 'typecheck' vs. 'stackunderflow'. GS shows "--.writeobject--"
-		vs. "--writeobject--". ILLEGAL 1 and 2. assign: Ray
+23-12D-1  OK	Fixed incidentally
 
-23-12D-2  DIFF	GS gets 'typecheck' vs. 'stackunderflow'. GS shows "--.writeobject--"
-		vs. "--writeobject--". ILLEGAL 3 and 4. assign: Ray
+23-12D-2  OK	Fixed incidentally
 
-23-12D-3  DIFF	GS gets 'typecheck' vs. 'stackunderflow'. GS shows "--.writeobject--"
-		vs. "--writeobject--". ILLEGAL 5 and 6. assign: Ray
+23-12D-3  OK	Fixed incidentally
 
-23-12D-4  DIFF	GS gets 'typecheck' vs. 'stackunderflow'. GS shows "--.writeobject--"
-		vs. "--writeobject--". ILLEGAL 7. assign: Ray
+23-12D-4  OK	Fixed incidentally
 
 23-12E-1  AOK	Device Dependent: Test says "length can vary due to multiple valid
 		methods". GS differs by 1 to 5 in results (hope that's close enough)
@@ -4091,10 +4089,9 @@ Test	 Status	Comments
 
 23-12F-1  OK	
 
-23-12G-1  DIFF	GS gets different byte counts from "Flate" filter source. assign: Alex
+23-12G-1  AOK	same as 23-12A-3 (peter)
 
-23-12G-2  DIFF	GS gets different number, third line from bottom SYNTAX 11 & 12. 
-		assign: Alex
+23-12G-2  AOK	same as 23-12A-3 (peter)
 
 23-12G-3  OK	
 
@@ -4308,15 +4305,7 @@ Test	 Status	Comments
 
 23-36-1  OK	
 
-23-36-2  DIFF	GS has a '?' character in some lines that doesn't render on Tek or CPSI,
-		This causes a the end of the string to shift to the right on lines that
-		mismatch.  
-		.
-		Analyzed by Igor.
-		This is a difference in writeobject output data.
-		writeobject is implemented in lib/gs_btokn.ps .
-		Don't know whom to assign it, so passing to Ray.
-		Assign: Ray.
+23-36-2  OK	Fixed in r7631 Peter
 
 23-36-3  AOK    fixed in rev. 7232 (Peter)
 
