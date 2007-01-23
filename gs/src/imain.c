@@ -760,6 +760,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 #ifndef PSI_INCLUDED
 	if (i_ctx_p->pgs != NULL && i_ctx_p->pgs->device != NULL) {
 	    gx_device *pdev = i_ctx_p->pgs->device;
+	    const char * dname = pdev->dname;
 
 	    /* make sure device doesn't isn't freed by .uninstalldevice */
 	    rc_adjust(pdev, 1, "gs_main_finit");	
@@ -772,7 +773,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 	    code = gs_closedevice(pdev);
 	    if (code < 0)
 		eprintf2("ERROR %d closing %s device. See gs/src/ierrors.h for code explanation.\n",
-		    code, i_ctx_p->pgs->device->dname);
+		    code, dname);
 	    rc_decrement(pdev, "gs_main_finit");		/* device might be freed */
 	    if (exit_status == 0 || exit_status == e_Quit)
 		exit_status = code;

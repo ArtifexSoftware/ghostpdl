@@ -1138,9 +1138,14 @@ pdf_close(gx_device * dev)
 
     if (pdev->outlines_id != 0) {
 	/* depth > 0 is only possible for an incomplete outline tree. */
-	while (pdev->outline_depth > 0)
-	    pdfmark_close_outline(pdev);
-	pdfmark_close_outline(pdev);
+	while (pdev->outline_depth > 0) {
+	    code1 = pdfmark_close_outline(pdev);
+	    if (code >= 0)
+		code = code1;
+	}
+	code = pdfmark_close_outline(pdev);
+	if (code >= 0)
+	    code = code1;
 	pdf_open_obj(pdev, pdev->outlines_id);
 	pprintd1(s, "<< /Count %d", pdev->outlines_open);
 	pprintld2(s, " /First %ld 0 R /Last %ld 0 R >>\n",

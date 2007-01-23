@@ -755,12 +755,19 @@ pdfmark_write_outline(gx_device_pdf * pdev, pdf_outline_node_t * pnode,
 		      long next_id)
 {
     stream *s;
+    int code = 0;
 
     pdf_open_separate(pdev, pnode->id);
-    pnode->action->id = pnode->id;
+    if (pnode->action != NULL)
+	pnode->action->id = pnode->id;
+    else {
+	eprintf1("pdfmark error: Outline node %d has no action or destination.\n", pnode->id);
+	code = gs_note_error(gs_error_undefined);
+    }
     s = pdev->strm;
     stream_puts(s, "<< ");
-    cos_dict_elements_write(pnode->action, pdev);
+    if (pnode->action != NULL)
+	cos_dict_elements_write(pnode->action, pdev);
     if (pnode->count)
 	pprintd1(s, "/Count %d ", pnode->count);
     pprintld1(s, "/Parent %ld 0 R\n", pnode->parent_id);
@@ -773,9 +780,10 @@ pdfmark_write_outline(gx_device_pdf * pdev, pdf_outline_node_t * pnode,
 		  pnode->first_id, pnode->last_id);
     stream_puts(s, ">>\n");
     pdf_end_separate(pdev);
-    COS_FREE(pnode->action, "pdfmark_write_outline");
+    if (pnode->action != NULL)
+	COS_FREE(pnode->action, "pdfmark_write_outline");
     pnode->action = 0;
-    return 0;
+    return code;
 }
 
 /* Adjust the parent's count when writing an outline node. */
@@ -803,12 +811,10 @@ pdfmark_close_outline(gx_device_pdf * pdev)
 {
     int depth = pdev->outline_depth;
     pdf_outline_level_t *plevel = &pdev->outline_levels[depth];
-    int code;
+    int code = 0;
 
     if (plevel->last.id) {	/* check for incomplete tree */
 	code = pdfmark_write_outline(pdev, &plevel->last, 0);
-	if (code < 0)
-	    return code;
     }
     if (depth > 0) {
 	plevel[-1].last.last_id = plevel->last.id;
@@ -818,7 +824,7 @@ pdfmark_close_outline(gx_device_pdf * pdev)
 	    pdev->closed_outline_depth--;
 	pdev->outline_depth--;
     }
-    return 0;
+    return code;
 }
 
 /* OUT pdfmark */
