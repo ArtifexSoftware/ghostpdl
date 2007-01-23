@@ -95,99 +95,57 @@ xps_add_default(xps_context_t *ctx, char *extension, char *content_type)
 	xps_add_type_map(ctx, ctx->defaults, extension, content_type);
 }
 
-/*
- * Relationships are stored in a binary tree indexed by the source and target pair.
- */
-
-void xps_debug_relations(xps_context_t *ctx, xps_relation_t *node)
+static char *
+xps_find_override(xps_type_map_t *node, char *partname)
 {
     if (node)
     {
-	if (node->left)
-	    xps_debug_relations(ctx, node->left);
-	dprintf3("Relation source=%s target=%s type=%s\n", node->source, node->target, node->type);
-	if (node->right)
-	    xps_debug_relations(ctx, node->right);
-    }
-}
-
-static inline int
-xps_compare_relation(xps_relation_t *a, char *b_source, char *b_target)
-{
-    int cmp = strcmp(a->source, b_source);
-    if (cmp == 0)
-	cmp = strcmp(a->target, b_target);
-    return cmp;
-}
-
-static xps_relation_t *
-xps_new_relation(xps_context_t *ctx, char *source, char *target, char *type)
-{
-    xps_relation_t *node;
-
-    node = xps_alloc(ctx, sizeof(xps_relation_t));
-    if (!node)
-	goto cleanup;
-
-    node->source = xps_strdup(ctx, source);
-    node->target = xps_strdup(ctx, target);
-    node->type = xps_strdup(ctx, type);
-    node->left = NULL;
-    node->right = NULL;
-
-    if (!node->source)
-	goto cleanup;
-    if (!node->target)
-	goto cleanup;
-    if (!node->type)
-	goto cleanup;
-
-    return node;
-
-cleanup:
-    if (node)
-    {
-	if (node->source) xps_free(ctx, node->source);
-	if (node->target) xps_free(ctx, node->target);
-	if (node->type) xps_free(ctx, node->type);
-	xps_free(ctx, node);
+	int cmp = strcmp(node->name, partname);
+	if (cmp < 0)
+	    return xps_find_override(node->left, partname);
+	if (cmp == 0)
+	    return node->type;
+	if (cmp > 0)
+	    return xps_find_override(node->right, partname);
     }
     return NULL;
 }
 
-
-static void
-xps_add_relation_imp(xps_context_t *ctx, xps_relation_t *node, char *source, char *target, char *type)
+static char *
+xps_find_default(xps_type_map_t *node, char *extension)
 {
-    int cmp = xps_compare_relation(node, source, target);
-    if (cmp < 0)
+    if (node)
     {
-	if (node->left)
-	    xps_add_relation_imp(ctx, node->left, source, target, type);
-	else
-	    node->left = xps_new_relation(ctx, source, target, type);
+	int cmp = strcmp(node->name, extension);
+	if (cmp < 0)
+	    return xps_find_default(node->left, extension);
+	if (cmp == 0)
+	    return node->type;
+	if (cmp > 0)
+	    return xps_find_default(node->right, extension);
     }
-    else if (cmp > 0)
-    {
-	if (node->right)
-	    xps_add_relation_imp(ctx, node->right, source, target, type);
-	else
-	    node->right = xps_new_relation(ctx, source, target, type);
-    }
-    else
-    {
-	/* it's a duplicate so we don't do anything */
-    }
+    return NULL;
 }
 
-static void
-xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type)
+char *
+xps_get_content_type(xps_context_t *ctx, char *partname)
 {
-    /* dprintf3("Relation source=%s target=%s type=%s\n", source, target, type); */
-    if (ctx->relations == NULL)
-	ctx->relations = xps_new_relation(ctx, source, target, type);
-    else
-	xps_add_relation_imp(ctx, ctx->relations, source, target, type);
+    char *extension;
+    char *type;
+
+    type = xps_find_override(ctx->overrides, partname);
+    if (type)
+	return type;
+
+    extension = strrchr(partname, '.');
+    if (extension)
+	extension ++;
+
+    type = xps_find_default(ctx->defaults, extension);
+    if (type)
+	return type;
+
+    return NULL;
 }
 
 /*
@@ -245,11 +203,11 @@ xps_handle_metadata(void *zp, char *name, char **atts)
 
     if (!strcmp(name, "Relationship"))
     {
-	char source[1024];
+	char srcbuf[1024];
+	char tgtbuf[1024];
 	char *target = NULL;
 	char *type = NULL;
-
-	strcpy(source, ctx->last->name);
+	char *p;
 
 	for (i = 0; atts[i]; i += 2)
 	{
@@ -260,7 +218,41 @@ xps_handle_metadata(void *zp, char *name, char **atts)
 	}
 
 	if (target && type)
-	    xps_add_relation(ctx, source, target, type);
+	{
+	    strcpy(srcbuf, ctx->last->name);
+	    p = strstr(srcbuf, "_rels/");
+	    if (p)
+	    {
+		*p = 0;
+		strcat(srcbuf, p + 6);
+	    }
+	    p = strstr(srcbuf, ".rels");
+	    if (p)
+	    {
+		*p = 0;
+	    }
+
+	    dprintf1("source = %s\n", srcbuf);
+
+	    if (target[0] != '/')
+	    {
+		strcpy(tgtbuf, srcbuf);
+		strcat(tgtbuf, "/");
+		strcat(tgtbuf, target);
+	    }
+	    else
+	    {
+		strcpy(tgtbuf, target);
+	    }
+
+	    dprintf2("target = %s (%s)\n", tgtbuf, target);
+
+	    xps_clean_path(tgtbuf);
+
+	    dprintf1("target = %s\n", tgtbuf);
+
+	    xps_add_relation(ctx, srcbuf, tgtbuf, type);
+	}
     }
 }
 

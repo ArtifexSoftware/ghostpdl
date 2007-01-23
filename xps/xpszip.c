@@ -6,15 +6,18 @@
 void xps_debug_parts(xps_context_t *ctx)
 {
     xps_part_t *part = ctx->root;
+    xps_relation_t *rel;
     while (part)
     {
 	dprintf2("part '%s' size=%d\n", part->name, part->size);
+	for (rel = part->relations; rel; rel = rel->next)
+	    dprintf2("     target=%s type=%s\n", rel->target, rel->type);
 	part = part->next;
     }
 }
 
 xps_part_t *
-xps_new_part(xps_context_t *ctx)
+xps_new_part(xps_context_t *ctx, char *name, int capacity)
 {
     xps_part_t *part;
 
@@ -27,7 +30,39 @@ xps_new_part(xps_context_t *ctx)
     part->capacity = 0;
     part->complete = 0;
     part->data = NULL;
+    part->relations = NULL;
     part->next = NULL;
+
+    part->name = xps_strdup(ctx, name);
+    if (!part->name)
+    {
+	xps_free(ctx, part);
+	return NULL;
+    }
+
+    if (capacity == 0)
+	capacity = 1024;
+
+    part->size = 0;
+    part->capacity = capacity;
+    part->data = xps_alloc(ctx, part->capacity);
+    if (!part->data)
+    {
+	xps_free(ctx, part->name);
+	xps_free(ctx, part);
+	return NULL;
+    }
+
+    /* add it to the list of parts */
+    if (!ctx->root)
+    {
+	ctx->root = part;
+    }
+    else
+    {
+	part->next = ctx->root;
+	ctx->root = part;
+    }
 
     return part;
 }
@@ -38,6 +73,56 @@ xps_free_part(xps_context_t *ctx, xps_part_t *part)
     if (part->name) xps_free(ctx, part->name);
     if (part->data) xps_free(ctx, part->data);
     xps_free(ctx, part);
+}
+
+/*
+ * Relationships are stored in a linked list hooked into the part which
+ * is the source of the relation.
+ */
+
+int
+xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type)
+{
+    xps_relation_t *node;
+    xps_part_t *part;
+
+    dprintf3("Relation source=%s target=%s type=%s\n", source, target, type);
+
+    for (part = ctx->root; part; part = part->next)
+	if (!strcmp(part->name, source))
+	    break;
+
+    /* No existing part found. Create a blank part and hook it in. */
+    if (part == NULL)
+    {
+	part = xps_new_part(ctx, source, 0);
+	if (!part)
+	    return gs_rethrow(-1, "cannot create new part");
+    }
+
+    /* Check for duplicates. */
+    for (node = part->relations; node; node = node->next)
+	if (!strcmp(node->target, target))
+	    return 0;
+
+    node = xps_alloc(ctx, sizeof(xps_relation_t));
+    if (!node)
+	return gs_rethrow(-1, "cannot create new relation");
+
+    node->target = xps_strdup(ctx, target);
+    node->type = xps_strdup(ctx, type);
+    if (!node->target || !node->type)
+    {
+	if (node->target) xps_free(ctx, node->target);
+	if (node->type) xps_free(ctx, node->type);
+	xps_free(ctx, node);
+	return gs_rethrow(-1, "cannot copy relation strings");
+    }
+
+    node->next = part->relations;
+    part->relations = node;
+
+    return 0;
 }
 
 static inline int
@@ -95,52 +180,6 @@ xps_find_part(xps_context_t *ctx, char *name)
 }
 
 static int
-xps_create_part(xps_context_t *ctx)
-{
-    xps_part_t *part;
-
-    part = xps_new_part(ctx);
-    if (!part)
-	return gs_throw(-1, "cannot allocate part");
-
-    part->name = xps_strdup(ctx, ctx->zip_file_name);
-    if (!part->name)
-	return gs_throw(-1, "cannot strdup part name");
-
-    /* setup data buffer */
-    if (ctx->zip_uncompressed_size == 0)
-    {
-	part->size = 0;
-	part->capacity = 1024;
-	part->data = xps_alloc(ctx, part->capacity);
-    }
-    else
-    {
-	part->size = 0;
-	part->capacity = ctx->zip_uncompressed_size;
-	part->data = xps_alloc(ctx, part->capacity);
-    }
-    if (!part->data)
-	return gs_throw(-1, "cannot allocate part buffer");
-
-    /* add it to the list of parts */
-    if (!ctx->root)
-    {
-	ctx->root = part;
-    }
-    else
-    {
-	part->next = ctx->root;
-	ctx->root = part;
-    }
-
-    /* make it the current */
-    ctx->last = part;
-
-    return 0;
-}
-
-static int
 xps_prepare_part(xps_context_t *ctx)
 {
     xps_part_t *part;
@@ -176,9 +215,10 @@ xps_prepare_part(xps_context_t *ctx)
     part = xps_find_part(ctx, ctx->zip_file_name);
     if (!part)
     {
-	code = xps_create_part(ctx);
-	if (code < 0)
+	part = xps_new_part(ctx, ctx->zip_file_name, ctx->zip_uncompressed_size);
+	if (!part)
 	    return gs_rethrow(code, "cannot create part buffer");
+	ctx->last = part; /* make it the current part */
     }
     else
     {
@@ -350,10 +390,11 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 	case 2: /* file name */
 	    if (buf->limit - buf->ptr < ctx->zip_name_length)
 		return 0;
-	    if (ctx->zip_name_length >= sizeof(ctx->zip_file_name) + 1)
+	    if (ctx->zip_name_length >= sizeof(ctx->zip_file_name) + 2)
 		return gs_throw(-1, "part name too long");
-	    readall(ctx, buf, (byte*)ctx->zip_file_name, ctx->zip_name_length);
-	    ctx->zip_file_name[ctx->zip_name_length] = 0;
+	    ctx->zip_file_name[0] = '/';
+	    readall(ctx, buf, (byte*)ctx->zip_file_name + 1, ctx->zip_name_length);
+	    ctx->zip_file_name[ctx->zip_name_length + 1] = 0;
 	    ctx->zip_state ++;
 
 	case 3: /* extra field */
