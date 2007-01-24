@@ -3322,8 +3322,7 @@ Test	 Status	Comments
 
 14-14-1  OK	
 
-15-01-1  DIFF	GS has -12dict- and CPSI has -11dict- in debug text. Different checksum.
-                Assign: Ray.
+15-01-1  OK	Fixed as of Nov 4 2005
 
 15-01-2  OK	Minor rasterizing differences. -Tor
 
@@ -3331,8 +3330,7 @@ Test	 Status	Comments
 
 15-02-2  OK	Minor differences visually reviewed by RJJ
 
-15-03-1  DIFF	GS has -12dict- and CPSI has -11dict- in debug text. Different checksum.
-                Assign: Ray.
+15-03-1  OK	Fixed as of Nov 4 2005
 
 15-04-1  AOK	GS has -12dict- and CPSI has -11dict- in debug text. Different checksum. The
 		font dictionary debug for GS has one more key: /OrigFont.
@@ -3607,7 +3605,7 @@ Test	 Status	Comments
 
 18-02F-3  DIFF	18-02A-4 repeat
 
-18-02F-4  DIFF	18-02A-4 repeat
+18-02F-4  OK	Fixed before Nov 3 (after Oct 2).
 
 18-02F-5  DIFF	18-02A-4 repeat
 
@@ -4243,8 +4241,7 @@ Test	 Status	Comments
 
 23-26-1  OK	
 
-23-26-2  DIFF	GS gets 'undefined' error during defineresource.  (PLRM3 requires
-		CIDSystemInfo). Assign: Ray
+23-26-2  OK	Fixed before Oct 2.
 
 23-26-3  AOK	Device Dependent: GS has more entries for Filter, ColorSpace
 		page fills before ImageType and PatternType shown. Same as 23-13-2.
@@ -4651,7 +4648,7 @@ Test	 Status	Comments
 
 28-02-1  OK	
 
-28-02-2  DIFF	Error message difference Protected vs Invalid Access  -- Assigned to Ray
+28-02-2  OK	Fixed before Nov 4 2005 (after Oct 2)
 
 28-02-3  OK	
 
