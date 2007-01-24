@@ -637,7 +637,8 @@ Test	 Status	Comments
 
 09-40-19  OK	Matches Tek hardcopy output. RJJ (CPSI ignores settransfer)
 
-09-40-2  DIFF	CPSI problem : 'image'ignores transfer function.
+09-40-2   AOK	GS is contone, Tek is dithered, otherwise GS matches Tek.
+		CPSI ignores transfer function.
 		(the last 2 test must print mirrored images).  Assign: Ray
 
 09-40-20  OK	Minor differences visually reviewed by RJJ
@@ -1057,7 +1058,8 @@ Test	 Status	Comments
                 See explanation in 09-47J-6.
 		cpsi/09-47J-1  missing
 
-09-47J-10 OK	Verified visually against Tek hardcopy by Sabrina
+09-47J-10 DIFF	GS differs a lot on all sub test panels. May be a regression.
+		Assign: Igor
 		cpsi/09-47J-10  missing
 
 09-47J-2  AOK	Analyzed by Igor.
@@ -1065,10 +1067,12 @@ Test	 Status	Comments
                 See explanation in 09-47J-6.
 		cpsi/09-47J-2  missing
 
-09-47J-3  OK	Verified visually against Tek hardcopy by Sabrina
+09-47J-3  DIFF	GS differs a lot on all sub test panels. May be a regression.
+		Assign: Igor
 		cpsi/09-47J-3  missing
 
-09-47J-4  OK	Verified visually against Tek hardcopy by Sabrina
+09-47J-4  DIFF	GS differs a lot on all sub test panels. May be a regression.
+		Assign: Igor
 		cpsi/09-47J-4  missing
 
 09-47J-5  AOK	Analyzed by Igor.
@@ -1087,14 +1091,16 @@ Test	 Status	Comments
                 not painted with the shading color.
 		cpsi/09-47J-6  missing
 
-09-47J-4  OK	Verified visually against Tek hardcopy by Sabrina
+09-47J-7  DIFF	GS differs a lot on all sub test panels. May be a regression.
+		Assign: Igor
 		cpsi/09-47J-7  missing
 
 09-47J-8  AOK	Analyzed by Igor.
                 Tek misses an imagemaskmask or a character with a shading color.
 		cpsi/09-47J-8  missing
 
-09-47J-4  OK	Verified visually against Tek hardcopy by Sabrina
+09-47J-9  DIFF	GS differs a lot on all sub test panels. May be a regression.
+		Assign: Igor
 		cpsi/09-47J-9  missing
 
 09-47K-1  AOK	Analyzed by Igor.
@@ -1124,7 +1130,8 @@ Test	 Status	Comments
 09-47K-4  OK	Verified visually against Tek hardcopy by Sabrina
 		cpsi/09-47K-4  missing
 
-09-47K-5  DIFF	missing several graphics rangecheck in GS output Assign: Ray
+09-47K-5  DIFF	GS differs from Tek and Acrobat 7 Pro output. Assign: Igor
+		May be a regression since we don't have CPSI for comparison.
 		cpsi/09-47K-5  missing
 
 09-47K-6  OK	Verified visually against Tek hardcopy by Sabrina
@@ -1575,7 +1582,7 @@ Test	 Status	Comments
 
 11-03-6  OK	Minor differences visually reviewed by RJJ
 
-11-03-7  AOK	Same as 11-01-6. 
+11-03-7  OK	Fixed as of rev 7618.
 
 11-04-1  OK	Minor differences visually reviewed by RJJ
 
@@ -1589,7 +1596,7 @@ Test	 Status	Comments
 
 11-04-6  OK	Minor differences visually reviewed by RJJ
 
-11-04-7  AOK	Same as 11-01-6. 
+11-04-7  OK	Fixed as of rev 7618.
 
 11-05-1  OK	Minor differences visually reviewed by RJJ
 
@@ -1684,7 +1691,7 @@ Test	 Status	Comments
 11-10-5  DIFF	same as 11-10-4 assign: Raph.
 	 Same as 11-10-4
 
-11-10-6  AOK	look30, much34 : AOK same as 11-01-6.
+11-10-6  OK	Fixed as of rev 7618.
 
 11-11-1  OK	Fixed with rev 7212.
 
@@ -1770,7 +1777,10 @@ Test	 Status	Comments
 
 11-17-5  OK	fixed in r7228 - Raph
 
-11-17-6  OK	Fixed as of rev 7598.
+11-17-6  AOK	GS has small square in upper right of border line, CPSI has
+		similar square in lower right. Tek has small square in lower
+		right. Device Dependent: Uses device coordinates, GS, Tek
+		and CPSI all have different default CTM. RJJ
 
 11-18-1  OK	Fixed with rev 7212.
 
@@ -1918,7 +1928,7 @@ Test	 Status	Comments
 
 11-22-7  OK	fixed in r7228 - Raph
 
-11-22-8  AOK	curve saw : AOK - same as 11-01-6.
+11-22-8  OK	Fixed as of rev 7618.
 
 11-23-1  AOK	GS (apparently) does not implement upath caching. Tek and CPSI
 		do, but differ. Device Dependent (as comment says).
@@ -2000,7 +2010,8 @@ Test	 Status	Comments
 
 11-27-8  OK	
 
-11-28-1  OK	Minor differences visually reviewed by HAS
+11-28-1  DIFF	GS has much different stroke pattern in circles/wedges. Tek
+		and CPSI agree. May be setflat issue. Assign: Ray
 
 11-28-10  AOK	same as 11-21-8.
 
@@ -3028,13 +3039,11 @@ Test	 Status	Comments
 
 13-22-6  OK	rev 7617.
 
-13-23-1  DIFF	Extra line under /ordfeminine and /ordmasculine characters. - ADC
-		Analyzed by Igor. This is a font issue.
-		Both URW and UFST Helvetica has underbars in these 2 characters.
-		Some other fonts do not have it.
-		PLRM3 defines these characters with no underbars.
-		I don't know what to do with it, so passing to Ray.
-                assign: Ray.
+13-23-1  OK	GS matches CPSI and Tek when Adobe fonts are used.
+		With URW or UFST fonts, an extra line under /ordfeminine and
+		/ordmasculine characters shows as well as slightly different
+		appearance of other characters. This is a font issue and must
+		be resolved by the font vendor chosen for the implementation.
 
 13-24-1  OK
 
@@ -3050,8 +3059,7 @@ Test	 Status	Comments
 
 13-25-1  OK	
 
-13-25-2  DIFF	GS reports [T] for three tests.  CPSI reports [F]. - ADC
-                assign Peter.
+13-25-2  OK	Fixed as of r7610.
 
 13-25-3  OK	
 
@@ -3500,7 +3508,7 @@ Test	 Status	Comments
 17-06-2  DIFF	Same as 17-04-2 except rectangles instead of dots.  Still like GS output better.  
 		More consistant repeats of the pattern. 
 
-17-06-3  DIFF	NON-graphic language printing differences.  
+17-06-3  OK	Fixed as of rev 7636.
 
 17-06-4  OK	
 
@@ -3757,7 +3765,7 @@ Test	 Status	Comments
 
 20-11-2  OK	fixed incidentally.
 
-20-11-3  OK	fixed incidentally.
+20-11-3  OK	
 
 20-12-1  OK	Looks okay. -Tor
 
@@ -3888,7 +3896,7 @@ Test	 Status	Comments
 
 21-11-2  OK	Fixed as of rev 7598.
 
-21-11-3  DIFF	GS says '{ /A /add }', CPSI says '{ 567 --add-- }' - ADC
+21-11-3  OK	Fixed as of rev 7616.
 
 21-11-4  OK	
 
@@ -4141,8 +4149,7 @@ Test	 Status	Comments
 
 23-12W-1  OK	Fixed as of r7500.
 
-23-12W-2  DIFF	GS gets 'F' instead of 'T' from (globalstring /ResusableStreamDecode
-		filter gcheck).  Assign: Peter
+23-12W-2  OK	Fixed as of rev 7636.
 
 23-12W-3  OK	Minor differences visually reviewed by RJJ
 
@@ -4152,7 +4159,7 @@ Test	 Status	Comments
 
 23-12W-6  OK	Fixed as of r7500.
 
-23-13-1  DIFF	GS has 'T' instead of 'F' in last column. Assign: Peter
+23-13-1  OK	Fixed as of r7610.
 
 23-13-2  AOK	Device Dependent: GS has more entries for Filter, ColorSpace
 		page fills before ImageType and PatternType shown.
