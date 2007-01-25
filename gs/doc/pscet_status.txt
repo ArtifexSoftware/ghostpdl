@@ -1804,7 +1804,27 @@ Test	 Status	Comments
 
 11-19-5  OK	Minor differences visually reviewed by RJJ
 
-11-19-6  DIFF	cash21, look30 : path ending point, assign: Igor.
+11-19-6  AOK	cash21, look30 : ustrokepath ending point, Analyzed by Igor.
+		I believe it is CPSI problem.
+		I placed some tests to peeves:/home/igor/pscet/mytests/11-19-Igor01.zip .
+		The ZIP contains 2 PS files, which are made from 11-19.PS
+		with removing unrelated things and inserting a debug printing.
+		The 2 files differ in a small thing : wheter it access
+		currentpoint after ustrokepath, or not.
+		The raster appear to be different.
+		The log file tell us that no error happen,
+		because the currenpointy coordinates are successfully printed
+		(in the order Y X).
+		The position od the cross depends on the
+		currentpoint after ustrokepath,
+		but 'currentpoint' appears to cnahge it !
+		I believe that CPSI actually didn't pas the "interference" test,
+		which 1-19-6 is designed for.
+		As we noticed from other 20 tests (unpublished), this behavior 
+		appears pretty occasional, so we're unable to analyze it completely 
+		and to reproduce it in Ghostscript.
+		Tek matches CPSI though. I can't know why.
+		Welcome anybody who can improve this analyzis.
 
 11-20-1  OK	Minor differences visually reviewed by HAS
 
@@ -2809,7 +2829,7 @@ Test	 Status	Comments
 
 13-03-7  OK	Color corrected by rev 7172.
 
-13-03-8  DIFF	Same as 11-19-6. assign: Igor.
+13-03-8  AOK	Same as cash21, look30 : ustrokepath ending point.
 
 13-04-1  AOK	Analyzed by Igor.
 		CPSI prints an incomplete page.
@@ -3055,7 +3075,7 @@ Test	 Status	Comments
 
 13-24-5  OK	Minor differences visually reviewed by Igor.
 
-13-24-6  DIFF	Same as 11-19-6 - strokepath - Assign: Igor.
+13-24-6  AOK	Same as cash21, look30 : ustrokepath ending point.
 
 13-25-1  OK	
 
@@ -4391,7 +4411,7 @@ Test	 Status	Comments
 24-13-2  OK	
 
 24-13-3  DIFF	All failures are caused by writable FontDirectory.
-		Assigned to Alex.
+		Assign Peter.
 
 24-14-1  OK	
 
