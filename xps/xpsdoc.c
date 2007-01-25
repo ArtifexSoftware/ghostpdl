@@ -2,6 +2,12 @@
 
 #include <expat.h>
 
+#define REL_START_PART "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation"
+
+#define CT_FIXDOC "application/vnd.ms-package.xps-fixeddocument+xml"
+#define CT_FIXDOCSEQ "application/vnd.ms-package.xps-fixeddocumentsequence+xml"
+#define CT_FIXPAGE "application/vnd.ms-package.xps-fixedpage+xml"
+
 /*
  * Content types are stored in two separate binary trees.
  * One lists Override entries, which map a part name to a type.
@@ -24,6 +30,8 @@ static xps_type_map_t *
 xps_new_type_map(xps_context_t *ctx, char *name, char *type)
 {
     xps_type_map_t *node;
+
+    dprintf2("adding type map from %s to %s\n", name, type);
 
     node = xps_alloc(ctx, sizeof(xps_type_map_t));
     if (!node)
@@ -133,6 +141,8 @@ xps_get_content_type(xps_context_t *ctx, char *partname)
     char *extension;
     char *type;
 
+    dprintf1("getting type for part '%s'...\n", partname);
+
     type = xps_find_override(ctx->overrides, partname);
     if (type)
 	return type;
@@ -153,15 +163,28 @@ xps_get_content_type(xps_context_t *ctx, char *partname)
  * is the source of the relation.
  */
 
+void xps_debug_parts(xps_context_t *ctx)
+{
+    xps_part_t *part = ctx->first_part;
+    xps_relation_t *rel;
+    while (part)
+    {
+	dprintf2("part '%s' size=%d\n", part->name, part->size);
+	for (rel = part->relations; rel; rel = rel->next)
+	    dprintf2("     target=%s type=%s\n", rel->target, rel->type);
+	part = part->next;
+    }
+}
+
 int
 xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type)
 {
     xps_relation_t *node;
     xps_part_t *part;
 
-    dprintf3("Relation source=%s target=%s type=%s\n", source, target, type);
+    /* dprintf3("Relation source=%s target=%s type=%s\n", source, target, type); */
 
-    for (part = ctx->root; part; part = part->next)
+    for (part = ctx->first_part; part; part = part->next)
 	if (!strcmp(part->name, source))
 	    break;
 
@@ -194,6 +217,122 @@ xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type)
 
     node->next = part->relations;
     part->relations = node;
+
+    return 0;
+}
+
+/*
+ * <DocumentReference> -- fixdocseq
+ * <PageContent> -- fixdoc
+ *
+ * TODO: We should really look at the root StartPart relationship
+ * for the FixedDocumentSequence and follow the DocumentReferences
+ * therein for the page sequence. For now, we'll cheat and read
+ * any PageContent references in the order they are in the file.
+ */
+
+void xps_debug_fixdocseq(xps_context_t *ctx)
+{
+    xps_document_t *fixdoc = ctx->first_fixdoc;
+    xps_page_t *page = ctx->first_page;
+
+    if (ctx->start_part)
+	dprintf1("start part %s\n", ctx->start_part);
+
+    while (fixdoc)
+    {
+	dprintf1("fixdoc %s\n", fixdoc->name);
+	fixdoc = fixdoc->next;
+    }
+
+    while (page)
+    {
+	dprintf3("page %s w=%d h=%d\n", page->name, page->width, page->height);
+	page = page->next;
+    }
+}
+
+int
+xps_add_fixed_document(xps_context_t *ctx, char *name)
+{
+    xps_document_t *fixdoc;
+
+    /* Check for duplicates first */
+    for (fixdoc = ctx->first_fixdoc; fixdoc; fixdoc = fixdoc->next)
+	if (!strcmp(fixdoc->name, name))
+	    return 0;
+
+    dprintf1("adding fixdoc %s\n", name);
+
+    fixdoc = xps_alloc(ctx, sizeof(xps_document_t));
+    if (!fixdoc)
+	return -1;
+
+    fixdoc->name = xps_strdup(ctx, name);
+    if (!fixdoc->name)
+    {
+	xps_free(ctx, fixdoc);
+	return -1;
+    }
+
+    fixdoc->next = NULL;
+
+    if (!ctx->first_fixdoc)
+    {
+	ctx->first_fixdoc = fixdoc;
+	ctx->last_fixdoc = fixdoc;
+    }
+    else
+    {
+	ctx->last_fixdoc->next = fixdoc;
+	ctx->last_fixdoc = fixdoc;
+    }
+
+    return 0;
+}
+
+int
+xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
+{
+    xps_page_t *page;
+
+    /* Check for duplicates first */
+    for (page = ctx->first_page; page; page = page->next)
+	if (!strcmp(page->name, name))
+	    return 0;
+
+    dprintf1("adding page %s\n", name);
+
+    page = xps_alloc(ctx, sizeof(xps_page_t));
+    if (!page)
+	return -1;
+
+    page->name = xps_strdup(ctx, name);
+    if (!page->name)
+    {
+	xps_free(ctx, page);
+	return -1;
+    }
+
+    page->width = width;
+    page->height = height;
+    page->next = NULL;
+
+    if (!ctx->first_page)
+    {
+	ctx->first_page = page;
+	ctx->last_page = page;
+	ctx->next_page = page;
+    }
+    else
+    {
+	ctx->last_page->next = page;
+	ctx->last_page = page;
+    }
+
+    /* we processed to the end already... */
+    if (ctx->next_page == NULL)
+	ctx->next_page = page;
 
     return 0;
 }
@@ -269,7 +408,7 @@ xps_handle_metadata(void *zp, char *name, char **atts)
 
 	if (target && type)
 	{
-	    strcpy(srcbuf, ctx->last->name);
+	    strcpy(srcbuf, ctx->last_part->name);
 	    p = strstr(srcbuf, "_rels/");
 	    if (p)
 	    {
@@ -282,8 +421,6 @@ xps_handle_metadata(void *zp, char *name, char **atts)
 		*p = 0;
 	    }
 
-	    dprintf1("source = %s\n", srcbuf);
-
 	    if (target[0] != '/')
 	    {
 		strcpy(tgtbuf, srcbuf);
@@ -295,13 +432,55 @@ xps_handle_metadata(void *zp, char *name, char **atts)
 		strcpy(tgtbuf, target);
 	    }
 
-	    dprintf2("target = %s (%s)\n", tgtbuf, target);
-
 	    xps_clean_path(tgtbuf);
 
-	    dprintf1("target = %s\n", tgtbuf);
-
 	    xps_add_relation(ctx, srcbuf, tgtbuf, type);
+	}
+    }
+
+    if (!strcmp(name, "DocumentReference"))
+    {
+	char *source = NULL;
+	char srcbuf[1024];
+
+	for (i = 0; atts[i]; i += 2)
+	{
+	    if (!strcmp(atts[i], "Source"))
+		source = atts[i + 1];
+	}
+
+	if (source)
+	{
+	    // TODO: can these be relative?
+	    strcpy(srcbuf, source);
+	    xps_clean_path(srcbuf);
+	    xps_add_fixed_document(ctx, srcbuf);
+	}
+    }
+
+    if (!strcmp(name, "PageContent"))
+    {
+	char *source = NULL;
+	int width = 0;
+	int height = 0;
+	char srcbuf[1024];
+
+	for (i = 0; atts[i]; i += 2)
+	{
+	    if (!strcmp(atts[i], "Source"))
+		source = atts[i + 1];
+	    if (!strcmp(atts[i], "Width"))
+		width = atoi(atts[i + 1]);
+	    if (!strcmp(atts[i], "Height"))
+		height = atoi(atts[i + 1]);
+	}
+
+	if (source)
+	{
+	    // TODO: can these be relative?
+	    strcpy(srcbuf, source);
+	    xps_clean_path(srcbuf);
+	    xps_add_fixed_page(ctx, srcbuf, width, height);
 	}
     }
 }
@@ -346,6 +525,15 @@ xps_process_fpage(xps_context_t *ctx, xps_part_t *part)
 int
 xps_process_part(xps_context_t *ctx, xps_part_t *part)
 {
+    xps_document_t *fixdoc;
+    char *type;
+
+    dprintf2("processing part '%s' (%s)\n", part->name, part->complete ? "final" : "piece");
+
+    /*
+     * These two are magic Open Packaging Convention names.
+     */
+
     if (strstr(part->name, "[Content_Types].xml"))
     {
 	xps_process_metadata(ctx, part);
@@ -356,14 +544,77 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
 	xps_process_metadata(ctx, part);
     }
 
-    if (part->complete)
+    /*
+     * For the rest we need to track the relationships
+     * and content-types given by the previous two types.
+     *
+     * We can't do anything until we have the relationship
+     * for the start part.
+     */
+
+    if (!ctx->start_part)
     {
-	dprintf1("complete part '%s'.\n", part->name);
-    }
-    else
-    {
-	dprintf1("incomplete piece '%s'.\n", part->name);
+	xps_part_t *p;
+	xps_relation_t *r;
+	for (p = ctx->first_part; p; p = p->next)
+	    if (!strcmp(p->name, "/"))
+		for (r = p->relations; r; r = r->next)
+		    if (!strcmp(r->type, REL_START_PART))
+		    {
+			ctx->start_part = r->target;
+			dprintf1("milestone: we have a start part '%s'\n", ctx->start_part);
+		    }
     }
 
+    if (ctx->start_part)
+    {
+	if (!strcmp(part->name, ctx->start_part))
+	{
+	    xps_process_metadata(ctx, part);
+	}
+    }
+
+    /*
+     * Now we have to start following the chain of fixdoc and page
+     * parts that we have so far read and parse as far as we can.
+     */
+
+    for (fixdoc = ctx->first_fixdoc; fixdoc; fixdoc = fixdoc->next)
+    {
+	xps_part_t *p;
+	int okay = 0;
+	for (p = ctx->first_part; p; p = p->next)
+	{
+	    if (!strcmp(fixdoc->name, p->name))
+	    {
+		xps_process_metadata(ctx, p);
+		okay = p->complete;
+	    }
+	}
+	if (!okay)
+	    break;
+    }
+
+#if 0
+    type = xps_get_content_type(ctx, part->name);
+    if (type)
+    {
+	dprintf2("found content type for part %s = %s\n", part->name, type);
+	if (!strcmp(type, "application/vnd.ms-package.xps-fixeddocument+xml"))
+	{
+	    xps_process_metadata(ctx, part);
+	}
+	if (!strcmp(type, "application/vnd.ms-package.xps-fixeddocumentsequence+xml"))
+	{
+	    xps_process_metadata(ctx, part);
+	}
+	if (!strcmp(type, "application/vnd.ms-package.xps-fixedpage+xml"))
+	{
+	    dputs("Ooo! Oo! A page!\n");
+	}
+    }
+#endif
+
+    return 0;
 }
 

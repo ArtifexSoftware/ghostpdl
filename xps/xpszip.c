@@ -3,19 +3,6 @@
 #define ZIP_LOCAL_FILE_SIG 0x04034b50
 #define ZIP_DATA_DESC_SIG 0x08074b50
 
-void xps_debug_parts(xps_context_t *ctx)
-{
-    xps_part_t *part = ctx->root;
-    xps_relation_t *rel;
-    while (part)
-    {
-	dprintf2("part '%s' size=%d\n", part->name, part->size);
-	for (rel = part->relations; rel; rel = rel->next)
-	    dprintf2("     target=%s type=%s\n", rel->target, rel->type);
-	part = part->next;
-    }
-}
-
 xps_part_t *
 xps_new_part(xps_context_t *ctx, char *name, int capacity)
 {
@@ -54,14 +41,14 @@ xps_new_part(xps_context_t *ctx, char *name, int capacity)
     }
 
     /* add it to the list of parts */
-    if (!ctx->root)
+    if (!ctx->first_part)
     {
-	ctx->root = part;
+	ctx->first_part = part;
     }
     else
     {
-	part->next = ctx->root;
-	ctx->root = part;
+	part->next = ctx->first_part;
+	ctx->first_part = part;
     }
 
     return part;
@@ -123,7 +110,7 @@ static xps_part_t *
 xps_find_part(xps_context_t *ctx, char *name)
 {
     xps_part_t *part;
-    for (part = ctx->root; part; part = part->next)
+    for (part = ctx->first_part; part; part = part->next)
 	if (!strcmp(part->name, name))
 	    return part;
     return NULL;
@@ -168,7 +155,7 @@ xps_prepare_part(xps_context_t *ctx)
 	part = xps_new_part(ctx, ctx->zip_file_name, ctx->zip_uncompressed_size);
 	if (!part)
 	    return gs_rethrow(code, "cannot create part buffer");
-	ctx->last = part; /* make it the current part */
+	ctx->last_part = part; /* make it the current part */
     }
     else
     {
@@ -179,10 +166,10 @@ xps_prepare_part(xps_context_t *ctx)
 	    if (!part->data)
 		return gs_throw(-1, "cannot extend part buffer");
 	}
-	ctx->last = part;
+	ctx->last_part = part;
     }
 
-    ctx->last->complete = last_piece;
+    ctx->last_part->complete = last_piece;
 
     /* init decompression */
     if (ctx->zip_method == 8)
@@ -211,7 +198,7 @@ xps_prepare_part(xps_context_t *ctx)
 static int
 xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 {
-    xps_part_t *part = ctx->last;
+    xps_part_t *part = ctx->last_part;
     int code;
 
     if (ctx->zip_method == 8)
@@ -389,7 +376,7 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 	    /* Process contents of part.
 	     * This is the entrance to the real parser.
 	     */
-	    code = xps_process_part(ctx, ctx->last);
+	    code = xps_process_part(ctx, ctx->last_part);
 	    if (code < 0)
 		return gs_rethrow(code, "cannot handle part");
 	}

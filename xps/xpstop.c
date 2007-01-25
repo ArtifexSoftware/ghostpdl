@@ -90,6 +90,8 @@ dputs("xps_imp_allocate_interp_instance!\n");
 
     pgs = gs_state_alloc(pmem);
 
+    memset(ctx, 0, sizeof(xps_context_t));
+
     if (!instance || !ctx || !pgs)
     {
 	if (instance)
@@ -288,6 +290,7 @@ dputs("xps_imp_deallocate_interp_instance!\n");
     xps_debug_parts(ctx);
     xps_debug_type_map(ctx, "Default", ctx->defaults);
     xps_debug_type_map(ctx, "Override", ctx->overrides);
+    xps_debug_fixdocseq(ctx);
 
     // free gstate?
     gs_free_object(mem, ctx, "xps_imp_deallocate_interp_instance");

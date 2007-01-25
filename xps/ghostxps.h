@@ -12,6 +12,8 @@ typedef struct xps_context_s xps_context_t;
 typedef struct xps_part_s xps_part_t;
 typedef struct xps_type_map_s xps_type_map_t;
 typedef struct xps_relation_s xps_relation_t;
+typedef struct xps_document_s xps_document_t;
+typedef struct xps_page_s xps_page_t;
 
 #define xps_alloc(ctx, size) \
     ((void*)gs_alloc_bytes(ctx->memory, size, __FUNCTION__));
@@ -43,17 +45,39 @@ struct xps_relation_s
     xps_relation_t *next;
 };
 
+struct xps_document_s
+{
+    char *name;
+    xps_document_t *next;
+};
+
+struct xps_page_s
+{
+    char *name;
+    int width;
+    int height;
+    xps_page_t *next;
+};
+
 struct xps_context_s
 {
     void *instance;
     gs_memory_t *memory;
     gs_state *pgs;
 
-    xps_part_t *root;
-    xps_part_t *last;
+    xps_part_t *first_part;
+    xps_part_t *last_part;
 
     xps_type_map_t *defaults;
     xps_type_map_t *overrides;
+
+    char *start_part; /* fixed document sequence */
+    xps_document_t *first_fixdoc; /* first fixed document */
+    xps_document_t *last_fixdoc; /* last fixed document */
+
+    xps_page_t *first_page; /* first page of document */
+    xps_page_t *last_page; /* last page of document */
+    xps_page_t *next_page; /* next page to process when its resources are completed */
 
     unsigned int zip_state;
     unsigned int zip_general;
