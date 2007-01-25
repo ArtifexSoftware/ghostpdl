@@ -149,6 +149,56 @@ xps_get_content_type(xps_context_t *ctx, char *partname)
 }
 
 /*
+ * Relationships are stored in a linked list hooked into the part which
+ * is the source of the relation.
+ */
+
+int
+xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type)
+{
+    xps_relation_t *node;
+    xps_part_t *part;
+
+    dprintf3("Relation source=%s target=%s type=%s\n", source, target, type);
+
+    for (part = ctx->root; part; part = part->next)
+	if (!strcmp(part->name, source))
+	    break;
+
+    /* No existing part found. Create a blank part and hook it in. */
+    if (part == NULL)
+    {
+	part = xps_new_part(ctx, source, 0);
+	if (!part)
+	    return gs_rethrow(-1, "cannot create new part");
+    }
+
+    /* Check for duplicates. */
+    for (node = part->relations; node; node = node->next)
+	if (!strcmp(node->target, target))
+	    return 0;
+
+    node = xps_alloc(ctx, sizeof(xps_relation_t));
+    if (!node)
+	return gs_rethrow(-1, "cannot create new relation");
+
+    node->target = xps_strdup(ctx, target);
+    node->type = xps_strdup(ctx, type);
+    if (!node->target || !node->type)
+    {
+	if (node->target) xps_free(ctx, node->target);
+	if (node->type) xps_free(ctx, node->type);
+	xps_free(ctx, node);
+	return gs_rethrow(-1, "cannot copy relation strings");
+    }
+
+    node->next = part->relations;
+    part->relations = node;
+
+    return 0;
+}
+
+/*
  * Parse the metadata [Content_Types.xml] and _rels/XXX.rels parts.
  * These should be parsed eagerly as they are interleaved, so the
  * parsing needs to be able to cope with incomplete xml.
