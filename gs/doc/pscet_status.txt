@@ -1811,19 +1811,19 @@ Test	 Status	Comments
 		with removing unrelated things and inserting a debug printing.
 		The 2 files differ in a small thing : wheter it access
 		currentpoint after ustrokepath, or not.
-		The raster appear to be different.
-		The log file tell us that no error happen,
-		because the currenpointy coordinates are successfully printed
+		The rasters (included into the ZIP) appear to be different !
+		The log files (included into the ZIP) tell us that no error happen,
+		because the currenpoint coordinates are successfully printed
 		(in the order Y X).
-		The position od the cross depends on the
+		The position of the 2nd cross depends on the
 		currentpoint after ustrokepath,
 		but 'currentpoint' appears to cnahge it !
-		I believe that CPSI actually didn't pas the "interference" test,
+		I believe that CPSI actually didn't pass the "interference" test,
 		which 1-19-6 is designed for.
 		As we noticed from other 20 tests (unpublished), this behavior 
 		appears pretty occasional, so we're unable to analyze it completely 
 		and to reproduce it in Ghostscript.
-		Tek matches CPSI though. I can't know why.
+		Tek matches CPSI though - I can't know why.
 		Welcome anybody who can improve this analyzis.
 
 11-20-1  OK	Minor differences visually reviewed by HAS
