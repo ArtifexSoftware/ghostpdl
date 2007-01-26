@@ -214,7 +214,7 @@ gslt_measure_font_glyph(gs_state *pgs, gslt_font_t *xf, int gid, gslt_glyph_metr
     int ofs, len;
     int idx, i, n;
     int hadv, vadv, vorg;
-    int vtop, ymax;
+    int vtop, ymax, desc;
     int scale;
 
     /* some insane defaults */
@@ -235,7 +235,10 @@ gslt_measure_font_glyph(gs_state *pgs, gslt_font_t *xf, int gid, gslt_glyph_metr
     if (len < 2 * 18)
 	return gs_throw(-1, "hhea table is too short");
 
-    vorg = u16(xf->data + ofs + 4); /* ascender is default vorg */
+    vorg = s16(xf->data + ofs + 4); /* ascender is default vorg */
+    desc = s16(xf->data + ofs + 6); /* descender */
+    if (desc < 0)
+	desc = -desc;
     n = u16(xf->data + ofs + 17 * 2);
 
     ofs = gslt_find_sfnt_table(xf, "hmtx", &len);
@@ -247,7 +250,7 @@ gslt_measure_font_glyph(gs_state *pgs, gslt_font_t *xf, int gid, gslt_glyph_metr
 	idx = n - 1;
 
     hadv = u16(xf->data + ofs + idx * 4);
-    vadv = hadv;
+    vadv = 0;
 
     /*
      * Vertical metrics are hairy (with missing tables).
@@ -256,7 +259,10 @@ gslt_measure_font_glyph(gs_state *pgs, gslt_font_t *xf, int gid, gslt_glyph_metr
     ofs = gslt_find_sfnt_table(xf, "OS/2", &len);
     if (ofs > 0 && len > 70)
     {
-	vorg = u16(xf->data + ofs + 68); /* sTypoAscender */
+	vorg = s16(xf->data + ofs + 68); /* sTypoAscender */
+	desc = s16(xf->data + ofs + 70); /* sTypoDescender */
+	if (desc < 0)
+	    desc = -desc;
     }
 
     ofs = gslt_find_sfnt_table(xf, "vhea", &len);
@@ -315,6 +321,9 @@ gslt_measure_font_glyph(gs_state *pgs, gslt_font_t *xf, int gid, gslt_glyph_metr
 	    }
 	}
     }
+
+    if (vadv == 0)
+	vadv = vorg + desc;
 
     mtx->hadv = hadv / (float) scale;
     mtx->vadv = vadv / (float) scale;
