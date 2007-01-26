@@ -76,18 +76,18 @@ level2dict begin
  } odef
 % undefinefont has to take local/global VM into account.
 /undefinefont		% <fontname> undefinefont -
- { .FontDirectory 1 .argindex .undef
+ { .FontDirectory 1 .argindex .forceundef	% FontDirectory is readonly
    .currentglobal
     {		% Current mode is global; delete from local directory too.
       //systemdict /LocalFontDirectory .knownget
-       { 1 index .undef }
+       { 1 index .forceundef }		% LocalFontDirectory is readonly
       if
     }
     {		% Current mode is local; if there was a shadowed global
 		% definition, copy it into the local directory.
       //systemdict /SharedFontDirectory .knownget
        { 1 index .knownget
-	  { .FontDirectory 2 index 3 -1 roll put }
+	  { .FontDirectory 2 index 3 -1 roll { put } //superexec } % readonly
 	 if
        }
       if
@@ -99,7 +99,7 @@ level2dict begin
 % will delete it from FontDirectory but not from SharedFontDirectory.
 % We have to handle this by making restore copy missing entries from
 % SharedFontDirectory to FontDirectory.  Since this could slow down restore
-% considerably, we define a new operator .dictcopynew for this purpose.
+% considerably, we define a new operator .forcecopynew for this purpose.
 % Furthermore, if FAKEFONTS is in effect, we want global real fonts to
 % override fake local ones.  We handle this by brute force.
 /restore		% <save> restore -
@@ -128,10 +128,10 @@ level2dict begin
 	  }
 	 ifelse
        } forall
-      pop counttomark 2 idiv { .undef } repeat pop
+      pop counttomark 2 idiv { .forceundef } repeat pop		% readonly
     }
    if
-   //SharedFontDirectory exch .dictcopynew pop
+   //SharedFontDirectory exch .forcecopynew pop
    .currentglobal .setglobal	% Rebind FontDirectory according to current VM.
    pop
  } bind odef

@@ -493,11 +493,11 @@ buildfontdict 3 /.buildfont3 cvx put
                 % the font in LocalFontDirectory.
    .currentglobal
     { //systemdict /LocalFontDirectory .knownget
-       { 2 index 2 index .growput }
+       { 2 index 2 index { .growput } //superexec }	% readonly
       if
     }
    if
-   dup .FontDirectory 4 -2 roll .growput
+   dup .FontDirectory 4 -2 roll { .growput } //superexec	% readonly
                 % If the font originated as a resource, register it.
    currentfile .currentresourcefile eq { dup .registerfont } if
  } odef
@@ -1038,7 +1038,7 @@ $error /SubstituteFont { } put
                 % because it's different depending on language level.
            .currentglobal exch /.setglobal .systemvar exec
                 % Remove the fake definition, if any.
-           .FontDirectory 3 index .undef
+           .FontDirectory 3 index .forceundef		% readonly
            1 index (r) file .loadfont .FontDirectory exch
            /.setglobal .systemvar exec
          }
@@ -1128,7 +1128,7 @@ currentdict /.putgstringcopy .undef
         .FontDirectory 1 index known not {
           2 dict dup /FontName 3 index put
           dup /FontType 1 put
-          .FontDirectory 3 1 roll put
+          .FontDirectory 3 1 roll { put } //superexec	% readonly
         } {
           pop
         } ifelse

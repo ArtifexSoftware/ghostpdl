@@ -197,11 +197,13 @@ private int
 zundef(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
+    os_ptr op1 = op - 1;
     int code;
 
-    check_type(op[-1], t_dictionary);
-    check_dict_write(op[-1]);
-    code = idict_undef(op - 1, op);
+    check_type(*op1, t_dictionary);
+    if (i_ctx_p->in_superexec == 0)
+	check_dict_write(*op1);
+    code = idict_undef(op1, op);
     if (code < 0 && code != e_undefined) /* ignore undefined error */
 	return code;
     pop(2);
@@ -352,29 +354,6 @@ zcleardictstack(i_ctx_t *i_ctx_p)
 
 /* ------ Extensions ------ */
 
-/* <dict1> <dict2> .dictcopynew <dict2> */
-private int
-zdictcopynew(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    os_ptr op1 = op - 1;
-    int code;
-
-    check_type(*op1, t_dictionary);
-    check_dict_read(*op1);
-    check_type(*op, t_dictionary);
-    check_dict_write(*op);
-    /* This is only recognized in Level 2 mode. */
-    if (!imemory->gs_lib_ctx->dict_auto_expand)
-	return_error(e_undefined);
-    code = idict_copy_new(op1, op);
-    if (code < 0)
-	return code;
-    ref_assign(op1, op);
-    pop(1);
-    return 0;
-}
-
 /* -mark- <key0> <value0> <key1> <value1> ... .dicttomark <dict> */
 /* This is the Level 2 >> operator. */
 private int
@@ -406,6 +385,35 @@ zdicttomark(i_ctx_t *i_ctx_p)
     ref_stack_pop(&o_stack, count2);
     ref_assign(osp, &rdict);
     return code;
+}
+
+/* <dict1> <dict2> .forcecopynew <dict2> */
+/*
+ * This operator is a special-purpose accelerator for use by 'restore' (see
+ * gs_dps1.ps).  Note that this operator does *not* require that dict2 be
+ * writable.  Hence it is in the same category of "dangerous" operators as
+ * .forceput and .forceundef.
+ */
+private int
+zforcecopynew(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    os_ptr op1 = op - 1;
+    int code;
+
+    check_type(*op1, t_dictionary);
+    check_dict_read(*op1);
+    check_type(*op, t_dictionary);
+    /*check_dict_write(*op);*/	/* see above */
+    /* This is only recognized in Level 2 mode. */
+    if (!imemory->gs_lib_ctx->dict_auto_expand)
+	return_error(e_undefined);
+    code = idict_copy_new(op1, op);
+    if (code < 0)
+	return code;
+    ref_assign(op1, op);
+    pop(1);
+    return 0;
 }
 
 /* <dict> <key> .forceundef - */
@@ -473,7 +481,8 @@ zsetmaxlength(i_ctx_t *i_ctx_p)
     int code;
 
     check_type(*op1, t_dictionary);
-    check_dict_write(*op1);
+    if (i_ctx_p->in_superexec == 0)
+	check_dict_write(*op1);
     check_type(*op, t_integer);
 #if arch_sizeof_int < arch_sizeof_long
     check_int_leu(*op, max_uint);
@@ -511,8 +520,8 @@ const op_def zdict1_op_defs[] = {
 };
 const op_def zdict2_op_defs[] = {
 		/* Extensions */
-    {"2.dictcopynew", zdictcopynew},
     {"1.dicttomark", zdicttomark},
+    {"2.forcecopynew", zforcecopynew},
     {"2.forceundef", zforceundef},
     {"2.knownget", zknownget},
     {"1.knownundef", zknownundef},

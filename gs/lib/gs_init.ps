@@ -621,11 +621,6 @@ currentdict /.typenames .undef
 } odef
 systemdict /internaldict dup .makeinternaldict .makeoperator
 .forceput		% proc is local, systemdict is global
-% Move superexec to internaldict if superexec is defined.
-currentdict /superexec .knownget {
-  1183615869 internaldict /superexec 3 -1 roll put
-  currentdict /superexec .undef
-} if
 
 % Define some additional built-in procedures (beyond the ones defined by
 % the PostScript Language Reference Manual).
@@ -2063,7 +2058,8 @@ SAFER { .setsafe } if
   //systemdict /.delaybind {} .forceput	% reclaim the space
   //systemdict /.bindnow .forceundef	% ditto
   put
-  //systemdict /.forcedef .forceundef		% remove temptation
+  //systemdict /.forcecopynew .forceundef	% remove temptation
+  //systemdict /.forcedef .forceundef		% ditto
   //systemdict /.forceput .forceundef		% ditto
   //systemdict /.forceundef .forceundef		% ditto
   currentuserparams /IdiomRecognition known {
@@ -2254,6 +2250,10 @@ $error /.nosetlocal false put
 currentdict /.execute_scheduled_inits undef
 currentdict /.delayed_init_queue undef
 
+% Make global and local FontDirectory read-only.
+FontDirectory readonly pop
+/GlobalFontDirectory where { pop GlobalFontDirectory readonly pop } if
+
 % Remove systemdict entries for things that have been bound in where used
 % and that shouldn't be accessible by name, and close up systemdict.
 currentdict /filterdict .undef
@@ -2273,9 +2273,15 @@ end
  { pop NOGC not { 2 vmreclaim 0 vmreclaim } if
  } if
 DELAYBIND not {
-  systemdict /.forcedef .undef		% remove temptation
+  systemdict /.forcecopynew .undef	% remove temptation
+  systemdict /.forcedef .undef		% ditto
   systemdict /.forceput .undef		% ditto
   systemdict /.forceundef .undef	% ditto
+} if
+% Move superexec to internaldict if superexec is defined.
+currentdict /superexec .knownget {
+  1183615869 internaldict /superexec 3 -1 roll put
+  currentdict /superexec .undef
 } if
 WRITESYSTEMDICT not { systemdict readonly pop } if
 (END GC) VMDEBUG
