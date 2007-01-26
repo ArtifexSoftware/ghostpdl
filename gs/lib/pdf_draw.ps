@@ -1003,8 +1003,6 @@ end
     } if
   } ifelse
 		% Stack: datasource imagemask
-   % image and imagemask can be redefined in gs_init.ps to tweak interpolation
-   % after device-specific files are run. Don't bind them here.
    { currentdict end setfillstate { imagemask } }
    { ColorSpace setgcolorspace currentdict end setfillblend { image } }
   ifelse
