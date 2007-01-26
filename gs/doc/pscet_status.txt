@@ -2867,11 +2867,9 @@ Test	 Status	Comments
 
 13-07-3  OK	
 
-13-08-1  DIFF	font directory writable in gs
-                assign Peter.
+13-08-1  OK	Fixed by r7642.
 
-13-09-1  DIFF	GlobalFontDirectory wcheck : GS not conforming. : Analyzed by Igor.
-                assign Peter.
+13-09-1  OK	Fixed by r7642.
 
 13-10-1  OK	
 
@@ -3043,9 +3041,7 @@ Test	 Status	Comments
 
 13-20-6  OK	rev 7617.
 
-13-21-1  DIFF	CPSI indicates [F] for ( SharedFontDirectory xcheck).  GS
-		indicates [T]. - ADC
-                assign Peter.
+13-21-1  OK	Fixed by r7642.
 
 13-22-1  OK
 
@@ -4410,8 +4406,7 @@ Test	 Status	Comments
 
 24-13-2  OK	
 
-24-13-3  DIFF	All failures are caused by writable FontDirectory.
-		Assign Peter.
+24-13-3  OK	Fixed by r7642.
 
 24-14-1  OK	
 
@@ -5068,14 +5063,13 @@ Test	 Status	Comments
 
 30-06-2  OK	
 
-30-07-1  DIFF	Probably same as 30-08-1 assign Peter.
+30-07-1  OK	Fixed by r7642.
 
 30-07-2  DIFF	/GlobalFontDirectory /Type3Font1 known gs=true, cpsi=false. assign Peter.
 
 30-07-3  DIFF	note the 5's in the cash and gray column. assign Peter.
 
-30-08-1 DIFF	FontDirectory and SharedFontDirectory writable in gs not
-                in cpsi assign Peter.
+30-08-1  OK	Fixed by r7642.
 
 30-08-2  DIFF	same as 30-07-2 assign Peter.
 
