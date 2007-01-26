@@ -1195,10 +1195,10 @@ mark_allocated(void *obj, bool to_new)
 
     if (pre->o_type != &st_refs) {
 	/* Must not happen. Can't continue. Emit a crash. */
-	int i = *(int *)0;
+	void *p = *(void **)0;
 
-	mark_allocated((void *)i, false); /* an untrivial use of i 
-					     against code optimization. */
+	mark_allocated(p, false); /* a non-trivial use of p to defeat
+				     code optimization. */
     }
     /* We know that every block of refs ends with */
     /* a full-size ref, so we only need the end check */

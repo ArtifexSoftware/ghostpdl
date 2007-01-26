@@ -107,9 +107,9 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
     do {
 	dict *pdict = pdref->value.pdict;
 	uint size = npairs(pdict);
-	const gs_memory_t *mem = dict_mem(pdict);
 #ifdef DEBUG
 	if (gs_debug_c('D')) {
+	    const gs_memory_t *mem = dict_mem(pdict);
 	    ref dnref;
 
 	    name_index_ref(mem, nidx, &dnref);
@@ -131,6 +131,12 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
 			    DO_NOTHING, break);
 	  miss:;
 	} else {
+	    /*
+	     * The name_index macro takes mem as its first argument, but
+	     * does not actually use it.  The following is a little ugly,
+	     * but it avoids a compiler warning.
+	     */
+	    /*const gs_memory_t *_mem_not_used = dict_mem(pdict);*/
 	    ref *kbot = pdict->keys.value.refs;
 	    register ref *kp;
 	    int wrap = 0;
@@ -139,7 +145,7 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
 	    for (kp = kbot + dict_hash_mod(hash, size) + 2;;) {
 		--kp;
 		if (r_has_type(kp, t_name)) {
-		    if (name_index(mem, kp) == nidx) {
+		    if (name_index(_mem_not_used, kp) == nidx) {
 			INCR_DEPTH(pdref);
 			return pdict->values.value.refs + (kp - kbot);
 		    }
