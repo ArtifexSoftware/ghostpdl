@@ -99,7 +99,7 @@ private int
 			  stream_cursor_write *, bool);
 
 /* Initialize a stream for reading from a collection of blocks */
-void
+private void
 sread_block(register stream *s,  const byte *ptr, uint len, const uint32_t *node )
 {
     static const stream_procs p = {
@@ -242,8 +242,8 @@ romfs_open_file(gx_io_device *iodev, const char *fname, uint namelen,
     extern const uint32_t *gs_romfs[];
     int code;
     const uint32_t *node_scan = gs_romfs[0], *node = NULL;
-    uint32_t filelen, blocks, decompress_len;
-    int i, compression;
+    uint32_t filelen, blocks;
+    int i;
     char *filename;
     char fmode[4] = "\000\000\000\000";
 
