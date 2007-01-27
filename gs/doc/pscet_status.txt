@@ -4289,7 +4289,7 @@ Test	 Status	Comments
 
 23-32-2  DIFF	'token' error inconformity. 
 		Environment dependent (a virtual address in the printing).
-		assign: Peter or assign: Alex.
+		assign: Peter
 
 23-32-3  OK	Fixed as of rev 7598.
 
