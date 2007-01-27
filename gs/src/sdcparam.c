@@ -215,9 +215,8 @@ s_DCT_get_quantization_tables(gs_param_list * plist,
 		case 1:
 		    break;
 	    }
-	    /* break const to free the string */
-	    gs_free_string(mem, (byte *) str.data, str.size,
-			   "quant_param_string");
+	    gs_free_const_string(mem, str.data, str.size,
+				 "quant_param_string");
 	}
 	code = quant_param_array(&fa, DCTSIZE2,
 			    table_ptrs[comp_info[i].quant_tbl_no]->quantval,

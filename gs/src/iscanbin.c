@@ -836,7 +836,6 @@ nos:
 	    str[4] = v0, str[5] = v1, str[6] = v2, str[7] = v3;
 	}
     }
-tx:
     if (r_has_attr(obj, a_executable))
 	type += BS_EXECUTABLE;
     str[0] = (byte) type;
