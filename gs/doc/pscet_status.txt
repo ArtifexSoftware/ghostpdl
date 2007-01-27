@@ -3789,9 +3789,7 @@ Test	 Status	Comments
 
 20-13-2  OK	Color corrected by rev 7172.
 
-20-14-1  DIFF	Different checksum. (globaldict dup /op1 /show load put Q) fails with invalidaccess in CPSI 
-		but gives "7" in GS. Many other tests fail with undefined GlobLen in CPSI but give numbers with GS.
-                assign: Peter
+20-14-1  OK	GS matches Tek hardcopy. (Peter->Ray)
 
 20-14-2  OK	Color corrected by rev 7172.
 
