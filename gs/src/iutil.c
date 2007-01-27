@@ -459,7 +459,7 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 	    }
 	    data = (const byte *)
 		gs_struct_type_name_string(
-		     gs_object_type((gs_memory_t *)mem,
+				gs_object_type(mem,
 				    (const obj_header_t *)op->value.pstruct));
 	    size = strlen((const char *)data);
 	    if (size > 4 && !memcmp(data + size - 4, "type", 4))

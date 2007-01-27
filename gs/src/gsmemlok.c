@@ -272,7 +272,7 @@ gs_locked_object_size(gs_memory_t * mem, const void *ptr)
 		     );
 }
 private gs_memory_type_ptr_t
-gs_locked_object_type(gs_memory_t * mem, const void *ptr)
+gs_locked_object_type(const gs_memory_t * mem, const void *ptr)
 {
     RETURN_MONITORED(
 		     gs_memory_type_ptr_t,

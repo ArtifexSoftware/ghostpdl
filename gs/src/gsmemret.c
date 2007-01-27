@@ -262,7 +262,7 @@ gs_forward_object_size(gs_memory_t * mem, const void *ptr)
     DO_FORWARD(return target->procs.object_size(target, ptr));
 }
 private gs_memory_type_ptr_t
-gs_forward_object_type(gs_memory_t * mem, const void *ptr)
+gs_forward_object_type(const gs_memory_t * mem, const void *ptr)
 {
     DO_FORWARD(return target->procs.object_type(target, ptr));
 }

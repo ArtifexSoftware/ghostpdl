@@ -308,7 +308,7 @@ typedef struct gs_memory_procs_s {
      */
 
 #define gs_memory_proc_object_type(proc)\
-  gs_memory_type_ptr_t proc(gs_memory_t *mem, const void *obj)
+  gs_memory_type_ptr_t proc(const gs_memory_t *mem, const void *obj)
 #define gs_object_type(mem, obj)\
   (*(mem)->procs.object_type)(mem, obj)
     gs_memory_proc_object_type((*object_type));

@@ -438,7 +438,7 @@ i_object_size(gs_memory_t * mem, const void /*obj_header_t */ *obj)
 
 /* Get the type of a structure from the header. */
 private gs_memory_type_ptr_t
-i_object_type(gs_memory_t * mem, const void /*obj_header_t */ *obj)
+i_object_type(const gs_memory_t * mem, const void /*obj_header_t */ *obj)
 {
     return ((const obj_header_t *)obj - 1)->o_type;
 }
