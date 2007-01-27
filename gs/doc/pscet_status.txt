@@ -2845,12 +2845,10 @@ Test	 Status	Comments
 
 13-05-2  OK	
 
-13-05-3  DIFF	Fix all of the issues except one - Adobe accepts read-only font
-                dictionary as an valid argument of definefont and modifies it
-                anyway. Fixing this problem using .force* operations requires
-                multiple changes in the resource machinery. Perhaps, we can add
-                an operator that increases the access rights.  rev. 7165 - Alex
-                Assign: Peter.
+13-05-3  AOK	Adobe's interpreters accept a read-only font dictionary as a
+		valid argument of definefont and modify it anyway. This is a
+		bug that we will not emulate. (r7165 by Alex + comment by
+		Peter)
 
 13-05-4  OK	Minor differences visually reviewed by HAS
 
