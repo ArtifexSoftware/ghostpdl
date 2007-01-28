@@ -1292,8 +1292,13 @@ Test	 Status	Comments
 
 09-56-2  OK	revisin 7234 (peter)
 
-09-56-3  DIFF	Device Dependent: GS missing '1' for GRAY 33. Tek has '1' for
-		MEMO 3 & 4 (GS and CPSI do not). further analysis. assign: Peter
+09-56-3  DIFF	Device Dependent: GS missing '1' for GRAY 33 (same as
+		30-07-3, q.v.).  '5' occur in MEMO 03 and 04 because the
+		Tek implementation, unlike both gs and CPSI, defines a
+		ColorRendering resource called /Saturation.  The PLRM3 lists
+		such a resource as present in Adobe products, but it is not
+		required for correct operation of any PostScript program.
+		Assign: Peter
 
 09-57-1  AOK	Fixed by rev 7169.; GS has a better smoothing.
 
