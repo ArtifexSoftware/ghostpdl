@@ -1,5 +1,5 @@
-The gslite library temporarily requires a patch to gs/src.  See 
-"Patch for Ghostscript" attached below.
+The gslite library temporarily requires patches to gs/src.  See "Patches
+for Ghostscript" attached below.
 
 How to build and test gslite library with Microsoft Visual Studio 8
 with Microsoft Platform SDK for Windows Server 2003 R2.
@@ -45,9 +45,11 @@ vsvars32.bat patch
  @goto end
 
 
-Patch for ghostscript to run gslite.  We will integrate these or
-compatible fixes into the gs tree as time permits.
-----------------------------------------------------------------
+Patches for ghostscript
+-----------------------
+
+Note We will integrate these or compatible fixes into the gs tree as
+time permits.
 
 
 This is required to avoid a circular dependency in the build.
@@ -63,3 +65,60 @@ Index: sjpegc.c
 -#include "gconfig_.h"
  #ifdef DONT_HAVE_JMEMSYS_H
 
+This patch is needed to support True Type Collection files.
+
+Index: gs/src/ttfmain.c
+===================================================================
+--- gs/src/ttfmain.c    (revision 7637)
++++ gs/src/ttfmain.c    (working copy)
+@@ -211,7 +211,8 @@
+FontError ttfFont__Open(ttfInterpreter *tti, ttfFont *this, ttfReader *r,
+                                   unsigned int nTTC, float w, float h,
+                                   bool design_grid)
+-{   char sVersion[4], sVersion0[4] = {0, 1, 0, 0};
++{   char sVersion[4], sVersion1[4] = {0, 1, 0, 0};
++    char sVersion2[4] = {0, 2, 0, 0};
+    unsigned int nNumTables, i;
+    TT_Error code;
+    int k;
+@@ -227,7 +228,7 @@
+       unsigned int nPos = 0xbaadf00d; /* Quiet compiler. */
+
+       r->Read(r, sVersion, 4);
+-       if(memcmp(sVersion, sVersion0, 4))
++       if(memcmp(sVersion, sVersion1, 4) && memcmp(sVersion, sVersion2, 4))
+           return fUnimplemented;
+       nFonts = ttfReader__UInt(r);
+       if (nFonts == 0)
+@@ -239,7 +240,7 @@
+       r->Seek(r, nPos);
+       r->Read(r, sVersion, 4);
+    }
+-    if(memcmp(sVersion, sVersion0, 4) && memcmp(sVersion, "true", 4))
++    if(memcmp(sVersion, sVersion1, 4) && memcmp(sVersion, "true", 4))
+       return fUnimplemented;
+    nNumTables    = ttfReader__UShort(r);
+    ttfReader__UShort(r); /* nSearchRange */ 
+
+
+The following module does not compile without the patch.  We hope to
+deprecate "check_interrupts" soon.
+
+
+
+Index: gp_mslib.c
+===================================================================
+--- gp_mslib.c	(revision 7655)
++++ gp_mslib.c	(working copy)
+@@ -26,10 +26,8 @@
+  */
+ #ifdef CHECK_INTERRUPTS
+ 
+-#include "gx.h"
+-
+ int
+-gp_check_interrupts(const gs_memory_t *mem)
++gp_check_interrupts(void *mem)
+ {
+     return 0;
+ }
