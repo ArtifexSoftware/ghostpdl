@@ -869,9 +869,23 @@ missing on this page.  The glyphs are not actually present in the
 downloaded font.  It will work properly with Monotype if the plugins
 are configured correctly.
 
+20-07.BIN page 18 (repeats throughout test) - The HP prints the text
+in the wrong color.  The logical operation 17 (DSon) is used to paint
+green text on a white background.  The result should be black, the
+text is green.  The following example prints the wrong colored text
+from the example and a rectangle with the same raster operation and
+colors, the rectangle is the predicted black and the text is green.
+
+(quoted printable)
+
+=1BE=1B*r3U=1B*v2S=1B*l17O=1B*p300x400Y=1B*c90A=1B*c150B=1B*c0PDownloa=
+ding symbol set 62F and making it permanent=1BE
+
+
 ----
 
 HP Color Laserjet 4600 CET printed on the Color Laserjet 4550
+
 
 21-09.BIN :
 
@@ -902,3 +916,6 @@ in the X dimension.
 	   HP incorrectly renders 4 of the rasters on the page 
 Black triangles appear in a regular pattern across the raster  
 
+
+
+           
