@@ -3076,9 +3076,9 @@ Test	 Status	Comments
 
 13-24-6  AOK	Same as cash21, look30 : ustrokepath ending point.
 
-13-25-1  OK	
+13-25-1  OK
 
-13-25-2  OK	Fixed as of r7610.
+13-25-2  OK	Fixed as of r7610 (when run with -dLOCALFONTS).
 
 13-25-3  OK	
 
@@ -4174,7 +4174,7 @@ Test	 Status	Comments
 
 23-12W-6  OK	Fixed as of r7500.
 
-23-13-1  OK	Fixed as of r7610.
+23-13-1  OK	Fixed as of r7610 (when run with -dLOCALFONTS).
 
 23-13-2  AOK	Device Dependent: GS has more entries for Filter, ColorSpace
 		page fills before ImageType and PatternType shown.
@@ -5068,7 +5068,7 @@ Test	 Status	Comments
 
 30-07-2  DIFF	/GlobalFontDirectory /Type3Font1 known gs=true, cpsi=false. assign Peter.
 
-30-07-3  DIFF	note the 5's in the cash and gray column. assign Peter.
+30-07-3  DIFF	gs missing '1' for gray33.  Assign Peter.
 
 30-08-1  OK	Fixed by r7642.
 
