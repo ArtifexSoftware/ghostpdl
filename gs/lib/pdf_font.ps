@@ -1533,8 +1533,15 @@ drawopdict begin
     } ifelse
   } bdef
   /Tf {
-    1 index Page /Font rget not { 1 index /invalidfont signalerror } if
-    resourcefont exch Tf pop
+    1 index Page /Font rget {
+      resourcefont exch Tf pop
+    }
+    { % Bug 689037
+      (   **** Warning: Tf refers to an unknown resource name: ) pdfformaterror
+      1 index .namestring pdfformaterror
+      ( Assuming it's a font name.\n) pdfformaterror
+      Tf
+    } ifelse
   } bdef
 end
 
