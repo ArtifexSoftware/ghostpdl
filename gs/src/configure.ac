@@ -45,7 +45,7 @@ dnl --------------------------------------------------
 if test $ac_cv_prog_gcc = yes; then
     cflags_to_try="-Wall -Wstrict-prototypes \
 -Wmissing-declarations -Wmissing-prototypes \
--Wcast-qual -Wwrite-strings \
+-Wwrite-strings \
 -fno-builtin -fno-common"
     optflags_to_try="-O2"
 else
