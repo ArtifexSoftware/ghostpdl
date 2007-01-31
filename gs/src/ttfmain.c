@@ -211,7 +211,8 @@ void ttfFont__finit(ttfFont *this)
 FontError ttfFont__Open(ttfInterpreter *tti, ttfFont *this, ttfReader *r, 
 				    unsigned int nTTC, float w, float h, 
 				    bool design_grid)
-{   char sVersion[4], sVersion0[4] = {0, 1, 0, 0};
+{   char sVersion[4], sVersion1[4] = {0, 1, 0, 0};
+    char sVersion2[4] = {0, 2, 0, 0};
     unsigned int nNumTables, i;
     TT_Error code;
     int k;
@@ -227,7 +228,7 @@ FontError ttfFont__Open(ttfInterpreter *tti, ttfFont *this, ttfReader *r,
 	unsigned int nPos = 0xbaadf00d; /* Quiet compiler. */
 
 	r->Read(r, sVersion, 4);
-	if(memcmp(sVersion, sVersion0, 4))
+       if(memcmp(sVersion, sVersion1, 4) && memcmp(sVersion, sVersion2, 4))
 	    return fUnimplemented;
 	nFonts = ttfReader__UInt(r);
 	if (nFonts == 0)
@@ -239,7 +240,7 @@ FontError ttfFont__Open(ttfInterpreter *tti, ttfFont *this, ttfReader *r,
 	r->Seek(r, nPos);
 	r->Read(r, sVersion, 4);
     }
-    if(memcmp(sVersion, sVersion0, 4) && memcmp(sVersion, "true", 4))
+    if(memcmp(sVersion, sVersion1, 4) && memcmp(sVersion, "true", 4))
 	return fUnimplemented;
     nNumTables    = ttfReader__UShort(r);
     ttfReader__UShort(r); /* nSearchRange */
