@@ -37,7 +37,7 @@ private int
 zDCTD(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    gs_memory_t *mem = (gs_memory_t *)(i_ctx_p->memory.current);
+    gs_memory_t *mem = gs_memory_stable(imemory);
     stream_DCT_state state;
     dict_param_list list;
     jpeg_decompress_data *jddp;
