@@ -1058,21 +1058,23 @@ Test	 Status	Comments
                 See explanation in 09-47J-6.
 		cpsi/09-47J-1  missing
 
-09-47J-10 DIFF	GS differs a lot on all sub test panels. May be a regression.
-		Assign: Igor
-		cpsi/09-47J-10  missing
+09-47J-10 AOK	Analyzed by Igor.
+                Tek misses an imagemask or a character with a shading color.
+                See explanation in 09-47J-6.
 
 09-47J-2  AOK	Analyzed by Igor.
                 Tek misses an imagemask or a character with a shading color.
                 See explanation in 09-47J-6.
 		cpsi/09-47J-2  missing
 
-09-47J-3  DIFF	GS differs a lot on all sub test panels. May be a regression.
-		Assign: Igor
+09-47J-3  AOK	Analyzed by Igor.
+                Tek misses an imagemask or a character with a shading color.
+                See explanation in 09-47J-6.
 		cpsi/09-47J-3  missing
 
-09-47J-4  DIFF	GS differs a lot on all sub test panels. May be a regression.
-		Assign: Igor
+09-47J-4  AOK	Analyzed by Igor.
+                Tek misses an imagemask or a character with a shading color.
+                See explanation in 09-47J-6.
 		cpsi/09-47J-4  missing
 
 09-47J-5  AOK	Analyzed by Igor.
@@ -1091,8 +1093,9 @@ Test	 Status	Comments
                 not painted with the shading color.
 		cpsi/09-47J-6  missing
 
-09-47J-7  DIFF	GS differs a lot on all sub test panels. May be a regression.
-		Assign: Igor
+09-47J-7  AOK	Analyzed by Igor.
+                Tek misses an imagemask or a character with a shading color.
+                See explanation in 09-47J-6.
 		cpsi/09-47J-7  missing
 
 09-47J-8  AOK	Analyzed by Igor.
@@ -1130,8 +1133,12 @@ Test	 Status	Comments
 09-47K-4  OK	Verified visually against Tek hardcopy by Sabrina
 		cpsi/09-47K-4  missing
 
-09-47K-5  DIFF	GS differs from Tek and Acrobat 7 Pro output. Assign: Igor
-		May be a regression since we don't have CPSI for comparison.
+09-47K-5  AOK   Analyzed by Igor.
+		I have no idea why Tek prints nothing.
+		IMO in most cases the shading data are fine.
+		3 cases, which fails with GS, have a definitely wrong
+		number of color components in Background.
+		We won't reproduce the erroneus behavior of Tec.
 		cpsi/09-47K-5  missing
 
 09-47K-6  OK	Verified visually against Tek hardcopy by Sabrina
