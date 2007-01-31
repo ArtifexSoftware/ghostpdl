@@ -303,7 +303,7 @@ const gx_device_printer gs_bitrgbtags_device =
         0 ,
         0,
         0,
-        { 0 }
+        0
     };
 
 static void

@@ -87,7 +87,7 @@ dump_jas_image(jas_image_t *image)
     if (image == NULL) return 1;
 
     if_debug2('w', "[w]JPX image is %d x %d\n",
-	jas_image_width(image), jas_image_height(image));
+	(int)jas_image_width(image), (int)jas_image_height(image));
 
     /* sort the colorspace */
     if jas_clrspc_isunknown(clrspc) csname = "unknown";
@@ -134,8 +134,8 @@ dump_jas_image(jas_image_t *image)
 	if_debug6('w', "[w]  component %d: type %d '%s%s' (%d bits%s)",
 	    i, type, name, opacity, jas_image_cmptprec(image, i), issigned);
 	if_debug4('w', " grid step (%d,%d) offset (%d,%d)\n",
-	    jas_image_cmpthstep(image, i), jas_image_cmptvstep(image, i),
-	    jas_image_cmpttlx(image, i), jas_image_cmpttly(image, i));
+	    (int)jas_image_cmpthstep(image, i), (int)jas_image_cmptvstep(image, i),
+	    (int)jas_image_cmpttlx(image, i), (int)jas_image_cmpttly(image, i));
     }
 
     return 0;

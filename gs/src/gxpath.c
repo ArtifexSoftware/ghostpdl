@@ -1017,7 +1017,9 @@ gx_print_segment(const segment * pseg)
 	case s_dash:{
     		const dash_segment *const pd = (const dash_segment *)pseg;
 
-		dprintf5("%s: %1.4f %1.4f %1.4f  %1.4f dash\n", out, pd->pt.x, pd->pt.y, pd->tangent.x, pd->tangent.y);
+		dprintf5("%s: %1.4f %1.4f %1.4f  %1.4f dash\n", out, 
+		    fixed2float(pd->pt.x), fixed2float(pd->pt.y), 
+		    fixed2float(pd->tangent.x), fixed2float(pd->tangent.y));
 		break;
 	    }
 	case s_line_close:{

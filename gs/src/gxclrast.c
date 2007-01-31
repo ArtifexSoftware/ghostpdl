@@ -2240,11 +2240,7 @@ cmd_select_map(cmd_map_index map_index, cmd_map_contents cont,
 	case cmd_map_transfer_3:
 	    pmap = &pis->set_transfer.gray;
 	    *pcomp_num = &pis->set_transfer.gray_component_num;
-transfer1:  {
-		int i = map_index - cmd_map_transfer_0;
-
-	        if_debug1('L', " transfer[%d]", i);
-	    }
+transfer1:  if_debug1('L', " transfer[%d]", (int)(map_index - cmd_map_transfer_0));
 	    rc_unshare_struct(*pmap, gx_transfer_map, &st_transfer_map, mem,
 		return_error(gs_error_VMerror), "cmd_select_map(transfer)");
 	    map = *pmap;

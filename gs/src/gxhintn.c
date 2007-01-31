@@ -364,7 +364,7 @@ private void t1_hint__set_aligned_coord(t1_hint * this, t1_glyph_space_coord gc,
 
 private void t1_hinter__paint_glyph(t1_hinter * this, bool aligned)
 {
-#ifdef VD_TRACE
+#if VD_TRACE
 #define X(j) *member_prt(t1_glyph_space_coord, &this->pole[j], offset_x)
 #define Y(j) *member_prt(t1_glyph_space_coord, &this->pole[j], offset_y)
     t1_glyph_space_coord *p_x = (aligned ? &this->pole[0].ax : &this->pole[0].gx);
@@ -414,7 +414,7 @@ private void t1_hinter__paint_glyph(t1_hinter * this, bool aligned)
 
 private void  t1_hinter__paint_raster_grid(t1_hinter * this)
 {
-#ifdef VD_TRACE
+#if VD_TRACE
     int i;
     double j; /* 'long' can overflow */
     unsigned long c0 = RGB(192, 192, 192), c1 = RGB(64, 64, 64);

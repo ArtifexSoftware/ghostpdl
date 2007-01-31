@@ -32,7 +32,11 @@
 */
 
 #if !defined(VD_TRACE)
-#define VD_TRACE 1
+#   if defined(DEBUG)
+#	define VD_TRACE 1
+#   else
+#	define VD_TRACE 0
+#   endif
 #endif
 
 typedef struct vd_trace_host_s vd_trace_host;

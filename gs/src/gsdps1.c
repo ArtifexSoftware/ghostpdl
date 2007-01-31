@@ -93,7 +93,7 @@ gs_setbbox(gs_state * pgs, floatp llx, floatp lly, floatp urx, floatp ury)
 /* ------ Rectangles ------ */
 
 /* Append a list of rectangles to a path. */
-int
+private int
 gs_rectappend_compat(gs_state * pgs, const gs_rect * pr, uint count, bool clip)
 {
     extern bool CPSI_mode;
