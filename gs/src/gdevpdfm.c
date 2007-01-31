@@ -761,7 +761,7 @@ pdfmark_write_outline(gx_device_pdf * pdev, pdf_outline_node_t * pnode,
     if (pnode->action != NULL)
 	pnode->action->id = pnode->id;
     else {
-	eprintf1("pdfmark error: Outline node %d has no action or destination.\n", (int)pnode->id);
+	eprintf1("pdfmark error: Outline node %ld has no action or destination.\n", pnode->id);
 	code = gs_note_error(gs_error_undefined);
     }
     s = pdev->strm;
