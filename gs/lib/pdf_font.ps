@@ -189,51 +189,62 @@ pdfdict begin
 } bdef
                                
 % Get the metrics of a font, if specified.
-/getfontmetrics {	% <font-resource> <font> <Encoding|null> getfontmetrics
-			%   <font-resource> <font> <Encoding|null>
-			%   <Metrics|null> <GlyphMap|null>
+/getfontmetrics {       % <font-resource> <font> <Encoding|null> getfontmetrics
+                        %   <font-resource> <font> <Encoding|null>
+                        %   <Metrics|null> <GlyphMap|null>
+
   2 index /Widths known {
-    dup null eq { pop dup /Encoding get } if
-    4 dict begin
+    dup //null eq { pop dup /Encoding get } if
+    7 dict begin
       dup length dict
       /Metrics exch def
       /Encoding exch def
       /GlyphMap //null def
       exch
       dup /Widths oget /Widths exch def
-		% Stack: font font-res
-		% Note that widths are always based on a 1000-unit
-		% character space, but the FontMatrix may specify
-		% some other scale factor.  Compensate for this here,
-		% by scaling the Widths if necessary.
+                % Stack: font font-res
+                % Note that widths are always based on a 1000-unit
+                % character space, but the FontMatrix may specify
+                % some other scale factor.  Compensate for this here,
+                % by scaling the Widths if necessary.
       0.001 2 index /FontMatrix get 0 get div
-		% Stack: font font-res mscale
-      1 index /FirstChar oget dup 1 4 index /LastChar oget
-       {	% Stack: font font-res mscale first-char index
-	 Encoding 1 index dup 2 index length ge {
-           (   **** Warning: Font Encoding array size is smaller than character range.\n)
-           pdfformaterror
-	   pop pop /.notdef
-         } {
-	   get
-	 } ifelse
-	 Widths 2 index 4 index sub dup 2 index length ge {
-           (   **** Warning: Font Widths array size is smaller than character range.\n)
-           pdfformaterror
-           % use MissingWidth if it's available, if not, default to 1000 (full width)
-	   pop pop 4 index /FontDescriptor knownoget {
-	     /MissingWidth knownoget not { 1000	} if
-	   } { 1000 } ifelse
-         } {
-	   oget
-	 } ifelse
-	 	% Stack: font font-res mscale first-char index charname width
-	 4 index mul
-		% The following 'loop' is only context for 'exit'.
-	 {	
-		% Work around a bug in pdfTeX, which can generate Encoding
-		% vectors containing nulls :
-	   1 index //null eq { exit } if
+                % Stack: font font-res mscale
+      /FirstChar 2 index /FirstChar oget def
+      /LastChar  2 index /LastChar  oget def
+
+      Encoding length LastChar le {
+         (   **** Warning: Font Encoding array size is smaller than character range.\n)
+         pdfformaterror
+      } if
+
+      1 index /FontDescriptor knownoget {
+           /MissingWidth knownoget not { 0 } if 
+        } 
+        { 1000 
+        } 
+      ifelse /MissingWidth exch def
+             
+      Widths length LastChar FirstChar sub le {
+         (   **** Warning: Font Widths array size is smaller than character range.\n)
+         pdfformaterror
+         /Widths [Widths aload length LastChar FirstChar sub exch sub MissingWidth exch {dup} repeat] def
+      } if
+      FirstChar
+
+      0 Encoding 
+       {        % Stack: font font-res mscale first-char index charname
+
+         1 index FirstChar lt { MissingWidth } {
+           1 index LastChar gt { MissingWidth } { Widths 2 index FirstChar sub get } ifelse
+         } ifelse
+
+                % Stack: font font-res mscale first-char index charname width
+         4 index mul
+                % The following 'loop' is only context for 'exit'.
+         {      
+                % Work around a bug in pdfTeX, which can generate Encoding
+                % vectors containing nulls :
+           1 index //null eq { exit } if
            Metrics 2 index .knownget {
              1 index ne
            } {
@@ -277,32 +288,13 @@ pdfdict begin
              } if
            } if
            2 copy Metrics 3 1 roll put
-	   exit
-	 } loop
-	 pop pop pop
+           exit
+         } loop
+         pop pop
+         1 add
        }
-      for pop
-		% Now fill in the MissingWidth for any encoded characters
-		% that aren't in Metrics already.  Note that built-in
-		% fonts may have Widths/FirstChar/LastChar but no
-		% FontDescriptor, so we must check for this.
-		% Stack: font font-res mscale
-      1 index /FontDescriptor knownoget {
-	Metrics exch
-	/MissingWidth knownoget { 2 index mul } { 0 } ifelse exch
-	Encoding {
-		% Stack: font font-res mscale missing-width metrics charname
-		% Work around the abovementioned pdfTeX bug.
-	  dup //null ne {
-	    2 copy known not { 2 copy 4 index put } if pop
-	  } {
-	    pop
-	  } ifelse
-	} forall pop pop pop
-      } {
-	pop
-      } ifelse
-    exch Encoding Metrics GlyphMap end
+     forall pop pop pop
+     exch Encoding Metrics GlyphMap end
   } {
     //null //null
   } ifelse
