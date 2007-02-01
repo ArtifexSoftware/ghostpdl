@@ -74,7 +74,9 @@ zsave(i_ctx_t *i_ctx_p)
     ialloc_set_space(idmemory, space);
     if (vmsave == 0)
 	return_error(e_VMerror);
-    sid = alloc_save_state(idmemory, vmsave);
+    code = alloc_save_state(idmemory, vmsave, &sid);
+    if (code < 0)
+	return code;
     if (sid == 0) {
 	ifree_object(vmsave, "zsave");
 	return_error(e_VMerror);
@@ -405,7 +407,9 @@ zforgetsave(i_ctx_t *i_ctx_p)
 	gs_grestore(last);
     }
     /* Forget the save in the memory manager. */
-    alloc_forget_save(asave);
+    code = alloc_forget_save(asave);
+    if (code < 0)
+	return code;
     {
 	uint space = icurrent_space;
 

@@ -52,7 +52,7 @@ alloc_save_t *alloc_find_save(const gs_dual_memory_t *, ulong);
  * otherwise return the save ID.  The second argument is a client data
  * pointer, assumed to point to an object.
  */
-ulong alloc_save_state(gs_dual_memory_t *, void *);
+int alloc_save_state(gs_dual_memory_t * dmem, void *cdata, ulong *psid);
 
 /* Get the client pointer passed to alloc_saved_state. */
 void *alloc_save_client_data(const alloc_save_t *);
@@ -90,7 +90,7 @@ int alloc_restore_step_in(gs_dual_memory_t *, alloc_save_t *);
  * by calling alloc_find_save.  Note that forgetting a save does not
  * require checking pointers for recency.
  */
-void alloc_forget_save_in(gs_dual_memory_t *, alloc_save_t *);
+int alloc_forget_save_in(gs_dual_memory_t *, alloc_save_t *);
 /* Backward compatibility */
 #define alloc_forget_save(save) alloc_forget_save_in(idmemory, save)
 

@@ -290,8 +290,8 @@ alloc_save_print(alloc_change_t * cp, bool print_current)
 /* Forward references */
 private int  restore_resources(alloc_save_t *, gs_ref_memory_t *);
 private void restore_free(gs_ref_memory_t *);
-private long save_set_new(gs_ref_memory_t *, bool, bool);
-private void save_set_new_changes(gs_ref_memory_t *, bool, bool);
+private int  save_set_new(gs_ref_memory_t * mem, bool to_new, bool set_limit, ulong *pscanned);
+private int  save_set_new_changes(gs_ref_memory_t *, bool, bool);
 #if NO_INVISIBLE_LEVELS
 private bool check_l_mark(void *obj);
 #endif
@@ -345,8 +345,8 @@ alloc_free_save(gs_ref_memory_t *mem, alloc_save_t *save, const char *scn)
     /* Free any inner chunk structures.  This is the easiest way to do it. */
     restore_free(mem);
 }
-ulong
-alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
+int
+alloc_save_state(gs_dual_memory_t * dmem, void *cdata, ulong *psid)
 {
     gs_ref_memory_t *lmem = dmem->space_local;
     gs_ref_memory_t *gmem = dmem->space_global;
@@ -379,8 +379,11 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
     /* can have the attribute set are the ones on the changes chain, */
     /* and ones in objects allocated since the last save. */
     if (lmem->save_level > 1) {
-	long scanned = save_set_new(&lsave->state, false, true);
+	ulong scanned;
+	int code = save_set_new(&lsave->state, false, true, &scanned);
 
+	if (code < 0)
+	    return code;
 #if !NO_INVISIBLE_LEVELS
 	if ((lsave->state.total_scanned += scanned) > max_repeated_scan) {
 	    /* Do a second, invisible save. */
@@ -414,7 +417,8 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
 #endif
     }
     alloc_set_in_save(dmem);
-    return sid;
+    *psid = sid;
+    return 0;
 }
 /* Save the state of one space (global or local). */
 private alloc_save_t *
@@ -820,7 +824,11 @@ alloc_restore_step_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 	}
 	alloc_set_not_in_save(dmem);
     } else {			/* Set the l_new attribute in all slots that are now new. */
-	save_set_new(mem, true, false);
+	ulong scanned;
+
+	code = save_set_new(mem, true, false, &scanned);
+	if (code < 0)
+	    return code;
     }
 
     return sprev == save;
@@ -1006,11 +1014,13 @@ restore_free(gs_ref_memory_t * mem)
 private void file_forget_save(gs_ref_memory_t *);
 private void combine_space(gs_ref_memory_t *);
 private void forget_changes(gs_ref_memory_t *);
-void
+int
 alloc_forget_save_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 {
     gs_ref_memory_t *mem = save->space_local;
     alloc_save_t *sprev;
+    ulong scanned;
+    int code;
 
     print_save("forget_save", mem->space, save);
 
@@ -1022,7 +1032,9 @@ alloc_forget_save_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 	if (mem->save_level != 0) {
 	    alloc_change_t *chp = mem->changes;
 
-	    save_set_new(&sprev->state, true, false);
+	    code = save_set_new(&sprev->state, true, false, &scanned);
+	    if (code < 0)
+		return code;
 	    /* Concatenate the changes chains. */
 	    if (chp == 0)
 		mem->changes = sprev->state.changes;
@@ -1035,7 +1047,9 @@ alloc_forget_save_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 	    combine_space(mem);	/* combine memory */
 	} else {
 	    forget_changes(mem);
-	    save_set_new(mem, false, false);
+	    code = save_set_new(mem, false, false, &scanned);
+	    if (code < 0)
+		return code;
 	    file_forget_save(mem);
 	    combine_space(mem);	/* combine memory */
 	    /* This is the outermost save, which might also */
@@ -1043,7 +1057,9 @@ alloc_forget_save_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 	    mem = save->space_global;
 	    if (mem != save->space_local && mem->saved != 0) {
 		forget_changes(mem);
-		save_set_new(mem, false, false);
+		code = save_set_new(mem, false, false, &scanned);
+		if (code < 0)
+		    return code;
 		file_forget_save(mem);
 		combine_space(mem);
 	    }
@@ -1052,6 +1068,7 @@ alloc_forget_save_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 	}
     }
     while (sprev != save);
+    return 0;
 }
 /* Combine the chunks of the next outer level with those of the current one, */
 /* and free the bookkeeping structures. */
@@ -1179,8 +1196,8 @@ file_forget_save(gs_ref_memory_t * mem)
     }
 }
 
-private inline uint
-mark_allocated(void *obj, bool to_new)
+private inline int
+mark_allocated(void *obj, bool to_new, uint *psize)
 {   
     obj_header_t *pre = (obj_header_t *)obj - 1;
     uint size = pre_obj_contents_size(pre);
@@ -1194,11 +1211,9 @@ mark_allocated(void *obj, bool to_new)
 #endif
 
     if (pre->o_type != &st_refs) {
-	/* Must not happen. Can't continue. Emit a crash. */
-	void *p = *(void **)0;
-
-	mark_allocated(p, false); /* a non-trivial use of p to defeat
-				     code optimization. */
+	/* Must not happen. */
+	if_debug0('u', "Wrong object type when expected a ref.\n");
+	return_error(e_Fatal);
     }
     /* We know that every block of refs ends with */
     /* a full-size ref, so we only need the end check */
@@ -1225,7 +1240,8 @@ mark_allocated(void *obj, bool to_new)
 	    }
 	}
 #undef RP_REF
-    return size;
+    *psize = size;
+    return 0;
 }
 
 #if NO_INVISIBLE_LEVELS
@@ -1268,13 +1284,16 @@ check_l_mark(void *obj)
 /* This includes every slot on the current change chain, */
 /* and every (ref) slot allocated at this save level. */
 /* Return the number of bytes of data scanned. */
-private long
-save_set_new(gs_ref_memory_t * mem, bool to_new, bool set_limit)
+private int
+save_set_new(gs_ref_memory_t * mem, bool to_new, bool set_limit, ulong *pscanned)
 {
-    long scanned = 0;
+    ulong scanned = 0;
+    int code;
 
     /* Handle the change chain. */
-    save_set_new_changes(mem, to_new, set_limit);
+    code = save_set_new_changes(mem, to_new, set_limit);
+    if (code < 0)
+	return code;
 
 #if !NO_INVISIBLE_LEVELS
     /* Handle newly allocated ref objects. */
@@ -1289,8 +1308,12 @@ save_set_new(gs_ref_memory_t * mem, bool to_new, bool set_limit)
 	    if (pre->o_type == &st_refs) {
 		/* These are refs, scan them. */
 		ref_packed *prp = (ref_packed *) (pre + 1);
-
-		scanned += mark_allocated(prp, to_new);
+		uint size;
+		
+		code = mark_allocated(prp, to_new, &size);
+		if (code < 0)
+		    return code;
+		scanned += size;
 	    } else
 		scanned += sizeof(obj_header_t);
 	    END_OBJECTS_SCAN
@@ -1301,24 +1324,31 @@ save_set_new(gs_ref_memory_t * mem, bool to_new, bool set_limit)
 	if_debug2('u', "[u]set_new (%s) scanned %ld\n",
 		  (to_new ? "restore" : "save"), scanned);
 #endif
-    return scanned;
+    *pscanned = scanned;
+    return 0;
 }
 
 /* Set or reset the l_new attribute on the changes chain. */
-private void
+private int
 save_set_new_changes(gs_ref_memory_t * mem, bool to_new, bool set_limit)
 {
     register alloc_change_t *chp = mem->changes;
     register uint new = (to_new ? l_new : 0);
 #if NO_INVISIBLE_LEVELS
-    long scanned = mem->total_scanned;
+    ulong scanned = mem->total_scanned;
 #endif
 
     for (; chp; chp = chp->next) {
 #if NO_INVISIBLE_LEVELS
 	if (chp->offset == AC_OFFSET_ALLOCATED) {
-	    if (chp->where != 0)
-		scanned += mark_allocated((void *)chp->where, to_new);
+	    if (chp->where != 0) {
+		uint size;
+		int code = mark_allocated((void *)chp->where, to_new, &size);
+
+		if (code < 0)
+		    return code;
+		scanned += size;
+	    }
 	} else
 #endif
 	{
@@ -1347,4 +1377,5 @@ save_set_new_changes(gs_ref_memory_t * mem, bool to_new, bool set_limit)
 	    mem->total_scanned = scanned;
     }
 #endif
+    return 0;
 }
