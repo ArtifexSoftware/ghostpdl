@@ -82,10 +82,12 @@
 
 % Load a font file that might be a TrueType font.
 
+/tt_tag_dict << <00010000> 0 (true) 0 (typ1) 0 (ttcf) 0 >> readonly def
+
 % <file> .loadfontfile -
 /.loadnonttfontfile /.loadfontfile load def
 /.loadfontfile {
-  dup read pop 2 copy unread 0 eq {
+  dup (1234) .peekstring { //tt_tag_dict exch known } { //false } ifelse {
 		% If this is a font at all, it's a TrueType font.
     .loadttfont pop
   } {
@@ -93,6 +95,8 @@
     .loadnonttfontfile
   } ifelse
 } bind def
+
+currentdict /tt_tag_dict .undef
 
 % ---------------- Automatic Type 42 generation ---------------- %
 
