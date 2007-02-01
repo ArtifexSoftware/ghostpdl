@@ -1291,11 +1291,16 @@ Test	 Status	Comments
 
 09-55-2  OK	
 
-09-56-1  DIFF	Device Dependent: Tek and Adobe show '/findcolorrendering' instead
-		of '--findcolorrendering--' with errors.I've checked in a fix for 
-                the setcolorrendering issue.  There is still a discrepancy in that 
-                the reference output shows additional built-in color rendering names 
-                /GenericImagesetter and /AppleMonitor (peter).  Assign ray
+09-56-1  AOK 	Device Dependent: Tek and Adobe show '/findcolorrendering'
+                instead of '--findcolorrendering--' with errors. I've checked
+                in a fix for the setcolorrendering issue. /GenericImagesetter
+                and /AppleMonitor are CRD's provided by Adobe to OEM as
+                examples. They must be removed from the final product but
+                Scanvec-Amiable forgot.
+                -
+                The checksum depends on the order of resource enumeration,
+                which depends on the order of dictionary enumeration and
+                directory enumeration for external halftones.
 
 09-56-2  OK	revisin 7234 (peter)
 
