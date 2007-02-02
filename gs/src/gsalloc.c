@@ -85,18 +85,14 @@ private
 ENUM_PTRS_BEGIN(ref_memory_enum_ptrs) return 0;
 ENUM_PTR3(0, gs_ref_memory_t, streams, names_array, changes);
 ENUM_PTR(3, gs_ref_memory_t, saved);
-#if NO_INVISIBLE_LEVELS
 ENUM_PTR(4, gs_ref_memory_t, scan_limit);
-#endif
 ENUM_PTRS_END
 private RELOC_PTRS_WITH(ref_memory_reloc_ptrs, gs_ref_memory_t *mptr)
 {
     RELOC_PTR(gs_ref_memory_t, streams);
     RELOC_PTR(gs_ref_memory_t, names_array);
     RELOC_PTR(gs_ref_memory_t, changes);
-#if NO_INVISIBLE_LEVELS
     RELOC_PTR(gs_ref_memory_t, scan_limit);
-#endif
     /* Don't relocate the saved pointer now -- see igc.c for details. */
     mptr->reloc_saved = RELOC_OBJ(mptr->saved);
 }
@@ -328,10 +324,8 @@ ialloc_reset(gs_ref_memory_t * mem)
     mem->allocated = 0;
     mem->inherited = 0;
     mem->changes = 0;
-#if NO_INVISIBLE_LEVELS
     mem->scan_limit = 0;
     mem->total_scanned = 0;
-#endif
     ialloc_reset_free(mem);
 }
 

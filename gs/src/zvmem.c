@@ -151,7 +151,7 @@ zrestore(i_ctx_t *i_ctx_p)
 	 */
 	vmsave->gsave = 0;
 	/* Now it's safe to restore the state of memory. */
-	code = alloc_restore_state_step(asave);
+	code = alloc_restore_step_in(idmemory, asave);
 	if (code < 0)
 	    return code;
 	last = code;
@@ -407,7 +407,7 @@ zforgetsave(i_ctx_t *i_ctx_p)
 	gs_grestore(last);
     }
     /* Forget the save in the memory manager. */
-    code = alloc_forget_save(asave);
+    code = alloc_forget_save_in(idmemory, asave);
     if (code < 0)
 	return code;
     {

@@ -185,7 +185,6 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
 	 */
 	chunk_t *pcc = mem->pcc;
 	ref *end;
-#if NO_INVISIBLE_LEVELS
 	ref_packed **ppr = 0;
 	int code = 0;
 
@@ -194,7 +193,6 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
 	    if (code < 0)
 		return code;
 	}
-#endif
 	obj = gs_alloc_struct_array((gs_memory_t *) mem, num_refs + 1,
 				    ref, &st_refs, cname);
 	if (obj == 0)
@@ -219,10 +217,8 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
 	    chunk_locate_ptr(obj, &cl);
 	    cl.cp->has_refs = true;
 	}
-#if NO_INVISIBLE_LEVELS
 	if (ppr)
 	    *ppr = (ref_packed *)obj;
-#endif
     }
     make_array(parr, attrs | mem->space, num_refs, obj);
     return 0;
@@ -286,10 +282,8 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
 	) {
 	if ((obj_header_t *) obj == mem->cc.rcur) {
 	    /* Deallocate the entire refs object. */
-#if NO_INVISIBLE_LEVELS
 	    if ((gs_memory_t *)mem != mem->stable_memory)
 		alloc_save_remove(mem, (ref_packed *)obj, "gs_free_ref_array");
-#endif
 	    gs_free_object((gs_memory_t *) mem, obj, cname);
 	    mem->cc.rcur = 0;
 	    mem->cc.rtop = 0;
@@ -319,10 +313,8 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
 	    if_debug4('a', "[a%d:-$L]%s(%u) 0x%lx\n",
 		      ialloc_trace_space(mem), client_name_string(cname),
 		      num_refs, (ulong) obj);
-#if NO_INVISIBLE_LEVELS
 	if ((gs_memory_t *)mem != mem->stable_memory)
 	    alloc_save_remove(mem, (ref_packed *)obj, "gs_free_ref_array");
-#endif
 	    alloc_free_chunk(cl.cp, mem);
 	    return;
 	}

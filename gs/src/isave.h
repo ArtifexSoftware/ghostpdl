@@ -81,8 +81,6 @@ bool alloc_any_names_since_save(const alloc_save_t *);
  * if this is the case, the operation cannot fail.
  */
 int alloc_restore_step_in(gs_dual_memory_t *, alloc_save_t *);
-/* Backward compatibility */
-#define alloc_restore_state_step(save) alloc_restore_step_in(idmemory, save)
 
 /*
  * Forget a save -- like committing a transaction (restore is like
@@ -91,15 +89,11 @@ int alloc_restore_step_in(gs_dual_memory_t *, alloc_save_t *);
  * require checking pointers for recency.
  */
 int alloc_forget_save_in(gs_dual_memory_t *, alloc_save_t *);
-/* Backward compatibility */
-#define alloc_forget_save(save) alloc_forget_save_in(idmemory, save)
 
 /* Release all memory -- like doing a restore "past the bottom". */
 int alloc_restore_all(gs_dual_memory_t *);
-#if NO_INVISIBLE_LEVELS
 /* Filter save change lists. */
 void alloc_save__filter_changes(gs_ref_memory_t *mem);
-#endif
 
 /* ------ Internals ------ */
 

@@ -373,7 +373,6 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 	end_phase("finish trace");
     }
 
-#if NO_INVISIBLE_LEVELS
     /* Filter save change lists with removing elements,
        which point to unmarked blocks of refs. */
     {
@@ -385,7 +384,6 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 	    alloc_save__filter_changes(mem);
 	}
     }
-#endif
     /* Clear marks and relocation in spaces that are only being traced. */
     /* We have to clear the marks first, because we want the */
     /* relocation to wind up as o_untraced, not o_unmarked. */

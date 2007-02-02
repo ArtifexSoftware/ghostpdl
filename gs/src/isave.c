@@ -27,9 +27,7 @@
 #include "isstate.h"
 #include "store.h"		/* for ref_assign */
 #include "ivmspace.h"
-#if NO_INVISIBLE_LEVELS
 #include "igc.h"
-#endif
 #include "gsutil.h"		/* gs_next_ids prototype */
 
 /* Structure descriptor */
@@ -155,10 +153,8 @@ print_save(const char *str, uint spacen, const alloc_save_t *sav)
 	    str, spacen, (ulong)sav, (ulong)sav->client_data, (ulong)sav->id);
 }
 
-#if NO_INVISIBLE_LEVELS
 /* A link to igcref.c . */
 ptr_proc_reloc(igc_reloc_ref_ptr_nocheck, ref_packed);
-#endif
 
 /*
  * Structure for saved change chain for save/restore.  Because of the
@@ -172,9 +168,7 @@ struct alloc_change_s {
     ref contents;
 #define AC_OFFSET_STATIC (-2)	/* static object */
 #define AC_OFFSET_REF (-1)	/* dynamic ref */
-#if NO_INVISIBLE_LEVELS
 #define AC_OFFSET_ALLOCATED (-3) /* a newly allocated ref array */
-#endif
     short offset;		/* if >= 0, offset within struct */
 };
 
@@ -195,7 +189,6 @@ case 1:
     if (ptr->offset >= 0)
 	ENUM_RETURN((byte *) ptr->where - ptr->offset);
     else
-#if NO_INVISIBLE_LEVELS
 	if (ptr->offset != AC_OFFSET_ALLOCATED)
 	    ENUM_RETURN_REF(ptr->where);
 	else {
@@ -204,9 +197,6 @@ case 1:
 	       alloc_save__filter_changes. */
     	    ENUM_RETURN(0);
 	}
-#else
-	ENUM_RETURN_REF(ptr->where);
-#endif
 case 2:
     ENUM_RETURN_REF(&ptr->contents);
 ENUM_PTRS_END
@@ -219,7 +209,6 @@ private RELOC_PTRS_WITH(change_reloc_ptrs, alloc_change_t *ptr)
 	case AC_OFFSET_REF:
 	    RELOC_REF_PTR_VAR(ptr->where);
 	    break;
-#if NO_INVISIBLE_LEVELS
 	case AC_OFFSET_ALLOCATED:
 	    /* We know that ptr->where may point to an unmarked object
 	       because change_enum_ptrs skipped it,
@@ -238,7 +227,6 @@ private RELOC_PTRS_WITH(change_reloc_ptrs, alloc_change_t *ptr)
 	    if (ptr->where != 0 && !gcst->relocating_untraced)
 		ptr->where = igc_reloc_ref_ptr_nocheck(ptr->where, gcst);
 	    break;
-#endif
 	default:
 	    {
 		byte *obj = (byte *) ptr->where - ptr->offset;
@@ -292,9 +280,7 @@ private int  restore_resources(alloc_save_t *, gs_ref_memory_t *);
 private void restore_free(gs_ref_memory_t *);
 private int  save_set_new(gs_ref_memory_t * mem, bool to_new, bool set_limit, ulong *pscanned);
 private int  save_set_new_changes(gs_ref_memory_t *, bool, bool);
-#if NO_INVISIBLE_LEVELS
 private bool check_l_mark(void *obj);
-#endif
 
 /* Initialize the save/restore machinery. */
 void
@@ -384,7 +370,6 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata, ulong *psid)
 
 	if (code < 0)
 	    return code;
-#if !NO_INVISIBLE_LEVELS
 	if ((lsave->state.total_scanned += scanned) > max_repeated_scan) {
 	    /* Do a second, invisible save. */
 	    alloc_save_t *rsave;
@@ -412,9 +397,6 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata, ulong *psid)
 		print_save("save", lmem->space, lsave);
 	    }
 	}
-#else
-	(void)scanned;
-#endif
     }
     alloc_set_in_save(dmem);
     *psid = sid;
@@ -535,7 +517,6 @@ alloc_save_change(gs_dual_memory_t * dmem, const ref * pcont,
     return alloc_save_change_in(mem, pcont, where, cname);
 }
 
-#if NO_INVISIBLE_LEVELS
 /* Allocate a structure for recording an allocation event. */
 int
 alloc_save_change_alloc(gs_ref_memory_t *mem, client_name_t cname, ref_packed ***ppr)
@@ -611,8 +592,6 @@ alloc_save__filter_changes(gs_ref_memory_t *memory)
     for  (; mem; mem = &mem->saved->state)
 	alloc_save__filter_changes_in_space(mem);
 }
-
-#endif
 
 /* Return (the id of) the innermost externally visible save object, */
 /* i.e., the innermost save with a non-zero ID. */
@@ -854,11 +833,9 @@ restore_space(gs_ref_memory_t * mem, gs_dual_memory_t *dmem)
 		alloc_save_print(cp, true);
 	    }
 #endif
-#if NO_INVISIBLE_LEVELS
 	    if (cp->offset == AC_OFFSET_ALLOCATED)
 		DO_NOTHING;
 	    else
-#endif
 	    if (r_is_packed(&cp->contents))
 		*cp->where = *(ref_packed *) & cp->contents;
 	    else
@@ -1163,11 +1140,9 @@ forget_changes(gs_ref_memory_t * mem)
 	ref_packed *prp = chp->where;
 
 	if_debug1('U', "[U]forgetting change 0x%lx\n", (ulong) chp);
-#if NO_INVISIBLE_LEVELS
 	if (chp->offset == AC_OFFSET_ALLOCATED)
 	    DO_NOTHING;
 	else
-#endif
 	if (!r_is_packed(prp))
 	    r_clear_attrs((ref *) prp, l_new);
 	next = chp->next;
@@ -1244,7 +1219,6 @@ mark_allocated(void *obj, bool to_new, uint *psize)
     return 0;
 }
 
-#if NO_INVISIBLE_LEVELS
 /* Check if a block contains refs marked by garbager. */
 private bool
 check_l_mark(void *obj)
@@ -1278,7 +1252,6 @@ check_l_mark(void *obj)
     }
 #undef RP_REF
 }
-#endif
 
 /* Set or reset the l_new attribute in every relevant slot. */
 /* This includes every slot on the current change chain, */
@@ -1295,7 +1268,6 @@ save_set_new(gs_ref_memory_t * mem, bool to_new, bool set_limit, ulong *pscanned
     if (code < 0)
 	return code;
 
-#if !NO_INVISIBLE_LEVELS
     /* Handle newly allocated ref objects. */
     SCAN_MEM_CHUNKS(mem, cp) {
 	if (cp->has_refs) {
@@ -1323,7 +1295,6 @@ save_set_new(gs_ref_memory_t * mem, bool to_new, bool set_limit, ulong *pscanned
     END_CHUNKS_SCAN
 	if_debug2('u', "[u]set_new (%s) scanned %ld\n",
 		  (to_new ? "restore" : "save"), scanned);
-#endif
     *pscanned = scanned;
     return 0;
 }
@@ -1334,12 +1305,9 @@ save_set_new_changes(gs_ref_memory_t * mem, bool to_new, bool set_limit)
 {
     register alloc_change_t *chp = mem->changes;
     register uint new = (to_new ? l_new : 0);
-#if NO_INVISIBLE_LEVELS
     ulong scanned = mem->total_scanned;
-#endif
 
     for (; chp; chp = chp->next) {
-#if NO_INVISIBLE_LEVELS
 	if (chp->offset == AC_OFFSET_ALLOCATED) {
 	    if (chp->where != 0) {
 		uint size;
@@ -1349,9 +1317,7 @@ save_set_new_changes(gs_ref_memory_t * mem, bool to_new, bool set_limit)
 		    return code;
 		scanned += size;
 	    }
-	} else
-#endif
-	{
+	} else {
 	    ref_packed *prp = chp->where;
 
 	    if_debug3('U', "[U]set_new 0x%lx: (0x%lx, %d)\n",
@@ -1363,12 +1329,9 @@ save_set_new_changes(gs_ref_memory_t * mem, bool to_new, bool set_limit)
 		    (rp->tas.type_attrs & ~l_new) + new;
 	    }
 	}
-#if NO_INVISIBLE_LEVELS
 	if (mem->scan_limit == chp)
 	    break;
-#endif
     }
-#if NO_INVISIBLE_LEVELS
     if (set_limit) {
 	if (scanned >= max_repeated_scan) {
 	    mem->scan_limit = mem->changes;
@@ -1376,6 +1339,5 @@ save_set_new_changes(gs_ref_memory_t * mem, bool to_new, bool set_limit)
 	} else
 	    mem->total_scanned = scanned;
     }
-#endif
     return 0;
 }
