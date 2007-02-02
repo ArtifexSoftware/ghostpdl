@@ -47,7 +47,7 @@ FCOfontfile ReadFCOfontmap:
 24        CGOmega-Italic
 25        CGOmega-Bold
 26        CGOmega-BoldItalic
-27        Symbol
+27        SymbolMT  SymbolEncoding  FCO_Symbol
 28        CGTimes
 29        CGTimes-Italic
 30        CGTimes-Bold
