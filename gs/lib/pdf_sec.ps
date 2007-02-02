@@ -447,13 +447,6 @@ def
    {
       exch 
 	% Stack: readdata? dict parms filternames file/string
-      3 index /Length oget
-      dup 0 eq {
-	% Handle Length=0 case specially to avoid SubFileDecode semantics
-        pop pop ()
-      } {
-        () /SubFileDecode filter
-      } ifelse
       3 index /StreamKey get arc4decodefilter
       exch
    } if

@@ -913,24 +913,25 @@ pdfdict begin
 		% Stack: readdata? dict parms filternames
     2 index /File get exch
 		% Stack: readdata? dict parms file/string filternames
-    pdf_decrypt_stream		% add decryption if needed
     dup length 0 eq {
 		% All the PDF filters have EOD markers, but in this case
 		% there is no specified filter.
-      pop exch pop
-		% Stack: readdata? dict file/string
-      2 index 1 index type /filetype eq or {
+      exch dup type /filetype eq 5 index or {
               % Use length for any files or reading data from any source.
-        1 index /Length knownoget not { 0 } if
+        3 index /Length knownoget not { 0 } if
       } {
       0       % Otherwise length of 0 for whole string
       } ifelse
-      2 index /IDFlag known { pop } { () /SubFileDecode filter } ifelse
+      4 index /IDFlag known { pop } { () /SubFileDecode filter } ifelse
+      exch
+      pdf_decrypt_stream		% add decryption if needed
+      pop exch pop
     } {
                 % Stack: readdata? dict parms source filternames
       exch 3 index /Length knownoget {
         dup 0 ne { () /SubFileDecode filter } { pop } ifelse
       } if exch
+      pdf_decrypt_stream		% add decryption if needed
       applyfilters
     } ifelse
   } ifelse
