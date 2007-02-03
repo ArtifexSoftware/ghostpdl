@@ -42,6 +42,7 @@ typedef enum {
     BT_SEQ_IEEE_LSB = 129,	/* IEEE float, little-endian */
     BT_SEQ_NATIVE_MSB = 130,	/* native floats, big-endian */
     BT_SEQ_NATIVE_LSB = 131,	/* native floats, little-endian */
+#define BT_IS_SEQ(btype) (((btype) & ~3) == BT_SEQ)
     BT_INT32_MSB = 132,
     BT_INT32_LSB = 133,
     BT_INT16_MSB = 134,
@@ -132,7 +133,10 @@ typedef enum {
 #define SIZEOF_BIN_SEQ_OBJ ((uint)8)
 
 /* Forward references */
-private int scan_bin_get_name(const gs_memory_t *mem, const ref *, int, ref *);
+private int scan_bos(i_ctx_t *, ref *, scanner_state *);
+private void scan_bos_error(scanner_state *, const char *);
+private int scan_bin_scalar(i_ctx_t *, ref *, scanner_state *);
+private int scan_bin_get_name(scanner_state *, const gs_memory_t *mem, const ref *, int, ref *, const char *);
 private int scan_bin_num_array_continue(i_ctx_t *, ref *, scanner_state *);
 private int scan_bin_string_continue(i_ctx_t *, ref *, scanner_state *);
 private int scan_bos_continue(i_ctx_t *, ref *, scanner_state *);
@@ -147,86 +151,136 @@ scan_binary_token(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
 {
     stream *const s = pstate->s_file.value.pfile;
     scan_binary_state *const pbs = &pstate->s_ss.binary;
-
     s_declare_inline(s, p, rlimit);
-    int num_format, code;
-    uint arg;
+    int btype, code;
     uint wanted;
-    uint rcnt;
+
+    s_begin_inline(s, p, rlimit);
+    pbs->token_type = btype = *p;
+    wanted = bin_token_bytes[btype - MIN_BIN_TOKEN_TYPE] - 1;
+    if (rlimit - p < wanted) {
+	s_end_inline(s, p - 1, rlimit);
+	pstate->s_scan_type = scanning_none;
+	code = scan_Refill;
+    } else {
+	pbs->num_format = bin_token_num_formats[btype - MIN_BIN_TOKEN_TYPE];
+	if (BT_IS_SEQ(btype))
+	    code = scan_bos(i_ctx_p, pref, pstate);
+	else
+	    code = scan_bin_scalar(i_ctx_p, pref, pstate);
+    }
+    if (code == scan_Refill && s->end_status == EOFC)
+	code = gs_note_error(e_syntaxerror);
+    if (code < 0 && pstate->s_error.string[0] == 0)
+	snprintf(pstate->s_error.string, sizeof(pstate->s_error.string),
+		 "binary token, type=%d", btype);
+    return code;
+}
+
+/* Scan a binary object sequence. */
+private int
+scan_bos(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
+{
+    stream *const s = pstate->s_file.value.pfile;
+    scan_binary_state *const pbs = &pstate->s_ss.binary;
+    s_declare_inline(s, p, rlimit);
+    int num_format = pbs->num_format;
+    int code;
+
+    s_begin_inline(s, p, rlimit);
+    {
+	uint rcnt = rlimit - p;
+	uint top_size = p[1];
+	uint hsize, size;
+
+	if (top_size == 0) {
+	    /* Extended header (2-byte array size, 4-byte length) */
+	    ulong lsize;
+
+	    if (rcnt < 7) {
+		s_end_inline(s, p - 1, rlimit);
+		pstate->s_scan_type = scanning_none;
+		return scan_Refill;
+	    }
+	    pbs->top_size = top_size = sdecodeushort(p + 2, num_format);
+	    pbs->lsize = lsize = sdecodelong(p + 4, num_format);
+	    if (p[1] != 0) { /* reserved, must be 0 */
+		scan_bos_error(pstate, "non-zero unused field");
+		return_error(e_syntaxerror);
+	    }
+	    if ((size = lsize) != lsize) {
+		scan_bos_error(pstate, "bin obj seq length too large");
+		return_error(e_limitcheck);
+	    }
+	    hsize = 8;
+	} else {
+	    /* Normal header (1-byte array size, 2-byte length). */
+	    /* We already checked rcnt >= 3. */
+	    pbs->top_size = top_size;
+	    pbs->lsize = size = sdecodeushort(p + 2, num_format);
+	    hsize = 4;
+	}
+	if (size < hsize || (size - hsize) >> 3 < top_size) {
+	    scan_bos_error(pstate, "sequence too short");
+	    return_error(e_syntaxerror); /* size too small */
+	}
+	/*
+	 * Preallocate an array large enough for the worst case,
+	 * namely, all objects and no strings.  Note that we must
+	 * divide size by 8, not sizeof(ref), since array elements
+	 * in binary tokens always occupy 8 bytes regardless of the
+	 * size of a ref.
+	 */
+	code = ialloc_ref_array(&pbs->bin_array,
+				a_all + a_executable, size / 8,
+				"binary object sequence(objects)");
+	if (code < 0)
+	    return code;
+	p += hsize - 1;
+	size -= hsize;
+	s_end_inline(s, p, rlimit);
+	pbs->max_array_index = pbs->top_size = top_size;
+	pbs->min_string_index = pbs->size = size;
+	pbs->index = 0;
+	pstate->s_da.is_dynamic = false;
+	pstate->s_da.base = pstate->s_da.next =
+	    pstate->s_da.limit = pstate->s_da.buf;
+	code = scan_bos_continue(i_ctx_p, pref, pstate);
+	if (code == scan_Refill || code < 0) {
+	    /* Clean up array for GC. */
+	    uint index = pbs->index;
+
+	    refset_null(pbs->bin_array.value.refs + index,
+			r_size(&pbs->bin_array) - index);
+	}
+	return code;
+    }
+}
+
+/* Report an error in a binary object sequence. */
+private void
+scan_bos_error(scanner_state *pstate, const char *msg)
+{
+    snprintf(pstate->s_error.string, sizeof(pstate->s_error.string),
+	     "bin obj seq, type=%d, elements=%u, size=%lu, %s",
+	     pstate->s_ss.binary.token_type,
+	     pstate->s_ss.binary.top_size,
+	     pstate->s_ss.binary.lsize, msg);
+}
+
+/* Scan a non-sequence binary token. */
+private int
+scan_bin_scalar(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
+{
+    stream *const s = pstate->s_file.value.pfile;
+    scan_binary_state *const pbs = &pstate->s_ss.binary;
+    s_declare_inline(s, p, rlimit);
+    int num_format = pbs->num_format, code;
+    uint wanted, arg;
 
     s_begin_inline(s, p, rlimit);
     wanted = bin_token_bytes[*p - MIN_BIN_TOKEN_TYPE] - 1;
-    rcnt = rlimit - p;
-    if (rcnt < wanted) {
-	s_end_inline(s, p - 1, rlimit);
-	pstate->s_scan_type = scanning_none;
-	return scan_Refill;
-    }
-    num_format = bin_token_num_formats[*p - MIN_BIN_TOKEN_TYPE];
     switch (*p) {
-	case BT_SEQ_IEEE_MSB:
-	case BT_SEQ_IEEE_LSB:
-	case BT_SEQ_NATIVE_MSB:
-	case BT_SEQ_NATIVE_LSB:{
-		uint top_size = p[1];
-		uint hsize, size;
-
-		pbs->num_format = num_format;
-		if (top_size == 0) {
-		    /* Extended header (2-byte array size, 4-byte length) */
-		    ulong lsize;
-
-		    if (rcnt < 7) {
-			s_end_inline(s, p - 1, rlimit);
-			pstate->s_scan_type = scanning_none;
-			return scan_Refill;
-		    }
-		    if (p[1] != 0) /* reserved, must be 0 */
-			return_error(e_syntaxerror);
-		    top_size = sdecodeushort(p + 2, num_format);
-		    lsize = sdecodelong(p + 4, num_format);
-		    if ((size = lsize) != lsize)
-			return_error(e_limitcheck);
-		    hsize = 8;
-		} else {
-		    /* Normal header (1-byte array size, 2-byte length). */
-		    /* We already checked rcnt >= 3. */
-		    size = sdecodeushort(p + 2, num_format);
-		    hsize = 4;
-		}
-		if (size < hsize || (size - hsize) >> 3 < top_size)
-		    return_error(e_syntaxerror); /* size too small */
-		/*
-		 * Preallocate an array large enough for the worst case,
-		 * namely, all objects and no strings.  Note that we must
-		 * divide size by 8, not sizeof(ref), since array elements
-		 * in binary tokens always occupy 8 bytes regardless of the
-		 * size of a ref.
-		 */
-		code = ialloc_ref_array(&pbs->bin_array,
-					a_all + a_executable, size / 8,
-					"binary object sequence(objects)");
-		if (code < 0)
-		    return code;
-		p += hsize - 1;
-		size -= hsize;
-		s_end_inline(s, p, rlimit);
-		pbs->max_array_index = pbs->top_size = top_size;
-		pbs->min_string_index = pbs->size = size;
-		pbs->index = 0;
-		pstate->s_da.is_dynamic = false;
-		pstate->s_da.base = pstate->s_da.next =
-		    pstate->s_da.limit = pstate->s_da.buf;
-		code = scan_bos_continue(i_ctx_p, pref, pstate);
-		if (code == scan_Refill || code < 0) {
-		    /* Clean up array for GC. */
-		    uint index = pbs->index;
-
-		    refset_null(pbs->bin_array.value.refs + index,
-				r_size(&pbs->bin_array) - index);
-		}
-		return code;
-	    }
 	case BT_INT8:
 	    make_int(pref, (p[1] ^ 128) - 128);
 	    s_end_inline(s, p + 1, rlimit);
@@ -236,7 +290,7 @@ scan_binary_token(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
 	    if (!num_is_valid(num_format))
 		return_error(e_syntaxerror);
 	    wanted = 1 + encoded_number_bytes(num_format);
-	    if (rcnt < wanted) {
+	    if (rlimit - p < wanted) {
 		s_end_inline(s, p - 1, rlimit);
 		pstate->s_scan_type = scanning_none;
 		return scan_Refill;
@@ -307,27 +361,27 @@ scan_binary_token(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
 		return code;
 	    }
 	case BT_LITNAME_SYSTEM:
-	    code = scan_bin_get_name(imemory, system_names_p, p[1], pref);
+	    code = scan_bin_get_name(pstate, imemory, system_names_p, p[1],
+				     pref, "system");
 	    goto lname;
 	case BT_EXECNAME_SYSTEM:
-	    code = scan_bin_get_name(imemory, system_names_p, p[1], pref);
+	    code = scan_bin_get_name(pstate, imemory, system_names_p, p[1],
+				     pref, "system");
 	    goto xname;
 	case BT_LITNAME_USER:
-	    code = scan_bin_get_name(imemory, user_names_p, p[1], pref);
+	    code = scan_bin_get_name(pstate, imemory, user_names_p, p[1],
+				     pref, "user");
 	  lname:
 	    if (code < 0)
 		return code;
-	    if (!r_has_type(pref, t_name))
-		return_error(e_undefined);
 	    s_end_inline(s, p + 1, rlimit);
 	    return 0;
 	case BT_EXECNAME_USER:
-	    code = scan_bin_get_name(imemory, user_names_p, p[1], pref);
+	    code = scan_bin_get_name(pstate, imemory, user_names_p, p[1],
+				     pref, "user");
 	  xname:
 	    if (code < 0)
 		return code;
-	    if (!r_has_type(pref, t_name))
-		return_error(e_undefined);
 	    r_set_attrs(pref, a_executable);
 	    s_end_inline(s, p + 1, rlimit);
 	    return 0;
@@ -358,11 +412,19 @@ scan_binary_token(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
 
 /* Get a system or user name. */
 private int
-scan_bin_get_name(const gs_memory_t *mem, const ref *pnames /*t_array*/, int index, ref *pref)
+scan_bin_get_name(scanner_state *pstate, const gs_memory_t *mem,
+		  const ref *pnames /*t_array*/, int index, ref *pref,
+		  const char *usstring)
 {
     /* Convert all errors to e_undefined to match Adobe. */
-    if (pnames == 0 || array_get(mem, pnames, (long)index, pref) < 0)
+    if (pnames == 0 || array_get(mem, pnames, (long)index, pref) < 0 ||
+	!r_has_type(pref, t_name)) {
+	snprintf(pstate->s_error.string,
+		 sizeof(pstate->s_error.string),
+		 "%s%d", usstring, index);
+	pstate->s_error.is_name = true;
 	return_error(e_undefined);
+    }
     return 0;
 }
 
@@ -419,6 +481,7 @@ scan_bin_num_array_continue(i_ctx_t *i_ctx_p, ref * pref,
 		sbufskip(s, wanted);
 		break;
 	    case t_null:
+		scan_bos_error(pstate, "bad number format");
 		return_error(e_syntaxerror);
 	    default:
 		return code;
@@ -467,8 +530,10 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
 	    pstate->s_scan_type = scanning_binary;
 	    return scan_Refill;
 	}
-	if (p[2] != 0) /* reserved, must be 0 */
+	if (p[2] != 0) { /* reserved, must be 0 */
+	    scan_bos_error(pstate, "non-zero unused field");
 	    return_error(e_syntaxerror);
+	}
 	attrs = (p[1] & 128 ? a_executable : 0);
 	/*
 	 * We always decode all 8 bytes of the object, so we can signal
@@ -478,34 +543,44 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
 	value = sdecodelong(p + 5, num_format);
 	switch (p[1] & 0x7f) {
 	    case BS_TYPE_NULL:
-		if (osize | value) /* unused */
+		if (osize | value) { /* unused */
+		    scan_bos_error(pstate, "non-zero unused field");
 		    return_error(e_syntaxerror);
+		}
 		make_null(op);
 		break;
 	    case BS_TYPE_INTEGER:
-		if (osize)	/* unused */
+		if (osize) {	/* unused */
+		    scan_bos_error(pstate, "non-zero unused field");
 		    return_error(e_syntaxerror);
+		}
 		make_int(op, value);
 		break;
 	    case BS_TYPE_REAL:{
 		    float vreal;
 
 		    if (osize != 0) {	/* fixed-point number */
-			if (osize > 31)
+			if (osize > 31) {
+			    scan_bos_error(pstate, "invalid number format");
 			    return_error(e_syntaxerror);
+			}
 			/* ldexp requires a signed 2nd argument.... */
 			vreal = (float)ldexp((double)value, -(int)osize);
 		    } else {
 			code = sdecode_float(p + 5, num_format, &vreal);
-			if (code < 0)
+			if (code < 0) {
+			    scan_bos_error(pstate, "invalid real number");
 			    return code;
+			}
 		    }
 		    make_real(op, vreal);
 		    break;
 		}
 	    case BS_TYPE_BOOLEAN:
-		if (osize)	/* unused */
+		if (osize) {	/* unused */
+		    scan_bos_error(pstate, "non-zero unused field");
 		    return_error(e_syntaxerror);
+		}
 		make_bool(op, value != 0);
 		break;
 	    case BS_TYPE_STRING:
@@ -519,8 +594,10 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
 		}
 		if (value < max_array_index * SIZEOF_BIN_SEQ_OBJ ||
 		    value + osize > size
-		    )
+		    ) {
+		    scan_bos_error(pstate, "invalid string offset");
 		    return_error(e_syntaxerror);
+		}
 		if (value < min_string_index) {
 		    /* We have to (re)allocate the strings. */
 		    uint str_size = size - value;
@@ -549,17 +626,17 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
 	    case BS_TYPE_NAME:
 		switch (osize) {
 		    case 0:
-			if (user_names_p == NULL)
-			    return_error(e_undefined);
-			code = array_get(imemory, user_names_p, value, op);
+			code = scan_bin_get_name(pstate, imemory,
+						 user_names_p, value, op,
+						 "user");
 			goto usn;
 		    case 0xffff:
-			code = array_get(imemory, system_names_p, value, op);
+			code = scan_bin_get_name(pstate, imemory,
+						 system_names_p, value, op,
+						 "system");
 		      usn:
 			if (code < 0)
 			    return code;
-			if (!r_has_type(op, t_name))
-			    return_error(e_undefined);
 			r_set_attrs(op, attrs);
 			break;
 		    default:
@@ -571,8 +648,10 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
 	      arr:
 		if (value + osize > min_string_index ||
 		    value & (SIZEOF_BIN_SEQ_OBJ - 1)
-		    )
+		    ) {
+		    scan_bos_error(pstate, "bad array offset");
 		    return_error(e_syntaxerror);
+		}
 		{
 		    uint aindex = value / SIZEOF_BIN_SEQ_OBJ;
 
@@ -589,11 +668,14 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
 		atype = t_mixedarray;	/* mark as dictionary */
 		goto arr;
 	    case BS_TYPE_MARK:
-		if (osize | value) /* unused */
+		if (osize | value) { /* unused */
+		    scan_bos_error(pstate, "non-zero unused field");
 		    return_error(e_syntaxerror);
+		}
 		make_mark(op);
 		break;
 	    default:
+		scan_bos_error(pstate, "invalid object type");
 		return_error(e_syntaxerror);
 	}
     }

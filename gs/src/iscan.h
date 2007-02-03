@@ -70,6 +70,8 @@ typedef struct scan_binary_state_s {
     uint min_string_index;	/* smallest legal index in strings */
     uint top_size;
     uint size;
+    int token_type;		/* binary token type for error reporting */
+    ulong lsize;		/* b.o.s. size ibid. */
 } scan_binary_state;
 
 /* Define the scanner state. */
@@ -100,6 +102,17 @@ struct scanner_state_s {
 	stream_AXD_state axd;	/* string */
 	stream_PSSD_state pssd;	/* string */
     } s_ss;
+    /* The following are used only to return information for errors. */
+    struct se_ {		/* scanner error */
+	ref object;		/* normally t__invalid */
+	bool is_name;		/* true if 'string' is name, false if string */
+#define SCANNER_MAX_ERROR_STRING 120 /* adhoc, for Adobe-compatible messages */
+	char string[SCANNER_MAX_ERROR_STRING+1]; /* normally empty */
+    } s_error;
+#define SCAN_INIT_ERROR(pstate)\
+  (make_t(&(pstate)->s_error.object, t__invalid),\
+   (pstate)->s_error.is_name = false,\
+   (pstate)->s_error.string[0] = 0)
 };
 
 /* The type descriptor is public only for checking. */
@@ -148,6 +161,13 @@ int scan_string_token_options(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
 			      int options);
 #define scan_string_token(i_ctx_p, pstr, pref)\
   scan_string_token_options(i_ctx_p, pstr, pref, 0)
+
+/*
+ * Return the "error object" to be stored in $error.command instead of
+ * --token--, if any, or -1 if no special error object is required.
+ */
+int scanner_error_object(i_ctx_t *i_ctx_p, const scanner_state *pstate,
+			 ref *pseo);
 
 /*
  * Handle a scan_Refill return from scan_token.

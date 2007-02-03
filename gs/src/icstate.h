@@ -51,6 +51,7 @@ struct gs_context_state_s {
     bool keep_usertime;		/* true if context ever executed usertime */
     int in_superexec;		/* # of levels of superexec */
     /* View clipping is handled in the graphics state. */
+    ref error_object;		/* t__invalid or error object from operator */
     ref userparams;		/* t_dictionary */
     int scanner_options;	/* derived from userparams */
     bool LockFilePermissions;	/* accessed from userparams */

@@ -108,6 +108,7 @@ again:
 	default:		/* error */
 	    if (code > 0)	/* comment, not possible */
 		code = gs_note_error(e_syntaxerror);
+	    scanner_error_object(i_ctx_p, pstate, &i_ctx_p->error_object);
 	    break;
 	case scan_BOS:
 	    code = 0;
@@ -213,6 +214,7 @@ again:
 	    return ztoken_handle_comment(i_ctx_p, pstate, esp + 1, code,
 					 save, true, ztokenexec_continue);
 	default:		/* error */
+	    scanner_error_object(i_ctx_p, pstate, &i_ctx_p->error_object);
 	    break;
     }
     if (!save) {		/* Deallocate the scanner state record. */

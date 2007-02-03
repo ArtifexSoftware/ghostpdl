@@ -44,11 +44,12 @@ CLEAR_MARKS_PROC(context_state_clear_marks)
     r_clear_attrs(&pcst->stdio[0], l_mark);
     r_clear_attrs(&pcst->stdio[1], l_mark);
     r_clear_attrs(&pcst->stdio[2], l_mark);
+    r_clear_attrs(&pcst->error_object, l_mark);
     r_clear_attrs(&pcst->userparams, l_mark);
 }
 private 
 ENUM_PTRS_WITH(context_state_enum_ptrs, gs_context_state_t *pcst) {
-    index -= 5;
+    index -= 6;
     if (index < st_gs_dual_memory_num_ptrs)
 	return ENUM_USING(st_gs_dual_memory, &pcst->memory,
 			  sizeof(pcst->memory), index);
@@ -68,14 +69,18 @@ ENUM_PTRS_WITH(context_state_enum_ptrs, gs_context_state_t *pcst) {
     case 1: ENUM_RETURN_REF(&pcst->stdio[0]);
     case 2: ENUM_RETURN_REF(&pcst->stdio[1]);
     case 3: ENUM_RETURN_REF(&pcst->stdio[2]);
-    case 4: ENUM_RETURN_REF(&pcst->userparams);
+    case 4: ENUM_RETURN_REF(&pcst->error_object);
+    case 5: ENUM_RETURN_REF(&pcst->userparams);
 ENUM_PTRS_END
 private RELOC_PTRS_WITH(context_state_reloc_ptrs, gs_context_state_t *pcst);
     RELOC_PTR(gs_context_state_t, pgs);
     RELOC_USING(st_gs_dual_memory, &pcst->memory, sizeof(pcst->memory));
+    /******* WHY DON'T WE CLEAR THE l_mark OF stdio? ******/
     RELOC_REF_VAR(pcst->stdio[0]);
     RELOC_REF_VAR(pcst->stdio[1]);
     RELOC_REF_VAR(pcst->stdio[2]);
+    RELOC_REF_VAR(pcst->error_object);
+    r_clear_attrs(&pcst->error_object, l_mark);
     RELOC_REF_VAR(pcst->userparams);
     r_clear_attrs(&pcst->userparams, l_mark);
     RELOC_USING(st_dict_stack, &pcst->dict_stack, sizeof(pcst->dict_stack));
@@ -125,6 +130,7 @@ context_state_alloc(gs_context_state_t ** ppcst,
     pcst->keep_usertime = false;
     pcst->in_superexec = 0;
     pcst->plugin_list = 0;
+    make_t(&pcst->error_object, t__invalid);
     {	/*
 	 * Create an empty userparams dictionary of the right size.
 	 * If we can't determine the size, pick an arbitrary one.

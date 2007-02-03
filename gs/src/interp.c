@@ -489,6 +489,10 @@ again:
     }
     code = interp(pi_ctx_p, epref, perror_object);
     i_ctx_p = *pi_ctx_p;
+    if (!r_has_type(&i_ctx_p->error_object, t__invalid)) {
+	*perror_object = i_ctx_p->error_object;
+	make_t(&i_ctx_p->error_object, t__invalid);
+    }
     /* Prevent a dangling reference to the GC signal in ticks_left */
     /* in the frame of interp, but be prepared to do a GC if */
     /* an allocation in this routine asks for it. */
@@ -1332,6 +1336,7 @@ remap:		    if (iesp + 2 >= estop) {
 			icount = 0;
 			goto top;
 		    case e_undefined:	/* //name undefined */
+			scanner_error_object(i_ctx_p, &sstate, &token);
 			return_with_error(code, &token);
 		    case scan_EOF:	/* end of file */
 			esfile_clear_cache();
@@ -1397,7 +1402,9 @@ remap:		    if (iesp + 2 >= estop) {
 		    }
 			goto scan_cont;
 		    default:	/* error */
-			return_with_code_iref();
+			ref_assign_inline(&token, IREF);
+			scanner_error_object(i_ctx_p, &sstate, &token);
+			return_with_error(code, &token);
 		}
 	    }
 	case exec(t_string):
@@ -1442,7 +1449,9 @@ remap:		    if (iesp + 2 >= estop) {
 		    case scan_Refill:	/* error */
 			code = gs_note_error(e_syntaxerror);
 		    default:	/* error */
-			return_with_code_iref();
+			ref_assign_inline(&token, IREF);
+			scanner_error_object(i_ctx_p, &sstate, &token);
+			return_with_error(code, &token);
 		}
 	    }
 	    /* Handle packed arrays here by re-dispatching. */
@@ -1795,6 +1804,8 @@ zerrorexec(i_ctx_t *i_ctx_p)
     code = zexec(i_ctx_p);
     if (code >= 0)
 	pop(1);
+    else
+	esp -= 3;		/* undo our additions to estack */
     return code;
 }
 

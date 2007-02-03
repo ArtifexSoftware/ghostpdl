@@ -15,6 +15,7 @@
 /* Token scanner for Ghostscript interpreter */
 #include "ghost.h"
 #include "memory_.h"
+#include "string_.h"
 #include "stream.h"
 #include "ierrors.h"
 #include "btoken.h"		/* for ref_binary_object_format */
@@ -174,18 +175,21 @@ CLEAR_MARKS_PROC(scanner_clear_marks)
 
     r_clear_attrs(&ssptr->s_file, l_mark);
     r_clear_attrs(&ssarray, l_mark);
+    r_clear_attrs(&ssptr->s_error.object, l_mark);
 }
 private 
 ENUM_PTRS_WITH(scanner_enum_ptrs, scanner_state *ssptr) return 0;
 case 0:
     ENUM_RETURN_REF(&ssptr->s_file);
 case 1:
+    ENUM_RETURN_REF(&ssptr->s_error.object);
+case 2:
     if (ssptr->s_scan_type == scanning_none ||
 	!ssptr->s_da.is_dynamic
 	)
 	ENUM_RETURN(0);
     return ENUM_STRING2(ssptr->s_da.base, da_size(&ssptr->s_da));
-case 2:
+case 3:
     if (ssptr->s_scan_type != scanning_binary)
 	return 0;
     ENUM_RETURN_REF(&ssarray);
@@ -208,6 +212,8 @@ private RELOC_PTRS_WITH(scanner_reloc_ptrs, scanner_state *ssptr)
 	RELOC_REF_VAR(ssarray);
 	r_clear_attrs(&ssarray, l_mark);
     }
+    RELOC_REF_VAR(ssptr->s_error.object);
+    r_clear_attrs(&ssptr->s_error.object, l_mark);
 }
 RELOC_PTRS_END
 /* Structure type */
@@ -221,6 +227,7 @@ scanner_init_options(scanner_state *sstate, const ref *fop, int options)
     sstate->s_scan_type = scanning_none;
     sstate->s_pstack = 0;
     sstate->s_options = options;
+    SCAN_INIT_ERROR(sstate);
 }
 void scanner_init_stream_options(scanner_state *sstate, stream *s,
 				 int options)
@@ -233,6 +240,41 @@ void scanner_init_stream_options(scanner_state *sstate, stream *s,
 
     make_file(&fobj, a_read, 0, s);
     scanner_init_options(sstate, &fobj, options);
+}
+
+/*
+ * Return the "error object" to be stored in $error.command instead of
+ * --token--, if any, or <0 if no special error object is available.
+ */
+int
+scanner_error_object(i_ctx_t *i_ctx_p, const scanner_state *pstate,
+		     ref *pseo)
+{
+    if (!r_has_type(&pstate->s_error.object, t__invalid)) {
+	ref_assign(pseo, &pstate->s_error.object);
+	return 0;
+    }
+    if (pstate->s_error.string[0]) {
+	int len = strlen(pstate->s_error.string);
+
+	if (pstate->s_error.is_name) {
+	    int code = name_ref(imemory, pstate->s_error.string, len, pseo, 1);
+
+	    if (code < 0)
+		return code;
+	    r_set_attrs(pseo, a_executable); /* Adobe compatibility */
+	    return 0;
+	} else {
+	    byte *estr = ialloc_string(len, "scanner_error_object");
+
+	    if (estr == 0)
+		return -1;		/* VMerror */
+	    memcpy(estr, (const byte *)pstate->s_error.string, len);
+	    make_string(pseo, a_all | icurrent_space, len, estr);
+	    return 0;
+	}
+    }
+    return -1;			/* no error object */
 }
 
 /* Handle a scan_Refill return from scan_token. */
@@ -353,6 +395,7 @@ scan_comment(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate,
 
 /* Read a token from a string. */
 /* Update the string if succesful. */
+/* Store the error object in i_ctx_p->error_object if not. */
 int
 scan_string_token_options(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
 			  int options)
@@ -386,6 +429,8 @@ scan_string_token_options(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
 	case scan_EOF:
 	    break;
     }
+    if (code < 0)
+	scanner_error_object(i_ctx_p, &state, &i_ctx_p->error_object);
     return code;
 }
 
@@ -415,8 +460,6 @@ scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
 
 #define sreturn(code)\
   { retcode = gs_note_error(code); goto sret; }
-#define sreturn_no_error(code)\
-  { scan_end_inline(); return(code); }
 #define if_not_spush1()\
   if ( osp < ostop ) osp++;\
   else if ( (retcode = ref_stack_push(&o_stack, 1)) >= 0 )\
@@ -507,6 +550,7 @@ scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
     pdepth = pstate->s_pdepth;
     ref_assign(&sstate.s_file, &pstate->s_file);
     sstate.s_options = pstate->s_options;
+    SCAN_INIT_ERROR(&sstate);
     scan_begin_inline();
     /*
      * Loop invariants:
@@ -1131,10 +1175,13 @@ scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
 		    {
 			ref *pvalue;
 
-			if (!r_has_type(myref, t_name))
+			if (!r_has_type(myref, t_name) ||
+			    (pvalue = dict_find_name(myref)) == 0) {
+			    ref_assign(&sstate.s_error.object, myref);
+			    r_set_attrs(&sstate.s_error.object,
+				a_executable); /* Adobe compatibility */
 			    sreturn(e_undefined);
-			if ((pvalue = dict_find_name(myref)) == 0)
-			    sreturn(e_undefined);
+			}
 			if (pstack != 0 &&
 			    r_space(pvalue) > ialloc_space(idmemory)
 			    )
@@ -1145,6 +1192,7 @@ scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
     }
   sret:if (retcode < 0) {
 	scan_end_inline();
+	pstate->s_error = sstate.s_error;
 	if (pstack != 0) {
 	    if (retcode == e_undefined)
 		*pref = *osp;	/* return undefined name as error token */
