@@ -258,7 +258,7 @@ scanner_error_object(i_ctx_t *i_ctx_p, const scanner_state *pstate,
 	int len = strlen(pstate->s_error.string);
 
 	if (pstate->s_error.is_name) {
-	    int code = name_ref(imemory, pstate->s_error.string, len, pseo, 1);
+	    int code = name_ref(imemory, (const byte *)pstate->s_error.string, len, pseo, 1);
 
 	    if (code < 0)
 		return code;

@@ -68,6 +68,8 @@ int unlink(const char *);
 #if defined(_MSC_VER)
 #  define fdopen(handle,mode) _fdopen(handle,mode)
 #  define fileno(file) _fileno(file)
+/* Microsoft Visual C++ 2005  doesn't properly define snprintf  */
+int snprintf(char *buffer, size_t count, const char *format , ...);
 #endif
 
 #endif /* stdio__INCLUDED */

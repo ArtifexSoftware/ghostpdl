@@ -46,6 +46,7 @@
 #include "gsexit.h"
 
 #include "windows_.h"
+#include <stdarg.h>
 #include <shellapi.h>
 #include <winspool.h>
 #include "gp_mswin.h"
@@ -715,4 +716,17 @@ int gp_fseek_64(FILE *strm, int64_t offset, int origin)
 #else
     return _fseeki64(strm, offset, origin);
 #endif
+}
+
+/* -------------------------  _snprintf -----------------------------*/
+
+/* Microsoft Visual C++ 2005  doesn't properly define snprintf,
+   which is defined in the C standard ISO/IEC 9899:1999 (E) */
+
+int snprintf(char *buffer, size_t count, const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+
+    return vsnprintf_s(buffer, count, count - 1, format, args);
 }
