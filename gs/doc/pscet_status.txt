@@ -4306,7 +4306,7 @@ Test	 Status	Comments
 
 23-32-3  OK	Fixed as of rev 7598.
 
-23-32-4  DIFF	Binary token parser problem. CPSI matches Tek. Assign: Peter
+23-32-4  OK	fixed in rev 7672 (Peter)
 
 23-32-5  OK	
 
