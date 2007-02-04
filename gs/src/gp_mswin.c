@@ -725,8 +725,15 @@ int gp_fseek_64(FILE *strm, int64_t offset, int origin)
 
 int snprintf(char *buffer, size_t count, const char *format, ...)
 {
-    va_list args;
-    va_start(args, format);
+    if (count > 0) {
+	va_list args;
+	int n; 
 
-    return vsnprintf_s(buffer, count, count - 1, format, args);
+	va_start(args, format);
+	n = _vsnprintf(buffer, count, format, args);
+	buffer[count - 1] = 0;
+	va_end(args);
+	return n;
+    } else
+	return 0;
 }
