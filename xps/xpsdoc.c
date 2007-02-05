@@ -8,6 +8,22 @@
 #define CT_FIXDOCSEQ "application/vnd.ms-package.xps-fixeddocumentsequence+xml"
 #define CT_FIXPAGE "application/vnd.ms-package.xps-fixedpage+xml"
 
+static void
+xps_absolute_path(char *output, char *pwd, char *path)
+{
+    if (path[0] == '/')
+    {
+	strcpy(output, path);
+    }
+    else
+    {
+	strcpy(output, pwd);
+	strcat(output, "/");
+	strcat(output, path);
+    }
+    xps_clean_path(output);
+}
+
 /*
  * Content types are stored in two separate binary trees.
  * One lists Override entries, which map a part name to a type.
@@ -141,7 +157,7 @@ xps_get_content_type(xps_context_t *ctx, char *partname)
     char *extension;
     char *type;
 
-    dprintf1("getting type for part '%s'...\n", partname);
+    dprintf1("getting type for part '%s'\n", partname);
 
     type = xps_find_override(ctx->overrides, partname);
     if (type)
@@ -184,9 +200,7 @@ xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type)
 
     /* dprintf3("Relation source=%s target=%s type=%s\n", source, target, type); */
 
-    for (part = ctx->first_part; part; part = part->next)
-	if (!strcmp(part->name, source))
-	    break;
+    part = xps_find_part(ctx, source);
 
     /* No existing part found. Create a blank part and hook it in. */
     if (part == NULL)
@@ -322,7 +336,6 @@ xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
     {
 	ctx->first_page = page;
 	ctx->last_page = page;
-	ctx->next_page = page;
     }
     else
     {
@@ -330,7 +343,7 @@ xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
 	ctx->last_page = page;
     }
 
-    /* we processed to the end already... */
+    /* first page, or we processed all the previous pages */
     if (ctx->next_page == NULL)
 	ctx->next_page = page;
 
@@ -394,6 +407,7 @@ xps_handle_metadata(void *zp, char *name, char **atts)
     {
 	char srcbuf[1024];
 	char tgtbuf[1024];
+	char dirbuf[1024];
 	char *target = NULL;
 	char *type = NULL;
 	char *p;
@@ -421,18 +435,12 @@ xps_handle_metadata(void *zp, char *name, char **atts)
 		*p = 0;
 	    }
 
-	    if (target[0] != '/')
-	    {
-		strcpy(tgtbuf, srcbuf);
-		strcat(tgtbuf, "/");
-		strcat(tgtbuf, target);
-	    }
-	    else
-	    {
-		strcpy(tgtbuf, target);
-	    }
+	    strcpy(dirbuf, srcbuf);
+	    p = strrchr(dirbuf, '/');
+	    if (p)
+		p[1] = 0;
 
-	    xps_clean_path(tgtbuf);
+	    xps_absolute_path(tgtbuf, dirbuf, target);
 
 	    xps_add_relation(ctx, srcbuf, tgtbuf, type);
 	}
@@ -451,9 +459,7 @@ xps_handle_metadata(void *zp, char *name, char **atts)
 
 	if (source)
 	{
-	    // TODO: can these be relative?
-	    strcpy(srcbuf, source);
-	    xps_clean_path(srcbuf);
+	    xps_absolute_path(srcbuf, ctx->pwd, source);
 	    xps_add_fixed_document(ctx, srcbuf);
 	}
     }
@@ -461,9 +467,9 @@ xps_handle_metadata(void *zp, char *name, char **atts)
     if (!strcmp(name, "PageContent"))
     {
 	char *source = NULL;
+	char srcbuf[1024];
 	int width = 0;
 	int height = 0;
-	char srcbuf[1024];
 
 	for (i = 0; atts[i]; i += 2)
 	{
@@ -477,9 +483,7 @@ xps_handle_metadata(void *zp, char *name, char **atts)
 
 	if (source)
 	{
-	    // TODO: can these be relative?
-	    strcpy(srcbuf, source);
-	    xps_clean_path(srcbuf);
+	    xps_absolute_path(srcbuf, ctx->pwd, source);
 	    xps_add_fixed_page(ctx, srcbuf, width, height);
 	}
     }
@@ -489,6 +493,13 @@ static int
 xps_process_metadata(xps_context_t *ctx, xps_part_t *part)
 {
     XML_Parser xp;
+    char *s;
+
+    /* Save directory name part */
+    strcpy(ctx->pwd, part->name);
+    s = strrchr(ctx->pwd, '/');
+    if (s)
+	s[1] = 0;
 
     xp = XML_ParserCreate(NULL);
     if (!xp)
@@ -554,17 +565,25 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
 
     if (!ctx->start_part)
     {
-	xps_part_t *p;
-	xps_relation_t *r;
-	for (p = ctx->first_part; p; p = p->next)
-	    if (!strcmp(p->name, "/"))
-		for (r = p->relations; r; r = r->next)
-		    if (!strcmp(r->type, REL_START_PART))
-		    {
-			ctx->start_part = r->target;
-			dprintf1("milestone: we have a start part '%s'\n", ctx->start_part);
-		    }
+	xps_part_t *rootpart = xps_find_part(ctx, "/");
+	if (rootpart)
+	{
+	    xps_relation_t *rel;
+	    for (rel = rootpart->relations; rel; rel = rel->next)
+	    {
+		if (!strcmp(rel->type, REL_START_PART))
+		{
+		    ctx->start_part = rel->target;
+		    dprintf1("milestone: we have a start part '%s'\n", ctx->start_part);
+		}
+	    }
+	}
     }
+
+    /*
+     * Read the start part (which is a FixedDocumentSequence) if it
+     * is the current part.
+     */
 
     if (ctx->start_part)
     {
@@ -575,45 +594,39 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
     }
 
     /*
-     * Now we have to start following the chain of fixdoc and page
-     * parts that we have so far read and parse as far as we can.
+     * Follow the FixedDocumentSequence and parse the
+     * listed FixedDocuments that we have available.
      */
 
     for (fixdoc = ctx->first_fixdoc; fixdoc; fixdoc = fixdoc->next)
     {
-	xps_part_t *p;
-	int okay = 0;
-	for (p = ctx->first_part; p; p = p->next)
+	xps_part_t *fixdocpart = xps_find_part(ctx, fixdoc->name);
+	if (fixdocpart)
 	{
-	    if (!strcmp(fixdoc->name, p->name))
-	    {
-		xps_process_metadata(ctx, p);
-		okay = p->complete;
-	    }
+	    xps_process_metadata(ctx, fixdocpart);
+	    if (!fixdocpart->complete)
+		break; /* incomplete fixdocpart, try parsing more later */
 	}
-	if (!okay)
-	    break;
     }
 
-#if 0
-    type = xps_get_content_type(ctx, part->name);
-    if (type)
+    /*
+     * If we know which page part is next, check if we
+     * have all the page dependencies. If everything is
+     * ready: parse and render.
+     */
+
+    while (ctx->next_page)
     {
-	dprintf2("found content type for part %s = %s\n", part->name, type);
-	if (!strcmp(type, "application/vnd.ms-package.xps-fixeddocument+xml"))
+	xps_part_t *pagepart = xps_find_part(ctx, ctx->next_page->name);
+	if (pagepart && pagepart->complete)
 	{
-	    xps_process_metadata(ctx, part);
+	    /* TODO: Check required resources */
+	    dprintf1("PROCESSING PAGE '%s'.\n", pagepart->name);
+	    ctx->next_page = ctx->next_page->next;
 	}
-	if (!strcmp(type, "application/vnd.ms-package.xps-fixeddocumentsequence+xml"))
-	{
-	    xps_process_metadata(ctx, part);
-	}
-	if (!strcmp(type, "application/vnd.ms-package.xps-fixedpage+xml"))
-	{
-	    dputs("Ooo! Oo! A page!\n");
-	}
+	else
+	    break;
     }
-#endif
 
     return 0;
 }

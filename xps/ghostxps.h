@@ -88,6 +88,8 @@ struct xps_context_s
     unsigned int zip_uncompressed_size;
     z_stream zip_stream;
     char zip_file_name[2048];
+
+    char pwd[1024]; /* directory name of current xml part being processed */
 };
 
 struct xps_part_s
@@ -103,6 +105,7 @@ struct xps_part_s
 
 xps_part_t * xps_new_part(xps_context_t *ctx, char *name, int capacity);
 void xps_free_part(xps_context_t *ctx, xps_part_t *part);
+xps_part_t *xps_find_part(xps_context_t *ctx, char *name);
 int xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type);
 
 typedef struct xps_parser_s xps_parser_t;

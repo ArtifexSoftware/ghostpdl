@@ -3,6 +3,50 @@
 #define ZIP_LOCAL_FILE_SIG 0x04034b50
 #define ZIP_DATA_DESC_SIG 0x08074b50
 
+static inline int
+read1(xps_context_t *ctx, stream_cursor_read *buf)
+{
+    buf->ptr++;
+    return *buf->ptr;
+}
+
+static inline int
+read2(xps_context_t *ctx, stream_cursor_read *buf)
+{
+    int a = read1(ctx, buf);
+    int b = read1(ctx, buf);
+    return a | (b << 8);
+}
+
+static inline int
+read4(xps_context_t *ctx, stream_cursor_read *buf)
+{
+    int a = read1(ctx, buf);
+    int b = read1(ctx, buf);
+    int c = read1(ctx, buf);
+    int d = read1(ctx, buf);
+    return a | (b << 8) | (c << 16) | (d << 24);
+}
+
+static inline void
+readall(xps_context_t *ctx, stream_cursor_read *buf, byte *str, int n)
+{
+    while (n--)
+	*str++ = read1(ctx, buf);
+}
+
+static void *
+xps_zip_alloc_items(xps_context_t *ctx, int items, int size)
+{
+    return xps_alloc(ctx, items * size);
+}
+
+static void 
+xps_zip_free(xps_context_t *ctx, void *ptr)
+{
+    xps_free(ctx, ptr);
+}
+
 xps_part_t *
 xps_new_part(xps_context_t *ctx, char *name, int capacity)
 {
@@ -62,51 +106,7 @@ xps_free_part(xps_context_t *ctx, xps_part_t *part)
     xps_free(ctx, part);
 }
 
-static inline int
-read1(xps_context_t *ctx, stream_cursor_read *buf)
-{
-    buf->ptr++;
-    return *buf->ptr;
-}
-
-static inline int
-read2(xps_context_t *ctx, stream_cursor_read *buf)
-{
-    int a = read1(ctx, buf);
-    int b = read1(ctx, buf);
-    return a | (b << 8);
-}
-
-static inline int
-read4(xps_context_t *ctx, stream_cursor_read *buf)
-{
-    int a = read1(ctx, buf);
-    int b = read1(ctx, buf);
-    int c = read1(ctx, buf);
-    int d = read1(ctx, buf);
-    return a | (b << 8) | (c << 16) | (d << 24);
-}
-
-static inline void
-readall(xps_context_t *ctx, stream_cursor_read *buf, byte *str, int n)
-{
-    while (n--)
-	*str++ = read1(ctx, buf);
-}
-
-static void *
-xps_zip_alloc_items(xps_context_t *ctx, int items, int size)
-{
-    return xps_alloc(ctx, items * size);
-}
-
-static void 
-xps_zip_free(xps_context_t *ctx, void *ptr)
-{
-    xps_free(ctx, ptr);
-}
-
-static xps_part_t *
+xps_part_t *
 xps_find_part(xps_context_t *ctx, char *name)
 {
     xps_part_t *part;
