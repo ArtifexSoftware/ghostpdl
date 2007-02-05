@@ -210,9 +210,8 @@ Test	 Status	Comments
 09-19-4	 OK	Verified visually against Tek hardcopy. RJJ
 		cpsi/09-19-5  missing
 
-09-20-1  DIFF	Device Dependent: different default screen (OK), but GS has
-		gcheck=T, xcheck=T for default screen. GS matches Tek on the
-		rest. assign: Ray
+09-20-1  AOK	Device Dependent: different default screen (OK)
+		GS matches Tek on the rest.
 
 09-20-2  OK	Device Dependent: Matches Tek hardcopy and checksum. RJJ
 
@@ -221,8 +220,7 @@ Test	 Status	Comments
 09-20-4  DIFF	Device Dependent, Resolution dependent. Tek and CPSI differ
 		GS almost matches Tek hardcopy except "Actual Angle" when
 		AccurateScreens=true is 100.6 for GS (100.0 for Tek) and
-		GS shows "100 27" instead of "100.0 27.0"
-		than what Tek shows. Assign: Ray
+		GS shows "100 27" instead of "100.0 27.0" Assign: Ray
 
 09-20-5  OK	
 
@@ -639,7 +637,6 @@ Test	 Status	Comments
 
 09-40-2   AOK	GS is contone, Tek is dithered, otherwise GS matches Tek.
 		CPSI ignores transfer function.
-		(the last 2 test must print mirrored images).  Assign: Ray
 
 09-40-20  OK	Minor differences visually reviewed by RJJ
 
