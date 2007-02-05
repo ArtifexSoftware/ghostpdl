@@ -380,7 +380,9 @@ currentdict end readonly def
         % A single pair.
         exch pop exch pop exch pop exch        % e [] i (values) offset
         4 index null ne {
-          4 index exch get
+          4 index length 1 index gt {
+            4 index exch get
+          } if
         } if                                   % e [] i (values) cid|name
         exch 
         PDFDEBUG {
