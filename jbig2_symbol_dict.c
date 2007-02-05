@@ -35,6 +35,7 @@
 #include "jbig2_generic.h"
 #include "jbig2_mmr.h"
 #include "jbig2_symbol_dict.h"
+#include "jbig2_text.h"
 
 #if defined(OUTPUT_PBM) || defined(DUMP_SYMDICT)
 #include <stdio.h>
@@ -391,10 +392,68 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		    "aggregate symbol coding (%d instances)", REFAGGNINST);
 
 		  if (REFAGGNINST > 1) {
-		      code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-			"aggregate coding with REFAGGNINST=%d", REFAGGNINST);
+		      /* multiple symbols are embedded text regions */ 
+		      Jbig2TextRegionParams rparams;
+		      Jbig2SymbolDict *SBSYMS[2];
+		      Jbig2Image *image;
+
+		      rparams.SBHUFF = params->SDHUFF;
+		      rparams.SBREFINE = 1;
+		      rparams.SBDEFPIXEL = 0;
+		      rparams.SBCOMBOP = JBIG2_COMPOSE_OR;
+		      rparams.TRANSPOSED = 0;
+		      rparams.REFCORNER = JBIG2_CORNER_TOPLEFT;
+		      rparams.SBDSOFFSET = 0;
+		      rparams.SBNUMINSTANCES = REFAGGNINST;
+		      rparams.LOGSBSTRIPS = 0;
+		      rparams.SBSTRIPS = 1;
+		      if (rparams.SBHUFF) {
+			rparams.SBHUFFFS = jbig2_build_huffman_table(ctx,
+				&jbig2_huffman_params_F);
+			rparams.SBHUFFDS = jbig2_build_huffman_table(ctx,
+				&jbig2_huffman_params_H);
+			rparams.SBHUFFDT = jbig2_build_huffman_table(ctx,
+				&jbig2_huffman_params_K);
+			rparams.SBHUFFRDW = jbig2_build_huffman_table(ctx,
+				&jbig2_huffman_params_O);
+			rparams.SBHUFFRDH = jbig2_build_huffman_table(ctx,
+				&jbig2_huffman_params_O);
+			rparams.SBHUFFRDX = jbig2_build_huffman_table(ctx,
+				&jbig2_huffman_params_O);
+			rparams.SBHUFFRDY = jbig2_build_huffman_table(ctx,
+				&jbig2_huffman_params_O);
+			rparams.SBHUFFRSIZE = jbig2_build_huffman_table(ctx,
+				&jbig2_huffman_params_A);
+		      }
+		      rparams.SBRTEMPLATE = params->SDRTEMPLATE;
+		      rparams.sbrat[0] = params->sdrat[0];
+		      rparams.sbrat[1] = params->sdrat[1];
+		      rparams.sbrat[2] = params->sdrat[2];
+		      rparams.sbrat[3] = params->sdrat[3];
+
+		      SBSYMS[0] = params->SDINSYMS;
+		      SBSYMS[1] = SDNEWSYMS;
+		      image = jbig2_image_new(ctx, SYMWIDTH, HCHEIGHT);
+		      code = jbig2_decode_text_region(ctx, segment, &rparams,
+			(const Jbig2SymbolDict * const *)SBSYMS, 2, 
+			image, data, size, NULL);
+		      jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+			"text region decode returned %d", code);
+
+		      if (rparams.SBHUFF) {
+			jbig2_release_huffman_table(ctx, rparams.SBHUFFFS);
+			jbig2_release_huffman_table(ctx, rparams.SBHUFFDS);
+			jbig2_release_huffman_table(ctx, rparams.SBHUFFDT);
+			jbig2_release_huffman_table(ctx, rparams.SBHUFFRDW);
+			jbig2_release_huffman_table(ctx, rparams.SBHUFFRDH);
+			jbig2_release_huffman_table(ctx, rparams.SBHUFFRDX);
+			jbig2_release_huffman_table(ctx, rparams.SBHUFFRDY);
+			jbig2_release_huffman_table(ctx, rparams.SBHUFFRSIZE);	
+		      }
+		
+		      code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
+			"NYI aggregate coding with REFAGGNINST=%d", REFAGGNINST);
 		      return NULL;
-		      /* todo: multiple symbols are like a text region */
 		  } else {
 		      /* 6.5.8.2.2 */
 		      bool SBHUFF = params->SDHUFF;

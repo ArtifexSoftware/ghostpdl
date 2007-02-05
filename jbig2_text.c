@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (C) 2002-2005 artofcode LLC.
+    Copyright (C) 2002-2006 artofcode LLC.
     
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
@@ -32,43 +32,7 @@
 #include "jbig2_huffman.h"
 #include "jbig2_generic.h"
 #include "jbig2_symbol_dict.h"
-
-typedef enum {
-    JBIG2_CORNER_BOTTOMLEFT = 0,
-    JBIG2_CORNER_TOPLEFT = 1,
-    JBIG2_CORNER_BOTTOMRIGHT = 2,
-    JBIG2_CORNER_TOPRIGHT = 3
-} Jbig2RefCorner;
-
-typedef struct {
-    bool SBHUFF;
-    bool SBREFINE;
-    bool SBDEFPIXEL;
-    Jbig2ComposeOp SBCOMBOP;
-    bool TRANSPOSED;
-    Jbig2RefCorner REFCORNER;
-    int SBDSOFFSET;
-    /* SBW */
-    /* SBH */
-    uint32_t SBNUMINSTANCES;
-    int LOGSBSTRIPS;
-    int SBSTRIPS;
-    /* SBNUMSYMS */
-    /* SBSYMCODES */
-    /* SBSYMCODELEN */
-    /* SBSYMS */
-    Jbig2HuffmanTable *SBHUFFFS;
-    Jbig2HuffmanTable *SBHUFFDS;
-    Jbig2HuffmanTable *SBHUFFDT;
-    Jbig2HuffmanTable *SBHUFFRDW;
-    Jbig2HuffmanTable *SBHUFFRDH;
-    Jbig2HuffmanTable *SBHUFFRDX;
-    Jbig2HuffmanTable *SBHUFFRDY;
-    Jbig2HuffmanTable *SBHUFFRSIZE;
-    bool SBRTEMPLATE;
-    int8_t sbrat[4];
-} Jbig2TextRegionParams;
-
+#include "jbig2_text.h"
 
 /**
  * jbig2_decode_text_region: decode a text region segment
@@ -87,7 +51,7 @@ typedef struct {
  *
  * returns: 0 on success
  **/
-static int
+int
 jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
                              const Jbig2TextRegionParams *params,
                              const Jbig2SymbolDict * const *dicts, const int n_dicts,
