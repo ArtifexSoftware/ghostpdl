@@ -640,8 +640,12 @@ end
 	3 index
 	  dup dup type /arraytype eq { 0 get } if
 	  //csncompdict exch get exec mul
-	string readstring pop
-		% Stack: filepos /Indexed basespace hival table
+	string dup 3 1 roll readstring pop  % the string is padded with 0s
+        length 1 index length lt {
+          (   **** Warning: Short look-up table in the Indexed color space was padded with 0's.\n)
+          pdfformaterror
+        } if
+		% Stack: filepos /Indexed basespace hival table table'
 	5 -1 roll PDFfile exch setfileposition
     }
     if 4 array astore
