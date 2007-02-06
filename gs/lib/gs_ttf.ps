@@ -1671,6 +1671,7 @@ currentdict /postalias undef
 /.pdfcharkeys {
 	% The following algorithms are per the PDF Reference, Second Edition
 	% (PDF 1.3 reference manual).
+  TTFDEBUG { (.pdfcharkeys beg) = } if
   is_symbolic {
     <00030001> .findcmap {
       %
@@ -1684,9 +1685,16 @@ currentdict /postalias undef
       %
       (   **** Warning: Embedded symbolic TT fonts should not contain a cmap for Platform=3 Encoding=1.\n)
         pdfformaterror
-      TTFDEBUG { (Using cmap 3.1) = } if
-      AdobeGlyphList .pdfmapchars 
-      /Encoding /WinAnsiEncoding .findencoding
+      prebuilt_encoding null ne {
+        % Bug 689083.
+        TTFDEBUG { (Using cmap 3.0 with prebuilt_encoding.) = } if
+        prebuilt_encoding .invert_encoding .pdfmapchars
+        /Encoding prebuilt_encoding
+      } {
+        TTFDEBUG { (Using cmap 3.1 with WinAnsiEncoding) = } if
+        AdobeGlyphList .pdfmapchars 
+        /Encoding /WinAnsiEncoding .findencoding
+      } ifelse
     } {
       %
       % Adobe PDF spec says that in this case PDF interpreter should
@@ -1783,6 +1791,7 @@ currentdict /postalias undef
       } ifelse
     } ifelse
   } ifelse
+  TTFDEBUG { (.pdfcharkeys end) = } if
 } bind def
 
 % <file> <is_symbolic> <Encoding|null> .loadpdfttfont <type42font>
