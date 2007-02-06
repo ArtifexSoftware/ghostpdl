@@ -1728,40 +1728,32 @@ currentdict /postalias undef
         % This is illegal with PDF spec.
         (   **** Warning: Embedded symbolic TT fonts must contain a cmap for Platform=1 Encoding=0.\n)
         pdfformaterror
-        % Try to map Unicode to SymbolEncoding
-        <00030001> .findcmap {
-          TTFDEBUG { (Using cmap 3.1) = } if
-  	  /.allow_uniXXXX_glyph_names //true def
-          AdobeGlyphList .pdfmapchars
-          /Encoding /SymbolEncoding .findencoding
-        } {
-          % Apply the default algorithm. Hopely it has 'post'.
-          .charkeys
-          % check if the CharStrings dict contains glyphs needed by the
-	  % prebuilt_encoding otherwise try the 3,0 cmap.
-	  prebuilt_encoding null ne {
-	    false prebuilt_encoding {	% false means no missing glyphs
-	      4 index exch known not { pop true exit } if
-            } forall
-            {
-	      (   **** Warning: Encoding derived from 'post' is incomplete.\n)
-	      pdfformaterror
-	      % Try another cmap format 3,0 -- Adobe doesn't mention it, but does
-	      % use it apparently (empirically determined).
-	      <00030000> .findcmap {
-	        TTFDEBUG { (Adding cmap 3.0) = } if
-   		5 1 roll pop pop pop pop             
-		prebuilt_encoding null ne {
-		  prebuilt_encoding .invert_encoding .pdfmapchars
-		  /Encoding prebuilt_encoding
-		} {
-		  AdobeGlyphList .pdfmapchars
-		  /Encoding /SymbolEncoding .findencoding
-		} ifelse
-	      } if
-            }if
+        % Apply the default algorithm. Hopely it has 'post'.
+        .charkeys
+        % check if the CharStrings dict contains glyphs needed by the
+        % prebuilt_encoding otherwise try the 3,0 cmap.
+	prebuilt_encoding null ne {
+	  false prebuilt_encoding {	% false means no missing glyphs
+	    4 index exch known not { pop true exit } if
+          } forall
+          {
+	    (   **** Warning: Encoding derived from 'post' is incomplete.\n)
+	    pdfformaterror
+	    % Try another cmap format 3,0 -- Adobe doesn't mention it, but does
+	    % use it apparently (empirically determined).
+	    <00030000> .findcmap {
+	      TTFDEBUG { (Adding cmap 3.0) = } if
+   	      5 1 roll pop pop pop pop             
+	      prebuilt_encoding null ne {
+	      prebuilt_encoding .invert_encoding .pdfmapchars
+	      /Encoding prebuilt_encoding
+	    } {
+	      AdobeGlyphList .pdfmapchars
+	      /Encoding /SymbolEncoding .findencoding
+	      } ifelse
+	    } if
           } if
-        } ifelse
+        } if
       } ifelse
     } ifelse
   } {
