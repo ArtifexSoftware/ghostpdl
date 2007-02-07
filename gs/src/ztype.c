@@ -184,14 +184,14 @@ znoaccess(i_ctx_t *i_ctx_p)
 
     check_op(1);
     if (r_has_type(op, t_dictionary)) {
-	ref *fid;
+	ref *aop = dict_access_ref(op);
+	
+	/* CPSI throws invalidaccess when seting noaccess to a readonly dictionary (CET 13-13-6) : */
+	if (!r_has_attrs(aop, a_write))
+	    return_error(e_invalidaccess);
 
 	/* Don't allow removing read access to permanent dictionaries. */
 	if (dict_is_permanent_on_dstack(op))
-	    return_error(e_invalidaccess);
-	/* CPSI throws invalidaccess when seting noaccess to a font (CET 13-13-6) : */
-	if (dict_find_string(op, "FID", &fid) > 0 &&
-	    r_type(fid) == t_fontID)
 	    return_error(e_invalidaccess);
 	/*
 	 * Even though Red Book 3 says that changing the access of a
