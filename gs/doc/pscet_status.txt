@@ -531,8 +531,10 @@ Test	 Status	Comments
 		assign: Raph.
 
 09-36-5  DIFF	In "Technical Paths", Ghostscript differs a lot, combination
-		of 09-24-2 linecap linejoin issues and dash issues. 
-		assign: Igor
+		of 09-24-2 linecap linejoin issues and dash issues. Defer 
+		this until after 09-24-2 is addressed.  
+		Need CPSI for investigations.
+		Assign: Ray
 
 09-36-6  OK	Fixed by r7123.
 
