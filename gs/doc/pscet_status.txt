@@ -1101,9 +1101,10 @@ Test	 Status	Comments
                 Tek misses an imagemaskmask or a character with a shading color.
 		cpsi/09-47J-8  missing
 
-09-47J-9  DIFF	GS differs a lot on all sub test panels. May be a regression.
-		Assign: Igor
-		cpsi/09-47J-9  missing
+09-47J-9  AOK	Analyzed by Igor.
+                Tek misses an imagemask or a character with a shading color.
+                See explanation in 09-47J-6.
+		cpsi/09-47J-1  missing
 
 09-47K-1  AOK	Analyzed by Igor.
                 Tek yields a rangecheck while rendering 
