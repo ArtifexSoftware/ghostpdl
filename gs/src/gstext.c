@@ -236,7 +236,14 @@ gs_text_begin(gs_state * pgs, const gs_text_params_t * text,
 	if (!pgs->current_point_valid)
 	    return_error(gs_error_nocurrentpoint);
     }
-
+    /* Detect zero FintNatrix now for Adobe compatibility with CET tests.
+       Note that matrixe\\ces like [1 0 0 0 0 0] are used in comparefiles
+       to compute a text width. 
+       Note : FontType 3 throws error in setcachedevice. */
+    if (pgs->font->FontType != ft_user_defined &&
+	pgs->font->FontMatrix.xx == 0 && pgs->font->FontMatrix.xy == 0 &&
+	pgs->font->FontMatrix.yx == 0 && pgs->font->FontMatrix.yy == 0)
+	return_error(gs_error_undefinedresult); /* sic! : CPSI compatibility */
     if (text->operation & TEXT_DO_DRAW) {
 	code = gx_effective_clip_path(pgs, &pcpath);
         gs_set_object_tag(pgs, GS_TEXT_TAG);

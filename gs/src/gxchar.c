@@ -291,7 +291,14 @@ gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
 {
     gs_show_enum *const penum = (gs_show_enum *)pte;
     gs_state *pgs = penum->pgs;
+    gs_font *pfont = gs_rootfont(pgs);
 
+    /* Detect zero FintNatrix now for Adobe compatibility with CET tests.
+       Note that matrixe\\ces like [1 0 0 0 0 0] are used in comparefiles
+       to compute a text width. See also gs_text_begin. */
+    if (pfont->FontMatrix.xx == 0 && pfont->FontMatrix.xy == 0 &&
+	pfont->FontMatrix.yx == 0 && pfont->FontMatrix.yy == 0)
+	return_error(gs_error_undefinedresult); /* sic! : CPSI compatibility */
     switch (control) {
     case TEXT_SET_CHAR_WIDTH:
 	return set_char_width(penum, pgs, pw[0], pw[1]);
@@ -308,7 +315,7 @@ gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	int code;
 	bool retry = (penum->width_status == sws_retry);
 
-	if (gs_rootfont(pgs)->WMode) {
+	if (pfont->WMode) {
 	    float vx = pw[8], vy = pw[9];
 	    gs_fixed_point pvxy, dvxy;
 

@@ -2939,12 +2939,7 @@ Test	 Status	Comments
 
 13-13-5  OK	Minor differences visually reviewed by HAS 
 
-13-13-6 DIFF    GS error inconformity.
-		cpsi gives an undefinedresult when using a font scaled by 0.
-		Note : we have got comparefiles,
-		which scale with [1 0 0 0 0 0 0] to measure text width.
-		It should not through error.
-                assign: Alex.
+13-13-6 OK
 
 13-13-7  OK	
 
@@ -2960,10 +2955,7 @@ Test	 Status	Comments
 
 13-15-2  OK	Color corrected by rev 7172. 
 
-13-15-3  DIFF	GS error inconformity.
-		cpsi gives an undefinedresult when using a font scaled by 0.
-		See comment to 13-13-6.
-                assign: Alex.
+13-15-3  OK
 
 13-15-4  OK	
 
@@ -4393,7 +4385,7 @@ Test	 Status	Comments
 
 24-08-3  OK	
 
-24-09-1  OK	
+24-09-1  DIFF	errordict must not be read-only. Assign: Igor or Assign: Alex.
 
 24-09-2  OK	
 

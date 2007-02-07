@@ -500,6 +500,7 @@ buildfontdict 3 /.buildfont3 cvx put
    dup .FontDirectory 4 -2 roll { .growput } //superexec	% readonly
                 % If the font originated as a resource, register it.
    currentfile .currentresourcefile eq { dup .registerfont } if
+   readonly
  } odef
 
 % Define a procedure for defining aliased fonts.
