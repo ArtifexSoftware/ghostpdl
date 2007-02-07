@@ -2914,9 +2914,8 @@ Test	 Status	Comments
 
 13-12-3  OK	
 
-13-12-4  DIFF	I don't know how to restore stack when the continuation
-                operator is used. - Alex
-                assign Peter
+13-12-4  DIFF	kshpw error inconformity
+                assign: Igor.
 
 13-12-5  OK	Minor differences visually reviewed by RJJ
 
