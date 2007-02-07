@@ -62,6 +62,7 @@ xps_new_part(xps_context_t *ctx, char *name, int capacity)
     part->complete = 0;
     part->data = NULL;
     part->relations = NULL;
+    part->relations_complete = 0;
     part->next = NULL;
 
     part->name = xps_strdup(ctx, name);

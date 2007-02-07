@@ -26,9 +26,11 @@ typedef struct xps_page_s xps_page_t;
 
 int xps_process_data(xps_context_t *ctx, stream_cursor_read *buf);
 int xps_process_part(xps_context_t *ctx, xps_part_t *part);
+int xps_process_fixed_page(xps_context_t *ctx, xps_part_t *part);
 
 char *xps_strdup_imp(xps_context_t *ctx, const char *str, const char *function);
 char *xps_clean_path(char *name);
+void xps_absolute_path(char *output, char *pwd, char *path);
 
 struct xps_type_map_s
 {
@@ -89,7 +91,8 @@ struct xps_context_s
     z_stream zip_stream;
     char zip_file_name[2048];
 
-    char pwd[1024]; /* directory name of current xml part being processed */
+    char pwd[1024]; /* directory name of xml part being processed */
+    char *state; /* temporary state for various processing */
 };
 
 struct xps_part_s
@@ -100,10 +103,11 @@ struct xps_part_s
     int complete;
     char *data;
     xps_relation_t *relations;
+    int relations_complete; /* is corresponding .rels part finished? */
     xps_part_t *next;
 };
 
-xps_part_t * xps_new_part(xps_context_t *ctx, char *name, int capacity);
+xps_part_t *xps_new_part(xps_context_t *ctx, char *name, int capacity);
 void xps_free_part(xps_context_t *ctx, xps_part_t *part);
 xps_part_t *xps_find_part(xps_context_t *ctx, char *name);
 int xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type);

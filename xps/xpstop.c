@@ -287,10 +287,15 @@ xps_imp_deallocate_interp_instance(pl_interp_instance_t *pinstance)
 
 dputs("xps_imp_deallocate_interp_instance!\n");
 
-    xps_debug_parts(ctx);
-    xps_debug_type_map(ctx, "Default", ctx->defaults);
-    xps_debug_type_map(ctx, "Override", ctx->overrides);
-    xps_debug_fixdocseq(ctx);
+    if (getenv("XPS_DEBUG_PARTS"))
+	xps_debug_parts(ctx);
+    if (getenv("XPS_DEBUG_TYPES"))
+    {
+	xps_debug_type_map(ctx, "Default", ctx->defaults);
+	xps_debug_type_map(ctx, "Override", ctx->overrides);
+    }
+    if (getenv("XPS_DEBUG_PAGES"))
+	xps_debug_fixdocseq(ctx);
 
     // free gstate?
     gs_free_object(mem, ctx, "xps_imp_deallocate_interp_instance");

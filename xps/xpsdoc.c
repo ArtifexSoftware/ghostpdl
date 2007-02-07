@@ -3,26 +3,11 @@
 #include <expat.h>
 
 #define REL_START_PART "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation"
+#define REL_REQUIRED_RESOURCE "http://schemas.microsoft.com/xps/2005/06/required-resource"
 
 #define CT_FIXDOC "application/vnd.ms-package.xps-fixeddocument+xml"
 #define CT_FIXDOCSEQ "application/vnd.ms-package.xps-fixeddocumentsequence+xml"
 #define CT_FIXPAGE "application/vnd.ms-package.xps-fixedpage+xml"
-
-static void
-xps_absolute_path(char *output, char *pwd, char *path)
-{
-    if (path[0] == '/')
-    {
-	strcpy(output, path);
-    }
-    else
-    {
-	strcpy(output, pwd);
-	strcat(output, "/");
-	strcat(output, path);
-    }
-    xps_clean_path(output);
-}
 
 /*
  * Content types are stored in two separate binary trees.
@@ -364,6 +349,24 @@ xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
  */
 
 static void
+xps_part_from_relation(char *output, char *name)
+{
+    char *p;
+    strcpy(output, name);
+    p = strstr(output, "_rels/");
+    if (p)
+    {
+	*p = 0;
+	strcat(output, p + 6);
+    }
+    p = strstr(output, ".rels");
+    if (p)
+    {
+	*p = 0;
+    }
+}
+
+static void
 xps_handle_metadata(void *zp, char *name, char **atts)
 {
     xps_context_t *ctx = zp;
@@ -422,18 +425,7 @@ xps_handle_metadata(void *zp, char *name, char **atts)
 
 	if (target && type)
 	{
-	    strcpy(srcbuf, ctx->last_part->name);
-	    p = strstr(srcbuf, "_rels/");
-	    if (p)
-	    {
-		*p = 0;
-		strcat(srcbuf, p + 6);
-	    }
-	    p = strstr(srcbuf, ".rels");
-	    if (p)
-	    {
-		*p = 0;
-	    }
+	    xps_part_from_relation(srcbuf, ctx->last_part->name);
 
 	    strcpy(dirbuf, srcbuf);
 	    p = strrchr(dirbuf, '/');
@@ -507,7 +499,7 @@ xps_process_metadata(xps_context_t *ctx, xps_part_t *part)
 
     XML_SetUserData(xp, ctx);
     XML_SetParamEntityParsing(xp, XML_PARAM_ENTITY_PARSING_NEVER);
-    XML_SetStartElementHandler(xp, xps_handle_metadata);
+    XML_SetStartElementHandler(xp, (XML_StartElementHandler)xps_handle_metadata);
 
     (void) XML_Parse(xp, part->data, part->size, 1);
 
@@ -517,18 +509,81 @@ xps_process_metadata(xps_context_t *ctx, xps_part_t *part)
 }
 
 /*
- * The document sequence bla bla bla.
+ * Scan FixedPage XML for required resources:
+ *
+ *   <Glyphs FontUri=... >
+ *   <ImageBrush ImageSource=... >
+ *   <ResourceDictionary Source=... >
  */
 
-int
-xps_process_fpage(xps_context_t *ctx, xps_part_t *part)
+static void
+xps_parse_content_relations_imp(void *zp, char *name, char **atts)
 {
-    xps_parser_t *parser;
-    parser = xps_new_parser(ctx, part->data, part->size);
-    if (!parser)
-	return gs_rethrow(-1, "could not create xml parser");
+    xps_context_t *ctx = zp;
+    char path[1024];
+    int i;
 
-//    xps_debug_parser(parser);
+    /* TODO: xps_absolute_path on the targets */
+
+    if (!strcmp(name, "Glyphs"))
+    {
+	for (i = 0; atts[i]; i += 2)
+	{
+	    if (!strcmp(atts[i], "FontUri"))
+	    {
+		xps_absolute_path(path, ctx->pwd, atts[i+1]);
+		xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
+	    }
+	}
+    }
+
+    if (!strcmp(name, "ImageBrush"))
+    {
+	for (i = 0; atts[i]; i += 2)
+	{
+	    if (!strcmp(atts[i], "ImageSource"))
+	    {
+		xps_absolute_path(path, ctx->pwd, atts[i+1]);
+		xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
+	    }
+	}
+    }
+
+    if (!strcmp(name, "ResourceDictionary"))
+    {
+	for (i = 0; atts[i]; i += 2)
+	{
+	    if (!strcmp(atts[i], "Source"))
+	    {
+		xps_absolute_path(path, ctx->pwd, atts[i+1]);
+		xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
+	    }
+	}
+    }
+}
+
+int
+xps_parse_content_relations(xps_context_t *ctx, xps_part_t *part)
+{
+    XML_Parser xp;
+
+    ctx->state = part->name;
+
+    dprintf1("parsing relations from content (%s)\n", part->name);
+
+    xp = XML_ParserCreate(NULL);
+    if (!xp)
+	return -1;
+
+    XML_SetUserData(xp, ctx);
+    XML_SetParamEntityParsing(xp, XML_PARAM_ENTITY_PARSING_NEVER);
+    XML_SetStartElementHandler(xp, (XML_StartElementHandler)xps_parse_content_relations_imp);
+
+    (void) XML_Parse(xp, part->data, part->size, 1);
+
+    XML_ParserFree(xp);
+
+    ctx->state = NULL;
 
     return 0;
 }
@@ -537,7 +592,6 @@ int
 xps_process_part(xps_context_t *ctx, xps_part_t *part)
 {
     xps_document_t *fixdoc;
-    char *type;
 
     dprintf2("processing part '%s' (%s)\n", part->name, part->complete ? "final" : "piece");
 
@@ -553,6 +607,18 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
     if (strstr(part->name, "_rels/"))
     {
 	xps_process_metadata(ctx, part);
+
+	if (part->complete)
+	{
+	    char realname[1024];
+	    xps_part_t *realpart;
+	    xps_part_from_relation(realname, part->name);
+	    realpart = xps_find_part(ctx, realname);
+	    if (realpart)
+	    {
+		realpart->relations_complete = 1;
+	    }
+	}
     }
 
     /*
@@ -615,17 +681,51 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
      * ready: parse and render.
      */
 
-    while (ctx->next_page)
+loop:
+    if (ctx->next_page)
     {
 	xps_part_t *pagepart = xps_find_part(ctx, ctx->next_page->name);
 	if (pagepart && pagepart->complete)
 	{
-	    /* TODO: Check required resources */
-	    dprintf1("PROCESSING PAGE '%s'.\n", pagepart->name);
-	    ctx->next_page = ctx->next_page->next;
+	    xps_relation_t *rel;
+	    int have_resources;
+	    char *s;
+
+	    /* Set current directory for resolving relative path names */
+	    strcpy(ctx->pwd, pagepart->name);
+	    s = strrchr(ctx->pwd, '/');
+	    if (s)
+		s[1] = 0;
+
+	    if (!pagepart->relations_complete)
+	    {
+		xps_parse_content_relations(ctx, pagepart);
+		pagepart->relations_complete = 1;
+	    }
+
+	    have_resources = 1;
+	    for (rel = pagepart->relations; rel; rel = rel->next)
+	    {
+		if (!strcmp(rel->type, REL_REQUIRED_RESOURCE))
+		{
+		    xps_part_t *respart;
+		    respart = xps_find_part(ctx, rel->target);
+		    if (!respart || !respart->complete)
+			have_resources = 0;
+		}
+	    }
+
+	    if (have_resources)
+	    {
+		int code = xps_process_fixed_page(ctx, pagepart);
+		if (code < 0)
+		    return code;
+
+		/* keep trying as long as we can */
+		ctx->next_page = ctx->next_page->next;
+		goto loop;
+	    }
 	}
-	else
-	    break;
     }
 
     return 0;

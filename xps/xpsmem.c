@@ -68,3 +68,19 @@ xps_clean_path(char *name)
     return name;
 }
 
+void
+xps_absolute_path(char *output, char *pwd, char *path)
+{
+    if (path[0] == '/')
+    {
+	strcpy(output, path);
+    }
+    else
+    {
+	strcpy(output, pwd);
+	strcat(output, "/");
+	strcat(output, path);
+    }
+    xps_clean_path(output);
+}
+
