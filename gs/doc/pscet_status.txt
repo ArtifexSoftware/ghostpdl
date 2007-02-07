@@ -3419,10 +3419,7 @@ Test	 Status	Comments
 
 16-03-4  OK	Now appears correct - Raph
 
-16-04-1  DIFF	In (/FONTTYPE1 /FONTTYPE1 1 BuildFont) test, Adobe typechecks, we are blank.
-	        In (/FONTTYPE0 /FONTTYPE3 3 BuildFont) test, Adobe typechecks, we /rangecheck
-		--getinterval--, Adobe /typecheck definefont. 
-	        Analyzed by Raph. assign Alex.
+16-04-1  OK  	Fixed by rev. 7686 - Alex
 
 16-05-1  OK	Color corrected by rev 7172
 

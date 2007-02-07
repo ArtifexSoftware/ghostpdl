@@ -636,6 +636,16 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
 	if (!r_is_array(pencoding))
 	    return_error(e_invalidfont);
     }
+    if (pencoding) {   /* observed Adobe behavior */
+        int count = r_size(pencoding);
+        int type = ftype ? t_name : t_integer;
+        while (count--) {
+           ref r;
+           if (array_get(imemory, pencoding, count, &r) < 0 || 
+             !(r_has_type(&r, type) || r_has_type(&r, t_null))) 
+               return_error(e_typecheck);
+        }
+    }
     if ((code = dict_int_param(op, "WMode", 0, 1, 0, &wmode)) < 0 ||
 	(code = dict_bool_param(op, "BitmapWidths", false, &bitmapwidths)) < 0 ||
 	(code = dict_int_param(op, "ExactSize", 0, 2, fbit_use_bitmaps, &exactsize)) < 0 ||
