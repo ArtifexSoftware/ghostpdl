@@ -236,7 +236,7 @@ gs_text_begin(gs_state * pgs, const gs_text_params_t * text,
 	if (!pgs->current_point_valid)
 	    return_error(gs_error_nocurrentpoint);
     }
-    /* Detect zero FintNatrix now for Adobe compatibility with CET tests.
+    /* Detect zero FontNatrix now for Adobe compatibility with CET tests.
        Note that matrixe\\ces like [1 0 0 0 0 0] are used in comparefiles
        to compute a text width. 
        Note : FontType 3 throws error in setcachedevice. */
@@ -352,6 +352,9 @@ gs_kshow_begin(gs_state * pgs, const byte * str, uint size,
 {
     gs_text_params_t text;
 
+    /* Detect degenerate CTM now for Adobe compatibility with CET 13-12-4. */
+    if (pgs->ctm.xx * pgs->ctm.yy - pgs->ctm.yx * pgs->ctm.xy == 0)
+	return_error(gs_error_undefinedresult); /* sic! : CPSI compatibility */
     text.operation = TEXT_FROM_STRING | text_do_draw(pgs) | TEXT_INTERVENE |
 	TEXT_RETURN_WIDTH;
     text.data.bytes = str, text.size = size;

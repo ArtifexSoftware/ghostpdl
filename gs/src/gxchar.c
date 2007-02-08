@@ -293,7 +293,7 @@ gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
     gs_state *pgs = penum->pgs;
     gs_font *pfont = gs_rootfont(pgs);
 
-    /* Detect zero FintNatrix now for Adobe compatibility with CET tests.
+    /* Detect zero FontMatrix now for Adobe compatibility with CET tests.
        Note that matrixe\\ces like [1 0 0 0 0 0] are used in comparefiles
        to compute a text width. See also gs_text_begin. */
     if (pfont->FontMatrix.xx == 0 && pfont->FontMatrix.xy == 0 &&
