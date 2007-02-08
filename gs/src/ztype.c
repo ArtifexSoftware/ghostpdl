@@ -187,17 +187,17 @@ znoaccess(i_ctx_t *i_ctx_p)
 	ref *aop = dict_access_ref(op);
 	
 	/* CPSI throws invalidaccess when seting noaccess to a readonly dictionary (CET 13-13-6) : */
-	if (!r_has_attrs(aop, a_write))
+	if (!r_has_attrs(aop, a_write)) {
+	    if (!r_has_attrs(aop, a_read) && !r_has_attrs(aop, a_execute)) {
+		/* Already noaccess - do nothing (CET 24-09-1). */
+		return 0;
+	    }
 	    return_error(e_invalidaccess);
+	}
 
 	/* Don't allow removing read access to permanent dictionaries. */
 	if (dict_is_permanent_on_dstack(op))
 	    return_error(e_invalidaccess);
-	/*
-	 * Even though Red Book 3 says that changing the access of a
-	 * read-only dictionary is not allowed, Adobe interpreters allow
-	 * executing noaccess on a readonly or noaccess dictionary.
-	 */
     }
     return access_check(i_ctx_p, 0, true);
 }

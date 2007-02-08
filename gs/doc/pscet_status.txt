@@ -2914,7 +2914,7 @@ Test	 Status	Comments
 
 13-12-3  OK	
 
-13-12-4  DIFF	kshpw error inconformity
+13-12-4  DIFF	kshow error inconformity
                 assign: Igor.
 
 13-12-5  OK	Minor differences visually reviewed by RJJ
@@ -3796,7 +3796,9 @@ Test	 Status	Comments
 
 20-14-2  OK	Color corrected by rev 7172.
 
-20-15-1  OK	
+20-15-1  DIFF   userdict /product known
+		CPSI=F GS=T
+		assign: Alex
 
 20-15-2  OK	
 
@@ -4381,7 +4383,7 @@ Test	 Status	Comments
 
 24-08-3  OK	
 
-24-09-1  DIFF	errordict must not be read-only. Assign: Igor or Assign: Alex.
+24-09-1  OK
 
 24-09-2  OK	
 
