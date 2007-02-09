@@ -256,6 +256,12 @@ gslt_measure_font_glyph(gs_state *pgs, gslt_font_t *xf, int gid, gslt_glyph_metr
      * Vertical metrics are hairy (with missing tables).
      */
 
+    head = gslt_find_sfnt_table(xf, "head", &len);
+    if (head > 0)
+    {
+	scale = u16(xf->data + head + 18); /* units per em */
+    }
+
     ofs = gslt_find_sfnt_table(xf, "OS/2", &len);
     if (ofs > 0 && len > 70)
     {
@@ -284,12 +290,6 @@ gslt_measure_font_glyph(gs_state *pgs, gslt_font_t *xf, int gid, gslt_glyph_metr
 	vadv = u16(xf->data + ofs + idx * 4);
 	vtop = u16(xf->data + ofs + idx * 4 + 2);
 
-	head = gslt_find_sfnt_table(xf, "head", &len);
-	if (head > 0)
-	{
-	    scale = u16(xf->data + head + 18); /* units per em */
-	}
-
 	glyf = gslt_find_sfnt_table(xf, "glyf", &len);
 	loca = gslt_find_sfnt_table(xf, "loca", &len);
 	if (head > 0 && glyf > 0 && loca > 0)
@@ -297,7 +297,7 @@ gslt_measure_font_glyph(gs_state *pgs, gslt_font_t *xf, int gid, gslt_glyph_metr
 	    format = u16(xf->data + head + 50); /* indexToLocaFormat */
 
 	    if (format == 0)
-		ofs = u16(xf->data + loca + gid * 2);
+		ofs = u16(xf->data + loca + gid * 2) * 2;
 	    else
 		ofs = u32(xf->data + loca + gid * 4);
 
