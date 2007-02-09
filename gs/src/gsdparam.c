@@ -495,7 +495,7 @@ e:	param_signal_error(plist, param_name, ecode);\
      */
     if (leadingedge & LEADINGEDGE_REQ_BIT) {
 	leadingedge = (leadingedge & LEADINGEDGE_SET_MASK) |
-	    ((leadingedge >> LEADINGEDGE_REQ_VAL_SHIFT) && LEADINGEDGE_MASK);
+	    ((leadingedge >> LEADINGEDGE_REQ_VAL_SHIFT) & LEADINGEDGE_MASK);
     }
 
     /*
