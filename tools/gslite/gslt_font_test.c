@@ -140,7 +140,8 @@ main(int argc, const char *argv[])
     char *s;
     char *devicename;
     char *filename;
-    int i, n, pid, eid, best;
+    int i, k, n, pid, eid, best;
+    int subfontid;
     char *buf;
     int len;
 
@@ -158,13 +159,19 @@ main(int argc, const char *argv[])
     {
         filename = "/Users/tor/src/work/gslite/TrajanPro-Regular.otf";
 	// filename = "/Users/tor/src/work/gslite/GenR102.TTF";
-	// return gs_throw(1, "usage: gslt_font_api_test font.otf");
+	// return gs_throw(1, "usage: gslt_font_api_test font.otf [subfontid]");
     }
     else
     {
-        filename = argv[argc-1];
+        filename = argv[1];
     }
-    
+
+    subfontid = 0;
+    if (argc == 3)
+	subfontid = atoi(argv[2]);
+
+    printf("Loading font '%s' subfont %d.\n", filename, subfontid);
+
     n = readfile(filename, &buf, &len);
     if (n < 0) {
         printf("cannot read font file '%s'", filename);
@@ -193,21 +200,43 @@ main(int argc, const char *argv[])
      * Create the font and select an encoding
      */
 
-    font = gslt_new_font(mem, cache, buf, len, 0);
+    font = gslt_new_font(mem, cache, buf, len, subfontid);
     if (!font) {
         printf("cannot create font");
 	return 1;
     }
 
-    n = gslt_count_font_encodings(font);
-    for (best = 0, i = 0; i < n; i++)
+    static struct { int pid, eid; } xps_cmap_list[] =
     {
-        gslt_identify_font_encoding(font, i, &pid, &eid);
-	printf("encoding %d/%d = ( %d %d )\n", i + 1, n, pid, eid);
-        if (pid == 3 && eid == 0)
-            best = i;
+	{ 3, 10 },	/* Unicode with surrogates */
+	{ 3, 1 },	/* Unicode without surrogates */
+	{ 3, 5 },	/* Wansung */
+	{ 3, 4 },	/* Big5 */
+	{ 3, 3 },	/* Prc */
+	{ 3, 2 },	/* ShiftJis */
+	{ 3, 0 },	/* Symbol */
+	// { 0, * }, -- Unicode (deprecated)
+	{ 1, 0 },
+	{ -1, -1 },
+    };
+
+    n = gslt_count_font_encodings(font);
+    best = -1;
+    for (k = 0; xps_cmap_list[k].pid != -1; k++)
+    {
+	for (i = 0; i < n; i++)
+	{
+	    gslt_identify_font_encoding(font, i, &pid, &eid);
+	    if (pid == xps_cmap_list[k].pid && eid == xps_cmap_list[k].eid)
+		goto found_cmap;
+	}
     }
-    gslt_select_font_encoding(font, best);
+    gs_throw(-1, "could not find a suitable cmap");
+    return 1;
+
+found_cmap:
+    printf("found a cmap to use %d %d\n", pid, eid);
+    gslt_select_font_encoding(font, i);
 
     /*
      * Test outline extraction.
@@ -233,7 +262,7 @@ main(int argc, const char *argv[])
 
     text = "Pack my box with five dozen liquor jugs!";
 
-text = "ii";
+text = "This";
 
     ctm.xx = 100.0;
     ctm.xy = 0.0;
@@ -244,6 +273,9 @@ text = "ii";
     for (s = text; *s; s++)
     {
         int gid = gslt_encode_font_char(font, *s);
+
+	if (s == text)
+	    gid = 2119;
 
 	printf("char '%c' -> glyph %d\n", *s, gid);
 
@@ -265,12 +297,6 @@ text = "ii";
         printf(" -> %dx%d+(%d,%d)\n",
                 slot.w, slot.h,
                 slot.lsb, slot.top);
-
-    ctm.xx = 0.0;
-    ctm.xy = 100.0;
-    ctm.yx = -100.0;
-    ctm.yy = 0.0;
-    ctm.tx = ctm.ty = 0.0;
 
 	gslt_release_font_glyph(mem, &slot);
     }
