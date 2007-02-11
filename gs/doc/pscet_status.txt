@@ -856,11 +856,11 @@ Test	 Status	Comments
 
 09-47B-12  AOK	GS has wrong color Test06 GS not smooth Test07, Test08.
 		NOTE: Tek gets rangecheck error on Test03 Test10, CPSI and GS do not.
-		RJJ assign: Raph
-	According to my reading of the spec, test6 should rangecheck,
-	but CPSI returns garbage data instead. r7130 improves match to
-	Tek output, but ultimately rendering of this page will be
-	device dependent, hence aok. - Raph
+		.
+		According to my reading of the spec, test6 should rangecheck,
+		but CPSI returns garbage data instead. r7130 improves match to
+		Tek output, but ultimately rendering of this page will be
+		device dependent, hence aok. - Raph
 
 09-47B-2  DIFF	GS has different pattern phase. Tek and CPSI appear to be the same.
 		Assign: Ray
@@ -1637,7 +1637,7 @@ Test	 Status	Comments
 
 11-06-4  OK	Minor differences visually reviewed by RJJ
 
-11-06-5  DIFF	GS has extra line: MUCH 15, 30, 31 assign: Raph.
+11-06-5  DIFF	GS has extra line: MUCH 15, 30, 31 assign: Igor
 
 11-07-1  DIFF	Circles being drawn in wrong place. 
 		Likely a problem with current point after rendering a text.
@@ -1682,8 +1682,7 @@ Test	 Status	Comments
 		IMO cross to be removed at all.
 		(this bug is unrelated to CET test).
 		-
-		Passing to Raph to figure out what to do with all this.
-                assign: Raph.
+                assign: Igor.
 
 11-09-5  OK	Minor differences visually reviewed by RJJ
 
@@ -2551,8 +2550,6 @@ Test	 Status	Comments
 		PLRM doesn't allow packedarray as 'names' element of the color space.
 		GS appears tolerant to it.
 		IMO it should be aok.
-		Passing to Dan for confirmation.
-		assign: Raph.
 
 12-14A-9  OK	Minor differences in positions and character shapes and minor
 		differences in shading gradients. - ADC
