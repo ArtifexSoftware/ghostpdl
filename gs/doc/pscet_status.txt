@@ -1639,8 +1639,9 @@ Test	 Status	Comments
 
 11-06-5  DIFF	GS has extra line: MUCH 15, 30, 31 assign: Raph.
 
-11-07-1  DIFF	Circles being drawn in wrong place. Elements missing. Tek matches
-		CPSI. Assign: Ray (Tim)
+11-07-1  DIFF	Circles being drawn in wrong place. 
+		Likely a problem with current point after rendering a text.
+		Tek matches CPSI. Assign: Igor
 
 11-07-2  OK	Minor differences visually reviewed by RJJ
 
@@ -3411,11 +3412,11 @@ Test	 Status	Comments
 
 16-03-1  OK	Fixed by rev 7172.
 
-16-03-2  DIFF	distorted shapes, needs further analysis.
+16-03-2  DIFF	distorted charater shapes.
 		Distortion happens when contents of Metrics dict don't match
-		metrics information in charstring. Assign: Ray (Tim)
+		metrics information in charstring. Assign: Igor
 
-16-03-3  DIFF	distorted shapes, looks similar to 16-03-2. Assign: Ray (Tim)
+16-03-3  DIFF	distorted character shapes, looks similar to 16-03-2. Assign: Igor.
 
 16-03-4  OK	Now appears correct - Raph
 
