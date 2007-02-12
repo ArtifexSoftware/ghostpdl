@@ -383,8 +383,14 @@ Test	 Status	Comments
 09-34-11  OK	Matches Tek hardcopy output. RJJ
 		cpsi/09-34-11  missing
 
-09-34-12  DIFF	GS has smooth gradients, Tek hardcopy has dark gray stripe up
-		middle of gradients. GS matches AD7	assign: Raph
+09-34-12  AOK	GS has smooth gradients, Tek hardcopy has dark gray stripe up
+		middle of gradients. GS matches AD7
+		I found that once I set embedded an sRGB colorrendering
+		dictionary, which is what AD7 uses for RGB matching,
+		GS and AD7 were nearly a perfect match. There was only
+		one relatively small rectangle area pointed out by cmpi in a
+		single ramp ( the CIEDefg [ffff] row). It appears that the TEK
+		output is the one that is incorrect. TIM
 		cpsi/09-34-12  missing
 
 09-34-13  OK	Fixed revs 7159 and 7187.
@@ -393,8 +399,12 @@ Test	 Status	Comments
 09-34-14  OK	Matches Tek hardcopy output. RJJ
 		cpsi/09-34-14  missing
 
-09-34-15 DIFF	Mostly matches Tek hardcopy output. GS has smooth gradients, Tek
-		has dark gray stripe in middle of 8th row. GS matched AD7 assign: Raph
+09-34-15 AOK	Mostly matches Tek hardcopy output. GS has smooth gradients, Tek
+		has dark gray stripe in middle of 8th row. GS matched AD7
+		--
+		In my tests with GS, AD5 as well as the AD7 output, none show
+		the dark gray stripe mentioned. It is my opinion that TEK is the
+		one that is failing. TIM
 		cpsi/09-34-15  missing
 
 09-34-16  AOK	GS missing some graphics seen on Tek hardcopy. 
@@ -436,18 +446,108 @@ Test	 Status	Comments
 09-34-19  OK	Matches Tek hardcopy output. RJJ
 		cpsi/09-34-19  missing
 
-09-34-2  DIFF	GS has Yellow graphic, Tek shows Red for 'SeparateUnBlue setcolorspace'
-		(right of "1.0" text). Probably RGB vs. CMYK device color  assign: Raph
+09-34-2  AOK	GS has Yellow graphic, Tek shows Red for 'SeparateUnBlue setcolorspace'
+		(right of "1.0" text). Probably RGB vs. CMYK device color
 		NOTE: AD7 and Tek hardcopy output differ in same areas. - RJJ
 		Distiller/Acrobat 7.0 differ on four graphics.  These are the five below
 		the text that says "( /HIVAL 4095 def )".  Distiller/Acrobat shows the
 		first four of these as a grayish shade.  The fifth is a paler shade of
 		gray.  GS shows these as black, gray, burgandy, brown, and red respectively.
-		- ADC. 
-		cps/09-34-2  missing  Assign Raph
+		- ADC.
+		From what I can see the yellow graphic that GS creates is
+		correct. The color space is aptly named "SeparateUnblue" (see
+		further below), since "un-blue" is yellow, this lead me to
+		believe yellow is what should be produced. Upon further digging
+		into the color space and putting some debug messages in the
+		tintTransform procedure, it also seems to be correct. From what
+		I can see the tint tintTransform procedure takes the blue value
+		and does some math on it to vary it in the range of 0.0 to 1.0.
+		It also places two ones on the stack just ahead of this blue
+		value so that all values passed to the /DeviceRGB are in the
+		range 1,1,0 to 1,1,1, which are various shades of yellow.
+		--
+		When I first did this I didn't know about the AD7 output... This
+		further verifies that the yellow is correct as AD7 matches GS
+		for this part of the job.
+		--
+		There is a second unresolved issue below the section that says
+		"/HIVAL 4095 def". I believe again that the four non-matching
+		graphics produced by GS are correct. For example...
+		--
+		The burgandy and brown are produced by the following code, respectively:
+		/HIVAL 4095 def
+		...
+		(gs Indexed_RGB_Proc setcolorspace 2048 setcolor Q)
+		(gs Indexed_RGB_Proc setcolorspace 3072 setcolor Q)
+		With the following colorspace definition:
+		/Indexed_RGB_Proc
+		{
+			[
+				/Indexed
+				/DeviceRGB
+				HIVAL
+				{
+					dup
+					HIVAL
+					div
+					exch
+					HIVAL
+					2
+					idiv
+					dup
+					2
+					index
+					exch
+					mod
+					exch
+					div
+					exch
+					HIVAL
+					3
+					idiv
+					dup
+					3
+					-1
+					roll
+					exch
+					mod
+					exch
+					div
+				}
+			]
+		}
+		def
+		--
+		Basically this space produces as output RGB values where the B's
+		that are split into 3 ranges by B_out= ( Value_in mod (HIVAL/3)
+		) / (HIVAL/3), G's that are split into 2 ranges by G_out =
+		(Value_in mod (HIVAL/2) ) / (HIVAL/ 2) and the R's are in one
+		range by R_out = Value_in / HIVAL. So a input value of 1/2 of
+		the input range (determined by HIVAL) produces an output of
+		roughly R=0.5, G=0, B=0.5. An input value of .75 of the input
+		range produces and output of roughly R=.74,G=.5,B=.25
+		--
+		I modified the colorspace to dump the stack at the end of its
+		number crunching tintTransform procedure. I printed out the
+		values for the burgandy and brown graphic sections and here is
+		what I got back.
+		--
+		2048 setcolor
+		0.500366	// B
+		0.00048852	// G
+		0.500122	// R
+		Which is the burgandy color mentioned.
+		--
+		3072 setcolor
+		0.250549	// B
+		0.500733	// G
+		0.750183	// R
+		Which is the brown color mentioned.
+		This verified to me that GS is doing the right thing. TIM
+		cps/09-34-2  missing
 
-09-34-3  DIFF	GS has missing graphic, Tek shows Cyan for 'SeparateUncyan setcolorspace'
-		(right of "1.0" text). Probably RGB vs. CMYK device color  assign: Raph
+09-34-3  AOK	GS has missing graphic, Tek shows Cyan for 'SeparateUncyan setcolorspace'
+		(right of "1.0" text). Probably RGB vs. CMYK device color
 		NOTE: AD7 and Tek hardcopy output differ in same areas.a - RJJ
 		There are two things happening with this page.  The 'SeparateUncyan'
 		issue is another example of a separation color space which has a
@@ -459,7 +559,79 @@ Test	 Status	Comments
 		The second issue (which is a problem) is a difference in the appearance
 		of the color spaces below the text that says "( /HIVAL 4095 def )" 
 		(Apparently a similar problem as the one seen in 09-34-02). - ADC
-		cpsi/09-34-3  missing  Assign Raph
+		--
+		To analyze 09-34-3, I added some PostScript to print out the
+		HIVAL, input value and CMYK output values for the section that
+		uses the Indexed_CMYK_Proc colorspace with a HIVAL of 4095. Here
+		is what I got for the printout from both Distiller 5.0 and GS:
+		--
+		HIVAL= 4095
+		in= 0.0
+		C= 0.0
+		M= 0.0
+		Y= 0.0
+		K= 0.0
+		HIVAL= 4095
+		in= 1024
+		C= 0.250061
+		M= 0.500244
+		Y= 0.750183
+		K= 0.000977517
+		HIVAL= 4095
+		in= 2048
+		C= 0.500122
+		M= 0.00048852
+		Y= 0.500366
+		K= 0.00195503
+		HIVAL= 4095
+		in= 3072
+		C= 0.750183
+		M= 0.500733
+		Y= 0.250549
+		K= 0.00293255
+		HIVAL= 4095
+		in= 4095
+		C= 1
+		M= 0.00048852
+		Y= 0.0
+		K= 0.00293255
+		--
+		What Acrobat (AD5 and AD7) produces is only one black graphic
+		for the line "GS Indexed_CMYK_Proc setcolorspace 4095 setcolor Q".
+		For all of the other input values (0,1024,2048 and 3072) no
+		output is produced from Acrobat. Based upon the CMYK values that
+		the lookup proc is returning for both AD5 and GS, GS looks to be
+		doing the right thing here. I have no idea why Acrobat seems to
+		be failing on this.
+		--
+		In this respect, this page is AOK by me.
+		--
+		For the SeparateUnCyan colorspace section I did a similar thing.
+		I printed out the value passed into the tinttransform proc as
+		well as the values passed back by same. Since M,Y and K are
+		always zero, I only had to print out the Cyan value. Again, both
+		from Acrobat and GS I get the following values back:
+		--
+		in= 0.0
+		C= 1.0
+		in= 0.0
+		C= 1.0
+		in= 0.1
+		C= 0.9
+		in= 0.287
+		C= 0.713
+		in= 0.42
+		C= 0.580000043
+		in= 0.821
+		C= 0.17900002
+		in= 1.0
+		C= 0.0
+		in= 1.0
+		C= 0.0
+		--
+		Based upon these values, I believe that we are doing the right
+		thing here and that this should be marked AOK. as well. TIM
+		cpsi/09-34-3  missing
 
 09-34-4  OK	Matches Tek hardcopy output. RJJ
 		cpsi/09-34-4  missing
@@ -473,8 +645,8 @@ Test	 Status	Comments
                 This is an obvious bug that we don't want in Ghostscript.
 		cpsi/09-34-6  missing
 
-09-34-7  DIFF	GS has different 'currentcolor' results and different color graphics
-		Probably RGB vs. CMYK device color  assign: Raph
+09-34-7  AOK	GS has different 'currentcolor' results and different color graphics
+		Probably RGB vs. CMYK device color
 		NOTE: AD7 and Tek hardcopy output differ in same areas. - RJJ
 		Thre are two issues with this page.  The first issue is the colors of
 		of the various graphics on the page.   The page has spot colors.  It
@@ -485,6 +657,9 @@ Test	 Status	Comments
 		The second issue (which is a problem) is that the currentcolor value
 		for the CIEBasedDEFG differs.  The graphic for the same line is also
 		missing (which is probably related.) - ADC
+		--
+		The differences were releated to the colorrendering dictionary
+		in use. When I embedded an sRGB CRD the output matched AD5/AD7. TIM
 		cpsi/09-34-7  missing
 
 09-34-8  OK	Matches Tek hardcopy output. RJJ
@@ -2106,7 +2281,9 @@ Test	 Status	Comments
 
 12-02-17  OK	Minor differences in positions and character shapes - ADC
 
-12-02-18  DIFF	Squares in the top row are darker in GS vs CPSI.  Assign Raph
+12-02-18  AOK	Squares in the top row are darker in GS vs CPSI.
+		This is exactly the same issue as 12-07B-10. After embedding
+		CPSI's default CRD into the job, the output matches. TIM	
 
 12-02-19  OK	Minor differences in positions and character shapes - ADC
 
@@ -2160,10 +2337,19 @@ Test	 Status	Comments
 
 12-05-2  OK	
 
-12-05-3  DIFF	Page is gray in GS.  White in CPSI. - Assign Raph
+12-05-3  AOK	Page is gray in GS.  White in CPSI.
 		This "{.75 mul} settransfer erasepage showpage" gives
 		a gray page in GS.
-		
+		--
+		I ran this job through Acrobat Distiller 5.0 as well as Apple's
+		Preview, they match the GS output. The Red Book states that
+		erasepage is influenced "if an atypical transfer function has
+		been defined"... Since the transfer function is {.75 mul} a gray
+		value of R=191,G=191,B=191 should be expected from all that I
+		can see and reproduce here. I noticed it is noted several times
+		that "CPSI ignores settransfer". I believe this is another case
+		where whatever version of CPSI is used to generated these
+		PPM's, settransfer looks to be ignored. TIM
 
 12-06-1  OK	Minor differences in positions and character shapes - ADC
 
@@ -2215,9 +2401,12 @@ Test	 Status	Comments
 
 12-07B-1  OK	Minor differences in positions and character shapes - ADC
 
-12-07B-10  DIFF	Some grays in the top row are lighter in GS versus CPSI
-		(after 7152). - ADC Assign Raph
-
+12-07B-10  AOK	Some grays in the top row are lighter in GS versus CPSI
+		(after 7152). - ADC
+		This is exactly the same issue as 12-02-18. After embedding
+		CPSI's default CRD into the job, the gray rectangles in the top
+		row match. TIM
+		
 12-07B-11  DIFF	Some grays in the top row are lighter in GS versus CPSI
 		(after 7152). - ADC Assign Raph
 
