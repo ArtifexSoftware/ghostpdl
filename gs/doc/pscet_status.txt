@@ -1849,8 +1849,7 @@ Test	 Status	Comments
 
 11-20-3  OK	Minor differences visually reviewed by RJJ
 
-11-20-4  DIFF	show operator doesn't restore the stack
-                assign Peter.
+11-20-4  OK
 
 11-20-5  DIFF	Analyzed by Igor.
 		I believe it is CPSI problem.
@@ -2912,8 +2911,7 @@ Test	 Status	Comments
 
 13-12-3  OK	
 
-13-12-4  DIFF	kshow error inconformity
-                assign: Igor.
+13-12-4  OK
 
 13-12-5  OK	Minor differences visually reviewed by RJJ
 

@@ -784,11 +784,14 @@ op_show_restore(i_ctx_t *i_ctx_p, bool for_error)
     int code = 0;
 
     if (for_error) {
+#if 0 /* Disabled for CPSI compatibility for 13-12-4. 
+         CPSI doesn't remove cshow, kshow proc operands. */
 	uint saved_count = esodepth(ep).value.intval;
 	uint count = ref_stack_count(&o_stack);
 
 	if (count > saved_count)	/* if <, we're in trouble */
 	    ref_stack_pop(&o_stack, count - saved_count);
+#endif
 	if (ep[1].value.opproc == op_show_continue && penum->enum_client_data != NULL) {
 	    /* Replace the continuation operaton on estack with the right operator : */
 	    op_proc_t proc;
