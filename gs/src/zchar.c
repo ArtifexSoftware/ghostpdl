@@ -57,6 +57,7 @@ zshow(i_ctx_t *i_ctx_p)
     if (code != 0 ||
 	(code = gs_show_begin(igs, op->value.bytes, r_size(op), imemory, &penum)) < 0)
 	return code;
+    *(op_proc_t *)&penum->enum_client_data = zshow;
     if ((code = op_show_finish_setup(i_ctx_p, penum, 1, finish_show)) < 0) {
 	ifree_object(penum, "op_show_enum_setup");
 	return code;
@@ -77,6 +78,7 @@ zashow(i_ctx_t *i_ctx_p)
 	(code = op_show_setup(i_ctx_p, op)) != 0 ||
 	(code = gs_ashow_begin(igs, axy[0], axy[1], op->value.bytes, r_size(op), imemory, &penum)) < 0)
 	return code;
+    *(op_proc_t *)&penum->enum_client_data = zashow;
     if ((code = op_show_finish_setup(i_ctx_p, penum, 3, finish_show)) < 0) {
 	ifree_object(penum, "op_show_enum_setup");
 	return code;
@@ -110,6 +112,7 @@ zwidthshow(i_ctx_t *i_ctx_p)
 				   op->value.bytes, r_size(op),
 				   imemory, &penum)) < 0)
 	return code;
+    *(op_proc_t *)&penum->enum_client_data = zwidthshow;
     if ((code = op_show_finish_setup(i_ctx_p, penum, 4, finish_show)) < 0) {
 	ifree_object(penum, "op_show_enum_setup");
 	return code;
@@ -146,6 +149,7 @@ zawidthshow(i_ctx_t *i_ctx_p)
 				    op->value.bytes, r_size(op),
 				    imemory, &penum)) < 0)
 	return code;
+    *(op_proc_t *)&penum->enum_client_data = zawidthshow;
     if ((code = op_show_finish_setup(i_ctx_p, penum, 6, finish_show)) < 0) {
 	ifree_object(penum, "op_show_enum_setup");
 	return code;
@@ -174,6 +178,7 @@ zkshow(i_ctx_t *i_ctx_p)
 	(code = gs_kshow_begin(igs, op->value.bytes, r_size(op),
 			       imemory, &penum)) < 0)
 	return code;
+    *(op_proc_t *)&penum->enum_client_data = zkshow;
     if ((code = op_show_finish_setup(i_ctx_p, penum, 2, finish_show)) < 0) {
 	ifree_object(penum, "op_show_enum_setup");
 	return code;
@@ -202,6 +207,7 @@ zstringwidth(i_ctx_t *i_ctx_p)
 	(code = gs_stringwidth_begin(igs, op->value.bytes, r_size(op),
 				     imemory, &penum)) < 0)
 	return code;
+    *(op_proc_t *)&penum->enum_client_data = zstringwidth;
     if ((code = op_show_finish_setup(i_ctx_p, penum, 1, finish_stringwidth)) < 0) {
 	ifree_object(penum, "op_show_enum_setup");
 	return code;
@@ -226,7 +232,7 @@ finish_stringwidth(i_ctx_t *i_ctx_p)
 
 /* Common code for charpath and .charboxpath. */
 private int
-zchar_path(i_ctx_t *i_ctx_p,
+zchar_path(i_ctx_t *i_ctx_p, op_proc_t proc, 
 	   int (*begin)(gs_state *, const byte *, uint,
 			bool, gs_memory_t *, gs_text_enum_t **))
 {
@@ -240,6 +246,7 @@ zchar_path(i_ctx_t *i_ctx_p,
 	(code = begin(igs, op[-1].value.bytes, r_size(op - 1),
 		      op->value.boolval, imemory, &penum)) < 0)
 	return code;
+    *(op_proc_t *)&penum->enum_client_data = proc;
     if ((code = op_show_finish_setup(i_ctx_p, penum, 2, finish_show)) < 0) {
 	ifree_object(penum, "op_show_enum_setup");
 	return code;
@@ -250,13 +257,13 @@ zchar_path(i_ctx_t *i_ctx_p,
 private int
 zcharpath(i_ctx_t *i_ctx_p)
 {
-    return zchar_path(i_ctx_p, gs_charpath_begin);
+    return zchar_path(i_ctx_p, zcharpath, gs_charpath_begin);
 }
 /* <string> <box_bool> .charboxpath - */
 private int
 zcharboxpath(i_ctx_t *i_ctx_p)
 {
-    return zchar_path(i_ctx_p, gs_charboxpath_begin);
+    return zchar_path(i_ctx_p, zcharboxpath, gs_charboxpath_begin);
 }
 
 /* <wx> <wy> <llx> <lly> <urx> <ury> setcachedevice - */
@@ -782,6 +789,13 @@ op_show_restore(i_ctx_t *i_ctx_p, bool for_error)
 
 	if (count > saved_count)	/* if <, we're in trouble */
 	    ref_stack_pop(&o_stack, count - saved_count);
+	if (ep[1].value.opproc == op_show_continue && penum->enum_client_data != NULL) {
+	    /* Replace the continuation operaton on estack with the right operator : */
+	    op_proc_t proc;
+
+	    *(void **)&proc = penum->enum_client_data;
+	    make_op_estack(ep + 1, proc);
+	}
     }
     if (SHOW_IS_STRINGWIDTH(penum) && igs->text_rendering_mode != 3) {	
 	/* stringwidth does an extra gsave */

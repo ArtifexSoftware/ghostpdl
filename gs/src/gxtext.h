@@ -91,6 +91,7 @@ rc_free_proc(rc_free_text_enum);
     /* The following change dynamically.  NOTE: gs_text_enum_copy_dynamic */\
     /* knows the entire list of dynamically changing elements. */\
     rc_header rc;\
+    void *enum_client_data;\
     gs_font *current_font; /* changes for composite fonts */\
     gs_glyph outer_CID; /* When a Type 3 is a FMapType 9 descendent. */\
     bool is_pure_color; /* The text is painted with a pure color. */\

@@ -181,6 +181,7 @@ gs_text_enum_init(gs_text_enum_t *pte, const gs_text_enum_procs_t *procs,
 #else
     pte->text_enum_id = 0;
 #endif
+    pte->enum_client_data = NULL;
     /* text_begin procedure sets rc */
     /* init_dynamic sets current_font */
 
