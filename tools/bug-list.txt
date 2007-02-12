@@ -101,3 +101,4 @@ dictionary which will be a considerable amount of work.
 0452 OPEN 30-19 p 9 LB negative character width, we apply, hp is positive
 0453 OPEN 25-05 p 37 MC 17 our black text vs HP's green
 0454 OPEN 25-04 p 23 black white HP vs gray output
+0455 OPEN PCL test files from Dev Informatica (test1_lj4 test1_lj4550 test1_lj5) bad rendering of color bitmaps
