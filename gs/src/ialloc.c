@@ -185,14 +185,7 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
 	 */
 	chunk_t *pcc = mem->pcc;
 	ref *end;
-	ref_packed **ppr = 0;
-	int code = 0;
 
-	if ((gs_memory_t *)mem != mem->stable_memory) {
-	    code = alloc_save_change_alloc(mem, "gs_alloc_ref_array", &ppr);
-	    if (code < 0)
-		return code;
-	}
 	obj = gs_alloc_struct_array((gs_memory_t *) mem, num_refs + 1,
 				    ref, &st_refs, cname);
 	if (obj == 0)
@@ -217,8 +210,14 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
 	    chunk_locate_ptr(obj, &cl);
 	    cl.cp->has_refs = true;
 	}
-	if (ppr)
-	    *ppr = (ref_packed *)obj;
+	if ((gs_memory_t *)mem != mem->stable_memory) {
+	    ref_packed **ppr = 0;
+	    int code = alloc_save_change_alloc(mem, "gs_alloc_ref_array", &ppr);
+	    if (code < 0)
+		return code;
+            if (ppr)
+	        *ppr = (ref_packed *)obj;
+	}
     }
     make_array(parr, attrs | mem->space, num_refs, obj);
     return 0;
