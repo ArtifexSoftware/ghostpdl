@@ -1,0 +1,283 @@
+afs.dev: henry
+async.dev: ray and stefan
+bbox.dev: igor
+bboxutil.dev: igor
+bit.dev: ray and stefan
+bitcmyk.dev: ray and stefan
+bitrgb.dev: ray and stefan
+bitrgbtags.dev: henry
+bj10e.dev: ray and stefan
+bj200.dev: ray and stefan
+bjc600.dev: ray and stefan
+bjc800.dev: ray and stefan
+bmp16.dev: ray and stefan
+bmp16m.dev: ray and stefan
+bmp256.dev: ray and stefan
+bmp32b.dev: ray and stefan
+bmpa16m.dev: ray and stefan
+bmpamono.dev: ray (obsolete ?)
+bmpgray.dev: ray and stefan
+bmpmono.dev: ray and stefan
+bmpsep1.dev: ray and stefan
+bmpsep8.dev: ray and stefan
+btoken.dev: ray and stefan
+cdeskjet.dev: ray and stefan
+cdj550.dev: ray and stefan
+cdjcolor.dev: ray and stefan
+cdjmono.dev: ray and stefan
+cfax.dev: ray and stefan
+cfd.dev: alex
+cfe.dev alex
+cfe.dev: alex
+cidfont.dev: igor
+cidlib.dev: igor
+cie.dev: raph
+cielib.dev: raph
+clfile.dev: ray and stefan
+clist.dev: ray and stefan
+cljet5.dev: ray and stefan
+cljet5c.dev: ray and stefan
+cljet5pr.dev: ray and stefan
+clmemory.dev: ray and stefan
+cmaplib.dev: igor
+cmapread.dev: igor
+cmyklib.dev: raph and tim
+cmykread.dev raph and tim
+colimlib.dev: raph and tim
+color.dev: raph and tim
+compfont.dev: igor
+crc32.dev: ralph
+cspixel.dev: raph and tim
+cspixlib.dev: raph and tim
+dctd.dev: alex
+dcte.dev: alex
+deskjet.dev: ray and stefan
+devcmap.dev: obsolete
+devicen.dev: raph and tim
+djet500.dev: ray and stefan
+dpnxtlib.dev: raph
+dps.dev: ray
+dps2int.dev: igor
+dps2lib.dev: igor
+dps2read.dev: igor
+dpsand2.dev: ?
+dpslib.dev: ?
+dpsnext.dev ?
+dscparse.dev: ray
+eps9high.dev: ?
+eps9mid.dev: ?
+epsf.dev: alex
+epson.dev: raph
+epsonc.dev: raph
+epswrite.dev: raph
+fapi.dev: igor
+fapif.dev: igor
+fapiu.dev: igor
+farc4.dev: ralph
+fax.dev: ray and stefan
+faxg3.dev: ray and stefan
+faxg32d.dev: ray and stefan
+faxg4.dev: ray and stefan
+fcopy.dev: igor
+fdecode.dev: alex
+filter.dev: alex
+fimscale.dev: alex
+fmd5.dev: ralph
+frsd.dev: alex
+func.dev: igor
+func4.dev: igor
+func4lib.dev: igor
+funclib.dev: igor
+fzlib.dev: alex
+gsiodevs.dev: ray and stefan
+gsnogc.dev: obsolete
+gxfapiu.dev: igor
+gxfapiu1.dev: igor
+hpgl2.dev: henry
+hpgl2c.dev: henry
+htxlib.dev: raph and tim
+ibmpro.dev: ray and stefan
+icc.dev: raph and tim
+icclib.dev: raph and tim
+ijs.dev: ralph
+ijslib.dev: ralph
+imasklib.dev: ray and stefan
+iodevice.dev: ray and stefan
+iscale.dev: ray and stefan
+isupport.dev: ray and stefan
+jasper.dev: ralph
+jasper_0.dev: ralph
+jbig2.dev: ralph
+jbig2dec.dev: ralph
+jbig2dec_0.dev: ralph
+jpeg.dev: ray and stefan
+jpege6.dev: third party
+jpeggray.dev: ray and stefan
+jpx.dev: ralph
+jpx_jasper.dev: ralph
+laserjet.dev: ray and stefan
+ldf_jb2.dev: ralph
+libpng.dev: third party
+lj5gray.dev: ray and stefan
+lj5mono.dev: ray and stefan
+ljet2p.dev: ray and stefan
+ljet3.dev: ray and stefan
+ljet3d.dev: ray and stefan
+ljet4.dev: ray and stefan
+ljet4d.dev: ray and stefan
+ljetplus.dev: ray and stefan
+lpg.dev: third party
+luratech_jp2.dev: ralph
+lzwd.dev: alex
+lzwe.dev: alex
+macglyph.dev: ralph
+macres.dev: ralph
+macroman.dev: ralph
+page.dev: ray and stefan
+pagedev.dev: ray and stefan
+path1.dev: igor
+path1lib.dev: igor
+patlib.dev: raph and tim
+patread.dev: raph and tim
+pattern.dev: raph and tim
+pbm.dev: ray and stefan
+pbmraw.dev: ray and stefan
+pcl5.dev: henry
+pcl5base.dev: henry
+pcl5c.dev: henry
+pcx16.dev: ray and stefan
+pcx24b.dev: ray and stefan
+pcx256.dev: ray and stefan
+pcxcmyk.dev: ray and stefan
+pcxgray.dev: ray and stefan
+pcxmono.dev: ray and stefan
+pdf.dev: alex
+pdffonts.dev: alex
+pdfread.dev: alex
+pdfwrite.dev: igor
+pdiff.dev: alex
+pdtext.dev: igor
+pdxtext.dev: igor
+pgm.dev: ray and stefan
+pgmraw.dev: ray and stefan
+pgnm.dev: ray and stefan
+pgnmraw.dev: ray and stefan
+pipe.dev: ray
+pj.dev: ?
+pjl.dev: henry
+pjxl.dev: ?
+pjxl300.dev: ?
+pkm.dev: ray and stefan
+pkmraw.dev: ray and stefan
+pksm.dev: ray and stefan
+pksm.dev: raph and tim
+pksmraw.dev: raph and tim
+pl.dev: henry
+png16.dev: ray and stefan
+png16m.dev: ray and stefan
+png256.dev: ray and stefan
+png48.dev: ray and stefan
+pngalpha.dev: raph and tim
+pnggray.dev: ray and stefan
+pnggray.dev ray and stefan
+pngmono.dev: ray and stefan
+pngp.dev: alex
+pnm.dev: ray and stefan
+pnmraw.dev: ray and stefan
+posync.dev: ?
+ppm.dev: ray and stefan
+ppmraw.dev: ray and stefan
+ps2write.dev: igor
+psbase.dev: ray and stefan
+psdcmyk.dev: raph and tim
+psdf.dev: igor
+psdrgb.dev: ray and stefan
+psf.dev: igor
+psf0lib.dev: igor
+psf0read.dev: igor
+psf1lib.dev: igor
+psf2lib.dev: igor
+psgray.dev: igor
+psi.dev: ray and stefan
+psl2cs.dev: raph and tim
+psmono.dev: igor
+psrgb.dev: igor
+pswrite.dev: igor
+pxl.dev: henry
+pxlcolor.dev: ray and stefan
+pxlmono.dev: ray and stefan
+rld.dev: alex
+rle.dev: alex
+romfs0.dev: ray and stefan
+romfs1.dev: ray and stefan
+roplib.dev: raph, tim and henry
+rtlbase.dev: henry
+rtlbasec.dev: henry
+sarc4.dev: ralph
+sdctd.dev: alex
+sdcte.dev: alex
+sddparam.dev: alex
+seexec.dev: alex and ralph (ralph for gscrypt)
+sepr.dev: raph and tim
+seprlib.dev: raph and tim
+sfile.dev: ray and stefan
+shadelib.dev: igor
+sicclib.dev: raph and tim
+simscale.dev: raph
+sjbig2.dev: ralph
+sjbig2_.dev: ralph
+sjbig2_jbig2dec.dev
+sjbig2_jbig2dec.dev: ralph
+sjbig2_luratech.dev: ralph
+sjpx.dev: ralph
+sjpx_jasper.dev
+sjpx_jasper.dev: ralph
+sjpx_luratech.dev: ralph
+slzwd.dev: alex
+slzwe.dev: alex
+smd5.dev: ralph
+spotcmyk.dev: raph and tim
+stcolor.dev: ?
+strdline.dev: alex
+szlibd.dev: alex
+szlibe.dev: alex
+tfax.dev: ray and stefan
+tiff12nc.dev: ray and stefan
+tiff24nc.dev: ray and stefan
+tiff32nc.dev: ray and stefan
+tiffcrle.dev: ray and stefan
+tiffg3.dev: ray and stefan
+tiffg32d.dev: ray and stefan
+tiffg4.dev: ray and stefan
+tiffgray.dev: ray and stefan
+tifflzw.dev: ray and stefan
+tiffpack.dev: ray and stefan
+tiffs.dev: ray and stefan
+tiffsep.dev: ray and stefan
+tracedev.dev: igor
+translib.dev: raph and tim
+transpar.dev: raph and tim
+traplib.dev: raph and tim
+ttflib.dev: igor
+ttfont.dev: igor
+type1.dev: igor
+type2.dev: igor
+type32.dev: igor
+type42.dev: igor
+ufst.dev: henry
+uniprint.dev: ray and stefan
+unix_.dev: ?
+upath.dev: igor
+usparam.dev: ray and stefan
+vector.dev: igor
+x11.dev: raph and tim
+x11alpha.dev: raph and tim
+x11alt_.dev: raph and tim
+x11cmyk.dev: raph and tim
+x11gray2.dev: raph and tim
+x11gray4.dev: raph and tim
+x11mono.dev: raph and tim
+xcf.dev: raph and tim
+zfrsd.dev: alex
+zlibd.dev: third party
+zlibe.dev: third party
