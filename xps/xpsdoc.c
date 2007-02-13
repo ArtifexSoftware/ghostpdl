@@ -681,8 +681,7 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
      * ready: parse and render.
      */
 
-loop:
-    if (ctx->next_page)
+    while (ctx->next_page)
     {
 	xps_part_t *pagepart = xps_find_part(ctx, ctx->next_page->name);
 	if (pagepart && pagepart->complete)
@@ -717,15 +716,17 @@ loop:
 
 	    if (have_resources)
 	    {
-		int code = xps_process_fixed_page(ctx, pagepart);
+		int code = xps_parse_fixed_page(ctx, pagepart);
 		if (code < 0)
 		    return code;
 
-		/* keep trying as long as we can */
 		ctx->next_page = ctx->next_page->next;
-		goto loop;
+
+		continue;
 	    }
 	}
+
+	break;
     }
 
     return 0;

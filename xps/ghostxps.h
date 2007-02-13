@@ -1,19 +1,26 @@
+#include <stdlib.h>
+
 #include "memory_.h"
 #include "gsgc.h"
-#include "scommon.h"
+#include "gstypes.h"
 #include "gsstate.h"
+#include "gscoord.h"
+#include "gsmemory.h"
+#include "gsparam.h"
+#include "gsdevice.h"
+#include "scommon.h"
 #include "gserror.h"
 #include "gserrors.h"
 #include "gspaint.h"
+#include "gspath.h"
 
 #include "zlib.h"
 
+/*
+ * Context and memory.
+ */
+
 typedef struct xps_context_s xps_context_t;
-typedef struct xps_part_s xps_part_t;
-typedef struct xps_type_map_s xps_type_map_t;
-typedef struct xps_relation_s xps_relation_t;
-typedef struct xps_document_s xps_document_t;
-typedef struct xps_page_s xps_page_t;
 
 #define xps_alloc(ctx, size) \
     ((void*)gs_alloc_bytes(ctx->memory, size, __FUNCTION__));
@@ -24,13 +31,25 @@ typedef struct xps_page_s xps_page_t;
 #define xps_free(ctx, ptr) \
     gs_free_object(ctx->memory, ptr, __FUNCTION__);
 
-int xps_process_data(xps_context_t *ctx, stream_cursor_read *buf);
-int xps_process_part(xps_context_t *ctx, xps_part_t *part);
-int xps_process_fixed_page(xps_context_t *ctx, xps_part_t *part);
-
 char *xps_strdup_imp(xps_context_t *ctx, const char *str, const char *function);
 char *xps_clean_path(char *name);
 void xps_absolute_path(char *output, char *pwd, char *path);
+
+/* end of page device callback foo */
+int xps_show_page(xps_context_t *ctx, int num_copies, int flush);
+
+/*
+ * Packages, parts and relations.
+ */
+
+typedef struct xps_part_s xps_part_t;
+typedef struct xps_type_map_s xps_type_map_t;
+typedef struct xps_relation_s xps_relation_t;
+typedef struct xps_document_s xps_document_t;
+typedef struct xps_page_s xps_page_t;
+
+int xps_process_data(xps_context_t *ctx, stream_cursor_read *buf);
+int xps_process_part(xps_context_t *ctx, xps_part_t *part);
 
 struct xps_type_map_s
 {
@@ -112,25 +131,21 @@ void xps_free_part(xps_context_t *ctx, xps_part_t *part);
 xps_part_t *xps_find_part(xps_context_t *ctx, char *name);
 int xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type);
 
-typedef struct xps_parser_s xps_parser_t;
+/*
+ * XML and content.
+ */
+
 typedef struct xps_item_s xps_item_t;
-typedef struct xps_mark_s xps_mark_t;
 
-struct xps_mark_s
-{
-    /* this is opaque state to save/restore the parser location */
-    xps_item_t *head;
-    int downed;
-    int nexted;
-};
-
-xps_parser_t * xps_new_parser(xps_context_t *ctx, char *buf, int len);
-void xps_free_parser(xps_parser_t *parser);
-xps_item_t * xps_next(xps_parser_t *parser);
-void xps_down(xps_parser_t *parser);
-void xps_up(xps_parser_t *parser);
+xps_item_t * xps_parse_xml(xps_context_t *ctx, char *buf, int len);
+xps_item_t * xps_next(xps_item_t *item);
+xps_item_t * xps_down(xps_item_t *item);
+void xps_free_item(xps_context_t *ctx, xps_item_t *item);
 char * xps_tag(xps_item_t *item);
-char * xps_att(xps_item_t *item, char *att);
-xps_mark_t xps_mark(xps_parser_t *parser);
-void xps_goto(xps_parser_t *parser, xps_mark_t mark);
+char * xps_att(xps_item_t *item, const char *att);
+
+int xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part);
+int xps_parse_path(xps_context_t *ctx, xps_item_t *node);
+int xps_parse_glyphs(xps_context_t *ctx, xps_item_t *node);
+int xps_parse_canvas(xps_context_t *ctx, xps_item_t *node);
 

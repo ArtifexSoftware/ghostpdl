@@ -36,6 +36,9 @@ $(XPSOBJ)xpsdoc.$(OBJ): $(XPSSRC)xpsdoc.c $(XPSINCLUDES)
 $(XPSOBJ)xpspage.$(OBJ): $(XPSSRC)xpspage.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpspage.c $(XPSO_)xpspage.$(OBJ)
 
+$(XPSOBJ)xpspath.$(OBJ): $(XPSSRC)xpspath.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xpspath.c $(XPSO_)xpspath.$(OBJ)
+
 $(XPS_TOP_OBJ): $(XPSSRC)xpstop.c $(pltop_h) $(XPSINCLUDES)
 	$(CP_) $(XPSGEN)pconf.h $(XPSGEN)pconfig.h
 	$(XPSCCC) $(XPSSRC)xpstop.c $(XPSO_)xpstop.$(OBJ)
@@ -46,6 +49,7 @@ XPS_OBJS=\
     $(XPSOBJ)xpsxml.$(OBJ) \
     $(XPSOBJ)xpsdoc.$(OBJ) \
     $(XPSOBJ)xpspage.$(OBJ) \
+    $(XPSOBJ)xpspath.$(OBJ) \
 
 $(XPSOBJ)xps.dev: $(XPS_MAK) $(ECHOGS_XE) $(XPS_OBJS)
 	$(SETMOD) $(XPSOBJ)xps $(XPS_OBJS)

@@ -6,6 +6,16 @@
 
 #define XMLBUFLEN 4096
 
+typedef struct xps_parser_s xps_parser_t;
+
+struct xps_parser_s
+{
+    xps_context_t *ctx;
+    xps_item_t *root;
+    xps_item_t *head;
+    const char *error;
+};
+
 struct xps_item_s
 {
     char *name;
@@ -14,30 +24,6 @@ struct xps_item_s
     xps_item_t *down;
     xps_item_t *next;
 };
-
-struct xps_parser_s
-{
-    xps_context_t *ctx;
-    xps_item_t *root;
-    xps_item_t *head;
-    const char *error;
-    int nexted;
-    int downed;
-};
-
-
-static void free_item(xps_context_t *ctx, xps_item_t *item)
-{
-    xps_item_t *next;
-    while (item)
-    {
-	next = item->next;
-	if (item->down)
-	    free_item(ctx, item->down);
-	xps_free(ctx, item);
-	item = next;
-    }
-}
 
 static void on_open_tag(void *zp, const char *name, const char **atts)
 {
@@ -56,8 +42,8 @@ static void on_open_tag(void *zp, const char *name, const char **atts)
 
     /* count size to alloc */
 
-    namelen = strlen(name) + 1;
-    attslen = sizeof(char*);
+    namelen = strlen(name) + 1; /* zero terminated */
+    attslen = sizeof(char*); /* with space for sentinel */
     textlen = 0;
     for (i = 0; atts[i]; i++)
     {
@@ -160,37 +146,28 @@ static void on_text(void *zp, const char *buf, int len)
     }
 }
 
-
-xps_parser_t *
-xps_new_parser(xps_context_t *ctx, char *buf, int len)
+xps_item_t *
+xps_parse_xml(xps_context_t *ctx, char *buf, int len)
 {
-    xps_parser_t *parser;
+    xps_parser_t parser;
     XML_Parser xp;
     int code;
 
-    parser = xps_alloc(ctx, sizeof(xps_parser_t));
-    if (!parser)
-	return NULL;
-
-    parser->ctx = ctx;
-    parser->root = NULL;
-    parser->head = NULL;
-    parser->error = NULL;
-    parser->downed = 0;
-    parser->nexted = 0;
+    parser.ctx = ctx;
+    parser.root = NULL;
+    parser.head = NULL;
+    parser.error = NULL;
 
     /* xp = XML_ParserCreateNS(NULL, ns); */
     xp = XML_ParserCreate(NULL);
     if (!xp)
     {
-	xps_free(ctx, parser);
 	gs_throw(-1, "xml error: could not create expat parser");
 	return NULL;
     }
 
-    XML_SetUserData(xp, parser);
+    XML_SetUserData(xp, &parser);
     XML_SetParamEntityParsing(xp, XML_PARAM_ENTITY_PARSING_NEVER);
-
     XML_SetStartElementHandler(xp, on_open_tag);
     XML_SetEndElementHandler(xp, on_close_tag);
     XML_SetCharacterDataHandler(xp, on_text);
@@ -198,25 +175,56 @@ xps_new_parser(xps_context_t *ctx, char *buf, int len)
     code = XML_Parse(xp, buf, len, 1);
     if (code == 0)
     {
-	if (parser->root)
-	    free_item(ctx, parser->root);
-	xps_free(ctx, parser);
+	if (parser.root)
+	    xps_free_item(ctx, parser.root);
 	XML_ParserFree(xp);
 	gs_throw1(-1, "xml error: %s", XML_ErrorString(XML_GetErrorCode(xp)));
 	return NULL;
     }
 
-    parser->head = NULL;
-    return parser;
+    return parser.root;
+}
+
+xps_item_t *
+xps_next(xps_item_t *item)
+{
+    return item->next;
+}
+
+xps_item_t *
+xps_down(xps_item_t *item)
+{
+    return item->down;
+}
+
+char *
+xps_tag(xps_item_t *item)
+{
+    return item->name;
+}
+
+char *
+xps_att(xps_item_t *item, const char *att)
+{
+    int i;
+    for (i = 0; item->atts[i]; i += 2)
+	if (!strcmp(item->atts[i], att))
+	    return item->atts[i + 1];
+    return NULL;
 }
 
 void
-xps_free_parser(xps_parser_t *parser)
+xps_free_item(xps_context_t *ctx, xps_item_t *item)
 {
-    xps_context_t *ctx = parser->ctx;
-    if (parser->root)
-	free_item(ctx, parser->root);
-    xps_free(ctx, parser);
+    xps_item_t *next;
+    while (item)
+    {
+	next = item->next;
+	if (item->down)
+	    xps_free_item(ctx, item->down);
+	xps_free(ctx, item);
+	item = next;
+    }
 }
 
 static void indent(int n)
@@ -256,89 +264,5 @@ xps_debug_item(xps_item_t *item, int level)
 
 	item = item->next;
     }
-}
-
-void
-xps_debug_parser(xps_parser_t *parser)
-{
-    xps_debug_item(parser->root, 0);
-}
-
-xps_item_t *
-xps_next_item(xps_parser_t *parser)
-{
-    if (parser->downed)
-	return NULL;
-
-    if (!parser->head)
-    {
-	parser->head = parser->root;
-	return parser->head;
-    }
-
-    if (!parser->nexted)
-    {
-	parser->nexted = 1;
-	return parser->head;
-    }
-
-    if (parser->head->next)
-    {
-	parser->head = parser->head->next;
-	return parser->head;
-    }
-
-    return NULL;
-}
-
-void
-xps_down(xps_parser_t *parser)
-{
-    if (!parser->downed && parser->head && parser->head->down)
-	parser->head = parser->head->down;
-    else
-	parser->downed ++;
-    parser->nexted = 0;
-}
-
-void
-xps_up(xps_parser_t *parser)
-{
-    if (!parser->downed && parser->head && parser->head->up)
-	parser->head = parser->head->up;
-    else
-	parser->downed --;
-}
-
-char *
-xps_tag(xps_item_t *item)
-{
-    return item->name;
-}
-
-char *
-xps_att(xps_item_t *item, char *att)
-{
-    int i;
-    for (i = 0; item->atts[i]; i += 2)
-	if (!strcmp(item->atts[i], att))
-	    return item->atts[i + 1];
-    return NULL;
-}
-
-xps_mark_t xps_mark(xps_parser_t *parser)
-{
-    xps_mark_t mark;
-    mark.head = parser->head;
-    mark.nexted = parser->nexted;
-    mark.downed = parser->downed;
-    return mark;
-}
-
-void xps_goto(xps_parser_t *parser, xps_mark_t mark)
-{
-    parser->head = mark.head;
-    parser->nexted = mark.nexted;
-    parser->downed = mark.downed;
 }
 

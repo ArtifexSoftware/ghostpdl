@@ -247,7 +247,7 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 	if (count > remain)
 	    count = remain;
 	/* dprintf1("  reading %d bytes\n", count); */
-	readall(ctx, buf, part->data + part->size, count);
+	readall(ctx, buf, (byte*)part->data + part->size, count);
 	part->size += count;
 	if (part->size == ctx->zip_uncompressed_size)
 	    return 1;
@@ -284,9 +284,9 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		else if (signature == ZIP_DATA_DESC_SIG)
 		{
 		    /* dputs("data desc signature\n"); */
-		    unsigned int dd_crc32 = read4(ctx, buf);
-		    unsigned int dd_csize = read4(ctx, buf);
-		    unsigned int dd_usize = read4(ctx, buf);
+		    (void) read4(ctx, buf); /* crc32 */
+		    (void) read4(ctx, buf); /* csize */
+		    (void) read4(ctx, buf); /* usize */
 		}
 		else
 		{
@@ -305,23 +305,16 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		if (buf->limit - buf->ptr < 26)
 		    return 0;
 
-		unsigned int version = read2(ctx, buf);
-		unsigned int general = read2(ctx, buf);
-		unsigned int method = read2(ctx, buf);
-		unsigned int filetime = read2(ctx, buf);
-		unsigned int filedate = read2(ctx, buf);
-		unsigned int crc32 = read4(ctx, buf);
-		unsigned int csize = read4(ctx, buf);
-		unsigned int usize = read4(ctx, buf);
-		unsigned int namelength = read2(ctx, buf);
-		unsigned int extralength = read2(ctx, buf);
-
-		ctx->zip_general = general;
-		ctx->zip_method = method;
-		ctx->zip_name_length = namelength;
-		ctx->zip_extra_length = extralength;
-		ctx->zip_compressed_size = csize;
-		ctx->zip_uncompressed_size = usize;
+		(void) read2(ctx, buf); /* version */
+		ctx->zip_general = read2(ctx, buf);
+		ctx->zip_method = read2(ctx, buf);
+		(void) read2(ctx, buf); /* file time */
+		(void) read2(ctx, buf); /* file date */
+		(void) read4(ctx, buf); /* crc32 */
+		ctx->zip_compressed_size = read4(ctx, buf);
+		ctx->zip_uncompressed_size = read4(ctx, buf);
+		ctx->zip_name_length = read2(ctx, buf);
+		ctx->zip_extra_length = read2(ctx, buf);
 	    }
 	    ctx->zip_state ++;
 
@@ -367,9 +360,9 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		/* dputs("data descriptor by flag\n"); */
 		if (buf->limit - buf->ptr < 12)
 		    return 0;
-		unsigned int dd_crc32 = read4(ctx, buf);
-		unsigned int dd_csize = read4(ctx, buf);
-		unsigned int dd_usize = read4(ctx, buf);
+		read4(ctx, buf); /* crc32 */
+		read4(ctx, buf); /* csize */
+		read4(ctx, buf); /* usize */
 	    }
 
 	    ctx->zip_state = 0;
