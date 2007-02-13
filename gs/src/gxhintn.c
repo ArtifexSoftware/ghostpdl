@@ -648,8 +648,12 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm,
     }
     if (this->ctmf.denominator != 0) {
 	code = fraction_matrix__invert_to(&this->ctmf, &this->ctmi); /* Note: ctmi is inversion of ctmf, not ctm. */
-	if (code < 0)
+	if (code == gs_error_rangecheck)
+	    this->ctmf.denominator = 0;
+	else if (code < 0)
 	    return code;
+    }
+    if (this->ctmf.denominator != 0) {
 	this->g2o_fraction = 1 << this->g2o_fraction_bits;
 	/* Note : possibly we'll adjust the matrix precision dynamically 
 	   with adjust_matrix_precision while importing the glyph. */
