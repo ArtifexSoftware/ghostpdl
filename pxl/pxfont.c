@@ -134,10 +134,6 @@ px_set_char_matrix(px_state_t *pxs)
 		  if ( pxgs->char_shear.x != 0 || pxgs->char_shear.y != 0 )
 		    { gs_matrix smat;
 		      gs_make_identity(&smat);
-		      if( pxgs->char_shear.x == 1 && pxgs->char_shear.y == 1) {
-			  /* make 1 1 shear matrix invertable pxlfts2.0/t310.bin */
-			  pxgs->char_shear.y += 0.0001;
-		      }
 		      smat.yx = pxgs->char_shear.x;
 		      smat.xy = pxgs->char_shear.y;
 		      gs_matrix_multiply(&smat, &mat, &mat);
@@ -344,10 +340,18 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 	return_error(errorIllegalArraySize);
     if ( !pxgs->base_font )
 	return_error(errorNoCurrentFont);
-    if ( !pxgs->char_matrix_set ) { 
+    if ( !pxgs->char_matrix_set ) {
+        gs_matrix *cm = &pxgs->char_matrix;
+        float det;
         code = px_set_char_matrix(pxs);
         if ( code < 0 )
             return code;
+        /* check for a singular matrix - this does not generate an
+           interpreter error on hp.  Casts prevent double precision
+           temporary variables, as in gsmatrix.c. */
+        det = (float)(cm->xx * cm->yy) - (float)(cm->xy * cm->yx);
+        if ( det == 0 )
+            return 0;
     }
 
     gs_setcharmatrix(pgs, &pxgs->char_matrix);

@@ -56,12 +56,21 @@ painted.  The comment on this image says "The 2nd and 3rd rectangles should
 be stroked and painted with black color."  [1] See the entry for
 SetColorSpace in the discrepancies report.
 
+t310 - SetCharShear
+
+On page 1 panel 1 the character shear setting results in font scaling
+factors thar are zero.  The Artifex interpreter produces no result,
+the HP 4600 produces a thin one pixel line for the character.  We do
+not attempt to emulate this.
+
+
 t314 - SetFillMode
 ------------------
 
 The lower figure in all 3 images, ostensibly drawn with the non-zero winding
 number rule, is clearly not drawn with this rule.  [1] See the discussion of
 clipping and of SetClipIntersect in the discrepancies report.
+
 
 t321 - SetClipIntersect
 -----------------------
