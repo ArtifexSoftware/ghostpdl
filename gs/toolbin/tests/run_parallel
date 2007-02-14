@@ -21,6 +21,7 @@
 import os
 import string
 import re
+import sys
 
 ## globals -- edit these to make it work
 run=True	# whether to submit the job after creating it
@@ -33,6 +34,10 @@ testdir=home+"/tests/ps/ps3fts"	# directory of files to run
 configfile="testing.cfg"	# template config file
 files=os.listdir(testdir)	# list of files to run
 
+## defaults -- override from the commandline
+action='run'
+if len(sys.argv) > 1:
+  action = sys.argv[1]
 
 ## helper functions
 
@@ -86,9 +91,31 @@ def makepbscleanup(configfiles, comparefiledirs, jobid=None):
      outfile.write("rm " + configfiles[node] + "\n")
    outfile.close()
 
+def makepbsreport(jobid):
+  '''Create a report from the output of a previous job
+     Pass the jobid of the actual regression run so we
+     know which log to parse.'''
+  outfile = open("run_regression_report.pbs","w")
+  # run this on nina by default since it's trivial
+  outfile.write("#PBS -l nodes=1:run:nina -W depend=afterany:%s\n" % jobid)
+  outfile.write("cd %s\n" % base)
+  dest = " >> regression.%s.log\n" % jobid
+  # hack: we want the stderr output from the regression run, but
+  # the jobid pbs appends to the file isn't quite the same as
+  # what qsub (or qstat) give us.
+  log = "run_regression.pbs.e%s" % string.split(jobid, '.')[0]
+  outfile.write("echo Run split over %d nodes" % nodes + dest)
+  outfile.write("JOBS=`cat %s | egrep ^Ran | wc -l`" % log + dest)
+  outfile.write("echo Run completed over $JOBS jobs" + dest)
+  outfile.write("DIFFS=`cat %s | egrep DIFFER$ | wc -l`" % log + dest)
+  outfile.write("echo Run shows $DIFFS differences" + dest)
+  outfile.write("echo" + dest)
+  outfile.write("cat %s | egrep ^Checking" % log + dest)
+  outfile.close()
+
 ## create a config files from the template for each node
 (cluster, nodes) = choosecluster()
-print "choosing %s with %d nodes free" % (cluster, nodes)
+print "choosing %s with %d cpus free" % (cluster, nodes)
 
 configfiles=[]
 comparefiledirs=[]
@@ -132,14 +159,23 @@ makepbs("make_testdb")
 if run:
    # qsub the pbs file
 
-   #job= os.popen("qsub make_testdb.pbs")
-   job= os.popen("qsub run_regression.pbs")
-   jobid=string.strip(job.readline())
+   if action == 'update':
+     job= os.popen("qsub make_testdb.pbs")
+   else:
+     job = os.popen("qsub run_regression.pbs")
+   jobid = string.strip(job.readline())
    print "run submitted as", jobid 
+
+   # append a follow-up report generation job
+   if action == 'run':
+     makepbsreport(jobid)
+     job = os.popen("qsub run_regression_report.pbs")
+     report_jobid = string.strip(job.readline())
+     print "report job is", report_jobid
 
    # append a follow-up job to do the cleanup
    makepbscleanup(configfiles,comparefiledirs,jobid)
    job = os.popen("qsub run_regression_cleanup.pbs")
-   jobid = string.strip(job.readline())
-   print "cleanup job is", jobid
+   cleanup_jobid = string.strip(job.readline())
+   print "cleanup job is", cleanup_jobid
 
