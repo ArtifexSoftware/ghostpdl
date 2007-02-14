@@ -57,6 +57,19 @@ GLGEN=$(GLGENDIR)$(D)
 GLOBJ=$(GLOBJDIR)$(D)
 #**************** END PATCHES
 
+# 1 --> Use 64 bits for gx_color_index.  This is required only for
+# non standard devices or DeviceN process color model devices.
+USE_LARGE_COLOR_INDEX=1
+
+!if $(USE_LARGE_COLOR_INDEX) == 1
+# Definitions to force gx_color_index to 64 bits
+LARGEST_UINTEGER_TYPE=unsigned __int64
+GX_COLOR_INDEX_TYPE=$(LARGEST_UINTEGER_TYPE)
+
+CFLAGS=$(CFLAGS) /DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)"
+!endif
+
+
 !include $(COMMONDIR)\msvcdefs.mak
 !include $(COMMONDIR)\pcdefs.mak
 !include $(COMMONDIR)\generic.mak
