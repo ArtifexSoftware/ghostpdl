@@ -204,10 +204,6 @@ scan_bos(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
 	    }
 	    pbs->top_size = top_size = sdecodeushort(p + 2, num_format);
 	    pbs->lsize = lsize = sdecodelong(p + 4, num_format);
-	    if (p[1] != 0) { /* reserved, must be 0 */
-		scan_bos_error(pstate, "non-zero unused field");
-		return_error(e_syntaxerror);
-	    }
 	    if ((size = lsize) != lsize) {
 		scan_bos_error(pstate, "bin obj seq length too large");
 		return_error(e_limitcheck);
@@ -224,6 +220,25 @@ scan_bos(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
 	    scan_bos_error(pstate, "sequence too short");
 	    return_error(e_syntaxerror); /* size too small */
 	}
+        { /* Preliminary syntax check to avoid potentialy large
+           * memory allocation on junk data. Bug 688833
+           */
+          const unsigned char *q, *rend = p + hsize + top_size*8;
+
+          if (rend > rlimit)
+              rend = rlimit; 
+          for (q = p + hsize + 1; q < rend; q += 8) {
+             int c = q[-1] & 0x7f;
+             if (c > 10 && c != BS_TYPE_DICTIONARY) {
+		scan_bos_error(pstate, "invalid object type");
+		return_error(e_syntaxerror);
+             }
+             if (*q != 0) {
+		scan_bos_error(pstate, "non-zero unused field");
+		return_error(e_syntaxerror);
+             }
+          }
+        }
 	/*
 	 * Preallocate an array large enough for the worst case,
 	 * namely, all objects and no strings.  Note that we must
