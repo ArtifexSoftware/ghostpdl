@@ -2259,6 +2259,7 @@ Test	 Status	Comments
 		CPSI output.  Strange result in Distiller 7.0 output.  Acrobat 7.0
 		reports incorrect number of values for setcolor operator.  Page is
 		blank.
+		See also 18-02G-1.
                 Partial analysis from Jan (11/29/2006)
                 1. An uncolored pattern is created, and used to draw the region on       
                    the left.  The pattern consists of a 9 unit x 9 unit tile, in the     
@@ -3868,6 +3869,7 @@ Test	 Status	Comments
 		-
                 pattern differs in 4th column of stars in the last box.
                 Analyzed by Igor.
+                See also 12-01-5.
                 A simplified test case is placed to
                 peeves:/home/igor/pscet/mytests/18-02G-1-Igor01.PS .
                 This is a general pattern implementation problem.
