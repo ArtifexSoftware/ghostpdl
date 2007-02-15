@@ -236,16 +236,21 @@ private void fraction_matrix__set(fraction_matrix * this, const double_matrix * 
     double unused = frexp(scale, &matrix_exp);
 
     this->bitshift = matrix_bits - matrix_exp;
-    this->denominator = 1 << this->bitshift;
-    /* Round towards zero for a better view of mirrored characters : */
-    this->xx = (int32_t)(pmat->xx * this->denominator + 0.5);
-    this->xy = (int32_t)(pmat->xy * this->denominator + 0.5);
-    this->yx = (int32_t)(pmat->yx * this->denominator + 0.5);
-    this->yy = (int32_t)(pmat->yy * this->denominator + 0.5);
-    m = Max(Max(any_abs(this->xx), any_abs(this->xy)), Max(any_abs(this->yx), any_abs(this->yy)));
-    unused = frexp(m, &matrix_exp);
-    if (matrix_exp > matrix_bits)
-        fraction_matrix__drop_bits(this, matrix_exp - matrix_bits);
+    if (this->bitshift >= sizeof( this->denominator) * 8) {
+	this->denominator = 0;
+	this->xx = this->xy = this->yx = this->yy = 0;
+    } else {
+	this->denominator = 1 << this->bitshift;
+	/* Round towards zero for a better view of mirrored characters : */
+	this->xx = (int32_t)(pmat->xx * this->denominator + 0.5);
+	this->xy = (int32_t)(pmat->xy * this->denominator + 0.5);
+	this->yx = (int32_t)(pmat->yx * this->denominator + 0.5);
+	this->yy = (int32_t)(pmat->yy * this->denominator + 0.5);
+	m = Max(Max(any_abs(this->xx), any_abs(this->xy)), Max(any_abs(this->yx), any_abs(this->yy)));
+	unused = frexp(m, &matrix_exp);
+	if (matrix_exp > matrix_bits)
+	    fraction_matrix__drop_bits(this, matrix_exp - matrix_bits);
+    }
 }
 
 private inline int fraction_matrix__to_double(const fraction_matrix * this, double_matrix * pmat)
