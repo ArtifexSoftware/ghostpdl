@@ -199,11 +199,7 @@ FEATURE_CORE    = \
 	  $(DD)\ttfont.dev	\
 	  $(DD)\pipe.dev
 
-!if "$(PL_SCALER)" == "ufst"
-FEATURE_DEVS    = $(FEATURE_CORE) $(DD)\fapi.dev
-!else
-FEATURE_DEVS    = $(FEATURE_CORE)
-!endif
+FEATURE_DEVS    = $(FEATURE_CORE) $(DD)\fapi.dev 
 !endif
 
 !include $(MAINSRCDIR)\pcl6_msvc.mak
