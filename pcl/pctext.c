@@ -474,10 +474,6 @@ pcl_show_chars_slow(
 	/* round width to integral pcl current units */
 	width = (pcl_get_width(pcs, &advance_vector, pscale, chr, is_space));
 
-        /* silently continue if the advance is zero */
-        if (width == 0)
-            continue;
-            
         /*
          * Check for transitions of the left margin; this check is
          * disabled if the immediately preceding character was a back-space.
