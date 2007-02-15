@@ -9,11 +9,25 @@ int xps_parse_glyphs(xps_context_t *ctx, xps_item_t *node)
 int xps_parse_canvas(xps_context_t *ctx, xps_item_t *root)
 {
     xps_item_t *node;
+    char *transform;
+    gs_matrix matrix;
+    int saved = 0;
 
     dputs("Begin Canvas!\n");
 
-    if (xps_att(root, "RenderTransform"))
+    transform = xps_att(root, "RenderTransform");
+    if (transform)
+    {
 	dputs("  canvas att render transform\n");
+	xps_parse_render_transform(ctx, transform, &matrix);
+	if (!saved)
+	{
+	    gs_gsave(ctx->pgs);
+	    saved = 1;
+	}
+	gs_concat(ctx->pgs, &matrix);
+    }
+
     if (xps_att(root, "Clip"))
 	dputs("  canvas att clip\n");
     if (xps_att(root, "Opacity"))
@@ -27,7 +41,16 @@ int xps_parse_canvas(xps_context_t *ctx, xps_item_t *root)
 	    dputs("  canvas resources\n");
 
 	if (!strcmp(xps_tag(node), "Canvas.RenderTransform"))
+	{
 	    dputs("  canvas render transform\n");
+	    xps_parse_matrix_transform(ctx, xps_down(node), &matrix);
+	    if (!saved)
+	    {
+		gs_gsave(ctx->pgs);
+		saved = 1;
+	    }
+	    gs_concat(ctx->pgs, &matrix);
+	}
 
 	if (!strcmp(xps_tag(node), "Canvas.Clip"))
 	    dputs("  canvas clip\n");
@@ -41,6 +64,11 @@ int xps_parse_canvas(xps_context_t *ctx, xps_item_t *root)
 	    xps_parse_glyphs(ctx, node);
 	if (!strcmp(xps_tag(node), "Canvas"))
 	    xps_parse_canvas(ctx, node);
+    }
+
+    if (saved)
+    {
+	gs_grestore(ctx->pgs);
     }
 
     dputs("Finish Canvas!\n");

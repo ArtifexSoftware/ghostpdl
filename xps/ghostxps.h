@@ -4,6 +4,7 @@
 #include "gsgc.h"
 #include "gstypes.h"
 #include "gsstate.h"
+#include "gsmatrix.h"
 #include "gscoord.h"
 #include "gsmemory.h"
 #include "gsparam.h"
@@ -148,4 +149,9 @@ int xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part);
 int xps_parse_path(xps_context_t *ctx, xps_item_t *node);
 int xps_parse_glyphs(xps_context_t *ctx, xps_item_t *node);
 int xps_parse_canvas(xps_context_t *ctx, xps_item_t *node);
+
+void xps_parse_matrix_transform(xps_context_t *ctx, xps_item_t *root, gs_matrix *matrix);
+void xps_parse_render_transform(xps_context_t *ctx, char *text, gs_matrix *matrix);
+void xps_parse_color(xps_context_t *ctx, char *hexstring, float *argb);
+int xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom);
 
