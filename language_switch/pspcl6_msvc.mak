@@ -134,7 +134,7 @@ DD=$(GLGENDIR)
 # afs  - Artifex font scaler.
 # 3 mutually exclusive choices follow, pick one.
 
-PL_SCALER=ufst
+PL_SCALER=afs
 PCL_FONT_SCALER=$(PL_SCALER)
 PXL_FONT_SCALER=$(PL_SCALER)
 
