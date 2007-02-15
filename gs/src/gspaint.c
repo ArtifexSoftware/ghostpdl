@@ -31,6 +31,8 @@
 #include "gxhldevc.h"
 #include "gsutil.h"
 
+extern bool CPSI_mode;
+
 /* Define the nominal size for alpha buffers. */
 #define abuf_nominal_SMALL 500
 #define abuf_nominal_LARGE 2000
@@ -455,7 +457,10 @@ gs_strokepath(gs_state * pgs)
     if (code < 0)
 	return code;
     /* NB: needs testing with PCL */
-    gx_setcurrentpoint(pgs, fixed2float(spath.position.x), fixed2float(spath.position.y));
+    if (CPSI_mode && gx_path_is_void(pgs->path))
+        pgs->current_point_valid = false;
+    else
+        gx_setcurrentpoint(pgs, fixed2float(spath.position.x), fixed2float(spath.position.y));
     return 0;
 
 }

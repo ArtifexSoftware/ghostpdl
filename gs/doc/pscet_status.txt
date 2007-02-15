@@ -2107,9 +2107,7 @@ Test	 Status	Comments
 		-
 		curve saw : AOK - same as 11-01-6.
 
-11-21-7  DIFF	GS gives "F" instead of "T" for "{ 10 10 moveto strokepath
-		currentpoint moveto } stopped". Tek matches CPSI
-                assign Alex.
+11-21-7  OK  	Fixed by rev. 7701 - Alex
 
 11-21-8  AOK	Device Dependent / Resolution Dependent. CPSI ignores setflat
 		Tek and CPSI differ.
@@ -2244,7 +2242,7 @@ Test	 Status	Comments
 
 11-28-8  DIFF	same as 11-21-4 assign: Ray.
 
-11-28-9  DIFF	upath - different returns last 2 lines assign Raph
+11-28-9  OK  	Fixed by rev. 7701 - Alex
 
 12-01-1  OK	Minor text outline differences - ADC
 
