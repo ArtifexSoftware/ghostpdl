@@ -143,21 +143,18 @@ class _GSTextTestResult(unittest._TextTestResult):
     def addFailure(self, test, err):
         self.failures.append((test, err))
         if self.showAll:
-	    self.stream.write(self.getDescription(test))
-	    self.stream.write(" ... ")
 	    lines = err[1].args[0]
 	    if (len(lines) > 18) & (lines[0:18] == "non-zero exit code"):
-		self.stream.writeln("ERROR")
+		result = "ERROR"
 	    else:
-		self.stream.writeln("DIFFER")
+		result = "DIFFER"
+	    self.stream.writeln(self.getDescription(test) + " ... " + result)
         elif self.dots:
             self.stream.write("D")
 
     def addSuccess(self, test):
 	unittest.TestResult.addSuccess(self, test)
-	self.stream.write(self.getDescription(test))
-	self.stream.write(" ... ")
-	self.stream.writeln("ok")
+	self.stream.writeln(self.getDescription(test) + " ... ok")
 
     def printErrorList(self, flavor, errors):
         handoff = []
