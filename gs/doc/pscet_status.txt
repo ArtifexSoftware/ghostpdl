@@ -5496,7 +5496,11 @@ Test	 Status	Comments
 
 35_all-5  OK	
 
-35_all-6  DIFF	Same as 34_all-5. Analyzed by Igor. assign: Alex.
+35_all-6  DIFF	Error reporting is fixed in rev. 7705.
+                There are still raster differences in the checkerboard
+                images at the bottom of the page. The images are resolution-dependent.
+                At 300 dpi some of them look darker than others. Adobe doesn't have
+                this problem. assign: Igor.
 
 35_all-7  AOK	Same as 33_all-7. Analyzed by Igor.
 

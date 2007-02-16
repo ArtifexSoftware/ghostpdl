@@ -474,12 +474,10 @@ op_show_finish_setup(i_ctx_t *i_ctx_p, gs_text_enum_t * penum, int npop,
 	penum->outer_CID = osenum->returned.current_glyph;
     }
     if (osenum == NULL && !(penum->text.operation & (TEXT_FROM_GLYPHS | TEXT_FROM_SINGLE_GLYPH))) {
-	gs_font *pfont = igs->root_font;
-
-	if (pfont->FontType == ft_CID_encrypted || 
-	    pfont->FontType == ft_CID_user_defined ||
-	    pfont->FontType == ft_CID_TrueType)
-	    return_error(e_typecheck);
+        int ft = igs->root_font->FontType;
+ 
+        if (ft >= ft_CID_encrypted && ft <= ft_CID_TrueType || ft == ft_CID_bitmap)
+            return_error(e_typecheck);
     }
     make_mark_estack(ep - (snumpush - 1), es_show, op_show_cleanup);
     if (endproc == NULL)
