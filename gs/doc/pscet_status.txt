@@ -3214,7 +3214,7 @@ Test	 Status	Comments
 		of ILLEGAL.  CPSI 'show' implementation differs from Tek (a proc rather
 		than an operator). The latter issue may be caused by CSL, which redefines
                 a number of operatord. IMHO this can be AOK
-                assign Tim
+                assign Peter
 
 13-16-9  OK	rev 7617.
 
@@ -3878,7 +3878,7 @@ Test	 Status	Comments
 18-02F-5  DIFF	18-02A-4 repeat
                 repeat of AOK problem assign Tim
 
-18-02G-1  DIFF	strokepath different - assign: Ray.
+18-02G-1  DIFF	strokepath different - assign: Igor.
 		-
                 pattern differs in 4th column of stars in the last box.
                 Analyzed by Igor.
@@ -4087,7 +4087,7 @@ Test	 Status	Comments
 20-22-3  OK	
 
 20-23-1  DIFF	Different checksum. GS has [T] where CPSI has [F] for (systemdict /deviceinfo known).
-                assign peter.
+                assign Peter.
 
 20-23-2  OK	
 
