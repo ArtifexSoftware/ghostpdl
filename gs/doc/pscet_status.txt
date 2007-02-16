@@ -892,12 +892,9 @@ Test	 Status	Comments
 
 09-44-7  OK	
 
-09-45-1  DIFF	GS has missing 'miter' extension on leftmost second row.
-		(Tek and CPSI render 7 'V' with miter join, GS only 6).
-		assign: Ray
+09-45-1  OK
 
-09-45-2  DIFF	Similar to 09-45-1. GS missing miter extensions top row,
-		rightmost and bottom row, second from left.  assign: Ray
+09-45-2  OK
 
 09-45-3  OK	
 

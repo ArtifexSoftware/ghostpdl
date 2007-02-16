@@ -197,6 +197,7 @@ typedef struct partial_line_s {
     endpoint o;			/* starting coordinate */
     endpoint e;			/* ending coordinate */
     gs_fixed_point width;	/* one-half line width, see above */
+    gs_fixed_point vector;	/* The line segment direction */
     bool thin;			/* true if minimum-width line */
 } partial_line;
 typedef partial_line *pl_ptr;
@@ -658,6 +659,8 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		pl.e.p.x = sx;
 		pl.e.p.y = sy;
 	    }
+	    pl.vector.x = udx;
+	    pl.vector.y = udy;
 	    if (always_thin) {
 		pl.e.cdelta.x = pl.e.cdelta.y = 0;
 		pl.width.x = pl.width.y = 0;
@@ -1490,8 +1493,8 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 	 * computations in user space.
 	 */
 	float check = pgs_lp->miter_check;
-	double u1 = plp->e.cdelta.y, v1 = plp->e.cdelta.x;
-	double u2 = nplp->o.cdelta.y, v2 = nplp->o.cdelta.x;
+	double u1 = plp->vector.y, v1 = plp->vector.x;
+	double u2 = -nplp->vector.y, v2 = -nplp->vector.x;
 	double num, denom;
 	int code;
 
@@ -1562,6 +1565,8 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 	 *              +       -               false
 	 *              -       -               T >= check
 	 */
+	if (num == 0 && denom == 0)
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	if (denom < 0)
 	    num = -num, denom = -denom;
 	/* Now denom >= 0, so sign(num) = sign(T). */
