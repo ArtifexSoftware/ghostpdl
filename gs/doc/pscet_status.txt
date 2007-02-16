@@ -685,7 +685,7 @@ Test	 Status	Comments
 
 09-36-3  OK	Fixed by rev. 7226
 
-09-36-4  DIFF	Dash pattern differences with GS.
+09-36-4  NF	Dash pattern differences with GS.
 		Analyzed by Igor. 
                 -
                 GS rounds coordinates to 1/256th of a pixel.
@@ -953,7 +953,7 @@ Test	 Status	Comments
 		I guess something is wrong with WhitePoint in GS,
 		because an assimmetry red|blue must come from it.
 		The assymmetry is observing with CPSI and not wiuth GS.
-		Assign to Raph.
+		Assign to Tim
 		-
 		Test10:
 		A color mapping problem in GS.
@@ -964,7 +964,7 @@ Test	 Status	Comments
 		and Table specifies the "reverse".
 		So the result must be convex.
 		With GS it looks linear.
-		Assign to Raph.
+		Assign to Tim
 		-
 		Test11:
 		A problem with color mapping in GS.
@@ -981,7 +981,7 @@ Test	 Status	Comments
 		It appears a linear mapping with precision 1/255.
 		But DecodeLMN is x^2.22222, 
 		so the color mapping must not be linear.
-		Assign to Raph.
+		Assign to Tim
 
 09-47B-11  DIFF	Test02, Test03 :
                 Analyzed by Igor.
@@ -1007,24 +1007,24 @@ Test	 Status	Comments
                 Analyzed by Igor.
                 A bad color CMYK=[1 1 1 1] in the test.
                 GPSI and GS differently convert [v v v v] CMYK colors to RGB.
-                Assign to Raph.
+                Assign to Tim
                 -
                 Test06:
                 Analyzed by Igor.
                 A bad color CMYK=[0.7 0.7 0.7 0.7] in the test.
                 GPSI and GS differently convert [v v v v] CMYK colors to RGB.
-                Assign to Raph.
+                Assign to Tim
                 -
                 Test11:
                 A color mapping problem.
                 The upper side of the gradient looks a dark red with GS, and a dark blue with CPSI.
                 Not sure who is wrong.
                 Maybe the WhitePoint isn't correctly accounted ?
-                Assign to Raph.
+                Assign to Tim
                 -
                 Test12:
                 Same as test05.
-                Assign to Raph.
+                Assign to Tim
 
 09-47B-12  AOK	GS has wrong color Test06 GS not smooth Test07, Test08.
 		NOTE: Tek gets rangecheck error on Test03 Test10, CPSI and GS do not.
@@ -1050,7 +1050,7 @@ Test	 Status	Comments
 		Briefly analyzed by Igor.
 		Looks similar to 09-47B-10 Test11.
 		To be revised after fixing 09-47B-10 Test11.
-		Assign to Raph.
+		Assign to Tim
 		-
 		Test10: aok
 		CPSI problem : a non-monotonic color space is rendered as monotonic.
@@ -1205,7 +1205,7 @@ Test	 Status	Comments
 09-47I-3  DIFF	Test01, Test02, Test03, Test04, Test05, Test06, Test07: ok
 		Fixed by rev 7175.
 		-
-		Test11: Same as 09-47B-11 Test05. Assign to Raph.
+		Test11: Same as 09-47B-11 Test05. Assign to Tim.
 
 09-47I-4  OK	Fixed as of rev 7211.
 
@@ -1354,6 +1354,8 @@ Test	 Status	Comments
 		Test09: ok - Fixed with rev 7210.
 		-
 		Test10, Test11, Test12: ok - Fixed by rev 7206
+                -
+                No problem description assign: Ray
 
 09-47M-5  AOK	GS has smoother shadings (CPSI has triangle 'glitches' 
 		with self-intersectint tensor: Test05, 06
@@ -1728,7 +1730,8 @@ Test	 Status	Comments
 10-16-6  OK	Minor differences in positions and character shapes - ADC
 
 11-01-1  DIFF	gs_arc_add_inline sets current point from fixed point coords in
-	 path. Need to implement PRECISE_CURRENTPOINT logic here. - assign Raph
+	 path. Need to implement PRECISE_CURRENTPOINT logic here.
+         if this is the same as 09-36-4 make NF assign igor
 
 11-01-2  OK	
 
@@ -1748,6 +1751,7 @@ Test	 Status	Comments
 11-02-1  DIFF	gs_arc_add_inline sets current point from fixed point coords in
 	 path. Need to implement PRECISE_CURRENTPOINT logic here. - assign Raph
 	 (see 11-01-1).
+         if this is the same as 09-36-4 make NF assign igor
 
 11-02-2  OK	Minor differences visually reviewed by RJJ
 
@@ -2115,7 +2119,7 @@ Test	 Status	Comments
 
 11-22-2  OK	Minor differences visually reviewed by RJJ
 
-11-22-3  DIFF	uappend; assign Raph
+11-22-3  DIFF	uappend; assign igor
 		Note: as of rev 7229, GS doesn't issue typecheck error when 'ucache'
 		is not the first element. Differs from rev 7220. (see also 11-28-5)
 		Rev. 7220 matches Distiller 5 but doesn't match Tek or CPSI, which
@@ -2127,7 +2131,7 @@ Test	 Status	Comments
 
 11-22-5  DIFF	GS has different number. Although this is resolution dependent,
 		the test comment indicates what should happen. Tek has 0.12
-		values, CPSI has 0.06 (approx.). Assign: Raph
+		values, CPSI has 0.06 (approx.). Assign: alex
 
 11-22-6  OK	shape has a small 'point' with CPSI, Ghostscript matches Tek
 		hardcopy [2nd row down, right side, upper curve.]
@@ -2359,7 +2363,7 @@ Test	 Status	Comments
 12-03-4  OK	Minor differences visually reviewed by RJJ
 
 12-03-5  DIFF	Magenta in pattern at lower right in GS.  Not present in CPSI.
-		See 12-01-5.  Assign raph.
+		See 12-01-5.  Assign Tim
 
 12-03-6  OK	Minor differences in positions and character shapes - ADC
 
@@ -2370,7 +2374,7 @@ Test	 Status	Comments
 12-04-3  OK	Minor differences visually reviewed by RJJ
 
 12-04-4  DIFF	Magenta in pattern at lower right in GS.  Not present in CPSI.
-		See 12-01-5. Assign: raph
+		See 12-01-5. Assign: Tim
 
 12-04-5  AOK	GS has extra center line on symbols: LOOK 3, 12 , MUCH 9, MORE 19
 		Analyzed by Igor :
@@ -2405,13 +2409,13 @@ Test	 Status	Comments
 12-06-3  OK	
 
 12-06-4  DIFF	Magenta in pattern at lower right in GS.  Not present in CPSI.
-		See 12-01-5. Assign: raph.
+		See 12-01-5. Assign: Tim
 
 12-06-5  OK	Minor differences in positions and character shapes - ADC
 
 12-07A-1  DIFF?	Different blurring in squares in 7th column compared to CPSI.
 		GS blurring matches appearance of Distiller/Acrobat 7.0
-                assign: Raph.
+                assign: Tim
 
 12-07A-10  OK	Minor differences visually reviewed by RJJ
 
@@ -2430,13 +2434,13 @@ Test	 Status	Comments
 
 12-07A-3  DIFF	Squares are blurred in GS.  No blurring in CPSI.  Distiller/Acrobat
 		7.0 shows blurring similar to GS.
-                assign: Raph
+                assign: Tim
 
 12-07A-4  OK	Minor differences in positions and character shapes - ADC
 
 12-07A-5  DIFF	Page consists of blurred squares.  GS position shifted down slight
 		at the top of the page vs CPSI and Distiller/Acrobat 7.0. - ADC
-                assign: Raph
+                assign: Tim
 
 12-07A-6  OK	Minor differences in positions and character shapes - ADC
 
@@ -2453,24 +2457,24 @@ Test	 Status	Comments
 		This is exactly the same issue as 12-02-18. After embedding
 		CPSI's default CRD into the job, the gray rectangles in the top
 		row match. TIM
-		
+
 12-07B-11  DIFF	Some grays in the top row are lighter in GS versus CPSI
-		(after 7152). - ADC Assign Raph
+		(after 7152). - ADC Assign Tim
 
 12-07B-12  DIFF	Blurred images render a slight position shift relative to CPSI and
-		Distiller/Acrobat 7.0 - ADC assign: Raph.
+		Distiller/Acrobat 7.0 - ADC assign: Tim
 
 12-07B-13  DIFF	Several differences.  Color squares are missing in GS.  The
 		Distiller/Acrobat 7.0 shows these squares blurred.  They are not
-		in both BS and CPSI. - ADC assign: Raph.
+		in both BS and CPSI. - ADC assign: Tim
 
 12-07B-14  DIFF	Several differences.  Color squares are missing in GS.  The
 		Distiller/Acrobat 7.0 shows these squares blurred.  They are not
-		in both BS and CPSI. - ADC assign: Raph.
+		in both BS and CPSI. - ADC assign: Tim
 
 12-07B-15  DIFF	Several differences.  Dark squares are missing in GS.  There are
 		dfferences in the blurring between Distiller/Acrobat 7.0 vs GS
-		and CPSI. - ADC assign: Raph
+		and CPSI. - ADC assign: Tim
 
 12-07B-2  OK	Minor differences in positions and character shapes - ADC
 
@@ -2494,16 +2498,16 @@ Test	 Status	Comments
 12-07C-1  OK	Minor differences in positions and character shapes - ADC
 
 12-07C-10  DIFF	White and black rectangles missing in GS.  Differences between
-		CPSi and Distiller/Acrobat 7.0 - ADC assign Raph.
+		CPSi and Distiller/Acrobat 7.0 - ADC assign Tim
 
 12-07C-11  DIFF	White and black rectangles missing in GS.  Differences between
-		CPSi and Distiller/Acrobat 7.0 - ADC assign Raph.
+		CPSi and Distiller/Acrobat 7.0 - ADC assign Tim
 
 12-07C-12  DIFF	White and black rectangles missing in GS.  Differences between
-		CPSi and Distiller/Acrobat 7.0 - ADC assign Raph.
+		CPSi and Distiller/Acrobat 7.0 - ADC assign Tim
 
 12-07C-13  DIFF	White, black, and cyan rectangles missing in GS.  Differences
-		between CPSi and Distiller/Acrobat 7.0 - ADC assign Raph.
+		between CPSi and Distiller/Acrobat 7.0 - ADC assign Tim
 
 12-07C-14  OK	Minor differences in positions and character shapes - ADC
 
@@ -2526,7 +2530,7 @@ Test	 Status	Comments
 12-07C-7  OK	GS matches Tek -- no thin vertical lines.
 
 12-07C-8  DIFF	GS missing leftmost vertical column of shaded data in the
-		test block at the lower right of the page - ADC.  assign Raph
+		test block at the lower right of the page - ADC.  assign Tim
 
 12-07C-9  OK	Color corrected by rev 7172. Something fixed the error message.
 
@@ -2539,7 +2543,7 @@ Test	 Status	Comments
 12-08A-1  DIFF	Differences in the second and third test pattern in the rightmost
 		column.  GS pattern matches Distiller/Acrobat.  CPSI is different.
 		Adobe shows these a blurred.  Both CPSI and GS are crisp. - ADC
-                assign Raph.
+                assign Tim
 
 12-08A-2  OK	Minor differences in positions and character shapes - ADC
 
@@ -2547,7 +2551,7 @@ Test	 Status	Comments
 		the same pattern as GS.  Adobe shows the image blurred.  Both
 		CPSI and GS shows a crisp image.  (The page says interpolate
 		true in the upper left corner.) - ADC
-                assign Raph
+                assign Tim
 
 12-08A-4  OK	Color corrected by rev 7172.
 
@@ -2577,7 +2581,7 @@ Test	 Status	Comments
 12-08D-1  OK	Minor differences visually reviewed by RJJ
 
 12-08D-2  DIFF	Magenta in pattern at lower right in GS.  Not present in CPSI.
-		See 12-01-5. Assign: raph.
+		See 12-01-5. Assign: Tim
 
 12-08D-3  OK	Minor differences in positions and character shapes - ADC
 
@@ -2604,7 +2608,7 @@ Test	 Status	Comments
 12-10-7  OK	Minor differences in positions and character shapes - ADC
 
 12-10-8  DIFF	Magenta in pattern at lower right in GS.  Not present in CPSI.
-		See 12-01-5. Assign: raph.
+		See 12-01-5. Assign: Tim
 
 12-10-9  OK	Minor differences in positions and character shapes - ADC
 
@@ -2621,7 +2625,7 @@ Test	 Status	Comments
 12-11-6  OK	Minor differences visually reviewed by RJJ
 
 12-11-7  DIFF	Magenta in pattern at lower right in GS.  Not present in CPSI.
-		See 12-01-5. Assign: raph
+		See 12-01-5. Assign: Tim
 
 12-11-8  OK	Minor differences in positions and character shapes - ADC
 
@@ -2643,7 +2647,7 @@ Test	 Status	Comments
 
 12-12-8  OK	
 
-12-12-9  DIFF	A pattern phase difference. assign: Raph.
+12-12-9  DIFF	A pattern phase difference. assign: Tim
 
 12-13-1  OK	Minor differences in positions and character shapes - ADC
 
@@ -2652,7 +2656,7 @@ Test	 Status	Comments
 12-13-3  OK	Minor differences visually reviewed by RJJ
 
 12-13-4  DIFF	Magenta in pattern at lower right in GS.  Not present in CPSI.
-		See 12-01-5. Assign: raph
+		See 12-01-5. Assign: Tim
 
 12-13-5  OK  	Works for me in rev. 7579. There's no differences around 30
 		and 31 in left column. The checksum matches too. - Alex.
@@ -2664,9 +2668,9 @@ Test	 Status	Comments
 		differences in shading gradients. - ADC
 
 12-14A-11  DIFF	Analyzed by Igor.
-		Test03: diff - same as 09-47B-11 Test05. Assign: Raph.
+		Test03: diff - same as 09-47B-11 Test05. Assign: Tim
 		-
-		Test04: Similar to 09-47B-10 test11. assign: Raph.
+		Test04: Similar to 09-47B-10 test11. assign: Tim
 		-
 		Test05, Test12: aok
 		A bug in the test : insufficient data.
@@ -2681,20 +2685,20 @@ Test	 Status	Comments
 		black black black   --- looks correct.
 		-
 		Test08, Test09: ?
-		same as 09-47B-11 Test05. Assign: Raph.
+		same as 09-47B-11 Test05. Assign: Tim
 		Please pay attention to the vertical diagonal of the rhombus.
 		With CPSI it looks as a linear gradient, and does not with GS.
 		Looks that CMYK colors [v v v v] differently convert to RGB.
 		Not sure who is wrong, but CPSI looks more pleasant.
 
 12-14A-12  DIFF	Test03, 04, 10,11 :
-		same as 09-47B-11 Test05. Assign: Raph.
+		same as 09-47B-11 Test05. Assign: Tim
 		-
 		Test07: aok - same as 12-14A-11 Test05.
 
 12-14A-13  DIFF	Test02:aok -  same as 12-14A-11 Test05.
 		-
-		Test03: likely same as 09-47B-10 Test11. assign: Raph.
+		Test03: likely same as 09-47B-10 Test11. assign: Tim
 		-
 		Test04:
 		GS problem with non-contigous function.
@@ -2734,7 +2738,7 @@ Test	 Status	Comments
 		.
 		Assign to Ray to deside whether we should do this change.
 		-
-		Test05, 06, 07, 08, 12 : same as 09-47B-11 Test05. Assign: Raph.
+		Test05, 06, 07, 08, 12 : same as 09-47B-11 Test05. Assign: Tim
 		-
 		Test09: aok - same as 09-47B-11 Test04.
                 Likely CPSI problem.
@@ -3210,7 +3214,7 @@ Test	 Status	Comments
 		of ILLEGAL.  CPSI 'show' implementation differs from Tek (a proc rather
 		than an operator). The latter issue may be caused by CSL, which redefines
                 a number of operatord. IMHO this can be AOK
-                assign Raph
+                assign Tim
 
 13-16-9  OK	rev 7617.
 
@@ -3667,7 +3671,7 @@ Test	 Status	Comments
 
 16-08-1  OK	Fixed in r7156 - Raph
 
-16-09-1  DIFF	Distorted shapes, may be similar to 16-03-2. Needs further analysis - Raph
+16-09-1  DIFF	Distorted shapes, may be similar to 16-03-2. Needs further analysis - assign Igor
 
 16-10-1  AOK	Same as 16-01-1.
 
@@ -3679,7 +3683,8 @@ Test	 Status	Comments
 
 16-14-1  OK	
 
-16-15-1  DIFF	massive differences. Needs further analysis. Recommend deferring til later. - Raph
+16-15-1  DIFF	massive differences. Needs further analysis. Recommend deferring til later.
+                assign Tim
 
 16-16-1  OK	
 
@@ -3696,6 +3701,7 @@ Test	 Status	Comments
 17-01-6  AOK	Matches Tek. CPSI different.
 
 17-01-7  DIFF	Same as 17-01-6 
+                marked "same as" AOK problem but diff status assign: Ray
 
 17-01-8  OK	
 
@@ -3710,8 +3716,12 @@ Test	 Status	Comments
 17-02-5  OK	
 
 17-02-6  DIFF	Same as 17-01-6
+                marked "same as" AOK problem but diff status assign: Ray
+
 
 17-02-7  DIFF	Same as 17-01-6
+                marked "same as" AOK problem but diff status assign: Ray
+
 
 17-02-8  OK	
 
@@ -3720,13 +3730,14 @@ Test	 Status	Comments
 17-03-2  DIFF	GS has curves where CPSI has straight lines. Also GS differs in marker symbols.
 		Note Tek has _different_ straight line pattern and marker symbols.
 		This is not identified as "Device Dependent" in the test.
-		curve flatness used to draw lines.
+		curve flatness used to draw lines.  Assign: ray
 
 17-03-3  OK	Same as 17-01-3
 
 17-03-4  OK	Minor differences visually reviewed by RJJ
 
 17-03-5  DIFF	Same as 17-01-06
+                marked "same as" AOK problem but diff status assign: Ray
 
 17-03-6  OK	
 
@@ -3735,6 +3746,7 @@ Test	 Status	Comments
 17-04-2  DIFF	GS is missing dots (small circles) in places and has extra dots in others.
 		Note Tek has _different_ pattern of dots, but is more similar to CPSI than
 		to GS.  This is not identified as "Device Dependent" in the test.
+                assign: igor
 
 17-04-3  OK	same as 17-02-3
 
@@ -3744,7 +3756,8 @@ Test	 Status	Comments
 
 17-05-1  OK	
 
-17-05-2  DIFF	Same as 17-04-2
+17-05-2  DIFF	Same as 17-04-2 
+                assign igor
 
 17-05-3  OK	Same as 17-01-3
 
@@ -3755,7 +3768,7 @@ Test	 Status	Comments
 17-06-1  OK	
 
 17-06-2  DIFF	Same as 17-04-2 except rectangles instead of dots.  Still like GS output better.  
-		More consistant repeats of the pattern. 
+		More consistant repeats of the pattern.  assign Igor.
 
 17-06-3  OK	Fixed as of rev 7636.
 
@@ -3778,7 +3791,7 @@ Test	 Status	Comments
 
 18-01B-1  DIFF	The word "FORM" in the magenta oval throughout the test
                 is white with cpsi and gray with gs.  (repeats). - color saturation problem.
-                assign Raph.
+                assign Tim
 
 18-01B-2  DIFF	(18-01B-1) lower right graphic cpsi has red lines where gs has white. (assign Raph).
 		The locations of squares are shifted in this pattern.  Distiller/Acrobat
@@ -3789,7 +3802,7 @@ Test	 Status	Comments
 
 18-01C-1  OK	Minor differences visually reviewed by RJJ
 
-18-02A-1  DIFF	pattern size differs first row of graphics.
+18-02A-1  DIFF	pattern size differs first row of graphics. assign Tim
 
 18-02A-2  OK    Minor differences visually reviewed by HAS. Color corrected by rev 7172.
 
@@ -3808,14 +3821,16 @@ Test	 Status	Comments
 
 18-02B-11  DIFF	18-02A-4 repeat
 	   Fill rule is ok. Test 1, 4 shadings sharper in GS than Adobe.
-	   Test 9-12 colors darker in Adobe than GS. - Raph
+	   Test 9-12 colors darker in Adobe than GS. - Assign Tim
 
 18-02B-12  DIFF	18-02A-4 repeat
 	   Fill rule is ok. Test 1-3, 11 colors darker in Adobe.
 	   Test 12 colors lighter in Adobe. - Raph
+           assign Tim
 
 18-02B-13  DIFF	18-02A-4 repeat
 	   Fill rule is ok. Test 1-6 colors different as above. Raph
+           assign Tim
 
 18-02B-2  OK	
 
@@ -3830,6 +3845,7 @@ Test	 Status	Comments
 18-02B-7  DIFF	18-02A-4 repeat
 	Fill rule is ok.
 	Test 8-12 colors darker in Adobe than GS. - Raph
+        assign Tim
 
 18-02B-8  DIFF	18-02A-4 repeat
                 rangecheck vs. typecheck
@@ -3852,13 +3868,15 @@ Test	 Status	Comments
 
 18-02F-1  OK    Minor differences visually reviewed by HAS.
 
-18-02F-2  DIFF	pattern in third row of graphics out of phase.  assign Raph
+18-02F-2  DIFF	pattern in third row of graphics out of phase.  assign Tim
 
 18-02F-3  DIFF	18-02A-4 repeat
+                repeat of AOK problem assign Tim
 
 18-02F-4  OK	Fixed before Nov 3 (after Oct 2).
 
 18-02F-5  DIFF	18-02A-4 repeat
+                repeat of AOK problem assign Tim
 
 18-02G-1  DIFF	strokepath different - assign: Ray.
 		-
@@ -3886,7 +3904,7 @@ Test	 Status	Comments
 
 18-02G-2  OK	Fixed by r7123.
 
-18-02G-3  DIFF	Minor differences visually reviewed by HAS.
+18-02G-3  AOK	Minor differences visually reviewed by HAS.
 
 19-01-1  OK	
 
@@ -3956,6 +3974,7 @@ Test	 Status	Comments
 
 20-01-1  DIFF	GS gets maxlength 3 instead of maxlength 11 of CPSI and Tek.
 		This is probably implementation dependent and we may not want to change.
+                assign Alex
 
 20-01-2  AOK 	GS prints { 1 2 3 } [ 1 2 3 ] (1 2 3) where CPSI prints { 1 2 3 } [mark /1 -3array- ] and (   )
 		i.e. CPSI modifies the content of the array arguments when operator >> fails.
@@ -3970,6 +3989,7 @@ Test	 Status	Comments
 		by an array with << >> [ //systemdict //globaldict //userdict -0dict- ... ].
 		Different checksum. CPSI also has <<PROTECTED>> invalidaccess but that
 		may be because GS text is too big to fit in the box so it might be clipped.
+                assign Alex
 
 20-02-3  OK	Color corrected by rev 7172.
 
@@ -4052,6 +4072,7 @@ Test	 Status	Comments
 20-19-2  OK	Color corrected by rev 7172.
 
 20-20-1  DIFF	Same as 20-14-1.
+                refers to "OK" page assign: ray
 
 20-20-2  OK	
 
@@ -4075,6 +4096,7 @@ Test	 Status	Comments
 20-24-2  OK	
 
 20-25-1  DIFF	Different checksum. CPSI has { /show (_ri_text) -13array- --exec-- } where GS has --show--.
+                assign alex
 
 20-25-2  OK	
 
@@ -4085,6 +4107,7 @@ Test	 Status	Comments
 20-26-2  OK	
 
 20-27-1  DIFF	GS passes tests, CPSI has error messages. Page is marked Device Dependent.
+                assign ray
 
 20-27-2  OK	
 
@@ -4404,6 +4427,7 @@ Test	 Status	Comments
 23-12W-3  OK	Minor differences visually reviewed by RJJ
 
 23-12W-4  DIFF	Matches Tek hardcopy. RJJ (CPSI differs)
+                assign ray
 
 23-12W-5  OK	Fixed by rev 7149.
 
@@ -4422,6 +4446,7 @@ Test	 Status	Comments
 		shows (Oh*) instead of /Oh*. GS loads a font from (/Name (Font) findresource)
 		Special Test A, GS shows --findresource-- instead of findresource.
 		(.OrigFont issue should be fixed in r7156, other issues not reanalyzed yet - Raph)
+                assign alex
 
 23-13-5  OK	Fixed by rev 7442.
 
@@ -4860,6 +4885,7 @@ Test	 Status	Comments
                 - lower limit of 100000 on MaxFontCache system parameter
                 - alternate use of --setcacheparams-- and /setcacheparams
                   in the errors.
+                 assign alex
 
 27-07-2  OK	
 
@@ -4915,7 +4941,7 @@ Test	 Status	Comments
 
 28-05-1  OK	
 
-28-05-2  DIFF	Same as 28-03-1
+28-05-2  DIFF	Same as 28-03-1 assign ray
 
 28-05-3  OK	
 
@@ -4963,29 +4989,36 @@ Test	 Status	Comments
 
 29-02-2  DIFF	Ghostscript shows "0,0" CPSI and Tek render "1,0" in center
 		of page (large font).
+                assign alex
 
 29-02-3  DIFF	Ghostscript shows "0,0" Tek shows "1,0" in center
 		CPSI shows "2,0" (CPSI ignores #copies). Ghostscript is
 		producing the correct number of copies.
+                assign alex
 
 29-02-4  DIFF	Ghostscript shows "0,0" Tek shows "1,0" in center
 		CPSI shows "3,0" (CPSI ignores #copies). Ghostscript is
 		producing the correct number of copies.
+                assign alex
 
 29-02-5  DIFF	Ghostscript shows "0,0" Tek shows "2,0" in center
 		CPSI shows "4,0" (CPSI ignores #copies). Ghostscript text
 		matches Tek: ( userdict /#copies 1 put copypage )
+                assign alex
 
 29-02-6  DIFF	Ghostscript shows "0,0" Tek shows "3,0" in center
 		CPSI shows "4,0" (CPSI ignores #copies). Ghostscript page
 		similar to Tek == rotated by -15 degrees.
+                assign alex
 
 29-02-7  DIFF	Ghostscript shows "0,0" Tek shows "4,0" in center
 		Ghostscript page similar to Tek == rotated by -15 degrees.
 		cpsi/29-02-7  missing (CPSI ignored #copies on page 2).
+                assign alex
 
 29-02-8  DIFF	Ghostscript shows "1,2" Tek shows "5,2" in center
 		cpsi/29-02-8  missing (CPSI ignored #copies on page 2).
+                assign alex
 
 29-03-1  DIFF	Device Dependent. Too many InputAttributed. Analyzed by Igor. assign: Ray.
 
@@ -5039,8 +5072,10 @@ Test	 Status	Comments
 		cpsi/29-07B-12  missing
 
 29-07B-2  DIFF	GS shifts output up and left, CPSI and Tek ignore Margins [ -9 9 ]
+                assign ray.
 
 29-07B-3  DIFF	GS shifts output down and right, CPSI and Tek ignore Margins [ 9 -9 ]
+                assign ray.
 
 29-07B-4  OK	Verified visually by RJJ
 
@@ -5083,19 +5118,23 @@ Test	 Status	Comments
 		Tektronix hardcopy shows << /PageSize 3 >> with offset that
 		might be the same as CPSI (clipping right edge after 's' of
 		'setpagedevice' in the lower right banner block).
+                assign ray
 
 29-07C-9  DIFF	Device Dependent: CPSI shows offset page. GS offset differs.
 		Tektronix hardcopy shows << /PageSize 3 >> with offset that
 		might be the same as CPSI (clipping right edge after 's' of
 		'setpagedevice' in the lower right banner block).
+                assign ray
 
 29-07C-10 DIFF	Device Dependent: CPSI shows offset page. GS has no offset
 		Tektronix hardcopy shows << /PageSize 3 >> with offset that
 		might be the same as GS (no clipping).
+                assign ray
 
 29-07C-11 DIFF	Device Dependent: CPSI shows offset page. GS has no offset
 		Tektronix hardcopy shows << /PageSize 3 >> with offset that
 		might be the same as GS (no clipping).
+                assign ray
 
 29-07D-1  OK	
 
@@ -5108,6 +5147,7 @@ Test	 Status	Comments
 
 29-07D-5  DIFF	Ghostscript is producing a page when OuputPage is 'false'.
 		cpsi/missing output for 'Page 5 experiment'.
+                assign ray
 
 29-07D-6  DIFF	Device Dependent: Ghostscript is honoring 'PageOffset'
 		Adobe ignores this. correct by modifying setpagedevice.
