@@ -1,4 +1,4 @@
-#    Copyright (C) 2001 Artifex Software Inc.
+#    Copyright (C) 2001-2007 Artifex Software Inc.
 #
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -24,15 +24,19 @@ from stat import *
 import gsconf
 
 def exists(file, dbdir=gsconf.rasterdbdir):
-    x = 0
+    x = False
     try:
         mode = os.stat(dbdir + file + '.gz')[ST_MODE]
         if S_ISREG(mode):
-            x = 1
+            x = True
     except:
         pass
     
     return x
+
+def mtime(file, dbdir=gsconf.rasterdbdir):
+    'return the modification time of the entry'
+    return os.stat(dbdir + file + '.gz')[ST_MTIME]
 
 def get_file(file, dbdir=gsconf.rasterdbdir, output=None):
     if exists(file, dbdir):

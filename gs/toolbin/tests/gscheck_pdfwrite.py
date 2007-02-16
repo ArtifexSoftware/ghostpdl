@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#    Copyright (C) 2001-2004 Artifex Software Inc.
+#    Copyright (C) 2001-2007 Artifex Software Inc.
 # 
 # This file is part of AFPL Ghostscript.
 # 
@@ -25,36 +25,36 @@
 # compares Ghostscript against a baseline made from file->pdf->raster->md5sum.
 # this test tries to detect Ghostscript changes that affect the pdfwrite driver.
 
-import os, stat
+import os
 import calendar, string, time
 import gstestutils
 import gsconf, gstestgs, gsparamsets, gssum, gsutil
-
+import rasterdb
 
 class GSPDFWriteCompareTestCase(gstestgs.GhostscriptTestCase):
+    def makefilename(self):
+        return "%s.pdf.%s.%d.%d" % (self.file[string.rindex(self.file, '/') + 1:], self.device, self.dpi, self.band)
+	
     def shortDescription(self):
-        file = "%s.pdf.%s.%d.%d" % (self.file[string.rindex(self.file, '/') + 1:], self.device, self.dpi, self.band)
-	rasterfilename = gsconf.rasterdbdir + file + ".gz"
-	if not os.access(rasterfilename, os.F_OK):
+        file = self.makefilename()
+	if not rasterdb.exists(file):
 		os.system(gsconf.codedir + "update_pdfbaseline '%s'" %
                           (os.path.basename(self.file),))
+		self.skip = 1
         try:
-            ct = time.localtime(os.stat(rasterfilename)[stat.ST_MTIME])
+            ct = time.localtime(rasterdb.mtime(file))
             baseline_date = "%s %d, %4d %02d:%02d" % (
                 calendar.month_abbr[ct[1]], ct[2], ct[0], ct[3], ct[4])
         except:
-            if self.band: banded = "banded"
-            else: banded = "noband"
             self.skip = 1
 
+        if self.band: banded = "banded"
+        else: banded = "noband"
+        if hasattr(self, "skip") and self.skip:
       	    return "Skipping pdfwrite %s (%s/%ddpi/%s) [no previous raster data found]" % (os.path.basename(self.file), self.device, self.dpi, banded)
-
-	if self.band:
-	    return "Checking pdfwrite of %s (%s/%ddpi/banded) against baseline set on %s" % (os.path.basename(self.file), self.device, self.dpi, baseline_date)
         else:
-	    return "Checking pdfwrite of %s (%s/%ddpi/noband) against baseline set on %s" % (os.path.basename(self.file), self.device, self.dpi, baseline_date)
+	    return "Checking pdfwrite of %s (%s/%ddpi/%s) against baseline set on %s" % (os.path.basename(self.file), self.device, self.dpi, banded, baseline_date)
 
-	
     def runTest(self):
         if hasattr(self, "skip") and self.skip:
 	    self.assert_(True)
