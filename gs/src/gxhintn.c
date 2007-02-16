@@ -230,7 +230,7 @@ private void fraction_matrix__drop_bits(fraction_matrix * this, unsigned int bit
 
 private void fraction_matrix__set(fraction_matrix * this, const double_matrix * pmat)
 {   double axx = fabs(pmat->xx), axy = fabs(pmat->xy);
-    double ayx = fabs(pmat->xx), ayy = fabs(pmat->xy);
+    double ayx = fabs(pmat->yx), ayy = fabs(pmat->yy);
     double scale = max(axx + axy, ayx + ayy);
     int matrix_exp, m;
     double unused = frexp(scale, &matrix_exp);
