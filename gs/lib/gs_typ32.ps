@@ -95,8 +95,14 @@ end		% .cidfonttypes
 (%Type32BuildGlyph) cvn {	% <font> <cid> %Type32BuildGlyph -
   1 index /CharStrings get
 		% Stack: font cid CharStrings
-  dup 2 index .knownget
- { exch pop } { 0 get } ifelse
+  dup 2 index .knownget {
+    exch pop
+  } {
+    0 .knownget not {
+      exch pop  % Stack: cid
+      .getshowoperator /invalidfont signalerror
+    } if
+  } ifelse
 		% Stack: font cid cstr
   dup //.getmetrics32	% use // because of .undef below
   dup 14 gt {
@@ -116,7 +122,7 @@ end		% .cidfonttypes
     [ 1 0 0 1 11 -2 roll exch neg exch neg ] 5 -1 roll imagemask
   } ifelse
   pop pop pop pop
-} bind def
+} .bind def
 
 systemdict /.getmetrics32 .undef
 

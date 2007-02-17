@@ -5523,7 +5523,7 @@ Test	 Status	Comments
 		GS is not removing glyphs from previous page "currentfont removeall".
 		Assign: Ray
 
-35_all-12  DIFF	glyphshow : Different error reporting. Analyzed by Igor. assign: Alex.
+35_all-12 OK  	Fixed by rev. 7710 - Alex.
 
 35_all-2  OK  	Fixed as of rev 7583.
 

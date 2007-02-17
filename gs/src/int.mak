@@ -777,8 +777,8 @@ $(PSOBJ)zchar32.$(OBJ) : $(PSSRC)zchar32.c $(OP)\
 	$(PSCC) $(PSO_)zchar32.$(OBJ) $(C_) $(PSSRC)zchar32.c
 
 $(PSOBJ)zfont32.$(OBJ) : $(PSSRC)zfont32.c $(OP)\
- $(gsccode_h) $(gsmatrix_h) $(gsutil_h) $(gxfont_h)\
- $(bfont_h) $(store_h)
+ $(gsccode_h) $(gsmatrix_h) $(gsutil_h) $(gxfont_h) $(gxtext_h)\
+ $(bfont_h) $(store_h) $(ichar_h)
 	$(PSCC) $(PSO_)zfont32.$(OBJ) $(C_) $(PSSRC)zfont32.c
 
 type32_=$(PSOBJ)zchar32.$(OBJ) $(PSOBJ)zfont32.$(OBJ)
@@ -1438,7 +1438,7 @@ $(PSOBJ)ibnum.$(OBJ) : $(PSSRC)ibnum.c $(GH) $(math__h) $(memory__h)\
 	$(PSCC) $(PSO_)ibnum.$(OBJ) $(C_) $(PSSRC)ibnum.c
 
 $(PSOBJ)zcharx.$(OBJ) : $(PSSRC)zcharx.c $(OP)\
- $(gsmatrix_h) $(gstext_h) $(gxfixed_h) $(gxfont_h)\
+ $(gsmatrix_h) $(gstext_h) $(gxfixed_h) $(gxfont_h) $(gxtext_h)\
  $(ialloc_h) $(ibnum_h) $(ichar_h) $(iname_h) $(igstate_h) $(memory__h)
 	$(PSCC) $(PSO_)zcharx.$(OBJ) $(C_) $(PSSRC)zcharx.c
 

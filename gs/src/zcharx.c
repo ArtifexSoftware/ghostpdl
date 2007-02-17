@@ -19,6 +19,7 @@
 #include "gstext.h"
 #include "gxfixed.h"		/* for gxfont.h */
 #include "gxfont.h"
+#include "gxtext.h"
 #include "ialloc.h"
 #include "ichar.h"
 #include "igstate.h"
@@ -58,6 +59,7 @@ zglyphshow(i_ctx_t *i_ctx_p)
     if ((code = glyph_show_setup(i_ctx_p, &glyph)) != 0 ||
 	(code = gs_glyphshow_begin(igs, glyph, imemory, &penum)) < 0)
 	return code;
+    *(op_proc_t *)&penum->enum_client_data = zglyphshow;
     if ((code = op_show_finish_setup(i_ctx_p, penum, 1, NULL)) < 0) {
 	ifree_object(penum, "zglyphshow");
 	return code;
