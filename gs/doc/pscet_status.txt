@@ -4095,8 +4095,10 @@ Test	 Status	Comments
 
 20-24-2  OK	
 
-20-25-1  DIFF	Different checksum. CPSI has { /show (_ri_text) -13array- --exec-- } where GS has --show--.
-                assign alex
+20-25-1  OK     Ghostscript matches Tek and Distiller 5. CPSI-based PhotoPrint
+		product has /show operator redefined as a procedure, probably,
+                becaus of CSL installation. PhotoPrint cannot serve as a
+                reference implementation here, - Alex
 
 20-25-2  OK	
 
