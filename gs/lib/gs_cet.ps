@@ -14,10 +14,13 @@ true 0 startjob not {
 
 currentglobal true setglobal
 
-/version (3017.102) def			% match CPSI 3017.102
-/product (PhotoPRINT SE 5.0v2) def	% match CPSI 3017.102
-/revision 0 def				% match CPSI 3017.103 Tek shows revision 5
-/serialnumber 233640 def		% match CPSI 3017.102 Tek shows serialnumber 1401788461
+{
+  systemdict dup dup dup
+  /version (3017.102) put		% match CPSI 3017.102
+  /product (PhotoPRINT SE 5.0v2) put	% match CPSI 3017.102
+  /revision 0 put			% match CPSI 3017.103 Tek shows revision 5
+  /serialnumber 233640 put		% match CPSI 3017.102 Tek shows serialnumber 1401788461
+} superexec
 
 { } bind dup
 setblackgeneration

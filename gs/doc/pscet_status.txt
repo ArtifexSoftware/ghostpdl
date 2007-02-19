@@ -4047,9 +4047,7 @@ Test	 Status	Comments
 
 20-14-2  OK	Color corrected by rev 7172.
 
-20-15-1  DIFF   userdict /product known
-		CPSI=F GS=T
-		assign: Alex
+20-15-1  OK     Fixed by rev. 7713. - Alex
 
 20-15-2  OK	
 
