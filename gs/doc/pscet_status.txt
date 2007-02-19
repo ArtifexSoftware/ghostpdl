@@ -3972,9 +3972,7 @@ Test	 Status	Comments
 
 19-14-2  OK	
 
-20-01-1  DIFF	GS gets maxlength 3 instead of maxlength 11 of CPSI and Tek.
-		This is probably implementation dependent and we may not want to change.
-                assign Alex
+20-01-1  OK  	Fixed in rev. 7712. - Alex
 
 20-01-2  AOK 	GS prints { 1 2 3 } [ 1 2 3 ] (1 2 3) where CPSI prints { 1 2 3 } [mark /1 -3array- ] and (   )
 		i.e. CPSI modifies the content of the array arguments when operator >> fails.

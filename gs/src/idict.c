@@ -790,8 +790,14 @@ dict_grow(ref * pdref, dict_stack_t *pds)
     dict *pdict = pdref->value.pdict;
     /* We might have maxlength < npairs, if */
     /* dict_round_size increased the size. */
-    ulong new_size = (ulong) d_maxlength(pdict) * 3 / 2 + 2;
-
+    ulong new_size = (ulong) d_maxlength(pdict);
+    /* Adobe does this */
+    if (new_size < 20)       
+        new_size += 10;
+    else if (new_size < 200)
+        new_size *= 2;
+    else
+        new_size += new_size / 2;
 #if arch_sizeof_int < arch_sizeof_long
     if (new_size > max_uint)
 	new_size = max_uint;
