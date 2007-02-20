@@ -204,7 +204,12 @@ end		% .Instances of Category
 def
 /findresource {
     % See above re .errorexec.
-    1 .argindex pop	% catch stackunderflow
+    1 .argindex 	% also catch stackunderflow
+    dup type /stringtype eq { cvn } if  % for CET 23-13-04
+    3 1 roll exch pop
+    dup type /nametype ne {
+      /findresource .systemvar /typecheck signalerror
+    } if
     /findresource cvx //.findresource .errorexec
 } odef
 

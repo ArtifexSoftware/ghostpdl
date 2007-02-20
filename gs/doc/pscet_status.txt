@@ -4010,7 +4010,7 @@ Test	 Status	Comments
 20-22-3  OK	
 
 20-23-1  OK  	Tek and CPSI don't have /deviceinfo. Availability of this operator
-                on Ghostscript deprnds on gs_dps device. Rev. 7223 undefines it in
+                on Ghostscript deprnds on gs_dps device. Rev. 7723 undefines it in
 		gs_cet.ps to pass the test regardless of the configuration. - Alex
 
 20-23-2  OK	
@@ -4370,12 +4370,8 @@ Test	 Status	Comments
 23-13-3  DIFF	Device Dependent: GS has different Resource Categories and also
 		has different number of columns. Assign: Ray for further analysis
 
-23-13-4  DIFF	GS has different Font dict entries: .Alias only in GS, no CharOffsets
-		string, .OrigFont instead of OrigFont. GS has PathLoad. Later GS
-		shows (Oh*) instead of /Oh*. GS loads a font from (/Name (Font) findresource)
-		Special Test A, GS shows --findresource-- instead of findresource.
-		(.OrigFont issue should be fixed in r7156, other issues not reanalyzed yet - Raph)
-                assign alex
+23-13-4  AOK 	Ghostscript has extra keys in the font dictionary. PLRM says that
+		implementations can add specific keys. Rev. 7724 - Alex
 
 23-13-5  OK	Fixed by rev 7442.
 
