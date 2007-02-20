@@ -371,7 +371,7 @@ userdict /#copies 1 put
 % In LanguageLevel 3, copypage erases the page.
 /copypage {
 	.languagelevel 3 ge
-	dup { 0 } { 1 } ifelse .endpage {
+	dup { 0 } { 1 } ifelse .endpage .doneshowpage {
 	  .currentnumcopies 1 index .outputpage
 	  (>>copypage, press <return> to continue<<\n) .confirm
 	  dup { erasepage } if

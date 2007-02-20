@@ -4985,38 +4985,21 @@ Test	 Status	Comments
 
 29-02-1  OK	Minor differences visually reviewed by RJJ
 
-29-02-2  DIFF	Ghostscript shows "0,0" CPSI and Tek render "1,0" in center
-		of page (large font).
-                assign alex
+29-02-2  OK  	Fixed by rev. 7716. Ghostscript matches Tek and CPSI except
+		that CPSI-based PhotoPrint doesn't implement copypage and skips
+                pages 3 and 4. - Alex
 
-29-02-3  DIFF	Ghostscript shows "0,0" Tek shows "1,0" in center
-		CPSI shows "2,0" (CPSI ignores #copies). Ghostscript is
-		producing the correct number of copies.
-                assign alex
+29-02-3  OK  	See 29-02-2.
 
-29-02-4  DIFF	Ghostscript shows "0,0" Tek shows "1,0" in center
-		CPSI shows "3,0" (CPSI ignores #copies). Ghostscript is
-		producing the correct number of copies.
-                assign alex
+29-02-4  OK  	See 29-02-2.
 
-29-02-5  DIFF	Ghostscript shows "0,0" Tek shows "2,0" in center
-		CPSI shows "4,0" (CPSI ignores #copies). Ghostscript text
-		matches Tek: ( userdict /#copies 1 put copypage )
-                assign alex
+29-02-5  OK  	See 29-02-2.
 
-29-02-6  DIFF	Ghostscript shows "0,0" Tek shows "3,0" in center
-		CPSI shows "4,0" (CPSI ignores #copies). Ghostscript page
-		similar to Tek == rotated by -15 degrees.
-                assign alex
+29-02-6  OK     See 29-02-2.
 
-29-02-7  DIFF	Ghostscript shows "0,0" Tek shows "4,0" in center
-		Ghostscript page similar to Tek == rotated by -15 degrees.
-		cpsi/29-02-7  missing (CPSI ignored #copies on page 2).
-                assign alex
+29-02-7  OK  	See 29-02-2.
 
-29-02-8  DIFF	Ghostscript shows "1,2" Tek shows "5,2" in center
-		cpsi/29-02-8  missing (CPSI ignored #copies on page 2).
-                assign alex
+29-02-8  OK  	See 29-02-2.
 
 29-03-1  DIFF	Device Dependent. Too many InputAttributed. Analyzed by Igor. assign: Ray.
 
