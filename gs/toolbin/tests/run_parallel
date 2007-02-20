@@ -22,6 +22,7 @@ import os
 import string
 import re
 import sys
+import getopt
 
 ## globals -- edit these to make it work
 run=True	# whether to submit the job after creating it
@@ -34,10 +35,18 @@ testdir=home+"/tests/ps/ps3fts"	# directory of files to run
 configfile="testing.cfg"	# template config file
 files=os.listdir(testdir)	# list of files to run
 
-## defaults -- override from the commandline
+## defaults -- override from the command line
 action='run'
-if len(sys.argv) > 1:
-  action = sys.argv[1]
+revision=None	# revision we're testing, if known
+
+# parse the command line
+opts, args = getopt.getopt(sys.argv[1:], "r:", ["rev="])
+for o, a in opts:
+  if o in ("-r", "--rev"): 
+    revision = a
+    print "parallel run for r" + revision
+if len(args):
+  action = args[0]
 
 ## helper functions
 
@@ -80,11 +89,13 @@ def makepbscleanup(configfiles, comparefiledirs, jobid=None):
       Pass in sequences of the files and directories to be removed
       and the jobid, if any, that the cleanup should run after.'''
    outfile=open("run_regression_cleanup.pbs","w")
+   outfile.write("#PBS -l nodes=1:run")
    # run this on nina by default since it's trivial
+   #outfile.write(":nina")
    if jobid:
-     outfile.write("#PBS -l nodes=1:run:nina -W depend=afterany:%s\n" % jobid)
+     outfile.write(" -W depend=afterany:%s\n" % jobid)
    else:
-     outfile.write("#PBS -l nodes=1:run:nina\n")
+     outfile.write("\n")
    outfile.write("cd %s\n" % base)
    for node in range(nodes):
      outfile.write("rm -rf " + comparefiledirs[node] + "\n")
@@ -96,21 +107,32 @@ def makepbsreport(jobid):
      Pass the jobid of the actual regression run so we
      know which log to parse.'''
   outfile = open("run_regression_report.pbs","w")
+  outfile.write("#PBS -l nodes=1:run")
   # run this on nina by default since it's trivial
-  outfile.write("#PBS -l nodes=1:run:nina -W depend=afterany:%s\n" % jobid)
+  #outfile.write(":nina")
+  # run after the regression job is complete
+  outfile.write(" -W depend=afterany:%s\n" % jobid)
   outfile.write("cd %s\n" % base)
-  dest = " >> regression.%s.log\n" % jobid
+  if revision:
+    dest = " >> regression-r%s.log\n" % revision
+  else:
+    dest = " >> regression.%s.log\n" % jobid
   # hack: we want the stderr output from the regression run, but
   # the jobid pbs appends to the file isn't quite the same as
   # what qsub (or qstat) give us.
   log = "run_regression.pbs.e%s" % string.split(jobid, '.')[0]
+  outfile.write("echo Cluster-based regression report BETA -- may not be accurate" + dest)
   outfile.write("echo Run split over %d nodes" % nodes + dest)
   outfile.write("JOBS=`cat %s | egrep ^Ran | wc -l`" % log + dest)
-  outfile.write("echo Run completed over $JOBS jobs" + dest)
+  outfile.write("echo Run completed $JOBS jobs" + dest)
+  outfile.write("STARTT=`stat -c %Y run_regression.pbs`" + dest)
+  outfile.write("ENDT=`stat -c %Y " + log + "`" + dest)
+  outfile.write("echo elapsed time $(($ENDT - $STARTT)) seconds" + dest)
   outfile.write("DIFFS=`cat %s | egrep DIFFER$ | wc -l`" % log + dest)
   outfile.write("echo Run shows $DIFFS differences" + dest)
   outfile.write("echo" + dest)
-  outfile.write("cat %s | egrep ^Checking" % log + dest)
+  outfile.write("cat %s | egrep ^Checking | sort" % log + dest)
+  outfile.write("cat %s | grep 'relevant files'" % log + dest)
   outfile.close()
 
 ## create a config files from the template for each node
