@@ -1200,10 +1200,10 @@ Test	 Status	Comments
 
 09-47I-2  OK	Fixed by rev 7175.
 
-09-47I-3  DIFF	Test01, Test02, Test03, Test04, Test05, Test06, Test07: ok
+09-47I-3  OK	Test01, Test02, Test03, Test04, Test05, Test06, Test07: ok
 		Fixed by rev 7175.
 		-
-		Test11: Same as 09-47B-11 Test05. Assign to Tim.
+		Test11: OK. Looks fine in rev 7718. Tim.
 
 09-47I-4  OK	Fixed as of rev 7211.
 
