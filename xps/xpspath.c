@@ -242,7 +242,7 @@ xps_parse_path(xps_context_t *ctx, xps_item_t *root)
 
     /* if we have a clip mask, push that on the gstate and remember to restore */
 
-    if (clip || clip_node)
+    if (0 && clip || clip_node)
     {
 	if (!saved)
 	{
@@ -303,7 +303,17 @@ xps_parse_path(xps_context_t *ctx, xps_item_t *root)
 	xps_parse_abbreviated_geometry(ctx, data);
 	gs_fill(ctx->pgs);
 
-	// draw brush
+	if (fill_node)
+	{
+	    if (!strcmp(xps_tag(fill_node), "ImageBrush"))
+		xps_parse_image_brush(ctx, fill_node);
+	    if (!strcmp(xps_tag(fill_node), "VisualBrush"))
+		xps_parse_visual_brush(ctx, fill_node);
+	    if (!strcmp(xps_tag(fill_node), "LinearGradientBrush"))
+		xps_parse_linear_gradient_brush(ctx, fill_node);
+	    if (!strcmp(xps_tag(fill_node), "RadialGradientBrush"))
+		xps_parse_radial_gradient_brush(ctx, fill_node);
+	}
     }
 
     /* remember to restore if we did a gsave */

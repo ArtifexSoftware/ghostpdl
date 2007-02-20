@@ -84,6 +84,19 @@ xps_add_type_map(xps_context_t *ctx, xps_type_map_t *node, char *name, char *typ
     }
 }
 
+void
+xps_free_type_map(xps_context_t *ctx, xps_type_map_t *node)
+{
+    if (node)
+    {
+	xps_free_type_map(ctx, node->left);
+	xps_free_type_map(ctx, node->right);
+	xps_free(ctx, node->name);
+	xps_free(ctx, node->type);
+	xps_free(ctx, node);
+    }
+}
+
 static void
 xps_add_override(xps_context_t *ctx, char *part_name, char *content_type)
 {
@@ -220,6 +233,20 @@ xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type)
     return 0;
 }
 
+void
+xps_free_relations(xps_context_t *ctx, xps_relation_t *node)
+{
+    xps_relation_t *next;
+    while (node)
+    {
+	next = node->next;
+	xps_free(ctx, node->target);
+	xps_free(ctx, node->type);
+	xps_free(ctx, node);
+	node = next;
+    }
+}
+
 /*
  * <DocumentReference> -- fixdocseq
  * <PageContent> -- fixdoc
@@ -290,6 +317,19 @@ xps_add_fixed_document(xps_context_t *ctx, char *name)
     return 0;
 }
 
+void
+xps_free_fixed_documents(xps_context_t *ctx)
+{
+    xps_document_t *node = ctx->first_fixdoc;
+    while (node)
+    {
+	xps_document_t *next = node->next;
+	xps_free(ctx, node->name);
+	xps_free(ctx, node);
+	node = next;
+    }
+}
+
 int
 xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
 {
@@ -333,6 +373,19 @@ xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
 	ctx->next_page = page;
 
     return 0;
+}
+
+void
+xps_free_fixed_pages(xps_context_t *ctx)
+{
+    xps_page_t *node = ctx->first_page;
+    while (node)
+    {
+	xps_page_t *next = node->next;
+	xps_free(ctx, node->name);
+	xps_free(ctx, node);
+	node = next;
+    }
 }
 
 /*

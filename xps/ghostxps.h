@@ -14,6 +14,8 @@
 #include "gserrors.h"
 #include "gspaint.h"
 #include "gspath.h"
+#include "gsimage.h"
+#include "gscspace.h"
 
 #include "zlib.h"
 
@@ -128,9 +130,42 @@ struct xps_part_s
 };
 
 xps_part_t *xps_new_part(xps_context_t *ctx, char *name, int capacity);
-void xps_free_part(xps_context_t *ctx, xps_part_t *part);
 xps_part_t *xps_find_part(xps_context_t *ctx, char *name);
+void xps_free_part(xps_context_t *ctx, xps_part_t *part);
+
 int xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type);
+
+void xps_free_type_map(xps_context_t *ctx, xps_type_map_t *node);
+void xps_free_relations(xps_context_t *ctx, xps_relation_t *node);
+void xps_free_fixed_pages(xps_context_t *ctx);
+void xps_free_fixed_documents(xps_context_t *ctx);
+
+/*
+ * Various resources.
+ */
+
+/* type for the information derived directly from the raster file format */
+
+enum { XPS_GRAY, XPS_GRAY_A, XPS_RGB, XPS_RGB_A, XPS_CMYK, XPS_CMYK_A };
+
+typedef struct xps_image_s xps_image_t;
+
+struct xps_image_s
+{
+    int width;
+    int height;
+    int stride;
+    int colorspace;
+    int comps;
+    int bits;
+    int xres;
+    int yres;
+    byte *samples;
+};
+
+int xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
+int xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
+int xps_decode_tiff(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
 
 /*
  * XML and content.
@@ -146,9 +181,13 @@ char * xps_tag(xps_item_t *item);
 char * xps_att(xps_item_t *item, const char *att);
 
 int xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part);
+int xps_parse_canvas(xps_context_t *ctx, xps_item_t *node);
 int xps_parse_path(xps_context_t *ctx, xps_item_t *node);
 int xps_parse_glyphs(xps_context_t *ctx, xps_item_t *node);
-int xps_parse_canvas(xps_context_t *ctx, xps_item_t *node);
+int xps_parse_image_brush(xps_context_t *ctx, xps_item_t *node);
+int xps_parse_visual_brush(xps_context_t *ctx, xps_item_t *node);
+int xps_parse_linear_gradient_brush(xps_context_t *ctx, xps_item_t *node);
+int xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_item_t *node);
 
 void xps_parse_matrix_transform(xps_context_t *ctx, xps_item_t *root, gs_matrix *matrix);
 void xps_parse_render_transform(xps_context_t *ctx, char *text, gs_matrix *matrix);

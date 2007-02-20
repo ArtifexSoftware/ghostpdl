@@ -6,6 +6,8 @@
 static inline int
 read1(xps_context_t *ctx, stream_cursor_read *buf)
 {
+    if (buf->ptr >= buf->limit)
+	return -1;
     buf->ptr++;
     return *buf->ptr;
 }
@@ -104,6 +106,7 @@ xps_free_part(xps_context_t *ctx, xps_part_t *part)
 {
     if (part->name) xps_free(ctx, part->name);
     if (part->data) xps_free(ctx, part->data);
+    xps_free_relations(ctx, part->relations);
     xps_free(ctx, part);
 }
 
@@ -125,7 +128,7 @@ xps_prepare_part(xps_context_t *ctx)
     int last_piece;
     int code;
 
-    /* dprintf1("unzipping part '%s'\n", ctx->zip_file_name); */
+    dprintf1("unzipping part '%s'\n", ctx->zip_file_name);
 
     if (strstr(ctx->zip_file_name, ".piece"))
     {
@@ -162,7 +165,7 @@ xps_prepare_part(xps_context_t *ctx)
     {
 	if (ctx->zip_uncompressed_size != 0)
 	{
-	    part->capacity += ctx->zip_uncompressed_size;
+	    part->capacity = part->size + ctx->zip_uncompressed_size; /* grow to exact size */
 	    part->data = xps_realloc(ctx, part->data, part->capacity);
 	    if (!part->data)
 		return gs_throw(-1, "cannot extend part buffer");
@@ -224,6 +227,7 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 
 	if (code == Z_STREAM_END)
 	{
+	    inflateEnd(&ctx->zip_stream);
 	    return 1;
 	}
 	else if (code == Z_OK || code == Z_BUF_ERROR)
@@ -231,25 +235,28 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 	    return 0;
 	}
 	else
+	{
+	    inflateEnd(&ctx->zip_stream);
 	    return gs_throw2(-1, "inflate returned %d (%s)", code,
 		    ctx->zip_stream.msg ? ctx->zip_stream.msg : "no error message");
+	}
     }
 
     else
     {
 	/* dprintf1("stored data of known size: %d\n", ctx->zip_uncompressed_size); */
+	/* For stored parts we know the size.
+	 * Capacity is set to the actual size of the data.
+	 */
 	int input = buf->limit - buf->ptr;
 	int output = part->capacity - part->size;
-	int remain = ctx->zip_uncompressed_size - part->size;
 	int count = input;
 	if (count > output)
 	    count = output;
-	if (count > remain)
-	    count = remain;
-	/* dprintf1("  reading %d bytes\n", count); */
+	dprintf1("  reading %d bytes\n", count);
 	readall(ctx, buf, (byte*)part->data + part->size, count);
 	part->size += count;
-	if (part->size == ctx->zip_uncompressed_size)
+	if (part->size == part->capacity)
 	    return 1;
 	return 0;
     }

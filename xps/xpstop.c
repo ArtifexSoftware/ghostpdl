@@ -297,6 +297,22 @@ dputs("xps_imp_deallocate_interp_instance!\n");
     if (getenv("XPS_DEBUG_PAGES"))
 	xps_debug_fixdocseq(ctx);
 
+    /* Free XPS parsing stuff */
+    {
+	xps_part_t *part = ctx->first_part;
+	while (part)
+	{       
+	    xps_part_t *next = part->next;
+	    xps_free_part(ctx, part);
+	    part = next;
+	}
+
+	xps_free_fixed_pages(ctx);
+	xps_free_fixed_documents(ctx);
+	xps_free_type_map(ctx, ctx->overrides);
+	xps_free_type_map(ctx, ctx->defaults);
+    }
+
     // free gstate?
     gs_free_object(mem, ctx, "xps_imp_deallocate_interp_instance");
     gs_free_object(mem, instance, "xps_imp_deallocate_interp_instance");
