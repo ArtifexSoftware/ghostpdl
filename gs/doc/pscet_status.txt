@@ -4009,8 +4009,9 @@ Test	 Status	Comments
 
 20-22-3  OK	
 
-20-23-1  DIFF	Different checksum. GS has [T] where CPSI has [F] for (systemdict /deviceinfo known).
-                assign Peter.
+20-23-1  OK  	Tek and CPSI don't have /deviceinfo. Availability of this operator
+                on Ghostscript deprnds on gs_dps device. Rev. 7223 undefines it in
+		gs_cet.ps to pass the test regardless of the configuration. - Alex
 
 20-23-2  OK	
 
