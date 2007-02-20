@@ -1046,11 +1046,11 @@ Test	 Status	Comments
 
 09-47B-6  OK	Fixed by rev 7169.
 
-09-47B-7  DIFF	Test01, Test02 :
+09-47B-7  AOK	Test01, Test02 :
 		Briefly analyzed by Igor.
 		Looks similar to 09-47B-10 Test11.
 		To be revised after fixing 09-47B-10 Test11.
-		Assign to Tim
+		Resolved by using common CRD. Tim 
 		-
 		Test10: aok
 		CPSI problem : a non-monotonic color space is rendered as monotonic.
