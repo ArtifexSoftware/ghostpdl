@@ -4031,8 +4031,11 @@ Test	 Status	Comments
 
 20-26-2  OK	
 
-20-27-1  DIFF	GS passes tests, CPSI has error messages. Page is marked Device Dependent.
-                assign ray
+20-27-1  AOK 	This test check the content of the $error dictionary.
+		The content varies depending on the code executed before.
+                There's no error on CPSI, as it was stated before, The
+                value of /errorname is an error name, which is always
+                printed as white on black by the test program. - Alex
 
 20-27-2  OK	
 
