@@ -882,6 +882,22 @@ colors, the rectangle is the predicted black and the text is green.
 ding symbol set 62F and making it permanent=1BE
 
 
+24-04 page 3, 4 and 6 - The HP 4600 is incorrect.  The reference point is
+explicitly set to the current position before drawing the rectangles.
+The pattern's origin should coincide with the rectangle's origin as it
+does in the Artifex output.
+
+
+28-10 page 11 - This test checks fractional bit support for the
+polyline encoding command.  The last box on the page uses 26 fractional
+bits, Artifex supports this and prints the box, the HP 4600 does not
+support 26 bits and does not print the box.  The PCL Technical
+Reference Manual calls states the -26 <= fractional bits <= 26.  The
+HPGL/2 RTL tecnical reference manual states the value is device
+dependent.
+
+
+
 ----
 
 HP Color Laserjet 4600 CET printed on the Color Laserjet 4550
