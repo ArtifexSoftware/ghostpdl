@@ -119,7 +119,10 @@ build_remap_array(
     /* build the re-map table */
     for (i = 0; i < second_white; i++)
         pmap[i] = i;
-    pmap[i++] = first_white;
+
+    if (second_white != num_entries)
+        pmap[i++] = first_white;
+
     for (; i < map_size; i++) {
         int     j = i & (num_entries - 1);  /* in case map_size > num_entries */
 
@@ -130,7 +133,6 @@ build_remap_array(
         else
             pmap[i] = j;
     }
-
     /* check if a special "parallel map" can be used */
     if ( (b_per_p < 8)                     &&
          ((8 % b_per_p) == 0)              &&
