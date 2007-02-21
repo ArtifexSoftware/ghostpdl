@@ -4866,7 +4866,7 @@ Test	 Status	Comments
 
 28-05-1  OK	
 
-28-05-2  DIFF	CPSI doesn't execute 'for' proc if increment is 0, GS does. Assign: Ray
+28-05-2  OK	Fixed by rev. 7725
 
 28-05-3  OK	
 

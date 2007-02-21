@@ -304,6 +304,11 @@ zfor(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     register es_ptr ep;
 
+    if ( (r_has_type(op - 2, t_integer) && op[-2].value.intval == 0) ||
+         (r_has_type(op - 2, t_real) && op[-2].value.realval == 0.0) ) {
+	pop(4);		/* ignore for with 0 increment CET 28-05 */
+	return 0;
+    }
     check_estack(7);
     ep = esp + 6;
     check_proc(*op);
