@@ -182,7 +182,7 @@ filter_read(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
     uint min_size = template->min_out_size + max_min_left;
     uint save_space = ialloc_space(idmemory);
     /* PLRM3 requires the following, *not* max(space, save_space). */
-    uint use_space = max(space, avm_global); /* don't alloc in system space */
+    uint use_space = max(space, avm_system); /* don't alloc in foreign space */
     os_ptr sop = op - npop;
     stream *s;
     stream *sstrm;
@@ -262,7 +262,7 @@ filter_write(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
     uint min_size = template->min_in_size + max_min_left;
     uint save_space = ialloc_space(idmemory);
     /* PLRM3 requires the following, *not* max(space, save_space). */
-    uint use_space = max(space, avm_global); /* don't alloc in system space */
+    uint use_space = max(space, avm_system); /* don't alloc in foreign space */
     os_ptr sop = op - npop;
     stream *s;
     stream *sstrm;
