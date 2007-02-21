@@ -746,11 +746,14 @@ push_execstack(i_ctx_t *i_ctx_p, os_ptr op1, bool include_marks,
      */
     uint depth;
 
-    check_write_type(*op1, t_array);
+    if (!r_is_array(op1))
+	return_op_typecheck(op1);
+    /* Check the length before the write access per CET 28-03 */
     size = r_size(op1);
     depth = count_exec_stack(i_ctx_p, include_marks);
     if (depth > size)
 	return_error(e_rangecheck);
+    check_write(*op1);
     {
 	int code = ref_stack_store_check(&e_stack, op1, size, 0);
 

@@ -4854,9 +4854,11 @@ Test	 Status	Comments
 
 28-02-3  OK	
 
-28-03-1  DIFF	"Section 6.3 - SYNTAX" AOK is implementation dependent. GS doesn't need to match the internal
-		dump names of the PS interpreter. "ILLEGAL" test GS has different error messages.
-		Assign: Alex
+28-03-1  AOK 	The following differences remain:
+		1. names of internal operators are different
+		2. execution stack od 49 elements doesn't fit into 40-element
+                arrays provided by the test causing different errors.
+                Rev. 7730 - Alex
 
 28-03-2  OK	
 
