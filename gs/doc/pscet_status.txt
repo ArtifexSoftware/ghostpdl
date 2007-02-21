@@ -4355,8 +4355,8 @@ Test	 Status	Comments
 
 23-12W-3  OK	Minor differences visually reviewed by RJJ
 
-23-12W-4  DIFF	Matches Tek hardcopy. RJJ (CPSI differs)
-                assign ray
+23-12W-4  OK  	Matches Tek hardcopy. CPSI-based PhotoPrint product ignores
+                sethalftone and cannot be a reference implementation here. 
 
 23-12W-5  OK	Fixed by rev 7149.
 
