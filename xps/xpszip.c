@@ -244,18 +244,28 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 
     else
     {
-	/* dprintf1("stored data of known size: %d\n", ctx->zip_uncompressed_size); */
+	int input, output, count;
+
+	dprintf1("stored data of known size: %d\n", ctx->zip_uncompressed_size);
+
 	/* For stored parts we know the size.
-	 * Capacity is set to the actual size of the data.
+	 * Capacity is set to the actual size of the data,
+	 * except for empty parts which are an exception.
 	 */
-	int input = buf->limit - buf->ptr;
-	int output = part->capacity - part->size;
-	int count = input;
+
+	if (ctx->zip_uncompressed_size == 0)
+	    return 1;
+
+	input = buf->limit - buf->ptr;
+	output = part->capacity - part->size;
+	count = input;
 	if (count > output)
 	    count = output;
+
 	dprintf1("  reading %d bytes\n", count);
 	readall(ctx, buf, (byte*)part->data + part->size, count);
 	part->size += count;
+
 	if (part->size == part->capacity)
 	    return 1;
 	return 0;
