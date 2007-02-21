@@ -303,10 +303,16 @@ zfor(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     register es_ptr ep;
+    int code;
+    float params[3];
 
-    if ( (r_has_type(op - 2, t_integer) && op[-2].value.intval == 0) ||
-         (r_has_type(op - 2, t_real) && op[-2].value.realval == 0.0) ) {
-	pop(4);		/* ignore for with 0 increment CET 28-05 */
+ 	/* Mostly undocumented, and somewhat bizarre Adobe behavior discovered	*/
+	/* with the CET (28-05) and FTS (124-01) is that the proc is not run	*/
+	/* if BOTH the initial value and increment are zero.			*/
+    if ((code = float_params(op - 1, 3, params)) < 0)
+	return code;
+    if ( params[0] == 0.0 && params[1] == 0.0 ) {
+	pop(4);		/* don't run the proc */
 	return 0;
     }
     check_estack(7);
@@ -335,11 +341,6 @@ zfor(i_ctx_t *i_ctx_p)
 	else
 	    make_op_estack(ep, for_neg_int_continue);
     } else {
-	float params[3];
-	int code;
-
-	if ((code = float_params(op - 1, 3, params)) < 0)
-	    return code;
 	make_real(ep - 4, params[0]);
 	make_real(ep - 3, params[1]);
 	make_real(ep - 2, params[2]);
