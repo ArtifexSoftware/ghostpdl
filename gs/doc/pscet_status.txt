@@ -4892,7 +4892,7 @@ Test	 Status	Comments
 28-09-2  OK	Visually reviewed by RJJ
 		(previous report of '1' in more 15 is without gs_cet.ps).
 
-28-10-1  DIFF	Postscript language (STOP) vs (--string--) gs,cpsi  --- assigned Ray
+28-10-1  OK  	Fixed by rev. 7727. - Alex
 
 28-10-2  OK	Minor differences in boxed black/white 'T' 'F' glyphs, font renderer ufst.
 

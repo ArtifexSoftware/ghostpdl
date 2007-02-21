@@ -468,7 +468,7 @@ end		% serverdict
       pop
       serverdict /.jobsave save put
       serverdict /.jobsavelevel 1 put
-      .userdict /quit /stop load put
+      .userdict /quit { stop } .bind put  % CET 28-10 requires a procedure
     } ifelse
 		% Reset the interpreter state.
   clear cleardictstack
