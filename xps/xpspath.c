@@ -8,8 +8,9 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
     char *s = geom;
     int fillrule = 0;
     int i, n;
+    int cmd, old;
 
-    dputs("new path\n");
+    dprintf1("new path (%.70s)\n", geom);
     gs_newpath(ctx->pgs);
 
     while (*s)
@@ -36,96 +37,103 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
     n = pargs - args;
     i = 0;
 
+    old = 0;
+
     while (i < n)
     {
-	int cmd = args[i][0];
+	cmd = args[i][0];
+	if (cmd == '+' || cmd == '.' || cmd == '-' || (cmd >= '0' && cmd <= '9'))
+	    cmd = old; /* it's a number, repeat old command */
+	else
+	    i ++;
+
 	switch (cmd)
 	{
 	case 'F':
-	    fillrule = atoi(args[i+1]);
-	    i += 2;
+	    fillrule = atoi(args[i]);
+	    i ++;
 	    break;
 
 	case 'M':
-	    gs_moveto(ctx->pgs, atof(args[i+1]), atof(args[i+2]));
-	    dprintf2("moveto %g %g\n", atof(args[i+1]), atof(args[i+2]));
-	    i += 3;
+	    gs_moveto(ctx->pgs, atof(args[i]), atof(args[i+1]));
+	    dprintf2("moveto %g %g\n", atof(args[i]), atof(args[i+1]));
+	    i += 2;
 	    break;
 	case 'm':
-	    dprintf2("rmoveto %g %g\n", atof(args[i+1]), atof(args[i+2]));
-	    i += 3;
+	    dprintf2("rmoveto %g %g\n", atof(args[i]), atof(args[i+1]));
+	    i += 2;
 	    break;
 
 	case 'L':
-	    gs_lineto(ctx->pgs, atof(args[i+1]), atof(args[i+2]));
-	    dprintf2("lineto %g %g\n", atof(args[i+1]), atof(args[i+2]));
-	    i += 3;
+	    gs_lineto(ctx->pgs, atof(args[i]), atof(args[i+1]));
+	    dprintf2("lineto %g %g\n", atof(args[i]), atof(args[i+1]));
+	    i += 2;
 	    break;
 	case 'l':
-	    dprintf2("rlineto %g %g\n", atof(args[i+1]), atof(args[i+2]));
-	    i += 3;
+	    dprintf2("rlineto %g %g\n", atof(args[i]), atof(args[i+1]));
+	    i += 2;
 	    break;
 
 	case 'H':
-	    dprintf1("hlineto %g\n", atof(args[i+1]));
-	    i += 2;
+	    dprintf1("hlineto %g\n", atof(args[i]));
+	    i += 1;
 	    break;
 	case 'h':
-	    dprintf1("rhlineto %g\n", atof(args[i+1]));
-	    i += 2;
+	    dprintf1("rhlineto %g\n", atof(args[i]));
+	    i += 1;
 	    break;
 
 	case 'V':
-	    dprintf1("vlineto %g\n", atof(args[i+1]));
-	    i += 2;
+	    dprintf1("vlineto %g\n", atof(args[i]));
+	    i += 1;
 	    break;
 	case 'v':
-	    dprintf1("rvlineto %g\n", atof(args[i+1]));
-	    i += 2;
+	    dprintf1("rvlineto %g\n", atof(args[i]));
+	    i += 1;
 	    break;
 
 	case 'C':
 	    gs_curveto(ctx->pgs,
-		    atof(args[i+1]), atof(args[i+2]),
-		    atof(args[i+3]), atof(args[i+4]),
-		    atof(args[i+5]), atof(args[i+6]));
+		    atof(args[i]), atof(args[i+1]),
+		    atof(args[i+2]), atof(args[i+3]),
+		    atof(args[i+4]), atof(args[i+5]));
 	    dprintf6("curveto %g %g %g %g %g %g\n",
-		    atof(args[i+1]), atof(args[i+2]),
-		    atof(args[i+3]), atof(args[i+4]),
-		    atof(args[i+5]), atof(args[i+6]));
-	    i += 7;
+		    atof(args[i]), atof(args[i+1]),
+		    atof(args[i+2]), atof(args[i+3]),
+		    atof(args[i+4]), atof(args[i+5]));
+	    i += 6;
 	    break;
 	case 'c':
 	    dprintf6("rcurveto %g %g %g %g %g %g\n",
-		    atof(args[i+1]), atof(args[i+2]),
-		    atof(args[i+3]), atof(args[i+4]),
-		    atof(args[i+5]), atof(args[i+6]));
-	    i += 7;
+		    atof(args[i]), atof(args[i+1]),
+		    atof(args[i+2]), atof(args[i+3]),
+		    atof(args[i+4]), atof(args[i+5]));
+	    i += 6;
 	    break;
 
 	case 'Q': case 'q':
 	case 'S': case 's':
 	    dprintf1("path command '%c' for quadratic or smooth curve is not implemented\n", cmd);
-	    i += 5;
+	    i += 4;
 	    break;
 
 	case 'A': case 'a':
 	    dprintf1("path command '%c' for elliptical arc is not implemented\n", cmd);
-	    i += 8;
+	    i += 7;
 	    break;
 
 	case 'Z':
 	case 'z':
 	    gs_closepath(ctx->pgs);
 	    dputs("closepath\n");
-	    i += 1;
 	    break;
 
 	default:
 	    /* eek */
-	    i ++;
 	    break;
 	}
+
+	old = cmd;
     }
 }
 
@@ -242,7 +250,8 @@ xps_parse_path(xps_context_t *ctx, xps_item_t *root)
 
     /* if we have a clip mask, push that on the gstate and remember to restore */
 
-    if (0 && clip || clip_node)
+#if 0
+    if (clip || clip_node)
     {
 	if (!saved)
 	{
@@ -258,6 +267,7 @@ xps_parse_path(xps_context_t *ctx, xps_item_t *root)
 	    gs_clippath(ctx->pgs);
 	}
     }
+#endif
 
     /* if it's a solid color brush fill/stroke do just that. */
 
@@ -301,7 +311,7 @@ xps_parse_path(xps_context_t *ctx, xps_item_t *root)
 
 	gs_setrgbcolor(ctx->pgs, 0.5, 0.0, 0.3);
 	xps_parse_abbreviated_geometry(ctx, data);
-	gs_fill(ctx->pgs);
+	gs_fill(ctx->pgs); /* should clip */
 
 	if (fill_node)
 	{
