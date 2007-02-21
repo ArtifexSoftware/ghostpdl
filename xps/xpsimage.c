@@ -81,7 +81,8 @@ xps_parse_image_brush(xps_context_t *ctx, xps_item_t *root)
     char *viewbox_units;
     char *viewport_units;
     char *image_source;
-    xps_item_t *transform_node;
+
+    xps_item_t *transform_node = NULL;
 
     char partname[1024];
 
@@ -100,6 +101,10 @@ xps_parse_image_brush(xps_context_t *ctx, xps_item_t *root)
 	    transform_node = node;
     }
 
+    /*
+     * Decode image resource.
+     */
+
     dprintf1("drawing image brush '%s'\n", image_source);
 
     xps_absolute_path(partname, ctx->pwd, image_source);
@@ -111,8 +116,6 @@ xps_parse_image_brush(xps_context_t *ctx, xps_item_t *root)
     if (code < 0)
 	return gs_rethrow(-1, "cannot draw image brush");
 
-    /* TODO: use viewbox/viewport/transform */
-
     gs_gsave(ctx->pgs);
     {
 	gs_image_enum *penum;
@@ -120,9 +123,41 @@ xps_parse_image_brush(xps_context_t *ctx, xps_item_t *root)
 	gs_image_t gsimage;
 	unsigned int count = image.stride * image.height;
 	unsigned int used = 0;
+	gs_matrix matrix;
+	gs_rect gsviewbox;
+	gs_rect gsviewport;
+	float scalex, scaley;
 
-	gs_scale(ctx->pgs, 200.0, 200.0);
-	gs_translate(ctx->pgs, 100.0, 100.0);
+	/*
+	 * Figure out transformation.
+	 */
+
+	gs_make_identity(&matrix);
+	if (transform)
+	    xps_parse_render_transform(ctx, transform, &matrix);
+	if (transform_node)
+	    xps_parse_matrix_transform(ctx, transform_node, &matrix);
+	gs_concat(ctx->pgs, &matrix);
+
+	gsviewbox.p.x = 0.0; gsviewbox.p.y = 0.0;
+	gsviewbox.q.x = 1.0; gsviewbox.q.y = 1.0;
+	if (viewbox)
+	    xps_parse_rectangle(ctx, viewbox, &gsviewbox);
+
+	gsviewport.p.x = 0.0; gsviewport.p.y = 0.0;
+	gsviewport.q.x = 1.0; gsviewport.q.y = 1.0;
+	if (viewport)
+	    xps_parse_rectangle(ctx, viewport, &gsviewport);
+
+	scalex = (gsviewport.q.x - gsviewport.p.x) / (gsviewbox.q.x - gsviewbox.p.x);
+	scaley = (gsviewport.q.y - gsviewport.p.y) / (gsviewbox.q.y - gsviewbox.p.y);
+	gs_translate(ctx->pgs, gsviewport.p.x, gsviewport.p.y);
+	gs_scale(ctx->pgs, scalex, scaley);
+	gs_translate(ctx->pgs, -gsviewbox.p.x, gsviewbox.p.y);
+
+	/*
+	 * Set up colorspace and image structs.
+	 */
 
 	switch (image.colorspace)
 	{
@@ -145,6 +180,10 @@ xps_parse_image_brush(xps_context_t *ctx, xps_item_t *root)
 	gsimage.Width = image.width;
 	gsimage.Height = image.height;
 
+	/*
+	 * Voodoo.
+	 */
+
 	penum = gs_image_enum_alloc(ctx->memory, "xps_parse_image_brush");
 	if (!penum)
 	    return gs_throw(-1, "gs_enum_allocate failed");
@@ -160,6 +199,8 @@ xps_parse_image_brush(xps_context_t *ctx, xps_item_t *root)
 
 	if (count > used)
 	    return gs_throw2(0, "too much image data (image=%d used=%d)", count, used);
+
+	gs_image_cleanup(penum, ctx->pgs);
     }
     gs_grestore(ctx->pgs);
 

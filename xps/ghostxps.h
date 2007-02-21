@@ -192,5 +192,6 @@ int xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_item_t *node);
 void xps_parse_matrix_transform(xps_context_t *ctx, xps_item_t *root, gs_matrix *matrix);
 void xps_parse_render_transform(xps_context_t *ctx, char *text, gs_matrix *matrix);
 void xps_parse_color(xps_context_t *ctx, char *hexstring, float *argb);
+void xps_parse_rectangle(xps_context_t *ctx, char *text, gs_rect *rect);
 int xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom);
 
