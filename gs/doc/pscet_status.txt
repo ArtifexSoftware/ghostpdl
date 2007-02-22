@@ -4730,12 +4730,10 @@ Test	 Status	Comments
 
 27-06-2  OK	
 
-27-07-1  DIFF	Partial fix for 27-07, rev. 7160 - Alex
-                The following observed Adobe quirks are not reproduced.
-                - lower limit of 100000 on MaxFontCache system parameter
-                - alternate use of --setcacheparams-- and /setcacheparams
-                  in the errors.
-                 assign alex
+27-07-1  AOK 	Fixed by rev. 7733 - Alex
+                Alternate use of --setcacheparams-- and /setcacheparams in error
+                messages is an obvious bug in Adobe interpreters that we won't
+                reproduce.
 
 27-07-2  OK	
 

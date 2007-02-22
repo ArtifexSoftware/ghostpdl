@@ -40,6 +40,8 @@
 #define cmax_SMALL 500		/* cmax - # of cached chars */
 #define blimit_SMALL 100	/* blimit/upper - max size of a single cached char */
 
+extern bool CPSI_mode;
+
 /* Define a default procedure vector for fonts. */
 const gs_font_procs gs_font_procs_default = {
     gs_no_define_font,		/* (actually a default) */
@@ -630,14 +632,16 @@ gs_cachestatus(register const gs_font_dir * pdir, register uint pstat[7])
 /* setcacheparams */
 int
 gs_setcachesize(gs_font_dir * pdir, uint size)
-{				/* This doesn't delete anything from the cache yet. */
+{   /* This doesn't delete anything from the cache yet. */
+    if (CPSI_mode && size < 100000)                  /* for CET 27-07 */
+        size = 100000;
     pdir->ccache.bmax = size;
     return 0;
 }
 int
 gs_setcachelower(gs_font_dir * pdir, uint size)
 {
-    pdir->ccache.lower = ((int)size < 0) ? 0 : size; /* ?: for CET 27-07 */;
+    pdir->ccache.lower = ((int)size < 0) ? 0 : size; /* ?: for CET 27-07 */
     return 0;
 }
 int
