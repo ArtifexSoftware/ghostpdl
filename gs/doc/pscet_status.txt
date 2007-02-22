@@ -3839,11 +3839,10 @@ Test	 Status	Comments
 
 20-02-1  OK	Looks okay. -Tor
 
-20-02-2  DIFF	CPSI only has an array of [ -0dict- ... ] where GS has an empty dict followed
-		by an array with << >> [ //systemdict //globaldict //userdict -0dict- ... ].
-		Different checksum. CPSI also has <<PROTECTED>> invalidaccess but that
-		may be because GS text is too big to fit in the box so it might be clipped.
-                assign Alex
+20-02-2  DIFF   When --begin-- overflows dictionary stack it restores the argument
+		and places the content of the dictionary stack on the operand
+                stack. Adobe interpreters don't restore the argument.
+                assign Peter
 
 20-02-3  OK	Color corrected by rev 7172.
 

@@ -131,7 +131,7 @@ private int estack_underflow(i_ctx_t *);
 private int interp(i_ctx_t **, const ref *, ref *);
 private int interp_exit(i_ctx_t *);
 private void set_gc_signal(i_ctx_t *, int *, int);
-private int copy_stack(i_ctx_t *, const ref_stack_t *, ref *);
+private int copy_stack(i_ctx_t *, const ref_stack_t *, int skip, ref *);
 private int oparray_pop(i_ctx_t *);
 private int oparray_cleanup(i_ctx_t *);
 private int zerrorexec(i_ctx_t *);
@@ -549,7 +549,8 @@ again:
 		if ((ccode = ref_stack_extend(&o_stack, 1)) < 0)
 		    return ccode;
 	    }
-	    ccode = copy_stack(i_ctx_p, &d_stack, &saref);
+            /* Skip system dictionaries for CET 20-02-02 */
+	    ccode = copy_stack(i_ctx_p, &d_stack, min_dstack_size, &saref);
 	    if (ccode < 0)
 		return ccode;
 	    ref_stack_pop_to(&d_stack, min_dstack_size);
@@ -573,7 +574,7 @@ again:
 		if ((ccode = ref_stack_extend(&o_stack, 1)) < 0)
 		    return ccode;
 	    }
-	    ccode = copy_stack(i_ctx_p, &e_stack, &saref);
+	    ccode = copy_stack(i_ctx_p, &e_stack, 0, &saref);
 	    if (ccode < 0)
 		return ccode;
 	    {
@@ -613,7 +614,7 @@ again:
 		epref = &doref;
 		goto again;
 	    }
-	    ccode = copy_stack(i_ctx_p, &o_stack, &saref);
+	    ccode = copy_stack(i_ctx_p, &o_stack, 0, &saref);
 	    if (ccode < 0)
 		return ccode;
 	    ref_stack_clear(&o_stack);
@@ -685,9 +686,9 @@ set_gc_signal(i_ctx_t *i_ctx_p, int *psignal, int value)
 
 /* Copy the contents of an overflowed stack into a (local) array. */
 private int
-copy_stack(i_ctx_t *i_ctx_p, const ref_stack_t * pstack, ref * arr)
+copy_stack(i_ctx_t *i_ctx_p, const ref_stack_t * pstack, int skip, ref * arr)
 {
-    uint size = ref_stack_count(pstack);
+    uint size = ref_stack_count(pstack) - skip;
     uint save_space = ialloc_space(idmemory);
     int code;
 
