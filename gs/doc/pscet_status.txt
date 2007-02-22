@@ -196,19 +196,17 @@ Test	 Status	Comments
 09-18-2  OK	
 
 09-19-1	 OK	Fixed rev 7102. RJJ
-		cpsi/09-19-1  missing. Acrobat 7 hangs.
 
-09-19-2	 OK  	"0" vs. "0.0" is fixed in rev. 7186.
-		cpsi/09-19-2  missing
+09-19-2	 OK  	GS matches Tek hardcopy. CPSI gives 0.63 'B' value on first line of
+		third group -- Tek is probably correct. "0" vs. "0.0" is fixed in rev. 7186.
 
 09-19-3	 OK	Fixed rev 7102. RJJ
-		cpsi/09-19-3  missing
 
-09-19-4	 OK	Verified visually against Tek hardcopy. RJJ
-		cpsi/09-19-4  missing
+09-19-4	 OK	
 
-09-19-4	 OK	Verified visually against Tek hardcopy. RJJ
-		cpsi/09-19-5  missing
+09-19-4	 OK	
+
+09-19-5	 OK	
 
 09-20-1  AOK	Device Dependent: different default screen (OK)
 		GS matches Tek on the rest.
@@ -278,35 +276,27 @@ Test	 Status	Comments
 
 09-27-5  OK	
 
-09-28-1	 OK	Matches Tek hardcopy output. RJJ	(AD7 output differs).
-		cpsi/09-28-1  missing. Acrobat 7 output obtained.
+09-28-1	 DIFF	Must be regression. CPSI and Tek differ, GS shows 'invalidaccess'
+		errors.
 
 09-28-2  OK	Fixed as of rev. 7211
-		cpsi/09-28-2  missing. Acrobat 7 output obtained.
 
 09-28-3  OK	Fixed by rev 7617.
-		cpsi/09-28-3  missing. Acrobat 7 output obtained.
 
 09-28-4  OK	Imagemask -- Fixed by r7123. Tek and AD7 output differ.
-		cpsi/09-28-4  missing. Acrobat 7 output obtained. [ device dependent ?? ]
 
 09-28-5	 OK	Matches Tek hardcopy output. RJJ
-		cpsi/09-28-5  missing. Acrobat 7 output obtained.
 
 09-29-1  AOK	Device Dependent: GS has ProcessColorModel /DeviceRGB, Tek has non-standard
 		/DeviceCMY. GS matches Tek if BG, UCR set the same and ProcessColorModel is
-		forced to /DeviceCMY. DeviceRGB values fixed in rev. 7216
-		cpsi/09-29-1  missing
+		forced to /DeviceCMY. CPSI shows ProcessColorModel /DeviceN.  DeviceRGB
+		values fixed in rev. 7216
 
 09-29-2  OK	Fixed by rev 7617.
-		cpsi/09-29-2  missing
 
 09-29-3  OK	Imagemask -- Fixed by r7123. Tek and AD7 output differ.
-		cpsi/09-29-3  missing. Acrobat 7 output obtained.
 
-09-29-4  OK	Matches Tek hardcopy output. RJJ
-		(Adobe Acrobat 7 gives '1' for MEMO 3 and MEMO 4).
-		cpsi/09-29-4  missing
+09-29-4  OK	
 
 09-30-1  OK	Colors corrected by rev 7172.
 
@@ -706,17 +696,12 @@ Test	 Status	Comments
 09-38-4  OK	
 
 09-39-1  OK	Matches Tek hardcopy output. RJJ
-		cpsi/09-39-1  missing
 
-09-39-2  AOK	Fixed by rev 7617. GS is contone, Tek is dithered with coarse pattern.
-		cpsi/09-39-2 missing.
+09-39-2  OK	matches CPSI
 
-09-39-3  AOK	GS is contone, Tek is dithered with coarse pattern. GS with 4-bit
-		CMYK device matches Tek patterns. Imagemask fixed by r7123.
-		cpsi/09-39-3  missing
+09-39-3  OK	matches CPSI. Imagemask fixed by r7123.
 
-09-39-4  OK	Matches Tek hardcopy output. RJJ
-		cpsi/09-39-4  missing
+09-39-4  OK	
 
 09-40-1  AOK	Matches Tek hardcopy output. RJJ (CPSI ignores settransfer)
 		GS is contone, Tek is dithered
@@ -1151,118 +1136,62 @@ Test	 Status	Comments
 		-		- 
 		Test12: ok	Fixed by rev 7175.
 
-09-47J-1  AOK	Analyzed by Igor.
-                Tek misses an imagemask or a character with a shading color.
-                See explanation in 09-47J-6.
-		cpsi/09-47J-1  missing
+09-47J-1  DIFF	Test01 CPSI misses imagemask in shading. Test04 printout
+		differs (GS missing 'null'). Assign: Alex
+                
+09-47J-10 OK	
 
-09-47J-10 AOK	Analyzed by Igor.
-                Tek misses an imagemask or a character with a shading color.
-                See explanation in 09-47J-6.
+09-47J-2  OK	
 
-09-47J-2  AOK	Analyzed by Igor.
-                Tek misses an imagemask or a character with a shading color.
-                See explanation in 09-47J-6.
-		cpsi/09-47J-2  missing
+09-47J-3  AOK	Test01 CPSI misses an imagemask with a shading color.
 
-09-47J-3  AOK	Analyzed by Igor.
-                Tek misses an imagemask or a character with a shading color.
-                See explanation in 09-47J-6.
-		cpsi/09-47J-3  missing
+09-47J-4  OK	
 
-09-47J-4  AOK	Analyzed by Igor.
-                Tek misses an imagemask or a character with a shading color.
-                See explanation in 09-47J-6.
-		cpsi/09-47J-4  missing
+09-47J-5  OK	
 
-09-47J-5  AOK	Analyzed by Igor.
-                Tek misses an imagemask or a character with a shading color.
-                The bug is well visible in Test03 : The triangle is painted with the shading color,
-                then the character is painted with the shading Background,
-                which overlaps a part of the triangle, and then the character is 
-                not painted with the shading color.
-		cpsi/09-47J-5  missing
+09-47J-6  OK	
 
-09-47J-6  AOK	Analyzed by Igor.
-                Tek misses an imagemask or a character with a shading color.
-                The bug is well visible in Test03 : The triangle is painted with the shading color,
-                then the character is painted with the shading Background,
-                which overlaps a part of the triangle, and then the character is 
-                not painted with the shading color.
-		cpsi/09-47J-6  missing
+09-47J-7  OK	
 
-09-47J-7  AOK	Analyzed by Igor.
-                Tek misses an imagemask or a character with a shading color.
-                See explanation in 09-47J-6.
-		cpsi/09-47J-7  missing
+09-47J-8  AOK	Test01 CPSI misses an imagemask with a shading color.
 
-09-47J-8  AOK	Analyzed by Igor.
-                Tek misses an imagemaskmask or a character with a shading color.
-		cpsi/09-47J-8  missing
+09-47J-9  OK	
 
-09-47J-9  AOK	Analyzed by Igor.
-                Tek misses an imagemask or a character with a shading color.
-                See explanation in 09-47J-6.
-		cpsi/09-47J-1  missing
-
-09-47K-1  AOK	Analyzed by Igor.
-                Tek yields a rangecheck while rendering 
+09-47K-1  AOK	Test01 CPSI yields a rangecheck while rendering 
                 an imagemask or a character with a shading color.
                 and misses the rest of graphics.
                 I don't see any legal reason for rangecheck. 
-                See explanation in 09-47J-6.
-		cpsi/09-47K-1  missing
 
-09-47K-2  AOK	Analyzed by Igor.
-                Tek yields a rangecheck while rendering 
+09-47K-2  OK	
+
+09-47K-3  OK	
+
+09-47K-4  OK	
+
+09-47K-5  OK   
+
+09-47K-6  OK	
+
+09-47K-7  AOK	Test01 CPSI yields a rangecheck while rendering 
                 an imagemask or a character with a shading color.
-                and misses the rest of graphics.
-                I don't see any legal reason for rangecheck.
-                See explanation in 09-47J-6.
-		cpsi/09-47K-2  missing
+                I don't see any legal reason for rangecheck. 
+		Graphics appearance matches CPSI visually.
 
-09-47K-3  AOK	Analyzed by Igor.
-                Tek yields a rangecheck while rendering 
-                an imagemask or a character with a shading color.
-                and misses the rest of graphics.
-                I don't see any legal reason for rangecheck.
-                See explanation in 09-47J-6.
-		cpsi/09-47K-3  missing
+09-47K-8  OK	
 
-09-47K-4  OK	Verified visually against Tek hardcopy by Sabrina
-		cpsi/09-47K-4  missing
+09-47L-1  AOK	Test01 CPSI misses the character and imagemask with
+		a shading color.
 
-09-47K-5  AOK   Analyzed by Igor.
-		I have no idea why Tek prints nothing.
-		IMO in most cases the shading data are fine.
-		3 cases, which fails with GS, have a definitely wrong
-		number of color components in Background.
-		We won't reproduce the erroneus behavior of Tec.
-		cpsi/09-47K-5  missing
+09-47L-2  OK	
 
-09-47K-6  OK	Verified visually against Tek hardcopy by Sabrina
-		cpsi/09-47K-6  missing
+09-47L-3  OK	
 
-09-47K-7  OK	Verified visually against Tek hardcopy by Sabrina
-		cpsi/09-47K-7  missing
+09-47L-4  OK	
 
-09-47K-8  OK	Verified visually against Tek hardcopy by Sabrina
-		cpsi/09-47K-8  missing
-
-09-47L-1  OK	Verified visually against Tek hardcopy by Sabrina
-		cpsi/09-47L-1  missing
-
-09-47L-2  OK	Verified visually against Tek hardcopy by Sabrina
-		cpsi/09-47L-2  missing
-
-09-47L-3  OK	Verified visually against Tek hardcopy by Sabrina
-		cpsi/09-47L-3  missing
-
-09-47L-4  AOK	rangecheck in GS (insufficient elements in Background).
-		cpsi/09-47L-4  missing
-
-09-47L-5  OK	Verified visually against Tek hardcopy by Sabrina
-		cpsi/09-47L-5  missing
+09-47L-5  DIFF	Test01 CPSI misses the character and imagemask with
+		a shading color.
+		Test07, Test08 -- GS missing 'wedges' in center region
+		of shading. 
 
 09-47M-1  AOK	Test01: The corner colors are :      black   red
                                                      green white	
@@ -1889,7 +1818,8 @@ Test	 Status	Comments
 
 11-16-7  OK	
 
-11-16-8  AOK	look30, much34 : AOK same as 11-01-6.
+11-16-8  DIFF	MORE 21 GS has zig-zag stroke, CPSI and Tek are straight.
+		Assign: Igor
 
 11-17-1  OK	Fixed as of rev 7598.
 
@@ -2825,9 +2755,13 @@ Test	 Status	Comments
 
 12-14M-3  OK	fixed.
 
-12-14M-4  OK	Test06: ok - fixed.
+12-14M-4  DIFF	Test05: Tek has top half of cone solid dark gray, GS has light
+		gray (as in Test06). Assign: Igor
+		-
+		Test06: ok - fixed.
 		-
 		Test04, Test07: ok - Fixed by rev 7206
+		Note: CPSI gets rangecheck errors on Test06, 07, 08.
 
 12-14M-5  OK	fixed.
 
@@ -3141,11 +3075,7 @@ Test	 Status	Comments
 
 13-16-7  OK	Minor differences visually reviewed by RJJ
 
-13-16-8  DIFF	Tek does not return 'invalidaccess' as CPSI does on last two lines
-		of ILLEGAL.  CPSI 'show' implementation differs from Tek (a proc rather
-		than an operator). The latter issue may be caused by CSL, which redefines
-                a number of operatord. IMHO this can be AOK
-                assign Peter
+13-16-8  OK	
 
 13-16-9  OK	rev 7617.
 
@@ -3203,8 +3133,7 @@ Test	 Status	Comments
 
 13-20-1  OK	Minor differences in positions and character shapes - ADC
 
-13-20-2  OK  	Ghostscript matches Tek hardcopy. The CPSI-based product tested
-		has CSL installed, which redefines operator setfont.
+13-20-2  OK  	
 
 13-20-3  OK	Minor differences visually reviewed by RJJ
 
@@ -4019,10 +3948,7 @@ Test	 Status	Comments
 
 20-24-2  OK	
 
-20-25-1  OK     Ghostscript matches Tek and Distiller 5. CPSI-based PhotoPrint
-		product has /show operator redefined as a procedure in the
-                RenderingIntent ProcSet. CPSI matches GS and Tek when this
-		ProcSet is disabled. RJJ
+20-25-1  OK     
 
 20-25-2  OK	
 
@@ -4489,7 +4415,7 @@ Test	 Status	Comments
 		ColorSpaceFamily resources pre-loaded differs between CPSI and
                 Tek and Ghostscript. (this is not a problem).
 
-23-33-2  OK	
+23-33-2  OK	GS matches Tek hardcopy. CPSI shows "0 -1 T" in last line.
 
 23-33-3  OK  	Fixed in rev. 7620 - Alex
 
