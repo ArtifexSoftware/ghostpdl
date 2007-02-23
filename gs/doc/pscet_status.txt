@@ -895,17 +895,19 @@ Test	 Status	Comments
                 CPSI likely due to occasional data added at stream end.
                 See also Test11.
                 -
-                Test05:
+                Test05: AOK
                 Analyzed by Igor.
                 A bad color CMYK=[1 1 1 1] in the test.
                 GPSI and GS differently convert [v v v v] CMYK colors to RGB.
-                Assign to Tim
+                Matches fine in 7736 with CPSI_mode = true.
+                Tim
                 -
-                Test06:
+                Test06: AOK
                 Analyzed by Igor.
                 A bad color CMYK=[0.7 0.7 0.7 0.7] in the test.
                 GPSI and GS differently convert [v v v v] CMYK colors to RGB.
-                Assign to Tim
+                Matches fine in 7736 with CPSI_mode = true.
+                Tim
                 -
                 Test11: AOK
                 This is the same problem as Test04. Bug in test.
