@@ -869,33 +869,11 @@ Test	 Status	Comments
 		The assymmetry is observing with CPSI and not wiuth GS.
 		Assign to Tim
 		-
-		Test10:
-		A color mapping problem in GS.
-		Analyzed by Igor. 
-		Likely same as Test11, see Test11 first.
-		DecodeLMN is a concave function,
-		the Function is linear,
-		and Table specifies the "reverse".
-		So the result must be convex.
-		With GS it looks linear.
-		Assign to Tim
+		Test10: AOK
+		Match when using common CRD.
 		-
-		Test11:
-		A problem with color mapping in GS.
-		Analyzed by Igor. 
-		I traced what results gx_cspace_is_linear_in_line (in gxshade6.c) receives from 
-		cc2dc, which simply calls remap_color.
-		-
-		arg       value
-		0.1        231
-		0.28       185
-		0.52       122
-		0.7        74
-		-
-		It appears a linear mapping with precision 1/255.
-		But DecodeLMN is x^2.22222, 
-		so the color mapping must not be linear.
-		Assign to Tim
+		Test11: AOK
+		Match when using common CRD.
 
 09-47B-11  DIFF	Test02, Test03 :
                 Analyzed by Igor.
