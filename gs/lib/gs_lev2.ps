@@ -852,7 +852,13 @@ def
 def
 
 /makepattern {			% <proto_dict> <matrix> makepattern <pattern>
-  //.patterntypes 2 .argindex /PatternType get get
+  dup type /dicttype eq {
+     % "<dict> makepattern" reports /typecheck on Adobe
+     /makepattern .systemvar /typecheck signalerror
+  } if
+  //.patterntypes 2 .argindex /PatternType get .knownget not {
+      /makepattern .systemvar /rangecheck signalerror
+  } if
   .currentglobal false .setglobal exch
 		% Stack: proto matrix global buildproc
   3 index dup length 1 add dict .copydict

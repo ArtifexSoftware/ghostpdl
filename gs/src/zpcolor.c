@@ -89,20 +89,58 @@ zbuildpattern1(i_ctx_t *i_ctx_p)
     gs_client_color cc_instance;
     ref *pPaintProc;
 
+    code = read_matrix(imemory, op, &mat);
+    if (code < 0)
+        return code;
     check_type(*op1, t_dictionary);
     check_dict_read(*op1);
     gs_pattern1_init(&template);
-    if ((code = read_matrix(imemory, op, &mat)) < 0 ||
-	(code = dict_uid_param(op1, &template.uid, 1, imemory, i_ctx_p)) != 1 ||
-	(code = dict_int_param(op1, "PaintType", 1, 2, 0, &template.PaintType)) < 0 ||
-	(code = dict_int_param(op1, "TilingType", 1, 3, 0, &template.TilingType)) < 0 ||
-	(code = dict_floats_param(imemory, op1, "BBox", 4, BBox, NULL)) < 0 ||
-	(code = dict_float_param(op1, "XStep", 0.0, &template.XStep)) != 0 ||
-	(code = dict_float_param(op1, "YStep", 0.0, &template.YStep)) != 0 ||
-	(code = dict_find_string(op1, "PaintProc", &pPaintProc)) <= 0
-	)
-	return_error((code < 0 ? code : e_rangecheck));
+
+    code = dict_uid_param(op1, &template.uid, 1, imemory, i_ctx_p);
+    if (code < 0)
+        return code;
+    if (code != 1)
+        return_error(e_rangecheck);
+
+    code = dict_int_param(op1, "PaintType", 1, 2, 0, &template.PaintType);
+    if (code < 0)
+        return code;
+
+    code = dict_int_param(op1, "TilingType", 1, 3, 0, &template.TilingType);
+    if (code < 0)
+        return code;
+    
+    code = dict_floats_param(imemory, op1, "BBox", 4, BBox, NULL);
+    if (code < 0)
+        return code;
+    if (code == 0)
+       return_error(e_undefined); 
+
+    code = dict_float_param(op1, "XStep", 0.0, &template.XStep);
+    if (code < 0)
+        return code;
+    if (code == 1)
+       return_error(e_undefined); 
+    
+    code = dict_float_param(op1, "YStep", 0.0, &template.YStep);
+    if (code < 0)
+        return code;
+    if (code == 1)
+       return_error(e_undefined); 
+    
+    code = dict_find_string(op1, "PaintProc", &pPaintProc);
+    if (code < 0)
+        return code;
+    if (code == 0)
+       return_error(e_undefined); 
+
     check_proc(*pPaintProc);
+
+    if (mat.xx * mat.yy == mat.xy * mat.yx)
+        return_error(e_undefinedresult);
+    if (BBox[0] >= BBox[2] ||  BBox[1] >= BBox[3])
+        return_error(e_rangecheck);
+
     template.BBox.p.x = BBox[0];
     template.BBox.p.y = BBox[1];
     template.BBox.q.x = BBox[2];

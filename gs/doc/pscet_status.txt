@@ -3692,11 +3692,12 @@ Test	 Status	Comments
 18-02B-9  AOK	18-02A-4 repeat
 	Fill rule is ok, shadings sharper in GS than Adobe. - Raph
 
-18-02C-1  DIFF	rangecheck vs. typecheck.
-                undefined in cpsi not in GS. assign: Alex
+18-02C-1  DIFF	Partialy fixed by rev. 7738.
+                Adobe doesn't restore operands of rectfill operator when
+                an error happen in the PaintProc function but
+                Ghostscript does. assign: Alex
 
-18-02D-1  DIFF	GS missing text. GS has different error messages.
-                GS printing extra pattern mid-page. assign Alex
+18-02D-1  OK  	Fixed by rev. 7738. - Alex
 
 18-02E-1  DIFF	much of postscript dump missing in gs. assign Ray
 
