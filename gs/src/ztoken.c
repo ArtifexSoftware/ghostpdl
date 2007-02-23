@@ -55,8 +55,12 @@ ztoken(i_ctx_t *i_ctx_p)
 	    ref token;
 	    /* -1 is to remove the string operand in case of error. */
 	    int orig_ostack_depth = ref_stack_count(&o_stack) - 1;
-	    int code = scan_string_token(i_ctx_p, op, &token);
+	    int code;
 
+	    /* Don't pop the operand in case of invalidaccess. */
+	    if (!r_has_attr(op, a_read))
+		return_error(e_invalidaccess);
+	    code = scan_string_token(i_ctx_p, op, &token);
 	    switch (code) {
 	    case scan_EOF:	/* no tokens */
 		make_false(op);
