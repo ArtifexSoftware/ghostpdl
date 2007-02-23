@@ -294,6 +294,20 @@ gs_state_client_data(const gs_state * pgs)
     return pgs->client_data;
 }
 
+/* Free the chain of gstates.*/
+int
+gs_state_free_chain(gs_state * pgs)
+{
+   gs_state *saved = pgs, *tmp; 
+
+   while(saved != 0) {
+       tmp = saved->saved;
+       gs_state_free(saved);
+       saved = tmp;
+   }
+   return 0;
+}
+
 /* Free a graphics state. */
 int
 gs_state_free(gs_state * pgs)
