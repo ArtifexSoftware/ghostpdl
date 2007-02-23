@@ -907,12 +907,12 @@ Test	 Status	Comments
                 GPSI and GS differently convert [v v v v] CMYK colors to RGB.
                 Assign to Tim
                 -
-                Test11:
-                A color mapping problem.
-                The upper side of the gradient looks a dark red with GS, and a dark blue with CPSI.
-                Not sure who is wrong.
-                Maybe the WhitePoint isn't correctly accounted ?
-                Assign to Tim
+                Test11: AOK
+                This is the same problem as Test04. Bug in test.
+                Insufficient data for function.
+                /CIEBasedDEFG as /DeviceCMYK in Test04 needs 16 samples,
+                and only 12 are provided.
+                Tim
                 -
                 Test12:
                 Same as test05.
