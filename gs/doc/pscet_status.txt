@@ -969,8 +969,10 @@ Test	 Status	Comments
 
 09-47C-1  OK  	Fixed by rev 7221.
 
-09-47C-2  DIFF	GS shows '--.type1execchar-- rangecheck'. Adobe shows:
-		'F --show-- rangecheck null' assign: Peter
+09-47C-2  DIFF  Rev. 7740 adds 'null' to the message.
+                Adobe shows: 'F --show-- rangecheck null'
+		At 144 dpi GS shows 'F --.type1execchar-- rangecheck null'.
+                At 72 dpi GS shows the same message as Adobe. assign: Peter
 
 09-47D-1  OK	Fixed by rev 7169.
 
@@ -1078,7 +1080,7 @@ Test	 Status	Comments
 		000000 e70000
 		e60000 d1d1d1
 		It looks so with GS.
-		Don't know ehy CPSI misses green.
+		Don't know why CPSI misses green.
 		-
 		Test02 : Same as 09-47G-2 Test11.
 
@@ -1116,8 +1118,8 @@ Test	 Status	Comments
 		-		- 
 		Test12: ok	Fixed by rev 7175.
 
-09-47J-1  DIFF	Test01 CPSI misses imagemask in shading. Test04 printout
-		differs (GS missing 'null'). Assign: Alex
+09-47J-1  DIFF	Graphic differences in Test01 (partly drawn) and Test12
+		(green line across the shading). Assign: Alex
                 
 09-47J-10 OK	
 

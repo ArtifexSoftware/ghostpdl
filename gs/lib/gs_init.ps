@@ -887,6 +887,7 @@ userdict /.currentresourcefile //null put
     $error /newerror true put
     $error exch /errorname exch put
     $error exch /command exch put
+    $error /errorinfo known not { $error /errorinfo //null put } if
     $error /recordstacks get $error /errorname get /VMerror ne and
      {		% Attempt to store the stack contents atomically.
        count array astore dup $error /ostack 4 -1 roll
@@ -1070,6 +1071,7 @@ $error begin
   /.inerror false def
   /.nosetlocal true def
   /position //null def
+  /errorinfo //null def
 end
 % Define errordict similarly.  It has one entry per error name,
 %   plus handleerror.  However, some astonishingly badly written PostScript
