@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <memory.h>
+#include <io.h>
 
 typedef unsigned char uchar;
 typedef int bool;
@@ -112,6 +113,7 @@ typedef struct _ImagePnm ImagePnm;
 struct _ImagePnm {
   Image super;
   FILE *f;
+  long file_length;
 };
 
 static int
@@ -167,7 +169,7 @@ image_pnm_feof (Image *self)
 {
   ImagePnm *pnm = (ImagePnm *)self;
 
-  return feof (pnm->f);
+  return feof (pnm->f) || ftell(pnm->f) == pnm->file_length;
 }
 
 static void
@@ -337,6 +339,7 @@ open_pnm_image (const char *fn)
   image->super.raster = n_chan * ((width * bpp + 7) >> 3);
   image->super.n_chan = n_chan;
   image->super.bpp = bpp;
+  image->file_length = _filelength(fileno(f));
   return &image->super;
 punt:;
   fclose (f);
@@ -423,7 +426,7 @@ check_window (uchar **buf1, uchar **buf2,
   return !(match1 && match2);
 }
 
-static void
+static int
 fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
 		   FuzzyReport *freport, ImagePnm *image_out)
 {
@@ -439,6 +442,7 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
   uchar *out_buf = NULL;
   int x0 = -2, y0 = -2, mc = 0, mmax = 10;
   int y;
+  int rcode = 0;
 
   if (image_out != NULL)
     {
@@ -450,8 +454,16 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
   /* Read rows ahead for half window : */
   for (y = 0; y < MIN(half_win, height); y++) 
     {
-      image_get_rgb_scan_line (image1, buf1[half_win - y]);
-      image_get_rgb_scan_line (image2, buf2[half_win - y]);
+       if (image_get_rgb_scan_line (image1, buf1[half_win - y]) < 0) {
+	    rcode = 1;
+	    printf("*** I/O error in file 1 at y = %d\n", y);
+	    goto ex;
+	}
+       if (image_get_rgb_scan_line (image2, buf2[half_win - y])) {
+	    rcode = 1;
+	    printf("*** I/O error in file 2 at y = %d\n", y);
+	    goto ex;
+	}
     }
 
   /* Do compare : */
@@ -469,48 +481,59 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
 
       if (y < height - half_win)
         {
-          image_get_rgb_scan_line (image1, row1);
-          image_get_rgb_scan_line (image2, row2);
+	    if (image_get_rgb_scan_line (image1, row1)) {
+		rcode = 1;
+		printf("*** I/O error in file 1 at y = %d\n", y + half_win);
+		goto ex;
+	    }
+	    if (image_get_rgb_scan_line (image2, row2)) {
+		rcode = 1;
+		printf("*** I/O error in file 2 at y = %d\n", y + half_win);
+		goto ex;
+	    }
         }
       if (out_buf)
 	memset(out_buf, 0, out_buffer_size);
 
-      for (x = 0; x < width; x++)
-	{
-	  if (rowmid1[x * 3] != rowmid2[x * 3] ||
-	      rowmid1[x * 3 + 1] != rowmid2[x * 3 + 1] ||
-	      rowmid1[x * 3 + 2] != rowmid2[x * 3 + 2])
+      if (memcmp(rowmid1, rowmid2, width * 3)) 
+        {
+          for (x = 0; x < width; x++)
 	    {
-	      freport->n_diff++;
-	      if (abs (rowmid1[x * 3] - rowmid2[x * 3]) > tolerance ||
-		  abs (rowmid1[x * 3 + 1] - rowmid2[x * 3 + 1]) > tolerance ||
-		  abs (rowmid1[x * 3 + 2] - rowmid2[x * 3 + 2]) > tolerance)
-		{
-		  freport->n_outof_tolerance++;
-		  if (check_window (buf1, buf2, fparams, x, y, width, height)) {
-		    freport->n_outof_window++;
-		    if (out_buf) {
-		      out_buf[x * 3 + 0] = abs(rowmid1[x * 3 + 0]- rowmid2[x * 3 + 0]);
-		      out_buf[x * 3 + 1] = abs(rowmid1[x * 3 + 1]- rowmid2[x * 3 + 1]);
-		      out_buf[x * 3 + 2] = abs(rowmid1[x * 3 + 2]- rowmid2[x * 3 + 2]);
+	      if (rowmid1[x * 3] != rowmid2[x * 3] ||
+	          rowmid1[x * 3 + 1] != rowmid2[x * 3 + 1] ||
+	          rowmid1[x * 3 + 2] != rowmid2[x * 3 + 2])
+	        {
+	          freport->n_diff++;
+	          if (abs (rowmid1[x * 3] - rowmid2[x * 3]) > tolerance ||
+		      abs (rowmid1[x * 3 + 1] - rowmid2[x * 3 + 1]) > tolerance ||
+		      abs (rowmid1[x * 3 + 2] - rowmid2[x * 3 + 2]) > tolerance)
+		    {
+		      freport->n_outof_tolerance++;
+		      if (check_window (buf1, buf2, fparams, x, y, width, height)) {
+		        freport->n_outof_window++;
+		        if (out_buf) {
+		          out_buf[x * 3 + 0] = abs(rowmid1[x * 3 + 0]- rowmid2[x * 3 + 0]);
+		          out_buf[x * 3 + 1] = abs(rowmid1[x * 3 + 1]- rowmid2[x * 3 + 1]);
+		          out_buf[x * 3 + 2] = abs(rowmid1[x * 3 + 2]- rowmid2[x * 3 + 2]);
+		        }
+		        if (fparams->report_coordinates && 
+			    (abs(x - x0) > 1 && y == y0 || y - y0 > 1))
+		          {
+		            /* fixme : a contiguity test wanted. */
+			    x0 = x; y0 = y;
+			    mc++;
+			    if (mc < mmax) {
+			        printf("diff: x=%d y=%d c1=%02X%02X%02X c2=%02X%02X%02X\n", x, y,
+			    	        rowmid1[x * 3], rowmid1[x * 3 + 1], rowmid1[x * 3 + 2],
+				        rowmid2[x * 3], rowmid2[x * 3 + 1], rowmid2[x * 3 + 2]);
+			    } else if (mc == mmax)
+			        printf("Won't report more differences.\n");
+		        }
+		      }
 		    }
-		    if (fparams->report_coordinates && 
-			(((abs(x - x0) > 1) && y == y0) || (y - y0 > 1)))
-		      {
-		        /* fixme : a contiguity test wanted. */
-			x0 = x; y0 = y;
-			mc++;
-			if (mc < mmax) {
-			    printf("diff: x=%d y=%d c1=%02X%02X%02X c2=%02X%02X%02X\n", x, y,
-				    rowmid1[x * 3], rowmid1[x * 3 + 1], rowmid1[x * 3 + 2],
-				    rowmid2[x * 3], rowmid2[x * 3 + 1], rowmid2[x * 3 + 2]);
-			} else if (mc == mmax)
-			    printf("Won't report more differences.\n");
-		    }
-		  }
-		}
+	        }
 	    }
-	}
+        }
 
       roll_window (buf1, window_size);
       roll_window (buf2, window_size);
@@ -529,13 +552,14 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
 	  }
       }
     }
-
+ex:
   free_window (buf1, window_size);
   free_window (buf2, window_size);
   if (out_buf)
     free(out_buf);
   if (image_out)
     fclose(image_out->f);
+  return rcode;
 }
 
 static const char *
@@ -643,7 +667,8 @@ main (int argc, char **argv)
       printf ("Extra data (maybe pages) in the image file 1..\n");
       return 1;
     }
-    fuzzy_diff_images (image1, image2, &fparams, &freport, image_out);
+    if (fuzzy_diff_images (image1, image2, &fparams, &freport, image_out))
+	return 1;
     if (image_out)
       image_pnm_close (&image_out->super);
     image_out = NULL;
@@ -652,10 +677,10 @@ main (int argc, char **argv)
       printf ("%s: page %d: %d different, %d out of tolerance, %d out of window\n",
  	      fn[0], page, freport.n_diff, freport.n_outof_tolerance,
 	      freport.n_outof_window);
-      rcode = MAX(rcode, 1);
+      rcode = max(rcode, 1);
     }
     if (freport.n_outof_window > 0)
-      rcode = MAX(rcode, 2);
+      rcode = max(rcode, 2);
     page++;
   }
 
