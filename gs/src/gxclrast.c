@@ -2512,7 +2512,9 @@ clist_do_polyfill(gx_device *dev, gx_path *ppath,
 	 */
 	dev_proc_fill_parallelogram((*fill));
 
-	if (pseg2->next) {
+	/* close_path of 3 point triangle adds 4th point, detected here.*/
+	/* close_path on parallelogram adds 5th point also ignored. */
+	if (pseg2->next && !(px == pseg2->next->pt.x && py == pseg2->next->pt.y)) {
 	    /* Parallelogram */
 	    fill = dev_proc(dev, fill_parallelogram);
 	    bx = pseg2->pt.x - pseg1->pt.x;
