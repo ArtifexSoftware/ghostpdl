@@ -1221,10 +1221,12 @@ Test	 Status	Comments
 
 09-49B-1  OK	
 
-09-49B-2  DIFF	GS has WRONG T/F shown in Special Test C. GS close to Tek Special
-		Test B except for resolution dependent numbers for ActualFrequency.
-		(CPSI ignores sethalftone). Test C ActualFrequency also Device
-		Dependent.  Assign: Ray
+09-49B-2  AOK   Wrong value of AccurateScreens is fixed by rev. 7741.
+                CPSI-based PhotoPrint product ignores all attempts to change
+                the halftone and cannot be used as a reference.
+              	GS is close to Tek Special Test B except for resolution
+                dependent numbers for ActualFrequency. Test C ActualFrequency is
+                also Device Dependent. - Alex
 
 09-49C-1  OK	Matches Tek hardcopy and checksum. RJJ (CPSI differs because it
 		ignores setscreen).

@@ -139,6 +139,7 @@ end
     { dup wcheck not { dup length .copydict } if
       dup /Frequency 5 index put
       dup /Angle 4 index put
+      languagelevel 3 ge { dup /AccurateScreens dup getuserparam put } if
     }
    if
  } bind def
