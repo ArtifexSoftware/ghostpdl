@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <memory.h>
-#include <io.h>
+#include <sys/stat.h>
 
 typedef unsigned char uchar;
 typedef int bool;
@@ -51,6 +51,15 @@ struct _FuzzyReport {
   int n_outof_tolerance;
   int n_outof_window;
 };
+
+static off_t
+file_length(int file)
+{
+  struct stat st;
+
+  fstat(file, &st);
+  return st.st_size;
+}
 
 int
 image_get_rgb_scan_line (Image *image, uchar *buf)
@@ -339,7 +348,7 @@ open_pnm_image (const char *fn)
   image->super.raster = n_chan * ((width * bpp + 7) >> 3);
   image->super.n_chan = n_chan;
   image->super.bpp = bpp;
-  image->file_length = _filelength(fileno(f));
+  image->file_length = file_length(fileno(f));
   return &image->super;
 punt:;
   fclose (f);
@@ -677,10 +686,10 @@ main (int argc, char **argv)
       printf ("%s: page %d: %d different, %d out of tolerance, %d out of window\n",
  	      fn[0], page, freport.n_diff, freport.n_outof_tolerance,
 	      freport.n_outof_window);
-      rcode = max(rcode, 1);
+      rcode = MAX(rcode, 1);
     }
     if (freport.n_outof_window > 0)
-      rcode = max(rcode, 2);
+      rcode = MAX(rcode, 2);
     page++;
   }
 
