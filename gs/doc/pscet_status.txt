@@ -3704,8 +3704,12 @@ Test	 Status	Comments
 18-02D-1  OK  	Fixed by rev. 7738. - Alex
 
 18-02E-1  DIFF	much of postscript dump missing in gs. assign Ray
+		Ghostscript doesn't detect color operators in uncolored
+                pattern.
 
 18-02E-2  DIFF	much of postscript dump missing in gs. assign Ray
+		Ghostscript doesn't detect color operators in uncolored
+                pattern.
 
 18-02F-1  OK    Minor differences visually reviewed by HAS.
 
@@ -3827,7 +3831,7 @@ Test	 Status	Comments
 20-02-2  DIFF   When --begin-- overflows dictionary stack it restores the argument
 		and places the content of the dictionary stack on the operand
                 stack. Adobe interpreters don't restore the argument.
-                assign Peter
+                assign Alex
 
 20-02-3  OK	Color corrected by rev 7172.
 
@@ -3907,8 +3911,7 @@ Test	 Status	Comments
 
 20-19-2  OK	Color corrected by rev 7172.
 
-20-20-1  DIFF	Same as 20-14-1.
-                refers to "OK" page assign: ray
+20-20-1  OK  	GS matches Tek and CPSI as of rev. 7741.
 
 20-20-2  OK	
 
@@ -4014,7 +4017,7 @@ Test	 Status	Comments
 
 21-11-5  OK	
 
-21-11-6  DIFF	Differences in error messages - ADC
+21-11-6  DIFF	Differences in error messages for operator token - ADC
                 assign Peter
 
 21-11-7  OK	Corrected by 7152 and 7162.  ADC
@@ -4232,6 +4235,7 @@ Test	 Status	Comments
 23-12K-1  OK	Fixed as of r7500.
 
 23-12K-2  DIFF	GS has 'T' where CPSI has 'F' on one of the DCTEncode. Assign: Peter
+		DCTEncode doesn't close its target with /CloseTarget true
 
 23-12L-1  AOK	same as 23-12A-3
 
@@ -4313,8 +4317,10 @@ Test	 Status	Comments
 
 23-19-2  OK	
 
-23-20-1  DIFF	GS has different checksum, but remainder of page matches CPSI. ????
-		Assign: Ray (low priority)
+23-20-1  DIFF	GS has different checksum. readhexstring uses the string to store
+		the state. Modified bytes print are not printable but affect the
+                checksum.
+              	Assign: Ray (low priority)
 
 23-20-2  OK	
 
@@ -4672,6 +4678,7 @@ Test	 Status	Comments
 27-01-2  OK	
 
 27-02-1  DIFF	Device Dependent : GS has a reasonable cache limit.
+		Adobe has upper cache limit of 1e8 bytes. GS has no limit.
                 assign: Ray.
 
 27-02-2  OK	
