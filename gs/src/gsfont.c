@@ -633,8 +633,12 @@ gs_cachestatus(register const gs_font_dir * pdir, register uint pstat[7])
 int
 gs_setcachesize(gs_font_dir * pdir, uint size)
 {   /* This doesn't delete anything from the cache yet. */
-    if (CPSI_mode && size < 100000)                  /* for CET 27-07 */
-        size = 100000;
+    if (CPSI_mode) {
+        if (size < 100000)             /* for CET 27-07 */
+            size = 100000;
+        else if (size > 100000000)     /* for CET 27-02-01 */
+            size = 100000000;
+    }
     pdir->ccache.bmax = size;
     return 0;
 }

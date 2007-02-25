@@ -4677,9 +4677,8 @@ Test	 Status	Comments
 
 27-01-2  OK	
 
-27-02-1  DIFF	Device Dependent : GS has a reasonable cache limit.
-		Adobe has upper cache limit of 1e8 bytes. GS has no limit.
-                assign: Ray.
+27-02-1  OK  	Adobe has upper cache limit of 1e8 bytes.
+		Rev. 7746 does the same in CPSI compatibility mode. - Alex
 
 27-02-2  OK	
 
