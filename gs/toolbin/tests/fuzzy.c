@@ -474,6 +474,19 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
 	    goto ex;
 	}
     }
+  /* Initialie remaining scanlines if height < half_win */
+  for (; y < half_win; y++) {
+    memcpy(buf1[half_win - y], buf1[half_win], width * 3); 
+    memcpy(buf2[half_win - y], buf2[half_win], width * 3);
+  }
+
+  /* Initialie the rest of the buffer that would be uninitialised */
+  /* before half_win lines is read, because check_window() always */
+  /* peeks into the whole window */
+  for (y = 0; y < half_win; y++) {
+    memcpy(buf1[half_win + y + 1], buf1[half_win], width * 3);
+    memcpy(buf2[half_win + y + 1], buf2[half_win], width * 3);
+  }
 
   /* Do compare : */
   freport->n_diff = 0;
