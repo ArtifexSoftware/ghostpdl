@@ -692,8 +692,14 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
 	    {
 		if (!strcmp(rel->type, REL_START_PART))
 		{
+		    xps_part_t *startpart;
+
 		    ctx->start_part = rel->target;
 		    dprintf1("milestone: we have a start part '%s'\n", ctx->start_part);
+
+		    startpart = xps_find_part(ctx, rel->target);
+		    if (startpart)
+			xps_process_metadata(ctx, startpart);
 		}
 	    }
 	}

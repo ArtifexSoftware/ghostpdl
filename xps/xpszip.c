@@ -246,7 +246,7 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
     {
 	int input, output, count;
 
-	dprintf1("stored data of known size: %d\n", ctx->zip_uncompressed_size);
+	// dprintf1("stored data of known size: %d\n", ctx->zip_uncompressed_size);
 
 	/* For stored parts we know the size.
 	 * Capacity is set to the actual size of the data,
@@ -262,7 +262,7 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 	if (count > output)
 	    count = output;
 
-	dprintf1("  reading %d bytes\n", count);
+	// dprintf1("  reading %d bytes\n", count);
 	readall(ctx, buf, (byte*)part->data + part->size, count);
 	part->size += count;
 

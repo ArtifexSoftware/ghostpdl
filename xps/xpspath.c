@@ -269,6 +269,12 @@ xps_parse_path(xps_context_t *ctx, xps_item_t *root)
     }
 #endif
 
+    if (!data)
+    {
+	gs_throw(-1, "no abbreviated geometry data for path");
+	data = "M 0,0 L 0,100 100,100 100,0 Z";
+    }
+
     /* if it's a solid color brush fill/stroke do just that. */
 
     if (fill)

@@ -17,6 +17,12 @@
 #include "gsimage.h"
 #include "gscspace.h"
 
+#include "gxpath.h"     /* gsshade.h depends on it */
+#include "gxfixed.h"    /* gsshade.h depends on it */
+#include "gsshade.h"
+#include "gsfunc.h"
+#include "gsfunc3.h"    /* we use stitching and exponential interp */
+
 #include "zlib.h"
 
 /*
