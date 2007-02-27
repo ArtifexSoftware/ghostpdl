@@ -317,7 +317,8 @@ xps_parse_path(xps_context_t *ctx, xps_item_t *root)
 
 	gs_setrgbcolor(ctx->pgs, 0.5, 0.0, 0.3);
 	xps_parse_abbreviated_geometry(ctx, data);
-	gs_fill(ctx->pgs); /* should clip */
+	// gs_fill(ctx->pgs); /* should clip */
+	gs_clippath(ctx->pgs);
 
 	if (fill_node)
 	{

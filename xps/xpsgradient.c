@@ -195,7 +195,7 @@ xps_draw_one_radial_gradient(xps_context_t *ctx,
     rect.q.x = int2fixed(10000);
     rect.q.y = int2fixed(10000);
 
-    code = gs_shading_fill_path_adjusted(shading, NULL, &rect, dev, pis, false);
+    code = gs_shading_fill_path_adjusted(shading, NULL, &rect, dev, pis, 0);
     if (code < 0)
     {
 	gs_free_object(mem, shading, "gs_shading_R");
@@ -203,6 +203,63 @@ xps_draw_one_radial_gradient(xps_context_t *ctx,
     }
 
     gs_free_object(mem, shading, "gs_shading_R");
+
+    return gs_okay;
+}
+
+/*
+ * Linear gradients map to Axial shadings.
+ */
+
+int
+xps_draw_one_linear_gradient(xps_context_t *ctx,
+	gs_function_t *func, int extend,
+	float *pt0, float *pt1)
+{
+    gs_memory_t *mem = ctx->memory;
+    gs_state *pgs = ctx->pgs;
+    gs_imager_state *pis = (gs_imager_state*)pgs;
+    gx_device *dev = gs_currentdevice(pgs);
+    gs_shading_t *shading;
+    gs_shading_A_params_t params;
+    gs_color_space colorspace;
+    gs_fixed_rect rect;
+    int code;
+
+    gs_shading_A_params_init(&params);
+    {
+	gs_cspace_init_DeviceRGB(mem, &colorspace);
+
+	params.ColorSpace = &colorspace;
+
+	params.Coords[0] = pt0[0];
+	params.Coords[1] = pt0[1];
+	params.Coords[2] = pt1[0];
+	params.Coords[3] = pt1[1];
+
+	params.Extend[0] = extend;
+	params.Extend[1] = extend;
+
+	params.Function = func;
+    }
+
+    code = gs_shading_A_init(&shading, &params, mem);
+    if (code < 0)
+	return gs_throw(-1, "gs_shading_A_init failed");
+
+    rect.p.x = int2fixed(-10000);
+    rect.p.y = int2fixed(-10000);
+    rect.q.x = int2fixed(10000);
+    rect.q.y = int2fixed(10000);
+
+    code = gs_shading_fill_path_adjusted(shading, NULL, &rect, dev, pis, 0);
+    if (code < 0)
+    {
+	gs_free_object(mem, shading, "gs_shading_A");
+	return gs_throw(-1, "gs_shading_fill_path_adjusted failed");
+    }
+
+    gs_free_object(mem, shading, "gs_shading_A");
 
     return gs_okay;
 }
@@ -247,7 +304,7 @@ xps_draw_radial_gradient(xps_context_t *ctx,
 
     if (spread == SPREAD_PAD)
     {
-	code = xps_draw_one_radial_gradient(ctx, func, true, pt0, rad0, pt1, rad1);
+	code = xps_draw_one_radial_gradient(ctx, func, 1, pt0, rad0, pt1, rad1);
 	if (code < 0)
 	{
 	    xps_free(ctx, func); /* XXX: is this the right free function? */
@@ -260,9 +317,9 @@ xps_draw_radial_gradient(xps_context_t *ctx,
 	for (i = 0; i < 10; i++)
 	{
 	    if (spread == SPREAD_REFLECT && (i & 1))
-		code = xps_draw_one_radial_gradient(ctx, func, false, pt1, rad1, pt0, rad0);
+		code = xps_draw_one_radial_gradient(ctx, func, 0, pt1, rad1, pt0, rad0);
 	    else
-		code = xps_draw_one_radial_gradient(ctx, func, false, pt0, rad0, pt1, rad1);
+		code = xps_draw_one_radial_gradient(ctx, func, 0, pt0, rad0, pt1, rad1);
 
 	    if (code < 0)
 	    {
@@ -284,53 +341,62 @@ xps_draw_radial_gradient(xps_context_t *ctx,
     return gs_okay;
 }
 
+
+int
+xps_draw_linear_gradient(xps_context_t *ctx,
+	float *pt0, float *pt1, int spread,
+	float *offsets, float *colors, int count)
+{
+    gs_function_t *func;
+    int code;
+    int i;
+
+    float dx = pt1[0] - pt0[0];
+    float dy = pt1[1] - pt0[1];
+
+    func = xps_create_gradient_stop_function(ctx, offsets, colors, count);
+    if (!func)
+	return gs_rethrow(-1, "could not create gradient function");
+
+    if (spread == SPREAD_PAD)
+    {
+	code = xps_draw_one_linear_gradient(ctx, func, 1, pt0, pt1);
+	if (code < 0)
+	{
+	    gs_free_object(ctx->memory, func, "gs_function");
+	    return gs_rethrow(code, "could not draw axial gradient");
+	}
+    }
+    else
+    {
+	pt0[0] -= 10 * dx; pt0[1] -= 10 * dy;
+	pt1[0] -= 10 * dx; pt1[1] -= 10 * dy;
+
+	for (i = 0; i < 20; i++)
+	{
+	    if (spread == SPREAD_REFLECT && (i & 1))
+		code = xps_draw_one_linear_gradient(ctx, func, 0, pt1, pt0);
+	    else
+		code = xps_draw_one_linear_gradient(ctx, func, 0, pt0, pt1);
+	    if (code < 0)
+	    {
+		gs_free_object(ctx->memory, func, "gs_function");
+		return gs_rethrow(code, "could not draw axial gradient");
+	    }
+
+	    pt0[0] += dx; pt0[1] += dy;
+	    pt1[0] += dx; pt1[1] += dy;
+	}
+    }
+
+    gs_free_object(ctx->memory, func, "gs_function");
+    return gs_okay;
+}
+
+
 /*
  *
  */
-
-int
-xps_parse_linear_gradient_brush(xps_context_t *ctx, xps_item_t *root)
-{
-    xps_item_t *node;
-
-    float stop_offsets[MAX_STOPS];
-    float stop_colors[MAX_STOPS * 4];
-    int stop_count = 0;
-
-    char *opacity;
-    char *color_interpolation_mode;
-    char *spread_method;
-    char *mapping_mode;
-    char *transform;
-    char *start_point;
-    char *end_point;
-
-    xps_item_t *transform_node = NULL;
-
-    dputs("drawing linear gradient brush\n");
-
-    opacity = xps_att(root, "Opacity");
-    color_interpolation_mode = xps_att(root, "ColorInterpolationMode");
-    spread_method = xps_att(root, "SpreadMethod");
-    mapping_mode = xps_att(root, "MappingMode");
-    transform = xps_att(root, "Transform");
-    start_point = xps_att(root, "StartPoint");
-    end_point = xps_att(root, "EndPoint");
-
-    for (node = xps_down(root); node; node = xps_next(node))
-    {
-	if (!strcmp(xps_tag(node), "LinearGradientBrush.Transform"))
-	    transform_node = xps_down(node);
-	if (!strcmp(xps_tag(node), "LinearGradientBrush.GradientStops"))
-	    stop_count = xps_parse_gradient_stops(ctx, xps_down(node),
-		    stop_offsets, stop_colors, MAX_STOPS);
-    }
-
-    if (stop_count == 0)
-	return gs_throw(-1, "no gradient stops found");
-
-    return 0;
-}
 
 int
 xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_item_t *root)
@@ -419,6 +485,75 @@ xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_item_t *root)
 
 	if (code < 0)
 	    return gs_rethrow(-1, "could not draw radial gradient");
+    }
+
+    return 0;
+}
+
+int
+xps_parse_linear_gradient_brush(xps_context_t *ctx, xps_item_t *root)
+{
+    xps_item_t *node;
+
+    float stop_offsets[MAX_STOPS];
+    float stop_colors[MAX_STOPS * 4];
+    int stop_count = 0;
+
+    char *opacity;
+    char *color_interpolation_mode;
+    char *spread_method;
+    char *mapping_mode;
+    char *transform;
+    char *start_point;
+    char *end_point;
+
+    xps_item_t *transform_node = NULL;
+
+    dputs("drawing linear gradient brush\n");
+
+    opacity = xps_att(root, "Opacity");
+    color_interpolation_mode = xps_att(root, "ColorInterpolationMode");
+    spread_method = xps_att(root, "SpreadMethod");
+    mapping_mode = xps_att(root, "MappingMode");
+    transform = xps_att(root, "Transform");
+    start_point = xps_att(root, "StartPoint");
+    end_point = xps_att(root, "EndPoint");
+
+    for (node = xps_down(root); node; node = xps_next(node))
+    {
+	if (!strcmp(xps_tag(node), "LinearGradientBrush.Transform"))
+	    transform_node = xps_down(node);
+	if (!strcmp(xps_tag(node), "LinearGradientBrush.GradientStops"))
+	    stop_count = xps_parse_gradient_stops(ctx, xps_down(node),
+		    stop_offsets, stop_colors, MAX_STOPS);
+    }
+
+    if (stop_count == 0)
+	return gs_throw(-1, "no gradient stops found");
+
+    {
+	float gpt0[2];
+	float gpt1[2];
+	int gspread;
+	int code;
+
+	sscanf(start_point, "%g,%g", gpt0, gpt0 + 1);
+	sscanf(end_point, "%g,%g", gpt1, gpt1 + 1);
+
+	gspread = SPREAD_PAD;
+	if (spread_method && !strcmp(spread_method, "Pad"))
+	    gspread = SPREAD_PAD;
+	if (spread_method && !strcmp(spread_method, "Reflect"))
+	    gspread = SPREAD_REFLECT;
+	if (spread_method && !strcmp(spread_method, "Repeat"))
+	    gspread = SPREAD_REPEAT;
+
+	code = xps_draw_linear_gradient(ctx,
+		gpt0, gpt1, gspread,
+		stop_offsets, stop_colors, stop_count);
+
+	if (code < 0)
+	    return gs_rethrow(-1, "could not draw linear gradient");
     }
 
     return 0;
