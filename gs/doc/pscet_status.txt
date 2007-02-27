@@ -1573,9 +1573,7 @@ Test	 Status	Comments
 
 10-16-6  OK	Minor differences in positions and character shapes - ADC
 
-11-01-1  DIFF	gs_arc_add_inline sets current point from fixed point coords in
-	 path. Need to implement PRECISE_CURRENTPOINT logic here.
-         if this is the same as 09-36-4 make NF assign igor
+11-01-1  DIFF	Slightly different coords in 2 cases. assign igor
 
 11-01-2  OK	
 
@@ -1592,10 +1590,7 @@ Test	 Status	Comments
 		which depends on the flattening factor of the original curve.
 		With CPSI look30 has a smaller number of peaks.
 
-11-02-1  DIFF	gs_arc_add_inline sets current point from fixed point coords in
-	 path. Need to implement PRECISE_CURRENTPOINT logic here. - assign Raph
-	 (see 11-01-1).
-         if this is the same as 09-36-4 make NF assign igor
+11-02-1  DIFF	Same as 11-01-1  assign igor
 
 11-02-2  OK	Minor differences visually reviewed by RJJ
 

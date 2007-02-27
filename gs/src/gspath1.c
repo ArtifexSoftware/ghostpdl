@@ -57,6 +57,9 @@ typedef struct arc_curve_params_s {
 
 /* Forward declarations */
 private int arc_add(const arc_curve_params_t *arc, bool is_quadrant);
+private int gs_imager_arc_add(gx_path * ppath, gs_imager_state * pis, bool clockwise,
+	    floatp axc, floatp ayc, floatp arad, floatp aang1, floatp aang2,
+		  bool add_line, gs_point *p3);
 
 
 int
@@ -75,11 +78,19 @@ private inline int
 gs_arc_add_inline(gs_state *pgs, bool cw, floatp xc, floatp yc, floatp rad, 
 		    floatp a1, floatp a2, bool add)
 {
-    int code = gs_imager_arc_add(pgs->path, (gs_imager_state *)pgs, cw, xc, yc, rad, a1, a2, add);
+    gs_point p3;
+    int code = gs_imager_arc_add(pgs->path, (gs_imager_state *)pgs, cw, xc, yc, rad, a1, a2, add, &p3);
 
     if (code < 0)
 	return code;
+
+#if !PRECISE_CURRENTPOINT
     return gx_setcurrentpoint_from_path((gs_imager_state *)pgs, pgs->path);
+#else
+    pgs->current_point_valid = true;
+    return gs_point_transform(p3.x, p3.y, &ctm_only(pgs), &pgs->current_point);
+#endif
+
 }
 
 int
@@ -187,10 +198,10 @@ next_arc_quadrant(arc_curve_params_t * arc, fixed anext)
     return arc_add(arc, true);
 }
 
-int
+private int
 gs_imager_arc_add(gx_path * ppath, gs_imager_state * pis, bool clockwise,
 	    floatp axc, floatp ayc, floatp arad, floatp aang1, floatp aang2,
-		  bool add_line)
+		  bool add_line, gs_point *p3)
 {
     double ar = arad;
     fixed ang1 = float2fixed(aang1), ang2 = float2fixed(aang2), anext;
@@ -257,8 +268,12 @@ gs_imager_arc_add(gx_path * ppath, gs_imager_state * pis, bool clockwise,
 	    ang1 += adjust, ang2 += adjust;
 	}
 	arc.angle = ang1;
-	if (ang1 == ang2)
-	    return next_arc_curve(&arc, ang2);
+	if (ang1 == ang2) {
+	    code = next_arc_curve(&arc, ang2);
+	    if (code < 0)
+		return code;
+	    *p3 = arc.p3;
+	}
 	/* Do the first part, up to a multiple of 90 degrees. */
 	if (!arc.sincos.orthogonal) {
 	    anext = ROUND_UP(arc.angle + fixed_epsilon, fixed_90);
@@ -282,10 +297,16 @@ gs_imager_arc_add(gx_path * ppath, gs_imager_state * pis, bool clockwise,
     /*
      * Do the last curve of the arc, if any.
      */
-    if (arc.angle == ang2)
+    if (arc.angle == ang2) {
+	*p3 = arc.p3;
 	return 0;
+    }
 last:
-    return next_arc_curve(&arc, ang2);
+    code = next_arc_curve(&arc, ang2);
+    if (code < 0)
+	return code;
+    *p3 = arc.p3;
+    return 0;
 }
 
 int
@@ -377,20 +398,25 @@ arc_add(const arc_curve_params_t * arc, bool is_quadrant)
 #if !PRECISE_CURRENTPOINT
 	 (code = gs_point_transform2fixed(&pis->ctm, x0, y0, &p0)) < 0) ||
 	(code = gs_point_transform2fixed(&pis->ctm, xt, yt, &pt)) < 0 ||
-	(code = gs_point_transform2fixed(&pis->ctm, arc->p3.x, arc->p3.y, &p3)) < 0 ||
+	(code = gs_point_transform2fixed(&pis->ctm, arc->p3.x, arc->p3.y, &p3)) < 0
 #else
 	 (code = gs_point_transform2fixed_rounding(&pis->ctm, x0, y0, &p0)) < 0) ||
 	(code = gs_point_transform2fixed_rounding(&pis->ctm, xt, yt, &pt)) < 0 ||
-	(code = gs_point_transform2fixed_rounding(&pis->ctm, arc->p3.x, arc->p3.y, &p3)) < 0 ||
+	(code = gs_point_transform2fixed_rounding(&pis->ctm, arc->p3.x, arc->p3.y, &p3)) < 0
 #endif
-	(code =
-	 (arc->action == arc_nothing ?
+	)
+	return code;
+#if PRECISE_CURRENTPOINT
+    if (!path_position_valid(path))
+	gs_point_transform(arc->p0.x, arc->p0.y, &ctm_only(arc->pis), &pis->subpath_start);
+#endif
+    code = (arc->action == arc_nothing ?
 	  (p0.x = path->position.x, p0.y = path->position.y, 0) :
 	  arc->action == arc_lineto && path_position_valid(path) ?
 	  gx_path_add_line(path, p0.x, p0.y) :
 	  /* action == arc_moveto, or lineto with no current point */
-	  gx_path_add_point(path, p0.x, p0.y))) < 0
-	)
+	  gx_path_add_point(path, p0.x, p0.y));
+    if (code < 0)
 	return code;
     /* Compute the fraction coefficient for the curve. */
     /* See gx_path_add_partial_arc for details. */
@@ -435,6 +461,7 @@ add:
 	      "[r]Arc f=%f p0=(%f,%f) pt=(%f,%f) p3=(%f,%f) action=%d\n",
 	      fraction, x0, y0, xt, yt, arc->p3.x, arc->p3.y,
 	      (int)arc->action);
+
     /* Open-code gx_path_add_partial_arc_notes */
     return gx_path_add_curve_notes(path, p0.x, p0.y, p2.x, p2.y, p3.x, p3.y,
 				   arc->notes | sn_from_arc);
