@@ -99,4 +99,8 @@ void px_process_init(px_parser_state_t *st, bool big_endian);
 int px_process(px_parser_state_t *st, px_state_t *pxs,
 		  stream_cursor_read *pr);
 
+/* unfortunately we have to export this for pass through mode, other
+   commands do not need to know how much data is left to parse. */
+uint px_parser_data_left(px_parser_state_t *pxp);
+
 #endif				/* pxparse_INCLUDED */

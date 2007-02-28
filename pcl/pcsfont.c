@@ -19,6 +19,7 @@
 #include "gdebug.h"
 #include "pcommand.h"
 #include "pcfont.h"
+#include "pcursor.h"
 #include "pcpage.h"
 #include "pcstate.h"
 #include "pcfsel.h"

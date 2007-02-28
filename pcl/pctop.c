@@ -536,7 +536,6 @@ pcl_impl_remove_device(
 	code = gs_nulldevice(pcli->pcs.pgs);
 	if ( code < 0 )
 	    dprintf1("error code %d installing nulldevice, continuing\n", code );
-	//return pcl_do_resets(&pcli->pcs, pcl_reset_printer);
 	return pcl_do_resets(&pcli->pcs, pcl_reset_permanent);
 }
 
@@ -561,8 +560,6 @@ pcl_impl_deallocate_interp_instance(
 	pcl_free_default_objects( mem, &pcli->pcs);
 
 	/* free halftone cache in gs state */
-        // NB	gs_free_ht_cache(mem, pcli->pcs.pgs);
-        // NB might not be needed in 8.53 // gs_state_free_view_clip(pcli->pcs.pgs);
 	gs_state_free(pcli->pcs.pgs);
 	/* remove pcl's gsave grestore stack */
 	pcl_free_gstate_stk(&pcli->pcs);

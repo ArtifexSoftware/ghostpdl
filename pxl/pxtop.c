@@ -577,9 +577,6 @@ pxl_impl_deallocate_interp_instance(
 	/* do total dnit of interp state */
 	px_state_finit(pxli->pxs);
 	/* free halftone cache */
-        //	gs_free_ht_cache(mem, pxli->pgs);
-	/* Unwind allocation */ 
-        // NB might not be needed 8.53 // gs_state_free_view_clip(pxli->pgs);
 	gs_state_free(pxli->pgs);
 	px_process_release(pxli->st);
 	px_state_release(pxli->pxs);

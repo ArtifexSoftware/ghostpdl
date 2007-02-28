@@ -22,7 +22,6 @@ extern const gs_memory_struct_type_t st_bytes;
 inline private uint
 round_up_to_align(uint size)
 {
-    //    return (size + (arch_align_double_mod - 1)) & -arch_align_double_mod;
     return ARCH_ALIGN_MEMORY_MOD;
 }
 
@@ -402,13 +401,13 @@ pl_consolidate_free(gs_memory_t *mem)
 
 
 private uint
-pl_object_size(gs_memory_t * mem, const void /*obj_header_t */ *obj)
+pl_object_size(const gs_memory_t * mem, const void /*obj_header_t */ *obj)
 {
     return get_size((byte *)obj);
 }
 
 private gs_memory_type_ptr_t
-pl_object_type(gs_memory_t * mem, const void /*obj_header_t */ *obj)
+pl_object_type(const gs_memory_t * mem, const void /*obj_header_t */ *obj)
 {
     return get_type((byte *)obj);
 }

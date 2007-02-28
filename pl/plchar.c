@@ -494,7 +494,7 @@ pl_tt_lookup_char(const pl_font_t *plfont, gs_glyph glyph)
 
 /* Get a string from a TrueType font. */
 private int
-pl_tt_string_proc(gs_font_type42 *pfont, ulong offset, uint length, byte **pdata)
+pl_tt_string_proc(gs_font_type42 *pfont, ulong offset, uint length, const byte **pdata)
 {       pl_font_t *plfont = pfont->client_data;
 
         *pdata = plfont->header + plfont->offsets.GT +
@@ -531,12 +531,13 @@ pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t *plfont)
  */
 
 int
-pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
-                    float sbw[4])
+pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index,
+                  gs_type42_metrics_options_t options,  float *sbw)
 {    
     pl_font_t *plfont = pfont->client_data;
     const pl_font_glyph_t *pfg = 0;
     const byte *cdata = 0;
+    int wmode = gs_type42_metrics_options_wmode(options);
 
     if ( plfont->glyphs.table != 0 ) {
         /* at least one caller calls before the glyph.table is valid, no chars yet 
@@ -596,7 +597,7 @@ pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
             dprintf("Found vertical metrics\n");
         }
     }
-    return gs_type42_default_get_metrics(pfont, glyph_index, wmode, sbw);
+    return gs_type42_default_get_metrics(pfont, glyph_index, options, sbw);
 }
 
 
@@ -657,14 +658,6 @@ tt_find_table(gs_font_type42 *pfont, const char *tname, uint *plen)
         ulong table_dir_offset = 0;
 
         access(0, 12, OffsetTable);
-        /* do something reasonable for truetype collections.  For now we
-           just make use of the first font */
-        if ( !memcmp(OffsetTable, "ttcf", 4) ) {
-            byte *newoffset;
-            /* offset to table directory for font 0 */
-            access(12, 4, newoffset);
-            table_dir_offset = pl_get_uint32(newoffset);
-        }
         access(table_dir_offset, 12, OffsetTable);
         numTables = pl_get_uint16(OffsetTable + 4);
         access(table_dir_offset + 12, numTables * 16, TableDirectory);
@@ -689,13 +682,6 @@ typedef struct gs_imager_state_s gs_imager_state;
 #  define gx_path_DEFINED
 typedef struct gx_path_s gx_path;
 #endif
-
-/* Imported procedures */
-int gs_type42_append(uint glyph_index, gs_state * pgs,
-                 gx_path * ppath, gs_text_enum_t *penum, gs_font *pfont,
-                 bool charpath_flag);
-
-int gs_type42_get_metrics(gs_font_type42 *pfont, uint glyph_index, float psbw[4]);
 
 /*
  * Map a key through a cmap sub-table.  We export this so we can use
@@ -1084,7 +1070,7 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
             gs_setmatrix(pgs, &smat);
           }
         code = gs_type42_append(glyph, pgs, pgs->path,
-                                penum, pfont,
+                                (gs_text_enum_t *)penum, pfont,
                                 gs_show_in_charpath(penum) != cpm_show);
         if ( code >= 0 )
           code = (pfont->PaintType ? gs_stroke(pgs) : gs_fill(pgs));
@@ -1371,7 +1357,6 @@ cleanup:
  private int
 pl_intelli_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth)
 {       
-        pl_font_glyph_t *cglyph = pl_font_lookup_glyph(plfont, char_code);
         const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
         int wx;
 
@@ -1401,8 +1386,13 @@ pl_intelli_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, 
           }
         pwidth->x = (floatp)wx / 8782.0;
 
-        if_debug1('1', "[1] glyph %ld\n", cglyph->glyph);
-        if_debug2('1', "[1] intelli width of %d %f\n", char_code, pwidth->x);
+#ifdef DEBUG
+        {
+            pl_font_glyph_t *cglyph = pl_font_lookup_glyph(plfont, char_code);
+            if_debug1('1', "[1] glyph %ld\n", cglyph->glyph);
+            if_debug2('1', "[1] intelli width of %d %f\n", char_code, pwidth->x);
+        }
+#endif
         return 0;
 }
 

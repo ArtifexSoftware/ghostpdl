@@ -1143,7 +1143,6 @@ hpgl_add_point_to_path(
     {
         int     code = (*gs_procs[func])(pgls->pgs, x, y);
 	if (code < 0) {
-            hpgl_call_note_error(pgls->memory, code);
 	    if (code == gs_error_limitcheck)
 		hpgl_set_lost_mode(pgls, hpgl_lost_mode_entered);
 	} else {

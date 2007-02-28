@@ -453,11 +453,6 @@ pl_main(
     gs_c_param_list_release(&params);
     arg_finit(&args);
 
-#ifndef PSI_INCLUDED
-    /* free iodev */
-    // stefan foo: gs_iodev_free(pjl_mem);
-#endif
-   
     if ( gs_debug_c('A') )
 	dprintf("Final time" );
     pl_platform_dnit(0);
@@ -787,10 +782,10 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 {
     int code = 0;
     bool help = false;
-    const char *arg;
+    char *arg;
 
     gs_c_param_list_write_more(params);
-    while ( (arg = arg_next(pal, &code)) != 0 && 
+    while ( (arg = (char *)arg_next(pal, &code)) != 0 && 
 	    *arg == '-' ) { /* just - read from stdin */
         if (code < 0)
             break;

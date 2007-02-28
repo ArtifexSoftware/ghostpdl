@@ -29,6 +29,7 @@
 #include "pxparse.h"		/* requires pxattr.h, pxvalue.h */
 #include "pxptable.h"		/* requires pxenum.h, pxoper.h, pxvalue.h */
 #include "pxstate.h"
+#include "pxpthr.h"
 #include "gsstruct.h"
 
 /* GC structures and procedures */

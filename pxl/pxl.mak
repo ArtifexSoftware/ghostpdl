@@ -59,6 +59,7 @@ pxgstate_h=$(PXLSRC)pxgstate.h $(gsccolor_h) $(gsiparam_h) $(gsmatrix_h) $(gsref
 pxoper_h=$(PXLSRC)pxoper.h $(gserror_h) $(pxattr_h) $(pxerrors_h) $(pxvalue_h)
 pxparse_h=$(PXLSRC)pxparse.h $(pxoper_h)
 pxstate_h=$(PXLSRC)pxstate.h $(gsmemory_h) $(pxgstate_h) $(pltop_h)
+pxpthr_h=$(PXLSRC)pxpthr.h
 
 $(PXLOBJ)pxbfont.$(OBJ): $(PXLSRC)pxbfont.c $(AK) $(stdpre_h)\
  $(pxbfont_h)
@@ -74,7 +75,7 @@ $(PXLOBJ)pxerrors.$(OBJ): $(PXLSRC)pxerrors.c $(AK)\
 
 $(PXLOBJ)pxparse.$(OBJ): $(PXLSRC)pxparse.c $(AK) $(memory__h)\
  $(gdebug_h) $(gserror_h) $(gsio_h) $(gstypes_h)\
- $(plparse_h)\
+ $(plparse_h) $(pxpthr_h)\
  $(pxattr_h) $(pxenum_h) $(pxerrors_h) $(pxoper_h) $(pxparse_h) $(pxptable_h)\
  $(pxstate_h) $(pxtag_h) $(pxvalue_h) $(gsstruct_h)
 	$(PXLCCC) $(PXLSRC)pxparse.c $(PXLO_)pxparse.$(OBJ)
@@ -113,7 +114,7 @@ $(PXLOBJ)pxptable.$(OBJ): $(PXLSRC)pxptable.c $(AK) $(std_h)\
 
 $(PXLOBJ)pxpthr.$(OBJ): $(PXLSRC)pxpthr.c $(AK) \
  $(pcommand_h) $(pgmand_h) $(pcstate_h) $(pcparse_h) $(pctop_h)\
- $(pcpage_h) $(pxstate_h) $(pxoper_h) $(stdio__h)
+ $(pcpage_h) $(pxstate_h) $(pxoper_h) $(stdio__h) $(pxpthr_h)
 	$(PXLCCC) $(PXLSRC)pxpthr.c $(PXLO_)pxpthr.$(OBJ)
 
 $(PXLOBJ)pxvalue.$(OBJ): $(PXLSRC)pxvalue.c $(AK) $(std_h) $(gsmemory_h) $(pxvalue_h)

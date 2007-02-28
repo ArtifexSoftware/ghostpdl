@@ -135,6 +135,7 @@ alloc_crd(
     return code;
 }
 
+#ifdef READ_DEVICE_CRD
 /*
  * See if the default CRD is specified by the device.
  *
@@ -201,6 +202,7 @@ read_device_CRD(
     gs_c_param_list_release(&list);
     return (code == 0);
 }
+#endif
 
 /*
  * Build the default color rendering dictionary.

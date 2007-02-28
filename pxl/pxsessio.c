@@ -18,6 +18,7 @@
 #include "stdio_.h"
 #include "string_.h"
 #include "pxoper.h"
+#include "pxpthr.h"
 #include "pxstate.h"
 #include "pxfont.h"
 #include "pjparse.h" 

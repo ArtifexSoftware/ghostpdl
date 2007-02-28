@@ -23,6 +23,7 @@
 #include "gsparam.h"
 #include "gsdevice.h"
 #include "gxcmap.h"
+#include "gxdcconv.h"
 #include "gzstate.h"
 
 /* GC routines */
@@ -926,7 +927,6 @@ pcl_mono_color_mapping_procs(const gx_device * dev)
 private int
 pcl_update_mono(pcl_state_t *pcs)
 {
-    int code;
     gx_device *dev = gs_currentdevice(pcs->pgs);
     const gx_cm_color_map_procs *cm_procs =  dev_proc(dev, get_color_mapping_procs)(dev);
     if (pcs->monochrome_mode) {
@@ -962,7 +962,6 @@ set_print_mode(
 )
 {
     uint            mode = uint_arg(pargs);
-    int             code = 0;
 
     if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
 	return 0;

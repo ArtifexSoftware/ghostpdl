@@ -442,9 +442,6 @@ extern gs_char last_char;
 private gs_char
 pl_decode_glyph(gs_font *font,  gs_glyph glyph)
 {	
-    // NB glyph is unicode for builtin fonts 
-    // this fails for downloaded fonts where there is often 
-    // no association other than sequential numbering 
     return last_char;
 }
 
@@ -675,9 +672,7 @@ pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir, gs_memory_
 
 	pfont->procs.glyph_name = pl_glyph_name;
 	pfont->procs.decode_glyph = pl_decode_glyph;
-	// NB
-	// pfont->procs.callbacks.known_encode = pl_known_encode;
-
+	/* NB pfont->procs.callbacks.known_encode = pl_known_encode; */
 	pfont->procs.define_font = gs_no_define_font;
 	pfont->procs.make_font = gs_no_make_font;
 	pfont->procs.font_info = gs_default_font_info;

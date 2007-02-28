@@ -51,14 +51,4 @@ pl_set_pcl_halftone(gs_state *pgs, gs_mapping_proc transfer_proc,
     if ( code < 0 )
         return code;
     return gs_sethalftonephase(pgs, phase_x, phase_y);
-    /*
-     * Here is where we do the dreadful thing that appears to be
-     * necessary to match the observed behavior of LaserJet 5 and
-     * 6 printers with respect to superimposing halftoned source
-     * and pattern.  NB needs review wrt later printers.
-     */
-    //    if ( code < 0 )
-    //        return code;
-    //    return gs_setscreenphase(pgs, px + source_phase_x,
-    //                            py + source_phase_y, gs_color_select_source);
 }

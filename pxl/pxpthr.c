@@ -1,14 +1,36 @@
+/* Portions Copyright (C) 2007 artofcode LLC.
+   Portions Copyright (C) 2007 Artifex Software Inc.
+   Portions Copyright (C) 2007 Aladdin Enterprises.
+   This software is based in part on the work of the Independent JPEG Group.
+   All Rights Reserved.
+
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/ or
+   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+   San Rafael, CA  94903, (415)492-9861, for further information. */
+/*$Id$ */
+
+/* pxpthr.c.c */
+/* PCL XL passtrough mode */
 #include "stdio_.h"                     /* std.h + NULL */
 #include "gsdevice.h"
+#include "gstypes.h"
+#include "gspath.h"
+#include "gscoord.h"
+#include "gsstate.h"
 #include "pcommand.h"
 #include "pgmand.h"
 #include "pcstate.h"
 #include "pcparse.h"
 #include "pctop.h"
 #include "pcpage.h"
+#include "pcdraw.h"
 #include "pxoper.h"
 #include "pxstate.h"
 #include "pxgstate.h"
+#include "pxpthr.h"
+#include "pxparse.h"
 
 const byte apxPassthrough[] = {0, 0};
 
@@ -25,8 +47,6 @@ static bool global_this_pass_contiguous = false;
 
 /* this is the first passthrough on this page */
 static bool global_pass_first = true;
-
-static bool global_first_time_this_operator = false;
 
 /* store away the current font attributes PCL can't set these,
  * they persist for XL, rotation is missing */
@@ -59,7 +79,7 @@ pxPassthrough_pcl_state_nonpage_exceptions(px_state_t *pxs)
     int code2 = 0;
     int code3 = 0;
 
-    /* make the pcl ctm is active - After resets the hpgl/2 ctm is
+    /* make the pcl ctm active, after resets the hpgl/2 ctm is
        active. */
     pcl_set_graphics_state(global_pcs);
     /* xl current point -> device point -> pcl current
@@ -117,7 +137,7 @@ pxPassthrough_init(px_state_t *pxs)
     /* do an initial reset to set up a permanent reset.  The
        motivation here is to avoid tracking down a slew of memory
        leaks */
-    global_pcs->xfm_state.paper_size = get_default_paper(global_pcs); /* pxl paper ? */
+    global_pcs->xfm_state.paper_size = pcl_get_default_paper(global_pcs); /* pxl paper ? */
     pcl_do_resets(global_pcs, pcl_reset_initial);
     pcl_do_resets(global_pcs, pcl_reset_permanent);
 
@@ -152,7 +172,7 @@ pxPassthrough_setpagestate(px_state_t *pxs)
         /* set the page size and orientation.  Really just sets
            the page tranformation does not feed a page (see noop
            above) */
-        new_logical_page_for_passthrough(global_pcs, (int)pxs->orientation, 2 /* letter NB FIXME */);
+        pcl_new_logical_page_for_passthrough(global_pcs, (int)pxs->orientation, 2 /* letter NB FIXME */);
 
         if (gs_debug_c('i'))
             dprintf2("passthrough: snippet mode changing orientation from %d to %d\n",
@@ -165,7 +185,7 @@ pxPassthrough_setpagestate(px_state_t *pxs)
         /* clean the pcl page if it was marked by a previous snippet
            and set to full page mode. */
         global_pcs->page_marked = 0;
-        new_logical_page_for_passthrough(global_pcs, (int)pxs->orientation, 2 /* letter NB FIXME */);
+        pcl_new_logical_page_for_passthrough(global_pcs, (int)pxs->orientation, 2 /* letter NB FIXME */);
         if (gs_debug_c('i')) 
             dprintf("passthrough: full page mode\n");
     }
@@ -178,7 +198,6 @@ pxPassthrough(px_args_t *par, px_state_t *pxs)
     stream_cursor_read r;
     int code = 0;
     uint used;
-    static global_passthru_op_starting = false;
 
     /* apparently if there is no open data source we open one.  By the
        spec this should already be open, in practice it is not. */

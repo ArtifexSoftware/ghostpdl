@@ -430,7 +430,8 @@ hpgl_SB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		  { pfs->font = 0;
 		  }
 	      }
-            pgls->g.font = pgls->g.map = 0;
+            pgls->g.font = 0;
+            pgls->g.map = 0;
 	  }
 	return 0;
 }

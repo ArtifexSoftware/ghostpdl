@@ -378,7 +378,7 @@ paint_path(px_state_t *pxs, bool reset)
 		gx_path_assign_preserve(ppath, save_path);
 	    else {
 	        gx_path_assign_free(ppath, save_path);
-                gx_setcurrentpoint_from_path(pgs, ppath);
+                gx_setcurrentpoint_from_path((gs_imager_state *)pgs, ppath);
 		gs_currentpoint(pgs, &cursor);
 	        save_path = 0;
 	      }
@@ -469,7 +469,7 @@ paint_path(px_state_t *pxs, bool reset)
         }
  rx:	if ( save_path ) {
 	    gx_path_assign_free(ppath, save_path);   /* path without a Current point! */
-	    gx_setcurrentpoint_from_path(pgs, ppath);  
+	    gx_setcurrentpoint_from_path((gs_imager_state *)pgs, ppath);  
 	}
 	else /* Iff save_path is NULL, set currentpoint back to original */
 	    gs_moveto(pgs, cursor.x, cursor.y);

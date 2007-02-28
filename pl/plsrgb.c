@@ -348,7 +348,7 @@ pl_cspace_init_SRGB(gs_color_space **ppcs, const gs_state *pgs)
 {
 
     /* make sure we have a crd set up */
-    int code = pl_build_crd(pgs);
+    int code = pl_build_crd((gs_state *)pgs);
     if ( code < 0 )
         return code;
 

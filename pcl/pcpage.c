@@ -445,7 +445,7 @@ new_logical_page(
 }
 
 int
-new_logical_page_for_passthrough(pcl_state_t *pcs, int orient, int tag)
+pcl_new_logical_page_for_passthrough(pcl_state_t *pcs, int orient, int tag)
 {
     int i;
      pcl_paper_size_t *psize;
@@ -1091,7 +1091,7 @@ pcpage_do_registration(
 }
 
 pcl_paper_size_t *
-get_default_paper(
+pcl_get_default_paper(
     pcl_state_t *      pcs
 )
 {
@@ -1137,7 +1137,7 @@ pcpage_do_reset(
 			  !pjl_proc_compare(pcs->pjls, pjl_proc_get_envvar(pcs->pjls,
 						 "orientation"),
 				       "portrait") ? 0 : 1,
-                          get_default_paper(pcs),
+                          pcl_get_default_paper(pcs),
                           (type & pcl_reset_initial) != 0,
                           false
                           );

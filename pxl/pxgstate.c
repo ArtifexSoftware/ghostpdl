@@ -310,7 +310,7 @@ px_initclip(px_state_t *pxs)
 }
 
 private bool
-px_is_currentcolor_pattern(gs_state *pgs)
+px_is_currentcolor_pattern(const gs_state *pgs)
 {
     return (gs_color_space_num_components(gs_currentcolorspace(pgs)) < 1);
 }
@@ -363,7 +363,7 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
     if ( params->indexed )
 	pim->Decode[1] = (1 << depth) - 1;
     if (cie_space && !px_is_currentcolor_pattern(pgs)) {
-        code = pl_setSRGB(pgs, 0.0, 0.0, 0.0);
+        code = pl_setSRGB((gs_state *)pgs, 0.0, 0.0, 0.0);
     }
     return code;
 }

@@ -182,5 +182,7 @@ void px_state_finit(px_state_t *);
 /* get media size */
 void px_get_default_media_size(px_state_t *pxs, gs_point *pt);
 
+/* special begin page operator for passthrough mode. */
+int pxBeginPageFromPassthrough(px_state_t *pxs);
 
 #endif				/* pxstate_INCLUDED */

@@ -1514,20 +1514,6 @@ pcl_ht_set_print_mode(
 
 
 /*
- * Report if a rendering method is a monochrome method. The evaluation is made
- * with considering the remapping array.
- */
-private bool
-is_monochrome(
-    pcl_state_t *   pcs,
-    int             method
-)
-{
-    return (method > 4 && !(method & 1) ); /* greater than 4 and even */
-}
-
-
-/*
  * Free the graphic library halftone objects associated with a PCL halftone
  * object.
  *
@@ -1781,18 +1767,9 @@ pcl_ht_remap_render_method(
         uint render_method = (*ppht)->orig_render_method;
 	int code = 0;
 	if (is_gray != (*ppht)->is_gray_render_method ) {
-
-	    /* gray may be forced, -dForceMono=1 */ 
-            //	    is_gray = gx_set_cmap_procs_to_gray(pcs->pgs, 
-            //                                  gs_currentdevice(pcs->pgs),
-            //				is_gray);
-
 	    if( is_gray ) {
 	        render_method = monochrome_remap[pcs->rendering_remap[render_method]];
 		(*ppht)->is_gray_render_method = is_gray; 	        
-		/* What's desired is K only gray dithering vs 
-		 * cmy+k which looks good in color images containing gray. 
-		 */ 
 	    }
 	    else {
 		render_method = (*ppht)->orig_render_method;
@@ -1955,43 +1932,6 @@ pcl_ht_build_default_ht(
     return 0;
 }
 
-/*
- * Procedure to be used for transfer functions.
- *
- * Unlike the color space code, in this code the procedure is the same for all
- * components, but the client data differs.
- */
-private float
-transfer_proc(
-    floatp                          val,
-    const gx_transfer_map *         pmap,   /* ignored */
-    const void *                    pvdata
-)
-{
-    const pcl_ht_client_data_t *    pdata = (pcl_ht_client_data_t *)pvdata;
-    const byte *                    ptbl;
-
-    if (pdata->plktbl == 0)
-        return pow(val, pdata->inv_gamma);
-    ptbl = pcl_lookup_tbl_get_tbl(pdata->plktbl, pdata->comp_indx);
-    return (float)(ptbl[(int)floor(255.0 * val + 0.5)]) / 255.0;
-}
-
-/*
- * Special transfer function for use with the K component. We always want
- * this component to have the default (identity) transfer function when
- * operating in normal (colored) mode.
- */
-private float
-dflt_transfer_proc(
-    floatp                          val,
-    const gx_transfer_map *         pmap,   /* ignored */
-    const void *                    pvdata  /* ignored */
-)
-{ 
-    return val;
-}
-
 /* Define a transfer function without gamma correction. */
 private float
 identity_transfer(floatp tint, const gx_transfer_map *ignore_map)
@@ -1999,6 +1939,7 @@ identity_transfer(floatp tint, const gx_transfer_map *ignore_map)
 }
 
 
+#ifdef DEVICE_HAS_CRD
 /*
  * Get the rendering information corresponding to a given rendering method.
  * This takes into account the restriction that certain rendering methods may
@@ -2023,205 +1964,7 @@ get_rendering_info(
 
     return pinfo;
 }
-/*
- * Set the halftone component 
- *
- * Currently, only threshold halftones are supported.
- *
- * The relocation properties of the memory manager require that dither
- * matrices, whether built-in or user-defined, must be copied to strings to
- * fit into the format required by the graphic library halftone machiner.
- *
- * For lack of a better alternative, the monochrome threshold is set to be the
- * same as the first component.
- *
- * The separation names employed are not accurate, but the graphic library
- * insists that 4-color spaces uses the subtractive names (there is a way
- * around this, using the halftone type ht_typ_multiple_colorscreen, but that
- * did not seem to work with normal CMYK devices). Providing only three color
- * screens is not an option, as then the fourth component of a CMYK devices
- * will use the transfer function provided by one of the other components. If
- * this transfer function is inverting, the output will be very black.
- *
- * Returns 0 on success, < 0 in the event of an error.
- */
-private int
-set_threshold_ht(
-    pcl_state_t *               pcs,
-    pcl_ht_t *                  pht,
-    gs_ht *                     pgsht,
-    const pcl_rend_info_t *     pinfo,
-    int                         comp
-    /*    const gs_ht_separation_name sepname */
-)
-{
-    int                         icomp = (comp == 3 ? 0 : comp);
-    pcl_ht_builtin_dither_t     dt;
-    float                       (*proc)( floatp,
-                                         const gx_transfer_map *,
-                                         const void *
-                                         ) = transfer_proc;
-
-    /* if not in monochrome print mode, make sure K has default transfer */
-    if ((comp == 3) && !is_monochrome(pcs, pht->render_method))
-        proc = dflt_transfer_proc;
-
-    /* set the array threshold pointers */
-    if ((pinfo->flags & HT_USERDEF) != 0) {
-        if (pht->pdither != 0) {
-            dt.type = pcl_halftone_Threshold;
-            dt.u.thresh.nplanes = pcl_udither_get_nplanes(pht->pdither);
-            dt.u.thresh.width = pcl_udither_get_width(pht->pdither);
-            dt.u.thresh.height = pcl_udither_get_height(pht->pdither);
-            dt.u.thresh.pdata = pcl_udither_get_threshold(pht->pdither, 0);
-        } else 
-            dt = pcs->ordered_dither;
-    } else if (pinfo->pbidither != 0)
-        dt = *(pinfo->pbidither);
-    else
-        return e_Unimplemented;
-
-    if (dt.type == pcl_halftone_Threshold) {
-        ulong           size = dt.u.thresh.width * dt.u.thresh.height;
-        const byte *    pdata = ( dt.u.thresh.nplanes == 1
-                                    ? dt.u.thresh.pdata
-                                    : dt.u.thresh.pdata + icomp * size );
-
-        /* don't create a separate threshold array for the K component */
-        if (comp != 3) {
-            byte *  pb = gs_alloc_string( pht->rc.memory,
-                                          size,
-                                          "set_threshold_ht"
-                                          );
-
-            if (pb == 0)
-                return e_Memory;
-            memcpy(pb, pdata, size);
-            pht->thresholds[comp].size = size;
-            pht->thresholds[comp].data = pb;
-        }
-
-        return gs_ht_set_threshold_comp( pgsht,
-                                         comp,
-                                         /* sepname, */
-                                         dt.u.thresh.width,
-                                         dt.u.thresh.height,
-                                         (gs_const_string *)
-                                             &(pht->thresholds[icomp]),
-                                         proc,
-                                         &(pht->client_data[icomp])
-                                         );
-
-    } else if (dt.type == pcl_halftone_Table_Dither) {
-        ulong           size = ((dt.u.tdither.width + 7) / 8)
-                                 * dt.u.tdither.height * dt.u.tdither.nlevels;
-        const byte *    pdata = ( dt.u.thresh.nplanes == 1
-                                    ? dt.u.thresh.pdata
-                                    : dt.u.thresh.pdata + icomp * size );
-
-        return gs_ht_set_mask_comp( pgsht,
-                                    comp,
-                                    // NB                                    sepname,
-                                    dt.u.tdither.width,
-                                    dt.u.tdither.height,
-                                    dt.u.tdither.nlevels,
-                                    pdata,
-                                    proc,
-                                    &(pht->client_data[icomp])
-                                    );
-
-    } else
-       return e_Unimplemented;
-}
-
-/*
- * Color plane separation names for the three standard "concrete" color spaces.
- * The RGB space uses four components so as to provide a default component
- * (which is required by the graphic library code).
- */
-// NB private const gs_ht_separation_name sepnames_cmyk[4] = {
-// NB    gs_ht_separation_Cyan,
-// NB    gs_ht_separation_Magenta,
-// NB    gs_ht_separation_Yellow,
-// NB    gs_ht_separation_Default    /* Cyan is arbitrarily made the default */
-// NB };
-
-// NB private const gs_ht_separation_name sepnames_rgb[4] = {
-// NB     gs_ht_separation_Red,
-// NB     gs_ht_separation_Green,
-// NB     gs_ht_separation_Blue,
-// NB     gs_ht_separation_Default,   /* Red is arbitrarily made the default */
-// NB };
-// NB 
-// NB private const gs_ht_separation_name sepnames_gray[1] = {
-// NB     gs_ht_separation_Default
-// NB };
-// NB 
-// NB 
-/*
- * Create the graphic library halftone objects corresponding to a PCL halftone
- * object.
- *
- * The color space is provided as an operand, because certain rendering
- * mehtods are only usuable with device-specific color spaces.
- *
- * Returns 0 on success, < 0 in the event of an error.
- */
-private int
-create_gs_halftones(
-    pcl_state_t *        pcs,
-    pcl_ht_t *           pht,
-    pcl_cspace_type_t    cstype,
-    int                  ncomps     /* # device components */
-)
-{
-    int                             code = 0;
-    const pcl_rend_info_t *         pinfo = 0;
-    int                             i;
-    // NB  const gs_ht_separation_name *   sepnames = 0;
-
-    /* see if there is anything to do */
-    if ( (pht->pfg_ht != 0) && (pht->pim_ht != 0))
-        return 0;
-    free_gs_hts(pht);
-
-    /* get the rendering information for geometric objects */
-    pinfo = get_rendering_info(pcs, pht->render_method, cstype, false);
-
-    /* make the typical assumption concerning the color space */
-// NB     if (ncomps == 4)
-// NB         sepnames = sepnames_cmyk;
-// NB     else if (ncomps == 3) {
-// NB         sepnames = sepnames_rgb;
-// NB         ncomps = 4;
-// NB     } else if (ncomps == 1)
-// NB        sepnames = sepnames_gray;
-// NB    else
-    return e_Range;
-
-    /* create the top-level halftone graphic object */
-    if ((code = gs_ht_build(&(pht->pfg_ht), ncomps, pht->rc.memory)) < 0)
-        return code;
-
-    /* create the halftone components (allow for 4-color device) */
-    for (i = 0; i < ncomps; i++) {
-        code = set_threshold_ht(pcs, pht, pht->pfg_ht, pinfo, i /*, NB NB sepnames[i] */);
-        if (code < 0)
-            break;
-    }
-
-    /* currently the foreground and image halftone objects must be the same */
-    if (code == 0) {
-        if (pinfo != get_rendering_info(pcs, pht->render_method, cstype, true))
-            code = e_Unimplemented;
-        else 
-	  gs_ht_init_ptr(pht->pim_ht, pht->pfg_ht);
-    }
-
-    if (code < 0)
-        free_gs_hts(pht);
-    return code;
-}
+#endif /* DEVICE_HAS_CRD */
 
 /*
  * Set the given halftone into the graphic state. If the halftone doesn't
@@ -2237,11 +1980,6 @@ pcl_ht_set_halftone(
     bool                 for_image
 )
 {
-    pcl_ht_t *           pht = *ppht;
-    int                  ncomps = 0;
-    gs_ht *              pgsht = 0;
-    int                  code = 0;
-
     gs_string thresh;
     thresh.data = (byte *)ordered_dither_data;
     thresh.size = 256;
@@ -2251,51 +1989,5 @@ pcl_ht_set_halftone(
                                /* dither data */ thresh,
                                /* x phase */ 0,
                                /* y phase */ 0);
-
-
-    //dprintf( "NB halftone installation\n" );
-    return 0;
-    /* if no halftone yet, create one */
-    if (pht == 0) {
-        if ((code = pcl_ht_build_default_ht(pcs, ppht, pcs->memory)) < 0)
-            return code;
-        pht = *ppht;
-    }
-
-    /* see if the halftone is already set */
-    if (pcs->pids->pht == pht)
-        return 0;
-
-    /* 
-     * Check if the color mapping has changed. If it has, re-initialize the
-     * the mapping device, so that it will pick up any changes in the target
-     * device. Be sure to preserve the reference count when doing so (unless
-     * it is 0).
-     */
-    if (pcs->pids->pht != 0) {
-        const pcl_rend_info_t *  pinfo_old;
-
-        pinfo_old = get_rendering_info( pcs,
-					pcs->pids->pht->render_method,
-                                        cstype,     /* irrelevant */
-                                        for_image   /* irrelevant */
-                                        );
-    }
-
-    /* NB - fix me device fields should not be accessed */
-    ncomps = gs_currentdevice(pcs->pgs)->color_info.num_components;
-
-    /* see if we need to create a halftone object */
-    if ( ((pgsht = (for_image ? pht->pim_ht : pht->pfg_ht)) == 0) &&
-         ((code = create_gs_halftones(pcs, pht, cstype, ncomps)) < 0)    )
-        return code;
-    pgsht = (for_image ? pht->pim_ht : pht->pfg_ht);
-
-    /* install the halftone object */
-    if ((code = gs_ht_install(pcs->pgs, pgsht)) < 0)
-        return code;
-
-    pcl_ht_copy_from(pcs->pids->pht, pht);
-    return code;
 }
 

@@ -37,7 +37,7 @@
  */
 extern const pl_symbol_map_t map_8U_unicode;
 private gs_glyph
-hpgl_stick_arc_encode_char(gs_font *pfont, gs_char chr, gs_glyph not_used)
+hpgl_stick_arc_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t not_used)
 {	
     int i;
     /* reverse map unicode back to roman 8 */
@@ -129,7 +129,6 @@ hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
     int width;
     gs_matrix save_ctm;
     int code;
-    pl_font_t *plfont = (pl_font_t *)pfont->client_data;
 
     /* we assert the font is present at this point */
     width = hpgl_stick_arc_width(uni_code, font_type);

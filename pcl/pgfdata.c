@@ -5141,8 +5141,7 @@ private int
 hpgl_arc_width(uint char_index)
 {	
     if ( char_index < 0x20 || (char_index < 0xa0 && char_index > 0x7f))
-	arc_font_widths[0];
-    /* else */
+	return arc_font_widths[0];
     return arc_font_widths[char_index - 0x20];
 }
 

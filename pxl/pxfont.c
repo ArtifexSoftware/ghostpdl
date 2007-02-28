@@ -395,8 +395,6 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
             fyvals[i] = pydata ? real_elt(pydata, i) : 0.0;
         }
 
-        // NB: this looks correct but pdfwrite isn't generating 
-        // the correct information for text selection to compute spaces correctly.
         code = px_xyshow_begin(pgs, pchr, len, fxvals, fyvals,
                                len, mem, &penum, to_path, false);
 

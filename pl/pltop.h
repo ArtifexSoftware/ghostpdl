@@ -16,7 +16,6 @@
 
 /* define this hack to allow xml parsing instead of PK zip XPS input.
  */
-// #define PARSE_XML_HACK
 
 #ifndef pltop_INCLUDED
 #  define pltop_INCLUDED
