@@ -285,24 +285,33 @@ image_pnm_get_scan_line (Image *self, uchar *buf)
   return (code < n_bytes) ? -1 : 0;
 }
 
-Image *
-open_pnm_image (const char *fn)
+ImagePnm *
+alloc_pnm_image (const char *fn)
 {
+  ImagePnm *image;
+
   FILE *f = fopen (fn, "rb");
+
+  if (f == NULL) {
+      printf("Can't open file %s\n", fn);
+      return NULL;
+  }
+  image = (ImagePnm *)malloc (sizeof(ImagePnm));
+  image->f = f;
+  return image;
+}
+
+int
+open_pnm_image (ImagePnm *image)
+{
   int width, height;
   int maxval = 0;
   int n_chan, bpp;
   char linebuf[256];
-  ImagePnm *image;
 
-  if (f == NULL)
-    return NULL;
-
-  image = (ImagePnm *)malloc (sizeof(ImagePnm));
-  image->f = f;
-  if (fgets (linebuf, sizeof(linebuf), f) == NULL ||
+  if (fgets (linebuf, sizeof(linebuf), image->f) == NULL ||
       linebuf[0] != 'P' || linebuf[1] < '4' || linebuf[1] > '6')
-    goto punt;
+    return 1;
   switch (linebuf[1])
     {
     case '4':
@@ -319,47 +328,57 @@ open_pnm_image (const char *fn)
       bpp = 8;
       break;
     default:
-      goto punt;
+      return 1;
     }
   do
     {
-      if (fgets (linebuf, sizeof(linebuf), f) == NULL)
-	  goto punt;
+      if (fgets (linebuf, sizeof(linebuf), image->f) == NULL)
+	  return 1;
     }
   while (linebuf[0] == '#');
   if (sscanf (linebuf, "%d %d", &width, &height) != 2)
-      goto punt;    
+      return 1;
   while (!maxval)
     {
-      if (fgets (linebuf, sizeof(linebuf), f) == NULL)
-	  goto punt;
+      if (fgets (linebuf, sizeof(linebuf), image->f) == NULL)
+	  return 1;
       if (linebuf[0] == '#')
           continue; 
       if (sscanf(linebuf, "%d", &maxval) != 1 || maxval <= 0 || maxval > 255)
-	  goto punt;
+	  return 1;
     }
-  image->super.close = image_pnm_close;
-  image->super.get_scan_line = image_pnm_get_scan_line;
-  image->super.seek = no_seek;
-  image->super.feof_ = image_pnm_feof;
   image->super.width = width;
   image->super.height = height;
   image->super.maxval = maxval;
   image->super.raster = n_chan * ((width * bpp + 7) >> 3);
   image->super.n_chan = n_chan;
   image->super.bpp = bpp;
-  image->file_length = file_length(fileno(f));
-  return &image->super;
-punt:;
-  fclose (f);
-  return NULL;
+  image->file_length = file_length(fileno(image->f));
+  return 0;
 }
 
 Image *
-open_image_file (const char *fn)
+alloc_image_file (const char *fn)
 {
   /* This is the place to add a dispatcher for other image types. */
-  return open_pnm_image (fn);
+    ImagePnm *image = alloc_pnm_image (fn);
+
+  if (image == NULL)
+    return NULL;
+  image->super.close = image_pnm_close;
+  image->super.get_scan_line = image_pnm_get_scan_line;
+  image->super.seek = no_seek;
+  image->super.feof_ = image_pnm_feof;
+  return &image->super;
+}
+
+static int
+open_image (Image *self)
+{
+  /* This is the place to add a dispatcher for other image types. */
+  ImagePnm *pnm = (ImagePnm *)self;
+
+  return open_pnm_image (pnm);
 }
 
 static uchar **
@@ -656,21 +675,16 @@ main (int argc, char **argv)
   if (fn_idx < 2)
     return usage ();
 
-  image1 = open_image_file (fn[0]);
+  image1 = alloc_image_file (fn[0]);
   if (image1 == NULL)
-    {
-      printf ("Error opening %s\n", fn[0]);
       return 1;
-    }
 
-  image2 = open_image_file (fn[1]);
+  image2 = alloc_image_file (fn[1]);
   if (image2 == NULL)
     {
       image_close (image1);
-      printf ("Error opening %s\n", fn[1]);
       return 1;
     }
-
   if (fn[2]) 
     image_out = 
        (!strcmp(fn[2]+ strlen(fn[2]) - 4, ".bmp") ? create_bmp_image
@@ -687,6 +701,21 @@ main (int argc, char **argv)
     if (image2->feof_(image2)) 
     {
       printf ("Extra data (maybe pages) in the image file 1..\n");
+      return 1;
+    }
+    if (open_image(image1))
+    {
+      image_close (image1);
+      image_close (image2);
+      printf ("Error opening %s\n", fn[0]);
+      return 1;
+    }
+
+    if (open_image(image2))
+    {
+      image_close (image1);
+      image_close (image2);
+      printf ("Error opening %s\n", fn[1]);
       return 1;
     }
     if (fuzzy_diff_images (image1, image2, &fparams, &freport, image_out))
