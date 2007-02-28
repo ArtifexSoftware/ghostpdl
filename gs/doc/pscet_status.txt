@@ -5248,7 +5248,7 @@ Test	 Status	Comments
 
 31-10-1  OK	Minor differences in positions and character shapes - ADC
 
-31-10-2  DIFF	startjob result differ assign Ray
+31-10-2  OK  	Fixed in rev. 7749. - Alex
 
 31-10-3  OK	
 

@@ -441,10 +441,10 @@ serverdict begin
 % We could protect the job information better, but we aren't attempting
 % (currently) to protect ourselves against maliciousness.
 
-/.jobsave null def		% top-level save object
+/.jobsave //null def		% top-level save object
 /.jobsavelevel 0 def		% save depth of job (0 if .jobsave is null,
 				% 1 otherwise)
-/.adminjob true def		% status of current unencapsulated job
+/.adminjob //true def		% status of current unencapsulated job
 
 end		% serverdict
 
@@ -457,10 +457,10 @@ end		% serverdict
 % it doesn't reset stdin/stdout.
 /.startnewjob {			% <exit_bool> <password_level>
 				%   .startnewjob -
-    serverdict /.jobsave get dup null eq { pop } { restore } ifelse
+    serverdict /.jobsave get dup //null eq { pop } { restore } ifelse
     exch {
 			% Unencapsulated job
-      serverdict /.jobsave null put
+      serverdict /.jobsave //null put
       serverdict /.jobsavelevel 0 put
       serverdict /.adminjob 3 -1 roll 1 gt put
     } {
@@ -473,7 +473,7 @@ end		% serverdict
 		% Reset the interpreter state.
   clear cleardictstack
   initgraphics
-  false setglobal
+  //false setglobal
   2 vmreclaim	% Make sure GC'ed memory is reclaimed and freed.
 } bind def
 /.startjob {			% <exit_bool> <password> <finish_proc>
@@ -486,20 +486,23 @@ end		% serverdict
 		% passing the finish_proc to be executed afterwards.
     2 .stop
   } {		% Password check failed
-    pop pop pop false
+    pop pop pop //false
   } ifelse
 } odef
 /startjob {			% <exit_bool> <password> startjob <ok_bool>
 	% This is a hack.  We really need some way to indicate explicitly
 	% to the interpreter that we are under control of a job server.
-  { .startnewjob true } .startjob
+  1 .argindex type /booleantype ne {
+    /startjob .systemvar /typecheck signalerror
+  } if
+  { .startnewjob //true } .startjob
 } odef
 
 % The procedure to undo the job encapsulation 
 /.endjob {
   clear cleardictstack
-  serverdict /.jobsave get dup null eq { pop } { restore } ifelse
-  serverdict /.jobsave null put
+  serverdict /.jobsave get dup //null eq { pop } { restore } ifelse
+  serverdict /.jobsave //null put
   2 vmreclaim   % recover local and global VM
 } odef
 
@@ -521,7 +524,7 @@ end
 serverdict begin
 
 /exitserver {			% <password> exitserver -
-  true exch { .startnewjob } .startjob not {
+  //true exch { .startnewjob } .startjob not {
     /exitserver /invalidaccess signalerror
   } if
 } bind def
