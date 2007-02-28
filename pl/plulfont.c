@@ -232,6 +232,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
 
     if (!plugins_opened) {
 
+	gx_UFST_close_static_fcos();
         plugins = pl_ufst_get_list(mem, "UFSTPLUGINS", UFSTPLUGINS);
         for (k = 0; plugins[k]; k++) {
             strcpy((char *)pthnm, ufst_root_dir);
