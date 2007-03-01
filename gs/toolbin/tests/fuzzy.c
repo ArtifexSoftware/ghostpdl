@@ -103,6 +103,17 @@ image_get_rgb_scan_line (Image *image, uchar *buf)
   free (image_buf);
   return code;
 }
+int
+image_get_rgb_scan_line_with_error (Image *image, uchar *buf, int image_index, int row_index, int *rcode)
+{
+    int code = image_get_rgb_scan_line (image, buf);
+
+    if (code == 1) {
+	*rcode = 1;
+	printf("*** I/O error in file %d at y = %d\n", image_index, row_index);
+    }
+    return code;
+}
 
 int
 image_close (Image *image)
@@ -458,8 +469,9 @@ static int
 fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
 		   FuzzyReport *freport, ImagePnm *image_out)
 {
-  int width = MAX(image1->width, image2->width);
-  int height = MAX(image1->height, image2->height);
+  int width = MIN(image1->width, image2->width);
+  int height = MIN(image1->height, image2->height);
+  int max_height = MAX(image1->height, image2->height);
   int tolerance = fparams->tolerance;
   int window_size = fparams->window_size;
   int row_bytes = width * 3;
@@ -482,16 +494,10 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
   /* Read rows ahead for half window : */
   for (y = 0; y < MIN(half_win, height); y++) 
     {
-       if (image_get_rgb_scan_line (image1, buf1[half_win - y]) < 0) {
-	    rcode = 1;
-	    printf("*** I/O error in file 1 at y = %d\n", y);
+       if (image_get_rgb_scan_line_with_error (image1, buf1[half_win - y], 1, y, &rcode))
 	    goto ex;
-	}
-       if (image_get_rgb_scan_line (image2, buf2[half_win - y])) {
-	    rcode = 1;
-	    printf("*** I/O error in file 2 at y = %d\n", y);
+       if (image_get_rgb_scan_line_with_error (image2, buf2[half_win - y], 2, y, &rcode))
 	    goto ex;
-	}
     }
   /* Initialie remaining scanlines if height < half_win */
   for (; y < half_win; y++) {
@@ -522,16 +528,10 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
 
       if (y < height - half_win)
         {
-	    if (image_get_rgb_scan_line (image1, row1)) {
-		rcode = 1;
-		printf("*** I/O error in file 1 at y = %d\n", y + half_win);
+	    if (image_get_rgb_scan_line_with_error (image1, row1, 1, y + half_win, &rcode))
 		goto ex;
-	    }
-	    if (image_get_rgb_scan_line (image2, row2)) {
-		rcode = 1;
-		printf("*** I/O error in file 2 at y = %d\n", y + half_win);
+	    if (image_get_rgb_scan_line_with_error (image2, row2, 2, y + half_win, &rcode))
 		goto ex;
-	    }
         }
       if (out_buf)
 	memset(out_buf, 0, out_buffer_size);
@@ -552,7 +552,7 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
 		      freport->n_outof_tolerance++;
 		      if (check_window (buf1, buf2, fparams, x, y, width, height)) {
 		        freport->n_outof_window++;
-		        if (out_buf) {
+		        if (out_buf && x < image1->width) {
 		          out_buf[x * 3 + 0] = abs(rowmid1[x * 3 + 0]- rowmid2[x * 3 + 0]);
 		          out_buf[x * 3 + 1] = abs(rowmid1[x * 3 + 1]- rowmid2[x * 3 + 1]);
 		          out_buf[x * 3 + 2] = abs(rowmid1[x * 3 + 2]- rowmid2[x * 3 + 2]);
@@ -593,6 +593,17 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
 	  }
       }
     }
+  y += half_win;
+  for (; y < max_height; y++) {
+      if (y < image1->height) {
+	    if (image_get_rgb_scan_line_with_error(image1, buf1[0], 1, y, &rcode))
+		goto ex;
+      }
+      if (y < image2->height) {
+	    if (image_get_rgb_scan_line_with_error(image2, buf2[0], 2, y, &rcode))
+		goto ex;
+      }
+  }
 ex:
   free_window (buf1, window_size);
   free_window (buf2, window_size);
@@ -635,6 +646,7 @@ main (int argc, char **argv)
   const char *fn[3] = {0, 0, 0};
   int fn_idx = 0;
   int i, page = 1, rcode = 0;
+  char *out_fn = NULL;
 
   fparams.tolerance = 2;
   fparams.window_size = 3;
@@ -685,11 +697,14 @@ main (int argc, char **argv)
       image_close (image1);
       return 1;
     }
-  if (fn[2]) 
-    image_out = 
-       (!strcmp(fn[2]+ strlen(fn[2]) - 4, ".bmp") ? create_bmp_image
-                                                  : create_pnm_image)
-           (image1, fn[2]);
+
+  if (fn[2]) {
+      out_fn = malloc(strlen(fn[2]) + 5);
+      if (out_fn == NULL) {
+	  printf("Can't alloc the output file name.\n");
+	  return 1;
+      }
+  }
 
   while (!image1->feof_(image1) || !image2->feof_(image2)) 
   { 
@@ -700,24 +715,51 @@ main (int argc, char **argv)
     }
     if (image2->feof_(image2)) 
     {
-      printf ("Extra data (maybe pages) in the image file 1..\n");
+      printf ("Extra data (maybe pages) in the image file 1.\n");
       return 1;
     }
     if (open_image(image1))
     {
-      image_close (image1);
-      image_close (image2);
-      printf ("Error opening %s\n", fn[0]);
+      printf ("Error parsing the page %d header in file %s\n", page, fn[0]);
       return 1;
     }
 
     if (open_image(image2))
     {
-      image_close (image1);
-      image_close (image2);
-      printf ("Error opening %s\n", fn[1]);
+      printf ("Error parsing the page %d header in file %s\n", page, fn[1]);
       return 1;
     }
+    if (image1->width != image2->width) {
+	printf("Diffenert image width for page %d\n", page);
+	rcode = MAX(rcode, 1);
+    }
+    if (image1->height != image2->height) {
+	printf("Diffenert image height for page %d\n", page);
+	rcode = MAX(rcode, 1);
+    }
+    if (out_fn != NULL) {
+      int l = strlen(fn[2]);
+
+      strcpy(out_fn, fn[2]);
+      for (i = l; i >= 0; i--) {
+	  if (out_fn[i] == '\\' || out_fn[i] == '/' || out_fn[i] == '.')
+	      break;
+      }
+      if (out_fn[i] == '.') {
+	  char c;
+
+	  memmove(out_fn + i + 4, out_fn + i, l + 1 - i);
+	  c = out_fn[i + 4];
+	  sprintf(out_fn + i, "-%03d", page);
+	  out_fn[i + 4] = c;
+      } else
+	  sprintf(out_fn + l, "-%03d", page);
+      image_out = 
+       (!strcmp(fn[2]+ strlen(fn[2]) - 4, ".bmp") ? create_bmp_image
+                                                  : create_pnm_image)
+           (image1, out_fn);
+    } else
+      image_out = NULL;
     if (fuzzy_diff_images (image1, image2, &fparams, &freport, image_out))
 	return 1;
     if (image_out)
@@ -734,6 +776,7 @@ main (int argc, char **argv)
       rcode = MAX(rcode, 2);
     page++;
   }
-
+  image_close (image1);
+  image_close (image2);
   return rcode;
 }
