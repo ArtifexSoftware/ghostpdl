@@ -47,7 +47,7 @@ typedef struct arc_curve_params_s {
     segment_notes notes;
     gs_point p0, p3, pt;
     gs_sincos_t sincos;		/* (not used by arc_add) */
-    fixed angle;		/* (not used by arc_add) */
+    double angle;		/* (not used by arc_add) */
     int fast_quadrant;		/* 0 = not calculated, -1 = not fast, */
 				/* 1 = fast (only used for quadrants) */
     /* The following are set once iff fast_quadrant > 0. */
@@ -117,17 +117,17 @@ gs_arc_add(gs_state * pgs, bool clockwise, floatp axc, floatp ayc,
 
 /* Compute the next curve as part of an arc. */
 private int
-next_arc_curve(arc_curve_params_t * arc, fixed anext)
+next_arc_curve(arc_curve_params_t * arc, double anext)
 {
     double x0 = arc->p0.x = arc->p3.x;
     double y0 = arc->p0.y = arc->p3.y;
     double trad = arc->radius *
-	tan(fixed2float(anext - arc->angle) *
+	tan((anext - arc->angle) *
 	    (degrees_to_radians / 2));
 
     arc->pt.x = x0 - trad * arc->sincos.sin;
     arc->pt.y = y0 + trad * arc->sincos.cos;
-    gs_sincos_degrees(fixed2float(anext), &arc->sincos);
+    gs_sincos_degrees(anext, &arc->sincos);
     arc->p3.x = arc->center.x + arc->radius * arc->sincos.cos;
     arc->p3.y = arc->center.y + arc->radius * arc->sincos.sin;
     arc->angle = anext;
@@ -138,7 +138,7 @@ next_arc_curve(arc_curve_params_t * arc, fixed anext)
  * and anext = arc.angle +/- 90.
  */
 private int
-next_arc_quadrant(arc_curve_params_t * arc, fixed anext)
+next_arc_quadrant(arc_curve_params_t * arc, double anext)
 {
     double x0 = arc->p0.x = arc->p3.x;
     double y0 = arc->p0.y = arc->p3.y;
@@ -171,7 +171,7 @@ next_arc_quadrant(arc_curve_params_t * arc, fixed anext)
      * We know that anext is a multiple of 90 (as a fixed); we want
      * (anext / 90) & 3.  The following is much faster than a division.
      */
-    switch ((fixed2int(anext) >> 1) & 3) {
+    switch (((int)anext >> 1) & 3) {
     case 0:
 	arc->sincos.sin = 0, arc->sincos.cos = 1;
 	arc->p3.x = x0 = arc->center.x + arc->radius;
@@ -204,7 +204,7 @@ gs_imager_arc_add(gx_path * ppath, gs_imager_state * pis, bool clockwise,
 		  bool add_line, gs_point *p3)
 {
     double ar = arad;
-    fixed ang1 = float2fixed(aang1), ang2 = float2fixed(aang2), anext;
+    double ang1 = aang1, ang2 = aang2, anext;
     double ang1r;		/* reduced angle */
     arc_curve_params_t arc;
     int code;
@@ -213,27 +213,24 @@ gs_imager_arc_add(gx_path * ppath, gs_imager_state * pis, bool clockwise,
     arc.pis = pis;
     arc.center.x = axc;
     arc.center.y = ayc;
-#define fixed_90 int2fixed(90)
-#define fixed_180 int2fixed(180)
-#define fixed_360 int2fixed(360)
     if (ar < 0) {
-	ang1 += fixed_180;
-	ang2 += fixed_180;
+	ang1 += 180;
+	ang2 += 180;
 	ar = -ar;
     }
     arc.radius = ar;
     arc.action = (add_line ? arc_lineto : arc_moveto);
     arc.notes = sn_none;
     arc.fast_quadrant = 0;
-    ang1r = fixed2float(ang1 % fixed_360);
+    ang1r = fmod(ang1, 360);
     gs_sincos_degrees(ang1r, &arc.sincos);
     arc.p3.x = axc + ar * arc.sincos.cos;
     arc.p3.y = ayc + ar * arc.sincos.sin;
     if (clockwise) {
 	while (ang1 < ang2)
-	    ang2 -= fixed_360;
+	    ang2 -= 360;
 	if (ang2 < 0) {
-	    fixed adjust = ROUND_UP(-ang2, fixed_360);
+	    double adjust = ceil(-ang2 / 360) * 360;
 
 	    ang1 += adjust, ang2 += adjust;
 	}
@@ -242,7 +239,7 @@ gs_imager_arc_add(gx_path * ppath, gs_imager_state * pis, bool clockwise,
 	    goto last;
 	/* Do the first part, up to a multiple of 90 degrees. */
 	if (!arc.sincos.orthogonal) {
-	    anext = ROUND_DOWN(arc.angle - fixed_epsilon, fixed_90);
+	    anext = floor(arc.angle / 90) * 90;
 	    if (anext < ang2)
 		goto last;
 	    code = next_arc_curve(&arc, anext);
@@ -252,7 +249,7 @@ gs_imager_arc_add(gx_path * ppath, gs_imager_state * pis, bool clockwise,
 	    arc.notes = sn_not_first;
 	}	    
 	/* Do multiples of 90 degrees.  Invariant: ang1 >= ang2 >= 0. */
-	while ((anext = arc.angle - fixed_90) >= ang2) {
+	while ((anext = arc.angle - 90) >= ang2) {
 	    code = next_arc_quadrant(&arc, anext);
 	    if (code < 0)
 		return code;
@@ -261,9 +258,9 @@ gs_imager_arc_add(gx_path * ppath, gs_imager_state * pis, bool clockwise,
 	}
     } else {
 	while (ang2 < ang1)
-	    ang2 += fixed_360;
+	    ang2 += 360;
 	if (ang1 < 0) {
-	    fixed adjust = ROUND_UP(-ang1, fixed_360);
+	    double adjust = ceil(-ang1 / 360) * 360;
 
 	    ang1 += adjust, ang2 += adjust;
 	}
@@ -276,7 +273,7 @@ gs_imager_arc_add(gx_path * ppath, gs_imager_state * pis, bool clockwise,
 	}
 	/* Do the first part, up to a multiple of 90 degrees. */
 	if (!arc.sincos.orthogonal) {
-	    anext = ROUND_UP(arc.angle + fixed_epsilon, fixed_90);
+	    anext = ceil(arc.angle / 90) * 90;
 	    if (anext > ang2)
 		goto last;
 	    code = next_arc_curve(&arc, anext);
@@ -286,7 +283,7 @@ gs_imager_arc_add(gx_path * ppath, gs_imager_state * pis, bool clockwise,
 	    arc.notes = sn_not_first;
 	}	    
 	/* Do multiples of 90 degrees.  Invariant: 0 <= ang1 <= ang2. */
-	while ((anext = arc.angle + fixed_90) <= ang2) {
+	while ((anext = arc.angle + 90) <= ang2) {
 	    code = next_arc_quadrant(&arc, anext);
 	    if (code < 0)
 		return code;

@@ -1573,7 +1573,7 @@ Test	 Status	Comments
 
 10-16-6  OK	Minor differences in positions and character shapes - ADC
 
-11-01-1  DIFF	Slightly different coords in 2 cases. assign igor
+11-01-1  AOK	Matches Tek. CPSI slightly differs in few coordinates.
 
 11-01-2  OK	
 
@@ -1590,7 +1590,7 @@ Test	 Status	Comments
 		which depends on the flattening factor of the original curve.
 		With CPSI look30 has a smaller number of peaks.
 
-11-02-1  DIFF	Same as 11-01-1  assign igor
+11-02-1  AOK	Same as 11-01-1
 
 11-02-2  OK	Minor differences visually reviewed by RJJ
 
