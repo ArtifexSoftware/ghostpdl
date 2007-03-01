@@ -73,41 +73,41 @@ xps_parse_image_brush(xps_context_t *ctx, xps_item_t *root)
     xps_image_t image;
     int code;
 
-    char *opacity;
-    char *transform;
-    char *viewbox;
-    char *viewport;
-    char *tile_mode;
-    char *viewbox_units;
-    char *viewport_units;
-    char *image_source;
+    char *opacity_att;
+    char *transform_att;
+    char *viewbox_att;
+    char *viewport_att;
+    char *tile_mode_att;
+    char *viewbox_units_att;
+    char *viewport_units_att;
+    char *image_source_att;
 
-    xps_item_t *transform_node = NULL;
+    xps_item_t *transform_tag = NULL;
 
     char partname[1024];
 
-    opacity = xps_att(root, "Opacity");
-    transform = xps_att(root, "Transform");
-    viewbox = xps_att(root, "Viewbox");
-    viewport = xps_att(root, "Viewport");
-    tile_mode = xps_att(root, "TileMode");
-    viewbox_units = xps_att(root, "ViewboxUnits");
-    viewport_units = xps_att(root, "ViewportUnits");
-    image_source = xps_att(root, "ImageSource");
+    opacity_att = xps_att(root, "Opacity");
+    transform_att = xps_att(root, "Transform");
+    viewbox_att = xps_att(root, "Viewbox");
+    viewport_att = xps_att(root, "Viewport");
+    tile_mode_att = xps_att(root, "TileMode");
+    viewbox_units_att = xps_att(root, "ViewboxUnits");
+    viewport_units_att = xps_att(root, "ViewportUnits");
+    image_source_att = xps_att(root, "ImageSource");
 
     for (node = xps_down(root); node; node = xps_next(node))
     {
 	if (!strcmp(xps_tag(node), "ImageBrush.Transform"))
-	    transform_node = node;
+	    transform_tag = node;
     }
 
     /*
      * Decode image resource.
      */
 
-    dprintf1("drawing image brush '%s'\n", image_source);
+    dprintf1("drawing image brush '%s'\n", image_source_att);
 
-    xps_absolute_path(partname, ctx->pwd, image_source);
+    xps_absolute_path(partname, ctx->pwd, image_source_att);
     part = xps_find_part(ctx, partname);
     if (!part)
 	return gs_throw1(-1, "cannot find image resource part '%s'", partname);
@@ -123,37 +123,37 @@ xps_parse_image_brush(xps_context_t *ctx, xps_item_t *root)
 	gs_image_t gsimage;
 	unsigned int count = image.stride * image.height;
 	unsigned int used = 0;
-	gs_matrix matrix;
-	gs_rect gsviewbox;
-	gs_rect gsviewport;
+	gs_matrix transform;
+	gs_rect viewbox;
+	gs_rect viewport;
 	float scalex, scaley;
 
 	/*
 	 * Figure out transformation.
 	 */
 
-	gs_make_identity(&matrix);
-	if (transform)
-	    xps_parse_render_transform(ctx, transform, &matrix);
-	if (transform_node)
-	    xps_parse_matrix_transform(ctx, transform_node, &matrix);
-	gs_concat(ctx->pgs, &matrix);
+	gs_make_identity(&transform);
+	if (transform_att)
+	    xps_parse_render_transform(ctx, transform_att, &transform);
+	if (transform_tag)
+	    xps_parse_matrix_transform(ctx, transform_tag, &transform);
+	gs_concat(ctx->pgs, &transform);
 
-	gsviewbox.p.x = 0.0; gsviewbox.p.y = 0.0;
-	gsviewbox.q.x = 1.0; gsviewbox.q.y = 1.0;
-	if (viewbox)
-	    xps_parse_rectangle(ctx, viewbox, &gsviewbox);
+	viewbox.p.x = 0.0; viewbox.p.y = 0.0;
+	viewbox.q.x = 1.0; viewbox.q.y = 1.0;
+	if (viewbox_att)
+	    xps_parse_rectangle(ctx, viewbox_att, &viewbox);
 
-	gsviewport.p.x = 0.0; gsviewport.p.y = 0.0;
-	gsviewport.q.x = 1.0; gsviewport.q.y = 1.0;
-	if (viewport)
-	    xps_parse_rectangle(ctx, viewport, &gsviewport);
+	viewport.p.x = 0.0; viewport.p.y = 0.0;
+	viewport.q.x = 1.0; viewport.q.y = 1.0;
+	if (viewport_att)
+	    xps_parse_rectangle(ctx, viewport_att, &viewport);
 
-	scalex = (gsviewport.q.x - gsviewport.p.x) / (gsviewbox.q.x - gsviewbox.p.x);
-	scaley = (gsviewport.q.y - gsviewport.p.y) / (gsviewbox.q.y - gsviewbox.p.y);
-	gs_translate(ctx->pgs, gsviewport.p.x, gsviewport.p.y);
+	scalex = (viewport.q.x - viewport.p.x) / (viewbox.q.x - viewbox.p.x);
+	scaley = (viewport.q.y - viewport.p.y) / (viewbox.q.y - viewbox.p.y);
+	gs_translate(ctx->pgs, viewport.p.x, viewport.p.y);
 	gs_scale(ctx->pgs, scalex, scaley);
-	gs_translate(ctx->pgs, -gsviewbox.p.x, gsviewbox.p.y);
+	gs_translate(ctx->pgs, -viewbox.p.x, viewbox.p.y);
 
 	/*
 	 * Set up colorspace and image structs.

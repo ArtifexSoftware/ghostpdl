@@ -9,23 +9,23 @@ int xps_parse_glyphs(xps_context_t *ctx, xps_item_t *node)
 int xps_parse_canvas(xps_context_t *ctx, xps_item_t *root)
 {
     xps_item_t *node;
-    char *transform;
-    gs_matrix matrix;
+    char *transform_att;
+    gs_matrix transform;
     int saved = 0;
 
     dputs("Begin Canvas!\n");
 
-    transform = xps_att(root, "RenderTransform");
-    if (transform)
+    transform_att = xps_att(root, "RenderTransform");
+    if (transform_att)
     {
 	dputs("  canvas att render transform\n");
-	xps_parse_render_transform(ctx, transform, &matrix);
+	xps_parse_render_transform(ctx, transform_att, &transform);
 	if (!saved)
 	{
 	    gs_gsave(ctx->pgs);
 	    saved = 1;
 	}
-	gs_concat(ctx->pgs, &matrix);
+	gs_concat(ctx->pgs, &transform);
     }
 
     if (xps_att(root, "Clip"))
@@ -43,13 +43,13 @@ int xps_parse_canvas(xps_context_t *ctx, xps_item_t *root)
 	if (!strcmp(xps_tag(node), "Canvas.RenderTransform"))
 	{
 	    dputs("  canvas render transform\n");
-	    xps_parse_matrix_transform(ctx, xps_down(node), &matrix);
+	    xps_parse_matrix_transform(ctx, xps_down(node), &transform);
 	    if (!saved)
 	    {
 		gs_gsave(ctx->pgs);
 		saved = 1;
 	    }
-	    gs_concat(ctx->pgs, &matrix);
+	    gs_concat(ctx->pgs, &transform);
 	}
 
 	if (!strcmp(xps_tag(node), "Canvas.Clip"))
@@ -80,7 +80,8 @@ int
 xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 {
     xps_item_t *root, *node;
-    char *width, *height;
+    char *width_att;
+    char *height_att;
     int code;
 
     dprintf1("milestone: processing page %s\n", part->name);
@@ -92,15 +93,15 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     if (strcmp(xps_tag(root), "FixedPage"))
 	return gs_throw1(-1, "expected FixedPage element (found %s)", xps_tag(root));
 
-    width = xps_att(root, "Width");
-    height = xps_att(root, "Height");
+    width_att = xps_att(root, "Width");
+    height_att = xps_att(root, "Height");
 
-    if (!width)
+    if (!width_att)
 	return gs_throw(-1, "FixedPage missing required attribute: Width");
-    if (!height)
+    if (!height_att)
 	return gs_throw(-1, "FixedPage missing required attribute: Height");
 
-    dprintf2("FixedPage width=%d height=%d\n", atoi(width), atoi(height));
+    dprintf2("FixedPage width=%d height=%d\n", atoi(width_att), atoi(height_att));
 
     /* Setup new page */
     {
@@ -112,8 +113,8 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	gs_c_param_list list;
 
 	gs_c_param_list_write(&list, mem);
-	fv[0] = atoi(width) / 96.0 * 72.0;
-	fv[1] = atoi(height) / 96.0 * 72.0;
+	fv[0] = atoi(width_att) / 96.0 * 72.0;
+	fv[1] = atoi(height_att) / 96.0 * 72.0;
 	fa.size = 2;
 
 	code = param_write_float_array((gs_param_list *)&list, ".MediaSize", &fa);
@@ -136,7 +137,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	if (code < 0)
 	    return gs_rethrow(code, "cannot set page transform");
 
-	code = gs_translate(pgs, 0.0, -atoi(height));
+	code = gs_translate(pgs, 0.0, -atoi(height_att));
 	if (code < 0)
 	    return gs_rethrow(code, "cannot set page transform");
 

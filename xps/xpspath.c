@@ -1,5 +1,11 @@
 #include "ghostxps.h"
 
+/*
+ * Parse an abbreviated geometry string, and call
+ * ghostscript moveto/lineto/curveto functions to
+ * build up a path.
+ */
+
 int
 xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 {
@@ -137,34 +143,39 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
     }
 }
 
+/*
+ * Parse an XPS <Path> element, and call relevant ghostscript
+ * functions for drawing and/or clipping the child elements.
+ */
+
 int
 xps_parse_path(xps_context_t *ctx, xps_item_t *root)
 {
     xps_item_t *node;
 
-    char *transform;
-    char *clip;
-    char *data;
-    char *fill;
-    char *stroke;
-    char *opacity;
-    char *opacity_mask;
+    char *transform_att;
+    char *clip_att;
+    char *data_att;
+    char *fill_att;
+    char *stroke_att;
+    char *opacity_att;
+    char *opacity_mask_att;
 
-    xps_item_t *transform_node = NULL;
-    xps_item_t *clip_node = NULL;
-    xps_item_t *data_node = NULL;
-    xps_item_t *fill_node = NULL;
-    xps_item_t *stroke_node = NULL;
-    xps_item_t *opacity_mask_node;
+    xps_item_t *transform_tag = NULL;
+    xps_item_t *clip_tag = NULL;
+    xps_item_t *data_tag = NULL;
+    xps_item_t *fill_tag = NULL;
+    xps_item_t *stroke_tag = NULL;
+    xps_item_t *opacity_mask_tag;
 
-    char *stroke_dash_array;
-    char *stroke_dash_cap;
-    char *stroke_dash_offset;
-    char *stroke_end_line_cap;
-    char *stroke_start_line_cap;
-    char *stroke_line_join;
-    char *stroke_miter_limit;
-    char *stroke_thickness;
+    char *stroke_dash_array_att;
+    char *stroke_dash_cap_att;
+    char *stroke_dash_offset_att;
+    char *stroke_end_line_cap_att;
+    char *stroke_start_line_cap_att;
+    char *stroke_line_join_att;
+    char *stroke_miter_limit_att;
+    char *stroke_thickness_att;
 
     int saved = 0;
 
@@ -172,65 +183,65 @@ xps_parse_path(xps_context_t *ctx, xps_item_t *root)
      * Extract attributes and extended attributes.
      */
 
-    transform = xps_att(root, "RenderTransform");
-    clip = xps_att(root, "Clip");
-    data = xps_att(root, "Data");
-    fill = xps_att(root, "Fill");
-    stroke = xps_att(root, "Stroke");
-    opacity = xps_att(root, "Opacity");
-    opacity_mask = xps_att(root, "OpacityMask");
+    transform_att = xps_att(root, "RenderTransform");
+    clip_att = xps_att(root, "Clip");
+    data_att = xps_att(root, "Data");
+    fill_att = xps_att(root, "Fill");
+    stroke_att = xps_att(root, "Stroke");
+    opacity_att = xps_att(root, "Opacity");
+    opacity_mask_att = xps_att(root, "OpacityMask");
 
-    stroke_dash_array = xps_att(root, "StrokeDashArray");
-    stroke_dash_cap = xps_att(root, "StrokeDashCap");
-    stroke_dash_offset = xps_att(root, "StrokeDashOffset");
-    stroke_end_line_cap = xps_att(root, "StrokeEndLineCap");
-    stroke_start_line_cap = xps_att(root, "StrokeStartLineCap");
-    stroke_line_join = xps_att(root, "StrokeLineJoin");
-    stroke_miter_limit = xps_att(root, "StrokeMiterLimit");
-    stroke_thickness = xps_att(root, "StrokeThickness");
+    stroke_dash_array_att = xps_att(root, "StrokeDashArray");
+    stroke_dash_cap_att = xps_att(root, "StrokeDashCap");
+    stroke_dash_offset_att = xps_att(root, "StrokeDashOffset");
+    stroke_end_line_cap_att = xps_att(root, "StrokeEndLineCap");
+    stroke_start_line_cap_att = xps_att(root, "StrokeStartLineCap");
+    stroke_line_join_att = xps_att(root, "StrokeLineJoin");
+    stroke_miter_limit_att = xps_att(root, "StrokeMiterLimit");
+    stroke_thickness_att = xps_att(root, "StrokeThickness");
 
     for (node = xps_down(root); node; node = xps_next(node))
     {
 	if (!strcmp(xps_tag(node), "Path.RenderTransform"))
-	    transform_node = xps_down(node);
+	    transform_tag = xps_down(node);
 
 	if (!strcmp(xps_tag(node), "Path.OpacityMask"))
-	    opacity_mask_node = xps_down(node);
+	    opacity_mask_tag = xps_down(node);
 
 	if (!strcmp(xps_tag(node), "Path.Clip"))
-	    clip_node = xps_down(node);
+	    clip_tag = xps_down(node);
 
 	if (!strcmp(xps_tag(node), "Path.Fill"))
-	    fill_node = xps_down(node);
+	    fill_tag = xps_down(node);
 
 	if (!strcmp(xps_tag(node), "Path.Stroke"))
-	    stroke_node = xps_down(node);
+	    stroke_tag = xps_down(node);
 
 	if (!strcmp(xps_tag(node), "Path.Data"))
-	    data_node = xps_down(node);
+	    data_tag = xps_down(node);
     }
 
     /*
      * Act on the information we have gathered:
      */
 
-    if (fill_node && !strcmp(xps_tag(fill_node), "SolidColorBrush"))
+    if (fill_tag && !strcmp(xps_tag(fill_tag), "SolidColorBrush"))
     {
-	fill = xps_att(fill_node, "Color");
-	fill_node = NULL;
+	fill_att = xps_att(fill_tag, "Color");
+	fill_tag = NULL;
     }
 
-    if (stroke_node && !strcmp(xps_tag(stroke_node), "SolidColorBrush"))
+    if (stroke_tag && !strcmp(xps_tag(stroke_tag), "SolidColorBrush"))
     {
-	stroke = xps_att(stroke_node, "Color");
-	stroke_node = NULL;
+	stroke_att = xps_att(stroke_tag, "Color");
+	stroke_tag = NULL;
     }
 
     /* if we have a transform, push that on the gstate and remember to restore */
 
-    if (transform || transform_node)
+    if (transform_att || transform_tag)
     {
-	gs_matrix matrix;
+	gs_matrix transform;
 
 	dputs("  path transform\n");
 
@@ -240,18 +251,17 @@ xps_parse_path(xps_context_t *ctx, xps_item_t *root)
 	    saved = 1;
 	}
 
-	if (transform)
-	    xps_parse_render_transform(ctx, transform, &matrix);
-	if (transform_node)
-	    xps_parse_matrix_transform(ctx, transform_node, &matrix);
+	if (transform_att)
+	    xps_parse_render_transform(ctx, transform_att, &transform);
+	if (transform_tag)
+	    xps_parse_matrix_transform(ctx, transform_tag, &transform);
 
-	gs_concat(ctx->pgs, &matrix);
+	gs_concat(ctx->pgs, &transform);
     }
 
     /* if we have a clip mask, push that on the gstate and remember to restore */
 
-#if 0
-    if (clip || clip_node)
+    if (clip_att || clip_tag)
     {
 	if (!saved)
 	{
@@ -261,51 +271,50 @@ xps_parse_path(xps_context_t *ctx, xps_item_t *root)
 
 	dputs("  path clip\n");
 
-	if (clip)
+	if (clip_att)
 	{
-	    xps_parse_abbreviated_geometry(ctx, clip);
-	    gs_clippath(ctx->pgs);
+	    xps_parse_abbreviated_geometry(ctx, clip_att);
+	    gs_clip(ctx->pgs);
 	}
     }
-#endif
 
-    if (!data)
+    if (!data_att)
     {
 	gs_throw(-1, "no abbreviated geometry data for path");
-	data = "M 0,0 L 0,100 100,100 100,0 Z";
+	data_att = "M 0,0 L 0,100 100,100 100,0 Z";
     }
 
     /* if it's a solid color brush fill/stroke do just that. */
 
-    if (fill)
+    if (fill_att)
     {
 	float argb[4];
 	dputs("  path solid color fill\n");
-	xps_parse_color(ctx, fill, argb);
+	xps_parse_color(ctx, fill_att, argb);
 	if (argb[0] > 0.001)
 	{
 	    gs_setrgbcolor(ctx->pgs, argb[1], argb[2], argb[3]);
-	    xps_parse_abbreviated_geometry(ctx, data);
+	    xps_parse_abbreviated_geometry(ctx, data_att);
 	    gs_fill(ctx->pgs);
 	}
     }
 
-    if (stroke)
+    if (stroke_att)
     {
 	float argb[4];
 	dputs("  path solid color stroke\n");
-	xps_parse_color(ctx, stroke, argb);
+	xps_parse_color(ctx, stroke_att, argb);
 	if (argb[0] > 0.001)
 	{
 	    gs_setrgbcolor(ctx->pgs, argb[1], argb[2], argb[3]);
-	    xps_parse_abbreviated_geometry(ctx, data);
+	    xps_parse_abbreviated_geometry(ctx, data_att);
 	    gs_stroke(ctx->pgs);
 	}
     }
 
     /* if it's a visual brush or image, use the path as a clip mask to paint brush */
 
-    if (fill_node || stroke_node)
+    if (fill_tag || stroke_tag)
     {
 	if (!saved)
 	{
@@ -316,20 +325,20 @@ xps_parse_path(xps_context_t *ctx, xps_item_t *root)
 	dputs("  path complex brush\n");
 
 	gs_setrgbcolor(ctx->pgs, 0.5, 0.0, 0.3);
-	xps_parse_abbreviated_geometry(ctx, data);
-	// gs_fill(ctx->pgs); /* should clip */
-	gs_clippath(ctx->pgs);
+	xps_parse_abbreviated_geometry(ctx, data_att);
+	gs_clip(ctx->pgs);
+	dputs("clip\n");
 
-	if (fill_node)
+	if (fill_tag)
 	{
-	    if (!strcmp(xps_tag(fill_node), "ImageBrush"))
-		xps_parse_image_brush(ctx, fill_node);
-	    if (!strcmp(xps_tag(fill_node), "VisualBrush"))
-		xps_parse_visual_brush(ctx, fill_node);
-	    if (!strcmp(xps_tag(fill_node), "LinearGradientBrush"))
-		xps_parse_linear_gradient_brush(ctx, fill_node);
-	    if (!strcmp(xps_tag(fill_node), "RadialGradientBrush"))
-		xps_parse_radial_gradient_brush(ctx, fill_node);
+	    if (!strcmp(xps_tag(fill_tag), "ImageBrush"))
+		xps_parse_image_brush(ctx, fill_tag);
+	    if (!strcmp(xps_tag(fill_tag), "VisualBrush"))
+		xps_parse_visual_brush(ctx, fill_tag);
+	    if (!strcmp(xps_tag(fill_tag), "LinearGradientBrush"))
+		xps_parse_linear_gradient_brush(ctx, fill_tag);
+	    if (!strcmp(xps_tag(fill_tag), "RadialGradientBrush"))
+		xps_parse_radial_gradient_brush(ctx, fill_tag);
 	}
     }
 
