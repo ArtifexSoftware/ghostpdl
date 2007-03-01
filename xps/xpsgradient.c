@@ -492,7 +492,7 @@ xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_item_t *root)
 
 
     if (!stop_tag || !center_att || !origin_att || !radius_x_att || !radius_y_att)
-	return gs_throw(-1, "missing attribute in gradient stop tag");
+	return gs_throw(-1, "missing attribute in radial gradient tag");
 
     stop_count = xps_parse_gradient_stops(ctx, stop_tag, stop_offsets, stop_colors, MAX_STOPS);
     if (stop_count == 0)
@@ -582,7 +582,7 @@ xps_parse_linear_gradient_brush(xps_context_t *ctx, xps_item_t *root)
 
 
     if (!stop_tag || !start_point_att || !end_point_att)
-	return gs_throw(-1, "missing attribute in gradient stop tag");
+	return gs_throw(-1, "missing attribute in linear gradient tag");
 
     stop_count = xps_parse_gradient_stops(ctx, stop_tag, stop_offsets, stop_colors, MAX_STOPS);
     if (stop_count == 0)
