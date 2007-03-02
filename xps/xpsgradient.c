@@ -235,11 +235,11 @@ xps_draw_one_radial_gradient(xps_context_t *ctx,
     rect.q.x = int2fixed(10000);
     rect.q.y = int2fixed(10000);
 
-    code = gs_shading_fill_path_adjusted(shading, NULL, &rect, dev, pis, 0);
+    code = gs_shfill(ctx->pgs, shading);
     if (code < 0)
     {
 	gs_free_object(mem, shading, "gs_shading_R");
-	return gs_throw(-1, "gs_shading_fill_path_adjusted failed");
+	return gs_throw(-1, "gs_shfill failed");
     }
 
     gs_free_object(mem, shading, "gs_shading_R");
@@ -292,11 +292,11 @@ xps_draw_one_linear_gradient(xps_context_t *ctx,
     rect.q.x = int2fixed(10000);
     rect.q.y = int2fixed(10000);
 
-    code = gs_shading_fill_path_adjusted(shading, NULL, &rect, dev, pis, 0);
+    code = gs_shfill(ctx->pgs, shading);
     if (code < 0)
     {
 	gs_free_object(mem, shading, "gs_shading_A");
-	return gs_throw(-1, "gs_shading_fill_path_adjusted failed");
+	return gs_throw(-1, "gs_shfill failed");
     }
 
     gs_free_object(mem, shading, "gs_shading_A");
@@ -307,6 +307,9 @@ xps_draw_one_linear_gradient(xps_context_t *ctx,
 /*
  * We need to loop and create many shading objects to account
  * for the Repeat and Reflect SpreadMethods.
+ *
+ * TODO: calculate how many iterations are required to fill
+ * the current clipping region.
  */
 
 int
@@ -444,7 +447,6 @@ xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_item_t *root)
 {
     xps_item_t *node;
     int code;
-    int i;
 
     xps_item_t *transform_tag = NULL;
     xps_item_t *stop_tag = NULL;
@@ -596,8 +598,8 @@ xps_parse_linear_gradient_brush(xps_context_t *ctx, xps_item_t *root)
 	gs_concat(ctx->pgs, &transform);
     }
 
-    sscanf(start_point, "%g,%g", start_point, start_point + 1);
-    sscanf(end_point, "%g,%g", end_point, end_point + 1);
+    sscanf(start_point_att, "%g,%g", start_point, start_point + 1);
+    sscanf(end_point_att, "%g,%g", end_point, end_point + 1);
 
     spread_method = SPREAD_PAD;
     if (spread_att)

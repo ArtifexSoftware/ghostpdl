@@ -7,6 +7,7 @@ xps_parse_visual_brush(xps_context_t *ctx, xps_item_t *root)
 {
     xps_item_t *node;
     int i, k;
+    int tile_x, tile_y;
 
     char *opacity_att;
     char *transform_att;
@@ -43,7 +44,18 @@ xps_parse_visual_brush(xps_context_t *ctx, xps_item_t *root)
 	    visual_tag = xps_down(node);
     }
 
+
     dputs("drawing visual brush\n");
+
+    if (!viewbox_att || !viewport_att)
+	return gs_throw(-1, "missing viewbox/viewport attribute in visual brush");
+
+    if (visual_att)
+	/* find resource */ ;
+
+    if (!visual_tag)
+	return 0; /* move along, nothing to see */
+
 
     gs_gsave(ctx->pgs);
 
@@ -85,36 +97,43 @@ xps_parse_visual_brush(xps_context_t *ctx, xps_item_t *root)
 	    tile_mode = TILE_FLIP_X_Y;
     }
 
-    if (visual_tag)
+    if (tile_mode == TILE_NONE)
+	tile_x = tile_y = 1;
+    else
+	tile_x = tile_y = 6;
+
+    gs_translate(ctx->pgs,
+	    (viewbox.p.x - viewbox.q.x) * (tile_x/2),
+	    (viewbox.p.y - viewbox.q.y) * (tile_y/2));
+
+    for (k = 0; k < tile_y; k++)
     {
-	if (tile_mode != TILE_NONE)
+	for (i = 0; i < tile_x; i++)
 	{
-	    for (k = 0; k < 3; k++)
-	    {
-		for (i = 0; i < 3; i++)
-		{
-		    if (!strcmp(xps_tag(visual_tag), "Path"))
-			xps_parse_path(ctx, visual_tag);
-		    if (!strcmp(xps_tag(visual_tag), "Glyphs"))
-			xps_parse_glyphs(ctx, visual_tag);
-		    if (!strcmp(xps_tag(visual_tag), "Canvas"))
-			xps_parse_canvas(ctx, visual_tag);
+	    gs_gsave(ctx->pgs);
+	    gs_newpath(ctx->pgs);
+	    gs_moveto(ctx->pgs, viewbox.p.x, viewbox.p.y);
+	    gs_lineto(ctx->pgs, viewbox.p.x, viewbox.q.y);
+	    gs_lineto(ctx->pgs, viewbox.q.x, viewbox.q.y);
+	    gs_lineto(ctx->pgs, viewbox.q.x, viewbox.p.y);
+	    gs_closepath(ctx->pgs);
+	    gs_clip(ctx->pgs);
 
-		    gs_translate(ctx->pgs, viewbox.p.x - viewbox.q.x, 0.0);
-		}
-		gs_translate(ctx->pgs, -3 * (viewbox.p.x - viewbox.q.x), viewbox.p.y - viewbox.q.y);
-	    }
-	}
-
-	else
-	{
 	    if (!strcmp(xps_tag(visual_tag), "Path"))
 		xps_parse_path(ctx, visual_tag);
 	    if (!strcmp(xps_tag(visual_tag), "Glyphs"))
 		xps_parse_glyphs(ctx, visual_tag);
 	    if (!strcmp(xps_tag(visual_tag), "Canvas"))
 		xps_parse_canvas(ctx, visual_tag);
+
+	    gs_grestore(ctx->pgs);
+
+	    gs_translate(ctx->pgs, -(viewbox.p.x - viewbox.q.x), 0.0);
 	}
+
+	gs_translate(ctx->pgs,
+		tile_x * (viewbox.p.x - viewbox.q.x),
+		-(viewbox.p.y - viewbox.q.y));
     }
 
     gs_grestore(ctx->pgs);
