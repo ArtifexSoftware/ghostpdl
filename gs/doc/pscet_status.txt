@@ -1988,7 +1988,20 @@ Test	 Status	Comments
 
 11-24-2  OK	
 
-11-24-3  DIFF	ueofill; assign Igor
+11-24-3  AOK	user path :
+		CPSI doesn't follow PLRM page 199 about user paths :
+                "the first operator after setbbox must be an absolute positioning operator 
+                (moveto, arc, or arcn)." 
+                "All coordinates specified as operands must fall within the bounds 
+                specified by setbbox".
+                When an user path starts with rmoveto, CPSI looks using current point 
+                from the graphic state when it is set, and probably the setbbox lower coordinates
+                when current point is not set. However arc, arcn in the user path
+                do not paint a line from the graphic state current point.
+                Also painting outside setbbox somethimes throws error, sometimes not -
+                we could not figure out what does it depend on.
+                Due to all that CPSI's algorithm isn't clear and we're unable to reproduce it.
+                Will follow PLRM instead.
 
 11-24-4  OK	
 
@@ -2004,7 +2017,7 @@ Test	 Status	Comments
 
 11-25-2  OK	
 
-11-25-3  DIFF	ufill; assign Igor
+11-25-3  AOK	user paths : same as 11-24-3.
 
 11-25-4  OK	
 
@@ -2042,7 +2055,7 @@ Test	 Status	Comments
 
 11-27-2  OK	
 
-11-27-3  DIFF	ustroke; assign Igor
+11-27-3  AOK	user paths : same as 11-24-3.
 
 11-27-4  OK	
 
