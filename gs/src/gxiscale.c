@@ -209,21 +209,27 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 	    const byte *pdata = bdata;
 	    frac *psrc = (frac *) penum->line;
 	    gs_client_color cc;
-	    int i;
+	    int i, j;
+            int dpd = dc * (bps <= 8 ? 1 : sizeof(frac));
 
+            if (penum->matrix.xx < 0) {
+              pdata += (pss->params.WidthIn - 1) * dpd;
+              dpd = - dpd;
+            }
 	    r.ptr = (byte *) psrc - 1;
 	    if_debug0('B', "[B]Concrete row:\n[B]");
 	    for (i = 0; i < pss->params.WidthIn; i++, psrc += c) {
-		int j;
-
-		if (bps <= 8)
-		    for (j = 0; j < dc; ++pdata, ++j) {
-			decode_sample(*pdata, cc, j);
-		} else		/* bps == 12 */
-		    for (j = 0; j < dc; pdata += sizeof(frac), ++j) {
-			decode_frac(*(const frac *)pdata, cc, j);
+		if (bps <= 8) {
+		    for (j = 0; j < dc;  ++j) {
+			decode_sample(pdata[j], cc, j);
+                    }
+		} else {	/* bps == 12 */
+		    for (j = 0; j < dc;  ++j) {
+			decode_frac(((const frac *)pdata)[j], cc, j);
 		    }
-		(*pcs->type->concretize_color) (&cc, pcs, psrc, pis);
+                }
+		pdata += dpd;
+                (*pcs->type->concretize_color) (&cc, pcs, psrc, pis);
 #ifdef DEBUG
 		if (gs_debug_c('B')) {
 		    int ci;
