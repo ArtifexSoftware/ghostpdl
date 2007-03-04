@@ -597,7 +597,7 @@ pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index,
             dprintf("Found vertical metrics\n");
         }
     }
-    return gs_type42_default_get_metrics(pfont, glyph_index, options, sbw);
+    return gs_type42_default_get_metrics(pfont, glyph_index, wmode, sbw);
 }
 
 
