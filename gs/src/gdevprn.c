@@ -1081,6 +1081,13 @@ gx_default_setup_buf_device(gx_device *bdev, byte *buffer, int bytes_per_line,
     if ((gx_device *)mdev == bdev && mdev->num_planes)
 	raster = bitmap_raster(mdev->planes[0].depth * mdev->width);
     if (ptrs == 0) {
+	/* 
+	 * Before allocating a new line pointer array, if there is a previous
+	 * array, free it to prevent leaks.
+	 */
+	if (mdev->line_ptrs != NULL)
+	    gs_free_object(mdev->line_pointer_memory, mdev->line_ptrs,
+		       "mem_close");
 	/*
 	 * Allocate line pointers now; free them when we close the device.
 	 * Note that for multi-planar devices, we have to allocate using
