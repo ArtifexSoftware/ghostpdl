@@ -102,6 +102,7 @@ typedef struct px_bitmap_enum_s {
     gs_memory_t *mem;            /* used only for the jpeg filter */
     uint data_per_row;		 /* ditto minus possible trailing padding */
     bool initialized;
+    pxeCompressMode_t compress_type;
     stream_RLD_state rld_stream_state;	/* decompressor states */
     stream_DCT_state dct_stream_state;
     jpeg_decompress_data jdd;
@@ -386,9 +387,8 @@ read_deltarow_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
   bool end_of_row = false;
 
   if ( benum->initialized && deltarow->rowwritten == par->pv[1]->value.i ) {
-    gs_free_object(benum->mem, deltarow->seedrow, "read_deltarow_bitmap_data");
-    benum->initialized = 0;
-    return 0;
+      deltarow->rowwritten = 0;
+      return 0;
   }
 
   /* initialize at begin of image */
@@ -514,17 +514,20 @@ read_deltarow_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 private int
 read_bitmap(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 {	
-    switch( par->pv[2]->value.i ) {
+    benum->compress_type = par->pv[2]->value.i;
+    switch( benum->compress_type ) {
     case eRLECompression:
         return read_rle_bitmap_data(benum, pdata, par);
     case eJPEGCompression:
         return read_jpeg_bitmap_data(benum, pdata, par);
     case eDeltaRowCompression:
         return read_deltarow_bitmap_data(benum, pdata, par);
-    default:
+    case eNoCompression:
         return read_uncompressed_bitmap_data(benum, pdata, par);
+    default:
+        break;
     }
-    return -1; /* NOT REACHED */
+    return -1;
 }
 
 
@@ -652,13 +655,17 @@ pxReadImage(px_args_t *par, px_state_t *pxs)
 const byte apxEndImage[] = {0, 0};
 int
 pxEndImage(px_args_t *par, px_state_t *pxs)
-{	gx_device *dev = gs_currentdevice(pxs->pgs);
-	px_image_enum_t *pxenum = pxs->image_enum;
-	(*dev_proc(dev, end_image))(dev, pxenum->info, true);
-	gs_free_object(pxs->memory, pxenum->row, "pxEndImage(row)");
-	gs_free_object(pxs->memory, pxenum, "pxEndImage(pxenum)");
-	pxs->image_enum = 0;
-	return 0;
+{	
+    gx_device *dev = gs_currentdevice(pxs->pgs);
+    px_image_enum_t *pxenum = pxs->image_enum;
+    px_bitmap_enum_t *pbenum = &pxenum->benum;
+    (*dev_proc(dev, end_image))(dev, pxenum->info, true);
+    gs_free_object(pxs->memory, pxenum->row, "pxEndImage(row)");
+    if ( pbenum->compress_type == eDeltaRowCompression )
+        gs_free_object(pbenum->mem, pbenum->deltarow_state.seedrow, "pxEndImage(seedrow)");
+    gs_free_object(pxs->memory, pxenum, "pxEndImage(pxenum)");
+    pxs->image_enum = 0;
+    return 0;
 }
 
 /* ---------------- Raster pattern operators ---------------- */
