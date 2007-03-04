@@ -516,7 +516,7 @@ clist_open_output_file(gx_device *dev)
 			    true)) < 0 ||
 	(code = clist_fopen(cdev->page_bfname, fmode, &cdev->page_bfile,
 			    cdev->bandlist_memory, cdev->bandlist_memory,
-			    true)) < 0 ||
+			    false)) < 0 ||
 	(code = clist_reinit_output_file(dev)) < 0
 	) {
 	clist_close_output_file(dev);
