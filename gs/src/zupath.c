@@ -349,13 +349,13 @@ zuappend(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    if ((code = upath_append(op, i_ctx_p, CPSI_mode)) >= 0)
+    if ((code = upath_append(op, i_ctx_p, false)) >= 0)
 	code = gs_upmergepath(igs);
     gs_grestore(igs);
-    igs->current_point.x = fixed2float(igs->path->position.x);
-    igs->current_point.y = fixed2float(igs->path->position.y);
     if (code < 0)
 	return code;
+    igs->current_point.x = fixed2float(igs->path->position.x);
+    igs->current_point.y = fixed2float(igs->path->position.y);
     pop(1);
     return 0;
 }

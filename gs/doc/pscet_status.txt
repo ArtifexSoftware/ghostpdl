@@ -1959,13 +1959,7 @@ Test	 Status	Comments
 
 11-22-2  OK	Minor differences visually reviewed by RJJ
 
-11-22-3  DIFF	uappend; assign igor
-		Note: as of rev 7229, GS doesn't issue typecheck error when 'ucache'
-		is not the first element. Differs from rev 7220. (see also 11-28-5)
-		Rev. 7220 matches Distiller 5 but doesn't match Tek or CPSI, which
-                ignore most of the user path errors. IMHO, all upath cases can
-                be classified as AOK. Reassigning the case to Raph who owns all
-                other upath cases. - Alex 
+11-22-3  AOK	CPSI is wrong with the invalid test "User path must start with absolute point".
 
 11-22-4  OK
 
@@ -1994,7 +1988,7 @@ Test	 Status	Comments
 
 11-24-2  OK	
 
-11-24-3  DIFF	ueofill; Analyzed by Igor. assign: Raph.
+11-24-3  DIFF	ueofill; assign Igor
 
 11-24-4  OK	
 
@@ -2010,7 +2004,7 @@ Test	 Status	Comments
 
 11-25-2  OK	
 
-11-25-3  DIFF	more ucache discrepancies similar to 11-24-3 assign: Raph
+11-25-3  DIFF	ufill; assign Igor
 
 11-25-4  OK	
 
@@ -2048,7 +2042,7 @@ Test	 Status	Comments
 
 11-27-2  OK	
 
-11-27-3  DIFF	more ucache discrepancies similar to 11-23-3 assign: Raph
+11-27-3  DIFF	ustroke; assign Igor
 
 11-27-4  OK	
 
