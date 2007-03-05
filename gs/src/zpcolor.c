@@ -166,34 +166,32 @@ private int
 zsetpatternspace(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    gs_color_space cs;
+    gs_color_space *pcs;
+    gs_color_space *pcs_base;
     uint edepth = ref_stack_count(&e_stack);
-    int code;
+    int code = 0;
 
     if (!r_is_array(op))
         return_error(e_typecheck);
     check_read(*op);
     switch (r_size(op)) {
 	case 1:		/* no base space */
-	    cs.params.pattern.has_base_space = false;
+	    pcs_base = NULL;
 	    break;
 	default:
 	    return_error(e_rangecheck);
 	case 2:
-	    cs = *gs_currentcolorspace(igs);
-	    if (cs_num_components(&cs) < 0)	/* i.e., Pattern space */
+	    pcs_base = gs_currentcolorspace(igs);
+	    if (cs_num_components(pcs_base) < 0)       /* i.e., Pattern space */
 		return_error(e_rangecheck);
-	    {
-		/* We can't count on C compilers to recognize the aliasing */
-		/* that would be involved in a direct assignment */
-		/* cs.params.pattern.base_space = *(gs_paint_color_space *)&cs; */
-		/* At least MSVC7 chocks with it. */
-		memmove(&cs.params.pattern.base_space, &cs, sizeof(gs_paint_color_space));
-	    }
-	    cs.params.pattern.has_base_space = true;
     }
-    gs_cspace_init(&cs, &gs_color_space_type_Pattern, imemory, false);
-    code = gs_setcolorspace(igs, &cs);
+    pcs = gs_cspace_alloc(imemory, &gs_color_space_type_Pattern);
+    pcs->base_space = pcs_base;
+    pcs->params.pattern.has_base_space = (pcs_base != NULL);
+    rc_increment(pcs_base);
+    code = gs_setcolorspace(igs, pcs);
+    /* release reference from construction */
+    rc_decrement_only(pcs, "zsetpatternspace");
     if (code < 0) {
 	ref_stack_pop_to(&e_stack, edepth);
 	return code;

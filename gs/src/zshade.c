@@ -161,20 +161,15 @@ build_shading(i_ctx_t *i_ctx_p, build_shading_proc_t proc)
     params.Background = 0;
     /* Collect parameters common to all shading types. */
     {
-	const gs_color_space *pcs_orig = gs_currentcolorspace(igs);
-	int num_comp = gs_color_space_num_components(pcs_orig);
-	gs_color_space *pcs;
+	gs_color_space *pcs = gs_currentcolorspace(igs);
+	int num_comp = gs_color_space_num_components(pcs);
 
 	if (num_comp < 0) {	/* Pattern color space */
             gs_errorinfo_put_pair_from_dict(i_ctx_p, op, "ColorSpace");
 	    return_error(e_typecheck);
         }
-	pcs = ialloc_struct(gs_color_space, &st_color_space,
-			    "build_shading");
-	if (pcs == 0)
-	    return_error(e_VMerror);
-	gs_cspace_init_from(pcs, pcs_orig);
 	params.ColorSpace = pcs;
+	rc_increment(pcs);
 	if (dict_find_string(op, "Background", &pvalue) > 0) {
 	    gs_client_color *pcc =
 		ialloc_struct(gs_client_color, &st_client_color,
@@ -233,8 +228,7 @@ build_shading(i_ctx_t *i_ctx_p, build_shading_proc_t proc)
 fail:
     gs_free_object(imemory, params.Background, "Background");
     if (params.ColorSpace) {
-	gs_cspace_release(params.ColorSpace);
-	gs_free_object(imemory, params.ColorSpace, "ColorSpace");
+	rc_decrement_only(params.ColorSpace, "build_shading");
     }
     return (code < 0 ? code : gs_note_error(e_rangecheck));
 }

@@ -343,12 +343,12 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 		    break;
 		case gs_color_space_index_Indexed:
 		    if (pdev->CompatibilityLevel <= 1.2) {
-			pcs2 = (const gs_color_space *)&pcs->params.indexed.base_space;
+			pcs2 = pcs->base_space;
 			csi = gs_color_space_get_index(pcs2);
 			if (!is_cspace_allowed_in_strategy(pdev, csi))
 			    goto write_process_color;
 			if (csi == gs_color_space_index_Separation) {
-			    pcs2 = (const gs_color_space *)&pcs2->params.separation.alt_space;
+			    pcs2 = pcs->base_space;
 			    goto check_pcs2;
 			}
 			goto check_pcs2;
@@ -356,7 +356,7 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 		    goto scn;
 		case gs_color_space_index_Separation:
 		    if (pdev->CompatibilityLevel <= 1.2) {
-			pcs2 = (const gs_color_space *)&pcs->params.separation.alt_space;
+			pcs2 = pcs->base_space;
 			check_pcs2:
 			csi = gs_color_space_get_index(pcs2);
 			if (!is_cspace_allowed_in_strategy(pdev, csi))

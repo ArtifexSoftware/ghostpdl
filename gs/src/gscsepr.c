@@ -33,12 +33,11 @@
 
 /* ---------------- Color space ---------------- */
 
-gs_private_st_composite(st_color_space_Separation, gs_paint_color_space,
+gs_private_st_composite(st_color_space_Separation, gs_color_space,
 			"gs_color_space_Separation",
 			cs_Separation_enum_ptrs, cs_Separation_reloc_ptrs);
 
 /* Define the Separation color space type. */
-private cs_proc_base_space(gx_alt_space_Separation);
 private cs_proc_init_color(gx_init_Separation);
 private cs_proc_concrete_space(gx_concrete_space_Separation);
 private cs_proc_concretize_color(gx_concretize_Separation);
@@ -46,18 +45,17 @@ private cs_proc_remap_concrete_color(gx_remap_concrete_Separation);
 private cs_proc_remap_color(gx_remap_Separation);
 private cs_proc_install_cspace(gx_install_Separation);
 private cs_proc_set_overprint(gx_set_overprint_Separation);
-private cs_proc_adjust_cspace_count(gx_adjust_cspace_Separation);
+private cs_proc_final(gx_final_Separation);
 private cs_proc_serialize(gx_serialize_Separation);
 const gs_color_space_type gs_color_space_type_Separation = {
     gs_color_space_index_Separation, true, false,
     &st_color_space_Separation, gx_num_components_1,
-    gx_alt_space_Separation,
     gx_init_Separation, gx_restrict01_paint_1,
     gx_concrete_space_Separation,
     gx_concretize_Separation, gx_remap_concrete_Separation,
     gx_remap_Separation, gx_install_Separation,
     gx_set_overprint_Separation,
-    gx_adjust_cspace_Separation, gx_no_adjust_color_count,
+    gx_final_Separation, gx_no_adjust_color_count,
     gx_serialize_Separation,
     gx_cspace_is_linear_default
 };
@@ -65,31 +63,14 @@ const gs_color_space_type gs_color_space_type_Separation = {
 /* GC procedures */
 
 private 
-ENUM_PTRS_WITH(cs_Separation_enum_ptrs, gs_color_space *pcs)
-{
-    return ENUM_USING(*pcs->params.separation.alt_space.type->stype,
-		      &pcs->params.separation.alt_space,
-		      sizeof(pcs->params.separation.alt_space), index - 1);
-}
-ENUM_PTR(0, gs_color_space, params.separation.map);
+ENUM_PTRS_BEGIN(cs_Separation_enum_ptrs) return 0;
+    ENUM_PTR(0, gs_color_space, params.separation.map);
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(cs_Separation_reloc_ptrs, gs_color_space *pcs)
+private RELOC_PTRS_BEGIN(cs_Separation_reloc_ptrs)
 {
     RELOC_PTR(gs_color_space, params.separation.map);
-    RELOC_USING(*pcs->params.separation.alt_space.type->stype,
-		&pcs->params.separation.alt_space,
-		sizeof(gs_base_color_space));
 }
 RELOC_PTRS_END
-
-/* Get the alternate space for a Separation space. */
-private const gs_color_space *
-gx_alt_space_Separation(const gs_color_space * pcs)
-{
-    return pcs->params.separation.use_alt_cspace
-	   ? (const gs_color_space *)&(pcs->params.separation.alt_space)
-    	   : NULL;
-}
 
 /* Get the concrete space for a Separation space. */
 private const gs_color_space *
@@ -108,10 +89,7 @@ gx_concrete_space_Separation(const gs_color_space * pcs,
      * Check if we are using the alternate color space.
      */
     if (pis->color_component_map.use_alt_cspace) {
-        const gs_color_space *pacs =
-	    (const gs_color_space *)&pcs->params.separation.alt_space;
-
-        return cs_concrete_space(pacs, pis);
+        return cs_concrete_space(pcs->base_space, pis);
     }
     /*
      * Separation color spaces are concrete (when not using alt. color space).
@@ -155,8 +133,8 @@ gx_install_Separation(const gs_color_space * pcs, gs_state * pgs)
     pgs->color_space->params.separation.use_alt_cspace =
 	using_alt_color_space(pgs);
     if (pgs->color_space->params.separation.use_alt_cspace)
-        code = (*pcs->params.separation.alt_space.type->install_cspace)
-	((const gs_color_space *) & pcs->params.separation.alt_space, pgs);
+        code = (pcs->base_space->type->install_cspace)
+	    (pcs->base_space, pgs);
     /*
      * Give the device an opportunity to capture equivalent colors for any
      * spot colors which might be present in the color space.
@@ -174,9 +152,7 @@ gx_set_overprint_Separation(const gs_color_space * pcs, gs_state * pgs)
     gs_devicen_color_map *  pcmap = &pgs->color_component_map;
 
     if (pcmap->use_alt_cspace)
-        return gx_spot_colors_set_overprint( 
-                   (const gs_color_space *)&pcs->params.separation.alt_space,
-                   pgs );
+        return gx_spot_colors_set_overprint( pcs->base_space, pgs );
     else {
         gs_overprint_params_t   params;
 
@@ -198,77 +174,46 @@ gx_set_overprint_Separation(const gs_color_space * pcs, gs_state * pgs)
     }
 }
 
-/* Adjust the reference count of a Separation color space. */
+/* Finalize contents of a Separation color space. */
 private void
-gx_adjust_cspace_Separation(const gs_color_space * pcs, int delta)
+gx_final_Separation(const gs_color_space * pcs)
 {
-    rc_adjust_const(pcs->params.separation.map, delta,
+    rc_adjust_const(pcs->params.separation.map, -1,
 		    "gx_adjust_Separation");
-    (*pcs->params.separation.alt_space.type->adjust_cspace_count)
-	((const gs_color_space *)&pcs->params.separation.alt_space, delta);
 }
 
 /* ------ Constructors/accessors ------ */
 
 /*
- * Build a separation color space.
+ * Construct a new separation color space.
  */
 int
-gs_build_Separation(
-		    gs_color_space * pcspace,
-		    const gs_color_space * palt_cspace,
-		    gs_memory_t * pmem
+gs_cspace_new_Separation(
+    gs_color_space **ppcs,
+    gs_color_space * palt_cspace,
+    gs_memory_t * pmem
 )
 {
-    gs_separation_params * pcssepr = &pcspace->params.separation;
+    gs_color_space *pcs;
     int code;
 
     if (palt_cspace == 0 || !palt_cspace->type->can_be_alt_space)
 	return_error(gs_error_rangecheck);
 
-    code = alloc_device_n_map(&pcssepr->map, pmem, "gs_cspace_build_Separation");
-    if (pcssepr->map == NULL) {
-	gs_free_object(pmem, pcspace, "gs_cspace_build_Separation");
+    pcs = gs_cspace_alloc(pmem, &gs_color_space_type_Separation);
+    if (pcs == NULL)
 	return_error(gs_error_VMerror);
-    }
-    return 0;
-}
+    pcs->params.separation.map = NULL;
 
-/*
- * Build a separation color space.
- *
- * The values array provided with separation color spaces is actually cached
- * information, but filled in by the client. The alternative space is the
- * color space in which the tint procedure will provide alternative colors.
- */
-int
-gs_cspace_build_Separation(
-			      gs_color_space ** ppcspace,
-			      gs_separation_name sname,
-			      const gs_color_space * palt_cspace,
-			      int cache_size,
-			      gs_memory_t * pmem
-)
-{
-    gs_color_space *pcspace = NULL;
-    gs_separation_params *pcssepr = NULL;
-    int code;
-
-    if (palt_cspace == 0 || !palt_cspace->type->can_be_alt_space)
-	return_error(gs_error_rangecheck);
-
-    code = gs_cspace_alloc(&pcspace, &gs_color_space_type_Separation, pmem);
-    if (code < 0)
-	return code;
- 
-    code = gs_build_Separation(pcspace, palt_cspace, pmem);
+    code = alloc_device_n_map(&pcs->params.separation.map, pmem,
+			      "gs_cspace_build_Separation");
     if (code < 0) {
-	gs_free_object(pmem, pcspace, "gs_cspace_build_Separation");
-	return code;
+	gs_free_object(pmem, pcs, "gs_cspace_build_Separation");
+	return_error(code);
     }
-    pcssepr->sep_name = sname;
-    gs_cspace_init_from((gs_color_space *) & pcssepr->alt_space, palt_cspace);
-    *ppcspace = pcspace;
+    pcs->base_space = palt_cspace;
+    rc_increment(palt_cspace);
+    *ppcs = pcs;
     return 0;
 }
 
@@ -309,8 +254,7 @@ gs_cspace_set_sepr_function(const gs_color_space *pcspace, gs_function_t *pfn)
 
     if (gs_color_space_get_index(pcspace) != gs_color_space_index_Separation ||
 	pfn->params.m != 1 || pfn->params.n !=
-	  gs_color_space_num_components((const gs_color_space *)
-					&pcspace->params.separation.alt_space)
+	  gs_color_space_num_components(pcspace->base_space)
 	)
 	return_error(gs_error_rangecheck);
     pimap = pcspace->params.separation.map;
@@ -370,8 +314,7 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
     float ftemp;
     int code;
     gs_client_color cc;
-    const gs_color_space *pacs =
-	(const gs_color_space *)&pcs->params.separation.alt_space;
+    const gs_color_space *pacs = pcs->base_space;
     
     if (pcs->params.separation.sep_type == SEP_OTHER &&
 	pcs->params.separation.use_alt_cspace) {
@@ -418,8 +361,7 @@ gx_remap_concrete_Separation(const frac * pconc,  const gs_color_space * pcs,
     }
 #endif
     if (pis->color_component_map.use_alt_cspace) {
-        const gs_color_space *pacs =
-	    (const gs_color_space *)&pcs->params.separation.alt_space;
+        const gs_color_space *pacs = pcs->base_space;
 
 	return (*pacs->type->remap_concrete_color)
 				(pconc, pacs, pdc, pis, dev, select);
@@ -538,7 +480,7 @@ gx_serialize_Separation(const gs_color_space * pcs, stream * s)
     code = sputs(s, (const byte *)&p->sep_name, sizeof(p->sep_name), &n);
     if (code < 0)
 	return code;
-    code = cs_serialize((const gs_color_space *)&p->alt_space, s);
+    code = cs_serialize(pcs->base_space, s);
     if (code < 0)
 	return code;
     code = gx_serialize_device_n_map(pcs, p->map, s);

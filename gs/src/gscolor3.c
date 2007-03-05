@@ -60,7 +60,7 @@ gs_shfill(gs_state * pgs, const gs_shading_t * psh)
     gx_path cpath;
     gs_matrix imat;
     gs_client_color cc;
-    gs_color_space cs;
+    gs_color_space *pcs;
     gx_device_color devc;
     int code;
 
@@ -74,10 +74,13 @@ gs_shfill(gs_state * pgs, const gs_shading_t * psh)
     code = gs_pattern2_set_shfill(&cc);
     if (code < 0)
 	return code;
-    gs_cspace_init(&cs, &gs_color_space_type_Pattern, pgs->memory, false);
-    cs.params.pattern.has_base_space = false;
-    code = cs.type->remap_color(&cc, &cs, &devc, (gs_imager_state *)pgs,
-				pgs->device, gs_color_select_texture);
+    pcs = gs_cspace_alloc(pgs->memory, &gs_color_space_type_Pattern);
+    if (pcs == NULL)
+	return_error(gs_error_VMerror);
+
+    pcs->params.pattern.has_base_space = false;
+    code = pcs->type->remap_color(&cc, pcs, &devc, (gs_imager_state *)pgs,
+				  pgs->device, gs_color_select_texture);
     if (code >= 0) {
 	gx_path_init_local(&cpath, pgs->memory);
 	code = gx_cpath_to_path(pgs->clip_path, &cpath);
@@ -86,6 +89,7 @@ gs_shfill(gs_state * pgs, const gs_shading_t * psh)
 				pgs->fill_adjust.x, pgs->fill_adjust.y);
 	gx_path_free(&cpath, "gs_shfill");
     }
+    rc_decrement(pcs, "gs_shfill");
     gs_pattern_reference(&cc, -1);
     return code;
 }

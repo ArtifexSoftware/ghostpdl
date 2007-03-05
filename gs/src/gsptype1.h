@@ -56,7 +56,7 @@ typedef gs_pattern1_template_t gs_client_pattern;
  */
 extern int gs_cspace_build_Pattern1(
 				    gs_color_space ** ppcspace,
-				    const gs_color_space * pbase_cspace,
+				    gs_color_space * pbase_cspace,
 				    gs_memory_t * pmem
 				    );
 
@@ -116,7 +116,7 @@ extern int gs_makepixmappattern(
 				bool mask,
 				const gs_matrix * pmat,
 				long id,
-				const gs_color_space * pcspace,
+				gs_color_space * pcspace,
 				uint white_index,
 				gs_state * pgs,
 				gs_memory_t * mem

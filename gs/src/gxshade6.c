@@ -1008,8 +1008,7 @@ is_color_linear(const patch_fill_state_t *pfs, const patch_color_t *c0, const pa
     if (pfs->unlinear)
 	return 1; /* Disable this check. */
     else {
-	const gs_direct_color_space *cs = 
-		    (const gs_direct_color_space *)pfs->direct_space;
+	const gs_color_space *cs = pfs->direct_space;
 	int code;
 	float smoothness = max(pfs->smoothness, 1.0 / min_linear_grades);
 	/* Restrict the smoothness with 1/min_linear_grades, because cs_is_linear
@@ -1563,8 +1562,7 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
     if (pfs->unlinear)
 	return 2;
     if (!wedge) {
-	const gs_direct_color_space *cs = 
-		(const gs_direct_color_space *)pfs->direct_space;
+	const gs_color_space *cs = pfs->direct_space;
 	float smoothness = max(pfs->smoothness, 1.0 / min_linear_grades);
 	/* Restrict the smoothness with 1/min_linear_grades, because cs_is_linear
 	   can't provide a better precision due to the color

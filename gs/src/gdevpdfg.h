@@ -73,7 +73,7 @@ struct pdf_color_space_s {
  * Create a local Device{Gray,RGB,CMYK} color space corresponding to the
  * given number of components.
  */
-int pdf_cspace_init_Device(const gs_memory_t *mem, gs_color_space *pcs, int num_components);
+int pdf_cspace_init_Device(gs_memory_t *mem, gs_color_space **ppcs, int num_components);
 
 /*
  * Create a PDF color space corresponding to a PostScript color space.

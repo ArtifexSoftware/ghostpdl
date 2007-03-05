@@ -301,25 +301,28 @@ private int
 zsetdevcspace(i_ctx_t * i_ctx_p)
 {
 
-    gs_color_space  cs;
+    gs_color_space  *pcs;
     int             code;
 
     switch((gs_color_space_index)osp->value.intval) {
       default:  /* can't happen */
       case gs_color_space_index_DeviceGray:
-	gs_cspace_init_DeviceGray(imemory, &cs);
+	pcs = gs_cspace_new_DeviceGray(imemory);
         break;
 
       case gs_color_space_index_DeviceRGB:
-        gs_cspace_init_DeviceRGB(imemory, &cs);
+        pcs = gs_cspace_new_DeviceRGB(imemory);
         break;
 
       case gs_color_space_index_DeviceCMYK:
-        gs_cspace_init_DeviceCMYK(imemory, &cs);
+        pcs = gs_cspace_new_DeviceCMYK(imemory);
         break;
     }
-    if ((code = gs_setcolorspace(igs, &cs)) >= 0)
+    if (pcs == NULL)
+	return_error(e_VMerror);
+    if ((code = gs_setcolorspace(igs, pcs)) >= 0)
         pop(1);
+    rc_decrement_only(pcs, "zsetdevcspace");
     return code;
 }
 

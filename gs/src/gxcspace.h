@@ -78,18 +78,6 @@ struct gs_color_space_type_s {
   (*(pcs)->type->num_components)(pcs)
 	cs_proc_num_components((*num_components));
 
-    /*
-     * Return the base or alternate color space underlying this one.
-     * Only defined for Indexed, Separation, DeviceN, and
-     * uncolored Pattern spaces; returns NULL for all others.
-     */
-
-#define cs_proc_base_space(proc)\
-  const gs_color_space *proc(const gs_color_space *)
-#define cs_base_space(pcs)\
-  (*(pcs)->type->base_space)(pcs)
-	cs_proc_base_space((*base_space));
-
     /* Construct the initial color value for this space. */
 
 #define cs_proc_init_color(proc)\
@@ -171,13 +159,11 @@ struct gs_color_space_type_s {
   int proc(const gs_color_space *, gs_state *)
 	cs_proc_set_overprint((*set_overprint));
 
-    /* Adjust reference counts of indirect color space components. */
+    /* Free contents of composite colorspace objects. */
 
-#define cs_proc_adjust_cspace_count(proc)\
-  void proc(const gs_color_space *, int)
-#define cs_adjust_cspace_count(pgs, delta)\
-  (*(pgs)->color_space->type->adjust_cspace_count)((pgs)->color_space, delta)
-	cs_proc_adjust_cspace_count((*adjust_cspace_count));
+#define cs_proc_final(proc)\
+  void proc(const gs_color_space *)
+	cs_proc_final((*final));
 
     /* Adjust reference counts of indirect color components. */
     /*
@@ -196,7 +182,8 @@ struct gs_color_space_type_s {
 
 /* Adjust both reference counts. */
 #define cs_adjust_counts(pgs, delta)\
-  (cs_adjust_color_count(pgs, delta), cs_adjust_cspace_count(pgs, delta))
+    cs_adjust_color_count(pgs, delta);					\
+	rc_adjust_const(pgs->color_space, delta, "cs_adjust_counts")
 
     /* Serialization. */
     /*
@@ -213,7 +200,7 @@ struct gs_color_space_type_s {
     /* A color mapping linearity check. */
 
 #define cs_proc_is_linear(proc)\
-  int proc(const gs_direct_color_space *cs, const gs_imager_state * pis,\
+  int proc(const gs_color_space *cs, const gs_imager_state * pis,\
 		gx_device *dev,\
 		const gs_client_color *c0, const gs_client_color *c1,\
 		const gs_client_color *c2, const gs_client_color *c3,\
@@ -223,18 +210,15 @@ struct gs_color_space_type_s {
 	cs_proc_is_linear((*is_linear));
 };
 
-/* Standard color space structure types */
 extern_st(st_base_color_space);
 #define public_st_base_color_space()	/* in gscspace.c */\
-  gs_public_st_simple(st_base_color_space, gs_base_color_space,\
+  gs_public_st_simple(st_base_color_space, gs_color_space,\
     "gs_base_color_space")
-/*extern_st(st_paint_color_space); *//* (not needed) */
 
 /* Standard color space procedures */
 cs_proc_num_components(gx_num_components_1);
 cs_proc_num_components(gx_num_components_3);
 cs_proc_num_components(gx_num_components_4);
-cs_proc_base_space(gx_no_base_space);
 cs_proc_init_color(gx_init_paint_1);
 cs_proc_init_color(gx_init_paint_3);
 cs_proc_init_color(gx_init_paint_4);
@@ -247,7 +231,6 @@ cs_proc_concretize_color(gx_no_concretize_color);
 cs_proc_remap_color(gx_default_remap_color);
 cs_proc_install_cspace(gx_no_install_cspace);
 cs_proc_set_overprint(gx_spot_colors_set_overprint);
-cs_proc_adjust_cspace_count(gx_no_adjust_cspace_count);
 cs_proc_adjust_color_count(gx_no_adjust_color_count);
 cs_proc_serialize(gx_serialize_cspace_type);
 cs_proc_is_linear(gx_cspace_no_linear);
@@ -270,15 +253,8 @@ cs_proc_remap_concrete_color(gx_remap_concrete_DCMYK);
 /* Define the allocator type for color spaces. */
 extern_st(st_color_space);
 
-/*
- * Initialize the type and memory fields of a color space, possibly
- * allocating it first.  This is only used by color space implementations.
- */
-void gs_cspace_init(gs_color_space *pcs,
-		    const gs_color_space_type *pcstype,
-		    gs_memory_t *mem, bool isheap);
-int gs_cspace_alloc(gs_color_space **ppcspace,
-		    const gs_color_space_type *pcstype,
-		    gs_memory_t *mem);
+/* Allocate a new color space object. Used by color space implementations. */
+gs_color_space *
+gs_cspace_alloc(gs_memory_t *mem, const gs_color_space_type *pcstype);
 
 #endif /* gxcspace_INCLUDED */

@@ -168,10 +168,4 @@ extern  int     gs_cspace_build_CIEICC( gs_color_space **   ppcspace,
 int
 gx_load_icc_profile(gs_cie_icc *picc_info);
 
-/*
- * Increment color space reference counts.
- */
-void
-gx_increment_cspace_count(const gs_color_space * pcs);
-
 #endif /* gsicc_INCLUDED */

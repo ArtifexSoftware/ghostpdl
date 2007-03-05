@@ -527,8 +527,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	    const gs_color_space *pcs = cldev->color_space.space;
 	    int hival = pcs->params.indexed.hival;
 	    uint num_values = (hival + 1) *
-		gs_color_space_num_components(
-		    (const gs_color_space *)&pcs->params.indexed.base_space);
+		gs_color_space_num_components(pcs->base_space);
 	    bool use_proc = cldev->color_space.byte1 & 4;
 	    const void *map_data;
 	    uint map_size;

@@ -54,7 +54,12 @@ void rc_trace_adjust(const void *vp, const rc_header *prc, int delta);
 /* ------ Allocate/free ------ */
 
 rc_free_proc(rc_free_struct_only);
-/* rc_init[_free] is only used to initialize stack-allocated structures. */
+/*
+ * rc_init[_free] really should be used only to initialize
+ * stack-allocated structures; with heap-allocated structures, it's
+ * better to use a finalize method so that the garbage collector can
+ * clean them up if the refcount fails to reach zero. 
+ */
 #define rc_init_free(vp, mem, rcinit, proc)\
   BEGIN\
     (vp)->rc.ref_count = rcinit;\

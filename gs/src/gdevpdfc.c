@@ -317,12 +317,13 @@ const pdf_color_space_names_t pdf_color_space_names_short = {
  * given number of components.
  */
 int
-pdf_cspace_init_Device(const gs_memory_t *mem, gs_color_space *pcs, int num_components)
+pdf_cspace_init_Device(gs_memory_t *mem, gs_color_space **ppcs,
+		       int num_components)
 {
     switch (num_components) {
-    case 1: gs_cspace_init_DeviceGray(mem, pcs); break;
-    case 3: gs_cspace_init_DeviceRGB(mem, pcs); break;
-    case 4: gs_cspace_init_DeviceCMYK(mem, pcs); break;
+    case 1: *ppcs = gs_cspace_new_DeviceGray(mem); break;
+    case 3: *ppcs = gs_cspace_new_DeviceRGB(mem); break;
+    case 4: *ppcs = gs_cspace_new_DeviceCMYK(mem); break;
     default: return_error(gs_error_rangecheck);
     }
     return 0;
@@ -363,8 +364,7 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 			const gs_color_space *pcs, cos_array_t *pca)
 {
     const gs_indexed_params *pip = &pcs->params.indexed;
-    const gs_color_space *base_space =
-	(const gs_color_space *)&pip->base_space;
+    const gs_color_space *base_space = pcs->base_space;
     int num_entries = pip->hival + 1;
     int num_components = gs_color_space_num_components(base_space);
     uint table_size = num_entries * num_components;
@@ -377,7 +377,6 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     gs_memory_t *mem = pdev->pdf_memory;
     byte *table;
     byte *palette;
-    gs_color_space cs_gray;
     cos_value_t v;
     int code;
 
@@ -428,7 +427,7 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	for (i = 0; i < num_entries; ++i) {
 	    gs_client_color cc;
 
-	    gs_cspace_indexed_lookup(&pcs->params.indexed, i, &cc);
+	    gs_cspace_indexed_lookup(pcs, i, &cc);
 	    for (j = 0; j < num_components; ++j) {
 		float v = (cc.paint.values[j] - cmin.paint.values[j])
 		    * 255 / (cmax.paint.values[j] - cmin.paint.values[j]);
@@ -454,8 +453,7 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    for (i = 0; i < num_entries; ++i)
 		palette[i] = palette[i * 3];
 	    table_size = num_entries;
-	    gs_cspace_init_DeviceGray(mem, &cs_gray);
-	    base_space = &cs_gray;
+	    base_space = gs_cspace_new_DeviceGray(mem);
 	}
     }
     stream_write(&es, palette, table_size);
@@ -574,8 +572,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    if (res_name != NULL)
 		return 0; /* Ignore .includecolorspace */
             return pdf_color_space( pdev, pvalue, ppranges,
-                                    (const gs_color_space *)
-                                        &pcs->params.icc.alt_space,
+                                    pcs->base_space,
                                     pcsn, by_name);
 	}
         break;
@@ -835,7 +832,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 				  csa->colorant_name, &name_string, &name_string_length);
 		    if (code < 0)
 			return code;
-		    code = pdf_color_space(pdev, &v_separation, NULL, &csa->cspace, pcsn, false);
+		    code = pdf_color_space(pdev, &v_separation, NULL, csa->cspace, pcsn, false);
 		    if (code < 0)
 			return code;
 		    code = pdf_string_to_cos_name(pdev, name_string, name_string_length, &v_colorant_name);
@@ -853,8 +850,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 		COS_OBJECT_VALUE(va, pres_attributes->object);
 	    }
 	    if ((code = pdf_separation_color_space(pdev, pca, "/DeviceN", &v,
-						   (const gs_color_space *)
-					&pcs->params.device_n.alt_space,
+						   pcs->base_space,
 					pfn, &pdf_color_space_names, va)) < 0)
 		return code;
 	}
@@ -875,8 +871,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 		(code = pdf_string_to_cos_name(pdev, name_string, 
 				      name_string_length, &v)) < 0 ||
 		(code = pdf_separation_color_space(pdev, pca, "/Separation", &v,
-						   (const gs_color_space *)
-					    &pcs->params.separation.alt_space,
+					    pcs->base_space,
 					    pfn, &pdf_color_space_names, NULL)) < 0)
 		return code;
 	}
@@ -884,8 +879,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 
     case gs_color_space_index_Pattern:
 	if ((code = pdf_color_space(pdev, pvalue, ppranges,
-				    (const gs_color_space *)
-				    &pcs->params.pattern.base_space,
+				    pcs->base_space,
 				    &pdf_color_space_names, false)) < 0 ||
 	    (code = cos_array_add(pca,
 				  cos_c_string_value(&v, "/Pattern"))) < 0 ||
@@ -1042,7 +1036,7 @@ pdf_color_space_procsets(gx_device_pdf *pdev, const gs_color_space *pcs)
 	break;
     case gs_color_space_index_Indexed:
 	pdev->procsets |= ImageI;
-	pbcs = (const gs_color_space *)&pcs->params.indexed.base_space;
+	pbcs = pcs->base_space;
 	goto csw;
     default:
 	pdev->procsets |= ImageC;

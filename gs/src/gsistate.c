@@ -128,6 +128,8 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
     pis->cmap_procs = cmap_procs_default;
     pis->pattern_cache = NULL;
     pis->have_pattern_streams = false;
+    pis->devicergb_cs = gs_cspace_new_DeviceRGB(mem);
+    pis->devicecmyk_cs = gs_cspace_new_DeviceCMYK(mem);
     return 0;
 }
 
@@ -166,6 +168,8 @@ gs_imager_state_copied(gs_imager_state * pis)
     rc_increment(pis->set_transfer.green);
     rc_increment(pis->set_transfer.blue);
     rc_increment(pis->cie_joint_caches);
+    rc_increment(pis->devicergb_cs);
+    rc_increment(pis->devicecmyk_cs);
 }
 
 /* Adjust reference counts before assigning one imager state to another. */
@@ -189,6 +193,8 @@ gs_imager_state_pre_assign(gs_imager_state *pto, const gs_imager_state *pfrom)
     RCCOPY(halftone);
     RCCOPY(shape.mask);
     RCCOPY(opacity.mask);
+    RCCOPY(devicergb_cs);
+    RCCOPY(devicecmyk_cs);
 #undef RCCOPY
 }
 
@@ -221,5 +227,7 @@ gs_imager_state_release(gs_imager_state * pis)
     RCDECR(halftone);
     RCDECR(shape.mask);
     RCDECR(opacity.mask);
+    RCDECR(devicergb_cs);
+    RCDECR(devicecmyk_cs);
 #undef RCDECR
 }

@@ -41,11 +41,13 @@ void gx_set_effective_transfer(gs_state *);
 int
 gs_setcmykcolor(gs_state * pgs, floatp c, floatp m, floatp y, floatp k)
 {
-    gs_color_space      cs;
+    gs_color_space      *pcs;
     int                 code;
 
-    gs_cspace_init_DeviceCMYK(pgs->memory, &cs);
-    if ((code = gs_setcolorspace(pgs, &cs)) >= 0) {
+    pcs = gs_cspace_new_DeviceCMYK(pgs->memory);
+    if (pcs == NULL)
+	return_error(gs_error_VMerror);
+    if ((code = gs_setcolorspace(pgs, pcs)) >= 0) {
        gs_client_color *    pcc = pgs->ccolor;
 
         cs_adjust_color_count(pgs, -1); /* not strictly necessary */
@@ -56,6 +58,7 @@ gs_setcmykcolor(gs_state * pgs, floatp c, floatp m, floatp y, floatp k)
         pcc->pattern = 0;		/* for GC */
         gx_unset_dev_color(pgs);
     }
+    rc_decrement_only(pcs, "gs_setcmykcolor");
     return code;
 }
 

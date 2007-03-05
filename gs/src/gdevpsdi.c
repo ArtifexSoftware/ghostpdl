@@ -585,11 +585,10 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 	if (cmyk_to_rgb) {
 	    extern_st(st_color_space);
 	    gs_memory_t *mem = pdev->v_memory;
-	    gs_color_space *rgb_cs = gs_alloc_struct(mem, 
-		    gs_color_space, &st_color_space, "psdf_setup_image_filters");
 
-	    gs_cspace_init_DeviceRGB(mem, rgb_cs);  /* idempotent initialization */
-	    pim->ColorSpace = rgb_cs;
+	    /* {csrc} decref old colorspace? */
+	    rc_decrement_only(pim->ColorSpace, "psdf_setup_image_filters");
+	    pim->ColorSpace = gs_cspace_new_DeviceRGB(mem);
 	}
 	if (params.Depth == -1)
 	    params.Depth = (cmyk_to_rgb ? 8 : bpc_out);

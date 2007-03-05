@@ -35,7 +35,7 @@
  */
 int zcs_begin_map(i_ctx_t *i_ctx_p, gs_indexed_map ** pmap,
 		  const ref * pproc, int num_entries,
-		  const gs_direct_color_space * base_space,
+		  const gs_color_space * base_space,
 		  op_proc_t map1);
 
 #endif /* icsmap_INCLUDED */

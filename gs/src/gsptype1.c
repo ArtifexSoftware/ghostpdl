@@ -83,23 +83,21 @@ private const gs_pattern_type_t gs_pattern1_type = {
  */
 int
 gs_cspace_build_Pattern1(gs_color_space ** ppcspace,
-		    const gs_color_space * pbase_cspace, gs_memory_t * pmem)
+		    gs_color_space * pbase_cspace, gs_memory_t * pmem)
 {
     gs_color_space *pcspace = 0;
-    int code;
 
     if (pbase_cspace != 0) {
 	if (gs_color_space_num_components(pcspace) < 0)		/* Pattern space */
 	    return_error(gs_error_rangecheck);
     }
-    code = gs_cspace_alloc(&pcspace, &gs_color_space_type_Pattern, pmem);
-    if (code < 0)
-	return code;
+    pcspace = gs_cspace_alloc(pmem, &gs_color_space_type_Pattern);
+    if (pcspace == NULL)
+	return_error(gs_error_VMerror);
     if (pbase_cspace != 0) {
 	pcspace->params.pattern.has_base_space = true;
-	gs_cspace_init_from((gs_color_space *) & (pcspace->params.pattern.base_space),
-			    pbase_cspace
-	    );
+	/* reference to base space shifts from pgs to pcs with no net change */
+	pcspace->base_space = pbase_cspace;
     } else
 	pcspace->params.pattern.has_base_space = false;
     *ppcspace = pcspace;
@@ -499,7 +497,7 @@ gs_pattern1_set_color(const gs_client_color * pcc, gs_state * pgs)
     if (ptmplt->PaintType == 2) {
         const gs_color_space *  pcs = pgs->color_space;
 
-        pcs = (const gs_color_space *)&(pcs->params.pattern.base_space);
+        pcs = pcs->base_space;
         return pcs->type->set_overprint(pcs, pgs);
     } else {
         gs_overprint_params_t   params;
@@ -546,7 +544,7 @@ public_st_gx_strip_bitmap();
  */
 typedef struct pixmap_info_s {
     gs_depth_bitmap bitmap;	/* must be first */
-    const gs_color_space *pcspace;
+    gs_color_space *pcspace;
     uint white_index;
     void (*free_proc)(gs_memory_t *, void *, client_name_t);
 } pixmap_info;
@@ -614,8 +612,7 @@ image_PaintProc(const gs_client_color * pcolor, gs_state * pgs)
     const gs_depth_bitmap *pbitmap = &(ppmap->bitmap);
     gs_image_enum *pen =
         gs_image_enum_alloc(gs_state_memory(pgs), "image_PaintProc");
-    gs_color_space cs;
-    const gs_color_space *pcspace;
+    gs_color_space *pcspace;
     gx_image_enum_common_t *pie;
     /*
      * If the image is transparent then we want to do image type4 processing.
@@ -640,8 +637,7 @@ image_PaintProc(const gs_client_color * pcolor, gs_state * pgs)
 	return_error(gs_error_VMerror);
 
     if (ppmap->pcspace == 0) {
-        gs_cspace_init_DeviceGray(pgs->memory, &cs);
-        pcspace = &cs;
+	pcspace = gs_cspace_new_DeviceGray(pgs->memory);
     } else
         pcspace = ppmap->pcspace;
     gs_gsave(pgs);
@@ -715,7 +711,7 @@ gs_makepixmappattern(
 			bool mask,
 			const gs_matrix * pmat,
 			long id,
-			const gs_color_space * pcspace,
+			gs_color_space * pcspace,
 			uint white_index,
 			gs_state * pgs,
 			gs_memory_t * mem

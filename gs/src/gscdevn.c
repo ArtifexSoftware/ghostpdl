@@ -38,13 +38,13 @@
 /* ---------------- Color space ---------------- */
 
 /* GC descriptors */
-gs_private_st_composite(st_color_space_DeviceN, gs_paint_color_space,
+gs_private_st_composite(st_color_space_DeviceN, gs_color_space,
      "gs_color_space_DeviceN", cs_DeviceN_enum_ptrs, cs_DeviceN_reloc_ptrs);
+private_st_device_n_attributes();
 private_st_device_n_map();
 
 /* Define the DeviceN color space type. */
 private cs_proc_num_components(gx_num_components_DeviceN);
-private cs_proc_base_space(gx_alt_space_DeviceN);
 private cs_proc_init_color(gx_init_DeviceN);
 private cs_proc_restrict_color(gx_restrict_DeviceN);
 private cs_proc_concrete_space(gx_concrete_space_DeviceN);
@@ -52,18 +52,17 @@ private cs_proc_concretize_color(gx_concretize_DeviceN);
 private cs_proc_remap_concrete_color(gx_remap_concrete_DeviceN);
 private cs_proc_install_cspace(gx_install_DeviceN);
 private cs_proc_set_overprint(gx_set_overprint_DeviceN);
-private cs_proc_adjust_cspace_count(gx_adjust_cspace_DeviceN);
+private cs_proc_final(gx_final_DeviceN);
 private cs_proc_serialize(gx_serialize_DeviceN);
 const gs_color_space_type gs_color_space_type_DeviceN = {
     gs_color_space_index_DeviceN, true, false,
     &st_color_space_DeviceN, gx_num_components_DeviceN,
-    gx_alt_space_DeviceN,
     gx_init_DeviceN, gx_restrict_DeviceN,
     gx_concrete_space_DeviceN,
     gx_concretize_DeviceN, gx_remap_concrete_DeviceN,
     gx_default_remap_color, gx_install_DeviceN,
     gx_set_overprint_DeviceN,
-    gx_adjust_cspace_DeviceN, gx_no_adjust_color_count,
+    gx_final_DeviceN, gx_no_adjust_color_count,
     gx_serialize_DeviceN,
     gx_cspace_is_linear_default
 };
@@ -71,77 +70,52 @@ const gs_color_space_type gs_color_space_type_DeviceN = {
 /* GC procedures */
 
 private 
-ENUM_PTRS_WITH(cs_DeviceN_enum_ptrs, gs_color_space *pcs)
-{
-    return ENUM_USING(*pcs->params.device_n.alt_space.type->stype,
-		      &pcs->params.device_n.alt_space,
-		      sizeof(pcs->params.device_n.alt_space), index - 3);
-}
+ENUM_PTRS_BEGIN(cs_DeviceN_enum_ptrs) return 0;
 ENUM_PTR(0, gs_color_space, params.device_n.names);
 ENUM_PTR(1, gs_color_space, params.device_n.map);
 ENUM_PTR(2, gs_color_space, params.device_n.colorants);
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(cs_DeviceN_reloc_ptrs, gs_color_space *pcs)
+private RELOC_PTRS_BEGIN(cs_DeviceN_reloc_ptrs)
 {
     RELOC_PTR(gs_color_space, params.device_n.names);
     RELOC_PTR(gs_color_space, params.device_n.map);
     RELOC_PTR(gs_color_space, params.device_n.colorants);
-    RELOC_USING(*pcs->params.device_n.alt_space.type->stype,
-		&pcs->params.device_n.alt_space,
-		sizeof(gs_base_color_space));
 }
 RELOC_PTRS_END
-
-/* ---------------- GC for DeviceN Attribute color spaces ---------------- */
-
-private 
-ENUM_PTRS_WITH(device_n_attributes_enum_ptrs, gs_device_n_attributes *pdevnatt)
-{
-    return ENUM_USING(*pdevnatt->cspace.type->stype,
-		      &(pdevnatt->cspace),
-		      sizeof(pdevnatt->cspace), index - 1);
-}
-ENUM_PTR(0, gs_device_n_attributes, next);
-ENUM_PTRS_END
-
-private RELOC_PTRS_WITH(device_n_attributes_reloc_ptrs,
-	       			gs_device_n_attributes *pdevnatt)
-{
-    RELOC_USING(*pdevnatt->cspace.type->stype,
-		      &(pdevnatt->cspace),
-		      sizeof(pdevnatt->cspace));
-    RELOC_PTR(gs_device_n_attributes, next);
-}
-RELOC_PTRS_END
-
-gs_private_st_composite(st_device_n_attributes, gs_device_n_attributes,
-     "gs_device_n_attributes", device_n_attributes_enum_ptrs,
-     device_n_attributes_reloc_ptrs);
 
 /* ------ Public procedures ------ */
 
 /*
- * Build a DeviceN color space.  Not including allocation and
- * initialization of the color space.
+ * Create a new DeviceN colorspace.
  */
 int
-gs_build_DeviceN(
-		gs_color_space *pcspace,
-		uint num_components,
-		const gs_color_space *palt_cspace,
-		gs_memory_t *pmem
-		)
+gs_cspace_new_DeviceN(
+    gs_color_space **ppcs,
+    uint num_components,
+    gs_color_space *palt_cspace,
+    gs_memory_t *pmem
+    )
 {
-    gs_device_n_params *pcsdevn = &pcspace->params.device_n;
-    gs_separation_name *pnames = 0;
+    gs_color_space *pcs;
+    gs_device_n_params *pcsdevn;
+    gs_separation_name *pnames;
     int code;
 
     if (palt_cspace == 0 || !palt_cspace->type->can_be_alt_space)
 	return_error(gs_error_rangecheck);
 
+    pcs = gs_cspace_alloc(pmem, &gs_color_space_type_DeviceN);
+    if (pcs == NULL)
+	return_error(gs_error_VMerror);
+    pcsdevn = &pcs->params.device_n;
+    pcsdevn->names = NULL;
+    pcsdevn->map = NULL;
+    pcsdevn->colorants = NULL;
+
     /* Allocate space for color names list. */
     code = alloc_device_n_map(&pcsdevn->map, pmem, "gs_cspace_build_DeviceN");
     if (code < 0) {
+	gs_free_object(pmem, pcs, "gs_cspace_new_DeviceN");
 	return code;
     }
     /* Allocate space for color names list. */
@@ -150,42 +124,14 @@ gs_build_DeviceN(
 			  ".gs_cspace_build_DeviceN(names)");
     if (pnames == 0) {
 	gs_free_object(pmem, pcsdevn->map, ".gs_cspace_build_DeviceN(map)");
+	gs_free_object(pmem, pcs, "gs_cspace_new_DeviceN");
 	return_error(gs_error_VMerror);
     }
+    pcs->base_space = palt_cspace;
+    rc_increment(palt_cspace);
     pcsdevn->names = pnames;
     pcsdevn->num_components = num_components;
-    pcsdevn->colorants = NULL;
-    return 0;
-}
-
-/*
- * Build a DeviceN color space.  Including allocation and initialization
- * of the color space.
- */
-int
-gs_cspace_build_DeviceN(
-			gs_color_space **ppcspace,
-			gs_separation_name *psnames,
-			uint num_components,
-			const gs_color_space *palt_cspace,
-			gs_memory_t *pmem
-			)
-{
-    gs_color_space *pcspace = 0; /* bogus initialization */
-    gs_device_n_params *pcsdevn = 0; /* bogus initialization */
-    int code;
-
-    code = gs_cspace_alloc(&pcspace, &gs_color_space_type_DeviceN, pmem);
-    if (code < 0)
-	return code;
-
-    code = gs_build_DeviceN(pcspace, num_components, palt_cspace, pmem);
-    if (code < 0) {
-	gs_free_object(pmem, pcspace, "gs_cspace_build_DeviceN");
-	return code;
-    }
-    gs_cspace_init_from((gs_color_space *)&pcsdevn->alt_space, palt_cspace);
-    *ppcspace = pcspace;
+    *ppcs = pcs;
     return 0;
 }
 
@@ -235,7 +181,8 @@ gs_attachattributecolorspace(gs_separation_name sep_name, gs_state * pgs)
 
     /* Point our attribute list entry to the attribute color space */
     patt->colorant_name = sep_name;
-    gs_cspace_init_from((gs_color_space *)&(patt->cspace), pgs->color_space);
+    patt->cspace = pgs->color_space;
+    rc_increment(pgs->color_space);
 
     /* Link our new attribute color space to the DeviceN color space */
     patt->next = pdevncs->params.device_n.colorants;
@@ -300,9 +247,7 @@ gs_cspace_set_devn_function(gs_color_space *pcspace, gs_function_t *pfn)
 
     if (gs_color_space_get_index(pcspace) != gs_color_space_index_DeviceN ||
 	pfn->params.m != pcspace->params.device_n.num_components ||
-	pfn->params.n !=
-	  gs_color_space_num_components((gs_color_space *)
-					&pcspace->params.device_n.alt_space)
+	pfn->params.n != gs_color_space_num_components(pcspace->base_space)
 	)
 	return_error(gs_error_rangecheck);
     pimap = pcspace->params.device_n.map;
@@ -333,15 +278,6 @@ private int
 gx_num_components_DeviceN(const gs_color_space * pcs)
 {
     return pcs->params.device_n.num_components;
-}
-
-/* Return the alternate space of a DeviceN space. */
-private const gs_color_space *
-gx_alt_space_DeviceN(const gs_color_space * pcs)
-{
-    return pcs->params.device_n.use_alt_cspace
-	   ? (const gs_color_space *)&(pcs->params.device_n.alt_space)
-    	   : NULL;
 }
 
 /* Initialize a DeviceN color. */
@@ -384,10 +320,7 @@ gx_concrete_space_DeviceN(const gs_color_space * pcs,
      * Check if we are using the alternate color space.
      */
     if (pis->color_component_map.use_alt_cspace) {
-        const gs_color_space *pacs =
-	    (const gs_color_space *)&pcs->params.device_n.alt_space;
-
-        return cs_concrete_space(pacs, pis);
+        return cs_concrete_space(pcs->base_space, pis);
     }
     /*
      * DeviceN color spaces are concrete (when not using alt. color space).
@@ -402,8 +335,7 @@ gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
 {
     int code, tcode = 0;
     gs_client_color cc;
-    const gs_color_space *pacs =
-	(const gs_color_space *)&pcs->params.device_n.alt_space;
+    const gs_color_space *pacs = pcs->base_space;
     gs_device_n_map *map = pcs->params.device_n.map;
 
 #ifdef DEBUG
@@ -473,8 +405,7 @@ gx_remap_concrete_DeviceN(const frac * pconc, const gs_color_space * pcs,
     }
 #endif
     if (pis->color_component_map.use_alt_cspace) {
-        const gs_color_space *pacs =
-	    (const gs_color_space *)&pcs->params.device_n.alt_space;
+        const gs_color_space *pacs = pcs->base_space;
 
 	return (*pacs->type->remap_concrete_color)
 				(pconc, pacs, pdc, pis, dev, select);
@@ -594,11 +525,12 @@ gx_install_DeviceN(const gs_color_space * pcs, gs_state * pgs)
     code = check_DeviceN_component_names(pcs, pgs);
     if (code < 0)
        return code;
-    pgs->color_space->params.device_n.use_alt_cspace =
+    /* {csrc} was pgs->color_space->params.device_n.use_alt_cspace */
+    ((gs_color_space *)pcs)->params.device_n.use_alt_cspace =
 	using_alt_color_space(pgs);
     if (pcs->params.device_n.use_alt_cspace)
-        code = (*pcs->params.device_n.alt_space.type->install_cspace)
-	((const gs_color_space *) & pcs->params.device_n.alt_space, pgs);
+        code = (pcs->base_space->type->install_cspace)
+	    (pcs->base_space, pgs);
     /*
      * Give the device an opportunity to capture equivalent colors for any
      * spot colors which might be present in the color space.
@@ -616,9 +548,7 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_state * pgs)
     gs_devicen_color_map *  pcmap = &pgs->color_component_map;
 
     if (pcmap->use_alt_cspace)
-        return gx_spot_colors_set_overprint( 
-                   (const gs_color_space *)&pcs->params.device_n.alt_space,
-                   pgs );
+        return gx_spot_colors_set_overprint( pcs->base_space, pgs);
     else {
         gs_overprint_params_t   params;
 
@@ -640,22 +570,17 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_state * pgs)
     }
 }
 
-/* Adjust the reference count of a DeviceN color space. */
+/* Finalize contents of a DeviceN color space. */
 private void
-gx_adjust_cspace_DeviceN(const gs_color_space * pcs, int delta)
+gx_final_DeviceN(const gs_color_space * pcs)
 {
     gs_device_n_attributes * pnextatt, * patt = pcs->params.device_n.colorants;
 
-    rc_adjust_const(pcs->params.device_n.map, delta, "gx_adjust_DeviceN");
-    (*pcs->params.device_n.alt_space.type->adjust_cspace_count)
-	((const gs_color_space *)&pcs->params.device_n.alt_space, delta);
+    rc_decrement_only(pcs->params.device_n.map, "gx_adjust_DeviceN");
     while (patt != NULL) {
-	gs_color_space * pattcs = &(patt->cspace);
-
 	pnextatt = patt->next;
-        (pattcs->type->adjust_cspace_count)
-		((const gs_color_space *)pattcs, delta);
-        rc_adjust_const(patt, delta, "gx_adjust_DeviceN");
+	rc_decrement(patt->cspace, "gx_final_DeviceN");
+        rc_decrement(patt, "gx_adjust_DeviceN");
 	patt = pnextatt;
     }
 }
@@ -688,7 +613,7 @@ gx_serialize_DeviceN(const gs_color_space * pcs, stream * s)
     code = sputs(s, (const byte *)&p->names[0], sizeof(p->names[0]) * p->num_components, &n);
     if (code < 0)
 	return code;
-    code = cs_serialize((const gs_color_space *)&p->alt_space, s);
+    code = cs_serialize(pcs->base_space, s);
     if (code < 0)
 	return code;
     return gx_serialize_device_n_map(pcs, p->map, s);

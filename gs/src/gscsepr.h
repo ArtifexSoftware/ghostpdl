@@ -35,22 +35,15 @@
  * The tint transform procedure now is executed as required and must
  * be executable without doing a call out.
  */
-extern int gs_cspace_build_Separation(
-					 gs_color_space ** ppcspace,
-					 gs_separation_name sname,
-					 const gs_color_space * palt_cspace,
-					 int cache_size,
-					 gs_memory_t * pmem
-					 );
+
 /*
- * This routine builds the central part of the Separation color space.
- * It does not allocate a structure for the color space or initialize it.
+ * This routine constructs a new separation color space object.
  */
-extern int gs_build_Separation(
-				  gs_color_space * pcspace,
-				  const gs_color_space * palt_cspace,
-				  gs_memory_t * pmem
-				  );
+extern int gs_cspace_new_Separation(
+    gs_color_space **ppcs,
+    gs_color_space * palt_cspace,
+    gs_memory_t * pmem
+    );
 
 /* Set the Separation tint transformation procedure to a Function. */
 #ifndef gs_function_DEFINED

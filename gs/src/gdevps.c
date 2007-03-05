@@ -1448,7 +1448,7 @@ psw_begin_image(gx_device * dev,
 		) {
 		goto fail;
 	    }
-	    pbcs = (const gs_color_space *)&pcs->params.indexed.base_space;
+	    pbcs = pcs->base_space;
 	    switch (gs_color_space_get_index(pbcs)) {
 	    case gs_color_space_index_DeviceGray:
 		base_name = "DeviceGray"; break;

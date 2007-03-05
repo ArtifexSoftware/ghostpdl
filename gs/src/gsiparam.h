@@ -176,7 +176,7 @@ typedef struct gs_color_space_s gs_color_space;
                  * member of the subclass, when the base structure is assigned\
                  * to the subclass structure. Bugs 613909, 688725\
                  */\
-	const gs_color_space *ColorSpace
+	gs_color_space *ColorSpace
 
 
 typedef struct gs_pixel_image_s {

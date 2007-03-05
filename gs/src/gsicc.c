@@ -73,29 +73,21 @@ private_st_cie_icc();
  * we must enumerate and relocate pointers in these space explicity.
  */
 gs_private_st_composite( st_color_space_CIEICC,
-                         gs_paint_color_space,
+                         gs_color_space,
                          "gs_color_space_CIEICC",
                          cs_CIEICC_enum_ptrs,
                          cs_CIEICC_reloc_ptrs );
 
 /* pointer enumeration routine */
 private
-ENUM_PTRS_WITH(cs_CIEICC_enum_ptrs, gs_color_space * pcs)
-        return ENUM_USING( *pcs->params.icc.alt_space.type->stype,
-                           &pcs->params.icc.alt_space,
-                           sizeof(pcs->params.separation.alt_space),
-                           index - 1 );
-
+ENUM_PTRS_BEGIN(cs_CIEICC_enum_ptrs) return 0;
         ENUM_PTR(0, gs_color_space, params.icc.picc_info);
 ENUM_PTRS_END
 
 /* pointer relocation routine */
 private
-RELOC_PTRS_WITH(cs_CIEICC_reloc_ptrs, gs_color_space * pcs)
+RELOC_PTRS_BEGIN(cs_CIEICC_reloc_ptrs)
     RELOC_PTR(gs_color_space, params.icc.picc_info);
-    RELOC_USING( *pcs->params.icc.alt_space.type->stype,
-                 &pcs->params.icc.alt_space,
-                 sizeof(pcs->params.separation.alt_space) );
 RELOC_PTRS_END
 
 
@@ -119,12 +111,11 @@ RELOC_PTRS_END
  * root class.
  */
 private cs_proc_num_components(gx_num_components_CIEICC);
-private cs_proc_base_space(gx_alt_space_CIEICC);
 private cs_proc_init_color(gx_init_CIEICC);
 private cs_proc_restrict_color(gx_restrict_CIEICC);
 private cs_proc_concrete_space(gx_concrete_space_CIEICC);
 private cs_proc_concretize_color(gx_concretize_CIEICC);
-private cs_proc_adjust_cspace_count(gx_adjust_cspace_CIEICC);
+private cs_proc_final(gx_final_CIEICC);
 private cs_proc_serialize(gx_serialize_CIEICC);
 
 private const gs_color_space_type gs_color_space_type_CIEICC = {
@@ -133,7 +124,6 @@ private const gs_color_space_type gs_color_space_type_CIEICC = {
     true,                           /* can_be_alt_space */
     &st_color_space_CIEICC,         /* stype - structure descriptor */
     gx_num_components_CIEICC,       /* num_components */
-    gx_alt_space_CIEICC,            /* base_space */
     gx_init_CIEICC,                 /* init_color */
     gx_restrict_CIEICC,             /* restrict_color */
     gx_concrete_space_CIEICC,       /* concrete_space */
@@ -142,7 +132,7 @@ private const gs_color_space_type gs_color_space_type_CIEICC = {
     gx_default_remap_color,         /* remap_color */
     gx_install_CIE,                 /* install_cpsace */
     gx_spot_colors_set_overprint,   /* set_overprint */
-    gx_adjust_cspace_CIEICC,        /* adjust_cspace_count */
+    gx_final_CIEICC,                /* final */
     gx_no_adjust_color_count,       /* adjust_color_count */
     gx_serialize_CIEICC,		    /* serialize */
     gx_cspace_is_linear_default
@@ -156,18 +146,6 @@ private int
 gx_num_components_CIEICC(const gs_color_space * pcs)
 {
     return pcs->params.icc.picc_info->num_components;
-}
-
-/*
- * Return the alternative space for an ICCBasee color space, but only if
- * that space is being used.
- */
-private const gs_color_space *
-gx_alt_space_CIEICC(const gs_color_space * pcs)
-{
-    return (pcs->params.icc.picc_info->picc == NULL)
-                ? (const gs_color_space *)&pcs->params.icc.alt_space
-                : NULL;
 }
 
 /*
@@ -217,8 +195,7 @@ private const gs_color_space *
 gx_concrete_space_CIEICC(const gs_color_space * pcs, const gs_imager_state * pis)
 {
     if (pcs->params.icc.picc_info->picc == NULL) {
-        const gs_color_space *  pacs = (const gs_color_space *)
-                                        &pcs->params.icc.alt_space;
+        const gs_color_space *  pacs = pcs->base_space;
 
         return cs_concrete_space(pacs, pis);
     } else
@@ -246,9 +223,9 @@ gx_concretize_CIEICC(
 
     /* use the altenate space concretize if appropriate */
     if (picc == NULL)
-        return picc_params->alt_space.type->concretize_color(
+        return pcs->base_space->type->concretize_color(
                             pcc,
-                            (const gs_color_space *)&picc_params->alt_space,
+                            pcs->base_space,
                             pconc,
                             pis );
 
@@ -318,32 +295,16 @@ gx_concretize_CIEICC(
 }
 
 /*
- * Handle a reference or de-reference of the prameter structure of an
- * ICCBased color space. For the purposes of this routine, the color space
- * is considered a reference rather than an object, and is not itself
- * reference counted (an unintuitive but otherwise legitimate state of
- * affairs).
- *
- * Because color spaces store alternative/base color space inline, these
- * need to have their reference count adjusted explicitly.
+ * Finalize the contents of an ICC color space. Now that color space
+ * objects have straightforward reference counting discipline, there's
+ * nothing special about it. In the previous state of affairs, the
+ * argument in favor of correct reference counting spoke of "an
+ * unintuitive but otherwise legitimate state of affairs".
  */
 private void
-gx_adjust_cspace_CIEICC(const gs_color_space * pcs, int delta)
+gx_final_CIEICC(const gs_color_space * pcs)
 {
-    const gs_icc_params *   picc_params = &pcs->params.icc;
-
-    rc_adjust_const(picc_params->picc_info, delta, "gx_adjust_cspace_CIEICC");
-    picc_params->alt_space.type->adjust_cspace_count(
-                (const gs_color_space *)&picc_params->alt_space, delta );
-}
-
-/*
- * Increment color space reference counts.
- */
-void
-gx_increment_cspace_count(const gs_color_space * pcs)
-{
-    pcs->type->adjust_cspace_count(pcs, 1);
+    rc_decrement_only(pcs->params.icc.picc_info, "gx_final_CIEICC");
 }
 
 private int

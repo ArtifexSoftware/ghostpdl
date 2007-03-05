@@ -279,9 +279,7 @@ cie_set_finish(i_ctx_t *i_ctx_p, gs_color_space * pcs,
     if (code >= 0)
 	code = gs_setcolorspace(igs, pcs);
     /* Delete the extra reference to the parameter tables. */
-    gs_cspace_release(pcs);
-    /* Free the top-level object, which was copied by gs_setcolorspace. */
-    gs_free_object(gs_state_memory(igs), pcs, "cie_set_finish");
+    rc_decrement_only(pcs, "cie_set_finish");
     if (code < 0) {
 	ref_stack_pop_to(&e_stack, edepth);
 	return code;

@@ -123,7 +123,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	      gx_color_index one, const gx_clip_path *pcpath)
 {
     int code;
-    gs_color_space cs;
+    gs_color_space *pcs;
     cos_value_t cs_value;
     cos_value_t *pcsvalue;
     byte palette[arch_sizeof_color_index * 2];
@@ -195,11 +195,11 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	gs_image_t_init_mask(&image, false);
 	set_image_color(pdev, zero);
     } else if (zero == pdev->black && one == pdev->white) {
-	gs_cspace_init_DeviceGray(pdev->memory, &cs);
-	gs_image_t_init(&image, &cs);
+	pcs = gs_cspace_new_DeviceGray(pdev->memory);
+	gs_image_t_init(&image, pcs);
     } else if (zero == pdev->white && one == pdev->black) {
-	gs_cspace_init_DeviceGray(pdev->memory, &cs);
-	gs_image_t_init(&image, &cs);
+	pcs = gs_cspace_new_DeviceGray(pdev->memory);
+	gs_image_t_init(&image, pcs);
 	invert = 0xff;
     } else {
 	/*
@@ -208,28 +208,33 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	 * internally, and high-level images don't go through this code.
 	 * However, we still want the code to work.
 	 */
-	gs_color_space cs_base;
+	gs_color_space *pcs_base;
 	gx_color_index c[2];
 	int i, j;
 	int ncomp = pdev->color_info.num_components;
 	byte *p;
 
-	code = pdf_cspace_init_Device(pdev->memory, &cs_base, ncomp);
+	code = pdf_cspace_init_Device(pdev->memory, &pcs_base, ncomp);
 	if (code < 0)
 	    return code;
 	c[0] = psdf_adjust_color_index((gx_device_vector *)pdev, zero);
 	c[1] = psdf_adjust_color_index((gx_device_vector *)pdev, one);
-	gs_cspace_init(&cs, &gs_color_space_type_Indexed, pdev->memory, false);
-	cs.params.indexed.base_space = *(gs_direct_color_space *)&cs_base;
-	cs.params.indexed.hival = 1;
+	pcs = gs_cspace_alloc(pdev->memory, &gs_color_space_type_Indexed);
+	if (pcs == NULL) {
+	    rc_decrement(pcs_base, "pdf_copy_mono");
+	    return_error(gs_error_VMerror);
+	}
+	pcs->base_space = pcs_base;
+	pcs->params.indexed.hival = 1;
+	pcs->params.indexed.n_comps = ncomp;
 	p = palette;
 	for (i = 0; i < 2; ++i)
 	    for (j = ncomp - 1; j >= 0; --j)
 		*p++ = (byte)(c[i] >> (j * 8));
-	cs.params.indexed.lookup.table.data = palette;
-	cs.params.indexed.lookup.table.size = p - palette;
-	cs.params.indexed.use_proc = false;
-	gs_image_t_init(&image, &cs);
+	pcs->params.indexed.lookup.table.data = palette;
+	pcs->params.indexed.lookup.table.size = p - palette;
+	pcs->params.indexed.use_proc = false;
+	gs_image_t_init(&image, pcs);
 	image.BitsPerComponent = 1;
     }
     pdf_make_bitmap_image(&image, x, y, w, h);
@@ -255,7 +260,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	 * We don't have to worry about color space scaling: the color
 	 * space is always a Device space.
 	 */
-	code = pdf_color_space(pdev, &cs_value, NULL, &cs,
+	code = pdf_color_space(pdev, &cs_value, NULL, pcs,
 			       &writer.pin->color_spaces, in_line);
 	if (code < 0)
 	    return code;
@@ -353,17 +358,17 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
 {
     int depth = pdev->color_info.depth;
     int bytes_per_pixel = depth >> 3;
-    gs_color_space cs;
+    gs_color_space *pcs;
     cos_value_t cs_value;
     ulong nbytes;
-    int code = pdf_cspace_init_Device(pdev->memory, &cs, bytes_per_pixel);
+    int code = pdf_cspace_init_Device(pdev->memory, &pcs, bytes_per_pixel);
     const byte *row_base;
     int row_step;
     bool in_line;
 
     if (code < 0)
 	return code;		/* can't happen */
-    gs_image_t_init(pim, &cs);
+    gs_image_t_init(pim, pcs);
     pdf_make_bitmap_image(pim, x, y, w, h);
     pim->BitsPerComponent = 8;
     nbytes = (ulong)w * bytes_per_pixel * h;
@@ -405,7 +410,7 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     pdf_image_writer_init(piw);
     pdev->ParamCompatibilityLevel = pdev->CompatibilityLevel;
     if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line)) < 0 ||
-	(code = pdf_color_space(pdev, &cs_value, NULL, &cs,
+	(code = pdf_color_space(pdev, &cs_value, NULL, pcs,
 				&piw->pin->color_spaces, in_line)) < 0 ||
 	(for_pattern < 2 || nbytes < 512000 ?
 	    (code = psdf_setup_lossless_filters((gx_device_psdf *) pdev,

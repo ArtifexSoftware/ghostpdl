@@ -574,7 +574,7 @@ gx_default_remap_color(const gs_client_color * pcc, const gs_color_space * pcs,
 		       gs_color_select_t select)
 {
     frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    const gs_color_space *pconcs;
+    gs_color_space *pconcs;
     int i = pcs->type->num_components(pcs);
     int code = (*pcs->type->concretize_color)(pcc, pcs, conc, pis);
 

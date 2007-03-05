@@ -29,29 +29,30 @@
 
 /* setcolorspace */
 int
-gs_setcolorspace(gs_state * pgs, const gs_color_space * pcs)
+gs_setcolorspace(gs_state * pgs, gs_color_space * pcs)
 {
     int             code = 0;
-    gs_color_space  cs_old = *pgs->color_space;
+    gs_color_space  *cs_old = pgs->color_space;
     gs_client_color cc_old = *pgs->ccolor;
 
     if (pgs->in_cachedevice)
 	return_error(gs_error_undefined);
 
     if (pcs->id != pgs->color_space->id) {
-        pcs->type->adjust_cspace_count(pcs, 1);
-        *pgs->color_space = *pcs;
+        rc_increment(pcs);
+        pgs->color_space = pcs;
         if ( (code = pcs->type->install_cspace(pcs, pgs)) < 0          ||
               (pgs->overprint && (code = gs_do_set_overprint(pgs)) < 0)  ) {
-            *pgs->color_space = cs_old;
-            pcs->type->adjust_cspace_count(pcs, -1);
-        } else
-            cs_old.type->adjust_cspace_count(&cs_old, -1);
+            pgs->color_space = cs_old;
+            rc_decrement_only(pcs, "gs_setcolorspace");
+        } else {
+	    cs_old->type->adjust_color_count(&cc_old, cs_old, -1);
+	    rc_decrement_only(cs_old, "gs_setcolorspace");
+	}
     }
 
     if (code >= 0) {
         cs_full_init_color(pgs->ccolor, pcs);
-        cs_old.type->adjust_color_count(&cc_old, &cs_old, -1);
         gx_unset_dev_color(pgs);
     }
 
@@ -59,7 +60,7 @@ gs_setcolorspace(gs_state * pgs, const gs_color_space * pcs)
 }
 
 /* currentcolorspace */
-const gs_color_space *
+gs_color_space *
 gs_currentcolorspace(const gs_state * pgs)
 {
     return pgs->color_space;
@@ -97,10 +98,10 @@ private_st_indexed_map();
 
 /* Define a lookup_index procedure that just returns the map values. */
 int
-lookup_indexed_map(const gs_indexed_params * params, int index, float *values)
+lookup_indexed_map(const gs_color_space * pcs, int index, float *values)
 {
-    int m = cs_num_components((const gs_color_space *)&params->base_space);
-    const float *pv = &params->lookup.map->values[index * m];
+    int m = cs_num_components(pcs->base_space);
+    const float *pv = &pcs->params.indexed.lookup.map->values[index * m];
 
     memcpy(values, pv, sizeof(*values) * m);
     return 0;
@@ -144,30 +145,28 @@ alloc_indexed_map(gs_indexed_map ** ppmap, int nvals, gs_memory_t * pmem,
 
 /* ---------------- Indexed color spaces ---------------- */
 
-gs_private_st_composite(st_color_space_Indexed, gs_paint_color_space,
+gs_private_st_composite(st_color_space_Indexed, gs_color_space,
      "gs_color_space_Indexed", cs_Indexed_enum_ptrs, cs_Indexed_reloc_ptrs);
 
 /* ------ Color space ------ */
 
 /* Define the Indexed color space type. */
-private cs_proc_base_space(gx_base_space_Indexed);
 private cs_proc_restrict_color(gx_restrict_Indexed);
 private cs_proc_concrete_space(gx_concrete_space_Indexed);
 private cs_proc_concretize_color(gx_concretize_Indexed);
 private cs_proc_install_cspace(gx_install_Indexed);
 private cs_proc_set_overprint(gx_set_overprint_Indexed);
-private cs_proc_adjust_cspace_count(gx_adjust_cspace_Indexed);
+private cs_proc_final(gx_final_Indexed);
 private cs_proc_serialize(gx_serialize_Indexed);
 const gs_color_space_type gs_color_space_type_Indexed = {
     gs_color_space_index_Indexed, false, false,
     &st_color_space_Indexed, gx_num_components_1,
-    gx_base_space_Indexed,
     gx_init_paint_1, gx_restrict_Indexed,
     gx_concrete_space_Indexed,
     gx_concretize_Indexed, NULL,
     gx_default_remap_color, gx_install_Indexed,
     gx_set_overprint_Indexed,
-    gx_adjust_cspace_Indexed, gx_no_adjust_color_count,
+    gx_final_Indexed, gx_no_adjust_color_count,
     gx_serialize_Indexed,
     gx_cspace_is_linear_default
 };
@@ -177,18 +176,10 @@ const gs_color_space_type gs_color_space_type_Indexed = {
 private uint
 indexed_table_size(const gs_color_space *pcs)
 {
-    return (pcs->params.indexed.hival + 1) *
-	cs_num_components((const gs_color_space *)
-			  &pcs->params.indexed.base_space);
-
+    return (pcs->params.indexed.hival + 1) * pcs->params.indexed.n_comps;
 }
 private 
-ENUM_PTRS_WITH(cs_Indexed_enum_ptrs, gs_color_space *pcs)
-{
-    return ENUM_USING(*pcs->params.indexed.base_space.type->stype,
-		      &pcs->params.indexed.base_space,
-		      sizeof(pcs->params.indexed.base_space), index - 1);
-}
+ENUM_PTRS_WITH(cs_Indexed_enum_ptrs, gs_color_space *pcs) return 0;
 case 0:
 if (pcs->params.indexed.use_proc)
     ENUM_RETURN((void *)pcs->params.indexed.lookup.map);
@@ -198,9 +189,6 @@ else
 ENUM_PTRS_END
 private RELOC_PTRS_WITH(cs_Indexed_reloc_ptrs, gs_color_space *pcs)
 {
-    RELOC_USING(*pcs->params.indexed.base_space.type->stype,
-		&pcs->params.indexed.base_space,
-		sizeof(gs_base_color_space));
     if (pcs->params.indexed.use_proc)
 	RELOC_PTR(gs_color_space, params.indexed.lookup.map);
     else {
@@ -214,21 +202,14 @@ private RELOC_PTRS_WITH(cs_Indexed_reloc_ptrs, gs_color_space *pcs)
 }
 RELOC_PTRS_END
 
-/* Return the base space of an Indexed color space. */
-private const gs_color_space *
-gx_base_space_Indexed(const gs_color_space * pcs)
-{
-    return (const gs_color_space *)&(pcs->params.indexed.base_space);
-}
 
-
-/* Color space installation ditto. */
+/* Color space installation for an Indexed color space. */
 
 private int
 gx_install_Indexed(const gs_color_space * pcs, gs_state * pgs)
 {
-    return (*pcs->params.indexed.base_space.type->install_cspace)
-	((const gs_color_space *) & pcs->params.indexed.base_space, pgs);
+    return (*pcs->base_space->type->install_cspace)
+	((const gs_color_space *) pcs->base_space, pgs);
 }
 
 /* Color space overprint setting ditto. */
@@ -236,21 +217,19 @@ gx_install_Indexed(const gs_color_space * pcs, gs_state * pgs)
 private int
 gx_set_overprint_Indexed(const gs_color_space * pcs, gs_state * pgs)
 {
-    return (*pcs->params.indexed.base_space.type->set_overprint)
-	((const gs_color_space *)&pcs->params.indexed.base_space, pgs);
+    return (*pcs->base_space->type->set_overprint)
+	((const gs_color_space *)pcs->base_space, pgs);
 }
 
-/* Color space reference count adjustment ditto. */
+/* Color space finalization ditto. */
 
 private void
-gx_adjust_cspace_Indexed(const gs_color_space * pcs, int delta)
+gx_final_Indexed(const gs_color_space * pcs)
 {
     if (pcs->params.indexed.use_proc) {
-	rc_adjust_const(pcs->params.indexed.lookup.map, delta,
+	rc_adjust_const(pcs->params.indexed.lookup.map, -1,
 			"gx_adjust_Indexed");
     }
-    (*pcs->params.indexed.base_space.type->adjust_cspace_count)
-	((const gs_color_space *)&pcs->params.indexed.base_space, delta);
 }
 
 /*
@@ -262,16 +241,16 @@ gx_adjust_cspace_Indexed(const gs_color_space * pcs, int delta)
  * do not range-check their input values.
  */
 private int
-map_palette_entry_1(const gs_indexed_params * params, int indx, float *values)
+map_palette_entry_1(const gs_color_space * pcs, int indx, float *values)
 {
-    values[0] = params->lookup.map->values[indx];
+    values[0] = pcs->params.indexed.lookup.map->values[indx];
     return 0;
 }
 
 private int
-map_palette_entry_3(const gs_indexed_params * params, int indx, float *values)
+map_palette_entry_3(const gs_color_space * pcs, int indx, float *values)
 {
-    const float *pv = &(params->lookup.map->values[3 * indx]);
+    const float *pv = &(pcs->params.indexed.lookup.map->values[3 * indx]);
 
     values[0] = pv[0];
     values[1] = pv[1];
@@ -280,9 +259,9 @@ map_palette_entry_3(const gs_indexed_params * params, int indx, float *values)
 }
 
 private int
-map_palette_entry_4(const gs_indexed_params * params, int indx, float *values)
+map_palette_entry_4(const gs_color_space * pcs, int indx, float *values)
 {
-    const float *pv = &(params->lookup.map->values[4 * indx]);
+    const float *pv = &(pcs->params.indexed.lookup.map->values[4 * indx]);
 
     values[0] = pv[0];
     values[1] = pv[1];
@@ -292,12 +271,12 @@ map_palette_entry_4(const gs_indexed_params * params, int indx, float *values)
 }
 
 private int
-map_palette_entry_n(const gs_indexed_params * params, int indx, float *values)
+map_palette_entry_n(const gs_color_space * pcs, int indx, float *values)
 {
-    int m = cs_num_components((const gs_color_space *)&params->base_space);
+    int m = cs_num_components(pcs->base_space);
 
     memcpy((void *)values,
-	   (const void *)(params->lookup.map->values + indx * m),
+	   (const void *)(pcs->params.indexed.lookup.map->values + indx * m),
 	   m * sizeof(float)
     );
 
@@ -339,7 +318,7 @@ alloc_indexed_palette(
 int
 gs_cspace_build_Indexed(
 			   gs_color_space ** ppcspace,
-			   const gs_color_space * pbase_cspace,
+			   gs_color_space * pbase_cspace,
 			   uint num_entries,
 			   const gs_const_string * ptbl,
 			   gs_memory_t * pmem
@@ -347,14 +326,13 @@ gs_cspace_build_Indexed(
 {
     gs_color_space *pcspace = 0;
     gs_indexed_params *pindexed = 0;
-    int code;
 
     if ((pbase_cspace == 0) || !pbase_cspace->type->can_be_base_space)
 	return_error(gs_error_rangecheck);
 
-    code = gs_cspace_alloc(&pcspace, &gs_color_space_type_Indexed, pmem);
-    if (code < 0)
-	return code;
+    pcspace = gs_cspace_alloc(pmem, &gs_color_space_type_Indexed);
+    if (pcspace == NULL)
+	return_error(gs_error_VMerror);
     pindexed = &(pcspace->params.indexed);
     if (ptbl == 0) {
 	pindexed->lookup.map =
@@ -368,9 +346,10 @@ gs_cspace_build_Indexed(
 	pindexed->lookup.table = *ptbl;
 	pindexed->use_proc = false;
     }
-    gs_cspace_init_from((gs_color_space *) & (pindexed->base_space),
-			pbase_cspace);
+    pcspace->base_space = pbase_cspace;
+    rc_increment(pbase_cspace);
     pindexed->hival = num_entries - 1;
+    pindexed->n_comps = cs_num_components(pbase_cspace);
     *ppcspace = pcspace;
     return 0;
 }
@@ -407,7 +386,7 @@ gs_cspace_indexed_value_array(const gs_color_space * pcspace)
 int
 gs_cspace_indexed_set_proc(
 			   gs_color_space * pcspace,
-			   int (*proc)(const gs_indexed_params *, int, float *)
+			   int (*proc)(const gs_color_space *, int, float *)
 )
 {
     if ((gs_color_space_get_index(pcspace) != gs_color_space_index_Indexed) ||
@@ -437,10 +416,7 @@ private const gs_color_space *
 gx_concrete_space_Indexed(const gs_color_space * pcs,
 			  const gs_imager_state * pis)
 {
-    const gs_color_space *pbcs =
-    (const gs_color_space *)&pcs->params.indexed.base_space;
-
-    return cs_concrete_space(pbcs, pis);
+    return cs_concrete_space(pcs->base_space, pis);
 }
 
 private int
@@ -453,9 +429,9 @@ gx_concretize_Indexed(const gs_client_color * pc, const gs_color_space * pcs,
 	 value >= pcs->params.indexed.hival ? pcs->params.indexed.hival :
 	 (int)value);
     const gs_color_space *pbcs =
-	(const gs_color_space *)&pcs->params.indexed.base_space;
+	(const gs_color_space *)pcs->base_space;
     gs_client_color cc;
-    int code = gs_cspace_indexed_lookup(&pcs->params.indexed, index, &cc);
+    int code = gs_cspace_indexed_lookup(pcs, index, &cc);
 
     if (code < 0)
 	return code;
@@ -464,14 +440,15 @@ gx_concretize_Indexed(const gs_client_color * pc, const gs_color_space * pcs,
 
 /* Look up an index in an Indexed color space. */
 int
-gs_cspace_indexed_lookup(const gs_indexed_params *pip, int index,
+gs_cspace_indexed_lookup(const gs_color_space *pcs, int index,
 			 gs_client_color *pcc)
 {
+    const gs_indexed_params *pip = &pcs->params.indexed;
     if (pip->use_proc) {
 	return pip->lookup.map->proc.lookup_index
-	    (pip, index, &pcc->paint.values[0]);
+	    (pcs, index, &pcc->paint.values[0]);
     } else {
-	const gs_color_space *pbcs = (const gs_color_space *)&pip->base_space;
+	const gs_color_space *pbcs = pcs->base_space;
 	int m = cs_num_components(pbcs);
 	const byte *pcomp = pip->lookup.table.data + m * index;
 
@@ -507,7 +484,7 @@ gx_serialize_Indexed(const gs_color_space * pcs, stream * s)
 
     if (code < 0)
 	return code;
-    code = cs_serialize((const gs_color_space *)&p->base_space, s);
+    code = cs_serialize(pcs->base_space, s);
     if (code < 0)
 	return code;
     code = sputs(s, (const byte *)&p->hival, sizeof(p->hival), &n);

@@ -52,22 +52,12 @@ gs_setsubstitutecolorspace(gs_state *pgs, gs_color_space_index csi,
 	    return_error(gs_error_rangecheck);
     }
     pcs_old = pgs->device_color_spaces.indexed[index];
-    if (pcs_old == 0) {
-	gs_color_space *pcs_new;
-
-	if (pcs == 0 || gs_color_space_get_index(pcs) == csi)
-	    return 0;
-	pcs_new = gs_alloc_struct(pgs->memory, gs_color_space, &st_color_space,
-				  "gs_setsubstitutecolorspace");
-	if (pcs_new == 0)
-	    return_error(gs_error_VMerror);
-	gs_cspace_init_from(pcs_new, pcs);
-	pgs->device_color_spaces.indexed[index] = pcs_new;
-    } else {
-	gs_cspace_assign(pgs->device_color_spaces.indexed[index],
-			 (pcs ? pcs :
-			  pgs->shared->device_color_spaces.indexed[index]));
-    }
+    if (pcs_old == 0 &&	(pcs == 0 || gs_color_space_get_index(pcs) == csi))
+	return 0;
+    rc_assign(pgs->device_color_space.indexed[index],
+	      (pcs ? pcs :
+	       pgs->shared->device_color_spaces.indexed[index]),
+	      "gs_setsubstitutecolorspace");
     return 0;
 }
 

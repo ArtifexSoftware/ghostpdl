@@ -243,19 +243,15 @@ make_device_color_space(gx_device_pdf *pdev,
     gs_color_space *cs;
     gs_memory_t *mem = pdev->v_memory;
 
-    cs = gs_alloc_struct(mem, gs_color_space, &st_color_space, 
-			    "psdf_setup_image_colors_filter");
-    if (cs == NULL)
-	return_error(gs_error_VMerror);
     switch (output_cspace_index) {
 	case gs_color_space_index_DeviceGray:
-	    gs_cspace_init_DeviceGray(mem, cs);
+	    cs = gs_cspace_new_DeviceGray(mem);
 	    break;
 	case gs_color_space_index_DeviceRGB:
-	    gs_cspace_init_DeviceRGB(mem, cs); 
+	    cs = gs_cspace_new_DeviceRGB(mem); 
 	    break;
 	case gs_color_space_index_DeviceCMYK:
-	    gs_cspace_init_DeviceCMYK(mem, cs); 
+	    cs = gs_cspace_new_DeviceCMYK(mem); 
 	    break;
 	default:
 	    /* Notify the user and terminate.
@@ -265,6 +261,8 @@ make_device_color_space(gx_device_pdf *pdev,
 	    eprintf("Unsupported ProcessColorModel");
 	    return_error(gs_error_undefined);
     }
+    if (cs == NULL)
+	return_error(gs_error_VMerror);
     *ppcs = cs;
     return 0;
 }
@@ -275,7 +273,7 @@ check_image_color_space(gs_pixel_image_t * pim, gs_color_space_index index)
     if (pim->ColorSpace->type->index == index)
 	return true;
     if (pim->ColorSpace->type->index == gs_color_space_index_Indexed)
-	if (pim->ColorSpace->params.indexed.base_space.type->index == index)
+	if (pim->ColorSpace->base_space->type->index == index)
 	    return true;
     return false;
 }
@@ -305,7 +303,6 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     pdf_image_enum *pie;
     gs_image_format_t format;
     const gs_color_space *pcs;
-    gs_color_space cs_gray_temp;
     cos_value_t cs_value;
     int num_components;
     bool is_mask = false, in_line = false;
@@ -462,6 +459,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    code = gs_gsave(pgs);
 	    if (code < 0)
 		return code;
+	    /* {csrc}: const cast warning */
 	    code = gs_setcolorspace(pgs, ((const gs_image4_t *)pic)->ColorSpace);
 	    if (code < 0)
 		return code;
@@ -549,8 +547,8 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	 * color space, which pdf_color_space() can't handle.  Patch it
 	 * to DeviceGray here.
 	 */
-	gs_cspace_init_DeviceGray(pdev->memory, &cs_gray_temp);
-	pcs = &cs_gray_temp;
+	/* {csrc} make sure this gets freed */
+	pcs = gs_cspace_new_DeviceGray(pdev->memory);
     } else if (is_mask)
 	code = pdf_prepare_imagemask(pdev, pis, pdcolor);
     else

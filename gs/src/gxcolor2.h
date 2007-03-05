@@ -27,7 +27,7 @@
 struct gs_indexed_map_s {
     rc_header rc;
     union {
-	int (*lookup_index)(const gs_indexed_params *, int, float *);
+	int (*lookup_index)(const gs_color_space *, int, float *);
 	int (*tint_transform)(const gs_separation_params *, floatp, float *);
     } proc;
     void *proc_data;
@@ -39,7 +39,7 @@ struct gs_indexed_map_s {
     indexed_map_enum_ptrs, indexed_map_reloc_ptrs, proc_data, values)
 
 /* Define a lookup_index procedure that just returns the map values. */
-int lookup_indexed_map(const gs_indexed_params *, int, float *);
+int lookup_indexed_map(const gs_color_space *, int, float *);
 
 /* Allocate an indexed map and its values. */
 /* The initial reference count is 1. */

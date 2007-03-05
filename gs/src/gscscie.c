@@ -40,86 +40,80 @@ private_st_cie_defg();
 /* Define the CIE color space types. */
 
 /* CIEBasedDEFG */
-gs_private_st_ptrs1(st_color_space_CIEDEFG, gs_base_color_space,
+gs_private_st_ptrs1(st_color_space_CIEDEFG, gs_color_space,
      "gs_color_space(CIEDEFG)", cs_CIEDEFG_enum_ptrs, cs_CIEDEFG_reloc_ptrs,
 		    params.defg);
-private cs_proc_adjust_cspace_count(gx_adjust_cspace_CIEDEFG);
+private cs_proc_final(gx_final_CIEDEFG);
 private cs_proc_serialize(gx_serialize_CIEDEFG);
 const gs_color_space_type gs_color_space_type_CIEDEFG = {
     gs_color_space_index_CIEDEFG, true, true,
     &st_color_space_CIEDEFG, gx_num_components_4,
-    gx_no_base_space,
     gx_init_CIE, gx_restrict_CIEDEFG,
     gx_concrete_space_CIE,
     gx_concretize_CIEDEFG, NULL,
     gx_default_remap_color, gx_install_CIE,
     gx_spot_colors_set_overprint,
-    gx_adjust_cspace_CIEDEFG, gx_no_adjust_color_count,
+    gx_final_CIEDEFG, gx_no_adjust_color_count,
     gx_serialize_CIEDEFG,
     gx_cspace_is_linear_default
 };
 
 /* CIEBasedDEF */
-gs_private_st_ptrs1(st_color_space_CIEDEF, gs_base_color_space,
+gs_private_st_ptrs1(st_color_space_CIEDEF, gs_color_space,
 	"gs_color_space(CIEDEF)", cs_CIEDEF_enum_ptrs, cs_CIEDEF_reloc_ptrs,
 		    params.def);
-private cs_proc_adjust_cspace_count(gx_adjust_cspace_CIEDEF);
+private cs_proc_final(gx_final_CIEDEF);
 private cs_proc_serialize(gx_serialize_CIEDEF);
 const gs_color_space_type gs_color_space_type_CIEDEF = {
     gs_color_space_index_CIEDEF, true, true,
     &st_color_space_CIEDEF, gx_num_components_3,
-    gx_no_base_space,
     gx_init_CIE, gx_restrict_CIEDEF,
     gx_concrete_space_CIE,
     gx_concretize_CIEDEF, NULL,
     gx_default_remap_color, gx_install_CIE,
     gx_spot_colors_set_overprint,
-    gx_adjust_cspace_CIEDEF, gx_no_adjust_color_count,
+    gx_final_CIEDEF, gx_no_adjust_color_count,
     gx_serialize_CIEDEF,
     gx_cspace_is_linear_default
 };
 
 /* CIEBasedABC */
-gs_private_st_ptrs1(st_color_space_CIEABC, gs_base_color_space,
+gs_private_st_ptrs1(st_color_space_CIEABC, gs_color_space,
 	"gs_color_space(CIEABC)", cs_CIEABC_enum_ptrs, cs_CIEABC_reloc_ptrs,
 		    params.abc);
-private cs_proc_adjust_cspace_count(gx_adjust_cspace_CIEABC);
+private cs_proc_final(gx_final_CIEABC);
 private cs_proc_serialize(gx_serialize_CIEABC);
 const gs_color_space_type gs_color_space_type_CIEABC = {
     gs_color_space_index_CIEABC, true, true,
     &st_color_space_CIEABC, gx_num_components_3,
-    gx_no_base_space,
     gx_init_CIE, gx_restrict_CIEABC,
     gx_concrete_space_CIE,
     gx_concretize_CIEABC, NULL,
     gx_remap_CIEABC, gx_install_CIE,
     gx_spot_colors_set_overprint,
-    gx_adjust_cspace_CIEABC, gx_no_adjust_color_count,
+    gx_final_CIEABC, gx_no_adjust_color_count,
     gx_serialize_CIEABC,
     gx_cspace_is_linear_default
 };
 
 /* CIEBasedA */
-gs_private_st_ptrs1(st_color_space_CIEA, gs_base_color_space,
+gs_private_st_ptrs1(st_color_space_CIEA, gs_color_space,
 	      "gs_color_space(CIEA)", cs_CIEA_enum_ptrs, cs_CIEA_reloc_ptrs,
 		    params.a);
-private cs_proc_adjust_cspace_count(gx_adjust_cspace_CIEA);
+private cs_proc_final(gx_final_CIEA);
 private cs_proc_serialize(gx_serialize_CIEA);
 const gs_color_space_type gs_color_space_type_CIEA = {
     gs_color_space_index_CIEA, true, true,
     &st_color_space_CIEA, gx_num_components_1,
-    gx_no_base_space,
     gx_init_CIE, gx_restrict_CIEA,
     gx_concrete_space_CIE,
     gx_concretize_CIEA, NULL,
     gx_default_remap_color, gx_install_CIE,
     gx_spot_colors_set_overprint,
-    gx_adjust_cspace_CIEA, gx_no_adjust_color_count,
+    gx_final_CIEA, gx_no_adjust_color_count,
     gx_serialize_CIEA,
     gx_cspace_is_linear_default
 };
-
-private gs_color_space rgb_cs, cmyk_cs;
 
 /* Determine the concrete space underlying a CIEBased space. */
 const gs_color_space *
@@ -130,11 +124,9 @@ gx_concrete_space_CIE(const gs_color_space * pcs, const gs_imager_state * pis)
     if (pcie == 0 || pcie->RenderTable.lookup.table == 0 ||
 	pcie->RenderTable.lookup.m == 3
 	) {
-	gs_cspace_init_DeviceRGB(pis->memory, &rgb_cs);  /* idempotent initialization */
-        return &rgb_cs;
+	return pis->devicergb_cs;
     } else {			/* pcie->RenderTable.lookup.m == 4 */
-	gs_cspace_init_DeviceCMYK(pis->memory, &cmyk_cs); /* idempotent initialization */
-	return &cmyk_cs;
+	return pis->devicecmyk_cs;
     }
 }
 
@@ -148,29 +140,31 @@ gx_install_CIE(const gs_color_space * pcs, gs_state * pgs)
     return (*pcs->params.a->common.install_cspace) (pcs, pgs);
 }
 
-/* Adjust reference counts for a CIE color space */
+/* Free params for a CIE color space */
 private void
-gx_adjust_cspace_CIEDEFG(const gs_color_space * pcs, int delta)
+gx_final_CIEDEFG(const gs_color_space * pcs)
 {
-    rc_adjust_const(pcs->params.defg, delta, "gx_adjust_cspace_CIEDEFG");
+    rc_adjust_const(pcs->params.defg, -1, "gx_adjust_cspace_CIEDEFG");
 }
 
 private void
-gx_adjust_cspace_CIEDEF(const gs_color_space * pcs, int delta)
+gx_final_CIEDEF(const gs_color_space * pcs)
 {
-    rc_adjust_const(pcs->params.def, delta, "gx_adjust_cspace_CIEDEF");
+    rc_adjust_const(pcs->params.def, -1, "gx_adjust_cspace_CIEDEF");
 }
 
 private void
-gx_adjust_cspace_CIEABC(const gs_color_space * pcs, int delta)
+gx_final_CIEABC(const gs_color_space * pcs)
 {
-    rc_adjust_const(pcs->params.abc, delta, "gx_adjust_cspace_CIEABC");
+    rc_adjust_const(pcs->params.abc, -1, "gx_adjust_cspace_CIEABC");
 }
 
 private void
-gx_adjust_cspace_CIEA(const gs_color_space * pcs, int delta)
+gx_final_CIEA(const gs_color_space * pcs)
 {
-    rc_adjust_const(pcs->params.a, delta, "gx_adjust_cspace_CIEA");
+    /* {csrc} debug */
+    dlprintf3("%08x %d += %d\n", pcs->params.a, pcs->params.a->rc.ref_count, -1);
+    rc_adjust_const(pcs->params.a, -1, "gx_adjust_cspace_CIEA");
 }
 
 /* ---------------- Procedures ---------------- */
@@ -240,12 +234,11 @@ gx_build_cie_space(gs_color_space ** ppcspace,
 		const gs_color_space_type * pcstype,
 		gs_memory_type_ptr_t stype, gs_memory_t * pmem)
 {
-    gs_color_space *pcspace;
-    int code = gs_cspace_alloc(&pcspace, pcstype, pmem);
+    gs_color_space *pcspace = gs_cspace_alloc(pmem, pcstype);
     gs_cie_common_elements_t *pdata;
 
-    if (code < 0)
-	return 0;
+    if (pcspace == NULL)
+	return NULL;
     rc_alloc_struct_1(pdata, gs_cie_common_elements_t, stype, pmem,
 		      {
 		      gs_free_object(pmem, pcspace, "gx_build_cie_space");

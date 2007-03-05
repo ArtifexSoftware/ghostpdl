@@ -172,7 +172,7 @@ image1_setup(i_ctx_t * i_ctx_p, bool has_alpha)
      * triggering a rangecheck error.
      */
     if (CPSI_mode && gs_color_space_num_components(csp) < 1) {
-       const gs_color_space *bsp = cs_base_space(csp);
+       const gs_color_space *bsp = csp->base_space;
        if (bsp)
          csp = bsp;
     }

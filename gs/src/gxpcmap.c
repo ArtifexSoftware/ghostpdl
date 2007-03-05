@@ -711,9 +711,8 @@ gs_pattern1_remap_color(const gs_client_color * pc, const gs_color_space * pcs,
 	return 0;
     }
     if (pinst->template.PaintType == 2) {	/* uncolored */
-	code = (*pcs->params.pattern.base_space.type->remap_color)
-	    (pc, (const gs_color_space *)&pcs->params.pattern.base_space,
-	     pdc, pis, dev, select);
+	code = (pcs->base_space->type->remap_color)
+	    (pc, pcs->base_space, pdc, pis, dev, select);
 	if (code < 0)
 	    return code;
 	if (pdc->type == gx_dc_type_pure)

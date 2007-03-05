@@ -38,26 +38,24 @@
 private const gs_color_space_type gs_color_space_type_DeviceGray = {
     gs_color_space_index_DeviceGray, true, true,
     &st_base_color_space, gx_num_components_1,
-    gx_no_base_space,
     gx_init_paint_1, gx_restrict01_paint_1,
     gx_same_concrete_space,
     gx_concretize_DeviceGray, gx_remap_concrete_DGray,
     gx_remap_DeviceGray, gx_no_install_cspace,
     gx_spot_colors_set_overprint,
-    gx_no_adjust_cspace_count, gx_no_adjust_color_count,
+    NULL, gx_no_adjust_color_count,
     gx_serialize_cspace_type,
     gx_cspace_is_linear_default
 };
 private const gs_color_space_type gs_color_space_type_DeviceRGB = {
     gs_color_space_index_DeviceRGB, true, true,
     &st_base_color_space, gx_num_components_3,
-    gx_no_base_space,
     gx_init_paint_3, gx_restrict01_paint_3,
     gx_same_concrete_space,
     gx_concretize_DeviceRGB, gx_remap_concrete_DRGB,
     gx_remap_DeviceRGB, gx_no_install_cspace,
     gx_spot_colors_set_overprint,
-    gx_no_adjust_cspace_count, gx_no_adjust_color_count,
+    NULL, gx_no_adjust_color_count,
     gx_serialize_cspace_type,
     gx_cspace_is_linear_default
 };
@@ -67,13 +65,12 @@ private cs_proc_set_overprint(gx_set_overprint_DeviceCMYK);
 private const gs_color_space_type gs_color_space_type_DeviceCMYK = {
     gs_color_space_index_DeviceCMYK, true, true,
     &st_base_color_space, gx_num_components_4,
-    gx_no_base_space,
     gx_init_paint_4, gx_restrict01_paint_4,
     gx_same_concrete_space,
     gx_concretize_DeviceCMYK, gx_remap_concrete_DCMYK,
     gx_remap_DeviceCMYK, gx_no_install_cspace,
     gx_set_overprint_DeviceCMYK,
-    gx_no_adjust_cspace_count, gx_no_adjust_color_count,
+    NULL, gx_no_adjust_color_count,
     gx_serialize_cspace_type,
     gx_cspace_is_linear_default
 };
@@ -82,143 +79,68 @@ private const gs_color_space_type gs_color_space_type_DeviceCMYK = {
 public_st_color_space();
 public_st_base_color_space();
 
-
 /* ------ Create/copy/destroy ------ */
 
-void
-gs_cspace_init(gs_color_space *pcs, const gs_color_space_type * pcstype,
-	       gs_memory_t *mem, bool isheap)
+
+private void
+gs_cspace_final(void *vptr)
 {
+    gs_color_space *pcs = (gs_color_space *)vptr;
+
+    if (pcs->type->final)
+	pcs->type->final(pcs);
+    if_debug2('c', "[c]cspace final %08x %d\n", pcs, pcs->id);
+    rc_decrement_only(pcs->base_space, "gs_cspace_final");
+}
+
+private gs_color_space *
+gs_cspace_alloc_with_id(gs_memory_t *mem, ulong id,
+		   const gs_color_space_type *pcstype)
+{
+    gs_color_space *pcs;
+
+    rc_alloc_struct_1(pcs, gs_color_space, &st_color_space, mem, return NULL,
+		      "gs_cspace_alloc_with_id");
+    if_debug3('c', "[c]cspace alloc %08x %s %d\n",
+	      pcs, pcstype->stype->sname, pcstype->index);
     pcs->type = pcstype;
-    pcs->pmem = isheap ? mem : NULL;
-    pcs->id = gs_next_ids(mem, 1);
-}
-
-int
-gs_cspace_alloc(gs_color_space ** ppcspace,
-		const gs_color_space_type * pcstype,
-		gs_memory_t * mem)
-{
-    gs_color_space *pcspace =
-	gs_alloc_struct(mem, gs_color_space, &st_color_space,
-			"gs_cspace_alloc");
-
-    if (pcspace == 0)
-	return_error(gs_error_VMerror);
-    if (pcstype != 0)
-        gs_cspace_init(pcspace, pcstype, mem, true);
-    *ppcspace = pcspace;
-    return 0;
-}
-
-int
-gs_cspace_init_DeviceGray(const gs_memory_t *mem, gs_color_space *pcs)
-{
-    /* parameterless color space; no re-entrancy problems */
-    static gs_color_space  dev_gray_proto;
-
-    if (dev_gray_proto.id == 0)
-        gs_cspace_init( &dev_gray_proto,
-                        &gs_color_space_type_DeviceGray,
-                        (gs_memory_t *)mem, false );
-    *pcs = dev_gray_proto;
-    return 0;
-}
-int
-gs_cspace_build_DeviceGray(gs_color_space ** ppcspace, gs_memory_t * pmem)
-{
-    int     code = gs_cspace_alloc(ppcspace, NULL, pmem);
-
-    if (code >= 0)
-        code = gs_cspace_init_DeviceGray(pmem, *ppcspace);
-    return code;
-}
-
-int
-gs_cspace_init_DeviceRGB(const gs_memory_t *mem, gs_color_space *pcs)
-{
-    /* parameterless color space; no re-entrancy problems */
-    static gs_color_space  dev_rgb_proto;
-
-    if (dev_rgb_proto.id == 0)
-        gs_cspace_init( &dev_rgb_proto,
-                        &gs_color_space_type_DeviceRGB,
-                        (gs_memory_t *)mem, false );
-    *pcs = dev_rgb_proto;
-    return 0;
-}
-int
-gs_cspace_build_DeviceRGB(gs_color_space ** ppcspace, gs_memory_t * pmem)
-{
-    int     code = gs_cspace_alloc(ppcspace, NULL, pmem);
-
-    if (code >= 0)
-        code = gs_cspace_init_DeviceRGB(pmem, *ppcspace);
-    return code;
-}
-
-int
-gs_cspace_init_DeviceCMYK(const gs_memory_t *mem, gs_color_space *pcs)
-{
-    /* parameterless color space; no re-entrancy problems */
-    static gs_color_space  dev_cmyk_proto;
-
-    if (dev_cmyk_proto.id == 0)
-        gs_cspace_init( &dev_cmyk_proto,
-                        &gs_color_space_type_DeviceCMYK,
-                        (gs_memory_t *)mem, false );
-    *pcs = dev_cmyk_proto;
-    return 0;
-}
-int
-gs_cspace_build_DeviceCMYK(gs_color_space ** ppcspace, gs_memory_t * pmem)
-{
-    int     code = gs_cspace_alloc(ppcspace, NULL, pmem);
-
-    if (code >= 0)
-        code = gs_cspace_init_DeviceCMYK(pmem, *ppcspace);
-    return code;
+    pcs->id = id;
+    pcs->base_space = NULL;
+    return pcs;
 }
 
 /*
- * Copy just enough of a color space object.  This will do the right thing
- * for copying color spaces into the base or alternate color space of a
- * compound color space when legal, but it can't check that the operation is
- * actually legal.
+ * Generic allocation function for colorspace implementations. Return
+ * NULL on allocation failure.
  */
-inline private void
-cs_copy(gs_color_space *pcsto, const gs_color_space *pcsfrom)
+gs_color_space *
+gs_cspace_alloc(gs_memory_t *mem, const gs_color_space_type *pcstype)
 {
-    memcpy(pcsto, pcsfrom, pcsfrom->type->stype->ssize);
+    return gs_cspace_alloc_with_id(mem, gs_next_ids(mem, 1), pcstype);
 }
 
-/* Copy a color space into one newly allocated by the caller. */
-void
-gs_cspace_init_from(gs_color_space * pcsto, const gs_color_space * pcsfrom)
+/* Constructors for simple device color spaces. */
+
+gs_color_space *
+gs_cspace_new_DeviceGray(gs_memory_t *mem)
 {
-    cs_copy(pcsto, pcsfrom);
-    (*pcsto->type->adjust_cspace_count)(pcsto, 1);
+    return gs_cspace_alloc_with_id(mem, cs_DeviceGray_id,
+				   &gs_color_space_type_DeviceGray);
 }
 
-/* Assign a color space into a previously initialized one. */
-void
-gs_cspace_assign(gs_color_space * pdest, const gs_color_space * psrc)
+gs_color_space *
+gs_cspace_new_DeviceRGB(gs_memory_t *mem)
 {
-    /* check for a = a */
-    if (pdest == psrc)
-	return;
-    (*psrc->type->adjust_cspace_count)(psrc, 1);
-    (*pdest->type->adjust_cspace_count)(pdest, -1);
-    cs_copy(pdest, psrc);
+    return gs_cspace_alloc_with_id(mem, cs_DeviceRGB_id,
+				   &gs_color_space_type_DeviceRGB);
+}
+gs_color_space *
+gs_cspace_new_DeviceCMYK(gs_memory_t *mem)
+{
+    return gs_cspace_alloc_with_id(mem, cs_DeviceCMYK_id,
+				   &gs_color_space_type_DeviceCMYK);
 }
 
-
-/* Prepare to free a color space. */
-void
-gs_cspace_release(gs_color_space * pcs)
-{
-    (*pcs->type->adjust_cspace_count)(pcs, -1);
-}
 
 /* ------ Accessors ------ */
 
@@ -266,13 +188,7 @@ gx_num_components_4(const gs_color_space * pcs)
 const gs_color_space *
 gs_cspace_base_space(const gs_color_space * pcspace)
 {
-    return cs_base_space(pcspace);
-}
-
-const gs_color_space *
-gx_no_base_space(const gs_color_space * pcspace)
-{
-    return NULL;
+    return pcspace->base_space;
 }
 
 /* ------ Other implementation procedures ------ */
@@ -450,15 +366,9 @@ gx_set_overprint_DeviceCMYK(const gs_color_space * pcs, gs_state * pgs)
 }
 
 
-/* Null reference count adjustment procedure. */
-void
-gx_no_adjust_cspace_count(const gs_color_space * pcs, int delta)
-{
-}
-
 /* A stub for a color mapping linearity check, when it is inapplicable. */
 int
-gx_cspace_no_linear(const gs_direct_color_space *cs, const gs_imager_state * pis,
+gx_cspace_no_linear(const gs_color_space *cs, const gs_imager_state * pis,
 		gx_device * dev, 
 		const gs_client_color *c0, const gs_client_color *c1,
 		const gs_client_color *c2, const gs_client_color *c3,
@@ -468,10 +378,10 @@ gx_cspace_no_linear(const gs_direct_color_space *cs, const gs_imager_state * pis
 }
 
 private inline int
-cc2dc(const gs_direct_color_space *cs, const gs_imager_state * pis, gx_device *dev,
+cc2dc(const gs_color_space *cs, const gs_imager_state * pis, gx_device *dev,
 	    gx_device_color *dc, const gs_client_color *cc)
 {
-    return cs->type->remap_color(cc, (const gs_color_space *)cs, dc, pis, dev, gs_color_select_texture);
+    return cs->type->remap_color(cc, cs, dc, pis, dev, gs_color_select_texture);
 }
 
 private inline void
@@ -516,14 +426,14 @@ is_dc_nearly_linear(const gx_device *dev, const gx_device_color *c,
 
 /* Default color mapping linearity check, a 2-points case. */
 private int
-gx_cspace_is_linear_in_line(const gs_direct_color_space *cs, const gs_imager_state * pis,
+gx_cspace_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pis,
 		gx_device *dev, 
 		const gs_client_color *c0, const gs_client_color *c1,
 		float smoothness)
 {
     gs_client_color c01a, c01b;
     gx_device_color d[2], d01a, d01b;
-    int n = cs->type->num_components((const gs_color_space *)cs);
+    int n = cs->type->num_components(cs);
     int code;
 
     code = cc2dc(cs, pis, dev, &d[0], c0);
@@ -549,7 +459,7 @@ gx_cspace_is_linear_in_line(const gs_direct_color_space *cs, const gs_imager_sta
 
 /* Default color mapping linearity check, a triangle case. */
 private int
-gx_cspace_is_linear_in_triangle(const gs_direct_color_space *cs, const gs_imager_state * pis,
+gx_cspace_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state * pis,
 		gx_device *dev, 
 		const gs_client_color *c0, const gs_client_color *c1,
 		const gs_client_color *c2, float smoothness)
@@ -559,7 +469,7 @@ gx_cspace_is_linear_in_triangle(const gs_direct_color_space *cs, const gs_imager
        Note it gives 7 points for a quadrangle. */
     gs_client_color c01, c12, c20, c012;
     gx_device_color d[3], d01, d12, d20, d012;
-    int n = cs->type->num_components((const gs_color_space *)cs);
+    int n = cs->type->num_components(cs);
     int code;
 
     code = cc2dc(cs, pis, dev, &d[0], c0);
@@ -604,7 +514,7 @@ gx_cspace_is_linear_in_triangle(const gs_direct_color_space *cs, const gs_imager
 
 /* Default color mapping linearity check. */
 int
-gx_cspace_is_linear_default(const gs_direct_color_space *cs, const gs_imager_state * pis,
+gx_cspace_is_linear_default(const gs_color_space *cs, const gs_imager_state * pis,
 		gx_device *dev, 
 		const gs_client_color *c0, const gs_client_color *c1,
 		const gs_client_color *c2, const gs_client_color *c3,
@@ -642,12 +552,15 @@ ENUM_PTRS_BEGIN_PROC(color_space_enum_ptrs)
 {
     EV_CONST gs_color_space *pcs = vptr;
 
-    return ENUM_USING(*pcs->type->stype, vptr, size, index);
+    if (index == 0)
+	return ENUM_OBJ(pcs->base_space);
+    return ENUM_USING(*pcs->type->stype, vptr, size, index - 1);
     ENUM_PTRS_END_PROC
 }
 private 
 RELOC_PTRS_WITH(color_space_reloc_ptrs, gs_color_space *pcs)
 {
+    RELOC_VAR(pcs->base_space);
     RELOC_USING(*pcs->type->stype, vptr, size);
 }
 RELOC_PTRS_END

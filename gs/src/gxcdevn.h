@@ -49,7 +49,7 @@ typedef struct gs_device_n_attributes_s gs_device_n_attributes;
 struct gs_device_n_attributes_s {
     rc_header rc;
     gs_separation_name colorant_name;
-    gs_color_space cspace;
+    gs_color_space *cspace;
     struct gs_device_n_attributes_s * next;	/* Linked list */
 };
 #define private_st_device_n_attributes() /* in gscdevn.c */\

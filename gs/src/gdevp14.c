@@ -815,7 +815,7 @@ pdf14_put_image(pdf14_device *pdev, gs_imager_state *pis, gx_device *target)
     int num_comp = buf->n_chan - 1;
     byte *buf_ptr = buf->data + buf->rect.p.y * buf->rowstride + buf->rect.p.x;
     byte *linebuf;
-    gs_color_space cs;
+    gs_color_space *pcs;
     const byte bg = pdev->ctx->additive ? 255 : 0;
 
 #ifdef DUMP_TO_PNG
@@ -839,19 +839,21 @@ pdf14_put_image(pdf14_device *pdev, gs_imager_state *pis, gx_device *target)
      */
     switch (num_comp) {
 	case 1:				/* DeviceGray */
-	    gs_cspace_init_DeviceGray(pis->memory, &cs);
+	    pcs = gs_cspace_new_DeviceGray(pis->memory);
 	    break;
 	case 3:				/* DeviceRGB */
-	    gs_cspace_init_DeviceRGB(pis->memory, &cs);
+	    pcs = gs_cspace_new_DeviceRGB(pis->memory);
 	    break;
 	case 4:				/* DeviceCMYK */
-	    gs_cspace_init_DeviceCMYK(pis->memory, &cs);
+	    pcs = gs_cspace_new_DeviceCMYK(pis->memory);
 	    break;
 	default:			/* Should never occur */
 	    return_error(gs_error_rangecheck);
 	    break;
     }
-    gs_image_t_init_adjust(&image, &cs, false);
+    if (pcs == NULL)
+	return_error(gs_error_VMerror);
+    gs_image_t_init_adjust(&image, pcs, false);
     image.ImageMatrix.xx = (float)width;
     image.ImageMatrix.yy = (float)height;
     image.Width = width;
@@ -868,8 +870,10 @@ pdf14_put_image(pdf14_device *pdev, gs_imager_state *pis, gx_device *target)
 						(gs_image_common_t *)&image,
 						NULL, NULL, NULL,
 						pis->memory, &info);
-    if (code < 0)
+    if (code < 0) {
+	rc_decrement_only(pcs, "pdf14_put_image");
 	return code;
+    }
 
     linebuf = gs_alloc_bytes(pdev->memory, width * num_comp, "pdf14_put_image");
     for (y = 0; y < height; y++) {
@@ -921,6 +925,8 @@ pdf14_put_image(pdf14_device *pdev, gs_imager_state *pis, gx_device *target)
     gs_setdevice_no_init(pgs, (gx_device*) pdev);
     rc_decrement_only(pdev, "pdf_14_put_image");
 #endif
+
+    rc_decrement_only(pcs, "pdf14_put_image");
 
     return code;
 }
