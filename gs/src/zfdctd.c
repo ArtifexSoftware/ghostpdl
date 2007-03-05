@@ -31,13 +31,27 @@ private_st_jpeg_decompress_data();
 /* Import the parameter processing procedure from sddparam.c */
 stream_state_proc_put_params(s_DCTD_put_params, stream_DCT_state);
 
+/* Find the memory that will be used for allocating the stream. */
+private gs_ref_memory_t *
+find_stream_memory(i_ctx_t *i_ctx_p, int npop, uint space)
+{
+    uint use_space = max(space, avm_global);
+    os_ptr sop = osp - npop;
+
+    if (r_has_type(sop, t_dictionary)) {
+	--sop;
+    }
+    use_space = max(use_space, r_space(sop));
+    return idmemory->spaces_indexed[use_space >> r_space_shift];
+}
+
 /* <source> <dict> DCTDecode/filter <file> */
 /* <source> DCTDecode/filter <file> */
 private int
 zDCTD(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    gs_memory_t *mem = gs_memory_stable(imemory);
+    gs_memory_t *mem;
     stream_DCT_state state;
     dict_param_list list;
     jpeg_decompress_data *jddp;
@@ -45,6 +59,11 @@ zDCTD(i_ctx_t *i_ctx_p)
     const ref *dop;
     uint dspace;
 
+    if (r_has_type(op, t_dictionary))
+	dop = op, dspace = r_space(op);
+    else
+	dop = 0, dspace = 0;
+    mem = (gs_memory_t *)find_stream_memory(i_ctx_p, 0, dspace);
     /* First allocate space for IJG parameters. */
     jddp = gs_alloc_struct_immovable(mem,jpeg_decompress_data,
       &st_jpeg_decompress_data, "zDCTD");
@@ -59,10 +78,6 @@ zDCTD(i_ctx_t *i_ctx_p)
     if ((code = gs_jpeg_create_decompress(&state)) < 0)
 	goto fail;		/* correct to do jpeg_destroy here */
     /* Read parameters from dictionary */
-    if (r_has_type(op, t_dictionary))
-	dop = op, dspace = r_space(op);
-    else
-	dop = 0, dspace = 0;
     if ((code = dict_param_list_read(&list, dop, NULL, false, iimemory)) < 0)
 	goto fail;
     if ((code = s_DCTD_put_params((gs_param_list *) & list, &state)) < 0)
