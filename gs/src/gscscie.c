@@ -162,8 +162,6 @@ gx_final_CIEABC(const gs_color_space * pcs)
 private void
 gx_final_CIEA(const gs_color_space * pcs)
 {
-    /* {csrc} debug */
-    dlprintf3("%08x %d += %d\n", pcs->params.a, pcs->params.a->rc.ref_count, -1);
     rc_adjust_const(pcs->params.a, -1, "gx_adjust_cspace_CIEA");
 }
 
