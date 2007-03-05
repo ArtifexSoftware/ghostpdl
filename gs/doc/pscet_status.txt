@@ -867,7 +867,7 @@ Test	 Status	Comments
 		I guess something is wrong with WhitePoint in GS,
 		because an assimmetry red|blue must come from it.
 		The assymmetry is observing with CPSI and not wiuth GS.
-		Assign to Tim
+		Assign to Igor
 		-
 		Test10: AOK
 		Match when using common CRD.
@@ -917,8 +917,8 @@ Test	 Status	Comments
                 Tim
                 -
                 Test12:
-                Same as test05.
-                Assign to Tim
+                CIEBasedDEFG shading does not match CPSI.
+                Assign to Igor
 
 09-47B-12  AOK	GS has wrong color Test06 GS not smooth Test07, Test08.
 		NOTE: Tek gets rangecheck error on Test03 Test10, CPSI and GS do not.
@@ -2157,7 +2157,7 @@ Test	 Status	Comments
                    pattern (the uncolored pattern in this case) is rendered using        
                    the wrong transformation matrix.  We haven't yet had time to go       
                    back and determine why this is happening.                             
-                   Assign: raph and tim                                                  
+                   Assign: Tim                                                  
 
 12-01-6  OK	Minor differences in positions and character shapes - ADC
 
@@ -2313,11 +2313,11 @@ Test	 Status	Comments
 
 12-07B-13  DIFF	Several differences.  Color squares are missing in GS.  The
 		Distiller/Acrobat 7.0 shows these squares blurred.  They are not
-		in both BS and CPSI. - ADC assign: Tim
+		in both GS and CPSI. - ADC assign: Tim
 
 12-07B-14  DIFF	Several differences.  Color squares are missing in GS.  The
 		Distiller/Acrobat 7.0 shows these squares blurred.  They are not
-		in both BS and CPSI. - ADC assign: Tim
+		in both GS and CPSI. - ADC assign: Tim
 
 12-07B-15  DIFF	Several differences.  Dark squares are missing in GS.  There are
 		dfferences in the blurring between Distiller/Acrobat 7.0 vs GS
@@ -2515,9 +2515,9 @@ Test	 Status	Comments
 		differences in shading gradients. - ADC
 
 12-14A-11  DIFF	Analyzed by Igor.
-		Test03: diff - same as 09-47B-11 Test05. Assign: Tim
+		Test03: diff - same as 09-47B-11 Test05. Assign: Igor
 		-
-		Test04: Similar to 09-47B-10 test11. assign: Tim
+		Test04: Similar to 09-47B-10 test11. assign: Igor
 		-
 		Test05, Test12: aok
 		A bug in the test : insufficient data.
@@ -2532,20 +2532,20 @@ Test	 Status	Comments
 		black black black   --- looks correct.
 		-
 		Test08, Test09: ?
-		same as 09-47B-11 Test05. Assign: Tim
+		same as 09-47B-11 Test05. Assign: Igor
 		Please pay attention to the vertical diagonal of the rhombus.
 		With CPSI it looks as a linear gradient, and does not with GS.
 		Looks that CMYK colors [v v v v] differently convert to RGB.
 		Not sure who is wrong, but CPSI looks more pleasant.
 
 12-14A-12  DIFF	Test03, 04, 10,11 :
-		same as 09-47B-11 Test05. Assign: Tim
+		same as 09-47B-11 Test05. Assign: Igor
 		-
 		Test07: aok - same as 12-14A-11 Test05.
 
 12-14A-13  DIFF	Test02:aok -  same as 12-14A-11 Test05.
 		-
-		Test03: likely same as 09-47B-10 Test11. assign: Tim
+		Test03: likely same as 09-47B-10 Test11. assign: Igor
 		-
 		Test04:
 		GS problem with non-contigous function.
@@ -2585,7 +2585,7 @@ Test	 Status	Comments
 		.
 		Assign to Ray to deside whether we should do this change.
 		-
-		Test05, 06, 07, 08, 12 : same as 09-47B-11 Test05. Assign: Tim
+		Test05, 06, 07, 08, 12 : same as 09-47B-11 Test05. Assign: Igor
 		-
 		Test09: aok - same as 09-47B-11 Test04.
                 Likely CPSI problem.
