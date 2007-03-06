@@ -3496,11 +3496,9 @@ Test	 Status	Comments
 
 16-03-1  OK	Fixed by rev 7172.
 
-16-03-2  DIFF	distorted charater shapes.
-		Distortion happens when contents of Metrics dict don't match
-		metrics information in charstring. Assign: Igor
+16-03-2	 OK
 
-16-03-3  DIFF	distorted character shapes, looks similar to 16-03-2. Assign: Igor.
+16-03-3	 OK
 
 16-03-4  OK	Now appears correct - Raph
 
@@ -3520,7 +3518,7 @@ Test	 Status	Comments
 
 16-08-1  OK	Fixed in r7156 - Raph
 
-16-09-1  DIFF	Distorted shapes, may be similar to 16-03-2. Needs further analysis - assign Igor
+16-09-1  OK
 
 16-10-1  AOK	Same as 16-01-1.
 
@@ -3532,8 +3530,7 @@ Test	 Status	Comments
 
 16-14-1  OK	
 
-16-15-1  DIFF	massive differences. Needs further analysis. Recommend deferring til later.
-                assign Tim
+16-15-1  OK
 
 16-16-1  OK	
 
