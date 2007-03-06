@@ -66,6 +66,8 @@ type2_sbw(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack, ip_state_t * ipsp,
 	wx = pcis->pfont->data.defaultWidthX;
     if (pcis->seac_accent < 0) {
 	if (pcis->sb_set) {
+	    pcis->origin_offset.x = pcis->lsb.x - sbx;
+	    pcis->origin_offset.y = pcis->lsb.y - sby;
 	    sbx = pcis->lsb.x;
 	    sby = pcis->lsb.y;
 	}
@@ -335,7 +337,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    if (code < 0)
 			return code;
 		} else {
-		    t1_hinter__setcurrentpoint(h, pcis->save_adxy.x, pcis->save_adxy.y);
+		    t1_hinter__setcurrentpoint(h, pcis->save_adxy.x + pcis->origin_offset.x, 
+						  pcis->save_adxy.y + pcis->origin_offset.y);
 		    code = t1_hinter__end_subglyph(h);
 		    if (code < 0)
 			return code;

@@ -134,6 +134,7 @@ struct gs_type1_state_s {
     fixed base_lsb;		/* The lsb of the base character for 'seac'. */
     int flex_path_state_flags;	/* record whether path was open */
 				/* at start of Flex section */
+    gs_fixed_point origin_offset; /* Origin offset due to replaced metrics. */
 #define flex_max 8
     int flex_count;
     int ignore_pops;		/* # of pops to ignore (after */

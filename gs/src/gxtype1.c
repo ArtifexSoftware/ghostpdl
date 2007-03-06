@@ -125,6 +125,7 @@ gs_type1_interp_init(register gs_type1_state * pcis, gs_imager_state * pis,
     pcis->num_hints = 0;
     pcis->seac_accent = -1;
     pcis->log2_subpixels = *plog2_subpixels;
+    pcis->origin_offset.x = pcis->origin_offset.y = 0;
 
     /* Set the sampling scale. */
     set_pixel_scale(&pcis->scale.x, plog2_scale->x);

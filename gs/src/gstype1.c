@@ -293,6 +293,8 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 
 		    if (pcis->seac_accent < 0) {
 			if (pcis->sb_set) {
+			    pcis->origin_offset.x = pcis->lsb.x - sbx;
+			    pcis->origin_offset.y = pcis->lsb.y - sby;
 			    sbx = pcis->lsb.x;
 			    sby = pcis->lsb.y;
 			}
@@ -497,8 +499,8 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			    return_error(code);
 			goto pushed;
 		    case ce1_setcurrentpoint:
-			cs0 += pcis->adxy.x;
-			cs1 += pcis->adxy.y;
+			cs0 += pcis->adxy.x + pcis->origin_offset.x;
+			cs1 += pcis->adxy.y + pcis->origin_offset.y;
 			t1_hinter__setcurrentpoint(h, cs0, cs1);
 			cnext;
 		    default:
