@@ -232,16 +232,11 @@ static int free_aux(ttfMemory *mem, void *ptr)
 
    if ( !exec )
      return TT_Err_Ok;
-   if ( !exec->current_face ) {
-     /* This may happen while closing a high level device, when allocator runs out of memory. 
-        A test case is 01_001.pdf with pdfwrite and a small vmthreshold.
-     */
-     return TT_Err_Out_Of_Memory;
-   }
    if (--exec->lock)
      return TT_Err_Ok; /* Still in use */
-
-   mem = exec->current_face->font->tti->ttf_memory;
+   mem = exec->memory;
+   if (!mem)
+     return TT_Err_Ok; /* Never used */
 
    /* points zone */
    FREE( exec->pts.cur_y );
@@ -304,6 +299,7 @@ static int free_aux(ttfMemory *mem, void *ptr)
    Int          callSize, stackSize;
 
    callSize  = 32;
+   exec->memory = mem;
 
    /* reserve a little extra for broken fonts like courbs or timesbs */
    stackSize = maxp->maxStackElements + 32;

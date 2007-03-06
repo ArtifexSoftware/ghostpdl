@@ -265,6 +265,7 @@ gs_font_dir_alloc2_limits(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
     pdir->grid_fit_tt = 2;
     pdir->memory = struct_mem;
     pdir->tti = 0;
+    pdir->ttm = 0;
     pdir->san = 0;
     pdir->global_glyph_code = NULL;
     pdir->text_enum_id = 0;

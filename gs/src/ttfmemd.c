@@ -84,6 +84,7 @@ ENUM_PTRS_BEGIN(TExecution_Context_enum_ptrs) return 0;
     ENUM_PTR(19, TExecution_Context, twilight.touch);
     ENUM_PTR(20, TExecution_Context, twilight.contours);
     ENUM_PTR(21, TExecution_Context, cvt);
+    ENUM_PTR(22, TExecution_Context, memory);
 ENUM_PTRS_END
 
 private RELOC_PTRS_WITH(TExecution_Context_reloc_ptrs, TExecution_Context *mptr)
@@ -115,6 +116,7 @@ private RELOC_PTRS_WITH(TExecution_Context_reloc_ptrs, TExecution_Context *mptr)
     RELOC_PTR(TExecution_Context, twilight.touch);
     RELOC_PTR(TExecution_Context, twilight.contours);
     RELOC_PTR(TExecution_Context, cvt);
+    RELOC_PTR(TExecution_Context, memory);
     DISCARD(mptr);
 }
 RELOC_PTRS_END

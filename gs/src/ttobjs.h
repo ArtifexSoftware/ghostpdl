@@ -695,6 +695,7 @@ typedef struct _TExecution_Context TExecution_Context;
     Int                n_points;
     Int                maxGlyphSize;
     Int                lock;
+    ttfMemory	       *memory;
   };
 
 

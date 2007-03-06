@@ -173,7 +173,6 @@ void ttfInterpreter__release(ttfInterpreter **ptti)
     mem->free(mem, tti->usage, "ttfInterpreter__release");
     mem->free(mem, tti->exec, "ttfInterpreter__release");
     mem->free(mem, *ptti, "ttfInterpreter__release");
-    mem->free(mem, mem, "ttfInterpreter__release");
     *ptti = 0;
 }
 
@@ -191,8 +190,15 @@ void ttfFont__init(ttfFont *this, ttfMemory *mem,
 void ttfFont__finit(ttfFont *this)
 {   ttfMemory *mem = this->tti->ttf_memory;
 
-    if (this->exec)
-	Context_Destroy(this->exec);
+    if (this->exec) {
+	if (this->inst)
+	    Context_Destroy(this->exec);
+	else {
+	    /* Context_Create was not called - see ttfFont__Open.
+	       Must not call Context_Destroy for proper 'lock' count.
+	     */
+	}
+    }
     this->exec = NULL;
     if (this->inst)
 	Instance_Destroy(this->inst);
