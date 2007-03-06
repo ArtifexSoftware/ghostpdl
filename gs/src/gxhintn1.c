@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id: gxhintn.c 7583 2007-01-08 15:04:53Z leonardo $ */
+/* $Id$ */
 /* A stuff for reconnizing and fixing wrong contour signs. */
 
 #include "memory_.h"
