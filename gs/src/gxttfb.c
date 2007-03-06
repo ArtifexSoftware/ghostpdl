@@ -291,10 +291,10 @@ private void WarnPatented(gs_font_type42 *pfont, ttfFont *ttf, const char *txt)
 
 /*----------------------------------------------*/
 
-typedef struct gx_ttfMemory_s {
+struct gx_ttfMemory_s {
     ttfMemory super;
     gs_memory_t *memory;
-} gx_ttfMemory;
+};
 
 gs_private_st_simple(st_gx_ttfMemory, gx_ttfMemory, "gx_ttfMemory");
 /* st_gx_ttfMemory::memory points to a root. */
