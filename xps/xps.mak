@@ -63,6 +63,22 @@ $(XPSOBJ)xpsimage.$(OBJ): $(XPSSRC)xpsimage.c $(XPSINCLUDES)
 $(XPSOBJ)xpsgradient.$(OBJ): $(XPSSRC)xpsgradient.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpsgradient.c $(XPSO_)xpsgradient.$(OBJ)
 
+$(XPSOBJ)xpsglyphs.$(OBJ): $(XPSSRC)xpsglyphs.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xpsglyphs.c $(XPSO_)xpsglyphs.$(OBJ)
+
+$(XPSOBJ)xpsfont1.$(OBJ): $(XPSSRC)xpsfont1.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xpsfont1.c $(XPSO_)xpsfont1.$(OBJ)
+
+$(XPSOBJ)xpsfont2.$(OBJ): $(XPSSRC)xpsfont2.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xpsfont2.c $(XPSO_)xpsfont2.$(OBJ)
+
+$(XPSOBJ)xpsttf.$(OBJ): $(XPSSRC)xpsttf.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xpsttf.c $(XPSO_)xpsttf.$(OBJ)
+
+$(XPSOBJ)xpscff.$(OBJ): $(XPSSRC)xpscff.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xpscff.c $(XPSO_)xpscff.$(OBJ)
+
+
 $(XPS_TOP_OBJ): $(XPSSRC)xpstop.c $(pltop_h) $(XPSINCLUDES)
 	$(CP_) $(XPSGEN)pconf.h $(XPSGEN)pconfig.h
 	$(XPSCCC) $(XPSSRC)xpstop.c $(XPSO_)xpstop.$(OBJ)
@@ -82,6 +98,11 @@ XPS_OBJS=\
     $(XPSOBJ)xpsvisual.$(OBJ) \
     $(XPSOBJ)xpsimage.$(OBJ) \
     $(XPSOBJ)xpsgradient.$(OBJ) \
+    $(XPSOBJ)xpsglyphs.$(OBJ) \
+    $(XPSOBJ)xpsfont1.$(OBJ) \
+    $(XPSOBJ)xpsfont2.$(OBJ) \
+    $(XPSOBJ)xpsttf.$(OBJ) \
+    $(XPSOBJ)xpscff.$(OBJ) \
 
 $(XPSOBJ)xps.dev: $(XPS_MAK) $(ECHOGS_XE) $(XPS_OBJS)
 	$(SETMOD) $(XPSOBJ)xps $(XPS_OBJS)

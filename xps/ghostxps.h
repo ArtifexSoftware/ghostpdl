@@ -16,12 +16,25 @@
 #include "gspath.h"
 #include "gsimage.h"
 #include "gscspace.h"
+#include "gscolor3.h"
+#include "gsutil.h"
 
 #include "gxpath.h"     /* gsshade.h depends on it */
 #include "gxfixed.h"    /* gsshade.h depends on it */
+#include "gxmatrix.h"	/* gxtype1.h depends on it */
 #include "gsshade.h"
 #include "gsfunc.h"
 #include "gsfunc3.h"    /* we use stitching and exponential interp */
+
+#include "gxfont.h"
+#include "gxchar.h"
+#include "gxtype1.h"
+#include "gxfont1.h"
+#include "gxfont42.h"
+#include "gxfcache.h"
+#include "gxistate.h"
+
+#include "gzstate.h"
 
 #include "zlib.h"
 
@@ -94,6 +107,7 @@ struct xps_context_s
     void *instance;
     gs_memory_t *memory;
     gs_state *pgs;
+    gs_font_dir *fontdir;
 
     xps_part_t *first_part;
     xps_part_t *last_part;
@@ -172,6 +186,60 @@ struct xps_image_s
 int xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
 int xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
 int xps_decode_tiff(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
+
+/*
+ * Fonts.
+ */
+
+typedef struct xps_font_s xps_font_t;
+
+struct xps_font_s
+{
+    byte *data;
+    int length;
+    gs_font *font;
+
+    int subfontid;
+    int cmaptable;
+    int cmapsubcount;
+    int cmapsubtable;
+    int usepua;
+
+    /* these are for CFF opentypes only */
+    byte *cffdata;
+    byte *cffend;
+    byte *gsubrs;
+    byte *subrs;
+    byte *charstrings;
+};
+
+typedef struct xps_glyph_metrics_s xps_glyph_metrics_t;
+
+struct xps_glyph_metrics_s
+{
+    float hadv, vadv, vorg;
+};
+
+
+int xps_init_font_cache(xps_context_t *ctx);
+void xps_free_font_cache(xps_context_t *ctx);
+
+xps_font_t *xps_new_font(xps_context_t *ctx, char *buf, int buflen, int index);
+void xps_free_font(xps_context_t *ctx, xps_font_t *font);
+
+int xps_count_font_encodings(xps_font_t *font);
+int xps_identify_font_encoding(xps_font_t *font, int idx, int *pid, int *eid);
+int xps_select_font_encoding(xps_font_t *font, int idx);
+int xps_encode_font_char(xps_font_t *font, int key);
+
+int xps_measure_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, xps_glyph_metrics_t *mtx);
+int xps_draw_font_glyph_to_path(xps_context_t *ctx, xps_font_t *font, int gid, float x, float y);
+int xps_fill_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, float x, float y);
+
+int xps_find_sfnt_table(xps_font_t *font, char *name, int *lengthp);
+int xps_load_sfnt_cmap(xps_font_t *font);
+int xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font);
+int xps_init_postscript_font(xps_context_t *ctx, xps_font_t *font);
 
 /*
  * XML and content.

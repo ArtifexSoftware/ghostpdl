@@ -1,11 +1,5 @@
 #include "ghostxps.h"
 
-int xps_parse_glyphs(xps_context_t *ctx, xps_item_t *node)
-{
-    dputs("Ooo some text!\n");
-    return 0;
-}
-
 int xps_parse_canvas(xps_context_t *ctx, xps_item_t *root)
 {
     xps_item_t *node;

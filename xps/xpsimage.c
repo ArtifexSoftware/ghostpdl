@@ -184,7 +184,7 @@ xps_parse_image_brush(xps_context_t *ctx, xps_item_t *root)
 	 * Voodoo.
 	 */
 
-	penum = gs_image_enum_alloc(ctx->memory, "xps_parse_image_brush");
+	penum = gs_image_enum_alloc(ctx->memory, "xps_parse_image_brush (gs_image_enum_alloc)");
 	if (!penum)
 	    return gs_throw(-1, "gs_enum_allocate failed");
 
@@ -200,11 +200,11 @@ xps_parse_image_brush(xps_context_t *ctx, xps_item_t *root)
 	if (count > used)
 	    return gs_throw2(0, "too much image data (image=%d used=%d)", count, used);
 
-	gs_image_cleanup(penum, ctx->pgs);
+	gs_image_cleanup_and_free_enum(penum, ctx->pgs);
     }
     gs_grestore(ctx->pgs);
 
-    /* TODO: free image data */
+    xps_free(ctx, image.samples);
 
     return 0;
 }

@@ -106,6 +106,7 @@ dputs("xps_imp_allocate_interp_instance!\n");
     ctx->instance = instance;
     ctx->memory = pmem;
     ctx->pgs = pgs;
+    ctx->fontdir = NULL;
 
     instance->pre_page_action = 0;
     instance->pre_page_closure = 0;
@@ -113,6 +114,8 @@ dputs("xps_imp_allocate_interp_instance!\n");
     instance->post_page_closure = 0;
 
     instance->ctx = ctx;
+
+    xps_init_font_cache(ctx);
 
     *ppinstance = (pl_interp_instance_t *)instance;
 
@@ -312,6 +315,8 @@ dputs("xps_imp_deallocate_interp_instance!\n");
 	xps_free_type_map(ctx, ctx->overrides);
 	xps_free_type_map(ctx, ctx->defaults);
     }
+
+    xps_free_font_cache(ctx);
 
     // free gstate?
     gs_free_object(mem, ctx, "xps_imp_deallocate_interp_instance");
