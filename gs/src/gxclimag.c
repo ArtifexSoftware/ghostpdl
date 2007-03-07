@@ -377,6 +377,7 @@ clist_begin_typed_image(gx_device * dev,
 	(code = gs_matrix_multiply(&mat, &ctm_only(pis), &mat)) < 0 ||
 	/****** CAN'T HANDLE SOME TRANSFORMS ******/
 	(mat.tx != cdev->imager_state.ctm.tx) ||  
+	(mat.ty != cdev->imager_state.ctm.ty) ||  
 	!(cdev->disable_mask & clist_disable_nonrect_hl_image ?
 	  (is_xxyy(&mat) || is_xyyx(&mat)) :
 	  image_matrix_ok_to_band(&mat))
