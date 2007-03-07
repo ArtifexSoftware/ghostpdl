@@ -1,15 +1,32 @@
 #/usr/bin/env python
 
-import os, re
-import sys, time
+import os
+import time
+import sys
+
+try:
+  from mpi4py import MPI
+except ImportError:
+  class DummyMPI:
+    'a dummy MPI class for conditionals in a serial job'
+    size = 1
+    rank = 0
+  MPI = DummyMPI()
+
+class Conf:
+  'class for holding various configuration parameters'
+  # output format, set to False for interactive
+  batch = False
+  # should we update the md5sum database to new values?
+  update = True
+conf = Conf()
 
 # results of tests are stored as classes
 
 class TestResult:
   'generic test result class'
-  def __init__(self, test=None, msg=None):
-    self.test = test
-    self.msg = None
+  def __init__(self, msg=None):
+    self.msg = msg
   def __str__(self):
     return 'no result'
 
@@ -31,13 +48,12 @@ class ErrorResult(TestResult):
 class NewResult(TestResult):
   'result class for tests that are new and have no expected result'
   def __str__(self):
-    return 'new'
+    return 'new (%s)' % self.msg
 
 class SelfTest:
   'generic class for self tests'
   def __init__(self):
     self.result = None
-    self.msg = ''
   def description(self):
     'returns a short name for the test'
     return "generic self test"
@@ -51,45 +67,116 @@ class SelfTestSuite:
     self.stream = stream
     self.tests = []
     self.fails = []
+    self.errors = []
+    self.news = []
+    self.elapsed = 0.0
   def addTest(self, test):
     self.tests.append(test)
-  def run(self):
-    starttime = time.time()
-    for test in self.tests:
-      self.stream.write("%s ... " % test.description())
-      test.run()
-      if not isinstance(test.result, OKResult):
+  def addResult(self, test):
+    if test:
+      if not conf.batch:
+        print test.description() + ' ... ' + str(test.result)
+      self.tests.append(test)
+      if isinstance(test.result, ErrorResult):
+        self.errors.append(test)
+      elif isinstance(test.result, NewResult):
+        self.news.append(test)
+      elif not isinstance(test.result, OKResult):
+        # treat everything else as a failure
         self.fails.append(test)
-      self.stream.write("%s\n" % test.result)
-    stoptime = time.time()
-    self.stream.write('-'*72 + '\n')
-    self.stream.write('ran %d tests in %.3f seconds\n\n' % 
-	(len(self.tests), stoptime - starttime))
-    if len(self.fails):
-      self.stream.write('FAILED %d of %d tests\n' % 
-	(len(self.fails),len(self.tests)))
-    else:
-      self.stream.write('PASSED all %d tests\n' % len(self.tests))
+  def run(self):
+    'run each test in sequence'
+    starttime = time.time()
+    tests = self.tests
+    self.tests = []
+    for test in tests:
+      test.run()
+      self.addResult(test)
+    self.elapsed = time.time() - starttime
+    self.report()
+  def report(self):
+    if not conf.batch:
+      print '-'*72
+    print 'ran %d tests in %.3f seconds on %d nodes\n' % \
+	(len(self.tests), self.elapsed, MPI.size)
+    if self.fails:
+      print 'FAILED %d of %d tests' % \
+	(len(self.fails),len(self.tests))
+      if conf.batch:
+        for test in self.fails:
+          print '  ' + test.file
+        print
+    if self.errors:
+      print 'ERROR running %d of %d tests' % \
+	(len(self.errors),len(self.tests))
+      if conf.batch:
+        for test in self.errors:
+          print '  ' + test.description()
+          print test.result.msg
+        print
+    if not self.fails and not self.errors:
+      print 'PASSED all %d tests' % len(self.tests)
+    if self.news:
+      print '%d NEW files with no previous result' % len(self.news)
+    print
 
-class lsTest(SelfTest):
-  '''test class for running the language switch build
-  pass in a database for comparison and a path to a file to check'''
-  def __init__(self, db, file, dpi=300):
+class MPITestSuite(SelfTestSuite):
+  def run(self):
+    '''use MPI to dispatch tests to worker nodes
+    each of which will run the run the actual tests
+    and return the result'''
+    starttime = time.time()
+    # broadcast the accumulated tests to all nodes
+    self = MPI.COMM_WORLD.Bcast(self, 0)
+    if MPI.rank > 0:
+      # daughter nodes run requested tests
+      test = None
+      while True:
+        MPI.COMM_WORLD.Send(test, dest=0)
+        test = MPI.COMM_WORLD.Recv(source=0)
+        if not test:
+          break
+        test.run()
+    else:
+      # mother node hands out work and reports
+      tests = self.tests
+      self.tests = []
+      while tests:
+        status = MPI.Status()
+        test = MPI.COMM_WORLD.Recv(source=MPI.ANY_SOURCE, status=status)
+        self.addResult(test)
+        MPI.COMM_WORLD.Send(tests.pop(), dest=status.source)
+      # retrieve outstanding results and tell the nodes we're finished
+      for node in xrange(1, MPI.size):
+        test = MPI.COMM_WORLD.Recv(source=MPI.ANY_SOURCE)
+	self.addResult(test)
+        MPI.COMM_WORLD.Send(None, dest=node)
+    stoptime = time.time()
+    self.elapsed = stoptime - starttime
+    if MPI.rank == 0:
+      self.report()
+
+class md5Test(SelfTest):
+  '''test class for running a file and comparing the output to an
+  expected value.'''
+  def __init__(self, file, md5sum, dpi=300):
     SelfTest.__init__(self)
-    self.db = db
     self.file = file
+    self.md5sum = md5sum
     self.dpi = dpi
     self.exe = './language_switch/obj/pspcl6'
+    #self.exe = './bin/gs -q -I../fonts'
     self.opts = "-dNOPAUSE -sDEVICE=ppmraw -r%d" % dpi
-    self.psopts = '-dMaxBitmap=40000000 ./gs/lib/gs_cet.ps'
+    self.opts += " -dSAFER -dBATCH"
+    self.psopts = '-dMaxBitmap=40000000 -dJOBSERVER ./lib/gs_cet.ps'
   def description(self):
     return 'Checking ' + self.file
   def run(self):
-    scratch = os.path.basename(self.file) + '.md5'
+    scratch = os.path.join('/tmp', os.path.basename(self.file) + '.md5')
     # add psopts if it's a postscript file
     if self.file[-3:].lower() == '.ps' or \
 	self.file[-4:].lower() == '.eps':
-      cmd = '%s %s -sOutputFile="|md5sum>%s" %s %s ' % \
+      cmd = '%s %s -sOutputFile="|md5sum>%s" %s - < %s ' % \
 	(self.exe, self.opts, scratch, self.psopts, self.file)
     else:
       cmd = '%s %s -sOutputFile="|md5sum>%s" %s' % \
@@ -98,39 +185,94 @@ class lsTest(SelfTest):
     msg = run.readlines()
     code = run.close()
     if code:
-      self.result = ErrorResult('\n'.join(msg))
+      self.result = ErrorResult(''.join(msg))
       return
-    checksum = open(scratch)
-    md5sum = checksum.readline().split()[0]
-    checksum.close()
-    os.unlink(scratch)
     try:
-      oldsum = self.db[self.file]
-    except KeyError:
-      self.db[self.file] = md5sum
+      checksum = open(scratch)
+      md5sum = checksum.readline().split()[0]
+      checksum.close()
+      os.unlink(scratch)
+    except IOError:
+      self.result = ErrorResult('no output')
+      return
+    if not self.md5sum:
       self.result = NewResult(md5sum)
       return
-    if oldsum == md5sum:
+    if self.md5sum == md5sum:
       self.result = OKResult(md5sum)
     else:
       self.result = FailResult(md5sum)
 
+class DB:
+  '''class representing an md5 sum database'''
+  def __init__(self):
+    self.store = None
+    self.db = {}
+  def load(self, store='reg_baseline.txt'):
+    self.store = store
+    try:
+      f = open(self.store)
+    except IOError:
+      print 'WARNING: could not open baseline database', self.store
+      return
+    for line in f.readlines():
+      if line[:1] == '#': continue
+      fields = line.split()
+      try:
+        file = fields[0].strip()
+        md5sum = fields[1].strip()
+        self.db[file] = md5sum
+      except IndexError:
+        pass
+    f.close()
+  def save(self, store=None):
+    if not store:
+      store = self.store
+    f = open(store, 'w')
+    f.write('# regression test baseline\n')
+    for key in self.db.keys():
+      f.write(str(key) + ' ' + str(self.db[key]) + '\n')
+    f.close()
+  def __getitem__(self, key):
+    try:
+      value = self.db[key]
+    except KeyError:
+      value = None
+    return value
+  def __setitem__(self, key, value):
+    self.db[key] = value
+
 def run_regression():
   'run normal set of regressions'
   from glob import glob
-  import anydbm
-  suite = SelfTestSuite()
-  db = anydbm.open('reg_cache.db', 'c')
-  testdir = '../tests/'
-  tests = ['pcl/pcl5cfts/fts.*',
+  if MPI.size > 1:
+    suite = MPITestSuite()
+  else:
+    suite = SelfTestSuite()
+  if MPI.rank == 0:
+    db = DB()
+    db.load()
+    testdir = '../tests/'
+    tests = ['pcl/pcl5cfts/fts.*',
 	'pcl/pcl5efts/fts.*', 
 	'pcl/pcl5ccet/*.BIN',
 	'ps/ps3cet/*.PS']
-  for test in tests:
-    for file in glob(testdir + test):
-      suite.addTest(lsTest(db, file))
+    pstests = ['ps/ps3fts/*.ps','ps/ps3cet/*.PS']
+    for test in tests:
+      for file in glob(testdir + test):
+        suite.addTest(md5Test(file, db[file]))
+    if MPI.size > 1:
+      print('running tests on %d nodes...' % MPI.size)
   suite.run()
-  db.close()
+  if MPI.rank == 0:
+    # update the database with new files and save
+    for test in suite.news:
+      db[test.file] = test.result.msg
+    if conf.update:
+      for test in suite.fails:
+        db[test.file] = test.result.msg
+    db.save()
+
 
 # self test self tests
 
