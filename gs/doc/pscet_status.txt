@@ -2518,7 +2518,7 @@ Test	 Status	Comments
 		differences in shading gradients. - ADC
 
 12-14A-11  DIFF	Analyzed by Igor.
-		Test03: diff - same as 09-47B-11 Test05. Assign: Igor
+		Test03: diff - same as 09-47B-11 Test05. Assign: Tim
 		-
 		Test04: Similar to 09-47B-10 test11. assign: Igor
 		-
@@ -2535,14 +2535,14 @@ Test	 Status	Comments
 		black black black   --- looks correct.
 		-
 		Test08, Test09: ?
-		same as 09-47B-11 Test05. Assign: Igor
+		same as 09-47B-11 Test05. Assign: Tim
 		Please pay attention to the vertical diagonal of the rhombus.
 		With CPSI it looks as a linear gradient, and does not with GS.
 		Looks that CMYK colors [v v v v] differently convert to RGB.
 		Not sure who is wrong, but CPSI looks more pleasant.
 
 12-14A-12  DIFF	Test03, 04, 10,11 :
-		same as 09-47B-11 Test05. Assign: Igor
+		same as 09-47B-11 Test05. Assign: Tim
 		-
 		Test07: aok - same as 12-14A-11 Test05.
 
@@ -2588,7 +2588,7 @@ Test	 Status	Comments
 		.
 		Assign to Ray to deside whether we should do this change.
 		-
-		Test05, 06, 07, 08, 12 : same as 09-47B-11 Test05. Assign: Igor
+		Test05, 06, 07, 08, 12 : same as 09-47B-11 Test05. Assign: Tim
 		-
 		Test09: aok - same as 09-47B-11 Test04.
                 Likely CPSI problem.
