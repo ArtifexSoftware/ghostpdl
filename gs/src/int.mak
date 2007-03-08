@@ -1733,11 +1733,12 @@ $(PSD)func4.dev : $(INT_MAK) $(ECHOGS_XE) $(func4read_)\
 	$(ADDMOD) $(PSD)func4 -functiontype 4
 	$(ADDMOD) $(PSD)func4 -include $(PSD)func $(GLD)func4lib
 
+# Note: opextern.h is included from oper.h and is a dependency of oper.h
 $(PSOBJ)zfunc4.$(OBJ) : $(PSSRC)zfunc4.c $(memory__h) $(string__h)\
  $(OP) $(opextern_h)\
  $(gsfunc_h) $(gsfunc4_h) $(gsutil_h)\
  $(idict_h) $(ifunc_h) $(iname_h) $(ialloc_h)\
- $(dstack_h) $(gzstate_h) $(gxdevcli_h)
+ $(dstack_h) $(gzstate_h) $(gxdevcli_h) $(string__h)
 	$(PSCC) $(PSO_)zfunc4.$(OBJ) $(C_) $(PSSRC)zfunc4.c
 
 $(PSOBJ)zimage3.$(OBJ) : $(PSSRC)zimage3.c $(OP) $(memory__h)\
