@@ -178,8 +178,6 @@ zcs_begin_map(i_ctx_t *i_ctx_p, gs_indexed_map ** pmap, const ref * pproc,
 
     if (code < 0)
 	return code;
-    /* Set the reference count to 0 rather than 1. */
-    rc_init_free(map, mem, 0, free_indexed_map);
     *pmap = map;
     /* Map the entire set of color indices.  Since the */
     /* o-stack may not be able to hold N*4096 values, we have */
