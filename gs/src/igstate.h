@@ -112,7 +112,7 @@ typedef struct int_remap_color_info_s int_remap_color_info_t;
 #endif
 
 typedef struct int_gstate_s {
-    ref dash_pattern;		/* (array) */
+    ref dash_pattern_array;	/* (array) */
     /* Screen_procs are only relevant if setscreen was */
     /* executed more recently than sethalftone */
     /* (for this graphics context). */
