@@ -1654,9 +1654,7 @@ Test	 Status	Comments
 
 11-06-5  DIFF	GS has extra line: MUCH 15, 30, 31 assign: Igor
 
-11-07-1  DIFF	Circles being drawn in wrong place. 
-		Likely a problem with current point after rendering a text.
-		Tek matches CPSI. Assign: Igor
+11-07-1  OK
 
 11-07-2  OK	Minor differences visually reviewed by RJJ
 

@@ -354,8 +354,6 @@ zuappend(i_ctx_t *i_ctx_p)
     gs_grestore(igs);
     if (code < 0)
 	return code;
-    igs->current_point.x = fixed2float(igs->path->position.x);
-    igs->current_point.y = fixed2float(igs->path->position.y);
     pop(1);
     return 0;
 }
@@ -751,8 +749,6 @@ upath_append(os_ptr oppath, i_ctx_t *i_ctx_p, bool upath_compat)
 	pop(nargs);
 	return code;
     }
-    igs->current_point.x = fixed2float(igs->path->position.x);
-    igs->current_point.y = fixed2float(igs->path->position.y);
     return 0;
 }
 

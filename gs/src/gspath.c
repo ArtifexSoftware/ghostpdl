@@ -64,6 +64,7 @@ gs_upmergepath(gs_state * pgs)
 	return code;
     if (pgs->current_point_valid) {
 	saved->current_point = pgs->current_point;
+	saved->subpath_start = pgs->subpath_start;
 	saved->current_point_valid = true;
     }
     return code;
