@@ -260,7 +260,7 @@ void
    * (Decode is not initialized).
    */
     gs_pixel_image_t_init(gs_pixel_image_t * pim,
-			  const gs_color_space * color_space);
+			  gs_color_space * color_space);
 
 /*
  * Initialize an ImageType 1 image (or imagemask).  Also sets ImageMask,
@@ -274,7 +274,7 @@ void
  * Note that for init and init_adjust, adjust is only relevant if
  * pim->ImageMask is true.
  */
-void gs_image_t_init_adjust(gs_image_t * pim, const gs_color_space * pcs,
+void gs_image_t_init_adjust(gs_image_t * pim, gs_color_space * pcs,
 			    bool adjust);
 #define gs_image_t_init(pim, pcs)\
   gs_image_t_init_adjust(pim, pcs, true)

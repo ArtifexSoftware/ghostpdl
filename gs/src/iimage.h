@@ -39,7 +39,7 @@ int data_image_params(const gs_memory_t *mem,
 int pixel_image_params(i_ctx_t *i_ctx_p, const ref *op,
                        gs_pixel_image_t *pim, image_params * pip,
                        int max_bits_per_component, bool has_alpha,
-                       const gs_color_space *csp);
+                       gs_color_space *csp);
 
 /* Exported for zimage3.c and ztrans.c */
 int zimage_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,

@@ -198,7 +198,7 @@ private int read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
                                  gs_color_space **ppcs,
                                  gs_memory_t *mem);
 private int read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
-                             const gs_color_space *pcs);
+                             gs_color_space *pcs);
 private int read_put_params(command_buf_t *pcb, gs_imager_state *pis,
                             gx_device_clist_reader *cdev,
                             gs_memory_t *mem);
@@ -1941,7 +1941,7 @@ out:
 
 private int
 read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
-		 const gs_color_space *pcs)
+		 gs_color_space *pcs)
 {
     uint index = *(pcb->ptr)++;
     const gx_image_type_t *image_type = gx_image_type_table[index];

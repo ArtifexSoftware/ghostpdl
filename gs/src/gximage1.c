@@ -47,7 +47,7 @@ const gx_image_type_t gs_image_type_mask1 = {
 
 /* Define the procedures for initializing gs_image_ts to default values. */
 void
-gs_image_t_init_adjust(gs_image_t * pim, const gs_color_space * color_space,
+gs_image_t_init_adjust(gs_image_t * pim, gs_color_space * color_space,
 		       bool adjust)
 {
     gs_pixel_image_t_init((gs_pixel_image_t *) pim, color_space);
@@ -111,7 +111,7 @@ gx_image1_sput(const gs_image_common_t *pic, stream *s,
 
 private int
 gx_image1_sget(gs_image_common_t *pic, stream *s,
-	       const gs_color_space *pcs)
+	       gs_color_space *pcs)
 {
     gs_image1_t *const pim = (gs_image1_t *)pic;
     int code = gx_pixel_image_sget((gs_pixel_image_t *)pim, s, pcs);
@@ -171,7 +171,7 @@ gx_image1_mask_sput(const gs_image_common_t *pic, stream *s,
 
 private int
 gx_image1_mask_sget(gs_image_common_t *pic, stream *s,
-		    const gs_color_space *ignore_pcs)
+		    gs_color_space *ignore_pcs)
 {
     gs_image1_t *const pim = (gs_image1_t *)pic;
     int code;

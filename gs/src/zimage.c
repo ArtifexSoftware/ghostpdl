@@ -117,7 +117,7 @@ data_image_params(const gs_memory_t *mem,
 int
 pixel_image_params(i_ctx_t *i_ctx_p, const ref *op, gs_pixel_image_t *pim,
 		   image_params *pip, int max_bits_per_component,
-		   bool has_alpha, const gs_color_space *csp)
+		   bool has_alpha, gs_color_space *csp)
 {
     int num_components =
 	gs_color_space_num_components(csp);
@@ -162,7 +162,7 @@ image1_setup(i_ctx_t * i_ctx_p, bool has_alpha)
     gs_image_t      image;
     image_params    ip;
     int             code;
-    const gs_color_space *csp = gs_currentcolorspace(igs);
+    gs_color_space *csp = gs_currentcolorspace(igs);
     extern bool CPSI_mode;
 
     /* Adobe interpreters accept sampled images when the current color
@@ -172,7 +172,7 @@ image1_setup(i_ctx_t * i_ctx_p, bool has_alpha)
      * triggering a rangecheck error.
      */
     if (CPSI_mode && gs_color_space_num_components(csp) < 1) {
-       const gs_color_space *bsp = csp->base_space;
+       gs_color_space *bsp = csp->base_space;
        if (bsp)
          csp = bsp;
     }

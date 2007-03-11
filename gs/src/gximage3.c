@@ -48,7 +48,7 @@ private const gx_image_enum_procs_t image3_enum_procs = {
 
 /* Initialize an ImageType 3 image. */
 void
-gs_image3_t_init(gs_image3_t * pim, const gs_color_space * color_space,
+gs_image3_t_init(gs_image3_t * pim, gs_color_space * color_space,
 		 gs_image3_interleave_type_t interleave_type)
 {
     gs_pixel_image_t_init((gs_pixel_image_t *) pim, color_space);

@@ -75,7 +75,7 @@ struct gx_image_type_s {
      * use pcs.
      */
 #define image_proc_sget(proc)\
-  int proc(gs_image_common_t *pic, stream *s, const gs_color_space *pcs)
+  int proc(gs_image_common_t *pic, stream *s, gs_color_space *pcs)
 
     image_proc_sget((*sget));
 
@@ -114,7 +114,7 @@ image_proc_release(gx_image_default_release); /* just free the params */
 int gx_pixel_image_sput(const gs_pixel_image_t *pic, stream *s,
 			const gs_color_space **ppcs, int extra);
 int gx_pixel_image_sget(gs_pixel_image_t *pic, stream *s,
-			const gs_color_space *pcs);
+			gs_color_space *pcs);
 void gx_pixel_image_release(gs_pixel_image_t *pic, gs_memory_t *mem);
 
 /* Internal procedures for use in sput/sget implementations. */

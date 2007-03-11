@@ -61,7 +61,7 @@ gs_image3x_mask_init(gs_image3x_mask_t *pimm)
     pimm->MaskDict.BitsPerComponent = 0;	/* not supplied */
 }
 void
-gs_image3x_t_init(gs_image3x_t * pim, const gs_color_space * color_space)
+gs_image3x_t_init(gs_image3x_t * pim, gs_color_space * color_space)
 {
     gs_pixel_image_t_init((gs_pixel_image_t *) pim, color_space);
     pim->type = &gs_image_type_3x;

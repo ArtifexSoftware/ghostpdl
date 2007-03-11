@@ -324,7 +324,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     const pdf_color_space_names_t *names;
     bool convert_to_process_colors = false;
     gs_color_space *pcs_device = NULL;
-    const gs_color_space *pcs_orig = NULL;
+    gs_color_space *pcs_orig = NULL;
     pdf_lcvd_t *cvd = NULL;
 
     /*

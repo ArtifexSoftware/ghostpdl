@@ -55,7 +55,7 @@ gs_data_image_t_init(gs_data_image_t * pim, int num_components)
 }
 void
 gs_pixel_image_t_init(gs_pixel_image_t * pim,
-		      const gs_color_space * color_space)
+		      gs_color_space * color_space)
 {
     int num_components;
 
@@ -225,7 +225,7 @@ gx_image_no_sput(const gs_image_common_t *pic, stream *s,
 
 int
 gx_image_no_sget(gs_image_common_t *pic, stream *s,
-		 const gs_color_space *pcs)
+		 gs_color_space *pcs)
 {
     return_error(gs_error_rangecheck);
 }
@@ -439,7 +439,7 @@ sget_variable_uint(stream *s, uint *pw)
  */
 int
 gx_pixel_image_sget(gs_pixel_image_t *pim, stream *s,
-		    const gs_color_space *pcs)
+		    gs_color_space *pcs)
 {
     uint control;
     float decode_default_1 = 1;
