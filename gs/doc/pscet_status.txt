@@ -869,8 +869,8 @@ Test	 Status	Comments
 		CPSI paints a lighter magenta. 
 		I guess something is wrong with WhitePoint in GS,
 		because an assimmetry red|blue must come from it.
-		The assymmetry is observing with CPSI and not wiuth GS.
-		Assign to Igor
+		The assymmetry is observing with CPSI and not with GS.
+		Assign to Tim
 		-
 		Test10: AOK
 		Match when using common CRD.
@@ -878,10 +878,7 @@ Test	 Status	Comments
 		Test11: AOK
 		Match when using common CRD.
 
-09-47B-11  DIFF	Test02, Test03 :
-                Analyzed by Igor.
-                Similar to 09-47B-10 Test11, Igor didn't dig in details.
-                To be revised after fixing  09-47B-10 Test11.
+09-47B-11  DIFF	Test02, Test03 : aok. Same as 09-47B-10 Test11.
 		-
                 Test04: aok
                 Analyzed by Igor.
@@ -2520,7 +2517,7 @@ Test	 Status	Comments
 12-14A-11  DIFF	Analyzed by Igor.
 		Test03: diff - same as 09-47B-11 Test05. Assign: Tim
 		-
-		Test04: Similar to 09-47B-10 test11. assign: Igor
+		Test04: aok. Similar to 09-47B-10 test11.
 		-
 		Test05, Test12: aok
 		A bug in the test : insufficient data.
@@ -2548,7 +2545,7 @@ Test	 Status	Comments
 
 12-14A-13  DIFF	Test02:aok -  same as 12-14A-11 Test05.
 		-
-		Test03: likely same as 09-47B-10 Test11. assign: Igor
+		Test03: aok. same as 09-47B-10 Test11.
 		-
 		Test04:
 		GS problem with non-contigous function.
@@ -2586,7 +2583,7 @@ Test	 Status	Comments
 		  // Then a half of occurances 'c' to be replaced with 'C'.
 		  }
 		.
-		Assign to Ray to deside whether we should do this change.
+		Assign: igor.
 		-
 		Test05, 06, 07, 08, 12 : same as 09-47B-11 Test05. Assign: Tim
 		-
@@ -3603,7 +3600,7 @@ Test	 Status	Comments
 17-05-1  OK	
 
 17-05-2  DIFF	Same as 17-04-2
-                assign igor
+                assign: igor
 
 17-05-3  OK	Same as 17-01-3
 
@@ -3614,7 +3611,7 @@ Test	 Status	Comments
 17-06-1  OK	
 
 17-06-2  DIFF	Same as 17-04-2 except rectangles instead of dots.  Still like GS output better.  
-		More consistant repeats of the pattern.  assign Igor.
+		More consistant repeats of the pattern.  assign: Igor.
 
 17-06-3  OK	Fixed as of rev 7636.
 
