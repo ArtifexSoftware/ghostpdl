@@ -1652,7 +1652,27 @@ Test	 Status	Comments
 
 11-06-4  OK	Minor differences visually reviewed by RJJ
 
-11-06-5  DIFF	GS has extra line: MUCH 15, 30, 31 assign: Igor
+11-06-5  AOK	CPSI problem.
+		GS has extra line: MUCH 15, 30, 31. Tek and CPSI do not.
+		Analyzed by Igor.
+		The following test discovers a problem in CPSI :
+		.
+		72 72 moveto 72 72 rlineto clip
+		0 0 200 200 rectfill
+		showpage
+		72 72 moveto 72 72 rlineto clip
+		0 0 200 200 rectclip
+		clippath currentpoint
+		showpage
+		.
+		The test installs aclipping path from a single line.
+		The first page paints a line, so
+		the clipping is not empty.
+		The second page first installs same clipping,
+		and then applies rectclip over it.
+		The intersection isn't empty by theory,
+		but with CPSI it appears empty and 
+		"clippath currentpoint" fails with nocurrentpoint.
 
 11-07-1  OK
 
