@@ -115,7 +115,6 @@ typedef struct px_bitmap_enum_s {
 typedef struct px_image_enum_s px_image_enum_t;
 #endif
 struct px_image_enum_s {
-  gs_color_space color_space;	/* must be first, for subclassing */
   gs_image_t image;
   byte *row;			/* buffer for one row of data */
   uint raster;
@@ -558,7 +557,7 @@ pxBeginImage(px_args_t *par, px_state_t *pxs)
 	     !rop3_uses_T(gs_currentrasterop(pgs))
              ) {
             if ( pxs->useciecolor )
-                code = pl_setSRGB(pgs, 0.0, 0.0, 0.0);
+                code = pl_setSRGBcolor(pgs, 0.0, 0.0, 0.0);
             else
                 code = gs_setgray(pgs, 0.0);
         }
@@ -588,8 +587,7 @@ pxBeginImage(px_args_t *par, px_state_t *pxs)
 	  if ( pxenum->row == 0 )
 	    code = gs_note_error(errorInsufficientMemory);
 	  else 
-	    code = px_image_color_space(&pxenum->color_space, &pxenum->image,
-					&params, (const gs_string *)&pxgs->palette, pgs);
+	    code = px_image_color_space(&pxenum->image, &params, (const gs_string *)&pxgs->palette, pgs);
 	}
 	if ( code < 0 )
 	  { gs_free_object(pxs->memory, pxenum->row, "pxReadImage(row)");
@@ -663,6 +661,8 @@ pxEndImage(px_args_t *par, px_state_t *pxs)
     gs_free_object(pxs->memory, pxenum->row, "pxEndImage(row)");
     if ( pbenum->compress_type == eDeltaRowCompression )
         gs_free_object(pbenum->mem, pbenum->deltarow_state.seedrow, "pxEndImage(seedrow)");
+    if ( pxenum->image.ColorSpace )
+        rc_decrement(pxenum->image.ColorSpace, "pxEndImage(image.ColorSpace)");
     gs_free_object(pxs->memory, pxenum, "pxEndImage(pxenum)");
     pxs->image_enum = 0;
     return 0;

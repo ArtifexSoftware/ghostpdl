@@ -83,10 +83,7 @@ free_indexed_cspace(
     pcl_cs_indexed_t *  pindexed = (pcl_cs_indexed_t *)pvindexed;
 
     pcl_cs_base_release(pindexed->pbase);
-    if (pindexed->pcspace != 0) {
-        gs_cspace_release(pindexed->pcspace);
-        gs_free_object(pmem, pindexed->pcspace, cname);
-    }
+    rc_decrement(pindexed->pcspace, "free_indexed_cspace");
     if (pindexed->palette.data != 0)
         gs_free_string( pmem,
                         pindexed->palette.data,
@@ -766,15 +763,7 @@ pcl_cs_indexed_update_lookup_tbl(
     if (code <= 0)
         return code;
 
-    /* the base space was updated, so re-build the indexed color space */
-    if (pindexed->pcspace != 0) {
-        gs_cspace_release(pindexed->pcspace);
-        gs_free_object( pindexed->rc.memory,
-                        pindexed->pcspace,
-                        "update_lookup_tbl"
-                        );
-        pindexed->pcspace = 0;
-    }
+    rc_decrement(pindexed->pcspace, "pcl_cs_indexed_update_lookup_tbl");
 
     return gs_cspace_build_Indexed( &(pindexed->pcspace),
                                     pindexed->pbase->pcspace,

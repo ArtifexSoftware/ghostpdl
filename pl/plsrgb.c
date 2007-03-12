@@ -208,10 +208,6 @@ private const gs_cie_render_proc3 pl_EncodeABC_procs = {
  *
  */
 
-/* comment this define out to enable reading crd's from devices - the current implementation suffers from memory leaks */
-
-#define DISABLE_DEVICE_CRD
-
 private bool
 pl_read_device_CRD(gs_cie_render *pcrd, gs_state *pgs)
 {
@@ -221,9 +217,6 @@ pl_read_device_CRD(gs_cie_render *pcrd, gs_state *pgs)
     char            nbuff[64];  /* ample size */
     int             code = 0;
 
-#ifdef DISABLE_DEVICE_CRD
-    return false;
-#endif
     /*get the CRDName parameter from the device */
     gs_c_param_list_write(&list, gs_state_memory(pgs));
     if (param_request((gs_param_list *)&list, "CRDName") < 0)
@@ -315,34 +308,8 @@ pl_build_crd(gs_state *pgs)
     return code;
 }
 
-/* statics for singleton CIEABC color space and a procedure to set the
-   sRGB via CIEABC. */
-gs_color_space *pl_pcs;
-bool pl_pcs_built = false;
-extern const gs_color_space_type gs_color_space_type_CIEABC;
 
-int
-pl_build_and_set_sRGB_space(gs_state *pgs)
-{
-    if ( pl_pcs_built == false ) {
-        int code = gs_cspace_build_CIEABC(&pl_pcs, NULL, gs_state_memory(pgs));
-        if ( code < 0 )
-            return code;
-        *(gs_cie_DecodeLMN(pl_pcs)) = pl_DecodeLMN;
-        *(gs_cie_MatrixLMN(pl_pcs)) = pl_MatrixLMN;
-        (gs_cie_WhitePoint(pl_pcs)) = pl_WhitePoint;
-        (gs_cie_BlackPoint(pl_pcs)) = pl_BlackPoint;
-        pl_pcs_built = true;
-    }
-    pl_pcs->type = &gs_color_space_type_CIEABC;
-    return gs_setcolorspace(pgs, pl_pcs);
-}
-
-/* more statics for a singleton CIEABC color space.  This duplicates code but
-   this color space is used for images.  Note we just return the color
-   space to the client and don't set the color space in the gstate. */
-gs_color_space *pl_pcs2;
-bool pl_pcs2_built = false;
+/* return SRGB color space to the client */
 int
 pl_cspace_init_SRGB(gs_color_space **ppcs, const gs_state *pgs)
 {
@@ -352,62 +319,51 @@ pl_cspace_init_SRGB(gs_color_space **ppcs, const gs_state *pgs)
     if ( code < 0 )
         return code;
 
-    if ( pl_pcs2_built == false ) {
-        int code = gs_cspace_build_CIEABC(&pl_pcs2, NULL, gs_state_memory(pgs));
-        if ( code < 0 )
-            return code;
-        *(gs_cie_DecodeLMN(pl_pcs2)) = pl_DecodeLMN;
-        *(gs_cie_MatrixLMN(pl_pcs2)) = pl_MatrixLMN;
-        (gs_cie_WhitePoint(pl_pcs2)) = pl_WhitePoint;
-        (gs_cie_BlackPoint(pl_pcs2)) = pl_BlackPoint;
-        pl_pcs2_built = true;
-    }
-    pl_pcs2->type = &gs_color_space_type_CIEABC;
-    *ppcs = pl_pcs2;
+    code = gs_cspace_build_CIEABC(ppcs, NULL, gs_state_memory(pgs));
+    if ( code < 0 )
+        return code;
+    *(gs_cie_DecodeLMN(*ppcs)) = pl_DecodeLMN;
+    *(gs_cie_MatrixLMN(*ppcs)) = pl_MatrixLMN;
+    (gs_cie_WhitePoint(*ppcs)) = pl_WhitePoint;
+    (gs_cie_BlackPoint(*ppcs)) = pl_BlackPoint;
     return 0;
 }
 
-/* set an srgb color and check crd and color space prerequisites are ok */
+/* set the srgb color space */
 int
-pl_setSRGB(gs_state *pgs, float r, float g, float b)
+pl_setSRGB(gs_state *pgs)
+{
+    gs_color_space *pcs;
+    int code;
+
+    code = pl_cspace_init_SRGB(&pcs, pgs);
+    if ( code < 0 )
+        return code;
+    code = gs_setcolorspace(pgs, pcs);
+    rc_decrement(pcs, "ps_setSRGB");
+    return code;
+}
+
+/* set an srgb color */
+int
+pl_setSRGBcolor(gs_state *pgs, float r, float g, float b)
 {
     int code;
+    gs_client_color color;
+
     /* make sure we have a crd set up */
     code = pl_build_crd(pgs);
     if ( code < 0 )
         return code;
-    /* build (if necessary) and set the color space */
-    code = pl_build_and_set_sRGB_space(pgs);
+
+    code = pl_setSRGB(pgs);
     if ( code < 0 )
         return code;
-    /* set the color */
-    {
-        gs_client_color color;
-        color.paint.values[0] = r;
-        color.paint.values[1] = g;
-        color.paint.values[2] = b;
-        code = gs_setcolor(pgs, &color);
-    }
-    return code;
-}
     
-        
-void
-pl_free_srgb(gs_state *pgs)
-{
-    if (pl_pcrd_built) {
-        gs_free_object(gs_state_memory(pgs), pl_pcrd, "pl_free_srgb");
-        pl_pcrd_built = false;
-    }
-    if (pl_pcs_built) {
-        gs_free_object(gs_state_memory(pgs), pl_pcs->params.abc, "pl_free_srgb");
-        gs_free_object(gs_state_memory(pgs), pl_pcs, "pl_free_srgb");
-        pl_pcs_built = false;
-    }
-    if (pl_pcs2_built) {
-        gs_free_object(gs_state_memory(pgs), pl_pcs2->params.abc, "pl_free_srgb");
-        gs_free_object(gs_state_memory(pgs), pl_pcs2, "pl_free_srgb");
-        pl_pcs2_built = false;
-    }
-    return;
+    /* set the color */
+    color.paint.values[0] = r;
+    color.paint.values[1] = g;
+    color.paint.values[2] = b;
+    code = gs_setcolor(pgs, &color);
+    return code;
 }

@@ -927,11 +927,7 @@ free_base_cspace(
 {
     pcl_cs_base_t * pbase = (pcl_cs_base_t *)pvbase;
 
-    if (pbase->pcspace != 0) {
-        gs_cspace_release(pbase->pcspace);
-        gs_free_object(pmem, pbase->pcspace, cname);
-    }
-    free_lookup_tbls(&(pbase->client_data));
+    rc_decrement(pbase->pcspace, "free_base_cspace");
     gs_free_object(pmem, pvbase, cname);
 }
 
@@ -953,7 +949,7 @@ alloc_base_cspace(
 )
 {
     pcl_cs_base_t *     pbase = 0;
-    int                 code;
+    int                 code = 0;
 
     *ppbase = 0;
     rc_alloc_struct_1( pbase,
@@ -970,15 +966,15 @@ alloc_base_cspace(
     pbase->pcspace = 0;
 
     if (type == pcl_cspace_White)
-        code = gs_cspace_build_DeviceGray(&(pbase->pcspace), pmem);
+        pbase->pcspace = gs_cspace_new_DeviceGray(pmem);
     else if (type <= pcl_cspace_CMY)
-        code = gs_cspace_build_DeviceRGB(&(pbase->pcspace), pmem);
+        pbase->pcspace = gs_cspace_new_DeviceRGB(pmem);
     else
         code = gs_cspace_build_CIEABC( &(pbase->pcspace),
                                        &(pbase->client_data),
                                        pmem
                                        );
-    if (code < 0)
+    if (code < 0 || pbase->pcspace == NULL)
         free_base_cspace(pmem, pbase, "allocate pcl base color space");
     else 
         *ppbase = pbase;

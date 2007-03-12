@@ -210,7 +210,6 @@ px_end_session_cleanup(px_state_t *pxs)
 	px_dict_release(&pxs->stream_dict);
 	/* delete downloaded fonts on end of session */
 	px_dict_release(&pxs->font_dict);
-        pl_free_srgb(pxs->pgs);
         pxpcl_release();
 }
 

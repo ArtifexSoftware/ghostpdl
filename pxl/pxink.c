@@ -218,7 +218,6 @@ px_paint_pattern(const gs_client_color *pcc, gs_state *pgs)
 	const px_pattern_t *pattern = ppat->client_data;
 	const byte *dp = pattern->data;
 	gs_image_enum *penum;
-	gs_color_space color_space;
 	gs_image_t image;
 	int code;
 	int num_components =
@@ -231,8 +230,7 @@ px_paint_pattern(const gs_client_color *pcc, gs_state *pgs)
 	uint bits_per_row, bytes_per_row;
 	int x;
 
-	code = px_image_color_space(&color_space, &image, &pattern->params,
-				    &pattern->palette, pgs);
+	code = px_image_color_space(&image, &pattern->params, &pattern->palette, pgs);
 	if ( code < 0 )
 	  return code;
 	penum = gs_image_enum_alloc(gs_state_memory(pgs), "px_paint_pattern");
@@ -361,29 +359,30 @@ render_pattern(gs_client_color *pcc, const px_pattern_t *pattern,
 	    px_initclip(pxs);
 	  }
           {
-              gs_color_space cs;
               gs_color_space *pcs;
               /* set the color space */
               switch ( pxgs->color_space ) {
               case eGray:
-                  gs_cspace_init_DeviceGray(pxgs->memory, &cs);
-                  pcs = &cs;
+                  pcs = gs_cspace_new_DeviceGray(pxgs->memory);
+                  if ( pcs == NULL )
+                      return_error(errorInsufficientMemory);
                   gs_setcolorspace(pgs, pcs);
                   break;
               case eRGB:
-                  gs_cspace_init_DeviceRGB(pxgs->memory, &cs);
-                  pcs = &cs;
-                  gs_setcolorspace(pgs, pcs);
+                  pcs = gs_cspace_new_DeviceRGB(pxgs->memory);
+                  if ( pcs == NULL )
+                      return_error(errorInsufficientMemory);
                   break;
               case eSRGB:
               case eCRGB:
-                  if ( pl_build_and_set_sRGB_space(pgs) < 0 )
+                  if ( pl_cspace_init_SRGB(&pcs, pgs) < 0 )
                       /* should not happen */
                       return_error(errorInsufficientMemory);
                   break;
               default:
                   return_error(errorIllegalAttributeValue);
               }
+              gs_setcolorspace(pgs, pcs);
           }
 	  code = gs_makepattern(pcc, &template, &mat, pgs, NULL);
 	  gs_grestore(pgs);
@@ -591,12 +590,10 @@ px_set_paint(const px_paint_t *ppt, px_state_t *pxs)
     case pxpPattern:
 	return gs_setpattern(pgs, &ppt->value.pattern.color);
     case pxpSRGB:
-        {
-            return pl_setSRGB(pgs,
-                              ppt->value.rgb[0],
-                              ppt->value.rgb[1],
-                              ppt->value.rgb[2]);
-        }
+        return pl_setSRGBcolor(pgs,
+                               ppt->value.rgb[0],
+                               ppt->value.rgb[1],
+                               ppt->value.rgb[2]);
     default:		/* can't happen */
 	return_error(errorIllegalAttributeValue);
     }

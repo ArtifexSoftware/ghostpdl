@@ -17,19 +17,18 @@
 #ifndef plsrgb_INCLUDED
 #  define plsrgb_INCLUDED
 
-int pl_cspace_init_SRGB(gs_color_space **ppcs, const gs_state *pgs);
-
-/* set an srgb color */
-int pl_setSRGB(gs_state *pgs, float r, float g, float b);
-
 /* build a color rendering dictionary to be used with the srgb color
-   space */
+   space.  If the device has a color rendering dictionary it will be
+   used. */
 int pl_build_crd(gs_state *pgs);
 
-/* free color spaces and the crd associated with setting up srgb */
-void pl_free_srgb(gs_state *pgs);
+/* return an srgb color space to the client */
+int pl_cspace_init_SRGB(gs_color_space **ppcs, const gs_state *pgs);
 
 /* build and set the rgb color space */
-int pl_build_and_set_sRGB_space(gs_state *pgs);
+int pl_setsRGB(gs_state *pgs);
+
+/* set an srgb color */
+int pl_setSRGBcolor(gs_state *pgs, float r, float g, float b);
 
 #endif /* plsrgb_INCLUDED */

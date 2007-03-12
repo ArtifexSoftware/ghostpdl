@@ -317,22 +317,22 @@ px_is_currentcolor_pattern(const gs_state *pgs)
 
 /* Set up the color space information for a bitmap image or pattern. */
 int
-px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
+px_image_color_space(gs_image_t *pim,
   const px_bitmap_params_t *params, const gs_string *palette,
   const gs_state *pgs)
 {	
 
     int depth = params->depth;
-    gs_color_space base_pcs;
-    gs_color_space *pbase_pcs;
+    gs_color_space *pbase_pcs = NULL;
+    gs_color_space *pcs = NULL;
     bool cie_space = false;
     int code = 0;
     switch ( params->color_space ) {
     case eGray:
-	gs_cspace_init_DeviceGray(pgs->memory, &base_pcs);
+	pbase_pcs = gs_cspace_new_DeviceGray(pgs->memory);
 	break;
     case eRGB:
-        gs_cspace_init_DeviceRGB(pgs->memory, &base_pcs);
+        pbase_pcs = gs_cspace_new_DeviceRGB(pgs->memory);
         break;
     case eSRGB:
     case eCRGB:
@@ -344,26 +344,32 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
     default:
 	return_error(errorIllegalAttributeValue);
     }
+    if (pbase_pcs == NULL)
+        return_error(errorInsufficientMemory);
 
     if ( params->indexed ) { 
-        memmove(&pcs->params.indexed.base_space, 
-                (cie_space ? pbase_pcs : &base_pcs),
-                sizeof(pcs->params.indexed.base_space));
-	gs_cspace_init(pcs, &gs_color_space_type_Indexed, pgs->memory, true);
+        pcs = gs_cspace_alloc(pgs->memory, &gs_color_space_type_Indexed);
+        if ( pcs == NULL ) {
+            /* free the base space also */
+            rc_decrement(pbase_pcs, "px_image_color_space");
+            return_error(errorInsufficientMemory);
+        }
+	pcs->base_space = pbase_pcs;
 	pcs->params.indexed.hival = (1 << depth) - 1;
 	pcs->params.indexed.lookup.table.data = palette->data;
 	pcs->params.indexed.lookup.table.size = palette->size;
 	pcs->params.indexed.use_proc = 0;
     } else {
-        *pcs = (cie_space ? *pbase_pcs : base_pcs);
+        pcs = pbase_pcs;
     }
     gs_image_t_init(pim, pcs);
     pim->ColorSpace = pcs;
     pim->BitsPerComponent = depth;
     if ( params->indexed )
 	pim->Decode[1] = (1 << depth) - 1;
+    /* NB - this needs investigation */
     if (cie_space && !px_is_currentcolor_pattern(pgs)) {
-        code = pl_setSRGB((gs_state *)pgs, 0.0, 0.0, 0.0);
+        code = pl_setSRGBcolor((gs_state *)pgs, 0.0, 0.0, 0.0);
     }
     return code;
 }

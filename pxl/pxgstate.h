@@ -189,7 +189,7 @@ int px_initclip(px_state_t *pxs);
 void px_gstate_reset(px_gstate_t *);
 
 /* Set up the color space information for a bitmap image or pattern. */
-int px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
+int px_image_color_space(gs_image_t *pim,
                          const px_bitmap_params_t *params,
                          const gs_string *palette,
                          const gs_state *pgs);
