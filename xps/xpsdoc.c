@@ -684,6 +684,7 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
 
     if (!ctx->start_part)
     {
+	dputs("looking for start part...\n");
 	xps_part_t *rootpart = xps_find_part(ctx, "/");
 	if (rootpart)
 	{

@@ -39,6 +39,13 @@
 #include "zlib.h"
 
 /*
+ * Some forward declarations for circular dependencies.
+ */
+
+typedef struct xps_font_s xps_font_t;
+typedef struct xps_image_s xps_image_t;
+
+/*
  * Context and memory.
  */
 
@@ -147,6 +154,9 @@ struct xps_part_s
     xps_relation_t *relations;
     int relations_complete; /* is corresponding .rels part finished? */
     xps_part_t *next;
+
+    xps_font_t *font; /* parsed font resource */
+    xps_font_t *image; /* parsed image resource */
 };
 
 xps_part_t *xps_new_part(xps_context_t *ctx, char *name, int capacity);
@@ -168,8 +178,6 @@ void xps_free_fixed_documents(xps_context_t *ctx);
 
 enum { XPS_GRAY, XPS_GRAY_A, XPS_RGB, XPS_RGB_A, XPS_CMYK, XPS_CMYK_A };
 
-typedef struct xps_image_s xps_image_t;
-
 struct xps_image_s
 {
     int width;
@@ -190,8 +198,6 @@ int xps_decode_tiff(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
 /*
  * Fonts.
  */
-
-typedef struct xps_font_s xps_font_t;
 
 struct xps_font_s
 {

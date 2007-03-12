@@ -1,5 +1,91 @@
 #include "ghostxps.h"
 
+#include <ctype.h>
+
+static inline int unhex(int i)
+{
+    if (isdigit(i))
+	return i - '0';
+    return tolower(i) - 'a' + 10;
+}
+
+/*
+ * Some fonts in XPS are obfuscated by XOR:ing the first 32 bytes of the
+ * data with the GUID in the fontname.
+ */
+int
+xps_deobfuscate_font_resource(xps_context_t *ctx, xps_part_t *part)
+{
+    byte buf[33];
+    byte key[16];
+    char *p;
+    int i;
+
+    dprintf1("deobfuscating font data in part '%s'\n", part->name);
+
+    p = strrchr(part->name, '/');
+    if (!p)
+	p = part->name;
+
+    for (i = 0; i < 32 && *p; p++)
+    {
+	if (isxdigit(*p))
+	    buf[i++] = *p;
+    }
+    buf[i] = 0;
+
+    if (i != 32)
+	return gs_throw(-1, "cannot extract GUID from part name");
+
+    for (i = 0; i < 16; i++)
+	key[i] = unhex(buf[i*2+0]) * 16 + unhex(buf[i*2+1]);
+
+    dputs("KEY ");
+    for (i = 0; i < 16; i++)
+    {
+	dprintf1("%02x", key[i]);
+	part->data[i] ^= key[15-i];
+	part->data[i+16] ^= key[15-i];
+    }
+    dputs("\n");
+}
+
+int
+xps_select_best_font_encoding(xps_font_t *font)
+{
+    static struct { int pid, eid; } xps_cmap_list[] =
+    {
+	{ 3, 10 },      /* Unicode with surrogates */
+	{ 3, 1 },       /* Unicode without surrogates */
+	{ 3, 5 },       /* Wansung */
+	{ 3, 4 },       /* Big5 */
+	{ 3, 3 },       /* Prc */
+	{ 3, 2 },       /* ShiftJis */
+	{ 3, 0 },       /* Symbol */
+	// { 0, * }, -- Unicode (deprecated)
+	{ 1, 0 },
+	{ -1, -1 },
+    };
+
+    int i, k, n, pid, eid;
+
+    n = xps_count_font_encodings(font);
+    for (k = 0; xps_cmap_list[k].pid != -1; k++)
+    {
+	for (i = 0; i < n; i++)
+	{
+	    xps_identify_font_encoding(font, i, &pid, &eid);
+	    if (pid == xps_cmap_list[k].pid && eid == xps_cmap_list[k].eid)
+	    {
+		xps_select_font_encoding(font, i);
+		return 0;
+	    }
+	}
+    }
+
+    return gs_throw(-1, "could not find a suitable cmap");
+}
+
 /*
  * Parse and draw an XPS <Glyphs> element.
  */
@@ -15,14 +101,22 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
     xps_glyph_metrics_t mtx;
     float x = originx;
     float y = originy;
-    int gid = 0;
+    char *s = unicode;
 
-    if (is_charpath)
-	xps_draw_font_glyph_to_path(ctx, font, gid, x, y);
-    else
-	xps_fill_font_glyph(ctx, font, gid, x, y);
+    while (*s)
+    {
+	int cid = *s++;
+	int gid = xps_encode_font_char(font, cid);
 
-    xps_measure_font_glyph(ctx, font, gid, &mtx);
+	if (is_charpath)
+	    xps_draw_font_glyph_to_path(ctx, font, gid, x, y);
+	else
+	    xps_fill_font_glyph(ctx, font, gid, x, y);
+
+	xps_measure_font_glyph(ctx, font, gid, &mtx);
+
+	x += mtx.hadv * size;
+    }
 }
 
 int
@@ -55,6 +149,7 @@ xps_parse_glyphs(xps_context_t *ctx, xps_item_t *root)
     xps_font_t *font;
 
     char partname[1024];
+    char *parttype;
 
     int is_sideways = 0;
     int saved = 0;
@@ -118,9 +213,21 @@ xps_parse_glyphs(xps_context_t *ctx, xps_item_t *root)
     if (!part)
 	return gs_throw1(-1, "cannot find font resource part '%s'", partname);
 
-    font = xps_new_font(ctx, part->data, part->size, 0);
-    if (!font)
-	return gs_rethrow1(-1, "cannot load font resource '%s'", partname);
+    if (!part->font)
+    {
+	/* deobfuscate if necessary */
+	parttype = xps_get_content_type(ctx, part->name);
+	if (parttype && !strcmp(parttype, "application/vnd.ms-package.obfuscated-opentype"))
+	    xps_deobfuscate_font_resource(ctx, part);
+
+	part->font = xps_new_font(ctx, part->data, part->size, 0);
+	if (!part->font)
+	    return gs_rethrow1(-1, "cannot load font resource '%s'", partname);
+
+	xps_select_best_font_encoding(part->font);
+    }
+
+    font = part->font;
 
     /*
      * Set up graphics state.
@@ -225,11 +332,6 @@ xps_parse_glyphs(xps_context_t *ctx, xps_item_t *root)
     if (saved)
     {
 	gs_grestore(ctx->pgs);
-    }
-
-    if (font)
-    {
-	xps_free_font(ctx, font);
     }
 
     return 0;
