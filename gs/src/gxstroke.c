@@ -479,15 +479,23 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	    default:
 		{
 		    /* The check is more complicated, but it's worth it. */
-		    double xsq = xx * xx + xy * xy;
-		    double ysq = yx * yx + yy * yy;
-		    double cross = xx * yx + xy * yy;
-
-		    if (cross < 0)
-			cross = 0;
-		    always_thin =
-			((max(xsq, ysq) + cross) * line_width * line_width
-			 < 0.25);
+		    /* Compute radii of the transformed round brush. */
+		    /* Let x = [a, sqrt(1-a^2)]' 
+		       radius^2 is an extremum of :
+		       rr(a)=(CTM*x)^2 = (a*xx + sqrt(1 - a^2)*xy)^2 + (a*yx + sqrt(1 - a^2)*yy)^2
+		       With solving D(rr(a),a)==0, got :
+		       max_rr = (xx^2 + xy^2 + yx^2 + yy^2 + sqrt(((xy + yx)^2 + (xx - yy)^2)*((xy - yx)^2 + (xx + yy)^2)))/2.
+		       r = sqrt(max_rr);
+		       Well we could use eigenvaluse of the quadratic form,
+		       but it gives same result with a bigger calculus.
+		     */
+		    double max_rr = (xx*xx + xy*xy + yx*yx + yy*yy + 
+					sqrt( ((xy + yx)*(xy + yx) + (xx - yy)*(xx - yy)) * 
+					      ((xy - yx)*(xy - yx) + (xx + yy)*(xx + yy)) 
+					    )
+				     )/2;
+		    
+		    always_thin = max_rr * line_width * line_width < 0.25;
 		}
 	}
     }

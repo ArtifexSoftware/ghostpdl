@@ -1700,22 +1700,13 @@ Test	 Status	Comments
 
 11-09-3  OK	
 
-11-09-4  DIFF	linewidth different.
+11-09-4  AOK	linewidth different.
                 Analyzed by Igor.
 		GS paints a "thin line" whenever the line wdth is lesser than 1 pixel.
 		The decision is taken in gxstroke.c ln 453, 468, 482
 		with the threshold half width smaller than half pixel.
 		Well I can set a smaller threshold for CPSI compatibility,
 		but I need CPSI to measure its constant.
-		-
-		BTW, gxstroke.c ln 483 looks BUGGY :
-		what does 'cross' do here ????
-		The matrix [1 -1 -1 1 0 0] gixes cross = -2 and 
-		always_thin = ((max(2,2) + -2) * somrthing < 0.25) = true /* WRONG !!!!!! */
-		IMO cross to be removed at all.
-		(this bug is unrelated to CET test).
-		-
-                assign: Igor.
 
 11-09-5  OK	Minor differences visually reviewed by RJJ
 
