@@ -486,7 +486,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		       With solving D(rr(a),a)==0, got :
 		       max_rr = (xx^2 + xy^2 + yx^2 + yy^2 + sqrt(((xy + yx)^2 + (xx - yy)^2)*((xy - yx)^2 + (xx + yy)^2)))/2.
 		       r = sqrt(max_rr);
-		       Well we could use eigenvaluse of the quadratic form,
+		       Well we could use eigenvalues of the quadratic form,
 		       but it gives same result with a bigger calculus.
 		     */
 		    double max_rr = (xx*xx + xy*xy + yx*yx + yy*yy + 
