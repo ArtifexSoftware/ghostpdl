@@ -23,11 +23,7 @@ GLSRCDIR?=../gs/src
 PCLSRCDIR?=../pcl
 PLSRCDIR?=../pl
 PXLSRCDIR?=../pxl
-ifeq ($(MET_INCLUDED), TRUE)
-XPSSRCDIR?=../met
-else
 XPSSRCDIR?=../xps
-endif
 
 COMMONDIR?=../common
 MAINSRCDIR?=../main
@@ -73,29 +69,19 @@ XPSOBJDIR?=$(GENDIR)
 ifeq ($(XPS_INCLUDED), TRUE)
 TARGET_DEVS?=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev $(XPSOBJDIR)/xps.dev
 else 
-ifeq ($(MET_INCLUDED), TRUE)
-TARGET_DEVS?=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev $(XPSOBJDIR)/xps.dev
-else 
 TARGET_DEVS?=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev 
-endif
 endif
 TARGET_XE?=$(GENDIR)/pcl6
 TARGET_LIB?=$(GENDIR)/pcl6.a
 MAIN_OBJ?=$(PLOBJDIR)/plmain.$(OBJ) $(PLOBJDIR)/plimpl.$(OBJ)
 PCL_TOP_OBJ?=$(PCLOBJDIR)/pctop.$(OBJ)
 PXL_TOP_OBJ?=$(PXLOBJDIR)/pxtop.$(OBJ)
-ifeq ($(MET_INCLUDED), TRUE)
-XPS_TOP_OBJ?=$(XPSOBJDIR)/mettop.$(OBJ)
-TOP_OBJ+= $(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(XPS_TOP_OBJ)
-XCFLAGS?=-DXPS_INCLUDED
-else
 ifeq ($(XPS_INCLUDED), TRUE)
 XPS_TOP_OBJ?=$(XPSOBJDIR)/xpstop.$(OBJ)
 TOP_OBJ+= $(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(XPS_TOP_OBJ)
 XCFLAGS?=-DXPS_INCLUDED
 else
 TOP_OBJ+= $(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
-endif 
 endif
 
 # note agfa gives its libraries incompatible names so they cannot be
@@ -135,7 +121,7 @@ UFST_ROMFS_ARGS?=-b \
 
 EXTRALIBS?= $(UFST_LIB)if_lib.a $(UFST_LIB)fco_lib.a $(UFST_LIB)tt_lib.a  $(UFST_LIB)if_lib.a
 UFSTFONTDIR?=/usr/local/fontdata5.0/
-endif
+endif # PL_SCALER = ufst
 
 # flags for artifex scaler
 ifeq ($(PL_SCALER), afs)
@@ -150,15 +136,10 @@ ifeq ($(ROMFONTS), true)
 PL_SCALER=afs
 XLDFLAGS=-L../pl/ 
 EXTRALIBS=-lttffont
-endif
+endif # ROMFONTS
 
-endif
+endif # PL_SCALER = afs
 
-
-ifeq ($(MET_INCLUDED), TRUE)
-# include the xml parser library
-EXTRALIBS+=-lexpat
-endif 
 ifeq ($(XPS_INCLUDED), TRUE)
 # include the xml parser library
 EXTRALIBS+=-lexpat
@@ -233,9 +214,6 @@ include $(COMMONDIR)/ugcc_top.mak
 include $(PLSRCDIR)/pl.mak
 include $(PXLSRCDIR)/pxl.mak
 include $(PCLSRCDIR)/pcl.mak
-ifeq ($(MET_INCLUDED), TRUE)
-include $(XPSSRCDIR)/met.mak
-endif
 ifeq ($(XPS_INCLUDED), TRUE)
 include $(XPSSRCDIR)/xps.mak
 endif
