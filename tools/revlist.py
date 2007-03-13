@@ -10,12 +10,10 @@ import os, string
 import sys
 
 SVN_CMD = 'svn log -q'
-verbose = False
+SVN_GS_REPOS = 'svn+ssh://svn.ghostscript.com/svn/ghostscript/trunk/gs'
+SVN_PCL_REPOS = 'svn+ssh://svn.ghostscript.com/var/lib/svn-private/ghostpcl'
 
-# array to hold the revision data
-entries = []
-
-def parse(log, module=None):
+def parse(log, entries, module=None):
   '''parse the output of SVN_CMD and dump the results
      as tuples   in the entries global'''
   if not module: module = ''
@@ -59,12 +57,16 @@ def report(entries):
     
 if __name__ == '__main__':
   sys.stderr.write('Downloading logs. This may take a while...\n')
-  log = os.popen(SVN_CMD)
-  parse(log, 'ghostpcl')
+
+  # array to hold the revision data
+  entries = []
+
+  log = os.popen(SVN_CMD + ' ' + SVN_PCL_REPOS)
+  parse(log, entries, 'ghostpcl')
   log.close()
 
-  log = os.popen(SVN_CMD + ' gs')
-  parse(log, 'ghostscript')
+  log = os.popen(SVN_CMD + ' ' + SVN_GS_REPOS)
+  parse(log, entries, 'ghostscript')
   log.close()
 
   # sort (by date, since that element is first)
