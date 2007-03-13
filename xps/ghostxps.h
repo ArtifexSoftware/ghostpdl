@@ -165,6 +165,8 @@ void xps_free_part(xps_context_t *ctx, xps_part_t *part);
 
 int xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type);
 
+char *xps_get_content_type(xps_context_t *ctx, char *partname);
+
 void xps_free_type_map(xps_context_t *ctx, xps_type_map_t *node);
 void xps_free_relations(xps_context_t *ctx, xps_relation_t *node);
 void xps_free_fixed_pages(xps_context_t *ctx);

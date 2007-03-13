@@ -48,6 +48,8 @@ xps_deobfuscate_font_resource(xps_context_t *ctx, xps_part_t *part)
 	part->data[i+16] ^= key[15-i];
     }
     dputs("\n");
+
+    return 0;
 }
 
 int
@@ -85,6 +87,43 @@ xps_select_best_font_encoding(xps_font_t *font)
 
     return gs_throw(-1, "could not find a suitable cmap");
 }
+
+/*
+ * Call text drawing primitives.
+ */
+
+int xps_draw_font_glyph_to_path(xps_context_t *ctx, xps_font_t *font, int gid, float x, float y)
+{
+    return 0;
+}
+
+int xps_fill_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, float x, float y)
+{
+    gs_text_params_t params;
+    gs_text_enum_t *textenum;
+    int code;
+
+    params.operation = TEXT_FROM_SINGLE_GLYPH | TEXT_DO_DRAW;
+    params.data.d_glyph = gid;
+    params.size = 1;
+
+    // dprintf3("filling glyph '%c' at %g,%g\n", gid, x, y);
+
+    gs_moveto(ctx->pgs, x, y);
+
+    code = gs_text_begin(ctx->pgs, &params, ctx->memory, &textenum);
+    if (code != 0)
+	return gs_throw1(-1, "cannot gs_text_begin() (%d)", code);
+
+    code = gs_text_process(textenum);
+    if (code != 0)
+	return gs_throw1(-1, "cannot gs_text_process() (%d)", code);
+
+    gs_text_release(textenum, "gslt font render");
+
+    return 0;
+}
+
 
 /*
  * Parse and draw an XPS <Glyphs> element.
@@ -151,6 +190,8 @@ xps_parse_glyphs(xps_context_t *ctx, xps_item_t *root)
     char partname[1024];
     char *parttype;
 
+    gs_matrix matrix;
+    float font_size = 10.0;
     int is_sideways = 0;
     int saved = 0;
 
@@ -270,6 +311,12 @@ xps_parse_glyphs(xps_context_t *ctx, xps_item_t *root)
 	}
     }
 
+    font_size = atof(font_size_att);
+
+    gs_setfont(ctx->pgs, font->font);
+    gs_make_scaling(font_size, -font_size, &matrix);
+    gs_setcharmatrix(ctx->pgs, &matrix);
+
     /*
      * If it's a solid color brush fill/stroke do a simple fill
      */
@@ -288,7 +335,7 @@ xps_parse_glyphs(xps_context_t *ctx, xps_item_t *root)
 	if (argb[0] > 0.001)
 	{
 	    gs_setrgbcolor(ctx->pgs, argb[1], argb[2], argb[3]);
-	    xps_parse_glyphs_imp(ctx, font, atof(font_size_att),
+	    xps_parse_glyphs_imp(ctx, font, font_size,
 		    atof(origin_x_att), atof(origin_y_att),
 		    is_sideways, indices_att, unicode_att, 0);
 	}
@@ -308,7 +355,7 @@ xps_parse_glyphs(xps_context_t *ctx, xps_item_t *root)
 
 	dputs("  glyphs complex brush\n");
 
-	xps_parse_glyphs_imp(ctx, font, atof(font_size_att),
+	xps_parse_glyphs_imp(ctx, font, font_size,
 		atof(origin_x_att), atof(origin_y_att),
 		is_sideways, indices_att, unicode_att, 1);
 

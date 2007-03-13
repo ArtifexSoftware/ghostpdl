@@ -66,11 +66,8 @@ $(XPSOBJ)xpsgradient.$(OBJ): $(XPSSRC)xpsgradient.c $(XPSINCLUDES)
 $(XPSOBJ)xpsglyphs.$(OBJ): $(XPSSRC)xpsglyphs.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpsglyphs.c $(XPSO_)xpsglyphs.$(OBJ)
 
-$(XPSOBJ)xpsfont1.$(OBJ): $(XPSSRC)xpsfont1.c $(XPSINCLUDES)
-	$(XPSCCC) $(XPSSRC)xpsfont1.c $(XPSO_)xpsfont1.$(OBJ)
-
-$(XPSOBJ)xpsfont2.$(OBJ): $(XPSSRC)xpsfont2.c $(XPSINCLUDES)
-	$(XPSCCC) $(XPSSRC)xpsfont2.c $(XPSO_)xpsfont2.$(OBJ)
+$(XPSOBJ)xpsfont.$(OBJ): $(XPSSRC)xpsfont.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xpsfont.c $(XPSO_)xpsfont.$(OBJ)
 
 $(XPSOBJ)xpsttf.$(OBJ): $(XPSSRC)xpsttf.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpsttf.c $(XPSO_)xpsttf.$(OBJ)
@@ -99,8 +96,7 @@ XPS_OBJS=\
     $(XPSOBJ)xpsimage.$(OBJ) \
     $(XPSOBJ)xpsgradient.$(OBJ) \
     $(XPSOBJ)xpsglyphs.$(OBJ) \
-    $(XPSOBJ)xpsfont1.$(OBJ) \
-    $(XPSOBJ)xpsfont2.$(OBJ) \
+    $(XPSOBJ)xpsfont.$(OBJ) \
     $(XPSOBJ)xpsttf.$(OBJ) \
     $(XPSOBJ)xpscff.$(OBJ) \
 
