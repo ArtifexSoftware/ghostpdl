@@ -512,7 +512,7 @@ set_dest_raster_width(
 {
     if (!pcs->raster_state.graphics_mode) {
 	if ( arg_is_present(pargs) ) {
-	    uint    dw = 10 * uint_arg(pargs);
+	    uint    dw = 10 * fabs(float_arg(pargs));
 
 	    pcs->raster_state.dest_width_cp = dw;
 	    pcs->raster_state.dest_width_set = (dw != 0);
@@ -542,7 +542,7 @@ set_dest_raster_height(
 {
     if (!pcs->raster_state.graphics_mode) {	
 	if ( arg_is_present(pargs) ) {
-	    uint    dh = 10 * uint_arg(pargs);
+	    uint    dh = 10 * fabs(float_arg(pargs));
 
 	    pcs->raster_state.dest_height_cp = dh;
 	    pcs->raster_state.dest_height_set = (dh != 0);
