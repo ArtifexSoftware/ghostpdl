@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 artofcode LLC.
+/* Copyright (C) 2001-2007 artofcode LLC.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -31,7 +31,7 @@ CONFIG_CONST long gs_buildtime = GS_BUILDTIME;
 
 #ifndef GS_COPYRIGHT
 #  define GS_COPYRIGHT\
-	"Copyright (C) 2006 artofcode LLC, Benicia, CA.  All rights reserved."
+	"Copyright (C) 2007 artofcode LLC, Benicia, CA.  All rights reserved."
 #endif
 const char *CONFIG_CONST gs_copyright = GS_COPYRIGHT;
 
@@ -43,7 +43,7 @@ const char *CONFIG_CONST gs_productfamily = GS_PRODUCTFAMILY;
 
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
-	GS_PRODUCTFAMILY " SVN PRE-RELEASE"
+	GS_PRODUCTFAMILY ""
 #endif
 const char *CONFIG_CONST gs_product = GS_PRODUCT;
 
