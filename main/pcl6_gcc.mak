@@ -155,6 +155,7 @@ GX_COLOR_INDEX_DEFINE?=-DGX_COLOR_INDEX_TYPE="unsigned long long"
 # GX_COLOR_INDEX_DEFINE=
 
 HAVE_STDINT_H_DEFINE?=-DHAVE_STDINT_H
+HAVE_MKSTEMP_DEFINE?=-DHAVE_MKSTEMP
 
 # Assorted definitions.  Some of these should probably be factored out....
 # We use -O0 for debugging, because optimization confuses gdb.
@@ -162,7 +163,7 @@ HAVE_STDINT_H_DEFINE?=-DHAVE_STDINT_H
 # between 2.7.0 and 2.7.2 inclusive.  (2.7.2.1 is OK.)
 # disable assert() with -DNDEBUG
 
-GCFLAGS?=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -DNDEBUG  $(HAVE_STDINT_H_DEFINE) $(GX_COLOR_INDEX_DEFINE)
+GCFLAGS?=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -DNDEBUG  $(HAVE_STDINT_H_DEFINE) $(HAVE_MKSTEMP_DEFINE) $(GX_COLOR_INDEX_DEFINE)
 # CFLAGS?=-g -O0 $(GCFLAGS) $(XCFLAGS)
 CFLAGS?= $(GCFLAGS) $(XCFLAGS)
 
