@@ -30,5 +30,9 @@ for file in $TESTS; do
  fsum=`md5sum $file | cut -f 1 -d ' '`
  result=`$EXE $OPTS -sOutputFile="|md5sum" $file`
  rsum=`echo $result | cut -f 1 -d ' '`
- echo "$fsum $rsum $EXE r$rev+$gsrev $file" >> $BASELINE
+ if test -z "$rsum"; then
+  echo "no output for $file"
+ else
+  echo "$fsum $rsum $EXE r$rev+$gsrev $file" >> $BASELINE
+ fi
 done
