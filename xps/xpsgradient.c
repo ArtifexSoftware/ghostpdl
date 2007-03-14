@@ -203,15 +203,17 @@ xps_draw_one_radial_gradient(xps_context_t *ctx,
     gx_device *dev = gs_currentdevice(pgs);
     gs_shading_t *shading;
     gs_shading_R_params_t params;
-    gs_color_space colorspace;
+    gs_color_space *colorspace;
     gs_fixed_rect rect;
     int code;
 
     gs_shading_R_params_init(&params);
     {
-	gs_cspace_init_DeviceRGB(mem, &colorspace);
+	colorspace = gs_cspace_new_DeviceRGB(mem);
+	if (!colorspace)
+	    return gs_throw(-1, "cannot create colorspace for gradient");
 
-	params.ColorSpace = &colorspace;
+	params.ColorSpace = colorspace;
 
 	params.Coords[0] = pt0[0];
 	params.Coords[1] = pt0[1];
@@ -262,15 +264,17 @@ xps_draw_one_linear_gradient(xps_context_t *ctx,
     gx_device *dev = gs_currentdevice(pgs);
     gs_shading_t *shading;
     gs_shading_A_params_t params;
-    gs_color_space colorspace;
+    gs_color_space *colorspace;
     gs_fixed_rect rect;
     int code;
 
     gs_shading_A_params_init(&params);
     {
-	gs_cspace_init_DeviceRGB(mem, &colorspace);
+	colorspace = gs_cspace_new_DeviceRGB(mem);
+	if (!colorspace)
+	    return gs_throw(-1, "cannot create colorspace for gradient");
 
-	params.ColorSpace = &colorspace;
+	params.ColorSpace = colorspace;
 
 	params.Coords[0] = pt0[0];
 	params.Coords[1] = pt0[1];

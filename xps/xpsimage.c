@@ -119,7 +119,7 @@ xps_parse_image_brush(xps_context_t *ctx, xps_item_t *root)
     gs_gsave(ctx->pgs);
     {
 	gs_image_enum *penum;
-	gs_color_space colorspace;
+	gs_color_space *colorspace;
 	gs_image_t gsimage;
 	unsigned int count = image.stride * image.height;
 	unsigned int used = 0;
@@ -162,20 +162,22 @@ xps_parse_image_brush(xps_context_t *ctx, xps_item_t *root)
 	switch (image.colorspace)
 	{
 	case XPS_GRAY:
-	    gs_cspace_init_DeviceGray(ctx->memory, &colorspace);
+	    colorspace = gs_cspace_new_DeviceGray(ctx->memory);
 	    break;
 	case XPS_RGB:
-	    gs_cspace_init_DeviceRGB(ctx->memory, &colorspace);
+	    colorspace = gs_cspace_new_DeviceRGB(ctx->memory);
 	    break;
 	case XPS_CMYK:
-	    gs_cspace_init_DeviceCMYK(ctx->memory, &colorspace);
+	    colorspace = gs_cspace_new_DeviceCMYK(ctx->memory);
 	    break;
 	default:
 	    return gs_throw(-1, "cannot handle images with alpha channels");
 	}
+	if (!colorspace)
+	    return gs_throw(-1, "cannot create colorspace for image");
 
-	gs_image_t_init(&gsimage, &colorspace);
-	gsimage.ColorSpace = &colorspace;
+	gs_image_t_init(&gsimage, colorspace);
+	gsimage.ColorSpace = colorspace;
 	gsimage.BitsPerComponent = image.bits;
 	gsimage.Width = image.width;
 	gsimage.Height = image.height;
@@ -201,6 +203,7 @@ xps_parse_image_brush(xps_context_t *ctx, xps_item_t *root)
 	    return gs_throw2(0, "too much image data (image=%d used=%d)", count, used);
 
 	gs_image_cleanup_and_free_enum(penum, ctx->pgs);
+	// TODO: free colorspace
     }
     gs_grestore(ctx->pgs);
 
