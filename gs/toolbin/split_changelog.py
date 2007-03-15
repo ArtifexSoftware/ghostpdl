@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#    Copyright (C) 2003 artofcode LLC.  All rights reserved.
+#    Copyright (C) 2003-2007 artofcode LLC.  All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -18,7 +18,7 @@
 # $Id$
 
 # script to generate the split Changes/Details html changelogs
-# for Ghostscript from the output of 'cvs2cl.pl --xml'
+# for Ghostscript from the output of 'svn log --xml'
 
 import string, re
 import xml.parsers.expat
@@ -69,12 +69,16 @@ class Entry:
 		file.write('<blockquote>\n')
 		file.write('<pre>\n')
 		# todo: html-escape the msg lines
-		for line in self.data['msg']:
+		try:
+		  for line in self.data['msg']:
 			# skip the details unless wanted
 			if not details and self.r.search(line): break
 			if self.c.search(line): break
 			if self.d.search(line): break
 			file.write(line.encode('utf8'))
+		except KeyError:
+		  line = '(empty)'
+		  file.write(line.encode('utf8'))
 		file.write('</pre>\n')
 		file.write('<p>[')
 		#file.write(string.join(map(string.join, zip(self.data['name'],self.data['revision'])),', '))
