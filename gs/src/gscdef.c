@@ -43,7 +43,7 @@ const char *CONFIG_CONST gs_productfamily = GS_PRODUCTFAMILY;
 
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
-	GS_PRODUCTFAMILY ""
+	GS_PRODUCTFAMILY " SVN PRE-RELEASE"
 #endif
 const char *CONFIG_CONST gs_product = GS_PRODUCT;
 
