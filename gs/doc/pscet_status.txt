@@ -279,8 +279,10 @@ Test	 Status	Comments
 
 09-27-5  OK	
 
-09-28-1	 DIFF	Must be regression. CPSI and Tek differ, GS shows 'invalidaccess'
-		errors.
+09-28-1	 AOK 	Ghostscript is different from both Tek and PhotoPrint but
+		matches Distiller 5. Tek doesn't reset the dash array at
+                initgraphics. PhotoPrint redefines halftone operators as no-op,
+                which affects the test results.  Fixed by rev. 7792. - Alex
 
 09-28-2  OK	Fixed as of rev. 7211
 
