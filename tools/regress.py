@@ -8,18 +8,86 @@ try:
   from mpi4py import MPI
 except ImportError:
   class DummyMPI:
-    'a dummy MPI class for conditionals in a serial job'
+    '''A dummy MPI class for running serial jobs.'''
     size = 1
     rank = 0
   MPI = DummyMPI()
 
 class Conf:
-  'class for holding various configuration parameters'
-  # output format, set to False for interactive
-  batch = False
-  # should we update the md5sum database to new values?
-  update = True
+  def __init__(self):
+    # set defaults
+    self.batch = False
+    self.update = False
+    self.verbose = False
+    self.testpath = os.path.join(os.environ['HOME'], 'tests')
+    #self.exe = './language_switch/obj/pspcl6'
+    self.exe = './bin/gs -q -I$HOME/fonts'
+    self.test = 'comparefiles'
+
+  def parse(self, args):
+    '''Parse the command line for configuration switches
+
+    For example:
+      conf = Conf()
+      conf.parse(sys.argv)
+    '''
+
+    for index in xrange(1,len(args)):
+      arg = args[index]
+      if arg[:2] == '--':
+
+        # support generic '--opt=val'
+        sep = arg.find('=')
+        if sep > 0:
+          opt = arg[2:sep]
+          val = arg[sep+1:]
+        else:
+          opt = arg[2:]
+
+          # for select options support '--opt val'
+          if opt in ('exe', 'test'):
+            try:
+	      val = args[index+1]
+            except IndexError:
+	      print 'Warning:', opt, 'requires a specific value.'
+	      val = None
+          else:
+	    # default to postitive boolean value
+            val = True
+
+        if MPI.rank == 0:
+          print 'got option', opt, ' = ', val
+
+        # for select options, accumulate the values
+        if opt in ('test'):
+          opt += 's' # pluralize collections
+          if not hasattr(self, opt):
+            self.__dict__[opt] = []
+          self.__dict__[opt].append(val)
+        else:
+	  # set an attribute on ourselves with the option value
+          self.__dict__[opt] = val
+ 
+    # finally, set defaults for unset accumulating options
+    if not hasattr(self, 'tests'):
+      self.tests = []
+      # guess appropriate defaults based on the executable
+      basename = os.path.basename(self.exe.split()[0])
+      if basename.find('pcl') >= 0:
+        self.tests += ['pcl/pcl5cfts/fts.*',
+	'pcl/pcl5efts/fts.*', 
+	'pcl/pcl5ccet/*.BIN']
+      if basename.find('ps') >= 0 or basename.find('gs') >= 0:
+	self.tests += ['ps/ps3cet/*.PS']
+        # run the normal comparefiles suite for now
+        self.tests = ['comparefiles/*.ps', 
+		 'comparefiles/*.pdf', 
+		 'comparfiles/*.ai']
+
+# global configuration instance
 conf = Conf()
+conf.parse(sys.argv)
+
 
 # results of tests are stored as classes
 
@@ -62,7 +130,8 @@ class SelfTest:
     self.result = OKResult()
 
 class SelfTestSuite:
-  'generic class for running a collection of SelfTest instances'
+  '''Generic class for running a collection of SelfTest instances.'''
+
   def __init__(self, stream=sys.stderr):
     self.stream = stream
     self.tests = []
@@ -70,8 +139,10 @@ class SelfTestSuite:
     self.errors = []
     self.news = []
     self.elapsed = 0.0
+
   def addTest(self, test):
     self.tests.append(test)
+
   def addResult(self, test):
     if test:
       if not conf.batch:
@@ -84,8 +155,9 @@ class SelfTestSuite:
       elif not isinstance(test.result, OKResult):
         # treat everything else as a failure
         self.fails.append(test)
+
   def run(self):
-    'run each test in sequence'
+    '''Run each test in sequence.'''
     starttime = time.time()
     tests = self.tests
     self.tests = []
@@ -94,6 +166,7 @@ class SelfTestSuite:
       self.addResult(test)
     self.elapsed = time.time() - starttime
     self.report()
+
   def report(self):
     if not conf.batch:
       print '-'*72
@@ -114,20 +187,17 @@ class SelfTestSuite:
           print '  ' + test.description()
           print test.result.msg
         print
-    if not self.fails and not self.errors:
+    if not self.fails and not self.errors and not self.news:
       print 'PASSED all %d tests' % len(self.tests)
     if self.news:
       print '%d NEW files with no previous result' % len(self.news)
     print
 
 class MPITestSuite(SelfTestSuite):
+  '''Use MPI to run multiple tests in parallel.'''
+
   def run(self):
-    '''use MPI to dispatch tests to worker nodes
-    each of which will run the run the actual tests
-    and return the result'''
     starttime = time.time()
-    # broadcast the accumulated tests to all nodes
-    self = MPI.COMM_WORLD.Bcast(self, 0)
     if MPI.rank > 0:
       # daughter nodes run requested tests
       test = None
@@ -145,7 +215,7 @@ class MPITestSuite(SelfTestSuite):
         status = MPI.Status()
         test = MPI.COMM_WORLD.Recv(source=MPI.ANY_SOURCE, status=status)
         self.addResult(test)
-        MPI.COMM_WORLD.Send(tests.pop(), dest=status.source)
+        MPI.COMM_WORLD.Send(tests.pop(0), dest=status.source)
       # retrieve outstanding results and tell the nodes we're finished
       for node in xrange(1, MPI.size):
         test = MPI.COMM_WORLD.Recv(source=MPI.ANY_SOURCE)
@@ -156,26 +226,34 @@ class MPITestSuite(SelfTestSuite):
     if MPI.rank == 0:
       self.report()
 
+# specific code for our needs
+
 class md5Test(SelfTest):
-  '''test class for running a file and comparing the output to an
+  '''Test class for running a file and comparing the output to an
   expected value.'''
+
   def __init__(self, file, md5sum, dpi=300):
     SelfTest.__init__(self)
     self.file = file
     self.md5sum = md5sum
     self.dpi = dpi
-    self.exe = './language_switch/obj/pspcl6'
-    #self.exe = './bin/gs -q -I../fonts'
-    self.opts = "-dNOPAUSE -sDEVICE=ppmraw -r%d" % dpi
+    self.exe = conf.exe
+    self.opts = "-dQUIET -dNOPAUSE -dBATCH -K1000000"
+    self.opts += " -sDEVICE=ppmraw -r%d" % dpi
     self.opts += " -dSAFER -dBATCH"
-    self.psopts = '-dMaxBitmap=40000000 -dJOBSERVER ./lib/gs_cet.ps'
+    #self.psopts = '-dMaxBitmap=40000000 -dJOBSERVER ./lib/gs_cet.ps'
+    self.psopts = '-dMaxBitmap=30000000 -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f'
+
   def description(self):
     return 'Checking ' + self.file
+
   def run(self):
     scratch = os.path.join('/tmp', os.path.basename(self.file) + '.md5')
     # add psopts if it's a postscript file
     if self.file[-3:].lower() == '.ps' or \
-	self.file[-4:].lower() == '.eps':
+	self.file[-4:].lower() == '.eps' or \
+        self.file[-4:].lower() == '.pdf' or \
+        self.file[-3:].lower() == '.ai':
       cmd = '%s %s -sOutputFile="|md5sum>%s" %s - < %s ' % \
 	(self.exe, self.opts, scratch, self.psopts, self.file)
     else:
@@ -205,9 +283,11 @@ class md5Test(SelfTest):
 
 class DB:
   '''class representing an md5 sum database'''
+
   def __init__(self):
     self.store = None
     self.db = {}
+
   def load(self, store='reg_baseline.txt'):
     self.store = store
     try:
@@ -225,6 +305,7 @@ class DB:
       except IndexError:
         pass
     f.close()
+
   def save(self, store=None):
     if not store:
       store = self.store
@@ -233,14 +314,18 @@ class DB:
     for key in self.db.keys():
       f.write(str(key) + ' ' + str(self.db[key]) + '\n')
     f.close()
+
+  # provide a dictionary interface
   def __getitem__(self, key):
     try:
       value = self.db[key]
     except KeyError:
       value = None
     return value
+
   def __setitem__(self, key, value):
     self.db[key] = value
+
 
 def run_regression():
   'run normal set of regressions'
@@ -252,29 +337,25 @@ def run_regression():
   if MPI.rank == 0:
     db = DB()
     db.load()
-    testdir = '../tests/'
-    tests = ['pcl/pcl5cfts/fts.*',
-	'pcl/pcl5efts/fts.*', 
-	'pcl/pcl5ccet/*.BIN',
-	'ps/ps3cet/*.PS']
-    pstests = ['ps/ps3fts/*.ps','ps/ps3cet/*.PS']
-    for test in tests:
-      for file in glob(testdir + test):
+    for test in conf.tests:
+      for file in glob(os.path.join(conf.testpath,test)):
         suite.addTest(md5Test(file, db[file]))
     if MPI.size > 1:
-      print('running tests on %d nodes...' % MPI.size)
+      print 'running tests on %d nodes...' % MPI.size
   suite.run()
   if MPI.rank == 0:
     # update the database with new files and save
     for test in suite.news:
       db[test.file] = test.result.msg
     if conf.update:
+      if len(suite.fails):
+        print 'Updating baselines for the failed tests.'
       for test in suite.fails:
         db[test.file] = test.result.msg
     db.save()
 
 
-# self test self tests
+# self test routines for the self test classes
 
 class RandomTest(SelfTest):
   'test class with random results for testing'
@@ -305,6 +386,9 @@ def test_ourselves():
   for count in range(4 + int(r.random()*12)):
     suite.addTest(RandomTest())
   suite.run()
+
+
+# Do someting useful when executed directly
 
 if __name__ == '__main__':
   #test_ourselves()
