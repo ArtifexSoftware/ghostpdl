@@ -140,10 +140,6 @@ endif # ROMFONTS
 
 endif # PL_SCALER = afs
 
-ifeq ($(XPS_INCLUDED), TRUE)
-# include the xml parser library
-EXTRALIBS+=-lexpat
-endif 
 # a 64 bit type is needed for devicen color space/model support but
 # carries a performance burden.  Use this definition (uncomment) for
 # devicen support.
@@ -190,7 +186,8 @@ FEATURE_DEVS?=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
              $(DD)ttflib.dev  $(DD)cielib.dev $(DD)pipe.dev $(DD)htxlib.dev\
 	     $(DD)gsnogc.dev $(DD)sdctd.dev $(DD)libpng_$(SHARE_LIBPNG).dev\
 	     $(DD)psl3lib.dev $(DD)seprlib.dev $(DD)translib.dev\
-	     $(DD)cidlib.dev $(DD)psf1lib.dev $(DD)psf0lib.dev $(DD)lzwd.dev 
+	     $(DD)cidlib.dev $(DD)psf0lib.dev $(DD)psf1lib.dev\
+	     $(DD)lzwd.dev
 
 # cygwin does not have threads at this time, so we don't include the
 # thread library or asyncronous devices.
