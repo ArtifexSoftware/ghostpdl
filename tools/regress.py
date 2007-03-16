@@ -21,7 +21,8 @@ class Conf:
     self.verbose = False
     self.testpath = os.path.join(os.environ['HOME'], 'tests')
     #self.exe = './language_switch/obj/pspcl6'
-    self.exe = './bin/gs -q -I$HOME/fonts'
+    #self.exe = './bin/gs -q -I$HOME/fonts'
+    self.exe = './main/obj/pcl6'
     self.test = 'comparefiles'
 
   def parse(self, args):
@@ -54,9 +55,6 @@ class Conf:
           else:
 	    # default to postitive boolean value
             val = True
-
-        if MPI.rank == 0:
-          print 'got option', opt, ' = ', val
 
         # for select options, accumulate the values
         if opt in ('test'):
