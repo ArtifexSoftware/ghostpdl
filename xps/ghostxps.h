@@ -39,6 +39,14 @@
 
 #include "zlib.h"
 
+/* override the debug printfs */
+#ifndef DEBUG
+#undef _dpl
+#define _dpl
+#undef dpf
+#define dpf
+#endif
+
 /*
  * Some forward declarations for circular dependencies.
  */
