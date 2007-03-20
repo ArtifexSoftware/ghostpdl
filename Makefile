@@ -27,19 +27,11 @@ clean:
 	rm -f fonts /usr/local/bin/pcl6
 
 
-.PHONY: xps
-
 xps_debug: 
 	make -C main -f pcl6_gcc.mak XPS_INCLUDED=TRUE debug
 
 xps: 
 	make -C main -f pcl6_gcc.mak XPS_INCLUDED=TRUE 
-
-met_debug: 
-	make -C main -f pcl6_gcc.mak MET_INCLUDED=TRUE debug
-
-met: 
-	make -C main -f pcl6_gcc.mak MET_INCLUDED=TRUE 
 
 ####  UFST LIBRARY DEPENDENCY RULES ####
 
@@ -111,4 +103,4 @@ all_clean: clean uclean ls_uclean ls_clean
 	make -C ufst/rts/lib -f makefile.artifex clean
 
 
-.PHONY: clean test install product profile ls_clean ls_test ls_install ls_product ls_profile ls_udebug udebug ufst check
+.PHONY: clean test install product profile xps xps_debug ls_clean ls_test ls_install ls_product ls_profile ls_udebug udebug ufst check
