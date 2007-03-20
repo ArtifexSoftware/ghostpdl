@@ -159,7 +159,10 @@ xps_get_content_type(xps_context_t *ctx, char *partname)
 
     type = xps_find_override(ctx->overrides, partname);
     if (type)
+    {
+	dprintf1("  override -> %s\n", type);
 	return type;
+    }
 
     extension = strrchr(partname, '.');
     if (extension)
@@ -167,7 +170,10 @@ xps_get_content_type(xps_context_t *ctx, char *partname)
 
     type = xps_find_default(ctx->defaults, extension);
     if (type)
+    {
+	dprintf1("  extension -> %s\n", type);
 	return type;
+    }
 
     return NULL;
 }

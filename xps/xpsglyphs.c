@@ -141,11 +141,19 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
     float x = originx;
     float y = originy;
     char *s = unicode;
+    int ucs, gid, t, n;
 
-    while (*s)
+    n = strlen(s);
+
+    while (n > 0)
     {
-	int cid = *s++;
-	int gid = xps_encode_font_char(font, cid);
+	t = xps_utf8_to_ucs(&ucs, s, n);
+	if (t < 0)
+	    return gs_throw(-1, "error decoding UTF-8 string");
+
+	s += t; n -= t;
+
+	gid = xps_encode_font_char(font, ucs);
 
 	if (is_charpath)
 	    xps_draw_font_glyph_to_path(ctx, font, gid, x, y);
@@ -259,6 +267,10 @@ xps_parse_glyphs(xps_context_t *ctx, xps_item_t *root)
 	/* deobfuscate if necessary */
 	parttype = xps_get_content_type(ctx, part->name);
 	if (parttype && !strcmp(parttype, "application/vnd.ms-package.obfuscated-opentype"))
+	    xps_deobfuscate_font_resource(ctx, part);
+
+	/* stupid XPS files with content-types after the parts */
+	if (!parttype && strstr(part->name, ".odttf"))
 	    xps_deobfuscate_font_resource(ctx, part);
 
 	part->font = xps_new_font(ctx, part->data, part->size, 0);

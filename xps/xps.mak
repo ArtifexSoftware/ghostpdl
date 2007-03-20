@@ -3,7 +3,7 @@ XPSGEN      = $(XPSGENDIR)$(D)
 XPSOBJ      = $(XPSOBJDIR)$(D)
 XPSO_       = $(O_)$(XPSOBJ)
 
-XPSCCC  = $(CC_) $(I_)$(XPSSRCDIR)$(_I) $(I_)$(XPSGENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(EXPATINCDIR)$(_I) $(C_)
+XPSCCC  = $(CC_) $(I_)$(XPSSRCDIR)$(_I) $(I_)$(XPSGENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(EXPATINCDIR)$(_I) $(C_) -I/opt/local/include
 
 # Define the name of this makefile.
 XPS_MAK     = $(XPSSRC)xps.mak
@@ -23,6 +23,9 @@ XPSINCLUDES=$(XPSSRC)*.h
 
 $(XPSOBJ)xpsmem.$(OBJ): $(XPSSRC)xpsmem.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpsmem.c $(XPSO_)xpsmem.$(OBJ)
+
+$(XPSOBJ)xpsutf.$(OBJ): $(XPSSRC)xpsutf.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xpsutf.c $(XPSO_)xpsutf.$(OBJ)
 
 $(XPSOBJ)xpsjpeg.$(OBJ): $(XPSSRC)xpsjpeg.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpsjpeg.c $(XPSO_)xpsjpeg.$(OBJ)
@@ -82,6 +85,7 @@ $(XPS_TOP_OBJ): $(XPSSRC)xpstop.c $(pltop_h) $(XPSINCLUDES)
 
 XPS_OBJS=\
     $(XPSOBJ)xpsmem.$(OBJ) \
+    $(XPSOBJ)xpsutf.$(OBJ) \
     $(XPSOBJ)xpsjpeg.$(OBJ) \
     $(XPSOBJ)xpspng.$(OBJ) \
     $(XPSOBJ)xpstiff.$(OBJ) \
