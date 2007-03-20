@@ -10,7 +10,7 @@
    contact Artifex Software, Inc., 101 Lucas Valley Road #110,
    San Rafael, CA  94903, (415)492-9861, for further information. */
 
-/*$Id: mettop.c 2326 2006-02-21 18:57:42Z henrys $*/
+/*$Id$*/
 
 /* Top-level API implementation of XML Paper Specification */
 
