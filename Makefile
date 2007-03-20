@@ -28,10 +28,10 @@ clean:
 
 
 xps_debug: 
-	make -C main -f pcl6_gcc.mak XPS_INCLUDED=TRUE debug
+	make -C xps -f xps_gcc.mak debug
 
 xps: 
-	make -C main -f pcl6_gcc.mak XPS_INCLUDED=TRUE 
+	make -C xps -f xps_gcc.mak 
 
 ####  UFST LIBRARY DEPENDENCY RULES ####
 
