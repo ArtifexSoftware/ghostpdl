@@ -51,7 +51,7 @@ cd ..
 
 # remove proprietary subdirectories
 echo "removing proprietary code ... "
-for verboten in ufst met xps tools/metro_tests; do
+for verboten in ufst tools/metro_tests; do
   if test -d $exportdir/$verboten; then
     echo "  $verboten"
     rm -rf $exportdir/$verboten
