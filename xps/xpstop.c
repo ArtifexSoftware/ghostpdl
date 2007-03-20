@@ -48,7 +48,7 @@ struct xps_interp_instance_s
 const pl_interp_characteristics_t *
 xps_imp_characteristics(const pl_interp_implementation_t *pimpl)
 {
-    static pl_interp_characteristics_t met_characteristics =
+    static pl_interp_characteristics_t xps_characteristics =
     {
 	"XPS",    
 	"PK", /* string to recognize XPS files */
@@ -57,7 +57,7 @@ xps_imp_characteristics(const pl_interp_implementation_t *pimpl)
 	XPS_BUILD_DATE,
 	XPS_PARSER_MIN_INPUT_SIZE, /* Minimum input size */
     };
-    return &met_characteristics;
+    return &xps_characteristics;
 }
 
 private int  
@@ -83,10 +83,10 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
 dputs("xps_imp_allocate_interp_instance!\n");
 
     instance = (xps_interp_instance_t *) gs_alloc_bytes(pmem,
-	    sizeof(xps_interp_instance_t), "met_allocate_interp_instance");
+	    sizeof(xps_interp_instance_t), "xps_imp_allocate_interp_instance");
 
     ctx = (xps_context_t *) gs_alloc_bytes(pmem,
-	    sizeof(xps_context_t), "met_allocate_interp_instance");
+	    sizeof(xps_context_t), "xps_imp_allocate_interp_instance");
 
     pgs = gs_state_alloc(pmem);
 
@@ -222,7 +222,7 @@ xps_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *pcursor)
 private int
 xps_imp_flush_to_eoj(pl_interp_instance_t *pinstance, stream_cursor_read *pcursor)
 {
-    /* assume met cannot be pjl embedded */
+    /* assume XPS cannot be pjl embedded */
     return -1;
 }
 
