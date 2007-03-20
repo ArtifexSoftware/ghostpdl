@@ -1,7 +1,21 @@
-product:
+all: pcl xps ls_product
+
+debug: pcl_debug ls_debug xps_debug
+
+# only pcl has an install target at this point
+install: pcl_install
+
+test: pcl_test ls_test
+
+# legacy targets for backward compatibility
+product: pcl
+
+# specific front-end targets
+
+pcl:
 	make -C main -f pcl6_gcc.mak	# build PCL and PCLXL. 
 
-debug: 
+pcl_debug: 
 	make -C main -f pcl6_gcc.mak debug
 
 fonts:
@@ -9,13 +23,13 @@ fonts:
 	cp urwfonts/*.ttf /windows/fonts/	# copy the fonts. 
 	touch fonts
 
-profile:
+pcl_profile:
 	make -C main -f pcl6_gcc.mak pg-fp
 
-install:
+pcl_install:
 	install main/obj/pcl6 /usr/local/bin
 
-test: 
+pcl_test: 
 	cd tools; ../main/obj/pcl6 -dTextAlphaBits=4 owl.pcl tiger.px3 # test with PCL and PXL test file 
 
 # NB - this does not remove the fonts.  blowing away /windows/fonts
@@ -96,11 +110,11 @@ uclean:
 	make -C ufst/rts/lib -f makefile.artifex clean
 
 
-all_debug: debug udebug ls_debug ls_udebug 
+all_debug: pcl_debug udebug ls_debug ls_udebug xps_debug
 
 
 all_clean: clean uclean ls_uclean ls_clean
 	make -C ufst/rts/lib -f makefile.artifex clean
 
 
-.PHONY: clean test install product profile xps xps_debug ls_clean ls_test ls_install ls_product ls_profile ls_udebug udebug ufst check
+.PHONY: all clean test check install product profile pcl pcl_debug pcl_test pcl_install xps xps_debug ls_clean ls_test ls_install ls_product ls_profile ls_udebug udebug ufst
