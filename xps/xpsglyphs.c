@@ -143,13 +143,15 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
     char *s = unicode;
     int ucs, gid, t, n;
 
+    dprintf1("string (%s)\n", s);
+
     n = strlen(s);
 
     while (n > 0)
     {
 	t = xps_utf8_to_ucs(&ucs, s, n);
 	if (t < 0)
-	    return gs_throw(-1, "error decoding UTF-8 string");
+	    return gs_rethrow(-1, "error decoding UTF-8 string");
 
 	s += t; n -= t;
 

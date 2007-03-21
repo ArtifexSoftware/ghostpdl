@@ -76,7 +76,6 @@ void xps_absolute_path(char *output, char *pwd, char *path);
 /* end of page device callback foo */
 int xps_show_page(xps_context_t *ctx, int num_copies, int flush);
 
-int xps_ucs_to_utf8(char *s, int p);
 int xps_utf8_to_ucs(int *p, const char *s, int n);
 
 /*
