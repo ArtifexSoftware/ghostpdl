@@ -594,7 +594,7 @@ end readonly def
 ] readonly def
 /setshowstate
  { WordSpacing 0 eq TextSpacing 0 eq and
-    { TextRenderingMode 0 eq {
+    { TextRenderingMode 0 eq currentdevice .devicename /pdfwrite eq or {
         { setfillstate show }
       } {
         TextRenderingMode 3 eq {
@@ -626,7 +626,7 @@ end readonly def
         } ifelse
       } ifelse
     }
-    { TextRenderingMode 0 eq TextRenderingMode 3 eq or
+    { TextRenderingMode 0 eq TextRenderingMode 3 eq or currentdevice .devicename /pdfwrite eq or
        % Tr was set to graphic state.
        { WordSpacing 0 eq
           { { setfillstate TextSpacing 0 Vexch 3 -1 roll ashow } }

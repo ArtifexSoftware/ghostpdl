@@ -2000,7 +2000,7 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     ppts->values.size = size;
     ppts->values.matrix = tmat;
     ppts->values.render_mode = (penum->pis->text_rendering_mode == 3 ? 3 : 
-				font->PaintType == 0 ? 0 : 1);
+				font->PaintType == 0 ? 0 : penum->pis->text_rendering_mode);
     ppts->values.word_spacing = w_s;
     ppts->font = font;
 
