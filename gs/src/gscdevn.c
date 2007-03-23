@@ -398,10 +398,12 @@ gx_remap_concrete_DeviceN(const frac * pconc, const gs_color_space * pcs,
 	dprintf("gx_remap_concrete_DeviceN: color space id mismatch");
 #endif
 
-#if ENABLE_NAMED_COLOR_CALLBACK
-    if (pis->color_component_map.use_named_color_callback) {
-	return gx_remap_concrete_named_color_DeviceN(pconc, pcs, pdc,
+#if ENABLE_CUSTOM_COLOR_CALLBACK
+    if (pis->custom_color_callback) {
+	int code = gx_remap_concrete_custom_color_DeviceN(pconc, pcs, pdc,
 						       	pis, dev, select);
+	if (code >= 0)
+	    return code;
     }
 #endif
     if (pis->color_component_map.use_alt_cspace) {
@@ -502,16 +504,15 @@ private int
 gx_install_DeviceN(const gs_color_space * pcs, gs_state * pgs)
 {
     int code;
-#if ENABLE_NAMED_COLOR_CALLBACK
+#if ENABLE_CUSTOM_COLOR_CALLBACK
     /*
-     * Check if we want to use the callback color processing for this color space.
+     * Check if we want to use the callback color processing for this
+     * color space.
      */
-    bool use_named_color_callback =
-    		named_color_callback_install_DeviceN(pgs->color_space, pgs);
+    bool use_custom_color_callback =
+    		custom_color_callback_install_DeviceN(pcs, pgs);
 
-    pgs->color_component_map.use_named_color_callback =
-	   					 use_named_color_callback;
-    if (use_named_color_callback) {
+    if (use_custom_color_callback) {
 	/*
 	 * We are using the callback instead of the alternate tint transform
 	 * for this color space.
@@ -522,6 +523,7 @@ gx_install_DeviceN(const gs_color_space * pcs, gs_state * pgs)
         return 0;
     }
 #endif
+
     code = check_DeviceN_component_names(pcs, pgs);
     if (code < 0)
        return code;

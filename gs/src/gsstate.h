@@ -52,6 +52,9 @@ int gs_setoverprintmode(gs_state *, int);
 
 int gs_do_set_overprint(gs_state *);
 
+int gs_currentrenderingintent(const gs_state *);
+int gs_setrenderingintent(gs_state *, int);
+
 int gs_initgraphics(gs_state *);
 
 /* Device control */

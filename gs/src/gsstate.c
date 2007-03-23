@@ -699,6 +699,21 @@ gs_currentoverprintmode(const gs_state * pgs)
     return pgs->overprint_mode;
 }
 
+/* setrenderingintent */
+int
+gs_setrenderingintent(gs_state *pgs, int ri) {
+    if (ri < 0 || ri > 3)
+	return_error(gs_error_rangecheck);
+    pgs->renderingintent = ri;
+    return 0;
+}
+
+/* currentrenderingintent */
+int
+gs_currentrenderingintent(const gs_state * pgs)
+{
+    return pgs->renderingintent;
+}
 
 /*
  * Reset most of the graphics state.

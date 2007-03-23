@@ -21,6 +21,8 @@
 #include "gsutil.h"
 #include "gzstate.h"
 #include "gxdevcli.h"
+#include "gdevdevn.h"
+#include "gxblend.h"
 #include "gdevp14.h"
 
 #define PUSH_TS 0
@@ -429,12 +431,45 @@ gx_init_transparency_mask(gs_imager_state * pis,
     return 0;
 }
 
+/*
+ * We really only care about the number of spot colors when we have
+ * a device which supports spot colors.  With the other devices we use
+ * the tint transform function for DeviceN and Separation color spaces
+ * and convert spot colors into process colors.
+ */
+int
+get_num_pdf14_spot_colors(gs_state * pgs)
+{
+    gx_device * dev = pgs->device;
+    gs_devn_params * pclist_devn_params = dev_proc(dev, ret_devn_params)(dev);
+
+    /*
+     * Devices which support spot colors store the PageSpotColors device
+     * parameter inside their devn_params structure.  (This is done by the
+     * devn_put_params routine.)  The PageSpotColors device parameter is
+     * set by pdf_main whenever a PDF page is being processed.  See
+     * countspotcolors in lib/pdf_main.ps.
+     */
+    if (pclist_devn_params != NULL) {
+	return pclist_devn_params->page_spot_colors;
+    }
+    return 0;
+}
+
 int
 gs_push_pdf14trans_device(gs_state * pgs)
 {
     gs_pdf14trans_params_t params = { 0 };
 
-    params.pdf14_op = PDF14_PUSH_DEVICE;  /* Other parameters not used */
+    params.pdf14_op = PDF14_PUSH_DEVICE;
+    /*
+     * We really only care about the number of spot colors when we have
+     * a device which supports spot colors.  With the other devices we use
+     * the tint transform function for DeviceN and Separation color spaces
+     * and convert spot colors into process colors.
+     */
+    params.num_spot_colors = get_num_pdf14_spot_colors(pgs);
+    /* Note: Other parameters not used */
     return gs_state_update_pdf14trans(pgs, &params);
 }
 

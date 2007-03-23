@@ -256,6 +256,9 @@ gs_text_begin(gs_state * pgs, const gs_text_params_t * text,
        of a Type 3 font while stringwidth. 
        Unfortunately we can't effectively know a leaf font type here,
        so we load the color unconditionally . */
+    /* Processing a text object operation */
+    gs_set_object_tag(pgs, GS_TEXT_TAG);
+
     gx_set_dev_color(pgs);
     code = gs_state_color_load(pgs);
     if (code < 0)
@@ -280,6 +283,9 @@ gs_text_update_dev_color(gs_state * pgs, gs_text_enum_t * pte)
      * update of the graphic state color will update the text color as
      * well.
      */
+    /* Processing a text object operation */
+    gs_set_object_tag(pgs, GS_TEXT_TAG);
+
     if (pte->pdcolor != 0)
         gx_set_dev_color(pgs);
     return 0;

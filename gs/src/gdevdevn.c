@@ -25,6 +25,8 @@
 #include "gxdcconv.h"
 #include "gdevdevn.h"
 #include "gsequivc.h"
+#include "gxblend.h"
+#include "gdevp14.h"
 
 /*
  * Utility routines for common DeviceN related parameters:
@@ -349,6 +351,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
     bool num_spot_changed = false;
     int num_order = pdevn_params->num_separation_order_names;
     int max_sep = pdevn_params->max_separations;
+    int page_spot_colors = pdevn_params->page_spot_colors;
     gs_param_string_array scna;		/* SeparationColorNames array */
     gs_param_string_array sona;		/* SeparationOrder names array */
 
@@ -415,7 +418,8 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
 
 	    num_order = sona.size;
 	    for (i = 0; i < num_spot + npcmcolors; i++)
-		pdevn_params->separation_order_map[i] = GX_DEVICE_COLOR_MAX_COMPONENTS;
+		pdevn_params->separation_order_map[i] =
+		       			GX_DEVICE_COLOR_MAX_COMPONENTS;
 	    for (i = 0; i < num_order; i++) {
 	        /*
 	         * Check if names match either the process color model or
@@ -445,25 +449,29 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
             case 0:
 	        if (max_sep < 1 || max_sep > GX_DEVICE_COLOR_MAX_COMPONENTS)
 		    return_error(gs_error_rangecheck);
-#if !USE_COMPRESSED_ENCODING
-		/*
-		 * If we are not using a compressed pixel encoding, then the
-		 * device depth (pixel size) varies with the number of
-		 * separations.  The depth is constant with the compressed
-		 * encoding scheme.
-		 */
-	        {
-		    int depth =
-		        bpc_to_depth(max_sep, pdevn_params->bitspercomponent);
-
-                    if (depth > 8 * size_of(gx_color_index))
-		        return_error(gs_error_rangecheck);
-                    pdev->color_info.depth = depth;
-	        }
-#endif
-    	        pdevn_params->max_separations =
-		        pdev->color_info.max_components =
-    	                pdev->color_info.num_components = max_sep;
+        }
+        /*
+         * The PDF interpreter scans the resources for pages to try to
+	 * determine the number of spot colors.  (Unfortuneately there is
+	 * no way to determine the number of spot colors for a PS page
+	 * except to interpret the entire page.)  The spot color count for
+	 * a PDF page may be high since there may be spot colors in a PDF
+	 * page's resources that are not used.  However this does give us
+	 * an upper limit on the number of spot colors.  A value of -1
+	 * indicates that the number of spot colors in unknown (a PS file).
+         */
+        code = param_read_int(plist, param_name = "PageSpotColors",
+		       					&page_spot_colors);
+        switch (code) {
+            default:
+	        param_signal_error(plist, param_name, code);
+            case 1:
+		break;
+            case 0:
+	        if (page_spot_colors < -1)
+		    return_error(gs_error_rangecheck);
+	        if (page_spot_colors > GX_DEVICE_COLOR_MAX_COMPONENTS)
+		    page_spot_colors = GX_DEVICE_COLOR_MAX_COMPONENTS;
         }
         /* 
          * The DeviceN device can have zero components if nothing has been
@@ -477,10 +485,14 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
 	 * SeparationColorNames, SeparationOrder, or MaxSeparations.
 	 */
 	if (num_spot_changed || pdevn_params->max_separations != max_sep ||
-	    	    pdevn_params->num_separation_order_names != num_order) {
+	    	    pdevn_params->num_separation_order_names != num_order ||
+		    pdevn_params->page_spot_colors != page_spot_colors) {
 	    pdevn_params->separations.num_separations = num_spot;
 	    pdevn_params->num_separation_order_names = num_order;
     	    pdevn_params->max_separations = max_sep;
+    	    pdevn_params->page_spot_colors = page_spot_colors;
+	    if (max_sep != 0)
+		 pdev->color_info.max_components = max_sep;
 	    /*
 	     * If we have SeparationOrder specified then the number of
 	     * components is given by the number of names in the list.
@@ -489,10 +501,17 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
 	     * of ProcessColorModel components plus the number of
 	     * SeparationColorNames is used.
 	     */
-            pdev->color_info.num_components = (num_order) ? num_order 
+            pdev->color_info.num_components = (num_order)
+		? num_order 
 		: (pdevn_params->max_separations)
-				? pdevn_params->max_separations
-				: npcmcolors + num_spot;
+			? pdevn_params->max_separations
+			: (page_spot_colors >= 0)
+		       		? npcmcolors + num_spot + page_spot_colors
+	    			: pdev->color_info.max_components;
+            if (pdev->color_info.num_components >
+		    pdev->color_info.max_components)
+                pdev->color_info.num_components =
+		       	pdev->color_info.max_components;
 #if !USE_COMPRESSED_ENCODING
 	    /*
 	     * See earlier comment about the depth and non compressed
@@ -550,7 +569,15 @@ devn_printer_put_params(gx_device * pdev, gs_param_list * plist,
         /* Reset the sparable and linear shift, masks, bits. */
 	set_linear_color_bits_mask_shift(pdev);
     }
-
+    /*
+     * Also check for parameters which are being passed from the PDF 1.4
+     * compositior clist write device.  This device needs to pass info
+     * to the PDF 1.4 compositor clist reader device.  However this device
+     * is not crated until the clist is being read.  Thus we have to buffer
+     * this info in the output device.   (This is only needed for devices
+     * which support spot colors.)
+     */
+    code = pdf14_put_devn_params(pdev, pdevn_params, plist);
     return code;
 }
 
@@ -643,7 +670,7 @@ print_compressed_color_list(compressed_color_list_t * pcomp_list, int num_comp)
 /*
  * Allocate an list level element for our encode color list.
  */
-private compressed_color_list_t * 
+compressed_color_list_t * 
 alloc_compressed_color_list_elem(gs_memory_t * mem, int num_comps)
 {
     compressed_color_list_t * plist =
@@ -656,6 +683,43 @@ alloc_compressed_color_list_elem(gs_memory_t * mem, int num_comps)
 	plist->first_bit_map = NUM_ENCODE_LIST_ITEMS;
     }
     return plist;
+}
+
+/*
+ * Free the elements of a compressed color list.
+ */
+void
+free_compressed_color_list(gs_memory_t * mem,
+	       	compressed_color_list_t * pcomp_list)
+{
+    int i;
+
+    if (pcomp_list == NULL)
+	return;
+
+    /* Discard the sub levels. */
+    for (i = 0; i < pcomp_list->num_sub_level_ptrs; i++)
+       free_compressed_color_list(mem, pcomp_list->u.sub_level_ptrs[i]);
+
+    gs_free_object(mem, pcomp_list, "free_compressed_color_list");
+    return;
+}
+
+/*
+ * Free a set of separation names
+ */
+void
+free_separation_names(gs_memory_t * mem,
+	       	gs_separations * pseparation)
+{
+    int i;
+
+    /* Discard the sub levels. */
+    for (i = 0; i < pseparation->num_separations; i++)
+        gs_free_object(mem, pseparation->names[i].data,
+				"free_separation_names");
+    pseparation->num_separations = 0;
+    return;
 }
 
 /*
@@ -840,7 +904,7 @@ init_compressed_color_list(gs_memory_t *mem)
  * the number of colorants being used times size of the colorant value saved
  * must fit into a gx_color_index value.
  */
-static int num_comp_bits[MAX_ENCODED_COMPONENTS + 1] = {
+int num_comp_bits[MAX_ENCODED_COMPONENTS + 1] = {
 	8,	/* 0 colorants - not used */
 	8,	/* 1 colorants */
 	8,	/* 2 colorants */
@@ -868,7 +932,7 @@ static int num_comp_bits[MAX_ENCODED_COMPONENTS + 1] = {
 #define gx_color_value_factor(num_bits) \
     ((gx_max_color_value << 8) + 0xff) / ((1 << num_bits) - 1)
 
-static int comp_bit_factor[MAX_ENCODED_COMPONENTS + 1] = {
+int comp_bit_factor[MAX_ENCODED_COMPONENTS + 1] = {
 	gx_color_value_factor(8),		 /*  0 colorants (8 bits) */
 	gx_color_value_factor(8),		 /*  1 colorants (8 bits) */
 	gx_color_value_factor(8),		 /*  2 colorants (8 bits) */
@@ -1193,7 +1257,7 @@ devn_encode_compressed_color(gx_device *pdev, const gx_color_value colors[],
 /*
  * Find the bit map for given bit map index.
  */
-private comp_bit_map_list_t *
+comp_bit_map_list_t *
 find_bit_map(gx_color_index index, compressed_color_list_t * pcomp_list)
 {
     int loc = (int)(index >> (NUM_GX_COLOR_INDEX_BITS - 8));
@@ -1336,8 +1400,6 @@ devn_unpack_row(gx_device * dev, int num_comp, gs_devn_params * pdevn_params,
        		            *out++ = solid_color >> 8;
 		        else {
             	            *out++ = (factor * ((int)color & bit_mask)) >> 16;
-			    if (comp_num == 3 && out[-1] != 0)
-			        comp_num = comp_num;
 	    	            color >>= bit_count;
 		        }
 		    }
@@ -1521,6 +1583,7 @@ const spotcmyk_device gs_spotcmyk_device =
       DeviceCMYKComponents,	/* Names of color model colorants */
       4,			/* Number colorants for CMYK */
       0,			/* MaxSeparations has not been specified */
+      -1,			/* PageSpotColors has not been specified */
       {0},			/* SeparationNames */
       0,			/* SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
@@ -1540,6 +1603,7 @@ const spotcmyk_device gs_devicen_device =
       NULL,			/* No names for standard DeviceN color model */
       0,			/* No standard colorants for DeviceN */
       0,			/* MaxSeparations has not been specified */
+      -1,			/* PageSpotColors has not been specified */
       {0},			/* SeparationNames */
       0,			/* SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */

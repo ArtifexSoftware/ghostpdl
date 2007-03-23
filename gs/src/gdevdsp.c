@@ -89,6 +89,7 @@ private dev_proc_get_color_comp_index(display_separation_get_color_comp_index);
 private dev_proc_encode_color(display_separation_encode_color);
 private dev_proc_decode_color(display_separation_decode_color);
 private dev_proc_update_spot_equivalent_colors(display_update_spot_equivalent_colors);
+private dev_proc_ret_devn_params(display_ret_devn_params);
 
 
 private const gx_device_procs display_procs =
@@ -153,7 +154,8 @@ private const gx_device_procs display_procs =
     NULL,				/* fill_linear_color_scanline */\
     NULL,				/* fill_linear_color_trapezoid */\
     NULL,				/* fill_linear_color_triangle */\
-    display_update_spot_equivalent_colors /* update_spot_equivalent_colors */
+    display_update_spot_equivalent_colors, /* update_spot_equivalent_colors */
+    display_ret_devn_params		/* ret_devn_params */\
 };
 
 /* GC descriptor */
@@ -207,6 +209,7 @@ const gx_device_display gs_display_device =
       DeviceCMYKComponents,     /* Names of color model colorants */
       4,                        /* Number of colorants for CMYK */
       0,                        /* MaxSeparations has not been specified */
+      -1,			/* PageSpotColors has not been specified */
       {0},                      /* SeparationNames */
       {0},                      /* SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 } /* Initial component SeparationOrder */
@@ -1163,6 +1166,17 @@ display_update_spot_equivalent_colors(gx_device * dev, const gs_state * pgs)
         update_spot_equivalent_cmyk_colors(dev, pgs,
 		    &ddev->devn_params, &ddev->equiv_cmyk_colors);
     return 0;
+}
+
+/*
+ *  Device proc for returning a pointer to DeviceN parameter structure
+ */
+private gs_devn_params *
+display_ret_devn_params(gx_device * dev)
+{
+    gx_device_display * pdev = (gx_device_display *)dev;
+
+    return &pdev->devn_params;
 }
 
 /*

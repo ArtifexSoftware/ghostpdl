@@ -31,6 +31,7 @@
 #include "gsimage.h"
 #include "gsrect.h"
 #include "gzstate.h"
+#include "gdevdevn.h"
 #include "gdevp14.h"
 #include "gsovrc.h"
 #include "gxcmap.h"
@@ -38,6 +39,19 @@
 #include "gstrans.h"
 #include "gsutil.h"
 #include "gxcldev.h"
+#include "gxdcconv.h"
+
+/*
+ * We chose the blending color space based upon the process color model of the
+ * output device.  For gray, RGB, CMYK, or CMYK+spot devices, the choice is
+ * usually simple.  For other devices or if the user is doing custom color
+ * processing then the user may want to control this choice.
+ */
+#define AUTO_CUSTOM_BLENDING 0
+#define ALWAYS_USE_CUSTOM_BLENDING 1
+#define DO_NOT_USE_CUSTOM_BLENDING 2
+
+#define CUSTOM_BLENDING_MODE AUTO_CUSTOM_BLENDING
 
 /* #define DUMP_TO_PNG */
 
@@ -49,7 +63,7 @@
 
 /* Buffer stack	data structure */
 
-#define	PDF14_MAX_PLANES 16
+#define	PDF14_MAX_PLANES GX_DEVICE_COLOR_MAX_COMPONENTS
 
 /* GC procedures for buffer stack */
 
@@ -77,6 +91,115 @@ gs_private_st_ptrs2(st_pdf14_ctx, pdf14_ctx, "pdf14_ctx",
 		    pdf14_ctx_enum_ptrs, pdf14_ctx_reloc_ptrs,
 		    stack, maskbuf);
 
+/*
+ * Unpack a device color.  This routine is similar to the device's
+ * decode_color procedure except for two things.  The procedure produces 1
+ * byte values instead of gx_color_values (2 bytes) and the output values
+ * are inverted for subtractive color spaces (like CMYK).  A separate
+ * procedure is used instead of the decode_color to minimize execution time.
+ */
+private void
+pdf14_unpack_additive(int num_comp, gx_color_index color,
+			       	pdf14_device * p14dev, byte * out)
+{
+    int i;
+
+    for (i = num_comp - 1; i >= 0; i--) {
+	out[i] = (byte)(color & 0xff);
+	color >>= 8;
+    }
+}
+
+/*
+ * Unpack a device color.  This routine is similar to the device's
+ * decode_color procedure except for two things.  The procedure produces 1
+ * byte values instead of gx_color_values (2 bytes) and the output values
+ * are inverted for subtractive color spaces (like CMYK).  A separate
+ * procedure is used instead of the decode_color to minimize execution time.
+ */
+private void
+pdf14_unpack_subtractive(int num_comp, gx_color_index color,
+			       	pdf14_device * p14dev, byte * out)
+{
+    int i;
+
+    for (i = num_comp - 1; i >= 0; i--) {
+	out[i] = 0xff - (byte)(color & 0xff);
+	color >>= 8;
+    }
+}
+
+/*
+ * Unpack a 'compressed' CMYK color index.  The color index value is unpacked
+ * into a set of 8 bit values.  For more information about 'compressed' color
+ * index values see the comments before the devn_encode_compressed_color routine.
+ *
+ * Note: For simplicity of coding the calling routines, this routine will also
+ * handle 'uncompressed' color index values.
+ */
+private void
+pdf14_unpack_compressed(int num_comp, gx_color_index color,
+			       	pdf14_device * p14dev, byte * out)
+{
+    int comp_num;
+
+    if (p14dev->devn_params.compressed_color_list == NULL) {
+        /*
+         * For 'uncompressed' data we simply have to unpack the gx_color_index
+	 * value directly.
+         */
+        for (comp_num = num_comp - 1; comp_num >= 0; comp_num--) {
+	    out[comp_num] = 0xff - (byte)(color & 0xff);
+	    color >>= 8;
+        }
+    }
+    else {
+        int factor, bit_count, bit_mask;
+        comp_bit_map_list_t * pbitmap;
+        gx_color_value solid_color = 0xff;
+
+    	pbitmap = find_bit_map(color,
+		       	p14dev->devn_params.compressed_color_list);
+	bit_count = num_comp_bits[pbitmap->num_non_solid_comp];
+	bit_mask = (1 << bit_count) - 1;
+	factor = comp_bit_factor[pbitmap->num_non_solid_comp];
+	if (pbitmap->solid_not_100) {
+	    solid_color = 0xff - ((factor * ((int)color & bit_mask)) >> 16);
+	    color >>= bit_count;
+	}
+        for (comp_num = 0; comp_num < num_comp; comp_num++) {
+	    if (colorant_present(pbitmap, colorants, comp_num)) {
+		if (colorant_present(pbitmap, solid_colorants, comp_num))
+       		    *out++ = (byte)solid_color;
+		else {
+            	    *out++ = 0xff - ((factor * ((int)color & bit_mask)) >> 16);
+	    	    color >>= bit_count;
+		}
+	    }
+	    else
+            	*out++ = 0xff;
+        }
+    }
+}
+
+/*
+ * Unpack a device color.  This routine is used for devices in which we do
+ * not know the details of the process color model.  In this case we use
+ * the device's decode_color procedure.
+ */
+private void
+pdf14_unpack_custom(int num_comp, gx_color_index color,
+			       	pdf14_device * p14dev, byte * out)
+{
+    int i;
+    gx_device * tdev = p14dev->target;
+    gx_color_value cm_values[GX_DEVICE_COLOR_MAX_COMPONENTS];
+
+    dev_proc(tdev, decode_color)(tdev, color, cm_values);
+    for (i = 0; i < num_comp; i++)
+	out[i] = 0xff - gx_color_value_to_byte(cm_values[i]);
+}
+
 /* ------ The device descriptors ------	*/
 
 /*
@@ -89,8 +212,12 @@ private	int pdf14_open(gx_device * pdev);
 private	dev_proc_close_device(pdf14_close);
 private	int pdf14_output_page(gx_device	* pdev,	int num_copies,	int flush);
 private	dev_proc_put_params(pdf14_put_params);
+private	dev_proc_get_color_comp_index(pdf14_cmykspot_get_color_comp_index);
+private	dev_proc_get_color_mapping_procs(pdf14_cmykspot_get_color_mapping_procs);
 private	dev_proc_encode_color(pdf14_encode_color);
+private	dev_proc_encode_color(pdf14_compressed_encode_color);
 private	dev_proc_decode_color(pdf14_decode_color);
+private	dev_proc_decode_color(pdf14_compressed_decode_color);
 private	dev_proc_fill_rectangle(pdf14_fill_rectangle);
 private	dev_proc_fill_rectangle(pdf14_mark_fill_rectangle);
 private	dev_proc_fill_rectangle(pdf14_mark_fill_rectangle_ko_simple);
@@ -105,6 +232,7 @@ private	dev_proc_begin_transparency_group(pdf14_begin_transparency_group);
 private	dev_proc_end_transparency_group(pdf14_end_transparency_group);
 private	dev_proc_begin_transparency_mask(pdf14_begin_transparency_mask);
 private	dev_proc_end_transparency_mask(pdf14_end_transparency_mask);
+private int pdf14_clist_get_param_compressed_color_list(pdf14_device * p14dev);
 
 private	const gx_color_map_procs *
     pdf14_get_cmap_procs(const gs_imager_state *, const gx_device *);
@@ -114,15 +242,15 @@ private	const gx_color_map_procs *
 
 /* 24-bit color. */
 
-#define	pdf14_procs(get_color_mapping_procs, get_color_comp_index) \
+#define	pdf14_dev_procs(get_color_mapping_procs, get_color_comp_index, encode_color, decode_color) \
 {\
 	pdf14_open,			/* open */\
 	NULL,				/* get_initial_matrix */\
 	NULL,				/* sync_output */\
 	pdf14_output_page,		/* output_page */\
 	pdf14_close,			/* close */\
-	pdf14_encode_color,		/* rgb_map_rgb_color */\
-	pdf14_decode_color,		/* gx_default_rgb_map_color_rgb */\
+	encode_color,			/* rgb_map_rgb_color */\
+	decode_color,			/* gx_default_rgb_map_color_rgb */\
 	pdf14_fill_rectangle,		/* fill_rectangle */\
 	NULL,				/* tile_rectangle */\
 	pdf14_copy_mono,		/* copy_mono */\
@@ -167,55 +295,215 @@ private	const gx_color_map_procs *
 	NULL,				/* discard_transparency_layer */\
 	get_color_mapping_procs,	/* get_color_mapping_procs */\
 	get_color_comp_index,		/* get_color_comp_index */\
-	pdf14_encode_color,		/* encode_color */\
-	pdf14_decode_color		/* decode_color */\
+	encode_color,			/* encode_color */\
+	decode_color,			/* decode_color */\
+	NULL,				/* pattern_manage */\
+	NULL,				/* fill_rectangle_hl_color */\
+	NULL,				/* include_color_space */\
+	NULL,				/* fill_linear_color_scanline */\
+	NULL,				/* fill_linear_color_trapezoid */\
+	NULL,				/* fill_linear_color_triangle */\
+	gx_forward_update_spot_equivalent_colors	/* update spot */\
 }
 
 private	const gx_device_procs pdf14_Gray_procs =
-	pdf14_procs(gx_default_DevGray_get_color_mapping_procs,
-			gx_default_DevGray_get_color_comp_index);
+	pdf14_dev_procs(gx_default_DevGray_get_color_mapping_procs,
+			gx_default_DevGray_get_color_comp_index,
+		       	pdf14_encode_color, pdf14_decode_color);
 
 private	const gx_device_procs pdf14_RGB_procs =
-	pdf14_procs(gx_default_DevRGB_get_color_mapping_procs,
-			gx_default_DevRGB_get_color_comp_index);
+	pdf14_dev_procs(gx_default_DevRGB_get_color_mapping_procs,
+			gx_default_DevRGB_get_color_comp_index,
+		       	pdf14_encode_color, pdf14_decode_color);
 
 private	const gx_device_procs pdf14_CMYK_procs =
-	pdf14_procs(gx_default_DevCMYK_get_color_mapping_procs,
-			gx_default_DevCMYK_get_color_comp_index);
+	pdf14_dev_procs(gx_default_DevCMYK_get_color_mapping_procs,
+			gx_default_DevCMYK_get_color_comp_index,
+		       	pdf14_encode_color, pdf14_decode_color);
+
+private	const gx_device_procs pdf14_CMYKspot_procs =
+	pdf14_dev_procs(pdf14_cmykspot_get_color_mapping_procs,
+			pdf14_cmykspot_get_color_comp_index,
+		       	pdf14_compressed_encode_color,
+		       	pdf14_compressed_decode_color);
+
+private	const gx_device_procs pdf14_custom_procs =
+	pdf14_dev_procs(gx_forward_get_color_mapping_procs,
+			gx_forward_get_color_comp_index,
+		       	gx_forward_encode_color,
+		       	gx_forward_decode_color);
 
 gs_private_st_composite_use_final(st_pdf14_device, pdf14_device, "pdf14_device",
 				  pdf14_device_enum_ptrs, pdf14_device_reloc_ptrs,
 			  gx_device_finalize);
 
+private int pdf14_put_image(gx_device * dev, gs_imager_state * pis,
+	       						gx_device * target);
+private int pdf14_cmykspot_put_image(gx_device * dev, gs_imager_state * pis,
+	       						gx_device * target);
+private int pdf14_custom_put_image(gx_device * dev, gs_imager_state * pis,
+	       						gx_device * target);
+
+private const pdf14_procs_t gray_pdf14_procs = {
+    pdf14_unpack_additive,
+    pdf14_put_image
+};
+
+private const pdf14_procs_t rgb_pdf14_procs = {
+    pdf14_unpack_additive,
+    pdf14_put_image
+};
+
+private const pdf14_procs_t cmyk_pdf14_procs = {
+    pdf14_unpack_subtractive,
+    pdf14_put_image
+};
+
+private const pdf14_procs_t cmykspot_pdf14_procs = {
+    pdf14_unpack_compressed,
+    pdf14_cmykspot_put_image
+};
+
+private const pdf14_procs_t custom_pdf14_procs = {
+    pdf14_unpack_custom,
+    pdf14_custom_put_image
+};
+
+private const pdf14_nonseparable_blending_procs_t gray_blending_procs = {
+    art_blend_luminosity_rgb_8,
+    art_blend_saturation_rgb_8
+};
+
+private const pdf14_nonseparable_blending_procs_t rgb_blending_procs = {
+    art_blend_luminosity_rgb_8,
+    art_blend_saturation_rgb_8
+};
+
+private const pdf14_nonseparable_blending_procs_t cmyk_blending_procs = {
+    art_blend_luminosity_cmyk_8,
+    art_blend_saturation_cmyk_8
+};
+
+private const pdf14_nonseparable_blending_procs_t custom_blending_procs = {
+    art_blend_luminosity_custom_8,
+    art_blend_saturation_custom_8
+};
+
 const pdf14_device gs_pdf14_Gray_device	= {
     std_device_color_stype_body(pdf14_device, &pdf14_Gray_procs, "pdf14gray",
 				&st_pdf14_device,
 				XSIZE, YSIZE, X_DPI, Y_DPI, 8, 255, 256),
-    { 0 }
+    { 0 },			/* Procs */
+    NULL,			/* target */
+    { 0 },			/* devn_params - not used */
+    &gray_pdf14_procs,
+    &gray_blending_procs
 };
 
 const pdf14_device gs_pdf14_RGB_device = {
     std_device_color_stype_body(pdf14_device, &pdf14_RGB_procs, "pdf14RGB",
 				&st_pdf14_device,
 				XSIZE, YSIZE, X_DPI, Y_DPI, 24, 255, 256),
-    { 0 }
+    { 0 },			/* Procs */
+    NULL,			/* target */
+    { 0 },			/* devn_params - not used */
+    &rgb_pdf14_procs,
+    &rgb_blending_procs
 };
 
 const pdf14_device gs_pdf14_CMYK_device	= {
     std_device_std_color_full_body_type(pdf14_device, &pdf14_CMYK_procs,
-	"PDF14cmyk", &st_pdf14_device, XSIZE, YSIZE, X_DPI, Y_DPI, 32,
-	0, 0, 0, 0, 0, 0),
-    { 0 }
+	    "PDF14cmyk", &st_pdf14_device, XSIZE, YSIZE, X_DPI, Y_DPI, 32,
+	    0, 0, 0, 0, 0, 0),
+    { 0 },			/* Procs */
+    NULL,			/* target */
+    { 0 },			/* devn_params - not used */
+    &cmyk_pdf14_procs,
+    &cmyk_blending_procs
+};
+
+const pdf14_device gs_pdf14_CMYKspot_device	= {
+    std_device_part1_(pdf14_device, &pdf14_CMYKspot_procs, "PDF14cmykspot", &st_pdf14_device, open_init_closed),
+    dci_values(GX_DEVICE_COLOR_MAX_COMPONENTS,64,255,255,256,256),
+    std_device_part2_(XSIZE, YSIZE, X_DPI, Y_DPI),
+    offset_margin_values(0, 0, 0, 0, 0, 0),
+    std_device_part3_(),
+    { 0 },			/* Procs */
+    NULL,			/* target */
+    /* DeviceN parameters */
+    { 8,			/* Not used - Bits per color */
+      DeviceCMYKComponents,	/* Names of color model colorants */
+      4,			/* Number colorants for CMYK */
+      0,			/* MaxSeparations has not been specified */
+      -1,			/* PageSpotColors has not been specified */
+      {0},			/* SeparationNames */
+      0,			/* SeparationOrder names */
+      {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
+    },
+    &cmykspot_pdf14_procs,
+    &cmyk_blending_procs
+};
+
+/*
+ * The 'custom' PDF 1.4 compositor device is for working with those devices
+ * which support spot colors but do not have a CMYK process color model.
+ *
+ * This causes some problems with the Hue, Saturation, Color, and Luminosity
+ * blending modes.  These blending modes are 'non separable' and depend upon
+ * knowing the details of the blending color space.  However we use the
+ * process color model of the output device for our blending color space.
+ * With an unknown process color model, we have to fall back to some 'guesses'
+ * about how to treat these blending modes.
+ */
+const pdf14_device gs_pdf14_custom_device = {
+    std_device_part1_(pdf14_device, &pdf14_custom_procs, "PDF14custom", &st_pdf14_device, open_init_closed),
+    dci_values(GX_DEVICE_COLOR_MAX_COMPONENTS,64,255,255,256,256),
+    std_device_part2_(XSIZE, YSIZE, X_DPI, Y_DPI),
+    offset_margin_values(0, 0, 0, 0, 0, 0),
+    std_device_part3_(),
+    { 0 },			/* Procs */
+    NULL,			/* target */
+    /* DeviceN parameters */
+    { 8,			/* Not used - Bits per color */
+      DeviceCMYKComponents,	/* Names of color model colorants */
+      4,			/* Number colorants for CMYK */
+      0,			/* MaxSeparations has not been specified */
+      -1,			/* PageSpotColors has not been specified */
+      {0},			/* SeparationNames */
+      0,			/* SeparationOrder names */
+      {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
+    },
+    &custom_pdf14_procs,
+    &custom_blending_procs
 };
 
 /* GC procedures */
 private	
-ENUM_PTRS_WITH(pdf14_device_enum_ptrs, pdf14_device *pdev) return 0;
+ENUM_PTRS_WITH(pdf14_device_enum_ptrs, pdf14_device *pdev)
+{
+    index -= 3;
+    if (index < pdev->devn_params.separations.num_separations)
+	ENUM_RETURN(pdev->devn_params.separations.names[index].data);
+    index -= pdev->devn_params.separations.num_separations;
+    if (index < pdev->devn_params.pdf14_separations.num_separations)
+	ENUM_RETURN(pdev->devn_params.pdf14_separations.names[index].data);
+    return 0;
+}
 case 0:	return ENUM_OBJ(pdev->ctx);
 case 1:	ENUM_RETURN(gx_device_enum_ptr(pdev->target));
+case 2: ENUM_RETURN(pdev->devn_params.compressed_color_list);
 ENUM_PTRS_END
+
 private	RELOC_PTRS_WITH(pdf14_device_reloc_ptrs, pdf14_device *pdev)
 {
+    {
+	int i;
+
+	for (i = 0; i < pdev->devn_params.separations.num_separations; ++i) {
+	    RELOC_PTR(pdf14_device, devn_params.separations.names[i].data);
+	}
+    }
+    RELOC_PTR(pdf14_device, devn_params.compressed_color_list);
     RELOC_VAR(pdev->ctx);
     pdev->target = gx_device_reloc_ptr(pdev->target, gcst);
 }
@@ -406,28 +694,29 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect,
 	    int n_chan_copy = buf->n_chan + (tos->has_shape ? 1 : 0);
 
 	    for (i = 0; i < n_chan_copy; i++) {
-		byte *buf_ptr = buf_plane;
-		byte *tos_ptr = tos_plane;
-		int y;
-
-		for (y = y0; y < y1; ++y) {
-		    memcpy (buf_ptr, tos_ptr, width); 
-		    buf_ptr += buf->rowstride;
-		    tos_ptr += tos->rowstride;
+			byte *buf_ptr = buf_plane;
+			byte *tos_ptr = tos_plane;
+			int y;
+	
+			for (y = y0; y < y1; ++y) {
+				memcpy (buf_ptr, tos_ptr, width); 
+				buf_ptr += buf->rowstride;
+				tos_ptr += tos->rowstride;
+			}
+			buf_plane += buf->planestride;
+			tos_plane += tos->planestride;
 		}
-		buf_plane += buf->planestride;
-		tos_plane += tos->planestride;
-	    }
 	    if (has_shape && !tos->has_shape)
-		memset (buf_plane, 0, buf->planestride);
+			memset (buf_plane, 0, buf->planestride);
+		}
 	}
-    }
 
-    return 0;
+	return 0;
 }
 
 private	int
-pdf14_pop_transparency_group(pdf14_ctx *ctx)
+pdf14_pop_transparency_group(pdf14_ctx *ctx,
+    const pdf14_nonseparable_blending_procs_t * pblend_procs)
 {
     pdf14_buf *tos = ctx->stack;
     pdf14_buf *nos = tos->saved;
@@ -547,15 +836,13 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx)
 							pix_alpha, shape);
 		} else if (tos_isolated) {
 		    art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr,
-						tos_pixel,
-						n_chan - 1,
-						pix_alpha, blend_mode);
+					tos_pixel, n_chan - 1,
+					pix_alpha, blend_mode, pblend_procs);
 		} else {
 		    byte tos_alpha_g = tos_ptr[x + tos_alpha_g_offset];
 		    art_pdf_recomposite_group_8(nos_pixel, nos_alpha_g_ptr,
-						tos_pixel, tos_alpha_g,
-						n_chan - 1,
-						pix_alpha, blend_mode);
+					tos_pixel, tos_alpha_g, n_chan - 1,
+					pix_alpha, blend_mode, pblend_procs);
 		}
 		if (nos_has_shape) {
 		    nos_ptr[x + nos_shape_offset] =
@@ -685,6 +972,100 @@ pdf14_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
     return 0;
 }
 
+/*
+ * Encode a list of colorant values into a gx_color_index_value.  For more
+ * information about 'compressed' color index values see the comments before
+ * the devn_encode_compressed_color routine.
+ */
+private gx_color_index
+pdf14_compressed_encode_color(gx_device *dev, const gx_color_value colors[])
+{
+    return devn_encode_compressed_color(dev, colors,
+		    &(((pdf14_device *)dev)->devn_params));
+}
+
+/*
+ * Decode a gx_color_index value back to a list of colorant values.  For more
+ * information about 'compressed' color index values see the comments before
+ * the devn_encode_compressed_color routine.
+ */
+private int
+pdf14_compressed_decode_color(gx_device * dev, gx_color_index color,
+	       						gx_color_value * out)
+{
+    return devn_decode_compressed_color(dev, color, out,
+		    &(((pdf14_device *)dev)->devn_params));
+}
+
+static void
+pdf14_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
+{
+    int num_comp = dev->color_info.num_components;
+
+    out[0] = out[1] = out[2] = frac_0;
+    out[3] = frac_1 - gray;
+    for (--num_comp; num_comp > 3; num_comp--)
+	out[num_comp] = 0;
+}
+
+/*
+ * Default map from DeviceRGB color space to DeviceCMYK color
+ * model. Since this mapping is defined by the PostScript language
+ * it is unlikely that any device with a DeviceCMYK color model
+ * would define this mapping on its own.
+ *
+ * If the imager state is not available, map as though the black
+ * generation and undercolor removal functions are identity
+ * transformations. This mode is used primarily to support the
+ * raster operation (rop) feature of PCL, which requires that
+ * the raster operation be performed in an RGB color space.
+ * Note that default black generation and undercolor removal
+ * functions in PostScript need NOT be identity transformations:
+ * often they are { pop 0 }.
+ */
+static void
+pdf14_rgb_cs_to_cmyk_cm(gx_device * dev, const gs_imager_state *pis,
+  			   frac r, frac g, frac b, frac out[])
+{
+    int num_comp = dev->color_info.num_components;
+
+    if (pis != 0)
+        color_rgb_to_cmyk(r, g, b, pis, out);
+    else {
+        frac    c = frac_1 - r, m = frac_1 - g, y = frac_1 - b;
+        frac    k = min(c, min(m, g));
+
+        out[0] = c - k;
+        out[1] = m - k;
+        out[2] = y - k;
+        out[3] = k;
+    }
+    for (--num_comp; num_comp > 3; num_comp--)
+	out[num_comp] = 0;
+}
+
+void
+pdf14_cmyk_cs_to_cmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+{
+    int num_comp = dev->color_info.num_components;
+
+    out[0] = c;
+    out[1] = m;
+    out[2] = y;
+    out[3] = k;
+    for (--num_comp; num_comp > 3; num_comp--)
+	out[num_comp] = 0;
+}
+static const gx_cm_color_map_procs pdf14_DeviceCMYKspot_procs = {
+    pdf14_gray_cs_to_cmyk_cm, pdf14_rgb_cs_to_cmyk_cm, pdf14_cmyk_cs_to_cmyk_cm
+};
+
+const gx_cm_color_map_procs *
+pdf14_cmykspot_get_color_mapping_procs(const gx_device * dev)
+{
+    return &pdf14_DeviceCMYKspot_procs;
+}
+
 #ifdef DUMP_TO_PNG
 /* Dumps a planar RGBA image to	a PNG file. */
 private	int
@@ -799,8 +1180,9 @@ dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
  * Return code: negative on error.
  **/
 private	int
-pdf14_put_image(pdf14_device *pdev, gs_imager_state *pis, gx_device *target)
+pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
 {
+    const pdf14_device * pdev = (pdf14_device *)dev;
     int code;
     gs_image1_t image;
     gs_matrix pmat;
@@ -931,6 +1313,180 @@ pdf14_put_image(pdf14_device *pdev, gs_imager_state *pis, gx_device *target)
     return code;
 }
 
+/**
+ * pdf14_cmykspot_put_image: Put rendered image to target device.
+ * @pdev: The PDF 1.4 rendering device.
+ * @pis: State for image draw operation.
+ * @target: The target device.
+ *
+ * Puts the rendered image in @pdev's buffer to @target. This is called
+ * as part of the sequence of popping the PDF 1.4 device filter.
+ *
+ * Return code: negative on error.
+ **/
+private	int
+pdf14_cmykspot_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
+{
+    pdf14_device * pdev = (pdf14_device *)dev;
+    int code = 0;
+    int width = pdev->width;
+    int height = pdev->height;
+    int x, y, tmp, comp_num, output_comp_num;
+    pdf14_buf *buf = pdev->ctx->stack;
+    int planestride = buf->planestride;
+    int num_comp = buf->n_chan - 1;
+    byte *buf_ptr = buf->data;
+    const byte bg = pdev->ctx->additive ? gx_max_color_value : 0;
+    gx_color_index color;
+    gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_value comp;
+    byte a;
+    int input_map[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    int output_map[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    int num_known_comp = 0;
+    int output_num_comp = target->color_info.num_components;
+    gs_devn_params * pdevn_params = &pdev->devn_params;
+    gs_separations * pseparations = &pdevn_params->separations;
+    int num_sep = pseparations->num_separations++;
+
+    if_debug0('v', "[v]pdf14_cmykspot_put_image\n");
+    /*
+     * The process color model for the PDF 1.4 compositor device is CMYK plus
+     * spot colors.  The target device may have only some of these colorants due
+     * to the SeparationOrder device parameter.  Thus we need to determine the
+     * mapping between the PDF 1.4 compositor and the target device.  Note:
+     * There should not be a spot colorant in the PDF 1.4 device that is not
+     * present in the target device.
+     */
+    /* Check if target processes CMYK colorants. */
+    for (comp_num = 0; comp_num < 4; comp_num++) {
+	const char * pcomp_name = (const char *)DeviceCMYKComponents[comp_num]; 
+
+	output_comp_num = dev_proc(target, get_color_comp_index)
+		(target, pcomp_name, strlen(pcomp_name), NO_COMP_NAME_TYPE);
+	if (output_comp_num >=0 &&
+	     	output_comp_num < GX_DEVICE_COLOR_MAX_COMPONENTS) {
+	    output_map[num_known_comp] = output_comp_num;
+	    input_map[num_known_comp++] = comp_num;
+	}
+    }
+    /* Check if target processes our spot colorants. */
+    for (comp_num = 0; comp_num < num_sep; comp_num++) {
+	output_comp_num = dev_proc(target, get_color_comp_index)
+	       (target, (const char *)(pseparations->names[comp_num].data),
+	       	pseparations->names[comp_num].size,  NO_COMP_NAME_TYPE);
+	if (output_comp_num >= 0 &&
+	     	output_comp_num < GX_DEVICE_COLOR_MAX_COMPONENTS) {
+	    output_map[num_known_comp] = output_comp_num;
+	    input_map[num_known_comp++] = comp_num + 4;
+	}
+    }
+
+    /* Clear all output colorants first */
+    for (comp_num = 0; comp_num < output_num_comp; comp_num++)
+	cv[comp_num] = 0;
+
+    /* Send pixel data to the target device. */
+    for (y = 0; y < height; y++) {
+	for (x = 0; x < width; x++) {
+
+	    /* composite CMYKA, etc. pixel with over solid background */
+	    a = buf_ptr[x + planestride * num_comp];
+
+	    if ((a + 1) & 0xfe) {
+		a ^= 0xff;
+		for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
+		    comp  = buf_ptr[x + planestride * input_map[comp_num]];
+		    tmp = ((bg - comp) * a) + 0x80;
+		    comp += tmp + (tmp >> 8);
+		    cv[output_map[comp_num]] = comp;
+		}
+	    } else if (a == 0) {
+		for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
+		    cv[output_map[comp_num]] = bg;
+		}
+	    } else {
+		for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
+		    comp = buf_ptr[x + planestride * input_map[comp_num]];
+		    cv[output_map[comp_num]] = (comp << 8) + comp;
+		}
+	    }
+	    color = dev_proc(target, encode_color)(target, cv);
+	    code = dev_proc(target, fill_rectangle)(target, x, y, 1, 1, color);
+	}
+
+	buf_ptr += buf->rowstride;
+    }
+
+    return code;
+}
+
+/**
+ * pdf14_custom_put_image: Put rendered image to target device.
+ * @pdev: The PDF 1.4 rendering device.
+ * @pis: State for image draw operation.
+ * @target: The target device.
+ *
+ * Puts the rendered image in @pdev's buffer to @target. This is called
+ * as part of the sequence of popping the PDF 1.4 device filter.
+ *
+ * Return code: negative on error.
+ **/
+private	int
+pdf14_custom_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
+{
+    pdf14_device * pdev = (pdf14_device *)dev;
+    int code = 0;
+    int width = pdev->width;
+    int height = pdev->height;
+    int x, y, tmp, comp_num;
+    pdf14_buf *buf = pdev->ctx->stack;
+    int planestride = buf->planestride;
+    int num_comp = buf->n_chan - 1;
+    byte *buf_ptr = buf->data;
+    const byte bg = pdev->ctx->additive ? gx_max_color_value : 0;
+    gx_color_index color;
+    gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_value comp;
+    byte a;
+
+    if_debug0('v', "[v]pdf14_custom_put_image\n");
+
+    /* Send pixel data to the target device. */
+    for (y = 0; y < height; y++) {
+	for (x = 0; x < width; x++) {
+
+	    /* composite CMYKA, etc. pixel with over solid background */
+	    a = buf_ptr[x + planestride * num_comp];
+
+	    if ((a + 1) & 0xfe) {
+		a ^= 0xff;
+		for (comp_num = 0; comp_num < num_comp; comp_num++) {
+		    comp  = buf_ptr[x + planestride * comp_num];
+		    tmp = ((bg - comp) * a) + 0x80;
+		    comp += tmp + (tmp >> 8);
+		    cv[comp_num] = comp;
+		}
+	    } else if (a == 0) {
+		for (comp_num = 0; comp_num < num_comp; comp_num++) {
+		    cv[comp_num] = bg;
+		}
+	    } else {
+		for (comp_num = 0; comp_num < num_comp; comp_num++) {
+		    comp = buf_ptr[x + planestride * comp_num];
+		    cv[comp_num] = (comp << 8) + comp;
+		}
+	    }
+	    color = dev_proc(target, encode_color)(target, cv);
+	    code = dev_proc(target, fill_rectangle)(target, x, y, 1, 1, color);
+	}
+
+	buf_ptr += buf->rowstride;
+    }
+
+    return code;
+}
+
 private	int
 pdf14_close(gx_device *dev)
 {
@@ -1001,6 +1557,15 @@ pdf14_forward_put_params(gx_device * dev, gs_param_list	* plist)
     return code;
 }
 
+/* Function prototypes */
+int put_param_compressed_color_list_elem(gx_device * pdev,
+    gs_param_list * plist, compressed_color_list_t ** pret_comp_list,
+    char * keyname, int num_comps);
+int put_param_pdf14_spot_names(gx_device * pdev,
+		gs_separations * pseparations, gs_param_list * plist);
+#define PDF14CompressedColorListParamName "PDF14CompressedColorList"
+#define PDF14NumSpotColorsParamName "PDF14NumSpotColors"
+
 /*
  * The put_params method for the PDF 1.4 device will check if the
  * target device has closed and, if so, close itself.  Note:  This routine is
@@ -1021,6 +1586,11 @@ pdf14_put_params(gx_device * dev, gs_param_list	* plist)
 	    code = gs_closedevice(dev);
 	gs_pdf14_device_copy_params(dev, tdev);
     }
+#if 0
+    put_param_compressed_color_list_elem(pdev, plist, &pret_comp_list,
+		  PDF14CompressedColorListParamName, TOP_ENCODED_LEVEL);
+    put_param_pdf14_spot_names(dev, &pdev->devn_params, plist);
+#endif
     return code;
 }
 
@@ -1188,17 +1758,61 @@ pdf14_disable_device(gx_device * dev)
 private	pdf14_default_colorspace_t
 pdf14_determine_default_blend_cs(gx_device * pdev)
 {
-    if (pdev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
-	/* Use DeviceCMYK for all subrtactive process color models. */
-	return DeviceCMYK;
-    else {
+    if (pdev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
 	/*
 	 * Note:  We do not allow the SeparationOrder device parameter for
 	 * additive devices.  Thus we always have 1 colorant for DeviceGray
 	 * and 3 colorants for DeviceRGB.  We do not currently support
 	 * blending in a DeviceGray color space.  Thus we oniy use DeviceRGB.
 	 */
-	return DeviceRGB;
+	return PDF14_DeviceRGB;
+    else {
+	/*
+	 * Check if the device is CMYK only or CMYK plus spot colors.
+	 */
+	int i, output_comp_num, num_cmyk_used = 0, num_cmyk = 0;
+
+#if CUSTOM_BLENDING_MODE == ALWAYS_USE_CUSTOM_BLENDING
+	return PDF14_DeviceCustom;
+#endif
+	/*
+	 * Count the number of CMYK process components supported by the output
+	 * device.
+	 */
+	for (i = 0; i < 4; i++) {
+	    const char * pcomp_name = (const char *)DeviceCMYKComponents[i]; 
+
+	    output_comp_num = dev_proc(pdev, get_color_comp_index)
+		(pdev, pcomp_name, strlen(pcomp_name), NO_COMP_NAME_TYPE);
+	    
+	    if (output_comp_num >= 0) {
+		num_cmyk++;
+		if (output_comp_num != GX_DEVICE_COLOR_MAX_COMPONENTS)
+		    num_cmyk_used++;
+	    }
+	}
+	/*
+	 * Check if the device supports only CMYK.  Otherewise we assume that
+	 * the output device supports spot colors.  Note:  This algorithm can
+	 * be fooled if the SeparationOrder device parameter is being used by
+	 * the output device device to only select CMYK.
+	 */
+	if (num_cmyk_used == 4 && pdev->color_info.num_components == 4
+	    && pdev->color_info.max_components == 4)
+	    return PDF14_DeviceCMYK;
+	/*
+	 * Check if we should use the 'custom' PDF 1.4 compositor device.
+	 * This device is only needed for those devices which do not support
+	 * a basic CMYK process color model.
+	 */
+#if CUSTOM_BLENDING_MODE == AUTO_USE_CUSTOM_BLENDING
+	if (num_cmyk != 4)
+	    return PDF14_DeviceCustom;
+#endif
+	/*
+	 * Otherewise we use a CMYK plus spot colors for blending.
+	 */
+	return PDF14_DeviceCMYKspot;
     }
 }
 
@@ -1209,21 +1823,53 @@ pdf14_determine_default_blend_cs(gx_device * pdev)
  * currently only using a color space based upon the device.
  */
 private	int
-get_pdf14_device_proto(gx_device * dev,
-		const pdf14_device ** pdevproto)
+get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
+	pdf14_device * ptempdevproto, gs_imager_state * pis,
+	const gs_pdf14trans_t * pdf14pct)
 {
     pdf14_default_colorspace_t dev_cs =
 		pdf14_determine_default_blend_cs(dev);
 
     switch (dev_cs) {
-	case DeviceGray:
-	    *pdevproto = &gs_pdf14_Gray_device;
+	case PDF14_DeviceGray:
+	    *pdevproto = (pdf14_device *)&gs_pdf14_Gray_device;
 	    break;
-	case DeviceRGB:
-	    *pdevproto = &gs_pdf14_RGB_device;
+	case PDF14_DeviceRGB:
+	    *pdevproto = (pdf14_device *)&gs_pdf14_RGB_device;
 	    break;
-	case DeviceCMYK:
-	    *pdevproto = &gs_pdf14_CMYK_device;
+	case PDF14_DeviceCMYK:
+	    *pdevproto = (pdf14_device *)&gs_pdf14_CMYK_device;
+	    break;
+	case PDF14_DeviceCMYKspot:
+	    *pdevproto = (pdf14_device *)&gs_pdf14_CMYKspot_device;
+	    /*
+	     * The number of components for the PDF14 device is the sum
+	     * of the process components and the number of spot colors
+	     * for the page.
+	     */
+	    if (pdf14pct->params.num_spot_colors >= 0) {
+	        *ptempdevproto = **pdevproto;
+	        ptempdevproto->devn_params.page_spot_colors =
+	    	    pdf14pct->params.num_spot_colors;
+	        ptempdevproto->color_info.num_components =
+	    	    ptempdevproto->devn_params.num_std_colorant_names +
+	    	    pdf14pct->params.num_spot_colors;
+	        if (ptempdevproto->color_info.num_components >
+	    		ptempdevproto->color_info.max_components)
+	    	    ptempdevproto->color_info.num_components =
+		        ptempdevproto->color_info.max_components;
+		*pdevproto = ptempdevproto;
+	    }
+	    break;
+	case PDF14_DeviceCustom:
+	    /*
+	     * We are using the output device's process color model.  The
+	     * color_info for the PDF 1.4 compositing device needs to match
+	     * the output device.
+	     */
+	    *ptempdevproto = gs_pdf14_custom_device;
+	    ptempdevproto->color_info = dev->color_info;
+	    *pdevproto = ptempdevproto;
 	    break;
 	default:			/* Should not occur */
 	    return_error(gs_error_rangecheck);
@@ -1240,11 +1886,12 @@ get_pdf14_device_proto(gx_device * dev,
  */
 private	int
 pdf14_recreate_device(gs_memory_t *mem,	gs_imager_state	* pis,
-				gx_device * dev)
+		gx_device * dev, const gs_pdf14trans_t * pdf14pct)
 {
     pdf14_device * pdev = (pdf14_device *)dev;
     gx_device * target = pdev->target;
-    const pdf14_device * dev_proto;
+    pdf14_device * dev_proto;
+    pdf14_device temp_dev_proto;
     int code;
 
     if_debug0('v', "[v]pdf14_recreate_device\n");
@@ -1253,10 +1900,11 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_imager_state	* pis,
      * We will not use the entire prototype device but we will set the
      * color related info and the device procs to match the prototype.
      */
-    code = get_pdf14_device_proto(target, &dev_proto);
+    code = get_pdf14_device_proto(target, &dev_proto,
+		   		 &temp_dev_proto, pis, pdf14pct);
     if (code < 0)
 	return code;
-    pdev->color_info = dev_proto->color_info;
+    pdev->color_info = temp_dev_proto.color_info;
     pdev->procs = dev_proto->procs;
     gx_device_fill_in_procs(dev);
     check_device_separable((gx_device *)pdev);
@@ -1281,12 +1929,13 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_imager_state * pis,
 	case PDF14_PUSH_DEVICE:
 	    p14dev->blend_mode = 0;
 	    p14dev->opacity = p14dev->shape = 0.0;
-	    pdf14_recreate_device(mem, pis, pdev);
+	    pdf14_recreate_device(mem, pis, pdev, pdf14pct);
 	    break;
 	case PDF14_POP_DEVICE:
 	    pis->get_cmap_procs = p14dev->save_get_cmap_procs;
 	    gx_set_cmap_procs(pis, p14dev->target);
-	    code = pdf14_put_image(p14dev, pis, p14dev->target);
+	    /* Send image out raster data to output device */
+            p14dev->pdf14_procs->put_image(pdev, pis, p14dev->target);
 	    pdf14_disable_device(pdev);
 	    pdf14_close(pdev);
 	    break;
@@ -1524,7 +2173,7 @@ pdf14_end_transparency_group(gx_device *dev,
     int code;
 
     if_debug0('v', "[v]end_transparency_group\n");
-    code = pdf14_pop_transparency_group(pdev->ctx);
+    code = pdf14_pop_transparency_group(pdev->ctx, pdev->blend_procs);
     return code;
 }
 
@@ -1582,6 +2231,7 @@ pdf14_mark_fill_rectangle(gx_device * dev,
     byte shape = 0; /* Quiet compiler. */
     byte src_alpha;
 
+    /* NB: gx_color_index is 4 or 8 bytes */
     if (sizeof(color) <= sizeof(ulong))
 	if_debug7('v', "[v]pdf14_mark_fill_rectangle, (%d, %d), %d x %d color = %lx  bm %d, nc %d,\n", 
 		    x, y, w, h, (ulong)color, blend_mode, num_chan);
@@ -1590,21 +2240,13 @@ pdf14_mark_fill_rectangle(gx_device * dev,
 		    x, y, w, h, 
 		    (ulong)(color >> 8*(sizeof(color) - sizeof(ulong))), (ulong)color, 
 		    blend_mode, num_chan);
-    /* NB: gx_color_index is 4 or 8 bytes */
 
-    /* Complement the components for subtractive color spaces */
-    if (additive) {
-	for (i = num_comp - 1; i >= 0; i--) {
-	    src[i] = (byte)(color & 0xff);
-	    color >>= 8;
-	}
-    }
-    else {
-	for (i = num_comp - 1; i >= 0; i--) {
-	    src[i] = (byte)(0xff - (color & 0xff));
-	    color >>= 8;
-	}
-    }
+    /*
+     * Unpack the gx_color_index values.  Complement the components for subtractive
+     * color spaces.
+     */
+    pdev->pdf14_procs->unpack_color(num_comp, color, pdev, src);
+
     src_alpha = src[num_comp] = (byte)floor (255 * pdev->alpha + 0.5);
     if (has_shape)
 	shape = (byte)floor (255 * pdev->shape + 0.5);
@@ -1634,7 +2276,8 @@ pdf14_mark_fill_rectangle(gx_device * dev,
 		    dst[k] = 255 - dst_ptr[k * planestride];
 		dst[num_comp] = dst_ptr[num_comp * planestride];
 	    }
-	    art_pdf_composite_pixel_alpha_8(dst, src, num_comp, blend_mode);
+	    art_pdf_composite_pixel_alpha_8(dst, src, num_comp,
+			   		 blend_mode, pdev->blend_procs);
 	    /* Complement the results for subtractive color spaces */
 	    if (additive) {
 		for (k = 0; k < num_chan; ++k)
@@ -1688,19 +2331,12 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
 		    (ulong)(color >> 8*(sizeof(color) - sizeof(ulong))), (ulong)color, 
 		    num_chan);
 
-    /* Complement the components for subtractive color spaces */
-    if (additive) {
-	for (i = num_comp - 1; i >= 0; i--) {
-	    src[i] = (byte)(color & 0xff);
-	    color >>= 8;
-	}
-    }
-    else {
-	for (i = num_comp - 1; i >= 0; i--) {
-	    src[i] = (byte)(0xff - (color & 0xff));
-	    color >>= 8;
-	}
-    }
+    /*
+     * Unpack the gx_color_index values.  Complement the components for subtractive
+     * color spaces.
+     */
+    pdev->pdf14_procs->unpack_color(num_comp, color, pdev, src);
+
     src[num_comp] = (byte)floor (255 * pdev->alpha + 0.5);
     opacity = (byte)floor (255 * pdev->opacity + 0.5);
 
@@ -1997,15 +2633,16 @@ pdf14_get_cmap_procs(const gs_imager_state *pis, const gx_device * dev)
 
 int
 gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
-				gx_device ** pdev, gx_device * target)
+	gx_device ** pdev, gx_device * target, const gs_pdf14trans_t * pdf14pct)
 {
-    const pdf14_device * dev_proto;
-    pdf14_device *p14dev;
+    pdf14_device * dev_proto;
+    pdf14_device * p14dev, temp_dev_proto;
     int code;
 
     if_debug0('v', "[v]gs_pdf14_device_push\n");
 
-    code = get_pdf14_device_proto(target, &dev_proto);
+    code = get_pdf14_device_proto(target, &dev_proto,
+		   		 &temp_dev_proto, pis, pdf14pct);
     if (code < 0)
 	return code;
     code = gs_copydevice((gx_device **) &p14dev,
@@ -2013,12 +2650,12 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
     if (code < 0)
 	return code;
 
-    check_device_separable((gx_device *)p14dev);
-    gx_device_fill_in_procs((gx_device *)p14dev);
-
     gs_pdf14_device_copy_params((gx_device *)p14dev, target);
 
     rc_assign(p14dev->target, target, "gs_pdf14_device_push");
+
+    check_device_separable((gx_device *)p14dev);
+    gx_device_fill_in_procs((gx_device *)p14dev);
 
     p14dev->save_get_cmap_procs = pis->get_cmap_procs;
     pis->get_cmap_procs = pdf14_get_cmap_procs;
@@ -2089,6 +2726,8 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize)
 	default:			/* Should not occur. */
 	    break;
 	case PDF14_PUSH_DEVICE:
+	    put_value(pbuf, pparams->num_spot_colors);	    
+	    break;
 	case PDF14_POP_DEVICE:
 	case PDF14_END_TRANS_GROUP:
 	case PDF14_END_TRANS_MASK:
@@ -2183,6 +2822,8 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
 	default:			/* Should not occur. */
 	    break;
 	case PDF14_PUSH_DEVICE:
+	    read_value(data, params.num_spot_colors);	    
+	    break;
 	case PDF14_POP_DEVICE:
 	case PDF14_END_TRANS_GROUP:
 	    break;			/* No data */
@@ -2263,10 +2904,12 @@ c_pdf14trans_create_default_compositor(const gs_composite_t * pct,
 
     /*
      * We only handle the push operation.  All other operations are ignored.
+     * The other operations will be handled by the create_compositor routine
+     * for the PDF 1.4 compositing device.
      */
     switch (pdf14pct->params.pdf14_op) {
 	case PDF14_PUSH_DEVICE:
-	    code = gs_pdf14_device_push(mem, pis, &p14dev, tdev);
+	    code = gs_pdf14_device_push(mem, pis, &p14dev, tdev, pdf14pct);
 	    *pp14dev = p14dev;
 	    break;
 	default:
@@ -2380,22 +3023,12 @@ send_pdf14trans(gs_imager_state	* pis, gx_device * dev,
  * This section provides support for this device.
  */
 
-/* Define the default alpha-compositing	device.	*/
-typedef	struct pdf14_clist_device_s {
-    gx_device_forward_common;
-    const gx_color_map_procs *(*save_get_cmap_procs)(const gs_imager_state *,
-						     const gx_device *);
-    gx_device_color_info saved_target_color_info;
-    float opacity;
-    float shape;
-    gs_blend_mode_t blend_mode;
-    bool text_knockout;
-} pdf14_clist_device;
-
-gs_private_st_suffix_add0_final(st_pdf14_clist_device,
-    pdf14_clist_device, "pdf14_clist_device",
-    device_c_pdf14_clist_enum_ptrs, device_c_pdf14_clist_reloc_ptrs,
-    gx_device_finalize, st_device_forward);
+/*
+ * Define the default pre-clist (clist writer) PDF 1.4 compositing device.
+ * We actually use the same structure for both the clist writer and reader
+ * devices.  However we use separate names to identify the routines for each
+ * device.
+ */
 
 #define	pdf14_clist_procs(get_color_mapping_procs, get_color_comp_index,\
 						encode_color, decode_color) \
@@ -2452,7 +3085,14 @@ gs_private_st_suffix_add0_final(st_pdf14_clist_device,
 	get_color_mapping_procs,	/* get_color_mapping_procs */\
 	get_color_comp_index,		/* get_color_comp_index */\
 	encode_color,			/* encode_color */\
-	decode_color			/* decode_color */\
+	decode_color,			/* decode_color */\
+	NULL,				/* pattern_manage */\
+	NULL,				/* fill_rectangle_hl_color */\
+	NULL,				/* include_color_space */\
+	NULL,				/* fill_linear_color_scanline */\
+	NULL,				/* fill_linear_color_trapezoid */\
+	NULL,				/* fill_linear_color_triangle */\
+	gx_forward_update_spot_equivalent_colors	/* update spot */\
 }
 
 private	dev_proc_create_compositor(pdf14_clist_create_compositor);
@@ -2480,27 +3120,96 @@ private	const gx_device_procs pdf14_clist_CMYK_procs =
 			gx_default_DevCMYK_get_color_comp_index,
 			cmyk_8bit_map_cmyk_color, cmyk_8bit_map_color_cmyk);
 
+private	const gx_device_procs pdf14_clist_CMYKspot_procs =
+	pdf14_clist_procs(pdf14_cmykspot_get_color_mapping_procs,
+			pdf14_cmykspot_get_color_comp_index,
+			pdf14_compressed_encode_color,
+			pdf14_compressed_decode_color);
+
+private	const gx_device_procs pdf14_clist_custom_procs =
+	pdf14_clist_procs(gx_forward_get_color_mapping_procs,
+			gx_forward_get_color_comp_index,
+			gx_forward_encode_color,
+			gx_forward_decode_color);
+
 const pdf14_clist_device pdf14_clist_Gray_device = {
     std_device_color_stype_body(pdf14_clist_device, &pdf14_clist_Gray_procs,
-			"pdf14clistgray", &st_pdf14_clist_device,
+			"pdf14clistgray", &st_pdf14_device,
 			XSIZE, YSIZE, X_DPI, Y_DPI, 8, 255, 256),
-    { 0 }
+    { 0 },			/* Procs */
+    NULL,			/* target */
+    { 0 },			/* devn_params - not used */
+    &gray_pdf14_procs,
+    &gray_blending_procs
 };
 
 const pdf14_clist_device pdf14_clist_RGB_device	= {
     std_device_color_stype_body(pdf14_clist_device, &pdf14_clist_RGB_procs,
-			"pdf14clistRGB", &st_pdf14_clist_device,
+			"pdf14clistRGB", &st_pdf14_device,
 			XSIZE, YSIZE, X_DPI, Y_DPI, 24, 255, 256),
-    { 0 }
+    { 0 },			/* Procs */
+    NULL,			/* target */
+    { 0 },			/* devn_params - not used */
+    &rgb_pdf14_procs,
+    &rgb_blending_procs
 };
 
 const pdf14_clist_device pdf14_clist_CMYK_device = {
     std_device_std_color_full_body_type(pdf14_clist_device,
 			&pdf14_clist_CMYK_procs, "PDF14clistcmyk",
-			&st_pdf14_clist_device, XSIZE, YSIZE, X_DPI, Y_DPI, 32,
+			&st_pdf14_device, XSIZE, YSIZE, X_DPI, Y_DPI, 32,
 			0, 0, 0, 0, 0, 0),
-    { 0 }
+    { 0 },			/* Procs */
+    NULL,			/* target */
+    { 0 },			/* devn_params - not used */
+    &cmyk_pdf14_procs,
+    &cmyk_blending_procs
 };
+
+const pdf14_clist_device pdf14_clist_CMYKspot_device = {
+    std_device_part1_(pdf14_device, &pdf14_clist_CMYKspot_procs, "PDF14clistcmykspot", &st_pdf14_device, open_init_closed),
+    dci_values(GX_DEVICE_COLOR_MAX_COMPONENTS,64,255,255,256,256),
+    std_device_part2_(XSIZE, YSIZE, X_DPI, Y_DPI),
+    offset_margin_values(0, 0, 0, 0, 0, 0),
+    std_device_part3_(),
+    { 0 },			/* Procs */
+    NULL,			/* target */
+    /* DeviceN parameters */
+    { 8,			/* Not used - Bits per color */
+      DeviceCMYKComponents,	/* Names of color model colorants */
+      4,			/* Number colorants for CMYK */
+      0,			/* MaxSeparations has not been specified */
+      -1,			/* PageSpotColors has not been specified */
+      {0},			/* SeparationNames */
+      0,			/* SeparationOrder names */
+      {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
+    },
+    &cmykspot_pdf14_procs,
+    &cmyk_blending_procs
+};
+
+const pdf14_clist_device pdf14_clist_custom_device = {
+    std_device_part1_(pdf14_device, &pdf14_clist_CMYKspot_procs, "PDF14clistcustom", &st_pdf14_device, open_init_closed),
+    dci_values(GX_DEVICE_COLOR_MAX_COMPONENTS,64,255,255,256,256),
+    std_device_part2_(XSIZE, YSIZE, X_DPI, Y_DPI),
+    offset_margin_values(0, 0, 0, 0, 0, 0),
+    std_device_part3_(),
+    { 0 },			/* Procs */
+    NULL,			/* target */
+    /* DeviceN parameters */
+    { 8,			/* Not used - Bits per color */
+      DeviceCMYKComponents,	/* Names of color model colorants */
+      4,			/* Number colorants for CMYK */
+      0,			/* MaxSeparations has not been specified */
+      -1,			/* PageSpotColors has not been specified */
+      {0},			/* SeparationNames */
+      0,			/* SeparationOrder names */
+      {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
+    },
+    &custom_pdf14_procs,
+    &custom_blending_procs
+};
+
 
 /*
  * the PDF 1.4 transparency spec says that color space for blending
@@ -2509,21 +3218,54 @@ const pdf14_clist_device pdf14_clist_CMYK_device = {
  * currently only using a color space based upon the device.
  */
 private	int
-get_pdf14_clist_device_proto(gx_device * dev,
-		const pdf14_clist_device ** pdevproto)
+get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
+	pdf14_clist_device * ptempdevproto, gs_imager_state * pis,
+	const gs_pdf14trans_t * pdf14pct)
 {
     pdf14_default_colorspace_t dev_cs =
 		pdf14_determine_default_blend_cs(dev);
 
     switch (dev_cs) {
-	case DeviceGray:
-	    *pdevproto = &pdf14_clist_Gray_device;
+	case PDF14_DeviceGray:
+	    *pdevproto = (pdf14_clist_device *)&pdf14_clist_Gray_device;
 	    break;
-	case DeviceRGB:
-	    *pdevproto = &pdf14_clist_RGB_device;
+	case PDF14_DeviceRGB:
+	    *pdevproto = (pdf14_clist_device *)&pdf14_clist_RGB_device;
 	    break;
-	case DeviceCMYK:
-	    *pdevproto = &pdf14_clist_CMYK_device;
+	case PDF14_DeviceCMYK:
+	    *pdevproto = (pdf14_clist_device *)&pdf14_clist_CMYK_device;
+	    break;
+	case PDF14_DeviceCMYKspot:
+	    *pdevproto = (pdf14_clist_device *)&pdf14_clist_CMYKspot_device;
+	    *pdevproto = (pdf14_clist_device *)&pdf14_clist_custom_device;
+	    /*
+	     * The number of components for the PDF14 device is the sum
+	     * of the process components and the number of spot colors
+	     * for the page.
+	     */
+	    if (pdf14pct->params.num_spot_colors >= 0) {
+	        *ptempdevproto = **pdevproto;
+	        ptempdevproto->devn_params.page_spot_colors =
+	    	    pdf14pct->params.num_spot_colors;
+	        ptempdevproto->color_info.num_components =
+	    	    ptempdevproto->devn_params.num_std_colorant_names +
+	    	    pdf14pct->params.num_spot_colors;
+	        if (ptempdevproto->color_info.num_components >
+	    		ptempdevproto->color_info.max_components)
+	    	    ptempdevproto->color_info.num_components =
+	        	ptempdevproto->color_info.max_components;
+	        *pdevproto = ptempdevproto;
+	    }
+	    break;
+	case PDF14_DeviceCustom:
+	    /*
+	     * We are using the output device's process color model.  The
+	     * color_info for the PDF 1.4 compositing device needs to match
+	     * the output device.
+	     */
+	    *ptempdevproto = pdf14_clist_custom_device;
+	    ptempdevproto->color_info = dev->color_info;
+	    *pdevproto = ptempdevproto;
 	    break;
 	default:			/* Should not occur */
 	    return_error(gs_error_rangecheck);
@@ -2533,18 +3275,19 @@ get_pdf14_clist_device_proto(gx_device * dev,
 
 private	int
 pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
-				gx_device ** ppdev, gx_device * target)
+				gx_device ** ppdev, gx_device * target,
+				const gs_pdf14trans_t * pdf14pct)
 {
-    const pdf14_clist_device * dev_proto;
-    pdf14_clist_device *pdev;
+    pdf14_clist_device * dev_proto;
+    pdf14_clist_device * pdev, temp_dev_proto;
     int code;
 
     if_debug0('v', "[v]pdf14_create_clist_device\n");
 
-    code = get_pdf14_clist_device_proto(target, &dev_proto);
+    code = get_pdf14_clist_device_proto(target, &dev_proto,
+		   		 &temp_dev_proto, pis, pdf14pct);
     if (code < 0)
 	return code;
-
     code = gs_copydevice((gx_device **) &pdev,
 			 (const gx_device *) dev_proto, mem);
     if (code < 0)
@@ -2558,6 +3301,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
     rc_assign(pdev->target, target, "pdf14_create_clist_device");
 
     code = dev_proc((gx_device *) pdev, open_device) ((gx_device *) pdev);
+    pdev->pclist_device = target;
     *ppdev = (gx_device *) pdev;
     return code;
 }
@@ -2597,11 +3341,12 @@ pdf14_disable_clist_device(gs_memory_t *mem, gs_imager_state * pis,
  */
 private	int
 pdf14_recreate_clist_device(gs_memory_t	*mem, gs_imager_state *	pis,
-				gx_device * dev)
+		gx_device * dev, const gs_pdf14trans_t * pdf14pct)
 {
     pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
     gx_device * target = pdev->target;
-    const pdf14_clist_device * dev_proto;
+    pdf14_clist_device * dev_proto;
+    pdf14_clist_device temp_dev_proto;
     int code;
 
     if_debug0('v', "[v]pdf14_recreate_clist_device\n");
@@ -2610,7 +3355,8 @@ pdf14_recreate_clist_device(gs_memory_t	*mem, gs_imager_state *	pis,
      * We will not use the entire prototype device but we will set the
      * color related info to match the prototype.
      */
-    code = get_pdf14_clist_device_proto(target, &dev_proto);
+    code = get_pdf14_clist_device_proto(target, &dev_proto,
+		   		 &temp_dev_proto, pis, pdf14pct);
     if (code < 0)
 	return code;
     pdev->color_info = dev_proto->color_info;
@@ -2618,6 +3364,366 @@ pdf14_recreate_clist_device(gs_memory_t	*mem, gs_imager_state *	pis,
     gx_device_fill_in_procs(dev);
     check_device_separable((gx_device *)pdev);
 
+    return code;
+}
+
+/*
+ * Key names are normally C const strings.  However we need to create temp
+ * parameter key names.  They only need to have a short life.  We need to
+ * create a parameter list with the key names.  Then we will put the parameters
+ * into the clist.  That process will create a permanent copy of the key
+ * name.  At that point we can release our temp key names.
+ */
+typedef struct keyname_link_list_s {
+	struct keyname_link_list_s * next;
+	char * key_name;
+    } keyname_link_list_t;
+
+/*
+ * The GC description for the keyname link list is being included for
+ * completeness.  Since this structure is only temporary, this structure
+ * should never be exposed to the GC.
+ */
+gs_private_st_ptrs2(st_keyname_link_list, keyname_link_list_t,
+	       		"keyname_link_list", keyname_link_list_enum_ptrs,
+		       	keyname_link_list_reloc_ptrs, next, key_name);
+
+/* See comments before the definition of keyname_link_list_t */
+private int
+free_temp_keyname_list(gs_memory_t * mem, keyname_link_list_t * plist)
+{
+    keyname_link_list_t * pthis_elem;
+
+    while (plist != NULL) {
+	pthis_elem = plist;
+	plist = plist->next;
+	gs_free_object(mem, (byte *)pthis_elem, "free_temp_keyname_list");
+    }
+    return 0;
+}
+
+/* Put a data value into our 'string' */
+#define put_data(pdata, value, count)\
+    for(j = 0; j < count; j++)\
+	*pdata++ = (byte)((value) >> (j * 8))
+
+/*
+ * Convert a compressed color list element into a set of device parameters.
+ * Note:  This routine recursively calls itself.  As a result it can create
+ * mulitple device parameters.  The parameters are 'strings'.  Actually the
+ * data is stored in the strings as binary data.
+ *
+ * See comments before the definition of keyname_link_list_t
+ */
+private int
+get_param_compressed_color_list_elem(pdf14_clist_device * pdev,
+       	gs_param_list * plist, compressed_color_list_t * pcomp_list,
+       	char * keyname, keyname_link_list_t ** pkeyname_list)
+{
+    int max_list_elem_size =
+	    6 + NUM_ENCODE_LIST_ITEMS * sizeof(comp_bit_map_list_t);
+    int code, i, j;
+    byte * pdata;
+    gs_param_string str;
+
+    if (pcomp_list == NULL)	/* Exit if we don not have a list. */
+	return 0;
+
+    /* Allocate a string for temp data */
+    pdata = gs_alloc_bytes(pdev->memory, max_list_elem_size,
+		   		 "convert_compressed_color_list_elem");
+    str.data = (const byte *)pdata;
+    str.persistent = false;
+
+    put_data(pdata, pcomp_list->num_sub_level_ptrs, 2);
+    put_data(pdata, pcomp_list->first_bit_map, 2);
+
+    /* . */
+    for (i = pcomp_list->first_bit_map; i < NUM_ENCODE_LIST_ITEMS; i++) {
+	put_data(pdata, pcomp_list->u.comp_data[i].num_comp, 2);
+	put_data(pdata, pcomp_list->u.comp_data[i].num_non_solid_comp, 2);
+	put_data(pdata, pcomp_list->u.comp_data[i].solid_not_100, 1);
+        put_data(pdata, pcomp_list->u.comp_data[i].colorants, 
+        			sizeof(pcomp_list->u.comp_data[i].colorants));
+	if (pcomp_list->u.comp_data[i].num_comp !=
+		       	pcomp_list->u.comp_data[i].num_non_solid_comp) {
+            put_data(pdata, pcomp_list->u.comp_data[i].solid_colorants, 
+        	sizeof(pcomp_list->u.comp_data[i].solid_colorants));
+	}
+    }
+    str.size = pdata - str.data;
+    code = param_write_string(plist, keyname, &str);
+    gs_free_object(pdev->memory, (byte *)str.data,
+		    "convert_compressed_color_list_elem");
+
+    /* Convert the sub levels. */
+    for (i = 0; i < pcomp_list->num_sub_level_ptrs; i++) {
+	/*
+	 * We generate a keyname for the sub level elements based upon
+	 * the keyname for the current level.  See comments before the
+	 * definition of keyname_link_list_t for comments about the lifetime
+	 * of the keynames.
+	 */
+    	/* Allocate a string for the keyname */
+	char * keyname_buf = (char *)gs_alloc_bytes(pdev->memory,
+		strlen(keyname) + 10, "convert_compressed_color_list_elem");
+	/*
+	 * Allocate a link list element so we can keep track of the memory
+	 * allocated to hold the keynames.
+	 */
+       	keyname_link_list_t * pkeyname_list_elem = 
+	    gs_alloc_struct(pdev->memory, keyname_link_list_t,
+		&st_keyname_link_list, "convert_compressed_color_list_elem");
+	pkeyname_list_elem->next = *pkeyname_list;
+	pkeyname_list_elem->key_name = keyname_buf;
+	*pkeyname_list = pkeyname_list_elem;
+	sprintf(keyname_buf, "%s_%d", keyname, i);
+	get_param_compressed_color_list_elem(pdev, plist,
+		       		pcomp_list->u.sub_level_ptrs[i], keyname_buf,
+			       	pkeyname_list);
+    }
+
+    return 0;;
+}
+#undef put_data
+
+/* Get data value from our 'string' */
+#define get_data(pdata, value, count)\
+    j = count - 1;\
+    value = pdata[j--];\
+    for(; j >= 0; j--)\
+	value = (value <<= 8) | pdata[j];\
+    pdata += count
+
+/*
+ * Retrieve a compressed color list from a set of device parameters.
+ * Note:  This routine recursively calls itself.  As a result it can process
+ * mulitple device parameters and create the entire compressed color list.
+ * The parameters are 'strings'.  Actually the data is stored in the strings
+ * as binary data.
+ */
+int
+put_param_compressed_color_list_elem(gx_device * pdev,
+    gs_param_list * plist, compressed_color_list_t ** pret_comp_list,
+    char * keyname, int num_comps)
+{
+    int code, i, j;
+    byte * pdata;
+    gs_param_string str;
+    compressed_color_list_t * pcomp_list;
+
+    /* Check if the given keyname is present. */
+    code = param_read_string(plist, keyname, &str);
+    switch (code) {
+      case 0:
+	  break;	/* We have the given keyname, continue. */
+      default:
+	  param_signal_error(plist, keyname, code);
+      case 1:
+	  *pret_comp_list = NULL;
+	  return 0;
+    }
+    /* Allocate a compressed color list element. */
+    pdata = (byte *)str.data;
+    pcomp_list = alloc_compressed_color_list_elem(pdev->memory, num_comps);
+    get_data(pdata, pcomp_list->num_sub_level_ptrs, 2);
+    get_data(pdata, pcomp_list->first_bit_map, 2);
+
+    /* Read the bit maps */
+    for (i = pcomp_list->first_bit_map; i < NUM_ENCODE_LIST_ITEMS; i++) {
+	get_data(pdata, pcomp_list->u.comp_data[i].num_comp, 2);
+	get_data(pdata, pcomp_list->u.comp_data[i].num_non_solid_comp, 2);
+	get_data(pdata, pcomp_list->u.comp_data[i].solid_not_100, 1);
+        get_data(pdata, pcomp_list->u.comp_data[i].colorants, 
+        			sizeof(pcomp_list->u.comp_data[i].colorants));
+	if (pcomp_list->u.comp_data[i].num_comp !=
+		       	pcomp_list->u.comp_data[i].num_non_solid_comp) {
+            get_data(pdata, pcomp_list->u.comp_data[i].solid_colorants, 
+        		sizeof(pcomp_list->u.comp_data[i].solid_colorants));
+	}
+    }
+
+    /* Get the sub levels. */
+    for (i = 0; i < pcomp_list->num_sub_level_ptrs; i++) {
+	char buff[50];
+        compressed_color_list_t * sub_list_ptr;
+
+	sprintf(buff, "%s_%d", keyname, i);
+	put_param_compressed_color_list_elem(pdev, plist,
+		       			&sub_list_ptr, buff, num_comps - 1);
+	pcomp_list->u.sub_level_ptrs[i] = sub_list_ptr;
+    }
+
+    *pret_comp_list = pcomp_list;
+    return 0;;
+}
+#undef get_data
+
+/*
+ * Convert a list of spot color names into a set of device parameters.
+ * This is done to transfer information from the PDf14 clist writer
+ * compositing device to the PDF14 clist reader compositing device.
+ *
+ * See comments before the definition of keyname_link_list_t
+ */
+private int
+get_param_spot_color_names(pdf14_clist_device * pdev,
+       	gs_param_list * plist, keyname_link_list_t ** pkeyname_list)
+{
+    int code, i;
+    gs_param_string str;
+    gs_separations * separations = &pdev->devn_params.separations;
+    int num_spot_colors = separations->num_separations;
+
+    if (num_spot_colors == 0)
+	return 0;
+
+    code = param_write_int(plist, PDF14NumSpotColorsParamName,
+		   				 &num_spot_colors);
+    for (i = 0; i < num_spot_colors; i++) {
+	/*
+	 * We generate a keyname for the spot color based upon the
+	 * spot color number.  See comments before the definition of
+	 * keyname_link_list_t for comments about the lifetime of the keynames.
+	 */
+    	/* Allocate a string for the keyname */
+	char * keyname_buf = (char *)gs_alloc_bytes(pdev->memory,
+		strlen("PDF14SpotName_") + 10, "get_param_spot_color_names");
+	/*
+	 * Allocate a link list element so we can keep track of the memory
+	 * allocated to hold the keynames.
+	 */
+       	keyname_link_list_t * pkeyname_list_elem = 
+	    gs_alloc_struct(pdev->memory, keyname_link_list_t,
+		&st_keyname_link_list, "get_param_spot_color_names");
+	pkeyname_list_elem->next = *pkeyname_list;
+	pkeyname_list_elem->key_name = keyname_buf;
+	*pkeyname_list = pkeyname_list_elem;
+	sprintf(keyname_buf, "%PDF14SpotName_%d", i);
+	str.size = separations->names[i].size;
+	str.data = separations->names[i].data;
+	str.persistent = false;
+	code = param_write_string(plist, keyname_buf, &str);
+    }
+    return 0;;
+}
+
+/*
+ * Retrieve a list of spot color names for the PDF14 device.
+ */
+int
+put_param_pdf14_spot_names(gx_device * pdev,
+	       	gs_separations * pseparations, gs_param_list * plist)
+{
+    int code, num_spot_colors, i;
+    gs_param_string str;
+
+    /* Check if the given keyname is present. */
+    code = param_read_int(plist, PDF14NumSpotColorsParamName,
+		   				&num_spot_colors);
+    switch (code) {
+        default:
+	    param_signal_error(plist, PDF14NumSpotColorsParamName, code);
+	    break;
+        case 1:
+	    return 0;
+        case 0:
+	    if (num_spot_colors < 1 ||
+		num_spot_colors > GX_DEVICE_COLOR_MAX_COMPONENTS)
+		return_error(gs_error_rangecheck);
+	    for (i = 0; i < num_spot_colors; i++) {
+		char buff[20];
+		byte * sep_name;
+
+		sprintf(buff, "PDF14SpotName_%d", i);
+		code = param_read_string(plist, buff, &str);
+		switch (code) {
+	            default:
+			param_signal_error(plist, buff, code);
+			break;
+		    case 0:
+			sep_name = gs_alloc_bytes(pdev->memory,
+				str.size, "put_param_pdf14_spot_names");
+			memcpy(sep_name, str.data, str.size);
+			pseparations->names[i].size = str.size;
+			pseparations->names[i].data = sep_name;
+		}
+	    }
+	    pseparations->num_separations = num_spot_colors;
+	    break;
+    }
+    return 0;;
+}
+
+private int
+pdf14_clist_get_param_compressed_color_list(pdf14_device * p14dev)
+{
+    gx_device_clist_writer * cldev = (gx_device_clist_writer *)p14dev->pclist_device;
+    gs_c_param_list param_list;
+    keyname_link_list_t * pkeyname_list_head = NULL;
+    int code;
+
+    /*
+     * If a put_params call fails, the device will be left in a closed
+     * state, but higher-level code won't notice this fact.  We flag this by
+     * setting permanent_error, which prevents writing to the command list.
+     */
+
+    if (cldev->permanent_error)
+	return cldev->permanent_error;
+    gs_c_param_list_write(&param_list, p14dev->memory);
+    code = get_param_compressed_color_list_elem(p14dev,
+		(gs_param_list *)&param_list,
+		p14dev->devn_params.compressed_color_list,
+       		PDF14CompressedColorListParamName, &pkeyname_list_head);
+    get_param_spot_color_names(p14dev, (gs_param_list *)&param_list,
+		   	 &pkeyname_list_head);
+    if (code >= 0) {
+        gx_device * tdev = p14dev->target;
+
+	gs_c_param_list_read(&param_list);
+	// put_param_compressed_color_list_elem(p14dev,
+		       // (gs_param_list *)&param_list,
+		       // &pret_comp_list, "PDF14CompressedColorList",
+		       // TOP_ENCODED_LEVEL);
+	// put_param_pdf14_spot_names(p14dev, (gs_param_list *)&param_list);
+#if 1
+	code = dev_proc(tdev, put_params)(tdev, (gs_param_list *)&param_list);
+#else
+	/*
+	 * This call will put the compressed color list info into the
+	 * clist.  However there are two problems.  The info goes into
+	 * the list at the end of the list.
+	 */
+	code = cmd_put_params(cldev, (gs_param_list *)&param_list );
+#endif
+    }
+    gs_c_param_list_release(&param_list);
+    free_temp_keyname_list(p14dev->memory, pkeyname_list_head);
+
+    return code;
+}
+
+/*
+ * This procedure will have information from the PDF 1.4 clist writing
+ * clist compositior device.  This is information output the compressed
+ * color list info which is needed for the support of spot colors in
+ * PDF 1.4 compositing.  This info needs to be passed to the PDF 1.4
+ * clist reading compositor.  However this device is not created until
+ * the clist is read.  To get this info to that device, we have to
+ * temporarily store that info in the output device.  This routine saves
+ * that info in the output device.
+ */
+int
+pdf14_put_devn_params(gx_device * pdev, gs_devn_params * pdevn_params,
+	       				gs_param_list * plist)
+{
+    int code = put_param_compressed_color_list_elem(pdev, plist,
+	    &pdevn_params->pdf14_compressed_color_list,
+	    PDF14CompressedColorListParamName, TOP_ENCODED_LEVEL);
+    if (code >= 0)
+       code = put_param_pdf14_spot_names(pdev,
+		       &pdevn_params->pdf14_separations, plist);
     return code;
 }
 
@@ -2647,7 +3753,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
 		pdev->save_get_cmap_procs = pis->get_cmap_procs;
 		pis->get_cmap_procs = pdf14_get_cmap_procs;
 		gx_set_cmap_procs(pis, dev);
-		code = pdf14_recreate_clist_device(mem, pis, dev);
+		code = pdf14_recreate_clist_device(mem, pis, dev, pdf14pct);
 		pdev->blend_mode = pdev->text_knockout = 0;
 		pdev->opacity = pdev->shape = 0.0;
 		if (code < 0)
@@ -2667,6 +3773,12 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
 		    return code;
 		}
 	    case PDF14_POP_DEVICE:
+		/*
+		 * For spot colors we use a 'compressed encoding' for
+		 * gx_color_index values.  Send the related data struct
+		 * to the clist.
+		 */
+	        pdf14_clist_get_param_compressed_color_list(pdev);
 		/* Restore the color_info for the clist device */
 		pdev->target->color_info = pdev->saved_target_color_info;
 		pis->get_cmap_procs = pdev->save_get_cmap_procs;
@@ -2950,7 +4062,7 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
     /* We only handle the push/pop operations */
     switch (pdf14pct->params.pdf14_op) {
 	case PDF14_PUSH_DEVICE:
-	    code = pdf14_create_clist_device(mem, pis, pcdev, dev);
+	    code = pdf14_create_clist_device(mem, pis, pcdev, dev, pdf14pct);
 	    /*
 	     * Set the color_info of the clist device to match the compositing
 	     * device.  We will restore it when the compositor is popped.
@@ -2996,6 +4108,7 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
 {
     pdf14_device * p14dev = (pdf14_device *)tdev;
     gs_pdf14trans_t * pdf14pct = (gs_pdf14trans_t *) pcte;
+    gs_devn_params * pclist_devn_params;
 
     /*
      * We only handle the push/pop operations. Save and restore the color_info
@@ -3005,14 +4118,139 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
      */
     switch (pdf14pct->params.pdf14_op) {
 	case PDF14_PUSH_DEVICE:
-	    p14dev->saved_clist_color_info = cdev->color_info;
+	    p14dev->saved_target_color_info = cdev->color_info;
 	    cdev->color_info = p14dev->color_info;
+	    /*
+	     * If we are blending using spot colors (i.e. the output device
+	     * supports spot colors) then we need to transfer compressed
+	     * color info from the clist PDF 1.4 compositing reader device
+	     * to the clist writer PDF 1.4 compositing device.
+	     * This info was transfered from that device to the output
+	     * device as a set of device parameters.  However the clist
+	     * reader PDF 1.4 compositing device did not exist when the
+	     * device parameters were read from the clist.  So that info
+	     * was buffered into the output device.
+	     */
+	    pclist_devn_params = dev_proc(cdev, ret_devn_params)(cdev);
+	    if (pclist_devn_params != NULL) {
+		int num_comp = p14dev->color_info.num_components;
+		/*
+		 * The number of components for the PDF14 device is the sum
+		 * of the process components and the number of spot colors
+		 * for the page.
+		 */
+		p14dev->devn_params.page_spot_colors =
+		    pclist_devn_params->page_spot_colors;
+		p14dev->color_info.num_components =
+		    p14dev->devn_params.num_std_colorant_names +
+		    p14dev->devn_params.page_spot_colors;
+		/* Transfer the data for the compressed color encoding. */
+		// free_compressed_color_list(p14dev->memory,
+			// p14dev->devn_params.compressed_color_list);
+		p14dev->devn_params.compressed_color_list =
+		    pclist_devn_params->pdf14_compressed_color_list;
+		// free_separation_names(p14dev->memory,
+				// &p14dev->devn_params.separations);
+		p14dev->devn_params.separations =
+		    pclist_devn_params->pdf14_separations;
+		if ( num_comp != p14dev->color_info.num_components) {
+		    dev_proc(tdev, open_device) (tdev);
+		    dev_proc(tdev, open_device) (tdev);
+		}
+	    }
 	    break;
 	case PDF14_POP_DEVICE:
-	    cdev->color_info = p14dev->saved_clist_color_info;
+	    cdev->color_info = p14dev->saved_target_color_info;
 	    break;
 	default:
 	    break;		/* do nothing for remaining ops */
     }
     return 0;
+}
+
+/*
+ * This routine will check to see if the color component name matches those
+ * that are available amoung the current device's color components.  If the
+ * color name is known to the output device then we add it to the list of
+ * colorants for the PDF 1.4 transparency compositor. 
+ *
+ * Notes:  There are currently three different versions of The PDF 1.4
+ * transparency compositor device.  The choice of which one is being used
+ * depends upon the process color model of the output device.  This procedure
+ * is only used if the output (target) device uses a CMYK plus spot color
+ * process color model.
+ *
+ * Parameters:
+ *   dev - pointer to device data structure.
+ *   pname - pointer to name (zero termination not required)
+ *   nlength - length of the name
+ *
+ * This routine returns a positive value (0 to n) which is the device colorant
+ * number if the name is found.  It returns GX_DEVICE_COLOR_MAX_COMPONENTS if
+ * the colorant is not being used due to a SeparationOrder device parameter.
+ * It returns a negative value if not found.
+ */
+private int
+pdf14_cmykspot_get_color_comp_index(gx_device * dev, const char * pname,
+				int name_size, int component_type)
+{
+    pdf14_device * pdev = (pdf14_device *) dev;
+    gx_device * tdev = pdev->target;
+    gs_devn_params * pdevn_params = &pdev->devn_params;
+    gs_separations * pseparations = &pdevn_params->separations;
+    int comp_index;
+
+    /*
+     * If this is not a separation name then simply forward it to the target
+     * device.
+     */
+    if (component_type == NO_COMP_NAME_TYPE)
+	return dev_proc(tdev, get_color_comp_index)
+				(tdev, pname, name_size, component_type);
+    /*
+     * Check if the component is in either the process color model list
+     * or in the SeparationNames list.
+     */
+    comp_index = check_pcm_and_separation_names(dev, pdevn_params,
+					pname, name_size, component_type);
+    /*
+     * Return the colorant number if we know this name.
+     */
+    if (comp_index >= 0)
+	return comp_index; 
+    /*
+     * If we do not know this color, check if the output (target) device does.
+     */
+     comp_index = dev_proc(tdev, get_color_comp_index)
+				(tdev, pname, name_size, component_type);
+    /*
+     * Ignore color if unknown to the output device or if color is not being
+     * imaged due to the SeparationOrder device parameter.
+     */
+    if (comp_index < 0 || comp_index == GX_DEVICE_COLOR_MAX_COMPONENTS)
+	return comp_index; 
+
+    /*
+     * This is a new colorant.  Add it to our list of colorants.
+     */
+    if (pseparations->num_separations < GX_DEVICE_COLOR_MAX_COMPONENTS - 1) {
+	int sep_num = pseparations->num_separations++;
+        int color_component_number;
+	byte * sep_name;
+
+	sep_name = gs_alloc_bytes(dev->memory,
+			name_size, "pdf14_cmykspot_get_color_comp_index");
+	memcpy(sep_name, pname, name_size);
+	pseparations->names[sep_num].size = name_size;
+	pseparations->names[sep_num].data = sep_name;
+	color_component_number = sep_num + pdevn_params->num_std_colorant_names;
+	if (color_component_number >= dev->color_info.num_components)
+	    color_component_number = GX_DEVICE_COLOR_MAX_COMPONENTS;
+	else
+	    pdevn_params->separation_order_map[color_component_number] =
+					       color_component_number;
+        return color_component_number;
+    }
+
+    return GX_DEVICE_COLOR_MAX_COMPONENTS;
 }

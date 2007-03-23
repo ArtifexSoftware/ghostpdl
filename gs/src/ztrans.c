@@ -31,6 +31,8 @@
 #include "iname.h"
 #include "store.h"
 #include "gsdfilt.h"
+#include "gdevdevn.h"
+#include "gxblend.h"
 #include "gdevp14.h"
 
 /* ------ Utilities ------ */

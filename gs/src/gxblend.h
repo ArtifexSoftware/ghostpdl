@@ -18,7 +18,32 @@
 
 typedef bits16 ArtPixMaxDepth;
 
-#define ART_MAX_CHAN 16
+#define ART_MAX_CHAN GX_DEVICE_COLOR_MAX_COMPONENTS
+
+/*
+ * This structure contains procedures for processing which differ
+ * between the different blending color spaces.
+ *
+ * The Luminosity, Color, Saturation, and Hue blend modes depend
+ * upon the blending color space.  Currently the blending color space
+ * matches the process color model of the compositing device.  We need
+ * two routines to implement the four 'non separable' blend modes.
+ */
+typedef struct {
+    /*
+     * Perform luminosity and color blending.  (Also used for hue blending.)
+     */
+    void (* blend_luminosity)(int n_chan, byte *dst,
+		    const byte *backdrop, const byte *src);
+    /*
+     * Perform saturation blending.  (Also used for hue blending.)
+     */
+    void (* blend_saturation)(int n_chan, byte *dst,
+		    const byte *backdrop, const byte *src);
+} pdf14_nonseparable_blending_procs_s;
+
+typedef pdf14_nonseparable_blending_procs_s
+		pdf14_nonseparable_blending_procs_t;
 
 /**
  * art_blend_pixel: Compute PDF 1.4 blending function.
@@ -57,6 +82,7 @@ art_blend_pixel(ArtPixMaxDepth * dst, const ArtPixMaxDepth * backdrop,
  * @src: Source pixel color.
  * @n_chan: Number of channels.
  * @blend_mode: Blend mode.
+ * @pblend_procs: Procs for handling non separable blending modes.
  *
  * Computes the blend of two pixels according the PDF 1.4 transparency
  * spec (section 3.2, Blend Mode). A few things to keep in mind about
@@ -77,7 +103,8 @@ art_blend_pixel(ArtPixMaxDepth * dst, const ArtPixMaxDepth * backdrop,
  **/
 void
 art_blend_pixel_8(byte *dst, const byte *backdrop,
-		  const byte *src, int n_chan, gs_blend_mode_t blend_mode);
+		const byte *src, int n_chan, gs_blend_mode_t blend_mode,
+       		const pdf14_nonseparable_blending_procs_t * pblend_procs);
 
 /**
  * art_pdf_union_8: Union together two alpha values.
@@ -104,6 +131,7 @@ byte art_pdf_union_mul_8(byte alpha1, byte alpha2, byte alpha_mask);
  * @src: Source pixel color.
  * @n_chan: Number of channels.
  * @blend_mode: Blend mode.
+ * @pblend_procs: Procs for handling non separable blending modes.
  *
  * Composites two pixels using the basic compositing operation. A few
  * things to keep in mind:
@@ -120,8 +148,8 @@ byte art_pdf_union_mul_8(byte alpha1, byte alpha2, byte alpha_mask);
  **/
 void
 art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
-
-				gs_blend_mode_t blend_mode);
+	gs_blend_mode_t blend_mode,
+       	const pdf14_nonseparable_blending_procs_t * pblend_procs);
 
 /**
  * art_pdf_uncomposite_group_8: Uncomposite group pixel.
@@ -146,6 +174,7 @@ art_pdf_uncomposite_group_8(byte *dst,
  * @alpha: Alpha mask value.
  * @src_alpha_g: alpha_g value associated with @src.
  * @blend_mode: Blend mode for compositing.
+ * @pblend_procs: Procs for handling non separable blending modes.
  *
  * Note: this is only for non-isolated groups. This covers only the
  * single-alpha case. A separate function is needed for dual-alpha,
@@ -157,16 +186,17 @@ art_pdf_uncomposite_group_8(byte *dst,
  **/
 void
 art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
-			    const byte *src, byte src_alpha_g,
-			    int n_chan,
-
-			    byte alpha, gs_blend_mode_t blend_mode);
+	const byte *src, byte src_alpha_g, int n_chan,
+	byte alpha, gs_blend_mode_t blend_mode,
+       	const pdf14_nonseparable_blending_procs_t * pblend_procs);
 
 /**
  * art_pdf_composite_group_8: Composite group pixel.
  * @dst: Where to store pixel, also initial backdrop of group.
  * @dst_alpha_g: Optional pointer to alpha g value.
  * @alpha: Alpha mask value.
+ * @blend_mode: Blend mode for compositing.
+ * @pblend_procs: Procs for handling non separable blending modes.
  *
  * Note: this is only for isolated groups. This covers only the
  * single-alpha case. A separate function is needed for dual-alpha,
@@ -175,10 +205,9 @@ art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
  * @alpha corresponds to $fk_i \cdot fm_i \cdot qk_i \cdot qm_i$.
  **/
 void
-art_pdf_composite_group_8(byte *dst, byte *alpha_g,
-			  const byte *src,
-
-			  int n_chan, byte alpha, gs_blend_mode_t blend_mode);
+art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
+	const byte *src, int n_chan, byte alpha, gs_blend_mode_t blend_mode,
+       	const pdf14_nonseparable_blending_procs_t * pblend_procs);
 
 /**
  * art_pdf_composite_knockout_simple_8: Simple knockout compositing.
@@ -231,6 +260,7 @@ art_pdf_composite_knockout_isolated_8(byte *dst,
  * @alpha_mask: Alpha mask.
  * @shape_mask: Shape mask.
  * @blend_mode: Blend mode for compositing.
+ * @pblend_procs: Procs for handling non separable blending modes.
  *
  * This function handles compositing in the case where the knockout
  * group is non-isolated. If the @src pixels themselves come from a
@@ -239,13 +269,28 @@ art_pdf_composite_knockout_isolated_8(byte *dst,
  **/
 void
 art_pdf_composite_knockout_8(byte *dst,
-			     byte *dst_alpha_g,
-			     const byte *backdrop,
-			     const byte *src,
-			     int n_chan,
-			     byte shape,
+		byte *dst_alpha_g, const byte *backdrop, const byte *src,
+		int n_chan, byte shape, byte alpha_mask,
+		byte shape_mask, gs_blend_mode_t blend_mode,
+       		const pdf14_nonseparable_blending_procs_t * pblend_procs);
 
-			     byte alpha_mask,
-			     byte shape_mask, gs_blend_mode_t blend_mode);
+/*
+ * Routines for handling the non separable blending modes.
+ */
+/* RGB blending color space */
+void art_blend_luminosity_rgb_8(int n_chan, byte *dst, const byte *backdrop,
+			   const byte *src);
+void art_blend_saturation_rgb_8(int n_chan, byte *dst, const byte *backdrop,
+			   const byte *src);
+/* CMYK and CMYK + spot blending color space */
+void art_blend_saturation_cmyk_8(int n_chan, byte *dst, const byte *backdrop,
+			   const byte *src);
+void art_blend_luminosity_cmyk_8(int n_chan, byte *dst, const byte *backdrop,
+			   const byte *src);
+/* 'Custom' i.e. unknown blending color space. */
+void art_blend_luminosity_custom_8(int n_chan, byte *dst, const byte *backdrop,
+			   const byte *src);
+void art_blend_saturation_custom_8(int n_chan, byte *dst, const byte *backdrop,
+			   const byte *src);
 
 #endif /* gxblend_INCLUDED */

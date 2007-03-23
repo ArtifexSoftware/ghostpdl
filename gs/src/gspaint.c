@@ -72,6 +72,9 @@ gs_fillpage(gs_state * pgs)
     gs_logical_operation_t save_lop;
     bool hl_color_available;
 
+    /* Processing a fill object operation */
+    gs_set_object_tag(pgs, GS_PATH_TAG);
+
     gx_set_dev_color(pgs);
     hl_color_available = gx_hld_is_hl_color_available((gs_imager_state *)pgs, 
 						    pgs->dev_color);
@@ -365,7 +368,8 @@ gs_stroke(gs_state * pgs)
 	}
 	code = gx_path_add_char_path(pgs->show_gstate->path, pgs->path,
 				     pgs->in_charpath);
-    } if (gs_is_null_device(pgs->device)) {
+    }
+    if (gs_is_null_device(pgs->device)) {
 	/* Handle separately to prevent gs_state_color_load. */
 	gs_newpath(pgs);
 	code = 0;
@@ -380,6 +384,38 @@ gs_stroke(gs_state * pgs)
         else
             gs_set_object_tag(pgs, GS_TEXT_TAG);
 
+	/* Here we need to distinguish text from vectors to compute the object tag.
+	   Actually we need to know whether this function is called to rasterize a character,
+	   or to rasterize a vector graphics to the output device.
+	   Currently we assume it works for the bitrgbtags device only,
+	   which is a low level device with a 4-component color model.
+	   We use the fact that with printers a character is usually being rendered 
+	   to a 1bpp cache device rather than to the output device.
+	   Therefore we hackly look whether the target device
+	   "has a color" : either it's a multicomponent color model,
+	   or it is not gray (such as a yellow separation).
+
+	   This check has several limitations :
+	   1. It doesn't work with -dNOCACHE.
+	   2. It doesn't work with large characters,
+	      which cannot fit into a cache cell and thus they
+	      render directly to the output device.
+	   3. It doesn't work for TextAlphaBits=2 or 4.
+	      We don't care of this case because
+	      text antialiasing usually usn't applied to printers.
+	   4. It doesn't work for things like with "(xyz) true charpath stroke".
+	      That's unfortunate, we'd like to improve someday.
+	   5. It doesn't work for high level devices when a Type 3 character is being constructed.
+	      This case is not important for low level devices
+	      (which a printer is), because low level device doesn't accept
+	      Type 3 charproc streams immediately.
+	 */
+        if (gx_device_has_color(gs_currentdevice(pgs))) {
+            gs_set_object_tag(pgs, GS_PATH_TAG);
+	}
+	else {
+            gs_set_object_tag(pgs, GS_TEXT_TAG);
+	}
 	gx_set_dev_color(pgs);
 	code = gs_state_color_load(pgs);
 	if (code < 0)

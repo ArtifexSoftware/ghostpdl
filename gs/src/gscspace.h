@@ -19,7 +19,6 @@
 
 #include "gsmemory.h"
 #include "gsiparam.h"
-#include "gsnamecl.h"
 #include "gsrefct.h"
 
 /*
@@ -188,9 +187,6 @@ typedef struct gs_separation_params_s {
     separation_type sep_type;
     bool use_alt_cspace;
     gs_callback_func_get_colorname_string *get_colorname_string;
-#if ENABLE_NAMED_COLOR_CALLBACK
-    named_color_params_t named_color_params;
-#endif
 } gs_separation_params;
 
 typedef struct gs_device_n_params_s {
@@ -200,10 +196,10 @@ typedef struct gs_device_n_params_s {
     gs_device_n_attributes *colorants;
     bool use_alt_cspace;
     gs_callback_func_get_colorname_string *get_colorname_string;
-#if ENABLE_NAMED_COLOR_CALLBACK
-    named_color_params_t named_color_params;
-#endif
 } gs_device_n_params;
+
+/* Define an abstract type for the client color space data */
+typedef struct client_color_space_data_s client_color_space_data_t;
 
 /*
  * Non-direct paint space: Indexed space.
@@ -251,6 +247,7 @@ struct gs_color_space_s {
     rc_header                  rc;
     gs_id                      id;
     gs_color_space             *base_space;
+    client_color_space_data_t	*pclient_color_space_data;
     union {
 	gs_device_pixel_params   pixel;
 	gs_cie_defg *            defg;

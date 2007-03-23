@@ -92,7 +92,8 @@ const gx_device_mask_clip gs_mask_clip_device =
   gx_forward_fill_linear_color_scanline,
   gx_forward_fill_linear_color_trapezoid,
   gx_forward_fill_linear_color_triangle,
-  gx_forward_update_spot_equivalent_colors
+  gx_forward_update_spot_equivalent_colors,
+  gx_forward_ret_devn_params
  }
 };
 

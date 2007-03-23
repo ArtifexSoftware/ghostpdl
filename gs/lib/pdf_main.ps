@@ -461,6 +461,7 @@ pdfdict begin
    if
   pdfopenfile begin
   pdfopencache
+  writeoutputintents
   .writepdfmarks {
 	% Copy bookmarks (outline) to the output.
     Trailer /Root oget /Outlines knownoget {
@@ -1147,6 +1148,10 @@ end readonly def
   } ifelse
   % Don't change the page size if we are going to fit the PDF to the page
   systemdict /PDFFitPage known { currentdict /PageSize undef } if
+  % Determine the number of spot colors used on the page.  Note: This searches
+  % the pages resources.  It may be high if a spot color is in a resource but
+  % is not actually used on the page.
+  << /PageSpotColors 3 index countspotcolors >> setpagedevice
   % Let the device know if we will be using PDF 1.4 transparency.
   % The clist logic may need to adjust the size of bands.
   1 index pageusestransparency /PageUsesTransparency exch def
@@ -1274,6 +1279,9 @@ end readonly def
   % problems, for example with the pnga device.
   endpage
   end			% scratch dict
+  % Indicate that the number of spot colors is unknown in case the next page
+  % imaged is a PS file.
+  << /PageSpotColors -1 >> setpagedevice
   % Some PDF files don't have matching q/Q (gsave/grestore) so we need
   % to clean up any left over dicts from the dictstack
   countdictstack PDFdictstackcount sub dup 0 ne { 
@@ -1409,6 +1417,119 @@ end readonly def
    } if
 } bind def
 
+% Add a color name to our spot color list.  Ignore /All and /None
+/putspotcolor {			% <name> <spotcolordict> putspotcolor -
+  % The 'name' could be a string.  If so then convert to a name.
+  exch dup type /stringtype eq { cvn } if
+  dup dup /None eq exch /All eq or { pop pop } { 0 put } ifelse
+} bind def
+
+% Determine which spot colors are used within a color space  Note: This
+% dict will include all colors used in Separation or DeviceN color spaces.
+% Thus it may include Cyan, Magenta, Yellow, and Black.
+%	<colorspace> <spotcolordict> colorspacespotcolors -
+/colorspacespotcolors {
+  exch dup type /arraytype eq {
+    % If we have an Indexed color space then get the base space.
+    dup 0 oget dup /Indexed eq {
+      pop 1 oget 2 copy colorspacespotcolors
+    } {
+      % Stack:  <spotcolordict> <colorspace> <colorspacetype>
+      dup /Separation eq exch /DeviceN eq or {
+        dup 1 oget dup type /arraytype eq { 
+	  { oforce 2 index putspotcolor } forall
+        } {
+          2 index putspotcolor
+        } ifelse
+      } if
+    } ifelse
+  } if
+  pop pop
+} bind def
+
+% Check the Resources of a page, form, or annotation.  Determine which spot
+% colors are used within the resource  Note: The spot color dict will include
+% all colors used in Separation or DeviceN color spaces.  Thus it may include
+% Cyan, Magenta, Yellow, and Black.  We also pass a dict that is used to check
+% for loops in the resource list.
+%	<spotcolordict> <loopdict> <page/form/annot dict>
+% 		 resourcespotcolors <spotcolordict> <loopdict>
+/resourcespotcolors {
+  {	% Use loop to provide an exitable context.
+    % Exit if no Resources entry
+    /Resources knownoget not { exit } if
+    % Exit if we have already seen this dict
+    2 copy known { pop exit } if
+
+    % Save the Resources dict into our loop checking dict.
+    2 copy 0 put
+
+    % Scan resources that might contain a color space.
+    dup /ColorSpace knownoget {
+      { exch pop oforce 3 index colorspacespotcolors } forall
+    } if
+    dup /Pattern knownoget {
+      { exch pop oforce 4 copy exch pop resourcespotcolors pop pop pop } forall
+    } if
+    dup /Shading knownoget {
+      { exch pop oforce /ColorSpace oget 3 index colorspacespotcolors } forall
+    } if
+    /XObject knownoget {
+      { exch pop oforce dup
+        /Subtype get /Form eq { resourcespotcolors } { pop } ifelse
+      } forall
+    } if
+    exit
+  } loop
+} bind def
+
+% Determine which spot colors are used within the annotations.  Note: This
+% dict will include all colors used in Separation or DeviceN color spaces.
+% Thus it may include Cyan, Magenta, Yellow, and Black.
+%	<spotcolordict> <loopdict> <annotsarray>
+% 		 annotsspotcolors <spotcolordict> <loopdict>
+/annotsspotcolors {
+  { oforce /AP knownoget {	% Get appearance dict for the annoation
+      /N knownoget {		% Get the /N (i.e. normal) appearance stream
+        resourcespotcolors
+      } if			% If normal appearance streamknown
+    } if			% If AP dict known
+  } forall
+} bind def
+
+% Determine spot colors are used within a page.  We are creating a dict to
+% hold the spot color names as keys.  Using a dict avoids having to worry
+% about duplicate entries.  The keys in the dict contain the spot color
+% names.  However the values have no meaning.  Note: This dict will include
+% all colors used in Separation or DeviceN color spaces specified in the
+% page's resources.  Thus it may include Cyan, Magenta, Yellow, and Black.
+% There is no attempt to verify that these color spaces are actually used
+% within the object streams for the page.
+/pagespotcolors {		% <pagedict> pagespotcolors <spotcolordict>
+  dup
+  % Create a dict to hold spot color names.
+  0 dict exch
+  % Create a dict to be used to check for reference loops.
+  4 dict exch 
+  % Check for color spaces in the Resources
+  resourcespotcolors
+  % Also check for color spaces in the annotations.
+  3 -1 roll
+  /Annots knownoget { annotsspotcolors } if
+  pop				% Discard reference loop dict
+} bind def
+
+% Determine how many (if any) spot colors are used by a page.
+% Note:  This count does not include Cyan, Magenta, Yellow, or Black
+/countspotcolors {		% <pagedict> countspotcolors <count>
+  pagespotcolors		% Get dict with all spot colors
+  dup length			% spot color dict length
+  % Remove CMYK from the spot color count.
+  [ /Cyan /Magenta /Yellow /Black ]
+  { 2 index exch known { 1 sub } if } forall
+  exch pop			% Remove spot color dict
+} bind def
+
 % ------ ColorSpace substitution support ------ %
 
 %
@@ -1458,7 +1579,47 @@ end readonly def
   }
 bind def
 
-
+% Write OutputIntents to device if the device handles it
+/writeoutputintents {
+  currentdevice 1 dict dup /OutputIntent null put readonly
+  .getdeviceparams
+  mark ne { pop pop
+    % device supports OutputIntent parameter
+    Trailer /Root oget /OutputIntents knownoget {
+      {	% process all output profiles present
+        dup length dict .copydict
+	dup /DestOutputProfile knownoget {
+	  PDFfile fileposition exch
+	  mark exch { oforce } forall .dicttomark
+	  true resolvestream
+	  [ { counttomark 1 add index
+	      64000 string readstring
+	      not { exit} if
+	    } loop
+	  ] exch closefile
+	  0 1 index { length add } forall .bytestring
+	  0 3 2 roll {
+	      3 copy putinterval
+	      length add
+	  } forall pop
+	  exch PDFfile exch setfileposition
+	  1 index /DestOutputProfile 3 2 roll put
+	} if
+	% Convert to string array because it's easier for the device
+	[ 1 index /OutputCondition knownoget not { () } if
+	  2 index /OutputConditionIdentifier knownoget not { () } if
+	  3 index /RegistryName knownoget not { () } if
+	  4 index /Info knownoget not { () } if
+	  5 index /DestOutputProfile knownoget not { () } if
+	]
+	[ /OutputIntent 3 2 roll .pdfputparams pop pop
+        pop	  % done with this OutputIntent dictionary
+      } forall
+    } if	% OutputIntents known
+    % tell device there are no more OutputIntents
+    [ /OutputIntent [ ] .pdfputparams pop pop
+  } if
+} bind def
 
 end			% pdfdict
 .setglobal

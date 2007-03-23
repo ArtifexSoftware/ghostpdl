@@ -297,21 +297,21 @@ gs_enable_object_tagging()
         BITTAG = GS_UNKNOWN_TAG;
 }
 
-
 void
 gs_set_object_tag(gs_state * pgs, const gs_object_tag_type_t tag)
 {
     if (BITTAG != GS_DEVICE_DOESNT_SUPPORT_TAGS) {
-	if ( BITTAG != tag ) {
-	    /* mkromfs breaks this dependance 
-	       NB: needs to be fixed.
-	    gx_unset_dev_color(pgs);
-	    **/
-	    BITTAG = tag;
-	    /* the assumption is made that the caller will:
-	     * gx_set_dev_color(pgs);
-	     */
-	}
+		if ( pgs->object_tag != tag ) {
+			pgs->object_tag = tag;
+			/* mkromfs breaks this dependance 
+			   NB: needs to be fixed.
+			gx_unset_dev_color(pgs);
+			**/
+			BITTAG = tag;
+			/* the assumption is made that the caller will:
+			 * gx_set_dev_color(pgs);
+			 */
+		}
     }
 }
 

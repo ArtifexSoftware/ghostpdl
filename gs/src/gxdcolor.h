@@ -27,7 +27,11 @@
 #ifndef gx_device_DEFINED
 #  define gx_device_DEFINED
 typedef struct gx_device_s gx_device;
+#endif
 
+#ifndef gs_imager_state_DEFINED
+#  define gs_imager_state_DEFINED
+typedef struct gs_imager_state_s gs_imager_state;
 #endif
 
 /*

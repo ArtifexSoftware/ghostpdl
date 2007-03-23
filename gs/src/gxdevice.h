@@ -102,7 +102,6 @@
 #define std_device_part3_()\
 	0/*PageCount*/, 0/*ShowpageCount*/, 1/*NumCopies*/, 0/*NumCopies_set*/,\
 	0/*IgnoreNumCopies*/, 0/*UseCIEColor*/, 0/*LockSafetyParams*/,\
-	INIT_NAMED_COLOR_PTR	/* 'Named color' callback pointer */\
 	{ gx_default_install, gx_default_begin_page, gx_default_end_page }
 /*
  * We need a number of different variants of the std_device_ macro simply
@@ -274,6 +273,7 @@ dev_proc_fill_linear_color_scanline(gx_default_fill_linear_color_scanline);
 dev_proc_fill_linear_color_trapezoid(gx_default_fill_linear_color_trapezoid);
 dev_proc_fill_linear_color_triangle(gx_default_fill_linear_color_triangle);
 dev_proc_update_spot_equivalent_colors(gx_default_update_spot_equivalent_colors);
+dev_proc_ret_devn_params(gx_default_ret_devn_params);
 /* BACKWARD COMPATIBILITY */
 #define gx_non_imaging_create_compositor gx_null_create_compositor
 
@@ -353,6 +353,7 @@ dev_proc_fill_linear_color_scanline(gx_forward_fill_linear_color_scanline);
 dev_proc_fill_linear_color_trapezoid(gx_forward_fill_linear_color_trapezoid);
 dev_proc_fill_linear_color_triangle(gx_forward_fill_linear_color_triangle);
 dev_proc_update_spot_equivalent_colors(gx_forward_update_spot_equivalent_colors);
+dev_proc_ret_devn_params(gx_forward_ret_devn_params);
 
 /* ---------------- Implementation utilities ---------------- */
 

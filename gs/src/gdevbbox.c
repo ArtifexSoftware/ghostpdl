@@ -272,6 +272,7 @@ gx_device_bbox_init(gx_device_bbox * dev, gx_device * target, gs_memory_t *mem)
 	set_dev_proc(dev, update_spot_equivalent_colors,
 				gx_forward_update_spot_equivalent_colors);
 	set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
+	set_dev_proc(dev, ret_devn_params, gx_forward_ret_devn_params);
 	gx_device_set_target((gx_device_forward *)dev, target);
     } else {
 	gx_device_fill_in_procs((gx_device *)dev);

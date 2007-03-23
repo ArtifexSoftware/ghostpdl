@@ -34,6 +34,7 @@
 #include "iutil2.h"
 #include "ivmem2.h"
 #include "store.h"
+#include "gsnamecl.h"
 
 /* The (global) font directory */
 extern gs_font_dir *ifont_dir;	/* in zfont.c */
@@ -268,6 +269,13 @@ zsetsystemparams(i_ctx_t *i_ctx_p)
 	    if (code < 0)
 		goto out;
     }
+#if ENABLE_CUSTOM_COLOR_CALLBACK
+    /* The custom color callback pointer */
+    code = custom_color_callback_put_params(i_ctx_p->pgs, plist);
+    if (code < 0)
+	goto out;
+#endif
+
     code = setparams(i_ctx_p, plist, &system_param_set);
   out:
     iparam_list_release(&list);
@@ -639,7 +647,7 @@ current_param_list(i_ctx_t *i_ctx_p, const param_set * pset,
 {
     stack_param_list list;
     gs_param_list *const plist = (gs_param_list *)&list;
-    int i;
+    int i, code = 0;
 
     stack_param_list_write(&list, &o_stack, NULL, iimemory);
     for (i = 0; i < pset->long_count; i++) {
@@ -647,8 +655,8 @@ current_param_list(i_ctx_t *i_ctx_p, const param_set * pset,
 
 	if (pname_matches(pname, psref)) {
 	    long val = (*pset->long_defs[i].current)(i_ctx_p);
-	    int code = param_write_long(plist, pname, &val);
 
+	    code = param_write_long(plist, pname, &val);
 	    if (code < 0)
 		return code;
 	}
@@ -658,8 +666,8 @@ current_param_list(i_ctx_t *i_ctx_p, const param_set * pset,
 
 	if (pname_matches(pname, psref)) {
 	    bool val = (*pset->bool_defs[i].current)(i_ctx_p);
-	    int code = param_write_bool(plist, pname, &val);
 
+	    code = param_write_bool(plist, pname, &val);
 	    if (code < 0)
 		return code;
 	}
@@ -669,7 +677,6 @@ current_param_list(i_ctx_t *i_ctx_p, const param_set * pset,
 
 	if (pname_matches(pname, psref)) {
 	    gs_param_string val;
-	    int code;
 
 	    (*pset->string_defs[i].current)(i_ctx_p, &val);
 	    code = param_write_string(plist, pname, &val);
@@ -677,7 +684,14 @@ current_param_list(i_ctx_t *i_ctx_p, const param_set * pset,
 		return code;
 	}
     }
-    return 0;
+#if ENABLE_CUSTOM_COLOR_CALLBACK
+    if (pset == &system_param_set) {
+        /* The custom_color callback pointer */
+	if (pname_matches(CustomColorCallbackParamName, psref))
+	    code = custom_color_callback_get_params(i_ctx_p->pgs, plist);
+    }
+#endif
+    return code;
 }
 
 /* Get the current values of a parameter set to the stack. */

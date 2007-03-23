@@ -90,6 +90,15 @@ typedef struct gs_devn_params_s {
     fixed_colorant_names_list std_colorant_names;
     int num_std_colorant_names;	/* Number of names in list */
     int max_separations;	/* From MaxSeparation parameter */
+    /*
+     * This value comes from scanning color space resources in PDF files.
+     * Thus this value is only valid for PDF files.  The value may also
+     * be high if there are color space resources that are defined for
+     * a page but which are not actually used.  This value does give us
+     * a maximum value for the number of spot colors.
+     * From the PageSpotColors parameter.
+     */
+    int page_spot_colors;
 
     /*
     * Separation info (if any).
@@ -109,9 +118,23 @@ typedef struct gs_devn_params_s {
      * Pointer to our list of which colorant combinations are being used.
      */
     struct compressed_color_list_s * compressed_color_list;
+    /*
+     * If the file is using PDF 1.4 transparency compositing and we are using
+     * the clist then we need to pass the compressed color list from the PDF
+     * 1.4 clist writer device to the PDF 1.4 reader device.  However that
+     * device is not created until the clist is read and being processed.
+     * We need to temporary hold that data in the output device until after
+     * clist reader PDF 1.4 compositing device is created.  The PDF 1.4
+     * compositor may also have a different list of separations.
+     */
+    struct compressed_color_list_s * pdf14_compressed_color_list;
+    gs_separations pdf14_separations;
 } gs_devn_params_t;
 
-typedef gs_devn_params_t gs_devn_params;
+#ifndef gs_devn_params_DEFINED
+#  define gs_devn_params_DEFINED
+typedef struct gs_devn_params_s gs_devn_params;
+#endif
 
 extern fixed_colorant_name DeviceCMYKComponents[];
 
@@ -465,9 +488,53 @@ int devn_unpack_row(gx_device * dev, int num_comp, gs_devn_params * pdevn_params
 					 int width, byte * in, byte * out);
 
 /*
+ * Find the bit map for given bit map index.
+ */
+comp_bit_map_list_t * find_bit_map(gx_color_index index,
+	       			compressed_color_list_t * pcomp_list);
+
+/*
+ * Allocate an list level element for our encode color list.
+ */
+compressed_color_list_t * alloc_compressed_color_list_elem(gs_memory_t * mem,
+	       							int num_comps);
+
+/*
+ * The elements of this array contain the number of bits used to encode a color
+ * value in a 'compressed' gx_color_index value.  The index into the array is
+ * the number of compressed components.
+ */
+extern int num_comp_bits[];
+
+/*
+ * Values used to decompressed the colorants in our encoded values back into
+ * a gx_color value.  The color value will be (comp_bits * entry) >> 8
+ * The number of bits in comp_bits are defined in the num_comp_bits table.
+ * These values are chosen to expand these bit combinations back to 16 bit values
+ * (after shifting right 8 bits).
+ */
+/*
+ * The elements of this array contain factors used to convert compressed color
+ * values to gx_color_values.  The index into the array is the number of
+ * compressed components.
+ */
+extern int comp_bit_factor[];
+
+/*
  * A routine for debugging the encoded color colorant list.  This routine
  * dumps the contents of the list.
  */
 void print_compressed_color_list(compressed_color_list_t * pcomp_list, int num_comp);
+
+/*
+ * Free the elements of a compressed color list.
+ */
+void free_compressed_color_list(gs_memory_t * mem,
+	       	compressed_color_list_t * pcomp_list);
+
+/*
+ * Free a set of separation names
+ */
+void free_separation_names(gs_memory_t * mem, gs_separations * pseparation);
 
 #endif		/* ifndef gdevdevn_INCLUDED */

@@ -25,6 +25,13 @@
 systemdict /pdfmark known not
  { userdict /pdfmark { cleartomark } bind put } if
 
+/renderingintentdict mark
+  /Absolute 0
+  /RelativeColorimetric 1
+  /Saturation 2
+  /Perceptual 3
+.dicttomark readonly def
+
 userdict /GS_PDF_ProcSet 127 dict dup begin
 
 % ---------------- Abbreviations ---------------- %
@@ -194,7 +201,7 @@ nodict readonly pop
 /K { 4 array astore cvx //csdevcmyk scput } bdef
 /cs { csset fcput } bdef
 /CS { csset scput } bdef
-/ri { pop } bdef
+/ri { //renderingintentdict exch .knownget { .setrenderingintent } if } bdef
 % We have to break up sc according to the number of operands.
 /sc1 { /FillColor gput } bdef
 /SC1 { /StrokeColor gput } bdef

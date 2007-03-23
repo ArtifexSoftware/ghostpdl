@@ -28,6 +28,7 @@
 #include "gzpath.h"
 #include "gzcpath.h"
 #include "gzstate.h"
+#include "gsutil.h"
 
 /*
  * Define how much rounding slop setbbox should leave,
@@ -195,6 +196,9 @@ gs_rectfill(gs_state * pgs, const gs_rect * pr, uint count)
     bool hl_color = (hl_color_available && 
 		dev_proc(pdev, fill_rectangle_hl_color)(pdev, 
 		    	    &empty, pis, pdc, NULL) == 0);
+
+    /* Processing a fill object operation */
+    gs_set_object_tag(pgs, GS_PATH_TAG);
 
     gx_set_dev_color(pgs);
     if ((is_fzero2(pgs->ctm.xy, pgs->ctm.yx) ||

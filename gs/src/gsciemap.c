@@ -202,6 +202,80 @@ gx_concretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
 }
 #undef SCALE_TO_RANGE
 
+#if ENABLE_CUSTOM_COLOR_CALLBACK
+/*
+ * This routine is only used if ENABLE_CUSTOM_COLOR_CALLBACK is true.
+ * Otherwise we use gx_default_remap_color directly for CIEBasedDEFG color
+ * spaces.
+ *
+ * Render a CIEBasedDEFG color.
+ */
+int
+gx_remap_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
+	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+		gs_color_select_t select)
+{
+    client_custom_color_params_t * pcb =
+	    (client_custom_color_params_t *) (pis->custom_color_callback);
+
+    if (pcb != NULL) {
+	if (pcb->client_procs->remap_CIEBasedDEFG(pcb, pc, pcs,
+			   			pdc, pis, dev, select) == 0)
+	    return 0;
+    }
+    /* Use default routine for non custom color processing. */
+    return gx_default_remap_color(pc, pcs, pdc, pis, dev, select);
+}
+
+/*
+ * This routine is only used if ENABLE_CUSTOM_COLOR_CALLBACK is true.
+ * Otherwise we use gx_default_remap_color directly for CIEBasedDEF color
+ * spaces.
+ *
+ * Render a CIEBasedDEF color.
+ */
+int
+gx_remap_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
+	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+		gs_color_select_t select)
+{
+    client_custom_color_params_t * pcb =
+	    (client_custom_color_params_t *) (pis->custom_color_callback);
+
+    if (pcb != NULL) {
+	if (pcb->client_procs->remap_CIEBasedDEF(pcb, pc, pcs,
+			   			pdc, pis, dev, select) == 0)
+	    return 0;
+    }
+    /* Use default routine for non custom color processing. */
+    return gx_default_remap_color(pc, pcs, pdc, pis, dev, select);
+}
+
+/*
+ * This routine is only used if ENABLE_CUSTOM_COLOR_CALLBACK is true.
+ * Otherwise we use gx_default_remap_color directly for CIEBasedA color
+ * spaces.
+ *
+ * Render a CIEBasedA color.
+ */
+int
+gx_remap_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
+	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+		gs_color_select_t select)
+{
+    client_custom_color_params_t * pcb =
+	    (client_custom_color_params_t *) (pis->custom_color_callback);
+
+    if (pcb != NULL) {
+	if (pcb->client_procs->remap_CIEBasedA(pcb, pc, pcs,
+			   			pdc, pis, dev, select) == 0)
+	    return 0;
+    }
+    /* Use default routine for non custom color processing. */
+    return gx_default_remap_color(pc, pcs, pdc, pis, dev, select);
+}
+#endif
+
 /* Render a CIEBasedABC color. */
 /* We provide both remap and concretize, but only the former */
 /* needs to be efficient. */
@@ -216,6 +290,19 @@ gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
     if_debug3('c', "[c]remap CIEABC [%g %g %g]\n",
 	      pc->paint.values[0], pc->paint.values[1],
 	      pc->paint.values[2]);
+#if ENABLE_CUSTOM_COLOR_CALLBACK
+    {
+        client_custom_color_params_t * pcb =
+	    (client_custom_color_params_t *) (pis->custom_color_callback);
+
+        if (pcb != NULL) {
+	    if (pcb->client_procs->remap_CIEBasedABC(pcb, pc, pcs,
+			   			pdc, pis, dev, select) == 0)
+	        return 0;
+	}
+    }
+#endif
+
     CIE_CHECK_RENDERING(pcs, conc, pis, goto map3);
     vec3.u = float2cie_cached(pc->paint.values[0]);
     vec3.v = float2cie_cached(pc->paint.values[1]);

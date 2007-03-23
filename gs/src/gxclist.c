@@ -135,7 +135,8 @@ const gx_device_procs gs_clist_device_procs = {
     gx_default_fill_linear_color_scanline,
     gx_default_fill_linear_color_trapezoid, /* fixme : write to clist. */
     gx_default_fill_linear_color_triangle,
-    gx_forward_update_spot_equivalent_colors
+    gx_forward_update_spot_equivalent_colors,
+    gx_forward_ret_devn_params
 };
 
 /* ------ Define the command set and syntax ------ */

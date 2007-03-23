@@ -19,6 +19,7 @@
 #include "gscdefs.h"
 #include "gsdevice.h"
 #include "gdevmem.h"
+#include "gxcindex.h"
 #include "gxblend.h"
 #include "gxtext.h"
 

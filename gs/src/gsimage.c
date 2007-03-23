@@ -27,7 +27,7 @@
 #include "gxpath.h"		/* for gx_effective_clip_path */
 #include "gximask.h"
 #include "gzstate.h"
-
+#include "gsutil.h"
 
 /*
   The main internal invariant for the gs_image machinery is
@@ -196,6 +196,9 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
 
     if (code < 0)
 	return code;
+    /* Processing an image object operation */
+    gs_set_object_tag(pgs, GS_IMAGE_TAG);
+
     if (uses_color) {
 	gx_set_dev_color(pgs);
         code = gs_state_color_load(pgs);

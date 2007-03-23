@@ -392,7 +392,7 @@ gsdcolor_h=$(GLSRC)gsdcolor.h $(gsccolor_h)\
 gxdcolor_h=$(GLSRC)gxdcolor.h\
  $(gscsel_h) $(gsdcolor_h) $(gsropt_h) $(gsstruct_h)
 gsnamecl_h=$(GLSRC)gsnamecl.h
-gscspace_h=$(GLSRC)gscspace.h $(gsmemory_h) $(gsnamecl_h) $(gsrefct_h)
+gscspace_h=$(GLSRC)gscspace.h $(gsmemory_h) $(gsrefct_h)
 gscssub_h=$(GLSRC)gscssub.h $(gscspace_h)
 gxdevcli_h=$(GLSRC)gxdevcli.h $(std_h) $(stdint__h)\
  $(gscompt_h) $(gsdcolor_h) $(gsiparam_h) $(gsmatrix_h)\
@@ -2446,13 +2446,16 @@ $(GLD)seprlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(seprlib_)
 $(GLOBJ)gscsepr.$(OBJ) : $(GLSRC)gscsepr.c $(GXERR) $(memory__h)\
  $(gsfunc_h) $(gsrefct_h) $(gsmatrix_h) $(gscsepr_h) $(gxcspace_h)\
  $(gxfixed_h) $(gxcolor2_h) $(gzstate_h) $(gscdevn_h) $(gxcdevn_h)\
- $(gxcmap_h) $(gxdevcli_h) $(gsovrc_h) $(stream_h)
+ $(gxcmap_h) $(gxdevcli_h) $(gsovrc_h) $(stream_h) $(gsnamecl_h)
 	$(GLCC) $(GLO_)gscsepr.$(OBJ) $(C_) $(GLSRC)gscsepr.c
 
-$(GLOBJ)gsnamecl.$(OBJ) : $(GLSRC)gsnamecl.c $(GXERR) $(memory__h)
+$(GLOBJ)gsnamecl.$(OBJ) : $(GLSRC)gsnamecl.c $(GXERR) $(memory__h) $(gxcspace_h)\
+	$(gscdefs_h) $(gxdevice_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gsnamecl.$(OBJ) $(C_) $(GLSRC)gsnamecl.c
 
-$(GLOBJ)gsncdemo.$(OBJ) : $(GLSRC)gsncdemo.c $(GXERR) $(memory__h)
+$(GLOBJ)gsncdemo.$(OBJ) : $(GLSRC)gsncdemo.c $(GXERR) $(stdpre_h) $(math_h)\
+       	$(memory__h) $(gscdefs_h) $(gscspace_h) $(gxdevice_h) $(gzstate_h)\
+	$(malloc__h)
 	$(GLCC) $(GLO_)gsncdemo.$(OBJ) $(C_) $(GLSRC)gsncdemo.c
 
 # ================ Display Postscript extensions ================ #

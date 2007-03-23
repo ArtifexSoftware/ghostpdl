@@ -1878,7 +1878,7 @@ private int do_FAPIpassfont(i_ctx_t *i_ctx_p, char *font_file_path, bool *succes
 private int zFAPIpassfont(i_ctx_t *i_ctx_p)
 {   os_ptr op = osp;
     int code;
-    bool found;
+    bool found = false;
     char *font_file_path = NULL;
     ref *v;
 

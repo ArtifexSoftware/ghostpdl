@@ -429,8 +429,12 @@ private int
 ppm_get_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
+    int code;
 
-    return gdev_prn_get_params_planar(pdev, plist, &bdev->UsePlanarBuffer);
+    code = gdev_prn_get_params_planar(pdev, plist, &bdev->UsePlanarBuffer);
+    if (code < 0) return code;
+    code = param_write_null(plist, "OutputIntent");
+    return code;
 }
 
 private int
@@ -443,8 +447,26 @@ ppm_put_params(gx_device * pdev, gs_param_list * plist)
     int ecode = 0;
     int code;
     long v;
+    gs_param_string_array intent;
     const char *vname;
 
+    if ((code = param_read_string_array(plist, "OutputIntent", &intent)) == 0) {
+	int i, j;
+
+	dlprintf1("%d strings:\n", intent.size);
+	for (i = 0; i < intent.size; i++) {
+	    const gs_param_string *s = &intent.data[i];
+	    dlprintf2("  %d: size %d:", i, s->size);
+	    if (i < 4) {
+		for (j = 0; j < s->size; j++)
+		    dlprintf1("%c", s->data[j]);
+	    } else {
+		for (j = 0; j < 16; j++)
+		    dlprintf1(" %02x", s->data[j]);
+	    }
+	    dlprintf("\n");
+	}
+    }
     save_info = pdev->color_info;
     if ((code = param_read_long(plist, (vname = "GrayValues"), &v)) != 1 ||
 	(code = param_read_long(plist, (vname = "RedValues"), &v)) != 1 ||

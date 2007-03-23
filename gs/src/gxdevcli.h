@@ -494,7 +494,7 @@ typedef struct gx_device_color_info_s {
                              : "DeviceCMYK") )
 
 #define dci_std_polarity(nc)                    \
-    ( (nc) == 4 ? GX_CINFO_POLARITY_SUBTRACTIVE \
+    ( (nc) >= 4 ? GX_CINFO_POLARITY_SUBTRACTIVE \
                 : GX_CINFO_POLARITY_ADDITIVE )
 
       /*
@@ -632,15 +632,6 @@ dev_page_proc_install(gx_default_install);
 dev_page_proc_begin_page(gx_default_begin_page);
 dev_page_proc_end_page(gx_default_end_page);
 
-#if ENABLE_NAMED_COLOR_CALLBACK
-/* Ptr to named color callback struct */
-#define NAMED_COLOR_PTR void * named_color_callback;
-#define INIT_NAMED_COLOR_PTR   NULL,		/* Initial value */
-#else
-#define NAMED_COLOR_PTR
-#define INIT_NAMED_COLOR_PTR
-#endif
-
 /* ---------------- Device structure ---------------- */
 
 /*
@@ -713,7 +704,6 @@ typedef struct gx_device_cached_colors_s {
 	bool IgnoreNumCopies;		/* if true, force num_copies = 1 */\
 	bool UseCIEColor;		/* for PS LL3 */\
 	bool LockSafetyParams;		/* If true, prevent unsafe changes */\
-	NAMED_COLOR_PTR			/* Pointer to named color callback struct */\
 	gx_page_device_procs page_procs;	/* must be last */\
 		/* end of std_device_body */\
 	gx_device_procs procs	/* object procedures */
@@ -1348,6 +1338,20 @@ typedef struct gs_fill_attributes_s {
 #define dev_proc_update_spot_equivalent_colors(proc)\
   dev_t_proc_update_spot_equivalent_colors(proc, gx_device)
 
+/*
+ * return a pointer to the devn_params section of a device.  Return NULL
+ * if this field is not present within the device.
+ */
+#ifndef gs_devn_params_DEFINED
+#define gs_devn_params_DEFINED
+typedef struct gs_devn_params_s gs_devn_params;
+#endif
+
+#define dev_t_proc_ret_devn_params(proc, dev_t)\
+  gs_devn_params * proc(dev_t *dev)
+#define dev_proc_ret_devn_params(proc)\
+  dev_t_proc_ret_devn_params(proc, gx_device)
+
 /* Define the device procedure vector template proper. */
 
 #define gx_device_proc_struct(dev_t)\
@@ -1411,6 +1415,7 @@ typedef struct gs_fill_attributes_s {
 	dev_t_proc_fill_linear_color_trapezoid((*fill_linear_color_trapezoid), dev_t); \
 	dev_t_proc_fill_linear_color_triangle((*fill_linear_color_triangle), dev_t); \
 	dev_t_proc_update_spot_equivalent_colors((*update_spot_equivalent_colors), dev_t); \
+	dev_t_proc_ret_devn_params((*ret_devn_params), dev_t); \
 }
 
 

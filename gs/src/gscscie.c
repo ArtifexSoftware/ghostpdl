@@ -51,7 +51,12 @@ const gs_color_space_type gs_color_space_type_CIEDEFG = {
     gx_init_CIE, gx_restrict_CIEDEFG,
     gx_concrete_space_CIE,
     gx_concretize_CIEDEFG, NULL,
-    gx_default_remap_color, gx_install_CIE,
+#if ENABLE_CUSTOM_COLOR_CALLBACK
+    gx_remap_CIEDEFG,
+#else
+    gx_default_remap_color,
+#endif
+    gx_install_CIE,
     gx_spot_colors_set_overprint,
     gx_final_CIEDEFG, gx_no_adjust_color_count,
     gx_serialize_CIEDEFG,
@@ -70,7 +75,12 @@ const gs_color_space_type gs_color_space_type_CIEDEF = {
     gx_init_CIE, gx_restrict_CIEDEF,
     gx_concrete_space_CIE,
     gx_concretize_CIEDEF, NULL,
-    gx_default_remap_color, gx_install_CIE,
+#if ENABLE_CUSTOM_COLOR_CALLBACK
+    gx_remap_CIEDEF,
+#else
+    gx_default_remap_color,
+#endif
+    gx_install_CIE,
     gx_spot_colors_set_overprint,
     gx_final_CIEDEF, gx_no_adjust_color_count,
     gx_serialize_CIEDEF,
@@ -108,7 +118,12 @@ const gs_color_space_type gs_color_space_type_CIEA = {
     gx_init_CIE, gx_restrict_CIEA,
     gx_concrete_space_CIE,
     gx_concretize_CIEA, NULL,
-    gx_default_remap_color, gx_install_CIE,
+#if ENABLE_CUSTOM_COLOR_CALLBACK
+    gx_remap_CIEA,
+#else
+    gx_default_remap_color,
+#endif
+    gx_install_CIE,
     gx_spot_colors_set_overprint,
     gx_final_CIEA, gx_no_adjust_color_count,
     gx_serialize_CIEA,

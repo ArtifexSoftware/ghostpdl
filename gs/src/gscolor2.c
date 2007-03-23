@@ -52,6 +52,8 @@ gs_setcolorspace(gs_state * pgs, gs_color_space * pcs)
     }
 
     if (code >= 0) {
+	pgs->color_space->pclient_color_space_data =
+	    pcs->pclient_color_space_data;
         cs_full_init_color(pgs->ccolor, pcs);
         gx_unset_dev_color(pgs);
     }
