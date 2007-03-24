@@ -3682,11 +3682,11 @@ pdf14_clist_get_param_compressed_color_list(pdf14_device * p14dev)
         gx_device * tdev = p14dev->target;
 
 	gs_c_param_list_read(&param_list);
-	// put_param_compressed_color_list_elem(p14dev,
-		       // (gs_param_list *)&param_list,
-		       // &pret_comp_list, "PDF14CompressedColorList",
-		       // TOP_ENCODED_LEVEL);
-	// put_param_pdf14_spot_names(p14dev, (gs_param_list *)&param_list);
+	/* put_param_compressed_color_list_elem(p14dev,
+		        (gs_param_list *)&param_list,
+		        &pret_comp_list, "PDF14CompressedColorList",
+		        TOP_ENCODED_LEVEL);
+	 put_param_pdf14_spot_names(p14dev, (gs_param_list *)&param_list); */
 #if 1
 	code = dev_proc(tdev, put_params)(tdev, (gs_param_list *)&param_list);
 #else
@@ -4145,12 +4145,12 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
 		    p14dev->devn_params.num_std_colorant_names +
 		    p14dev->devn_params.page_spot_colors;
 		/* Transfer the data for the compressed color encoding. */
-		// free_compressed_color_list(p14dev->memory,
-			// p14dev->devn_params.compressed_color_list);
+		/* free_compressed_color_list(p14dev->memory,
+			p14dev->devn_params.compressed_color_list); */
 		p14dev->devn_params.compressed_color_list =
 		    pclist_devn_params->pdf14_compressed_color_list;
-		// free_separation_names(p14dev->memory,
-				// &p14dev->devn_params.separations);
+		/* free_separation_names(p14dev->memory,
+				 &p14dev->devn_params.separations); */
 		p14dev->devn_params.separations =
 		    pclist_devn_params->pdf14_separations;
 		if ( num_comp != p14dev->color_info.num_components) {
