@@ -95,11 +95,11 @@ gs_cspace_final(void *vptr)
     if_debug2('c', "[c]cspace final %08x %d\n", pcs, pcs->id);
     
 #if ENABLE_CUSTOM_COLOR_CALLBACK
-
+    {
 	client_color_space_data_t *pclient_data = pcs->pclient_color_space_data;
 	if ( pclient_data )
 		pclient_data->client_adjust_cspace_count( pcs, -1 );
-
+    }
 #endif /*ENABLE_CUSTOM_COLOR_CALLBACK*/
     
     rc_decrement_only(pcs->base_space, "gs_cspace_final");
