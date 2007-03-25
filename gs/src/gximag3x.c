@@ -741,10 +741,13 @@ gx_image3x_plane_data(gx_image_enum_common_t * info,
 	      h, (mask_plane[0].data ? "+" : ""), penum->mask[0].y,
 	      (mask_plane[1].data ? "+" : ""), penum->mask[1].y,
 	      (pixel_planes[0].data ? "+" : ""), penum->pixel.y);
-    if (penum->mask[0].y >= penum->mask[0].height &&
-	penum->mask[1].y >= penum->mask[1].height &&
-	penum->pixel.y >= penum->pixel.height)
-	return 1;
+    if (penum->mask[0].depth == 0 || penum->mask[0].y >= penum->mask[0].height) {
+        if (penum->mask[1].depth == 0 || penum->mask[1].y >= penum->mask[1].height) {
+	    if (penum->pixel.y >= penum->pixel.height) {
+	        return 1;
+            }
+        }
+    }
     /*
      * The mask may be complete (gx_image_plane_data_rows returned 1),
      * but there may still be pixel rows to go, so don't return 1 here.
