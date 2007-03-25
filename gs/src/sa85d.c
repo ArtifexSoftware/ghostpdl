@@ -45,7 +45,7 @@ s_A85D_process(stream_state * st, stream_cursor_read * pr,
     /* might be as many as 6 characters after the last valid data char  */
     /* D <cr> <lf> '~' <cr> <lf> '>' where 'D' is a data character.     */
     const byte *rlimit = pr->limit - (last ? 0 : 7); /* max EOD len + 1 */
-    const byte *r = rlimit;
+    const byte *r = max(p, rlimit);
     byte *wlimit = pw->limit;
     int ccount = ss->odd;
     ulong word = ss->word;
