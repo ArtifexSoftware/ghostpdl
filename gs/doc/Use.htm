@@ -611,6 +611,16 @@ appropriately for a viewer.
 PDF files.
 </dl>
 
+<dl>
+<dt><b><tt>-dIgnoreTTEncoding</tt></b>
+<dd>
+Force the PDF interpreter to use an encoding specified in the 'cmap' table
+of embedded TrueType fonts and ignore the Encoding dictionary.
+This is a last resort measure for the files that have an incorrect Encoding
+entry for a TrueType font dictionary. This option is known to cause
+regressions and should not be used routinely.
+</dl>
+
 <h3><a name="PDF_problems"></a>Problems interpreting a PDF file</h3>
 
 <p>

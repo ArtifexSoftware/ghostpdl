@@ -132,10 +132,15 @@ pdfdict begin
 % Get the (possibly modified) encoding of a font.
 /getfontencoding {	% <font-resource> <font> getfontencoding
 			%   <font-resource> <font> <Encoding|null>
-  1 index /Encoding known {
-    dup /Encoding knownoget { 2 index getencoding } { null } ifelse
+  //systemdict /IgnoreTTEncoding .knownget not { //false } if {
+  1 index /Subtype get /TrueType eq } { //false } ifelse {
+    //null
   } {
-    null
+    1 index /Encoding known {
+      dup /Encoding knownoget { 2 index getencoding } { //null } ifelse
+    } {
+      //null
+    } ifelse
   } ifelse
 } bdef
 
