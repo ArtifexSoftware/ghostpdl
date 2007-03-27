@@ -1920,7 +1920,9 @@ Test	 Status	Comments
 		assign: Ray.
 
 11-20-6  DIFF	In special test B, Adobe has rangechecks, we don't. In
-	 special test A, we have one rangecheck they don't. - assign Raph
+		special test A, we have one rangecheck they don't.
+                The test is about interaction of setbbox with save,
+                gsave and other operators. - assign Raph
 
 11-20-7  OK	
 
@@ -3491,8 +3493,7 @@ Test	 Status	Comments
 
 15-10-4  OK	Minor rasterizing differences. -Tor
 
-15-11-1  DIFF	Top row of circles is visible in GS and empty in CPSI. (/NotDefined null BuildFont) The page says Device Dependent behavior.
-                Assign: Ray
+15-11-1  OK  	Fixed by rev. 7806. - Alex
 
 15-14-1  OK	Minor differences visually reviewed by RJJ
 
