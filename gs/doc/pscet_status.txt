@@ -3563,8 +3563,9 @@ Test	 Status	Comments
 
 17-01-6  AOK	Matches Tek. CPSI different.
 
-17-01-7  DIFF	Same as 17-01-6 
-                marked "same as" AOK problem but diff status assign: Ray
+17-01-7  AOK 	Matches Tek and Distiller 5. CPSI is different and wrong,
+                The test exercises ineofill operator and can be easily checked
+                visually by modifying the test to fill the current path.
 
 17-01-8  OK	
 
@@ -3578,13 +3579,11 @@ Test	 Status	Comments
 
 17-02-5  OK	
 
-17-02-6  DIFF	Same as 17-01-6
-                marked "same as" AOK problem but diff status assign: Ray
+17-02-6  AOK 	Same as 17-01-6 but tests infill instead of ineofill.
+                Matches Tek and Distiller 5. CPSI is different and wrong,
 
-
-17-02-7  DIFF	Same as 17-01-6
-                marked "same as" AOK problem but diff status assign: Ray
-
+17-02-7  AOK 	Same as 17-01-6 but tests infill instead of ineofill.
+                Matches Tek and Distiller 5. CPSI is different and wrong,
 
 17-02-8  OK	
 
@@ -3599,8 +3598,8 @@ Test	 Status	Comments
 
 17-03-4  OK	Minor differences visually reviewed by RJJ
 
-17-03-5  DIFF	Same as 17-01-06
-                marked "same as" AOK problem but diff status assign: Ray
+17-03-5  DIFF	Similar to 17-01-6 but tests instroke. The insideness testing is OK
+                but the pattern phase is different from Tek and CPSI. assign: Ray
 
 17-03-6  OK	
 
