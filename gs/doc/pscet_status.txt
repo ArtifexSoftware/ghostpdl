@@ -1836,7 +1836,15 @@ Test	 Status	Comments
 
 11-18-5  OK	Minor differences visually reviewed by RJJ
 
-11-18-6  DIFF	similar to 11-11-6 assign: Ray.
+11-18-6  AOK 	Adobe interpreters (CPSI, Tek, Distiller 5) have obvious
+		rendering problems, which are hard to simulate in GS.
+                1. The long diagonal line is caused by "clippath 0 0 rlineto
+                   stroke showpage". Different Adobe interpreters draw it
+                   fron the center of the page to different corners.
+                2. The line drawn by "10 0 rlineto" is not horizontal in
+                   LOOK 30 and MUCH 34 cases. This bug can be demonstrated
+                   by this short program "300 300 moveto 10 10 rlineto 8 8
+                   rlineto strokepath 10 0 rlineto stroke showpage". - Alex
 
 11-19-1  OK	
 
