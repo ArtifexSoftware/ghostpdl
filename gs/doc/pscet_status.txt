@@ -4252,8 +4252,7 @@ Test	 Status	Comments
 
 23-12K-1  OK	Fixed as of r7500.
 
-23-12K-2  DIFF	GS has 'T' where CPSI has 'F' on one of the DCTEncode. Assign: Peter
-		DCTEncode doesn't close its target with /CloseTarget true
+23-12K-2  OK  	Fixed by rev 7808. - Alex
 
 23-12L-1  AOK	same as 23-12A-3
 
