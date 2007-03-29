@@ -1324,13 +1324,13 @@ Test	 Status	Comments
 
 09-56-2  OK	revisin 7234 (peter)
 
-09-56-3  DIFF	Device Dependent: GS missing '1' for GRAY 33 (same as
-		30-07-3, q.v.).  '5' occur in MEMO 03 and 04 because the
-		Tek implementation, unlike both gs and CPSI, defines a
-		ColorRendering resource called /Saturation.  The PLRM3 lists
-		such a resource as present in Adobe products, but it is not
-		required for correct operation of any PostScript program.
-		Assign: Peter
+09-56-3  OK     Ghostscript matches the checksum for Tek360 version of the test.
+		PhotoPrint has extra '1' in GRAY33 that tests that whether the
+                change in colorspace affects CRD. Surprisingly, it does.
+                Tek scan and Distillier 5 have '1' in MEMO 03 and 04, i.e.
+                have different default CRD and a CRD returned by /Saturation
+                findcolorrendering. CRD selection is implementation dependent
+                and is normally left to OEM.
 
 09-57-1  AOK	Fixed by rev 7169.; GS has a better smoothing.
 
