@@ -4334,10 +4334,7 @@ Test	 Status	Comments
 
 23-19-2  OK	
 
-23-20-1  DIFF	GS has different checksum. readhexstring uses the string to store
-		the state. Modified bytes print are not printable but affect the
-                checksum.
-              	Assign: Ray (low priority)
+23-20-1  OK	Fixed by rev. 7809. - Alex
 
 23-20-2  OK	
 

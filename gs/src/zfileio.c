@@ -118,17 +118,15 @@ zwrite(i_ctx_t *i_ctx_p)
 /* <file> <string> readhexstring <substring> <filled_bool> */
 private int zreadhexstring_continue(i_ctx_t *);
 
-/* We keep track of the odd digit in the next byte of the string */
-/* beyond the bytes already used.  (This is just for convenience; */
-/* we could do the same thing by passing 2 state parameters to the */
-/* continuation procedure instead of 1.) */
+/* We pack the odd digit above the the current position for the  */
+/* convenience of reusing procedures that take 1 state parameter */
 private int
-zreadhexstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint start)
+zreadhexstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint start, int odd)
 {
     stream *s;
     uint len, nread;
     byte *str;
-    int odd;
+    int odd_byte = odd;
     stream_cursor_write cw;
     int status;
 
@@ -136,16 +134,10 @@ zreadhexstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint start)
     /*check_write_type(*op, t_string); *//* done by caller */
     str = op->value.bytes;
     len = r_size(op);
-    if (start < len) {
-	odd = str[start];
-	if (odd > 0xf)
-	    odd = -1;
-    } else
-	odd = -1;
     cw.ptr = str + start - 1;
     cw.limit = str + len - 1;
     for (;;) {
-	status = s_hex_process(&s->cursor.r, &cw, &odd,
+	status = s_hex_process(&s->cursor.r, &cw, &odd_byte,
 			       hex_ignore_garbage);
 	if (status == 1) {	/* filled the string */
 	    ref_assign_inline(op - 1, op);
@@ -161,9 +153,8 @@ zreadhexstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint start)
     }
     nread = cw.ptr + 1 - str;
     if (status != EOFC) {	/* Error */
-	if (nread < len)
-	    str[nread] = (odd < 0 ? 0x10 : odd);
-	return handle_read_status(i_ctx_p, status, op - 1, &nread,
+	nread |= odd_byte << 24;
+        return handle_read_status(i_ctx_p, status, op - 1, &nread,
 				  zreadhexstring_continue);
     }
     /* Reached end-of-file before filling the string. */
@@ -179,23 +170,24 @@ zreadhexstring(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
 
     check_write_type(*op, t_string);
-    if (r_size(op) > 0)
-	*op->value.bytes = 0x10;
-    return zreadhexstring_at(i_ctx_p, op, 0);
+    return zreadhexstring_at(i_ctx_p, op, 0, -1);
 }
 /* Continue a readhexstring operation after a callout. */
-/* *op is the index within the string. */
+/* *op contains the index within the string and the odd flag. */
 private int
 zreadhexstring_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int code;
+    int code, length, odd;
 
     check_type(*op, t_integer);
-    if (op->value.intval < 0 || op->value.intval > r_size(op - 1))
+    length = op->value.intval & 0xFFFFFF;
+    odd = op->value.intval >> 24;
+    
+    if (length > r_size(op - 1) || odd < -1 || odd > 0xF)
 	return_error(e_rangecheck);
     check_write_type(op[-1], t_string);
-    code = zreadhexstring_at(i_ctx_p, op - 1, (uint) op->value.intval);
+    code = zreadhexstring_at(i_ctx_p, op - 1, (uint)length, odd);
     if (code >= 0)
 	pop(1);
     return code;
