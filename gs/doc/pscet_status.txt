@@ -1808,8 +1808,7 @@ Test	 Status	Comments
 
 11-16-7  OK	
 
-11-16-8  DIFF	MORE 21 GS has zig-zag stroke, CPSI and Tek are straight.
-		Assign: Igor
+11-16-8  AOK
 
 11-17-1  OK	Fixed as of rev 7598.
 
@@ -3605,10 +3604,10 @@ Test	 Status	Comments
 
 17-04-1  OK	
 
-17-04-2  DIFF	GS is missing dots (small circles) in places and has extra dots in others.
-		Note Tek has _different_ pattern of dots, but is more similar to CPSI than
-		to GS.  This is not identified as "Device Dependent" in the test.
-                assign: igor
+17-04-2  DIFF	GS paints more dots (small circles).
+		Note Tek has _different_ pattern of dots.  
+		This is not identified as "Device Dependent" in the test.
+                assign: alex
 
 17-04-3  OK	same as 17-02-3
 
@@ -3619,7 +3618,7 @@ Test	 Status	Comments
 17-05-1  OK	
 
 17-05-2  DIFF	Same as 17-04-2
-                assign: igor
+                assign: alex
 
 17-05-3  OK	Same as 17-01-3
 
@@ -3630,7 +3629,7 @@ Test	 Status	Comments
 17-06-1  OK	
 
 17-06-2  DIFF	Same as 17-04-2 except rectangles instead of dots.  Still like GS output better.  
-		More consistant repeats of the pattern.  assign: Igor.
+		More consistant repeats of the pattern.  assign: alex.
 
 17-06-3  OK	Fixed as of rev 7636.
 
