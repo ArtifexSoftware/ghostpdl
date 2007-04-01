@@ -403,6 +403,7 @@ typedef enum {
 /* Define the device structure. */
 struct gx_device_pdf_s {
     gx_device_psdf_common;
+    bool is_ps2write;          /* ps2write (true) versus pdfwrite (false); never changed */
     /* PDF-specific distiller parameters */
     double CompatibilityLevel;
     int EndPage;

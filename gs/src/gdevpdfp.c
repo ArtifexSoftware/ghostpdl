@@ -83,7 +83,7 @@ private const gs_param_item_t pdf_param_items[] = {
     pi("NoEncrypt", gs_param_type_string, NoEncrypt),
 
 	/* Target viewer capabilities (Ghostscript-specific)  */
-    pi("ForOPDFRead", gs_param_type_bool, ForOPDFRead),
+ /* pi("ForOPDFRead", gs_param_type_bool, ForOPDFRead),			    pdfwrite-only */
     pi("PatternImagemask", gs_param_type_bool, PatternImagemask),
     pi("MaxClipPathSize", gs_param_type_int, MaxClipPathSize),
     pi("MaxShadingBitmapSize", gs_param_type_int, MaxShadingBitmapSize),
@@ -91,7 +91,7 @@ private const gs_param_item_t pdf_param_items[] = {
     pi("HaveTrueTypes", gs_param_type_bool, HaveTrueTypes),
     pi("HaveCIDSystem", gs_param_type_bool, HaveCIDSystem),
     pi("HaveTransparency", gs_param_type_bool, HaveTransparency),
-    pi("OPDFReadProcsetPath", gs_param_type_string, OPDFReadProcsetPath),
+ /* pi("OPDFReadProcsetPath", gs_param_type_string, OPDFReadProcsetPath),   ps2write-only */
     pi("CompressEntireFile", gs_param_type_bool, CompressEntireFile),
     pi("PDFX", gs_param_type_bool, PDFX),
     pi("PDFA", gs_param_type_bool, PDFA),
@@ -196,6 +196,8 @@ gdev_pdf_get_params(gx_device * dev, gs_param_list * plist)
 	(code = param_write_int(plist, ".EmbedFontObjects", &EmbedFontObjects)) < 0 ||
 	(code = param_write_int(plist, "CoreDistVersion", &cdv)) < 0 ||
 	(code = param_write_float(plist, "CompatibilityLevel", &cl)) < 0 ||
+	(pdev->is_ps2write && (code = param_write_string(plist, "OPDFReadProcsetPath", &pdev->OPDFReadProcsetPath)) < 0) ||
+	(!pdev->is_ps2write && (code = param_write_bool(plist, "ForOPDFRead", &pdev->ForOPDFRead)) < 0) ||
 	/* Indicate that we can process pdfmark and DSC. */
 	(param_requested(plist, "pdfmark") > 0 &&
 	 (code = param_write_null(plist, "pdfmark")) < 0) ||
@@ -332,6 +334,10 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 
 	    plist->memory = pdev->pdf_memory;
 	    code = gs_param_read_items(plist, pdev, pdf_param_items);
+	    if (code < 0 ||
+		(pdev->is_ps2write && (code = param_read_string(plist, "OPDFReadProcsetPath", &pdev->OPDFReadProcsetPath)) < 0) ||
+		(!pdev->is_ps2write && (code = param_read_bool(plist, "ForOPDFRead", &pdev->ForOPDFRead)) < 0)
+		);
 	    plist->memory = mem;
 	}
 	if (code < 0)
@@ -521,6 +527,8 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	    memcpy((char *)pdev + ppi->offset,
 		   (char *)&save_dev + ppi->offset,
 		   gs_param_type_sizes[ppi->type]);
+	pdev->ForOPDFRead = save_dev.ForOPDFRead;
+	pdev->OPDFReadProcsetPath = save_dev.OPDFReadProcsetPath;
     }
     return ecode;
 }

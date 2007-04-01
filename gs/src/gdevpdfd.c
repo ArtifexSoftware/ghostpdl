@@ -47,7 +47,7 @@ gdev_pdf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 
     /* Make a special check for the initial fill with white, */
     /* which shouldn't cause the page to be opened. */
-    if (color == pdev->white && !is_in_page(pdev) && pdev->sbstack_depth == bottom)
+    if (color == pdev->white && !is_in_page(pdev) && pdev->sbstack_depth <= bottom)
 	if (x == 0 && y == 0 && w == pdev->width && h == pdev->height)
 	    return 0;
     code = pdf_open_page(pdev, PDF_IN_STREAM);
