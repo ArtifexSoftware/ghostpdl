@@ -103,7 +103,7 @@ check_Separation_component_name(const gs_color_space * pcs, gs_state * pgs);
 
 /* Install a Separation color space. */
 private int
-gx_install_Separation(const gs_color_space * pcs, gs_state * pgs)
+gx_install_Separation(gs_color_space * pcs, gs_state * pgs)
 {
     int code;
 #if ENABLE_CUSTOM_COLOR_CALLBACK

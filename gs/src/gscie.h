@@ -364,7 +364,7 @@ typedef struct gx_cie_vector_cache3_s {
 
 /* Elements common to all CIE color space dictionaries. */
 struct gs_cie_common_s {
-    int (*install_cspace)(const gs_color_space *, gs_state *);
+    int (*install_cspace)(gs_color_space *, gs_state *);
     void *client_data;
     gs_range3 RangeLMN;
     gs_cie_common_proc3 DecodeLMN;

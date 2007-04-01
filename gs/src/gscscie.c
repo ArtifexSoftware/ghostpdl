@@ -150,7 +150,7 @@ gx_concrete_space_CIE(const gs_color_space * pcs, const gs_imager_state * pis)
 /* interpreters can substitute their own installer. */
 /* This procedure is exported for the benefit of gsicc.c */
 int
-gx_install_CIE(const gs_color_space * pcs, gs_state * pgs)
+gx_install_CIE(gs_color_space * pcs, gs_state * pgs)
 {
     return (*pcs->params.a->common.install_cspace) (pcs, pgs);
 }

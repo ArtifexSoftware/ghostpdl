@@ -251,7 +251,7 @@ gx_restrict_Pattern(gs_client_color * pcc, const gs_color_space * pcs)
 
 /* Install a Pattern color space. */
 private int
-gx_install_Pattern(const gs_color_space * pcs, gs_state * pgs)
+gx_install_Pattern(gs_color_space * pcs, gs_state * pgs)
 {
     if (!pcs->params.pattern.has_base_space)
 	return 0;

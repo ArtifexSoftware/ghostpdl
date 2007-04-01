@@ -415,7 +415,7 @@ gx_install_cie_abc(gs_cie_abc *pcie, gs_state * pgs)
 }
 
 int
-gx_install_CIEDEFG(const gs_color_space * pcs, gs_state * pgs)
+gx_install_CIEDEFG(gs_color_space * pcs, gs_state * pgs)
 {
     gs_cie_defg *pcie = pcs->params.defg;
 
@@ -442,7 +442,7 @@ gx_install_CIEDEFG(const gs_color_space * pcs, gs_state * pgs)
 }
 
 int
-gx_install_CIEDEF(const gs_color_space * pcs, gs_state * pgs)
+gx_install_CIEDEF(gs_color_space * pcs, gs_state * pgs)
 {
     gs_cie_def *pcie = pcs->params.def;
 
@@ -469,7 +469,7 @@ gx_install_CIEDEF(const gs_color_space * pcs, gs_state * pgs)
 }
 
 int
-gx_install_CIEABC(const gs_color_space * pcs, gs_state * pgs)
+gx_install_CIEABC(gs_color_space * pcs, gs_state * pgs)
 {
 #if ENABLE_CUSTOM_COLOR_CALLBACK
     {
@@ -491,7 +491,7 @@ gx_install_CIEABC(const gs_color_space * pcs, gs_state * pgs)
 }
 
 int
-gx_install_CIEA(const gs_color_space * pcs, gs_state * pgs)
+gx_install_CIEA(gs_color_space * pcs, gs_state * pgs)
 {
     gs_cie_a *pcie = pcs->params.a;
     gs_sample_loop_params_t lp;

@@ -184,7 +184,7 @@ gs_color_space_restrict_color(gs_client_color *pcc, const gs_color_space *pcs)
 
 /* Install a DeviceGray color space. */
 private int
-gx_install_DeviceGray(const gs_color_space * pcs, gs_state * pgs)
+gx_install_DeviceGray(gs_color_space * pcs, gs_state * pgs)
 {
 #if ENABLE_CUSTOM_COLOR_CALLBACK
     /*
@@ -230,14 +230,14 @@ gs_cspace_base_space(const gs_color_space * pcspace)
 
 /* Null color space installation procedure. */
 int
-gx_no_install_cspace(const gs_color_space * pcs, gs_state * pgs)
+gx_no_install_cspace(gs_color_space * pcs, gs_state * pgs)
 {
     return 0;
 }
   
 /* Install a DeviceRGB color space. */
 private int
-gx_install_DeviceRGB(const gs_color_space * pcs, gs_state * pgs)
+gx_install_DeviceRGB(gs_color_space * pcs, gs_state * pgs)
 {
 #if ENABLE_CUSTOM_COLOR_CALLBACK
     /*
@@ -255,7 +255,7 @@ gx_install_DeviceRGB(const gs_color_space * pcs, gs_state * pgs)
 
 /* Install a DeviceCMYK color space. */
 private int
-gx_install_DeviceCMYK(const gs_color_space * pcs, gs_state * pgs)
+gx_install_DeviceCMYK(gs_color_space * pcs, gs_state * pgs)
 {
 #if ENABLE_CUSTOM_COLOR_CALLBACK
     /*

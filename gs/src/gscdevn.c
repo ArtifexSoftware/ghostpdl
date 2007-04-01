@@ -501,7 +501,7 @@ check_DeviceN_component_names(const gs_color_space * pcs, gs_state * pgs)
 
 /* Install a DeviceN color space. */
 private int
-gx_install_DeviceN(const gs_color_space * pcs, gs_state * pgs)
+gx_install_DeviceN(gs_color_space * pcs, gs_state * pgs)
 {
     int code;
 #if ENABLE_CUSTOM_COLOR_CALLBACK

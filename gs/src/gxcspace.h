@@ -140,7 +140,7 @@ struct gs_color_space_type_s {
     /* Install the color space in a graphics state. */
 
 #define cs_proc_install_cspace(proc)\
-  int proc(const gs_color_space *, gs_state *)
+  int proc(gs_color_space *, gs_state *)
 	cs_proc_install_cspace((*install_cspace));
 
     /*

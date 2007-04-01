@@ -578,7 +578,7 @@ gx_load_icc_profile(gs_cie_icc *picc_info)
  * the ICC profile or the alternate color space is to be used.
  */
 private int
-gx_install_CIEICC(const gs_color_space * pcs, gs_state * pgs)
+gx_install_CIEICC(gs_color_space * pcs, gs_state * pgs)
 {
     const gs_icc_params * picc_params = (const gs_icc_params *)&pcs->params.icc;
     gs_cie_icc *    picc_info = picc_params->picc_info;

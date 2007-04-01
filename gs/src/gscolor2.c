@@ -208,10 +208,10 @@ RELOC_PTRS_END
 /* Color space installation for an Indexed color space. */
 
 private int
-gx_install_Indexed(const gs_color_space * pcs, gs_state * pgs)
+gx_install_Indexed(gs_color_space * pcs, gs_state * pgs)
 {
     return (*pcs->base_space->type->install_cspace)
-	((const gs_color_space *) pcs->base_space, pgs);
+	(pcs->base_space, pgs);
 }
 
 /* Color space overprint setting ditto. */
