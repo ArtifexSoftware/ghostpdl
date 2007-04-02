@@ -140,7 +140,6 @@ process_composite_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 	    if (code < 0)
 		return code;
 	    curr.xy_index = out.xy_index; /* pdf_encode_process_string advanced it. */
-	    pte->xy_index = out.xy_index;
 	    if (out.index < str.size) {
 		gs_glyph glyph;
 
@@ -149,9 +148,11 @@ process_composite_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 		while (out.index--)
 		    pte->orig_font->procs.next_char_glyph(pte, &chr, &glyph);
 		font_code = 2; /* force exiting the loop */
-	    } else
+	    } else {
 		/* advance *pte past the current substring */
 		gs_text_enum_copy_dynamic(pte, (gs_text_enum_t *)&prev, true);
+	    }
+	    pte->xy_index = out.xy_index;
 	    if (return_width) {
 		pte->returned.total_width.x = total_width.x +=
 		    out.returned.total_width.x;
