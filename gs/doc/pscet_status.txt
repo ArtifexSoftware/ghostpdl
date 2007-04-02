@@ -3635,8 +3635,12 @@ Test	 Status	Comments
 
 17-06-1  OK	
 
-17-06-2  DIFF	Same as 17-04-2 except rectangles instead of dots.  Still like GS output better.  
-		More consistant repeats of the pattern.  assign: alex.
+17-06-2  AOK 	Similar to 17-04-2 but testing inustroke. Placing the dots in
+		middle of the stroke is reasonable but some of the dots are
+                placed at the end of the line where their relative position
+                depends on the rounding errors. Ghostscript generates
+                correct results above 300 dpi. CPSI and Tek miss some
+                points, - Alex
 
 17-06-3  OK	Fixed as of rev 7636.
 
