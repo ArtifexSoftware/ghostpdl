@@ -3604,10 +3604,18 @@ Test	 Status	Comments
 
 17-04-1  OK	
 
-17-04-2  DIFF	GS paints more dots (small circles).
-		Note Tek has _different_ pattern of dots.  
-		This is not identified as "Device Dependent" in the test.
-                assign: alex
+17-04-2  AOK 	The test is unreasonable. The test checks whether a point is in
+		the user path (using inueofill operator) but places many of
+                the points on the boundary of the path where insideness is
+                affected by rounding errors. When the point is inside the path,
+                a small black circle is drawn around the point. The test is
+                performed for different CTM.
+                -
+		Ghostscript skips some of the points at low resolution but
+                draws all expected points at 300 dpi and above.
+                -
+                CPSI, Tek, and Distiller 5 are all different and skip different
+                points depending on the current CTM. - Alex
 
 17-04-3  OK	same as 17-02-3
 
@@ -3617,8 +3625,7 @@ Test	 Status	Comments
 
 17-05-1  OK	
 
-17-05-2  DIFF	Same as 17-04-2
-                assign: alex
+17-05-2  AOK 	Similar to 17-04-2 but testing inufill. - Alex
 
 17-05-3  OK	Same as 17-01-3
 
