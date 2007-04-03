@@ -351,7 +351,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 	    ppdev->buffer_space = 0;
 	    if ((code = gdev_create_buf_device
 		 (ppdev->printer_procs.buf_procs.create_buf_device,
-		  &bdev, pdev, NULL, NULL, false)) < 0 ||
+		  &bdev, pdev, NULL, NULL, NULL)) < 0 ||
 		(code = ppdev->printer_procs.buf_procs.setup_buf_device
 		 (bdev, base, buf_space.raster,
 		  (byte **)(base + buf_space.bits), 0, pdev->height,
@@ -968,9 +968,9 @@ int
 gdev_create_buf_device(create_buf_device_proc_t cbd_proc, gx_device **pbdev,
 		       gx_device *target,
 		       const gx_render_plane_t *render_plane,
-		       gs_memory_t *mem, bool for_band)
+		       gs_memory_t *mem, gx_band_complexity_t *band_complexity)
 {
-    int code = cbd_proc(pbdev, target, render_plane, mem, for_band);
+    int code = cbd_proc(pbdev, target, render_plane, mem, band_complexity);
 
     if (code < 0)
 	return code;
@@ -985,7 +985,7 @@ gdev_create_buf_device(create_buf_device_proc_t cbd_proc, gx_device **pbdev,
  */
 int
 gx_default_create_buf_device(gx_device **pbdev, gx_device *target,
-    const gx_render_plane_t *render_plane, gs_memory_t *mem, bool for_band)
+    const gx_render_plane_t *render_plane, gs_memory_t *mem, gx_band_complexity_t *band_complexity)
 {
     int plane_index = (render_plane ? render_plane->index : -1);
     int depth;
@@ -1014,7 +1014,7 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target,
         check_device_separable((gx_device *)mdev);
 	gx_device_fill_in_procs((gx_device *)mdev);
     } else
-	gs_make_mem_device(mdev, mdproto, mem, (for_band ? 1 : 0),
+	gs_make_mem_device(mdev, mdproto, mem, (band_complexity == NULL ? 1 : 0),
 			   (target == (gx_device *)mdev ? NULL : target));
     mdev->width = target->width;
     /*
@@ -1050,7 +1050,7 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target,
 int
 gx_default_size_buf_device(gx_device_buf_space_t *space, gx_device *target,
 			   const gx_render_plane_t *render_plane,
-			   int height, bool for_band)
+			   int height, bool not_used)
 {
     gx_device_memory mdev;
 

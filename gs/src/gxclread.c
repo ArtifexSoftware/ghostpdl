@@ -36,6 +36,9 @@
 #include "stream.h"
 #include "strimpl.h"
 
+/* forward decl */
+private int gx_clist_reader_read_band_complexity(gx_device_clist *dev);
+
 /* ------ Band file reading stream ------ */
 
 /*
@@ -113,10 +116,12 @@ rb:
 		goto rb;
 	    clist_fseek(cfile, pos, SEEK_SET, ss->page_cfname);
 	    left = (uint) (ss->b_this.pos - pos);
-	    if_debug5('l', "[l]reading for bands (%d,%d) at bfile %ld, cfile %ld, length %u\n",
+	    if_debug7('l', 
+		      "[l]reading for bands (%d,%d) at bfile %ld, cfile %ld, length %u color %d rop %d\n",
 		      bmin, bmax,
-		      (long)(clist_ftell(bfile) - 2 * sizeof(ss->b_this)),
-		      (long)pos, left);
+		      (long)(clist_ftell(bfile) - sizeof(ss->b_this)), /* stefan foo was: 2 * sizeof ?? */
+		      (long)pos, left, ss->b_this.band_complexity.uses_color,
+		      ss->b_this.band_complexity.nontrivial_rops);
 	}
     }
     pw->ptr = q;
@@ -198,6 +203,39 @@ clist_setup_params(gx_device *dev)
     return code;
 }
 
+private int 
+clist_reader_init(gx_device_clist *cdev)
+{
+    gx_device_clist_reader * const crdev = &cdev->reader;
+    
+    int code = 0;
+
+   /* Initialize for rendering if we haven't done so yet. */
+    if (crdev->ymin < 0) {
+	code = clist_end_page(&cdev->writer);
+	if (code < 0)
+	    return code;
+	code = clist_render_init(cdev);
+    }
+    return code;
+}
+
+/* Initialize for reading. */
+private int
+clist_render_init(gx_device_clist *dev)
+{
+    gx_device_clist_reader * const crdev = &dev->reader;
+
+    crdev->ymin = crdev->ymax = 0;
+    crdev->yplane.index = -1;
+    /* For normal rasterizing, pages and num_pages are zero. */
+    crdev->pages = 0;
+    crdev->num_pages = 0;
+
+    return gx_clist_reader_read_band_complexity(dev);
+}
+
+
 /* Copy a rasterized rectangle to the client, rasterizing if needed. */
 int
 clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
@@ -245,10 +283,14 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
 		plane_index = i;
 	    }
     }
+
+    if (0 > (code = clist_reader_init(cdev)))
+	return code;
+
     clist_select_render_plane(dev, y, line_count, &render_plane, plane_index);
     code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
 				  &bdev, cdev->target, &render_plane,
-				  dev->memory, true);
+				  dev->memory, clist_get_band_complexity(dev,y));
     if (code < 0)
 	return code;
     code = clist_rasterize_lines(dev, y, line_count, bdev, &render_plane, &my);
@@ -286,7 +328,7 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
 
 	code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
 				      &bdev, cdev->target, &render_plane,
-				      dev->memory, true);
+				      dev->memory, clist_get_band_complexity(dev, y));
 	if (code < 0)
 	    return code;
 	band_params = *params;
@@ -382,20 +424,6 @@ clist_rasterize_lines(gx_device *dev, int y, int line_count,
     return line_count;
 }
 
-/* Initialize for reading. */
-private int
-clist_render_init(gx_device_clist *dev)
-{
-    gx_device_clist_reader * const crdev = &dev->reader;
-
-    crdev->ymin = crdev->ymax = 0;
-    crdev->yplane.index = -1;
-    /* For normal rasterizing, pages and num_pages are zero. */
-    crdev->pages = 0;
-    crdev->num_pages = 0;
-    return 0;
-}
-
 /*
  * Render a rectangle to a client-supplied device.  There is no necessary
  * relationship between band boundaries and the region being rendered.
@@ -416,15 +444,6 @@ clist_render_rectangle(gx_device_clist *cdev, const gs_int_rect *prect,
     int code = 0;
     int i;
 
-    /* Initialize for rendering if we haven't done so yet. */
-    if (crdev->ymin < 0) {
-	code = clist_end_page(&cdev->writer);
-	if (code < 0)
-	    return code;
-	code = clist_render_init(cdev);
-	if (code < 0)
-	    return code;
-    }
     if (render_plane)
 	crdev->yplane = *render_plane;
     else
@@ -518,5 +537,61 @@ clist_playback_file_bands(clist_playback_action action,
     if (opened_cfile && rs.page_cfile != 0)
 	clist_fclose(rs.page_cfile, rs.page_cfname, false);
 
+    return code;
+}
+
+/*
+ * return pointer to list indexed by (y /band_height)
+ * Don't free the returned pointer.
+ */
+gx_band_complexity_t *
+clist_get_band_complexity(gx_device *dev, int y)
+{
+    if (dev != NULL) {
+	gx_device_clist_reader * const crdev = &((gx_device_clist *)dev)->reader;
+	int band_number = y / crdev->page_info.band_params.BandHeight;
+    
+	if (crdev->band_complexity_array == NULL)
+	    return NULL;
+
+	return &crdev->band_complexity_array[band_number];
+    }
+    return NULL;   
+}
+
+
+/* call once per read page to read the band complexity from clist file 
+ */
+private int
+gx_clist_reader_read_band_complexity(gx_device_clist *dev)
+{
+    int code = -1;  /* no dev bad call */
+
+    if (dev) {
+	gx_device_clist_reader * const crdev = &((gx_device_clist *)dev)->reader;
+	gx_device_clist *cdev = (gx_device_clist *)dev;
+	int i;
+	stream_band_read_state rs;
+	cmd_block cb;
+	int64_t save_pos;
+	int pos = 0;
+ 
+	/* setup stream */
+	s_init_state((stream_state *)&rs, &s_band_read_template, (gs_memory_t *)0);
+	rs.band_first = 0;
+	rs.band_last = crdev->nbands;
+	rs.page_info = crdev->page_info;
+
+	save_pos = clist_ftell(rs.page_bfile);
+	clist_fseek(rs.page_bfile, pos, SEEK_SET, rs.page_bfname);
+
+	for (i=0; i < crdev->nbands; i++) {
+	    clist_fread_chars(&cb, sizeof(cb), rs.page_bfile);
+	    crdev->band_complexity_array[i] = cb.band_complexity;
+	}
+
+	clist_fseek(rs.page_bfile, save_pos, SEEK_SET, rs.page_bfname);
+	code = 0;  
+    }
     return code;
 }

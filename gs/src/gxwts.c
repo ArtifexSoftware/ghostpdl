@@ -80,21 +80,92 @@ mul_shr_16 (int a, int b)
 #if 0
 private int
 wts_get_samples_rat(const wts_screen_t *ws, int x, int y,
-		    wts_screen_sample_t **samples, int *p_nsamples)
+		    int *pcellx, int *pcelly, int *p_nsamples)
 {
     int d = y / ws->cell_height;
     int r = y % ws->cell_height;
     int x_ix = ((d * ws->cell_shift) + x) % ws->cell_width;
     *p_nsamples = ws->cell_width - x_ix;
-    *samples = ws->samples + x_ix + r * ws->cell_width;
+    *pcellx = x_ix;
+    *pcelly = y_ix;
     return 0;
 }
 #endif
 
+#define MOD_IS_SLOWER_THAN_BRANCH
+
+#ifdef WTS_CACHE_SIZE_X
+/* Implementation of wts_get_samples for Screen J, with cache. */
+private int
+wts_get_samples_j(wts_screen_t *ws, int x, int y,
+		  int *pcellx, int *pcelly, int *p_nsamples)
+{
+    int x_ix, y_ix;
+    int nsamples;
+    const wts_screen_j_t *wsj = (const wts_screen_j_t *)ws;
+    wts_j_cache_el *xcache = &wsj->xcache[(x >> 3) & (WTS_CACHE_SIZE_X - 1)];
+    wts_j_cache_el *ycache = &wsj->ycache[y & (WTS_CACHE_SIZE_Y - 1)];
+
+    if (xcache->tag != x || (x & 7)) {
+	double pad = (wsj->pa) * (1.0 / (1 << 16));
+	double pbd = (wsj->pb) * (1.0 / (1 << 16));
+	double afrac = x * pad;
+	double bfrac = x * pbd;
+	int acount = (int)floor(afrac);
+	int bcount = (int)floor(bfrac);
+	int nsa = (int)ceil((acount + 1 - afrac) / pad);
+	int nsb = (int)ceil((acount + 1 - afrac) / pad);
+
+	xcache->x = x + acount * wsj->XA + bcount * wsj->XB;
+	xcache->y = acount * wsj->YA + bcount * wsj->YB;
+#ifdef MOD_IS_SLOWER_THAN_BRANCH
+	xcache->x += (xcache->y / ws->cell_height) * ws->cell_shift;
+	xcache->y %= ws->cell_height;
+#endif
+	xcache->nsamples = min(nsa, nsb);
+	xcache->tag = x;
+    }
+    x_ix = xcache->x;
+    y_ix = xcache->y;
+    nsamples = xcache->nsamples;
+
+    if (ycache->tag != y) {
+	int ccount = mul_shr_16(y, wsj->pc);
+	int dcount = mul_shr_16(y, wsj->pd);
+
+	ycache->x = ccount * wsj->XC + dcount * wsj->XD;
+	ycache->y = y + ccount * wsj->YC + dcount * wsj->YD;
+#ifdef MOD_IS_SLOWER_THAN_BRANCH
+	ycache->x += (ycache->y / ws->cell_height) * ws->cell_shift;
+	ycache->y %= ws->cell_height;
+#endif
+	ycache->tag = y;
+    }
+    x_ix += ycache->x;
+    y_ix += ycache->y;
+
+#ifdef MOD_IS_SLOWER_THAN_BRANCH
+    if (y_ix >= ws->cell_height) {
+	x_ix += ws->cell_shift;
+	y_ix -= ws->cell_height;
+    }
+#else
+    x_ix += (y_ix / ws->cell_height) * ws->cell_shift;
+    y_ix %= ws->cell_height;
+#endif
+    x_ix %= ws->cell_width;
+
+    nsamples = min(nsamples, ws->cell_width - x_ix);
+    *p_nsamples = nsamples;
+    *pcellx = x_ix;
+    *pcelly = y_ix;
+    return 0;
+}
+#else
 /* Implementation of wts_get_samples for Screen J. */
 private int
-wts_get_samples_j(const wts_screen_t *ws, int x, int y,
-		  wts_screen_sample_t **samples, int *p_nsamples)
+wts_get_samples_j(wts_screen_t *ws, int x, int y,
+		  int *pcellx, int *pcelly, int *p_nsamples)
 {
     const wts_screen_j_t *wsj = (const wts_screen_j_t *)ws;
     /* int d = y / ws->cell_height; */
@@ -130,9 +201,11 @@ wts_get_samples_j(const wts_screen_t *ws, int x, int y,
 	   x, y, x_ix, y_ix, nsamples, ccount);
 #endif
     *p_nsamples = nsamples;
-    *samples = ws->samples + x_ix + y_ix * ws->cell_width;
+    *pcellx = x_ix;
+    *pcelly = y_ix;
     return 0;
 }
+#endif
 
 private int
 wts_screen_h_offset(int x, double p1, int m1, int m2)
@@ -159,7 +232,7 @@ wts_screen_h_offset(int x, double p1, int m1, int m2)
 /* Implementation of wts_get_samples for Screen H. */
 private int
 wts_get_samples_h(const wts_screen_t *ws, int x, int y,
-		  wts_screen_sample_t **samples, int *p_nsamples)
+		  int *pcellx, int *pcelly, int *p_nsamples)
 {
     const wts_screen_h_t *wsh = (const wts_screen_h_t *)ws;
     int x_ix = wts_screen_h_offset(x, wsh->px,
@@ -167,7 +240,8 @@ wts_get_samples_h(const wts_screen_t *ws, int x, int y,
     int y_ix = wts_screen_h_offset(y, wsh->py,
 				   wsh->y1, ws->cell_height - wsh->y1);
     *p_nsamples = (x_ix >= wsh->x1 ? ws->cell_width : wsh->x1) - x_ix;
-    *samples = ws->samples + x_ix + y_ix * ws->cell_width;
+    *pcellx = x_ix;
+    *pcelly = y_ix;
     return 0;
 }
 
@@ -195,13 +269,13 @@ wts_get_samples_h(const wts_screen_t *ws, int x, int y,
  * Return value: 0 on success.
  **/
 int
-wts_get_samples(const wts_screen_t *ws, int x, int y,
-		wts_screen_sample_t **samples, int *p_nsamples)
+wts_get_samples(wts_screen_t *ws, int x, int y,
+		int *pcellx, int *pcelly, int *p_nsamples)
 {
     if (ws->type == WTS_SCREEN_J)
-	return wts_get_samples_j(ws, x, y, samples, p_nsamples);
+	return wts_get_samples_j(ws, x, y, pcellx, pcelly, p_nsamples);
     if (ws->type == WTS_SCREEN_H)
-	return wts_get_samples_h(ws, x, y, samples, p_nsamples);
+	return wts_get_samples_h(ws, x, y, pcellx, pcelly, p_nsamples);
     else
 	return -1;
 }
@@ -270,8 +344,10 @@ wts_draw(wts_screen_t *ws, wts_screen_sample_t shade,
 	for (xo = 0; xo < w; xo += imax) {
 	    wts_screen_sample_t *samples;
 	    int n_samples, i;
+	    int cx, cy;
 
-	    wts_get_samples(ws, x + xo, y + yo, &samples, &n_samples);
+	    wts_get_samples(ws, x + xo, y + yo, &cx, &cy, &n_samples);
+	    samples = ws->samples + cy * ws->cell_width + cx;
 	    imax = min(w - xo, n_samples);
 	    for (i = 0; i < imax; i++) {
 		if (shade > samples[i])
@@ -310,6 +386,8 @@ gx_dc_wts_fill_rectangle_1(const gx_device_color *pdevc,
     wts_screen_t *ws = components[0].corder.wts;
     wts_screen_sample_t shade = pdevc->colors.wts.levels[0];
     gx_color_index color0, color1;
+    int xph = pdevc->phase.x;
+    int yph = pdevc->phase.y;
 
     color0 = dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN ? 0 :
 	pdevc->colors.wts.plane_vector[1];
@@ -317,7 +395,7 @@ gx_dc_wts_fill_rectangle_1(const gx_device_color *pdevc,
 
     tile_data = malloc(tile_size);
 
-    wts_draw(ws, shade, tile_data, tile_raster, x, y, w, h);
+    wts_draw(ws, shade, tile_data, tile_raster, x - xph, y - yph, w, h);
  
     /* See gx_dc_ht_binary_fill_rectangle() for explanation. */
     if (dev->color_info.depth > 1)
@@ -441,6 +519,8 @@ gx_dc_wts_fill_rectangle_4(const gx_device_color *pdevc,
     int code = 0;
     bool invert = 0 && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE;
     int i;
+    int xph = pdevc->phase.x;
+    int yph = pdevc->phase.y;
 
     for (i = 0; i < num_comp; i++) {
 	wts_screen_sample_t shade = pdevc->colors.wts.levels[i];
@@ -448,7 +528,7 @@ gx_dc_wts_fill_rectangle_4(const gx_device_color *pdevc,
 	wts_screen_t *ws = components[i].corder.wts;
 
 	tile_data[i] = malloc(tile_size);
-	wts_draw(ws, shade, tile_data[i], tile_raster, x, y, w, h);
+	wts_draw(ws, shade, tile_data[i], tile_raster, x - xph, y - yph, w, h);
     }
 
     ctile_data = malloc(ctile_size);

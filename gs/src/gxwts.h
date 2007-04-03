@@ -21,6 +21,11 @@ typedef bits16 wts_screen_sample_t;
 typedef struct wts_screen_s wts_screen_t;
 #endif
 
+/* We cache intermediate results for wts_get_samples_j. In general, if these
+   are set so that a band fits, then the hit rate will be excellent. */ 
+#define WTS_CACHE_SIZE_X 512
+#define WTS_CACHE_SIZE_Y 512
+
 typedef enum {
     WTS_SCREEN_RAT,
     WTS_SCREEN_J,
@@ -34,6 +39,13 @@ struct wts_screen_s {
     int cell_shift;
     wts_screen_sample_t *samples;
 };
+
+typedef struct {
+    int tag;
+    int x;
+    int y;
+    int nsamples;
+} wts_j_cache_el;
 
 typedef struct {
     wts_screen_t base;
@@ -54,6 +66,12 @@ typedef struct {
     int YC;
     int XD;
     int YD;
+
+#ifdef WTS_CACHE_SIZE_X
+#define WTS_SCREEN_J_SIZE_NOCACHE 68
+    wts_j_cache_el xcache[WTS_CACHE_SIZE_X];
+    wts_j_cache_el ycache[WTS_CACHE_SIZE_Y];
+#endif
 } wts_screen_j_t;
 
 typedef struct {
@@ -68,7 +86,8 @@ typedef struct {
     int y1;
 } wts_screen_h_t;
 
-int wts_get_samples(const wts_screen_t *ws, int x, int y,
-		wts_screen_sample_t **samples, int *p_nsamples);
+int
+wts_get_samples(wts_screen_t *ws, int x, int y,
+		int *pcellx, int *pcelly, int *p_nsamples);
 
 #endif

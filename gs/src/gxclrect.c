@@ -145,6 +145,7 @@ clist_fill_rectangle(gx_device * dev, int x, int y, int width, int height,
     fit_fill(dev, x, y, width, height);
     FOR_RECTS {
 	pcls->colors_used.or |= color;
+	pcls->band_complexity.uses_color |= ((color != 0xffffff) && (color != 0)); 
 	TRY_RECT {
 	    code = cmd_disable_lop(cdev, pcls);
 	    if (code >= 0 && color != pcls->colors[1])
@@ -180,7 +181,11 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
     FOR_RECTS {
 	ulong offset_temp;
 
-	pcls->colors_used.or |= colors_used;
+	pcls->colors_used.or |= colors_used;	
+	pcls->band_complexity.uses_color |= 
+	    ((color0 != gx_no_color_index) && (color0 != 0xffffff) && (color0 != 0)) ||
+	    ((color1 != gx_no_color_index) && (color1 != 0xffffff) && (color1 != 0));
+
 	TRY_RECT {
 	    code = cmd_disable_lop(cdev, pcls);
 	} HANDLE_RECT(code);
@@ -234,6 +239,10 @@ clist_copy_mono(gx_device * dev,
     gx_color_index colors_used =
 	(color0 == gx_no_color_index ? 0 : color0) |
 	(color1 == gx_no_color_index ? 0 : color1);
+    bool uses_color = 
+	((color0 != gx_no_color_index) && (color0 != 0xffffff) && (color0 != 0)) ||
+	((color1 != gx_no_color_index) && (color1 != 0xffffff) && (color1 != 0));
+
 
     fit_copy(dev, data, data_x, raster, id, x, y, width, height);
     y0 = y;
@@ -244,6 +253,8 @@ clist_copy_mono(gx_device * dev,
 	int code;
 
 	pcls->colors_used.or |= colors_used;
+	pcls->band_complexity.uses_color |= uses_color;
+
 	TRY_RECT {
 	    code = cmd_disable_lop(cdev, pcls);
 	    if (code >= 0)
@@ -340,6 +351,8 @@ clist_copy_color(gx_device * dev,
 	int code;
 
 	pcls->colors_used.or |= colors_used;
+	pcls->band_complexity.uses_color = 1;
+
 	TRY_RECT {
 	    code = cmd_disable_lop(cdev, pcls);
 	    if (code >= 0)
@@ -585,6 +598,7 @@ clist_strip_copy_rop(gx_device * dev,
 	pcls->colors_used.or =
 	    ((rop_proc_table[color_rop])((rop_operand)D, (rop_operand)S, (rop_operand)T) & all) | D;
 	pcls->colors_used.slow_rop |= slow_rop;
+	pcls->band_complexity.nontrivial_rops |= slow_rop;
 	if (rop3_uses_T(rop)) {
 	    if (tcolors == 0 || tcolors[0] != tcolors[1]) {
 		ulong offset_temp;

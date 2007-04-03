@@ -637,7 +637,7 @@ typedef dev_proc_create_buf_device((*create_buf_device_proc_t));
 int gdev_create_buf_device(create_buf_device_proc_t cbd_proc,
 			   gx_device **pbdev, gx_device *target,
 			   const gx_render_plane_t *render_plane,
-			   gs_memory_t *mem, bool for_band);
+			   gs_memory_t *mem, gx_band_complexity_t *band_complexity);
 
 /* BACKWARD COMPATIBILITY */
 #define dev_print_scan_lines(dev)\

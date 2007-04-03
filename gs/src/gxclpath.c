@@ -171,6 +171,8 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     /* should properly calculate colors_used, but for now just punt */
     pcls->colors_used.or = ((gx_color_index)1 << cldev->color_info.depth) - 1;
 
+    pcls->band_complexity.uses_color |= (pdcolor->colors.pure != 0 && pdcolor->colors.pure != 0xffffff);
+
     /* record the color we have just serialized color */
     pdcolor->type->save_dc(pdcolor, &pcls->sdc);
 

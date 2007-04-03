@@ -216,6 +216,8 @@ typedef struct cmd_block_s {
     int band_min, band_max;
 #define cmd_band_end (-1)	/* end of band file */
     int64_t pos;		/* starting position in cfile */
+    gx_band_complexity_t band_complexity;  
+    
 } cmd_block;
 
 /* ---------------- Band state ---------------- */
@@ -252,7 +254,7 @@ struct gx_clist_state_s {
     /* Following are only used when writing */
     cmd_list list;		/* list of commands for band */
     /* Following are set when writing, read when reading */
-    ulong cost;			/* cost of rendering the band */
+    gx_band_complexity_t band_complexity; 
     gx_colors_used_t colors_used;
 };
 

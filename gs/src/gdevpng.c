@@ -449,11 +449,11 @@ pngalpha_open(gx_device * pdev)
 private int 
 pngalpha_create_buf_device(gx_device **pbdev, gx_device *target,
    const gx_render_plane_t *render_plane, gs_memory_t *mem,
-   bool for_band)
+   gx_band_complexity_t *band_complexity)
 {
     gx_device_printer *ptarget = (gx_device_printer *)target;
     int code = gx_default_create_buf_device(pbdev, target, 
-	render_plane, mem, for_band);
+	render_plane, mem, band_complexity);
     /* Now set copy_alpha to one that handles RGBA */
     set_dev_proc(*pbdev, copy_alpha, ptarget->orig_procs.copy_alpha);
     return code;

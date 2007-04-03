@@ -34,7 +34,7 @@ int gdev_prn_put_params_planar(gx_device * pdev, gs_param_list * plist,
 /* Use this instead of the default if UsePlanarBuffer is true. */
 int gdev_prn_create_buf_planar(gx_device **pbdev, gx_device *target,
 			       const gx_render_plane_t *render_plane,
-			       gs_memory_t *mem, bool for_band);
+			       gs_memory_t *mem, gx_band_complexity_t *for_band);
 
 /* Determine the space needed by a planar buffer device. */
 /* Use this instead of the default if UsePlanarBuffer is true. */

@@ -43,6 +43,7 @@ struct gs_get_bits_params_s {
     gs_get_bits_options_t options;
     byte *data[32];
     int x_offset;		/* in returned data */
+    int original_y;
     uint raster;
 };
 

@@ -261,6 +261,7 @@ typedef struct gx_device_clist_reader_s {
 					/* means all planes */
     const gx_placed_page *pages;
     int num_pages;
+    gx_band_complexity_t band_complexity_array[100];  /* NB: should be: num_bands elements */
 } gx_device_clist_reader;
 
 typedef union gx_device_clist_s {
@@ -343,5 +344,32 @@ int clist_render_rectangle(gx_device_clist *cdev,
 			   const gs_int_rect *prect, gx_device *bdev,
 			   const gx_render_plane_t *render_plane,
 			   bool clear);
+
+/* A null pointer is used to denote not banding.  
+ * Since false == NULL the old usage of for_banding = false works even if it's hackish.
+ *
+ * returns the complexity for a band given the y offset from top of page.
+ */
+gx_band_complexity_t *
+clist_get_band_complexity(gx_device *dev, int y);
+
+/* deep copy constructor if from != NULL
+ * default constructor if from == NULL
+ */
+void 
+clist_copy_band_complexity(gx_band_complexity_t *this, const gx_band_complexity_t *from);
+
+#ifdef DEBUG 
+#define clist_debug_rect clist_debug_rect_imp
+void clist_debug_rect_imp(int x, int y, int width, int height);
+#define clist_debug_image_rect clist_debug_image_rect_imp
+void clist_debug_image_rect_imp(int x, int y, int width, int height);
+#define clist_debug_set_ctm clist_debug_set_ctm_imp
+void clist_debug_set_ctm_imp(const gs_matrix *m);
+#else
+#define clist_debug_rect (void)
+#define clist_debug_image_rect (void)
+#define clist_debug_set_ctm (void)
+#endif
 
 #endif /* gxclist_INCLUDED */

@@ -302,7 +302,7 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
     int code;
 
     /* Call create_buf_device to get the memory planarity set up. */
-    cdev->buf_procs.create_buf_device(&pbdev, target, NULL, NULL, true);
+    cdev->buf_procs.create_buf_device(&pbdev, target, NULL, NULL, clist_get_band_complexity(0, 0));
     /* HACK - if the buffer device can't do copy_alpha, disallow */
     /* copy_alpha in the commmand list device as well. */
     if (dev_proc(pbdev, copy_alpha) == gx_no_copy_alpha)
@@ -663,7 +663,13 @@ clist_end_page(gx_device_clist_writer * cldev)
     return 0;
 }
 
-/* Compute the set of used colors in the page_info structure. */
+/* Compute the set of used colors in the page_info structure. 
+ *
+ * NB: Area for improvement, move states[band] and page_info to clist
+ * rather than writer device, or remove completely as this is used by the old planar devices 
+ * to operate on a plane at a time.  
+ */
+
 void
 clist_compute_colors_used(gx_device_clist_writer *cldev)
 {
@@ -684,6 +690,7 @@ clist_compute_colors_used(gx_device_clist_writer *cldev)
 	    cldev->states[band].colors_used.or;
 	cldev->page_info.band_colors_used[entry].slow_rop |=
 	    cldev->states[band].colors_used.slow_rop;
+
     }
 }
 
@@ -803,4 +810,28 @@ clist_get_band(gx_device * dev, int y, int *band_start)
 	y = dev->height;
     *band_start = start = y - y % band_height;
     return min(dev->height - start, band_height);
+}
+
+
+
+
+/* copy constructor if from != NULL
+ * default constructor if from == NULL
+ */
+void 
+clist_copy_band_complexity(gx_band_complexity_t *this, const gx_band_complexity_t *from)
+{
+    if (from) {
+	memcpy(this, from, sizeof(gx_band_complexity_t));
+    } else {
+	/* default */
+	this->uses_color = false;
+	this->nontrivial_rops = false;
+#if 0
+	/* todo: halftone phase */
+
+	this->x0 = 0;
+	this->y0 = 0;
+#endif
+    }
 }

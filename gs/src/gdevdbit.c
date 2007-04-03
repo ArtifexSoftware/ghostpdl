@@ -49,8 +49,12 @@ gx_default_copy_mono(gx_device * dev, const byte * data,
     bool invert;
     gx_color_index color;
     gx_device_color devc;
-
+    
+    if (!data) 
+	gs_throw(-997, __FUNCTION__ );
     fit_copy(dev, data, dx, raster, id, x, y, w, h);
+    if (!data) 
+	gs_throw(-997, __FUNCTION__ );
     if (one != gx_no_color_index) {
 	invert = false;
 	color = one;
@@ -65,7 +69,11 @@ gx_default_copy_mono(gx_device * dev, const byte * data,
 	invert = true;
 	color = zero;
     }
+    if (!data) 
+	gs_throw(-997, __FUNCTION__ );
     set_nonclient_dev_color(&devc, color);
+    if (!data) 
+	gs_throw(-997, __FUNCTION__ );
     return gx_dc_default_fill_masked
 	(&devc, data, dx, raster, id, x, y, w, h, dev, rop3_T, invert);
 }
