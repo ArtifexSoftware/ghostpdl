@@ -91,9 +91,13 @@ ls_clean:
 
 ls_uproduct: ufst
 	make -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" 
+	cp *.icc ./language_switch/ufst-obj
+	cp wts_* ./language_switch/ufst-obj
 
 ls_udebug: ufst
 	make -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" debug
+	cp *.icc ./language_switch/ufst-obj
+	cp wts_* ./language_switch/ufst-obj
 
 ls_uclean:
 	make -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" clean
@@ -101,9 +105,13 @@ ls_uclean:
 
 uproduct: ufst
 	make -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" 
+	cp *.icc ./language_switch/ufst-obj
+	cp wts_* ./language_switch/ufst-obj
 
 udebug: ufst
 	make -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" debug
+	cp *.icc ./main/ufst-obj
+	cp wts_* ./main/ufst-obj
 
 uclean:
 	make -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" clean

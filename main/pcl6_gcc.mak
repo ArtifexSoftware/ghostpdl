@@ -183,7 +183,8 @@ DEVICES_DEVS?=$(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev
    $(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcxcmyk.dev $(DD)pswrite.dev $(DD)pdfwrite.dev\
    $(DD)pxlmono.dev $(DD)pxlcolor.dev\
    $(DD)bmpmono.dev $(DD)bmpsep8.dev \
-   $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)jpeg.dev
+   $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)jpeg.dev \
+   $(DD)wtscmyk.dev $(DD)wtsimdi.dev $(DD)imdi.dev
 
 FEATURE_DEVS?=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 	     $(DD)patlib.dev $(DD)psl2cs.dev $(DD)rld.dev $(DD)roplib.dev\
