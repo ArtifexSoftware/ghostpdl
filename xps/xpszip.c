@@ -4,12 +4,22 @@
 #define ZIP_DATA_DESC_SIG 0x08074b50
 
 static inline int
+make4(byte *buf)
+{
+    int a = buf[0];
+    int b = buf[1];
+    int c = buf[2];
+    int d = buf[3];
+    return a | (b << 8) | (c << 16) | (d << 24);
+}
+
+static inline int
 read1(xps_context_t *ctx, stream_cursor_read *buf)
 {
     if (buf->ptr >= buf->limit)
 	return -1;
     buf->ptr++;
-    return *buf->ptr;
+    return (byte) *buf->ptr;
 }
 
 static inline int
@@ -154,7 +164,7 @@ xps_prepare_part(xps_context_t *ctx)
 	    *p = 0;
     }
 
-    /* dprintf3("  to part '%s' (piece=%d) (last=%d)\n", ctx->zip_file_name, piece, last_piece); */
+    // dprintf3("  to part '%s' (piece=%d) (last=%d)\n", ctx->zip_file_name, piece, last_piece);
 
     part = xps_find_part(ctx, ctx->zip_file_name);
     if (!part)
@@ -245,6 +255,46 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 	}
     }
 
+    if (ctx->zip_method == 0 && (ctx->zip_general & 8))
+    {
+	/* A stored part with an unknown size. This is a brain damaged file
+	 * allowed by a brain damaged spec and written by a brain damaged company.
+	 */
+
+	if (part->size >= part->capacity)
+	{
+	    /* dprintf2("growing buffer (%d/%d)\n", part->size, part->capacity); */
+	    part->capacity += 8192;
+	    part->data = xps_realloc(ctx, part->data, part->capacity);
+	    if (!part->data)
+		return gs_throw(-1, "out of memory");
+	}
+
+	while (1)
+	{
+	    int sig;
+	    int c;
+
+	    if (part->size > 4)
+	    {
+		sig = make4(part->data + part->size - 4);
+		if (sig == ZIP_DATA_DESC_SIG) // || sig == ZIP_LOCAL_FILE_SIG)
+		{
+		    dprintf1("found signature %x in data stream\n", sig);
+		    buf->ptr -= 4;
+		    part->size -= 4;
+		    return 1;
+		}
+	    }
+
+	    c = read1(ctx, buf);
+	    if (c < 0)
+		return 0;
+
+	    part->data[part->size++] = c;
+	}
+    }
+
     else
     {
 	int input, output, count;
@@ -287,6 +337,7 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 	{
 	case -1:
 	    /* at the end, or error condition. toss data. */
+	    dputs("at end of zip (or in fail mode)\n");
 	    buf->ptr = buf->limit;
 	    return 1;
 
@@ -310,10 +361,10 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		}
 		else
 		{
-		    /* dprintf1("unknown signature %x\n", signature); */
-		    /* some other unknown part. we're done with the file. quit. */
-		    ctx->zip_state = -1;
-		    return 0;
+		    /* some other unknown part. */
+		    dprintf1("unknown signature %x\n", signature);
+		    // ctx->zip_state = -1;
+		    // return 0;
 		}
 	    }
 	    while (signature != ZIP_LOCAL_FILE_SIG);
@@ -377,7 +428,7 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 
 	    if (ctx->zip_general & 4)
 	    {
-		/* dputs("data descriptor by flag\n"); */
+		dputs("data descriptor by flag\n");
 		if (buf->limit - buf->ptr < 12)
 		    return 0;
 		read4(ctx, buf); /* crc32 */
