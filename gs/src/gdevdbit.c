@@ -14,6 +14,7 @@
 /* Default device bitmap copying implementation */
 #include "gx.h"
 #include "gpcheck.h"
+#include "gserror.h"
 #include "gserrors.h"
 #include "gsbittab.h"
 #include "gsrect.h"
@@ -51,10 +52,10 @@ gx_default_copy_mono(gx_device * dev, const byte * data,
     gx_device_color devc;
     
     if (!data) 
-	gs_throw(-997, __FUNCTION__ );
+	gs_throw(-997, __func__ );
     fit_copy(dev, data, dx, raster, id, x, y, w, h);
     if (!data) 
-	gs_throw(-997, __FUNCTION__ );
+	gs_throw(-997, __func__ );
     if (one != gx_no_color_index) {
 	invert = false;
 	color = one;
@@ -70,10 +71,10 @@ gx_default_copy_mono(gx_device * dev, const byte * data,
 	color = zero;
     }
     if (!data) 
-	gs_throw(-997, __FUNCTION__ );
+	gs_throw(-997, __func__ );
     set_nonclient_dev_color(&devc, color);
     if (!data) 
-	gs_throw(-997, __FUNCTION__ );
+	gs_throw(-997, __func__ );
     return gx_dc_default_fill_masked
 	(&devc, data, dx, raster, id, x, y, w, h, dev, rop3_T, invert);
 }

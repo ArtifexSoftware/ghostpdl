@@ -24,9 +24,15 @@ int gs_log_error(int, const char *, int);
 #define gs_note_error(err) gs_log_error(err, __FILE__, __LINE__)
 #define return_error(err) return gs_note_error(err)
 
-# if defined(__WIN32__)
-#define __func__ __FUNCTION__
-# endif
+#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901L
+#  if defined(__FUNCTION__)
+#    define __func__ __FUNCTION__
+#  elif defined(__FUNC__)
+#    define __func__ __FUNC__
+#  else
+#    define __func__ "<unknown>"
+#  endif
+#endif
 
 /*
  * Error reporting macros.

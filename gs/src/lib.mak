@@ -1037,7 +1037,7 @@ $(GLD)tracedev.dev : $(ECHOGS_XE) $(LIB_MAK) $(GLOBJ)gdevtrac.$(OBJ)
 
 ### Default driver procedure implementations
 
-$(GLOBJ)gdevdbit.$(OBJ) : $(GLSRC)gdevdbit.c $(GXERR) $(gpcheck_h)\
+$(GLOBJ)gdevdbit.$(OBJ) : $(GLSRC)gdevdbit.c $(GXERR) $(gserror_h) $(gpcheck_h)\
  $(gdevmem_h) $(gsbittab_h) $(gsrect_h) $(gsropt_h)\
  $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h)
 	$(GLCC) $(GLO_)gdevdbit.$(OBJ) $(C_) $(GLSRC)gdevdbit.c
