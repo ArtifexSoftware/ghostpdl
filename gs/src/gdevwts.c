@@ -1007,7 +1007,7 @@ wtsimdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
     halftoned_bytes = (width + 7) >> 3;	/* bytes per component */
     halftoned_buffer = gs_malloc(pdev->memory, halftoned_bytes * n_planes, 1,
 			       	"wtsimdi_print_page(halftoned_data)");
-    if (halftoned_data == NULL) {
+    if (halftoned_buffer == NULL) {
 	code = GS_NOTE_ERROR(pdev->memory, gs_error_VMerror);
 	goto cleanup;
     }
