@@ -19,7 +19,7 @@ read1(xps_context_t *ctx, stream_cursor_read *buf)
     if (buf->ptr >= buf->limit)
 	return -1;
     buf->ptr++;
-    return (byte) *buf->ptr;
+    return *buf->ptr;
 }
 
 static inline int
@@ -164,7 +164,7 @@ xps_prepare_part(xps_context_t *ctx)
 	    *p = 0;
     }
 
-    // dprintf3("  to part '%s' (piece=%d) (last=%d)\n", ctx->zip_file_name, piece, last_piece);
+    /* dprintf3("  to part '%s' (piece=%d) (last=%d)\n", ctx->zip_file_name, piece, last_piece); */
 
     part = xps_find_part(ctx, ctx->zip_file_name);
     if (!part)
@@ -220,6 +220,8 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 
     if (ctx->zip_method == 8)
     {
+	/* dputs("inflate data\n"); */
+
 	if (part->size >= part->capacity)
 	{
 	    /* dprintf2("growing buffer (%d/%d)\n", part->size, part->capacity); */
@@ -261,6 +263,8 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 	 * allowed by a brain damaged spec and written by a brain damaged company.
 	 */
 
+	/* dputs("stored data of unknown size\n"); */
+
 	if (part->size >= part->capacity)
 	{
 	    /* dprintf2("growing buffer (%d/%d)\n", part->size, part->capacity); */
@@ -272,56 +276,53 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 
 	while (1)
 	{
-	    int sig;
-	    int c;
 
 	    if (part->size > 4)
 	    {
-		sig = make4(part->data + part->size - 4);
-		if (sig == ZIP_DATA_DESC_SIG) // || sig == ZIP_LOCAL_FILE_SIG)
+		if (make4(part->data + part->size - 4) == ZIP_DATA_DESC_SIG)
 		{
-		    dprintf1("found signature %x in data stream\n", sig);
-		    buf->ptr -= 4;
+		    if (buf->limit - buf->ptr < 12)
+			return 0;
+
+		    read4(ctx, buf); /* crc32 */
+		    read4(ctx, buf); /* csize */
+		    read4(ctx, buf); /* usize */
+
+		    /* dputs("found data descriptor signature\n"); */
+
 		    part->size -= 4;
 		    return 1;
 		}
 	    }
 
-	    c = read1(ctx, buf);
-	    if (c < 0)
+	    code = read1(ctx, buf);
+	    if (code < 0)
 		return 0;
 
-	    part->data[part->size++] = c;
+	    part->data[part->size++] = code;
 	}
     }
 
     else
     {
-	int input, output, count;
-
-	// dprintf1("stored data of known size: %d\n", ctx->zip_uncompressed_size);
-
-	/* For stored parts we know the size.
-	 * Capacity is set to the actual size of the data,
-	 * except for empty parts which are an exception.
+	/* For stored parts we usually know the size,
+	 * and then capacity is set to the actual size of the data.
 	 */
+
+	/* dprintf1("stored data of known size: %d\n", ctx->zip_uncompressed_size); */
 
 	if (ctx->zip_uncompressed_size == 0)
 	    return 1;
 
-	input = buf->limit - buf->ptr;
-	output = part->capacity - part->size;
-	count = input;
-	if (count > output)
-	    count = output;
+	while (part->size < part->capacity)
+	{
+	    int c = read1(ctx, buf);
+	    if (c < 0)
+		return 0;
+	    part->data[part->size++] = c;
+	}
 
-	// dprintf1("  reading %d bytes\n", count);
-	readall(ctx, buf, (byte*)part->data + part->size, count);
-	part->size += count;
-
-	if (part->size == part->capacity)
-	    return 1;
-	return 0;
+	return 1;
     }
 }
 
@@ -337,7 +338,7 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 	{
 	case -1:
 	    /* at the end, or error condition. toss data. */
-	    dputs("at end of zip (or in fail mode)\n");
+	    /* dputs("at end of zip (or in fail mode)\n"); */
 	    buf->ptr = buf->limit;
 	    return 1;
 
@@ -363,8 +364,8 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		{
 		    /* some other unknown part. */
 		    dprintf1("unknown signature %x\n", signature);
-		    // ctx->zip_state = -1;
-		    // return 0;
+		    ctx->zip_state = -1;
+		    return 0;
 		}
 	    }
 	    while (signature != ZIP_LOCAL_FILE_SIG);
@@ -428,7 +429,7 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 
 	    if (ctx->zip_general & 4)
 	    {
-		dputs("data descriptor by flag\n");
+		/* dputs("data descriptor by flag\n"); */
 		if (buf->limit - buf->ptr < 12)
 		    return 0;
 		read4(ctx, buf); /* crc32 */
