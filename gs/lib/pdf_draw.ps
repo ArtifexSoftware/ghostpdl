@@ -756,7 +756,11 @@ end
     dup 3 index /Length oget
 
     dup 65535 le {
-      string readstring pop
+      dup 0 eq {
+        pop pop ()
+      } {
+        string readstring pop
+      } ifelse
     } {
       () /SubFileDecode filter /ReusableStreamDecode filter
     } ifelse
