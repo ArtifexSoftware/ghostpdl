@@ -517,6 +517,7 @@ Z8=$(PSOBJ)zbfont.$(OBJ) $(PSOBJ)zchar.$(OBJ) $(PSOBJ)zcolor.$(OBJ)
 Z9=$(PSOBJ)zdevice.$(OBJ) $(PSOBJ)zfont.$(OBJ) $(PSOBJ)zfontenum.$(OBJ) $(PSOBJ)zgstate.$(OBJ)
 Z10=$(PSOBJ)zdfilter.$(OBJ) $(PSOBJ)zht.$(OBJ) $(PSOBJ)zimage.$(OBJ) $(PSOBJ)zmatrix.$(OBJ)
 Z11=$(PSOBJ)zpaint.$(OBJ) $(PSOBJ)zpath.$(OBJ)
+Z12=$(PSOBJ)zncdummy.$(OBJ)
 Z1OPS=zarith zarray zcontrol1 zcontrol2 zcontrol3
 Z2OPS=zdict1 zdict2 zfile zfile1 zfileio1 zfileio2
 Z3_4OPS=zfilter zfproc zgeneric ziodev zmath
@@ -530,7 +531,7 @@ Z11OPS=zpaint zpath pantone
 INT_MAIN=$(PSOBJ)imain.$(OBJ) $(PSOBJ)imainarg.$(OBJ) $(GLOBJ)gsargs.$(OBJ) $(PSOBJ)idisp.$(OBJ)
 INT_OBJS=$(INT_MAIN)\
  $(INT1) $(INT2) $(INT3) $(INT4) $(INT5) $(INT6) $(INT7)\
- $(Z1) $(Z2) $(Z3) $(Z4) $(Z5) $(Z6) $(Z7) $(Z8) $(Z9) $(Z10) $(Z11)
+ $(Z1) $(Z2) $(Z3) $(Z4) $(Z5) $(Z6) $(Z7) $(Z8) $(Z9) $(Z10) $(Z11) $(Z12)
 INT_CONFIG=$(GLOBJ)gconfig.$(OBJ) $(GLOBJ)gscdefs.$(OBJ)\
  $(PSOBJ)iconfig.$(OBJ) $(PSOBJ)iccinit$(COMPILE_INITS).$(OBJ)
 INT_ALL=$(INT_OBJS) $(INT_CONFIG)
@@ -567,6 +568,7 @@ $(PSD)psbase.dev : $(INT_MAK) $(ECHOGS_XE) $(INT_OBJS)\
 	$(ADDMOD) $(PSD)psbase -obj $(Z9)
 	$(ADDMOD) $(PSD)psbase -obj $(Z10)
 	$(ADDMOD) $(PSD)psbase -obj $(Z11)
+	$(ADDMOD) $(PSD)psbase -obj $(Z12)
 	$(ADDMOD) $(PSD)psbase -oper $(Z1OPS)
 	$(ADDMOD) $(PSD)psbase -oper $(Z2OPS)
 	$(ADDMOD) $(PSD)psbase -oper $(Z3_4OPS)
@@ -1135,12 +1137,13 @@ $(PSD)usparam.dev : $(INT_MAK) $(ECHOGS_XE) $(usparam_)
 	$(SETMOD) $(PSD)usparam $(usparam_)
 	$(ADDMOD) $(PSD)usparam -oper zusparam -replace $(PSD)nousparm
 
+
 # Note that zusparam includes both Level 1 and Level 2 operators.
 $(PSOBJ)zusparam.$(OBJ) : $(PSSRC)zusparam.c $(OP) $(memory__h) $(string__h)\
  $(gscdefs_h) $(gsfont_h) $(gsstruct_h) $(gsutil_h) $(gxht_h)\
  $(ialloc_h) $(icontext_h) $(idict_h) $(idparam_h) $(iparam_h)\
  $(iname_h) $(itoken_h) $(iutil2_h) $(ivmem2_h)\
- $(dstack_h) $(estack_h) $(store_h)
+ $(dstack_h) $(estack_h) $(store_h) $(gsnamecl_h)
 	$(PSCC) $(PSO_)zusparam.$(OBJ) $(C_) $(PSSRC)zusparam.c
 
 # Define full Level 2 support.
@@ -1979,6 +1982,13 @@ $(PSOBJ)wrfont.$(OBJ) : $(PSSRC)wrfont.c $(AK)\
 
 $(PSD)fapif.dev : $(INT_MAK) $(ECHOGS_XE)
 	$(SETMOD) $(PSD)fapif
+
+
+# ---------------- Custom color dummy callback ---------------- #
+
+$(PSOBJ)zncdummy.$(OBJ) : $(PSSRC)zncdummy.c $(OP) $(GX) $(math_h)\
+  $(memory__h) $(gscdefs_h) $(gsnamecl_h) $(malloc__h) $(gsncdummy_h)
+	$(PSCC) $(PSO_)zncdummy.$(OBJ) $(C_) $(PSSRC)zncdummy.c
 
 # ================ Dependencies for auxiliary programs ================ #
 

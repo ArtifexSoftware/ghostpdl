@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 artofcode LLC.
+/* Copyright (C) 2001-2007 artofcode LLC.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -25,7 +25,7 @@
  * Enable custom client callback color processing.  Note:  There is a sample
  * implementation in src/gsncdemo.c.
  */
-#define ENABLE_CUSTOM_COLOR_CALLBACK 1	/* 0 --> disabled, 1 --> enabled */
+#define ENABLE_CUSTOM_COLOR_CALLBACK 0	/* 0 --> disabled, 1 --> enabled */
 
 
 #if ENABLE_CUSTOM_COLOR_CALLBACK
