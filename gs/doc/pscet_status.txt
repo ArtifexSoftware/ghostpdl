@@ -3856,10 +3856,7 @@ Test	 Status	Comments
 
 20-02-1  OK	Looks okay. -Tor
 
-20-02-2  DIFF   When --begin-- overflows dictionary stack it restores the argument
-		and places the content of the dictionary stack on the operand
-                stack. Adobe interpreters don't restore the argument.
-                assign Alex
+20-02-2  OK     Fixed by rev. 7829. - Alex
 
 20-02-3  OK	Color corrected by rev 7172.
 

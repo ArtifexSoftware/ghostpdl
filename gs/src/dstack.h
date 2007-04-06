@@ -46,7 +46,9 @@
 /* Macro to ensure enough room on the dictionary stack */
 #define check_dstack(n)\
   if ( dstop - dsp < (n) )\
-    { d_stack.requested = (n); return_error(e_dictstackoverflow); }
+    { int ds_code_ = ref_stack_extend(&d_stack, n);\
+      if ( ds_code_ < 0 ) return ds_code_;\
+    }
 
 /*
  * The dictionary stack is implemented as a linked list of blocks;
