@@ -102,7 +102,7 @@ wts_get_samples_j(wts_screen_t *ws, int x, int y,
 {
     int x_ix, y_ix;
     int nsamples;
-    const wts_screen_j_t *wsj = (const wts_screen_j_t *)ws;
+    wts_screen_j_t *wsj = (wts_screen_j_t *)ws;
     wts_j_cache_el *xcache = &wsj->xcache[(x >> 3) & (WTS_CACHE_SIZE_X - 1)];
     wts_j_cache_el *ycache = &wsj->ycache[y & (WTS_CACHE_SIZE_Y - 1)];
 

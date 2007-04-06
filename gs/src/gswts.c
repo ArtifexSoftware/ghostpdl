@@ -760,7 +760,7 @@ wts_cache_alloc_callback(void *data, int bytes)
     return malloc(bytes);
 }
 
-private void *
+private void
 store_be32(byte *ptr, int x)
 {
     ptr[0] = (x >> 24) & 0xff;
