@@ -24,7 +24,7 @@ PCLSRCDIR?=../pcl
 PLSRCDIR?=../pl
 PXLSRCDIR?=../pxl
 XPSSRCDIR?=../xps
-
+ICCSRCDIR?=../gs/icclib
 COMMONDIR?=../common
 MAINSRCDIR?=../main
 
