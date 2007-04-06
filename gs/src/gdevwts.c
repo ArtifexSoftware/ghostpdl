@@ -483,6 +483,8 @@ wtsimdi_open_device(gx_device *dev)
     idev->zero.color_index = gx_no_color_index;
     idev->one.color_index = gx_no_color_index;
 
+    /* guarantee the device bands */
+    ((gx_device_printer *)dev)->space_params.banding_type = BandingAlways;
     return gdev_prn_open(dev);
 }
 
