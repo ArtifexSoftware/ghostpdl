@@ -1365,10 +1365,11 @@ devicedict /Default devicedict .defaultdevicename get put
 currentpacking false setpacking
 /.linescreen
 % The following screen algorithm is used by permission of the author.
-    { 1 add 180 mul cos 1 0.08 add mul exch 2 add 180 mul cos 
-      1 0.08 sub mul add 2 div % (C) 1989 Berthold K.P. Horn
+    { ((C) 1989 Berthold K.P. Horn) pop
+      1 add 180 mul cos 1 0.08 add mul exch 2 add 180 mul cos 
+      1 0.08 sub mul add 2 div
     }
-bind executeonly def
+bind readonly def
 setpacking
 /.sethireshalftone {	% <dpi> .sethireshalftone <doscreen>
 	% According to information published by Hewlett-Packard,

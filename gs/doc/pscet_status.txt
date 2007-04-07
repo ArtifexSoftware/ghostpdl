@@ -4875,14 +4875,11 @@ Test	 Status	Comments
                 The test expects currentpagedevice to return the same dictionaty each time. 
                 assign: Alex.
 
-29-05-1  DIFF  	Rev 7595 MSVC8 debug build fails with no output pages.
-		Error: /invalidaccess in --forall--, while copying a halftone with 'Gcopy'.
-		.
-		Here is a simplified test :
-		gswin32c.exe -r300 -dBATCH gs_cet.ps -c currenthalftone /SpotFunction get rcheck ==
-		It prints 'false' with -r200 or greater, and 'true' with -r144 or smaller.
-		.
-		Assign: Raph.
+29-05-1  OK     Make the spot function in the high resolution halftone readable
+                to accomodate the test logic. Ghostscript matches Tek and
+                Distiller 5. CPSI-based PhotoPrint product redefines halftone
+                operations as no-op and cannot serve as a reference
+                implementation here. - Alex
 
 29-05-2  OK	
 
