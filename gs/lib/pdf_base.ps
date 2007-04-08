@@ -47,9 +47,10 @@ pdfdict begin
 
 % ------ Utilities ------ %
 
-% Define a scratch string.  The PDF language definition says that
-% no line in a PDF file can exceed 255 characters.
-/pdfstring 255 string def
+% Define a scratch string. The PDF language definition says that
+% no line in a PDF file can exceed 255 characters, but this string
+% is also used to search for %PDF-, which needs 1024 characters.
+/pdfstring 1024 string def
 
 % Read the previous line of a file.  If we aren't at a line boundary,
 % read the line containing the current position.

@@ -43,7 +43,7 @@ const char iodev_dtype_stdio[] = "Special";
  * immediately afterwards so as not to wind up with dangling references.
  */
 
-#define STDIN_BUF_SIZE 128
+#define STDIN_BUF_SIZE 1024
 
 private iodev_proc_init(stdin_init);
 private iodev_proc_open_device(stdin_open);

@@ -76,7 +76,7 @@ systemdict begin
   } loop
   exch pop
   {
-    dup 127 string .peekstring { % "128 string" doesn't work for "(%stdin) run"
+    dup 1023 string .peekstring { % "1024 string" exceeds current %stdin buffer"
       (%PDF-1.) search {
         3 1 roll pop pop
         dup (%!PS) search not {
