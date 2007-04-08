@@ -1121,7 +1121,7 @@ Test	 Status	Comments
 		Test12: ok	Fixed by rev 7175.
 
 09-47J-1  DIFF	Graphic differences in Test01 (partly drawn) and Test12
-		(green line across the shading). Assign: Alex
+		(green line across the shading). Assign: Igor
                 
 09-47J-10 OK	
 
