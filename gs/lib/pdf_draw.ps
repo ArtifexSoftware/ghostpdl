@@ -1410,11 +1410,17 @@ end
 /drawannot {		% <annot> drawannot -
   dup annotvisible {
     gsave
-    dup dup /Subtype get //drawannottypes exch .knownget {
-      exec
+    dup dup /Subtype knownoget {
+      //drawannottypes exch .knownget {
+        exec
+      } {
+        dup calcstampscale exch drawwidget	% Use drawwidget for everything else
+      } ifelse			% type known
     } {
-      dup calcstampscale exch drawwidget	% Use drawwidget for everything else
-    } ifelse			% type known
+      pop
+      (   **** Warning: /Annot dict without required /Subtype entry is ignored.\n)
+      pdfformaterror
+    } ifelse
     grestore
   } if pop			% annotvisible
 } bdef
