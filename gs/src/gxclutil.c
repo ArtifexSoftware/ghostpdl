@@ -143,11 +143,11 @@ cmd_write_band(gx_device_clist_writer * cldev, int band_min, int band_max,
  	    return_error(gs_error_ioerror);
 	cb.band_min = band_min;
 	cb.band_max = band_max;
-	cb.pos = clist_ftell(cfile);
+	cb.pos = cldev->page_info.io_procs->ftell(cfile);
 	clist_copy_band_complexity(&cb.band_complexity, band_complexity);  
 	if_debug4('l', "[l]writing for bands (%d,%d) at %ld K %d \n",
 		  band_min, band_max, (long)cb.pos, cb.band_complexity.uses_color);
-	clist_fwrite_chars(&cb, sizeof(cb), bfile);
+	cldev->page_info.io_procs->fwrite_chars(&cb, sizeof(cb), bfile);
 	if (cp != 0) {
 	    pcl->tail->next = 0;	/* terminate the list */
 	    for (; cp != 0; cp = cp->next) {
@@ -160,14 +160,14 @@ cmd_write_band(gx_device_clist_writer * cldev, int band_min, int band_max,
 		    return_error(gs_error_Fatal);
 		}
 #endif
-		clist_fwrite_chars(cp + 1, cp->size, cfile);
+		cldev->page_info.io_procs->fwrite_chars(cp + 1, cp->size, cfile);
 	    }
 	    pcl->head = pcl->tail = 0;
 	}
-	clist_fwrite_chars(&end, 1, cfile);
+	cldev->page_info.io_procs->fwrite_chars(&end, 1, cfile);
 	process_interrupts(cldev->memory);
-	code_b = clist_ferror_code(bfile);
-	code_c = clist_ferror_code(cfile);
+	code_b = cldev->page_info.io_procs->ferror_code(bfile);
+	code_c = cldev->page_info.io_procs->ferror_code(cfile);
 	if (code_b < 0)
 	    return_error(code_b);
 	if (code_c < 0)

@@ -227,6 +227,7 @@ void gx_page_queue_enqueue(
  */
 /* rets 0 ok, gs_error_Fatal if error */
 int gx_page_queue_add_page(
+    gx_device_clist_writer *const pcwdev,
     gx_page_queue_t * queue,		/* page queue to add to */
     gx_page_queue_action_t action,		/* action code to queue */
     const gx_band_page_info_t * page_info,	/* bandinfo incl. bandlist */

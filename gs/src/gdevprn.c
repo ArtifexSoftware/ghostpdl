@@ -137,6 +137,7 @@ BACKTRACE(pdev);
 open_c:
     ppdev->buf = base;
     ppdev->buffer_space = space;
+    clist_init_io_procs(pclist_dev, false);
     clist_init_params(pclist_dev, base, space, pdev,
 		      ppdev->printer_procs.buf_procs,
 		      space_params->band, ppdev->is_async_renderer,

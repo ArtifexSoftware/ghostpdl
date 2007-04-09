@@ -152,6 +152,8 @@ private_st_MEMFILE();
 	/* forward references */
 private void memfile_free_mem(MEMFILE * f);
 private int memfile_init_empty(MEMFILE * f);
+private int memfile_set_memory_warning(clist_file_ptr cf, int bytes_left);
+private int memfile_fclose(clist_file_ptr cf, const char *fname, bool delete);
 
 /************************************************/
 /*   #define DEBUG      /- force statistics -/  */
@@ -218,7 +220,7 @@ allocateWithReserve(
 
 /* ---------------- Open/close/unlink ---------------- */
 
-int
+private int
 memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 	      clist_file_ptr /*MEMFILE * */  * pf,
 	      gs_memory_t *mem, gs_memory_t *data_mem, bool ok_to_compress)
@@ -319,7 +321,7 @@ finish:
     return code;
 }
 
-int
+private int
 memfile_fclose(clist_file_ptr cf, const char *fname, bool delete)
 {
     MEMFILE *const f = (MEMFILE *)cf;
@@ -355,7 +357,7 @@ memfile_fclose(clist_file_ptr cf, const char *fname, bool delete)
     return 0;
 }
 
-int
+private int
 memfile_unlink(const char *fname)
 {
     /*
@@ -368,7 +370,7 @@ memfile_unlink(const char *fname)
 /* ---------------- Writing ---------------- */
 
 /* Pre-alloc enough reserve mem blox to guarantee a write of N bytes will succeed */
-int	/* returns 0 ok, gs_error_VMerror if insufficient */
+private int	/* returns 0 ok, gs_error_VMerror if insufficient */
 memfile_set_memory_warning(clist_file_ptr cf, int bytes_left)
 {
     MEMFILE *const f = (MEMFILE *)cf;
@@ -611,7 +613,7 @@ memfile_next_blk(MEMFILE * f)
     return (ecode);
 }
 
-int	/* returns # of chars actually written */
+private int	/* returns # of chars actually written */
 memfile_fwrite_chars(const void *data, uint len, clist_file_ptr cf)
 {
     const char *str = (const char *)data;
@@ -824,7 +826,7 @@ memfile_get_pdata(MEMFILE * f)
 
 /* ---------------- Reading ---------------- */
 
-int
+private int
 memfile_fread_chars(void *data, uint len, clist_file_ptr cf)
 {
     char *str = (char *)data;
@@ -857,19 +859,19 @@ memfile_fread_chars(void *data, uint len, clist_file_ptr cf)
 
 /* ---------------- Position/status ---------------- */
 
-int
+private int
 memfile_ferror_code(clist_file_ptr cf)
 {
     return (((MEMFILE *) cf)->error_code);	/* errors stored here */
 }
 
-int64_t
+private int64_t
 memfile_ftell(clist_file_ptr cf)
 {
     return (((MEMFILE *) cf)->log_curr_pos);
 }
 
-void
+private void
 memfile_rewind(clist_file_ptr cf, bool discard_data, const char *ignore_fname)
 {
     MEMFILE *f = (MEMFILE *) cf;
@@ -885,7 +887,7 @@ memfile_rewind(clist_file_ptr cf, bool discard_data, const char *ignore_fname)
     }
 }
 
-int
+private int
 memfile_fseek(clist_file_ptr cf, int64_t offset, int mode, const char *ignore_fname)
 {
     MEMFILE *f = (MEMFILE *) cf;
@@ -1120,5 +1122,25 @@ memfile_init_empty(MEMFILE * f)
 
     f->error_code = 0;
 
+    return 0;
+}
+
+clist_io_procs_t clist_io_procs_memory = {
+    memfile_fopen,
+    memfile_fclose,
+    memfile_unlink,
+    memfile_fwrite_chars,
+    memfile_fread_chars,
+    memfile_set_memory_warning,
+    memfile_ferror_code,
+    memfile_ftell,
+    memfile_rewind,
+    memfile_fseek,
+};
+
+int
+gs_gxclmem_init(gs_memory_t *mem)
+{
+    clist_io_procs_file_global = &clist_io_procs_memory;
     return 0;
 }

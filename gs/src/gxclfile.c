@@ -25,9 +25,11 @@
 /* This is an implementation of the command list I/O interface */
 /* that uses the file system for storage. */
 
+extern clist_io_procs_t *clist_io_procs_file_global;
+
 /* ------ Open/close/unlink ------ */
 
-int
+private int
 clist_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 	    clist_file_ptr * pcf, gs_memory_t * mem, gs_memory_t *data_mem,
 	    bool ok_to_compress)
@@ -47,7 +49,13 @@ clist_fopen(char fname[gp_file_name_sizeof], const char *fmode,
     return 0;
 }
 
-int
+private int
+clist_unlink(const char *fname)
+{
+    return (unlink(fname) != 0 ? gs_note_error(gs_error_ioerror) : 0);
+}
+
+private int
 clist_fclose(clist_file_ptr cf, const char *fname, bool delete)
 {
     return (fclose((FILE *) cf) != 0 ? gs_note_error(gs_error_ioerror) :
@@ -55,21 +63,9 @@ clist_fclose(clist_file_ptr cf, const char *fname, bool delete)
 	    0);
 }
 
-int
-clist_unlink(const char *fname)
-{
-    return (unlink(fname) != 0 ? gs_note_error(gs_error_ioerror) : 0);
-}
-
 /* ------ Writing ------ */
 
-long
-clist_space_available(long requested)
-{
-    return requested;
-}
-
-int
+private int
 clist_fwrite_chars(const void *data, uint len, clist_file_ptr cf)
 {
     return fwrite(data, 1, len, (FILE *) cf);
@@ -77,7 +73,7 @@ clist_fwrite_chars(const void *data, uint len, clist_file_ptr cf)
 
 /* ------ Reading ------ */
 
-int
+private int
 clist_fread_chars(void *data, uint len, clist_file_ptr cf)
 {
     FILE *f = (FILE *) cf;
@@ -111,25 +107,25 @@ clist_fread_chars(void *data, uint len, clist_file_ptr cf)
 
 /* ------ Position/status ------ */
 
-int
+private int
 clist_set_memory_warning(clist_file_ptr cf, int bytes_left)
 {
     return 0;			/* no-op */
 }
 
-int
+private int
 clist_ferror_code(clist_file_ptr cf)
 {
     return (ferror((FILE *) cf) ? gs_error_ioerror : 0);
 }
 
-int64_t
+private int64_t
 clist_ftell(clist_file_ptr cf)
 {
     return gp_ftell_64((FILE *) cf);
 }
 
-void
+private void
 clist_rewind(clist_file_ptr cf, bool discard_data, const char *fname)
 {
     FILE *f = (FILE *) cf;
@@ -153,8 +149,29 @@ clist_rewind(clist_file_ptr cf, bool discard_data, const char *fname)
     }
 }
 
-int
+private int
 clist_fseek(clist_file_ptr cf, int64_t offset, int mode, const char *ignore_fname)
 {
     return gp_fseek_64((FILE *) cf, offset, mode);
+}
+
+clist_io_procs_t clist_io_procs_file = {
+    clist_fopen,
+    clist_fclose,
+    clist_unlink,
+    clist_fwrite_chars,
+    clist_fread_chars,
+    clist_set_memory_warning,
+    clist_ferror_code,
+    clist_ftell,
+    clist_rewind,
+    clist_fseek,
+};
+
+init_proc(gs_clist_init);
+int
+gs_gxclfile_init(gs_memory_t *mem)
+{
+    clist_io_procs_file_global = &clist_io_procs_file;
+    return 0;
 }

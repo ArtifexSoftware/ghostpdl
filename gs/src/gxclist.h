@@ -176,7 +176,7 @@ typedef struct gx_clist_state_s gx_clist_state;
 	int ymin, ymax;			/* current band, <0 when writing */\
 		/* Following are set when writing, read when reading. */\
 	gx_band_page_info_t page_info;	/* page information */\
-	int nbands		/* # of bands */
+	int nbands			/* # of bands */
 
 typedef struct gx_device_clist_common_s {
     gx_device_clist_common_members;
@@ -299,6 +299,8 @@ extern_st(st_device_clist);
 
 /* The device template itself is never used, only the procedures. */
 extern const gx_device_procs gs_clist_device_procs;
+
+void clist_init_io_procs(gx_device_clist *pclist_dev, bool in_memory);
 
 /* Reset (or prepare to append to) the command list after printing a page. */
 int clist_finish_page(gx_device * dev, bool flush);

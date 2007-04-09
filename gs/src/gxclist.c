@@ -139,6 +139,27 @@ const gx_device_procs gs_clist_device_procs = {
     gx_forward_ret_devn_params
 };
 
+/*------------------- Choose the implementation -----------------------
+
+   For chossing the clist i/o implementation by makefile options
+   we define a global variable, which is initialized with
+   file io procs when they are included into the build.
+ */
+clist_io_procs_t *clist_io_procs_file_global = NULL;
+
+void 
+clist_init_io_procs(gx_device_clist *pclist_dev, bool in_memory)
+{   
+#if 0 /* reserved for future use */
+    if (in_memory || clist_io_procs_file_global == NULL)
+	pclist_dev->common.page_info.io_procs = pclist_dev->reader.page_info.io_procs = 
+		pclist_dev->writer.page_info.io_procs = &clist_io_procs_memory;
+    else
+#endif
+	pclist_dev->common.page_info.io_procs = pclist_dev->reader.page_info.io_procs = 
+		pclist_dev->writer.page_info.io_procs = clist_io_procs_file_global;
+}
+
 /* ------ Define the command set and syntax ------ */
 
 /* Initialization for imager state. */
@@ -452,9 +473,9 @@ clist_reinit_output_file(gx_device *dev)
     /* if partial page rendering is available */
     if ( clist_test_VMerror_recoverable(cdev) )
 	{ if (cdev->page_bfile != 0)
-	    code = clist_set_memory_warning(cdev->page_bfile, b_block);
+	    code = cdev->page_info.io_procs->set_memory_warning(cdev->page_bfile, b_block);
 	if (code >= 0 && cdev->page_cfile != 0)
-	    code = clist_set_memory_warning(cdev->page_cfile, c_block);
+	    code = cdev->page_info.io_procs->set_memory_warning(cdev->page_cfile, c_block);
 	}
     return code;
 }
@@ -512,10 +533,10 @@ clist_open_output_file(gx_device *dev)
     cdev->page_cfname[0] = 0;	/* create a new file */
     cdev->page_bfname[0] = 0;	/* ditto */
     clist_reset_page(cdev);
-    if ((code = clist_fopen(cdev->page_cfname, fmode, &cdev->page_cfile,
+    if ((code = cdev->page_info.io_procs->fopen(cdev->page_cfname, fmode, &cdev->page_cfile,
 			    cdev->bandlist_memory, cdev->bandlist_memory,
 			    true)) < 0 ||
-	(code = clist_fopen(cdev->page_bfname, fmode, &cdev->page_bfile,
+	(code = cdev->page_info.io_procs->fopen(cdev->page_bfname, fmode, &cdev->page_bfile,
 			    cdev->bandlist_memory, cdev->bandlist_memory,
 			    false)) < 0 ||
 	(code = clist_reinit_output_file(dev)) < 0
@@ -533,11 +554,11 @@ int
 clist_close_page_info(gx_band_page_info_t *ppi)
 {
     if (ppi->cfile != NULL) {
-	clist_fclose(ppi->cfile, ppi->cfname, true);
+	ppi->io_procs->fclose(ppi->cfile, ppi->cfname, true);
 	ppi->cfile = NULL;
     }
     if (ppi->bfile != NULL) {
-	clist_fclose(ppi->bfile, ppi->bfname, true);
+	ppi->io_procs->fclose(ppi->bfile, ppi->bfname, true);
 	ppi->bfile = NULL;
     }
     return 0;
@@ -601,15 +622,15 @@ clist_finish_page(gx_device *dev, bool flush)
 
     if (flush) {
 	if (cdev->page_cfile != 0)
-	    clist_rewind(cdev->page_cfile, true, cdev->page_cfname);
+	    cdev->page_info.io_procs->rewind(cdev->page_cfile, true, cdev->page_cfname);
 	if (cdev->page_bfile != 0)
-	    clist_rewind(cdev->page_bfile, true, cdev->page_bfname);
+	    cdev->page_info.io_procs->rewind(cdev->page_bfile, true, cdev->page_bfname);
 	clist_reset_page(cdev);
     } else {
 	if (cdev->page_cfile != 0)
-	    clist_fseek(cdev->page_cfile, 0L, SEEK_END, cdev->page_cfname);
+	    cdev->page_info.io_procs->fseek(cdev->page_cfile, 0L, SEEK_END, cdev->page_cfname);
 	if (cdev->page_bfile != 0)
-	    clist_fseek(cdev->page_bfile, 0L, SEEK_END, cdev->page_bfname);
+	    cdev->page_info.io_procs->fseek(cdev->page_bfile, 0L, SEEK_END, cdev->page_bfname);
     }
     code = clist_init(dev);		/* reinitialize */
     if (code >= 0)
@@ -636,24 +657,24 @@ clist_end_page(gx_device_clist_writer * cldev)
 	 * Note that because of copypage, there may be many such entries.
 	 */
 	cb.band_min = cb.band_max = cmd_band_end;
-	cb.pos = (cldev->page_cfile == 0 ? 0 : clist_ftell(cldev->page_cfile));
-	code = clist_fwrite_chars(&cb, sizeof(cb), cldev->page_bfile);
+	cb.pos = (cldev->page_cfile == 0 ? 0 : cldev->page_info.io_procs->ftell(cldev->page_cfile));
+	code = cldev->page_info.io_procs->fwrite_chars(&cb, sizeof(cb), cldev->page_bfile);
 	if (code > 0)
 	    code = 0;
     }
     if (code >= 0) {
 	clist_compute_colors_used(cldev);
 	ecode |= code;
-	cldev->page_bfile_end_pos = clist_ftell(cldev->page_bfile);
+	cldev->page_bfile_end_pos = cldev->page_info.io_procs->ftell(cldev->page_bfile);
     }
     if (code < 0)
 	ecode = code;
 
     /* Reset warning margin to 0 to release reserve memory if mem files */
     if (cldev->page_bfile != 0)
-	clist_set_memory_warning(cldev->page_bfile, 0);
+	cldev->page_info.io_procs->set_memory_warning(cldev->page_bfile, 0);
     if (cldev->page_cfile != 0)
-	clist_set_memory_warning(cldev->page_cfile, 0);
+	cldev->page_info.io_procs->set_memory_warning(cldev->page_cfile, 0);
 
 #ifdef DEBUG
     if (gs_debug_c('l') | gs_debug_c(':'))

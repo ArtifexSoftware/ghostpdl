@@ -60,12 +60,13 @@ private int
 s_band_read_init(stream_state * st)
 {
     stream_band_read_state *const ss = (stream_band_read_state *) st;
+    clist_io_procs_t *io_procs = ss->page_info.io_procs;
 
     ss->left = 0;
     ss->b_this.band_min = 0;
     ss->b_this.band_max = 0;
     ss->b_this.pos = 0;
-    clist_rewind(ss->page_bfile, false, ss->page_bfname);
+    io_procs->rewind(ss->page_bfile, false, ss->page_bfname);
     return 0;
 }
 
@@ -81,13 +82,14 @@ s_band_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     uint left = ss->left;
     int status = 1;
     uint count;
+    clist_io_procs_t *io_procs = ss->page_info.io_procs;
 
     while ((count = wlimit - q) != 0) {
 	if (left) {		/* Read more data for the current run. */
 	    if (count > left)
 		count = left;
-	    clist_fread_chars(q + 1, count, cfile);
-	    if (clist_ferror_code(cfile) < 0) {
+	    io_procs->fread_chars(q + 1, count, cfile);
+	    if (io_procs->ferror_code(cfile) < 0) {
 		status = ERRC;
 		break;
 	    }
@@ -102,7 +104,7 @@ rb:
 	 * that includes a current band).
 	 */
 	if (ss->b_this.band_min == cmd_band_end &&
-	    clist_ftell(bfile) == ss->page_bfile_end_pos
+	    io_procs->ftell(bfile) == ss->page_bfile_end_pos
 	    ) {
 	    status = EOFC;
 	    break;
@@ -111,15 +113,15 @@ rb:
 	    int bmax = ss->b_this.band_max;
 	    int64_t pos = ss->b_this.pos;
 
-	    clist_fread_chars(&ss->b_this, sizeof(ss->b_this), bfile);
+	    io_procs->fread_chars(&ss->b_this, sizeof(ss->b_this), bfile);
 	    if (!(ss->band_last >= bmin && ss->band_first <= bmax))
 		goto rb;
-	    clist_fseek(cfile, pos, SEEK_SET, ss->page_cfname);
+	    io_procs->fseek(cfile, pos, SEEK_SET, ss->page_cfname);
 	    left = (uint) (ss->b_this.pos - pos);
 	    if_debug7('l', 
 		      "[l]reading for bands (%d,%d) at bfile %ld, cfile %ld, length %u color %d rop %d\n",
 		      bmin, bmax,
-		      (long)(clist_ftell(bfile) - sizeof(ss->b_this)), /* stefan foo was: 2 * sizeof ?? */
+		      (long)(io_procs->ftell(bfile) - sizeof(ss->b_this)), /* stefan foo was: 2 * sizeof ?? */
 		      (long)pos, left, ss->b_this.band_complexity.uses_color,
 		      ss->b_this.band_complexity.nontrivial_rops);
 	}
@@ -505,13 +507,13 @@ clist_playback_file_bands(clist_playback_action action,
 
     /* If this is a saved page, open the files. */
     if (rs.page_cfile == 0) {
-	code = clist_fopen(rs.page_cfname,
+	code = crdev->page_info.io_procs->fopen(rs.page_cfname,
 			   gp_fmode_rb, &rs.page_cfile, crdev->bandlist_memory,
 			   crdev->bandlist_memory, true);
 	opened_cfile = (code >= 0);
     }
     if (rs.page_bfile == 0 && code >= 0) {
-	code = clist_fopen(rs.page_bfname,
+	code = crdev->page_info.io_procs->fopen(rs.page_bfname,
 			   gp_fmode_rb, &rs.page_bfile, crdev->bandlist_memory,
 			   crdev->bandlist_memory, false);
 	opened_bfile = (code >= 0);
@@ -535,9 +537,9 @@ clist_playback_file_bands(clist_playback_action action,
 
     /* Close the files if we just opened them. */
     if (opened_bfile && rs.page_bfile != 0)
-	clist_fclose(rs.page_bfile, rs.page_bfname, false);
+	crdev->page_info.io_procs->fclose(rs.page_bfile, rs.page_bfname, false);
     if (opened_cfile && rs.page_cfile != 0)
-	clist_fclose(rs.page_cfile, rs.page_cfname, false);
+	crdev->page_info.io_procs->fclose(rs.page_cfile, rs.page_cfname, false);
 
     return code;
 }
@@ -585,15 +587,15 @@ gx_clist_reader_read_band_complexity(gx_device_clist *dev)
 	rs.band_last = crdev->nbands;
 	rs.page_info = crdev->page_info;
 
-	save_pos = clist_ftell(rs.page_bfile);
-	clist_fseek(rs.page_bfile, pos, SEEK_SET, rs.page_bfname);
+	save_pos = crdev->page_info.io_procs->ftell(rs.page_bfile);
+	crdev->page_info.io_procs->fseek(rs.page_bfile, pos, SEEK_SET, rs.page_bfname);
 
 	for (i=0; i < crdev->nbands; i++) {
-	    clist_fread_chars(&cb, sizeof(cb), rs.page_bfile);
+	    crdev->page_info.io_procs->fread_chars(&cb, sizeof(cb), rs.page_bfile);
 	    crdev->band_complexity_array[i] = cb.band_complexity;
 	}
 
-	clist_fseek(rs.page_bfile, save_pos, SEEK_SET, rs.page_bfname);
+	crdev->page_info.io_procs->fseek(rs.page_bfile, save_pos, SEEK_SET, rs.page_bfname);
 	code = 0;  
     }
     return code;

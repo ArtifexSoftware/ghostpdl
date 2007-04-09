@@ -1709,6 +1709,7 @@ $(GLOBJ)gxclutil.$(OBJ) : $(GLSRC)gxclutil.c $(GXERR) $(memory__h) $(string__h)\
 clfile_=$(GLOBJ)gxclfile.$(OBJ)
 $(GLD)clfile.dev : $(LIB_MAK) $(ECHOGS_XE) $(clfile_)
 	$(SETMOD) $(GLD)clfile $(clfile_)
+	$(ADDMOD) $(GLD)clfile -init gxclfile
 
 $(GLOBJ)gxclfile.$(OBJ) : $(GLSRC)gxclfile.c $(stdio__h) $(string__h)\
  $(gp_h) $(gsmemory_h) $(gserror_h) $(gserrors_h) $(gxclio_h)
@@ -1721,6 +1722,7 @@ $(GLD)clmemory.dev : $(LIB_MAK) $(ECHOGS_XE) $(clmemory_) $(GLD)s$(BAND_LIST_COM
 	$(SETMOD) $(GLD)clmemory $(clmemory_)
 	$(ADDMOD) $(GLD)clmemory -include $(GLD)s$(BAND_LIST_COMPRESSOR)e
 	$(ADDMOD) $(GLD)clmemory -include $(GLD)s$(BAND_LIST_COMPRESSOR)d
+	$(ADDMOD) $(GLD)clmemory -init gxclmem
 	$(ADDMOD) $(GLD)clmemory -init cl_$(BAND_LIST_COMPRESSOR)
 
 gxclmem_h=$(GLSRC)gxclmem.h $(gxclio_h) $(strimpl_h)

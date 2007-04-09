@@ -29,63 +29,67 @@
 
 typedef void *clist_file_ptr;	/* We can't do any better than this. */
 
-/* ---------------- Open/close/unlink ---------------- */
+struct clist_io_procs_s {
 
-/*
- * If *fname = 0, generate and store a new scratch file name; otherwise,
- * open an existing file.  Only modes "r" and "w+" are supported,
- * and only binary data (but the caller must append the "b" if needed).
- * Mode "r" with *fname = 0 is an error.
- */
-int clist_fopen(char fname[gp_file_name_sizeof], const char *fmode,
-		clist_file_ptr * pcf,
-		gs_memory_t * mem, gs_memory_t *data_mem,
-		bool ok_to_compress);
+    /* ---------------- Open/close/unlink ---------------- */
 
-/*
- * Close a file, optionally deleting it.
- */
-int clist_fclose(clist_file_ptr cf, const char *fname, bool delete);
+    /*
+     * If *fname = 0, generate and store a new scratch file name; otherwise,
+     * open an existing file.  Only modes "r" and "w+" are supported,
+     * and only binary data (but the caller must append the "b" if needed).
+     * Mode "r" with *fname = 0 is an error.
+     */
+    int (*fopen)(char fname[gp_file_name_sizeof], const char *fmode,
+		    clist_file_ptr * pcf,
+		    gs_memory_t * mem, gs_memory_t *data_mem,
+		    bool ok_to_compress);
 
-/*
- * Delete a file.
- */
-int clist_unlink(const char *fname);
+    /*
+     * Close a file, optionally deleting it.
+     */
+    int (*fclose)(clist_file_ptr cf, const char *fname, bool delete);
 
-/* ---------------- Writing ---------------- */
+    /*
+     * Delete a file.
+     */
+    int (*unlink)(const char *fname);
 
-/* clist_space_available returns min(requested, available). */
-long clist_space_available(long requested);
+    /* ---------------- Writing ---------------- */
 
-int clist_fwrite_chars(const void *data, uint len, clist_file_ptr cf);
+    int (*fwrite_chars)(const void *data, uint len, clist_file_ptr cf);
 
-/* ---------------- Reading ---------------- */
+    /* ---------------- Reading ---------------- */
 
-int clist_fread_chars(void *data, uint len, clist_file_ptr cf);
+    int (*fread_chars)(void *data, uint len, clist_file_ptr cf);
 
-/* ---------------- Position/status ---------------- */
+    /* ---------------- Position/status ---------------- */
 
-/*
- * Set the low-memory warning threshold.  clist_ferror_code will return 1
- * if fewer than this many bytes of memory are left for storing band data.
- */
-int clist_set_memory_warning(clist_file_ptr cf, int bytes_left);
+    /*
+     * Set the low-memory warning threshold.  clist_ferror_code will return 1
+     * if fewer than this many bytes of memory are left for storing band data.
+     */
+    int (*set_memory_warning)(clist_file_ptr cf, int bytes_left);
 
-/*
- * clist_ferror_code returns a negative error code per gserrors.h, not a
- * Boolean; 0 means no error, 1 means low-memory warning.
- */
-int clist_ferror_code(clist_file_ptr cf);
+    /*
+     * clist_ferror_code returns a negative error code per gserrors.h, not a
+     * Boolean; 0 means no error, 1 means low-memory warning.
+     */
+    int (*ferror_code)(clist_file_ptr cf);
 
-int64_t clist_ftell(clist_file_ptr cf);
+    int64_t (*ftell)(clist_file_ptr cf);
 
-/*
- * We pass the file name to clist_rewind and clist_fseek in case the
- * implementation has to close and reopen the file.  (clist_fseek with
- * offset = 0 and mode = SEEK_END indicates we are about to append.)
- */
-void clist_rewind(clist_file_ptr cf, bool discard_data, const char *fname);
+    /*
+     * We pass the file name to clist_rewind and clist_fseek in case the
+     * implementation has to close and reopen the file.  (clist_fseek with
+     * offset = 0 and mode = SEEK_END indicates we are about to append.)
+     */
+    void (*rewind)(clist_file_ptr cf, bool discard_data, const char *fname);
 
-int clist_fseek(clist_file_ptr cf, int64_t offset, int mode, const char *fname);
+    int (*fseek)(clist_file_ptr cf, int64_t offset, int mode, const char *fname);
+};
+
+typedef struct clist_io_procs_s clist_io_procs_t;
+
+extern clist_io_procs_t *clist_io_procs_file_global;
 
 #endif /* gxclio_INCLUDED */
