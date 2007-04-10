@@ -139,7 +139,8 @@ private const gx_device_pattern_accum gs_pattern_accum_device =
 
 /* Allocate a pattern accumulator, with an initial refct of 0. */
 gx_device_pattern_accum *
-gx_pattern_accum_alloc(gs_memory_t * mem, client_name_t cname)
+gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * stoarge_memory, 
+		       gs_pattern1_instance_t *pinst, client_name_t cname)
 {
     gx_device_pattern_accum *adev =
 	gs_alloc_struct(mem, gx_device_pattern_accum,
@@ -152,6 +153,8 @@ gx_pattern_accum_alloc(gs_memory_t * mem, client_name_t cname)
 		   mem, true);
     check_device_separable((gx_device *)adev);
     gx_device_forward_fill_in_procs((gx_device_forward *)adev);
+    adev->instance = pinst;
+    adev->bitmap_memory = stoarge_memory;
     return adev;
 }
 
@@ -638,12 +641,10 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
      * Note that adev is an internal device, so it will be freed when the
      * last reference to it from a graphics state is deleted.
      */
-    adev = gx_pattern_accum_alloc(mem, "gx_pattern_load");
+    adev = gx_pattern_accum_alloc(mem, mem, pinst, "gx_pattern_load");
     if (adev == 0)
 	return_error(gs_error_VMerror);
     gx_device_set_target((gx_device_forward *)adev, dev);
-    adev->instance = pinst;
-    adev->bitmap_memory = mem;
     code = dev_proc(adev, open_device)((gx_device *)adev);
     if (code < 0)
 	goto fail;

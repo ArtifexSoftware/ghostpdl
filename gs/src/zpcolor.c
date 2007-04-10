@@ -250,11 +250,11 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
 	internal_accum = (code == 0);
     }
     if (internal_accum) {
-	pdev = gx_pattern_accum_alloc(imemory, "pattern_paint_prepare");
+	gs_memory_t *storage_memory = gstate_pattern_cache(pgs)->memory;
+
+	pdev = gx_pattern_accum_alloc(imemory, storage_memory, pinst, "pattern_paint_prepare");
 	if (pdev == 0)
 	    return_error(e_VMerror);
-	pdev->instance = pinst;
-	pdev->bitmap_memory = gstate_pattern_cache(pgs)->memory;
 	code = (*dev_proc(pdev, open_device)) ((gx_device *) pdev);
 	if (code < 0) {
 	    ifree_object(pdev, "pattern_paint_prepare");

@@ -215,7 +215,9 @@ typedef struct gx_device_pattern_accum_s {
     instance, bits, mask)
 
 /* Allocate a pattern accumulator. */
-gx_device_pattern_accum *gx_pattern_accum_alloc(gs_memory_t * memory, client_name_t);
+gx_device_pattern_accum * gx_pattern_accum_alloc(gs_memory_t * mem, 
+		       gs_memory_t * stoarge_memory, 
+		       gs_pattern1_instance_t *pinst, client_name_t cname);
 
 /* Add an accumulated pattern to the cache. */
 /* Note that this does not free any of the data in the accumulator */
