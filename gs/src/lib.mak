@@ -1629,8 +1629,15 @@ clbase3_=$(GLOBJ)gxclutil.$(OBJ) $(GLOBJ)gsparams.$(OBJ)
 clbase4_=$(GLOBJ)gsroptab.$(OBJ) $(GLOBJ)stream.$(OBJ)
 clpath_=$(GLOBJ)gxclimag.$(OBJ) $(GLOBJ)gxclpath.$(OBJ) $(GLOBJ)gxdhtserial.$(OBJ)
 clist_=$(clbase1_) $(clbase2_) $(clbase3_) $(clbase4_) $(clpath_)
+
+# The old code selected one of clmemory, clfile depending on BAND_LIST_STORAGE.
+# Now we meed clmemory to be included permanently for large patterns,
+# and clfile to be included on demand.
+# clfile works for page clist iff it is included.
+
 $(GLD)clist.dev : $(LIB_MAK) $(ECHOGS_XE) $(clist_)\
  $(GLD)cl$(BAND_LIST_STORAGE).dev\
+ $(GLD)clmemory.dev\
  $(GLD)cfe.dev $(GLD)cfd.dev $(GLD)rle.dev $(GLD)rld.dev $(GLD)psl2cs.dev
 	$(SETMOD) $(GLD)clist $(clbase1_)
 	$(ADDMOD) $(GLD)clist -obj $(clbase2_)
@@ -1638,6 +1645,7 @@ $(GLD)clist.dev : $(LIB_MAK) $(ECHOGS_XE) $(clist_)\
 	$(ADDMOD) $(GLD)clist -obj $(clbase4_)
 	$(ADDMOD) $(GLD)clist -obj $(clpath_)
 	$(ADDMOD) $(GLD)clist -include $(GLD)cl$(BAND_LIST_STORAGE)
+	$(ADDMOD) $(GLD)clist -include $(GLD)clmemory
 	$(ADDMOD) $(GLD)clist -include $(GLD)cfe $(GLD)cfd $(GLD)rle $(GLD)rld $(GLD)psl2cs
 
 $(GLOBJ)gxclist.$(OBJ) : $(GLSRC)gxclist.c $(GXERR) $(memory__h) $(string__h)\

@@ -90,6 +90,7 @@ struct clist_io_procs_s {
 
 typedef struct clist_io_procs_s clist_io_procs_t;
 
-extern clist_io_procs_t *clist_io_procs_file_global;
+extern const clist_io_procs_t *clist_io_procs_file_global;
+extern const clist_io_procs_t *clist_io_procs_memory_global;
 
 #endif /* gxclio_INCLUDED */

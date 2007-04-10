@@ -142,20 +142,19 @@ const gx_device_procs gs_clist_device_procs = {
 /*------------------- Choose the implementation -----------------------
 
    For chossing the clist i/o implementation by makefile options
-   we define a global variable, which is initialized with
-   file io procs when they are included into the build.
+   we define global variables, which are initialized with
+   file/memory io procs when they are included into the build.
  */
-clist_io_procs_t *clist_io_procs_file_global = NULL;
+const clist_io_procs_t *clist_io_procs_file_global = NULL;
+const clist_io_procs_t *clist_io_procs_memory_global = NULL;
 
 void 
 clist_init_io_procs(gx_device_clist *pclist_dev, bool in_memory)
 {   
-#if 0 /* reserved for future use */
     if (in_memory || clist_io_procs_file_global == NULL)
 	pclist_dev->common.page_info.io_procs = pclist_dev->reader.page_info.io_procs = 
-		pclist_dev->writer.page_info.io_procs = &clist_io_procs_memory;
+		pclist_dev->writer.page_info.io_procs = clist_io_procs_memory_global;
     else
-#endif
 	pclist_dev->common.page_info.io_procs = pclist_dev->reader.page_info.io_procs = 
 		pclist_dev->writer.page_info.io_procs = clist_io_procs_file_global;
 }

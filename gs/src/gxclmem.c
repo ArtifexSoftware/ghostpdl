@@ -178,7 +178,7 @@ const byte *decomp_rd_ptr1, *decomp_rd_limit1;
 #endif
 
 /* ----------------------------- Memory Allocation --------------------- */
-void *	/* allocated memory's address, 0 if failure */
+private void *	/* allocated memory's address, 0 if failure */
 allocateWithReserve(
          MEMFILE  *f,			/* file to allocate mem to */
          int      sizeofBlock,		/* size of block to allocate */
@@ -1138,6 +1138,7 @@ clist_io_procs_t clist_io_procs_memory = {
     memfile_fseek,
 };
 
+init_proc(gs_gxclmem_init);
 int
 gs_gxclmem_init(gs_memory_t *mem)
 {

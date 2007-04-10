@@ -61,7 +61,7 @@ typedef struct gx_band_page_info_s {
     clist_file_ptr cfile;	/* command file, normally 0 */
     char bfname[gp_file_name_sizeof];	/* block file name */
     clist_file_ptr bfile;	/* block file, normally 0 */
-    clist_io_procs_t *io_procs;
+    const clist_io_procs_t *io_procs;
     uint tile_cache_size;	/* size of tile cache */
     int64_t bfile_end_pos;		/* ftell at end of bfile */
     gx_band_params_t band_params;  /* parameters used when writing band list */

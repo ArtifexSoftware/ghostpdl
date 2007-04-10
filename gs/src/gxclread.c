@@ -60,7 +60,7 @@ private int
 s_band_read_init(stream_state * st)
 {
     stream_band_read_state *const ss = (stream_band_read_state *) st;
-    clist_io_procs_t *io_procs = ss->page_info.io_procs;
+    const clist_io_procs_t *io_procs = ss->page_info.io_procs;
 
     ss->left = 0;
     ss->b_this.band_min = 0;
@@ -82,7 +82,7 @@ s_band_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     uint left = ss->left;
     int status = 1;
     uint count;
-    clist_io_procs_t *io_procs = ss->page_info.io_procs;
+    const clist_io_procs_t *io_procs = ss->page_info.io_procs;
 
     while ((count = wlimit - q) != 0) {
 	if (left) {		/* Read more data for the current run. */

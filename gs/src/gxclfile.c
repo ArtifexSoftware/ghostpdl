@@ -25,8 +25,6 @@
 /* This is an implementation of the command list I/O interface */
 /* that uses the file system for storage. */
 
-extern clist_io_procs_t *clist_io_procs_file_global;
-
 /* ------ Open/close/unlink ------ */
 
 private int
@@ -155,7 +153,7 @@ clist_fseek(clist_file_ptr cf, int64_t offset, int mode, const char *ignore_fnam
     return gp_fseek_64((FILE *) cf, offset, mode);
 }
 
-clist_io_procs_t clist_io_procs_file = {
+private clist_io_procs_t clist_io_procs_file = {
     clist_fopen,
     clist_fclose,
     clist_unlink,
@@ -168,7 +166,7 @@ clist_io_procs_t clist_io_procs_file = {
     clist_fseek,
 };
 
-init_proc(gs_clist_init);
+init_proc(gs_gxclfile_init);
 int
 gs_gxclfile_init(gs_memory_t *mem)
 {
