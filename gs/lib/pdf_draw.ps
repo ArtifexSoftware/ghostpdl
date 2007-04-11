@@ -376,6 +376,11 @@ end
 
 /gssmask {
   dup /None eq PDFusingtransparency not or {
+   
+ %TSOMARK
+  % (gssmask endtransparencygroup) == flush
+  % .endtransparencygroup
+    
     pop null
   } {
 	% Preprocess the SMask value into a parameter dictionary for
@@ -395,7 +400,7 @@ end
     } if
     dup /TR knownoget {
       resolveidfnproc /TransferFunction exch 3 2 roll
-    } if    
+    } if
     dup /G oget dup /BBox oget /BBox exch 4 2 roll
     /.execmaskgroup cvx 2 packedarray cvx /Draw exch 3 2 roll
     pop .dicttomark
@@ -406,23 +411,56 @@ end
 /.execmaskgroup {	% <masknum> <paramdict> <formdict> .execmaskgroup -
 	% Save our place in PDFfile, and do a gsave to avoid resetting
 	% the color space.
+	
+(in execmaskgroup ) == flush
+	
   currentcolorspace 4 1 roll
   PDFfile fileposition 4 1 roll
 	% We have to select the group's color space so that the
 	% background color will be interpreted correctly.
-  dup /Group oget /CS knownoget { csresolve dup setgcolorspace csput } if
-  exch dup /BBox get aload pop .begintransparencymaskgroup {
+
+%TSOMARK
+  dup /Group oget dup /foobar exch def /CS knownoget { csresolve dup setgcolorspace csput } if
+  exch dup /BBox get dup
+
+  %stack ( A ) == flush  
+
+  foobar exch
+  
+  userdict /begantransparencygroup known
+  {
+  	(begantransparencygroup known) == flush
+  	pop pop
+  }
+  {
+  	(begantransparencygroup NOT known) == flush
+  	.beginformgroup
+  } ifelse
+  
+  %stack ( B ) == flush  
+  %stack ( C ) == flush  
+  aload pop 
+  %stack ( D ) == flush  
+
+  .begintransparencymaskgroup
+  {   
     dup /Resources knownoget { oforce } { 0 dict } ifelse
     exch false resolvestream
     .execgroup .endtransparencymask
-  } stopped {
+  } stopped
+  {
     .discardtransparencymask stop
   } if
+
+
   PDFfile exch setfileposition 
   setcolorspace
 } bdef
 % Paint a Form+Group XObject, either for a transparency mask or for a Do.
 /.execgroup {		% <resdict> <stream> .execgroup -
+
+(In execgroup ) == flush
+
   gsave //nodict begin
   null SMask
   1 .setopacityalpha 1 .setshapealpha
@@ -441,12 +479,18 @@ end
   pop .dicttomark
 		% Stack: bbox paramdict
   exch aload pop
+  
+  userdict /begantransparencygroup true put
+  
   .begintransparencygroup
 } bdef
 
 % .paintgroupform implements the Form PaintProc in the case where the
 % Form XObject dictionary includes a Group key.  See .paintform below.
 /.paintgroupform {	% <resdict> <stream> <formdict> .paintgroupform -
+
+(In paintgroupform ) == flush
+
   dup /Group oget exch /BBox oget
 		% Stack: resdict stream groupdict bbox
   .beginformgroup {
@@ -980,6 +1024,9 @@ end
     PDFfile fileposition exch
     gsave //nodict begin
     null /SoftMask gput
+
+(In doimagesmask ) == flush
+
     1 .setopacityalpha 1 .setshapealpha
     0 .inittransparencymask 1 .inittransparencymask
     /Compatible .setblendmode
@@ -990,8 +1037,14 @@ end
     << /Subtype /Group /Isolated true 
       /.image_with_SMask true % pdfwrite needs : see gs/src/ztrans.c, gs/src/gdevpdft.c 
     >> 0 0 1 1 .begintransparencygroup
+
+  	userdict /begantransparencygroup true put
+
     doimage
     .endtransparencygroup
+
+  	userdict /begantransparencygroup false put
+
   } {
     doimage
   } ifelse
