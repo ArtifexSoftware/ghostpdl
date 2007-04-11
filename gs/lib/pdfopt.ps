@@ -474,7 +474,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
       } forall
     } if
 		% Visit the Contents stream(s).
-    dup /Contents .knownget { (Visiting Contents) == flush omvisit } if
+    dup /Contents .knownget { omvisit } if
 		% Visit Image XObjects.  We don't try to visit them in
 		% reference order.
     filter_params { omvisit } daforall
@@ -791,9 +791,6 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 % Find the Contents of a page.
 /contentsobjects { % <pagedict> contentsobjects <firstobj#> <lastobj#> true
 		   % <pagedict> contentsobjects false
-		  
-	(Looking at contents) == flush
-		   
   /Contents .knownget {
     dup oforce                   % ref []
     dup type /dicttype eq {

@@ -257,34 +257,11 @@ nodict readonly pop
 % Establish a given color (and color space) as current.
 /.settransparencyparams {	% <alpha> <smask> .settransparencyparams -
   PDFusingtransparency {
-
-%dup type == flush
-%(In settransparencyparams ) == flush
-
     /.inittransparencymask where {
       pop AlphaIsShape {
-	%(In settransparencyparams AlphaIsShape ) == flush
-        1 .setopacityalpha 
-        
-        %true
-        userdict /InitedTheMask known not
-        {
-        	0 .inittransparencymask
-        } if
-        
-        exch .setshapealpha 1
+        1 .setopacityalpha 0 .inittransparencymask exch .setshapealpha 1
       } {
-		%-->(In settransparencyparams AlphaIs NOT Shape) == flush
-        1 .setshapealpha
-        
-        %true
-        userdict /InitedTheMask known not
-        {
-          1	.inittransparencymask
-        } if
-        
-        
-        exch .setopacityalpha 0
+        1 .setshapealpha 1 .inittransparencymask exch .setopacityalpha 0
       } ifelse
 	% Set the soft mask by rendering the XObject.  Doing this every time
 	% is obviously very inefficient; we'll improve it later.
@@ -299,22 +276,7 @@ nodict readonly pop
 /.settransparencymask {		% <paramdict> <masknum> .settransparencymask -
   exch dup null eq {
     PDFusingtransparency {
-
-%(In settransparencymask ) == flush
-
-      pop 
-     
-      %true
-      userdict /InitedTheMask known not
-      {
-    	.inittransparencymask
-      }
-      {
-       pop
-   	  } ifelse
-    	
-      userdict /InitedTheMask true put
-
+      pop .inittransparencymask
     } {
       dup /Draw get exec
     } ifelse
@@ -325,9 +287,6 @@ nodict readonly pop
 % (Non-mask) images must execute setfillblend.
 /setfillblend {
   FillOverprint setoverprint
-
-%(In setfillblend ) == flush
-
   FillConstantAlpha SoftMask .settransparencyparams
 } def
 /setfillstate {
@@ -335,9 +294,6 @@ nodict readonly pop
 } def
 /setstrokestate {
   StrokeColor StrokeColorSpace setgcolor StrokeOverprint setoverprint
-
-%(In setstrokestate ) == flush
-
   StrokeConstantAlpha SoftMask .settransparencyparams
 } def
 /Cdict 15 dict dup begin	% <color...> <colorspace> -proc- -
