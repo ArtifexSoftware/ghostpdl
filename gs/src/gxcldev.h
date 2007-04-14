@@ -266,7 +266,7 @@ struct gx_clist_state_s {
 	0, gx_no_bitmap_id,\
 	 { 0, 0 }, { gx_no_color_index, gx_no_color_index },\
 	 { 0, 0, 0, 0 }, lop_default, 0, 0, 0, initial_known,\
-	{ 0, 0 }, 0, { 0 }
+	{ 0, 0 }, { 0, 0 }, { 0, 0 }
 
 /* Define the size of the command buffer used for reading. */
 /* This is needed to split up operations with a large amount of data, */

@@ -261,7 +261,7 @@ typedef struct gx_device_clist_reader_s {
 					/* means all planes */
     const gx_placed_page *pages;
     int num_pages;
-    gx_band_complexity_t band_complexity_array[100];  /* NB: should be: num_bands elements */
+    gx_band_complexity_t *band_complexity_array;  /* num_bands elements */
 } gx_device_clist_reader;
 
 typedef union gx_device_clist_s {
@@ -269,6 +269,8 @@ typedef union gx_device_clist_s {
     gx_device_clist_reader reader;
     gx_device_clist_writer writer;
 } gx_device_clist;
+
+#define CLIST_IS_WRITER(cdev) ((cdev)->common.ymin < 0)
 
 extern_st(st_device_clist);
 #define public_st_device_clist()	/* in gxclist.c */\
@@ -354,6 +356,10 @@ int clist_render_rectangle(gx_device_clist *cdev,
  */
 gx_band_complexity_t *
 clist_get_band_complexity(gx_device *dev, int y);
+
+/* Free any band_complexity_array memory used by the clist reader device */
+void
+gx_clist_reader_free_band_complexity_array(gx_device_clist *cldev);
 
 /* deep copy constructor if from != NULL
  * default constructor if from == NULL

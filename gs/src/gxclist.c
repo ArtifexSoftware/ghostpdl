@@ -27,7 +27,6 @@
 #include "gxdcolor.h"
 
 /* GC information */
-#define CLIST_IS_WRITER(cdev) ((cdev)->common.ymin < 0)
 extern_st(st_imager_state);
 private
 ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
@@ -36,31 +35,49 @@ ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
 
 	return (ret ? ret : ENUM_OBJ(0));
     }
-    if (!CLIST_IS_WRITER(cdev))
-	return 0;
     index -= st_device_forward_max_ptrs;
-    switch (index) {
-    case 0: return ENUM_OBJ((cdev->writer.image_enum_id != gs_no_id ?
-			     cdev->writer.clip_path : 0));
-    case 1: return ENUM_OBJ((cdev->writer.image_enum_id != gs_no_id ?
-			     cdev->writer.color_space.space : 0));
-    default:
-	return ENUM_USING(st_imager_state, &cdev->writer.imager_state,
-			  sizeof(gs_imager_state), index - 2);
+    if (CLIST_IS_WRITER(cdev)) {
+        switch (index) {
+        case 0: return ENUM_OBJ((cdev->writer.image_enum_id != gs_no_id ?
+                     cdev->writer.clip_path : 0));
+        case 1: return ENUM_OBJ((cdev->writer.image_enum_id != gs_no_id ?
+                     cdev->writer.color_space.space : 0));
+        default:
+        return ENUM_USING(st_imager_state, &cdev->writer.imager_state,
+                  sizeof(gs_imager_state), index - 2);
+        }
+    }
+    else {
+        /* 041207
+         * clist is reader.
+         * We don't expect this code to be exercised at this time as the reader
+         * runs under gdev_prn_output_page which is an atomic function of the
+         * interpreter. We do this as this situation may change in the future.
+         */
+        if (index == 0)
+            return ENUM_OBJ(cdev->reader.band_complexity_array);
+        else
+            return 0;
     }
 ENUM_PTRS_END
 private
 RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
 {
     RELOC_PREFIX(st_device_forward);
-    if (!CLIST_IS_WRITER(cdev))
-	return;
-    if (cdev->writer.image_enum_id != gs_no_id) {
-	RELOC_VAR(cdev->writer.clip_path);
-	RELOC_VAR(cdev->writer.color_space.space);
+    if (CLIST_IS_WRITER(cdev)) {
+        if (cdev->writer.image_enum_id != gs_no_id) {
+        RELOC_VAR(cdev->writer.clip_path);
+        RELOC_VAR(cdev->writer.color_space.space);
+        }
+        RELOC_USING(st_imager_state, &cdev->writer.imager_state,
+            sizeof(gs_imager_state));
     }
-    RELOC_USING(st_imager_state, &cdev->writer.imager_state,
-		sizeof(gs_imager_state));
+    else
+        /* 041207
+         * clist is reader.
+         * See note above in ENUM_PTRS_WITH section.
+         */
+        RELOC_VAR(cdev->reader.band_complexity_array);
 } RELOC_PTRS_END
 public_st_device_clist();
 
@@ -615,9 +632,14 @@ clist_output_page(gx_device * dev, int num_copies, int flush)
 int
 clist_finish_page(gx_device *dev, bool flush)
 {
-    gx_device_clist_writer * const cdev =
-	&((gx_device_clist *)dev)->writer;
+    gx_device_clist_writer * const cdev =	&((gx_device_clist *)dev)->writer;
     int code;
+
+    /* If this is a reader clist, which is about to be reset to a writer,
+     * free any band_complexity_array memory used by same.
+     */
+    if (!CLIST_IS_WRITER((gx_device_clist *)dev))
+       	gx_clist_reader_free_band_complexity_array( (gx_device_clist *)dev );
 
     if (flush) {
 	if (cdev->page_cfile != 0)

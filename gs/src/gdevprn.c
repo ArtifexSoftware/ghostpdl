@@ -198,6 +198,13 @@ gdev_prn_tear_down(gx_device *pdev, byte **the_memory)
 	ppdev->buf = 0;
 	ppdev->buffer_space = 0;
 	is_command_list = true;
+	
+	/* If the clist is a reader clist, free any band_complexity_array
+	 * memory used by same.
+	 */
+	if (!CLIST_IS_WRITER(pclist_dev))
+	    gx_clist_reader_free_band_complexity_array(pclist_dev);
+	
     } else {
 	/* point at the device bitmap, no need to close mem dev */
 	*the_memory = pmemdev->base;

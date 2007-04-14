@@ -26,6 +26,7 @@
 #include "gxgetbit.h"
 #include "gxhttile.h"
 #include "gdevplnx.h"
+#include "gsmemory.h"
 /*
  * We really don't like the fact that gdevprn.h is included here, since
  * command lists are supposed to be usable for purposes other than printer
@@ -234,6 +235,7 @@ clist_render_init(gx_device_clist *dev)
     /* For normal rasterizing, pages and num_pages are zero. */
     crdev->pages = 0;
     crdev->num_pages = 0;
+    crdev->band_complexity_array = NULL;
 
     return gx_clist_reader_read_band_complexity(dev);
 }
@@ -561,9 +563,22 @@ clist_get_band_complexity(gx_device *dev, int y)
 
 	return &crdev->band_complexity_array[band_number];
     }
-    return NULL;   
+    return NULL;
 }
 
+/* Free any band_complexity_array memory used by the clist reader device */
+void gx_clist_reader_free_band_complexity_array( gx_device_clist *cldev )
+{
+	if (cldev != NULL) {
+	    gx_device_clist_reader * const crdev = &cldev->reader;
+	    
+	    if ( crdev->band_complexity_array ) {
+	    	gs_free_object( crdev->memory, crdev->band_complexity_array,
+	    	  "gx_clist_reader_free_band_complexity_array" );
+	    	crdev->band_complexity_array = NULL;
+	    }
+	}
+}
 
 /* call once per read page to read the band complexity from clist file 
  */
@@ -589,6 +604,14 @@ gx_clist_reader_read_band_complexity(gx_device_clist *dev)
 
 	save_pos = crdev->page_info.io_procs->ftell(rs.page_bfile);
 	crdev->page_info.io_procs->fseek(rs.page_bfile, pos, SEEK_SET, rs.page_bfname);
+
+	if ( crdev->band_complexity_array == NULL )
+		crdev->band_complexity_array = (gx_band_complexity_t*)
+		  gs_alloc_byte_array( crdev->memory, crdev->nbands,
+		  sizeof( gx_band_complexity_t ), "gx_clist_reader_read_band_complexity" );
+
+	if ( crdev->band_complexity_array == NULL )
+		return_error(gs_error_VMerror);
 
 	for (i=0; i < crdev->nbands; i++) {
 	    crdev->page_info.io_procs->fread_chars(&cb, sizeof(cb), rs.page_bfile);
