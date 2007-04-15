@@ -2128,7 +2128,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
   switch (ptype) {
   case LJ4DITH:
     /* Page size, orientation, top margin & perforation skip */
-    fprintf(prn_stream, "\033&l26A\033&l0o0e0L\033*r0F" );
+    fprintf(prn_stream, "\033&l%dA\033&l0o0e0L\033*r0F", paper_size);
     fprintf(prn_stream, "\033*p0x0Y" ); /* These Offsets are hacked ! */
     fprintf(prn_stream, "\033&u600D\033*r1A" );
     /* Select data compression */
