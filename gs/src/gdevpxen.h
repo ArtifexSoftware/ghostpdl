@@ -307,11 +307,12 @@ typedef enum {
 
 typedef enum {
     eNoTreatment = 0,
-    eScreenMatch,
     eVivid,
-    eUnknown1,
-    eUnknown2,
-    eUnknown3,
+    eScreenMatch,
+    eText,
+    eOutofGamut,
+    eCIELabmatch1,
+    eCIELabmatch2,
     pxeColorTreatment_next
 } pxeColorTreatment;
     
