@@ -212,7 +212,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	      return -1;
 	    }
 	    len = symcodelengths[index-1].PREFLEN;
-	    if (code == 32) range = jbig2_huffman_get_bits(hs, 2) + 2;
+	    if (code == 32) range = jbig2_huffman_get_bits(hs, 2) + 3;
 	    else if (code == 33) range = jbig2_huffman_get_bits(hs, 3) + 3;
 	    else if (code == 34) range = jbig2_huffman_get_bits(hs, 7) + 11;
 	  }
