@@ -609,10 +609,18 @@ pdfdict begin
        } forall
      } loop			% Loop to previous trailer
    } ifelse			% Ifelse readxref stopped
-   Trailer /Encrypt knownoget {
-     pop
-     pdf_process_Encrypt	% signal error
-   } if
+
+   % Scan numbers in the range 2147483648..4294967295 in Encrypt dictionary
+   % as unsigned integers for compatibility with Acrobat Reader. Bug 689010.
+   << /PDFScanUnsigned //true >> setuserparams
+   { Trailer /Encrypt knownoget {
+       pop
+       pdf_process_Encrypt	% signal error
+     } if
+   } stopped
+   << /PDFScanUnsigned //false >> setuserparams
+   { stop } if
+
    currentdict end
  } bind def
 

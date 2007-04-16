@@ -17,6 +17,7 @@
 #include "ghost.h"
 #include "ierrors.h"
 #include "scommon.h"
+#include "iscan.h"
 #include "iscannum.h"		/* defines interface */
 #include "scanchar.h"
 #include "store.h"
@@ -33,7 +34,7 @@
  */
 int
 scan_number(const byte * str, const byte * end, int sign,
-	    ref * pref, const byte ** psp, const bool PDFScanInvNum)
+	    ref * pref, const byte ** psp, int scanner_options)
 {
     const byte *sp = str;
 #define GET_NEXT(cvar, sp, end_action)\
@@ -57,6 +58,7 @@ scan_number(const byte * str, const byte * end, int sign,
     int exp10;
     int code = 0;
     int c, d;
+    uint max_scan; /* max signed or unsigned int */
     const byte *const decoder = scan_char_decoder;
 #define IS_DIGIT(d, c)\
   ((d = decoder[c]) < 10)
@@ -95,12 +97,13 @@ scan_number(const byte * str, const byte * end, int sign,
 	    goto ind;
 	ival = ival * 10 + d;
     }
+    max_scan = scanner_options & SCAN_PDF_UNSIGNED && sign >= 0 ? ~0 : max_int;
     for (;; ival = ival * 10 + d) {
 	GET_NEXT(c, sp, goto iret);
 	if (!IS_DIGIT(d, c))
 	    break;
-	if (WOULD_OVERFLOW(ival, d, max_int))
-	    goto i2l;
+        if (WOULD_OVERFLOW(((unsigned)ival), d, max_scan))
+            goto i2l;
     }
   ind:				/* We saw a non-digit while accumulating an integer in ival. */
     switch (c) {
@@ -187,8 +190,8 @@ iret:
 
     /* Accumulate a long in lval. */
 i2l:
-    for (lval = ival;;) {
-	if (WOULD_OVERFLOW(lval, d, max_long)) {
+    for (lval = (unsigned)ival;;) {
+	if (WOULD_OVERFLOW(((unsigned long)lval), d, ((unsigned long)max_long))) {
 	    /* Make a special check for entering the smallest */
 	    /* (most negative) integer. */
 	    if (lval == max_long / 10 &&
@@ -208,7 +211,7 @@ i2l:
 		    break;
 		}
 	    } else
-		dval = lval;
+		dval = (unsigned long)lval;
 	    goto l2d;
 	}
 	lval = lval * 10 + d;
@@ -276,11 +279,11 @@ i2r:
 	 * PostScript gives an error on numbers with a '-' following a '.'
 	 * Adobe Acrobat Reader (PDF) apparently doesn't treat this as an
 	 * error. Experiments show that the numbers following the '-' are
-	 * ignored, so we swallow the fractional part. PDFScanInvNum enables
-	 * this compatibility kloodge.
+	 * ignored, so we swallow the fractional part. SCAN_PDF_INV_NUM
+	 *  enables this compatibility kloodge.
 	 */
 	if (c == '-') {
-	    if (!PDFScanInvNum)
+	    if ((SCAN_PDF_INV_NUM & scanner_options) == 0)
 		break;
 	    do {
 		GET_NEXT(c, sp, c = EOFC);
@@ -312,7 +315,7 @@ l2r:
     while (IS_DIGIT(d, c) || c == '-') {
 	/* Handle bogus '-' following '.' as in i2r above.	*/
 	if (c == '-') {
-	    if (!PDFScanInvNum)
+	    if (scanner_options & SCAN_PDF_INV_NUM == 0)
 		break;
 	    do {
 		GET_NEXT(c, sp, c = EOFC);

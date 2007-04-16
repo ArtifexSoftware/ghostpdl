@@ -23,6 +23,6 @@
  * Note that scan_number does not mark the result ref as "new".
  */
 int scan_number(const byte * sp, const byte * end, int sign, ref * pref,
-		const byte ** psp, const bool PDFScanRules);
+		const byte ** psp, int scanner_options);
 
 #endif /* iscannum_INCLUDED */

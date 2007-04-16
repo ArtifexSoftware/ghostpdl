@@ -284,7 +284,7 @@ $(PSOBJ)iscan.$(OBJ) : $(PSSRC)iscan.c $(GH) $(memory__h)\
 	$(PSCC) $(PSO_)iscan.$(OBJ) $(C_) $(PSSRC)iscan.c
 
 $(PSOBJ)iscannum.$(OBJ) : $(PSSRC)iscannum.c $(GH) $(math__h)\
- $(ierrors_h) $(iscannum_h) $(scanchar_h) $(scommon_h) $(store_h)
+ $(ierrors_h) $(iscan_h) $(iscannum_h) $(scanchar_h) $(scommon_h) $(store_h)
 	$(PSCC) $(PSO_)iscannum.$(OBJ) $(C_) $(PSSRC)iscannum.c
 
 ### Streams
