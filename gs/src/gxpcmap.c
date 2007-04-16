@@ -186,7 +186,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
     int64_t size = (int64_t)raster * pinst->size.y;
     gx_device_forward *fdev;
 
-    if (size < MAX_BITMAP_PATTERN_SIZE) {
+    if (size < MAX_BITMAP_PATTERN_SIZE || pinst->template.PaintType != 1) {
 	gx_device_pattern_accum *adev = gs_alloc_struct(mem, gx_device_pattern_accum,
 			&st_device_pattern_accum, cname);
 
@@ -272,7 +272,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
 	cwdev->band_params.page_uses_transparency = false;
 	cwdev->band_params.BandWidth = pinst->size.x;
 	cwdev->band_params.BandHeight = pinst->size.x;
-	cwdev->band_params.BandBufferSpace = max_long;
+	cwdev->band_params.BandBufferSpace = 0;
 	cwdev->do_not_open_or_close_bandfiles = false;
 	cwdev->bandlist_memory = storage_memory->non_gc_memory;
 	cwdev->free_up_bandlist_memory = dummy_free_up_bandlist_memory;
@@ -600,6 +600,10 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 			   "free_pattern_cache_entry(bits data)");
 	    ctile->tbits.data = 0;	/* for GC */
 	}
+	if (ctile->cdev != NULL) {
+	    dev_proc(&ctile->cdev->common, close_device)((gx_device *)&ctile->cdev->common);
+	    ctile->cdev = NULL;
+	}
 	ctile->id = gx_no_bitmap_id;
 	pcache->tiles_used--;
     }
@@ -876,10 +880,10 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
     return code;
 fail:
     if (adev->procs.open_device == pattern_clist_open_device) {
-	gx_device_clist *pdev = (gx_device_clist *)adev;
+	gx_device_clist *cdev = (gx_device_clist *)adev;
 
-	gs_free_object(mem, pdev->common.data, "gx_pattern_load");
-	pdev->common.data = 0;
+	gs_free_object(cdev->writer.bandlist_memory, cdev->common.data, "gx_pattern_load");
+	cdev->common.data = 0;
     }
     gs_free_object(mem, adev, "gx_pattern_load");
     return code;
