@@ -3,13 +3,13 @@
 #define ZIP_LOCAL_FILE_SIG 0x04034b50
 #define ZIP_DATA_DESC_SIG 0x08074b50
 
-static inline int
-make4(byte *buf)
+static inline unsigned int
+scan4(byte *buf)
 {
-    int a = buf[0];
-    int b = buf[1];
-    int c = buf[2];
-    int d = buf[3];
+    unsigned int a = buf[0];
+    unsigned int b = buf[1];
+    unsigned int c = buf[2];
+    unsigned int d = buf[3];
     return a | (b << 8) | (c << 16) | (d << 24);
 }
 
@@ -277,21 +277,22 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 	while (1)
 	{
 
-	    if (part->size > 4)
+	    if (part->size > 16)
 	    {
-		if (make4(part->data + part->size - 4) == ZIP_DATA_DESC_SIG)
+		if (scan4(part->data + part->size - 16) == ZIP_DATA_DESC_SIG)
 		{
-		    if (buf->limit - buf->ptr < 12)
-			return 0;
+		    unsigned int crc32 = scan4(part->data + part->size - 12);
+		    unsigned int csize = scan4(part->data + part->size - 8);
+		    unsigned int usize = scan4(part->data + part->size - 4);
 
-		    read4(ctx, buf); /* crc32 */
-		    read4(ctx, buf); /* csize */
-		    read4(ctx, buf); /* usize */
-
-		    /* dputs("found data descriptor signature\n"); */
-
-		    part->size -= 4;
-		    return 1;
+		    if (csize == usize && usize == part->size - 16)
+		    {
+			if (crc32 == xps_crc32(0, part->data, part->size - 16))
+			{
+			    part->size -= 16;
+			    return 1;
+			}
+		    }
 		}
 	    }
 
