@@ -235,7 +235,7 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
     gs_pattern1_instance_t *pinst =
 	(gs_pattern1_instance_t *)gs_currentcolor(pgs)->pattern;
     ref *pdict = &((int_pattern *) pinst->template.client_data)->dict;
-    gx_device_pattern_accum *pdev = NULL;
+    gx_device_forward *pdev = NULL;
     gx_device *cdev = gs_currentdevice_inline(igs);
     int code;
     ref *ppp;
@@ -316,7 +316,7 @@ private int
 pattern_paint_finish(i_ctx_t *i_ctx_p)
 {
     int o_stack_adjust = ref_stack_count(&o_stack) - esp->value.intval;
-    gx_device_pattern_accum *pdev = r_ptr(esp - 1, gx_device_pattern_accum);
+    gx_device_forward *pdev = r_ptr(esp - 1, gx_device_forward);
 
     if (pdev != NULL) {
 	gx_color_tile *ctile;

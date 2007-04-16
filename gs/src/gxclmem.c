@@ -1142,6 +1142,6 @@ init_proc(gs_gxclmem_init);
 int
 gs_gxclmem_init(gs_memory_t *mem)
 {
-    clist_io_procs_file_global = &clist_io_procs_memory;
+    clist_io_procs_memory_global = &clist_io_procs_memory;
     return 0;
 }

@@ -143,12 +143,6 @@ private const stream_template s_band_read_template = {
 /* Forward references */
 
 private int clist_render_init(gx_device_clist *);
-private int clist_playback_file_bands(clist_playback_action action,
-				      gx_device_clist_reader *crdev,
-				      gx_band_page_info_t *page_info,
-				      gx_device *target,
-				      int band_first, int band_last,
-				      int x0, int y0);
 private int clist_rasterize_lines(gx_device *dev, int y, int lineCount,
 				  gx_device *bdev,
 				  const gx_render_plane_t *render_plane,
@@ -485,7 +479,7 @@ clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
 }
 
 /* Playback the band file, taking the indicated action w/ its contents. */
-private int
+int
 clist_playback_file_bands(clist_playback_action action, 
 			  gx_device_clist_reader *crdev,
 			  gx_band_page_info_t *page_info, gx_device *target,

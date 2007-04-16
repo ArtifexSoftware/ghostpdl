@@ -28,6 +28,7 @@
 #include "gxdevmem.h"
 #include "gxpcolor.h"
 #include "gxp1impl.h"
+#include "gxclist.h"
 #include "gzstate.h"
 
 /* Define the default size of the Pattern cache. */
@@ -137,25 +138,153 @@ private const gx_device_pattern_accum gs_pattern_accum_device =
  0, 0, 0, 0			/* bitmap_memory, bits, mask, instance */
 };
 
+
+private int 
+dummy_free_up_bandlist_memory(gx_device *cldev, bool b)
+{
+    return 0;
+}
+
+int 
+pattern_clist_open_device(gx_device *dev)
+{
+    /* This function is defiled only for clist_init_bands. */
+    return gs_clist_device_procs.open_device(dev);
+}
+
+private dev_proc_create_buf_device(dummy_create_buf_device)
+{
+    gx_device_memory *mdev = (gx_device_memory *)*pbdev;
+
+    gs_make_mem_device(mdev, gdev_mem_device_for_bits(target->color_info.depth),
+		mem, 0, target);
+    return 0;
+}
+private dev_proc_size_buf_device(dummy_size_buf_device)
+{
+    return 0;
+}
+private dev_proc_setup_buf_device(dummy_setup_buf_device)
+{
+    return 0;
+}
+private dev_proc_destroy_buf_device(dummy_destroy_buf_device)
+{
+}
+
+#define MAX_BITMAP_PATTERN_SIZE max_long
+
 /* Allocate a pattern accumulator, with an initial refct of 0. */
-gx_device_pattern_accum *
-gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * stoarge_memory, 
+gx_device_forward *
+gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory, 
 		       gs_pattern1_instance_t *pinst, client_name_t cname)
 {
-    gx_device_pattern_accum *adev =
-	gs_alloc_struct(mem, gx_device_pattern_accum,
+    gx_device *tdev = pinst->saved->device;
+    int depth = (pinst->template.PaintType == 1 ? 1 : tdev->color_info.depth);
+    int raster = (pinst->size.x * depth + 7) / 8;
+    int64_t size = (int64_t)raster * pinst->size.y;
+    gx_device_forward *fdev;
+
+    if (size < MAX_BITMAP_PATTERN_SIZE) {
+	gx_device_pattern_accum *adev = gs_alloc_struct(mem, gx_device_pattern_accum,
 			&st_device_pattern_accum, cname);
 
-    if (adev == 0)
-	return 0;
-    gx_device_init((gx_device *)adev,
-		   (const gx_device *)&gs_pattern_accum_device,
-		   mem, true);
-    check_device_separable((gx_device *)adev);
-    gx_device_forward_fill_in_procs((gx_device_forward *)adev);
-    adev->instance = pinst;
-    adev->bitmap_memory = stoarge_memory;
-    return adev;
+	if (adev == 0)
+	    return 0;
+	gx_device_init((gx_device *)adev,
+		       (const gx_device *)&gs_pattern_accum_device,
+		       mem, true);
+	adev->instance = pinst;
+	adev->bitmap_memory = storage_memory;
+	fdev = (gx_device_forward *)adev;
+    } else {
+	int code;
+	int save_height = tdev->height;
+	gx_device_buf_procs_t buf_procs = {dummy_create_buf_device,
+	dummy_size_buf_device, dummy_setup_buf_device, dummy_destroy_buf_device};
+	gx_device_clist *cdev = gs_alloc_struct(mem, gx_device_clist,
+			&st_device_clist, cname);
+	gx_device_clist_writer *cwdev = (gx_device_clist_writer *)cdev;
+	const int data_size = 1024*32;
+	byte *data;
+
+	if (cdev == 0)
+	    return 0;
+	/* We're not shure how big area do we need here.
+	   Definitely we need 1 state in 'states'.
+	   Not sure whether we need to create tile_cache, etc..
+	   Note it is allocated in non-gc memory,
+	   because the garbager descriptor for
+	   gx_device_clist do not enumerate 'data'
+	   and its subfields, assuming they do not relocate.
+	   We place command list files to non-gc memory
+	   due to same reason.
+	 */
+	data = gs_alloc_bytes(storage_memory->non_gc_memory, data_size, cname);
+	if (data == NULL) {
+	    gs_free_object(mem, cdev, cname);
+	    return 0;
+	}
+	memset(cdev, 0, sizeof(*cdev));
+	cwdev->params_size = sizeof(gx_device_clist);
+	cwdev->static_procs = NULL;
+	cwdev->dname = "pattern-clist";
+	cwdev->memory = mem;
+	cwdev->stype = &st_device_clist;
+	cwdev->stype_is_dynamic = false;
+	cwdev->finalize = NULL;
+	rc_init(cwdev, mem, 1);
+	cwdev->retained = true;
+	cwdev->is_open = false;
+	cwdev->max_fill_band = 0;
+	cwdev->color_info = tdev->color_info;
+	cwdev->cached_colors = tdev->cached_colors;
+	cwdev->width = pinst->size.x;
+	cwdev->height = pinst->size.y;
+        cwdev->LeadingEdge = tdev->LeadingEdge;
+	/* Fields left zeroed :
+	float MediaSize[2];
+	float ImagingBBox[4];
+	bool ImagingBBox_set;
+	*/
+	cwdev->HWResolution[0] = tdev->HWResolution[0];
+	cwdev->HWResolution[1] = tdev->HWResolution[1];
+	/* Fields left zeroed :
+	float MarginsHWResolution[2];
+	float Margins[2];
+	float HWMargins[4];
+	long PageCount;
+	long ShowpageCount;
+	int NumCopies;
+	bool NumCopies_set;
+	bool IgnoreNumCopies;
+	*/
+	cwdev->UseCIEColor = tdev->UseCIEColor;
+	cwdev->LockSafetyParams = true;
+	/* gx_page_device_procs page_procs; */
+	cwdev->procs = gs_clist_device_procs;
+	cwdev->procs.open_device = pattern_clist_open_device;
+	gx_device_copy_color_params((gx_device *)cwdev, tdev);
+	cwdev->target = tdev;
+	clist_init_io_procs(cdev, true);
+	cwdev->data = data;
+	cwdev->data_size = data_size;
+	cwdev->buf_procs = buf_procs ;
+	cwdev->band_params.page_uses_transparency = false;
+	cwdev->band_params.BandWidth = pinst->size.x;
+	cwdev->band_params.BandHeight = pinst->size.x;
+	cwdev->band_params.BandBufferSpace = max_long;
+	cwdev->do_not_open_or_close_bandfiles = false;
+	cwdev->bandlist_memory = storage_memory->non_gc_memory;
+	cwdev->free_up_bandlist_memory = dummy_free_up_bandlist_memory;
+	cwdev->disable_mask = 0;
+	cwdev->page_uses_transparency = false;
+	cwdev->pinst = pinst;
+	fdev = (gx_device_forward *)cdev;
+    }
+    check_device_separable((gx_device *)fdev);
+    gx_device_forward_fill_in_procs(fdev);
+    return fdev;
 }
 
 /*
@@ -408,6 +537,7 @@ gx_pattern_alloc_cache(gs_memory_t * mem, uint num_tiles, ulong max_bits)
 	tiles->tbits.data = 0;
 	tiles->tmask.data = 0;
 	tiles->index = i;
+	tiles->cdev = NULL;
     }
     return pcache;
 }
@@ -485,46 +615,66 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 private void make_bitmap(gx_strip_bitmap *, const gx_device_memory *, gx_bitmap_id);
 int
 gx_pattern_cache_add_entry(gs_imager_state * pis,
-		   gx_device_pattern_accum * padev, gx_color_tile ** pctile)
+		   gx_device_forward * fdev, gx_color_tile ** pctile)
 {
-    gx_device_memory *mbits = padev->bits;
-    gx_device_memory *mmask = padev->mask;
-    const gs_pattern1_instance_t *pinst = padev->instance;
     gx_pattern_cache *pcache;
+    const gs_pattern1_instance_t *pinst;
     ulong used = 0;
-    gx_bitmap_id id = pinst->id;
+    gx_bitmap_id id;
     gx_color_tile *ctile;
     int code = ensure_pattern_cache(pis);
+    extern dev_proc_open_device(pattern_clist_open_device);
 
     if (code < 0)
 	return code;
     pcache = pis->pattern_cache;
-    /*
-     * Check whether the pattern completely fills its box.
-     * If so, we can avoid the expensive masking operations
-     * when using the pattern.
-     */
-    if (mmask != 0) {
-	int y;
+    if (fdev->procs.open_device != pattern_clist_open_device) {
+	gx_device_pattern_accum *padev = (gx_device_pattern_accum *)fdev;
+	gx_device_memory *mbits = padev->bits;
+	gx_device_memory *mmask = padev->mask;
 
-	for (y = 0; y < mmask->height; y++) {
-	    const byte *row = scan_line_base(mmask, y);
-	    int w;
+	pinst = padev->instance;
+	/*
+	 * Check whether the pattern completely fills its box.
+	 * If so, we can avoid the expensive masking operations
+	 * when using the pattern.
+	 */
+	if (mmask != 0) {
+	    int y;
 
-	    for (w = mmask->width; w > 8; w -= 8)
-		if (*row++ != 0xff)
+	    for (y = 0; y < mmask->height; y++) {
+		const byte *row = scan_line_base(mmask, y);
+		int w;
+
+		for (w = mmask->width; w > 8; w -= 8)
+		    if (*row++ != 0xff)
+			goto keep;
+		if ((*row | (0xff >> w)) != 0xff)
 		    goto keep;
-	    if ((*row | (0xff >> w)) != 0xff)
-		goto keep;
+	    }
+	    /* We don't need a mask. */
+	    mmask = 0;
+	  keep:;
 	}
-	/* We don't need a mask. */
-	mmask = 0;
-      keep:;
+	if (mbits != 0)
+	    used += gdev_mem_bitmap_size(mbits);
+	if (mmask != 0)
+	    used += gdev_mem_bitmap_size(mmask);
+    } else {
+	gx_device_clist *cdev = (gx_device_clist *)fdev;
+	gx_device_clist_writer * cldev = (gx_device_clist_writer *)cdev;
+
+	code = clist_end_page(cldev);
+	if (code < 0)
+	    return code;
+	pinst = cdev->writer.pinst;
+	/* HACK: we would like to copy the pattern clist stream into the 
+	   tile cache memory and properly account its size,
+	   but we have no time for this development now.
+	   Therefore the stream is stored outside the cache. */
+	used = 0;
     }
-    if (mbits != 0)
-	used += gdev_mem_bitmap_size(mbits);
-    if (mmask != 0)
-	used += gdev_mem_bitmap_size(mmask);
+    id = pinst->id;
     ctile = &pcache->tiles[id % pcache->num_tiles];
     gx_pattern_cache_free_entry(pcache, ctile);
     while (pcache->bits_used + used > pcache->max_bits &&
@@ -534,24 +684,44 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
 	gx_pattern_cache_free_entry(pcache, &pcache->tiles[pcache->next]);
     }
     ctile->id = id;
-    ctile->depth = padev->color_info.depth;
+    ctile->depth = fdev->color_info.depth;
     ctile->uid = pinst->template.uid;
     ctile->tiling_type = pinst->template.TilingType;
     ctile->step_matrix = pinst->step_matrix;
     ctile->bbox = pinst->bbox;
     ctile->is_simple = pinst->is_simple;
     ctile->is_dummy = false;
-    if (mbits != 0) {
-	make_bitmap(&ctile->tbits, mbits, gs_next_ids(pis->memory, 1));
-	mbits->bitmap_memory = 0;	/* don't free the bits */
-    } else
+    if (fdev->procs.open_device != pattern_clist_open_device) {
+	gx_device_pattern_accum *padev = (gx_device_pattern_accum *)fdev;
+	gx_device_memory *mbits = padev->bits;
+	gx_device_memory *mmask = padev->mask;
+
+	if (mbits != 0) {
+	    make_bitmap(&ctile->tbits, mbits, gs_next_ids(pis->memory, 1));
+	    mbits->bitmap_memory = 0;	/* don't free the bits */
+	} else
+	    ctile->tbits.data = 0;
+	if (mmask != 0) {
+	    make_bitmap(&ctile->tmask, mmask, id);
+	    mmask->bitmap_memory = 0;	/* don't free the bits */
+	} else
+	    ctile->tmask.data = 0;
+	ctile->cdev = NULL;
+	pcache->bits_used += used;
+    } else {
+	gx_device_clist *cdev = (gx_device_clist *)fdev;
+	gx_device_clist_writer *cwdev = (gx_device_clist_writer *)fdev;
+
 	ctile->tbits.data = 0;
-    if (mmask != 0) {
-	make_bitmap(&ctile->tmask, mmask, id);
-	mmask->bitmap_memory = 0;	/* don't free the bits */
-    } else
+	ctile->tbits.size.x = 0;
+	ctile->tbits.size.y = 0;
 	ctile->tmask.data = 0;
-    pcache->bits_used += used;
+	ctile->tmask.size.x = 0;
+	ctile->tmask.size.y = 0;
+	ctile->cdev = cdev;
+	/* Prevent freeing files on pattern_paint_cleanup : */
+	cwdev->do_not_open_or_close_bandfiles = true;
+    }
     pcache->tiles_used++;
     *pctile = ctile;
     return 0;
@@ -585,6 +755,7 @@ gx_pattern_cache_add_dummy_entry(gs_imager_state *pis,
     ctile->tbits.size = pinst->size;
     ctile->tbits.id = gs_no_bitmap_id;
     memset(&ctile->tmask, 0 , sizeof(ctile->tmask));
+    ctile->cdev = NULL;
     pcache->tiles_used++;
     return 0;
 }
@@ -623,7 +794,7 @@ int
 gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
 		gx_device * dev, gs_color_select_t select)
 {
-    gx_device_pattern_accum *adev;
+    gx_device_forward *adev;
     gs_pattern1_instance_t *pinst =
 	(gs_pattern1_instance_t *)pdc->ccolor.pattern;
     gs_state *saved;
@@ -641,7 +812,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
      * Note that adev is an internal device, so it will be freed when the
      * last reference to it from a graphics state is deleted.
      */
-    adev = gx_pattern_accum_alloc(mem, mem, pinst, "gx_pattern_load");
+    adev = gx_pattern_accum_alloc(mem, pis->pattern_cache->memory, pinst, "gx_pattern_load");
     if (adev == 0)
 	return_error(gs_error_VMerror);
     gx_device_set_target((gx_device_forward *)adev, dev);
@@ -664,7 +835,8 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
 	return code;
     }
     /* We REALLY don't like the following cast.... */
-    code = gx_pattern_cache_add_entry((gs_imager_state *)pis, adev, &ctile);
+    code = gx_pattern_cache_add_entry((gs_imager_state *)pis, 
+		adev, &ctile);
     if (code >= 0) {
 	if (!gx_pattern_cache_lookup(pdc, pis, dev, select)) {
 	    lprintf("Pattern cache lookup failed after insertion!\n");
@@ -672,14 +844,16 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
 	}
     }
 #ifdef DEBUG
-    if (gs_debug_c('B')) {
-        if (adev->mask)
-	    debug_dump_bitmap(adev->mask->base, adev->mask->raster,
-			      adev->mask->height, "[B]Pattern mask");
-	if (adev->bits)
-	    debug_dump_bitmap(((gx_device_memory *) adev->target)->base,
-			      ((gx_device_memory *) adev->target)->raster,
-			      adev->target->height, "[B]Pattern bits");
+    if (gs_debug_c('B') && adev->procs.open_device == pattern_accum_open) {
+	gx_device_pattern_accum *pdev = (gx_device_pattern_accum *)adev;
+
+        if (pdev->mask)
+	    debug_dump_bitmap(pdev->mask->base, pdev->mask->raster,
+			      pdev->mask->height, "[B]Pattern mask");
+	if (pdev->bits)
+	    debug_dump_bitmap(((gx_device_memory *) pdev->target)->base,
+			      ((gx_device_memory *) pdev->target)->raster,
+			      pdev->target->height, "[B]Pattern bits");
     }
 #endif
     /* Free the bookkeeping structures, except for the bits and mask */
@@ -689,6 +863,12 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
     gs_state_free_chain(saved);
     return code;
 fail:
+    if (adev->procs.open_device == pattern_clist_open_device) {
+	gx_device_clist *pdev = (gx_device_clist *)adev;
+
+	gs_free_object(mem, pdev->common.data, "gx_pattern_load");
+	pdev->common.data = 0;
+    }
     gs_free_object(mem, adev, "gx_pattern_load");
     return code;
 }

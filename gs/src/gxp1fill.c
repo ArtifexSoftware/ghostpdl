@@ -26,6 +26,7 @@
 #include "gxclip2.h"
 #include "gxpcolor.h"
 #include "gxp1impl.h"
+#include "gxcldev.h"
 
 /* Define the state for tile filling. */
 typedef struct tile_fill_state_s {
@@ -235,6 +236,16 @@ tile_colored_fill(const tile_fill_state_t * ptfs,
     }
     return code;
 }
+
+private int 
+clist_fopen_dummy(char fname[gp_file_name_sizeof], const char *fmode,
+		    clist_file_ptr * pcf,
+		    gs_memory_t * mem, gs_memory_t *data_mem,
+		    bool ok_to_compress)
+{
+    return 0;
+}
+
 int
 gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 			     int w, int h, gx_device * dev,
@@ -252,6 +263,24 @@ gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 	return 0;
     if (rop_source == NULL)
 	set_rop_no_source(rop_source, no_source, dev);
+    if (ptile->cdev != NULL) {
+	gs_memory_t *mem = dev->memory;
+	gx_device_clist *cdev = ptile->cdev;
+	gx_device_clist_reader *crdev = (gx_device_clist_reader *)cdev;
+	int x0 = 0, y0 = 0;
+	gx_device_buf_procs_t buf_procs = {0};
+
+	crdev->yplane.depth = 0; /* Don't know what to set here. */
+	crdev->yplane.shift = 0;
+	crdev->yplane.index = -1;
+	crdev->pages = NULL;
+	crdev->num_pages = 1;
+	crdev->page_info.io_procs->rewind(crdev->page_info.bfile, false, NULL);
+	crdev->page_info.io_procs->rewind(crdev->page_info.cfile, false, NULL);
+	code = clist_playback_file_bands(playback_action_render,
+		    crdev, &crdev->page_info, dev, 0, 0, x0, y0);
+	return code;
+   }
     bits = &ptile->tbits;
     code = tile_fill_init(&state, pdevc, dev, false);
     if (code < 0)

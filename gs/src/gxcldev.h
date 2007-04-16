@@ -736,4 +736,9 @@ int clist_playback_band(clist_playback_action action,
 			stream *s, gx_device *target,
 			int x0, int y0, gs_memory_t *mem);
 
+/* Playback the band file, taking the indicated action w/ its contents. */
+int clist_playback_file_bands(clist_playback_action action, 
+			  gx_device_clist_reader *crdev,
+			  gx_band_page_info_t *page_info, gx_device *target,
+			  int band_first, int band_last, int x0, int y0);
 #endif /* gxcldev_INCLUDED */

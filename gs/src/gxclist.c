@@ -42,9 +42,10 @@ ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
                      cdev->writer.clip_path : 0));
         case 1: return ENUM_OBJ((cdev->writer.image_enum_id != gs_no_id ?
                      cdev->writer.color_space.space : 0));
+	case 2: return ENUM_OBJ(cdev->writer.pinst);
         default:
         return ENUM_USING(st_imager_state, &cdev->writer.imager_state,
-                  sizeof(gs_imager_state), index - 2);
+                  sizeof(gs_imager_state), index - 3);
         }
     }
     else {
@@ -66,9 +67,10 @@ RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
     RELOC_PREFIX(st_device_forward);
     if (CLIST_IS_WRITER(cdev)) {
         if (cdev->writer.image_enum_id != gs_no_id) {
-        RELOC_VAR(cdev->writer.clip_path);
-        RELOC_VAR(cdev->writer.color_space.space);
+	    RELOC_VAR(cdev->writer.clip_path);
+	    RELOC_VAR(cdev->writer.color_space.space);
         }
+	RELOC_VAR(cdev->writer.pinst);
         RELOC_USING(st_imager_state, &cdev->writer.imager_state,
             sizeof(gs_imager_state));
     }
@@ -169,11 +171,9 @@ void
 clist_init_io_procs(gx_device_clist *pclist_dev, bool in_memory)
 {   
     if (in_memory || clist_io_procs_file_global == NULL)
-	pclist_dev->common.page_info.io_procs = pclist_dev->reader.page_info.io_procs = 
-		pclist_dev->writer.page_info.io_procs = clist_io_procs_memory_global;
+	pclist_dev->common.page_info.io_procs = clist_io_procs_memory_global;
     else
-	pclist_dev->common.page_info.io_procs = pclist_dev->reader.page_info.io_procs = 
-		pclist_dev->writer.page_info.io_procs = clist_io_procs_file_global;
+	pclist_dev->common.page_info.io_procs = clist_io_procs_file_global;
 }
 
 /* ------ Define the command set and syntax ------ */
@@ -272,7 +272,14 @@ clist_init_bands(gx_device * dev, gx_device_memory *bdev, uint data_size,
     gx_device_clist_writer * const cdev =
 	&((gx_device_clist *)dev)->writer;
     int nbands;
+    extern dev_proc_open_device(pattern_clist_open_device);
 
+    if (dev->procs.open_device == pattern_clist_open_device) {
+	/* We don't need bands really. */
+	cdev->page_band_height = dev->height;
+	cdev->nbands = 1;
+	return 0;
+    }
     if (gdev_mem_data_size(bdev, band_width, band_height) > data_size)
 	return_error(gs_error_rangecheck);
     cdev->page_band_height = band_height;
@@ -615,9 +622,14 @@ clist_close(gx_device *dev)
 {
     gx_device_clist_writer * const cdev =
 	&((gx_device_clist *)dev)->writer;
+    extern dev_proc_open_device(pattern_clist_open_device);
 
     if (cdev->do_not_open_or_close_bandfiles)
 	return 0;	
+    if (cdev->procs.open_device == pattern_clist_open_device) {
+	gs_free_object(cdev->bandlist_memory, cdev->data, "clist_close");
+	cdev->data = NULL;
+    }
     return clist_close_output_file(dev);
 }
 

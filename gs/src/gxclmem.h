@@ -61,7 +61,7 @@ typedef struct LOG_MEMFILE_BLK {
     RAW_BUFFER *raw_block;	/* or NULL */
 } LOG_MEMFILE_BLK;
 
-typedef struct MEMFILE {
+struct MEMFILE_s {
     gs_memory_t *memory;	/* storage allocator */
     gs_memory_t *data_memory;	/* storage allocator for data */
     bool ok_to_compress;	/* if true, OK to compress this file */
@@ -102,7 +102,11 @@ typedef struct MEMFILE {
     bool compressor_initialized;
     stream_state *compress_state;
     stream_state *decompress_state;
-} MEMFILE;
+};
+#ifndef MEMFILE_DEFINED
+#define MEMFILE_DEFINED
+typedef struct MEMFILE_s MEMFILE;
+#endif
 
 /*
  * Only the MEMFILE and stream_state structures are GC-compatible, so we

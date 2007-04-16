@@ -56,6 +56,11 @@
  * questions is negative, we flush the buffer.
  */
 
+#ifndef gs_pattern1_instance_t_DEFINED
+#  define gs_pattern1_instance_t_DEFINED
+typedef struct gs_pattern1_instance_s gs_pattern1_instance_t;
+#endif
+
 /* ---------------- Public structures ---------------- */
 
 /*
@@ -242,6 +247,7 @@ typedef struct gx_device_clist_writer_s {
 		/* Following must be set before writing */
 	proc_free_up_bandlist_memory((*free_up_bandlist_memory)); /* if nz, proc to free some bandlist memory */
 	int disable_mask;		/* mask of routines to disable clist_disable_xxx */
+	gs_pattern1_instance_t *pinst; /* Used when it is a pattern clist. */
 } gx_device_clist_writer;
 
 /* Bits for gx_device_clist_writer.disable_mask. Bit set disables behavior */
@@ -264,13 +270,16 @@ typedef struct gx_device_clist_reader_s {
     gx_band_complexity_t *band_complexity_array;  /* num_bands elements */
 } gx_device_clist_reader;
 
-typedef union gx_device_clist_s {
+union gx_device_clist_s {
     gx_device_clist_common common;
     gx_device_clist_reader reader;
     gx_device_clist_writer writer;
-} gx_device_clist;
+};
 
-#define CLIST_IS_WRITER(cdev) ((cdev)->common.ymin < 0)
+#ifndef gx_device_clist_DEFINED
+#define gx_device_clist_DEFINED
+typedef union gx_device_clist_s gx_device_clist;
+#endif
 
 extern_st(st_device_clist);
 #define public_st_device_clist()	/* in gxclist.c */\
@@ -278,7 +287,9 @@ extern_st(st_device_clist);
     "gx_device_clist", 0, device_clist_enum_ptrs, device_clist_reloc_ptrs,\
     gx_device_finalize)
 #define st_device_clist_max_ptrs\
-  (st_device_forward_max_ptrs + st_imager_state_num_ptrs + 1)
+  (st_device_forward_max_ptrs + st_imager_state_num_ptrs + 3)
+
+#define CLIST_IS_WRITER(cdev) ((cdev)->common.ymin < 0)
 
 /* setup before opening clist device */
 #define clist_init_params(xclist, xdata, xdata_size, xtarget, xbuf_procs, xband_params, xexternal, xmemory, xfree_bandlist, xdisable, pageusestransparency)\
@@ -293,6 +304,7 @@ extern_st(st_device_clist);
 	(xclist)->writer.free_up_bandlist_memory = (xfree_bandlist);\
 	(xclist)->writer.disable_mask = (xdisable);\
 	(xclist)->writer.page_uses_transparency = (pageusestransparency);\
+	(xclist)->writer.pinst = NULL;\
     END
 
 /* Determine whether this clist device is able to recover VMerrors */
@@ -358,8 +370,7 @@ gx_band_complexity_t *
 clist_get_band_complexity(gx_device *dev, int y);
 
 /* Free any band_complexity_array memory used by the clist reader device */
-void
-gx_clist_reader_free_band_complexity_array(gx_device_clist *cldev);
+void gx_clist_reader_free_band_complexity_array(gx_device_clist *cldev);
 
 /* deep copy constructor if from != NULL
  * default constructor if from == NULL
