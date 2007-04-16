@@ -36,6 +36,7 @@
 #include "gxistate.h"
 
 #include "gzstate.h"
+#include "gzpath.h"
 
 #include "zlib.h"
 
@@ -77,6 +78,8 @@ void xps_absolute_path(char *output, char *pwd, char *path);
 int xps_show_page(xps_context_t *ctx, int num_copies, int flush);
 
 int xps_utf8_to_ucs(int *p, const char *s, int n);
+
+unsigned int xps_crc32(unsigned int crc, unsigned char *buf, int n);
 
 /*
  * Packages, parts and relations.
