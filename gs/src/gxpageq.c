@@ -298,7 +298,7 @@ gx_page_queue_add_page(gx_device_clist_writer *const pcwdev,
 	entry->page_info = *page_info;
     else {
 	entry->page_info = null_page_info;
-	entry->page_info.io_procs = pcwdev->io_procs;
+	entry->page_info.io_procs = pcwdev->page_info.io_procs;
     }
     entry->num_copies = page_count;
 

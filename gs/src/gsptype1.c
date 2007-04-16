@@ -449,6 +449,13 @@ gs_pattern1_get_pattern(const gs_pattern_instance_t *pinst)
 	&((const gs_pattern1_instance_t *)pinst)->template;
 }
 
+/* Check device color for Pattern Type 1. */
+bool
+gx_dc_is_pattern1_color(const gx_device_color *pdevc)
+{
+    return pdevc->type == &gx_dc_pattern;
+}
+
 /*
  * Perform actions required at setcolor time. This procedure resets the
  * overprint information (almost) as required by the pattern. The logic

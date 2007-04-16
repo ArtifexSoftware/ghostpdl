@@ -20,6 +20,11 @@
 #include "gspcolor.h"
 #include "gxbitmap.h"
 
+#ifndef gx_device_color_DEFINED
+#  define gx_device_color_DEFINED
+typedef struct gx_device_color_s gx_device_color;
+#endif
+
 /* ---------------- Types and structures ---------------- */
 
 /* PatternType 1 template */
@@ -77,6 +82,9 @@ void gs_pattern1_init(gs_pattern1_template_t *);
 int gs_makepattern(gs_client_color *, const gs_client_pattern *,
 		   const gs_matrix *, gs_state *, gs_memory_t *);
 const gs_client_pattern *gs_getpattern(const gs_client_color *);
+
+/* Check device color for Pattern Type 1. */
+bool gx_dc_is_pattern1_color(const gx_device_color *pdevc);
 
 /*
  * Make a pattern from a bitmap or pixmap. The pattern may be colored or

@@ -29,6 +29,7 @@
 #include "gxpcolor.h"
 #include "gxp1impl.h"
 #include "gxclist.h"
+#include "gxcldev.h"
 #include "gzstate.h"
 
 /* Define the default size of the Pattern cache. */
@@ -198,8 +199,6 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
 	adev->bitmap_memory = storage_memory;
 	fdev = (gx_device_forward *)adev;
     } else {
-	int code;
-	int save_height = tdev->height;
 	gx_device_buf_procs_t buf_procs = {dummy_create_buf_device,
 	dummy_size_buf_device, dummy_setup_buf_device, dummy_destroy_buf_device};
 	gx_device_clist *cdev = gs_alloc_struct(mem, gx_device_clist,
@@ -719,12 +718,25 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
 	ctile->tmask.size.x = 0;
 	ctile->tmask.size.y = 0;
 	ctile->cdev = cdev;
+	gs_free_object(cwdev->bandlist_memory, cwdev->data, "gx_pattern_cache_add_entry");
+	cwdev->data = NULL;
+	cwdev->states = NULL;
+	cwdev->cbuf = NULL;
+	cwdev->cnext = NULL;
+	cwdev->cend = NULL;
+	cwdev->ccl = NULL;
 	/* Prevent freeing files on pattern_paint_cleanup : */
 	cwdev->do_not_open_or_close_bandfiles = true;
     }
     pcache->tiles_used++;
     *pctile = ctile;
     return 0;
+}
+
+bool 
+gx_pattern_tile_is_clist(gx_color_tile *ptile)
+{
+    return ptile->cdev != NULL;
 }
 
 /* Add a dummy Pattern cache entry.  Stubs a pattern tile for interpreter when

@@ -246,4 +246,8 @@ void gx_pattern_cache_winnow(gx_pattern_cache *,
 			     bool (*)(gx_color_tile *, void *),
 			     void *);
 
+bool gx_pattern_tile_is_clist(gx_color_tile *ptile);
+
+dev_proc_open_device(pattern_clist_open_device);
+
 #endif /* gxpcolor_INCLUDED */
