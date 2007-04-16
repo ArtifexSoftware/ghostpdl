@@ -988,7 +988,7 @@ EXTRA_INIT_FILES= Fontmap cidfmap xlatmap FAPI FCOfontmap-PCLPS2 gs_cet.ps
 #	The init files are put in the lib/ directory (gs_init.ps + EXTRA_INIT_FILES)
 #	Resource files go into Resource/...
 
-RESOURCE_LIST=ColorSpace/ Decoding/ Font/ Procset/ IdiomSet/ CIDFont/ CMap/
+RESOURCE_LIST=ColorSpace/ Decoding/ Font/ ProcSet/ IdiomSet/ CIDFont/ CMap/
 
 # PCLXL_ PJL and XPS hooks are for other parsers that may be built with a PS
 # language switch build.
