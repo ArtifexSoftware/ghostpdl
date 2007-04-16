@@ -49,6 +49,8 @@ xps_true_callback_build_char(gs_text_enum_t *ptextenum, gs_state *pgs, gs_font *
     float sbw[4], w2[6];
     int code;
 
+    dprintf1("build char ttf %d\n", glyph);
+
     code = gs_type42_get_metrics(p42, glyph, sbw);
     if (code < 0)
 	return code;
@@ -121,6 +123,7 @@ int xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font)
 
 	p42->client_data = font; /* that's us */
 
+	/* this is overwritten in grid_fit() */
 	gs_make_identity(&p42->FontMatrix);
 	gs_make_identity(&p42->orig_FontMatrix); /* NB ... original or zeroes? */
 

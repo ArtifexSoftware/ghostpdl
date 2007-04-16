@@ -216,12 +216,16 @@ xps_read_cff_dict(byte *p, byte *e, xps_font_t *font, gs_font_type1 *pt1)
 
 	    if (b0 == (256 | 7))
 	    {
-		pt1->FontMatrix.xx = args[0].fval * 1000;
-		pt1->FontMatrix.xy = args[1].fval * 1000;
-		pt1->FontMatrix.yx = args[2].fval * 1000;
-		pt1->FontMatrix.yy = args[3].fval * 1000;
-		pt1->FontMatrix.tx = args[4].fval * 1000;
-		pt1->FontMatrix.ty = args[5].fval * 1000;
+		pt1->FontMatrix.xx = args[0].fval;
+		pt1->FontMatrix.xy = args[1].fval;
+		pt1->FontMatrix.yx = args[2].fval;
+		pt1->FontMatrix.yy = args[3].fval;
+		pt1->FontMatrix.tx = args[4].fval;
+		pt1->FontMatrix.ty = args[5].fval;
+		dprintf6("cff font matrix %g %g %g %g %g %g\n",
+			args[0].fval, args[1].fval,
+			args[2].fval, args[3].fval,
+			args[4].fval, args[5].fval);
 	    }
 
 	    if (b0 == 5)
@@ -230,6 +234,9 @@ xps_read_cff_dict(byte *p, byte *e, xps_font_t *font, gs_font_type1 *pt1)
 		pt1->FontBBox.p.y = args[1].fval;
 		pt1->FontBBox.q.x = args[2].fval;
 		pt1->FontBBox.q.y = args[3].fval;
+		dprintf4("cff font bbox %g %g %g %g\n",
+			args[0].fval, args[1].fval,
+			args[2].fval, args[3].fval);
 	    }
 
 	    if (b0 == 20)
@@ -242,7 +249,7 @@ xps_read_cff_dict(byte *p, byte *e, xps_font_t *font, gs_font_type1 *pt1)
 		pt1->data.initialRandomSeed = args[0].ival;
 
 	    /* Monday morning blues */
-
+#if 0
 	    if (b0 == 6)
 	    {
 		pt1->data.BlueValues.count = n / 2;
@@ -314,6 +321,8 @@ xps_read_cff_dict(byte *p, byte *e, xps_font_t *font, gs_font_type1 *pt1)
 
 	    if (b0 == (256 | 18))
 		pt1->data.ExpansionFactor = args[0].fval;
+
+#endif
 
 	    n = 0;
 	}
@@ -677,13 +686,13 @@ xps_post_callback_seac_data(gs_font_type1 * pfont, int ccode, gs_glyph * pglyph,
 private int
 xps_post_callback_push(void *callback_data, const fixed *values, int count)
 {
-    return gs_throw(-1, "push not implemented");;
+    return gs_throw(-1, "push not implemented");
 }
 
 private int
 xps_post_callback_pop(void *callback_data, fixed *value)
 {
-    return gs_throw(-1, "pop not implemented");;
+    return gs_throw(-1, "pop not implemented");
 }
 
 
@@ -705,7 +714,8 @@ xps_cff_append(gs_state *pgs, gs_font_type1 *pt1, gs_glyph glyph, int donthint)
     if (code < 0)
 	return gs_rethrow(code, "cannot get glyph data");
 
-    gs_make_scaling(0.001, 0.001, &mtx);
+    mtx = ctm_only(pgs);
+    gs_matrix_scale(&mtx, 0.001, 0.001, &mtx);
     mtx.tx = 0;
     mtx.ty = 0;
     gs_matrix_fixed_from_matrix(&pgis->ctm, &mtx);
@@ -736,8 +746,9 @@ xps_cff_append(gs_state *pgs, gs_font_type1 *pt1, gs_glyph glyph, int donthint)
 	    pgd = 0;
 	    break;
 	case 0: /* all done */
+	    return 0;
 	default: /* code < 0, error */
-	    return code;
+	    return gs_throw(code, "cannot interpret type1 data");
 	}
     }
 }
@@ -752,7 +763,7 @@ xps_post_callback_build_char(gs_text_enum_t *ptextenum, gs_state *pgs,
     float sbw[4], w2[6];
     int code;
 
-    dprintf2("build_char chr=%d glyph=%d\n", chr, glyph);
+    dprintf1("build char cff %d\n", glyph);
 
     // get the metrics
     w2[0] = 0;
@@ -855,7 +866,7 @@ xps_init_postscript_font(xps_context_t *ctx, xps_font_t *font)
     pt1->procs.encode_char = xps_post_callback_encode_char; 
     pt1->procs.decode_glyph = xps_post_callback_decode_glyph;
     // enumerate_glyph
-    pt1->procs.glyph_info = xps_post_callback_glyph_info;;
+    pt1->procs.glyph_info = xps_post_callback_glyph_info;
     pt1->procs.glyph_outline = xps_post_callback_glyph_outline;
     pt1->procs.glyph_name = xps_post_callback_glyph_name;
     pt1->procs.init_fstack = gs_default_init_fstack;
