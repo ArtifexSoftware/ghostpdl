@@ -17,7 +17,7 @@
 # contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 # San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-# $Id$
+# $Id: get_baselines,v 1.3 2004/05/02 19:23:01 ray Exp $
 
 #
 # get_baselines <date>
@@ -47,10 +47,11 @@ if len(sys.argv) == 2:
 else:
     usage()
 
+
 try:
-    baseline_log = open(gsconf.log_baseline)
+    baseline_log = open(name)
 except:
-    print "ERROR: Could not open baseline log."
+    print "ERROR: cannot open baseline log",name
     sys.exit(1)
 
 changes = {}

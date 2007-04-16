@@ -16,14 +16,14 @@
 # contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 # San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-# $Id$
+# $Id: dump_testdb,v 1.7 2004/07/14 18:21:24 ray Exp $
 
 #
-# dump_testdb [<dbfile>]
+# dump_baseline.py [<dbfile>]
 #
-# dumps (prints out) the contents of the testdatadb
+# dumps (prints out) the contents of the baselinedb
 
-import string, sys, anydbm, gsconf
+import string, sys, anydbm, gsconf, os
 
 def compare_field_2(s1, s2):
     if string.split(s1,' ')[1] < string.split(s2,' ')[1]:
@@ -32,19 +32,19 @@ def compare_field_2(s1, s2):
     	return 1
 
 if len(sys.argv) == 2:
-    print "opening ", sys.argv[1]
-    db = anydbm.open(sys.argv[1])
+    name=sys.argv[1]
 else:
-    db = anydbm.open(gsconf.testdatadb)
+    name=gsconf.baselinedb
+
+if not os.path.exists(name):
+    print "cannot open",name
+    sys.exit(1)
+
+print "opening ", name
+db = anydbm.open(name)
 
 # collect the database as strings
 dump = []
 for k in db.keys():
-    dump.append('%s %s' % (db[k], k))
+    print '-%50s- %s' % (k,db[k])
 
-# Sort on field 2 (the file name)
-dump.sort(compare_field_2)
-
-# Print the sorted list
-for line in dump:
-    print line

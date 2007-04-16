@@ -19,17 +19,18 @@
 #
 # base classes for regression testing
 
-import os
+import os, time
 import string
 import gsconf
 from gstestutils import GSTestCase
 
+myself="gstestgs.py"
+
 class Ghostscript:
 	def __init__(self):
-		self.command = '/usr/bin/gs'
+		self.device = ''
 		self.dpi = 72
 		self.band = 0
-		self.device = ''
 		self.infile = 'input'
 		if os.name == 'nt':
 			self.nullfile = 'nul'
@@ -39,88 +40,119 @@ class Ghostscript:
 
 		# log file options
 		# NOTE: we always append to the log.  if it is desired to start a new
-		# log, it is the responsibility of the caller to clear/erase the old
-		# one.
+		# log, it is the responsibility of the caller to clear/erase the old one.
+
 		self.log_stdout = self.nullfile
 		self.log_stderr = self.nullfile
+
+	def log_message(self,message):
+		try:
+			log = open(self.log_stdout, "a")
+			log.write(message+"\n")
+			log.close()
+		except:
+			pass
 
 	def process(self):
 		bandsize = 30000000
 		if (self.band): bandsize = 10000
 		
-		cmd = self.command
+		gsroot=self.gsroot
+		execpath = gsroot+'bin/gs'
+
+		arguments = ' -sOutputFile=\'%s\' ' % (self.outfile,)
+
 		if gsconf.fontdir:
-			cmd = cmd + ' -I' + gsconf.fontdir
-		cmd = cmd + ' -dQUIET -dNOPAUSE -dBATCH -K1000000 '
-		if self.dpi:
-			cmd = cmd + '-r%d ' % (self.dpi,)
-		cmd = cmd + '-dMaxBitmap=%d ' % (bandsize,)
-		cmd = cmd + '-sDEVICE=%s ' % (self.device,)
-		cmd = cmd + '-sOutputFile=\'%s\' ' % (self.outfile,)
-
-		# as of gs_init 1.93, job server emulation needs -dNOOUTERSAVE so
-		# that the 'exitserver' will restore global VM as expected.
-		# As of gs_init 1.111, job server emulation is supported (in a
-		# backward compatible fashion) so we add -dJOBSERVER.
-		cmd = cmd + '-dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f'
-
-		if string.lower(self.infile[-4:]) == ".pdf" or \
-		   string.lower(self.infile[-3:]) == ".ai":
-			cmd = cmd + ' -dFirstPage=1 -dLastPage=1 '
+			FontPath=gsconf.fontdir
 		else:
-			cmd = cmd + ' - < '
+			FontPath = ''
+		ResourcePath=gsroot+'lib/'
+		IPath = ResourcePath+':'+FontPath
+		if IPath:
+			arguments+= ' -I' + IPath
 
-		cmd = cmd + ' \'%s\' >> %s 2>> %s' % (self.infile, self.log_stdout, self.log_stderr)
 
+		arguments += ' -sDEVICE=%s ' % (self.device,)
+		if self.dpi:
+			arguments += '-r%d ' % (self.dpi,)
 
-		# before we execute the command which might append to the log
-		# we output a short header to show the commandline that generates
-		# the log entry.
+		arguments += ' -dNOPAUSE -dBATCH -K1000000'
+		arguments += ' -dMaxBitmap=%d' % (bandsize,)
+		arguments += ' -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f'
+
+		if string.lower(self.infile[-4:]) == ".pdf" or string.lower(self.infile[-3:]) == ".ai":
+			arguments += ' -dFirstPage=1 -dLastPage=1 '
+			infile = self.infile
+		else:
+			# for some tests, input from stdin is required - use it all the time
+			infile = ' - < '+self.infile
+
+		if self.log_stdout and self.log_stderr:
+			capture=' >> %s 2>> %s' % (self.log_stdout, self.log_stderr)
+		else:
+			capture=''
+
+		fullcommand=execpath+arguments+" "+infile+" "+capture
+		
+		# before we execute the command which appends to the log
+		# we output a message to record the commandline that generates the log entry.
+
+		infilename=os.path.basename(self.infile)
+		comment=' '.join((infilename,"to",self.outfile))
+
 		if len(self.log_stdout) > 0 and self.log_stdout != self.nullfile:
 			try:
 				log = open(self.log_stdout, "a")
-				log.write("===\n%s\n---\n" % (cmd,))
+				log.write("=== "+comment+"\n")
+				log.write(fullcommand+"\n")
+				log.write("---\n")
 				log.close()
 			except:
 				pass
 		if len(self.log_stderr) > 0 and self.log_stderr != self.nullfile:
 			try:
 				log = open(self.log_stderr, "a")
-				log.write("===\n%s\n---\n" % (cmd,))
+				log.write("==="+comment+"\n")
+				log.write(fullcommand+"\n")
+				log.write("---\n")
 				log.close()
 			except:
 				pass
-			
 
-		ret = os.system(cmd)
+		if self.__dict__.has_key("verbose") and self.verbose:
+			print fullcommand
 
-		if ret == 0:
+		gs_return=os.system(fullcommand)
+
+		if gs_return == 0:
 			return 1
 		else:
 			return 0
 
 		
 class GhostscriptTestCase(GSTestCase):
-	def __init__(self, gs='gs', dpi=72, band=0, file='test.ps', device='pdfwrite', log_stdout='', log_stderr='', track_daily=0):
-		self.gs = gs
+	def __init__(self,
+		     gsroot='gsroot',
+		     dpi=72, band=0, file='test.ps', device='pdfwrite', log_stdout='', log_stderr='', track_daily=0,now=None):
+
+		self.gsroot = gsroot
+
 		self.file = file
+		self.device = device
 		self.dpi = dpi
 		self.band = band
-		self.device = device
 		self.log_stdout = log_stdout
 		self.log_stderr = log_stderr
 		self.track_daily = track_daily
+		self.now = now
 		GSTestCase.__init__(self)
-
 
 class GSCrashTestCase(GhostscriptTestCase):
 	def runTest(self):
 		gs = Ghostscript()
-		gs.command = self.gs
+		gs.gsroot = self.gsroot
+		gs.device = self.device
 		gs.dpi = self.dpi
 		gs.band = self.band
-		gs.device = self.device
 		gs.infile = self.file
-
 		self.assert_(gs.process(), 'ghostscript failed to render file: ' + self.file)
-

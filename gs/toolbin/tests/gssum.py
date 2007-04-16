@@ -19,41 +19,54 @@
 #
 # this module contains routines for calculating sums and managing
 # the sum database
+
 import anydbm
 import gsconf
 import os, string, md5
 from stat import *
 
-def exists(file, dbname=gsconf.testdatadb):
-    db = anydbm.open(dbname)
-    exists = db.has_key(file)
-    db.close()
+myself="gssum.py"
 
+def exists(imagefile, dbname):
+    db = anydbm.open(dbname)
+    imagefilebase=os.path.basename(imagefile)
+    exists = db.has_key(imagefilebase)
+    db.close()
     return exists
 
-def add_file(file, dbname=gsconf.testdatadb, sum=''):
+def add_file(imagefile, dbname, sum=None):
     db = anydbm.open(dbname, 'w')
-    if len(sum) > 0:
-        db[file] = sum
+    if sum == None:
+        sum = make_sum(imagefile)
+    if sum != None:
+        imagefilebase=os.path.basename(imagefile)
+        db[imagefilebase] = sum
     else:
-        db[file] = make_sum(file)
+        print "gssum.add_file failed to create a sum for",imagefile
     db.close()
-
-def get_sum(file, dbname=gsconf.testdatadb):
-    db = anydbm.open(dbname)
-    sum = db[file]
-    db.close()
-
     return sum
 
-def make_sum(file):
+def get_sum(imagefile, dbname):
     try:
-	mode = os.stat(file)[ST_MODE]
+        db = anydbm.open(dbname)
+    except:
+        print "cannot open", dbname, "for", imagefile
+        
+    imagefilebase=os.path.basename(imagefile)
+    sum = db[imagefilebase]
+    db.close()
+    return sum
+
+def make_sum(imagefile):
+    try:
+	mode = os.stat(imagefile)[ST_MODE]
     except OSError:
+        print "gssum.add_file failed to stat",imagefile
 	return None
+
     if S_ISREG(mode):
 	sum = md5.new()
-	f = open(file, "r")
+	f = open(imagefile, "r")
 	data = f.read(1024)
 	while data:
 		sum.update(data)
@@ -62,4 +75,5 @@ def make_sum(file):
 
         return sum.hexdigest()
     
+    print "gssum.add_file failed ISREG",imagefile
     return None

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#    Copyright (C) 2001-2007 Artifex Software Inc.
+#    Copyright (C) 2001-2004 Artifex Software Inc.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -24,87 +24,103 @@
 # against known baselines
 #
 
-
-import os
+myself="gscheck_raster.py"
+import sys, os, stat
 import string, calendar, time
 import gstestutils
 import gssum, gsconf, gstestgs, gsparamsets, gsutil
-import rasterdb
 
 class GSCompareTestCase(gstestgs.GhostscriptTestCase):
-    def makefilename(self):
-        file = "%s.%s.%d.%d" % (self.file[string.rindex(self.file, '/') + 1:], self.device, self.dpi, self.band)
-	return file
 
     def shortDescription(self):
-	file = self.makefilename()
-	if not rasterdb.exists(file):
-		os.system(gsconf.codedir + "update_baseline '%s'" %
-                          (os.path.basename(self.file),))
-		self.skip = 1
-	try:
-		ct = time.localtime(rasterdb.mtime(file))
-		baseline_date = "%s %d, %4d %02d:%02d" % ( calendar.month_abbr[ct[1]], ct[2], ct[0], ct[3], ct[4] )
-	except:
-		self.skip = 1
+        file = "%s.%s.%d.%d" % (self.file[string.rindex(self.file, '/') + 1:], self.device, self.dpi, self.band)
+	rasterfilename = gsconf.rasterdbdir + file + ".gz"
 
-	if self.band: banded = "banded"
-	else: banded = "noband"
-	if hasattr(self, "skip") and self.skip:
-		return "Skipping %s (%s/%ddpi/%s) [no previous raster data found]" % (os.path.basename(self.file), self.device, self.dpi, banded)
-	else:
-		return "Checking %s (%s/%ddpi/%s) against baseline set on %s" % (os.path.basename(self.file), self.device, self.dpi, banded, baseline_date)
+        if self.band:
+            banded = "banded"
+        else:
+            banded = "noband"
+        filename_base= os.path.basename(self.file)
+        filename_details= "%s (%s/%ddpi/%s)" % (filename_base, self.device, self.dpi,banded)
+
+	if not os.access(rasterfilename, os.F_OK):
+            message="ERROR \ncannot find "+rasterfilename+" for "+filename_details
+            print myself,message
+            self.skip = 1
+        else:
+            ct = time.localtime(os.stat(rasterfilename)[stat.ST_MTIME])
+            baseline_date = "%s %d, %4d %02d:%02d" % ( calendar.month_abbr[ct[1]], ct[2], ct[0], ct[3], ct[4] )
+            message="Checking %s against baseline set on %s" % (filename_details,baseline_date)
+
+        return message
 
     def runTest(self):
         if hasattr(self, "skip") and self.skip == 1:
 	    self.assert_(True)
 	    return
 
-	file = self.makefilename()
+	outputfile = "%s.%s.%d.%d" % (self.file[string.rindex(self.file, '/') + 1:], self.device, self.dpi, self.band)
 
 	gs = gstestgs.Ghostscript()
-	gs.command = self.gs
+
+	gs.gsroot = self.gsroot
 	gs.device = self.device
 	gs.dpi = self.dpi
 	gs.band = self.band
 	gs.infile = self.file
-	gs.outfile = gsconf.scratchdir+file
+	gs.outfile = outputfile
 	if self.log_stdout:
 	    gs.log_stdout = self.log_stdout
 	if self.log_stderr:
 	    gs.log_stderr = self.log_stderr
 
 	if gs.process():
-	    sum = gssum.make_sum(gsconf.scratchdir+file)
+	    sum = gssum.make_sum(outputfile)
         else:
 	    sum = ''
-	os.unlink(gsconf.scratchdir+file)
 
-	# add test result to daily database
-	if self.track_daily:
-	    gssum.add_file(file, dbname=gsconf.get_dailydb_name(), sum=sum)
+        if os.path.exists(outputfile):
+            os.unlink(outputfile)
+
+	if sum and self.track_daily:	                                                  # add test result to daily database
+            if gsconf.__dict__.has_key("checksumdb") and gsconf.checksumdb:
+                dbname=gsconf.dailydir+gsconf.checksumdb+".db"
+            else:
+                dbname=gsconf.get_dailydb_name()
+            gssum.add_file(outputfile, dbname=dbname, sum=sum)
 
 	if not sum:
-	    self.fail("output file could not be created "\
-		      "for file: " + self.file)
+	    message=myself+" output file "+outputfile+" was not created for input file: " + self.file
+	    self.fail(message)
         else:
-	    self.assertEqual(sum, gssum.get_sum(file),
-			     'md5sum did not match baseline (' +
-			     file + ') for file: ' + self.file)
-
+            if gssum.exists(outputfile,gsconf.baselinedb):
+                sum_baseline=gssum.get_sum(outputfile,gsconf.baselinedb)
+                message=myself+' checksum did not match baseline (' + outputfile + ') for input file: ' + self.file
+                self.assertEqual(sum,sum_baseline,message)
+            else:
+                message = myself+" no baseline checksum (" + outputfile + ") for file: " + self.file
+                self.fail(message)
 
 # add compare tests
-def add_compare_test(suite, f, device, dpi, band, track):
-    suite.addTest(GSCompareTestCase(gs=gsconf.comparegs,
-                                    file=gsconf.comparefiledir + f,
-                                    device=device, dpi=dpi,
-                                    band=band,
-                                    log_stdout=gsconf.log_stdout,
-                                    log_stderr=gsconf.log_stderr,
-                                    track_daily=track))
+def add_compare_test(suite, gsroot, testfile, device, dpi, band, track, now=None):
 
+    logdir=gsconf.logdir
+    if now == None:
+        now=time.strftime("%Y-%m-%d-%H:%M:%S", time.localtime())
+    prefix=logdir+now+"."
 
-def addTests(suite, gsroot, **args):
+    log_stdout=prefix+gsconf.gs_stdout
+    log_stderr=prefix+gsconf.gs_stderr
+
+    suite.addTest(GSCompareTestCase(gsroot=gsroot,
+                                    file=gsconf.comparefiledir + testfile,
+                                    device=device,dpi=dpi,band=band,
+                                    log_stdout=log_stdout,
+                                    log_stderr=log_stderr,
+                                    track_daily=track,now=now)
+                  )
+
+def addTests(suite,gsroot,now,options=None, **args):
     if args.has_key('track'):
         track = args['track']
     else:
@@ -112,14 +128,21 @@ def addTests(suite, gsroot, **args):
 
     # get a list of test files
     comparefiles = os.listdir(gsconf.comparefiledir)
+    comparefiles.sort()
 
-    for f in comparefiles:
-        if gsutil.check_extension(f):
+    if sys.modules["gsconf"].__dict__.has_key("revision"):
+        print myself,gsconf.revision
+    
+#    for testfile in comparefiles:
+#        print myself,testfile
+
+    for testfile in comparefiles:
+        if gsutil.check_extension(testfile):
 	    for params in gsparamsets.testparamsets:
-	        add_compare_test(suite, f, params.device,
-				 params.resolution, params.banding, track)
-
+	        add_compare_test(suite,
+                                 gsroot,testfile,
+                                 params.device,params.resolution,params.banding,
+                                 track,now)
 
 if __name__ == '__main__':
     gstestutils.gsRunTestsMain(addTests)
-
