@@ -710,9 +710,13 @@ gslt_cff_append(gs_state *pgs, gs_font_type1 *pt1, gs_glyph glyph, int donthint)
     if (code < 0)
 	return gs_rethrow(code, "cannot get glyph data");
 
-    gs_make_scaling(0.001, 0.001, &mtx);
-    mtx.tx = 0;
-    mtx.ty = 0;
+    mtx.xx = ctm_only(pgs).xx;
+    mtx.xy = ctm_only(pgs).xy;
+    mtx.yx = ctm_only(pgs).yx;
+    mtx.yy = ctm_only(pgs).yy;
+    mtx.tx = 0.0;
+    mtx.ty = 0.0;
+    gs_matrix_scale(&mtx, 0.001, 0.001, &mtx);
     gs_matrix_fixed_from_matrix(&pgis->ctm, &mtx);
     pgis->flatness = 0;
 
