@@ -549,8 +549,15 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_state * pgs)
 {
     gs_devicen_color_map *  pcmap = &pgs->color_component_map;
 
-    if (pcmap->use_alt_cspace)
-        return gx_spot_colors_set_overprint( pcs->base_space, pgs);
+    if (pcmap->use_alt_cspace) {
+    	const gs_color_space_type* base_type = pcs->base_space->type;
+    	
+    	/* If the base space is DeviceCMYK, handle overprint as DeviceCMYK */
+    	if ( base_type->index == gs_color_space_index_DeviceCMYK )
+    		return base_type->set_overprint( pcs->base_space, pgs );
+    	else
+    		return gx_spot_colors_set_overprint( pcs->base_space, pgs);
+    }
     else {
         gs_overprint_params_t   params;
 
