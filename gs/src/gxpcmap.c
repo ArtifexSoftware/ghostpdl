@@ -576,6 +576,7 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
     if ((ctile->id != gx_no_bitmap_id) && !ctile->is_dummy) {
 	gs_memory_t *mem = pcache->memory;
 	gx_device_memory mdev;
+	ulong used = 0;
 
 	/*
 	 * We must initialize the memory device properly, even though
@@ -586,7 +587,7 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 	    mdev.width = ctile->tmask.size.x;
 	    mdev.height = ctile->tmask.size.y;
 	    /*mdev.color_info.depth = 1;*/
-	    pcache->bits_used -= gdev_mem_bitmap_size(&mdev);
+	    used = gdev_mem_bitmap_size(&mdev);
 	    gs_free_object(mem, ctile->tmask.data,
 			   "free_pattern_cache_entry(mask data)");
 	    ctile->tmask.data = 0;	/* for GC */
@@ -595,7 +596,7 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 	    mdev.width = ctile->tbits.size.x;
 	    mdev.height = ctile->tbits.size.y;
 	    mdev.color_info.depth = ctile->depth;
-	    pcache->bits_used -= gdev_mem_bitmap_size(&mdev);
+	    used += gdev_mem_bitmap_size(&mdev);
 	    gs_free_object(mem, ctile->tbits.data,
 			   "free_pattern_cache_entry(bits data)");
 	    ctile->tbits.data = 0;	/* for GC */
@@ -604,8 +605,9 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 	    dev_proc(&ctile->cdev->common, close_device)((gx_device *)&ctile->cdev->common);
 	    ctile->cdev = NULL;
 	}
-	ctile->id = gx_no_bitmap_id;
 	pcache->tiles_used--;
+	pcache->bits_used -= used;
+	ctile->id = gx_no_bitmap_id;
     }
 }
 
@@ -627,15 +629,17 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
     gx_color_tile *ctile;
     int code = ensure_pattern_cache(pis);
     extern dev_proc_open_device(pattern_clist_open_device);
+    gx_device_memory *mmask = NULL;
+    gx_device_memory *mbits = NULL;
 
     if (code < 0)
 	return code;
     pcache = pis->pattern_cache;
     if (fdev->procs.open_device != pattern_clist_open_device) {
 	gx_device_pattern_accum *padev = (gx_device_pattern_accum *)fdev;
-	gx_device_memory *mbits = padev->bits;
-	gx_device_memory *mmask = padev->mask;
-
+	
+	mbits = padev->bits;
+	mmask = padev->mask;
 	pinst = padev->instance;
 	/*
 	 * Check whether the pattern completely fills its box.
@@ -696,8 +700,6 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
     ctile->is_dummy = false;
     if (fdev->procs.open_device != pattern_clist_open_device) {
 	gx_device_pattern_accum *padev = (gx_device_pattern_accum *)fdev;
-	gx_device_memory *mbits = padev->bits;
-	gx_device_memory *mmask = padev->mask;
 
 	if (mbits != 0) {
 	    make_bitmap(&ctile->tbits, mbits, gs_next_ids(pis->memory, 1));
