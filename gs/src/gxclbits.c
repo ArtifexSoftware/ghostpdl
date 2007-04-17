@@ -683,7 +683,7 @@ clist_change_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     tile_loc loc;
     int code;
 
-  top:if (clist_find_bits(cldev, tiles->id, &loc)) {	/* The bitmap is in the cache.  Check whether this band */
+   top:if (clist_find_bits(cldev, tiles->id, &loc)) {	/* The bitmap is in the cache.  Check whether this band */
 	/* knows about it. */
 	uint band_index = pcls - cldev->states;
 	byte *bptr = ts_mask(loc.tile) + (band_index >> 3);

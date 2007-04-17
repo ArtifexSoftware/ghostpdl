@@ -345,7 +345,6 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
     gx_device_memory bdev;
     gx_device *pbdev = (gx_device *)&bdev;
     int code;
-    extern dev_proc_open_device(pattern_clist_open_device);
 
     /* Call create_buf_device to get the memory planarity set up. */
     cdev->buf_procs.create_buf_device(&pbdev, target, NULL, NULL, clist_get_band_complexity(0, 0));
@@ -354,7 +353,7 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
     if (dev_proc(pbdev, copy_alpha) == gx_no_copy_alpha)
 	cdev->disable_mask |= clist_disable_copy_alpha;
     if (cdev->procs.open_device == pattern_clist_open_device) {
-	bits_size = 0;
+	bits_size = data_size / 2;
     } else if (band_height) {
 	/*
 	 * The band height is fixed, so the band buffer requirement
@@ -366,9 +365,6 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
 	if (band_data_size >= band_space)
 	    return_error(gs_error_rangecheck);
 	bits_size = min(band_space - band_data_size, data_size >> 1);
-	code = clist_init_tile_cache(dev, data, bits_size);
-	if (code < 0)
-	    return code;
     } else {
 	/*
 	 * Choose the largest band height that will fit in the
@@ -380,10 +376,10 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
 			  band_space - bits_size, page_uses_transparency);
 	if (band_height == 0)
 	    return_error(gs_error_rangecheck);
-	code = clist_init_tile_cache(dev, data, bits_size);
-	if (code < 0)
-	    return code;
     }
+    code = clist_init_tile_cache(dev, data, bits_size);
+    if (code < 0)
+	return code;
     cdev->page_tile_cache_size = bits_size;
     data += bits_size;
     size -= bits_size;
@@ -410,9 +406,8 @@ clist_reset(gx_device * dev)
     cdev->permanent_error = 0;
     nbands = cdev->nbands;
     cdev->ymin = cdev->ymax = -1;	/* render_init not done yet */
-    if (cdev->procs.open_device != pattern_clist_open_device)
-	memset(cdev->tile_table, 0, (cdev->tile_hash_mask + 1) *
-	   sizeof(*cdev->tile_table));
+    memset(cdev->tile_table, 0, (cdev->tile_hash_mask + 1) *
+       sizeof(*cdev->tile_table));
     cdev->cnext = cdev->cbuf;
     cdev->ccl = 0;
     cdev->band_range_list.head = cdev->band_range_list.tail = 0;
