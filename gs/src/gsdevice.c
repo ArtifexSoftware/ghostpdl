@@ -291,8 +291,11 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
     code = dev_proc(new_dev, finish_copydevice)(new_dev, dev);
     if (code < 0) {
 	gs_free_object(mem, new_dev, "gs_copydevice(device)");
+#if 0 /* gs_free_object above calls gx_device_finalize,
+	 which closes the device and releaszes its stype, i.e. a_std. */
 	if (a_std)
 	    gs_free_object(dev->memory->non_gc_memory, a_std, "gs_copydevice(stype)");
+#endif
 	return code;
     }
     *pnew_dev = new_dev;
