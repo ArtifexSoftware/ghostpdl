@@ -173,7 +173,7 @@ private dev_proc_destroy_buf_device(dummy_destroy_buf_device)
 {
 }
 
-#define MAX_BITMAP_PATTERN_SIZE max_long
+#define MAX_BITMAP_PATTERN_SIZE (1024*1024)
 
 /* Allocate a pattern accumulator, with an initial refct of 0. */
 gx_device_forward *
