@@ -87,8 +87,9 @@
 #  define DBG_PRINT4(fmt, a, b, c, d)
 #endif
 
+#ifdef DEBUG
 static int nInstrCount=0;
-
+#endif
 
 /* There are two kinds of implementations there:              */
 /*                                                            */

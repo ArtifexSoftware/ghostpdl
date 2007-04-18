@@ -451,8 +451,9 @@ ppm_put_params(gx_device * pdev, gs_param_list * plist)
     const char *vname;
 
     if ((code = param_read_string_array(plist, "OutputIntent", &intent)) == 0) {
-	int i, j;
 #ifdef DEBUG
+	int i, j;
+
 	dlprintf1("%d strings:\n", intent.size);
 	for (i = 0; i < intent.size; i++) {
 	    const gs_param_string *s = &intent.data[i];

@@ -478,7 +478,7 @@ op_show_finish_setup(i_ctx_t *i_ctx_p, gs_text_enum_t * penum, int npop,
     if (osenum == NULL && !(penum->text.operation & (TEXT_FROM_GLYPHS | TEXT_FROM_SINGLE_GLYPH))) {
         int ft = igs->root_font->FontType;
  
-        if (ft >= ft_CID_encrypted && ft <= ft_CID_TrueType || ft == ft_CID_bitmap)
+        if ((ft >= ft_CID_encrypted && ft <= ft_CID_TrueType) || ft == ft_CID_bitmap)
             return_error(e_typecheck);
     }
     make_mark_estack(ep - (snumpush - 1), es_show, op_show_cleanup);

@@ -583,7 +583,6 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 	bool cmyk_to_rgb = psdf_is_converting_image_to_RGB(pdev, pis, pim);
 
 	if (cmyk_to_rgb) {
-	    extern_st(st_color_space);
 	    gs_memory_t *mem = pdev->v_memory;
 
 	    /* {csrc} decref old colorspace? */

@@ -566,7 +566,9 @@ gs_upathbbox(gs_state * pgs, gs_rect * pbox, bool include_moveto)
     if (path_last_is_moveto(pgs->path) && include_moveto) {
 	gs_fixed_point pt;
 
-	gx_path_current_point_inline(pgs->path, &pt);
+	code = gx_path_current_point_inline(pgs->path, &pt);
+        if (code < 0)
+	    return code;
 	if (pt.x < fbox.p.x)
 	    fbox.p.x = pt.x;
 	if (pt.y < fbox.p.y)
