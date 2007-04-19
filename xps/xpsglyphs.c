@@ -9,6 +9,44 @@ static inline int unhex(int i)
     return tolower(i) - 'a' + 10;
 }
 
+void xps_debug_path(xps_context_t *ctx)
+{
+    segment *seg;
+    curve_segment *cseg;
+
+    seg = (segment*)ctx->pgs->path->first_subpath;
+    while (seg)
+    {
+        switch (seg->type)
+        {
+        case s_start:
+	    dprintf2("%g %g moveto\n", 
+                    fixed2float(seg->pt.x) * 0.001,
+                    fixed2float(seg->pt.y) * 0.001);
+            break;
+        case s_line:
+	    dprintf2("%g %g lineto\n", 
+                    fixed2float(seg->pt.x) * 0.001,
+                    fixed2float(seg->pt.y) * 0.001);
+            break;
+        case s_line_close:
+	    dputs("closepath\n");
+            break;
+        case s_curve:
+            cseg = (curve_segment*)seg;
+	    dprintf6("%g %g %g %g %g %g curveto\n", 
+                    fixed2float(cseg->p1.x) * 0.001,
+                    fixed2float(cseg->p1.y) * 0.001,
+                    fixed2float(cseg->p2.x) * 0.001,
+                    fixed2float(cseg->p2.y) * 0.001,
+                    fixed2float(seg->pt.x) * 0.001,
+                    fixed2float(seg->pt.y) * 0.001);
+            break;
+        }
+        seg = seg->next;
+    }
+}
+
 /*
  * Some fonts in XPS are obfuscated by XOR:ing the first 32 bytes of the
  * data with the GUID in the fontname.
@@ -48,6 +86,17 @@ xps_deobfuscate_font_resource(xps_context_t *ctx, xps_part_t *part)
 	part->data[i+16] ^= key[15-i];
     }
     dputs("\n");
+
+    {
+	static int id = 0;
+	char buf[25];
+	FILE *fp;
+	sprintf(buf, "font%d.otf", id++);
+	dprintf1("saving font data to %s\n", buf);
+	fp = fopen(buf, "wb");
+	fwrite(part->data, part->size, 1, fp);
+	fclose(fp);
+    }
 
     return 0;
 }
@@ -94,6 +143,31 @@ xps_select_best_font_encoding(xps_font_t *font)
 
 int xps_draw_font_glyph_to_path(xps_context_t *ctx, xps_font_t *font, int gid, float x, float y)
 {
+    gs_text_params_t params;
+    gs_text_enum_t *textenum;
+    int code;
+
+    params.operation = TEXT_FROM_SINGLE_GLYPH | TEXT_DO_FALSE_CHARPATH;
+    params.data.d_glyph = gid;
+    params.size = 1;
+
+    // this code is not functional. it needs a lot more matrix voodoo.
+
+    dputs("--draw glyph to path--\n");
+
+    gs_moveto(ctx->pgs, x, y);
+
+    if (gs_text_begin(ctx->pgs, &params, ctx->memory, &textenum) != 0)
+	return gs_throw(-1, "cannot gs_text_begin()");
+    if (gs_text_process(textenum) != 0)
+	return gs_throw(-1, "cannot gs_text_process()");
+    gs_text_release(textenum, "gslt font outline");
+
+    xps_debug_path(ctx);
+    gs_fill(ctx->pgs);
+
+    dputs("--end--\n");
+
     return 0;
 }
 
@@ -107,7 +181,7 @@ int xps_fill_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, float x, 
     params.data.d_glyph = gid;
     params.size = 1;
 
-    // dprintf3("filling glyph '%c' at %g,%g\n", gid, x, y);
+    // dprintf3("filling glyph %d at %g,%g\n", gid, x, y);
 
     gs_moveto(ctx->pgs, x, y);
 
@@ -127,11 +201,89 @@ int xps_fill_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, float x, 
 
 /*
  * Parse and draw an XPS <Glyphs> element.
+ *
+ * Indices syntax:
+
+ GlyphIndices   = GlyphMapping ( ";" GlyphMapping ) 
+ GlyphMapping   = ( [ClusterMapping] GlyphIndex ) [GlyphMetrics] 
+ ClusterMapping = "(" ClusterCodeUnitCount [":" ClusterGlyphCount] ")" 
+ ClusterCodeUnitCount = * DIGIT 
+ ClusterGlyphCount    = * DIGIT 
+ GlyphIndex     = * DIGIT 
+ GlyphMetrics   = "," AdvanceWidth ["," uOffset ["," vOffset]] 
+ AdvanceWidth   = ["+"] RealNum 
+ uOffset        = ["+" | "-"] RealNum 
+ vOffset        = ["+" | "-"] RealNum 
+ RealNum        = ((DIGIT ["." DIGIT]) | ("." DIGIT)) [Exponent] 
+ Exponent       = ( ("E"|"e") ("+"|"-") DIGIT ) 
+
  */
+
+static char *
+xps_parse_digits(char *s, int *digit)
+{
+    *digit = 0;
+    while (*s >= '0' && *s <= '9')
+    {
+	*digit = *digit * 10 + (*s - '0');
+	s ++;
+    }
+    return s;
+}
+
+static int is_real_num_char(int c)
+{
+    return (c >= '0' && c <= '9') || c == 'e' || c == 'E' || c == '+' || c == '-' || c == '.';
+}
+
+static char *
+xps_parse_real_num(char *s, float *number)
+{
+    char buf[64];
+    char *p = buf;
+    while (is_real_num_char(*s))
+	*p++ = *s++;
+    *p = 0;
+    if (buf[0])
+	*number = atof(buf);
+    return s;
+}
+
+static char *
+xps_parse_cluster_mapping(char *s, int *code_count, int *glyph_count)
+{
+    if (*s == '(')
+	s = xps_parse_digits(s + 1, code_count);
+    if (*s == ':')
+	s = xps_parse_digits(s + 1, glyph_count);
+    if (*s == ')')
+	s ++;
+    return s;
+}
+
+static char *
+xps_parse_glyph_index(char *s, int *glyph_index)
+{
+    if (*s >= '0' && *s <= '9')
+	s = xps_parse_digits(s, glyph_index);
+    return s;
+}
+
+static char *
+xps_parse_glyph_metrics(char *s, float *advance, float *uofs, float *vofs)
+{
+    if (*s == ',')
+	s = xps_parse_real_num(s + 1, advance);
+    if (*s == ',')
+	s = xps_parse_real_num(s + 1, uofs);
+    if (*s == ',')
+	s = xps_parse_real_num(s + 1, vofs);
+    return s;
+}
 
 int
 xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
-	float originx, float originy, int is_sideways,
+	float originx, float originy, int is_sideways, int bidi_level,
 	char *indices, char *unicode, int is_charpath)
 {
     // parse unicode and indices strings and encode glyphs
@@ -140,31 +292,79 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
     xps_glyph_metrics_t mtx;
     float x = originx;
     float y = originy;
-    char *s = unicode;
-    int ucs, gid, t, n;
+    char *us = unicode;
+    char *is = indices;
+    int un;
 
-    dprintf1("string (%s)\n", s);
+    dprintf1("string (%s)\n", us);
+    dprintf1("indices %.50s\n", is);
 
-    n = strlen(s);
+    if (!unicode)
+	return gs_throw(-1, "no unicode in glyphs element");
 
-    while (n > 0)
+    if (!unicode && !indices)
+	return gs_throw(-1, "no text in glyphs element");
+
+    if (us)
+	un = strlen(us);
+
+    while ((us && un > 0) || (is && *is))
     {
-	t = xps_utf8_to_ucs(&ucs, s, n);
-	if (t < 0)
-	    return gs_rethrow(-1, "error decoding UTF-8 string");
+	int char_code = ' ';
+	int glyph_index = -1;
+	int code_count = 1;
+	int glyph_count = 1;
 
-	s += t; n -= t;
+	float advance;
+	float u_offset = 0.0;
+	float v_offset = 0.0;
 
-	gid = xps_encode_font_char(font, ucs);
+	// TODO: code_count and glyph_count char skipping magic
+
+	if (is && *is)
+	{
+	    is = xps_parse_cluster_mapping(is, &code_count, &glyph_count);
+	    is = xps_parse_glyph_index(is, &glyph_index);
+	}
+
+	if (us && un > 0)
+	{
+	    int t = xps_utf8_to_ucs(&char_code, us, un);
+	    if (t < 0)
+		return gs_rethrow(-1, "error decoding UTF-8 string");
+	    us += t; un -= t;
+	}
+
+	if (glyph_index == -1)
+	    glyph_index = xps_encode_font_char(font, char_code);
+
+	xps_measure_font_glyph(ctx, font, glyph_index, &mtx);
+	if (is_sideways)
+	    advance = mtx.vadv * 100.0;
+	else if (bidi_level & 1)
+	    advance = -mtx.hadv * 100.0;
+	else
+	    advance = mtx.hadv * 100.0;
+
+	if (is && *is)
+	{
+	    is = xps_parse_glyph_metrics(is, &advance, &u_offset, &v_offset);
+	    if (*is == ';')
+		is ++;
+	}
+
+	dprintf6("glyph mapping (%d:%d)%d,%g,%g,%g\n",
+		code_count, glyph_count, glyph_index,
+		advance, u_offset, v_offset);
+
+	// TODO: is_sideways and bidi_level
 
 	if (is_charpath)
-	    xps_draw_font_glyph_to_path(ctx, font, gid, x, y);
+	    xps_draw_font_glyph_to_path(ctx, font, glyph_index, x, y);
 	else
-	    xps_fill_font_glyph(ctx, font, gid, x, y);
+	    xps_fill_font_glyph(ctx, font, glyph_index, x, y);
 
-	xps_measure_font_glyph(ctx, font, gid, &mtx);
-
-	x += mtx.hadv * size;
+	x += advance * 0.01 * size;
     }
 }
 
@@ -203,6 +403,7 @@ xps_parse_glyphs(xps_context_t *ctx, xps_item_t *root)
     gs_matrix matrix;
     float font_size = 10.0;
     int is_sideways = 0;
+    int bidi_level = 0;
     int saved = 0;
 
     /*
@@ -253,6 +454,9 @@ xps_parse_glyphs(xps_context_t *ctx, xps_item_t *root)
     if (is_sideways_att)
 	is_sideways = !strcmp(is_sideways_att, "true");
 
+    if (bidi_level_att)
+	bidi_level = atoi(bidi_level_att);
+
     /*
      * Find and load the font resource
      */
@@ -292,7 +496,7 @@ xps_parse_glyphs(xps_context_t *ctx, xps_item_t *root)
     {
 	gs_matrix transform;
 
-	dputs("  glyphs transform\n");
+	dputs("glyphs transform\n");
 
 	if (!saved)
 	{
@@ -316,7 +520,7 @@ xps_parse_glyphs(xps_context_t *ctx, xps_item_t *root)
 	    saved = 1;
 	}
 
-	dputs("  glyphs clip\n");
+	dputs("glyphs clip\n");
 
 	if (clip_att)
 	{
@@ -331,6 +535,9 @@ xps_parse_glyphs(xps_context_t *ctx, xps_item_t *root)
     gs_make_scaling(font_size, -font_size, &matrix);
     gs_setcharmatrix(ctx->pgs, &matrix);
 
+    gs_currentcharmatrix(ctx->pgs, &matrix, true);
+    dprintf4("currentcharmatrix %g %g %g %g\n", matrix.xx, matrix.xy, matrix.yx, matrix.yy);
+
     /*
      * If it's a solid color brush fill/stroke do a simple fill
      */
@@ -344,14 +551,15 @@ xps_parse_glyphs(xps_context_t *ctx, xps_item_t *root)
     if (fill_att)
     {
 	float argb[4];
-	dputs("  glyphs solid color fill\n");
+	dputs("glyphs solid color fill\n");
 	xps_parse_color(ctx, fill_att, argb);
 	if (argb[0] > 0.001)
 	{
 	    gs_setrgbcolor(ctx->pgs, argb[1], argb[2], argb[3]);
 	    xps_parse_glyphs_imp(ctx, font, font_size,
 		    atof(origin_x_att), atof(origin_y_att),
-		    is_sideways, indices_att, unicode_att, 0);
+		    is_sideways, bidi_level,
+		    indices_att, unicode_att, 0);
 	}
     }
 
@@ -367,11 +575,11 @@ xps_parse_glyphs(xps_context_t *ctx, xps_item_t *root)
 	    saved = 1;
 	}
 
-	dputs("  glyphs complex brush\n");
+	dputs("glyphs complex brush\n");
 
 	xps_parse_glyphs_imp(ctx, font, font_size,
 		atof(origin_x_att), atof(origin_y_att),
-		is_sideways, indices_att, unicode_att, 1);
+		is_sideways, bidi_level, indices_att, unicode_att, 1);
 
 	gs_clip(ctx->pgs);
 	dputs("clip\n");

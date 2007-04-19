@@ -37,8 +37,8 @@ int xps_init_font_cache(xps_context_t *ctx)
     if (!ctx->fontdir)
 	return gs_throw(-1, "cannot gs_font_dir_alloc2_limits()");
 
-    gs_setaligntopixels(ctx->fontdir, 1); /* no subpixels */
-    gs_setgridfittt(ctx->fontdir, 3); /* see gx_ttf_outline for values */
+    gs_setaligntopixels(ctx->fontdir, 0); /* no subpixels */
+    gs_setgridfittt(ctx->fontdir, 0); /* see gx_ttf_outline in gxttfn.c for values */
 
     return gs_okay;
 }
@@ -386,10 +386,10 @@ int xps_measure_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, xps_gl
 
     /* some insane defaults */
 
-    scale = 2048; /* units-per-em */
-    mtx->hadv = 0.5;
-    mtx->vadv = -1.0;
-    mtx->vorg = 1.0;
+    scale = 1000; /* units-per-em */
+    hadv = 500;
+    vadv = -1000;
+    vorg = 1000;
 
     /*
      * Horizontal metrics are easy.

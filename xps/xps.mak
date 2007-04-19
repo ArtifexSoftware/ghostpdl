@@ -27,6 +27,9 @@ $(XPSOBJ)xpsmem.$(OBJ): $(XPSSRC)xpsmem.c $(XPSINCLUDES)
 $(XPSOBJ)xpsutf.$(OBJ): $(XPSSRC)xpsutf.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpsutf.c $(XPSO_)xpsutf.$(OBJ)
 
+$(XPSOBJ)xpscrc.$(OBJ): $(XPSSRC)xpscrc.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xpscrc.c $(XPSO_)xpscrc.$(OBJ)
+
 $(XPSOBJ)xpsjpeg.$(OBJ): $(XPSSRC)xpsjpeg.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpsjpeg.c $(XPSO_)xpsjpeg.$(OBJ)
 
@@ -86,6 +89,7 @@ $(XPS_TOP_OBJ): $(XPSSRC)xpstop.c $(pltop_h) $(XPSINCLUDES)
 XPS_OBJS=\
     $(XPSOBJ)xpsmem.$(OBJ) \
     $(XPSOBJ)xpsutf.$(OBJ) \
+    $(XPSOBJ)xpscrc.$(OBJ) \
     $(XPSOBJ)xpsjpeg.$(OBJ) \
     $(XPSOBJ)xpspng.$(OBJ) \
     $(XPSOBJ)xpstiff.$(OBJ) \
