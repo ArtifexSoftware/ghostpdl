@@ -37,6 +37,7 @@ hpgl_clear_polygon_buffer(hpgl_args_t *pargs, hpgl_state_t *pgls)
     hpgl_call(hpgl_PM(pargs, pgls));
     hpgl_args_set_int(pargs,2);
     hpgl_call(hpgl_PM(pargs, pgls));
+    return 0;
 }
     
 /* Build a rectangle in polygon mode used by (EA, ER, RA, RR). */
