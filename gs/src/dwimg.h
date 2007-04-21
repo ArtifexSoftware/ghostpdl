@@ -78,6 +78,8 @@ IMAGE *image_new(void *handle, void *device);
 void image_delete(IMAGE *img);
 int image_size(IMAGE *img, int new_width, int new_height, int new_raster, 
    unsigned int new_format, void *pimage);
+int image_separation(IMAGE *img, int comp_num, const char *name,
+   unsigned short c, unsigned short m, unsigned short y, unsigned short k);
 
 /* GUI thread only */
 void image_open(IMAGE *img);

@@ -315,7 +315,7 @@ l2r:
     while (IS_DIGIT(d, c) || c == '-') {
 	/* Handle bogus '-' following '.' as in i2r above.	*/
 	if (c == '-') {
-	    if (scanner_options & SCAN_PDF_INV_NUM == 0)
+	    if ((scanner_options & SCAN_PDF_INV_NUM) == 0)
 		break;
 	    do {
 		GET_NEXT(c, sp, c = EOFC);

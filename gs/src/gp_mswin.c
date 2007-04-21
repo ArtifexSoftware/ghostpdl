@@ -204,8 +204,6 @@ is_spool(const char *queue)
 private int
 is_printer(const char *name)
 {
-    char buf[128];
-
     /* is printer if no name given */
     if (strlen(name) == 0)
 	return TRUE;

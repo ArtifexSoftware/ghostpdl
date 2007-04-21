@@ -15,6 +15,7 @@
 /* File stream implementation using stdio */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"
+#include "unistd_.h"
 #include "gsmemory.h"
 #include "gdebug.h"
 #include "gpcheck.h"

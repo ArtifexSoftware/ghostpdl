@@ -1192,7 +1192,7 @@ $(GLD)sfile.dev : $(LIB_MAK) $(ECHOGS_XE) $(sfile_)
 	$(SETMOD) $(GLD)sfile $(sfile_)
 
 $(GLOBJ)sfxstdio.$(OBJ) : $(GLSRC)sfxstdio.c $(AK) $(stdio__h) $(memory__h)\
- $(gdebug_h) $(gpcheck_h) $(stream_h) $(strimpl_h)
+ $(unistd__h) $(gdebug_h) $(gpcheck_h) $(stream_h) $(strimpl_h)
 	$(GLCC) $(GLO_)sfxstdio.$(OBJ) $(C_) $(GLSRC)sfxstdio.c
 
 $(GLOBJ)sfxfd.$(OBJ) : $(GLSRC)sfxfd.c $(AK)\

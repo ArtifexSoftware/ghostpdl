@@ -851,7 +851,6 @@ install_prog()
 
         /* Create lib/cidfmap */
 	if (g_bCJKFonts) {
-		FILE *f;
 		char szCIDFmap[MAXSTR];
 		char szCIDFmap_bak[MAXSTR];
 		char szGSPATH[MAXSTR];

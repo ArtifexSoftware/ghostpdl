@@ -878,7 +878,6 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     int orientation;
     int papersize;
     char papername[64];
-    char drvname[32];
     LPDEVMODE podevmode, pidevmode;
     HANDLE hprinter;
 

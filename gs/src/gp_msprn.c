@@ -179,7 +179,7 @@ mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
     }
 
     /* start a thread to read the pipe */
-    tid = _beginthread(&mswin_printer_thread, 32768, pipeh[0]);
+    tid = _beginthread(&mswin_printer_thread, 32768, (void *)(pipeh[0]));
     if (tid == -1) {
 	fclose(*pfile);
 	close(pipeh[0]);

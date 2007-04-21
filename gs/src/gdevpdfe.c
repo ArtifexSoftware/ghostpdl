@@ -345,7 +345,7 @@ pdf_make_document_uuid(gx_device_pdf *pdev, const byte digest[6], char *buf, int
     return 0;
 }
 
-private char dd[]={'\'', 0xEF, 0xBB, 0xBF, '\'', 0};
+static const char dd[]={'\'', '\357', '\273', '\277', '\'', 0};
 
 /* --------------------------------------------  */
 

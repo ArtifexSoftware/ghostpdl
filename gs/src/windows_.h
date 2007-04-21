@@ -19,6 +19,7 @@
 
 #define STRICT
 #include <windows.h>
+#include <process.h>
 
 #ifdef __WATCOMC__
 typedef RGBQUAD FAR * LPRGBQUAD;

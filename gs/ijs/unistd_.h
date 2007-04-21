@@ -29,6 +29,7 @@
 #include <fcntl.h>
 #define read(handle, buffer, count) _read(handle, buffer, count)
 #define write(handle, buffer, count) _write(handle, buffer, count)
+#define close(fd) _close(fd)
 #else
 #include <unistd.h>
 #endif
