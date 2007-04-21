@@ -29,17 +29,27 @@
 #define DO_EDGE 1
 #define DO_RELATIVE 2
 
+/* clear the polygon buffer by entering and exiting polygon mode. */
+private int
+hpgl_clear_polygon_buffer(hpgl_args_t *pargs, hpgl_state_t *pgls)
+{
+    hpgl_args_setup(pargs);
+    hpgl_call(hpgl_PM(pargs, pgls));
+    hpgl_args_set_int(pargs,2);
+    hpgl_call(hpgl_PM(pargs, pgls));
+}
+    
 /* Build a rectangle in polygon mode used by (EA, ER, RA, RR). */
 private int
-hpgl_rectangle(hpgl_args_t *pargs, hpgl_state_t *pgls, int flags)
+hpgl_rectangle(hpgl_args_t *pargs,  hpgl_state_t *pgls, int flags)
 {	hpgl_real_t x2, y2;
 	if ( !hpgl_arg_units(pgls->memory, pargs, &x2) || 
-	     !hpgl_arg_units(pgls->memory, pargs, &y2) )
-	  return e_Range;
-
-        if ( current_units_out_of_range(x2) ||
-             current_units_out_of_range(y2) )
+	     !hpgl_arg_units(pgls->memory, pargs, &y2) ||
+             current_units_out_of_range(x2) ||
+             current_units_out_of_range(y2) ) {
+            hpgl_call(hpgl_clear_polygon_buffer(pargs, pgls));
             return e_Range;
+        }
 
 	if ( flags & DO_RELATIVE )
 	  {
@@ -76,8 +86,10 @@ hpgl_wedge(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	if ( !hpgl_arg_units(pgls->memory, pargs, &radius) ||
 	     !hpgl_arg_c_real(pgls->memory, pargs, &start) ||
 	     !hpgl_arg_c_real(pgls->memory, pargs, &sweep) || sweep < -360 || sweep > 360
-	   )
-	  return e_Range;
+             ) {
+            hpgl_call(hpgl_clear_polygon_buffer(pargs, pgls));
+            return e_Range;
+        }
 
         hpgl_arg_c_real(pgls->memory, pargs, &chord);
 
@@ -191,14 +203,16 @@ int
 hpgl_FP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int method = 0;
 
-	if ( hpgl_arg_c_int(pgls->memory, pargs, &method) && (method & ~1) )
-	  return e_Range;
-	pgls->g.fill_type = (method == 0) ?
-	  hpgl_even_odd_rule : hpgl_winding_number_rule;
-	hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
-	hpgl_call(hpgl_draw_current_path(pgls,
-					 hpgl_get_poly_render_mode(pgls)));
-	return 0;
+    if ( hpgl_arg_c_int(pgls->memory, pargs, &method) && (method & ~1) ) {
+        hpgl_call(hpgl_clear_polygon_buffer(pargs, pgls));
+        return e_Range;
+    }
+    pgls->g.fill_type = (method == 0) ?
+        hpgl_even_odd_rule : hpgl_winding_number_rule;
+    hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
+    hpgl_call(hpgl_draw_current_path(pgls,
+                                     hpgl_get_poly_render_mode(pgls)));
+    return 0;
 }
 
 /* close a subpolygon; PM1 or CI inside of a polygon */
