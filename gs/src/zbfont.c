@@ -34,8 +34,25 @@
 #include "istruct.h"
 #include "store.h"
 
-/* Structure descriptor */
+/* Structure descriptor and GC procedures for font_data */
 public_st_font_data();
+private
+CLEAR_MARKS_PROC(font_data_clear_marks)
+{
+    ref_struct_clear_marks(cmem, vptr, offset_of(font_data, u.type42.mru_sfnts_index)/*size*/, pstype);
+}
+private
+ENUM_PTRS_BEGIN_PROC(font_data_enum_ptrs)
+{
+    return ref_struct_enum_ptrs(mem, vptr, offset_of(font_data, u.type42.mru_sfnts_index)/*size*/, index, pep, pstype, gcst);
+}
+ENUM_PTRS_END_PROC
+private
+RELOC_PTRS_BEGIN(font_data_reloc_ptrs)
+{
+    ref_struct_reloc_ptrs(vptr, offset_of(font_data, u.type42.mru_sfnts_index)/*size*/, pstype, gcst);
+}
+RELOC_PTRS_END
 
 /* <string|name> <font_dict> .buildfont3 <string|name> <font> */
 /* Build a type 3 (user-defined) font. */

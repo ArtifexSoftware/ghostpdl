@@ -95,7 +95,7 @@ z11_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
 	return prgnum->value.intval;
     default:			/* array type */
         code = string_array_access_proc(pfont->memory, pcidmap, 1, cid * gdbytes,
-					gdbytes, &data);
+					gdbytes, NULL, NULL, &data);
 
 	if (code < 0)
 	    return code;

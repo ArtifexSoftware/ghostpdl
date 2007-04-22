@@ -73,6 +73,8 @@ build_gs_TrueType_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_type42 **ppfont,
     pfont = *ppfont;
     pdata = pfont_data(pfont);
     ref_assign(&pdata->u.type42.sfnts, &sfnts);
+    pdata->u.type42.mru_sfnts_index = 0;
+    pdata->u.type42.mru_sfnts_pos = 0;
     make_null_new(&pdata->u.type42.CIDMap);
     ref_assign(&pdata->u.type42.GlyphDirectory, &GlyphDirectory);
     pfont->data.string_proc = z42_string_proc;
@@ -167,15 +169,35 @@ font_GlyphDirectory_param(os_ptr op, ref *pGlyphDirectory)
  */
 int
 string_array_access_proc(const gs_memory_t *mem, 
-			 const ref *psa, int modulus, ulong offset,
-			 uint length, const byte **pdata)
+			 const ref *psa, int modulus, ulong offset, uint length,
+			 uint *mru_index, ulong *mru_pos,
+			 const byte **pdata)
 {
-    ulong left = offset;
-    uint index = 0;
+    ulong left;
+    uint index;
+    bool backwards;
 
     if (length == 0)
         return 0;
-    for (;; ++index) {
+    if (mru_index && mru_pos && offset >= (*mru_pos >> 1)) {
+	/*    offset in or after mru string				*/
+	/* OR offset in 2nd half of the fragment before the mru string	*/
+	backwards = (*mru_pos > offset);
+	if (backwards) {
+	    index = *mru_index - 1;	/* 1st string to examine */
+	    left = *mru_pos - offset;	/* how many bytes to seek backwards */
+	} else {
+	    index = *mru_index;		/* 1st string to examine */
+	    left = offset - *mru_pos;	/* how many bytes to seek forward */
+	}
+    } else {
+	/*    no mru							*/
+	/* OR offset in 1st half of the fragment before the mru string	*/
+	backwards = false;
+	index = 0;
+	left = offset;
+    }
+    for (;;) {
 	ref rstr;
 	int code = array_get(mem, psa, index, &rstr);
 	uint size;
@@ -190,13 +212,29 @@ string_array_access_proc(const gs_memory_t *mem,
 	 * the additional byte is padding and should be ignored.
 	 */
 	size = r_size(&rstr) & -modulus;
+	if (backwards) {
+	    if (left <= size) {
+		left = size - left;
+		backwards = false;
+		/* "index" does not change */
+	    } else {
+		left -= size;
+		--index;
+		continue;
+	    }
+	}
 	if (left < size) {
 	    *pdata = rstr.value.const_bytes + left;
+	    if (mru_index)
+		*mru_index = index;
+	    if (mru_pos)
+		*mru_pos = offset - left;
 	    if (left + length > size)
 		return size - left;
 	    return 0;
 	}
 	left -= size;
+	++index;
     }
 }
 
@@ -362,7 +400,8 @@ z42_string_proc(gs_font_type42 * pfont, ulong offset, uint length,
 		const byte ** pdata)
 {
     return string_array_access_proc(pfont->memory, &pfont_data(pfont)->u.type42.sfnts, 2,
-				    offset, length, pdata);
+				    offset, length, &pfont_data(pfont)->u.type42.mru_sfnts_index,
+				    &pfont_data(pfont)->u.type42.mru_sfnts_pos, pdata);
 }
 
 private int

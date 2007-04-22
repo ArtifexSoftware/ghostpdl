@@ -46,7 +46,9 @@ int font_gdir_get_outline(const gs_memory_t *mem, const ref *, long, gs_glyph_da
  * (because of the strange behavior of odd-length strings), 1 for CIDMap.
  * Return code : 0 - success, <0 - error, 
  *               >0 - number of accessible bytes (client must cycle).
+ * - mru_index/pos are used as a hint where to start searching; NULLs for no hint.
  */
-int string_array_access_proc(const gs_memory_t *mem, const ref *, int, ulong, uint, const byte **);
+int string_array_access_proc(const gs_memory_t *mem, const ref *, int, ulong, uint,
+			     uint *mru_index, ulong *mru_pos, const byte **);
 
 #endif /* ifont42_INCLUDED */

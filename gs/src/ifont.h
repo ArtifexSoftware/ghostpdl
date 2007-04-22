@@ -26,6 +26,9 @@
 /* The structure given below is 'client data' from the viewpoint */
 /* of the library.  font-type objects (t_struct/st_font, "t_fontID") */
 /* point directly to a gs_font.  */
+/* Note: From the GC point of view, it is handled as an array of refs, followed by */
+/*       non-relocatable data starting with u.type42.mru_sfnts_index; this also    */
+/*       means all members of union _fs must start with the same number of refs    */
 
 typedef struct font_data_s {
     ref dict;			/* font dictionary object */
@@ -45,6 +48,9 @@ typedef struct font_data_s {
 	    ref sfnts;
 	    ref CIDMap;		/* for CIDFontType 2 fonts */
 	    ref GlyphDirectory;
+	    /* the following are used to optimize lookups into sfnts */
+	    uint mru_sfnts_index;   /* index of most recently used sfnts string */
+	    ulong mru_sfnts_pos;    /* data bytes before sfnts string at index mru_sfnts_index */
 	} type42;
 	struct _fc0 {
 	    ref GlyphDirectory;
@@ -63,7 +69,11 @@ typedef struct font_data_s {
 /* st_font_data is exported for zdefault_make_font in zfont.c. */
 extern_st(st_font_data);
 #define public_st_font_data()	/* in zbfont.c */\
-  gs_public_st_ref_struct(st_font_data, font_data, "font_data")
+  private struct_proc_clear_marks(font_data_clear_marks);\
+  private struct_proc_enum_ptrs(font_data_enum_ptrs);\
+  private struct_proc_reloc_ptrs(font_data_reloc_ptrs);\
+  gs_public_st_complex_only(st_font_data, font_data, "font_data",\
+    font_data_clear_marks, font_data_enum_ptrs, font_data_reloc_ptrs, 0)
 #define pfont_data(pfont) ((font_data *)((pfont)->client_data))
 #define pfont_dict(pfont) (&pfont_data(pfont)->dict)
 
