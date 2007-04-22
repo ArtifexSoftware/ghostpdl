@@ -369,6 +369,10 @@ $(PSOBJ)ziodevs$(STDIO_IMPLEMENTATION).$(OBJ) : $(PSSRC)ziodevs$(STDIO_IMPLEMENT
 $(PSOBJ)zmath.$(OBJ) : $(PSSRC)zmath.c $(OP) $(math__h) $(gxfarith_h) $(store_h)
 	$(PSCC) $(PSO_)zmath.$(OBJ) $(C_) $(PSSRC)zmath.c
 
+$(PSOBJ)zalg.$(OBJ) : $(PSSRC)zalg.c $(OP) $(ghost_h) $(gserrors_h)\
+ $(oper_h) $(store_h) $(estack_h) 
+	$(PSCC) $(PSO_)zalg.$(OBJ) $(C_) $(PSSRC)zalg.c
+
 $(PSOBJ)zmisc.$(OBJ) : $(PSSRC)zmisc.c $(OP) $(gscdefs_h) $(gp_h)\
  $(errno__h) $(memory__h) $(string__h)\
  $(ialloc_h) $(idict_h) $(dstack_h) $(iname_h) $(ivmspace_h) $(ipacked_h) $(store_h)
@@ -509,7 +513,7 @@ INT7=$(PSOBJ)sfilter1.$(OBJ) $(GLOBJ)sstring.$(OBJ) $(GLOBJ)stream.$(OBJ)
 Z1=$(PSOBJ)zarith.$(OBJ) $(PSOBJ)zarray.$(OBJ) $(PSOBJ)zcontrol.$(OBJ)
 Z2=$(PSOBJ)zdict.$(OBJ) $(PSOBJ)zfile.$(OBJ) $(PSOBJ)zfile1.$(OBJ) $(PSOBJ)zfileio.$(OBJ)
 Z3=$(PSOBJ)zfilter.$(OBJ) $(PSOBJ)zfproc.$(OBJ) $(PSOBJ)zgeneric.$(OBJ)
-Z4=$(PSOBJ)ziodev.$(OBJ) $(PSOBJ)ziodevs$(STDIO_IMPLEMENTATION).$(OBJ) $(PSOBJ)zmath.$(OBJ)
+Z4=$(PSOBJ)ziodev.$(OBJ) $(PSOBJ)ziodevs$(STDIO_IMPLEMENTATION).$(OBJ) $(PSOBJ)zmath.$(OBJ) $(PSOBJ)zalg.$(OBJ)
 Z5=$(PSOBJ)zmisc.$(OBJ) $(PSOBJ)zpacked.$(OBJ) $(PSOBJ)zrelbit.$(OBJ)
 Z6=$(PSOBJ)zstack.$(OBJ) $(PSOBJ)zstring.$(OBJ) $(PSOBJ)zsysvm.$(OBJ)
 Z7=$(PSOBJ)ztoken.$(OBJ) $(PSOBJ)ztype.$(OBJ) $(PSOBJ)zvmem.$(OBJ)
@@ -520,7 +524,7 @@ Z11=$(PSOBJ)zpaint.$(OBJ) $(PSOBJ)zpath.$(OBJ)
 Z12=$(PSOBJ)zncdummy.$(OBJ)
 Z1OPS=zarith zarray zcontrol1 zcontrol2 zcontrol3
 Z2OPS=zdict1 zdict2 zfile zfile1 zfileio1 zfileio2
-Z3_4OPS=zfilter zfproc zgeneric ziodev zmath
+Z3_4OPS=zfilter zfproc zgeneric ziodev zmath zalg
 Z5_6OPS=zmisc zpacked zrelbit zstack zstring zsysvm
 Z7_8OPS=ztoken ztype zvmem zbfont zchar zcolor
 Z9OPS=zdevice zfont zfontenum zgstate1 zgstate2 zgstate3
