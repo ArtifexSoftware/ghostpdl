@@ -742,7 +742,7 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
 bool 
 gx_pattern_tile_is_clist(gx_color_tile *ptile)
 {
-    return ptile->cdev != NULL;
+    return ptile != NULL && ptile->cdev != NULL;
 }
 
 /* Add a dummy Pattern cache entry.  Stubs a pattern tile for interpreter when
