@@ -51,10 +51,8 @@ private int zsort_cleanup(i_ctx_t *i_ctx_p);
 private int
 zsort(i_ctx_t *i_ctx_p)
 {
-    int code;
     os_ptr op = osp;
     uint N;
-    ref status;
 
     /* Check operands for type and access */
     /* we can sort only writable [and unpacked] arrays */
@@ -90,7 +88,7 @@ zsort(i_ctx_t *i_ctx_p)
     } else {
 	check_estack(11);
 	push_mark_estack(es_other, zsort_cleanup);
-H1:	make_int(&esp[1], N / 2 + 1);	/* l */
+/*H1:*/	make_int(&esp[1], N / 2 + 1);	/* l */
 	make_int(&esp[2], N);	    	/* r */
 	make_int(&esp[3], 0);	    	/* i */
 	make_int(&esp[4], 0);	    	/* j */
@@ -139,7 +137,7 @@ H2:	    if (l > 1) {
 		    return o_pop_estack;
 		}
 	    }
-H3:	    j = l;
+/* H3: */   j = l;
 H4:	    i = j;
 	    j <<= 1;
 	    if (j >= r)
@@ -148,14 +146,14 @@ H4:	    i = j;
 		else
 		    goto H8;
 	    else {
-H5:		H = 5;
+/* H5: */	H = 5;
 		push(1);
 		ref_assign(&op[-1], &Rn[j]);
 		ref_assign(&op[0], &Rn[j + 1]);
 		break;
 	    }
 	case 5:
-H5_cont:    if (!r_has_type(&op[0], t_boolean))
+/*H5_cont:*/if (!r_has_type(&op[0], t_boolean))
 		return_error(e_typecheck);
 	    if (op[0].value.boolval)
 		j++;
@@ -165,10 +163,10 @@ H6:	    H = 6;
 	    ref_assign(&op[0], &Rn[j]);
 	    break;
 	case 6:
-H6_cont:    if (!r_has_type(&op[0], t_boolean))
+/*H6_cont:*/if (!r_has_type(&op[0], t_boolean))
 		return_error(e_typecheck);
 	    if (op[0].value.boolval) {
-H7:		ref_assign_old(&arry, &Rn[i], &Rn[j], ".sort(H7)");
+/* H7: */  	ref_assign_old(&arry, &Rn[i], &Rn[j], ".sort(H7)");
 		goto H4;
 	    } else {
 H8:		ref_assign_old(&arry, &Rn[i], &R, ".sort(H8)");
