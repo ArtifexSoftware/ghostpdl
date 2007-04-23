@@ -447,8 +447,15 @@ ppm_put_params(gx_device * pdev, gs_param_list * plist)
     int ecode = 0;
     int code;
     long v;
+    gs_param_string_array intent;
     const char *vname;
 
+    if ((code = param_read_string_array(plist, "OutputIntent", &intent)) == 0) {
+	/* Silewntly ingore this parameter. 
+	   We need it against 'rangecheck',
+	   because PDF interpreter always sends this parameter.
+	 */
+    }
     save_info = pdev->color_info;
     if ((code = param_read_long(plist, (vname = "GrayValues"), &v)) != 1 ||
 	(code = param_read_long(plist, (vname = "RedValues"), &v)) != 1 ||
