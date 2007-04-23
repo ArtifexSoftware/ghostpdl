@@ -1179,6 +1179,9 @@ drawopdict begin
   /' { ' } def
   /" { " } def
   /TJ { TJ } def
+
+  /Tform { Tform } def  % Text formatting and painting for AcroForm
+                        % without appearance streams.
 end
 
 % ============================== Annotations ============================== %
@@ -1425,6 +1428,148 @@ end
   } if pop			% annotvisible
 } bdef
 currentdict /drawannottypes undef
+
+% ============================ AcroForm fields ============================ %
+
+% Get an attribure of the 0th annotation of a node
+/annot_oget {  % <annot> /Name annot_oget <value>
+  1 index /Kids knownoget {
+    0 oget exch oget exch pop
+  } {
+    oget
+  } ifelse
+} bdef
+
+% All procedures have the signature:
+% <acroform> <field> <annot|field> foo <acroform> <field> <annot|field>
+/draw_terminal_field_dict 4 dict begin
+
+/Btn {
+  1 index /Tf pget not { 0 } if
+  dup 16#20000 and 0 ne {
+    pop % Push button
+    dup /AP known {
+       dup 1 exch drawwidget
+    } {
+      (Piush button without appearance stream is not yet implemented) =
+    } ifelse
+  } {
+    16#10000 and 0 ne {
+        % Radio button
+        dup /AP known {
+          1 index /Kids oget {
+            1 exch drawwidget
+          } forall
+        } {
+          (Radio button without appearance stream is not yet implemented) =
+        } ifelse
+    } {
+        % Checkbox
+        dup /AP known {
+          dup 1 exch drawwidget
+        } {
+          (CkeckBox without appearance stream is not yet implemented) =
+        } ifelse
+    } ifelse
+  } ifelse
+} bdef
+
+/Tx {
+  dup /AP known {
+    dup 1 exch drawwidget
+  } {
+    2 index /NeedAppearances knownoget not { //false } if {
+      dup /AP << /N 10 dict dup cvx begin >> put
+      /Subtype /Form def
+      /BBox [ 0 0 4 index /Rect oget { oforce } forall  3 -1 roll sub abs 3 1 roll sub abs exch ] def
+      /Resources 3 index /DR pget not { 0 dict } if def
+      /File 1000 string dup 3 1 roll def
+      /Length 0 def
+                            % <acroform> <field> <annot> (string)
+      /NullEncode filter    % <acroform> <field> <annot> file 
+
+      dup (BT ) writestring
+      2 index /DA pget not { () } if
+      [ exch
+        { token {
+            dup /Tf eq {
+              2 index 0 eq {
+                /BBox load 3 get
+                0.75 mul   % empirical constant
+                4 -1 roll pop 3 1 roll
+              } if
+            } if
+            exch
+          } {
+            exit
+          } ifelse
+        } loop
+      ]
+      { 1 index exch write== } forall
+      dup 3 index /MaxLen pget not { 0 } if write=
+      dup 3 index /V pget not { () } if write==
+      dup 3 index /Ff pget not { 0 } if write=
+      dup 3 index /Q pget not { 0 } if write=
+      dup (Tform ET) write=
+      end
+      closefile             %  <acroform> <field> <annot>
+      dup 1 exch drawwidget
+    } if
+  } ifelse
+} bdef
+
+/Ch {
+  (Ch is not yet implemened) ==
+} bdef
+
+/Sig {
+  (Sig is not yet implemened ) ==
+} bdef
+
+currentdict end def
+
+/draw_terminal_field {   % <field> draw_terminal_field -
+ dup /Kids knownoget { 0 oget } { dup } ifelse
+ dup /P knownoget {
+    /Page load eq {
+      //draw_terminal_field_dict 2 index /FT pget not { 0 } if .knownget {
+        exec
+      } if
+   } if
+ } if
+ pop pop
+} bdef
+
+% We distinguish 4 types of nodes on the form field tree:
+%  - non-terminal field - has a kid that refers to the parent (or anywhere else)
+%  - terminal field with separate widget annotations - has a kid that doesn't have a parent
+%  - terminal field with a merged widget annotation - has no kids
+%  - widget annotation - has /Subtype and /Rect
+%
+% The recursive enumeration of the form fields doesn't descend into widget annotations.
+
+/draw_form_field { % <field> draw_form_field -
+  dup /Kids knownoget {                       % field []
+    dup 0 oget /Parent knownoget {            % field [] kid
+      pop % mon-terminal field                % field []
+      exch pop                                % []
+      { oforce draw_form_field } forall
+    } {
+      pop draw_terminal_field % separate annots % -
+    } ifelse
+  } {
+    draw_terminal_field % merged annotation   % -
+  } ifelse
+} bdef
+
+/draw_acro_form {		% <form> draw_acro_form -
+  dup /Fields knownoget {
+    { oforce draw_form_field } forall
+  } if
+  pop 
+} bdef
+
+currentdict /draw_terminal_field_dict undef
 
 end			% pdfdict
 end			% GS_PDF_ProcSet
