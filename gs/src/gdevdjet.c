@@ -170,7 +170,7 @@ const gx_device_hpjet gs_ljet2p_device =
 HPJET_DEVICE(prn_hp_procs, "ljet2p",
 	     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	     X_DPI, Y_DPI,
-	     0.20, 0.25, 0.25, 0.25,	/* margins */
+	     0.25, 0.25, 0.25, 0.0,	/* margins */
 	     1, ljet2p_print_page_copies);
 
 const gx_device_hpjet gs_ljet3_device =
