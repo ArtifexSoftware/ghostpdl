@@ -2147,12 +2147,15 @@ Currently Ghostscript is capable of PostScript font emulation in 2 ways :
 specifying TrueType font names or files in <a href="../lib/Fontmap">lib/Fontmap</a>.
 </li>
 <p>
-<b><tt>Decoding</tt></b> resources are not current used by the native font renderer.
+<b><tt>Decoding</tt></b> resources are not currently used by the native font renderer.
 
 <p>
 An instance of the <b><tt>Decoding</tt></b> resource category is
 a dictionary. The dictionary keys are PostScript glyph names and the
-values are character codes. The name of the resource instance should
+values are either character codes, or arrays of character codes.
+Arrays are used when a single name may be mapped to various character codes -
+in this case Ghostscript tries all alternatives until a success.
+The name of the resource instance should
 reflect the character set for which it maps. For example,
 <b><tt>/Unicode</tt></b> <b><tt>/Decoding</tt></b> resource maps to
 Unicode UTF-16.
@@ -2176,18 +2179,21 @@ of the table in a comfortable form.
 
 <p>
 <b><tt>CIDDecoding</tt></b> resources are similar to <b><tt>Decoding</tt></b>
-resources, except they map Charaacter Identifiers (CIDs) rather than glyph names.
-Another difference is that the native Ghostscript font renderer already uses 
-<b><tt>CIDDecoding</tt></b> resources while emulate CID fonts with TrueType.
+resources, except they map Character Identifiers (CIDs) rather than glyph names.
+Another difference is that the native Ghostscript font renderer uses 
+<b><tt>CIDDecoding</tt></b> resources while emulate CID fonts with TrueType or OpenType fonts.
 
 <p>
 An instance of the <b><tt>CIDDecoding</tt></b> resource category is
-a dictionary of strings. Keys in the dictionary are integers,
-which correspond to high order byte of a CID. Values are
-512-bytes strings. Each string represents 256 character codes,
-corresponding various values of the lower byte of CID.
-Each character code ocupies 2 bytes, high order byte first.
-Two zero bytes represent mapping to the default character.
+a dictionary of arrays. Keys in the dictionary are integers,
+which correspond to high order byte of a CID. 
+Values are 256-element arrays, and their indices correspond to the low order byte of a CID.
+Each elemet of an array is either null, or character code (integer), or an array
+of character codes (integers). The zero code represents mapping to the default character.
+
+<p>
+The dictionary includes the additional key <b><tt>CIDCount</tt></b>.
+Its value is the maximal CID defined, plus one.
 
 <p>
 The Ghostscript library is capable of generating some <b><tt>CIDDecoding</tt></b>

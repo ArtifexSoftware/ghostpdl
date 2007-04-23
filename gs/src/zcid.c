@@ -51,26 +51,36 @@ cid_system_info_param(gs_cid_system_info_t *pcidsi, const ref *prcidsi)
 private bool 
 TT_char_code_from_CID_no_subst(const gs_memory_t *mem, 
 			       const ref *Decoding, const ref *TT_cmap, uint nCID, uint *c)
-{   ref *DecodingArray, char_code, ih, glyph_index;
+{   ref *DecodingArray, char_code, char_code1, ih, glyph_index, *Duplicates;
+    bool found = false;
+    int i = nCID % 256, n;
 
     make_int(&ih, nCID / 256);
     if (dict_find(Decoding, &ih, &DecodingArray) <= 0 || 
 	    !r_has_type(DecodingArray, t_array) ||
-	    array_get(mem, DecodingArray, nCID % 256, &char_code) < 0 || 
-	    !r_has_type(&char_code, t_integer)) {
-	/* fixme : Generally, a single char_code can be insufficient. 
-	   It could be an array. Fix lib/gs_ciddc.ps as well.  */
-        return false;
-    } 
-    if (TT_cmap == NULL) {
-	*c = char_code.value.intval;
-	return true;
-    }
-    if (array_get(mem, TT_cmap, char_code.value.intval, &glyph_index) < 0 ||
-	    !r_has_type(&glyph_index, t_integer))
+	    array_get(mem, DecodingArray, i, &char_code) < 0)
 	return false;
-    *c = glyph_index.value.intval;
-    return true;
+    if (r_has_type(&char_code, t_integer))
+	n = 1; 
+    else if (r_has_type(&char_code, t_array)) {
+	DecodingArray = &char_code;
+	i = 0;
+	n = r_size(DecodingArray);
+    } else
+	return false; /* Must not happen. */
+    for (;n--; i++) {
+	if (array_get(mem, DecodingArray, i, &char_code1) < 0 ||
+	    !r_has_type(&char_code1, t_integer))
+	    return false; /* Must not happen. */
+	if (array_get(mem, TT_cmap, char_code1.value.intval, &glyph_index) >= 0 &&
+		r_has_type(&glyph_index, t_integer)) {
+	    *c = glyph_index.value.intval;
+	    found = true;
+	    if (*c != 0)
+		return true;
+	}
+    }
+    return found;
 }
 
 /* Convert a CID into a TT char code or into a TT glyph index, using SubstNWP. */

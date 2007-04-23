@@ -95,7 +95,23 @@ dup length 5 add dict begin
     } if                                    % b I I0
     //.Ranges exch get                      % b I [Range]
     exch 256 mod                            % b [Range] I1
-    3 2 roll put                            %
+    2 copy get                              % b [Range] I1 e
+    dup //null ne {
+      % We've got char code duplicates for same CID.
+      dup type /integertype eq {
+        4 3 roll                            % [Range] I1 e b
+        2 array astore put                  %
+      } {
+        dup length 1 add dup dup array dup  % b [Range] I1 D l l D' D'
+        3 2 roll 0 exch getinterval         % b [Range] I1 D l D' D''
+        4 3 roll exch copy pop              % b [Range] I1 l D'
+        dup 3 2 roll 1 sub                  % b [Range] I1 D' D' l-1
+        6 5 roll                            % [Range] I1 D' D' l-1 b
+        put put                             %
+      } ifelse
+    } {
+      pop 3 2 roll put                      %
+    } ifelse
   } bind def
 
   /endcidrange
