@@ -451,10 +451,32 @@ ppm_put_params(gx_device * pdev, gs_param_list * plist)
     const char *vname;
 
     if ((code = param_read_string_array(plist, "OutputIntent", &intent)) == 0) {
-	/* Silewntly ingore this parameter. 
-	   We need it against 'rangecheck',
-	   because PDF interpreter always sends this parameter.
+	/* This device does not use the OutputIntent parameter.
+	   We include this code just as a sample how to handle it.
+	   The PDF interpreter extracts OutputIntent from a PDF file and sends it to here,
+	   if a device includes it in the .getdeviceparams response.
+	   This device does include due to ppm_get_params implementation.
+	   ppm_put_params must handle it (and ingore it) against 'rangecheck'.
 	 */
+	static const bool debug_print_OutputIntent = false;
+
+	if (debug_print_OutputIntent) {
+	    int i, j;
+
+	    dlprintf1("%d strings:\n", intent.size);
+	    for (i = 0; i < intent.size; i++) {
+		const gs_param_string *s = &intent.data[i];
+		dlprintf2("  %d: size %d:", i, s->size);
+		if (i < 4) {
+		    for (j = 0; j < s->size; j++)
+			dlprintf1("%c", s->data[j]);
+		} else {
+		    for (j = 0; j < s->size; j++)
+			dlprintf1(" %02x", s->data[j]);
+		}
+		dlprintf("\n");
+	    }
+	}
     }
     save_info = pdev->color_info;
     if ((code = param_read_long(plist, (vname = "GrayValues"), &v)) != 1 ||
