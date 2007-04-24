@@ -246,7 +246,7 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
     pfont->data.get_metrics = gs_type42_default_get_metrics;
 
     /* Now build the len_glyphs array since 'loca' may not be properly sorted */
-    pfont->data.len_glyphs = (uint *)gs_alloc_byte_array(pfont->memory, pfont->data.numGlyphs, sizeof(uint),
+    pfont->data.len_glyphs = (uint *)gs_alloc_byte_array(pfont->memory, loca_size, sizeof(uint),
 						    "gs_type42_font");
     if (pfont->data.len_glyphs == 0)
 	return_error(gs_error_VMerror);
