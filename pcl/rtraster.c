@@ -1174,7 +1174,7 @@ pcl_start_raster(
             /* memory exhaustion; release the already allocated seed rows */
             for (j = 0; j < i; j++)
                 gs_free_object( prast->pmem, 
-                                pseed_rows[i].pdata,
+                                pseed_rows[j].pdata,
                                 "start PCL raster"
                                 );
             gs_free_object(prast->pmem, pseed_rows, "start PCL raster");
