@@ -128,6 +128,21 @@ extern_st(st_gs_font_type42);
  */
 int gs_type42_font_init(gs_font_type42 *pfont, int subfontid);
 
+/* Read data from sfnts. */
+int gs_type42_read_data(gs_font_type42 * pfont, ulong pos, uint length, byte *buf);
+
+/* Read data from sfnts. */
+/* A temporary macro for simplifying the old code change. */
+#define READ_SFNTS(pfont, pos, length, buf)\
+  BEGIN\
+    if (length > sizeof(buf))\
+	return_error(gs_error_unregistered);/* Must not happen. */\
+    code = gs_type42_read_data(pfont, (ulong)(pos), length, buf);\
+    if ( code < 0 ) return code;\
+  END
+
+#define MAX_NUM_TT_TABLES 40
+
 /* Append the outline of a TrueType character to a path. */
 int gs_type42_append(uint glyph_index, gs_state * pgs,
 		 gx_path * ppath, gs_text_enum_t *penum, gs_font *pfont,

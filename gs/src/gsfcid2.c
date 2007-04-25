@@ -67,12 +67,6 @@ gs_font_cid2_from_type42(gs_font_cid2 **ppfcid, gs_font_type42 *pfont42,
     return 0;
 }
 
-/* Set up a pointer to a substring of the font data. */
-#define ACCESS(base, length, vptr)\
-  BEGIN\
-    code = pfont->data.string_proc(pfont, (ulong)(base), length, &vptr);\
-    if ( code < 0 ) return code;\
-  END
 #define U16(p) (((uint)((p)[0]) << 8) + (p)[1])
 #define U32(p) get_u32_msb(p)
 #define PUT16(p, v)\
@@ -102,7 +96,7 @@ tt_16bit_format4_decode_next(const gs_cmap_t * pcmap_in,
     const gs_cmap_tt_16bit_format4_t *pcmap =
 	(const gs_cmap_tt_16bit_format4_t *)pcmap_in;
     gs_font_type42 *pfont = pcmap->font;
-    const byte *ttdata;
+    byte ttdata[2];
     int code;
     uint chr, value = 0;
     uint segment2;
@@ -116,22 +110,22 @@ tt_16bit_format4_decode_next(const gs_cmap_t * pcmap_in,
     for (segment2 = 0; segment2 < pcmap->segCount2; segment2 += 2) {
 	uint start, delta, roff;
 
-	ACCESS(pcmap->endCount + segment2, 2, ttdata);
+	READ_SFNTS(pfont, pcmap->endCount + segment2, 2, ttdata);
 	if (chr > U16(ttdata))
 	    continue;
-	ACCESS(pcmap->startCount + segment2, 2, ttdata);
+	READ_SFNTS(pfont, pcmap->startCount + segment2, 2, ttdata);
 	start = U16(ttdata);
 	if (chr < start)
 	    continue;
-	ACCESS(pcmap->idDelta + segment2, 2, ttdata);
+	READ_SFNTS(pfont, pcmap->idDelta + segment2, 2, ttdata);
 	delta = U16(ttdata);
-	ACCESS(pcmap->idRangeOffset + segment2, 2, ttdata);
+	READ_SFNTS(pfont, pcmap->idRangeOffset + segment2, 2, ttdata);
 	roff = U16(ttdata);
 	if (roff) {
 	    ulong gidoff = pcmap->idRangeOffset + segment2 + roff +
 		(chr - start) * 2;
 
-	    ACCESS(gidoff, 2, ttdata);
+	    READ_SFNTS(pfont, gidoff, 2, ttdata);
 	    value = U16(ttdata);
 	    if (value != 0)
 		value += delta;
@@ -190,7 +184,7 @@ tt_16bit_format4_next_entry(gs_cmap_lookups_enum_t *penum)
     const gs_cmap_tt_16bit_format4_t *pcmap =
 	(const gs_cmap_tt_16bit_format4_t *)penum->cmap;
     gs_font_type42 *pfont = pcmap->font;
-    const byte *ttdata;
+    byte ttdata[2];
     int code;
     uint start, end, delta, roff;
     uint value;
@@ -198,26 +192,26 @@ tt_16bit_format4_next_entry(gs_cmap_lookups_enum_t *penum)
  top:
     if (segment2 >= pcmap->segCount2)
 	return 1;
-    ACCESS(pcmap->endCount + segment2, 2, ttdata);
+    READ_SFNTS(pfont, pcmap->endCount + segment2, 2, ttdata);
     end = U16(ttdata);
     if (next > end) {
 	segment2 += 2;
 	goto top;
     }
-    ACCESS(pcmap->startCount + segment2, 2, ttdata);
+    READ_SFNTS(pfont, pcmap->startCount + segment2, 2, ttdata);
     start = U16(ttdata);
     if (next < start)
 	next = start;
     PUT16(penum->entry.key[0], next);
-    ACCESS(pcmap->idDelta + segment2, 2, ttdata);
+    READ_SFNTS(pfont, pcmap->idDelta + segment2, 2, ttdata);
     delta = U16(ttdata);
-    ACCESS(pcmap->idRangeOffset + segment2, 2, ttdata);
+    READ_SFNTS(pfont, pcmap->idRangeOffset + segment2, 2, ttdata);
     roff = U16(ttdata);
     if (roff) {
 	/* Non-zero offset, table lookup. */
 	ulong gidoff = pcmap->idRangeOffset + segment2 + roff;
 
-	ACCESS(gidoff, 2, ttdata);
+	READ_SFNTS(pfont, gidoff, 2, ttdata);
 	value = U16(ttdata);
 	if (value != 0)
 	    value += delta;
@@ -263,7 +257,7 @@ gs_cmap_from_type42_cmap(gs_cmap_t **ppcmap, gs_font_type42 *pfont,
     ulong origin = pfont->data.cmap;
     gs_cmap_tt_16bit_format4_t *pcmap;
     int code;
-    const byte *ttdata;
+    byte ttdata[2];
     ulong offset = origin;
     uint segCount2;
 
@@ -277,23 +271,23 @@ gs_cmap_from_type42_cmap(gs_cmap_t **ppcmap, gs_font_type42 *pfont,
 	uint cmap_count;
 	uint i;
 	
-	ACCESS(origin + 2, 2, ttdata);
+	READ_SFNTS(pfont, origin + 2, 2, ttdata);
 	cmap_count = U16(ttdata);
 	for (i = 0; i < cmap_count; ++i) {
-	    ACCESS(origin + 4 + i * 8, 8, ttdata);
+	    READ_SFNTS(pfont, origin + 4 + i * 8, 8, ttdata);
 	    if (U16(ttdata) != 3 || /* platform ID */
 		U16(ttdata + 2) != 1 /* encoding ID */
 		)
 		continue;
 	    offset = origin + U32(ttdata + 4);
-	    ACCESS(offset, 2, ttdata);
+	    READ_SFNTS(pfont, offset, 2, ttdata);
 	    if (U16(ttdata) != 4 /* format */)
 		continue;
 	    break;
 	}
 	if (i >= cmap_count)	/* not found */
 	    return_error(gs_error_invalidfont);
-	ACCESS(offset + 6, 2, ttdata);
+	READ_SFNTS(pfont, offset + 6, 2, ttdata);
 	segCount2 = U16(ttdata);
     }
 

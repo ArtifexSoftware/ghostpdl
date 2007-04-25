@@ -49,15 +49,6 @@ private int default_get_outline(gs_font_type42 *pfont, uint glyph_index,
 font_proc_font_info(gs_type42_font_info); /* Type check. */
 font_proc_font_info(gs_truetype_font_info); /* Type check. */
 
-/* Set up a pointer to a substring of the font data. */
-/* Free variables: pfont, string_proc. */
-#define ACCESS(base, length, vptr)\
-  BEGIN\
-    code = (*string_proc)(pfont, (ulong)(base), length, &vptr);\
-    if ( code < 0 ) return code;\
-    if ( code > 0 ) return_error(gs_error_invalidfont);\
-  END
-
 /* Get 2- or 4-byte quantities from a table. */
 #define U8(p) ((uint)((p)[0]))
 #define S8(p) (int)((U8(p) ^ 0x80) - 0x80)
@@ -70,7 +61,7 @@ font_proc_font_info(gs_truetype_font_info); /* Type check. */
 GS_NOTIFY_PROC(gs_len_glyphs_release);
 
 /* Read data from sfnts. */
-private int
+int
 gs_type42_read_data(gs_font_type42 * pfont, ulong pos, uint length, byte *buf)
 {
     int (*string_proc)(gs_font_type42 *, ulong, uint, const byte **) =
@@ -97,22 +88,21 @@ get_glyph_offset(gs_font_type42 *pfont, uint glyph_index)
 {
     ulong result;
     byte buf[4];
+    int code;
 
+    /* Hack : when reading fails, we return a huge offset. 
+       Then gs_type42_font_init will fails because it is greater than loca size. 
+       Fixme : improve with changing the function prototype.
+     */
     if (pfont->data.indexToLocFormat) {
-	gs_type42_read_data(pfont, pfont->data.loca + glyph_index * 4, 4, buf);
-	result = u32(buf);
+	code = gs_type42_read_data(pfont, pfont->data.loca + glyph_index * 4, 4, buf);
+	result = (code < 0 ? 0xffffffff : u32(buf));
     } else {
-	gs_type42_read_data(pfont, pfont->data.loca + glyph_index * 2, 2, buf);
-	result = (ulong) U16(buf) << 1;
+	code = gs_type42_read_data(pfont, pfont->data.loca + glyph_index * 2, 2, buf);
+	result = (code < 0 ? 0xffffffff : (ulong) U16(buf) << 1);
     }
     return result;
 }
-
-/*
- * Initialize the cached values in a Type 42 font.
- * Note that this initializes the type42_data procedures other than
- * string_proc, and the font procedures as well.
- */
 
 /* compare fn used by gs_type42_font_init() for sorting the 'loca' table */
 typedef struct gs_type42_font_init_sort_s {
@@ -134,14 +124,20 @@ gs_type42_font_init_compare (const void *a, const void *b)
 	       ((const gs_type42_font_init_sort_t *)b)->glyph_num;
 }
 
+/*
+ * Initialize the cached values in a Type 42 font.
+ * Note that this initializes the type42_data procedures other than
+ * string_proc, and the font procedures as well.
+ */
+
 int
 gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
 {
     int (*string_proc)(gs_font_type42 *, ulong, uint, const byte **) =
 	pfont->data.string_proc;
-    const byte *OffsetTable;
+    byte OffsetTable[12];
     uint numTables;
-    const byte *TableDirectory;
+    byte TableDirectory[MAX_NUM_TT_TABLES * 16];
     uint i;
     int code;
     byte head_box[8];
@@ -154,15 +150,15 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
     static const byte version_true[4] = {'t', 'r', 'u', 'e'};
     static const byte version_ttcf[4] = {'t', 't', 'c', 'f'};
 
-    ACCESS(0, 12, OffsetTable);
+    READ_SFNTS(pfont, 0, 12, OffsetTable);
     if (!memcmp(OffsetTable, version_ttcf, 4))
     {
 	numFonts = u32(OffsetTable + 8);
 	if (subfontID < 0 || subfontID >= numFonts)
 	    return_error(gs_error_rangecheck);
-	ACCESS(12, numFonts * 4, OffsetTable);
-	OffsetTableOffset = u32(OffsetTable + subfontID * 4);
-	ACCESS(OffsetTableOffset, 12, OffsetTable);
+	READ_SFNTS(pfont, 12 + subfontID * 4, 4, OffsetTable);
+	OffsetTableOffset = u32(OffsetTable);
+	READ_SFNTS(pfont, OffsetTableOffset, 12, OffsetTable);
     }
     else
     {
@@ -174,7 +170,9 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
 	return_error(gs_error_invalidfont);
 
     numTables = U16(OffsetTable + 4);
-    ACCESS(OffsetTableOffset + 12, numTables * 16, TableDirectory);
+    if (numTables > MAX_NUM_TT_TABLES)
+	return_error(gs_error_invalidfont);
+    READ_SFNTS(pfont, OffsetTableOffset + 12, numTables * 16, TableDirectory);
     /* Clear all non-client-supplied data. */
     {
 	void *proc_data = pfont->data.proc_data;
@@ -193,16 +191,16 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
 	    pfont->data.glyf = offset;
 	    glyph_size = (uint)u32(tab + 12);
 	} else if (!memcmp(tab, "head", 4)) {
-	    const byte *head;
+	    byte head[54];
 
-	    ACCESS(offset, 54, head);
+	    READ_SFNTS(pfont, offset, 54, head);
 	    pfont->data.unitsPerEm = U16(head + 18);
 	    memcpy(head_box, head + 36, 8);
 	    pfont->data.indexToLocFormat = U16(head + 50);
 	} else if (!memcmp(tab, "hhea", 4)) {
-	    const byte *hhea;
+	    byte hhea[36];
 
-	    ACCESS(offset, 36, hhea);
+	    READ_SFNTS(pfont, offset, 36, hhea);
 	    pfont->data.metrics[0].numMetrics = U16(hhea + 34);
 	} else if (!memcmp(tab, "hmtx", 4)) {
 	    pfont->data.metrics[0].offset = offset;
@@ -211,16 +209,16 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
 	    pfont->data.loca = offset;
 	    loca_size = u32(tab + 12);
 	} else if (!memcmp(tab, "maxp", 4)) {
-	    const byte *maxp;
+	    byte maxp[30];
 
-	    ACCESS(offset, 30, maxp);
+	    READ_SFNTS(pfont, offset, 30, maxp);
 	    pfont->data.trueNumGlyphs = U16(maxp + 4);
 	} else if (!memcmp(tab, "name", 4)) {
 	    pfont->data.name_offset = offset;
 	} else if (!memcmp(tab, "vhea", 4)) {
-	    const byte *vhea;
+	    byte vhea[36];
 
-	    ACCESS(offset, 36, vhea);
+	    READ_SFNTS(pfont, offset, 36, vhea);
 	    pfont->data.metrics[1].numMetrics = U16(vhea + 34);
 	} else if (!memcmp(tab, "vmtx", 4)) {
 	    pfont->data.metrics[1].offset = offset;
@@ -774,8 +772,6 @@ private int
 simple_glyph_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 		     float sbw[4])
 {
-    int (*string_proc)(gs_font_type42 *, ulong, uint, const byte **) =
-	pfont->data.string_proc;
     double factor = 1.0 / pfont->data.unitsPerEm;
     uint width;
     int lsb;
@@ -784,24 +780,24 @@ simple_glyph_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
     {
 	const gs_type42_mtx_t *pmtx = &pfont->data.metrics[wmode];
 	uint num_metrics = pmtx->numMetrics;
-	const byte *pmetrics;
+	byte pmetrics[4];
 
 	if (pmtx->length == 0)
 	    return_error(gs_error_rangecheck);
 	if (glyph_index < num_metrics) {
-	    ACCESS(pmtx->offset + glyph_index * 4, 4, pmetrics);
+	    READ_SFNTS(pfont, pmtx->offset + glyph_index * 4, 4, pmetrics);
 	    width = U16(pmetrics);
 	    lsb = S16(pmetrics + 2);
 	} else {
 	    uint offset = pmtx->offset + num_metrics * 4;
 	    uint glyph_offset = (glyph_index - num_metrics) * 2;
-	    const byte *plsb;
+	    byte plsb[2];
 
-	    ACCESS(offset - 4, 4, pmetrics);
+	    READ_SFNTS(pfont, offset - 4, 4, pmetrics);
 	    width = U16(pmetrics);
 	    if (glyph_offset >= pmtx->length)
 		glyph_offset = pmtx->length - 2;
-	    ACCESS(offset + glyph_offset, 2, plsb);
+	    READ_SFNTS(pfont, offset + glyph_offset, 2, plsb);
 	    lsb = S16(plsb);
 	}
     }
@@ -1246,17 +1242,17 @@ private int get_from_names_table(gs_font_type42 *pfont, gs_font_info_t *info,
 {
     int (*string_proc)(gs_font_type42 *, ulong, uint, const byte **) =
 	pfont->data.string_proc;
-    const byte *t;
+    byte t[12];
     ushort num_records, strings_offset, i, language_id = 0xffff, length0 = 0, offset0 = 0;
     int code;
 
-    ACCESS(pfont->data.name_offset + 2, 4, t);
+    READ_SFNTS(pfont, pfont->data.name_offset + 2, 4, t);
     num_records = U16(t);
     strings_offset = U16(t + 2);
     for (i = 0; i < num_records; i++) {
 	ushort platformID, specificID, languageID, nameID, length, offset;
 
-	ACCESS(pfont->data.name_offset + 6 + i * 12, 12, t);
+	READ_SFNTS(pfont, pfont->data.name_offset + 6 + i * 12, 12, t);
 	platformID = U16(t + 0);
 	specificID = U16(t + 2);
 	languageID = U16(t + 4);
@@ -1276,8 +1272,9 @@ private int get_from_names_table(gs_font_type42 *pfont, gs_font_info_t *info,
     }
     if (language_id == 0xffff)
 	return 0;
-    ACCESS(pfont->data.name_offset + strings_offset + offset0, length0, t);
-    pmember->data = t;
+    if ((*string_proc)(pfont, pfont->data.name_offset + strings_offset + offset0, 
+				length0, &pmember->data) != 0)
+	return_error(gs_error_invalidfont);
     pmember->size = length0;
     info->members |= member;
     return 0;

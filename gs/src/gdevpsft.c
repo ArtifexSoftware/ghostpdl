@@ -61,12 +61,6 @@
 
 /* ---------------- Utilities ---------------- */
 
-#define ACCESS(base, length, vptr)\
-  BEGIN\
-    code = string_proc(pfont, (ulong)(base), length, &vptr);\
-    if (code < 0) return code;\
-  END
-
 /* Pad to a multiple of 4 bytes. */
 private void
 put_pad(stream *s, uint length)
@@ -658,12 +652,9 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 {
     gs_font *const font = (gs_font *)pfont;
     gs_const_string font_name;
-    int (*string_proc)(gs_font_type42 *, ulong, uint, const byte **) =
-	pfont->data.string_proc;
-    const byte *OffsetTable;
+    byte OffsetTable[12];
     uint numTables_stored, numTables, numTables_out;
-#define MAX_NUM_TABLES 40
-    byte tables[MAX_NUM_TABLES * 16];
+    byte tables[MAX_NUM_TT_TABLES * 16];
     uint i;
     ulong offset;
     gs_glyph glyph, glyph_prev;
@@ -706,20 +697,20 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
      * table directory.
      */
 
-    ACCESS(0, 12, OffsetTable);
+    READ_SFNTS(pfont, 0, 12, OffsetTable);
     numTables_stored = U16(OffsetTable + 4);
     for (i = numTables = 0; i < numTables_stored; ++i) {
-	const byte *tab;
-	const byte *data;
+	byte tab[16];
+	byte data[54];
 	ulong start;
 	uint length;
 
-	if (numTables == MAX_NUM_TABLES)
+	if (numTables == MAX_NUM_TT_TABLES)
 	    return_error(gs_error_limitcheck);
-	ACCESS(12 + i * 16, 16, tab);
+	READ_SFNTS(pfont, 12 + i * 16, 16, tab);
 	start = u32(tab + 8);
 	length = u32(tab + 12);
-	/* Copy the table data now, since another ACCESS may invalidate it. */
+	/* Copy the table data now (a rudiment of old code). */
 	memcpy(&tables[numTables * 16], tab, 16);
 
 #define W(a,b,c,d)\
@@ -730,7 +721,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	    if (length < 54)
 		return_error(gs_error_invalidfont);
 	    length = 54; /* bug 688409 fig2.eps has length=56. */
-	    ACCESS(start, length, data);
+	    READ_SFNTS(pfont, start, length, data);
 	    memcpy(head, data, length);
 	    continue;
 	case W('g','l','y','f'): /* synthesized */
@@ -745,7 +736,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	    have_cmap = true;
 	    break;
 	case W('m','a','x','p'):
-	    ACCESS(start, length, data);
+	    READ_SFNTS(pfont, start, length, data);
 	    numGlyphs = U16(data + 4);
 	    break;
 	case W('n','a','m','e'):
@@ -879,7 +870,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	+ generate_mtx * (have_hvhea[0] + have_hvhea[1]) /* hmtx, vmtx */
 	+ !have_OS_2		/* OS/2 */
 	+ !have_cmap + !have_name + !have_post;
-    if (numTables_out >= MAX_NUM_TABLES)
+    if (numTables_out >= MAX_NUM_TT_TABLES)
 	return_error(gs_error_limitcheck);
     offset = 12 + numTables_out * 16;
     for (i = 0; i < numTables; ++i) {
@@ -1001,10 +992,10 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 		     * Adjust the first and last character indices in the OS/2
 		     * table to reflect the values in the generated cmap.
 		     */
-		    const byte *pos2;
+		    byte pos2[OS_2_LENGTH2];
 		    ttf_OS_2_t os2;
 
-		    ACCESS(OS_2_start, OS_2_length, pos2);
+		    READ_SFNTS(pfont, OS_2_start, OS_2_length, pos2);
 		    memcpy(&os2, pos2, min(OS_2_length, sizeof(os2)));
 		    update_OS_2(&os2, TT_BIAS, 256);
 		    stream_write(s, &os2, OS_2_length);

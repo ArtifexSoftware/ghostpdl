@@ -1408,7 +1408,6 @@ private inline int
 access_type42_data(gs_font_type42 *pfont, ulong base, ulong length, 
 		   const byte **vptr)
 {
-    /* See ACCESS macro in gstype42.c */
     return pfont->data.string_proc(pfont, base, length, vptr);
 }
 
@@ -1488,8 +1487,6 @@ same_type42_hinting(gs_font_type42 *font0, gs_font_type42 *font1)
     }
     return 1;
 }
-
-#undef ACCESS
 
 /* ------ CIDFont shared ------ */
 
