@@ -69,22 +69,41 @@ font_proc_font_info(gs_truetype_font_info); /* Type check. */
 
 GS_NOTIFY_PROC(gs_len_glyphs_release);
 
+/* Read data from sfnts. */
+private int
+gs_type42_read_data(gs_font_type42 * pfont, ulong pos, uint length, byte *buf)
+{
+    int (*string_proc)(gs_font_type42 *, ulong, uint, const byte **) =
+	pfont->data.string_proc;
+    uint left = length;
+    const byte *data;
+    int code;
+
+    do {
+	code = (*string_proc)(pfont, (ulong)(pos + length - left), left, &data);
+	if (code < 0) 
+	    return code;
+	if (code == 0) 
+	    code = left;
+	memcpy(buf + length - left, data, code);
+	left -= code;
+    } while (left);
+    return 0;
+}
+
 /* Get the offset to a glyph using the loca table */
 private inline ulong
 get_glyph_offset(gs_font_type42 *pfont, uint glyph_index) 
 {
-    int (*string_proc)(gs_font_type42 *, ulong, uint, const byte **) =
-	pfont->data.string_proc;
-    const byte *ploca;
     ulong result;
-    int code;		/* hidden variable used by ACCESS */
+    byte buf[4];
 
     if (pfont->data.indexToLocFormat) {
-	ACCESS(pfont->data.loca + glyph_index * 4, 4, ploca);
-	result = u32(ploca);
+	gs_type42_read_data(pfont, pfont->data.loca + glyph_index * 4, 4, buf);
+	result = u32(buf);
     } else {
-	ACCESS(pfont->data.loca + glyph_index * 2, 2, ploca);
-	result = (ulong) U16(ploca) << 1;
+	gs_type42_read_data(pfont, pfont->data.loca + glyph_index * 2, 2, buf);
+	result = (ulong) U16(buf) << 1;
     }
     return result;
 }
@@ -511,24 +530,15 @@ default_get_outline(gs_font_type42 * pfont, uint glyph_index,
 	     * Perhaps we can handle it (with a low performance),
 	     * making a contiguous copy.
 	     */
-	    uint left = glyph_length;
 
 	    /* 'code' is the returned length */
 	    buf = (byte *)gs_alloc_string(pgd->memory, glyph_length, "default_get_outline");
 	    if (buf == 0)
 		return_error(gs_error_VMerror);
 	    gs_glyph_data_from_string(pgd, buf, glyph_length, (gs_font *)pfont);
-	    for (;;) {
-		memcpy(buf + glyph_length - left, data, code);
-		if (!(left -= code))
-		    return 0;
-		code = (*string_proc)(pfont, (ulong)(pfont->data.glyf + glyph_start + 
-		              glyph_length - left), left, &data);
-		if (code < 0) 
-		    return code;
-		if (code == 0) 
-		    code = left;
-	    }
+	    memcpy(buf, data, code);
+	    return gs_type42_read_data(pfont, pfont->data.glyf + glyph_start + code, 
+				       glyph_length - code, buf + code);
 	}
     }
     return 0;
