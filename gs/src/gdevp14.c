@@ -2781,6 +2781,13 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize)
     *psize = need;
     if (need > avail)
 	return_error(gs_error_rangecheck);
+
+	/* If we are writing more than the maximum ever expected,
+	 * return a rangecheck error.
+	 */
+	if ( need > MAX_CLIST_COMPOSITOR_SIZE )
+		return_error(gs_error_rangecheck);
+
     /* Copy our serialzed data into the output buffer */
     memcpy(data, buf, need - mask_size);
     if (mask_size)	/* Include the transfer mask data if present */
@@ -2800,7 +2807,7 @@ int gs_create_pdf14trans( gs_composite_t ** ppct,
     dp += sizeof(value)
 
 /*
- * Convert the string representation of the PDF 1.4 tranparency  parameter
+ * Convert the string representation of the PDF 1.4 transparency parameter
  * into the full compositor.
  */
 private	int
@@ -2843,6 +2850,18 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
 	    params.csel = *data++;
 	    break;
 	case PDF14_BEGIN_TRANS_MASK:
+		/* This is the largest transparency parameter at this time (potentially
+		 * 1275 bytes in size if Background_components = 
+		 * GS_CLIENT_COLOR_MAX_COMPONENTS and we have a transfer function
+		 * as well).
+		 *
+		 * NOTE:
+		 * The clist reader must be able to handle this sized device.
+		 * If any changes are made here the #define MAX_CLIST_COMPOSITOR_SIZE
+		 * may also need to be changed correspondingly (defined in gstparam.h)
+		 * Also... if another compositor param should exceed this size, this
+		 * same condition applies.
+		 */
 	    read_value(data, params.subtype);
 	    params.function_is_identity = *data++;
 	    params.Background_components = *data++;
@@ -2884,7 +2903,12 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
 	return code;
     used = data - start;
     if_debug1('v', "  used = %d\n", used);
-    return used;
+    
+    /* If we read more than the maximum expected, return a rangecheck error */
+    if ( used > MAX_CLIST_COMPOSITOR_SIZE )
+ 		return_error(gs_error_rangecheck);
+    else
+    	return used;
 }
 
 /*

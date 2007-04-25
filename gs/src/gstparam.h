@@ -117,6 +117,8 @@ typedef struct gx_transparency_mask_params_s {
     byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE];
 } gx_transparency_mask_params_t;
 
+#define MAX_CLIST_COMPOSITOR_SIZE (sizeof( gx_transparency_mask_params_t ) + 1)
+
 /* Select the opacity or shape parameters. */
 typedef enum {
     TRANSPARENCY_CHANNEL_Opacity = 0,

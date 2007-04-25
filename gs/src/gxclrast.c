@@ -2034,11 +2034,15 @@ out:
  * including the compositor name size, is smaller than the data buffer
  * size. This assumption is inherent in the basic design of the coding
  * and the de-serializer interface, as no length field is provided.
- * At the time of this writing, no compositor comes remotely close to
- * violating this assumption (largest create_compositor is about 16
- * bytes, while the command data buffer is 800 bytes), nor is any likely
- * to do so in the future. In the unlikely event that this assumption
- * is violated, a change in the encoding would be called for).
+ *
+ * At the time of this writing, no compositor violates this assumption.
+ * The largest create_compositor is currently 1275 bytes, while the command
+ * data buffer is 4096 bytes.
+ *
+ * In the event that this assumption is violated, a change in the encoding
+ * would be called for.
+ *
+ * See comment in gdevp14.c c_pdf14trans_read PDF14_BEGIN_TRANS_MASK case.
  */
 extern_gs_find_compositor();
 
@@ -2057,7 +2061,8 @@ read_create_compositor(
     gx_device *                 tdev = *ptarget;
 
     /* fill the command buffer (see comment above) */
-    cbp = top_up_cbuf(pcb, cbp);
+	if (pcb->end - cbp < MAX_CLIST_COMPOSITOR_SIZE + sizeof(comp_id))
+		cbp = top_up_cbuf(pcb, cbp);
 
     /* find the appropriate compositor method vector */
     comp_id = *cbp++;
@@ -2066,6 +2071,11 @@ read_create_compositor(
 
     /* de-serialize the compositor */
     code = pcomp_type->procs.read(&pcomp, cbp, pcb->end - cbp, mem);
+    
+    /* If we read more than the maximum expected, return a rangecheck error */
+    if ( code > MAX_CLIST_COMPOSITOR_SIZE )
+ 		return_error(gs_error_rangecheck);
+   	
     if (code > 0)
         cbp += code;
     pcb->ptr = cbp;
