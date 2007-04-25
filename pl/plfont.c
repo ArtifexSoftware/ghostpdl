@@ -667,6 +667,7 @@ pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir, gs_memory_
 	pfont->WMode = 0;
 	pfont->PaintType = 0;
 	pfont->StrokeWidth = 0;
+        pfont->is_cached = 0;
 	pfont->procs.init_fstack = gs_default_init_fstack;
 	pfont->procs.next_char_glyph = gs_default_next_char_glyph;
 
