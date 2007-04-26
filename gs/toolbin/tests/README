@@ -1,14 +1,5 @@
 crontab executes run_nightly
 
-run_nightly provides the correct python environment for running run_nightly.py
-	export PYTHONPATH=.:/home/regression/python:$PYTHONPATH	
-
-Since we now have shared python modules in /home/regression/python,
-it needs to be added to the appropriate path.
-For example in .bashrc
-
-	export PYTHONPATH=.:/home/regression/python:$PYTHONPATH
-
 This addition is also helpful
 
 	export PATH=.:/home/regression/bin:$PATH
