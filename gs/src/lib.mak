@@ -496,6 +496,7 @@ scf_h=$(GLSRC)scf.h $(shc_h)
 scfx_h=$(GLSRC)scfx.h $(shc_h)
 siinterp_h=$(GLSRC)siinterp.h $(sisparam_h)
 siscale_h=$(GLSRC)siscale.h $(sisparam_h)
+sidscale_h=$(GLSRC)sidscale.h $(sisparam_h)
 simscale_h=$(GLSRC)simscale.h $(scommon_h) $(sisparam_h)
 gximage_h=$(GLSRC)gximage.h $(gsiparam_h)\
  $(gxcspace_h) $(gxdda_h) $(gxiclass_h) $(gxiparam_h) $(gxsample_h)\
@@ -1771,7 +1772,7 @@ $(GLOBJ)gdevvec.$(OBJ) : $(GLSRC)gdevvec.c $(GXERR)\
 
 # ---------------- Image scaling filters ---------------- #
 
-iscale_=$(GLOBJ)siinterp.$(OBJ) $(GLOBJ)siscale.$(OBJ)
+iscale_=$(GLOBJ)siinterp.$(OBJ) $(GLOBJ)siscale.$(OBJ) $(GLOBJ)sidscale.$(OBJ)
 $(GLD)iscale.dev : $(LIB_MAK) $(ECHOGS_XE) $(iscale_)
 	$(SETMOD) $(GLD)iscale $(iscale_)
 
@@ -1785,6 +1786,12 @@ $(GLOBJ)siscale.$(OBJ) : $(GLSRC)siscale.c $(AK)\
  $(gconfigv_h) $(gdebug_h)\
  $(siscale_h) $(strimpl_h)
 	$(GLCC) $(GLO_)siscale.$(OBJ) $(C_) $(GLSRC)siscale.c
+
+$(GLOBJ)sidscale.$(OBJ) : $(GLSRC)sidscale.c $(AK)\
+ $(math__h) $(memory__h) $(stdio__h)\
+ $(gconfigv_h) $(gdebug_h)\
+ $(sidscale_h) $(strimpl_h)
+	$(GLCC) $(GLO_)sidscale.$(OBJ) $(C_) $(GLSRC)sidscale.c
 
 # -------------- imagemask scaling filter --------------- #
 

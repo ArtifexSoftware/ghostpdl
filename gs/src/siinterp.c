@@ -21,10 +21,6 @@
 #include "siinterp.h"
 
 /* ImageInterpolateEncode state */
-typedef struct gx_dda_int_s {
-    dda_state_struct(ia_, int, uint) state;
-    dda_step_struct(ie_, int, uint) step;
-} gx_dda_int_t;
 typedef enum {
     SCALE_SAME = 0,
     SCALE_SAME_ALIGNED,

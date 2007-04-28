@@ -34,6 +34,7 @@
 #include "stream.h"		/* for s_alloc_state */
 #include "siinterp.h"		/* for spatial interpolation */
 #include "siscale.h"		/* for Mitchell filtering */
+#include "sidscale.h"		/* for special case downscale filter */
 
 /*
  * Define whether we are using Mitchell filtering or spatial
@@ -65,12 +66,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     if (!penum->interpolate) 
 	return 0;
     if (penum->use_mask_color || penum->posture != image_portrait ||
-    	penum->masked || penum->alpha ||
-	(penum->dev->color_info.num_components == 1 &&
-	 penum->dev->color_info.max_gray < 15) ||
-        (penum->dev->color_info.num_components > 1 &&
-         penum->dev->color_info.max_color < 15)
-       ) {
+    	penum->masked || penum->alpha ) {
 	/* We can't handle these cases yet.  Punt. */
 	penum->interpolate = false;
 	return 0;
@@ -122,6 +118,27 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
 	in_size = round_up(iss.WidthIn * iss.Colors * sizeof(frac),
 			   align_bitmap_mod);
     }
+#ifdef USE_MITCHELL_FILTER
+    template = &s_IScale_template;
+#else
+    template = &s_IIEncode_template;
+#endif
+    /* Special case handling for when we are downsampling to a dithered device	*/
+    /* The point of this non-linear downsampling is to preserve dark pixels	*/
+    /* from the source image to avoid dropout. The color polarity must be used	*/
+    if (((iss.WidthOut < iss.WidthIn) && (iss.HeightOut < iss.HeightIn)) &&
+	((penum->dev->color_info.num_components == 1 &&
+	  penum->dev->color_info.max_gray < 15) ||
+	 (penum->dev->color_info.num_components > 1 &&
+	  penum->dev->color_info.max_color < 15))
+	) {
+	if (penum->dev->color_info.polarity == GX_CINFO_POLARITY_UNKNOWN)
+	    return 0;	/* can't do special downsampling to this color space */
+	template = &s_ISpecialDownScale_template;
+    }
+    /* The SpecialDownScale filter needs polarity, either ADDITIVE or SUBTRACTIVE */
+    /* UNKNOWN case (such as for palette colors) has been handled above */
+    iss.ColorPolarityAdditive = penum->dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE;
     /* Allocate a buffer for one source/destination line. */
     {
 	uint out_size =
@@ -131,11 +148,6 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
 	line = gs_alloc_bytes(mem, in_size + out_size,
 			      "image scale src+dst line");
     }
-#ifdef USE_MITCHELL_FILTER
-    template = &s_IScale_template;
-#else
-    template = &s_IIEncode_template;
-#endif
     pss = (stream_image_scale_state *)
 	s_alloc_state(mem, template->stype, "image scale state");
     if (line == 0 || pss == 0 ||
@@ -306,17 +318,33 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 			/* Just pack colors into a scan line. */
 			gx_color_index color = devc.colors.pure;
 
-			/* Skip RGB runs quickly. */
-			if (c == 3) {
-			    do {
-				LINE_ACCUM(color, bpp);
-				x++, psrc += 3;
-			    } while (x < xe && psrc[-3] == psrc[0] &&
+			/* Skip runs quickly for the common cases. */
+			switch (c) {
+			    case 1:
+				do {
+				    LINE_ACCUM(color, bpp);
+				    x++, psrc += 1;
+				} while (x < xe && psrc[-1] == psrc[0]);
+				break;
+			    case 3:
+				do {
+				    LINE_ACCUM(color, bpp);
+				    x++, psrc += 3;
+				} while (x < xe && psrc[-4] == psrc[0] &&
+				     psrc[-3] == psrc[1] && psrc[-2] == psrc[2] &&
+				     psrc[-1] == psrc[3]);
+				break;
+			    case 4:
+				do {
+				    LINE_ACCUM(color, bpp);
+				    x++, psrc += 3;
+				} while (x < xe && psrc[-3] == psrc[0] &&
 				     psrc[-2] == psrc[1] &&
 				     psrc[-1] == psrc[2]);
-			} else {
-			    LINE_ACCUM(color, bpp);
-			    x++, psrc += c;
+				break;
+			    default:
+				LINE_ACCUM(color, bpp);
+				x++, psrc += c;
 			}
 		    } else {
 			int rcode;

@@ -55,6 +55,7 @@ typedef struct stream_image_scale_params_s {
     uint MaxValueOut;		/* max value of output component, */
 				/* 0 < MaxValueOut < 1 << BitsPerComponentOut*/
     int WidthOut, HeightOut;	/* > 0 */
+    bool ColorPolarityAdditive;	/* needed by SpecialDownScale filter */
 } stream_image_scale_params_t;
 
 /* Define a generic image scaling stream state. */
