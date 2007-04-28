@@ -15,7 +15,7 @@
 */
 
 /* $Id: gdevwts.c 6300 2005-12-28 19:56:24Z giles $ */
-
+/* ALPHA: Sample Device that provides WTS screening and IMDI color management */
 /* TODO: this should be configurable */
 #define LINK_ICC_NAME	"../../link.icc"
 
