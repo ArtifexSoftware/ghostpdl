@@ -86,7 +86,7 @@ private dev_proc_get_bits_rectangle(wtsimdi_halftoned_get_bits_rectangle);
 
 typedef struct cached_color_s {
     gx_color_index color_index;
-    byte cmyk[0];
+    byte cmyk[4];
 } cached_color;
 
 typedef struct gx_device_wtsimdi_s {
