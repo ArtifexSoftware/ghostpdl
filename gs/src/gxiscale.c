@@ -337,7 +337,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 			    case 4:
 				do {
 				    LINE_ACCUM(color, bpp);
-				    x++, psrc += 3;
+				    x++, psrc += 4;
 				} while (x < xe && psrc[-3] == psrc[0] &&
 				     psrc[-2] == psrc[1] &&
 				     psrc[-1] == psrc[2]);
