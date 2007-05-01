@@ -202,7 +202,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     byte *buffer;
     fixed mtx, mty;
     gs_fixed_point row_extent, col_extent, x_extent, y_extent;
-    bool device_color;
+    bool device_color = true;
     gs_fixed_rect obox, cbox;
 
     if (pmat == 0)

@@ -1,5 +1,3 @@
-# $Id: $
-
 # Ghostscript error suppression file for Valgrind memcheck tool.
 #
 # The following are suspected bugs which should be either fixed or
@@ -12,6 +10,7 @@
 # Errors, detected in the system calls or CRTL are not suppressed
 # because this cannot be done in the platform-independent way.
 #
+# $Id: vg_bugs.supp 7890 2007-05-02 19:56:24Z alexcher $
 
 # Type 1 to Type 2 conversion issues
 # pdfwrite - Bug687846.ps 401-01.ps
@@ -100,17 +99,6 @@
    Memcheck:Cond
    fun:load_transfer_map
    fun:process_transfer
-}
-
-# Image render
-# pdfwrite - 405-01.ps 450-01.ps
-{
-   <bug 688910>
-   Memcheck:Cond
-   fun:image_render_mono
-   fun:gx_image1_plane_data
-   fun:gx_image_plane_data_rows
-   fun:gs_image_next_planes
 }
 
 # Image 3
