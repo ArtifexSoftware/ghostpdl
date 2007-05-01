@@ -601,7 +601,17 @@ wedge_vertex_list_elem_buffer_alloc(patch_fill_state_t *pfs)
     const int max_level = LAZY_WEDGES_MAX_LEVEL;
     gs_memory_t *memory = pfs->pis->memory;
 
-    pfs->wedge_vertex_list_elem_count_max = max_level * (1 << max_level);
+    /* We have 'max_level' levels, each of which divides 1 or 3 sides.
+       LAZY_WEDGES stores all 2^level divisions until 
+       the other area of same bnoundary is processed.
+       Thus the upper estimation of the buffer size is :
+       max_level * (1 << max_level) * 3.
+       Likely this estimation to be decreased to
+       max_level * (1 << max_level) * 2.
+       because 1 side of a triangle is always outside the division path.
+       For now we set the smaller estimation for obtaining an experimental data
+       from the wild. */
+    pfs->wedge_vertex_list_elem_count_max = max_level * (1 << max_level) * 2;
     pfs->wedge_vertex_list_elem_buffer = (wedge_vertex_list_elem_t *)gs_alloc_bytes(memory, 
 	    sizeof(wedge_vertex_list_elem_t) * pfs->wedge_vertex_list_elem_count_max, 
 	    "alloc_wedge_vertex_list_elem_buffer");
