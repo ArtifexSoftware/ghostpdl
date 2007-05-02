@@ -205,7 +205,11 @@ init_patch_fill_state(patch_fill_state_t *pfs)
     pfs->inside = false;
     pfs->n_color_args = 1;
     pfs->fixed_flat = float2fixed(pfs->pis->flatness);
-    pfs->smoothness = pfs->pis->smoothness;
+    /* Restrict the pfs->smoothness with 1/min_linear_grades, because cs_is_linear
+       can't provide a better precision due to the color
+       representation with integers.
+     */
+    pfs->smoothness = max(pfs->pis->smoothness, 1.0 / min_linear_grades);
     pfs->color_stack_size = 0;
     pfs->color_stack_step = 0;
     pfs->color_stack_ptr = NULL;
@@ -980,11 +984,7 @@ dc2fc(const patch_fill_state_t *pfs, gx_color_index c,
 private inline float
 function_linearity(const patch_fill_state_t *pfs, const patch_color_t *c0, const patch_color_t *c1)
 {
-    float smoothness = max(pfs->smoothness, 1.0 / min_linear_grades), s = 0;
-    /* Restrict the smoothness with 1/min_linear_grades, because cs_is_linear
-       can't provide a better precision due to the color
-       representation with integers.
-     */
+    float s = 0;
 
     if (pfs->Function != NULL) {
 	patch_color_t c;
@@ -1002,7 +1002,7 @@ function_linearity(const patch_fill_state_t *pfs, const patch_color_t *c0, const
 		float d = v - c.cc.paint.values[i];
 		float s1 = any_abs(d) / pfs->color_domain.paint.values[i];
 
-		if (s1 > smoothness)
+		if (s1 > pfs->smoothness)
 		    return s1;
 		if (s < s1)
 		    s = s1;
@@ -1020,17 +1020,12 @@ is_color_linear(const patch_fill_state_t *pfs, const patch_color_t *c0, const pa
     else {
 	const gs_color_space *cs = pfs->direct_space;
 	int code;
-	float smoothness = max(pfs->smoothness, 1.0 / min_linear_grades);
-	/* Restrict the smoothness with 1/min_linear_grades, because cs_is_linear
-	   can't provide a better precision due to the color
-	   representation with integers.
-	 */
 	float s = function_linearity(pfs, c0, c1);
 
-	if (s > smoothness)
+	if (s > pfs->smoothness)
 	    return 0;
 	code = cs_is_linear(cs, pfs->pis, pfs->dev, 
-		&c0->cc, &c1->cc, NULL, NULL, smoothness - s);
+		&c0->cc, &c1->cc, NULL, NULL, pfs->smoothness - s);
 	if (code <= 0)
 	    return code;
 	return 1;
@@ -1598,27 +1593,22 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
 	return 2;
     if (!wedge) {
 	const gs_color_space *cs = pfs->direct_space;
-	float smoothness = max(pfs->smoothness, 1.0 / min_linear_grades);
-	/* Restrict the smoothness with 1/min_linear_grades, because cs_is_linear
-	   can't provide a better precision due to the color
-	   representation with integers.
-	 */
 	float s0, s1, s2, s01, s012;
 
 	s0 = function_linearity(pfs, p0->c, p1->c);
-	if (s0 > smoothness)
+	if (s0 > pfs->smoothness)
 	    return 1;
 	s1 = function_linearity(pfs, p1->c, p2->c);
-	if (s1 > smoothness)
+	if (s1 > pfs->smoothness)
 	    return 1;
 	s2 = function_linearity(pfs, p2->c, p0->c);
-	if (s2 > smoothness)
+	if (s2 > pfs->smoothness)
 	    return 1;
 	/* fixme: check an inner color ? */
 	s01 = max(s0, s1);
 	s012 = max(s01, s2);
 	code = cs_is_linear(cs, pfs->pis, pfs->dev, 
-			    &p0->c->cc, &p1->c->cc, &p2->c->cc, NULL, smoothness - s012);
+			    &p0->c->cc, &p1->c->cc, &p2->c->cc, NULL, pfs->smoothness - s012);
 	if (code < 0)
 	    return code;
 	if (code == 0)
@@ -2409,6 +2399,7 @@ triangle_by_4(patch_fill_state_t *pfs,
     gs_fixed_rect r, r1;
     int code = 0;
     byte *color_stack_ptr;
+
     if (!pfs->inside) {
 	bbox_of_points(&r, &p0->p, &p1->p, &p2->p, NULL);
 	r1 = r;
