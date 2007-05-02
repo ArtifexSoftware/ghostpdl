@@ -201,6 +201,7 @@ init_patch_fill_state(patch_fill_state_t *pfs)
     pfs->vectorization = false; /* A stub for a while. Will use with pclwrite. */
     pfs->maybe_self_intersecting = true;
     pfs->monotonic_color = (pfs->Function == NULL);
+    pfs->function_arg_shift = 0;
     pfs->linear_color = false;
     pfs->inside = false;
     pfs->n_color_args = 1;
@@ -2343,14 +2344,15 @@ private inline int
 is_quadrangle_color_monotonic(const patch_fill_state_t *pfs, const quadrangle_patch *p, 
 			      bool *not_monotonic_by_u, bool *not_monotonic_by_v) 
 {   /* returns : 1 = monotonic, 0 = don't know, <0 = error. */
-    int code;
+    int code, r;
 
     code = isnt_color_monotonic(pfs, p->p[0][0]->c, p->p[1][1]->c);
     if (code <= 0)
 	return code;
-    if (code & 1)
+    r = code << pfs->function_arg_shift;
+    if (r & 1)
 	*not_monotonic_by_u = true;
-    if (code & 2)
+    if (r & 2)
 	*not_monotonic_by_v = true;
     return !code;
 }

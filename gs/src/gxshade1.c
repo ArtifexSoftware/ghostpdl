@@ -182,10 +182,14 @@ A_fill_region(A_fill_state_t * pfs, patch_fill_state_t *pfs1)
     gs_point_transform2fixed(&pfs1->pis->ctm, x1 + pfs->delta.y * h0, y1 - pfs->delta.x * h0, &curve[1].vertex.p);
     gs_point_transform2fixed(&pfs1->pis->ctm, x1 + pfs->delta.y * h1, y1 - pfs->delta.x * h1, &curve[2].vertex.p);
     gs_point_transform2fixed(&pfs1->pis->ctm, x0 + pfs->delta.y * h1, y0 - pfs->delta.x * h1, &curve[3].vertex.p);
-    curve[0].vertex.cc[0] = curve[0].vertex.cc[1] = pfs->t0; /* The element cc[1] is set to a dummy value against */
-    curve[1].vertex.cc[0] = curve[1].vertex.cc[1] = pfs->t1; /* interrupts while an idle priocessing in gxshade.6.c .  */
-    curve[2].vertex.cc[0] = curve[2].vertex.cc[1] = pfs->t1;
-    curve[3].vertex.cc[0] = curve[3].vertex.cc[1] = pfs->t0;
+    curve[0].vertex.cc[0] = pfs->t0; /* The element cc[1] is set to a dummy value against */
+    curve[1].vertex.cc[0] = pfs->t1; /* interrupts while an idle priocessing in gxshade.6.c .  */
+    curve[2].vertex.cc[0] = pfs->t1;
+    curve[3].vertex.cc[0] = pfs->t0;
+    curve[0].vertex.cc[1] = 0; /* The element cc[1] is set to a dummy value against */
+    curve[1].vertex.cc[1] = 0; /* interrupts while an idle priocessing in gxshade.6.c .  */
+    curve[2].vertex.cc[1] = 0;
+    curve[3].vertex.cc[1] = 0;
     make_other_poles(curve);
     return patch_fill(pfs1, curve, NULL, NULL);
 }
@@ -215,6 +219,7 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     if (code < 0)
 	return code;
     pfs1.maybe_self_intersecting = false;
+    pfs1.function_arg_shift = 1;
     /*
      * Compute the parameter range.  We construct a matrix in which
      * (0,0) corresponds to t = 0 and (0,1) corresponds to t = 1,
@@ -697,6 +702,7 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     code = init_patch_fill_state(&pfs1);
     if (code < 0)
 	return code;
+    pfs1.function_arg_shift = 1;
     pfs1.rect = *clip_rect;
     pfs1.maybe_self_intersecting = false;
     code = R_extensions(&pfs1, psh, rect, d0, d1, psh->params.Extend[0], false);

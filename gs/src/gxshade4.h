@@ -118,6 +118,7 @@ typedef struct patch_color_s patch_color_t;
 typedef struct patch_fill_state_s {
     mesh_fill_state_common;
     const gs_function_t *Function;
+    int function_arg_shift;
     bool vectorization;
     int n_color_args;
     fixed max_small_coord; /* Length restriction for intersection_of_small_bars. */
