@@ -1047,8 +1047,32 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
        It is important for intersection_of_small_bars to compute faster. */
     int code;
     patch_color_t *c;
-    byte *color_stack_ptr = reserve_colors_inline(pfs, &c, 1);
+    byte *color_stack_ptr;
+    bool save_inside = pfs->inside;
 
+    if (!pfs->inside) {
+	gs_fixed_rect r, r1;
+
+	if(swap_axes) {
+	    r.p.y = min(le->start.x, le->end.x);
+	    r.p.x = min(le->start.y, le->end.y);
+	    r.q.y = max(re->start.x, re->end.x);
+	    r.q.x = max(re->start.y, re->end.y);
+	} else {
+	    r.p.x = min(le->start.x, le->end.x);
+	    r.p.y = min(le->start.y, le->end.y);
+	    r.q.x = max(re->start.x, re->end.x);
+	    r.q.y = max(re->start.y, re->end.y);
+	}
+	r1 = r;
+	rect_intersect(r, pfs->rect);
+	if (r.q.x <= r.p.x || r.q.y <= r.p.y)
+	    return 0;
+	if (r1.p.x == r.p.x && r1.p.y == r.p.y &&
+	    r1.q.x == r.q.x && r1.q.y == r.q.y)
+	    pfs->inside = true;
+    }
+    color_stack_ptr = reserve_colors_inline(pfs, &c, 1);
     if (color_stack_ptr == NULL)
 	return_error(gs_error_unregistered); /* Must not happen. */
     /* Use the recursive decomposition due to isnt_color_monotonic
@@ -1136,6 +1160,7 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
 	pfs->linear_color = linear_color_save;
     }
 out:
+    pfs->inside = save_inside;
     release_colors_inline(pfs, color_stack_ptr, 1);
     return code;
 }
@@ -1851,6 +1876,45 @@ mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_p
      */
 }
 
+private inline void
+bbox_of_points(gs_fixed_rect *r, 
+	const gs_fixed_point *p0, const gs_fixed_point *p1,
+	const gs_fixed_point *p2, const gs_fixed_point *p3)
+{
+    r->p.x = r->q.x = p0->x;
+    r->p.y = r->q.y = p0->y;
+
+    if (r->p.x > p1->x)
+	r->p.x = p1->x;
+    if (r->q.x < p1->x)
+	r->q.x = p1->x;
+    if (r->p.y > p1->y)
+	r->p.y = p1->y;
+    if (r->q.y < p1->y)
+	r->q.y = p1->y;
+
+    if (r->p.x > p2->x)
+	r->p.x = p2->x;
+    if (r->q.x < p2->x)
+	r->q.x = p2->x;
+    if (r->p.y > p2->y)
+	r->p.y = p2->y;
+    if (r->q.y < p2->y)
+	r->q.y = p2->y;
+
+    if (p3 == NULL)
+	return;
+
+    if (r->p.x > p3->x)
+	r->p.x = p3->x;
+    if (r->q.x < p3->x)
+	r->q.x = p3->x;
+    if (r->p.y > p3->y)
+	r->p.y = p3->y;
+    if (r->q.y < p3->y)
+	r->q.y = p3->y;
+}
+
 private int
 fill_wedges_aux(patch_fill_state_t *pfs, int k, int ka, 
 	const gs_fixed_point pole[4], const patch_color_t *c0, const patch_color_t *c1,
@@ -1861,8 +1925,26 @@ fill_wedges_aux(patch_fill_state_t *pfs, int k, int ka,
     if (k > 1) {
 	gs_fixed_point q[2][4];
 	patch_color_t *c;
-	byte *color_stack_ptr = reserve_colors_inline(pfs, &c, 1);
+	bool save_inside = pfs->inside;
+	byte *color_stack_ptr;
 
+	if (!pfs->inside) {
+	    gs_fixed_rect r, r1;
+
+	    bbox_of_points(&r, &pole[0], &pole[1], &pole[2], &pole[3]);
+	    r.p.x -= INTERPATCH_PADDING;
+	    r.p.y -= INTERPATCH_PADDING;
+	    r.q.x += INTERPATCH_PADDING;
+	    r.q.y += INTERPATCH_PADDING;
+	    r1 = r;
+	    rect_intersect(r, pfs->rect);
+	    if (r.q.x <= r.p.x || r.q.y <= r.p.y)
+		return 0;
+	    if (r1.p.x == r.p.x && r1.p.y == r.p.y &&
+		r1.q.x == r.q.x && r1.q.y == r.q.y)
+		pfs->inside = true;
+	}
+	color_stack_ptr = reserve_colors_inline(pfs, &c, 1);
 	if (color_stack_ptr == NULL)
 	    return_error(gs_error_unregistered); /* Must not happen. */
 	patch_interpolate_color(c, c0, c1, pfs, 0.5);
@@ -1871,6 +1953,7 @@ fill_wedges_aux(patch_fill_state_t *pfs, int k, int ka,
 	if (code >= 0)
 	    code = fill_wedges_aux(pfs, k / 2, ka, q[1], c, c1, wedge_type);
 	release_colors_inline(pfs, color_stack_ptr, 1);
+	pfs->inside = save_inside;
 	return code;
     } else {
 	if (INTERPATCH_PADDING && (wedge_type & interpatch_padding)) {
@@ -2313,45 +2396,6 @@ divide_bar(patch_fill_state_t *pfs,
     patch_interpolate_color(c, p0->c, p1->c, pfs, (double)(radix - 1) / radix);
 }
 
-private inline void
-bbox_of_points(gs_fixed_rect *r, 
-	const gs_fixed_point *p0, const gs_fixed_point *p1,
-	const gs_fixed_point *p2, const gs_fixed_point *p3)
-{
-    r->p.x = r->q.x = p0->x;
-    r->p.y = r->q.y = p0->y;
-
-    if (r->p.x > p1->x)
-	r->p.x = p1->x;
-    if (r->q.x < p1->x)
-	r->q.x = p1->x;
-    if (r->p.y > p1->y)
-	r->p.y = p1->y;
-    if (r->q.y < p1->y)
-	r->q.y = p1->y;
-
-    if (r->p.x > p2->x)
-	r->p.x = p2->x;
-    if (r->q.x < p2->x)
-	r->q.x = p2->x;
-    if (r->p.y > p2->y)
-	r->p.y = p2->y;
-    if (r->q.y < p2->y)
-	r->q.y = p2->y;
-
-    if (p3 == NULL)
-	return;
-
-    if (r->p.x > p3->x)
-	r->p.x = p3->x;
-    if (r->q.x < p3->x)
-	r->q.x = p3->x;
-    if (r->p.y > p3->y)
-	r->p.y = p3->y;
-    if (r->q.y < p3->y)
-	r->q.y = p3->y;
-}
-
 private int 
 triangle_by_4(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2, 
@@ -2364,22 +2408,20 @@ triangle_by_4(patch_fill_state_t *pfs,
     bool inside_save = pfs->inside;
     gs_fixed_rect r, r1;
     int code = 0;
-    byte *color_stack_ptr = reserve_colors_inline(pfs, c, 3);
-
+    byte *color_stack_ptr;
+    if (!pfs->inside) {
+	bbox_of_points(&r, &p0->p, &p1->p, &p2->p, NULL);
+	r1 = r;
+	rect_intersect(r, pfs->rect);
+	if (r.q.x <= r.p.x || r.q.y <= r.p.y)
+	    return 0;
+    }
+    color_stack_ptr = reserve_colors_inline(pfs, c, 3);
     if(color_stack_ptr == NULL)
 	return_error(gs_error_unregistered);
     p01.c = c[0];
     p12.c = c[1];
     p20.c = c[2];
-    if (!pfs->inside) {
-	bbox_of_points(&r, &p0->p, &p1->p, &p2->p, NULL);
-	r1 = r;
-	rect_intersect(r, pfs->rect);
-	if (r.q.x <= r.p.x || r.q.y <= r.p.y) { /* Outside. */
-	    code = 0;
-	    goto out;
-	}
-    }
     code = try_device_linear_color(pfs, false, p0, p1, p2);
     switch(code) {
 	case 0: /* The area is filled. */
@@ -3108,6 +3150,29 @@ split_patch(patch_fill_state_t *pfs, tensor_patch *s0, tensor_patch *s1, const t
     s1->c[1][1] = p->c[1][1];
 }
 
+private inline void
+tensor_patch_bbox(gs_fixed_rect *r, const tensor_patch *p)
+{
+    int i, j;
+
+    r->p.x = r->q.x = p->pole[0][0].x;
+    r->p.y = r->q.y = p->pole[0][0].y;
+    for (i = 0; i < 4; i++) {
+	for (j = 0; j < 4; j++) {
+	    const gs_fixed_point *q = &p->pole[i][j];
+
+	    if (r->p.x > q->x)
+		r->p.x = q->x;
+	    if (r->p.y > q->y)
+		r->p.y = q->y;
+	    if (r->q.x < q->x)
+		r->q.x = q->x;
+	    if (r->q.y < q->y)
+		r->q.y = q->y;
+	}
+    }
+}
+
 private int 
 decompose_stripe(patch_fill_state_t *pfs, const tensor_patch *p, int ku)
 {
@@ -3115,8 +3180,22 @@ decompose_stripe(patch_fill_state_t *pfs, const tensor_patch *p, int ku)
 	tensor_patch s0, s1;
 	patch_color_t *c[2];
 	int code;
-	byte *color_stack_ptr = reserve_colors_inline(pfs, c, 2);
+	byte *color_stack_ptr;
+	bool save_inside = pfs->inside;
 
+	if (!pfs->inside) {
+	    gs_fixed_rect r, r1;
+
+	    tensor_patch_bbox(&r, p);
+	    r1 = r;
+	    rect_intersect(r, pfs->rect);
+	    if (r.q.x <= r.p.x || r.q.y <= r.p.y)
+		return 0;
+	    if (r1.p.x == r.p.x && r1.p.y == r.p.y &&
+		r1.q.x == r.q.x && r1.q.y == r.q.y)
+		pfs->inside = true;
+	}
+	color_stack_ptr = reserve_colors_inline(pfs, c, 2);
 	if(color_stack_ptr == NULL)
 	    return_error(gs_error_unregistered); /* Must not happen. */
 	split_stripe(pfs, &s0, &s1, p, c);
@@ -3128,6 +3207,7 @@ decompose_stripe(patch_fill_state_t *pfs, const tensor_patch *p, int ku)
 	if (code >= 0)
 	    code = decompose_stripe(pfs, &s1, ku / 2);
 	release_colors_inline(pfs, color_stack_ptr, 2);
+	pfs->inside = save_inside;
 	return code;
     } else {
 	quadrangle_patch q;
@@ -3382,9 +3462,27 @@ fill_patch(patch_fill_state_t *pfs, const tensor_patch *p, int kv, int kv0, int 
 	patch_color_t *c[2];
         shading_vertex_t q0, q1, q2;
 	int code = 0;
-	byte *color_stack_ptr = reserve_colors_inline(pfs, c, 2);
+	byte *color_stack_ptr;
+	bool save_inside = pfs->inside;
 
-	if (color_stack_ptr == NULL)
+	if (!pfs->inside) {
+	    gs_fixed_rect r, r1;
+
+	    tensor_patch_bbox(&r, p);
+	    r.p.x -= INTERPATCH_PADDING;
+	    r.p.y -= INTERPATCH_PADDING;
+	    r.q.x += INTERPATCH_PADDING;
+	    r.q.y += INTERPATCH_PADDING;
+	    r1 = r;
+	    rect_intersect(r, pfs->rect);
+	    if (r.q.x <= r.p.x || r.q.y <= r.p.y)
+		return 0;
+	    if (r1.p.x == r.p.x && r1.p.y == r.p.y &&
+		r1.q.x == r.q.x && r1.q.y == r.q.y)
+		pfs->inside = true;
+	}
+	color_stack_ptr = reserve_colors_inline(pfs, c, 2);
+	if(color_stack_ptr == NULL)
 	    return_error(gs_error_unregistered); /* Must not happen. */
 	split_patch(pfs, &s0, &s1, p, c);
 	if (kv0 <= 1) {
@@ -3429,6 +3527,7 @@ fill_patch(patch_fill_state_t *pfs, const tensor_patch *p, int kv, int kv0, int 
 	   Delaying this improvement because it is low important.
 	 */
 	release_colors_inline(pfs, color_stack_ptr, 2);
+	pfs->inside = save_inside;
 	return code;
     }
 }
