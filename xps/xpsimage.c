@@ -66,7 +66,7 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
 }
 
 int
-xps_parse_image_brush(xps_context_t *ctx, xps_item_t *root)
+xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 {
     xps_item_t *node;
     xps_part_t *part;
@@ -100,6 +100,8 @@ xps_parse_image_brush(xps_context_t *ctx, xps_item_t *root)
 	if (!strcmp(xps_tag(node), "ImageBrush.Transform"))
 	    transform_tag = node;
     }
+
+    xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag);
 
     /*
      * Decode image resource.

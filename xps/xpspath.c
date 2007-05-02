@@ -213,6 +213,8 @@ xps_parse_arc_segment(xps_context_t *ctx, xps_item_t *root)
 	double scale_num, scale_denom, scale;
 	int code;
 
+	sign = is_clockwise == is_large_arc ? -1.0 : 1.0;
+
 	gs_currentpoint(ctx->pgs, &start);
 	end.x = point_x; end.y = point_y;
 	size.x = size_x; size.y = size_y;
@@ -425,7 +427,7 @@ xps_parse_path_figure(xps_context_t *ctx, xps_item_t *root)
 }
 
 int
-xps_parse_path_geometry(xps_context_t *ctx, xps_item_t *root)
+xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 {
     xps_item_t *node;
 
@@ -434,6 +436,7 @@ xps_parse_path_geometry(xps_context_t *ctx, xps_item_t *root)
     char *transform_att;
 
     xps_item_t *transform_tag = NULL;
+    xps_item_t *figures_tag = NULL; /* only used by resource */
 
     gs_matrix transform;
     int even_odd = 0;
@@ -448,6 +451,9 @@ xps_parse_path_geometry(xps_context_t *ctx, xps_item_t *root)
 	if (!strcmp(xps_tag(node), "PathGeometry.Transform"))
 	    transform_tag = xps_down(node);
     }
+
+    xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag);
+    xps_resolve_resource_reference(ctx, dict, &figures_att, &figures_tag);
 
     if (transform_att || transform_tag)
     {
@@ -466,6 +472,11 @@ xps_parse_path_geometry(xps_context_t *ctx, xps_item_t *root)
     if (figures_att)
     {
 	xps_parse_abbreviated_geometry(ctx, figures_att);
+    }
+
+    if (figures_tag)
+    {
+	xps_parse_path_figure(ctx, figures_tag);
     }
 
     for (node = xps_down(root); node; node = xps_next(node))
@@ -488,9 +499,10 @@ xps_parse_path_geometry(xps_context_t *ctx, xps_item_t *root)
  */
 
 int
-xps_parse_path(xps_context_t *ctx, xps_item_t *root)
+xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 {
     xps_item_t *node;
+    xps_item_t *rsrc;
 
     char *transform_att;
     char *clip_att;
@@ -560,6 +572,13 @@ xps_parse_path(xps_context_t *ctx, xps_item_t *root)
 	    data_tag = xps_down(node);
     }
 
+    xps_resolve_resource_reference(ctx, dict, &data_att, &data_tag);
+    xps_resolve_resource_reference(ctx, dict, &clip_att, &clip_tag);
+    xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag);
+    xps_resolve_resource_reference(ctx, dict, &fill_att, &fill_tag);
+    xps_resolve_resource_reference(ctx, dict, &stroke_att, &stroke_tag);
+    xps_resolve_resource_reference(ctx, dict, &opacity_mask_att, &opacity_mask_tag);
+
     /*
      * Act on the information we have gathered:
      */
@@ -575,6 +594,11 @@ xps_parse_path(xps_context_t *ctx, xps_item_t *root)
 	stroke_att = xps_att(stroke_tag, "Color");
 	stroke_tag = NULL;
     }
+
+    if (stroke_miter_limit_att)
+	gs_setmiterlimit(ctx->pgs, atof(stroke_miter_limit_att));
+    if (stroke_thickness_att)
+	gs_setlinewidth(ctx->pgs, atof(stroke_thickness_att));
 
     /* if we have a transform, push that on the gstate and remember to restore */
 
@@ -630,7 +654,7 @@ xps_parse_path(xps_context_t *ctx, xps_item_t *root)
 	    if (data_att)
 		xps_parse_abbreviated_geometry(ctx, data_att);
 	    if (data_tag)
-		xps_parse_path_geometry(ctx, data_tag);
+		xps_parse_path_geometry(ctx, dict, data_tag);
 	    gs_fill(ctx->pgs);
 	}
     }
@@ -646,7 +670,7 @@ xps_parse_path(xps_context_t *ctx, xps_item_t *root)
 	    if (data_att)
 		xps_parse_abbreviated_geometry(ctx, data_att);
 	    if (data_tag)
-		xps_parse_path_geometry(ctx, data_tag);
+		xps_parse_path_geometry(ctx, dict, data_tag);
 	    gs_stroke(ctx->pgs);
 	}
     }
@@ -667,20 +691,20 @@ xps_parse_path(xps_context_t *ctx, xps_item_t *root)
 	if (data_att)
 	    xps_parse_abbreviated_geometry(ctx, data_att);
 	if (data_tag)
-	    xps_parse_path_geometry(ctx, data_tag);
+	    xps_parse_path_geometry(ctx, dict, data_tag);
 	gs_clip(ctx->pgs);
 	dputs("clip\n");
 
 	if (fill_tag)
 	{
 	    if (!strcmp(xps_tag(fill_tag), "ImageBrush"))
-		xps_parse_image_brush(ctx, fill_tag);
+		xps_parse_image_brush(ctx, dict, fill_tag);
 	    if (!strcmp(xps_tag(fill_tag), "VisualBrush"))
-		xps_parse_visual_brush(ctx, fill_tag);
+		xps_parse_visual_brush(ctx, dict, fill_tag);
 	    if (!strcmp(xps_tag(fill_tag), "LinearGradientBrush"))
-		xps_parse_linear_gradient_brush(ctx, fill_tag);
+		xps_parse_linear_gradient_brush(ctx, dict, fill_tag);
 	    if (!strcmp(xps_tag(fill_tag), "RadialGradientBrush"))
-		xps_parse_radial_gradient_brush(ctx, fill_tag);
+		xps_parse_radial_gradient_brush(ctx, dict, fill_tag);
 	}
     }
 

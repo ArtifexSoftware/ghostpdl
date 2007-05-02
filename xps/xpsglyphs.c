@@ -364,12 +364,17 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
 	else
 	    xps_fill_font_glyph(ctx, font, glyph_index, x, y);
 
-	x += advance * 0.01 * size;
+	if (is_sideways)
+	    y += advance * 0.01 * size;
+	else
+	{
+	    x += advance * 0.01 * size;
+	}
     }
 }
 
 int
-xps_parse_glyphs(xps_context_t *ctx, xps_item_t *root)
+xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 {
     xps_item_t *node;
 
@@ -440,6 +445,11 @@ xps_parse_glyphs(xps_context_t *ctx, xps_item_t *root)
 	if (!strcmp(xps_tag(node), "Glyphs.Fill"))
 	    fill_tag = xps_down(node);
     }
+
+    xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag);
+    xps_resolve_resource_reference(ctx, dict, &clip_att, &clip_tag);
+    xps_resolve_resource_reference(ctx, dict, &fill_att, &fill_tag);
+    xps_resolve_resource_reference(ctx, dict, &opacity_mask_att, &opacity_mask_tag);
 
     /*
      * Check that we have all the necessary information.
@@ -585,13 +595,13 @@ xps_parse_glyphs(xps_context_t *ctx, xps_item_t *root)
 	dputs("clip\n");
 
 	if (!strcmp(xps_tag(fill_tag), "ImageBrush"))
-	    xps_parse_image_brush(ctx, fill_tag);
+	    xps_parse_image_brush(ctx, dict, fill_tag);
 	if (!strcmp(xps_tag(fill_tag), "VisualBrush"))
-	    xps_parse_visual_brush(ctx, fill_tag);
+	    xps_parse_visual_brush(ctx, dict, fill_tag);
 	if (!strcmp(xps_tag(fill_tag), "LinearGradientBrush"))
-	    xps_parse_linear_gradient_brush(ctx, fill_tag);
+	    xps_parse_linear_gradient_brush(ctx, dict, fill_tag);
 	if (!strcmp(xps_tag(fill_tag), "RadialGradientBrush"))
-	    xps_parse_radial_gradient_brush(ctx, fill_tag);
+	    xps_parse_radial_gradient_brush(ctx, dict, fill_tag);
     }
 
     /*

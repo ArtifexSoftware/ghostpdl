@@ -51,6 +51,9 @@ $(XPSOBJ)xpsdoc.$(OBJ): $(XPSSRC)xpsdoc.c $(XPSINCLUDES)
 $(XPSOBJ)xpspage.$(OBJ): $(XPSSRC)xpspage.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpspage.c $(XPSO_)xpspage.$(OBJ)
 
+$(XPSOBJ)xpsresource.$(OBJ): $(XPSSRC)xpsresource.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xpsresource.c $(XPSO_)xpsresource.$(OBJ)
+
 $(XPSOBJ)xpscommon.$(OBJ): $(XPSSRC)xpscommon.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpscommon.c $(XPSO_)xpscommon.$(OBJ)
 
@@ -97,6 +100,7 @@ XPS_OBJS=\
     $(XPSOBJ)xpsxml.$(OBJ) \
     $(XPSOBJ)xpsdoc.$(OBJ) \
     $(XPSOBJ)xpspage.$(OBJ) \
+    $(XPSOBJ)xpsresource.$(OBJ) \
     $(XPSOBJ)xpscommon.$(OBJ) \
     $(XPSOBJ)xpscolor.$(OBJ) \
     $(XPSOBJ)xpspath.$(OBJ) \

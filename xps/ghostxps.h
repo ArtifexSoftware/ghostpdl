@@ -49,17 +49,27 @@
 #endif
 
 /*
- * Some forward declarations for circular dependencies.
+ * Forward declarations.
  */
 
+typedef struct xps_context_s xps_context_t;
+
+typedef struct xps_part_s xps_part_t;
+typedef struct xps_type_map_s xps_type_map_t;
+typedef struct xps_relation_s xps_relation_t;
+typedef struct xps_document_s xps_document_t;
+typedef struct xps_page_s xps_page_t;
+
+typedef struct xps_item_s xps_item_t;
 typedef struct xps_font_s xps_font_t;
 typedef struct xps_image_s xps_image_t;
+typedef struct xps_resource_s xps_resource_t;
+typedef struct xps_glyph_metrics_s xps_glyph_metrics_t;
 
 /*
  * Context and memory.
  */
 
-typedef struct xps_context_s xps_context_t;
 
 #define xps_alloc(ctx, size) \
     ((void*)gs_alloc_bytes(ctx->memory, size, __FUNCTION__));
@@ -84,12 +94,6 @@ unsigned int xps_crc32(unsigned int crc, unsigned char *buf, int n);
 /*
  * Packages, parts and relations.
  */
-
-typedef struct xps_part_s xps_part_t;
-typedef struct xps_type_map_s xps_type_map_t;
-typedef struct xps_relation_s xps_relation_t;
-typedef struct xps_document_s xps_document_t;
-typedef struct xps_page_s xps_page_t;
 
 int xps_process_data(xps_context_t *ctx, stream_cursor_read *buf);
 int xps_process_part(xps_context_t *ctx, xps_part_t *part);
@@ -235,8 +239,6 @@ struct xps_font_s
     byte *charstrings;
 };
 
-typedef struct xps_glyph_metrics_s xps_glyph_metrics_t;
-
 struct xps_glyph_metrics_s
 {
     float hadv, vadv, vorg;
@@ -267,8 +269,6 @@ int xps_init_postscript_font(xps_context_t *ctx, xps_font_t *font);
  * XML and content.
  */
 
-typedef struct xps_item_s xps_item_t;
-
 xps_item_t * xps_parse_xml(xps_context_t *ctx, char *buf, int len);
 xps_item_t * xps_next(xps_item_t *item);
 xps_item_t * xps_down(xps_item_t *item);
@@ -277,17 +277,35 @@ char * xps_tag(xps_item_t *item);
 char * xps_att(xps_item_t *item, const char *att);
 
 int xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part);
-int xps_parse_canvas(xps_context_t *ctx, xps_item_t *node);
-int xps_parse_path(xps_context_t *ctx, xps_item_t *node);
-int xps_parse_glyphs(xps_context_t *ctx, xps_item_t *node);
-int xps_parse_image_brush(xps_context_t *ctx, xps_item_t *node);
-int xps_parse_visual_brush(xps_context_t *ctx, xps_item_t *node);
-int xps_parse_linear_gradient_brush(xps_context_t *ctx, xps_item_t *node);
-int xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_item_t *node);
+int xps_parse_canvas(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
+int xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
+int xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
+int xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
+int xps_parse_visual_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
+int xps_parse_linear_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
+int xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
 
 void xps_parse_matrix_transform(xps_context_t *ctx, xps_item_t *root, gs_matrix *matrix);
 void xps_parse_render_transform(xps_context_t *ctx, char *text, gs_matrix *matrix);
 void xps_parse_color(xps_context_t *ctx, char *hexstring, float *argb);
 void xps_parse_rectangle(xps_context_t *ctx, char *text, gs_rect *rect);
 int xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom);
+
+/*
+ * Static XML resources.
+ */
+
+struct xps_resource_s
+{
+    char *name;
+    xps_item_t *data;
+    xps_resource_t *next;
+    xps_resource_t *parent; /* up to the previous dict in the stack */
+};
+
+xps_resource_t *xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *name);
+xps_resource_t *xps_parse_resource_dictionary(xps_context_t *ctx, xps_item_t *root);
+void xps_free_resource_dictionary(xps_context_t *ctx, xps_resource_t *dict);
+xps_item_t *xps_parse_resource_reference(xps_context_t *ctx, xps_resource_t *dict, char *att);
+int xps_resolve_resource_reference(xps_context_t *ctx, xps_resource_t *dict, char **attp, xps_item_t **tagp);
 

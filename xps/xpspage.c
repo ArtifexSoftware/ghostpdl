@@ -1,68 +1,80 @@
 #include "ghostxps.h"
 
-int xps_parse_canvas(xps_context_t *ctx, xps_item_t *root)
+int xps_parse_canvas(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 {
+    xps_resource_t *new_dict = NULL;
     xps_item_t *node;
+
     char *transform_att;
+    char *clip_att;
+    char *opacity_att;
+    char *opacity_mask_att;
+
+    xps_item_t *transform_tag = NULL;
+    xps_item_t *clip_tag = NULL;
+    xps_item_t *opacity_mask_tag = NULL;
+
     gs_matrix transform;
-    int saved = 0;
 
     dputs("Begin Canvas!\n");
 
     transform_att = xps_att(root, "RenderTransform");
-    if (transform_att)
-    {
-	dputs("  canvas att render transform\n");
-	xps_parse_render_transform(ctx, transform_att, &transform);
-	if (!saved)
-	{
-	    gs_gsave(ctx->pgs);
-	    saved = 1;
-	}
-	gs_concat(ctx->pgs, &transform);
-    }
-
-    if (xps_att(root, "Clip"))
-	dputs("  canvas att clip\n");
-    if (xps_att(root, "Opacity"))
-	dputs("  canvas att opacity\n");
-    if (xps_att(root, "OpacityMask"))
-	dputs("  canvas att opacity mask\n");
+    clip_att = xps_att(root, "Clip");
+    opacity_att = xps_att(root, "Opacity");
+    opacity_mask_att = xps_att(root, "OpacityMask");
 
     for (node = xps_down(root); node; node = xps_next(node))
     {
 	if (!strcmp(xps_tag(node), "Canvas.Resources"))
-	    dputs("  canvas resources\n");
-
-	if (!strcmp(xps_tag(node), "Canvas.RenderTransform"))
 	{
-	    dputs("  canvas render transform\n");
-	    xps_parse_matrix_transform(ctx, xps_down(node), &transform);
-	    if (!saved)
+	    new_dict = xps_parse_resource_dictionary(ctx, xps_down(node));
+	    if (new_dict)
 	    {
-		gs_gsave(ctx->pgs);
-		saved = 1;
+		new_dict->parent = dict;
+		dict = new_dict;
 	    }
-	    gs_concat(ctx->pgs, &transform);
 	}
 
+	if (!strcmp(xps_tag(node), "Canvas.RenderTransform"))
+	    transform_tag = xps_down(node);
 	if (!strcmp(xps_tag(node), "Canvas.Clip"))
-	    dputs("  canvas clip\n");
-
+	    clip_tag = xps_down(node);
 	if (!strcmp(xps_tag(node), "Canvas.OpacityMask"))
-	    dputs("  canvas opacity mask\n");
-
-	if (!strcmp(xps_tag(node), "Path"))
-	    xps_parse_path(ctx, node);
-	if (!strcmp(xps_tag(node), "Glyphs"))
-	    xps_parse_glyphs(ctx, node);
-	if (!strcmp(xps_tag(node), "Canvas"))
-	    xps_parse_canvas(ctx, node);
+	    opacity_mask_tag = xps_down(node);
     }
 
-    if (saved)
+    xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag);
+    xps_resolve_resource_reference(ctx, dict, &clip_att, &clip_tag);
+    xps_resolve_resource_reference(ctx, dict, &opacity_mask_att, &opacity_mask_tag);
+
+    gs_gsave(ctx->pgs);
+
+    gs_make_identity(&transform);
+    if (transform_att)
+	xps_parse_render_transform(ctx, transform_att, &transform);
+    if (transform_tag)
+	xps_parse_matrix_transform(ctx, transform_tag, &transform);
+    gs_concat(ctx->pgs, &transform);
+
+    // TODO: clip
+    // TODO: opacity
+    // TODO: opacity_mask
+
+    for (node = xps_down(root); node; node = xps_next(node))
     {
-	gs_grestore(ctx->pgs);
+	if (!strcmp(xps_tag(node), "Path"))
+	    xps_parse_path(ctx, dict, node);
+	if (!strcmp(xps_tag(node), "Glyphs"))
+	    xps_parse_glyphs(ctx, dict, node);
+	if (!strcmp(xps_tag(node), "Canvas"))
+	    xps_parse_canvas(ctx, dict, node);
+    }
+
+    gs_grestore(ctx->pgs);
+
+    if (new_dict)
+    {
+	xps_free_resource_dictionary(ctx, new_dict);
     }
 
     dputs("Finish Canvas!\n");
@@ -74,6 +86,7 @@ int
 xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 {
     xps_item_t *root, *node;
+    xps_resource_t *dict;
     char *width_att;
     char *height_att;
     int code;
@@ -96,6 +109,8 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	return gs_throw(-1, "FixedPage missing required attribute: Height");
 
     dprintf2("FixedPage width=%d height=%d\n", atoi(width_att), atoi(height_att));
+
+    dict = NULL;
 
     /* Setup new page */
     {
@@ -145,16 +160,19 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     for (node = xps_down(root); node; node = xps_next(node))
     {
 	if (!strcmp(xps_tag(node), "FixedPage.Resources"))
+	{
 	    dputs("FixedPage has resources\n");
+	    dict = xps_parse_resource_dictionary(ctx, xps_down(node));
+	}
 
 	if (!strcmp(xps_tag(node), "Path"))
-	    xps_parse_path(ctx, node);
+	    xps_parse_path(ctx, dict, node);
 
 	if (!strcmp(xps_tag(node), "Glyphs"))
-	    xps_parse_glyphs(ctx, node);
+	    xps_parse_glyphs(ctx, dict, node);
 
 	if (!strcmp(xps_tag(node), "Canvas"))
-	    xps_parse_canvas(ctx, node);
+	    xps_parse_canvas(ctx, dict, node);
     }
 
     /* Flush page */
@@ -162,6 +180,11 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	code = xps_show_page(ctx, 1, true); /* copies, flush */
 	if (code < 0)
 	    return gs_rethrow(code, "cannot flush page");
+    }
+
+    if (dict)
+    {
+	xps_free_resource_dictionary(ctx, dict);
     }
 
     xps_free_item(ctx, root);

@@ -447,7 +447,7 @@ xps_draw_linear_gradient(xps_context_t *ctx,
  */
 
 int
-xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_item_t *root)
+xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 {
     xps_item_t *node;
     int code;
@@ -496,6 +496,7 @@ xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_item_t *root)
 	    stop_tag = xps_down(node);
     }
 
+    xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag);
 
     if (!stop_tag || !center_att || !origin_att || !radius_x_att || !radius_y_att)
 	return gs_throw(-1, "missing attribute in radial gradient tag");
@@ -506,11 +507,12 @@ xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_item_t *root)
 
     gs_gsave(ctx->pgs);
 
+    gs_make_identity(&transform);
     if (transform_att)
-    {
 	xps_parse_render_transform(ctx, transform_att, &transform);
-	gs_concat(ctx->pgs, &transform);
-    }
+    if (transform_tag)
+	xps_parse_matrix_transform(ctx, transform_tag, &transform);
+    gs_concat(ctx->pgs, &transform);
 
     sscanf(center_att, "%g,%g", center, center + 1);
     sscanf(origin_att, "%g,%g", origin, origin + 1);
@@ -543,7 +545,7 @@ xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_item_t *root)
 }
 
 int
-xps_parse_linear_gradient_brush(xps_context_t *ctx, xps_item_t *root)
+xps_parse_linear_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 {
     xps_item_t *node;
     int code;
@@ -586,6 +588,7 @@ xps_parse_linear_gradient_brush(xps_context_t *ctx, xps_item_t *root)
 	    stop_tag = xps_down(node);
     }
 
+    xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag);
 
     if (!stop_tag || !start_point_att || !end_point_att)
 	return gs_throw(-1, "missing attribute in linear gradient tag");
@@ -596,11 +599,12 @@ xps_parse_linear_gradient_brush(xps_context_t *ctx, xps_item_t *root)
 
     gs_gsave(ctx->pgs);
 
+    gs_make_identity(&transform);
     if (transform_att)
-    {
 	xps_parse_render_transform(ctx, transform_att, &transform);
-	gs_concat(ctx->pgs, &transform);
-    }
+    if (transform_tag)
+	xps_parse_matrix_transform(ctx, transform_tag, &transform);
+    gs_concat(ctx->pgs, &transform);
 
     sscanf(start_point_att, "%g,%g", start_point, start_point + 1);
     sscanf(end_point_att, "%g,%g", end_point, end_point + 1);

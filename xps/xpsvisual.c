@@ -3,7 +3,7 @@
 enum { TILE_NONE, TILE_TILE, TILE_FLIP_X, TILE_FLIP_Y, TILE_FLIP_X_Y };
 
 int
-xps_parse_visual_brush(xps_context_t *ctx, xps_item_t *root)
+xps_parse_visual_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 {
     xps_item_t *node;
     int i, k;
@@ -44,14 +44,13 @@ xps_parse_visual_brush(xps_context_t *ctx, xps_item_t *root)
 	    visual_tag = xps_down(node);
     }
 
+    xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag);
+    xps_resolve_resource_reference(ctx, dict, &visual_att, &visual_tag);
 
     dputs("drawing visual brush\n");
 
     if (!viewbox_att || !viewport_att)
 	return gs_throw(-1, "missing viewbox/viewport attribute in visual brush");
-
-    if (visual_att)
-	/* find resource */ ;
 
     if (!visual_tag)
 	return 0; /* move along, nothing to see */
@@ -120,11 +119,11 @@ xps_parse_visual_brush(xps_context_t *ctx, xps_item_t *root)
 	    gs_clip(ctx->pgs);
 
 	    if (!strcmp(xps_tag(visual_tag), "Path"))
-		xps_parse_path(ctx, visual_tag);
+		xps_parse_path(ctx, dict, visual_tag);
 	    if (!strcmp(xps_tag(visual_tag), "Glyphs"))
-		xps_parse_glyphs(ctx, visual_tag);
+		xps_parse_glyphs(ctx, dict, visual_tag);
 	    if (!strcmp(xps_tag(visual_tag), "Canvas"))
-		xps_parse_canvas(ctx, visual_tag);
+		xps_parse_canvas(ctx, dict, visual_tag);
 
 	    gs_grestore(ctx->pgs);
 
