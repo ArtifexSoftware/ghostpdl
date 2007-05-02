@@ -470,6 +470,7 @@ is_dc_nearly_linear(const gx_device *dev, const gx_device_color *c,
 	const gx_device_color *c0, const gx_device_color *c1, 
 	double t, int n, float smoothness)
 {
+
     if (c0->type == &gx_dc_type_data_pure) {
 	int i;
 	gx_color_index pure0 = c0->colors.pure;
@@ -481,11 +482,12 @@ is_dc_nearly_linear(const gx_device *dev, const gx_device_color *c,
 	    int mask = (1 << dev->color_info.comp_bits[i]) - 1;
 	    int max_color = (i == dev->color_info.gray_index ? dev->color_info.max_gray 
 							     : dev->color_info.max_color);
+	    float max_diff = max(1, max_color * smoothness);
 	    int b0 = (pure0 >> shift) & mask, b1 = (pure1 >> shift) & mask; 
 	    int b = (pure >> shift) & mask;
 	    double bb = b0 * t + b1 * (1 - t);
 
-	    if (any_abs(b - bb) > max_color * smoothness)
+	    if (any_abs(b - bb) > max_diff)
 		return false;
 	}
 	return true;
