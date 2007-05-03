@@ -117,6 +117,7 @@ xps_parse_visual_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
 	    gs_lineto(ctx->pgs, viewbox.q.x, viewbox.p.y);
 	    gs_closepath(ctx->pgs);
 	    gs_clip(ctx->pgs);
+	    gs_newpath(ctx->pgs);
 
 	    if (!strcmp(xps_tag(visual_tag), "Path"))
 		xps_parse_path(ctx, dict, visual_tag);

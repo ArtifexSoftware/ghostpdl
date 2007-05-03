@@ -56,7 +56,20 @@ int xps_parse_canvas(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	xps_parse_matrix_transform(ctx, transform_tag, &transform);
     gs_concat(ctx->pgs, &transform);
 
-    // TODO: clip
+    if (clip_att)
+    {
+	xps_parse_abbreviated_geometry(ctx, clip_att);
+	gs_clip(ctx->pgs);
+	gs_newpath(ctx->pgs);
+    }
+
+    if (clip_tag)
+    {
+	xps_parse_path_geometry(ctx, dict, clip_tag);
+	gs_clip(ctx->pgs);
+	gs_newpath(ctx->pgs);
+    }
+
     // TODO: opacity
     // TODO: opacity_mask
 

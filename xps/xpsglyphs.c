@@ -502,6 +502,25 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
      * Set up graphics state.
      */
 
+    if (clip_att || clip_tag)
+    {
+	if (!saved)
+	{
+	    gs_gsave(ctx->pgs);
+	    saved = 1;
+	}
+
+	dputs("glyphs clip\n");
+
+	if (clip_att)
+	    xps_parse_abbreviated_geometry(ctx, clip_att);
+	if (clip_tag)
+	    xps_parse_path_geometry(ctx, dict, clip_tag);
+
+	gs_clip(ctx->pgs);
+	gs_newpath(ctx->pgs);
+    }
+
     if (transform_att || transform_tag)
     {
 	gs_matrix transform;
@@ -520,23 +539,6 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	    xps_parse_matrix_transform(ctx, transform_tag, &transform);
 
 	gs_concat(ctx->pgs, &transform);
-    }
-
-    if (clip_att || clip_tag)
-    {
-	if (!saved)
-	{
-	    gs_gsave(ctx->pgs);
-	    saved = 1;
-	}
-
-	dputs("glyphs clip\n");
-
-	if (clip_att)
-	{
-	    xps_parse_abbreviated_geometry(ctx, clip_att);
-	    gs_clip(ctx->pgs);
-	}
     }
 
     font_size = atof(font_size_att);
@@ -592,6 +594,8 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 		is_sideways, bidi_level, indices_att, unicode_att, 1);
 
 	gs_clip(ctx->pgs);
+	gs_newpath(ctx->pgs);
+
 	dputs("clip\n");
 
 	if (!strcmp(xps_tag(fill_tag), "ImageBrush"))

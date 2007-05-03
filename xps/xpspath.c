@@ -528,6 +528,8 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     char *stroke_miter_limit_att;
     char *stroke_thickness_att;
 
+    gs_line_cap linecap;
+    gs_line_join linejoin;
     int saved = 0;
 
     /*
@@ -595,10 +597,79 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	stroke_tag = NULL;
     }
 
+    /* TODO: stroke_end_line_cap_att */
+    /* TODO: stroke_dash_cap_att */
+
+    linecap = gs_cap_butt;
+    if (stroke_start_line_cap_att)
+    {
+	if (!strcmp(stroke_start_line_cap_att, "Flat")) linecap = gs_cap_butt;
+	if (!strcmp(stroke_start_line_cap_att, "Square")) linecap = gs_cap_square;
+	if (!strcmp(stroke_start_line_cap_att, "Round")) linecap = gs_cap_round;
+	if (!strcmp(stroke_start_line_cap_att, "Triangle")) linecap = gs_cap_triangle;
+    }
+    gs_setlinecap(ctx->pgs, linecap);
+
+    linejoin = gs_join_miter;
+    if (stroke_line_join_att)
+    {
+	if (!strcmp(stroke_line_join_att, "Miter")) linejoin = gs_join_miter;
+	if (!strcmp(stroke_line_join_att, "Bevel")) linejoin = gs_join_bevel;
+	if (!strcmp(stroke_line_join_att, "Round")) linejoin = gs_join_round;
+    }
+    gs_setlinejoin(ctx->pgs, linecap);
+
     if (stroke_miter_limit_att)
 	gs_setmiterlimit(ctx->pgs, atof(stroke_miter_limit_att));
+
     if (stroke_thickness_att)
 	gs_setlinewidth(ctx->pgs, atof(stroke_thickness_att));
+
+    if (stroke_dash_array_att)
+    {
+	float dash_array[100];
+	float dash_offset = 0.0;
+	int dash_count = 0;
+
+	if (stroke_dash_offset_att)
+	    dash_offset = atof(stroke_dash_offset_att);
+
+	/* TODO: parse array of space separated numbers */
+	dash_array[0] = 10.0;
+	dash_array[1] = 20.0;
+	dash_array[2] = 5.0;
+	dash_array[3] = 20.0;
+	dash_count = 4;
+
+	dputs(".... dashed line ....\n");
+
+	gs_setdash(ctx->pgs, dash_array, dash_count, dash_offset);
+    }
+    else
+    {
+	gs_setdash(ctx->pgs, NULL, 0, 0.0);
+    }
+
+    /* if we have a clip mask, push that on the gstate and remember to restore */
+
+    if (clip_att || clip_tag)
+    {
+	if (!saved)
+	{
+	    gs_gsave(ctx->pgs);
+	    saved = 1;
+	}
+
+	dputs("  path clip\n");
+
+	if (clip_att)
+	    xps_parse_abbreviated_geometry(ctx, clip_att);
+	if (clip_tag)
+	    xps_parse_path_geometry(ctx, dict, clip_tag);
+
+	gs_clip(ctx->pgs);
+	gs_newpath(ctx->pgs);
+    }
 
     /* if we have a transform, push that on the gstate and remember to restore */
 
@@ -620,25 +691,6 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	    xps_parse_matrix_transform(ctx, transform_tag, &transform);
 
 	gs_concat(ctx->pgs, &transform);
-    }
-
-    /* if we have a clip mask, push that on the gstate and remember to restore */
-
-    if (clip_att || clip_tag)
-    {
-	if (!saved)
-	{
-	    gs_gsave(ctx->pgs);
-	    saved = 1;
-	}
-
-	dputs("  path clip\n");
-
-	if (clip_att)
-	{
-	    xps_parse_abbreviated_geometry(ctx, clip_att);
-	    gs_clip(ctx->pgs);
-	}
     }
 
     /* if it's a solid color brush fill/stroke do just that. */
@@ -693,6 +745,8 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	if (data_tag)
 	    xps_parse_path_geometry(ctx, dict, data_tag);
 	gs_clip(ctx->pgs);
+	gs_newpath(ctx->pgs);
+
 	dputs("clip\n");
 
 	if (fill_tag)
