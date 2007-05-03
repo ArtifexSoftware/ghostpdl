@@ -1748,7 +1748,8 @@ private void t1_hinter__simplify_representation(t1_hinter * this)
 		    this->primary_hint_count--;
 		continue; /* skip it. */
 	    } else {
-		this->hint[j] = this->hint[i];
+		if (i != j)
+                    this->hint[j] = this->hint[i];
 		j++;
 	    }
 	this->hint_count = j;
