@@ -11,13 +11,12 @@ install: pcl_install
 
 uninstall: pcl_uninstall
 
-# legacy targets for backward compatibility
 product: pcl
 
 # specific front-end targets
 
 pcl:
-	$(MAKE) -C main -f pcl6_gcc.mak	# build PCL and PCLXL. 
+	$(MAKE) -C main -f pcl6_gcc.mak	product # build PCL and PCLXL. 
 
 pcl_debug: 
 	$(MAKE) -C main -f pcl6_gcc.mak debug
@@ -114,7 +113,7 @@ ls_uclean:
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
 
 uproduct: ufst
-	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" 
+	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" product
 	cp *.icc ./language_switch/ufst-obj
 	cp wts_* ./language_switch/ufst-obj
 
