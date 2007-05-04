@@ -210,19 +210,17 @@ gdev_pdf_get_params(gx_device * dev, gs_param_list * plist)
 
 /* ---------------- Put parameters ---------------- */
 
-/* Put parameters. */
-int
-gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
+/* Put parameters, implementation */
+private int
+gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_param_list * plist)
 {
-    gx_device_pdf *pdev = (gx_device_pdf *) dev;
     int ecode, code;
-    gx_device_pdf save_dev;
+    gx_device_pdf *pdev = (gx_device_pdf *) dev;
     float cl = (float)pdev->CompatibilityLevel;
     bool locked = pdev->params.LockDistillerParams;
     gs_param_name param_name;
     enum psdf_color_conversion_strategy save_ccs = pdev->params.ColorConversionStrategy;
   
-
     pdev->pdf_memory = gs_memory_stable(pdev->memory);
     /*
      * If this is a pseudo-parameter (pdfmark or DSC),
@@ -294,8 +292,6 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 		param_signal_error(plist, param_name, ecode = gs_error_rangecheck);
 	}
 
-	save_dev = *pdev;
-
 	switch (code = param_read_float(plist, (param_name = "CompatibilityLevel"), &cl)) {
 	    default:
 		ecode = code;
@@ -350,11 +346,11 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	     */
 	    long fon = pdev->FirstObjectNumber;
 
-	    if (fon != save_dev.FirstObjectNumber) {
+	    if (fon != save_dev->FirstObjectNumber) {
 		if (fon <= 0 || fon > 0x7fff0000 ||
 		    (pdev->next_id != 0 &&
 		     pdev->next_id !=
-		     save_dev.FirstObjectNumber + pdf_num_initial_ids)
+		     save_dev->FirstObjectNumber + pdf_num_initial_ids)
 		    ) {
 		    ecode = gs_error_rangecheck;
 		    param_signal_error(plist, "FirstObjectNumber", ecode);
@@ -505,7 +501,7 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 				 dev->HWResolution[1] / factor);
     }
 #undef MAX_EXTENT
-    if (pdev->FirstObjectNumber != save_dev.FirstObjectNumber) {
+    if (pdev->FirstObjectNumber != save_dev->FirstObjectNumber) {
 	if (pdev->xref.file != 0) {
 	    fseek(pdev->xref.file, 0L, SEEK_SET);
 	    pdf_initialize_ids(pdev);
@@ -516,21 +512,39 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     return 0;
  fail:
     /* Restore all the parameters to their original state. */
-    pdev->version = save_dev.version;
-    pdf_set_process_color_model(pdev, save_dev.pcm_color_info_index);
-    pdev->saved_fill_color = save_dev.saved_fill_color;
-    pdev->saved_stroke_color = save_dev.saved_fill_color;
+    pdev->version = save_dev->version;
+    pdf_set_process_color_model(pdev, save_dev->pcm_color_info_index);
+    pdev->saved_fill_color = save_dev->saved_fill_color;
+    pdev->saved_stroke_color = save_dev->saved_fill_color;
     {
 	const gs_param_item_t *ppi = pdf_param_items;
 
 	for (; ppi->key; ++ppi)
 	    memcpy((char *)pdev + ppi->offset,
-		   (char *)&save_dev + ppi->offset,
+		   (char *)save_dev + ppi->offset,
 		   gs_param_type_sizes[ppi->type]);
-	pdev->ForOPDFRead = save_dev.ForOPDFRead;
-	pdev->OPDFReadProcsetPath = save_dev.OPDFReadProcsetPath;
+	pdev->ForOPDFRead = save_dev->ForOPDFRead;
+	pdev->OPDFReadProcsetPath = save_dev->OPDFReadProcsetPath;
     }
     return ecode;
+}
+
+/* Put parameters */
+int
+gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
+{
+    int code;
+    gx_device_pdf *pdev = (gx_device_pdf *) dev;
+    gs_memory_t *mem = gs_memory_stable(pdev->memory);
+    gx_device_pdf *save_dev = gs_malloc(mem, sizeof(gx_device_pdf), 1,
+        "saved gx_device_pdf");
+
+    if (!save_dev)
+        return_error(gs_error_VMerror);
+    memcpy(save_dev, pdev, sizeof(gx_device_pdf));
+    code = gdev_pdf_put_params_impl(dev, save_dev, plist);
+    gs_free(mem, save_dev, sizeof(gx_device_pdf), 1, "saved gx_device_pdf");
+    return code;
 }
 
 /* ---------------- Process DSC comments ---------------- */
