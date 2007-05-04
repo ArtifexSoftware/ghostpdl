@@ -894,10 +894,11 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
     if (buf == NULL)
 	return_error(gs_error_VMerror);
 
+    buf->alpha = bg_alpha;
+
     /* fill in, but these values aren't really used */
     buf->isolated = true;
     buf->knockout = false;
-    buf->alpha = bg_alpha;
     buf->shape = 0xff;
     buf->blend_mode = BLEND_MODE_Normal;
     buf->transfer_fn = transfer_fn;
