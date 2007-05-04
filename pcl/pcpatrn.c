@@ -488,7 +488,18 @@ render_pattern(
 	code = pcl_cs_indexed_install(&pindexed, pcs);
     if ( code < 0 )
 	return code;
-    /* render the pattern */
+
+    /* the following is placed here until we have time to properly
+       address this.  The makepixmappattern() procedure detects a
+       pattern as opaque if the white index is the number of entries
+       in the current palette (the index of an invalid color).
+       The motivation for this is the white index has no purpose for
+       opaque patterns.  Upon remapping (see above) the white index
+       may be set to a white value in the palette, a valid color.  We
+       restore the invariant here, if necessary. */
+    if ( (type == pcl_ccolor_colored_pattern) && !pcs->pattern_transparent )
+        wht_indx = pindexed->num_entries;
+
     code = gs_makepixmappattern( &(pccolor->ccolor),
                                  &pixinfo,
                                  (pcspace == 0),
@@ -651,7 +662,6 @@ set_colored_pattern(
 {
     pcl_cs_indexed_t *  pindexed = pcs->ppalet->pindexed;
     pcl_gsid_t          cache_id = pcs->ppalet->id;
-    bool                remap = pcs->pattern_transparent;
     int                 code = set_ht_crd_from_palette(pcs);
 
     if (code < 0)
@@ -660,14 +670,19 @@ set_colored_pattern(
     if (check_pattern_rendering(pcs, pptrn, false, 0, true, NULL))
         return 0;
 
+    /* note we always remap the white point.  The remapping procedure
+       serves the dual purpose of remapping the white point which may
+       be necessary in the transparent case and resizing the palette
+       which may be needed for either transparent or opaque
+       patterns. */
     code = render_pattern( pcs,
                            pptrn,
                            pcl_ccolor_colored_pattern,
                            pindexed,
                            NULL,
                            &white_paint,
-                           (remap ? 0 : pindexed->num_entries),
-                           remap
+                           0,
+                           true /* remap */
                            );
     if (code >= 0) {
         pptrn->pen = 0;
