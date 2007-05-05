@@ -779,7 +779,7 @@ pdfdict begin
   } if
   /endstream ne { 
     (   **** Warning: stream Length incorrect.\n) pdfformaterror
-    dup /Length 0 put	% prevent the use of the incorrect length.
+    dup /Length undef % prevent the use of the incorrect length.
     cvx endobj exit   % exit from .pdfrun now.
   } if
   cvx
@@ -906,34 +906,39 @@ pdfdict begin
     pdf_decrypt_stream
     applyfilters
   } {
-    exch dup /FilePosition .knownget {
-      1 index /File get exch setfileposition
-    } if
+    exch
+    dup /Length knownoget { 0 eq } { //false } ifelse {
+      () 0 () /SubFileDecode filter
+    } {
+      dup /FilePosition .knownget {
+        1 index /File get exch setfileposition
+      } if
 		% Stack: readdata? dict
-    /DecodeParms /Filter filterparms
+      /DecodeParms /Filter filterparms
 		% Stack: readdata? dict parms filternames
-    2 index /File get exch
+      2 index /File get exch
 		% Stack: readdata? dict parms file/string filternames
-    dup length 0 eq {
+      dup length 0 eq {
 		% All the PDF filters have EOD markers, but in this case
 		% there is no specified filter.
-      exch dup type /filetype eq 5 index or {
+        exch dup type /filetype eq 5 index or {
               % Use length for any files or reading data from any source.
-        3 index /Length knownoget not { 0 } if
+          3 index /Length knownoget not { 0 } if
+        } {
+        0       % Otherwise length of 0 for whole string
+        } ifelse
+        4 index /IDFlag known { pop } { () /SubFileDecode filter } ifelse
+        exch
+        pdf_decrypt_stream		% add decryption if needed
+        pop exch pop
       } {
-      0       % Otherwise length of 0 for whole string
-      } ifelse
-      4 index /IDFlag known { pop } { () /SubFileDecode filter } ifelse
-      exch
-      pdf_decrypt_stream		% add decryption if needed
-      pop exch pop
-    } {
                 % Stack: readdata? dict parms source filternames
-      exch 3 index /Length knownoget {
-        dup 0 ne { () /SubFileDecode filter } { pop } ifelse
-      } if exch
-      pdf_decrypt_stream		% add decryption if needed
-      applyfilters
+        exch 3 index /Length knownoget {
+          () /SubFileDecode filter
+        } if exch
+        pdf_decrypt_stream		% add decryption if needed
+        applyfilters
+      } ifelse
     } ifelse
   } ifelse
 		% Stack: readdata? dict file
