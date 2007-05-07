@@ -128,6 +128,10 @@
 <li><a href="#Platform_specific_code">Platform-specific code</a>
 </ul>
 <li><a href="#Adding_features_and_options">Adding features and options</a>
+<li><a href="#Profiling">Profiling</a>
+<ul>
+<li><a href="#ProfilingMSVC6">Profiling with Microsoft developer Studio 6</a>
+</ul>
 <li><a href="#Troubleshooting">Troubleshooting</a>
 </ul></blockquote>
 
@@ -4670,6 +4674,12 @@ Lang.
 <p>
 [Ray, please supply more information about what you want here]
 
+
+<h2><a name="Profiling"></a>Profilinging</h2>
+
+<p>
+
+
 <h2><a name="Troubleshooting"></a>Troubleshooting</h2>
 
 <p>
@@ -4701,6 +4711,119 @@ Files:
 <a href="../src/idebug.h">src/idebug.h</a>,
 <a href="../src/idebug.c">src/idebug.c</a>.
 </dl>
+
+<hr>
+
+<h2><a name="Profiling"></a>Profilinging</h2>
+<h3><a name="ProfilingMSVC6"></a>Profiling with Microsoft developer Studio 6</h3>
+
+<p>
+The Microsoft profiling tool is included into Microsoft Developer Studio 6
+Enterprise Edition only. Standard Edition and Professional Edition do not include it.
+
+<p>
+Microsoft profiler tool requires the application to be linked with
+a special linker option. To provide it you need the following change to 
+<tt><b>gs/src/msvccmd.mak</tt></b> :
+
+<blockquote><pre><tt> 
+ 
+*** SVN-GS\HEAD\gs\src\msvccmd.mak	Tue Jan  9 21:41:07 2007
+--- gs\src\msvccmd.mak	Mon May  7 11:29:35 2007
+***************
+*** 159,163 ****
+  # Note that it must be followed by a space.
+  CT=/Od /Fd$(GLOBJDIR) $(NULL) $(CDCC) $(CPCH)
+! LCT=/DEBUG /INCREMENTAL:YES
+  COMPILE_FULL_OPTIMIZED=    # no optimization when debugging
+  COMPILE_WITH_FRAMES=    # no optimization when debugging
+--- 159,164 ----
+  # Note that it must be followed by a space.
+  CT=/Od /Fd$(GLOBJDIR) $(NULL) $(CDCC) $(CPCH)
+! # LCT=/DEBUG /INCREMENTAL:YES
+! LCT=/DEBUG /PROFILE
+  COMPILE_FULL_OPTIMIZED=    # no optimization when debugging
+  COMPILE_WITH_FRAMES=    # no optimization when debugging
+***************
+*** 167,175 ****
+  !if $(DEBUGSYM)==0
+  CT=
+! LCT=
+  CMT=/MT
+  !else
+  CT=/Zi /Fd$(GLOBJDIR) $(NULL)
+! LCT=/DEBUG
+  CMT=/MTd
+  !endif
+--- 168,178 ----
+  !if $(DEBUGSYM)==0
+  CT=
+! # LCT=
+! LCT=/PROFILE
+  CMT=/MT
+  !else
+  CT=/Zi /Fd$(GLOBJDIR) $(NULL)
+! # LCT=/DEBUG
+! LCT=/DEBUG /PROFILE
+  CMT=/MTd
+  !endif
+
+</blockquote></pre></tt>
+
+Note that any of debug and release build may be profiled.
+ 
+<p>
+Mictosoft Profiler tool can't profile a dynamically loaded DLLs. 
+When building Ghostscript with makefiles you need to specify 
+<tt><b>MAKEDLL=0</tt></b> to <tt><b>nmake</tt></b> command line.
+
+<p>
+The Integrated Development Environment of Microsoft Developer Studio 6
+cannot profile a makefile-based project. Therefore the profiling tool
+to be started from command line. 
+
+<p>
+The profiling from command line is a 4 step procedure.
+The following batch file provides a sample for it :
+
+<blockquote><pre><tt>
+
+set DEVSTUDIO=G:\Program Files\Microsoft Visual Studio
+set GS_HOME=..\..\gs-hdp
+set GS_COMMAND_LINE=%GS_HOME%\bin\gswin32c.exe -I%GS_HOME%\lib;f:\afpl\fonts -r144 -dBATCH -dNOPAUSE -d/DEBUG attachment.pdf
+set START_FUNCTION=_main
+set Path=%DEVSTUDIO%\Common\MSDev98\Bin;%DEVSTUDIO%\VC98\Bin
+PREP.EXE /OM /SF %START_FUNCTION% /FT   %GS_HOME%\bin\gswin32c.exe  
+If ERRORLEVEL 1 echo step 1 fails&exit
+PROFILE  /I %GS_HOME%\bin\gswin32c.pbi  %GS_COMMAND_LINE%
+If ERRORLEVEL 1 echo step 2 fails&exit
+PREP /M %GS_HOME%\bin\gswin32c /OT xxx.pbt 
+If ERRORLEVEL 1 echo step 3 fails&exit
+PLIST /ST xxx.pbt >profile.txt
+If ERRORLEVEL 1 echo step 4 fails&exit
+
+</blockquote></pre></tt>
+
+<p>
+This batch file to be adopted to your configuration :
+
+<ul>
+<li>
+Edit the path to developer studio in the line 1.
+<li>
+Edit the Ghostscript home directory in the line 2.
+<li>
+Edit Ghostscript command line in line 3. Note that profiling without /NOPAUSE is a bad idea.
+<li>
+In the line 4 edit the function name to start the profiling from.
+The sample code specifies _main as the starting function.
+Note it is the linker's function name, which starts with underscore.
+<li>
+Edit the output file name in the line 5.
+</ul>
+
+
+
 
 <!-- [2.0 end contents] ==================================================== -->
 
