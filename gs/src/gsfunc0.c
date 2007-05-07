@@ -641,19 +641,34 @@ make_interpolation_tensor(const gs_function_Sd_t *pfn, int *I, double *T,
        Suppose we have a 4x4x4...x4 hypercube of nodes, and we want to build
        a multicubic interpolation function for the inner 2x2x2...x2 hypercube.
        We represent the multicubic function with a tensor of Besier poles,
-       and the size of the tensor is 4x4x....x4. Note that the outer corners 
+       and the size of the tensor is 4x4x....x4. Note that the corners 
        of the tensor are equal to the corners of the 2x2x...x2 hypercube.
 
-       We organized the 'pole' array so that a tensor of a cell 
+       We organize the 'pole' array so that a tensor of a cell 
        occupies the cell, and tensors for neighbour cells have a common hyperplane.
 
-       For a 1-dimentional case the let the nodes are p0, p1, p2, p3,
-       and let the tensor coefficients are q0, q1, q2, q3.
-       We choose a cubic approximation, in which tangents at nodes p1, p2
-       are parallel to (p2 - p0) and (p3 - p1) correspondingly.
+       For a 1-dimentional case let the nodes are n0, n1, n2, n3.
+       It defines 3 cells n0...n1, n1...n2, n2...n3.
+       For the 2nd cell n1...n2 let the tensor coefficients are q10, q11, q12, q13.
+       We choose a cubic approximation, in which tangents at nodes n1, n2
+       are parallel to (n2 - n0) and (n3 - n1) correspondingly.
        (Well, this doesn't give a the minimal curvity, but likely it is
        what Adobe implementations do, see the bug 687352, 
        and we agree that it's some reasonable).
+
+       Then we have :
+
+       q11 = n0
+       q12 = (n0/2 + 3*n1 - n2/2)/3;
+       q11 = (n1/2 + 3*n2 - n3/2)/3;
+       q13 = n2
+
+       When the source node array have an insufficient nomber of nodes
+       along a dimension to determine tangents a cell
+       (this happens near the array boundaries),
+       we simply duplicate ending nodes. This solution is done 
+       for the compatibility to the old code, and definitely 
+       there exists a better one. Likely Adobe does the same.
 
        For a 2-dimensional case we apply the 1-dimentional case through
        the first dimension, and then construct a surface by varying the
@@ -668,12 +683,8 @@ make_interpolation_tensor(const gs_function_Sd_t *pfn, int *I, double *T,
        implementation with POLE_CACHE_DEBUG).
 
        Then we apply the 2-dimentional considerations recursively 
-       to all dimensions. This is exactly what this function does.
+       to all dimensions. This is exactly what the function does.
 
-       When the source node array have an insufficient nomber of nodes
-       along a dimension, we duplicate ending nodes. This solution is done 
-       choosen to the compatibility to the old code, but definitely 
-       there exists a better one.
      */
     int code;
     
@@ -1140,7 +1151,7 @@ fn_Sd_1arg_linear_monotonic_rec(const gs_function_Sd_t *const pfn, int i0, int i
 	code = load_vector_to(pfn, ii * pfn->params.n * pfn->params.BitsPerSample, VV);
 	if (code < 0)
 	    return code;
-	if (code & (code >>1))
+	if (code & (code >> 1))
 	    return code; /* Not monotonic by some component of the result. */
 	code = fn_Sd_1arg_linear_monotonic_rec(pfn, i0, ii, V0, VV);
 	if (code < 0)
