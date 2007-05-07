@@ -182,7 +182,12 @@ pdfdict begin
 	% bound into it.
   1 index cvlit count 2 sub 3 1 roll mark mark 5 2 roll
   {	% Stack: ..operands.. count opdict file
-    token {
+    { token } stopped {
+      dup type /filetype eq { pop } if % pop the operand if it is restored
+      (   **** Error reading a content stream. The page may be incomplete.\n)
+      pdfformaterror
+      //false
+    } if {
       dup type /nametype eq {
 	dup xcheck {
 	  .pdfexectoken
