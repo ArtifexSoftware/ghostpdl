@@ -400,6 +400,7 @@ gxdevcli_h=$(GLSRC)gxdevcli.h $(std_h) $(stdint__h)\
  $(gsrefct_h) $(gsropt_h) $(gsstruct_h) $(gstparam_h) $(gsxfont_h)\
  $(gxbitmap_h) $(gxcindex_h) $(gxcvalue_h) $(gxfixed_h)\
  $(gxtext_h) $(gscspace_h) $(gsnamecl_h)
+gscicach_h=$(GLSRC)gscicach.h $(gxdevcli_h)
 gxdevice_h=$(GLSRC)gxdevice.h $(stdio__h)\
  $(gsfname_h) $(gsmalloc_h) $(gsparam_h) $(gxdevcli_h) $(gxstdio_h)
 gxdht_h=$(GLSRC)gxdht.h\
@@ -761,6 +762,10 @@ $(GLOBJ)gscspace.$(OBJ) : $(GLSRC)gscspace.c $(GXERR) $(memory__h)\
  $(gsdevice_h) $(gxdevcli_h) $(gzstate_h) $(stream_h)
 	$(GLCC) $(GLO_)gscspace.$(OBJ) $(C_) $(GLSRC)gscspace.c
 
+$(GLOBJ)gscicach.$(OBJ) : $(GLSRC)gscicach.c $(GXERR)\
+ $(gsccolor_h) $(gxcspace_h) $(gxdcolor_h) $(gscicach_h) $(memory__h)
+	$(GLCC) $(GLO_)gscicach.$(OBJ) $(C_) $(GLSRC)gscicach.c
+
 $(GLOBJ)gsovrc.$(OBJ) : $(GLSRC)gsovrc.c $(GXERR)\
  $(memory__h) $(gsutil_h) $(gxcomp_h) $(gxdevice_h) $(gsdevice_h) $(gxgetbit_h)\
  $(gsovrc_h) $(gxdcolor_h) $(gxoprect_h) $(gsbitops_h) $(gxistate_h)
@@ -1081,7 +1086,7 @@ LIB2s=$(GLOBJ)gsbitcom.$(OBJ) $(GLOBJ)gsbitops.$(OBJ) $(GLOBJ)gsbittab.$(OBJ)
 # Note: gschar.c is no longer required for a standard build;
 # we include it only for backward compatibility for library clients.
 LIB3s=$(GLOBJ)gscedata.$(OBJ) $(GLOBJ)gscencs.$(OBJ) $(GLOBJ)gschar.$(OBJ) $(GLOBJ)gscolor.$(OBJ)
-LIB4s= $(GLOBJ)gscoord.$(OBJ) $(GLOBJ)gscparam.$(OBJ) $(GLOBJ)gscspace.$(OBJ) $(GLOBJ)gsovrc.$(OBJ) $(GLOBJ)gxoprect.$(OBJ)
+LIB4s=$(GLOBJ)gscoord.$(OBJ) $(GLOBJ)gscparam.$(OBJ) $(GLOBJ)gscspace.$(OBJ)  $(GLOBJ)gscicach.$(OBJ) $(GLOBJ)gsovrc.$(OBJ) $(GLOBJ)gxoprect.$(OBJ)
 LIB5s=$(GLOBJ)gsdevice.$(OBJ) $(GLOBJ)gsdevmem.$(OBJ) $(GLOBJ)gsdparam.$(OBJ) $(GLOBJ)gsdfilt.$(OBJ)
 LIB6s=$(GLOBJ)gsfname.$(OBJ) $(GLOBJ)gsfont.$(OBJ) $(GLOBJ)gsgdata.$(OBJ) $(GLOBJ)gsgcache.$(OBJ)
 LIB7s=$(GLOBJ)gsht.$(OBJ) $(GLOBJ)gshtscr.$(OBJ) $(GLOBJ)gswts.$(OBJ)
@@ -2649,7 +2654,7 @@ $(GLOBJ)gxshade4.$(OBJ) : $(GLSRC)gxshade4.c $(GXERR)\
 	$(GLCC) $(GLO_)gxshade4.$(OBJ) $(C_) $(GLSRC)gxshade4.c
 
 $(GLOBJ)gxshade6.$(OBJ) : $(GLSRC)gxshade6.c $(GXERR) $(memory__h)\
- $(gscoord_h) $(gsmatrix_h)\
+ $(gscoord_h) $(gscicach_h) $(gsmatrix_h)\
  $(gxcspace_h) $(gxdcolor_h) $(gxistate_h) $(gxshade_h) $(gxshade4_h) $(gxdevcli_h)\
  $(gxarith_h) $(gzpath_h) $(math__h) $(vdtrace_h)
 	$(GLCC) $(GLO_)gxshade6.$(OBJ) $(C_) $(GLSRC)gxshade6.c

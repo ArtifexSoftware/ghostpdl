@@ -22,6 +22,7 @@
 #include "gserrors.h"
 #include "gsmatrix.h"		/* for gscoord.h */
 #include "gscoord.h"
+#include "gscicach.h"
 #include "gxcspace.h"
 #include "gxdcolor.h"
 #include "gxistate.h"
@@ -182,6 +183,18 @@ vx:	    if ((code = shade_next_coords(cs, curve[1].control, 2)) < 0 ||
     return 0;
 }
 
+private inline bool
+is_linear_color_applicable(const patch_fill_state_t *pfs)
+{
+    if (!USE_LINEAR_COLOR_PROCS)
+	return false;
+    if (pfs->dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN)
+	return false;
+    if (gx_get_cmap_procs(pfs->pis, pfs->dev)->is_halftoned(pfs->pis, pfs->dev))
+	return false;
+    return true;
+}
+
 int
 init_patch_fill_state(patch_fill_state_t *pfs)
 {
@@ -217,13 +230,24 @@ init_patch_fill_state(patch_fill_state_t *pfs)
     pfs->color_stack = NULL;
     pfs->color_stack_limit = NULL;
     pfs->memory = NULL;
+    pfs->unlinear = !is_linear_color_applicable(pfs);
 #   if LAZY_WEDGES
 	code = wedge_vertex_list_elem_buffer_alloc(pfs);
 	if (code < 0)
 	    return code;
 #   endif
     pfs->max_small_coord = 1 << ((sizeof(int64_t) * 8 - 1/*sign*/) / 3);
-    return allocate_color_stack(pfs, pfs->pis->memory);
+    code = allocate_color_stack(pfs, pfs->pis->memory);
+    if (code < 0)
+	return code;
+    if (pfs->unlinear)
+	pfs->pcic = NULL;
+    else {
+	pfs->pcic = gs_color_index_cache_create(pfs->pis->memory, pcs, pfs->dev, pfs->pis, true);
+	if (pfs->pcic == NULL)
+	    return_error(gs_error_VMerror);
+    }
+    return 0;
 }
 
 bool
@@ -235,6 +259,8 @@ term_patch_fill_state(patch_fill_state_t *pfs)
 #   endif
     if (pfs->color_stack)
 	gs_free_object(pfs->memory, pfs->color_stack, "term_patch_fill_state");
+    if (pfs->pcic != NULL)
+	gs_color_index_cache_destroy(pfs->pcic);
     return b;
 }
 
@@ -865,17 +891,65 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
     return code;
 }
 
-private int
-patch_color_to_device_color(const patch_fill_state_t *pfs, const patch_color_t *c, gx_device_color *pdevc)
+private inline void
+dc2fc(const patch_fill_state_t *pfs, gx_color_index c, 
+	    frac31 fc[GX_DEVICE_COLOR_MAX_COMPONENTS])
 {
-    /* A code fragment copied from mesh_fill_triangle. */
-    gs_client_color fcc;
-    const gs_color_space *pcs = pfs->direct_space;
+    int j;
+    const gx_device_color_info *cinfo = &pfs->dev->color_info;
 
-    memcpy(fcc.paint.values, c->cc.paint.values, 
-		sizeof(fcc.paint.values[0]) * pfs->num_components);
-    return pcs->type->remap_color(&fcc, pcs, pdevc, pfs->pis,
-			      pfs->dev, gs_color_select_texture);
+    for (j = 0; j < cinfo->num_components; j++) {
+	    int shift = cinfo->comp_shift[j];
+	    int bits = cinfo->comp_bits[j];
+
+	    fc[j] = ((c >> shift) & ((1 << bits) - 1)) << (sizeof(frac31) * 8 - 1 - bits);
+    }
+}
+
+#define DEBUG_COLOR_INDEX_CACHE 0
+
+private inline int
+patch_color_to_device_color(const patch_fill_state_t *pfs, const patch_color_t *c, gx_device_color *pdevc, frac31 *frac_values)
+{
+    /* Must return 2 if the color is not pure. 
+       See try_device_linear_color.
+     */
+    int code;
+    gx_device_color devc;
+
+    if (DEBUG_COLOR_INDEX_CACHE && pdevc == NULL)
+	pdevc = &devc;
+    if (pfs->pcic) {
+	code = gs_cached_color_index(pfs->pcic, c->cc.paint.values, pdevc, frac_values);
+	if (code < 0)
+	    return code;
+    }
+    if (DEBUG_COLOR_INDEX_CACHE || pfs->pcic == NULL) {
+#	if DEBUG_COLOR_INDEX_CACHE
+	gx_color_index cindex = pdevc->colors.pure;
+#	endif
+	gs_client_color fcc;
+	const gs_color_space *pcs = pfs->direct_space;
+
+	if (pdevc == NULL)
+	    pdevc = &devc;
+	memcpy(fcc.paint.values, c->cc.paint.values, 
+		    sizeof(fcc.paint.values[0]) * pfs->num_components);
+	code = pcs->type->remap_color(&fcc, pcs, pdevc, pfs->pis,
+				  pfs->dev, gs_color_select_texture);
+	if (code < 0)
+	    return code;
+	if (frac_values != NULL) {
+	    dc2fc(pfs, pdevc->colors.pure, frac_values);
+	    if (pdevc->type != &gx_dc_type_data_pure)
+		return 2;
+	}
+#	if DEBUG_COLOR_INDEX_CACHE
+	if (cindex != pdevc->colors.pure)
+	    return_error(gs_error_unregistered);
+#	endif
+    }
+    return 0;
 }
 
 private inline double
@@ -956,7 +1030,7 @@ constant_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_ed
 	/* if (dbg_nofill)
 		return 0; */
 #   endif
-    code = patch_color_to_device_color(pfs, &c1, &dc);
+    code = patch_color_to_device_color(pfs, &c1, &dc, NULL);
     if (code < 0)
 	return code;
     if (!VD_TRACE_DOWN)
@@ -965,21 +1039,6 @@ constant_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_ed
 	le, re, ybot, ytop, swap_axes, &dc, pfs->pis->log_op);
     vd_restore;
     return code;
-}
-
-private inline void
-dc2fc(const patch_fill_state_t *pfs, gx_color_index c, 
-	    frac31 fc[GX_DEVICE_COLOR_MAX_COMPONENTS])
-{
-    int j;
-    const gx_device_color_info *cinfo = &pfs->dev->color_info;
-
-    for (j = 0; j < cinfo->num_components; j++) {
-	    int shift = cinfo->comp_shift[j];
-	    int bits = cinfo->comp_bits[j];
-
-	    fc[j] = ((c >> shift) & ((1 << bits) - 1)) << (sizeof(frac31) * 8 - 1 - bits);
-    }
 }
 
 private inline float
@@ -1099,7 +1158,6 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
 	    gx_device *pdev = pfs->dev;
 	    frac31 fc[2][GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    gs_fill_attributes fa;
-	    gx_device_color dc[2];
 	    gs_fixed_rect clip;
 
 	    clip = pfs->rect;
@@ -1118,30 +1176,31 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
 	    fa.lop = 0;
 	    fa.ystart = ybot;
 	    fa.yend = ytop;
-	    code = patch_color_to_device_color(pfs, c0, &dc[0]);
+	    code = patch_color_to_device_color(pfs, c0, NULL, fc[0]);
 	    if (code < 0)
 		goto out;
-	    if (dc[0].type == &gx_dc_type_data_pure) {
-		dc2fc(pfs, dc[0].colors.pure, fc[0]);
-		code = patch_color_to_device_color(pfs, c1, &dc[1]);
-		if (code < 0)
-		    goto out;
-		dc2fc(pfs, dc[1].colors.pure, fc[1]);
-		code = dev_proc(pdev, fill_linear_color_trapezoid)(pdev, &fa, 
-				&le->start, &le->end, &re->start, &re->end, 
-				fc[0], fc[1], NULL, NULL);
-		if (code == 1) {
-		    pfs->monotonic_color = monotonic_color_save;
-		    pfs->linear_color = linear_color_save;
-		    code = 0; /* The area is filled. */
-		    goto out;
-		}
-		if (code < 0)
-		    goto out;
-		else /* code == 0, the device requested to decompose the area. */ 
-		    code = gs_note_error(gs_error_unregistered); /* Must not happen. */
-		    goto out;
+	    if (code == 2) {
+		/* Must not happen. */
+		code=gs_note_error(gs_error_unregistered);
+		goto out;
 	    }
+	    code = patch_color_to_device_color(pfs, c1, NULL, fc[1]);
+	    if (code < 0)
+		goto out;
+	    code = dev_proc(pdev, fill_linear_color_trapezoid)(pdev, &fa, 
+			    &le->start, &le->end, &re->start, &re->end, 
+			    fc[0], fc[1], NULL, NULL);
+	    if (code == 1) {
+		pfs->monotonic_color = monotonic_color_save;
+		pfs->linear_color = linear_color_save;
+		code = 0; /* The area is filled. */
+		goto out;
+	    }
+	    if (code < 0)
+		goto out;
+	    else /* code == 0, the device requested to decompose the area. */ 
+		code = gs_note_error(gs_error_unregistered); /* Must not happen. */
+		goto out;
 	}
 	if (!pfs->unlinear || !pfs->linear_color || 
 		color_span(pfs, c0, c1) > pfs->smoothness) {
@@ -1625,22 +1684,19 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
 	fa.ht = NULL;
 	fa.swap_axes = false;
 	fa.lop = 0;
-	code = patch_color_to_device_color(pfs, p0->c, &dc[0]);
-	if (code < 0)
+	code = patch_color_to_device_color(pfs, p0->c, &dc[0], fc[0]);
+	if (code != 0)
 	    return code;
 	if (dc[0].type != &gx_dc_type_data_pure)
 	    return 2;
-	dc2fc(pfs, dc[0].colors.pure, fc[0]);
 	if (!wedge) {
-	    code = patch_color_to_device_color(pfs, p1->c, &dc[1]);
-	    if (code < 0)
+	    code = patch_color_to_device_color(pfs, p1->c, &dc[1], fc[1]);
+	    if (code != 0)
 		return code;
-	    dc2fc(pfs, dc[1].colors.pure, fc[1]);
 	}
-	code = patch_color_to_device_color(pfs, p2->c, &dc[2]);
-	if (code < 0)
+	code = patch_color_to_device_color(pfs, p2->c, &dc[2], fc[2]);
+	if (code != 0)
 	    return code;
-	dc2fc(pfs, dc[2].colors.pure, fc[2]);
 	draw_triangle(&p0->p, &p1->p, &p2->p, RGB(255, 0, 0));
 	if (!VD_TRACE_DOWN)
 	    vd_disable;
@@ -1798,18 +1854,6 @@ out:
     return code;
 }
 
-private inline bool
-is_linear_color_applicable(const patch_fill_state_t *pfs)
-{
-    if (!USE_LINEAR_COLOR_PROCS)
-	return false;
-    if (pfs->dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN)
-	return false;
-    if (gx_get_cmap_procs(pfs->pis, pfs->dev)->is_halftoned(pfs->pis, pfs->dev))
-	return false;
-    return true;
-}
-
 int
 mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_point *p1, 
 	    const patch_color_t *c0, const patch_color_t *c1)
@@ -1822,7 +1866,6 @@ mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_p
     gs_fixed_edge le, re;
     const fixed adjust = INTERPATCH_PADDING;
 
-    pfs->unlinear = !is_linear_color_applicable(pfs);
     if (swap_axes) {
 	if (p0->x < p1->x) {
 	    q0.x = p0->y;
@@ -2022,7 +2065,7 @@ ordered_triangle(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge *re, 
 #   endif
     if (!VD_TRACE_DOWN)
         vd_disable;
-    code = patch_color_to_device_color(pfs, c, &dc);
+    code = patch_color_to_device_color(pfs, c, &dc, NULL);
     if (code < 0)
 	return code;
     if (le->end.y < re->end.y) {
@@ -2108,7 +2151,7 @@ constant_color_quadrangle_aux(patch_fill_state_t *pfs, const quadrangle_patch *p
     patch_interpolate_color(c[1], p->p[0][0]->c, p->p[0][1]->c, pfs, 0.5);
     patch_interpolate_color(c[2], p->p[1][0]->c, p->p[1][1]->c, pfs, 0.5);
     patch_interpolate_color(c[0], c[1], c[2], pfs, 0.5);
-    code = patch_color_to_device_color(pfs, c[0], &dc);
+    code = patch_color_to_device_color(pfs, c[0], &dc, NULL);
     if (code < 0)
 	return code;
     {	gs_fixed_point qq[4];

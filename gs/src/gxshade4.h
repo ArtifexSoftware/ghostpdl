@@ -112,7 +112,10 @@ struct patch_color_s {
 typedef struct patch_color_s patch_color_t;
 #endif
 
-
+#ifndef gs_color_index_cache_DEFINED
+#  define gs_color_index_cache_DEFINED
+typedef struct gs_color_index_cache_s gs_color_index_cache_t;
+#endif
 
 /* Define the common state for rendering Coons and tensor patches. */
 typedef struct patch_fill_state_s {
@@ -140,6 +143,7 @@ typedef struct patch_fill_state_s {
     byte *color_stack; /* A storage for shortened patch_color_t structures. */
     byte *color_stack_limit;
     gs_memory_t *memory; /* Where color_buffer is allocated. */
+    gs_color_index_cache_t *pcic;
 } patch_fill_state_t;
 
 /* Define a structure for mesh or patch vertex. */
