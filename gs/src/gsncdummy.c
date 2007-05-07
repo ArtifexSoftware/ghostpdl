@@ -67,10 +67,6 @@
 #include "gxdevice.h"
 #include "gzstate.h"
 #include "malloc_.h"
-#include "ghost.h"
-#include "ierrors.h"
-#include "iddict.h"
-#include "store.h"
 #include "gsutil.h"
 #include "gsncdummy.h"
 
