@@ -15,7 +15,7 @@
 # containing the `install' targets.
 # This is the very last part of the makefile for these configurations.
 
-install: install-exec install-scripts install-data
+install: install-exec install-scripts install-data install-shared
 
 # The sh -c in the rules below is required because Ultrix's implementation
 # of sh -e terminates execution of a command if any error occurs, even if
@@ -169,3 +169,9 @@ golfer.eps grayalph.ps snowflak.ps tiger.eps vasarely.ps waterfal.ps \
 ridt91.eps ;\
 	do $(INSTALL_DATA) $(PSEXDIR)/$$f $(DESTDIR)$(exdir) ;\
 	done
+
+install-shared: $(GS_SHARED_OBJS)
+	-mkdir -p $(gssharedir)
+	$(SH) -c 'for obj in $(GS_SHARED_OBJS); do \
+	    $(INSTALL_PROGRAM) $$obj $(gssharedir)/; done'
+

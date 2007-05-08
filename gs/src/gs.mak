@@ -258,7 +258,8 @@ gconfig_h=$(GLGENDIR)$(D)gconfxx.h
 gconfigf_h=$(GLGENDIR)$(D)gconfxc.h
 gconfigd_h=$(GLGENDIR)$(D)gconfigd.h
 
-all default : $(GS_XE)
+all default : $(GS_XE) $(GS_SHARED_OBJS)
+	$(RM) _temp_*
 	$(NO_OP)
 
 # the distclean and maintainer-clean targets (if any)
@@ -271,6 +272,7 @@ realclean : clean
 clean : mostlyclean
 	$(RM_) $(GSGEN)arch.h
 	$(RM_) $(GS_XE)
+	$(RM_) $(GS_SHARED_OBJS)
 
 #****** FOLLOWING IS WRONG, NEEDS TO BE PER-SUBSYSTEM ******
 mostlyclean : config-clean
