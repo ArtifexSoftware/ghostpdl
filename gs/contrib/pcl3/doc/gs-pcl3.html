@@ -1,0 +1,6277 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML
+><HEAD
+><TITLE
+>pcl3</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet version 1.13"></HEAD
+><BODY
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+><H1
+>GS-PCL3</H1
+><DIV
+CLASS="REFNAMEDIV"
+><H2
+>NAME</H2
+>pcl3 &#8212; ghostscript device driver for printers understanding PCL 3+</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><H2
+>SYNOPSIS</H2
+><P
+><B
+CLASS="COMMAND"
+>gs</B
+>   -sDEVICE=pcl3   [<TT
+CLASS="REPLACEABLE"
+><I
+>gs_option</I
+></TT
+> | -dBlackLevels=<TT
+CLASS="REPLACEABLE"
+><I
+>integer</I
+></TT
+> | -dCMYLevels=<TT
+CLASS="REPLACEABLE"
+><I
+>integer</I
+></TT
+> | -sColorModel=<TT
+CLASS="REPLACEABLE"
+><I
+>model</I
+></TT
+> | -sColourModel=<TT
+CLASS="REPLACEABLE"
+><I
+>model</I
+></TT
+> | -dCompressionMethod=<TT
+CLASS="REPLACEABLE"
+><I
+>method</I
+></TT
+> | -dConfigureEveryPage | -dCUPSAccounting | -dCUPSMessages | -dDepletion=<TT
+CLASS="REPLACEABLE"
+><I
+>depletion</I
+></TT
+> | -dDryTime=<TT
+CLASS="REPLACEABLE"
+><I
+>seconds</I
+></TT
+> | -sDuplexCapability=<TT
+CLASS="REPLACEABLE"
+><I
+>capability</I
+></TT
+> | -sIntensityRendering=<TT
+CLASS="REPLACEABLE"
+><I
+>method</I
+></TT
+> | -dLeadingEdge=<TT
+CLASS="REPLACEABLE"
+><I
+>edge</I
+></TT
+> | -dManualFeed | -sMediaConfigurationFile=<TT
+CLASS="REPLACEABLE"
+><I
+>pathname</I
+></TT
+> | -dMediaPosition=<TT
+CLASS="REPLACEABLE"
+><I
+>position</I
+></TT
+> | -sMedium=<TT
+CLASS="REPLACEABLE"
+><I
+>medium</I
+></TT
+> | -dOnlyCRD | -sPageCountFile=<TT
+CLASS="REPLACEABLE"
+><I
+>pathname</I
+></TT
+> | -sPCLInit1=<TT
+CLASS="REPLACEABLE"
+><I
+>string</I
+></TT
+> | -sPCLInit2=<TT
+CLASS="REPLACEABLE"
+><I
+>string</I
+></TT
+> | -sPJLJob=<TT
+CLASS="REPLACEABLE"
+><I
+>jobname</I
+></TT
+> | -sPJLLanguage=<TT
+CLASS="REPLACEABLE"
+><I
+>language</I
+></TT
+> | -sPrintQuality=<TT
+CLASS="REPLACEABLE"
+><I
+>quality</I
+></TT
+> | -dRasterGraphicsQuality=<TT
+CLASS="REPLACEABLE"
+><I
+>quality</I
+></TT
+> | -dSendBlackLast | -dSendNULs=<TT
+CLASS="REPLACEABLE"
+><I
+>number</I
+></TT
+> | -dShingling=<TT
+CLASS="REPLACEABLE"
+><I
+>shingling</I
+></TT
+> | -sSubdevice=<TT
+CLASS="REPLACEABLE"
+><I
+>subdevice</I
+></TT
+> | -dTumble | -dUseCard=<TT
+CLASS="REPLACEABLE"
+><I
+>value</I
+></TT
+>...] [<TT
+CLASS="REPLACEABLE"
+><I
+>file</I
+></TT
+>...] </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A NAME="DESCRIPTION"
+><H2
+>DESCRIPTION</H2
+></A
+><DIV
+CLASS="REFSECT2"
+><H3
+>Supported Printers</H3
+><P
+>The ghostscript device driver <B
+CLASS="COMMAND"
+>pcl3</B
+>
+(formerly called <B
+CLASS="COMMAND"
+>hpdj</B
+>)
+is a ghostscript backend for printers understanding
+Hewlett-Packard's Printer Command Language, level 3+
+("PCL 3+", also called "PCL 3 Plus").
+The driver is intended to support in particular the following printer models:
+<BLOCKQUOTE
+><P
+CLASS="LITERALLAYOUT"
+>HP&nbsp;DeskJet<br>
+HP&nbsp;DeskJet&nbsp;Plus<br>
+HP&nbsp;DeskJet&nbsp;Portable<br>
+HP&nbsp;DeskJet&nbsp;310<br>
+HP&nbsp;DeskJet&nbsp;320<br>
+HP&nbsp;DeskJet&nbsp;340<br>
+HP&nbsp;DeskJet&nbsp;400<br>
+HP&nbsp;DeskJet&nbsp;500<br>
+HP&nbsp;DeskJet&nbsp;500C<br>
+HP&nbsp;DeskJet&nbsp;510<br>
+HP&nbsp;DeskJet&nbsp;520<br>
+HP&nbsp;DeskJet&nbsp;540<br>
+HP&nbsp;DeskJet&nbsp;550C<br>
+HP&nbsp;DeskJet&nbsp;560C<br>
+HP&nbsp;DeskJet&nbsp;600<br>
+HP&nbsp;DeskJet&nbsp;660C<br>
+HP&nbsp;DeskJet&nbsp;670C<br>
+HP&nbsp;DeskJet&nbsp;680C<br>
+HP&nbsp;DeskJet&nbsp;690C<br>
+HP&nbsp;DeskJet&nbsp;850C<br>
+HP&nbsp;DeskJet&nbsp;855C<br>
+HP&nbsp;DeskJet&nbsp;870C<br>
+HP&nbsp;DeskJet&nbsp;890C<br>
+HP&nbsp;DeskJet&nbsp;1120C</P
+></BLOCKQUOTE
+>
+
+The PCL dialect called "PCL Level 3 enhanced" is apparently a not
+entirely compatible modification of PCL 3+.
+This driver should basically work with such printers
+but you must be more careful which options you select and
+you might not be able to exploit all your printer's capabilities.</P
+><P
+>The driver does <I
+CLASS="EMPHASIS"
+>not</I
+> support printers understanding only
+Hewlett-Packard's PPA (Printing Performance Architecture) commands.
+If a printer's documentation does not say anything about its
+printer command language and
+you find a statement like "... is designed for Microsoft Windows" or
+"DOS support through Windows only",
+the printer is almost certainly a PPA printer and hence is intended
+<I
+CLASS="EMPHASIS"
+>exclusively</I
+>
+for systems running Microsoft Windows.
+(These printers are also erroneously known as "GDI printers"
+because they are intended to be accessed through a manufacturer-supplied driver
+via Windows' GDI interface.)
+There exist ways of using a PPA printer with ghostscript,
+but not through <B
+CLASS="COMMAND"
+>pcl3</B
+>.</P
+><P
+>Different printer models usually implement model-specific subsets of all
+PCL-3+ commands or arguments to commands.
+You must therefore tell the driver by means of the
+<SPAN
+CLASS="OPTION"
+>Subdevice</SPAN
+>
+option for which model the generated PCL code is intended.
+The model-dependent difference in the generated code is not great.
+Apart from media specifications, resolutions and colour capabilities,
+one can consider three groups of models
+which are treated with significant differences:
+
+<BLOCKQUOTE
+><P
+></P
+><DL
+><DT
+>Group 1</DT
+><DD
+><P
+>DeskJet, DeskJet Plus, DeskJet 500</P
+></DD
+><DT
+>Group 2</DT
+><DD
+><P
+>DeskJet Portable, DeskJets 3<TT
+CLASS="REPLACEABLE"
+><I
+>xx</I
+></TT
+>,
+400, 5<TT
+CLASS="REPLACEABLE"
+><I
+>xx</I
+></TT
+> except 500 and 540,</P
+></DD
+><DT
+>Group 3</DT
+><DD
+><P
+>DeskJets 540, 6<TT
+CLASS="REPLACEABLE"
+><I
+>xx</I
+></TT
+>,
+8<TT
+CLASS="REPLACEABLE"
+><I
+>xx</I
+></TT
+> and 1120C.</P
+></DD
+></DL
+></BLOCKQUOTE
+>
+
+The first two groups I call the "old Deskjets",
+the third group consists of "new DeskJets".
+If you have a PCL-3 printer not appearing in the list above,
+the likelihood is still good that it will accept the files generated by
+<B
+CLASS="COMMAND"
+>pcl3</B
+>.
+You can specify one of the supported subdevices in these cases
+(it is sufficient to try one each from the groups just mentioned),
+or use the special subdevice names
+<TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+> or <TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+>
+which are treated like members of the second and the third group above,
+respectively,
+with all subdevice-dependent checks having been turned off.</P
+><P
+>The list of printer models for which this driver is currently known to work is:</P
+><P
+><BLOCKQUOTE
+><P
+CLASS="LITERALLAYOUT"
+>HP&nbsp;2000C<br>
+HP&nbsp;2500CM<br>
+HP&nbsp;DeskJet&nbsp;697C<br>
+HP&nbsp;DeskJet&nbsp;850C<br>
+HP&nbsp;DeskJet&nbsp;970C<br>
+HP&nbsp;DeskJet&nbsp;1100C<br>
+Xerox&nbsp;DocuPrint&nbsp;M750</P
+></BLOCKQUOTE
+></P
+><P
+>Details can be found in the file <TT
+CLASS="FILENAME"
+>reports.txt</TT
+> in the
+<B
+CLASS="COMMAND"
+>pcl3</B
+> distribution;
+its latest version is available via <B
+CLASS="COMMAND"
+>pcl3</B
+>'s
+<A
+HREF="http://home.t-online.de/home/Martin.Lottermoser/pcl3.html"
+TARGET="_top"
+>home
+page</A
+>.
+If you wish to report on the hardware compatibility for a particular
+printer model,
+please read the file <TT
+CLASS="FILENAME"
+>how-to-report.txt</TT
+>.</P
+><P
+>Omitting models already mentioned,
+previous (<B
+CLASS="COMMAND"
+>hpdj</B
+>) versions of this driver were reported to
+work with the following printers:</P
+><P
+><BLOCKQUOTE
+><P
+CLASS="LITERALLAYOUT"
+>HP&nbsp;DeskJet&nbsp;340<br>
+HP&nbsp;DeskJet&nbsp;400&nbsp;(tested&nbsp;for&nbsp;Gray&nbsp;only)<br>
+HP&nbsp;DeskJet&nbsp;420<br>
+HP&nbsp;DeskJet&nbsp;500<br>
+HP&nbsp;DeskJet&nbsp;500C&nbsp;(tested&nbsp;for&nbsp;Gray&nbsp;only)<br>
+HP&nbsp;DeskJet&nbsp;520<br>
+HP&nbsp;DeskJet&nbsp;540<br>
+HP&nbsp;DeskJet&nbsp;560C<br>
+HP&nbsp;DeskJet&nbsp;600<br>
+HP&nbsp;DeskJet&nbsp;610C<br>
+HP&nbsp;DeskJet&nbsp;612C		<br>
+HP&nbsp;DeskJet&nbsp;640C		<br>
+HP&nbsp;DeskJet&nbsp;660C/660Cse<br>
+HP&nbsp;DeskJet&nbsp;670C<br>
+HP&nbsp;DeskJet&nbsp;672C<br>
+HP&nbsp;DeskJet&nbsp;680C<br>
+HP&nbsp;DeskJet&nbsp;690C<br>
+HP&nbsp;DeskJet&nbsp;690C+<br>
+HP&nbsp;DeskJet&nbsp;693C<br>
+HP&nbsp;DeskJet&nbsp;694C<br>
+HP&nbsp;DeskJet&nbsp;832C<br>
+HP&nbsp;DeskJet&nbsp;855C<br>
+HP&nbsp;DeskJet&nbsp;870Cse/870Cxi<br>
+HP&nbsp;DeskJet&nbsp;880C<br>
+HP&nbsp;DeskJet&nbsp;890C<br>
+HP&nbsp;DeskJet&nbsp;895Cse/895Cxi<br>
+HP&nbsp;DeskJet&nbsp;932C		<br>
+HP&nbsp;DeskJet&nbsp;1120C<br>
+HP&nbsp;OfficeJet&nbsp;350	<br>
+HP&nbsp;OfficeJet&nbsp;590<br>
+HP&nbsp;OfficeJet&nbsp;600<br>
+HP&nbsp;OfficeJet&nbsp;625<br>
+HP&nbsp;OfficeJet&nbsp;G55	<br>
+HP&nbsp;OfficeJet&nbsp;T45	<br>
+Lexmark&nbsp;3000&nbsp;Color&nbsp;Jetprinter<br>
+Olivetti&nbsp;JP792&nbsp;(see&nbsp;the&nbsp;option&nbsp;<SPAN
+CLASS="OPTION"
+>SendBlackLast</SPAN
+>)</P
+></BLOCKQUOTE
+></P
+><P
+>Most of the people who sent me reports did not state to which extent
+<B
+CLASS="COMMAND"
+>hpdj</B
+> worked for their printer model.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A NAME="COLOURMODELS"
+><H3
+>Colour Models</H3
+></A
+><P
+>Ignoring photo cartridges which are not supported by <B
+CLASS="COMMAND"
+>pcl3</B
+>,
+DeskJet printers can be classified in four categories:</P
+><P
+></P
+><UL
+><LI
+><P
+>The printer has only a black ink cartridge.</P
+></LI
+><LI
+><P
+>The printer can print with either a black or a
+cyan/magenta/yellow (CMY) cartridge.</P
+></LI
+><LI
+><P
+>The printer holds a CMY and a black cartridge simultaneously,
+but the two groups of inks are chemically incompatible and should not be
+overlayed.
+(Don't worry: the printer is not going to explode if they do.
+You merely get poorer results because the black ink will spread further
+than it should.
+This is called "ink bleeding".)</P
+></LI
+><LI
+><P
+>The printer holds a CMY and a black cartridge simultaneously
+and the inks can be mixed.
+(Newer HP DeskJets use such bleed-proof inks.)</P
+></LI
+></UL
+><P
+>This leads to four <I
+CLASS="FIRSTTERM"
+>(process) colour models</I
+>
+for the driver:
+<BLOCKQUOTE
+><P
+></P
+><DL
+><DT
+>Gray</DT
+><DD
+><P
+>Print in black only.</P
+></DD
+><DT
+>CMY</DT
+><DD
+><P
+>Print with cyan, magenta and yellow.
+In this mode, "composite black" consisting of all three inks is used to
+stand in for true black.</P
+></DD
+><DT
+>CMY+K</DT
+><DD
+><P
+>Print with all four inks, but never mix black with one of the others.</P
+></DD
+><DT
+>CMYK</DT
+><DD
+><P
+>Print with all four inks.</P
+></DD
+></DL
+></BLOCKQUOTE
+>
+
+As a printer with both, a black and a CMY cartridge, can usually also print,
+e.g., with black only,
+the printer's "cartridge state" merely identifies one of these models as the
+maximal one.
+Depending on the category of the printer,
+the driver will therefore accept one or more models.
+The possibilities are:
+<BLOCKQUOTE
+><DIV
+CLASS="INFORMALTABLE"
+><P
+></P
+><TABLE
+BORDER="1"
+CLASS="CALSTABLE"
+><TR
+><TH
+ALIGN="LEFT"
+VALIGN="TOP"
+>DeskJet Model</TH
+><TH
+ALIGN="LEFT"
+VALIGN="TOP"
+>Colour Models</TH
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>DeskJet, DeskJet Plus, DeskJet Portable, 500, 510, 520</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>Gray</TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>310, 320, 340, 400, 500C, 540, 600</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>Gray, CMY</TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>550C, 560C</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>Gray, CMY, CMY+K</TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>660C, 670C, 680C, 690C, 850C, 855C, 870C, 890C, 1120C</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>all</TD
+></TR
+></TABLE
+><P
+></P
+></DIV
+></BLOCKQUOTE
+>
+
+The subdevices <TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+> and
+<TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+> also permit all colour models.
+A printer capable only of CMY might accept CMY+K or CMYK data,
+remapping them to CMY,
+and a printer capable of CMY+K might remap CMY data to CMY+K.</P
+><P
+>The colour model CMY+K is not useful if you have a CMYK printer.
+In contrast,
+if you have a CMY+K or CMYK printer and the two cartridges support different
+resolutions,
+the colour models Gray or CMY become interesting as well.
+In most of these cases
+the black cartridge can print at a higher resolution than the CMY cartridge,
+although the converse does also occur.
+In addition, ghostscript is generally fastest for Gray.</P
+><P
+>PCL 3+ also supports the colour model RGB
+although Hewlett-Packard discourages its use.
+For this model the printer internally converts the RGB data it receives into
+CMY data for printing.
+Note that not everything which can be demanded when using a CMY palette
+in PCL 3+ is also permitted when using RGB.
+Because of its limited usefulness,
+<B
+CLASS="COMMAND"
+>pcl3</B
+> accepts the colour model RGB only for the subdevices
+<TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+> and <TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+>.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A NAME="SIZESANDORIENTATIONS"
+><H3
+>Media Sizes and Orientations</H3
+></A
+><P
+>A PostScript document describes its visible content with respect to
+a coordinate system called <I
+CLASS="FIRSTTERM"
+>default user space</I
+>.
+Almost all PostScript devices are <I
+CLASS="FIRSTTERM"
+>page devices</I
+> which
+paint only a restricted rectangular area in default user space.
+Part of the state of a page device is therefore the current
+<I
+CLASS="FIRSTTERM"
+>page size</I
+>,
+two numbers specifying the width and height of the sheet to be printed on.
+These values must be interpreted from default user space,
+hence the page size not only describes the
+"sheet size" (extension irrespective of orientation) but also the
+orientation between page contents and sheet
+(portrait if width <= height, landscape otherwise).
+The page size is requested by the user or the document,
+and it is one of the jobs of the device to satisfy this request.</P
+><P
+>Ghostscript looks at several sources to determine the page size:</P
+><P
+></P
+><UL
+><LI
+><P
+>the default size configured for <B
+CLASS="COMMAND"
+>gs</B
+>
+(usually US Letter or ISO A4 in portrait orientation),</P
+></LI
+><LI
+><P
+>the value given to the option <SPAN
+CLASS="OPTION"
+>PAPERSIZE</SPAN
+> in the
+invocation,</P
+></LI
+><LI
+><P
+>the size requested by the document, unless you specify
+<TT
+CLASS="USERINPUT"
+><B
+>-dFIXEDMEDIA</B
+></TT
+>.</P
+></LI
+></UL
+><P
+>The last applicable item in this list overrides the others,
+hence the current page size can change at runtime.</P
+><P
+>The <B
+CLASS="COMMAND"
+>pcl3</B
+> driver splits the page size into sheet size and
+page orientation and passes the sheet size to the printer.
+This works only if the printer accepts this size
+(accepted sizes are listed in your printer's manual).
+For the explicitly supported printers,
+the driver knows which sizes are accepted
+and will refuse to print if an unsupported one is requested.
+(If you suspect that <B
+CLASS="COMMAND"
+>pcl3</B
+> is in error concerning what is
+supported,
+check the list of supported sizes in the PPD file for the subdevice you are
+using.)
+Group-3 printers also accept a <I
+CLASS="FIRSTTERM"
+>custom page size</I
+> command
+which permits printing on arbitrarily-sized media
+but only within certain limits which are also known to the driver.
+Unlike the sheet size the page orientation is irrelevant for deciding whether
+a particular page size is supported or not.
+The driver will adapt itself as required by the
+PostScript language and rotate the output if necessary.
+(I know of only one other ghostscript driver capable of this.)</P
+><P
+>In setting up the PostScript default user space,
+<B
+CLASS="COMMAND"
+>pcl3</B
+>
+does not treat envelope sizes differently from other sizes.</P
+><P
+>The subdevice <TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+> accepts all sizes supported by
+the HP DeskJet 560C,
+<TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+> supports all discrete sizes known to the
+HP DeskJets 850C/855C/870C/890C and
+treats in addition every other size request as a custom page size
+without imposing any limits.
+If using any of these two subdevices you should change the list of supported
+sizes to fit your printer's capabilities;
+see the
+<A
+HREF="gs-pcl3.html#CONFIGURATION"
+><I
+CLASS="CITETITLE"
+>CONFIGURATION</I
+></A
+>
+section below for details.</P
+><P
+>In order for a document to be printed correctly
+a sheet of appropriate size must be provided and the driver must know
+what its orientation with respect to the printing mechanism is.
+The latter is usually specified by reference to the feeding direction as
+"short edge first" or "long edge first".
+Don't confuse this kind of orientation with the portrait/landscape
+orientation:
+the former ("sheet orientation") refers to the orientation of the sheet
+with respect to the feeding direction,
+the latter ("page orientation") describes the orientation of the sheet with
+respect to the page contents (default user space).
+These orientations are logically independent:
+people inserting paper into the printer need to know about the first,
+people composing documents only care about the latter.</P
+><P
+>Because <B
+CLASS="COMMAND"
+>pcl3</B
+>
+has no information about the actual dimension or orientation of the medium
+in the input tray,
+you must ensure yourself that this is appropriate.
+By default, the driver assumes the dimension to be that requested via the
+page size,
+but you can override this assumption with an <TT
+CLASS="LITERAL"
+>InputAttributes</TT
+>
+definition (see the
+<A
+HREF="gs-pcl3.html#SOURCESANDDESTINATIONS"
+><I
+CLASS="CITETITLE"
+>Media Sources and Destinations</I
+></A
+>
+subsection in the <I
+CLASS="CITETITLE"
+>CONFIGURATION</I
+> section below).</P
+><P
+>There is no command in PCL 3+ to tell the printer about the
+sheet's orientation in the input tray,
+therefore it cannot be chosen and the manufacturer must prescribe it.
+I am not aware of any precise and complete statement from Hewlett-Packard
+about what is required in this respect,
+hence you should check your printer's manual whether the assumptions made by
+<B
+CLASS="COMMAND"
+>pcl3</B
+> are correct or not:
+the driver assumes that media are always fed short edge first except when
+using the subdevices
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdjplus</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj400</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj500</B
+></TT
+>
+or
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj500c</B
+></TT
+>
+for printing on envelope sizes
+(US no. 10 and ISO DL).
+In these cases you should insert the medium long edge first.
+If you find that <B
+CLASS="COMMAND"
+>pcl3</B
+>'s default behaviour is incorrect,
+you can override it with the option <SPAN
+CLASS="OPTION"
+>LeadingEdge</SPAN
+>
+or a media configuration file
+(see the
+<A
+HREF="gs-pcl3.html#CONFIGURATION"
+><I
+CLASS="CITETITLE"
+>CONFIGURATION</I
+></A
+>
+section below).</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><H3
+>Print Quality and Media Properties</H3
+><P
+>With the introduction of the DeskJet 540, HP added two new PCL commands to the
+language: "Print Quality" and "Media Type".
+For older DeskJets (groups 1 and 2), similar effects can be
+achieved by specifying some technical aspects of the printing process in detail.</P
+><P
+>You can use the <SPAN
+CLASS="OPTION"
+>PrintQuality</SPAN
+> and
+<SPAN
+CLASS="OPTION"
+>Medium</SPAN
+> options to adapt the driver to the desired
+output quality and those properties of the medium it must know about,
+independent of which kind of subdevice you select.
+If it corresponds to a printer understanding the new commands,
+the option values are passed through to the printer,
+otherwise these specifications are
+mapped to the older Depletion, Shingling, and Raster Graphics Quality commands
+based on recommendations from HP.
+If you are not satisfied with the result in the latter case,
+use the options <SPAN
+CLASS="OPTION"
+>Depletion</SPAN
+>,
+<SPAN
+CLASS="OPTION"
+>Shingling</SPAN
+> and
+<SPAN
+CLASS="OPTION"
+>RasterGraphicsQuality</SPAN
+>
+to explicitly set these values.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><H3
+>Diagnostic Messages</H3
+><P
+>Error messages issued by this driver start with
+"<TT
+CLASS="COMPUTEROUTPUT"
+>? <TT
+CLASS="REPLACEABLE"
+><I
+>component</I
+></TT
+>:</TT
+>"
+and warnings with
+"<TT
+CLASS="COMPUTEROUTPUT"
+>?-W <TT
+CLASS="REPLACEABLE"
+><I
+>component</I
+></TT
+>:</TT
+>".
+The <TT
+CLASS="REPLACEABLE"
+><I
+>component</I
+></TT
+> can be
+<TT
+CLASS="COMPUTEROUTPUT"
+>eprn</TT
+>,
+<TT
+CLASS="COMPUTEROUTPUT"
+>pcl3</TT
+>, or
+<TT
+CLASS="COMPUTEROUTPUT"
+>pclgen</TT
+>,
+corresponding to the driver's three internal layers:
+the <B
+CLASS="COMMAND"
+>eprn</B
+> device extends ghostscript without knowing PCL,
+<B
+CLASS="COMMAND"
+>pclgen</B
+> is a module generating PCL without being aware of
+ghostscript,
+and <B
+CLASS="COMMAND"
+>pcl3</B
+> is the driver proper connecting the other two
+layers.</P
+><P
+>All these messages are written on the standard error stream.</P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><H2
+>OPTIONS</H2
+><P
+>When specifying options for <B
+CLASS="COMMAND"
+>gs</B
+> you should keep in mind
+that
+case is significant,
+that some options must be passed as strings (<TT
+CLASS="USERINPUT"
+><B
+>-s</B
+></TT
+>)
+and others as general tokens (<TT
+CLASS="USERINPUT"
+><B
+>-d</B
+></TT
+>),
+and that <B
+CLASS="COMMAND"
+>gs</B
+>
+effectively ignores every option it does not recognize.
+Hence some care in spelling parameter names is necessary.</P
+><P
+>If you are confused by the large number of options, don't worry.
+Just ignore those you don't understand and
+concentrate first on the following ones,
+given here in the order of their importance:
+<TT
+CLASS="USERINPUT"
+><B
+>-sDEVICE</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>-sSubdevice</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>-sColourModel</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>-r</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>-sPrintQuality</B
+></TT
+>,
+and
+<TT
+CLASS="USERINPUT"
+><B
+>-sMedium</B
+></TT
+>.
+You should also check whether there is an entry in the
+<TT
+CLASS="FILENAME"
+>reports.txt</TT
+> file
+in the <B
+CLASS="COMMAND"
+>pcl3</B
+> distribution
+listing working option combinations for your printer.</P
+><DIV
+CLASS="REFSECT2"
+><H3
+>Standard Options</H3
+><P
+>When calling <B
+CLASS="COMMAND"
+>gs</B
+> with the <B
+CLASS="COMMAND"
+>pcl3</B
+> driver 
+you can specify any option defined for ghostscript's
+<B
+CLASS="COMMAND"
+>prn</B
+>
+(printer) device although some have particular meanings or restrictions.
+This includes all device-independent options described in
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gs</SPAN
+>(1)</SPAN
+>.
+You should also look into ghostscript's extended documentation
+(file <A
+HREF="Use.htm"
+TARGET="_top"
+><TT
+CLASS="FILENAME"
+>Use.htm</TT
+></A
+> and the section
+<A
+HREF="Language.htm#Device_parameters"
+TARGET="_top"
+><I
+CLASS="CITETITLE"
+>Device
+parameters</I
+></A
+>
+in <TT
+CLASS="FILENAME"
+>Language.htm</TT
+>).&#13;</P
+><P
+></P
+><DL
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-sDEVICE=pcl3</B
+></TT
+></DT
+><DD
+><P
+>This specification selects the <B
+CLASS="COMMAND"
+>pcl3</B
+>
+driver,
+but this is not the only way to select it with this option.
+See the description of the <SPAN
+CLASS="OPTION"
+>Subdevice</SPAN
+> option below for other
+possibilities.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-dDuplex[<SPAN
+CLASS="OPTIONAL"
+>=<TT
+CLASS="REPLACEABLE"
+><I
+>boolean</I
+></TT
+></SPAN
+>]</B
+></TT
+> or <TT
+CLASS="USERINPUT"
+><B
+>-dDuplex=null</B
+></TT
+></DT
+><DD
+><P
+>This parameter requests duplex printing and can be set to
+<TT
+CLASS="USERINPUT"
+><B
+>true</B
+></TT
+> only for <TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+> and
+<TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+>,
+and when the
+<SPAN
+CLASS="OPTION"
+>DuplexCapability</SPAN
+> value is not <TT
+CLASS="USERINPUT"
+><B
+>none</B
+></TT
+>.
+The default is <TT
+CLASS="USERINPUT"
+><B
+>null</B
+></TT
+>
+which for this driver means that the printer's default setting will be used.</P
+><P
+>If your printer does not support duplex printing you can achieve the same
+effect manually by printing the odd and even pages separately
+(use a command like <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>psselect</SPAN
+>(1)</SPAN
+> from the psutils package for extracting these parts)
+and reinserting the paper in between.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-r <TT
+CLASS="REPLACEABLE"
+><I
+>resolution</I
+></TT
+></B
+></TT
+></DT
+><DD
+><P
+>This option specifies the resolution in
+pixels per inch (ppi; sometimes also called dots per inch, dpi).
+The driver checks whether the subdevice selected accepts the given
+resolution unless the subdevice is <TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+> or
+<TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+>.
+Resolutions supported by at least some of the other subdevices
+for some of the colour models are 75, 100, 150, 300, 600×300 and 600 ppi.
+Consult the PPD files in the <B
+CLASS="COMMAND"
+>pcl3</B
+> distribution if you want
+to know the details.
+The default resolution for <B
+CLASS="COMMAND"
+>pcl3</B
+> is 300 ppi.</P
+><P
+>At least the highest possible value should be listed in your printer's manual,
+but some care is necessary in the interpretation:
+the value given to <B
+CLASS="COMMAND"
+>pcl3</B
+> must be a resolution supported by
+the printer's hardware for all the colorants in the process colour model
+simultaneously and when operating in raster graphics mode.
+You should also keep in mind that if your printer has two cartridges
+they might support different sets of resolutions,
+i.e., which resolution you can choose might depend on the colour model.
+It is also possible that the print quality has to be considered as well.
+If you are in doubt and have access to a manufacturer-endorsed driver for your
+printer,
+use <B
+CLASS="COMMAND"
+>pcl3opts</B
+> to find out about the settings used by that
+driver.</P
+><P
+>At least some of the series-500 DeskJets claim to
+permit a resolution of 600 × 300 ppi.
+However,
+although these models have a 600 dpi addressable horizontal resolution grid
+they do not permit neighbouring pixels to be activated
+(and the dots printed still have a diameter of about 1/300 in).
+The raster data generated by
+<B
+CLASS="COMMAND"
+>gs</B
+>
+does not obey this restriction.
+In addition, it is possible that the higher resolution is anyway only supported
+for the printer's builtin fonts and not for general raster data.</P
+><P
+>Concerning the DeskJet 870C,
+my impression is that although some HP documents and drivers use expressions
+like "600x300 dpi C-REt color" for this printer,
+the model does not really support a resolution of 600 × 300 ppi.
+First, it does not accept <B
+CLASS="COMMAND"
+>pcl3</B
+>'s output with this resolution,
+and second,
+if one inspects the best output of HP's Windows driver for this printer
+with <B
+CLASS="COMMAND"
+>pcl3opts</B
+>,
+one finds that the file uses a "mixed resolution",
+i.e., 600 ppi for black and 300 ppi for CMY.
+This is not supported by <B
+CLASS="COMMAND"
+>pcl3</B
+>.</P
+></DD
+></DL
+></DIV
+><DIV
+CLASS="REFSECT2"
+><H3
+><B
+CLASS="COMMAND"
+>Pcl3</B
+>-Specific Options</H3
+><P
+></P
+><DL
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-dBlackLevels=<TT
+CLASS="REPLACEABLE"
+><I
+>levels</I
+></TT
+></B
+></TT
+> and <TT
+CLASS="USERINPUT"
+><B
+>-dCMYLevels=<TT
+CLASS="REPLACEABLE"
+><I
+>levels</I
+></TT
+></B
+></TT
+></DT
+><DD
+><P
+>These options set the number of intensity levels per pixel and colorant
+to use when printing with black or CMY inks, respectively,
+and must be consistent with the colour model.
+They permit access to the printer's
+Colour Resolution Enhancement technology (C-REt) feature.
+The defaults are 0 or 2, depending on the colour model chosen.
+Other values are only accepted for the subdevices
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj8<TT
+CLASS="REPLACEABLE"
+><I
+>nn</I
+></TT
+>c</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj1120c</B
+></TT
+>
+and <TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+>,
+and when not using the colour model <TT
+CLASS="USERINPUT"
+><B
+>RGB</B
+></TT
+>.</P
+><P
+>The subdevice <TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+>
+accepts any non-negative number of levels except 1 up to 256.
+The subdevices <TT
+CLASS="USERINPUT"
+><B
+>hpdj8<TT
+CLASS="REPLACEABLE"
+><I
+>nn</I
+></TT
+>c</B
+></TT
+>
+and <TT
+CLASS="USERINPUT"
+><B
+>hpdj1120c</B
+></TT
+> accept the
+<TT
+CLASS="REPLACEABLE"
+><I
+>levels</I
+></TT
+> 0, 2, 3 and 4
+with the following restrictions if any of the levels is larger than 2
+(these restrictions have been determined experimentally with a
+DeskJet 850C and are not based on HP documentation):</P
+><P
+></P
+><UL
+><LI
+><P
+>You can't use this feature with draft quality.</P
+></LI
+><LI
+><P
+>You can't use a colour model of <TT
+CLASS="USERINPUT"
+><B
+>CMY</B
+></TT
+>.</P
+></LI
+><LI
+><P
+>You must use a resolution of 300 ppi.</P
+></LI
+><LI
+><P
+>You must use 4 levels for black.</P
+></LI
+></UL
+><P
+>When using the subdevice <TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+>
+you should expect the printer to similarly limit the possibilities.
+In particular you must expect the permitted number of levels to depend on
+colour model, resolution and print quality.
+So far I have not heard of a PCL-3+ printer supporting more than
+four intensity levels per colorant.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-sColorModel=<TT
+CLASS="REPLACEABLE"
+><I
+>model</I
+></TT
+></B
+></TT
+> or <TT
+CLASS="USERINPUT"
+><B
+>-sColourModel=<TT
+CLASS="REPLACEABLE"
+><I
+>model</I
+></TT
+></B
+></TT
+></DT
+><DD
+><P
+>This selects the colour model to be used by the driver:
+<TT
+CLASS="USERINPUT"
+><B
+>Gray</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>RGB</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>CMY</B
+></TT
+>, <TT
+CLASS="USERINPUT"
+><B
+>CMY+K</B
+></TT
+> or
+<TT
+CLASS="USERINPUT"
+><B
+>CMYK</B
+></TT
+>.
+The default is <TT
+CLASS="USERINPUT"
+><B
+>Gray</B
+></TT
+>.
+Which colour models are accepted depends on the subdevice, see
+<A
+HREF="gs-pcl3.html#COLOURMODELS"
+><I
+CLASS="CITETITLE"
+>Colour Models</I
+></A
+>
+in the section <I
+CLASS="CITETITLE"
+>DESCRIPTION</I
+> above.</P
+><P
+>A value of <TT
+CLASS="USERINPUT"
+><B
+>CMY</B
+></TT
+> for this option also sets
+<TT
+CLASS="USERINPUT"
+><B
+>BlackLevels</B
+></TT
+> to zero,
+and if
+<TT
+CLASS="USERINPUT"
+><B
+>CMYLevels</B
+></TT
+>
+is zero when you demand any of <TT
+CLASS="USERINPUT"
+><B
+>CMY</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>CMY+K</B
+></TT
+> or <TT
+CLASS="USERINPUT"
+><B
+>CMYK</B
+></TT
+>,
+it is set to two.
+For <TT
+CLASS="USERINPUT"
+><B
+>RGB</B
+></TT
+>, effectively the same happens as for
+<TT
+CLASS="USERINPUT"
+><B
+>CMY</B
+></TT
+>.
+For all other situations you must ensure yourself that colour model and
+intensity levels are consistent or <B
+CLASS="COMMAND"
+>pcl3</B
+> will complain.
+This rule implies that you can ignore the level options unless you
+want to use a non-default number of levels.</P
+><P
+>The PostScript page device dictionary entry
+<TT
+CLASS="LITERAL"
+>ProcessColorModel</TT
+> will not be correct for a colour model of
+<TT
+CLASS="USERINPUT"
+><B
+>CMY</B
+></TT
+> or <TT
+CLASS="USERINPUT"
+><B
+>CMY+K</B
+></TT
+>.
+(Ghostscript returns the native colour space in this parameter,
+not the process colour model.)</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-dCompressionMethod=<TT
+CLASS="REPLACEABLE"
+><I
+>method</I
+></TT
+></B
+></TT
+></DT
+><DD
+><P
+>PCL interpreters understand several compression methods for raster graphics
+data in order to speed up host-printer communication.
+The possible choices are:
+
+<DIV
+CLASS="INFORMALTABLE"
+><P
+></P
+><TABLE
+BORDER="1"
+CLASS="CALSTABLE"
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>0</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>Unencoded, non-compressed</TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>1</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>Runlength encoding</TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>2</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>Tagged Image File Format (TIFF) revision 4.0 "Packbits" encoding </TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>3</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>Delta Row Compression</TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>9</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>Compressed Replacement Delta Row Encoding</TD
+></TR
+></TABLE
+><P
+></P
+></DIV
+>
+
+The default method is 9 except for the subdevices
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdjplus</B
+></TT
+>, and
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj500</B
+></TT
+> where it is 3
+(these printers do not support method 9),
+and for the subdevices <TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+> and
+<TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+> where it is 2
+(this seems to give the best combination of portability and compression).
+Requesting method 3 actually leads to a combination of methods 2 and 3.
+The driver may temporarily choose method 0 if a compressed data sequence would
+be longer than its uncompressed version.</P
+><P
+>Compression rates can vary drastically, depending on the structure of the input.
+However, although the absolute values change, the relative order of efficiency
+between the methods is usually the order of increasing
+<TT
+CLASS="REPLACEABLE"
+><I
+>method</I
+></TT
+>.
+In short: use method 9 if it is supported.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-dConfigureEveryPage[<SPAN
+CLASS="OPTIONAL"
+>=<TT
+CLASS="REPLACEABLE"
+><I
+>boolean</I
+></TT
+></SPAN
+>]</B
+></TT
+></DT
+><DD
+><P
+>This parameter, if set to true, will force the printer to be reconfigured for
+every page.
+The option is superfluous for printers which are truly PCL-3-conforming.</P
+><P
+>Use this parameter if you discover that you can print single-page documents
+without problems but that the printer does not accept multi-page files.
+At present, the only printer I know of for which such a reconfiguration is
+needed is the Xerox DocuPrint M750.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-dCUPSAccounting[<SPAN
+CLASS="OPTIONAL"
+>=<TT
+CLASS="REPLACEABLE"
+><I
+>boolean</I
+></TT
+></SPAN
+>]</B
+></TT
+></DT
+><DD
+><P
+>You will usually specify this parameter when using <B
+CLASS="COMMAND"
+>pcl3</B
+> as
+the final component in a CUPS (Common UNIX Printing System) driver.
+It will lead to appropriate page accounting messages on standard error.
+The default for this parameter is <TT
+CLASS="USERINPUT"
+><B
+>false</B
+></TT
+>.</P
+><P
+>If you have set this parameter to <TT
+CLASS="USERINPUT"
+><B
+>true</B
+></TT
+> you can't set
+it back to <TT
+CLASS="USERINPUT"
+><B
+>false</B
+></TT
+>.
+The driver will generate a warning if this is attempted.</P
+><P
+>When using <B
+CLASS="COMMAND"
+>pcl3</B
+> within CUPS you will normally set both,
+<SPAN
+CLASS="OPTION"
+>CUPSAccounting</SPAN
+> and <SPAN
+CLASS="OPTION"
+>CUPSMessages</SPAN
+>.
+There exist, however, CUPS configurations where page accounting messages should
+be generated by a command further down the print pipeline than
+<B
+CLASS="COMMAND"
+>pcl3</B
+>
+(e.g., by a CUPS backend capable of processing PJL Page Status messages
+and driving a printer which sends them).
+In these cases you should not specify <TT
+CLASS="USERINPUT"
+><B
+>-dCUPSAccounting</B
+></TT
+>.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-dCUPSMessages[<SPAN
+CLASS="OPTIONAL"
+>=<TT
+CLASS="REPLACEABLE"
+><I
+>boolean</I
+></TT
+></SPAN
+>]</B
+></TT
+></DT
+><DD
+><P
+>Specify this parameter when using <B
+CLASS="COMMAND"
+>pcl3</B
+> as a
+component in a CUPS (Common UNIX Printing System) driver.
+It will modify the format of error messages and warnings as expected by CUPS.
+The default for this parameter is <TT
+CLASS="USERINPUT"
+><B
+>false</B
+></TT
+>.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-dDepletion=<TT
+CLASS="REPLACEABLE"
+><I
+>depletion</I
+></TT
+></B
+></TT
+></DT
+><DD
+><P
+>This option is only available for old DeskJets
+(including <TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+>)
+and when printing in colour.
+The integer <TT
+CLASS="REPLACEABLE"
+><I
+>depletion</I
+></TT
+> controls an algorithm for
+removing certain pixels from the image;
+this leads to less ink being applied to the medium.
+The possible values for <TT
+CLASS="REPLACEABLE"
+><I
+>depletion</I
+></TT
+> are:
+
+<DIV
+CLASS="INFORMALTABLE"
+><P
+></P
+><TABLE
+BORDER="1"
+CLASS="CALSTABLE"
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>1</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>No depletion</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>2</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>25%</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>3</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>50%</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>4</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>25% with gamma correction</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>5</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>50% with gamma correction</TD
+></TR
+></TABLE
+><P
+></P
+></DIV
+>
+
+The default value is derived from
+<SPAN
+CLASS="OPTION"
+>Medium</SPAN
+> and <SPAN
+CLASS="OPTION"
+>PrintQuality</SPAN
+>.
+The values 4 and 5 are not understood by the DeskJet 500C,
+but even for the other printers these values are not useful because PostScript
+permits finer control for gamma correction through transfer functions
+(see the subsection
+<A
+HREF="gs-pcl3.html#TRANSFERFUNCTIONS"
+><I
+CLASS="CITETITLE"
+>Transfer Functions</I
+></A
+>
+in the next section).</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-dDryTime=<TT
+CLASS="REPLACEABLE"
+><I
+>delay</I
+></TT
+></B
+></TT
+></DT
+><DD
+><P
+>With the exception of the DeskJets 500 and 500C,
+series-500 DeskJet printers can be told to guarantee a minimum drying time of
+<TT
+CLASS="REPLACEABLE"
+><I
+>delay</I
+></TT
+>
+seconds before the next page of the same print job is dropped on a newly
+printed page.
+(This interval can be terminated by pressing the Load/Eject button.)
+The printer will choose default values depending on the current print quality,
+hence it is normally not necessary to specify this option and
+the feature is even considered obsolete for post-series-500 DeskJets
+although it is still supported by some of them.</P
+><P
+>Permissible values for
+<TT
+CLASS="REPLACEABLE"
+><I
+>delay</I
+></TT
+>
+are <TT
+CLASS="USERINPUT"
+><B
+>null</B
+></TT
+> and
+integers in the range <TT
+CLASS="USERINPUT"
+><B
+>0</B
+></TT
+>
+to <TT
+CLASS="USERINPUT"
+><B
+>1200</B
+></TT
+>,
+where
+<TT
+CLASS="USERINPUT"
+><B
+>null</B
+></TT
+>
+instructs
+<B
+CLASS="COMMAND"
+>pcl3</B
+>
+not to send a corresponding command,
+<TT
+CLASS="USERINPUT"
+><B
+>0</B
+></TT
+>
+establishes default values for the current print quality,
+and all other values explicitly request the duration in seconds.
+The default is <TT
+CLASS="USERINPUT"
+><B
+>null</B
+></TT
+>.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-sDuplexCapability=<TT
+CLASS="REPLACEABLE"
+><I
+>capability</I
+></TT
+></B
+></TT
+></DT
+><DD
+><P
+>Looking at the final result (sheet printed),
+there are two kinds of duplex printing identified by the two possible values
+for the option <SPAN
+CLASS="OPTION"
+>Tumble</SPAN
+>.
+Not all printers capable of duplex printing, however, provide the hardware
+support necessary for both,
+hence the driver must be told what the printer offers in order to be able to
+compensate for the missing functionality.
+The parameter <TT
+CLASS="USERINPUT"
+><B
+><TT
+CLASS="REPLACEABLE"
+><I
+>capability</I
+></TT
+></B
+></TT
+>
+can be any of the following:
+
+<DIV
+CLASS="INFORMALTABLE"
+><P
+></P
+><TABLE
+BORDER="1"
+CLASS="CALSTABLE"
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>none</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>no duplex capability</TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>sameLeadingEdge</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>second pass of sheet occurs with the same leading edge</TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>oppositeLeadingEdge</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>second pass of sheet occurs with the opposite leading edge</TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>both</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>second pass of sheet can occur with either edge</TD
+></TR
+></TABLE
+><P
+></P
+></DIV
+>
+
+This option can only be specified for
+<TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+> and <TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+>.
+The default value is <TT
+CLASS="USERINPUT"
+><B
+>none</B
+></TT
+>.</P
+><P
+>The correct setting for the HP DeskJet 970C is
+<TT
+CLASS="USERINPUT"
+><B
+>oppositeLeadingEdge</B
+></TT
+>,
+but the printer permits access to its duplex functionality only if you specify
+in addition
+<TT
+CLASS="USERINPUT"
+><B
+>-sPJLLanguage=PCL3GUI -dOnlyCRD</B
+></TT
+>.
+(Many thanks to Dawei W. Dong for an extensive series of experiments.)</P
+><P
+>If a printer does not offer hardware support for both orientations,
+the document to be printed must execute <TT
+CLASS="LITERAL"
+>showpage</TT
+> after a
+possible page-level <TT
+CLASS="LITERAL"
+>restore</TT
+> and not before,
+otherwise the driver will not be able to compensate for the missing
+functionality
+and only one of the two <SPAN
+CLASS="OPTION"
+>Tumble</SPAN
+> values will work.
+All DSC-3.0-conforming PostScript files have the required property.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-sIntensityRendering=<TT
+CLASS="REPLACEABLE"
+><I
+>method</I
+></TT
+></B
+></TT
+></DT
+><DD
+><P
+>Most printers,
+including every PCL-3+ printer I know of,
+can render only a small number of intensities per pixel and colorant.
+In the most frequent case, merely two levels are possible.
+As this is usually not sufficient,
+various methods have been devised to achieve a larger palette;
+this is possible at the expense of spatial resolution.
+Because of this tradeoff between effective resolution and the number of
+colours which can be distinguished,
+the best method for a given document depends on the contents of the document
+and the user should therefore be able to select it.</P
+><P
+>The <B
+CLASS="COMMAND"
+>pcl3</B
+> driver supports the following
+<TT
+CLASS="USERINPUT"
+><B
+><TT
+CLASS="REPLACEABLE"
+><I
+>methods</I
+></TT
+></B
+></TT
+> for intensity
+rendering:
+
+<DIV
+CLASS="INFORMALTABLE"
+><P
+></P
+><TABLE
+BORDER="1"
+CLASS="CALSTABLE"
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>printer</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>use the printer's capabilities directly</TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>halftones</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>use ghostscript's halftoning implementation</TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>Floyd-Steinberg</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>use Floyd-Steinberg error diffusion</TD
+></TR
+></TABLE
+><P
+></P
+></DIV
+>
+
+The default method is <TT
+CLASS="USERINPUT"
+><B
+>halftones</B
+></TT
+>.
+The methods differ only in their treatment of intensities which cannot be
+represented directly by the printer.
+If your document contains for example only black text,
+they all produce the same result, albeit at different speeds.</P
+><P
+>With <TT
+CLASS="USERINPUT"
+><B
+>printer</B
+></TT
+>,
+<B
+CLASS="COMMAND"
+>pcl3</B
+> will cause everything to be painted
+at the full hardware resolution but will have to map all colours to the nearest
+levels the printer can represent directly.
+For a CMY or CMYK printer with two intensity levels,
+this results in just 8 useful colours per pixel.
+This value is therefore usually only sensible for documents with a small number
+of widely different saturated colours
+where accurate colour reproduction is of minor importance but
+achieving the highest possible resolution is essential.
+Another possible application is the case of PostScript input which has already
+been adapted to the printer's resolution and available intensity levels.</P
+><P
+>With <TT
+CLASS="USERINPUT"
+><B
+>halftones</B
+></TT
+>,
+ghostscript will use what looks like standard PostScript halftoning algorithms.
+For details, consult a PostScript manual.
+However, you should know that ghostscript's current halftoning
+implementation has some problems:
+<P
+></P
+><UL
+><LI
+><P
+>The algorithm cannot handle different non-zero values for
+<SPAN
+CLASS="OPTION"
+>BlackLevels</SPAN
+> and <SPAN
+CLASS="OPTION"
+>CMYLevels</SPAN
+>.
+In this situation <B
+CLASS="COMMAND"
+>gs</B
+> will in general assume
+that the number of black levels available is equal to that for CMY levels.
+Depending on which of the numbers is smaller, there will then either be unused
+black levels or some will be used more than once.</P
+></LI
+><LI
+><P
+>When you are using values larger than 2 for <SPAN
+CLASS="OPTION"
+>BlackLevels</SPAN
+> or
+<SPAN
+CLASS="OPTION"
+>CMYLevels</SPAN
+>,
+ghostscript does not discover by itself that it could now achieve the same
+number of shades with smaller halftone cells.</P
+></LI
+><LI
+><P
+>Most of the ways of increasing the halftone screen frequency seem to fail.
+I have been successful only with the somewhat pedestrian approach of
+using threshold arrays,
+and even that worked only for some cases.</P
+></LI
+><LI
+><P
+>For particular CMYK values and with ghostscript version 6 or higher,
+the colour becomes drastically wrong.
+One example is CMYK = (0.99998472, 0.002549, 0, 0.00367827);
+this should be almost a pure cyan but is instead displayed as a sort of pink.
+If one subtracts one unit in the last position for any of the non-zero
+components,
+the result becomes acceptable.
+The problem has not been observed with ghostscript 5.50.</P
+></LI
+><LI
+><P
+>For ghostscript versions up to and including 5.50,
+if you are using the colour model <TT
+CLASS="USERINPUT"
+><B
+>CMYK</B
+></TT
+>
+and more than 2 black levels you should not set merely a single halftone screen
+(<TT
+CLASS="LITERAL"
+>setscreen</TT
+>, a type-1 or a type-3 halftone dictionary)
+because
+ghostscript's dithering routine can in this case return non-monotonic levels of
+black for monotonic input intensities.
+However, if you specify independent halftone information for the colour
+components,
+<B
+CLASS="COMMAND"
+>gs</B
+>
+uses a slower but more accurate algorithm instead which does not lead to the
+wrong behaviour.
+It is not necessary for the halftone information to be different for different
+components to achieve this.
+Note that ghostscript installs separate halftone screens for CMYK devices by
+default if the resolution is at least 150 ppi.</P
+></LI
+></UL
+>
+Whenever you modify the halftone screens you should therefore use a test file
+like
+<TT
+CLASS="FILENAME"
+>levels-test.ps</TT
+> in the <B
+CLASS="COMMAND"
+>pcl3</B
+> distribution
+to check whether you obtain the desired result.
+In particular,
+you should count the number of intensities you can distinguish
+for a single colorant:
+if it is obviously not one plus
+the number of pixels in the halftone cell times
+one less than the number of hardware intensity levels,
+something has gone wrong.
+This is, for example, the case if
+you specified 4 black levels and a 2×2 halftone cell,
+and you then can distinguish more than 1 + 4×3 = 13 intensity levels.
+You should also watch for non-monotonic jumps in intensity and incompletely
+filled shapes.</P
+><P
+>The value <TT
+CLASS="USERINPUT"
+><B
+>Floyd-Steinberg</B
+></TT
+> selects Floyd-Steinberg error
+diffusion as the method for rendering intensities.
+Use this in particular for printing photographs and other documents with
+a large number of colours or small irregular shapes.
+Regrettably, <B
+CLASS="COMMAND"
+>pcl3</B
+>'s speed is much slower with this
+method than in the other cases,
+hence this value should only be used when it is really needed
+(e.g., when you run into one of ghostscript's halftoning problems)
+or when the delay is acceptable.</P
+><P
+>If you are using ghostscript 5.50 and
+the page to be rendered needs a lot of memory
+(this applies in particular to <TT
+CLASS="USERINPUT"
+><B
+>Floyd-Steinberg</B
+></TT
+> in colour)
+a core dump may result under certain circumstances.
+You can get around this by increasing the <SPAN
+CLASS="OPTION"
+>MaxBitmap</SPAN
+> parameter
+or by switching to a newer ghostscript version.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-dLeadingEdge=<TT
+CLASS="REPLACEABLE"
+><I
+>edge</I
+></TT
+></B
+></TT
+></DT
+><DD
+><P
+>This option can be used to specify which edge of the sheet will enter the
+printer first.
+The permitted values identify this edge by reference to
+the orientation of default user space on the sheet
+when printing with default settings (except for <SPAN
+CLASS="OPTION"
+>LeadingEdge</SPAN
+>)
+and a page size having width <= height
+("canonical page in portrait orientation"):
+
+<DIV
+CLASS="INFORMALTABLE"
+><P
+></P
+><TABLE
+BORDER="1"
+CLASS="CALSTABLE"
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>null</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>No request for media orientation</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>0</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>Short edge; top of canonical page</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>1</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>Long edge; right side of canonical page</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>2</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>Short edge; bottom of canonical page</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>3</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>Long edge; left side of canonical page</TD
+></TR
+></TABLE
+><P
+></P
+></DIV
+></P
+><P
+>As far as I know,
+given a particular PCL-3+ printer and a particular media size,
+you cannot choose between short edge first (0 or 2) and
+long edge first (1 or 3):
+this orientation is prescribed by the manufacturer and should be documented
+in your printer's manual.
+If in doubt, use short edge first when inserting the medium.</P
+><P
+>The default value for <TT
+CLASS="REPLACEABLE"
+><I
+>edge</I
+></TT
+> is
+<TT
+CLASS="USERINPUT"
+><B
+>null</B
+></TT
+>.
+This leads either to 0 or to 3,
+depending on whether the subdevice normally expects media of this size
+to be fed short edge first or long edge first.
+See the subsection
+<A
+HREF="gs-pcl3.html#SIZESANDORIENTATIONS"
+><I
+CLASS="CITETITLE"
+>Media Sizes and
+Orientations</I
+></A
+>
+in the <I
+CLASS="CITETITLE"
+>DESCRIPTION</I
+> section above for details.</P
+><P
+>If you find that you can't set this parameter from PostScript but you can set
+it from the command line,
+ghostscript's <TT
+CLASS="LITERAL"
+>setpagedevice</TT
+> definition probably does not
+pass the parameter to drivers.
+Read the <TT
+CLASS="FILENAME"
+>gs-mods.txt</TT
+> file in the <B
+CLASS="COMMAND"
+>pcl3</B
+>
+distribution on how to fix this.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-dManualFeed[<SPAN
+CLASS="OPTIONAL"
+>=<TT
+CLASS="REPLACEABLE"
+><I
+>boolean</I
+></TT
+></SPAN
+>]</B
+></TT
+></DT
+><DD
+><P
+>It is possible to request a DeskJet printer to wait before each page of a
+document until the Load/Eject button is pressed on the printer.
+This is intended for situations where some special medium is used or
+the medium has to be inserted into an input slot holding only one sheet at a
+time.
+The default setting for this option is <TT
+CLASS="USERINPUT"
+><B
+>false</B
+></TT
+>.</P
+><P
+>In PCL, manual feed is established by requesting a particular media source (2),
+hence you should expect that setting this parameter will interfere with the
+input tray selection via <TT
+CLASS="LITERAL"
+>InputAttributes</TT
+>
+(see the
+<A
+HREF="gs-pcl3.html#SOURCESANDDESTINATIONS"
+><I
+CLASS="CITETITLE"
+>Media Sources and Destinations</I
+></A
+>
+subsection in the <I
+CLASS="CITETITLE"
+>CONFIGURATION</I
+> section below).</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-sMediaConfigurationFile=<TT
+CLASS="REPLACEABLE"
+><I
+>pathname</I
+></TT
+></B
+></TT
+></DT
+><DD
+><P
+>This option must specify an existing file containing a list of
+supported media sizes, sheet orientations
+and corresponding margin descriptions for the printer.
+This will take precedence over the builtin subdevice-specific lists.
+The format of the file is described in the
+<A
+HREF="gs-pcl3.html#CONFIGURATION"
+><I
+CLASS="CITETITLE"
+>CONFIGURATION</I
+></A
+>
+section below.
+This option is primarily intended to be used with the subdevices
+<TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+> and <TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+>.</P
+><P
+>The default is not to use a media configuration file but the builtin lists.
+However,
+a media file path can also be specified at compile time overriding the default
+behaviour for <TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+> only.
+Using the
+<SPAN
+CLASS="OPTION"
+>MediaConfigurationFile</SPAN
+>
+option in addition will take precedence over the compiled-in media file path.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-dMediaPosition=<TT
+CLASS="REPLACEABLE"
+><I
+>position</I
+></TT
+></B
+></TT
+></DT
+><DD
+><P
+>This option sets the standard PostScript page device parameter
+<TT
+CLASS="LITERAL"
+>MediaPosition</TT
+> to the specified value.
+The integer <TT
+CLASS="REPLACEABLE"
+><I
+>position</I
+></TT
+> identifies an input tray for
+feeding media from and
+must refer to an existing entry in the <TT
+CLASS="LITERAL"
+>InputAttributes</TT
+>
+dictionary (see the
+<A
+HREF="gs-pcl3.html#SOURCESANDDESTINATIONS"
+><I
+CLASS="CITETITLE"
+>Media Sources and Destinations</I
+></A
+>
+subsection in the <I
+CLASS="CITETITLE"
+>CONFIGURATION</I
+> section below)
+in order to take effect.
+The media selection process will use this entry in preference to others
+provided it matches the media request.
+The default is not to request a particular tray by position but to look for
+a best match based on other properties.
+As ghostscript's default configuration defines only one entry in
+<TT
+CLASS="LITERAL"
+>InputAttributes</TT
+>
+this option is ineffective unless you modify <TT
+CLASS="LITERAL"
+>InputAttributes</TT
+>.</P
+><P
+>With current ghostscript versions	
+you can't use this parameter to select a
+negative <TT
+CLASS="REPLACEABLE"
+><I
+>position</I
+></TT
+>.
+The driver will issue a warning if you attempt it.
+If the entry is actually selected,
+a <TT
+CLASS="LITERAL"
+>rangecheck</TT
+> error from ghostscript will follow.
+This restriction applies only to this device parameter,
+not to permissible values for position numbers in
+<TT
+CLASS="LITERAL"
+>InputAttributes</TT
+>:
+if you want to use a negative <TT
+CLASS="REPLACEABLE"
+><I
+>position</I
+></TT
+>,
+you can do so by making sure that it is the only matching entry
+or by selecting it via <TT
+CLASS="LITERAL"
+>Priority</TT
+>.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-sMedium=<TT
+CLASS="REPLACEABLE"
+><I
+>medium</I
+></TT
+></B
+></TT
+></DT
+><DD
+><P
+>This option selects the type of medium you wish to print on
+as far as the printer needs to know about it.
+The possible choices are:
+
+<DIV
+CLASS="INFORMALTABLE"
+><P
+></P
+><TABLE
+BORDER="1"
+CLASS="CALSTABLE"
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>0</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>plain paper</B
+></TT
+></TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>1</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>bond paper</B
+></TT
+></TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>2</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>HP Premium paper</B
+></TT
+></TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>3</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>glossy paper</B
+></TT
+></TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>4</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>transparency film</B
+></TT
+></TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>5</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>quick dry glossy</B
+></TT
+></TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>6</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>quick dry transparency</B
+></TT
+></TD
+></TR
+></TABLE
+><P
+></P
+></DIV
+>
+
+The default is <TT
+CLASS="USERINPUT"
+><B
+>plain paper</B
+></TT
+>.
+For <TT
+CLASS="REPLACEABLE"
+><I
+>medium</I
+></TT
+>,
+you can specify the full strings (these are the standard values),
+the (in some cases) one-word strings resulting from dropping "paper", "film",
+and "HP",
+or an integer.
+Out-of-range numerical values generate a warning but are passed through to the
+printer if you are using a group-3 subdevice.
+If you don't,
+the effect is the same as specifying <TT
+CLASS="USERINPUT"
+><B
+>plain paper</B
+></TT
+>.
+The values 5 and 6 are unknown to most DeskJets;
+the only official exception I know of is the HP 2000C printer.
+Your printer's manual should tell you which kinds of medium are supported.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-dOnlyCRD[<SPAN
+CLASS="OPTIONAL"
+>=<TT
+CLASS="REPLACEABLE"
+><I
+>boolean</I
+></TT
+></SPAN
+>]</B
+></TT
+></DT
+><DD
+><P
+>This parameter influences the PCL code generated
+and should only be specified for group-3 DeskJets.
+The default value is <TT
+CLASS="USERINPUT"
+><B
+>false</B
+></TT
+> and leads to the new
+PCL command Configure Raster Data being used only when it is necessary.
+Specifying <TT
+CLASS="USERINPUT"
+><B
+>true</B
+></TT
+> leads to Configure Raster Data
+being used even in those cases where older commands would be sufficient.</P
+><P
+>There are indications that printers with a PCL dialect of
+"PCL Level 3 enhanced" need a value of <TT
+CLASS="USERINPUT"
+><B
+>true</B
+></TT
+> for this
+option to enable some of their functionality.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-sPageCountFile=<TT
+CLASS="REPLACEABLE"
+><I
+>pathname</I
+></TT
+></B
+></TT
+></DT
+><DD
+><P
+>The <TT
+CLASS="REPLACEABLE"
+><I
+>pathname</I
+></TT
+>
+must specify either a non-existent file in a directory with write permission
+or a writable file with a single line containing a non-negative integer.
+In the first case,
+<B
+CLASS="COMMAND"
+>pcl3</B
+>
+will create the file and insert the number of pages printed,
+in the second case the number will be incremented by that amount.
+Parallel invocations of
+<B
+CLASS="COMMAND"
+>gs</B
+>
+are permitted to use the same file.
+<B
+CLASS="COMMAND"
+>pcl3</B
+>
+will also make the initial page count available in its page device dictionary.</P
+><P
+>This option is mainly intended for spooler backends calling
+<B
+CLASS="COMMAND"
+>pcl3</B
+>.
+It can be used to keep track of the total number of pages printed and also for
+per-job accounting.
+I recommend using this option for the first purpose and to make a note of the
+values in the resulting files whenever you insert a new ink cartridge.
+This will enable you to get an indication of how much a printed page costs,
+and hence why it is a good idea to use <TT
+CLASS="USERINPUT"
+><B
+>draft</B
+></TT
+> quality
+whenever possible
+and why you should have bought a laser printer.</P
+><P
+>The driver can be compiled without this option present
+but on a UNIX system I would not expect this to be done unless
+<B
+CLASS="COMMAND"
+>gs</B
+>
+offers the same functionality in a driver-independent manner
+which it currently does not.</P
+><P
+><B
+CLASS="COMMAND"
+>pcl3</B
+>
+is distributed with example files <TT
+CLASS="FILENAME"
+>if-pcl3</TT
+> and
+<TT
+CLASS="FILENAME"
+>cups-pcl3</TT
+>
+of Berkeley and CUPS spooler backends using this option.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-sPCLInit1=<TT
+CLASS="REPLACEABLE"
+><I
+>string</I
+></TT
+></B
+></TT
+> and <TT
+CLASS="USERINPUT"
+><B
+>-sPCLInit2=<TT
+CLASS="REPLACEABLE"
+><I
+>string</I
+></TT
+></B
+></TT
+></DT
+><DD
+><P
+>These options can be used to insert additional PCL commands into
+<B
+CLASS="COMMAND"
+>pcl3</B
+>'s output.
+Strings given to <SPAN
+CLASS="OPTION"
+>PCLInit1</SPAN
+> will be sent immediately after the
+initial Printer Reset command,
+the value of <SPAN
+CLASS="OPTION"
+>PCLInit2</SPAN
+> will be emitted shortly before the
+raster data of the first page.
+The default is not to send any additional commands.</P
+><P
+>Don't use any of these options unless you understand PCL or someone who does
+tells you which value to choose under which circumstances.</P
+><P
+>Because not every possible <TT
+CLASS="REPLACEABLE"
+><I
+>string</I
+></TT
+> value can be
+passed from the command line,
+these parameters are best set from a PostScript file.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-sPJLJob=[<SPAN
+CLASS="OPTIONAL"
+><TT
+CLASS="REPLACEABLE"
+><I
+>jobname</I
+></TT
+></SPAN
+>]</B
+></TT
+></DT
+><DD
+><P
+>This option can be used to surround the generated file with
+Printer Job Language (PJL) commands declaring it to be a single print job
+called <TT
+CLASS="REPLACEABLE"
+><I
+>jobname</I
+></TT
+>.
+If you omit <TT
+CLASS="REPLACEABLE"
+><I
+>jobname</I
+></TT
+>, you create an unnamed job.
+The string <TT
+CLASS="REPLACEABLE"
+><I
+>jobname</I
+></TT
+> may not contain double quotes
+or control characters except HT
+(the forbidden byte codes are 0 to 8, 10 to 31, and 34).</P
+><P
+>Use this option if your printer understands PJL and
+you discover either that settings for one job influence the following job
+or that the printer does not recognize the end of the job (lights remain
+flashing or a control panel still displays a processing message).
+If you send the generated PCL file through a PJL filter,
+in particular one querying the printer's state,
+omit this option and use the filter for this purpose instead.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-sPJLLanguage=<TT
+CLASS="REPLACEABLE"
+><I
+>language</I
+></TT
+></B
+></TT
+></DT
+><DD
+><P
+>If a printer supports several command languages and PCL 3+ is not the
+default,
+the printer must be told to switch to PCL 3+ at the beginning of the
+print job.
+Hewlett-Packard's printers use a Printer Job Language (PJL) command
+for this purpose.
+Specifying this option will switch the printer to
+<TT
+CLASS="REPLACEABLE"
+><I
+>language</I
+></TT
+> for the duration of the job and back to the
+default at the end.</P
+><P
+>This option is not usually necessary except that there are indications that
+printers with a PCL dialect of "PCL Level 3 enhanced" need
+<TT
+CLASS="USERINPUT"
+><B
+>-sPJLLanguage=PCL3GUI</B
+></TT
+>
+to enable some of their functionality.</P
+><P
+>You should never use the option unless you have a reliable source for the values
+of <TT
+CLASS="REPLACEABLE"
+><I
+>language</I
+></TT
+> accepted by your printer,
+for example the output from <B
+CLASS="COMMAND"
+>pcl3opts</B
+> for a file generated
+by an official driver for the printer in question.
+Values I have seen so far are <TT
+CLASS="COMPUTEROUTPUT"
+>PCLSLEEK</TT
+> and
+<TT
+CLASS="COMPUTEROUTPUT"
+>PCL3GUI</TT
+>.</P
+><P
+>If you send the generated PCL file through a PJL filter,
+omit this option and use the filter for this purpose instead.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-sPrintQuality=<TT
+CLASS="REPLACEABLE"
+><I
+>quality</I
+></TT
+></B
+></TT
+></DT
+><DD
+><P
+>There are three print quality settings:
+
+<DIV
+CLASS="INFORMALTABLE"
+><P
+></P
+><TABLE
+BORDER="1"
+CLASS="CALSTABLE"
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>-1</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>draft</B
+></TT
+> or <TT
+CLASS="USERINPUT"
+><B
+>econo</B
+></TT
+></TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>0</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>normal</B
+></TT
+></TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>1</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>presentation</B
+></TT
+> or <TT
+CLASS="USERINPUT"
+><B
+>best</B
+></TT
+></TD
+></TR
+></TABLE
+><P
+></P
+></DIV
+>
+
+The default is <TT
+CLASS="USERINPUT"
+><B
+>normal</B
+></TT
+>.
+You may specify the strings or an integer.
+Out-of-range numerical values will generate a warning but are passed
+through to the printer if you have selected a group-3 subdevice.
+If you haven't,
+the effect is the same as specifying <TT
+CLASS="USERINPUT"
+><B
+>normal</B
+></TT
+>.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-dRasterGraphicsQuality=<TT
+CLASS="REPLACEABLE"
+><I
+>quality</I
+></TT
+></B
+></TT
+></DT
+><DD
+><P
+>This option is only available for old DeskJets
+(including <TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+>)
+and controls a trade-off between quality and print speed.
+The possible values for <TT
+CLASS="REPLACEABLE"
+><I
+>quality</I
+></TT
+> are:
+
+<DIV
+CLASS="INFORMALTABLE"
+><P
+></P
+><TABLE
+BORDER="1"
+CLASS="CALSTABLE"
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>0</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>Use current control panel setting</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>1</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>Draft</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>2</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>High</TD
+></TR
+></TABLE
+><P
+></P
+></DIV
+>
+
+Specifying this option overrides the default value derived from
+<SPAN
+CLASS="OPTION"
+>Medium</SPAN
+> and <SPAN
+CLASS="OPTION"
+>PrintQuality</SPAN
+>.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-dSendBlackLast[<SPAN
+CLASS="OPTIONAL"
+>=<TT
+CLASS="REPLACEABLE"
+><I
+>boolean</I
+></TT
+></SPAN
+>]</B
+></TT
+></DT
+><DD
+><P
+>When printing with four inks,
+a PCL-3+ printer expects the colour information for a row of pixels
+in the order black, cyan, magenta, and finally yellow (KCMY).</P
+><P
+>There exists at least one printer (Olivetti JP792) which claims to accept
+PCL 3+ 
+but expects the colour planes to arrive in the order CMYK.
+If you have a printer with this property, use this option.
+The default value is <TT
+CLASS="USERINPUT"
+><B
+>false</B
+></TT
+>.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-dSendNULs=<TT
+CLASS="REPLACEABLE"
+><I
+>number</I
+></TT
+></B
+></TT
+></DT
+><DD
+><P
+>Most HP drivers for newer DeskJet printers generate PCL files starting with a
+sequence of 600 NUL characters, at least one uses even 9600 NULs.
+I have seen no documentation of this feature
+but I assume that in PCL the NUL character demands a null operation, i.e.,
+does nothing.
+Just in case such a NUL sequence is useful under certain circumstances,
+this option can be used to request it.
+(It has been suggested that this is needed to get the printer to accept
+new PCL commands if the previous print job was aborted in the middle of a
+command.)
+The value <TT
+CLASS="REPLACEABLE"
+><I
+>number</I
+></TT
+> specifies the number of
+NUL characters to send and must not be negative.
+The default is zero.
+Note that initial NULs might confuse spooler backends which
+try to determine the file type from the first few bytes of the file contents.</P
+><P
+>There is no point in using this option if some other command
+in your print pipeline will add Printer Job Language (PJL) commands
+to the <B
+CLASS="COMMAND"
+>pcl3</B
+>-generated file.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-dShingling=<TT
+CLASS="REPLACEABLE"
+><I
+>shingling</I
+></TT
+></B
+></TT
+></DT
+><DD
+><P
+>This option is only available for group-2 DeskJets
+(including <TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+>)
+and controls the number of passes the print head makes over the medium.
+A higher number permits more neighbouring pixels
+to be printed in separate passes,
+thereby reducing the likelihood of the ink spreading into the next pixel.
+The possible values for <TT
+CLASS="REPLACEABLE"
+><I
+>shingling</I
+></TT
+> are:
+
+<DIV
+CLASS="INFORMALTABLE"
+><P
+></P
+><TABLE
+BORDER="1"
+CLASS="CALSTABLE"
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>0</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>No shingling</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>1</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>2 passes (50% each pass)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>2</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>4 passes (25% each pass)</TD
+></TR
+></TABLE
+><P
+></P
+></DIV
+>
+
+Specifying this option overrides the default value derived from
+<SPAN
+CLASS="OPTION"
+>Medium</SPAN
+> and <SPAN
+CLASS="OPTION"
+>PrintQuality</SPAN
+>.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-sSubdevice=<TT
+CLASS="REPLACEABLE"
+><I
+>subdevice</I
+></TT
+></B
+></TT
+></DT
+><DD
+><P
+>This option identifies the printer model for which the generated file is
+intended.
+The following names (mostly of Hewlett-Packard DeskJet printers)
+are accepted for <TT
+CLASS="REPLACEABLE"
+><I
+>subdevice</I
+></TT
+>:</P
+><BLOCKQUOTE
+><P
+><TT
+CLASS="USERINPUT"
+><B
+>hpdj</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdjplus</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdjportable</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj310</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj320</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj340</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj400</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj500</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj500c</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj510</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj520</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj540</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj550c</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj560c</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj600</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj660c</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj670c</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj680c</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj690c</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj850c</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj855c</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj870c</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj890c</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj1120c</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+>.</P
+></BLOCKQUOTE
+><P
+>The correspondence with the real printer name is, I hope, obvious.
+Note that <TT
+CLASS="USERINPUT"
+><B
+>hpdj</B
+></TT
+> does not select the
+<B
+CLASS="COMMAND"
+>hpdj</B
+> driver (this driver's predecessor)
+but configures the <B
+CLASS="COMMAND"
+>pcl3</B
+> driver
+for the "classical" HP DeskJet.</P
+><P
+>With the exception of <TT
+CLASS="USERINPUT"
+><B
+>hpdj</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+> and <TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+>,
+your <B
+CLASS="COMMAND"
+>gs</B
+> binary might support the subdevice names also
+as device names,
+i.e., instead of specifying
+<TT
+CLASS="USERINPUT"
+><B
+>-sDEVICE=pcl3
+-sSubdevice=<TT
+CLASS="REPLACEABLE"
+><I
+>subdevice</I
+></TT
+></B
+></TT
+>
+you might be able to write
+<TT
+CLASS="USERINPUT"
+><B
+>-sDEVICE=<TT
+CLASS="REPLACEABLE"
+><I
+>subdevice</I
+></TT
+></B
+></TT
+>.
+Check ghostscript's list of available devices to find out whether this is the
+case (<TT
+CLASS="USERINPUT"
+><B
+>gs -h</B
+></TT
+>).</P
+><P
+>The choice of subdevice primarily determines which resolutions, colour models,
+intensity levels and media sizes the driver will accept,
+where the output will appear on the page,
+and to some extent what PCL code the driver will generate.
+Several of the subdevices are treated identically.</P
+><P
+>The default subdevice is <TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+>.
+It is intended for new PCL-3+ printers not explicitly supported by this driver.
+For <TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+>,
+all subdevice-specific checks (e.g., supported resolutions)
+are turned off.
+Supported media sizes and margin settings are assumed to be identical with
+those for the DeskJets 850C/855C/870C/890C,
+but you can and should use the <SPAN
+CLASS="OPTION"
+>MediaConfigurationFile</SPAN
+>
+option or its compile-time equivalent to override this.
+The PCL code generated assumes a new DeskJet in the sense that it should be
+at least of the level of a DeskJet 540 supporting the PCL commands Media Type
+and Print Quality.
+If you specify unequal horizontal and vertical resolutions or
+more than two levels of intensity per colorant and pixel,
+the printer must in addition understand the Configure Raster Data command.</P
+><P
+>The subdevice <TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+> is similar but behaves like
+a DeskJet 560C.
+It supports all colour models and all uniform resolutions
+(the horizontal resolution is equal to the vertical resolution).</P
+><P
+>If you choose to use <TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+> or
+<TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+>
+it is your responsibility to ensure that <B
+CLASS="COMMAND"
+>pcl3</B
+>
+is only called with parameter values the printer can handle.
+This applies in particular to the resolution and the intensity levels.</P
+><P
+>If you set this parameter from a PostScript document you must know that
+doing this re-initializes most of the <B
+CLASS="COMMAND"
+>pcl3</B
+> parameters
+to their default values.
+If you set several page device parameters in a single
+<TT
+CLASS="LITERAL"
+>setpagedevice</TT
+> call
+the <SPAN
+CLASS="OPTION"
+>Subdevice</SPAN
+> option will be treated first.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-dTumble[<SPAN
+CLASS="OPTIONAL"
+>=<TT
+CLASS="REPLACEABLE"
+><I
+>boolean</I
+></TT
+></SPAN
+>]</B
+></TT
+></DT
+><DD
+><P
+>When duplex printing is requested (<TT
+CLASS="USERINPUT"
+><B
+>-dDuplex</B
+></TT
+>),
+this parameter specifies whether the y axes of PostScript's default user space
+on the two sides of the sheet (assumed to use the same page size) point to the
+same edge or to opposite edges.
+The default value <TT
+CLASS="USERINPUT"
+><B
+>false</B
+></TT
+> indicates the same edge and
+is usually suitable for binding on the left while
+<TT
+CLASS="USERINPUT"
+><B
+>true</B
+></TT
+> indicates opposite edges and should be used for
+binding at the top.</P
+><P
+>You should note that the interpretation of <SPAN
+CLASS="OPTION"
+>Tumble</SPAN
+> refers to
+default user space:
+if a PostScript program has rotated the user space coordinate system
+the association between the page's apparent "up" direction and the binding edge
+will usually not be the one desired.
+You should watch for this in particular when creating output
+in landscape orientation from an application still generating
+PostScript Level 1 code.
+If a ghostscript screen driver like <B
+CLASS="COMMAND"
+>x11</B
+> displays the pages
+with the right side up you should have nothing to worry about,
+even in the case of landscape orientation.
+(You must call <B
+CLASS="COMMAND"
+>gs</B
+> directly for this test,
+not via <B
+CLASS="COMMAND"
+>ghostview</B
+>.)
+If the orientation between the two sides turns out to be wrong,
+you will have to print again with the opposite value for
+<SPAN
+CLASS="OPTION"
+>Tumble</SPAN
+>.
+If that does not help and you have a printer supporting only one of the two
+possible duplex orientations,
+check the relative order of <TT
+CLASS="LITERAL"
+>restore</TT
+> and
+<TT
+CLASS="LITERAL"
+>showpage</TT
+> in the document you printed
+(see the <SPAN
+CLASS="OPTION"
+>DuplexCapability</SPAN
+> option above).</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>-dUseCard[<SPAN
+CLASS="OPTIONAL"
+>=<TT
+CLASS="REPLACEABLE"
+><I
+>value</I
+></TT
+></SPAN
+>]</B
+></TT
+></DT
+><DD
+><P
+>This option should only be given when printing on A6 and with a printer like the
+HP DeskJet 1120C which distinguishes between A6 sheets and A6 postcards.
+The option can be used to specifically request one of the alternatives.
+The default <TT
+CLASS="REPLACEABLE"
+><I
+>value</I
+></TT
+> is <TT
+CLASS="USERINPUT"
+><B
+>null</B
+></TT
+>
+and means that sheets are preferred to postcards,
+but either is acceptable if supported.
+The other permitted values are
+<TT
+CLASS="USERINPUT"
+><B
+>true</B
+></TT
+> and <TT
+CLASS="USERINPUT"
+><B
+>false</B
+></TT
+>.</P
+><P
+>This option applies to all page sizes set while ghostscript
+executes and this includes the default size set at startup.
+If you wish to use <TT
+CLASS="USERINPUT"
+><B
+>-dUseCard=true</B
+></TT
+> you will
+therefore usually have to specify the <SPAN
+CLASS="OPTION"
+>PAPERSIZE</SPAN
+> option in the
+call,
+otherwise an error will occur because there is no postcard variant for the
+usual default sizes (ISO A4 and US Letter).</P
+></DD
+></DL
+></DIV
+><DIV
+CLASS="REFSECT2"
+><H3
+>Option Combinations for Hardware Parameters</H3
+><P
+>Not all combinations of colour model, resolution, number of intensity levels,
+print quality and media type are accepted or make sense.
+Unfortunately, Hewlett-Packard does not publicly release sufficient information
+to find the best possible combinations.
+A good way to find reasonable settings is to use <B
+CLASS="COMMAND"
+>pcl3opts</B
+>
+on files generated by an official driver for the printer.
+You should also check the file <TT
+CLASS="FILENAME"
+>reports.txt</TT
+> in the
+<B
+CLASS="COMMAND"
+>pcl3</B
+> distribution.
+In addition, I'll provide some remarks here.</P
+><P
+>As a general rule,
+it is unprofitable to use a finer resolution than 300 ppi or more than
+2 intensity levels for draft quality.
+A coarser resolution in particular can reduce the time needed to generate
+and transmit the file to the printer.
+Combined with draft quality this leads to what HP calls an "EconoFast" mode.</P
+><P
+>As an exception, here are recommendations based on official HP documentation
+for the DeskJet 1120C.
+The table lists the resolution and the number of black or black and CMY levels
+if not 2.
+<BLOCKQUOTE
+><DIV
+CLASS="INFORMALTABLE"
+><P
+></P
+><TABLE
+BORDER="1"
+CLASS="CALSTABLE"
+><TR
+><TH
+ALIGN="LEFT"
+VALIGN="TOP"
+>Quality</TH
+><TH
+ALIGN="LEFT"
+VALIGN="TOP"
+>Gray</TH
+><TH
+ALIGN="LEFT"
+VALIGN="TOP"
+>CMYK</TH
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>draft</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>300 ppi</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>300 ppi</TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>normal</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>300 ppi, 4 levels</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>300 ppi, (4,3) levels</TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>presentation</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>600 ppi</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>300 ppi, (4,4) levels</TD
+></TR
+></TABLE
+><P
+></P
+></DIV
+></BLOCKQUOTE
+>
+
+These seem reasonable values for the supported series-800 DeskJets as well.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><H3
+>Checking Page Device Parameters</H3
+><P
+>As for all ghostscript drivers,
+<B
+CLASS="COMMAND"
+>pcl3</B
+>'s command line options correspond to identically-named
+PostScript page device parameters
+and are accessible in the usual way.
+In particular,
+it is possible to read the value of a parameter
+by letting <B
+CLASS="COMMAND"
+>gs</B
+> execute a command like
+<BLOCKQUOTE
+><PRE
+CLASS="PROGRAMLISTING"
+>currentpagedevice /<TT
+CLASS="REPLACEABLE"
+><I
+>parameter</I
+></TT
+> get ==</PRE
+></BLOCKQUOTE
+>
+where <TT
+CLASS="REPLACEABLE"
+><I
+>parameter</I
+></TT
+> is the name of the parameter one
+would like to inspect,
+for example <TT
+CLASS="USERINPUT"
+><B
+>BlackLevels</B
+></TT
+>.
+This is useful if you are in doubt whether the driver has accepted your options.
+Of course, for printer-visible parameters you can also use
+<B
+CLASS="COMMAND"
+>pcl3opts</B
+> on the output file.</P
+><P
+>The ghostscript distribution contains a program <TT
+CLASS="FILENAME"
+>uninfo.ps</TT
+>
+which displays the page device dictionary on standard output
+but does not resolve nested dictionaries.
+The <B
+CLASS="COMMAND"
+>pcl3</B
+> distribution contains a similar program
+<TT
+CLASS="FILENAME"
+>dumppdd.ps</TT
+> which does not have this limitation.</P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A NAME="CONFIGURATION"
+><H2
+>CONFIGURATION</H2
+></A
+><DIV
+CLASS="REFSECT2"
+><H3
+>Media Configuration File</H3
+><P
+>A <I
+CLASS="FIRSTTERM"
+>media configuration file</I
+>
+(<I
+CLASS="FIRSTTERM"
+>media file</I
+> for short) can be used to override the
+builtin subdevice-specific lists of supported media sizes
+and, for each size, the sheet orientation in the input tray
+and the margins enforced by the printer.
+This feature is mainly intended to be used in conjunction with
+<TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+> and <TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+>:
+if you have a model not directly supported by this driver, look up the
+supported media sizes,
+the rules for inserting media
+and the corresponding printable regions in your printer's
+manual and enter them in a media file.</P
+><TABLE
+CLASS="CAUTION"
+BORDER="1"
+WIDTH="100%"
+><TR
+><TD
+ALIGN="CENTER"
+><B
+>CAUTION</B
+></TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+><P
+>Entering a media size in the file which is not really supported by your
+printer is not useful:
+the PCL interpreter will simply ignore the request to set this size,
+and printer and driver may have diverging opinions about what the margins
+will be.
+If you need to print on a medium of a size not supported by your printer,
+choose a larger and printer-supported size in PostScript or via
+<SPAN
+CLASS="OPTION"
+>FIXEDMEDIA</SPAN
+>,
+shift the image if necessary,
+establish properly-positioned clipping regions within the real size, and print.
+Or you could use a suitable page size recovery policy for PostScript's
+media selection process.
+However, if you have a newer DeskJet supporting custom page sizes,
+all this is not necessary.</P
+></TD
+></TR
+></TABLE
+><P
+>Margin specifications are important for two reasons:
+the values for the left and top margins determine how the output is positioned
+on the page,
+and sufficiently large values for the right and bottom margins prevent the
+print head being caught at the paper's edge and printing beyond the sheet,
+respectively.
+Because DeskJet printers usually have an inconveniently large bottom margin
+(usually 0.4-0.8 inches or 10-20 mm),
+one might be tempted to specify smaller values than listed in the
+printer's manual.
+However, one user reported that this led to the printer depositing a large wet
+blob of black ink at the bottom of the page.</P
+><P
+>A line in the media file can be blank, a comment line (first non-blank
+character is '<TT
+CLASS="USERINPUT"
+><B
+>#</B
+></TT
+>'), or one of the following:</P
+><BLOCKQUOTE
+><DIV
+CLASS="INFORMALTABLE"
+><P
+></P
+><TABLE
+BORDER="0"
+CLASS="CALSTABLE"
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>unit</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="REPLACEABLE"
+><I
+>unit</I
+></TT
+></TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="REPLACEABLE"
+><I
+>size</I
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="REPLACEABLE"
+><I
+>left</I
+></TT
+> <TT
+CLASS="REPLACEABLE"
+><I
+>bottom</I
+></TT
+>  <TT
+CLASS="REPLACEABLE"
+><I
+>right</I
+></TT
+> <TT
+CLASS="REPLACEABLE"
+><I
+>top</I
+></TT
+></TD
+></TR
+></TABLE
+><P
+></P
+></DIV
+></BLOCKQUOTE
+><P
+>A <TT
+CLASS="USERINPUT"
+><B
+>unit</B
+></TT
+> line specifies in which units
+margin specifications in the following lines should be interpreted.
+<TT
+CLASS="REPLACEABLE"
+><I
+>unit</I
+></TT
+>
+can either be <TT
+CLASS="USERINPUT"
+><B
+>in</B
+></TT
+> (inch) or
+<TT
+CLASS="USERINPUT"
+><B
+>mm</B
+></TT
+> (millimetre)
+with <TT
+CLASS="USERINPUT"
+><B
+>in</B
+></TT
+> being the default.
+A unit specification remains in force until overridden by a following
+<TT
+CLASS="USERINPUT"
+><B
+>unit</B
+></TT
+> line.</P
+><P
+>The second kind of line states that the model supports a particular
+media configuration and specifies the hardware margins in force for that case.
+The <TT
+CLASS="REPLACEABLE"
+><I
+>size</I
+></TT
+> word consists of two parts:
+a keyword denoting the extension and an optional suffix.
+The following keywords are accepted
+(entries marked with an asterisk (*) are those used by the subdevice
+<TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+>
+if no media file is employed;
+entries with a section/paragraph sign (§) similarly identify the sizes
+used by <TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+>):
+
+<DIV
+CLASS="INFORMALTABLE"
+><P
+></P
+><TABLE
+BORDER="1"
+CLASS="CALSTABLE"
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>Index3x5in</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>US index card 3 × 5 in</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>EnvChou4</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>Japanese long envelope #4 (90 × 205 mm)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>EnvMonarch</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>US Monarch envelope (3.875 × 7.5 in)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>*<TT
+CLASS="USERINPUT"
+><B
+>Postcard</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>Japanese Hagaki card (100 × 148 mm)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>*<TT
+CLASS="USERINPUT"
+><B
+>Index4x6in</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>US index card 4 × 6 in</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>§*<TT
+CLASS="USERINPUT"
+><B
+>Env10</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>US no. 10 envelope (4.125 × 9.5 in)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>A6</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>ISO/JIS A6 (105 × 148 mm)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>*<TT
+CLASS="USERINPUT"
+><B
+>A6Card</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>ISO/JIS A6 postcard (105 × 148 mm)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>§*<TT
+CLASS="USERINPUT"
+><B
+>EnvDL</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>ISO DL envelope (110 × 220 mm)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>EnvUS_A2</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>US A2 envelope (4.375 × 5.75 in)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>*<TT
+CLASS="USERINPUT"
+><B
+>EnvC6</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>ISO C6 envelope (114 × 162 mm)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>EnvChou3</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>Japanese long envelope #3 (120 × 235 mm)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>*<TT
+CLASS="USERINPUT"
+><B
+>Index5x8in</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>US index card 5 × 8 in</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>Statement</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>US Statement (5.5 × 8.5 in)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>DoublePostcard</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>double Postcard (148 × 200 mm)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>*<TT
+CLASS="USERINPUT"
+><B
+>A5</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>ISO/JIS A5 (148 × 210 mm)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>EnvC5</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>ISO C5 envelope (162 × 229 mm)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>ISOB5</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>ISO B5 (176 × 250 mm)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>*<TT
+CLASS="USERINPUT"
+><B
+>JISB5</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>JIS B5 (182 × 257 mm)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>§*<TT
+CLASS="USERINPUT"
+><B
+>Executive</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>US Executive (7.25 × 10.5 in)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>§*<TT
+CLASS="USERINPUT"
+><B
+>A4</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>ISO/JIS A4 (210 × 297 mm)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>§*<TT
+CLASS="USERINPUT"
+><B
+>Letter</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>US Letter (8.5 × 11 in)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>§*<TT
+CLASS="USERINPUT"
+><B
+>Legal</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>US Legal (8.5 × 14 in)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>EnvKaku2</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>Japanese Kaku envelope (240 × 332 mm)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>JISB4</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>JIS B4 (257 × 364 mm).
+This is distinct from ISO B4 (250 × 353 mm).</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>Tabloid</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>US Tabloid (11 × 17 in; in landscape orientation also called "Ledger")</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>A3</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>ISO/JIS A3 (297 × 420 mm)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+><TT
+CLASS="USERINPUT"
+><B
+>HPSuperB</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>what HP calls Super B (13 × 19 in)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>*<TT
+CLASS="USERINPUT"
+><B
+>CustomPageSize</B
+></TT
+></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>custom page size</TD
+></TR
+></TABLE
+><P
+></P
+></DIV
+>
+
+Note the difference between <TT
+CLASS="USERINPUT"
+><B
+>A6</B
+></TT
+> (sheet) and
+<TT
+CLASS="USERINPUT"
+><B
+>A6Card</B
+></TT
+> (postcard).
+I do not know why Hewlett-Packard associates this distinction with media size
+instead of media type.
+However, with the exception of the 1120C all DeskJet printers I know of
+use only <TT
+CLASS="USERINPUT"
+><B
+>A6Card</B
+></TT
+> anyway.</P
+><P
+>In looking at your printer's documentation, bear in mind that a driver might
+support more sizes than the printer accepts;
+<B
+CLASS="COMMAND"
+>pcl3</B
+> needs to be given the latter values.
+If you are in doubt what your printer understands,
+<B
+CLASS="COMMAND"
+>pcl3opts</B
+> can tell you which media size another driver
+requests.</P
+><P
+>Custom page sizes are not understood by older printers
+and may be used in a media file only for the subdevices
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj540</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj6<TT
+CLASS="REPLACEABLE"
+><I
+>nn</I
+></TT
+>[<SPAN
+CLASS="OPTIONAL"
+>c</SPAN
+>]</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj8<TT
+CLASS="REPLACEABLE"
+><I
+>nn</I
+></TT
+>c</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj1120c</B
+></TT
+>,
+and <TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+> (group 3).
+In these cases you can print, within certain limits, on arbitrarily-sized media.
+The driver knows these limits and refuses to generate a file if you exceed them.
+For <TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+>, there are no limits.
+<B
+CLASS="COMMAND"
+>pcl3</B
+>
+will tell the printer to expect a custom page size
+only if there is no fitting discrete entry.</P
+><P
+>Although it is possible, on those printers which support it,
+to use a media configuration file containing only a custom page size entry,
+I advise against it
+because this size specification is only intended as a last resort.
+If you have a custom page size entry in the media file,
+you should therefore list <I
+CLASS="EMPHASIS"
+>all</I
+> discrete sizes supported by
+your printer or at least those which you expect to use.</P
+><P
+>The size keyword in the <TT
+CLASS="REPLACEABLE"
+><I
+>size</I
+></TT
+> field can be extended
+by the following strings:
+<P
+></P
+><DL
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>Big</B
+></TT
+></DT
+><DD
+><P
+>For <B
+CLASS="COMMAND"
+>pcl3</B
+>, this suffix means banner printing.
+In these cases the top and bottom margins are usually zero.
+HP DeskJets supporting banner printing do so only for ISO A4 and US Letter.
+Your media file should then contain entries for the
+<TT
+CLASS="REPLACEABLE"
+><I
+>sizes</I
+></TT
+>
+<TT
+CLASS="USERINPUT"
+><B
+>A4</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>A4Big</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>Letter</B
+></TT
+>, and
+<TT
+CLASS="USERINPUT"
+><B
+>LetterBig</B
+></TT
+>.</P
+></DD
+><DT
+><TT
+CLASS="USERINPUT"
+><B
+>.Transverse</B
+></TT
+></DT
+><DD
+><P
+>By default,
+<B
+CLASS="COMMAND"
+>pcl3</B
+> assumes that the media listed are fed short edge first.
+If you specify this qualifier,
+the driver will assume that you are going to feed media of this size
+long edge first.
+If, for example,
+your printer's manual states that envelopes of size ISO DL should be fed
+long edge first,
+the corresponding <TT
+CLASS="REPLACEABLE"
+><I
+>size</I
+></TT
+> field in your media file
+should contain the string <TT
+CLASS="USERINPUT"
+><B
+>EnvDL.Transverse</B
+></TT
+>,
+not <TT
+CLASS="USERINPUT"
+><B
+>EnvDL</B
+></TT
+>.</P
+><P
+>This specification (or its absence) can be overridden with the option
+<SPAN
+CLASS="OPTION"
+>LeadingEdge</SPAN
+> in the call.</P
+></DD
+></DL
+>
+
+The builtin lists for the <TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+> and
+<TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+> devices do not contain size entries with any
+of these suffixes.</P
+><P
+>Every media file must contain at least an entry which fits ghostscript's
+default page size,
+usually ISO A4 or US Letter.
+Only those sizes which are listed will be accepted by <B
+CLASS="COMMAND"
+>pcl3</B
+>.
+This is independent of a <TT
+CLASS="USERINPUT"
+><B
+>.Transverse</B
+></TT
+> suffix.
+If there are several entries in the media file with the same
+<TT
+CLASS="REPLACEABLE"
+><I
+>size</I
+></TT
+> value,
+only the first is used.</P
+><P
+>The margins in a size entry should be valid for monochrome printing in
+raster graphics mode.
+If a non-monochrome colour model is selected and unless the bottom margin is
+exactly zero,
+it will be increased by a subdevice-specific amount.
+This increment is zero for <TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+> and
+<TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+>.</P
+><P
+>The orientation of the margins refers to the feeding direction:
+you should imagine holding the sheet such that the leading edge is at the top
+and the side to be printed on is towards you.
+Be careful with envelopes:
+older (pre-1997) HP documentation usually gives the margins in landscape
+orientation
+even for those printers where the envelope has to be fed short edge first.
+You can check this by looking for the largest margin value:
+if it is on the left instead of at the bottom you almost certainly have such a
+landscape-based specification;
+rotate the values by +90 degrees (quarter-circle counterclockwise) in these
+cases.
+The margins have to be specified as non-negative floating point numbers
+in inches or millimetres
+as announced by the last preceding <TT
+CLASS="USERINPUT"
+><B
+>unit</B
+></TT
+> line.
+The floating point format is that of the "C" locale.</P
+><P
+><B
+CLASS="COMMAND"
+>pcl3</B
+>
+is distributed with an example of a media configuration file,
+<TT
+CLASS="FILENAME"
+>example.mcf</TT
+>.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><H3
+>PostScript Configuration Files</H3
+><P
+>Sometimes it is desirable to execute additional PostScript commands for a
+particular file or possibly all files sent to a particular printer or print
+queue.
+With ghostscript this is easily possible because <B
+CLASS="COMMAND"
+>gs</B
+>
+accepts several file names in the invocation and processes them sequentially.
+This is particularly appropriate for those PostScript operators which affect
+device-specific features and should therefore not appear in a portable page
+description
+and for settings which would be part
+of the interpreter's persistent state when using a real PostScript printer.</P
+><P
+>The <B
+CLASS="COMMAND"
+>pcl3</B
+> distribution contains examples of filters
+<TT
+CLASS="FILENAME"
+>if-pcl3</TT
+> for the Berkeley spooler
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>lpr</SPAN
+>(1)</SPAN
+>
+and <TT
+CLASS="FILENAME"
+>cups-pcl3</TT
+> for the Common UNIX Printing System
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>cupsd</SPAN
+>(8)</SPAN
+>.
+These filters permit the use of a print-queue-specific configuration file.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A NAME="SOURCESANDDESTINATIONS"
+><H3
+>Media Sources and Destinations</H3
+></A
+><P
+>PostScript has a builtin mechanism for selecting media sources and destinations
+based on certain properties of the document.
+This usually requires a system administrator to set the
+<TT
+CLASS="LITERAL"
+>InputAttributes</TT
+> and <TT
+CLASS="LITERAL"
+>OutputAttributes</TT
+> 
+dictionaries in the device's page device dictionary according to the current
+state of the printer and its intended use.
+For example, if there are two input trays,
+one currently holding paper and the other transparencies,
+the administrator could configure the <TT
+CLASS="LITERAL"
+>InputAttributes</TT
+>
+dictionary such that print jobs requesting transparencies in a certain manner
+automatically fetch media from the second tray
+and every job needing a size not currently available will terminate with
+an error message.
+Unfortunately, in order to work as expected this process usually also requires
+some additional action on the part of the entity generating the PostScript code
+to be printed.</P
+><P
+>If your printer is capable of sensing certain properties of media in the
+input tray (e.g., media size)
+or assumes a fixed association between media properties and input trays
+you must expect this functionality to interfere with the process referenced
+here.</P
+><P
+>In the attributes dictionaries,
+each tray is identified by an integer,
+its <I
+CLASS="FIRSTTERM"
+>position number</I
+>.
+When ghostscript successfully matches the document's requirements with trays
+the resulting position numbers are accessible to the driver.
+The <B
+CLASS="COMMAND"
+>pcl3</B
+> driver uses these numbers (except 0)
+directly as arguments
+for the PCL commands "Media Source" and "Media Destination", respectively.
+For the Media Source values (input trays), I know of the following meanings:
+
+<BLOCKQUOTE
+><DIV
+CLASS="INFORMALTABLE"
+><P
+></P
+><TABLE
+BORDER="1"
+CLASS="CALSTABLE"
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>-1</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>banner printing</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>1</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>default tray; portable CSF (DJ 340); tray 2 (HP 2500C)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>2</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>manual feed</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>3</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>envelope feed</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>4</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>desktop CSF (DJ 340); tray 3 (HP 2500C)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>5</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>tray 1 (HP 2500C)</TD
+></TR
+><TR
+><TD
+ALIGN="RIGHT"
+VALIGN="TOP"
+>7</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+>auto select (HP 2500C)</TD
+></TR
+></TABLE
+><P
+></P
+></DIV
+></BLOCKQUOTE
+>
+
+You'll have to experiment with your printer to find out which values are
+accepted and what their interpretation is.
+In general,
+you can only expect 1 and 2 to work.
+Unrecognized values should be simply ignored by the printer
+leading to the medium being fetched from the default tray.
+To shorten the search, use <B
+CLASS="COMMAND"
+>pcl3opts</B
+>
+if you can in order to find out which values other drivers generate.
+Don't bother testing the value 0:
+in PCL its effect is to eject a page and, as this is not needed,
+<B
+CLASS="COMMAND"
+>pcl3</B
+> uses it to mean that no particular tray should be
+selected.</P
+><P
+>I do not know of any PCL-3+ printer supporting more than one output tray,
+hence the corresponding implementation is based on the speculation that such
+a feature, if made available,
+would use the same command as in PCL 5.
+Again, a value of zero is used by <B
+CLASS="COMMAND"
+>pcl3</B
+> to mean
+"don't select a particular tray".</P
+><P
+>Ghostscript's default configuration defines
+<TT
+CLASS="LITERAL"
+>InputAttributes</TT
+> and
+<TT
+CLASS="LITERAL"
+>OutputAttributes</TT
+> dictionaries with one entry each,
+having position number 0 in both cases,
+and maps all requests to these positions.
+As explained above, this configuration will lead to <B
+CLASS="COMMAND"
+>pcl3</B
+>
+not requesting any particular input or output tray.
+If you wish to modify this you should consult a PostScript manual,
+for example the sections 6.2.1 and 6.2.4 in the
+<I
+CLASS="CITETITLE"
+>PostScript Language Reference</I
+>. 
+However, I'll present here three examples without explanation.
+In all cases, the PostScript code shown should be executed before the
+document to be printed.</P
+><P
+>The first example is intended for situations where you always wish to select
+a specific input tray:
+<BLOCKQUOTE
+><PRE
+CLASS="PROGRAMLISTING"
+>&#60;&#60;
+  /InputAttributes &#60;&#60;
+    0 null	
+    <TT
+CLASS="REPLACEABLE"
+><I
+>input</I
+></TT
+> &#60;&#60; /PageSize [6 6 524287 524287] &#62;&#62;
+  &#62;&#62;
+&#62;&#62; setpagedevice</PRE
+></BLOCKQUOTE
+>
+Replace <TT
+CLASS="REPLACEABLE"
+><I
+>input</I
+></TT
+> with the number of the tray
+you wish to use.
+The second example does the same for the output tray:
+<BLOCKQUOTE
+><PRE
+CLASS="PROGRAMLISTING"
+>&#60;&#60;
+  /OutputAttributes &#60;&#60;
+    0 null
+    <TT
+CLASS="REPLACEABLE"
+><I
+>output</I
+></TT
+> &#60;&#60; &#62;&#62;
+  &#62;&#62;
+&#62;&#62; setpagedevice</PRE
+></BLOCKQUOTE
+>
+Replace <TT
+CLASS="REPLACEABLE"
+><I
+>output</I
+></TT
+> with the number of the tray
+you wish to use.</P
+><P
+>For the final example assume that you have one input tray,
+filled with media of a certain default size,
+and you wish all print jobs requesting another size to automatically switch
+to manual feed so you can insert these special sheets at leisure.
+In that case,
+let <B
+CLASS="COMMAND"
+>gs</B
+> execute the following PostScript code:</P
+><BLOCKQUOTE
+><PRE
+CLASS="PROGRAMLISTING"
+>&#60;&#60;
+  /InputAttributes &#60;&#60;
+    0 &#60;&#60; /PageSize [<TT
+CLASS="REPLACEABLE"
+><I
+>width</I
+></TT
+> <TT
+CLASS="REPLACEABLE"
+><I
+>height</I
+></TT
+>] &#62;&#62;
+    2 &#60;&#60; /PageSize [6 6 524287 524287] &#62;&#62; 
+    /Priority [0 2]
+  &#62;&#62;
+&#62;&#62; setpagedevice</PRE
+></BLOCKQUOTE
+><P
+>For <TT
+CLASS="REPLACEABLE"
+><I
+>width</I
+></TT
+> and <TT
+CLASS="REPLACEABLE"
+><I
+>height</I
+></TT
+> you
+must insert the actual dimensions of your default size
+in units of 1 bp ("big point", 1/72 inch, roughly 0.35 mm);
+the tolerance is 5 bp.
+In contrast to a document's page size,
+the orientation is irrelevant here.</P
+><P
+>If you drop the second entry and the <TT
+CLASS="USERINPUT"
+><B
+>Priority</B
+></TT
+> line
+in the last example
+you obtain a configuration where ghostscript will refuse to print any document
+not requesting the specified media size.
+If you retain the two lines and you are using the
+<TT
+CLASS="USERINPUT"
+><B
+>unspecold</B
+></TT
+> or <TT
+CLASS="USERINPUT"
+><B
+>unspec</B
+></TT
+> devices
+it is advisable to insert your printer's actual size bounds instead of those
+given above.
+This will protect you against printing on some sizes
+not supported by your printer.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><H3
+>Banner Printing</H3
+><P
+>Some printers support printing on continuous forms,
+also called banners or z-fold media.
+Your printer's manual should tell you whether this is supported and in
+particular how to load these media.</P
+><P
+>In order to print on continuous media with <B
+CLASS="COMMAND"
+>pcl3</B
+>,
+configure it as follows:
+<P
+></P
+><UL
+><LI
+><P
+>Make sure that input position number -1 will be selected
+(see the subsection
+<A
+HREF="gs-pcl3.html#SOURCESANDDESTINATIONS"
+><I
+CLASS="CITETITLE"
+>Media Sources And Destinations</I
+></A
+>
+above).</P
+></LI
+><LI
+><P
+>In the call to <B
+CLASS="COMMAND"
+>gs</B
+>,
+select a subdevice supporting the intended "<TT
+CLASS="USERINPUT"
+><B
+>Big</B
+></TT
+>" size.
+By default,
+only the subdevices <TT
+CLASS="USERINPUT"
+><B
+>hpdj680c</B
+></TT
+>,
+<TT
+CLASS="USERINPUT"
+><B
+>hpdj690c</B
+></TT
+> and <TT
+CLASS="USERINPUT"
+><B
+>hpdj1120c</B
+></TT
+>
+support banner printing
+(<TT
+CLASS="USERINPUT"
+><B
+>A4Big</B
+></TT
+> and <TT
+CLASS="USERINPUT"
+><B
+>LetterBig</B
+></TT
+>).</P
+></LI
+></UL
+>
+Don't forget to prepare the printer as well.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><H3
+>Correcting Offsets</H3
+><P
+>A media configuration file is intended to adapt
+<B
+CLASS="COMMAND"
+>pcl3</B
+>
+to the difference in margin settings between printer models and should usually
+contain "official" information,
+preferably taken from the model's manual.</P
+><P
+>A different situation arises if a particular printer's output is not properly
+positioned on the page even if the margin information is correct for this
+model.
+PostScript defines two arrays in the page device dictionary for correcting such
+misadjustments,
+both containing two numbers describing a desired shift of the page image with
+respect to device space coordinate axes but in different units.
+The values in the `<TT
+CLASS="LITERAL"
+>Margins</TT
+>' array are interpreted with
+respect to a canonical default resolution,
+the newer `<TT
+CLASS="LITERAL"
+>PageOffset</TT
+>' array
+is taken to be in units of 1/72 inch ("big points", bp).
+For <B
+CLASS="COMMAND"
+>pcl3</B
+> the device coordinate system has an
+x axis pointing to the right and a y axis pointing downwards
+when looking at the sheet with the leading edge at the top and the side to be
+printed on towards you.
+The canonical default resolution is 300 ppi.</P
+><P
+>As an example, assume your printer shifts its output 1 mm to the right
+and 0.5 mm upwards.
+Now create a file containing either the PostScript code
+<BLOCKQUOTE
+><PRE
+CLASS="PROGRAMLISTING"
+>&#60;&#60; /Margins [-11.8 5.9] &#62;&#62; setpagedevice</PRE
+></BLOCKQUOTE
+>
+("shift 11.8 pixels to the left and 5.9 pixels down") or
+<BLOCKQUOTE
+><PRE
+CLASS="PROGRAMLISTING"
+>&#60;&#60; /PageOffset [-2.8 1.4] &#62;&#62; setpagedevice</PRE
+></BLOCKQUOTE
+>
+("shift 2.8 bp to the left and 1.4 bp down")
+and have it executed by ghostscript before the file to be printed.</P
+><P
+>The margin test files distributed with <B
+CLASS="COMMAND"
+>pcl3</B
+>
+can be used to determine the necessary correction.
+You should be aware that you have to expect fluctuations between individual
+print jobs,
+in particular in the horizontal direction.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A NAME="TRANSFERFUNCTIONS"
+><H3
+>Transfer Functions</H3
+></A
+><P
+>DeskJets usually produce prints which are too dark (too much ink on the page),
+most noticeably when using more than 2 intensity levels per colorant.
+In this case you should perform
+<I
+CLASS="FIRSTTERM"
+>gamma correction</I
+>
+by modifying what PostScript calls <I
+CLASS="FIRSTTERM"
+>transfer functions</I
+>.
+In the simplest case,
+create a file containing the PostScript command</P
+><BLOCKQUOTE
+><PRE
+CLASS="PROGRAMLISTING"
+>{<TT
+CLASS="REPLACEABLE"
+><I
+>number</I
+></TT
+> exp} settransfer</PRE
+></BLOCKQUOTE
+><P
+>where a good value for <TT
+CLASS="REPLACEABLE"
+><I
+>number</I
+></TT
+>
+is usually in the range 0.3-0.5,
+and specify this file in ghostscript's command line before the file you wish to
+print.
+Now the intensities of all colorants will be rescaled by exponentiation
+with <TT
+CLASS="REPLACEABLE"
+><I
+>number</I
+></TT
+>.
+Because PostScript intensity values are in the range zero to one
+with zero meaning dark and one meaning light (additive interpretation),
+a value of <TT
+CLASS="REPLACEABLE"
+><I
+>number</I
+></TT
+> &#60; 1
+will lead to lighter colours and
+<TT
+CLASS="REPLACEABLE"
+><I
+>number</I
+></TT
+> &#62; 1 results in darker colours.</P
+><P
+>The best value for <TT
+CLASS="REPLACEABLE"
+><I
+>number</I
+></TT
+> depends on the
+print quality,
+the number of intensity levels,
+the method chosen for intensity rendering,
+the kind of medium you print on,
+and the properties of the document to be printed.</P
+><P
+>Note that there is no common convention for the interpretation of
+stand-alone gamma values.
+When dealing with other software you might for example find that the boundary
+between light and dark is at a value of 1000 and
+that lighter colours are obtained with larger values.
+In order to understand what a "gamma value" means
+you therefore need the complete specification of the transfer function and,
+if the value does not refer to PostScript,
+also information on the interpretation of intensity values.</P
+><P
+>You can also set independent transfer functions for the four colorants
+by using the operator <TT
+CLASS="LITERAL"
+>setcolortransfer</TT
+>
+which expects four routines as arguments.
+Consult a PostScript manual if you want to learn more about transfer functions.</P
+><P
+>If you are using <TT
+CLASS="USERINPUT"
+><B
+>-sIntensityRendering=halftones</B
+></TT
+>,
+less than 32 intensity levels per colorant,
+a resolution below 800 ppi,
+and unless you explicitly set transfer functions,
+<B
+CLASS="COMMAND"
+>gs</B
+> applies a default gamma correction roughly corresponding
+to a value of 0.8 for <TT
+CLASS="REPLACEABLE"
+><I
+>number</I
+></TT
+>.</P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><H2
+>LIMITATIONS</H2
+><DIV
+CLASS="REFSECT2"
+><H3
+>Ghostscript Version</H3
+><P
+>This manual page contains statements relying on undocumented properties of
+ghostscript.
+These statements are to my best knowledge and belief correct for current
+ghostscript versions
+but I do not check all these statements for every new version.</P
+><P
+>If you are in doubt about a particular point, please check it yourself.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><H3
+>Reliability</H3
+><P
+>Hewlett-Packard does not publicly provide sufficiently detailed or accurate
+technical information to write a reliable driver for all of its PCL-3+ printers.
+The amount and quality of available information differs between printer models.
+As a consequence,
+<B
+CLASS="COMMAND"
+>pcl3</B
+> cannot provide the same level of reliability for all
+of its devices.</P
+><P
+>In my opinion the best-documented printers are those of the DeskJet-500 series.
+In addition, I have currently access to a DeskJet 850C which I have used for a
+number of experiments.
+Support for these printers should be considered to be the most reliable.</P
+><P
+>The next level of reliability belongs to the remaining printers for which
+subdevices exist.
+In these cases I had at least access to official HP documentation on supported
+media sizes and associated hardware margins
+and in addition for almost all cases some information on the supported PCL
+commands,
+sometimes complemented by PCL files generated by HP's official drivers and sent
+me by users.</P
+><P
+>The third level of reliability is associated with those printers for which
+people have sent success reports
+but for which I have no official information from HP.</P
+><P
+>With decreasing reliability it becomes increasingly probable
+that there is printer functionality which is not accessible through
+<B
+CLASS="COMMAND"
+>pcl3</B
+> or
+even that this driver generates PCL code not accepted by the printer.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><H3
+>Mixed Resolutions</H3
+><P
+>Some printers are able to print with different resolutions for black and
+CMY on the same region of a page.
+For example, the best quality on a DeskJet 850C is achieved with 600 ppi for
+black and 300 ppi for CMY.
+This is not supported by <B
+CLASS="COMMAND"
+>pcl3</B
+>.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><H3
+>Photo Cartridges</H3
+><P
+>From what I've heard, DeskJet printers with photo cartridges installed do not
+use a CMYK palette but instead one with 6 components.
+I have no official information on this interface
+and even if I had it wouldn't help because
+ghostscript does not currently support <TT
+CLASS="LITERAL"
+>DeviceN</TT
+> as a
+native colour space.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><H3
+>Cartridge Alignment</H3
+><P
+>DeskJet printers with more than one ink cartridge present should usually be
+configured for the proper relative alignment of these cartridges.
+Apparently, this information is stored in not-immediately-volatile memory
+in the printer together with some settings (like the default media size)
+which are not relevant for printing with <B
+CLASS="COMMAND"
+>pcl3</B
+>.
+As I do not have information on how this is done,
+you will need to use one of HP's programs for this purpose.</P
+><P
+>On a Linux system, try installing and running HP's DOS DeskJet control panel
+<B
+CLASS="COMMAND"
+>DJCP</B
+> in the DOS emulator.
+<B
+CLASS="COMMAND"
+>DJCP</B
+> should be present on one of the installation media
+you received with your printer.
+One user managed to get this to work
+for a DJ 670C with DOSEMU 0.98 under RedHat 5.2 by setting
+<BLOCKQUOTE
+><PRE
+CLASS="PROGRAMLISTING"
+>$_ports = "0x378 0x379"</PRE
+></BLOCKQUOTE
+>
+in <TT
+CLASS="FILENAME"
+>dosemu.conf</TT
+>.
+I was not successful on my Debian system.</P
+><P
+>The <B
+CLASS="COMMAND"
+>pcl3</B
+> distribution contains a file
+<TT
+CLASS="FILENAME"
+>calign.ps</TT
+> which you can print if you wish to check
+to which extent the cartridges are aligned.</P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><H2
+>KNOWN BUGS</H2
+><P
+>There are no known bugs in <B
+CLASS="COMMAND"
+>pcl3</B
+> proper,
+but there do exist restrictions or bugs in <B
+CLASS="COMMAND"
+>gs</B
+>
+which can lead to faulty behaviour when printing with <B
+CLASS="COMMAND"
+>pcl3</B
+>.
+As far as I noticed them
+they are mentioned in the body of this manual page at the relevant points.</P
+><P
+>You can find an up-to-date bug list for this driver via
+<B
+CLASS="COMMAND"
+>pcl3</B
+>'s home page on the Web.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><H2
+>SEE ALSO</H2
+><P
+><A HREF="Readme.htm"
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gs</SPAN
+>(1)</SPAN
+></A
+>,
+<A HREF="pcl3opts.html"
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>pcl3opts</SPAN
+>(1)</SPAN
+></A
+></P
+><P
+><A
+HREF="http://www.cs.indiana.edu/docproject/programming/postscript/postscript.html"
+TARGET="_top"
+><I
+CLASS="CITETITLE"
+>A First Guide to PostScript</I
+></A
+></P
+><P
+>Adobe Systems,
+<A
+HREF="http://partners.adobe.com/asn/developer/PDFS/TN/PLRM.pdf"
+TARGET="_top"
+><I
+CLASS="CITETITLE"
+>PostScript Language Reference</I
+></A
+>.
+Third edition, 1999.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><H2
+>AUTHOR</H2
+><P
+>Copyright © 2000, 2001 by Martin Lottermoser,
+Greifswaldstraße 28, 38124 Braunschweig, Germany.
+E-mail:
+<A HREF="mailto:Martin.Lottermoser@t-online.de"><TT
+CLASS="EMAIL"
+>Martin.Lottermoser@t-online.de</TT
+></A>.</P
+><P
+><B
+CLASS="COMMAND"
+>pcl3</B
+> has a
+<A
+HREF="http://home.t-online.de/home/Martin.Lottermoser/pcl3.html"
+TARGET="_top"
+>home page</A
+> on the Web.</P
+><P
+>This is free software,
+released under the terms of the
+<A
+HREF="http://www.gnu.org/copyleft/lesser.html"
+TARGET="_top"
+>GNU Lesser General Public License (LGPL)</A
+>,
+Version 2.1.
+<I
+CLASS="EMPHASIS"
+>USE IT AT YOUR OWN RISK.</I
+></P
+><P
+>Version of this reference page: $Revision: 1.21 $
+($Date: 2001/08/18 17:19:29 $).</P
+></DIV
+></BODY
+></HTML
+>

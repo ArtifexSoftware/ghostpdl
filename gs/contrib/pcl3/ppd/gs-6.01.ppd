@@ -1,0 +1,26 @@
+*PPD-Adobe: "4.3"
+*% ****************************************************************************
+*% File:     @(#)$Id: gs-6.01.ppd,v 1.1 2001/03/16 07:59:17 Martin Rel $
+*% Contents: PPD file part for Aladdin Ghostscript 6.01
+*% Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
+*%           Germany; Martin.Lottermoser@t-online.de
+*%
+*% ****************************************************************************
+*%
+*%	Copyright (C) 2001 Martin Lottermoser
+*%	All rights reserved
+*%
+*% ****************************************************************************
+
+*% Required general information keywords not provided in device PPD files
+*Product: "(Aladdin Ghostscript)"
+*PSVersion: "(3010) 601"
+
+*% For gs 6.01, unix-gcc.mak by default includes ttfont.dev. Change "Type42" to
+*% "None" if your configuration differs:
+*TTRasterizer: Type42
+
+*% ****************************************************************************
+
+*% Common parts
+*Include: "gs-common.ppd"

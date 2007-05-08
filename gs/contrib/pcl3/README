@@ -1,0 +1,342 @@
+*******************************************************************************
+  File:     @(#)$Id: README,v 2.12 2001/08/19 09:03:27 Martin Rel $
+  Contents: README file for the pcl3 distribution
+  Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
+	    Germany. E-mail: Martin.Lottermoser@t-online.de.
+
+*******************************************************************************
+*									      *
+*	Copyright (C) 1997, 1998, 1999, 2000, 2001 by Martin Lottermoser      *
+*	All rights reserved						      *
+*									      *
+*******************************************************************************
+
+
+Table of Contents
+=================
+- What is pcl3?
+- Conditions of use
+- Status of this release
+- Files needed
+- How to compile ghostscript with pcl3
+
+
+
+What is pcl3?
+=============
+pcl3, formerly called hpdj, is a ghostscript device driver for printers
+understanding Hewlett-Packard's Printer Command Language, Level 3+ (PCL 3+).
+Some printer models (currently exclusively HP DeskJets) are explicitly
+supported, but there is also generic support for other PCL-3+ printers.
+So far I have not heard of any PCL-3 printer for which the driver cannot be
+used at all and it even works for some printers which claim to be
+PCL-3-conforming but aren't. For a more positive statement, i.e., a list of
+printer models for which pcl3 is currently known to work and how, see the file
+doc/reports.txt.
+
+
+
+Conditions of use
+=================
+pcl3 is free software and can be used under the terms of the GNU Lesser General
+Public License (LGPL), Version 2.1 (February 1999). You can find a copy of the
+LGPL in the pcl3 distribution, in several software packages distributed by the
+Free Software Foundation, and at http://www.gnu.org/copyleft/lesser.html.
+
+This implies in particular that you are using pcl3 AT YOUR OWN RISK!
+
+
+
+Status of this release
+======================
+This is version 3.3 of pcl3, released 2001-08-19. This is an ordinary
+(non-beta) release. Read the manual page to learn about the supported
+functionality and restrictions.
+
+
+
+Files needed
+============
+First, you need a ghostscript distribution. This version of pcl3 has been
+successfully integrated with the following ghostscript distributions:
+
+  - AFPL ghostscript 7.0
+  - GNU ghostscript 6.51
+
+Other ghostscript versions than those mentioned here are very likely to work,
+too.
+
+To obtain a ghostscript distribution, visit http://www.cs.wisc.edu/~ghost.
+You will also need some third-party archives in addition. See the URL just
+mentioned or check Make.htm in the ghostscript distribution you have obtained.
+
+Second, you need a font distribution containing at least a basic set of
+PostScript fonts. Such a set is distributed with ghostscript as an "std" and an
+"other" archive. Because font files are PostScript files, they are normally not
+restricted to a particular version of ghostscript although the archives have a
+ghostscript version number in their file names. Some of the possibilities are:
+
+      ghostscript-fonts-std-6.0.tar.gz
+      ghostscript-fonts-other-6.0.tar.gz
+      gnu-gs-fonts-std-6.0.tar.gz
+      gnu-gs-fonts-std-5.50.tar.gz
+      gnu-gs-fonts-other-6.0.tar.gz
+      gnu-gs-fonts-other-5.50.tar.gz
+
+Unless you already have such a set on your system, fetch at least an "std"
+archive and choose the one with the highest version number you can readily lay
+your hands on. Different file names do not necessarily mean different contents.
+
+  A side remark: The "StandardSymL" font dated 1998-03-26 (first present in
+  a 5.10 font archive) contains the Euro glyph. However, it has the wrong
+  PostScript name ("euro" instead of "Euro") and the wrong default encoding
+  (decimal 240 instead of octal 240). This is corrected in the version dated
+  1999-10-21. Ghostscript's "SymbolEncoding" encoding vector had the same bugs
+  in gs 5.50 and this was fixed in gs 6.0.
+
+Third, you need the pcl3 distribution:
+
+      pcl3-<version>.tar.gz
+
+But if you are reading this file, you should already have it. If not,
+you can obtain the current distribution through the following URL:
+
+      http://home.t-online.de/home/Martin.Lottermoser/pcl3.html
+
+I am distributing pcl3 only in the form of gzipped tar archives. If you wish to
+compile pcl3 on a non-UNIX platform, you need gzip, tar (on a Microsoft Windows
+system, you can use the Cygnus port of the GNU tools, available from
+http://sources.redhat.com/cygwin), and a command to convert text files from
+LF-terminated lines to whatever the line termination conventions are on your
+system.
+
+
+
+How to compile ghostscript with pcl3
+====================================
+You need an ISO-C-conforming compiler and library in order to compile pcl3.
+
+The following description is heavily biased towards UNIX systems and in
+particular Linux.
+
+ 1. Unpack the core distribution
+
+    This is the file ghostscript-N.NN.tar or gnu-gs-N.NN.tar. Unpacking it will
+    create a subdirectory "gsN.NN" in the current directory.
+
+    In order to clearly identify directories I'm going to use the following
+    expressions:
+    - "gs directory": the directory gsN.NN you have just created
+    - "documentation directory": In gs 5.50 this is identical to the
+      gs directory, in newer versions it is the subdirectory "doc" in the
+      gs directory.
+    - "source directory": In gs 5.50 this is identical to the gs directory,
+      in newer versions it is the subdirectory "src" in the gs directory.
+
+ 2. Read Make.htm in the documentation directory on how to compile ghostscript.
+    In particular, you should learn
+
+      - which other files you need to unpack and how, and
+      - what the platform-specific make file for your platform is.
+
+ 3. Unpack the other files needed (except the font files) as directed by
+    Make.htm.
+
+ 4. Unpack pcl3, preferably in the gs directory. The file pcl3-<version>.tar
+    unpacks into a subdirectory pcl3-<version> with only three files:
+
+	README-cover
+	pcl3.tar	the distribution proper
+	pcl3.tar.sig	an OpenPGP signature for pcl3.tar
+
+    Make the directory accessible under the name "pcl3" from the gs directory,
+    either by renaming it or by creating an appropriate symbolic link. Then
+    change into the pcl3 directory and unpack pcl3.tar from there. This should
+    give you in addition the following regular files in that directory:
+
+	BUGS		pcl3's bug list
+	LGPL		text of the GNU LGPL
+	NEWS		list of user-visible changes between versions
+	README		this file
+
+    Furthermore, a number of subdirectories will have been created:
+
+	doc		documentation
+        eprn            C source code for the eprn device on which pcl3 is based
+	lib		cups-pcl3, example.mcf, if-pcl3
+        ppd             PostScript printer description files
+	ps		PostScript files
+	src		C source code and build files for pcl3
+
+ 5. Extend contrib.mak in the source directory.
+
+    The pcl3 distribution contains extension files "src/contrib.mak-N.NN.add"
+    for this purpose, where "N.NN" is a ghostscript version (at least for all
+    ghostscript distributions listed in "Files needed" above). These files
+    contain text to be inserted into contrib.mak at some point, for example at
+    the end. An extension file might work for other gs versions in addition to
+    the designated one.
+
+    The extension files contain an initial comment which gives you some
+    further instructions (compile options, files shared with hpdj, available
+    devices).
+
+ 6. Add at least "$(DD)pcl3.dev" ("pcl3.dev" in gs 5.50) to one of the
+    DEVICE_DEVS* variables in the platform-specific make file. The conventional
+    place is DEVICE_DEVS3, DEVICE_DEVS4, or DEVICE_DEVS5. For a complete list
+    of pcl3 devices you can define here, see the contrib.mak-N.NN.add file.
+    You might also wish to modify the device and feature lists in other
+    respects.
+
+    On a Linux system, the file to edit is unix-gcc.mak.
+
+ 7. Read the file doc/gs-mods.txt about modifications I suggest for making in
+    ghostscript's source code or configuration files.
+
+ 8. Other changes to the platform-specific make file
+
+    For a UNIX system and if you wish to install the software in a non-default
+    directory, edit the make variable "prefix" (normally /usr/local).
+    This directory must exist before step 10.
+
+    If you intend to use the X Window System, check whether the values for the
+    variables XINCLUDE, XLIBDIRS, and XLIBS are correct. On Linux, they should
+    usually be "-I/usr/X11R6/include", "-L/usr/X11R6/lib", and
+    "Xt SM ICE Xext X11", respectively. You can ignore XINCLUDE if one of the
+    directories searched by the compiler anyway contains an appropriate "X11"
+    subdirectory (e.g., there is a link from /usr/include/X11 to
+    /usr/X11R6/include/X11).
+
+ 9. On a UNIX system, check that the platform-specific make file (unix-gcc.mak
+    for Linux) is available to make from the gs directory (or use "-f"). Then,
+    in the gs directory, type "make" to generate the gs binary, and
+    "make pcl3opts" to generate the pcl3opts binary. The latter step is likely
+    to fail if you are not on an XPG-conforming UNIX system.
+
+10. Install: "make install pcl3-install".
+
+    If you are not on a UNIX system, you'll probably have to omit the
+    "pcl3-install" part. Instead, copy pcl3's doc/*.html files and the compiled
+    pcl3opts binary (provided it did compile) to appropriate places yourself.
+
+    If "make pcl3-install" gives you a usage message from the "instcopy"
+    command you've forgotten "make pcl3opts" in step 9.
+
+    The "make pcl3opts" call, if successful, has also generated two NLS message
+    catalogues for pcl3opts in ghostscript's object file directory ("obj" in
+    the gs directory): pcl3opts-en.cat (English) and pcl3opts-de.cat (German).
+    These catalogues are not installed automatically. If you wish to use them,
+    copy each file into an appropriate NLS directory under a name matching your
+    NLSPATH conventions with "pcl3opts" for %N. (On Linux the default value for
+    NLSPATH usually includes /usr/share/locale/%L/%N and
+    /usr/share/locale/%L/LC_MESSAGES/%N.) You need the English catalogue only
+    if you want pcl3opts to issue media sizes in inches instead of millimetres.
+
+    Note that pcl3's PostScript example files (subdirectory "ps") are also not
+    installed. If you find them useful, copy them to an appropriate place
+    yourself.
+
+11. Install the fonts.
+
+    First call the newly generated "gs" with the option "-h". The output will
+    show you ghostscript's search path. The fonts should be present in one of
+    these directories. On UNIX systems, the convention is to use a ".../fonts"
+    directory for this purpose. Note that newer font distributions unpack into
+    "./fonts" and some older ones into ".".
+
+    If you already have a ghostscript installation somewhere else on your
+    system and its font directory is not included in the font path of your new
+    gs binary, you can create a symbolic link from the ".../fonts" directory to
+    your installed fonts, or use the environment variable GS_FONTPATH to direct
+    gs to the directory/ies in question.
+
+12. This is a good point to take a first look at pcl3's documentation if you
+    haven't done that yet. It is available as a manual page (type "man gs-pcl3")
+    and in HTML format (open gs-pcl3.html in the installed ghostscript's
+    documentation directory with an HTML browser).
+
+13. If your printer is not directly supported by pcl3 and you wish the driver
+    to be correctly informed about supported media sizes and the associated
+    hardware margins, look into the file lib/example.mcf and then create a
+    media configuration file for your printer from information in its manual.
+    You must at least specify an entry for the default page size (A4 or
+    US Letter as selected in your ghostscript configuration).
+
+    If you have selected to set PCL3_MEDIA_FILE in step 5, the media file
+    you have just created should be installed under that path name.
+
+14. Integration with a spool system
+
+    This depends on your spooler :-). The minimum you need is the ability to
+    print a file without any modifications by spool commands. In that case
+    you can generate a PCL file by calling ghostscript with option values
+    appropriate for your current needs and pass the generated file through the
+    spool system for printing. Such spool queues are usually called "raw"
+    queues.
+
+    If you are using CUPS (Common UNIX Printing System, http://www.cups.org),
+    you can proceed as follows:
+
+      - Create a file ppd/gs.ppd describing the site-specific properties of
+        your ghostscript installation.
+      - Select a PPD file suitable for your printer model and copy it into
+	CUPS' "model" directory using the ppd/catppd script.
+      - Copy the lib/cups-pcl3 filter to CUPS' "filter" directory.
+      - Install a new print queue based on the new PPD file.
+
+    The details of the first two steps are described in the ppd/README file.
+    You should also at some stage read the initial comments in lib/cups-pcl3.
+
+    Most Linux systems still use a Berkeley spooler (lpr/lprm/lpq) which maps
+    the queue name in the print request to a call to some backend command,
+    based on /etc/printcap. Frequently, the backend is an intelligent filter
+    which will examine the contents of the file to be printed and perform
+    appropriate processing based on the file type.
+
+    Because with an ordinary Berkeley spooler one cannot pass command line
+    options to the backend, it is a good idea to install several print queues
+    for those option combinations one needs frequently. You could for example
+    install seven print queues: one for passing any file to the printer
+    unchanged, three for monochrome and three for colour printing, each of the
+    last two groups having a queue for "draft", "normal" and "presentation"
+    quality.
+
+    If you are on a machine with an AT&T spool system (lp/cancel/lpstat),
+    one queue can be sufficient because you can pass command line options to
+    the backend. However, if your printer has different hardware configurations
+    (either black or CMY cartridge, either banner or tray feed) and you cannot
+    completely control when print jobs are submitted, you should still install
+    separate queues for these configurations, take steps to make it at least
+    likely that the jobs submitted to each queue have the necessary properties,
+    and enable only the queue agreeing with the printer's current configuration.
+
+    You also need only one queue independent of the spool system if you have a
+    spooler frontend capable of inserting PostScript setup commands into the
+    document to be printed or if such a document manager is part of your
+    spooler (the latter applies to CUPS). The pcl3 distribution contains the
+    necessary PPD files for these cases; read the file ppd/README for further
+    instructions. Note that the remarks above on separate queues for distinct
+    hardware configurations apply also to this case.
+
+    The pcl3 distribution contains configurable input filters for the Berkeley
+    spooler and for CUPS in the files "lib/if-pcl3" and "lib/cups-pcl3",
+    respectively. Read the initial comments in these files for further
+    instructions.
+
+    You should also not forget to skim the "OPTIONS" and "CONFIGURATION"
+    sections in pcl3's manual page: some parts are particularly relevant for
+    spooler backends.
+
+15. Test your configuration by printing a few example documents.
+
+    As a first step and in particular when you are using a media configuration
+    file, print some of the margin test files ps/margins-*.ps appropriate for
+    your current media size. They should show marks with a distance of 25 mm or
+    1 in (depending on the media size) from the margins. If you find deviations
+    from what you expect, read the manual page and in particular the
+    description of how to use the "Margins" or "PageOffset" entries to correct
+    misalignments.
+
+    For trying out various rendering parameters, ps/levels-test.ps is a good
+    test file, in particular if you print through a spooler, because the
+    printed page will tell you which settings were effective.

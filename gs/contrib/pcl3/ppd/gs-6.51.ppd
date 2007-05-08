@@ -1,0 +1,26 @@
+*PPD-Adobe: "4.3"
+*% ****************************************************************************
+*% File:     @(#)$Id: gs-6.51.ppd,v 1.2 2001/08/19 08:52:59 Martin Rel $
+*% Contents: PPD file part for GNU Ghostscript 6.51
+*% Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
+*%           Germany; Martin.Lottermoser@t-online.de
+*%
+*% ****************************************************************************
+*%
+*%	Copyright (C) 2001 Martin Lottermoser
+*%	All rights reserved
+*%
+*% ****************************************************************************
+
+*% Required general information keywords not provided in device PPD files
+*Product: "(GNU Ghostscript)"
+*PSVersion: "(3010) 651"
+
+*% For newer gs versions like this, unix-gcc.mak by default includes
+*% ttfont.dev. Change "Type42" to "None" if your configuration differs.
+*TTRasterizer: Type42
+
+*% ****************************************************************************
+
+*% Common parts
+*Include: "gs-common.ppd"

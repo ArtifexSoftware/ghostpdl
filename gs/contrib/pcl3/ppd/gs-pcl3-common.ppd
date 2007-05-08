@@ -1,0 +1,116 @@
+*PPD-Adobe: "4.3"
+*% ****************************************************************************
+*% File:     @(#)$Id: gs-pcl3-common.ppd,v 1.4 2001/04/10 16:36:27 Martin Rel $
+*% Contents: PPD file part common to all subdevices provided by the pcl3 driver
+*% Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
+*%           Germany; Martin.Lottermoser@t-online.de
+*%
+*% ****************************************************************************
+*%
+*%	Copyright (C) 2001 Martin Lottermoser
+*%	All rights reserved
+*%
+*% ****************************************************************************
+
+*% Required pcl3-specific keyword:
+*Manufacturer: "Martin Lottermoser"
+
+*% ****************************************************************************
+
+*% CUPS keywords independent of the subdevice
+*cupsVersion: 1.1
+*% The *cupsManualCopies statement is irrelevant for pcl3.
+*cupsFilter: "application/vnd.cups-postscript 0 cups-pcl3"
+
+*% ****************************************************************************
+
+*% Intensity rendering methods
+
+*OpenUI *eprnIntensityRendering/Intensity rendering: PickOne
+*OrderDependency: 50 AnySetup *eprnIntensityRendering
+*DefaulteprnIntensityRendering: halftones
+*eprnIntensityRendering printer: "(<<) cvx exec /IntensityRendering (printer) (>>) cvx exec setpagedevice"
+*eprnIntensityRendering halftones: "(<<) cvx exec /IntensityRendering (halftones) (>>) cvx exec setpagedevice"
+*eprnIntensityRendering Floyd-Steinberg: "(<<) cvx exec /IntensityRendering (Floyd-Steinberg) (>>) cvx exec setpagedevice"
+*CloseUI *eprnIntensityRendering
+
+*% ============================================================================
+
+*% Print quality
+
+*OpenUI *OutputMode/Print quality: PickOne
+*DefaultOutputMode: Normal
+*OrderDependency: 50 AnySetup *OutputMode
+*OutputMode Draft: "(<<) cvx exec /PrintQuality (draft) (>>) cvx exec setpagedevice"
+*OutputMode Normal: "(<<) cvx exec /PrintQuality (normal) (>>) cvx exec setpagedevice"
+*OutputMode Presentation: "(<<) cvx exec /PrintQuality (presentation) (>>) cvx exec setpagedevice"
+*CloseUI *OutputMode
+
+*% Media type (reduced list)
+*% The use of the *MediaType keyword for this property is a concession to CUPS.
+*% In my opinion it is wrong: *MediaType has the same meaning as the "MediaType"
+*% page device parameter and is therefore intended for influencing the media
+*% selection process. In agreement with that the PPD specification explicitly
+*% states that this "method usually requires prior device setup", i.e.,
+*% configuration of "InputAttributes". Read the discussion on selection and
+*% configuration parameters in notes.tex in the pcl3 distribution for further
+*% remarks.
+*% If you have a document manager with correct behaviour, rename the *MediaType
+*% statements into *pcl3Medium statements.
+
+*OpenUI *MediaType: PickOne
+*DefaultMediaType: plain
+*OrderDependency: 50 AnySetup *MediaType
+*MediaType plain/plain paper: "(<<) cvx exec /Medium (plain paper) (>>) cvx exec setpagedevice"
+*MediaType bond/bond paper: "(<<) cvx exec /Medium (bond paper) (>>) cvx exec setpagedevice"
+*MediaType Premium/HP Premium paper: "(<<) cvx exec /Medium (HP Premium paper) (>>) cvx exec setpagedevice"
+*MediaType glossy/glossy paper: "(<<) cvx exec /Medium (glossy paper) (>>) cvx exec setpagedevice"
+*MediaType transparency/transparency film: "(<<) cvx exec /Medium (transparency film) (>>) cvx exec setpagedevice"
+*CloseUI *MediaType
+
+*% ****************************************************************************
+
+*% Input slots
+
+*OpenUI *InputSlot: PickOne
+*OrderDependency: 50 AnySetup *InputSlot
+*DefaultInputSlot: Cassette
+*InputSlot Cassette/Default tray: ""
+*InputSlot ManualFeed: "(<<) cvx exec /ManualFeed true (>>) cvx exec setpagedevice"
+*% All other input slots require that there is a corresponding entry in
+*% "InputAttributes" or the request for the slot will be ignored. Hence these
+*% slots are not made known here even for printers where they are known to
+*% exist.
+*%
+*% If your printer has these media sources *and* you have configured
+*% "InputAttributes" appropriately, copy the complete "*InputSlot" entry to
+*% your local customization file and remove the comment prefix in the lines
+*% needed. (If you're using CUPS, you must edit this section here or delete it,
+*% but you should do it in the concatenated file for your printer's model.)
+*% In particular for the envelope feed, you should then also add constraints
+*% between this slot and all non-envelope page sizes. The banner slot
+*% (continuous feed) will be protected by pcl3 against size mismatches but
+*% you might also add constraints for all unsupported sizes (which usually
+*% means every size except A4 and Letter).
+*%
+*% *InputSlot ContinuousFeed/Continuous feed: "(<<) cvx exec
+*%    /InputAttributes (<<) cvx exec /Priority [-1] (>>) cvx exec
+*%    (>>) cvx exec setpagedevice"
+*% *End
+*% *InputSlot Envelope: "(<<) cvx exec
+*%    /InputAttributes (<<) cvx exec /Priority [3] (>>) cvx exec
+*%    (>>) cvx exec setpagedevice"
+*% *End
+*% *InputSlot DesktopCSF/Desktop CSF: "(<<) cvx exec
+*%    /InputAttributes (<<) cvx exec /Priority [4] (>>) cvx exec
+*%    (>>) cvx exec setpagedevice"
+*% *End
+*%
+*CloseUI *InputSlot
+
+*% pcl3 is not capable of sensing the media size in an input slot:
+*RequiresPageRegion All: True
+
+*% ****************************************************************************
+
+*Include: "gs.ppd"

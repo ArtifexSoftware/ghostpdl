@@ -1,0 +1,136 @@
+#******************************************************************************
+# File:     @(#)$Id: example.mcf,v 2.1 2000/10/22 08:53:25 Martin Rel $
+# Contents: Example of a media configuration file for the ghostscript device
+#           "pcl3": supported media dimensions and their margins for "unspec"
+# Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
+#           Germany, e-mail: Martin.Lottermoser@t-online.de
+#
+#******************************************************************************
+#									      *
+#	Copyright (C) 1997, 1998, 2000 by Martin Lottermoser		      *
+#	All rights reserved						      *
+#									      *
+#******************************************************************************
+#
+# This file is intended as a template for adapting the "unspec" subdevice to
+# the media sizes accepted by a printer not explicitly supported by pcl3.
+# The file contains entries with those data which are compiled into the
+# "unspec" subdevice and which will be used if you do not specify a media
+# description file. The default values given here almost agree with:
+#   Hewlett-Packard
+#   "HP DeskJet 855C, 850C, 870C, and 890C Series Printers - Printable Areas"
+#   1996-06-06, available from http://www.hp.com: bpd02523
+#
+# You should read the subsection "Media Configuration File" in the manual page
+# gs-pcl3(1) and then rewrite this file based on your printer's manual. 
+#
+#------------------------------------------------------------------------------
+
+# The margins are specified in inches (the unit line is actually superfluous
+# because this is the default, but it's here to remind you that this can be
+# changed):
+unit in
+
+#------------------------------------------------------------------------------
+
+# Internationally standardized sizes
+
+# ISO A6 (105 x 148 mm, sheets or cards):
+# A6	sheets not supported by default
+A6Card	0.125 0.46 0.125 0.04
+
+# ISO A5 (148 x 210 mm):
+A5	0.13 0.46 0.13 0.04
+
+# ISO A4 (210 x 297 mm):
+A4	0.13 0.46 0.13 0.04
+
+# Banner printing
+# A4Big	not supported by default
+
+# ISO A3 (297 x 420 mm)
+# A3	not supported by default
+
+# ISO DL (110 x 220 mm):
+EnvDL	0.125 0.87 0.125 0.04
+
+# ISO C5 (162 x 229 mm):
+# EnvC5	not supported by default
+
+# ISO C6 (114 x 162 mm):
+EnvC6	0.125 0.87 0.125 0.04
+
+#------------------------------------------------------------------------------
+
+# US sizes
+
+# US Executive (7.25 x 10.5 in):
+Executive	0.25 0.46 0.25 0.04
+
+# US Letter (8.5 x 11 in):
+Letter	0.25 0.46 0.25 0.04
+
+# Banner printing
+# LetterBig  not supported by default
+
+# US Legal (8.5 x 14 in):
+Legal	0.25 0.46 0.25 0.04
+
+# US Tabloid (11 x 17 in) or Ledger (17 x 11 in):
+# Tabloid	not supported by default
+
+# US Statement (5.5 x 8.5 in):
+# Statement	not supported by default
+
+# Super B (13 x 19 in according to HP):
+# HPSuperB	not supported by default
+
+# US Index card (3 x 5 in):
+# Index3x5in	not supported by default
+
+# US Index card (4 x 6 in):
+Index4x6in	0.125 0.46 0.125 0.04
+
+# US Index card (5 x 8 in):
+Index5x8in	0.125 0.46 0.125 0.04
+
+# US Monarch envelope (3.875 x 7.5 in):
+# EnvMonarch	not supported by default
+
+# US No. 10 envelope (4.125 x 9.5 in):
+Env10	0.125 0.87 0.125 0.04
+
+# US A2 envelope (4.375 x 5.75 in):
+# EnvUS_A2	not supported by default
+
+#------------------------------------------------------------------------------
+
+# Japanese sizes
+
+# JIS B5 (182 x 257 mm):
+JISB5	0.13 0.46 0.13 0.04
+#	Actually, bpd02523 states that the top margin should be 0.46 in for
+#	JIS B5. This is unlikely in general and provably wrong for the DJ 850C.
+
+# JIS B4 (257 x 364 mm):
+# JISB4		not supported by default
+
+# Hagaki card (100 x 148 mm):
+Postcard	0.125 0.46 0.125 0.04
+
+# Oufuko-Hagaki postcard (148 x 200 mm):
+# DoublePostcard  not supported by default
+
+# Long envelope #3 (120 x 235 mm):
+# EnvChou3	not supported by default
+
+# Long envelope #4 (90 x 205 mm):
+# EnvChou4	not supported by default
+
+# Kaku envelope (240 x 332 mm):
+# EnvKaku2	not supported by default
+
+#------------------------------------------------------------------------------
+
+# Custom page size:
+CustomPageSize	0.13 0.46 0.13 0.04

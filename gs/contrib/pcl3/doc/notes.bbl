@@ -1,0 +1,70 @@
+\begin{thebibliography}{10}
+
+\bibitem{PSSupplement2017}
+Adobe Systems Incorporated.
+\newblock {\em {PostScript} Language Reference Manual Supplement for
+  Version~2017}, April 1996.
+\newblock Document ID: PN~LPS5217.
+
+\bibitem{PPD4.3}
+Adobe Systems Incorporated.
+\newblock {\em {PostScript} Printer Description File Format Specification,
+  Version~4.3}, February 1996.
+\newblock Document ID: PN~LPS5003.
+
+\bibitem{PSSupplement3010}
+Adobe Systems Incorporated.
+\newblock {\em Supplement: {PostScript} Language Reference Manual
+  (LanguageLevel 3 Specification and {Adobe} {PostScript}~3 Version~3010
+  Product Supplement)}, October 1997.
+\newblock Document ID: 970028-006.
+
+\bibitem{PostScript3}
+{Adobe Systems Incorporated}.
+\newblock {\em {PostScript} Language Reference}.
+\newblock Addison-Wesley, Reading\slash Mas\-sa\-chu\-setts etc., 3rd edition,
+  February 1999.
+\newblock First printing.
+
+\bibitem{PSSupplement3011}
+Adobe Systems Incorporated.
+\newblock {\em {PostScript} Language Reference Supplement: {Adobe}
+  {PostScript}~3 Version~3010 and~3011 Product Supplement}, August 1999.
+\newblock Document ID: 28-007.
+
+\bibitem{Use5.50}
+L.~Peter Deutsch.
+\newblock {\em How to use Ghostscript}, September 1998.
+\newblock File {\tt Use.htm} in ghostscript 5.50.
+
+\bibitem{Drivers5.50}
+L.~Peter Deutsch.
+\newblock {\em The interface between Ghostscript and device drivers}, September
+  1998.
+\newblock File {\tt Drivers.htm} in ghostscript 5.50.
+
+\bibitem{Language5.50}
+L.~Peter Deutsch.
+\newblock {\em The relationship between Ghostscript and {PostScript}},
+  September 1998.
+\newblock File {\tt Language.htm} in ghostscript 5.50.
+
+\bibitem{Drivers6.01}
+L.~Peter Deutsch.
+\newblock {\em The interface between Ghostscript and device drivers}, February
+  2000.
+\newblock File {\tt Drivers.htm} in ghostscript 6.01.
+
+\bibitem{hpdj}
+Martin Lottermoser.
+\newblock {\em hdpj: a Ghostscript Device Driver for PCL 3+}, October 1999.
+\newblock Version 2.6. See {\tt ftp://ftp.sbs.de\slash pub\slash graphics\slash
+  ghostscript\slash pcl3\slash pcl3.html}.
+
+\bibitem{pcl3}
+Martin Lottermoser.
+\newblock {\em pcl3}, October 2000.
+\newblock Version 3.0. See {\tt http://home.t-online.de\slash home\slash
+  Martin.Lottermoser\slash pcl3.html}.
+
+\end{thebibliography}

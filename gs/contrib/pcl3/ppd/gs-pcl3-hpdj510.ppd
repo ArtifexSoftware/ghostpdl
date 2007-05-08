@@ -1,0 +1,94 @@
+*PPD-Adobe: "4.3"
+*% ****************************************************************************
+*% File:     @(#)$Id: gs-pcl3-hpdj510.ppd,v 1.2 2001/03/23 15:51:02 Martin Rel $
+*% Contents: PPD file for the ghostscript devices "hpdj510" and "hpdj520" of
+*%           the pcl3 driver
+*% Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
+*%           Germany, Martin.Lottermoser@t-online.de
+*%
+*% ****************************************************************************
+*%
+*%	Copyright (C) 2001 Martin Lottermoser
+*%	All rights reserved
+*%
+*% ****************************************************************************
+
+*% Required general information keywords
+
+*FileVersion: "1.0"
+*FormatVersion: "4.3"
+*LanguageEncoding: ISOLatin1
+*LanguageVersion: English
+*ModelName: "ghostscript/pcl3/hpdj510 and hpdj520"
+*ShortNickName: "ghostscript/pcl3/hpdj510,520"
+*NickName: "ghostscript/pcl3/hpdj510 or hpdj520"
+*PCFileName: "HPDJ_510.PPD"
+
+*% *Product, *PSVersion and *Manufacturer are assumed to be included via
+*% gs-pcl3-common.ppd.
+
+*% ****************************************************************************
+
+*% Device selection
+*GhostscriptOptions: "-sDEVICE=hpdj510"
+
+*% ****************************************************************************
+
+*% Rendering capabilities
+
+*ColorDevice: False
+*DefaultColorModel: Gray
+
+*OpenUI *Resolution: PickOne
+*OrderDependency: 50 AnySetup *Resolution
+*DefaultResolution: 300dpi
+*Resolution 75dpi: "(<<) cvx exec /HWResolution [75 75] (>>) cvx exec setpagedevice"
+*Resolution 100dpi: "(<<) cvx exec /HWResolution [100 100] (>>) cvx exec setpagedevice"
+*Resolution 150dpi: "(<<) cvx exec /HWResolution [150 150] (>>) cvx exec setpagedevice"
+*Resolution 300dpi: "(<<) cvx exec /HWResolution [300 300] (>>) cvx exec setpagedevice"
+*CloseUI *Resolution
+
+*% ****************************************************************************
+
+*% Information on page sizes
+
+*OpenUI *PageSize: PickOne
+*OrderDependency: 50 AnySetup *PageSize
+*DefaultPageSize: Unknown
+*PageSize Letter: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice letter"
+*PageSize Legal: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice legal"
+*PageSize Executive: "(<<) cvx exec /PageSize [522 756] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize A4: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice a4"
+*PageSize Env10: "(<<) cvx exec /PageSize [297 684] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize EnvDL: "(<<) cvx exec /PageSize [312 624] /ImagingBBox null (>>) cvx exec setpagedevice"
+*?PageSize: "save /PageSizeQuery /ProcSet resourcestatus
+  { pop pop /PageSizeQuery /ProcSet findresource begin query end }
+  { (Unknown) }
+  ifelse
+  = flush restore"
+*End
+*CloseUI *PageSize
+
+*OpenUI *PageRegion: PickOne
+*OrderDependency: 50 AnySetup *PageRegion
+*DefaultPageRegion: Unknown
+*PageRegion Letter: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice letter"
+*PageRegion Legal: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice legal"
+*PageRegion Executive: "(<<) cvx exec /PageSize [522 756] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion A4: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice a4"
+*PageRegion Env10: "(<<) cvx exec /PageSize [297 684] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion EnvDL: "(<<) cvx exec /PageSize [312 624] /ImagingBBox null (>>) cvx exec setpagedevice"
+*CloseUI *PageRegion
+
+*% The *DefaultImageableArea keyword is assumed to be found somewhere else.
+*ImageableArea Letter: "18 34 594 789"
+*ImageableArea Legal: "18 34 594 1005"
+*ImageableArea Executive: "18 34 507 753"
+*ImageableArea A4: "9 34 585 839"
+*ImageableArea Env10: "9 52 288 681"
+*ImageableArea EnvDL: "9 52 301 620"
+
+*% ****************************************************************************
+
+*% Common parts:
+*Include: "gs-pcl3-common.ppd"

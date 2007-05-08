@@ -1,0 +1,2052 @@
+%******************************************************************************
+% File:     @(#)$Id: notes.tex,v 1.11 2001/02/24 06:00:16 Martin Rel $
+% Contents: Notes an writing a ghostscript device driver
+%	    This is a TeX file using the LaTeX package.
+% Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
+%           Germany. E-mail: Martin.Lottermoser@t-online.de.
+%
+%******************************************************************************
+%
+%	Copyright (C) 2000, 2001 by Martin Lottermoser
+%	All rights reserved
+%
+%******************************************************************************
+
+\documentclass[twoside,a4paper]{article}
+
+% Macros to extract RCS information
+\def\RCScontents$#1:#2 ${\ignorespaces#2}
+\def\RCSDate$#1: #2/#3/#4 #5${#2--#3--#4}
+
+% Extracted RCS information.
+\setbox0=\hbox{\RCScontents$Locker:  $}
+\ifdim\wd0=0pt
+  \edef\Revision{\RCScontents$Revision: 1.11 $}
+  \edef\Date{\RCSDate$Date: 2001/02/24 06:00:16 $}
+  \def\BottomInfo{Version \Revision}
+\else
+  \edef\Revision{\RCScontents$Revision: 1.11 $+}
+  \def\Date{\today}
+  \def\BottomInfo{Version of \Date}
+  \def\draft{}
+\fi
+
+% Title page information
+\author{Martin Lottermoser\cr
+  {\tt Martin.Lottermoser@t-online.de}\cr
+  Greifswaldstra{\ss}e 28\cr
+  38124 Braunschweig\cr
+  Germany}
+\title{Notes on Writing a {\it Ghostscript\/} Device Driver for Printers}
+\date{Version \Revision\ (\Date)}
+
+% 25mm margins for A4
+\textwidth=160truemm
+\evensidemargin=-0.4truemm \oddsidemargin=\evensidemargin
+\topmargin=-0.4truemm
+\textheight=247truemm
+\advance\textheight by -\headheight
+\advance\textheight by -\headsep
+\advance\textheight by -\footskip
+
+% Page layout
+\pagestyle{myheadings}
+\makeatletter
+\markboth{\@title}{\@title}
+\def\@oddfoot{{\tiny\sl \BottomInfo\/}\hfil}
+\makeatother
+
+% Paragraph layout
+\setlength{\parindent}{0mm }
+\setlength{\parskip}{1.5mm plus 0.5mm minus 0.5mm }
+
+%******************************************************************************
+
+% Normal underscore
+\catcode`\_=\active
+\newcommand{\normalUS}{\catcode`\_=\active \def_{\char`\_}}
+\catcode`\_=8
+
+% My version of LaTeX does not know that cmtt has braces and substitutes them
+% from cmsy.
+\newcommand{\lb}{\char"7B}
+\newcommand{\rb}{\char"7D}
+
+% Abbreviations
+\newcommand{\gs}{\textit{ghostscript\/}}
+\newcommand{\Gs}{\textit{Ghostscript\/}}
+
+% Markup
+\newenvironment{note}{\begin{quote}\small}{\end{quote}}
+\newenvironment{program}{\begin{quote}
+    \normalUS\ttfamily\obeylines\obeyspaces\parskip=0mm \parindent=0mm }%
+  {\end{quote}}
+\newcommand{\ps}[1]{{\sffamily\bfseries #1}}	% PostScript names in the text
+\renewcommand{\d}[1]{{\bfseries #1}}	% definition of a concept or name
+\newcommand{\prog}[1]{\texttt{#1}}
+\newcommand{\file}[1]{\texttt{#1}}	% file names
+
+\bibliographystyle{plain}
+
+\hyphenation{ghost-script}
+
+\newif\ifdraft \draftfalse
+\expandafter\ifx\csname draft\endcsname\relax\else \drafttrue \fi
+
+%******************************************************************************
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+
+%******************************************************************************
+
+\section{Introduction}
+
+This document contains remarks which I consider useful for persons implementing
+a \gs\ device driver for printers.
+It is based on my experiences and in particular the mistakes I made in
+implementing the \textit{hpdj/pcl3\/} driver~\cite{hpdj,pcl3}.
+And yes, I have made lots of mistakes,
+and I do not guarantee anything about the accuracy of this document either.
+
+The topics covered in this document can be arranged in the following
+categories:
+\begin{itemize}
+  \item Suggestions on how to approach the implementation of a \gs\ device
+    driver
+  \item Information which is in my opinion necessary for properly implementing
+    a driver but which I could not find in \gs's documentation
+  \item Information I have collected for convenience
+  \item Parts which logically belong into the design documentation for
+    the \textit{hpdj/pcl3\/} driver but which have wider applicability
+\end{itemize}
+
+As the title indicates,
+this is not an exhaustive introduction on how to write a \gs\ device driver.
+You will need to access other documentation as well
+(and, of course, do some thinking of your own),
+preferably before reading this paper.
+
+This document is still largely incomplete.	%???
+
+%==============================================================================
+
+\subsection{The Most Important Advice on Writing a \Gs\ Device Driver}
+
+\begin{center}
+  \bigskip
+  \begin{picture}(120, 30)
+    \put(60,15){\oval(120,30)}
+    \put(60,15){\makebox(0,0){\hfil\Large\em Don't do it!\/\hfil}}
+  \end{picture}
+  \bigskip
+\end{center}
+
+You should disregard this advice only if all of the following conditions are
+true:
+\begin{itemize}
+  \item You are prepared to spend a substantial amount of time on this task.
+  \item You have or are prepared to acquire sufficient knowledge of PostScript
+    to find relevant information in the
+    {\it PostScript Language Reference\/}~\cite{PostScript3},
+    hereafter abbreviated as ``PLR3''.
+    You must know chapters~6 and~7 (excluding sections~6.3 and~7.1) pretty well.
+  \item You either know \gs's internal APIs (in particular~\cite{Drivers6.01})
+    and programming conventions or are prepared to learn them.
+    (Obvious, of course, but I still thought I'd better mention it.)
+  \item You can read large amounts\footnote{%
+      % Aladdin gs 5.50: 243089 lines for *.c and *.h, 32914 for *.ps.
+      % loc gave 168705 NLOC for *.c and *.h.
+      \Gs\ has roughly 250,000~lines of C and 33,000~lines of PostScript
+      code~[gs~5.50].}
+    of source code (C and PostScript) written by another person and
+    locate and understand those sections which are relevant to a problem you
+    have encountered.
+    If you wish to write a reliable driver,
+    you will have to do this much more often than you expect.
+  \item In view of in particular the amount of time you will have to spend and
+    the amount of frustration you will experience,
+    the driver you have in mind will offer new functionality which is worth
+    this effort.
+    I would not expect this to be the case unless you have a sufficiently large
+    group of users.
+\end{itemize}
+If you conclude from this that my own experiences in writing \gs\ device
+drivers were not entirely pleasant, you are right.
+In particular,
+I have serious doubts about whether the result justifies the effort I put into
+it.
+This document is an attempt to improve the result-to-effort ratio by making
+my experience available to others.
+
+%==============================================================================
+
+\subsection{Restrictions}
+
+This document concerns itself only with printer drivers.
+By this I mean devices with the following properties:
+\begin{itemize}
+  \item From the point of view of PostScript, we are dealing with a page device.
+  \item Processing in the driver can be split into two phases:
+  \begin{itemize}
+    \item creating a rasterized representation (pixmap) of the entire page in
+      memory,
+    \item converting it into another format appropriate for a particular kind
+      of hardware or software external to \gs, and
+      sending the converted data to a file.
+  \end{itemize}
+  \item From the point of view of \gs, we are dealing with a device derived
+    from the {\it prn\/} device.
+\end{itemize}
+
+%==============================================================================
+
+\subsection{Conventions}
+
+A word or group of words \d{in this type} has a special meaning.
+The meaning is sometimes explained at the point where the term is denoted in
+this manner,
+but the main purpose is to alert the reader to the existence of a special
+meaning connected with these words in the context of PostScript or \gs.
+
+A reference like ``[gs~$n.m$]'' accompanying a statement means that I have
+checked this statement to be true for \gs\ version~$n.m$.
+These are typically statements about bugs in \gs\ or
+information I could not find in \gs's documentation
+but which I obtained from the source code or by experiment.
+
+%******************************************************************************
+
+\section{General Approach}
+
+%==============================================================================
+
+\subsection{PostScript First}
+
+You should base your implementation on those properties of your driver which
+will be visible in PostScript.
+
+One reason is that \gs\ is changing fairly rapidly.
+Although some effort is made to remain backward-compatible,
+you cannot expect this to be always possible.
+If you base your design on PostScript concepts,
+the result is much more likely to be able to adapt easily to changes in \gs.
+The same applies in areas where \gs\ does not yet correctly or entirely support
+the PostScript language definition.
+
+The second reason is that the PostScript language is well documented and offers
+a reasonably broad range of concepts for you to use.
+A description of similar coverage at the level of \gs's driver API does not
+exist.
+You will have to fill conceptual gaps in the latter from the former.
+
+Finally, you should not dismiss the possibility that you might later want to
+write a similar driver for another PostScript interpreter.
+Everything which depends on PostScript only could then be reused unchanged,
+although I would expect this to happen more on the level of structure and
+concepts then with actual lines of code.
+
+%==============================================================================
+
+\subsection{Architecture}
+
+It is almost certain that you'll find that a large part of what you need to
+implement is entirely independent of the printer you wish to drive
+and could be used for other drivers as well.
+This is due to a gap between the functionality offered by the \gs\ kernel and
+the functionality needed by most printer drivers.
+This gap is only partly closed by the abstract \textit{prn\/} device
+and this has led to a certain amount of duplicated code in \gs\ drivers.
+
+One solution to this problem is to reuse code from another driver.
+This is easiest to do if this functionality has been implemented in terms of an
+abstract \gs\ device derived from the \textit{prn\/} device.
+Your driver can then use this device instead of \textit{prn\/} as its base
+device.
+The \textit{pcl3\/} driver contains such an intermediate component in the
+\textit{eprn\/} (``extended \textit{prn\/}'') device.
+Its implementation has about
+4700~brutto and 2400~netto lines of code.	% pcl3 3.0.2
+This gives you an impression of the size of the functionality gap you would
+otherwise have to bridge on your own,
+although admittedly not everything implemented in \textit{eprn\/} is
+absolutely essential for every printer driver.
+
+Independent of whether \textit{eprn\/} suits your needs or not,
+you should always implement the universal part of your functionality
+in a reusable form.
+
+At the other end of your implementation you should consider encapsulating
+printer-specific routines in a form which is largely independent of \gs.
+This also makes it easier to reuse this code in other contexts.
+The correct level of abstraction for this API is almost certainly near the
+point where your driver has obtained a pixmap for the page to be printed and
+has to convert it into the printer's language.
+
+If you introduce these two layers of functionality,
+the ``real'' driver will just be the intermediate layer connecting these two.
+\begin{note}
+  In the implementation of my \textit{pcl3\/} driver about
+  47~\% of the code belongs to the high-level \textit{eprn\/} device,
+  21~\% can be found in the printer-specific backend,
+  and 32~\% are contained in the intermediate layer.
+  % This is based on NLOCs. BLOC-based values are even better: 49%, 24%, and
+  % 27%. This reflects the more extensive documentation I've provided in the
+  % reusable parts.
+  % (BLOC, NLOC) as of pcl3 3.0.2: (4658, 2361), (2263, 1084), (2620, 1616).
+  This means that roughly two thirds of the code could be reused
+  in other contexts!
+\end{note}
+
+%******************************************************************************
+
+\section{Properties of an Output Device in PostScript}
+
+%==============================================================================
+
+\subsection{Definition}
+
+A PostScript interpreter may support several \d{output devices}.
+A \d{page device} is a special kind of output device.
+Its state is characterized by \d{page device parameters}.
+
+The \d{current (output) device} is part of the graphics state and can be
+inspected with \ps{currentpagedevice}.
+A new page device can be selected by calling \ps{setpagedevice}%
+  \footnote{%
+    For devices which are not page devices, other methods have to be
+    employed.
+    The null device, for example, is installed by calling \ps{nulldevice}.}
+and passing the device name as a value for the \ps{OutputDevice} page device
+parameter.%
+  \footnote{%
+    This does work with \gs\ but it produces a drastically reduced page device
+    dictionary without, e.g., \ps{HWResolution}~[gs~5.50, gs~6.50].
+    The official \gs\ interface for switching output devices from PostScript
+    is via the non-standard \ps{selectdevice} operator~\cite{Use5.50}.}
+This resets all page device parameters to the default values appropriate for
+the new device.
+
+%==============================================================================
+
+\subsection{Identity and Basic Properties}
+
+An output device is identified by its name.
+If the interpreter supports several output devices,
+the \ps{OutputDevice} resource category should contain an entry for each device,
+indexed by its name and listing the associated properties in an
+\d{output device dictionary}.%
+  \footnote{\Gs\ does not list its available devices in the \ps{OutputDevice}
+    resource category~[gs~5.50, gs~6.50].
+    Furthermore, although defining an output device dictionary as an external
+    resource makes it visible to \ps{resourcestatus} and \ps{findresource},
+    \gs\ versions before~6.50 will not list it with \ps{resourceforall} unless
+    you execute \ps{findresource} first~[gs~5.50, gs~6.01].
+    This makes \ps{resourceforall} useless.
+    However, you can obtain the list of supported devices from \gs's
+    non-standard \ps{devicenames} operator.
+  }
+Section~6.4 of PLR3 contains a list of these properties:
+\begin{itemize}
+  \item media classes
+  \item page sizes
+  \item resolutions
+  \item process colour models
+  \item trapping details dictionary types
+\end{itemize}
+It is possible (but there is no corresponding statement in PLR3)
+that a PostScript program relies on the assumption that,
+if a value is listed as supported,
+it is supported independent of the values chosen for other parameters
+unless the meaning of the property in question restricts it explicitly to a
+particular situation (this is only the case for \ps{DeviceN}).
+This is a possible rule for separating output devices.
+
+Therefore, if you have constraints among the values you wish to support
+(e.g., \ps{DeviceGray} can be used at 600\,ppi but \ps{DeviceCMYK} is only
+possible at 300\,ppi),
+you should consider implementing these groups of unconstrained values
+in different output devices.
+This might be inconvenient, though,
+and I myself have usually disregarded this advice.
+
+%==============================================================================
+
+\subsection{Process Colour Models}
+
+PostScript defines six \d{process colour models}:
+\begin{quote}
+  \ps{DeviceGray},
+  \ps{DeviceRGB}, \ps{DeviceRGBK},
+  \ps{DeviceCMY}, \ps{DeviceCMYK},
+  \ps{DeviceN}.
+\end{quote}
+A process colour model defines the \d{colorants} used by a device.
+\ps{DeviceN} is a parameterized process colour model which has to be
+supplemented by an explicit list of colorants (page device parameter
+\ps{SeparationColorNames}).
+Normally each device has one \d{native process colour model},
+but it may support others.\footnote{
+  For example, a monochrome device capable of producing separations might
+  support the process colour model
+  \ps{DeviceCMYK}~\cite[page~424]{PostScript3}.}
+
+Each process colour model has an underlying \d{native colour space}.
+Because some process colour models are based on the same colour space
+only the following four colour spaces act as native colour spaces:
+\begin{quote}
+  \ps{DeviceGray},
+  \ps{DeviceRGB},
+  \ps{DeviceCMYK},
+  \ps{DeviceN}.
+\end{quote}
+The colour spaces \ps{DeviceGray}, \ps{DeviceRGB}, and \ps{DeviceCMYK} are
+called \d{device colour spaces}.
+The colour space \ps{DeviceN} is \emph{not\/} a device colour space
+but one of the \d{special colour spaces}.
+
+Note that a designation like ``\ps{DeviceRGB}'' can therefore denote a
+colour space, a native colour space or a process colour model.
+You have to find out which before you will be able to correctly understand
+the statement containing such a name.
+
+%==============================================================================
+
+\subsection{Media Selection}
+
+\subsubsection{Media Sources}
+
+PostScript assumes the output device to have several \d{media sources},
+each identified by an integer (\d{position number}).
+You will have to decide how to associate these numbers with input trays or
+whatever your printer supports.
+
+Properties of the media currently present in a tray can be stored in the
+\ps{InputAttributes} dictionary in the page device dictionary and are
+accessed during \d{media selection}.
+
+If the printer is capable of providing information on the properties of media
+currently available in its input trays,
+\ps{InputAttributes} should therefore be initialized appropriately
+by the driver.
+
+%------------------------------------------------------------------------------
+
+\subsubsection{The Process}
+
+PostScript's media selection process composes an \d{input media request} from
+those among the page device parameters
+\ps{PageSize}, \ps{MediaColor}, \ps{MediaWeight}, \ps{MediaType},
+\ps{MediaClass}, and \ps{InsertSheet}
+which are not \ps{null} (some devices may add others) and
+tries to find a matching entry in \ps{InputAttributes}.
+Apart from \ps{MatchAll}, only those parameters which a device
+considers for inclusion in a media request should appear in an
+\ps{InputAttributes} entry.
+
+An entry in \ps{InputAttributes} \d{matches} the request if
+\begin{itemize}
+  \item it contains matching entries (equal values, in the case of
+    \ps{PageSize} with a tolerance of 5~bp) for all parameters in the
+    request and
+  \item either
+    \begin{itemize}
+      \item does not have a \ps{MatchAll} entry which is \ps{true} or
+      \item does have a \ps{MatchAll} entry which is \ps{true} and
+	does not contain any entries in addition to \ps{MatchAll} and those
+	present in the media request.
+    \end{itemize}
+\end{itemize}
+Formally, you can define a relation ``$\leq$'' between two media requests or
+\ps{InputAttributes} entries $a$ and~$b$ as follows:
+\begin{displaymath}
+  a \leq b \quad :\Longleftrightarrow \quad
+  \vtop{\advance\hsize by -4cm
+    All parameters present in $a$ (except for \ps{MatchAll} in an
+    \ps{InputAttributes} entry) are also present in~$b$ and have matching
+    values.}
+\end{displaymath}
+The match rule can then be rephrased in the following manner:
+\begin{quote}
+  An \ps{InputAttributes} entry~$e$ matches the input media request~$r$
+  if and only if $r \leq e$
+  except when \ps{MatchAll} is defined and \ps{true} in~$e$.
+  In the latter case one needs $r = e$.
+\end{quote}
+A media request is therefore a set of minimal requirements a media source must
+satisfy in order for the document to be printed from that source.
+
+Exceptions are possible if no match is found,
+the \ps{Policies} dictionary permits ignoring at least one parameter in the
+request,
+and a matching request $r' < r$ can be formed.
+PLR3 demands that in this case the interpreter must set the ignored
+page device parameters to \ps{null}\footnote{%
+  \Gs\ does not currently do it [gs~6.01].}.
+The only exception is \ps{PageSize} which will be set to the value present
+in the \ps{InputAttributes} entry selected.
+The state of the device thus becomes as if the document had originally
+requested~$r'$.
+
+%------------------------------------------------------------------------------
+
+\subsubsection{Selection Parameters Which are also Configuration Parameters}
+
+Let a ``configuration parameter'' be a page device parameter which influences
+the way the output device adapts to the medium,
+while a ``selection parameter'' is a parameter considered for inclusion in a
+media request.
+The 6~standard selection parameters can then be classified as follows:
+\begin{itemize}
+  \item
+    also a configuration parameter:
+      \ps{PageSize},
+      \ps{MediaClass},
+      % Explicitly defined to be an "arbitrary string representing attributes
+      % of the medium that may require special action by the output device"
+      % (PLR3 p. 402).
+  \item
+    not a configuration parameter:
+      \ps{InsertSheet},
+      \ps{MediaType},
+  \item
+    possibly a configuration parameter:
+      \ps{MediaColor} (probably not),
+      \ps{MediaWeight} (probably yes).
+\end{itemize}
+
+If a particular selection parameter is also a configuration parameter,
+it must be set correctly for the medium chosen by the media selection process.
+Assuming the correct value to be non-null and disregarding the
+\ps{PageSize} parameter,
+this is the case if and only if the parameter is correctly specified in the
+\ps{InputAttributes} entry \emph{and\/} the documents requests the same value:
+\begin{itemize}
+  \item
+    If the parameter is not specified in \ps{InputAttributes} and a match
+    results, the value in the page device dictionary will be \ps{null}.
+  \item
+    If the parameter is not correctly specified in \ps{InputAttributes},
+    the parameter's value in the page device dictionary will either be this
+    incorrect value or \ps{null}.
+  \item
+    If the parameter is correctly specified in \ps{InputAttributes},
+    the document requests a different value,
+    and a match results,
+    the value will also become \ps{null}.
+\end{itemize}
+The \ps{PageSize} parameter is different because instead of being set to
+\ps{null} when the request cannot be satisfied it is set to the value
+belonging to the \ps{InputAttributes} entry chosen.
+In my opinion this behaviour would have been desirable for all
+configuration parameters considered for selection.
+
+I wish to draw two conclusions from this dicussion:
+\begin{itemize}
+  \item
+    If the output device uses a selection parameter for configuration,
+    the interpreter should be configured such that the \ps{InputAttributes}
+    entries contain the correct values
+    and the \ps{Policies} dictionary should not permit the request to be
+    ignored.
+  \item
+    As already mentioned in a footnote,
+    \gs's behaviour with respect to non-matching parameters is not
+    currently~[gs~6.01] PostScript-conforming,
+    hence the preceding discussion does not really apply.
+    However, I am not aware of any statement in the documentation that this
+    was a deliberate implementation decision,
+    hence this behaviour cannot be relied upon.
+
+    Therefore I still conclude that
+    a \gs\ device should not use selection parameters for configuration
+    unless the driver can sense these media properties.
+
+    The reason is that the typical execution environment for \gs\ is a
+    single-user PC with a dedicated printer completely controlled by the user.
+    If this user inserts media with properties the driver needs to know,
+    it is unreasonable to require the parameter to be set in two places.
+\end{itemize}
+
+%------------------------------------------------------------------------------
+
+\subsubsection{User Interaction via \ps{Policies}}
+
+The user may set a policy code of~2 in the \ps{Policies} dictionary.
+This indicates that a mismatch should result in some kind of device-specific
+interaction with an external entity,
+for example asking a human operator to insert media of the size requested and
+waiting for confirmation.
+This is not supported by \gs\ and results in a
+\ps{configurationerror}~[gs~5.50] just as for a policy value of~0.
+Should it be implemented one day, this will hopefully be independent of
+the \gs\ device in question.
+You should therefore ignore this feature.
+
+%------------------------------------------------------------------------------
+
+\subsubsection{Automatic Switch to Manual Feed}
+
+A user might wish to tell the interpreter something like the following:
+``I have put A4 sheets into the input tray where they can be fed automatically,
+but I am prepared to feed certain other sizes manually''.
+The second part of this statement cannot be easily expressed in
+\ps{InputAttributes} for two reasons.
+
+The first and more important one is that you cannot request additional actions
+(like setting \ps{ManualFeed} to \ps{true}) to be performed automatically if a
+particular media source is selected and certain conditions are met.\footnote{%
+  One might consider (mis)using the \ps{Install} procedure for this purpose
+  provided it can determine which source has been selected.
+  However, there is no standard way for that,
+  and in addition PLR3 does not say whether it is permitted for
+  \ps{Install} to call \ps{setpagedevice}.
+  This is a problem because the latter calls \ps{Install} again.}
+The only choices I see are
+to make manual feed implicit in the media source by convention or
+to provoke a \ps{PageSize} mismatch.
+The first possibility must be supported by the driver,
+the second requires the user to choose a \ps{PageSize} recovery policy of~2,
+possibly combined with a \ps{PolicyReport} procedure setting \ps{ManualFeed} to
+\ps{true}.
+
+The second problem arises if ``certain other sizes'' refers to a list or range
+of page sizes.
+Lists can only be supported by distributing the individual sizes over several
+media sources one at a time,
+ranges are permissible with \gs~[gs~5.50] but not in standard PostScript.
+If you want to make it possible for the user to specify lists in this
+situation,
+you must reserve an unlimited set of position numbers for this
+special purpose.
+
+One possible solution to both problems is therefore to let the driver interpret
+all negative position numbers as meaning ``manual feed''.
+
+In deciding how to implement your driver you should, however,
+not forget that \ps{InputAttributes} only states which media are currently
+available according to the user.
+The driver still has to check whether the requested size is acceptable to the
+printer.
+This reduces the usefulness of specifying lists or ranges for manual feed.
+In fact, if one uses \gs's ability to accept a range for \ps{PageSize},
+a single position number with an implied manual feed is probably sufficient.
+This is definitely the case if the device supports custom page sizes in such a
+way that the total set of supported sizes can be expressed as a single
+connected range of media extensions.
+
+%==============================================================================
+
+\subsection{Setting up Default User Space}	\label{PsUserSpace}
+
+The PostScript language asserts that default user space is set up in a certain
+manner in relation to the medium printed on.
+PostScript programs may rely on this relationship.
+Most printers, however, can neither control nor react to how the media have
+been put into their input trays.
+In what follows I assume that this is the case for the printer in question.
+
+Concerning the extension (height and width irrespective of orientation) of
+media,
+the \ps{PageSize} entry in the \ps{InputAttributes} dictionary is available for
+telling a PostScript interpreter about the media present in an input tray.
+This is, however, not sufficient for the interpreter to correctly set up
+default user space:
+even assuming a sheet to be unmarked and to have indistinguishable sides
+this merely reduces the 8~possibilities of putting it into the input tray to
+two inequivalent ways (unless it is a square sheet).
+They are usually described by reference to the feeding direction as
+``short edge first'' and ``long edge first''.
+Both lead to equivalent \ps{PageSize} entries in \ps{InputAttributes}.
+
+The implementation of a PostScript output device for such a printer must
+therefore be accompanied by rules stating what the ``right'' ways for putting
+media into input trays are.
+In order to prevent printing beyond the edges of a sheet,
+the minimum is to state whether the interpreter assumes media will be fed short
+edge first or long edge first.
+A more detailed rule would add a description of default user space on
+a sheet lying in the input tray.
+This enables the user in addition to reliably position the output with respect
+to matter already on the medium (e.g., a watermark).
+
+\begin{note}
+  At least three versions of the {\it PostScript Language Reference
+  Supplement\/}~\cite{PSSupplement2017,PSSupplement3010,PSSupplement3011}
+  impose special rules
+  for the location of default user space when printing on envelopes.
+  In my opinion these rules are undesirable because they require
+  \textit{the program generating a PostScript page\/} to know
+  whether printing will be done on envelopes or on ordinary paper
+  of the same size.
+  As this has nothing to do with the layout of text within the page,
+  the program should not need to know this.
+  But even worse, the rules are chosen such that if one requests landscape
+  orientation (which is usually desired for envelopes) the standard rule
+  governing the behaviour of \ps{setpagedevice} (rotate by $+90^\circ$)
+  actually produces output standing on its head when applied to an envelope
+  having the flap along its longer edge!
+  
+  If, on the other hand, a printer has particular requirements for feeding
+  envelopes and this does not produce the desired result when keeping to
+  PostScript's default rules,
+  the output device should deal with this problem, possibly triggered by a
+  page device parameter or by imposing the rule that certain page sizes are
+  always interpreted as envelopes.
+
+  My advice is therefore to ignore these rules,
+  but you should form your own conclusion based on your printer's requirements.
+\end{note}
+
+All this applies only to a default state for default user space.
+This state is characterized by requesting a page in portrait orientation
+($\hbox{width} < \hbox{height}$)%
+  \footnote{It is also assumed that the size requested is available,
+    otherwise the media selection process might influence the location and
+    scale of default user space (\ps{PageSize} recovery policies~3 and~4).}
+and omitting requests for any of the page device parameters
+\ps{LeadingEdge}, \ps{Orientation}, \ps{ImageShift},
+\ps{PageOffset}, \ps{Margins}, \ps{Tumble}, \ps{MirrorPrint},
+and possibly others.
+The resulting structure on the sheet is sometimes called the
+\d{canonical page in portrait orientation},
+but you should think of this situation as the set of conditions
+under which the statement about the position of default user space
+on a sheet in the input tray is valid.
+
+Most of the parameters just mentioned are defined in terms of their effect
+with respect to this default orientation.
+For example,
+on receiving a \ps{PageSize} request for landscape orientation the interpreter
+must rotate default user space 90~degrees counterclockwise with respect to
+its position for portrait orientation and shift the origin into the
+new lower left corner.
+
+The parameter \ps{LeadingEdge} makes it possible for the user to tell the
+interpreter that a sheet has been put into the input tray in a non-standard
+way.
+Note that different devices can differ in which of the 4~possibilities is the
+default:
+for an interpreter assuming a short-edge orientation in the input tray it will
+be either~0 or~2,
+while a long-edge-oriented one will have~1 or~3 as its default.
+This argument can be reversed:
+specifying which of these values is the default assumed by the interpreter
+together with the information which side of the sheet will be printed on
+uniquely selects one of the 8 possible orientations in the input tray as the
+``right'' one for the default situation.
+
+The parameter \ps{Orientation} should only be supported by devices
+with media of continuously variable page sizes (printing to roll-fed media,
+screen displays or file formats):
+the values~1 and~3 cannot be supported on cut-sheet media,
+and the user can achieve the effect of~2 by choosing a \ps{LeadingEdge} value
+differing by~2 from its default.
+
+You must decide which of these parameters will be supported by your driver.
+Note that some are automatically available for every \gs\ device.
+
+%==============================================================================
+
+\subsection{Device Coordinates}
+
+The rules of PostScript about the relative positioning of default user space
+and the medium are intended to ensure that a PostScript program need not know
+about the device coordinate system.
+This information is, however, still accessible to the program:
+the operator \ps{defaultmatrix}, for example,
+returns the default transformation matrix for the device,
+and with this information a PostScript program can unambiguously determine the
+position of the device coordinate system with respect to default user space.
+Hence the following discussion indeed belongs under the heading of
+PostScript-visible properties of the output device.
+
+When writing your driver you must choose a device coordinate system.
+This is no problem; just do it.
+However, I am not aware of any statement in PLR3 which states that the
+device coordinate system is a fixed property of the output device.
+``Fixed'' in this context means ``fixed with respect to the feeding direction''
+or equivalently ``fixed with respect to the default of default user space''.
+If you therefore wish to switch your device coordinate system if the user
+requests landscape orientation or on any other occasion the user executes
+\ps{setpagedevice},
+this is perfectly legitimate.
+You might even do it in such a manner that \ps{defaultmatrix} returns the
+same value under all circumstances.
+This freedom is actually desirable,
+because it means that you can choose whatever convention for device coordinates
+is the simplest for you to implement depending on the current set of
+page device parameters.
+
+However, if you look at the description of the \ps{PageOffset} and \ps{Margins}
+parameters you'll find statements that for \ps{PageOffset}
+``the repositioning is typically accomplished by altering the current
+transformation matrix, although on some devices it may instead be accomplished
+by device-dependent means that are independent of the graphics state
+(in particular, of the CTM)''~\cite[page 415]{PostScript3} and that
+for \ps{Margins} the latter case is the typical one.
+(Incidentally, as both parameters have to be specified with respect to the
+direction of the axes of the device coordinate system,
+your driver's documentation should tell the user where these axes point to.)
+If your device coordinates are fixed with respect to the default default user
+space,
+you will have to modify the default transformation matrix,
+and conversely if you wish the influence of such parameters not to be visible
+in the CTM you must shift your device coordinates.
+
+Concerning \ps{PageOffset} and \ps{Margins} these discussions are, however,
+slightly academic because \gs\ implements these parameters for all devices
+and does it via modifications of the default transformation matrix
+in both cases~[gs~5.50].
+At least for \ps{Margins} you can easily override this behaviour but I wouldn't.
+
+%==============================================================================
+
+\subsection{Other Standard Page Device Parameters Describing Device
+  Capabilities}
+
+The following page device parameters defined in PLR3 refer to special
+hardware functionality:
+\begin{quote}
+  \ps{InsertSheet}, \ps{ManualFeed}, \ps{TraySwitch},
+  various parameters for roll-fed media,
+  \ps{Duplex},
+  \ps{Collate}, \ps{Jog}, \ps{OutputFaceUp},
+  \ps{MaxSeparations}, \ps{SeparationColorNames}.
+\end{quote}
+Absence of one of these parameters indicates that the feature is not
+supported by the device.
+The converse is not true.
+You will have to decide which of these features you can support.
+
+In addition, there exist also position numbers for media destinations
+(keys in \ps{OutputAttributes}),
+similar to the numbers for media sources.
+If your printer has several output destinations your driver should
+support them as well.
+
+%==============================================================================
+
+\subsection{Non-Standard Page Device Parameters}
+
+If your driver is going to offer functionality which cannot be expressed in
+terms of standard page device parameters,
+you will have to define new ones.
+
+You should take some care not to choose parameter names which can collide with
+other definitions.
+At the least you should check the current edition of the
+{\it PostScript Language Reference Supplement\/}~\cite{PSSupplement3011}
+in order to find out whether there is already a semi-standard parameter
+for this functionality or one having the intended name but another meaning.
+
+%******************************************************************************
+
+\section{General Properties of a \Gs\ Device}
+
+Unless there is an explicit reference to a different version,
+everything which follows in this and subsequent sections is based on
+\gs\ version 5.50.
+
+%==============================================================================
+
+\subsection{Definitions}
+
+A \gs\ device driver defines one or more \d{ghostscript devices}.
+A ghostscript device is identified by its name (1~to~8 letters, digits or
+underscores, starting with a letter~\cite{Drivers5.50}\footnote{%
+  These restrictions are probably the combined result of restrictions from
+  the C~language and from some file systems.
+  Effectively, this means that you can ignore at least the length restriction
+  on almost all platforms.}) and characterized by a
+C~variable which must be called {\tt gs\_\textit{name}\_device}.
+% No italic correction for "name" here; it looks worse.
+This is the \d{device structure instance},
+its type is the \d{device structure}.
+The device structure instance is a prototype for the data structure
+(\d{device instance}, sometimes also called \d{driver instance})
+which is actually used when a device is installed in the graphics state.
+
+\ifdraft
+??? Forwarding device, band device,
+life cycle (at which point in a multi-function open call is the device open?
+Will partially opened devices be closed?)
+\fi
+
+%==============================================================================
+
+\subsection{Relation to Output Devices}
+
+There is a one-to-one correspondence between ghostscript devices and 
+PostScript output devices supported by \gs.
+
+Technically, this can be inconvenient if your driver implements lots of
+different output devices and you do not wish to clutter \gs's device list
+with all these names.
+In that case you should introduce sub-devices based on particular parameter
+values.
+My \textit{hpdj\/} driver for example uses \texttt{hpdj} as the device name but
+in addition selects a particular printer model with the
+page device parameter \ps{Model}.
+As the latter determines which process colour models and page sizes are
+supported by the driver,
+this parameter in fact distinguishes between output devices within one
+ghostscript device.
+
+If you choose to implement such sub-devices you should try to simulate the
+behaviour of \ps{setpagedevice} for \ps{OutputDevice}
+(initialization with default values)
+whenever the output device is changed.
+Your \prog{put\_params} implementation should therefore check for the
+sub-device-changing parameters first.
+However, you should only reset those parameters which the user can override.
+%??? This does not apply to the resolution when set from the
+% command line [gs~6.01].
+
+%==============================================================================
+
+\subsection{Device Structure}
+
+\ifdraft
+??? Dynamic memory
+\fi
+
+%------------------------------------------------------------------------------
+
+\subsubsection{Device Procedures}
+
+Among the variables in the device structure are several dealing with functions:
+\begin{itemize}
+  \item The \prog{static\_procs} variable points to a static table of
+    type \prog{gx\_device\_procs} containing pointers to functions.
+    It is common to all device instances of the same type.
+  \item \prog{page\_procs} is of type \prog{gx\_page\_device\_procs}.
+    This is a table of pointers to functions peculiar to page devices.
+  \item The \d{device procedure table} \prog{procs} is also of
+    type \prog{gx\_device\_procs}
+    (but not a pointer to that type as \prog{static\_procs} is).
+    The entries in this table (or the functions pointed to) are the
+    \d{device procedures}.
+\end{itemize}
+
+The function \prog{gx\_device\_set\_procs()} checks whether
+\prog{static\_procs} is \prog{NULL} or not.	% gsdevice.c
+If it is not,
+the table pointed to is copied over \prog{procs} and
+\prog{static\_procs} is set to \prog{NULL}.
+
+More important, however, is that almost all \prog{NULL} entries in the
+device procedure table are overwritten with default values.
+This is done by \prog{gx\_device\_fill\_in\_procs()}.
+It first calls \prog{gx\_device\_set\_procs()}
+and then replaces null entries for all device procedures except
+\prog{fill\_rectangle}~[gs~5.50].\footnote{
+  The entries for \prog{image\_data} and \prog{end\_image} are always
+  overwritten with non-null default values
+  even if they are non-null to begin with.}
+
+The list of device procedures is frequently growing.
+In \gs\ version~5.50 this table has 43~entries.
+Check the definition of \prog{gx\_device\_proc\_struct()} in \file{gxdevcli.h}
+for the current list.
+
+A device procedure should be called by using the \prog{dev\_proc()} macro:
+it takes a pointer to a device instance and the name of a device
+procedure table field as arguments and is expanded into the entry in the
+device procedure table.
+
+While entries in \prog{*static\_procs} may not change,
+the device procedures in \prog{procs} can change during a device's lifetime.
+The macro \prog{set\_dev\_proc()} is intended for this purpose.
+%???
+%The \textit{prn\/} device, for example,
+%sets a number of device procedures for rendering when the device is opened
+%(\prog{gdev\_prn_\allocate()}) and restores the old values when the device is
+%closed (\prog{gdev\_prn\_tear\_down()}).
+
+%==============================================================================
+
+\subsection{\Gs\ Devices in PostScript}
+
+\subsubsection{Type, \Gs\ Initialization and State}
+
+\Gs\ introduces a new basic type \ps{devicetype} for representing ghostscript
+device (structure) instances.
+Instances of this type are composite objects.	% See 'ref_type' in iref.h.
+
+% See gs_init.ps.
+On initialization,
+\gs\ repeatedly executes the \ps{.getdevice} operator to obtain
+all known device structure instances.
+It then creates a dictionary \ps{devicedict} in \ps{systemdict} containing
+for each device an array of length~2;
+the first entry is the device structure instance,   % from 'gx_device_list[]'
+the second is \ps{null}\footnote{
+  Actually, the PostScript initialization code sets the second entry to be
+  \ps{null} if the device is not writable and
+  makes it a copy of the first if it is.
+  However, the implementation of \ps{.getdevice} (\prog{zgetdevice()})
+  always returns a read-only object~[gs~5.50].	% See zdevice.c.
+  % Also tested with gs 5.50 and gs 5.10 binaries.
+  }.
+Entries in \ps{devicedict} have the string returned by \ps{.devicename} as a
+key (\prog{dname} field in the device structure).	% See zdevice.c.
+
+The device instance current in the graphics state
+can be obtained with the operator
+\ps{currentdevice} implemented in \prog{zcurrentdevice()}.
+
+%------------------------------------------------------------------------------
+
+\subsubsection{Switching Devices}
+
+The procedure \ps{selectdevice} calls first \ps{finddevice} and then
+\ps{setdevice}.	% Actually, it also calls \ps{.setdefaultscreen}.
+
+The procedure \ps{finddevice} looks into \ps{devicedict} to find a device by
+its name and checks the second entry in the array.
+If it is \ps{null},
+the entry is replaced by the result of \ps{copydevice} applied to the first
+entry.
+In all cases, this second entry is returned.
+
+\ifdraft
+??? TEST: What happens on multiple selection?
+\fi
+
+\ps{copydevice} is a \gs\ operator implemented in \prog{zcopydevice()}.
+% See zdevice.c.
+The latter calls \prog{gs\_copydevice()}	% gsdevice.c
+which allocates storage for a new device instance,
+calls \prog{gx\_device\_init()} and sets the device variable \prog{is\_open}
+to \prog{false}.
+The function \prog{gx\_device\_init()} copies the source device instance
+storage into the new instance with the exception of the \prog{memory} variable.
+
+The procedure \ps{setdevice} calls the operator \ps{.setdevice} implemented
+in \prog{zsetdevice()}.	% zdevice.c
+This function calls \prog{gs\_setdevice\_no\_erase()} and clears the
+underlying page device.	% macro clear_pagedevice()
+
+\ifdraft
+??? What happens with the old device?
+\fi
+
+The function \prog{gs\_setdevice\_no\_erase()} first checks whether the device
+is already open.
+If not, it calls \prog{gx\_device\_fill\_in\_procs()} and the
+\prog{open\_device} device procedure and finally it sets \prog{is\_open = true}.
+Then it calls \prog{gs\_setdevice\_no\_init()}, \prog{gs\_initmatrix()} and
+\prog{gs\_initclip()}.
+
+\prog{gs\_setdevice\_no\_init()} sets the colour mapping procedures
+in the graphics state from the device's colour mapping procedures
+(calling \prog{gx\_set\_cmap\_procs()}).
+
+%******************************************************************************
+
+\section{\Gs\ Device Parameters}
+
+The variables in a device instance determine the values of its
+\d{device parameters}.
+These parameters are a subset of the
+page device parameters of the corresponding PostScript output device.
+The connection between the two and the way in which the device parameters may
+be accessed is an area where \gs's documentation is particularly reticent.
+
+%==============================================================================
+
+\subsection{Parameter Dictionaries}
+
+A device parameter is identified by a string, its name.
+If a device supports a particular parameter,
+it associates a typed value with this name.
+\Gs\ has an internal API for dealing with collections of such name-value pairs.
+
+%------------------------------------------------------------------------------
+
+\subsubsection{Types for Parameters}
+
+The name of a parameter is of type \prog{gs\_param\_name}
+which is defined as \prog{const char~*}.
+
+Each parameter has a type associated with it which is stored in an instance
+of type \prog{gs\_param\_type}:
+\begin{program}	% gsparam.h
+typedef enum \lb
+\    /* Scalar */
+\    gs_param_type_null, gs_param_type_bool, gs_param_type_int,
+\    gs_param_type_long, gs_param_type_float,
+\    /* Homogenous collection */
+\    gs_param_type_string, gs_param_type_name,
+\    gs_param_type_int_array, gs_param_type_float_array,
+\    gs_param_type_string_array, gs_param_type_name_array,
+\    /* Heterogenous collection */
+\    gs_param_type_dict, gs_param_type_dict_int_keys, gs_param_type_array
+\rb\ gs_param_type;
+\end{program}
+In addition, there is a macro \prog{gs\_param\_type\_any} which resolves to
+an expression of this type and which can be used to denote any type.
+
+\ifdraft
+???
+What is the concept of ``type'' here? PostScript, C, a mixture of both?
+Add description of collections.
+\fi
+
+The type \prog{gs\_param\_value} is used to store values of parameters.
+It is a \prog{union} of the following C~types:
+\begin{quote}
+  \prog{bool}, \prog{int}, \prog{long}, \prog{float},
+  \prog{gs\_param\_string},		% twice
+  \prog{gs\_param\_int\_array}, \prog{gs\_param\_float\_array},
+  \prog{gs\_param\_string\_array},	% twice
+  \prog{gs\_param\_collection}
+\end{quote}
+
+Finally, the type \prog{gs\_param\_typed\_value} combines a type description
+with a value:
+\begin{program}	% gsparam.h
+  typedef struct gs_param_typed_value_s \lb
+  \    gs_param_value value;
+  \    gs_param_type type;
+  \rb\ gs_param_typed_value;
+\end{program}
+
+%------------------------------------------------------------------------------
+
+\subsubsection{Type and Operations for Parameter Collections}
+
+A \d{parameter dictionary} represents an unordered collection of
+instances of type \prog{gs\_param\_typed\_value}
+and is of the C~type \prog{gs\_param\_list}
+% (also known as \prog{struct gs\_param\_list\_s})
+or of a type having the same initial storage layout as this type.
+This is the same convention as used to simulate type inheritance for
+device structures:
+\prog{gs\_param\_list} should be
+considered as an abstract base class defining access routines for
+parameter dictionaries
+while its derived types provide implementations for the routines and storage
+for the parameters.
+This abstract interface is declared in \file{gsparam.h}.
+
+Concrete implementations of this abstract interface are the following types:
+\begin{quote}\begin{flushleft}
+  \prog{gs\_c\_param\_list},	% gsparam.h
+  \prog{dict\_param\_list},	% iparam.h
+  \prog{array\_param\_list},	% iparam.h
+  \prog{stack\_param\_list},	% iparam.h
+  \prog{printer\_param\_list\_t}	% gdevpsdf.c
+\end{flushleft}\end{quote}
+The only one of interest to implementors of device drivers is
+\prog{stack\_param\_list} because it is used to represent objects on the
+operand stack.
+\ifdraft
+??? More about it later?
+\fi
+
+There exists a macro \prog{gs\_param\_list\_common} to obtain the list of
+declarations common to all parameter dictionary types.
+It resolves to:
+\begin{program}
+  const gs_param_list_procs *procs;
+  gs_memory_t *memory;	% Actually, the semicolon is not part of the macro.
+\end{program}
+The \prog{procs} member points to a table of pointers to the
+implementation's access methods.
+This table contains the following members\footnote{
+    I am not aware of any official description for the semantics or behaviour of
+    these functions at the level of abstraction for \prog{gs\_param\_list};
+    the comments in \file{gsparam.h} are insufficient for this purpose.
+    These descriptions are therefore heavily based on the actual implementation
+    for \prog{iparam\_list} which is an abstract type between
+    \prog{gs\_param\_list} and a number of concrete implementations
+    including \prog{stack\_param\_list}.
+  }:
+\begin{itemize}
+  \item \prog{int (*xmit\_typed)(gs\_param\_list *, gs\_param\_name,
+      gs\_param\_typed\_value *);}
+
+    This routine is used to ``transmit'' a value.
+    This means either to put a value into the dictionary (writing)
+    or to extract it (reading).
+    Which direction is chosen depends on the function pointed to,
+    i.e., unless you modify this pointer you can either read or write the
+    parameter dictionary but not both.
+
+    A reading implementation of \prog{xmit\_typed} returns zero if the
+    parameter value was successfully extracted,
+    one if the parameter does not exist,
+    and a negative value on error.
+    A writing implementation returns zero or one on success and
+    a negative value on error.
+
+    The reading implementation of \prog{xmit\_typed} for
+    \prog{stack\_param\_list}	% Actually, for 'iparam_list'.
+    keeps track of which parameter was accessed and what the result was.
+    % See comments in iparam.h and the 'results' field in 'iparam_list'
+    % [gs 5.50].
+
+    \ifdraft
+    ??? Discuss selective writing.
+    \fi
+  \item \prog{int (*signal\_error)(gs\_param\_list *, gs\_param\_name, int);}
+
+    This routine is used to associate an error code (the last argument) with
+    the parameter designated.
+    A parameter dictionary can for example store this code in the list together
+    with the parameter's value.
+    The function must \emph{never\/} be called for a
+    non-existent parameter [gs~5.50].
+    % Looking at iparam.c, this should give a core.
+
+    This routine is in particular intended to be used by functions extracting
+    values from a parameter dictionary and discovering that
+    the type is incorrect or the value is outside the permissible range.
+  \item \prog{int (*commit)(gs\_param\_list *);}
+
+    This function is used to perform some final processing after extracting
+    all interesting values from a parameter dictionary.
+    It can for example check that all the parameters present have been
+    extracted,
+    i.e., that there are no unknown parameters left in the dictionary.
+    % ref_param_read_commit() does this if it has been requested.
+    % If there are undefined parameters, their 'result' codes are set to
+    % 'e_undefined'.
+
+    The routine returns zero on success and a negative value on error.
+  \item \prog{int (*next\_key)(gs\_param\_list *, gs\_param\_enumerator\_t *,
+    gs\_param\_key\_t *);}
+
+    This routine is useful for debugging because it can be used to iterate over
+    all entries in a parameter dictionary.
+    The second argument points to an iterator which stores the last position
+    accessed;
+    it must have been initialized by calling
+    \prog{void param\_init\_enumerator(gs\_param\_enumerator\_t *)} before
+    the first call to this function.
+    The third argument
+    (the type is an alias for \prog{gs\_param\_string})	% gs 6.50
+    will receive the name of the next parameter if there is
+    one (return code is zero),
+    otherwise the return code is~1 (no more parameters) or negative (error).
+  \item In addition, there are the members
+    \prog{begin\_xmit\_collection},
+    \prog{end\_xmit\_collection},
+    \prog{request},
+    \prog{requested},
+    and
+    \prog{get\_policy}.
+\end{itemize}
+
+%------------------------------------------------------------------------------
+
+\subsubsection{Interface for Drivers}
+
+The methods in parameter dictionaries are not particularly interesting
+from the point of view of writing a driver,
+but there are some functions on top of this interface which are.
+
+
+\paragraph{Reading.}
+
+For reading a value from a parameter dictionary, the basic routine is:
+\begin{program}
+int param_read_requested_typed(gs_param_list *, gs_param_name,
+\  gs_param_typed_value *);
+\end{program}
+This function expects a requested type to have been filled into the
+\prog{type} field of the entry pointed to be the third argument.
+It calls the \prog{xmit\_typed} function.
+If the latter returns a non-zero exit code, this code is returned.
+Otherwise the function checks for a mismatch between the requested and
+the actual type
+and tries to convert between the two if necessary and possible.
+For example, if the actual parameter is of type \prog{gs\_param\_type\_int}
+its value can also be extracted as \prog{gs\_param\_type\_long}
+or \prog{gs\_param\_type\_float}.	% See param_coerce_typed().
+If the types do not match,
+a value of \prog{gs\_error\_typecheck} is returned.
+Otherwise the result is returned via the \prog{value} field in the
+third argument.
+
+There is a macro \prog{param\_read\_typed()} which effectively calls
+\prog{param\_read\_requested\_typed()} with the value
+\prog{gs\_param\_type\_any} and
+can be used to fetch a parameter value irrespective of its type.
+The \prog{type} field in the third argument will contain the actual type.
+
+Implemented on top of \prog{param\_read\_requested\_typed()} there are several
+functions \prog{param\_read\_\textit{type}()} which request and return a value
+of a specific type.
+For an \prog{int}, the routine is:
+\begin{program}
+int param_read_int(gs_param_list *, gs_param_name, int *);
+\end{program}
+These functions should be used in preference to the others.
+
+
+\paragraph{Writing.}
+
+For writing a parameter there is a macro \prog{param\_write\_typed()} which
+should be called as if it were the following function:
+\begin{program}
+  int param_write_typed(gs_param_list *, gs_param_name,
+  \  gs_param_typed_value *);
+\end{program}
+The macro is mapped to a call to \prog{xmit\_typed} and returns its return code.
+
+Again there is a layer of type-specific functions on top of this basic
+interface.
+For an \prog{int}, the routine is:
+\begin{program}
+int param_write_int(gs_param_list *, gs_param_name, const int *);
+\end{program}
+These functions should be preferred.
+
+
+\paragraph{Other Functions.}
+
+The macros \prog{param\_signal\_error()}, \prog{param\_commit()} and
+\prog{param\_get\_next\_key()}
+can be called as if they were the following functions:
+\begin{program}
+int param_signal_error(gs_param_list *, gs_param_name, int);
+int param_commit(gs_param_list *);
+int param_get_next_key(gs_param_list *, gs_param_enumerator_t *,
+\    gs_param_key_t *);
+\end{program}
+They call the dictionary's \prog{signal\_error}, \prog{commit} and
+\prog{next\_key} routines, respectively.
+
+%==============================================================================
+
+
+\subsection{The Parameter Device Procedures}
+
+To be described.	% ???
+
+%==============================================================================
+
+\subsection{Default Parameters}
+
+\subsubsection{All Devices}
+
+The function \prog{gx\_default\_get\_params()} writes the following
+parameters into the parameter list it received as an argument~[gs~5.50]:
+% See gsdparam.c and gxdevcli.h.
+\begin{quote}	% ??? Find a better solution.
+  \normalUS
+  \def\a{$^*$}	% asterisk
+  \halign{\quad\prog{#}\hfil\quad& \prog{#}\hfil\quad&
+      \vtop{\raggedright\hsize=5cm #\strut}\hfil\cr
+      % ??? Improve baseline distance.
+    \omit\quad Name\hfil & \omit Type and device variable or value\hfil &
+      Remarks\cr
+    \noalign{\smallskip\nointerlineskip
+      \hbox{\dimen0=\hsize \advance\dimen0 by -2em
+	\quad \vrule depth 0.4pt height 0pt width \dimen0}
+      \smallskip}
+    .HWMargins\a&	float HWMargins[4]&\cr
+    .IgnoreNumCopies\a&	bool IgnoreNumCopies&\cr
+    .MarginsHWResolution& float MarginsHWResolution[2]&\cr
+    .MediaSize\a&	float MediaSize[2]&\cr
+    BitsPerPixel&	int color_info.depth&\cr
+    BlueValues&		(int)(color_info.max_color + 1)&
+      only set if \prog{color\_info.num\_components} is larger than 1.\cr
+    ColorValues&	(long)(1L << color_info.depth)&
+      only set if \prog{color\_info.num\_components} is larger than 1.\cr
+    Colors&		int color_info.num_components&	\cr
+    GraphicsAlphaBits&	int&
+      a value returned by the device procedure \prog{get_alpha_bits}\cr
+    GrayValues&		(int)(color_info.max_gray + 1)&\cr
+    GreenValues&	(int)(color_info.max_color + 1)&
+      only set if \prog{color\_info.num\_components} is larger than 1.\cr
+    HWColorMap&		& returned as a string\cr	% ???
+    HWResolution\a&	float HWResolution[2]& \cr
+    HWSize\a&		float [2]&
+      initialized with \prog{width} and \prog{height} (in this order)\cr
+    ImagingBBox\a&	\textrm{null or} float ImagingBBox[4]&
+      the type depends on \prog{bool ImagingBBox_set}\cr
+    Margins\a&		float Margins[2]&	\cr
+    Name&		const char *dname& treated as a string\cr
+    NumCopies\a&	\textrm{null or} int NumCopies&
+      only read or written if \prog{NumCopies\_set} is not negative.
+      The null value is returned if \prog{NumCopies\_set} is zero.\cr
+    OutputDevice&	const char *dname& treated as a name\cr
+    PageCount&		long PageCount&	\cr
+    PageSize\a&		float MediaSize[2]&
+      only set if \prog{PAGESIZE_IS_MEDIASIZE} was defined during
+      compilation which it is~[gs~5.50].\cr
+    ProcessColorModel&	\vtop{\raggedright\hsize=5cm
+      \textrm{a name derived from
+      \prog{color\_info.num\_components},
+      see section~\ref{NativeColourSpaces}}\strut}\hfil\cr
+    RedValues&		(int)(color_info.max_color + 1)&
+      only set if \prog{color\_info.num\_components} is larger than 1.\cr
+    TextAlphaBits&	int&
+      a value returned by the device procedure \prog{get_alpha_bits}\cr
+  }
+\end{quote}
+
+The function \prog{gx\_default\_put\_params()} reads the same parameters from
+its arguments list,
+but copies only some of them into the device instance.
+These writable parameters are marked with an asterisk in the preceding list.
+The others are accessed in order to check that they are defined at all,
+that they have the right type or that their value satisfies certain constraints.
+For example,
+\ps{PageCount} must be defined and
+be either \ps{null} or a \prog{long} value agreeing with the value present
+in the \prog{PageCount} field in the device instance.
+
+In addition the default put procedure also accesses \prog{\%MediaSource} and
+\prog{\%MediaDestination} but only to check that these parameters have values
+of integer type.
+
+Before \prog{gx\_default\_put\_params()} actually modifies any parameters it
+calls \prog{param\_commit()} for the parameter list after having called all
+the necessary routines for reading the known parameters
+into temporary variables.
+If the commit routine returns a negative value,
+processing terminates without making changes in the device structure.
+
+%------------------------------------------------------------------------------
+
+\subsubsection{The \textit{prn\/} Device}
+
+The function \prog{gdev\_prn\_get\_params()} first calls
+\prog{gx\_default\_get\_params()} and then writes the following parameters
+into the parameter list it received as an argument:
+\begin{quote}	% ??? Find a better solution.
+  \normalUS
+  \def\a{$^*$}
+  \halign{\quad\prog{#}\hfil\quad& \prog{#}\hfil\quad&
+      \vtop{\raggedright\hsize=5cm #\strut}\hfil\cr
+      % ??? Improve baseline distance.
+    \omit\quad Name\hfil & \omit Type and device variable or value\hfil &
+      Remarks\cr
+    \noalign{\smallskip\nointerlineskip
+      \hbox{\dimen0=\hsize \advance\dimen0 by -2em
+	\quad \vrule depth 0.4pt height 0pt width \dimen0}
+      \smallskip}
+    BandBufferSpace&	long space_params.band.BandBufferSpace&	\cr
+    BandHeight&		int  space_params.band.BandHeight&	\cr
+    BandWidth&		int  space_params.band.BandWidth&	\cr
+    BufferSpace&	long space_params.BufferSpace&	\cr
+    Duplex\a&		\textrm{null or} bool Duplex&
+	only read or written if \prog{Duplex\_set} is not negative.
+	A null value is returned if \prog{Duplex\_set} is zero.\cr
+    MaxBitmap&		long space_params.MaxBitmap&\cr
+    OpenOutputFile\a&	bool OpenOutputFile&\cr
+    OutputFile\a&	char fname[]&	treated as a string\cr
+    ReopenPerPage\a&	bool ReopenPerPage&\cr
+  }
+\end{quote}
+The function \prog{gdev\_prn\_put\_params()} accesses the same parameters
+as \prog{gx\_default\_get\_params()}
+and finally calls \prog{gx\_default\_put\_params()}.
+Only those parameters marked with an asterisk, however,
+are usually copied into the device instance.
+The others will be copied only
+if the field \prog{space\_params.params\_\-are\_\-read\_\-only} is \prog{false}
+(then they must also satisfy some constraints),
+otherwise their values must agree with those in the device instance.
+
+In addition the put function also accesses
+\prog{InputAttributes} and \prog{OutputAttributes}
+and checks that they are dictionaries if defined.
+
+%==============================================================================
+
+\subsection{The Basic Access Routines in PostScript}
+
+A device's parameters can be read with \ps{getdeviceprops} and modified by
+\ps{putdeviceprops}~\cite{Language5.50}.
+The first is based on the operator \ps{.getdeviceparams},
+the second on \ps{.putdeviceparams}.
+
+%------------------------------------------------------------------------------
+
+\subsubsection{Reading}
+
+The operator \ps{.getdeviceparams} accepts either a \ps{null} value or a
+dictionary of keys\footnote{Values are simply duplicates of the keys.}.
+In the second case, only the specified device parameters are fetched.
+The operator puts a mark object on the stack and on top of it the
+names and values of those parameters which it could find.
+If the caller requested a parameter which cannot be found
+that request will be ignored without indicating an error.
+
+\ifdraft
+??? CHECK
+\fi
+
+This operator is implemented in \prog{zgetdeviceparams()} which calls
+\prog{zget\_device\_params()},
+a function introduced to reduce duplicate code.
+% See zdevice.c.
+This function first prepares an instance of type \prog{stack\_param\_list}
+by connecting it with the operand stack
+and then calls \prog{gs\_get\_device\_or\_hardware\_params()} for the device
+with this list.
+
+\ifdraft
+??? Discuss selection.
+\fi
+
+The function \prog{gs\_get\_device\_or\_hardware\_params()} calls
+\prog{gx\_device\_set\_procs()},
+supplies default values for some device procedures if necessary,
+and finally passes the parameter list to the \prog{get\_params} procedure.
+
+%------------------------------------------------------------------------------
+
+\subsubsection{Writing}
+
+The operator \ps{.putdeviceparams} is implemented in \prog{zputdeviceparams()}.
+Its behaviour with respect to unrecognized keys has to be requested as
+either to ignore them or to generate an \ps{undefined} error
+(as \ps{putdeviceprops} does).
+
+The implementation first prepares an instance of type \prog{stack\_param\_list}
+and then calls \prog{gs\_put\-device\-params()} for the device
+with this list.
+If the return code is negative (error), the function returns.
+Otherwise, some special processing is done under certain circumstances
+and finally the macro \prog{clear\_\-page\-device()} is called for the graphics
+state.
+
+\ifdraft
+??? Add description of error processing for undefined values.
+\fi
+
+The function \prog{gs\_putdeviceparams()} calls
+\prog{gx\_device\_set\_procs()},
+supplies default values for some device procedures if necessary,
+and then calls the \prog{put\_params} procedure with the parameter list.
+The return code from \prog{gs\_putdeviceparams()} is the code returned by the
+device procedure provided it is negative or the device was closed before the
+call or it is still open afterwards;
+otherwise (no error and the device was open before and is closed afterwards)
+the return code is always~1.
+
+%==============================================================================
+
+\subsection{Connection with Page Device Parameters}
+
+%------------------------------------------------------------------------------
+
+\subsubsection{The Implementation of \ps{currentpagedevice}}
+
+The procedure \ps{currentpagedevice} first calls the operator
+\ps{.currentpagedevice} which is implemented in \prog{zcurrentpagedevice()}.
+If the current device is a page device or acts as a forwarding device
+for a page device,
+this function returns the dictionary parameter \prog{pagedevice} from
+\gs's graphics state.
+
+If the dictionary returned is empty, \ps{currentpagedevice}
+creates a new dictionary from all
+parameters returned by \ps{.getdeviceparams} for the page device plus
+the following ``required attributes''~[gs~5.50]:
+\begin{quote}
+  % See definition of .requiredattrs in gs_setpd.ps.
+  \ps{PageOffset},
+  \ps{InputAttributes},
+  \ps{\%MediaSource},
+  \ps{OutputAttributes},
+  \ps{\%MediaDestination},
+  \ps{Install},
+  \ps{BeginPage},
+  \ps{EndPage},
+  \ps{Policies}.
+\end{quote}
+The default values for these parameters are overridden if \ps{.getdeviceparams}
+returns values for them.
+% Remark in gs_setpd.ps 5.50, line 199-200:
+%   In case of duplicate keys, .dicttomark takes the entry
+%   lower on the stack, so we can just append the defaults here.
+Before returning the resulting dictionary,
+\ps{currentpagedevice} also calls \ps{.setpagedevice} (\prog{zsetpagedevice()})
+which sets \prog{pagedevice} in the graphics state.
+
+If, on the other hand, \ps{.currentpagedevice} returns a dictionary of non-zero
+length,
+\ps{currentpagedevice} creates and returns a new dictionary constructed from
+this and the current values for \ps{.MediaSize} and \ps{PageCount}.
+% Definition of .dynamicppkeys in gs_setpd.ps.
+If your driver modifies other device parameters except as requested through
+\ps{setpagedevice},
+these modifications will therefore not be visible in PostScript.
+
+\ifdraft
+??? Describe when the data are refreshed.
+\fi
+
+%------------------------------------------------------------------------------
+
+\subsubsection{The Implementation of \ps{setpagedevice}}
+
+\ifdraft
+\Gs's implementation of \ps{setpagedevice} is fairly complex.
+This document lists only some of its properties,
+the reader should check the file \file{gs\_setpd.ps} for details.
+
+???
+\else
+To be described.
+\fi
+
+%==============================================================================
+
+\ifdraft
+\subsection{???}
+
+CLI, overriding, multiple access, \prog{Duplex\_set} problem.
+\fi
+
+%******************************************************************************
+
+\section{Pages and Media}
+
+\subsection{Device Coordinates}	\label{DevCoord}
+
+\Gs's documentation~\cite[section ``Coordinates and types'']{Drivers5.50}
+gives the impression that a driver can choose any location for the origin
+and orientation of its device coordinate system provided coordinate values
+fit into an \prog{int}.
+This is misleading.
+
+Printer drivers based on the \textit{prn\/} device use an internal
+pixmap-generating device (a ``memory'' or a ``command list'' device)
+for scan conversion.
+The device coordinate system for this pixmap uses $x$-values in the range
+$[0, \hbox{width}-1]$ and $y$-values in the range $[0, \hbox{height}-1]$.
+% ??? Reference.
+The width and height values are set from the page size and the resolution
+(see \prog{gx\_device\_set\_width\_height()})	% gsdevice.c
+and are available in the device instance as the \prog{width} and \prog{height}
+fields.
+Anything falling outside this area is clipped.	% Where? ???
+This clipping happens in addition to the clipping established at PostScript
+level.
+Therefore you should never put your device coordinate origin in the interior
+of the imageable area or outside of the page area.
+It also means that the imageable area must be contained in the page area:
+the \textit{prn\/} device cannot support ``Extra''
+sizes~\cite[Appendix~B]{PPD4.3}.\footnote{
+  A better way would have been to set width and height from page size,
+  resolution and the hardware margins.
+  Not only would this have achieved support for ``Extra'' sizes via negative
+  margins,
+  it would also almost certainly have forced \gs\ to interpret hardware margins
+  with respect to device space (see section~\ref{HardwareMargins}).}
+
+Where a driver's device coordinate system is located on the printed page
+depends on where the driver puts the pixels from the pixmap.
+It extracts these values by calling one of the following functions to obtain
+one or more scan lines (all $x$~pixels for one $y$~value,
+$x = 0$ lying in the first byte of the scan line):
+\begin{quote}
+  % Checked with gs 5.50.
+  \tt\raggedright \parindent=-2em \advance\leftskip by 2em
+  \noindent\kern-2em
+  int gdev\_prn\_copy\_scan\_lines(gx\_device\_printer *pdev, int y,
+    byte *str, \penalty-5 uint size);
+
+  int gdev\_prn\_get\_bits(gx\_device\_printer *pdev, int y,
+    byte *str, \penalty-5 byte **actual\_data);
+\end{quote}
+
+In most cases the printer's native I/O~interface for raster data
+will print a small group of pixel lines,
+clear its memory for the next group
+and advance the paper by the distance covered.
+It will not usually be possible to move backwards.
+Hence the first pixel line sent is the one closest to the medium's
+\d{leading edge},
+that edge which enters the printer first.\footnote{
+  Ah, you noticed the logical gap?
+  Well, if you find a printer which feeds paper with one edge first and
+  then starts printing from one of the other edges,
+  send me a message and I'll be surprised.}
+It is also to be expected that the printer prints the pixel line entirely,
+starting at the left margin of the imageable area and proceeding to the right.
+A convenient position for the device coordinate system is therefore
+with the origin in the top left corner\footnote{
+  ``Top'' is defined as where the first pixel line is printed (leading edge),
+  and ``left'' is the edge to the left if you hold the sheet with the
+  leading edge up and the printed side towards you.}
+of the imageable area,
+the $x$~axis pointing to the right and the $y$~axis downwards.
+The driver can then extract scan lines from the pixmap in the order of
+increasing~$y$,
+does not need to reverse the order of pixels within the line,
+and need not insert or remove pixels at the beginning of raster lines.
+With the choice of device coordinates as just described
+the leading edge is then the edge close to the $y = 0$ line in device space.
+
+It is occasionally helpful to distinguish explicitly between the two systems
+of device coordinates:
+pixmap device coordinates are fixed with respect to the pixmap
+(I call this the \d{pixmap device space})
+and the ``real'' device coordinates should be thought of as being attached to
+the sheet printed.
+The relation between them is established by the driver's source code and the
+printer's native I/O~interface.
+When programming for \gs\ you usually deal with pixmap device space,
+except when setting up the default user space.
+
+%==============================================================================
+
+\subsection{Device Space and Default User Space}
+
+Having fixed the relation between the pixmap's device coordinates and the
+printer's interface you still have to set up the default matrix to establish
+the correct relation between default user space and
+(``real'') device coordinates.
+
+%------------------------------------------------------------------------------
+
+\subsubsection{The \ps{defaultmatrix} Operator}
+% Description derived from gs 5.50, checked with gs 6.50.
+
+\Gs\ implements \ps{defaultmatrix} in \prog{zdefaultmatrix()}	% zmatrix.c
+which calls \prog{gs\_defaultmatrix()}.
+The latter function first checks whether the parameter \prog{ctm\_default\_set}
+in the graphics state is set or not.	% See gscoord.c.
+If it is, the function returns the value of \prog{ctm\_default} in the
+graphics state.
+If it is not set,
+the function obtains the current device from the graphics state,
+calls \prog{gs\_deviceinitialmatrix()} for this device,
+and performs an additional shift of the coordinate system based on the
+values for the \prog{Margins} array in the device instance:
+\begin{program}
+  pmat->tx +=
+  \  dev->Margins[0] * dev->HWResolution[0] / dev->MarginsHWResolution[0];
+  pmat->ty +=
+  \  dev->Margins[1] * dev->HWResolution[1] / dev->MarginsHWResolution[1];
+\end{program}
+
+The function \prog{gs\_deviceinitialmatrix()}	% gsdevice.c
+first checks whether the
+device procedure \prog{get\_initial\_matrix} has been filled in or not
+and inserts \prog{gx\_default\_get\_initial\_matrix()} in the procedure list
+if not.
+It then calls the device procedure \prog{get\_initial\_matrix}.
+
+Looking from default user space,
+the default procedure \prog{gx\_default\_get\_initial\_matrix()} returns a
+matrix putting the origin in the top left corner of the page,
+the $x$~axis pointing to the right and the $y$~axis downwards.
+% See gdevdflt.c.
+
+The graphics state parameter \prog{ctm\_default} is set in
+\prog{gs\_setdefaultmatrix()} only.	% gscoord.c
+This function in turn is called only from \prog{zsetdefaultmatrix()} which
+is the implementation of the \ps{.setdefaultmatrix} operator.
+This operator is always (and usually only) called during execution of
+\ps{setpagedevice} with the value of the CTM valid
+after the possible execution of the \ps{Install} procedure.
+
+This is the connection between \ps{defaultmatrix} and the
+\prog{get\_initial\_matrix} device procedure.
+One implication of this relation is that,
+if \ps{setpagedevice} is called at least once,
+the default matrix will remain fixed until the next call to
+\ps{setpagedevice}.\footnote{
+  Note that at least one function of the \gs\ kernel
+  (\prog{gx\_default\_clip\_box()})
+  calls the \prog{get\_initial\_matrix} procedure directly
+  instead of calling \prog{gs\_deviceinitialmatrix()} [gs~6.50].
+  I have not investigated whether this could have unwanted consequences.}
+
+The conclusions to be drawn from this are the following:
+\begin{itemize}
+  \item You need to write your own \prog{get\_initial\_matrix} procedure only
+    if the device coordinate origin is not in the upper left corner of the
+    page area as seen from default user space.
+  \item The driver should not change the default CTM except when
+    \ps{setpagedevice} is called.
+
+    This means that all parameters the \prog{get\_initial\_matrix} procedure
+    needs to define default user space should be changed only in the
+    \prog{put\_params} device procedure.
+  \item Your implementation of \prog{get\_initial\_matrix} should ignore
+    \prog{Margins} and any transformation already taken care of in
+    \ps{setpagedevice} (like \ps{PageOffset}).
+\end{itemize}
+
+\ifdraft
+??? Discuss the soft-tumble problem and its solution.
+\fi
+
+%------------------------------------------------------------------------------
+
+\subsubsection{The Imageable Area and the Device Coordinate Origin}
+\label{HardwareMargins}
+
+The imageable area of a ghostscript device is described by the \prog{HWMargins}
+device variable.
+This is an array of four \prog{float}s,
+interpreted as distances in~bp from the edges of the page.\footnote{
+  The ``canonical margin order'' in \gs, used for several such variables,
+  is: left, bottom, right, and top,
+  but this does not tell you which coordinate system defines these directions.
+  This documentation is missing for several other device structure fields
+  which require a reference system for their interpretation.
+  In the case of \prog{HWMargins} one apparently has to look from default user
+  space (see \prog{gs\_initclip()} in \file{gspath.c}).
+  In contrast, the standard \texttt{*HWMargins} parameter in PPD files
+  is explicitly defined with respect to the
+  feeding direction~\cite[page~114]{PPD4.3}.}
+These values can be set by calling:
+\begin{program}
+  void gx_device_set_margins(gx_device *dev, const float *margins,
+  \  bool move_origin);
+\end{program}
+If you specify \prog{true} for \prog{move\_origin},
+\gs\ will in addition use the left and top margin values to set the
+\prog{Margins} array in such a manner that
+the device coordinate origin will be in the top left corner of the imageable
+area.
+As explained in section~\ref{DevCoord},
+the resulting effect is usually desirable.
+However, the way used to achieve it is wrong:
+the \prog{Margins} array contains the value of the \ps{Margins} page device
+parameter which was introduced to compensate for mechanical misalignments
+in a device.
+I take this to mean that a value of zero means that no misalignment exists,
+a contradiction with the situation achieved by
+\prog{gx\_device\_set\_margins()}.
+Of course one could tell the user that
+when setting \ps{Margins} s/he should take the imageable area into account,
+but this becomes a nuisance if the imageable area depends on the
+page size.
+This is for example the case for Hewlett-Packard's DeskJet printers.
+
+If you want to position your device coordinate origin in the top left corner
+of the imageable area and to leave \ps{Margins} with its standard meaning,
+you will therefore have to implement the desired shift of the device coordinate
+origin in your driver's \prog{get\_initial\_matrix} device procedure.
+This procedure will need to know the top and left margins in device space.
+
+%------------------------------------------------------------------------------
+
+\subsubsection{Landscape Orientation}
+
+As explained in section~\ref{PsUserSpace},
+the PostScript language requires that
+if a user requests landscape orientation
+(a \ps{PageSize} value with $\hbox{width} > \hbox{height}$ in a
+\ps{setpagedevice} request)
+the output device must rotate default user space by $+90^\circ$ with respect
+to portrait orientation for the same medium.\footnote{
+  I would not consider this rule to be binding for an output device printing
+  on media of continuously variable dimensions.
+  In particular, it is certainly inappropriate for a screen viewer and for most
+  if not all file formats.
+  But the behaviour is essential for every device printing on
+  media of discrete sizes.}
+However, the only ghostscript drivers I know of which actually do it are
+\textit{cljet5\/}~[gs~5.50] and my own \textit{hpdj/pcl3\/} driver.
+% I have done an automated check on most of the 137 devices present in gs 5.10
+% as compiled for Debian 2.1 (package gs 5.10-1). The exceptions were the
+% screen and file devices lvga256, vgalib, cgmmono, cgm8, and cgm24. The only
+% device where an exchange of width and height in the PageSize device parameter
+% led to a defaultmatrix with a different orientation was hpdj (cljet5 was not
+% among the devices compiled into the excutable).
+% Incidentally, hpdj is capable of this only since hpdj 2.2 but at least gave
+% an error message before that.
+% I have also searched through the gs 5.50 source code for drivers which set
+% their own get_initial_matrix() device procedure. I found
+% mem_get_initial_matrix(), clj_get_initial_matrix(), pm_get_initial_matrix(),
+% win_dib_get_initial_matrix(), and x_get_initial_matrix(). Only
+% clj_get_initial_matrix() treats rotation.
+% In addition, I have looked for the string "landscape" (irrespective of
+% upper/lower case) and found nothing suggestive except in the MS Windows
+% viewer gdevwpr2.c where it says: "...does try to set the printer page size
+% from the PostScript PageSize, but it isn't working reliably at the moment".
+
+Your driver can determine that landscape orientation has been requested by
+examining the \prog{MediaSize[]} array.
+It contains the requested page size in~bp with respect to default user
+space.\footnote{
+  This interpretation is not documented with the variable's definition
+  but can be deduced from the fact that it receives the value of the
+  \ps{PageSize} page device parameter (\prog{gx\_default\_put\_params()}).}
+If it is a case of landscape orientation
+($\hbox{\prog{MediaSize[0]}} > \hbox{\prog{MediaSize[1]}}$),
+you must include a rotation by $+90^\circ$ in your \prog{get\_initial\_matrix}
+device procedure and you must modify the \prog{width} and \prog{height}
+fields appropriately.
+
+Unfortunately, \gs's functions \prog{gx\_device\_set\_width\_height()},
+\prog{gx\_device\_set\_resolution()} and \prog{gx\_device\_set\_media\_size()}
+all assume that device space and default user space have the same notion about
+what is ``vertical'' and what is ``horizontal''.
+Hence you must update \prog{width} and \prog{height} directly and guard against
+some other instance calling any of these functions and producing inappropriate
+values.
+The only reliable way I know for this
+is to check for this condition in the \prog{open\_device} device procedure and,
+if necessary, to reassign \prog{width} and \prog{height} there.
+Doing this requires reallocation of storage in the \textit{prn\/} device.
+
+\ifdraft
+??? Problem of the initial matrix routine having the necessary information
+\fi
+
+The same problems arise if your driver supports the \ps{LeadingEdge} page
+device parameter because in that case arbitrary orientations of default user
+space with respect to device space are possible.
+
+%==============================================================================
+
+\subsection{Media Sources and Destinations}
+
+\Gs~[gs~5.50] sets the page device parameters \ps{\%MediaSource} and
+\ps{\%MediaDestination} to the position numbers determined for media source and
+media destination respectively
+during the process of media selection.
+
+If your driver supports different media sources or destinations,
+its \prog{put\_params} routine should fetch the values of these parameters.
+
+\Gs\ does support the \ps{MediaPosition} page device parameter for
+media selection~[gs~5.50, gs~6.01],
+but not by default as a device parameter
+(i.e., you must set it with \ps{setpagedevice}, not from the command line),
+and you can't use it to select negative position numbers
+(this gives a \ps{rangecheck}~[gs~6.01]).
+
+%==============================================================================
+
+\ifdraft
+\subsection{To be Discussed}	%???
+
+media sizes, InputAttributes
+\fi
+
+%******************************************************************************
+
+\section{\Gs's Colour Treatment}
+
+%==============================================================================
+
+\subsection{Native Colour Spaces}	\label{NativeColourSpaces}
+
+\Gs\ does not support \ps{DeviceN} as a native colour space~[gs~5.50].
+The other three possible spaces are supported;
+this information is encoded in the \prog{color\_info.num\_components}
+device parameter 
+which can be \prog{1} for \ps{DeviceGray},
+\prog{3} for \ps{DeviceRGB} and \prog{4} in the case of \ps{DeviceCMYK}.
+
+Note that \prog{gx\_default\_get\_params()} returns these colour space names
+as the value of the device parameter 
+\ps{ProcessColorModel} which will be inappropriate if the device uses, e.g.,
+the process colour model \ps{DeviceCMY}.
+Your driver cannot correct this because
+\prog{gx\_default\_put\_params()} signals an error if this
+page device parameter has another value than the native colour space name
+belonging to the current \prog{color\_info.num\_components} value.
+% Source code inspection in gs 5.50.
+
+%==============================================================================
+
+\ifdraft
+
+\subsection{Internal Colour Representation}
+
+\subsubsection{Colour in the Native Colour Space}
+
+Colour specifications in a PostScript program can be given in any of the
+supported colour spaces.
+They are then converted into the native colour space as specified by the
+PostScript language definition.
+This part is standard and results in certain real numbers
+in the range $[0, 1]$.
+
+??? What are the device colours? Where does \gs\ apply transfer functions?
+
+For \gs, these
+\prog{color\_info.num\_components} floating point numbers are first
+converted into instances of type \prog{frac},
+an integer type % (\prog{short}~[gs~6.50])	% gxfrac.h
+with the range zero to
+$f_1 := 32760 = 2^3 \times 3^2 \times 5 \times 7 \times 13$.
+This value is chosen in order to be able to represent
+``almost all common fractions'' % gxfrac.h [gs 6.50]
+of~1 exactly.
+The conversions between \prog{float} and \prog{frac} are defined as follows:
+\begin{program}		% gxfrac.h in gs 5.50 and 6.50
+  \#define frac_1         ((frac)0x7ff8)
+  \#define frac_1_float   ((float)frac_1)
+  \#define frac2float(fr) ((fr) / frac_1_float)
+  \#define float2frac(fl) ((frac)(((fl) + 0.5 / frac_1_float) * frac_1_float))
+\end{program}
+Assuming infinite precision for floating point arithmetic,
+the conversion from a \prog{float}~$x$ to a \prog{frac}~$f$ is therefore
+simply:
+$$
+  f = \left\lfloor x f_1 + {1 \over 2} \right\rfloor
+$$
+Looking at the pre-images of the possible results we find that
+this map divides the interval $[0, 1]$ into $f_1 + 1$~pieces of unequal length:
+the first and the last piece have length $1 / 2 f_1$,
+the others have length $1/f_1$.
+
+\ifdraft
+??? Discuss the resulting problems, present the correct solution.
+\fi
+
+???
+are then converted into \d{(device) colour values},
+instances of type \prog{gx\_color\_value}.
+This is an unsigned integer type
+(at present, it is \prog{unsigned short}~\cite{Drivers6.01}),
+and the conversion maps zero to zero and one to
+the value of the macro \prog{gx\_max\_color\_value}\footnote{
+  This is equal to $2^{\hbox{\prog{gx\_color\_value\_bits}}} - 1$
+  where \prog{gx\_color\_value\_bits} is
+  $8 \times \hbox{\prog{sizeof(gx\_color\_value)}}$ [gs~6.50].}.
+  % gxcvalue.h
+
+%------------------------------------------------------------------------------
+
+\subsubsection{???}
+
+??? gx\_color\_index, depth
+
+%------------------------------------------------------------------------------
+
+??? mapping functions (what is called depending on the native colour space)
+
+%==============================================================================
+
+\subsection{Intensity Rendering}
+
+??? \Gs's dithering implementation, 3 possibilities
+
+%==============================================================================
+
+\subsection{Process Colour Models}
+
+??? Example for DeviceCMY.
+
+\fi	% draft
+
+%******************************************************************************
+
+\addcontentsline{toc}{section}{\numberline{}References}\nobreak
+\bibliography{Informatik,ghostscript}
+
+%******************************************************************************
+
+\end{document}

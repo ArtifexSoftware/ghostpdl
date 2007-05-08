@@ -1,0 +1,58 @@
+
+Quick installation instructions for the Lexmark Z12 or Z31 printer under Linux
+------------------------------------------------------------------------------
+
+For those who don't want to read the Ghostscript and CUPS documentation
+I will provide here some short instructions.
+
+I suppose you don't have CUPS and ESP Ghostscript installed on your system. 
+You need the followings:
+- CUPS (the current version is 1.1.18)
+- ESP Ghostscript (current CVS version: espgs-7.05.6-source.tar.bz2)
+- PPD file from www.linuxprinting.org
+- cupsomatic Perl script from www.linuxprinting.org
+
+1) Compile CUPS 
+  ./configure --prefix=/usr --exec-prefix=/usr --localstatedir=/var \
+  --sysconfdir=/etc &&
+  make && make install
+
+2) Extract the ESP Ghostscript source.
+  Replace the gdevlx32.c from the gsX.YZ/src directory with the one
+  provided with this tarball. 
+  Now we are ready to compile Ghostscript.
+  ./configure --prefix=/usr/local --with-fontpath=/usr/local/share/ghostscript/fonts &&
+  make && make install 
+
+3) Copy the PPD file (Lexmark-Z12-lxm3200-tweaked.ppd or
+   Lexmark-Z31-lxm3200-tweaked.ppd) to 
+  /usr/share/cups/model
+  chmod a+r Lexmark-Z12-lxm3200-tweaked.ppd
+  or
+  chmod a+r Lexmark-Z31-lxm3200-tweaked.ppd
+
+4) Copy the cupsomatic Perl script to /usr/lib/cups/filter
+   chmod 755 cupsomatic
+
+5) Now we are ready to start CUPS:
+   /etc/rc.d/init.d/cups start or /etc/init.d/cups start
+
+6) Open your favorite web browser and connect to http://localhost:631.
+   From the graphical CUPS configuration tool add a new printer.
+   Select the "Lexmark Z12, lxm3200-tweaked" or 
+   "Lexmark Z31, lxm3200-tweaked" from the list.
+   If everything went well now you can print a test page.
+   Remember that I have tested only B&W printing. If you select color,
+   I cannot guarantee anything. 
+
+Enjoy the Lexmark Z12/Z31 printing under Linux !
+
+Note that the lxm3200 driver was written by Daniel Gordini,
+so all credits go to him.
+
+If you have problems setting up the Z12 or Z31, first of all read the CUPS 
+and ESP Ghostscript documentation. If you are sure that the problem is 
+connected with the driver, please contact us.
+
+Boer Attila (Z12) (boera@unitbv.ro)
+Tomas Groth (Z31) (tomasgroth@hotmail.com)

@@ -1,0 +1,489 @@
+#******************************************************************************
+# File:     @(#)$Id: reports.txt,v 2.13 2001/08/14 16:20:35 Martin Rel $
+# Contents: Hardware compatibility reports for pcl3
+# Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
+#           Germany. E-mail: Martin.Lottermoser@t-online.de.
+#
+#******************************************************************************
+#									      *
+#	Copyright (C) 2000, 2001 by Martin Lottermoser			      *
+#	All rights reserved						      *
+#									      *
+#******************************************************************************
+#
+# For a description of the format and the meaning of the entries in this file,
+# see how-to-report.txt.
+#
+# The reports are sorted by the following criteria:
+# - company and printer name (basically alphabetically ascending)
+# - pcl3 version (descending)
+# - ghostscript version (descending)
+# - date (descending)
+#
+# The success and failure items within a report are preferably sorted as
+# follows:
+# - colour model: Gray, RGB, CMY, CMY+K, CMYK
+# - resolution (ascending)
+# - intensity levels (ascending)
+#
+# Note that the classification as success or failure is the responsibility of
+# the person who provided the report. In the case of failure, you should read
+# the accompanying comment in order to find out what went wrong. There are
+# cases where the failure is not due to pcl3.
+#
+#******************************************************************************
+
+# Hewlett-Packard 2000C/2000CN Professional Series Color Printers
+# (includes 2000Cse, 2000Cxi, and 2000CN)
+
+Name: Torsten Ian Smith
+E-mail address: torstenian@get2net.dk
+Date: 2001-04-18
+Printer: HP 2000C Version 9.5.1.R
+Ghostscript version: 6.50
+pcl3 version: 3.2
+Success: -sDEVICE=pcl3 -sColorModel=CMYK -dCompressionMethod=9
+  -sPageCountFile=/var/spool/pagecount -sIntensityRendering=Floyd-Steinberg
+  -sSubdevice=unspec -sMedium=plain -sPrintQuality=1
+
+Name: Torsten Ian Smith
+E-mail address: torstenian@get2net.dk
+Date: 2001-04-08
+Printer: HP 2000C Version 9.5.1.R
+Ghostscript version: 6.01
+pcl3 version: 3.0.2
+Remarks: Settings derived from MS-windows printfile using pcl3opts.
+Success: gs -sDEVICE=pcl3 -sSubdevice=unspec -dSendNULs -sPJLLanguage=PCL3GUI
+  -dOnlyCRD -r300 -sColourModel=CMYK -dBlackLevels=4 -dCMYLevels=4
+  -sPrintQuality=presentation -sMedium=plain -dCompressionMethod=9
+
+#******************************************************************************
+
+# Hewlett-Packard 2500CM Professional Series Color Printer (model C2685A)
+
+Name: Ian Leonard
+E-mail address: ghostscript@denver.com.au
+Date: 2001-07-17
+Printer: HP Deskjet 2500CM C2685A FW-8.3.6
+Ghostscript version: 6.50
+pcl3 version: 3.2
+Remarks: Printer display remained "Processing Job" after job completed printing.
+         Tests were done on a Windows 2000 platform using AFPL Ghostscript
+         6.50 compiled with pcl3.  This distribution is available at 
+         http://www.denver.com.au/downloads/gs-pcl.
+Success: -sDEVICE=pcl3 -sColorModel=CMYK -sSubdevice=unspec
+         -dCompressionMethod=9 -r600 
+Success: -sDEVICE=pcl3 -sColorModel=CMYK -sSubdevice=unspec
+         -dCompressionMethod=9.
+  The above produces 300dpi.
+Success: -sDEVICE=pcl3 -sSubdevice=unspec -dSendNULs=600
+         -sPJLLanguage=PCL3GUI -dOnlyCRD -r300 -sColourModel=CMYK
+         -dBlackLevels=4 -dCMYLevels=4 -sPrintQuality=presentation
+         -sMedium=transparency -dCompressionMethod=9
+  The above worked only if the command
+   << /PCLInit1 <1B2A6F375708090000070101> >> setpagedevice
+  was included before the document to be printed.
+
+#******************************************************************************
+
+# Hewlett-Packard DeskJet 697C
+
+Name: Oliver Schurr
+E-mail address: schurro@georgetown.edu
+Date: 2001-02-02
+Printer: Hewlett-Packard DeskJet 697C
+Ghostscript version: AFPL GS 6.50
+pcl3 version: 3.0.2
+Success: -sDEVICE=hpdj690c
+Success: -sDEVICE=hpdj690c -r600x300
+Success: -sDEVICE=hpdj690c -r600
+Success: -sDEVICE=hpdj690c -ColorModel=CMYK
+Success: -sDEVICE=hpdj690c -r600x300 -ColorModel=CMYK
+Remarks: in each case I used 'lpr -Praw test.pcl' to send the file to the
+  printer
+
+#******************************************************************************
+
+# Hewlett-Packard DeskJet 850C (model C2145A)
+
+Name: Martin Lottermoser
+E-mail address: Martin.Lottermoser@t-online.de
+Date: 2000-10-21
+Printer: Hewlett-Packard DeskJet 850C, model C2145A, revision: 9.20 01/14/95
+Ghostscript version: Aladdin ghostscript 6.01
+pcl3 version: pre-3.0
+Remarks: All tests were made with levels-test.ps. I have made no remarks on
+  recognizable halftoning problems except where the result was seriously wrong.
+  This applies also to the classification as success or failure.
+Success: -sDEVICE=hpdj850c -r75.
+  This resolution is too small to be useful.
+Failure: -sDEVICE=hpdj850c -r150.
+  In the 43-levels test for black, fields 4 and 5 became white again (non-
+  monotonic behaviour). The same gaps appear with the other bands.
+  This is apparently a ghostscript problem, see the following test.
+  The behaviour is the same in GNU ghostscript 5.50.
+Success: -sDEVICE=hpdj850c -r150 -dNoHalftoning
+Success: -sDEVICE=hpdj850c -r300
+Failure: -sDEVICE=hpdj850c -r300 -dBlackLevels=4.
+  In the black band of the 43-levels test, fields 1, 3, 5, 7, 9, 11, 22, 24,
+  26, 28, and 30 have white gaps on the right. Similar gaps appear in the
+  other bands. This is a problem with gs 6.01 which does not appear with
+  GNU ghostscript 5.50. See also the following test.
+Success: -sDEVICE=hpdj850c -r300 -dBlackLevels=4 -dNoHalftoning
+Success: -sDEVICE=hpdj850c -r600
+Success: -sDEVICE=hpdj850c -r75 -sColourModel=CMY.
+  This resolution is too small to be useful.
+  Composite black is mapped to true black by the printer.
+Failure: -sDEVICE=hpdj850c -r150 -sColourModel=CMY.
+  Composite black is mapped to true black by the printer.
+  In the 43-levels test for black, fields 4 and 5 became white again (non-
+  monotonic behaviour).
+  This is apparently a ghostscript problem, see the following test.
+Success: -sDEVICE=hpdj850c -r150 -sColourModel=CMY -dNoHalftoning.
+  Composite black is mapped to true black by the printer.
+Success: -sDEVICE=hpdj850c -r300 -sColourModel=CMY.
+  Composite black is mapped to true black by the printer.
+Success: -sDEVICE=hpdj850c -r75 -sColourModel=CMYK.
+  This resolution is too small to be useful.
+Failure: -sDEVICE=hpdj850c -r150 -sColourModel=CMYK.
+  In the 43-levels test for black, fields 4 and 5 became white again (non-
+  monotonic behaviour). The three CMY bands show a diminished intensity in the
+  same fields, though not quite as obvious.
+  This is apparently a ghostscript problem, see the following test.
+Success: -sDEVICE=hpdj850c -r150 -sColourModel=CMYK -dNoHalftoning
+Success: -sDEVICE=hpdj850c -r300 -sColourModel=CMYK
+Success: -sDEVICE=hpdj850c -r300 -sColourModel=CMYK -dBlackLevels=4
+  -dCMYLevels=3.
+  The CMY colorants are far too saturated (I didn't override the transfer
+  functions).
+Success: -sDEVICE=hpdj850c -r300 -sColourModel=CMYK -dBlackLevels=4
+  -dCMYLevels=4.
+  The CMY colorants are far too saturated (again, no transfer functions).
+
+#******************************************************************************
+
+# Hewlett-Packard DeskJet 970C (model C6429A)
+
+Name: Patrick Brison
+E-mail address: pbn@rtbf.be
+Date: 2001/01/29
+Printer: DeskJet970Cxi (model C6429A)
+         Serial Number: ES989130ZPJQ
+         Service ID: 09345
+         FW Revision: BF410063
+         PCL Default Symbol Set: 341
+Ghostscript version: 6.50
+pcl3 version: 3.0.2
+Media configuration file: none used
+Remarks: Three series of test were made:
+   - monochrome support
+   - colours support
+   - duplex support
+   In summary:
+     Different X and Y resolutions (600x300, 2400x1200) do not
+     seem to work.
+     The combination color/normal/600 dpi does not seem to work.
+     Some options must be avoided for some modes to work correctly
+     Duplex settings seem to work fine in all modes
+
+##################
+# Monochrome tests
+##################
+
+# Draft 300 dpi
+Success: -sDEVICE=pcl3
+   -dSendNULs -sPJLLanguage=PCL3GUI -dOnlyCRD
+   -sColourModel=Gray -sPrintQuality=draft -r300
+
+# Draft 600x300 dpi
+Failure: -sDEVICE=pcl3
+   -dSendNULs -sPJLLanguage=PCL3GUI -dOnlyCRD
+   -sColourModel=Gray -sPrintQuality=draft -r600x300.
+   No output, printer loads page, power led blinks but nothing happens.
+
+# Normal 300 dpi
+Success: -sDEVICE=pcl3
+  -dSendNULs -dOnlyCRD
+  -sColourModel=Gray -sPrintQuality=normal -r300 -sMedium=plain.
+  Removing / adding any of "-dSendNULs", "-dOnlyCRD" has no effect,
+  Using "-sPJLLanguage=PCL3GUI" causes this mode to FAIL
+
+# Normal 600x300 dpi
+Failure: -sDEVICE=pcl3
+   -dSendNULs -sPJLLanguage=PCL3GUI -dOnlyCRD
+   -sColourModel=Gray -sPrintQuality=normal -r600x300.
+   Right half of page missing
+
+# Normal 600 dpi
+Success: -sDEVICE=pcl3
+   -dSendNULs -sPJLLanguage=PCL3GUI -dOnlyCRD
+   -sColourModel=Gray -sPrintQuality=normal -r600
+
+# Best 600 dpi
+Success: -sDEVICE=pcl3
+   -dSendNULs -sPJLLanguage=PCL3GUI -dOnlyCRD
+   -sColourModel=Gray -sPrintQuality=presentation -r600
+
+##############
+# Colour tests
+##############
+
+# Draft 300 dpi
+Success: -sDEVICE=pcl3
+   -dSendNULs -sPJLLanguage=PCL3GUI -dOnlyCRD -dCMYLevels=4
+   -sColourModel=CMYK -sPrintQuality=draft -r300
+
+# Normal 300 dpi
+Success: -sDEVICE=pcl3
+   -sColourModel=CMYK -sPrintQuality=normal -r300 -sMedium=plain.
+   Adding "-dCMYLevels=4" causes this mode to FAIL
+
+# Normal 600 dpi
+Failure: -sDEVICE=pcl3
+   -dSendNULs -sPJLLanguage=PCL3GUI -dOnlyCRD -dCMYLevels=4
+   -sColourModel=CMYK -sPrintQuality=normal -r600.
+   No output, printer loads page, power led blinks but nothing happens.
+Failure: -sDEVICE=pcl3
+   -dSendNULs -sPJLLanguage=PCL3GUI -dOnlyCRD -dCMYLevels=4
+   -sColourModel=CMYK -sPrintQuality=normal -r600 -sMedium=plain.
+   No output. Printer loads a page and is "locked" with blinking power LED
+Failure: -sDEVICE=pcl3
+   -dSendNULs -dOnlyCRD -dCMYLevels=4
+   -sColourModel=CMYK -sPrintQuality=normal -r600 -sMedium=plain.
+  This NEARLY works! Output is sharp but colours are shifted to the
+  right of the page (the page printed was "levels-test.ps")
+Failure: -sDEVICE=pcl3
+   -sColourModel=CMYK -sPrintQuality=normal -r600 -sMedium=plain.
+  The output was just a plain nice black vertical bar, and the printer
+  stayed "locked" with blinking power LED without ejecting the page.
+
+# Best 600 dpi
+Success: -sDEVICE=pcl3
+   -dSendNULs -sPJLLanguage=PCL3GUI -dOnlyCRD -dCMYLevels=4
+   -sColourModel=CMYK -sPrintQuality=presentation -r600
+
+# Best 1200 dpi
+Success: -sDEVICE=pcl3 -sSubdevice=unspec
+   -dSendNULs -sPJLLanguage=PCL3GUI -dOnlyCRD
+   -r1200 -sColourModel=CMY -sPrintQuality=presentation
+   -sMedium=glossy -dCompressionMethod=2.
+   Adding "-dCMYLevels=4" causes this mode to FAIL
+   This mode only works with "-sColourModel=CMY"
+
+##############
+# Duplex tests
+##############
+
+# Book binding
+Success: -sDEVICE=pcl3
+   -dSendNULs -sPJLLanguage=PCL3GUI -dOnlyCRD
+   -sDuplexCapability=oppositeLeadingEdge -dCompressionMethod=2
+   -dDuplex=true -dTumble=false
+   -sColourModel=mono -sPrintQuality=normal -r600
+
+# Tablet binding
+Success: -sDEVICE=pcl3
+   -dSendNULs -sPJLLanguage=PCL3GUI -dOnlyCRD
+   -sDuplexCapability=oppositeLeadingEdge -dCompressionMethod=2
+   -dDuplex=true -dTumble=true
+   -sColourModel=mono -sPrintQuality=normal -r600
+
+#******************************************************************************
+
+# Hewlett-Packard DeskJet 1100C
+
+Name: Klaus Reimann
+E-mail address: Klaus.Reimann@itap.physik.uni-stuttgart.de
+Date: 2000-12-08
+Printer: HP DJ 1100C
+Ghostscript version: 6.30
+pcl3 version: 3.0.2
+Success: -sPJLLanguage=PCL3GUI -dOnlyCRD -sDEVICE=pcl3 -sSubdevice=unspec
+   -r300 -sColourModel=Gray -dBlackLevels=2.
+  Specifying -dOnlyCRD is necessary.
+
+
+Name: Klaus Reimann
+E-mail address: Klaus.Reimann@itap.physik.uni-stuttgart.de
+Date: 2000-12-08
+Printer: HP DJ 1100C
+Ghostscript version: 6.30
+pcl3 version: 3.0.1
+pcl3opts: In colour: -r300 -dBlackLevels=4 -dCMYLevels=4, monochrome: -r600.
+  In both cases, -sPJLLanguage=PCL3GUI was also issued.
+Remarks: The results can be summarized as follows:
+
+  1. Connection
+     Success:
+     a) no options
+     b) -sPJLLanguage=PCL3GUI -dOnlyCRD
+	The "-dOnlyCRD" is needed. Success only with Version >3.0.2.
+     c) -dSendNULs
+	No effect.
+     Failure:
+     a) -sPJLLanguage=PCL3GUI
+	non-uniformly distributed vertical black lines.
+
+  2. Compression
+     Success: all Compression methods work
+     a) no options
+     b) -dCompressionMethod=2
+     c) -dCompressionMethod=9
+
+  3. Media type
+     Success: all
+     a) no options
+     b) -sMedium=plain
+
+  4. Print Quality
+     Success: all
+     a) no options
+     b) -sPrintQuality=presentation
+
+  5. Resolution
+     Sucess:
+     a) -r300 : all
+     b) -r600 : Success with -sColourModel=Gray
+     Failure: all other
+     a) -r600 -sColourModel=CMYK
+
+  6. Colour Models and Levels
+     Success:
+     a) -sColourModel=Gray -dBlackLevels=2
+     b) -sColourModel=CMYK -dBlackLevels=2 -dCMYLevels=2
+     Failure: all other
+     a) -r300 -sColourModel=Gray -dBlackLevels=4
+       This test gave white gaps in parts of levels-test.ps: in the 43-levels
+       test, the gaps were on the right of some of the fields, in the
+       401-levels case, there were white vertical lines in 6 groups, the first
+       5 consisting of 19 lines each, the last of four. The distance between
+       the lines within a group was 2mm. Apart from the gaps, the intensity
+       increased monotonically.  
+       Some of the corners were missing from the letters.
+     b) -r600 -sColourModel=Gray -dBlackLevels=3
+	non-monotonic intensity.
+     c) -r600 -sColourModel=Gray -dBlackLevels=4
+	non-monotonic intensity. Missing corners. Grouped vertical lines.
+     d) -r300 -sColourModel=CMYK -dBlackLevels=2 -dCMYLevels=4
+	Totally wrong colours.
+     e) -dBlackLevels=3 -dCMYLevels=2
+	Wrong colours: yellow becomes white, magenta yellow, and cyan magenta.
+     f) -dBlackLevels=4 -dCMYLevels=3
+	 When gradually passing horizontally from one colour to the next
+	 (e.g., red or green to black) in a vertical direction, there are
+	 horizontal strips where one colorant is missing from the mix.
+     g) -dBlackLevels=4 -dCMYLevels=4
+	 Sometimes missing colorant. Some corners are missing from letters.
+
+  7. Printer Model
+     Success:
+     a) unspec
+     b) hpdj1120c
+
+Success: -sDEVICE=pcl3 -sSubdevice=unspec -r300
+   -sColourModel=Gray -dBlackLevels=2
+Failure: -sPJLLanguage=PCL3GUI -sDEVICE=pcl3 -sSubdevice=unspec -r300
+   -sColourModel=Gray -dBlackLevels=2.
+  Black vertical stripes. But see test with pcl3 3.0.2 and using -dOnlyCRD.
+Failure: -sDEVICE=pcl3 -sSubdevice=unspec -dCompressionMethod=9
+  -r300 -sColourModel=Gray -sMedium=plain -sPrintQuality=presentation
+  -dBlackLevels=4.
+  This test gave white gaps in parts of levels-test.ps: in the 43-levels test,
+  the gaps were on the right of some of the fields, in the 401-levels case,
+  there were white vertical lines in 6 groups, the first 5 consisting of
+  19 lines each, the last of four. The distance between the lines within a
+  group was 2mm. Apart from the gaps, the intensity increased monotonically.
+  Some of the corners were missing from the letters.
+Success: -sDEVICE=pcl3 -sSubdevice=unspec -dSendNULs -r600 -sColourModel=Gray
+  -sMedium=plain -sPrintQuality=presentation -dCompressionMethod=2
+Failure: -sDEVICE=pcl3 -sSubdevice=unspec -dSendNULs -r600 -sColourModel=Gray
+  -sMedium=plain -sPrintQuality=presentation -dCompressionMethod=2
+  -dBlackLevels=3.
+  The intensity does not increase monotonically.
+Failure: -sDEVICE=pcl3 -sSubdevice=unspec -dSendNULs -r600 -sColourModel=Gray
+  -sMedium=plain -sPrintQuality=presentation -dCompressionMethod=2
+  -dBlackLevels=4.
+  The intensity does not increase monotonically.
+Failure: -sDEVICE=pcl3 -sSubdevice=unspec -dSendNULs -r600 -sColourModel=Gray
+  -sMedium=plain -sPrintQuality=presentation -dCompressionMethod=2
+  -dBlackLevels=4 -sPJLLanguage=PCL3GUI.
+  Garbage (black vertical stripes) printed.
+Failure: -sDEVICE=pcl3 -sSubdevice=unspec -dSendNULs -r600 -sColourModel=Gray
+  -sMedium=plain -sPrintQuality=presentation -dCompressionMethod=2
+  -dBlackLevels=4 -sPJLLanguage=PCL3GUI -dOnlyCRD.
+  Black vertical stripes and nothing else.
+Failure: -sDEVICE=pcl3 -sSubdevice=unspec -dCompressionMethod=9
+  -r600 -sColourModel=Gray -sMedium=plain -sPrintQuality=presentation
+  -dBlackLevels=4 -sPJLLanguage=PCL3GUI -dOnlyCRD.
+  Black vertical stripes and nothing else.
+Failure: -sDEVICE=pcl3 -sSubdevice=unspec -dCompressionMethod=9
+  -r600 -sColourModel=Gray -sMedium=plain -sPrintQuality=presentation
+  -dBlackLevels=4.
+  Non-monotonic increase of intensities, many thin vertical lines (2 mm
+  distance) in the 401 levels test section of levels-test.ps.
+Success: -sDEVICE=pcl3 -sSubdevice=hpdj1120c -sColourModel=CMYK
+  -sPrintQuality=presentation
+Success: -sDEVICE=pcl3 -sSubdevice=unspec -dSendNULs -r300 -sColourModel=CMYK
+  -dBlackLevels=2 -dCMYLevels=2 -sMedium=plain -sPrintQuality=presentation
+  -dCompressionMethod=9
+Failure: -sDEVICE=pcl3 -sSubdevice=unspec -dSendNULs -r300 -sColourModel=CMYK
+  -dBlackLevels=2 -dCMYLevels=4 -sMedium=plain -sPrintQuality=presentation
+  -dCompressionMethod=9.
+  Totally wrong colours.
+Failure: -sDEVICE=pcl3 -sSubdevice=unspec -dSendNULs -r300 -sColourModel=CMYK
+  -dBlackLevels=3 -dCMYLevels=2 -sMedium=plain -sPrintQuality=presentation
+  -dCompressionMethod=9.
+  Wrong colours: yellow becomes white, magenta yellow, and cyan magenta.
+Failure: -sDEVICE=pcl3 -sSubdevice=unspec -dSendNULs -r300 -sColourModel=CMYK
+  -dBlackLevels=4 -dCMYLevels=3 -sMedium=plain -sPrintQuality=presentation
+  -dCompressionMethod=2.
+  When gradually passing from one colour to the next (e.g., red or green to
+  black) in a vertical direction, there are horizontal strips where one
+  colorant is missing from the mix.
+Failure: -sDEVICE=pcl3 -sSubdevice=unspec -r300
+  -sColourModel=CMYK -dBlackLevels=4 -dCMYLevels=4 -dCompressionMethod=2.
+  When printing levels-test.ps, some corners are missing from letters.
+  Using -dNoHalftoning does not help.
+Failure: -sDEVICE=pcl3 -sSubdevice=unspec -r300
+  -sColourModel=CMYK -dBlackLevels=4 -dCMYLevels=4 -dCompressionMethod=2
+  -dNoHalftoning
+  When printing levels-test.ps, some corners are missing from letters.
+Failure: -sDEVICE=pcl3 -sSubdevice=unspec -r300
+  -sColourModel=CMYK -dBlackLevels=4 -dCMYLevels=4 -dCompressionMethod=2
+  -sPrintQuality=presentation.
+  When printing levels-test.ps, some corners are missing from letters,
+  and starting from intensity 17/42, levels are difficult to distinguish.
+  Sometimes colours are missing.
+Failure: -sDEVICE=pcl3 -sSubdevice=unspec -dSendNULs -r300 -sColourModel=CMYK
+  -dBlackLevels=4 -dCMYLevels=4 -sMedium=plain -sPrintQuality=presentation
+  -dCompressionMethod=2.
+  Same result as previous test, i.e., no influence of -dSendNULs.
+Failure: -sDEVICE=pcl3 -sSubdevice=unspec -r300
+  -sColourModel=CMYK -dBlackLevels=4 -dCMYLevels=4 -dCompressionMethod=2
+  -sPrintQuality=presentation -sPJLLanguage=PCL3GUI -dOnlyCRD -dNoHalftoning.
+  When printing levels-test.ps, some corners are missing from letters.
+Failure: -sDEVICE=pcl3 -sSubdevice=unspec -dSendNULs -r600 -sColourModel=CMYK
+  -dBlackLevels=4 -dCMYLevels=4 -sMedium=plain -sPrintQuality=presentation
+  -dCompressionMethod=2.
+  Wrong colours, twice the size, wrong position.
+
+#******************************************************************************
+
+# Xerox DocuPrint M750
+
+Name:  Russ Bohnhoff
+Date:  01/17/01
+Printer:  Xerox DocuPrint M750
+Ghostscript version:  GNU 5.50
+pcl3 version:  3.0.2
+Remarks: any value other than 600 dpi will be printed at 600 dpi
+Success: -sDEVICE=pcl3 -sSubdevice=unspec -r600 -sPrintQuality=normal
+	-sMedium=plain -dCompressionMethod=2 -sColorModel=CMYK.
+  This option gives me full color with no defects.
+  Printing can only be done one page at a time or otherwise
+  a page feed error (blinking red) occurs.
+  Margins:
+        TOP: 7/48"
+        BOTTOM: 17/48"
+        LEFT: 7/48"
+        RIGHT: 17/48"
