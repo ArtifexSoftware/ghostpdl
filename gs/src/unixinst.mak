@@ -15,7 +15,7 @@
 # containing the `install' targets.
 # This is the very last part of the makefile for these configurations.
 
-install: install-exec install-scripts install-data install-shared
+install: install-exec install-scripts install-data $(INSTALL_SHARED) $(INSTALL_CONTRIB)
 
 # The sh -c in the rules below is required because Ultrix's implementation
 # of sh -e terminates execution of a command if any error occurs, even if

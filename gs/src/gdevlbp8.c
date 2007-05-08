@@ -43,7 +43,7 @@ problems
 
 /* The device descriptors */
 private dev_proc_print_page(lbp8_print_page);
-#if 0
+#ifdef NOCONTRIB
 private dev_proc_print_page(lips3_print_page);
 #endif
 
@@ -54,7 +54,7 @@ const gx_device_printer far_data gs_lbp8_device =
 	0.16, 0.2, 0.32, 0.21,		/* margins: left, bottom, right, top */
 	1, lbp8_print_page);
 
-#if 0
+#ifdef NOCONTRIB
 const gx_device_printer far_data gs_lips3_device =
   prn_device(prn_std_procs, "lips3",
 	82,				/* width_10ths, 8.3" */
@@ -82,7 +82,7 @@ static const char lbp8_init[] = {
 
 static const char *lbp8_end = NULL;
 
-#if 0
+#ifdef NOCONTRIB
 static const char lips3_init[] = {
   ESC, '<', /* soft reset */
   DCS, '0', 'J', ST, /* JOB END */
@@ -205,7 +205,7 @@ lbp8_print_page(gx_device_printer *pdev, FILE *prn_stream)
 			      lbp8_end, sizeof(lbp8_end));
 }
 
-#if 0
+#ifdef NOCONTRIB
 /* Print a LIPS III page. */
 private int
 lips3_print_page(gx_device_printer *pdev, FILE *prn_stream)

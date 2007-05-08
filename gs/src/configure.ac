@@ -22,6 +22,30 @@ AC_INIT
 AC_PREREQ(2.52)
 AC_CONFIG_SRCDIR(src/gs.c)
 
+GS_VERSION_MAJOR=8
+GS_VERSION_MINOR=57
+GS_REVISIONDATE=20070426
+
+GS_VERSION=`expr $GS_VERSION_MAJOR \* 100 + $GS_VERSION_MINOR`
+
+if test $GS_VERSION_MINOR -lt 10; then
+	GS_VERSION_MINOR0=0$GS_VERSION_MINOR
+else
+	GS_VERSION_MINOR0=$GS_VERSION_MINOR
+fi
+
+AC_SUBST(GS_REVISIONDATE, $GS_REVISIONDATE)
+AC_SUBST(GS_VERSION_MAJOR, $GS_VERSION_MAJOR)
+AC_SUBST(GS_VERSION_MINOR, $GS_VERSION_MINOR)
+AC_SUBST(GS_VERSION_MINOR0, $GS_VERSION_MINOR0)
+AC_SUBST(GS_VERSION, $GS_VERSION)
+
+dnl Inherit compiler flags from the environment...
+CFLAGS="${CFLAGS:=}"
+CPPFLAGS="${CPPFLAGS:=}"
+CXXFLAGS="${CXXFLAGS:=}"
+LDFLAGS="${LDFLAGS:=}"
+
 dnl --------------------------------------------------  
 dnl Check for programs
 dnl --------------------------------------------------  
@@ -35,6 +59,20 @@ CFLAGS=$save_cflags
 
 AC_PROG_RANLIB
 #AC_PROG_INSTALL
+
+dnl --------------------------------------------------  
+dnl Allow excluding the contributed drivers
+dnl --------------------------------------------------  
+
+AC_ARG_ENABLE(contrib, [  --disable-contrib       do not include contributed drivers [default=include]])
+CONTRIBINCLUDE="include contrib/contrib.mak"
+INSTALL_CONTRIB="install-contrib-extras"
+if test x$enable_contrib = xno; then
+    CONTRIBINCLUDE=""
+    INSTALL_CONTRIB=""
+    CFLAGS="$CFLAGS -DNOCONTRIB"
+fi
+AC_SUBST(CONTRIBINCLUDE)
 
 dnl --------------------------------------------------
 dnl Set build flags based on environment
@@ -51,6 +89,12 @@ if test $ac_cv_prog_gcc = yes; then
 else
     cflags_to_try=
     optflags_to_try="-O"
+fi
+
+AC_ARG_ENABLE(debug, [  --enable-debug          turn on debugging [default=no]])
+if test x$enable_debug = xyes; then
+    optflags_to_try="-g"
+    CFLAGS="-DDEBUG $CFLAGS"
 fi
 
 AC_MSG_CHECKING([supported compiler flags])
@@ -144,6 +188,8 @@ if test "$uint64_type" != "none"; then
 	GCFLAGS="$GCFLAGS -DGX_COLOR_INDEX_TYPE=\"$uint64_type\""
 fi
 
+dnl pkg-config is used for several tests now...
+AC_PATH_PROG(PKGCONFIG, pkg-config)
 
 dnl --------------------------------------------------
 dnl Check for libraries
@@ -151,6 +197,50 @@ dnl --------------------------------------------------
 
 AC_CHECK_LIB(m, cos)
 dnl AC_CHECK_LIB(pthread, pthread_create)
+
+dnl Tests for iconv (Needed for OpenPrinting Vector, "opvp" output device)
+AC_ARG_WITH(libiconv,
+            [AC_HELP_STRING([--with-libiconv=@<:@no/gnu/native@:>@],
+                            [use the libiconv library])],,
+	    [with_libiconv=maybe])
+found_iconv=no
+case $with_libiconv in
+  maybe)
+    # Check in the C library first
+    AC_CHECK_FUNC(iconv_open, [with_libiconv=no; found_iconv=yes])
+    # Check if we have GNU libiconv
+    if test $found_iconv = "no"; then
+      AC_CHECK_LIB(iconv, libiconv_open, [with_libiconv=gnu; found_iconv=yes])
+    fi
+    # Check if we have a iconv in -liconv, possibly from vendor
+    if test $found_iconv = "no"; then
+      AC_CHECK_LIB(iconv, iconv_open, [with_libiconv=native; found_iconv=yes])
+    fi
+    ;;
+  no)
+    AC_CHECK_FUNC(iconv_open, [with_libiconv=no; found_iconv=yes])
+    ;;
+  gnu|yes)
+    AC_CHECK_LIB(iconv, libiconv_open, [with_libiconv=gnu; found_iconv=yes])
+    ;;
+  native)
+    AC_CHECK_LIB(iconv, iconv_open, [with_libiconv=native; found_iconv=yes])
+    ;;
+esac
+if test x$found_iconv != xno -a x$with_libiconv != xno ; then
+  LIBS="$LIBS -liconv"
+fi
+
+case $with_libiconv in
+  gnu)
+    AC_DEFINE(USE_LIBICONV_GNU, 1, [Using GNU libiconv])
+    ;;
+  native)
+    AC_DEFINE(USE_LIBICONV_NATIVE, 1, [Using a native implementation of iconv in a separate library])
+    ;;
+esac
+
+AC_CHECK_LIB(dl, dlopen)
 
 AC_MSG_CHECKING([for local jpeg library source])
 dnl At present, we give the local source priority over the shared
@@ -245,6 +335,40 @@ fi
 AC_SUBST(SHARE_LIBPNG)
 AC_SUBST(LIBPNGDIR)
 AC_SUBST(PNGDEVS)
+
+dnl look for CUPS...
+AC_ARG_ENABLE(cups, [  --enable-cups           turn on CUPS support, default=yes])
+
+CUPSDEV=""
+CUPSINCLUDE=""
+CUPSCONFIG="${CUPSCONFIG:=}"
+cups_datadir="/usr/share/cups"
+cups_serverroot="/etc/cups"
+cups_serverbin="/usr/lib/cups"
+
+if ( ! test -z "$CONTRIBINCLUDE" ) && ( test -d contrib/cups ); then
+    if test x$enable_cups != xno; then
+	AC_PATH_PROG(CUPSCONFIG,cups-config)
+	if test "x$CUPSCONFIG" != x; then
+	    dnl Use values from CUPS config...
+#	    LIBS="`$CUPSCONFIG --ldflags` `$CUPSCONFIG --static --image --libs | sed -e '1,$s/-lssl//'` $LIBS"
+	    LIBS="`$CUPSCONFIG --ldflags` `$CUPSCONFIG --image --libs` $LIBS"
+	    CFLAGS="`$CUPSCONFIG --cflags` $CFLAGS -Dgs_stderr=stderr"
+	    cups_serverroot="`$CUPSCONFIG --serverroot`"
+	    cups_serverbin="`$CUPSCONFIG --serverbin`"
+	    cups_datadir="`$CUPSCONFIG --datadir`"
+	    CUPSINCLUDE="include contrib/cups/cups.mak"
+	    CUPSDEV="\$(DD)cups.dev"
+	fi
+    fi
+fi
+
+AC_SUBST(CUPSDEV)
+AC_SUBST(CUPSCONFIG)
+AC_SUBST(CUPSINCLUDE)
+AC_SUBST(cups_datadir)
+AC_SUBST(cups_serverroot)
+AC_SUBST(cups_serverbin)
 
 dnl look for IJS implementation
 AC_ARG_WITH(ijs, AC_HELP_STRING([--with-ijs],[include IJS driver support]))
@@ -370,23 +494,76 @@ AC_SUBST(JASPERDIR)
 AC_SUBST(SHARE_JASPER)
 AC_SUBST(JPXDEVS)
 
+dnl look for omni implementation
+AC_ARG_WITH([omni], AC_HELP_STRING([--with-omni],
+	[build the omni driver]))
+dnl set safe defaults
+OMNIDEVS=''
+INCLUDEOMNI=yes
+if ( ! test -z "$CONTRIBINCLUDE" ) && ( test x$with_omni != xno ); then
+	OMNIDEVS='$(DD)omni.dev'
+
+	if test -n "$GCC"; then
+		LIBS="$LIBS -lstdc++"
+	fi
+fi
+AC_SUBST(OMNIDEVS)
+
 dnl optional X11 for display devices
 AC_PATH_XTRA
-XLIBS=''
-if test x"$no_x" = x"yes"; then
-	AC_MSG_NOTICE([disabling X11 output devices])
-	X11DEVS=''
-else
-	# enable X11 output devices
-	X11DEVS='$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11gray2.dev $(DD)x11gray4.dev $(DD)x11mono.dev'
-	# the makefile wants a list of just the library names in XLIBS
-	for item in -lXt $X_PRE_LIBS -lXext -lX11 $X_EXTRA_LIBS; do
-		stripped=`echo "$item" | sed -e 's/-l//'`
-		if test "x$stripped" != "x$item"; then
-			XLIBS="$XLIBS $stripped"
+
+X_LDFLAGS=""
+X_CFLAGS=""
+X_DEVS=""
+X_LIBS=""
+
+if test x$no_x != xyes; then
+	if test "$x_libraries" = "/usr/lib"; then
+		echo "Ignoring X library directory \"$x_libraries\" requested by configure."
+		x_libraries="NONE"
+	fi
+	if test ! "$x_libraries" = "NONE" -a ! "$x_libraries" = ""; then
+		LDFLAGS="-L$x_libraries $LDFLAGS"
+		X_LDFLAGS="-L$x_libraries"
+		if test "$uname" = "SunOS"; then
+			X_LDFLAGS="$X_LDFLAGS -R$x_libraries"
 		fi
-	done
+	fi
+
+	if test "$x_includes" = "/usr/include"; then
+		echo "Ignoring X include directory \"$x_includes\" requested by configure."
+		x_includes="NONE"
+	fi
+	if test ! "$x_includes" = "NONE" -a ! "$x_includes" = ""; then
+		X_CFLAGS="-I$x_includes"
+	fi
+
+	SAVELIBS="$LIBS"
+
+	AC_CHECK_LIB(X11,XOpenDisplay)
+	AC_CHECK_LIB(Xext,XdbeQueryExtension)
+	AC_CHECK_LIB(Xt,XtAppCreateShell)
+
+	LIBS="$SAVELIBS"
+
+	if test "$ac_cv_lib_Xt_XtAppCreateShell" = yes; then
+		X11DEVS="\$(DD)x11.dev \$(DD)x11alpha.dev \$(DD)x11cmyk.dev \$(DD)x11mono.dev \$(DD)x11_.dev \$(DD)x11alt_.dev \$(DD)x11cmyk2.dev \$(DD)x11cmyk4.dev \$(DD)x11cmyk8.dev \$(DD)x11rg16x.dev \$(DD)x11rg32x.dev \$(DD)x11gray2.dev \$(DD)x11gray4.dev"
+		X_DEVS=$X11DEVS
+		# the makefile wants a list of just the library names in XLIBS
+		for item  in -lXt $X_PRE_LIBS -lXext -lX11 $X_EXTRA_LIBS; do
+			stripped=`echo "$item" | sed -e 's/-l//'`
+			if test "x$stripped" != "x$item"; then
+				XLIBS="$XLIBS $stripped"
+			fi
+		done
+		X_LIBS=$XLIBS
+	fi
 fi
+
+AC_SUBST(X_LDFLAGS)
+AC_SUBST(X_CFLAGS)
+AC_SUBST(X_LIBS)
+AC_SUBST(X_DEVS)
 AC_SUBST(X11DEVS)
 AC_SUBST(XLIBS)
 
@@ -404,6 +581,284 @@ AC_ARG_ENABLE(compile-inits, AC_HELP_STRING([--disable-compile-inits],
                        COMPILE_INITS="0"
                fi])
 AC_SUBST(COMPILE_INITS)
+
+dnl look for drivers to compile...
+AC_ARG_WITH(drivers,
+[  --with-drivers=LIST     Drivers to support, separated by commas.
+                          Either list the drivers or use aliases:
+                          ALL      = all drivers
+                          FILES    = all file format drivers
+                          PRINTERS = all printer drivers
+                          Printers:
+                          APPLE    = all Apple printers
+                          BROTHER  = all Brother printers
+                          CANON    = all Canon printers
+                          EPSON    = all Epson printers
+                          HP       = all HP printers
+                          IBM      = all IBM printers
+                          JAPAN    = older japanese printers
+                          LEXMARK  = all Lexmark printers
+                          OKI      = all OKI printers
+			  PCLXL    = all PCL XL/6 printers
+                          File formats:
+                          BMP      = Output to bmp files
+                          FAX      = Output to fax files
+                          JPEG     = Output to JPEG files
+                          JPEG2000 = Output to JPEG 2000 files
+                          PBM      = Output to PBM/PNM
+                          PCX      = Output to PCX
+			  PNG      = Output to PNG
+                          PS       = Output to PostScript/PDF
+                          TIFF     = Output to TIFF
+                          You can mix both variants, e.g.
+                          --with-drivers=HP,stcolor would build HP drivers and
+                          the Epson stcolor driver.
+                          Aliases must be uppercase (a 3rd party driver might
+                          have the same name).
+                          Default: ALL],drivers="$withval",drivers="ALL")
+
+AC_ARG_WITH(driversfile,
+[  --with-driversfile=FILE Drivers to support from file, separated by newlines.],
+driversfile="$withval",driversfile="")
+
+if test "x$driversfile" != x; then
+	# Add drivers from file...
+	drivers="`tr '\n' ',' <$driversfile`"
+fi
+
+dnl Check which drivers we'd like to support.
+P_DEVS=""
+F_DEVS=""
+
+dnl Known printers
+HP_DEVS="cdj500 djet500 djet500c dnj650c cljet5pr deskjet laserjet ljetplus ljet2p ljet3 ljet3d ljet4 ljet4d lj4dith lj5mono lj5gray cdeskjet cdjcolor cdjmono cdj550 pj pjxl pjxl300 lp2563 paintjet pjetxl cljet5 cljet5c pxlmono pxlcolor cdj670 cdj850 cdj880 cdj890 cdj970 cdj1600 chp2200 pcl3 hpdjplus hpdjportable hpdj310 hpdj320 hpdj340 hpdj400 hpdj500 hpdj500c hpdj510 hpdj520 hpdj540 hpdj550c hpdj560c hpdj600 hpdj660c hpdj670c hpdj680c hpdj690c hpdj850c hpdj855c hpdj870c hpdj890c hpdj1120c lj3100sw"
+PCLXL_DEVS="pxlmono pxlcolor"
+EPSON_DEVS="eps9high eps9mid epson epsonc escp lp8000 lq850 photoex st800 stcolor alc1900 alc2000 alc4000 alc4100 alc8500 alc8600 alc9100 lp3000c lp8000c lp8200c lp8300c lp8500c lp8800c lp9000c lp9200c lp9500c lp9800c lps6500 epl2050 epl2050p epl2120 epl2500 epl2750 epl5800 epl5900 epl6100 epl6200 lp1800 lp1900 lp2200 lp2400 lp2500 lp7500 lp7700 lp7900 lp8100 lp8300f lp8400f lp8600 lp8600f lp8700 lp8900 lp9000b lp9100 lp9200b lp9300 lp9400 lp9600 lp9600s lps4500"
+CANON_DEVS="bj10e bj200 bjc600 bjc800 lbp8 lips3 bjcmono bjcgray bjccmyk bjccolor"
+LEXMARK_DEVS="lxm5700m lx5000 lxm3200 lex2050 lex3200 lex5700 lex7000"
+BROTHER_DEVS="hl7x0 hl1240 hl1250"
+APPLE_DEVS="appledmp iwhi iwlo iwlq"
+IBM_DEVS="ibmpro jetp3852"
+OKI_DEVS="oki182 okiibm oki4w"
+JAPAN_DEVS="lips4 lips4v ljet4pjl lj4dithp dj505j picty180 lips2p bjc880j pr201 pr150 pr1000 pr1000_4 jj100 bj10v bj10vh mj700v2c mj500c mj6000c mj8000c fmpr fmlbp ml600 lbp310 lbp320 md50Mono md50Eco md1xMono escpage lp2000 npdl rpdl"
+MISC_PDEVS="uniprint ap3250 atx23 atx24 atx38 coslw2p coslwxl cp50 declj250 fs600 imagen lj250 m8510 necp6 oce9050 r4081 sj48 tek4696 t4693d2 t4693d4 t4693d8 dl2100 la50 la70 la75 la75plus ln03 xes md2k md5k gdi samsunggdi"
+OPVP_DEVS="opvp oprp"
+
+dnl Known file formats
+BMP_DEVS="bmpmono bmpgray bmpsep1 bmpsep8 bmp16 bmp256 bmp16m bmp32b bmpa16 bmpa16m bmpa256 bmpa32b bmpamono bmpasep1 bmpasep8"
+FAX_DEVS="cfax dfaxlow dfaxhigh fax tfax tiffg3 tiffg32d tiffg4 faxg3 faxg32d faxg4"
+JPEG_DEVS="jpeg jpeggray"
+JPEG2000_DEVS="jpx"
+PNG_DEVS="png16 png16m png256 pngalpha pnggray pngmono"
+TIFF_DEVS="tiffs tiff12nc tiff24nc tiffcrle tifflzw tiffpack"
+PCX_DEVS="pcxmono pcxgray pcx16 pcx256 pcx24b pcxcmyk pcx2up"
+PBM_DEVS="pbm pbmraw pgm pgmraw pgnm pgnmraw pnm pnmraw ppm ppmraw pkm pkmraw pksm pksmraw pam"
+PS_DEVS="psdf psdcmyk psdrgb pdfwrite pswrite epswrite psgray psmono psrgb bbox"
+MISC_FDEVS="ccr cgm24 cgm8 cgmmono cif inferno mag16 mag256 mgr4 mgr8 mgrgray2 mgrgray4 mgrgray8 mgrmono miff24 plan9bm sgirgb sunhmono bit bitrgb bitcmyk devicen spotcmyk xcf"
+
+while test -n "$drivers"; do
+	if echo $drivers |grep "," >/dev/null; then
+		THIS="`echo $drivers |sed -e 's/,.*//'`"
+		drivers="`echo $drivers |sed -e \"s/$THIS,//\"`"
+	else
+		THIS=$drivers
+		drivers=""
+	fi
+	case "$THIS" in
+	ALL)
+		# ALL = PRINTERS + FILES...
+		if test -z "$drivers"; then
+			drivers="PRINTERS,FILES"
+		else
+			drivers="$drivers,PRINTERS,FILES"
+		fi
+		;;
+	PRINTERS)
+		P_DEVS="$P_DEVS $CANON_DEVS $EPSON_DEVS $HP_DEVS $LEXMARK_DEVS $BROTHER_DEVS $APPLE_DEVS $IBM_DEVS $OKI_DEVS $JAPAN_DEVS $MISC_PDEVS $OPVP_DEVS"
+		;;
+	FILES)
+		F_DEVS="$F_DEVS $BMP_DEVS $FAX_DEVS $JPEG_DEVS $JPEG2000_DEVS $PNG_DEVS $TIFF_DEVS $PCX_DEVS $PBM_DEVS $PS_DEVS $MISC_FDEVS"
+		;;
+	APPLE)
+		# All Apple printers
+		P_DEVS="$P_DEVS $APPLE_DEVS"
+		;;
+	BMP)
+		# BMP file format
+		F_DEVS="$F_DEVS $BMP_DEVS"
+		;;
+	CANON)
+		# All Canon printers
+		P_DEVS="$P_DEVS $CANON_DEVS"
+		;;
+	EPSON)
+		# All Epson printers
+		P_DEVS="$P_DEVS $EPSON_DEVS"
+		;;
+	FAX)
+		# Fax file formats
+		F_DEVS="$F_DEVS $FAX_DEVS"
+		;;
+	JPEG)
+		# Jpeg file formats
+		F_DEVS="$F_DEVS $JPEG_DEVS"
+		;;
+	JPEG2000)
+		# Jpeg file formats
+		F_DEVS="$F_DEVS $JPEG2000_DEVS"
+		;;
+	PNG)
+		# PNG file formats
+		F_DEVS="$F_DEVS $PNG_DEVS"
+		;;
+	TIFF)
+		# TIFF file formats
+		F_DEVS="$F_DEVS $TIFF_DEVS"
+		;;
+	PCLXL)
+		# PCL XL/PCL 6 drivers
+		F_DEVS="$F_DEVS $PCLXL_DEVS"
+		;;
+	PCX)
+		# PCX file formats
+		F_DEVS="$F_DEVS $PCX_DEVS"
+		;;
+	PBM)
+		# PBM file formats
+		F_DEVS="$F_DEVS $PBM_DEVS"
+		;;
+	HP)
+		# All HP printers
+		P_DEVS="$P_DEVS $HP_DEVS"
+		;;
+	LEXMARK)
+		# All Lexmark printers
+		P_DEVS="$P_DEVS $LEXMARK_DEVS"
+		;;
+	BROTHER)
+		# All Brother printers
+		P_DEVS="$P_DEVS $BROTHER_DEVS"
+		;;
+	OKI)
+		# All OKI printers
+		P_DEVS="$P_DEVS $OKI_DEVS"
+		;;
+	IBM)
+		# All IBM printers
+		P_DEVS="$P_DEVS $IBM_DEVS"
+		;;
+	JAPAN)
+		# All old japanese printers
+		P_DEVS="$P_DEVS $JAPAN_DEVS"
+		;;
+	PS)
+		# PostScript/PDF writing
+		F_DEVS="$F_DEVS $PS_DEVS"
+		;;
+        opvp)
+		# Open Vector Printing driver...
+		if test x$ac_cv_lib_dl_dlopen != xno -a x$found_iconv != xno; then
+			P_DEVS="$P_DEVS $OPVP_DEVS"
+		else
+			AC_MSG_WARN(Unable to include opvp/oprp driver due to missing prerequisites...)
+		fi
+		;;
+	*)
+		# It's a driver name (or a user messup)
+		P_DEVS="$P_DEVS `echo $THIS |sed -e 's,\.dev$,,'`"
+		;;
+	esac
+done
+# No need to include opvp/oprp driver without iconv/libiconv.
+if test -n "$P_DEVS"; then
+	if test x$found_iconv = xno ; then
+		P_DEVS=`echo $P_DEVS | sed -e 's|opvp||' -e 's|oprp||'` 
+		AC_MSG_WARN(Unable to include opvp/oprp driver due to missing iconv/libiconv...)
+	fi
+
+# Remove contributed drivers if requested and make sure we don't have any 
+# duplicates in there, add $(DD)foo.dev constructs
+	PRINTERS=`(for i in $P_DEVS; do d='$(DD)'${i}.dev; if ( grep -q '^'$d src/*.mak ) || ( ! test -z "$CONTRIBINCLUDE" ); then echo $d; fi; done) | sort | uniq | tr '\012' ' '`
+fi
+if test -n "$F_DEVS"; then
+	FILES=`(for i in $F_DEVS; do d='$(DD)'${i}.dev; if ( grep -q '^'$d src/*.mak ) || ( ! test -z "$CONTRIBINCLUDE" ); then echo $d; fi; done) | sort | uniq | tr '\012' ' '`
+fi
+AC_SUBST(PRINTERS)
+AC_SUBST(FILES)
+
+dnl Dynamic device support.
+DYNAMIC_CFLAGS=""
+DYNAMIC_DEVS=""
+DYNAMIC_FLAGS=""
+DYNAMIC_LDFLAGS=""
+DYNAMIC_LIBS=""
+INSTALL_SHARED=""
+
+AC_ARG_ENABLE(dynamic, [  --enable-dynamic        enable dynamically loaded drivers (default=no)],
+[	case `uname` in
+		Linux*)
+		INSTALL_SHARED="install-shared"
+		DYNAMIC_CFLAGS="-fPIC"
+		if test "x$X_DEVS" != x; then
+			DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
+		else
+			DYNAMIC_DEVS=""
+		fi
+		DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
+		DYNAMIC_LDFLAGS="-fPIC -shared"
+		DYNAMIC_LIBS="-rdynamic -ldl"
+		X_DEVS=""
+		;;
+		*BSD)
+		DYNAMIC_CFLAGS="-fPIC"
+		DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
+		DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
+		DYNAMIC_LDFLAGS="-fPIC -shared"
+		DYNAMIC_LIBS=""
+		X_DEVS=""
+		;;
+		*)
+		AC_MSG_ERROR([Sorry, dynamic driver support not available on this platform!])
+		;;
+	esac
+])
+
+AC_SUBST(DYNAMIC_CFLAGS)
+AC_SUBST(DYNAMIC_DEVS)
+AC_SUBST(DYNAMIC_FLAGS)
+AC_SUBST(DYNAMIC_LDFLAGS)
+AC_SUBST(DYNAMIC_LIBS)
+AC_SUBST(INSTALL_SHARED)
+
+dnl look for default font path...
+AC_ARG_WITH(fontpath, [  --with-fontpath         set font path for gs],fontpath="$withval",fontpath="")
+
+dnl Fix "prefix" variable...
+if test "x$prefix" = xNONE; then
+	prefix=/usr/local
+fi
+
+dnl Fix "datadir" variable...
+if test "x$datadir" = 'x${prefix}/share'; then
+	datadir="$prefix/share"
+fi
+
+dnl Fix "fontpath" variable...
+if test "x$fontpath" = "x"; then
+	# These font directories are used by various Linux distributions...
+	fontpath="$datadir/fonts/default/ghostscript"
+	fontpath="${fontpath}:$datadir/fonts/default/Type1"
+	fontpath="${fontpath}:$datadir/fonts/default/TrueType"
+
+	# These font directories are used by IRIX...
+	fontpath="${fontpath}:/usr/lib/DPS/outline/base"
+
+	# These font directories are used by Solaris...
+	fontpath="${fontpath}:/usr/openwin/lib/X11/fonts/Type1"
+	fontpath="${fontpath}:/usr/openwin/lib/X11/fonts/TrueType"
+fi
+
+AC_SUBST(fontpath)
 
 dnl --------------------------------------------------
 dnl Check for library functions
@@ -433,4 +888,7 @@ dnl --------------------------------------------------
 
 AC_SUBST(OPT_CFLAGS)
 AC_SUBST(GCFLAGS)
-AC_OUTPUT(Makefile)
+AC_OUTPUT(Makefile src/version.mak
+	  contrib/cups/pstopxl contrib/cups/pstoraster)
+
+chmod +x contrib/cups/pstopxl contrib/cups/pstoraster
