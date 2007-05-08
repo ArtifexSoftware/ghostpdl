@@ -152,6 +152,7 @@ currentdict /NOFONTMAP known   /NOFONTMAP exch def
 currentdict /NOFONTPATH known   /NOFONTPATH exch def
 currentdict /NOGC known   /NOGC exch def
 currentdict /NOINTERPOLATE .knownget { /INTERPOLATE exch not def } if
+currentdict /NOMEDIAATTRS known /NOMEDIAATTRS exch def
 currentdict /NOOUTERSAVE known   /NOOUTERSAVE exch def
 currentdict /NOPAGEPROMPT known   /NOPAGEPROMPT exch def
 currentdict /NOPAUSE known   /NOPAUSE exch def
@@ -1469,7 +1470,22 @@ setpacking
 % Set the default screen and BG/UCR.
 /.setdefaultbgucr {
   systemdict /setblackgeneration known {
-    { pop 0 } dup setblackgeneration setundercolorremoval
+% T. Kamppeter, Linux Foundation
+%
+% Martin Lottermoser, author of the "pcl3" driver writes in
+% contrib/pcl3/doc/gs-mods.txt, section C1:
+%
+% There is a bug in ghostscript's default configuration for the
+% undercolour removal and black generation functions. It shows up when
+% printing PostScript documents using the RGB colour space ("setrgbcolor" or
+% "sethsbcolor") on a device where the CMYK space is the native colour space;
+% this is the case for pcl3 if you specify "-sColourModel=CMYK". The bug
+% results in black being printed as a mixture of cyan, magenta, and yellow.
+%
+% The bug is simply fixed by replacing the line
+%   { pop 0 } dup setblackgeneration setundercolorremoval
+% with the following line:
+    {} dup setblackgeneration setundercolorremoval
   } if
 } bind def
 /.useloresscreen {	% - .useloresscreen <bool>
