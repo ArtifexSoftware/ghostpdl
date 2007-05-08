@@ -81,7 +81,8 @@ px_write_page_header(stream *s, const gx_device *dev)
 /* Write the media selection command if needed, updating the media size. */
 int
 px_write_select_media(stream *s, const gx_device *dev, 
-		      pxeMediaSize_t *pms, byte *media_source)
+		      pxeMediaSize_t *pms, byte *media_source,
+		      int page, bool Duplex, bool Tumble)
 {
 #define MSD(ms, res, w, h)\
   { ms, (float)((w) * 1.0 / (res)), (float)((h) * 1.0 / res) },
@@ -115,6 +116,22 @@ px_write_select_media(stream *s, const gx_device *dev,
     if (media_source != NULL)
 	tray = *media_source;
     px_put_uba(s, tray, pxaMediaSource);
+
+    if (Duplex)
+    {
+      if (Tumble)
+	px_put_uba(s, (byte)eDuplexHorizontalBinding, pxaDuplexPageMode);
+      else
+	px_put_uba(s, (byte)eDuplexVerticalBinding, pxaDuplexPageMode);
+
+      if (page & 1)
+	px_put_uba(s, (byte)eFrontMediaSide, pxaDuplexPageSide);
+      else
+	px_put_uba(s, (byte)eBackMediaSide, pxaDuplexPageSide);
+    }
+    else
+      px_put_uba(s, (byte)eSimplexFrontSide, pxaSimplexPageMode);
+
     if (pms)
 	*pms = size;
 
