@@ -36,56 +36,11 @@ extern void exit(int);
 extern char *getenv(const char *);
 #endif
 
-#ifdef GS_DEVS_SHARED
-#ifndef GS_DEVS_SHARED_DIR
-#  define GS_DEVS_SHARED_DIR "/usr/lib/ghostscript/8.16"
-#endif
-/*
- * use shared library for drivers, always load them when starting, this
- * avoid too many modifications, and since it is supported only under linux
- * and applied as a patch (preferable).
- */
-#include <sys/types.h>
-#include <dirent.h>
-#include <dlfcn.h>
-#include <string.h>
-
-void
-gp_init(void)
-{
-  DIR*           dir = NULL;
-  struct dirent* dirent;
-  char           buff[1024];
-  char*          pbuff;
-  void*          handle;
-  void           (*gs_shared_init)(void);
-
-  strncpy(buff, GS_DEVS_SHARED_DIR, sizeof(buff) - 2);
-  pbuff = buff + strlen(buff);
-  *pbuff++ = '/'; *pbuff = '\0';
-
-  dir = opendir(GS_DEVS_SHARED_DIR);
-  if (dir == 0) return;
-
-  while ((dirent = readdir(dir)) != 0) {
-    strncpy(pbuff, dirent->d_name, sizeof(buff) - (pbuff - buff) - 1);
-    if ((handle = dlopen(buff, RTLD_NOW)) != 0) {
-      if ((gs_shared_init = dlsym(handle, "gs_shared_init")) != 0) {
-	(*gs_shared_init)();
-      } else {
-      }
-    }
-  }
-
-  closedir(dir);
-}
-#else
 /* Do platform-dependent initialization. */
 void
 gp_init(void)
 {
 }
-#endif
 
 /* Do platform-dependent cleanup. */
 void

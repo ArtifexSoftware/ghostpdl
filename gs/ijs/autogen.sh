@@ -34,10 +34,6 @@ VERSIONGREP="sed -e s/.*[^0-9\.]\([0-9]\.[0-9]\).*/\1/"
 # do we need automake?
 (grep "^AM_INIT_AUTOMAKE" "$CONFIG_AC" >/dev/null) && {
   AM_NEEDED=`fgrep AUTOMAKE_OPTIONS Makefile.am | $VERSIONGREP`
-  AM_NMAJOR=`echo $AM_NEEDED |cut -d. -f1`
-  AM_NMINOR=`echo $AM_NEEDED |cut -d. -f2`
-  AM_NPATCHLEVEL=`echo $AM_NEEDED |cut -d. -f3`
-  AM_NVERSION=`expr $AM_NMAJOR '*' 10000 + $AM_NMINOR '*' 100 + 0$AM_NPATCHLEVEL`
   if test -z $AM_NEEDED; then
     echo -n "checking for automake... "
     AUTOMAKE=automake
@@ -53,11 +49,8 @@ VERSIONGREP="sed -e s/.*[^0-9\.]\([0-9]\.[0-9]\).*/\1/"
     echo -n "checking for automake $AM_NEEDED or later... "
     for am in automake-$AM_NEEDED automake$AM_NEEDED automake; do
       ($am --version < /dev/null > /dev/null 2>&1) || continue
-      AM_MAJOR=`echo $AM_NEEDED |cut -d. -f1`
-      AM_MINOR=`echo $AM_NEEDED |cut -d. -f2`
-      AM_PATCHLEVEL=`echo $AM_NEEDED |cut -d. -f3`
-      AM_VERSION=`expr $AM_NMAJOR '*' 10000 + $AM_NMINOR '*' 100 + 0$AM_NPATCHLEVEL`
-      if test $AM_VERSION -ge $AM_NVERSION; then
+      ver=`$am --version < /dev/null | head -1 | $VERSIONGREP`
+      if test $ver = $AM_NEEDED; then
         AUTOMAKE=$am
         echo $AUTOMAKE
         break
@@ -67,11 +60,8 @@ VERSIONGREP="sed -e s/.*[^0-9\.]\([0-9]\.[0-9]\).*/\1/"
     echo -n "checking for aclocal $AM_NEEDED or later... "
     for ac in aclocal-$AM_NEEDED aclocal$AM_NEEDED aclocal; do
       ($ac --version < /dev/null > /dev/null 2>&1) || continue
-      AM_MAJOR=`echo $AM_NEEDED |cut -d. -f1`
-      AM_MINOR=`echo $AM_NEEDED |cut -d. -f2`
-      AM_PATCHLEVEL=`echo $AM_NEEDED |cut -d. -f3`
-      AM_VERSION=`expr $AM_NMAJOR '*' 10000 + $AM_NMINOR '*' 100 + 0$AM_NPATCHLEVEL`
-      if test $AM_VERSION -ge $AM_NVERSION; then
+      ver=`$ac --version < /dev/null | head -1 | $VERSIONGREP`
+      if test $ver = $AM_NEEDED; then
         ACLOCAL=$ac
         echo $ACLOCAL
         break

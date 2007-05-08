@@ -164,17 +164,8 @@ level2dict begin
 % We don't include attributes such as .MediaSize, which all devices
 % are guaranteed to supply on their own.
 /.defaultpolicies mark
-  % M. Sweet, Easy Software Products
-  %
-  % Due to the fact that it is not possible to properly implement
-  % the selection policies from a Ghostscript driver, we have changed
-  % the default policy to "7" (impose) to avoid numerous problems with
-  % printing within CUPS...
-  %
-  % /PolicyNotFound 1
-  % /PageSize 0
-  /PolicyNotFound 7
-  /PageSize 7
+  /PolicyNotFound 1
+  /PageSize 0
   /PolicyReport {
     dup /.LockSafetyParams known {
 	% Only possible error is invalidaccess
@@ -385,42 +376,21 @@ level2dict begin
     } bind
 .dicttomark readonly def
 
-% M. Sweet, Easy Software Products:
-%
-% Define NOMEDIAATTRS to turn off the default (but unimplementable) media
-% selection policies for setpagedevice.  This is used by CUPS to support
-% the standard Adobe media attributes.
-NOMEDIAATTRS {
-  % Define only PageSize for input attribute matching.
-  /.inputattrkeys [
-    /PageSize
-  ] readonly def
-  % Define no other keys used in media selection.
-  /.inputselectionkeys [
-    /noInputSelectionsKeys
-  ] readonly def
+% Define the keys used in input attribute matching.
+/.inputattrkeys [
+  /PageSize /MediaColor /MediaWeight /MediaType /InsertSheet /ManualFeed
+	% The following are documented in Adobe's supplement for v2017.
+  /LeadingEdge /MediaClass
+] readonly def
+% Define other keys used in media selection.
+/.inputselectionkeys [
+  /MediaPosition /Orientation
+] readonly def
 
-  % Define no keys used in output attribute matching.
-  /.outputattrkeys [
-    /noOutputAttrKeys
-  ] readonly def
-} {
-  % Define the keys used in input attribute matching.
-  /.inputattrkeys [
-    /PageSize /MediaColor /MediaWeight /MediaType /InsertSheet /ManualFeed
-	  % The following are documented in Adobe's supplement for v2017.
-    /LeadingEdge /MediaClass
-  ] readonly def
-  % Define other keys used in media selection.
-  /.inputselectionkeys [
-    /MediaPosition /Orientation
-  ] readonly def
-
-  % Define the keys used in output attribute matching.
-  /.outputattrkeys [
-    /OutputType /Duplex /Tumble /ManualFeed
-  ] readonly def
-} ifelse
+% Define the keys used in output attribute matching.
+/.outputattrkeys [
+  /OutputType
+] readonly def
 
 % Define all the parameters that should always be copied to the merged
 % dictionary.
@@ -532,22 +502,11 @@ NOMEDIAATTRS {
 % They are expected to consume the top 2 operands.
 % NOTE: we currently treat all values other than 0, 1, or 7 (for PageSize)
 % the same as 0, i.e., we signal an error.
-%
-% M. Sweet, Easy Software Products:
-%
-% Define NOMEDIAATTRS to turn off the default (but unimplementable) media
-% selection policies for setpagedevice.  This is used by CUPS to support
-% the standard Adobe media attributes.
   0 {		% Set errorinfo and signal a configurationerror.
-      NOMEDIAATTRS {
-        % NOMEDIAATTRS means that the default policy is 7...
-        pop 2 index exch 7 put
-      } {
 	pop dup 4 index exch get 2 array astore
 	$error /errorinfo 3 -1 roll put
 	cleartomark
 	/setpagedevice .systemvar /configurationerror signalerror
-      } ifelse
   } bind
   1 {		% Roll back the failed request to its previous status.
 SETPDDEBUG { (Rolling back.) = pstack flush } if

@@ -29,8 +29,7 @@ int px_write_page_header(stream *s, const gx_device *dev);
 /* Write the media selection command if needed, updating the media size. */
 int px_write_select_media(stream *s, const gx_device *dev,
 			  pxeMediaSize_t *pms,
-			  byte *media_source,
-			  int page, bool Duplex, bool Tumble);
+			  byte *media_source);
 
 /*
  * Write the file trailer.  Note that this takes a FILE *, not a stream *,
