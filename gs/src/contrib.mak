@@ -847,3 +847,24 @@ $(DD)sunhmono.dev : $(sunr_) $(DD)page.dev
 $(GLOBJ)gdevsunr.$(OBJ) : $(GLSRC)gdevsunr.c $(PDEVH)
 	$(GLCC) $(GLO_)gdevsunr.$(OBJ) $(C_) $(GLSRC)gdevsunr.c
 
+
+#########################################################################
+### --------------------Japanese printer addons --------------------- ###
+#########################################################################
+
+### These drivers are based on patches on existing device drivers in the
+### src/ directory, therefore they are not in addons/
+
+$(DD)ljet4pjl.dev: $(HPMONO) $(DD)page.dev
+	$(SETPDEV) $(DD)ljet4pjl $(HPMONO)
+
+$(DD)lj4dithp.dev: $(cdeskjet_) $(DD)page.dev
+	$(SETPDEV) $(DD)lj4dithp $(cdeskjet_)
+
+$(DD)dj505j.dev: $(cdeskjet_)
+	$(SETPDEV) $(DD)dj505j $(cdeskjet_)
+
+$(DD)picty180.dev: $(cdeskjet_)
+	$(SETPDEV) $(DD)picty180 $(cdeskjet_)
+
+#########################################################################

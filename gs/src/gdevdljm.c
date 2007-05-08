@@ -100,6 +100,10 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 
     /* Initialize printer. */
     if (pdev->PageCount == 0) {
+	if (features & HACK__IS_A_LJET4PJL) {
+ 	    fputs("\033%-12345X@PJL\r\n@PJL ENTER LANGUAGE = PCL\r\n",
+  		  prn_stream);
+	}
 	fputs("\033E", prn_stream);	/* reset printer */
 	/* If the printer supports it, set the paper size */
 	/* based on the actual requested size. */
