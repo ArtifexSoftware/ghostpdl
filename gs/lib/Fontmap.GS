@@ -401,3 +401,14 @@
 % the SymbolEncoding.
 
 /Hershey-Symbol				(hrsyr.gsf)	;	% 5066567
+
+/Arial					/ArialMT		;
+/Arial,Bold				/Arial-BoldMT		;
+/Arial,Italic				/Arial-ItalicMT		;
+/Arial,BoldItalic			/Arial-BoldItalicMT	;
+
+/TimesNewRoman				/TimesNewRomanPSMT		;
+/TimesNewRoman,Bold			/TimesNewRomanPS-BoldMT		;
+/TimesNewRoman,Italic			/TimesNewRomanPS-ItalicMT	;
+/TimesNewRoman,BoldItalic		/TimesNewRomanPS-BoldItalicMT	;
+
