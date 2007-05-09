@@ -1,6 +1,9 @@
 #!/usr/bin/perl -w
 $/="";
 
+# script for generating reports from the pscet status document
+# $Id: $
+
 $mydb = "pscet_status.txt";
 open(MYDB,$mydb) or die "Unable to open $mydb:$!\n";
 
