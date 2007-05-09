@@ -333,6 +333,8 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
     unsigned int signature;
     int code;
 
+    dprintf1("xps_process_data state=%d\n", ctx->zip_state);
+
     while (1)
     {
 	switch (ctx->zip_state)
@@ -352,20 +354,28 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		signature = read4(ctx, buf);
 		if (signature == ZIP_LOCAL_FILE_SIG)
 		{
-		    /* dputs("local file signature\n"); */
+		    dputs("local file signature\n");
 		}
 		else if (signature == ZIP_DATA_DESC_SIG)
 		{
-		    /* dputs("data desc signature\n"); */
+		    dputs("data desc signature\n");
 		    (void) read4(ctx, buf); /* crc32 */
 		    (void) read4(ctx, buf); /* csize */
 		    (void) read4(ctx, buf); /* usize */
 		}
 		else
 		{
-		    /* some other unknown part. */
-		    dprintf1("unknown signature %x\n", signature);
 		    ctx->zip_state = -1;
+
+		    if (signature == 0x02014b50) /* central directory */
+			return 0;
+		    if (signature == 0x05054b50) /* digital signature */
+			return 0;
+		    if (signature == 0x06054b50) /* end of central directory */
+			return 0;
+
+		    /* some other unknown part. */
+		    dprintf1("unknown signature 0x%x\n", signature);
 		    return 0;
 		}
 	    }
@@ -403,6 +413,13 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 
 	case 3: /* extra field */
 
+	    /* work around for the fixed size cursor buffer */
+	    if (ctx->zip_extra_length > buf->limit - buf->ptr)
+	    {
+		ctx->zip_extra_length -= buf->limit - buf->ptr;
+		buf->limit = buf->ptr;
+	    }
+
 	    if (buf->limit - buf->ptr < ctx->zip_extra_length)
 		return 0;
 	    buf->ptr += ctx->zip_extra_length;
@@ -426,14 +443,16 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		    ctx->zip_state ++;
 	    }
 
-	case 5: /* data descriptor */
+	case 5: /* end of part (data descriptor) */
 
-	    if (ctx->zip_general & 4)
+	    if (ctx->zip_general & 8)
 	    {
-		/* dputs("data descriptor by flag\n"); */
-		if (buf->limit - buf->ptr < 12)
+		dputs("data descriptor by flag\n");
+		if (buf->limit - buf->ptr < 16)
 		    return 0;
-		read4(ctx, buf); /* crc32 */
+		signature = read4(ctx, buf); /* crc32 ... or signature */
+		if (signature == ZIP_DATA_DESC_SIG)
+		    read4(ctx, buf); /* crc32 */
 		read4(ctx, buf); /* csize */
 		read4(ctx, buf); /* usize */
 	    }
