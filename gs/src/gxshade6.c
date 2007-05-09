@@ -218,6 +218,8 @@ init_patch_fill_state(patch_fill_state_t *pfs)
     pfs->linear_color = false;
     pfs->inside = false;
     pfs->n_color_args = 1;
+    pfs->decomposition_limit = float2fixed(min(pfs->dev->HWResolution[0], 
+					       pfs->dev->HWResolution[1]) / 72);
     pfs->fixed_flat = float2fixed(pfs->pis->flatness);
     /* Restrict the pfs->smoothness with 1/min_linear_grades, because cs_is_linear
        can't provide a better precision due to the color
@@ -1134,7 +1136,7 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
        based on fn_is_monotonic_proc_t is_monotonic, 
        which applies to intervals. */
     patch_interpolate_color(c, c0, c1, pfs, 0.5);
-    if (ytop - ybot < fixed_1 / 2) /* Prevent an infinite color decomposition. */
+    if (ytop - ybot < pfs->decomposition_limit) /* Prevent an infinite color decomposition. */
 	code = constant_color_trapezoid(pfs, le, re, ybot, ytop, swap_axes, c);
     else {  
 	bool monotonic_color_save = pfs->monotonic_color;
@@ -2463,7 +2465,10 @@ triangle_by_4(patch_fill_state_t *pfs,
 	case 0: /* The area is filled. */
 	    goto out;
 	case 2: /* decompose to constant color areas */
-	    if (sd < fixed_1 * 4) {
+	    /* Halftoned devices may do with some bigger areas
+	       due to imprecise representation of a contone color. 
+	       So we multiply the decomposition limit by 4 for a faster rendering. */
+	    if (sd < pfs->decomposition_limit * 4) {
 		code = constant_color_triangle(pfs, p2, p0, p1);
 		goto out;
 	    }
@@ -2484,7 +2489,7 @@ triangle_by_4(patch_fill_state_t *pfs,
 	    }
 	    break;
 	case 1: /* decompose to linear color areas */
-	    if (sd < fixed_1) {
+	    if (sd < pfs->decomposition_limit) {
 		code = constant_color_triangle(pfs, p2, p0, p1);
 		goto out;
 	    }
@@ -2954,9 +2959,9 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	double size_u = max(max(d0001x, d1011x), max(d0001y, d1011y));
 	double size_v = max(max(d0010x, d0111x), max(d0010y, d0111y));
 
-	if (size_u > fixed_1)
+	if (size_u > pfs->decomposition_limit)
 	    is_big_u = true;
-	if (size_v > fixed_1)
+	if (size_v > pfs->decomposition_limit)
 	    is_big_v = true;
 	else if (!is_big_u)
 	    return (QUADRANGLES || !pfs->maybe_self_intersecting ? 
@@ -3434,7 +3439,7 @@ is_y_bended(const tensor_patch *p)
 }
 
 private inline bool
-is_curve_x_small(const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
+is_curve_x_small(const patch_fill_state_t *pfs, const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
 {   /* Is curve within a single pixel, or smaller than half pixel ? */
     fixed xmin0 = min(pole[0 * pole_step].x, pole[1 * pole_step].x);
     fixed xmin1 = min(pole[2 * pole_step].x, pole[3 * pole_step].x);
@@ -3443,13 +3448,13 @@ is_curve_x_small(const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
     fixed xmax1 = max(pole[2 * pole_step].x, pole[3 * pole_step].x);
     fixed xmax =  max(xmax0, xmax1);
 
-    if(xmax - xmin <= fixed_1)
+    if(xmax - xmin <= pfs->decomposition_limit)
 	return true;
     return false;	
 }
 
 private inline bool
-is_curve_y_small(const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
+is_curve_y_small(const patch_fill_state_t *pfs, const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
 {   /* Is curve within a single pixel, or smaller than half pixel ? */
     fixed ymin0 = min(pole[0 * pole_step].y, pole[1 * pole_step].y);
     fixed ymin1 = min(pole[2 * pole_step].y, pole[3 * pole_step].y);
@@ -3458,7 +3463,7 @@ is_curve_y_small(const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
     fixed ymax1 = max(pole[2 * pole_step].y, pole[3 * pole_step].y);
     fixed ymax =  max(ymax0, ymax1);
 
-    if (ymax - ymin <= fixed_1)
+    if (ymax - ymin <= pfs->decomposition_limit)
 	return true;
     return false;	
 }
@@ -3466,21 +3471,21 @@ is_curve_y_small(const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
 private inline bool
 is_patch_narrow(const patch_fill_state_t *pfs, const tensor_patch *p)
 {
-    if (!is_curve_x_small(&p->pole[0][0], 4, pfs->fixed_flat))
+    if (!is_curve_x_small(pfs, &p->pole[0][0], 4, pfs->fixed_flat))
 	return false;
-    if (!is_curve_x_small(&p->pole[0][1], 4, pfs->fixed_flat))
+    if (!is_curve_x_small(pfs, &p->pole[0][1], 4, pfs->fixed_flat))
 	return false;
-    if (!is_curve_x_small(&p->pole[0][2], 4, pfs->fixed_flat))
+    if (!is_curve_x_small(pfs, &p->pole[0][2], 4, pfs->fixed_flat))
 	return false;
-    if (!is_curve_x_small(&p->pole[0][3], 4, pfs->fixed_flat))
+    if (!is_curve_x_small(pfs, &p->pole[0][3], 4, pfs->fixed_flat))
 	return false;
-    if (!is_curve_y_small(&p->pole[0][0], 4, pfs->fixed_flat))
+    if (!is_curve_y_small(pfs, &p->pole[0][0], 4, pfs->fixed_flat))
 	return false;
-    if (!is_curve_y_small(&p->pole[0][1], 4, pfs->fixed_flat))
+    if (!is_curve_y_small(pfs, &p->pole[0][1], 4, pfs->fixed_flat))
 	return false;
-    if (!is_curve_y_small(&p->pole[0][2], 4, pfs->fixed_flat))
+    if (!is_curve_y_small(pfs, &p->pole[0][2], 4, pfs->fixed_flat))
 	return false;
-    if (!is_curve_y_small(&p->pole[0][3], 4, pfs->fixed_flat))
+    if (!is_curve_y_small(pfs, &p->pole[0][3], 4, pfs->fixed_flat))
 	return false;
     return true;
 }

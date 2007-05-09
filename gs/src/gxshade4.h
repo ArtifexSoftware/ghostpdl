@@ -130,6 +130,7 @@ typedef struct patch_fill_state_s {
     int wedge_vertex_list_elem_count;
     int wedge_vertex_list_elem_count_max;
     gs_client_color color_domain;
+    fixed decomposition_limit;
     fixed fixed_flat;
     double smoothness;
     bool maybe_self_intersecting;
