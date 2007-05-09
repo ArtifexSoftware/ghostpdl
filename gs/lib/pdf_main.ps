@@ -1325,7 +1325,9 @@ end readonly def
   grestore
   % Draw the annotations
   /Annots knownoget { { oforce drawannot } forall } if
-  Trailer /Root oget /AcroForm knownoget { draw_acro_form } if
+  //systemdict /ShowAcroForm .knownget { //true eq } { //false } ifelse {
+    Trailer /Root oget /AcroForm knownoget { draw_acro_form } if
+  } if
 } bind def
 
 /processcolorspace {	% - processcolorspace <colorspace>
