@@ -17,6 +17,7 @@
 #include "gspath.h"
 #include "gsimage.h"
 #include "gscspace.h"
+#include "gsptype1.h"
 #include "gscolor3.h"
 #include "gsutil.h"
 

@@ -353,9 +353,11 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
 		is ++;
 	}
 
+#if 0
 	dprintf6("glyph mapping (%d:%d)%d,%g,%g,%g\n",
 		code_count, glyph_count, glyph_index,
 		advance, u_offset, v_offset);
+#endif
 
 	// TODO: is_sideways and bidi_level
 
@@ -502,25 +504,6 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
      * Set up graphics state.
      */
 
-    if (clip_att || clip_tag)
-    {
-	if (!saved)
-	{
-	    gs_gsave(ctx->pgs);
-	    saved = 1;
-	}
-
-	dputs("glyphs clip\n");
-
-	if (clip_att)
-	    xps_parse_abbreviated_geometry(ctx, clip_att);
-	if (clip_tag)
-	    xps_parse_path_geometry(ctx, dict, clip_tag);
-
-	gs_clip(ctx->pgs);
-	gs_newpath(ctx->pgs);
-    }
-
     if (transform_att || transform_tag)
     {
 	gs_matrix transform;
@@ -539,6 +522,25 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	    xps_parse_matrix_transform(ctx, transform_tag, &transform);
 
 	gs_concat(ctx->pgs, &transform);
+    }
+
+    if (clip_att || clip_tag)
+    {
+	if (!saved)
+	{
+	    gs_gsave(ctx->pgs);
+	    saved = 1;
+	}
+
+	dputs("glyphs clip\n");
+
+	if (clip_att)
+	    xps_parse_abbreviated_geometry(ctx, clip_att);
+	if (clip_tag)
+	    xps_parse_path_geometry(ctx, dict, clip_tag);
+
+	gs_clip(ctx->pgs);
+	gs_newpath(ctx->pgs);
     }
 
     font_size = atof(font_size_att);

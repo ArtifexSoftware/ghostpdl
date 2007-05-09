@@ -530,6 +530,8 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 
     gs_line_cap linecap;
     gs_line_join linejoin;
+    float linewidth;
+    float miterlimit;
     int saved = 0;
 
     /*
@@ -619,14 +621,19 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     }
     gs_setlinejoin(ctx->pgs, linecap);
 
+    miterlimit = 10.0;
     if (stroke_miter_limit_att)
-	gs_setmiterlimit(ctx->pgs, atof(stroke_miter_limit_att));
+	miterlimit = atof(stroke_miter_limit_att);
+    gs_setmiterlimit(ctx->pgs, miterlimit);
 
+    linewidth = 1.0;
     if (stroke_thickness_att)
-	gs_setlinewidth(ctx->pgs, atof(stroke_thickness_att));
+	linewidth = atof(stroke_thickness_att);
+    gs_setlinewidth(ctx->pgs, linewidth);
 
     if (stroke_dash_array_att)
     {
+	char *s = stroke_dash_array_att;
 	float dash_array[100];
 	float dash_offset = 0.0;
 	int dash_count = 0;
@@ -634,41 +641,20 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	if (stroke_dash_offset_att)
 	    dash_offset = atof(stroke_dash_offset_att);
 
-	/* TODO: parse array of space separated numbers */
-	dash_array[0] = 10.0;
-	dash_array[1] = 20.0;
-	dash_array[2] = 5.0;
-	dash_array[3] = 20.0;
-	dash_count = 4;
-
-	dputs(".... dashed line ....\n");
+	while (*s)
+	{
+	    while (*s == ' ')
+		s++;
+	    dash_array[dash_count++] = atof(s) * linewidth;
+	    while (*s && *s != ' ')
+		s++;
+	}
 
 	gs_setdash(ctx->pgs, dash_array, dash_count, dash_offset);
     }
     else
     {
 	gs_setdash(ctx->pgs, NULL, 0, 0.0);
-    }
-
-    /* if we have a clip mask, push that on the gstate and remember to restore */
-
-    if (clip_att || clip_tag)
-    {
-	if (!saved)
-	{
-	    gs_gsave(ctx->pgs);
-	    saved = 1;
-	}
-
-	dputs("  path clip\n");
-
-	if (clip_att)
-	    xps_parse_abbreviated_geometry(ctx, clip_att);
-	if (clip_tag)
-	    xps_parse_path_geometry(ctx, dict, clip_tag);
-
-	gs_clip(ctx->pgs);
-	gs_newpath(ctx->pgs);
     }
 
     /* if we have a transform, push that on the gstate and remember to restore */
@@ -691,6 +677,27 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	    xps_parse_matrix_transform(ctx, transform_tag, &transform);
 
 	gs_concat(ctx->pgs, &transform);
+    }
+
+    /* if we have a clip mask, push that on the gstate and remember to restore */
+
+    if (clip_att || clip_tag)
+    {
+	if (!saved)
+	{
+	    gs_gsave(ctx->pgs);
+	    saved = 1;
+	}
+
+	dputs("  path clip\n");
+
+	if (clip_att)
+	    xps_parse_abbreviated_geometry(ctx, clip_att);
+	if (clip_tag)
+	    xps_parse_path_geometry(ctx, dict, clip_tag);
+
+	gs_clip(ctx->pgs);
+	gs_newpath(ctx->pgs);
     }
 
     /* if it's a solid color brush fill/stroke do just that. */
