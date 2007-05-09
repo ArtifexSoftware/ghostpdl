@@ -504,9 +504,12 @@ set_default_entries(
                                     cnt
                                     );
 
-    /* all other entries are black (always comp. value 0) */
-    if (num > cnt)
-        memset(pindexed->palette.data + 3 * (start + cnt), 0, num - cnt);
+    /* all other entries are black (always comp. value 0).  For simplicity we reset all of the the remaining pallete data. */
+    if (num > cnt) {
+        int bytes_initialized = 3 * (start + cnt);
+        int bytes_left = (3 * pcl_cs_indexed_palette_size) - bytes_initialized;
+        memset(pindexed->palette.data + bytes_initialized, 0, bytes_left);
+    }
 
     /* set the default widths */
     for (i = start; i < num; i++)
