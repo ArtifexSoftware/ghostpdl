@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 artofcode LLC.
+/* Copyright (C) 2001-2007 artofcode LLC.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -62,10 +62,6 @@ extern int zflushpage(i_ctx_t *);
 
 #ifndef GS_MAX_LIB_DIRS
 #  define GS_MAX_LIB_DIRS 25
-#endif
-
-#ifndef GS_BUG_MAILBOX
-#  define GS_BUG_MAILBOX "bug-gs@ghostscript.com"
 #endif
 
 #define MAX_BUFFERED_SIZE 1024
@@ -883,7 +879,7 @@ private const char help_usage2[] = "\
                                          embed %d or %ld for page #\n";
 private const char help_trailer[] = "\
 For more information, see %s.\n\
-Report bugs to %s, using the form in Bug-form.htm.\n";
+Please report bugs to bugs.ghostscript.com.\n";
 private const char help_devices[] = "Available devices:";
 private const char help_default_device[] = "Default output device:";
 private const char help_emulators[] = "Input formats:";
@@ -1060,5 +1056,5 @@ print_help_trailer(const gs_main_instance *minst)
     if (gp_file_name_combine(gs_doc_directory, strlen(gs_doc_directory), 
 	    use_htm, strlen(use_htm), false, buffer, &blen) != gp_combine_success)
 	p = use_htm;
-    outprintf(minst->heap, help_trailer, p, GS_BUG_MAILBOX);
+    outprintf(minst->heap, help_trailer, p);
 }
