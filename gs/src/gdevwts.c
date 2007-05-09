@@ -1,5 +1,5 @@
-/* Copyright (C) 2006 artofcode LLC.  All rights reserved.
-  
+/* Copyright (C) 2006-2007 artofcode LLC.  All rights reserved.
+
   This software is provided AS-IS with no warranty, either express or
   implied.
   
@@ -217,7 +217,7 @@ wts_halftone_line_8(wts_cooked_halftone *wch, int y, int width, int n_planes,
 	wts_screen_t *w = wch[plane_ix].wts;
 	int width_padded = wch[plane_ix].width_padded;
 	byte * dline = dst + plane_ix * halftoned_bytes;
-	//byte * dline = dst[plane_ix];
+	/*byte * dline = dst[plane_ix];*/
 	int imax;
 
 	for (x = 0; x < width;) {
