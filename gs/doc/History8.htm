@@ -29,6 +29,7 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
+<li><a href="#Version8.57">Version 8.57 (2007-05-11)</a>
 <li><a href="#Version8.56">Version 8.56 (2007-03-14)</a>
 <li><a href="#Version8.54">Version 8.54 (2006-05-17)</a>
 <li><a href="#Version8.53">Version 8.53 (2005-10-20)</a>
@@ -73,6 +74,1910 @@ overview</a>.
 <!-- [1.0 end visible header] ============================================== -->
 
 <!-- [2.0 begin contents] ================================================== -->
+
+<h2><a name="Version8.57"></a>Version 8.57 (2007-05-11)</h2>
+
+<p>This is a stable release in the 8.5x series of Ghostscript.
+In addition to the usual bug fixes, there are specific performance 
+and quality improvements in the areas of patterns, shading and
+image filtering.
+
+<p>Also new in this release is an implementation of the Well Tempered 
+Screening algorithm in an output device, using Graeme Gill's IMDI 
+library for efficient color mapping.
+
+<p> The following <a href="http://bugs.ghostscript.com/">bugs</a> were
+open at the time of release: <blockquote>
+226943,
+430175,
+465936,
+493348,
+530011,
+535932,
+578865,
+592160,
+610478,
+614298,
+626295,
+686747,
+686853,
+686865,
+687011,
+687039,
+687084,
+687095,
+687108,
+687146,
+687193,
+687196,
+687257,
+687271,
+687280,
+687295,
+687297,
+687303,
+687327,
+687342,
+687345,
+687346,
+687375,
+687397,
+687414,
+687445,
+687475,
+687484,
+687492,
+687514,
+687520,
+687531,
+687536,
+687559,
+687561,
+687593,
+687595,
+687608,
+687630,
+687650,
+687666,
+687674,
+687677,
+687680,
+687695,
+687697,
+687702,
+687715,
+687721,
+687728,
+687729,
+687731,
+687775,
+687780,
+687782,
+687793,
+687796,
+687805,
+687814,
+687844,
+687850,
+687887,
+687903,
+687904,
+687907,
+687915,
+687931,
+687950,
+687957,
+687960,
+687970,
+687974,
+687978,
+687981,
+687983,
+687988,
+688006,
+688007,
+688020,
+688022,
+688024,
+688026,
+688032,
+688035,
+688036,
+688042,
+688054,
+688058,
+688061,
+688064,
+688066,
+688075,
+688081,
+688095,
+688124,
+688129,
+688130,
+688134,
+688151,
+688152,
+688159,
+688166,
+688184,
+688187,
+688200,
+688203,
+688204,
+688207,
+688210,
+688215,
+688227,
+688239,
+688243,
+688267,
+688269,
+688280,
+688282,
+688283,
+688288,
+688295,
+688311,
+688312,
+688317,
+688318,
+688320,
+688323,
+688332,
+688333,
+688337,
+688339,
+688342,
+688358,
+688359,
+688360,
+688361,
+688363,
+688372,
+688375,
+688378,
+688386,
+688387,
+688389,
+688395,
+688400,
+688410,
+688413,
+688427,
+688428,
+688429,
+688434,
+688436,
+688437,
+688440,
+688446,
+688448,
+688468,
+688473,
+688474,
+688475,
+688477,
+688479,
+688483,
+688490,
+688493,
+688495,
+688500,
+688515,
+688517,
+688518,
+688526,
+688528,
+688532,
+688533,
+688539,
+688540,
+688542,
+688557,
+688565,
+688573,
+688580,
+688581,
+688584,
+688588,
+688598,
+688601,
+688604,
+688605,
+688610,
+688616,
+688617,
+688619,
+688621,
+688626,
+688627,
+688633,
+688634,
+688636,
+688637,
+688638,
+688643,
+688646,
+688647,
+688651,
+688653,
+688655,
+688671,
+688673,
+688674,
+688683,
+688696,
+688697,
+688699,
+688708,
+688709,
+688710,
+688711,
+688712,
+688714,
+688717,
+688728,
+688730,
+688731,
+688734,
+688736,
+688738,
+688739,
+688757,
+688762,
+688770,
+688774,
+688777,
+688778,
+688783,
+688796,
+688797,
+688806,
+688807,
+688808,
+688811,
+688813,
+688815,
+688818,
+688829,
+688830,
+688834,
+688843,
+688845,
+688846,
+688870,
+688871,
+688872,
+688876,
+688877,
+688878,
+688899,
+688903,
+688904,
+688907,
+688908,
+688909,
+688914,
+688915,
+688916,
+688917,
+688918,
+688919,
+688923,
+688926,
+688928,
+688933,
+688934,
+688940,
+688942,
+688943,
+688945,
+688949,
+688952,
+688958,
+688965,
+688969,
+688970,
+688976,
+688977,
+688978,
+688979,
+688981,
+688983,
+688986,
+688990,
+688992,
+688994,
+688999,
+689002,
+689003,
+689011,
+689013,
+689014,
+689022,
+689025,
+689028,
+689031,
+689032,
+689036,
+689040,
+689044,
+689046,
+689048,
+689050,
+689053,
+689055,
+689056,
+689057,
+689058,
+689060,
+689065,
+689068,
+689070,
+689076,
+689077,
+689078,
+689080,
+689081,
+689085,
+689090,
+689092,
+689093,
+689094,
+689098,
+689101,
+689103,
+689104,
+689106,
+689107,
+689111,
+689114,
+689115,
+689116,
+689117,
+689123,
+689127,
+689128,
+689129,
+689130,
+689132,
+689133,
+689136,
+689137,
+689138,
+689145,
+689146,
+689147,
+689148,
+689150,
+689153,
+689154,
+689155,
+689159,
+689161,
+689164,
+689167,
+689169,
+689170,
+689172,
+689174,
+689175,
+689179,
+689181,
+689182,
+689184,
+689186,
+689188,
+689189,
+689195,
+689198,
+689199,
+689205,
+689206,
+689209,
+689210,
+689211,
+689212,
+689215,
+689216,
+689221,
+689222,
+689223,
+689224,
+689225,
+689230.
+</blockquote>
+
+<h3><a name="8.57_Incompatible_changes"></a>Incompatible changes</h3>
+
+<p>
+There are no known incompatible changes at this point.
+
+<h3><a name="8.57_changelog"></a>Changelog</h3>
+
+<p><strong><a name="2007-05-11T170615.247707Z"></a>
+2007-05-11T17:06:15.247707Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update the product name for release.
+</pre>
+<p>[src/gscdef.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-11T170351.074953Z"></a>
+2007-05-11T17:03:51.074953Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update release date.
+</pre>
+<p>[doc/History7.htm doc/Projects.htm doc/History8.htm man/dvipdf.1 man/ps2ascii.1 doc/Use.htm doc/Readme.htm doc/Source.htm doc/Deprecated.htm doc/Maintain.htm man/ps2epsi.1 doc/Install.htm doc/API.htm doc/Issues.htm doc/DLL.htm doc/Drivers.htm man/pfbtopfa.1 doc/Release.htm doc/Commprod.htm doc/Xfonts.htm doc/Devices.htm doc/Language.htm man/gs.1 man/pf2afm.1 doc/Ps2ps2.htm doc/Fonts.htm man/printafm.1 doc/Ps2pdf.htm doc/Develop.htm doc/Helpers.htm man/pdf2dsc.1 doc/Psfiles.htm doc/Lib.htm doc/gs-vms.hlp doc/Htmstyle.htm man/font2c.1 man/gsnd.1 man/pdfopt.1 doc/News.htm man/pdf2ps.1 man/ps2pdf.1 doc/Testing.htm doc/Make.htm doc/Details8.htm doc/Unix-lpr.htm doc/C-style.htm doc/Ps-style.htm doc/History1.htm doc/History2.htm man/gslp.1 man/wftopfa.1 doc/History3.htm man/ps2ps.1 doc/Ps2epsi.htm doc/History4.htm man/ps2pdfwr.1 doc/History5.htm doc/History6.htm]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-11T170229.404037Z"></a>
+2007-05-11T17:02:29.404037Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update the libpng version listed in the top-level makefiles.
+</pre>
+<p>[src/bcwin32.mak src/openvms.mak src/ugcclib.mak src/macosx.mak src/watcw32.mak src/dvx-gcc.mak src/msvc32.mak src/unix-gcc.mak src/unixansi.mak src/macos-mcp.mak src/msvclib.mak src/all-arch.mak src/os2.mak src/version.mak src/watclib.mak]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-11T165333.148016Z"></a>
+2007-05-11T16:53:33.148016Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Install the libpng 1.2.16 source release.
+</pre>
+<p>[libpng]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-11T164803.952583Z"></a>
+2007-05-11T16:48:03.952583Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Move the included libpng out of the way.
+</pre>
+<p>[libpng]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-11T153341.202626Z"></a>
+2007-05-11T15:33:41.202626Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct the keyword substitution property key.
+</pre>
+<p>[toolbin/pscet_status.pl]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-11T133333.031639Z"></a>
+2007-05-11T13:33:33.031639Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Try again to fix the Id keyword line.
+</pre>
+<p>[toolbin/pscet_status.pl]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-11T093941.369263Z"></a>
+2007-05-11T09:39:41.369263Z leonardo</strong> (<a href="Details8.htm#2007-05-11T093941.369263Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (shadings) : Removing a dead code from radial shadings.
+
+</pre>
+<p>[src/gxshade1.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-09T215825.788526Z"></a>
+2007-05-09T21:58:25.788526Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Covert gdevwts.c to native line endings and turn on keywork 
+substitution.
+
+Also convert a C++-style comment. It looks like this line
+can actually be removed.
+</pre>
+<p>[src/gdevwts.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-09T215157.598496Z"></a>
+2007-05-09T21:51:57.598496Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add Id lines and associated properties to some recent script additions.
+</pre>
+<p>[toolbin/ocheck.py toolbin/pscet_status.pl]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-09T214700.539315Z"></a>
+2007-05-09T21:47:00.539315Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add recent new files to the documenation index.
+</pre>
+<p>[doc/Develop.htm src/gscicach.c src/gscicach.h]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-09T195501.401845Z"></a>
+2007-05-09T19:55:01.401845Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Make AcroForm rendering a non-default option because it is not yet 
+fully implemented and causes raster differences. Bug 689197.
+
+</pre>
+<p>[lib/pdf_main.ps doc/Use.htm]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-09T184556.177217Z"></a>
+2007-05-09T18:45:56.177217Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Point to bugzilla instead of the old bug-report email address in the 
+help text. Also remove the unused constant defining the address.
+</pre>
+<p>[src/imainarg.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-09T154554.143921Z"></a>
+2007-05-09T15:45:54.143921Z leonardo</strong> (<a href="Details8.htm#2007-05-09T154554.143921Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (shadings) : The decomposition limit must depend on resolution.
+
+</pre>
+<p>[src/gxshade4.h src/gxshade6.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-09T101229.054433Z"></a>
+2007-05-09T10:12:29.054433Z Till Kamppeter</strong></p>
+<blockquote>
+<pre>
+Protect expression "$Id$" against being replaced by SubVersion (bug #689093).
+</pre>
+<p>[doc/gsdoc.el]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-09T063744.288003Z"></a>
+2007-05-09T06:37:44.288003Z Marcos Woehrmann</strong></p>
+<blockquote>
+<pre>
+Added entries to alias Arial to ArialMT and TimesNewRoman to TimesNewRomanPSMT.  This is useful when running on 
+windows.
+</pre>
+<p>[lib/Fontmap.GS]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-09T032139.704394Z"></a>
+2007-05-09T03:21:39.704394Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Temporarily revert the KRGB support patch for the IJS device. There
+were some build problems, and also there's a known segfault in some
+situations. This will be worked on after the 8.57 release.
+</pre>
+<p>[src/gdevijs.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-08T194748.994751Z"></a>
+2007-05-08T19:47:48.994751Z Ralph Giles</strong> (<a href="Details8.htm#2007-05-08T194748.994751Z">details</a>)</p>
+<blockquote>
+<pre>
+Implement KRGB raster support in the IJS device. Patch from David 
+Suffield.
+
+</pre>
+<p>[src/gdevijs.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-08T182647.239521Z"></a>
+2007-05-08T18:26:47.239521Z Till Kamppeter</strong> (<a href="Details8.htm#2007-05-08T182647.239521Z">details</a>)</p>
+<blockquote>
+<pre>
+Makes ijs/ working with automake 1.10
+
+</pre>
+<p>[ijs/autogen.sh]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-08T182354.589216Z"></a>
+2007-05-08T18:23:54.589216Z Till Kamppeter</strong></p>
+<blockquote>
+<pre>
+Fixed file properties
+</pre>
+<p>[src/version.mak]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-08T181310.044227Z"></a>
+2007-05-08T18:13:10.044227Z Till Kamppeter</strong></p>
+<blockquote>
+<pre>
+Back out everything after rev 7909
+</pre>
+<p>[contrib/gdevmd2k.c contrib/gdevxes.c contrib/gdevgdi.c src/configure.ac contrib/lips4 contrib/eplaser contrib/gdevhl12.c src/gdevlj56.c ijs/autogen.sh src/gdevdljm.c src/lib.mak contrib/gdevcd8.c src/gdevpx.c src/gdevl256.c contrib/contrib.mak src/gdevvglb.c src/gdevdljm.h contrib/gdevcd8.h contrib/cups src/unix-gcc.mak contrib/gdevdj9.c src/gdevpxut.c src/gdevcdj.c contrib/chp2200 contrib/gdevlx32.c contrib/gdevlx50.c contrib/gdevop4w.c src/gdevpxut.h lib/gs_init.ps src/gdevlbp8.c src/version.mak contrib/opvp contrib/gdevbjc_.c contrib/japanese contrib/gdevbjca.c src/gdevxalt.c contrib/lxm3200-tweaked src/version.mak.in contrib/gdevbjc_.h contrib/gomni.c src/contrib.mak src/devs.mak lib/gs_setpd.ps contrib/pcl3 contrib/gdevlx7.c contrib/gdevln03.c src/gdevdjet.c src/gconf.c contrib/defs.h src/gs.mak contrib/uniprint src/Makefile.in src/unix-aux.mak contrib/md2k_md5k src/unixinst.mak contrib/epson740 src/gp_unix.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-08T174446.931200Z"></a>
+2007-05-08T17:44:46.931200Z Till Kamppeter</strong></p>
+<blockquote>
+<pre>
+Makes ijs/ working with automake 1.10
+</pre>
+<p>[ijs/autogen.sh]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-08T174312.186735Z"></a>
+2007-05-08T17:43:12.186735Z Till Kamppeter</strong></p>
+<blockquote>
+<pre>
+Added duples support to the PCL-XL ("pxlmono"/"pxlcolor") output devices
+
+</pre>
+<p>[src/gdevpx.c src/gdevlj56.c src/gdevpxut.c src/gdevpxut.h]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-08T174129.378446Z"></a>
+2007-05-08T17:41:29.378446Z Till Kamppeter</strong> (<a href="Details8.htm#2007-05-08T174129.378446Z">details</a>)</p>
+<blockquote>
+<pre>
+Support for the CUPS Raster output device in the lib/*.ps files
+
+</pre>
+<p>[lib/gs_setpd.ps lib/gs_init.ps]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-08T173026.894961Z"></a>
+2007-05-08T17:30:26.894961Z Till Kamppeter</strong></p>
+<blockquote>
+<pre>
+src/version.mak --> src/version.mak.in (part of build system patch)
+</pre>
+<p>[src/version.mak.in src/version.mak]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-08T172931.725620Z"></a>
+2007-05-08T17:29:31.725620Z Till Kamppeter</strong> (<a href="Details8.htm#2007-05-08T172931.725620Z">details</a>)</p>
+<blockquote>
+<pre>
+Build system extensions for support of CUPS Raster, OpenPrinting
+Vector, X11 driver modularizationm, and for easy selection of drivers
+
+</pre>
+<p>[src/Makefile.in src/configure.ac src/contrib.mak src/unixinst.mak src/gdevlbp8.c src/version.mak]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-08T171647.444481Z"></a>
+2007-05-08T17:16:47.444481Z Till Kamppeter</strong> (<a href="Details8.htm#2007-05-08T171647.444481Z">details</a>)</p>
+<blockquote>
+<pre>
+Conditionals to avoid conflicts with the drivers "bjc880j", "lips2p",
+"lips4", and "lips4v" in contrib/
+
+</pre>
+<p>[src/gdevlbp8.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-08T165211.701719Z"></a>
+2007-05-08T16:52:11.701719Z Till Kamppeter</strong> (<a href="Details8.htm#2007-05-08T165211.701719Z">details</a>)</p>
+<blockquote>
+<pre>
+All third-party built-in and Uniprint drivers listed in the OpenPrinting database
+
+</pre>
+<p>[contrib/japanese/doc/gs261j.txt contrib/japanese/dviprlib.h contrib/cups/pxlmono.ppd contrib/japanese/doc/gdevmjc.txt contrib/pcl3/doc/gs-pcl3.ref contrib/eplaser contrib/japanese/doc contrib/japanese/doc/gdevcd8.txt contrib/uniprint/Stc680pl.upp contrib/pcl3/eprn/mediasize.c contrib/pcl3/BUGS contrib/japanese/doc/README.gs550j contrib/pcl3/eprn/mediasize.h contrib/pcl3/ppd/gs-6.50.ppd contrib/pcl3/ppd/gs-pcl3-unspecold.ppd contrib/pcl3/src/contrib.mak-7.00.add contrib/lxm3200-tweaked/LICENSE contrib/lxm3200-tweaked/Z12-Z31-QuickSetup contrib/japanese/dmp_init.ps contrib/pcl3/eprn/pagecount.c contrib/chp2200 contrib/uniprint/Stc740p.upp contrib/gdevlx50.c contrib/lxm3200-tweaked/RELEASE_NOTES contrib/pcl3/src/pcl3opts.c contrib/pcl3/src/gdevpcl3.c contrib/pcl3/eprn/pagecount.h contrib/pcl3/src/pclsize.c contrib/pcl3/ps/margins-LetterRotated.ps contrib/gdevbjc_.c contrib/pcl3/ppd/gs-pcl3-hpdj400.ppd contrib/epson740/printerdb_rh6.0 contrib/japanese contrib/pcl3/src/pclsize.h contrib/gdevbjc_.h contrib/pcl3/ppd/gs-pcl3-hpdjportable.ppd contrib/cups/cups.mak contrib/uniprint/Stc670pl.upp contrib/cups/pxlcolor.ppd contrib/pcl3/ppd/gs-pcl3-hpdj660c.ppd contrib/pcl3 contrib/gdevlx7.c contrib/uniprint/bjc6000a1.upp contrib/pcl3/eprn/eprnrend.c.orig contrib/pcl3/ppd/gs-5.50.ppd contrib/defs.h contrib/pcl3/eprn/eprnparm.c contrib/pcl3/doc/how-to-report.txt contrib/japanese/doc/dj505j.txt contrib/japanese/gdevml6.c contrib/japanese/escp_24.src contrib/japanese/gdevlbp3.c contrib/uniprint/stc740ih.upp contrib/eplaser/gdevescv.c contrib/uniprint/Stc680p.upp contrib/uniprint/s400a1.upp contrib/epson740/upp-HowTo-to-be contrib/gdevxes.c contrib/japanese/gdevj100.c contrib/eplaser/gdevescv.h contrib/lips4/gdevlips.c contrib/japanese/doc/gdevj100.txt contrib/lips4/gdevlprn.c contrib/uniprint/Stc760pl.upp contrib/lips4/gdevlips.h contrib/pcl3/ppd/fonts.ppd contrib/uniprint/Stp870p.upp contrib/uniprint/PM820p.upp contrib/pcl3/ps/dumppdd.ps contrib/pcl3/src/zmedia2.c-6.51.diff contrib/lips4/gdevlprn.h contrib/pcl3/ppd/gs-common.ppd contrib/gdevcd8.c contrib/contrib.mak contrib/pcl3/ppd/gs-pcl3-hpdj1120c.ppd contrib/japanese/doc/cdj880.txt contrib/gdevcd8.h contrib/japanese/dmp_site.ps contrib/cups/gdevcups.c contrib/pcl3/src/contrib.mak-6.50.add contrib/japanese/doc/gdevmd2k.txt contrib/gdevdj9.c contrib/cups/pstoraster contrib/japanese/doc/gdevmag.txt contrib/lips4/gdevl4r.c contrib/lxm3200-tweaked/README contrib/lips4/gdevl4v.c.orig contrib/lips4/gdevl4v.c contrib/pcl3/ps/margins-A4Rotated.ps contrib/pcl3/ppd/gs-pcl3-hpdj540.ppd contrib/pcl3/doc/notes.bbl contrib/epson740/ps-to-printer.fpi_rh5.2 contrib/pcl3/doc/notes.tex contrib/pcl3/README contrib/pcl3/LGPL contrib/pcl3/ppd/gs-6.01.ppd contrib/chp2200/AUTHORS contrib/uniprint/PM760p.upp contrib/opvp/opvp_media.def contrib/uniprint/Stc777pl.upp contrib/uniprint/Stp720pl.upp contrib/japanese/gdevnpdl.c contrib/pcl3/src/contrib.mak-5.50.add contrib/epson740/README contrib/md2k_md5k contrib/pcl3/ps/margins-Env10Rotated.ps contrib/uniprint/PM760pl.upp contrib/uniprint/Stc670p.upp contrib/japanese/gdevmag.c contrib/cups/pstopxl contrib/japanese/gdev10v.c contrib/gdevmd2k.c contrib/cups/pstoraster.in contrib/chp2200/COPYING contrib/pcl3/ppd/gs-pcl3-hpdj510.ppd contrib/uniprint/Stc740pl.upp contrib/lips4 contrib/pcl3/src/zmedia2.c-6.01.diff contrib/gdevhl12.c contrib/pcl3/ppd/gs-pcl3-hpdj550c.ppd contrib/md2k_md5k/README.jis contrib/pcl3/ppd/catppd contrib/japanese/doc/Gdevlips.htm contrib/pcl3/ppd/gs-6.51.ppd contrib/pcl3/doc contrib/pcl3/pcl3.tar.sig contrib/cups contrib/japanese/gdevespg.c contrib/japanese/gdevalps.c contrib/pcl3/NEWS contrib/japanese/doc/gdevml6.txt contrib/gdevop4w.c contrib/pcl3/ppd/README contrib/uniprint/Stc760p.upp contrib/pcl3/eprn/eprnfs.c contrib/opvp contrib/gdevbjca.c contrib/pcl3/ppd/gs-pcl3-hpdj600.ppd contrib/gomni.c contrib/uniprint/Stp720p.upp contrib/pcl3/doc/gs-mods.txt contrib/uniprint/sipixa6.upp contrib/opvp/gdevopvp.c contrib/pcl3/src/zmedia2.c-5.50.diff contrib/pcl3/src/zmedia2.c-6.50.diff contrib/pcl3/ppd/gs-pcl3-hpdj680c.ppd contrib/pcl3/eprn/eprnrend.c contrib/pcl3/ps/margins-A4.ps contrib/pcl3/src/contrib.mak-6.01.add contrib/uniprint contrib/pcl3/src/pcl3opts-de.msg contrib/japanese/doc/djgpp.txt contrib/japanese/gdevdmpr.c contrib/japanese/doc/gdevlbp3.txt contrib/pcl3/doc/pcl3opts.html contrib/japanese/doc/gdevdmpr.txt contrib/japanese/doc/gs261j.euc contrib/chp2200/INSTALL contrib/pcl3/ppd contrib/cups/pstopxl.in contrib/pcl3/src contrib/pcl3/ppd/gs-pcl3-hpdj500c.ppd contrib/uniprint/Stc777p.upp contrib/gdevgdi.c contrib/pcl3/ps/margins-EnvDLRotated.ps contrib/japanese/gdevp201.c contrib/japanese/doc/gdevp201.txt contrib/pcl3/ppd/gs-7.00.ppd contrib/pcl3/ps/margins-Letter.ps contrib/uniprint/bjc6000b1.upp contrib/pcl3/lib/if-pcl3 contrib/pcl3/eprn contrib/opvp/opvp_common.h contrib/cups/pstoraster.convs contrib/pcl3/lib contrib/pcl3/src/pclcap.c contrib/uniprint/Stp870pl.upp contrib/pcl3/doc/gs-pcl3.1 contrib/japanese/gdevfmlbp.c contrib/pcl3/src/contrib.mak-6.51.add contrib/japanese/doc/gdevalps.txt contrib/gdevlx32.c contrib/pcl3/src/pclcap.h contrib/pcl3/src/pclgen.c contrib/pcl3/ps contrib/pcl3/src/pcl3opts-en.msg contrib/uniprint/s400b1.upp contrib/japanese/doc/gdev10v.txt contrib/japanese/gdevmjc.c contrib/epson740/printerdb_rh5.2 contrib/pcl3/ppd/gs-pcl3-hpdj500.ppd contrib/pcl3/src/pclgen.h contrib/lxm3200-tweaked contrib/pcl3/doc/pcl3opts.ref contrib/uniprint/sharp.upp contrib/japanese/gdevmjc.h contrib/pcl3/src/pclscan.c contrib/pcl3/src/zmedia2.c-7.00.diff contrib/pcl3/eprn/gdeveprn.c contrib/pcl3/ps/calign.ps contrib/pcl3/src/pclscan.h contrib/gdevln03.c contrib/pcl3/ppd/gs-pcl3-common.ppd contrib/pcl3/ppd/gs-pcl3-hpdj3xx.ppd contrib/pcl3/eprn/gdeveprn.h contrib/pcl3/lib/example.mcf contrib/pcl3/src/pclcomp.c contrib/pcl3/ppd/gs-pcl3-unspec.ppd contrib/pcl3/ps/levels-test.ps contrib/pcl3/doc/pcl3opts.1 contrib/pcl3/ppd/gs-pcl3-hpdj8xxc.ppd contrib/uniprint/PM820pl.upp contrib/japanese/gdevrpdl.c contrib/epson740 contrib/japanese/doc/gdevfmlbp.txt contrib/pcl3/lib/cups-pcl3 contrib/pcl3/doc/gs-pcl3.html contrib/japanese/gdevfmpr.c contrib/pcl3/doc/reports.txt contrib/japanese/dviprlib.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-08T163345.043492Z"></a>
+2007-05-08T16:33:45.043492Z Till Kamppeter</strong> (<a href="Details8.htm#2007-05-08T163345.043492Z">details</a>)</p>
+<blockquote>
+<pre>
+Addition of support for some older japanese-market PCL Printers
+
+</pre>
+<p>[src/gdevdjet.c src/gdevdljm.c src/gdevdljm.h src/contrib.mak src/gdevcdj.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-08T162619.557957Z"></a>
+2007-05-08T16:26:19.557957Z Till Kamppeter</strong> (<a href="Details8.htm#2007-05-08T162619.557957Z">details</a>)</p>
+<blockquote>
+<pre>
+Modularization of the X11 output devices into dynamic libraries
+
+</pre>
+<p>[src/gconf.c src/lib.mak src/gdevl256.c src/gdevxalt.c src/gs.mak src/gdevvglb.c src/Makefile.in src/unix-gcc.mak src/unix-aux.mak src/devs.mak src/unixinst.mak src/gp_unix.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-07T215344.031582Z"></a>
+2007-05-07T21:53:44.031582Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Remove unneeded header references to the interpreter. This file is part 
+of the graphics library. Also clean up the dependencies in the makefile.
+</pre>
+<p>[src/lib.mak src/gsncdummy.c src/gsncdummy.h]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-07T213143.787169Z"></a>
+2007-05-07T21:31:43.787169Z leonardo</strong> (<a href="Details8.htm#2007-05-07T213143.787169Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (shadings) : Implement a color index cache.
+
+</pre>
+<p>[src/gxshade4.h src/lib.mak src/gscicach.c src/gscicach.h src/gxshade6.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-07T194503.500615Z"></a>
+2007-05-07T19:45:03.500615Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Trap input errors when reading PDF content streams and issue a warning.
+Acrobat Reader silently ignores such errors. Bug 689026, customer 850.
+
+</pre>
+<p>[lib/pdf_base.ps]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-07T174200.368595Z"></a>
+2007-05-07T17:42:00.368595Z Timothy Osborn</strong> (<a href="Details8.htm#2007-05-07T174200.368595Z">details</a>)</p>
+<blockquote>
+<pre>
+Fixing a bounding box pixel rounding issue in pdf14_begin_transparency_group.
+
+</pre>
+<p>[src/gdevp14.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-07T103300.607664Z"></a>
+2007-05-07T10:33:00.607664Z leonardo</strong></p>
+<blockquote>
+<pre>
+Fix (functions) : Improving the documentation for make_interpolation_tensor.
+
+</pre>
+<p>[src/gsfunc0.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-07T084812.997512Z"></a>
+2007-05-07T08:48:12.997512Z leonardo</strong> (<a href="Details8.htm#2007-05-07T084812.997512Z">details</a>)</p>
+<blockquote>
+<pre>
+Documenting how to profile Ghostscript with MSVC6 (continued).
+
+</pre>
+<p>[doc/Develop.htm]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-07T081013.225741Z"></a>
+2007-05-07T08:10:13.225741Z leonardo</strong> (<a href="Details8.htm#2007-05-07T081013.225741Z">details</a>)</p>
+<blockquote>
+<pre>
+Documenting how to profile Ghostscript with MSVC6.
+
+</pre>
+<p>[doc/Develop.htm]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-05T192034.952465Z"></a>
+2007-05-05T19:20:34.952465Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Undefine /Length in the stream dictionary when the value is incorrect to
+distinguish streams of 0 and unknown length. Old code re-defined incorrect
+length as 0. Bug 689208, customer 770.
+
+</pre>
+<p>[lib/pdf_base.ps toolbin/pdf_info.ps]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-04T212303.556389Z"></a>
+2007-05-04T21:23:03.556389Z Timothy Osborn</strong> (<a href="Details8.htm#2007-05-04T212303.556389Z">details</a>)</p>
+<blockquote>
+<pre>
+Minor change to make the source code more accurate.
+
+</pre>
+<p>[src/gdevp14.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-04T041847.247543Z"></a>
+2007-05-04T04:18:47.247543Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Move allocation of a large structure from the stack to the heap to avoid
+C stack overflow on Windows NT that allocates 12K less of the stack
+space than requested by the application. Bug 688998.
+
+</pre>
+<p>[src/gdevpdfp.c lib/pdf_draw.ps]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-04T001508.895805Z"></a>
+2007-05-04T00:15:08.895805Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Previous version was too aggresive with image interpolation to
+1-bit per component (bpc) devices. Now we downsample using the
+'special' image filter that prevents dropout on 1bpc devices and
+use the "Mitchell" image filter for upscaling to those devices
+when the scale factor (in X and Y) is at least 4:1. This prevents
+upscaling on 1:1 images as well as near 1:1 where the results
+would probably be poor quality.
+
+</pre>
+<p>[src/gxiscale.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-03T151326.865969Z"></a>
+2007-05-03T15:13:26.865969Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Avoid a Valgrind warning about ovelapping arguments in memcpy().
+Don't assign a structure to itself.
+
+</pre>
+<p>[src/gxhintn.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-02T212041.869528Z"></a>
+2007-05-02T21:20:41.869528Z leonardo</strong> (<a href="Details8.htm#2007-05-02T212041.869528Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (shadings) : Extra subdivision of axial and radial shadings.
+
+</pre>
+<p>[src/gxshade4.h src/gxshade1.c src/gxshade6.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-02T191252.030634Z"></a>
+2007-05-02T19:12:52.030634Z leonardo</strong> (<a href="Details8.htm#2007-05-02T191252.030634Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (shadings) : The color space linearity check didn't account the color precision.
+
+</pre>
+<p>[src/gscspace.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-02T181829.002307Z"></a>
+2007-05-02T18:18:29.002307Z leonardo</strong> (<a href="Details8.htm#2007-05-02T181829.002307Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (shadings) : Always adjust smoothness according to the minimal color precision.
+
+</pre>
+<p>[src/gxshade6.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-02T123309.355227Z"></a>
+2007-05-02T12:33:09.355227Z leonardo</strong> (<a href="Details8.htm#2007-05-02T123309.355227Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (shadings) : Early skip parts that fall outside the clipping box.
+
+</pre>
+<p>[src/gxshade6.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-01T235523.394938Z"></a>
+2007-05-01T23:55:23.394938Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Pacify Valgrind. Initialize an uninitialized variable that is used in
+conditional expression but doesn't affect the end result. Bug 688910.
+
+</pre>
+<p>[toolbin/vg_bugs.supp toolbin/vg_okay.supp src/gxipixel.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-01T225127.306035Z"></a>
+2007-05-01T22:51:27.306035Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Pacify Valgrind. Initialize an uninitialized variable that is used in
+calculations but doesn't affect the end result in this case.
+
+</pre>
+<p>[src/gximono.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-05-01T205258.020607Z"></a>
+2007-05-01T20:52:58.020607Z leonardo</strong> (<a href="Details8.htm#2007-05-01T205258.020607Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (shadings) : wedge_vertex_list_elem_buffer overflow.
+
+</pre>
+<p>[src/gxshade6.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-30T190816.584376Z"></a>
+2007-04-30T19:08:16.584376Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix typo in 7887. Local regression testing missed this -- was seen in 
+nightly run. This was part of the "optimization" in the 4 component
+source color case.
+</pre>
+<p>[src/gxiscale.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-29T003416.918957Z"></a>
+2007-04-29T00:34:16.918957Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix structure problem (this could have caused out-of-bounds access).
+</pre>
+<p>[src/gdevwts.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-28T221719.957831Z"></a>
+2007-04-28T22:17:19.957831Z Ray Johnston</strong> (<a href="Details8.htm#2007-04-28T221719.957831Z">details</a>)</p>
+<blockquote>
+<pre>
+Implementation of a new non-linear image filter that prevents dropout
+when images are scaled down to a 1-bit per component device. Bugs
+689147 for customer 531 and image quality problem for customer 780.
+This filter is used whenever /Interpolate == true (or -dDOINTERPOLATE
+command line option is used) and the image is being scaled down on
+a 1-bit per component device.
+
+Interpolation throughput of gray or cmyk images is also improved by
+a factor of about 2:1 (depending on the data content) even when
+the standard Mitchell filter is used. The performance improvement
+when using this new filter is even higher since the filter itself
+uses less CPU time.
+
+</pre>
+<p>[src/sidscale.h src/gxdda.h src/lib.mak src/siinterp.c src/gxiscale.c doc/Develop.htm src/sisparam.h src/sidscale.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-28T215523.077958Z"></a>
+2007-04-28T21:55:23.077958Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add missing comment (brief description line).
+</pre>
+<p>[src/gdevwts.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-26T234630.659099Z"></a>
+2007-04-26T23:46:30.659099Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix regression tools to remove dependency on PYTHONPATH since
+the environment variable method isn't very convenient for those
+running local regressions and add those python files from
+peeves:/home/regression/python to this directory (under svn).
+</pre>
+<p>[toolbin/tests/README toolbin/tests/run_nightly toolbin/tests/myoptparse.py toolbin/tests/main.py]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-25T200000.200965Z"></a>
+2007-04-25T20:00:00.200965Z Timothy Osborn</strong> (<a href="Details8.htm#2007-04-25T200000.200965Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix for slow PDF performance reported in bug report #688830.
+
+</pre>
+<p>[src/gstparam.h src/gxclrast.c src/gdevp14.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-25T055033.064031Z"></a>
+2007-04-25T05:50:33.064031Z leonardo</strong> (<a href="Details8.htm#2007-04-25T055033.064031Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (TT fonts) : Allow sfnts string breaks inside TT tables.
+
+</pre>
+<p>[src/gxfcopy.c src/gxfont42.h src/gsfcid2.c src/gstype42.c src/gdevpsft.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-25T032832.022759Z"></a>
+2007-04-25T03:28:32.022759Z leonardo</strong> (<a href="Details8.htm#2007-04-25T032832.022759Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (TT fonts) : Allow 'loca' elements to be broken into parts with 'sfnts' strings.
+
+</pre>
+<p>[src/gstype42.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-24T162121.866752Z"></a>
+2007-04-24T16:21:21.866752Z leonardo</strong> (<a href="Details8.htm#2007-04-24T162121.866752Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (TT fonts) : Could write past len_glyphs array.
+
+</pre>
+<p>[src/gstype42.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-24T001614.934585Z"></a>
+2007-04-24T00:16:14.934585Z leonardo</strong> (<a href="Details8.htm#2007-04-24T001614.934585Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (TT fonts) : Do not consider overlapped glyps while computing glyph length.
+
+</pre>
+<p>[src/gstype42.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-23T235901.979981Z"></a>
+2007-04-23T23:59:01.979981Z Alex Cherepanov</strong> (<a href="Details8.htm#2007-04-23T235901.979981Z">details</a>)</p>
+<blockquote>
+<pre>
+Partly implement AcroForm feature: all fields that provire appearance
+streams and text fields with variable text. Bug 687498.
+
+</pre>
+<p>[lib/pdf_main.ps lib/pdf_draw.ps lib/pdf_ops.ps]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-23T214619.686175Z"></a>
+2007-04-23T21:46:19.686175Z leonardo</strong> (<a href="Details8.htm#2007-04-23T214619.686175Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (TT fonts) : A faster computation of glyph lengthes.
+
+</pre>
+<p>[src/gstype42.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-23T193120.353885Z"></a>
+2007-04-23T19:31:20.353885Z Henry Stiles</strong></p>
+<blockquote>
+<pre>
+Margin adjustments courtesy of jbrown@cs.ucsd.edu.  We have no way of
+testing this change since we do not have a Laserjet II.  Bug #688054.
+</pre>
+<p>[src/gdevdjet.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-23T180455.781264Z"></a>
+2007-04-23T18:04:55.781264Z leonardo</strong> (<a href="Details8.htm#2007-04-23T180455.781264Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (p*mraw devices) : Removing an incorrect debug printing (continued 2).
+
+</pre>
+<p>[src/gdevpbm.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-23T173816.893357Z"></a>
+2007-04-23T17:38:16.893357Z leonardo</strong> (<a href="Details8.htm#2007-04-23T173816.893357Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Provide alternative char codes in a CIDDecoding resource (continued).
+
+</pre>
+<p>[src/zcid.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-23T132747.091654Z"></a>
+2007-04-23T13:27:47.091654Z leonardo</strong> (<a href="Details8.htm#2007-04-23T132747.091654Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Provide alternative char codes in a CIDDecoding resource.
+
+</pre>
+<p>[lib/gs_ciddc.ps doc/Language.htm src/zcid.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-23T064208.584860Z"></a>
+2007-04-23T06:42:08.584860Z leonardo</strong> (<a href="Details8.htm#2007-04-23T064208.584860Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (p*mraw devices) : Removing an incorrect debug printing (continued).
+
+</pre>
+<p>[src/gdevpbm.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-22T220022.158968Z"></a>
+2007-04-22T22:00:22.158968Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix MSVC 7 warnings about unused variables and unreferenced labels.
+</pre>
+<p>[src/zalg.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-22T202522.439569Z"></a>
+2007-04-22T20:25:22.439569Z leonardo</strong> (<a href="Details8.htm#2007-04-22T202522.439569Z">details</a>)</p>
+<blockquote>
+<pre>
+Implementing high level patterns, step 10.
+
+</pre>
+<p>[src/gxpcmap.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-22T201902.249842Z"></a>
+2007-04-22T20:19:02.249842Z leonardo</strong> (<a href="Details8.htm#2007-04-22T201902.249842Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (p*mraw devices) : Removing an incorrect debug printing.
+
+</pre>
+<p>[src/gdevpbm.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-22T175556.827285Z"></a>
+2007-04-22T17:55:56.827285Z leonardo</strong> (<a href="Details8.htm#2007-04-22T175556.827285Z">details</a>)</p>
+<blockquote>
+<pre>
+Implementing the PS operator .sort in C language.
+
+</pre>
+<p>[src/zalg.c src/int.mak lib/gs_init.ps]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-22T115025.863066Z"></a>
+2007-04-22T11:50:25.863066Z leonardo</strong> (<a href="Details8.htm#2007-04-22T115025.863066Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (TT fonts) : A faster seeking through 'sfnts' array.
+
+</pre>
+<p>[src/zfcid1.c src/zbfont.c src/ifont.h src/zfont42.c src/ifont42.h]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-21T023344.148360Z"></a>
+2007-04-21T02:33:44.148360Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix all warnings generated by MSVC 6 & 7 except the warnings matching
+"C4018|C4244|jbig2dec|jasper" regular expression.
+
+</pre>
+<p>[src/dwimg.h src/lib.mak src/iscannum.c src/windows_.h src/gdevwpr2.c src/gp_mswin.c src/sfxstdio.c src/gdevpdfe.c src/gp_msprn.c src/dwdll.c ijs/unistd_.h src/dwsetup.cpp]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-19T150451.253884Z"></a>
+2007-04-19T15:04:51.253884Z Thomas DiGennaro</strong></p>
+<blockquote>
+<pre>
+Integrate make_testdb.py with new environment,
+including testing.cfg and python procedures in other scripts.
+make_testdb.py supports creation of a testdata.db with checksums
+generated by running gs build in HEAD/ and installed in gshead/.
+</pre>
+<p>[toolbin/tests/README toolbin/tests/make_testdb toolbin/tests/make_testdb.py]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-18T002349.202468Z"></a>
+2007-04-18T00:23:49.202468Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix a few warnings generated by GCC 4.1.2.
+
+</pre>
+<p>[src/gxttfb.c src/gdevpbm.c src/gdevpsdi.c src/gspath1.c src/zchar.c src/ttinterp.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-17T183939.936412Z"></a>
+2007-04-17T18:39:39.936412Z leonardo</strong> (<a href="Details8.htm#2007-04-17T183939.936412Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix : A bug in device_cpath_accum_enum_ptrs.
+
+</pre>
+<p>[src/gxacpath.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-17T175743.141720Z"></a>
+2007-04-17T17:57:43.141720Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Remove the inadvertently added instance of testing.cfg; it clobbers 
+local configs. Changes should instead be made to testing.cfg.example, 
+with the expectation that users will copy that to testing.cfg and
+edit to suit.
+</pre>
+<p>[toolbin/tests/testing.cfg]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-17T142846.266428Z"></a>
+2007-04-17T14:28:46.266428Z leonardo</strong> (<a href="Details8.htm#2007-04-17T142846.266428Z">details</a>)</p>
+<blockquote>
+<pre>
+Implementing high level patterns, step 9.
+
+</pre>
+<p>[src/gxpcmap.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-17T140950.996301Z"></a>
+2007-04-17T14:09:50.996301Z leonardo</strong> (<a href="Details8.htm#2007-04-17T140950.996301Z">details</a>)</p>
+<blockquote>
+<pre>
+Implementing high level patterns, step 8.
+
+</pre>
+<p>[src/gxclist.c src/gxclbits.c src/gxpcmap.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-17T065536.784240Z"></a>
+2007-04-17T06:55:36.784240Z leonardo</strong> (<a href="Details8.htm#2007-04-17T065536.784240Z">details</a>)</p>
+<blockquote>
+<pre>
+Implementing high level patterns, step 7.
+
+</pre>
+<p>[src/gxpcmap.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-17T002538.792981Z"></a>
+2007-04-17T00:25:38.792981Z Timothy Osborn</strong> (<a href="Details8.htm#2007-04-17T002538.792981Z">details</a>)</p>
+<blockquote>
+<pre>
+This is a patch for bug report #689171.
+
+</pre>
+<p>[src/gscdevn.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-17T000210.771224Z"></a>
+2007-04-17T00:02:10.771224Z leonardo</strong> (<a href="Details8.htm#2007-04-17T000210.771224Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix : gs_copydevice2 crashed on error.
+
+</pre>
+<p>[src/gsdevice.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-16T235559.056841Z"></a>
+2007-04-16T23:55:59.056841Z leonardo</strong> (<a href="Details8.htm#2007-04-16T235559.056841Z">details</a>)</p>
+<blockquote>
+<pre>
+Implementing high level patterns, step 6.
+
+</pre>
+<p>[src/gxclist.c src/gxpcmap.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-16T185312.628313Z"></a>
+2007-04-16T18:53:12.628313Z leonardo</strong> (<a href="Details8.htm#2007-04-16T185312.628313Z">details</a>)</p>
+<blockquote>
+<pre>
+Implementing high level patterns, step 5.
+
+</pre>
+<p>[src/gsptype1.c src/gxpageq.c src/lib.mak src/gxpcmap.c src/gsptype1.h src/gxpcolor.h src/gxfill.c src/gxp1fill.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-16T144542.497063Z"></a>
+2007-04-16T14:45:42.497063Z Thomas DiGennaro</strong></p>
+<blockquote>
+<pre>
+Checkin the work on regression, search, testfiles.  Mostly Python scripts.
+See README files for documentation of use and structure.
+</pre>
+<p>[toolbin/tests/dump_checksum.py toolbin/python toolbin/tests/gscheck_testfiles.py toolbin/tests/dump_checksum_plus.py toolbin/tests/update_baseline toolbin/tests/check_source.py toolbin/tests/gssum.py toolbin/tests/gscheck_all.py toolbin/tests/dump_checksum_raw.py toolbin/tests/find_unique_file.py toolbin/tests/rasterdb.py toolbin/tests/gscheck_fuzzypdf.py toolbin/search/README toolbin/testfiles toolbin/search toolbin/tests/get_baselines toolbin/tests/build_revision.py toolbin/tests/run_regression toolbin/tests/compare_checksumdb.py toolbin/tests/gsconf.py toolbin/tests/testdiff toolbin/tests/dump_testdb toolbin/tests/gsvalidate.py toolbin/tests/update_baseline.py toolbin/tests/make_baselinedb.py toolbin/tests/gscheck_raster.py toolbin/tests/update_pdfbaseline toolbin/tests/gsparamsets.py toolbin/tests/validate.py toolbin/tests/gstestutils.py toolbin/tests/compare_checksums.py toolbin/tests/regen_filelist.py toolbin/tests/run_nightly.py toolbin/tests/regen_baseline.py toolbin/tests/gstestgs.py toolbin/tests/run_regression.py toolbin/tests/get_baselines.py toolbin/tests/testdiff.py toolbin/tests/updatelistpdf.py toolbin/tests/gscheck_pdfwrite.py toolbin/tests/updatelist.py toolbin/tests/run_series.py toolbin/tests/get_baseline_log.py toolbin/tests/collate.py toolbin/tests/testing.cfg]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-16T110219.661421Z"></a>
+2007-04-16T11:02:19.661421Z leonardo</strong> (<a href="Details8.htm#2007-04-16T110219.661421Z">details</a>)</p>
+<blockquote>
+<pre>
+Implementing high level patterns, step 4.
+
+</pre>
+<p>[src/gxclmem.c src/lib.mak src/gxclist.c src/gxpcmap.c src/gxcldev.h src/gxclmem.h src/gxclist.h src/gxpcolor.h src/gxp1fill.c src/zpcolor.c src/gxclread.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-16T025057.803705Z"></a>
+2007-04-16T02:50:57.803705Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Use right capitalization for compiled resources: s/Procset/ProcSet/
+</pre>
+<p>[src/openvms.mak src/int.mak src/Makefile.in]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-16T022614.232909Z"></a>
+2007-04-16T02:26:14.232909Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Scan numbers in the range of 2147483648..4294967295 in PDF Encrypt dictionary
+as unsigned integers for compatibility with Acrobat Reader.
+Bug 689010, customer 870.
+
+</pre>
+<p>[lib/pdf_main.ps src/iscan.c src/iscannum.c src/int.mak src/iscan.h src/iscannum.h src/ztoken.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-15T070159.507361Z"></a>
+2007-04-15T07:01:59.507361Z Henry Stiles</strong></p>
+<blockquote>
+<pre>
+This fix is associated with closed bug 689139 and was not checked in
+when that bug was closed due to a bookkeeping mistake.  It adds
+attributes needed to parse the pxl color treatment operator.  There is
+no implementation associated with these new attributes so no change is
+expected.
+</pre>
+<p>[src/gdevpxen.h]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-15T063802.809649Z"></a>
+2007-04-15T06:38:02.809649Z Henry Stiles</strong></p>
+<blockquote>
+<pre>
+The paper size was hard coded to A4 instead of using the paper size in the
+printer device state.  Thanks to Leif Harcke for the patch.  The HP
+and Canon color printer drivers are not tested so there are no
+expected regression differences.
+</pre>
+<p>[src/gdevcdj.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-15T054243.102974Z"></a>
+2007-04-15T05:42:43.102974Z Henry Stiles</strong></p>
+<blockquote>
+<pre>
+The range of runcode32 was not correct.  The specification says 3
+(not 2) should be added to the run length.  See the JBIG2 spec, Table
+29 in section 7.4.3.1.7 (Symbol ID Huffman table decoding).  Fixes
+688009 for customer 670.
+</pre>
+<p>[jbig2dec/jbig2_text.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-14T140804.439060Z"></a>
+2007-04-14T14:08:04.439060Z Timothy Osborn</strong> (<a href="Details8.htm#2007-04-14T140804.439060Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix for the band_complexity_array overflow issue. First reported in bug
+report #689165. Also encountered by me when running the test file for bug
+report #688830.
+
+</pre>
+<p>[src/lib.mak src/gxclist.c src/gxcldev.h src/gxclist.h src/gdevprn.c src/gxclread.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-11T182107.628832Z"></a>
+2007-04-11T18:21:07.628832Z Timothy Osborn</strong></p>
+<blockquote>
+<pre>
+Adding src/gsncdummy.[ch] and src/zncdummy.c to the Color Mapping section of Develop.htm</pre>
+<p>[doc/Develop.htm]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-11T181535.603892Z"></a>
+2007-04-11T18:15:35.603892Z Timothy Osborn</strong></p>
+<blockquote>
+<pre>
+Adding svn keywords</pre>
+<p>[src/gsncdummy.h]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-11T180802.032998Z"></a>
+2007-04-11T18:08:02.032998Z Timothy Osborn</strong></p>
+<blockquote>
+<pre>
+Adding svn keywords</pre>
+<p>[src/gsncdummy.c src/zncdummy.c src/gsncdummy.h]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-11T152552.638692Z"></a>
+2007-04-11T15:25:52.638692Z Timothy Osborn</strong></p>
+<blockquote>
+<pre>
+svn newbie mistake. Did not mean to grab the lib folder items.*</pre>
+<p>[lib/pdf_main.ps lib/pdf_draw.ps lib/pdf_ops.ps lib/pdfopt.ps]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-11T152044.560137Z"></a>
+2007-04-11T15:20:44.560137Z Timothy Osborn</strong></p>
+<blockquote>
+<pre>
+gsncdemo.* are now named gsncdummy.*</pre>
+<p>[lib/pdf_main.ps src/gsncdemo.c lib/pdf_draw.ps lib/pdf_ops.ps lib/pdfopt.ps]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-10T171341.025532Z"></a>
+2007-04-10T17:13:41.025532Z leonardo</strong> (<a href="Details8.htm#2007-04-10T171341.025532Z">details</a>)</p>
+<blockquote>
+<pre>
+Implementing high level patterns, step 3.
+
+</pre>
+<p>[src/gxpcmap.c src/gxpcolor.h src/zpcolor.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-10T065436.984146Z"></a>
+2007-04-10T06:54:36.984146Z leonardo</strong> (<a href="Details8.htm#2007-04-10T065436.984146Z">details</a>)</p>
+<blockquote>
+<pre>
+Make the memory clist implementation to build always.
+
+</pre>
+<p>[src/gxclmem.c src/lib.mak src/gxclfile.c src/gxclist.c src/gxband.h src/gxclread.c src/gxclio.h]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-09T205020.646460Z"></a>
+2007-04-09T20:50:20.646460Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Interpret PDF PageLabels dictionary and include the labels in %%Page comments
+in the PS file. Thanks to Jason McCarty for the patch. Bug 688071.
+</pre>
+<p>[lib/pdf2dsc.ps]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-09T085430.839959Z"></a>
+2007-04-09T08:54:30.839959Z leonardo</strong> (<a href="Details8.htm#2007-04-09T085430.839959Z">details</a>)</p>
+<blockquote>
+<pre>
+Implementing clist i/o virtual functions.
+
+</pre>
+<p>[src/gxclmem.c src/gxpageq.c src/lib.mak src/gxclfile.c src/gxclist.c src/gxclmem.h src/gxpageq.h src/gxclist.h src/gdevprn.c src/gdevprna.c src/gxband.h src/gxclread.c src/gxclio.h src/gxclpage.c src/gxclutil.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-09T031838.528054Z"></a>
+2007-04-09T03:18:38.528054Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Remove unused static rendering procedures for 16-bit samples identical to the
+corresponding 12-bit procedures. Fix bug 687399.
+
+</pre>
+<p>[src/gxi16bit.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-08T184558.681482Z"></a>
+2007-04-08T18:45:58.681482Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Make annotation handler more robust. Ignore annotations without /Subtype
+entry and issue a warning.
+
+</pre>
+<p>[lib/pdf_draw.ps]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-08T182338.107786Z"></a>
+2007-04-08T18:23:38.107786Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Increase the size of %stdin buffer to support larger lookahead requests and
+look for for %PDF- tag in the first 1024 bytes of the file. Fix bug 687125,
+
+</pre>
+<p>[lib/pdf_main.ps lib/pdf_base.ps src/ziodevs.c src/ziodevsc.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-08T175540.402009Z"></a>
+2007-04-08T17:55:40.402009Z leonardo</strong></p>
+<blockquote>
+<pre>
+pscet_status.txt : Improving assignments.
+</pre>
+<p>[doc/pscet_status.txt]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-07T200746.466482Z"></a>
+2007-04-07T20:07:46.466482Z Ray Johnston</strong> (<a href="Details8.htm#2007-04-07T200746.466482Z">details</a>)</p>
+<blockquote>
+<pre>
+Add missing calls needed to properly send data to the printer on
+Windows. Thanks to Luke Bakken for this fix. Bug 687250.
+
+</pre>
+<p>[src/gp_msprn.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-07T015838.533291Z"></a>
+2007-04-07T01:58:38.533291Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Make the spot function in the high resolution halftone a readable procedure
+to accomodate CET 29-05-01. Move Berthold K.P. Horn's copyright message into
+the body of the function to keep them together at all times.
+
+</pre>
+<p>[doc/pscet_status.txt lib/gs_init.ps]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-06T155856.468981Z"></a>
+2007-04-06T15:58:56.468981Z Alex Cherepanov</strong> (<a href="Details8.htm#2007-04-06T155856.468981Z">details</a>)</p>
+<blockquote>
+<pre>
+Following Adobe implementation don't restore the operand of --begin--
+when it overflows the dictionary stack. Fix CET 20-02-02.
+
+</pre>
+<p>[doc/pscet_status.txt src/zdict.c src/dstack.h src/interp.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-06T101736.503282Z"></a>
+2007-04-06T10:17:36.503282Z leonardo</strong></p>
+<blockquote>
+<pre>
+Fix : MSVC8 warnings.
+Also replaced cumbersome type casts and fixed ambiguous naming in gxclread.c .
+
+</pre>
+<p>[src/gxwts.c src/gswts.c src/gxclread.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-06T041748.623209Z"></a>
+2007-04-06T04:17:48.623209Z Henry Stiles</strong></p>
+<blockquote>
+<pre>
+make gdevdevn a dependency of the transparency library since it
+gdevp14 now depends on it.
+</pre>
+<p>[src/lib.mak]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-06T041132.256255Z"></a>
+2007-04-06T04:11:32.256255Z Henry Stiles</strong></p>
+<blockquote>
+<pre>
+force the wts device to always band.
+</pre>
+<p>[src/gdevwts.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-06T041100.512053Z"></a>
+2007-04-06T04:11:00.512053Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Accept a perfectly valid 0-length pattern stream. Work around a strange
+restriction on 0-length target string in the readstring operator.
+Fix bug 689162.
+
+</pre>
+<p>[lib/pdf_draw.ps]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-06T024319.702262Z"></a>
+2007-04-06T02:43:19.702262Z Timothy Osborn</strong></p>
+<blockquote>
+<pre>
+Splitting graphics library from interpreter portion of the sample custom color callback</pre>
+<p>[src/gsncdummy.c src/zncdummy.c src/gsncdummy.h]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-06T023931.953398Z"></a>
+2007-04-06T02:39:31.953398Z Timothy Osborn</strong></p>
+<blockquote>
+<pre>
+Splitting graphics library from interpreter portion of the sample custom color callback</pre>
+<p>[src/lib.mak src/gsnamecl.h src/int.mak]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-05T213409.306348Z"></a>
+2007-04-05T21:34:09.306348Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add #ifdef protection to some new debug printouts for the OutputIntent 
+parameter.
+</pre>
+<p>[src/gdevpbm.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-05T173643.783101Z"></a>
+2007-04-05T17:36:43.783101Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix compilation on MSVC 6. Add a best effort simulation of C99 __func__
+keyword on older compilers.
+</pre>
+<p>[src/lib.mak src/gdevdbit.c src/gserror.h]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-05T012914.432997Z"></a>
+2007-04-05T01:29:14.432997Z Henry Stiles</strong></p>
+<blockquote>
+<pre>
+fixes a UMR that was caused by a typo.
+</pre>
+<p>[src/gdevwts.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-03T160849.165033Z"></a>
+2007-04-03T16:08:49.165033Z Stefan Kemper</strong> (<a href="Details8.htm#2007-04-03T160849.165033Z">details</a>)</p>
+<blockquote>
+<pre>
+Committing Raph's wtsimdi device
+
+</pre>
+<p>[src/gxwts.c src/gxclist.c src/gxdevbuf.h src/gxwts.h src/gxclist.h src/gxgetbit.h src/gdevwts.c src/gdevdbit.c src/gxbitfmt.h src/gxclread.c src/gdevpng.c src/gxclutil.c src/gxclimag.c src/gxcldev.h src/gdevppla.c src/gdevprn.c src/gdevppla.h src/gswts.c src/gdevprn.h src/gxclpath.c src/gxclrect.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-02T223451.451596Z"></a>
+2007-04-02T22:34:51.451596Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Change CET 17-06-02 to AOK. Ghostscript generates correct results
+at 300 dpi and above.
+</pre>
+<p>[doc/pscet_status.txt]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-02T214337.719440Z"></a>
+2007-04-02T21:43:37.719440Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Change CET 17-04-02 and 17-05-02 to AOK. Ghostscript generates correct results
+at 300 dpi and above.
+</pre>
+<p>[doc/pscet_status.txt]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-02T182544.568365Z"></a>
+2007-04-02T18:25:44.568365Z leonardo</strong> (<a href="Details8.htm#2007-04-02T182544.568365Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : a composite font with a Type 3 descendent and FMapType 2 (continued).
+
+</pre>
+<p>[src/gdevpdtc.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-01T214650.065374Z"></a>
+2007-04-01T21:46:50.065374Z leonardo</strong> (<a href="Details8.htm#2007-04-01T214650.065374Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : a composite font with a Type 3 descendent and FMapType 2 
+
+</pre>
+<p>[src/gdevpdtc.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-01T191449.835812Z"></a>
+2007-04-01T19:14:49.835812Z leonardo</strong> (<a href="Details8.htm#2007-04-01T191449.835812Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (ps2write) : Device initialization problems.
+
+</pre>
+<p>[src/gdevpdfx.h src/gdevpdfp.c src/gdevpdfd.c src/gdevpdfb.h lib/gs_pdfwr.ps]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-01T182755.285455Z"></a>
+2007-04-01T18:27:55.285455Z leonardo</strong></p>
+<blockquote>
+<pre>
+pscet_status.txt : Closing 11-16-8, which appears eventually fixed; Passing 17-04-2 to Alex.	
+</pre>
+<p>[doc/pscet_status.txt]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-01T073925.772162Z"></a>
+2007-04-01T07:39:25.772162Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix typo that caused undefined during build.
+</pre>
+<p>[src/gdevrops.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-04-01T070600.179365Z"></a>
+2007-04-01T07:06:00.179365Z leonardo</strong> (<a href="Details8.htm#2007-04-01T070600.179365Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix : MSVC warnings.
+
+</pre>
+<p>[src/gscie.h src/gscscie.c src/gxcspace.h src/gscsepr.c src/gscspace.c src/gsicc.c src/gspcolor.c src/gscdevn.c src/gscie.c src/gscolor2.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-03-29T232610.038260Z"></a>
+2007-03-29T23:26:10.038260Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Change CET 09-56-03 to OK. Ghostscript matches Tek360 checksum. CPSI-based
+PhotoPrint product is wrong again.
+</pre>
+<p>[doc/pscet_status.txt]</p>
+</blockquote>
+
+<p><strong><a name="2007-03-29T005336.234691Z"></a>
+2007-03-29T00:53:36.234691Z Alex Cherepanov</strong> (<a href="Details8.htm#2007-03-29T005336.234691Z">details</a>)</p>
+<blockquote>
+<pre>
+Don't store part of the state of readhexstring in not yet written bytes
+of the target string to avoid the string modification when the operator
+fails and the stack is restored. Fix CET 23-20-01.
+
+</pre>
+<p>[doc/pscet_status.txt src/zfileio.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-03-28T160331.220336Z"></a>
+2007-03-28T16:03:31.220336Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Propagate CloseSource or CloseTarget flags to the temporary stream
+created by filter_ensure_buffer(). Fix CET 23-12k-02.
+
+DIFFERENCE:
+No other CET or Comparefiles differences.
+</pre>
+<p>[doc/pscet_status.txt src/zfilter.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-03-27T224440.516433Z"></a>
+2007-03-27T22:44:40.516433Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Change the status of CET 17-01-07, 17-02-06, and 17-02-07 to AOK.
+Ghostscript matches Tek and Distiller 5, CPSI is wrong here.
+</pre>
+<p>[doc/pscet_status.txt]</p>
+</blockquote>
+
+<p><strong><a name="2007-03-27T173951.715201Z"></a>
+2007-03-27T17:39:51.715201Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Make FontBBox a required attribute in CPSI compatibility mode.
+PLRM says that it's a required attribute and recent Adobe interpreters
+enforce this. Fix CET 15-11.
+
+</pre>
+<p>[doc/pscet_status.txt src/zchar.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-03-27T025514.620042Z"></a>
+2007-03-27T02:55:14.620042Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Change the status of CET 11-18-6 to AOK. Adobe interpreters have obvious
+rendering bugs that are hard to simulate in Ghostscript.
+</pre>
+<p>[doc/pscet_status.txt]</p>
+</blockquote>
+
+<p><strong><a name="2007-03-26T003609.521618Z"></a>
+2007-03-26T00:36:09.521618Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Clear a Purify warning. Fix yet another case where a non-0-terminated string
+was directly used as a sscanf() argument, causing an access to the wild core.
+
+</pre>
+<p>[src/gdevpdfm.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-03-25T215801.514677Z"></a>
+2007-03-25T21:58:01.514677Z Alex Cherepanov</strong> (<a href="Details8.htm#2007-03-25T215801.514677Z">details</a>)</p>
+<blockquote>
+<pre>
+Add a new option for ignoring an Encoding entry of a True Type font dictionary.
+Work around the bug 688596.
+
+</pre>
+<p>[lib/pdf_font.ps doc/Use.htm]</p>
+</blockquote>
+
+<p><strong><a name="2007-03-25T201659.028603Z"></a>
+2007-03-25T20:16:59.028603Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Clear a Purify warning. Search for the EOD marher not earlier than
+the start of the data buffer.
+
+</pre>
+<p>[src/sa85d.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-03-25T174716.863668Z"></a>
+2007-03-25T17:47:16.863668Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Don't check current row position in the mask of the image type 3x
+when the mask is not defined. Fix an infinite loop.
+Fix the bug 688912, and a part of the bug 689138.
+
+</pre>
+<p>[src/gximag3x.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-03-25T144819.599692Z"></a>
+2007-03-25T14:48:19.599692Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix an off-by-one error in the glyph array sorting logic detected by Purify.
+
+</pre>
+<p>[src/gxfcopy.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-03-25T041856.724059Z"></a>
+2007-03-25T04:18:56.724059Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Clear a Valgrind warning. Initialize a buffer overshot area in CCITTFaxDecode
+filter. Bug 688905.
+
+</pre>
+<p>[src/scfd.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-03-24T172822.209822Z"></a>
+2007-03-24T17:28:22.209822Z Timothy Osborn</strong></p>
+<blockquote>
+<pre>
+Changing C++ comments to C format comments</pre>
+<p>[src/gdevp14.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-03-24T163123.728641Z"></a>
+2007-03-24T16:31:23.728641Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix C++ -style variable definition introduced by the previous commit,
+which is not supported by older compilers: MSVC 6, gcc 2.96.
+</pre>
+<p>[src/gscspace.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-03-23T135611.260385Z"></a>
+2007-03-23T13:56:11.260385Z Timothy Osborn</strong></p>
+<blockquote>
+<pre>
+Custom color hooks code merge</pre>
+<p>[src/gsimage.c src/gstext.c src/gscscie.c src/gdevtsep.c src/gxdcolor.h src/gsciemap.c src/gsicc.c src/gscdevn.c src/gscie.c lib/pdf_main.ps src/gdevdsp.c src/gdevpsd.c src/lib.mak src/gdevdflt.c src/gsncdemo.c src/gsdps1.c src/gdevdevn.c src/zusparam.c src/gxdevice.h src/gdevdevn.h src/iparam.c src/zfapi.c lib/pdf_ops.ps src/gsstate.c src/gdevp14.c src/gxclist.c src/gxcmap.c src/gsstate.h src/gdevp14.h src/ztrans.c src/gstrans.c src/gxblend.c src/gdevpbm.c src/gstrans.h src/gxclip.c src/gxblend.h src/gscspace.c src/gsnamecl.c src/gdevrops.c src/gscolor2.c src/zcolor3.c src/gdevpnga.c src/gscspace.h src/gxistate.h src/gsnamecl.h src/gsdparam.c src/gdevbbox.c src/gxclipm.c src/gxcie.h src/gdevnfwd.c src/gdevprn.c src/gspaint.c src/gscsepr.c src/gsutil.c src/gxclip2.c src/gxdevcli.h]</p>
+</blockquote>
+
+<p><strong><a name="2007-03-21T014830.497976Z"></a>
+2007-03-21T01:48:30.497976Z leonardo</strong> (<a href="Details8.htm#2007-03-21T014830.497976Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (PDF interpreter, pdfwrite) : Transparently pass unusialrenedering modes.
+
+</pre>
+<p>[src/gdevpdtt.c lib/pdf_ops.ps]</p>
+</blockquote>
+
+<p><strong><a name="2007-03-19T042734.509606Z"></a>
+2007-03-19T04:27:34.509606Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct a typo in the indexed colorspace support for the luratech JPX 
+decoder.
+</pre>
+<p>[src/sjpx_luratech.h]</p>
+</blockquote>
+
+<p><strong><a name="2007-03-15T021309.397460Z"></a>
+2007-03-15T02:13:09.397460Z Alex Cherepanov</strong> (<a href="Details8.htm#2007-03-15T021309.397460Z">details</a>)</p>
+<blockquote>
+<pre>
+Reset the dashed line array at initgraphics. Fix CET 09-28-01.
+
+</pre>
+<p>[doc/pscet_status.txt src/zgstate.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-03-15T004911.591683Z"></a>
+2007-03-15T00:49:11.591683Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update an additional version number.
+</pre>
+<p>[doc/News.htm]</p>
+</blockquote>
+
+<p><strong><a name="2007-03-15T004421.345487Z"></a>
+2007-03-15T00:44:21.345487Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Bump the revision number after the 8.56 release.
+</pre>
+<p>[doc/News.htm lib/gs_init.ps src/gscdef.c src/version.mak]</p>
+</blockquote>
 
 <h2><a name="Version8.56"></a>Version 8.56 (2007-03-14)</h2>
 
