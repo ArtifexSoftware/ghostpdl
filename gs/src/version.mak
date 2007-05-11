@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2006 artofcode LLC.
+#  Copyright (C) 2001-2007 artofcode LLC.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -19,7 +19,7 @@ GS_VERSION_MAJOR=8
 GS_VERSION_MINOR=57
 GS_VERSION_MINOR0=57
 # Revision date: year x 10000 + month x 100 + day.
-GS_REVISIONDATE=20070315
+GS_REVISIONDATE=20070511
 # Derived values
 GS_VERSION=$(GS_VERSION_MAJOR)$(GS_VERSION_MINOR0)
 GS_DOT_VERSION=$(GS_VERSION_MAJOR).$(GS_VERSION_MINOR0)
