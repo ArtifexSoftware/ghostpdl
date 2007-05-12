@@ -22,6 +22,8 @@
 #include "gsmalloc.h"
 #include "sjpx.h"
 
+private void s_jpxd_set_defaults(stream_state *ss);
+
 /* stream implementation */
 
 /* As with the /JBIG2Decode filter, we let the library do its own 
@@ -50,12 +52,7 @@ s_jpxd_init(stream_state * ss)
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
     int status = 0;
 
-    state->buffer = NULL;
-    state->bufsize = 0;
-    state->buffill = 0;
-    state->stream = NULL;
-    state->image = NULL;
-    state->offset = 0;
+    s_jpxd_set_defaults(ss);
     state->jpx_memory = ss->memory ? ss->memory->non_gc_memory : gs_lib_ctx_get_non_gc_memory_t();
             
     status = jas_init();

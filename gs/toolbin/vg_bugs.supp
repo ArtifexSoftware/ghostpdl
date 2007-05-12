@@ -149,14 +149,3 @@
    fun:shade_next_coords
    fun:put_float_mesh_data
 }
-
-# Jbig2 error reporting
-# pdfwrite - 2page-output.jbig2.pdf
-{
-   <bug 688877>
-   Memcheck:Cond
-   fun:vfprintf
-   fun:vsnprintf
-   fun:jbig2_error
-   fun:jbig2_decode_refinement_region
-}
