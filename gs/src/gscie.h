@@ -102,10 +102,14 @@
 			        (1 << (_cie_interpolate_bits - 1)),\
 			       _cie_interpolate_bits))
 #  define cie_interpolate(p, i)\
-     cie_interpolate_between((p)[_cix(i)], (p)[_cix(i) + 1], i)
+     ((i) >= (gx_cie_cache_size - 1) << _cie_interpolate_bits ? \
+       (p)[gx_cie_cache_size - 1] : \
+       cie_interpolate_between((p)[_cix(i)], (p)[_cix(i) + 1], i))
 #  define cie_interpolate_fracs(p, i)\
-     ((p)[_cix(i)] +\
-      (frac)arith_rshift((long)((p)[_cix(i) + 1] - (p)[_cix(i)]) * _cif(i), _cie_interpolate_bits))
+     ((i) >= (gx_cie_cache_size - 1) << _cie_interpolate_bits ? \
+       (p)[gx_cie_cache_size - 1] : \
+       ((p)[_cix(i)] + \
+        (frac)arith_rshift((long)((p)[_cix(i) + 1] - (p)[_cix(i)]) * _cif(i), _cie_interpolate_bits)))
 #else
 #  define _cie_interpolate_bits 0
 #  define cie_interpolate_between(v0, v1, i) (v0)
