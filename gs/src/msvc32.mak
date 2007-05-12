@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2006 artofcode LLC.
+#  Copyright (C) 2001-2007 artofcode LLC.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -348,6 +348,9 @@ MSVC_VERSION=7
 MSVC_MINOR_VERSION=1
 !endif
 !if "$(_NMAKE_VER)" == "8.00.40607.16"
+MSVC_VERSION=8
+!endif
+!if "$(_NMAKE_VER)" == "8.00.50727.42"
 MSVC_VERSION=8
 !endif
 !endif
