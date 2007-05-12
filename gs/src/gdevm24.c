@@ -39,7 +39,7 @@ struct stats_mem24_s {
 	fprevc[257];
     double ftotal;
 } stats_mem24;
-static int prev_count;
+static int prev_count = 0;
 static uint prev_colors[256];
 # define INCR(v) (++(stats_mem24.v))
 #else
@@ -209,11 +209,10 @@ mem_true24_fill_rectangle(gx_device * dev,
 		    else
 			--ci;
 		}
-		if (ci) {
+		if (ci)
 		    memmove(&prev_colors[1], &prev_colors[0],
 			    ci * sizeof(prev_colors[0]));
-		    prev_colors[0] = color;
-		}
+		prev_colors[0] = color;
 	    }
 #endif
 	    INCR(fcolor[min(w, 100)]);
