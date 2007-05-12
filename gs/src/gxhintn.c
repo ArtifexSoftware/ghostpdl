@@ -1748,7 +1748,7 @@ private void t1_hinter__simplify_representation(t1_hinter * this)
 		    this->primary_hint_count--;
 		continue; /* skip it. */
 	    } else {
-		if (i != j)
+		if (i != j)  /* for Valgrind */
                     this->hint[j] = this->hint[i];
 		j++;
 	    }
