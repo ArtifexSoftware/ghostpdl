@@ -137,7 +137,10 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	gs_c_param_list_write(&list, mem);
 	fv[0] = atoi(width_att) / 96.0 * 72.0;
 	fv[1] = atoi(height_att) / 96.0 * 72.0;
+	fa.data = fv;
 	fa.size = 2;
+
+	dprintf2("setting media size = %g x %g\n", fv[0], fv[1]);
 
 	code = param_write_float_array((gs_param_list *)&list, ".MediaSize", &fa);
 	gs_c_param_list_write(&list, mem);
