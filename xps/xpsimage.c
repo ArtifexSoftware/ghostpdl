@@ -98,7 +98,7 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
     for (node = xps_down(root); node; node = xps_next(node))
     {
 	if (!strcmp(xps_tag(node), "ImageBrush.Transform"))
-	    transform_tag = node;
+	    transform_tag = xps_down(node);
     }
 
     xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag);
@@ -108,6 +108,9 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
      */
 
     dprintf1("drawing image brush '%s'\n", image_source_att);
+
+    dprintf1("  viewbox_att = (%s)\n", viewbox_att);
+    dprintf1("  viewport_att = (%s)\n", viewport_att);
 
     xps_absolute_path(partname, ctx->pwd, image_source_att);
     part = xps_find_part(ctx, partname);
@@ -129,10 +132,16 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 	gs_rect viewbox;
 	gs_rect viewport;
 	float scalex, scaley;
+	float resx, resy;
 
 	/*
 	 * Figure out transformation.
 	 */
+
+	resx = image.xres / 96.0;
+	resy = image.yres / 96.0;
+
+	dprintf2("  image resolution = %d x %d\n", image.xres, image.yres);
 
 	gs_make_identity(&transform);
 	if (transform_att)
@@ -141,18 +150,36 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 	    xps_parse_matrix_transform(ctx, transform_tag, &transform);
 	gs_concat(ctx->pgs, &transform);
 
+	dprintf6("  image transform [%g %g %g %g %g %g]\n",
+		transform.xx, transform.xy,
+		transform.yx, transform.yy,
+		transform.tx, transform.ty);
+
 	viewbox.p.x = 0.0; viewbox.p.y = 0.0;
 	viewbox.q.x = 1.0; viewbox.q.y = 1.0;
 	if (viewbox_att)
 	    xps_parse_rectangle(ctx, viewbox_att, &viewbox);
+
+	dprintf4("  image viewbox = [%g %g %g %g]\n",
+		viewbox.p.x, viewbox.p.y,
+		viewbox.q.x, viewbox.q.y);
 
 	viewport.p.x = 0.0; viewport.p.y = 0.0;
 	viewport.q.x = 1.0; viewport.q.y = 1.0;
 	if (viewport_att)
 	    xps_parse_rectangle(ctx, viewport_att, &viewport);
 
+	dprintf4("  image viewport = [%g %g %g %g]\n",
+		viewport.p.x, viewport.p.y,
+		viewport.q.x, viewport.q.y);
+
+	viewbox.p.x *= resx; viewbox.p.y *= resy;
+	viewbox.q.x *= resx; viewbox.q.y *= resy;
+
 	scalex = (viewport.q.x - viewport.p.x) / (viewbox.q.x - viewbox.p.x);
 	scaley = (viewport.q.y - viewport.p.y) / (viewbox.q.y - viewbox.p.y);
+	dprintf2("  image scale = %g x %g\n", scalex, scaley);
+
 	gs_translate(ctx->pgs, viewport.p.x, viewport.p.y);
 	gs_scale(ctx->pgs, scalex, scaley);
 	gs_translate(ctx->pgs, -viewbox.p.x, viewbox.p.y);
