@@ -333,7 +333,7 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
     unsigned int signature;
     int code;
 
-    dprintf1("xps_process_data state=%d\n", ctx->zip_state);
+    /* dprintf1("xps_process_data state=%d\n", ctx->zip_state); */
 
     while (1)
     {
@@ -445,7 +445,7 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 
 	case 5: /* end of part (data descriptor) */
 
-	    if (ctx->zip_general & 8)
+	    if (0 && ctx->zip_general & 8)
 	    {
 		dputs("data descriptor by flag\n");
 		if (buf->limit - buf->ptr < 16)
