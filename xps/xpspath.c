@@ -17,7 +17,7 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
     int i, n;
     int cmd, old;
 
-    dprintf1("new path (%.70s)\n", geom);
+    // dprintf1("new path (%.70s)\n", geom);
     gs_newpath(ctx->pgs);
 
     while (*s)
@@ -63,47 +63,47 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 
 	case 'M':
 	    gs_moveto(ctx->pgs, atof(args[i]), atof(args[i+1]));
-	    dprintf2("moveto %g %g\n", atof(args[i]), atof(args[i+1]));
+	    // dprintf2("moveto %g %g\n", atof(args[i]), atof(args[i+1]));
 	    i += 2;
 	    break;
 	case 'm':
 	    gs_rmoveto(ctx->pgs, atof(args[i]), atof(args[i+1]));
-	    dprintf2("rmoveto %g %g\n", atof(args[i]), atof(args[i+1]));
+	    // dprintf2("rmoveto %g %g\n", atof(args[i]), atof(args[i+1]));
 	    i += 2;
 	    break;
 
 	case 'L':
 	    gs_lineto(ctx->pgs, atof(args[i]), atof(args[i+1]));
-	    dprintf2("lineto %g %g\n", atof(args[i]), atof(args[i+1]));
+	    // dprintf2("lineto %g %g\n", atof(args[i]), atof(args[i+1]));
 	    i += 2;
 	    break;
 	case 'l':
 	    gs_rlineto(ctx->pgs, atof(args[i]), atof(args[i+1]));
-	    dprintf2("rlineto %g %g\n", atof(args[i]), atof(args[i+1]));
+	    // dprintf2("rlineto %g %g\n", atof(args[i]), atof(args[i+1]));
 	    i += 2;
 	    break;
 
 	case 'H':
 	    gs_currentpoint(ctx->pgs, &pt);
 	    gs_lineto(ctx->pgs, atof(args[i]), pt.y);
-	    dprintf1("hlineto %g\n", atof(args[i]));
+	    // dprintf1("hlineto %g\n", atof(args[i]));
 	    i += 1;
 	    break;
 	case 'h':
 	    gs_rlineto(ctx->pgs, atof(args[i]), 0.0);
-	    dprintf1("rhlineto %g\n", atof(args[i]));
+	    // dprintf1("rhlineto %g\n", atof(args[i]));
 	    i += 1;
 	    break;
 
 	case 'V':
 	    gs_currentpoint(ctx->pgs, &pt);
 	    gs_lineto(ctx->pgs, pt.x, atof(args[i]));
-	    dprintf1("vlineto %g\n", atof(args[i]));
+	    // dprintf1("vlineto %g\n", atof(args[i]));
 	    i += 1;
 	    break;
 	case 'v':
 	    gs_rlineto(ctx->pgs, 0.0, atof(args[i]));
-	    dprintf1("rvlineto %g\n", atof(args[i]));
+	    // dprintf1("rvlineto %g\n", atof(args[i]));
 	    i += 1;
 	    break;
 
@@ -112,10 +112,10 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 		    atof(args[i]), atof(args[i+1]),
 		    atof(args[i+2]), atof(args[i+3]),
 		    atof(args[i+4]), atof(args[i+5]));
-	    dprintf6("curveto %g %g %g %g %g %g\n",
-		    atof(args[i]), atof(args[i+1]),
-		    atof(args[i+2]), atof(args[i+3]),
-		    atof(args[i+4]), atof(args[i+5]));
+	    // dprintf6("curveto %g %g %g %g %g %g\n",
+		    // atof(args[i]), atof(args[i+1]),
+		    // atof(args[i+2]), atof(args[i+3]),
+		    // atof(args[i+4]), atof(args[i+5]));
 	    i += 6;
 	    break;
 	case 'c':
@@ -123,10 +123,10 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 		    atof(args[i]), atof(args[i+1]),
 		    atof(args[i+2]), atof(args[i+3]),
 		    atof(args[i+4]), atof(args[i+5]));
-	    dprintf6("rcurveto %g %g %g %g %g %g\n",
-		    atof(args[i]), atof(args[i+1]),
-		    atof(args[i+2]), atof(args[i+3]),
-		    atof(args[i+4]), atof(args[i+5]));
+	    // dprintf6("rcurveto %g %g %g %g %g %g\n",
+		    // atof(args[i]), atof(args[i+1]),
+		    // atof(args[i+2]), atof(args[i+3]),
+		    // atof(args[i+4]), atof(args[i+5]));
 	    i += 6;
 	    break;
 
@@ -144,7 +144,7 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 	case 'Z':
 	case 'z':
 	    gs_closepath(ctx->pgs);
-	    dputs("closepath\n");
+	    // dputs("closepath\n");
 	    break;
 
 	default:
@@ -209,7 +209,7 @@ xps_parse_arc_segment(xps_context_t *ctx, xps_item_t *root)
 	gs_point start, end, size, midpoint, halfdis, thalfdis, tcenter, center;
 	gs_matrix rotmat, save_ctm;
 	double correction;
-	double sign, rot, start_angle, delta_angle;
+	double sign, start_angle, delta_angle;
 	double scale_num, scale_denom, scale;
 	int code;
 
@@ -229,7 +229,7 @@ xps_parse_arc_segment(xps_context_t *ctx, xps_item_t *root)
 	halfdis.y = (start.y - end.y) / 2.0;
 
 	/* rotate the halfdis vector so x axis parallel ellipse x axis */
-	gs_make_rotation(-rot, &rotmat);
+	gs_make_rotation(-rotation_angle, &rotmat);
 	if ((code = gs_distance_transform(halfdis.x, halfdis.y, &rotmat, &thalfdis)) < 0)
 	    gs_rethrow(code, "transform failed");
 
@@ -278,7 +278,7 @@ xps_parse_arc_segment(xps_context_t *ctx, xps_item_t *root)
 	/* save the ctm */
 	gs_currentmatrix(ctx->pgs, &save_ctm);
 	gs_translate(ctx->pgs, center.x, center.y);
-	gs_rotate(ctx->pgs, rot);
+	gs_rotate(ctx->pgs, rotation_angle);
 	gs_scale(ctx->pgs, size.x, size.y);
 
 	if ((code = gs_arcn(ctx->pgs, 0, 0, 1,
@@ -663,8 +663,6 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     {
 	gs_matrix transform;
 
-	dputs("  path transform\n");
-
 	if (!saved)
 	{
 	    gs_gsave(ctx->pgs);
@@ -689,8 +687,6 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	    saved = 1;
 	}
 
-	dputs("  path clip\n");
-
 	if (clip_att)
 	    xps_parse_abbreviated_geometry(ctx, clip_att);
 	if (clip_tag)
@@ -705,7 +701,6 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     if (fill_att)
     {
 	float argb[4];
-	dputs("  path solid color fill\n");
 	xps_parse_color(ctx, fill_att, argb);
 	if (argb[0] > 0.001)
 	{
@@ -721,7 +716,6 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     if (stroke_att)
     {
 	float argb[4];
-	dputs("  path solid color stroke\n");
 	xps_parse_color(ctx, stroke_att, argb);
 	if (argb[0] > 0.001)
 	{
@@ -744,8 +738,6 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	    saved = 1;
 	}
 
-	dputs("  path complex brush\n");
-
 	gs_setrgbcolor(ctx->pgs, 0.5, 0.0, 0.3);
 	if (data_att)
 	    xps_parse_abbreviated_geometry(ctx, data_att);
@@ -753,8 +745,6 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	    xps_parse_path_geometry(ctx, dict, data_tag);
 	gs_clip(ctx->pgs);
 	gs_newpath(ctx->pgs);
-
-	dputs("clip\n");
 
 	if (fill_tag)
 	{

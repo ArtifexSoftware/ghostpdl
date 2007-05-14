@@ -109,9 +109,6 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 
     dprintf1("drawing image brush '%s'\n", image_source_att);
 
-    dprintf1("  viewbox_att = (%s)\n", viewbox_att);
-    dprintf1("  viewport_att = (%s)\n", viewport_att);
-
     xps_absolute_path(partname, ctx->pwd, image_source_att);
     part = xps_find_part(ctx, partname);
     if (!part)
@@ -178,7 +175,6 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 
 	scalex = (viewport.q.x - viewport.p.x) / (viewbox.q.x - viewbox.p.x);
 	scaley = (viewport.q.y - viewport.p.y) / (viewbox.q.y - viewbox.p.y);
-	dprintf2("  image scale = %g x %g\n", scalex, scaley);
 
 	gs_translate(ctx->pgs, viewport.p.x, viewport.p.y);
 	gs_scale(ctx->pgs, scalex, scaley);

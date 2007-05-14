@@ -23,12 +23,6 @@ xps_parse_render_transform(xps_context_t *ctx, char *transform, gs_matrix *matri
     matrix->xx = args[0]; matrix->xy = args[1];
     matrix->yx = args[2]; matrix->yy = args[3];
     matrix->tx = args[4]; matrix->ty = args[5];
-
-    dprintf7("parsed transform '%s' into [%g %g %g %g %g %g]\n",
-	    transform,
-	    args[0], args[1],
-	    args[2], args[3],
-	    args[4], args[5]);
 }
 
 void

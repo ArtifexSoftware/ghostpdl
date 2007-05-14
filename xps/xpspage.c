@@ -59,14 +59,14 @@ int xps_parse_canvas(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     if (clip_att)
     {
 	xps_parse_abbreviated_geometry(ctx, clip_att);
-	gs_clip(ctx->pgs);
+	// gs_clip(ctx->pgs);
 	gs_newpath(ctx->pgs);
     }
 
     if (clip_tag)
     {
 	xps_parse_path_geometry(ctx, dict, clip_tag);
-	gs_clip(ctx->pgs);
+	// gs_clip(ctx->pgs);
 	gs_newpath(ctx->pgs);
     }
 
@@ -137,6 +137,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	gs_c_param_list_write(&list, mem);
 	fv[0] = atoi(width_att) / 96.0 * 72.0;
 	fv[1] = atoi(height_att) / 96.0 * 72.0;
+	fa.persistent = false;
 	fa.data = fv;
 	fa.size = 2;
 

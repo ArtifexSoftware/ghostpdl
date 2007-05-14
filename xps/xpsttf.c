@@ -49,7 +49,7 @@ xps_true_callback_build_char(gs_text_enum_t *ptextenum, gs_state *pgs, gs_font *
     float sbw[4], w2[6];
     int code;
 
-    dprintf1("build char ttf %d\n", glyph);
+    // dprintf1("build char ttf %d\n", glyph);
 
     code = gs_type42_get_metrics(p42, glyph, sbw);
     if (code < 0)
@@ -63,8 +63,6 @@ xps_true_callback_build_char(gs_text_enum_t *ptextenum, gs_state *pgs, gs_font *
     w2[3] = pbbox->p.y;
     w2[4] = pbbox->q.x;
     w2[5] = pbbox->q.y;
-
-    dprintf6("  bbox (%g %g) %g %g %g %g\n", w2[0], w2[1], w2[2], w2[3], w2[4], w2[5]);
 
     /* Expand the bbox when stroking */
     if ( pfont->PaintType )

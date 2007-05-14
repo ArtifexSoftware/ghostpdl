@@ -296,8 +296,8 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
     char *is = indices;
     int un;
 
-    dprintf1("string (%s)\n", us);
-    dprintf1("indices %.50s\n", is);
+    // dprintf1("string (%s)\n", us);
+    // dprintf1("indices %.50s\n", is);
 
     if (!unicode)
 	return gs_throw(-1, "no unicode in glyphs element");
@@ -508,8 +508,6 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     {
 	gs_matrix transform;
 
-	dputs("glyphs transform\n");
-
 	if (!saved)
 	{
 	    gs_gsave(ctx->pgs);
@@ -532,8 +530,6 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	    saved = 1;
 	}
 
-	dputs("glyphs clip\n");
-
 	if (clip_att)
 	    xps_parse_abbreviated_geometry(ctx, clip_att);
 	if (clip_tag)
@@ -549,9 +545,6 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     gs_make_scaling(font_size, -font_size, &matrix);
     gs_setcharmatrix(ctx->pgs, &matrix);
 
-    gs_currentcharmatrix(ctx->pgs, &matrix, true);
-    dprintf4("currentcharmatrix %g %g %g %g\n", matrix.xx, matrix.xy, matrix.yx, matrix.yy);
-
     /*
      * If it's a solid color brush fill/stroke do a simple fill
      */
@@ -565,7 +558,6 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     if (fill_att)
     {
 	float argb[4];
-	dputs("glyphs solid color fill\n");
 	xps_parse_color(ctx, fill_att, argb);
 	if (argb[0] > 0.001)
 	{
@@ -589,16 +581,12 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	    saved = 1;
 	}
 
-	dputs("glyphs complex brush\n");
-
 	xps_parse_glyphs_imp(ctx, font, font_size,
 		atof(origin_x_att), atof(origin_y_att),
 		is_sideways, bidi_level, indices_att, unicode_att, 1);
 
 	gs_clip(ctx->pgs);
 	gs_newpath(ctx->pgs);
-
-	dputs("clip\n");
 
 	if (!strcmp(xps_tag(fill_tag), "ImageBrush"))
 	    xps_parse_image_brush(ctx, dict, fill_tag);

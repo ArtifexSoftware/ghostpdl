@@ -410,13 +410,14 @@ xps_free_fixed_pages(xps_context_t *ctx)
 static void
 xps_part_from_relation(char *output, char *name)
 {
-    char *p;
+    char *p, *q;
     strcpy(output, name);
     p = strstr(output, "_rels/");
+    q = strstr(name, "_rels/");
     if (p)
     {
 	*p = 0;
-	strcat(output, p + 6);
+	strcat(output, q + 6);
     }
     p = strstr(output, ".rels");
     if (p)

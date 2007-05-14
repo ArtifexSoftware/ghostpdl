@@ -265,17 +265,16 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 
 	/* dputs("stored data of unknown size\n"); */
 
-	if (part->size >= part->capacity)
-	{
-	    /* dprintf2("growing buffer (%d/%d)\n", part->size, part->capacity); */
-	    part->capacity += 8192;
-	    part->data = xps_realloc(ctx, part->data, part->capacity);
-	    if (!part->data)
-		return gs_throw(-1, "out of memory");
-	}
-
 	while (1)
 	{
+	    if (part->size >= part->capacity)
+	    {
+		/* dprintf2("growing buffer (%d/%d)\n", part->size, part->capacity); */
+		part->capacity += 8192;
+		part->data = xps_realloc(ctx, part->data, part->capacity);
+		if (!part->data)
+		    return gs_throw(-1, "out of memory");
+	    }
 
 	    if (part->size > 16)
 	    {

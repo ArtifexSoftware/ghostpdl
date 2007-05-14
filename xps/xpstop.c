@@ -223,7 +223,8 @@ private int
 xps_imp_flush_to_eoj(pl_interp_instance_t *pinstance, stream_cursor_read *pcursor)
 {
     /* assume XPS cannot be pjl embedded */
-    return -1;
+    pcursor->ptr = pcursor->limit;
+    return 0;
 }
 
 /* Parser action for end-of-file */
