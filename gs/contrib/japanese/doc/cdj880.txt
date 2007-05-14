@@ -1,0 +1,120 @@
+Patched Ghostscript driver for HP DeskJet 880C/882C and 895C printers.
+
+Matthew J. Gelhaus (mgelhaus@proaxis.com)
+Updated March 30, 1999
+
+****************************************************
+* 注意:                                            *
+* cdj880 についてのみ次のような変更をしてあります。*
+* 1. Time out Error が出ないようした。             *
+* 2. -r オプションで解像度が変更できるようにした。 *
+* (よって -dQuality オプションは使用できません。)  *
+*                                                  *
+* 大森紀人 <ohmori@p.chiba-u.ac.jp>                *
+****************************************************
+
+This package is based very heavily on the work of Uli Wortmann
+(uli@bonk.ethz.ch), and I do not claim to be the original author of very
+much of this code.  Uli has done a tremendous amount of excellent work, and
+this package is a modification to his driver by me to add the ability to print
+to the DeskJet 880C, 882C, and 895C printers.  Under the terms of the GNU
+General Public License (see LICENSING TERMS below), I am distributing this
+package under the same license.
+
+Please also see the file readme.hp8 for Uli's notes about the package.
+
+It is my intent to submit this work as a patch to Uli Wortmann for inclusion
+in the original HP850C driver package.
+
+LICENSING TERMS:
+
+    Copyright (C) 1999  <Matthew J. Gelhaus mgelhaus@proaxis.com>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    
+    To view the General Public License in its entirety, check the file
+    LICENSE.
+
+DISCLAIMER:
+
+This is a work still under development, and as such I do not guarantee
+it will work (see LICENSING TERMS above).  However, please send bug
+reports to me (mgelhaus@proaxis.com), along with as much information
+as you can.
+
+SYSTEM REQUIREMENTS:
+
+This package is designed to work with Aladdin Ghostscript 5.50 (available
+from ftp://ftp.cs.wisc.edu/ghost/aladdin/gs550/).  It may work with earlier
+versions of Ghostscript, but I have not tested it.  You can follow the
+directions included to compile Ghostscript, but here are is a condensed
+version that worked for me:
+
+INSTALLATION INSTRUCTIONS:
+
+1.  Obtain the files 
+       
+       ghostscript-5.50.tar.gz            2826251 bytes 
+       jpegsrc.v6b.tar.gz                  613261 bytes 
+       libpng-1.0.2.tar.gz                 225386 bytes 
+       zlib-1.1.3.tar.gz                   168463 bytes
+       ghostscript-fonts-std-5.50.tar.gz  1444863 bytes 
+       
+2.  Create a directory to perform the build in, for example,
+    /usr/local/src/gs.  Unpack each of the files into this directory:
+    
+    $ cd /usr/local/src
+    $ mkdir gs ; cd gs
+    $ tar zxvf $HOME/ghostscript-5.50.tar.gz
+    $ tar zxvf $HOME/jpegsrc.v6b.tar.gz
+    $ tar zxvf $HOME/libpng-1.0.2.tar.gz
+    $ tar zxvf $HOME/zlib-1.1.3.tar.gz
+    
+3.  Copy all the files from this driver package into the ghostscript
+    directory.  For example,
+    
+    $ cp $HOME/hp850C-880p/* /usr/local/src/gs/gs5.50/
+    
+    This will overwrite the files contrib.mak and makefile.  This is OK.
+
+4.  If desired, edit the makefile.  This should only be necessary if you
+    want to build a ghostscript binary that uses your existing PNG and
+    ZLIB libraries dynamically.  Normally ghostscript compiles these in
+    statically.  Note that you still need to download the sources to those
+    libraries (as listed in step 1) even if you want to link dynamically.
+    
+5.  There is a bug (I think) in the ghostscript source.  If during the make
+    it fails to build due to a missing "arch.h" in the file std.h, you can
+    fix it by changing line 28 of std.h from
+    
+        #include "arch.h"
+        
+    to
+    
+        #include "obj/arch.h"
+
+6.  Type 'make'.
+
+7.  Type 'make install' (as root).
+
+7.  To specify the 880C/882C/895C driver, use -sDEVICE=cdj880:
+
+    $ gs test.ps -sDEVICE=cdj880 -dNOPAUSE -dSAFER -sOutputFile=- | lpr
+    
+
+Please, please, please report any bugs to me at mgelhaus@proaxis.com.  This
+includes installation instruction bugs, because I was doing this from
+memory!
+

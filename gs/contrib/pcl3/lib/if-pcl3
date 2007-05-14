@@ -1,0 +1,417 @@
+#!/bin/sh
+#******************************************************************************
+# File:     @(#)$Id: if-pcl3,v 2.6 2001/07/07 10:05:34 Martin Rel $
+# Contents: Example of a pcl3-based input filter for a Berkeley spooler (lpr)
+#	    driving a PCL-3 printer
+# Call:     if-pcl3 <input filter arguments>
+# Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
+#	    Germany. E-mail: Martin.Lottermoser@t-online.de.
+#
+#******************************************************************************
+#									      *
+#	Copyright (C) 1998, 2000, 2001 by Martin Lottermoser		      *
+#	All rights reserved						      *
+#									      *
+#******************************************************************************
+#
+# This input filter has the following interesting because unusual features:
+# - If an error occurs, the user is notified by mail.
+# - The filter is configurable based on the spool directory and permits in
+#   particular
+#   - the configuration of a "transparent" queue and
+#   - the inclusion of a file with PostScript configuration commands.
+# - The filter does pac(8) accounting if this is requested in the printcap file.
+#
+# This is not the best of all possible filters. However, all the others I've
+# seen so far -- excepting those I've modified myself :-) -- lack several
+# important though elementary features. Much of this is admittedly due to the
+# inflexibility of the Berkeley spool system (compared to the AT&T spooler)
+# but, speaking entirely subjectively, I've also often had the impression that
+# the filters' authors are not as familiar with PCL, ghostscript or the
+# Berkeley spooler as one should be when trying to write universally useful
+# software. You should form your own opinion on this point and, if necessary,
+# ruthlessly modify whatever filter you determine to use until it satisfies
+# your requirements.
+#
+#******************************************************************************
+#
+# Installation
+# ============
+#
+# printcap entry
+# --------------
+# Read the man page printcap(5). You should set at least 'if' (absolute path
+# name of this filter), 'lp' (printer device), 'sd' (absolute path name of the
+# spool directory, choose it to be queue-specific), and 'sh' (suppress header,
+# should be true). Here's an example for a queue named "draft":
+#
+#   draft:if=/var/spool/lpd/if-pcl3:lp=/dev/lp0:sd=/var/spool/lpd/draft:sh:
+#
+# Other entries which are worth considering are 'af' (this must usually be a
+# file named 'acct' in the spool directory, see pac(8)), 'lf', and 'mx'.
+#
+# You must create the spool directory if it does not exist. Usually, it should
+# be owned by "daemon", group "lp", and have the file mode 770.
+#
+#
+# Filter configuration
+# --------------------
+# This filter looks for a file if-pcl3.cfg in the spool directory. If it exists
+# and is readable it is sourced as a shell script. The file is intended for
+# setting shell variables used by this filter, redefining the two accounting
+# routines, and for modifying the environment.
+#
+# Here follows a description of shell variables used by this filter. Note that
+# you can also add other command line arguments to the gs call by setting
+# GS_OPTIONS in the environment.
+#
+# - GS: This is normally the path name of the ghostscript executable. But if
+#   the configuration file sets it to the empty string, this filter will not
+#   call ghostscript but simply 'cat'. This is intended for setting up a
+#   "transparent" queue which passes files through to the printer without
+#   modifications.
+# - INIT_TRANS: This must be empty or a parameter-less format string for the
+#   'printf' command. If $GS is empty, this string will be sent before the file
+#   to be printed. Use it for PCL commands under the assumption that the user
+#   wishes to print a text file. In particular, this is the place to set the
+#   media size to ISO A4 if that is your default paper size. My recommendation
+#   for A4 and ISO 8859-1 is:
+#     INIT_TRANS='\033&l26A\033(0N\033&a10L\033(s12H\033&l6.5D\033&l5E\033&l66F'
+#   For US Letter size, replace the "26" near the beginning by "2".
+#   Setting INIT_TRANS should have no influence on PCL files submitted to such
+#   a queue because all PCL-generating programs should start their output with
+#   the "Printer Reset" command (pcl3 does this) which resets all parameters to
+#   their defaults.
+# - RESOLUTION: This must be empty or an acceptable argument for ghostscript's
+#   option '-r'. In the first case, pcl3's default resolution will be used
+#   unless the document overrides it. Remember that "-r" sets also
+#   "-dFIXEDRESOLUTION".
+# - SUBDEVICE, COLOURMODEL, QUALITY: These must contain values for pcl3's
+#   options "Subdevice", "ColourModel" and "PrintQuality".
+# - PSCONFIGFILE: If this variable contains the name of an existing and
+#   readable file it will be included in the call to ghostscript. This file is
+#   intended to contain PostScript configuration commands, for example setting
+#   the 'PageOffset' array, defining transfer functions, setting the halftone
+#   screen or configuring 'InputAttributes'.
+# - PAGECOUNTFILE: If pcl3 has been compiled without EPRN_NO_PAGECOUNTFILE
+#   defined, it has the ability to update a page count file with the number of
+#   pages printed. If this variable is non-empty (and that is the default),
+#   page counting will be enabled using the file specified in the variable and
+#   the count will be accumulated across jobs.
+# - USE_INTERMEDIATE_FILE: When printing via ghostscript, this variable should
+#   be "yes" or "no". It controls whether ghostscript's output is sent directly
+#   to a printer or first to a file. Using "yes" needs substantial temporary
+#   disk space but prevents wrong output in some situations and is therefore
+#   the default.
+#
+# The defaults for these variables can be found below before the point where
+# the configuration file is sourced.
+#
+# The two accounting functions, 'acct_start' and 'acct_stop', are always called,
+# respectively, before and after the print command (cat or gs). 'acct_start'
+# should return a string on standard output which will be passed as an argument
+# to the later call to 'acct_stop'. The latter function should then return on
+# standard output a string representation of an integer or a floating point
+# number. If accounting has been enabled by an 'af' entry in the printcap file
+# and the print command was successful, this value will be recorded together
+# with the job owner's user name in the accounting file for later evaluation by
+# 'pac'. The usual interpretation is that this value represents pages printed
+# or feet of paper consumed.
+#
+# The default implementation of the accounting functions counts the number of
+# jobs submitted for a transparent queue and the number of pages printed for a
+# pcl3-based one. If PAGECOUNTFILE is empty or page counting manifestly does
+# not work, the filter counts jobs also in the latter case.
+#
+#
+#
+# Restrictions
+# ============
+# A spool queue based on this filter processes only PostScript files correctly
+# except when configured as a transparent queue in which case only text or PCL
+# files should be sent. This is not a so-called "intelligent filter" which
+# adapts its behaviour to the type of file received!
+#
+#******************************************************************************
+
+name=`basename "$0"`
+
+# Reset umask if 0. Otherwise an ordinary user could modify the accounting
+# information if this is the first time accounting is used. This does not work
+# on systems not supporting the old octal notation but is harmless there.
+expr "x`umask`" : 'x00*$' > /dev/null && umask 002
+
+# Berkeley input filters are called in the spool directory. This is used to
+# locate configuration files and it usually identifies the spool queue.
+spool_directory=`pwd`
+
+#******************************************************************************
+
+# In order to notify the user of errors occurring in the backend I'm copying
+# standard error into a temporary file and mail it to the user if it is
+# non-empty when the filter terminates.
+
+errlog="${TMPDIR:-/tmp}/$$-1.tmp"
+rm -f "$errlog"
+notify_user=root	# This will be overwritten after we've checked the
+notify_host=`uname -n`	# arguments in the call.
+
+
+finish()
+{
+  if [ -s "$errlog" ]; then
+    ${MAILX:-mailx} -s "$name: Error while printing" \
+      "$notify_user"@"$notify_host" << ---
+The following error occurred while running $0
+in $spool_directory:
+
+`cat $errlog`
+---
+    cat "$errlog" >&3	# for the log file
+    rm -f "$errlog"
+    exit 2
+  fi
+  rm -f "$errlog"
+  exit 0
+}
+
+
+# Set up a trap for finish() on exit and SIGINT
+trap finish 0 2
+
+# Copy standard error into a file. We duplicate file descriptor 2 as 3 because
+# stderr can be appended to a log file by the 'lf' field in printcap and we
+# should like to be able to have both, a cumulative log file for the
+# administrator and a job-specific mail message to the user.
+exec 3>&2
+exec 2> "$errlog"
+
+#******************************************************************************
+
+# Process options. Most are irrelevant for gs and this filter.
+print_controls=no  # print control characters instead of interpreting them
+host=		# host name of job owner
+user=		# user name of job owner
+length=0	# page length in lines
+indentation=0	# amount of indentation in characters
+width=0		# page width in characters
+while getopts ch:i:l:n:w: option; do
+  case "$option" in
+  c)
+    print_controls=yes;;
+  h)
+    host="$OPTARG";;
+  i)
+    indentation="$OPTARG";;
+  l)
+    length="$OPTARG";;
+  n)
+    user="$OPTARG";;
+  w)
+    width="$OPTARG";;
+  *)
+    echo "? $name"": Illegal option specification. The call was:" >&2
+    printf '  %s\n' "$*" >&2
+    exit 2;;
+  esac
+done
+test 1 = "$OPTIND" || shift `expr $OPTIND - 1`
+
+# Deal with non-option arguments
+if [ $# -gt 1 ]; then
+  echo "? $name"": More than one non-option argument in the call:" >&2
+  printf '  %s\n' "$*" >&2
+  exit 2
+fi
+if [ $# -gt 0 ]; then
+  accounting_file="$1"
+else
+  accounting_file=
+fi
+
+# Starting here, any errors occurring are sent to the job's owner
+if [ '' != "$user" ]; then
+  notify_user="$user"
+  test '' = "$host" || notify_host="$host"
+fi
+
+#******************************************************************************
+
+# Set up default values.
+
+# These are the parameters which can be redefined in the configuration file.
+# You might also have to use GS_OPTIONS, for example for the media type.
+GS=gs
+SUBDEVICE=unspec
+COLOURMODEL=Gray	# Americans note the "U"! Britons note the "a"! :-)
+RESOLUTION=
+QUALITY=normal
+PSCONFIGFILE=if-pcl3.ps
+PAGECOUNTFILE=gs-pages.count
+INIT_TRANS=
+USE_INTERMEDIATE_FILE=yes
+
+
+# Default accounting: count the number of files printed or, if supported, the
+# number of pages.
+
+acct_start()
+{
+  test '' = "$PAGECOUNTFILE" -o ! -f "$PAGECOUNTFILE" || cat "$PAGECOUNTFILE"
+
+  return
+}
+
+acct_stop()
+{
+  pages_before="$1"
+  test '' != "$pages_before" || pages_before=0
+
+  if [ '' != "$PAGECOUNTFILE" -a -f "$PAGECOUNTFILE" ]; then
+    pages_after=`cat "$PAGECOUNTFILE"`
+    pages=`expr $pages_after - $pages_before`
+    if [ '' = "$pages" -o 0 -ge "$pages" ]; then
+      test 0 -ne "$rc" || echo "? $name"": Wrong value for number of pages" \
+	"printed: \`$pages'." >&2
+      pages=1	# count files instead
+    fi
+  else
+    pages=1	# count files
+  fi
+  echo $pages
+
+  return
+}
+
+#******************************************************************************
+
+# Read the configuration file for the filter if present in the spool directory
+true
+cfg=if-pcl3.cfg
+test ! -f $cfg -o ! -r $cfg || . ./$cfg
+test $? -eq 0 || exit 2
+
+# RESOLUTION and PSCONFIGFILE must not contain field separators
+if expr "x$RESOLUTION$PSCONFIGFILE" : "x.*[$IFS]" > /dev/null; then
+  printf '? %s: Shell field separator(s) in RESOLUTION (%s)\n' \
+    "$name" "$RESOLUTION" >&2
+  printf '  or PSCONFIGFILE (%s).\n' "$PSCONFIGFILE" >&2
+  exit 2
+fi
+
+#******************************************************************************
+
+# Initialize accounting
+LC_NUMERIC=C; export LC_NUMERIC
+acct_saved=`acct_start`
+
+# stdin is the input file, stdout the printer.
+
+rc=0
+if [ '' = "$GS" ]; then
+  # Transparent queue
+  printf '\033E\033&k2G'   # PCL: Printer Reset, Line Termination (LF -> CR+LF)
+  test '' = "$INIT_TRANS" || printf "$INIT_TRANS"
+  cat
+  rc=$?
+else
+  # An empty specifications for RESOLUTION means "use the default".
+  test '' = "$RESOLUTION" || RESOLUTION="-r$RESOLUTION"
+
+  # Remove the PostScript configuration file from the command line if it does
+  # not exist or is not readable
+  test '' != "$PSCONFIGFILE" -a -f "$PSCONFIGFILE" -a -r "$PSCONFIGFILE" || \
+    PSCONFIGFILE=
+
+  # If PAGECOUNTFILE is non-empty, insert an option with it in the call.
+  pcf_option=
+  test '' = "$PAGECOUNTFILE" || pcf_option=-sPageCountFile="$PAGECOUNTFILE"
+
+  # We have to pass the resulting PCL file to standard output. Unfortunately,
+  # if one does this directly from ghostscript (via "-sOutputFile=-"), the
+  # output can contain unwanted data: error messages and data written to what
+  # is standard output for PostScript. (I consider this behaviour to be a bug
+  # in gs.) The latter feature is for example used by some MS Windows drivers
+  # for PostScript printers in order to report the current processing state
+  # back to the host.
+  # If we want neither error messages nor statements like "%%[ Page: 1 ]%%" to
+  # be intermixed with what is to be printed, we have to create a file first
+  # and copy it to stdout in a second step. This might require substantial disk
+  # space.
+  # Hence I provide both solutions. Choose the one you like best by setting
+  # USE_INTERMEDIATE_FILE.
+
+  if [ no = "$USE_INTERMEDIATE_FILE" ]; then
+    # Directly to stdout, hoping that other data will not appear. However,
+    # in order not to loose the error message text, the following command is
+    # used to ensure that this output will be printed properly and in
+    # particular without a "staircase effect" provided the error occurs on the
+    # first page.
+    # This is for example what happens if the input file is not PostScript.
+    printf '\033E\033&k2G\033&s0C'
+    # PCL: Printer Reset, Line Termination (LF -> CR+LF), End-of-Line-Wrap (ON).
+
+    # Call ghostscript
+    ${GS:-gs} -q -dNOPAUSE -dSAFER -sDEVICE=pcl3 -sSubdevice="$SUBDEVICE" \
+      -sColourModel="$COLOURMODEL" $RESOLUTION -sPrintQuality="$QUALITY" \
+      $pcf_option -sOutputFile=- $PSCONFIGFILE -
+    rc=$?
+    test 0 -eq $rc || \
+      printf '\n? %s: %s returned an exit code of %s.\n' "$name" "$GS" "$rc" >&2
+  else
+    # Two-step process with an intermediate file
+    tmp="${TMPDIR:-/tmp}/$$-2.tmp"
+    rm -f "$tmp"
+
+    # Call ghostscript, redirecting stdout to stderr. Note that permissible
+    # output (e.g., from "=") will be redirected to stderr as well, hence
+    # we can't use the size of the resulting file as the sole indication that
+    # an error has occurred.
+    prev_umask=`umask`
+    umask 027	# Ensure privacy. The group should be lp.
+    ${GS:-gs} -q -dNOPAUSE -dSAFER -sDEVICE=pcl3 -sSubdevice="$SUBDEVICE" \
+      -sColourModel="$COLOURMODEL" $RESOLUTION -sPrintQuality="$QUALITY" \
+      $pcf_option -sOutputFile="$tmp" $PSCONFIGFILE - >&2
+    rc=$?
+    test 0 -eq $rc || \
+      printf '\n? %s: %s returned an exit code of %s.\n' "$name" "$GS" "$rc" >&2
+    umask "$prev_umask"
+
+    # If an error occurred, don't bother printing.
+    if [ 0 -eq $rc ]; then
+      cat "$tmp"
+      rc=$?
+      test $rc -eq 0 || printf \
+	'? %s: Error copying the generated file to stdout.\n' "$name" >&2
+    fi
+
+    rm -f "$tmp"
+  fi
+fi
+
+# Reset the printer to its default state. This also ejects any unfinished pages
+# which is needed if the transparent queue is used for printing ordinary text.
+# It is superfluous when printing with pcl3 because pcl3 generates this at the
+# end of its output already, but a second reset is harmless (unless the printer
+# knows more than one command language and PCL-3+ is not the default) and it
+# works even if gs crashes.
+printf '\033E'	# PCL: Printer Reset
+
+# Terminate accounting
+pages=`acct_stop "$acct_saved"`
+
+# Exit on error
+test 0 -eq $rc || exit 2
+
+#******************************************************************************
+
+# User-specific accounting on success
+if [ '' != "$accounting_file" ]; then
+  printf '%7.2f\t%s:%s\n' "$pages" "$host" "$user" >> "$accounting_file"
+fi
+
+# Remove the trap for finish() in case the stderr log is non-empty although
+# everything worked.
+trap - 0 2
+
+exit 0

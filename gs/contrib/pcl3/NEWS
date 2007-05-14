@@ -1,0 +1,379 @@
+*******************************************************************************
+  File:     @(#)$Id: NEWS,v 2.10 2001/08/19 09:05:15 Martin Rel $
+  Contents: Significant user-visible changes between versions of pcl3/hpdj
+  Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
+	    Germany. E-mail: Martin.Lottermoser@t-online.de.
+
+*******************************************************************************
+*									      *
+*	Copyright (C) 1997, 1998, 1999, 2000, 2001 by Martin Lottermoser      *
+*	All rights reserved						      *
+*									      *
+*******************************************************************************
+
+
+Version 3.3 (released 2001-08-19)
+=================================
+* Options
+  - There is a new option "-sPJLJob" for declaring the generated file as a
+    PJL print job.
+  - I've documented the options "PCLInit1" and "PCLInit2" because I now know of
+    a situation where one of them is needed.
+  - The option "-dCUPSMessages" has been split into "-dCUPSMessages" and
+    "-dCUPSAccounting".
+  - I have added a new option "-dConfigureEveryPage" which is needed by some
+    not strictly PCL-3-conforming printers.
+* Compilation
+  - Adaptation to AFPL ghostscript 7.0 (previously only available as a patch
+    file) and GNU ghostscript 6.51.
+* Other
+  - I've removed the "PageCountFile" configuration parameter for cups-pcl3
+    because the corresponding device parameter can also be set from PostScript.
+  - I've corrected a bug which showed itself in wrong colour rendering for
+    yellow on 64-bit platforms when using Floyd-Steinberg error diffusion.
+  - If you've been using gs-pcl3-hpdj8xxc.ppd or gs-pcl3-hpdj1120c.ppd in an
+    environment where you had to explicitly specify values for the options
+    "*eprnBlackLevels" or "*eprnNonBlackLevels" you'll have to replace these
+    now with a reference to "*pcl3IntensityLevels".
+
+
+
+Version 3.2 (released 2001-03-26)
+=================================
+This is the first non-beta release of pcl3 after hpdj 2.6.
+
+The main functional extension in this release is support for the Common UNIX
+Printing System (CUPS):
+- I have added PPD files for the supported subdevices.
+- The package now contains a filter for using pcl3 with CUPS.
+- The driver has a new option "-dCUPSMessages" to generate messages in the
+  format demanded by CUPS.
+
+
+Version 3.1 (released 2001-02-28)
+=================================
+- After waiting almost 5 years for someone to implement it where it logically
+  belongs (in the ghostscript core distribution somewhere near the "prn"
+  device), I have finally dropped a deliberate restriction in hpdj/pcl3 and
+  have implemented Floyd-Steinberg error diffusion on my own. The resulting
+  quality is quite good, the performance isn't. There is a new option
+  "-sIntensityRendering" which selects the rendering method to use.
+- I have added support for the RGB colour model. This is mostly of interest to
+  people writing other ghostscript drivers and wishing to use pcl3's "eprn"
+  device.
+- I have changed the "SendNULs" option to be of integer type instead of a
+  boolean.
+- The option "-dNoHalftoning" has been replaced by the value "printer" for the
+  new option "-sIntensityRendering".
+- I have changed the %N name used by the message catalogues for pcl3opts from
+  "pcltools" to "pcl3opts". You should delete your old catalogues if you
+  installed them.
+
+
+Version 3.0.2 (released 2000-11-09)
+===================================
+- Because I'm disappointed with the way the FTP server previously used for
+  distributing hpdj is administered, I've moved pcl3's WWW home page to
+  http://home.t-online.de/home/Martin.Lottermoser/pcl3.html.
+- I've made one change in the generated PCL code (argument value for Start
+  Raster Graphics) which, according to the HP documentation available to me,
+  should be equivalent but which is apparently a necessary condition for duplex
+  printing on the HP DJ 970C.
+- The option -dOnlyCRD is now documented.
+- Rearrangements in the output of pcl3opts, addition of -dOnlyCRD if needed.
+- Clarifications in the reference page.
+
+
+Version 3.0.1 (released 2000-10-27)
+===================================
+Bugfix release (-sSubdevice leading to 300 ppi resolution).
+
+
+Version 3.0 (released 2000-10-22)
+=================================
+As predicted in hpdj 2.5, the name of this driver has been changed to "pcl3".
+I am sorry it took so long for this version to be released, but, apart from
+other tasks intervening, the work for this driver expanded in a manner I had
+not anticipated. The current version is practically a new implementation, hence
+this is only a beta release which should be approached with appropriate care.
+
+* Functionality/behaviour of the driver
+
+  + Removed Functionality
+    - I have removed the optional source code for generating a device-specific
+      'InputAttributes' page device parameter. I had misunderstood the purpose
+      of this parameter in PostScript.
+
+  + Modifications
+    - The option "Colo[u]rMode" is now called ""Colo[u]rModel" and its default
+      value is called "Gray" instead of "mono".
+    - The default for "ManualFeed" is now always "false".
+    - The "MarginFile" option has been renamed "MediaConfigurationFile" and
+      media configuration files now expect PPD mediaOption keywords (like "A4")
+      instead of PCL page size codes ("26" for ISO A4) to identify media sizes.
+    - The "MediaType" parameter has been renamed "Medium" to prevent a conflict
+      with PostScript Level 3. There are extensions in the permissible values
+      as well.
+    - The "Model" option has been renamed "Subdevice" and the permissible
+      values have been changed.
+    - The "PagecountFile" option is now called "PageCountFile" in order to
+      agree with the spelling of the page device parameter "PageCount".
+    - The default compression method depends now on the subdevice chosen.
+      For "unspec", it is 2 instead of 9 as previously.
+
+  + Extensions
+    - More printer models are explicitly supported (in particular some of the
+      series 300 and 600 DeskJets).
+    - It is now possible to select supported printer models (subdevices)
+      directly by a "-sDEVICE" option.
+    - The driver can now also deal with media fed long edge first. This is
+      needed for envelope sizes on some older DeskJets. The implementation is
+      actually more general and adds support for the standard
+      PostScript-Level-3 page device parameter "LeadingEdge".
+    - The driver now reacts to media positions (numbers identifying input or
+      output trays) determined by PostScript's media selection process.
+    - The driver now supports banner printing.
+    - The driver now supports duplex printing.
+    - There is a new option "-dNoHalftoning" which turns off ghostscript's
+      halftoning.
+    - I've added support for printers (e.g., Olivetti JP 792) which violate PCL
+      in requiring the black pixel plane to be sent last when printing in
+      colour.
+    - You now have direct access to print quality parameters for older DeskJets.
+    - There are two new options with minor usefulness (SendNULs, PJLLanguage).
+
+* Documentation
+  - I have rewritten the documentation in SGML, using the DocBook DTD.
+    The distribution contains derived variants as an nroff/troff manual page
+    and in HTML format.
+  - To my dismay I have discovered that the description on how to increase the
+    halftone screen frequency does not work with current ghostscript versions.
+    The manual page has been corrected accordingly.
+  - The support for functionality needing the PCL command "Configure Raster
+    Data" is no longer marked as unsafe because I have finally obtained some
+    official HP documentation on it.
+  - I've added a preliminary version of a TeX document (notes.tex) containing
+    useful information for other driver implementors.
+
+* Other Changes
+  - I've added a command "pcl3opts" which parses PCL-3+ files and guesses the
+    options needed to generate a file with similar settings using pcl3. This
+    command is intended for people having access to a manufacturer-endorsed
+    driver for their printer.
+  - I've added some PostScript files to the package:
+    - calign.ps for checking the relative alignment of ink cartridges
+    - dumpppd.ps for dumping the contents of the page device dictionary to
+      standard output
+    - levels-test.ps for checking the basic colour capabilities of ghostscript
+      and the driver
+
+* Compilation/Sources
+  - I have restructured the driver and split it into three layers.
+    The top-most one is a new abstract gs device ("eprn") extending
+    ghostscript's standard "prn" device and dealing with aspects independent of
+    PCL. The lowest layer is a PCL-3+ generator. Both components are intended
+    to be usable in other contexts as well. The "pcl3" driver proper is the
+    intermediate layer connecting the other two.
+  - The way you have to integrate pcl3's sources in the compilation has
+    changed. You now have less compilation options to worry about.
+
+
+
+Version 2.6 (released 1999-10-16)
+=================================
+The main purpose of this version is to update the address of hpdj's FTP site
+and my e-mail address which have changed. Other changes are:
+
+* Documentation
+  - I have removed the description of HPDJ_INPUTATTRIBUTES from README.hpdj.
+    The symbol can still be defined during compilation if you need it, but
+    because I had misunderstood the purpose of the 'InputAttributes' page
+    device parameter hpdj's resulting behaviour is not in agreement with the
+    PostScript language definition.
+  - README.hpdj now describes a fix for ghostscript's BG/UCR bug which was
+    previously mentioned only on hpdj's WWW home page.
+  - I've made numerous small changes in the manual page and README.hpdj.
+
+* Compilation
+  - The make file parts needed for hpdj are no longer diffs but simply text
+    segments which can be inserted with an ordinary text editor.
+
+There are almost no changes in the source code.
+
+
+
+Version 2.5 (released 1998-11-22)
+=================================
+This is mainly a release to adapt hpdj to gs 5.50. There are no changes in
+functionality.
+
+Unless there arise reasons for quickly issuing a new package, this will be the
+last release where the driver is called "hpdj". The new name will probably be
+"pcl3" and numbering will start with version 3.0.
+
+* Changes in behaviour
+  - hpdj will now complain if you specify the option 'BitsPerPixel' unless the
+    value given happens to be the same as the one chosen by hpdj.
+
+* Compilation
+  - hpdj should now adapt automatically to the ghostscript version used, i.e.,
+    you no longer have to set version-specific defines for older gs releases.
+  - One user encountered and located a bug in Microsoft VC++ 5.0 which
+    prevented reading margin files. This release works around the bug.
+
+* Documentation
+  - Numerous small changes.
+
+
+
+Version 2.4 (released 1998-04-27)
+=================================
+Starting with this version, hpdj is released under the terms of the GNU Library
+General Public License (LGPL) instead of the GNU GPL.
+
+* Extensions
+  - This version supports the Color Resolution Enhancement technology (C-REt)
+    feature of some HP series-800 DeskJets, at least as far as I've been able
+    to discover how this works without any documentation from HP. See the
+    description of the new options 'BlackLevels' and 'CMYLevels' in the manual
+    page.
+  - There is a new option, "PagecountFile", which can be used to keep track of
+    the number of pages printed. It is intended for spooler backends.
+  - As an example of an input filter for a BSD spooler (lpr), I've added a file
+    'if-hpdj' to the distribution. Read the comments in the file to find out
+    what it can do.
+  - I've extended the list of PCL media size codes known to hpdj by some codes
+    of interest to people with series-1100 DeskJets.
+
+* Modifications
+  - The DJ 850C/855C/unspec margin information has been modified:
+    - The margins for the JIS B5 format were demonstrably wrong for the DJ 850C
+      and have been changed.
+    - I've removed the entry for US A2 envelopes because contrary to what I
+      believed previously this size is not supported.
+
+* Documentation
+  - The FILES section in the manual page has been restructured and extended as
+    a CONFIGURATION section. In particular, for those not familiar with
+    PostScript, I've added much more on configuration with PostScript commands.
+
+* Compilation
+  - I have added a missing "#include <errno.h>" directive to hpdjprn.c.
+  - I have added an include directive for Aladdin's header "std.h" where
+    appropriate in order to avoid some name clashes with non-standard system
+    types like 'uint' on some operating systems (e.g., FreeBSD).
+
+
+
+
+Version 2.3 (released 1997-12-16)
+=================================
+This is a release to fix a bug preventing linking when HPDJ_MARGIN_FILE was
+defined during compilation.
+
+
+
+Version 2.2 (released 1997-12-08)
+=================================
+Most of the changes in this version are either in the documentation or internal.
+So far, only one bug has been reported for hpdj 2.1 and it is concerned with
+compilation and not with the generated PCL code (see below).
+
+* Changes in behaviour
+
+  - Printing with a series-500 DeskJet on envelope sizes now assumes manual
+    feed unless overridden by the new 'ManualFeed' option.
+
+  - I have finally managed to see how to support automatic rotation for pages
+    in landscape orientation without help from 'setpagedevice'. The rule is
+    now: put media into the input tray short edge first and let hpdj worry
+    about the rest.
+
+    In particular, it is now possible to use setpagedevice to declare landscape
+    orientation in default user space and thus obtain a file which can be
+    viewed on the screen in its proper orientation and which will, without
+    modifications, print correctly if processed by hpdj.
+
+  - hpdj can now also install its own 'InputAttributes' dictionary in its page
+    device dictionary. (And if you don't know what that can be used for you
+    should skip this paragraph.) There will be one entry for each page size
+    supported by the printer model chosen. This has the disadvantage that
+    unsupported page sizes no longer produce readable messages like
+
+      ? Device hpdj: This document requests a page size of 210 x 297 pt.
+	This exceeds the custom page size limits for the DeskJet 850C.
+
+    from hpdj but instead slightly cryptic messages like
+
+      Error: /configurationerror in --setpagedevice--
+      Additional information: [/PageSize [210 297]]
+
+    from the setpagedevice operator (some ghostscript versions, e.g. gs 4.03,
+    even omit the second of these lines). The advantage is that setpagedevice
+    can now perform the usual media size matching.
+
+    This feature is not active by default because it generates the wrong
+    initial CTM if the printer model supports custom page sizes and the media
+    size requested could be matched as a custom page size. This is due to a bug
+    in make_adjustment_matrix() (file zmedia2.c) which is present in at least
+    gs 3.53, gs 4.03 and gs 5.10. The hpdj distribution contains a patch file
+    for zmedia2.c based on gs 5.10 which fixes this problem.
+
+    Compile hpdj with -DHPDJ_INPUTATTRIBUTES to activate this feature.
+
+
+* Command line options:
+
+  - New options (see the manual page for descriptions):
+    - DryTime
+    - ManualFeed
+
+  - Changes in option interfaces (no change in functionality):
+    - ColourMode and ColorMode accept "monochrome" as a synonym for "mono".
+    - MediaType now recognizes the string "photo paper".
+    - PrintQuality accepts "best" as a synonym for "presentation".
+
+
+* Manual page:
+  - I have made the nroff/troff syntax more acceptable to man commands of
+    limited intelligence and faulty man macros. In particular, man is now more
+    likely to discover that preprocessing by tbl is needed, and nroff should
+    no longer get confused what the "previous" font is after CW has been used.
+    (The Linux system on which I developed hpdj 2.1 did not have these faults,
+    but since then I have switched distributions...)
+  - The man page now contains a reference to hpdj's FTP site.
+  - The list of printers known to work with hpdj has been extended.
+  - I have rewritten most of the "LIMITATIONS" section.
+
+* Additional files in the distribution:
+  - This file :-).
+  - A copy of the hpdj home page, hpdj.html, giving a short introduction to
+    ghostscript and hpdj, together with instructions on where to get them.
+  - Patch files for devs.mak in Aladdin ghostscript 3.53 and 5.10.
+  - Patch file for zmedia2.c (bug in make_adjustment_matrix()) based on Aladdin
+    ghostscript 5.10.
+  - Margin test files in landscape orientation for ISO A4 and US Letter.
+
+* Compilation:
+  - In two places, I had used dynamic initializers for structs. This is not
+    required to be supported by ISO/ANSI C and gave error messages from at
+    least one compiler. This bug has been fixed.
+  - A user reported problems with the interpretation of return values of
+    fprintf() on his non-ISO/ANSI-C-conforming system. This lead to hpdj
+    erroneously assuming that an error had occurred. The code has been changed
+    to circumvent this problem.
+  - Based on user feedback, I have rewritten parts of README.hpdj.
+  - There is a new printer model, "none", intended only as a compile-time value
+    for HPDJ_DEFAULT_MODEL. Using this model leads to an error message telling
+    the user that s/he should explicitly specify -sModel. I have introduced this
+    value for the benefit of persons distributing binary versions of ghostscript
+    and wishing to force their users to deliberately choose the printer model.
+    This is the default value for HPDJ_DEFAULT_MODEL now.
+  - The source code for the driver is now distributed over 7 files instead of
+    3 as before.
+
+
+
+Version 2.1 (released 1997-06-08)
+=================================
+This was the first widely-released version of hpdj.

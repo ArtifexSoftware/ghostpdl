@@ -1,0 +1,71 @@
+#!/bin/sh
+#******************************************************************************
+# File:     @(#)$Id: catppd,v 1.2 2001/03/16 07:57:12 Martin Rel $
+# Contents: Primitive *Include resolver for PPD files
+# Call:     catppd <top-level file> <target directory or file>
+# Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
+#           Germany; Martin.Lottermoser@t-online.de
+#
+#******************************************************************************
+#									      *
+#	Copyright (C) 2001 by Martin Lottermoser			      *
+#	All rights reserved						      *
+#									      *
+#******************************************************************************
+#
+# All PPD files included with relative path names must be accessible from the
+# current working directory.
+#
+#******************************************************************************
+
+name=catppd
+
+# Collect the arguments
+if [ $# -ne 2 ]; then
+  printf '? Usage: %s <top-level file> <target directory or file>\n' "$0" >&2
+  exit 1
+fi
+infile="$1"
+if [ -d "$2" ]; then
+  outfile="$2"/`basename "$infile"`
+else
+  outfile="$2"
+fi
+
+# Check arguments for validity
+if [ ! -f "$infile" -o ! -r "$infile" ]; then
+  printf '? %s: `%s'\'' is not accessible.\n' "$name" "$infile" >&2
+  exit 1
+fi
+if [ -f "$outfile" ]; then
+  printf '? %s: There is already a file %s.\n' "$name" "$outfile" >&2
+  exit 1
+fi
+
+# Create awk script
+tmp="${TMPDIR:-/tmp}/$$.tmp"
+rm -f "$tmp"
+: ${AWK:=awk}
+cat << '---' | sed -e "s,@AWK@,$AWK," -e "s,@TMP@,$tmp," > "$tmp" || exit 1
+NR == 1 && first == "" && $1 ~ /^\*PPD-Adobe:/ {next}
+/^\*Include: *".*"$/ {
+  quote = index($0, "\"")
+  lastquote = length($0)
+  file = substr($0, quote+1, lastquote-quote-1)
+  # No support for hexadecimal substrings.
+  printf "*%% Begin included file \"%s\"\n", file
+  if (system("@AWK@ -f @TMP@ " file) != 0) exit 1
+  printf "*%% End included file \"%s\"\n", file
+  next
+}
+{print $0}
+---
+
+# Create output file
+$AWK -f "$tmp" -v first=yes "$infile" > "$outfile" || \
+  { rm -f "$tmp" "$outfile"; exit 1; }
+
+# Clean up
+rm -f "$tmp"
+
+exit 0

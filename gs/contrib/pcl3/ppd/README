@@ -1,0 +1,228 @@
+*******************************************************************************
+  File:     @(#)$Id: README,v 1.10 2001/08/19 08:52:32 Martin Rel $
+  Contents: Notes on the PPD files in the pcl3 distribution
+  Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
+            Germany. E-mail: Martin.Lottermoser@t-online.de.
+
+*******************************************************************************
+*									      *
+*	Copyright (C) 2001 by Martin Lottermoser			      *
+*	All rights reserved						      *
+*									      *
+*******************************************************************************
+
+
+Purpose and Format of PPD Files, Document Managers
+**************************************************
+Some PostScript commands (e.g., for duplex printing) are not concerned with
+what appears on the page but control the way a document is printed independent
+of its contents. Such commands are usually not created by the application
+generating the PostScript document but are inserted at the user's request when
+actually printing the file. In addition, some PostScript interpreters differ in
+the commands needed to achieve a particular effect, hence a PostScript file
+might have to be adapted for a certain device if it was orginally generated for
+a different one. This post-processing of PostScript files is the job of a
+PostScript "document manager" or "print manager". It obtains its information
+from a PPD (PostScript Printer Description) file for the printer selected.
+
+The most useful kind of document manager is a preprocessor for a spooler. This
+preprocessor parses the PostScript file to determine its current settings, asks
+the user which special features (e.g., duplex printing, output quality,
+stapling, etc.) are desired, extends or modifies the file with commands
+extracted from the PPD file, and passes the modified file to the spooler.
+
+There exist also spooler-integrated document managers where the user interface
+is detached from the editing component; in these cases the interface passes the
+information it has collected to the spooling interface in some spooler-specific
+manner and later a backend inserts appropriate PostScript commands.
+
+Primitive document manager implementations don't bother about parsing the
+PostScript file but merely prepend the new PostScript commands to the file;
+such commands will not take effect if the file already contains invocations of
+the same feature. Beware of this in particular in the case of Windows-generated
+PostScript files which usually contain explicit settings for the resolution.
+You might consider adding definitions for ghostscript's FIXEDRESOLUTION
+variable to the *Resolution statements in the PPD file if you have such a
+document manager.
+
+PPD files contain also some information which is relevant for software
+generating PostScript files. A case in point is the list of supported media
+sizes: it can be used by PostScript-generating programs to present a user with
+a list of choices for the document to be composed, and it is also used by the
+document manager to replace the size's invocation code with the commands
+required to obtain this size on the printer selected. It can be confusing if
+you have a PPD-based user interface to a print system which accepts PostScript
+as well as non-PostScript files and where the interface does not clearly
+distinguish between these two steps (document composition and printing); you
+might get the impression that you can alter the page size after the PostScript
+file has been generated. (A similar case is page orientation.) Actually,
+PostScript does provide functionality for doing this (PageSize recovery
+policies), but altering the size selection commands is logically wrong and does
+not give a usable result in general.
+
+The PPD file format is defined by Adobe:
+
+      Adobe Systems Incorporated
+      "PostScript Printer Description File Format Specification"
+      Version 4.3
+      9 February 1996
+      Document ID: PN LPS5003
+
+This specification can be obtained from http://www.adobe.com.
+
+
+
+The PPD Files for pcl3
+**********************
+The PPD files distributed with pcl3 are not complete descriptions of the
+devices implemented by ghostscript with the pcl3 driver. Their main purpose is
+to provide some essential support for document managers acting as
+preprocessors. This makes it possible to create printing interfaces which are
+easier to use than ghostscript's command line interface. As a consequence,
+you will find no *OpenUI/*CloseUI entries for device parameters like
+"SendBlackLast" or "PJLLanguage": the values of these parameters are not
+job-specific but printer-specific properties and should be given as additions
+in other PPD statements or in the call to ghostscript.
+
+PPD files can include other PPD files. For pcl3, the include structure looks
+like this (inclusion is from top to bottom):
+
+	gs-pcl3-<subdevice>.ppd
+	|
+	gs-pcl3-common.ppd
+	|
+	gs.ppd
+	|
+	gs-<gs version>.ppd
+	|
+	gs-common.ppd
+
+Several of the files gs-pcl3-<subdevice>.ppd and in particular those where
+<subdevice> is not an acceptable argument to "-sSubdevice" are valid for
+several subdevices. If you are unsure which file to select, check the initial
+comments or the *ModelName statement in a file to discover the subdevices
+supported by that file.
+
+The gs-pcl3-<subdevice>.ppd files assume that the PostScript file generated by
+the document manager is passed to a ghostscript executable with options
+selecting pcl3 and the intended subdevice and without altering the default
+state of the device as far as it is reflected in the PPD file. If this does not
+agree with your environment, use a local PPD customization file for the
+necessary adaptations.
+
+If you're using CUPS, device and subdevice selection should happen via the
+*cupsFilter statement and the filter called. The gs-pcl3-<subdevice>.ppd files
+already contain *cupsFilter statements using the cups-pcl3 filter. If you're
+using a different filter, modify the statements as needed, otherwise read the
+initial comments in the file cups-pcl3.
+
+
+Installation of the Files
+*************************
+
+1.  Create a file called gs.ppd for describing site-specific settings of your
+    ghostscript installation. It should contain at least the following
+    statements:
+
+      *PPD-Adobe: "4.3"
+      *DefaultPaperDimension: <size>
+      *Include: "gs-<gs version>.ppd"
+
+    Replace "<size>" with the default page size configured for your ghostscript
+    installation. Usually, this is either "A4" or "Letter". In the case of A4
+    you would therefore write:
+
+      *DefaultPaperDimension: A4
+
+    You might also wish to insert other statements here which describe settings
+    which are relevant for a document manager. For example, if your document
+    manager downloads fonts to the PostScript interpreter if it is of the
+    opinion that the latter does not have a particular font used in a document
+    (this is the case for CUPS), you should compose a PPD file with a list of
+    fonts accessible to your ghostscript installation and insert it or an
+    *Include statement for it at this point. You can use the fonts.ppd file in
+    this directory as a model (or as a temporary substitute); it contains a
+    list of ghostscript's usual standard fonts. If the programs accessing the
+    PPD file use it only for determining whether a font is accessible to the
+    interpreter or not, you can also simply use the list of font descriptions
+    resulting from running gs on:
+
+      /scratch 200 string def
+      (*)
+      {
+	(*Font ) print print (: Standard "\(0.0\)" Standard Disk\n) print
+      }
+      scratch /Font resourceforall
+
+    (put this into a file and run "gs -q -dBATCH -sDEVICE=bit" on it). This
+    output will contain information which is wrong, but it will list all fonts
+    known to your ghostscript installation.
+
+    Don't forget to also replace <gs version> with your ghostscript's version
+    number. If there is no gs-<gs version>.ppd file for your gs version, use
+    one of the existing gs-<gs version>.ppd files as a model.
+
+2.  The PPD specification distinguishes between printer models (e.g., the
+    HP DeskJet 540) and printer instances (e.g., the second printer in
+    room 12). The PPD file for an instance can be generated by creating a local
+    instance-specific customization file which includes the model's PPD file.
+
+    If your document manager has an interface for instance installation, it is
+    sufficient to give it the relevant gs-pcl3-<subdevice>.ppd files which
+    describe models. Otherwise you usually have to create a customization file
+    under the name of the instance, containing just
+
+      *PPD-Adobe: "4.3"
+      *ShortNickName: "<short text>"
+      *NickName: "<text>"
+      *Include: "gs-pcl3-<subdevice>.ppd"
+
+    with <text> describing the printer instance (<short text> should basically
+    have the same content but consist of at most 31 characters) and <subdevice>
+    being replaced to generate the name of the pcl3 PPD file you wish to use
+    for this printer.
+
+    If you wish to extend or override other settings in the
+    gs-pcl3-<subdevice>.ppd file, add these statements in the customization
+    file between the first and the last statement above.
+
+    The pcl3 PPD files contain *InputSlot definitions only for those media
+    sources ("Cassette" and "ManualFeed") which are available independent of
+    your "InputAttributes" definitions. If you configure a print queue such
+    that other sources are available as well, read the comments on the
+    *InputSlot entry in gs-pcl3-common.ppd.
+
+    You can't use local customization files with CUPS up to at least version
+    1.1.8 because the CUPS PPD scanner (a) does not support the *Include
+    statement and (b) violates the PPD specification in either taking the
+    last occurrence of a keyword as the correct instance or collecting all
+    instances instead of disregarding every except the first. Modify the
+    installed instance files in this case if you need some customization, for
+    example to change the "*NickName" value (which actually CUPS should do when
+    you give it a description for the print queue at creation time).
+
+3.  Copy all PPD files needed into a directory where they will be found by your
+    document manager.
+
+    If your document manager does not support the "*Include" statement, use the
+    script "catppd" for this purpose:
+
+	catppd <top PPD file> <target directory or file>
+
+    The script requires that all the files referenced from <top PPD file> must
+    be accessible from the current working directory under the name given in
+    the "*Include" statement. In the case of pcl3's PPD files this means that
+    you must call it from the "ppd" directory. If you are installing model
+    files you may specify any gs-pcl3-*.ppd file for <top PPD file> with the
+    exception of gs-pcl3-common.ppd. If you are installing instance files, use
+    catppd only on your customization files.
+
+    For CUPS up to at least version 1.1.8 you'll have to use catppd and you
+    should copy the files into the .../cups/model directory. You must also
+    remove the second "*OpenUI *MediaType: ... *CloseUI *MediaType" section
+    from the copied gs-pcl3-unspec.ppd file.
+
+4.  If you are using the "unspec" or "unspecold" subdevices, check whether the
+    PPD file supports all the features you need. You will also almost certainly
+    find some features or values there which are not supported by your printer.
+    It is probably best to create your own PPD file in this case.

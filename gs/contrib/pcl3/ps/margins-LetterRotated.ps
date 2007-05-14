@@ -1,0 +1,73 @@
+%!PS-Adobe-3.0
+%%Title: Margin test file for the page size LetterRotated
+%%Copyright: Copyright (C) 1997, 1998, 1999, 2000 by Martin Lottermoser. All rights reserved.
+%%Creator: makemtf 1.19
+%%CreationDate: Sun Aug 19 12:16:19 CEST 2001
+%%Pages: 1
+%%DocumentNeededResources: font Courier
+%%DocumentMedia: LetterRotated 792 612 0 () ()
+%%Comments: The first entry in the preceding line should really be an empty
+%%+ string. That it is not is a concession to bugs in ghostview and gv.
+%%LanguageLevel: 2
+%%EndComments
+
+%%BeginProlog
+/in {72 mul} def
+/mm {0.0 mul} dup 0 72 25.4 div put def
+
+/crossdict 8 dict def	% 4 defined here, 4 more defined at runtime
+crossdict begin
+  /reverse {0.0 mul} dup 0 1.0 72 div put def
+  /temp 100 string def
+  /showrounded {100.0 mul round 100.0 div temp cvs show} def
+  /append {	% <string> <substring> append <string+substring>
+    exch dup dup length	% <substring> <string> <string> <length>
+    4 -1 roll putinterval
+  } def
+end
+
+/cross {	% <right> <top> <x> <y> cross -
+  crossdict begin
+    /y exch def  /x exch def
+    % 1 pt distance from the edges:
+    1 in 1 sub mul /top   exch def
+    1 in 1 sub mul /right exch def
+    0 setlinewidth
+    newpath
+      x y moveto
+      right 0 rmoveto
+      x y lineto
+      0 top rlineto
+    stroke
+    x y moveto
+    right -0.2 mul  dup 0 lt {70 sub} if
+    top   -0.2 mul  dup 0 lt { 8 sub} if
+    rmoveto
+    (\() show  x reverse showrounded  (, ) show
+    y reverse showrounded  (\)) show
+  end
+} def
+%%EndProlog
+
+%%BeginSetup
+%%BeginFeature: *PageSize LetterRotated
+1 dict begin /PageSize [792 612] def currentdict end setpagedevice
+%%EndFeature
+%%IncludeResource: font Courier
+/Courier findfont 8 scalefont setfont
+%%EndSetup
+
+%%Page: 1 1
+
+396 306 moveto (Page size: LetterRotated)
+dup stringwidth -2 div exch -2 div exch rmoveto show
+
+-1 -1  1 in			1 in			cross
+ 1 -1  792 1 in sub	1 in			cross
+-1  1  1 in			612 1 in sub	cross
+ 1  1  792 1 in sub	612 1 in sub	cross
+
+showpage
+
+%%Trailer
+%%EOF

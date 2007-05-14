@@ -1,0 +1,232 @@
+%!PS-Adobe-3.0
+%%Title: (Colorant Alignment Test)
+%%Copyright: Copyright (C) 2000 by Martin Lottermoser. All rights reserved.
+%%Creator: Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig, Germany. E-mail: Martin.Lottermoser@t-online.de.
+%%CreationDate: $Date: 2000/08/30 16:53:36 $
+%%Pages: 1
+%%Orientation: Portrait
+%%LanguageLevel: 2
+%%DocumentNeededResources: font Helvetica Helvetica-Bold
+%%EndComments
+%******************************************************************************
+%
+% This PostScript program generates a test page for visually inspecting the
+% relative alignment of black and other colorants.
+%
+% It is intended for ghostscript devices driving CMYK-capable HP DeskJet
+% printers. These printers have several ink cartridges, usually one for black
+% and a second for cyan, magenta and yellow. After insertion of a new
+% cartridge, one should configure the printer for the proper relative alignment
+% of these two cartridges. This program can be used to check to which extent
+% the cartridges are aligned.
+%
+% You can print this document on ISO A4 or US Letter.
+%
+%******************************************************************************
+%%BeginProlog
+
+/runter {	% <Distanz> runter -
+  currentpoint
+  3 -1 roll sub
+  exch pop 50 exch
+  moveto
+} bind def
+
+/Pixelmitte {		% <x> <y> Pixelmitte <xx> <yy>
+  transform
+  2 {floor 0.5 add exch} repeat
+  itransform
+} bind def
+
+/zeigeZentriert {	% <Zeichenkette> zeigeZentriert -
+  dup stringwidth exch -2 div exch rmoveto show
+} bind def
+
+/zeigeDistanz {		% <Anzahl Pixel> zeigeDistanz -
+  gsave
+    Strichlaenge 1.5 mul Strichlaenge -4 mul rmoveto
+    temp cvs zeigeZentriert
+  grestore
+} bind def
+
+/Pixeldistanz {		% <x> <y> Pixeldistanz <xx> <yy>
+  dtransform
+  dup abs 2 index abs le	% <x'> <y'> |y'|<=|x'|
+  {
+    pop 0 ge {1}{-1} ifelse
+    0
+  }
+  {
+    0 ge {1}{-1} ifelse
+    exch pop 0 exch
+  }
+  ifelse
+  idtransform
+} bind def
+
+/Ausrichtung {		% <CMYK-Farbe> <y-Verschiebung> Ausrichtung -
+  gsave
+    0 setlinewidth
+    0 setgray
+    newpath
+      0 0 moveto
+      Strichlaenge 0 rlineto
+    stroke
+
+    newpath
+      Strichlaenge exch moveto
+      aload pop setcmykcolor
+      Strichlaenge 0 rlineto
+    stroke
+
+    0 setgray
+    newpath
+      Strichlaenge 2 mul 0 moveto
+      Strichlaenge 0 rlineto
+    stroke
+  grestore
+} bind def
+
+/horizontal {		% <CMYK-Farbe> <Anzahl Pixel> horizontal -
+  gsave
+    Strichlaenge 1.5 mul 0 rmoveto
+    currentpoint Pixelmitte translate
+    -90 rotate
+    hPixel mul
+    Ausrichtung
+  grestore
+} bind def
+
+/vertikal {		% <CMYK-Farbe> <Anzahl Pixel> vertikal -
+  gsave
+    0 Strichlaenge -1.5 mul rmoveto
+    currentpoint Pixelmitte translate
+    vPixel mul
+    Ausrichtung
+  grestore
+} bind def
+
+/Testfolge {		% <CMYK-Farbe> <Name der Prozedur> Testfolge -
+  load
+  -6 1 6.001
+  {			% <CMYK-Farbe> <Prozedur> <Distanz>
+    2 index
+    1 index
+    3 index exec
+    zeigeDistanz
+    hDistanz 0 rmoveto
+  } for
+  pop pop
+  Strichlaenge 6 mul runter
+} bind def
+
+%%EndProlog
+%******************************************************************************
+%%BeginSetup
+
+%%IncludeResource: font Helvetica-Bold
+/gross /Helvetica-Bold findfont 10 scalefont def
+/sehrgross /Helvetica-Bold findfont 12 scalefont def
+
+%%IncludeResource: font Helvetica
+/normal /Helvetica findfont 10 scalefont def
+/klein /Helvetica findfont 7 scalefont def
+
+/temp 100 string def
+
+% Layout-Parameter
+/hDistanz 40 def	% Abstand zwischen Tests
+/Strichlaenge 10 def
+
+% CMYK-Werte als Arrays
+/Zyan [1 0 0 0] def
+/Magenta [0 1 0 0] def
+/Gelb [0 0 1 0] def
+
+% Horizontale und vertikale Abstände für 1 Pixel
+/hPixel 1 0 Pixeldistanz pop def
+/vPixel 0 1 Pixeldistanz exch pop def
+
+% Kontrollen der Pixeldistanzen
+hPixel 0 dtransform
+dup mul exch dup mul add sqrt 1 sub abs
+0.000001 gt
+{
+  (WARNING! Violation of an assumption \(horizontal distance\) concerning the relative alignment of user and device space.) =
+} if
+0 vPixel dtransform
+dup mul exch dup mul add sqrt 1 sub abs
+0.000001 gt
+{
+  (WARNING! Violation of an assumption \(vertical distance\) concerning the relative alignment of user and device space.) =
+} if
+
+%%EndSetup
+%******************************************************************************
+%%Page: 1 1
+
+% Damit alles sowohl auf A4 als auch auf US Letter paßt, darf man nicht über
+% eine Breite von 595 und eine Höhe von 792 bp hinausgehen.
+
+% Überschrift
+sehrgross setfont
+300 720 moveto
+(Colorant Alignment Test) zeigeZentriert
+
+% Auflösung dokumentieren
+40 runter
+normal setfont
+(The resolution is ) show
+currentpagedevice /HWResolution get 
+aload pop exch temp cvs show
+( x ) show
+temp cvs show
+( pixels per inch.) show
+
+% Hinweis zu den Einheiten
+12 runter
+(The number printed with each test is the number of pixels the line in the middle has been shifted with respect to the) show
+12 runter
+(neighbouring lines.) show
+
+%------------------------------------------------------------------------------
+
+40 runter
+gross setfont
+(Horizontal Alignment) show
+20 runter
+
+normal setfont
+
+Zyan    /horizontal Testfolge
+Magenta /horizontal Testfolge
+Gelb    /horizontal Testfolge
+
+%------------------------------------------------------------------------------
+
+40 runter
+gross setfont
+(Vertical Alignment) show
+20 runter
+
+normal setfont
+
+Zyan    /vertikal Testfolge
+Magenta /vertikal Testfolge
+Gelb    /vertikal Testfolge
+
+%------------------------------------------------------------------------------
+
+50 runter
+klein setfont
+(Author: Martin Lottermoser) show
+11 runter
+($Id: calign.ps,v 1.3 2000/08/30 16:53:36 Martin Rel $) show
+
+%------------------------------------------------------------------------------
+
+showpage
+
+%******************************************************************************
+%%Trailer
+%%EOF

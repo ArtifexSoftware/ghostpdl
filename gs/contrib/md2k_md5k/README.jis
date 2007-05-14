@@ -1,0 +1,179 @@
+
+	ALPS MD series printer driver for Ghostscript 5.xx
+
+							1999/ 4/18
+							1999/ 5/ 2 更新
+
+概要
+---
+  本ドライバは Ghostscript 5.10/5.50(/5.82) で ALPS MD シリーズプリンターの
+出力をするためのドライバです。以下のような機能を備えています。
+
+	カラー／モノクロ印刷が可能
+	300dpi, 600dpi, 1200x600dpi に対応
+	用紙の種類・サイズの指定が可能
+	Floyd-Steinberg dithering が可能
+	dithering 使用時に色の濃度調整が可能
+
+現在、MD-2000/2010/4000/1300/1500/5000 で動作が確認されています。(md2kのみ)
+
+
+インストール
+---
+1. ghostscript をコンパイルするのに必要なソース類を展開し、
+   適宜必要なパッチを当てます。
+2. gdevmd2k.c を gs のソースのあるディレクトリにコピーします。
+3. gs5.10 の場合は、gdevmd2k.dev を Makefile に追加します。
+   gs5.50 の場合は、gdevmd2k.mak-5.50 を contrib.mak に追加します。
+   (gs5.8x の場合は、gdevmd2k.mak-5.8x を contrib.mak に追加)
+4. 自分のサイト用に Makefile を調整し、 DEVICE_DEVS に md2k.dev を追加します。
+   MD-5000 を使用する場合は、md5k.dev を追加します。
+5. make
+
+
+使用方
+---
+  デバイスの指定
+	  gs を実行する際に、-sDEVICE オプションで以下のいずれかのデバイスを
+	選択することで、ALPS MD プリンター用の出力が生成されます。
+
+	-sDEVICE=md2k
+		MD-2000/4000/1000 等、MD-5000 以前の MD シリーズに対応した
+		形式の出力を行います。(MD-5000 でも出力可能です)
+	-sDEVICE=md5k
+		MD-5000 専用の形式で出力します。エコブラックモードを使用する
+		場合は、こちらを指定する必要があります。
+	(注) md5k.dev は99/5/2現在、実際のプリンターでテストされていません。
+	     MD-5000 で、本デバイスをテストして下さった方は是非結果を
+	     お知らせ下さい。
+
+  カラー／モノクロ・dithering の選択
+	-dBitsPerPixel=1   通常のモノクロ印刷
+	-dBitsPerPixel=4   通常のカラー印刷    (default)
+	-dBitsPerPixel=8   Floyd-Steinberg dithering を用いたモノクロ印刷
+	-dBitsPerPixel=32  Floyd-Steinberg dithering を用いたカラー印刷
+
+	(例) tiger.ps をモノクロ・dithering 使用で出力
+	    gs -q -dNOPAUSE -sDEVICE=md2k -dBitsPerPixel=8 \
+	       -sOutputFile=- tiger.ps -c quit | lpr
+
+	-dColor, -dDither を使用しても同様の設定が可能です。
+		-dColor=false	モノクロ
+		-dColor(=true)	カラー
+		-dDither=false	ditheringしない
+		-dDither(=true)	dithering を使用
+
+	* カラー印刷を選択しても PS ファイルがモノクロの場合には、
+	  CMYのインクリボンは使用しません。
+	* dithering を使用すれば、写真等の画像はより綺麗に印刷されるはず
+	  ですが、画像によっては使用しない方が綺麗な場合もあります。
+
+  解像度の選択
+	-r300		300dpi
+	-r600		600dpi (default)
+	-r1200x600	1200x600dpi
+
+	(例) 1200x600dpi で出力
+	    gs -q -dNOPAUSE -sDEVICE=md2k -r1200x600 -dBitsPerPixel=1 \
+	       -sOutputFile=- tiger.ps -c quit | lpr
+
+	* MD-2000 でも、カラー 1200x600dpi が一応指定できますが、
+	  画質はほとんど 600dpi と変わりません。
+
+  用紙指定
+	  用紙の種類を指定します。Windows のドライバと異なり、
+	解像度は用紙の種類から自動的に決定されません。
+	解像度は -r オプションで別途指定して下さい。
+	(注) アイロンシール、レベカフリー等、動作確認していないものも
+	     あります。
+
+	-sMediaType=PlainPaper		コピー紙 (default)
+	-sMediaType=IronSeal		アイロンシール
+	-sMediaType=RebecaFree		レベカフリー
+	-sMediaType=CardBoard		厚紙
+	-sMediaType=PostCard		はがき
+	-sMediaType=FinePaper		上質紙
+	-sMediaType=CoatedFilm		光沢フィルム
+	-sMediaType=GlossyPaper		光沢紙
+	-sMediaType=TransparencyFilm	OHP用紙 (MD-2000 以外)
+	-sMediaType=OHP			  〃
+	-sMediaType=OHP_MD2000		OHP (MD-2000で専用インクを使用する場合)
+
+  用紙サイズの指定
+	-sPAPERSIZE=letter	レターサイズ
+	-sPAPERSIZE=a4		A4
+	-sPAPERSIZE=b5		B5
+	-sPAPERSIZE=postcard	はがき (*)
+	-d.MediaSize='{xx yy}'	任意サイズの指定 (xx, yy は 1/72 inch)
+
+	(*) gdevlips に含まれる gs_statd.ps のパッチを当てた場合に
+	    使用可能
+
+  色の濃度調整
+	dithering を使用する場合のみ、以下のoptionで濃淡の調整が可能。
+	数が大きい程、色が濃く出力されます。
+
+	-dBlack=0-2048		(default 1024)
+	-dCyan=0-2048		(default 1024)
+	-dMagenta=0-2048	(default 1024)
+	-dYellow=0-2048		(default 1024)
+
+	(例) シアンを濃く、マゼンタを薄く印刷する
+	    gs -q -dNOPAUSE -sDEVICE=md2k -dBitsPerPixel=32 \
+	       -dCyan=1200 -dMagenta=800 -sOutputFile=- tiger.ps -c quit
+
+  その他
+	-dManualFeed	手差し印刷する場合に指定します。
+
+	-dEcoBlack	エコブラック印刷を行います。
+			デバイスに md5k を使用した時のみ有効です。
+
+	-dReverseSide	裏面に印刷を行う際に、カール矯正を禁止するため
+			指定します。
+
+
+変更履歴
+---
+1999-05-02	Ver.0.2a
+	* MD-5000 用デバイス md5k の追加
+	* 用紙指定オプション -sMediaType の追加	            
+	* オプション -dManualFeed, -dEcoBlack, -dReverseSide の追加
+	* カラー・dithering の有無を -dBitsPerPixel で指定するよう
+	  README を変更
+	* -dColor, -dDither を int 型から bool 型に変更
+	* -dBitsPerPixel=1 の時、余白をスキップしないバグを修正
+	* 用紙サイズに letter を追加
+	* MD-2000 での OHP 出力に対応
+
+1999-04-18	Ver.0.1
+	* MD-2000 対応の gdevmd2k-0.1 を公開
+
+
+TODO (or NOT TODO ?)
+---
+* 光沢印刷など特殊なモードへの対応
+* dithering 時の画質の向上
+
+
+謝辞
+---
+    Floyd-Steinberg dithering のアルゴリズムは、George Cameron 氏の書かれた
+  gdevcdj.c を参考にさせて頂きました。
+
+    MD-5000 用ドライバ gdevalps の作者 Shinya Uminoさんからは
+  MD-5000 での動作報告と本ドライバに関する御意見を頂きました。
+  本ドライバの MD-5000 対応部分は gdevalps を元に作られました。
+
+    gdevlips の作者 大森紀人さんからはカラーの設定等について御意見を
+  頂きました。また、gs のオプションについては、gdevlips を参考にさせて
+  頂きました。
+
+    Kousuke Ikeda さん、福居毅至さん、清水健二さん、MIHIRA Yoshiro さん
+  からは、MD-1300, MD-1500, MD-4000 での動作報告を頂きました。
+  
+---
+  本ドライバに関する御意見、バグ報告、ALPS MD 各機種でのテスト結果等
+ありましたら、メールにて御連絡願います。
+
+檜垣 将和
+Masakazu Higaki	<higamasa@dd.mbn.or.jp>
