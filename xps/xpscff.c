@@ -222,10 +222,6 @@ xps_read_cff_dict(byte *p, byte *e, xps_font_t *font, gs_font_type1 *pt1)
 		pt1->FontMatrix.yy = args[3].fval;
 		pt1->FontMatrix.tx = args[4].fval;
 		pt1->FontMatrix.ty = args[5].fval;
-		dprintf6("cff font matrix %g %g %g %g %g %g\n",
-			args[0].fval, args[1].fval,
-			args[2].fval, args[3].fval,
-			args[4].fval, args[5].fval);
 	    }
 
 	    if (b0 == 5)
@@ -234,9 +230,6 @@ xps_read_cff_dict(byte *p, byte *e, xps_font_t *font, gs_font_type1 *pt1)
 		pt1->FontBBox.p.y = args[1].fval;
 		pt1->FontBBox.q.x = args[2].fval;
 		pt1->FontBBox.q.y = args[3].fval;
-		dprintf4("cff font bbox %g %g %g %g\n",
-			args[0].fval, args[1].fval,
-			args[2].fval, args[3].fval);
 	    }
 
 	    if (b0 == 20)
@@ -610,7 +603,6 @@ private int
 xps_post_callback_glyph_outline(gs_font *font, int wmode, gs_glyph glyph,
 	const gs_matrix *pmat, gx_path *ppath, double sbw[4])
 {
-    dprintf2("glyph_outline wmode=%d glyph=%d\n", wmode, glyph);
     return -1;
 }
 
@@ -637,8 +629,6 @@ xps_post_callback_glyph_data(gs_font_type1 * pfont, gs_glyph glyph, gs_glyph_dat
     byte *s, *e;
     byte *p;
 
-    dprintf1("get glyph data for %d\n", glyph);
-
     p = xps_find_cff_index(font->charstrings, font->cffend, glyph, &s, &e);
     if (!p)
 	return gs_rethrow(-1, "cannot find charstring");
@@ -655,8 +645,6 @@ xps_post_callback_subr_data(gs_font_type1 * pfont,
     xps_font_t *font = pfont->client_data;
     byte *s, *e;
     byte *p;
-
-    dprintf2("get %s subr data for %d\n", global?"global":"local", subr_num);
 
     if (global)
     {
@@ -762,8 +750,6 @@ xps_post_callback_build_char(gs_text_enum_t *ptextenum, gs_state *pgs,
     const gs_rect *pbbox;
     float sbw[4], w2[6];
     int code;
-
-    dprintf1("build char cff %d\n", glyph);
 
     // get the metrics
     w2[0] = 0;

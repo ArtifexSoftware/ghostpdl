@@ -16,8 +16,6 @@ int xps_parse_canvas(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 
     gs_matrix transform;
 
-    dputs("Begin Canvas!\n");
-
     transform_att = xps_att(root, "RenderTransform");
     clip_att = xps_att(root, "Clip");
     opacity_att = xps_att(root, "Opacity");
@@ -90,8 +88,6 @@ int xps_parse_canvas(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	xps_free_resource_dictionary(ctx, new_dict);
     }
 
-    dputs("Finish Canvas!\n");
-
     return 0;
 }
 
@@ -135,6 +131,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	gs_c_param_list list;
 
 	gs_c_param_list_write(&list, mem);
+
 	fv[0] = atoi(width_att) / 96.0 * 72.0;
 	fv[1] = atoi(height_att) / 96.0 * 72.0;
 	fa.persistent = false;
@@ -144,7 +141,6 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	dprintf2("setting media size = %g x %g\n", fv[0], fv[1]);
 
 	code = param_write_float_array((gs_param_list *)&list, ".MediaSize", &fa);
-	gs_c_param_list_write(&list, mem);
 	if ( code >= 0 )
 	{ 
 	    gs_c_param_list_read(&list);

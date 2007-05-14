@@ -78,16 +78,13 @@ xps_deobfuscate_font_resource(xps_context_t *ctx, xps_part_t *part)
     for (i = 0; i < 16; i++)
 	key[i] = unhex(buf[i*2+0]) * 16 + unhex(buf[i*2+1]);
 
-    dputs("KEY ");
     for (i = 0; i < 16; i++)
     {
-	dprintf1("%02x", key[i]);
 	part->data[i] ^= key[15-i];
 	part->data[i+16] ^= key[15-i];
     }
-    dputs("\n");
 
-    {
+    if (0) {
 	static int id = 0;
 	char buf[25];
 	FILE *fp;

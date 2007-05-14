@@ -94,15 +94,30 @@ xps_parse_visual_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
     if (viewport_att)
 	xps_parse_rectangle(ctx, viewport_att, &viewport);
 
+    tile_mode = TILE_NONE;
+    if (tile_mode_att)
+    {
+	if (!strcmp(tile_mode_att, "None"))
+	    tile_mode = TILE_NONE;
+	if (!strcmp(tile_mode_att, "Tile"))
+	    tile_mode = TILE_TILE;
+	if (!strcmp(tile_mode_att, "FlipX"))
+	    tile_mode = TILE_FLIP_X;
+	if (!strcmp(tile_mode_att, "FlipY"))
+	    tile_mode = TILE_FLIP_Y;
+	if (!strcmp(tile_mode_att, "FlipXY"))
+	    tile_mode = TILE_FLIP_X_Y;
+    }
+
     scalex = (viewport.q.x - viewport.p.x) / (viewbox.q.x - viewbox.p.x);
     scaley = (viewport.q.y - viewport.p.y) / (viewbox.q.y - viewbox.p.y);
+
+#if 0 /* can't get this to work */
 
     dprintf6("xps_parse_visual_brush [%g %g %g %g] scale=%g,%g\n",
 	    transform.xx, transform.xy,
 	    transform.yx, transform.yy,
 	    scalex, scaley);
-
-#if 0 /* can't get this to work */
 
     {
 	struct userdata foo;
@@ -162,6 +177,8 @@ xps_parse_visual_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
 	gs_fill(ctx->pgs);
     }
 
+    dputs("finished visual brush\n");
+
 #else
 
     gs_gsave(ctx->pgs);
@@ -170,21 +187,6 @@ xps_parse_visual_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
     gs_translate(ctx->pgs, viewport.p.x, viewport.p.y);
     gs_scale(ctx->pgs, scalex, scaley);
     gs_translate(ctx->pgs, -viewbox.p.x, viewbox.p.y);
-
-    tile_mode = TILE_NONE;
-    if (tile_mode_att)
-    {
-	if (!strcmp(tile_mode_att, "None"))
-	    tile_mode = TILE_NONE;
-	if (!strcmp(tile_mode_att, "Tile"))
-	    tile_mode = TILE_TILE;
-	if (!strcmp(tile_mode_att, "FlipX"))
-	    tile_mode = TILE_FLIP_X;
-	if (!strcmp(tile_mode_att, "FlipY"))
-	    tile_mode = TILE_FLIP_Y;
-	if (!strcmp(tile_mode_att, "FlipXY"))
-	    tile_mode = TILE_FLIP_X_Y;
-    }
 
     if (tile_mode == TILE_NONE)
 	tile_x = tile_y = 1;
@@ -229,8 +231,6 @@ xps_parse_visual_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
     gs_grestore(ctx->pgs);
 
 #endif
-
-    dputs("finished visual brush\n");
 
     return 0;
 }

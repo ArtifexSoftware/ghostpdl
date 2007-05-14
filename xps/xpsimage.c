@@ -138,8 +138,6 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 	resx = image.xres / 96.0;
 	resy = image.yres / 96.0;
 
-	dprintf2("  image resolution = %d x %d\n", image.xres, image.yres);
-
 	gs_make_identity(&transform);
 	if (transform_att)
 	    xps_parse_render_transform(ctx, transform_att, &transform);
@@ -147,28 +145,15 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 	    xps_parse_matrix_transform(ctx, transform_tag, &transform);
 	gs_concat(ctx->pgs, &transform);
 
-	dprintf6("  image transform [%g %g %g %g %g %g]\n",
-		transform.xx, transform.xy,
-		transform.yx, transform.yy,
-		transform.tx, transform.ty);
-
 	viewbox.p.x = 0.0; viewbox.p.y = 0.0;
 	viewbox.q.x = 1.0; viewbox.q.y = 1.0;
 	if (viewbox_att)
 	    xps_parse_rectangle(ctx, viewbox_att, &viewbox);
 
-	dprintf4("  image viewbox = [%g %g %g %g]\n",
-		viewbox.p.x, viewbox.p.y,
-		viewbox.q.x, viewbox.q.y);
-
 	viewport.p.x = 0.0; viewport.p.y = 0.0;
 	viewport.q.x = 1.0; viewport.q.y = 1.0;
 	if (viewport_att)
 	    xps_parse_rectangle(ctx, viewport_att, &viewport);
-
-	dprintf4("  image viewport = [%g %g %g %g]\n",
-		viewport.p.x, viewport.p.y,
-		viewport.q.x, viewport.q.y);
 
 	viewbox.p.x *= resx; viewbox.p.y *= resy;
 	viewbox.q.x *= resx; viewbox.q.y *= resy;

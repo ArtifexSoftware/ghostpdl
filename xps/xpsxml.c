@@ -182,6 +182,8 @@ xps_parse_xml(xps_context_t *ctx, char *buf, int len)
 	return NULL;
     }
 
+    XML_ParserFree(xp);
+
     return parser.root;
 }
 
