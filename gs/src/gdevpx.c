@@ -54,11 +54,8 @@ typedef struct gx_device_pclxl_s {
     pxeMediaSize_t media_size;
     bool ManualFeed;            /* map ps setpage commands to pxl */
     bool ManualFeed_set;         
-    int MediaPosition;		/* MediaPosition attribute */
-    int MediaPosition_set;
-    int page;			/* Page number starting at 0 */
-    bool Duplex;		/* Duplex attribute */
-    bool Tumble;		/* Tumble attribute */
+    int  MediaPosition;         
+    int  MediaPosition_set;
     gx_path_type_t fill_rule;	/* ...winding_number or ...even_odd  */
     gx_path_type_t clip_rule;	/* ditto */
     pxeColorSpace_t color_space;
@@ -783,12 +780,6 @@ pclxl_beginpage(gx_device_vector * vdev)
     stream *s = vdev->strm;
     byte media_source = eAutoSelect; /* default */
 
-    xdev->page ++;
-
-    errprintf("PAGE: %d %d\n", xdev->page, xdev->NumCopies);
-    errprintf("INFO: Printing page %d...\n", xdev->page);
-    errflush();
-
     px_write_page_header(s, (const gx_device *)vdev);
 
     if (xdev->ManualFeed_set && xdev->ManualFeed) 
@@ -796,9 +787,7 @@ pclxl_beginpage(gx_device_vector * vdev)
     else if (xdev->MediaPosition_set && xdev->MediaPosition >= 0 )
 	media_source = xdev->MediaPosition;
  
-    px_write_select_media(s, (const gx_device *)vdev, &xdev->media_size,
-			  &media_source,
-                          xdev->page, xdev->Duplex, xdev->Tumble);
+    px_write_select_media(s, (const gx_device *)vdev, &xdev->media_size, &media_source );
 
     spputc(s, pxtBeginPage);
     return 0;
@@ -1137,12 +1126,6 @@ pclxl_open_device(gx_device * dev)
 					 VECTOR_OPEN_FILE_SEQUENTIAL);
     if (code < 0)
 	return code;
-
-    xdev->page = 0;
-    xdev->Duplex = false;
-    xdev->MediaPosition = 0;
-    xdev->Tumble = false;
-
     pclxl_page_init(xdev);
     px_write_file_header(vdev->strm, dev);
     xdev->media_size = pxeMediaSize_next;	/* no size selected */
@@ -1627,100 +1610,60 @@ pclxl_image_end_image(gx_image_enum_common_t * info, bool draw_last)
     return code;
 }
 
-/*
- * 'pclxl_get_params()' - Get pagedevice parameters.
- */
-
-private int				/* O - Error status */
-pclxl_get_params(gx_device     *dev,	/* I - Device info */
-                 gs_param_list *plist)	/* I - Parameter list */
+/* Get parameters. */
+int
+pclxl_get_params(gx_device *dev, gs_param_list *plist)
 {
-  gx_device_pclxl	*xdev;		/* PCL XL device */
-  int			code;		/* Return code */
+    gx_device_pclxl *pdev = (gx_device_pclxl *) dev;
+    int code = gdev_vector_get_params(dev, plist);
 
+    if (code < 0)
+	return code;
 
- /*
-  * First process the "standard" page device parameters...
-  */
-
-  if ((code = gdev_vector_get_params(dev, plist)) < 0)
-    return (code);
-
- /*
-  * Then write the PCL-XL parameters...
-  */
-
-  xdev = (gx_device_pclxl *)dev;
-
-  if ((code = param_write_bool(plist, "Duplex", &(xdev->Duplex))) < 0)
-    return (code);
-
-  if ((code = param_write_int(plist, "MediaPosition",
-                              &(xdev->MediaPosition))) < 0)
-    return (code);
-
-  if ((code = param_write_bool(plist, "Tumble", &(xdev->Tumble))) < 0)
-    return (code);
-
-  return (0);
+     if (code >= 0)
+	code = param_write_bool(plist, "ManualFeed", &pdev->ManualFeed);
+    return code;
 }
 
-
-/*
- * 'pclxl_put_params()' - Set pagedevice parameters.
- */
-
-private int				/* O - Error status */
-pclxl_put_params(gx_device     *dev,	/* I - Device info */
-                 gs_param_list *plist)	/* I - Parameter list */
+/* Put parameters. */
+int
+pclxl_put_params(gx_device * dev, gs_param_list * plist)
 {
-  gx_device_pclxl	*xdev;		/* PCL XL device */
-  int			code;		/* Error code */
-  int			intval;		/* Integer value */
-  bool			boolval;	/* Boolean value */
+    gx_device_pclxl *pdev = (gx_device_pclxl *) dev;
+    int code = 0;
+    bool ManualFeed;
+    bool ManualFeed_set = false;
+    int MediaPosition;
+    bool MediaPosition_set = false;
 
+    code = param_read_bool(plist, "ManualFeed", &ManualFeed);
+    if (code == 0) 
+	ManualFeed_set = true;
+    if (code >= 0) {
+	code = param_read_int(plist, "%MediaSource", &MediaPosition);
+	if (code == 0) 
+	    MediaPosition_set = true;
+	else if (code < 0) {
+	    if (param_read_null(plist, "%MediaSource") == 0) {
+		code = 0;
+	    }
+	}
+    }
 
- /*
-  * Process PCL-XL driver parameters...
-  */
+    /* note this handles not opening/closing the device */
+    code = gdev_vector_put_params(dev, plist);
+    if (code < 0)
+	return code;
 
-  xdev = (gx_device_pclxl *)dev;
-
-#define intoption(name, sname, type) \
-  if ((code = param_read_int(plist, sname, &intval)) < 0) \
-  { \
-    param_signal_error(plist, sname, code); \
-    return (code); \
-  } \
-  else if (code == 0) \
-  { \
-    xdev->name = (type)intval; \
-  }
-
-#define booloption(name, sname) \
-  if ((code = param_read_bool(plist, sname, &boolval)) < 0) \
-  { \
-    if ((code = param_read_null(plist, sname)) < 0) \
-    { \
-      param_signal_error(plist, sname, code); \
-      return (code); \
-    } \
-    if (code == 0) \
-      xdev->name = false; \
-  } \
-  else if (code == 0) \
-    xdev->name = (bool)boolval;
-
-  booloption(Duplex, "Duplex")
-  intoption(MediaPosition, "MediaPosition", int)
-  booloption(Tumble, "Tumble")
-
- /*
-  * Then process standard page device parameters...
-  */
-
-  if ((code = gdev_vector_put_params(dev, plist)) < 0)
-    return (code);
-
-  return (0);
+    if (code >= 0) {
+	if (ManualFeed_set) {
+	    pdev->ManualFeed = ManualFeed;
+	    pdev->ManualFeed_set = true;
+	}
+	if (MediaPosition_set) {
+	    pdev->MediaPosition = MediaPosition;
+	    pdev->MediaPosition_set = true;
+	}
+    }
+    return code;
 }
