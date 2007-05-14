@@ -1598,6 +1598,9 @@ bind def
     % device supports OutputIntent parameter
     Trailer /Root oget /OutputIntents knownoget {
       {	% process all output profiles present
+        dup xcheck {
+          exec
+        } if
         dup length dict .copydict
 	dup /DestOutputProfile knownoget {
 	  PDFfile fileposition exch
