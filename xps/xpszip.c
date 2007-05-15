@@ -241,7 +241,7 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 
     if (ctx->zip_method == 8)
     {
-	dputs("zip: inflate data\n");
+	// dputs("zip: inflate data\n");
 
 	if (part->size >= part->capacity)
 	{
@@ -284,7 +284,7 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 	 * allowed by a brain damaged spec and written by a brain damaged company.
 	 */
 
-	dputs("zip: stored data of unknown size! (bad style, fix the generator)\n");
+	// dputs("zip: stored data of unknown size! (bad style, fix the generator)\n");
 
 	sixteen = ctx->zip_version < 45 ? 16 : 24;
 
@@ -326,7 +326,6 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 
 		    if (csize == usize && usize == part->size - part->interleave - sixteen)
 		    {
-			// TODO: this doesn't work with interleaved parts
 			if (crc32 == xps_crc32(0, part->data + part->interleave, part->size - part->interleave - sixteen))
 			{
 			    part->size -= sixteen;
@@ -352,7 +351,7 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 	 * and then capacity is set to the actual size of the data.
 	 */
 
-	dprintf1("zip: stored data of known size: %d\n", ctx->zip_uncompressed_size);
+	// dprintf1("zip: stored data of known size: %d\n", ctx->zip_uncompressed_size);
 
 	if (ctx->zip_uncompressed_size == 0)
 	    return 1;
@@ -410,8 +409,8 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		    else
 		    {
 			(void) read4(ctx, buf); /* crc32 */
-			(void) read8(ctx, buf); /* csize */
-			(void) read8(ctx, buf); /* usize */
+			(void) read4(ctx, buf); /* csize */
+			(void) read4(ctx, buf); /* usize */
 		    }
 		}
 		else if (signature == ZIP_CENTRAL_DIRECTORY_SIG)
