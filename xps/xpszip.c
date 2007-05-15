@@ -2,6 +2,7 @@
 
 #define ZIP_LOCAL_FILE_SIG 0x04034b50
 #define ZIP_DATA_DESC_SIG 0x08074b50
+#define ZIP_CENTRAL_DIRECTORY_SIG 0x02014b50
 
 static inline unsigned int
 scan4(byte *buf)
@@ -11,6 +12,12 @@ scan4(byte *buf)
     unsigned int c = buf[2];
     unsigned int d = buf[3];
     return a | (b << 8) | (c << 16) | (d << 24);
+}
+
+static inline unsigned int
+scan8(byte *buf)
+{
+    return scan4(buf); /* skip high bytes */
 }
 
 static inline int
@@ -38,6 +45,14 @@ read4(xps_context_t *ctx, stream_cursor_read *buf)
     int c = read1(ctx, buf);
     int d = read1(ctx, buf);
     return a | (b << 8) | (c << 16) | (d << 24);
+}
+
+static inline int
+read8(xps_context_t *ctx, stream_cursor_read *buf)
+{
+    int a = read4(ctx, buf);
+    int b = read4(ctx, buf);
+    return a; /* skip high bytes */
 }
 
 static inline void
@@ -70,6 +85,7 @@ xps_new_part(xps_context_t *ctx, char *name, int capacity)
 
     part->name = NULL;
     part->size = 0;
+    part->interleave = 0;
     part->capacity = 0;
     part->complete = 0;
     part->data = NULL;
@@ -141,8 +157,6 @@ xps_prepare_part(xps_context_t *ctx)
     int last_piece;
     int code;
 
-    dprintf1("unzipping part '%s'\n", ctx->zip_file_name);
-
     if (strstr(ctx->zip_file_name, ".piece"))
     {
 	piece = 1;
@@ -164,7 +178,7 @@ xps_prepare_part(xps_context_t *ctx)
 	    *p = 0;
     }
 
-    /* dprintf3("  to part '%s' (piece=%d) (last=%d)\n", ctx->zip_file_name, piece, last_piece); */
+    dprintf3("zip: preparing part '%s' (piece=%d) (last=%d)\n", ctx->zip_file_name, piece, last_piece);
 
     part = xps_find_part(ctx, ctx->zip_file_name);
     if (!part)
@@ -176,6 +190,8 @@ xps_prepare_part(xps_context_t *ctx)
     }
     else
     {
+	part->interleave = part->size; /* save where this interleaved part starts for checksums */
+
 	if (ctx->zip_uncompressed_size != 0)
 	{
 	    part->capacity = part->size + ctx->zip_uncompressed_size; /* grow to exact size */
@@ -183,6 +199,7 @@ xps_prepare_part(xps_context_t *ctx)
 	    if (!part->data)
 		return gs_throw(-1, "cannot extend part buffer");
 	}
+
 	ctx->last_part = part;
     }
 
@@ -216,11 +233,15 @@ static int
 xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 {
     xps_part_t *part = ctx->last_part;
+    unsigned int crc32;
+    unsigned int csize;
+    unsigned int usize;
     int code;
+    int sixteen;
 
     if (ctx->zip_method == 8)
     {
-	/* dputs("inflate data\n"); */
+	dputs("zip: inflate data\n");
 
 	if (part->size >= part->capacity)
 	{
@@ -263,7 +284,9 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 	 * allowed by a brain damaged spec and written by a brain damaged company.
 	 */
 
-	/* dputs("stored data of unknown size\n"); */
+	dputs("zip: stored data of unknown size! (bad style, fix the generator)\n");
+
+	sixteen = ctx->zip_version < 45 ? 16 : 24;
 
 	while (1)
 	{
@@ -276,22 +299,42 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 		    return gs_throw(-1, "out of memory");
 	    }
 
-	    if (part->size > 16)
-	    {
-		if (scan4(part->data + part->size - 16) == ZIP_DATA_DESC_SIG)
-		{
-		    unsigned int crc32 = scan4(part->data + part->size - 12);
-		    unsigned int csize = scan4(part->data + part->size - 8);
-		    unsigned int usize = scan4(part->data + part->size - 4);
+	    /* A workaround to handle this case is to look for signatures.
+	     * Check the crc32 just to be on the safe side.
+	     */
 
-		    if (csize == usize && usize == part->size - 16)
+	    if (part->size >= sixteen)
+	    {
+		if (scan4(part->data + part->size - sixteen) == ZIP_DATA_DESC_SIG)
+		{
+		    dprintf1("zip: found data descriptor signature in stream (size=%d)\n", part->size - part->interleave - sixteen);
+
+		    if (ctx->zip_version < 45)
 		    {
-			if (crc32 == xps_crc32(0, part->data, part->size - 16))
+			crc32 = scan4(part->data + part->size - 12);
+			csize = scan4(part->data + part->size - 8);
+			usize = scan4(part->data + part->size - 4);
+		    }
+		    else
+		    {
+			crc32 = scan4(part->data + part->size - 20);
+			csize = scan4(part->data + part->size - 16);
+			usize = scan4(part->data + part->size - 8);
+		    }
+
+		    dprintf3("zip: crc32=%08x csize=%d usize=%d\n", crc32, csize, usize);
+
+		    if (csize == usize && usize == part->size - part->interleave - sixteen)
+		    {
+			// TODO: this doesn't work with interleaved parts
+			if (crc32 == xps_crc32(0, part->data + part->interleave, part->size - part->interleave - sixteen))
 			{
-			    part->size -= 16;
+			    part->size -= sixteen;
 			    return 1;
 			}
 		    }
+
+		    dputs("zip: crc32 didn't match ... resuming\n");
 		}
 	    }
 
@@ -309,7 +352,7 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 	 * and then capacity is set to the actual size of the data.
 	 */
 
-	/* dprintf1("stored data of known size: %d\n", ctx->zip_uncompressed_size); */
+	dprintf1("zip: stored data of known size: %d\n", ctx->zip_uncompressed_size);
 
 	if (ctx->zip_uncompressed_size == 0)
 	    return 1;
@@ -340,7 +383,7 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 	{
 	case -1:
 	    /* at the end, or error condition. toss data. */
-	    /* dputs("at end of zip (or in fail mode)\n"); */
+	    // dputs("at end of zip (or in fail mode)\n");
 	    buf->ptr = buf->limit;
 	    return 1;
 
@@ -353,28 +396,34 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		signature = read4(ctx, buf);
 		if (signature == ZIP_LOCAL_FILE_SIG)
 		{
-		    dputs("local file signature\n");
+		    dputs("zip: local file signature\n");
 		}
 		else if (signature == ZIP_DATA_DESC_SIG)
 		{
-		    dputs("data desc signature\n");
-		    (void) read4(ctx, buf); /* crc32 */
-		    (void) read4(ctx, buf); /* csize */
-		    (void) read4(ctx, buf); /* usize */
+		    dputs("zip: data desc signature\n");
+		    if (ctx->zip_version >= 45)
+		    {
+			(void) read4(ctx, buf); /* crc32 */
+			(void) read8(ctx, buf); /* csize */
+			(void) read8(ctx, buf); /* usize */
+		    }
+		    else
+		    {
+			(void) read4(ctx, buf); /* crc32 */
+			(void) read8(ctx, buf); /* csize */
+			(void) read8(ctx, buf); /* usize */
+		    }
+		}
+		else if (signature == ZIP_CENTRAL_DIRECTORY_SIG)
+		{
+		    ctx->zip_state = -1;
+		    dputs("zip: central directory signature\n");
+		    return 0;
 		}
 		else
 		{
 		    ctx->zip_state = -1;
-
-		    if (signature == 0x02014b50) /* central directory */
-			return 0;
-		    if (signature == 0x05054b50) /* digital signature */
-			return 0;
-		    if (signature == 0x06054b50) /* end of central directory */
-			return 0;
-
-		    /* some other unknown part. */
-		    dprintf1("unknown signature 0x%x\n", signature);
+		    dprintf1("zip: unknown signature 0x%x\n", signature);
 		    return 0;
 		}
 	    }
@@ -387,7 +436,7 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		if (buf->limit - buf->ptr < 26)
 		    return 0;
 
-		(void) read2(ctx, buf); /* version */
+		ctx->zip_version = read2(ctx, buf);
 		ctx->zip_general = read2(ctx, buf);
 		ctx->zip_method = read2(ctx, buf);
 		(void) read2(ctx, buf); /* file time */
@@ -397,17 +446,25 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		ctx->zip_uncompressed_size = read4(ctx, buf);
 		ctx->zip_name_length = read2(ctx, buf);
 		ctx->zip_extra_length = read2(ctx, buf);
+
+		dprintf5("zip: version=%d general=0x%04x method=%d csize=%d usize=%d\n",
+			ctx->zip_version, ctx->zip_general, ctx->zip_method,
+			ctx->zip_compressed_size, ctx->zip_uncompressed_size);
 	    }
 	    ctx->zip_state ++;
 
 	case 2: /* file name */
-	    if (buf->limit - buf->ptr < ctx->zip_name_length)
-		return 0;
-	    if (ctx->zip_name_length >= sizeof(ctx->zip_file_name) + 2)
-		return gs_throw(-1, "part name too long");
-	    ctx->zip_file_name[0] = '/';
-	    readall(ctx, buf, (byte*)ctx->zip_file_name + 1, ctx->zip_name_length);
-	    ctx->zip_file_name[ctx->zip_name_length + 1] = 0;
+	    {
+		if (buf->limit - buf->ptr < ctx->zip_name_length)
+		    return 0;
+		if (ctx->zip_name_length >= sizeof(ctx->zip_file_name) + 2)
+		    return gs_throw(-1, "part name too long");
+		ctx->zip_file_name[0] = '/';
+		readall(ctx, buf, (byte*)ctx->zip_file_name + 1, ctx->zip_name_length);
+		ctx->zip_file_name[ctx->zip_name_length + 1] = 0;
+
+		dprintf1("zip: file name '%s'\n", ctx->zip_file_name);
+	    }
 	    ctx->zip_state ++;
 
 	case 3: /* extra field */
@@ -443,18 +500,6 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 	    }
 
 	case 5: /* end of part (data descriptor) */
-
-	    if (0 && ctx->zip_general & 8)
-	    {
-		dputs("data descriptor by flag\n");
-		if (buf->limit - buf->ptr < 16)
-		    return 0;
-		signature = read4(ctx, buf); /* crc32 ... or signature */
-		if (signature == ZIP_DATA_DESC_SIG)
-		    read4(ctx, buf); /* crc32 */
-		read4(ctx, buf); /* csize */
-		read4(ctx, buf); /* usize */
-	    }
 
 	    ctx->zip_state = 0;
 

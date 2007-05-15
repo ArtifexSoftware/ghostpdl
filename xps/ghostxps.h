@@ -150,6 +150,7 @@ struct xps_context_s
     xps_page_t *next_page; /* next page to process when its resources are completed */
 
     unsigned int zip_state;
+    unsigned int zip_version;
     unsigned int zip_general;
     unsigned int zip_method;
     unsigned int zip_name_length;
@@ -167,6 +168,7 @@ struct xps_part_s
 {
     char *name;
     int size;
+    int interleave; /* start of last interleave (for crc32 reasons) */
     int capacity;
     int complete;
     char *data;
