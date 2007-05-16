@@ -855,11 +855,10 @@ end readonly def
 		                          % filepos fontres stream
     1 index /FontDescriptor oget          % filepos fontres stream fd   
     /Flags get 4 and 0 ne                 % filepos fontres stream is_symbolic
-    dup {
-      2 index null exch getencoding       % filepos fontres stream is_symbolic Encoding
-    } {
-      2 index StandardEncoding exch getencoding
-    } ifelse
+    dup { //null } { StandardEncoding } ifelse        
+    3 index /Encoding known {
+      3 index getencoding
+    } if                                  % filepos fontres stream is_symbolic Encoding
     dup 4 index exch                      % filepos fontres stream is_symbolic Encoding fontres Encoding
     /prebuilt_encoding exch put           % filepos fontres stream is_symbolic Encoding
     .loadpdfttfont
