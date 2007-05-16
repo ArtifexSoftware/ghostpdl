@@ -639,6 +639,363 @@ R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *
     return 0;
 }
 
+typedef struct radial_shading_attrs_s {
+    double x0, y0;
+    double x1, y1;
+    double span[2][2];
+    double apex;
+    bool have_apex;
+    bool have_root[2]; /* ongoing contact, outgoing contact. */
+    bool outer_contact[2];
+    gs_point p[6]; /* 4 corners of the rectangle, p[4] = p[0], p[5] = p[1] */
+} radial_shading_attrs_t;
+
+#define Pw2(a) ((a)*(a))
+
+private void
+radial_shading_external_contact(radial_shading_attrs_t *rsa, int point_index, double t, double r0, double r1, bool at_corner, int root_index)
+{
+    double cx = rsa->x0 + (rsa->x1 - rsa->x0) * t;
+    double cy = rsa->y0 + (rsa->y1 - rsa->y0) * t;
+    double rx = rsa->p[point_index].x - cx;
+    double ry = rsa->p[point_index].y - cy;
+    double dx = rsa->p[point_index - 1].x - rsa->p[point_index].x;
+    double dy = rsa->p[point_index - 1].y - rsa->p[point_index].y;
+
+    if (at_corner) {
+	double Dx = rsa->p[point_index + 1].x - rsa->p[point_index].x;
+	double Dy = rsa->p[point_index + 1].y - rsa->p[point_index].y;
+	bool b1 = (dx * rx + dy * ry >= 0);
+	bool b2 = (Dx * rx + Dy * ry >= 0);
+
+	if (b1 & b2)
+	    rsa->outer_contact[root_index] = true;
+    } else {
+	if (rx * dy - ry * dx < 0)
+	    rsa->outer_contact[root_index] = true;
+    }
+}
+
+private void
+store_roots(radial_shading_attrs_t *rsa, const bool have_root[2], const double t[2], double r0, double r1, int point_index, bool at_corner)
+{
+    int i;
+
+    for (i = 0; i < 2; i++) {
+	bool good_root;
+
+	if (!have_root[i])
+	    continue;
+	good_root = (!rsa->have_apex || (rsa->apex <= 0 || r0 == 0 ? t[i] >= rsa->apex : t[i] <= rsa->apex));
+	if (good_root) {
+	    radial_shading_external_contact(rsa, point_index, t[i], r0, r1, at_corner, i);
+	    if (!rsa->have_root[i]) {
+		rsa->span[i][0] = rsa->span[i][1] = t[i];
+		rsa->have_root[i] = true;
+	    } else {
+		if (rsa->span[i][0] > t[i])
+		    rsa->span[i][0] = t[i];
+		if (rsa->span[i][1] < t[i])
+		    rsa->span[i][1] = t[i];
+	    }
+	}
+    }
+}
+
+private void
+compute_radial_shading_span_extended_side(radial_shading_attrs_t *rsa, double r0, double r1, int point_index)
+{
+    double cc, c;
+    bool have_root[2] = {false, false};
+    double t[2];
+    bool by_x = (rsa->p[point_index].x == rsa->p[point_index + 1].x);
+    int i;
+
+    /* Assuming x0 = y0 = 0 : 
+       cc * t +- (r0 + (r1 - r0) * t) == c 
+       t0 := (c - r0) / (cc + (r1 - r0))
+       t1 := (c + r0) / (cc - (r1 - r0))
+     */
+
+    if (by_x) {
+	c = rsa->p[point_index].x - rsa->x0;
+	cc = rsa->x1 - rsa->x0;
+    } else {
+	c = rsa->p[point_index].y - rsa->y0;
+	cc = rsa->y1 - rsa->y0;
+    }
+    t[0] = (c - r0) / (cc + r1 - r0);
+    t[1] = (c + r0) / (cc - r1 + r0);
+    if (t[0] > t[1]) {
+	t[0] = t[1];
+	t[1] = (c - r0) / (cc + r1 - r0);
+    }
+    for (i = 0; i < 2; i++) {
+	double d, d0, d1;
+
+	if (by_x) {
+	    d = rsa->y1 - rsa->y0 + r0 + (r1 - r0) * t[i];
+	    d0 = rsa->p[point_index].y;
+	    d1 = rsa->p[point_index + 1].y;
+	} else {
+	    d = rsa->x1 - rsa->x0 + r0 + (r1 - r0) * t[i];
+	    d0 = rsa->p[point_index].x;
+	    d1 = rsa->p[point_index + 1].x;
+	}
+	if (d1 > d0 ? d0 <= d && d <= d1 : d1 <= d && d <= d0)
+	    have_root[i] = true;
+    }
+    store_roots(rsa, have_root, t, r0, r1, point_index, false);
+}
+
+private int
+compute_radial_shading_span_extended_point(radial_shading_attrs_t *rsa, double r0, double r1, int point_index)
+{
+    double p1x = rsa->x1 - rsa->x0;
+    double p1y = rsa->y1 - rsa->y0;
+    double qx = rsa->p[point_index].x - rsa->x0;
+    double qy = rsa->p[point_index].y - rsa->y0;
+    double div = (Pw2(p1x) + Pw2(p1y) - Pw2(r0 - r1));
+    bool have_root[2] = {false, false};
+    double t[2];
+
+    if (fabs(div) < 1e-8) {
+	/* Linear equation. */
+	/* This case is always the ongoing eclipese contact. */
+	double cx = rsa->x0 - (rsa->x1 - rsa->x0) * r0 / (r1 - r0);
+	double cy = rsa->y0 - (rsa->y1 - rsa->y0) * r0 / (r1 - r0);
+	
+	t[0] = (Pw2(qx) + Pw2(qy))/(cx*qx + cy*qy) / 2;
+	have_root[0] = true;
+    } else {
+	/* Square equation. */
+	double desc2 = -((Pw2(qx) + Pw2(qy) - Pw2(r0))*(Pw2(p1x) + Pw2(p1y) - Pw2(r0 - r1))) + Pw2(p1x*qx + p1y*qy + r0*(-r0 + r1));
+
+	if (desc2 < 0) {
+	    return -1; /* The point is outside the shading coverage. 
+		          Do not shorten, because we didn't observe it in practice. */
+	} else {
+	    double desc1 = sqrt(desc2);
+
+	    if (div > 0) {
+		t[0] = (p1x*qx + p1y*qy + r0*(-r0 + r1) - desc1) / div;
+		t[1] = (p1x*qx + p1y*qy + r0*(-r0 + r1) + desc1) / div;
+	    } else {
+		t[0] = (p1x*qx + p1y*qy + r0*(-r0 + r1) + desc1) / div;
+		t[1] = (p1x*qx + p1y*qy + r0*(-r0 + r1) - desc1) / div;
+	    }
+	    have_root[0] = have_root[1] = true;
+	}
+    }
+    store_roots(rsa, have_root, t, r0, r1, point_index, true);
+    if (have_root[0] && have_root[1]) 
+	return 15;
+    if (have_root[0])
+	return 15 - 4;
+    if (have_root[1])
+	return 15 - 2;
+    return -1;
+}
+
+#undef Pw2
+
+private int
+compute_radial_shading_span_extended(radial_shading_attrs_t *rsa, double r0, double r1)
+{
+    int span_type0, span_type1;
+    
+    span_type0 = compute_radial_shading_span_extended_point(rsa, r0, r1, 1);
+    if (span_type0 == -1)
+	return -1;
+    span_type1 = compute_radial_shading_span_extended_point(rsa, r0, r1, 2);
+    if (span_type0 != span_type1)
+	return -1;
+    span_type1 = compute_radial_shading_span_extended_point(rsa, r0, r1, 3);
+    if (span_type0 != span_type1)
+	return -1;
+    span_type1 = compute_radial_shading_span_extended_point(rsa, r0, r1, 4);
+    if (span_type0 != span_type1)
+	return -1;
+    compute_radial_shading_span_extended_side(rsa, r0, r1, 1);
+    compute_radial_shading_span_extended_side(rsa, r0, r1, 2);
+    compute_radial_shading_span_extended_side(rsa, r0, r1, 3);
+    compute_radial_shading_span_extended_side(rsa, r0, r1, 4);
+    return span_type0;
+}
+
+private int
+compute_radial_shading_span(radial_shading_attrs_t *rsa, float x0, float y0, floatp r0, float x1, float y1, floatp r1, const gs_rect * rect)
+{
+    /* If the shading area is much larger than the path bbox,
+       we want to shorten the shading for a faster rendering.
+       If any point of the path bbox falls outside the shading area,
+       our math is not applicable, and we render entire shading.
+       If the path bbox is inside the shading area,
+       we compute 1 or 2 'spans' - the shading parameter intervals,
+       which covers the bbox. For doing that we need to resolve 
+       a square eqation by the shading parameter 
+       for each corner of the bounding box,
+       and for each side of the shading bbox.
+       Note the equation to be solved in the user space.
+       Since each equation gives 2 roots (because the points are
+       strongly inside the shading area), we will get 2 parameter intervals -
+       the 'lower' one corresponds to the first (ongoing) contact of
+       the running circle, and the second one corresponds to the last (outgoing) contact
+       (like in a sun eclipse; well our sun is rectangular).
+
+       Here are few exceptions. 
+
+       First, the equation degenerates when the distance sqrt((x1-x0)^2 + (y1-y0)^2)
+       appears equal to r0-r1. In this case the base circles do contact,
+       and the running circle does contact at the same point.
+       The equation degenerates to a linear one.
+       Since we don't want float precision noize to affect the result,
+       we compute this condition in 'fixed' coordinates.
+
+       Second, Postscript approximates any circle with 3d order beziers.
+       This approximation may give a 2% error.
+       Therefore using the precise roots may cause a dropout.
+       To prevetn them, we slightly modify the base radii.
+       However the sign of modification smartly depends
+       on the relative sizes of the base circles,
+       and on the contact number. Currently we don't want to
+       define and debug the smart optimal logic for that,
+       so we simply try all 4 variants for each source equation,
+       and use the union of intervals.
+
+       Third, we could compute which quarter of the circle
+       really covers the path bbox. Using it we could skip
+       rendering of uncovering quarters. Currently we do not
+       implement this optimization. The general tensor patch algorithm
+       will skip uncovering parts.
+
+       Fourth, when one base circle is (almost) inside the other, 
+       the parameter interval must include the shading apex.
+       To know that, we determine whether the contacting circle
+       is outside the rectangle (the "outer" contact),
+       or it is (partially) inside the rectangle.
+
+       At last, a small shortening of a shading won't give a
+       sensible speedup, but it may replace a symmetric function domain
+       with an assymmetric one, so that the rendering 
+       would be asymmetyric for a symmetric shading.
+       Therefore we do not perform a small sortening.
+       Instead we shorten only if the shading span
+       is much smaller that the shading domain.
+     */
+    const double extent = 1.02;
+    int span_type0, span_type1, span_type;
+
+    memset(rsa, 0, sizeof(*rsa));
+    rsa->x0 = x0;
+    rsa->y0 = y0;
+    rsa->x1 = x1;
+    rsa->y1 = y1;
+    rsa->p[0] = rsa->p[4] = rect->p;
+    rsa->p[1].x = rsa->p[5].x = rect->p.x;
+    rsa->p[1].y = rsa->p[5].y = rect->q.y;
+    rsa->p[2] = rect->q;
+    rsa->p[3].x = rect->q.x;
+    rsa->p[3].y = rect->p.y;
+    rsa->have_apex = any_abs(r1 - r0) > 1e-7 * any_abs(r1 + r0);
+    rsa->apex = (rsa->have_apex ? -r0 / (r1 - r0) : 0);
+    span_type0 = compute_radial_shading_span_extended(rsa, r0 / extent, r1 * extent);
+    if (span_type0 == -1)
+	return -1;
+    span_type1 = compute_radial_shading_span_extended(rsa, r0 / extent, r1 / extent);
+    if (span_type0 != span_type1)
+	return -1;
+    span_type1 = compute_radial_shading_span_extended(rsa, r0 * extent, r1 * extent);
+    if (span_type0 != span_type1)
+	return -1;
+    span_type1 = compute_radial_shading_span_extended(rsa, r0 * extent, r1 / extent);
+    if (span_type1 == -1)
+	return -1;
+    if (r0 < r1) {
+	if (rsa->have_root[0] && !rsa->outer_contact[0])
+	    rsa->span[0][0] = rsa->apex; /* Likely never happens. Remove ? */
+	if (rsa->have_root[1] && !rsa->outer_contact[1])
+	    rsa->span[1][0] = rsa->apex;
+    } else if (r0 > r1) {
+	if (rsa->have_root[0] && !rsa->outer_contact[0])
+	    rsa->span[0][1] = rsa->apex;
+	if (rsa->have_root[1] && !rsa->outer_contact[1])
+	    rsa->span[1][1] = rsa->apex; /* Likely never happens. Remove ? */
+    }
+    span_type = 0;
+    if (rsa->have_root[0] && rsa->span[0][0] < 0)
+	span_type |= 1;
+    if (rsa->have_root[1] && rsa->span[1][0] < 0)
+	span_type |= 1;
+    if (rsa->have_root[0] && rsa->span[0][1] > 0 && rsa->span[0][0] < 1)
+	span_type |= 2;
+    if (rsa->have_root[1] && rsa->span[1][1] > 0 && rsa->span[1][0] < 1)
+	span_type |= 4;
+    if (rsa->have_root[0] && rsa->span[0][1] > 1)
+	span_type |= 8;
+    if (rsa->have_root[1] && rsa->span[1][1] > 1)
+	span_type |= 8;
+    return span_type;
+}
+
+private bool
+shorten_radial_shading(float *x0, float *y0, floatp *r0, float *d0, float *x1, float *y1, floatp *r1, float *d1, double span_[2])
+{
+    double s0 = span_[0], s1 = span_[1], w;
+
+    if (s0 < 0)
+	s0 = 0;
+    if (s1 < 0)
+	s1 = 0;
+    if (s0 > 1)
+	s0 = 1;
+    if (s1 > 1)
+	s1 = 1;
+    w = s1 - s0;
+    if (w == 0)
+	return false; /* Don't pass a degenerate shading. */
+    if (w > 0.3)
+	return false; /* The span is big, don't shorten it. */
+    {	/* Do shorten. */
+	double R0 = *r0, X0 = *x0, Y0 = *y0, D0 = *d0;
+	double R1 = *r1, X1 = *x1, Y1 = *y1, D1 = *d1;
+
+	*r0 = R0 + (R1 - R0) * s0;
+	*x0 = X0 + (X1 - X0) * s0;
+	*y0 = Y0 + (Y1 - Y0) * s0;
+	*d0 = D0 + (D1 - D0) * s0;
+	*r1 = R0 + (R1 - R0) * s1;
+	*x1 = X0 + (X1 - X0) * s1;
+	*y1 = Y0 + (Y1 - Y0) * s1;
+	*d1 = D0 + (D1 - D0) * s1;
+    }
+    return true;
+}
+
+private bool inline
+is_radial_shading_large(double x0, double y0, double r0, double d0, double x1, double y1, double r1, const gs_rect * rect)
+{
+    const double d = hypot(x1 - x0, y1 - y0);
+    const double area0 = M_PI * r0 * r0 / 2;
+    const double area1 = M_PI * r1 * r1 / 2;
+    const double area2 = (r0 + r1) / 2 * d;
+    const double arbitrary = 8;
+    double areaX, areaY;
+
+    /* The shading area is not equal to area0 + area1 + area2
+       when one circle is (almost) inside the other.
+       We believe that the 'arbitrary' coefficient recovers that
+       when it is set greater than 2. */
+    /* If one dimension is large enough, the shading parameter span is wide. */
+    areaX = (rect->q.x - rect->p.x) * (rect->q.x - rect->p.x);
+    if (areaX * arbitrary < area0 + area1 + area2)
+	return true;
+    areaY = (rect->q.y - rect->p.y) * (rect->q.y - rect->p.y);
+    if (areaY * arbitrary < area0 + area1 + area2)
+	return true;
+    return false;
+}
+
 private int
 gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 			    const gs_fixed_rect *clip_rect,
@@ -650,6 +1007,8 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     floatp r0 = psh->params.Coords[2];
     float x1 = psh->params.Coords[3], y1 = psh->params.Coords[4];
     floatp r1 = psh->params.Coords[5];
+    radial_shading_attrs_t rsa;
+    int span_type; /* <0 - don't shorten, 1 - extent0, 2 - first contact, 4 - last contact, 8 - extent1. */
     int code;
     patch_fill_state_t pfs1;
 
@@ -663,11 +1022,51 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     pfs1.function_arg_shift = 1;
     pfs1.rect = *clip_rect;
     pfs1.maybe_self_intersecting = false;
-    code = R_extensions(&pfs1, psh, rect, d0, d1, psh->params.Extend[0], false);
-    if (code >= 0)
-	code = R_tensor_annulus(&pfs1, rect, x0, y0, r0, d0, x1, y1, r1, d1);
-    if (code >= 0)
-	code = R_extensions(&pfs1, psh, rect, d0, d1, false, psh->params.Extend[1]);
+    if (is_radial_shading_large(x0, y0, r0, d0, x1, y1, r1, rect))
+	span_type = compute_radial_shading_span(&rsa, x0, y0, r0, x1, y1, r1, rect);
+    else
+	span_type = -1;
+    if (span_type < 0) {
+	code = R_extensions(&pfs1, psh, rect, d0, d1, psh->params.Extend[0], false);
+	if (code >= 0)
+	    code = R_tensor_annulus(&pfs1, rect, x0, y0, r0, d0, x1, y1, r1, d1);
+	if (code >= 0)
+	    code = R_extensions(&pfs1, psh, rect, d0, d1, false, psh->params.Extend[1]);
+    } else {
+	bool second_interval = true; 
+
+	code = 0;
+	if (span_type & 1)
+	    code = R_extensions(&pfs1, psh, rect, d0, d1, psh->params.Extend[0], false);
+	if (code >= 0) {
+	    float X0 = x0, Y0 = y0, D0 = d0, X1 = x1, Y1 = y1, D1 = d1;
+	    floatp R0 = r0, R1 = r1;
+
+	    if ((span_type & 2) && (span_type & 4) && rsa.span[0][1] >= rsa.span[1][0]) {
+		double united[2];
+
+		united[0] = rsa.span[0][0];
+		united[1] = rsa.span[1][1];
+		shorten_radial_shading(&X0, &Y0, &R0, &D0, &X1, &Y1, &R1, &D1, united);
+		second_interval = false;
+		code = R_tensor_annulus(&pfs1, rect, X0, Y0, R0, D0, X1, Y1, R1, D1);
+	    } else if (span_type & 2) {
+		second_interval = shorten_radial_shading(&X0, &Y0, &R0, &D0, &X1, &Y1, &R1, &D1, rsa.span[0]);
+		code = R_tensor_annulus(&pfs1, rect, X0, Y0, R0, D0, X1, Y1, R1, D1);
+	    }
+	}
+	if (code >= 0 && second_interval) {
+	    if (span_type & 4) {
+		float X0 = x0, Y0 = y0, D0 = d0, X1 = x1, Y1 = y1, D1 = d1;
+		floatp R0 = r0, R1 = r1;
+
+		shorten_radial_shading(&X0, &Y0, &R0, &D0, &X1, &Y1, &R1, &D1, rsa.span[1]);
+		code = R_tensor_annulus(&pfs1, rect, X0, Y0, R0, D0, X1, Y1, R1, D1);
+	    }
+	}
+	if (code >= 0 && (span_type & 8))
+	    code = R_extensions(&pfs1, psh, rect, d0, d1, false, psh->params.Extend[1]);
+    }
     if (term_patch_fill_state(&pfs1))
 	return_error(gs_error_unregistered); /* Must not happen. */
     return code;
