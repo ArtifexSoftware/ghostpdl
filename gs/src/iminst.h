@@ -47,11 +47,6 @@ typedef struct gs_file_path_s {
     uint count;
 } gs_file_path;
 
-/* buffer sizes for stdio */
-#define STDIN_BUF_SIZE 128
-#define STDOUT_BUF_SIZE 128
-#define STDERR_BUF_SIZE 128
-
 /*
  * Here is where we actually define the structure of interpreter instances.
  * Clients should not reference any of the members.  Note that in order to
