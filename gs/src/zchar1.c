@@ -230,6 +230,7 @@ charstring_execchar_aux(i_ctx_t *i_ctx_p, gs_text_enum_t *penum, gs_font *pfont)
 	cxs.sbw[2] = 0;
 	cxs.sbw[3] = -penum->FontBBox_as_Metrics2.x; /* Sic! */
 	cxs.use_FontBBox_as_Metrics2 = true;
+	cxs.present = metricsNone;
     }
     /* Establish a current point. */
     code = gs_moveto(igs, 0.0, 0.0);
