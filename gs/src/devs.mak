@@ -1496,7 +1496,7 @@ $(GLOBJ)gdevpnga.$(OBJ) : $(GLSRC)gdevpnga.c $(png__h)\
 
 ### IMDI from Argyll
 
-IMDISRC=$(GLSRC)imdi
+IMDISRC=imdi
 IMDISRCDIR=$(IMDISRC)$(D)
 
 simdi_=$(GLOBJ)imdi.$(OBJ) $(GLOBJ)imdi_tab.$(OBJ)
