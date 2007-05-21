@@ -175,6 +175,10 @@ IJSSRCDIR=ijs
 IJSEXECTYPE=win
 !endif
 
+!ifndef IMDISRCDIR
+IMDISRCDIR=imdi
+!endif
+
 # Define any other compilation flags.
 
 !ifndef CFLAGS

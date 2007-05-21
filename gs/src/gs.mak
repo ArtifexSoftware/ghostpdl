@@ -70,6 +70,8 @@
 #	    to properly compile in the jpeg2k library source
 #	ICCSRCDIR - the name of the ICC lib source dir, currently
 #	    always icclib (compiled in statically)
+#	IMDISRCDIR - the name of the IMDI lib source directory
+#	    generally 'imdi'
 #	DEVICE_DEVS - the devices to include in the executable.
 #	    See devs.mak for details.
 #	DEVICE_DEVS1...DEVICE_DEVS21 - additional devices, if the definition

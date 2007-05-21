@@ -1496,16 +1496,15 @@ $(GLOBJ)gdevpnga.$(OBJ) : $(GLSRC)gdevpnga.c $(png__h)\
 
 ### IMDI from Argyll
 
-IMDISRC=imdi
-IMDISRCDIR=$(IMDISRC)$(D)
+IMDISRC=$(IMDISRCDIR)$(D)
 
 simdi_=$(GLOBJ)imdi.$(OBJ) $(GLOBJ)imdi_tab.$(OBJ)
 
-$(GLOBJ)imdi.$(OBJ) : $(IMDISRCDIR)imdi.c
-	$(GLCC) $(GLO_)imdi.$(OBJ) $(C_) $(IMDISRCDIR)imdi.c
+$(GLOBJ)imdi.$(OBJ) : $(IMDISRC)imdi.c
+	$(GLCC) $(GLO_)imdi.$(OBJ) $(C_) $(IMDISRC)imdi.c
 
-$(GLOBJ)imdi_tab.$(OBJ) : $(IMDISRCDIR)imdi_tab.c
-	$(GLCC) $(GLO_)imdi_tab.$(OBJ) $(C_) $(IMDISRCDIR)/imdi_tab.c
+$(GLOBJ)imdi_tab.$(OBJ) : $(IMDISRC)imdi_tab.c
+	$(GLCC) $(GLO_)imdi_tab.$(OBJ) $(C_) $(IMDISRC)imdi_tab.c
 
 $(DD)simdi.dev : $(DEVS_MAK) $(simdi_)
 	$(SETMOD) $(DD)simdi $(simdi_)
@@ -1516,7 +1515,7 @@ wts_=$(GLOBJ)gdevwts.$(OBJ)
 
 $(GLOBJ)gdevwts.$(OBJ) : $(GLSRC)gdevwts.c $(PDEVH)\
  $(gscdefs_h) $(gscspace_h) $(gxgetbit_h) $(gxiparam_h) $(gxlum_h)
-	$(GLICCCC) -I$(IMDISRC) $(GLO_)gdevwts.$(OBJ) $(C_) $(GLSRC)gdevwts.c
+	$(GLICCCC) -I$(IMDISRCDIR) $(GLO_)gdevwts.$(OBJ) $(C_) $(GLSRC)gdevwts.c
 
 $(DD)wtscmyk.dev : $(DEVS_MAK) $(wts_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)wtscmyk $(wts_)

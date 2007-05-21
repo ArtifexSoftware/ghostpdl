@@ -181,6 +181,13 @@ JPXSRCDIR=jasper
 ICCSRCDIR=icclib
 !endif
 
+# Define the directory where the imdi library source is stored.
+# See devs.mak for more information
+
+!ifndef IMDISRCDIR
+IMDISRCDIR=imdi
+!endif
+
 # Define any other compilation flags.
 
 !ifndef CFLAGS
