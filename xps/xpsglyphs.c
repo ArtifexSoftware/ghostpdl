@@ -2,6 +2,18 @@
 
 #include <ctype.h>
 
+#define XPS_TEXT_BUFFER_SIZE 300
+
+typedef struct xps_text_buffer_s xps_text_buffer_t;
+
+struct xps_text_buffer_s
+{
+    int count;
+    float x[XPS_TEXT_BUFFER_SIZE + 1];
+    float y[XPS_TEXT_BUFFER_SIZE + 1];
+    gs_glyph g[XPS_TEXT_BUFFER_SIZE];
+};
+
 static inline int unhex(int i)
 {
     if (isdigit(i))
@@ -138,49 +150,38 @@ xps_select_best_font_encoding(xps_font_t *font)
  * Call text drawing primitives.
  */
 
-int xps_draw_font_glyph_to_path(xps_context_t *ctx, xps_font_t *font, int gid, float x, float y)
+int xps_flush_text_buffer(xps_context_t *ctx, xps_font_t *font,
+	xps_text_buffer_t *buf, int is_charpath)
 {
     gs_text_params_t params;
     gs_text_enum_t *textenum;
+    float x = buf->x[0];
+    float y = buf->y[0];
     int code;
+    int i;
 
-    params.operation = TEXT_FROM_SINGLE_GLYPH | TEXT_DO_FALSE_CHARPATH;
-    params.data.d_glyph = gid;
-    params.size = 1;
-
-    // this code is not functional. it needs a lot more matrix voodoo.
-
-    dputs("--draw glyph to path--\n");
+    // dprintf1("flushing text buffer (%d glyphs)\n", buf->count);
 
     gs_moveto(ctx->pgs, x, y);
 
-    if (gs_text_begin(ctx->pgs, &params, ctx->memory, &textenum) != 0)
-	return gs_throw(-1, "cannot gs_text_begin()");
-    if (gs_text_process(textenum) != 0)
-	return gs_throw(-1, "cannot gs_text_process()");
-    gs_text_release(textenum, "gslt font outline");
+    params.operation = TEXT_FROM_GLYPHS | TEXT_REPLACE_WIDTHS;
+    if (is_charpath)
+	params.operation |= TEXT_DO_FALSE_CHARPATH;
+    else
+	params.operation |= TEXT_DO_DRAW;
+    params.data.d_glyph = buf->g;
+    params.x_widths = buf->x + 1;
+    params.y_widths = buf->y + 1;
+    params.size = buf->count;
+    params.widths_size = buf->count;
 
-    xps_debug_path(ctx);
-    gs_fill(ctx->pgs);
-
-    dputs("--end--\n");
-
-    return 0;
-}
-
-int xps_fill_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, float x, float y)
-{
-    gs_text_params_t params;
-    gs_text_enum_t *textenum;
-    int code;
-
-    params.operation = TEXT_FROM_SINGLE_GLYPH | TEXT_DO_DRAW;
-    params.data.d_glyph = gid;
-    params.size = 1;
-
-    // dprintf3("filling glyph %d at %g,%g\n", gid, x, y);
-
-    gs_moveto(ctx->pgs, x, y);
+    for (i = 0; i < buf->count; i++)
+    {
+	buf->x[i] = buf->x[i] - x;
+	buf->y[i] = buf->y[i] - y;
+	x += buf->x[i];
+	y += buf->y[i];
+    }
 
     code = gs_text_begin(ctx->pgs, &params, ctx->memory, &textenum);
     if (code != 0)
@@ -192,9 +193,10 @@ int xps_fill_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, float x, 
 
     gs_text_release(textenum, "gslt font render");
 
+    buf->count = 0;
+
     return 0;
 }
-
 
 /*
  * Parse and draw an XPS <Glyphs> element.
@@ -286,6 +288,7 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
     // parse unicode and indices strings and encode glyphs
     // and calculate metrics for positioning
 
+    xps_text_buffer_t buf;
     xps_glyph_metrics_t mtx;
     float x = originx;
     float y = originy;
@@ -295,6 +298,8 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
 
     // dprintf1("string (%s)\n", us);
     // dprintf1("indices %.50s\n", is);
+
+    buf.count = 0;
 
     if (!unicode)
 	return gs_throw(-1, "no unicode in glyphs element");
@@ -358,10 +363,24 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
 
 	// TODO: is_sideways and bidi_level
 
+	if (buf.count < XPS_TEXT_BUFFER_SIZE)
+	{
+	    buf.x[buf.count] = x;
+	    buf.y[buf.count] = y;
+	    buf.g[buf.count] = glyph_index;
+	    buf.count ++;
+	}
+	else
+	{
+	    xps_flush_text_buffer(ctx, font, &buf, is_charpath);
+	}
+
+#if 0
 	if (is_charpath)
 	    xps_draw_font_glyph_to_path(ctx, font, glyph_index, x, y);
 	else
 	    xps_fill_font_glyph(ctx, font, glyph_index, x, y);
+#endif
 
 	if (is_sideways)
 	    y += advance * 0.01 * size;
@@ -369,6 +388,11 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
 	{
 	    x += advance * 0.01 * size;
 	}
+    }
+
+    if (buf.count > 0)
+    {
+	xps_flush_text_buffer(ctx, font, &buf, is_charpath);
     }
 }
 
