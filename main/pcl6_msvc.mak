@@ -45,6 +45,10 @@ ZSRCDIR=..\gs\zlib
 SHARE_ZLIB=0
 !endif
 
+!ifndef IMDISRCDIR
+IMDISRCDIR=..\gs\imdi
+!endif
+
 !ifndef COMPILE_INITS
 COMPILE_INITS=0
 !endif

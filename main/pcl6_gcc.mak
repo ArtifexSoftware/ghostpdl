@@ -39,6 +39,8 @@ PSRCDIR?=../gs/libpng
 # only relevant if not shared
 PNGCCFLAGS?=-DPNG_USER_MEM_SUPPORTED
 
+IMDISRCDIR?=../gs/imdi
+
 # Choose COMPILE_INITS=1 for init files and fonts in ROM (otherwise =0)
 COMPILE_INITS?=0
 
