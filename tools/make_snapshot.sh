@@ -16,7 +16,7 @@
 
 # cut off revision numbers for the changelogs
 ghostpcl_NEWSREV=2226
-ghostscript_NEWSREV=6781
+ghostscript_NEWSREV=7955
 
 # svn urls
 ghostpcl_SVNROOT=svn+ssh://svn.ghostscript.com/var/lib/svn-private/ghostpcl/trunk/ghostpcl
