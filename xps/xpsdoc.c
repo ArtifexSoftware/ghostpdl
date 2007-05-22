@@ -32,7 +32,7 @@ xps_new_type_map(xps_context_t *ctx, char *name, char *type)
 {
     xps_type_map_t *node;
 
-    dprintf2("adding type map from %s to %s\n", name, type);
+    // dprintf2("doc: adding type map from %s to %s\n", name, type);
 
     node = xps_alloc(ctx, sizeof(xps_type_map_t));
     if (!node)
@@ -100,7 +100,7 @@ xps_free_type_map(xps_context_t *ctx, xps_type_map_t *node)
 static void
 xps_add_override(xps_context_t *ctx, char *part_name, char *content_type)
 {
-    /* dprintf2("Override part=%s type=%s\n", part_name, content_type); */
+    // dprintf2("doc: override part=%s type=%s\n", part_name, content_type);
     if (ctx->overrides == NULL)
 	ctx->overrides = xps_new_type_map(ctx, part_name, content_type);
     else
@@ -110,7 +110,7 @@ xps_add_override(xps_context_t *ctx, char *part_name, char *content_type)
 static void
 xps_add_default(xps_context_t *ctx, char *extension, char *content_type)
 {
-    /* dprintf2("Default extension=%s type=%s\n", extension, content_type); */
+    // dprintf2("doc: default extension=%s type=%s\n", extension, content_type);
     if (ctx->defaults == NULL)
 	ctx->defaults = xps_new_type_map(ctx, extension, content_type);
     else
@@ -202,7 +202,7 @@ xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type)
     xps_relation_t *node;
     xps_part_t *part;
 
-    /* dprintf3("Relation source=%s target=%s type=%s\n", source, target, type); */
+    // dprintf3("doc: relation source=%s target=%s type=%s\n", source, target, type);
 
     part = xps_find_part(ctx, source);
 
@@ -294,7 +294,7 @@ xps_add_fixed_document(xps_context_t *ctx, char *name)
 	if (!strcmp(fixdoc->name, name))
 	    return 0;
 
-    dprintf1("adding fixdoc %s\n", name);
+    dprintf1("doc: adding fixdoc %s\n", name);
 
     fixdoc = xps_alloc(ctx, sizeof(xps_document_t));
     if (!fixdoc)
@@ -346,7 +346,7 @@ xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
 	if (!strcmp(page->name, name))
 	    return 0;
 
-    dprintf1("adding page %s\n", name);
+    dprintf1("doc: adding page %s\n", name);
 
     page = xps_alloc(ctx, sizeof(xps_page_t));
     if (!page)
@@ -577,6 +577,14 @@ xps_process_metadata(xps_context_t *ctx, xps_part_t *part)
  */
 
 static void
+xps_trim_url(char *path)
+{
+    char *p = strrchr(path, '#');
+    if (p)
+	*p = 0;
+}
+
+static void
 xps_parse_content_relations_imp(void *zp, char *name, char **atts)
 {
     xps_context_t *ctx = zp;
@@ -592,6 +600,7 @@ xps_parse_content_relations_imp(void *zp, char *name, char **atts)
 	    if (!strcmp(atts[i], "FontUri"))
 	    {
 		xps_absolute_path(path, ctx->pwd, atts[i+1]);
+		xps_trim_url(path);
 		xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
 	    }
 	}
@@ -604,6 +613,7 @@ xps_parse_content_relations_imp(void *zp, char *name, char **atts)
 	    if (!strcmp(atts[i], "ImageSource"))
 	    {
 		xps_absolute_path(path, ctx->pwd, atts[i+1]);
+		xps_trim_url(path);
 		xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
 	    }
 	}
@@ -616,6 +626,7 @@ xps_parse_content_relations_imp(void *zp, char *name, char **atts)
 	    if (!strcmp(atts[i], "Source"))
 	    {
 		xps_absolute_path(path, ctx->pwd, atts[i+1]);
+		xps_trim_url(path);
 		xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
 	    }
 	}
@@ -703,7 +714,7 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
 		    xps_part_t *startpart;
 
 		    ctx->start_part = rel->target;
-		    dprintf1("milestone: we have a start part '%s'\n", ctx->start_part);
+		    dprintf1("doc: we know the start part '%s'\n", ctx->start_part);
 
 		    startpart = xps_find_part(ctx, rel->target);
 		    if (startpart)
@@ -777,7 +788,10 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
 		    xps_part_t *respart;
 		    respart = xps_find_part(ctx, rel->target);
 		    if (!respart || !respart->complete)
+		    {
+			dprintf1("  page part resource %s not complete\n", rel->target);
 			have_resources = 0;
+		    }
 		}
 	    }
 

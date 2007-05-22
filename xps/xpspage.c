@@ -57,14 +57,14 @@ int xps_parse_canvas(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     if (clip_att)
     {
 	xps_parse_abbreviated_geometry(ctx, clip_att);
-	// gs_clip(ctx->pgs);
+	gs_clip(ctx->pgs);
 	gs_newpath(ctx->pgs);
     }
 
     if (clip_tag)
     {
 	xps_parse_path_geometry(ctx, dict, clip_tag);
-	// gs_clip(ctx->pgs);
+	gs_clip(ctx->pgs);
 	gs_newpath(ctx->pgs);
     }
 
@@ -100,7 +100,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     char *height_att;
     int code;
 
-    dprintf1("milestone: processing page %s\n", part->name);
+    dprintf1("processing page %s\n", part->name);
 
     root = xps_parse_xml(ctx, part->data, part->size);
     if (!root)
@@ -116,8 +116,6 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	return gs_throw(-1, "FixedPage missing required attribute: Width");
     if (!height_att)
 	return gs_throw(-1, "FixedPage missing required attribute: Height");
-
-    dprintf2("FixedPage width=%d height=%d\n", atoi(width_att), atoi(height_att));
 
     dict = NULL;
 
@@ -137,8 +135,6 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	fa.persistent = false;
 	fa.data = fv;
 	fa.size = 2;
-
-	dprintf2("setting media size = %g x %g\n", fv[0], fv[1]);
 
 	code = param_write_float_array((gs_param_list *)&list, ".MediaSize", &fa);
 	if ( code >= 0 )
