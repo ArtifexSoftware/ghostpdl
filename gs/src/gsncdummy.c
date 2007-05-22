@@ -58,6 +58,7 @@
 #include "stdpre.h"
 #include "math_.h"
 #include "memory_.h"
+#include "ierrors.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gscdefs.h"
