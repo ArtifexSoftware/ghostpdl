@@ -40,7 +40,10 @@ pdfdict begin
   drawopdict { } forall
   /endstream { exit } bind
   (%%EOF) cvn { exit } bind		% for filters
-	% PDF 1.1 operators
+  /obj { (   **** Warning: Content stream is not terminated by 'endstream'.\n)
+         pdfformaterror pop pop exit
+       } bind
+       	% PDF 1.1 operators
   /BX { /BXlevel BXlevel 1 add store } bind
   /EX { /BXlevel BXlevel 1 sub store } bind
   /PS { cvx exec } bind

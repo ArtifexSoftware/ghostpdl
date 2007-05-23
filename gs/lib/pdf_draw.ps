@@ -1292,8 +1292,9 @@ end
 		% XObject lacks Type and Subtype keys.  This is illegal,
 		% but Acrobat Reader accepts it.  The only way we can
 		% tell whether this is a Form or a set of sub-appearances
-		% is by testing for the stream Length key.
-      dup /Length known {
+		% is by testing for the stream Length or File key.
+                % If the stream lacks Length key, try File key.
+      dup /Length known 1 index /File known or {
       		% If this is a form then simply use it
         true
       } {
