@@ -142,10 +142,6 @@ currentdict /runpdfstring .undef
    GS_PDF_ProcSet begin
    pdfdict begin
    pdfopen begin
-   Trailer /Root oget /Pages oget /CropBox knownoget
-    { oforce_array normrect mark /CropBox 3 -1 roll /PAGES pdfmark
-    }
-   if
    /FirstPage where 
     { pop FirstPage dup pdfpagecount gt
       { (\nRequested FirstPage is greater than the number of pages in the file: ) print
@@ -1002,6 +998,45 @@ pdfdict begin
     } if
   } ifelse
 } bind def
+
+% Procedures to do the necessary transformations of view destinations
+% <PDF2PS_matrix> <rot> <view> -- <view'>
+/viewdestprocs 8 dict dup begin
+    /Fit  { exch pop exch pop } bind def
+    /FitH {
+	aload pop
+	0 4 -1 roll 1 and 0 eq { exch } if
+	4 -1 roll transform exch pop
+	2 array astore
+    } bind def
+    /FitV {
+	aload pop
+	0 4 -1 roll 1 and 0 ne { exch } if
+	4 -1 roll transform pop
+	2 array astore
+    } bind def
+    /FitB  /Fit  load def
+    /FitBH /FitH load def
+    /FitBV /FitV load def
+    /XYZ  {
+	aload pop
+	3 1 roll
+	2 copy 7 -1 roll 1 and 0 ne { exch } if	4 2 roll    % odd rotation switches x<->y
+	2 { dup null eq { pop 0 } if exch } repeat	    % replace nulls with 0
+	7 -1 roll transform				    % transform coordinates
+	2 { 3 -1 roll null eq { pop null } if exch } repeat % put the nulls back
+	3 -1 roll
+	4 array astore
+    } bind def
+    /FitR {
+	exch pop
+	aload pop
+	2 { 5 index transform 4 2 roll } repeat normrect_elems
+	5 array astore
+	exch pop
+    } bind def
+end readonly def
+
 /linkdest {		% <link|outline> linkdest
 			%   ([/Page <n>] /View <view> | ) <link|outline>
   dup /Dest knownoget
@@ -1010,18 +1045,30 @@ pdfdict begin
       dup null eq
        { pop }
        { dup 0 oget
-         dup type /dicttype eq {
-           dup /Type knownoget {
+	 false % don't have a page# and transformation matrix (yet)
+	 1 index type /dicttype eq {
+	   1 index /Type knownoget {
              /Page eq {
+	       pop % the "false" flag
+	       dup pdf_cached_PDF2PS_matrix exch
+	       dup /Rotate pget not { 0 } if 90 idiv exch
                pdfpagenumber
+               true % now we have a page# and a transformation matrix
              } if
            } if
          } if
-         dup type /integertype ne 
-           { pop }
-           { /Page exch 4 -2 roll }
-         ifelse
-	 dup length 1 sub 1 exch getinterval /View exch 3 -1 roll
+	 % stack: <link|outline> <dest>	( <PDF2PS_matrix> <rot>	<page#>	true  |	 <page> false )
+	 {
+	   /Page exch 6	2 roll
+	   % stack: [/Page <page#>] <link|outline> <dest> <PDF2PS_matrix> <rot>
+	   3 -1 roll dup length 1	sub 1 exch getinterval /View 4 1 roll
+	   % stack: [/Page <page#>] <link|outline> /View <PDF2PS_matrix> <rot> <view>
+	   //viewdestprocs 1 index 0 get get exec
+	   3 -1 roll
+	 } { 
+	   pop
+	   dup length 1 sub 1 exch getinterval /View exch 3 -1 roll
+	 } ifelse
        }
       ifelse
     }
@@ -1102,67 +1149,140 @@ end readonly def
   } if
 } bind def
 
-/.pdfshowpage_Install {	% <pagedict> [<prevproc>] .pdfshowpage_Install -
-  exch
-	% We would like to clip to the CropBox here, but the subsequent
-	% initgraphics would override it.  Instead, we have to handle it
-	% in graphicsbeginpage.
-  dup /CropBox pget dup {exch pop} if systemdict /UseCropBox known and {
-    /CropBox exch /CropBox pget pop
+% Compute the matrix that transforms the PDF->PS "default" user space
+/pdf_PDF2PS_matrix {	% <pdfpagedict> -- matrix
+  matrix currentmatrix matrix setmatrix exch
+  % stack: savedCTM <pdfpagedict>
+  dup /CropBox pget dup {exch pop} if //systemdict /UseCropBox known and {
+    /CropBox 2 copy pget pop
   } {
-    /MediaBox exch get_media_box
+    /MediaBox 1 index get_media_box
   } ifelse
-  % stack: [<prevproc>] /Crop|MediaBox <Crop|Media Box>
+  % stack: savedCTM <pdfpagedict> /Crop|MediaBox <Crop|Media Box>
   oforce_elems normrect_elems fix_empty_rect_elems 4 array astore
-  systemdict /PDFFitPage known {
+  //systemdict /PDFFitPage known {
     PDFDEBUG { (Fiting PDF to imageable area of the page.) = flush } if
     currentpagedevice /.HWMargins get aload pop
     currentpagedevice /PageSize get aload pop
+    % Adjust PageSize and .HWMargins for the page portrait/landscape orientation
+    2 copy gt
+    7 index aload pop 3 -1 roll sub 3 1 roll exch sub exch
+    10 index /Rotate pget not { 0 } if 90 idiv 1 and 0 ne { exch } if
+    gt
+    ne {
+      2 copy ne {
+        % rotate the .HWMargins
+        2 copy lt {
+	  6 2 roll 4 -1 roll 6 -2 roll
+        } {
+	  6 2 roll 4  1 roll 6 -2 roll
+        } ifelse
+        % rotate the page dimensions
+        exch
+      } if
+    } if
     3 -1 roll sub 3 1 roll exch sub exch
-    % stack: [<prevproc>] <pagedict> <Crop|Media Box> Xmin Ymin Xmax Ymax
+    % stack: savedCTM <pdfpagedict> <Crop|Media Box> Xmin Ymin Xmax Ymax
     PDFDEBUG { (    Translate up by [ ) print 3 index =print (, ) print 2 index =print ( ]) = flush } if
     3 index 3 index translate		% move origin up to imageable area
     2 index sub exch 3 index sub exch 4 2 roll pop pop
-	    % stack: [Box] XImageable YImageable
+	    % stack: savedCTM <pdfpagedict> [Box] XImageable YImageable
     2 index aload pop 2 index sub exch 3 index sub exch 4 2 roll pop pop
-	    % stack: [Box] XImageable YImageable XBox YBox
+    5 index /Rotate pget not { 0 } if 90 idiv 1 and 0 ne { exch } if
+	    % stack: savedCTM <pdfpagedict> [Box] XImageable YImageable XBox YBox
     3 -1 roll exch div 3 1 roll div .min
     PDFDEBUG { (    Scale by ) print dup = flush } if
-    dup scale
-  } if
+  } {
+    //systemdict /NoUserUnit .knownget not { false } if {
+      1
+    } {
+      1 index /UserUnit knownoget {
+        PDFDEBUG { (Scaling due to UserUnit by ) print dup = flush } if
+      } {
+        1
+      } ifelse
+    } ifelse
+  } ifelse
+  % stack: savedCTM <pdfpagedict> [Box] scale
+  dup scale
+  % Rotate according to /Rotate
+  aload pop boxrect
+  {
+    {     pop pop }
+    { -90 rotate pop neg 0 translate }
+    { 180 rotate neg exch neg exch translate }
+    {  90 rotate neg 0 exch translate pop }
+  }
+  5 index /Rotate pget not { 0 } if
+  PDFDEBUG { dup 0 ne { (Rotating by ) print dup =print ( degrees.) = flush } if } if
+  90 idiv 3 and get exec
   % Now translate to the origin given in the Crop|Media Box
-  dup 0 get neg exch 1 get neg translate
-  0 get
-  exec
+  exch neg exch neg translate
+  % stack: savedCTM <pdfpagedict>
+  pop
+  matrix currentmatrix exch setmatrix
+} bind def
+
+% Cache the matrix that transforms the PDF->PS "default" user space
+% into <pdfpagedict> under the key //PDF2PS_matrix_key, then return it
+/PDF2PS_matrix_key (PDF->PS matrix) cvn def
+/pdf_cached_PDF2PS_matrix {  % <pdfpagedict> -- <PDF2PS_matrix>
+  dup //PDF2PS_matrix_key .knownget {
+    exch pop
+  } {
+    dup dup pdf_PDF2PS_matrix //PDF2PS_matrix_key exch put
+    //PDF2PS_matrix_key get
+  } ifelse
+} bind def
+currentdict /PDF2PS_matrix_key undef
+
+/.pdfshowpage_Install {	% <pagedict> [<prevproc>] .pdfshowpage_Install -
+  exch pdf_cached_PDF2PS_matrix concat
+  0 get exec
 } bind def
 
 /pdfshowpage_setpage {	% <pagedict> pdfshowpage_setpage <pagedict>
   5 dict begin		% for setpagedevice
-	% Stack: pagedict
+	% Stack: pdfpagedict
   % UseCIEColor is always true for PDF; see the comment in runpdf above
   /UseCIEColor true def
-  currentpagedevice /Orientation 2 index /Rotate pget not { 0 } if 90 idiv
-	% Rotate specifies *clockwise* rotation!
-    neg 3 and def
-	% Stack: pagedict currentpagedict
-  1 index /CropBox pget dup {exch pop} if systemdict /UseCropBox known and {
-			% Set the page size.
-    1 index /CropBox pget pop /CropBox exch oforce_elems normrect_elems
-    fix_empty_rect_elems boxrect
-    2 array astore /PageSize exch def pop pop
+  /Orientation 0 def
+  currentpagedevice
+	% Stack: pdfpagedict currentpagedevicedict
+  1 index /CropBox pget dup {exch pop} if //systemdict /UseCropBox known and {
+    /CropBox 2 index /CropBox pget % will use the CropBox
   } {
-    1 index /MediaBox pget {
-			% Set the page size.
-      /MediaBox exch oforce_elems normrect_elems fix_empty_rect_elems boxrect
-      2 array astore /PageSize exch def pop pop
-    } if
+    /MediaBox 2 index get_media_box true % will use the MediaBox
   } ifelse
-  % Don't change the page size if we are going to fit the PDF to the page
-  systemdict /PDFFitPage known { currentdict /PageSize undef } if
+  {
+    oforce_elems normrect_elems fix_empty_rect_elems boxrect 4 2 roll pop pop
+    3 index /Rotate pget not { 0 } if 90 idiv 1 and 0 ne { exch } if
+    % stack: pdfpagedict currentpagedevicedict boxwidth boxheight
+    //systemdict /PDFFitPage known {
+      % Preserve page size,
+      % but choose portrait/landscape depending on box width:height ratio
+      % (if box width == height, select portrait orientation)
+      gt
+      1 index /PageSize get aload pop
+      2 copy gt
+      4 -1 roll ne { exch } if
+    } {
+      % Set the page size.
+      //systemdict /NoUserUnit .knownget not { false } if not {
+        3 index /UserUnit knownoget {
+          dup 4 -1 roll mul 3 1 roll mul
+        } if
+      } if
+    } ifelse
+    2 array astore /PageSize exch def
+  } {
+    pop % pops /Crop|MediaBox
+  } ifelse
   % Determine the number of spot colors used on the page.  Note: This searches
   % the pages resources.  It may be high if a spot color is in a resource but
   % is not actually used on the page.
   << /PageSpotColors 3 index countspotcolors >> setpagedevice
+
   % Let the device know if we will be using PDF 1.4 transparency.
   % The clist logic may need to adjust the size of bands.
   1 index pageusestransparency /PageUsesTransparency exch def
@@ -1198,32 +1318,13 @@ end readonly def
   .writepdfmarks {
 
 	% Copy the crop box.
-    dup /CropBox knownoget {
-      oforce_array normrect
-
-        % .pdfshowpage_Install translates the origin -
+    dup /CropBox pget {
+        % .pdfshowpage_Install transforms the user space -
         % do same here with the CropBox.
-
-      1 index /CropBox pget dup {exch pop} if systemdict /UseCropBox known and {
-        1 index /CropBox pget pop /CropBox exch
-      } {
-        1 index get_media_box /MediaBox exch
-      } ifelse
-      oforce_elems normrect_elems fix_empty_rect_elems 4 array astore
-      dup 0 get exch 1 get   % [] tx ty
-      2 index 0 get 2 index sub 3 index exch 0 exch put
-      2 index 2 get 2 index sub 3 index exch 2 exch put
-      2 index 1 get 1 index sub 3 index exch 1 exch put
-      2 index 3 get 1 index sub 3 index exch 3 exch put
-      pop pop
-
-	% If the page has been rotated, rotate the CropBox.
+      oforce_elems
+      2 { Page pdf_cached_PDF2PS_matrix transform 4 2 roll } repeat
+      normrect_elems /CropBox 5 1 roll fix_empty_rect_elems 4 array astore
       mark /CropBox 3 -1 roll
-      3 index /Rotate pget {
-	90 idiv 1 and 0 ne {
-	  aload pop 4 -2 roll exch 4 2 roll exch 4 array astore
-	} if
-      } if
       /PAGE pdfmark
     } if
 
@@ -1246,7 +1347,7 @@ end readonly def
 	%****** DOESN'T HANDLE COLOR TRANSFER YET ******
    /TRDefault currenttransfer def
   matrix currentmatrix 2 dict
-  2 index /CropBox knownoget {
+  2 index /CropBox pget {
     oforce_elems normrect_elems boxrect
     4 array astore 1 index /ClipRect 3 -1 roll put
   } if
@@ -1263,7 +1364,7 @@ end readonly def
       % If the page has a Group, enclose contents in transparency group.
       % (Adobe Tech Note 5407, sec 9.2)
       dup /Group knownoget {
-	1 index /CropBox knownoget {
+	1 index /CropBox pget {
           /CropBox exch
         } {
 	  1 index get_media_box /MediaBox exch
