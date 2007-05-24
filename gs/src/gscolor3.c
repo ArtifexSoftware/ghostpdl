@@ -26,6 +26,7 @@
 #include "gzpath.h"
 #include "gxpaint.h"		/* (requires gx_path) */
 #include "gxshade.h"
+#include "gscie.h"
 
 /* setsmoothness */
 int
@@ -64,6 +65,21 @@ gs_shfill(gs_state * pgs, const gs_shading_t * psh)
     gx_device_color devc;
     int code;
 
+    /* Must install the shading color space
+       tyo allow check_DeviceN_component_names initialize
+       the color component map.
+     */
+    /* Don't bother with saving the old color space, color,
+       and cie_joint_caches,
+       because .shfill is always called within gsave-grestore -
+       see gs/lib . */
+    code = gs_setcolorspace(pgs, psh->params.ColorSpace);
+    if (code < 0)
+	return 0;
+    if (psh->params.cie_joint_caches != NULL) {
+	pgs->cie_joint_caches = psh->params.cie_joint_caches;
+	rc_increment(pgs->cie_joint_caches);
+    }
     gs_pattern2_init(&pat);
     pat.Shading = psh;
     gs_make_identity(&imat);

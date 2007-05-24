@@ -1764,7 +1764,7 @@ $(PSOBJ)zcolor3.$(OBJ) : $(PSSRC)zcolor3.c $(GH)\
 
 $(PSOBJ)zshade.$(OBJ) : $(PSSRC)zshade.c $(memory__h) $(OP)\
  $(gscolor2_h) $(gscolor3_h) $(gscspace_h) $(gsfunc3_h)\
- $(gsptype2_h) $(gsshade_h) $(gsstruct_h) $(gsuid_h)\
+ $(gsptype2_h) $(gsshade_h) $(gsstruct_h) $(gsuid_h) $(gscie_h)\
  $(stream_h)\
  $(files_h)\
  $(ialloc_h) $(idict_h) $(idparam_h) $(ifunc_h) $(igstate_h) $(ipcolor_h)\

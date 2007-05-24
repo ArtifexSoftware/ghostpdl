@@ -334,7 +334,7 @@ cie_cache_joint(i_ctx_t *i_ctx_p, const ref_cie_render_procs * pcrprocs,
 		const gs_cie_common *pcie, gs_state * pgs)
 {
     const gs_cie_render *pcrd = gs_currentcolorrendering(pgs);
-    gx_cie_joint_caches *pjc = gx_currentciecaches(pgs);
+    gx_cie_joint_caches *pjc = gx_unshare_cie_caches(pgs);
     gs_ref_memory_t *imem = (gs_ref_memory_t *) gs_state_memory(pgs);
     ref pqr_procs;
     uint space;

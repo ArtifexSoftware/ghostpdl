@@ -90,6 +90,39 @@ cie_lookup_map3(cie_cached_vector3 * pvec,
 #  define cie_lookup_map3(pvec, pc, cname) cie_lookup_mult3(pvec, pc)
 #endif
 
+
+/*
+ * Test whether a CIE rendering has been defined; ensure that the joint
+ * caches are loaded.  Note that the procedure may return 1 if no rendering
+ * has been defined.
+ */
+private inline int 
+gx_cie_check_rendering_inline(const gs_color_space * pcs, frac * pconc, const gs_imager_state * pis)
+{
+    if (pis->cie_render == 0) {
+	/* No rendering has been defined yet: return black. */
+	pconc[0] = pconc[1] = pconc[2] = frac_0;
+	return 1;
+    }
+    if (pis->cie_joint_caches->status == CIE_JC_STATUS_COMPLETED) {
+	if (pis->cie_joint_caches->cspace_id != pcs->id)
+	    pis->cie_joint_caches->status = CIE_JC_STATUS_BUILT;
+    }
+    if (pis->cie_joint_caches->status != CIE_JC_STATUS_COMPLETED) {
+	int     code = gs_cie_jc_complete(pis, pcs);
+
+	if (code < 0)
+	    return code;
+    }
+    return 0;
+}
+int 
+gx_cie_check_rendering(const gs_color_space * pcs, frac * pconc, const gs_imager_state * pis)
+{
+    return gx_cie_check_rendering_inline(pcs, pconc, pis);
+}
+
+
 /* Render a CIEBasedDEFG color. */
 int
 gx_concretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
@@ -100,11 +133,16 @@ gx_concretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
     fixed hijk[4];
     frac abc[3];
     cie_cached_vector3 vec3;
+    int code;
 
     if_debug4('c', "[c]concretize DEFG [%g %g %g %g]\n",
 	      pc->paint.values[0], pc->paint.values[1],
 	      pc->paint.values[2], pc->paint.values[3]);
-    CIE_CHECK_RENDERING(pcs, pconc, pis, return 0);
+    code = gx_cie_check_rendering_inline(pcs, pconc, pis);
+    if (code < 0)
+	return code;
+    if (code == 1)
+	return 0;
 
     /*
      * Apply DecodeDEFG, including restriction to RangeHIJK and scaling to
@@ -158,11 +196,16 @@ gx_concretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
     fixed hij[3];
     frac abc[3];
     cie_cached_vector3 vec3;
+    int code;
 
     if_debug3('c', "[c]concretize DEF [%g %g %g]\n",
 	      pc->paint.values[0], pc->paint.values[1],
 	      pc->paint.values[2]);
-    CIE_CHECK_RENDERING(pcs, pconc, pis, return 0);
+    code = gx_cie_check_rendering_inline(pcs, pconc, pis);
+    if (code < 0)
+	return code;
+    if (code == 1)
+	return 0;
 
     /*
      * Apply DecodeDEF, including restriction to RangeHIJ and scaling to
@@ -286,6 +329,7 @@ gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
 {
     frac conc[4];
     cie_cached_vector3 vec3;
+    int code;
 
     if_debug3('c', "[c]remap CIEABC [%g %g %g]\n",
 	      pc->paint.values[0], pc->paint.values[1],
@@ -303,7 +347,11 @@ gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
     }
 #endif
 
-    CIE_CHECK_RENDERING(pcs, conc, pis, goto map3);
+    code = gx_cie_check_rendering_inline(pcs, conc, pis);
+    if (code < 0)
+	return code;
+    if (code == 1)
+	goto map3;
     vec3.u = float2cie_cached(pc->paint.values[0]);
     vec3.v = float2cie_cached(pc->paint.values[1]);
     vec3.w = float2cie_cached(pc->paint.values[2]);
@@ -348,11 +396,16 @@ gx_concretize_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
 {
     const gs_cie_abc *pcie = pcs->params.abc;
     cie_cached_vector3 vec3;
+    int code;
 
     if_debug3('c', "[c]concretize CIEABC [%g %g %g]\n",
 	      pc->paint.values[0], pc->paint.values[1],
 	      pc->paint.values[2]);
-    CIE_CHECK_RENDERING(pcs, pconc, pis, return 0);
+    code = gx_cie_check_rendering_inline(pcs, pconc, pis);
+    if (code < 0)
+	return code;
+    if (code == 1)
+	return 0;
 
     vec3.u = float2cie_cached(pc->paint.values[0]);
     vec3.v = float2cie_cached(pc->paint.values[1]);
@@ -372,9 +425,14 @@ gx_concretize_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
     const gs_cie_a *pcie = pcs->params.a;
     cie_cached_value a = float2cie_cached(pc->paint.values[0]);
     cie_cached_vector3 vlmn;
+    int code;
 
     if_debug1('c', "[c]concretize CIEA %g\n", pc->paint.values[0]);
-    CIE_CHECK_RENDERING(pcs, pconc, pis, return 0);
+    code = gx_cie_check_rendering_inline(pcs, pconc, pis);
+    if (code < 0)
+	return code;
+    if (code == 1)
+	return 0;
 
     /* Apply DecodeA and MatrixA. */
     if (!pis->cie_joint_caches->skipDecodeABC)

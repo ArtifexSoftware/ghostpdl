@@ -135,6 +135,7 @@ private void
 shading_params_init(gs_shading_params_t *params)
 {
     params->ColorSpace = 0;	/* must be set by client */
+    params->cie_joint_caches = 0;
     params->Background = 0;
     params->have_BBox = false;
     params->AntiAlias = false;

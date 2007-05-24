@@ -1307,6 +1307,20 @@ currentdict /PDF2PS_matrix_key undef
   pop currentdict end setpagedevice
 } bind def
 
+/.free_page_resources {   % - .free_page_resources -
+  Page /Resources pget {
+    /Shading knownoget {
+      { dup type /dicttype eq {
+          dup /.shading_dict known {
+            dup /.shading_dict undef
+          } if
+        } if
+        pop pop
+      } forall
+    } if
+  } if
+} bind def
+
 /pdfshowpage_finish {	% <pagedict> pdfshowpage_finish -
    save /PDFSave exch store
    /PDFdictstackcount countdictstack store
@@ -1387,6 +1401,7 @@ currentdict /PDF2PS_matrix_key undef
   } {
     showpagecontents
   } ifelse
+  .free_page_resources
   % todo: mixing drawing ops outside the device filter could cause
   % problems, for example with the pnga device.
   endpage

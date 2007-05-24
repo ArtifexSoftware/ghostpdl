@@ -2606,7 +2606,7 @@ gscolor3_h=$(GLSRC)gscolor3.h
 gsfunc3_h=$(GLSRC)gsfunc3.h $(gsdsrc_h) $(gsfunc_h)
 gsshade_h=$(GLSRC)gsshade.h\
  $(gsccolor_h) $(gscspace_h) $(gsdsrc_h) $(gsfunc_h) $(gsmatrix_h)\
- $(gxfixed_h)
+ $(gxfixed_h) $(gscie_h)
 gxshade_h=$(GLSRC)gxshade.h $(gsshade_h) $(gxfixed_h) $(gxmatrix_h) $(stream_h)
 gxshade4_h=$(GLSRC)gxshade4.h
 

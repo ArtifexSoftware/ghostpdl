@@ -24,6 +24,11 @@
 #include "gsmatrix.h"
 #include "gxfixed.h"
 
+#ifndef gx_cie_joint_caches_DEFINED
+#define gx_cie_joint_caches_DEFINED
+typedef struct gx_cie_joint_caches_s gx_cie_joint_caches;
+#endif
+
 /* ---------------- Types and structures ---------------- */
 
 /* Define the shading types. */
@@ -44,6 +49,7 @@ typedef enum {
  */
 #define gs_shading_params_common\
   gs_color_space *ColorSpace;\
+  gx_cie_joint_caches *cie_joint_caches; /* if ColorSpace is CIE or uses CIE. */\
   gs_client_color *Background;\
   bool have_BBox;\
   gs_rect BBox;\
@@ -94,9 +100,9 @@ struct gs_shading_s {
 };
 #define ShadingType(psh) ((psh)->head.type)
 #define private_st_shading()	/* in gsshade.c */\
-  gs_private_st_ptrs2(st_shading, gs_shading_t, "gs_shading_t",\
+  gs_private_st_ptrs3(st_shading, gs_shading_t, "gs_shading_t",\
     shading_enum_ptrs, shading_reloc_ptrs,\
-    params.ColorSpace, params.Background)
+    params.ColorSpace, params.cie_joint_caches, params.Background)
 
 /* Define Function-based shading. */
 typedef struct gs_shading_Fb_params_s {

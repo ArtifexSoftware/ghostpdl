@@ -227,6 +227,7 @@ gx_concretize_CIEICC(
     cie_cached_vector3      vlmn;
     gs_client_color         lcc = *pcc;
     int                     i, ncomps = picc_info->num_components;
+    int code;
 
     /* use the altenate space concretize if appropriate */
     if (picc == NULL)
@@ -237,7 +238,11 @@ gx_concretize_CIEICC(
                             pis );
 
     /* set up joint cache as required */
-    CIE_CHECK_RENDERING(pcs, pconc, pis, return 0);
+    code = gx_cie_check_rendering(pcs, pconc, pis);
+    if (code < 0)
+	return code;
+    if (code == 1)
+	return 0;
 
     /* verify and update the stream pointer */
     if (picc_info->file_id != (instrp->read_id | instrp->write_id))
