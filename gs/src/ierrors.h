@@ -41,9 +41,6 @@ extern const char *const gs_error_names[];
 #define e_dictstackunderflow (-4)
 #define e_execstackoverflow (-5)
 #define e_interrupt (-6)
-/* We also need to define gs_error_interrupt, for gpcheck.h. */
-#undef gs_error_interrupt
-#define gs_error_interrupt e_interrupt
 #define e_invalidaccess (-7)
 #define e_invalidexit (-8)
 #define e_invalidfileaccess (-9)

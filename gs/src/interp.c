@@ -17,6 +17,7 @@
 #include "string_.h"
 #include "ghost.h"
 #include "gsstruct.h"		/* for iastruct.h */
+#include "gserrors.h"		/* for gpcheck.h */
 #include "stream.h"
 #include "ierrors.h"
 #include "estack.h"

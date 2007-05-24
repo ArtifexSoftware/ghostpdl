@@ -2050,7 +2050,7 @@ $(PSOBJ)imain.$(OBJ) : $(PSSRC)imain.c $(GH) $(memory__h) $(string__h)\
 
 #****** $(CCINT) interp.c
 $(PSOBJ)interp.$(OBJ) : $(PSSRC)interp.c $(GH) $(memory__h) $(string__h)\
- $(gsstruct_h) $(idebug_h)\
+ $(gsstruct_h) $(gserror_h) $(idebug_h)\
  $(dstack_h) $(ierrors_h) $(estack_h) $(files_h)\
  $(ialloc_h) $(iastruct_h) $(icontext_h) $(icremap_h) $(iddict_h) $(igstate_h)\
  $(iname_h) $(inamedef_h) $(interp_h) $(ipacked_h)\
