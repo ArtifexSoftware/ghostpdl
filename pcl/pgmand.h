@@ -295,6 +295,7 @@ int hpgl_EW(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_FP(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_RA(hpgl_args_t *pargs, hpgl_state_t *pgls);
+int hpgl_RQ(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_RR(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_WG(hpgl_args_t *pargs, hpgl_state_t *pgls);
 
