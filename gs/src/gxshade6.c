@@ -747,7 +747,7 @@ draw_patch(const tensor_patch *p, bool interior, ulong rgbcolor)
 {
 #ifdef DEBUG
 #if 0 /* Disabled for a better view with a specific purpose. 
-	 Feel free to enable fo needed. */
+	 Feel free to enable if needed. */
     int i, step = (interior ? 1 : 3);
 
     for (i = 0; i < 4; i += step) {
@@ -806,9 +806,9 @@ curve_samples(patch_fill_state_t *pfs,
     {	
 #	if LAZY_WEDGES || QUADRANGLES
 	    int k1;
-	    fixed L = any_abs(pole[1].x - pole[0].x) + any_abs(pole[1].y - pole[0].y) +
-		      any_abs(pole[2].x - pole[1].x) + any_abs(pole[2].y - pole[1].y) +
-		      any_abs(pole[3].x - pole[2].x) + any_abs(pole[3].y - pole[2].y);
+	    fixed L = any_abs(pole[pole_step * 1].x - pole[pole_step * 0].x) + any_abs(pole[pole_step * 1].y - pole[pole_step * 0].y) +
+		      any_abs(pole[pole_step * 2].x - pole[pole_step * 1].x) + any_abs(pole[pole_step * 2].y - pole[pole_step * 1].y) +
+		      any_abs(pole[pole_step * 3].x - pole[pole_step * 2].x) + any_abs(pole[pole_step * 3].y - pole[pole_step * 2].y);
 #	endif
 
 #	if LAZY_WEDGES
@@ -3288,6 +3288,8 @@ fill_stripe(patch_fill_state_t *pfs, const tensor_patch *p)
     /* The stripe is flattened enough by V, so ignore inner poles. */
     int ku[4], kum, code;
 
+    if (0)
+	draw_patch(p, true, RGB(0, 255, 255)); /* Debug purpose only. */
     /* We would like to apply iterations for enumerating the kum curve parts,
        but the roundinmg errors would be too complicated due to
        the dependence on the direction. Note that neigbour
@@ -3525,6 +3527,8 @@ fill_patch(patch_fill_state_t *pfs, const tensor_patch *p, int kv, int kv0, int 
 	color_stack_ptr = reserve_colors_inline(pfs, c, 2);
 	if(color_stack_ptr == NULL)
 	    return_error(gs_error_unregistered); /* Must not happen. */
+	if (0)
+	    draw_patch(p, true, RGB(255, 255, 0)); /* Debug purpose only. */
 	split_patch(pfs, &s0, &s1, p, c);
 	if (kv0 <= 1) {
 	    q0.p = s0.pole[0][0];
