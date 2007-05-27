@@ -639,6 +639,27 @@ R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *
     return 0;
 }
 
+private int
+R_fill_rect_with_const_color(const patch_fill_state_t *pfs, const gs_fixed_rect *clip_rect, float t)
+{
+    patch_color_t pc;
+    const gs_color_space *pcs = pfs->direct_space;
+    gx_device_color dc;
+    int code;
+
+    code = gs_function_evaluate(pfs->Function, &t, pc.cc.paint.values);
+    if (code < 0)
+	return code;
+    pcs->type->restrict_color(&pc.cc, pcs);
+    code = patch_color_to_device_color(pfs, &pc, &dc);
+    if (code < 0)
+	return code;
+    return gx_fill_rectangle_device_rop(fixed2int_pixround(clip_rect->p.x), fixed2int_pixround(clip_rect->p.y), 
+					fixed2int_pixround(clip_rect->q.x) - fixed2int_pixround(clip_rect->p.x),
+					fixed2int_pixround(clip_rect->q.y) - fixed2int_pixround(clip_rect->p.y), 
+					&dc, pfs->dev, pfs->pis->log_op);
+}
+
 typedef struct radial_shading_attrs_s {
     double x0, y0;
     double x1, y1;
@@ -716,7 +737,6 @@ compute_radial_shading_span_extended_side(radial_shading_attrs_t *rsa, double r0
        t0 := (c - r0) / (cc + (r1 - r0))
        t1 := (c + r0) / (cc - (r1 - r0))
      */
-
     if (by_x) {
 	c = rsa->p[point_index].x - rsa->x0;
 	cc = rsa->x1 - rsa->x0;
@@ -1032,6 +1052,10 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 	    code = R_tensor_annulus(&pfs1, rect, x0, y0, r0, d0, x1, y1, r1, d1);
 	if (code >= 0)
 	    code = R_extensions(&pfs1, psh, rect, d0, d1, false, psh->params.Extend[1]);
+    } else if (span_type == 1) {
+	code = R_fill_rect_with_const_color(&pfs1, clip_rect, d0);
+    } else if (span_type == 8) {
+	code = R_fill_rect_with_const_color(&pfs1, clip_rect, d1);
     } else {
 	bool second_interval = true; 
 

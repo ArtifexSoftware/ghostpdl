@@ -911,7 +911,7 @@ dc2fc(const patch_fill_state_t *pfs, gx_color_index c,
 #define DEBUG_COLOR_INDEX_CACHE 0
 
 private inline int
-patch_color_to_device_color(const patch_fill_state_t *pfs, const patch_color_t *c, gx_device_color *pdevc, frac31 *frac_values)
+patch_color_to_device_color_inline(const patch_fill_state_t *pfs, const patch_color_t *c, gx_device_color *pdevc, frac31 *frac_values)
 {
     /* Must return 2 if the color is not pure. 
        See try_device_linear_color.
@@ -952,6 +952,12 @@ patch_color_to_device_color(const patch_fill_state_t *pfs, const patch_color_t *
 #	endif
     }
     return 0;
+}
+
+int
+patch_color_to_device_color(const patch_fill_state_t *pfs, const patch_color_t *c, gx_device_color *pdevc)
+{
+    return patch_color_to_device_color_inline(pfs, c, pdevc, NULL);
 }
 
 private inline double
@@ -1032,7 +1038,7 @@ constant_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_ed
 	/* if (dbg_nofill)
 		return 0; */
 #   endif
-    code = patch_color_to_device_color(pfs, &c1, &dc, NULL);
+    code = patch_color_to_device_color_inline(pfs, &c1, &dc, NULL);
     if (code < 0)
 	return code;
     if (!VD_TRACE_DOWN)
@@ -1178,7 +1184,7 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
 	    fa.lop = 0;
 	    fa.ystart = ybot;
 	    fa.yend = ytop;
-	    code = patch_color_to_device_color(pfs, c0, NULL, fc[0]);
+	    code = patch_color_to_device_color_inline(pfs, c0, NULL, fc[0]);
 	    if (code < 0)
 		goto out;
 	    if (code == 2) {
@@ -1186,7 +1192,7 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
 		code=gs_note_error(gs_error_unregistered);
 		goto out;
 	    }
-	    code = patch_color_to_device_color(pfs, c1, NULL, fc[1]);
+	    code = patch_color_to_device_color_inline(pfs, c1, NULL, fc[1]);
 	    if (code < 0)
 		goto out;
 	    code = dev_proc(pdev, fill_linear_color_trapezoid)(pdev, &fa, 
@@ -1686,17 +1692,17 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
 	fa.ht = NULL;
 	fa.swap_axes = false;
 	fa.lop = 0;
-	code = patch_color_to_device_color(pfs, p0->c, &dc[0], fc[0]);
+	code = patch_color_to_device_color_inline(pfs, p0->c, &dc[0], fc[0]);
 	if (code != 0)
 	    return code;
 	if (dc[0].type != &gx_dc_type_data_pure)
 	    return 2;
 	if (!wedge) {
-	    code = patch_color_to_device_color(pfs, p1->c, &dc[1], fc[1]);
+	    code = patch_color_to_device_color_inline(pfs, p1->c, &dc[1], fc[1]);
 	    if (code != 0)
 		return code;
 	}
-	code = patch_color_to_device_color(pfs, p2->c, &dc[2], fc[2]);
+	code = patch_color_to_device_color_inline(pfs, p2->c, &dc[2], fc[2]);
 	if (code != 0)
 	    return code;
 	draw_triangle(&p0->p, &p1->p, &p2->p, RGB(255, 0, 0));
@@ -2067,7 +2073,7 @@ ordered_triangle(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge *re, 
 #   endif
     if (!VD_TRACE_DOWN)
         vd_disable;
-    code = patch_color_to_device_color(pfs, c, &dc, NULL);
+    code = patch_color_to_device_color_inline(pfs, c, &dc, NULL);
     if (code < 0)
 	return code;
     if (le->end.y < re->end.y) {
@@ -2153,7 +2159,7 @@ constant_color_quadrangle_aux(patch_fill_state_t *pfs, const quadrangle_patch *p
     patch_interpolate_color(c[1], p->p[0][0]->c, p->p[0][1]->c, pfs, 0.5);
     patch_interpolate_color(c[2], p->p[1][0]->c, p->p[1][1]->c, pfs, 0.5);
     patch_interpolate_color(c[0], c[1], c[2], pfs, 0.5);
-    code = patch_color_to_device_color(pfs, c[0], &dc, NULL);
+    code = patch_color_to_device_color_inline(pfs, c[0], &dc, NULL);
     if (code < 0)
 	return code;
     {	gs_fixed_point qq[4];

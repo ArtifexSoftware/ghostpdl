@@ -188,6 +188,9 @@ void patch_resolve_color(patch_color_t * ppcr, const patch_fill_state_t *pfs);
 int gx_shade_background(gx_device *pdev, const gs_fixed_rect *rect, 
 	const gx_device_color *pdevc, gs_logical_operation_t log_op);
 
+int patch_color_to_device_color(const patch_fill_state_t *pfs, 
+	const patch_color_t *c, gx_device_color *pdevc);
+
 byte *reserve_colors(patch_fill_state_t *pfs, patch_color_t *c0[], int n);
 void release_colors(patch_fill_state_t *pfs, byte *ptr, int n);
 
