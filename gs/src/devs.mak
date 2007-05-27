@@ -1520,7 +1520,7 @@ $(GLOBJ)gdevwts.$(OBJ) : $(GLSRC)gdevwts.c $(PDEVH)\
 $(DD)wtscmyk.dev : $(DEVS_MAK) $(wts_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)wtscmyk $(wts_)
 
-$(DD)wtsimdi.dev : $(DEVS_MAK) $(wts_) $(GLD)page.dev
+$(DD)wtsimdi.dev : $(DEVS_MAK) $(wts_) $(GLD)sicclib.dev $(GLD)simdi.dev $(GLD)page.dev
 	$(SETPDEV2) $(DD)wtsimdi $(wts_)
 	$(ADDMOD) $(DD)wtsimdi -include $(GLD)sicclib
 	$(ADDMOD) $(DD)wtsimdi -include $(GLD)simdi
