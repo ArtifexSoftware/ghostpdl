@@ -3777,8 +3777,10 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
     kv[3] = curve_samples(pfs, &p.pole[0][3], 4, pfs->fixed_flat);
     kvm = max(max(kv[0], kv[1]), max(kv[2], kv[3]));
     ku[0] = curve_samples(pfs, p.pole[0], 1, pfs->fixed_flat);
+    ku[1] = curve_samples(pfs, p.pole[1], 1, pfs->fixed_flat);
+    ku[2] = curve_samples(pfs, p.pole[2], 1, pfs->fixed_flat);
     ku[3] = curve_samples(pfs, p.pole[3], 1, pfs->fixed_flat);
-    kum = max(ku[0], ku[3]);
+    kum = max(max(ku[0], ku[1]), max(ku[2], ku[3]));
     km = max(kvm, kum);
 #   if NOFILL_TEST
 	dbg_nofill = false;
