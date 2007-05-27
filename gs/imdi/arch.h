@@ -14,7 +14,7 @@
 #ifdef ALLOW64
 
 /* Detect machine/compiler specifics here */
-#if defined(NT)
+#if defined(NT) || defined(__WIN32__)
 #define longlong __int64
 #else	/* !NT, assume standard */
 #define longlong long long
