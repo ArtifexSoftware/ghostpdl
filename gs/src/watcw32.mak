@@ -140,7 +140,9 @@ JBIG2SRCDIR=jbig2dec
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
 
+!ifndef ICCSRCDIR
 ICCSRCDIR=icclib
+!endif
 
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
@@ -148,6 +150,13 @@ ICCSRCDIR=icclib
 
 IJSSRCDIR=ijs
 IJSEXECTYPE=win
+
+# Define the directory where the imdi source are stored.
+# See imdi.mak for more information
+
+!ifndef IMDISRCDIR
+IMDISRCDIR=imdi
+!endif
 
 # Define any other compilation flags.
 
