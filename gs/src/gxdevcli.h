@@ -704,6 +704,8 @@ typedef struct gx_device_cached_colors_s {
 	bool IgnoreNumCopies;		/* if true, force num_copies = 1 */\
 	bool UseCIEColor;		/* for PS LL3 */\
 	bool LockSafetyParams;		/* If true, prevent unsafe changes */\
+	long band_offset_x;		/* offsets of clist band base to (mem device) buffer */\
+	long band_offset_y;		/* for rendering that is phase sensitive (wtsimdi) */\
 	gx_page_device_procs page_procs;	/* must be last */\
 		/* end of std_device_body */\
 	gx_device_procs procs	/* object procedures */

@@ -118,8 +118,10 @@ const gx_device_wtsimdi gs_wtsimdi_device = {
 			3, 24, 255, 255, 256, 256, wtsimdi_print_page)
 };
 
+#if DUMMY_WTS_HALFTONE_LINE
 private void
 wts_halftone_line(void **wts, int y, int width, int n_planes,
+		  long band_offset_x, long band_offset_y,
 		  byte **dst, const byte *src)
 {
     int x;
@@ -141,9 +143,11 @@ wts_halftone_line(void **wts, int y, int width, int n_planes,
 	}
     }
 }
+#endif
 
 private void
 wts_halftone_line_16(wts_cooked_halftone *wch, int y, int width, int n_planes,
+		     long band_offset_x, long band_offset_y,
 		     byte **dst, const byte *src)
 {
     int x;
@@ -160,7 +164,7 @@ wts_halftone_line_16(wts_cooked_halftone *wch, int y, int width, int n_planes,
 	    int n_samples;
 	    int cx, cy;
 
-	    wts_get_samples(w, x, y, &cx, &cy, &n_samples);
+	    wts_get_samples(w, band_offset_x + x, band_offset_y + y, &cx, &cy, &n_samples);
 	    samples = w->samples + cy * w->cell_width + cx;
 
 	    imax = min(width - x, n_samples);
@@ -206,6 +210,7 @@ wts_halftone_line_16(wts_cooked_halftone *wch, int y, int width, int n_planes,
 
 private void
 wts_halftone_line_8(wts_cooked_halftone *wch, int y, int width, int n_planes,
+		    long band_offset_x, long band_offset_y,
 		    byte * dst, const byte * src)
 {
     int x;
@@ -225,7 +230,7 @@ wts_halftone_line_8(wts_cooked_halftone *wch, int y, int width, int n_planes,
 	    int n_samples;
 	    int cx, cy;
 
-	    wts_get_samples(w, x, y, &cx, &cy, &n_samples);
+	    wts_get_samples(w, band_offset_x + x, band_offset_y + y, &cx, &cy, &n_samples);
 	    samples = wch[plane_ix].cell + cy * width_padded + cx;
 
 	    imax = min(width - x, n_samples);
@@ -326,7 +331,7 @@ wtscmyk_print_page(gx_device_printer *pdev, FILE *prn_stream)
     int cmyk_bytes = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
     /* Output bytes have to be padded to 16 bits. */
     int y;
-    char *cmyk_line = 0;
+    byte *cmyk_line = 0;
     byte *data;
     int code = 0;
     int pbm_bytes;
@@ -338,7 +343,7 @@ wtscmyk_print_page(gx_device_printer *pdev, FILE *prn_stream)
     /* Initialize the wts halftones. */
     wts_init_halftones(wdev, n_planes);
 
-    cmyk_line = gs_malloc(pdev->memory, cmyk_bytes, 1, "wtscmyk_print_page(in)");
+    cmyk_line = (byte *)gs_malloc(pdev->memory, cmyk_bytes, 1, "wtscmyk_print_page(in)");
     if (cmyk_line == 0) {
 	code = GS_NOTE_ERROR(pdev->memory, gs_error_VMerror);
 	goto out;
@@ -376,7 +381,8 @@ wtscmyk_print_page(gx_device_printer *pdev, FILE *prn_stream)
     /* For each raster line */
     for (y = 0; y < pdev->height; y++) {
 	gdev_prn_get_bits(pdev, y, cmyk_line, &data);
-	wts_halftone_line_8(wdev->wcooked, y, pdev->width, n_planes, dst, data);
+	wts_halftone_line_8(wdev->wcooked, y, pdev->width, n_planes, 
+			    wdev->band_offset_x, wdev->band_offset_y, dst, data);
 	for (i = 0; i < n_planes; i++)
 	    if (ostream[i])
 		fwrite(dst + i * pbm_bytes, 1, pbm_bytes, ostream[i]);
@@ -541,7 +547,7 @@ wtsimdi_fill_rectangle(gx_device * dev,
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     gx_device_wtsimdi * idev = (gx_device_wtsimdi *)
 	    ((mdev->target) ? (gx_device_wts *)(mdev->target)
-			    : dev);
+			    : (gx_device_wts *)dev);
     wts_cooked_halftone * wch = idev->wcooked;
     int n_planes = 4;
     int code, comp_value;
@@ -609,7 +615,8 @@ wtsimdi_fill_rectangle(gx_device * dev,
 		    int cx, cy;
 		    int j;
 
-		    wts_get_samples(wch[plane_ix].wts, (x & -8) + (i << 3), y, &cx, &cy, &n_samples);
+		    wts_get_samples(wch[plane_ix].wts, ((dev->band_offset_x + x) & -8) + (i << 3),
+				    (dev->band_offset_y + y), &cx, &cy, &n_samples);
 		    samples = wch[plane_ix].cell + cy * width_padded + cx;
 
 		    imax = min((nfill + 1 - i) << 3, n_samples);
@@ -645,7 +652,7 @@ wtsimdi_copy_mono(gx_device * dev,
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     gx_device_wtsimdi * idev = (gx_device_wtsimdi *)
 	    ((mdev->target) ? (gx_device_wts *)(mdev->target)
-			    : dev);
+			    : (gx_device_wts *)dev);
     wts_cooked_halftone * wch = idev->wcooked;
     int n_planes = 4;
     int code, comp_value;
@@ -732,7 +739,8 @@ wtsimdi_copy_mono(gx_device * dev,
 		    int cx, cy;
 		    int j;
 
-		    wts_get_samples(wch[plane_ix].wts, (x & -8) + (i << 3), y, &cx, &cy, &n_samples);
+		    wts_get_samples(wch[plane_ix].wts, ((dev->band_offset_x + x) & -8) + (i << 3),
+				    (dev->band_offset_y + y), &cx, &cy, &n_samples);
 		    samples = wch[plane_ix].cell + cy * width_padded + cx;
 
 		    imax = min((nfill + 1 - i) << 3, n_samples);
@@ -835,7 +843,7 @@ wtsimdi_contone_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 	gx_device_memory * const mdev = (gx_device_memory *)dev;
         gx_device_wtsimdi * idev = (gx_device_wtsimdi *)
 	    ((mdev->target) ? (gx_device_wts *)(mdev->target)
-			    : dev);
+			    : (gx_device_wts *)dev);
 	int width = dev->width;
 	int n_planes = 4;
 	int r_last = -1, g_last = -1, b_last = -1, r, g, b;
@@ -874,8 +882,8 @@ wtsimdi_contone_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 	    *cmyk_data++ = y;
 	    *cmyk_data++ = k;
 	}
-	wts_halftone_line_8(idev->wcooked, original_y, width,
-					    n_planes, buffer, cmyk_buffer);
+	wts_halftone_line_8(idev->wcooked, original_y, width, n_planes,
+			    idev->band_offset_x, idev->band_offset_y,  buffer, cmyk_buffer);
 	params->data[0] = buffer;
 	gs_free(dev->memory, cmyk_buffer, halftoned_bytes * n_planes, 1,
 		       	"wtsimdi_print_page(halftoned_data)");

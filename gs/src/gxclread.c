@@ -469,6 +469,24 @@ clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
     for (i = 0; i < num_pages && code >= 0; ++i) {
 	const gx_placed_page *ppage = &ppages[i];
 
+	/*
+	 * Set the band_offset_? values in case the buffer device
+	 * needs this. Example, wtsimdi device needs to adjust the 
+	 * phase of the dithering based on the page position, NOT
+	 * the position within the band buffer to avoid band stitch
+	 * lines in the dither pattern.
+	 *
+	 * The band_offset_x is not important for placed pages that
+	 * are nested on a 'master' page (imposition) since each
+	 * page expects to be dithered independently, but setting
+	 * this allows pages to be contiguous without a dithering
+	 * shift.
+	 *
+	 * The following sets the band_offset_? relative to the
+	 * master page.
+	 */
+	bdev->band_offset_x = ppage->offset.x;
+	bdev->band_offset_y = ppage->offset.y + (band_first * band_height);
 	code = clist_playback_file_bands(playback_action_render,
 					 crdev, &ppage->page->info,
 					 bdev, band_first, band_last,

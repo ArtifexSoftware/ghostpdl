@@ -263,6 +263,8 @@ const gx_device_printer gs_bitrgbtags_device =
         0 ,
         0 ,
         0 ,
+	0,
+	0,
         { 
             gx_default_install,
             gx_default_begin_page,
@@ -621,7 +623,7 @@ bit_print_page(gx_device_printer * pdev, FILE * prn_stream)
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
     byte *in = gs_alloc_bytes(pdev->memory, line_size, "bit_print_page(in)");
     byte *data;
-    int nul = !strcmp(pdev->fname, "nul");
+    int nul = !strcmp(pdev->fname, "nul") || !strcmp(pdev->fname, "/dev/null");
     int lnum = 0, bottom = pdev->height;
 
     if (in == 0)
