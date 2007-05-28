@@ -309,6 +309,7 @@ alloc_pnm_image (const char *fn)
   }
   image = (ImagePnm *)malloc (sizeof(ImagePnm));
   image->f = f;
+  image->file_length = file_length(fileno(f));
   return image;
 }
 
@@ -364,7 +365,6 @@ open_pnm_image (ImagePnm *image)
   image->super.raster = n_chan * ((width * bpp + 7) >> 3);
   image->super.n_chan = n_chan;
   image->super.bpp = bpp;
-  image->file_length = file_length(fileno(image->f));
   return 0;
 }
 
