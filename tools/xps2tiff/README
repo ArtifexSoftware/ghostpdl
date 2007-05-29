@@ -1,0 +1,10 @@
+xps2tiff converts XPS files to multipage RGB TIFF files using Microsoft's own
+means.
+
+Usage: xps2tiff RESOLUTION_DPI INPUT.XPS OUTPUT.TIFF
+
+The program uses .NET 3.0 Framework and requires Visual Studio 2005
+to compile.
+
+Some sample files allocate over 1GB of memory at 300 dpi resolution.
+Virtual memory appears to work reasonably well.
