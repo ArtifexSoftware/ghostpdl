@@ -131,7 +131,7 @@ LIMITATIONS.
    least as large as the fixed overhead of the compressor plus the
    decompressor, plus the expected compressed size of a block that size.
  */
-private const long COMPRESSION_THRESHOLD = 300000;
+private const long COMPRESSION_THRESHOLD = 32000000;
 
 #define NEED_TO_COMPRESS(f)\
   ((f)->ok_to_compress && (f)->total_space > COMPRESSION_THRESHOLD)
