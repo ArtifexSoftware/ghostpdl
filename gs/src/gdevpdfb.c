@@ -123,7 +123,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	      gx_color_index one, const gx_clip_path *pcpath)
 {
     int code;
-    gs_color_space *pcs;
+    gs_color_space *pcs = NULL;
     cos_value_t cs_value;
     cos_value_t *pcsvalue;
     byte palette[arch_sizeof_color_index * 2];

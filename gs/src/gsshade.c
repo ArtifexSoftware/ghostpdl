@@ -417,7 +417,7 @@ gs_shading_Tpp_init(gs_shading_t ** ppsh,
 /* ================ Shading rendering ================ */
 
 /* Add a user-space rectangle to a path. */
-private int
+int
 shading_path_add_box(gx_path *ppath, const gs_rect *pbox,
 		     const gs_matrix_fixed *pmat)
 {
@@ -441,12 +441,51 @@ shading_path_add_box(gx_path *ppath, const gs_rect *pbox,
 }
 
 /* Fill a path with a shading. */
+int
+gs_shading_do_fill_rectangle(const gs_shading_t *psh,
+		     const gs_fixed_rect *prect, gx_device *dev,
+		     gs_imager_state *pis, bool fill_background)
+{   /* If you need to fill a path, clip the output device before calling this function. */
+    const gs_matrix_fixed *pmat = &pis->ctm;
+    gs_fixed_rect path_box;
+    gs_rect path_rect;
+    gs_rect rect;
+    int code = 0;
+
+    dev_proc(dev, get_clipping_box)(dev, &path_box);
+    if (prect)
+	rect_intersect(path_box, *prect);
+    if (psh->params.Background && fill_background) {
+	const gs_color_space *pcs = psh->params.ColorSpace;
+	gs_client_color cc;
+	gx_device_color dev_color;
+
+	cc = *psh->params.Background;
+	(*pcs->type->restrict_color)(&cc, pcs);
+	(*pcs->type->remap_color)(&cc, pcs, &dev_color, pis,
+				  dev, gs_color_select_texture);
+
+	/****** WRONG IF NON-IDEMPOTENT RasterOp ******/
+	code = gx_shade_background(dev, &path_box, &dev_color, pis->log_op);
+    }
+    if (code >= 0) {
+	path_rect.p.x = fixed2float(path_box.p.x);
+	path_rect.p.y = fixed2float(path_box.p.y);
+	path_rect.q.x = fixed2float(path_box.q.x);
+	path_rect.q.y = fixed2float(path_box.q.y);
+	gs_bbox_transform_inverse(&path_rect, (const gs_matrix *)pmat, &rect);
+	code = gs_shading_fill_rectangle(psh, &rect, &path_box, dev, pis);
+    }
+    return code;
+}
+
+/* Fill a path with a shading. */
+/* Depricated. To be removed soon. */
 private int
 gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
 		     const gs_fixed_rect *prect, gx_device *orig_dev,
 		     gs_imager_state *pis, bool fill_background)
-{
-    gs_memory_t *mem = pis->memory;
+{   gs_memory_t *mem = pis->memory;
     const gs_matrix_fixed *pmat = &pis->ctm;
     gx_device *dev = orig_dev;
     gs_fixed_rect path_box;

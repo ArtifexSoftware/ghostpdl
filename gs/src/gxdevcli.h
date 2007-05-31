@@ -1224,7 +1224,8 @@ typedef enum {
     pattern_manage__finish_accum,
     pattern_manage__load,
     pattern_manage__shading_area,
-    pattern_manage__is_cpath_accum
+    pattern_manage__is_cpath_accum,
+    pattern_manage__shfill_doesnt_need_path
 } pattern_manage_t;
 
 #define dev_t_proc_pattern_manage(proc, dev_t)\

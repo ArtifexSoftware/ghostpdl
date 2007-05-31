@@ -870,6 +870,10 @@ int
 gx_default_pattern_manage(gx_device *pdev, gx_bitmap_id id,
 		gs_pattern1_instance_t *pinst, pattern_manage_t function)
 {
+    if (function == pattern_manage__shfill_doesnt_need_path) {
+	if (pdev->procs.fill_path == gx_default_fill_path)
+	    return 1;
+    }
     return 0;
 }
 

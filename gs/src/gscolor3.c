@@ -58,7 +58,6 @@ gs_shfill(gs_state * pgs, const gs_shading_t * psh)
      * shading with Background removed.
      */
     gs_pattern2_template_t pat;
-    gx_path cpath;
     gs_matrix imat;
     gs_client_color cc;
     gs_color_space *pcs;
@@ -98,12 +97,22 @@ gs_shfill(gs_state * pgs, const gs_shading_t * psh)
     code = pcs->type->remap_color(&cc, pcs, &devc, (gs_imager_state *)pgs,
 				  pgs->device, gs_color_select_texture);
     if (code >= 0) {
-	gx_path_init_local(&cpath, pgs->memory);
-	code = gx_cpath_to_path(pgs->clip_path, &cpath);
-	if (code >= 0)
-	    code = gx_fill_path(&cpath, &devc, pgs, gx_rule_winding_number,
+	gx_device *dev = pgs->device;
+	bool need_path = !dev_proc(dev, pattern_manage)(dev, gs_no_id, NULL,
+		pattern_manage__shfill_doesnt_need_path);
+
+	if (need_path) {
+    	    gx_path cpath;
+
+	    gx_path_init_local(&cpath, pgs->memory);
+	    code = gx_cpath_to_path(pgs->clip_path, &cpath);
+	    if (code >= 0)
+		code = gx_fill_path(&cpath, &devc, pgs, gx_rule_winding_number,
+				    pgs->fill_adjust.x, pgs->fill_adjust.y);
+	    gx_path_free(&cpath, "gs_shfill");
+	} else 
+	    code = gx_fill_path(NULL, &devc, pgs, gx_rule_winding_number,
 				pgs->fill_adjust.x, pgs->fill_adjust.y);
-	gx_path_free(&cpath, "gs_shfill");
     }
     rc_decrement(pcs, "gs_shfill");
     gs_pattern_reference(&cc, -1);

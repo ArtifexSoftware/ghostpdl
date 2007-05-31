@@ -218,6 +218,10 @@ gx_dc_pattern2_fill_path(const gx_device_color * pdevc,
 }
 
 /* Fill a rectangle with a PatternType 2 color. */
+/* WARNING: This function doesn't account the shading BBox
+   to allow the clipent to optimize the clipping 
+   with changing the order of clip patrhs and rects.
+   The client must clip with the shading BBOx before calling this function. */
 private int
 gx_dc_pattern2_fill_rectangle(const gx_device_color * pdevc, int x, int y,
                               int w, int h, gx_device * dev,
@@ -230,12 +234,15 @@ gx_dc_pattern2_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 	return dev_proc(dev, fill_rectangle)(dev, x, y, w, h, (gx_color_index)0/*any*/);
     } else {
 	gs_fixed_rect rect;
+	gs_pattern2_instance_t *pinst =
+	    (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
 
 	rect.p.x = int2fixed(x);
 	rect.p.y = int2fixed(y);
 	rect.q.x = int2fixed(x + w);
 	rect.q.y = int2fixed(y + h);
-	return gx_dc_pattern2_fill_path(pdevc, NULL, &rect,  dev);
+	return gs_shading_do_fill_rectangle(pinst->template.Shading, &rect, dev,
+				    (gs_imager_state *)pinst->saved, !pinst->shfill);
     }
 }
 
@@ -301,6 +308,59 @@ gx_dc_pattern2_get_bbox(const gx_device_color * pdevc, gs_fixed_rect *bbox)
     if (code < 0)
 	return code;
     return 1;
+}
+
+int
+gx_dc_pattern2_color_has_bbox(const gx_device_color * pdevc)
+{
+    gs_pattern2_instance_t *pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
+    const gs_shading_t *psh = pinst->template.Shading;
+
+    return psh->params.have_BBox;
+}
+
+/* Create a path from a PatternType 2 shading BBox to a path. */
+int
+gx_dc_shading_path_add_box(gx_path *ppath, const gx_device_color * pdevc)
+{
+    gs_pattern2_instance_t *pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
+    const gs_shading_t *psh = pinst->template.Shading;
+
+    if (!psh->params.have_BBox)
+	return_error(gs_error_unregistered); /* Do not call in this case. */
+    else {
+	gs_state *pis = pinst->saved;
+
+	return shading_path_add_box(ppath, &psh->params.BBox, &pis->ctm);
+    }
+}
+
+/* Intersect a clipping path a shading BBox. */
+int
+gx_dc_pattern2_clip_with_bbox(const gx_device_color * pdevc, gx_device * pdev, 
+			      gx_clip_path *cpath_local, const gx_clip_path **ppcpath1)
+{
+    if (gx_dc_is_pattern2_color(pdevc) && gx_dc_pattern2_color_has_bbox(pdevc) &&
+	    (*dev_proc(pdev, pattern_manage))(pdev, gs_no_id, NULL, pattern_manage__shading_area) == 0) {
+	gs_pattern2_instance_t *pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
+	gx_path box_path;
+	int code;
+
+	gx_path_init_local(&box_path, pdev->memory);
+	code = gx_dc_shading_path_add_box(&box_path, pdevc);
+	if (code == gs_error_limitcheck) {
+	    /* Ignore huge BBox - bug 689027. */
+	    code = 0;
+	} else {
+	    if (code >= 0) {
+		gx_cpath_init_local_shared(cpath_local, *ppcpath1, pdev->memory);
+		code = gx_cpath_intersect(cpath_local, &box_path, gx_rule_winding_number, (gs_imager_state *)pinst->saved);
+		*ppcpath1 = cpath_local;
+	    }
+	}
+	gx_path_free(&box_path, "gx_default_fill_path(path_bbox)");
+    }
+    return 0;
 }
 
 /* Get a shading color space. */

@@ -41,6 +41,7 @@
 #include "gxpaint.h"		/* for prototypes */
 #include "gxfdrop.h"
 #include "gxfill.h"
+#include "gxpath.h"
 #include "gsptype1.h"
 #include "gsptype2.h"
 #include "gxpcolor.h"
@@ -565,7 +566,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 		     gx_path * ppath, const gx_fill_params * params,
 		 const gx_device_color * pdevc, const gx_clip_path * pcpath)
 {
-    int code;
+    int code = 0;
 
     if (gx_dc_is_pattern2_color(pdevc) 
 	|| pdevc->type == &gx_dc_type_data_ht_colored
@@ -585,60 +586,49 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	/*  We need a single clipping path here, because shadings and
 	    halftones don't take 2 paths. Compute the clipping path intersection.
 	*/
-	gx_clip_path cpath_intersection;
-	gx_path path_intersection;
+	gx_clip_path cpath_intersection, cpath_with_shading_bbox;
+	const gx_clip_path *pcpath1, *pcpath2;
+	gs_imager_state *pis_noconst = (gs_imager_state *)pis; /* Break const. */
 
-	gx_path_init_local(&path_intersection, pdev->memory);
-	gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
-	code = gx_cpath_intersect_with_params(&cpath_intersection, ppath, params->rule, 
-		    (gs_imager_state *)pis, params);
+	if (ppath != NULL) {
+	    gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
+	    code = gx_cpath_intersect_with_params(&cpath_intersection, ppath, params->rule, 
+			pis_noconst, params);
+	    pcpath1 = &cpath_intersection;
+	} else
+	    pcpath1 = pcpath;
+
+
+	pcpath2 = pcpath1;
+	if (code >= 0)
+	    code = gx_dc_pattern2_clip_with_bbox(pdevc, pdev, &cpath_with_shading_bbox, &pcpath1);
 	/* Do fill : */
 	if (code >= 0) {
-	    if (pdevc->type == &gx_dc_type_data_ht_colored || gx_dc_is_pattern1_color(pdevc)) {
-		const gx_rop_source_t *rs = NULL;
-		gx_device *dev;
-		gx_device_clip cdev;
-		gs_fixed_rect clip_box;
-		gs_int_rect cb;
+	    const gx_rop_source_t *rs = NULL;
+	    gx_device *dev;
+	    gx_device_clip cdev;
+	    gs_fixed_rect clip_box;
+	    gs_int_rect cb;
 
-		gx_cpath_outer_box(&cpath_intersection, &clip_box);
-		gx_make_clip_path_device(&cdev, &cpath_intersection);
-		cdev.target = pdev;
-		dev = (gx_device *)&cdev;
-		(*dev_proc(dev, open_device))(dev);
-		cb.p.x = fixed2int_pixround(clip_box.p.x);
-		cb.p.y = fixed2int_pixround(clip_box.p.y);
-		cb.q.x = fixed2int_pixround(clip_box.q.x);
-		cb.q.y = fixed2int_pixround(clip_box.q.y);
-		code = pdevc->type->fill_rectangle(pdevc,
-			    cb.p.x, cb.p.y, cb.q.x - cb.p.x, cb.q.y - cb.p.y,
-			    dev, pis->log_op, rs);
-	    } else {
-		/* The shading fill algorithm fills an area restricted with a path,
-		   so we need to convert cpath into path.
-
-		   We can't set a clipping device here like we did for 
-		   gx_dc_type_data_ht_colored, because the shading itself
-		   may add another clipping with its BBox,
-		   which may be transformed into a parallelogram.
-		   We don't want two clipping devices chained consequently.
-		 */
-		if (params->rule != gx_rule_winding_number) {
-		    /* HACK : Rather cpath_intersection contains a valid path,
-		       it is not planarized to a simple winding path,
-		       so we can't use the contained path.
-		       Reset path_valid against using it.
-		    */
-		    cpath_intersection.path_valid = false;
-		}
-		code = gx_cpath_to_path(&cpath_intersection, &path_intersection);
-		if (code >= 0)
-		    code = gx_dc_pattern2_fill_path(pdevc, &path_intersection, NULL,  pdev);
-	    }
+	    gx_cpath_outer_box(pcpath1, &clip_box);
+	    gx_make_clip_path_device(&cdev, pcpath1);
+	    cdev.HWResolution[0] = pdev->HWResolution[0];
+	    cdev.HWResolution[1] = pdev->HWResolution[1];
+	    cdev.target = pdev;
+	    dev = (gx_device *)&cdev;
+	    (*dev_proc(dev, open_device))(dev);
+	    cb.p.x = fixed2int_pixround(clip_box.p.x);
+	    cb.p.y = fixed2int_pixround(clip_box.p.y);
+	    cb.q.x = fixed2int_pixround(clip_box.q.x);
+	    cb.q.y = fixed2int_pixround(clip_box.q.y);
+	    code = pdevc->type->fill_rectangle(pdevc,
+			cb.p.x, cb.p.y, cb.q.x - cb.p.x, cb.q.y - cb.p.y,
+			dev, pis->log_op, rs);
 	}
-	/* Destruct local data and return :*/
-	gx_path_free(&path_intersection, "shading_fill_path_intersection");
-	gx_cpath_free(&cpath_intersection, "shading_fill_cpath_intersection");
+	if (ppath != NULL)
+	    gx_cpath_free(&cpath_intersection, "shading_fill_cpath_intersection");
+	if (pcpath1 != pcpath2)
+	    gx_cpath_free(&cpath_with_shading_bbox, "shading_fill_cpath_intersection");
     } else {
 	bool got_dc = false;
         vd_save;

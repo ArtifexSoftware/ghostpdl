@@ -375,56 +375,67 @@ gx_cpath_path_list_new(gs_memory_t *mem, gx_clip_path *pcpath, int rule,
 
 /* ------ Clipping path accessing ------ */
 
+/* Synthesize a path from a clipping path. */
+int
+gx_cpath_to_path_synthesize(const gx_clip_path * pcpath, gx_path * ppath)
+{
+    /* Synthesize a path. */
+    gs_cpath_enum cenum;
+    gs_fixed_point pts[3];
+    int code;
+
+    gx_cpath_enum_init(&cenum, pcpath);
+    while ((code = gx_cpath_enum_next(&cenum, pts)) != 0) {
+	switch (code) {
+	    case gs_pe_moveto:
+		code = gx_path_add_point(ppath, pts[0].x, pts[0].y);
+		break;
+	    case gs_pe_lineto:
+		code = gx_path_add_line_notes(ppath, pts[0].x, pts[0].y,
+					   gx_cpath_enum_notes(&cenum));
+		break;
+	    case gs_pe_curveto:
+		code = gx_path_add_curve_notes(ppath, pts[0].x, pts[0].y,
+					       pts[1].x, pts[1].y,
+					       pts[2].x, pts[2].y,
+					   gx_cpath_enum_notes(&cenum));
+		break;
+	    case gs_pe_closepath:
+		code = gx_path_close_subpath_notes(ppath,
+					   gx_cpath_enum_notes(&cenum));
+		break;
+	    default:
+		if (code >= 0)
+		    code = gs_note_error(gs_error_unregistered);
+	}
+	if (code < 0)
+	    break;
+    }
+    return 0;
+}
+
 /* Return the path of a clipping path. */
 int
 gx_cpath_to_path(gx_clip_path * pcpath, gx_path * ppath)
 {
     if (!pcpath->path_valid) {
-	/* Synthesize a path. */
-	gs_cpath_enum cenum;
-	gs_fixed_point pts[3];
 	gx_path rpath;
 	int code;
 
 	gx_path_init_local(&rpath, pcpath->path.memory);
-	gx_cpath_enum_init(&cenum, pcpath);
-	while ((code = gx_cpath_enum_next(&cenum, pts)) != 0) {
-	    switch (code) {
-		case gs_pe_moveto:
-		    code = gx_path_add_point(&rpath, pts[0].x, pts[0].y);
-		    break;
-		case gs_pe_lineto:
-		    code = gx_path_add_line_notes(&rpath, pts[0].x, pts[0].y,
-					       gx_cpath_enum_notes(&cenum));
-		    break;
-		case gs_pe_curveto:
-		    code = gx_path_add_curve_notes(&rpath, pts[0].x, pts[0].y,
-						   pts[1].x, pts[1].y,
-						   pts[2].x, pts[2].y,
-					       gx_cpath_enum_notes(&cenum));
-		    break;
-		case gs_pe_closepath:
-		    code = gx_path_close_subpath_notes(&rpath,
-					       gx_cpath_enum_notes(&cenum));
-		    break;
-		default:
-		    if (code >= 0)
-			code = gs_note_error(gs_error_unregistered);
-	    }
-	    if (code < 0)
-		break;
-	}
-	if (code >= 0)
-	    code = gx_path_assign_free(&pcpath->path, &rpath);
+	code = gx_cpath_to_path_synthesize(pcpath, ppath);
 	if (code < 0) {
 	    gx_path_free(&rpath, "gx_cpath_to_path error");
 	    return code;
 	}
+	code = gx_path_assign_free(&pcpath->path, &rpath);
+	if (code < 0)
+	    return code;
 	pcpath->path_valid = true;
+	return 0;
     }
     return gx_path_assign_preserve(ppath, &pcpath->path);
 }
-
 /* Return the inner and outer check rectangles for a clipping path. */
 /* Return true iff the path is a rectangle. */
 bool
@@ -474,7 +485,7 @@ gx_cpath_list(const gx_clip_path *pcpath)
 }
 /* Internal non-const version of the same accessor. */
 inline private gx_clip_list *
-gx_cpath_list_private(gx_clip_path *pcpath)
+gx_cpath_list_private(const gx_clip_path *pcpath)
 {
     return &pcpath->rect_list->list;
 }
@@ -760,7 +771,7 @@ gx_clip_list_from_rectangle(register gx_clip_list * clp,
 
 /* Start enumerating a clipping path. */
 int
-gx_cpath_enum_init(gs_cpath_enum * penum, gx_clip_path * pcpath)
+gx_cpath_enum_init(gs_cpath_enum * penum, const gx_clip_path * pcpath)
 {
     if ((penum->using_path = pcpath->path_valid)) {
 	gx_path_enum_init(&penum->path_enum, &pcpath->path);

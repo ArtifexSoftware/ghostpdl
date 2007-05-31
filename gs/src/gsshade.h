@@ -253,8 +253,14 @@ int gs_shading_Tpp_init(gs_shading_t ** ppsh,
 #  define gx_path_DEFINED
 typedef struct gx_path_s gx_path;
 #endif
+/* Fill a path with a shading. */
+/* Depricated. To be removed soon. */
 int gs_shading_fill_path_adjusted(const gs_shading_t *psh, /*const*/ gx_path *ppath,
 			 const gs_fixed_rect *prect, gx_device *dev,
 			 gs_imager_state *pis, bool fill_background);
 
+/* Fill a path with a shading. */
+int gs_shading_do_fill_rectangle(const gs_shading_t *psh, 
+			 const gs_fixed_rect *prect, gx_device *dev,
+			 gs_imager_state *pis, bool fill_background);
 #endif /* gsshade_INCLUDED */

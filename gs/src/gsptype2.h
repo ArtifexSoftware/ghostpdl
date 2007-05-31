@@ -75,6 +75,11 @@ typedef struct gx_device_s gx_device;
 typedef struct gs_color_space_s gs_color_space;
 #endif
 
+#ifndef gx_clip_path_DEFINED
+#  define gx_clip_path_DEFINED
+typedef struct gx_clip_path_s gx_clip_path;
+#endif
+
 extern const gx_device_color_type_t gx_dc_pattern2;
 
 #define gx_dc_type_pattern2 (&gx_dc_pattern2)
@@ -106,6 +111,18 @@ int gx_dc_pattern2_shade_bbox_transform2fixed(const gs_rect * rect,
 
 /* Get a shading bbox. Returns 1 on success. */
 int gx_dc_pattern2_get_bbox(const gx_device_color * pdevc, gs_fixed_rect *bbox);
+
+/* Checks whether a PatternType 2 has a shading BBox. */
+int gx_dc_pattern2_color_has_bbox(const gx_device_color * pdevc);
+
+/* Intersect a clipping path a shading BBox. */
+int gx_dc_pattern2_clip_with_bbox(const gx_device_color * pdevc, gx_device * pdev, 
+				  gx_clip_path *cpath_local, const gx_clip_path **cpath1);
+
+
+/* Create a path from a PatternType 2 shading BBox to a path. */
+int gx_dc_shading_path_add_box(gx_path *ppath, const gx_device_color * pdevc);
+
 
 /* Get a shading color space. */
 const gs_color_space *gx_dc_pattern2_get_color_space(const gx_device_color * pdevc);
