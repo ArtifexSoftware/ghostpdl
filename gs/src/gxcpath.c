@@ -423,7 +423,7 @@ gx_cpath_to_path(gx_clip_path * pcpath, gx_path * ppath)
 	int code;
 
 	gx_path_init_local(&rpath, pcpath->path.memory);
-	code = gx_cpath_to_path_synthesize(pcpath, ppath);
+	code = gx_cpath_to_path_synthesize(pcpath, &rpath);
 	if (code < 0) {
 	    gx_path_free(&rpath, "gx_cpath_to_path error");
 	    return code;
@@ -432,7 +432,6 @@ gx_cpath_to_path(gx_clip_path * pcpath, gx_path * ppath)
 	if (code < 0)
 	    return code;
 	pcpath->path_valid = true;
-	return 0;
     }
     return gx_path_assign_preserve(ppath, &pcpath->path);
 }
