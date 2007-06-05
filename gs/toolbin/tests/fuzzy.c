@@ -1,5 +1,5 @@
 /**
- * Fuzzy comparison utility. Copyright 2001-2003 artofcode LLC.
+ * Fuzzy comparison utility. Copyright 2001-2003 Artifex Software, Inc.
  **/
 
 #include <stdio.h>

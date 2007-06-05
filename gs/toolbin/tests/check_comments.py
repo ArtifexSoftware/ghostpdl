@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#    Copyright (C) 2003 artofcode LLC. All rights reserved.
+#    Copyright (C) 2003 Artifex Software, Inc. All rights reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
 # implied.

@@ -2,7 +2,7 @@
  * Copyright (c) 1999-2000 Image Power, Inc. and the University of
  *   British Columbia.
  * Copyright (c) 2001-2003 Michael David Adams.
- * Copyright (c) 2005-2006 artofcode LLC.
+ * Copyright (c) 2005-2006 Artifex Software, Inc.
  *
  * All rights reserved.
  */

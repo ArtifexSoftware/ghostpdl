@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#    Copyright (C) 1991-2004 artofcode LLC.  All rights reserved.
+#    Copyright (C) 1991-2004 Artifex Software, Inc.  All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.

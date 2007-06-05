@@ -3,14 +3,14 @@
 # script to generate ldf_jb2.mak
 # whose source sometimes changes
 
-# $Id: $
+# $Id$
 
 import time, glob
 import os.path
 
 outfile="ldf_jb2.mak"
 
-license = """#    Copyright (C) %d artofcode LLC.  All rights reserved.
+license = """#    Copyright (C) %d Artifex Software, Inc.  All rights reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -25,7 +25,7 @@ license = """#    Copyright (C) %d artofcode LLC.  All rights reserved.
 # contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 # San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-# $Id: ldf_jb2.mak 6525 2006-01-30 09:20:34Z giles $
+# $Id$
 """ % time.gmtime().tm_year
 
 comment = """

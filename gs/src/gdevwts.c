@@ -1,4 +1,4 @@
-/* Copyright (C) 2006-2007 artofcode LLC.  All rights reserved.
+/* Copyright (C) 2006-2007 Artifex Software, Inc.  All rights reserved.
 
   This software is provided AS-IS with no warranty, either express or
   implied.

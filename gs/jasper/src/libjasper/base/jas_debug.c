@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2001-2002 Michael David Adams.
- * Copyright (c) 2005-2006 artofcode LLC.
+ * Copyright (c) 2005-2006 Artifex Software, Inc.
  * All rights reserved.
  */
 

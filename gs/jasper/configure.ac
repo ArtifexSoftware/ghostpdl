@@ -1,6 +1,6 @@
 dnl ****************************************************************************
 dnl Copyright (c) 2001-2003 Michael David Adams.
-dnl Copyright (c) 2004-2006 artofcode LLC.
+dnl Copyright (c) 2004-2006 Artifex Software, Inc.
 dnl All rights reserved.
 dnl
 dnl The complete licensing terms for this software can be found in the file

@@ -57,7 +57,7 @@ Modified to run on Compaq Alpha hardware.
 
 -----------------
 Modified 07/2002
-By Ralph Giles <giles@artofcode.com>
+By Ralph Giles <giles@ghostscript.com>
 Still 100% public domain
 modified for use with stdint types, autoconf
 code cleanup, removed attribution comments

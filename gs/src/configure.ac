@@ -1,4 +1,4 @@
-dnl  Copyright (C) 2001-2006 artofcode LLC.
+dnl  Copyright (C) 2001-2006 Artifex Software, Inc.
 dnl  All Rights Reserved.
 
 dnl  This software is provided AS-IS with no warranty, either express or

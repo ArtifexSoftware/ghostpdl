@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (c) 2004 artofcode LLC.
+    Copyright (C) 2004 Artifex Software, Inc.
     
     This software is provided AS-IS with no warranty,
     either express or implied.

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 artofcode LLC.
+/* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -35,7 +35,7 @@ px_write_file_header(stream *s, const gx_device *dev)
     static const char *const rendermode_color = "COLOR";
     static const char *const file_header =
 	"\n@PJL ENTER LANGUAGE = PCLXL\n\
-) HP-PCL XL;1;1;Comment Copyright artofcode LLC 2005\000\n";
+) HP-PCL XL;1;1;Comment Copyright Artifex Sofware, Inc. 2005\000\n";
     static const byte stream_header[] = {
 	DA(pxaUnitsPerMeasure),
 	DUB(0), DA(pxaMeasure),
