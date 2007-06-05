@@ -68,11 +68,11 @@ Ghostscript</a>.
 <h2><a name="Introduction"></a>Introduction</h2>
 
 <p>
-This document describes the process that artofcode LLC, the copyright holder
-of Ghostscript, uses for making new Ghostscript releases. Please note
+This document describes the process for making new Ghostscript releases.
+Please note
 that while the the license allows anyone to prepare and distribute
 releases in accordance with its terms and conditions, this document is
-really meant only to document the process used by artofcode LLC.
+really meant only to document the process used by Artifex Software, Inc.
 However, the eventual purpose of this document is to describe
 Ghostscript release procedures in enough detail that someone who knows
 little about Ghostscript but is generally familiar with the platform on
@@ -80,12 +80,6 @@ which the procedure is being carried out can execute the procedures
 correctly. So if you add or changing anything to/in this document,
 be sure to specify all command lines, file names, etc. in explicit
 detail.
-
-<p>
-The release process for the GPL and AFPL branches are similar, though
-there are some differences in terms of policy and release locations. See
-the section on <a href="#GPL_releases">GPL releases</a> below for
-information specific to GPL Ghostscript.
 
 <p>
 File names below that don't include an explicit subdirectory name are in the
@@ -99,8 +93,8 @@ you will want to change.
 
 <li>If you make any significant changes, please edit
 <b><tt>gscdef.c</tt></b> to change <b><tt>GS_PRODUCTFAMILY</tt></b> and
-<b><tt>GS_PRODUCT</tt></b> from "AFPL Ghostscript" to something else,
-in order to avoid confusion with artofcode's releases.
+<b><tt>GS_PRODUCT</tt></b> from "GPL Ghostscript" to something else,
+in order to avoid confusion with Artifex releases.
 
 <li>In the same file, you may also want to edit <b><tt>GS_COPYRIGHT</tt></b>
 to add your own copyright notice (although you must not remove any
@@ -118,7 +112,7 @@ below.
 <h2><a name="Servers"></a>Servers</h2>
 
 <p>
-The GPL and AFPL Ghostscript files are maintained on sites accessible to
+The GPL Ghostscript files are maintained on sites accessible to
 the public.  One specific site hosts the active SVN repository for code,
 data, and documentation, and the bug report data base; several sites
 offer distributions with release numbers, intended for wider
@@ -127,7 +121,7 @@ distribution.
 <h3><a name="Development_files"></a>Development sources and bug reports</h3>
 
 <p>
-The primary repository for GPL and AFPL Ghostscript is <a
+The primary repository for GPL Ghostscript is <a
 href="http://www.ghostscript.com/" class="offsite">ghostscript.com</a>.
 Please check there first for any news about releases or current work,
 and for information about where to download ghostscript and how to
@@ -139,7 +133,7 @@ class="offsite">svn.ghostscript.com</a>.
 
 <p>
 It may also be helpful to
-read the SourceForge AFPL Ghostscript home page (<a
+read the SourceForge Ghostscript home page (<a
 href="http://sourceforge.net/projects/ghostscript/" 
 class="offsite">http://sourceforge.net/projects/ghostscript/</a>).
 
@@ -154,24 +148,12 @@ class="offsite">http://sourceforge.net/project/showfiles.php?group_id=1897</a>
 </blockquote>
 
 <p>
-Stable releases are also distributed from
+Releases are also distributed from
 
 <blockquote>
 <a
-href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/" 
-class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/</a> or
-<br>
-<a
-href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/gpl/" 
-class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/gpl/</a>
-</blockquote>
-
-<p>
-Development releases are also distributed from
-
-<blockquote>
-<a href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/test/" 
-class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/test/</a>
+href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/GPL/" 
+class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/GPL/</a> or
 </blockquote>
 
 <h2><a name="Release_numbering"></a>Release numbering</h2>
@@ -670,8 +652,7 @@ files such as
 Unzip <b><tt>gsNNNsrc.zip</tt></b>.  
 The directory must be named <b><tt>gsN.NN</tt></b>.
 <p>
-Extract the AFPL fonts <b><tt>ghostscript-fonts-std-6.0.tar.gz</tt></b>
-or GNU fonts <b><tt>gnu-gs-fonts-std-6.0.tar.gz</tt></b>
+Extract the fonts <b><tt>ghostscript-fonts-std-#.##.tar.gz</tt></b>
 into a directory <b><tt>fonts</tt></b> adjacent to the 
 <b><tt>gsN.NN</tt></b> directory.  
 The fonts are needed in this location for building 
@@ -706,19 +687,11 @@ If you do not have WinZip Self-Extractor, you can use
 Upload <b><tt>ghostscript-#.##.tar.*</tt></b> to SourceForge (by anonymous
 FTP to <b><tt>upload.sourceforge.net</tt></b>, directory
 <b><tt>/incoming</tt></b>), and then post it using the "File Release"
-facility in the AFPL Ghostscript project. If this is a stable AFPL
-release put it in the <b><tt>ghostscript</tt></b> module.
-If this is a GPL release, put it in the <b><tt>gs-gpl</tt></b> module.
-If this is a test release or beta release, put
-it in the <b><tt>gs-devel</tt></b> or <b><tt>gs-beta</tt></b> module,
-respectively. 
+facility in the Ghostscript project. Put the release in the appropriate 
+package, usually "GPL Ghostscript".
 If you are adding executable builds or source archives for other
 platforms to an existing source release, please use the same release
 date as the source release, not the current date.
-
-<p>
-If <b><tt>doc/C-style.htm</tt></b> has changed, put it on
-<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/C-style.htm</tt></b>.
 
 <h3><a name="Beta_distributions"></a>Beta distributions</h3>
 
@@ -727,11 +700,7 @@ Do the steps for distributions in general.
 
 <p>
 Upload <b><tt>ghostscript-#.##.tar.*</tt></b> to
-<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/test</tt></b>.
-
-<p>
-Send an email announcement to the <tt>gs-test</tt> list
-announcing the new release.
+<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/GPL/test</tt></b>.
 
 <h3><a name="Public_releases"></a>Public releases</h3>
 
@@ -740,8 +709,8 @@ Do the steps for distributions in general.
 
 <p>
 Create a directory at
-<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/gs###/</tt></b>.  In that
-directory, store the following files:
+<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/GPL/gs###/</tt></b>.  
+In that directory, store the following files:
 
 <ul>
 
@@ -818,49 +787,11 @@ In <b><tt>gscdef.c</tt></b>, edit the definition of
 Edit <b><tt>doc/News.htm</tt></b> to remove all the content.
 
 
-<h2><a name="GPL_releases"></a>GPL Ghostscript releases</h2>
-
-<p>
-artofcode LLC re-releases each stable AFPL Ghostscript branch as
-GPL Ghostscript (under the GNU GPL license) when the next major stable
-AFPL release comes out, or after one calendar year, whichever comes first.
-
-<h3><a name="GPL_code"></a>GPL code</h3>
-
-<p>
-To make a GPL Ghostscript release from AFPL Ghostscript, update the
-LICENCE file to reflect the new status of the code. In general there
-can be no recipe for this as it depends on the niceties of ownership and
-permisison attached to each piece of code. However, a previous GPL
-release can serve as a guide.
-
-<p>
-The documentation
-should also be checked for references to the source being under the 
-AFPL to avoid confusion.
-
-<p>
-There are also generally some portions of code (usually drivers) which
-are limited to GPL Ghostscript only. These may want porting to the new
-version before release.
-
-<p>Once the license change is complete and the codebase has been
-updated to satifaction, follow the release process as described for AFPL
-Ghostscript above to test and package the new version. The distribution
-methods are parallel to those for the AFPL, with the GPL releases
-generally going under a separate header. For example, on the wisc
-ftp site upload the file to 
-<tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/gpl/gs###/</tt>.
-
-
 <h2><a name="Fonts"></a>Fonts</h2>
 
 <p>
-artofcode LLC distributes a package of the base 35 PostScript fonts, and a
-package of other miscellaneous fonts.  As with the Ghostscript code, each
-package is released both with the AFPL and with the GPL; however, unlike the
-Ghostscript code, artofcode releases these versions simultaneously rather
-than with a one-version delay.
+Artifex Software, Inc. distributes a package of the base 35 PostScript 
+fonts, and a package of other miscellaneous fonts.
 
 <p>
 To make the font packages, run the command
@@ -875,17 +806,11 @@ This creates the following files:
 <blockquote><pre>
 ghostscript-fonts-std-#.##.tar.gz
 ghostscript-fonts-other-#.##.tar.gz
-gnu-gs-fonts-std-#.##.tar.gz
-gnu-gs-fonts-other-#.##.tar.gz
 </pre></blockquote>
 
 <p>
-The first two of these use the AFPL, and should be uploaded to
-<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/fonts/</tt></b>.  The other two
-use the GPL, and should be uploaded to
-<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/gnu/fonts/</tt></b>.  For the GPL
-release, also see <a href="#GPL_after_releasing">"After releasing
-(GNU)"</a>.
+The first two of these use the GPL, and should be uploaded to
+<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/fonts/</tt></b>.  
 
 <!-- [2.0 end contents] ==================================================== -->
 
