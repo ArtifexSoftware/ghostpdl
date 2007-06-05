@@ -97,11 +97,6 @@ void gs_pattern2_init(gs_pattern2_template_t *);
 /* Check device color for Pattern Type 2. */
 bool gx_dc_is_pattern2_color(const gx_device_color *pdevc);
 
-/* Fill path or rect, and with a PatternType 2 color. */
-int gx_dc_pattern2_fill_path(const gx_device_color * pdevc, 
-			      gx_path * ppath, gs_fixed_rect * rect, 
-			      gx_device * dev);
-
 /* Set the 'shfill' flag to a PatternType 2 pattern instance. */
 int gs_pattern2_set_shfill(gs_client_color * pcc);
 
@@ -118,11 +113,6 @@ int gx_dc_pattern2_color_has_bbox(const gx_device_color * pdevc);
 /* Intersect a clipping path a shading BBox. */
 int gx_dc_pattern2_clip_with_bbox(const gx_device_color * pdevc, gx_device * pdev, 
 				  gx_clip_path *cpath_local, const gx_clip_path **cpath1);
-
-
-/* Create a path from a PatternType 2 shading BBox to a path. */
-int gx_dc_shading_path_add_box(gx_path *ppath, const gx_device_color * pdevc);
-
 
 /* Get a shading color space. */
 const gs_color_space *gx_dc_pattern2_get_color_space(const gx_device_color * pdevc);

@@ -52,10 +52,7 @@ gs_shfill(gs_state * pgs, const gs_shading_t * psh)
      * shfill is equivalent to filling the current clipping path (or, if
      * clipping, its bounding box) with the shading, disregarding the
      * Background if any.  In order to produce reasonable high-level output,
-     * we must actually implement this by calling gs_fill rather than
-     * gs_shading_fill_path.  However, filling with a shading pattern does
-     * paint the Background, so if necessary, we construct a copy of the
-     * shading with Background removed.
+     * we must implement this by calling gs_fill_path. 
      */
     gs_pattern2_template_t pat;
     gs_matrix imat;
@@ -65,7 +62,7 @@ gs_shfill(gs_state * pgs, const gs_shading_t * psh)
     int code;
 
     /* Must install the shading color space
-       tyo allow check_DeviceN_component_names initialize
+       to allow check_DeviceN_component_names initialize
        the color component map.
      */
     /* Don't bother with saving the old color space, color,

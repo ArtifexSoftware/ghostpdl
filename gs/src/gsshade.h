@@ -257,17 +257,12 @@ typedef struct gx_path_s gx_path;
 #define gs_matrix_fixed_DEFINED
 typedef struct gs_matrix_fixed_s gs_matrix_fixed;
 #endif
-/* Fill a path with a shading. */
-/* Depricated. To be removed soon. */
-int gs_shading_fill_path_adjusted(const gs_shading_t *psh, /*const*/ gx_path *ppath,
-			 const gs_fixed_rect *prect, gx_device *dev,
-			 gs_imager_state *pis, bool fill_background);
-
-/* Fill a path with a shading. */
+/* Fill a rectangle with a shading. */
 int gs_shading_do_fill_rectangle(const gs_shading_t *psh, 
 			 const gs_fixed_rect *prect, gx_device *dev,
 			 gs_imager_state *pis, bool fill_background);
 
+/* Add a shading bbox to a path. */
 int gs_shading_path_add_box(gx_path *ppath, const gs_rect *pbox,
 		     const gs_matrix_fixed *pmat);
 

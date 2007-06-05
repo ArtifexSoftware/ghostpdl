@@ -204,19 +204,6 @@ gs_pattern2_set_color(const gs_client_color * pcc, gs_state * pgs)
     return code;
 }
 
-/* Fill path or rect, and with a PatternType 2 color. */
-int
-gx_dc_pattern2_fill_path(const gx_device_color * pdevc, 
-                              gx_path * ppath, gs_fixed_rect * rect, 
-                              gx_device * dev)
-{
-    gs_pattern2_instance_t *pinst =
-        (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
-
-    return gs_shading_fill_path_adjusted(pinst->template.Shading, ppath, rect, dev,
-                                (gs_imager_state *)pinst->saved, !pinst->shfill);
-}
-
 /* Fill a rectangle with a PatternType 2 color. */
 /* WARNING: This function doesn't account the shading BBox
    to allow the clipent to optimize the clipping 
@@ -320,7 +307,7 @@ gx_dc_pattern2_color_has_bbox(const gx_device_color * pdevc)
 }
 
 /* Create a path from a PatternType 2 shading BBox to a path. */
-int
+private int
 gx_dc_shading_path_add_box(gx_path *ppath, const gx_device_color * pdevc)
 {
     gs_pattern2_instance_t *pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
