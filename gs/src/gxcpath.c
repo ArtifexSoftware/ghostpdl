@@ -722,6 +722,8 @@ gx_cpath_scale_exp2_shared(gx_clip_path * pcpath, int log2_scale_x,
 		SCALE_V(ymax, log2_scale_y);
 #undef SCALE_V
 	    }
+	list->xmin = arith_rshift(list->xmin, -log2_scale_x);
+	list->xmax = arith_rshift(list->xmax, -log2_scale_x);
     }
     pcpath->id = gs_next_ids(pcpath->path.memory, 1);	/* path changed => change id */
     return 0;
@@ -1022,6 +1024,40 @@ gx_cpath_rect_visible(gx_clip_path * pcpath, gs_int_rect *prect)
 	return true;
     }
     return false;
+}
+
+int
+gx_cpath_copy(const gx_clip_path * from, gx_clip_path * pcpath)
+{   /* *pcpath must be initialized. */
+    gx_clip_rect *r, *s;
+    gx_clip_list *l = &pcpath->rect_list->list;
+
+    pcpath->path_valid = false;
+    /* NOTE: pcpath->path still contains the old path. */
+    if (pcpath->path_list)
+	rc_decrement(pcpath->path_list, "gx_cpath_copy");
+    pcpath->path_list = NULL;
+    pcpath->rule = from->rule;
+    pcpath->outer_box = from->outer_box;
+    pcpath->inner_box = from->inner_box;
+    l->single = from->rect_list->list.single;
+    for (r = from->rect_list->list.head; r != NULL; r = r->next) {
+	s = gs_alloc_struct(from->rect_list->rc.memory, gx_clip_rect, &st_clip_rect, "gx_cpath_copy");
+	if (s == NULL)
+	    return_error(gs_error_VMerror);
+	*s = *r;
+	s->next = NULL;
+	if (l->tail) {
+	    s->prev = l->tail;
+	    l->tail->next = s;
+	} else {
+	    l->head = s;
+	    s->prev = NULL;
+	}
+	l->tail = s;
+    }
+    l->count = from->rect_list->list.count;
+    return 0;
 }
 
 /* ------ Debugging printout ------ */

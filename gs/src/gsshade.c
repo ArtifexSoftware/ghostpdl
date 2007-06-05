@@ -418,7 +418,7 @@ gs_shading_Tpp_init(gs_shading_t ** ppsh,
 
 /* Add a user-space rectangle to a path. */
 int
-shading_path_add_box(gx_path *ppath, const gs_rect *pbox,
+gs_shading_path_add_box(gx_path *ppath, const gs_rect *pbox,
 		     const gs_matrix_fixed *pmat)
 {
     gs_fixed_point pt;
@@ -527,7 +527,7 @@ gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
 		}
 		code = gx_cpath_from_rectangle(path_clip, &path_box);
 		if (code >= 0) {
-		    code = shading_path_add_box(box_path, &psh->params.BBox, pmat);
+		    code = gs_shading_path_add_box(box_path, &psh->params.BBox, pmat);
 		    if (code == gs_error_limitcheck) {
 			/* Ignore huge BBox - bug 689027. */
 			code = 0;

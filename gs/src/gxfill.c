@@ -557,6 +557,20 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     return code;
 }
 
+private int
+pass_shading_area_through_clip_path_device(gx_device * pdev, const gs_imager_state * pis,
+		     gx_path * ppath, const gx_fill_params * params,
+		 const gx_device_color * pdevc, const gx_clip_path * pcpath)
+{
+    if (pdevc == NULL) {
+	gx_device_clip *cdev = (gx_device_clip *)pdev;
+
+	return dev_proc(cdev->target, fill_path)(cdev->target, pis, ppath, params, pdevc, pcpath);
+    }
+    /* We know that tha clip path device implements fill_path with default proc. */
+    return gx_default_fill_path(pdev, pis, ppath, params, pdevc, pcpath);
+}
+
 /*
  * Fill a path.  This is the default implementation of the driver
  * fill_path procedure.
@@ -591,14 +605,14 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	gs_imager_state *pis_noconst = (gs_imager_state *)pis; /* Break const. */
 
 	if (ppath != NULL) {
-	    gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
+	    code = gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
+	    if (code < 0)
+		return code;
 	    code = gx_cpath_intersect_with_params(&cpath_intersection, ppath, params->rule, 
 			pis_noconst, params);
 	    pcpath1 = &cpath_intersection;
 	} else
 	    pcpath1 = pcpath;
-
-
 	pcpath2 = pcpath1;
 	if (code >= 0)
 	    code = gx_dc_pattern2_clip_with_bbox(pdevc, pdev, &cpath_with_shading_bbox, &pcpath1);
@@ -616,6 +630,9 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	    cdev.HWResolution[1] = pdev->HWResolution[1];
 	    cdev.target = pdev;
 	    dev = (gx_device *)&cdev;
+	    if ((*dev_proc(pdev, pattern_manage))(pdev, 
+		    gs_no_id, NULL, pattern_manage__shading_area) > 0)
+		set_dev_proc(&cdev, fill_path, pass_shading_area_through_clip_path_device);
 	    (*dev_proc(dev, open_device))(dev);
 	    cb.p.x = fixed2int_pixround(clip_box.p.x);
 	    cb.p.y = fixed2int_pixround(clip_box.p.y);

@@ -27,6 +27,7 @@
 #include "gsstate.h"
 #include "gserrors.h"
 #include "gsptype2.h"
+#include "gsshade.h"
 #include "gzpath.h"
 #include "gzcpath.h"
 #include "gdevpdfx.h"
@@ -520,21 +521,6 @@ lcvd_fill_rectangle_shifted2(gx_device *dev, int x, int y, int width, int height
     return cvd->std_fill_rectangle((gx_device *)&cvd->mdev, 
 	x - cvd->mdev.mapped_x, y - cvd->mdev.mapped_y, width, height, color);
 }
-private int 
-lcvd_fill_rectangle_shifted_from_mdev(gx_device *dev, int x, int y, int width, int height, gx_color_index color)
-{
-    pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
-
-    return cvd->std_fill_rectangle((gx_device *)&cvd->mdev, 
-	x - cvd->mdev.mapped_x, y - cvd->mdev.mapped_y, width, height, color);
-}
-private void 
-lcvd_get_clipping_box_from_target(gx_device *dev, gs_fixed_rect *pbox)
-{
-    gx_device_memory *mdev = (gx_device_memory *)dev;
-
-    (*dev_proc(mdev->target, get_clipping_box))(mdev->target, pbox);
-}
 private void
 lcvd_get_clipping_box_shifted_from_mdev(gx_device *dev, gs_fixed_rect *pbox)
 {
@@ -998,9 +984,9 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
 	/* Type 3 images will write to the mask directly. */
 	dev_proc(&cvd->mdev, fill_rectangle) = (need_mask ? lcvd_fill_rectangle_shifted2 
 							  : lcvd_fill_rectangle_shifted);
-	dev_proc(&cvd->mdev, get_clipping_box) = lcvd_get_clipping_box_from_target;
+	dev_proc(&cvd->mdev, get_clipping_box) = lcvd_get_clipping_box_shifted_from_mdev;
     } else {
-	dev_proc(&cvd->mdev, fill_rectangle) = lcvd_fill_rectangle_shifted_from_mdev;
+	dev_proc(&cvd->mdev, fill_rectangle) = lcvd_fill_rectangle_shifted;
 	dev_proc(&cvd->mdev, get_clipping_box) = lcvd_get_clipping_box_shifted_from_mdev;
     }
     dev_proc(&cvd->mdev, pattern_manage) = lcvd_pattern_manage;
@@ -1022,28 +1008,6 @@ pdf_remove_masked_image_converter(gx_device_pdf *pdev, pdf_lcvd_t *cvd, bool nee
 	(*dev_proc(cvd->mask, close_device))((gx_device *)cvd->mask);
 	gs_free_object(cvd->mask->memory, cvd->mask, "pdf_remove_masked_image_converter");
     }
-}
-
-private int
-path_scale(gx_path *path, double scalex, double scaley)
-{
-    segment *pseg = (segment *)path->first_subpath;
-
-    for (;pseg != NULL; pseg = pseg->next) {
-	pseg->pt.x = (fixed)floor(pseg->pt.x * scalex + 0.5);
-	pseg->pt.y = (fixed)floor(pseg->pt.y * scaley + 0.5);
-	if (pseg->type == s_curve) {
-	    curve_segment *s = (curve_segment *)pseg;
-
-	    s->p1.x = (fixed)floor(s->p1.x * scalex + 0.5);
-	    s->p1.y = (fixed)floor(s->p1.y * scaley + 0.5);
-	    s->p2.x = (fixed)floor(s->p2.x * scalex + 0.5);
-	    s->p2.y = (fixed)floor(s->p2.y * scaley + 0.5);
-	}
-    }
-    path->position.x = (fixed)floor(path->position.x * scalex + 0.5);
-    path->position.y = (fixed)floor(path->position.y * scaley + 0.5);
-    return 0;
 }
 
 /* ------ Driver procedures ------ */
@@ -1110,7 +1074,8 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    gs_matrix m, save_ctm = ctm_only(pis), ms, msi, mm;
 	    gs_int_point rect_size;
 	    /* double scalex = 1.9, scaley = 1.4; debug purpose only. */
-	    double scale, scalex = 1.0, scaley = 1.0;
+	    double scale, scalex, scaley;
+	    int log2_scale_x = 0, log2_scale_y = 0;
 	    gx_drawing_color dc = *pdcolor;
 	    gs_pattern2_instance_t pi = *(gs_pattern2_instance_t *)dc.ccolor.pattern;
 	    gs_state *pgs = gs_state_copy(pi.saved, gs_state_memory(pi.saved));
@@ -1150,12 +1115,13 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 		   we prefer to deal only with integers being powers of 2
 		   in order to avoid possible distorsions when scaling paths.
 		*/
-		scalex = ceil(sqrt(scale));
-		scalex = scaley = 1 << ilog2((int)scalex);
-		if (scalex * scaley < scale)
-		    scalex *= 2;
-		if (scalex * scaley < scale)
-		    scaley *= 2;
+		log2_scale_x = log2_scale_y = ilog2((int)ceil(sqrt(scale)));
+		if ((double)(1 << log2_scale_x) * (1 << log2_scale_y) < scale)
+		    log2_scale_y++;
+		if ((double)(1 << log2_scale_x) * (1 << log2_scale_y) < scale)
+		    log2_scale_x++;
+		scalex = (double)(1 << log2_scale_x);
+		scaley = (double)(1 << log2_scale_y);
 		rect_size.x = (int)floor(rect_size.x / scalex + 0.5);
 		rect_size.y = (int)floor(rect_size.y / scaley + 0.5);
 		gs_make_scaling(1.0 / scalex, 1.0 / scaley, &ms);
@@ -1182,32 +1148,11 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    }
 	    pdf_put_matrix(pdev, NULL, &cvd.m, " cm q\n");
 	    cvd.write_matrix = false;
-	    if (code >= 0) {
-		/* See gx_default_fill_path. */
-		gx_clip_path cpath_intersection;
-		gx_path path_intersection, path1, *p = &path_intersection;
-
-		gx_path_init_local(&path_intersection, pdev->memory);
-		gx_path_init_local(&path1, pdev->memory);
-		gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
-		if ((code = gx_cpath_intersect(&cpath_intersection, ppath, params->rule, (gs_imager_state *)pis)) >= 0)
-		    code = gx_cpath_to_path(&cpath_intersection, &path_intersection);
-		if (code >= 0 && scale > 1) {
-		    code = gx_path_copy(&path_intersection, &path1);	
-		    if (code > 0) {
-			p = &path1;
-			code = path_scale(&path1, scalex, scaley);
-		    }
-		}
-		if (code >= 0)
-		    code = gx_dc_pattern2_fill_path(&dc, p, NULL, (gx_device *)&cvd.mdev);
-		gx_path_free(&path_intersection, "gdev_pdf_fill_path");
-		gx_path_free(&path1, "gdev_pdf_fill_path");
-		gx_cpath_free(&cpath_intersection, "gdev_pdf_fill_path");
-	    }
-	    if (code >= 0) {
+	    if (code >= 0)
+		code = gs_shading_do_fill_rectangle(pi.template.Shading,
+		     NULL, (gx_device *)&cvd.mdev, (gs_imager_state *)pgs, !pi.shfill);
+	    if (code >= 0)
 		code = pdf_dump_converted_image(pdev, &cvd);
-	    }
 	    stream_puts(pdev->strm, "Q Q\n");
 	    pdf_remove_masked_image_converter(pdev, &cvd, need_mask);
 	    gs_setmatrix((gs_state *)pis, &save_ctm);

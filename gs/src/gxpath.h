@@ -343,6 +343,7 @@ bool
 				fixed, fixed);
 const gs_fixed_rect *cpath_is_rectangle(const gx_clip_path * pcpath);
 bool gx_cpath_rect_visible(gx_clip_path * pcpath, gs_int_rect *prect);
+int gx_cpath_copy(const gx_clip_path * from, gx_clip_path * pcpath);
 
 /* Enumerate a clipping path.  This interface does not copy the path. */
 /* However, it does write into the path's "visited" flags. */

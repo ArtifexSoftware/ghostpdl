@@ -331,7 +331,7 @@ gx_dc_shading_path_add_box(gx_path *ppath, const gx_device_color * pdevc)
     else {
 	gs_state *pis = pinst->saved;
 
-	return shading_path_add_box(ppath, &psh->params.BBox, &pis->ctm);
+	return gs_shading_path_add_box(ppath, &psh->params.BBox, &pis->ctm);
     }
 }
 
