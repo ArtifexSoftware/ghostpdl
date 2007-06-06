@@ -1,0 +1,464 @@
+%!PS-Adobe-3.0
+%%Title: (CMYK Intensity Level Representation Test for the pcl3 Driver)
+%%Copyright: Copyright (C) 2000 by Martin Lottermoser. All rights reserved.
+%%Creator: Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig, Germany; e-mail: Martin.Lottermoser@t-online.de
+%%CreationDate: $Date: 2000/12/11 18:01:54 $
+%%LanguageLevel: 2
+%%Pages: 1
+%%Orientation: Portrait
+%%DocumentNeededResources: font Helvetica Helvetica-Bold
+%%EndComments
+%******************************************************************************
+% @(#)$Id: levels-test.ps,v 1.14 2000/12/11 18:01:54 Martin Rel $
+%
+% This PostScript program generates a test page for visually inspecting the
+% representation of equally-spaced CMYK intensity levels.
+% It is intended for the use with ghostscript's pcl3 driver.
+%
+% You can print this document on media of ISO A4 or US Letter size.
+%
+%******************************************************************************
+%%BeginProlog
+
+/runter {	% <Distanz> runter -
+  currentpoint
+  3 -1 roll sub
+  exch pop links exch
+  moveto
+} bind def
+
+% Schriftgroesse 10 bp vorausgesetzt.
+/nz { 12 runter } def
+/hz {  6 runter } def
+
+/ein {
+  currentpoint exch pop 150 exch moveto
+} bind def
+
+/zeigeZentriert {	% <Zeichenkette> zeigeZentriert -
+  dup stringwidth exch -2 div exch rmoveto show
+} bind def
+
+%------------------------------------------------------------------------------
+
+/hole_falls_bekannt {	% <dict> <Name> hole_falls_bekannt [<Wert>] <gefunden>
+  2 copy known
+  {get true} {pop pop false} ifelse
+} bind def
+
+/zeigeParameter {	% <Name> zeigeParameter -
+  ein
+  currentpagedevice exch hole_falls_bekannt
+  {temp cvs}{(unknown)} ifelse
+  show
+} bind def
+
+/zeigeParameterFallsBekannt {	% <Name> zeigeParameterFallsBekannt -
+  dup currentpagedevice exch hole_falls_bekannt
+  {
+    exch temp cvs show (:) show ein
+    dup type /nulltype eq
+    {(--null--)}	% zur Unterscheidung von (null).
+    {temp cvs}
+    ifelse
+    show nz
+  }
+  {
+    pop
+  }
+  ifelse
+} bind def
+
+%------------------------------------------------------------------------------
+
+/zeigeFrequenz {	% <dict> <Schluessel> zeigeFrequenz -
+  get temp cvs show ( cells/inch) show
+} bind def
+
+/zeigeTF {	% <HTD> zeigeTF -
+  /TransferFunction known
+  {(, transfer) show}
+  if
+} bind def
+
+% Komponenten-Verzeichnisse in einem Typ-5-Verzeichnis
+/HTDict2 <<
+  % Aufrufe: <HTD> <Routine> -, kein Zeilenumbruch
+  1 {
+      (, ) show /Frequency zeigeFrequenz
+  }
+  3 {
+    (, ) show
+    dup /Width get temp cvs show (x) show /Height get temp cvs show
+    ( pixels) show
+  }
+  dup 6 exch	% 6 kann hier wie 3 behandelt werden.
+>> def
+
+/zeigeTransfer {	% <HTD> zeigeTransfer -
+  /TransferFunction known
+  {(With transfer function.) show nz} if
+} bind def
+
+% Oberste Ebene
+/HTDict1 <<
+  % Aufrufe: <HTD> <Routine> -
+  1 {
+    (Frequency: ) show
+    dup /Frequency zeigeFrequenz nz
+    zeigeTransfer
+  }
+  2 {
+    % Die Ausrichtung klappt nicht ganz, weil Helvetica eine
+    % Proportionalschrift ist.
+    dup (Red:    ) show /RedFrequency   zeigeFrequenz nz
+    dup (Green: )  show /GreenFrequency zeigeFrequenz nz
+    dup (Blue:   ) show /BlueFrequency  zeigeFrequenz nz
+        (Gray:   ) show /GrayFrequency  zeigeFrequenz nz
+  }
+  3 {
+    (Cell size: ) show
+    dup /Width  get temp cvs show (x) show
+    dup /Height get temp cvs show ( pixels) show nz
+    zeigeTransfer
+  }
+  dup 6 exch	% 6 kann hier wie 3 behandelt werden.
+  5 {
+    [/Default  /Gray  /Red /Green /Blue  /Cyan /Magenta /Yellow /Black]
+    {
+      % <HTD_1> <Name>
+      1 index 1 index known
+      {
+	% <HTD_1> <Name>
+	dup temp cvs show (: ) show
+	1 index exch get	% <HTD_1> <HTD_2>
+	dup
+	(type ) show dup /HalftoneType get dup temp cvs show
+	% <HTD_1> <HTD_2> <HTD_2> <Typ>
+	HTDict2 zeigeHTTeile
+	zeigeTF
+	nz
+      }
+      {pop}
+      ifelse
+      % <HTD_1>
+    } forall
+    pop
+  }
+>> def
+
+/zeigeHTTeile {	% <HTD> <Typ> <Routinen-Verzeichnis> zeigeHTTeile -
+  dup 2 index known
+  { exch get exec }	% <HTD> Routine -
+  { pop pop pop }
+  ifelse
+} bind def
+
+%------------------------------------------------------------------------------
+
+/Rechteckpfad {		% - Rechteckpfad -
+  currentpoint
+  newpath
+    moveto
+    Breite 0 rlineto
+    0 Hoehe  rlineto
+    Breite neg 0 rlineto
+    closepath
+} bind def
+
+/Rechteck {		% <C> <M> <Y> <K> Rechteck -
+  gsave
+    setcmykcolor
+    Rechteckpfad
+    currentpoint fill moveto
+    mitRand
+    {
+      0 setgray
+      0 setlinewidth
+      Rechteckpfad
+      stroke
+    } if
+  grestore
+} bind def
+
+/macheTest {		% <Array mit Farbe> <Levels> macheTest -
+  /maxLevel exch 1 sub def
+  gsave
+    0 1 maxLevel
+    {
+      maxLevel div
+      1 index aload pop		% <Faktor> <C> <M> <Y> <K>
+      1 1 4 {pop 4 index mul 4 1 roll} for
+      Rechteck
+      pop
+      Breite 0 rmoveto
+    } for
+  grestore
+  pop
+  mitRand not
+  {
+    gsave
+      0 setlinewidth  0 setgray
+      currentpoint newpath moveto
+        maxLevel 1 add Breite mul
+	dup 0 rlineto
+	0 Hoehe rlineto
+	neg 0 rlineto
+	closepath
+      stroke
+    grestore
+  } if
+  Hoehe 1.2 mul runter
+} bind def
+
+/vollerTest {	% <mit Nummern> vollerTest -
+  % Parameteruebergabe durch dict stack: schwarzeStufen, CMYStufen, Basisbreite,
+  % Maximalbreite, Hoehe.
+
+  % Maximale Anzahl Stufen
+  /maxStufen
+  schwarzeStufen CMYStufen gt {schwarzeStufen} {CMYStufen} ifelse
+  def
+
+  % Tatsaechliche Breite der 4 Testkaesten
+  /Kastenbreite
+  maxStufen Basisbreite mul dup Maximalbreite gt {pop Maximalbreite} if
+  def
+
+  % Ueberschrift
+  gross setfont
+  (Test with ) show
+  CMYStufen temp cvs show
+  CMYStufen schwarzeStufen ne
+  { ( CMY and ) show schwarzeStufen temp cvs show ( black) show } if
+  ( levels) show
+  nz
+  normal setfont
+
+  /Breite Kastenbreite CMYStufen div def
+
+  % Nummerierung, falls gewuenscht und sinnvoll
+  CMYStufen schwarzeStufen eq and
+  {
+    gsave
+      sehrklein setfont
+      Breite 2 div 0 rmoveto
+      0 1 schwarzeStufen 1 sub
+      {
+	temp cvs
+	gsave zeigeZentriert grestore
+	Breite 0 rmoveto
+      } for
+    grestore
+    3 runter
+  } if
+
+  % Die vier Streifen
+  Hoehe runter
+  [1 0 0 0] CMYStufen      macheTest
+  [0 1 0 0] CMYStufen      macheTest
+  [0 0 1 0] CMYStufen      macheTest
+  /Breite Kastenbreite schwarzeStufen div def
+  [0 0 0 1] schwarzeStufen macheTest
+} bind def
+
+%%EndProlog
+%******************************************************************************
+%%BeginSetup
+
+%%IncludeResource: font Helvetica-Bold
+/gross /Helvetica-Bold findfont 10 scalefont def
+/sehrgross /Helvetica-Bold findfont 12 scalefont def
+
+%%IncludeResource: font Helvetica
+/normal /Helvetica findfont 10 scalefont def
+/klein /Helvetica findfont 7 scalefont def
+/sehrklein /Helvetica findfont 5 scalefont def
+
+/temp 100 string def
+
+/links 50 def
+
+/Basisbreite 20 def
+/Breite Basisbreite def
+/Hoehe Basisbreite def
+/Maximalbreite 515 def
+
+/mitRand true def
+
+%%EndSetup
+%******************************************************************************
+%%Page: 1 1
+
+% Damit alles sowohl auf A4 als auch auf US Letter passt, darf man nicht ueber
+% eine Breite von 595 und eine Hoehe von 792 bp hinausgehen.
+
+% Ueberschrift
+sehrgross setfont
+300 760 moveto
+(CMYK Intensity Level Representation Test) zeigeZentriert
+
+%==============================================================================
+
+% Erlaeuterung
+links 740 moveto
+normal setfont
+(This test page \(designed for ghostscript's pcl3 driver\) is intended \
+for visually inspecting the representation of) show nz
+(equally-spaced intensity levels.) show nz
+nz
+
+%==============================================================================
+
+% Konfiguration
+gross setfont
+(Configuration for this test run) show nz
+normal setfont
+hz
+/HoeheKonfiguration currentpoint exch pop def	% Merken der Hoehe.
+(Product:) show ein
+  product show ( \(revision ) show revision temp cvs show (\)) show nz
+(Interpreter version:) show ein version show nz
+/OutputDevice zeigeParameterFallsBekannt % Optional seit Level 3.
+/Subdevice zeigeParameterFallsBekannt	% pcl3
+/Model     zeigeParameterFallsBekannt	% hpdj
+currentpagedevice /ColourModel known
+{ (ColourModel: ) show /ColourModel zeigeParameter nz }	% pcl3
+{
+  currentpagedevice /ColourMode known	% hpdj
+  { (ColourMode: ) show /ColourMode zeigeParameter nz }
+  { /ProcessColorModel zeigeParameterFallsBekannt}
+  ifelse
+}
+ifelse
+/schwarzeStufen 2 def
+currentpagedevice /BlackLevels known
+{
+  (BlackLevels: ) show ein
+  currentpagedevice /BlackLevels get
+  dup /schwarzeStufen exch def
+  temp cvs
+  show nz
+} if
+schwarzeStufen 0 le { /schwarzeStufen 2 def } if
+/CMYStufen 2 def
+currentpagedevice /CMYLevels known
+{
+  currentpagedevice dup /ColourModel known
+  { /ColourModel get (RGB) eq }
+  { pop false }		% hpdj
+  ifelse
+  {
+    (RGBLevels: ) show ein
+    currentpagedevice /RGBLevels get
+  }
+  {
+    (CMYLevels: ) show ein
+    currentpagedevice /CMYLevels get
+  }
+  ifelse
+  dup /CMYStufen exch def
+  temp cvs
+  show nz
+} if
+CMYStufen 0 le { /CMYStufen 2 def } if
+/IntensityRendering zeigeParameterFallsBekannt	% pcl3
+(Resolution: ) show ein
+currentpagedevice /HWResolution get
+aload pop exch temp cvs show ( x ) show temp cvs show
+( pixels per inch) show nz
+/PrintQuality zeigeParameterFallsBekannt
+currentpagedevice /Medium known
+{ /Medium zeigeParameterFallsBekannt }		% pcl3
+{
+  % MediaType ist ein Standard-Parameter, aber wir wollen ihn nur fuer hpdj
+  % sehen.
+  currentpagedevice dup /OutputDevice known
+  {
+    /OutputDevice get
+    (hpdj) eq { (MediaType: ) show /MediaType zeigeParameter nz } if
+  }
+  { pop }
+  ifelse
+}
+ifelse
+
+hz
+
+% Transferfunktionen
+currentcolortransfer true
+0 1 3 { pop exch length 0 eq and } for
+{(This test run uses trivial transfer functions \(no gamma correction\).) show}
+{(This test run uses non-trivial transfer functions \(gamma correction\).) show}
+ifelse
+nz
+
+/HoeheEndeKonfiguration currentpoint exch pop def
+
+% Halbtonzustand
+/links links 300 add def
+links HoeheKonfiguration moveto
+currenthalftone dup /HalftoneType get dup
+(Halftone type: ) show temp cvs show nz	% <HTD> <Typ>
+HTDict1 zeigeHTTeile
+/links 50 def
+links HoeheEndeKonfiguration moveto
+
+nz
+
+%==============================================================================
+
+% Test mit BlackLevels und CMYLevels
+false vollerTest
+nz
+
+%==============================================================================
+
+% Sei h >= 2 die Anzahl von der Hardware darstellbarer Stufen und p >= 1 die
+% Anzahl Pixel im Halbtonschirm. Dann kann man insgesamt
+%
+%	n = h + (h - 1)*(p - 1) = (h - 1)*p + 1
+%
+% verschiedene Intensitaeten darstellen. Gleichmaessig ueber das Intervall
+% [0, 1] verteilt, findet man sie an den Stellen:
+%
+%	Intensitaet(j) = j/(n - 1),	0 <= j <= n-1
+%
+% Waehlt man nun eine andere (natuerlich groessere) Stufenzahl N fuer den
+% Aufruf von 'vollerTest', so bekommt man diese Intensitaeten genau dann mit,
+% wenn N-1 ein Vielfaches von n-1 ist. Einsetzen der Hardware-Stufen fuehrt zu
+% der Aussage, dass N-1 ein Vielfaches von (h - 1)*p sein muss, notwendigerweise
+% also ein Vielfaches von h-1.
+
+% Der folgende Test soll mindestens in den Faellen h = 2, 3, 4 und 8 die
+% exakt darstellbaren Intensitaeten treffen. Dies erfordet, dass N-1 ein
+% Vielfaches von kgV(1, 2, 3, 7) = 42 sein muss. (Diese Nummer kenn' ich doch
+% irgendwoher...)
+/schwarzeStufen 43 def
+/CMYStufen schwarzeStufen def
+true vollerTest
+nz
+
+% Ein Test mit effektiv kontinuierlicher Aenderung der Intensitaet.
+% Die 401 kommen als kgV(16, 25) + 1 zustande, wobei ich an 4x4 und 5x5 Pixel
+% grosse Halbtonzellen denke.
+% Bei dieser Anzahl und 300 ppi hat jedes Feld etwas mehr als 5 Pixel zur
+% Verfuegung (Maximalbreite/72*300/401).
+/mitRand false def
+/schwarzeStufen 401 def
+/CMYStufen schwarzeStufen def
+false vollerTest
+
+%==============================================================================
+
+30 runter
+klein setfont
+(Author: Martin Lottermoser) show
+10 runter
+($Id: levels-test.ps,v 1.14 2000/12/11 18:01:54 Martin Rel $) show
+
+showpage
+
+%******************************************************************************
+%%Trailer
+%%EOF

@@ -1,0 +1,81 @@
+
+	gdevfmlbp.c  -  Fujitsu FMLBP2xx 用デバイスドライバ
+
+			Version 1.2   1998/03/30
+
+◆ はじめに
+
+  これは、ghostscript 2.6.1 で、FMLBP2xx 系のページプリンタを使うための
+  デバイスドライバです。
+
+
+◆ インストール方法
+
+ 1. gdevfmlbp.c を ghostscript 2.6.1 のソースプログラムを展開した
+    ディレクトリにコピーします。
+
+ 2. Makefile に gdevfmlbp.mak を追加します。
+
+ 3. Makefile の DEVICE_DEVS に fmlbp.dev を加えます。
+
+    例: DEVICE_DEVS=x11.dev fmlbp.dev
+			    ~~~~~~~~~
+ 4. make コマンドで gs をコンパイルし、インストールします。
+
+
+◆ 使用方法
+
+   デバイスドライバの選択は -sDEVICE オプションによって行ないます。
+
+    例: gs -sDEVICE=fmlbp
+
+   (注意)プリンタ本体のエミュレーション設定を FMモードに設定してください。
+
+   デフォルトの解像度は 400dpi です。240dpi で印刷する場合は、次のように
+   -r オプションで指定します。
+
+    例: gs -sDEVICE=fmlbp  -r240
+
+   (注意) -r オプションの値はチェックしていません。
+
+   用紙サイズを指定する場合には、-sPAPERSIZE オプションで指定します。
+   指定可能なサイズは、a3, a4, a5, b4, b5, legal, letter です。
+   デフォルトの用紙は a4 です。a3 を指定する時は次のように指定します。
+
+    例: gs -sDEVICE=fmlbp  -sPAPERSIZE=a3
+
+
+◆ バグ/制限事項
+
+ o 動作確認は、Solaris上の ghostscript 2.6.1j と FMLBP226 で行なってます。
+
+ o おそらく Aladdin 版の ghostcript 5.01 でも動作すると思いますが、確認
+   していません。5.01 では gdevfmlbp.mk5 を gdevfmlbp.mak の代りに試して
+   みてください。
+
+ o 用紙は a3, a4, a5, b4, b5, legal, letter, ハガキ に対応させましたが、
+   a4 以外は、あまりテストしていませんので、問題があるかもしれません。
+
+
+◆ おわりに
+
+ o この FMLBP2xx 用ドライバは、成松宏氏の ESC/Page 用ドライバ gdevepag を
+   後藤和茂氏 <goto@statabo.rim.or.jp> が、FMLBP2xx 用に改造した物です。
+   修正および拡張を 中山正一 <naka@fadev.fvd.fujitsu.co.jp> が行っています。
+
+   なお、ESC/Page 用ドライバは、Tom Quinn氏 <trq@prg.oxford.ac.uk> 作成の
+   lbp8 用ドライバを成松宏氏 <nari@lsi.tmg.nec.co.jp> が、ESC/Page 用に
+   改造した物です。
+
+ o 配布条件は、もとのソースファイルと同様 GPL に従います。
+
+ o 私も富士通VLSI(株)も富士通(株)も、本ソフトウェアの修正その他、如何なる
+   保守についても義務を負いません。また、本ソフトウェアを使用することに
+   よって如何なる損害が生じても一切責任を負いません。
+   各自の責任でプログラムをご使用ください。
+
+ o ご意見・ご要望などは、naka@fadev.fvd.fujitsu.co.jp へお願いします。
+
+   
+                富士通VLSI(株)  中山 正一 <naka@fadev.fvd.fujitsu.co.jp>
+[EOF]

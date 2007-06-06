@@ -412,7 +412,7 @@ $(DD)lvga256.dev : $(DEVS_MAK) $(lvga256_)
 	$(ADDMOD) $(DD)lvga256 -lib vga vgagl
 
 $(GLOBJ)gdevl256.$(OBJ) : $(GLSRC)gdevl256.c $(GDEV) $(memory__h)
-	$(GLCC) $(GLO_)gdevl256.$(OBJ) $(C_) $(GLSRC)gdevl256.c
+	$(GLCCSHARED) $(GLO_)gdevl256.$(OBJ) $(C_) $(GLSRC)gdevl256.c
 
 vgalib_=$(GLOBJ)gdevvglb.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ)
 $(DD)vgalib.dev : $(DEVS_MAK) $(vgalib_)
@@ -420,7 +420,18 @@ $(DD)vgalib.dev : $(DEVS_MAK) $(vgalib_)
 	$(ADDMOD) $(DD)vgalib -lib vga
 
 $(GLOBJ)gdevvglb.$(OBJ) : $(GLSRC)gdevvglb.c $(GDEV) $(gdevpccm_h) $(gsparam_h)
-	$(GLCC) $(GLO_)gdevvglb.$(OBJ) $(C_) $(GLSRC)gdevvglb.c
+	$(GLCCSHARED) $(GLO_)gdevvglb.$(OBJ) $(C_) $(GLSRC)gdevvglb.c
+
+### Shared library object supporting vgalib.
+### NON PORTABLE, ONLY UNIX WITH GCC SUPPORT
+
+$(GLOBJ)lvga256.so: $(lvga256_)
+	$(CCLD) -shared -Wl,'-solvga256.so' $(lvga256_) -lvga -lvgagl
+	mv lvga256.so $(GLOBJ)lvga256.so
+
+$(GLOBJ)vgalib.so: $(vgalib_)
+	$(CCLD) -shared -Wl,'-sovgalib.so' $(vgalib_) -lvga -lvgagl
+	mv vgalib.so $(GLOBJ)vgalib.so
 
 ### -------------------------- The X11 device -------------------------- ###
 
@@ -450,14 +461,14 @@ GDEVX=$(GDEV) $(x__h) $(gdevx_h) $(TOP_MAKEFILES)
 $(GLOBJ)gdevx.$(OBJ) : $(GLSRC)gdevx.c $(GDEVX) $(math__h) $(memory__h)\
  $(gscoord_h) $(gsdevice_h) $(gsiparm2_h) $(gsmatrix_h) $(gsparam_h)\
  $(gxdevmem_h) $(gxgetbit_h) $(gxiparam_h) $(gxpath_h)
-	$(GLCC) $(XINCLUDE) $(GLO_)gdevx.$(OBJ) $(C_) $(GLSRC)gdevx.c
+	$(GLCCSHARED) $(XINCLUDE) $(GLO_)gdevx.$(OBJ) $(C_) $(GLSRC)gdevx.c
 
 $(GLOBJ)gdevxcmp.$(OBJ) : $(GLSRC)gdevxcmp.c $(GDEVX) $(math__h)
 	$(GLCC) $(XINCLUDE) $(GLO_)gdevxcmp.$(OBJ) $(C_) $(GLSRC)gdevxcmp.c
 
 $(GLOBJ)gdevxini.$(OBJ) : $(GLSRC)gdevxini.c $(GDEVX) $(memory__h)\
  $(gserrors_h) $(gsparamx_h) $(gxdevmem_h) $(gdevbbox_h)
-	$(GLCC) $(XINCLUDE) $(GLO_)gdevxini.$(OBJ) $(C_) $(GLSRC)gdevxini.c
+	$(GLCCSHARED) $(XINCLUDE) $(GLO_)gdevxini.$(OBJ) $(C_) $(GLSRC)gdevxini.c
 
 # We have to compile gdevxres without warnings, because there is a
 # const/non-const cast required by the X headers that we can't work around.
@@ -467,7 +478,7 @@ $(GLOBJ)gdevxres.$(OBJ) : $(GLSRC)gdevxres.c $(std_h) $(x__h)\
 
 $(GLOBJ)gdevxxf.$(OBJ) : $(GLSRC)gdevxxf.c $(GDEVX) $(math__h) $(memory__h)\
  $(gsstruct_h) $(gsutil_h) $(gxxfont_h)
-	$(GLCC) $(XINCLUDE) $(GLO_)gdevxxf.$(OBJ) $(C_) $(GLSRC)gdevxxf.c
+	$(GLCCSHARED) $(XINCLUDE) $(GLO_)gdevxxf.$(OBJ) $(C_) $(GLSRC)gdevxxf.c
 
 # Alternate X11-based devices to help debug other drivers.
 # x11alpha pretends to have 4 bits of alpha channel.
@@ -517,7 +528,14 @@ $(DD)x11rg32x.dev : $(DEVS_MAK) $(DD)x11alt_.dev
 
 $(GLOBJ)gdevxalt.$(OBJ) : $(GLSRC)gdevxalt.c $(GDEVX) $(math__h) $(memory__h)\
  $(gsdevice_h) $(gsparam_h) $(gsstruct_h)
-	$(GLCC) $(XINCLUDE) $(GLO_)gdevxalt.$(OBJ) $(C_) $(GLSRC)gdevxalt.c
+	$(GLCCSHARED) $(XINCLUDE) $(GLO_)gdevxalt.$(OBJ) $(C_) $(GLSRC)gdevxalt.c
+
+### Shared library object supporting X11.
+### NON PORTABLE, ONLY UNIX WITH GCC SUPPORT
+
+$(GLOBJ)X11.so: $(x11alt_) $(x11_)
+	$(CCLD) -shared -Wl,'-soX11.so' $(x11alt_) $(x11_) -L/usr/X11R6/lib -lXt -lSM -lICE -lXext -lX11 $(XLIBDIRS)
+	mv X11.so $(GLOBJ)X11.so
 
 ###### --------------- Memory-buffered printer devices --------------- ######
 

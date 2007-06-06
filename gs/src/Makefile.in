@@ -30,6 +30,7 @@ PSSRCDIR=./src
 PSLIBDIR=./lib
 PSGENDIR=./obj
 PSOBJDIR=./obj
+CONTRIBDIR=./contrib
 
 # Do not edit the next group of lines.
 
@@ -48,6 +49,7 @@ PSD=$(PSGENDIR)/
 INSTALL = $(GLSRCDIR)/instcopy -c
 INSTALL_PROGRAM = $(INSTALL) -m 755
 INSTALL_DATA = $(INSTALL) -m 644
+INSTALL_SHARED = @INSTALL_SHARED@
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -56,9 +58,15 @@ scriptdir = $(bindir)
 libdir = @libdir@
 mandir = @mandir@
 man1ext = 1
+man1dir = $(mandir)/man$(man1ext)
 datadir = @datadir@
-gsdir = $(datadir)/ghostscript
+datarootdir = @datarootdir@
+
+# The following must be substituted using @datadir@ and @libdir@
+# to avoid adding RPM generation paths (CUPS STR #1112)
+gsdir = @datadir@/ghostscript
 gsdatadir = $(gsdir)/$(GS_DOT_VERSION)
+gssharedir = @libdir@/ghostscript/$(GS_DOT_VERSION)
 
 docdir=$(gsdatadir)/doc
 exdir=$(gsdatadir)/examples
@@ -67,7 +75,7 @@ GS_DOCDIR=$(docdir)
 # Define the default directory/ies for the runtime
 # initialization and font files.  Separate multiple directories with a :.
 
-GS_LIB_DEFAULT=$(gsdatadir)/lib:$(gsdatadir)/Resource:$(gsdir)/fonts
+GS_LIB_DEFAULT=$(gsdatadir)/lib:$(gsdatadir)/Resource:$(gsdir)/fonts:@fontpath@
 
 # Define the default directory for cached data files
 # this must be a single path.
@@ -237,7 +245,7 @@ GCFLAGS=@CPPFLAGS@ @GCFLAGS@ @CFLAGS@
 CFLAGS_STANDARD=@OPT_CFLAGS@
 CFLAGS_DEBUG=-g -O
 CFLAGS_PROFILE=-pg @OPT_CFLAGS@
-CFLAGS_SO=-fPIC
+CFLAGS_SO=@DYNAMIC_CFLAGS@
 
 # Define the other compilation flags.  Add at most one of the following:
 #	-DBSD4_2 for 4.2bsd systems.
@@ -250,7 +258,7 @@ CFLAGS_SO=-fPIC
 # We don't include -ansi, because this gets in the way of the platform-
 #   specific stuff that <math.h> typically needs; nevertheless, we expect
 #   gcc to accept ANSI-style function prototypes and function definitions.
-XCFLAGS=
+XCFLAGS=@DYNAMIC_FLAGS@
 
 # defines from autoconf; note that we don't use these at present.
 ACDEFS=@DEFS@
@@ -264,7 +272,7 @@ CFLAGS=$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)
 #	-R /usr/local/xxx/lib:/usr/local/lib
 # giving the full path names of the shared library directories.
 # XLDFLAGS can be set from the command line.
-XLDFLAGS=
+XLDFLAGS=@X_LDFLAGS@
 
 LDFLAGS=@LDFLAGS@ $(XLDFLAGS)
 
@@ -275,7 +283,7 @@ LDFLAGS=@LDFLAGS@ $(XLDFLAGS)
 # Solaris may need -lnsl -lsocket -lposix4.
 # (Libraries required by individual drivers are handled automatically.)
 
-EXTRALIBS=
+EXTRALIBS=@LIBS@ @DYNAMIC_LIBS@
 
 # Define the standard libraries to search at the end of linking.
 # Most platforms require -lpthread for the POSIX threads library;
@@ -310,10 +318,10 @@ XINCLUDE=@X_CFLAGS@
 # the -L (or whatever). It also defines X_PRE_LIBS and X_EXTRA_LIBS 
 # all three of which are stripped and slotted into XLIBS below.
 # Usually however, all but X_LIBS are empty on modern platforms.
-XLIBDIRS=@X_LIBS@
+XLIBDIRS=@X_LDFLAGS@
 XLIBDIR=
 #XLIBS=Xt Xext X11
-XLIBS=@XLIBS@
+XLIBS=@X_LIBS@
 
 # Define whether this platform has floating point hardware:
 #	FPU_TYPE=2 means floating point is faster than fixed point.
@@ -336,11 +344,19 @@ FPU_TYPE=1
 # Default is No sync primitives since some platforms don't have it (HP-UX)
 SYNC=nosync
 
+# programs we use
+RM=rm -f
+
+# ------ Dynamic loader options ------- #
+SOC_CFLAGS	=	@SOC_CFLAGS@
+SOC_LIBS	=	@SOC_LIBS@
+SOC_LOADER	=	@SOC_LOADER@
+
 # ------ Devices and features ------ #
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev $(PSD)fapi.dev @JBIG2DEVS@ @JPXDEVS@
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev $(PSD)fapi.dev @JBIG2DEVS@ @JPXDEVS@
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(GLD)pipe.dev
 # The following is strictly for testing.
@@ -378,7 +394,7 @@ STDIO_IMPLEMENTATION=c
 
 # Override the default device.  This is set to 'display' by 
 # unix-dll.mak when building a shared object.
-DISPLAY_DEV=
+DISPLAY_DEV=$(DD)bbox.dev
 
 # Define the name table capacity size of 2^(16+n).
 # Setting this to a non-zero value will slow down the interpreter.
@@ -389,31 +405,58 @@ EXTEND_NAMES=0
 # devs.mak and contrib.mak for the list of available devices.
 
 #DEVICE_DEVS=$(DISPLAY_DEV) $(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11gray2.dev $(DD)x11gray4.dev $(DD)x11mono.dev
-DEVICE_DEVS=$(DISPLAY_DEV) @X11DEVS@
+#DEVICE_DEVS=$(DISPLAY_DEV) @X11DEVS@
+#DEVICE_DEVS=$(DISPLAY_DEV) @X_DEVS@
 
-DEVICE_DEVS1=$(DD)bmpmono.dev $(DD)bmpgray.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)bmp32b.dev
-DEVICE_DEVS2=#$(DD)gdevjbig2.dev $(DD)gdevjpx.dev #$(DD)rinkj.dev
-DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev $(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev $(DD)lj5mono.dev $(DD)lj5gray.dev
-DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev $(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev
-DEVICE_DEVS5=$(DD)uniprint.dev @IJSDEVS@
-DEVICE_DEVS6=$(DD)bj10e.dev $(DD)bj200.dev $(DD)bjc600.dev $(DD)bjc800.dev
-DEVICE_DEVS7=$(DD)faxg3.dev $(DD)faxg32d.dev $(DD)faxg4.dev $(DD)cfax.dev
-DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev $(DD)pcxcmyk.dev
-DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev $(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev
-DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
-DEVICE_DEVS11=$(DD)tiff12nc.dev $(DD)tiff24nc.dev $(DD)tiffgray.dev $(DD)tiff32nc.dev $(DD)tiffsep.dev
-DEVICE_DEVS12=$(DD)psmono.dev $(DD)psgray.dev $(DD)psrgb.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
+#DEVICE_DEVS1=$(DD)bmpmono.dev $(DD)bmpgray.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)bmp32b.dev
+#DEVICE_DEVS2=#$(DD)gdevjbig2.dev $(DD)gdevjpx.dev #$(DD)rinkj.dev
+#DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev $(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev $(DD)lj5mono.dev $(DD)lj5gray.dev
+#DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev $(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev
+#DEVICE_DEVS5=$(DD)uniprint.dev @IJSDEVS@
+#DEVICE_DEVS6=$(DD)bj10e.dev $(DD)bj200.dev $(DD)bjc600.dev $(DD)bjc800.dev
+#DEVICE_DEVS7=$(DD)faxg3.dev $(DD)faxg32d.dev $(DD)faxg4.dev $(DD)cfax.dev
+#DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev $(DD)pcxcmyk.dev
+#DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev $(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev
+#DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
+#DEVICE_DEVS11=$(DD)tiff12nc.dev $(DD)tiff24nc.dev $(DD)tiffgray.dev $(DD)tiff32nc.dev $(DD)tiffsep.dev
+#DEVICE_DEVS12=$(DD)psmono.dev $(DD)psgray.dev $(DD)psrgb.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
 #DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev
-DEVICE_DEVS13=@PNGDEVS@
-DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
-DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)ps2write.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
-DEVICE_DEVS16=$(DD)bbox.dev
+#DEVICE_DEVS13=@PNGDEVS@
+#DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
+#DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)ps2write.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+#DEVICE_DEVS16=$(DD)bbox.dev
 
+#DEVICE_DEVS17=
+#DEVICE_DEVS18=
+#DEVICE_DEVS19=
+#DEVICE_DEVS20=$(DD)cljet5.dev $(DD)cljet5c.dev
+#DEVICE_DEVS21=$(DD)spotcmyk.dev $(DD)devicen.dev $(DD)xcf.dev $(DD)psdcmyk.dev $(DD)psdrgb.dev
+DEVICE_DEVS=$(DISPLAY_DEV) @X_DEVS@
+DEVICE_DEVS1=@FILES@
+DEVICE_DEVS2=@PRINTERS@
+DEVICE_DEVS3=@CUPSDEV@
+DEVICE_DEVS4=@IJSDEVS@
+DEVICE_DEVS5=@OMNIDEVS@
+DEVICE_DEVS6=@PNGDEVS@
+DEVICE_DEVS7=@JBIG2DEVS@
+DEVICE_DEVS8=
+DEVICE_DEVS9=
+DEVICE_DEVS10=
+DEVICE_DEVS11=
+DEVICE_DEVS12=
+DEVICE_DEVS13=
+DEVICE_DEVS14=
+DEVICE_DEVS15=
+DEVICE_DEVS16=
 DEVICE_DEVS17=
 DEVICE_DEVS18=
 DEVICE_DEVS19=
-DEVICE_DEVS20=$(DD)cljet5.dev $(DD)cljet5c.dev
-DEVICE_DEVS21=$(DD)spotcmyk.dev $(DD)devicen.dev $(DD)xcf.dev $(DD)psdcmyk.dev $(DD)psdrgb.dev
+DEVICE_DEVS20=
+DEVICE_DEVS21=
+
+
+# Shared library target to build.
+GS_SHARED_OBJS=@DYNAMIC_DEVS@
 
 # ---------------------------- End of options --------------------------- #
 
@@ -432,9 +475,13 @@ AK=
 CCFLAGS=$(GENOPT) $(CAPOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
 CCAUX=$(CC) $(GCFLAGS)
+CC_LEAF=$(CC_)
+# note gcc can't use -fomit-frame-pointer with -pg.
+CC_LEAF_PG=$(CC_)
 # These are the specific warnings we have to turn off to compile those
 # specific few files that need this.  We may turn off others in the future.
 CC_NO_WARN=$(CC_)
+CC_SHARED=$(CC_) @DYNAMIC_LDFLAGS@
 
 # ---------------- End of platform-specific section ---------------- #
 
@@ -460,6 +507,8 @@ include $(GLSRCDIR)/unixlink.mak
 include $(GLSRCDIR)/unix-dll.mak
 include $(GLSRCDIR)/unix-end.mak
 include $(GLSRCDIR)/unixinst.mak
+@CONTRIBINCLUDE@
+@CUPSINCLUDE@
 
 # Clean up after the autotools scripts
 # configure.ac and Makefile.in are symlinks from a subdir 

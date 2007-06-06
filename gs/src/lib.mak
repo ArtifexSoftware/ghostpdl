@@ -33,9 +33,9 @@ GLJBIG2CC=$(CC_) $(I_)$(GLI_) $(II)$(JB2I_)$(_I) $(JB2CF_) $(GLF_)
 GLJASCC=$(CC_) $(I_)$(JPXI_) $(II)$(GLI_)$(_I) $(JPXCF_) $(GLF_)
 GLLDFJB2CC=$(CC_) $(I_)$(LDF_JB2I_) $(II)$(GLI_)$(_I) $(JB2CF_) $(GLF_)
 GLLWFJPXCC=$(CC_) $(I_)$(LWF_JPXI_) $(II)$(GLI_)$(_I) $(JPXCF_) $(GLF_)
+GLCCSHARED=$(CC_SHARED) $(I_)$(GLI_)$(_I) $(GLF_)
 # All top-level makefiles define GLD.
 #GLD=$(GLGEN)
-
 # Define the name of this makefile.
 LIB_MAK=$(GLSRC)lib.mak
 

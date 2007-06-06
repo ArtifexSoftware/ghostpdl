@@ -1,0 +1,264 @@
+*PPD-Adobe: "4.3"
+*% ****************************************************************************
+*% File:     @(#)$Id: gs-pcl3-hpdj1120c.ppd,v 1.6 2001/08/19 09:13:23 Martin Rel $
+*% Contents: PPD file for the ghostscript device "hpdj1120c" of the pcl3 driver
+*% Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
+*%           Germany, Martin.Lottermoser@t-online.de
+*%
+*% ****************************************************************************
+*%
+*%	Copyright (C) 2001 Martin Lottermoser
+*%	All rights reserved
+*%
+*% ****************************************************************************
+
+*% Required general information keywords
+
+*FileVersion: "1.1"
+*FormatVersion: "4.3"
+*LanguageEncoding: ISOLatin1
+*LanguageVersion: English
+*ModelName: "ghostscript/pcl3/hpdj1120c"
+*ShortNickName: "ghostscript/pcl3/hpdj1120c"
+*NickName: "ghostscript/pcl3/hpdj1120c"
+*PCFileName: "HPDJ1120.PPD"
+
+*% *Product, *PSVersion and *Manufacturer are assumed to be included via
+*% gs-pcl3-common.ppd.
+
+*% ****************************************************************************
+
+*% Device selection
+*GhostscriptOptions: "-sDEVICE=hpdj1120c"
+
+*% ****************************************************************************
+
+*% Rendering capabilities
+
+*ColorDevice: True
+
+*OpenUI *ColorModel: PickOne
+*OrderDependency: 20 AnySetup *ColorModel
+*DefaultColorModel: Gray
+*ColorModel Gray: "(<<) cvx exec /ColourModel (Gray) (>>) cvx exec setpagedevice"
+*ColorModel CMY: "(<<) cvx exec /ColourModel (CMY) (>>) cvx exec setpagedevice"
+*ColorModel CMY+K: "(<<) cvx exec /ColourModel (CMY+K) (>>) cvx exec setpagedevice"
+*ColorModel CMYK: "(<<) cvx exec /ColourModel (CMYK) (>>) cvx exec setpagedevice"
+*CloseUI *ColorModel
+
+*OpenUI *Resolution: PickOne
+*OrderDependency: 50 AnySetup *Resolution
+*DefaultResolution: 300dpi
+*Resolution 75dpi: "(<<) cvx exec /HWResolution [75 75] (>>) cvx exec setpagedevice"
+*Resolution 150dpi: "(<<) cvx exec /HWResolution [150 150] (>>) cvx exec setpagedevice"
+*Resolution 300dpi: "(<<) cvx exec /HWResolution [300 300] (>>) cvx exec setpagedevice"
+*Resolution 600dpi: "(<<) cvx exec /HWResolution [600 600] (>>) cvx exec setpagedevice"
+*CloseUI *Resolution
+
+*OpenUI *pcl3IntensityLevels/Intensity levels: PickOne
+*OrderDependency: 50 AnySetup *pcl3IntensityLevels
+*Defaultpcl3IntensityLevels: Automatic
+*pcl3IntensityLevels Automatic: ""
+*pcl3IntensityLevels K4/black 4: "(<<) cvx exec /BlackLevels 4 (>>) cvx exec setpagedevice"
+*pcl3IntensityLevels K4C3/black 4, CMY 3: "(<<) cvx exec /BlackLevels 4 /CMYLevels 3 (>>) cvx exec setpagedevice"
+*pcl3IntensityLevels K4C4/black 4, CMY 4: "(<<) cvx exec /BlackLevels 4 /CMYLevels 4 (>>) cvx exec setpagedevice"
+*CloseUI *pcl3IntensityLevels
+
+*% ============================================================================
+
+*% Constraints (exclusions) between rendering parameters
+
+*UIConstraints: *ColorModel CMY *Resolution 600dpi
+*UIConstraints: *Resolution 600dpi *ColorModel CMY
+*UIConstraints: *ColorModel CMY+K *Resolution 600dpi
+*UIConstraints: *Resolution 600dpi *ColorModel CMY+K
+*UIConstraints: *ColorModel CMYK *Resolution 600dpi
+*UIConstraints: *Resolution 600dpi *ColorModel CMYK
+
+*UIConstraints: *ColorModel Gray *pcl3IntensityLevels K4C3
+*UIConstraints: *pcl3IntensityLevels K4C3 *ColorModel Gray
+*UIConstraints: *ColorModel Gray *pcl3IntensityLevels K4C4
+*UIConstraints: *pcl3IntensityLevels K4C4 *ColorModel Gray
+*UIConstraints: *ColorModel CMY *pcl3IntensityLevels K4
+*UIConstraints: *pcl3IntensityLevels K4 *ColorModel CMY
+*UIConstraints: *ColorModel CMY *pcl3IntensityLevels K4C3
+*UIConstraints: *pcl3IntensityLevels K4C3 *ColorModel CMY
+*UIConstraints: *ColorModel CMY *pcl3IntensityLevels K4C4
+*UIConstraints: *pcl3IntensityLevels K4C4 *ColorModel CMY
+*UIConstraints: *ColorModel CMY+K *pcl3IntensityLevels K4
+*UIConstraints: *pcl3IntensityLevels K4 *ColorModel CMY+K
+*UIConstraints: *ColorModel CMYK *pcl3IntensityLevels K4
+*UIConstraints: *pcl3IntensityLevels K4 *ColorModel CMYK
+
+*UIConstraints: *Resolution 75dpi *pcl3IntensityLevels K4
+*UIConstraints: *pcl3IntensityLevels K4 *Resolution 75dpi
+*UIConstraints: *Resolution 75dpi *pcl3IntensityLevels K4C3
+*UIConstraints: *pcl3IntensityLevels K4C3 *Resolution 75dpi
+*UIConstraints: *Resolution 75dpi *pcl3IntensityLevels K4C4
+*UIConstraints: *pcl3IntensityLevels K4C4 *Resolution 75dpi
+*UIConstraints: *Resolution 150dpi *pcl3IntensityLevels K4
+*UIConstraints: *pcl3IntensityLevels K4 *Resolution 150dpi
+*UIConstraints: *Resolution 150dpi *pcl3IntensityLevels K4C3
+*UIConstraints: *pcl3IntensityLevels K4C3 *Resolution 150dpi
+*UIConstraints: *Resolution 150dpi *pcl3IntensityLevels K4C4
+*UIConstraints: *pcl3IntensityLevels K4C4 *Resolution 150dpi
+*UIConstraints: *Resolution 600dpi *pcl3IntensityLevels K4
+*UIConstraints: *pcl3IntensityLevels K4 *Resolution 600dpi
+*UIConstraints: *Resolution 600dpi *pcl3IntensityLevels K4C3
+*UIConstraints: *pcl3IntensityLevels K4C3 *Resolution 600dpi
+*UIConstraints: *Resolution 600dpi *pcl3IntensityLevels K4C4
+*UIConstraints: *pcl3IntensityLevels K4C4 *Resolution 600dpi
+
+*% More than two intensity levels are not possible with draft quality:
+*UIConstraints: *OutputMode Draft *pcl3IntensityLevels K4
+*UIConstraints: *pcl3IntensityLevels K4 *OutputMode Draft
+*UIConstraints: *OutputMode Draft *pcl3IntensityLevels K4C3
+*UIConstraints: *pcl3IntensityLevels K4C3 *OutputMode Draft
+*UIConstraints: *OutputMode Draft *pcl3IntensityLevels K4C4
+*UIConstraints: *pcl3IntensityLevels K4C4 *OutputMode Draft
+
+*% ****************************************************************************
+
+*% Information on page sizes
+
+*OpenUI *PageSize: PickOne
+*OrderDependency: 50 AnySetup *PageSize
+*DefaultPageSize: Unknown
+*PageSize Executive: "(<<) cvx exec /PageSize [522 756] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize Letter: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice letter"
+*PageSize Legal: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice legal"
+*PageSize Tabloid: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice 11x17"
+*PageSize Statement: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice halfletter"
+*PageSize HPSuperB: "(<<) cvx exec /PageSize [936 1368] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize A6: "(<<) cvx exec /PageSize [298 420] /ImagingBBox null /UseCard false (>>) cvx exec setpagedevice"
+*PageSize A5: "(<<) cvx exec /PageSize [420 595] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize A4: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice a4"
+*PageSize A3: "(<<) cvx exec /PageSize [842 1191] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize JISB5: "(<<) cvx exec /PageSize [516 729] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize JISB4: "(<<) cvx exec /PageSize [729 1032] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize Postcard: "(<<) cvx exec /PageSize [283 420] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize A6Card: "(<<) cvx exec /PageSize [298 420] /ImagingBBox null /UseCard true (>>) cvx exec setpagedevice"
+*PageSize Index4x6in: "(<<) cvx exec /PageSize [288 432] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize Index5x8in: "(<<) cvx exec /PageSize [360 576] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize Env10: "(<<) cvx exec /PageSize [297 684] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize EnvDL: "(<<) cvx exec /PageSize [312 624] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize EnvC6: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice c6"
+*PageSize EnvUS_A2/US A2 envelope: "(<<) cvx exec /PageSize [315 414] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize EnvChou3: "(<<) cvx exec /PageSize [340 666] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize EnvChou4: "(<<) cvx exec /PageSize [255 581] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize EnvKaku2: "(<<) cvx exec /PageSize [680 941] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize LetterBig: "(<<) cvx exec
+  /PageSize [612 792] /ImagingBBox null
+  /InputAttributes (<<) cvx exec /Priority [-1] (>>) cvx exec
+  (>>) cvx exec setpagedevice"
+*End
+*PageSize A4Big: "(<<) cvx exec
+  /PageSize [595 842] /ImagingBBox null
+  /InputAttributes (<<) cvx exec /Priority [-1] (>>) cvx exec
+  (>>) cvx exec setpagedevice"
+*End
+*?PageSize: "save /PageSizeQuery /ProcSet resourcestatus
+  { pop pop /PageSizeQuery /ProcSet findresource begin query end }
+  { (Unknown) }
+  ifelse
+  = flush restore"
+*End
+*CloseUI *PageSize
+
+*OpenUI *PageRegion: PickOne
+*OrderDependency: 50 AnySetup *PageRegion
+*DefaultPageRegion: Unknown
+*PageRegion Executive: "(<<) cvx exec /PageSize [522 756] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion Letter: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice letter"
+*PageRegion Legal: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice legal"
+*PageRegion Tabloid: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice 11x17"
+*PageRegion Statement: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice halfletter"
+*PageRegion HPSuperB: "(<<) cvx exec /PageSize [936 1368] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion A6: "(<<) cvx exec /PageSize [298 420] /ImagingBBox null /UseCard false (>>) cvx exec setpagedevice"
+*PageRegion A5: "(<<) cvx exec /PageSize [420 595] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion A4: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice a4"
+*PageRegion A3: "(<<) cvx exec /PageSize [842 1191] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion JISB5: "(<<) cvx exec /PageSize [516 729] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion JISB4: "(<<) cvx exec /PageSize [729 1032] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion Postcard: "(<<) cvx exec /PageSize [283 420] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion A6Card: "(<<) cvx exec /PageSize [298 420] /ImagingBBox null /UseCard true (>>) cvx exec setpagedevice"
+*PageRegion Index4x6in: "(<<) cvx exec /PageSize [288 432] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion Index5x8in: "(<<) cvx exec /PageSize [360 576] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion Env10: "(<<) cvx exec /PageSize [297 684] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion EnvDL: "(<<) cvx exec /PageSize [312 624] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion EnvC6: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice c6"
+*PageRegion EnvUS_A2/US A2 envelope: "(<<) cvx exec /PageSize [315 414] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion EnvChou3: "(<<) cvx exec /PageSize [340 666] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion EnvChou4: "(<<) cvx exec /PageSize [255 581] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion EnvKaku2: "(<<) cvx exec /PageSize [680 941] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion LetterBig: "(<<) cvx exec
+  /PageSize [612 792] /ImagingBBox null
+  /InputAttributes (<<) cvx exec /Priority [-1] (>>) cvx exec
+  (>>) cvx exec setpagedevice"
+*End
+*PageRegion A4Big: "(<<) cvx exec
+  /PageSize [595 842] /ImagingBBox null
+  /InputAttributes (<<) cvx exec /Priority [-1] (>>) cvx exec
+  (>>) cvx exec setpagedevice"
+*End
+*CloseUI *PageRegion
+
+*% The *DefaultImageableArea keyword is assumed to be found somewhere else.
+*ImageableArea Executive: "18 34 504 747"
+*ImageableArea Letter: "18 34 594 783"
+*ImageableArea Legal: "18 34 594 999"
+*ImageableArea Tabloid: "15 34 777 1215"
+*ImageableArea Statement: "15 34 381 603"
+*ImageableArea HPSuperB: "15 34 921 1359"
+*ImageableArea A6: "9 34 288 410"
+*ImageableArea A5: "9 34 410 586"
+*ImageableArea A4: "15 34 580 833"
+*ImageableArea A3: "15 34 827 1181"
+*ImageableArea JISB5: "9 34 506 719"
+*ImageableArea JISB4: "15 34 714 1023"
+*ImageableArea Postcard: "9 34 274 410"
+*ImageableArea A6Card: "9 34 288 410"
+*ImageableArea Index4x6in: "9 34 279 423"
+*ImageableArea Index5x8in: "9 34 351 567"
+*ImageableArea Env10: "9 34 288 675"
+*ImageableArea EnvDL: "9 34 302 614"
+*ImageableArea EnvC6: "9 34 314 450"
+*ImageableArea EnvUS_A2: "9 34 306 405"
+*ImageableArea EnvChou3: "9 34 331 657"
+*ImageableArea EnvChou4: "9 34 246 572"
+*ImageableArea EnvKaku2: "15 34 665 932"
+*ImageableArea LetterBig: "18 0 594 789"
+*ImageableArea A4Big: "10 0 585 839"
+
+*% ============================================================================
+
+*% Custom page size information
+
+*LeadingEdge Short: ""
+*DefaultLeadingEdge: Short
+
+*MaxMediaWidth: "936"
+*MaxMediaHeight: "1368"
+*ParamCustomPageSize Width: 2 points 255.118 936
+*ParamCustomPageSize Height: 3 points 413.858 1368
+*ParamCustomPageSize WidthOffset: 4 points 0 0
+*ParamCustomPageSize HeightOffset: 5 points 0 0
+*ParamCustomPageSize Orientation: 1 int 0 3
+*HWMargins: 9 34 9 9
+*CustomPageSize True: "
+  pop pop
+  2 index 2 mod 0 eq {exch} if
+  1 index 1 index gt {2}{3} ifelse
+  4 -1 roll add 4 mod
+  (<<) cvx exec /PageSize [ 6 -2 roll ]
+    /LeadingEdge 5 -1 roll
+    % This works only if the interpreter passes this parameter to the device.
+    % Ghostscript's setpagedevice definition does not do this by default.
+    /ImagingBBox null (>>) cvx exec setpagedevice"
+*End
+*NonUIOrderDependency: 50 AnySetup *CustomPageSize True
+
+*% ****************************************************************************
+
+*% Common parts:
+*Include: "gs-pcl3-common.ppd"

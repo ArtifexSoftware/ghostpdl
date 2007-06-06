@@ -13,6 +13,16 @@
 /* $Id$*/
 /* HP and Canon colour printer drivers */
 
+/*
+ * HP DeskJet 505J Support (dj505j.dev)
+ *   -- taken from dj505j driver for Ghostscript 2.6.1 by Kazunori Asayama
+ * NEC PICTY180 (PC-PR101J/180) Support (picty180.dev)
+ * HP LaserJet 4V/4LJ Pro dither Suport (lj4dithp.dev)
+ *
+ *     Norihito Ohmori <ohmori@p.chiba-u.ac.jp>
+ *     April 15, 1999
+ */
+
 /****************************************************************
  * The code in this file was contributed by the authors whose names and/or
  * e-mail addresses appear below: Aladdin Enterprises takes no
@@ -105,6 +115,8 @@
  *    10 - bjc600:	BJC 600//4000 printers
  *** The BJC800 driver is based on the bjc600 one. By YA too.
  *    11 - bjc800:	BJC 800 printer
+ *    12 - dj505j:      HP DeskJet 505J
+ *    13 - pixty180:    NEC PICTY 180 (PC-PR101J/180)
  ***/
 
 /*
@@ -173,6 +185,8 @@ private int cdj_param_check_float(gs_param_list *, gs_param_name, floatp, bool);
 /* Margins are left, bottom, right, top. */
 #define DESKJET_MARGINS_LETTER   (float)0.25, (float)0.50, (float)0.25, (float)0.167
 #define DESKJET_MARGINS_A4       (float)0.125, (float)0.50, (float)0.143, (float)0.167
+#define DESKJET_505J_MARGINS     (float)0.125, (float)0.50, (float)0.125, (float)0.167
+#define DESKJET_505J_MARGINS_COLOR (float)0.125, (float)0.665, (float)0.125, (float)0.167
 #define LJET4_MARGINS  		 (float)0.26, (float)0.0, (float)0.0, (float)0.0
 /* The PaintJet and DesignJet seem to have the same margins */
 /* regardless of paper size. */
@@ -217,15 +231,16 @@ private int cdj_param_check_float(gs_param_list *, gs_param_name, floatp, bool);
 /* Printer types */
 #define DJ500C   0
 #define DJ550C   1
-#define PJXL300  2
-#define PJ180    3
-#define PJXL180  4
-#define DECLJ250 5
-#define DNJ650C  6
-#define LJ4DITH  7
-#define ESC_P	 8
-#define BJC600	 9
-#define BJC800	 10
+#define DJ505J   2
+#define PJXL300  3
+#define PJ180    4
+#define PJXL180  5
+#define DECLJ250 6
+#define DNJ650C  7
+#define LJ4DITH  8
+#define ESC_P	 9
+#define BJC600	 10
+#define BJC800	 11
 
 /* No. of ink jets (used to minimise head movements) */
 #define HEAD_ROWS_MONO 50
@@ -242,6 +257,7 @@ private dev_proc_decode_color  (gdev_cmyk_map_color_cmyk);
 /* Print-page, parameters and miscellaneous procedures */
 private dev_proc_open_device(dj500c_open);
 private dev_proc_open_device(dj550c_open);
+private dev_proc_open_device(dj505j_open);
 private dev_proc_open_device(dnj650c_open);
 private dev_proc_open_device(lj4dith_open);
 private dev_proc_open_device(pj_open);
@@ -253,8 +269,11 @@ private dev_proc_open_device(bjc_open);
 private dev_proc_print_page(declj250_print_page);
 private dev_proc_print_page(dj500c_print_page);
 private dev_proc_print_page(dj550c_print_page);
+private dev_proc_print_page(dj505j_print_page);
+private dev_proc_print_page(picty180_print_page);
 private dev_proc_print_page(dnj650c_print_page);
 private dev_proc_print_page(lj4dith_print_page);
+private dev_proc_print_page(lj4dithp_print_page);
 private dev_proc_print_page(pj_print_page);
 private dev_proc_print_page(pjxl_print_page);
 private dev_proc_print_page(pjxl300_print_page);
@@ -519,6 +538,9 @@ private gx_device_procs cdj550cmyk_procs =
 cmyk_colour_procs(dj550c_open, cdj_get_params, cdj_put_params);
 #endif
 
+private gx_device_procs dj505j_procs =
+hp_colour_procs(dj505j_open, cdj_get_params, cdj_put_params);
+
 private gx_device_procs dnj650c_procs =
 hp_colour_procs(dnj650c_open, cdj_get_params, cdj_put_params);
 
@@ -567,6 +589,14 @@ gx_device_cdj far_data gs_cdj550cmyk_device = {
 };
 #endif
 
+gx_device_cdj far_data gs_picty180_device =
+cdj_device(cdj550_procs, "picty180", 300, 300, BITSPERPIXEL,
+ 	   picty180_print_page, 0, 2, 1);
+
+gx_device_cdj far_data gs_dj505j_device =
+cdj_device(dj505j_procs, "dj505j", 300, 300, 1,
+ 	   dj505j_print_page, 4, 0, 1);
+ 
 gx_device_pj far_data gs_declj250_device =
 pj_device(pj_procs, "declj250", 180, 180, BITSPERPIXEL,
 	  declj250_print_page);
@@ -578,6 +608,10 @@ cdj_device(dnj650c_procs, "dnj650c", 300, 300, BITSPERPIXEL,
 gx_device_cdj far_data gs_lj4dith_device =
 cdj_device(lj4dith_procs, "lj4dith", 600, 600, 8,
 	   lj4dith_print_page, 4, 0, 1);
+
+gx_device_cdj far_data gs_lj4dithp_device =
+cdj_device(lj4dith_procs, "lj4dithp", 600, 600, 8,
+	   lj4dithp_print_page, 4, 0, 1);
 
 gx_device_pj far_data gs_pj_device =
 pj_device(pj_procs, "pj", 180, 180, BITSPERPIXEL,
@@ -678,6 +712,11 @@ dj550c_open(gx_device *pdev)
 }
 
 private int
+dj505j_open(gx_device *pdev)
+{ return hp_colour_open(pdev, DJ505J);
+}
+
+private int
 dnj650c_open(gx_device *pdev)
 { return hp_colour_open(pdev, DNJ650C);
 }
@@ -717,6 +756,8 @@ hp_colour_open(gx_device *pdev, int ptype)
 {	/* Change the margins if necessary. */
   static const float dj_a4[4] = { DESKJET_MARGINS_A4 };
   static const float dj_letter[4] = { DESKJET_MARGINS_LETTER };
+  static const float dj_505j[4] = { DESKJET_505J_MARGINS };
+  static const float dj_505jc[4] = { DESKJET_505J_MARGINS_COLOR };
   static const float lj4_all[4] = { LJET4_MARGINS };
   static const float pj_all[4] = { PAINTJET_MARGINS };
   static const float dnj_all[4] = { DESIGNJET_MARGINS };
@@ -742,6 +783,9 @@ hp_colour_open(gx_device *pdev, int ptype)
   case DJ550C:
     m = (gdev_pcl_paper_size(pdev) == PAPER_SIZE_A4 ? dj_a4 :
 	 dj_letter);
+    break;
+  case DJ505J:
+	m = pdev->color_info.num_components > 1 ? dj_505jc : dj_505j;
     break;
   case DNJ650C:
     m = dnj_all;
@@ -1228,6 +1272,26 @@ dj550c_print_page(gx_device_printer * pdev, FILE * prn_stream)
   return hp_colour_print_page(pdev, prn_stream, DJ550C);
 }
 
+/* The Picty180C can compress (mode 9) */
+/* This printer need switching mode using PJL */
+private int
+picty180_print_page(gx_device_printer * pdev, FILE * prn_stream)
+{  int ret_code;
+  /* Ensure we're operating in PCL mode */
+  fputs("\033%-12345X@PJL ENTER LANGUAGE = PCLSLEEK\n", prn_stream);
+  ret_code =  hp_colour_print_page(pdev, prn_stream, DJ550C);
+  /* Reenter switch-configured language */
+  fputs("\033%-12345X", prn_stream);
+  return ret_code;
+}
+
+/* The DeskJet505J can compress  */
+private int
+dj505j_print_page(gx_device_printer * pdev, FILE * prn_stream)
+{
+  return hp_colour_print_page(pdev, prn_stream, DJ505J);
+}
+
 /* The DesignJet650C can compress (mode 1) */
 private int
 dnj650c_print_page(gx_device_printer * pdev, FILE * prn_stream)
@@ -1239,6 +1303,17 @@ private int
 lj4dith_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
   return hp_colour_print_page(pdev, prn_stream, LJ4DITH);
+}
+
+private int
+lj4dithp_print_page(gx_device_printer * pdev, FILE * prn_stream)
+{ int ret_code;
+  /* Ensure we're operating in PCL mode */
+  fputs("\033%-12345X@PJL\r\n@PJL ENTER LANGUAGE = PCL\r\n", prn_stream);
+  ret_code = hp_colour_print_page(pdev, prn_stream, LJ4DITH);
+  /* Reenter switch-configured language */
+  fputs("\033%-12345X", prn_stream);
+  return ret_code;
 }
 
 /* The PJXL300 can compress (modes 2 & 3) */
@@ -2106,7 +2181,11 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
   }
   
   /* Initialize printer. */
-  if (ptype == BJC600 || ptype == BJC800) {
+  if (ptype == DJ505J) {
+    fputs("\033@",prn_stream); /* Reset printer */
+    fprintf(prn_stream,"\033_R%c%c", /* Set resolution */
+      (int)x_dpi & 0xff,((int)x_dpi >> 8) & 0xff);
+  } else if (ptype == BJC600 || ptype == BJC800) {
     bjc_init_page(pdev, prn_stream);
   } else {
       if (ptype == LJ4DITH)  {
@@ -2148,6 +2227,24 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
     fprintf(prn_stream, "\033*r%ds-%du0A", raster_width, num_comps);
     /* Select data compression */
     compression = 9;
+    break;
+  case DJ505J:
+    /* Set depletion and shingling levels */
+    fprintf(prn_stream, "\033_D%c\033_E%c",
+      cdj->depletion, cdj->shingling);
+    /* Move to top left of printed area */
+    fwrite("\033_N\000", 4, 1, prn_stream);
+    fwrite("\033_J\xc4\xff", 5, 1, prn_stream);
+    /* Set number of planes ((-)1 is mono, (-)3 is (cmy)rgb, -4 is cmyk),
+     * and raster width, then start raster graphics */
+    fprintf(prn_stream, "\033_U%c%c",
+      (0xffff - num_comps + 1) & 0xff, ((0xffff - num_comps + 1) >> 8) & 0xff);
+    fprintf(prn_stream,
+      "\033_S%c%c", raster_width & 0xff, (raster_width >> 8) & 0xff);
+    /* set origin */
+    fwrite("\033_A\001", 4, 1, prn_stream);
+    compression = 1;
+    combined_escapes = 0;
     break;
   case DNJ650C:
     if (pdev->x_pixels_per_inch == 600) {
@@ -2275,7 +2372,9 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
    * omission is that 'mode 9' compression is not supported, as this
    * mode can give both computational and PCL file size advantages. */
 
-  if (combined_escapes) {
+  if (ptype == DJ505J) {
+    fprintf(prn_stream, "\033_M%c", compression);
+  } else if (combined_escapes) {
     /* From now on, all escape commands start with \033*b, so we
      * combine them (if the printer supports this). */
     fputs("\033*b", prn_stream);
@@ -2356,7 +2455,10 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 	}
       /* Skip blank lines if any */
       if (num_blank_lines > 0) {
-	if (ptype == ESC_P) {
+        if (ptype == DJ505J) {
+          fprintf(prn_stream,"\033_Y%c%c",
+          num_blank_lines & 0xff, (num_blank_lines >> 8) & 0xff);
+	} else if (ptype == ESC_P) {
 	  ep_print_image(prn_stream, 'B', 0, num_blank_lines);
 	} else if (ptype == BJC600 || ptype == BJC800) {
 	    bjc_v_skip(num_blank_lines, pdev, prn_stream);
@@ -2540,6 +2642,13 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
                  fputc('v', prn_stream);
              }
 	    break;
+	  case DJ505J:
+	    out_count = gdev_pcl_mode1compress((const byte *)
+					       plane_data[scan][i],
+					       (const byte *)
+					       plane_data[scan][i] + plane_size - 1,
+					       out_data);
+	    break;
 	  case PJ180:
 	  case DNJ650C:
 	    if (num_comps > 1)
@@ -2609,7 +2718,10 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 	    break;
 	  }
 	  if (output_plane) {
-	    if (combined_escapes)
+            if (ptype == DJ505J)
+	      fprintf(prn_stream, "\033_%c%c%c",
+		      "WVVV"[i], out_count & 0xff, (out_count >> 8) & 0xff);
+	    else if (combined_escapes)
 	      fprintf(prn_stream, "%d%c", out_count, "wvvv"[i]);
 	    else if (ptype == BJC600 || ptype == BJC800) {
 	      if (out_count)
@@ -2638,13 +2750,16 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
   /* end raster graphics */
   if (ptype == BJC600 || ptype == BJC800) {
     bjc_finish_page(pdev, prn_stream);
-  }
+  } else if (ptype == DJ505J)
+    fputs("\033_C", prn_stream);
   else if (ptype != ESC_P) 
     fputs("\033*rbC\033E", prn_stream);
 
   /* eject page */
   if (ptype == PJ180)
     fputc('\f', prn_stream);
+  else if (ptype == DJ505J)
+    fputs("\f\033@", prn_stream);
   else if (ptype == DNJ650C)
     fputs ("\033*rC\033%0BPG;", prn_stream);
   else if (ptype == BJC600 || ptype == BJC800)

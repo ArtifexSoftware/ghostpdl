@@ -1,0 +1,28 @@
+
+	gdevj100.c  -  Star JJ-100 用デバイスドライバ
+
+
+○インストール方法
+
+1. gdevj100.c を gs261 のソースプログラムがあるディレクトリにコピーし
+て下さい。
+
+2. Makefile に gdevj100.mak を追加して下さい。
+
+3. Makefile の DEVICE_DEVS に jj100.dev を加えて下さい。
+
+    例) DEVICE_DEVS=pc98.dev jj100.dev
+			     ^^^^^^^^^
+4. make コマンドで gs をコンパイルし、インストールして下さい。
+
+
+○使い方
+
+＊デバイスの選択は -sDEVICE オプションによって行ないます。
+
+    例) gs -sDEVICE=jj100	(jj100を指定)
+	gs -sDEVICE=pc98	(pc98を指定)
+
+
+
+				横山和由 (caz@psq.mei.co.jp)

@@ -95,6 +95,7 @@
 /* The device descriptors */
 private dev_proc_open_device(hpjet_open);
 private dev_proc_close_device(hpjet_close);
+private dev_proc_close_device(ljet4pjl_close);
 private dev_proc_print_page_copies(djet_print_page_copies);
 private dev_proc_print_page_copies(djet500_print_page_copies);
 private dev_proc_print_page_copies(fs600_print_page_copies);
@@ -107,12 +108,17 @@ private dev_proc_print_page_copies(ljet4_print_page_copies);
 private dev_proc_print_page_copies(ljet4d_print_page_copies);
 private dev_proc_print_page_copies(lp2563_print_page_copies);
 private dev_proc_print_page_copies(oce9050_print_page_copies);
+private dev_proc_print_page_copies(ljet4pjl_print_page_copies);
 private dev_proc_get_params(hpjet_get_params);
 private dev_proc_put_params(hpjet_put_params);
 
 private const gx_device_procs prn_hp_procs =
 prn_params_procs(hpjet_open, gdev_prn_output_page, hpjet_close,
 		 hpjet_get_params, hpjet_put_params);
+
+private gx_device_procs prn_ljet4pjl_procs =
+prn_params_procs(hpjet_open, gdev_prn_output_page, ljet4pjl_close,
+		 gdev_prn_get_params, gdev_prn_put_params);
 
 typedef struct gx_device_hpjet_s gx_device_hpjet;
 
@@ -215,6 +221,13 @@ HPJET_DEVICE(prn_hp_procs, "oce9050",
 	     0, 0, 0, 0,		/* margins */
 	     1, oce9050_print_page_copies);
 
+const gx_device_printer gs_ljet4pjl_device =
+prn_device_copies(prn_ljet4pjl_procs, "ljet4pjl",
+	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+	   X_DPI2, Y_DPI2,
+	   0, 0, 0, 0,			/* margins */
+	   1, ljet4pjl_print_page_copies);
+
 /* Open the printer, adjusting the margins if necessary. */
 private int
 hpjet_open(gx_device * pdev)
@@ -274,6 +287,22 @@ hpjet_close(gx_device * pdev)
     }
 
     return gdev_prn_close(pdev);
+}
+
+private int
+ljet4pjl_close(gx_device *pdev)
+{
+    gx_device_printer *const ppdev = (gx_device_printer *)pdev;
+    int code = gdev_prn_open_printer(pdev, 1);
+
+    if (code < 0)
+	return code;
+    if ( ppdev->Duplex_set >= 0 && ppdev->Duplex ) {
+        gdev_prn_open_printer(ppdev, 1);
+        fputs("\033&l0H", ppdev->file) ;
+    }
+    fputs("\033%-12345X", ppdev->file);
+    return gdev_prn_close(ppdev);
 }
 
 /* ------ Internal routines ------ */
@@ -425,6 +454,22 @@ ljet4d_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 					dots_per_inch, PCL_LJ4D_FEATURES,
 					init);
 }
+ 
+/* LaserJet 4 series compresses, and it needs a special sequence to */
+/* allow it to specify coordinates at 600 dpi. */
+/* It too needs its coordinate system translated slightly. */
+private int
+ljet4pjl_print_page_copies(gx_device_printer *pdev, FILE *prn_stream,
+			int num_copies)
+{	int dots_per_inch = (int)pdev->y_pixels_per_inch;
+	char real_init[60];
+
+	sprintf(real_init, "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
+	return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
+					dots_per_inch, PCL_LJ4PJL_FEATURES,
+					real_init);
+}
+
 /* The 2563B line printer can't compress */
 /* and doesn't support *p+ or *b vertical spacing. */
 private int

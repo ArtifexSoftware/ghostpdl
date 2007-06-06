@@ -77,12 +77,12 @@ $(GS_SO_MAJOR): $(GS_SO_MAJOR_MINOR)
 
 # Build the small Ghostscript loaders, with Gtk+ and without
 
-$(GSSOC_XE): $(GS_SO) $(GLSRC)dxmainc.c
+$(GSSOC_XE): $(GS_SO) $(GLSRC)$(SOC_LOADER)
 	$(GLCC) -g -o $(GSSOC_XE) $(GLSRC)dxmainc.c -L$(BINDIR) -l$(GS)
 
-$(GSSOX_XE): $(GS_SO) $(GLSRC)dxmain.c
-	$(GLCC) -g `pkg-config --cflags gtk+-2.0` -o $(GSSOX_XE) $(GLSRC)dxmain.c -L$(BINDIR) -l$(GS) `pkg-config --libs gtk+-2.0`
-
+$(GSSOX_XE): $(GS_SO) $(GLSRC)$(SOC_LOADER)
+	$(GLCC) -g $(SOC_CFLAGS) -o $(GSSOX_XE) $(GLSRC)$(SOC_LOADER) \
+	-L$(BINDIR) -l$(GS) $(SOC_LIBS)
 
 # ------------------------- Recursive make targets ------------------------- #
 

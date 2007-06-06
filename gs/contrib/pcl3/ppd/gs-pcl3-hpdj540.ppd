@@ -1,0 +1,149 @@
+*PPD-Adobe: "4.3"
+*% ****************************************************************************
+*% File:     @(#)$Id: gs-pcl3-hpdj540.ppd,v 1.2 2001/03/23 15:50:13 Martin Rel $
+*% Contents: PPD file for the ghostscript device "hpdj540" of the pcl3 driver
+*% Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
+*%           Germany, Martin.Lottermoser@t-online.de
+*%
+*% ****************************************************************************
+*%
+*%	Copyright (C) 2001 Martin Lottermoser
+*%	All rights reserved
+*%
+*% ****************************************************************************
+
+*% Required general information keywords
+
+*FileVersion: "1.0"
+*FormatVersion: "4.3"
+*LanguageEncoding: ISOLatin1
+*LanguageVersion: English
+*ModelName: "ghostscript/pcl3/hpdj540"
+*ShortNickName: "ghostscript/pcl3/hpdj540"
+*NickName: "ghostscript/pcl3/hpdj540"
+*PCFileName: "HPDJ_540.PPD"
+
+*% *Product, *PSVersion and *Manufacturer are assumed to be included via
+*% gs-pcl3-common.ppd.
+
+*% ****************************************************************************
+
+*% Device selection
+*GhostscriptOptions: "-sDEVICE=hpdj540"
+
+*% ****************************************************************************
+
+*% Rendering capabilities
+
+*ColorDevice: True
+
+*OpenUI *ColorModel: PickOne
+*OrderDependency: 20 AnySetup *ColorModel
+*DefaultColorModel: Gray
+*ColorModel Gray: "(<<) cvx exec /ColourModel (Gray) (>>) cvx exec setpagedevice"
+*ColorModel CMY: "(<<) cvx exec /ColourModel (CMY) (>>) cvx exec setpagedevice"
+*CloseUI *ColorModel
+
+*OpenUI *Resolution: PickOne
+*OrderDependency: 50 AnySetup *Resolution
+*DefaultResolution: 300dpi
+*Resolution 75dpi: "(<<) cvx exec /HWResolution [75 75] (>>) cvx exec setpagedevice"
+*Resolution 150dpi: "(<<) cvx exec /HWResolution [150 150] (>>) cvx exec setpagedevice"
+*Resolution 300dpi: "(<<) cvx exec /HWResolution [300 300] (>>) cvx exec setpagedevice"
+*CloseUI *Resolution
+
+*% ****************************************************************************
+
+*% Information on page sizes
+
+*OpenUI *PageSize: PickOne
+*OrderDependency: 50 AnySetup *PageSize
+*DefaultPageSize: Unknown
+*PageSize Executive: "(<<) cvx exec /PageSize [522 756] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize Letter: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice letter"
+*PageSize Legal: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice legal"
+*PageSize A4: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice a4"
+*PageSize A5: "(<<) cvx exec /PageSize [420 595] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize JISB5: "(<<) cvx exec /PageSize [516 729] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize Index4x6in: "(<<) cvx exec /PageSize [288 432] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize Index5x8in: "(<<) cvx exec /PageSize [360 576] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize A6Card: "(<<) cvx exec /PageSize [298 420] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize Env10: "(<<) cvx exec /PageSize [297 684] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize EnvDL: "(<<) cvx exec /PageSize [312 624] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageSize EnvC6: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice c6"
+*PageSize Postcard: "(<<) cvx exec /PageSize [283 420] /ImagingBBox null (>>) cvx exec setpagedevice"
+*?PageSize: "save /PageSizeQuery /ProcSet resourcestatus
+  { pop pop /PageSizeQuery /ProcSet findresource begin query end }
+  { (Unknown) }
+  ifelse
+  = flush restore"
+*End
+*CloseUI *PageSize
+
+*OpenUI *PageRegion: PickOne
+*OrderDependency: 50 AnySetup *PageRegion
+*DefaultPageRegion: Unknown
+*PageRegion Executive: "(<<) cvx exec /PageSize [522 756] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion Letter: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice letter"
+*PageRegion Legal: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice legal"
+*PageRegion A4: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice a4"
+*PageRegion A5: "(<<) cvx exec /PageSize [420 595] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion JISB5: "(<<) cvx exec /PageSize [516 729] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion Index4x6in: "(<<) cvx exec /PageSize [288 432] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion Index5x8in: "(<<) cvx exec /PageSize [360 576] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion A6Card: "(<<) cvx exec /PageSize [298 420] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion Env10: "(<<) cvx exec /PageSize [297 684] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion EnvDL: "(<<) cvx exec /PageSize [312 624] /ImagingBBox null (>>) cvx exec setpagedevice"
+*PageRegion EnvC6: "(<<) cvx exec /ImagingBBox null (>>) cvx exec setpagedevice c6"
+*PageRegion Postcard: "(<<) cvx exec /PageSize [283 420] /ImagingBBox null (>>) cvx exec setpagedevice"
+*CloseUI *PageRegion
+
+*% The *DefaultImageableArea keyword is assumed to be found somewhere else.
+*% The bottom margins are smaller than indicated when using the
+*% process colour model Gray.
+*ImageableArea Executive: "18 43 504 753"
+*ImageableArea Letter: "18 43 594 789"
+*ImageableArea Legal: "18 43 594 1005"
+*ImageableArea A4: "10 43 586 839"
+*ImageableArea A5: "10 61 410 592"
+*ImageableArea JISB5: "12 43 504 725"
+*ImageableArea Index4x6in: "10 61 278 429"
+*ImageableArea Index5x8in: "10 61 350 573"
+*ImageableArea A6Card: "10 61 288 416"
+*ImageableArea Env10: "10 61 287 681"
+*ImageableArea EnvDL: "10 61 302 620"
+*ImageableArea EnvC6: "10 61 313 456"
+*ImageableArea Postcard: "12 61 271 416"
+
+*% ============================================================================
+
+*% Custom page size information
+
+*LeadingEdge Short: ""
+*DefaultLeadingEdge: Short
+
+*MaxMediaWidth: "612"
+*MaxMediaHeight: "1008"
+*ParamCustomPageSize Width: 2 points 360 612
+*ParamCustomPageSize Height: 3 points 419.76 1008
+*ParamCustomPageSize WidthOffset: 4 points 0 0
+*ParamCustomPageSize HeightOffset: 5 points 0 0
+*ParamCustomPageSize Orientation: 1 int 0 3
+*HWMargins: 10 61 9 3
+*CustomPageSize True: "
+  pop pop
+  2 index 2 mod 0 eq {exch} if
+  1 index 1 index gt {2}{3} ifelse
+  4 -1 roll add 4 mod
+  (<<) cvx exec /PageSize [ 6 -2 roll ]
+    /LeadingEdge 5 -1 roll
+    % This works only if the interpreter passes this parameter to the device.
+    % Ghostscript's setpagedevice definition does not do this by default.
+    /ImagingBBox null (>>) cvx exec setpagedevice"
+*End
+*NonUIOrderDependency: 50 AnySetup *CustomPageSize True
+
+*% ****************************************************************************
+
+*% Common parts:
+*Include: "gs-pcl3-common.ppd"
