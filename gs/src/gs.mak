@@ -261,7 +261,6 @@ gconfigf_h=$(GLGENDIR)$(D)gconfxc.h
 gconfigd_h=$(GLGENDIR)$(D)gconfigd.h
 
 all default : $(GS_XE) $(GS_SHARED_OBJS)
-	$(RM_) _temp_*
 	$(NO_OP)
 
 # the distclean and maintainer-clean targets (if any)
