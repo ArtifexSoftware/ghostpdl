@@ -227,7 +227,7 @@ GCFLAGS=-Wall -Wstrict-prototypes -Wmissing-declarations -Wmissing-prototypes -f
 CFLAGS_STANDARD=-O2
 CFLAGS_DEBUG=-g -O0
 CFLAGS_PROFILE=-pg -O2
-CFLAGS_SO=-fPIC
+CFLAGS_SO=-fPIC -shared
 
 # Define the other compilation flags.  Add at most one of the following:
 #	-DBSD4_2 for 4.2bsd systems.
@@ -443,7 +443,7 @@ CCAUX=$(CC) `cat $(AK)`
 # These are the specific warnings we have to turn off to compile those
 # specific few files that need this.  We may turn off others in the future.
 CC_NO_WARN=$(CC_) -Wno-cast-qual -Wno-traditional
-CC_SHARED=$(CC_) -fPIC -shared
+CC_SHARED=$(CC_) $(CFLAGS_SO)
 
 # ---------------- End of platform-specific section ---------------- #
 
