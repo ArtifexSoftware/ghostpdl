@@ -453,6 +453,7 @@ CC_=$(CC)
 CC_D=$(CC) $(CO)
 CC_INT=$(CC)
 CC_NO_WARN=$(CC_)
+CC_SHARED=$(CC_)
 
 # ------ Devices and features ------ #
 

@@ -147,6 +147,7 @@ CCFLAGS=$(GENOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
 CCAUX=$(CC)
 CC_NO_WARN=$(CC_) -Wno-cast-qual -Wno-traditional
+CC_SHARED=$(CC_)
 
 include $(GLSRCDIR)/unixhead.mak
 include $(GLSRCDIR)/gs.mak

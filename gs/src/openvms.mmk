@@ -443,6 +443,7 @@ CONFLDTR=-o
 CC_=$(COMP)
 CC_INT=$(CC_)
 CC_NO_WARN=$(CC_)
+CC_SHARED=$(CC_)
 
 # ------------------- Include the generic makefiles ---------------------- #
 

@@ -385,6 +385,7 @@ CCFLAGS=$(GENOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
 CCAUX=$(CC)
 CC_NO_WARN=$(CC_)
+CC_SHARED=$(CC_)
 
 # ---------------- End of platform-specific section ---------------- #
 

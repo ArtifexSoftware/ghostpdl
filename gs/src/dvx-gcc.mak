@@ -335,6 +335,7 @@ AK=
 CCFLAGS=$(GENOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
 CC_NO_WARN=$(CC_)
+CC_SHARED=$(CC_)
 
 # ---------------- End of platform-specific section ---------------- #
 

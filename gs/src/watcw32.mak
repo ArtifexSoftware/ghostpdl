@@ -387,6 +387,7 @@ CC_=$(CC_WX) $(COMPILE_FULL_OPTIMIZED)
 CC_D=$(CC_WX) $(COMPILE_WITH_FRAMES)
 CC_INT=$(CC)
 CC_NO_WARN=$(CC_)
+CC_SHARED=$(CC_)
 
 # No additional flags are needed for Windows compilation.
 CCWINFLAGS=
