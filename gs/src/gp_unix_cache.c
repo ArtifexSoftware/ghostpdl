@@ -31,7 +31,7 @@ typedef struct gp_cache_entry_s {
     int type;
     int keylen;
     byte *key;
-    md5_byte_t hash[16];
+    gs_md5_byte_t hash[16];
     char *filename;
     int len;
     void *buffer;
@@ -139,12 +139,12 @@ gp_cache_indexfilename(const char *prefix)
 /* compute and set a cache key's hash */
 private void gp_cache_hash(gp_cache_entry *entry)
 {
-    md5_state_t md5;
+    gs_md5_state_t md5;
     
     /* we use md5 hashes of the key */
-    md5_init(&md5);
-    md5_append(&md5, entry->key, entry->keylen);
-    md5_finish(&md5, entry->hash);
+    gs_md5_init(&md5);
+    gs_md5_append(&md5, entry->key, entry->keylen);
+    gs_md5_finish(&md5, entry->hash);
 }
 
 /* compute and set cache item's filename */
