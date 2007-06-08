@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -26,7 +26,7 @@
  */
 typedef struct stream_MD5E_state_s {
     stream_state_common;
-    md5_state_t md5;
+    gs_md5_state_t md5;
 } stream_MD5E_state;
 
 #define private_st_MD5E_state()	/* in smd5.c */\

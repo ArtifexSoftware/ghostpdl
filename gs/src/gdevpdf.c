@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -346,13 +346,13 @@ copy_padded(byte buf[32], gs_param_string *str)
 private void
 Adobe_magic_loop_50(byte digest[16], int key_length)
 {
-    md5_state_t md5;
+    gs_md5_state_t md5;
     int i;
 
     for (i = 0; i < 50; i++) {
-	md5_init(&md5);
-	md5_append(&md5, digest, key_length);
-	md5_finish(&md5, digest);
+	gs_md5_init(&md5);
+	gs_md5_append(&md5, digest, key_length);
+	gs_md5_finish(&md5, digest);
     }
 }
 
@@ -374,7 +374,7 @@ Adobe_magic_loop_19(byte *data, int data_size, const byte *key, int key_size)
 private int
 pdf_compute_encryption_data(gx_device_pdf * pdev)
 {
-    md5_state_t md5;
+    gs_md5_state_t md5;
     byte digest[16], buf[32], t;
     stream_arcfour_state sarc4;
 
@@ -420,10 +420,10 @@ pdf_compute_encryption_data(gx_device_pdf * pdev)
 	return_error(gs_error_rangecheck);
     }
     /* Compute O : */
-    md5_init(&md5);
+    gs_md5_init(&md5);
     copy_padded(buf, &pdev->OwnerPassword);
-    md5_append(&md5, buf, sizeof(buf));
-    md5_finish(&md5, digest);
+    gs_md5_append(&md5, buf, sizeof(buf));
+    gs_md5_finish(&md5, digest);
     if (pdev->EncryptionR == 3)
 	Adobe_magic_loop_50(digest, pdev->KeyLength / 8);
     copy_padded(buf, &pdev->UserPassword);
@@ -433,31 +433,31 @@ pdf_compute_encryption_data(gx_device_pdf * pdev)
 	Adobe_magic_loop_19(buf, sizeof(buf), digest, pdev->KeyLength / 8);
     memcpy(pdev->EncryptionO, buf, sizeof(pdev->EncryptionO));
     /* Compute Key : */
-    md5_init(&md5);
+    gs_md5_init(&md5);
     copy_padded(buf, &pdev->UserPassword);
-    md5_append(&md5, buf, sizeof(buf));
-    md5_append(&md5, pdev->EncryptionO, sizeof(pdev->EncryptionO));
-    t = (byte)(pdev->Permissions >>  0);  md5_append(&md5, &t, 1);
-    t = (byte)(pdev->Permissions >>  8);  md5_append(&md5, &t, 1);
-    t = (byte)(pdev->Permissions >> 16);  md5_append(&md5, &t, 1);
-    t = (byte)(pdev->Permissions >> 24);  md5_append(&md5, &t, 1);
-    md5_append(&md5, pdev->fileID, sizeof(pdev->fileID));
+    gs_md5_append(&md5, buf, sizeof(buf));
+    gs_md5_append(&md5, pdev->EncryptionO, sizeof(pdev->EncryptionO));
+    t = (byte)(pdev->Permissions >>  0);  gs_md5_append(&md5, &t, 1);
+    t = (byte)(pdev->Permissions >>  8);  gs_md5_append(&md5, &t, 1);
+    t = (byte)(pdev->Permissions >> 16);  gs_md5_append(&md5, &t, 1);
+    t = (byte)(pdev->Permissions >> 24);  gs_md5_append(&md5, &t, 1);
+    gs_md5_append(&md5, pdev->fileID, sizeof(pdev->fileID));
     if (pdev->EncryptionR == 3)
 	if (!pdev->EncryptMetadata) {
 	    const byte v[4] = {0xFF, 0xFF, 0xFF, 0xFF};
 
-	    md5_append(&md5, v, 4);
+	    gs_md5_append(&md5, v, 4);
 	}
-    md5_finish(&md5, digest);
+    gs_md5_finish(&md5, digest);
     if (pdev->EncryptionR == 3)
 	Adobe_magic_loop_50(digest, pdev->KeyLength / 8);
     memcpy(pdev->EncryptionKey, digest, pdev->KeyLength / 8);
     /* Compute U : */
     if (pdev->EncryptionR == 3) {
-	md5_init(&md5);
-	md5_append(&md5, pad, sizeof(pad));
-	md5_append(&md5, pdev->fileID, sizeof(pdev->fileID));
-	md5_finish(&md5, digest);
+	gs_md5_init(&md5);
+	gs_md5_append(&md5, pad, sizeof(pad));
+	gs_md5_append(&md5, pdev->fileID, sizeof(pdev->fileID));
+	gs_md5_finish(&md5, digest);
 	s_arcfour_set_key(&sarc4, pdev->EncryptionKey, pdev->KeyLength / 8);
 	s_arcfour_process_buffer(&sarc4, digest, sizeof(digest));
 	Adobe_magic_loop_19(digest, sizeof(digest), pdev->EncryptionKey, pdev->KeyLength / 8);

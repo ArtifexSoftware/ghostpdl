@@ -1,5 +1,6 @@
 /*
-  Copyright (C) 2002 Aladdin Enterprises.  All rights reserved.
+  Copyright (C) 2002-2007 Artifex Software, Inc.
+  All rights reserved.
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -37,6 +38,8 @@
   <ghost@aladdin.com>.  Other authors are noted in the change history
   that follows (in reverse chronological order):
 
+  2007-06-08 RG  Namespaced the api calls to avoid conflict with other
+	implementations when linking gs as a library.
   2002-04-13 lpd Splits off main program into a separate file, md5main.c.
  */
 
@@ -76,14 +79,14 @@ do_test(void)
     int status = 0;
 
     for (i = 0; i < 7*2; i += 2) {
-	md5_state_t state;
-	md5_byte_t digest[16];
+	gs_md5_state_t state;
+	gs_md5_byte_t digest[16];
 	char hex_output[16*2 + 1];
 	int di;
 
-	md5_init(&state);
-	md5_append(&state, (const md5_byte_t *)test[i], strlen(test[i]));
-	md5_finish(&state, digest);
+	gs_md5_init(&state);
+	gs_md5_append(&state, (const gs_md5_byte_t *)test[i], strlen(test[i]));
+	gs_md5_finish(&state, digest);
 	for (di = 0; di < 16; ++di)
 	    sprintf(hex_output + di * 2, "%02x", digest[di]);
 	if (strcmp(hex_output, test[i + 1])) {

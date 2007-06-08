@@ -1,5 +1,6 @@
 /*
-  Copyright (C) 1999, 2000 Artifex Software, Inc.  All rights reserved.
+  Copyright (C) 1999-2007 Artifex Software, Inc.
+  All rights reserved.
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -37,6 +38,8 @@
   <ghost@aladdin.com>.  Other authors are noted in the change history
   that follows (in reverse chronological order):
 
+  2007-06-08 RG  Namespaced the api calls to avoid conflict with other
+	implementations when linking gs as a library.
   2002-04-13 lpd Clarified derivation from RFC 1321; now handles byte order
 	either statically or dynamically; added missing #include <string.h>
 	in library.
@@ -61,7 +64,7 @@
 #  define BYTE_ORDER 0
 #endif
 
-#define T_MASK ((md5_word_t)~0)
+#define T_MASK ((gs_md5_word_t)~0)
 #define T1 /* 0xd76aa478 */ (T_MASK ^ 0x28955b87)
 #define T2 /* 0xe8c7b756 */ (T_MASK ^ 0x173848a9)
 #define T3    0x242070db
@@ -129,19 +132,19 @@
 
 
 static void
-md5_process(md5_state_t *pms, const md5_byte_t *data /*[64]*/)
+gs_md5_process(gs_md5_state_t *pms, const gs_md5_byte_t *data /*[64]*/)
 {
-    md5_word_t
+    gs_md5_word_t
 	a = pms->abcd[0], b = pms->abcd[1],
 	c = pms->abcd[2], d = pms->abcd[3];
-    md5_word_t t;
+    gs_md5_word_t t;
 #if BYTE_ORDER > 0
     /* Define storage only for big-endian CPUs. */
-    md5_word_t X[16];
+    gs_md5_word_t X[16];
 #else
     /* Define storage for little-endian or both types of CPUs. */
-    md5_word_t xbuf[16];
-    const md5_word_t *X;
+    gs_md5_word_t xbuf[16];
+    const gs_md5_word_t *X;
 #endif
 
     {
@@ -153,7 +156,7 @@ md5_process(md5_state_t *pms, const md5_byte_t *data /*[64]*/)
 	 */
 	static const int w = 1;
 
-	if (*((const md5_byte_t *)&w)) /* dynamic little-endian */
+	if (*((const gs_md5_byte_t *)&w)) /* dynamic little-endian */
 #endif
 #if BYTE_ORDER <= 0		/* little-endian */
 	{
@@ -161,9 +164,9 @@ md5_process(md5_state_t *pms, const md5_byte_t *data /*[64]*/)
 	     * On little-endian machines, we can process properly aligned
 	     * data without copying it.
 	     */
-	    if (!((data - (const md5_byte_t *)0) & 3)) {
+	    if (!((data - (const gs_md5_byte_t *)0) & 3)) {
 		/* data are properly aligned */
-		X = (const md5_word_t *)data;
+		X = (const gs_md5_word_t *)data;
 	    } else {
 		/* not aligned */
 		memcpy(xbuf, data, 64);
@@ -180,7 +183,7 @@ md5_process(md5_state_t *pms, const md5_byte_t *data /*[64]*/)
 	     * On big-endian machines, we must arrange the bytes in the
 	     * right order.
 	     */
-	    const md5_byte_t *xp = data;
+	    const gs_md5_byte_t *xp = data;
 	    int i;
 
 #  if BYTE_ORDER == 0
@@ -310,7 +313,7 @@ md5_process(md5_state_t *pms, const md5_byte_t *data /*[64]*/)
 }
 
 void
-md5_init(md5_state_t *pms)
+gs_md5_init(gs_md5_state_t *pms)
 {
     pms->count[0] = pms->count[1] = 0;
     pms->abcd[0] = 0x67452301;
@@ -320,12 +323,12 @@ md5_init(md5_state_t *pms)
 }
 
 void
-md5_append(md5_state_t *pms, const md5_byte_t *data, int nbytes)
+gs_md5_append(gs_md5_state_t *pms, const gs_md5_byte_t *data, int nbytes)
 {
-    const md5_byte_t *p = data;
+    const gs_md5_byte_t *p = data;
     int left = nbytes;
     int offset = (pms->count[0] >> 3) & 63;
-    md5_word_t nbits = (md5_word_t)(nbytes << 3);
+    gs_md5_word_t nbits = (gs_md5_word_t)(nbytes << 3);
 
     if (nbytes <= 0)
 	return;
@@ -345,12 +348,12 @@ md5_append(md5_state_t *pms, const md5_byte_t *data, int nbytes)
 	    return;
 	p += copy;
 	left -= copy;
-	md5_process(pms, pms->buf);
+	gs_md5_process(pms, pms->buf);
     }
 
     /* Process full blocks. */
     for (; left >= 64; p += 64, left -= 64)
-	md5_process(pms, p);
+	gs_md5_process(pms, p);
 
     /* Process a final partial block. */
     if (left)
@@ -358,24 +361,24 @@ md5_append(md5_state_t *pms, const md5_byte_t *data, int nbytes)
 }
 
 void
-md5_finish(md5_state_t *pms, md5_byte_t digest[16])
+gs_md5_finish(gs_md5_state_t *pms, gs_md5_byte_t digest[16])
 {
-    static const md5_byte_t pad[64] = {
+    static const gs_md5_byte_t pad[64] = {
 	0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     };
-    md5_byte_t data[8];
+    gs_md5_byte_t data[8];
     int i;
 
     /* Save the length before padding. */
     for (i = 0; i < 8; ++i)
-	data[i] = (md5_byte_t)(pms->count[i >> 2] >> ((i & 3) << 3));
+	data[i] = (gs_md5_byte_t)(pms->count[i >> 2] >> ((i & 3) << 3));
     /* Pad to 56 bytes mod 64. */
-    md5_append(pms, pad, ((55 - (pms->count[0] >> 3)) & 63) + 1);
+    gs_md5_append(pms, pad, ((55 - (pms->count[0] >> 3)) & 63) + 1);
     /* Append the length. */
-    md5_append(pms, data, 8);
+    gs_md5_append(pms, data, 8);
     for (i = 0; i < 16; ++i)
-	digest[i] = (md5_byte_t)(pms->abcd[i >> 2] >> ((i & 3) << 3));
+	digest[i] = (gs_md5_byte_t)(pms->abcd[i >> 2] >> ((i & 3) << 3));
 }

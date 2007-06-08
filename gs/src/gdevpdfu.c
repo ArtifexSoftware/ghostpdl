@@ -440,17 +440,17 @@ private const context_proc context_procs[4][4] =
 private int
 pdf_object_key(const gx_device_pdf * pdev, gs_id object_id, byte key[16])
 {
-    md5_state_t md5;
-    md5_byte_t zero[2] = {0, 0}, t;
+    gs_md5_state_t md5;
+    gs_md5_byte_t zero[2] = {0, 0}, t;
     int KeySize = pdev->KeyLength / 8;
 
-    md5_init(&md5);
-    md5_append(&md5, pdev->EncryptionKey, KeySize);
-    t = (byte)(object_id >>  0);  md5_append(&md5, &t, 1);
-    t = (byte)(object_id >>  8);  md5_append(&md5, &t, 1);
-    t = (byte)(object_id >> 16);  md5_append(&md5, &t, 1);
-    md5_append(&md5, zero, 2);
-    md5_finish(&md5, key);
+    gs_md5_init(&md5);
+    gs_md5_append(&md5, pdev->EncryptionKey, KeySize);
+    t = (byte)(object_id >>  0);  gs_md5_append(&md5, &t, 1);
+    t = (byte)(object_id >>  8);  gs_md5_append(&md5, &t, 1);
+    t = (byte)(object_id >> 16);  gs_md5_append(&md5, &t, 1);
+    gs_md5_append(&md5, zero, 2);
+    gs_md5_finish(&md5, key);
     return min(KeySize + 5, 16);
 }
 
@@ -470,7 +470,7 @@ pdf_begin_encrypt(gx_device_pdf * pdev, stream **s, gs_id object_id)
 {
     gs_memory_t *mem = pdev->v_memory;
     stream_arcfour_state *ss;
-    md5_byte_t key[16];
+    gs_md5_byte_t key[16];
     int code, keylength;
 
     if (!pdev->KeyLength)
