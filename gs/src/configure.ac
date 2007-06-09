@@ -331,6 +331,7 @@ cups_serverbin="/usr/lib/cups"
 if ( test -d cups ); then
     if test x$enable_cups != xno; then
 	AC_PATH_PROG(CUPSCONFIG,cups-config)
+	AC_CHECK_HEADER([cups/raster.h],[],[CUPSCONFIG=""])
 	if test "x$CUPSCONFIG" != x; then
 	    dnl Use values from CUPS config...
 #	    LIBS="`$CUPSCONFIG --ldflags` `$CUPSCONFIG --static --image --libs | sed -e '1,$s/-lssl//'` $LIBS"
