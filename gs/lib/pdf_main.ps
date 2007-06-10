@@ -79,7 +79,9 @@ systemdict begin
   } loop
   exch pop
   {
-    dup 1023 string .peekstring { % "1024 string" exceeds current %stdin buffer"
+    dup 1023 string .peekstring pop dup length 400 ge {
+      % "1024 string" exceeds current %stdin buffer
+      % Valid PDF file cannot be smaller than 400 bytes.
       (%PDF-1.) search {
         3 1 roll pop pop
         dup (%!PS) search not {
@@ -552,8 +554,9 @@ pdfdict begin
    currentglobal true .setglobal globaldict begin
    /TTFWarnList 0 dict def /UndefProcList 0 dict def
    end .setglobal
-   PDFfile dup 0 setfileposition pdfstring readstring 
-   not {/pdfopen cvx /syntaxerror signalerror} if
+   PDFfile dup 0 setfileposition
+   0 () /SubFileDecode filter   % to avoid file closure
+   pdfstring readstring pop
    (%PDF-) search not {/pdfopen cvx /syntaxerror signalerror} if
    length /PDFoffset exch def pop
    % some badly formed PDF's (Visioneer) have something other than EOL
