@@ -833,7 +833,7 @@ init(void)
 	    s++;
     }
     len = s - p;
-    strncpy(szLogFile, p, min(len, sizeof(szLogFile)-1));
+    strncpy(szLogFile, p, min(len, (int)sizeof(szLogFile)-1));
     szLogFile[len] = '\0';
     if (inquote && (*s == '\042')) {
 	s++;

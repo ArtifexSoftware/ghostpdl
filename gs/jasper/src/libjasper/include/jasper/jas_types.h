@@ -89,7 +89,7 @@ typedef int	jas_bool;
    In particular, it does not define the "long long" and "unsigned long
    long" types. We therefore must make our own defines.
  */
-# ifdef _MSC_VER
+# if defined(_MSC_VER) || (defined(__BORLANDC__) && defined(__WIN32__))
 /* 
    We use the intrinsics rather than the windows.h types because
    that header is large, slow to compile, and incompatibile with
@@ -108,14 +108,16 @@ typedef int	jas_bool;
 #  define ulonglong	UINT64
 # endif /* _MSC_VER */
 
-/* Microsoft defines some things with slightly different names */
-# define O_RDWR _O_RDWR
-# define O_RDONLY _O_RDONLY
-# define O_WRONLY _O_WRONLY
-# define O_CREAT _O_CREAT
-# define O_TRUNC _O_TRUNC
-# define O_APPEND _O_APPEND
-# define O_EXCL _O_EXCL
+#if !defined(__BORLANDC__)
+   /* Microsoft defines some things with slightly different names */
+#  define O_RDWR _O_RDWR
+#  define O_RDONLY _O_RDONLY
+#  define O_WRONLY _O_WRONLY
+#  define O_CREAT _O_CREAT
+#  define O_TRUNC _O_TRUNC
+#  define O_APPEND _O_APPEND
+#  define O_EXCL _O_EXCL
+#endif /* !__BORLANDC__ */
 
 #endif /* WIN32 */
 

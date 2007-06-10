@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2006 Artifex Software, Inc.
+#  Copyright (C) 2001-2007 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -12,7 +12,7 @@
 #
 # $Id$
 # makefile for (Windows 95 / Windows NT) +
-#   Borland C++ 4.5 platform.
+#   Borland C++ 4.5 and 5.5 platforms.
 #   Borland C++Builder 3 platform (need BC++ 4.5 for 16-bit code)
 
 # ------------------------------- Options ------------------------------- #
@@ -25,29 +25,48 @@
 # source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
-BINDIR=bin
-GLSRCDIR=src
-GLGENDIR=obj
-GLOBJDIR=obj
-PSSRCDIR=src
-PSLIBDIR=lib
-PSRESDIR=Resource
-PSGENDIR=obj
-PSOBJDIR=obj
+!ifndef BINDIR
+BINDIR=.\bin
+!endif
+!ifndef GLSRCDIR
+GLSRCDIR=.\src
+!endif
+!ifndef GLGENDIR
+GLGENDIR=.\obj
+!endif
+!ifndef GLOBJDIR
+GLOBJDIR=.\obj
+!endif
+!ifndef PSSRCDIR
+PSSRCDIR=.\src
+!endif
+!ifndef PSLIBDIR
+PSLIBDIR=.\lib
+!endif
+!ifndef PSRESDIR
+PSRESDIR=.\Resource
+!endif
+!ifndef PSGENDIR
+PSGENDIR=.\obj
+!endif
+!ifndef PSOBJDIR
+PSOBJDIR=.\obj
+!endif
 
 # Define the root directory for Ghostscript installation.
 
 !ifndef AROOTDIR
 AROOTDIR=c:/gs
 !endif
-
 !ifndef GSROOTDIR
 GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
 !endif
 
 # Define the directory that will hold documentation at runtime.
 
+!ifndef GS_DOCDIR
 GS_DOCDIR=$(GSROOTDIR)/doc
+!endif
 
 # Define the default directory/ies for the runtime
 # initialization, resource and font files.  Separate multiple directories with \;.
@@ -77,8 +96,12 @@ GS_INIT=gs_init.ps
 
 # Choose generic configuration options.
 
-# Setting DEBUG=1 includes debugging features (-Z switch) in the code.  The
-# compiled code is substantially slower and larger.
+# Setting DEBUG=1 includes debugging features in the build:
+# 1. It defines the C preprocessor symbol DEBUG. The latter includes
+#    tracing and self-validation code fragments into compilation.
+#    Particularly it enables the -Z and -T switches in Ghostscript.
+# Code produced with this option is somewhat larger and runs 
+# somewhat slower.
 
 !ifndef DEBUG
 DEBUG=0
@@ -102,10 +125,17 @@ NOPRIVATE=0
 
 # Define the names of the executable files.
 
+!ifndef GS
 GS=gswin32
+!endif
+!ifndef GSCONSOLE
 GSCONSOLE=gswin32c
+!endif
+!ifndef GSDLL
 GSDLL=gsdll32
+!endif
 
+!ifndef BUILD_TIME_GS
 # Define the name of a pre-built executable that can be invoked at build
 # time.  Currently, this is only needed for compiled fonts.  The usual
 # alternatives are:
@@ -115,21 +145,13 @@ BUILD_TIME_GS=gswin32c
 # option, then you must build the executable first without compiled fonts,
 # and then again with compiled fonts.
 #BUILD_TIME_GS=$(BINDIR)\$(GS) -I$(PSLIBDIR)
+!endif
 
-# To build two small executables and a large DLL, use MAKEDLL=1.
-# To build two large executables, use MAKEDLL=0.
+# To build two small executables and a large DLL use MAKEDLL=1
+# To build two large executables use MAKEDLL=0
 
 !ifndef MAKEDLL
 MAKEDLL=1
-!endif
-
-# If you want multi-thread-safe compilation, set MULTITHREAD=1; if not, set
-# MULTITHREAD=0.  MULTITHREAD=0 produces slightly smaller and faster code,
-# but MULTITHREAD=1 is required if you use any "asynchronous" output
-# drivers.
-
-!ifndef MULTITHREAD
-MULTITHREAD=1
 !endif
 
 # Define the directory where the IJG JPEG library sources are stored,
@@ -159,6 +181,57 @@ PVERSION=10216
 ZSRCDIR=zlib
 !endif
 
+# Define which jbig2 library to use
+!ifndef JBIG2_LIB
+JBIG2_LIB=jbig2dec
+!endif
+
+!if "$(JBIG2_LIB)" == "luratech" || "$(JBIG2_LIB)" == "ldf_jb2"
+# Set defaults for using the Luratech JB2 implementation
+!ifndef JBIG2SRCDIR
+# CSDK source code location
+JBIG2SRCDIR=ldf_jb2
+!endif
+!ifndef JBIG2_CFLAGS
+# required compiler flags
+JBIG2_CFLAGS=-DUSE_LDF_JB2 -DWIN32
+!endif
+!else
+# Use jbig2dec by default. See jbig2.mak for more information.
+!ifndef JBIG2SRCDIR
+# location of included jbig2dec library source
+JBIG2SRCDIR=jbig2dec
+!endif
+!endif
+
+# Alternatively, you can build a separate DLL
+# and define SHARE_JBIG2=1 in src/winlib.mak
+
+# Define which jpeg2k library to use
+!ifndef JPX_LIB
+JPX_LIB=jasper
+!endif
+
+!if "$(JPX_LIB)" == "luratech" || "$(JPX_LIB)" == "lwf_jp2"
+# Set defaults for using the Luratech JP2 implementation
+!ifndef JPXSRCDIR
+# CSDK source code location
+JPXSRCDIR=lwf_jp2
+!endif
+!ifndef JPX_CFLAGS
+# required compiler flags
+JPX_CFLAGS=-DUSE_LWF_JP2 -DWIN32
+!endif
+!else
+# Use jasper by default. See jasper.mak for more information.
+!ifndef JPXSRCDIR
+JPXSRCDIR=jasper
+!endif
+!endif
+
+# Alternatively, you can build a separate DLL
+# and define SHARE_JPX=1 in src/winlib.mak
+
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
 
@@ -174,6 +247,9 @@ ICCSRCDIR=icclib
 IJSSRCDIR=ijs
 IJSEXECTYPE=win
 !endif
+
+# Define the directory where the imdi library source is stored.
+# See devs.mak for more information
 
 !ifndef IMDISRCDIR
 IMDISRCDIR=imdi
@@ -302,69 +378,91 @@ CPU_TYPE=586
 # of that type (or higher) is available: this is NOT currently checked
 # at runtime.
 
+! ifndef FPU_TYPE
 FPU_TYPE=387
+!endif
 
 # Define the .dev module that implements thread and synchronization
 # primitives for this platform.  Don't change this unless you really know
 # what you're doing.
 
+!ifndef SYNC
 SYNC=winsync
+!endif
 
 # ------ Devices and features ------ #
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)mshandle.dev $(PSD)mspoll.dev $(GLD)pipe.dev $(PSD)fapi.dev
+!ifndef FEATURE_DEVS
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)mshandle.dev $(PSD)msprinter.dev $(PSD)mspoll.dev $(GLD)pipe.dev $(PSD)fapi.dev $(PSD)jbig2.dev $(PSD)jpx.dev
+!endif
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
+!ifndef COMPILE_INITS
 COMPILE_INITS=0
+!endif
 
 # Choose whether to store band lists on files or in memory.
 # The choices are 'file' or 'memory'.
 
+!ifndef BAND_LIST_STORAGE
 BAND_LIST_STORAGE=file
+!endif
 
 # Choose which compression method to use when storing band lists in memory.
 # The choices are 'lzw' or 'zlib'.
 
+!ifndef BAND_LIST_COMPRESSOR
 BAND_LIST_COMPRESSOR=zlib
+!endif
 
 # Choose the implementation of file I/O: 'stdio', 'fd', or 'both'.
 # See gs.mak and sfxfd.c for more details.
 
+!ifndef FILE_IMPLEMENTATION
 FILE_IMPLEMENTATION=stdio
+!endif
 
 # Choose the implementation of stdio: '' for file I/O and 'c' for callouts
 # See gs.mak and ziodevs.c/ziodevsc.c for more details.
 
+!ifndef STDIO_IMPLEMENTATION
 STDIO_IMPLEMENTATION=c
+!endif
 
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 
+!ifndef DEVICE_DEVS
 DEVICE_DEVS=$(DD)display.dev $(DD)mswindll.dev $(DD)mswinpr2.dev
 DEVICE_DEVS2=$(DD)epson.dev $(DD)eps9high.dev $(DD)eps9mid.dev $(DD)epsonc.dev $(DD)ibmpro.dev
 DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev
 DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev
-DEVICE_DEVS5=$(DD)djet500c.dev $(DD)declj250.dev $(DD)lj250.dev
+DEVICE_DEVS5=$(DD)uniprint.dev $(DD)djet500c.dev $(DD)declj250.dev $(DD)lj250.dev $(DD)ijs.dev
 DEVICE_DEVS6=$(DD)st800.dev $(DD)stcolor.dev $(DD)bj10e.dev $(DD)bj200.dev
 DEVICE_DEVS7=$(DD)t4693d2.dev $(DD)t4693d4.dev $(DD)t4693d8.dev $(DD)tek4696.dev
-DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev
-DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev
+DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev $(DD)pcxcmyk.dev
+DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev $(DD)pkmraw.dev
 DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
-DEVICE_DEVS11=$(DD)bmpmono.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)tiff12nc.dev $(DD)tiff24nc.dev
+DEVICE_DEVS11=$(DD)bmpmono.dev $(DD)bmpgray.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)tiff12nc.dev $(DD)tiff24nc.dev $(DD)tiffgray.dev $(DD)tiff32nc.dev $(DD)tiffsep.dev
 DEVICE_DEVS12=$(DD)psmono.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
 DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev $(DD)pngalpha.dev
-DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev  $(DD)jpegcmyk.dev
+DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev $(DD)jpegcmyk.dev
 DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)ps2write.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+DEVICE_DEVS16=$(DD)bbox.dev
 # Overflow for DEVS3,4,5,6,9
-DEVICE_DEVS16=$(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev
-DEVICE_DEVS17=$(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev
-DEVICE_DEVS18=$(DD)jetp3852.dev $(DD)r4081.dev $(DD)lbp8.dev $(DD)uniprint.dev
-DEVICE_DEVS19=$(DD)m8510.dev $(DD)necp6.dev $(DD)bjc600.dev $(DD)bjc800.dev
+DEVICE_DEVS17=$(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev 
+DEVICE_DEVS18=$(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev $(DD)jetp3852.dev $(DD)r4081.dev
+DEVICE_DEVS19=$(DD)lbp8.dev $(DD)m8510.dev $(DD)necp6.dev $(DD)bjc600.dev $(DD)bjc800.dev
 DEVICE_DEVS20=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev
+DEVICE_DEVS21= $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16m.dev $(DD)bmp32b.dev $(DD)psdcmyk.dev $(DD)psdrgb.dev
+!endif
+
+# FAPI compilation options :
+UFST_CFLAGS=-DMSVC
 
 # ---------------------------- End of options ---------------------------- #
 
@@ -456,13 +554,8 @@ CS=-N
 CS=
 !endif
 
-!if $(MULTITHREAD)!=0
 CMT=-tWM
 CLIB=cw32mt.lib
-!else
-CMT=
-CLIB=cw32.lib
-!endif
 
 # Specify function prolog type
 COMPILE_FOR_DLL=-WDE
@@ -541,10 +634,6 @@ $(GENHT_XE): $(PSSRCDIR)\genht.c $(GENHT_DEPS)
 
 $(GENINIT_XE): $(PSSRCDIR)\geninit.c $(GENINIT_DEPS)
 	$(CCAUX) $(PSSRCDIR)\geninit.c $(CCAUX_TAIL)
-
-# -------------------------------- Library -------------------------------- #
-
-# See winlib.mak
 
 # ----------------------------- Main program ------------------------------ #
 
@@ -663,6 +752,13 @@ $(PSOBJ)dwuninst.res
 
 !endif
 
+DEBUGDEFS=BINDIR=.\debugbin GLGENDIR=.\debugobj GLOBJDIR=.\debugobj PSLIBDIR=.\lib PSGENDIR=.\debugobj PSOBJDIR=.\debugobj DEBUG=1 TDEBUG=1
+OTHERDEFS=COMPBASE="$(COMPBASE)" AROOTDIR="$(AROOTDIR)" GSROOTDIR="$(GSROOTDIR)" CFLAGS="$(CFLAGS)"
+
+debug:
+	make -f $(MAKEFILE) $(DEBUGDEFS) $(OTHERDEFS)
+
+debugclean:
+	make -f $(MAKEFILE) $(DEBUGDEFS) clean
 
 # end of makefile
-

@@ -160,7 +160,7 @@ main(int argc, char *argv[])
     define_int(f, "ARCH_LOG2_SIZEOF_SHORT", ilog2(size_of(short)));
     define_int(f, "ARCH_LOG2_SIZEOF_INT", ilog2(size_of(int)));
     define_int(f, "ARCH_LOG2_SIZEOF_LONG", ilog2(size_of(long)));
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) && ! (defined(__BORLANDC__) && defined(__WIN32__))
     /* MSVC does not provide 'long long' but we need this on some archs
        to define a 64 bit type. A corresponding #ifdef in stdint_.h handles
        that case for MSVC. Most other platforms do support long long if

@@ -85,7 +85,7 @@
 #include "jpc_math.h"
 
 #ifndef USE_ASM_WIN32
-# if defined(_WIN32) && !defined(_WIN64)
+# if defined(_WIN32) && !defined(_WIN64) && ! defined(__BORLANDC__)
 #  define USE_ASM_WIN32
 # endif
 #endif

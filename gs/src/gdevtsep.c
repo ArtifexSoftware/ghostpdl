@@ -1071,7 +1071,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 	gs_free_object(pdev->memory, sep_line, "tiffsep_print_page");
     }
 
-#if DEBUG && 0
+#if defined(DEBUG) && 0
     print_compressed_color_list(tfdev->devn_params.compressed_color_list,
 		    			max(16, num_comp));
 #endif

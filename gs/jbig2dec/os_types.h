@@ -41,7 +41,7 @@
 #endif
 #elif defined(HAVE_CONFIG_H)
 # include "config_types.h"
-#elif defined(_WIN32)
+#elif defined(_WIN32) || defined(__WIN32__) 
 # include "config_win32.h"
 #endif
 

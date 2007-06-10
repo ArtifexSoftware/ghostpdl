@@ -69,7 +69,7 @@
   /* A configure-based build is being used. */
 #include "jas_config_ac.h" 
 
-#elif defined(_MSC_VER) || defined(JAS_WIN_MSVC_BUILD)
+#elif defined(_MSC_VER) || defined(JAS_WIN_MSVC_BUILD) || (defined(__BORLANDC__) && defined(__WIN32__))
 
   /* MSVC or other MS Windows platform build */
 #include "jas_config_win32.h"
