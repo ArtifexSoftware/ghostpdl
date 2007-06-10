@@ -214,7 +214,7 @@ filter_read(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
 	    sstrm->is_temp = 1;
 	    break;
 	case t_file:
-	    check_read_known_file(sstrm, sop, return);
+            check_read_known_file_else(sstrm, sop, return, DO_NOTHING);
 	    ialloc_set_space(idmemory, use_space);
 	    goto ens;
 	default:
