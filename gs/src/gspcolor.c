@@ -211,6 +211,7 @@ gx_remap_Pattern(const gs_client_color * pc, const gs_color_space * pcs,
 {
     if (pc->pattern == 0) {
         pdc->ccolor_valid = false;
+        pdc->ccolor.pattern = 0; /* for GC */
 	color_set_null_pattern(pdc);
 	return 0;
     }
