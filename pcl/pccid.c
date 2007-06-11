@@ -19,6 +19,7 @@
 #include "pcstate.h"
 #include "pcpalet.h"
 #include "pccid.h"
+#include "plsrgb.h"
 
 
 /* CID accessors */
@@ -293,6 +294,10 @@ check_cid_hdr(
         pcid->bits_per_primary[1] = 8;
         pcid->bits_per_primary[2] = 8;
     }
+
+    /* if the device handles color conversion remap the colorimetric color space to rgb */
+    if (pl_device_does_color_conversion() && pcid->cspace == pcl_cspace_Colorimetric)
+        pcid->cspace = pcl_cspace_RGB;
 
     return 0;
 }

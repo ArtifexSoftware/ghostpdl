@@ -27,6 +27,28 @@
 #include "gzstate.h"
 #include "plsrgb.h"
 
+/* uncomment the following definition to specify the device does the
+   color conversion.  If the definition is commented out we set up an
+   srgb color space and associated color rendering dictionary using
+   the regular color conversion machinery in the graphics library
+   pipeline.  The wtsimdi device is an example device that does color
+   conversion as a "postprocess" and requires the definition.  If
+   defined all additive colors are passed through as Device RGB but
+   the device assumes the triples are in fact sRGB.  NB eventually
+   this should be decided at run time.  */
+
+#define DEVICE_DOES_COLOR_CONVERSION
+
+bool
+pl_device_does_color_conversion()
+{
+#ifdef DEVICE_DOES_COLOR_CONVERSION
+    return true;
+#endif
+    return false;
+}    
+
+
 /* shared language (pcl and pclxl) for setting up sRGB to XYZ and an
    associated default CRD to be used.  The code will request a crd
    from the driver which will override the default crd.  We use the
@@ -269,7 +291,7 @@ gs_cie_render *pl_pcrd;
 bool pl_pcrd_built = false; /* the crd has been built */
 
 
-int
+private int
 pl_build_crd(gs_state *pgs)
 {
     int code;
@@ -314,10 +336,18 @@ int
 pl_cspace_init_SRGB(gs_color_space **ppcs, const gs_state *pgs)
 {
 
+    int code;
     /* make sure we have a crd set up */
-    int code = pl_build_crd((gs_state *)pgs);
+#ifdef DEVICE_DOES_COLOR_CONVERSION
+    *ppcs = gs_cspace_new_DeviceRGB(pgs->memory);
+    return 0;
+#endif
+
+    code = pl_build_crd((gs_state *)pgs);
     if ( code < 0 )
         return code;
+
+
 
     code = gs_cspace_build_CIEABC(ppcs, NULL, gs_state_memory(pgs));
     if ( code < 0 )
@@ -330,7 +360,7 @@ pl_cspace_init_SRGB(gs_color_space **ppcs, const gs_state *pgs)
 }
 
 /* set the srgb color space */
-int
+private int
 pl_setSRGB(gs_state *pgs)
 {
     gs_color_space *pcs;
@@ -351,6 +381,9 @@ pl_setSRGBcolor(gs_state *pgs, float r, float g, float b)
     int code;
     gs_client_color color;
 
+#ifdef DEVICE_DOES_COLOR_CONVERSION
+    return gs_setrgbcolor(pgs, r, g, b);
+#endif
     /* make sure we have a crd set up */
     code = pl_build_crd(pgs);
     if ( code < 0 )

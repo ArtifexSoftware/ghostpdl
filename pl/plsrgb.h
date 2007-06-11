@@ -11,24 +11,22 @@
    San Rafael, CA  94903, (415)492-9861, for further information. */
 /*$Id$ */
 
-/* plsrgb.h - interface for controlling srgb colorspace */
+/* plsrgb.h - interface for controlling srgb colorspace as used by pcl. */
 
-/* initialize srgb color space */
 #ifndef plsrgb_INCLUDED
 #  define plsrgb_INCLUDED
 
-/* build a color rendering dictionary to be used with the srgb color
-   space.  If the device has a color rendering dictionary it will be
-   used. */
-int pl_build_crd(gs_state *pgs);
+/* note each of the following will set up a color rendering dictionary
+   if one is not present, possibly reading the dictionary from the
+   device. */
 
 /* return an srgb color space to the client */
 int pl_cspace_init_SRGB(gs_color_space **ppcs, const gs_state *pgs);
 
-/* build and set the rgb color space */
-int pl_setsRGB(gs_state *pgs);
-
 /* set an srgb color */
 int pl_setSRGBcolor(gs_state *pgs, float r, float g, float b);
+
+/* true if device does color conversion as a post process */
+bool pl_device_does_color_conversion(void);
 
 #endif /* plsrgb_INCLUDED */
