@@ -298,11 +298,11 @@ ljet4pjl_close(gx_device *pdev)
     if (code < 0)
 	return code;
     if ( ppdev->Duplex_set >= 0 && ppdev->Duplex ) {
-        gdev_prn_open_printer(ppdev, 1);
+        gdev_prn_open_printer(pdev, 1);
         fputs("\033&l0H", ppdev->file) ;
     }
     fputs("\033%-12345X", ppdev->file);
-    return gdev_prn_close(ppdev);
+    return gdev_prn_close(pdev);
 }
 
 /* ------ Internal routines ------ */
