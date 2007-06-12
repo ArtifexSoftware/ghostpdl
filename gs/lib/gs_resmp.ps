@@ -189,13 +189,17 @@ setpacking
   length 3 sub -1 0 {                              % <object> bGlobal [execstack] null i
     2 index exch get                               % <object> bGlobal [execstack] null proc
     dup type dup /packedarraytype eq exch /arraytype eq or {
-      dup length 1 gt {                            % <object> bGlobal [execstack] null proc
-        dup 0 get                                  % <object> bGlobal [execstack] null proc elem0
-        5 index eq {                               % <object> bGlobal [execstack] null proc
-          1 get                                    % <object> bGlobal [execstack] null object1
-          exch pop exit                            % <object> bGlobal [execstack] object1
+      dup rcheck {
+        dup length 1 gt {                          % <object> bGlobal [execstack] null proc
+          dup 0 get                                % <object> bGlobal [execstack] null proc elem0
+          5 index eq {                             % <object> bGlobal [execstack] null proc
+            1 get                                  % <object> bGlobal [execstack] null object1
+            exch pop exit                          % <object> bGlobal [execstack] object1
+          } {
+            pop
+          } ifelse
         } {
-          pop
+          pop                                      % <object> bGlobal [execstack] false
         } ifelse
       } {
         pop                                        % <object> bGlobal [execstack] false
