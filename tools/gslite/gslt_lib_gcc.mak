@@ -114,7 +114,7 @@ $(GSLITE_LIB): $(GSLIB_PARTS) $(GSLT_OBJS) $(MAKEFILE)
 ifeq ($(PLATFORM), Darwin)
 	gcc -dynamiclib -o libgslt.dylib $(shell cat obj/ld.tr | sed 's/\\//g') $(GSXLIBS) $(GSLT_OBJS) $(STDLIBS)
 else
-	gcc -Xlinker -V -shared -Wl $(shell cat obj/ld.tr | sed 's/\\//g') $(GSXLIBS) $(GSLT_OBJS) -o $(GSLITE_LIB) $(STDLIBS)
+	gcc -shared $(shell cat obj/ld.tr | sed 's/\\//g') $(GSXLIBS) $(GSLT_OBJS) -o $(GSLITE_LIB) $(STDLIBS)
 endif
 
 $(GSLTOBJ)gslt_image_test.$(OBJ) : $(GSLITE_LIB) $(GSLTSRC)gslt_image_test.c
