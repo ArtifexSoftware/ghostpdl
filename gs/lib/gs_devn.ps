@@ -201,16 +201,10 @@ colorspacedict
         .usealternate
           {
             pop
-    	    % "QuarkXPress pictwpstops filter 1.0" generates a document, 
-    	    % which places an extra value on the operand stack
-	    % and tintTransform replaces it - see bug 549307 
-	    % and the test case of bug 688584.
-	    % Here we use mark...cleartomark for providing a tolerance.
-            mark 
-            true % An extra value for bogus Adobe tintTransform 
             currentcolor
             currentcolorspace 3 get exec
-            cleartomark
+            currentcolorspace 2 get
+            //clear_setcolor_operands exec            
           }
           { pop }
         ifelse

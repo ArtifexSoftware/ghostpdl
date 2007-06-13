@@ -502,14 +502,30 @@ systemdict /setcolor .undef
             ifelse
           }
         if
-          { //.cs_get_default_color exec setcolor }
+          { 
+            % Some versions of PhotoShop generate documents
+            % that place an extra value on the operand stack
+            % and tintTransform replaces it - see bug 549307
+            % for details. Also see the test case of bug 689263.
+            % Here we use mark...cleartomark to restore the stack
+            % to its normal state.
+            mark
+            true % An extra value for bogus Adobe tintTransform
+            3 -1 roll
+            //.cs_get_default_color exec setcolor
+            cleartomark
+          }
           {
             //.cs_validate exec
             //.cs_substitute exec
             //.cs_prepare exec
             //.cs_install exec
             dup //make_array1 exec //setcolorspace
-	    //.cs_get_default_color exec setcolor
+            mark %See comments above
+            true
+            3 -1 roll
+            //.cs_get_default_color exec setcolor
+            cleartomark
           }
         ifelse
       }
