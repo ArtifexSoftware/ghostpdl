@@ -1507,18 +1507,21 @@ currentdict /PDF2PS_matrix_key undef
 /resourceusestransparency {	% <dict> <dict> resourceusestransparency <bool>
   {	% Use loop to provide an exitable context.
     /Resources knownoget not { 0 dict } if
-    2 copy known {
-      (   **** File has circular references in resource dictionaries.\n)
-      pdfformaterror
-      pop false exit
+    2 copy .knownget {
+      { % Some circular references may be missed because scanning stops
+        % when the 1st transparency is found.
+        (   **** File has circular references in resource dictionaries.\n)
+        pdfformaterror
+      } if
+      pop //false exit
     } if
-    2 copy dup put
+    2 copy //true put              % In the current chain.
     dup /ExtGState knownoget {
       extgstateusestransparency
-      { pop true exit } if
+      { pop //true exit } if
     } if
     dup /XObject knownoget {
-      false exch {
+      //false exch {
 	exch pop oforce dup /Subtype get
 	dup /Image eq { 1 index /SMask known { pop pop not exit } if } if
 	/Form eq {
@@ -1526,9 +1529,10 @@ currentdict /PDF2PS_matrix_key undef
 	} {
 	  pop
 	} ifelse
-      } forall { pop true exit } if
+      } forall { pop //true exit } if
     } if
-    pop false exit
+    2 copy //false put             % Visited but not in the current chain.
+    pop //false exit
   } loop
   exch pop
 } bind def
