@@ -315,14 +315,8 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
 
     while ((us && un > 0) || (is && *is))
     {
-	int char_code = ' ';
-	int glyph_index = -1;
 	int code_count = 1;
 	int glyph_count = 1;
-
-	float advance;
-	float u_offset = 0.0;
-	float v_offset = 0.0;
 
 	if (is && *is)
 	{
@@ -336,6 +330,12 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
 
 	while (code_count > 0 || glyph_count > 0)
 	{
+	    int char_code = '?';
+	    int glyph_index = -1;
+	    float u_offset = 0.0;
+	    float v_offset = 0.0;
+	    float advance;
+
 	    if (glyph_count)
 	    {
 		if (is && *is)

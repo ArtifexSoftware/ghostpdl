@@ -1,5 +1,11 @@
 #include "ghostxps.h"
 
+int
+xps_draw_arc_segment(xps_context_t *ctx,
+	float size_x, float size_y, float rotation_angle,
+	int is_large_arc, int is_clockwise,
+	float point_x, float point_y);
+
 /*
  * Parse an abbreviated geometry string, and call
  * ghostscript moveto/lineto/curveto functions to
@@ -16,6 +22,7 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
     int fillrule = 0;
     int i, n;
     int cmd, old;
+    float x1, y1, x2, y2;
 
     // dprintf1("new path (%.70s)\n", geom);
     gs_newpath(ctx->pgs);
@@ -130,14 +137,46 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 	    i += 6;
 	    break;
 
-	case 'Q': case 'q':
+	case 'Q':
+	    x1 = atof(args[i+0]);
+	    y1 = atof(args[i+1]);
+	    x2 = atof(args[i+2]);
+	    y2 = atof(args[i+3]);
+	    gs_curveto(ctx->pgs,
+		    (pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
+		    (x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
+		    x2, y2);
+	    break;
+	case 'q':
+	    gs_currentpoint(ctx->pgs, &pt);
+	    x1 = atof(args[i+0]) + pt.x;
+	    y1 = atof(args[i+1]) + pt.y;
+	    x2 = atof(args[i+2]) + pt.x;
+	    y2 = atof(args[i+3]) + pt.y;
+	    gs_curveto(ctx->pgs,
+		    (pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
+		    (x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
+		    x2, y2);
+	    break;
+
 	case 'S': case 's':
-	    dprintf1("path command '%c' for quadratic or smooth curve is not implemented\n", cmd);
+	    dprintf1("path command '%c' for smooth curve is not implemented\n", cmd);
 	    i += 4;
 	    break;
 
-	case 'A': case 'a':
-	    dprintf1("path command '%c' for elliptical arc is not implemented\n", cmd);
+	case 'A':
+	    xps_draw_arc_segment(ctx,
+		    atof(args[i+0]), atof(args[i+1]), atof(args[i+2]),
+		    atoi(args[i+3]), atoi(args[i+4]),
+		    atof(args[i+5]), atof(args[i+6]));
+	    i += 7;
+	    break;
+	case 'a':
+	    gs_currentpoint(ctx->pgs, &pt);
+	    xps_draw_arc_segment(ctx,
+		    atof(args[i+0]), atof(args[i+1]), atof(args[i+2]),
+		    atoi(args[i+3]), atoi(args[i+4]),
+		    atof(args[i+5]) + pt.x, atof(args[i+6]) + pt.y);
 	    i += 7;
 	    break;
 
@@ -177,6 +216,98 @@ angle_between(const gs_point u, const gs_point v)
 }
 
 int
+xps_draw_arc_segment(xps_context_t *ctx,
+	float size_x, float size_y, float rotation_angle,
+	int is_large_arc, int is_clockwise,
+	float point_x, float point_y)
+{
+    gs_point start, end, size, midpoint, halfdis, thalfdis, tcenter, center;
+    gs_matrix rotmat, save_ctm;
+    double correction;
+    double sign, start_angle, delta_angle;
+    double scale_num, scale_denom, scale;
+    int code;
+
+    sign = is_clockwise == is_large_arc ? -1.0 : 1.0;
+
+    gs_currentpoint(ctx->pgs, &start);
+    end.x = point_x; end.y = point_y;
+    size.x = size_x; size.y = size_y;
+
+#define SQR(x) ((x)*(x))
+#define MULTOFSQUARES(x, y) (SQR((x)) * SQR((y)))
+
+    gs_make_rotation(-rotation_angle, &rotmat);
+
+    /* get the distance of the radical line */
+    halfdis.x = (start.x - end.x) / 2.0;
+    halfdis.y = (start.y - end.y) / 2.0;
+
+    /* rotate the halfdis vector so x axis parallel ellipse x axis */
+    gs_make_rotation(-rotation_angle, &rotmat);
+    if ((code = gs_distance_transform(halfdis.x, halfdis.y, &rotmat, &thalfdis)) < 0)
+	gs_rethrow(code, "transform failed");
+
+    /* correct radii if necessary */
+    correction = (SQR(thalfdis.x) / SQR(size.x)) + (SQR(thalfdis.y) / SQR(size.y));
+    if (correction > 1.0)
+    {
+	size.x *= sqrt(correction);
+	size.y *= sqrt(correction);
+    }
+
+    scale_num = (MULTOFSQUARES(size.x, size.y)) -
+	(MULTOFSQUARES(size.x, thalfdis.y)) -
+	(MULTOFSQUARES(size.y, thalfdis.x));
+    scale_denom = MULTOFSQUARES(size.x, thalfdis.y) + MULTOFSQUARES(size.y, thalfdis.x);
+    scale = sign * sqrt(((scale_num / scale_denom) < 0) ? 0 : (scale_num / scale_denom));
+
+    /* translated center */
+    tcenter.x = scale * ((size.x * thalfdis.y)/size.y);
+    tcenter.y = scale * ((-size.y * thalfdis.x)/size.x);
+
+    /* of the original radical line */
+    midpoint.x = (end.x + start.x) / 2.0;
+    midpoint.y = (end.y + start.y) / 2.0;
+
+    center.x = tcenter.x + midpoint.x;
+    center.y = tcenter.y + midpoint.y;
+    {
+	gs_point coord1, coord2, coord3, coord4;
+	coord1.x = 1;
+	coord1.y = 0;
+	coord2.x = (thalfdis.x - tcenter.x) / size.x; 
+	coord2.y = (thalfdis.y - tcenter.y) / size.y;
+	coord3.x = (thalfdis.x - tcenter.x) / size.x;
+	coord3.y = (thalfdis.y - tcenter.y) / size.y;
+	coord4.x = (-thalfdis.x - tcenter.x) / size.x;
+	coord4.y = (-thalfdis.y - tcenter.y) / size.y;
+	start_angle = angle_between(coord1, coord2);
+	delta_angle = angle_between(coord3, coord4);
+	if (delta_angle < 0 && !is_clockwise)
+	    delta_angle += (degrees_to_radians * 360);
+	if (delta_angle > 0 && is_clockwise)
+	    delta_angle -= (degrees_to_radians * 360);
+    }
+
+    /* save the ctm */
+    gs_currentmatrix(ctx->pgs, &save_ctm);
+    gs_translate(ctx->pgs, center.x, center.y);
+    gs_rotate(ctx->pgs, rotation_angle);
+    gs_scale(ctx->pgs, size.x, size.y);
+
+    if ((code = gs_arcn(ctx->pgs, 0, 0, 1,
+		    radians_to_degrees * start_angle,
+		    radians_to_degrees * (start_angle + delta_angle))) < 0)
+	return gs_rethrow(code, "arc failed");
+
+    /* restore the ctm */
+    gs_setmatrix(ctx->pgs, &save_ctm);
+
+    return 0;
+}
+
+int
 xps_parse_arc_segment(xps_context_t *ctx, xps_item_t *root)
 {
     /* ArcSegment pretty much follows the SVG algorithm for converting an
@@ -185,7 +316,8 @@ xps_parse_arc_segment(xps_context_t *ctx, xps_item_t *root)
        graphics library in the form of a postscript arc.
      */
 
-    int rotation_angle, is_large_arc, is_clockwise;
+    float rotation_angle;
+    int is_large_arc, is_clockwise;
     float point_x, point_y;
     float size_x, size_y;
 
@@ -205,92 +337,8 @@ xps_parse_arc_segment(xps_context_t *ctx, xps_item_t *root)
     is_large_arc = !strcmp(is_large_arc_att, "true");
     is_clockwise = !strcmp(sweep_direction_att, "Clockwise");
 
-    {
-	gs_point start, end, size, midpoint, halfdis, thalfdis, tcenter, center;
-	gs_matrix rotmat, save_ctm;
-	double correction;
-	double sign, start_angle, delta_angle;
-	double scale_num, scale_denom, scale;
-	int code;
-
-	sign = is_clockwise == is_large_arc ? -1.0 : 1.0;
-
-	gs_currentpoint(ctx->pgs, &start);
-	end.x = point_x; end.y = point_y;
-	size.x = size_x; size.y = size_y;
-
-#define SQR(x) ((x)*(x))
-#define MULTOFSQUARES(x, y) (SQR((x)) * SQR((y)))
-
-	gs_make_rotation(-rotation_angle, &rotmat);
-
-	/* get the distance of the radical line */
-	halfdis.x = (start.x - end.x) / 2.0;
-	halfdis.y = (start.y - end.y) / 2.0;
-
-	/* rotate the halfdis vector so x axis parallel ellipse x axis */
-	gs_make_rotation(-rotation_angle, &rotmat);
-	if ((code = gs_distance_transform(halfdis.x, halfdis.y, &rotmat, &thalfdis)) < 0)
-	    gs_rethrow(code, "transform failed");
-
-	/* correct radii if necessary */
-	correction = (SQR(thalfdis.x) / SQR(size.x)) + (SQR(thalfdis.y) / SQR(size.y));
-	if (correction > 1.0)
-	{
-	    size.x *= sqrt(correction);
-	    size.y *= sqrt(correction);
-	}
-
-	scale_num = (MULTOFSQUARES(size.x, size.y)) -
-	    (MULTOFSQUARES(size.x, thalfdis.y)) -
-	    (MULTOFSQUARES(size.y, thalfdis.x));
-	scale_denom = MULTOFSQUARES(size.x, thalfdis.y) + MULTOFSQUARES(size.y, thalfdis.x);
-	scale = sign * sqrt(((scale_num / scale_denom) < 0) ? 0 : (scale_num / scale_denom));
-
-	/* translated center */
-	tcenter.x = scale * ((size.x * thalfdis.y)/size.y);
-	tcenter.y = scale * ((-size.y * thalfdis.x)/size.x);
-
-	/* of the original radical line */
-	midpoint.x = (end.x + start.x) / 2.0;
-	midpoint.y = (end.y + start.y) / 2.0;
-
-	center.x = tcenter.x + midpoint.x;
-	center.y = tcenter.y + midpoint.y;
-	{
-	    gs_point coord1, coord2, coord3, coord4;
-	    coord1.x = 1;
-	    coord1.y = 0;
-	    coord2.x = (thalfdis.x - tcenter.x) / size.x; 
-	    coord2.y = (thalfdis.y - tcenter.y) / size.y;
-	    coord3.x = (thalfdis.x - tcenter.x) / size.x;
-	    coord3.y = (thalfdis.y - tcenter.y) / size.y;
-	    coord4.x = (-thalfdis.x - tcenter.x) / size.x;
-	    coord4.y = (-thalfdis.y - tcenter.y) / size.y;
-	    start_angle = angle_between(coord1, coord2);
-	    delta_angle = angle_between(coord3, coord4);
-	    if (delta_angle < 0 && !is_clockwise)
-		delta_angle += (degrees_to_radians * 360);
-	    if (delta_angle > 0 && is_clockwise)
-		delta_angle -= (degrees_to_radians * 360);
-	}
-
-	/* save the ctm */
-	gs_currentmatrix(ctx->pgs, &save_ctm);
-	gs_translate(ctx->pgs, center.x, center.y);
-	gs_rotate(ctx->pgs, rotation_angle);
-	gs_scale(ctx->pgs, size.x, size.y);
-
-	if ((code = gs_arcn(ctx->pgs, 0, 0, 1,
-			radians_to_degrees * start_angle,
-			radians_to_degrees * (start_angle + delta_angle))) < 0)
-	    return gs_rethrow(code, "arc failed");
-
-	/* restore the ctm */
-	gs_setmatrix(ctx->pgs, &save_ctm);
-    }
-
-    return 0;
+    return xps_draw_arc_segment(ctx, size_x, size_y, rotation_angle,
+	    is_large_arc, is_clockwise, point_x, point_y);
 }
 
 int

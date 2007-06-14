@@ -788,10 +788,7 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
 		    xps_part_t *respart;
 		    respart = xps_find_part(ctx, rel->target);
 		    if (!respart || !respart->complete)
-		    {
-			dprintf1("  page part resource %s not complete\n", rel->target);
 			have_resources = 0;
-		    }
 		}
 	    }
 
