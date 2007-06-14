@@ -2,7 +2,12 @@
 
 enum { TILE_NONE, TILE_TILE, TILE_FLIP_X, TILE_FLIP_Y, TILE_FLIP_X_Y };
 
-struct userdata { xps_context_t *ctx; xps_resource_t *dict; xps_item_t *visual_tag; gs_matrix mat; };
+struct userdata
+{
+    xps_context_t *ctx;
+    xps_resource_t *dict;
+    xps_item_t *visual_tag;
+};
 
 static int
 xps_paint_visual_brush(const gs_client_color *pcc, gs_state *pgs)
@@ -12,8 +17,10 @@ xps_paint_visual_brush(const gs_client_color *pcc, gs_state *pgs)
     xps_context_t *ctx = data->ctx;
     xps_resource_t *dict = data->dict;
     xps_item_t *visual_tag = data->visual_tag;
+    gs_state *oldpgs;
 
-    gs_concat(ctx->pgs, &data->mat);
+    oldpgs = ctx->pgs;
+    ctx->pgs = pgs;
 
     if (!strcmp(xps_tag(visual_tag), "Path"))
 	xps_parse_path(ctx, dict, visual_tag);
@@ -21,6 +28,8 @@ xps_paint_visual_brush(const gs_client_color *pcc, gs_state *pgs)
 	xps_parse_glyphs(ctx, dict, visual_tag);
     if (!strcmp(xps_tag(visual_tag), "Canvas"))
 	xps_parse_canvas(ctx, dict, visual_tag);
+
+    ctx->pgs = oldpgs;
 
     return 0;
 }
@@ -112,13 +121,9 @@ xps_parse_visual_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
     scalex = (viewport.q.x - viewport.p.x) / (viewbox.q.x - viewbox.p.x);
     scaley = (viewport.q.y - viewport.p.y) / (viewbox.q.y - viewbox.p.y);
 
-#if 0 /* can't get this to work */
+    gs_gsave(ctx->pgs);
 
-    dprintf6("xps_parse_visual_brush [%g %g %g %g] scale=%g,%g\n",
-	    transform.xx, transform.xy,
-	    transform.yx, transform.yy,
-	    scalex, scaley);
-
+    if (tile_mode != TILE_NONE)
     {
 	struct userdata foo;
 	gs_client_pattern gspat;
@@ -126,111 +131,89 @@ xps_parse_visual_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
 	gs_color_space *cs;
 	gs_matrix mat;
 
+	dprintf6("xps_parse_visual_brush [%g %g %g %g] scale=%g,%g\n",
+		transform.xx, transform.xy,
+		transform.yx, transform.yy,
+		scalex, scaley);
+	dprintf4("  viewport [%g %g %g %g]\n", viewport.p.x, viewport.p.y, viewport.q.x, viewport.q.y);
+	dprintf4("  viewbox  [%g %g %g %g]\n", viewbox.p.x, viewbox.p.y, viewbox.q.x, viewbox.q.y);
+	gs_currentmatrix(ctx->pgs, &mat);
+	dprintf6("  current [%g %g %g %g %g %g]\n",
+		mat.xx, mat.xy,
+		mat.yx, mat.yy,
+		mat.tx, mat.ty);
+
 	gs_pattern1_init(&gspat);
 	uid_set_UniqueID(&gspat.uid, gs_next_ids(ctx->memory, 1));
 	gspat.PaintType = 1;
 	gspat.TilingType = 1;
 	gspat.PaintProc = xps_paint_visual_brush;
 	gspat.client_data = &foo;
+
 	foo.ctx = ctx;
 	foo.dict = dict;
 	foo.visual_tag = visual_tag;
-	foo.mat.xx = transform.xx;
-	foo.mat.xy = transform.xy;
-	foo.mat.yx = transform.yx;
-	foo.mat.yy = transform.yy;
-	foo.mat.tx = 0;
-	foo.mat.ty = 0;
 
-	gspat.BBox.p.x = 0;
-	gspat.BBox.p.y = 0;
-	gspat.BBox.q.x = viewbox.q.x - viewbox.p.x;
-	gspat.BBox.q.y = viewbox.q.y - viewbox.p.y;
-
+	gspat.BBox.p.x = viewbox.p.x;
+	gspat.BBox.p.y = viewbox.p.y;
+	gspat.BBox.q.x = viewbox.q.x;
+	gspat.BBox.q.y = viewbox.q.y;
 	gspat.XStep = viewbox.q.x - viewbox.p.x;
 	gspat.YStep = viewbox.q.y - viewbox.p.y;
 
-	/* NB: don't scale smaller than a pixel */
-	/* resolution scaling is done when the pattern is painted */
-	/* translate the viewbox to the origin, scale the viewbox to
-	   the viewport and translate the viewbox back. */
-	gs_make_translation(viewport.p.x, viewport.p.y, &mat);
-	gs_matrix_scale(&mat, scalex, scaley, &mat);
-	gs_matrix_translate(&mat, -viewbox.p.x, viewbox.p.y, &mat);
+	gs_concat(ctx->pgs, &transform);
+	gs_translate(ctx->pgs, viewport.p.x, viewport.p.y);
+	gs_scale(ctx->pgs, scalex, scaley);
+	gs_translate(ctx->pgs, -viewbox.p.x, -viewbox.p.y);
 
-
-	gs_gsave(ctx->pgs);
-	gs_concat(ctx->pgs, &mat);
 	cs = gs_cspace_new_DeviceRGB(ctx->memory);
 	gs_setcolorspace(ctx->pgs, cs);
+	gs_make_identity(&mat);
 	gs_makepattern(&gscolor, &gspat, &mat, ctx->pgs, NULL);
-	gs_grestore(ctx->pgs);
-
 	gs_setpattern(ctx->pgs, &gscolor);
 
 	// fill all area...
-	gs_moveto(ctx->pgs, -1000, -1000);
-	gs_lineto(ctx->pgs, -1000,  1000);
-	gs_lineto(ctx->pgs,  1000,  1000);
-	gs_lineto(ctx->pgs,  1000, -1000);
-	gs_closepath(ctx->pgs);
+	// gs_setgray(ctx->pgs, 0.3); // test by filling area with gray instead of pattern
+	// gs_moveto(ctx->pgs, 0, 0);
+	// gs_lineto(ctx->pgs, 0, 1000);
+	// gs_lineto(ctx->pgs, 1000, 1000);
+	// gs_lineto(ctx->pgs, 1000, 0);
+	// gs_closepath(ctx->pgs);
+
 	gs_fill(ctx->pgs);
     }
-
-    dputs("finished visual brush\n");
-
-#else
-
-    gs_gsave(ctx->pgs);
-
-    gs_concat(ctx->pgs, &transform);
-    gs_translate(ctx->pgs, viewport.p.x, viewport.p.y);
-    gs_scale(ctx->pgs, scalex, scaley);
-    gs_translate(ctx->pgs, -viewbox.p.x, viewbox.p.y);
-
-    if (tile_mode == TILE_NONE)
-	tile_x = tile_y = 1;
     else
-	tile_x = tile_y = 40;
-
-    gs_translate(ctx->pgs,
-	    (viewbox.p.x - viewbox.q.x) * (tile_x/2),
-	    (viewbox.p.y - viewbox.q.y) * (tile_y/2));
-
-    for (k = 0; k < tile_y; k++)
     {
-	for (i = 0; i < tile_x; i++)
-	{
-	    gs_gsave(ctx->pgs);
-	    gs_newpath(ctx->pgs);
-	    gs_moveto(ctx->pgs, viewbox.p.x, viewbox.p.y);
-	    gs_lineto(ctx->pgs, viewbox.p.x, viewbox.q.y);
-	    gs_lineto(ctx->pgs, viewbox.q.x, viewbox.q.y);
-	    gs_lineto(ctx->pgs, viewbox.q.x, viewbox.p.y);
-	    gs_closepath(ctx->pgs);
-	    gs_clip(ctx->pgs);
-	    gs_newpath(ctx->pgs);
+	dputs("single tile\n");
 
-	    if (!strcmp(xps_tag(visual_tag), "Path"))
-		xps_parse_path(ctx, dict, visual_tag);
-	    if (!strcmp(xps_tag(visual_tag), "Glyphs"))
-		xps_parse_glyphs(ctx, dict, visual_tag);
-	    if (!strcmp(xps_tag(visual_tag), "Canvas"))
-		xps_parse_canvas(ctx, dict, visual_tag);
+	gs_clip(ctx->pgs);
+	gs_newpath(ctx->pgs);
 
-	    gs_grestore(ctx->pgs);
+	gs_concat(ctx->pgs, &transform);
+	gs_translate(ctx->pgs, viewport.p.x, viewport.p.y);
+	gs_scale(ctx->pgs, scalex, scaley);
+	gs_translate(ctx->pgs, -viewbox.p.x, viewbox.p.y);
 
-	    gs_translate(ctx->pgs, -(viewbox.p.x - viewbox.q.x), 0.0);
-	}
+	gs_newpath(ctx->pgs);
+	gs_moveto(ctx->pgs, viewbox.p.x, viewbox.p.y);
+	gs_lineto(ctx->pgs, viewbox.p.x, viewbox.q.y);
+	gs_lineto(ctx->pgs, viewbox.q.x, viewbox.q.y);
+	gs_lineto(ctx->pgs, viewbox.q.x, viewbox.p.y);
+	gs_closepath(ctx->pgs);
+	gs_clip(ctx->pgs);
+	gs_newpath(ctx->pgs);
 
-	gs_translate(ctx->pgs,
-		tile_x * (viewbox.p.x - viewbox.q.x),
-		-(viewbox.p.y - viewbox.q.y));
+	if (!strcmp(xps_tag(visual_tag), "Path"))
+	    xps_parse_path(ctx, dict, visual_tag);
+	if (!strcmp(xps_tag(visual_tag), "Glyphs"))
+	    xps_parse_glyphs(ctx, dict, visual_tag);
+	if (!strcmp(xps_tag(visual_tag), "Canvas"))
+	    xps_parse_canvas(ctx, dict, visual_tag);
     }
 
     gs_grestore(ctx->pgs);
 
-#endif
+    dputs("finished visual brush\n");
 
     return 0;
 }

@@ -86,6 +86,9 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 
     char partname[1024];
 
+    gs_clip(ctx->pgs);
+    gs_newpath(ctx->pgs);
+
     opacity_att = xps_att(root, "Opacity");
     transform_att = xps_att(root, "Transform");
     viewbox_att = xps_att(root, "Viewbox");
@@ -119,6 +122,7 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 	return gs_rethrow(-1, "cannot draw image brush");
 
     gs_gsave(ctx->pgs);
+
     {
 	gs_image_enum *penum;
 	gs_color_space *colorspace;
@@ -138,12 +142,13 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 	resx = image.xres / 96.0;
 	resy = image.yres / 96.0;
 
+	dprintf2("  image resolution = %d, %d\n", image.xres, image.yres);
+
 	gs_make_identity(&transform);
 	if (transform_att)
 	    xps_parse_render_transform(ctx, transform_att, &transform);
 	if (transform_tag)
 	    xps_parse_matrix_transform(ctx, transform_tag, &transform);
-	gs_concat(ctx->pgs, &transform);
 
 	viewbox.p.x = 0.0; viewbox.p.y = 0.0;
 	viewbox.q.x = 1.0; viewbox.q.y = 1.0;
@@ -160,10 +165,6 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 
 	scalex = (viewport.q.x - viewport.p.x) / (viewbox.q.x - viewbox.p.x);
 	scaley = (viewport.q.y - viewport.p.y) / (viewbox.q.y - viewbox.p.y);
-
-	gs_translate(ctx->pgs, viewport.p.x, viewport.p.y);
-	gs_scale(ctx->pgs, scalex, scaley);
-	gs_translate(ctx->pgs, -viewbox.p.x, viewbox.p.y);
 
 	/*
 	 * Set up colorspace and image structs.
@@ -196,6 +197,11 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 	 * Voodoo.
 	 */
 
+	gs_concat(ctx->pgs, &transform);
+	gs_translate(ctx->pgs, viewport.p.x, viewport.p.y);
+	gs_scale(ctx->pgs, scalex, scaley);
+	gs_translate(ctx->pgs, -viewbox.p.x, -viewbox.p.y);
+
 	penum = gs_image_enum_alloc(ctx->memory, "xps_parse_image_brush (gs_image_enum_alloc)");
 	if (!penum)
 	    return gs_throw(-1, "gs_enum_allocate failed");
@@ -215,6 +221,7 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 	gs_image_cleanup_and_free_enum(penum, ctx->pgs);
 	// TODO: free colorspace
     }
+
     gs_grestore(ctx->pgs);
 
     xps_free(ctx, image.samples);

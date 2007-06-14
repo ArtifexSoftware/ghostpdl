@@ -455,7 +455,8 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     int subfontid = 0;
     int is_sideways = 0;
     int bidi_level = 0;
-    int saved = 0;
+
+    gs_gsave(ctx->pgs);
 
     /*
      * Extract attributes and extended attributes.
@@ -560,12 +561,6 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     {
 	gs_matrix transform;
 
-	if (!saved)
-	{
-	    gs_gsave(ctx->pgs);
-	    saved = 1;
-	}
-
 	if (transform_att)
 	    xps_parse_render_transform(ctx, transform_att, &transform);
 	if (transform_tag)
@@ -576,12 +571,6 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 
     if (clip_att || clip_tag)
     {
-	if (!saved)
-	{
-	    gs_gsave(ctx->pgs);
-	    saved = 1;
-	}
-
 	if (clip_att)
 	    xps_parse_abbreviated_geometry(ctx, clip_att);
 	if (clip_tag)
@@ -629,18 +618,12 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 
     if (fill_tag)
     {
-	if (!saved)
-	{
-	    gs_gsave(ctx->pgs);
-	    saved = 1;
-	}
-
 	xps_parse_glyphs_imp(ctx, font, font_size,
 		atof(origin_x_att), atof(origin_y_att),
 		is_sideways, bidi_level, indices_att, unicode_att, 1);
 
-	gs_clip(ctx->pgs);
-	gs_newpath(ctx->pgs);
+	// gs_clip(ctx->pgs);
+	// gs_newpath(ctx->pgs);
 
 	if (!strcmp(xps_tag(fill_tag), "ImageBrush"))
 	    xps_parse_image_brush(ctx, dict, fill_tag);
@@ -656,10 +639,7 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
      * Remember to restore if we did a gsave
      */
 
-    if (saved)
-    {
-	gs_grestore(ctx->pgs);
-    }
+    gs_grestore(ctx->pgs);
 
     return 0;
 }

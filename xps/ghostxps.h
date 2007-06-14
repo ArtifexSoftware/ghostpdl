@@ -15,7 +15,6 @@
 #include "gserrors.h"
 #include "gspaint.h"
 #include "gspath.h"
-#include "gspath2.h"
 #include "gsimage.h"
 #include "gscspace.h"
 #include "gsptype1.h"

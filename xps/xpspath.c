@@ -580,7 +580,8 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     gs_line_join linejoin;
     float linewidth;
     float miterlimit;
-    int saved = 0;
+
+    gs_gsave(ctx->pgs);
 
     /*
      * Extract attributes and extended attributes.
@@ -705,17 +706,11 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	gs_setdash(ctx->pgs, NULL, 0, 0.0);
     }
 
-    /* if we have a transform, push that on the gstate and remember to restore */
+    /* if we have a transform, push that on the gstate */
 
     if (transform_att || transform_tag)
     {
 	gs_matrix transform;
-
-	if (!saved)
-	{
-	    gs_gsave(ctx->pgs);
-	    saved = 1;
-	}
 
 	if (transform_att)
 	    xps_parse_render_transform(ctx, transform_att, &transform);
@@ -729,12 +724,6 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 
     if (clip_att || clip_tag)
     {
-	if (!saved)
-	{
-	    gs_gsave(ctx->pgs);
-	    saved = 1;
-	}
-
 	if (clip_att)
 	    xps_parse_abbreviated_geometry(ctx, clip_att);
 	if (clip_tag)
@@ -780,22 +769,13 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 
     if (fill_tag || stroke_tag)
     {
-	if (!saved)
-	{
-	    gs_gsave(ctx->pgs);
-	    saved = 1;
-	}
-
-	gs_setrgbcolor(ctx->pgs, 0.5, 0.0, 0.3);
-	if (data_att)
-	    xps_parse_abbreviated_geometry(ctx, data_att);
-	if (data_tag)
-	    xps_parse_path_geometry(ctx, dict, data_tag);
-	gs_clip(ctx->pgs);
-	gs_newpath(ctx->pgs);
-
 	if (fill_tag)
 	{
+	    if (data_att)
+		xps_parse_abbreviated_geometry(ctx, data_att);
+	    if (data_tag)
+		xps_parse_path_geometry(ctx, dict, data_tag);
+
 	    if (!strcmp(xps_tag(fill_tag), "ImageBrush"))
 		xps_parse_image_brush(ctx, dict, fill_tag);
 	    if (!strcmp(xps_tag(fill_tag), "VisualBrush"))
@@ -805,14 +785,28 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	    if (!strcmp(xps_tag(fill_tag), "RadialGradientBrush"))
 		xps_parse_radial_gradient_brush(ctx, dict, fill_tag);
 	}
+	
+	if (stroke_tag)
+	{
+	    if (data_att)
+		xps_parse_abbreviated_geometry(ctx, data_att);
+	    if (data_tag)
+		xps_parse_path_geometry(ctx, dict, data_tag);
+
+	    gs_strokepath(ctx->pgs);
+
+	    if (!strcmp(xps_tag(stroke_tag), "ImageBrush"))
+		xps_parse_image_brush(ctx, dict, stroke_tag);
+	    if (!strcmp(xps_tag(stroke_tag), "VisualBrush"))
+		xps_parse_visual_brush(ctx, dict, stroke_tag);
+	    if (!strcmp(xps_tag(stroke_tag), "LinearGradientBrush"))
+		xps_parse_linear_gradient_brush(ctx, dict, stroke_tag);
+	    if (!strcmp(xps_tag(stroke_tag), "RadialGradientBrush"))
+		xps_parse_radial_gradient_brush(ctx, dict, stroke_tag);
+	}
     }
 
-    /* remember to restore if we did a gsave */
-
-    if (saved)
-    {
-	gs_grestore(ctx->pgs);
-    }
+    gs_grestore(ctx->pgs);
 
     return 0;
 }

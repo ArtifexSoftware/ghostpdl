@@ -475,6 +475,8 @@ xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_it
     float radius_x;
     float radius_y;
 
+    gs_clip(ctx->pgs);
+    gs_newpath(ctx->pgs);
 
     dputs("drawing radial gradient brush\n");
 
@@ -569,6 +571,8 @@ xps_parse_linear_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_it
     float end_point[2];
     int spread_method;
 
+    gs_clip(ctx->pgs);
+    gs_newpath(ctx->pgs);
 
     dputs("drawing linear gradient brush\n");
 
