@@ -29,6 +29,7 @@ typedef struct arg_source_s {
     bool is_file;
     union _u {
 	struct _su {
+	    bool parsed;	/* true for "pushed-back" argument, not to be parsed again */
 	    char *chars;	/* original string */
 	    gs_memory_t *memory;  /* if non-0, free chars when done with it */
 	    const char *str;	/* string being read */
@@ -57,13 +58,11 @@ void arg_init(arg_list * pal, const char **argv, int argc,
  * This may also be used (once) to "unread" the last argument.
  * If mem != 0, it is used to free the string when we are done with it.
  * Return 0 on success, non-zero on failure
- * NB: pushing args has the side effect of changing the parsing algoritm to
- * space delimited instead of argument string delimited.
  */
-int arg_push_memory_string(arg_list * pal, char *str, gs_memory_t * mem);
+int arg_push_memory_string(arg_list * pal, char *str, bool parsed, gs_memory_t * mem);
 
-#define arg_push_string(pal, str)\
-  arg_push_memory_string(pal, str, (gs_memory_t *)0);
+#define arg_push_string(pal, str, parsed)\
+  arg_push_memory_string(pal, str, parsed, (gs_memory_t *)0);
 
 /* Clean up an arg list before exiting. */
 void arg_finit(arg_list * pal);

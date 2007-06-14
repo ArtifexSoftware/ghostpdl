@@ -37,7 +37,7 @@ arg_init(arg_list * pal, const char **argv, int argc,
 
 /* Push a string onto an arg list. */
 int
-arg_push_memory_string(arg_list * pal, char *str, gs_memory_t * mem)
+arg_push_memory_string(arg_list * pal, char *str, bool parsed, gs_memory_t * mem)
 {
     arg_source *pas;
 
@@ -47,6 +47,7 @@ arg_push_memory_string(arg_list * pal, char *str, gs_memory_t * mem)
     }
     pas = &pal->sources[pal->depth];
     pas->is_file = false;
+    pas->u.s.parsed = parsed;
     pas->u.s.chars = str;
     pas->u.s.memory = mem;
     pas->u.s.str = str;
@@ -92,6 +93,22 @@ arg_next(arg_list * pal, int *code)
     }
     if (pas->is_file)
 	f = pas->u.file, endc = EOF;
+    else if (pas->u.s.parsed)
+	/* this	string is a "pushed-back" argument		     */
+	/* (retrieved by a precedeing arg_next(), but not processed) */
+	if (strlen(pas->u.s.str) >= arg_str_max) {
+	    errprintf("Command too long: %s\n", pas->u.s.str);
+	    *code = gs_error_Fatal;
+	    return NULL;
+	} else {
+	    strcpy(pal->cstr, pas->u.s.str);
+	    result = pal->cstr;
+	    if (pas->u.s.memory)
+		gs_free_object(pas->u.s.memory,	pas->u.s.chars,	"arg_next");
+	    pal->depth--;
+	    pas--;
+	    goto at;
+	}
     else
 	astr = pas->u.s.str, f = NULL, endc = 0;
     result = cstr = pal->cstr;
@@ -172,9 +189,9 @@ arg_next(arg_list * pal, int *code)
 	    *code = gs_error_Fatal;
 	    return NULL;
 	}
-	/* If input is coming from an @-file, allow quotes */
-	/* to protect whitespace. */
-	if (c == '"' && f != NULL)
+	/* Allow quotes to protect whitespace. */
+	/* (special cases have already been handled and don't reach this point) */
+	if (c == '"')
 	    in_quote = !in_quote;
 	else
 	    cstr[i++] = c;

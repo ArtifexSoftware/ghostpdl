@@ -190,7 +190,7 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
 	    (char *)gs_alloc_bytes(minst->heap, len, "GS_OPTIONS");
 
 	    gp_getenv(GS_OPTIONS, opts, &len);	/* can't fail */
-	    if (arg_push_memory_string(&args, opts, minst->heap))
+	    if (arg_push_memory_string(&args, opts, false, minst->heap))
 		return e_Fatal;
 	}
     }
@@ -362,7 +362,7 @@ run_stdin:
 		    char *p = arg_copy(arg, minst->heap);
 		    if (p == NULL)
 			return e_Fatal;
-		    arg_push_string(pal, p);
+		    arg_push_string(pal, p, true);
 		}
 		pal->expand_ats = ats;
 		break;
