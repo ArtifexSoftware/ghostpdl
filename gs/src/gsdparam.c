@@ -21,6 +21,7 @@
 #include "gsparam.h"
 #include "gxdevice.h"
 #include "gxfixed.h"
+#include "math.h"			/* for log10 */
 
 /* Define whether we accept PageSize as a synonym for MediaSize. */
 /* This is for backward compatibility only. */
@@ -382,6 +383,7 @@ gdev_end_output_media(gs_param_list * mlist, gs_param_dict * pdict)
 /* ================ Putting parameters ================ */
 
 /* Forward references */
+private int param_normalize_anti_alias_bits( uint max_gray, int bits );
 private int param_anti_alias_bits(gs_param_list *, gs_param_name, int *);
 private int param_MediaSize(gs_param_list *, gs_param_name,
 			    const float *, gs_param_float_array *);
@@ -802,8 +804,10 @@ nce:
 	dev->ImagingBBox_set = false;
     }
     dev->UseCIEColor = ucc;
-    dev->color_info.anti_alias.text_bits = tab;
-    dev->color_info.anti_alias.graphics_bits = gab;
+    dev->color_info.anti_alias.text_bits =
+    	param_normalize_anti_alias_bits(dev->color_info.max_gray, tab);
+    dev->color_info.anti_alias.graphics_bits =
+    	param_normalize_anti_alias_bits(dev->color_info.max_gray, gab);;
     dev->LockSafetyParams = locksafe;
     gx_device_decache_colors(dev);
     return 0;
@@ -815,6 +819,20 @@ gx_device_request_leadingedge(gx_device *dev, int le_req)
     dev->LeadingEdge = (dev->LeadingEdge & ~LEADINGEDGE_REQ_VAL) |
 	((le_req << LEADINGEDGE_REQ_VAL_SHIFT) & LEADINGEDGE_REQ_VAL) |
 	LEADINGEDGE_REQ_BIT;
+}
+
+/* Limit the anti-alias bit values to the maximum legal value for the
+ * current color depth.
+ */
+private int
+param_normalize_anti_alias_bits( uint max_gray, int bits )
+{
+	/* Use log2(x) = log10(x) / Log10(2) as log2 might not be available
+	 * with all compilers
+	 */
+	double	max_bits = log10((double)max_gray + 1.0) / 0.30102999;
+	
+	return  (bits > max_bits ? (int)max_bits : bits);
 }
 
 /* Read TextAlphaBits or GraphicsAlphaBits. */
