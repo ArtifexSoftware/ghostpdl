@@ -580,8 +580,8 @@ clist_strip_copy_rop(gx_device * dev,
 			rop3_know_T_0(rop_used) :
 			tcolors[0] == gx_device_white(dev) ?
 			rop3_know_T_1(rop_used) : rop_used);
-	slow_rop = !(rop == rop3_0 || rop == rop3_1 ||
-		     rop == rop3_D || rop == rop3_S || rop == rop3_T);
+	slow_rop = !(rop == rop3_0 || rop == rop3_1 || 
+                     rop == rop3_S || rop == rop3_T);
     }
     y0 = y;
     /*
