@@ -821,13 +821,15 @@ userdict /.currentresourcefile //null put
 
 % Define a special version of runlibfile that aborts on errors.
 /runlibfile0
-	{ cvlit dup /.currentfilename exch def
+	{ cvlit dup dup /.currentfilename exch def
 	   { findlibfile not { stop } if }
 	  stopped
 	   { (Can't find \(or open\) initialization file ) print
 	     .currentfilename == flush /runlibfile0 cvx 1 .quit
 	   } if
-	  exch pop cvx stopped
+	  exch pop cvx 
+	  { stopped } 0 get 3 -1 roll 2 array astore cvx exec
+	  /.currentfilename exch store
 	   { (While reading ) print .currentfilename print (:\n) print flush
 	     /handleerror .systemvar exec /runlibfile0 1 .quit
 	   } if
