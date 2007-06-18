@@ -658,7 +658,7 @@ MISC_PDEVS="uniprint ap3250 atx23 atx24 atx38 coslw2p coslwxl cp50 declj250 fs60
 OPVP_DEVS="opvp oprp"
 
 dnl Known file formats
-BMP_DEVS="bmpmono bmpgray bmpsep1 bmpsep8 bmp16 bmp256 bmp16m bmp32b bmpa16 bmpa16m bmpa256 bmpa32b bmpamono bmpasep1 bmpasep8"
+BMP_DEVS="bmpmono bmpgray bmpsep1 bmpsep8 bmp16 bmp256 bmp16m bmp32b"
 FAX_DEVS="cfax dfaxlow dfaxhigh fax tfax tiffg3 tiffg32d tiffg4 faxg3 faxg32d faxg4"
 JPEG_DEVS="jpeg jpeggray jpegcmyk"
 PNG_DEVS="png16 png16m png256 pngalpha pnggray pngmono"
