@@ -803,10 +803,12 @@ nce:
 	dev->ImagingBBox_set = false;
     }
     dev->UseCIEColor = ucc;
-    dev->color_info.anti_alias.text_bits =
-    	param_normalize_anti_alias_bits(dev->color_info.max_gray, tab);
-    dev->color_info.anti_alias.graphics_bits =
-    	param_normalize_anti_alias_bits(dev->color_info.max_gray, gab);
+	dev->color_info.anti_alias.text_bits =
+		param_normalize_anti_alias_bits(max(dev->color_info.max_gray,
+			dev->color_info.max_color), tab);
+	dev->color_info.anti_alias.graphics_bits =
+		param_normalize_anti_alias_bits(max(dev->color_info.max_gray,
+			dev->color_info.max_color), gab);
     dev->LockSafetyParams = locksafe;
     gx_device_decache_colors(dev);
     return 0;
