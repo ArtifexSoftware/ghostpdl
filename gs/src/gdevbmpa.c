@@ -453,7 +453,7 @@ bmpa_reader_buffer_planes(gx_device_printer *pdev, FILE *file, int num_copies,
 	    /* Set up the buffer device. */
 	    code = gdev_create_buf_device(crdev->buf_procs.create_buf_device,
 					  &bdev, crdev->target, &render_plane,
-					  dev->memory, true);
+					  dev->memory, NULL);
 	    if (code < 0)
 		goto done;
 
@@ -636,8 +636,8 @@ bmpa_get_space_params(const gx_device_printer *pdev,
     /* This will give us a very "ungenerous" buffer. */
     /* Here, my arbitrary rule for min image row is: twice the dest width */
     /* in full CMYK. */
-    int render_space;
-    int writer_space;
+    ulong render_space = 0;
+    ulong writer_space;
     const int tile_cache_space = 50 * 1024;
     const int min_image_rows = 2;
     int min_row_space =
@@ -647,9 +647,8 @@ bmpa_get_space_params(const gx_device_printer *pdev,
     space_params->band.BandWidth = pdev->width;
     space_params->band.BandHeight = min_band_height;
 
-    render_space = gdev_mem_data_size( (const gx_device_memory *)pdev,
-				       space_params->band.BandWidth,
-				       space_params->band.BandHeight );
+    gdev_mem_data_size( (const gx_device_memory *)pdev, space_params->band.BandWidth,
+			space_params->band.BandHeight, &render_space );
     /* need to include minimal writer requirements to satisfy rasterizer init */
     writer_space = 	/* add 5K slop for good measure */
 	5000 + (72 + 8) * ( (pdev->height / space_params->band.BandHeight) + 1 );

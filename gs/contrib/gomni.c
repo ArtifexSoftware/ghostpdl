@@ -1990,8 +1990,8 @@ GetSpaceParams (const gx_device_printer *pgx_prt_dev,
    /* This will give us a very "ungenerous" buffer. */
    /* Here, my arbitrary rule for min image row is: twice the dest width */
    /* in full RGB. */
-   int       render_space;
-   int       writer_space;
+   ulong       render_space = 0;
+   ulong       writer_space;
    const int tile_cache_space = 50 * 1024;
    const int min_image_rows   = 2;
    int       min_row_space    = min_image_rows * (3 * (pgx_prt_dev->width + sizeof (int) - 1));
@@ -2000,9 +2000,8 @@ GetSpaceParams (const gx_device_printer *pgx_prt_dev,
    space_params->band.BandWidth  = pgx_prt_dev->width;
    space_params->band.BandHeight = (pgx_prt_dev->height + min_band_count - 1) / min_band_count;
 
-   render_space = gdev_mem_data_size ((const gx_device_memory *)pgx_prt_dev,
-                                      space_params->band.BandWidth,
-                                      space_params->band.BandHeight);
+   gdev_mem_data_size ((const gx_device_memory *)pgx_prt_dev, space_params->band.BandWidth,
+			space_params->band.BandHeight, &render_space);
 
    /* need to include minimal writer requirements to satisfy rasterizer init */
    writer_space = 5000 /* add 5K slop for good measure */
