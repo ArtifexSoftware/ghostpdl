@@ -587,16 +587,19 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 	    mdev.width = ctile->tmask.size.x;
 	    mdev.height = ctile->tmask.size.y;
 	    /*mdev.color_info.depth = 1;*/
-	    used = gdev_mem_bitmap_size(&mdev);
+	    gdev_mem_bitmap_size(&mdev, &used);
 	    gs_free_object(mem, ctile->tmask.data,
 			   "free_pattern_cache_entry(mask data)");
 	    ctile->tmask.data = 0;	/* for GC */
 	}
 	if (ctile->tbits.data != 0) {
+	    ulong tbits_used = 0;
+
 	    mdev.width = ctile->tbits.size.x;
 	    mdev.height = ctile->tbits.size.y;
 	    mdev.color_info.depth = ctile->depth;
-	    used += gdev_mem_bitmap_size(&mdev);
+	    gdev_mem_bitmap_size(&mdev, &tbits_used);
+	    used += tbits_used;
 	    gs_free_object(mem, ctile->tbits.data,
 			   "free_pattern_cache_entry(bits data)");
 	    ctile->tbits.data = 0;	/* for GC */
@@ -624,7 +627,7 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
 {
     gx_pattern_cache *pcache;
     const gs_pattern1_instance_t *pinst;
-    ulong used = 0;
+    ulong used = 0, mask_used = 0;
     gx_bitmap_id id;
     gx_color_tile *ctile;
     int code = ensure_pattern_cache(pis);
@@ -664,9 +667,11 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
 	  keep:;
 	}
 	if (mbits != 0)
-	    used += gdev_mem_bitmap_size(mbits);
-	if (mmask != 0)
-	    used += gdev_mem_bitmap_size(mmask);
+	    gdev_mem_bitmap_size(mbits, &used);
+	if (mmask != 0) {
+	    gdev_mem_bitmap_size(mmask, &mask_used);
+	    used += mask_used;
+	}
     } else {
 	gx_device_clist *cdev = (gx_device_clist *)fdev;
 	gx_device_clist_writer * cldev = (gx_device_clist_writer *)cdev;

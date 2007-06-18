@@ -369,6 +369,7 @@ mem_default_strip_copy_rop(gx_device * dev,
     gx_device_memory mdev;
     union { long l; void *p; } mdev_storage[20];
     uint row_raster = bitmap_raster(width * depth);
+    ulong size_from_mem_device;
     gs_rop3_t trans_rop = gs_transparent_rop(lop);
     bool uses_d = rop3_uses_D(trans_rop);
     bool uses_s = rop3_uses_S(trans_rop);
@@ -451,11 +452,13 @@ mem_default_strip_copy_rop(gx_device * dev,
     mdev.width = width;
     mdev.height = block_height;
     mdev.color_info.num_components = rop_depth >> 3;
-    if (gdev_mem_data_size(&mdev, width, block_height) <= sizeof(mdev_storage)) {
+    if (gdev_mem_data_size(&mdev, width, block_height, &size_from_mem_device) >= 0 &&
+	size_from_mem_device <= sizeof(mdev_storage)) {
 	/* Use the locally allocated storage. */
 	mdev.base = (byte *)mdev_storage;
-	mdev.line_ptrs = (byte **)
-	    (mdev.base + gdev_mem_bits_size(&mdev, mdev.width, mdev.height));
+	if ((code = gdev_mem_bits_size(&mdev, mdev.width, mdev.height, &size_from_mem_device)) < 0)
+	    return code;
+	mdev.line_ptrs = (byte **) (mdev.base + size_from_mem_device);
     } else {
 	mdev.bitmap_memory = mem;
     }

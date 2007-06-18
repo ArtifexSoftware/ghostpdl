@@ -550,8 +550,8 @@ x_set_buffer(gx_device_X * xdev)
 	    byte *buffer;
 	    ulong space;
 
-	    space = gdev_mem_data_size(mdev, xdev->width, xdev->height);
-	    if (space > xdev->MaxBitmap) {
+	    if (gdev_mem_data_size(mdev, xdev->width, xdev->height, &space) < 0 ||
+	    	space > xdev->MaxBitmap) {
 		buffered = false;
 		goto setup;
 	    }

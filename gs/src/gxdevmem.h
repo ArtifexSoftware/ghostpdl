@@ -177,17 +177,17 @@ extern_st(st_device_memory);
  * size includes both the bitmap and the line pointers.
  */
 /* bits only */
-ulong gdev_mem_bits_size(const gx_device_memory *mdev, int width,
-			 int height);
+int gdev_mem_bits_size(const gx_device_memory *mdev, int width,
+			 int height, ulong *size);
 /* line pointers only */
 ulong gdev_mem_line_ptrs_size(const gx_device_memory *mdev, int width,
 			      int height);
 /* bits + line pointers */
-ulong gdev_mem_data_size(const gx_device_memory *mdev, int width,
-			 int height);
+int gdev_mem_data_size(const gx_device_memory *mdev, int width,
+			 int height, ulong *size);
 
-#define gdev_mem_bitmap_size(mdev)\
-  gdev_mem_data_size(mdev, (mdev)->width, (mdev)->height)
+#define gdev_mem_bitmap_size(mdev, size)\
+  gdev_mem_data_size(mdev, (mdev)->width, (mdev)->height, size)
 
 /*
  * Do the inverse computation: given the device width and a buffer size,

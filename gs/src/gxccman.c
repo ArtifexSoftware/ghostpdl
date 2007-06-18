@@ -562,7 +562,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
     int log2_yscale = pscale->y;
     int log2_depth = ilog2(depth);
     uint nwidth_bits = (iwidth >> log2_xscale) << log2_depth;
-    ulong isize, icdsize;
+    ulong isize, icdsize, isize2;
     uint iraster;
     cached_char *cc;
     gx_device_memory mdev;
@@ -611,7 +611,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
 	pdev->retained = retained;
 	pdev->width = iwidth;
 	pdev->height = iheight;
-	isize = gdev_mem_bitmap_size(pdev);
+	gdev_mem_bitmap_size(pdev, &isize);	/* Assume less than max_ulong */
 	pdev->HWResolution[0] = HWResolution0;
 	pdev->HWResolution[1] = HWResolution1;
     } else {
@@ -630,8 +630,9 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
 	dev->rc = rc;
 	dev->width = iwidth;
 	dev->height = 2 << log2_yscale;
-	isize = gdev_mem_bitmap_size(dev) +
-	    gdev_mem_bitmap_size(dev2);
+	gdev_mem_bitmap_size(dev, &isize);	/* Assume less than max_ulong */
+	gdev_mem_bitmap_size(dev2, &isize2);	/* Assume less than max_ulong */
+	isize += isize2;	/* Assume less than max_ulong */
 	dev->HWResolution[0] = HWResolution0 * (1 >> log2_xscale);
 	dev->HWResolution[1] = HWResolution1 * (1 >> log2_yscale);
     }
@@ -663,8 +664,9 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
     if (dev2) {			/* The second device is an alpha device that targets */
 	/* the real storage for the character. */
 	byte *bits = cc_bits(cc);
-	uint bsize = (uint) gdev_mem_bitmap_size(dev2);
+	ulong bsize;
 
+	gdev_mem_bitmap_size(dev2, &bsize);
 	memset(bits, 0, bsize);
 	dev2->base = bits;
 	(*dev_proc(dev2, open_device)) ((gx_device *) dev2);
@@ -681,10 +683,13 @@ void
 gx_open_cache_device(gx_device_memory * dev, cached_char * cc)
 {
     byte *bits = cc_bits(cc);
+    ulong bsize;
+
+    gdev_mem_bitmap_size(dev, &bsize);
 
     dev->width = cc->width;
     dev->height = cc->height;
-    memset((char *)bits, 0, (uint) gdev_mem_bitmap_size(dev));
+    memset((char *)bits, 0, bsize);
     dev->base = bits;
     (*dev_proc(dev, open_device)) ((gx_device *) dev);	/* initialize */
 }

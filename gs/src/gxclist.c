@@ -274,6 +274,7 @@ clist_init_bands(gx_device * dev, gx_device_memory *bdev, uint data_size,
     gx_device_clist_writer * const cdev =
 	&((gx_device_clist *)dev)->writer;
     int nbands;
+    ulong space;
 
     if (dev->procs.open_device == pattern_clist_open_device) {
 	/* We don't need bands really. */
@@ -281,7 +282,8 @@ clist_init_bands(gx_device * dev, gx_device_memory *bdev, uint data_size,
 	cdev->nbands = 1;
 	return 0;
     }
-    if (gdev_mem_data_size(bdev, band_width, band_height) > data_size)
+    if (gdev_mem_data_size(bdev, band_width, band_height, &space) < 0 ||
+	space > data_size)
 	return_error(gs_error_rangecheck);
     cdev->page_band_height = band_height;
     nbands = (cdev->target->height + band_height - 1) / band_height;
@@ -359,10 +361,10 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
 	 * The band height is fixed, so the band buffer requirement
 	 * is completely determined.
 	 */
-	uint band_data_size =
-	    gdev_mem_data_size(&bdev, band_width, band_height);
+	ulong band_data_size;
 
-	if (band_data_size >= band_space)
+	if (gdev_mem_data_size(&bdev, band_width, band_height, &band_data_size) < 0 ||
+	    band_data_size >= band_space)
 	    return_error(gs_error_rangecheck);
 	bits_size = min(band_space - band_data_size, data_size >> 1);
     } else {

@@ -209,9 +209,11 @@ gdev_mem_mono_set_inverted(gx_device_memory * dev, bool black_is_1)
  * The computation for planar devices is a little messier.  Each plane
  * must pad its scan lines, and then we must pad again for the pointer
  * tables (one table per plane).
+ *
+ * Return VMerror if the size exceeds max ulong 
  */
-ulong
-gdev_mem_bits_size(const gx_device_memory * dev, int width, int height)
+int
+gdev_mem_bits_size(const gx_device_memory * dev, int width, int height, ulong *psize)
 {
     int num_planes = dev->num_planes;
     gx_render_plane_t plane1;
@@ -225,18 +227,27 @@ gdev_mem_bits_size(const gx_device_memory * dev, int width, int height)
 	planes = &plane1, plane1.depth = dev->color_info.depth, num_planes = 1;
     for (size = 0, pi = 0; pi < num_planes; ++pi)
 	size += bitmap_raster(width * planes[pi].depth);
-    return ROUND_UP(size * height, ARCH_ALIGN_PTR_MOD);
+    if (size > (max_ulong - ARCH_ALIGN_PTR_MOD) / (ulong)height)
+	return_error(gs_error_VMerror);
+    *psize = ROUND_UP(size * height, ARCH_ALIGN_PTR_MOD);
+    return 0;
 }
 ulong
 gdev_mem_line_ptrs_size(const gx_device_memory * dev, int width, int height)
 {
     return (ulong)height * sizeof(byte *) * max(dev->num_planes, 1);
 }
-ulong
-gdev_mem_data_size(const gx_device_memory * dev, int width, int height)
+int 
+gdev_mem_data_size(const gx_device_memory * dev, int width, int height, ulong *psize)
 {
-    return gdev_mem_bits_size(dev, width, height) +
-	gdev_mem_line_ptrs_size(dev, width, height);
+    ulong bits_size;
+    ulong line_ptrs_size = gdev_mem_line_ptrs_size(dev, width, height);
+
+    if (gdev_mem_bits_size(dev, width, height, &bits_size) < 0 ||
+	bits_size > max_ulong - line_ptrs_size)
+	return_error(gs_error_VMerror);
+    *psize = bits_size + line_ptrs_size;
+    return 0;
 }
 /*
  * Do the inverse computation: given a width (in pixels) and a buffer size,
@@ -248,6 +259,7 @@ gdev_mem_max_height(const gx_device_memory * dev, int width, ulong size,
 {
     int height;
     ulong max_height;
+    ulong data_size;
 
     if (page_uses_transparency) {
         /*
@@ -271,8 +283,12 @@ gdev_mem_max_height(const gx_device_memory * dev, int width, ulong size,
          * Because of alignment rounding, the just-computed height might
          * be too large by a small amount.  Adjust it the easy way.
          */
-        while (gdev_mem_data_size(dev, width, height) > size)
+        do {
+	    gdev_mem_data_size(dev, width, height, &data_size);
+	    if (data_size <= size)
+	    	break;
 	    --height;
+	} while (data_size > size);
     }
     return height;
 }
@@ -293,14 +309,16 @@ int
 gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
 {
     bool line_pointers_adjacent = true;
+    ulong size;
 
     if (setup_height < 0 || setup_height > mdev->height)
 	return_error(gs_error_rangecheck);
     if (mdev->bitmap_memory != 0) {
 	/* Allocate the data now. */
-	ulong size = gdev_mem_bitmap_size(mdev);
+	if (gdev_mem_bitmap_size(mdev, &size) < 0)
+	    return_error(gs_error_VMerror);
 
-	if ((uint) size != size)
+	if ((uint) size != size)	/* ulong may be bigger than uint */
 	    return_error(gs_error_limitcheck);
 	mdev->base = gs_alloc_bytes(mdev->bitmap_memory, (uint)size,
 				    "mem_open");
@@ -319,9 +337,10 @@ gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
 	mdev->foreign_line_pointers = false;
 	line_pointers_adjacent = false;
     }
-    if (line_pointers_adjacent)
-	mdev->line_ptrs = (byte **)
-	    (mdev->base + gdev_mem_bits_size(mdev, mdev->width, mdev->height));
+    if (line_pointers_adjacent) {
+	gdev_mem_bits_size(mdev, mdev->width, mdev->height, &size);
+	mdev->line_ptrs = (byte **)(mdev->base + size);
+    }
     mdev->raster = gdev_mem_raster(mdev);
     return gdev_mem_set_line_ptrs(mdev, NULL, 0, NULL, setup_height);
 }
