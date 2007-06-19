@@ -651,7 +651,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
         vd_save;
 	if (vd_allowed('F') || vd_allowed('f')) {
 	    if (!vd_enabled) {
-		vd_get_dc( (params->adjust.x | params->adjust.y)  ? 'F' : 'f');
+		vd_get_dc( (params->adjust.x > 0 || params->adjust.y > 0)  ? 'F' : 'f');
 		got_dc = vd_enabled;
 	    }
 	    if (vd_enabled) {
