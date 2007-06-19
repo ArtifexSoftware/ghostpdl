@@ -29,6 +29,10 @@
 #include "idictdef.h"
 #include "iutil.h"
 #include "ivmspace.h"		/* for store check */
+/*
+#include "idicttpl.h" - Do not remove this comment.
+                        "idicttpl.h" is included below.
+*/
 
 /*
  * Dictionaries per se aren't supposed to know anything about the
@@ -339,12 +343,13 @@ dict_find(const ref * pdref, const ref * pkey,
     if (dict_is_packed(pdict)) {
 	const ref_packed *pslot = 0;
 
-	packed_search_1(*ppvalue = packed_search_value_pointer,
-			return 1,
-			if (pslot == 0) pslot = kp, goto miss);
-	packed_search_2(*ppvalue = packed_search_value_pointer,
-			return 1,
-			if (pslot == 0) pslot = kp, goto miss);
+#	define found *ppvalue = packed_search_value_pointer; return 1
+#	define deleted if (pslot == 0) pslot = kp
+#	define missing goto miss
+#	include "idicttpl.h"
+#	undef missing
+#	undef deleted
+#	undef found
 	/*
 	 * Double wraparound, dict is full.
 	 * Note that even if there was an empty slot (pslot != 0),

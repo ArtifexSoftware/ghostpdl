@@ -52,6 +52,7 @@ idebug_h=$(PSSRC)idebug.h
 iddstack_h=$(PSSRC)iddstack.h
 idict_h=$(PSSRC)idict.h $(iddstack_h)
 idictdef_h=$(PSSRC)idictdef.h
+idicttpl_h=$(PSSRC)idicttpl.h
 idosave_h=$(PSSRC)idosave.h
 igcstr_h=$(PSSRC)igcstr.h
 inames_h=$(PSSRC)inames.h
@@ -168,7 +169,7 @@ $(PSOBJ)idebug.$(OBJ) : $(PSSRC)idebug.c $(GH) $(string__h)\
 $(PSOBJ)idict.$(OBJ) : $(PSSRC)idict.c $(GH) $(math__h) $(string__h)\
  $(ierrors_h)\
  $(gxalloc_h)\
- $(iddstack_h) $(idebug_h) $(idict_h) $(idictdef_h)\
+ $(iddstack_h) $(idebug_h) $(idict_h) $(idictdef_h) $(idicttpl_h)\
  $(imemory_h) $(iname_h) $(inamedef_h) $(ipacked_h) $(isave_h)\
  $(iutil_h) $(ivmspace_h) $(store_h)
 	$(PSCC) $(PSO_)idict.$(OBJ) $(C_) $(PSSRC)idict.c
@@ -180,7 +181,7 @@ $(PSOBJ)idparam.$(OBJ) : $(PSSRC)idparam.c $(GH) $(memory__h) $(string__h) $(ier
 	$(PSCC) $(PSO_)idparam.$(OBJ) $(C_) $(PSSRC)idparam.c
 
 $(PSOBJ)idstack.$(OBJ) : $(PSSRC)idstack.c $(GH)\
- $(idebug_h) $(idict_h) $(idictdef_h) $(idstack_h) $(iname_h) $(inamedef_h)\
+ $(idebug_h) $(idict_h) $(idictdef_h) $(idicttpl_h) $(idstack_h) $(iname_h) $(inamedef_h)\
  $(ipacked_h) $(iutil_h) $(ivmspace_h)
 	$(PSCC) $(PSO_)idstack.$(OBJ) $(C_) $(PSSRC)idstack.c
 

@@ -79,39 +79,8 @@
 #define npairs(dct) (nslots(dct) - 1)
 #define d_length(dct) ((uint)((dct)->count.value.intval))
 
-/*
- * Define macros for searching a packed dictionary.  Free variables:
- *      ref_packed kpack - holds the packed key.
- *      uint hash - holds the hash of the name.
- *      dict *pdict - points to the dictionary.
- *      uint size - holds npairs(pdict).
- * Note that the macro is *not* enclosed in {}, so that we can access
- * the values of kbot and kp after leaving the loop.
- *
- * We break the macro into two to avoid overflowing some preprocessors.
- */
-/* packed_search_body also uses kp and kbot as free variables. */
+/* packed_search_value_pointer simplifies the access to 
+   packed dictionary search template data - see idicttpl.h . */
 #define packed_search_value_pointer (pdict->values.value.refs + (kp - kbot))
-#define packed_search_body(found1,found2,del,miss)\
-    { if_debug2('D', "[D]probe 0x%lx: 0x%x\n", (ulong)kp, *kp);\
-      if ( *kp == kpack )\
-       { found1;\
-	 found2;\
-       }\
-      else if ( !r_packed_is_name(kp) )\
-       { /* Empty, deleted, or wraparound. Figure out which. */\
-	 if ( *kp == packed_key_empty ) miss;\
-	 if ( kp == kbot ) break;	/* wrap */\
-	 else { del; }\
-       }\
-    }
-#define packed_search_1(found1,found2,del,miss)\
-   const ref_packed *kbot = pdict->keys.value.packed;\
-   register const ref_packed *kp;\
-   for ( kp = kbot + dict_hash_mod(hash, size) + 1; ; kp-- )\
-     packed_search_body(found1,found2,del,miss)
-#define packed_search_2(found1,found2,del,miss)\
-   for ( kp += size; ; kp-- )\
-     packed_search_body(found1,found2,del,miss)
 
 #endif /* idictdef_INCLUDED */

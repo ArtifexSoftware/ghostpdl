@@ -22,6 +22,10 @@
 #include "ipacked.h"
 #include "iutil.h"
 #include "ivmspace.h"
+/*
+#include "idicttpl.h" - Do not remove this comment.
+                        "idicttpl.h" is included below.
+*/
 
 /* Debugging statistics */
 #ifdef DEBUG
@@ -123,13 +127,13 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
 #define INCR_DEPTH(pdref)\
   INCR(depth[min(MAX_STATS_DEPTH, pds->stack.p - pdref)])
 	if (dict_is_packed(pdict)) {
-	    packed_search_1(INCR_DEPTH(pdref),
-			    return packed_search_value_pointer,
-			    DO_NOTHING, goto miss);
-	    packed_search_2(INCR_DEPTH(pdref),
-			    return packed_search_value_pointer,
-			    DO_NOTHING, break);
-	  miss:;
+#	    define found INCR_DEPTH(pdref); return packed_search_value_pointer
+#	    define deleted 
+#	    define missing break;
+#	    include "idicttpl.h"
+#	    undef missing
+#	    undef deleted
+#	    undef found
 	} else {
 	    /*
 	     * The name_index macro takes mem as its first argument, but
