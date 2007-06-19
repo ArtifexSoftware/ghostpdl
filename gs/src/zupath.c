@@ -460,6 +460,35 @@ zupath(i_ctx_t *i_ctx_p)
     check_type(*op, t_boolean);
     return make_upath(i_ctx_p, op, igs, igs->path, op->value.boolval);
 }
+
+/* Compute the path length for user path purposes. */
+private int 
+path_length_for_upath(const gx_path *ppath)
+{
+    gs_path_enum penum;
+    int op, size = 0;
+    gs_fixed_point pts[3];
+
+    gx_path_enum_init(&penum, ppath);
+    while ((op = gx_path_enum_next(&penum, pts)) != 0) {
+	switch (op) {
+	    case gs_pe_moveto:
+	    case gs_pe_lineto:
+		size += 3;
+		continue;
+	    case gs_pe_curveto:
+		size += 7;
+		continue;
+	    case gs_pe_closepath:
+		size += 1;
+		continue;
+	    default:
+		return_error(e_unregistered);
+	}
+    }
+    return size;
+}
+
 int
 make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
 	   bool with_ucache)
@@ -485,28 +514,13 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
 	bbox.p.x = bbox.p.y = bbox.q.x = bbox.q.y = 0;
     }
 
-    /* Compute the size of the user path array. */
-    {
-	gs_fixed_point pts[3];
+    code = path_length_for_upath(ppath);
+    if (code < 0)
+        return code;
+    size += code;
+    if (size >= 65536)
+        return_error(e_limitcheck);
 
-	gx_path_enum_init(&penum, ppath);
-	while ((op = gx_path_enum_next(&penum, pts)) != 0) {
-	    switch (op) {
-		case gs_pe_moveto:
-		case gs_pe_lineto:
-		    size += 3;
-		    continue;
-		case gs_pe_curveto:
-		    size += 7;
-		    continue;
-		case gs_pe_closepath:
-		    size += 1;
-		    continue;
-		default:
-		    return_error(e_unregistered);
-	    }
-	}
-    }
     code = ialloc_ref_array(rupath, a_all | a_executable, size,
 			    "make_upath");
     if (code < 0)
@@ -573,6 +587,81 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
 	}
     }
     return 0;
+}
+
+
+private int
+zgetpath(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int i, code, path_size, leaf_count;
+    ref *main_ref, *operators[5];
+
+    push(1);
+    path_size = code = path_length_for_upath(igs->path);
+    if (code < 0)
+        return code;
+    leaf_count = (path_size + max_array_size - 1) / max_array_size;
+    code = ialloc_ref_array(op, a_all, leaf_count, "zgetpath_master");
+    if (code < 0)
+        return code;
+    if (path_size == 0)
+        return 0;
+
+    if (dict_find_string(systemdict, "moveto", &operators[1]) <= 0 ||
+  	dict_find_string(systemdict, "lineto", &operators[2]) <= 0 ||
+	dict_find_string(systemdict, "curveto", &operators[3]) <= 0 ||
+	dict_find_string(systemdict, "closepath", &operators[4]) <= 0)
+          return_error(e_undefined);
+
+    main_ref = op->value.refs;
+    for (i = 0; i < leaf_count; i++) {
+       int leaf_size = ( i == leaf_count - 1) ? path_size - i * max_array_size : max_array_size;
+       code = ialloc_ref_array(&main_ref[i], a_all | a_executable, leaf_size, "zgetpath_leaf");
+       if (code < 0)
+            return code;
+    }
+
+    {
+        int pe, j, k;
+        gs_path_enum penum;
+        static const int oper_count[5] = { 0, 2, 2, 6, 0 };
+	gs_point pts[3];
+        const double  *fts[6]; 
+
+        fts[0] = &pts[0].x;
+        fts[1] = &pts[0].y;
+        fts[2] = &pts[1].x;
+        fts[3] = &pts[1].y;
+        fts[4] = &pts[2].x;
+        fts[5] = &pts[2].y;
+
+        main_ref = op->value.refs;
+	gs_path_enum_copy_init(&penum, igs, false);
+        pe = gs_path_enum_next(&penum, pts);
+        k = 0;
+
+        for (i = 0; i < leaf_count; i++) {
+            int leaf_size = ( i == leaf_count - 1) ? path_size - i * max_array_size : max_array_size;
+            ref *leaf_ref = main_ref[i].value.refs;
+            
+            for (j = 0; j < leaf_size; j++) {
+                if (k < oper_count[pe])
+                   make_real_new(&leaf_ref[j], (float)*fts[k++]);
+                else {
+                    k = 0;
+                    ref_assign(&leaf_ref[j], operators[pe]);
+                    pe = gs_path_enum_next(&penum, pts);
+                    if (pe == 0)
+                        goto out;
+                    if (pe >= 5)
+                        return_error(e_unregistered);
+                }
+            }
+        }
+     }
+  out:
+  return 0;
 }
 
 /* ------ Internal routines ------ */
@@ -798,5 +887,7 @@ const op_def zupath_l2_op_defs[] =
     {"1upath", zupath},
     {"1ustroke", zustroke},
     {"1ustrokepath", zustrokepath},
+		/* Path access for PDF */
+    {"0.getpath", zgetpath},
     op_def_end(0)
 };

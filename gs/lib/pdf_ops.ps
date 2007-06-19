@@ -102,13 +102,10 @@ nodict readonly pop
 % of the PDF graphics state; see 4.4.1 of PDF reference 3rd ed.
 /grestore_nopath {
   % Collect the upath with an identity CTM
-  { matrix setmatrix //false upath } stopped {
-    pop grestore newpath
-  } {
+    matrix setmatrix .getpath
     % Save the CTM, set identity during the uappend, then set the CTM
     grestore matrix currentmatrix matrix setmatrix
-    exch newpath uappend setmatrix
-  } ifelse
+    exch newpath { exec } forall setmatrix
 } bdef
 
 /q {

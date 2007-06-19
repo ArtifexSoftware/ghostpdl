@@ -275,20 +275,16 @@ drawopdict begin
   /q { q } def
   /Q { Q } def
 			% Graphics state setting
-  /cm { { //false upath } stopped {
-	  pop	% discard 'false' (upath failed, probably no currentpoint).
-	  //cmmatrix astore concat
-	} {
-	  % update the CTM, then uappend.
-	  7 1 roll //cmmatrix astore concat
-	  newpath { mark exch uappend } stopped 
-	  cleartomark
-	} ifelse
+  /cm { //cmmatrix astore
+        .getpath      
+        exch concat
+        newpath { exec } forall
 	% If inside a BT/ET block, we need to update the TextSaveMatrix
 	currentdict /TextSaveMatrix .knownget {
 	  //cmmatrix exch dup concatmatrix pop
 	} if
       } bdef
+
   /i { 1 .min setflat } bdef
   /J /setlinecap load def
   /d /setdash load def

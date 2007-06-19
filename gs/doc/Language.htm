@@ -724,6 +724,19 @@ only if the <b><tt>dps</tt></b> or <b><tt>level2</tt></b> option was
 selected when Ghostscript was built.
 </dl>
 
+<dl>
+<dt><b><tt>- .getpath &lt;array&gt;</tt></b>
+<dd>Export the current path to an array of executable arrays. This
+operator is similar to <b><tt>upath</tt></b>, except
+
+<li>array of arrays is used to overcome 64K-1 limit on the
+array lemgth.
+<li>no <b><tt>ucache</tt></b> or <b><tt>setbbox</tt></b> entries are generated.
+<li>operators are used instead of executable names.
+<li>there's no special handling of an empty path or trailing <b><tt>moveto</tt></b>.
+The saved path can be restored by <b><tt>newpath { exec } forall</tt></b>.
+</dl>
+
 <h4><a name="Painting"></a>Painting operators</h4>
 
 <p>
