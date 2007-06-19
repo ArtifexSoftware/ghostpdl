@@ -33,8 +33,8 @@
  */
 
     const ref_packed *kbot = pdict->keys.value.packed;
-    register const ref_packed *kp = kbot + dict_hash_mod(hash, size) + 1;
-
+    const int start = dict_hash_mod(hash, size) + 1;
+    register const ref_packed *kp = kbot + start;
     int wrap = 0;
 
     again:
