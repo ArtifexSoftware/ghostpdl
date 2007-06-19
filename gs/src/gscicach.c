@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id: gscicach.c 7765 2007-03-05 21:09:35Z raph $ */
+/* $Id$ */
 /* A color index cache. */
 #include "gx.h"
 #include "gserrors.h"
