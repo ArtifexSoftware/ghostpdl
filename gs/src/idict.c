@@ -573,12 +573,13 @@ dict_undef(ref * pdref, const ref * pkey, dict_stack_t *pds)
     mem = dict_memory(pdict);
     if (dict_is_packed(pdict)) {
 	ref_packed *pkp = pdict->keys.value.writable_packed + index;
+	bool must_save = ref_must_save_in(mem, &pdict->keys);
 
 	if_debug3('d', "[d]0x%lx: removing key at 0%lx: 0x%x\n",
 		  (ulong)pdict, (ulong)pkp, (uint)*pkp);
 	/* See the initial comment for why it is safe not to save */
 	/* the change if the keys array itself is new. */
-	if (ref_must_save_in(mem, &pdict->keys))
+	if (must_save)
 	    ref_do_save_in(mem, &pdict->keys, pkp, "dict_undef(key)");
 	/*
 	 * Accumulating deleted entries slows down lookup.
@@ -594,8 +595,15 @@ dict_undef(ref * pdref, const ref * pkey, dict_stack_t *pds)
 	    uint end = nslots(pdict);
 
 	    *pkp = packed_key_empty;
-	    while (++index < end && *++pkp == packed_key_deleted)
-		*pkp = packed_key_empty;
+	    if (must_save) {
+		while (++index < end && *++pkp == packed_key_deleted) {
+		    ref_do_save_in(mem, &pdict->keys, pkp, "dict_undef(key)");
+		    *pkp = packed_key_empty;
+		}
+	    } else {
+		while (++index < end && *++pkp == packed_key_deleted)
+		    *pkp = packed_key_empty;
+	    }
 	} else
 	    *pkp = packed_key_deleted;
     } else {			/* not packed */
