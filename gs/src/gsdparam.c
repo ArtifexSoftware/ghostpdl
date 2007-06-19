@@ -828,7 +828,7 @@ gx_device_request_leadingedge(gx_device *dev, int le_req)
 private int
 param_normalize_anti_alias_bits( uint max_gray, int bits )
 {
-	int	max_bits = ilog2( max_gray + 1.0);
+	int	max_bits = ilog2( max_gray + 1);
 	
 	return  (bits > max_bits ? max_bits : bits);
 }
