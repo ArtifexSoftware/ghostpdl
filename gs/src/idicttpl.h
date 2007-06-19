@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id: idicttpl.h 8022 2007-06-05 22:23:38Z giles $ */
+/* $Id$ */
 /* A template for packed dictionary search method */
 
 /*
