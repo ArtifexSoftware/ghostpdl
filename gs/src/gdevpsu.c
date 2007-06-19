@@ -201,7 +201,7 @@ psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
     fputs("%%BeginResource: procset ", f);
     fflush(f);
     psw_print_procset_name(f, dev, pdpc);
-    fputs("\n/", f);
+    fprintf(f, " %5.3lf %d\n/", pdpc->ProcSet_version / 1000.0, 0);
     fflush(f);
     psw_print_procset_name(f, dev, pdpc);
     fputs(" 80 dict dup begin\n", f);
