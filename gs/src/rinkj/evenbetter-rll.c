@@ -16,11 +16,8 @@
 
 /*
  * Code in this module is covered by US Patents 5,055,942 and
- * 5,917,614, and corresponding international patents.  This version
- * of ETS is for commercial licensees and is governed by the licensing
- * agreement between artofcode LLC and the licensee. Please see
- * http://www.levien.com/artofcode/eventone/ for information on licensing.
-*/
+ * 5,917,614, and corresponding international patents.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
