@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2002 Artifex Software, Inc.
+# Copyright (C) 2002-2007 Artifex Software, Inc.
 #
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -102,12 +102,26 @@ def diff(a,b):
     two = fontmetric(b)
     two.parse()
     print "differences between '"+a+"' and '"+b+"':"
-    print "  [not yet implemented. try --dump on each file and then running 'diff']"
-    
+    #print "  [not yet implemented. try --dump on each file and then running 'diff']"
+    # break abstraction
+    glyphs = one.metrics.keys()
+    glyphs.sort()
+    count = 0
+    for glyph in glyphs:
+      awx = one.metrics[glyph]['WX']
+      try:
+        bwx = two.metrics[glyph]['WX']
+      except KeyError:
+        continue
+      if awx != bwx:
+        count += 1
+        print " ", glyph, awx, bwx
+    print count, "advance width differences"
+
 import sys, getopt
 
 def usage():
-    print "Usage: " + sys.argv[0] + "[options] <files>"
+    print "Usage: " + sys.argv[0] + " [options] <file1.afm> [<file2.afm>]"
     print "reads adobe font metric files an preforms various tasks"
     print " options:"
     print "   --dump prints the parsed data for manual comparison"
