@@ -21,6 +21,10 @@
 #include "gsexit.h"
 #include "gp.h"
 
+#ifdef HAVE_FONTCONFIG
+#  include <fontconfig/fontconfig.h>
+#endif
+
 /*
  * This is the only place in Ghostscript that calls 'exit'.  Including
  * <stdlib.h> is overkill, but that's where it's declared on ANSI systems.
@@ -224,16 +228,193 @@ gp_close_printer(FILE * pfile, const char *fname)
   * building a custom fontmap file.
   */
  
+
+/* Mangle the FontConfig family and style information into a
+ * PostScript font name */
+#ifdef HAVE_FONTCONFIG
+static void makePSFontName(char* family, int weight, int slant, char *buf, int bufsize)
+{
+    int bytesCopied, length, i;
+    const char *slantname, *weightname;
+
+    switch (slant) {
+	case FC_SLANT_ROMAN:   slantname=""; break;;
+	case FC_SLANT_OBLIQUE: slantname="Oblique"; break;;
+	case FC_SLANT_ITALIC:  slantname="Italic"; break;;
+	default:               slantname="Unknown"; break;;
+    }
+
+    switch (weight) {
+	case FC_WEIGHT_MEDIUM:   weightname=""; break;;
+	case FC_WEIGHT_LIGHT:    weightname="Light"; break;;
+	case FC_WEIGHT_DEMIBOLD: weightname="Demi"; break;;
+	case FC_WEIGHT_BOLD:     weightname="Bold"; break;;
+	case FC_WEIGHT_BLACK:    weightname="Black"; break;;
+	default:                 weightname="Unknown"; break;;
+    }
+
+    length = strlen(family);
+    if (length >= bufsize)
+	length = bufsize;
+    /* Copy the family name, stripping spaces */
+    bytesCopied=0;
+    for (i = 0; i < length; i++)
+	if (family[i] != ' ')
+	    buf[bytesCopied++] = family[i];
+
+    if ( ((slant != FC_SLANT_ROMAN) || (weight != FC_WEIGHT_MEDIUM)) \
+	    && bytesCopied < bufsize )
+    {
+	buf[bytesCopied] = '-';
+	bytesCopied++;
+	if (weight != FC_WEIGHT_MEDIUM)
+	{
+	    length = strlen(family);
+	    if ((length + bytesCopied) >= bufsize)
+		length = bufsize - bytesCopied - 1;
+	    strncpy(buf+bytesCopied, weightname, length);
+	    bytesCopied += length;
+	}
+	if (slant != FC_SLANT_ROMAN)
+	{
+	    length = strlen(family);
+	    if ((length + bytesCopied) >= bufsize)
+		length = bufsize - bytesCopied - 1;
+	    strncpy(buf+bytesCopied, slantname, length);
+	    bytesCopied += length;
+	}
+    }
+    buf[bytesCopied] = '\0';
+}
+#endif
+
+/* State struct for font iteration - passed as an opaque 'void*' through the rest of gs */
+#ifdef HAVE_FONTCONFIG
+typedef struct {
+    int index;              /* current index of iteration over font_list */
+    FcConfig* fc;           /* FontConfig library handle */
+    FcFontSet* font_list;   /* FontConfig font list */
+    char name[255];         /* name of last font */
+} unix_fontenum_t;
+#endif
+
 void *gp_enumerate_fonts_init(gs_memory_t *mem)
 {
+#ifdef HAVE_FONTCONFIG
+    unix_fontenum_t *state = (unix_fontenum_t *)malloc(sizeof(unix_fontenum_t));
+    if (state == NULL)
+	return NULL;    /* Failed to allocate state */
+
+    state->index     = 0;
+    state->fc        = NULL;
+    state->font_list = NULL;
+
+    /* Load the fontconfig library */
+    state->fc = FcInitLoadConfigAndFonts();
+    if (state->fc == NULL) {
+	free(state);
+	state = NULL;
+	dlprintf("destroyed state - fontconfig init failed");
+	return NULL;  /* Failed to open fontconfig library */
+    }
+
+    /* load the font set that we'll iterate over */
+    FcPattern *pat = FcPatternBuild(NULL,
+	    FC_OUTLINE, FcTypeBool, 1,
+	    FC_SCALABLE, FcTypeBool, 1,
+	    NULL);
+    FcObjectSet* os = FcObjectSetBuild(FC_FILE, FC_OUTLINE, FC_FAMILY, FC_WEIGHT, FC_SLANT, 0);
+    state->font_list = FcFontList(0, pat, os);
+    FcPatternDestroy(pat);
+    FcObjectSetDestroy(os);
+    if (state->font_list == NULL) {
+	free(state);
+	state = NULL;
+	return NULL;  /* Failed to generate font list */
+    }
+    return (void *)state;
+#else
     return NULL;
+#endif
 }
-         
+
 int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
 {
+#ifdef HAVE_FONTCONFIG
+    char* psname = NULL;
+
+    unix_fontenum_t* state = (unix_fontenum_t *)enum_state;
+    if (state == NULL) {
+	return 0;   /* gp_enumerate_fonts_init failed for some reason */
+    }
+
+    /* Bits of the following were borrowed from Red Hat's GS 7 FontConfig patch */
+    FcChar8* file_fc = NULL;
+    FcChar8* family_fc = NULL;
+    int outline_fc, slant_fc, weight_fc;
+    FcResult result;
+
+    if (state->index == state->font_list->nfont) {
+	return 0; /* we've run out of fonts */
+    }
+
+    FcPattern* font = state->font_list->fonts[state->index];
+
+    result = FcPatternGetString (font, FC_FAMILY, 0, &family_fc);
+    if (result != FcResultMatch || family_fc == NULL) {
+	dlprintf ("DEBUG: FC_FAMILY mismatch\n");
+	return 0;
+    }
+
+    result = FcPatternGetString (font, FC_FILE, 0, &file_fc);
+    if (result != FcResultMatch || file_fc == NULL) {
+	dlprintf ("DEBUG: FC_FILE mismatch\n");
+	return 0;
+    }
+
+    result = FcPatternGetBool (font, FC_OUTLINE, 0, &outline_fc);
+    if (result != FcResultMatch) {
+	dlprintf1 ("DEBUG: FC_OUTLINE failed to match on %s\n", (char*)family_fc);
+	return 0;
+    }
+
+    result = FcPatternGetInteger (font, FC_SLANT, 0, &slant_fc);
+    if (result != FcResultMatch) {
+	dlprintf ("DEBUG: FC_SLANT didn't match\n");
+	return 0;
+    }
+
+    result = FcPatternGetInteger (font, FC_WEIGHT, 0, &weight_fc);
+    if (result != FcResultMatch) {
+	dlprintf ("DEBUG: FC_WEIGHT didn't match\n");
+	return 0;
+    }
+
+    /* Gross hack to work around Fontconfig's inability to tell
+     * us the font's PostScript name - generate it ourselves.
+     * We must free the memory allocated here next time around. */
+    makePSFontName((char *)family_fc, weight_fc, slant_fc, &state->name, sizeof(state->name));
+    *fontname = &state->name;
+
+    /* return the font path straight out of fontconfig */
+    *path = (char*)file_fc;
+
+    state->index ++;
+    return 1;
+#else
     return 0;
+#endif
 }
-                         
+
 void gp_enumerate_fonts_free(void *enum_state)
 {
-}           
+#ifdef HAVE_FONTCONFIG
+    unix_fontenum_t* state = (unix_fontenum_t *)enum_state;
+    if (state != NULL) {
+	if (state->font_list != NULL)
+	    FcFontSetDestroy(state->font_list);
+	free(state);
+    }
+#endif
+}
+

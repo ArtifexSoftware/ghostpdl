@@ -173,6 +173,29 @@ fi
 dnl pkg-config is used for several tests now...
 AC_PATH_PROG(PKGCONFIG, pkg-config)
 
+dnl Fontconfig support
+FONTCONFIG_LIBS=""
+AC_ARG_ENABLE(fontconfig, [  --disable-fontconfig    Don't use fontconfig to list system fonts])
+if test "$enable_fontconfig" != "no"; then
+	# We MUST NOT use PKG_CHECK_MODULES since it is a) not a standard
+	# autoconf macro and b) requires pkg-config on the system, which is
+	# NOT standard on ANY OS, including Linux!
+	AC_PATH_PROG(PKGCONFIG, pkg-config, no)
+
+	if test "$PKGCONFIG" != no; then
+		AC_MSG_CHECKING(for fontconfig)
+		if $PKGCONFIG --exists fontconfig; then
+			AC_MSG_RESULT(yes)
+			CFLAGS="$CFLAGS `$PKGCONFIG --cflags fontconfig`"
+			FONTCONFIG_LIBS="`$PKGCONFIG --libs fontconfig`"
+			AC_DEFINE_UNQUOTED(HAVE_FONTCONFIG, 1)
+		else
+			AC_MSG_RESULT(no)
+		fi
+	fi
+fi
+AC_SUBST(FONTCONFIG_LIBS)
+
 dnl --------------------------------------------------
 dnl Check for libraries
 dnl --------------------------------------------------
