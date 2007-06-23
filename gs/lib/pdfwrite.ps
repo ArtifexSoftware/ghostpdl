@@ -244,8 +244,38 @@ readonly def
   /nulltype { pop (null) ows } bind
   /integertype { =string cvs ows } bind
   /booleantype 1 index
-  /realtype { OFile exch write===only } bind
-  /stringtype 1 index
+  /realtype {
+    =string cvs
+    (e) search {  % PDF has no exponential format
+      exch pop % exp pre
+      exch cvi exch
+      (-) anchorsearch { ows } if
+      (.) search {
+        exch pop            % exp (frac) (int)
+        1 index length      % exp (frac) (int) len
+        3 1 roll            % exp len (frac) (int)
+        exch concatstrings  % exp len (int_frac)
+        3 1 roll sub        % (int_frac) exp-len
+        exch                % exp-len (int_frac)
+      } if                  % exp (mant)
+      1 index 0 ge {
+        ows { (0) ows } repeat (.) ows
+      } {
+        dup length          % exp (mant) len
+        3 -1 roll add       % (mant) exp+len
+        dup 0 le {
+          (0.) ows neg { (0) ows } repeat ows
+        } {
+          2 copy 0 exch getinterval ows
+          (.) ows
+          1 index length 1 index sub getinterval ows
+        } ifelse
+      } ifelse
+    } {
+      ows
+    } ifelse
+  } bind
+  /stringtype { OFile exch write===only } bind
   /nametype { pdfwritename } bind
 	% Composite/reference objects
   /arraytype { pdfwritearray } bind
