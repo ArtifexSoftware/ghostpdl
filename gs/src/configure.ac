@@ -506,25 +506,28 @@ SOC_CFLAGS=""
 SOC_LIBS=""
 SOC_LOADER="dxmainc.c"
 if test "x$enable_gtk" != "xno"; then
-	# Try GTK+ 2.x first...
-	if test "x$PKGCONFIG" != x; then
-		AC_MSG_CHECKING(for GTK+ 2.x)
-		if $PKGCONFIG --exists gtk+-2.0; then
-			SOC_LOADER="dxmain.c"
-			SOC_CFLAGS="`$PKGCONFIG gtk+-2.0 --cflags`"
-			SOC_LIBS="`$PKGCONFIG gtk+-2.0 --libs`"
-		fi
+    # Try GTK+ 2.x first...
+    if test "x$PKGCONFIG" != x; then
+	AC_MSG_CHECKING(for GTK+ 2.x)
+	if $PKGCONFIG --exists gtk+-2.0; then
+	    SOC_LOADER="dxmain.c"
+	    SOC_CFLAGS="`$PKGCONFIG gtk+-2.0 --cflags`"
+	    SOC_LIBS="`$PKGCONFIG gtk+-2.0 --libs`"
+	    AC_MSG_RESULT([yes])
+	else
+	    AC_MSG_RESULT([no])
 	fi
+    fi
 
-	# Then fall back on GTK+ 1.x...
-	if test "x$SOC_LOADER" = x; then
-		AC_PATH_PROG(GTKCONFIG, gtk-config)
-		if test "x$GTKCONFIG" != x; then
-			SOC_LOADER="dxmain.c"
-			SOC_CFLAGS="`$GTKCONFIG --cflags`"
-			SOC_LIBS="`$GTKCONFIG --libs`"
-		fi
+    # Then fall back on GTK+ 1.x...
+    if test "x$SOC_LOADER" = x; then
+	AC_PATH_PROG(GTKCONFIG, gtk-config)
+	if test "x$GTKCONFIG" != x; then
+	    SOC_LOADER="dxmain.c"
+	    SOC_CFLAGS="`$GTKCONFIG --cflags`"
+	    SOC_LIBS="`$GTKCONFIG --libs`"
 	fi
+    fi
 fi
 AC_SUBST(SOC_CFLAGS)
 AC_SUBST(SOC_LIBS)
