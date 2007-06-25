@@ -628,7 +628,7 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
     /* get and set the orientation field */
     {
         pcl_font_header_t *header = (pcl_font_header_t *)plfont->header;
-        plfont->landscape = (header->Orientation == 1);
+        plfont->orient = header->Orientation;
     }
     return pl_font_add_glyph(plfont, pcs->character_code, char_data);
 #undef plfont

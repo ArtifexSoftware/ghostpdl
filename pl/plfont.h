@@ -167,7 +167,7 @@ struct pl_font_s {
 			/* (for segmented fonts only) */
   struct { uint x, y; } resolution; /* resolution (for bitmap fonts) */
   float bold_fraction;              /* for PXL algorithmic bolding */
-  bool landscape;                   /* true if pcl bitmap font designed in landscape */
+  int orient;                       /* true if pcl bitmap font designed in landscape */
   pl_font_params_t params;
   byte character_complement[8];	/* character complement (for unbound fonts) */
   struct o_ {

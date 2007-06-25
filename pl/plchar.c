@@ -368,7 +368,7 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
   gs_char chr, gs_glyph glyph)
 {       pl_font_t *plfont = (pl_font_t *)pfont->client_data;
         const byte *cdata = pl_font_lookup_glyph(plfont, glyph)->data;
-        bool landscape = plfont->landscape;
+        bool orient = plfont->orient;
 
         if ( cdata == 0 )
           return 0;
@@ -421,28 +421,24 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
             }
           else
             bold = 0;
-          gs_make_identity(&image.ImageMatrix);
-          if ( landscape ) {
-              /* note that we don't even use the font metrics for lsb.
-                 It appears in landscape mode the bitmaps account for
-                 this, very peculiar */
-              gs_matrix_rotate(&image.ImageMatrix, -90, &image.ImageMatrix);
-              gs_matrix_translate(&image.ImageMatrix, 
-                                  -image.Height, image.Width, &image.ImageMatrix);
-              /* for the landscape case apparently we adjust by the
-                 width + left offset and height - top offset.  Note
-                 the landscape left offset is always negative in pcl's
-                 coordinate system. */
-              image.ImageMatrix.tx -= (image.Width + pl_get_int16(params)) /* left offset */;
-              image.ImageMatrix.ty += (pl_get_int16(params+2) - image.Height);
-          }
-          else {
-              image.ImageMatrix.tx -= lsb;
-              image.ImageMatrix.ty += ascent;
-          }
 
+          gs_make_identity(&image.ImageMatrix);
+          gs_matrix_rotate(&image.ImageMatrix, orient * -90, &image.ImageMatrix);
+          image.ImageMatrix.tx -= lsb;
+          image.ImageMatrix.ty += ascent;
           image.adjust = true;
-          code = gs_setcharwidth(penum, pgs, delta_x, 0);
+          if (bold || orient != 0)
+              code = gs_setcharwidth(penum, pgs, delta_x, 0);
+          else {
+              /* we use cache device for portrait bitmap fonts to
+                 avoid image setup overhead.  */
+              float m[6];
+              m[0] = delta_x; m[1] = 0;
+              m[2] = lsb; m[3] = image.Height - ascent;
+              m[4] = image.Width + m[2];
+              m[5] = -ascent;
+              code = gs_setcachedevice(penum, pgs, m);
+          }
           if ( code < 0 )
             return code;
 #ifdef DEBUG          
