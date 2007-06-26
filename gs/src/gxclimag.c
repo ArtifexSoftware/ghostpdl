@@ -108,28 +108,40 @@ clist_fill_mask(gx_device * dev,
 	int code;
         ulong offset_temp;
 
-	TRY_RECT {
+	do {
 	    code = cmd_update_lop(cdev, pcls, lop);
-	} HANDLE_RECT_UNLESS(code, 0);
+	} while (RECT_RECOVER(code));
+	/* HANDLE_RECT_UNLESS(code, 0); */
+	if (code < 0 && SET_BAND_CODE(code))
+	    goto error_in_rect;
 	if (depth > 1 && !pcls->color_is_alpha) {
 	    byte *dp;
 
-	    TRY_RECT {
+	    do {
 		code =
 		    set_cmd_put_op(dp, cdev, pcls, cmd_opv_set_copy_alpha, 1);
-	    } HANDLE_RECT_UNLESS(code, 0);
+	    } while (RECT_RECOVER(code));
+	    /* HANDLE_RECT_UNLESS(code, 0); */
+	    if (code < 0 && SET_BAND_CODE(code))
+		goto error_in_rect;
 	    pcls->color_is_alpha = 1;
 	}
-	TRY_RECT {
+	do {
 	    code = cmd_do_write_unknown(cdev, pcls, clip_path_known);
 	    if (code >= 0)
 		code = cmd_do_enable_clip(cdev, pcls, pcpath != NULL);
-	} HANDLE_RECT_UNLESS(code, 0);
-	TRY_RECT {
+	} while (RECT_RECOVER(code));
+	/* HANDLE_RECT_UNLESS(code, 0); */
+	if (code < 0 && SET_BAND_CODE(code))
+	    goto error_in_rect;
+	do {
 	    code = cmd_put_drawing_color(cdev, pcls, pdcolor);
 	    if (depth > 1 && code >= 0)
 		code = cmd_set_color1(cdev, pcls, pdcolor->colors.pure);
-	} HANDLE_RECT_UNLESS(code, 0);
+	} while (RECT_RECOVER(code));
+	/* HANDLE_RECT_UNLESS(code, 0); */
+	if (code < 0 && SET_BAND_CODE(code))
+	    goto error_in_rect;
 	pcls->colors_used.slow_rop |= slow_rop;
 	pcls->band_complexity.nontrivial_rops |= slow_rop;
 	pcls->band_complexity.uses_color |= (pdcolor->colors.pure != 0 && pdcolor->colors.pure != 0xffffff);
@@ -143,10 +155,12 @@ clist_fill_mask(gx_device * dev,
 	    tile.size.y = tile.rep_height = orig_height;
 	    tile.rep_shift = tile.shift = 0;
 	    tile.id = id;
-	    TRY_RECT {
+	    do {
 	        code = clist_change_bits(cdev, pcls, &tile, depth);
-	    } HANDLE_RECT_UNLESS(code,
-	        (code != gs_error_VMerror || !cdev->error_is_retryable) );
+	    } while (RECT_RECOVER(code));
+	    /* HANDLE_RECT_UNLESS(code, (code != gs_error_VMerror || !cdev->error_is_retryable) ); */
+	    if (code < 0 && !(code != gs_error_VMerror || !cdev->error_is_retryable) && SET_BAND_CODE(code))
+		goto error_in_rect;
 	    if (code < 0) {
 	        /* Something went wrong; just copy the bits. */
 	        goto copy;
@@ -162,7 +176,7 @@ clist_fill_mask(gx_device * dev,
 	    rect.x = orig_x, rect.y = y0;
 	    rect.width = orig_width, rect.height = yend - y0;
 	    rsize = 1 + cmd_sizexy(rect);
-	    TRY_RECT {
+	    do {
 	        code = (orig_data_x ?
 	      		cmd_put_set_data_x(cdev, pcls, orig_data_x) : 0);
 		if (code >= 0) {
@@ -182,7 +196,10 @@ clist_fill_mask(gx_device * dev,
 		        cmd_putxy(rect, dp);
 		    }
 		}
-	    } HANDLE_RECT_UNLESS(code, 0);
+	    } while (RECT_RECOVER(code));
+	    /* HANDLE_RECT_UNLESS(code, 0); */
+	    if (code < 0 && SET_BAND_CODE(code))
+		goto error_in_rect;
 	    pcls->rect = rect;
 	    goto end;
 	}
@@ -656,7 +673,7 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 	    byte image_op = cmd_opv_begin_image;
 
 	    /* Make sure the imager state is up to date. */
-	    TRY_RECT {
+	    do {
 	        code = (pie->color_map_is_known ? 0 :
 			cmd_put_color_mapping(cdev, pie->pis));
 		pie->color_map_is_known = true;
@@ -673,11 +690,17 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 		    code = cmd_do_enable_clip(cdev, pcls, pie->pcpath != NULL);
 		if (code >= 0)
 		    code = cmd_update_lop(cdev, pcls, lop);
-	    } HANDLE_RECT_UNLESS(code, 0);
+	    } while (RECT_RECOVER(code));
+	    /* HANDLE_RECT_UNLESS(code, 0); */
+	    if (code < 0 && SET_BAND_CODE(code))
+		goto error_in_rect;
 	    if (pie->uses_color) {
- 	        TRY_RECT {
+ 	        do {
 		    code = cmd_put_drawing_color(cdev, pcls, &pie->dcolor);
-		} HANDLE_RECT_UNLESS(code, 0);
+		} while (RECT_RECOVER(code));
+		/* HANDLE_RECT_UNLESS(code, 0); */
+		if (code < 0 && SET_BAND_CODE(code))
+		    goto error_in_rect;
 	    }
 	    if (entire_box.p.x != 0 || entire_box.p.y != 0 ||
 		entire_box.q.x != pie->image.Width ||
@@ -689,10 +712,13 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 			  pie->image.Height - entire_box.q.y, bp);
  	        }
 	    len = bp - pie->begin_image_command;
-	    TRY_RECT {
+	    do {
 		code =
 		    set_cmd_put_op(dp, cdev, pcls, image_op, 1 + len);
-	    } HANDLE_RECT_UNLESS(code, 0);
+	    } while (RECT_RECOVER(code));
+	    /* HANDLE_RECT_UNLESS(code, 0); */
+	    if (code < 0 && SET_BAND_CODE(code))
+		goto error_in_rect;
 	    memcpy(dp + 1, pie->begin_image_command, len);
  
 	    /* Mark band's begin_image as known */
@@ -743,18 +769,21 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 	    }
 	    for (iy = by0, ih = by1 - by0; ih > 0; iy += nrows, ih -= nrows) {
 		nrows = min(ih, rows_per_cmd);
-		TRY_RECT {
+		do {
 		    code = cmd_image_plane_data(cdev, pcls, planes, info,
 						bytes_per_plane, offsets,
 						xoff - xskip, nrows);
-		} HANDLE_RECT_UNLESS(code, 0);
+		} while (RECT_RECOVER(code));
+		/* HANDLE_RECT_UNLESS(code, 0); */
+		if (code < 0 && SET_BAND_CODE(code))
+		    goto error_in_rect;
 		for (i = 0; i < num_planes; ++i)
 		    offsets[i] += planes[i].raster * nrows;
 	    }
 	}
     } END_RECTS_ON_ERROR(
 	code = clist_image_plane_data_retry_cleanup(dev, pie, yh_used, code),
-	(code < 0 ? (band_code = code) : code) >= 0,
+	(code < 0 ? SET_BAND_CODE(code) : code) >= 0,
 	(cmd_clear_known(cdev,
 			 clist_image_unknowns(dev, pie) | begin_image_known),
 	 pie->color_map_is_known = false,
@@ -1438,10 +1467,13 @@ write_image_end_all(gx_device *dev, const clist_image_enum *pie)
 
 	if (!(pcls->known & begin_image_known))
 	    continue;
-	TRY_RECT {
+	do {
 	    if_debug1('L', "[L]image_end for band %d\n", band);
 	    code = set_cmd_put_op(dp, cdev, pcls, cmd_opv_image_data, 2);
-	} HANDLE_RECT_UNLESS(code, 0);
+	} while (RECT_RECOVER(code));
+	/* HANDLE_RECT_UNLESS(code, 0); */
+	if (code < 0 && SET_BAND_CODE(code))
+	    goto error_in_rect;
 	dp[1] = 0;	    /* EOD */
 	pcls->known ^= begin_image_known;
     } END_RECTS;

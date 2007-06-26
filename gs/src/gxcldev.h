@@ -576,17 +576,10 @@ int cmd_update_lop(gx_device_clist_writer *, gx_clist_state *,
 	    height = min(band_end, yend) - y;\
 retry_rect:\
 	    ;
-#define TRY_RECT\
-		    do
-#define HANDLE_RECT_UNLESS(codevar, unless_clause)\
-		    while (codevar < 0 &&\
-			   (codevar = clist_VMerror_recover(cdev, codevar)) >= 0\
-			   );\
-		    if (codevar < 0 && !(unless_clause))\
-			BEGIN\
-			    band_code = (codevar);\
-			    goto error_in_rect;\
-			END;
+
+#define RECT_RECOVER(codevar) (codevar < 0 && (codevar = clist_VMerror_recover(cdev, codevar)) >= 0)
+#define SET_BAND_CODE(codevar) (band_code = codevar)
+
 #define END_RECTS_ON_ERROR(retry_cleanup, is_error, after_recovering)\
 	    continue;\
 error_in_rect:\
@@ -594,8 +587,7 @@ error_in_rect:\
 		    retry_cleanup;\
 		    if ((is_error) &&\
 			cdev->driver_call_nesting == 0 &&\
-			(band_code =\
-			 clist_VMerror_recover_flush(cdev, band_code)) >= 0 &&\
+			SET_BAND_CODE(clist_VMerror_recover_flush(cdev, band_code)) >= 0 &&\
 			(after_recovering)\
 			)\
 			goto retry_rect;\

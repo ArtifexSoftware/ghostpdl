@@ -148,7 +148,7 @@ clist_fill_rectangle(gx_device * dev, int x, int y, int width, int height,
     FOR_RECTS {
 	pcls->colors_used.or |= color;
 	pcls->band_complexity.uses_color |= ((color != 0xffffff) && (color != 0)); 
-	TRY_RECT {
+	do {
 	    code = cmd_disable_lop(cdev, pcls);
 	    if (code >= 0 && color != pcls->colors[1])
 		code = cmd_put_color(cdev, pcls, &clist_select_color1,
@@ -156,7 +156,10 @@ clist_fill_rectangle(gx_device * dev, int x, int y, int width, int height,
 	    if (code >= 0)
 		code = cmd_write_rect_cmd(cdev, pcls, cmd_op_fill_rect, x, y,
 					  width, height);
-	} HANDLE_RECT_UNLESS(code, 0);
+	} while (RECT_RECOVER(code));
+	/* HANDLE_RECT_UNLESS(code, 0); */
+	if (code < 0 && SET_BAND_CODE(code))
+	    goto error_in_rect;
     } END_RECTS;
     return 0;
 }
@@ -190,16 +193,21 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
 	    ((color0 != gx_no_color_index) && (color0 != 0xffffff) && (color0 != 0)) ||
 	    ((color1 != gx_no_color_index) && (color1 != 0xffffff) && (color1 != 0));
 
-	TRY_RECT {
+	do {
 	    code = cmd_disable_lop(cdev, pcls);
-	} HANDLE_RECT_UNLESS(code, 0);
+	} while (RECT_RECOVER(code));
+	/* HANDLE_RECT_UNLESS(code, 0); */
+	if (code < 0 && SET_BAND_CODE(code))
+	    goto error_in_rect;
 	if (!cls_has_tile_id(cdev, pcls, tile->id, offset_temp)) {
 	    code = 0;
 	    if (tile->id != gx_no_bitmap_id) {
-		TRY_RECT {
+		do {
 		    code = clist_change_tile(cdev, pcls, tile, depth);
-		} HANDLE_RECT_UNLESS(code,
-		    (code != gs_error_VMerror || !cdev->error_is_retryable));
+		} while (RECT_RECOVER(code));
+		/* HANDLE_RECT_UNLESS(code, (code != gs_error_VMerror || !cdev->error_is_retryable)); */
+		if (code < 0 && !(code != gs_error_VMerror || !cdev->error_is_retryable) && SET_BAND_CODE(code))
+		    goto error_in_rect;
 	    }
 	    if (code < 0) {
 		/* ok if gx_default... does retries internally: */
@@ -208,14 +216,12 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
 						       x, y, width, height,
 						       color0, color1,
 						       px, py);
-		if (code < 0) {
-		    band_code = code;
-		    goto error_in_rect; /* ERROR_RECT(code); */
-		}
+		if (code < 0 && SET_BAND_CODE(code))
+		    goto error_in_rect;
 		goto endr;
 	    }
 	}
-	TRY_RECT {
+	do {
 	    code = 0;
 	    if (color0 != pcls->tile_colors[0] || color1 != pcls->tile_colors[1])
 		code = cmd_set_tile_colors(cdev, pcls, color0, color1);
@@ -226,7 +232,10 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
 	    if (code >= 0)
 		code = cmd_write_rect_cmd(cdev, pcls, cmd_op_tile_rect, x, y,
 					  width, height);
-	} HANDLE_RECT_UNLESS(code, 0);
+	} while (RECT_RECOVER(code));
+	/* HANDLE_RECT_UNLESS(code, 0); */
+	if (code < 0 && SET_BAND_CODE(code))
+	    goto error_in_rect;
 endr:;
     } END_RECTS;
     return 0;
@@ -263,7 +272,7 @@ clist_copy_mono(gx_device * dev,
 	pcls->colors_used.or |= colors_used;
 	pcls->band_complexity.uses_color |= uses_color;
 
-	TRY_RECT {
+	do {
 	    code = cmd_disable_lop(cdev, pcls);
 	    if (code >= 0)
 		code = cmd_disable_clip(cdev, pcls);
@@ -271,7 +280,10 @@ clist_copy_mono(gx_device * dev,
 		code = cmd_set_color0(cdev, pcls, color0);
 	    if (color1 != pcls->colors[1] && code >= 0)
 		code = cmd_set_color1(cdev, pcls, color1);
-	} HANDLE_RECT_UNLESS(code, 0);
+	} while (RECT_RECOVER(code));
+	/* HANDLE_RECT_UNLESS(code, 0); */
+	if (code < 0 && SET_BAND_CODE(code))
+	    goto error_in_rect;
 	/* Don't bother to check for a possible cache hit: */
 	/* tile_rectangle and fill_mask handle those cases. */
 copy:{
@@ -286,13 +298,16 @@ copy:{
 	rect.x = x, rect.y = y;
 	rect.width = w1, rect.height = height;
 	rsize = (dx ? 3 : 1) + cmd_size_rect(&rect);
-	TRY_RECT {
+	do {
 	    code = cmd_put_bits(cdev, pcls, row, w1, height, raster,
 				rsize, (orig_id == gx_no_bitmap_id ?
 					1 << cmd_compress_rle :
 					cmd_mask_compress_any),
 				&dp, &csize);
-	} HANDLE_RECT_UNLESS(code, code == gs_error_limitcheck);
+	} while (RECT_RECOVER(code));
+	/* HANDLE_RECT_UNLESS(code, code == gs_error_limitcheck); */
+	if (code < 0 && !(code == gs_error_limitcheck) && SET_BAND_CODE(code))
+	    goto error_in_rect;
 	compress = (uint)code;
 	if (code < 0) {
 	    /* The bitmap was too large; split up the transfer. */
@@ -319,10 +334,8 @@ copy:{
 					       w1 - w2, 1, color0, color1);
 		} 
 		--cdev->driver_call_nesting; /* UNNEST_RECT */
-		if (code < 0) {
-		    band_code = code;
-		    goto error_in_rect; /* ERROR_RECT(code); */
-		}
+		if (code < 0 && SET_BAND_CODE(code))
+		    goto error_in_rect;
 		continue;
 	    }
 	}
@@ -367,18 +380,24 @@ clist_copy_color(gx_device * dev,
 	pcls->colors_used.or |= colors_used;
 	pcls->band_complexity.uses_color = 1;
 
-	TRY_RECT {
+	do {
 	    code = cmd_disable_lop(cdev, pcls);
 	    if (code >= 0)
 		code = cmd_disable_clip(cdev, pcls);
-	} HANDLE_RECT_UNLESS(code, 0);
+	} while (RECT_RECOVER(code));
+	/* HANDLE_RECT_UNLESS(code, 0); */
+	if (code < 0 && SET_BAND_CODE(code))
+	    goto error_in_rect;
 	if (pcls->color_is_alpha) {
 	    byte *dp;
 
-	    TRY_RECT {
+	    do {
 		code =
 		    set_cmd_put_op(dp, cdev, pcls, cmd_opv_set_copy_color, 1);
-	    } HANDLE_RECT_UNLESS(code, 0);
+	    } while (RECT_RECOVER(code));
+	    /* HANDLE_RECT_UNLESS(code, 0); */
+	    if (code < 0 && SET_BAND_CODE(code))
+		goto error_in_rect;
 	    pcls->color_is_alpha = 0;
 	}
 copy:{
@@ -392,11 +411,14 @@ copy:{
 	    rect.x = x, rect.y = y;
 	    rect.width = w1, rect.height = height;
 	    rsize = (dx ? 3 : 1) + cmd_size_rect(&rect);
-	    TRY_RECT {
+	    do {
 		code = cmd_put_bits(cdev, pcls, row, w1 * depth,
 				    height, raster, rsize,
 				    1 << cmd_compress_rle, &dp, &csize);
-	    } HANDLE_RECT_UNLESS(code, code == gs_error_limitcheck);
+	    } while (RECT_RECOVER(code));
+	    /* HANDLE_RECT_UNLESS(code, code == gs_error_limitcheck); */
+	    if (code < 0 && !(code == gs_error_limitcheck) && SET_BAND_CODE(code))
+		goto error_in_rect;
 	    compress = (uint)code;
 	    if (code < 0) {
 		/* The bitmap was too large; split up the transfer. */
@@ -421,10 +443,8 @@ copy:{
 						    x + w2, y, w1 - w2, 1);
 		    } 
 		    --cdev->driver_call_nesting; /* UNNEST_RECT */
-		    if (code < 0) {
-			band_code = code;
-			goto error_in_rect; /* ERROR_RECT(code); */
-		    }
+		    if (code < 0 && SET_BAND_CODE(code))
+			goto error_in_rect;
 		    continue;
 		}
 	    }
@@ -473,24 +493,33 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	int code;
 
 	pcls->colors_used.or |= color;
-	TRY_RECT {
+	do {
 	    code = cmd_disable_lop(cdev, pcls);
 	    if (code >= 0)
 		code = cmd_disable_clip(cdev, pcls);
-	} HANDLE_RECT_UNLESS(code, 0);
+	} while (RECT_RECOVER(code));
+	/* HANDLE_RECT_UNLESS(code, 0); */
+	if (code < 0 && SET_BAND_CODE(code))
+	    goto error_in_rect;
 	if (!pcls->color_is_alpha) {
 	    byte *dp;
 
-	    TRY_RECT {
+	    do {
 		code =
 		    set_cmd_put_op(dp, cdev, pcls, cmd_opv_set_copy_alpha, 1);
-	    } HANDLE_RECT_UNLESS(code, 0);
+	    } while (RECT_RECOVER(code));
+	    /* HANDLE_RECT_UNLESS(code, 0); */
+	    if (code < 0 && SET_BAND_CODE(code))
+		goto error_in_rect;
 	    pcls->color_is_alpha = 1;
 	}
 	if (color != pcls->colors[1]) {
-	    TRY_RECT {
+	    do {
 		code = cmd_set_color1(cdev, pcls, color);
-	    } HANDLE_RECT_UNLESS(code, 0);
+	    } while (RECT_RECOVER(code));
+	    /* HANDLE_RECT_UNLESS(code, 0); */
+	    if (code < 0 && SET_BAND_CODE(code))
+		goto error_in_rect;
 	}
 copy:{
 	    gx_cmd_rect rect;
@@ -503,11 +532,14 @@ copy:{
 	    rect.x = x, rect.y = y;
 	    rect.width = w1, rect.height = height;
 	    rsize = (dx ? 4 : 2) + cmd_size_rect(&rect);
-	    TRY_RECT {
+	    do {
 		code = cmd_put_bits(cdev, pcls, row, w1 << log2_depth,
 				    height, raster, rsize,
 				    1 << cmd_compress_rle, &dp, &csize);
-	    } HANDLE_RECT_UNLESS(code, code == gs_error_limitcheck);
+	    } while (RECT_RECOVER(code));
+	    /* HANDLE_RECT_UNLESS(code, code == gs_error_limitcheck); */
+	    if (code < 0 && !(code == gs_error_limitcheck) && SET_BAND_CODE(code))
+		goto error_in_rect;
 	    compress = (uint)code;
 	    if (code < 0) {
 		/* The bitmap was too large; split up the transfer. */
@@ -533,10 +565,8 @@ copy:{
 						    color, depth);
 		    } 
 		    --cdev->driver_call_nesting; /* UNNEST_RECT */
-		    if (code < 0) {
-			band_code = code;
-			goto error_in_rect; /* ERROR_RECT(code); */
-		    }
+		    if (code < 0 && SET_BAND_CODE(code))
+			goto error_in_rect;
 		    continue;
 		}
 	    }
@@ -636,11 +666,14 @@ clist_strip_copy_rop(gx_device * dev,
 			tile_with_id.id = gs_next_ids(dev->memory, 1);
 			tiles = &tile_with_id;
 		    }
-		    TRY_RECT {
+		    do {
 			code = clist_change_tile(cdev, pcls, tiles,
 						 (tcolors != 0 ? 1 :
 						  dev->color_info.depth));
-		    } HANDLE_RECT_UNLESS(code, code == gs_error_limitcheck);
+		    } while (RECT_RECOVER(code));
+		    /* HANDLE_RECT_UNLESS(code, code == gs_error_limitcheck); */
+		    if (code < 0 && !(code == gs_error_limitcheck) && SET_BAND_CODE(code))
+			goto error_in_rect;
 		    if (code < 0) {
 			/*
 			 * The error is a limitcheck: we have a tile that
@@ -689,40 +722,46 @@ clist_strip_copy_rop(gx_device * dev,
 					phase_x, pcls->tile_phase.y, lop);
 			    } 
 			    --cdev->driver_call_nesting; /* UNNEST_RECT */
-			    if (code < 0) {
-				band_code = code;
-				goto error_in_rect; /* ERROR_RECT(code); */
-			    }
+			    if (code < 0 && SET_BAND_CODE(code))
+				goto error_in_rect;
 			}
 			continue;
 		    }
 		    if (phase_x != pcls->tile_phase.x ||
 			phase_y != pcls->tile_phase.y
 			) {
-			TRY_RECT {
+			do {
 			    code = cmd_set_tile_phase(cdev, pcls, phase_x,
 						      phase_y);
-			} HANDLE_RECT_UNLESS(code, 0);
+			} while (RECT_RECOVER(code));
+			/* HANDLE_RECT_UNLESS(code, 0); */
+			if (code < 0 && SET_BAND_CODE(code))
+			    goto error_in_rect;
 		    }
 		}
 	    }
 	    /* Set the tile colors. */
-	    TRY_RECT {
+	    do {
 		code =
 		    (tcolors != 0 ?
 		     cmd_set_tile_colors(cdev, pcls, tcolors[0], tcolors[1]) :
 		     cmd_set_tile_colors(cdev, pcls, gx_no_color_index,
 					 gx_no_color_index));
-	    } HANDLE_RECT_UNLESS(code, 0);
+	    } while (RECT_RECOVER(code));
+	    /* HANDLE_RECT_UNLESS(code, 0); */
+	    if (code < 0 && SET_BAND_CODE(code))
+		goto error_in_rect;
 	}
-	TRY_RECT {
+	do {
 	    code = 0;
 	    if (lop != pcls->lop)
 		code = cmd_set_lop(cdev, pcls, lop);
 	    if (code >= 0)
 		code = cmd_enable_lop(cdev, pcls);
-	} HANDLE_RECT_UNLESS(code, 0);
-
+	} while (RECT_RECOVER(code));
+	/* HANDLE_RECT_UNLESS(code, 0); */
+	if (code < 0 && SET_BAND_CODE(code))
+	    goto error_in_rect;
 	/* Set lop_enabled to -1 so that fill_rectangle / copy_* */
 	/* won't attempt to set it to 0. */
 	pcls->lop_enabled = -1;
@@ -742,10 +781,8 @@ clist_strip_copy_rop(gx_device * dev,
 	} 
 	--cdev->driver_call_nesting; /* UNNEST_RECT */
 	pcls->lop_enabled = 1;
-	if (code < 0) {
-	    band_code = code;
-	    goto error_in_rect; /* ERROR_RECT(code); */
-	}
+	if (code < 0 && SET_BAND_CODE(code))
+	    goto error_in_rect;
     } END_RECTS;
     return 0;
 }
