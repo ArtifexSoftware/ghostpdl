@@ -102,32 +102,34 @@ clist_fill_mask(gx_device * dev,
     if (cmd_check_clip_path(cdev, pcpath))
 	cmd_clear_known(cdev, clip_path_known);
     data_x_bit = data_x << log2_depth;
+    if (cdev->permanent_error < 0)
+      return (cdev->permanent_error);
     FOR_RECTS {
 	int code;
         ulong offset_temp;
 
 	TRY_RECT {
 	    code = cmd_update_lop(cdev, pcls, lop);
-	} HANDLE_RECT(code);
+	} HANDLE_RECT_UNLESS(code, 0);
 	if (depth > 1 && !pcls->color_is_alpha) {
 	    byte *dp;
 
 	    TRY_RECT {
 		code =
 		    set_cmd_put_op(dp, cdev, pcls, cmd_opv_set_copy_alpha, 1);
-	    } HANDLE_RECT(code);
+	    } HANDLE_RECT_UNLESS(code, 0);
 	    pcls->color_is_alpha = 1;
 	}
 	TRY_RECT {
 	    code = cmd_do_write_unknown(cdev, pcls, clip_path_known);
 	    if (code >= 0)
 		code = cmd_do_enable_clip(cdev, pcls, pcpath != NULL);
-	} HANDLE_RECT(code);
+	} HANDLE_RECT_UNLESS(code, 0);
 	TRY_RECT {
 	    code = cmd_put_drawing_color(cdev, pcls, pdcolor);
 	    if (depth > 1 && code >= 0)
 		code = cmd_set_color1(cdev, pcls, pdcolor->colors.pure);
-	} HANDLE_RECT(code);
+	} HANDLE_RECT_UNLESS(code, 0);
 	pcls->colors_used.slow_rop |= slow_rop;
 	pcls->band_complexity.nontrivial_rops |= slow_rop;
 	pcls->band_complexity.uses_color |= (pdcolor->colors.pure != 0 && pdcolor->colors.pure != 0xffffff);
@@ -180,7 +182,7 @@ clist_fill_mask(gx_device * dev,
 		        cmd_putxy(rect, dp);
 		    }
 		}
-	    } HANDLE_RECT(code);
+	    } HANDLE_RECT_UNLESS(code, 0);
 	    pcls->rect = rect;
 	    goto end;
 	}
@@ -520,6 +522,26 @@ use_default:
 					pdcolor, pcpath, mem, pinfo);
 }
 
+/* Error cleanup for clist_image_plane_data. */
+private inline int
+clist_image_plane_data_retry_cleanup(gx_device *dev, clist_image_enum *pie, int yh_used, int code)
+{
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
+
+    ++cdev->ignore_lo_mem_warnings;
+    ++cdev->driver_call_nesting; /* NEST_RECT */ 
+    {
+	code = write_image_end_all(dev, pie);
+    } 
+    --cdev->driver_call_nesting; /* UNNEST_RECT */
+    --cdev->ignore_lo_mem_warnings;
+    /* Update sub-rect */
+    if (!pie->image.Interpolate)
+        pie->rect.p.y += yh_used;  /* interpolate & mem recovery currently incompat */
+    return code;
+}
+
 /* Process the next piece of an image. */
 private int
 clist_image_plane_data(gx_image_enum_common_t * info,
@@ -593,6 +615,8 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 	height = min(ROUND_UP(ry1, band_height), dev->height) - y;
     }
 
+    if (cdev->permanent_error < 0)
+      return (cdev->permanent_error);
     FOR_RECTS {
 	/*
 	 * Just transmit the subset of the data that intersects this band.
@@ -649,11 +673,11 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 		    code = cmd_do_enable_clip(cdev, pcls, pie->pcpath != NULL);
 		if (code >= 0)
 		    code = cmd_update_lop(cdev, pcls, lop);
-	    } HANDLE_RECT(code);
+	    } HANDLE_RECT_UNLESS(code, 0);
 	    if (pie->uses_color) {
  	        TRY_RECT {
 		    code = cmd_put_drawing_color(cdev, pcls, &pie->dcolor);
-		} HANDLE_RECT(code);
+		} HANDLE_RECT_UNLESS(code, 0);
 	    }
 	    if (entire_box.p.x != 0 || entire_box.p.y != 0 ||
 		entire_box.q.x != pie->image.Width ||
@@ -668,7 +692,7 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 	    TRY_RECT {
 		code =
 		    set_cmd_put_op(dp, cdev, pcls, image_op, 1 + len);
-	    } HANDLE_RECT(code);
+	    } HANDLE_RECT_UNLESS(code, 0);
 	    memcpy(dp + 1, pie->begin_image_command, len);
  
 	    /* Mark band's begin_image as known */
@@ -723,22 +747,13 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 		    code = cmd_image_plane_data(cdev, pcls, planes, info,
 						bytes_per_plane, offsets,
 						xoff - xskip, nrows);
-		} HANDLE_RECT(code);
+		} HANDLE_RECT_UNLESS(code, 0);
 		for (i = 0; i < num_planes; ++i)
 		    offsets[i] += planes[i].raster * nrows;
 	    }
 	}
     } END_RECTS_ON_ERROR(
-	BEGIN
-	    ++cdev->ignore_lo_mem_warnings;
-	    NEST_RECT {
-		code = write_image_end_all(dev, pie);
-	    } UNNEST_RECT;
-	    --cdev->ignore_lo_mem_warnings;
-	    /* Update sub-rect */
-	    if (!pie->image.Interpolate)
-	        pie->rect.p.y += yh_used;  /* interpolate & mem recovery currently incompat */
-	END,
+	code = clist_image_plane_data_retry_cleanup(dev, pie, yh_used, code),
 	(code < 0 ? (band_code = code) : code) >= 0,
 	(cmd_clear_known(cdev,
 			 clist_image_unknowns(dev, pie) | begin_image_known),
@@ -767,7 +782,8 @@ clist_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 	return_error(gs_error_Fatal);
     }
 #endif
-    NEST_RECT {
+    ++cdev->driver_call_nesting; /* NEST_RECT */ 
+    {
 	do {
 	    code = write_image_end_all(dev, pie);
 	} while (code < 0 && cdev->error_is_retryable &&
@@ -782,7 +798,8 @@ clist_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 	    if (retry_code >= 0 && cdev->driver_call_nesting == 0)
 		code = clist_VMerror_recover_flush(cdev, code);
 	}
-    } UNNEST_RECT;
+    } 
+    --cdev->driver_call_nesting; /* UNNEST_RECT */
     cdev->image_enum_id = gs_no_id;
     gs_free_object(pie->memory, pie, "clist_image_end_image");
     return code;
@@ -1414,6 +1431,8 @@ write_image_end_all(gx_device *dev, const clist_image_enum *pie)
      */
     if (height <= 0)
 	return 0;
+    if (cdev->permanent_error < 0)
+      return (cdev->permanent_error);
     FOR_RECTS {
 	byte *dp;
 
@@ -1422,7 +1441,7 @@ write_image_end_all(gx_device *dev, const clist_image_enum *pie)
 	TRY_RECT {
 	    if_debug1('L', "[L]image_end for band %d\n", band);
 	    code = set_cmd_put_op(dp, cdev, pcls, cmd_opv_image_data, 2);
-	} HANDLE_RECT(code);
+	} HANDLE_RECT_UNLESS(code, 0);
 	dp[1] = 0;	    /* EOD */
 	pcls->known ^= begin_image_known;
     } END_RECTS;

@@ -562,29 +562,12 @@ int cmd_update_lop(gx_device_clist_writer *, gx_clist_state *,
  * stupid compilers from giving "statement not reached" warnings.
  */
 
-#define FOR_RECTS_NO_ERROR\
-    BEGIN\
-	int yend = y + height;\
-	int band_height = cdev->page_band_height;\
-	/* no band_code */\
-\
-	if (cdev->permanent_error < 0)\
-	  return (cdev->permanent_error);\
-	do {\
-	    int band = y / band_height;\
-	    gx_clist_state *pcls = cdev->states + band;\
-	    int band_end = (band + 1) * band_height;\
-\
-	    height = min(band_end, yend) - y;\
-/* no retry_rect: */
 #define FOR_RECTS\
     BEGIN\
 	int yend = y + height;\
 	int band_height = cdev->page_band_height;\
 	int band_code;\
 \
-	if (cdev->permanent_error < 0)\
-	  return (cdev->permanent_error);\
 	do {\
 	    int band = y / band_height;\
 	    gx_clist_state *pcls = cdev->states + band;\
@@ -593,25 +576,17 @@ int cmd_update_lop(gx_device_clist_writer *, gx_clist_state *,
 	    height = min(band_end, yend) - y;\
 retry_rect:\
 	    ;
-#define NEST_RECT    ++cdev->driver_call_nesting;
-#define UNNEST_RECT  --cdev->driver_call_nesting
-#define ERROR_RECT(code_value)\
-		BEGIN\
-		    band_code = (code_value);\
-		    if (1) goto error_in_rect;\
-		END
 #define TRY_RECT\
-		BEGIN\
 		    do
 #define HANDLE_RECT_UNLESS(codevar, unless_clause)\
 		    while (codevar < 0 &&\
 			   (codevar = clist_VMerror_recover(cdev, codevar)) >= 0\
 			   );\
 		    if (codevar < 0 && !(unless_clause))\
-			ERROR_RECT(codevar);\
-		END
-#define HANDLE_RECT(codevar)\
-		HANDLE_RECT_UNLESS(codevar, 0)
+			BEGIN\
+			    band_code = (codevar);\
+			    goto error_in_rect;\
+			END;
 #define END_RECTS_ON_ERROR(retry_cleanup, is_error, after_recovering)\
 	    continue;\
 error_in_rect:\
@@ -625,13 +600,10 @@ error_in_rect:\
 			)\
 			goto retry_rect;\
 		}\
-		if (1) return band_code;\
+		return band_code;\
 	} while ((y += height) < yend);\
     END
 #define END_RECTS END_RECTS_ON_ERROR(DO_NOTHING, 1, 1)
-#define END_RECTS_NO_ERROR\
-	} while ((y += height) < yend);\
-    END
 
 /* ------ Exported by gxclrect.c ------ */
 

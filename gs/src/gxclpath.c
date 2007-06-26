@@ -602,7 +602,9 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 			 &unknown);
     if (unknown)
 	cmd_clear_known(cdev, unknown);
-    FOR_RECTS_NO_ERROR {
+    if (cdev->permanent_error < 0)
+      return (cdev->permanent_error);
+    FOR_RECTS {
 	int code = cmd_do_write_unknown(cdev, pcls, FILL_KNOWN);
 
 	if (code < 0)
@@ -625,7 +627,7 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 			    true, sn_none /* fill doesn't need the notes */ );
 	if (code < 0)
 	    return code;
-    } END_RECTS_NO_ERROR;
+    } END_RECTS;
     return 0;
 }
 
@@ -733,7 +735,9 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     }
     if (unknown)
 	cmd_clear_known(cdev, unknown);
-    FOR_RECTS_NO_ERROR {
+    if (cdev->permanent_error < 0)
+      return (cdev->permanent_error);
+    FOR_RECTS {
 	int code;
 
 	if ((code = cmd_do_write_unknown(cdev, pcls, stroke_all_known)) < 0 ||
@@ -771,7 +775,7 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	    if (code < 0)
 		return code;
 	}
-    } END_RECTS_NO_ERROR;
+    } END_RECTS;
     return 0;
 }
 
@@ -812,7 +816,9 @@ clist_put_polyfill(gx_device *dev, fixed px, fixed py,
 	return 0;
     y0 = y;
     y1 = y + height;
-    FOR_RECTS_NO_ERROR {
+    if (cdev->permanent_error < 0)
+      return (cdev->permanent_error);
+    FOR_RECTS {
 	if ((code = cmd_update_lop(cdev, pcls, lop)) < 0 ||
 	    (code = cmd_put_drawing_color(cdev, pcls, pdcolor)) < 0)
 	    goto out;
@@ -824,7 +830,7 @@ clist_put_polyfill(gx_device *dev, fixed px, fixed py,
 			    true, sn_none /* fill doesn't need the notes */ );
 	if (code < 0)
 	    goto out;
-    } END_RECTS_NO_ERROR;
+    } END_RECTS;
 out:
     gx_path_free(&path, "clist_put_polyfill");
     return code;

@@ -143,6 +143,8 @@ clist_fill_rectangle(gx_device * dev, int x, int y, int width, int height,
     int code;
 
     fit_fill(dev, x, y, width, height);
+    if (cdev->permanent_error < 0)
+      return (cdev->permanent_error);
     FOR_RECTS {
 	pcls->colors_used.or |= color;
 	pcls->band_complexity.uses_color |= ((color != 0xffffff) && (color != 0)); 
@@ -154,7 +156,7 @@ clist_fill_rectangle(gx_device * dev, int x, int y, int width, int height,
 	    if (code >= 0)
 		code = cmd_write_rect_cmd(cdev, pcls, cmd_op_fill_rect, x, y,
 					  width, height);
-	} HANDLE_RECT(code);
+	} HANDLE_RECT_UNLESS(code, 0);
     } END_RECTS;
     return 0;
 }
@@ -178,6 +180,8 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
     int code;
 
     fit_fill(dev, x, y, width, height);
+    if (cdev->permanent_error < 0)
+      return (cdev->permanent_error);
     FOR_RECTS {
 	ulong offset_temp;
 
@@ -188,7 +192,7 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
 
 	TRY_RECT {
 	    code = cmd_disable_lop(cdev, pcls);
-	} HANDLE_RECT(code);
+	} HANDLE_RECT_UNLESS(code, 0);
 	if (!cls_has_tile_id(cdev, pcls, tile->id, offset_temp)) {
 	    code = 0;
 	    if (tile->id != gx_no_bitmap_id) {
@@ -204,8 +208,10 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
 						       x, y, width, height,
 						       color0, color1,
 						       px, py);
-		if (code < 0)
-		    ERROR_RECT(code);
+		if (code < 0) {
+		    band_code = code;
+		    goto error_in_rect; /* ERROR_RECT(code); */
+		}
 		goto endr;
 	    }
 	}
@@ -220,7 +226,7 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
 	    if (code >= 0)
 		code = cmd_write_rect_cmd(cdev, pcls, cmd_op_tile_rect, x, y,
 					  width, height);
-	} HANDLE_RECT(code);
+	} HANDLE_RECT_UNLESS(code, 0);
 endr:;
     } END_RECTS;
     return 0;
@@ -246,6 +252,8 @@ clist_copy_mono(gx_device * dev,
 
     fit_copy(dev, data, data_x, raster, id, x, y, width, height);
     y0 = y;
+    if (cdev->permanent_error < 0)
+      return (cdev->permanent_error);
     FOR_RECTS {
 	int dx = data_x & 7;
 	int w1 = dx + width;
@@ -263,7 +271,7 @@ clist_copy_mono(gx_device * dev,
 		code = cmd_set_color0(cdev, pcls, color0);
 	    if (color1 != pcls->colors[1] && code >= 0)
 		code = cmd_set_color1(cdev, pcls, color1);
-	} HANDLE_RECT(code);
+	} HANDLE_RECT_UNLESS(code, 0);
 	/* Don't bother to check for a possible cache hit: */
 	/* tile_rectangle and fill_mask handle those cases. */
 copy:{
@@ -299,7 +307,8 @@ copy:{
 		/* Split a single (very long) row. */
 		int w2 = w1 >> 1;
 
-		NEST_RECT {
+		++cdev->driver_call_nesting; /* NEST_RECT */ 
+		{
 		    code = clist_copy_mono(dev, row, dx,
 					   raster, gx_no_bitmap_id, x, y,
 					   w2, 1, color0, color1);
@@ -308,9 +317,12 @@ copy:{
 					       raster, gx_no_bitmap_id,
 					       x + w2, y,
 					       w1 - w2, 1, color0, color1);
-		} UNNEST_RECT;
-		if (code < 0)
-		    ERROR_RECT(code);
+		} 
+		--cdev->driver_call_nesting; /* UNNEST_RECT */
+		if (code < 0) {
+		    band_code = code;
+		    goto error_in_rect; /* ERROR_RECT(code); */
+		}
 		continue;
 	    }
 	}
@@ -344,6 +356,8 @@ clist_copy_color(gx_device * dev,
     fit_copy(dev, data, data_x, raster, id, x, y, width, height);
     y0 = y;
     data_x_bit = data_x * depth;
+    if (cdev->permanent_error < 0)
+      return (cdev->permanent_error);
     FOR_RECTS {
 	int dx = (data_x_bit & 7) / depth;
 	int w1 = dx + width;
@@ -357,14 +371,14 @@ clist_copy_color(gx_device * dev,
 	    code = cmd_disable_lop(cdev, pcls);
 	    if (code >= 0)
 		code = cmd_disable_clip(cdev, pcls);
-	} HANDLE_RECT(code);
+	} HANDLE_RECT_UNLESS(code, 0);
 	if (pcls->color_is_alpha) {
 	    byte *dp;
 
 	    TRY_RECT {
 		code =
 		    set_cmd_put_op(dp, cdev, pcls, cmd_opv_set_copy_color, 1);
-	    } HANDLE_RECT(code);
+	    } HANDLE_RECT_UNLESS(code, 0);
 	    pcls->color_is_alpha = 0;
 	}
 copy:{
@@ -396,7 +410,8 @@ copy:{
 		    /* Split a single (very long) row. */
 		    int w2 = w1 >> 1;
 
-		    NEST_RECT {
+		    ++cdev->driver_call_nesting; /* NEST_RECT */ 
+		    {
 			code = clist_copy_color(dev, row, dx,
 						raster, gx_no_bitmap_id,
 						x, y, w2, 1);
@@ -404,9 +419,12 @@ copy:{
 			    code = clist_copy_color(dev, row, dx + w2,
 						    raster, gx_no_bitmap_id,
 						    x + w2, y, w1 - w2, 1);
-		    } UNNEST_RECT;
-		    if (code < 0)
-			ERROR_RECT(code);
+		    } 
+		    --cdev->driver_call_nesting; /* UNNEST_RECT */
+		    if (code < 0) {
+			band_code = code;
+			goto error_in_rect; /* ERROR_RECT(code); */
+		    }
 		    continue;
 		}
 	    }
@@ -446,6 +464,8 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
     fit_copy(dev, data, data_x, raster, id, x, y, width, height);
     y0 = y;
     data_x_bit = data_x << log2_depth;
+    if (cdev->permanent_error < 0)
+      return (cdev->permanent_error);
     FOR_RECTS {
 	int dx = (data_x_bit & 7) >> log2_depth;
 	int w1 = dx + width;
@@ -457,20 +477,20 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	    code = cmd_disable_lop(cdev, pcls);
 	    if (code >= 0)
 		code = cmd_disable_clip(cdev, pcls);
-	} HANDLE_RECT(code);
+	} HANDLE_RECT_UNLESS(code, 0);
 	if (!pcls->color_is_alpha) {
 	    byte *dp;
 
 	    TRY_RECT {
 		code =
 		    set_cmd_put_op(dp, cdev, pcls, cmd_opv_set_copy_alpha, 1);
-	    } HANDLE_RECT(code);
+	    } HANDLE_RECT_UNLESS(code, 0);
 	    pcls->color_is_alpha = 1;
 	}
 	if (color != pcls->colors[1]) {
 	    TRY_RECT {
 		code = cmd_set_color1(cdev, pcls, color);
-	    } HANDLE_RECT(code);
+	    } HANDLE_RECT_UNLESS(code, 0);
 	}
 copy:{
 	    gx_cmd_rect rect;
@@ -501,7 +521,8 @@ copy:{
 		    /* Split a single (very long) row. */
 		    int w2 = w1 >> 1;
 
-		    NEST_RECT {
+		    ++cdev->driver_call_nesting; /* NEST_RECT */ 
+		    {
 			code = clist_copy_alpha(dev, row, dx,
 						raster, gx_no_bitmap_id, x, y,
 						w2, 1, color, depth);
@@ -510,9 +531,12 @@ copy:{
 						    raster, gx_no_bitmap_id,
 						    x + w2, y, w1 - w2, 1,
 						    color, depth);
-		    } UNNEST_RECT;
-		    if (code < 0)
-			ERROR_RECT(code);
+		    } 
+		    --cdev->driver_call_nesting; /* UNNEST_RECT */
+		    if (code < 0) {
+			band_code = code;
+			goto error_in_rect; /* ERROR_RECT(code); */
+		    }
 		    continue;
 		}
 	    }
@@ -588,6 +612,8 @@ clist_strip_copy_rop(gx_device * dev,
      * We shouldn't need to put the logic below inside FOR/END_RECTS,
      * but the lop_enabled flags are per-band.
      */
+    if (cdev->permanent_error < 0)
+      return (cdev->permanent_error);
     FOR_RECTS {
 	const byte *row = sdata + (y - y0) * sraster;
 	gx_color_index D = pcls->colors_used.or;
@@ -652,7 +678,8 @@ clist_strip_copy_rop(gx_device * dev,
 			     * we may as well use the current tile phase
 			     * so we don't have to write extra commands.
 			     */
-			    NEST_RECT {
+			    ++cdev->driver_call_nesting; /* NEST_RECT */ 
+			    {
 				code = clist_strip_copy_rop(dev,
 					(sdata == 0 ? 0 : row + iy * sraster),
 					sourcex, sraster,
@@ -660,9 +687,12 @@ clist_strip_copy_rop(gx_device * dev,
 					&line_tile, tcolors,
 					x, y + iy, width, 1,
 					phase_x, pcls->tile_phase.y, lop);
-			    } UNNEST_RECT;
-			    if (code < 0)
-				ERROR_RECT(code);
+			    } 
+			    --cdev->driver_call_nesting; /* UNNEST_RECT */
+			    if (code < 0) {
+				band_code = code;
+				goto error_in_rect; /* ERROR_RECT(code); */
+			    }
 			}
 			continue;
 		    }
@@ -672,7 +702,7 @@ clist_strip_copy_rop(gx_device * dev,
 			TRY_RECT {
 			    code = cmd_set_tile_phase(cdev, pcls, phase_x,
 						      phase_y);
-			} HANDLE_RECT(code);
+			} HANDLE_RECT_UNLESS(code, 0);
 		    }
 		}
 	    }
@@ -683,7 +713,7 @@ clist_strip_copy_rop(gx_device * dev,
 		     cmd_set_tile_colors(cdev, pcls, tcolors[0], tcolors[1]) :
 		     cmd_set_tile_colors(cdev, pcls, gx_no_color_index,
 					 gx_no_color_index));
-	    } HANDLE_RECT(code);
+	    } HANDLE_RECT_UNLESS(code, 0);
 	}
 	TRY_RECT {
 	    code = 0;
@@ -691,12 +721,13 @@ clist_strip_copy_rop(gx_device * dev,
 		code = cmd_set_lop(cdev, pcls, lop);
 	    if (code >= 0)
 		code = cmd_enable_lop(cdev, pcls);
-	} HANDLE_RECT(code);
+	} HANDLE_RECT_UNLESS(code, 0);
 
 	/* Set lop_enabled to -1 so that fill_rectangle / copy_* */
 	/* won't attempt to set it to 0. */
 	pcls->lop_enabled = -1;
-	NEST_RECT {
+	++cdev->driver_call_nesting; /* NEST_RECT */ 
+	{
 	    if (scolors != 0) {
 		if (scolors[0] == scolors[1])
 		    code = clist_fill_rectangle(dev, x, y, width, height,
@@ -708,10 +739,13 @@ clist_strip_copy_rop(gx_device * dev,
 	    } else
 		code = clist_copy_color(dev, row, sourcex, sraster, id,
 					x, y, width, height);
-	} UNNEST_RECT;
+	} 
+	--cdev->driver_call_nesting; /* UNNEST_RECT */
 	pcls->lop_enabled = 1;
-	if (code < 0)
-	    ERROR_RECT(code);
+	if (code < 0) {
+	    band_code = code;
+	    goto error_in_rect; /* ERROR_RECT(code); */
+	}
     } END_RECTS;
     return 0;
 }
