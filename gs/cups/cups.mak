@@ -24,9 +24,9 @@
 
 cups_=	$(GLOBJ)gdevcups.$(OBJ)
 
-CUPSSERVER= $(install_prefix)`cups-config --serverbin`
-CUPSCONFIG= $(install_prefix)`cups-config --serverroot`
-CUPSDATA= $(install_prefix)`cups-config --datadir`
+CUPSSERVER= $(DESTDIR)`cups-config --serverbin`
+CUPSCONFIG= $(DESTDIR)`cups-config --serverroot`
+CUPSDATA= $(DESTDIR)`cups-config --datadir`
 
 $(DD)cups.dev:	$(cups_) $(GLD)page.dev
 	$(ADDMOD) $(DD)cups -lib cupsimage -lib cups

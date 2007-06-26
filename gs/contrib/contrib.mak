@@ -849,10 +849,10 @@ $(BINDIR)$(D)pcl3opts$(XE): $(pcl3opts_)
 # and the PPD files are not copied.
 pcl3-install:
 	for f in gs-pcl3 pcl3opts; do	\
-	  $(INSTALL_DATA) $(pcl3_root)doc$(D)$$f.1 $(install_prefix)$(man1dir)/$$f.$(man1ext) \
+	  $(INSTALL_DATA) $(pcl3_root)doc$(D)$$f.1 $(DESTDIR)$(man1dir)/$$f.$(man1ext) \
 	    || exit 1;	\
-	  $(INSTALL_DATA) $(pcl3_root)doc$(D)$$f.html $(install_prefix)$(docdir) || exit 1; done
-	$(INSTALL_PROGRAM) $(BINDIR)$(D)pcl3opts$(XE) $(install_prefix)$(bindir)
+	  $(INSTALL_DATA) $(pcl3_root)doc$(D)$$f.html $(DESTDIR)$(docdir) || exit 1; done
+	$(INSTALL_PROGRAM) $(BINDIR)$(D)pcl3opts$(XE) $(DESTDIR)$(bindir)
 
 
 ### ----------------- The Xerox XES printer device --------------------- ###
@@ -945,9 +945,9 @@ $(GLOBJ)dviprlib.$(OBJ): $(JAPSRC)dviprlib.c $(JAPSRC)dviprlib.h
 	$(GLCC) $(O_)$@ $(C_) $(JAPSRC)dviprlib.c
 
 extra-dmprt-install:
-	$(INSTALL_DATA) $(JAPSRC)dmp_init.ps $(install_prefix)$(gsdatadir)$(D)lib || exit 1
-	$(INSTALL_DATA) $(JAPSRC)dmp_site.ps $(install_prefix)$(gsdatadir)$(D)lib || exit 1
-	$(INSTALL_DATA) $(JAPSRC)escp_24.src $(install_prefix)$(gsdatadir)$(D)lib || exit 1
+	$(INSTALL_DATA) $(JAPSRC)dmp_init.ps $(DESTDIR)$(gsdatadir)$(D)lib || exit 1
+	$(INSTALL_DATA) $(JAPSRC)dmp_site.ps $(DESTDIR)$(gsdatadir)$(D)lib || exit 1
+	$(INSTALL_DATA) $(JAPSRC)escp_24.src $(DESTDIR)$(gsdatadir)$(D)lib || exit 1
 
 
 
@@ -1087,7 +1087,7 @@ $(GLOBJ)gdevalps.$(OBJ): $(JAPSRC)gdevalps.c $(PDEVH)
 
 extra-upp-install:
 	for f in $(CONTRIBSRC)uniprint$(D)*.upp; do \
-	    $(INSTALL_DATA) $$f $(install_prefix)$(gsdatadir)$(D)lib || exit 1; \
+	    $(INSTALL_DATA) $$f $(DESTDIR)$(gsdatadir)$(D)lib || exit 1; \
 	done
 
 ### ------------ Build/Install special features ------------ ###
