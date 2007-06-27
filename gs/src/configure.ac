@@ -857,6 +857,14 @@ AC_ARG_ENABLE(dynamic, [  --enable-dynamic        enable dynamically loaded driv
 		DYNAMIC_LIBS=""
 		X_DEVS=""
 		;;
+		SunOS)
+		DYNAMIC_CFLAGS="-KPIC"
+		DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
+		DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
+		DYNAMIC_LDFLAGS="-G"
+		DYNAMIC_LIBS=""
+		X_DEVS=""
+		;;
 		*)
 		AC_MSG_ERROR([Sorry, dynamic driver support not available on this platform!])
 		;;
