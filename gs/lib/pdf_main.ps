@@ -1464,8 +1464,8 @@ currentdict /PDF2PS_matrix_key undef
 
 % Define minimum PDF version for checking for transparency features.
 % Transparency is a 1.4 feature however we have seen files that claimed
-% to be PDF 1.3 with transparency features.
-/PDFtransparencyversion 1.3 def
+% to be PDF 1.2 with transparency features. Bug 689288.
+/PDFtransparencyversion 1.2 def
 
 % Determine whether a page might invoke any transparency features:
 %	- Non-default BM, ca, CA, or SMask in an ExtGState
