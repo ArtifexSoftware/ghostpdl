@@ -302,15 +302,18 @@ gx_ht_read_component_wts(gx_ht_order_component *pcomp,
     int hdr_size = wts_size(ws);
     int cell_size = ws->cell_width * ws->cell_height *
 	sizeof(wts_screen_sample_t);
+    int bufsize = 1+hdr_size+cell_size;
 
     memset(&pcomp->corder, 0, sizeof(pcomp->corder));
 
-    pcomp->corder.wts = gs_wts_from_buf(data);
+    if (size < bufsize)
+	return -1;
+    pcomp->corder.wts = gs_wts_from_buf(data, bufsize);
     pcomp->cname = 0;
     if (pcomp->corder.wts == NULL)
 	return -1;
 
-    return 1 + hdr_size + cell_size;
+    return bufsize;
 }
 
 /*

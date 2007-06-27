@@ -60,6 +60,6 @@ int
 wts_size(const wts_screen_t *ws);
 
 wts_screen_t *
-gs_wts_from_buf(const byte *buf);
+gs_wts_from_buf(const byte *buf, int bufsize);
 
 #endif

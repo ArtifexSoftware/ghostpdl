@@ -97,15 +97,15 @@ typedef struct cached_color_s {
 #if COLOR_CACHE_SIZE == 256
 #  define COLOR_TO_CACHE_INDEX(color) (((color + 0x000001) ^ (color >> 8) ^ (color >> 16)) & 0xff)
 #elif COLOR_CACHE_SIZE == 4096
-#  define COLOR_TO_CACHE_INDEX(color) (((color + 0x010101) ^ (color >> 12)) & 0xfff)
+#  define COLOR_TO_CACHE_INDEX(color) ((color ^ (color>>4) ^ (color>>8)) & 0xfff)
 #elif COLOR_CACHE_SIZE == 8192
-#  define COLOR_TO_CACHE_INDEX(color) (((color + 0x010101) ^ (((color << 24) | color) >> 11)) & 0x1fff)
+#  define COLOR_TO_CACHE_INDEX(color) (((color + 0x010204) ^ (((color << 24) | color) >> 11)) & 0x1fff)
 #elif COLOR_CACHE_SIZE == 16384
-#  define COLOR_TO_CACHE_INDEX(color) (((color + 0x010101) ^ (((color << 24) | color) >> 10)) & 0x3fff)
+#  define COLOR_TO_CACHE_INDEX(color) (((color + 0x010204) ^ (((color << 24) | color) >> 10)) & 0x3fff)
 #elif COLOR_CACHE_SIZE == 32768
-#  define COLOR_TO_CACHE_INDEX(color) (((color + 0x010101) ^ (((color << 24) | color) >> 9)) & 0x7fff)
+#  define COLOR_TO_CACHE_INDEX(color) (((color + 0x010204) ^ (((color << 24) | color) >> 9)) & 0x7fff)
 #elif COLOR_CACHE_SIZE == 65536
-#  define COLOR_TO_CACHE_INDEX(color) (((color + 0x010101) ^ (((color << 24) | color) >> 8)) & 0xffff)
+#  define COLOR_TO_CACHE_INDEX(color) (((color + 0x010204) ^ (((color << 24) | color) >> 8)) & 0xffff)
 #else
 #  define COLOR_TO_CACHE_INDEX(color) 0
 #endif
@@ -121,7 +121,9 @@ typedef struct gx_device_wtsimdi_s {
     imdi *mdo;
     cached_color *color_cache;
     cached_color current_color;
-    long color_cache_hit, color_cache_collision, color_is_current;
+#ifdef DEBUG
+    long color_cache_hit, color_cache_collision, cache_fill_empty, color_is_current;
+#endif
 } gx_device_wtsimdi;
 
 private const gx_device_procs wtsimdi_procs =
@@ -296,7 +298,7 @@ wts_load_halftone(gs_memory_t *mem, wts_cooked_halftone *wch, const char *fn)
     }
     fread(buf, 1, size, f);
     fclose(f);
-    wts = gs_wts_from_buf(buf);
+    wts = gs_wts_from_buf(buf, size);
     gs_free(mem, buf, size, 1, "wts_load_halftone");
     wch->wts = wts;
     width_padded = wts->cell_width + 7;
@@ -375,7 +377,10 @@ wtscmyk_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	/* allocate 1 more for sytems that return NULL if requested count is 0 */
     idev->color_cache = (cached_color *)gs_malloc(idev->memory, COLOR_CACHE_SIZE + 1,
 				sizeof(cached_color), "wtscmyk_print_page(color_cache)");
-    idev->color_cache_hit = idev->color_cache_collision = idev->color_is_current = 0;
+#ifdef DEBUG
+    idev->color_cache_hit = idev->color_cache_collision =
+	idev->color_is_current = idev->cache_fill_empty = 0;
+#endif
     for (i=0; i<COLOR_CACHE_SIZE; i++)		/* clear cache to empty */
 	idev->color_cache[i].color_index = gx_no_color_index;
     pbm_bytes = (pdev->width + 7) >> 3;
@@ -418,11 +423,15 @@ wtscmyk_print_page(gx_device_printer *pdev, FILE *prn_stream)
 		fwrite(dst + i * pbm_bytes, 1, pbm_bytes, ostream[i]);
     }
 out:
+#ifdef DEBUG
     for (i=0,unused_color_cache_slots=0; i<COLOR_CACHE_SIZE; i++)
 	if (idev->color_cache[i].color_index == gx_no_color_index)
 	    unused_color_cache_slots++;
-    dprintf4("wtscmyk_print_page: color cache stats: current=%ld, hits=%ld, collisions=%ld, unused_slots=%d\n",
-	idev->color_is_current, idev->color_cache_hit, idev->color_cache_collision, unused_color_cache_slots);
+    if_debug5(':',"wtscmyk_print_page color cache stats: current=%ld, hits=%ld,"
+	" collisions=%ld, fill=%ld, unused_slots=%d\n",
+	idev->color_is_current, idev->color_cache_hit, idev->color_cache_collision,
+	idev->cache_fill_empty, unused_color_cache_slots);
+#endif
     /* Clean up... */
     gs_free(pdev->memory, cmyk_line, cmyk_bytes, 1, "wtscmyk_print_page(in)");
     gs_free(pdev->memory, idev->color_cache, COLOR_CACHE_SIZE + 1, sizeof(cached_color),
@@ -558,7 +567,9 @@ wtsimdi_resolve_one(gx_device_wtsimdi *idev, gx_color_index color)
 
 	if (idev->color_cache[hash].color_index == color) {
 	    /* cache hit */
+#ifdef DEBUG
 	    idev->color_cache_hit++;
+#endif
 	    idev->current_color = idev->color_cache[hash];
 	} else {
 	    /* cache collision or empty, fill it */
@@ -569,7 +580,12 @@ wtsimdi_resolve_one(gx_device_wtsimdi *idev, gx_color_index color)
 	    double rgb[3];
 	    double cmyk[4];
 
-	    idev->color_cache_collision++;
+#ifdef DEBUG
+	    if (idev->color_cache[hash].color_index == gx_no_color_index)
+		idev->cache_fill_empty++;
+	    else
+		idev->color_cache_collision++;
+#endif
 	    rgb[0] = r / 255.0;
 	    rgb[1] = g / 255.0;
 	    rgb[2] = b / 255.0;
@@ -583,8 +599,11 @@ wtsimdi_resolve_one(gx_device_wtsimdi *idev, gx_color_index color)
 	    idev->current_color.cmyk[3] = cmyk[3] * 255 + 0.5;
 	    idev->color_cache[hash] = idev->current_color;
 	}
-    } else
+    }
+#ifdef DEBUG
+    else
 	idev->color_is_current++;
+#endif
     return 0;
 }
 
@@ -1074,7 +1093,10 @@ wtsimdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	/* allocate 1 more for sytems that return NULL if requested count is 0 */
     idev->color_cache = (cached_color *)gs_malloc(idev->memory, COLOR_CACHE_SIZE + 1,
 				sizeof(cached_color), "wtscmyk_print_page(color_cache)");
-    idev->color_cache_hit = idev->color_cache_collision = idev->color_is_current = 0;
+#ifdef DEBUG
+    idev->color_cache_hit = idev->color_cache_collision =
+	idev->color_is_current = idev->cache_fill_empty = 0;
+#endif
     for (i=0; i<COLOR_CACHE_SIZE; i++)		/* clear cache to empty */
 	idev->color_cache[i].color_index = gx_no_color_index;
 
@@ -1099,11 +1121,15 @@ wtsimdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 #endif
     }
 cleanup:
+#ifdef DEBUG
     for (i=0,unused_color_cache_slots=0; i<COLOR_CACHE_SIZE; i++)
 	if (idev->color_cache[i].color_index == gx_no_color_index)
 	    unused_color_cache_slots++;
-    dprintf4("wtsimdi_print_page: color cache stats: current=%ld, hits=%ld, collisions=%ld, unused_slots=%d\n",
-	idev->color_is_current, idev->color_cache_hit, idev->color_cache_collision, unused_color_cache_slots);
+    if_debug5(':',"wtsimdi_print_page color cache stats: current=%ld, hits=%ld,"
+	" collisions=%ld, fill=%ld, unused_slots=%d\n",
+	idev->color_is_current, idev->color_cache_hit, idev->color_cache_collision,
+	idev->cache_fill_empty, unused_color_cache_slots);
+#endif
     gs_free(pdev->memory, idev->color_cache, COLOR_CACHE_SIZE, sizeof(cached_color),
 	    "wtscmyk_print_page(color_cache)");
     if (halftoned_buffer != NULL)

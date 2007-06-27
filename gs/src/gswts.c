@@ -1440,21 +1440,32 @@ wts_size(const wts_screen_t *ws)
 }
 
 wts_screen_t *
-gs_wts_from_buf(const byte *buf)
+gs_wts_from_buf(const byte *buf, int bufsize)
 {
     const wts_screen_t *ws = (const wts_screen_t *)buf;
     wts_screen_t *result;
     int size = wts_size(ws);
+    int hdr_size;
     int cell_size; /* size of cell in bytes */
 
     result = (wts_screen_t *)malloc(size);
     if (result == NULL)
 	return NULL;
-    memcpy(result, ws, size);
+    
+#ifdef WTS_SCREEN_J_SIZE_NOCACHE	/* ??? isn't this always defined ??? */
+    if (ws->type == WTS_SCREEN_J) {
+	hdr_size = WTS_SCREEN_J_SIZE_NOCACHE;
+	memcpy(result, ws, hdr_size);
+    } else
+#endif
+    {
+	hdr_size = sizeof(wts_screen_t);
+        memcpy(result, ws, hdr_size);
+    }
     cell_size = ws->cell_width * ws->cell_height * sizeof(wts_screen_sample_t);
 
-    result->samples = (wts_screen_sample_t *)malloc(cell_size);
-    if (result->samples == NULL) {
+    if (bufsize < (cell_size + hdr_size) ||
+	(result->samples = (wts_screen_sample_t *)malloc(cell_size)) == NULL) {
 	free(result);
 	return NULL;
     }
@@ -1467,10 +1478,9 @@ gs_wts_from_buf(const byte *buf)
 	    wsj->xcache[i].tag = -1;
 	for (i = 0; i < WTS_CACHE_SIZE_Y; i++)
 	    wsj->ycache[i].tag = -1;
-	size = WTS_SCREEN_J_SIZE_NOCACHE;
     }
 #endif
-    memcpy(result->samples, buf + size, cell_size);
+    memcpy(result->samples, buf + hdr_size, cell_size);
 
     return result;
 }
