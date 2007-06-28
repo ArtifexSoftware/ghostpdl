@@ -174,6 +174,7 @@ dnl pkg-config is used for several tests now...
 AC_PATH_PROG(PKGCONFIG, pkg-config)
 
 dnl Fontconfig support
+HAVE_FONTCONFIG=""
 FONTCONFIG_LIBS=""
 AC_ARG_ENABLE(fontconfig, [  --disable-fontconfig    Don't use fontconfig to list system fonts])
 if test "$enable_fontconfig" != "no"; then
@@ -188,12 +189,13 @@ if test "$enable_fontconfig" != "no"; then
 			AC_MSG_RESULT(yes)
 			CFLAGS="$CFLAGS `$PKGCONFIG --cflags fontconfig`"
 			FONTCONFIG_LIBS="`$PKGCONFIG --libs fontconfig`"
-			AC_DEFINE_UNQUOTED(HAVE_FONTCONFIG, 1)
+			HAVE_FONTCONFIG=-DHAVE_FONTCONFIG
 		else
 			AC_MSG_RESULT(no)
 		fi
 	fi
 fi
+AC_SUBST(HAVE_FONTCONFIG)
 AC_SUBST(FONTCONFIG_LIBS)
 
 dnl --------------------------------------------------
