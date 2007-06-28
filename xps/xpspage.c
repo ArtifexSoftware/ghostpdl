@@ -164,6 +164,12 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	    return gs_rethrow(code, "cannot clear page");
     }
 
+#ifdef PDF14_PAGE
+    code = gs_push_pdf14trans_device(ctx->pgs);
+    if (code < 0)
+	return gs_rethrow(code, "cannot install transparency device");
+#endif
+    
     /* Draw contents */
 
     for (node = xps_down(root); node; node = xps_next(node))
@@ -183,6 +189,12 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	if (!strcmp(xps_tag(node), "Canvas"))
 	    xps_parse_canvas(ctx, dict, node);
     }
+
+#ifdef PDF14_PAGE
+    code = gs_pop_pdf14trans_device(ctx->pgs);
+    if (code < 0)
+	return gs_rethrow(code, "cannot remove transparency device");
+#endif
 
     /* Flush page */
     {

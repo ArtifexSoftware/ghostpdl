@@ -22,6 +22,8 @@
 #include "gscolor3.h"
 #include "gsutil.h"
 
+#include "gstrans.h"
+
 #include "gxpath.h"     /* gsshade.h depends on it */
 #include "gxfixed.h"    /* gsshade.h depends on it */
 #include "gxmatrix.h"	/* gxtype1.h depends on it */
@@ -49,6 +51,9 @@
 #undef dpf
 #define dpf
 #endif
+
+#define noPDF14_JOB
+#define PDF14_PAGE
 
 /*
  * Forward declarations.
@@ -294,6 +299,8 @@ void xps_parse_render_transform(xps_context_t *ctx, char *text, gs_matrix *matri
 void xps_parse_color(xps_context_t *ctx, char *hexstring, float *argb);
 void xps_parse_rectangle(xps_context_t *ctx, char *text, gs_rect *rect);
 int xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom);
+int xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root);
+
 
 /*
  * Static XML resources.

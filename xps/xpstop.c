@@ -200,13 +200,6 @@ xps_imp_get_device_memory(pl_interp_instance_t *pinstance, gs_memory_t **ppmem)
     return 0;
 }
 
-/* Prepare interp instance for the next "job" */
-private int
-xps_imp_init_job(pl_interp_instance_t *pinstance)
-{
-    return 0;
-}
-
 /* Parse a cursor-full of data */
 private int
 xps_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *pcursor)
@@ -245,16 +238,36 @@ xps_imp_report_errors(pl_interp_instance_t *pinstance,
     return 0;
 }
 
+/* Prepare interp instance for the next "job" */
+private int
+xps_imp_init_job(pl_interp_instance_t *pinstance)
+{
+    xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
+    xps_context_t *ctx = instance->ctx;
+    int code;
+
+#ifdef PDF14_JOB
+    code = gs_push_pdf14trans_device(ctx->pgs);
+    if (code < 0)
+	return gs_rethrow(code, "cannot install transparency device");
+#endif
+
+    return 0;
+}
+
 /* Wrap up interp instance after a "job" */
 private int
 xps_imp_dnit_job(pl_interp_instance_t *pinstance)
 {
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
+    xps_context_t *ctx = instance->ctx;
+    int code;
 
-    (void)instance; // unused warning
-
-    // NB lets free some stuff.
-    // zip_end_job(pctx->pst, pctx->pctx, pctx->pzip);
+#ifdef PDF14_JOB
+    code = gs_pop_pdf14trans_device(ctx->pgs);
+    if (code < 0)
+	return gs_rethrow(code, "cannot remove transparency device");
+#endif
 
     return 0;
 }

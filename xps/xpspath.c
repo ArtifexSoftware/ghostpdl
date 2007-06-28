@@ -580,6 +580,7 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     gs_line_join linejoin;
     float linewidth;
     float miterlimit;
+    float opacity;
 
     gs_gsave(ctx->pgs);
 
@@ -635,6 +636,13 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     /*
      * Act on the information we have gathered:
      */
+
+    opacity = 1.0;
+    if (opacity_att)
+	opacity = atof(opacity_att);
+    gs_setopacityalpha(ctx->pgs, opacity);
+
+    gs_setopacityalpha(ctx->pgs, 0.5);
 
     if (fill_tag && !strcmp(xps_tag(fill_tag), "SolidColorBrush"))
     {
