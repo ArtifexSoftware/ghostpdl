@@ -573,6 +573,15 @@ clist_get_band_complexity(gx_device *dev, int y)
 	if (crdev->band_complexity_array == NULL)
 	    return NULL;
 
+        {
+            /* NB this is a temporary workaround until the band
+               complexity machinery can be removed entirely. */
+            gx_colors_used_t colors_used;
+            int range_ignored;
+            gdev_prn_colors_used(dev, y, 1, &colors_used, &range_ignored);
+            crdev->band_complexity_array[band_number].nontrivial_rops = (int)colors_used.slow_rop;
+            crdev->band_complexity_array[band_number].uses_color = (int)colors_used.or;
+        }
 	return &crdev->band_complexity_array[band_number];
     }
     return NULL;
