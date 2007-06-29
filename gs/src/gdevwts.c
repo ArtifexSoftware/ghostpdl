@@ -759,6 +759,17 @@ wtsimdi_copy_mono(gx_device * dev,
      * Check if this is a new color.  To minimize color conversion
      * time, we keep a couple of values cached in the wtsimdi device.
      */
+#define COPY_MONO_BLACK_IS_K 
+#define COPY_MONO_OPTIMIZATION
+
+#ifdef COPY_MONO_BLACK_IS_K 
+    if (one == 0) {
+	/* FIXME: This should rely on tag bits, but copy_mono black is (probably) only used for text */
+	idev->current_color.cmyk[0] =idev->current_color.cmyk[1] =  idev->current_color.cmyk[2] = 0;
+	idev->current_color.cmyk[3] = 0xff;	/* 100% K channel, 0% C, M, Y */
+	idev->current_color.color_index = 0;
+    } else
+#endif
     if ((code = wtsimdi_resolve_one(idev, one)) < 0)
 	return code;
 
@@ -768,40 +779,28 @@ wtsimdi_copy_mono(gx_device * dev,
         base = scan_line_base(mdev, y);
         for (plane_ix = 0; plane_ix < 4; plane_ix++) {
 	    int nfill = (end_x >> 3) - first_byte;
+	    int i;
+	    byte smask, save_left, save_right;
 
 	    width_padded = wch[plane_ix].width_padded;
 	    dst = base + first_byte + plane_ix * halftoned_bytes;
+	    save_left = dst[0];
+	    save_right = dst[nfill];
 	    comp_value = idev->current_color.cmyk[plane_ix];
-	    if (0 && comp_value == 0) {
-		/* TODO: these cases should be optimized, avoiding a screen */
-		if (nfill == 0) {
-		    dst[0] &= (0xff << (8 - (x & 7))) |
-			((1 << (7 - (end_x & 7))) - 1);
-		} else {
-		    int i;
-
-		    dst[0] &= (0xff << (8 - (x & 7)));
-		    for (i = 1; i < nfill; i++)
-			dst[i] = 0;
-		    dst[i] &= ((1 << (7 - (end_x & 7))) - 1);
+#ifdef  COPY_MONO_OPTIMIZATION
+	    if (comp_value == 0) {
+		for (i = 0; i < nfill + 1; i++) {
+		    if ((smask = (src[i] << 8 | src[i + 1]) >> sshift) != 0)
+			dst[i] = dst[i] & ~smask;
 		}
-	    } else if (0 && comp_value == 0xff) {
-		if (nfill == 0) {
-		    dst[0] |= ~((0xff << (8 - (x & 7))) |
-			((1 << (7 - (end_x & 7))) - 1));
-		} else {
-		    int i;
-
-		    dst[0] |= ~(0xff << (8 - (x & 7)));
-		    for (i = 1; i < nfill; i++)
-			dst[i] = 0xff;
-		    dst[i] |= ~((1 << (7 - (end_x & 7))) - 1);
+	    } else if (comp_value == 0xff) {
+		for (i = 0; i < nfill + 1; i++) {
+		    if ((smask = (src[i] << 8 | src[i + 1]) >> sshift) != 0)
+			dst[i] = smask | (dst[i] & ~smask) ;
 		}
-	    } else {
-		byte save_left = dst[0];
-		byte save_right = dst[nfill];
-		int i;
-
+	    } else
+#endif
+	    {
 		for (i = 0; i < nfill + 1;) {
 		    int n_samples;
 		    int cx, cy;
@@ -813,7 +812,7 @@ wtsimdi_copy_mono(gx_device * dev,
 
 		    imax = min((nfill + 1 - i) << 3, n_samples);
 		    for (j = 0; j < imax; j += 8) {
-			byte smask = (src[i] << 8 | src[i + 1]) >> sshift;
+			smask = (src[i] << 8 | src[i + 1]) >> sshift;
 			if (smask) {
 			    byte b;
 			    b = (((unsigned int)(((int)(samples[j + 0])) - comp_value) >> 24)) & 0x80;
@@ -828,12 +827,13 @@ wtsimdi_copy_mono(gx_device * dev,
 			}
 			i++;
 		    }
-		    dst[0] = (save_left & (0xff << (8 - (x & 7)))) |
-			(dst[0] & ~(0xff << (8 - (x & 7))));
-		    dst[nfill] = (save_right & ((1 << (7 - (end_x & 7))) - 1)) |
-			(dst[nfill] & ~((1 << (7 - (end_x & 7))) - 1));
 		}
 	    }
+	    /* Restore edge areas on left and right that may have been overwritten */
+	    dst[0] = (save_left & (0xff << (8 - (x & 7)))) |
+			(dst[0] & ~(0xff << (8 - (x & 7))));
+	    dst[nfill] = (save_right & ((1 << (7 - (end_x & 7))) - 1)) |
+			(dst[nfill] & ~((1 << (7 - (end_x & 7))) - 1));
         }
 	src += sraster;
     }
@@ -999,55 +999,57 @@ wtsimdi_create_buf_device(gx_device **pbdev, gx_device *target,
  * The input data is 1 bit per component CMYK.  The data is separated
  * into planes.
  */
+private void
 write_pkmraw_row(int width, byte * data, FILE * pstream)
 {
-#define noSKIP_OUTPUT
-#ifndef SKIP_OUTPUT
-    int x, bit;
-    int halftoned_bytes = (width + 7) >> 3;
-    byte * cdata = data;
-    byte * mdata = data + halftoned_bytes;
-    byte * ydata = mdata + halftoned_bytes;
-    byte * kdata = ydata + halftoned_bytes;
-    byte c = *cdata++;
-    byte m = *mdata++;
-    byte y = *ydata++;
-    byte k = *kdata++;
+    if (pstream == NULL)
+	return;
+    {
+	int x, bit;
+	int halftoned_bytes = (width + 7) >> 3;
+	byte * cdata = data;
+	byte * mdata = data + halftoned_bytes;
+	byte * ydata = mdata + halftoned_bytes;
+	byte * kdata = ydata + halftoned_bytes;
+	byte c = *cdata++;
+	byte m = *mdata++;
+	byte y = *ydata++;
+	byte k = *kdata++;
 
-    /*
-     * Contrary to what the documentation implies, gcc compiles putc
-     * as a procedure call.  This is ridiculous, but since we can't
-     * change it, we buffer groups of pixels ourselves and use fwrite.
-     */
-    for (bit = 7, x = 0; x < width;) {
-	byte raw[80 * 3];	/* 80 is arbitrary, must be a multiple of 8 */
-	int end = min(x + sizeof(raw) / 3, width);
-	byte *outp = raw;
+	/*
+	 * Contrary to what the documentation implies, gcc compiles putc
+	 * as a procedure call.  This is ridiculous, but since we can't
+	 * change it, we buffer groups of pixels ourselves and use fwrite.
+	 */
+	for (bit = 7, x = 0; x < width;) {
+	    byte raw[80 * 3];	/* 80 is arbitrary, must be a multiple of 8 */
+	    int end = min(x + sizeof(raw) / 3, width);
+	    byte *outp = raw;
 
-	for (; x < end; x++) {
+	    for (; x < end; x++) {
 
-	    if ((k >> bit) & 1) {
-		*outp++ = 0;	/* Set output color = black */
-		*outp++ = 0;
-		*outp++ = 0;
-	    } else {
-		*outp++ = 255 & (255 + ((c >> bit) & 1));
-		*outp++ = 255 & (255 + ((m >> bit) & 1));
-		*outp++ = 255 & (255 + ((y >> bit) & 1));
+		if ((k >> bit) & 1) {
+		    *outp++ = 0;	/* Set output color = black */
+		    *outp++ = 0;
+		    *outp++ = 0;
+		} else {
+		    *outp++ = 255 & (255 + ((c >> bit) & 1));
+		    *outp++ = 255 & (255 + ((m >> bit) & 1));
+		    *outp++ = 255 & (255 + ((y >> bit) & 1));
+		}
+		if (bit == 0) {
+		    c = *cdata++;
+		    m = *mdata++;
+		    y = *ydata++;
+		    k = *kdata++;
+		    bit = 7;
+		} else
+		    bit--;
 	    }
-	    if (bit == 0) {
-	        c = *cdata++;
-	        m = *mdata++;
-	        y = *ydata++;
-	        k = *kdata++;
-	        bit = 7;
-	    } else
-	        bit--;
+	    fwrite(raw, 1, outp - raw, pstream);
 	}
-	fwrite(raw, 1, outp - raw, pstream);
+	return;
     }
-#endif
-    return 0;
 }
 
 /*
@@ -1067,6 +1069,8 @@ wtsimdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
     int width = pdev->width;
     int height = pdev->height;
     dev_proc_get_bits((*save_get_bits)) = dev_proc(pdev, get_bits);
+    int output_is_nul = !strncmp(pdev->fname, "nul:", min(strlen(pdev->fname), 4)) ||
+	!strncmp(pdev->fname, "/dev/null", min(strlen(pdev->fname), 9));
 
     /*
      * The printer device setup changed the get_bits routine to
@@ -1101,11 +1105,13 @@ wtsimdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	idev->color_cache[i].color_index = gx_no_color_index;
 
     /* Initialize output file header. */
-    fprintf(prn_stream, "P6\n%d %d\n", width, height);
-    fprintf(prn_stream, "# Image generated by %s %d.%02d (device=wtsimdi)\n",
+    if (!output_is_nul) {
+	fprintf(prn_stream, "P6\n%d %d\n", width, height);
+	fprintf(prn_stream, "# Image generated by %s %d.%02d (device=wtsimdi)\n",
 	   	gs_program_name(), gs_revision_number() / 100,
 	   			gs_revision_number() % 100);
-    fprintf(prn_stream, "%d\n", 255);
+	fprintf(prn_stream, "%d\n", 255);
+    }
 
     /*
      * Get raster data and then write data to output file.
@@ -1116,9 +1122,8 @@ wtsimdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	 * the output data.  Print this data to the output file.
 	 */
 	gdev_prn_get_bits(pdev, y, halftoned_buffer, &halftoned_data);
-#if 1
-	write_pkmraw_row(width, halftoned_data, prn_stream);
-#endif
+	if (!output_is_nul)
+	    write_pkmraw_row(width, halftoned_data, prn_stream);
     }
 cleanup:
 #ifdef DEBUG
