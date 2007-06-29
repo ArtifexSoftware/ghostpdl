@@ -636,13 +636,16 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
-    FOR_RECTS(re, ry, rheight) {
+    RECT_ENUM_INIT(re, ry, rheight);
+    do {
+	gs_int_rect ibox;
+	gs_int_rect entire_box;
+
+	RECT_STEP_INIT(re);
 	/*
 	 * Just transmit the subset of the data that intersects this band.
 	 * Note that y and height always define a complete band.
 	 */
-	gs_int_rect ibox;
-	gs_int_rect entire_box;
 
 	if (!image_band_box(dev, pie, re.y, re.height, &ibox))
 	    continue;
@@ -783,14 +786,25 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 		    offsets[i] += planes[i].raster * nrows;
 	    }
 	}
-    } END_RECTS_ON_ERROR(
-	code = clist_image_plane_data_retry_cleanup(dev, pie, yh_used, code),
-	(code < 0 ? SET_BAND_CODE(code) : code) >= 0,
-	(cmd_clear_known(cdev,
-			 clist_image_unknowns(dev, pie) | begin_image_known),
-	 pie->color_map_is_known = false,
-	 cdev->image_enum_id = pie->id, true)
-	);
+    continue;
+error_in_rect:
+	if (cdev->error_is_retryable) {
+	    code = clist_image_plane_data_retry_cleanup(dev, pie, yh_used, code);
+	    if (code < 0)
+		SET_BAND_CODE(code);
+	    else if (cdev->driver_call_nesting == 0) {
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code));
+		if (re.band_code >= 0) {
+		    cmd_clear_known(cdev, clist_image_unknowns(dev, pie) | begin_image_known);
+		    pie->color_map_is_known = false;
+		    cdev->image_enum_id = pie->id;
+		    re.y -= re.height; /* Retry rect. */
+		    continue;
+		}
+	    }
+	}
+	return re.band_code;
+    } while ((re.y += re.height) < re.yend);
  done:
     *rows_used = pie->y - y_orig;
     return pie->y >= pie->rect.q.y;
