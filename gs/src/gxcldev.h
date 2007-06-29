@@ -557,28 +557,33 @@ int cmd_update_lop(gx_device_clist_writer *, gx_clist_state *,
  * permanent_error, which prevents writing to the command list.
  */
 
-/*
- * The "if (1)" statements in the following macros are there to prevent
- * stupid compilers from giving "statement not reached" warnings.
- */
+typedef struct cmd_rects_enum_s {
+	int y;
+	int height;
+	int yend;
+	int band_height;
+	int band_code;
+	int band;
+	gx_clist_state *pcls;
+	int band_end;
+} cmd_rects_enum_t;
 
-#define FOR_RECTS\
+#define FOR_RECTS(re, yvar, heightvar)\
     BEGIN\
-	int yend = y + height;\
-	int band_height = cdev->page_band_height;\
-	int band_code;\
-\
+	re.y = yvar;\
+	re.height = heightvar;\
+	re.yend = re.y + re.height;\
+	re.band_height = cdev->page_band_height;\
 	do {\
-	    int band = y / band_height;\
-	    gx_clist_state *pcls = cdev->states + band;\
-	    int band_end = (band + 1) * band_height;\
-\
-	    height = min(band_end, yend) - y;\
+	    re.band = re.y / re.band_height;\
+	    re.pcls = cdev->states + re.band;\
+	    re.band_end = (re.band + 1) * re.band_height;\
+	    re.height = min(re.band_end, re.yend) - re.y;\
 retry_rect:\
 	    ;
 
 #define RECT_RECOVER(codevar) (codevar < 0 && (codevar = clist_VMerror_recover(cdev, codevar)) >= 0)
-#define SET_BAND_CODE(codevar) (band_code = codevar)
+#define SET_BAND_CODE(codevar) (re.band_code = codevar)
 
 #define END_RECTS_ON_ERROR(retry_cleanup, is_error, after_recovering)\
 	    continue;\
@@ -587,13 +592,13 @@ error_in_rect:\
 		    retry_cleanup;\
 		    if ((is_error) &&\
 			cdev->driver_call_nesting == 0 &&\
-			SET_BAND_CODE(clist_VMerror_recover_flush(cdev, band_code)) >= 0 &&\
+			SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0 &&\
 			(after_recovering)\
 			)\
 			goto retry_rect;\
 		}\
-		return band_code;\
-	} while ((y += height) < yend);\
+		return re.band_code;\
+	} while ((re.y += re.height) < re.yend);\
     END
 #define END_RECTS END_RECTS_ON_ERROR(DO_NOTHING, 1, 1)
 
