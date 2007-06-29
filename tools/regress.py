@@ -24,6 +24,8 @@ class Conf:
     #self.exe = './bin/gs -q -I$HOME/fonts'
     self.exe = './main/obj/pcl6'
     self.test = 'comparefiles'
+    self.device = 'ppmraw'
+    self.dpi = 300
 
   def parse(self, args):
     '''Parse the command line for configuration switches
@@ -230,17 +232,17 @@ class md5Test(SelfTest):
   '''Test class for running a file and comparing the output to an
   expected value.'''
 
-  def __init__(self, file, md5sum, dpi=300):
+  def __init__(self, file, md5sum, dpi=600, device="ppmraw"):
     SelfTest.__init__(self)
     self.file = file
     self.md5sum = md5sum
     self.dpi = dpi
     self.exe = conf.exe
     self.opts = "-dQUIET -dNOPAUSE -dBATCH -K1000000"
-    self.opts += " -sDEVICE=ppmraw -r%d" % dpi
-    self.opts += " -dSAFER -dBATCH"
-    #self.psopts = '-dMaxBitmap=40000000 -dJOBSERVER ./lib/gs_cet.ps'
-    self.psopts = '-dMaxBitmap=30000000 -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f'
+    self.opts += " -sDEVICE=%s -r%d" % (device, dpi)
+    self.opts += " -Z@"
+    #self.psopts = '-dSAFER -dMaxBitmap=40000000 -dJOBSERVER ./lib/gs_cet.ps'
+    self.psopts = '-dSAFER -dMaxBitmap=30000000 -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f'
 
   def description(self):
     return 'Checking ' + self.file
@@ -337,8 +339,8 @@ def run_regression():
     db.load()
     for test in conf.tests:
       for file in glob(os.path.join(conf.testpath,test)):
-        suite.addTest(md5Test(file, db[file]))
-    if MPI.size > 1:
+        suite.addTest(md5Test(file, db[file], conf.dpi, conf.device))
+    if not conf.batch and MPI.size > 1:
       print 'running tests on %d nodes...' % MPI.size
   suite.run()
   if MPI.rank == 0:
