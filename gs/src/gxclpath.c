@@ -605,9 +605,12 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	cmd_clear_known(cdev, unknown);
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
-    FOR_RECTS(re, ry, rheight) {
-	int code = cmd_do_write_unknown(cdev, re.pcls, FILL_KNOWN);
-
+    RECT_ENUM_INIT(re, ry, rheight);
+    do {
+	int code;
+	RECT_STEP_INIT(re);
+retry_rect:
+	code = cmd_do_write_unknown(cdev, re.pcls, FILL_KNOWN);
 	if (code < 0)
 	    return code;
 	if ((code = cmd_do_enable_clip(cdev, re.pcls, pcpath != NULL)) < 0 ||
@@ -628,7 +631,13 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 			    true, sn_none /* fill doesn't need the notes */ );
 	if (code < 0)
 	    return code;
-    } END_RECTS;
+	continue;
+error_in_rect:
+	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
+	    goto retry_rect;
+	return re.band_code;
+    } while ((re.y += re.height) < re.yend);
     return 0;
 }
 
@@ -739,8 +748,11 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	cmd_clear_known(cdev, unknown);
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
-    FOR_RECTS(re, ry, rheight) {
+    RECT_ENUM_INIT(re, ry, rheight);
+    do {
 	int code;
+	RECT_STEP_INIT(re);
+retry_rect:
 
 	if ((code = cmd_do_write_unknown(cdev, re.pcls, stroke_all_known)) < 0 ||
 	    (code = cmd_do_enable_clip(cdev, re.pcls, pcpath != NULL)) < 0 ||
@@ -777,7 +789,13 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	    if (code < 0)
 		return code;
 	}
-    } END_RECTS;
+	continue;
+error_in_rect:
+	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
+	    goto retry_rect;
+	return re.band_code;
+    } while ((re.y += re.height) < re.yend);
     return 0;
 }
 
@@ -821,7 +839,10 @@ clist_put_polyfill(gx_device *dev, fixed px, fixed py,
     y1 = ry + rheight;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
-    FOR_RECTS(re, ry, rheight) {
+    RECT_ENUM_INIT(re, ry, rheight);
+    do {
+	RECT_STEP_INIT(re);
+retry_rect:
 	if ((code = cmd_update_lop(cdev, re.pcls, lop)) < 0 ||
 	    (code = cmd_put_drawing_color(cdev, re.pcls, pdcolor)) < 0)
 	    goto out;
@@ -833,7 +854,13 @@ clist_put_polyfill(gx_device *dev, fixed px, fixed py,
 			    true, sn_none /* fill doesn't need the notes */ );
 	if (code < 0)
 	    goto out;
-    } END_RECTS;
+	continue;
+error_in_rect:
+	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
+	    goto retry_rect;
+	return re.band_code;
+    } while ((re.y += re.height) < re.yend);
 out:
     gx_path_free(&path, "clist_put_polyfill");
     return code;

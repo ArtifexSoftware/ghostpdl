@@ -105,10 +105,13 @@ clist_fill_mask(gx_device * dev,
     data_x_bit = data_x << log2_depth;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
-    FOR_RECTS(re, ry, rheight) {
-		int code;
-        ulong offset_temp;
+    RECT_ENUM_INIT(re, ry, rheight);
+    do {
+	int code;
+	ulong offset_temp;
 
+	RECT_STEP_INIT(re);
+retry_rect:
 	do {
 	    code = cmd_update_lop(cdev, re.pcls, lop);
 	} while (RECT_RECOVER(code));
@@ -205,9 +208,14 @@ clist_fill_mask(gx_device * dev,
 	    goto end;
 	}
 end:
-	;
-    } END_RECTS;
-	return 0;
+	continue;
+error_in_rect:
+	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
+	    goto retry_rect;
+	return re.band_code;
+    } while ((re.y += re.height) < re.yend);
+    return 0;
 }
 
 /* ------ Bitmap image driver procedures ------ */
@@ -1479,9 +1487,12 @@ write_image_end_all(gx_device *dev, const clist_image_enum *pie)
 	return 0;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
-    FOR_RECTS(re, ry, rheight) {
+    RECT_ENUM_INIT(re, ry, rheight);
+    do {
 	byte *dp;
+	RECT_STEP_INIT(re);
 
+retry_rect:
 	if (!(re.pcls->known & begin_image_known))
 	    continue;
 	do {
@@ -1493,7 +1504,13 @@ write_image_end_all(gx_device *dev, const clist_image_enum *pie)
 	    goto error_in_rect;
 	dp[1] = 0;	    /* EOD */
 	re.pcls->known ^= begin_image_known;
-    } END_RECTS;
+	continue;
+error_in_rect:
+	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
+	    goto retry_rect;
+	return re.band_code;
+    } while ((re.y += re.height) < re.yend);
     return 0;
 }
 

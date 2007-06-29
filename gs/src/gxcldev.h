@@ -580,28 +580,9 @@ typedef struct cmd_rects_enum_s {
 	    re.band_end = (re.band + 1) * re.band_height;\
 	    re.height = min(re.band_end, re.yend) - re.y;
 
-#define FOR_RECTS(re, yvar, heightvar)\
-    BEGIN\
-	RECT_ENUM_INIT(re, yvar, heightvar);\
-	do {\
-	    RECT_STEP_INIT(re);\
-retry_rect:\
-	    ;
 
 #define RECT_RECOVER(codevar) (codevar < 0 && (codevar = clist_VMerror_recover(cdev, codevar)) >= 0)
 #define SET_BAND_CODE(codevar) (re.band_code = codevar)
-
-
-#define END_RECTS\
-	    continue;\
-error_in_rect:\
-		if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&\
-			SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)\
-		    goto retry_rect;\
-		return re.band_code;\
-	} while ((re.y += re.height) < re.yend);\
-    END
-
 
 /* ------ Exported by gxclrect.c ------ */
 

@@ -146,7 +146,10 @@ clist_fill_rectangle(gx_device * dev, int rx, int ry, int rwidth, int rheight,
     fit_fill(dev, rx, ry, rwidth, rheight);
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
-    FOR_RECTS(re, ry, rheight) {
+    RECT_ENUM_INIT(re, ry, rheight);
+    do {
+	RECT_STEP_INIT(re);
+retry_rect:
 	re.pcls->colors_used.or |= color;
 	re.pcls->band_complexity.uses_color |= ((color != 0xffffff) && (color != 0)); 
 	do {
@@ -161,7 +164,13 @@ clist_fill_rectangle(gx_device * dev, int rx, int ry, int rwidth, int rheight,
 	/* HANDLE_RECT_UNLESS(code, 0); */
 	if (code < 0 && SET_BAND_CODE(code))
 	    goto error_in_rect;
-    } END_RECTS;
+	continue;
+error_in_rect:
+	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
+	    goto retry_rect;
+	return re.band_code;
+    } while ((re.y += re.height) < re.yend);
     return 0;
 }
 
@@ -187,9 +196,12 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
     fit_fill(dev, rx, ry, rwidth, rheight);
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
-    FOR_RECTS(re, ry, rheight) {
+    RECT_ENUM_INIT(re, ry, rheight);
+    do {
 	ulong offset_temp;
 
+	RECT_STEP_INIT(re);
+retry_rect:
 	re.pcls->colors_used.or |= colors_used;	
 	re.pcls->band_complexity.uses_color |= 
 	    ((color0 != gx_no_color_index) && (color0 != 0xffffff) && (color0 != 0)) ||
@@ -239,7 +251,13 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
 	if (code < 0 && SET_BAND_CODE(code))
 	    goto error_in_rect;
 endr:;
-    } END_RECTS;
+	continue;
+error_in_rect:
+	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
+	    goto retry_rect;
+	return re.band_code;
+    } while ((re.y += re.height) < re.yend);
     return 0;
 }
 
@@ -266,15 +284,17 @@ clist_copy_mono(gx_device * dev,
     y0 = ry;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
-    FOR_RECTS(re, ry, rheight) {
+    RECT_ENUM_INIT(re, ry, rheight);
+    do {
 	int dx = data_x & 7;
 	int w1 = dx + rwidth;
 	const byte *row = data + (re.y - y0) * raster + (data_x >> 3);
 	int code;
 
+	RECT_STEP_INIT(re);
+retry_rect:
 	re.pcls->colors_used.or |= colors_used;
 	re.pcls->band_complexity.uses_color |= uses_color;
-
 	do {
 	    code = cmd_disable_lop(cdev, re.pcls);
 	    if (code >= 0)
@@ -352,7 +372,13 @@ copy:{
 	cmd_put2w(w1, re.height, dp);
 	re.pcls->rect = rect;
 	}
-    } END_RECTS;
+	continue;
+error_in_rect:
+	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
+	    goto retry_rect;
+	return re.band_code;
+    } while ((re.y += re.height) < re.yend);
     return 0;
 }
 
@@ -375,12 +401,15 @@ clist_copy_color(gx_device * dev,
     data_x_bit = data_x * depth;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
-    FOR_RECTS(re, ry, rheight) {
+    RECT_ENUM_INIT(re, ry, rheight);
+    do {
 	int dx = (data_x_bit & 7) / depth;
 	int w1 = dx + rwidth;
 	const byte *row = data + (re.y - y0) * raster + (data_x_bit >> 3);
 	int code;
 
+	RECT_STEP_INIT(re);
+retry_rect:
 	re.pcls->colors_used.or |= colors_used;
 	re.pcls->band_complexity.uses_color = 1;
 
@@ -462,7 +491,13 @@ copy:{
 	    cmd_put2w(w1, re.height, dp);
 	    re.pcls->rect = rect;
 	}
-    } END_RECTS;
+	continue;
+error_in_rect:
+	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
+	    goto retry_rect;
+	return re.band_code;
+    } while ((re.y += re.height) < re.yend);
     return 0;
 }
 
@@ -491,12 +526,15 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
     data_x_bit = data_x << log2_depth;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
-    FOR_RECTS(re, ry, rheight) {
+    RECT_ENUM_INIT(re, ry, rheight);
+    do {
 	int dx = (data_x_bit & 7) >> log2_depth;
 	int w1 = dx + rwidth;
 	const byte *row = data + (re.y - y0) * raster + (data_x_bit >> 3);
 	int code;
 
+	RECT_STEP_INIT(re);
+retry_rect:
 	re.pcls->colors_used.or |= color;
 	do {
 	    code = cmd_disable_lop(cdev, re.pcls);
@@ -586,7 +624,13 @@ copy:{
 	    cmd_put2w(w1, re.height, dp);
 	    re.pcls->rect = rect;
 	}
-    } END_RECTS;
+	continue;
+error_in_rect:
+	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
+	    goto retry_rect;
+	return re.band_code;
+    } while ((re.y += re.height) < re.yend);
     return 0;
 }
 
@@ -644,17 +688,17 @@ clist_strip_copy_rop(gx_device * dev,
                      rop == rop3_S || rop == rop3_T);
     }
     y0 = ry;
-    /*
-     * We shouldn't need to put the logic below inside FOR/END_RECTS,
-     * but the lop_enabled flags are per-band.
-     */
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
-    FOR_RECTS(re, ry, rheight) {
+    RECT_ENUM_INIT(re, ry, rheight);
+    do {
 	const byte *row = sdata + (re.y - y0) * sraster;
-	gx_color_index D = re.pcls->colors_used.or;
+	gx_color_index D;
 	int code;
 
+	RECT_STEP_INIT(re);
+	D = re.pcls->colors_used.or;
+retry_rect:
 	/* Reducing D, S, T to rop_operand (which apparently is 32 bit) appears safe
 	   due to 'all' a has smaller snumber of significant bits. */
 	re.pcls->colors_used.or =
@@ -789,6 +833,12 @@ clist_strip_copy_rop(gx_device * dev,
 	re.pcls->lop_enabled = 1;
 	if (code < 0 && SET_BAND_CODE(code))
 	    goto error_in_rect;
-    } END_RECTS;
+	continue;
+error_in_rect:
+	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
+	    goto retry_rect;
+	return re.band_code;
+    } while ((re.y += re.height) < re.yend);
     return 0;
 }
