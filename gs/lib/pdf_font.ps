@@ -1446,7 +1446,16 @@ currentdict /bndef undef
   } {
     dup dup /FontDescriptor knownoget {
                                           % font-res font-res font-desc
-      dup /FontObject .knownget {
+
+      dup /FontObject .knownget dup {     % font-res font-res font-desc font? bool bool
+        % Check that the cached FontObject has the right resource type
+        % The same font descriptor can be reused in a CID and non-CID contexts. bug 689301
+        3 index /Subtype knownoget not { /Type1 } if
+        dup /CIDFontType0 eq exch /CIDFontType2 eq or  % font-res font-res font-desc font bool is_cid
+        2 index /CIDFontType known xor {
+          pop pop //false                 % font-res font-res font-desc false 
+        } if
+      } if {
                                           % res res desc obj
           3 1 roll pop pop                % res obj
       } { 
