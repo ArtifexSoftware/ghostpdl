@@ -149,7 +149,6 @@ clist_fill_rectangle(gx_device * dev, int rx, int ry, int rwidth, int rheight,
     RECT_ENUM_INIT(re, ry, rheight);
     do {
 	RECT_STEP_INIT(re);
-retry_rect:
 	re.pcls->colors_used.or |= color;
 	re.pcls->band_complexity.uses_color |= ((color != 0xffffff) && (color != 0)); 
 	do {
@@ -164,13 +163,13 @@ retry_rect:
 	/* HANDLE_RECT_UNLESS(code, 0); */
 	if (code < 0 && SET_BAND_CODE(code))
 	    goto error_in_rect;
+	re.y += re.height;
 	continue;
 error_in_rect:
-	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
-		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
-	    goto retry_rect;
-	return re.band_code;
-    } while ((re.y += re.height) < re.yend);
+	if (!(cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0))
+	    return re.band_code;
+    } while (re.y < re.yend);
     return 0;
 }
 
@@ -201,7 +200,6 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
 	ulong offset_temp;
 
 	RECT_STEP_INIT(re);
-retry_rect:
 	re.pcls->colors_used.or |= colors_used;	
 	re.pcls->band_complexity.uses_color |= 
 	    ((color0 != gx_no_color_index) && (color0 != 0xffffff) && (color0 != 0)) ||
@@ -251,13 +249,13 @@ retry_rect:
 	if (code < 0 && SET_BAND_CODE(code))
 	    goto error_in_rect;
 endr:;
+	re.y += re.height;
 	continue;
 error_in_rect:
-	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
-		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
-	    goto retry_rect;
-	return re.band_code;
-    } while ((re.y += re.height) < re.yend);
+	if (!(cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0))
+	    return re.band_code;
+    } while (re.y < re.yend);
     return 0;
 }
 
@@ -292,7 +290,6 @@ clist_copy_mono(gx_device * dev,
 	int code;
 
 	RECT_STEP_INIT(re);
-retry_rect:
 	re.pcls->colors_used.or |= colors_used;
 	re.pcls->band_complexity.uses_color |= uses_color;
 	do {
@@ -374,10 +371,10 @@ copy:{
 	}
 	continue;
 error_in_rect:
-	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
-		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
-	    goto retry_rect;
-	return re.band_code;
+	if (!(cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0))
+	    return re.band_code;
+	re.y -= re.height;
     } while ((re.y += re.height) < re.yend);
     return 0;
 }
@@ -409,7 +406,6 @@ clist_copy_color(gx_device * dev,
 	int code;
 
 	RECT_STEP_INIT(re);
-retry_rect:
 	re.pcls->colors_used.or |= colors_used;
 	re.pcls->band_complexity.uses_color = 1;
 
@@ -493,10 +489,10 @@ copy:{
 	}
 	continue;
 error_in_rect:
-	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
-		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
-	    goto retry_rect;
-	return re.band_code;
+	if (!(cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0))
+	    return re.band_code;
+	re.y -= re.height;
     } while ((re.y += re.height) < re.yend);
     return 0;
 }
@@ -534,7 +530,6 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	int code;
 
 	RECT_STEP_INIT(re);
-retry_rect:
 	re.pcls->colors_used.or |= color;
 	do {
 	    code = cmd_disable_lop(cdev, re.pcls);
@@ -626,10 +621,10 @@ copy:{
 	}
 	continue;
 error_in_rect:
-	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
-		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
-	    goto retry_rect;
-	return re.band_code;
+	if (!(cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0))
+	    return re.band_code;
+	re.y -= re.height;
     } while ((re.y += re.height) < re.yend);
     return 0;
 }
@@ -698,7 +693,6 @@ clist_strip_copy_rop(gx_device * dev,
 
 	RECT_STEP_INIT(re);
 	D = re.pcls->colors_used.or;
-retry_rect:
 	/* Reducing D, S, T to rop_operand (which apparently is 32 bit) appears safe
 	   due to 'all' a has smaller snumber of significant bits. */
 	re.pcls->colors_used.or =
@@ -835,10 +829,10 @@ retry_rect:
 	    goto error_in_rect;
 	continue;
 error_in_rect:
-	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
-		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
-	    goto retry_rect;
-	return re.band_code;
+	if (!(cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0))
+	    return re.band_code;
+	re.y -= re.height;
     } while ((re.y += re.height) < re.yend);
     return 0;
 }

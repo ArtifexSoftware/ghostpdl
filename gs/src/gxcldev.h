@@ -505,39 +505,49 @@ int cmd_update_lop(gx_device_clist_writer *, gx_clist_state *,
 		   gs_logical_operation_t);
 
 /*
- * Define macros for dividing up an operation into bands, per the
- * template
-
-    FOR_RECTS[_NO_ERROR] {
-	... process rectangle x, y, width, height in band pcls ...
-    } END_RECTS[_NO_ERROR];
-
- * Note that FOR_RECTS resets y and height.  It is OK for the code that
+ * For dividing up an operation into bands, use the control pattern :
+ * 
+ *   cmd_rects_enum_t re;
+ *   RECT_ENUM_INIT(re, ry, rheight);
+ *   do {
+ *	RECT_STEP_INIT(re);
+ *	... process rectangle x, y, width, height in band pcls ...
+ *
+ *	........
+ *	continue;
+ * error_in_rect:
+ *	if (!(cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+ *		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0))
+ *	    return re.band_code;
+ *	re.y -= re.height;
+ *   } while ((re.y += re.height) < re.yend);
+ *
+ * Note that RECT_STEP_INIT(re) sets re.height.  It is OK for the code that
  * processes each band to reset height to a smaller (positive) value; the
  * vertical subdivision code in copy_mono, copy_color, and copy_alpha makes
  * use of this.  The band processing code may `continue' (to reduce nesting
  * of conditionals).
  *
- * If the processing code detects an error that may be a recoverable
- * VMerror, the code may call ERROR_RECT(), which will attempt to fix the
+ * The error_in_rect code detects an error that may be a recoverable
+ * VMerror, with calling clist_VMerror_recover_flush. It will attempt to fix the
  * VMerror by flushing and closing the band and resetting the imager state,
- * and then restart emitting the entire band. Before flushing the file, the
- * 'on_error' clause of END_RECTS_ON_ERROR (defaults to the constant 1 if
- * END_RECT is used) is evaluated and tested.  The 'on_error' clause enables
- * mop-up actions to be executed before flushing, and/or selectively
- * inhibits the flush, close, reset and restart process.  Similarly, the
- * 'after_recovering' clause of END_RECTS_ON_ERROR allows an action to get
- * performed after successfully recovering.
+ * and then restart emitting the entire band.
+ * Note that re.y must not change when restarting the band.
  *
- * The band processing code may wrap an operation with TRY_RECT { ...  }
- * HANDLE_RECT_UNLESS(code, unless_action) (or HANDLE_RECT(code)). This will
+ * The band processing code may wrap a writing operation with a pattern like this : 
+ *
+ * 	do {
+ *	    code = operation(...);
+ *	} while (RECT_RECOVER(code));
+ *	if (code < 0 && SET_BAND_CODE(code))
+ *	    goto error_in_rect;
+ *
+ *
+ * This will 
  * perform local first-stage VMerror recovery, by waiting for some memory to
  * become free and then retrying the failed operation starting at the
  * TRY_RECT. If local recovery is unsuccessful, the local recovery code
- * calls ERROR_RECT.
- *
- * The band processing loop should use the _NO_ERROR macros iff it doesn't
- * call ERROR_RECT anywhere.
+ * should pass control to error_in_rect.
  *
  * In a few cases, the band processing code calls other driver procedures
  * (e.g., clist_copy_mono calls itself recursively if it must split up the
@@ -545,12 +555,16 @@ int cmd_update_lop(gx_device_clist_writer *, gx_clist_state *,
  * VMerror recovery.  In such cases, the recursive call must not attempt
  * second-stage VMerror recovery, since the caller would have no way of
  * knowing that the writer state had been reset.  Such recursive calls
- * should be wrapped in NEST_RECT { ... } UNNEST_RECT, which causes
- * ERROR_RECT simply to return the error code rather than attempting
- * recovery.  (TRY/HANDLE_RECT will still attempt local recovery, as
- * described above, but this is harmless since it is transparent.) By
+ * should be wrapped in 
+ *
+ *  ++cdev->driver_call_nesting;  { ... } --cdev->driver_call_nesting;
+ *
+ * , which causes error_in_rect
+ * simply to return the error code rather than attempting
+ * recovery.  (The local recovery with do { ... } while (RECT_RECOVER(code));
+ * is still allowed since it is transparent.) By
  * convention, calls to cmd_put_xxx or cmd_set_xxx never attempt recovery
- * and so never require NEST_RECTs.
+ * and so never require  a nesting.
  *
  * If a put_params call fails, the device will be left in a closed state,
  * but higher-level code won't notice this fact.  We flag this by setting

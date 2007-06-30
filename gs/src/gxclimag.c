@@ -111,7 +111,6 @@ clist_fill_mask(gx_device * dev,
 	ulong offset_temp;
 
 	RECT_STEP_INIT(re);
-retry_rect:
 	do {
 	    code = cmd_update_lop(cdev, re.pcls, lop);
 	} while (RECT_RECOVER(code));
@@ -208,13 +207,13 @@ retry_rect:
 	    goto end;
 	}
 end:
+	re.y += re.height;
 	continue;
 error_in_rect:
-	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
-		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
-	    goto retry_rect;
+	if (!(cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0))
 	return re.band_code;
-    } while ((re.y += re.height) < re.yend);
+    } while (re.y < re.yend);
     return 0;
 }
 
@@ -1490,27 +1489,26 @@ write_image_end_all(gx_device *dev, const clist_image_enum *pie)
     RECT_ENUM_INIT(re, ry, rheight);
     do {
 	byte *dp;
-	RECT_STEP_INIT(re);
 
-retry_rect:
-	if (!(re.pcls->known & begin_image_known))
-	    continue;
-	do {
-	    if_debug1('L', "[L]image_end for band %d\n", re.band);
-	    code = set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_image_data, 2);
-	} while (RECT_RECOVER(code));
-	/* HANDLE_RECT_UNLESS(code, 0); */
-	if (code < 0 && SET_BAND_CODE(code))
-	    goto error_in_rect;
-	dp[1] = 0;	    /* EOD */
-	re.pcls->known ^= begin_image_known;
+	RECT_STEP_INIT(re);
+	if (re.pcls->known & begin_image_known) {
+	    do {
+		if_debug1('L', "[L]image_end for band %d\n", re.band);
+		code = set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_image_data, 2);
+	    } while (RECT_RECOVER(code));
+	    /* HANDLE_RECT_UNLESS(code, 0); */
+	    if (code < 0 && SET_BAND_CODE(code))
+		goto error_in_rect;
+	    dp[1] = 0;	    /* EOD */
+	    re.pcls->known ^= begin_image_known;
+	}
+	re.y += re.height;
 	continue;
 error_in_rect:
-	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
-		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
-	    goto retry_rect;
-	return re.band_code;
-    } while ((re.y += re.height) < re.yend);
+	if (!(cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0))
+	   return re.band_code;
+    } while (re.y < re.yend);
     return 0;
 }
 

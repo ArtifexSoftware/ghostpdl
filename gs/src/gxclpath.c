@@ -608,8 +608,8 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     RECT_ENUM_INIT(re, ry, rheight);
     do {
 	int code;
+
 	RECT_STEP_INIT(re);
-retry_rect:
 	code = cmd_do_write_unknown(cdev, re.pcls, FILL_KNOWN);
 	if (code < 0)
 	    return code;
@@ -631,13 +631,8 @@ retry_rect:
 			    true, sn_none /* fill doesn't need the notes */ );
 	if (code < 0)
 	    return code;
-	continue;
-error_in_rect:
-	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
-		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
-	    goto retry_rect;
-	return re.band_code;
-    } while ((re.y += re.height) < re.yend);
+	re.y += re.height;
+    } while (re.y < re.yend);
     return 0;
 }
 
@@ -751,9 +746,8 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     RECT_ENUM_INIT(re, ry, rheight);
     do {
 	int code;
-	RECT_STEP_INIT(re);
-retry_rect:
 
+	RECT_STEP_INIT(re);
 	if ((code = cmd_do_write_unknown(cdev, re.pcls, stroke_all_known)) < 0 ||
 	    (code = cmd_do_enable_clip(cdev, re.pcls, pcpath != NULL)) < 0 ||
 	    (code = cmd_update_lop(cdev, re.pcls, lop)) < 0
@@ -789,13 +783,8 @@ retry_rect:
 	    if (code < 0)
 		return code;
 	}
-	continue;
-error_in_rect:
-	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
-		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
-	    goto retry_rect;
-	return re.band_code;
-    } while ((re.y += re.height) < re.yend);
+	re.y += re.height;
+    } while (re.y < re.yend);
     return 0;
 }
 
@@ -842,7 +831,6 @@ clist_put_polyfill(gx_device *dev, fixed px, fixed py,
     RECT_ENUM_INIT(re, ry, rheight);
     do {
 	RECT_STEP_INIT(re);
-retry_rect:
 	if ((code = cmd_update_lop(cdev, re.pcls, lop)) < 0 ||
 	    (code = cmd_put_drawing_color(cdev, re.pcls, pdcolor)) < 0)
 	    goto out;
@@ -854,13 +842,8 @@ retry_rect:
 			    true, sn_none /* fill doesn't need the notes */ );
 	if (code < 0)
 	    goto out;
-	continue;
-error_in_rect:
-	if (cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
-		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0)
-	    goto retry_rect;
-	return re.band_code;
-    } while ((re.y += re.height) < re.yend);
+	re.y += re.height;
+    } while (re.y < re.yend);
 out:
     gx_path_free(&path, "clist_put_polyfill");
     return code;
