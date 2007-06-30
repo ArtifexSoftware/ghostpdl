@@ -114,7 +114,6 @@ clist_fill_mask(gx_device * dev,
 	do {
 	    code = cmd_update_lop(cdev, re.pcls, lop);
 	} while (RECT_RECOVER(code));
-	/* HANDLE_RECT_UNLESS(code, 0); */
 	if (code < 0 && SET_BAND_CODE(code))
 	    goto error_in_rect;
 	if (depth > 1 && !re.pcls->color_is_alpha) {
@@ -124,7 +123,6 @@ clist_fill_mask(gx_device * dev,
 		code =
 		    set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_set_copy_alpha, 1);
 	    } while (RECT_RECOVER(code));
-	    /* HANDLE_RECT_UNLESS(code, 0); */
 	    if (code < 0 && SET_BAND_CODE(code))
 			goto error_in_rect;
 	    re.pcls->color_is_alpha = 1;
@@ -134,7 +132,6 @@ clist_fill_mask(gx_device * dev,
 	    if (code >= 0)
 			code = cmd_do_enable_clip(cdev, re.pcls, pcpath != NULL);
 	} while (RECT_RECOVER(code));
-	/* HANDLE_RECT_UNLESS(code, 0); */
 	if (code < 0 && SET_BAND_CODE(code))
 	    goto error_in_rect;
 	do {
@@ -142,7 +139,6 @@ clist_fill_mask(gx_device * dev,
 	    if (depth > 1 && code >= 0)
 			code = cmd_set_color1(cdev, re.pcls, pdcolor->colors.pure);
 	} while (RECT_RECOVER(code));
-	/* HANDLE_RECT_UNLESS(code, 0); */
 	if (code < 0 && SET_BAND_CODE(code))
 	    goto error_in_rect;
 	re.pcls->colors_used.slow_rop |= slow_rop;
@@ -161,7 +157,6 @@ clist_fill_mask(gx_device * dev,
 	    do {
 	        code = clist_change_bits(cdev, re.pcls, &tile, depth);
 	    } while (RECT_RECOVER(code));
-	    /* HANDLE_RECT_UNLESS(code, (code != gs_error_VMerror || !cdev->error_is_retryable) ); */
 	    if (code < 0 && !(code != gs_error_VMerror || !cdev->error_is_retryable) && SET_BAND_CODE(code))
 		goto error_in_rect;
 	    if (code < 0) {
@@ -200,7 +195,6 @@ clist_fill_mask(gx_device * dev,
 		    }
 		}
 	    } while (RECT_RECOVER(code));
-	    /* HANDLE_RECT_UNLESS(code, 0); */
 	    if (code < 0 && SET_BAND_CODE(code))
 		goto error_in_rect;
 	    re.pcls->rect = rect;
@@ -555,11 +549,11 @@ clist_image_plane_data_retry_cleanup(gx_device *dev, clist_image_enum *pie, int 
 	&((gx_device_clist *)dev)->writer;
 
     ++cdev->ignore_lo_mem_warnings;
-    ++cdev->driver_call_nesting; /* NEST_RECT */ 
+    ++cdev->driver_call_nesting; 
     {
 	code = write_image_end_all(dev, pie);
     } 
-    --cdev->driver_call_nesting; /* UNNEST_RECT */
+    --cdev->driver_call_nesting;
     --cdev->ignore_lo_mem_warnings;
     /* Update sub-rect */
     if (!pie->image.Interpolate)
@@ -703,14 +697,12 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 		if (code >= 0)
 		    code = cmd_update_lop(cdev, re.pcls, lop);
 	    } while (RECT_RECOVER(code));
-	    /* HANDLE_RECT_UNLESS(code, 0); */
 	    if (code < 0 && SET_BAND_CODE(code))
 		goto error_in_rect;
 	    if (pie->uses_color) {
  	        do {
 		    code = cmd_put_drawing_color(cdev, re.pcls, &pie->dcolor);
 		} while (RECT_RECOVER(code));
-		/* HANDLE_RECT_UNLESS(code, 0); */
 		if (code < 0 && SET_BAND_CODE(code))
 		    goto error_in_rect;
 	    }
@@ -728,7 +720,6 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 		code =
 		    set_cmd_put_op(dp, cdev, re.pcls, image_op, 1 + len);
 	    } while (RECT_RECOVER(code));
-	    /* HANDLE_RECT_UNLESS(code, 0); */
 	    if (code < 0 && SET_BAND_CODE(code))
 		goto error_in_rect;
 	    memcpy(dp + 1, pie->begin_image_command, len);
@@ -786,7 +777,6 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 						bytes_per_plane, offsets,
 						xoff - xskip, nrows);
 		} while (RECT_RECOVER(code));
-		/* HANDLE_RECT_UNLESS(code, 0); */
 		if (code < 0 && SET_BAND_CODE(code))
 		    goto error_in_rect;
 		for (i = 0; i < num_planes; ++i)
@@ -834,7 +824,7 @@ clist_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 	return_error(gs_error_Fatal);
     }
 #endif
-    ++cdev->driver_call_nesting; /* NEST_RECT */ 
+    ++cdev->driver_call_nesting; 
     {
 	do {
 	    code = write_image_end_all(dev, pie);
@@ -851,7 +841,7 @@ clist_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 		code = clist_VMerror_recover_flush(cdev, code);
 	}
     } 
-    --cdev->driver_call_nesting; /* UNNEST_RECT */
+    --cdev->driver_call_nesting;
     cdev->image_enum_id = gs_no_id;
     gs_free_object(pie->memory, pie, "clist_image_end_image");
     return code;
@@ -1496,7 +1486,6 @@ write_image_end_all(gx_device *dev, const clist_image_enum *pie)
 		if_debug1('L', "[L]image_end for band %d\n", re.band);
 		code = set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_image_data, 2);
 	    } while (RECT_RECOVER(code));
-	    /* HANDLE_RECT_UNLESS(code, 0); */
 	    if (code < 0 && SET_BAND_CODE(code))
 		goto error_in_rect;
 	    dp[1] = 0;	    /* EOD */

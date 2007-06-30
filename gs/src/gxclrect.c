@@ -160,7 +160,6 @@ clist_fill_rectangle(gx_device * dev, int rx, int ry, int rwidth, int rheight,
 		code = cmd_write_rect_cmd(cdev, re.pcls, cmd_op_fill_rect, rx, re.y,
 					  rwidth, re.height);
 	} while (RECT_RECOVER(code));
-	/* HANDLE_RECT_UNLESS(code, 0); */
 	if (code < 0 && SET_BAND_CODE(code))
 	    goto error_in_rect;
 	re.y += re.height;
@@ -208,7 +207,6 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
 	do {
 	    code = cmd_disable_lop(cdev, re.pcls);
 	} while (RECT_RECOVER(code));
-	/* HANDLE_RECT_UNLESS(code, 0); */
 	if (code < 0 && SET_BAND_CODE(code))
 	    goto error_in_rect;
 	if (!cls_has_tile_id(cdev, re.pcls, tile->id, offset_temp)) {
@@ -217,7 +215,6 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
 		do {
 		    code = clist_change_tile(cdev, re.pcls, tile, depth);
 		} while (RECT_RECOVER(code));
-		/* HANDLE_RECT_UNLESS(code, (code != gs_error_VMerror || !cdev->error_is_retryable)); */
 		if (code < 0 && !(code != gs_error_VMerror || !cdev->error_is_retryable) && SET_BAND_CODE(code))
 		    goto error_in_rect;
 	    }
@@ -245,7 +242,6 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
 		code = cmd_write_rect_cmd(cdev, re.pcls, cmd_op_tile_rect, rx, re.y,
 					  rwidth, re.height);
 	} while (RECT_RECOVER(code));
-	/* HANDLE_RECT_UNLESS(code, 0); */
 	if (code < 0 && SET_BAND_CODE(code))
 	    goto error_in_rect;
 endr:;
@@ -301,7 +297,6 @@ clist_copy_mono(gx_device * dev,
 	    if (color1 != re.pcls->colors[1] && code >= 0)
 		code = cmd_set_color1(cdev, re.pcls, color1);
 	} while (RECT_RECOVER(code));
-	/* HANDLE_RECT_UNLESS(code, 0); */
 	if (code < 0 && SET_BAND_CODE(code))
 	    goto error_in_rect;
 	/* Don't bother to check for a possible cache hit: */
@@ -325,7 +320,6 @@ copy:{
 					cmd_mask_compress_any),
 				&dp, &csize);
 	} while (RECT_RECOVER(code));
-	/* HANDLE_RECT_UNLESS(code, code == gs_error_limitcheck); */
 	if (code < 0 && !(code == gs_error_limitcheck) && SET_BAND_CODE(code))
 	    goto error_in_rect;
 	compress = (uint)code;
@@ -342,7 +336,7 @@ copy:{
 		/* Split a single (very long) row. */
 		int w2 = w1 >> 1;
 
-		++cdev->driver_call_nesting; /* NEST_RECT */ 
+		++cdev->driver_call_nesting;
 		{
 		    code = clist_copy_mono(dev, row, dx,
 					   raster, gx_no_bitmap_id, rx, re.y,
@@ -353,7 +347,7 @@ copy:{
 					       rx + w2, re.y,
 					       w1 - w2, 1, color0, color1);
 		} 
-		--cdev->driver_call_nesting; /* UNNEST_RECT */
+		--cdev->driver_call_nesting;
 		if (code < 0 && SET_BAND_CODE(code))
 		    goto error_in_rect;
 		continue;
@@ -414,7 +408,6 @@ clist_copy_color(gx_device * dev,
 	    if (code >= 0)
 		code = cmd_disable_clip(cdev, re.pcls);
 	} while (RECT_RECOVER(code));
-	/* HANDLE_RECT_UNLESS(code, 0); */
 	if (code < 0 && SET_BAND_CODE(code))
 	    goto error_in_rect;
 	if (re.pcls->color_is_alpha) {
@@ -424,7 +417,6 @@ clist_copy_color(gx_device * dev,
 		code =
 		    set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_set_copy_color, 1);
 	    } while (RECT_RECOVER(code));
-	    /* HANDLE_RECT_UNLESS(code, 0); */
 	    if (code < 0 && SET_BAND_CODE(code))
 		goto error_in_rect;
 	    re.pcls->color_is_alpha = 0;
@@ -445,7 +437,6 @@ copy:{
 				    re.height, raster, rsize,
 				    1 << cmd_compress_rle, &dp, &csize);
 	    } while (RECT_RECOVER(code));
-	    /* HANDLE_RECT_UNLESS(code, code == gs_error_limitcheck); */
 	    if (code < 0 && !(code == gs_error_limitcheck) && SET_BAND_CODE(code))
 		goto error_in_rect;
 	    compress = (uint)code;
@@ -461,7 +452,7 @@ copy:{
 		    /* Split a single (very long) row. */
 		    int w2 = w1 >> 1;
 
-		    ++cdev->driver_call_nesting; /* NEST_RECT */ 
+		    ++cdev->driver_call_nesting; 
 		    {
 			code = clist_copy_color(dev, row, dx,
 						raster, gx_no_bitmap_id,
@@ -471,7 +462,7 @@ copy:{
 						    raster, gx_no_bitmap_id,
 						    rx + w2, re.y, w1 - w2, 1);
 		    } 
-		    --cdev->driver_call_nesting; /* UNNEST_RECT */
+		    --cdev->driver_call_nesting;
 		    if (code < 0 && SET_BAND_CODE(code))
 			goto error_in_rect;
 		    continue;
@@ -536,7 +527,6 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	    if (code >= 0)
 		code = cmd_disable_clip(cdev, re.pcls);
 	} while (RECT_RECOVER(code));
-	/* HANDLE_RECT_UNLESS(code, 0); */
 	if (code < 0 && SET_BAND_CODE(code))
 	    goto error_in_rect;
 	if (!re.pcls->color_is_alpha) {
@@ -546,7 +536,6 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
 		code =
 		    set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_set_copy_alpha, 1);
 	    } while (RECT_RECOVER(code));
-	    /* HANDLE_RECT_UNLESS(code, 0); */
 	    if (code < 0 && SET_BAND_CODE(code))
 		goto error_in_rect;
 	    re.pcls->color_is_alpha = 1;
@@ -555,7 +544,6 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	    do {
 		code = cmd_set_color1(cdev, re.pcls, color);
 	    } while (RECT_RECOVER(code));
-	    /* HANDLE_RECT_UNLESS(code, 0); */
 	    if (code < 0 && SET_BAND_CODE(code))
 		goto error_in_rect;
 	}
@@ -575,7 +563,6 @@ copy:{
 				    re.height, raster, rsize,
 				    1 << cmd_compress_rle, &dp, &csize);
 	    } while (RECT_RECOVER(code));
-	    /* HANDLE_RECT_UNLESS(code, code == gs_error_limitcheck); */
 	    if (code < 0 && !(code == gs_error_limitcheck) && SET_BAND_CODE(code))
 		goto error_in_rect;
 	    compress = (uint)code;
@@ -591,7 +578,7 @@ copy:{
 		    /* Split a single (very long) row. */
 		    int w2 = w1 >> 1;
 
-		    ++cdev->driver_call_nesting; /* NEST_RECT */ 
+		    ++cdev->driver_call_nesting;
 		    {
 			code = clist_copy_alpha(dev, row, dx,
 						raster, gx_no_bitmap_id, rx, re.y,
@@ -602,7 +589,7 @@ copy:{
 						    rx + w2, re.y, w1 - w2, 1,
 						    color, depth);
 		    } 
-		    --cdev->driver_call_nesting; /* UNNEST_RECT */
+		    --cdev->driver_call_nesting;
 		    if (code < 0 && SET_BAND_CODE(code))
 			goto error_in_rect;
 		    continue;
@@ -715,7 +702,6 @@ clist_strip_copy_rop(gx_device * dev,
 						 (tcolors != 0 ? 1 :
 						  dev->color_info.depth));
 		    } while (RECT_RECOVER(code));
-		    /* HANDLE_RECT_UNLESS(code, code == gs_error_limitcheck); */
 		    if (code < 0 && !(code == gs_error_limitcheck) && SET_BAND_CODE(code))
 			goto error_in_rect;
 		    if (code < 0) {
@@ -755,7 +741,7 @@ clist_strip_copy_rop(gx_device * dev,
 			     * we may as well use the current tile phase
 			     * so we don't have to write extra commands.
 			     */
-			    ++cdev->driver_call_nesting; /* NEST_RECT */ 
+			    ++cdev->driver_call_nesting;
 			    {
 				code = clist_strip_copy_rop(dev,
 					(sdata == 0 ? 0 : row + iy * sraster),
@@ -765,7 +751,7 @@ clist_strip_copy_rop(gx_device * dev,
 					rx, re.y + iy, rwidth, 1,
 					phase_x, re.pcls->tile_phase.y, lop);
 			    } 
-			    --cdev->driver_call_nesting; /* UNNEST_RECT */
+			    --cdev->driver_call_nesting;
 			    if (code < 0 && SET_BAND_CODE(code))
 				goto error_in_rect;
 			}
@@ -778,7 +764,6 @@ clist_strip_copy_rop(gx_device * dev,
 			    code = cmd_set_tile_phase(cdev, re.pcls, phase_x,
 						      phase_y);
 			} while (RECT_RECOVER(code));
-			/* HANDLE_RECT_UNLESS(code, 0); */
 			if (code < 0 && SET_BAND_CODE(code))
 			    goto error_in_rect;
 		    }
@@ -792,7 +777,6 @@ clist_strip_copy_rop(gx_device * dev,
 		     cmd_set_tile_colors(cdev, re.pcls, gx_no_color_index,
 					 gx_no_color_index));
 	    } while (RECT_RECOVER(code));
-	    /* HANDLE_RECT_UNLESS(code, 0); */
 	    if (code < 0 && SET_BAND_CODE(code))
 		goto error_in_rect;
 	}
@@ -803,13 +787,12 @@ clist_strip_copy_rop(gx_device * dev,
 	    if (code >= 0)
 		code = cmd_enable_lop(cdev, re.pcls);
 	} while (RECT_RECOVER(code));
-	/* HANDLE_RECT_UNLESS(code, 0); */
 	if (code < 0 && SET_BAND_CODE(code))
 	    goto error_in_rect;
 	/* Set lop_enabled to -1 so that fill_rectangle / copy_* */
 	/* won't attempt to set it to 0. */
 	re.pcls->lop_enabled = -1;
-	++cdev->driver_call_nesting; /* NEST_RECT */ 
+	++cdev->driver_call_nesting;
 	{
 	    if (scolors != 0) {
 		if (scolors[0] == scolors[1])
@@ -823,7 +806,7 @@ clist_strip_copy_rop(gx_device * dev,
 		code = clist_copy_color(dev, row, sourcex, sraster, id,
 					rx, re.y, rwidth, re.height);
 	} 
-	--cdev->driver_call_nesting; /* UNNEST_RECT */
+	--cdev->driver_call_nesting;
 	re.pcls->lop_enabled = 1;
 	if (code < 0 && SET_BAND_CODE(code))
 	    goto error_in_rect;
