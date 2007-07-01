@@ -16,6 +16,7 @@
 #include "memory_.h"
 #include "string_.h"
 #include "unistd_.h"
+#include "stat_.h" /* get system header early to avoid name clash on Cygwin */
 #include "ghost.h"
 #include "gscdefs.h"		/* for gx_io_device_table */
 #include "gsutil.h"		/* for bytes_compare */

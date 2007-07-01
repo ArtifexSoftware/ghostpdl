@@ -14,6 +14,7 @@
 /* $Id$ */
 /* Procedure-based filter stream support */
 #include "memory_.h"
+#include "stat_.h" /* get system header early to avoid name clash on Cygwin */
 #include "ghost.h"
 #include "oper.h"		/* for ifilter.h */
 #include "estack.h"

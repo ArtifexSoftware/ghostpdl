@@ -317,7 +317,7 @@ $(PSOBJ)zdict.$(OBJ) : $(PSSRC)zdict.c $(OP)\
 	$(PSCC) $(PSO_)zdict.$(OBJ) $(C_) $(PSSRC)zdict.c
 
 $(PSOBJ)zfile.$(OBJ) : $(PSSRC)zfile.c $(OP)\
- $(memory__h) $(string__h) $(unistd__h) $(gp_h) $(gpmisc_h)\
+ $(memory__h) $(string__h) $(unistd__h) $(stat__h) $(gp_h) $(gpmisc_h)\
  $(gscdefs_h) $(gsfname_h) $(gsstruct_h) $(gsutil_h) $(gxalloc_h) $(gxiodev_h)\
  $(dstack_h) $(estack_h) $(files_h)\
  $(ialloc_h) $(idict_h) $(ilevel_h) $(iname_h) $(iutil_h)\
@@ -341,7 +341,7 @@ $(PSOBJ)zfilter.$(OBJ) : $(PSSRC)zfilter.c $(OP) $(memory__h)\
  $(sfilter_h) $(srlx_h) $(sstring_h) $(stream_h) $(strimpl_h)
 	$(PSCC) $(PSO_)zfilter.$(OBJ) $(C_) $(PSSRC)zfilter.c
 
-$(PSOBJ)zfproc.$(OBJ) : $(PSSRC)zfproc.c $(GH) $(memory__h)\
+$(PSOBJ)zfproc.$(OBJ) : $(PSSRC)zfproc.c $(GH) $(memory__h) $(stat__h)\
  $(oper_h)\
  $(estack_h) $(files_h) $(gsstruct_h) $(ialloc_h) $(ifilter_h) $(istruct_h)\
  $(store_h) $(stream_h) $(strimpl_h)
@@ -401,7 +401,7 @@ $(PSOBJ)zsysvm.$(OBJ) : $(PSSRC)zsysvm.c $(GH)\
  $(ialloc_h) $(ivmspace_h) $(oper_h) $(store_h)
 	$(PSCC) $(PSO_)zsysvm.$(OBJ) $(C_) $(PSSRC)zsysvm.c
 
-$(PSOBJ)ztoken.$(OBJ) : $(PSSRC)ztoken.c $(OP) $(string__h)\
+$(PSOBJ)ztoken.$(OBJ) : $(PSSRC)ztoken.c $(OP) $(string__h) $(stat__h)\
  $(gsstruct_h)\
  $(dstack_h) $(estack_h) $(files_h)\
  $(idict_h) $(iname_h) $(iscan_h) $(itoken_h)\
@@ -415,7 +415,7 @@ $(PSOBJ)ztype.$(OBJ) : $(PSSRC)ztype.c $(OP)\
  $(iscan_h) $(iutil_h) $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)
 	$(PSCC) $(PSO_)ztype.$(OBJ) $(C_) $(PSSRC)ztype.c
 
-$(PSOBJ)zvmem.$(OBJ) : $(PSSRC)zvmem.c $(OP)\
+$(PSOBJ)zvmem.$(OBJ) : $(PSSRC)zvmem.c $(OP) $(stat__h)\
  $(dstack_h) $(estack_h) $(files_h)\
  $(ialloc_h) $(idict_h) $(igstate_h) $(isave_h) $(store_h) $(stream_h)\
  $(gsmalloc_h) $(gsmatrix_h) $(gsstate_h) $(gsstruct_h)
@@ -482,7 +482,7 @@ $(PSOBJ)zht.$(OBJ) : $(PSSRC)zht.c $(OP) $(memory__h)\
  $(ialloc_h) $(estack_h) $(igstate_h) $(iht_h) $(store_h)
 	$(PSCC) $(PSO_)zht.$(OBJ) $(C_) $(PSSRC)zht.c
 
-$(PSOBJ)zimage.$(OBJ) : $(PSSRC)zimage.c $(OP) $(memory__h)\
+$(PSOBJ)zimage.$(OBJ) : $(PSSRC)zimage.c $(OP) $(math__h) $(memory__h) $(stat__h)\
  $(gscspace_h) $(gscssub_h) $(gsimage_h) $(gsmatrix_h) $(gsstruct_h)\
  $(gxiparam_h)\
  $(estack_h) $(ialloc_h) $(ifilter_h) $(igstate_h) $(iimage_h) $(ilevel_h)\

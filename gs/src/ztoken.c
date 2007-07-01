@@ -14,6 +14,7 @@
 /* $Id$ */
 /* Token reading operators */
 #include "string_.h"
+#include "stat_.h" /* get system header early to avoid name clash on Cygwin */
 #include "ghost.h"
 #include "oper.h"
 #include "dstack.h"		/* for dict_find_name */

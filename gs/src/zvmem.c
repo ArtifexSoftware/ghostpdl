@@ -13,6 +13,7 @@
 
 /* $Id$ */
 /* "Virtual memory" operators */
+#include "stat_.h" /* get system header early to avoid name clash on Cygwin */
 #include "ghost.h"
 #include "gsstruct.h"
 #include "oper.h"
