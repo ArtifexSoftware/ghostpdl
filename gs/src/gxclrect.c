@@ -19,6 +19,8 @@
 #include "gxdevice.h"
 #include "gxdevmem.h"		/* must precede gxcldev.h */
 #include "gxcldev.h"
+#include "gxclpath.h"
+
 
 /* ---------------- Writing utilities ---------------- */
 
@@ -132,6 +134,42 @@ cmd_write_rect_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     return 0;
 }
 
+private int
+cmd_write_trapezoid_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
+		    int op,  const gs_fixed_edge *left, const gs_fixed_edge *right,
+		    fixed ybot, fixed ytop, bool swap_axes)
+{
+    byte *dp;
+    int rcsize;
+    int code;
+
+    rcsize = 1 + cmd_sizew(left->start.x) + cmd_sizew(left->start.y)
+	       + cmd_sizew(left->end.x) + cmd_sizew(left->end.y)
+	       + cmd_sizew(right->start.x) + cmd_sizew(right->start.y)
+	       + cmd_sizew(right->end.x) + cmd_sizew(right->end.y)
+	       + cmd_sizew(ybot) + cmd_sizew(ytop) + cmd_sizew(swap_axes);
+    code = set_cmd_put_op(dp, cldev, pcls, op, rcsize);
+    if (code < 0)
+	return code;
+    dp++;
+    cmd_putw(left->start.x, dp);
+    cmd_putw(left->start.y, dp);
+    cmd_putw(left->end.x, dp);
+    cmd_putw(left->end.y, dp);
+    cmd_putw(right->start.x, dp);
+    cmd_putw(right->start.y, dp);
+    cmd_putw(right->end.x, dp);
+    cmd_putw(right->end.y, dp);
+    cmd_putw(ybot, dp);
+    cmd_putw(ytop, dp);
+    cmd_putw(swap_axes, dp);
+    if_debug6('L', "    t%d:%d,%d,%d,%d   %d\n",
+	      rcsize - 1, left->start.x, left->start.y, left->end.x, left->end.y, ybot);
+    if_debug5('L', "    t%d,%d,%d,%d   %d\n",
+	      right->start.x, right->start.y, right->end.x, right->end.y, ytop);
+    return 0;
+}
+
 /* ---------------- Driver procedures ---------------- */
 
 int
@@ -159,6 +197,57 @@ clist_fill_rectangle(gx_device * dev, int rx, int ry, int rwidth, int rheight,
 	    if (code >= 0)
 		code = cmd_write_rect_cmd(cdev, re.pcls, cmd_op_fill_rect, rx, re.y,
 					  rwidth, re.height);
+	} while (RECT_RECOVER(code));
+	if (code < 0 && SET_BAND_CODE(code))
+	    goto error_in_rect;
+	re.y += re.height;
+	continue;
+error_in_rect:
+	if (!(cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0))
+	    return re.band_code;
+    } while (re.y < re.yend);
+    return 0;
+}
+
+int 
+clist_fill_trapezoid(gx_device * dev,
+    const gs_fixed_edge *left, const gs_fixed_edge *right,
+    fixed ybot, fixed ytop, bool swap_axes,
+    const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
+{
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
+    int code;
+    cmd_rects_enum_t re;
+    int ry, rheight;
+
+    if (swap_axes) {
+	ry = fixed2int(min(left->start.x, left->end.x));
+	rheight = fixed2int_ceiling(max(right->start.x, right->end.x)) - ry;
+    } else {
+	ry = fixed2int(ybot);
+	rheight = fixed2int_ceiling(ytop) - ry;
+    }
+    fit_fill_h(dev, ry, rheight);
+    if (cdev->permanent_error < 0)
+	return (cdev->permanent_error);
+    RECT_ENUM_INIT(re, ry, rheight);
+    do {
+	RECT_STEP_INIT(re);
+	do {
+	    code = cmd_put_drawing_color(cdev, re.pcls, pdcolor);
+	    if (code < 0) {
+		/* Something went wrong, use the default implementation. */
+		return gx_default_fill_trapezoid(dev, left, right, ybot, ytop, swap_axes, pdcolor, lop);
+	    }
+	    code = cmd_update_lop(cdev, re.pcls, lop);
+	    if (code >= 0) {
+		/* Dont't want to shorten the trapezoid by the band boundary,
+		   keeping in mind a further optimization with writing same data to all bands. */
+		code = cmd_write_trapezoid_cmd(cdev, re.pcls, cmd_opv_fill_trapezoid, left, right,
+					  ybot, ytop, swap_axes);
+	    }
 	} while (RECT_RECOVER(code));
 	if (code < 0 && SET_BAND_CODE(code))
 	    goto error_in_rect;

@@ -1384,6 +1384,43 @@ idata:			data_size = 0;
 			    code = clist_do_polyfill(tdev, ppath, &dev_color,
 						     imager_state.log_op);
 			    break;
+			case cmd_opv_fill_trapezoid:
+			    {
+				gx_cmd_rect rl, rr;
+				gs_fixed_edge left, right;
+				fixed ybot, ytop;
+				int swap_axes, wh;
+				fixed x0f;
+				fixed y0f;
+
+				cmd_getw(left.start.x, cbp);
+				cmd_getw(left.start.y, cbp);
+				cmd_getw(left.end.x, cbp);
+				cmd_getw(left.end.y, cbp);
+				cmd_getw(right.start.x, cbp);
+				cmd_getw(right.start.y, cbp);
+				cmd_getw(right.end.x, cbp);
+				cmd_getw(right.end.y, cbp);
+				cmd_getw(ybot, cbp);
+				cmd_getw(ytop, cbp);
+				cmd_getw(swap_axes, cbp);
+				wh = swap_axes ? tdev->width : tdev->height;
+				x0f = int2fixed(swap_axes ? y0 : x0);
+				y0f = int2fixed(swap_axes ? x0 : y0);
+				left.start.x -= x0f;
+				left.start.y -= y0f;
+				left.end.x -= x0f;
+				left.end.y -= y0f;
+				right.start.x -= x0f;
+				right.start.y -= y0f;
+				right.end.x -= x0f;
+				right.end.y -= y0f;
+				code = gx_default_fill_trapezoid(tdev, &left, &right,
+				    max(ybot - y0f, fixed_half), 
+				    min(ytop - y0f, int2fixed(wh)), swap_axes,
+				    &dev_color, imager_state.log_op);
+			    }
+			   break;
 			default:
 			    goto bad_op;
 		    }

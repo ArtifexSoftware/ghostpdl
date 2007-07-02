@@ -124,7 +124,7 @@ const gx_device_procs gs_clist_device_procs = {
     clist_fill_path,
     clist_stroke_path,
     clist_fill_mask,
-    gx_default_fill_trapezoid,
+    clist_fill_trapezoid,
     clist_fill_parallelogram,
     clist_fill_triangle,
     gx_default_draw_thin_line,
