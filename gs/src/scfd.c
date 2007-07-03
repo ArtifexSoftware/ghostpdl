@@ -300,7 +300,7 @@ s_CFD_process(stream_state * st, stream_cursor_read * pr,
 	 * in the string of initial zeros in the EOL.  If EndOfLine
 	 * is false, we aren't sure what we should do....
 	 */
-	if (ss->EncodedByteAlign & !ss->EndOfLine)
+	if (ss->EncodedByteAlign && !ss->EndOfLine)
 	    ss->bits_left &= ~7;
     }
     /* If we're between scan lines, scan for EOLs. */
