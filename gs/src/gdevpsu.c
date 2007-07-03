@@ -137,7 +137,7 @@ private const char *const psw_ps_procset[] = {
 };
 
 private const char *const psw_end_prolog[] = {
-    "end readonly def",
+    "end def",
     "%%EndResource",		/* ProcSet */
     "/pagesave null def",	/* establish binding */
     "%%EndProlog",
