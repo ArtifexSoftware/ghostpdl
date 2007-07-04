@@ -394,7 +394,7 @@ download_pcl_pattern(
 {
     uint                    count = arg_data_size(pargs);
     const pcl_upattern0_t * puptrn0 = (pcl_upattern0_t *)arg_data(pargs);
-    uint                    format, depth, rsize, patsize;
+    uint                    format, depth, rsize, patsize, ndsize, dsize;
     gs_depth_bitmap         pixinfo;
     int                     xres = 300, yres = 300;
     pcl_pattern_t *         pptrn = 0;
@@ -405,6 +405,8 @@ download_pcl_pattern(
 	return e_Range;
 
     format = puptrn0->format;
+    /* non data size - the size of the parameters that describe the data */
+    ndsize = (format == 20 ? sizeof(pcl_upattern1_t) : sizeof(pcl_upattern0_t)) - 1;
     pixinfo.num_comps = 1;
     pixinfo.size.x = (((uint)puptrn0->width[0]) << 8) + puptrn0->width[1];
     pixinfo.size.y = (((uint)puptrn0->height[0]) << 8) + puptrn0->height[1];
@@ -412,6 +414,7 @@ download_pcl_pattern(
     pixinfo.pix_depth = depth;
     pixinfo.raster = (pixinfo.size.x * depth + 7) / 8;
     rsize = pixinfo.raster * pixinfo.size.y;
+    dsize = min(count - ndsize, rsize);
     patsize = (((pixinfo.size.y) * (pixinfo.size.x) * depth) + 7) / 8;
 
     /* check for legitimate format */
@@ -433,28 +436,18 @@ download_pcl_pattern(
     if (pixinfo.data == 0)
         return e_Memory;
 
+                
     if (format == 20) {
         pcl_upattern1_t *   puptrn1 = (pcl_upattern1_t *)puptrn0;
 
         xres = (((uint)puptrn1->xres[0]) << 8) + puptrn1->xres[1];
         yres = (((uint)puptrn1->yres[0]) << 8) + puptrn1->yres[1];
-        memcpy(pixinfo.data, puptrn1->data, rsize);
-
-        /* -JJG If the pattern data was not sufficient to complete the full  */
-        /* length indicated by the resolution fields, pad the remainder with */
-        /* zeroes.                                                           */
-        for (i=count-12;i<rsize; i++)
-         {
-          pixinfo.data[i] = 0x00;
-         }
-
+        memcpy(pixinfo.data, puptrn1->data, dsize);
     } else {
-        uint    tmp_cnt = min(count - 8, rsize);
-
-        memcpy(pixinfo.data, puptrn0->data, tmp_cnt);
-        if (tmp_cnt < rsize)
-            memset(pixinfo.data + tmp_cnt, 0, rsize - tmp_cnt);
+        memcpy(pixinfo.data, puptrn0->data, dsize);
     }
+    if (dsize < rsize)
+        memset(pixinfo.data + dsize, 0, rsize - dsize);
 
     /* build the pattern */
     code = pcl_pattern_build_pattern( &(pptrn),
