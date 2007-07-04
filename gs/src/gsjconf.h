@@ -52,7 +52,7 @@
 #undef INCOMPLETE_TYPES_BROKEN
 
 /* The following is documented in jmemsys.h, not jconfig.doc. */
-#if ARCH_SIZEOF_INT <= 2
+#if ARCH_LOG2_SIZEOF_INT <= 1
 #  undef MAX_ALLOC_CHUNK
 #  define MAX_ALLOC_CHUNK 0xfff0
 #endif
