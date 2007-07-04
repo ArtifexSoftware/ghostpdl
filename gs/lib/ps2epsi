@@ -74,6 +74,7 @@ save countdictstack mark newpath /showpage {} def /setpagedevice {pop} def
 BEGINEPS
 
 cat "${infile}" |
+LC_ALL=C \
 sed -e '/^%%BeginPreview:/,/^%%EndPreview[^!-\~]*$/d' -e '/^%!PS-Adobe/d'\
 	-e '/^%%[A-Za-z][A-Za-z]*[^!-\~]*$/d' -e '/^%%[A-Za-z][A-Za-z]*: /d'
 
