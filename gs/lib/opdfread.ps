@@ -191,6 +191,52 @@ end % A dictionary for local binding
 { dup (A) 0 get ge exch (Z) 0 get le and
 } bind def
 
+% Copy (recursive) packedarray|array to to global VM
+% NOTE: a packedarray will be converted to non-packed (too bad)
+/cpa2g {	% <packedarray|array> cpa2g <packedarray|array>
+  dup length array	% <src> <dest>
+  0 1 2 index length 1 sub {
+	% <src> <dest> index
+    dup 3 index exch get cp2g
+	% <src> <dest> index <globalelement>
+    3 copy put pop pop
+  } for
+  exch pop 
+} bind def
+
+% Copy (recursive) dict to to global VM
+/cpd2g {
+  dup length dict exch {
+    cp2g 2 index 3 1 roll put
+  } forall
+} bind def
+
+% Copy string to to global VM
+/cps2g {	% <string> cps2g <string>
+  dup length string copy
+} bind def
+
+/cp2gprocs 
+<< /arraytype //cpa2g /dicttype //cpd2g /packedarraytype //cpa2g /stringtype //cps2g >>
+def
+
+/cp2g {		% <any> cp2g <any>
+		% where <any> is array | dict | string | packedarray
+		% NOTE: The object must be readable (not executeonly or noaccess)
+  dup gcheck not {
+    dup //cp2gprocs 1 index type 
+    2 copy known {
+      get currentglobal 3 1 roll true setglobal exec exch setglobal
+      % set the attributes appropriately (we must have 'read' access to get this far)
+      1 index wcheck not { readonly } if
+      1 index xcheck { cvx } if
+      exch pop		% discard original (local) object
+    } {
+      pop pop	% discard type
+    } ifelse
+  } if
+} bind def
+
 % ===================== Work Data =========================================
 
 /BlockBuffer 65535 string def % Make it big to load entire TrueType font
@@ -218,11 +264,13 @@ setglobal
 
 % ===================== Constants =========================================
 
+% The ExtGState elements are composite, thus need to be copied to
+% global VM (in case they aren't already global).
 /InitialExtGState 20 dict begin
-  /BG2 currentblackgeneration def
-  /UCR2 currentundercolorremoval def
-  /TR2 [ currentcolortransfer ] def
-  /HT currenthalftone def
+  /BG2 currentblackgeneration cp2g def
+  /UCR2 currentundercolorremoval cp2g def
+  /TR2 [ currentcolortransfer ] cp2g def
+  /HT currenthalftone cp2g def
 currentdict end readonly def
 
 /InitialGraphicState 20 dict begin
