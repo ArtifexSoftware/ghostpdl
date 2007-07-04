@@ -32,7 +32,7 @@ set_cinfo_polarity(gx_device * dev, gx_color_polarity_t new_polarity)
 #ifdef DEBUG
     /* sanity check */
     if (new_polarity == GX_CINFO_POLARITY_UNKNOWN) {
-        dprintf("set_cinfo_polarity: illegal operand");
+        dprintf("set_cinfo_polarity: illegal operand\n");
         return;
     }
 #endif
