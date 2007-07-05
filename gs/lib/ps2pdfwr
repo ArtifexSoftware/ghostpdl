@@ -5,6 +5,11 @@
 # This definition is changed on install to match the
 # executable name set in the makefile
 GS_EXECUTABLE=gs
+gs="`dirname $0`/$GS_EXECUTABLE"
+if test ! -x "$gs"; then
+	gs="$GS_EXECUTABLE"
+fi
+GS_EXECUTABLE="$gs"
 
 OPTIONS="-dSAFER"
 while true
@@ -37,4 +42,4 @@ fi
 
 # We have to include the options twice because -I only takes effect if it
 # appears before other options.
-exec $GS_EXECUTABLE $OPTIONS -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite "-sOutputFile=$outfile" $OPTIONS -c .setpdfwrite -f "$infile"
+exec "$GS_EXECUTABLE" $OPTIONS -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite "-sOutputFile=$outfile" $OPTIONS -c .setpdfwrite -f "$infile"

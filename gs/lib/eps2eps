@@ -5,6 +5,11 @@
 # This definition is changed on install to match the
 # executable name set in the makefile
 GS_EXECUTABLE=gs
+gs="`dirname $0`/$GS_EXECUTABLE"
+if test ! -x "$gs"; then
+	gs="$GS_EXECUTABLE"
+fi
+GS_EXECUTABLE="$gs"
 
 OPTIONS="-dDEVICEWIDTH=250000 -dDEVICEHEIGHT=250000"
 while true
@@ -21,4 +26,4 @@ if [ $# -ne 2 ]; then
 	exit 1
 fi
 
-exec $GS_EXECUTABLE -q -sDEVICE=epswrite "-sOutputFile=$2" -dNOPAUSE -dBATCH -dSAFER $OPTIONS "$1"
+exec "$GS_EXECUTABLE" -q -sDEVICE=epswrite "-sOutputFile=$2" -dNOPAUSE -dBATCH -dSAFER $OPTIONS "$1"

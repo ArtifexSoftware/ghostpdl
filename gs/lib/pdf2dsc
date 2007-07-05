@@ -9,6 +9,11 @@
 # This definition is changed on install to match the
 # executable name set in the makefile
 GS_EXECUTABLE=gs
+gs="`dirname $0`/$GS_EXECUTABLE"
+if test ! -x "$gs"; then
+	gs="$GS_EXECUTABLE"
+fi
+GS_EXECUTABLE="$gs"
 
 me=`basename $0`
 
@@ -26,5 +31,5 @@ pdffile=$1
 dscfile=$2
 : ${dscfile:=`echo $pdffile | sed 's,\.[^/.]*,,'`.dsc}
 
-exec $GS_EXECUTABLE -q -dNODISPLAY -dSAFER -dDELAYSAFER\
+exec "$GS_EXECUTABLE" -q -dNODISPLAY -dSAFER -dDELAYSAFER\
     -sPDFname="$pdffile" -sDSCname="$dscfile" pdf2dsc.ps -c quit
