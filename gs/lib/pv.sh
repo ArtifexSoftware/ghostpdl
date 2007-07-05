@@ -33,10 +33,18 @@ GS_EXECUTABLE=gs
 TEMPDIR=.
 PAGE=$1
 shift
-FILE=$1
+FILE="$1"
 shift
-trap "rm -rf $TEMPDIR/$FILE.$$.pv" 0 1 2 15
-#dvips -D$RESOLUTION -p $PAGE -n 1 $FILE $* -o $FILE.$$.pv
-dvips -p $PAGE -n 1 $FILE $* -o $FILE.$$.pv
-$GS_EXECUTABLE $FILE.$$.pv
+if test -z "$TEMPDIR"; then
+	TEMPDIR=/tmp
+fi
+if which mktemp >/dev/null 2>/dev/null; then
+	tmpfile="`mktemp $TEMPDIR/\"$FILE\".pv.XXXXXX`"
+else
+	tmpfile="$TEMPDIR/$FILE.$$.pv"
+fi
+trap "rm -rf $tmpfile" 0 1 2 15
+#dvips -D$RESOLUTION -p $PAGE -n 1 "$FILE" "$@" -o $tmpfile
+dvips -p $PAGE -n 1 "$FILE" "$@" -o $tmpfile
+$GS_EXECUTABLE $tmpfile
 exit 0
