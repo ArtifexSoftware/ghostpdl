@@ -482,11 +482,16 @@ pattern_accum_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 		       gs_get_bits_params_t * params, gs_int_rect ** unread)
 {
     gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
+    const gs_pattern1_instance_t *pinst = padev->instance;
 
     if (padev->bits)
 	return (*dev_proc(padev->target, get_bits_rectangle))
 	    (padev->target, prect, params, unread);
-    return_error(gs_error_Fatal); /* can't happen */
+
+	if (pinst->template.PaintType == 2)
+		return 0;
+	else
+		return_error(gs_error_Fatal); /* shouldn't happen */
 }
 
 /* ------ Color space implementation ------ */
