@@ -119,6 +119,16 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 
     dict = NULL;
 
+    /* Workaround for broken pdf14trans pop/push.
+     * Reinstate the original device for each page.
+     */
+    {
+	static gx_device *g_original_device = NULL;
+	if (!g_original_device)
+	    g_original_device = gs_currentdevice(ctx->pgs);
+	gs_setdevice_no_erase(ctx->pgs, g_original_device);
+    }
+
     /* Setup new page */
     {
 	gs_memory_t *mem = ctx->memory;
@@ -164,12 +174,10 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	    return gs_rethrow(code, "cannot clear page");
     }
 
-#ifdef PDF14_PAGE
     code = gs_push_pdf14trans_device(ctx->pgs);
     if (code < 0)
 	return gs_rethrow(code, "cannot install transparency device");
-#endif
-    
+
     /* Draw contents */
 
     for (node = xps_down(root); node; node = xps_next(node))
@@ -190,11 +198,9 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	    xps_parse_canvas(ctx, dict, node);
     }
 
-#ifdef PDF14_PAGE
     code = gs_pop_pdf14trans_device(ctx->pgs);
     if (code < 0)
-	return gs_rethrow(code, "cannot remove transparency device");
-#endif
+	return gs_rethrow(code, "cannot uninstall transparency device");
 
     /* Flush page */
     {

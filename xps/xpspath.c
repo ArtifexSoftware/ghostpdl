@@ -642,8 +642,6 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	opacity = atof(opacity_att);
     gs_setopacityalpha(ctx->pgs, opacity);
 
-    gs_setopacityalpha(ctx->pgs, 0.5);
-
     if (fill_tag && !strcmp(xps_tag(fill_tag), "SolidColorBrush"))
     {
 	fill_att = xps_att(fill_tag, "Color");

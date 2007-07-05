@@ -244,14 +244,6 @@ xps_imp_init_job(pl_interp_instance_t *pinstance)
 {
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     xps_context_t *ctx = instance->ctx;
-    int code;
-
-#ifdef PDF14_JOB
-    code = gs_push_pdf14trans_device(ctx->pgs);
-    if (code < 0)
-	return gs_rethrow(code, "cannot install transparency device");
-#endif
-
     return 0;
 }
 
@@ -261,14 +253,6 @@ xps_imp_dnit_job(pl_interp_instance_t *pinstance)
 {
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     xps_context_t *ctx = instance->ctx;
-    int code;
-
-#ifdef PDF14_JOB
-    code = gs_pop_pdf14trans_device(ctx->pgs);
-    if (code < 0)
-	return gs_rethrow(code, "cannot remove transparency device");
-#endif
-
     return 0;
 }
 

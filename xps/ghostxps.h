@@ -52,9 +52,6 @@
 #define dpf
 #endif
 
-#define noPDF14_JOB
-#define PDF14_PAGE
-
 /*
  * Forward declarations.
  */
