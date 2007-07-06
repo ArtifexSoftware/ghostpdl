@@ -1271,6 +1271,14 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		     * ends.
 		     */
 		    set_first_point();
+		    /*
+		     * If implicit_close == true, we don't need an explicit closepath,
+		     * because the filling algorithm will close subpath automatically.
+		     * Otherwise, if open < 0, we have an empty closed path.
+		     * If side != 0, it is outside the band, so we can 
+		     * safely skip it, because the band has been expanded
+		     * with line width.
+		     */
 		    if (side != 0) {
 			open = 0;
 			continue;
