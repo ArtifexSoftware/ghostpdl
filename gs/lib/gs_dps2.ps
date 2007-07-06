@@ -129,7 +129,7 @@ end
   } if
   exec exec
   .setglobal pop
-} odef
+} .bind odef
 % Redefine setscreen and setcolorscreen to recognize halftone dictionaries,
 % and to insert the Frequency and Angle into Type 1 halftones, per
 % Adobe TN 5085.
@@ -148,13 +148,13 @@ end
 	   { .fixsethalftonescreen sethalftone pop pop pop }
 	   { //setscreen }
 	  ifelse
-	} odef
+	} .bind odef
 /setcolorscreen		% <ignore*11> <dict> setcolorscreen -
 	{ dup type /dicttype eq
 	   { .fixsethalftonescreen sethalftone 12 { pop } repeat }
 	   { //setcolorscreen }
 	  ifelse
-	} odef
+	} .bind odef
 % Redefine currentscreen and currentcolorscreen to extract the Frequency
 % and Angle from Type 1 halftones, per Adobe TN 5085.
 /.fixcurrenthalftonescreen	% <dict> .fix... <freq> <angle> <proc>
