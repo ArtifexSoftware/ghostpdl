@@ -724,6 +724,8 @@ gx_path_merge_contacting_contours(gx_path *ppath)
 {
     /* Now this is a simplified algorithm,
        which merge only contours by a common quazi-vertical line. */
+    /* Note the merged contour is not equivalent to sum of original contours,
+       because we ignore small coordinate differences within fixed_epsilon. */
     int window = 5/* max spot holes */ * 6/* segments per subpath */;
     subpath *sp0 = ppath->segments->contents.subpath_first;
 
@@ -735,7 +737,7 @@ gx_path_merge_contacting_contours(gx_path *ppath)
 	
 	for (count = 0; sp1 != NULL && count < window; sp1 = spnext, count++) {
 	    segment *sp1last = sp1->last;
-	    segment *sc0, *sc1;
+	    segment *sc0, *sc1, *old_first;
 		
 	    spnext = (subpath *)sp1last->next;
 	    if (find_contacting_segments(sp0, sp0last, sp1, sp1last, &sc0, &sc1)) {
@@ -745,13 +747,33 @@ gx_path_merge_contacting_contours(gx_path *ppath)
 		    sp1last->next->prev = sp1->prev;
 		sp1->prev = 0;
 		sp1last->next = 0;
-		/* Change 'closepath' of the subpath 1 to a line (maybe degenerate) : */
-		if (sp1last->type == s_line_close)
+		old_first = sp1->next;
+		/* sp1 is not longer in use. Move subpath_current from it for safe removing : */
+		if (ppath->segments->contents.subpath_current == sp1) {
+		    ppath->segments->contents.subpath_current = sp1p;
+		}
+		if (sp1last->type == s_line_close) {
+		    /* Change 'closepath' of the subpath 1 to a line (maybe degenerate) : */
 		    sp1last->type = s_line;
+		    /* sp1 is not longer in use. Free it : */
+		    gs_free_object(gs_memory_stable(ppath->memory), sp1, "gx_path_merge_contacting_contours");
+		} else if (sp1last->pt.x == sp1->pt.x && sp1last->pt.y == sp1->pt.y) {
+		    /* Implicit closepath with zero length. Don't need a new segment. */
+		    /* sp1 is not longer in use. Free it : */
+		    gs_free_object(gs_memory_stable(ppath->memory), sp1, "gx_path_merge_contacting_contours");
+		} else {
+		    /* Insert the closing line segment. */
+		    /* sp1 is not longer in use. Convert it to the line segment : */
+		    sp1->type = s_line;
+		    sp1last->next = (segment *)sp1;
+		    sp1->next = NULL;
+		    sp1->prev = sp1last;
+		    sp1->last = NULL; /* Safety for garbager. */
+		    sp1last = (segment *)sp1;
+		}
+		sp1 = 0; /* Safety. */
 		/* Rotate the subpath 1 to sc1 : */
-		{   segment *old_first = sp1->next;
-
-		    /* Detach s_start and make a loop : */
+		{   /* Detach s_start and make a loop : */
 		    sp1last->next = old_first;
 		    old_first->prev = sp1last;
 		    /* Unlink before sc1 : */
