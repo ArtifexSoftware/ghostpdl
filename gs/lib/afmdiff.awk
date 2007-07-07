@@ -1,3 +1,4 @@
+#!/usr/bin/awk -f
 ###=====================================================================
 ### Read two Adobe Font Metric files, and compute tables of the
 ### differences in character repertoire, declared widths (WX), and
@@ -120,7 +121,7 @@
 
 
 END		{
-		    Sortpipe = "sort -f | pr -c3 -w80 -l1 -t"
+		    Sortpipe = "sort -f | pr -3 -w80 -l1 -t"
 		    print "Comparison of AFM metrics in files:", ARGV[1], ARGV[2]
 		    print "Font names:", FontName[1], FontName[2]
 		    show_name_diffs(FontName[2],CharName2, FontName[1],CharName1)
