@@ -358,6 +358,7 @@ struct pcl_state_s {
     int (*end_page)( pcl_state_t * pcs, int num_copies, int flush );
     /* map device color spaces to srgb */
     bool useciecolor;
+    bool halftone_set;
 };
 
 /* accessor functions for the pcl target device.  These live in
