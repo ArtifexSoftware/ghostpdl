@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -20,10 +20,6 @@
 #include "gx.h"
 #include "gp.h"
 #include "gpcheck.h"
-#include "iapi.h"
-#include "iref.h"
-#include "iminst.h"
-#include "imain.h"
 
 /* ------ Process message loop ------ */
 /* 

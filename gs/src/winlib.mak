@@ -193,7 +193,7 @@ $(GLD)mspoll.dev: $(ECHOGS_XE) $(mspoll_)
 	$(SETMOD) $(GLD)mspoll $(mspoll_)
 
 $(GLOBJ)gp_mspol.$(OBJ): $(GLSRC)gp_mspol.c $(AK)\
- $(gx_h) $(gp_h) $(gpcheck_h) $(iapi_h) $(iref_h) $(iminst_h) $(imain_h)
+ $(gx_h) $(gp_h) $(gpcheck_h)
 	$(GLCCWIN) $(GLO_)gp_mspol.$(OBJ) $(C_) $(GLSRC)gp_mspol.c
 
 # end of winlib.mak
