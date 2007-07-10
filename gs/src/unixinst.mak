@@ -171,7 +171,7 @@ ridt91.eps ;\
 	done
 
 install-shared: $(GS_SHARED_OBJS)
-	-mkdir -p $(gssharedir)
+	-mkdir -p $(DESTDIR)$(gssharedir)
 	$(SH) -c 'for obj in $(GS_SHARED_OBJS); do \
-	    $(INSTALL_PROGRAM) $$obj $(gssharedir)/; done'
+	    $(INSTALL_PROGRAM) $$obj $(DESTDIR)$(gssharedir)/; done'
 

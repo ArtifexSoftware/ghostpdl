@@ -38,14 +38,14 @@ $(GLOBJ)gdevcups.$(OBJ): cups/gdevcups.c $(PDEVH)
 install:	install-cups
 
 install-cups:
-	-mkdir -p $(CUPSSERVER)/filter
-	$(INSTALL_PROGRAM) cups/pstoraster $(CUPSSERVER)/filter
-	$(INSTALL_PROGRAM) cups/pstopxl $(CUPSSERVER)/filter
-	-mkdir -p $(CUPSCONFIG)
-	$(INSTALL_DATA) cups/pstoraster.convs $(CUPSCONFIG)
-	-mkdir -p $(CUPSDATA)/model
-	$(INSTALL_DATA) cups/pxlcolor.ppd $(CUPSDATA)/model
-	$(INSTALL_DATA) cups/pxlmono.ppd $(CUPSDATA)/model
+	-mkdir -p $(DESTDIR)$(CUPSSERVER)/filter
+	$(INSTALL_PROGRAM) cups/pstoraster $(DESTDIR)$(CUPSSERVER)/filter
+	$(INSTALL_PROGRAM) cups/pstopxl $(DESTDIR)$(CUPSSERVER)/filter
+	-mkdir -p $(DESTDIR)$(CUPSCONFIG)
+	$(INSTALL_DATA) cups/pstoraster.convs $(DESTDIR)$(CUPSCONFIG)
+	-mkdir -p $(DESTDIR)$(CUPSDATA)/model
+	$(INSTALL_DATA) cups/pxlcolor.ppd $(DESTDIR)$(CUPSDATA)/model
+	$(INSTALL_DATA) cups/pxlmono.ppd $(DESTDIR)$(CUPSDATA)/model
 
 
 #
