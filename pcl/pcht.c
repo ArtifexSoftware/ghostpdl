@@ -1967,27 +1967,29 @@ get_rendering_info(
 #endif /* DEVICE_HAS_CRD */
 
 /*
- * Set the given halftone into the graphic state. If the halftone doesn't
- * exist yet, create a default halftone and set it into the graphic state.
- *
- * Returns 0 on success, < 0 in the event of an error.
+ * Currently pcl always uses a fixed ordered dither if used with a
+ * device that requires halfoning.
  */
+
 int
 pcl_ht_set_halftone(
     pcl_state_t *        pcs,
-    pcl_ht_t **          ppht,
-    pcl_cspace_type_t    cstype,
-    bool                 for_image
+    pcl_ht_t **          ppht,   /* NOT USED */
+    pcl_cspace_type_t    cstype, /* NOT USED */
+    bool                 for_image /* NOT USED */
 )
 {
     gs_string thresh;
+    int code;
+
+    if ( pcs->halftone_set )
+        return 0;
+
     thresh.data = (byte *)ordered_dither_data;
     thresh.size = 256;
-    return pl_set_pcl_halftone(pcs->pgs,
-                               /* set transfer */ identity_transfer,
-                               /* width */ 16, /*height */ 16,
-                               /* dither data */ thresh,
-                               /* x phase */ 0,
-                               /* y phase */ 0);
+    code = pl_set_pcl_halftone(pcs->pgs, identity_transfer, 16, 16,
+                               thresh, 0, 0);
+    if ( code >= 0 )
+        pcs->halftone_set = true;
+    return code;
 }
-
