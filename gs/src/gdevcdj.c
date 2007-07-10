@@ -3331,6 +3331,17 @@ bppe:  return gs_error_rangecheck;
 	if (pdev->is_open) {
 	    gs_closedevice(pdev);
 	}
+	if (pdev->is_open) {
+	    int				code;	/* Return code */
+	    gdev_prn_space_params	sp;	/* Space parameter data */
+ 
+	    /* Reallocate memory for device */
+	    sp = ((gx_device_printer *)pdev)->space_params;
+
+	    if ((code = gdev_prn_reallocate_memory(pdev, &sp, pdev->width,
+						   pdev->height)) < 0)
+	        return (code);
+	}
     }
 
   switch (ccomps) {
