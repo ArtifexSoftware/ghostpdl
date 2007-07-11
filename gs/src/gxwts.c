@@ -14,7 +14,7 @@
 /* Rendering using Well Tempered Screening. */
 #include "stdpre.h"
 #include "memory_.h" /* for memcmp */
-#include <stdlib.h> /* for malloc */
+#include "malloc_.h"
 #include "gx.h"
 #include "gxstate.h"
 #include "gsht.h"
