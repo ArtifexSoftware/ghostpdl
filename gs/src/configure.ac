@@ -923,8 +923,11 @@ AC_SUBST(HAVE_HYPOT)
 AC_CHECK_FUNCS([fopen64], [HAVE_FILE64=-DHAVE_FILE64])
 AC_SUBST(HAVE_FILE64)
 
-AC_FUNC_FORK
 AC_PROG_GCC_TRADITIONAL
+
+dnl NB: We don't actually provide autoconf-switched fallbacks for any
+dnl     of these functions, so the checks are purely informational.
+AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_TYPE_SIGNAL
