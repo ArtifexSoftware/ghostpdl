@@ -78,7 +78,7 @@ ps_impl_characteristics(
 #define PSVERSION NULL
 #define PSBUILDDATE NULL
   static const pl_interp_characteristics_t ps_characteristics = {
-    "PS",
+    "POSTSCRIPT",
     /* NOTE - we don't look for %! because we want to recognize pdf as well */
     "%",
     "Artifex",
