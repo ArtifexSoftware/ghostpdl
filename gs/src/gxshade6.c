@@ -618,11 +618,6 @@ typedef struct {
     patch_color_t *c[2][2];     /* [v][u] */
 } tensor_patch;
 
-typedef struct {
-    const shading_vertex_t *p[2][2]; /* [v][u] */
-    wedge_vertex_list_t *l0001, *l0111, *l1110, *l1000;
-} quadrangle_patch;
-
 typedef enum {
     interpatch_padding = 1, /* A Padding between patches for poorly designed documents. */
     inpatch_wedge = 2  /* Wedges while a patch decomposition. */
@@ -1195,6 +1190,11 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
 	    code = patch_color_to_device_color_inline(pfs, c1, NULL, fc[1]);
 	    if (code < 0)
 		goto out;
+	    if (fa.swap_axes) {
+		vd_quad(le->start.y, le->start.x, le->end.y, le->end.x, re->end.y, re->end.x, re->start.y, re->start.x, 0, RGB(0,255,0));
+	    } else {
+		vd_quad(le->start.x, le->start.y, le->end.x, le->end.y, re->end.x, re->end.y, re->start.x, re->start.y, 0, RGB(0,255,0));
+	    }
 	    code = dev_proc(pdev, fill_linear_color_trapezoid)(pdev, &fa, 
 			    &le->start, &le->end, &re->start, &re->end, 
 			    fc[0], fc[1], NULL, NULL);
@@ -2337,7 +2337,7 @@ constant_color_quadrangle_aux(patch_fill_state_t *pfs, const quadrangle_patch *p
     }
 }
 
-private int
+int
 constant_color_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool self_intersecting)
 {
     patch_color_t *c[3];

@@ -640,8 +640,10 @@ R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *
 }
 
 private int
-R_fill_rect_with_const_color(const patch_fill_state_t *pfs, const gs_fixed_rect *clip_rect, float t)
+R_fill_rect_with_const_color(patch_fill_state_t *pfs, const gs_fixed_rect *clip_rect, float t)
 {
+#if 0 /* Disabled because the clist writer device doesn't pass 
+         the clipping path with fill_recatangle. */
     patch_color_t pc;
     const gs_color_space *pcs = pfs->direct_space;
     gx_device_color dc;
@@ -658,6 +660,34 @@ R_fill_rect_with_const_color(const patch_fill_state_t *pfs, const gs_fixed_rect 
 					fixed2int_pixround(clip_rect->q.x) - fixed2int_pixround(clip_rect->p.x),
 					fixed2int_pixround(clip_rect->q.y) - fixed2int_pixround(clip_rect->p.y), 
 					&dc, pfs->dev, pfs->pis->log_op);
+#else
+    /* Can't apply fill_rectangle, because the clist writer device doesn't pass 
+       the clipping path with fill_recatangle. Convert into trapezoids instead.
+    */
+    quadrangle_patch p;
+    shading_vertex_t pp[2][2];
+    const gs_color_space *pcs = pfs->direct_space;
+    patch_color_t pc;
+    int code;
+
+    code = gs_function_evaluate(pfs->Function, &t, pc.cc.paint.values);
+    if (code < 0)
+	return code;
+    pcs->type->restrict_color(&pc.cc, pcs);
+    pc.t[0] = pc.t[1] = t;
+    pp[0][0].p = clip_rect->p;
+    pp[0][1].p.x = clip_rect->q.x;
+    pp[0][1].p.y = clip_rect->p.y;
+    pp[1][0].p.x = clip_rect->p.x;
+    pp[1][0].p.y = clip_rect->q.y;
+    pp[1][1].p = clip_rect->q;
+    pp[0][0].c = pp[0][1].c = pp[1][0].c = pp[1][1].c = &pc;
+    p.p[0][0] = &pp[0][0];
+    p.p[0][1] = &pp[0][1];
+    p.p[1][0] = &pp[1][0];
+    p.p[1][1] = &pp[1][1];
+    return constant_color_quadrangle(pfs, &p, false);
+#endif
 }
 
 typedef struct radial_shading_attrs_s {

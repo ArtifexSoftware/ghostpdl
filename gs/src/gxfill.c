@@ -618,27 +618,38 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	    code = gx_dc_pattern2_clip_with_bbox(pdevc, pdev, &cpath_with_shading_bbox, &pcpath1);
 	/* Do fill : */
 	if (code >= 0) {
+	    gs_fixed_rect clip_box;
+	    gs_int_rect cb;
 	    const gx_rop_source_t *rs = NULL;
 	    gx_device *dev;
 	    gx_device_clip cdev;
-	    gs_fixed_rect clip_box;
-	    gs_int_rect cb;
 
 	    gx_cpath_outer_box(pcpath1, &clip_box);
-	    gx_make_clip_path_device(&cdev, pcpath1);
-	    cdev.HWResolution[0] = pdev->HWResolution[0];
-	    cdev.HWResolution[1] = pdev->HWResolution[1];
-	    cdev.target = pdev;
-	    dev = (gx_device *)&cdev;
-	    if ((*dev_proc(pdev, pattern_manage))(pdev, 
-		    gs_no_id, NULL, pattern_manage__shading_area) > 0)
-		set_dev_proc(&cdev, fill_path, pass_shading_area_through_clip_path_device);
-	    (*dev_proc(dev, open_device))(dev);
 	    cb.p.x = fixed2int_pixround(clip_box.p.x);
 	    cb.p.y = fixed2int_pixround(clip_box.p.y);
 	    cb.q.x = fixed2int_pixround(clip_box.q.x);
 	    cb.q.y = fixed2int_pixround(clip_box.q.y);
-	    code = pdevc->type->fill_rectangle(pdevc,
+	    if (gx_dc_is_pattern2_color(pdevc) && 
+		    (*dev_proc(pdev, pattern_manage))(pdev, gs_no_id, NULL, pattern_manage__handles_clip_path) > 0) {
+		/* A special interaction with clist writer device : 
+		   pass the intersected clipping path. It uses an unusual call to
+		   fill_path with NULL device color. */
+		code = (*dev_proc(pdev, fill_path))(pdev, pis, ppath, params, NULL, pcpath1);
+		dev = pdev;
+	    } else {
+		gx_make_clip_path_device(&cdev, pcpath1);
+		cdev.HWResolution[0] = pdev->HWResolution[0];
+		cdev.HWResolution[1] = pdev->HWResolution[1];
+		cdev.target = pdev;
+		dev = (gx_device *)&cdev;
+		if ((*dev_proc(pdev, pattern_manage))(pdev, 
+			gs_no_id, NULL, pattern_manage__shading_area) > 0)
+		    set_dev_proc(&cdev, fill_path, pass_shading_area_through_clip_path_device);
+		(*dev_proc(dev, open_device))(dev);
+		code = 0;
+	    }
+	    if (code >= 0)
+		code = pdevc->type->fill_rectangle(pdevc,
 			cb.p.x, cb.p.y, cb.q.x - cb.p.x, cb.q.y - cb.p.y,
 			dev, pis->log_op, rs);
 	}

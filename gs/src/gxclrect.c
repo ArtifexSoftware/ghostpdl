@@ -134,20 +134,68 @@ cmd_write_rect_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     return 0;
 }
 
+private inline byte * 
+cmd_put_frac31_color(gx_device_clist_writer * cldev, const frac31 *c, byte *dp)
+{
+    int num_components = cldev->color_info.num_components;
+    int j;
+
+    for (j = 0; j < num_components; j++)
+	cmd_putw(c[j], dp);
+    return dp;
+}
+
+private inline int
+cmd_size_frac31_color(gx_device_clist_writer * cldev, const frac31 *c)
+{
+    int j, s = 0;
+    int num_components = cldev->color_info.num_components;
+
+    for (j = 0; j < num_components; j++)
+	s += cmd_sizew(c[j]);
+    return s;
+}
+
 private int
 cmd_write_trapezoid_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		    int op,  const gs_fixed_edge *left, const gs_fixed_edge *right,
-		    fixed ybot, fixed ytop, bool swap_axes)
+		    fixed ybot, fixed ytop, int options, 
+		    const gs_fill_attributes *fa, 
+		    const frac31 *c0, const frac31 *c1,
+		    const frac31 *c2, const frac31 *c3)
 {
     byte *dp;
     int rcsize;
     int code;
+    int colors_mask = 0;
 
     rcsize = 1 + cmd_sizew(left->start.x) + cmd_sizew(left->start.y)
 	       + cmd_sizew(left->end.x) + cmd_sizew(left->end.y)
 	       + cmd_sizew(right->start.x) + cmd_sizew(right->start.y)
 	       + cmd_sizew(right->end.x) + cmd_sizew(right->end.y)
-	       + cmd_sizew(ybot) + cmd_sizew(ytop) + cmd_sizew(swap_axes);
+	       + cmd_sizew(ybot) + cmd_sizew(ytop) + cmd_sizew(options);
+
+    if (options & 2) {
+	rcsize += cmd_sizew(fa->clip->p.x) + cmd_sizew(fa->clip->p.y) 
+		+ cmd_sizew(fa->clip->q.x) + cmd_sizew(fa->clip->q.y);
+	if (c0 != NULL) {
+	    colors_mask += 1;
+	    rcsize += cmd_size_frac31_color(cldev, c0);
+	}
+	if (c1 != NULL) {
+	    colors_mask += 2;
+	    rcsize += cmd_size_frac31_color(cldev, c1);
+	}
+	if (c2 != NULL) {
+	    colors_mask += 4;
+	    rcsize += cmd_size_frac31_color(cldev, c2);
+	}
+	if (c3 != NULL) {
+	    colors_mask += 8;
+	    rcsize += cmd_size_frac31_color(cldev, c3);
+	}
+	rcsize += cmd_sizew(colors_mask);
+    }
     code = set_cmd_put_op(dp, cldev, pcls, op, rcsize);
     if (code < 0)
 	return code;
@@ -162,11 +210,26 @@ cmd_write_trapezoid_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     cmd_putw(right->end.y, dp);
     cmd_putw(ybot, dp);
     cmd_putw(ytop, dp);
-    cmd_putw(swap_axes, dp);
+    cmd_putw(options, dp);
     if_debug6('L', "    t%d:%d,%d,%d,%d   %d\n",
 	      rcsize - 1, left->start.x, left->start.y, left->end.x, left->end.y, ybot);
-    if_debug5('L', "    t%d,%d,%d,%d   %d\n",
-	      right->start.x, right->start.y, right->end.x, right->end.y, ytop);
+    if_debug6('L', "    t%d,%d,%d,%d   %d   o=%d\n",
+	      right->start.x, right->start.y, right->end.x, right->end.y, ytop, options);
+    if (options & 2) {
+	cmd_putw(fa->clip->p.x, dp);
+	cmd_putw(fa->clip->p.y, dp);
+	cmd_putw(fa->clip->q.x, dp);
+	cmd_putw(fa->clip->q.y, dp);
+	cmd_putw(colors_mask, dp);
+	if (c0 != NULL)
+	    dp = cmd_put_frac31_color(cldev, c0, dp);
+	if (c1 != NULL)
+	    dp = cmd_put_frac31_color(cldev, c1, dp);
+	if (c2 != NULL)
+	    dp = cmd_put_frac31_color(cldev, c2, dp);
+	if (c3 != NULL)
+	    cmd_put_frac31_color(cldev, c3, dp);
+    }
     return 0;
 }
 
@@ -210,43 +273,78 @@ error_in_rect:
     return 0;
 }
 
-int 
-clist_fill_trapezoid(gx_device * dev,
+private inline int 
+clist_write_fill_trapezoid(gx_device * dev,
     const gs_fixed_edge *left, const gs_fixed_edge *right,
-    fixed ybot, fixed ytop, bool swap_axes,
-    const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
+    fixed ybot, fixed ytop, int options,
+    const gx_drawing_color *pdcolor, gs_logical_operation_t lop,
+    const gs_fill_attributes *fa,
+    const frac31 *c0, const frac31 *c1,
+    const frac31 *c2, const frac31 *c3)
 {
     gx_device_clist_writer * const cdev =
 	&((gx_device_clist *)dev)->writer;
     int code;
     cmd_rects_enum_t re;
     int ry, rheight;
+    bool swap_axes = (options & 1);
 
-    if (swap_axes) {
-	ry = fixed2int(min(left->start.x, left->end.x));
-	rheight = fixed2int_ceiling(max(right->start.x, right->end.x)) - ry;
+    if (options & 4) {
+	if (swap_axes) {
+	    ry = fixed2int(min(min(left->start.x, left->end.x), right->start.x));
+	    rheight = fixed2int_ceiling(max(max(left->start.x, left->end.x), right->start.x)) - ry;
+	} else {
+	    ry = fixed2int(min(min(left->start.y, left->end.y), right->start.y));
+	    rheight = fixed2int_ceiling(max(max(left->start.y, left->end.y), right->start.y)) - ry;
+	}
     } else {
-	ry = fixed2int(ybot);
-	rheight = fixed2int_ceiling(ytop) - ry;
+	if (swap_axes) {
+	    ry = fixed2int(min(left->start.x, left->end.x));
+	    rheight = fixed2int_ceiling(max(right->start.x, right->end.x)) - ry;
+	} else {
+	    ry = fixed2int(ybot);
+	    rheight = fixed2int_ceiling(ytop) - ry;
+	}
     }
+    if (cdev->cropping_by_path) {
+	/* Cropping by Y is necessary when the shading path is smaller than shading.
+	   In this case the clipping path is written into the path's bands only.
+	   Thus bands outside the shading path are not clipped,
+	   but the shading may paint into them, so crop them here.
+	 */
+	if (ry < cdev->cropping_min) {
+	    rheight = ry + rheight - cdev->cropping_min;
+	    ry = cdev->cropping_min;
+	}
+	if (ry + rheight > cdev->cropping_max)
+	    rheight = cdev->cropping_max - ry;
+    }
+    fit_fill_y(dev, ry, rheight);
     fit_fill_h(dev, ry, rheight);
+    if (rheight < 0)
+	return 0;
     if (cdev->permanent_error < 0)
 	return (cdev->permanent_error);
     RECT_ENUM_INIT(re, ry, rheight);
     do {
 	RECT_STEP_INIT(re);
 	do {
-	    code = cmd_put_drawing_color(cdev, re.pcls, pdcolor);
-	    if (code < 0) {
-		/* Something went wrong, use the default implementation. */
-		return gx_default_fill_trapezoid(dev, left, right, ybot, ytop, swap_axes, pdcolor, lop);
-	    }
-	    code = cmd_update_lop(cdev, re.pcls, lop);
+	    if (pdcolor != NULL) {
+		code = cmd_put_drawing_color(cdev, re.pcls, pdcolor);
+		if (code < 0) {
+		    /* Something went wrong, use the default implementation. */
+		    return gx_default_fill_trapezoid(dev, left, right, ybot, ytop, swap_axes, pdcolor, lop);
+		}
+		code = cmd_update_lop(cdev, re.pcls, lop);
+	    } else
+		code = 0;
 	    if (code >= 0) {
+		byte *dp;
+
 		/* Dont't want to shorten the trapezoid by the band boundary,
 		   keeping in mind a further optimization with writing same data to all bands. */
 		code = cmd_write_trapezoid_cmd(cdev, re.pcls, cmd_opv_fill_trapezoid, left, right,
-					  ybot, ytop, swap_axes);
+					  ybot, ytop, options, fa, c0, c1, c2, c3);
 	    }
 	} while (RECT_RECOVER(code));
 	if (code < 0 && SET_BAND_CODE(code))
@@ -260,6 +358,88 @@ error_in_rect:
     } while (re.y < re.yend);
     return 0;
 }
+
+int
+clist_fill_trapezoid(gx_device * dev,
+    const gs_fixed_edge *left, const gs_fixed_edge *right,
+    fixed ybot, fixed ytop, bool swap_axes,
+    const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
+{
+    return clist_write_fill_trapezoid(dev, left, right,
+	ybot, ytop, swap_axes, pdcolor, lop, NULL, NULL, NULL, NULL, NULL);
+}
+
+int
+clist_fill_linear_color_trapezoid(gx_device * dev, const gs_fill_attributes *fa,
+	const gs_fixed_point *p0, const gs_fixed_point *p1,
+	const gs_fixed_point *p2, const gs_fixed_point *p3,
+	const frac31 *c0, const frac31 *c1,
+	const frac31 *c2, const frac31 *c3)
+{
+    gs_fixed_edge left, right;
+    int code;
+
+    left.start = *p0;
+    left.end = *p1;
+    right.start = *p2;
+    right.end = *p3;
+    code = clist_write_fill_trapezoid(dev, &left, &right,
+	fa->ystart, fa->yend, fa->swap_axes | 2, NULL, lop_default, fa, c0, c1, c2, c3);
+    if (code < 0)
+	return code;
+    /* NOTE : The return value 0 for the fill_linear_color_trapezoid method means
+       that the device requests a further decomposition of the trapezoid.
+       Currently we have no interface for checking whether the target device
+       can handle a trapezoid without an attempt to fill it.
+       Therefore the clist writer device must always return 1,
+       and the clist reader must perform a further decomposition
+       if the target device requests it.
+     */
+    return 1;
+}
+
+int 
+clist_fill_linear_color_triangle(gx_device * dev, const gs_fill_attributes *fa,
+	const gs_fixed_point *p0, const gs_fixed_point *p1,
+	const gs_fixed_point *p2,
+	const frac31 *c0, const frac31 *c1, const frac31 *c2)
+{
+    gs_fixed_edge left, right;
+    int code;
+
+    left.start = *p0;
+    left.end = *p1;
+    right.start = *p2;
+    right.end.x = right.end.y = 0; /* unused. */
+
+    code = clist_write_fill_trapezoid(dev, &left, &right,
+	fa->ystart, fa->yend, fa->swap_axes | 2 | 4, NULL, lop_default, fa, c0, c1, c2, NULL);
+    if (code < 0)
+	return code;
+    /* NOTE : The return value 0 for the fill_linear_color_triangle method means
+       that the device requests a further decomposition of the trapezoid.
+       Currently we have no interface for checking whether the target device
+       can handle a trapezoid without an attempt to fill it.
+       Therefore the clist writer device must always return 1,
+       and the clist reader must perform a further decomposition
+       if the target device requests it.
+     */
+    return 1;
+}
+
+
+int 
+clist_pattern_manage(gx_device *pdev, gx_bitmap_id id,
+		gs_pattern1_instance_t *pinst, pattern_manage_t function)
+{
+    if (function == pattern_manage__handles_clip_path)
+	return 1;
+    return gx_default_pattern_manage(pdev, id, pinst, function);
+}
+
+#define dev_proc_pattern_manage(proc)\
+  dev_t_proc_pattern_manage(proc, gx_device)
+
 
 int
 clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,

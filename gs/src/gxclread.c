@@ -27,6 +27,7 @@
 #include "gxhttile.h"
 #include "gdevplnx.h"
 #include "gsmemory.h"
+#include "vdtrace.h"
 /*
  * We really don't like the fact that gdevprn.h is included here, since
  * command lists are supposed to be usable for purposes other than printer
@@ -546,7 +547,15 @@ clist_playback_file_bands(clist_playback_action action,
 	s_std_init(&s, sbuf, cbuf_size, &no_procs, s_mode_read);
 	s.foreign = 1;
 	s.state = (stream_state *)&rs;
+
+
+	vd_get_dc('s');
+	vd_set_shift(0, 0);
+	vd_set_scale(0.01);
+	vd_set_origin(0, 0);
+	vd_erase(RGB(192, 192, 192));
 	code = clist_playback_band(action, crdev, &s, target, x0, y0, mem);
+	vd_release_dc;
     }
 
     /* Close the files if we just opened them. */

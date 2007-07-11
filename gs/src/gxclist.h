@@ -248,6 +248,8 @@ typedef struct gx_device_clist_writer_s {
 	proc_free_up_bandlist_memory((*free_up_bandlist_memory)); /* if nz, proc to free some bandlist memory */
 	int disable_mask;		/* mask of routines to disable clist_disable_xxx */
 	gs_pattern1_instance_t *pinst; /* Used when it is a pattern clist. */
+	bool cropping_by_path;
+	int cropping_min, cropping_max;
 } gx_device_clist_writer;
 
 /* Bits for gx_device_clist_writer.disable_mask. Bit set disables behavior */

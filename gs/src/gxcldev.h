@@ -283,6 +283,9 @@ dev_proc_copy_alpha(clist_copy_alpha);
 dev_proc_strip_tile_rectangle(clist_strip_tile_rectangle);
 dev_proc_strip_copy_rop(clist_strip_copy_rop);
 dev_proc_fill_trapezoid(clist_fill_trapezoid);
+dev_proc_fill_linear_color_trapezoid(clist_fill_linear_color_trapezoid);
+dev_proc_fill_linear_color_triangle(clist_fill_linear_color_triangle);
+dev_proc_pattern_manage(clist_pattern_manage);
 
 /* In gxclimag.c */
 dev_proc_fill_mask(clist_fill_mask);

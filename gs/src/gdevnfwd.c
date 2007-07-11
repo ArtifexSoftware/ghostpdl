@@ -757,8 +757,13 @@ gx_forward_pattern_manage(gx_device * dev, gx_bitmap_id id,
 		return 1;
 	}
 	return 0;
-    } else
+    } else {
+	if (function == pattern_manage__handles_clip_path) {
+	    if (dev->procs.fill_path == gx_default_fill_path)
+		return 0;
+	}
 	return dev_proc(tdev, pattern_manage)(tdev, id, pinst, function);
+    }
 }
 
 int

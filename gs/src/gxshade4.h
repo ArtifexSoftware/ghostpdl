@@ -160,6 +160,11 @@ typedef struct patch_curve_s {
     bool straight;
 } patch_curve_t;
 
+typedef struct {
+    const shading_vertex_t *p[2][2]; /* [v][u] */
+    wedge_vertex_list_t *l0001, *l0111, *l1110, *l1000;
+} quadrangle_patch;
+
 /* Initialize the fill state for triangle shading. */
 int mesh_init_fill_state(mesh_fill_state_t * pfs,
 			  const gs_shading_mesh_t * psh,
@@ -179,6 +184,8 @@ int patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	   const gs_fixed_point interior[4],
 	   void (*transform) (gs_fixed_point *, const patch_curve_t[4],
 			      const gs_fixed_point[4], floatp, floatp));
+
+int constant_color_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool self_intersecting);
 
 int wedge_vertex_list_elem_buffer_alloc(patch_fill_state_t *pfs);
 void wedge_vertex_list_elem_buffer_free(patch_fill_state_t *pfs);

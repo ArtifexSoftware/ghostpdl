@@ -150,12 +150,12 @@ const gx_device_procs gs_clist_device_procs = {
     gx_forward_get_color_comp_index,
     gx_forward_encode_color,
     gx_forward_decode_color,
-    gx_default_pattern_manage,
+    clist_pattern_manage,
     gx_default_fill_rectangle_hl_color,
     gx_default_include_color_space,
     gx_default_fill_linear_color_scanline,
-    gx_default_fill_linear_color_trapezoid, /* fixme : write to clist. */
-    gx_default_fill_linear_color_triangle,
+    clist_fill_linear_color_trapezoid,
+    clist_fill_linear_color_triangle,
     gx_forward_update_spot_equivalent_colors,
     gx_forward_ret_devn_params
 };
@@ -457,6 +457,7 @@ clist_reset(gx_device * dev)
     cdev->undercolor_removal_id = gs_no_id;
     cdev->device_halftone_id = gs_no_id;
     cdev->image_enum_id = gs_no_id;
+    cdev->cropping_by_path = false;
     return 0;
 }
 /*

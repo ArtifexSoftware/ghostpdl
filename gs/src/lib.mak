@@ -1687,7 +1687,7 @@ $(GLOBJ)gxclread.$(OBJ) : $(GLSRC)gxclread.c $(GXERR)\
  $(gscoord_h) $(gsdevice_h)\
  $(gxcldev_h) $(gxdevice_h) $(gxdevmem_h) $(gxgetbit_h) $(gxhttile_h)\
  $(gsmemory_h) \
- $(stream_h) $(strimpl_h)
+ $(stream_h) $(strimpl_h) $(vdtrace_h)
 	$(GLCC) $(GLO_)gxclread.$(OBJ) $(C_) $(GLSRC)gxclread.c
 
 $(GLOBJ)gxclrect.$(OBJ) : $(GLSRC)gxclrect.c $(GXERR)\

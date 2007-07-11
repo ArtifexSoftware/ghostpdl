@@ -90,7 +90,7 @@ cmd_get_w(const byte * p, const byte ** rp)
     long val = *p++ & 0x7f;
     int shift = 7;
 
-    for (; val += (long)(*p & 0x7f) << shift, *p++ > 0x7f; shift += 7);
+    for (; val |= (long)(*p & 0x7f) << shift, *p++ > 0x7f; shift += 7);
     *rp = p;
     return val;
 }
@@ -291,6 +291,8 @@ clist_playback_band(clist_playback_action playback_action,
     int code = 0;
     ht_buff_t  ht_buff;
     gx_device *const orig_target = target;
+    gx_device_clip clipper_dev;
+    bool clipper_dev_open;
 
     cbuf.data = (byte *)cbuf_storage;
     cbuf.size = cbuf_size;
@@ -306,6 +308,7 @@ in:				/* Initialize for a new page. */
     set_colors = state.colors;
     use_clip = false;
     pcpath = NULL;
+    clipper_dev_open = false;
     notes = sn_none;
     data_x = 0;
     {
@@ -944,14 +947,17 @@ set_phase:	/*
 			break;
 		    case cmd_opv_enable_clip:
 			pcpath = (use_clip ? &clip_path : NULL);
+			clipper_dev_open = false;
 			if_debug0('L', "\n");
 			break;
 		    case cmd_opv_disable_clip:
 			pcpath = NULL;
+			clipper_dev_open = false;
 			if_debug0('L', "\n");
 			break;
 		    case cmd_opv_begin_clip:
 			pcpath = NULL;
+			clipper_dev_open = false;
 			in_clip = true;
 			if_debug0('L', "\n");
 			code = gx_cpath_reset(&clip_path);
@@ -991,6 +997,7 @@ set_phase:	/*
 				  cbox.q.y >= target_box.q.y);
 			}
 			pcpath = (use_clip ? &clip_path : NULL);
+			clipper_dev_open = false;
 			state.lop_enabled = clip_save.lop_enabled;
 			imager_state.log_op =
 			    (state.lop_enabled ? state.lop :
@@ -1389,10 +1396,19 @@ idata:			data_size = 0;
 				gx_cmd_rect rl, rr;
 				gs_fixed_edge left, right;
 				fixed ybot, ytop;
-				int swap_axes, wh;
+				int options, swap_axes, wh;
 				fixed x0f;
 				fixed y0f;
+				gx_device *ttdev = tdev;
 
+				if (pcpath != NULL && !clipper_dev_open) {
+				    gx_make_clip_device(&clipper_dev, gx_cpath_list(pcpath)); /* fixme : create a global instance */
+				    clipper_dev.target = tdev;
+				    (*dev_proc(&clipper_dev, open_device))((gx_device *)&clipper_dev);
+				    clipper_dev_open = true;
+				}
+				if (clipper_dev_open)
+				    ttdev = (gx_device *)&clipper_dev;
 				cmd_getw(left.start.x, cbp);
 				cmd_getw(left.start.y, cbp);
 				cmd_getw(left.end.x, cbp);
@@ -1403,7 +1419,8 @@ idata:			data_size = 0;
 				cmd_getw(right.end.y, cbp);
 				cmd_getw(ybot, cbp);
 				cmd_getw(ytop, cbp);
-				cmd_getw(swap_axes, cbp);
+				cmd_getw(options, cbp);
+				swap_axes = options & 1;
 				wh = swap_axes ? tdev->width : tdev->height;
 				x0f = int2fixed(swap_axes ? y0 : x0);
 				y0f = int2fixed(swap_axes ? x0 : y0);
@@ -1415,10 +1432,58 @@ idata:			data_size = 0;
 				right.start.y -= y0f;
 				right.end.x -= x0f;
 				right.end.y -= y0f;
-				code = gx_default_fill_trapezoid(tdev, &left, &right,
-				    max(ybot - y0f, fixed_half), 
-				    min(ytop - y0f, int2fixed(wh)), swap_axes,
-				    &dev_color, imager_state.log_op);
+				if (options & 2) {
+				    int num_components = tdev->color_info.num_components;
+				    frac31 c[4][GX_DEVICE_COLOR_MAX_COMPONENTS], *cc[4];
+				    byte colors_mask, i, j, m = 1;
+				    gs_fill_attributes fa;
+				    gs_fixed_rect clip;
+
+				    if (cbuf.end - cbp < 5 * cmd_max_intsize(sizeof(frac31)))
+					cbp = top_up_cbuf(&cbuf, cbp);
+				    cmd_getw(clip.p.x, cbp);
+				    cmd_getw(clip.p.y, cbp);
+				    cmd_getw(clip.q.x, cbp);
+				    cmd_getw(clip.q.y, cbp);
+				    clip.p.x -= x0f;
+				    clip.p.y -= y0f;
+				    clip.q.x -= x0f;
+				    clip.q.y -= y0f;
+				    fa.clip = &clip;
+				    fa.swap_axes = swap_axes;
+				    fa.ht = NULL;
+				    fa.lop = lop_default; /* fgixme: imager_state.log_op; */
+				    fa.ystart = ybot - y0f;
+				    fa.yend = ytop - y0f;
+				    cmd_getw(colors_mask, cbp);
+				    for (i = 0; i < 4; i++, m <<= 1) {
+					if (colors_mask & m) {
+					    if (cbuf.end - cbp < num_components * cmd_max_intsize(sizeof(frac31)))
+						cbp = top_up_cbuf(&cbuf, cbp);
+					    cc[i] = c[i];
+					    for (j = 0; j < num_components; j++)
+						cmd_getw(c[i][j], cbp);
+					} else
+					    cc[i] = NULL;
+				    }
+				    if (options & 4)
+					code = 1 | dev_proc(ttdev, fill_linear_color_triangle)(ttdev, &fa,
+							&left.start, &left.end, &right.start,
+							cc[0], cc[1], cc[2]);
+				    else
+					code = 1 || dev_proc(ttdev, fill_linear_color_trapezoid)(ttdev, &fa,
+							&left.start, &left.end, &right.start, &right.end,
+							cc[0], cc[1], cc[2], cc[3]);
+				    if (code == 0) {
+					/* Fixme : The target device didn't fill the trapezoid and
+					   requests a decomposition. Call a code from gxshade6.c . */
+					code = gs_note_error(gs_error_unregistered);
+				    }
+				} else
+				    code = gx_default_fill_trapezoid(ttdev, &left, &right,
+					max(ybot - y0f, fixed_half), 
+					min(ytop - y0f, int2fixed(wh)), swap_axes,
+					&dev_color, imager_state.log_op);
 			    }
 			   break;
 			default:
@@ -2508,8 +2573,6 @@ vhc:	    E = B + D, F = D = A + C, C = B, B = A, A = 0;
 
 /*
  * Execute a polyfill -- either a fill_parallelogram or a fill_triangle.
- * If we ever implement fill_trapezoid in the band list, that will be
- * detected here too.
  *
  * Note that degenerate parallelograms or triangles may collapse into
  * a single line or point.  We must check for this so we don't try to

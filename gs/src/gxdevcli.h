@@ -1225,7 +1225,8 @@ typedef enum {
     pattern_manage__load,
     pattern_manage__shading_area,
     pattern_manage__is_cpath_accum,
-    pattern_manage__shfill_doesnt_need_path
+    pattern_manage__shfill_doesnt_need_path,
+    pattern_manage__handles_clip_path
 } pattern_manage_t;
 
 #define dev_t_proc_pattern_manage(proc, dev_t)\
@@ -1294,12 +1295,12 @@ typedef struct gs_fill_attributes_s {
 /* [p0 : p1] - left edge, from bottom to top.
    [p2 : p3] - right edge, from bottom to top.
    The filled area is within Y-spans of both edges. */
-/* If either (c0 and c1) or (c2 and c3) may be NULL.
+/* Either (c0 and c1) or (c2 and c3) may be NULL.
    In this case the color doesn't depend on X (on Y if fa->swap_axes).
    In this case the base coordinates for the color gradient
    may be unequal to p0, p1, p2, p3, and must be provided/taken
    in/from fa->ystart, fa->yend. 
-   The rerurn value 0 is not allowed in this case. */
+   The return value 0 is not allowed in this case. */
 /* Return values : 
   1 - success;
   0 - Too big. The area isn't filled. The client must decompose the area.

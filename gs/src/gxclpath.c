@@ -577,7 +577,21 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     gs_fixed_point adjust;
     bool slow_rop = cmd_slow_rop(dev, lop_know_S_0(lop), pdcolor);
     cmd_rects_enum_t re;
+    int code;
 
+    if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor)) {
+	/* Here we need to intersect *ppath, *pcpath and shading bbox.
+	   Call the default implementation, which has a special
+	   branch for processing a shading fill with the clip writer device.
+	   It will call us back with pdcolor=NULL for passing
+	   the intersected clipping path, 
+	   and then will decompose the shading into trapezoids.
+	   See comment below about pdcolor == NULL.
+	 */
+	code = gx_default_fill_path(dev, pis, ppath, params, pdcolor, pcpath);
+	cdev->cropping_by_path = false;
+	return code;
+    }
     if ( (cdev->disable_mask & clist_disable_fill_path) ||
 	 gs_debug_c(',')
 	 ) {
@@ -604,35 +618,57 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     if (unknown)
 	cmd_clear_known(cdev, unknown);
     if (cdev->permanent_error < 0)
-      return (cdev->permanent_error);
-    RECT_ENUM_INIT(re, ry, rheight);
-    do {
-	int code;
-
-	RECT_STEP_INIT(re);
-	code = cmd_do_write_unknown(cdev, re.pcls, FILL_KNOWN);
-	if (code < 0)
-	    return code;
-	if ((code = cmd_do_enable_clip(cdev, re.pcls, pcpath != NULL)) < 0 ||
-	    (code = cmd_update_lop(cdev, re.pcls, lop)) < 0
-	    )
-	    return code;
-	code = cmd_put_drawing_color(cdev, re.pcls, pdcolor);
-	if (code < 0) {
-	    /* Something went wrong, use the default implementation. */
-	    return gx_default_fill_path(dev, pis, ppath, params, pdcolor,
-					pcpath);
-	}
-	re.pcls->colors_used.slow_rop |= slow_rop;
-	code = cmd_put_path(cdev, re.pcls, ppath,
-			    int2fixed(max(re.y - 1, y0)),
-			    int2fixed(min(re.y + re.height + 1, y1)),
-			    op,
-			    true, sn_none /* fill doesn't need the notes */ );
-	if (code < 0)
-	    return code;
-	re.y += re.height;
-    } while (re.y < re.yend);
+	return (cdev->permanent_error);
+    if (pdcolor == NULL) {
+	/* See comment above about pattern2_color.
+	   Put the clipping path only.
+	   The graphics library will call us again with subdividing 
+	   the shading into trapezoids and rectangles. 
+	   Note cropping_by_path is true during such calls. */
+	cdev->cropping_by_path = true;
+	cdev->cropping_min = ry;
+	cdev->cropping_max = ry + rheight;
+	RECT_ENUM_INIT(re, ry, rheight);
+	do {
+	    RECT_STEP_INIT(re);
+	    if (pcpath != NULL) {
+		code = cmd_do_write_unknown(cdev, re.pcls, clip_path_known);
+		if (code < 0)
+		    return code;
+	    }
+	    code = cmd_do_enable_clip(cdev, re.pcls, pcpath != NULL);
+	    if (code  < 0)
+		return code;
+	    re.y += re.height;
+	} while (re.y < re.yend);
+    } else {
+	RECT_ENUM_INIT(re, ry, rheight);
+	do {
+	    RECT_STEP_INIT(re);
+	    code = cmd_do_write_unknown(cdev, re.pcls, FILL_KNOWN);
+	    if (code < 0)
+		return code;
+	    if ((code = cmd_do_enable_clip(cdev, re.pcls, pcpath != NULL)) < 0 ||
+		(code = cmd_update_lop(cdev, re.pcls, lop)) < 0
+		)
+		return code;
+	    code = cmd_put_drawing_color(cdev, re.pcls, pdcolor);
+	    if (code < 0) {
+		/* Something went wrong, use the default implementation. */
+		return gx_default_fill_path(dev, pis, ppath, params, pdcolor,
+					    pcpath);
+	    }
+	    re.pcls->colors_used.slow_rop |= slow_rop;
+	    code = cmd_put_path(cdev, re.pcls, ppath,
+				int2fixed(max(re.y - 1, y0)),
+				int2fixed(min(re.y + re.height + 1, y1)),
+				op,
+				true, sn_none /* fill doesn't need the notes */ );
+	    if (code < 0)
+		return code;
+	    re.y += re.height;
+	} while (re.y < re.yend);
+    }
     return 0;
 }
 
