@@ -57,29 +57,23 @@ int xps_parse_canvas(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     if (clip_att)
     {
 	xps_parse_abbreviated_geometry(ctx, clip_att);
-	gs_clip(ctx->pgs);
-	gs_newpath(ctx->pgs);
+	xps_clip(ctx);
     }
 
     if (clip_tag)
     {
 	xps_parse_path_geometry(ctx, dict, clip_tag);
-	gs_clip(ctx->pgs);
-	gs_newpath(ctx->pgs);
+	xps_clip(ctx);
     }
 
-    // TODO: opacity
-    // TODO: opacity_mask
+    xps_begin_opacity(ctx, dict, opacity_att, opacity_mask_tag);
 
     for (node = xps_down(root); node; node = xps_next(node))
     {
-	if (!strcmp(xps_tag(node), "Path"))
-	    xps_parse_path(ctx, dict, node);
-	if (!strcmp(xps_tag(node), "Glyphs"))
-	    xps_parse_glyphs(ctx, dict, node);
-	if (!strcmp(xps_tag(node), "Canvas"))
-	    xps_parse_canvas(ctx, dict, node);
+	xps_parse_element(ctx, dict, node);
     }
+
+    xps_end_opacity(ctx, dict, opacity_att, opacity_mask_tag);
 
     gs_grestore(ctx->pgs);
 
@@ -188,14 +182,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	    dict = xps_parse_resource_dictionary(ctx, xps_down(node));
 	}
 
-	if (!strcmp(xps_tag(node), "Path"))
-	    xps_parse_path(ctx, dict, node);
-
-	if (!strcmp(xps_tag(node), "Glyphs"))
-	    xps_parse_glyphs(ctx, dict, node);
-
-	if (!strcmp(xps_tag(node), "Canvas"))
-	    xps_parse_canvas(ctx, dict, node);
+	xps_parse_element(ctx, dict, node);
     }
 
     code = gs_pop_pdf14trans_device(ctx->pgs);

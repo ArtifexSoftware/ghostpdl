@@ -106,19 +106,34 @@ xps_create_gradient_stop_function(xps_context_t *ctx,
 	lparams.n = 3;
 	lparams.Range = range;
 
-	/* XXX: ignoring alpha component here */
+	/* TODO: use alpha component for opacity */
 
 	c0 = xps_alloc(ctx, 3 * sizeof(float));
-	c0[0] = colors[(i + 0) * 4 + 1];
-	c0[1] = colors[(i + 0) * 4 + 2];
-	c0[2] = colors[(i + 0) * 4 + 3];
 	lparams.C0 = c0;
 
 	c1 = xps_alloc(ctx, 3 * sizeof(float));
-	c1[0] = colors[(i + 1) * 4 + 1];
-	c1[1] = colors[(i + 1) * 4 + 2];
-	c1[2] = colors[(i + 1) * 4 + 3];
 	lparams.C1 = c1;
+
+	if (ctx->opacity_only)
+	{
+	    c0[0] = colors[(i + 0) * 4 + 0];
+	    c0[1] = colors[(i + 0) * 4 + 0];
+	    c0[2] = colors[(i + 0) * 4 + 0];
+
+	    c1[0] = colors[(i + 1) * 4 + 0];
+	    c1[1] = colors[(i + 1) * 4 + 0];
+	    c1[2] = colors[(i + 1) * 4 + 0];
+	}
+	else
+	{
+	    c0[0] = colors[(i + 0) * 4 + 1];
+	    c0[1] = colors[(i + 0) * 4 + 2];
+	    c0[2] = colors[(i + 0) * 4 + 3];
+
+	    c1[0] = colors[(i + 1) * 4 + 1];
+	    c1[1] = colors[(i + 1) * 4 + 2];
+	    c1[2] = colors[(i + 1) * 4 + 3];
+	}
 
 	lparams.N = 1;
 
@@ -475,8 +490,7 @@ xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_it
     float radius_x;
     float radius_y;
 
-    gs_clip(ctx->pgs);
-    gs_newpath(ctx->pgs);
+    xps_clip(ctx);
 
     dputs("drawing radial gradient brush\n");
 
@@ -507,15 +521,6 @@ xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_it
     if (stop_count == 0)
 	return gs_throw(-1, "no gradient stops found");
 
-    gs_gsave(ctx->pgs);
-
-    gs_make_identity(&transform);
-    if (transform_att)
-	xps_parse_render_transform(ctx, transform_att, &transform);
-    if (transform_tag)
-	xps_parse_matrix_transform(ctx, transform_tag, &transform);
-    gs_concat(ctx->pgs, &transform);
-
     sscanf(center_att, "%g,%g", center, center + 1);
     sscanf(origin_att, "%g,%g", origin, origin + 1);
     radius_x = atof(radius_x_att);
@@ -532,6 +537,17 @@ xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_it
 	    spread_method = SPREAD_REPEAT;
     }
 
+    gs_gsave(ctx->pgs);
+
+    gs_make_identity(&transform);
+    if (transform_att)
+	xps_parse_render_transform(ctx, transform_att, &transform);
+    if (transform_tag)
+	xps_parse_matrix_transform(ctx, transform_tag, &transform);
+    gs_concat(ctx->pgs, &transform);
+
+    xps_begin_opacity(ctx, dict, opacity_att, NULL);
+
     code = xps_draw_radial_gradient(ctx,
 	    center, origin, radius_x, radius_y, spread_method,
 	    stop_offsets, stop_colors, stop_count);
@@ -541,6 +557,8 @@ xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_it
 	gs_grestore(ctx->pgs);
 	return gs_rethrow(-1, "could not draw radial gradient");
     }
+
+    xps_end_opacity(ctx, dict, opacity_att, NULL);
 
     gs_grestore(ctx->pgs);
     return 0;
@@ -571,8 +589,7 @@ xps_parse_linear_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_it
     float end_point[2];
     int spread_method;
 
-    gs_clip(ctx->pgs);
-    gs_newpath(ctx->pgs);
+    xps_clip(ctx);
 
     dputs("drawing linear gradient brush\n");
 
@@ -601,15 +618,6 @@ xps_parse_linear_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_it
     if (stop_count == 0)
 	return gs_throw(-1, "no gradient stops found");
 
-    gs_gsave(ctx->pgs);
-
-    gs_make_identity(&transform);
-    if (transform_att)
-	xps_parse_render_transform(ctx, transform_att, &transform);
-    if (transform_tag)
-	xps_parse_matrix_transform(ctx, transform_tag, &transform);
-    gs_concat(ctx->pgs, &transform);
-
     sscanf(start_point_att, "%g,%g", start_point, start_point + 1);
     sscanf(end_point_att, "%g,%g", end_point, end_point + 1);
 
@@ -624,6 +632,17 @@ xps_parse_linear_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_it
 	    spread_method = SPREAD_REPEAT;
     }
 
+    gs_gsave(ctx->pgs);
+
+    gs_make_identity(&transform);
+    if (transform_att)
+	xps_parse_render_transform(ctx, transform_att, &transform);
+    if (transform_tag)
+	xps_parse_matrix_transform(ctx, transform_tag, &transform);
+    gs_concat(ctx->pgs, &transform);
+
+    xps_begin_opacity(ctx, dict, opacity_att, NULL);
+
     code = xps_draw_linear_gradient(ctx,
 	    start_point, end_point, spread_method,
 	    stop_offsets, stop_colors, stop_count);
@@ -633,6 +652,8 @@ xps_parse_linear_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_it
 	gs_grestore(ctx->pgs);
 	return gs_rethrow(-1, "could not draw linear gradient");
     }
+
+    xps_end_opacity(ctx, dict, opacity_att, NULL);
 
     gs_grestore(ctx->pgs);
     return 0;

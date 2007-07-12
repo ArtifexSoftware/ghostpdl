@@ -86,8 +86,7 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 
     char partname[1024];
 
-    gs_clip(ctx->pgs);
-    gs_newpath(ctx->pgs);
+    xps_clip(ctx);
 
     opacity_att = xps_att(root, "Opacity");
     transform_att = xps_att(root, "Transform");
@@ -197,6 +196,8 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 	 * Voodoo.
 	 */
 
+	xps_begin_opacity(ctx, dict, opacity_att, NULL);
+
 	gs_concat(ctx->pgs, &transform);
 	gs_translate(ctx->pgs, viewport.p.x, viewport.p.y);
 	gs_scale(ctx->pgs, scalex, scaley);
@@ -220,6 +221,8 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 
 	gs_image_cleanup_and_free_enum(penum, ctx->pgs);
 	// TODO: free colorspace
+
+	xps_end_opacity(ctx, dict, opacity_att, NULL);
     }
 
     gs_grestore(ctx->pgs);

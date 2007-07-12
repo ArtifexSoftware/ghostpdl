@@ -165,6 +165,19 @@ struct xps_context_s
 
     char pwd[1024]; /* directory name of xml part being processed */
     char *state; /* temporary state for various processing */
+
+    /* Hack to workaround ghostscript's lack of understanding
+     * the pdf 1.4 specification of Alpha only transparency groups.
+     * We have to force all colors to be white whenever we are computing
+     * opacity masks.
+     */
+    int opacity_only;
+
+    /* The fill_rule is set by path parsing.
+     * It is used by clip/fill functions.
+     * 1=nonzero, 0=evenodd
+     */
+    int fill_rule;
 };
 
 struct xps_part_s
@@ -286,6 +299,7 @@ int xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part);
 int xps_parse_canvas(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
 int xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
 int xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
+int xps_parse_solid_color_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
 int xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
 int xps_parse_visual_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
 int xps_parse_linear_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
@@ -298,6 +312,15 @@ void xps_parse_rectangle(xps_context_t *ctx, char *text, gs_rect *rect);
 int xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom);
 int xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root);
 
+int xps_begin_opacity(xps_context_t *ctx, xps_resource_t *dict, char *opacity_att, xps_item_t *opacity_mask_tag);
+int xps_end_opacity(xps_context_t *ctx, xps_resource_t *dict, char *opacity_att, xps_item_t *opacity_mask_tag);
+
+int xps_parse_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
+int xps_parse_element(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
+
+void xps_set_color(xps_context_t *ctx, float *argb);
+int xps_clip(xps_context_t *ctx);
+int xps_fill(xps_context_t *ctx);
 
 /*
  * Static XML resources.

@@ -443,6 +443,8 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     xps_item_t *fill_tag = NULL;
     xps_item_t *opacity_mask_tag = NULL;
 
+    char *fill_opacity_att = NULL;
+
     xps_part_t *part;
     xps_font_t *font;
 
@@ -455,8 +457,6 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     int subfontid = 0;
     int is_sideways = 0;
     int bidi_level = 0;
-
-    gs_gsave(ctx->pgs);
 
     /*
      * Extract attributes and extended attributes.
@@ -557,6 +557,8 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
      * Set up graphics state.
      */
 
+    gs_gsave(ctx->pgs);
+
     if (transform_att || transform_tag)
     {
 	gs_matrix transform;
@@ -576,8 +578,7 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	if (clip_tag)
 	    xps_parse_path_geometry(ctx, dict, clip_tag);
 
-	gs_clip(ctx->pgs);
-	gs_newpath(ctx->pgs);
+	xps_clip(ctx);
     }
 
     font_size = atof(font_size_att);
@@ -588,12 +589,15 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	gs_matrix_rotate(&matrix, 90.0, &matrix);
     gs_setcharmatrix(ctx->pgs, &matrix);
 
+    xps_begin_opacity(ctx, dict, opacity_att, opacity_mask_tag);
+
     /*
      * If it's a solid color brush fill/stroke do a simple fill
      */
 
     if (fill_tag && !strcmp(xps_tag(fill_tag), "SolidColorBrush"))
     {
+	fill_opacity_att = xps_att(fill_tag, "Opacity");
 	fill_att = xps_att(fill_tag, "Color");
 	fill_tag = NULL;
     }
@@ -602,14 +606,13 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     {
 	float argb[4];
 	xps_parse_color(ctx, fill_att, argb);
-	if (argb[0] > 0.001)
-	{
-	    gs_setrgbcolor(ctx->pgs, argb[1], argb[2], argb[3]);
-	    xps_parse_glyphs_imp(ctx, font, font_size,
-		    atof(origin_x_att), atof(origin_y_att),
-		    is_sideways, bidi_level,
-		    indices_att, unicode_att, 0);
-	}
+	if (fill_opacity_att)
+	    argb[0] = atof(fill_opacity_att);
+	xps_set_color(ctx, argb);
+	xps_parse_glyphs_imp(ctx, font, font_size,
+		atof(origin_x_att), atof(origin_y_att),
+		is_sideways, bidi_level,
+		indices_att, unicode_att, 0);
     }
 
     /*
@@ -621,23 +624,10 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	xps_parse_glyphs_imp(ctx, font, font_size,
 		atof(origin_x_att), atof(origin_y_att),
 		is_sideways, bidi_level, indices_att, unicode_att, 1);
-
-	// gs_clip(ctx->pgs);
-	// gs_newpath(ctx->pgs);
-
-	if (!strcmp(xps_tag(fill_tag), "ImageBrush"))
-	    xps_parse_image_brush(ctx, dict, fill_tag);
-	if (!strcmp(xps_tag(fill_tag), "VisualBrush"))
-	    xps_parse_visual_brush(ctx, dict, fill_tag);
-	if (!strcmp(xps_tag(fill_tag), "LinearGradientBrush"))
-	    xps_parse_linear_gradient_brush(ctx, dict, fill_tag);
-	if (!strcmp(xps_tag(fill_tag), "RadialGradientBrush"))
-	    xps_parse_radial_gradient_brush(ctx, dict, fill_tag);
+	xps_parse_brush(ctx, dict, fill_tag);
     }
 
-    /*
-     * Remember to restore if we did a gsave
-     */
+    xps_end_opacity(ctx, dict, opacity_att, opacity_mask_tag);
 
     gs_grestore(ctx->pgs);
 

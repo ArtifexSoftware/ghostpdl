@@ -1,6 +1,27 @@
 #include "ghostxps.h"
 
 int
+xps_clip(xps_context_t *ctx)
+{
+    if (ctx->fill_rule == 0)
+	gs_eoclip(ctx->pgs);
+    else
+	gs_clip(ctx->pgs);
+    gs_newpath(ctx->pgs);
+    return 0;
+}
+
+int
+xps_fill(xps_context_t *ctx)
+{
+    if (ctx->fill_rule == 0)
+	gs_eofill(ctx->pgs);
+    else
+	gs_fill(ctx->pgs);
+    return 0;
+}
+
+int
 xps_draw_arc_segment(xps_context_t *ctx,
 	float size_x, float size_y, float rotation_angle,
 	int is_large_arc, int is_clockwise,
@@ -19,13 +40,16 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
     char **pargs = args;
     char *s = geom;
     gs_point pt;
-    int fillrule = 0;
     int i, n;
     int cmd, old;
-    float x1, y1, x2, y2;
+    float x1, y1, x2, y2, x3, y3;
+    float smooth_x, smooth_y; /* saved cubic bezier control point for smooth curves */
+    int reset_smooth;
 
-    // dprintf1("new path (%.70s)\n", geom);
+    dprintf1("new path (%.70s)\n", geom);
     gs_newpath(ctx->pgs);
+
+    ctx->fill_rule = 0;
 
     while (*s)
     {
@@ -33,10 +57,10 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 	{
 	    *pargs++ = s++;
 	}
-	else if ((*s >= '0' && *s <= '9') || *s == '.' || *s == '+' || *s == '-')
+	else if ((*s >= '0' && *s <= '9') || *s == '.' || *s == '+' || *s == '-' || *s == 'e')
 	{
 	    *pargs++ = s;
-	    while ((*s >= '0' && *s <= '9') || *s == '.' || *s == '+' || *s == '-')
+	    while ((*s >= '0' && *s <= '9') || *s == '.' || *s == '+' || *s == '-' || *s == 'e')
 		s ++;
 	}
 	else
@@ -53,6 +77,10 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 
     old = 0;
 
+    reset_smooth = 1;
+    smooth_x = 0.0;
+    smooth_y = 0.0;
+
     while (i < n)
     {
 	cmd = args[i][0];
@@ -61,80 +89,122 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 	else
 	    i ++;
 
+	if (reset_smooth)
+	{
+	    smooth_x = 0.0;
+	    smooth_y = 0.0;
+	}
+
+	reset_smooth = 1;
+
 	switch (cmd)
 	{
 	case 'F':
-	    fillrule = atoi(args[i]);
+	    ctx->fill_rule = atoi(args[i]);
 	    i ++;
 	    break;
 
 	case 'M':
 	    gs_moveto(ctx->pgs, atof(args[i]), atof(args[i+1]));
-	    // dprintf2("moveto %g %g\n", atof(args[i]), atof(args[i+1]));
+	    //dprintf2("moveto %g %g\n", atof(args[i]), atof(args[i+1]));
 	    i += 2;
 	    break;
 	case 'm':
 	    gs_rmoveto(ctx->pgs, atof(args[i]), atof(args[i+1]));
-	    // dprintf2("rmoveto %g %g\n", atof(args[i]), atof(args[i+1]));
+	    //dprintf2("rmoveto %g %g\n", atof(args[i]), atof(args[i+1]));
 	    i += 2;
 	    break;
 
 	case 'L':
 	    gs_lineto(ctx->pgs, atof(args[i]), atof(args[i+1]));
-	    // dprintf2("lineto %g %g\n", atof(args[i]), atof(args[i+1]));
+	    //dprintf2("lineto %g %g\n", atof(args[i]), atof(args[i+1]));
 	    i += 2;
 	    break;
 	case 'l':
 	    gs_rlineto(ctx->pgs, atof(args[i]), atof(args[i+1]));
-	    // dprintf2("rlineto %g %g\n", atof(args[i]), atof(args[i+1]));
+	    //dprintf2("rlineto %g %g\n", atof(args[i]), atof(args[i+1]));
 	    i += 2;
 	    break;
 
 	case 'H':
 	    gs_currentpoint(ctx->pgs, &pt);
 	    gs_lineto(ctx->pgs, atof(args[i]), pt.y);
-	    // dprintf1("hlineto %g\n", atof(args[i]));
+	    //dprintf1("hlineto %g\n", atof(args[i]));
 	    i += 1;
 	    break;
 	case 'h':
 	    gs_rlineto(ctx->pgs, atof(args[i]), 0.0);
-	    // dprintf1("rhlineto %g\n", atof(args[i]));
+	    //dprintf1("rhlineto %g\n", atof(args[i]));
 	    i += 1;
 	    break;
 
 	case 'V':
 	    gs_currentpoint(ctx->pgs, &pt);
 	    gs_lineto(ctx->pgs, pt.x, atof(args[i]));
-	    // dprintf1("vlineto %g\n", atof(args[i]));
+	    //dprintf1("vlineto %g\n", atof(args[i]));
 	    i += 1;
 	    break;
 	case 'v':
 	    gs_rlineto(ctx->pgs, 0.0, atof(args[i]));
-	    // dprintf1("rvlineto %g\n", atof(args[i]));
+	    //dprintf1("rvlineto %g\n", atof(args[i]));
 	    i += 1;
 	    break;
 
 	case 'C':
-	    gs_curveto(ctx->pgs,
-		    atof(args[i]), atof(args[i+1]),
-		    atof(args[i+2]), atof(args[i+3]),
-		    atof(args[i+4]), atof(args[i+5]));
-	    // dprintf6("curveto %g %g %g %g %g %g\n",
-		    // atof(args[i]), atof(args[i+1]),
-		    // atof(args[i+2]), atof(args[i+3]),
-		    // atof(args[i+4]), atof(args[i+5]));
+	    x1 = atof(args[i+0]);
+	    y1 = atof(args[i+1]);
+	    x2 = atof(args[i+2]);
+	    y2 = atof(args[i+3]);
+	    x3 = atof(args[i+4]);
+	    y3 = atof(args[i+5]);
+	    gs_curveto(ctx->pgs, x1, y1, x2, y2, x3, y3);
 	    i += 6;
+	    reset_smooth = 0;
+	    smooth_x = x3 - x2;
+	    smooth_y = y3 - y2;
 	    break;
+
 	case 'c':
-	    gs_rcurveto(ctx->pgs,
-		    atof(args[i]), atof(args[i+1]),
-		    atof(args[i+2]), atof(args[i+3]),
-		    atof(args[i+4]), atof(args[i+5]));
-	    // dprintf6("rcurveto %g %g %g %g %g %g\n",
-		    // atof(args[i]), atof(args[i+1]),
-		    // atof(args[i+2]), atof(args[i+3]),
-		    // atof(args[i+4]), atof(args[i+5]));
+	    gs_currentpoint(ctx->pgs, &pt);
+	    x1 = atof(args[i+0]) + pt.x;
+	    y1 = atof(args[i+1]) + pt.y;
+	    x2 = atof(args[i+2]) + pt.x;
+	    y2 = atof(args[i+3]) + pt.y;
+	    x3 = atof(args[i+4]) + pt.x;
+	    y3 = atof(args[i+5]) + pt.y;
+	    gs_curveto(ctx->pgs, x1, y1, x2, y2, x3, y3);
 	    i += 6;
+	    reset_smooth = 0;
+	    smooth_x = x3 - x2;
+	    smooth_y = y3 - y2;
+	    break;
+
+	case 'S':
+	    gs_currentpoint(ctx->pgs, &pt);
+	    x1 = atof(args[i+0]);
+	    y1 = atof(args[i+1]);
+	    x2 = atof(args[i+2]);
+	    y2 = atof(args[i+3]);
+	    dprintf2("smooth %g %g\n", smooth_x, smooth_y);
+	    gs_curveto(ctx->pgs, pt.x + smooth_x, pt.y + smooth_y, x1, y1, x2, y2);
+	    i += 4;
+	    reset_smooth = 0;
+	    smooth_x = x2 - x1;
+	    smooth_y = y2 - y1;
+	    break;
+
+	case 's':
+	    gs_currentpoint(ctx->pgs, &pt);
+	    x1 = atof(args[i+0]) + pt.x;
+	    y1 = atof(args[i+1]) + pt.y;
+	    x2 = atof(args[i+2]) + pt.x;
+	    y2 = atof(args[i+3]) + pt.y;
+	    dprintf2("smooth %g %g\n", smooth_x, smooth_y);
+	    gs_curveto(ctx->pgs, pt.x + smooth_x, pt.y + smooth_y, x1, y1, x2, y2);
+	    i += 4;
+	    reset_smooth = 0;
+	    smooth_x = x2 - x1;
+	    smooth_y = y2 - y1;
 	    break;
 
 	case 'Q':
@@ -142,10 +212,12 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 	    y1 = atof(args[i+1]);
 	    x2 = atof(args[i+2]);
 	    y2 = atof(args[i+3]);
+	    //dprintf4("conicto %g %g %g %g\n", x1, y1, x2, y2);
 	    gs_curveto(ctx->pgs,
 		    (pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
 		    (x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
 		    x2, y2);
+	    i += 4;
 	    break;
 	case 'q':
 	    gs_currentpoint(ctx->pgs, &pt);
@@ -153,14 +225,11 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 	    y1 = atof(args[i+1]) + pt.y;
 	    x2 = atof(args[i+2]) + pt.x;
 	    y2 = atof(args[i+3]) + pt.y;
+	    //dprintf4("conicto %g %g %g %g\n", x1, y1, x2, y2);
 	    gs_curveto(ctx->pgs,
 		    (pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
 		    (x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
 		    x2, y2);
-	    break;
-
-	case 'S': case 's':
-	    dprintf1("path command '%c' for smooth curve is not implemented\n", cmd);
 	    i += 4;
 	    break;
 
@@ -183,7 +252,7 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 	case 'Z':
 	case 'z':
 	    gs_closepath(ctx->pgs);
-	    // dputs("closepath\n");
+	    //dputs("closepath\n");
 	    break;
 
 	default:
@@ -227,6 +296,10 @@ xps_draw_arc_segment(xps_context_t *ctx,
     double sign, start_angle, delta_angle;
     double scale_num, scale_denom, scale;
     int code;
+
+/* arcs are just too broken for now */
+gs_lineto(ctx->pgs, point_x, point_y);
+return 0;
 
     sign = is_clockwise == is_large_arc ? -1.0 : 1.0;
 
@@ -490,6 +563,10 @@ xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *ro
     int even_odd = 0;
     int saved = 0;
 
+    ctx->fill_rule = 0;
+
+    gs_newpath(ctx->pgs);
+
     figures_att = xps_att(root, "Figures");
     fill_rule_att = xps_att(root, "FillRule");
     transform_att = xps_att(root, "Transform");
@@ -502,6 +579,14 @@ xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *ro
 
     xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag);
     xps_resolve_resource_reference(ctx, dict, &figures_att, &figures_tag);
+
+    if (fill_rule_att)
+    {
+	if (!strcmp(fill_rule_att, "NonZero"))
+	    ctx->fill_rule = 1;
+	if (!strcmp(fill_rule_att, "EvenOdd"))
+	    ctx->fill_rule = 0;
+    }
 
     if (transform_att || transform_tag)
     {
@@ -550,7 +635,6 @@ int
 xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 {
     xps_item_t *node;
-    xps_item_t *rsrc;
 
     char *transform_att;
     char *clip_att;
@@ -565,7 +649,10 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     xps_item_t *data_tag = NULL;
     xps_item_t *fill_tag = NULL;
     xps_item_t *stroke_tag = NULL;
-    xps_item_t *opacity_mask_tag;
+    xps_item_t *opacity_mask_tag = NULL;
+
+    char *fill_opacity_att = NULL;
+    char *stroke_opacity_att = NULL;
 
     char *stroke_dash_array_att;
     char *stroke_dash_cap_att;
@@ -580,7 +667,7 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     gs_line_join linejoin;
     float linewidth;
     float miterlimit;
-    float opacity;
+    float argb[4];
 
     gs_gsave(ctx->pgs);
 
@@ -637,19 +724,16 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
      * Act on the information we have gathered:
      */
 
-    opacity = 1.0;
-    if (opacity_att)
-	opacity = atof(opacity_att);
-    gs_setopacityalpha(ctx->pgs, opacity);
-
     if (fill_tag && !strcmp(xps_tag(fill_tag), "SolidColorBrush"))
     {
+	fill_opacity_att = xps_att(fill_tag, "Opacity");
 	fill_att = xps_att(fill_tag, "Color");
 	fill_tag = NULL;
     }
 
     if (stroke_tag && !strcmp(xps_tag(stroke_tag), "SolidColorBrush"))
     {
+	stroke_opacity_att = xps_att(stroke_tag, "Opacity");
 	stroke_att = xps_att(stroke_tag, "Color");
 	stroke_tag = NULL;
     }
@@ -712,8 +796,6 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	gs_setdash(ctx->pgs, NULL, 0, 0.0);
     }
 
-    /* if we have a transform, push that on the gstate */
-
     if (transform_att || transform_tag)
     {
 	gs_matrix transform;
@@ -726,8 +808,6 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	gs_concat(ctx->pgs, &transform);
     }
 
-    /* if we have a clip mask, push that on the gstate and remember to restore */
-
     if (clip_att || clip_tag)
     {
 	if (clip_att)
@@ -735,40 +815,41 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	if (clip_tag)
 	    xps_parse_path_geometry(ctx, dict, clip_tag);
 
-	gs_clip(ctx->pgs);
-	gs_newpath(ctx->pgs);
+	xps_clip(ctx);
     }
+
+    xps_begin_opacity(ctx, dict, opacity_att, opacity_mask_tag);
 
     /* if it's a solid color brush fill/stroke do just that. */
 
     if (fill_att)
     {
-	float argb[4];
 	xps_parse_color(ctx, fill_att, argb);
-	if (argb[0] > 0.001)
-	{
-	    gs_setrgbcolor(ctx->pgs, argb[1], argb[2], argb[3]);
-	    if (data_att)
-		xps_parse_abbreviated_geometry(ctx, data_att);
-	    if (data_tag)
-		xps_parse_path_geometry(ctx, dict, data_tag);
-	    gs_fill(ctx->pgs);
-	}
+	if (fill_opacity_att)
+	    argb[0] = atof(fill_opacity_att);
+	xps_set_color(ctx, argb);
+
+	if (data_att)
+	    xps_parse_abbreviated_geometry(ctx, data_att);
+	if (data_tag)
+	    xps_parse_path_geometry(ctx, dict, data_tag);
+
+	xps_fill(ctx);
     }
 
     if (stroke_att)
     {
-	float argb[4];
 	xps_parse_color(ctx, stroke_att, argb);
-	if (argb[0] > 0.001)
-	{
-	    gs_setrgbcolor(ctx->pgs, argb[1], argb[2], argb[3]);
-	    if (data_att)
-		xps_parse_abbreviated_geometry(ctx, data_att);
-	    if (data_tag)
-		xps_parse_path_geometry(ctx, dict, data_tag);
-	    gs_stroke(ctx->pgs);
-	}
+	if (stroke_opacity_att)
+	    argb[0] = atof(stroke_opacity_att);
+	xps_set_color(ctx, argb);
+
+	if (data_att)
+	    xps_parse_abbreviated_geometry(ctx, data_att);
+	if (data_tag)
+	    xps_parse_path_geometry(ctx, dict, data_tag);
+
+	gs_stroke(ctx->pgs);
     }
 
     /* if it's a visual brush or image, use the path as a clip mask to paint brush */
@@ -782,16 +863,9 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	    if (data_tag)
 		xps_parse_path_geometry(ctx, dict, data_tag);
 
-	    if (!strcmp(xps_tag(fill_tag), "ImageBrush"))
-		xps_parse_image_brush(ctx, dict, fill_tag);
-	    if (!strcmp(xps_tag(fill_tag), "VisualBrush"))
-		xps_parse_visual_brush(ctx, dict, fill_tag);
-	    if (!strcmp(xps_tag(fill_tag), "LinearGradientBrush"))
-		xps_parse_linear_gradient_brush(ctx, dict, fill_tag);
-	    if (!strcmp(xps_tag(fill_tag), "RadialGradientBrush"))
-		xps_parse_radial_gradient_brush(ctx, dict, fill_tag);
+	    xps_parse_brush(ctx, dict, fill_tag);
 	}
-	
+
 	if (stroke_tag)
 	{
 	    if (data_att)
@@ -801,16 +875,11 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 
 	    gs_strokepath(ctx->pgs);
 
-	    if (!strcmp(xps_tag(stroke_tag), "ImageBrush"))
-		xps_parse_image_brush(ctx, dict, stroke_tag);
-	    if (!strcmp(xps_tag(stroke_tag), "VisualBrush"))
-		xps_parse_visual_brush(ctx, dict, stroke_tag);
-	    if (!strcmp(xps_tag(stroke_tag), "LinearGradientBrush"))
-		xps_parse_linear_gradient_brush(ctx, dict, stroke_tag);
-	    if (!strcmp(xps_tag(stroke_tag), "RadialGradientBrush"))
-		xps_parse_radial_gradient_brush(ctx, dict, stroke_tag);
+	    xps_parse_brush(ctx, dict, stroke_tag);
 	}
     }
+
+    xps_end_opacity(ctx, dict, opacity_att, opacity_mask_tag);
 
     gs_grestore(ctx->pgs);
 

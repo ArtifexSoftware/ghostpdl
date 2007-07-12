@@ -108,6 +108,9 @@ dputs("xps_imp_allocate_interp_instance!\n");
     ctx->pgs = pgs;
     ctx->fontdir = NULL;
 
+    ctx->opacity_only = 0;
+    ctx->fill_rule = 0;
+
     instance->pre_page_action = 0;
     instance->pre_page_closure = 0;
     instance->post_page_action = 0;
@@ -242,8 +245,6 @@ xps_imp_report_errors(pl_interp_instance_t *pinstance,
 private int
 xps_imp_init_job(pl_interp_instance_t *pinstance)
 {
-    xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
-    xps_context_t *ctx = instance->ctx;
     return 0;
 }
 
@@ -251,8 +252,6 @@ xps_imp_init_job(pl_interp_instance_t *pinstance)
 private int
 xps_imp_dnit_job(pl_interp_instance_t *pinstance)
 {
-    xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
-    xps_context_t *ctx = instance->ctx;
     return 0;
 }
 

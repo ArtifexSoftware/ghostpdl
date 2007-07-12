@@ -60,6 +60,9 @@ $(XPSOBJ)xpscommon.$(OBJ): $(XPSSRC)xpscommon.c $(XPSINCLUDES)
 $(XPSOBJ)xpscolor.$(OBJ): $(XPSSRC)xpscolor.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpscolor.c $(XPSO_)xpscolor.$(OBJ)
 
+$(XPSOBJ)xpsopacity.$(OBJ): $(XPSSRC)xpsopacity.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xpsopacity.c $(XPSO_)xpsopacity.$(OBJ)
+
 $(XPSOBJ)xpspath.$(OBJ): $(XPSSRC)xpspath.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpspath.c $(XPSO_)xpspath.$(OBJ)
 
@@ -103,6 +106,7 @@ XPS_OBJS=\
     $(XPSOBJ)xpsresource.$(OBJ) \
     $(XPSOBJ)xpscommon.$(OBJ) \
     $(XPSOBJ)xpscolor.$(OBJ) \
+    $(XPSOBJ)xpsopacity.$(OBJ) \
     $(XPSOBJ)xpspath.$(OBJ) \
     $(XPSOBJ)xpsvisual.$(OBJ) \
     $(XPSOBJ)xpsimage.$(OBJ) \

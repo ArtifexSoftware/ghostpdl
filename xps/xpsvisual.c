@@ -22,12 +22,7 @@ xps_paint_visual_brush(const gs_client_color *pcc, gs_state *pgs)
     oldpgs = ctx->pgs;
     ctx->pgs = pgs;
 
-    if (!strcmp(xps_tag(visual_tag), "Path"))
-	xps_parse_path(ctx, dict, visual_tag);
-    if (!strcmp(xps_tag(visual_tag), "Glyphs"))
-	xps_parse_glyphs(ctx, dict, visual_tag);
-    if (!strcmp(xps_tag(visual_tag), "Canvas"))
-	xps_parse_canvas(ctx, dict, visual_tag);
+    xps_parse_element(ctx, dict, visual_tag);
 
     ctx->pgs = oldpgs;
 
@@ -123,6 +118,10 @@ xps_parse_visual_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
 
     gs_gsave(ctx->pgs);
 
+    gs_concat(ctx->pgs, &transform);
+
+    xps_begin_opacity(ctx, dict, opacity_att, NULL);
+
     if (tile_mode != TILE_NONE)
     {
 	struct userdata foo;
@@ -161,7 +160,6 @@ xps_parse_visual_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
 	gspat.XStep = viewbox.q.x - viewbox.p.x;
 	gspat.YStep = viewbox.q.y - viewbox.p.y;
 
-	gs_concat(ctx->pgs, &transform);
 	gs_translate(ctx->pgs, viewport.p.x, viewport.p.y);
 	gs_scale(ctx->pgs, scalex, scaley);
 	gs_translate(ctx->pgs, -viewbox.p.x, -viewbox.p.y);
@@ -180,21 +178,18 @@ xps_parse_visual_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
 	// gs_lineto(ctx->pgs, 1000, 0);
 	// gs_closepath(ctx->pgs);
 
-	gs_fill(ctx->pgs);
+	xps_fill(ctx);
     }
     else
     {
 	dputs("single tile\n");
 
-	gs_clip(ctx->pgs);
-	gs_newpath(ctx->pgs);
+	xps_clip(ctx);
 
-	gs_concat(ctx->pgs, &transform);
 	gs_translate(ctx->pgs, viewport.p.x, viewport.p.y);
 	gs_scale(ctx->pgs, scalex, scaley);
 	gs_translate(ctx->pgs, -viewbox.p.x, viewbox.p.y);
 
-	gs_newpath(ctx->pgs);
 	gs_moveto(ctx->pgs, viewbox.p.x, viewbox.p.y);
 	gs_lineto(ctx->pgs, viewbox.p.x, viewbox.q.y);
 	gs_lineto(ctx->pgs, viewbox.q.x, viewbox.q.y);
@@ -203,13 +198,10 @@ xps_parse_visual_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
 	gs_clip(ctx->pgs);
 	gs_newpath(ctx->pgs);
 
-	if (!strcmp(xps_tag(visual_tag), "Path"))
-	    xps_parse_path(ctx, dict, visual_tag);
-	if (!strcmp(xps_tag(visual_tag), "Glyphs"))
-	    xps_parse_glyphs(ctx, dict, visual_tag);
-	if (!strcmp(xps_tag(visual_tag), "Canvas"))
-	    xps_parse_canvas(ctx, dict, visual_tag);
+	xps_parse_element(ctx, dict, visual_tag);
     }
+
+    xps_end_opacity(ctx, dict, opacity_att, NULL);
 
     gs_grestore(ctx->pgs);
 
