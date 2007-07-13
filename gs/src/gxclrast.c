@@ -1467,11 +1467,11 @@ idata:			data_size = 0;
 					    cc[i] = NULL;
 				    }
 				    if (options & 4)
-					code = 1 | dev_proc(ttdev, fill_linear_color_triangle)(ttdev, &fa,
+					code = dev_proc(ttdev, fill_linear_color_triangle)(ttdev, &fa,
 							&left.start, &left.end, &right.start,
 							cc[0], cc[1], cc[2]);
 				    else
-					code = 1 || dev_proc(ttdev, fill_linear_color_trapezoid)(ttdev, &fa,
+					code = dev_proc(ttdev, fill_linear_color_trapezoid)(ttdev, &fa,
 							&left.start, &left.end, &right.start, &right.end,
 							cc[0], cc[1], cc[2], cc[3]);
 				    if (code == 0) {
