@@ -608,7 +608,14 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	    code = gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
 	    if (code < 0)
 		return code;
-	    code = gx_cpath_intersect_with_params(&cpath_intersection, ppath, params->rule, 
+	    if (pcpath == NULL) {
+		gs_fixed_rect clip_box1;
+
+		(*dev_proc(pdev, get_clipping_box)) (pdev, &clip_box1);
+		code = gx_cpath_from_rectangle(&cpath_intersection, &clip_box1);
+	    }
+	    if (code >= 0)
+		code = gx_cpath_intersect_with_params(&cpath_intersection, ppath, params->rule, 
 			pis_noconst, params);
 	    pcpath1 = &cpath_intersection;
 	} else
