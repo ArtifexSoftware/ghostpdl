@@ -291,13 +291,17 @@ clist_write_fill_trapezoid(gx_device * dev,
 
     if (options & 4) {
 	if (swap_axes) {
-	    ry = fixed2int(min(min(left->start.x, left->end.x), right->start.x));
-	    rheight = fixed2int_ceiling(max(max(left->start.x, left->end.x), right->start.x)) - ry;
+	    ry = fixed2int(max(min(min(left->start.x, left->end.x), right->start.x), fa->clip->p.x));
+	    rheight = fixed2int_ceiling(min(max(max(left->start.x, left->end.x), right->start.x), fa->clip->q.x)) - ry;
 	} else {
-	    ry = fixed2int(min(min(left->start.y, left->end.y), right->start.y));
-	    rheight = fixed2int_ceiling(max(max(left->start.y, left->end.y), right->start.y)) - ry;
+	    ry = fixed2int(max(min(min(left->start.y, left->end.y), right->start.y), fa->clip->p.y));
+	    rheight = fixed2int_ceiling(min(max(max(left->start.y, left->end.y), right->start.y), fa->clip->q.y)) - ry;
 	}
     } else {
+	/* fixme: this may give a significant overestimation,
+	   so the command will be written to many bands.
+	   Would like to know a better range by X
+	   with computing intersections of sides with ybot, ytop. */
 	if (swap_axes) {
 	    ry = fixed2int(min(left->start.x, left->end.x));
 	    rheight = fixed2int_ceiling(max(right->start.x, right->end.x)) - ry;
@@ -384,7 +388,7 @@ clist_fill_linear_color_trapezoid(gx_device * dev, const gs_fill_attributes *fa,
     right.start = *p2;
     right.end = *p3;
     code = clist_write_fill_trapezoid(dev, &left, &right,
-	fa->ystart, fa->yend, fa->swap_axes | 2, NULL, lop_default, fa, c0, c1, c2, c3);
+	fa->ystart, fa->yend, fa->swap_axes | 2, NULL, fa->lop, fa, c0, c1, c2, c3);
     if (code < 0)
 	return code;
     /* NOTE : The return value 0 for the fill_linear_color_trapezoid method means
@@ -413,7 +417,7 @@ clist_fill_linear_color_triangle(gx_device * dev, const gs_fill_attributes *fa,
     right.end.x = right.end.y = 0; /* unused. */
 
     code = clist_write_fill_trapezoid(dev, &left, &right,
-	fa->ystart, fa->yend, fa->swap_axes | 2 | 4, NULL, lop_default, fa, c0, c1, c2, NULL);
+	fa->ystart, fa->yend, fa->swap_axes | 2 | 4, NULL, fa->lop, fa, c0, c1, c2, NULL);
     if (code < 0)
 	return code;
     /* NOTE : The return value 0 for the fill_linear_color_triangle method means
