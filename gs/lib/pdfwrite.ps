@@ -213,9 +213,18 @@ readonly def
   dup dup length dict copy
 	% Stack: origdict dict
   dup /File undef dup /FilePosition undef dup /StreamKey undef
-  dup /Length get dup oforce ne {
-    dup /Length 2 copy oget put
-  } if
+  dup /Length known {
+    dup /Length get dup oforce ne {
+      dup /Length 2 copy oget put
+    } if
+  } {
+    1 index /File get dup
+    3 index /FilePosition get setfileposition
+    dup 0 (endstream) /SubFileDecode filter flushfile
+    .fileposition 9 sub
+    2 index /FilePosition get sub
+    1 index exch /Length exch put
+  } ifelse
   exch dup /File get dup 3 -1 roll /FilePosition get setfileposition
   pdfcopystream
 } bind def
