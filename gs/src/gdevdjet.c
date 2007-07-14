@@ -129,13 +129,14 @@ struct gx_device_hpjet_s {
     bool MediaPosition_set;
     bool ManualFeed;
     bool ManualFeed_set;
+    bool Tumble;
 };
 
 #define HPJET_DEVICE(procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page_copies)\
   { prn_device_std_margins_body_copies(gx_device_hpjet, procs, dname, \
         w10, h10, xdpi, ydpi, lm, tm, lm, bm, rm, tm, color_bits, \
         print_page_copies), \
-    0, false, false, false }
+    0, false, false, false, false }
 
 const gx_device_hpjet gs_deskjet_device =
 HPJET_DEVICE(prn_hp_procs, "deskjet",
@@ -336,7 +337,7 @@ djet_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 
     hpjet_make_init(pdev, init, "\033&k1W\033*b2M");
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					300, PCL_DJ_FEATURES, init);
+					300, PCL_DJ_FEATURES, init, init, false);
 }
 /* The DeskJet500 can compress (modes 2&3) */
 private int
@@ -347,7 +348,7 @@ djet500_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 
     hpjet_make_init(pdev, init, "\033&k1W");
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					300, PCL_DJ500_FEATURES, init);
+					300, PCL_DJ500_FEATURES, init, init, false);
 }
 /* The Kyocera FS-600 laser printer (and perhaps other printers */
 /* which use the PeerlessPrint5 firmware) doesn't handle        */
@@ -364,7 +365,7 @@ fs600_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     hpjet_make_init(pdev, init, base_init);
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
 					dots_per_inch, PCL_FS600_FEATURES,
-					init);
+					init, init, false);
 }
 /* The LaserJet series II can't compress */
 private int
@@ -375,7 +376,7 @@ ljet_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 
     hpjet_make_init(pdev, init, "\033*b0M");
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					300, PCL_LJ_FEATURES, init);
+					300, PCL_LJ_FEATURES, init, init, false);
 }
 /* The LaserJet Plus can't compress */
 private int
@@ -386,7 +387,7 @@ ljetplus_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 
     hpjet_make_init(pdev, init, "\033*b0M");
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					300, PCL_LJplus_FEATURES, init);
+					300, PCL_LJplus_FEATURES, init, init, false);
 }
 /* LaserJet series IIp & IId compress (mode 2) */
 /* but don't support *p+ or *b vertical spacing. */
@@ -398,7 +399,7 @@ ljet2p_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 
     hpjet_make_init(pdev, init, "\033*r0F\033*b2M");
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					300, PCL_LJ2p_FEATURES, init);
+					300, PCL_LJ2p_FEATURES, init, init, false);
 }
 /* All LaserJet series IIIs (III,IIId,IIIp,IIIsi) compress (modes 2&3) */
 /* They also need their coordinate system translated slightly. */
@@ -410,7 +411,7 @@ ljet3_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 
     hpjet_make_init(pdev, init, "\033&l-180u36Z\033*r0F");
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					300, PCL_LJ3_FEATURES, init);
+					300, PCL_LJ3_FEATURES, init, init, false);
 }
 /* LaserJet IIId is same as LaserJet III, except for duplex */
 private int
@@ -418,10 +419,15 @@ ljet3d_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 			 int num_copies)
 {
     char init[80];
+    char even_init[80];
+
+    gx_device_hpjet *dev = (gx_device_hpjet *)pdev;
+    bool tumble=dev->Tumble;
 
     hpjet_make_init(pdev, init, "\033&l-180u36Z\033*r0F");
+    hpjet_make_init(pdev, even_init, "\033&l180u36Z\033*r0F");
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					300, PCL_LJ3D_FEATURES, init);
+					300, PCL_LJ3D_FEATURES, init, even_init, tumble);
 }
 /* LaserJet 4 series compresses, and it needs a special sequence to */
 /* allow it to specify coordinates at 600 dpi. */
@@ -436,9 +442,10 @@ ljet4_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 
     sprintf(base_init, "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
     hpjet_make_init(pdev, init, base_init);
+
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
 					dots_per_inch, PCL_LJ4_FEATURES,
-					init);
+					init, init, false);
 }
 private int
 ljet4d_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
@@ -447,12 +454,19 @@ ljet4d_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     int dots_per_inch = (int)pdev->y_pixels_per_inch;
     char base_init[60];
     char init[80];
+    char even_base_init[80];
+    char even_init[80];
+
+    gx_device_hpjet *dev = (gx_device_hpjet *)pdev;
+    bool tumble=dev->Tumble;
 
     sprintf(base_init, "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
     hpjet_make_init(pdev, init, base_init);
+    sprintf(even_base_init, "\033&l180u36Z\033*r0F\033&u%dD", dots_per_inch);
+    hpjet_make_init(pdev, even_init, even_base_init);
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
 					dots_per_inch, PCL_LJ4D_FEATURES,
-					init);
+					init,even_init,tumble);
 }
  
 /* LaserJet 4 series compresses, and it needs a special sequence to */
@@ -467,7 +481,7 @@ ljet4pjl_print_page_copies(gx_device_printer *pdev, FILE *prn_stream,
 	sprintf(real_init, "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
 	return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
 					dots_per_inch, PCL_LJ4PJL_FEATURES,
-					real_init);
+                                        real_init, real_init, false);
 }
 
 /* The 2563B line printer can't compress */
@@ -480,7 +494,7 @@ lp2563_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 
     hpjet_make_init(pdev, init, "\033*b0M");
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					300, PCL_LP2563B_FEATURES, init);
+					300, PCL_LP2563B_FEATURES, init, init, false);
 }
 /* The Oce line printer has TIFF compression */
 /* and doesn't support *p+ or *b vertical spacing. */
@@ -500,7 +514,7 @@ oce9050_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     hpjet_make_init(pdev, init, "\033*b0M");
 
     code = dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					400, PCL_OCE9050_FEATURES, init);
+					400, PCL_OCE9050_FEATURES, init, init, false);
 
     /* Return to HPGL/2 mode. */
     fputs("\033%1B", prn_stream);	/* Enter HPGL/2 mode */
@@ -520,7 +534,11 @@ hpjet_get_params(gx_device *pdev, gs_param_list *plist)
     int code = gdev_prn_get_params(pdev, plist);
 
     if (code >= 0)
+    {
 	code = param_write_bool(plist, "ManualFeed", &dev->ManualFeed);
+    }
+    if (code >=0)
+    	code = param_write_bool(plist, "Tumble", &dev->Tumble);
     return code;
 }
 
@@ -533,6 +551,7 @@ hpjet_put_params(gx_device *pdev, gs_param_list *plist)
     bool ManualFeed_set = false;
     int MediaPosition;
     bool MediaPosition_set = false;
+    bool Tumble;
 
     code = param_read_bool(plist, "ManualFeed", &ManualFeed);
     if (code == 0) ManualFeed_set = true;
@@ -545,11 +564,14 @@ hpjet_put_params(gx_device *pdev, gs_param_list *plist)
 	    }
 	}
     }
+    if (code>=0)
+       code=param_read_bool(plist,"Tumble",&Tumble);
 
     if (code >= 0)
 	code = gdev_prn_put_params(pdev, plist);
 
     if (code >= 0) {
+    dev->Tumble=Tumble;
 	if (ManualFeed_set) {
 	    dev->ManualFeed = ManualFeed;
 	    dev->ManualFeed_set = true;

@@ -667,7 +667,8 @@ hl1250_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 
 	sprintf(page_init, "\033&l-120U\033*r0F\033&u%dD%s", y_dpi, tray_pcl);
 	return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					    y_dpi, PCL_LJ4_FEATURES, page_init);
+					    y_dpi, PCL_LJ4_FEATURES, 
+                                            page_init, page_init, false);
     }
     return hl1250_print_1200dpi(pdev, prn_stream, num_copies, tray_pcl);
 }

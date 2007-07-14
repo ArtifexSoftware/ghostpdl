@@ -140,7 +140,9 @@ int dljet_mono_print_page_copies(
 	int num_copies,
 	int dots_per_inch,
 	int features,
-	const char *page_init
+	const char *odd_page_init,
+        const char *even_page_init,
+        bool tumble
 			     );
 
 #endif /* gdevdljm_INCLUDED */

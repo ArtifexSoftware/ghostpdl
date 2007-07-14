@@ -47,12 +47,12 @@ dljet_mono_print_page(gx_device_printer * pdev, FILE * prn_stream,
 		      int dots_per_inch, int features, const char *page_init)
 {
     return dljet_mono_print_page_copies(pdev, prn_stream, 1, dots_per_inch,
-					features, page_init);
+					features, page_init, page_init, false);
 }
 int
 dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 			     int num_copies, int dots_per_inch, int features,
-			     const char *page_init)
+			     const char *odd_page_init, const char *even_page_init, bool tumble)
 {
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
     int line_size_words = (line_size + W - 1) / W;
@@ -112,8 +112,10 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 	}
 	/* If printer can duplex, set duplex mode appropriately. */
 	if (features & PCL_HAS_DUPLEX) {
-	    if (dupset && dup)
+	    if (dupset && dup && !tumble)
 		fputs("\033&l1S", prn_stream);
+       else if (dupset && dup && tumble)
+		fputs("\033&l2S", prn_stream);
 	    else if (dupset && !dup)
 		fputs("\033&l0S", prn_stream);
 	    else		/* default to duplex for this printer */
@@ -125,7 +127,16 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
         fprintf(prn_stream, "\033&l%dA", paper_size); 
     } 
     fputs("\033&l0o0l0E", prn_stream);
-    fputs(page_init, prn_stream);
+    if ((features & PCL_HAS_DUPLEX) && dupset && dup)
+    {
+       /* We are printing duplex, so change margins as needed */
+       if ((pdev->PageCount%2)==0)
+          fputs(odd_page_init, prn_stream);
+       else
+          fputs(even_page_init, prn_stream);
+    }
+    else
+        fputs(odd_page_init, prn_stream);
     fprintf(prn_stream, "\033&l%dX", num_copies);	/* # of copies */
 
     /* End raster graphics, position cursor at top. */
@@ -134,7 +145,7 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     /* The DeskJet and DeskJet Plus reset everything upon */
     /* receiving \033*rB, so we must reinitialize graphics mode. */
     if (features & PCL_END_GRAPHICS_DOES_RESET) {
-	fputs(page_init, prn_stream);
+	fputs(odd_page_init, prn_stream); /* Assume this does the right thing */
 	fprintf(prn_stream, "\033&l%dX", num_copies);	/* # of copies */
     }
 
