@@ -446,6 +446,9 @@ byte *cmd_put_w(uint, byte *);
    (dp = cmd_put_w((uint)(wy), cmd_put_w((uint)(wx), dp))))
 #define cmd_putxy(xy,dp) cmd_put2w((xy).x, (xy).y, dp)
 
+int cmd_size_frac31(register frac31 w);
+byte * cmd_put_frac31(register frac31 w, register byte * dp);
+
 /* Put out a command to set a color. */
 typedef struct {
     byte set_op;

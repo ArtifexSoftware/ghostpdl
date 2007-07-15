@@ -95,6 +95,24 @@ cmd_get_w(const byte * p, const byte ** rp)
     return val;
 }
 
+/* Get a variable-length fractional operand. */
+#define cmd_getfrac(var, p)\
+  BEGIN\
+    if ( !(*p & 1) ) var = (*p++) << 24;\
+    else { const byte *_cbp; var = cmd_get_frac31(p, &_cbp); p = _cbp; }\
+  END
+private frac31
+cmd_get_frac31(const byte * p, const byte ** rp)
+{
+    frac31 val = (*p++ & 0xFE) << 24;
+    int shift = 24 - 7;
+
+    for (; val |= (frac31)(*p & 0xFE) << shift, *p++ & 1; shift -= 7);
+    *rp = p;
+    return val;
+}
+
+
 /*
  * Define the structure for keeping track of the command reading buffer.
  *
@@ -1462,7 +1480,7 @@ idata:			data_size = 0;
 						cbp = top_up_cbuf(&cbuf, cbp);
 					    cc[i] = c[i];
 					    for (j = 0; j < num_components; j++)
-						cmd_getw(c[i][j], cbp);
+						cmd_getfrac(c[i][j], cbp);
 					} else
 					    cc[i] = NULL;
 				    }

@@ -141,7 +141,7 @@ cmd_put_frac31_color(gx_device_clist_writer * cldev, const frac31 *c, byte *dp)
     int j;
 
     for (j = 0; j < num_components; j++)
-	cmd_putw(c[j], dp);
+	dp = cmd_put_frac31(c[j], dp);
     return dp;
 }
 
@@ -152,7 +152,7 @@ cmd_size_frac31_color(gx_device_clist_writer * cldev, const frac31 *c)
     int num_components = cldev->color_info.num_components;
 
     for (j = 0; j < num_components; j++)
-	s += cmd_sizew(c[j]);
+	s += cmd_size_frac31(c[j]);
     return s;
 }
 

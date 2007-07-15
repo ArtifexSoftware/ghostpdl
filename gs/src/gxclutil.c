@@ -329,6 +329,28 @@ cmd_put_w(register uint w, register byte * dp)
     *dp = w;
     return dp + 1;
 }
+/* Write a variable-size positive fractional. */
+int
+cmd_size_frac31(register frac31 w)
+{
+    register int size = 1;
+    register uint32_t v = w;
+
+    while (v & 0x01FFFFFF)
+	v <<= 7, size++;
+    return size;
+}
+byte *
+cmd_put_frac31(register frac31 w, register byte * dp)
+{
+    register uint32_t v = w;
+
+    while (v & 0x01FFFFFF)
+	*dp++ = (v >> 24) | 1, v <<= 7;
+    *dp = (v >> 24);
+    return dp + 1;
+}
+
 
 
 /*
