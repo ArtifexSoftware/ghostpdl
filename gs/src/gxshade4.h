@@ -177,6 +177,9 @@ bool term_patch_fill_state(patch_fill_state_t *pfs);
 int mesh_triangle(patch_fill_state_t *pfs, 
     const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2);
 
+int small_mesh_triangle(patch_fill_state_t *pfs, 
+	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2);
+
 int mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_point *p1, 
 	    const patch_color_t *c0, const patch_color_t *c1);
 

@@ -928,23 +928,37 @@ patch_color_to_device_color_inline(const patch_fill_state_t *pfs, const patch_co
 	gs_client_color fcc;
 	const gs_color_space *pcs = pfs->direct_space;
 
-	if (pdevc == NULL)
-	    pdevc = &devc;
-	memcpy(fcc.paint.values, c->cc.paint.values, 
-		    sizeof(fcc.paint.values[0]) * pfs->num_components);
-	code = pcs->type->remap_color(&fcc, pcs, pdevc, pfs->pis,
-				  pfs->dev, gs_color_select_texture);
-	if (code < 0)
-	    return code;
-	if (frac_values != NULL) {
-	    dc2fc(pfs, pdevc->colors.pure, frac_values);
-	    if (pdevc->type != &gx_dc_type_data_pure)
-		return 2;
+	if (pcs != NULL) {
+
+	    if (pdevc == NULL)
+		pdevc = &devc;
+	    memcpy(fcc.paint.values, c->cc.paint.values, 
+			sizeof(fcc.paint.values[0]) * pfs->num_components);
+	    code = pcs->type->remap_color(&fcc, pcs, pdevc, pfs->pis,
+				      pfs->dev, gs_color_select_texture);
+	    if (code < 0)
+		return code;
+	    if (frac_values != NULL) {
+		dc2fc(pfs, pdevc->colors.pure, frac_values);
+		if (pdevc->type != &gx_dc_type_data_pure)
+		    return 2;
+	    }
+#	    if DEBUG_COLOR_INDEX_CACHE
+	    if (cindex != pdevc->colors.pure)
+		return_error(gs_error_unregistered);
+#	    endif
+	} else {
+	    /* This is reserved for future extension,
+	    when a linear color triangle with frac31 colors is being decomposed
+	    during a clist rasterization. In this case frac31 colors are written into 
+	    the patch color, and pcs==NULL means an identity color mapping. 
+	    For a while we assume here pfs->pcic is also NULL. */
+	    int j;
+	    const gx_device_color_info *cinfo = &pfs->dev->color_info;
+
+	    for (j = 0; j < cinfo->num_components; j++)
+		frac_values[j] = (frac31)c->cc.paint.values[j];
 	}
-#	if DEBUG_COLOR_INDEX_CACHE
-	if (cindex != pdevc->colors.pure)
-	    return_error(gs_error_unregistered);
-#	endif
     }
     return 0;
 }
@@ -2589,7 +2603,7 @@ fill_triangle(patch_fill_state_t *pfs,
     return triangle_by_4(pfs, p0, p1, p2, l01, l12, l20, cd, sd);
 }
 
-private int 
+int 
 small_mesh_triangle(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2)
 {
