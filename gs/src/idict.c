@@ -423,7 +423,10 @@ dict_find_string(const ref * pdref, const char *kstr, ref ** ppvalue)
 	if ((code = name_ref(dict_mem(pdict), 
 			     (const byte *)kstr, strlen(kstr), &kname, -1)) < 0)
 	    return code;
-	return dict_find(pdref, &kname, ppvalue);
+	code = dict_find(pdref, &kname, ppvalue);
+        if (code == e_dictfull)
+            return_error(e_undefined);
+        return code;
     }
     return 0;
 }
