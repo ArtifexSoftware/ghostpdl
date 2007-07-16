@@ -298,8 +298,8 @@ xps_draw_arc_segment(xps_context_t *ctx,
     int code;
 
 /* arcs are just too broken for now */
-gs_lineto(ctx->pgs, point_x, point_y);
-return 0;
+// gs_lineto(ctx->pgs, point_x, point_y);
+// return 0;
 
     sign = is_clockwise == is_large_arc ? -1.0 : 1.0;
 
@@ -820,8 +820,6 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 
     xps_begin_opacity(ctx, dict, opacity_att, opacity_mask_tag);
 
-    /* if it's a solid color brush fill/stroke do just that. */
-
     if (fill_att)
     {
 	xps_parse_color(ctx, fill_att, argb);
@@ -835,6 +833,16 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	    xps_parse_path_geometry(ctx, dict, data_tag);
 
 	xps_fill(ctx);
+    }
+
+    if (fill_tag)
+    {
+	if (data_att)
+	    xps_parse_abbreviated_geometry(ctx, data_att);
+	if (data_tag)
+	    xps_parse_path_geometry(ctx, dict, data_tag);
+
+	xps_parse_brush(ctx, dict, fill_tag);
     }
 
     if (stroke_att)
@@ -852,31 +860,17 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	gs_stroke(ctx->pgs);
     }
 
-    /* if it's a visual brush or image, use the path as a clip mask to paint brush */
-
-    if (fill_tag || stroke_tag)
+    if (stroke_tag)
     {
-	if (fill_tag)
-	{
-	    if (data_att)
-		xps_parse_abbreviated_geometry(ctx, data_att);
-	    if (data_tag)
-		xps_parse_path_geometry(ctx, dict, data_tag);
+	if (data_att)
+	    xps_parse_abbreviated_geometry(ctx, data_att);
+	if (data_tag)
+	    xps_parse_path_geometry(ctx, dict, data_tag);
 
-	    xps_parse_brush(ctx, dict, fill_tag);
-	}
+	ctx->fill_rule = 1; /* over-ride for stroking */
+	gs_strokepath(ctx->pgs);
 
-	if (stroke_tag)
-	{
-	    if (data_att)
-		xps_parse_abbreviated_geometry(ctx, data_att);
-	    if (data_tag)
-		xps_parse_path_geometry(ctx, dict, data_tag);
-
-	    gs_strokepath(ctx->pgs);
-
-	    xps_parse_brush(ctx, dict, stroke_tag);
-	}
+	xps_parse_brush(ctx, dict, stroke_tag);
     }
 
     xps_end_opacity(ctx, dict, opacity_att, opacity_mask_tag);

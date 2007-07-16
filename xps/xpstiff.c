@@ -622,12 +622,15 @@ xps_decode_tiff_strips(gs_memory_t *mem, xps_tiff_t *tiff, xps_image_t *image)
     case 2:
         image->xres = tiff->xresolution;
         image->yres = tiff->yresolution;
+	break;
     case 3:
         image->xres = tiff->xresolution * 2.54 + 0.5;
         image->yres = tiff->yresolution * 2.54 + 0.5;
+	break;
     default:
         image->xres = 96;
         image->yres = 96;
+	break;
     }
 
     image->samples = gs_alloc_bytes(mem, image->stride * image->height, "samples");
