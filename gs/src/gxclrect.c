@@ -211,9 +211,9 @@ cmd_write_trapezoid_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     cmd_putw(ybot, dp);
     cmd_putw(ytop, dp);
     cmd_putw(options, dp);
-    if_debug6('L', "    t%d:%d,%d,%d,%d   %d\n",
+    if_debug6('L', "    t%ld:%ld,%ld,%ld,%ld   %ld\n",
 	      rcsize - 1, left->start.x, left->start.y, left->end.x, left->end.y, ybot);
-    if_debug6('L', "    t%d,%d,%d,%d   %d   o=%d\n",
+    if_debug6('L', "    t%ld,%ld,%ld,%ld   %ld   o=%d\n",
 	      right->start.x, right->start.y, right->end.x, right->end.y, ytop, options);
     if (options & 2) {
 	cmd_putw(fa->clip->p.x, dp);
@@ -343,8 +343,6 @@ clist_write_fill_trapezoid(gx_device * dev,
 	    } else
 		code = 0;
 	    if (code >= 0) {
-		byte *dp;
-
 		/* Dont't want to shorten the trapezoid by the band boundary,
 		   keeping in mind a further optimization with writing same data to all bands. */
 		code = cmd_write_trapezoid_cmd(cdev, re.pcls, cmd_opv_fill_trapezoid, left, right,
