@@ -489,8 +489,9 @@ make_midx_default(gx_device **pmidev, gx_device *dev, int width, int height,
     gx_device_memory *midev;
     int code;
 
-    if (height > max_ulong/width)	/* protect against overflow in bitmap size */
-	return_error(gs_error_VMerror);
+    if (width != 0)
+	if (height > max_ulong/width)	/* protect against overflow in bitmap size */
+	    return_error(gs_error_VMerror);
     if (mdproto == 0)
 	return_error(gs_error_rangecheck);
     midev = gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
