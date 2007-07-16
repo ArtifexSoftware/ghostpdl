@@ -227,8 +227,9 @@ gdev_mem_bits_size(const gx_device_memory * dev, int width, int height, ulong *p
 	planes = &plane1, plane1.depth = dev->color_info.depth, num_planes = 1;
     for (size = 0, pi = 0; pi < num_planes; ++pi)
 	size += bitmap_raster(width * planes[pi].depth);
-    if (size > (max_ulong - ARCH_ALIGN_PTR_MOD) / (ulong)height)
-	return_error(gs_error_VMerror);
+    if (height != 0)
+	if (size > (max_ulong - ARCH_ALIGN_PTR_MOD) / (ulong)height)
+	    return_error(gs_error_VMerror);
     *psize = ROUND_UP(size * height, ARCH_ALIGN_PTR_MOD);
     return 0;
 }
