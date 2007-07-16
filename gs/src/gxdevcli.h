@@ -141,6 +141,10 @@ typedef struct gx_stroke_params_s gx_stroke_params;
 #  define gs_imager_state_DEFINED
 typedef struct gs_imager_state_s gs_imager_state;
 #endif
+#ifndef patch_fill_state_t_DEFINED
+#  define patch_fill_state_t_DEFINED
+typedef struct patch_fill_state_s  patch_fill_state_t;
+#endif
 
 /* We need an abstract type for the image enumeration state, */
 /* for begin[_typed]_image. */
@@ -1275,6 +1279,7 @@ typedef struct gs_fill_attributes_s {
       const gx_device_halftone *ht; /* Reserved for possible use in future. */
       gs_logical_operation_t lop; /* Reserved for possible use in future. */
       fixed ystart, yend; /* Only for X-independent gradients. Base coordinates of the gradient. */
+      patch_fill_state_t *pfs; /* For gx_fill_triangle_small. Clients must not change. */
 } gs_fill_attributes;
 
 /* Fill a linear color scanline. */

@@ -48,6 +48,8 @@
 #include "gsserial.h"
 #include "gxdhtserial.h"
 #include "gzht.h"
+#include "gxshade.h"
+#include "gxshade4.h"
 
 extern_gx_device_halftone_list();
 extern_gx_image_type_table();
@@ -311,6 +313,7 @@ clist_playback_band(clist_playback_action playback_action,
     gx_device *const orig_target = target;
     gx_device_clip clipper_dev;
     bool clipper_dev_open;
+    patch_fill_state_t pfs;
 
     cbuf.data = (byte *)cbuf_storage;
     cbuf.size = cbuf_size;
@@ -319,6 +322,7 @@ clist_playback_band(clist_playback_action playback_action,
     set_cb_end(&cbuf, cbuf.data + cbuf.size);
     cbp = cbuf.end;
 
+    pfs.dev = NULL; /* Indicate "not initialized". */
     memset(&ht_buff, 0, sizeof(ht_buff));
 
 in:				/* Initialize for a new page. */
@@ -1484,18 +1488,42 @@ idata:			data_size = 0;
 					} else
 					    cc[i] = NULL;
 				    }
-				    if (options & 4)
+				    if (options & 4) {
+#					if 1 /* Disable to debug gx_fill_triangle_small. */
 					code = dev_proc(ttdev, fill_linear_color_triangle)(ttdev, &fa,
 							&left.start, &left.end, &right.start,
 							cc[0], cc[1], cc[2]);
-				    else
+#					else
+					code = 0;
+#					endif
+					if (code == 0) {
+					    /* Fixme : The target device didn't fill the trapezoid and
+					       requests a decomposition. Call a code from gxshade6.c 
+					       for subdividing into smaller triangles : */
+					    if (pfs.dev == NULL)
+						code = gx_init_patch_fill_state_for_clist(tdev, &pfs, mem);
+					    if (code >= 0) {
+						pfs.dev = ttdev;
+						pfs.rect = clip; /* fixme: eliminate 'clip'. */
+						fa.pfs = &pfs;
+						code = gx_fill_triangle_small(ttdev, &fa,
+							    &left.start, &left.end, &right.start,
+							    cc[0], cc[1], cc[2]);
+					    }
+					}
+				    } else {
 					code = dev_proc(ttdev, fill_linear_color_trapezoid)(ttdev, &fa,
 							&left.start, &left.end, &right.start, &right.end,
 							cc[0], cc[1], cc[2], cc[3]);
-				    if (code == 0) {
-					/* Fixme : The target device didn't fill the trapezoid and
-					   requests a decomposition. Call a code from gxshade6.c . */
-					code = gs_note_error(gs_error_unregistered);
+					if (code == 0) {
+					    /* Fixme : The target device didn't fill the trapezoid and
+					       requests a decomposition. 
+					       Currently we never call it with 4 colors (see gxshade6.c)
+					       and 2 colors must not return 0 - see comment to
+					       dev_t_proc_fill_linear_color_trapezoid in gxdevcli.c .
+					       Must not happen. */
+					    code = gs_note_error(gs_error_unregistered);
+					}
 				    }
 				} else
 				    code = gx_default_fill_trapezoid(ttdev, &left, &right,
@@ -1646,13 +1674,18 @@ idata:			data_size = 0;
 	gs_free_object(target->memory, target, "gxclrast discard compositor");
 	target = orig_target;
     }
-    if (code < 0)
+    if (code < 0) {
+	if (pfs.dev != NULL)
+	    term_patch_fill_state(&pfs);
 	return_error(code);
+    }
     /* Check whether we have more pages to process. */
     if (playback_action != playback_action_setup && 
 	(cbp < cbuf.end || !seofp(s))
 	)
 	goto in;
+    if (pfs.dev != NULL)
+	term_patch_fill_state(&pfs);
     return code;
 }
 

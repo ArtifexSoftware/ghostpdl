@@ -117,8 +117,13 @@ typedef struct patch_color_s patch_color_t;
 typedef struct gs_color_index_cache_s gs_color_index_cache_t;
 #endif
 
+#ifndef patch_fill_state_t_DEFINED
+#  define patch_fill_state_t_DEFINED
+typedef struct patch_fill_state_s  patch_fill_state_t;
+#endif
+
 /* Define the common state for rendering Coons and tensor patches. */
-typedef struct patch_fill_state_s {
+struct patch_fill_state_s {
     mesh_fill_state_common;
     const gs_function_t *Function;
     int function_arg_shift;
@@ -145,7 +150,7 @@ typedef struct patch_fill_state_s {
     byte *color_stack_limit;
     gs_memory_t *memory; /* Where color_buffer is allocated. */
     gs_color_index_cache_t *pcic;
-} patch_fill_state_t;
+} ;
 
 /* Define a structure for mesh or patch vertex. */
 struct shading_vertex_s {
@@ -173,12 +178,10 @@ int mesh_init_fill_state(mesh_fill_state_t * pfs,
 
 int init_patch_fill_state(patch_fill_state_t *pfs);
 bool term_patch_fill_state(patch_fill_state_t *pfs);
+int gx_init_patch_fill_state_for_clist(gx_device *dev, patch_fill_state_t *pfs, gs_memory_t *memory);
 
 int mesh_triangle(patch_fill_state_t *pfs, 
     const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2);
-
-int small_mesh_triangle(patch_fill_state_t *pfs, 
-	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2);
 
 int mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_point *p1, 
 	    const patch_color_t *c0, const patch_color_t *c1);
@@ -203,5 +206,7 @@ int patch_color_to_device_color(const patch_fill_state_t *pfs,
 
 byte *reserve_colors(patch_fill_state_t *pfs, patch_color_t *c0[], int n);
 void release_colors(patch_fill_state_t *pfs, byte *ptr, int n);
+
+dev_proc_fill_linear_color_triangle(gx_fill_triangle_small);
 
 #endif /* gxshade4_INCLUDED */

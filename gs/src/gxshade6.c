@@ -195,6 +195,31 @@ is_linear_color_applicable(const patch_fill_state_t *pfs)
     return true;
 }
 
+private int 
+alloc_patch_fill_memory(patch_fill_state_t *pfs, gs_memory_t *memory, const gs_color_space *pcs)
+{
+    int code;
+
+    pfs->memory = memory;
+#   if LAZY_WEDGES
+	code = wedge_vertex_list_elem_buffer_alloc(pfs);
+	if (code < 0)
+	    return code;
+#   endif
+    pfs->max_small_coord = 1 << ((sizeof(int64_t) * 8 - 1/*sign*/) / 3);
+    code = allocate_color_stack(pfs, memory);
+    if (code < 0)
+	return code;
+    if (pfs->unlinear || pcs == NULL)
+	pfs->pcic = NULL;
+    else {
+	pfs->pcic = gs_color_index_cache_create(memory, pcs, pfs->dev, pfs->pis, true);
+	if (pfs->pcic == NULL)
+	    return_error(gs_error_VMerror);
+    }
+    return 0;
+}
+
 int
 init_patch_fill_state(patch_fill_state_t *pfs)
 {
@@ -231,25 +256,8 @@ init_patch_fill_state(patch_fill_state_t *pfs)
     pfs->color_stack_ptr = NULL;
     pfs->color_stack = NULL;
     pfs->color_stack_limit = NULL;
-    pfs->memory = NULL;
     pfs->unlinear = !is_linear_color_applicable(pfs);
-#   if LAZY_WEDGES
-	code = wedge_vertex_list_elem_buffer_alloc(pfs);
-	if (code < 0)
-	    return code;
-#   endif
-    pfs->max_small_coord = 1 << ((sizeof(int64_t) * 8 - 1/*sign*/) / 3);
-    code = allocate_color_stack(pfs, pfs->pis->memory);
-    if (code < 0)
-	return code;
-    if (pfs->unlinear)
-	pfs->pcic = NULL;
-    else {
-	pfs->pcic = gs_color_index_cache_create(pfs->pis->memory, pcs, pfs->dev, pfs->pis, true);
-	if (pfs->pcic == NULL)
-	    return_error(gs_error_VMerror);
-    }
-    return 0;
+    return alloc_patch_fill_memory(pfs, pfs->pis->memory, pcs);
 }
 
 bool
@@ -627,7 +635,7 @@ int
 wedge_vertex_list_elem_buffer_alloc(patch_fill_state_t *pfs)
 {
     const int max_level = LAZY_WEDGES_MAX_LEVEL;
-    gs_memory_t *memory = pfs->pis->memory;
+    gs_memory_t *memory = pfs->memory;
 
     /* We have 'max_level' levels, each of which divides 1 or 3 sides.
        LAZY_WEDGES stores all 2^level divisions until 
@@ -653,7 +661,7 @@ wedge_vertex_list_elem_buffer_alloc(patch_fill_state_t *pfs)
 void
 wedge_vertex_list_elem_buffer_free(patch_fill_state_t *pfs)
 {
-    gs_memory_t *memory = pfs->pis->memory;
+    gs_memory_t *memory = pfs->memory;
 
     gs_free_object(memory, pfs->wedge_vertex_list_elem_buffer, 
 		"wedge_vertex_list_elem_buffer_free");
@@ -958,6 +966,7 @@ patch_color_to_device_color_inline(const patch_fill_state_t *pfs, const patch_co
 
 	    for (j = 0; j < cinfo->num_components; j++)
 		frac_values[j] = (frac31)c->cc.paint.values[j];
+	    pdevc->type = &gx_dc_type_data_pure;
 	}
     }
     return 0;
@@ -1675,26 +1684,29 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
 	return 2;
     if (!wedge) {
 	const gs_color_space *cs = pfs->direct_space;
-	float s0, s1, s2, s01, s012;
 
-	s0 = function_linearity(pfs, p0->c, p1->c);
-	if (s0 > pfs->smoothness)
-	    return 1;
-	s1 = function_linearity(pfs, p1->c, p2->c);
-	if (s1 > pfs->smoothness)
-	    return 1;
-	s2 = function_linearity(pfs, p2->c, p0->c);
-	if (s2 > pfs->smoothness)
-	    return 1;
-	/* fixme: check an inner color ? */
-	s01 = max(s0, s1);
-	s012 = max(s01, s2);
-	code = cs_is_linear(cs, pfs->pis, pfs->dev, 
-			    &p0->c->cc, &p1->c->cc, &p2->c->cc, NULL, pfs->smoothness - s012);
-	if (code < 0)
-	    return code;
-	if (code == 0)
-	    return 1;
+	if (cs != NULL) {
+	    float s0, s1, s2, s01, s012;
+
+	    s0 = function_linearity(pfs, p0->c, p1->c);
+	    if (s0 > pfs->smoothness)
+		return 1;
+	    s1 = function_linearity(pfs, p1->c, p2->c);
+	    if (s1 > pfs->smoothness)
+		return 1;
+	    s2 = function_linearity(pfs, p2->c, p0->c);
+	    if (s2 > pfs->smoothness)
+		return 1;
+	    /* fixme: check an inner color ? */
+	    s01 = max(s0, s1);
+	    s012 = max(s01, s2);
+	    code = cs_is_linear(cs, pfs->pis, pfs->dev, 
+				&p0->c->cc, &p1->c->cc, &p2->c->cc, NULL, pfs->smoothness - s012);
+	    if (code < 0)
+		return code;
+	    if (code == 0)
+		return 1;
+	}
     }
     {   gx_device *pdev = pfs->dev;
 	frac31 fc[3][GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -2603,7 +2615,7 @@ fill_triangle(patch_fill_state_t *pfs,
     return triangle_by_4(pfs, p0, p1, p2, l01, l12, l20, cd, sd);
 }
 
-int 
+private int 
 small_mesh_triangle(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2)
 {
@@ -2621,6 +2633,91 @@ small_mesh_triangle(patch_fill_state_t *pfs,
     if (code < 0)
 	return code;
     return terminate_wedge_vertex_list(pfs, &l[2], p2->c, p0->c);
+}
+
+int 
+gx_init_patch_fill_state_for_clist(gx_device *dev, patch_fill_state_t *pfs, gs_memory_t *memory)
+{
+    int i;
+
+    pfs->dev = dev;
+    pfs->pis = NULL;
+    pfs->direct_space = NULL;
+    pfs->num_components = dev->color_info.num_components;
+    /* pfs->cc_max_error[GS_CLIENT_COLOR_MAX_COMPONENTS] unused */
+    pfs->pshm = NULL;
+    pfs->Function = NULL;
+    pfs->function_arg_shift = 0;
+    pfs->vectorization = false; /* A stub for a while. Will use with pclwrite. */
+    pfs->n_color_args = 1; /* unused. */
+    pfs->max_small_coord = 0; /* unused. */
+    pfs->wedge_vertex_list_elem_buffer = NULL; /* fixme */
+    pfs->free_wedge_vertex = NULL; /* fixme */
+    pfs->wedge_vertex_list_elem_count = 0; /* fixme */
+    pfs->wedge_vertex_list_elem_count_max = 0; /* fixme */
+    for (i = 0; i < pfs->num_components; i++)
+	pfs->color_domain.paint.values[i] = (float)0x7fffffff;
+    /* decomposition_limit must be same as one in init_patch_fill_state */
+    pfs->decomposition_limit = float2fixed(min(pfs->dev->HWResolution[0], 
+					       pfs->dev->HWResolution[1]) / 72);
+    pfs->fixed_flat = 0; /* unused */
+    pfs->smoothness = 0; /* unused */
+    pfs->maybe_self_intersecting = false; /* unused */
+    pfs->monotonic_color = true;
+    pfs->linear_color = true;
+    pfs->unlinear = false; /* Because it is used when fill_linear_color_triangle was called. */
+    pfs->inside = false;
+    pfs->color_stack_size = 0;
+    pfs->color_stack_step = dev->color_info.num_components;
+    pfs->color_stack_ptr = NULL; /* fixme */
+    pfs->color_stack = NULL; /* fixme */
+    pfs->color_stack_limit = NULL; /* fixme */
+    pfs->pcic = NULL; /* Will do someday. */
+    return alloc_patch_fill_memory(pfs, memory, NULL);
+}
+
+/* A method for filling a small triangle that the device can't handle. 
+   Used by clist playback. */
+int 
+gx_fill_triangle_small(gx_device *dev, const gs_fill_attributes *fa,
+	const gs_fixed_point *p0, const gs_fixed_point *p1,
+	const gs_fixed_point *p2,
+	const frac31 *c0, const frac31 *c1, const frac31 *c2)
+{
+    patch_fill_state_t *pfs = fa->pfs;
+    patch_color_t c[3];
+    shading_vertex_t p[3];
+    int i;
+
+    /* pfs->rect = *fa->clip; unused ? */
+    p[0].p = *p0;
+    p[1].p = *p1;
+    p[2].p = *p2;
+    p[0].c = &c[0];
+    p[1].c = &c[1];
+    p[2].c = &c[2];
+    c[0].t[0] = c[0].t[1] = c[1].t[0] = c[1].t[1] = c[2].t[0] = c[2].t[1] = 0; /* Dummy - not used. */
+    for (i = 0; i < dev->color_info.num_components; i++) {
+	c[0].cc.paint.values[i] = (float)c0[i];
+	c[1].cc.paint.values[i] = (float)c1[i];
+	c[2].cc.paint.values[i] = (float)c2[i];
+    }
+    /* fixme: the cycle above converts frac31 values into floats.
+       We don't like this because (1) it misses lower bits,
+       and (2) fixed point values can be faster on some platforms.
+       We could fix it with coding a template for small_mesh_triangle
+       and its callees until patch_color_to_device_color_inline.
+    */
+    /* fixme : this function is called from gxclrast.c
+       after dev->procs.fill_linear_color_triangle returns 0 - "subdivide".
+       After few moments small_mesh_triangle indirectly calls
+       same function with same arguments as a part of
+       try_device_linear_color in triangle_by_4.
+       Obviusly it will return zero again.
+       Actually we don't need the second call, 
+       so optimize with skipping the second call.
+     */
+    return small_mesh_triangle(pfs, &p[0], &p[1], &p[2]);
 }
 
 private int
