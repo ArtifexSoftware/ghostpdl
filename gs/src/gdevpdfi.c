@@ -1392,6 +1392,8 @@ gdev_pdf_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
 	    return 0;
 	case pattern_manage__shfill_doesnt_need_path:
 	    return 0; /* gdev_pdf_fill_path still does need a path. */
+	case pattern_manage__handles_clip_path:
+	    return 1;
     }
     return_error(gs_error_unregistered);
 }

@@ -18,6 +18,7 @@
 #include "gx.h"
 #include "gpcheck.h"
 #include "gserrors.h"
+#include "gsptype2.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"		/* must precede gxcldev.h */
 #include "gxcldev.h"

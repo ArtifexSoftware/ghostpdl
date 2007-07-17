@@ -1415,7 +1415,6 @@ idata:			data_size = 0;
 			    break;
 			case cmd_opv_fill_trapezoid:
 			    {
-				gx_cmd_rect rl, rr;
 				gs_fixed_edge left, right;
 				fixed ybot, ytop;
 				int options, swap_axes, wh;

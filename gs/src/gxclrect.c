@@ -211,7 +211,7 @@ cmd_write_trapezoid_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     cmd_putw(ybot, dp);
     cmd_putw(ytop, dp);
     cmd_putw(options, dp);
-    if_debug6('L', "    t%ld:%ld,%ld,%ld,%ld   %ld\n",
+    if_debug6('L', "    t%d:%ld,%ld,%ld,%ld   %ld\n",
 	      rcsize - 1, left->start.x, left->start.y, left->end.x, left->end.y, ybot);
     if_debug6('L', "    t%ld,%ld,%ld,%ld   %ld   o=%d\n",
 	      right->start.x, right->start.y, right->end.x, right->end.y, ytop, options);

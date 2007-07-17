@@ -27,8 +27,8 @@
 #include "gxdcolor.h"
 #include "gxistate.h"
 #include "gxshade.h"
-#include "gxshade4.h"
 #include "gxdevcli.h"
+#include "gxshade4.h"
 #include "gxarith.h"
 #include "gzpath.h"
 #include "stdint_.h"
@@ -226,7 +226,7 @@ init_patch_fill_state(patch_fill_state_t *pfs)
     /* Warning : pfs->Function must be set in advance. */
     const gs_color_space *pcs = pfs->direct_space;
     gs_client_color fcc0, fcc1;
-    int i, code;
+    int i;
 
     for (i = 0; i < pfs->num_components; i++) {
 	fcc0.paint.values[i] = -1000000;
