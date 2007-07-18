@@ -12,26 +12,76 @@ struct tile_closure_s
     xps_context_t *ctx;
     xps_resource_t *dict;
     xps_item_t *tag;
+    gs_rect viewbox;
+    int tile_mode;
     void *user;
     int (*func)(xps_context_t*, xps_resource_t*, xps_item_t*, void*);
 };
 
 static int
-xps_paint_tiling_brush(const gs_client_color *pcc, gs_state *newpgs)
+xps_paint_tiling_brush_clipped(struct tile_closure_s *c)
 {
-    const gs_client_pattern *ppat = gs_getpattern(pcc);
-    const struct tile_closure_s *c = ppat->client_data;
-    gs_state *oldpgs;
+    xps_context_t *ctx = c->ctx;
     int code;
 
-    oldpgs = c->ctx->pgs;
-    c->ctx->pgs = newpgs;
+    gs_moveto(ctx->pgs, c->viewbox.p.x, c->viewbox.p.y);
+    gs_lineto(ctx->pgs, c->viewbox.p.x, c->viewbox.q.y);
+    gs_lineto(ctx->pgs, c->viewbox.q.x, c->viewbox.q.y);
+    gs_lineto(ctx->pgs, c->viewbox.q.x, c->viewbox.p.y);
+    gs_closepath(ctx->pgs);
+    gs_clip(ctx->pgs);
+    gs_newpath(ctx->pgs);
 
     code = c->func(c->ctx, c->dict, c->tag, c->user);
 
-    c->ctx->pgs = oldpgs;
-
     return code;
+}
+
+static int
+xps_paint_tiling_brush(const gs_client_color *pcc, gs_state *pgs)
+{
+    const gs_client_pattern *ppat = gs_getpattern(pcc);
+    struct tile_closure_s *c = ppat->client_data;
+    xps_context_t *ctx = c->ctx;
+    gs_state *saved_pgs;
+
+    saved_pgs = ctx->pgs;
+    ctx->pgs = pgs;
+
+    gs_gsave(ctx->pgs);
+    xps_paint_tiling_brush_clipped(c);
+    gs_grestore(ctx->pgs);
+
+    if (c->tile_mode == TILE_FLIP_X || c->tile_mode == TILE_FLIP_X_Y)
+    {
+	gs_gsave(ctx->pgs);
+	gs_translate(ctx->pgs, c->viewbox.q.x * 2, 0.0);
+	gs_scale(ctx->pgs, -1.0, 1.0);
+	xps_paint_tiling_brush_clipped(c);
+	gs_grestore(ctx->pgs);
+    }
+
+    if (c->tile_mode == TILE_FLIP_Y || c->tile_mode == TILE_FLIP_X_Y)
+    {
+	gs_gsave(ctx->pgs);
+	gs_translate(ctx->pgs, 0.0, c->viewbox.q.y * 2);
+	gs_scale(ctx->pgs, 1.0, -1.0);
+	xps_paint_tiling_brush_clipped(c);
+	gs_grestore(ctx->pgs);
+    }
+
+    if (c->tile_mode == TILE_FLIP_X_Y)
+    {
+	gs_gsave(ctx->pgs);
+	gs_translate(ctx->pgs, c->viewbox.q.x * 2, c->viewbox.q.y * 2);
+	gs_scale(ctx->pgs, -1.0, -1.0);
+	xps_paint_tiling_brush_clipped(c);
+	gs_grestore(ctx->pgs);
+    }
+
+    ctx->pgs = saved_pgs;
+
+    return 0;
 }
 
 int
@@ -110,8 +160,6 @@ xps_parse_tiling_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
 
     gs_gsave(ctx->pgs);
 
-    gs_concat(ctx->pgs, &transform);
-
     xps_begin_opacity(ctx, dict, opacity_att, NULL);
 
     if (tile_mode != TILE_NONE)
@@ -121,13 +169,18 @@ xps_parse_tiling_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
 	gs_client_pattern gspat;
 	gs_client_color gscolor;
 	gs_color_space *cs;
-	gs_matrix mat;
 
 	closure.ctx = ctx;
 	closure.dict = dict;
 	closure.tag = root;
+	closure.tile_mode = tile_mode;
 	closure.user = user;
 	closure.func = func;
+
+	closure.viewbox.p.x = viewbox.p.x;
+	closure.viewbox.p.y = viewbox.p.y;
+	closure.viewbox.q.x = viewbox.q.x;
+	closure.viewbox.q.y = viewbox.q.y;
 
 	gs_pattern1_init(&gspat);
 	uid_set_UniqueID(&gspat.uid, gs_next_ids(ctx->memory, 1));
@@ -136,12 +189,24 @@ xps_parse_tiling_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
 	gspat.PaintProc = xps_paint_tiling_brush;
 	gspat.client_data = &closure;
 
+	gspat.XStep = viewbox.q.x - viewbox.p.x;
+	gspat.YStep = viewbox.q.y - viewbox.p.y;
 	gspat.BBox.p.x = viewbox.p.x;
 	gspat.BBox.p.y = viewbox.p.y;
 	gspat.BBox.q.x = viewbox.q.x;
 	gspat.BBox.q.y = viewbox.q.y;
-	gspat.XStep = viewbox.q.x - viewbox.p.x;
-	gspat.YStep = viewbox.q.y - viewbox.p.y;
+
+	if (tile_mode == TILE_FLIP_X || tile_mode == TILE_FLIP_X_Y)
+	{
+	    gspat.BBox.q.x += gspat.XStep;
+	    gspat.XStep *= 2;
+	}
+
+	if (tile_mode == TILE_FLIP_Y || tile_mode == TILE_FLIP_X_Y)
+	{
+	    gspat.BBox.q.y += gspat.YStep;
+	    gspat.YStep *= 2;
+	}
 
 	gs_translate(ctx->pgs, viewport.p.x, viewport.p.y);
 	gs_scale(ctx->pgs, scalex, scaley);
@@ -149,8 +214,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
 
 	cs = gs_cspace_new_DeviceRGB(ctx->memory);
 	gs_setcolorspace(ctx->pgs, cs);
-	gs_make_identity(&mat);
-	gs_makepattern(&gscolor, &gspat, &mat, ctx->pgs, NULL);
+	gs_makepattern(&gscolor, &gspat, &transform, ctx->pgs, NULL);
 	gs_setpattern(ctx->pgs, &gscolor);
 
 	xps_fill(ctx);
@@ -158,6 +222,8 @@ xps_parse_tiling_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
     else
     {
 	xps_clip(ctx);
+
+	gs_concat(ctx->pgs, &transform);
 
 	gs_translate(ctx->pgs, viewport.p.x, viewport.p.y);
 	gs_scale(ctx->pgs, scalex, scaley);
