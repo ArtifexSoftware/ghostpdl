@@ -2227,15 +2227,19 @@ const int pl_built_in_symbol_map_count =
 
 ulong
 pl_map_symbol(const pl_symbol_map_t *psm,
-              uint chr, bool resident_font, bool isFontMSL)
+              uint chr, bool is_resident_font, bool is_MSL,
+              bool is_590)
 {
     uint first_code, last_code, code;
+
     /*
      * If there is no symbol map we assume the the character
-     * implicitly indexes the font.
+     * implicitly indexes the font.  The symbol set 590 is not
+     * documented it appears to do implicit mapping as well.
      */
+
     if (psm == 0) {
-	if ( resident_font )
+	if (is_resident_font && !is_590)
 	    return chr + 0xf000;
         else
             return chr;
@@ -2251,7 +2255,7 @@ pl_map_symbol(const pl_symbol_map_t *psm,
        Instead we may use a corresponding unicode symbol set and
        convert the resulting unicode value to msl.  This will not
        necessarily match HP. */
-    if (isFontMSL && (code != 0xffff) &&
+    if (is_MSL && (code != 0xffff) &&
         (pl_symbol_map_vocabulary(psm) == plgv_Unicode)) {
 #ifdef DEBUG
         if ( gs_debug_c('=') ) {

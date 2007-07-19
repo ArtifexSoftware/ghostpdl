@@ -111,7 +111,8 @@ hpgl_map_symbol(uint chr, const hpgl_state_t *pgls)
     
     return pl_map_symbol(psm, chr,
                          pfs->font->storage == pcds_internal,
-                         pl_complement_to_vocab(pfs->font->character_complement) == plgv_MSL);
+                         pl_complement_to_vocab(pfs->font->character_complement) == plgv_MSL,
+                         false);
 }
 
 /* ------ Font selection ------- */

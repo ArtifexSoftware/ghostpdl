@@ -58,7 +58,8 @@ set_symbol_map(px_state_t *pxs)
 	px_font_t *pxfont = pxgs->base_font;
 	uint symbol_set = pxgs->symbol_set;
 
-	if ( symbol_set == pxfont->params.symbol_set )
+	if ( ( symbol_set == pxfont->params.symbol_set ) ||
+             ( symbol_set == 590 ) )
 	  { /* Exact match, no mapping required. */
 	    pxgs->symbol_map = 0;
 	  }
@@ -274,7 +275,7 @@ px_str_to_gschars( px_args_t *par, px_state_t *pxs, gs_char *pchr)
     int i;
     gs_char chr;
     const pl_symbol_map_t *psm = pxs->pxgs->symbol_map;
-
+    uint symbol_set = pxs->pxgs->symbol_set;
     for (i=0; i < len; i++) {
         if (pstr->type & pxd_ubyte) {
             chr = str[i];
@@ -283,7 +284,8 @@ px_str_to_gschars( px_args_t *par, px_state_t *pxs, gs_char *pchr)
         }
         pchr[i] = pl_map_symbol(psm, chr,
                                 pxs->pxgs->base_font->storage == pxfsInternal,
-                                false);
+                                false,
+                                symbol_set == 590);
     }
 }
 

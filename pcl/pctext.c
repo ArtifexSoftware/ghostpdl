@@ -179,7 +179,7 @@ get_next_char(
        galley character */
     chr = pl_map_symbol(pcs->map, chr,
                         plfont->storage == pcds_internal,
-                        pl_complement_to_vocab(plfont->character_complement) == plgv_MSL);
+                        pl_complement_to_vocab(plfont->character_complement) == plgv_MSL, false);
     *pchr = chr;
     if (chr == 0xffff) {
         *pis_space = true;
