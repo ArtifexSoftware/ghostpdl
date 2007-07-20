@@ -1,39 +1,92 @@
 #include "ghostxps.h"
 
-static void 
-xps_remove_alpha_channel(xps_image_t *image)
+/*
+ * Un-interleave the alpha channel.
+ */
+
+static int
+xps_isolate_alpha_channel_8(xps_context_t *ctx, xps_image_t *image)
 {
-    int cs = image->colorspace;
     int n = image->comps;
     int y, x, k;
-    byte *sp, *dp;
+    byte *sp, *dp, *ap;
 
-    if (image->bits != 8)
-    {
-	gs_warn1("cannot strip alpha from %dbpc images", image->bits);
-	return;
-    }
+    if ((image->colorspace != XPS_GRAY_A) &&
+	    (image->colorspace != XPS_RGB_A) &&
+	    (image->colorspace != XPS_CMYK_A))
+	return 0;
 
-    if ((cs != XPS_GRAY_A) && (cs != XPS_RGB_A) && (cs != XPS_CMYK_A))
-	return;
+    image->alpha = xps_alloc(ctx, image->width * image->height);
+    if (!image->alpha)
+	return gs_throw(-1, "cannot allocate image alpha plane");
 
     for (y = 0; y < image->height; y++)
     {
 	sp = image->samples + image->width * n * y;
 	dp = image->samples + image->width * (n - 1) * y;
+	ap = image->alpha + image->width * y;
 	for (x = 0; x < image->width; x++)
 	{
 	    for (k = 0; k < n - 1; k++)
 		*dp++ = *sp++;
-	    sp++;
+	    *ap++ = *sp++;
 	}
     }
 
-    image->colorspace --;
+    if (image->colorspace == XPS_GRAY_A)
+	image->colorspace = XPS_GRAY;
+    if (image->colorspace == XPS_RGB_A)
+	image->colorspace = XPS_RGB;
+    if (image->colorspace == XPS_CMYK_A)
+	image->colorspace = XPS_CMYK;
+
     image->comps --;
-    image->stride = (n - 1) * image->width;
+    image->stride = image->width * image->comps;
+
+    return 0;
 }
 
+static int
+xps_isolate_alpha_channel_16(xps_context_t *ctx, xps_image_t *image)
+{
+    int n = image->comps;
+    int y, x, k;
+    unsigned short *sp, *dp, *ap;
+
+    if ((image->colorspace != XPS_GRAY_A) &&
+	    (image->colorspace != XPS_RGB_A) &&
+	    (image->colorspace != XPS_CMYK_A))
+	return 0;
+
+    image->alpha = xps_alloc(ctx, image->width * image->height * 2);
+    if (!image->alpha)
+	return gs_throw(-1, "cannot allocate image alpha plane");
+
+    for (y = 0; y < image->height; y++)
+    {
+	sp = image->samples + (image->width * n * y) * 2;
+	dp = image->samples + (image->width * (n - 1) * y) * 2;
+	ap = image->alpha + (image->width * y) * 2;
+	for (x = 0; x < image->width; x++)
+	{
+	    for (k = 0; k < n - 1; k++)
+		*dp++ = *sp++;
+	    *ap++ = *sp++;
+	}
+    }
+
+    if (image->colorspace == XPS_GRAY_A)
+	image->colorspace = XPS_GRAY;
+    if (image->colorspace == XPS_RGB_A)
+	image->colorspace = XPS_RGB;
+    if (image->colorspace == XPS_CMYK_A)
+	image->colorspace = XPS_CMYK;
+
+    image->comps --;
+    image->stride = image->width * image->comps * 2;
+
+    return 0;
+}
 
 static int
 xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
@@ -44,6 +97,10 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
 
     if (len < 2)
 	error = gs_throw(-1, "unknown image file format");
+
+    memset(image, 0, sizeof(xps_image_t));
+    image->samples = NULL;
+    image->alpha = NULL;
 
     if (buf[0] == 0xff && buf[1] == 0xd8)
 	error = xps_decode_jpeg(ctx->memory, buf, len, image);
@@ -59,40 +116,59 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
     if (error)
 	return gs_rethrow(error, "could not decode image");
 
-    /* NB: strip out alpha until we can handle it */
-    xps_remove_alpha_channel(image);
+    if (image->bits == 8)
+	xps_isolate_alpha_channel_8(ctx, image);
+    if (image->bits == 16)
+	xps_isolate_alpha_channel_16(ctx, image);
 
     return gs_okay;
 }
 
 static int
-xps_paint_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root, void *vimage)
+xps_paint_image_brush_imp(xps_context_t *ctx, xps_image_t *image, int alpha)
 {
-    xps_image_t *image = vimage;
     gs_image_enum *penum;
     gs_color_space *colorspace;
     gs_image_t gsimage;
     int code;
 
-    unsigned int count = image->stride * image->height;
-    unsigned int used = 0;
+    unsigned int count;
+    unsigned int used;
+    byte *samples;
 
-    switch (image->colorspace)
+    if (alpha)
     {
-    case XPS_GRAY:
 	colorspace = gs_cspace_new_DeviceGray(ctx->memory);
-	break;
-    case XPS_RGB:
-	colorspace = gs_cspace_new_DeviceRGB(ctx->memory);
-	break;
-    case XPS_CMYK:
-	colorspace = gs_cspace_new_DeviceCMYK(ctx->memory);
-	break;
-    default:
-	return gs_throw(-1, "cannot handle images with alpha channels");
+	if (!colorspace)
+	    return gs_throw(-1, "cannot create colorspace for image");
+
+	samples = image->alpha;
+	count = image->width * image->height; /* TODO: bits != 8 */
+	used = 0;
     }
-    if (!colorspace)
-	return gs_throw(-1, "cannot create colorspace for image");
+    else
+    {
+	switch (image->colorspace)
+	{
+	case XPS_GRAY:
+	    colorspace = gs_cspace_new_DeviceGray(ctx->memory);
+	    break;
+	case XPS_RGB:
+	    colorspace = gs_cspace_new_DeviceRGB(ctx->memory);
+	    break;
+	case XPS_CMYK:
+	    colorspace = gs_cspace_new_DeviceCMYK(ctx->memory);
+	    break;
+	default:
+	    return gs_throw(-1, "cannot draw images with interleaved alpha");
+	}
+	if (!colorspace)
+	    return gs_throw(-1, "cannot create colorspace for image");
+
+	samples = image->samples;
+	count = image->stride * image->height;
+	used = 0;
+    }
 
     gs_image_t_init(&gsimage, colorspace);
     gsimage.ColorSpace = colorspace;
@@ -110,7 +186,7 @@ xps_paint_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
     if ((code = gs_image_init(penum, &gsimage, false, ctx->pgs)) < 0)
 	return gs_throw(code, "gs_image_init failed");
 
-    if ((code = gs_image_next(penum, image->samples, count, &used)) < 0)
+    if ((code = gs_image_next(penum, samples, count, &used)) < 0)
 	return gs_throw(code, "gs_image_next failed");
 
     if (count < used)
@@ -121,33 +197,53 @@ xps_paint_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 
     gs_image_cleanup_and_free_enum(penum, ctx->pgs);
 
-    // TODO: free colorspace
+    return 0;
+}
 
-#if 0
-    float x0 = 0;
-    float y0 = 0;
-    float x1 = image->width * 96.0 / image->xres;
-    float y1 = image->height * 96.0 / image->yres;
-    gs_setlinewidth(ctx->pgs, 2.0);
+static int
+xps_paint_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root, void *vimage)
+{
+    xps_image_t *image = vimage;
+    int code;
 
-    gs_setgray(ctx->pgs, 0.5);
-    gs_moveto(ctx->pgs, x0, y0);
-    gs_lineto(ctx->pgs, x0, y1);
-    gs_lineto(ctx->pgs, x1, y1);
-    gs_lineto(ctx->pgs, x1, y0);
-    gs_closepath(ctx->pgs);
-    gs_stroke(ctx->pgs);
+    if (ctx->opacity_only)
+    {
+	if (image->alpha)
+	{
+	    dputs("xps_paint_image_brush opacity-only with alpha channel\n");
+	    xps_paint_image_brush_imp(ctx, image, 1);
+	}
+	return 0;
+    }
 
-    gs_setgray(ctx->pgs, 0.75);
-    gs_moveto(ctx->pgs, x0, y0);
-    gs_lineto(ctx->pgs, x1, y1);
-    gs_stroke(ctx->pgs);
+    if (image->alpha)
+    {
+	gs_transparency_mask_params_t params;
+	gs_transparency_group_params_t tgp;
+	gs_rect bbox;
 
-    gs_setgray(ctx->pgs, 0.25);
-    gs_moveto(ctx->pgs, x1, y0);
-    gs_lineto(ctx->pgs, x0, y1);
-    gs_stroke(ctx->pgs);
-#endif
+	dputs("xps_paint_image_brush with alpha channel\n");
+
+	/* ahem. FIXME. */
+	bbox.p.x = 0;
+	bbox.p.y = 0;
+	bbox.q.x = 1000;
+	bbox.q.y = 1000;
+
+	gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Alpha);
+	gs_begin_transparency_mask(ctx->pgs, &params, &bbox, 0);
+	xps_paint_image_brush_imp(ctx, image, 1);
+	gs_end_transparency_mask(ctx->pgs, TRANSPARENCY_CHANNEL_Opacity);
+
+	gs_trans_group_params_init(&tgp);
+	gs_begin_transparency_group(ctx->pgs, &tgp, &bbox);
+	xps_paint_image_brush_imp(ctx, image, 0);
+	gs_end_transparency_group(ctx->pgs);
+    }
+    else
+    {
+	xps_paint_image_brush_imp(ctx, image, 0);
+    }
 
     return 0;
 }
@@ -155,7 +251,6 @@ xps_paint_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 int
 xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 {
-    xps_item_t *node;
     xps_part_t *part;
     xps_image_t image;
     char *image_source_att;
@@ -181,7 +276,10 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 
     xps_parse_tiling_brush(ctx, dict, root, xps_paint_image_brush, &image);
 
-    xps_free(ctx, image.samples);
+    if (image.samples)
+	xps_free(ctx, image.samples);
+    if (image.alpha)
+	xps_free(ctx, image.alpha);
 
     return 0;
 }

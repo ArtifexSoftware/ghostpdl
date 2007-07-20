@@ -228,6 +228,7 @@ struct xps_image_s
     int xres;
     int yres;
     byte *samples;
+    byte *alpha; /* isolated alpha plane */
 };
 
 int xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
