@@ -289,15 +289,15 @@ px_str_to_gschars( px_args_t *par, px_state_t *pxs, gs_char *pchr)
     }
 }
 
-/* the reason not to use gs_xyshow_begin is it does not allow
-   requesting a charpath. */
+/* startup for the processing text */
 private int
-px_xyshow_begin(gs_state * pgs, const gs_char * str, uint size,
+px_text_setup(gs_state * pgs, const gs_char * str, uint size,
 		const float *x_widths, const float *y_widths,
 		uint widths_size, gs_memory_t * mem, gs_text_enum_t ** ppte,
                 bool to_path, bool can_cache)
 {
     gs_text_params_t text;
+    int code;
 
     text.operation = TEXT_FROM_CHARS | TEXT_REPLACE_WIDTHS | TEXT_RETURN_WIDTH;
     if (to_path)
@@ -309,7 +309,13 @@ px_xyshow_begin(gs_state * pgs, const gs_char * str, uint size,
     text.x_widths = x_widths;
     text.y_widths = y_widths;
     text.widths_size = widths_size;
-    return gs_text_begin(pgs, &text, mem, ppte);
+    code = gs_text_begin(pgs, &text, mem, ppte);
+    if (!can_cache) {
+        /* NB breaks API, needs a better solution. */
+        gs_show_enum *penum = (gs_show_enum *)*ppte;
+        penum->can_cache = -1;
+    }
+    return code;
 }
 
 /* Paint text or add it to the path. */
@@ -397,8 +403,9 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
             fyvals[i] = pydata ? real_elt(pydata, i) : 0.0;
         }
 
-        code = px_xyshow_begin(pgs, pchr, len, fxvals, fyvals,
-                               len, mem, &penum, to_path, false);
+        code = px_text_setup(pgs, pchr, len, fxvals, fyvals,
+                             len, mem, &penum, to_path,
+                             pxgs->char_bold_value == 0);
 
 
         if ( code >= 0 ) {
