@@ -245,6 +245,7 @@ init_patch_fill_state(patch_fill_state_t *pfs)
     pfs->n_color_args = 1;
     pfs->decomposition_limit = float2fixed(min(pfs->dev->HWResolution[0], 
 					       pfs->dev->HWResolution[1]) / 72);
+    pfs->decomposition_limit = max(pfs->decomposition_limit, fixed_1);
     pfs->fixed_flat = float2fixed(pfs->pis->flatness);
     /* Restrict the pfs->smoothness with 1/min_linear_grades, because cs_is_linear
        can't provide a better precision due to the color
