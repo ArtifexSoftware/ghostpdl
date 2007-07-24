@@ -55,6 +55,7 @@ if test x$enable_contrib = xno; then
     CFLAGS="$CFLAGS -DNOCONTRIB"
 fi
 AC_SUBST(CONTRIBINCLUDE)
+AC_SUBST(INSTALL_CONTRIB)
 
 dnl --------------------------------------------------
 dnl Set build flags based on environment

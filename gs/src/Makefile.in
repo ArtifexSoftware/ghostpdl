@@ -485,6 +485,7 @@ CC_SHARED=$(CC_) @DYNAMIC_LDFLAGS@
 
 # ---------------- End of platform-specific section ---------------- #
 
+INSTALL_CONTRIB=@INSTALL_CONTRIB@
 include $(GLSRCDIR)/unixhead.mak
 include $(GLSRCDIR)/gs.mak
 include $(GLSRCDIR)/lib.mak
