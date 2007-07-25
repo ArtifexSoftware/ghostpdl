@@ -1,0 +1,27 @@
+High Priority Problems
+======================
+
+Colorspaces other than RGB in color specifications.
+Images support grayscale, RGB and CMYK.
+
+Opacity masks need a proper bounding box.
+
+Gradient brushes need some work to figure out
+how many times to repeat to fill. Also needs
+the proper bounding box, same as opacity masks.
+
+Need to revise arc calculations. They are often
+flat out wrong or instable.
+
+Low Priority Problems
+=====================
+
+Cap styles for different parts of a line
+can be different in XPS, no support exists
+in ghostscript.
+
+WMPhoto images need a decoder and colorspace
+support.
+
+PrintTickets need to be looked into.
+
