@@ -590,7 +590,9 @@ pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index,
             wmode = 0;
         }
         else {
-            dprintf("Found vertical metrics\n");
+            if ( gs_debug_c('=') ) {
+                dprintf("Found vertical metrics\n");
+            }
         }
     }
     return gs_type42_default_get_metrics(pfont, glyph_index, wmode, sbw);

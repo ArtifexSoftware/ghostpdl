@@ -650,7 +650,8 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 	return plfont;
 }
 	
-/* Fill in generic font boilerplate. */
+/* Fill in generic font boilerplate. NB TODO examine duplication with
+   gs_font_alloc() */
 int
 pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir, gs_memory_t *mem, const char *font_name)
 {	
@@ -689,6 +690,7 @@ pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir, gs_memory_
 	}
 	strncpy(pfont->key_name.chars, font_name, sizeof(pfont->font_name.chars));
 	pfont->key_name.size = strlen(font_name);
+        memset(&pfont->orig_FontMatrix, 0, sizeof(pfont->orig_FontMatrix));
 	return 0;
 }
 
