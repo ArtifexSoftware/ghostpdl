@@ -1,7 +1,7 @@
 High Priority Problems
 ======================
 
-Colorspaces other than RGB in color specifications.
+Colorspaces other than RGB and scRGB in vector colors.
 Images support grayscale, RGB and CMYK.
 
 Opacity masks need a proper bounding box.

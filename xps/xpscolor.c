@@ -15,34 +15,72 @@ xps_set_color(xps_context_t *ctx, float *argb)
     }
 }
 
-void
-xps_parse_color(xps_context_t *ctx, char *hexstring, float *argb)
+static int unhex(int chr)
 {
     const char *hextable = "0123456789ABCDEF";
-    char *hexstringp = hexstring;
+    return strchr(hextable, (toupper(chr))) - hextable;
+}
 
-#define HEXTABLEINDEX(chr) (strchr(hextable, (toupper(chr))) - hextable)
-
-    /* nb need to look into color specification */
-    if (strlen(hexstring) == 9)
+static int count_commas(char *s)
+{
+    int n = 0;
+    while (*s)
     {
-	argb[0] = HEXTABLEINDEX(hexstringp[1]) * 16 + HEXTABLEINDEX(hexstringp[2]);
-	argb[1] = HEXTABLEINDEX(hexstringp[3]) * 16 + HEXTABLEINDEX(hexstringp[4]);
-	argb[2] = HEXTABLEINDEX(hexstringp[5]) * 16 + HEXTABLEINDEX(hexstringp[6]);
-	argb[3] = HEXTABLEINDEX(hexstringp[7]) * 16 + HEXTABLEINDEX(hexstringp[8]);
+	if (*s == ',')
+	    n ++;
+	s ++;
     }
+    return n;
+}
+
+void
+xps_parse_color(xps_context_t *ctx, char *string, float *argb)
+{
+    argb[0] = 1.0;
+    argb[1] = 0.0;
+    argb[2] = 0.0;
+    argb[3] = 0.0;
+
+    if (string[0] == '#')
+    {
+	if (strlen(string) == 9)
+	{
+	    argb[0] = unhex(string[1]) * 16 + unhex(string[2]);
+	    argb[1] = unhex(string[3]) * 16 + unhex(string[4]);
+	    argb[2] = unhex(string[5]) * 16 + unhex(string[6]);
+	    argb[3] = unhex(string[7]) * 16 + unhex(string[8]);
+	}
+	else
+	{
+	    argb[0] = 255.0;
+	    argb[1] = unhex(string[1]) * 16 + unhex(string[2]);
+	    argb[2] = unhex(string[3]) * 16 + unhex(string[4]);
+	    argb[3] = unhex(string[5]) * 16 + unhex(string[6]);
+	}
+
+	argb[0] /= 255.0;
+	argb[1] /= 255.0;
+	argb[2] /= 255.0;
+	argb[3] /= 255.0;
+    }
+
+    else if (string[0] == 's' && string[1] == 'c' && string[2] == '#')
+    {
+	if (count_commas(string) == 2)
+	    sscanf(string, "sc#%g,%g,%g", argb + 1, argb + 2, argb + 3);
+	if (count_commas(string) == 3)
+	    sscanf(string, "sc#%g,%g,%g,%g", argb, argb + 1, argb + 2, argb + 3);
+    }
+
+    else if (strstr(string, "ContextColor ") == string)
+    {
+	dprintf1("ICC profile colors are not supported (%s)\n", string);
+    }
+
     else
     {
-	argb[0] = 255.0;
-	argb[1] = HEXTABLEINDEX(hexstringp[1]) * 16 + HEXTABLEINDEX(hexstringp[2]);
-	argb[2] = HEXTABLEINDEX(hexstringp[3]) * 16 + HEXTABLEINDEX(hexstringp[4]);
-	argb[3] = HEXTABLEINDEX(hexstringp[5]) * 16 + HEXTABLEINDEX(hexstringp[6]);
+	gs_throw1(-1, "cannot parse color (%s)\n", string);
     }
-
-    argb[0] /= 255.0;
-    argb[1] /= 255.0;
-    argb[2] /= 255.0;
-    argb[3] /= 255.0;
 }
 
 int
