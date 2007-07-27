@@ -231,7 +231,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     gx_image_enum_common_init((gx_image_enum_common_t *)penum,
 			      (const gs_data_image_t *)pim,
 			      &image1_enum_procs, dev,
-			      (masked ? 1 : cs_num_components(pcs)),
+			      (masked ? 1 : (penum->alpha ? cs_num_components(pcs)+1 : cs_num_components(pcs))),
 			      format);
     if (penum->rect.w == width && penum->rect.h == height) {
 	x_extent = row_extent;
