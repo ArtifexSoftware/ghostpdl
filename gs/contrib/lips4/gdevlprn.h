@@ -82,6 +82,7 @@
 	 { 0 },		/* fname */\
 	0/*false*/,	/* OpenOutputFile */\
 	0/*false*/,	/* ReopenPerPage */\
+        0/*false*/,     /* page_uses_transparency */\
 	0/*false*/, -1,	/* Duplex[_set] */\
 	0/*false*/, 0, 0, 0, /* file_is_new ... buf */\
 	0, 0, 0, 0, 0/*false*/, 0, 0, /* buffer_memory ... clist_dis'_mask */\
@@ -124,6 +125,7 @@
 	 { 0 },		/* fname */\
 	0/*false*/,	/* OpenOutputFile */\
 	0/*false*/,	/* ReopenPerPage */\
+        0/*false*/,     /* page_uses_transparency */\
 	0/*false*/, 0,	/* Duplex[_set] */\
 	0/*false*/, 0, 0, 0, /* file_is_new ... buf */\
 	0, 0, 0, 0, 0/*false*/, 0, 0, /* buffer_memory ... clist_dis'_mask */\
