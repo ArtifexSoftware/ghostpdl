@@ -1083,7 +1083,7 @@ end readonly def
     /Page 1 3 -1 roll
   } def
   /LastPage {
-    counttomark 2 add index pdfpagecount /Page exch 3 -1 roll
+    /Page pdfpagecount 3 -1 roll
   } def
   /NextPage {
     counttomark 2 add index pdfpagenumber 1 add /Page exch 3 -1 roll
