@@ -1077,20 +1077,12 @@ end readonly def
     }
    if
 } bind def
-% <pagedict> mark ... -proc- -
+% <pagedict> mark ... -proc- <page#> <error>
 /namedactions 8 dict dup begin
-  /FirstPage {
-    /Page 1 3 -1 roll
-  } def
-  /LastPage {
-    /Page pdfpagecount 3 -1 roll
-  } def
-  /NextPage {
-    counttomark 2 add index pdfpagenumber 1 add /Page exch 3 -1 roll
-  } def
-  /PrevPage {
-    counttomark 2 add index pdfpagenumber 1 sub /Page exch 3 -1 roll
-  } def
+  /FirstPage { 1 //false } def
+  /LastPage { pdfpagecount //false } def
+  /NextPage { counttomark 2 add index pdfpagenumber 1 add dup pdfpagecount gt } bind def
+  /PrevPage { counttomark 2 add index pdfpagenumber 1 sub dup 1 lt } bind def
 end readonly def
 % <pagedict> <annotdict> -proc- -
 /annottypes 5 dict dup begin
@@ -1116,7 +1108,15 @@ end readonly def
 	  exch pop exch dup length dict copy dup /Dest 4 -1 roll put
         } {
 	  /N knownoget {		% Assume /S /Named
-	     namedactions exch .knownget { exec } if
+	     namedactions exch .knownget {
+               exec {
+                 pop
+                 (   **** Warning: Ignoring a named action pointing out of the document page range.\n)
+                 pdfformaterror
+               } {
+                 /Page exch 3 -1 roll
+               } ifelse
+             } if
 	  } if
         } ifelse
       } ifelse
