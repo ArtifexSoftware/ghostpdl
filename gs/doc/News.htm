@@ -59,6 +59,29 @@ overview</a>.
 
 <p>This is an unreleased development snapshot.
 
+<p>This is a new stable release of the Ghostscript codebase. The most 
+significant change is the merge of drivers and other patches from
+ESP Ghostscript. This version of Ghostscript work with CUPS and is 
+intended to be a replacement for the Easy Software fork going forward.
+We extend a special thanks to Till Kamppeter and Mike Sweet for making 
+this happen.
+
+<p>In addition to CUPS support, the ESP merge includes a number of other 
+notable changes. The contrib directory of the GPL Ghostscript source 
+tree now includes a much larger complement of drivers. These are not
+maintained by Artifex Software, Inc. and are not included in the 
+commercially licensed version, but are of great assistance maintaining 
+support for older printers in Linux distribution. The X11 device is now 
+modularized on Linux and Solaris systems when built with GNU ld, meaning 
+this device is compiled as a separate shared object which can be 
+optionally loaded at runtime, allowing the main binary to work on 
+systems without X client support installed.
+
+<p>This release also includes numerous important bug fixes over the 
+previous stable version, as well as improvements to performance, memory 
+footprint, shading and image handling. We recommend upgrading to all 
+users.
+
 <p> The following <a href="http://bugs.ghostscript.com/">bugs</a> were
 open at the time of the last release: <blockquote>
 226943,
@@ -465,7 +488,12 @@ open at the time of the last release: <blockquote>
 <h3><a name="8.60_Incompatible_changes"></a>Incompatible changes</h3>
 
 <p>
-There are no known incompatible changes at this point.
+The default device on unix-oriented builds has temporarily switched to 
+the <tt>bbox</tt> device, and is not the <tt>x11</tt> device as in the 
+past. The means that running gs from the commandline with no options 
+will no longer display a file. Specify -sDEVICE=x11alpha instead. The 
+change is a side effect of the X11 modularization patch, and will
+be remedied in a future release.
 
 <!-- [2.0 end contents] ==================================================== -->
 
@@ -486,7 +514,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 8.57, 11 May 2007
+<small>Ghostscript version 8.60, 1 August 2007
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
