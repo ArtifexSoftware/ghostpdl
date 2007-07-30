@@ -171,7 +171,7 @@ JVERSION=6
 
 !ifndef PSRCDIR
 PSRCDIR=libpng
-PVERSION=10216
+PVERSION=10218
 !endif
 
 # Define the directory where the zlib sources are stored.
