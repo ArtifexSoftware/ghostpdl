@@ -55,7 +55,9 @@ zcurrentrenderingintent(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-/* <int> .setrenderingintent - */
+/* <int> .setrenderingintent - 
+ * See the comment in gsstate.c about the argumet interepretation.
+ */
 private int
 zsetrenderingintent(i_ctx_t * i_ctx_p)
 {

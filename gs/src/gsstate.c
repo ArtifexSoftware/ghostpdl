@@ -699,7 +699,15 @@ gs_currentoverprintmode(const gs_state * pgs)
     return pgs->overprint_mode;
 }
 
-/* setrenderingintent */
+/* setrenderingintent
+ *
+ *  Use ICC numbers from Table 18 (section 6.1.11) rather than the PDF order
+ *  to reduce re-coding and confusion.
+ *    Perceptual            0
+ *    Relative Colorimetric 1
+ *    Saturation            2
+ *    AbsoluteColorimetric  3
+ */
 int
 gs_setrenderingintent(gs_state *pgs, int ri) {
     if (ri < 0 || ri > 3)

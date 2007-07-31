@@ -239,7 +239,7 @@ typedef struct gs_devicen_color_map_s {
 	bool accurate_curves;\
 	bool have_pattern_streams;\
 	float smoothness;\
-	int renderingintent;\
+	int renderingintent; /* See gsstate.c */\
 	CUSTOM_COLOR_PTR	/* Pointer to custom color callback struct */\
 	const gx_color_map_procs *\
 	  (*get_cmap_procs)(const gs_imager_state *, const gx_device *);\
