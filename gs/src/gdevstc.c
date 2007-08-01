@@ -1793,25 +1793,40 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
 
       switch(sd->color_info.num_components) { /* Establish color-procs */
       case 1:
+	 sd->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
          set_dev_proc(sd,map_rgb_color, stc_map_gray_color);
          set_dev_proc(sd,map_cmyk_color,gx_default_map_cmyk_color);
          set_dev_proc(sd,map_color_rgb, stc_map_color_gray);
 	 set_dev_proc(sd,encode_color, stc_map_gray_color);
          set_dev_proc(sd,decode_color, stc_map_color_gray);
+         set_dev_proc(sd, get_color_mapping_procs,
+                           gx_default_DevGray_get_color_mapping_procs);
+         set_dev_proc(sd, get_color_comp_index,
+                       gx_default_DevGray_get_color_comp_index );
          cv[0] = cv[1] = cv[2] = gx_max_color_value;
          white = stc_map_gray_color((gx_device *) sd, cv);
          break;
       case 3:
+	 sd->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
          set_dev_proc(sd,map_rgb_color, stc_map_rgb_color);
          set_dev_proc(sd,map_cmyk_color,gx_default_map_cmyk_color);
          set_dev_proc(sd,map_color_rgb, stc_map_color_rgb);
 	 set_dev_proc(sd,encode_color, stc_map_rgb_color);
          set_dev_proc(sd,decode_color, stc_map_color_rgb);
+         set_dev_proc(sd, get_color_mapping_procs,
+                           gx_default_DevRGB_get_color_mapping_procs);
+         set_dev_proc(sd, get_color_comp_index,
+                       gx_default_DevRGB_get_color_comp_index );
          cv[0] = cv[1] = cv[2] = gx_max_color_value;
          white = stc_map_rgb_color((gx_device *) sd, cv);
          break;
       default:
+	 sd->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
          set_dev_proc(sd,map_rgb_color, gx_default_map_rgb_color);
+         set_dev_proc(sd, get_color_mapping_procs,
+                           gx_default_DevCMYK_get_color_mapping_procs);
+         set_dev_proc(sd, get_color_comp_index,
+                       gx_default_DevCMYK_get_color_comp_index );
          if(sd->stc.flags & STCCMYK10) {
             set_dev_proc(sd,map_cmyk_color,stc_map_cmyk10_color);
             set_dev_proc(sd,map_color_rgb, stc_map_color_cmyk10);

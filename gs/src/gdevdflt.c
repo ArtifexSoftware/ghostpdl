@@ -604,7 +604,8 @@ gx_device_fill_in_procs(register gx_device * dev)
 		fill_dev_proc( dev,
                            get_color_mapping_procs,
                            gx_default_DevGray_get_color_mapping_procs );
-            }
+            } else
+		fill_dev_proc(dev, get_color_mapping_procs, gx_error_get_color_mapping_procs);
 	}
         fill_dev_proc( dev,
                        get_color_comp_index,
@@ -621,14 +622,8 @@ gx_device_fill_in_procs(register gx_device * dev)
                            get_color_comp_index,
                            gx_default_DevRGB_get_color_comp_index );
             } else {
-#if 0
-                fill_dev_proc( dev,
-                           get_color_mapping_procs,
-                           gx_default_DevCMY_get_color_mapping_procs );
-                fill_dev_proc( dev,
-                           get_color_comp_index,
-                           gx_default_DevCMY_get_color_comp_index );
-#endif
+		fill_dev_proc(dev, get_color_mapping_procs, gx_error_get_color_mapping_procs);
+		fill_dev_proc(dev, get_color_comp_index, gx_error_get_color_comp_index);
 	    }
         }
         break;
@@ -638,8 +633,10 @@ gx_device_fill_in_procs(register gx_device * dev)
         fill_dev_proc(dev, get_color_comp_index, gx_default_DevCMYK_get_color_comp_index);
         break;
     default:		/* Unknown color model - set error handlers */
-        fill_dev_proc(dev, get_color_mapping_procs, gx_error_get_color_mapping_procs);
-        fill_dev_proc(dev, get_color_comp_index, gx_error_get_color_comp_index);
+	if (dev_proc(dev, get_color_mapping_procs) == NULL) {
+	    fill_dev_proc(dev, get_color_mapping_procs, gx_error_get_color_mapping_procs);
+	    fill_dev_proc(dev, get_color_comp_index, gx_error_get_color_comp_index);
+	}
     }
 
     set_dev_proc(dev, decode_color, get_decode_color(dev));

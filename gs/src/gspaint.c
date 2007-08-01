@@ -67,18 +67,23 @@ gs_erasepage(gs_state * pgs)
 int
 gs_fillpage(gs_state * pgs)
 {
-    gx_device *dev;
+    gx_device *dev = gs_currentdevice(pgs);
     int code = 0;
     gs_logical_operation_t save_lop;
     bool hl_color_available;
 
+    /* If we get here without a valid get_color_mapping_procs, fail */
+    if (dev_proc(dev, get_color_mapping_procs) == NULL || 
+        dev_proc(dev, get_color_mapping_procs) == gx_error_get_color_mapping_procs) {
+	eprintf1("\n   *** Error: No get_color_mapping_procs for device: %s\n", dev->dname);
+	return_error(gs_error_Fatal);
+    }
     /* Processing a fill object operation */
     gs_set_object_tag(pgs, GS_PATH_TAG);
 
     gx_set_dev_color(pgs);
     hl_color_available = gx_hld_is_hl_color_available((gs_imager_state *)pgs, 
 						    pgs->dev_color);
-    dev = gs_currentdevice(pgs);
     /* Fill the page directly, ignoring clipping. */
     /* Use the default RasterOp. */
     save_lop = pgs->log_op;
