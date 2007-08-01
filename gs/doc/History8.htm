@@ -455,7 +455,6 @@ open at the time of release: <blockquote>
 689230,
 689232,
 689236,
-689237,
 689241,
 689242,
 689244,
@@ -522,14 +521,19 @@ open at the time of release: <blockquote>
 689368,
 689369,
 689370,
-689371,
 689372,
 689373,
 689374,
 689375,
 689376,
-689377,
-689378.
+689378,
+689379,
+689380,
+689381,
+689382,
+689384,
+689385,
+689386.
 </blockquote>
 
 <h3><a name="8.60_Incompatible_changes"></a>Incompatible changes</h3>
@@ -543,6 +547,87 @@ change is a side effect of the X11 modularization patch, and will
 be remedied in a future release.
 
 <h3><a name="8.60_changelog"></a>Changelog</h3>
+
+<p><strong><a name="2007-08-01T212057.253476Z"></a>
+2007-08-01T21:20:57.253476Z Ray Johnston</strong> (<a 
+href="Details8.htm#2007-08-01T2120$
+<blockquote>
+<pre>
+Fix problem seen with stcolor device where the get_color_mapping_procs
+device proc was NULL, causing SEGV. Bug #689371.
+
+</pre>
+<p>[src/gdevdflt.c src/gdevstc.c src/gxcmap.c src/gspaint.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-08-01T191812.034589Z"></a>
+2007-08-01T19:18:12.034589Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update release date and product name for final release.
+</pre>
+<p>[doc/History7.htm doc/Projects.htm doc/History8.htm man/dvipdf.1 
+man/ps2asci$
+</blockquote>
+
+<p><strong><a name="2007-08-01T171950.181574Z"></a>
+2007-08-01T17:19:50.181574Z Ray Johnston</strong> (<a 
+href="Details8.htm#2007-08-01T1719$
+<blockquote>
+<pre>
+Fix for gv hang, where an application sends (less than 1023 bytes)
+PostScript and expects a response. AppleTalk PAP and some other
+interactive viewer front ends may run into this. Bug #689237.
+
+</pre>
+<p>[lib/pdf_main.ps]</p>
+</blockquote>
+
+<p><strong><a name="2007-08-01T041013.989117Z"></a>
+2007-08-01T04:10:13.989117Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix a misleading typo in an error message: s/UseCUEColor/UseCIEColor/
+</pre>
+<p>[src/gdevpdfp.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-08-01T040106.081994Z"></a>
+2007-08-01T04:01:06.081994Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Remove inappropriate PNG_CONST qualifier from a few libpng arrays, where 
+it
+adds 2nd const qualifier, which is rejected by MSVC 6. Bug 689383.
+</pre>
+<p>[libpng/pngtrans.c libpng/pngerror.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-07-31T141945.536400Z"></a>
+2007-07-31T14:19:45.536400Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Use a correct name for the absolute colorimetric rendering intent. 
+Change the
+encoding of the rendering intents in the graphic state to use ICC 
+numbers
+from Table 18 (section 6.1.11) instead of the PDF order to reduce 
+re-coding
+and confusion. Bug 689377.
+
+</pre>
+<p>[src/gxistate.h lib/pdf_ops.ps src/gsstate.c src/zcolor3.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-07-31T033113.074828Z"></a>
+2007-07-31T03:31:13.074828Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update changelogs for the release candidate.
+</pre>
+<p>[doc/Changes.htm doc/History8.htm doc/News.htm doc/Details8.htm 
+doc/Details.$
+</blockquote>
 
 <p><strong><a name="2007-07-30T201356.963379Z"></a>
 2007-07-30T20:13:56.963379Z Ralph Giles</strong></p>
@@ -606,7 +691,7 @@ the patch. Bug 688311.
 </blockquote>
 
 <p><strong><a name="2007-07-27T201435.951213Z"></a>
-2007-07-27T20:14:35.951213Z Ray Johnston</strong> (<a href="Details.htm#2007-07-27T201435.951213Z">details</a>)</p>
+2007-07-27T20:14:35.951213Z Ray Johnston</strong> (<a href="Details8.htm#2007-07-27T201435.951213Z">details</a>)</p>
 <blockquote>
 <pre>
 Apply a long pending patch that only affects an ancient 'alphaimage'
@@ -628,7 +713,7 @@ japanese laser printer vecTor Andersson PDLs. Fix a FPE crash. Bug 689366.
 </blockquote>
 
 <p><strong><a name="2007-07-25T051245.877915Z"></a>
-2007-07-25T05:12:45.877915Z Ray Johnston</strong> (<a href="Details.htm#2007-07-25T051245.877915Z">details</a>)</p>
+2007-07-25T05:12:45.877915Z Ray Johnston</strong> (<a href="Details8.htm#2007-07-25T051245.877915Z">details</a>)</p>
 <blockquote>
 <pre>
 Revert patch for rev 7904 which caused regressions (bug 689215).
@@ -669,7 +754,7 @@ seen at 600 dpi with AC405122 from the PS ATS for customer #951.
 </blockquote>
 
 <p><strong><a name="2007-07-24T200220.813265Z"></a>
-2007-07-24T20:02:20.813265Z Igor Melichev</strong> (<a href="Details.htm#2007-07-24T200220.813265Z">details</a>)</p>
+2007-07-24T20:02:20.813265Z Igor Melichev</strong> (<a href="Details8.htm#2007-07-24T200220.813265Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix (shadings) : Decomposition limit could be too small.
@@ -679,7 +764,7 @@ Fix (shadings) : Decomposition limit could be too small.
 </blockquote>
 
 <p><strong><a name="2007-07-17T095556.457439Z"></a>
-2007-07-17T09:55:56.457439Z Igor Melichev</strong> (<a href="Details.htm#2007-07-17T095556.457439Z">details</a>)</p>
+2007-07-17T09:55:56.457439Z Igor Melichev</strong> (<a href="Details8.htm#2007-07-17T095556.457439Z">details</a>)</p>
 <blockquote>
 <pre>
 Banding : Extend clist language with trapezoids, linear color trapezoids and linear color triangles (continued 8).
@@ -689,7 +774,7 @@ Banding : Extend clist language with trapezoids, linear color trapezoids and lin
 </blockquote>
 
 <p><strong><a name="2007-07-16T213548.939836Z"></a>
-2007-07-16T21:35:48.939836Z Igor Melichev</strong> (<a href="Details.htm#2007-07-16T213548.939836Z">details</a>)</p>
+2007-07-16T21:35:48.939836Z Igor Melichev</strong> (<a href="Details8.htm#2007-07-16T213548.939836Z">details</a>)</p>
 <blockquote>
 <pre>
 Banding : Extend clist language with trapezoids, linear color trapezoids and linear color triangles (continued 6).
@@ -699,7 +784,7 @@ Banding : Extend clist language with trapezoids, linear color trapezoids and lin
 </blockquote>
 
 <p><strong><a name="2007-07-16T212442.764396Z"></a>
-2007-07-16T21:24:42.764396Z Igor Melichev</strong> (<a href="Details.htm#2007-07-16T212442.764396Z">details</a>)</p>
+2007-07-16T21:24:42.764396Z Igor Melichev</strong> (<a href="Details8.htm#2007-07-16T212442.764396Z">details</a>)</p>
 <blockquote>
 <pre>
 Banding : Extend clist language with trapezoids, linear color trapezoids and linear color triangles (continued 6).
@@ -728,7 +813,7 @@ Seen with 001-01.ps to the x11 device.
 </blockquote>
 
 <p><strong><a name="2007-07-16T170658.964025Z"></a>
-2007-07-16T17:06:58.964025Z Igor Melichev</strong> (<a href="Details.htm#2007-07-16T170658.964025Z">details</a>)</p>
+2007-07-16T17:06:58.964025Z Igor Melichev</strong> (<a href="Details8.htm#2007-07-16T170658.964025Z">details</a>)</p>
 <blockquote>
 <pre>
 Banding : Extend clist language with trapezoids, linear color trapezoids and linear color triangles (continued 5).
@@ -749,7 +834,7 @@ Bug 689360
 </blockquote>
 
 <p><strong><a name="2007-07-15T172707.515793Z"></a>
-2007-07-15T17:27:07.515793Z Igor Melichev</strong> (<a href="Details.htm#2007-07-15T172707.515793Z">details</a>)</p>
+2007-07-15T17:27:07.515793Z Igor Melichev</strong> (<a href="Details8.htm#2007-07-15T172707.515793Z">details</a>)</p>
 <blockquote>
 <pre>
 Banding : Extend clist language with trapezoids, linear color trapezoids and linear color triangles (continued 4).
@@ -769,7 +854,7 @@ printers (see 687978).  We have done no testing of these changes.
 </blockquote>
 
 <p><strong><a name="2007-07-13T184805.145075Z"></a>
-2007-07-13T18:48:05.145075Z Igor Melichev</strong> (<a href="Details.htm#2007-07-13T184805.145075Z">details</a>)</p>
+2007-07-13T18:48:05.145075Z Igor Melichev</strong> (<a href="Details8.htm#2007-07-13T184805.145075Z">details</a>)</p>
 <blockquote>
 <pre>
 Banding : Extend clist language with trapezoids, linear color trapezoids and linear color triangles (continued 3).
@@ -779,7 +864,7 @@ Banding : Extend clist language with trapezoids, linear color trapezoids and lin
 </blockquote>
 
 <p><strong><a name="2007-07-13T162903.411589Z"></a>
-2007-07-13T16:29:03.411589Z Igor Melichev</strong> (<a href="Details.htm#2007-07-13T162903.411589Z">details</a>)</p>
+2007-07-13T16:29:03.411589Z Igor Melichev</strong> (<a href="Details8.htm#2007-07-13T162903.411589Z">details</a>)</p>
 <blockquote>
 <pre>
 Banding : Extend clist language with trapezoids, linear color trapezoids and linear color triangles (continued 2).
@@ -789,7 +874,7 @@ Banding : Extend clist language with trapezoids, linear color trapezoids and lin
 </blockquote>
 
 <p><strong><a name="2007-07-13T120729.877199Z"></a>
-2007-07-13T12:07:29.877199Z Igor Melichev</strong> (<a href="Details.htm#2007-07-13T120729.877199Z">details</a>)</p>
+2007-07-13T12:07:29.877199Z Igor Melichev</strong> (<a href="Details8.htm#2007-07-13T120729.877199Z">details</a>)</p>
 <blockquote>
 <pre>
 Banding : Extend clist language with trapezoids, linear color trapezoids and linear color triangles (continued).
@@ -820,7 +905,7 @@ Bug 689272, customer 411.
 </blockquote>
 
 <p><strong><a name="2007-07-11T211739.855676Z"></a>
-2007-07-11T21:17:39.855676Z Igor Melichev</strong> (<a href="Details.htm#2007-07-11T211739.855676Z">details</a>)</p>
+2007-07-11T21:17:39.855676Z Igor Melichev</strong> (<a href="Details8.htm#2007-07-11T211739.855676Z">details</a>)</p>
 <blockquote>
 <pre>
 Banding : Exten\d clist language with trapezoids, linear color trapezoids and linear color triangles.
@@ -902,7 +987,7 @@ Bug 689254, customer 661.
 </blockquote>
 
 <p><strong><a name="2007-07-06T121801.891965Z"></a>
-2007-07-06T12:18:01.891965Z Igor Melichev</strong> (<a href="Details.htm#2007-07-06T121801.891965Z">details</a>)</p>
+2007-07-06T12:18:01.891965Z Igor Melichev</strong> (<a href="Details8.htm#2007-07-06T121801.891965Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix : ResTor Anderssoning high level objects in clist.
@@ -912,7 +997,7 @@ Fix : ResTor Anderssoning high level objects in clist.
 </blockquote>
 
 <p><strong><a name="2007-07-06T065015.857933Z"></a>
-2007-07-06T06:50:15.857933Z Igor Melichev</strong> (<a href="Details.htm#2007-07-06T065015.857933Z">details</a>)</p>
+2007-07-06T06:50:15.857933Z Igor Melichev</strong> (<a href="Details8.htm#2007-07-06T065015.857933Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix : Improving documentation for gxclpath.c .
@@ -922,7 +1007,7 @@ Fix : Improving documentation for gxclpath.c .
 </blockquote>
 
 <p><strong><a name="2007-07-06T060017.432528Z"></a>
-2007-07-06T06:00:17.432528Z Igor Melichev</strong> (<a href="Details.htm#2007-07-06T060017.432528Z">details</a>)</p>
+2007-07-06T06:00:17.432528Z Igor Melichev</strong> (<a href="Details8.htm#2007-07-06T060017.432528Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix : A wrong path filling.
@@ -941,7 +1026,7 @@ Let scripts search Ghostscript (or subscripts) in the same direcTor Anderssony w
 </blockquote>
 
 <p><strong><a name="2007-07-05T181259.492244Z"></a>
-2007-07-05T18:12:59.492244Z Timothy Osborn</strong> (<a href="Details.htm#2007-07-05T181259.492244Z">details</a>)</p>
+2007-07-05T18:12:59.492244Z Timothy Osborn</strong> (<a href="Details8.htm#2007-07-05T181259.492244Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix for bug #689312.
@@ -987,7 +1072,7 @@ Remove an obsolete cvs housekeeping file.
 </blockquote>
 
 <p><strong><a name="2007-07-04T195215.096425Z"></a>
-2007-07-04T19:52:15.096425Z Ray Johnston</strong> (<a href="Details.htm#2007-07-04T195215.096425Z">details</a>)</p>
+2007-07-04T19:52:15.096425Z Ray Johnston</strong> (<a href="Details8.htm#2007-07-04T195215.096425Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix for local ExtGState values that would caused invalidaccess on
@@ -1008,7 +1093,7 @@ Add a newline to a debug printf. Bug 689330.
 </blockquote>
 
 <p><strong><a name="2007-07-04T173044.235393Z"></a>
-2007-07-04T17:30:44.235393Z Ray Johnston</strong> (<a href="Details.htm#2007-07-04T173044.235393Z">details</a>)</p>
+2007-07-04T17:30:44.235393Z Ray Johnston</strong> (<a href="Details8.htm#2007-07-04T173044.235393Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix a typo in the jpeg config that resulted in MAX_ALLOC_CHUNK being
@@ -1053,7 +1138,7 @@ logical expressions. Bug 689315, attachment 3115.
 </blockquote>
 
 <p><strong><a name="2007-07-02T080903.552980Z"></a>
-2007-07-02T08:09:03.552980Z Igor Melichev</strong> (<a href="Details.htm#2007-07-02T080903.552980Z">details</a>)</p>
+2007-07-02T08:09:03.552980Z Igor Melichev</strong> (<a href="Details8.htm#2007-07-02T080903.552980Z">details</a>)</p>
 <blockquote>
 <pre>
 Extend the clist language with fill_trapezoid. 
@@ -1076,7 +1161,7 @@ inclusion. Bug 689276.
 </blockquote>
 
 <p><strong><a name="2007-06-30T234618.087581Z"></a>
-2007-06-30T23:46:18.087581Z Alex Cherepanov</strong> (<a href="Details.htm#2007-06-30T234618.087581Z">details</a>)</p>
+2007-06-30T23:46:18.087581Z Alex Cherepanov</strong> (<a href="Details8.htm#2007-06-30T234618.087581Z">details</a>)</p>
 <blockquote>
 <pre>
 Compare the type of the object cached in the font descriptot with the expected
@@ -1101,7 +1186,7 @@ Bug 689311, customer 411.
 </blockquote>
 
 <p><strong><a name="2007-06-30T065744.535512Z"></a>
-2007-06-30T06:57:44.535512Z Igor Melichev</strong> (<a href="Details.htm#2007-06-30T065744.535512Z">details</a>)</p>
+2007-06-30T06:57:44.535512Z Igor Melichev</strong> (<a href="Details8.htm#2007-06-30T065744.535512Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix : Expanding gxcldev.h macros, part 7.
@@ -1111,7 +1196,7 @@ Fix : Expanding gxcldev.h macros, part 7.
 </blockquote>
 
 <p><strong><a name="2007-06-30T064155.227485Z"></a>
-2007-06-30T06:41:55.227485Z Igor Melichev</strong> (<a href="Details.htm#2007-06-30T064155.227485Z">details</a>)</p>
+2007-06-30T06:41:55.227485Z Igor Melichev</strong> (<a href="Details8.htm#2007-06-30T064155.227485Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix : Expanding gxcldev.h macros, part 6.
@@ -1121,7 +1206,7 @@ Fix : Expanding gxcldev.h macros, part 6.
 </blockquote>
 
 <p><strong><a name="2007-06-29T204457.917902Z"></a>
-2007-06-29T20:44:57.917902Z Henry Stiles</strong> (<a href="Details.htm#2007-06-29T204457.917902Z">details</a>)</p>
+2007-06-29T20:44:57.917902Z Henry Stiles</strong> (<a href="Details8.htm#2007-06-29T204457.917902Z">details</a>)</p>
 <blockquote>
 <pre>
 Temporarily disable the band complexity code and use the existing
@@ -1132,7 +1217,7 @@ Temporarily disable the band complexity code and use the existing
 </blockquote>
 
 <p><strong><a name="2007-06-29T202142.242166Z"></a>
-2007-06-29T20:21:42.242166Z Ray Johnston</strong> (<a href="Details.htm#2007-06-29T202142.242166Z">details</a>)</p>
+2007-06-29T20:21:42.242166Z Ray Johnston</strong> (<a href="Details8.htm#2007-06-29T202142.242166Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix opTimothy Osbornization for 0 and 0xff (non-dithered) colors in the wtsimdi_copy_mono
@@ -1151,7 +1236,7 @@ want to look at the output.
 </blockquote>
 
 <p><strong><a name="2007-06-29T153825.753618Z"></a>
-2007-06-29T15:38:25.753618Z Igor Melichev</strong> (<a href="Details.htm#2007-06-29T153825.753618Z">details</a>)</p>
+2007-06-29T15:38:25.753618Z Igor Melichev</strong> (<a href="Details8.htm#2007-06-29T153825.753618Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix : Expanding gxcldev.h macros, part 5.
@@ -1161,7 +1246,7 @@ Fix : Expanding gxcldev.h macros, part 5.
 </blockquote>
 
 <p><strong><a name="2007-06-29T145420.698917Z"></a>
-2007-06-29T14:54:20.698917Z Igor Melichev</strong> (<a href="Details.htm#2007-06-29T145420.698917Z">details</a>)</p>
+2007-06-29T14:54:20.698917Z Igor Melichev</strong> (<a href="Details8.htm#2007-06-29T145420.698917Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix : Expanding gxcldev.h macros, part 4.
@@ -1171,7 +1256,7 @@ Fix : Expanding gxcldev.h macros, part 4.
 </blockquote>
 
 <p><strong><a name="2007-06-29T092827.467512Z"></a>
-2007-06-29T09:28:27.467512Z Igor Melichev</strong> (<a href="Details.htm#2007-06-29T092827.467512Z">details</a>)</p>
+2007-06-29T09:28:27.467512Z Igor Melichev</strong> (<a href="Details8.htm#2007-06-29T092827.467512Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix : Expanding gxcldev.h macros, part 3.
@@ -1181,7 +1266,7 @@ Fix : Expanding gxcldev.h macros, part 3.
 </blockquote>
 
 <p><strong><a name="2007-06-28T221645.367783Z"></a>
-2007-06-28T22:16:45.367783Z Ralph Giles</strong> (<a href="Details.htm#2007-06-28T221645.367783Z">details</a>)</p>
+2007-06-28T22:16:45.367783Z Ralph Giles</strong> (<a href="Details8.htm#2007-06-28T221645.367783Z">details</a>)</p>
 <blockquote>
 <pre>
 Pass -DHAVE_FONTCONFIG through CAPOPT so the fontconfig patch is 
@@ -1223,7 +1308,7 @@ Enable dynamic driver support on Solaris. Patch from Norm Jacobs, Bug
 </blockquote>
 
 <p><strong><a name="2007-06-27T015229.856489Z"></a>
-2007-06-27T01:52:29.856489Z Ray Johnston</strong> (<a href="Details.htm#2007-06-27T015229.856489Z">details</a>)</p>
+2007-06-27T01:52:29.856489Z Ray Johnston</strong> (<a href="Details8.htm#2007-06-27T015229.856489Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix an out of bounds buffer write in the wts_load_halftone logic and fine
@@ -1235,7 +1320,7 @@ Bug 689255 for customer 951.
 </blockquote>
 
 <p><strong><a name="2007-06-26T204303.119310Z"></a>
-2007-06-26T20:43:03.119310Z Igor Melichev</strong> (<a href="Details.htm#2007-06-26T204303.119310Z">details</a>)</p>
+2007-06-26T20:43:03.119310Z Igor Melichev</strong> (<a href="Details8.htm#2007-06-26T204303.119310Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix : Expanding gxcldev.h macros, part 2.
@@ -1245,7 +1330,7 @@ Fix : Expanding gxcldev.h macros, part 2.
 </blockquote>
 
 <p><strong><a name="2007-06-26T162542.642877Z"></a>
-2007-06-26T16:25:42.642877Z Igor Melichev</strong> (<a href="Details.htm#2007-06-26T162542.642877Z">details</a>)</p>
+2007-06-26T16:25:42.642877Z Igor Melichev</strong> (<a href="Details8.htm#2007-06-26T162542.642877Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix : Expanding gxcldev.h macros, part 1.
@@ -1264,7 +1349,7 @@ Replaced the $(install_prefix) from ESP Ghostscript by $(DESTDIR).
 </blockquote>
 
 <p><strong><a name="2007-06-26T070817.110301Z"></a>
-2007-06-26T07:08:17.110301Z Ray Johnston</strong> (<a href="Details.htm#2007-06-26T070817.110301Z">details</a>)</p>
+2007-06-26T07:08:17.110301Z Ray Johnston</strong> (<a href="Details8.htm#2007-06-26T070817.110301Z">details</a>)</p>
 <blockquote>
 <pre>
 Add logic for a configurable color lookup cache to the wts* devices.
@@ -1336,7 +1421,7 @@ Hack in some support for comparing WX fields with --diff. Incomplete.
 </blockquote>
 
 <p><strong><a name="2007-06-19T165920.420492Z"></a>
-2007-06-19T16:59:20.420492Z Igor Melichev</strong> (<a href="Details.htm#2007-06-19T165920.420492Z">details</a>)</p>
+2007-06-19T16:59:20.420492Z Igor Melichev</strong> (<a href="Details8.htm#2007-06-19T165920.420492Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix : MSVC8 compiler warnings.
@@ -1346,7 +1431,7 @@ Fix : MSVC8 compiler warnings.
 </blockquote>
 
 <p><strong><a name="2007-06-19T164429.490746Z"></a>
-2007-06-19T16:44:29.490746Z Igor Melichev</strong> (<a href="Details.htm#2007-06-19T164429.490746Z">details</a>)</p>
+2007-06-19T16:44:29.490746Z Igor Melichev</strong> (<a href="Details8.htm#2007-06-19T164429.490746Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix (PS interpreter) : "undef" data change was not properly saved.
@@ -1384,7 +1469,7 @@ Fix: Setting a right property on idicttpl.h .
 </blockquote>
 
 <p><strong><a name="2007-06-19T070942.151414Z"></a>
-2007-06-19T07:09:42.151414Z Igor Melichev</strong> (<a href="Details.htm#2007-06-19T070942.151414Z">details</a>)</p>
+2007-06-19T07:09:42.151414Z Igor Melichev</strong> (<a href="Details8.htm#2007-06-19T070942.151414Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix (PS interpreter) : Replace packed_search_* macros with a template (continued).
@@ -1394,7 +1479,7 @@ Fix (PS interpreter) : Replace packed_search_* macros with a template (continued
 </blockquote>
 
 <p><strong><a name="2007-06-19T055101.853658Z"></a>
-2007-06-19T05:51:01.853658Z Igor Melichev</strong> (<a href="Details.htm#2007-06-19T055101.853658Z">details</a>)</p>
+2007-06-19T05:51:01.853658Z Igor Melichev</strong> (<a href="Details8.htm#2007-06-19T055101.853658Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix (The filling algorithm) : Improving a condition for visual trace.
@@ -1404,7 +1489,7 @@ Fix (The filling algorithm) : Improving a condition for visual trace.
 </blockquote>
 
 <p><strong><a name="2007-06-19T054558.839755Z"></a>
-2007-06-19T05:45:58.839755Z Igor Melichev</strong> (<a href="Details.htm#2007-06-19T054558.839755Z">details</a>)</p>
+2007-06-19T05:45:58.839755Z Igor Melichev</strong> (<a href="Details8.htm#2007-06-19T054558.839755Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix (PS interpreter) : Replace packed_search_* macros with a template.
@@ -1449,7 +1534,7 @@ be the 'async' method of gdevprna etc. will be deprecated.
 </blockquote>
 
 <p><strong><a name="2007-06-18T163750.173337Z"></a>
-2007-06-18T16:37:50.173337Z Timothy Osborn</strong> (<a href="Details.htm#2007-06-18T163750.173337Z">details</a>)</p>
+2007-06-18T16:37:50.173337Z Timothy Osborn</strong> (<a href="Details8.htm#2007-06-18T163750.173337Z">details</a>)</p>
 <blockquote>
 <pre>
 Need to use maximum of max_gRay Johnston and max_color to know how many bits are
@@ -1460,7 +1545,7 @@ supported.
 </blockquote>
 
 <p><strong><a name="2007-06-18T152047.700377Z"></a>
-2007-06-18T15:20:47.700377Z Timothy Osborn</strong> (<a href="Details.htm#2007-06-18T152047.700377Z">details</a>)</p>
+2007-06-18T15:20:47.700377Z Timothy Osborn</strong> (<a href="Details8.htm#2007-06-18T152047.700377Z">details</a>)</p>
 <blockquote>
 <pre>
 Changing from using log10(x) / Log10(2) to iLog2(x) to compute the base 2 log.
@@ -1470,7 +1555,7 @@ Changing from using log10(x) / Log10(2) to iLog2(x) to compute the base 2 log.
 </blockquote>
 
 <p><strong><a name="2007-06-18T063758.394295Z"></a>
-2007-06-18T06:37:58.394295Z Ray Johnston</strong> (<a href="Details.htm#2007-06-18T063758.394295Z">details</a>)</p>
+2007-06-18T06:37:58.394295Z Ray Johnston</strong> (<a href="Details8.htm#2007-06-18T063758.394295Z">details</a>)</p>
 <blockquote>
 <pre>
 Fixes for ulong overflow in memory device buffer sizing that caused
@@ -1560,7 +1645,7 @@ tests/customer_tests/wd30ddwf.pcl
 </blockquote>
 
 <p><strong><a name="2007-06-17T000102.174467Z"></a>
-2007-06-17T00:01:02.174467Z Alex Cherepanov</strong> (<a href="Details.htm#2007-06-17T000102.174467Z">details</a>)</p>
+2007-06-17T00:01:02.174467Z Alex Cherepanov</strong> (<a href="Details8.htm#2007-06-17T000102.174467Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix misleading error message from runlibfile0 that always referred to the last
@@ -1572,7 +1657,7 @@ another file. Bug 688738.
 </blockquote>
 
 <p><strong><a name="2007-06-16T192422.647261Z"></a>
-2007-06-16T19:24:22.647261Z Timothy Osborn</strong> (<a href="Details.htm#2007-06-16T192422.647261Z">details</a>)</p>
+2007-06-16T19:24:22.647261Z Timothy Osborn</strong> (<a href="Details8.htm#2007-06-16T192422.647261Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix to limit GRalph LevienicsAlphaBits and TextAlphaBits to legal values.
@@ -1582,7 +1667,7 @@ Fix to limit GRalph LevienicsAlphaBits and TextAlphaBits to legal values.
 </blockquote>
 
 <p><strong><a name="2007-06-15T185534.118706Z"></a>
-2007-06-15T18:55:34.118706Z Timothy Osborn</strong> (<a href="Details.htm#2007-06-15T185534.118706Z">details</a>)</p>
+2007-06-15T18:55:34.118706Z Timothy Osborn</strong> (<a href="Details8.htm#2007-06-15T185534.118706Z">details</a>)</p>
 <blockquote>
 <pre>
 Comment change to reflect name change of the module gsncdemo.c to gsncdummy.c
@@ -1592,7 +1677,7 @@ Comment change to reflect name change of the module gsncdemo.c to gsncdummy.c
 </blockquote>
 
 <p><strong><a name="2007-06-14T220625.996646Z"></a>
-2007-06-14T22:06:25.996646Z Alex Cherepanov</strong> (<a href="Details.htm#2007-06-14T220625.996646Z">details</a>)</p>
+2007-06-14T22:06:25.996646Z Alex Cherepanov</strong> (<a href="Details8.htm#2007-06-14T220625.996646Z">details</a>)</p>
 <blockquote>
 <pre>
 Implement quoting in GS_OPTIONS environment variable. Bug 688965.
@@ -1602,7 +1687,7 @@ Implement quoting in GS_OPTIONS environment variable. Bug 688965.
 </blockquote>
 
 <p><strong><a name="2007-06-13T232111.020971Z"></a>
-2007-06-13T23:21:11.020971Z Igor Melichev</strong> (<a href="Details.htm#2007-06-13T232111.020971Z">details</a>)</p>
+2007-06-13T23:21:11.020971Z Igor Melichev</strong> (<a href="Details8.htm#2007-06-13T232111.020971Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix (pdfwrite) : A crash when comparing resources of different types.
@@ -1623,7 +1708,7 @@ Patch from Henry Stiles, needed for the gslt build.
 </blockquote>
 
 <p><strong><a name="2007-06-13T162733.371102Z"></a>
-2007-06-13T16:27:33.371102Z Timothy Osborn</strong> (<a href="Details.htm#2007-06-13T162733.371102Z">details</a>)</p>
+2007-06-13T16:27:33.371102Z Timothy Osborn</strong> (<a href="Details8.htm#2007-06-13T162733.371102Z">details</a>)</p>
 <blockquote>
 <pre>
 This is a fix for regression bug report 689263.
@@ -1707,7 +1792,7 @@ rev. 7834 that increased the size of look-ahead buffer to 1024 bytes.
 </blockquote>
 
 <p><strong><a name="2007-06-10T052102.102146Z"></a>
-2007-06-10T05:21:02.102146Z Alex Cherepanov</strong> (<a href="Details.htm#2007-06-10T052102.102146Z">details</a>)</p>
+2007-06-10T05:21:02.102146Z Alex Cherepanov</strong> (<a href="Details8.htm#2007-06-10T052102.102146Z">details</a>)</p>
 <blockquote>
 <pre>
 Add a work-around for malloc(0) returning a 0 pointer - call malloc(1)
@@ -1730,7 +1815,7 @@ Don't replace an closed stream with invalid_file_stream, which is an open,
 </blockquote>
 
 <p><strong><a name="2007-06-10T015133.615609Z"></a>
-2007-06-10T01:51:33.615609Z Alex Cherepanov</strong> (<a href="Details.htm#2007-06-10T015133.615609Z">details</a>)</p>
+2007-06-10T01:51:33.615609Z Alex Cherepanov</strong> (<a href="Details8.htm#2007-06-10T015133.615609Z">details</a>)</p>
 <blockquote>
 <pre>
 Port recent changes in MSVC build to Borland C build. Fix minor compilation
@@ -1792,7 +1877,7 @@ MacOS X, or one used by a client which also links to gs as a library.
 </blockquote>
 
 <p><strong><a name="2007-06-07T045246.418386Z"></a>
-2007-06-07T04:52:46.418386Z Ralph Giles</strong> (<a href="Details.htm#2007-06-07T045246.418386Z">details</a>)</p>
+2007-06-07T04:52:46.418386Z Ralph Giles</strong> (<a href="Details8.htm#2007-06-07T045246.418386Z">details</a>)</p>
 <blockquote>
 <pre>
 Remove an unused clean action.
@@ -1878,7 +1963,7 @@ to Artifex Software, Inc.
 </blockquote>
 
 <p><strong><a name="2007-06-05T212832.480500Z"></a>
-2007-06-05T21:28:32.480500Z Igor Melichev</strong> (<a href="Details.htm#2007-06-05T212832.480500Z">details</a>)</p>
+2007-06-05T21:28:32.480500Z Igor Melichev</strong> (<a href="Details8.htm#2007-06-05T212832.480500Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix (shadings) : OpTimothy Osbornize path manipulations for shading fill (continued 3).
@@ -1888,7 +1973,7 @@ Fix (shadings) : OpTimothy Osbornize path manipulations for shading fill (contin
 </blockquote>
 
 <p><strong><a name="2007-06-05T211017.034292Z"></a>
-2007-06-05T21:10:17.034292Z Igor Melichev</strong> (<a href="Details.htm#2007-06-05T211017.034292Z">details</a>)</p>
+2007-06-05T21:10:17.034292Z Igor Melichev</strong> (<a href="Details8.htm#2007-06-05T211017.034292Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix (shadings) : OpTimothy Osbornize path manipulations for shading fill (continued 2).
@@ -1898,7 +1983,7 @@ Fix (shadings) : OpTimothy Osbornize path manipulations for shading fill (contin
 </blockquote>
 
 <p><strong><a name="2007-06-03T223312.851834Z"></a>
-2007-06-03T22:33:12.851834Z Igor Melichev</strong> (<a href="Details.htm#2007-06-03T223312.851834Z">details</a>)</p>
+2007-06-03T22:33:12.851834Z Igor Melichev</strong> (<a href="Details8.htm#2007-06-03T223312.851834Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix (shadings) : OpTimothy Osbornize path manipulations for shading fill (continued).
@@ -1908,7 +1993,7 @@ Fix (shadings) : OpTimothy Osbornize path manipulations for shading fill (contin
 </blockquote>
 
 <p><strong><a name="2007-05-31T172552.270926Z"></a>
-2007-05-31T17:25:52.270926Z Igor Melichev</strong> (<a href="Details.htm#2007-05-31T172552.270926Z">details</a>)</p>
+2007-05-31T17:25:52.270926Z Igor Melichev</strong> (<a href="Details8.htm#2007-05-31T172552.270926Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix (shadings) : OpTimothy Osbornize path manipulations for shading fill.
@@ -1918,7 +2003,7 @@ Fix (shadings) : OpTimothy Osbornize path manipulations for shading fill.
 </blockquote>
 
 <p><strong><a name="2007-05-30T060543.128239Z"></a>
-2007-05-30T06:05:43.128239Z Ray Johnston</strong> (<a href="Details.htm#2007-05-30T060543.128239Z">details</a>)</p>
+2007-05-30T06:05:43.128239Z Ray Johnston</strong> (<a href="Details8.htm#2007-05-30T060543.128239Z">details</a>)</p>
 <blockquote>
 <pre>
 Change built-in compression threshold for memory based clist to
@@ -1929,7 +2014,7 @@ improve performance.
 </blockquote>
 
 <p><strong><a name="2007-05-28T184729.004635Z"></a>
-2007-05-28T18:47:29.004635Z Ray Johnston</strong> (<a href="Details.htm#2007-05-28T184729.004635Z">details</a>)</p>
+2007-05-28T18:47:29.004635Z Ray Johnston</strong> (<a href="Details8.htm#2007-05-28T184729.004635Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix for Segv with psdcmyk device when a job specifies DeviceGRay Johnston.
@@ -1950,7 +2035,7 @@ exit and miss all the differences. Encountered on GNU+Linux, i686, GCC 4.1.2.
 </blockquote>
 
 <p><strong><a name="2007-05-28T053514.685193Z"></a>
-2007-05-28T05:35:14.685193Z Ray Johnston</strong> (<a href="Details.htm#2007-05-28T053514.685193Z">details</a>)</p>
+2007-05-28T05:35:14.685193Z Ray Johnston</strong> (<a href="Details8.htm#2007-05-28T053514.685193Z">details</a>)</p>
 <blockquote>
 <pre>
 Primarily fix for wtsimdi problem with wts dithering phase shift at
@@ -2004,7 +2089,7 @@ Fix missing dependencies for the witsimdi.dev
 </blockquote>
 
 <p><strong><a name="2007-05-27T185135.172106Z"></a>
-2007-05-27T18:51:35.172106Z Igor Melichev</strong> (<a href="Details.htm#2007-05-27T185135.172106Z">details</a>)</p>
+2007-05-27T18:51:35.172106Z Igor Melichev</strong> (<a href="Details8.htm#2007-05-27T185135.172106Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix (shadings) : Account inner poles for computing a tensor shading flattening.
@@ -2014,7 +2099,7 @@ Fix (shadings) : Account inner poles for computing a tensor shading flattening.
 </blockquote>
 
 <p><strong><a name="2007-05-27T175943.657554Z"></a>
-2007-05-27T17:59:43.657554Z Igor Melichev</strong> (<a href="Details.htm#2007-05-27T175943.657554Z">details</a>)</p>
+2007-05-27T17:59:43.657554Z Igor Melichev</strong> (<a href="Details8.htm#2007-05-27T175943.657554Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix : More tolerance for bogus tintTransform.
@@ -2024,7 +2109,7 @@ Fix : More tolerance for bogus tintTransform.
 </blockquote>
 
 <p><strong><a name="2007-05-27T163919.788230Z"></a>
-2007-05-27T16:39:19.788230Z Igor Melichev</strong> (<a href="Details.htm#2007-05-27T163919.788230Z">details</a>)</p>
+2007-05-27T16:39:19.788230Z Igor Melichev</strong> (<a href="Details8.htm#2007-05-27T163919.788230Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix (shadings) : OpTimothy Osbornize filling a radial shading extension.
@@ -2044,7 +2129,7 @@ Bug 689250
 </blockquote>
 
 <p><strong><a name="2007-05-24T220557.168544Z"></a>
-2007-05-24T22:05:57.168544Z Igor Melichev</strong> (<a href="Details.htm#2007-05-24T220557.168544Z">details</a>)</p>
+2007-05-24T22:05:57.168544Z Igor Melichev</strong> (<a href="Details8.htm#2007-05-24T220557.168544Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix (shadings) : A bug in tensor patch size formula caused extra or missewd subdivisions.
@@ -2054,7 +2139,7 @@ Fix (shadings) : A bug in tensor patch size formula caused extra or missewd subd
 </blockquote>
 
 <p><strong><a name="2007-05-24T184603.324950Z"></a>
-2007-05-24T18:46:03.324950Z Igor Melichev</strong> (<a href="Details.htm#2007-05-24T184603.324950Z">details</a>)</p>
+2007-05-24T18:46:03.324950Z Igor Melichev</strong> (<a href="Details8.htm#2007-05-24T184603.324950Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix : Remove a redunDan Cobyt definition of gs_error_interrupt.
@@ -2064,7 +2149,7 @@ Fix : Remove a redunDan Cobyt definition of gs_error_interrupt.
 </blockquote>
 
 <p><strong><a name="2007-05-24T180657.635194Z"></a>
-2007-05-24T18:06:57.635194Z Igor Melichev</strong> (<a href="Details.htm#2007-05-24T180657.635194Z">details</a>)</p>
+2007-05-24T18:06:57.635194Z Igor Melichev</strong> (<a href="Details8.htm#2007-05-24T180657.635194Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix (shadings) : Reuse shadings while a PDF interpretation.
@@ -2086,7 +2171,7 @@ works with all known viewers.
 </blockquote>
 
 <p><strong><a name="2007-05-23T202742.841035Z"></a>
-2007-05-23T20:27:42.841035Z Alex Cherepanov</strong> (<a href="Details.htm#2007-05-23T202742.841035Z">details</a>)</p>
+2007-05-23T20:27:42.841035Z Alex Cherepanov</strong> (<a href="Details8.htm#2007-05-23T202742.841035Z">details</a>)</p>
 <blockquote>
 <pre>
 Add support for /UserUnit. Also fix some related bugs that stayed
@@ -2110,7 +2195,7 @@ the end of the stream. Bug 689239.
 </blockquote>
 
 <p><strong><a name="2007-05-22T205015.623551Z"></a>
-2007-05-22T20:50:15.623551Z Timothy Osborn</strong> (<a href="Details.htm#2007-05-22T205015.623551Z">details</a>)</p>
+2007-05-22T20:50:15.623551Z Timothy Osborn</strong> (<a href="Details8.htm#2007-05-22T205015.623551Z">details</a>)</p>
 <blockquote>
 <pre>
 Adding missing header line.
@@ -2198,7 +2283,7 @@ Remove unused and incorrect definitions of stdin, stdout, stderr buffer sizes.
 </blockquote>
 
 <p><strong><a name="2007-05-16T210435.033996Z"></a>
-2007-05-16T21:04:35.033996Z Igor Melichev</strong> (<a href="Details.htm#2007-05-16T210435.033996Z">details</a>)</p>
+2007-05-16T21:04:35.033996Z Igor Melichev</strong> (<a href="Details8.htm#2007-05-16T210435.033996Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix (shadings) : Shorten a radial shading when it is larger than paint area.
@@ -2239,7 +2324,7 @@ Correct keyword substitution.
 </blockquote>
 
 <p><strong><a name="2007-05-14T163623.969410Z"></a>
-2007-05-14T16:36:23.969410Z Igor Melichev</strong> (<a href="Details.htm#2007-05-14T163623.969410Z">details</a>)</p>
+2007-05-14T16:36:23.969410Z Igor Melichev</strong> (<a href="Details8.htm#2007-05-14T163623.969410Z">details</a>)</p>
 <blockquote>
 <pre>
 Fix (PDF interpreter) : Failed with an indirect OutputIntents element.

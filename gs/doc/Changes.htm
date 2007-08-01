@@ -8,6 +8,79 @@
 </head>
 <body>
 
+<p><strong><a name="2007-08-01T212057.253476Z"></a>
+2007-08-01T21:20:57.253476Z Ray Johnston</strong> (<a href="Details.htm#2007-08-01T2120$
+<blockquote>
+<pre>
+Fix problem seen with stcolor device where the get_color_mapping_procs
+device proc was NULL, causing SEGV. Bug #689371.
+
+</pre>
+<p>[src/gdevdflt.c src/gdevstc.c src/gxcmap.c src/gspaint.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-08-01T191812.034589Z"></a>
+2007-08-01T19:18:12.034589Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update release date and product name for final release.
+</pre>
+<p>[doc/History7.htm doc/Projects.htm doc/History8.htm man/dvipdf.1 man/ps2asci$
+</blockquote>
+
+<p><strong><a name="2007-08-01T171950.181574Z"></a>
+2007-08-01T17:19:50.181574Z Ray Johnston</strong> (<a href="Details.htm#2007-08-01T1719$
+<blockquote>
+<pre>
+Fix for gv hang, where an application sends (less than 1023 bytes)
+PostScript and expects a response. AppleTalk PAP and some other
+interactive viewer front ends may run into this. Bug #689237.
+
+</pre>
+<p>[lib/pdf_main.ps]</p>
+</blockquote>
+
+<p><strong><a name="2007-08-01T041013.989117Z"></a>
+2007-08-01T04:10:13.989117Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix a misleading typo in an error message: s/UseCUEColor/UseCIEColor/
+</pre>
+<p>[src/gdevpdfp.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-08-01T040106.081994Z"></a>
+2007-08-01T04:01:06.081994Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Remove inappropriate PNG_CONST qualifier from a few libpng arrays, where it
+adds 2nd const qualifier, which is rejected by MSVC 6. Bug 689383.
+</pre>
+<p>[libpng/pngtrans.c libpng/pngerror.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-07-31T141945.536400Z"></a>
+2007-07-31T14:19:45.536400Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Use a correct name for the absolute colorimetric rendering intent. Change the
+encoding of the rendering intents in the graphic state to use ICC numbers
+from Table 18 (section 6.1.11) instead of the PDF order to reduce re-coding
+and confusion. Bug 689377.
+
+</pre>
+<p>[src/gxistate.h lib/pdf_ops.ps src/gsstate.c src/zcolor3.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-07-31T033113.074828Z"></a>
+2007-07-31T03:31:13.074828Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update changelogs for the release candidate.
+</pre>
+<p>[doc/Changes.htm doc/History8.htm doc/News.htm doc/Details8.htm doc/Details.$
+</blockquote>
+
 <p><strong><a name="2007-07-30T201356.963379Z"></a>
 2007-07-30T20:13:56.963379Z Ralph Giles</strong></p>
 <blockquote>
