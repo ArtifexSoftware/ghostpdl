@@ -436,7 +436,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     }
     if (pdev->params.ColorConversionStrategy == ccs_UseDeviceIndependentColor) {
 	if (!pdev->UseCIEColor) {
-	    eprintf("Set UseCUEColor for UseDeviceIndependentColor to work properly.\n");
+	    eprintf("Set UseCIEColor for UseDeviceIndependentColor to work properly.\n");
 	    ecode = gs_note_error(gs_error_rangecheck);
 	    pdev->UseCIEColor = true;
 	}
@@ -446,7 +446,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
 	    eprintf("UseDeviceDependentColorForImages is not supported. Use UseDeviceIndependentColor.\n");
 	    pdev->params.ColorConversionStrategy = ccs_UseDeviceIndependentColor;
 	    if (!pdev->UseCIEColor) {
-		eprintf("Set UseCUEColor for UseDeviceIndependentColor to work properly.\n");
+		eprintf("Set UseCIEColor for UseDeviceIndependentColor to work properly.\n");
 		ecode = gs_note_error(gs_error_rangecheck);
 		pdev->UseCIEColor = true;
 	    }
