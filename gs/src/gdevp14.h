@@ -16,6 +16,8 @@
 #ifndef gdevp14_INCLUDED
 #  define gdevp14_INCLUDED
 
+#include "gxcmap.h"
+
 typedef enum {
     PDF14_DeviceGray = 0,
     PDF14_DeviceRGB = 1,
@@ -134,6 +136,14 @@ typedef struct pdf14_device_s {
     const gx_color_map_procs *(*save_get_cmap_procs)(const gs_imager_state *,
 						     const gx_device *);
     gx_device_color_info saved_target_color_info;
+    dev_proc_encode_color(*saved_target_encode_color);
+    dev_proc_decode_color(*saved_target_decode_color);
+    dev_proc_get_color_mapping_procs(*saved_target_get_color_mapping_procs);
+    dev_proc_get_color_comp_index(*saved_target_get_color_comp_index);
+    dev_proc_encode_color(*my_encode_color);
+    dev_proc_decode_color(*my_decode_color);
+    dev_proc_get_color_mapping_procs(*my_get_color_mapping_procs);
+    dev_proc_get_color_comp_index(*my_get_color_comp_index);
 } pdf14_device_t;
 
 /*

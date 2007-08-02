@@ -29,7 +29,7 @@ declare_mem_procs(mem_mapped4_copy_mono, mem_mapped4_copy_color, mem_mapped4_fil
 
 /* The device descriptor. */
 const gx_device_memory mem_mapped4_device =
-mem_device("image4", 4, 0,
+mem_device("image4", 3, 1,
 	   mem_mapped_map_rgb_color, mem_mapped_map_color_rgb,
   mem_mapped4_copy_mono, mem_mapped4_copy_color, mem_mapped4_fill_rectangle,
 	   mem_gray_strip_copy_rop);

@@ -1936,7 +1936,14 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_imager_state * pis,
 	    pis->get_cmap_procs = p14dev->save_get_cmap_procs;
 	    gx_set_cmap_procs(pis, p14dev->target);
 	    /* Send image out raster data to output device */
-            p14dev->pdf14_procs->put_image(pdev, pis, p14dev->target);
+	    {	/* hack: Reset lop_pdf14, which could be set by 
+		   pdf14_fill_path, pdf14_stroke_path
+		   to prevent a failure ingx_image_enum_begin. */
+		gs_imager_state new_is = *pis;
+
+		new_is.log_op &= ~lop_pdf14;
+		p14dev->pdf14_procs->put_image(pdev, &new_is, p14dev->target);
+	    }
 	    pdf14_disable_device(pdev);
 	    pdf14_close(pdev);
 	    break;
@@ -2661,7 +2668,6 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
     p14dev->save_get_cmap_procs = pis->get_cmap_procs;
     pis->get_cmap_procs = pdf14_get_cmap_procs;
     gx_set_cmap_procs(pis, (gx_device *)p14dev);
-
     code = dev_proc((gx_device *) p14dev, open_device) ((gx_device *) p14dev);
     *pdev = (gx_device *) p14dev;
     pdf14_set_marking_params((gx_device *)p14dev, pis);
@@ -3327,6 +3333,10 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
 
     code = dev_proc((gx_device *) pdev, open_device) ((gx_device *) pdev);
     pdev->pclist_device = target;
+    pdev->my_encode_color = pdev->procs.encode_color;
+    pdev->my_decode_color = pdev->procs.decode_color;
+    pdev->my_get_color_mapping_procs = pdev->procs.get_color_mapping_procs;
+    pdev->my_get_color_comp_index = pdev->procs.get_color_comp_index;
     *ppdev = (gx_device *) pdev;
     return code;
 }
@@ -3775,6 +3785,14 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
 		/* Re-activate the PDF 1.4 compositor */
 		pdev->saved_target_color_info = pdev->target->color_info;
 		pdev->target->color_info = pdev->color_info;
+		pdev->saved_target_encode_color = pdev->target->procs.encode_color;
+		pdev->saved_target_decode_color = pdev->target->procs.decode_color;
+		pdev->target->procs.encode_color = pdev->procs.encode_color = pdev->my_encode_color;
+		pdev->target->procs.decode_color = pdev->procs.decode_color = pdev->my_decode_color;
+		pdev->saved_target_get_color_mapping_procs = pdev->target->procs.get_color_mapping_procs;
+		pdev->saved_target_get_color_comp_index = pdev->target->procs.get_color_comp_index;
+		pdev->target->procs.get_color_mapping_procs = pdev->procs.get_color_mapping_procs = pdev->my_get_color_mapping_procs;
+		pdev->target->procs.get_color_comp_index = pdev->procs.get_color_comp_index = pdev->my_get_color_comp_index;
 		pdev->save_get_cmap_procs = pis->get_cmap_procs;
 		pis->get_cmap_procs = pdf14_get_cmap_procs;
 		gx_set_cmap_procs(pis, dev);
@@ -3806,6 +3824,10 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
 	        pdf14_clist_get_param_compressed_color_list(pdev);
 		/* Restore the color_info for the clist device */
 		pdev->target->color_info = pdev->saved_target_color_info;
+		pdev->target->procs.encode_color = pdev->saved_target_encode_color;
+		pdev->target->procs.decode_color = pdev->saved_target_decode_color;
+		pdev->target->procs.get_color_mapping_procs = pdev->saved_target_get_color_mapping_procs;
+		pdev->target->procs.get_color_comp_index = pdev->saved_target_get_color_comp_index;
 		pis->get_cmap_procs = pdev->save_get_cmap_procs;
 		gx_set_cmap_procs(pis, pdev->target);
 		/* Disable the PDF 1.4 compositor */
@@ -3951,7 +3973,7 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
      * filling and stroking operations.
      */
     new_is.log_op |= lop_pdf14;
-    return gx_default_fill_path(dev, &new_is, ppath, params, pdcolor, pcpath);
+    return gx_forward_fill_path(dev, &new_is, ppath, params, pdcolor, pcpath);
 }
 
 /*
@@ -3982,7 +4004,7 @@ pdf14_clist_stroke_path(gx_device *dev,	const gs_imager_state *pis,
      * filling and stroking operations.
      */
     new_is.log_op |= lop_pdf14;
-    return gx_default_stroke_path(dev, &new_is, ppath, params, pdcolor, pcpath);
+    return gx_forward_stroke_path(dev, &new_is, ppath, params, pdcolor, pcpath);
 }
 
 /*
@@ -4010,7 +4032,7 @@ pdf14_clist_text_begin(gx_device * dev,	gs_imager_state	* pis,
     if (code < 0)
 	return code;
     /* Pass text_begin to the target */
-    code = gx_default_text_begin(dev, pis, text, font, path,
+    code = gx_forward_text_begin(dev, pis, text, font, path,
 				pdcolor, pcpath, memory, &penum);
     if (code < 0)
 	return code;
@@ -4039,7 +4061,7 @@ pdf14_clist_begin_image(gx_device * dev,
     if (code < 0)
 	return code;
     /* Pass image to the target */
-    return gx_default_begin_image(dev, pis, pim, format, prect,
+    return gx_forward_begin_image(dev, pis, pim, format, prect,
 					pdcolor, pcpath, memory, pinfo);
 }
 
@@ -4064,7 +4086,7 @@ pdf14_clist_begin_typed_image(gx_device	* dev, const gs_imager_state * pis,
     if (code < 0)
 	return code;
     /* Pass image to the target */
-    return gx_default_begin_typed_image(dev, pis, pmat,
+    return gx_forward_begin_typed_image(dev, pis, pmat,
 			    pic, prect, pdcolor, pcpath, mem, pinfo);
 }
 
@@ -4100,6 +4122,14 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
 	    p14dev = (pdf14_clist_device *)(*pcdev);
 	    p14dev->saved_target_color_info = dev->color_info;
 	    dev->color_info = (*pcdev)->color_info;
+	    p14dev->saved_target_encode_color = dev->procs.encode_color;
+	    p14dev->saved_target_decode_color = dev->procs.decode_color;
+	    dev->procs.encode_color = p14dev->procs.encode_color = p14dev->my_encode_color;
+	    dev->procs.decode_color = p14dev->procs.decode_color = p14dev->my_decode_color;
+	    p14dev->saved_target_get_color_mapping_procs = dev->procs.get_color_mapping_procs;
+	    p14dev->saved_target_get_color_comp_index = dev->procs.get_color_comp_index;
+	    dev->procs.get_color_mapping_procs = p14dev->procs.get_color_mapping_procs = p14dev->my_get_color_mapping_procs;
+	    dev->procs.get_color_comp_index = p14dev->procs.get_color_comp_index = p14dev->my_get_color_comp_index;
 	    p14dev->save_get_cmap_procs = pis->get_cmap_procs;
 	    pis->get_cmap_procs = pdf14_get_cmap_procs;
 	    gx_set_cmap_procs(pis, dev);
@@ -4143,8 +4173,12 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
      */
     switch (pdf14pct->params.pdf14_op) {
 	case PDF14_PUSH_DEVICE:
+#	    if 0 /* Disabled because *p14dev has no forwarding methods during the clist playback. 
+		    This code is not executed while clist writing. */
 	    p14dev->saved_target_color_info = cdev->color_info;
 	    cdev->color_info = p14dev->color_info;
+	     */
+#	    endif
 	    /*
 	     * If we are blending using spot colors (i.e. the output device
 	     * supports spot colors) then we need to transfer compressed
@@ -4185,7 +4219,10 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
 	    }
 	    break;
 	case PDF14_POP_DEVICE:
+#	    if 0 /* Disabled because *p14dev has no forwarding methods during the clist playback. 
+		    This code is not executed while clist writing. */
 	    cdev->color_info = p14dev->saved_target_color_info;
+#	    endif
 	    break;
 	default:
 	    break;		/* do nothing for remaining ops */
