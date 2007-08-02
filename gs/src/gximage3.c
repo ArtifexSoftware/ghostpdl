@@ -534,7 +534,7 @@ gx_image3_plane_data(gx_image_enum_common_t * info,
 
 		mask_plane.data = mptr;
 		mask_plane.data_x = 0;
-		/* raster doesn't matter */
+		mask_plane.raster = 0; /* raster doesn't matter, pacify Valgrind */
 		pixel_plane.data = pptr;
 		pixel_plane.data_x = 0;
 		/* raster doesn't matter */
