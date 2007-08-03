@@ -369,11 +369,16 @@ xps_draw_arc_segment(xps_context_t *ctx,
     gs_rotate(ctx->pgs, rotation_angle);
     gs_scale(ctx->pgs, size.x, size.y);
 
-    if ((code = gs_arcn(ctx->pgs, 0, 0, 1,
-		    radians_to_degrees * start_angle,
-		    radians_to_degrees * (start_angle + delta_angle))) < 0)
-	return gs_rethrow(code, "arc failed");
+    {
+        static int (*const arc_procs[])(gs_state *, floatp xc, floatp yc,
+                                        floatp r, floatp ang1, floatp ang2)
+                    = {gs_arc, gs_arcn};
 
+        if ((code = (*arc_procs[is_clockwise ? 0 : 1])
+            (ctx->pgs, 0, 0, 1, radians_to_degrees * start_angle,
+             radians_to_degrees * (start_angle + delta_angle))) < 0)
+            return gs_rethrow(code, "arc failed");
+    }
     /* restore the ctm */
     gs_setmatrix(ctx->pgs, &save_ctm);
 
