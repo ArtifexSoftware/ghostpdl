@@ -179,7 +179,7 @@ private int
 contrib_pixels(double scale)
 {
     return (int)(fWidthIn / (scale >= 1.0 ? 1.0 : max(scale, min_scale))
-		 * 2 + 1);
+		 * 2 + 1.5);
 }
 
 /* Pre-calculate filter contributions for a row or a column. */
