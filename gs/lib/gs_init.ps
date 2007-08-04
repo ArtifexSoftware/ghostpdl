@@ -1519,6 +1519,14 @@ setpacking
   .setdefaultbgucr
 } bind def
 
+% Rendering intent mapping for setcolorrendering1 and PDF interpreter
+/.renderingintentdict mark
+  /Perceptual 0
+  /RelativeColorimetric 1
+  /Saturation 2
+  /AbsoluteColorimetric 3
+.dicttomark readonly def
+
 % Load basic color support
 %% Replace 1 (gs_cspace.ps)
 (gs_cspace.ps) runlibfile
@@ -2150,6 +2158,7 @@ currentdict /.imagemasktypes .undef
 currentdict /.patterntypes .undef
 currentdict /.shadingtypes .undef
 currentdict /.wheredict .undef
+currentdict /.renderingintentdict .undef
 end
 
 % Clean up VM, and enable GC.

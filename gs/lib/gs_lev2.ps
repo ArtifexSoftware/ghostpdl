@@ -770,6 +770,10 @@ end
 /.setcolorrendering1 where { pop } { (%END CRD) .skipeof } ifelse
 
 .colorrenderingtypes 1 {
+  % Adobe ProcSet "Adobe_AGM_Core 2.0 0" places an /Intent key into CRD's 
+  dup /Intent .knownget {
+    //.renderingintentdict exch .knownget { .setrenderingintent } if
+  } if
   dup .buildcolorrendering1 .setcolorrendering1
 } .bind put
 
