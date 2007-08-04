@@ -680,30 +680,30 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
 	 * anyway).
 	 */
 	pfont = r_ptr(pfid, gs_font);
-	if (pfont->base == pfont) {	/* original font */
-	    if (!level2_enabled)
-		return_error(e_invalidfont);
-	    if (obj_eq(pfont->memory, pfont_dict(pfont), op)) {
+	/*
+	 * If the following condition is false this is a re-encoded font,
+         * or some other questionable situation in which the FID
+	 * was preserved.  Pretend the FID wasn't there.
+	 */
+	if (obj_eq(pfont->memory, pfont_dict(pfont), op)) {
+	    if (pfont->base == pfont) {	/* original font */
+	        if (!level2_enabled)
+		    return_error(e_invalidfont);
 		*ppfont = pfont;
 		return 1;
-	    }
-	    /*
-	     * This is a re-encoded font, or some other
-	     * questionable situation in which the FID
-	     * was preserved.  Pretend the FID wasn't there.
-	     */
-	} else {		/* This was made by makefont or scalefont. */
-	    /* Just insert the new name. */
-	    gs_matrix mat;
-	    ref fname;			/* t_string */
+	    } else {		/* This was made by makefont or scalefont. */
+	        /* Just insert the new name. */
+	        gs_matrix mat;
+	        ref fname;			/* t_string */
 
-	    code = sub_font_params(imemory, op, &mat, NULL, &fname);
-	    if (code < 0)
-		return code;
-	    code = 1;
-	    copy_font_name(&pfont->font_name, &fname);
-	    goto set_name;
-	}
+	        code = sub_font_params(imemory, op, &mat, NULL, &fname);
+	        if (code < 0)
+		    return code;
+	        code = 1;
+	        copy_font_name(&pfont->font_name, &fname);
+	        goto set_name;
+	    }
+        }
     }
     /* This is a new font. */
     if (!r_has_attr(aop, a_write))
