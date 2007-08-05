@@ -682,6 +682,7 @@ currentdict /.pdf_hook_DSC_Creator undef
   /EmbedAllFonts { }
   /MaxSubsetPct { }
   /SubsetFonts { }
+  /DSCEncodingToUnicode { }
 .dicttomark readonly def
 /.distillerdevice
  { currentdevice .devicename dup /pdfwrite eq exch /ps2write eq or
@@ -754,6 +755,37 @@ currentdict /.pdf_hook_DSC_Creator undef
   } ifelse
 } .bind odef
 
+% Create a table for translation DSC comments into Unicode UTF-16
+/.make_DSC_translation_table {        % <encoding> .make_DSC_translation_table <array>
+  dup type /stringtype eq {
+    cvn
+  } if
+  dup type /nametype eq {
+    /Encoding findresource
+  } if
+  dup length array exch                   % [out] [in]
+  0 1 2 index length 1 sub {              % [out] [in] i
+    dup 2 index exch get                       % [out] [in] i n
+    dup dup null eq exch /.notdef eq or {
+      pop -1
+    } {
+      dup //AdobeGlyphList exch .knownget {  % [out] [in] i n c
+      dup type dup /arraytype eq exch /packedarraytype eq or {
+        0 get % fixme: using the 1st char
+      } if
+      exch pop                               % [out] [in] i c
+      } {                                    % [out] [in] i n
+        (DSCEncoding defines a character that is not in AdobeGlyphList : ) 
+        exch .namestring concatstrings =
+        /.make_DSC_translation_table cvx /undefined signalerror 
+      } ifelse
+    } ifelse
+    3 index                                  % [out] [in] i c [out]
+    3 1 roll put                             % [out] [in]
+  } for
+  pop                                        % [out]
+} bind def 
+
 1000 % priority
 {
   % Note, this may not work if the initial device is not pdfwrite
@@ -792,6 +824,14 @@ currentdict /.pdf_hook_DSC_Creator undef
         systemdict 2 index known { pop pop } { def } ifelse
       } forall
     } repeat
+    currentdevice .devicename /pdfwrite eq {
+      systemdict /PDFX known systemdict /PDFA known or {
+      /DSCEncoding where {
+          /DSCEncoding get .make_DSC_translation_table
+          /DSCEncodingToUnicode exch def 
+        } if
+      } if
+    } if
     currentdict end .setdistillerparams
     .distillerdevice //null false mark .putdeviceparams 
     dup type /booleantype eq not { cleartomark pop } if pop pop

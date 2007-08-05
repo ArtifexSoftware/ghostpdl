@@ -433,6 +433,21 @@ which may appear in future. If both <b><tt>DocumentUUID</tt></b>
 and <b><tt>InstanceUUID</tt></b> are specified, <b><tt>DocumentTimeSeq</tt></b> is being ignored.
 </dl>
 
+<dl>
+<dt><b><tt>-sDSCEncoding=</tt></b><em>string</em>
+<dd>Defines a name of Postscript encoding in which
+DSC comments are encoded in the source document.
+If specified, the comments are converted
+from that encoding into Unicode UTF-8 when writing <b><tt>Metadata</b></tt>.
+If not specified, the comments are copied to <b><tt>Metadata</b></tt>
+with no conversion. Note that Adobe Distiller for 
+Windows uses the default locale's code page
+for this translation, so it's result may differ from Ghostscript.
+Adobe Acrobat appears to use <b><tt>PDFDocEncoding</b></tt> when
+displaying document's properties,
+so we recommend this value.
+</dl>
+
 <p>
 <b><tt>ps2pdf</tt></b> recognizes all of the Acrobat Distiller 5 parameters
 defined in the DistillerParameters document included in the 

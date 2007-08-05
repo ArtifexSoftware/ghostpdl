@@ -450,6 +450,7 @@ struct gx_device_pdf_s {
 			      a bitmap representation of a shading.
 			      (Bigger shadings to be downsampled). */
     long MaxInlineImageSize;
+    gs_param_int_array DSCEncodingToUnicode;
     /* Encryption parameters */
     gs_param_string OwnerPassword;
     gs_param_string UserPassword;
@@ -673,8 +674,8 @@ struct gx_device_pdf_s {
  m(28,sbstack) m(29,substream_Resources) m(30,font3)\
  m(31,accumulating_substream_resource) \
  m(32,pres_soft_mask_dict) m(33,PDFXTrimBoxToMediaBoxOffset.data)\
- m(34,PDFXBleedBoxToTrimBoxOffset.data)
-#define gx_device_pdf_num_ptrs 35
+ m(34,PDFXBleedBoxToTrimBoxOffset.data) m(35, DSCEncodingToUnicode.data)
+#define gx_device_pdf_num_ptrs 36
 #define gx_device_pdf_do_param_strings(m)\
     m(0, OPDFReadProcsetPath) m(1, OwnerPassword) m(2, UserPassword) m(3, NoEncrypt)\
     m(4, DocumentUUID) m(5, InstanceUUID)
