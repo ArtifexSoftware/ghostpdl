@@ -458,6 +458,8 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     int is_sideways = 0;
     int bidi_level = 0;
 
+    gs_rect saved_bounds;
+
     /*
      * Extract attributes and extended attributes.
      */
@@ -578,7 +580,7 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	if (clip_tag)
 	    xps_parse_path_geometry(ctx, dict, clip_tag);
 
-	xps_clip(ctx);
+	xps_clip(ctx, &saved_bounds);
     }
 
     font_size = atof(font_size_att);
@@ -630,6 +632,11 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     xps_end_opacity(ctx, dict, opacity_att, opacity_mask_tag);
 
     gs_grestore(ctx->pgs);
+
+    if (clip_att || clip_tag)
+    {
+	xps_unclip(ctx, &saved_bounds);
+    }
 
     return 0;
 }

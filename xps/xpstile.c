@@ -22,6 +22,7 @@ static int
 xps_paint_tiling_brush_clipped(struct tile_closure_s *c)
 {
     xps_context_t *ctx = c->ctx;
+    gs_rect saved_bounds;
     int code;
 
     gs_moveto(ctx->pgs, c->viewbox.p.x, c->viewbox.p.y);
@@ -32,7 +33,21 @@ xps_paint_tiling_brush_clipped(struct tile_closure_s *c)
     gs_clip(ctx->pgs);
     gs_newpath(ctx->pgs);
 
+    /* tile paint functions use a different device
+     * with a different coord space, so we have to
+     * tweak the bounds.
+     */
+
+    saved_bounds = ctx->bounds;
+    dprintf4("tiled bounds [%g %g %g %g]\n",
+	    saved_bounds.p.x, saved_bounds.p.y,
+	    saved_bounds.q.x, saved_bounds.q.y);
+
+    ctx->bounds = c->viewbox; // transform?
+
     code = c->func(c->ctx, c->dict, c->tag, c->user);
+
+    ctx->bounds = saved_bounds;
 
     return code;
 }
@@ -221,7 +236,9 @@ xps_parse_tiling_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
     }
     else
     {
-	xps_clip(ctx);
+	gs_rect saved_bounds;
+
+	xps_clip(ctx, &saved_bounds);
 
 	gs_concat(ctx->pgs, &transform);
 
@@ -238,6 +255,8 @@ xps_parse_tiling_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
 	gs_newpath(ctx->pgs);
 
 	func(ctx, dict, root, user);
+
+	xps_unclip(ctx, &saved_bounds);
     }
 
     xps_end_opacity(ctx, dict, opacity_att, NULL);

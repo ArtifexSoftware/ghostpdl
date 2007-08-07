@@ -1,13 +1,157 @@
 #include "ghostxps.h"
 
-int
-xps_clip(xps_context_t *ctx)
+static void
+xps_grow_rect(gs_rect *rect, float x, float y)
 {
+    if (x < rect->p.x) rect->p.x = x;
+    if (y < rect->p.y) rect->p.y = y;
+    if (x > rect->q.x) rect->q.x = x;
+    if (y > rect->q.y) rect->q.y = y;
+}
+
+void
+xps_bounds_in_user_space(xps_context_t *ctx, gs_rect *user)
+{
+    gs_matrix ctm;
+    gs_matrix inv;
+    gs_point a, b, c, d;
+    float x0, y0, x1, y1;
+
+    gs_currentmatrix(ctx->pgs, &ctm);
+    gs_matrix_invert(&ctm, &inv);
+
+    gs_point_transform(ctx->bounds.p.x, ctx->bounds.p.y, &inv, &a);
+    gs_point_transform(ctx->bounds.p.x, ctx->bounds.q.y, &inv, &b);
+    gs_point_transform(ctx->bounds.q.x, ctx->bounds.q.y, &inv, &c);
+    gs_point_transform(ctx->bounds.q.x, ctx->bounds.p.y, &inv, &d);
+
+    user->p.x = MIN(MIN(a.x, b.x), MIN(c.x, d.x));
+    user->p.y = MIN(MIN(a.y, b.y), MIN(c.y, d.y));
+    user->q.x = MAX(MAX(a.x, b.x), MAX(c.x, d.x));
+    user->q.y = MAX(MAX(a.y, b.y), MAX(c.y, d.y));
+
+#if 0
+    user->p.x = 0.0;
+    user->p.y = 0.0;
+    user->q.x = 1000.0;
+    user->q.y = 1000.0;
+#endif
+
+}
+
+static void
+xps_update_bounds(xps_context_t *ctx, gs_rect *save)
+{
+    segment *seg;
+    curve_segment *cseg;
+    gs_point pt;
+    gs_rect rc;
+
+    save->p.x = ctx->bounds.p.x;
+    save->p.y = ctx->bounds.p.y;
+    save->q.x = ctx->bounds.q.x;
+    save->q.y = ctx->bounds.q.y;
+
+    /* get bounds of current path (that is about to be clipped) */
+    /* the coordinates of the path segments are already in device space (yay!) */
+
+    seg = (segment*)ctx->pgs->path->first_subpath;
+    rc.p.x = rc.q.x = fixed2float(seg->pt.x);
+    rc.p.y = rc.q.y = fixed2float(seg->pt.y);
+
+    while (seg)
+    {
+	switch (seg->type)
+	{
+	case s_start:
+	    xps_grow_rect(&rc, fixed2float(seg->pt.x), fixed2float(seg->pt.y));
+	    break;
+	case s_line:
+	    xps_grow_rect(&rc, fixed2float(seg->pt.x), fixed2float(seg->pt.y));
+	    break;
+	case s_line_close:
+	    break;
+	case s_curve:
+	    cseg = (curve_segment*)seg;
+	    xps_grow_rect(&rc, fixed2float(cseg->p1.x), fixed2float(cseg->p1.y));
+	    xps_grow_rect(&rc, fixed2float(cseg->p2.x), fixed2float(cseg->p2.y));
+	    xps_grow_rect(&rc, fixed2float(seg->pt.x), fixed2float(seg->pt.y));
+	    break;
+	}
+	seg = seg->next;
+    }
+
+    /* intersect with old bounds, and fix degenerate case */
+
+    rect_intersect(ctx->bounds, rc);
+
+    if (ctx->bounds.q.x < ctx->bounds.p.x)
+	ctx->bounds.q.x = ctx->bounds.p.x;
+    if (ctx->bounds.q.y < ctx->bounds.p.y)
+	ctx->bounds.q.y = ctx->bounds.p.y;
+}
+
+static void
+xps_restore_bounds(xps_context_t *ctx, gs_rect *save)
+{
+    ctx->bounds.p.x = save->p.x;
+    ctx->bounds.p.y = save->p.y;
+    ctx->bounds.q.x = save->q.x;
+    ctx->bounds.q.y = save->q.y;
+}
+
+void
+xps_debug_bounds(xps_context_t *ctx)
+{
+    gs_matrix mat;
+
+    gs_gsave(ctx->pgs);
+
+    dprintf6("bounds: debug [%g %g %g %g] w=%g h=%g\n",
+	    ctx->bounds.p.x, ctx->bounds.p.y,
+	    ctx->bounds.q.x, ctx->bounds.q.y,
+	    ctx->bounds.q.x - ctx->bounds.p.x,
+	    ctx->bounds.q.y - ctx->bounds.p.y);
+
+    gs_make_identity(&mat);
+    gs_setmatrix(ctx->pgs, &mat);
+
+    gs_setgray(ctx->pgs, 0.3);
+    gs_moveto(ctx->pgs, ctx->bounds.p.x, ctx->bounds.p.y);
+    gs_lineto(ctx->pgs, ctx->bounds.q.x, ctx->bounds.q.y);
+    gs_moveto(ctx->pgs, ctx->bounds.q.x, ctx->bounds.p.y);
+    gs_lineto(ctx->pgs, ctx->bounds.p.x, ctx->bounds.q.y);
+
+    gs_moveto(ctx->pgs, ctx->bounds.p.x, ctx->bounds.p.y);
+    gs_lineto(ctx->pgs, ctx->bounds.p.x, ctx->bounds.q.y);
+    gs_lineto(ctx->pgs, ctx->bounds.q.x, ctx->bounds.q.y);
+    gs_lineto(ctx->pgs, ctx->bounds.q.x, ctx->bounds.p.y);
+    gs_closepath(ctx->pgs);
+
+    gs_stroke(ctx->pgs);
+
+    gs_grestore(ctx->pgs);
+}
+
+int
+xps_unclip(xps_context_t *ctx, gs_rect *saved_bounds)
+{
+    xps_restore_bounds(ctx, saved_bounds);
+    return 0;
+}
+
+int
+xps_clip(xps_context_t *ctx, gs_rect *saved_bounds)
+{
+    xps_update_bounds(ctx, saved_bounds);
+
     if (ctx->fill_rule == 0)
 	gs_eoclip(ctx->pgs);
     else
 	gs_clip(ctx->pgs);
+
     gs_newpath(ctx->pgs);
+
     return 0;
 }
 
@@ -674,6 +818,8 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     float miterlimit;
     float argb[4];
 
+    gs_rect saved_bounds;
+
     gs_gsave(ctx->pgs);
 
     /*
@@ -820,7 +966,7 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	if (clip_tag)
 	    xps_parse_path_geometry(ctx, dict, clip_tag);
 
-	xps_clip(ctx);
+	xps_clip(ctx, &saved_bounds);
     }
 
     xps_begin_opacity(ctx, dict, opacity_att, opacity_mask_tag);
@@ -876,6 +1022,11 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	gs_strokepath(ctx->pgs);
 
 	xps_parse_brush(ctx, dict, stroke_tag);
+    }
+
+    if (clip_att || clip_tag)
+    {
+	xps_unclip(ctx, &saved_bounds);
     }
 
     xps_end_opacity(ctx, dict, opacity_att, opacity_mask_tag);

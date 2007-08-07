@@ -52,6 +52,16 @@
 #define dpf
 #endif
 
+#ifndef MIN
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#endif
+#ifndef MAX
+#define MAX(a,b) ((a) < (b) ? (b) : (a))
+#endif
+#ifndef ABS
+#define ABS(a) ((a) < 0 ? -(a) : (a))
+#endif
+
 /*
  * Forward declarations.
  */
@@ -178,6 +188,13 @@ struct xps_context_s
      * 1=nonzero, 0=evenodd
      */
     int fill_rule;
+
+    /* We often need the bounding box for the current
+     * area of the page affected by drawing operations.
+     * We keep these bounds updated every time we
+     * clip. The coordinates are in device space.
+     */
+    gs_rect bounds;
 };
 
 struct xps_part_s
@@ -323,8 +340,10 @@ int xps_parse_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
 int xps_parse_element(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
 
 void xps_set_color(xps_context_t *ctx, float *argb);
-int xps_clip(xps_context_t *ctx);
+int xps_clip(xps_context_t *ctx, gs_rect *saved_bounds);
+int xps_unclip(xps_context_t *ctx, gs_rect *saved_bounds);
 int xps_fill(xps_context_t *ctx);
+void xps_bounds_in_user_space(xps_context_t *ctx, gs_rect *user);
 
 /*
  * Static XML resources.

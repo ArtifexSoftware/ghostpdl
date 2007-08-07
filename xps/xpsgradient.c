@@ -224,7 +224,6 @@ xps_draw_one_radial_gradient(xps_context_t *ctx,
     gs_shading_t *shading;
     gs_shading_R_params_t params;
     gs_color_space *colorspace;
-    gs_fixed_rect rect;
     int code;
 
     gs_shading_R_params_init(&params);
@@ -252,11 +251,6 @@ xps_draw_one_radial_gradient(xps_context_t *ctx,
     if (code < 0)
 	return gs_throw(-1, "gs_shading_R_init failed");
 
-    rect.p.x = int2fixed(-10000);
-    rect.p.y = int2fixed(-10000);
-    rect.q.x = int2fixed(10000);
-    rect.q.y = int2fixed(10000);
-
     code = gs_shfill(ctx->pgs, shading);
     if (code < 0)
     {
@@ -282,7 +276,6 @@ xps_draw_one_linear_gradient(xps_context_t *ctx,
     gs_shading_t *shading;
     gs_shading_A_params_t params;
     gs_color_space *colorspace;
-    gs_fixed_rect rect;
     int code;
 
     gs_shading_A_params_init(&params);
@@ -307,11 +300,6 @@ xps_draw_one_linear_gradient(xps_context_t *ctx,
     code = gs_shading_A_init(&shading, &params, mem);
     if (code < 0)
 	return gs_throw(-1, "gs_shading_A_init failed");
-
-    rect.p.x = int2fixed(-10000);
-    rect.p.y = int2fixed(-10000);
-    rect.q.x = int2fixed(10000);
-    rect.q.y = int2fixed(10000);
 
     code = gs_shfill(ctx->pgs, shading);
     if (code < 0)
@@ -480,6 +468,8 @@ xps_parse_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *r
     gs_matrix transform;
     int spread_method;
 
+    gs_rect saved_bounds;
+
     gs_function_t *color_func;
     gs_function_t *opacity_func;
     int has_opacity = 0;
@@ -538,7 +528,7 @@ xps_parse_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *r
 
     has_opacity = xps_gradient_has_transparent_colors(stop_offsets, stop_colors, stop_count);
 
-    xps_clip(ctx);
+    xps_clip(ctx, &saved_bounds);
 
     gs_gsave(ctx->pgs);
 
@@ -558,11 +548,7 @@ xps_parse_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *r
 	    gs_transparency_group_params_t tgp;
 	    gs_rect bbox;
 
-	    /* ahem. FIXME. */
-	    bbox.p.x = 0;
-	    bbox.p.y = 0;
-	    bbox.q.x = 1000;
-	    bbox.q.y = 1000;
+	    xps_bounds_in_user_space(ctx, &bbox);
 
 	    gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Alpha);
 	    gs_begin_transparency_mask(ctx->pgs, &params, &bbox, 0);
@@ -584,6 +570,7 @@ xps_parse_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *r
 
     gs_grestore(ctx->pgs);
 
+    xps_unclip(ctx, &saved_bounds);
 
     xps_free_gradient_stop_function(ctx, opacity_func);
     xps_free_gradient_stop_function(ctx, color_func);

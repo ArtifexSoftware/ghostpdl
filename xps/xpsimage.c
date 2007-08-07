@@ -224,11 +224,7 @@ xps_paint_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 
 	dputs("xps_paint_image_brush with alpha channel\n");
 
-	/* ahem. FIXME. */
-	bbox.p.x = 0;
-	bbox.p.y = 0;
-	bbox.q.x = 1000;
-	bbox.q.y = 1000;
+	xps_bounds_in_user_space(ctx, &bbox);
 
 	gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Alpha);
 	gs_begin_transparency_mask(ctx->pgs, &params, &bbox, 0);

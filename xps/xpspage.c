@@ -14,6 +14,8 @@ int xps_parse_canvas(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     xps_item_t *clip_tag = NULL;
     xps_item_t *opacity_mask_tag = NULL;
 
+    gs_rect saved_bounds;
+
     gs_matrix transform;
 
     transform_att = xps_att(root, "RenderTransform");
@@ -54,16 +56,13 @@ int xps_parse_canvas(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	xps_parse_matrix_transform(ctx, transform_tag, &transform);
     gs_concat(ctx->pgs, &transform);
 
-    if (clip_att)
+    if (clip_att || clip_tag)
     {
-	xps_parse_abbreviated_geometry(ctx, clip_att);
-	xps_clip(ctx);
-    }
-
-    if (clip_tag)
-    {
-	xps_parse_path_geometry(ctx, dict, clip_tag);
-	xps_clip(ctx);
+	if (clip_att)
+	    xps_parse_abbreviated_geometry(ctx, clip_att);
+	if (clip_tag)
+	    xps_parse_path_geometry(ctx, dict, clip_tag);
+	xps_clip(ctx, &saved_bounds);
     }
 
     xps_begin_opacity(ctx, dict, opacity_att, opacity_mask_tag);
@@ -71,6 +70,11 @@ int xps_parse_canvas(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     for (node = xps_down(root); node; node = xps_next(node))
     {
 	xps_parse_element(ctx, dict, node);
+    }
+
+    if (clip_att || clip_tag)
+    {
+	xps_unclip(ctx, &saved_bounds);
     }
 
     xps_end_opacity(ctx, dict, opacity_att, opacity_mask_tag);
@@ -93,6 +97,9 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     char *width_att;
     char *height_att;
     int code;
+    gs_matrix ctm;
+    gs_point pt0, pt1;
+    gs_rect rc;
 
     dprintf1("processing page %s\n", part->name);
 
@@ -166,6 +173,14 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	code = gs_erasepage(pgs);
 	if (code < 0)
 	    return gs_rethrow(code, "cannot clear page");
+
+	/* set initial bounds to cover the page */
+	gs_currentmatrix(pgs, &ctm);
+	gs_point_transform(0.0, 0.0, &ctm, &rc.p);
+	gs_point_transform(atoi(width_att), atoi(height_att), &ctm, &rc.q);
+	if (rc.p.x > rc.q.x) { float t = rc.p.x; rc.p.x = rc.q.x; rc.q.x = t; }
+	if (rc.p.y > rc.q.y) { float t = rc.p.y; rc.p.y = rc.q.y; rc.q.y = t; }
+	ctx->bounds = rc;
     }
 
     code = gs_push_pdf14trans_device(ctx->pgs);

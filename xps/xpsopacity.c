@@ -17,21 +17,16 @@ xps_begin_opacity(xps_context_t *ctx, xps_resource_t *dict, char *opacity_att, x
 	opacity = atof(opacity_att);
     gs_setopacityalpha(ctx->pgs, opacity);
 
-    // TODO: this is not good. we need to get visible bbox somehow.
-    bbox.p.x = 0.0;
-    bbox.p.y = 0.0;
-    bbox.q.x = 1000.0;
-    bbox.p.y = 1000.0;
+    xps_bounds_in_user_space(ctx, &bbox);
 
     if (opacity_mask_tag)
     {
-	/* TODO: opacity masks with image brushes don't work */
-
 	dprintf1("begin opacity mask (%s)\n", xps_tag(opacity_mask_tag));
 
 	gs_trans_mask_params_init(&tmp, TRANSPARENCY_MASK_Luminosity);
 	gs_begin_transparency_mask(ctx->pgs, &tmp, &bbox, 0);
 
+	/* Need a path to fill/clip for the brush */
 	gs_moveto(ctx->pgs, bbox.p.x, bbox.p.y);
 	gs_lineto(ctx->pgs, bbox.p.x, bbox.q.y);
 	gs_lineto(ctx->pgs, bbox.q.x, bbox.q.y);
