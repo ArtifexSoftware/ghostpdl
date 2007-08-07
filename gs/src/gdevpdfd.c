@@ -455,20 +455,11 @@ prepare_fill_with_clip(gx_device_pdf *pdev, const gs_imager_state * pis,
 	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath)
 {
     bool new_clip;
-    int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
-    gs_fixed_rect cbox;
     int code;
 
-    /*
-     * Check for an empty clipping path.
-     */
-    if (pcpath) {
-	gx_cpath_outer_box(pcpath, &cbox);
-	if (cbox.p.x >= cbox.q.x || cbox.p.y >= cbox.q.y)
-	    return 1;		/* empty clipping path */
-    }
     if (gx_dc_is_pure(pdcolor)) {
-	/*
+        int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
+ 	/*
 	 * Make a special check for the initial fill with white,
 	 * which shouldn't cause the page to be opened.
 	 */
@@ -480,7 +471,17 @@ prepare_fill_with_clip(gx_device_pdf *pdev, const gs_imager_state * pis,
 		return 1;
         }
     }
-    *box = cbox;
+    /*
+     * Check for an empty clipping path.
+     */
+    if (pcpath) {
+        gs_fixed_rect cbox;
+
+	gx_cpath_outer_box(pcpath, &cbox);
+	if (cbox.p.x >= cbox.q.x || cbox.p.y >= cbox.q.y)
+	    return 1;		/* empty clipping path */
+        *box = cbox;
+    }
     new_clip = pdf_must_put_clip_path(pdev, pcpath);
     if (have_path || pdev->context == PDF_IN_NONE || new_clip) {
 	if (new_clip)
