@@ -5,9 +5,9 @@
 %%IncludeResource: CMap (ETenms-B5-H)
 %%BeginResource: CMap (ETenms-B5-V)
 %%Title: (ETenms-B5-V Adobe CNS1 0)
-%%Version: 7.001
+%%Version: 10.000
 %%Copyright: -----------------------------------------------------------
-%%Copyright: Copyright 1990-1997 Adobe Systems Incorporated.
+%%Copyright: Copyright 1990-2001 Adobe Systems Incorporated.
 %%Copyright: All Rights Reserved.
 %%Copyright:
 %%Copyright: Patents Pending
@@ -41,18 +41,23 @@ begincmap
 end def
 
 /CMapName /ETenms-B5-V def
-/CMapVersion 7.001 def
+/CMapVersion 10.000 def
 /CMapType 1 def
+
+/XUID [1 10 25597] def
+
 /WMode 1 def
 
+6 begincidchar
+<a14b> 13646
+<a14c> 109
+<a156> 312
+<a158> 122
+<a15a> 13743
+<a15c> 13745
+endcidchar
 
-18 begincidrange
-<a14b> <a14b> 13646
-<a14c> <a14c> 109
-<a156> <a156> 312
-<a158> <a158> 122
-<a15a> <a15a> 13743
-<a15c> <a15c> 13745
+12 begincidrange
 <a15d> <a15e> 130
 <a161> <a162> 134
 <a165> <a166> 138
@@ -71,5 +76,6 @@ endcmap
 CMapName currentdict /CMap defineresource pop
 end
 end
+
 %%EndResource
 %%EOF

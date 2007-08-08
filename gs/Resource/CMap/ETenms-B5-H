@@ -1,11 +1,13 @@
 %!PS-Adobe-3.0 Resource-CMap
 %%DocumentNeededResources: ProcSet (CIDInit)
+%%DocumentNeededResources: CMap (ETen-B5-H)
 %%IncludeResource: ProcSet (CIDInit)
+%%IncludeResource: CMap (ETen-B5-H)
 %%BeginResource: CMap (ETenms-B5-H)
 %%Title: (ETenms-B5-H Adobe CNS1 0)
-%%Version: 7.001
+%%Version: 10.000
 %%Copyright: -----------------------------------------------------------
-%%Copyright: Copyright 1990-1997 Adobe Systems Incorporated.
+%%Copyright: Copyright 1990-2001 Adobe Systems Incorporated.
 %%Copyright: All Rights Reserved.
 %%Copyright:
 %%Copyright: Patents Pending
@@ -39,17 +41,21 @@ begincmap
 end def
 
 /CMapName /ETenms-B5-H def
-/CMapVersion 7.001 def
+/CMapVersion 10.000 def
 /CMapType 1 def
+
+/XUID [1 10 25596] def
+
 /WMode 0 def
 
 1 begincidrange
-<20> <7e> 1 
+<20> <7e> 1
 endcidrange
 
 endcmap
 CMapName currentdict /CMap defineresource pop
 end
 end
+
 %%EndResource
 %%EOF
