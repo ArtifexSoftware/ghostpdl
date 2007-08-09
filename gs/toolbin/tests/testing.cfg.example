@@ -1,48 +1,62 @@
 # paths
 
+root		/home/regression/
+
+# latest revision built in root
 gsroot		/home/regression/HEAD/
+# latest revision installed to gshead
+installtree	/home/regression/gshead/
+# latest revision path to executable
+headinstallpath	/home/regression/gshead/bin/gs
+
 comparefiledir	/home/regression/comparefiles/
+comparefileall 	/home/regression/comparefiles/
+
 crashfiledir	/home/regression/crashfiles/
 codedir		/home/regression/regression/
 datadir		/home/regression/regression/
-scratchdir	/home/regression/regression/
 logdir		/home/regression/regression/logs/
+testdir		/home/regression/regression/test/
+
 dailydir	/home/regression/regression/daily/
 rasterdbdir	/home/regression/regression/raster/
+rasterdir	/home/regression/regression/raster/
 fontdir		/home/regression/fonts/
-repository	http://svn.ghostscript.com:8080/ghostscript/
+workdir		/home/regression/regression/work/
 
 # programs
-
-baselinegs	/home/regression/gs800/bin/gs
-comparegs	/home/regression/gshead/bin/gs
 fuzzy		/home/regression/regression/fuzzy
 
-# filenames
-
-testdatadb	/home/regression/regression/testdata.db
-log_stdout	/home/regression/regression/logs/gs-stdout.log
-log_stderr	/home/regression/regression/logs/gs-stderr.log
-log_baseline	/home/regression/regression/logs/baseline.log
-log_regression	/home/regression/regression/logs/regression.log
+# data filenames
+baselinedb	/home/regression/regression/baseline/baseline.db
+baseline_log	/home/regression/regression/baseline/baseline.log
 
 # nightly report options
-
 mail_server	 localhost
 report_to	 gs-regression@ghostscript.com
 report_from	 gs-regression@ghostscript.com
+mailkeyword	 xefitra
 
-regression_script	/home/regression/regression/run_regression
-diff_script		/home/regression/regression/testdiff
-get_baselines		/home/regression/regression/get_baselines
+# scripts
+run_regression_script	/home/regression/regression/run_regression.py
+testdiff_script		/home/regression/regression/testdiff.py
+get_baseline_log_script	/home/regression/regression/get_baseline_log.py
 
-update_log_stdout	/home/regression/regression/logs/update-stdout.log
-update_log_stderr	/home/regression/regression/logs/update-stderr.log
-config_log_stdout	/home/regression/regression/logs/config-stdout.log
-config_log_stderr	/home/regression/regression/logs/config-stderr.log
-make_log_stdout		/home/regression/regression/logs/make-stdout.log
-make_log_stderr		/home/regression/regression/logs/make-stderr.log
-install_log_stdout	/home/regression/regression/logs/install-stdout.log
-install_log_stderr	/home/regression/regression/logs/install-stderr.log
+# put into logdir defined above
+update_stdout	update-stdout
+update_stderr	update-stderr
+config_stdout	config-stdout
+config_stderr	config-stderr
+make_stdout	make-stdout
+make_stderr	make-stderr
+install_stdout	install-stdout
+install_stderr	install-stderr
+gs_stdout	gs-stdout
+gs_stderr	gs-stderr
+differences	differences
+baselines	baseline_changes
+regression	regression
+cumulative	cumulative
+email		email
+history		history
 
-rotate			7
