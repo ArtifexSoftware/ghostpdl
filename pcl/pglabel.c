@@ -569,19 +569,17 @@ hpgl_buffer_char(hpgl_state_t *pgls, byte ch)
 }
 
 /*
- * Test whether we can use show instead of charpath followed by
- * a GL/2 fill.  If so, the library will be able to use its
- * character cache.
+ * Test if the gl/2 drawing primitives should draw the character or
+ * "show" can be used directly.
  */
-
 private bool
-hpgl_use_show(hpgl_state_t *pgls)
+hpgl_use_show(hpgl_state_t *pgls, pl_font_t *pfont)
 {
 
     /* Show cannot be used if CF is not default since the character
        may require additional processing by the line drawing code. */
-    if ( (pgls->g.character.fill_mode == 0) &&
-	 (pgls->g.character.edge_pen == 0) )
+    if ( (pgls->g.character.fill_mode == 0 && pgls->g.character.edge_pen == 0) ||
+         (pfont->scaling_technology == plfst_bitmap) )
 	return true;
     else
 	return false;
@@ -716,7 +714,7 @@ hpgl_print_char(
     {
         gs_font *       pfont = pgls->g.font->pfont;
         bool            bitmaps_allowed = pgls->g.bitmap_fonts_allowed;
-        bool            use_show = hpgl_use_show(pgls);
+        bool            use_show = hpgl_use_show(pgls, font);
         gs_matrix       pre_rmat, rmat, advance_mat;
         int             angle = -1;	/* a multiple of 90 if used */
 	gs_text_enum_t *penum;
@@ -851,11 +849,11 @@ hpgl_print_char(
             gs_char mychar_buff[1];
             mychar_buff[0] = hpgl_map_symbol(ch, pgls);
             if (use_show) {
-                /* not a character path */
+                /* not a path that needs to be drawn by the hpgl/2
+                   vector drawing code. */
 		hpgl_call(hpgl_set_drawing_color(pgls, hpgl_rm_character));
                 text.operation = TEXT_FROM_CHARS | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
 	    } else 
-                /* character path */
                 text.operation = TEXT_FROM_CHARS | TEXT_DO_TRUE_CHARPATH | TEXT_RETURN_WIDTH;
             text.data.chars = mychar_buff;
             /* always on char (gs_chars (ints)) at a time */
