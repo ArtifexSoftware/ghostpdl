@@ -88,7 +88,7 @@ cmd_slow_rop(gx_device *dev, gs_logical_operation_t lop,
 	    rop = rop3_know_T_1(rop);
     }
     return !(rop == rop3_0 || rop == rop3_1 ||
-	     rop == rop3_D || rop == rop3_S || rop == rop3_T);
+	     rop == rop3_S || rop == rop3_T);
 }
 
 /* Write out the color for filling, stroking, or masking. */
