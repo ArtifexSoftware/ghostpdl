@@ -739,14 +739,19 @@ pdfdict begin
       dup /File PDFfile put
       % make sure that we are just past the EOL \n character
       PDFfile dup fileposition 1 sub setfileposition	% back up one
-      { PDFfile read pop dup 13 eq {
-	  % If there had been a \n, token would have advanced over it
-	  % thus, if the terminator was \r, we have a format error!
-	  (   **** Warning: stream operator not terminated by valid EOL.\n) pdfformaterror
-	  pop exit	% fileposition is OK (just past the \r).
-	} if 
-	10 eq { exit } if
-      } loop	% scan past \n
+
+      PDFfile read pop
+      dup 13 eq {
+        % If there had been a \n, token would have advanced over it
+	% thus, if the terminator was \r, we have a format error!
+	(   **** Warning: stream operator not terminated by valid EOL.\n) pdfformaterror
+	pop   % fileposition is OK (just past the \r).
+      } {
+        % Otherwise, scan past \n
+        { 10 eq { exit } if
+          PDFfile read pop
+        } loop
+      } ifelse   
       dup /FilePosition PDFfile fileposition put
       PDFDEBUG {
         PDFSTEPcount 1 le {
