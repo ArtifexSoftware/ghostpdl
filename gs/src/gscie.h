@@ -140,6 +140,7 @@ typedef long cie_cached_value;
 		    _cie_fixed_shift * 2 - _cie_product_excess_bits - (fbits)) :\
       arith_rshift((v) * (factor), _cie_fixed_shift * 2 - (fbits)))
 #  define cie_cached_rshift(v, n) arith_rshift(v, n)
+#  define cie_cached_abs(v) any_abs(v)  /* labs() is C89 extension */
 #else
 typedef float cie_cached_value;
 #  define float2cie_cached(v) (v)
@@ -149,6 +150,7 @@ typedef float cie_cached_value;
 #  define cie_cached_product2int(v, factor, fbits)\
      ((int)float_lshift((v) * (factor), fbits))
 #  define cie_cached_rshift(v, n) float_rshift(v, n)
+#  define cie_cached_abs(v) fabs(v)  /* intristic on MSVC and GCC */
 #endif
 
 /* ---------------- Structures ---------------- */

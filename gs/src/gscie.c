@@ -628,13 +628,13 @@ typedef struct cie_cache_range_temp_s {
     cie_cached_value prev;
     int imin, imax;
 } cie_cache_range_temp_t;
-private void
+private inline void
 check_interpolation_required(cie_cache_range_temp_t *pccr,
 			     cie_cached_value cur, int i, floatp threshold)
 {
     cie_cached_value prev = pccr->prev;
 
-    if (any_abs(cur - prev) > threshold * min(any_abs(prev), any_abs(cur))) {
+    if (cie_cached_abs(cur - prev) > threshold * min(cie_cached_abs(prev), cie_cached_abs(cur))) {
 	if (i - 1 < pccr->imin)
 	    pccr->imin = i - 1;
 	if (i > pccr->imax)
