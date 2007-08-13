@@ -988,7 +988,8 @@ $(PSGEN)gs_init.ps : $(PSLIB)$(GS_INIT) $(GENINIT_XE) $(gconfig_h)
 # unix-inst.mak uses this macro, problems should surface when testing installed
 # versions.
 #		Note: gs_cet.ps is only needed to match Adobe CPSI defaults
-EXTRA_INIT_FILES= Fontmap cidfmap xlatmap FAPI FCOfontmap-PCLPS2 gs_cet.ps
+EXTRA_INIT_FILES= Fontmap cidfmap xlatmap FAPI FCOfontmap-PCLPS2 gs_cet.ps \
+	cjkv/
 
 #	The init files are put in the lib/ directory (gs_init.ps + EXTRA_INIT_FILES)
 #	Resource files go into Resource/...
