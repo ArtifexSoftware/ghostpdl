@@ -1,0 +1,154 @@
+%!
+%
+% Developed by AXE,Inc., BBR Inc. and Turbolinux Inc.
+%   under the technical advice by suzuki toshiya (Hiroshima University)
+% For questions, please send mail to espgs8-cjk@printing-japan.org
+%
+% (C) Copyright 2006 Center of the International Cooperation for
+%     Computerization
+%
+%
+% Based on gs-cjk patches
+% Copyright (C) 2001-2003 gs-cjk project:
+%   Taiji Yamada, Hideyuki Suzuki, Masatake Yamato and suzuki toshiya.
+%   All rights reserved.
+%
+%
+% Based on GNU Ghostscript 7.07 and 8.15
+% Copyright (C) 1996-2003 artofcode LLC.  All rights reserved.
+%
+% This software is provided AS-IS with no warranty, either express or
+% implied.
+%
+%
+% This program is free software;  you can redistribute it and/or
+% modify it under the terms of the GNU General Public License as
+% published by the Free Software Foundation; either version 2 of
+% the License, or (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+% See the GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program; if not, write to the Free Software Foundation,
+% Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+%
+
+
+[
+   /CJKV_DEBUG_TTCF
+] {dup where {pop pop} { currentdict exch false def pop } ifelse} forall
+
+% /Charset /TTEncoding .cjkv_buildcmaptab cmap
+/.cjkv_buildcmaptab {
+  _cjkv_type11_util /.cjkv_buildcmapdict get 3 2 roll get begin
+  cvx exec exch CIDCounts end exch get array
+  dup length 1 sub 0 1 3 -1 roll { 1 index exch cmapglyphs 0 get put } for
+  exch exec
+} bind def
+
+% -mark- <key> <value> ... .cjkv_definettcidfont <font>
+%   rapid version of .definecjkvttcidfont
+% Proposed by Hideyuki Suzuki <hideyuki@sat.t.u-tokyo.ac.jp>
+% Modified by Taiji Yamada <taiji@aihara.co.jp>
+/.cjkv_definettcidfont {
+  CJKV_DEBUG_TTCF { (--- start cjkv_definettcidfontk\n) print flush } if
+  true setglobal
+  CJKV_DEBUG_TTCF { (--- making scratch dict...\n) print flush } if
+  15 _cjkv_base_util /.cjkv_newdicttomark get exec
+  CJKV_DEBUG_TTCF { (---                       ok\n) print flush } if
+  dup /CIDFontName fontname dup length string copy put
+  CJKV_DEBUG_TTCF { (--- CIDFontName put ok\n) print flush } if
+  dup /CIDFontType 2 put
+  CJKV_DEBUG_TTCF { (--- CIDFontType put ok\n) print flush } if
+  dup /CIDSystemInfo
+    mark
+    _cjkv_type11_tmp /.cjkv_ttencmapproc get exec
+    {
+      _cjkv_type11_util /.cjkv_buildcmapdict get 3 2 roll get begin
+      cvx exec pop
+      /Supplement exch
+      /Registry Registry
+      /Ordering Ordering
+      end
+    } {
+      /Registry (Adobe)
+      /Ordering (Identity)	% pursuant to makeIdentityCMap in pdf_font.ps
+      /Supplement 0
+    } ifelse
+    0 _cjkv_base_util /.cjkv_newdicttomark get exec put
+  CJKV_DEBUG_TTCF { (--- CIDSystemInfo define ok\n) print flush } if
+  dup /CharStrings mark /.notdef 0 .dicttomark put
+  CJKV_DEBUG_TTCF { (--- CharStrings define ok\n) print flush } if
+  _cjkv_type11_tmp /.cjkv_ttencmapproc get exec {
+    /cmapglyphs _cjkv_ttcmap_tmp /cmaptab get _cjkv_cmaparray def
+    exec .cjkv_buildcmaptab
+    dup length /CIDCount exch
+    3 -1 roll _cjkv_type11_util /.cjkv_makecidmap get exec	% it has not supported a dictionary yet
+    /CIDMap exch		% it should be a string or an array of strings
+    4 index 3 1 roll put
+    2 index 3 1 roll put
+  } {
+    dup /CIDCount numloca put
+    dup /CIDMap 0 put	% an integer interpreted as an offset from GI (see #5012 p.16)
+  } ifelse
+  dup /GDBytes 2 put
+  CJKV_DEBUG_TTCF { (--- GDBytes define ok\n) print flush pstack } if
+  dup /Encoding [ 256 { /.notdef } repeat ] put
+  CJKV_DEBUG_TTCF { (--- Encoding define ok\n) print flush } if
+  end end dup /CIDFontName get exch /CIDFont defineresource
+  CJKV_DEBUG_TTCF { (--- defineresource ok\n) print flush pstack } if
+} bind def
+
+% Load a TrueType font from a file as a CIDFontType 2 font.
+%   rapid version of .loadcjkvttcidfont
+% Proposed by Hideyuki Suzuki <hideyuki@sat.t.u-tokyo.ac.jp>
+% Modified by Taiji Yamada <taiji@aihara.co.jp>
+%
+% <file>             .cjkv_loadttcidfont <cidtype2font>
+% <file> <fontindex> .cjkv_loadttcidfont <cidtype2font>
+%   detect a kind of CID and encode a TrueType font to a CID-Keyed font.
+%
+% <file>             <ttcidcode> .cjkv_loadttcidfont <cidtype2font>
+% <file> <fontindex> <ttcidcode> .cjkv_loadttcidfont <cidtype2font>
+%   load a TrueType font and encode it with the kind of CID described
+%   in <ttcidcode> which is one of entry in .cjkv_ttencmap.
+/.loadcjkvttcidfont {
+  CJKV_DEBUG_TTCF { (*** START: .loadcjkvttcidfont: dictstack=) print countdictstack == flush } if
+  dup type /nametype ne { /Auto } if
+  1 index type /integertype eq { 3 1 roll } { exch } ifelse
+  CJKV_DEBUG_TTCF { (*** setup finished dictstack=) print countdictstack == flush } if
+  _cjkv_type42_util /.cjkv_loadttfonttables get exec
+  CJKV_DEBUG_TTCF { (*** loadttfonttables finished dictstack=) print countdictstack == flush } if
+  _cjkv_type42_util /.cjkv_makesfnts get exec
+  CJKV_DEBUG_TTCF { (*** makesfnts finished dictstack=) print countdictstack == flush } if
+  _cjkv_type42_util /.cjkv_pickcmap get exec
+  CJKV_DEBUG_TTCF { (*** pickcmap finished dictstack=) print countdictstack == flush } if
+  _cjkv_type11_util /.cjkv_getgsub get exec
+  CJKV_DEBUG_TTCF { (*** getgsub finished dictstack=) print countdictstack == flush } if
+  _cjkv_type11_util /.cjkv_getos2 get exec
+  CJKV_DEBUG_TTCF { (*** getos2 finished dictstack=) print countdictstack == flush } if
+  _cjkv_type11_util /.cjkv_ttencmap get
+  exch get _cjkv_type11_tmp exch /.cjkv_ttencmapproc exch put
+  CJKV_DEBUG_TTCF { (*** ttencmap finished dictstack=) print countdictstack == flush } if
+  mark
+  _cjkv_type42_util /.cjkv_ttkeys get exec
+  CJKV_DEBUG_TTCF { (*** ttkeys finished dictstack=) print countdictstack == flush } if
+  .cjkv_definettcidfont
+  CJKV_DEBUG_TTCF { (*** END: definettcidfont finished dictstack=) print countdictstack == flush } if
+} bind def
+
+% Open and load a TrueType font from a file as a CIDFontType 2 font.
+% <filename>             .openttcidfont <cidtype2font>
+% <filename> <fontindex> .openttcidfont <cidtype2font>
+% <filename>             <ttcidcode> .openttcidfont <cidtype2font>
+% <filename> <fontindex> <ttcidcode> .openttcidfont <cidtype2font>
+/.openttcidfont {
+  1 dup index type /nametype eq { 1 add } if
+  dup index type /integertype eq { 1 add } if
+  dup 1 add -1 roll (r) file exch 1 roll
+  .loadcjkvttcidfont	% rapid version, since 20010316
+  CJKV_DEBUG_TTCF { (*** .openttcidfont ok\n) print flush } if
+} bind def

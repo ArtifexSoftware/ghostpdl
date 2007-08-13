@@ -10,6 +10,14 @@
    or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
+/*
+ * Modified by AXE,Inc., BBR Inc. and Turbolinux Inc.
+ *   under the technical advice by suzuki toshiya (Hiroshima University)
+ * For questions, please send mail to espgs8-cjk@printing-japan.org
+ *
+ * (C) Copyright 2006 Center of the International Cooperation for
+ *     Computerization
+ */
 
 /* $Id$ */
 /* Type 42 font data definition */
@@ -154,6 +162,9 @@ int gs_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,
 
 int gs_type42_get_outline_from_TT_file(gs_font_type42 * pfont, stream *s, uint glyph_index,
 		gs_glyph_data_t *pgd);
+
+/* Export the function get glypf bounding box from font data */
+int gs_type42_glyph_fbbox(gs_font *font, uint glyph_index, gs_rect *pbbox);
 
 /* Export the font procedures so they can be called from the interpreter. */
 font_proc_enumerate_glyph(gs_type42_enumerate_glyph);

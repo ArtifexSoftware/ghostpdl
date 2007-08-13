@@ -10,6 +10,14 @@
    or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
+/*
+ * Modified by AXE,Inc., BBR Inc. and Turbolinux Inc.
+ *   under the technical advice by suzuki toshiya (Hiroshima University)
+ * For questions, please send mail to espgs8-cjk@printing-japan.org
+ *
+ * (C) Copyright 2006 Center of the International Cooperation for
+ *     Computerization
+ */
 
 /* $Id$ */
 /* Type 42 (TrueType) font library routines */
@@ -660,6 +668,49 @@ gs_type42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matri
 			     origin.y + float2fixed(info.width[WMode].y));
 }
 
+/* Get glyph bounding box from font file */
+int
+gs_type42_glyph_fbbox(gs_font *font, uint glyph_index, gs_rect *pbbox)
+{
+    gs_font_type42 *const pfont = (gs_font_type42 *)font;
+    gs_glyph_data_t glyph_data;
+    double factor = 1.0 / pfont->data.unitsPerEm;
+    int code = 0;
+    const byte *gdata;
+
+    if ((code = pfont->data.get_outline(pfont, glyph_index, &glyph_data)) < 0) {
+	return code;		/* non-existent glyph */
+    }
+    if (glyph_data.bits.size == 0) {
+	return 1; /* notdef */
+    }
+    if (glyph_data.bits.size != 0 && S16(glyph_data.bits.data) == -1) {
+	/* This is a composite glyph. */
+	uint flags;
+	gs_matrix_fixed mat;
+
+	gdata = glyph_data.bits.data + 10;
+	memset(&mat, 0, sizeof(mat)); /* arbitrary */
+	do {
+	    uint comp_index = U16(gdata + 2);
+
+	    parse_component(&gdata, &flags, &mat, NULL, pfont, &mat);
+	    if (flags & TT_CG_USE_MY_METRICS) {
+		code = gs_type42_glyph_fbbox(pfont, comp_index,pbbox);
+		goto done;
+	    }
+	}
+	while (flags & TT_CG_MORE_COMPONENTS);
+    }
+    gdata = glyph_data.bits.data;
+    pbbox->p.x = S16(gdata+2)*factor;
+    pbbox->p.y = S16(gdata+4)*factor;
+    pbbox->q.x = S16(gdata+6)*factor;
+    pbbox->q.y = S16(gdata+8)*factor;
+done:
+    gs_glyph_data_free(&glyph_data, "gs_type42_enumerate_glyph");
+    return code;
+}
 /* Get glyph info by glyph index. */
 int
 gs_type42_glyph_info_by_gid(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,

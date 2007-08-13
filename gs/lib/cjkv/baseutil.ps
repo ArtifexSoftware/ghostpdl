@@ -1,0 +1,569 @@
+%!
+%
+% Developed by AXE,Inc., BBR Inc. and Turbolinux Inc.
+%   under the technical advice by suzuki toshiya (Hiroshima University)
+% For questions, please send mail to espgs8-cjk@printing-japan.org
+%
+% (C) Copyright 2006 Center of the International Cooperation for
+%     Computerization
+%
+%
+% Based on gs-cjk patches
+% Copyright (C) 2001-2003 gs-cjk project:
+%   Taiji Yamada, Masatake Yamato, Hideyuki Suzuki and suzuki toshiya.
+%   Enhancements by Akira Tagoh and Taiji Yamada, 2005.
+%   All rights reserved.
+%
+%
+% Based on GNU Ghostscript 7.07 and 8.15
+% Copyright (C) 1996-2003 artofcode LLC.  All rights reserved.
+%
+% This software is provided AS-IS with no warranty, either express or
+% implied.
+%
+%
+% This program is free software;  you can redistribute it and/or
+% modify it under the terms of the GNU General Public License as
+% published by the Free Software Foundation; either version 2 of
+% the License, or (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+% See the GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program; if not, write to the Free Software Foundation,
+% Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+%
+
+[
+   /CJKV_DEBUG_BASE
+] {dup where {pop pop} { currentdict exch false def pop } ifelse} forall
+
+/_cjkv_ttcmap_tmp 10 dict def
+
+/_cjkv_base_util 50 dict dup begin
+
+  /.cjkv_newdicttomark { % <mark> <k1> <v1> ... <kn> <vn> <extra_space> .cjkv_newdicttomark <dict>
+    CJKV_DEBUG_BASE { (--- .cjkv_newdicttomark start\n) print flush  } if
+    counttomark 1 sub 2 idiv add dict   % <mark> <k1> <v1> ... <kn> <vn> <dict>
+    CJKV_DEBUG_BASE { (--- scratch dict making finished\n) print flush  } if
+    counttomark 1 sub 2 idiv {
+      dup                               % <mark> <k1> <v1> ... <kn> <vn> <dict> <dict>
+      4 2 roll                          % <mark> <k1> <v1> ... <dict> <dict> <kn> <vn>
+      dup type /stringtype eq { dup length string copy } if
+      dup type /arraytype  eq {
+        dup length array exch dup length 0 exch 1 exch 1 sub {
+          1 index 1 index get dup type /stringtype eq {
+            dup length string copy
+          } if
+          [ exch ]
+          3 index 3 1 roll putinterval
+        } for
+        pop
+      } if
+      dup type /dicttype   eq {
+        dup length dict exch
+        [ 1 index { pop } forall ] {
+          1 index 1 index get dup type /stringtype eq {
+            dup length string copy
+          } if
+          3 index 3 1 roll put
+        } forall
+        pop
+      } if
+      put                               % <mark> <k1> <v1> ... <dict>
+      CJKV_DEBUG_BASE { (--- copy ok\n) print flush  } if
+    } repeat                            % <mark> <dict>
+    exch pop                            % <dict>
+    CJKV_DEBUG_BASE { (--- .cjkv_newdicttomark ok\n) print flush  } if
+  } bind def
+
+  /orgXUID AladdinEnterprisesXUID def
+  /maxstring 32000 def    % half the maximum length of a PostScript string,
+                          % must be a multiple of 4 (for hmtx / loca / vmtx)
+  
+
+  /.cjkv_xuidstring <80000000> def
+
+  /.cjkv_curxuid {              % - curxuid <int>
+    0 .cjkv_xuidstring { exch 8 bitshift exch add } forall
+  } bind def
+
+  /.cjkv_nextxuid {             % - nextxuid -
+    3 -1 0 {
+      .cjkv_xuidstring 1 index 2 copy get dup 255 ne {
+        1 add put pop exit
+      } if pop 0 put pop
+    } for
+  } bind def
+  
+  % <string> <index> .cjkv_getu16 <integer>
+  /.cjkv_getu16 {
+    2 copy get 8 bitshift 3 1 roll 1 add get add
+  } bind def
+  
+  % <string> <index> .cjkv_gets16 <integer>
+  /.cjkv_gets16 {
+    .cjkv_getu16 16#8000 xor 16#8000 sub
+  } bind def
+  
+  % <string> <index> .cjkv_getu32 <integer>
+  /.cjkv_getu32 {
+    2 copy .cjkv_getu16 16 bitshift 3 1 roll 2 add .cjkv_getu16 add
+  } bind def
+  
+  % <string> <index> .cjkv_gets32 <integer>
+  /.cjkv_gets32 {
+    2 copy .cjkv_gets16 16 bitshift 3 1 roll 2 add .cjkv_getu16 add
+  } bind def
+  
+  % <string> <index> <integer> .cjkv_putu16 -
+  /.cjkv_putu16 {
+    3 copy -8 bitshift put
+    exch 1 add exch 16#ff and put
+  } bind def
+  
+  % <string> <index> <integer> .cjkv_putu32 -
+  /.cjkv_putu32 {
+    3 copy -16 bitshift .cjkv_putu16
+    exch 2 add exch 16#ffff and .cjkv_putu16
+  } bind def
+
+  /.cjkv_biglength { % <str>|<array of str> .biglength <integer>
+    dup type /arraytype eq { 0 exch { length add } forall } { length } ifelse
+  } bind def
+  
+  /.cjkv_concats { % [str ...] concats str
+    () exch dup length 1 sub -1 0 {
+      1 index exch get dup type /stringtype ne { dup length string cvs } if
+      3 -1 roll exch dup length 2 index length add string
+      dup dup 4 2 roll copy length 4 -1 roll putinterval exch
+    } for pop
+  } bind def
+  
+  % <str>|<array of str> <index> <count> .cjkv_biggetinterval <str>|<array of str>
+  /.cjkv_biggetinterval {
+    currentglobal 4 1 roll
+    false setglobal
+    5 dict begin
+    2 index type /arraytype eq {
+      /c exch def
+      /i exch def
+      [ exch {
+        dup length /l exch def
+        i c add l gt {
+          i l lt {
+            i l i sub getinterval
+            /c i c add l sub def
+            /i 0 def
+          } {
+            pop
+            /i i l sub def
+          } ifelse
+        } {
+          i c getinterval exit
+        } ifelse
+      } forall
+      counttomark array dup length 1 sub -1 0 { 1 index exch 3 index put exch pop } for exch pop
+      dup .cjkv_biglength 65535 le { .cjkv_concats } if
+    } { getinterval } ifelse
+    end
+    exch setglobal
+  } bind def
+  
+  % <str>|<array of str> <index> .cjkv_biggetu16 <integer>
+  /.cjkv_biggetu16 {
+    2 .cjkv_biggetinterval 0 .cjkv_getu16
+  } bind def
+  
+  % <str>|<array of str> <index> .cjkv_biggetu32 <integer>
+  /.cjkv_biggetu32 {
+    4 .cjkv_biggetinterval 0 .cjkv_getu32
+  } bind def
+  
+  % <string> .cjkv_strtoint <integer>
+  /.cjkv_strtoint {
+    0 exch { exch 8 bitshift add } forall
+  } bind def
+  
+  % <nametable> <nameid> findname <string> true
+  % <nametable> <nameid> findname false
+  /.cjkv_findname {
+    CJKV_DEBUG_BASE { (findname: ) print dup =only  } if
+    false 3 1 roll 0 1 3 index 2 .cjkv_getu16 1 sub {
+                  % Stack: false table id index
+      12 mul 6 add 2 index exch 12 getinterval
+      dup 6 .cjkv_getu16 2 index eq {
+                  % We found the name we want.
+        exch pop
+                  % Stack: false table record
+        dup 10 .cjkv_getu16 2 index 4 .cjkv_getu16 add
+        1 index 8 .cjkv_getu16 4 -1 roll 3 1 roll getinterval exch
+                  % Stack: false string record
+                  % Check for 8- vs. 16-bit characters.
+        .cjkv_is2byte { .cjkv_string2to1 } if true null 4 -1 roll exit
+      } if pop
+    } for pop pop
+    CJKV_DEBUG_BASE {
+      dup { ( = ) print 1 index == } { ( not found) = } ifelse
+    } if
+  } bind def
+  
+  % <namerecord> .cjkv_is2byte <bool>
+  /.cjkv_is2byte {
+    dup 0 .cjkv_getu16 {
+      { pop true }                % Apple Unicode
+      { pop false }               % Macintosh Script manager
+      { 1 .cjkv_getu16 1 eq }           % ISO
+      { 1 .cjkv_getu16 1 eq }           % Microsoft
+    } exch get exec
+  } bind def
+  
+  % <string2> string2to1 <string>
+  /.cjkv_string2to1 {
+    dup length 2 idiv string dup
+    0 1 3 index length 1 sub {
+      3 index 1 index 2 mul 1 add get put dup
+    } for pop exch pop
+  } bind def
+  
+
+  % <array> <lt-proc> .cjkv_sort <array>
+  /.cjkv_sort {
+    1 index length 1 sub -1 1 {
+      2 index exch 2 copy get 3 copy      % arr proc arr i arr[i] arr i arr[i]
+      0 1 3 index 1 sub {
+        3 index 1 index get       % arr proc arr i arr[i] arr imax amax j arr[j]
+        2 index 1 index 10 index exec {   % ... amax < arr[j]
+          4 2 roll
+        } if pop pop
+      } for                       % arr proc arr i arr[i] arr imax amax
+      4 -1 roll exch 4 1 roll put put
+    } for pop
+  } def
+  
+  
+  % <array|string> <index> <count> .cjkv_safegetinterval <subarray|substring>
+  /.cjkv_safegetinterval {
+    exch 2 index length .min exch
+    2 index length 2 index sub .min
+    getinterval
+  } bind def
+  
+  % <array> <index> <obj> .cjkv_safeput -
+  /.cjkv_safeput {
+    2 index length 2 index gt { put } { pop pop pop } ifelse
+  } bind def
+  
+  % Each procedure in this dictionary is called as follows:
+  %       <encodingtable> proc <glypharray>
+  /_cjkv_cmapformats mark
+    0 {		% Apple standard 1-to-1 mapping.
+      6 256 getinterval { } forall 256 packedarray
+    } bind
+    2 {		% Apple 16bit CJK (ShiftJIS etc)
+  
+      % /sHK_sz		subHeaderKey_size	% 1 * uint16
+      % /sH_sz		subHeader_size		% 4 * uint16
+      % /sH_len		subHeader_length
+      % /cmapf2_tblen	total table length
+      % /cmapf2_lang	language code (not used)
+      % /sHKs		subHeaderKeys
+  
+      /sHK_sz 2 def
+      /sH_sz 8 def
+      dup 2 .cjkv_getu16 /cmapf2_tblen exch def
+  
+      CJKV_DEBUG_BASE {
+         (format2 table length: 0x) print
+         cmapf2_tblen 16 10 string cvrs print
+         (=) print
+         cmapf2_tblen == flush
+      } if
+      dup 4 .cjkv_getu16 /cmapf2_lang exch def
+  
+      CJKV_DEBUG_BASE {
+         (format2 lang code: 0x) print
+         cmapf2_lang 16 10 string cvrs == flush
+      } if
+      dup 6 256 sHK_sz mul getinterval /sHKs exch def
+      CJKV_DEBUG_BASE {
+         (format2 subHeaderKeys: ) print
+         sHKs == flush
+         (scan subHeaderKeys\n) print flush
+      } if
+  
+      0		% initialization value for /sH_len
+      0 1 255 {
+         CJKV_DEBUG_BASE {
+            (hi byte ) =only
+            dup 16 10 string cvrs =only
+            (-> subHeader #) print
+            flush
+         } if
+         sHKs exch
+         2 mul .cjkv_getu16
+         CJKV_DEBUG_BASE {
+            dup 16 10 string cvrs =only
+            ( ) print dup == flush
+         } if
+         1 index	% get current max
+         1 index	% get current subHeaderKey
+         lt {exch} if pop
+      } for
+      /sH_len exch def
+  
+      CJKV_DEBUG_BASE {
+        (format2 subHeader length: ) print
+        sH_len ==
+        flush
+      } if
+      dup 6 256 sHK_sz mul add
+      cmapf2_tblen 1 index sub getinterval
+      /sH_gIA exch def
+      CJKV_DEBUG_BASE {
+         (format2 subHeaders + GID array: ) print
+         sH_gIA ==
+      } if
+  
+      /cmapf2_glyph_array 65535 array def
+  
+      /.cmapf2_putGID {
+          /cmapf2_ch cmapf2_ch_hi 8 bitshift cmapf2_ch_lo add def
+          CJKV_DEBUG_BASE {
+              (code: ) =only cmapf2_ch 16 4 string cvrs =only
+              ( -> ) =only
+          } if
+          firstCode cmapf2_ch_lo le
+          cmapf2_ch_lo firstCode entryCount add lt
+          and { % true: j is inside
+              sH_offset idRangeOffset add		% offset to gI
+              cmapf2_ch_lo firstCode sub 2 mul	% rel. pos. in range
+              add 6 add				% offset in sH_gIA
+              sH_gIA exch .cjkv_getu16
+              dup 0 gt { % 
+                  CJKV_DEBUG_BASE {
+                      dup 16 8 string cvrs =only
+                      (+) =only idDelta 16 8 string cvrs =only
+                  } if
+                  idDelta add
+                  CJKV_DEBUG_BASE {
+                      (=) =only dup 16 8 string cvrs == flush
+                  } if
+                  cmapf2_glyph_array exch cmapf2_ch exch put
+              } {
+                  CJKV_DEBUG_BASE {(specified 0: 0\n) print flush} if
+                  pop
+                  % cmapf2_glyph_array cmapf2_ch 0 put
+              } ifelse
+          } {   % false: j is outside
+              CJKV_DEBUG_BASE {(outside of range: 0\n) print flush} if
+              % cmapf2_glyph_array cmapf2_ch 0 put
+          } ifelse
+      } def
+  
+      16#00 1 16#ff { % hi_byte scan
+          /cmapf2_ch_hi exch def
+          sHKs cmapf2_ch_hi sHK_sz mul .cjkv_getu16
+          CJKV_DEBUG_BASE {
+              (subHeader_offset = idx * 8 = ) print
+              dup ==
+          } if
+          /sH_offset exch def
+          sH_gIA sH_offset sH_sz getinterval
+              dup 0 .cjkv_getu16 /firstCode exch def
+              dup 2 .cjkv_getu16 /entryCount exch def
+              dup 4 .cjkv_gets16 /idDelta exch def
+              dup 6 .cjkv_getu16 /idRangeOffset exch def
+          pop
+          CJKV_DEBUG_BASE {
+             (idRangeOffset: ) print idRangeOffset 16 8 string cvrs ==
+          } if
+          sH_offset 0 eq {
+             /cmapf2_ch_lo cmapf2_ch_hi def
+             /cmapf2_ch_hi 0 def
+             .cmapf2_putGID
+          } {
+             16#00 1 16#ff { % lo_byte scan
+                 /cmapf2_ch_lo exch def
+                 .cmapf2_putGID
+             } for
+          } ifelse
+       } for
+       pop
+       0 1 cmapf2_glyph_array length 1 sub { % rewrite null -> 0.
+          % CJKV_DEBUG_BASE { (rewriting null: ) print dup == flush } if
+          dup cmapf2_glyph_array exch get
+          null eq { cmapf2_glyph_array exch 0 put } {pop} ifelse 
+       } for
+       CJKV_DEBUG_BASE { (rewriting finished\n) print flush } if
+       cmapf2_glyph_array
+       CJKV_DEBUG_BASE {
+         16#0000 16#0010 16#fff0 {
+            16#0000 16#0001 16#000f {
+               1 index add dup 16#ffff lt {
+                 2 index exch get =only
+                 ( ) =only
+               } { pop } ifelse
+            } for
+            pop
+            (\n) print flush
+         } for
+       } if
+    } bind
+    4 {		% Microsoft/Adobe segmented mapping.
+      /etab exch _cjkv_ttcmap_tmp 3 1 roll put
+      /nseg2 _cjkv_ttcmap_tmp /etab get 6 .cjkv_biggetu16 def
+      14 /endc _cjkv_ttcmap_tmp /etab get 2 index nseg2 .cjkv_biggetinterval _cjkv_ttcmap_tmp 3 1 roll put
+  		% The Apple TrueType documentation omits the 2-byte
+  		% 'reserved pad' that follows the endCount vector!
+      2 add
+      nseg2 add /startc _cjkv_ttcmap_tmp /etab get 2 index nseg2 .cjkv_biggetinterval _cjkv_ttcmap_tmp 3 1 roll put
+      nseg2 add /iddelta _cjkv_ttcmap_tmp /etab get 2 index nseg2 .cjkv_biggetinterval _cjkv_ttcmap_tmp 3 1 roll put
+      nseg2 add /idroff _cjkv_ttcmap_tmp /etab get 2 index nseg2 .cjkv_biggetinterval  _cjkv_ttcmap_tmp 3 1 roll put
+  		% The following hack allows us to properly handle
+  		% idiosyncratic fonts that start at 0xf000:
+      pop
+      /firstcode _cjkv_ttcmap_tmp /startc get 0 .cjkv_getu16 16#ff00 and dup 16#f000 ne { pop 0 } if def
+      _cjkv_ttcmap_tmp /putglyph {
+        glyphs code 3 -1 roll put /code code 1 add def
+      } bind put
+  		% Do a first pass to compute the size of the glyphs array.
+      /numcodes 0 def /glyphs 0 0 2 nseg2 3 sub {
+  		% Stack: /glyphs numglyphs i2
+        /i2 exch def
+        /scode _cjkv_ttcmap_tmp /startc get i2 .cjkv_biggetu16 def
+        /ecode _cjkv_ttcmap_tmp /endc get i2 .cjkv_biggetu16 def
+        numcodes scode firstcode sub
+  		% Hack for fonts that have only 0x0000 and 0xf000 ranges
+        %dup 16#e000 ge { 255 and } if
+        % the previous line is obstructive to CJK fonts, so it was removed
+        exch sub 0 .max ecode scode sub 1 add add
+        exch 1 index add exch
+        numcodes add /numcodes exch def
+      } for array def
+  		% Now fill in the array.
+      /numcodes 0 def /code 0 def
+      0 2 nseg2 3 sub {
+        /i2 exch def
+        /scode _cjkv_ttcmap_tmp /startc get i2 .cjkv_getu16 def
+        /ecode _cjkv_ttcmap_tmp /endc get i2 .cjkv_getu16 def
+        numcodes scode firstcode sub
+  		% Hack for fonts that have only 0x0000 and 0xf000 ranges
+        %dup 16#e000 ge { 255 and } if
+        % the previous line is obstructive to CJK fonts, so it was removed
+        exch sub 0 .max dup { 0 _cjkv_ttcmap_tmp /putglyph get exec } repeat
+        ecode scode sub 1 add add numcodes add /numcodes exch def
+        /delta _cjkv_ttcmap_tmp /iddelta get i2 .cjkv_gets16 def
+        CJKV_DEBUG_BASE {
+  	(scode=) print scode =only
+  	( ecode=) print ecode =only
+  	( delta=) print delta =only
+  	( droff=) print _cjkv_ttcmap_tmp /idroff get i2 .cjkv_biggetu16 =
+        } if
+        _cjkv_ttcmap_tmp /idroff get i2 .cjkv_biggetu16 dup 0 eq {
+  	pop scode delta add 65535 and 1 ecode delta add 65535 and
+  	{ _cjkv_ttcmap_tmp /putglyph get exec } for
+        } {	% The +2 is for the 'reserved pad'.
+          /gloff exch 14 nseg2 3 mul add 2 add i2 add add def
+          0 1 ecode scode sub {
+  	  2 mul gloff add _cjkv_ttcmap_tmp /etab get exch .cjkv_biggetu16
+  	  dup 0 ne { delta add 65535 and } if _cjkv_ttcmap_tmp /putglyph get exec
+  	} for
+        } ifelse
+      } for glyphs /glyphs null def	% for GC
+    } bind
+    6 {		% Single interval lookup.
+      dup 6 .cjkv_getu16 /firstcode exch def dup 8 .cjkv_getu16 /ng exch def
+      firstcode ng add array
+  		% Stack: tab array
+  		% Fill elements 0 .. firstcode-1 with 0
+      0 1 firstcode 1 sub { 2 copy 0 put pop } for
+      dup firstcode ng getinterval
+  		% Stack: tab array subarray
+  		% Fill elements firstcode .. firstcode+nvalue-1 with glyph values
+      0 1 ng 1 sub {
+        dup 2 mul 10 add 4 index exch .cjkv_getu16 3 copy put pop pop
+      } for pop exch pop
+    } bind
+  .dicttomark readonly def                % _cjkv_cmapformats
+  
+  % <cmaptab> _cjkv_cmaparray <glypharray>
+  /_cjkv_cmaparray {
+    dup 0 .cjkv_biggetu16
+  
+    _cjkv_cmapformats exch .knownget {
+      CJKV_DEBUG_BASE {
+        (cmap: format ) print 1 index 0 .cjkv_biggetu16 = flush
+      } if exec
+    } {
+      (Can't handle format ) print 0 .cjkv_biggetu16 = flush
+      0 1 255 { } for 256 packedarray
+    } ifelse
+    CJKV_DEBUG_BASE {
+      (cmap: length=) print dup length = dup ==
+    } if
+  } bind def
+  
+  % Each procedure in this dictionary is called as follows:
+  %	<file> <length> -proc- <string|array_of_strings>
+  % Note that each table must have an even length, because of a strange
+  % Adobe requirement that each sfnts entry have even length.
+  /_cjkv_readtables mark
+  	% Ordinary tables
+    (head) { .cjkv_readtable }
+    (hhea) { .cjkv_readtable }
+    (maxp) { .cjkv_readtable }
+    (name) { .cjkv_readtable }
+    (OS/2) { .cjkv_readtable }
+    (vhea) { .cjkv_readtable }
+  	% Big tables
+    (cmap) { .cjkv_readbigtable }
+    (glyf) { .cjkv_readbigtable }
+    (loca) { .cjkv_readbigtable }
+    (hmtx) { .cjkv_readbigtable }
+    (vmtx) { .cjkv_readbigtable }
+    (post) { .cjkv_readbigtable }
+  	% Tables only needed for embedding in PDF files
+    (cvt ) { .cjkv_readtable }
+    (fpgm) { .cjkv_readtable }
+    (prep) { .cjkv_readtable }
+    (GSUB) { .cjkv_readtable }
+  .dicttomark
+  % Normally there would be a 'readonly' here, but the ttf2pf utility wants
+  % to include the 'kern' table as well, so we leave the readtables dictionary
+  % writable.
+  def                % readtables
+
+  % Read a table as a single string.
+  % <file> <length> .readtable <string>
+  /.cjkv_readtable {
+    dup dup 1 and add string
+                  % Stack: f len str
+    dup 0 4 -1 roll getinterval
+                  % Stack: f str str1
+          % Because of the absurd PostScript specification that gives an
+          % error for reading into an empty string, we have to check for
+          % this explicitly here.
+    3 -1 roll exch
+    dup () ne { readstring } if pop pop
+  } bind def
+  
+  % Read a big table (one that may exceed 64K).
+  % <file> <length> .readbigtable <string[s]>
+  /.cjkv_readbigtable {
+    dup 65400 lt {
+      .cjkv_readtable
+    } {
+      currentuserparams /VMReclaim get -2 vmreclaim
+      [ 4 2 roll {
+                  % Stack: mark ... f left
+        dup maxstring le { exit } if
+        1 index maxstring string readstring pop 3 1 roll maxstring sub
+      } loop .cjkv_readtable ]
+      exch vmreclaim
+    } ifelse
+  } bind def
+end readonly def % /_cjkv_base_util

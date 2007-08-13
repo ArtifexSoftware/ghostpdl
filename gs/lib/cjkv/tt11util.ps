@@ -1,0 +1,710 @@
+%!
+%
+% Developed by AXE,Inc., BBR Inc. and Turbolinux Inc.
+%   under the technical advice by suzuki toshiya (Hiroshima University)
+% For questions, please send mail to espgs8-cjk@printing-japan.org
+%
+% (C) Copyright 2006 Center of the International Cooperation for
+%     Computerization
+%
+%
+% Based on gs-cjk patches
+% Copyright (C) 2001-2003 gs-cjk project:
+%   Taiji Yamada, Hideyuki Suzuki, Masatake Yamato and suzuki toshiya.
+%   Enhancements by Akira Tagoh and Taiji Yamada, 2005.
+%   All rights reserved.
+%
+%
+% Based on GNU Ghostscript 7.07 and 8.15
+% Copyright (C) 1996-2003 artofcode LLC.  All rights reserved.
+%
+% This software is provided AS-IS with no warranty, either express or
+% implied.
+%
+%
+% This program is free software;  you can redistribute it and/or
+% modify it under the terms of the GNU General Public License as
+% published by the Free Software Foundation; either version 2 of
+% the License, or (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+% See the GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program; if not, write to the Free Software Foundation,
+% Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+%
+
+
+[
+   /CJKV_DEBUG_TT11
+   /CJKV_DEBUG_OS2
+   /CJKV_DEBUG_GSUB
+] {dup where {pop pop} { currentdict exch false def pop } ifelse} forall
+
+% ---------------- CIDFontType 2 font loading ---------------- %
+
+/_cjkv_type11_tmp 15 dict def
+
+/_cjkv_type11_util 30 dict dup begin
+  
+  % Create a string with array of CIDs
+  % [ <cid1> ... <cidN> ] .cjkv_makecidmapstring <string>
+  /.cjkv_makecidmapstring {
+    CJKV_DEBUG_TT11 { (.cjkv_makecidmapstring\n) print flush } if
+    mark exch cvx exec counttomark                % mark 1..N len
+    dup 2 mul string                              % mark 1..N len s
+    dup 3 -1 roll 1 sub 2 mul -2 0 {              % mark 1..N s s
+      2 copy 5 index -8 bitshift put              % mark 1..N s s j2
+      1 add 4 -1 roll 16#ff and put dup           % mark 1..N-1 s s
+    } for pop                                     % mark s
+    exch pop                                      % s
+  } bind def
+  
+  % Create a string or an array of strings with array of CIDs
+  % [ <cid1> ... <cidN> ] .makecidmap <string>|[<string> ...]
+  %   written by Taiji Yamada <taiji@aihara.co.jp>
+  /.cjkv_makecidmap {
+    CJKV_DEBUG_TT11 { (.cjkv_makecidmap\n) print flush } if
+    dup length maxstring le {
+      _cjkv_type11_util /.cjkv_makecidmapstring get exec
+    } {
+      dup length dup maxstring idiv exch
+      maxstring mod 0 ne { 1 add } if array exch
+      0 1 3 index length 1 sub {
+        dup maxstring mul 1 index 1 add maxstring mul
+        3 index length .min 1 index sub
+        3 index 3 1 roll getinterval
+        _cjkv_type11_util /.cjkv_makecidmapstring get exec
+        3 index 3 1 roll put
+      } for pop
+    } ifelse
+  } bind def
+  
+  % <file> .cjkv_loadttcidfont <cidtype2font>
+  /.cjkv_loadttcidfont {
+    CJKV_DEBUG_TT11 { (+++ .cjkv_loadttcidfont\n) print flush } if
+    _cjkv_type42_util /.cjkv_loadttfonttables get exec
+    .cjkv_makesfnts
+          % CIDFontType2 fonts don't have a cmap: they are indexed by CID.
+    /.cjkv_ttencmapproc false def
+    mark
+    CJKV_DEBUG_TT11 { (+++ mark ok\n) print flush } if
+    .cjkv_ttkeys
+    CJKV_DEBUG_TT11 { (+++ .cjkv_ttkeys finished\n) print flush } if
+    .cjkv_definettcidfont
+    CJKV_DEBUG_TT11 { (+++ .cjkv_definettcidfont finished\n) print flush } if
+  } bind def
+  
+  % - .getgsub -
+  % Defines gsubh, gsubv, gsubh2v and also defines gsubver, gsubfmt
+  %   in the case that GSUB table has 'Single Substitution Format 2'
+  %   which is formally used for vertically oriented glyphs such as CJK fonts.
+  % Written by Hideyuki Suzuki <hideyuki@sat.t.u-tokyo.ac.jp>
+  % Modified by Taiji Yamada <taiji@aihara.co.jp>
+  %
+  % [GSUB - The Glyph Substitution Table]
+  % Index        Size        Type        Name of Entry
+  % -----------------------------------
+  % 0        4        Fixed        Version
+  % 4        2        Offset        ScriptList
+  % 6        2        Offset        FeatureList
+  % 8        2        Offset        LookupList
+  %
+  % [Single Substitution Format 2, Subtable at LookupList]
+  % Index        Size        Type        Name of Entry
+  % -----------------------------------
+  % 0        2        uint16        SubstFormat
+  % 4        2        Offset        Coverage(--)
+  % 6        2        uint16        GlyphCount
+  % 8        2        GlyphID        Substitute(vertically oriented glyphs)
+  % --        2        uint16        SubstFormat
+  % +2        2        uint16        GlyphCount(same as above GlyphCount)
+  % +4        2        GlyphID        GlyphArray(horizontally oriented glyphs)
+  % -----------------------------------
+  % References
+  % 1. http://www.microsoft.com/typography/OTSPEC/gsub.htm
+  %
+  /.cjkv_getgsub {
+    CJKV_DEBUG_TT11 { (***   getgsub start\n) print } if
+    _cjkv_type11_tmp /gsubhog null put
+    _cjkv_type11_tmp /gsubvog null put
+    _cjkv_type11_tmp /gsubh2v null put
+    tabdict /GSUB .knownget { % if
+      CJKV_DEBUG_TT11 { (***      GSUB is known\n) print } if
+      dup /gsubver exch 0 .cjkv_getu32 _cjkv_type11_tmp 3 1 roll put
+      % dup /gsubosl exch 4 .cjkv_getu16 _cjkv_type11_tmp 3 1 roll put
+      % dup /gsubofl exch 6 .cjkv_getu16 _cjkv_type11_tmp 3 1 roll put
+      dup /gsuboll exch 8 .cjkv_getu16 _cjkv_type11_tmp 3 1 roll put
+      CJKV_DEBUG_GSUB {
+        (gsubver: ) print _cjkv_type11_tmp /gsubver get =
+        % (gsubosl: ) print _cjkv_type11_tmp /gsubosl get =
+        % (gsubofl: ) print _cjkv_type11_tmp /gsubofl get =
+        (gsuboll: ) print _cjkv_type11_tmp /gsuboll get =
+      } if
+      % dup /gsubfmt exch _cjkv_type11_tmp /gsuboll get 0 add .cjkv_getu16 _cjkv_type11_tmp 3 1 roll put
+      dup /gsublc exch _cjkv_type11_tmp /gsuboll get 0 add .cjkv_getu16 _cjkv_type11_tmp 3 1 roll put
+      CJKV_DEBUG_GSUB {
+        (gsublc: ) print _cjkv_type11_tmp /gsublc get =
+        % (gsubfmt: ) print _cjkv_type11_tmp /gsubfmt get =
+      } if
+      _cjkv_type11_tmp /gsublc get 0 ne {
+        0 1 _cjkv_type11_tmp /gsublc get 1 sub {
+          2 mul /gsubolt exch 2 index exch _cjkv_type11_tmp /gsuboll get 2 add add .cjkv_getu16 _cjkv_type11_tmp /gsuboll get add _cjkv_type11_tmp 3 1 roll put
+          dup /gsubltype exch _cjkv_type11_tmp /gsubolt get 0 add .cjkv_getu16 _cjkv_type11_tmp 3 1 roll put
+          dup /gsublflag exch _cjkv_type11_tmp /gsubolt get 2 add .cjkv_getu16 _cjkv_type11_tmp 3 1 roll put
+          dup /gsubsubc exch _cjkv_type11_tmp /gsubolt get 4 add .cjkv_getu16 _cjkv_type11_tmp 3 1 roll put
+          CJKV_DEBUG_GSUB {
+            (gsubolt: ) print _cjkv_type11_tmp /gsubolt get =
+            (gsubltype: ) print _cjkv_type11_tmp /gsubltype get =
+            (gsublflag: ) print _cjkv_type11_tmp /gsublflag get =
+            (gsubsubc: ) print _cjkv_type11_tmp /gsubsubc get =
+          } if
+          _cjkv_type11_tmp /gsubsubc get 0 ne {
+            0 1 _cjkv_type11_tmp /gsubsubc get 1 sub {
+              2 mul /gsubost exch 2 index exch _cjkv_type11_tmp /gsubolt get 6 add add .cjkv_getu16 _cjkv_type11_tmp /gsubolt get add _cjkv_type11_tmp 3 1 roll put
+              dup /substfmt exch _cjkv_type11_tmp /gsubost get 0 add .cjkv_getu16 _cjkv_type11_tmp 3 1 roll put
+              CJKV_DEBUG_GSUB {
+                (gsubost: ) print _cjkv_type11_tmp /gsubost get =
+                (substfmt: ) print _cjkv_type11_tmp /substfmt get =
+              } if
+  %           _cjkv_type11_tmp /gsubver get 16#00010000 eq { % ifelse
+              _cjkv_type11_tmp /gsubltype get 1 eq _cjkv_type11_tmp /substfmt get 2 eq and { % ifelse
+                dup /gsubocv exch _cjkv_type11_tmp /gsubost get 2 add .cjkv_getu16 _cjkv_type11_tmp 3 1 roll put
+                dup /gsubglc exch _cjkv_type11_tmp /gsubost get 4 add .cjkv_getu16 _cjkv_type11_tmp 3 1 roll put
+                % hacked by suzuki toshiya at 2001/3/6
+                %dup /gsubvog exch _cjkv_type11_tmp /gsubost get 6 add _cjkv_type11_tmp /gsubglc get getinterval _cjkv_type11_tmp 3 1 roll put
+                %dup /gsubhog exch _cjkv_type11_tmp /gsubost get _cjkv_type11_tmp /gsubocv get add 4 add _cjkv_type11_tmp /gsubglc get getinterval _cjkv_type11_tmp 3 1 roll put
+                dup /gsubvog exch _cjkv_type11_tmp /gsubost get 6 add _cjkv_type11_tmp /gsubglc get 2 mul getinterval _cjkv_type11_tmp 3 1 roll put
+                dup /cvfmt exch _cjkv_type11_tmp /gsubost get _cjkv_type11_tmp /gsubocv get add 0 add .cjkv_getu16 _cjkv_type11_tmp 3 1 roll put
+                _cjkv_type11_tmp /cvfmt get 1 eq {
+                dup /cvglc exch _cjkv_type11_tmp /gsubost get _cjkv_type11_tmp /gsubocv get add 2 add .cjkv_getu16 _cjkv_type11_tmp 3 1 roll put
+                dup /gsubhog exch _cjkv_type11_tmp /gsubost get _cjkv_type11_tmp /gsubocv get add 4 add _cjkv_type11_tmp /cvglc get 2 mul getinterval _cjkv_type11_tmp 3 1 roll put
+                CJKV_DEBUG_GSUB {
+                  (gsubocv: ) print _cjkv_type11_tmp /gsubocv get =
+                  (gsubglc: ) print _cjkv_type11_tmp /gsubglc get =
+                  (cvfmt: ) print _cjkv_type11_tmp /cvfmt get =
+  
+                  (gsubhog->gsubvog ) =
+                  0 2 _cjkv_type11_tmp /gsubhog get length 2 sub { % for
+                    dup
+                    _cjkv_type11_tmp /gsubhog get exch .cjkv_getu16 =only
+                    (->) =only
+                    _cjkv_type11_tmp /gsubvog get exch .cjkv_getu16 =
+                  } for
+                } if
+                  /gsubh2v << 0 2 _cjkv_type11_tmp /gsubhog get length 2 sub {
+                    dup _cjkv_type11_tmp /gsubhog get exch .cjkv_getu16
+                    exch _cjkv_type11_tmp /gsubvog get exch .cjkv_getu16
+                  } for >> _cjkv_type11_tmp 3 1 roll put
+                } {
+                  _cjkv_type11_tmp /cvfmt get 2 eq {
+                    dup /cvrngc exch _cjkv_type11_tmp /gsubost get _cjkv_type11_tmp /gsubocv get add 2 add .cjkv_getu16 _cjkv_type11_tmp 3 1 roll put
+                    dup /cvrngs exch _cjkv_type11_tmp /gsubost get _cjkv_type11_tmp /gsubocv get add 4 add _cjkv_type11_tmp /cvrngc get 6 mul getinterval _cjkv_type11_tmp 3 1 roll put
+                    /gsubh2v << 0 6 _cjkv_type11_tmp /cvrngs get length 6 sub {
+                      dup 0 add /fgid exch _cjkv_type11_tmp /cvrngs get exch .cjkv_getu16 _cjkv_type11_tmp 3 1 roll put
+                      dup 2 add /lgid exch _cjkv_type11_tmp /cvrngs get exch .cjkv_getu16 _cjkv_type11_tmp 3 1 roll put
+                      4 add /cvidx exch _cjkv_type11_tmp /cvrngs get exch .cjkv_getu16 _cjkv_type11_tmp 3 1 roll put
+                      CJKV_DEBUG_GSUB {
+                        (fgid: ) print _cjkv_type11_tmp /fgid get =
+                        (lgid: ) print _cjkv_type11_tmp /lgid get =
+                        (cvidx: ) print _cjkv_type11_tmp /cvidx get =
+                      } if
+                      _cjkv_type11_tmp /fgid get 1 _cjkv_type11_tmp /lgid get {
+                        dup _cjkv_type11_tmp /cvidx get add _cjkv_type11_tmp /fgid get sub 2 mul
+                        _cjkv_type11_tmp /gsubvog get exch .cjkv_getu16
+                      } for
+                    } for >> _cjkv_type11_tmp 3 1 roll put
+                  } {
+                    %(UNKNWON COVERAGE FORMAT.) = flush
+                  } ifelse
+                } ifelse
+              } {
+                %(UNKNOWN GSUB FORMAT.) = flush
+              } ifelse
+  %           } {
+  %             (ILLEGAL GSUB VERSION.) = flush
+  %           } ifelse
+            } for
+          } if
+        } for
+      } if
+      pop
+    } if
+  } bind def
+  
+  % glyphid .gsublookup glyphid
+  % Lookup substitute table. return the origin if not found.
+  %   modified by Taiji Yamada <taiji@aihara.co.jp> and Hideyuki Suzuki
+  /.gsublookup {
+    CJKV_DEBUG_TT11 { (.gsublookup\n) print flush } if
+    dup _cjkv_type11_tmp /gsubh2v get exch .knownget { exch pop } if
+  } bind def
+  
+  % - .cjkv_getos2 -
+  % Defines os2ver, os2cp1, os2cp2
+  %   to detect the kind of CID with the OS/2 table of a TrueType font.
+  % Written by Taiji Yamada <taiji@aihara.co.jp>
+  %
+  % [OS/2 - OS/2 and Windows Metrics]
+  % Index        Size        Type        Name of Entry
+  % -----------------------------------
+  % 0        2        USHORT        version
+  % 2        2        SHORT        xAvgCharWidth
+  % 4        2        USHORT        usWeightClass
+  % 6        2        USHORT        usWidthClass
+  % 8        2        SHORT        fsType
+  % 10        2        SHORT        ySubscriptXSize
+  % 12        2        SHORT        ySubscriptYSize
+  % 14        2        SHORT        ySubscriptXOffset
+  % 16        2        SHORT        ySubscriptYOffset
+  % 18        2        SHORT        ySuperscriptXSize
+  % 20        2        SHORT        ySuperscriptYSize
+  % 22        2        SHORT   ySuperscriptXOffset
+  % 24        2        SHORT        ySuperscriptYOffset
+  % 26        2        SHORT        yStrikeoutSize
+  % 28        2        SHORT        yStrikeoutPosition
+  % 30        2        SHORT        sFamilyClass
+  % 32        10        BYTE        panose[10]
+  % 42        4        ULONG        ulUnicodeRange1
+  % 46        4        ULONG        ulUnicodeRange2
+  % 50        4        ULONG        ulUnicodeRange3
+  % 54        4        ULONG        ulUnicodeRange4
+  % 58        4        CHAR        achVendID[4]
+  % 62        2        USHORT        fsSelection
+  % 64        2        USHORT        usFirstCharIndex
+  % 66        2        USHORT        usLastCharIndex
+  % 68        2        SHORT        sTypoAscender
+  % 70        2        SHORT        sTypoDescender
+  % 72        2        SHORT        sTypoLineGap
+  % 74        2        USHORT        usWinAscent
+  % 76        2        USHORT        usWinDescent
+  % 78        4        ULONG        ulCodePageRange1
+  % 82        4        ULONG        ulCodePageRange2
+  % 86        2        SHORT        sxHeight
+  % 88        2        SHORT        sCapHeight
+  % 90        2        USHORT        usDefaultChar
+  % 92        2        USHORT        usBreakChar
+  % 94        2        USHORT        usMaxContext
+  % -----------------------------------
+  % References
+  % 1. http://www.microsoft.com/typography/OTSPEC/os2.htm
+  %
+  /.cjkv_getos2 {
+    CJKV_DEBUG_TT11 { (.cjkv_getos2\n) print flush } if
+    /os2ver 0 def
+    tabdict (OS/2) cvn .knownget { % if
+      dup /os2ver exch 0 .cjkv_getu16 def
+      os2ver 0 gt { % if
+        %dup /os2typ exch 8 .cjkv_gets16 def
+        %dup /os2fam exch 30 .cjkv_gets16 def
+        dup /os2ur1 exch 42 .cjkv_getu32 def
+        dup /os2ur2 exch 46 .cjkv_getu32 def
+        dup /os2ur3 exch 50 .cjkv_getu32 def
+        dup /os2ur4 exch 54 .cjkv_getu32 def
+        %dup /os2sel exch 62 .cjkv_getu16 def
+        %dup /os2fci exch 64 .cjkv_getu16 def
+        %dup /os2lci exch 64 .cjkv_getu16 def
+        dup /os2cp1 exch 78 .cjkv_getu32 def 
+        dup /os2cp2 exch 82 .cjkv_getu32 def
+        CJKV_DEBUG_OS2 {
+          /tmp 64 string def
+          (os2ver: ) print os2ver 2 tmp cvrs =
+          %(os2typ: ) print os2typ 2 tmp cvrs =
+          %(os2fam: ) print os2fam 2 tmp cvrs =
+          (os2ur1: ) print os2ur1 2 tmp cvrs =
+          (os2ur2: ) print os2ur2 2 tmp cvrs =
+          (os2ur3: ) print os2ur3 2 tmp cvrs =
+          (os2ur4: ) print os2ur4 2 tmp cvrs =
+          %(os2sel: ) print os2sel 2 tmp cvrs =
+          %(os2fci: ) print os2fci 2 tmp cvrs =
+          %(os2lci: ) print os2lci 2 tmp cvrs =
+          (os2cp1: ) print os2cp1 2 tmp cvrs =
+          (os2cp2: ) print os2cp2 2 tmp cvrs =
+          [
+            [ 1 0 bitshift (Latin 1)        ]
+            [ 1 1 bitshift (Latin 2)        ]
+            [ 1 2 bitshift (Cyrillic)        ]
+            [ 1 3 bitshift (Greek)        ]
+            [ 1 4 bitshift (Turkish)        ]
+            [ 1 5 bitshift (Hebrew)        ]
+            [ 1 6 bitshift (Arabic)        ]
+            [ 1 7 bitshift (Baltic)        ]
+            [ 1 8 bitshift (Vietnamese)        ]
+            [ 1 16 bitshift (Thai)        ]
+            [ 1 17 bitshift (Japanese)        ]
+            [ 1 18 bitshift (Simplified Chinese)        ]
+            [ 1 19 bitshift (Korean Wansung)        ]
+            [ 1 20 bitshift (Traditional Chinese)        ]
+            [ 1 21 bitshift (Korean Johab)        ]
+            [ 1 31 bitshift (Symbol)        ]
+          ] { % forall
+            dup 0 get os2cp1 and 0 gt { % if
+              (CodePage: ) print 1 get =
+            } {
+                pop
+            } ifelse
+          } forall
+        } if
+      } if
+      pop
+    } if
+  } bind def
+  
+  % ---------------- CJK TrueType font loading ---------------- %
+  
+  % Written by the gs-cjk project
+  
+  % .parsecmap
+  % push an array as a result of reading a CMap file.
+  % the array is of the following form.
+  %   [ [ [ dst src num ] [ dst src num ] ... [ dst src num ] ]
+  %     [ [ dst src num ] [ dst src num ] ... [ dst src num ] ]
+  %     ...
+  %     [ [ dst src num ] [ dst src num ] ... [ dst src num ] ] ]
+  % each array [dst src num] corresponds to each line within
+  % /begin{bf,cid}{char,range}/end{bf,cid}{char,range} pairs.
+  
+  /.parsecmapdict mark
+  
+    CJKV_DEBUG_TT11 { (.parsecmapdict\n) print flush } if
+    % override system operators
+    /findresource { pop } bind
+    /defineresource { pop pop } bind
+    /dict {}
+    /def { pop pop } bind
+    /dup null
+    /begin { pop } bind
+    /end {}
+    /currentdict null
+  
+    % override CMap operators
+    /usecmap { pop } bind
+    /CMapName null
+    /begincmap { [ } bind
+    /endcmap { ] } bind
+    /begincodespacerange { pop mark } bind
+    /endcodespacerange { cleartomark } bind
+    /beginnotdefrange { pop mark } bind
+    /endnotdefrange { cleartomark } bind
+    /beginbfchar { /parsecmapcounter exch def } bind        % for FromCID CMaps
+    /endbfchar {
+      parsecmapcounter dup array exch 1 sub -1 0 {
+        [ 5 3 roll exch .cjkv_strtoint 1 ]
+        2 index 3 1 roll put
+      } for
+    } bind
+    /beginbfrange { begincidrange }                       % for FromCID CMaps
+    /endbfrange { endcidrange }
+    /begincidchar { beginbfchar }                                % for ToCID CMaps
+    /endcidchar { endbfchar }
+    /begincidrange { /parsecmapcounter exch def } bind        % for ToCID CMaps
+    /endcidrange {
+      parsecmapcounter dup array exch 1 sub -1 0 {
+        [ 6 3 roll 3 1 roll .cjkv_strtoint exch .cjkv_strtoint exch 1 index sub 1 add ]
+        2 index 3 1 roll put
+      } for
+    } bind
+  
+    % misc
+    /parsecmapcounter 0
+  
+  .dicttomark def         % .parsecmapdict
+  
+  
+  /.parsecmapfname 100 string def
+  
+  % <CMapName> .parsecmap <array>
+  % Return the contents of the CMap.  If the CMap is not found, empty array
+  % is returned.  Note that usecmap is ignored because of efficiency.
+  /.parsecmap {
+    CJKV_DEBUG_TT11 { (.parsecmap\n) print flush } if
+    /CMap /Category findresource begin
+    //.parsecmapfname ResourceFileName end        % filename
+    dup status {
+      pop pop pop pop
+      _cjkv_type11_util /.parsecmapdict get begin run end
+    } {
+      pop []
+    } ifelse
+  } bind def
+  
+  % .cjkv_buildcmaptab
+  % construct a cmap table using information obtained from horizontal/vertical
+  % CMaps, ToUnicode CMap, and substition data.
+  
+  % cmap /CMap proc .applyCMap cmap
+  /.applyCMap {
+    CJKV_DEBUG_TT11 { (.applyCMap\n) print flush } if
+    exch _cjkv_type11_util /.parsecmap get exec                        % {} [[[].].]
+    dup length 1 sub -1 0 {                % {} [[[].].] len-1 -1 0 {} for
+      1 index exch get                        % {} [[[].].] [[].]
+      dup length 1 sub -1 0 {                % {} [[[].].] [[].] len-1 -1 0 for {}
+        1 index exch get                        % {} [[[].].] [[].] [ cid gid num ]
+        cvx exec cmapglyphs                % {} [[[].].] [[].] cid gid num gmap
+        3 1 roll .cjkv_safegetinterval {        % {} [[[].].] [[].] cid [gid'..]
+          4 index exec dup cmapglyphs 0 get eq 1 index 0 eq or {
+            % found no glyph
+            pop
+          } {
+            % found a glyph
+            5 index exch 2 index exch .cjkv_safeput
+          } ifelse
+          1 add                                % {} [[[].].] [[].] cid++
+        } forall pop
+      } for                                % {} [[[].].] [[].]
+      pop                                        % {} [[[].].]
+    } for                                        % {} [[[].].]
+    pop pop                                %
+  } bind def
+  
+  % cmap /CMap-V .applyvCMap cmap
+  /.applyvCMap {
+    CJKV_DEBUG_TT11 { (.applyvCMap\n) print flush } if
+    _cjkv_type11_tmp /gsubh2v get null ne {
+      { _cjkv_type11_util /.gsublookup get exec } _cjkv_type11_util /.applyCMap get exec
+    } {
+      { } _cjkv_type11_util /.applyCMap get exec
+    } ifelse
+  } bind def
+  
+  % cmap /CMap-H .applyhCMap cmap
+  /.applyhCMap {
+    CJKV_DEBUG_TT11 { (.applyhCMap\n) print flush } if
+    { } _cjkv_type11_util /.applyCMap get exec
+  } bind def
+  
+  % cmap /CMap-V .applyvCMapUnicode cmap
+  /.applyvCMapUnicode {
+    CJKV_DEBUG_TT11 { (.applyvCMapUnicode\n) print flush } if
+    _cjkv_type11_tmp /gsubh2v get null ne {
+      {
+        dup 16#f900 ge
+        1 index 16#ff00 ge 2 index 16#ff9f le and not
+        and not {
+          _cjkv_type11_util /.gsublookup get exec
+        } if
+      } bind _cjkv_type11_util /.applyCMap get exec
+    } {
+      { } _cjkv_type11_util /.applyCMap get exec
+    } ifelse
+  } bind def
+  
+  % cmap /Adobe-*-* .applyCIDToCode cmap
+  /.applyCIDToCode {
+    CJKV_DEBUG_TT11 { (.applyCIDToCode\n) print flush } if
+    _cjkv_type11_util /.parsecmap get exec
+    {
+      {                           % cmap [ dist cid num ]
+        dup 0 get length 2 gt {   % multi-byte dist is not supported yet.
+          pop
+        } {
+          cvx exec exch           % cmap dist num cid
+          cmapglyphs 4 2 roll     % cmap cid cmapglyphs dist num
+          exch .cjkv_strtoint exch
+          .cjkv_safegetinterval        % cmap cid subcmapglyphs
+          {                       % cmap cid gid
+            2 index 2 index       % cmap cid gid cmap cid
+            3 2 roll              % cmap cid cmap cid gid
+            .cjkv_safeput              % cmap cid
+            1 add                 % cmap nextcid
+          } forall pop
+        } ifelse
+      } forall
+    } forall
+  } bind def
+  
+  % cmap /Adobe-*-UCS2 .applyCIDToUnicode cmap
+  /.applyCIDToUnicode {
+    CJKV_DEBUG_TT11 { (.applyCIDToUnicode\n) print flush } if
+    _cjkv_type11_util /.parsecmap get exec
+    {
+      {                           % cmap [ distuni cid num ]
+        dup 0 get length 2 gt     % multi-byte dist is not supported yet.
+        1 index 0 get <fffd> eq   % the value <fffd> is regard as undefined code.
+        or {
+          pop
+        } {
+          cvx exec exch           % cmap distuni num cid
+          cmapglyphs 4 2 roll     % cmap cid cmapglyphs distuni num
+          exch .cjkv_strtoint exch     % cmap cid cmapglyphs distuni num
+          .cjkv_safegetinterval        % cmap cid subcmapglyphs
+          {                       % cmap cid gid
+            2 index 2 index       % cmap cid gid cmap cid
+            3 2 roll              % cmap cid cmap cid gid
+            .cjkv_safeput              % cmap cid
+            1 add                 % cmap nextcid
+          } forall pop
+        } ifelse
+      } forall
+    } forall
+  } bind def
+  
+  /.cjkv_buildcmapdict mark
+    /Adobe-CNS1 <<
+      /Registry (Adobe)
+      /Ordering (CNS1)
+      /CIDCounts [ 14099 17408 17601 18846 18962 ]
+      /Big5 { 0 {
+        /Adobe-CNS1-ETen-B5     _cjkv_type11_util /.applyCIDToCode    get exec
+        /ETen-B5-V              _cjkv_type11_util /.applyvCMap        get exec
+        /ETen-B5-H              _cjkv_type11_util /.applyhCMap        get exec
+      } }
+      /Unicode { 3 {
+        /Adobe-CNS1-UCS2        _cjkv_type11_util /.applyCIDToUnicode get exec
+        /UniCNS-UCS2-V          _cjkv_type11_util /.applyvCMapUnicode get exec
+        /UniCNS-UCS2-H          _cjkv_type11_util /.applyhCMap        get exec
+      } }
+    >>
+    /Adobe-GB1 <<
+      /Registry (Adobe)
+      /Ordering (GB1)
+      /CIDCounts [ 7717 9897 22127 22353 29064 ]
+      /PRC { 2 {
+        /Adobe-GB1-GBK-EUC      _cjkv_type11_util /.applyCIDToCode    get exec
+        /GBK-EUC-V              _cjkv_type11_util /.applyvCMap        get exec
+        /GBK-EUC-H              _cjkv_type11_util /.applyhCMap        get exec
+      } }
+      /Unicode { 4 {
+        /Adobe-GB1-UCS2         _cjkv_type11_util /.applyCIDToUnicode get exec
+        /UniGB-UCS2-V           _cjkv_type11_util /.applyvCMapUnicode get exec
+        /UniGB-UCS2-H           _cjkv_type11_util /.applyhCMap        get exec
+      } }
+    >>
+    /Adobe-Japan1 <<
+      /Registry (Adobe)
+      /Ordering (Japan1)
+      /CIDCounts [ 8284 8359 8720 9354 15444 20317 23058 ]
+      /ShiftJIS { 2 {
+        /Adobe-Japan1-90ms-RKSJ _cjkv_type11_util /.applyCIDToCode    get exec
+        /90ms-RKSJ-V            _cjkv_type11_util /.applyvCMap        get exec
+        /90ms-RKSJ-H            _cjkv_type11_util /.applyhCMap        get exec
+      } }
+      /Unicode { 4 {
+        /Adobe-Japan1-UCS2      _cjkv_type11_util /.applyCIDToUnicode get exec
+        /UniJIS-UCS2-V          _cjkv_type11_util /.applyvCMapUnicode get exec
+        /UniJIS-UCS2-H          _cjkv_type11_util /.applyhCMap        get exec
+      } }
+    >>
+    /Adobe-Japan2 <<
+      /Registry (Adobe)
+      /Ordering (Japan2)
+      /CIDCounts [ 6068 ]
+      /Unicode { 0  {
+        /UniHojo-UCS2-V         _cjkv_type11_util /.applyvCMapUnicode get exec
+        /UniHojo-UCS2-H         _cjkv_type11_util /.applyhCMap        get exec
+      } }
+    >>
+    /Adobe-Korea1 <<
+      /Registry (Adobe)
+      /Ordering (Korea1)
+      /CIDCounts [ 9333 18155 18352 ]
+      /Johab { 1 {
+        /KSC-Johab-V            _cjkv_type11_util /.applyvCMap        get exec
+        /KSC-Johab-H            _cjkv_type11_util /.applyhCMap        get exec
+      } }
+      /Unicode { 2 {
+        /Adobe-Korea1-UCS2      _cjkv_type11_util /.applyCIDToUnicode get exec
+        /UniKS-UCS2-V           _cjkv_type11_util /.applyvCMapUnicode get exec
+        /UniKS-UCS2-H           _cjkv_type11_util /.applyhCMap        get exec
+      } }
+      /Wansung { 1 {
+        /Adobe-Korea1-KSCms-UHC _cjkv_type11_util /.applyCIDToCode    get exec
+        /KSCms-UHC-V            _cjkv_type11_util /.applyvCMap        get exec
+        /KSCms-UHC-H            _cjkv_type11_util /.applyhCMap        get exec
+      } }
+    >>
+    /Identity <<        % ttcmap ordering CIDMap only for specific and rare CJK TTF
+      /Registry (Unregistered)        % Thus Registry value is unpredictable. This
+      /Ordering (Identity)        % CIDFont can be used with Identity-H|V CMap
+      /CIDCounts [ 65535 ]
+      /H { 0 {
+        /Identity-H             _cjkv_type11_util /.applyhCMap        get exec % for ttcmap-order CIDMap
+      } }
+      /V { 0 {
+        /Identity-H             _cjkv_type11_util /.applyvCMap        get exec % for ttcmap-order and vertically-used CIDMap
+      } }
+    >>
+  .dicttomark def
+  
+  /.cjkv_ttencmap <<
+    /Identity              false
+    /Auto                  { 
+                             CJKV_DEBUG_TT11 { (+++ ttencmap->Auto exec\n) print flush } if
+                             _cjkv_type11_util /.cjkv_ttencoding get exec {
+                               dup
+                               _cjkv_type11_util /.cjkv_ttcharset get
+                               exch get
+                             CJKV_DEBUG_TT11 { (+++                exec\n) print flush } if
+                               exec
+                             CJKV_DEBUG_TT11 { (+++                      ok\n) print flush } if
+                               exch true
+                             } {
+                               false
+                             } ifelse
+                           } bind
+    /Adobe-CNS1            { /Adobe-CNS1   _cjkv_type11_util /.cjkv_ttencoding get exec }
+    /Adobe-GB1             { /Adobe-GB1    _cjkv_type11_util /.cjkv_ttencoding get exec }
+    /Adobe-Japan1          { /Adobe-Japan1 _cjkv_type11_util /.cjkv_ttencoding get exec }
+    /Adobe-Japan2          { /Adobe-Japan2 _cjkv_type11_util /.cjkv_ttencoding get exec }
+    /Adobe-Korea1          { /Adobe-Korea1 _cjkv_type11_util /.cjkv_ttencoding get exec }
+    /Adobe-CNS1-Big5       { /Adobe-CNS1   /Big5     true }
+    /Adobe-CNS1-Unicode    { /Adobe-CNS1   /Unicode  true }
+    /Adobe-GB1-PRC         { /Adobe-GB1    /PRC      true }
+    /Adobe-GB1-Unicode     { /Adobe-GB1    /Unicode  true }
+    /Adobe-Japan1-ShiftJIS { /Adobe-Japan1 /ShiftJIS true }
+    /Adobe-Japan1-Unicode  { /Adobe-Japan1 /Unicode  true }
+    /Adobe-Japan2-Unicode  { /Adobe-Japan2 /Unicode  true }
+    /Adobe-Korea1-Johab    { /Adobe-Korea1 /Johab    true }
+    /Adobe-Korea1-Unicode  { /Adobe-Korea1 /Unicode  true }
+    /Adobe-Korea1-Wansung  { /Adobe-Korea1 /Wansung  true }
+    /Identity-H            { /Identity     /H        true }
+    /Identity-V            { /Identity     /V        true }
+  >> def
+  
+  /.cjkv_ttcharset <<
+    /Unicode  { _cjkv_type11_util /.cjkv_detectos2 get exec }
+    /ShiftJIS /Adobe-Japan1
+    /Big5     /Adobe-CNS1
+    /PRC      /Adobe-GB1
+    /Wansung  /Adobe-Korea1
+    /Johab    /Adobe-Korea1
+  >> def
+  
+  /.cjkv_ttencdict <<
+    <00030001> /Unicode
+    <00030002> /ShiftJIS
+    <00030003> /Big5
+    <00030004> /PRC
+    <00030005> /Wansung
+    <00030006> /Johab
+  >> def
+  
+  /.cjkv_ttencoding {
+    CJKV_DEBUG_TT11 { (.cjkv_ttencoding\n) print flush } if
+    _cjkv_type11_util /.cjkv_ttencdict get _cjkv_ttcmap_tmp /cmapsub get 0 4 getinterval .knownget
+  } bind def
+  
+  /.cjkv_ttos2tab [
+    [ 1 20 bitshift /Adobe-CNS1   ]
+    [ 1 18 bitshift /Adobe-GB1    ]
+    [ 1 17 bitshift /Adobe-Japan1 ]
+    [ 1 19 bitshift /Adobe-Korea1 ]
+    [ 1 21 bitshift /Adobe-Korea1 ]
+  ] def
+  
+  /.cjkv_detectos2 {
+    CJKV_DEBUG_TT11 { (.cjkv_detectos2\n) print flush } if
+    /Identity        % default linear ordering to GID, Adobe Identity CIDs
+    os2ver 0 gt {
+      _cjkv_type11_util /.cjkv_ttos2tab get {
+        dup 0 get os2cp1 and 0 ne {
+          1 get exch
+        } if pop
+      } forall
+    } if
+  } bind def
+
+end readonly def
