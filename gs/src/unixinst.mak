@@ -92,7 +92,7 @@ pdf2dsc.ps pdfopt.ps ;\
 	done'
 # install cjkv patch
 	$(SH) -c 'for f in $(PSLIBDIR)/cjkv/*.ps ;\
-	do $(INSTALL_DATA) $$f $(install_prefix)$(gsdatadir)/lib/cjkv/ ;\
+	do $(INSTALL_DATA) $$f $(DESTDIR)$(gsdatadir)/lib/cjkv/ ;\
 	done'
 
 # install the default resource files
