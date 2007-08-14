@@ -17,7 +17,7 @@
 /* $Id$ */
 /* ALPHA: Sample Device that provides WTS screening and IMDI color management */
 /* TODO: this should be configurable */
-#define LINK_ICC_NAME	"../../link.icc"
+#define LINK_ICC_NAME	"link.icc"
 
 #include "errno_.h"
 #include "string_.h"
