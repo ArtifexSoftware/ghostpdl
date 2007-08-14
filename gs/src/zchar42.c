@@ -10,16 +10,6 @@
    or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
-/*
- * Modified by AXE,Inc., BBR Inc. and Turbolinux Inc.
- *   under the technical advice by suzuki toshiya (Hiroshima University)
- * Based on bugfix by Masatake Yamato and Hideo Saito, 2001.
- * For questions, please send mail to espgs8-cjk@printing-japan.org
- *
- * (C) Copyright 2006 Center of the International Cooperation for
- *     Computerization
- */
- 
 
 /* $Id$ */
 /* Type 42 character display operator */
@@ -52,17 +42,11 @@ zchar42_set_cache(i_ctx_t *i_ctx_p, gs_font_base *pbfont, ref *cnref,
     double w[2];
     int present;
     gs_font_type42 *pfont42 = (gs_font_type42 *)pbfont;
-    gs_rect bbox,*pbbox;
-    int code = gs_type42_glyph_fbbox((gs_font *)pbfont, glyph_index, &bbox);
+    int code = zchar_get_metrics(pbfont, cnref, sbw);
+    gs_rect bbox;
     int vertical = gs_rootfont(igs)->WMode;
     float sbw_bbox[8];
 
-    if (code != 0) {
-      pbbox = &pbfont->FontBBox;
-    } else {
-      pbbox = &bbox;
-    }
-    code = zchar_get_metrics(pbfont, cnref, sbw);
     if (code < 0)
 	return code;
     present = code;
@@ -91,16 +75,9 @@ zchar42_set_cache(i_ctx_t *i_ctx_p, gs_font_base *pbfont, ref *cnref,
 		present = metricsSideBearingAndWidth;
 	    }
 	} else {
-	    float sbw_hbbox[8];
-
-	    code = pfont42->data.get_metrics(pfont42, glyph_index, 
-		    gs_type42_metrics_options_WMODE0_AND_BBOX, sbw_hbbox);
-	    if (code < 0)
-		return code;
-
 	    if (present == metricsNone) {
-		sbw[0] = sbw_hbbox[2] / 2;
-		sbw[1] = pbbox->q.y - sbw_bbox[1];
+		sbw[0] = sbw_bbox[2] / 2;
+		sbw[1] = (pbfont->FontBBox.q.y + pbfont->FontBBox.p.y - sbw_bbox[3]) / 2;
 		sbw[2] = sbw_bbox[2];
 		sbw[3] = sbw_bbox[3];
 		present = metricsSideBearingAndWidth;
@@ -136,7 +113,7 @@ zchar42_set_cache(i_ctx_t *i_ctx_p, gs_font_base *pbfont, ref *cnref,
     return zchar_set_cache(i_ctx_p, pbfont, cnref,
 			   (put_lsb && present == metricsSideBearingAndWidth ?
 			    sbw : NULL),
-			   w, pbbox,
+			   w, &bbox,
 			   cont, exec_cont,
 			   gs_rootfont(igs)->WMode ? sbw : NULL);
 }

@@ -154,7 +154,6 @@ currentdict /NODISPLAY known   not /DISPLAYING exch def
 currentdict /NOFONTMAP known   /NOFONTMAP exch def
 currentdict /NOFONTPATH known   /NOFONTPATH exch def
 currentdict /NOGC known   /NOGC exch def
-currentdict /NOCJKV known   /NOCJKV exch def
 currentdict /NOINTERPOLATE .knownget { /INTERPOLATE exch not def } if
 currentdict /NOMEDIAATTRS known /NOMEDIAATTRS exch def
 currentdict /NOOUTERSAVE known   /NOOUTERSAVE exch def
@@ -672,14 +671,6 @@ systemdict /internaldict dup .makeinternaldict .makeoperator
 	   { /undefinedfilename signalerror }
 	  ifelse
 	} bind def
-/runlibfileifexists
-	{		% We don't want to bind 'run' into this procedure,
-			% since run may get redefined.
-	  findlibfile
-	   { exch pop /run .systemvar exec }
-	   { pop }
-	  ifelse
-	} bind def
 /selectdevice
 	{ finddevice setdevice .setdefaultscreen } bind def
 /signalerror		% <object> <errorname> signalerror -
@@ -848,7 +839,6 @@ userdict /.currentresourcefile //null put
 	} bind def
 % Temporarily substitute it for the real runlibfile.
 /.runlibfile /runlibfile load def
-/.runlibfileifexists /runlibfileifexists load def
 /runlibfile /runlibfile0 load def
 
 % Create the error handling machinery.
@@ -2197,10 +2187,5 @@ WRITESYSTEMDICT not { systemdict readonly pop } if
 % support DeviceN and spot color separations this will need to
 % be 'true' in some cases.
 userdict /AGM_preserve_spots false put
-
-%Load CJKV environment.
-NOCJKV not {
-  (cjkv/cjkvinit.ps) runlibfile
-} if
 
 % The interpreter will run the initial procedure (start).

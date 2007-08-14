@@ -10,15 +10,6 @@
    or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
-/*
- * Modified by AXE,Inc., BBR Inc. and Turbolinux Inc.
- *   under the technical advice by suzuki toshiya (Hiroshima University)
- * Based on bugfix by Hideo Saito, 2001.
- * For questions, please send mail to espgs8-cjk@printing-japan.org
- *
- * (C) Copyright 2006 Center of the International Cooperation for
- *     Computerization
- */
 
 /* $Id$ */
 /* Type 1 character display operator */
@@ -239,7 +230,7 @@ charstring_execchar_aux(i_ctx_t *i_ctx_p, gs_text_enum_t *penum, gs_font *pfont)
 	cxs.sbw[2] = 0;
 	cxs.sbw[3] = -penum->FontBBox_as_Metrics2.x; /* Sic! */
 	cxs.use_FontBBox_as_Metrics2 = true;
-	cxs.present = metricsSideBearingAndWidth;
+	cxs.present = metricsNone;
     }
     /* Establish a current point. */
     code = gs_moveto(igs, 0.0, 0.0);
@@ -272,8 +263,7 @@ charstring_execchar_aux(i_ctx_t *i_ctx_p, gs_text_enum_t *penum, gs_font *pfont)
 	const ref *opstr = op;
 	ref other_subr;
 
-	if (cxs.present == metricsSideBearingAndWidth
-	    && !cxs.use_FontBBox_as_Metrics2) {
+	if (cxs.present == metricsSideBearingAndWidth) {
 	    gs_point sbpt;
 
 	    sbpt.x = cxs.sbw[0], sbpt.y = cxs.sbw[1];
@@ -381,48 +371,11 @@ type1exec_bbox(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs,
     } else {
 	/* We have the width and bounding box: */
 	/* set up the cache device now. */
-        double w[2];
-        w[0] = pcxs->sbw[2], w[1] = pcxs->sbw[3];
-      
-	if (pcxs->use_FontBBox_as_Metrics2) {
-	   /* In this case, we have to calculate width for WMode=0. 
-	      pcxs->sbw[2, 3] is width for WMode=1.
-	      Normally, the width for WMode=0 is not used in WMode=1 
-	      rendering. However, if CDevProc is defined, 
-	      the width for WMode=0 is used. 
-	      Do the same as the case pcxs->present == metricsNone */
-	     double sbw[4];
-	     ref cnref;
-	     ref other_subr;
-	     int code;
-	     
-	    /* Since an OtherSubr callout might change osp, */
-	    /* save the character name now. */
-	    ref_assign(&cnref, op - 1);
-	    code = type1_continue_dispatch(i_ctx_p, pcxs, op, &other_subr, 4);
-	    op = osp;		/* OtherSubrs might change it */
-	    switch (code) {
- 	     default:		/* code < 0 or done, error */
-		 return ((code < 0 ? code :
-			 gs_note_error(e_invalidfont)));
-	    case type1_result_callothersubr:	/* unknown OtherSubr */
-		return type1_call_OtherSubr(i_ctx_p, pcxs,
-					    bbox_getsbw_continue,
-					    &other_subr);
-	    case type1_result_sbw:	/* [h]sbw, done */
-		break;
-	    }
-	    type1_cis_get_metrics(pcis, sbw);
-	    w[0] = sbw[2], w[1] = sbw[3];
-	    /* Now actual width is available, I can calculate much 
-	       better side bearing for WMode 1 from the width. */
-	    pcxs->sbw[0] = w[0] / 2;
-	}
  	return zchar_set_cache(i_ctx_p, pbfont, op - 1,
 			       (pcxs->present == metricsSideBearingAndWidth
 			        && !pcxs->use_FontBBox_as_Metrics2 ?
 			        pcxs->sbw : NULL),
-			       w,
+			       pcxs->sbw + 2,
 			       &pcxs->char_bbox,
 			       cont, exec_cont, 
 			       (pcxs->use_FontBBox_as_Metrics2 ? pcxs->sbw : NULL));
@@ -650,7 +603,7 @@ bbox_draw(i_ctx_t *i_ctx_p, int (*draw)(gs_state *), op_proc_t *exec_cont)
     code = type1_exec_init(&cxs.cis, penum, igs, pfont1);
     if (code < 0)
 	return code;
-    cxs.char_bbox = bbox;
+    cxs.char_bbox = pfont1->FontBBox;
     code = type1exec_bbox(i_ctx_p, &cxs, pfont, exec_cont);
     return code;
 }
@@ -855,7 +808,6 @@ nobbox_finish(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs)
     int code;
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
     gs_font *pfont;
-    double w[2];
 
     if ((code = gs_pathbbox(igs, &pcxs->char_bbox)) < 0 ||
 	(code = font_param(op - 3, &pfont)) < 0
@@ -868,24 +820,13 @@ nobbox_finish(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs)
 	gs_font_type1 *const pfont1 = (gs_font_type1 *) pfont;
 	op_proc_t cont, exec_cont = 0;
 
-	if (pcxs->present == metricsNone
-	    || pcxs->use_FontBBox_as_Metrics2) {
+	if (pcxs->present == metricsNone) {
 	    gs_point endpt;
 
 	    if ((code = gs_currentpoint(igs, &endpt)) < 0)
 		return code;
-	    /* We will not use sbw[3, 4]. 
-	       If pcxs->use_FontBBox_as_Metrics2 is true,
-	       sbw[3, 4] are used as arguments(W1x, W1y) of setcachedevice2. 
-	       We will use w[0, 1] as W0x and W0y of setcachedevice2.
-	       W0 and W1 is differrent parameters. Don't confuse. */
-	    w[0] = endpt.x, w[1] = endpt.y;
+	    pcxs->sbw[2] = endpt.x, pcxs->sbw[3] = endpt.y;
 	    pcxs->present = metricsSideBearingAndWidth;
-	    if (pcxs->use_FontBBox_as_Metrics2) {
-	      /* Now actual width is available, I can calculate much 
-		 better side bearing for WMode 1 from the width. */
-	      pcxs->sbw[0] = w[0] / 2;
-	    }
 	}
 	/*
 	 * We only need to rebuild the path from scratch if we might
@@ -902,7 +843,7 @@ nobbox_finish(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs)
 	} else {
 	    cont = (pbfont->PaintType == 0 ? nobbox_fill : nobbox_stroke), exec_cont = 0;
 	    code = zchar_set_cache(i_ctx_p, pbfont, op - 1, NULL,
-				    w,
+				   pcxs->sbw + 2,
 				   &pcxs->char_bbox,
 				   cont, &exec_cont,
 				   (pcxs->use_FontBBox_as_Metrics2 ? pcxs->sbw : NULL));

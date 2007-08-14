@@ -63,7 +63,6 @@ install-libdata:
 	-mkdir -p $(DESTDIR)$(gsdir)
 	-mkdir -p $(DESTDIR)$(gsdatadir)
 	-mkdir -p $(DESTDIR)$(gsdatadir)/lib
-	-mkdir -p $(DESTDIR)$(gsdatadir)/lib/cjkv
 	$(SH) -c 'for f in \
 $(EXTRA_INIT_FILES) Fontmap.GS \
 ht_ccsto.ps \
@@ -89,10 +88,6 @@ pdf2dsc.ps pdfopt.ps ;\
 	done'
 	$(SH) -c 'for f in $(PSLIBDIR)/*.ppd $(PSLIBDIR)/*.rpd $(PSLIBDIR)/*.upp $(PSLIBDIR)/*.xbm $(PSLIBDIR)/*.xpm;\
 	do $(INSTALL_DATA) $$f $(DESTDIR)$(gsdatadir)/lib ;\
-	done'
-# install cjkv patch
-	$(SH) -c 'for f in $(PSLIBDIR)/cjkv/*.ps ;\
-	do $(INSTALL_DATA) $$f $(DESTDIR)$(gsdatadir)/lib/cjkv/ ;\
 	done'
 
 # install the default resource files
