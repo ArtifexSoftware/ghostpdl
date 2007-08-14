@@ -138,10 +138,12 @@ imdi_open_device(gx_device *dev)
     
     luo->spaces(luo, &ins, &inn, &outs, &outn, &alg, NULL, NULL, NULL);
 
+#ifdef DEBUG
     dprintf3("%s -> %s [%s]\n",
 	    icm2str(icmColorSpaceSignature, ins),
 	    icm2str(icmColorSpaceSignature, outs),
 	    icm2str(icmLuAlg, alg));
+#endif
 
     if (inn != 3)
 	return gs_throw1(-1, "profile must have 3 input channels. got %d.", inn);

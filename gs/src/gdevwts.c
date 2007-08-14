@@ -343,7 +343,7 @@ wts_init_halftones(gx_device_wts *wdev, int n_planes)
 	    sprintf(wts_fn, "wts_plane_%d", i);
 	    code = wts_load_halftone(wdev->memory, &wdev->wcooked[i], wts_fn);
 	    if (code < 0)
-		return code;
+		return gs_throw1(code, "could not open file '%s'", wts_fn);
 	}
     }
     return 0;
@@ -367,7 +367,8 @@ wtscmyk_print_page(gx_device_printer *pdev, FILE *prn_stream)
     int i, unused_color_cache_slots;
 
     /* Initialize the wts halftones. */
-    wts_init_halftones(wdev, n_planes);
+    code = wts_init_halftones(wdev, n_planes);
+    if (code < 0) goto out;
 
     cmyk_line = (byte *)gs_malloc(pdev->memory, cmyk_bytes, 1, "wtscmyk_print_page(in)");
     if (cmyk_line == 0) {
@@ -511,10 +512,12 @@ wtsimdi_open_device(gx_device *dev)
     
     luo->spaces(luo, &ins, &inn, &outs, &outn, &alg, NULL, NULL, NULL);
 
+#ifdef DEBUG
     dprintf3("%s -> %s [%s]\n",
 	    icm2str(icmColorSpaceSignature, ins),
 	    icm2str(icmColorSpaceSignature, outs),
 	    icm2str(icmLuAlg, alg));
+#endif
 
     if (inn != 3)
 	return gs_throw1(-1, "profile must have 3 input channels. got %d.", inn);
@@ -1062,7 +1065,7 @@ wtsimdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
     gx_device_wtsimdi *idev = (gx_device_wtsimdi*)pdev;
     int n_planes = 4;
     byte * halftoned_data;
-    byte * halftoned_buffer;
+    byte * halftoned_buffer = NULL;
     int halftoned_bytes, y;
     int i, code = 0;
     int unused_color_cache_slots;
@@ -1081,7 +1084,8 @@ wtsimdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
     /*
      * Initialize the WTS halftones.
      */
-    wts_init_halftones((gx_device_wts *)idev, n_planes);
+    code = wts_init_halftones((gx_device_wts *)idev, n_planes);
+    if (code < 0) goto cleanup;
 
     /*
      * Allocate a buffer to hold the halftoned data.  This is 1 bit per
@@ -1126,20 +1130,24 @@ wtsimdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	    write_pkmraw_row(width, halftoned_data, prn_stream);
     }
 cleanup:
+    if (idev->color_cache != NULL) {
 #ifdef DEBUG
-    for (i=0,unused_color_cache_slots=0; i<COLOR_CACHE_SIZE; i++)
+      for (i=0,unused_color_cache_slots=0; i<COLOR_CACHE_SIZE; i++)
 	if (idev->color_cache[i].color_index == gx_no_color_index)
 	    unused_color_cache_slots++;
-    if_debug5(':',"wtsimdi_print_page color cache stats: current=%ld, hits=%ld,"
-	" collisions=%ld, fill=%ld, unused_slots=%d\n",
-	idev->color_is_current, idev->color_cache_hit, idev->color_cache_collision,
-	idev->cache_fill_empty, unused_color_cache_slots);
+	if_debug5(':',"wtsimdi_print_page color cache stats:"
+	    " current=%ld, hits=%ld,"
+	    " collisions=%ld, fill=%ld, unused_slots=%d\n",
+	    idev->color_is_current, idev->color_cache_hit, 
+	    idev->color_cache_collision, idev->cache_fill_empty, 
+	    unused_color_cache_slots);
 #endif
-    gs_free(pdev->memory, idev->color_cache, COLOR_CACHE_SIZE, sizeof(cached_color),
-	    "wtscmyk_print_page(color_cache)");
+	gs_free(pdev->memory, idev->color_cache, COLOR_CACHE_SIZE, 
+	    sizeof(cached_color), "wtscmyk_print_page(color_cache)");
+    }
     if (halftoned_buffer != NULL)
 	gs_free(pdev->memory, halftoned_buffer, halftoned_bytes * n_planes, 1,
 		       	"wtsimdi_print_page(halftoned_buffer)");
     set_dev_proc(pdev, get_bits, save_get_bits);
-    return 0;
+    return code;
 }
