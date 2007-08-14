@@ -153,7 +153,7 @@ BAND_LIST_COMPRESSOR=zlib
 # Define which major version of MSVC is being used (currently, 4, 5, & 6 supported)
 #       default to the latest version
 !ifndef MSVC_VERSION
-MSVC_VERSION=6
+MSVC_VERSION=8
 !endif
 
 !ifndef D
