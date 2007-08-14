@@ -108,9 +108,11 @@ COMPILE_INITS=1
 APP_CCC=$(CC_) -I..\pl -I..\gs\src -I.\obj $(C_)
 !endif
 
-# Define which major version of MSVC is being used (currently, 4, 5, & 6 supported)
-#       default to the latest version
-MSVC_VERSION=6
+# Define which major version of MSVC is being used (currently 6, 7 and 
+# 8 are supported). Default should be the latest version.
+!ifndef MSVC_VERSION
+MSVC_VERSION=8
+!endif
 
 D=\\
 DD=$(GLGENDIR)
