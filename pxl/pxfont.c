@@ -337,6 +337,7 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
     int code = 0;
     gs_char *pchr = 0;
     pl_font_t *plfont;
+    gs_matrix save_ctm;
 
     if ( pfont == 0 )
 	return_error(errorNoCurrentFont);
@@ -362,7 +363,13 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
             return 0;
     }
 
+    /* set the character matrix in the graphics state */
     gs_setcharmatrix(pgs, &pxgs->char_matrix);
+    /* The character matrix is not visible to devices.  High level
+       devices get character scaling information from the font's
+       matrix (FontMatrix).  */
+    gs_matrix_multiply(&pxgs->char_matrix, &pfont->orig_FontMatrix,
+                       &pfont->FontMatrix);
     /* we don't need to consider the vertical mess for resident fonts */
     if (plfont->storage != pxfsDownLoaded) {
         pfont->WMode = 0; /* horizontal */
@@ -406,7 +413,6 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
         code = px_text_setup(pgs, pchr, len, fxvals, fyvals,
                              len, mem, &penum, to_path,
                              pxgs->char_bold_value == 0);
-
 
         if ( code >= 0 ) {
             code = gs_text_process(penum);

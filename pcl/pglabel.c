@@ -778,10 +778,8 @@ hpgl_print_char(
 	    gs_concat(pgs, &smat);
 	}
 
-	/*
-	 * Patch the next-character procedure.
-	 */
 	gs_setfont(pgs, pfont);
+        pfont->FontMatrix = pfont->orig_FontMatrix;
 
 	/*
 	 * Adjust the initial position of the character according to

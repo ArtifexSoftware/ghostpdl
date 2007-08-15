@@ -658,6 +658,7 @@ pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir, gs_memory_
         int i;
 	plfont->pfont = pfont;
 	/* Initialize generic font data. */
+        gs_make_identity(&pfont->orig_FontMatrix);
 	pfont->next = pfont->prev = 0;
 	pfont->memory = mem;
 	pfont->dir = pdir;
@@ -690,16 +691,13 @@ pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir, gs_memory_
 	}
 	strncpy(pfont->key_name.chars, font_name, sizeof(pfont->font_name.chars));
 	pfont->key_name.size = strlen(font_name);
-        memset(&pfont->orig_FontMatrix, 0, sizeof(pfont->orig_FontMatrix));
 	return 0;
 }
 
 /* Fill in bitmap font boilerplate. */
 void
 pl_fill_in_bitmap_font(gs_font_base *pfont, long unique_id)
-{	/* It appears that bitmap fonts don't need a FontMatrix. */
-	gs_make_identity(&pfont->FontMatrix);
-	pfont->FontType = ft_user_defined;
+{	pfont->FontType = ft_user_defined;
 	pfont->BitmapWidths = true;
 	pfont->ExactSize = fbit_use_bitmaps;
 	pfont->InBetweenSize = fbit_use_bitmaps;
@@ -716,8 +714,7 @@ pl_fill_in_bitmap_font(gs_font_base *pfont, long unique_id)
 /* Fill in TrueType font boilerplate. */
 void
 pl_fill_in_tt_font(gs_font_type42 *pfont, void *data, long unique_id)
-{	gs_make_identity(&pfont->FontMatrix);
-	pfont->FontType = ft_TrueType;
+{	pfont->FontType = ft_TrueType;
 	pfont->BitmapWidths = true;
 	pfont->ExactSize = fbit_use_outlines;
 	pfont->InBetweenSize = fbit_use_outlines;
@@ -750,7 +747,7 @@ pl_fill_in_intelli_font(gs_font_base *pfont, long unique_id)
 {	/* Intellifonts have an 8782-unit design space. */
  	{ gs_matrix mat;
 	  gs_make_scaling(1.0/8782, 1.0/8782, &mat);
-	  gs_matrix_translate(&mat, -2980.0, -5380.0, &pfont->FontMatrix);
+	  gs_matrix_translate(&mat, -2980.0, -5380.0, &pfont->orig_FontMatrix);
 	}
 	pfont->FontType = ft_user_defined;
 	pfont->BitmapWidths = true;

@@ -249,10 +249,12 @@ px_begin_error_page(px_state_t *pxs)
 	/*pxSetPageDefaultCTM(NULL, pxs);*/
 	{
 	    gs_point pt;
+            gs_font *pfont = pxs->error_page_font->pfont;
 	    px_get_default_media_size(pxs, &pt);
 	    gs_translate(pgs, 0.0, pt.y);
 	    gs_scale(pgs, 1.0, -1.0);
-	    gs_setfont(pgs, (gs_font *)pxs->error_page_font->pfont);
+	    gs_setfont(pgs, pfont);
+            pfont->FontMatrix = pfont->orig_FontMatrix;
 	    return 90;
 	}
 }

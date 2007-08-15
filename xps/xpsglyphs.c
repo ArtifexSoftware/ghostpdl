@@ -589,7 +589,11 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     gs_make_scaling(font_size, -font_size, &matrix);
     if (is_sideways)
 	gs_matrix_rotate(&matrix, 90.0, &matrix);
+
     gs_setcharmatrix(ctx->pgs, &matrix);
+
+    gs_matrix_multiply(&matrix, &font->font->orig_FontMatrix,
+                       &font->font->FontMatrix);
 
     xps_begin_opacity(ctx, dict, opacity_att, opacity_mask_tag);
 

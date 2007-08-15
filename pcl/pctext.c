@@ -57,6 +57,8 @@ set_gs_font(
 {
     gs_font *       pfont = (gs_font *)pcs->font->pfont;
     gs_setfont(pcs->pgs, pfont);
+    /* font scaling is reflected directly in the ctm */
+    pfont->FontMatrix = pfont->orig_FontMatrix;
 }
 
 /* uncomment the following definition to treat map type 0 as defined
