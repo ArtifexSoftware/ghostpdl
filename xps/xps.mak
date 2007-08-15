@@ -33,8 +33,8 @@ $(XPSOBJ)xpscrc.$(OBJ): $(XPSSRC)xpscrc.c $(XPSINCLUDES)
 $(XPSOBJ)xpsjpeg.$(OBJ): $(XPSSRC)xpsjpeg.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpsjpeg.c $(XPSO_)xpsjpeg.$(OBJ)
 
-$(XPSOBJ)xpspng.$(OBJ): $(XPSSRC)xpspng.c $(XPSINCLUDES)
-	$(XPSCCC) $(XPSSRC)xpspng.c $(XPSO_)xpspng.$(OBJ)
+$(XPSOBJ)xpspng.$(OBJ): $(XPSSRC)xpspng.c $(XPSINCLUDES) $(PSRCDIR)$(D)png.h
+	$(XPSCCC) $(I_)$(PSRCDIR)$(_I) $(XPSSRC)xpspng.c $(XPSO_)xpspng.$(OBJ)
 
 $(XPSOBJ)xpstiff.$(OBJ): $(XPSSRC)xpstiff.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpstiff.c $(XPSO_)xpstiff.$(OBJ)
