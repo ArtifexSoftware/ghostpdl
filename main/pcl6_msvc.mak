@@ -209,10 +209,9 @@ UFST_ROMFS_ARGS=-b \
 -P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
 -P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
 -c
-UFST_BRIDGE=1
-!else
-UFST_BRIDGE=
 !endif
+
+UFST_BRIDGE=1
 
 !ifndef UFST_INCLUDES
 UFST_INCLUDES=$(I_)$(UFST_ROOT)\rts\inc $(I_)$(UFST_ROOT)\sys\inc $(I_)$(UFST_ROOT)\rts\fco $(I_)$(UFST_ROOT)\rts\gray $(I_)$(UFST_ROOT)\rts\tt -DAGFA_FONT_TABLE
