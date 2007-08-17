@@ -60,14 +60,6 @@
 # elif defined(__VMS) /* OpenVMS provides these types in inttypes.h */
 #  include <inttypes.h>
 #  define STDINT_TYPES_DEFINED
-# elif defined(__CYGWIN__)
-   /* Cygwin defines the signed versions in sys/types.h */
-   /* but uses a u_ prefix for the unsigned versions */
-   typedef u_int8_t                uint8_t;
-   typedef u_int16_t               uint16_t;
-   typedef u_int32_t               uint32_t;
-   typedef u_int64_t               uint64_t;
-#  define STDINT_TYPES_DEFINED
 # endif
    /* other archs may want to add defines here, 
       or use the fallbacks in std.h */
