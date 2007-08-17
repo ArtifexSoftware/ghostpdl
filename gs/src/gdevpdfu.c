@@ -1001,6 +1001,7 @@ pdf_alloc_aside(gx_device_pdf * pdev, pdf_resource_t ** plist,
     } else
 	pdf_reserve_object_id(pdev, pres, id);
     pres->next = *plist;
+    pres->rid = 0;
     *plist = pres;
     pres->prev = pdev->last_resource;
     pdev->last_resource = pres;
