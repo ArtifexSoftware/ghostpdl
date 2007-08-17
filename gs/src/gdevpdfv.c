@@ -776,6 +776,7 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
 	bits_per_flag = 8;
 	gs_make_identity((gs_matrix *)&ctm_ident);
 	ctm_ident.tx_fixed = ctm_ident.ty_fixed = 0;
+        ctm_ident.txy_fixed_valid = true;
 	cs.pctm = &ctm_ident;
 	if (pmp->Function)
 	    data_params.ranges = 0; /* don't scale function parameter */
