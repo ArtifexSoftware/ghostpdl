@@ -627,13 +627,16 @@ ENUM_PTRS_BEGIN_PROC(color_space_enum_ptrs)
 
     if (index == 0)
 	return ENUM_OBJ(pcs->base_space);
-    return ENUM_USING(*pcs->type->stype, vptr, size, index - 1);
+    if (index == 1)
+	return ENUM_OBJ(pcs->pclient_color_space_data);
+    return ENUM_USING(*pcs->type->stype, vptr, size, index - 2);
     ENUM_PTRS_END_PROC
 }
 private 
 RELOC_PTRS_WITH(color_space_reloc_ptrs, gs_color_space *pcs)
 {
     RELOC_VAR(pcs->base_space);
+    RELOC_VAR(pcs->pclient_color_space_data);
     RELOC_USING(*pcs->type->stype, vptr, size);
 }
 RELOC_PTRS_END

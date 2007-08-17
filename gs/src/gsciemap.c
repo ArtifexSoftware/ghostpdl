@@ -94,12 +94,12 @@ cie_lookup_map3(cie_cached_vector3 * pvec,
 /*
  * Test whether a CIE rendering has been defined; ensure that the joint
  * caches are loaded.  Note that the procedure may return 1 if no rendering
- * has been defined.
+ * has been defined. The 'cie_to_xyz' flag indicates that we don't need a CRD
  */
 private inline int 
 gx_cie_check_rendering_inline(const gs_color_space * pcs, frac * pconc, const gs_imager_state * pis)
 {
-    if (pis->cie_render == 0) {
+    if (pis->cie_render == 0 && !pis->cie_to_xyz) {
 	/* No rendering has been defined yet: return black. */
 	pconc[0] = pconc[1] = pconc[2] = frac_0;
 	return 1;

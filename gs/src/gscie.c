@@ -58,30 +58,6 @@ extern_st(st_imager_state);
   ((uint)(itemp = (int)(v)) >= (n) ?\
    (itemp < 0 ? 0 : (n) - 1) : itemp)
 
-/* Define the template for loading a cache. */
-/* If we had parameterized types, or a more flexible type system, */
-/* this could be done with a single procedure. */
-#define CIE_LOAD_CACHE_BODY(pcache, domains, rprocs, dprocs, pcie, cname)\
-  BEGIN\
-	int j;\
-\
-	for (j = 0; j < countof(pcache); j++) {\
-	    cie_cache_floats *pcf = &(pcache)[j].floats;\
-	    int i;\
-	    gs_sample_loop_params_t lp;\
-\
-	    gs_cie_cache_init(&pcf->params, &lp, &(domains)[j], cname);\
-	    for (i = 0; i <= lp.N; ++i) {\
-		float v = SAMPLE_LOOP_VALUE(i, lp);\
-		pcf->values[i] = (*(rprocs)->procs[j])(v, pcie);\
-		if_debug5('C', "[C]%s[%d,%d] = %g => %g\n",\
-			  cname, j, i, v, pcf->values[i]);\
-	    }\
-	    pcf->params.is_identity =\
-		(rprocs)->procs[j] == (dprocs).procs[j];\
-	}\
-  END
-
 /* Define cache interpolation threshold values. */
 #ifdef CIE_CACHE_INTERPOLATE
 #  ifdef CIE_INTERPOLATE_THRESHOLD
@@ -401,7 +377,7 @@ private void cie_cache_mult(gx_cie_vector_cache *, const gs_vector3 *,
 private bool cie_cache_mult3(gx_cie_vector_cache3_t *,
 			     const gs_matrix3 *, floatp);
 
-private int
+int
 gx_install_cie_abc(gs_cie_abc *pcie, gs_state * pgs)
 {
     if_debug_matrix3("[c]CIE MatrixABC =", &pcie->MatrixABC);
@@ -1166,7 +1142,7 @@ gs_cie_cache_to_fracs(const cie_cache_floats *pfloats, cie_cache_fracs *pfracs)
 
 /* If the current color space is a CIE space, or has a CIE base space, */
 /* return a pointer to the common part of the space; otherwise return 0. */
-private const gs_cie_common *
+const gs_cie_common *
 cie_cs_common_abc(const gs_color_space *pcs_orig, const gs_cie_abc **ppabc)
 {
     const gs_color_space *pcs = pcs_orig;
@@ -1468,6 +1444,7 @@ gx_cie_to_xyz_alloc(gs_imager_state **ppis, const gs_color_space *pcs,
 	return_error(gs_error_VMerror);
     memset(pis, 0, sizeof(*pis));	/* mostly paranoia */
     pis->memory = mem;
+    gs_imager_state_initialize(pis, mem);
 
     pjc = gs_alloc_struct(mem, gx_cie_joint_caches, &st_joint_caches,
 			  "gx_cie_to_xyz_free(joint caches)");
@@ -1493,11 +1470,7 @@ gx_cie_to_xyz_alloc(gs_imager_state **ppis, const gs_color_space *pcs,
     pjc->cspace_id = pcs->id;
     pjc->status = CIE_JC_STATUS_COMPLETED;
     pis->cie_joint_caches = pjc;
-    /*
-     * Set a non-zero CRD to pacify CIE_CHECK_RENDERING.  (It will never
-     * actually be referenced, aside from the zero test.)
-     */
-    pis->cie_render = (void *)~0;
+    pis->cie_to_xyz = true;
     *ppis = pis;
     return 0;
 }

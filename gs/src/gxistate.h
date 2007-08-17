@@ -133,6 +133,7 @@ typedef struct gx_transfer_s {
 		/* Color (device-dependent): */\
 \
 	struct gs_cie_render_s *cie_render;	/* (RC) may be 0 */\
+	bool cie_to_xyz;			/* flag for conversion to XYZ, no CRD req'd */\
 	gx_transfer_map *black_generation;	/* (RC) may be 0 */\
 	gx_transfer_map *undercolor_removal;	/* (RC) may be 0 */\
 		/* set_transfer holds the transfer functions specified by */\

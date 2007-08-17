@@ -686,12 +686,37 @@ gx_cie_joint_caches *gx_unshare_cie_caches(gs_state *);
 gx_cie_joint_caches *gx_currentciecaches(gs_state *);
 const gs_cie_common *gs_cie_cs_common(const gs_state *);
 int gs_cie_cs_complete(gs_state *, bool);
-int gs_cie_jc_complete(const gs_imager_state *, const gs_color_space *pcs);
+int gs_cie_jc_complete(const gs_imager_state *, const gs_color_space *);
 float gs_cie_cached_value(floatp, const cie_cache_floats *);
+int gx_install_cie_abc(gs_cie_abc *, gs_state *);
 
 #define CIE_CLAMP_INDEX(index)\
   index = (index < 0 ? 0 :\
 	   index >= gx_cie_cache_size ? gx_cie_cache_size - 1 : index)
+
+/* Define the template for loading a cache. */
+/* If we had parameterized types, or a more flexible type system, */
+/* this could be done with a single procedure. */
+#define CIE_LOAD_CACHE_BODY(pcache, domains, rprocs, dprocs, pcie, cname)\
+  BEGIN\
+	int j;\
+\
+	for (j = 0; j < countof(pcache); j++) {\
+	    cie_cache_floats *pcf = &(pcache)[j].floats;\
+	    int i;\
+	    gs_sample_loop_params_t lp;\
+\
+	    gs_cie_cache_init(&pcf->params, &lp, &(domains)[j], cname);\
+	    for (i = 0; i <= lp.N; ++i) {\
+		float v = SAMPLE_LOOP_VALUE(i, lp);\
+		pcf->values[i] = (*(rprocs)->procs[j])(v, pcie);\
+		if_debug5('C', "[C]%s[%d,%d] = %g => %g\n",\
+			  cname, j, i, v, pcf->values[i]);\
+	    }\
+	    pcf->params.is_identity =\
+		(rprocs)->procs[j] == (dprocs).procs[j];\
+	}\
+  END
 
 /*
  * Compute the source and destination WhitePoint and BlackPoint for
