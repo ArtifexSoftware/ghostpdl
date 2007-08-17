@@ -51,7 +51,7 @@ xps_debug:
 	$(MAKE) -C xps -f xps_gcc.mak debug
 
 xps: 
-	$(MAKE) -C xps -f xps_gcc.mak 
+	$(MAKE) -C xps -f xps_gcc.mak	# build XPS
 
 xps_clean:
 	$(MAKE) -C xps -f xps_gcc.mak clean
@@ -67,7 +67,7 @@ ls_profile:
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak pg-fp
 
 ls_product:
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak product # build PCL and PCLXL. 
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak product # build PS/PCL/XL. 
 
 ls_debug: 
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak debug
