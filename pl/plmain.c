@@ -73,7 +73,7 @@ Usage: %s [option* file]+...\n\
 Options: -dNOPAUSE -E[#] -h -C -L<PCL|PCLXL> -n -K<maxK> -P<PCL5C|PCL5E|RTL> -Z...\n\
          -sDEVICE=<dev> -g<W>x<H> -r<X>[x<Y>] -d{First|Last}Page=<#>\n\
 	 -sOutputFile=<file> (-s<option>=<string> | -d<option>[=<value>])*\n\
-         -J<PJL commands>";
+         -J<PJL commands>\n";
 
 /* ---------------- Static data for memory management ------------------ */
 
