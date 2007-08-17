@@ -202,6 +202,7 @@ FEATURE_DEVS?=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 
 ifeq ($(CYGWIN), TRUE)
 SYNC=
+CFLAGS+=-DHAVE_STDINT_H
 STDLIBS=-lm
 DEVICE_DEVS=$(DEVICES_DEVS)
 DEVICE_DEVS=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11mono.dev $(DD)x11cmyk.dev $(DEVICES_DEVS)
