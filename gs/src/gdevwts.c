@@ -23,6 +23,7 @@
 #include "string_.h"
 
 #include "gdevprn.h"
+#include "gdevmem.h"
 #include "gsdevice.h"
 #include "gxfrac.h"
 #include "gsht.h"
@@ -353,7 +354,6 @@ private int
 wtscmyk_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
     gx_device_wts *wdev = (gx_device_wts *)pdev;
-    gx_device_wtsimdi *idev = (gx_device_wtsimdi *)pdev;
     int cmyk_bytes = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
     /* Output bytes have to be padded to 16 bits. */
     int y;
@@ -362,9 +362,9 @@ wtscmyk_print_page(gx_device_printer *pdev, FILE *prn_stream)
     int code = 0;
     int pbm_bytes;
     int n_planes = pdev->color_info.num_components;
-    byte *dst;
+    byte *dst = NULL;
     FILE *ostream[4] = {0};
-    int i, unused_color_cache_slots;
+    int i;
 
     /* Initialize the wts halftones. */
     code = wts_init_halftones(wdev, n_planes);
@@ -375,15 +375,6 @@ wtscmyk_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	code = GS_NOTE_ERROR(pdev->memory, gs_error_VMerror);
 	goto out;
     }
-	/* allocate 1 more for sytems that return NULL if requested count is 0 */
-    idev->color_cache = (cached_color *)gs_malloc(idev->memory, COLOR_CACHE_SIZE + 1,
-				sizeof(cached_color), "wtscmyk_print_page(color_cache)");
-#ifdef DEBUG
-    idev->color_cache_hit = idev->color_cache_collision =
-	idev->color_is_current = idev->cache_fill_empty = 0;
-#endif
-    for (i=0; i<COLOR_CACHE_SIZE; i++)		/* clear cache to empty */
-	idev->color_cache[i].color_index = gx_no_color_index;
     pbm_bytes = (pdev->width + 7) >> 3;
     dst = gs_malloc(pdev->memory, pbm_bytes * n_planes, 1,
 		    "wtscmyk_print_page");
@@ -424,19 +415,8 @@ wtscmyk_print_page(gx_device_printer *pdev, FILE *prn_stream)
 		fwrite(dst + i * pbm_bytes, 1, pbm_bytes, ostream[i]);
     }
 out:
-#ifdef DEBUG
-    for (i=0,unused_color_cache_slots=0; i<COLOR_CACHE_SIZE; i++)
-	if (idev->color_cache[i].color_index == gx_no_color_index)
-	    unused_color_cache_slots++;
-    if_debug5(':',"wtscmyk_print_page color cache stats: current=%ld, hits=%ld,"
-	" collisions=%ld, fill=%ld, unused_slots=%d\n",
-	idev->color_is_current, idev->color_cache_hit, idev->color_cache_collision,
-	idev->cache_fill_empty, unused_color_cache_slots);
-#endif
     /* Clean up... */
     gs_free(pdev->memory, cmyk_line, cmyk_bytes, 1, "wtscmyk_print_page(in)");
-    gs_free(pdev->memory, idev->color_cache, COLOR_CACHE_SIZE + 1, sizeof(cached_color),
-	    "wtscmyk_print_page(color_cache)");
     gs_free(pdev->memory, dst, pbm_bytes, 1, "wtscmyk_print_page");
     for (i = 1; i < n_planes; i++) {
 	/* Don't close ostream[0], because gdev_prn_close will. */
@@ -473,7 +453,7 @@ private int
 wtsimdi_open_device(gx_device *dev)
 {
     gx_device_wtsimdi *idev = (gx_device_wtsimdi*)dev;
-    int code;
+    int i, code;
 
     icColorSpaceSignature ins, outs;
     int inn, outn;
@@ -492,7 +472,7 @@ wtsimdi_open_device(gx_device *dev)
 	wtsimdi_create_buf_device;
     /* Open and read profile */
 
-    fp = new_icmFileStd_name(LINK_ICC_NAME, "rb");
+    fp = new_icmFileStd_name((char *)LINK_ICC_NAME, (char *)"rb");
     if (!fp)
 	return gs_throw1(-1, "could not open file '%s'", LINK_ICC_NAME);
 
@@ -535,7 +515,14 @@ wtsimdi_open_device(gx_device *dev)
     idev->icco = icco;
     idev->luo = luo;
     idev->mdo = mdo;
-    idev->color_cache = NULL;
+	/* allocate at least 1 for sytems that return NULL if requested count is 0 */
+    idev->color_cache = (cached_color *)gs_malloc(idev->memory, max(COLOR_CACHE_SIZE, 1),
+				sizeof(cached_color), "wtsimdi_open_device(color_cache)");
+    if (idev->color_cache == NULL) {
+	return_error(gs_error_VMerror);
+    }
+    for (i=0; i<COLOR_CACHE_SIZE; i++)		/* clear cache to empty */
+	idev->color_cache[i].color_index = gx_no_color_index;
     idev->current_color.color_index = gx_no_color_index;
 
     /* guarantee the device bands */
@@ -557,7 +544,8 @@ wtsimdi_close_device(gx_device *dev)
     idev->luo->del(idev->luo);
     idev->icco->del(idev->icco);
     idev->fp->del(idev->fp);
-
+    gs_free(dev->memory, idev->color_cache, COLOR_CACHE_SIZE, 
+	sizeof(cached_color), "wtsimdi_close_device(color_cache)");
     return gdev_prn_close(dev);
 }
 
@@ -620,13 +608,12 @@ wtsimdi_fill_rectangle(gx_device * dev,
 	    ((mdev->target) ? (gx_device_wts *)(mdev->target)
 			    : (gx_device_wts *)dev);
     wts_cooked_halftone * wch = idev->wcooked;
-    int n_planes = 4;
     int code, comp_value;
     int halftoned_bytes = (idev-> width + 7) >> 3;
     int width_padded, imax;
-    byte * dst, * base, halftoned_data;
+    byte * dst, * base;
     byte * samples;
-    uint raster, plane_ix, bit_loc, xi;
+    uint raster, plane_ix;
     int first_byte, end_x;
 
     fit_fill(dev, x, y, w, h);
@@ -725,13 +712,12 @@ wtsimdi_copy_mono(gx_device * dev,
 	    ((mdev->target) ? (gx_device_wts *)(mdev->target)
 			    : (gx_device_wts *)dev);
     wts_cooked_halftone * wch = idev->wcooked;
-    int n_planes = 4;
     int code, comp_value;
     int halftoned_bytes = (idev-> width + 7) >> 3;
     int width_padded, imax;
-    byte * dst, * base, halftoned_data;
+    byte * dst, * base;
     byte * samples;
-    uint raster, plane_ix, bit_loc, xi;
+    uint raster, plane_ix;
     int first_byte, end_x;
     const byte *src;
     int sshift;
@@ -849,6 +835,7 @@ wtsimdi_copy_mono(gx_device * dev,
  * GB_HALFTONED to the parameter options.  This will tell the buffer
  * device to halftone the data (if it is not already halftoned).
  */
+int
 wtsimdi_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
 {	/*
 	 * Hand off to get_bits_rectangle, being careful to avoid a
@@ -918,43 +905,38 @@ wtsimdi_contone_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 	int width = dev->width;
 	int n_planes = 4;
 	int r_last = -1, g_last = -1, b_last = -1, r, g, b;
-	int c, m, y, k, x;
-	double rgb[3];
-	double cmyk[4];
+	int x;
 	byte * src = params->data[0];
-        byte * cmyk_buffer = gs_malloc(dev->memory,
-				(width + 7) * n_planes, 1,
+	/* Note that the following relies on objects being allocated to
+	 * at least a 4-byte boundary for efficiency on x86 and to prevent
+	 * alignment errors on CPU's that gripe about it. We know this is
+	 * true due to object headers requiring alignment. In the future
+	 * if we want to remove this invariant, we can use 'obj_align_mod'
+	 * to allocate a slightly larger buffer and offset 'cmyk_data'
+	 * to the proper alignment within the buffer.
+	 */
+        uint32_t * cmyk_buffer = gs_malloc(dev->memory,
+				(width + 7), sizeof(uint32_t),
 	   			"wtsimdi_contone_get_bits(cmyk_buffer)");
-	byte * cmyk_data = cmyk_buffer;
+	uint32_t* cmyk_data = cmyk_buffer;
 
         if (cmyk_data == NULL)
 	    return_error(gs_error_VMerror);
-	/*
-	 */
+
 	for (x = 0; x < width; x++) {
 	    r = *src++;
 	    g = *src++;
 	    b = *src++;
 	    if (r != r_last || g != g_last || b != b_last) {
+		gx_color_index color = (((r<<8) | g) << 8) | b;
+
 		r_last = r, g_last = g, b_last = b;
-	        rgb[0] = r * (1 / 255.0);
-	        rgb[1] = g * (1 / 255.0);
-	        rgb[2] = b * (1 / 255.0);
-	        code = idev->luo->lookup(idev->luo, cmyk, rgb);
-	        if (code > 1)
-		    return_error(gs_error_unknownerror);
-	        c = cmyk[0] * 255 + 0.5;
-	        m = cmyk[1] * 255 + 0.5;
-	        y = cmyk[2] * 255 + 0.5;
-	        k = cmyk[3] * 255 + 0.5;
+		wtsimdi_resolve_one(idev, color);
 	    }
-	    *cmyk_data++ = c;
-	    *cmyk_data++ = m;
-	    *cmyk_data++ = y;
-	    *cmyk_data++ = k;
+	    *cmyk_data++ = (uint32_t)idev->current_color.cmyk;
 	}
 	wts_halftone_line_8(idev->wcooked, original_y, width, n_planes,
-			    idev->band_offset_x, idev->band_offset_y,  buffer, cmyk_buffer);
+			    idev->band_offset_x, idev->band_offset_y,  buffer, (const byte *)cmyk_buffer);
 	params->data[0] = buffer;
 	gs_free(dev->memory, cmyk_buffer, halftoned_bytes * n_planes, 1,
 		       	"wtsimdi_print_page(halftoned_data)");
@@ -971,7 +953,6 @@ wtsimdi_create_buf_device(gx_device **pbdev, gx_device *target,
    const gx_render_plane_t *render_plane, gs_memory_t *mem,
    gx_band_complexity_t *band_complexity)
 {
-    gx_device_printer *ptarget = (gx_device_printer *)target;
     int code = gx_default_create_buf_device(pbdev, target, 
 	render_plane, mem, band_complexity);
     /* Now set our custom device procedures. */
@@ -1067,8 +1048,7 @@ wtsimdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
     byte * halftoned_data;
     byte * halftoned_buffer = NULL;
     int halftoned_bytes, y;
-    int i, code = 0;
-    int unused_color_cache_slots;
+    int code = 0;
     int width = pdev->width;
     int height = pdev->height;
     dev_proc_get_bits((*save_get_bits)) = dev_proc(pdev, get_bits);
@@ -1098,20 +1078,17 @@ wtsimdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	code = GS_NOTE_ERROR(pdev->memory, gs_error_VMerror);
 	goto cleanup;
     }
-	/* allocate 1 more for sytems that return NULL if requested count is 0 */
-    idev->color_cache = (cached_color *)gs_malloc(idev->memory, COLOR_CACHE_SIZE + 1,
-				sizeof(cached_color), "wtscmyk_print_page(color_cache)");
 #ifdef DEBUG
+    /* Collect stats on each page. With the allocation now done once in 'open' the
+     * statistics won't be the same if other pages have been printed  */
     idev->color_cache_hit = idev->color_cache_collision =
 	idev->color_is_current = idev->cache_fill_empty = 0;
 #endif
-    for (i=0; i<COLOR_CACHE_SIZE; i++)		/* clear cache to empty */
-	idev->color_cache[i].color_index = gx_no_color_index;
 
     /* Initialize output file header. */
     if (!output_is_nul) {
 	fprintf(prn_stream, "P6\n%d %d\n", width, height);
-	fprintf(prn_stream, "# Image generated by %s %d.%02d (device=wtsimdi)\n",
+	fprintf(prn_stream, "# Image generated by %s %ld.%02ld (device=wtsimdi)\n",
 	   	gs_program_name(), gs_revision_number() / 100,
 	   			gs_revision_number() % 100);
 	fprintf(prn_stream, "%d\n", 255);
@@ -1132,6 +1109,9 @@ wtsimdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 cleanup:
     if (idev->color_cache != NULL) {
 #ifdef DEBUG
+    { 
+      int i, unused_color_cache_slots;
+
       for (i=0,unused_color_cache_slots=0; i<COLOR_CACHE_SIZE; i++)
 	if (idev->color_cache[i].color_index == gx_no_color_index)
 	    unused_color_cache_slots++;
@@ -1141,9 +1121,8 @@ cleanup:
 	    idev->color_is_current, idev->color_cache_hit, 
 	    idev->color_cache_collision, idev->cache_fill_empty, 
 	    unused_color_cache_slots);
+    }
 #endif
-	gs_free(pdev->memory, idev->color_cache, COLOR_CACHE_SIZE, 
-	    sizeof(cached_color), "wtscmyk_print_page(color_cache)");
     }
     if (halftoned_buffer != NULL)
 	gs_free(pdev->memory, halftoned_buffer, halftoned_bytes * n_planes, 1,
