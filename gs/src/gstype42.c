@@ -289,6 +289,7 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
 	 * It assumes no overlapping and no duplicate glyphs.
 	 */
 	ulong last_glyph_offset = glyph_size;
+	ulong num_valid_loca_elm = loca_size;
 	gs_type42_font_init_sort_t *psort;
 	gs_type42_font_init_sort_t *psortary = 
 	    (gs_type42_font_init_sort_t *)gs_alloc_byte_array(pfont->memory, 
@@ -301,12 +302,18 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
 	    psort->glyph_offset = get_glyph_offset(pfont, i);
 	    }
 	qsort(psortary, loca_size, sizeof(gs_type42_font_init_sort_t), gs_type42_font_init_compare);
-	if (psortary[loca_size - 1].glyph_offset > glyph_size)
+	while (num_valid_loca_elm > 0 && psortary[num_valid_loca_elm - 1].glyph_offset > glyph_size)
+	    num_valid_loca_elm --;
+	if (0 == num_valid_loca_elm)
 	    return_error(gs_error_invalidfont);
-	for (i = loca_size; i--;) {
+	for (i = num_valid_loca_elm; i--;) {
 	    psort = psortary + i;
 	    pfont->data.len_glyphs[psort->glyph_num] = last_glyph_offset - psort->glyph_offset;
 	    last_glyph_offset = psort->glyph_offset;
+	}
+	for (i = num_valid_loca_elm; i < loca_size; i++) {
+	    psort = psortary + i;
+	    pfont->data.len_glyphs[psort->glyph_num] = 0;
 	}
 	/* Well the last element of len_glyphs is never used.
 	   We compute it because we're interesting whether it is not zero sometimes. 
