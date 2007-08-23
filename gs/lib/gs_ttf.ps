@@ -1378,14 +1378,10 @@ mark
         exch
       } if
       2 index 1 index known
-      { dup /.notdef eq {
-	  pop pop	% discard duplicate .notdef glyphs
-        } {
-	  % The same name maps to more than one glyph. Change the name.
-	  pop dup .nname 3 index 2 index 2 index put
-          2 index exch 3 -1 roll put
-        } 
-        ifelse
+      { % The same name maps to more than one glyph. Change the name.
+        % No special treatment for /.notdef glyph. Bug 689408.
+       	pop dup .nname 3 index 2 index 2 index put
+        2 index exch 3 -1 roll put
       } {
         2 index exch 3 -1 roll put	% unique name
       } ifelse
