@@ -4,14 +4,9 @@
   thereof are part of GhostPCL and GhostXPS.
 
   The files in the gs directory (folder) and the subdirectories 
-  (sub-folders) thereof are part of GPL Ghostscript, with the
-  exception of the Resource subdirectory of the gs directory.
-
-  The files in the Resource subdirectory and any subdirectories thereof
-  are also part of GPL Ghostscript, with the explicit exception of
-  the files in the CMap subdirectory. The CMap files are copyright
-  Adobe Systems Incorporated and covered by a separate license
-  which permits only verbatim distribution.
+  (sub-folders) thereof are part of GPL Ghostscript, along with
+  copies of its dependent third-party libraries. See the file
+  gs/LICENSE for information about this directory,
 
   GhostPCL, GhostXPS, and GPL Ghostscript are free software; you can 
   redistribute and/or modify them under the terms of version 2 of the
