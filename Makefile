@@ -36,7 +36,8 @@ pcl_uninstall:
 	rm -f /usr/local/bin/pcl6
 
 pcl_test: 
-	cd tools; ../main/obj/pcl6 -dTextAlphaBits=4 owl.pcl tiger.px3 # test with PCL and PXL test file 
+	cd tools; ../main/obj/pcl6 -dTextAlphaBits=4 \
+		owl.pcl tiger.px3 # test with PCL and PXL test file 
 
 # NB - this does not remove the fonts.  blowing away /windows/fonts
 # might be unexpected on some systems and we don't enumerate the font
@@ -82,7 +83,8 @@ ls_install:
 
 # test with PCL, PXL and PS file 
 ls_test:
-	cd tools; ../language_switch/obj/pspcl6 -dTextAlphaBits=4 owl.pcl tiger.px3 ../gs/examples/tiger.ps
+	cd tools; ../language_switch/obj/pspcl6 -dTextAlphaBits=4 \
+		owl.pcl tiger.px3 ../gs/examples/tiger.eps
 
 check:
 	tools/smoke_check.sh

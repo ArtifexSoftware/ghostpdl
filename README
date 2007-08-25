@@ -11,7 +11,7 @@ Experimental support for XPS is available in this release. Rasterization
 support is nearly complete, but some issues remain with conversion to 
 high-level languages such as PDF.
 
-This release corresponds to r2904 of the svn development trunk,
+This release corresponds to r2907 of the svn development trunk,
 or the ghostpdl-1.50 svn tag. It is built on a slightly modified
 version of the Ghostscript 8.60 codebase, recorded in the svn
 repository under tags/gs-ghostpdl-1.50.
