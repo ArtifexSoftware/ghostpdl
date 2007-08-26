@@ -1212,7 +1212,7 @@ mj_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
       /* Correct color depth. */
 	  if (mj->density != 1024 || mj->yellow != 1024 || mj->cyan != 1024
 		  || mj->magenta != 1024 || mj->black != 1024 ) {
-	      for (p_data = (gx_color_index*) data_words; p_data < end_data; p_data++) {
+	      for (p_data = (gx_color_index*) data_words; p_data < (gx_color_index *)end_data; p_data++) {
 			*p_data = mjc_correct_color(pdev, *p_data);
 	      }
 	  }
