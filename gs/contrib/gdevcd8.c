@@ -2263,7 +2263,7 @@ do_gcr(int bytecount, byte * inbyte, const byte kvalues[256],
     magenta = inbyte++;
     yellow = inbyte++;
 
-    if (black > 0)
+    if (*black > 0)
       NOBLACK(cyan, magenta, yellow, black);
 
     if (*magenta + *yellow + *cyan > 0) {	/* if any color at all */
