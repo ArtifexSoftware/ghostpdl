@@ -368,7 +368,7 @@ private void decompose_matrix(const gs_font_type42 *pfont, const gs_matrix * cha
 
 ttfFont *ttfFont__create(gs_font_dir *dir)
 {
-    gs_memory_t *mem = dir->memory;
+    gs_memory_t *mem = dir->memory->stable_memory;
     ttfFont *ttf;
 
     if (dir->ttm == NULL) {
@@ -384,7 +384,7 @@ ttfFont *ttfFont__create(gs_font_dir *dir)
     }
     if(ttfInterpreter__obtain(&dir->ttm->super, &dir->tti))
 	return 0;
-    if(gx_san__obtain(mem->stable_memory, &dir->san))
+    if(gx_san__obtain(mem, &dir->san))
 	return 0;
     ttf = gs_alloc_struct(mem, ttfFont, &st_ttfFont, "ttfFont__create");
     if (ttf == NULL)
@@ -395,16 +395,15 @@ ttfFont *ttfFont__create(gs_font_dir *dir)
 
 void ttfFont__destroy(ttfFont *this, gs_font_dir *dir)
 {   
-    ttfMemory *mem = this->tti->ttf_memory;
+    gs_memory_t *mem = dir->memory->stable_memory;
 
-    /* assert(mem == &dir->ttm->super); */
     ttfFont__finit(this);
-    mem->free(mem, this, "ttfFont__destroy");
+    gs_free_object(mem, this, "ttfFont__destroy");
     ttfInterpreter__release(&dir->tti);
     gx_san__release(&dir->san);
     if (dir->tti == NULL && dir->ttm != NULL) {
 	dir->ttm = NULL;
-	mem->free(mem, mem, "ttfFont__destroy(gx_ttfMemory)");
+	gs_free_object(dir->memory, mem, "ttfFont__destroy(gx_ttfMemory)");
     }
 }
 

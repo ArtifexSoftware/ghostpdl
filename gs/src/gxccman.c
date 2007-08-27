@@ -230,7 +230,7 @@ gx_attach_tt_interpreter(gs_font_dir * dir,
     m.yx = cyx;
     m.yy = cyy;
     m.tx = m.ty = 0;
-    pair->ttr = gx_ttfReader__create(dir->memory);
+    pair->ttr = gx_ttfReader__create(dir->memory->stable_memory);
     if (!pair->ttr)
 	return_error(gs_error_VMerror);
     /*  We could use a single the reader instance for all fonts ... */
