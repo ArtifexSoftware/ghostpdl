@@ -28,8 +28,8 @@
 #include "gxistate.h"
 #include "gxpath.h"
 #include "gxshade.h"
-#include "gxshade4.h"
 #include "gxdevcli.h"
+#include "gxshade4.h"
 #include "vdtrace.h"
 
 #define VD_TRACE_AXIAL_PATCH 1
