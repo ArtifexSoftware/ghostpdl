@@ -1,4 +1,4 @@
-== GhostPDL 1.50 ==
+== GhostPDL ==
 
 This is an implemenation of several page description languages on
 top of the Ghostscript graphics library.
@@ -6,15 +6,6 @@ top of the Ghostscript graphics library.
 Ghostscript PCL5e, PCL5c and PXL documentation is in doc/ghostpcl.*
 License is in LICENSE and COPYING. For information on support and 
 commercial distribution please contact http://artifex.com/
-
-Experimental support for XPS is available in this release. Rasterization 
-support is nearly complete, but some issues remain with conversion to 
-high-level languages such as PDF.
-
-This release corresponds to r2907 of the svn development trunk,
-or the ghostpdl-1.50 svn tag. It is built on a slightly modified
-version of the Ghostscript 8.60 codebase, recorded in the svn
-repository under tags/gs-ghostpdl-1.50.
 
 === BUILD INSTRUCTIONS ===
 
