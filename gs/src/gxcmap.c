@@ -295,7 +295,7 @@ rgb_cs_to_cmyk_cm(gx_device * dev, const gs_imager_state *pis,
         color_rgb_to_cmyk(r, g, b, pis, out);
     else {
         frac    c = frac_1 - r, m = frac_1 - g, y = frac_1 - b;
-        frac    k = min(c, min(m, g));
+        frac    k = min(c, min(m, y));
 
         out[0] = c - k;
         out[1] = m - k;
