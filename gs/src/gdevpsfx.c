@@ -640,10 +640,16 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 	     */
 	    cis.ostack[0] = cis.ostack[1];
 	sbw:
-	    if (cis.ostack[0] == pfont->data.defaultWidthX)
+	    /* cff_write_Private doesn't write defaultWidthX 
+	       when called with the Type 1 font,
+	       so the reader will assume 
+	       defaultWidthX = defaultWidthX_DEFAULT
+	       Use the latter here.
+	     */
+	    if (cis.ostack[0] == defaultWidthX_DEFAULT)
 		cis.os_count = 0;
 	    else {
-		cis.ostack[0] -= pfont->data.nominalWidthX;
+		cis.ostack[0] -= defaultWidthX_DEFAULT;
 		cis.os_count = 1;
 	    }
 	    if (hstem_hints.count) {
