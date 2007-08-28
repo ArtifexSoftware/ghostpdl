@@ -226,6 +226,8 @@ int psf_write_cmap(const gs_memory_t *mem, stream *s, const gs_cmap_t *pcmap,
 		   const gs_const_string *alt_cmap_name, int font_index_only);
 /* ------ Exported by gdevpsft.c ------ */
 
+extern const long default_defaultWidthX;
+
 /*
  * Write a TrueType (Type 42) font definition.
  * This procedure does not allocate or free any data.

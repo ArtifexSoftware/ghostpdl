@@ -750,6 +750,8 @@ typedef enum {
 #define initialRandomSeed_DEFAULT 0
 } Private_op;
 
+const long default_defaultWidthX = defaultWidthX_DEFAULT; /* For gdevpsfx.c */
+
 private void
 cff_write_Private(cff_writer_t *pcw, uint Subrs_offset,
 		  const gs_font_type1 *pfont)
