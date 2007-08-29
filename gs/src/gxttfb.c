@@ -402,8 +402,8 @@ void ttfFont__destroy(ttfFont *this, gs_font_dir *dir)
     ttfInterpreter__release(&dir->tti);
     gx_san__release(&dir->san);
     if (dir->tti == NULL && dir->ttm != NULL) {
+	gs_free_object(dir->memory, dir->ttm, "ttfFont__destroy(gx_ttfMemory)");
 	dir->ttm = NULL;
-	gs_free_object(dir->memory, mem, "ttfFont__destroy(gx_ttfMemory)");
     }
 }
 
