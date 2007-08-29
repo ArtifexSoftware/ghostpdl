@@ -347,8 +347,10 @@ zbuildfont11(i_ctx_t *i_ctx_p)
     pfont->procs.glyph_info = z11_glyph_info;
     pfont->procs.glyph_outline = z11_glyph_outline;
     pfont->data.get_glyph_index = z11_get_glyph_index;
-    get_font_name(imemory, &cfnstr, &CIDFontName);
-    copy_font_name(&pfcid->font_name, &cfnstr);
+    if (pfcid->font_name.size == 0) {
+	get_font_name(imemory, &cfnstr, &CIDFontName);
+	copy_font_name(&pfcid->font_name, &cfnstr);
+    }
     if (MetricsCount) {
 	/* "Wrap" the glyph accessor procedures. */
 	pfcid->cidata.orig_procs.get_outline = pfont->data.get_outline;

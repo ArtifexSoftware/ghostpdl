@@ -465,7 +465,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
 		code = pdf_obtain_cidfont_widths_arrays(pdev, pdsubf, wmode, &w, &w0, &v);
 		if (code < 0)
 		    return code;
-		code = pdf_obtain_parent_type0_font_resource(pdev, pdsubf, 
+		code = pdf_obtain_parent_type0_font_resource(pdev, pdsubf, font_index,
 				&font->data.CMap->CMapName, &pdfont);
 		if (code < 0)
 		    return code;
@@ -570,7 +570,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    if (pdsubf0->FontType == ft_user_defined)
 		pdfont = pdsubf0;
 	    else {
-		code = pdf_obtain_parent_type0_font_resource(pdev, pdsubf0, 
+		code = pdf_obtain_parent_type0_font_resource(pdev, pdsubf0, font_index0, 
 			    &font->data.CMap->CMapName, &pdfont);
 		if (code < 0)
 		    return code;

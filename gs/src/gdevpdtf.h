@@ -237,6 +237,7 @@ struct pdf_font_resource_s {
 	    ];
 	    gs_const_string CMapName; /* copied from the original CMap, */
 				/* or references the table of standard names */
+	    uint font_index;	/* The index of the descendent font in the source CMap. */
 	    bool cmap_is_standard;
 	    int WMode;		/* of CMap */
 

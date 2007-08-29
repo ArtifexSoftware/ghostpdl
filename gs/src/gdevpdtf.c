@@ -816,6 +816,7 @@ pdf_font_type0_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     if (code >= 0) {
 	(*ppfres)->u.type0.DescendantFont = DescendantFont;
 	(*ppfres)->u.type0.CMapName = *CMapName;
+	(*ppfres)->u.type0.font_index = 0;
 	code = pdf_compute_BaseFont(pdev, *ppfres, false);
     }
     return code;    

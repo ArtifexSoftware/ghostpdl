@@ -494,8 +494,10 @@ zbuildfont9(i_ctx_t *i_ctx_p)
     pfcid->cidata.FDBytes = FDBytes;
     pfcid->cidata.glyph_data = z9_glyph_data;
     pfcid->cidata.proc_data = 0;	/* for GC */
-    get_font_name(imemory, &cfnstr, &CIDFontName);
-    copy_font_name(&pfcid->font_name, &cfnstr);
+    if (pfcid->font_name.size == 0) {
+	get_font_name(imemory, &cfnstr, &CIDFontName);
+	copy_font_name(&pfcid->font_name, &cfnstr);
+    }
     ref_assign(&pfont_data(pfont)->u.cid0.GlyphDirectory, &GlyphDirectory);
     ref_assign(&pfont_data(pfont)->u.cid0.GlyphData, &GlyphData);
     ref_assign(&pfont_data(pfont)->u.cid0.DataSource, &DataSource);

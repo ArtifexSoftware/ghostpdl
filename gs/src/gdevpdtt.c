@@ -902,7 +902,7 @@ pdf_find_font_resource(gx_device_pdf *pdev, gs_font *font,
  */
 private int
 pdf_find_type0_font_resource(gx_device_pdf *pdev, const pdf_font_resource_t *pdsubf, 
-	    const gs_const_string *CMapName, pdf_font_resource_t **ppdfont)
+	    const gs_const_string *CMapName, uint font_index, pdf_font_resource_t **ppdfont)
 {
     pdf_resource_t **pchain = pdev->resources[resourceFont].chains;
     pdf_resource_t *pres;
@@ -915,6 +915,8 @@ pdf_find_type0_font_resource(gx_device_pdf *pdev, const pdf_font_resource_t *pds
 	    if (pdfont->FontType != ft_composite)
 		continue;
 	    if (pdfont->u.type0.DescendantFont != pdsubf)
+		continue;
+	    if (pdfont->u.type0.font_index != font_index)
 		continue;
 	    if (pdfont->BaseFont.size != pdsubf->BaseFont.size + CMapName->size + 1)
 		continue;
@@ -1819,9 +1821,10 @@ strings_equal(const gs_const_string *s1, const gs_const_string *s2)
  */
 int
 pdf_obtain_parent_type0_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdsubf, 
-		const gs_const_string *CMapName, pdf_font_resource_t **pdfont)
+		uint font_index, const gs_const_string *CMapName, pdf_font_resource_t **pdfont)
 {
-    if (pdsubf->u.cidfont.parent != 0 && 
+    if (pdsubf->u.cidfont.parent != 0 &&
+	    font_index == pdsubf->u.cidfont.parent->u.type0.font_index &&
 	    strings_equal(CMapName, &pdsubf->u.cidfont.parent->u.type0.CMapName))
 	*pdfont = pdsubf->u.cidfont.parent;
     else {
@@ -1836,11 +1839,12 @@ pdf_obtain_parent_type0_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *
 	 */
 
 	if (pdsubf->u.cidfont.parent == NULL || 
-		pdf_find_type0_font_resource(pdev, pdsubf, CMapName, pdfont) <= 0) {
+		pdf_find_type0_font_resource(pdev, pdsubf, CMapName, font_index, pdfont) <= 0) {
 	    int code = pdf_font_type0_alloc(pdev, pdfont, gs_no_id, pdsubf, CMapName);
 
 	    if (code < 0)
 		return code;
+	    (*pdfont)->u.type0.font_index = font_index;
 	}
 	pdsubf->u.cidfont.parent = *pdfont;
     }
