@@ -465,10 +465,10 @@ zbuildfont9(i_ctx_t *i_ctx_p)
 	if (code < 0)
 	    goto fail;
     }
-    code = build_gs_simple_font(i_ctx_p, op, &pfont, ft_CID_encrypted,
+    code = build_gs_outline_font(i_ctx_p, op, &pfont, ft_CID_encrypted, 
 				&st_gs_font_cid0, &build,
-				bf_Encoding_optional |
-				bf_UniqueID_ignored);
+				bf_Encoding_optional | bf_UniqueID_ignored, 
+				build_gs_simple_font);
     if (code < 0)
 	goto fail;
     if (code == 1) {

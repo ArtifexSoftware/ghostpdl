@@ -157,7 +157,7 @@ private int type1_continue_dispatch(i_ctx_t *, gs_type1exec_state *,
 private int op_type1_cleanup(i_ctx_t *);
 private void op_type1_free(i_ctx_t *);
 private int bbox_getsbw_continue(i_ctx_t *);
-private int type1exec_bbox(i_ctx_t *, gs_type1exec_state *, gs_font *, op_proc_t *exec_cont);
+private int type1exec_bbox(i_ctx_t *, gs_text_enum_t *, gs_type1exec_state *, gs_font *, op_proc_t *exec_cont);
 private int bbox_finish_fill(i_ctx_t *);
 private int bbox_finish_stroke(i_ctx_t *);
 private int bbox_fill(i_ctx_t *);
@@ -247,7 +247,7 @@ charstring_execchar_aux(i_ctx_t *i_ctx_p, gs_text_enum_t *penum, gs_font *pfont)
 	op_proc_t exec_cont = 0;
 
 	cxs.char_bbox = pfont1->FontBBox;
-	code = type1exec_bbox(i_ctx_p, &cxs, pfont, &exec_cont);
+	code = type1exec_bbox(i_ctx_p, penum, &cxs, pfont, &exec_cont);
 	if (code >= 0 && exec_cont != 0)
 	    code = (*exec_cont)(i_ctx_p);
 	return code;
@@ -326,13 +326,14 @@ charstring_execchar(i_ctx_t *i_ctx_p, int font_type_mask)
 /* Do all the work for the case where we have a bounding box. */
 /* Returns exec_cont - a function, which must be called by caller after this function. */
 private int
-type1exec_bbox(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs,
+type1exec_bbox(i_ctx_t *i_ctx_p, gs_text_enum_t *penum, gs_type1exec_state * pcxs,
 	       gs_font * pfont, op_proc_t *exec_cont)
 {
     os_ptr op = osp;
     gs_type1_state *const pcis = &pcxs->cis;
     gs_font_base *const pbfont = (gs_font_base *) pfont;
-    op_proc_t cont = (pbfont->PaintType == 0 ? bbox_finish_fill : bbox_finish_stroke);
+    op_proc_t cont = (pbfont->PaintType == 0 && penum->orig_font->PaintType == 0
+			? bbox_finish_fill : bbox_finish_stroke);
 
 
     /*
@@ -604,7 +605,7 @@ bbox_draw(i_ctx_t *i_ctx_p, int (*draw)(gs_state *), op_proc_t *exec_cont)
     if (code < 0)
 	return code;
     cxs.char_bbox = pfont1->FontBBox;
-    code = type1exec_bbox(i_ctx_p, &cxs, pfont, exec_cont);
+    code = type1exec_bbox(i_ctx_p, penum, &cxs, pfont, exec_cont);
     return code;
 }
 private int
@@ -839,9 +840,11 @@ nobbox_finish(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs)
 	    code = type1_exec_init(&pcxs->cis, penum, igs, pfont1);
 	    if (code < 0)
 		return code;
-	    code = type1exec_bbox(i_ctx_p, pcxs, pfont, &exec_cont);
+	    code = type1exec_bbox(i_ctx_p, penum, pcxs, pfont, &exec_cont);
 	} else {
-	    cont = (pbfont->PaintType == 0 ? nobbox_fill : nobbox_stroke), exec_cont = 0;
+	    cont = (pbfont->PaintType == 0 && penum->orig_font->PaintType == 0
+			? nobbox_fill : nobbox_stroke);
+	    exec_cont = 0;
 	    code = zchar_set_cache(i_ctx_p, pbfont, op - 1, NULL,
 				   pcxs->sbw + 2,
 				   &pcxs->char_bbox,
