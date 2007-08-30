@@ -212,7 +212,24 @@ pdfdict begin
                 % character space, but the FontMatrix may specify
                 % some other scale factor.  Compensate for this here,
                 % by scaling the Widths if necessary.
-      0.001 2 index /FontMatrix get 0 get div
+      0.001 2 index /FontMatrix get 0 get
+      dup 0 eq {
+		% FontMatrix.xx == 0, so we cannot scale down by xx.
+		% - FontMatrix[0] == 0 implies either FontMatrix[1] <> 0 or 
+		%   FontMatrix cannot be inverted. In the 1st case we have 
+		%   FontMatrixNonHV == true and will render text with cshow + xshow. 
+		%   In the 2nd case, metrics in the PDF Font object cannot be enforced 
+		%   [by altering metrics in PS glyph space].
+		% HACK:
+		% - we scale down by FontMatrix[1];
+		% - given the format of Metrics entries we use, wy = 0 in glyph space;
+		% - as a result, the cshow procedure receives as wy the value we 
+		%   need for wx (all of this in PS user space).
+	pop
+	2 index /FontMatrix get 1 get
+	dup 0 eq { pop 1 } if % sorry, no way to enforce PDF metrics by altering the font
+      } if
+      div
                 % Stack: font font-res mscale
       /FirstChar 2 index /FirstChar oget def
       /LastChar  2 index /LastChar  oget def
@@ -799,6 +816,15 @@ end readonly def
     FontName currentdict end definefont exch pop
 } bdef
 /.adjustcharwidth {	% <wx> <wy> .adjustcharwidth <wx'> <wy'>
+  % Enforce the metrics, in glyph space, to the values found in the PDF Font object
+  % - force wy == 0 (assumed, and not stored in the PDF font)
+  %   Even though PDF1.3-1.7 specifications state that this must be 0,
+  %   Distiller sometimes creates Type3 fonts with non-zero wy. We set
+  %   it to 0 since this is apparently what Acrobat Reader 4 and 5 do.
+  %   PDF1.2 does not mention this restriction, it only says
+  %   "see setcharwidth/ setcachedevice in the PostScript Reference".
+  % - get wx from the Widths array (do nothing if not present)
+  pop 0
   /Widths where {
     begin
     CharCode FirstChar ge CharCode LastChar le and {
@@ -1519,16 +1545,6 @@ drawopdict begin
     .adjustcharwidth setcharwidth
   } bdef
   /d1 {
-    4 index 0 ne {
-      % invalid wy parameter for d1 in Type3 font (must be 0)
-      % Even though the PDF 1.4 specification states that this must be 0,
-      % Distiller sometimes creates Type3 fonts with non-zero wy. We set
-      % it to 0 since this is apparently what Acrobat Reader 4 and 5 do,
-      % but if the specification is ever changed to allow non-zero wy, this
-      % will not work.
-      5 -1 roll pop 0 5 1 roll	  % set wy to 0
-    } if
-
     2 copy                           % ... llx lly urx ury | urx ury 
     0 ne exch 0 ne                   % ... llx lly urx ury | ury!=0 urx!=0
     3 index 6 index eq and           % ... llx lly urx ury | ury!=0 (urx!=0 && llx==urx)

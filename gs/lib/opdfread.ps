@@ -1342,8 +1342,15 @@ end
         /Encoding exch put                              % s fr f
         1 index /Metrics //knownget exec {              % s fr f M
           2 index /Subtype get /TrueType ne {
-            % Adjust Metrics for fonts converted from TrueTypes by 3d party.
-            1 index /FontMatrix get 0 get 0.001 div
+            1 index /FontMatrix get 0 get
+            dup 0 eq {
+	      % FontMatrix[0] == 0, so cannot downscale by it
+	      % HACK: downscale by FontMatrix[1], and will get the target value of wx as wy
+	      pop
+	      1 index /FontMatrix get 1 get
+	      dup 0 eq { pop 1 } if % sorry, FontMatrix is singular so cannot enforce the PDF metrics
+            } if
+            0.001 div
             //ScaleMetrics exec
           } if
           1 index exch /Metrics exch put                % s fr f
@@ -3130,6 +3137,7 @@ currentdict end readonly def
 /SetFont  % <resource_name> <size> SetFont -
 { dup //GraphicState exch /FontSize exch put
   //ResolveAndSetFont exec
+  //GraphicState /FontMatrixNonHV currentfont /FontMatrix get 1 get 0 ne put
 } bind def
 
 /ShowText  % <string> ShowText -
@@ -3137,15 +3145,42 @@ currentdict end readonly def
     //GraphicState /WordSpacing get 0
     32
     //GraphicState /CharacterSpacing get 0
-    6 5 roll awidthshow
+    6 5 roll
+    //GraphicState /FontMatrixNonHV get {
+      % Use xshow to force wy in text space to be 0 (PDF1.7 5.3.3 "Text Space Details")
+      %stack: wordspacing_wx wordspacing_wy space_char charspacing_wx charspacing_wy string
+      [                                         % wwx wwy sp cwx cwy str [
+        7 -2 roll pop				% sp cwx cwy str [ ww
+        5 -2 roll pop				% sp str [ ww cw
+        5 -1 roll                               % str [ ww cw sp
+        {                                       % str [ ... ww cw sp c wx wy
+          exch % will be removed, unless FontMatrix.xx == 0 (FontMatrixNonHV already true)
+          pop					% str [ ... ww cw sp c w
+          3 index add                           % str [ ... ww cw sp c w+cw
+          exch 2 index eq { 3 index add } if    % str [ ... ww cw sp w+cw[+ww]
+          4 1 roll                              % str [ ... w+cw[+ww] ww cw sp
+        }
+        currentfont /FontMatrix get 0 get 0 ne {
+          1 1 index length 1 sub getinterval cvx % drop the "exch"
+        } if
+        5 index                                 % str [ ww cw sp {cshowproc} str
+        cshow                                   % str [ widths... ww cw sp
+      pop pop pop ]                             % str [widths...]
+      xshow
+    } {
+      awidthshow
+    } ifelse
   } {
     //GraphicState /CharacterSpacing get 0 eq
+    //GraphicState /FontMatrixNonHV get not and
     //GraphicState /WordSpacing get 0 eq and {
       true charpath
     } {
       % Emulate with "{ charpath } cshow".
       % Not sure how it works with CID fonts.
       {                                                 % c wx wy
+        exch % will be removed, unless FontMatrixNonHV && FontMatrix.xx == 0
+        pop 0						% (PDF1.7 5.3.3 "Text Space Details")
         currentpoint 5 4 roll                           % wx wy x y c
         ( ) dup 0 3 index put true charpath             % wx wy x y c
         5 1 roll                                        % c wx wy x y
@@ -3155,6 +3190,11 @@ currentdict end readonly def
           //GraphicState /WordSpacing get 0 rmoveto
         } if
       }
+      //GraphicState /FontMatrixNonHV get dup not exch {
+        pop currentfont /FontMatrix get 0 get 0 ne
+      } if {
+        1 1 index length 1 sub getinterval cvx
+      } if
       exch cshow
     } ifelse
   } ifelse

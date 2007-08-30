@@ -657,6 +657,33 @@ pdf_char_widths(gx_device_pdf *const pdev,
 }
 
 /*
+ * Convert glyph widths (.Width.xy and .real_widths.xy) from design to PDF text space
+ * Zero-out one of Width.xy.x/y per PDF Ref 5.3.3 "Text Space Details"
+ */
+private void
+pdf_char_widths_to_uts(pdf_font_resource_t *pdfont /* may be NULL for non-Type3 */,
+		       pdf_glyph_widths_t *pwidths)
+{
+    if (pdfont && pdfont->FontType == ft_user_defined) {
+	gs_matrix *pmat = &pdfont->u.simple.s.type3.FontMatrix;
+
+	pwidths->Width.xy.x *= pmat->xx; /* formula simplified based on wy in glyph space == 0 */
+	pwidths->Width.xy.y  = 0.0; /* WMode == 0 for PDF Type 3 fonts */
+	gs_distance_transform(pwidths->real_width.xy.x, pwidths->real_width.xy.y, pmat, &pwidths->real_width.xy);
+    } else {
+	/*
+	 * For other font types:
+	 * - PDF design->text space is a simple scaling by 0.001.
+	 * - The Width.xy.x/y that should be zeroed-out per 5.3.3 "Text Space Details" is already 0.
+	 */
+	pwidths->Width.xy.x /= 1000.0;
+	pwidths->Width.xy.y /= 1000.0;
+	pwidths->real_width.xy.x /= 1000.0;
+	pwidths->real_width.xy.y /= 1000.0;
+    }
+}
+
+/*
  * Compute the total text width (in user space).  Return 1 if any
  * character had real_width != Width, otherwise 0.
  */
@@ -668,7 +695,6 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
 {
     int i;
     gs_point w;
-    double scale;
     gs_point dpt;
     int num_spaces = 0;
     int space_char =
@@ -681,13 +707,8 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
     code = pdf_attached_font_resource(pdev, (gs_font *)font, &pdfont, NULL, NULL, NULL, NULL);
     if (code < 0)
 	return code;
-    if (font->FontType == ft_user_defined) {
-	pdf_font3_scale(pdev, (gs_font *)font, &scale);
-	scale *= ppts->values.size;
-    } else
-	scale = 0.001 * ppts->values.size;
     for (i = 0, w.x = w.y = 0; i < pstr->size; ++i) {
-	pdf_glyph_widths_t cw;
+	pdf_glyph_widths_t cw; /* in PDF text space */
 	gs_char ch = pstr->data[i];
 
 	{  const gs_glyph *gdata_i = (gdata != NULL ? gdata + i : 0);
@@ -710,6 +731,7 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
 	    *accepted = 0;
 	    return code;
 	}
+	pdf_char_widths_to_uts(pdfont, &cw);
 	w.x += cw.real_width.xy.x;
 	w.y += cw.real_width.xy.y;
 	if (cw.real_width.xy.x != cw.Width.xy.x ||
@@ -720,7 +742,7 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
 	    ++num_spaces;
     }
     *accepted = i;
-    gs_distance_transform(w.x * scale, w.y * scale,
+    gs_distance_transform(w.x * ppts->values.size, w.y * ppts->values.size,
 			  &ppts->values.matrix, &dpt);
     if (pte->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
 	int num_chars = *accepted;
@@ -784,20 +806,14 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 			  gs_point *pdpt, const gs_glyph *gdata, bool composite)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *)pte->dev;
-    double scale;
     int space_char =
 	(pte->text.operation & TEXT_ADD_TO_SPACE_WIDTH ?
 	 pte->text.space.s_char : -1);
-    int code = 0;
     gs_point start, total;
+    pdf_font_resource_t *pdfont3 = NULL;
 
-    if (font->FontType == ft_user_defined) {
-	gx_device_pdf *pdev = (gx_device_pdf *)pte->dev;
-
-	pdf_font3_scale(pdev, font, &scale);
-	scale *= ppts->values.size;
-    } else
-	scale = 0.001 * ppts->values.size;
+    if (font->FontType == ft_user_defined)
+	pdf_attached_font_resource(pdev, font, &pdfont3, NULL, NULL, NULL, NULL);
     pte->text.data.bytes = pstr->data;
     pte->text.size = pstr->size;
     pte->index = 0;
@@ -812,7 +828,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
      * and the width values for pdf_append_chars are in device space.
      */
     for (;;) {
-	pdf_glyph_widths_t cw;	/* design space */
+	pdf_glyph_widths_t cw;	/* design space, then converted to PDF text space */
 	gs_point did, wanted, tpt;	/* user space */
 	gs_point v = {0, 0}; /* design space */
 	gs_char chr;
@@ -942,9 +958,10 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 		    break;
 	    }
 	}
+	pdf_char_widths_to_uts(pdfont3, &cw); /* convert design->text space */
 	if (pte->text.operation & TEXT_DO_DRAW) {
-	    gs_distance_transform(cw.Width.xy.x * scale,
-				  cw.Width.xy.y * scale,
+	    gs_distance_transform(cw.Width.xy.x * ppts->values.size,
+				  cw.Width.xy.y * ppts->values.size,
 				  &ppts->values.matrix, &did);
 	    gs_distance_transform((font->WMode ? 0 : ppts->values.character_spacing),
 				  (font->WMode ? ppts->values.character_spacing : 0),
@@ -974,8 +991,8 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 		return_error(gs_error_unregistered);
 	    gs_distance_transform(dpt.x, dpt.y, &ctm_only(pte->pis), &wanted);
 	} else {
-	    gs_distance_transform(cw.real_width.xy.x * scale,
-				  cw.real_width.xy.y * scale,
+	    gs_distance_transform(cw.real_width.xy.x * ppts->values.size,
+				  cw.real_width.xy.y * ppts->values.size,
 				  &ppts->values.matrix, &wanted);
 	    if (pte->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
 		gs_distance_transform(pte->text.delta_all.x,
@@ -1004,7 +1021,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	pdev->charproc_just_accumulated = false;
     }
     *pdpt = total;
-    return code;
+    return 0;
 }
 
 /*

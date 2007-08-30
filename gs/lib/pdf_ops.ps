@@ -61,6 +61,8 @@ userdict /GS_PDF_ProcSet 127 dict dup begin
 %	TextRise
 %	TextRenderingMode
 %	WordSpacing
+% (The following is cached information derived from other graphics state params)
+%	FontMatrixNonHV % TextFont.FontMatrix alters horz/vert glyph advance vector direction
 
 /nodict 1 dict def
 nodict /self { //nodict } executeonly put
@@ -401,6 +403,7 @@ end readonly def
    /WordSpacing 0 def		% 0 Tw
    /TextHScaling 1.0 def	% 100 Tz
    /TextFont null def
+   /FontMatrixNonHV //false def
    /Show { showfirst } def
  } bdef
 
@@ -460,6 +463,62 @@ end readonly def
 
 % ---------------- Font control ---------------- %
 
+% Test if the FontMatrix could transform a horizontal/vertical (depending
+% on writing mode) advance vector in glyph space into one with a different
+% direction in text space.
+% - if FontMatrix = [a b c d tx ty], this condition translates to:
+%       b != 0 for horizontal writing mode
+%       c != 0 for vertical writing mode
+% - when false, we automatically have wy/x == 0 in text space whenever wy/x == 0
+%   in glyph space, and can avoid the slow method that is otherwise necessary
+%   to implement zeroing wy/x cf PDF Ref 5.3.3 "Text space details"
+    % Worker procedure for testing a single font matrix
+/?FontMatrixNonHV {		    % ?horz <<fontdict>> -- ?horz ?nonhv
+    /FontMatrix .knownget {
+	1 index { 1 } { 2 } ifelse get 0 ne
+    } {
+	//false
+    } ifelse
+} bdef
+    % Worker procedure for recursive checking of font matrices
+/?FontMatrixNonHV {		    % {self} ?horz <<font>> -- {self} ?horz ?nonhv
+    2 copy //?FontMatrixNonHV exec {	    % check the font's own FontMatrix
+	pop pop //true
+    } {
+	% look for descendents/ components
+	pop				    % {self} ?horz <<font>>
+	dup /FontType get
+	dup 0 eq {			    % Type 0: look into FDepVector
+	    pop /FDepVector get 2 index	    % {self} ?horz [fonts..] {testproc}
+	} {
+	    9 eq {			    % Type 9 (CIDFontType 0): check FDArray
+		/FDArray get //?FontMatrixNonHV
+	    } {				    % all others: nothing more to check
+		pop {} {}
+	    } ifelse
+	} ifelse
+	%stack: {self} ?horz [fonts..] {testproc}
+	//false 5 2 roll {		    % {testproc} false {self} ?horz <<subfont>>
+	    4 index exec {
+		4 -1 roll pop //true 4 1 roll
+		exit
+	    } if
+	} forall
+	%stack: {testproc} ?nonhv {self} ?horz
+	4 2 roll exch pop
+    } ifelse
+} bdef
+    % Main procedure
+/?FontMatrixNonHV {		% <<rootfont>> -- ?nonhv
+    //?FontMatrixNonHV exch
+    % determine WMode
+    dup /WMode .knownget { 0 eq } { //true } ifelse % {proc} <<rootfont>> ?horz
+    exch
+    % call the worker procedure
+    //?FontMatrixNonHV exec
+    exch pop exch pop
+} bdef
+
 /Tf {		% <font> <scale> Tf -
   dup 0 eq {
     (\n   **** Warning: Invalid 0.0 font scale given for Tf ****\n)
@@ -472,6 +531,12 @@ end readonly def
     dup 1 eq { pop } { scalefont } ifelse
   }
   ifelse
+  dup ?FontMatrixNonHV dup FontMatrixNonHV ne {
+    /FontMatrixNonHV gput
+    { showfirst } /Show gput
+  } {
+    pop
+  } ifelse
   /TextFont gput settextstate
 } bdef
 
@@ -590,7 +655,7 @@ end readonly def
    { tW }
 ] readonly def
 /setshowstate
- { WordSpacing 0 eq TextSpacing 0 eq and
+ { WordSpacing 0 eq TextSpacing 0 eq and FontMatrixNonHV not and
     { TextRenderingMode 0 eq currentdevice .devicename /pdfwrite eq or {
         { setfillstate show }
       } {
@@ -625,25 +690,57 @@ end readonly def
     }
     { TextRenderingMode 0 eq TextRenderingMode 3 eq or currentdevice .devicename /pdfwrite eq or
        % Tr was set to graphic state.
-       { WordSpacing 0 eq
-          { { setfillstate TextSpacing 0 Vexch 3 -1 roll ashow } }
-	  { TextSpacing 0 eq
-            { { setfillstate WordSpacing 0 Vexch 32 4 -1 roll widthshow } }
-            { { setfillstate WordSpacing 0 Vexch 32
-                 TextSpacing 0 Vexch 6 -1 roll awidthshow } }
-	    ifelse
-	  }
-	 ifelse
+       { FontMatrixNonHV {
+           {
+             setfillstate
+             [ TextSpacing WordSpacing 3 index
+               {					    % str [... weach wword c undef|ythis xthis|undef
+		 exch % will be removed, unless FontMatrix.xx/yy == 0 (FontMatrixNonHV already true)
+                 Vexch pop                                  % str [... weach wword c wthis
+                 3 index add exch 32 eq {1 index add} if    % str [... weach wword w
+                 3 1 roll                                   % str [... w weach wword
+               }
+               % for the "exch" removed or not below, see comment in pdf_font.ps::getfontmetrics
+	       currentfont /FontMatrix get 0 3 Vexch pop get 0 ne {
+	         1 1 index length 1 sub getinterval cvx
+	       } if
+	       cshow pop pop ]
+             { xshow } { yshow } Vexch pop exec
+           }
+         } {
+           WordSpacing 0 eq
+            { { setfillstate TextSpacing 0 Vexch 3 -1 roll ashow } }
+	    { TextSpacing 0 eq
+              { { setfillstate WordSpacing 0 Vexch 32 4 -1 roll widthshow } }
+              { { setfillstate WordSpacing 0 Vexch 32
+                   TextSpacing 0 Vexch 6 -1 roll awidthshow } }
+	      ifelse
+	    }
+	   ifelse
+         } ifelse
        }
        { { WordSpacing TextSpacing
 			% Implement the combination of t3 and false charpath.
 			% Note that we must use cshow for this, because we
 			% can't parse multi-byte strings any other way.
-			% Stack: string xword xchar
-	    { pop pop (x) dup 0 3 index put false charpath
-			% Stack: xword xchar ccode
-             3 copy 32 eq { add } { exch pop } ifelse 0 Vexch rmoveto pop
+			% Stack: string wword wchar
+	    {
+	     exch % will be removed, unless FontMatrixNonHV && FontMatrix.xx/yy == 0
+			% Stack: str wword wchar ccode xthis ythis
+	     Vexch pop currentpoint 6 3 roll
+			% Stack: str wthis xorig yorig wword wchar ccode
+	     (x) dup 0 3 index put //false charpath
+             3 copy 32 eq { add } { exch pop } ifelse
+			% Stack: str wthis xorig yorig wword wchar ccode wextra
+             7 -3 roll moveto add
+             0 Vexch rmoveto pop
 	    }
+            % for the "exch" removed or not below, see comment in pdf_font.ps::getfontmetrics
+	    FontMatrixNonHV dup not exch {
+	      currentfont /FontMatrix get 0 3 Vexch pop get 0 ne
+	    } if {
+	      1 1 index length 1 sub getinterval cvx
+	    } if
 	   4 -1 roll cshow pop pop
 	   textrenderingprocs TextRenderingMode get exec
 	 }

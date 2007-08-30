@@ -161,7 +161,6 @@ typedef struct pdf_glyph_widths_s {
  * Compute and return the orig_matrix of a font.
  */
 int pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat);
-int font_orig_scale(const gs_font *font, double *sx);
 
 /* 
  * Check the Encoding compatibility 
@@ -269,9 +268,6 @@ bool pdf_is_simple_font(gs_font *font);
  * Check for CID font.
  */
 bool pdf_is_CID_font(gs_font *font);
-
-/* Get a synthesized Type 3 font scale. */
-void pdf_font3_scale(gx_device_pdf *pdev, gs_font *font, double *scale);
 
 /* Release a text characters colloction. */
 void pdf_text_release_cgp(pdf_text_enum_t *penum);

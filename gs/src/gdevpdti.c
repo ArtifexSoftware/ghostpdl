@@ -479,11 +479,11 @@ pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int
 	is defined to paint glyphs with the current color."
 	However comparefiles/Bug687044.ps doesn't follow that. */
 	pdev->skip_colors = false; 
-	pprintg2(pdev->strm, "%g %g d0\n", (float)pw[0], (float)pw[1]);
+	pprintg1(pdev->strm, "%g 0 d0\n", (float)pw[0]);
     } else {
 	pdev->skip_colors = true;
 	pprintg6(pdev->strm, "%g %g %g %g %g %g d1\n", 
-	    (float)pw[0], (float)pw[1], (float)pw[2], 
+	    (float)pw[0], (float)0.0, (float)pw[2], 
 	    (float)pw[3], (float)pw[4], (float)pw[5]);
 	pdfont->u.simple.s.type3.cached[ch >> 3] |= 0x80 >> (ch & 7);
     }

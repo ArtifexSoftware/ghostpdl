@@ -700,18 +700,6 @@ pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat)
     }
 }
 
-int
-font_orig_scale(const gs_font *font, double *sx)
-{   
-    gs_matrix mat;
-    int code = pdf_font_orig_matrix(font, &mat);
-
-    if (code < 0)
-	return code;
-    *sx = mat.xx;
-    return 0;
-}
-
 /* 
  * Check the Encoding compatibility 
  */
@@ -1231,16 +1219,6 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
     }
     *ppdfont = pdfont;
     return 1;
-}
-
-/* Get a synthesized Type 3 font scale. */
-void 
-pdf_font3_scale(gx_device_pdf *pdev, gs_font *font, double *scale)
-{
-    pdf_font_resource_t *pdfont;
-
-    pdf_attached_font_resource(pdev, font, &pdfont, NULL, NULL, NULL, NULL);
-    *scale = pdfont->u.simple.s.type3.FontMatrix.xx;
 }
 
 /*
@@ -2073,13 +2051,12 @@ pdf_set_text_process_state(gx_device_pdf *pdev,
 }
 
 private int
-store_glyph_width(pdf_glyph_width_t *pwidth, int wmode, double scale,
+store_glyph_width(pdf_glyph_width_t *pwidth, int wmode, const gs_matrix *scale,
 		  const gs_glyph_info_t *pinfo)
 {
     double w, v;
 
-    pwidth->xy.x = pinfo->width[wmode].x * scale;
-    pwidth->xy.y = pinfo->width[wmode].y * scale;
+    gs_distance_transform(pinfo->width[wmode].x, pinfo->width[wmode].y, scale, &pwidth->xy);
     if (wmode)
 	w = pwidth->xy.y, v = pwidth->xy.x;
     else
@@ -2087,13 +2064,12 @@ store_glyph_width(pdf_glyph_width_t *pwidth, int wmode, double scale,
     if (v != 0)
 	return 1;
     pwidth->w = w;
-    pwidth->v.x = pinfo->v.x * scale;
-    pwidth->v.y = pinfo->v.y * scale;
+    gs_distance_transform(pinfo->v.x, pinfo->v.y, scale, &pwidth->v);
     return 0;
 }
 
 private int
-get_missing_width(gs_font_base *cfont, int wmode, double scale_c, 
+get_missing_width(gs_font_base *cfont, int wmode, const gs_matrix *scale_c,
 		    pdf_glyph_widths_t *pwidths)
 {
     gs_font_info_t finfo;
@@ -2104,19 +2080,19 @@ get_missing_width(gs_font_base *cfont, int wmode, double scale_c,
     if (code < 0)
 	return code;
     if (wmode) {
-	pwidths->Width.xy.x = pwidths->real_width.xy.x = 0;
-	pwidths->Width.xy.y = pwidths->real_width.xy.y =
-		- finfo.MissingWidth * scale_c;
+	gs_distance_transform(0.0, -finfo.MissingWidth, scale_c, &pwidths->real_width.xy);
+	pwidths->Width.xy.x = 0;
+	pwidths->Width.xy.y = pwidths->real_width.xy.y;
 	pwidths->Width.w = pwidths->real_width.w =
 		pwidths->Width.xy.y;
 	pwidths->Width.v.x = - pwidths->Width.xy.y / 2;
 	pwidths->Width.v.y = - pwidths->Width.xy.y;
     } else {
-	pwidths->Width.xy.x = pwidths->real_width.xy.x =
-		finfo.MissingWidth * scale_c;
+	gs_distance_transform(finfo.MissingWidth, 0.0, scale_c, &pwidths->real_width.xy);
+	pwidths->Width.xy.x = pwidths->real_width.xy.x;
+	pwidths->Width.xy.y = 0;
 	pwidths->Width.w = pwidths->real_width.w =
 		pwidths->Width.xy.x;
-	pwidths->Width.xy.y = pwidths->real_width.xy.y = 0;
 	pwidths->Width.v.x = pwidths->Width.v.y = 0;
     }
     /*
@@ -2142,11 +2118,7 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
     gs_font_base *cfont = pdf_font_resource_font(pdfont, false);
     gs_font *ofont = orig_font;
     gs_glyph_info_t info;
-    /*
-     * orig_scale is 1.0 for TrueType, 0.001 or 1.0/2048 for Type 1.
-     */
-    double sxc, sxo;
-    double scale_c, scale_o;
+    gs_matrix scale_c, scale_o;
     int code, rcode = 0;
     gs_point v;
     int allow_cdevproc_callout = (orig_font->FontType == ft_CID_TrueType 
@@ -2155,19 +2127,19 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 
     if (ofont->FontType == ft_composite)
 	return_error(gs_error_unregistered); /* Must not happen. */
-    code = font_orig_scale((const gs_font *)cfont, &sxc);
+    code = pdf_font_orig_matrix((const gs_font *)cfont, &scale_c);
     if (code < 0)
 	return code;
-    code = font_orig_scale(ofont, &sxo);
+    code = pdf_font_orig_matrix(ofont, &scale_o);
     if (code < 0)
 	return code;
-    scale_c = sxc * 1000.0;
-    scale_o = sxo * 1000.0;
+    gs_matrix_scale(&scale_c, 1000.0, 1000.0, &scale_c);
+    gs_matrix_scale(&scale_o, 1000.0, 1000.0, &scale_o);
     pwidths->Width.v.x = pwidths->Width.v.y = 0;
     pwidths->real_width.v.x = pwidths->real_width.v.y = 0;
     pwidths->replaced_v = false;
     if (glyph == GS_NO_GLYPH)
-	return get_missing_width(cfont, wmode, scale_c, pwidths);
+	return get_missing_width(cfont, wmode, &scale_c, pwidths);
     code = cfont->procs.glyph_info((gs_font *)cfont, glyph, NULL,
 				    GLYPH_INFO_WIDTH0 |
 				    (GLYPH_INFO_WIDTH0 << wmode) |
@@ -2179,7 +2151,7 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
        So make a compatibe data here.
      */
     if (code == gs_error_undefined || !(info.members & (GLYPH_INFO_WIDTH0 << wmode))) {
-	code = get_missing_width(cfont, wmode, scale_c, pwidths);
+	code = get_missing_width(cfont, wmode, &scale_c, pwidths);
 	if (code < 0)
 	    v.y = 0;
 	else 
@@ -2187,7 +2159,7 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 	if (wmode && pdf_is_CID_font(ofont)) {
 	    pdf_glyph_widths_t widths1;
 
-	    if (get_missing_width(cfont, 0, scale_c, &widths1) < 0)
+	    if (get_missing_width(cfont, 0, &scale_c, &widths1) < 0)
 		v.x = 0;
 	    else
 		v.x = widths1.Width.w / 2;
@@ -2196,30 +2168,28 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
     } else if (code < 0)
 	return code;
     else {
-	code = store_glyph_width(&pwidths->Width, wmode, scale_c, &info);
+	code = store_glyph_width(&pwidths->Width, wmode, &scale_c, &info);
 	if (code < 0)
 	    return code;
 	rcode |= code;
-	if (info.members & (GLYPH_INFO_VVECTOR0 << wmode)) {
-	    v.y = info.v.y * scale_c;
-	} else
-	    v.y = 0;
+	if (info.members  & (GLYPH_INFO_VVECTOR0 << wmode))
+	    gs_distance_transform(info.v.x, info.v.y, &scale_c, &v);
+	else 
+	    v.x = v.y = 0;
 	if (wmode && pdf_is_CID_font(ofont)) {
 	    if (info.members & (GLYPH_INFO_WIDTH0 << wmode)) {
-		v.x = info.width[0].x * scale_c / 2;
+		gs_point xy;
+
+		gs_distance_transform(info.width[0].x, info.width[0].y, &scale_c, &xy);
+		v.x = xy.x / 2;
 	    } else {
 		pdf_glyph_widths_t widths1;
 		
-		if (get_missing_width(cfont, 0, scale_c, &widths1) < 0)
+		if (get_missing_width(cfont, 0, &scale_c, &widths1) < 0)
 		    v.x = 0;
 		else
 		    v.x = widths1.Width.w / 2;
 	    }
-	} else {
-	    if (info.members  & (GLYPH_INFO_VVECTOR0 << wmode)) {
-		v.x = info.v.x * scale_c;
-	    } else
-		v.x = 0;
 	}
     }
     pwidths->Width.v = v;
@@ -2263,12 +2233,11 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 	    pwidths->replaced_v = true;
 	else 
 	    info.v.x = info.v.y = 0;
-	code = store_glyph_width(&pwidths->real_width, wmode, scale_o, &info);
+	code = store_glyph_width(&pwidths->real_width, wmode, &scale_o, &info);
 	if (code < 0)
 	    return code;
 	rcode |= code;
-	pwidths->real_width.v.x = info.v.x * scale_o;
-	pwidths->real_width.v.y = info.v.y * scale_o;
+	gs_distance_transform(info.v.x, info.v.y, &scale_o, &pwidths->real_width.v);
     }
     return rcode;
 }
