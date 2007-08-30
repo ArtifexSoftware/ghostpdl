@@ -715,5 +715,8 @@ pdf_convert_truetype_font_descriptor(gx_device_pdf *pdev, pdf_font_resource_t *p
 	    pdfont->u.cidfont.CIDToGIDMap[ch] = glyph - GS_MIN_GLYPH_INDEX;
 	}
     }
+    pdfont->u.cidfont.Widths2 = NULL;
+    pdfont->u.cidfont.used2 = NULL;
+    pdfont->u.cidfont.v = NULL;
     return 0;
 }
