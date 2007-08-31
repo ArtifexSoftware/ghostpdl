@@ -652,8 +652,9 @@ private void t1_hinter__fix_subglyph_contour_signs(t1_hinter * this, int first_c
 				/* Cycled - don't fix. */
 				return;
 			    }
+			    if (!inside[i][l])
+				m = 1;
 			    inside[i][l] = 1;
-			    m = 1;
 			}
 		    }
 		}
