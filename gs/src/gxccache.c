@@ -223,9 +223,11 @@ gx_lookup_xfont_char(const gs_state * pgs, cached_fm_pair * pair,
 	    return 0;
     }
     log2_scale.x = log2_scale.y = 1;
-    cc = gx_alloc_char_bits(font->dir, NULL, NULL, 
+    code = gx_alloc_char_bits(font->dir, NULL, NULL, 
 		(ushort)(bbox.q.x - bbox.p.x), (ushort)(bbox.q.y - bbox.p.y), 
-		&log2_scale, 1);
+		&log2_scale, 1, &cc);
+    if (code < 0)
+	return code;
     if (cc == 0)
 	return 0;
     /* Success.  Make the cache entry. */

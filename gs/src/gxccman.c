@@ -58,8 +58,8 @@ RELOC_PTRS_END
 
 /* Forward references */
 private gx_xfont * lookup_xfont_by_name(gx_device *, const gx_xfont_procs *, gs_font_name *, int, const cached_fm_pair *, const gs_matrix *);
-private cached_char *alloc_char(gs_font_dir *, ulong);
-private cached_char *alloc_char_in_chunk(gs_font_dir *, ulong);
+private int alloc_char(gs_font_dir *, ulong, cached_char **);
+private int alloc_char_in_chunk(gs_font_dir *, ulong, cached_char **);
 private void hash_remove_cached_char(gs_font_dir *, uint);
 private void shorten_cached_char(gs_font_dir *, cached_char *, uint);
 
@@ -553,10 +553,10 @@ lookup_xfont_by_name(gx_device * fdev, const gx_xfont_procs * procs,
  * not NULL, dev should be an alpha-buffer device with dev2 (an alpha
  * device) as target.
  */
-cached_char *
+int 
 gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
 		   gx_device_memory * dev2, ushort iwidth, ushort iheight,
-		   const gs_log2_scale_point * pscale, int depth)
+		   const gs_log2_scale_point * pscale, int depth, cached_char **pcc)
 {
     int log2_xscale = pscale->x;
     int log2_yscale = pscale->y;
@@ -569,7 +569,9 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
     gx_device_memory *pdev = dev;
     gx_device_memory *pdev2;  
     float HWResolution0 = 72, HWResolution1 = 72;  /* default for dev == NULL */
+    int code;
     
+    *pcc = 0;
     if (dev == NULL) {
 	mdev.memory = 0;
 	mdev.target = 0;
@@ -637,7 +639,10 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
 	dev->HWResolution[1] = HWResolution1 * (1 >> log2_yscale);
     }
     icdsize = isize + sizeof_cached_char;
-    cc = alloc_char(dir, icdsize);
+    code = alloc_char(dir, icdsize, &cc);
+    if (code < 0)
+	return code;
+    *pcc = cc;
     if (cc == 0)
 	return 0;
     if_debug4('k', "[k]adding char 0x%lx:%u(%u,%u)\n",
@@ -675,7 +680,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
     } else if (dev)
 	gx_open_cache_device(dev, cc);
 
-    return cc;
+    return 0;
 }
 
 /* Open the cache device. */
@@ -962,11 +967,15 @@ gs_purge_font_from_char_caches_completely(gs_font * font)
 /* ------ Internal routines ------ */
 
 /* Allocate data space for a cached character, adding a new chunk if needed. */
-private cached_char *
-alloc_char(gs_font_dir * dir, ulong icdsize)
+private int
+alloc_char(gs_font_dir * dir, ulong icdsize, cached_char **pcc)
 {				/* Try allocating at the current position first. */
-    cached_char *cc = alloc_char_in_chunk(dir, icdsize);
+    cached_char *cc;
+    int code = alloc_char_in_chunk(dir, icdsize, &cc);
 
+    *pcc = cc;
+    if (code < 0)
+	return code;
     if (cc == 0) {
 	if (dir->ccache.bspace < dir->ccache.bmax) {	/* Allocate another chunk. */
 	    gs_memory_t *mem = dir->ccache.bits_memory;
@@ -1008,26 +1017,34 @@ alloc_char(gs_font_dir * dir, ulong icdsize)
 
 	    while ((dir->ccache.chunks = cck = cck->next) != cck_init) {
 		dir->ccache.cnext = 0;
-		cc = alloc_char_in_chunk(dir, icdsize);
-		if (cc != 0)
-		    return cc;
+		code = alloc_char_in_chunk(dir, icdsize, &cc);
+		if (code < 0)
+		    return code;
+		if (cc != 0) {
+		    *pcc = cc;
+		    return 0;
+		}
 	    }
 	}
 	dir->ccache.cnext = 0;
-	cc = alloc_char_in_chunk(dir, icdsize);
+	code = alloc_char_in_chunk(dir, icdsize, &cc);
+	if (code < 0)
+	    return code;
+	*pcc = cc;
     }
-    return cc;
+    return 0;
 }
 
 /* Allocate a character in the current chunk. */
-private cached_char *
-alloc_char_in_chunk(gs_font_dir * dir, ulong icdsize)
+private int
+alloc_char_in_chunk(gs_font_dir * dir, ulong icdsize, cached_char **pcc)
 {
     char_cache_chunk *cck = dir->ccache.chunks;
     cached_char_head *cch;
 
 #define cc ((cached_char *)cch)
 
+    *pcc = 0;
     while (gx_bits_cache_alloc((gx_bits_cache *) & dir->ccache,
 			       icdsize, &cch) < 0
 	) {
@@ -1045,9 +1062,13 @@ alloc_char_in_chunk(gs_font_dir * dir, ulong icdsize)
 
 	    if (pair != 0) {
 		uint chi = chars_head_index(cc->code, pair);
+		uint cnt = dir->ccache.table_mask + 1;
 
-		while (dir->ccache.table[chi & dir->ccache.table_mask] != cc)
+		while (dir->ccache.table[chi & dir->ccache.table_mask] != cc) {
 		    chi++;
+		    if (cnt-- == 0)
+			return_error(gs_error_unregistered); /* Must not happen. */
+		}
 		hash_remove_cached_char(dir, chi);
 	    }
 
@@ -1061,7 +1082,8 @@ alloc_char_in_chunk(gs_font_dir * dir, ulong icdsize)
 
     cc->chunk = cck;
     cc->loc = (byte *) cc - cck->data;
-    return cc;
+    *pcc = cc;
+    return 0;
 
 #undef cc
 }

@@ -624,11 +624,11 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	 * from oversampled bitmap strips to alpha values instead of
 	 * full oversampling with compression at the end.
 	 */
-	cc = gx_alloc_char_bits(dir, penum->dev_cache,
+	code = gx_alloc_char_bits(dir, penum->dev_cache,
 				(iwidth > MAX_TEMP_BITMAP_BITS / iheight &&
 				 log2_scale.x + log2_scale.y > alpha_bits ?
 				 penum->dev_cache2 : NULL),
-				iwidth, iheight, &log2_scale, depth);
+				iwidth, iheight, &log2_scale, depth, &cc);
 	if (cc == 0) {
 	    /* too big for cache or no cache */
 	    gx_path box_path;
