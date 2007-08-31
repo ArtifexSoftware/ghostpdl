@@ -437,7 +437,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	 * If there is a clipping path, set up a clipping device.
 	 */
 	if (pcpath) {
-	    gx_make_clip_device(&cdev, gx_cpath_list(pcpath));
+	    gx_make_clip_translate_device(&cdev, pcpath, 0, 0, NULL);
 	    cdev.target = dev;
 	    cdev.max_fill_band = dev->max_fill_band;
 	    dev = (gx_device *) & cdev;

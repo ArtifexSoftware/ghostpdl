@@ -70,7 +70,7 @@ gx_image_fill_masked_end(gx_device *dev, gx_device *tdev, const gx_device_color 
     if (code >= 0)
 	code = gx_dc_pattern2_clip_with_bbox(pdevc, tdev, &cpath_with_shading_bbox, &pcpath1);
     if (code >= 0) {
-	gx_make_clip_path_device(&cdev, pcpath1);
+	gx_make_clip_translate_device(&cdev, pcpath1, 0, 0, NULL);
 	cdev.target = tdev;
 	(*dev_proc(&cdev, open_device)) ((gx_device *) & cdev);
 	code1 = gx_device_color_fill_rectangle(pdevc, 

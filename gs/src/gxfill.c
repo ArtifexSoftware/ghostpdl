@@ -383,7 +383,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	 */
 	if (pcpath) {
 	    dev = (gx_device *) & cdev;
-	    gx_make_clip_device(&cdev, gx_cpath_list(pcpath));
+	    gx_make_clip_translate_device(&cdev, pcpath, 0, 0, NULL);
 	    cdev.target = save_dev;
 	    cdev.max_fill_band = save_dev->max_fill_band;
 	    (*dev_proc(dev, open_device)) (dev);
@@ -644,7 +644,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 		code = (*dev_proc(pdev, fill_path))(pdev, pis, ppath, params, NULL, pcpath1);
 		dev = pdev;
 	    } else {
-		gx_make_clip_path_device(&cdev, pcpath1);
+		gx_make_clip_translate_device(&cdev, pcpath1, 0, 0, NULL);
 		cdev.HWResolution[0] = pdev->HWResolution[0];
 		cdev.HWResolution[1] = pdev->HWResolution[1];
 		cdev.target = pdev;
