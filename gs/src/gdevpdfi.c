@@ -1393,7 +1393,13 @@ gdev_pdf_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
 	case pattern_manage__shfill_doesnt_need_path:
 	    return 0; /* gdev_pdf_fill_path still does need a path. */
 	case pattern_manage__handles_clip_path:
-	    return 1;
+	    /* This is important when the default implementation of 
+	       of fill_path is called due to a failure in setcolor
+	       or so, for example when a shading is incorfect. 
+	       The test case is the unfixed (buggy) Genoa test 446-01.ps . 
+	       In this case pdfwrite converts the object into rectangles,
+	       and the clipping device has to be set up. */
+	    return 0;
     }
     return_error(gs_error_unregistered);
 }
