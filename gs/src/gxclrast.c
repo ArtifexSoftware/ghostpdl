@@ -1423,9 +1423,7 @@ idata:			data_size = 0;
 				gx_device *ttdev = tdev;
 
 				if (pcpath != NULL && !clipper_dev_open) {
-				    gx_make_clip_translate_device(&clipper_dev, pcpath, 0, 0, NULL);
-				    clipper_dev.target = tdev;
-				    (*dev_proc(&clipper_dev, open_device))((gx_device *)&clipper_dev);
+				    gx_make_clip_device_on_stack(&clipper_dev, pcpath, tdev);
 				    clipper_dev_open = true;
 				}
 				if (clipper_dev_open)

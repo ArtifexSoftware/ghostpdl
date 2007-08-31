@@ -589,10 +589,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 				 false);
 	    return_error(gs_error_VMerror);
 	}
-	gx_make_clip_translate_device(cdev, pcpath, 0, 0, mem);
-	gx_device_retain((gx_device *)cdev, true); /* will free explicitly */
-	gx_device_set_target((gx_device_forward *)cdev, dev);
-	(*dev_proc(cdev, open_device)) ((gx_device *) cdev);
+	gx_make_clip_device_in_heap(cdev, pcpath, dev, mem);
 	penum->clip_dev = cdev;
     }
     if (penum->use_rop) {	/* Set up the RasterOp source device. */

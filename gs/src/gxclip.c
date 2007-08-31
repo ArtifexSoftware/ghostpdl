@@ -108,14 +108,26 @@ private const gx_device_clip gs_clip_device =
 
 /* Make a clipping device. */
 void
-gx_make_clip_translate_device(gx_device_clip * dev, const gx_clip_path *pcpath,
-			      int tx, int ty, gs_memory_t *mem)
+gx_make_clip_device_on_stack(gx_device_clip * dev, const gx_clip_path *pcpath, gx_device *target)
 {
-    gx_device_init((gx_device *)dev, (const gx_device *)&gs_clip_device,
-		   mem, true);
+    gx_device_init((gx_device *)dev, (const gx_device *)&gs_clip_device, NULL, true);
     dev->list = *gx_cpath_list(pcpath);
-    dev->translation.x = tx;
-    dev->translation.y = ty;
+    dev->translation.x = 0;
+    dev->translation.y = 0;
+    dev->target = target;
+    (*dev_proc(dev, open_device)) ((gx_device *)dev);
+}
+void
+gx_make_clip_device_in_heap(gx_device_clip * dev, const gx_clip_path *pcpath, gx_device *target,
+			      gs_memory_t *mem)
+{
+    gx_device_init((gx_device *)dev, (const gx_device *)&gs_clip_device, mem, true);
+    dev->list = *gx_cpath_list(pcpath);
+    dev->translation.x = 0;
+    dev->translation.y = 0;
+    gx_device_set_target((gx_device_forward *)dev, target);
+    gx_device_retain((gx_device *)dev, true); /* will free explicitly */
+    (*dev_proc(dev, open_device)) ((gx_device *)dev);
 }
 /* Define debugging statistics for the clipping loops. */
 #ifdef DEBUG

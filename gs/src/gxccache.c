@@ -315,10 +315,8 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 	code = gx_effective_clip_path(pgs, &pcpath);
 	if (code < 0)
 	    return code;
-	gx_make_clip_translate_device(&cdev, pcpath, 0, 0, NULL);
-	cdev.target = imaging_dev;
+	gx_make_clip_device_on_stack(&cdev, pcpath, imaging_dev);
 	imaging_dev = (gx_device *) & cdev;
-	(*dev_proc(imaging_dev, open_device)) (imaging_dev);
 	if_debug0('K', "[K](clipping)\n");
     }
     gx_set_dev_color(pgs);

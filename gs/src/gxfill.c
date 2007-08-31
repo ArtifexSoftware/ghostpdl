@@ -383,10 +383,8 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	 */
 	if (pcpath) {
 	    dev = (gx_device *) & cdev;
-	    gx_make_clip_translate_device(&cdev, pcpath, 0, 0, NULL);
-	    cdev.target = save_dev;
+	    gx_make_clip_device_on_stack(&cdev, pcpath, save_dev);
 	    cdev.max_fill_band = save_dev->max_fill_band;
-	    (*dev_proc(dev, open_device)) (dev);
 	}
     }
     /*
@@ -644,15 +642,13 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 		code = (*dev_proc(pdev, fill_path))(pdev, pis, ppath, params, NULL, pcpath1);
 		dev = pdev;
 	    } else {
-		gx_make_clip_translate_device(&cdev, pcpath1, 0, 0, NULL);
+		gx_make_clip_device_on_stack(&cdev, pcpath1, pdev);
 		cdev.HWResolution[0] = pdev->HWResolution[0];
 		cdev.HWResolution[1] = pdev->HWResolution[1];
-		cdev.target = pdev;
 		dev = (gx_device *)&cdev;
 		if ((*dev_proc(pdev, pattern_manage))(pdev, 
 			gs_no_id, NULL, pattern_manage__shading_area) > 0)
 		    set_dev_proc(&cdev, fill_path, pass_shading_area_through_clip_path_device);
-		(*dev_proc(dev, open_device))(dev);
 		code = 0;
 	    }
 	    if (code >= 0)

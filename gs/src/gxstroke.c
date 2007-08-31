@@ -437,11 +437,9 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	 * If there is a clipping path, set up a clipping device.
 	 */
 	if (pcpath) {
-	    gx_make_clip_translate_device(&cdev, pcpath, 0, 0, NULL);
-	    cdev.target = dev;
+	    gx_make_clip_device_on_stack(&cdev, pcpath, dev);
 	    cdev.max_fill_band = dev->max_fill_band;
 	    dev = (gx_device *) & cdev;
-	    (*dev_proc(dev, open_device)) (dev);
 	}
     }
     fill_params.rule = gx_rule_winding_number;

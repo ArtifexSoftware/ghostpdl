@@ -1076,9 +1076,7 @@ bbox_image_plane_data(gx_image_enum_common_t * info,
 	fixed x0 = float2fixed(corners[0].x), y0 = float2fixed(corners[0].y);
 	fixed bx2 = float2fixed(corners[2].x) - x0, by2 = float2fixed(corners[2].y) - y0;
 
-	gx_make_clip_translate_device(&cdev, pcpath, 0, 0, NULL);
-	cdev.target = dev;
-	(*dev_proc(&cdev, open_device)) ((gx_device *) & cdev);
+	gx_make_clip_device_on_stack(&cdev, pcpath, dev);
 	set_nonclient_dev_color(&devc, bdev->black);  /* any non-white color will do */
 	bdev->target = NULL;
 	gx_default_fill_triangle((gx_device *) & cdev, x0, y0,

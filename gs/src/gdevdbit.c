@@ -319,10 +319,8 @@ gx_default_fill_mask(gx_device * orig_dev,
     gx_device_clip cdev;
 
     if (pcpath != 0) {
-	gx_make_clip_translate_device(&cdev, pcpath, 0, 0, NULL);
-	cdev.target = orig_dev;
+	gx_make_clip_device_on_stack(&cdev, pcpath, orig_dev);
 	dev = (gx_device *) & cdev;
-	(*dev_proc(dev, open_device)) (dev);
     } else
 	dev = orig_dev;
     if (depth > 1) {
