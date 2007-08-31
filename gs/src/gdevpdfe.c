@@ -58,6 +58,7 @@ pdf_xml_data_write(stream *s, const byte *data, int data_length)
 		} else if (*p >= 0x7F && *p <= 0x9f) {
 		    /* Control characters are discouraged in XML. */
 		    pprintd1(s, "&#%d;", *p);
+		    l--; p++;
 		} else if ((*p & 0xE0) == 0xC0) {
 		    /* A 2-byte UTF-8 sequence */
 		    copy_bytes(s, &p, &l, 2);
