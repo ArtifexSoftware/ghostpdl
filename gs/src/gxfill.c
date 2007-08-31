@@ -643,8 +643,6 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 		dev = pdev;
 	    } else {
 		gx_make_clip_device_on_stack(&cdev, pcpath1, pdev);
-		cdev.HWResolution[0] = pdev->HWResolution[0];
-		cdev.HWResolution[1] = pdev->HWResolution[1];
 		dev = (gx_device *)&cdev;
 		if ((*dev_proc(pdev, pattern_manage))(pdev, 
 			gs_no_id, NULL, pattern_manage__shading_area) > 0)

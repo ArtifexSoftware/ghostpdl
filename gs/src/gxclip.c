@@ -114,6 +114,8 @@ gx_make_clip_device_on_stack(gx_device_clip * dev, const gx_clip_path *pcpath, g
     dev->list = *gx_cpath_list(pcpath);
     dev->translation.x = 0;
     dev->translation.y = 0;
+    dev->HWResolution[0] = target->HWResolution[0];
+    dev->HWResolution[1] = target->HWResolution[1];
     dev->target = target;
     (*dev_proc(dev, open_device)) ((gx_device *)dev);
 }
@@ -125,6 +127,8 @@ gx_make_clip_device_in_heap(gx_device_clip * dev, const gx_clip_path *pcpath, gx
     dev->list = *gx_cpath_list(pcpath);
     dev->translation.x = 0;
     dev->translation.y = 0;
+    dev->HWResolution[0] = target->HWResolution[0];
+    dev->HWResolution[1] = target->HWResolution[1];
     gx_device_set_target((gx_device_forward *)dev, target);
     gx_device_retain((gx_device *)dev, true); /* will free explicitly */
     (*dev_proc(dev, open_device)) ((gx_device *)dev);
