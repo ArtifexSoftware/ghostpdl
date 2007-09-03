@@ -45,6 +45,7 @@ private gs_state *gstate_clone(gs_state *, gs_memory_t *, client_name_t,
 private void gstate_free_contents(gs_state *);
 private int gstate_copy(gs_state *, const gs_state *,
 			gs_state_copy_reason_t, client_name_t);
+private void clip_stack_rc_adjust(gx_clip_stack_t *cs, int delta, client_name_t cname);
 
 /*
  * Graphics state storage management is complicated.  There are many
@@ -490,7 +491,7 @@ gs_state_copy(gs_state * pgs, gs_memory_t * mem)
 
     pgs->view_clip = 0;
     pnew = gstate_clone(pgs, mem, "gs_gstate", copy_for_gstate);
-    rc_increment(pnew->clip_stack);
+    clip_stack_rc_adjust(pnew->clip_stack, 1, "gs_state_copy");
     rc_increment(pnew->dfilter_stack);
     pgs->view_clip = view_clip;
     if (pnew == 0)
@@ -948,6 +949,21 @@ gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
     return 0;
 }
 
+
+/* Adjust reference counters for the whole clip stack */
+/* accessible from the given point */
+private void
+clip_stack_rc_adjust(gx_clip_stack_t *cs, int delta, client_name_t cname)
+{
+    gx_clip_stack_t *p = cs;  
+
+    while(p) {
+        gx_clip_stack_t *q = p;
+        p = p->next;  
+        rc_adjust(q, delta, cname);
+    }
+}
+
 /* Release the composite parts of a graphics state, */
 /* but not the state itself. */
 private void
@@ -957,7 +973,7 @@ gstate_free_contents(gs_state * pgs)
     const char *const cname = "gstate_free_contents";
 
     rc_decrement(pgs->device, cname);
-    rc_decrement(pgs->clip_stack, cname);
+    clip_stack_rc_adjust(pgs->clip_stack, -1, cname);
     rc_decrement(pgs->dfilter_stack, cname);
     cs_adjust_counts(pgs, -1);
     if (pgs->client_data != 0)
@@ -1009,11 +1025,12 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
     *parts.ccolor = *pfrom->ccolor;
     *parts.dev_color = *pfrom->dev_color;
     /* Handle references from gstate object. */
-#define RCCOPY(element)\
-    rc_pre_assign(pto->element, pfrom->element, cname)
-    RCCOPY(device);
-    RCCOPY(clip_stack);
-    RCCOPY(dfilter_stack);
+    rc_pre_assign(pto->device, pfrom->device, cname);
+    rc_pre_assign(pto->dfilter_stack, pfrom->dfilter_stack, cname);
+    if (pto->clip_stack != pfrom->clip_stack) {
+        clip_stack_rc_adjust(pfrom->clip_stack, 1, cname);
+        clip_stack_rc_adjust(pto->clip_stack, -1, cname);
+    }
     {
 	struct gx_pattern_cache_s *pcache = pto->pattern_cache;
 	void *pdata = pto->client_data;
@@ -1038,7 +1055,6 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
     }
     GSTATE_ASSIGN_PARTS(pto, &parts);
     cs_adjust_counts(pto, 1);
-#undef RCCOPY
     pto->show_gstate =
 	(pfrom->show_gstate == pfrom ? pto : 0);
     return 0;
