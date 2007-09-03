@@ -190,7 +190,7 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
     float smooth_x, smooth_y; /* saved cubic bezier control point for smooth curves */
     int reset_smooth;
 
-    dprintf1("new path (%.70s)\n", geom);
+    //dprintf1("new path (%.70s)\n", geom);
     gs_newpath(ctx->pgs);
 
     ctx->fill_rule = 0;
@@ -329,7 +329,7 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 	    y1 = atof(args[i+1]);
 	    x2 = atof(args[i+2]);
 	    y2 = atof(args[i+3]);
-	    dprintf2("smooth %g %g\n", smooth_x, smooth_y);
+	    //dprintf2("smooth %g %g\n", smooth_x, smooth_y);
 	    gs_curveto(ctx->pgs, pt.x + smooth_x, pt.y + smooth_y, x1, y1, x2, y2);
 	    i += 4;
 	    reset_smooth = 0;
@@ -343,7 +343,7 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 	    y1 = atof(args[i+1]) + pt.y;
 	    x2 = atof(args[i+2]) + pt.x;
 	    y2 = atof(args[i+3]) + pt.y;
-	    dprintf2("smooth %g %g\n", smooth_x, smooth_y);
+	    //dprintf2("smooth %g %g\n", smooth_x, smooth_y);
 	    gs_curveto(ctx->pgs, pt.x + smooth_x, pt.y + smooth_y, x1, y1, x2, y2);
 	    i += 4;
 	    reset_smooth = 0;

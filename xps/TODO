@@ -4,11 +4,8 @@ High Priority Problems
 Colorspaces other than RGB and scRGB in vector colors.
 Images support grayscale, RGB and CMYK.
 
-Opacity masks need a proper bounding box.
-
 Gradient brushes need some work to figure out
-how many times to repeat to fill. Also needs
-the proper bounding box, same as opacity masks.
+how many times to repeat to fill the bounding box.
 
 Need to revise arc calculations. They are often
 flat out wrong or instable.

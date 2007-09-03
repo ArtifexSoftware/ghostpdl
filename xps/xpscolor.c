@@ -111,3 +111,34 @@ xps_parse_solid_color_brush(xps_context_t *ctx,
     xps_fill(ctx);
 }
 
+int
+xps_parse_icc_profile(xps_context_t *ctx, gs_color_space **csp, byte *data, int length)
+{
+    gs_color_space *colorspace;
+    gs_cie_icc *info;
+    int code;
+    int i;
+
+    code = gs_cspace_build_CIEICC(&colorspace, NULL, ctx->memory);
+    if (code < 0)
+	return gs_rethrow(code, "cannot build ICC colorspace");
+
+    info = colorspace->params.icc.picc_info;
+    info->num_components = 4; /* XXX from where?! */
+    info->instrp = 0; /* XXX stream */
+    for (i = 0; i < info->num_components; i++)
+    {
+	info->Range.ranges[i].rmin = 0.0;
+	info->Range.ranges[i].rmax = 1.0;
+    }
+
+    code = gx_load_icc_profile(info);
+    if (code < 0)
+	return gs_rethrow(code, "cannot load ICC profile");
+
+    *csp = colorspace;
+
+    return 0;
+}
+
+

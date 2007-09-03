@@ -21,6 +21,7 @@
 #include "gscolor2.h"
 #include "gscolor3.h"
 #include "gsutil.h"
+#include "gsicc.h"
 
 #include "gstrans.h"
 
@@ -210,7 +211,7 @@ struct xps_part_s
     xps_part_t *next;
 
     xps_font_t *font; /* parsed font resource */
-    xps_font_t *image; /* parsed image resource */
+    gs_color_space *icc; /* parsed icc profile resource */
 };
 
 xps_part_t *xps_new_part(xps_context_t *ctx, char *name, int capacity);
@@ -344,6 +345,8 @@ int xps_clip(xps_context_t *ctx, gs_rect *saved_bounds);
 int xps_unclip(xps_context_t *ctx, gs_rect *saved_bounds);
 int xps_fill(xps_context_t *ctx);
 void xps_bounds_in_user_space(xps_context_t *ctx, gs_rect *user);
+
+int xps_parse_icc_profile(xps_context_t *ctx, gs_color_space **csp, byte *data, int length);
 
 /*
  * Static XML resources.

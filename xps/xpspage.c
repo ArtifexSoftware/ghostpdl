@@ -120,16 +120,6 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 
     dict = NULL;
 
-    /* Workaround for broken pdf14trans pop/push.
-     * Reinstate the original device for each page.
-     */
-    {
-	static gx_device *g_original_device = NULL;
-	if (!g_original_device)
-	    g_original_device = gs_currentdevice(ctx->pgs);
-	gs_setdevice_no_erase(ctx->pgs, g_original_device);
-    }
-
     /* Setup new page */
     {
 	gs_memory_t *mem = ctx->memory;
@@ -183,6 +173,9 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	ctx->bounds = rc;
     }
 
+    /* save the state with the original device before we push */
+    gs_gsave(ctx->pgs);
+
     code = gs_push_pdf14trans_device(ctx->pgs);
     if (code < 0)
 	return gs_rethrow(code, "cannot install transparency device");
@@ -210,6 +203,9 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	if (code < 0)
 	    return gs_rethrow(code, "cannot flush page");
     }
+
+    /* restore the original device, discarding the pdf14 compositor */
+    gs_grestore(ctx->pgs);
 
     if (dict)
     {

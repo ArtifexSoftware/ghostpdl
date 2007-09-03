@@ -251,6 +251,8 @@ xps_draw_one_radial_gradient(xps_context_t *ctx,
     if (code < 0)
 	return gs_throw(-1, "gs_shading_R_init failed");
 
+    gs_setsmoothness(ctx->pgs, 0.02);
+
     code = gs_shfill(ctx->pgs, shading);
     if (code < 0)
     {
@@ -300,6 +302,8 @@ xps_draw_one_linear_gradient(xps_context_t *ctx,
     code = gs_shading_A_init(&shading, &params, mem);
     if (code < 0)
 	return gs_throw(-1, "gs_shading_A_init failed");
+
+    gs_setsmoothness(ctx->pgs, 0.02);
 
     code = gs_shfill(ctx->pgs, shading);
     if (code < 0)

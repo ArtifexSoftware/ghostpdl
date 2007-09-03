@@ -20,12 +20,10 @@ xps_item_t *
 xps_find_resource(xps_context_t *ctx, xps_resource_t *dict, char *name)
 {
     xps_resource_t *head, *node;
-    dprintf1("looking for resource (%s)\n", name);
     for (head = dict; head; head = head->parent)
 	for (node = head; node; node = node->next)
 	    if (!strcmp(node->name, name))
 		return node->data;
-    dputs("  did not find\n");
     return NULL;
 }
 

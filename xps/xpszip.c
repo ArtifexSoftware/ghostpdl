@@ -94,7 +94,7 @@ xps_new_part(xps_context_t *ctx, char *name, int capacity)
     part->next = NULL;
 
     part->font = NULL;
-    part->image = NULL;
+    part->icc = NULL;
 
     part->name = xps_strdup(ctx, name);
     if (!part->name)
