@@ -93,11 +93,7 @@ gp_fopentemp_generic(const char *fname, const char *mode, bool b64)
      * fdopen as (char *), rather than following the POSIX.1 standard,
      * which defines it as (const char *).  Patch this here.
      */
-#if defined (O_LARGEFILE)
-    file = (b64 ? fdopen64 : fdopen)(fildes, (char *)mode); /* still really const */
-#else
     file = fdopen(fildes, (char *)mode); /* still really const */
-#endif
     if (file == 0)
 	close(fildes);
     return file;
