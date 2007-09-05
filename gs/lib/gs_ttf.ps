@@ -530,7 +530,7 @@ currentdict /tt_tag_dict .undef
         3 1 roll                                  % s o minl p lSi
         sub                                       % s o minl p'
         3 1 roll add                              % s p' o'
-        dup 3 index length ge {
+        dup 3 index length ge 2 index 0 le or {
           exch exit                               % s o p'
         } if
         exch                                      % s o' p'
@@ -1074,8 +1074,13 @@ mark
           } if
           /cmapsub 1 index def
           dup 4 getu32                                   % bool [] i PlatID SpecID (cmap) (cmapsub) p
-          cmaptab length 1 index sub                     % bool [] i PlatID SpecID (cmap) (cmapsub) p l
-          cmaptab 3 1 roll getinterval
+          cmaptab 1 index getu16a                        %     get cmap format
+          8 lt {                                         %     length for traditional 16bit format 0, 2, 4, 6
+            cmaptab 1 index 2 add getu16a
+          } {                                            %     length for advanced 32bit format 8, 10, 12
+            cmaptab 1 index 4 add getu32a
+          } ifelse                                       % bool [] i PlatID SpecID (cmap) (cmapsub) p l
+          cmaptab 3 1 roll getinterval_from_stringarray
           /cmaptab exch def                              % bool [] i PlatID SpecID (cmap) (cmapsub)
           5 index 5 index 1 add get                      % bool [] i PlatID SpecID (cmap) (cmapsub) /Decoding
           /Decoding exch def                             % bool [] i PlatID SpecID (cmap) (cmapsub)
