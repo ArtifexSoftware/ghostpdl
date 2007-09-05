@@ -64,9 +64,9 @@ xps_isolate_alpha_channel_16(xps_context_t *ctx, xps_image_t *image)
 
     for (y = 0; y < image->height; y++)
     {
-	sp = image->samples + (image->width * n * y) * 2;
-	dp = image->samples + (image->width * (n - 1) * y) * 2;
-	ap = image->alpha + (image->width * y) * 2;
+	sp = ((unsigned short*)image->samples) + (image->width * n * y);
+	dp = ((unsigned short*)image->samples) + (image->width * (n - 1) * y);
+	ap = ((unsigned short*)image->alpha) + (image->width * y);
 	for (x = 0; x < image->width; x++)
 	{
 	    for (k = 0; k < n - 1; k++)
@@ -138,10 +138,7 @@ xps_paint_image_brush_imp(xps_context_t *ctx, xps_image_t *image, int alpha)
 
     if (alpha)
     {
-	colorspace = gs_cspace_new_DeviceGray(ctx->memory);
-	if (!colorspace)
-	    return gs_throw(-1, "cannot create colorspace for image");
-
+	colorspace = ctx->gray;
 	samples = image->alpha;
 	count = image->width * image->height; /* TODO: bits != 8 */
 	used = 0;
@@ -150,21 +147,12 @@ xps_paint_image_brush_imp(xps_context_t *ctx, xps_image_t *image, int alpha)
     {
 	switch (image->colorspace)
 	{
-	case XPS_GRAY:
-	    colorspace = gs_cspace_new_DeviceGray(ctx->memory);
-	    break;
-	case XPS_RGB:
-	    colorspace = gs_cspace_new_DeviceRGB(ctx->memory);
-	    break;
-	case XPS_CMYK:
-	    colorspace = gs_cspace_new_DeviceCMYK(ctx->memory);
-	    break;
+	case XPS_GRAY: colorspace = ctx->gray; break;
+	case XPS_RGB: colorspace = ctx->srgb; break;
+	case XPS_CMYK: colorspace = ctx->cmyk; break;
 	default:
 	    return gs_throw(-1, "cannot draw images with interleaved alpha");
 	}
-	if (!colorspace)
-	    return gs_throw(-1, "cannot create colorspace for image");
-
 	samples = image->samples;
 	count = image->stride * image->height;
 	used = 0;

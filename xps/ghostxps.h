@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <ctype.h> /* for toupper() */
 
 #include "memory_.h"
 #include "math_.h"
@@ -177,6 +178,13 @@ struct xps_context_s
     char pwd[1024]; /* directory name of xml part being processed */
     char *state; /* temporary state for various processing */
 
+    /* The common colorspaces that are used often in most XPS files.
+     */
+    gs_color_space *gray;
+    gs_color_space *srgb;
+    gs_color_space *scrgb;
+    gs_color_space *cmyk;
+
     /* Hack to workaround ghostscript's lack of understanding
      * the pdf 1.4 specification of Alpha only transparency groups.
      * We have to force all colors to be white whenever we are computing
@@ -284,7 +292,6 @@ struct xps_glyph_metrics_s
 
 
 int xps_init_font_cache(xps_context_t *ctx);
-void xps_free_font_cache(xps_context_t *ctx);
 
 xps_font_t *xps_new_font(xps_context_t *ctx, char *buf, int buflen, int index);
 void xps_free_font(xps_context_t *ctx, xps_font_t *font);
@@ -329,7 +336,6 @@ int xps_parse_tiling_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t 
 
 void xps_parse_matrix_transform(xps_context_t *ctx, xps_item_t *root, gs_matrix *matrix);
 void xps_parse_render_transform(xps_context_t *ctx, char *text, gs_matrix *matrix);
-void xps_parse_color(xps_context_t *ctx, char *hexstring, float *argb);
 void xps_parse_rectangle(xps_context_t *ctx, char *text, gs_rect *rect);
 int xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom);
 int xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root);
@@ -340,12 +346,13 @@ int xps_end_opacity(xps_context_t *ctx, xps_resource_t *dict, char *opacity_att,
 int xps_parse_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
 int xps_parse_element(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
 
-void xps_set_color(xps_context_t *ctx, float *argb);
 int xps_clip(xps_context_t *ctx, gs_rect *saved_bounds);
 int xps_unclip(xps_context_t *ctx, gs_rect *saved_bounds);
 int xps_fill(xps_context_t *ctx);
 void xps_bounds_in_user_space(xps_context_t *ctx, gs_rect *user);
 
+void xps_parse_color(xps_context_t *ctx, char *hexstring, gs_color_space **csp, float *samples);
+void xps_set_color(xps_context_t *ctx, gs_color_space *colorspace, float *samples);
 int xps_parse_icc_profile(xps_context_t *ctx, gs_color_space **csp, byte *data, int length);
 
 /*

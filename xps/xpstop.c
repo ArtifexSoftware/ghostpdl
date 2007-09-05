@@ -111,6 +111,12 @@ dputs("xps_imp_allocate_interp_instance!\n");
     ctx->opacity_only = 0;
     ctx->fill_rule = 0;
 
+    /* TODO: load some builtin ICC profiles here */
+    ctx->gray = gs_cspace_new_DeviceGray(ctx->memory); /* profile for gray images */
+    ctx->cmyk = gs_cspace_new_DeviceGray(ctx->memory); /* profile for cmyk images */
+    ctx->srgb = gs_cspace_new_DeviceRGB(ctx->memory);
+    ctx->scrgb = gs_cspace_new_DeviceRGB(ctx->memory);
+
     instance->pre_page_action = 0;
     instance->pre_page_closure = 0;
     instance->post_page_action = 0;
@@ -313,7 +319,7 @@ dputs("xps_imp_deallocate_interp_instance!\n");
 	xps_free_type_map(ctx, ctx->defaults);
     }
 
-    xps_free_font_cache(ctx);
+    /* language clients don't free the font cache machinery */
 
     // free gstate?
     gs_free_object(mem, ctx, "xps_imp_deallocate_interp_instance");

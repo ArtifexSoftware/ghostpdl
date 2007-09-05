@@ -610,11 +610,12 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 
     if (fill_att)
     {
-	float argb[4];
-	xps_parse_color(ctx, fill_att, argb);
+	float samples[32];
+	gs_color_space *colorspace;
+	xps_parse_color(ctx, fill_att, &colorspace, samples);
 	if (fill_opacity_att)
-	    argb[0] = atof(fill_opacity_att);
-	xps_set_color(ctx, argb);
+	    samples[0] = atof(fill_opacity_att);
+	xps_set_color(ctx, colorspace, samples);
 	xps_parse_glyphs_imp(ctx, font, font_size,
 		atof(origin_x_att), atof(origin_y_att),
 		is_sideways, bidi_level,

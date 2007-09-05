@@ -227,7 +227,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
 	gs_scale(ctx->pgs, scalex, scaley);
 	gs_translate(ctx->pgs, -viewbox.p.x, -viewbox.p.y);
 
-	cs = gs_cspace_new_DeviceRGB(ctx->memory);
+	cs = ctx->srgb;
 	gs_setcolorspace(ctx->pgs, cs);
 	gs_makepattern(&gscolor, &gspat, &transform, ctx->pgs, NULL);
 	gs_setpattern(ctx->pgs, &gscolor);

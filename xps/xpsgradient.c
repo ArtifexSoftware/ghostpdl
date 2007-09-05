@@ -15,6 +15,8 @@ xps_parse_gradient_stops(xps_context_t *ctx, xps_item_t *node,
 	float *offsets, float *colors, int maxcount)
 {
     int count = 0;
+    gs_color_space *colorspace;
+    float sample[32];
 
     while (node && count < maxcount)
     {
@@ -25,11 +27,19 @@ xps_parse_gradient_stops(xps_context_t *ctx, xps_item_t *node,
 	    if (offset && color)
 	    {
 		offsets[count] = atof(offset);
-		xps_parse_color(ctx, color, colors + count * 4);
+
+		xps_parse_color(ctx, color, &colorspace, sample);
+
+		/* TODO: convert color to RGB (for now we pretend...) */
+
+		colors[count * 4 + 0] = sample[0];
+		colors[count * 4 + 1] = sample[1];
+		colors[count * 4 + 2] = sample[2];
+		colors[count * 4 + 3] = sample[3];
 		count ++;
 	    }
 	}
-	
+
 	node = xps_next(node);
     }
 
@@ -223,16 +233,11 @@ xps_draw_one_radial_gradient(xps_context_t *ctx,
     gs_memory_t *mem = ctx->memory;
     gs_shading_t *shading;
     gs_shading_R_params_t params;
-    gs_color_space *colorspace;
     int code;
 
     gs_shading_R_params_init(&params);
     {
-	colorspace = gs_cspace_new_DeviceRGB(mem);
-	if (!colorspace)
-	    return gs_throw(-1, "cannot create colorspace for gradient");
-
-	params.ColorSpace = colorspace;
+	params.ColorSpace = ctx->srgb;
 
 	params.Coords[0] = pt0[0];
 	params.Coords[1] = pt0[1];
@@ -277,16 +282,11 @@ xps_draw_one_linear_gradient(xps_context_t *ctx,
     gs_memory_t *mem = ctx->memory;
     gs_shading_t *shading;
     gs_shading_A_params_t params;
-    gs_color_space *colorspace;
     int code;
 
     gs_shading_A_params_init(&params);
     {
-	colorspace = gs_cspace_new_DeviceRGB(mem);
-	if (!colorspace)
-	    return gs_throw(-1, "cannot create colorspace for gradient");
-
-	params.ColorSpace = colorspace;
+	params.ColorSpace = ctx->srgb;
 
 	params.Coords[0] = pt0[0];
 	params.Coords[1] = pt0[1];

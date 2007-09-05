@@ -43,14 +43,6 @@ int xps_init_font_cache(xps_context_t *ctx)
     return gs_okay;
 }
 
-void xps_free_font_cache(xps_context_t *ctx)
-{
-    /* ahem... is that all? */
-    gs_free_object(ctx->memory, ctx->fontdir, "gs_font_dir");
-    ctx->fontdir = NULL;
-}
-
-
 xps_font_t *
 xps_new_font(xps_context_t *ctx, char *buf, int buflen, int index)
 {

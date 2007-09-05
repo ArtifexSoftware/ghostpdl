@@ -27,7 +27,8 @@ xps_true_callback_decode_glyph(gs_font *p42, gs_glyph glyph)
 private int
 xps_true_callback_glyph_name(gs_font *pf, gs_glyph glyph, gs_const_string *pstr)
 {
-    return 0;
+    /* let's pretend we have no 'post' table */
+    return -1;
 }
 
 private int

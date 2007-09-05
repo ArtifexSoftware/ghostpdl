@@ -816,7 +816,8 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     gs_line_join linejoin;
     float linewidth;
     float miterlimit;
-    float argb[4];
+    float samples[32];
+    gs_color_space *colorspace;
 
     gs_rect saved_bounds;
 
@@ -973,10 +974,10 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 
     if (fill_att)
     {
-	xps_parse_color(ctx, fill_att, argb);
+	xps_parse_color(ctx, fill_att, &colorspace, samples);
 	if (fill_opacity_att)
-	    argb[0] = atof(fill_opacity_att);
-	xps_set_color(ctx, argb);
+	    samples[0] = atof(fill_opacity_att);
+	xps_set_color(ctx, colorspace, samples);
 
 	if (data_att)
 	    xps_parse_abbreviated_geometry(ctx, data_att);
@@ -998,10 +999,10 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 
     if (stroke_att)
     {
-	xps_parse_color(ctx, stroke_att, argb);
+	xps_parse_color(ctx, stroke_att, &colorspace, samples);
 	if (stroke_opacity_att)
-	    argb[0] = atof(stroke_opacity_att);
-	xps_set_color(ctx, argb);
+	    samples[0] = atof(stroke_opacity_att);
+	xps_set_color(ctx, colorspace, samples);
 
 	if (data_att)
 	    xps_parse_abbreviated_geometry(ctx, data_att);
