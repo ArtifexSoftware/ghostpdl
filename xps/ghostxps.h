@@ -178,6 +178,8 @@ struct xps_context_s
     char pwd[1024]; /* directory name of xml part being processed */
     char *state; /* temporary state for various processing */
 
+    int use_transparency; /* global toggle for transparency */
+
     /* The common colorspaces that are used often in most XPS files.
      */
     gs_color_space *gray;
@@ -219,6 +221,7 @@ struct xps_part_s
     xps_part_t *next;
 
     xps_font_t *font; /* parsed font resource */
+    xps_image_t *image; /* parsed and decoded image resource */
     gs_color_space *icc; /* parsed icc profile resource */
 };
 
@@ -330,6 +333,8 @@ int xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *
 int xps_parse_visual_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
 int xps_parse_linear_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
 int xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node);
+
+void xps_free_image(xps_context_t *ctx, xps_image_t *image);
 
 int xps_parse_tiling_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root,
 	int (*func)(xps_context_t*, xps_resource_t*, xps_item_t*, void*), void *user);

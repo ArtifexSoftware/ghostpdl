@@ -45,8 +45,7 @@ static int count_commas(char *s)
 void
 xps_parse_color(xps_context_t *ctx, char *string, gs_color_space **csp, float *samples)
 {
-    static gs_color_space *g_device_rgb = NULL;
-    char *a, *b, *c;
+    char *a, *b;
     int n, i;
 
     samples[0] = 1.0;
@@ -145,6 +144,7 @@ xps_parse_solid_color_brush(xps_context_t *ctx,
     color_att = xps_att(node, "Color");
     opacity_att = xps_att(node, "Opacity");
 
+    colorspace = ctx->srgb;
     samples[0] = 1.0;
     samples[1] = 0.0;
     samples[2] = 0.0;
@@ -159,6 +159,8 @@ xps_parse_solid_color_brush(xps_context_t *ctx,
     xps_set_color(ctx, colorspace, samples);
 
     xps_fill(ctx);
+
+    return 0;
 }
 
 int

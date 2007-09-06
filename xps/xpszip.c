@@ -94,6 +94,7 @@ xps_new_part(xps_context_t *ctx, char *name, int capacity)
     part->next = NULL;
 
     part->font = NULL;
+    part->image = NULL;
     part->icc = NULL;
 
     part->name = xps_strdup(ctx, name);
@@ -135,6 +136,11 @@ xps_free_part(xps_context_t *ctx, xps_part_t *part)
 {
     if (part->name) xps_free(ctx, part->name);
     if (part->data) xps_free(ctx, part->data);
+
+    if (part->font) xps_free_font(ctx, part->font);
+    if (part->image) xps_free_image(ctx, part->image);
+    // if (part->icc) xps_free_colorspace(ctx, part->icc);
+
     xps_free_relations(ctx, part->relations);
     xps_free(ctx, part);
 }

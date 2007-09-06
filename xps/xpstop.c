@@ -111,6 +111,10 @@ dputs("xps_imp_allocate_interp_instance!\n");
     ctx->opacity_only = 0;
     ctx->fill_rule = 0;
 
+    ctx->use_transparency = 1;
+    if (getenv("XPS_DISABLE_TRANSPARENCY"))
+	ctx->use_transparency = 0;
+
     /* TODO: load some builtin ICC profiles here */
     ctx->gray = gs_cspace_new_DeviceGray(ctx->memory); /* profile for gray images */
     ctx->cmyk = gs_cspace_new_DeviceGray(ctx->memory); /* profile for cmyk images */

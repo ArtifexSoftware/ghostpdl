@@ -176,9 +176,12 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     /* save the state with the original device before we push */
     gs_gsave(ctx->pgs);
 
-    code = gs_push_pdf14trans_device(ctx->pgs);
-    if (code < 0)
-	return gs_rethrow(code, "cannot install transparency device");
+    if (ctx->use_transparency)
+    {
+	code = gs_push_pdf14trans_device(ctx->pgs);
+	if (code < 0)
+	    return gs_rethrow(code, "cannot install transparency device");
+    }
 
     /* Draw contents */
 
@@ -193,9 +196,12 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	xps_parse_element(ctx, dict, node);
     }
 
-    code = gs_pop_pdf14trans_device(ctx->pgs);
-    if (code < 0)
-	return gs_rethrow(code, "cannot uninstall transparency device");
+    if (ctx->use_transparency)
+    {
+	code = gs_pop_pdf14trans_device(ctx->pgs);
+	if (code < 0)
+	    return gs_rethrow(code, "cannot uninstall transparency device");
+    }
 
     /* Flush page */
     {

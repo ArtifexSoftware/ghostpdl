@@ -226,6 +226,7 @@ xps_paint_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
     }
     else
     {
+	dputs("xps_paint_image_brush solid color\n");
 	xps_paint_image_brush_imp(ctx, image, 0);
     }
 
@@ -236,35 +237,42 @@ int
 xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 {
     xps_part_t *part;
-    xps_image_t image;
     char *image_source_att;
     char partname[1024];
     int code;
 
     image_source_att = xps_att(root, "ImageSource");
 
-    /*
-     * Decode image resource.
-     */
-
-    dprintf1("drawing image brush '%s'\n", image_source_att);
-
     xps_absolute_path(partname, ctx->pwd, image_source_att);
     part = xps_find_part(ctx, partname);
     if (!part)
 	return gs_throw1(-1, "cannot find image resource part '%s'", partname);
 
-    code = xps_decode_image(ctx, part, &image);
-    if (code < 0)
-	return gs_rethrow(-1, "cannot draw image brush");
+    if (!part->image)
+    {
+	part->image = xps_alloc(ctx, sizeof(xps_image_t));
+	if (!part->image)
+	    return gs_throw(-1, "out of memory: image struct");
 
-    xps_parse_tiling_brush(ctx, dict, root, xps_paint_image_brush, &image);
+	dprintf1("decoding image brush '%s'\n", image_source_att);
 
-    if (image.samples)
-	xps_free(ctx, image.samples);
-    if (image.alpha)
-	xps_free(ctx, image.alpha);
+	code = xps_decode_image(ctx, part, part->image);
+	if (code < 0)
+	    return gs_rethrow(-1, "cannot decode image resource");
+    }
+
+    xps_parse_tiling_brush(ctx, dict, root, xps_paint_image_brush, part->image);
 
     return 0;
+}
+
+void
+xps_free_image(xps_context_t *ctx, xps_image_t *image)
+{
+    if (image->samples)
+	xps_free(ctx, image->samples);
+    if (image->alpha)
+	xps_free(ctx, image->alpha);
+    xps_free(ctx, image);
 }
 

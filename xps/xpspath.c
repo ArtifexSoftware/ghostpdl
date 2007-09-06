@@ -158,7 +158,9 @@ xps_clip(xps_context_t *ctx, gs_rect *saved_bounds)
 int
 xps_fill(xps_context_t *ctx)
 {
-    if (ctx->fill_rule == 0)
+    if (gs_currentopacityalpha(ctx->pgs) < 0.001)
+	gs_newpath(ctx->pgs);
+    else if (ctx->fill_rule == 0)
 	gs_eofill(ctx->pgs);
     else
 	gs_fill(ctx->pgs);
