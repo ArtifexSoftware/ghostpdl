@@ -28,15 +28,15 @@
 *LanguageVersion: English 
 *LanguageEncoding: ISOLatin1
 *PCFileName:	"PXLMONO.PPD"
-*Manufacturer:	"ESP"
-*Product:	"(ESP Ghostscript)"
+*Manufacturer:	"HP"
+*Product:	"(GPL Ghostscript)"
 *cupsVersion:	1.1
 *cupsManualCopies: False
 *cupsFilter:	"application/vnd.cups-postscript 0 pstopxl"
 *ModelName:     "HP LaserJet Series PCL 6"
 *ShortNickName: "HP LaserJet Series PCL 6"
 *NickName:      "HP LaserJet Series PCL 6 CUPS"
-*PSVersion:	"(3010.000) 81500"
+*PSVersion:	"(3010.000) 86000"
 *LanguageLevel:	"3"
 *ColorDevice:	False
 *DefaultColorSpace: Gray
