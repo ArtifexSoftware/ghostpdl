@@ -24,6 +24,7 @@ static const char
 #endif
 
 /* Standard headers */
+#include "std.h"
 #include <assert.h>
 #include <string.h>	/* for memset() */
 #include <stdlib.h>

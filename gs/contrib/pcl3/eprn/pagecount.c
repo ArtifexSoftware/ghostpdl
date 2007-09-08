@@ -23,6 +23,8 @@ static const char
 #define _XOPEN_SOURCE	500
 #endif
 
+#include "std.h"
+
 /* Standard headers */
 #include <errno.h>
 #include <stdio.h>

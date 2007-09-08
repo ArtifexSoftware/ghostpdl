@@ -20,6 +20,7 @@
 /* gdevopvp.c  ver.1.00 rel.1.0     26 Nov 2004 */
 /* OpenPrinting Vector Printer Driver Glue Code */
 
+#include        "std.h"
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<unistd.h>

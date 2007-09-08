@@ -88,6 +88,7 @@
 /*                                                                      */
 /************************************************************************/
 
+#include "std.h"
 #ifdef OMNI_USE_GLIB
 /* Include these first.  Ghostscript redefines printf */
 #include <glib.h>
