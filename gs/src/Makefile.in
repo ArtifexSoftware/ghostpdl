@@ -120,8 +120,11 @@ GENOPT=
 #
 # -DHAVE_FILE64
 #	use marked versions of the stdio FILE calls, fopen64() et al.
+#
+# -DHAVE_MKSTEMP64
+#	use non-standard function mkstemp64()
 
-CAPOPT= @HAVE_MKSTEMP@ @HAVE_HYPOT@ @HAVE_FILE64@ @HAVE_FONTCONFIG@
+CAPOPT= @HAVE_MKSTEMP@ @HAVE_HYPOT@ @HAVE_FILE64@ @HAVE_MKSTEMP64@ @HAVE_FONTCONFIG@
 
 # Define the name of the executable file.
 

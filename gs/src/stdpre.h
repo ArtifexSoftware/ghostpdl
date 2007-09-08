@@ -17,6 +17,9 @@
 #ifndef stdpre_INCLUDED
 #  define stdpre_INCLUDED
 
+/* Ghostscript uses transitional LFS functions. */
+#define _LARGEFILE64_SOURCE 1
+
 /*
  * Here we deal with the vagaries of various C compilers.  We assume that:
  *      ANSI-standard Unix compilers define __STDC__.
