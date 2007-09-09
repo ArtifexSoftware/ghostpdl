@@ -1614,17 +1614,21 @@ psw_image_plane_data(gx_image_enum_common_t * info,
     gdev_vector_image_enum_t *pie = (gdev_vector_image_enum_t *) info;
     int code =
 	gx_image_plane_data_rows(pie->bbox_info, planes, height, rows_used);
-    int pi;
+    int pi, j;
 
-    for (pi = 0; pi < pie->num_planes; ++pi) {
-	if (pie->bits_per_row != pie->width * info->plane_depths[pi])
-	    return_error(gs_error_rangecheck);
-	psw_put_bits(pdev->image_stream, planes[pi].data,
-		     planes[pi].data_x * info->plane_depths[pi],
-		     planes[pi].raster, pie->bits_per_row,
-		     *rows_used);
-        if (pdev->image_stream->end_status == ERRC)
-            return_error(gs_error_ioerror);
+    for (j = 0; j < *rows_used; j++) {
+        for (pi = 0; pi < pie->num_planes; ++pi) {
+	    if (pie->bits_per_row != pie->width * info->plane_depths[pi])
+	        return_error(gs_error_rangecheck);
+	    psw_put_bits(pdev->image_stream,
+                planes[pi].data,
+		planes[pi].data_x*info->plane_depths[pi] + pie->bits_per_row*j,
+		planes[pi].raster,
+                pie->bits_per_row,
+		1 );
+            if (pdev->image_stream->end_status == ERRC)
+                return_error(gs_error_ioerror);
+        }
     }
     pie->y += *rows_used;
     return code;
