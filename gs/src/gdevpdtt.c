@@ -1348,10 +1348,11 @@ pdf_reserve_char_code_in_pdfont(pdf_font_resource_t *pdfont, pdf_char_glyph_pair
 	if (standard_glyph_code_for_notdef == GS_NO_GLYPH)
 	    standard_glyph_code_for_notdef = 
 		    gs_c_name_glyph((const byte *)".notdef", 7) - gs_c_min_std_encoding_glyph;
-	for (ch = 0; ch < 256; ch++) {
+	for (ch = *last_reserved_char + 1; ch < 256; ch++) {
 	    pdf_encoding_element_t *pet = &pdfont->u.simple.Encoding[ch];
 
 	    if (pet->glyph == GS_NO_GLYPH && enc[ch] == standard_glyph_code_for_notdef) {
+		*last_reserved_char = ch;
 		break;
 	    }
 	}
@@ -1472,6 +1473,7 @@ pdf_make_text_glyphs_table_unencoded(gx_device_pdf *pdev, pdf_char_glyph_pairs_t
     }
 do_unknown:
     if (unknown) {
+	int last_reserved_char = -1;
 	 /* Using global glyph names. */
 
 	/* Try to find an existing font resource, which has necessary glyphs. 
@@ -1495,14 +1497,21 @@ do_unknown:
 	/* Try to add glyphs to the current font resource. . */
 	cgp->num_unused_chars = 0;
 	cgp->num_all_chars = 0;
+
+	if(pdfont != NULL)
+		last_reserved_char = pdfont->u.simple.last_reserved_char;
+
 	for (i = 0; i < pstr->size; i++) {
+		
 	    if (pdfont == NULL)
 		ch = 256; /* Force new encoding. */
 	    else
-		ch = pdf_reserve_char_code_in_pdfont(pdfont, cgp, gdata[i], &pdfont->u.simple.last_reserved_char);
+		ch = pdf_reserve_char_code_in_pdfont(pdfont, cgp, gdata[i], &last_reserved_char);
 	    if (ch > 255) {
+		if(pdfont != NULL)
+			last_reserved_char = pdfont->u.simple.last_reserved_char;
 		/* Start a new font/encoding. */
-		int last_reserved_char = -1;
+		last_reserved_char = -1;
 
 		cgp->num_unused_chars = 0;
 		cgp->num_all_chars = 0;
@@ -1515,10 +1524,10 @@ do_unknown:
 			return_error(gs_error_unregistered);
 		    }
 		}
-		if (pdfont != NULL)
-		    pdfont->u.simple.last_reserved_char = last_reserved_char;
-	    }
 	}
+    }
+	if (pdfont != NULL)
+	    pdfont->u.simple.last_reserved_char = last_reserved_char;
 	/* Change glyphs to char codes in the text : */
 	for (i = 0; i < pstr->size; i++) {
 	    /* A trick : pdf_reserve_char_code_in_pdfont here simply encodes with cgp. */

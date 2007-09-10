@@ -320,4 +320,6 @@ int pdf_encode_glyph(gs_font_base *bfont, gs_glyph glyph0,
 
 int pdf_shift_text_currentpoint(pdf_text_enum_t *penum, gs_point *wpt);
 
+void adjust_first_last_char(pdf_font_resource_t *pdfont, byte *str, int size);
+
 #endif /* gdevpdtt_INCLUDED */

@@ -365,7 +365,7 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
     return 0;
 }
 
-private void
+void
 adjust_first_last_char(pdf_font_resource_t *pdfont, byte *str, int size)
 {
     int i;
