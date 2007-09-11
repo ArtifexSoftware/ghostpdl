@@ -341,7 +341,7 @@ gx_path__check_curves(const gx_path * ppath, gx_path_copy_options options, fixed
 	    case s_line:
 		if (gx_check_fixed_diff_overflow(pseg->pt.x, pt0.x) ||
 		    gx_check_fixed_diff_overflow(pseg->pt.y, pt0.y))
-		    return true;
+		    return false;
 		break;
 	    case s_curve:
 		{
@@ -367,6 +367,9 @@ gx_path__check_curves(const gx_path * ppath, gx_path_copy_options options, fixed
 				pt0.y, pc->p1.y, pc->p2.y, pc->pt.y,
 				&ax, &bx, &cx, &ay, &by, &cy, k))
 			    return false;
+		    if (gx_check_fixed_diff_overflow(pseg->pt.x, pt0.x) ||
+			gx_check_fixed_diff_overflow(pseg->pt.y, pt0.y))
+			return false;
 		    }
 		}
 		break;
