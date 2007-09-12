@@ -227,8 +227,8 @@ xps_free_gradient_stop_function(xps_context_t *ctx, gs_function_t *func)
 static int
 xps_draw_one_radial_gradient(xps_context_t *ctx,
 	gs_function_t *func, int extend,
-	float *pt0, float rad0,
-	float *pt1, float rad1)
+	float x0, float y0, float r0,
+	float x1, float y1, float r1)
 {
     gs_memory_t *mem = ctx->memory;
     gs_shading_t *shading;
@@ -239,12 +239,12 @@ xps_draw_one_radial_gradient(xps_context_t *ctx,
     {
 	params.ColorSpace = ctx->srgb;
 
-	params.Coords[0] = pt0[0];
-	params.Coords[1] = pt0[1];
-	params.Coords[2] = rad0;
-	params.Coords[3] = pt1[0];
-	params.Coords[4] = pt1[1];
-	params.Coords[5] = rad1;
+	params.Coords[0] = x0;
+	params.Coords[1] = y0;
+	params.Coords[2] = r0;
+	params.Coords[3] = x1;
+	params.Coords[4] = y1;
+	params.Coords[5] = r1;
 
 	params.Extend[0] = extend;
 	params.Extend[1] = extend;
@@ -277,7 +277,7 @@ xps_draw_one_radial_gradient(xps_context_t *ctx,
 static int
 xps_draw_one_linear_gradient(xps_context_t *ctx,
 	gs_function_t *func, int extend,
-	float *pt0, float *pt1)
+	float x0, float y0, float x1, float y1)
 {
     gs_memory_t *mem = ctx->memory;
     gs_shading_t *shading;
@@ -288,10 +288,10 @@ xps_draw_one_linear_gradient(xps_context_t *ctx,
     {
 	params.ColorSpace = ctx->srgb;
 
-	params.Coords[0] = pt0[0];
-	params.Coords[1] = pt0[1];
-	params.Coords[2] = pt1[0];
-	params.Coords[3] = pt1[1];
+	params.Coords[0] = x0;
+	params.Coords[1] = y0;
+	params.Coords[2] = x1;
+	params.Coords[3] = y1;
 
 	params.Extend[0] = extend;
 	params.Extend[1] = extend;
@@ -320,126 +320,199 @@ xps_draw_one_linear_gradient(xps_context_t *ctx,
 /*
  * We need to loop and create many shading objects to account
  * for the Repeat and Reflect SpreadMethods.
- *
- * TODO: calculate how many iterations are required to fill
- * the current clipping region.
+ * I'm not smart enough to calculate this analytically
+ * so we iterate and check each object until we
+ * reach a reasonable limit for infinite cases.
  */
+
+static inline float point_inside_circle(float px, float py, float x, float y, float r)
+{
+    float dx = px - x;
+    float dy = py - y;
+    return (dx * dx + dy * dy) < (r * r);
+}
 
 static int
 xps_draw_radial_gradient(xps_context_t *ctx, xps_item_t *root, int spread, gs_function_t *func)
 {
-    float pt0[2] = { 0, 0 };
-    float pt1[2] = { 0, 0 };
+    gs_rect bbox;
+    float x0, y0, r0;
+    float x1, y1, r1;
     float xrad = 1;
     float yrad = 1;
     float invscale;
-    float rad0, rad1;
     float dx, dy;
     int code;
     int i;
+    int done;
 
-    {
-	char *center_att = xps_att(root, "Center");
-	char *origin_att = xps_att(root, "GradientOrigin");
-	char *radius_x_att = xps_att(root, "RadiusX");
-	char *radius_y_att = xps_att(root, "RadiusY");
+    char *center_att = xps_att(root, "Center");
+    char *origin_att = xps_att(root, "GradientOrigin");
+    char *radius_x_att = xps_att(root, "RadiusX");
+    char *radius_y_att = xps_att(root, "RadiusY");
 
-	if (origin_att)
-	    sscanf(origin_att, "%g,%g", pt0, pt0 + 1);
-	if (center_att)
-	    sscanf(center_att, "%g,%g", pt1, pt1 + 1);
-	if (radius_x_att)
-	    xrad = atof(radius_x_att);
-	if (radius_y_att)
-	    yrad = atof(radius_y_att);
-    }
+    if (origin_att)
+	sscanf(origin_att, "%g,%g", &x0, &y0);
+    if (center_att)
+	sscanf(center_att, "%g,%g", &x1, &y1);
+    if (radius_x_att)
+	xrad = atof(radius_x_att);
+    if (radius_y_att)
+	yrad = atof(radius_y_att);
 
     /* scale the ctm to make ellipses */
     gs_scale(ctx->pgs, 1.0, yrad / xrad);
 
     invscale = xrad / yrad;
-    pt0[1] *= invscale;
-    pt1[1] *= invscale;
+    y0 = y0 * invscale;
+    y1 = y1 * invscale;
 
-    rad0 = 0.0;
-    rad1 = xrad;
+    r0 = 0.0;
+    r1 = xrad;
 
-    dx = pt1[0] - pt0[0];
-    dy = pt1[1] - pt0[1];
+    dx = x1 - x0;
+    dy = y1 - y0;
 
     if (spread == SPREAD_PAD)
     {
-	code = xps_draw_one_radial_gradient(ctx, func, 1, pt0, rad0, pt1, rad1);
+	if (!point_inside_circle(x0, y0, x1, y1, r1))
+	{
+	    dputs("warning! cone should appear!\n");
+	    dprintf3(" circle 0: %g %g %g\n", x0, y0, r0);
+	    dprintf3(" circle 1: %g %g %g\n", x1, y1, r1);
+	}
+
+	code = xps_draw_one_radial_gradient(ctx, func, 1, x0, y0, r0, x1, y1, r1);
 	if (code < 0)
 	    return gs_rethrow(code, "could not draw axial gradient");
     }
     else
     {
-	for (i = 0; i < 10; i++)
-	{
-	    if (spread == SPREAD_REFLECT && (i & 1))
-		code = xps_draw_one_radial_gradient(ctx, func, 0, pt1, rad1, pt0, rad0);
-	    else
-		code = xps_draw_one_radial_gradient(ctx, func, 0, pt0, rad0, pt1, rad1);
+	xps_bounds_in_user_space(ctx, &bbox);
 
+	for (i = 0; i < 100; i++)
+	{
+	    /* Draw current circle */
+
+	    dprintf1("drawing circle %d of radial gradient\n", i);
+
+	    if (!point_inside_circle(x0, y0, x1, y1, r1))
+		dputs("warning! cone should appear!\n");
+
+	    if (spread == SPREAD_REFLECT && (i & 1))
+		code = xps_draw_one_radial_gradient(ctx, func, 0, x1, y1, r1, x0, y0, r0);
+	    else
+		code = xps_draw_one_radial_gradient(ctx, func, 0, x0, y0, r0, x1, y1, r1);
 	    if (code < 0)
 		return gs_rethrow(code, "could not draw axial gradient");
 
-	    rad0 = rad1;
-	    rad1 += xrad;
+	    /* Check if circle encompassed the entire bounding box (break loop if we do) */
 
-	    pt0[0] += dx; pt0[1] += dy;
-	    pt1[0] += dx; pt1[1] += dy;
+	    done = 1;
+	    if (!point_inside_circle(bbox.p.x, bbox.p.y, x1, y1, r1)) done = 0;
+	    if (!point_inside_circle(bbox.p.x, bbox.q.y, x1, y1, r1)) done = 0;
+	    if (!point_inside_circle(bbox.q.x, bbox.q.y, x1, y1, r1)) done = 0;
+	    if (!point_inside_circle(bbox.q.x, bbox.p.y, x1, y1, r1)) done = 0;
+	    if (done)
+		break;
+
+	    /* Prepare next circle */
+
+	    r0 = r1;
+	    r1 += xrad;
+
+	    x0 += dx;
+	    y0 += dy;
+	    x1 += dx;
+	    y1 += dy;
 	}
     }
 
     return 0;
 }
 
+/*
+ * Calculate how many iterations are needed to cover
+ * the bounding box.
+ */
+
 static int
 xps_draw_linear_gradient(xps_context_t *ctx, xps_item_t *root, int spread, gs_function_t *func)
 {
-    float pt0[2] = { 0, 0 };
-    float pt1[2] = { 0, 1 };
+    gs_rect bbox;
+    float x0, y0, x1, y1;
     float dx, dy;
     int code;
     int i;
 
-    {
-	char *start_point_att = xps_att(root, "StartPoint");
-	char *end_point_att = xps_att(root, "EndPoint");
+    x0 = 0;
+    y0 = 0;
+    x1 = 0;
+    y1 = 1;
 
-	if (start_point_att)
-	    sscanf(start_point_att, "%g,%g", pt0, pt0 + 1);
-	if (end_point_att)
-	    sscanf(end_point_att, "%g,%g", pt1, pt1 + 1);
-    }
+    char *start_point_att = xps_att(root, "StartPoint");
+    char *end_point_att = xps_att(root, "EndPoint");
 
-    dx = pt1[0] - pt0[0];
-    dy = pt1[1] - pt0[1];
+    if (start_point_att)
+	sscanf(start_point_att, "%g,%g", &x0, &y0);
+    if (end_point_att)
+	sscanf(end_point_att, "%g,%g", &x1, &y1);
+
+    dx = x1 - x0;
+    dy = y1 - y0;
+
+    xps_bounds_in_user_space(ctx, &bbox);
 
     if (spread == SPREAD_PAD)
     {
-	code = xps_draw_one_linear_gradient(ctx, func, 1, pt0, pt1);
+	code = xps_draw_one_linear_gradient(ctx, func, 1, x0, y0, x1, y1);
 	if (code < 0)
 	    return gs_rethrow(code, "could not draw axial gradient");
     }
     else
     {
-	pt0[0] -= 10 * dx; pt0[1] -= 10 * dy;
-	pt1[0] -= 10 * dx; pt1[1] -= 10 * dy;
+	float len;
+	float a, b;
+	float dist[4];
+	float d0, d1;
+	int i0, i1;
 
-	for (i = 0; i < 20; i++)
+	len = sqrt(dx * dx + dy * dy);
+	a = dx / len;
+	b = dy / len;
+
+	dist[0] = a * (bbox.p.x - x0) + b * (bbox.p.y - y0);
+	dist[1] = a * (bbox.p.x - x0) + b * (bbox.q.y - y0);
+	dist[2] = a * (bbox.q.x - x0) + b * (bbox.q.y - y0);
+	dist[3] = a * (bbox.q.x - x0) + b * (bbox.p.y - y0);
+
+	d0 = dist[0];
+	d1 = dist[0];
+	for (i = 1; i < 4; i++)
+	{
+	    if (dist[i] < d0) d0 = dist[i];
+	    if (dist[i] > d1) d1 = dist[i];
+	}
+
+	i0 = floor(d0 / len);
+	i1 = ceil(d1 / len);
+
+	for (i = i0; i < i1; i++)
 	{
 	    if (spread == SPREAD_REFLECT && (i & 1))
-		code = xps_draw_one_linear_gradient(ctx, func, 0, pt1, pt0);
+	    {
+		code = xps_draw_one_linear_gradient(ctx, func, 0,
+			x1 + dx * i, y1 + dy * i,
+			x0 + dx * i, y0 + dy * i);
+	    }
 	    else
-		code = xps_draw_one_linear_gradient(ctx, func, 0, pt0, pt1);
+	    {
+		code = xps_draw_one_linear_gradient(ctx, func, 0,
+			x0 + dx * i, y0 + dy * i,
+			x1 + dx * i, y1 + dy * i);
+	    }
 	    if (code < 0)
 		return gs_rethrow(code, "could not draw axial gradient");
-
-	    pt0[0] += dx; pt0[1] += dy;
-	    pt1[0] += dx; pt1[1] += dy;
 	}
     }
 
@@ -448,7 +521,7 @@ xps_draw_linear_gradient(xps_context_t *ctx, xps_item_t *root, int spread, gs_fu
 
 /*
  * Parse XML tag and attributes for a gradient brush, create color/opacity
- * funciton objects and call gradient drawing primitives.
+ * function objects and call gradient drawing primitives.
  */
 
 static int
