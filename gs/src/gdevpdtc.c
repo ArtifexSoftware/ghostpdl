@@ -335,7 +335,7 @@ attach_cmap_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
 
 /* Record widths and CID => GID mappings. */
 private int
-scan_cmap_text(pdf_text_enum_t *pte)
+scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
 {
     gx_device_pdf *pdev = (gx_device_pdf *)pte->dev;
     /* gs_font_type0 *const font = (gs_font_type0 *)pte->current_font;*/ /* Type 0, fmap_CMap */
@@ -349,7 +349,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
     uint font_index0 = 0x7badf00d;
     bool done = false;
     pdf_char_glyph_pairs_t p;
-    gs_glyph *type1_glyphs = 0;
+    gs_glyph *type1_glyphs = (gs_glyph *)vbuf;
     int num_type1_glyphs = 0;
 
     p.num_all_chars = 1;
@@ -385,12 +385,8 @@ scan_cmap_text(pdf_text_enum_t *pte)
 		done = true;
 		break;
 	    }
-	    if (code < 0){
-		if (type1_glyphs)
-		    gs_free_object(pdev->pdf_memory, type1_glyphs, 
-				    "Temporary storage for CFF descendant glyphs");
+	    if (code < 0)
 	    	return code;
-	    }
 	    subfont = scan.fstack.items[scan.fstack.depth].font;
 	    font_index = scan.fstack.items[scan.fstack.depth].index;
 	    scan.xy_index++;
@@ -403,21 +399,9 @@ scan_cmap_text(pdf_text_enum_t *pte)
 		    if (glyph == GS_MIN_CID_GLYPH) {
 			glyph = subfont->procs.encode_char(subfont, chr, GLYPH_SPACE_NAME);
     		    }
-        	    if(type1_glyphs) {
-			gs_glyph *temp = (gs_glyph *)gs_alloc_bytes(pdev->pdf_memory, 
-					sizeof(gs_glyph) * (num_type1_glyphs + 1), 
-					"Temporary storage for CFF descendant glyphs");
-			memcpy(temp, type1_glyphs, sizeof(gs_glyph) * num_type1_glyphs);
-			gs_free_object(pdev->pdf_memory, type1_glyphs, 
-				"Temporary storage for CFF descendant glyphs");
-			type1_glyphs = temp;
-		    }else
-			type1_glyphs = (gs_glyph *)gs_alloc_bytes(pdev->pdf_memory, 
-				    sizeof(gs_glyph) * (num_type1_glyphs + 1), 
-				    "Temporary storage for CFF descendant glyphs");
 		    type1_glyphs[num_type1_glyphs] = glyph;
 		    num_type1_glyphs++;
-		    if (font_change){
+		    if (font_change) {
 			subfont = subfont0;
 			subfont0 = 0;
 		    }
@@ -459,12 +443,8 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    }
 	    code = pdf_attached_font_resource(pdev, (gs_font *)subfont, &pdsubf, 
 				       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
-	    if (code < 0) {
-		if(type1_glyphs)
-		    gs_free_object(pdev->pdf_memory, type1_glyphs, 
-				    "Temporary storage for CFF descendant glyphs");
+	    if (code < 0)
 		return code;
-	    }
 	    if (break_index > start_index && pdev->charproc_just_accumulated)
 		break;
 	    if (subfont->FontType == ft_user_defined &&
@@ -480,7 +460,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
 		    subfont = subfont0;
 		    num_type1_glyphs--;
 		}
-    	    }else
+    	    } else
 		font_change = (pdsubf != pdsubf0 && pdsubf0 != NULL);
 	    if (!font_change) {
 		pdsubf0 = pdsubf;
@@ -612,58 +592,32 @@ scan_cmap_text(pdf_text_enum_t *pte)
 				 pte->text.x_widths == pte->text.y_widths ? 2 : 1);
 	    gs_text_params_t save_text;
 
-        if (!subfont && num_type1_glyphs != 0)
- 	    subfont = subfont0;
-	if (subfont && (subfont->FontType == ft_encrypted || subfont->FontType == ft_encrypted2)) {
-	    int save_op = pte->text.operation;
+	    if (!subfont && num_type1_glyphs != 0)
+ 		subfont = subfont0;
+	    if (subfont && (subfont->FontType == ft_encrypted || subfont->FontType == ft_encrypted2)) {
+		int save_op = pte->text.operation;
 
-	    pte->current_font = subfont;
-	    pte->text.operation |= TEXT_FROM_GLYPHS;
-	    pte->text.data.glyphs = type1_glyphs;
-	    /* initially this code reused scan.text.data.bytes directly, however it turns 
-	     * out that in the depths of pdf_obtain_font_resource_unencoded, we use the 
-	     * string we passed in to hold a list of glyph name indices. These are 4 bytes
-	     * in size, so if we reused that we would potentially run off the end of the 
-	     * buffer, as the incoming data stream may be encoded with as few as one byte
-	     * per glyph. Also, we can corrupt the input stream for the same reason. 
-	     * Because we are going to write these fonts out as straight type 1, we 
-	     * know its safe to reuse the data buffer to store the result, because 
-	     * that can't use more than one byte per glyph.
-	     */
-	    str.data = gs_alloc_bytes(pdev->pdf_memory, num_type1_glyphs * sizeof(gs_glyph), 
-		"working buffer for CFF fonts");
-	    str.size = num_type1_glyphs;
-	    code = pdf_obtain_font_resource_unencoded(pte, (const gs_string *)&str, &pdsubf0, 
-		type1_glyphs);
-	    if (code < 0) {
-		gs_free_object(pdev->pdf_memory, (void *)str.data, 
-		    "working buffer for CFF fonts");
-		if(type1_glyphs) {
-		    gs_free_object(pdev->pdf_memory, type1_glyphs, 
-			"Temporary storage for CFF descendant glyphs");
-		    num_type1_glyphs = 0;
-		    type1_glyphs = 0;
-		}
-		return(code);
-	    }	
-	    memcpy((void *)scan.text.data.bytes, (void *)str.data, str.size);
-	    gs_free_object(pdev->pdf_memory, (void *)str.data, 
-		"working buffer for CFF fonts");
-	    str.data = scan.text.data.bytes;
-	    pdsubf = pdsubf0;
-	    pte->text.operation = save_op;
-	}
+		pte->current_font = subfont;
+		pte->text.operation |= TEXT_FROM_GLYPHS;
+		pte->text.data.glyphs = type1_glyphs;
+		str.data = ((const byte *)vbuf) + ((pte->text.size - pte->index) * sizeof(gs_glyph)); 
+		str.size = num_type1_glyphs;
+		code = pdf_obtain_font_resource_unencoded(pte, (const gs_string *)&str, &pdsubf0, 
+		    type1_glyphs);
+		if (code < 0) 
+		    return(code);
+		memcpy((void *)scan.text.data.bytes, (void *)str.data, str.size);
+		str.data = scan.text.data.bytes;
+		pdsubf = pdsubf0;
+		pte->text.operation = save_op;
+	    }
 	    pte->current_font = subfont0;
 	    code = gs_matrix_multiply(&subfont0->FontMatrix, &font->FontMatrix, &m3); 
 	    /* We thought that it should be gs_matrix_multiply(&font->FontMatrix, &subfont0->FontMatrix, &m3); */
-		if (code < 0) {
-		    if(type1_glyphs)
-		gs_free_object(pdev->pdf_memory, type1_glyphs, 
-		"Temporary storage for CFF descendant glyphs");
-			return code;
-		}
+	    if (code < 0) 
+		return code;
 	    if (pdsubf0->FontType == ft_user_defined  || pdsubf->FontType == ft_encrypted || 
-	    pdsubf->FontType == ft_encrypted2)
+		pdsubf->FontType == ft_encrypted2)
 		    pdfont = pdsubf0;
 	    else {
 		code = pdf_obtain_parent_type0_font_resource(pdev, pdsubf0, font_index0, 
@@ -683,22 +637,18 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    }
 	    pdf_set_text_wmode(pdev, font->WMode);
 	    code = pdf_update_text_state(&text_state, (pdf_text_enum_t *)pte, pdfont, &m3);
-		if (code < 0) {
-	    if(type1_glyphs)
-		gs_free_object(pdev->pdf_memory, type1_glyphs, 
-		"Temporary storage for CFF descendant glyphs");
-	    return code;
-		}
+	    if (code < 0)
+		return code;
 	    /* process_text_modify_width breaks text parameters. 
 	       We would like to improve it someday. 
 	       Now save them locally and restore after the call. */
 	    save_text = pte->text;
 	    if (subfont && (subfont->FontType != ft_encrypted && 
-	    subfont->FontType != ft_encrypted2)) {
-	    /* If we are a type 1 descendant, we already sorted this out above */
-	    str.data = scan.text.data.bytes + index;
-	    str.size = break_index - index;
-	}
+		subfont->FontType != ft_encrypted2)) {
+    		/* If we are a type 1 descendant, we already sorted this out above */
+		str.data = scan.text.data.bytes + index;
+		str.size = break_index - index;
+	    }
 	    if (pte->text.operation & TEXT_REPLACE_WIDTHS) {
 		if (pte->text.x_widths != NULL)
 		    pte->text.x_widths += xy_index * xy_index_step;
@@ -706,40 +656,31 @@ scan_cmap_text(pdf_text_enum_t *pte)
 		    pte->text.y_widths += xy_index * xy_index_step;
 	    }
 	    pte->xy_index = 0;
-	if (subfont && (subfont->FontType == ft_encrypted || 
-	    subfont->FontType == ft_encrypted2)) {
-	    gs_font *f = pte->orig_font;
+	    if (subfont && (subfont->FontType == ft_encrypted || 
+		subfont->FontType == ft_encrypted2)) {
+		gs_font *f = pte->orig_font;
 
-	    adjust_first_last_char(pdfont, (byte *)str.data, 1);
+		adjust_first_last_char(pdfont, (byte *)str.data, 1);
 
-	    /* Make sure we use the descendant font, not the original type 0 ! */
-	    pte->orig_font = subfont;
-	    code = process_text_modify_width((pdf_text_enum_t *)pte, 
-		(gs_font *)subfont, &text_state, &str, &wxy, type1_glyphs, false);
-	    if (code < 0) {
-		if (type1_glyphs)
-		    gs_free_object(pdev->pdf_memory, type1_glyphs, 
-		    "Temporary storage for CFF descendant glyphs");
-		return(code);
-	    }
-	    if(type1_glyphs){
-		if(font_change){
+		/* Make sure we use the descendant font, not the original type 0 ! */
+		pte->orig_font = subfont;
+		code = process_text_modify_width((pdf_text_enum_t *)pte, 
+		    (gs_font *)subfont, &text_state, &str, &wxy, type1_glyphs, false);
+		if (code < 0)
+		    return(code);
+    		if(font_change) {
 		    type1_glyphs[0] = type1_glyphs[num_type1_glyphs];
 		    num_type1_glyphs = 1;
 		    subfont = saved_subfont;
 		    font_change = 0;
-		}else{
-		    gs_free_object(pdev->pdf_memory, type1_glyphs, 
-			"Temporary storage for CFF descendant glyphs");
+		} else {
 		    num_type1_glyphs = 0;
-		    type1_glyphs = 0;
 		}
+		pte->orig_font = f;
+	    } else {
+		code = process_text_modify_width((pdf_text_enum_t *)pte, (gs_font *)font,
+		    &text_state, &str, &wxy, NULL, true);
 	    }
-	    pte->orig_font = f;
-	}else{
-	    code = process_text_modify_width((pdf_text_enum_t *)pte, (gs_font *)font,
-		  &text_state, &str, &wxy, NULL, true);
-	}
 	    if (pte->text.operation & TEXT_REPLACE_WIDTHS) {
 		if (pte->text.x_widths != NULL)
 		    pte->text.x_widths -= xy_index * xy_index_step;
@@ -787,7 +728,7 @@ process_cmap_text(gs_text_enum_t *penum, void *vbuf, uint bsize)
 	/* Not implemented.  (PostScript doesn't allow TEXT_INTERVENE.) */
 	return_error(gs_error_rangecheck);
     }
-    code = scan_cmap_text(pte);
+    code = scan_cmap_text(pte, vbuf);
     if (code == TEXT_PROCESS_CDEVPROC)
 	pte->cdevproc_callout = true;
     else

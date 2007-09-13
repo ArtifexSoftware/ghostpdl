@@ -2512,6 +2512,18 @@ pdf_text_process(gs_text_enum_t *pte)
     else
 	goto skip;
 
+    /* Now that we are using the working buffer for text in composite fonts, we must make sure
+     * it is large enough. Each input character code may be promoted to a gs_glyph, in scan_cmap_text
+     * when processing a Type 0 font with a type 1 descendant font. This routine uses
+     * pdf_make_text_glyphs_table_unencoded (called from pdf_obtain_font_resource_unencoded) which  
+     * also may require an identically sized buffer, so we need:
+     * num__input_characters * sizeof(gs_glyph) * 2.
+     */
+    if (pte->orig_font->FontType == ft_composite) {
+	if (size < (pte->text.size - pte->index) * sizeof(gs_glyph) * 2)
+	    size = (pte->text.size - pte->index) * sizeof(gs_glyph) * 2;
+    }
+
     if (size <= sizeof(buf)) {
 	code = process(pte, buf.bytes, size);
     } else {
