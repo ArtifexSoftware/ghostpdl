@@ -42,7 +42,7 @@ hpgl_clear_polygon_buffer(hpgl_args_t *pargs, hpgl_state_t *pgls)
     
 /* Build a rectangle in polygon mode used by (EA, ER, RA, RR). */
 private int
-hpgl_rectangle(hpgl_args_t *pargs,  hpgl_state_t *pgls, int flags)
+hpgl_rectangle(hpgl_args_t *pargs,  hpgl_state_t *pgls, int flags, bool do_poly)
 {	hpgl_real_t x2, y2;
 	if ( !hpgl_arg_units(pgls->memory, pargs, &x2) || 
 	     !hpgl_arg_units(pgls->memory, pargs, &y2) ||
@@ -58,9 +58,11 @@ hpgl_rectangle(hpgl_args_t *pargs,  hpgl_state_t *pgls, int flags)
 	    y2 += pgls->g.pos.y;
 	  }
 	
-	hpgl_args_setup(pargs);
-	/* enter polygon mode. */
-	hpgl_call(hpgl_PM(pargs, pgls));
+        if ( do_poly ) {
+            hpgl_args_setup(pargs);
+            /* enter polygon mode. */
+            hpgl_call(hpgl_PM(pargs, pgls));
+        }
 
 	/* do the rectangle */
 	{
@@ -73,9 +75,12 @@ hpgl_rectangle(hpgl_args_t *pargs,  hpgl_state_t *pgls, int flags)
 	  hpgl_call(hpgl_add_point_to_path(pgls, x1, y2, hpgl_plot_draw_absolute, true));
 	  hpgl_call(hpgl_close_current_path(pgls));
 	}
+
 	/* exit polygon mode PM2 */
-	hpgl_args_set_int(pargs,2);
-	hpgl_call(hpgl_PM(pargs, pgls));
+        if ( do_poly ) {
+            hpgl_args_set_int(pargs,2);
+            hpgl_call(hpgl_PM(pargs, pgls));
+        }
 	return 0;
 }
 
@@ -146,7 +151,7 @@ int
 hpgl_EA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	
-	hpgl_call(hpgl_rectangle(pargs, pgls, DO_EDGE));
+        hpgl_call(hpgl_rectangle(pargs, pgls, DO_EDGE, true));
 	hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	return 0;
@@ -169,7 +174,7 @@ hpgl_EP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_ER(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_call(hpgl_rectangle(pargs, pgls, DO_RELATIVE));
+        hpgl_call(hpgl_rectangle(pargs, pgls, DO_RELATIVE, true));
 	hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	return 0;
@@ -316,7 +321,7 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_RA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_call(hpgl_rectangle(pargs, pgls, 0));
+        hpgl_call(hpgl_rectangle(pargs, pgls, 0, true));
 	hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
 	hpgl_call(hpgl_draw_current_path(pgls,
 					 hpgl_get_poly_render_mode(pgls)));
@@ -327,7 +332,7 @@ hpgl_RA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_RR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {		
-	hpgl_call(hpgl_rectangle(pargs, pgls, DO_RELATIVE));
+        hpgl_call(hpgl_rectangle(pargs, pgls, DO_RELATIVE, true));
 	hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
 	hpgl_call(hpgl_draw_current_path(pgls,
 					 hpgl_get_poly_render_mode(pgls)));
@@ -338,8 +343,9 @@ hpgl_RR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_RQ(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {
-        hpgl_call(hpgl_RR(pargs, pgls));
-        hpgl_call(hpgl_clear_polygon_buffer(pargs, pgls));
+        hpgl_call(hpgl_rectangle(pargs, pgls, DO_RELATIVE, false));
+	hpgl_call(hpgl_draw_current_path(pgls,
+					 hpgl_get_poly_render_mode(pgls)));
         return 0;
 }
 
