@@ -218,6 +218,59 @@ xps_free_gradient_stop_function(xps_context_t *ctx, gs_function_t *func)
 }
 
 /*
+ * For radial gradients that have a cone drawing we have to
+ * reverse the direction of the gradient because we draw
+ * the shading in the opposite direction with the
+ * big circle first.
+ */
+static gs_function_t *
+xps_reverse_function(xps_context_t *ctx, gs_function_t *func, float *fary, void *vary)
+{
+    gs_function_1ItSg_params_t sparams;
+    gs_function_t *sfunc;
+    int code;
+
+    /* take from stack allocated arrays that the caller provides */
+    float *domain = fary + 0;
+    float *range = fary + 2;
+    float *encode = fary + 2 + 6;
+    const gs_function_t **functions = vary;
+
+    domain[0] = 0.0;
+    domain[1] = 1.0;
+
+    range[0] = 0.0;
+    range[1] = 1.0;
+    range[2] = 0.0;
+    range[3] = 1.0;
+    range[4] = 0.0;
+    range[5] = 1.0;
+
+    functions[0] = func;
+
+    encode[0] = 1.0;
+    encode[1] = 0.0;
+
+    sparams.m = 1;
+    sparams.Domain = domain;
+    sparams.n = 3;
+    sparams.Range = range;
+    sparams.k = 1;
+    sparams.Functions = functions;
+    sparams.Bounds = NULL;
+    sparams.Encode = encode;
+
+    code = gs_function_1ItSg_init(&sfunc, &sparams, ctx->memory);
+    if (code < 0)
+    {
+	gs_throw(-1, "gs_function_1ItSg_init failed");
+	return NULL;
+    }
+
+    return sfunc;
+}
+
+/*
  * Radial gradients map more or less to Radial shadings.
  * The inner circle is always a point.
  * The outer circle is actually an ellipse,
@@ -329,7 +382,7 @@ static inline float point_inside_circle(float px, float py, float x, float y, fl
 {
     float dx = px - x;
     float dy = py - y;
-    return (dx * dx + dy * dy) < (r * r);
+    return (dx * dx + dy * dy) <= (r * r);
 }
 
 static int
@@ -373,31 +426,68 @@ xps_draw_radial_gradient(xps_context_t *ctx, xps_item_t *root, int spread, gs_fu
     dx = x1 - x0;
     dy = y1 - y0;
 
+    xps_bounds_in_user_space(ctx, &bbox);
+
     if (spread == SPREAD_PAD)
     {
 	if (!point_inside_circle(x0, y0, x1, y1, r1))
 	{
-	    dputs("warning! cone should appear!\n");
-	    dprintf3(" circle 0: %g %g %g\n", x0, y0, r0);
-	    dprintf3(" circle 1: %g %g %g\n", x1, y1, r1);
-	}
+	    gs_function_t *reverse;
+	    float in[1];
+	    float out[4];
+	    float fary[10];
+	    void *vary[1];
 
-	code = xps_draw_one_radial_gradient(ctx, func, 1, x0, y0, r0, x1, y1, r1);
-	if (code < 0)
-	    return gs_rethrow(code, "could not draw axial gradient");
+	    /* PDF shadings with extend doesn't work the same way as XPS
+	     * gradients when the radial shading is a cone. In this case
+	     * we fill the background ourselves.
+	     */
+
+	    in[0] = 1.0;
+	    out[0] = 1.0;
+	    out[1] = 0.0;
+	    out[2] = 0.0;
+	    out[3] = 0.0;
+	    if (ctx->opacity_only)
+		gs_function_evaluate(func, in, out);
+	    else
+		gs_function_evaluate(func, in, out + 1);
+
+	    xps_set_color(ctx, ctx->srgb, out);
+
+	    gs_moveto(ctx->pgs, bbox.p.x, bbox.p.y);
+	    gs_lineto(ctx->pgs, bbox.q.x, bbox.p.y);
+	    gs_lineto(ctx->pgs, bbox.q.x, bbox.q.y);
+	    gs_lineto(ctx->pgs, bbox.p.x, bbox.q.y);
+	    gs_closepath(ctx->pgs);
+	    gs_fill(ctx->pgs);
+
+	    /* We also have to reverse the direction so the bigger circle
+	     * comes first or the graphical results do not match. We also
+	     * have to reverse the direction of the function to compensate.
+	     */
+
+	    reverse = xps_reverse_function(ctx, func, fary, vary);
+	    code = xps_draw_one_radial_gradient(ctx, reverse, 1, x1, y1, r1, x0, y0, r0);
+	    if (code < 0)
+		return gs_rethrow(code, "could not draw radial gradient");
+	    xps_free(ctx, reverse);
+	}
+	else
+	{
+	    code = xps_draw_one_radial_gradient(ctx, func, 1, x0, y0, r0, x1, y1, r1);
+	    if (code < 0)
+		return gs_rethrow(code, "could not draw radial gradient");
+	}
     }
     else
     {
-	xps_bounds_in_user_space(ctx, &bbox);
-
 	for (i = 0; i < 100; i++)
 	{
 	    /* Draw current circle */
 
-	    dprintf1("drawing circle %d of radial gradient\n", i);
-
 	    if (!point_inside_circle(x0, y0, x1, y1, r1))
-		dputs("warning! cone should appear!\n");
+		dputs("oopsies, we need to reverse here too\n");
 
 	    if (spread == SPREAD_REFLECT && (i & 1))
 		code = xps_draw_one_radial_gradient(ctx, func, 0, x1, y1, r1, x0, y0, r0);
@@ -546,6 +636,7 @@ xps_parse_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *r
     int spread_method;
 
     gs_rect saved_bounds;
+    gs_rect bbox;
 
     gs_function_t *color_func;
     gs_function_t *opacity_func;
@@ -611,6 +702,8 @@ xps_parse_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *r
 
     gs_concat(ctx->pgs, &transform);
 
+    xps_bounds_in_user_space(ctx, &bbox);
+
     xps_begin_opacity(ctx, dict, opacity_att, NULL);
 
     if (ctx->opacity_only)
@@ -623,9 +716,6 @@ xps_parse_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *r
 	{
 	    gs_transparency_mask_params_t params;
 	    gs_transparency_group_params_t tgp;
-	    gs_rect bbox;
-
-	    xps_bounds_in_user_space(ctx, &bbox);
 
 	    gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Alpha);
 	    gs_begin_transparency_mask(ctx->pgs, &params, &bbox, 0);
