@@ -677,6 +677,10 @@ dup							% Format 2
   /vminor next def
   /hdrsize next def
   /aoffsize next def
+  hdrsize 4 gt {
+    hdrsize 4 sub dup advance
+    f exch () /SubFileDecode filter flushfile
+  } if
 
 	% Read the Indexes.
 

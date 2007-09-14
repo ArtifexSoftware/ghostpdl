@@ -1444,10 +1444,11 @@ end readonly def
     } 2 bndef
 
   <01000401> <01000402> <01000403> <01000404> % Type 1C
+  <01000C02>
     { exch pop
       dup /Subtype get
       fontloadprocs exch get exec
-    } 4 bndef 
+    } 5 bndef 
 
   <00010000> (true) (typ1) (ttcf)  % TrueType OpenType
     { exch pop readtruetype
