@@ -114,16 +114,6 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         color_unset(psdc);
     }
 
-    /* see if phase informaiton must be inserted in the command list */
-    if ( pdcolor->type->get_phase(pdcolor, &color_phase) &&
-         (color_phase.x != pcls->tile_phase.x ||
-          color_phase.y != pcls->tile_phase.y   )        &&
-	 (code = cmd_set_tile_phase( cldev,
-                                     pcls,
-                                     color_phase.x,
-                                     color_phase.y )) < 0  )
-        return code;
-
     /*
      * Get the device color type index and the required size.
      *
@@ -146,6 +136,16 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     else if (code < 0 && code != gs_error_rangecheck)
         return code;
     req_size = dc_size + 2 + 1 + enc_u_sizew(dc_size);
+
+    /* see if phase informaiton must be inserted in the command list */
+    if ( pdcolor->type->get_phase(pdcolor, &color_phase) &&
+         (color_phase.x != pcls->tile_phase.x ||
+          color_phase.y != pcls->tile_phase.y   )        &&
+	 (code = cmd_set_tile_phase( cldev,
+                                     pcls,
+                                     color_phase.x,
+                                     color_phase.y )) < 0  )
+        return code;
 
     /*
      * Encoded device colors are small in comparison to the command
