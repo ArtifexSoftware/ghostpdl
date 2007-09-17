@@ -1440,6 +1440,11 @@ hpgl_set_special_pixel_placement(hpgl_state_t *pgls, hpgl_rendering_mode_t rende
 	/* determine the adjustment in device space */
 	hpgl_call(gs_defaultmatrix(pgls->pgs, &default_matrix));
 	hpgl_call(gs_distance_transform(adjust.x, adjust.y, &default_matrix, &distance));
+        /* modify the path but first it should be "unshared" so the
+           translation (next statement) does not update the polygon
+           buffer */
+        hpgl_call(gx_path_unshare(ppath));
+
 	/* translate all points in the path by the adjustment.  */
 	hpgl_call(gx_path_translate(ppath,
                   float2fixed(distance.x / fabs(distance.x)),
