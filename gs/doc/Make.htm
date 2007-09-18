@@ -23,16 +23,11 @@
 <blockquote><ul>
 <li><a href="#General_overview">General overview</a>
 <li><a href="#Acquiring">How to acquire the source code</a>
-<ul>
-<li><a href="#Ghostscript_source">Ghostscript source code</a>
-<li><a href="#Third-party_libraries">Third-party library source code</a>
-</ul>
 <li><a href="#Unpack">How to unpack the source code</a>
 <ul>
 <li><a href="#Tarfiles">How to unpack compressed tar files generally</a>
 <li><a href="#Zipfiles">How to unpack zip files generally</a>
 <li><a href="#Unpack_Ghostscript">How to unpack Ghostscript itself</a>
-<li><a href="#Unpack_libraries">How to unpack the third-party libraries</a>
 </ul>
 <li><a href="#Bug_check">How to check for post-release bug fixes</a>
 <li><a href="#Makefile_overview">How to prepare the makefiles</a>
@@ -143,8 +138,7 @@ This document describes how to build a Ghostscript executable from source
 code.  There are four major steps to building Ghostscript:
 
 <ol>
-<li>Acquire the compressed archive files of source code for Ghostscript and
-the required third-party libraries.
+<li>Acquire the compressed archive files of source code for Ghostscript.
 <li>Unpack the archive files into the Ghostscript directory and correctly
 named subdirectories.
 <li>Configure the build to match your system and desired configuration options.
@@ -162,26 +156,12 @@ Ghostscript you must then install it; for that, see the
 <h2><a name="Acquiring"></a>How to acquire the source code</h2>
 
 <p>
-Building Ghostscript requires the Ghostscript source code itself, and also
-the source code for some third-party libraries that Ghostscript uses.
-
-<h3><a name="Ghostscript_source"></a>Ghostscript source code</h3>
+Building Ghostscript requires the Ghostscript source code itself, and in 
+some cases the source code for the third-party libraries that 
+Ghostscript uses.
 
 <p><a name="Authoritative_distribution_site"></a>
-There are two kinds of Ghostscript distributions available, called "AFPL
-Ghostscript" and "GPL Ghostscript"; the distinction between them is
-explained in the <a href="Commprod.htm">conditions for distributing
-Ghostscript</a>.  The authoritative distribution site for AFPL
-Ghostscript is
-
-<blockquote>
-<a href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/" 
-class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/</a>gs###
-</blockquote>
-
-<p>
-where "###" is the unpunctuated version number. GPL Ghostscript is 
-available from the same site at 
+Official releases can be found under the GPL license at
 
 <blockquote>
 <a href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/GPL/"
@@ -215,73 +195,8 @@ MS Windows, and VMS -- so you can choose the format most convenient for
 you; but it's up to you to locate that software.  See the section on <a
 href="#Unpack">unpacking the source code</a>.
 
-<h3><a name="Third-party_libraries"></a>Third-party library source code</h3>
-
 <p>
-To build Ghostscript you need the source code for the <a
-href="http://www.ijg.org/">Independent JPEG Group</a> (IJG) library, the
-<a href="http://www.libpng.org/pub/png/">Portable Network Graphics</a>
-(PNG)
-library, and the <a
-href="http://www.gzip.org/zlib/">zlib</a>
-compression and decompression library. The default build also expects source
-for the <a href="http://jbig2dec.sourceforge.net">jbig2dec</a> JBIG2 decompression
-library.
-
-<p>
-On Windows and MacOS, the .zip and .sit source archives include the appropriate 
-source versions of these libraries, so no additional downloads are necessary.
-Unix tarballs may also contain appropriate library source; the configure script
-will tell you if it cannot find the appropriate libraries.
-
-<p>
-Here are authoritative distribution points for these libraries, should you need
-to obtain the source yourself. As elsewhere, "#" is used for version
-numbers.  The JPEG source code is quite stable, so the reference
-here includes the latest version number. Versions of the zlib source are 
-not compatible between the 1.1.x and 1.2.x series; if you wish to 
-compile in zlib (as opposed to linking to a separately build dynamic 
-library) you must use a 1.2.x version.
-
-<blockquote><table cellpadding=0 cellspacing=0>
-<tr><th colspan=3 bgcolor="#CCCC00"><hr><font size="+1">Third-party libraries: authoritative sources</font><hr>
-<tr>	<td valign=top>JPEG
-	<td>&nbsp;&nbsp;&nbsp;
-	<td><a href="ftp://ftp.uu.net/graphics/jpeg/" 
-class="offsite">ftp://ftp.uu.net/graphics/jpeg/</a><a
-href="ftp://ftp.uu.net/graphics/jpeg/jpegsrc.v6b.tar.gz" 
-class="offsite">jpegsrc.v6b.tar.gz</a><br>
-	<a href="ftp://ftp.simtel.net/pub/simtelnet/msdos/graphics/" 
-class="offsite">ftp://ftp.simtel.net/pub/simtelnet/msdos/graphics/</a><a
-href="ftp://ftp.simtel.net/pub/simtelnet/msdos/graphics/jpegsr6b.zip">jpegsr6b.zip</a>
-
-<tr>	<td valign=top>PNG
-	<td>&nbsp;
-	<td><a href="http://www.libpng.org/pub/png/src/" 
-class="offsite">http://www.libpng.org/pub/png/src/</a>libpng-#.#.#.tar.gz<br>
-	<a href="http://www.libpng.org/pub/png/src/" 
-class="offsite">http://www.libpng.org/pub/png/src/</a>lpng###.zip<br>
-	<a href="ftp://swrinde.nde.swri.edu/pub/png/src/" 
-class="offsite">ftp://swrinde.nde.swri.edu/pub/png/src/</a>libpng-#.#.#.tar.gz<br>
-	<a href="ftp://swrinde.nde.swri.edu/pub/png/src/" 
-class="offsite">ftp://swrinde.nde.swri.edu/pub/png/src/</a>lpng###.zip
-
-<tr>	<td valign=top>zlib (latest)
-	<td>&nbsp;
-	<td>	<a href="http://www.gzip.org/zlib/zlib-1.2.1.tar.gz" 
-class="offsite">http://www.gzip.org/zlib/zlib-1.2.1.tar.gz</a><br>
-	<a href="http://www.gzip.org/zlib/zlib121.zip" 
-class="offsite">http://www.gzip.org/zlib/zlib121.zip</a><br>
-	See the <a href="http://www.gzip.org/zlib/">official website</a> 
-for a list of mirrors.
-<tr>	<td valign=top>jbig2dec
-	<td>&nbsp;
-	<td>	<a href="http://sourceforge.net/project/showfiles.php?group_id=28301" 
-class="offsite">http://sourceforge.net/project/showfiles.php?group_id=28301</a><br>
-</table></blockquote>
-
-<p>
-On DOS or MS Windows one ordinarily uses the zip file kits, in other
+On MS Windows one ordinarily uses the zip file kits, in other
 environments the compressed tar files, but this is simply a matter of
 convenience, since for the same version of the software the compressed tar
 file has the same contents as the zip file.  Note that each of these
@@ -470,53 +385,6 @@ directory.
 <tr>	<td><b><tt>examples/</tt></b>
 	<td>&nbsp;
 	<td>Sample PostScript files
-</table></blockquote>
-
-<h3><a name="Unpack_libraries"></a>How to unpack the third-party libraries</h3>
-
-<p>
-The Ghostscript makefiles expect to find the JPEG, PNG, and zlib source code
-in specific subdirectories of the <b><tt>gs</tt></b> directory, and this
-means you must pay careful attention to unpacking the source code for these
-packages.  Use the same method for all of them, no matter how they're
-packaged:
-
-<ol>
-<li>Make the gs directory current.
-<li>Unpack the archive file, creating a subdirectory (which will include a
-version number).
-<li>Whatever the subdirectory's original name, rename it to the versionless
-name shown just below.
-</ol>
-
-<p>
-If you're uncertain how to unpack an archive, review the sections on <a
-href="#Tarfiles">compressed tar files</a> and <a href="#Zipfiles">zip
-files</a>.
-
-<blockquote><table cellpadding=0 cellspacing=0>
-<tr><th colspan=5 bgcolor="#CCCC00"><hr><font size="+1">3d-party software subdirectories</font><hr>
-<tr>	<th valign=bottom align=left>Package
-	<td>&nbsp;&nbsp;&nbsp;&nbsp;
-	<th valign=bottom align=left>Possible<br>original name
-	<td>&nbsp;&nbsp;&nbsp;&nbsp;
-	<th valign=bottom align=left>Rename to
-<tr>	<td colspan=5><hr>
-<tr>	<td>JPEG
-	<td>&nbsp;
-	<td><b><tt>./jpeg-6b</tt></b>
-	<td>&nbsp;
-	<td><b><tt>./jpeg</tt></b>
-<tr>	<td>PNG
-	<td>&nbsp;
-	<td><b><tt>./libpng-</tt></b>#.##
-	<td>&nbsp;
-	<td><b><tt>./libpng</tt></b>
-<tr>	<td>zlib
-	<td>&nbsp;
-	<td><b><tt>./zlib-</tt></b>#.#.#
-	<td>&nbsp;
-	<td><b><tt>./zlib</tt></b>
 </table></blockquote>
 
 <h4>Luratech compressor libraries</h4>
@@ -884,12 +752,12 @@ After going through the steps just described to <a href="#Unpack">unpack
 the
 sources</a>, configure the build and make any desired
 <a href="#Preparing_makefiles">changes to the
-makefiles</a>, and unpack or create links to the <a
-href="#Unpack_libraries">third party libraries</a>, as the final step in
-preparing to build Ghostscript you must usually associate the name
-"<b><tt>makefile</tt></b>" with the correct makefile for your environment so
-the <b><tt>make</tt></b> command can find it.  See the section on your
-particular platform for how to do that if necessary.
+makefiles</a>.
+As the final step in preparing to build Ghostscript you must usually 
+associate the name "<b><tt>makefile</tt></b>" with the correct makefile 
+for your environment so the <b><tt>make</tt></b> command can find it.  
+See the section on your particular platform for how to do that if 
+necessary.
 
 <h3><a name="Invoke_make"></a>Invoking "make"</h3>
 
@@ -1355,10 +1223,10 @@ without <b><tt>/O2</tt></b>.
 
 <p>
 If you wish to compile Ghostscript with the Luratech JBIG2 and JPEG 2000 
-implementations, the source should be installed as described above under 
-<a href="#Unpack_libraries">unpacking third-party libraries</a>. If you 
-have an appropriately licensed source distribution this should already
-have been done.
+implementations, the source should be installed in the top-level 
+directory of the Ghostscript source.
+If you have an appropriately licensed source distribution this should 
+already have been done.
 
 <p>
 To enable the Luratech code, you need to pass 
@@ -1617,12 +1485,6 @@ in the section on <a href="#MacOS">Classic MacOS</a> above.
 
 <p>
 To set up the shlib build, download and uncompress the Ghostscript source.
-If the archive doesn't contain the 3rd party jpeg, png, and zlib source,
-you must download them as described at the beginning of this document and
-unpack them under the macgs-###-src directory under the specific names
-<tt>jpeg</tt>, <tt>zlib</tt> and <tt>libpng</tt>. You cannot use symlinks as
-Codewarrior will not be able to follow them for some of the needed header
-files.
 
 <p>
 Copy <tt>src/macos-mcp.mak</tt> to the top-level directory and rename
@@ -2530,10 +2392,7 @@ Some other shells have bugs or differences that cause the makefile not to
 work.
 
 <li>Make sure you followed the instructions in "How to unpack the source
-code" and "How to unpack the third-party libraries".
-
-<li>Use jpegsrc_v6b.tar.gz, zlib-1.2.x.tar.gz and libpng-1.2.x.tar.gz.  
-Earlier versions may not work.
+code".
 
 <li>If you wish to include support for XFree86, edit the makefile
 to change <b>BUILD_X11=0</b> to <b>BUILD_X11=1</b>.  
