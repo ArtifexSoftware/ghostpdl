@@ -1335,10 +1335,10 @@ possibly a specific one for each document.
 
 <h3><a name="UnicodeTT"></a>Using Unicode True Type fonts</h3>
 
-Ghostscript can handle True Type fonts with the full Unicode UTF-16 character set.
+Ghostscript can handle True Type fonts with the full Unicode character set.
 For doing that, a 3d party software should generate a Postscript
 or PDF document with a text, which is encoded with the 
-UTF16 encoding. Ghostscript may be used for converting
+UTF-16 encoding. Ghostscript may be used for converting
 such Postscript documents to PDF and for 
 re-distilling such PDF documents to PDF subsets.
 
@@ -1360,7 +1360,7 @@ with special values for the <b><tt>CSI</tt></b> key :
 
 <li> 
 In the PS or PDF document combine the font 
-with one of CMap <b><tt>Identity-UTF16-V</tt></b>
+with one of CMap <b><tt>Identity-UTF16-H</tt></b>
 (for the horizontal writing mode)
 or <b><tt>Identity-UTF16-V</tt></b> 
 (for the vertical writing mode).
@@ -2859,9 +2859,8 @@ usage.
         <td>&nbsp;
         <td>Force the interpreter's allocator to acquire additional memory
             in units of <b><em>n</em></b>K bytes, rather than the default
-            (currently 20K on DOS systems, 50K on Unix). <b><em>n</em></b>
-            is a positive decimal integer, on DOS systems no greater than
-            63.
+            20K. <b><em>n</em></b> is a positive decimal integer, on 
+            16-bit systems no greater than 63.
 <tr>    <td valign=top><b><tt>-N</tt></b><em>n</em>
         <td>&nbsp;
         <td>&nbsp;
