@@ -121,10 +121,12 @@ choose_DCT_params(gx_device *pdev, const gs_color_space *pcs,
 
     if (pcs->type->num_components(pcs) != 3)
 	return 0;
-    /* Make a copy of the parameter list since we will modify it. */
-    code = param_list_copy((gs_param_list *)list, (gs_param_list *)*param);
-    if (code < 0)
-	return code;
+    if (*param != NULL) {
+	/* Make a copy of the parameter list since we will modify it. */
+	code = param_list_copy((gs_param_list *)list, (gs_param_list *)*param);
+	if (code < 0)
+	    return code;
+    }
     *param = list;
 
     /* Create a local memory device for transforming colors to DeviceRGB. */
@@ -255,7 +257,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	return gs_error_rangecheck; /* Reject the alternative stream. */   
     if (pdev->version < psdf_version_ll3 && template == &s_zlibE_template)
 	orig_template = template = lossless_template;
-    if (dict) /* NB: rather than dereference NULL lets continue on without a dict */
+    if (dict != NULL) /* Some interpreters don't supply filter parameters. */
 	gs_c_param_list_read(dict);	/* ensure param list is in read mode */
     if (template == 0)	/* no compression */
 	return 0;
