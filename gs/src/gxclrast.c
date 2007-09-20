@@ -1210,6 +1210,8 @@ idata:			data_size = 0;
 #endif
 			code = gx_image_plane_data(image_info, planes,
 						   data_height);
+			if (code < 0)
+			    gx_image_end(image_info, false);
 			if (data_on_heap)
 			    gs_free_object(mem, data_on_heap,
 					   "clist image_data");
