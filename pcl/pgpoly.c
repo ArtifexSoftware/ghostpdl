@@ -342,11 +342,17 @@ hpgl_RR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 /* RQ dx,dy;*/
 int
 hpgl_RQ(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{
-        hpgl_call(hpgl_rectangle(pargs, pgls, DO_RELATIVE, false));
-	hpgl_call(hpgl_draw_current_path(pgls,
-					 hpgl_get_poly_render_mode(pgls)));
-        return 0;
+{ 
+    /* contary to the specification HP uses default pixel placement
+       with RQ */
+    byte save_pp = pgls->pp_mode;
+    pgls->pp_mode = 0;
+    hpgl_call(hpgl_rectangle(pargs, pgls, DO_RELATIVE, false));
+    hpgl_call(hpgl_draw_current_path(pgls,
+                                     hpgl_get_poly_render_mode(pgls)));
+    /* restore saved pixel placement mode */
+    pgls->pp_mode = save_pp;
+    return 0;
 }
 
 
