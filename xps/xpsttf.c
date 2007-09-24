@@ -1,6 +1,62 @@
 #include "ghostxps.h"
 
 /*
+ * Some extra TTF parsing magic that isn't covered by the graphics library.
+ */
+
+private inline int u16(byte *p)
+{
+        return (p[0] << 8) | p[1];
+}
+
+private inline int u32(byte *p)
+{
+        return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
+}
+
+extern ulong tt_find_table(gs_font_type42 *pfont, const char *tname, uint *plen);
+
+static const char *pl_mac_names[258] = {
+    ".notdef", ".null", "nonmarkingreturn", "space", "exclam", "quotedbl",
+    "numbersign", "dollar", "percent", "ampersand", "quotesingle", "parenleft",
+    "parenright", "asterisk", "plus", "comma", "hyphen", "period", "slash",
+    "zero", "one", "two", "three", "four", "five", "six", "seven", "eight",
+    "nine", "colon", "semicolon", "less", "equal", "greater", "question", "at",
+    "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O",
+    "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "bracketleft",
+    "backslash", "bracketright", "asciicircum", "underscore", "grave", "a",
+    "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p",
+    "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "braceleft", "bar",
+    "braceright", "asciitilde", "Adieresis", "Aring", "Ccedilla", "Eacute",
+    "Ntilde", "Odieresis", "Udieresis", "aacute", "agrave", "acircumflex",
+    "adieresis", "atilde", "aring", "ccedilla", "eacute", "egrave",
+    "ecircumflex", "edieresis", "iacute", "igrave", "icircumflex", "idieresis",
+    "ntilde", "oacute", "ograve", "ocircumflex", "odieresis", "otilde",
+    "uacute", "ugrave", "ucircumflex", "udieresis", "dagger", "degree", "cent",
+    "sterling", "section", "bullet", "paragraph", "germandbls", "registered",
+    "copyright", "trademark", "acute", "dieresis", "notequal", "AE", "Oslash",
+    "infinity", "plusminus", "lessequal", "greaterequal", "yen", "mu",
+    "partialdiff", "summation", "product", "pi", "integral", "ordfeminine",
+    "ordmasculine", "Omega", "ae", "oslash", "questiondown", "exclamdown",
+    "logicalnot", "radical", "florin", "approxequal", "Delta", "guillemotleft",
+    "guillemotright", "ellipsis", "nonbreakingspace", "Agrave", "Atilde",
+    "Otilde", "OE", "oe", "endash", "emdash", "quotedblleft", "quotedblright",
+    "quoteleft", "quoteright", "divide", "lozenge", "ydieresis", "Ydieresis",
+    "fraction", "currency", "guilsinglleft", "guilsinglright", "fi", "fl",
+    "daggerdbl", "periodcentered", "quotesinglbase", "quotedblbase",
+    "perthousand", "Acircumflex", "Ecircumflex", "Aacute", "Edieresis",
+    "Egrave", "Iacute", "Icircumflex", "Idieresis", "Igrave", "Oacute",
+    "Ocircumflex", "apple", "Ograve", "Uacute", "Ucircumflex", "Ugrave",
+    "dotlessi", "circumflex", "tilde", "macron", "breve", "dotaccent", "ring",
+    "cedilla", "hungarumlaut", "ogonek", "caron", "Lslash", "lslash", "Scaron",
+    "scaron", "Zcaron", "zcaron", "brokenbar", "Eth", "eth", "Yacute",
+    "yacute", "Thorn", "thorn", "minus", "multiply", "onesuperior",
+    "twosuperior", "threesuperior", "onehalf", "onequarter", "threequarters",
+    "franc", "Gbreve", "gbreve", "Idotaccent", "Scedilla", "scedilla",
+    "Cacute", "cacute", "Ccaron", "ccaron", "dcroat"
+};
+
+/*
  * A bunch of callback functions that the ghostscript
  * font machinery will call. The most important one
  * is the build_char function. These are specific to
@@ -25,10 +81,122 @@ xps_true_callback_decode_glyph(gs_font *p42, gs_glyph glyph)
 }
 
 private int
-xps_true_callback_glyph_name(gs_font *pf, gs_glyph glyph, gs_const_string *pstr)
+xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *pstr)
 {
-    /* let's pretend we have no 'post' table */
-    return -1;
+    /* This funciton is copied verbatim from plfont.c */
+
+    uint table_length;
+    ulong table_offset;
+
+    ulong format;
+    uint numGlyphs;
+    uint glyph_name_index;
+    const byte *postp; /* post table pointer */
+
+    /* guess if the font type is not truetype */
+    if ( pfont->FontType != ft_TrueType )
+    {
+	glyph -= 29;
+	if ( glyph >= 0 && glyph < 258 )
+	{
+	    pstr->data = pl_mac_names[glyph];
+	    pstr->size = strlen(pstr->data);
+	    return 0;
+	}
+	else
+	{
+	    return gs_throw1(-1, "glyph index %d out of range", glyph); 
+	}
+    }
+
+    table_offset = tt_find_table((gs_font_type42 *)pfont, "post", &table_length);
+
+    /* no post table */
+    if ( table_offset == 0 )
+	return gs_throw(-1, "no post table");
+
+    /* this shoudn't happen but... */
+    if ( table_length == 0 )
+	return gs_throw(-1, "zero-size post table");
+
+    ((gs_font_type42 *)pfont)->data.string_proc((gs_font_type42 *)pfont,
+						table_offset, table_length, &postp);
+    format = u32(postp);
+
+    if ( format != 0x20000 )
+    {
+	/* format 1.0 (mac encoding) is a simple table see the TT
+	   spec.  We don't implement this because we don't see it
+	   in practice */
+	return gs_throw1(-1, "unknown post table format 0x%x", format);
+    }
+
+    /* skip over the post header */
+    numGlyphs = u16(postp + 32);
+    if ( glyph < 0 || glyph > numGlyphs - 1)
+    {
+	return gs_throw1(-1, "glyph index %d out of range", glyph);
+    }
+
+    /* glyph name index starts at post + 34 each entry is 2 bytes */
+    glyph_name_index = u16(postp + 34 + (glyph * 2));
+
+    /* this shouldn't happen */
+    if ( glyph_name_index < 0 && glyph_name_index > 0x7fff )
+	return gs_throw(-1, "post table format error");
+
+    /* mac easy */
+    if ( glyph_name_index < 258 )
+    {
+	dprintf2("glyph name (mac) %d = %s\n", glyph, pl_mac_names[glyph_name_index]);
+	pstr->data = pl_mac_names[glyph_name_index];
+	pstr->size = strlen(pstr->data);
+	return 0;
+    }
+
+    /* not mac */
+    else
+    {
+	char *mydata;
+
+	/* and here's the tricky part */
+	const byte *pascal_stringp = postp + 34 + (numGlyphs * 2);
+
+	/* 0 - 257 lives in the mac table above */
+	glyph_name_index -= 258;
+
+	/* The string we want is the index'th pascal string,
+	   so we "hop" to each length byte "index" times. */
+	while (glyph_name_index > 0)
+	{
+	    pascal_stringp += ((int)(*pascal_stringp)+1);
+	    glyph_name_index--;
+	}
+
+	/* length byte */
+	pstr->size = (int)(*pascal_stringp);
+
+	/* + 1 is for the length byte */
+	pstr->data = pascal_stringp + 1;
+
+	/* sanity check */
+	if ( pstr->data + pstr->size > postp + table_length || pstr->data - 1 < postp)
+	    return gs_throw(-1, "data out of range");
+
+	/* sigh - we have to allocate a copy of the data - by the
+	   time a high level device makes use of it the font data
+	   may be freed.  This is a necessary leak. */
+	mydata = gs_alloc_bytes(pfont->memory, pstr->size + 1, "glyph to name");
+	if ( mydata == 0 )
+	    return -1;
+	memcpy(mydata, pascal_stringp + 1, pstr->size);
+	pstr->data = mydata;
+
+	mydata[pstr->size] = 0;
+	dprintf2("glyph name (tbl) %d = %s\n", glyph, pstr->data);
+
+	return 0;
+    }
 }
 
 private int
