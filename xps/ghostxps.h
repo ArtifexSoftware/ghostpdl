@@ -223,11 +223,14 @@ struct xps_part_s
     xps_font_t *font; /* parsed font resource */
     xps_image_t *image; /* parsed and decoded image resource */
     gs_color_space *icc; /* parsed icc profile resource */
+
+    int deobfuscated; /* have we deobfuscated the font data? */
 };
 
 xps_part_t *xps_new_part(xps_context_t *ctx, char *name, int capacity);
 xps_part_t *xps_find_part(xps_context_t *ctx, char *name);
 void xps_free_part(xps_context_t *ctx, xps_part_t *part);
+void xps_free_part_caches(xps_context_t *ctx, xps_part_t *part);
 
 int xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type);
 
@@ -356,9 +359,9 @@ int xps_unclip(xps_context_t *ctx, gs_rect *saved_bounds);
 int xps_fill(xps_context_t *ctx);
 void xps_bounds_in_user_space(xps_context_t *ctx, gs_rect *user);
 
-void xps_parse_color(xps_context_t *ctx, char *hexstring, gs_color_space **csp, float *samples);
-void xps_set_color(xps_context_t *ctx, gs_color_space *colorspace, float *samples);
-int xps_parse_icc_profile(xps_context_t *ctx, gs_color_space **csp, byte *data, int length);
+int xps_parse_color(xps_context_t *ctx, char *hexstring, gs_color_space **csp, float *samples);
+int xps_set_color(xps_context_t *ctx, gs_color_space *colorspace, float *samples);
+int xps_parse_icc_profile(xps_context_t *ctx, gs_color_space **csp, byte *data, int length, int ncomp);
 
 /*
  * Static XML resources.

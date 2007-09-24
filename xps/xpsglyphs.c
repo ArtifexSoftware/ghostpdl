@@ -533,7 +533,7 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     if (!part)
 	return gs_throw1(-1, "cannot find font resource part '%s'", partname);
 
-    if (!part->font)
+    if (!part->deobfuscated)
     {
 	/* deobfuscate if necessary */
 	parttype = xps_get_content_type(ctx, part->name);
@@ -546,6 +546,11 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	if (!parttype && strstr(part->name, ".ODTTF"))
 	    xps_deobfuscate_font_resource(ctx, part);
 
+	part->deobfuscated = 1;
+    }
+
+    if (!part->font)
+    {
 	part->font = xps_new_font(ctx, part->data, part->size, subfontid);
 	if (!part->font)
 	    return gs_rethrow1(-1, "cannot load font resource '%s'", partname);

@@ -395,6 +395,27 @@ xps_free_fixed_pages(xps_context_t *ctx)
 }
 
 /*
+ * Periodically free old parts and resources that
+ * will not be used any more. This looks at discard control
+ * information, and assumes that a given fixed page will
+ * not be drawn more than once.
+ */
+
+void
+xps_free_used_parts(xps_context_t *ctx)
+{
+    /* TODO: actually do what we should. for now we just free cached resources. */
+
+    xps_part_t *part = ctx->first_part;
+    while (part)
+    {       
+	xps_part_t *next = part->next;
+	xps_free_part_caches(ctx, part);
+	part = next;
+    }
+}
+
+/*
  * Parse the metadata [Content_Types.xml] and _rels/XXX.rels parts.
  * These should be parsed eagerly as they are interleaved, so the
  * parsing needs to be able to cope with incomplete xml.
@@ -585,13 +606,36 @@ xps_trim_url(char *path)
 }
 
 static void
+xps_parse_color_relation(xps_context_t *ctx, char *string)
+{
+    char path[1024];
+    char buf[1024];
+    char *sp, *ep;
+
+    /* "ContextColor /Resources/Foo.icc 1,0.3,0.5,1.0" */
+
+    strcpy(buf, string);
+    sp = strchr(buf, ' ');
+    if (sp)
+    {
+	sp ++;
+	ep = strchr(sp, ' ');
+	if (ep)
+	{
+	    *ep = 0;
+	    xps_absolute_path(path, ctx->pwd, sp);
+	    xps_trim_url(path);
+	    xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
+	}
+    }
+}
+
+static void
 xps_parse_content_relations_imp(void *zp, char *name, char **atts)
 {
     xps_context_t *ctx = zp;
     char path[1024];
     int i;
-
-    /* TODO: xps_absolute_path on the targets */
 
     if (!strcmp(name, "Glyphs"))
     {
@@ -631,6 +675,21 @@ xps_parse_content_relations_imp(void *zp, char *name, char **atts)
 	    }
 	}
     }
+
+
+    if (!strcmp(name, "SolidColorBrush") || !strcmp(name, "GradientStop"))
+    {
+	for (i = 0; atts[i]; i += 2)
+	    if (!strcmp(atts[i], "Color"))
+		xps_parse_color_relation(ctx, atts[i + 1]);
+    }
+
+    if (!strcmp(name, "Glyphs") || !strcmp(name, "Path"))
+    {
+	for (i = 0; atts[i]; i += 2)
+	    if (!strcmp(atts[i], "Fill") || !strcmp(atts[i], "Stroke"))
+		xps_parse_color_relation(ctx, atts[i + 1]);
+    }
 }
 
 int
@@ -655,6 +714,12 @@ xps_parse_content_relations(xps_context_t *ctx, xps_part_t *part)
     XML_ParserFree(xp);
 
     ctx->state = NULL;
+
+    {
+	xps_relation_t *rel;
+	for (rel = part->relations; rel; rel = rel->next)
+	    dprintf1("  relation %s\n", rel->target);
+    }
 
     return 0;
 }
@@ -800,6 +865,8 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
 
 		ctx->next_page = ctx->next_page->next;
 
+		xps_free_used_parts(ctx);
+
 		continue;
 	    }
 	}
@@ -809,4 +876,5 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
 
     return 0;
 }
+
 

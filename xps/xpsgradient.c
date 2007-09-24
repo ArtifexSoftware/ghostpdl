@@ -1,5 +1,7 @@
 #include "ghostxps.h"
 
+#include "../icclib/icc.h"
+
 #define MAX_STOPS 100
 
 enum { SPREAD_PAD, SPREAD_REPEAT, SPREAD_REFLECT };
@@ -30,7 +32,24 @@ xps_parse_gradient_stops(xps_context_t *ctx, xps_item_t *node,
 
 		xps_parse_color(ctx, color, &colorspace, sample);
 
-		/* TODO: convert color to RGB (for now we pretend...) */
+		/* Convert color to sRGB by calling ICClib directly */
+
+		if (colorspace->type->index == gs_color_space_index_CIEICC)
+		{
+		    double inv[32];
+		    double xyz[3];
+		    int i;
+
+		    struct _icc *icc = colorspace->params.icc.picc_info->picc;
+		    struct _icmLuBase *lu = colorspace->params.icc.picc_info->plu;
+
+		    for (i = 0; i < cs_num_components(colorspace); i++)
+			inv[i] = sample[i + 1];
+
+		    lu->lookup(lu, inv + 1, xyz);
+
+		    dprintf3("gradient convert to xyz: %g %g %g\n", xyz[0], xyz[1], xyz[2]);
+		}
 
 		colors[count * 4 + 0] = sample[0];
 		colors[count * 4 + 1] = sample[1];

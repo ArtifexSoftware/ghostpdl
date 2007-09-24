@@ -1,6 +1,8 @@
 #include "ghostxps.h"
 
-void
+#include "stream.h" /* for sizeof(stream) to work */
+
+int
 xps_set_color(xps_context_t *ctx, gs_color_space *cs, float *samples)
 {
     gs_client_color cc;
@@ -22,6 +24,8 @@ xps_set_color(xps_context_t *ctx, gs_color_space *cs, float *samples)
 	gs_setcolorspace(ctx->pgs, cs);
 	gs_setcolor(ctx->pgs, &cc);
     }
+
+    return 0;
 }
 
 static int unhex(int chr)
@@ -42,11 +46,14 @@ static int count_commas(char *s)
     return n;
 }
 
-void
+int
 xps_parse_color(xps_context_t *ctx, char *string, gs_color_space **csp, float *samples)
 {
-    char *a, *b;
-    int n, i;
+    xps_part_t *part;
+    char *profile, *p;
+    int i, n, code;
+
+    char partname[1024];
 
     samples[0] = 1.0;
     samples[1] = 0.0;
@@ -76,6 +83,8 @@ xps_parse_color(xps_context_t *ctx, char *string, gs_color_space **csp, float *s
 	samples[1] /= 255.0;
 	samples[2] /= 255.0;
 	samples[3] /= 255.0;
+
+	return 0;
     }
 
     else if (string[0] == 's' && string[1] == 'c' && string[2] == '#')
@@ -84,34 +93,34 @@ xps_parse_color(xps_context_t *ctx, char *string, gs_color_space **csp, float *s
 	    sscanf(string, "sc#%g,%g,%g", samples + 1, samples + 2, samples + 3);
 	if (count_commas(string) == 3)
 	    sscanf(string, "sc#%g,%g,%g,%g", samples, samples + 1, samples + 2, samples + 3);
+	return 0;
     }
 
     else if (strstr(string, "ContextColor ") == string)
     {
-	dprintf1("ICC profile colors are not supported (%s)\n", string);
+	/* Crack the string for profile name and sample values */
 
-	a = strchr(string, ' ');
-	if (a)
+	profile = strchr(string, ' ');
+	if (profile)
 	{
-	    *a++ = 0;
-	    b = strchr(a, ' ');
-	    if (b)
+	    *profile++ = 0;
+	    p = strchr(profile, ' ');
+	    if (p)
 	    {
-		*b++ = 0;
-		dprintf2("context color (%s) = (%s)\n", a, b);
+		*p++ = 0;
 	    }
-	    
-	    n = count_commas(b) + 1;
+
+	    n = count_commas(p) + 1;
 	    i = 0;
 	    while (i < n)
 	    {
-		samples[i++] = atof(b);
-		b = strchr(b, ',');
-		if (!b)
+		samples[i++] = atof(p);
+		p = strchr(p, ',');
+		if (!p)
 		    break;
-		b ++;
-		if (*b == ' ')
-		    b ++;
+		p ++;
+		if (*p == ' ')
+		    p ++;
 	    }
 	    while (i < n)
 	    {
@@ -119,17 +128,90 @@ xps_parse_color(xps_context_t *ctx, char *string, gs_color_space **csp, float *s
 	    }
 	}
 
+	/* Default fallbacks if the ICC stuff fails */
+
 	if (n == 2) /* alpha + tint */
 	    *csp = ctx->gray;
 
 	if (n == 5) /* alpha + CMYK */
 	    *csp = ctx->cmyk;
+
+	/* Find ICC colorspace part */
+
+	xps_absolute_path(partname, ctx->pwd, profile);
+	part = xps_find_part(ctx, partname);
+	if (!part)
+	    return gs_throw1(-1, "cannot find icc profile part '%s'", partname);
+
+	if (!part->icc)
+	{
+	    code = xps_parse_icc_profile(ctx, &part->icc, (byte*)part->data, part->size, n - 1);
+	    if (code < 0)
+		return gs_rethrow1(code, "cannot parse icc profile part '%s'", partname);
+	}
+
+	*csp = part->icc;
+
+	return 0;
     }
 
     else
     {
-	gs_throw1(-1, "cannot parse color (%s)\n", string);
+	return gs_throw1(-1, "cannot parse color (%s)\n", string);
     }
+}
+
+stream *
+xps_stream_from_buffer(xps_context_t *ctx, byte *data, int length)
+{
+    stream *stm;
+
+    stm = xps_alloc(ctx, sizeof(struct stream_s));
+    if (!stm)
+    {
+	gs_throw(-1, "out of memory: stream struct");
+	return NULL;
+    }
+
+    sread_string(stm, data, length);
+
+    return stm;
+}
+
+int
+xps_parse_icc_profile(xps_context_t *ctx, gs_color_space **csp, byte *data, int length, int ncomp)
+{
+    gs_color_space *colorspace;
+    gs_cie_icc *info;
+    stream *stm;
+    int code;
+    int i;
+
+    // based on zseticcspace
+
+    stm = xps_stream_from_buffer(ctx, data, length);
+    if (!stm)
+	return gs_rethrow(-1, "cannot create stream from buffer");
+
+    code = gs_cspace_build_CIEICC(&colorspace, NULL, ctx->memory);
+    if (code < 0)
+	return gs_rethrow(code, "cannot build ICC colorspace");
+
+    info = colorspace->params.icc.picc_info;
+    info->num_components = ncomp; /* redundant but that's what the interface requires */
+    info->instrp = stm;
+    info->file_id = (stm->read_id | stm->write_id);
+
+    code = gx_load_icc_profile(info);
+    if (code < 0)
+	return gs_throw(code, "gx_load_icc_profile failed");
+
+    // cie_cache_joint
+    // cie_set_finish
+
+    *csp = colorspace;
+
+    return 0;
 }
 
 int
@@ -159,36 +241,6 @@ xps_parse_solid_color_brush(xps_context_t *ctx,
     xps_set_color(ctx, colorspace, samples);
 
     xps_fill(ctx);
-
-    return 0;
-}
-
-int
-xps_parse_icc_profile(xps_context_t *ctx, gs_color_space **csp, byte *data, int length)
-{
-    gs_color_space *colorspace;
-    gs_cie_icc *info;
-    int code;
-    int i;
-
-    code = gs_cspace_build_CIEICC(&colorspace, NULL, ctx->memory);
-    if (code < 0)
-	return gs_rethrow(code, "cannot build ICC colorspace");
-
-    info = colorspace->params.icc.picc_info;
-    info->num_components = 4; /* XXX from where?! */
-    info->instrp = 0; /* XXX stream */
-    for (i = 0; i < info->num_components; i++)
-    {
-	info->Range.ranges[i].rmin = 0.0;
-	info->Range.ranges[i].rmax = 1.0;
-    }
-
-    code = gx_load_icc_profile(info);
-    if (code < 0)
-	return gs_rethrow(code, "cannot load ICC profile");
-
-    *csp = colorspace;
 
     return 0;
 }
