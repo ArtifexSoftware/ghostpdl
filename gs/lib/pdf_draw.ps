@@ -787,21 +787,92 @@ end
   PDFDEBUG { pdfdict /PDFSTEPcount .knownget { 1 le } { true } ifelse { (%Pattern: ) print dup === flush } if } if
 } bdef
 
+/ignore_color_op  (   **** Warning: Ignoring a color operation in a cached context.\n) readonly def
+
 drawopdict begin
-  /g { /DeviceGray cssubst { cs sc1 } { g } ifelse } bdef
-  /rg { /DeviceRGB cssubst { cs sc* } { rg } ifelse } bdef
-  /k { k } bdef
-  /cs { csresolve cs } bdef
-  /sc { scresolve { sc* } { sc1 } ifelse } bdef
+  /g  { .incachedevice { % Bug 689302
+          pop //ignore_color_op pdfformaterror
+        } {
+          /DeviceGray cssubst { cs sc1 } { g } ifelse
+        } ifelse
+      } bdef
+
+  /rg { .incachedevice {
+          pop pop pop //ignore_color_op pdfformaterror
+        } {
+          /DeviceRGB cssubst { cs sc* } { rg } ifelse
+        } ifelse
+      } bdef
+
+  /k  { .incachedevice {
+          pop pop pop pop //ignore_color_op pdfformaterror
+        } {
+          k
+        } ifelse
+      } bdef
+
+  /cs { .incachedevice {
+          pop //ignore_color_op pdfformaterror
+        } {
+          csresolve cs
+        } ifelse
+      } bdef
+
+  /sc { .incachedevice {
+          .pdfcount { pop } repeat //ignore_color_op pdfformaterror
+        } {
+          scresolve { sc* } { sc1 } ifelse
+        } ifelse
+      } bdef
+
   /scn /sc load def
-  /G { /DeviceGray cssubst { CS SC1 } { G } ifelse } bdef
-  /RG { /DeviceRGB cssubst { CS SC* } { RG } ifelse } bdef
-  /K { K } bdef
-  /CS { csresolve CS } bdef
-  /ri { ri } bdef
-  /SC { scresolve { SC* } { SC1 } ifelse } bdef
+
+  /G  { .incachedevice {
+          pop //ignore_color_op pdfformaterror
+        } {
+          /DeviceGray cssubst { CS SC1 } { G } ifelse
+        } ifelse
+      } bdef
+
+  /RG { .incachedevice {
+          pop pop pop //ignore_color_op pdfformaterror
+        } {
+          /DeviceRGB cssubst { CS SC* } { RG } ifelse
+        } ifelse
+      } bdef
+
+  /K  { .incachedevice {
+          pop pop pop pop //ignore_color_op pdfformaterror
+        } {
+          K
+        } ifelse
+      } bdef
+
+  /CS { .incachedevice {
+          pop //ignore_color_op pdfformaterror
+        } {
+          csresolve CS
+        } ifelse
+      } bdef
+
+  /ri { .incachedevice {
+          pop //ignore_color_op pdfformaterror
+        } {
+          ri
+        } ifelse
+      } bdef
+
+  /SC { .incachedevice {
+          .pdfcount { pop } repeat //ignore_color_op pdfformaterror
+        } {
+          scresolve { SC* } { SC1 } ifelse
+        } ifelse
+      } bdef
+
   /SCN /SC load def
 end
+
+currentdict /ignore_color_op undef
 
 % ---------------- Paths ---------------- %
 

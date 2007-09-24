@@ -364,9 +364,24 @@ zfontbbox(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* Export in_cachedevice flag for PDF interpreter, which, unlike
+ * PS unterpreter, ignores color operations in the inappropriate context.
+ */
+/* - .incachedevice <bool> */
+private int
+zincachedevice(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    push(1);
+    make_bool(op, !!igs->in_cachedevice);
+    return 0;
+}
+
+
 /* ------ Initialization procedure ------ */
 
-const op_def zchar_op_defs[] =
+const op_def zchar_a_op_defs[] =
 {
     {"3ashow", zashow},
     {"6awidthshow", zawidthshow},
@@ -385,6 +400,12 @@ const op_def zchar_op_defs[] =
     {"0%finish_show", finish_show},
     {"0%finish_stringwidth", finish_stringwidth},
     {"0%op_show_continue", op_show_continue},
+    op_def_end(0)
+};
+
+const op_def zchar_b_op_defs[] =
+{
+    {"0.incachedevice", zincachedevice},
     op_def_end(0)
 };
 
