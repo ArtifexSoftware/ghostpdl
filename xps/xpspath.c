@@ -182,8 +182,8 @@ xps_draw_arc_segment(xps_context_t *ctx,
 int
 xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 {
-    char *args[strlen(geom) + 1];
-    char **pargs = args;
+    char **args;
+    char **pargs;
     char *s = geom;
     gs_point pt;
     int i, n;
@@ -191,6 +191,9 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
     float x1, y1, x2, y2, x3, y3;
     float smooth_x, smooth_y; /* saved cubic bezier control point for smooth curves */
     int reset_smooth;
+
+    args = xps_alloc(ctx, sizeof(char*) * (strlen(geom) + 1));
+    pargs = args;
 
     //dprintf1("new path (%.70s)\n", geom);
     gs_newpath(ctx->pgs);
@@ -408,6 +411,8 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 
 	old = cmd;
     }
+
+    xps_free(ctx, args);
 
     return 0;
 }

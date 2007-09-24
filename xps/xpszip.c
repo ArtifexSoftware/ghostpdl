@@ -202,7 +202,7 @@ xps_prepare_part(xps_context_t *ctx)
     {
 	part = xps_new_part(ctx, ctx->zip_file_name, ctx->zip_uncompressed_size);
 	if (!part)
-	    return gs_rethrow(code, "cannot create part buffer");
+	    return gs_rethrow(-1, "cannot create part buffer");
 	ctx->last_part = part; /* make it the current part */
     }
     else

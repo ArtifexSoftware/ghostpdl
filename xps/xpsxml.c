@@ -120,6 +120,7 @@ static void on_text(void *zp, const char *buf, int len)
 {
     xps_parser_t *parser = zp;
     xps_context_t *ctx = parser->ctx;
+    char *atts[3];
     int i;
 
     if (parser->error)
@@ -130,12 +131,16 @@ static void on_text(void *zp, const char *buf, int len)
 	if (!is_xml_space(buf[i]))
 	{
 	    char *tmp = xps_alloc(ctx, len + 1);
-	    const char *atts[] = {"", tmp, 0};
 	    if (!tmp)
 	    {
 		parser->error = "out of memory";
 		return;
 	    }
+
+	    atts[0] = "";
+	    atts[1] = tmp;
+	    atts[2] = NULL;
+
 	    memcpy(tmp, buf, len);
 	    tmp[len] = 0;
 	    on_open_tag(zp, "", atts);
