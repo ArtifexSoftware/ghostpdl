@@ -61,7 +61,7 @@
 #define UFST_SCALE  16
 #define FXD_ONE     (1L << UFST_SCALE)      /* fixed point 1.0000 */
 
-private const pl_font_t *   plfont_last;    /* last selected font */
+static const pl_font_t *   plfont_last;    /* last selected font */
 static  const gs_matrix     pl_identmtx = { identity_matrix_body };
 
 extern IF_STATE if_state;
@@ -158,7 +158,7 @@ pl_init_fc(
 /*
  * Set the current UFST font (any type).
  */
-private int
+static int
 pl_set_ufst_font(const pl_font_t * plfont, FONTCONTEXT * pfc)
 {
     uint    status = CGIFfont(FSA pfc);
@@ -174,7 +174,7 @@ pl_set_ufst_font(const pl_font_t * plfont, FONTCONTEXT * pfc)
  * Set the current path from a character outline. This is more general than
  * may be necessary, depending on how the UFST module is compiled.
  */
-private int
+static int
 image_outline_char(
     PIFOUTLINE              pols,
     const gs_matrix_fixed * pmat,
@@ -236,7 +236,7 @@ image_outline_char(
  * Get the widt from a UFST character (any type). The caller should have
  * set the font type in advance.
  */
-private int
+static int
 pl_ufst_char_width(
     uint                char_code,
     const void *        pgs,
@@ -271,7 +271,7 @@ pl_ufst_char_width(
 /*
  * Generate a UFST character.
  */
-private int
+static int
 pl_ufst_make_char(
     gs_show_enum *      penum,
     gs_state *          pgs,
@@ -423,7 +423,7 @@ pl_ufst_make_char(
 /* Look up a character in the TrueType character-to-TT-glyph map. */
 /* Return a pointer to the glyph's slot (chr != gs_no_char) or where */
 /* it should be added (chr == gs_no_char). */
-private pl_tt_char_glyph_t *
+static pl_tt_char_glyph_t *
 pl_tt_lookup_char(const pl_font_t *plfont, gs_glyph glyph)
 {       uint size = plfont->char_glyphs.size;
         uint skip = plfont->char_glyphs.skip;
@@ -442,7 +442,7 @@ pl_tt_lookup_char(const pl_font_t *plfont, gs_glyph glyph)
 }
 
 /* Get a string from a TrueType font. */
-private int
+static int
 pl_tt_string_proc(gs_font_type42 *pfont, ulong offset, uint length,
   const byte **pdata)
 {       pl_font_t *plfont = pfont->client_data;
@@ -454,7 +454,7 @@ pl_tt_string_proc(gs_font_type42 *pfont, ulong offset, uint length,
 
 /* Return the vertical substitute for a glyph, if it has one; */
 /* otherwise return gs_no_glyph. */
-private gs_glyph
+static gs_glyph
 pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t *plfont)
 {       long VT = plfont->offsets.VT;
         const byte *vtseg;
@@ -494,7 +494,7 @@ typedef struct gx_path_s gx_path;
  * MicroType accepts unicode values a glyph identifiers, so no explicit
  * encoding is necessary.
  */
-private gs_glyph
+static gs_glyph
 pl_mt_encode_char(gs_font * pfont, gs_char pchr, gs_glyph_space_t not_used)
 {
     return (gs_glyph)pchr;
@@ -504,7 +504,7 @@ pl_mt_encode_char(gs_font * pfont, gs_char pchr, gs_glyph_space_t not_used)
 /*
  * Set the current UFST font to be a MicroType font.
  */
-private int
+static int
 pl_set_mt_font(
     gs_state            *pgs,
     const pl_font_t *   plfont,
@@ -521,7 +521,7 @@ pl_set_mt_font(
 }
 
 /* Render a MicroType character. */
-private int
+static int
 pl_mt_build_char(
     gs_show_enum *      penum,
     gs_state *          pgs,
@@ -609,7 +609,7 @@ pl_glyph_width_list_remove(gs_memory_t *mem)
 
 
 /* Get character existence and escapement for an MicroType font. */
-private int
+static int
 pl_mt_char_width(
     const pl_font_t *       plfont,
     const void *            pgs,
@@ -634,7 +634,7 @@ pl_mt_char_width(
     return code;
 }
 
-private int
+static int
 pl_mt_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4])
 {
     gs_point width;

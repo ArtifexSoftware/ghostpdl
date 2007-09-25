@@ -5041,7 +5041,7 @@ const short int arc_font_widths[] = {
 };
 
 /* generate the segments NB void *data is the the graphics state */
-private int
+static int
 hpgl_stick_segments(const gs_memory_t *mem, void *data, uint char_index)
 {
     /* characters start with 32 - what about char index < 0x20 ?? */
@@ -5083,7 +5083,7 @@ hpgl_stick_segments(const gs_memory_t *mem, void *data, uint char_index)
 
 /* this procedure has the same cartoon as hpgl_stick_segments() above
    except the drawing operations are different */
-private int
+static int
 hpgl_arc_segments(const gs_memory_t *mem, void *data, uint char_index)
 {
     /* characters start with 32 - what about char index < 0x20 ?? */
@@ -5129,7 +5129,7 @@ hpgl_arc_segments(const gs_memory_t *mem, void *data, uint char_index)
     return 0;
 }
 	
-private int
+static int
 hpgl_stick_width(uint char_index)
 {
     /* The fixed space font is always 1024, the width of the cell */
@@ -5137,7 +5137,7 @@ hpgl_stick_width(uint char_index)
 }
 
 /* Get the unscaled width of a stick/arc character. */
-private int
+static int
 hpgl_arc_width(uint char_index)
 {	
     if ( char_index < 0x20 || (char_index < 0xa0 && char_index > 0x7f))

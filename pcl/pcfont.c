@@ -74,7 +74,7 @@ pcl_decache_font(pcl_state_t *pcs, int set)
 
 /* set current font and symbol table to selected parameter's font and
    symbol table */
-private int
+static int
 pcl_set_font(pcl_state_t *pcs, pcl_font_selection_t *pfs)
 {
 	pcs->font = pfs->font;
@@ -97,7 +97,7 @@ pcl_recompute_font(pcl_state_t *pcs)
 }
 
 /* The font parameter commands all come in primary and secondary variants. */
-private int
+static int
 pcl_symbol_set(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 {	uint num = uint_arg(pargs);
 	uint symset;
@@ -116,16 +116,16 @@ pcl_symbol_set(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 	  }
 	return 0;
 }
-private int /* ESC ( <> others */
+static int /* ESC ( <> others */
 pcl_primary_symbol_set(pcl_args_t *pargs, pcl_state_t *pcs)
 {	return pcl_symbol_set(pargs, pcs, 0);
 }
-private int /* ESC ) <> others */
+static int /* ESC ) <> others */
 pcl_secondary_symbol_set(pcl_args_t *pargs, pcl_state_t *pcs)
 {	return pcl_symbol_set(pargs, pcs, 1);
 }
 
-private int
+static int
 pcl_spacing(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 {	uint spacing = uint_arg(pargs);
 
@@ -140,16 +140,16 @@ pcl_spacing(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 	  }
 	return 0;
 }
-private int /* ESC ( s <prop_bool> P */
+static int /* ESC ( s <prop_bool> P */
 pcl_primary_spacing(pcl_args_t *pargs, pcl_state_t *pcs)
 {	return pcl_spacing(pargs, pcs, 0);
 }
-private int /* ESC ) s <prop_bool> P */
+static int /* ESC ) s <prop_bool> P */
 pcl_secondary_spacing(pcl_args_t *pargs, pcl_state_t *pcs)
 {	return pcl_spacing(pargs, pcs, 1);
 }
 
-private int
+static int
 pcl_pitch(floatp cpi, pcl_state_t *pcs, int set)
 {	uint pitch_cp;
 	pcl_font_selection_t *pfs = &pcs->font_selection[set];
@@ -171,16 +171,16 @@ pcl_pitch(floatp cpi, pcl_state_t *pcs, int set)
 	  }
 	return 0;
 }
-private int /* ESC ( s <pitch> H */
+static int /* ESC ( s <pitch> H */
 pcl_primary_pitch(pcl_args_t *pargs, pcl_state_t *pcs)
 {	return pcl_pitch(float_arg(pargs), pcs, 0);
 }
-private int /* ESC ) s <pitch> H */
+static int /* ESC ) s <pitch> H */
 pcl_secondary_pitch(pcl_args_t *pargs, pcl_state_t *pcs)
 {	return pcl_pitch(float_arg(pargs), pcs, 1);
 }
 
-private int
+static int
 pcl_height(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 {	uint height_4ths = (uint)(float_arg(pargs) * 4 + 0.5);
 	pcl_font_selection_t *pfs = &pcs->font_selection[set];
@@ -194,16 +194,16 @@ pcl_height(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 	  }
 	return 0;
 }
-private int /* ESC ( s <height> V */
+static int /* ESC ( s <height> V */
 pcl_primary_height(pcl_args_t *pargs, pcl_state_t *pcs)
 {	return pcl_height(pargs, pcs, 0);
 }
-private int /* ESC ) s <height> V */
+static int /* ESC ) s <height> V */
 pcl_secondary_height(pcl_args_t *pargs, pcl_state_t *pcs)
 {	return pcl_height(pargs, pcs, 1);
 }
 
-private int
+static int
 pcl_style(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 {	uint style = uint_arg(pargs);
 
@@ -215,16 +215,16 @@ pcl_style(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 	  }
 	return 0;
 }
-private int /* ESC ( s <style> S */
+static int /* ESC ( s <style> S */
 pcl_primary_style(pcl_args_t *pargs, pcl_state_t *pcs)
 {	return pcl_style(pargs, pcs, 0);
 }
-private int /* ESC ) s <style> S */
+static int /* ESC ) s <style> S */
 pcl_secondary_style(pcl_args_t *pargs, pcl_state_t *pcs)
 {	return pcl_style(pargs, pcs, 1);
 }
 
-private int
+static int
 pcl_stroke_weight(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 {	int weight = int_arg(pargs);
 
@@ -240,16 +240,16 @@ pcl_stroke_weight(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 	  }
 	return 0;
 }
-private int /* ESC ( s <weight> B */
+static int /* ESC ( s <weight> B */
 pcl_primary_stroke_weight(pcl_args_t *pargs, pcl_state_t *pcs)
 {	return pcl_stroke_weight(pargs, pcs, 0);
 }
-private int /* ESC ) s <weight> B */
+static int /* ESC ) s <weight> B */
 pcl_secondary_stroke_weight(pcl_args_t *pargs, pcl_state_t *pcs)
 {	return pcl_stroke_weight(pargs, pcs, 1);
 }
 
-private int
+static int
 pcl_typeface(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 {	uint typeface = uint_arg(pargs);
 
@@ -261,16 +261,16 @@ pcl_typeface(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 	  }
 	return 0;
 }
-private int /* ESC ( s <typeface> T */
+static int /* ESC ( s <typeface> T */
 pcl_primary_typeface(pcl_args_t *pargs, pcl_state_t *pcs)
 {	return pcl_typeface(pargs, pcs, 0);
 }
-private int /* ESC ) s <typeface> T */
+static int /* ESC ) s <typeface> T */
 pcl_secondary_typeface(pcl_args_t *pargs, pcl_state_t *pcs)
 {	return pcl_typeface(pargs, pcs, 1);
 }
 
-private int
+static int
 pcl_font_selection_id(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 {	uint id = uint_arg(pargs);
 	pcl_font_selection_t *pfs = &pcs->font_selection[set];
@@ -287,16 +287,16 @@ pcl_font_selection_id(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 	    return 0;
 	  }
 }
-private int /* ESC ( <font_id> X */
+static int /* ESC ( <font_id> X */
 pcl_primary_font_selection_id(pcl_args_t *pargs, pcl_state_t *pcs)
 {	return pcl_font_selection_id(pargs, pcs, 0);
 }
-private int /* ESC ) <font_id> X */
+static int /* ESC ) <font_id> X */
 pcl_secondary_font_selection_id(pcl_args_t *pargs, pcl_state_t *pcs)
 {	return pcl_font_selection_id(pargs, pcs, 1);
 }
 
-private int
+static int
 pcl_select_default_font(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 {	
     if ( int_arg(pargs) != 3 )
@@ -316,16 +316,16 @@ pcl_select_default_font(pcl_args_t *pargs, pcl_state_t *pcs, int set)
     pcl_decache_font(pcs, set);
     return e_Unimplemented;
 }
-private int /* ESC ( 3 @ */
+static int /* ESC ( 3 @ */
 pcl_select_default_font_primary(pcl_args_t *pargs, pcl_state_t *pcs)
 {	return pcl_select_default_font(pargs, pcs, 0);
 }
-private int /* ESC ) 3 @ */
+static int /* ESC ) 3 @ */
 pcl_select_default_font_secondary(pcl_args_t *pargs, pcl_state_t *pcs)
 {	return pcl_select_default_font(pargs, pcs, 1);
 }
 
-private int /* SO */
+static int /* SO */
 pcl_SO(pcl_args_t *pargs, pcl_state_t *pcs)
 {	
     if ( pcs->font_selected != 1 ) { 
@@ -335,7 +335,7 @@ pcl_SO(pcl_args_t *pargs, pcl_state_t *pcs)
     return 0;
 }
 
-private int /* SI */
+static int /* SI */
 pcl_SI(pcl_args_t *pargs, pcl_state_t *pcs)
 {	
     if ( pcs->font_selected != 0 ) { 
@@ -346,7 +346,7 @@ pcl_SI(pcl_args_t *pargs, pcl_state_t *pcs)
 }
 
 /* This command is listed only on p. A-7 of the PCL5 Comparison Guide. */
-private int /* ESC & k <mode> S */
+static int /* ESC & k <mode> S */
 pcl_set_pitch_mode(pcl_args_t *pargs, pcl_state_t *pcs)
 {	int mode = int_arg(pargs);
 	floatp cpi;
@@ -374,7 +374,7 @@ pcl_set_pitch_mode(pcl_args_t *pargs, pcl_state_t *pcs)
 }
 
 /* Initialization */
-private int
+static int
 pcfont_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *mem
@@ -467,7 +467,7 @@ pcfont_do_registration(
    storage type does not exist.  Return the font parameters for the
    requested font number or the font parameters of the first found
    font for the active resource. */
- private int
+static int
 pcl_lookup_pjl_font(pcl_state_t *pcs, int pjl_font_number,
 		    pcl_data_storage_t pcl_data_storage, pl_font_params_t *params)
 {
@@ -604,13 +604,13 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
     }
 }
 
-private bool
+static bool
 purge_all(const gs_memory_t *mem, cached_char * cc, void *dummy)
 {
     return true;
 }
 
-private void
+static void
 pcl_unload_resident_fonts(pcl_state_t *pcs)
 {
     pl_dict_enum_t dictp;
@@ -628,7 +628,7 @@ pcl_unload_resident_fonts(pcl_state_t *pcs)
     }
 }
 
-private void
+static void
 pcfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {	
     if ((type & pcl_reset_initial) != 0) {

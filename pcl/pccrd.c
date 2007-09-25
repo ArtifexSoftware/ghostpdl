@@ -49,9 +49,9 @@ private_st_crd_t();
  *    RenderTable
  *
  */
-private const gs_vector3    dflt_WhitePoint = { 0.95, 1.0, 1.09 };
-private const gs_range3     dflt_RangePQR = {{ {0, 1}, {0, 1}, {0, 1.09} }};
-private const gs_matrix3    dflt_MatrixLMN = { {  3.51, -1.07,  0.06 },
+static const gs_vector3    dflt_WhitePoint = { 0.95, 1.0, 1.09 };
+static const gs_range3     dflt_RangePQR = {{ {0, 1}, {0, 1}, {0, 1.09} }};
+static const gs_matrix3    dflt_MatrixLMN = { {  3.51, -1.07,  0.06 },
                                                { -1.74,  1.98, -0.20 },
                                                { -0.54,  0.04,  1.05 },
                                                false };
@@ -64,7 +64,7 @@ private const gs_matrix3    dflt_MatrixLMN = { {  3.51, -1.07,  0.06 },
  * the mapped value, the location pointed to by pnew_val is used to hold the
  * result and a success (0) or error (< 0) indication is returned.
  */
-  private int
+  static int
 dflt_TransformPQR_proc(
     int                 cmp_indx,
     floatp              val,
@@ -80,7 +80,7 @@ dflt_TransformPQR_proc(
     return 0;
 }
 
-private const gs_cie_transform_proc3    dflt_TransformPQR_proto = {
+static const gs_cie_transform_proc3    dflt_TransformPQR_proto = {
     dflt_TransformPQR_proc,
     NULL,
     { NULL, 0 },
@@ -107,7 +107,7 @@ free_crd(
 /*
  * Allocate a PCL color rendering dictionary structure.
  */
-  private int
+  static int
 alloc_crd(
     pcl_crd_t **    ppcrd,
     gs_memory_t *   pmem
@@ -146,7 +146,7 @@ alloc_crd(
  *
  * Returns 
  */
-  private bool
+  static bool
 read_device_CRD(
     pcl_crd_t *     pcrd,
     pcl_state_t *   pcs

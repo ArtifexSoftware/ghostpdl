@@ -68,7 +68,7 @@ px_operator_proc(pxNewPath);
 
 /* Add lines to the path.  line_proc is gs_lineto or gs_rlineto. */
 /* Attributes: pxaEndPoint, pxaNumberOfPoints, pxaPointType. */
-private int
+static int
 add_lines(px_args_t *par, px_state_t *pxs,
   int (*line_proc)(gs_state *, floatp, floatp))
 {	int code = 0;
@@ -130,7 +130,7 @@ add_lines(px_args_t *par, px_state_t *pxs,
 /* Add Bezier curves to the path.  curve_proc is gs_curveto or gs_rcurveto. */
 /* Attributes: pxaNumberOfPoints, pxaPointType, pxaControlPoint1, */
 /* pxaControlPoint2, pxaEndPoint. */
-private int
+static int
 add_curves(px_args_t *par, px_state_t *pxs,
   int (*curve_proc)(gs_state *, floatp, floatp, floatp, floatp, floatp, floatp))
 {	int code = 0;
@@ -237,7 +237,7 @@ typedef struct px_arc_params_s {
   gs_matrix save_ctm;
   bool reversed;
 } px_arc_params_t;
-private int /* px_arc_type_t or error code */
+static int /* px_arc_type_t or error code */
 setup_arc(px_arc_params_t *params, const px_value_t *pbox,
   const px_value_t *pp3, const px_value_t *pp4, const px_state_t *pxs, bool ellipse)
 {	real x1 = real_value(pbox, 0);
@@ -325,7 +325,7 @@ setup_arc(px_arc_params_t *params, const px_value_t *pbox,
 
 /* per the nonsense in 5.7.3 (The ROP3 Operands) from the pxl
    reference manual the following rops are allowed for stroking. */
-private bool
+static bool
 pxl_allow_rop_for_stroke(gs_state *pgs)
 {
     gs_rop3_t rop = gs_currentrasterop(pgs);
@@ -335,7 +335,7 @@ pxl_allow_rop_for_stroke(gs_state *pgs)
 }
 
 /* Paint the current path, optionally resetting it afterwards. */
-private int
+static int
 paint_path(px_state_t *pxs, bool reset)
 {	gs_state *pgs = pxs->pgs;
 	gx_path *ppath = gx_current_path(pgs);
@@ -477,7 +477,7 @@ paint_path(px_state_t *pxs, bool reset)
 }
 
 /* Paint a shape defined by a one-operator path. */
-private int
+static int
 paint_shape(px_args_t *par, px_state_t *pxs, px_operator_proc((*path_op)))
 {	int code;
 	if ( (code = pxNewPath(par, pxs)) < 0 ||

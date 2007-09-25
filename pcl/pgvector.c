@@ -28,7 +28,7 @@
 /* ------ Internal procedures ------ */
 
 /* Draw an arc (AA, AR). */
- private int
+ static int
 hpgl_arc(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 {	
 	hpgl_real_t x_center, y_center, sweep, x_current, y_current, chord_angle = 5;
@@ -72,7 +72,7 @@ hpgl_arc(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 }
 
 /* Draw a 3-point arc (AT, RT). */
- private int
+ static int
 hpgl_arc_3_point(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 {	
 	hpgl_real_t x_start = pgls->g.pos.x, y_start = pgls->g.pos.y;
@@ -240,7 +240,7 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, hpgl_plot_function_t func)
 }
 
 /* ------ Commands ------ */
- private int
+ static int
 hpgl_draw_arc(hpgl_state_t *pgls)
 {
 	if ( !pgls->g.polygon_mode )
@@ -370,13 +370,13 @@ enum {
 };
 
 /* convert pe fixed to float accounting for fractional bits */
-private inline floatp
+static inline floatp
 pe_fixed2float(int32 x, int32 fbits)
 {
     return ((floatp)x * (1.0 / pow(2, fbits)));
 }
 
-private bool pe_args(const gs_memory_t *mem, hpgl_args_t *, int32 *, int);
+static bool pe_args(const gs_memory_t *mem, hpgl_args_t *, int32 *, int);
 int
 hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
@@ -514,7 +514,7 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 }
 /* Get an encoded value from the input.  Return false if we ran out of */
 /* input data.  Ignore syntax errors (!). */
-private bool
+static bool
 pe_args(const gs_memory_t *mem, hpgl_args_t *pargs, int32 *pvalues, int count)
 {	const byte *p = pargs->source.ptr;
 	const byte *rlimit = pargs->source.limit;
@@ -596,7 +596,7 @@ hpgl_RT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 }
 
 /* Initialization */
-private int
+static int
 pgvector_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *mem

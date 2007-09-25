@@ -44,7 +44,7 @@ pcl_implicit_gl2_finish(pcl_state_t *pcs)
 
 /* side effects resulting from a change in picture frame size or
    anchor point position */
- private int
+ static int
 pcl_set_picture_frame_side_effects(pcl_state_t *pcs)
 {
     hpgl_args_t args;
@@ -164,7 +164,7 @@ pcl_hpgl_plot_vert_size(pcl_args_t *pargs, pcl_state_t *pcs)
 
 /* We redefine this command so we can draw the current GL path */
 /* and, if appropriate, reset the underline bookkeeping. */
-private int /* ESC % <enum> A */ 
+static int /* ESC % <enum> A */ 
 pcl_enter_pcl_mode(pcl_args_t *pargs, pcl_state_t *pcs)
 {	int code;
 
@@ -183,7 +183,7 @@ pcl_enter_pcl_mode(pcl_args_t *pargs, pcl_state_t *pcs)
 }
 
 /* Initialization */
-private int
+static int
 pgframe_do_registration(
    pcl_parser_state_t *pcl_parser_state,
    gs_memory_t *mem

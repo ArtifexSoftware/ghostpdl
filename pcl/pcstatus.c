@@ -34,7 +34,7 @@
 
 /* Internal routines */
 
-private int status_add_symbol_id(ushort *, int, ushort);
+static int status_add_symbol_id(ushort *, int, ushort);
 
 
 /* Read out from the status buffer. */
@@ -54,7 +54,7 @@ pcl_status_read(byte *data, uint max_data, pcl_state_t *pcs)
 }
 
 /* Write a string on a stream. */
-private void
+static void
 stputs(stream *s, const char *str)
 {	uint ignore_count;
 	sputs(s, (const byte *)str, strlen(str), &ignore_count);
@@ -74,7 +74,7 @@ stprintf(stream *s, const char *fmt, ...)
 }
 
 /* Set up a stream for writing into the status buffer. */
-private void
+static void
 status_begin(stream *s, pcl_state_t *pcs)
 {	byte *buffer = pcs->status.buffer;
 
@@ -99,7 +99,7 @@ status_begin(stream *s, pcl_state_t *pcs)
 }
 
 /* Add an ID to a list being written. */
-private void
+static void
 status_put_id(stream *s, const char *title, const char *id)
 {	/* HACK: we know that there's at least one character in the buffer. */
 	if ( *s->cursor.w.ptr == '\n' )
@@ -113,7 +113,7 @@ status_put_id(stream *s, const char *title, const char *id)
 
 
 /* Finish writing an ID list. */
-private void
+static void
 status_end_id_list(stream *s)
 {	/* HACK: we know that there's at least one character in the buffer. */
 	if ( *s->cursor.w.ptr != '\n' )
@@ -121,7 +121,7 @@ status_end_id_list(stream *s)
 }
 
 
-private void
+static void
 status_print_idlist(stream *s, const ushort *idlist, int nid, const char *title)
 {
 	int i;
@@ -140,7 +140,7 @@ status_print_idlist(stream *s, const ushort *idlist, int nid, const char *title)
 
 /* Output a number, at most two decimal places, but trimming trailing 0's
  * and possibly the ".".  Want to match HP's output as closely as we can. */
-private void
+static void
 status_put_floating(stream *s, double v)
 {	/* Figure the format--easier than printing and chipping out the
 	 * chars we need. */
@@ -155,7 +155,7 @@ status_put_floating(stream *s, double v)
 
 /* Print font status information. */
 /* font_set = -1 for font list, 0 or 1 for current font. */
-private int
+static int
 status_put_font(stream *s, pcl_state_t *pcs,
   uint font_id, uint internal_id,
   pl_font_t *plfont, int font_set, bool extended)
@@ -301,7 +301,7 @@ status_put_font(stream *s, pcl_state_t *pcs,
 
 /* Finish writing status. */
 /* If we overflowed the buffer, store an error message. */
-private void
+static void
 status_end(stream *s, pcl_state_t *pcs)
 {	if ( sendwp(s) )
 	  { /* Overrun.  Scan back to the last EOL that leaves us */
@@ -326,7 +326,7 @@ status_end(stream *s, pcl_state_t *pcs)
 /* Status readouts */
 /* storage = 0 means currently selected, otherwise it is a mask. */
 
-private int
+static int
 status_do_fonts(stream *s, pcl_state_t *pcs,
   pcl_data_storage_t storage, bool extended)
 {	gs_const_string key;
@@ -348,13 +348,13 @@ status_do_fonts(stream *s, pcl_state_t *pcs,
 	return 0;
 }
 
-private int
+static int
 status_fonts(stream *s, pcl_state_t *pcs,
   pcl_data_storage_t storage)
 {	return status_do_fonts(s, pcs, storage, false);
 }
 
-private int
+static int
 status_macros(stream *s, pcl_state_t *pcs,
   pcl_data_storage_t storage)
 {	gs_const_string key;
@@ -376,10 +376,10 @@ status_macros(stream *s, pcl_state_t *pcs,
 
 /*
  * Get a list of current provided patterns in the given storage class(es).
- * The pattern storage dictionary is now private, and provides no externally
- * visible enumeratioin; hence this operation is rather crudely implemented.
+ * The pattern storage dictionary is now static, and provides no externally
+ * visible enumeration; hence this operation is rather crudely implemented.
  */
-  private int
+  static int
 status_patterns(
     stream *             s,
     pcl_state_t *        pcs,
@@ -415,7 +415,7 @@ status_patterns(
 }
 
 
-private bool	/* Is this symbol map supported by any relevant font? */
+static bool	/* Is this symbol map supported by any relevant font? */
 status_check_symbol_set(pcl_state_t *pcs, pl_symbol_map_t *mapp,
   pcl_data_storage_t storage)
 {	gs_const_string key;
@@ -435,7 +435,7 @@ status_check_symbol_set(pcl_state_t *pcs, pl_symbol_map_t *mapp,
 	return false;
 }
 
-private int	/* add symbol set ID to list (insertion), return new length */
+static int	/* add symbol set ID to list (insertion), return new length */
 status_add_symbol_id(ushort *idlist, int nid, ushort new_id)
 {	int i;
 	ushort *idp;
@@ -457,7 +457,7 @@ status_add_symbol_id(ushort *idlist, int nid, ushort new_id)
 	return nid + 1;
 }
 
-private int
+static int
 status_symbol_sets(stream *s, pcl_state_t *pcs, pcl_data_storage_t storage)
 {	gs_const_string key;
 	void *value;
@@ -513,13 +513,13 @@ status_symbol_sets(stream *s, pcl_state_t *pcs, pcl_data_storage_t storage)
 	return 0;
 }
 
-private int
+static int
 status_fonts_extended(stream *s, pcl_state_t *pcs,
   pcl_data_storage_t storage)
 {	return status_do_fonts(s, pcs, storage, true);
 }
 
-private int (*const status_write[])(stream *s, pcl_state_t *pcs,
+static int (*const status_write[])(stream *s, pcl_state_t *pcs,
 				 pcl_data_storage_t storage) = {
   status_fonts, status_macros, status_patterns, status_symbol_sets,
   status_fonts_extended
@@ -527,19 +527,19 @@ private int (*const status_write[])(stream *s, pcl_state_t *pcs,
 
 /* Commands */
 
-private int /* ESC * s <enum> T */
+static int /* ESC * s <enum> T */
 pcl_set_readback_loc_type(pcl_args_t *pargs, pcl_state_t *pcs)
 {	pcs->location_type = uint_arg(pargs);
 	return 0;
 }
 
-private int /* ESC * s <enum> U */
+static int /* ESC * s <enum> U */
 pcl_set_readback_loc_unit(pcl_args_t *pargs, pcl_state_t *pcs)
 {	pcs->location_unit = uint_arg(pargs);
 	return 0;
 }
 
-private int /* ESC * s <enum> I */
+static int /* ESC * s <enum> I */
 pcl_inquire_readback_entity(pcl_args_t *pargs, pcl_state_t *pcs)
 {	uint i = uint_arg(pargs);
 	int unit = pcs->location_unit;
@@ -626,7 +626,7 @@ pcl_inquire_readback_entity(pcl_args_t *pargs, pcl_state_t *pcs)
 	return 0;
 }
 
-private int /* ESC * s 1 M */
+static int /* ESC * s 1 M */
 pcl_free_space(pcl_args_t *pargs, pcl_state_t *pcs)
 {	stream st;
 
@@ -654,7 +654,7 @@ pcl_free_space(pcl_args_t *pargs, pcl_state_t *pcs)
 	return 0;
 }
 
-private int /* ESC & r <bool> F */
+static int /* ESC & r <bool> F */
 pcl_flush_all_pages(pcl_args_t *pargs, pcl_state_t *pcs)
 {	switch ( uint_arg(pargs) )
 	  {
@@ -676,7 +676,7 @@ pcl_flush_all_pages(pcl_args_t *pargs, pcl_state_t *pcs)
 	  }
 }
 
-private int /* ESC * s <int_id> X */
+static int /* ESC * s <int_id> X */
 pcl_echo(pcl_args_t *pargs, pcl_state_t *pcs)
 {	stream st;
 
@@ -687,7 +687,7 @@ pcl_echo(pcl_args_t *pargs, pcl_state_t *pcs)
 }
 
 /* Initialization */
-private int
+static int
 pcstatus_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *mem
@@ -717,7 +717,7 @@ pcstatus_do_registration(
 				  pcl_echo, pca_neg_ok|pca_big_error)
 	return 0;
 }
-private void
+static void
 pcstatus_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer) )
 	  { if ( type & pcl_reset_initial )

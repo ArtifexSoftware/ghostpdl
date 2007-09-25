@@ -31,7 +31,7 @@
 /*
  * GC routines
  */
-private
+static
 ENUM_PTRS_BEGIN(ht_dither_enum_ptrs)
 
         return 0;
@@ -49,7 +49,7 @@ ENUM_PTRS_BEGIN(ht_dither_enum_ptrs)
         }
 ENUM_PTRS_END
 
-private
+static
 RELOC_PTRS_BEGIN(ht_dither_reloc_ptrs)
     pcl_ht_builtin_dither_t *   pdither = (pcl_ht_builtin_dither_t *)vptr;
 
@@ -62,7 +62,7 @@ RELOC_PTRS_END
 private_st_ht_builtin_dither_t();
 
 
-private
+static
 ENUM_PTRS_BEGIN(ht_enum_ptrs)
         return 0;
       ENUM_PTR(0, pcl_ht_t, client_data[0].plktbl);
@@ -76,7 +76,7 @@ ENUM_PTRS_BEGIN(ht_enum_ptrs)
       ENUM_PTR(8, pcl_ht_t, pim_ht);
 ENUM_PTRS_END
 
-private
+static
 RELOC_PTRS_BEGIN(ht_reloc_ptrs)
     RELOC_PTR(pcl_ht_t, client_data[0].plktbl);
     RELOC_PTR(pcl_ht_t, client_data[1].plktbl);
@@ -96,7 +96,7 @@ private_st_ht_t();
  * matrices are fixed so as to give predictable results when used in combination
  * with logical operations (raster-ops).
  */
-private const byte  ordered_dither_data[16 * 16] = {
+static const byte  ordered_dither_data[16 * 16] = {
   142, 46, 174, 6, 134, 38, 166, 12, 140, 44, 172, 4, 132, 36, 164, 14, 
   78, 238, 110, 198, 70, 230, 102, 204, 76, 236, 108, 196, 68, 228, 100, 206, 
   190, 30, 158, 54, 182, 22, 150, 60, 188, 28, 156, 52, 180, 20, 148, 62, 
@@ -115,7 +115,7 @@ private const byte  ordered_dither_data[16 * 16] = {
   114, 210, 82, 250, 122, 218, 90, 240, 112, 208, 80, 248, 120, 216, 88, 242
 };
 
-private const byte  clustered_dither_data[16 * 16] = {
+static const byte  clustered_dither_data[16 * 16] = {
   228, 164, 40, 8, 24, 152, 199, 247, 231, 167, 43, 11, 27, 155, 196, 244, 
   116, 52, 96, 176, 80, 64, 135, 215, 119, 55, 99, 179, 83, 67, 132, 212, 
   20, 148, 192, 240, 224, 160, 39, 7, 23, 151, 195, 243, 227, 163, 36, 4, 
@@ -134,7 +134,7 @@ private const byte  clustered_dither_data[16 * 16] = {
   84, 68, 136, 216, 120, 56, 103, 183, 87, 71, 139, 219, 123, 59, 100, 180
 };
 
-private const byte  noise_dither_data[128 * 128] = {
+static const byte  noise_dither_data[128 * 128] = {
   112, 122, 183, 239, 27, 78, 115, 52, 204, 212, 6, 114, 72, 134, 205, 61,
   1, 38, 91, 107, 30, 206, 115, 168, 184, 7, 148, 32, 16, 195, 103, 191,
   15, 121, 109, 64, 246, 184, 48, 208, 245, 220, 34, 187, 216, 30, 35, 148,
@@ -1161,19 +1161,19 @@ private const byte  noise_dither_data[128 * 128] = {
   209, 147, 171, 82, 181, 119, 239, 83, 75, 139, 10, 152, 39, 15, 179, 157
 };
 
-private const pcl_ht_builtin_threshold_t    ordered_dither_thresh = {
+static const pcl_ht_builtin_threshold_t    ordered_dither_thresh = {
     1,          /* all planes the same */
     16, 16,     /* 16 x 16 pixels */
     ordered_dither_data
 };
 
-private const pcl_ht_builtin_threshold_t    clustered_dither_thresh = {
+static const pcl_ht_builtin_threshold_t    clustered_dither_thresh = {
     1,          /* all planes the same */
     16, 16,     /* 16 x 16 pixels */
     clustered_dither_data
 };
 
-private const pcl_ht_builtin_threshold_t    noise_dither_thresh = {
+static const pcl_ht_builtin_threshold_t    noise_dither_thresh = {
 
     1,          /* all planes the same */
     128, 128,   /* 128 x 128 pixels */
@@ -1202,7 +1202,7 @@ static const bool ENABLE_AUTO_GRAY_RENDER_METHODS = false;
  * Update built-in rendering information. Attempts to changed fixed rendering
  * infomration are ignored.
  */
-private void
+static void
 pcl_ht_update_rendering_info(
     pcl_state_t *                     pcs,
     int                               method,
@@ -1220,7 +1220,7 @@ pcl_ht_update_rendering_info(
 /*
  * Read dither information from a parameter dictionary held by the device.
  */
-private void
+static void
 read_dither(
     pcl_state_t *               pcs,
     int                         method,
@@ -1298,7 +1298,7 @@ read_dither(
  * Modify the rendering remap table. Note that the change will not take
  * effect until the next time the print mode is reset.
  */
-private void
+static void
 pcl_ht_update_rendering_remap(
     pcl_state_t *   pcs,
     const byte *    map
@@ -1310,7 +1310,7 @@ pcl_ht_update_rendering_remap(
 /*
  * Read a re-mapping array for rendering methods.
  */
-private void
+static void
 read_remap_array(
     pcl_state_t *pcs,
     gs_param_list * plist,
@@ -1439,7 +1439,7 @@ pcl_ht_init_render_methods(
 	 * maps all methods to ones that are supported in the default
 	 * system.  
 	 */
-	private const byte  rendering_remap[20] = {
+	static const byte  rendering_remap[20] = {
 	    0,  1,  2,  3,  /*  0 -  3 */
 	    3,  5,  5,  7,  /*  4 -  7 */
 	    8,  9, 10, 11,  /*  8 - 11 */
@@ -1520,7 +1520,7 @@ pcl_ht_set_print_mode(
  * Note that freeing of the halftone strings is legitimate, as graphic library
  * halftones are never shared among PCL halftone objects.
  */
-private void
+static void
 free_gs_hts(
     pcl_ht_t *  pht
 )
@@ -1557,7 +1557,7 @@ free_gs_hts(
  * exist only because they are required by the graphic library halftone
  * structures.
  */
-private void
+static void
 free_pcl_ht(
     gs_memory_t *   pmem,
     void *          pvht,
@@ -1584,7 +1584,7 @@ free_pcl_ht(
  *
  * Returns 0 on success, < 0 in event of an error.
  */
-private int
+static int
 alloc_pcl_ht(
     pcl_ht_t **   ppht,
     gs_memory_t * pmem
@@ -1640,7 +1640,7 @@ alloc_pcl_ht(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-private int
+static int
 unshare_pcl_ht(
     pcl_ht_t ** ppht
 )
@@ -1933,7 +1933,7 @@ pcl_ht_build_default_ht(
 }
 
 /* Define a transfer function without gamma correction. */
-private float
+static float
 identity_transfer(floatp tint, const gx_transfer_map *ignore_map)
 {	return tint;
 }
@@ -1946,7 +1946,7 @@ identity_transfer(floatp tint, const gx_transfer_map *ignore_map)
  * not be used with device-independent color spaces. Also considers whether
  * or not the rendering is processing PCL rasters (the for_image operand).
  */
-private const pcl_rend_info_t *
+static const pcl_rend_info_t *
 get_rendering_info(
     pcl_state_t *       pcs,
     uint                sel_method,

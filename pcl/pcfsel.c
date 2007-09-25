@@ -61,7 +61,7 @@ static const char * const score_name[] = {
     "fontnumber"
 };
 
-private void
+static void
 dprint_cc(const byte *pcc)
 {	dprintf8("cc=%02x %02x %02x %02x %02x %02x %02x %02x", pcc[0],
 		 pcc[1], pcc[2], pcc[3], pcc[4], pcc[5], pcc[6], pcc[7]);
@@ -77,7 +77,7 @@ dprint_font_params_t(const pl_font_params_t *pfp)
 
 #include "plftable.h"
 
-private void
+static void
 dprint_font_name(const pl_font_t *pfont) 
 {
     int i;
@@ -102,7 +102,7 @@ dprint_font_name(const pl_font_t *pfont)
     }
 }
 
-private void
+static void
 dprint_font_t(const pl_font_t *pfont)
 {	
     dprint_font_name(pfont);
@@ -113,7 +113,7 @@ dprint_font_t(const pl_font_t *pfont)
     dprint_font_params_t(&pfont->params);
 }
 
-private void
+static void
 dprintf_font_scoring(const char *type, const pl_font_t *pfont, match_score_t score)
 {
     int i;
@@ -133,7 +133,7 @@ dprintf_font_scoring(const char *type, const pl_font_t *pfont, match_score_t sco
    the requested map is not available or to the requested symbol set
    if it is available. 2 is returned for no matching symbol set, 1 for
    mismatched vocabulary and 0 if the sets match. */
-private int
+static int
 check_support(const pcl_state_t *pcs, uint symbol_set, const pl_font_t *fp,
     pl_symbol_map_t **mapp)
 {
@@ -164,7 +164,7 @@ check_support(const pcl_state_t *pcs, uint symbol_set, const pl_font_t *fp,
 /* a font may be scalable but we want to treat it a bitmap for the
    purpose of selection.  Right now lineprinter is the only example of
    this */
-private bool
+static bool
 font_is_scalable_selection_wise(const pl_font_t *fp)
 {
     if (fp->params.typeface_family == 0)
@@ -176,7 +176,7 @@ font_is_scalable_selection_wise(const pl_font_t *fp)
     
 /* Compute a font's score against selection parameters.  TRM 8-27.
  * Also set *mapp to the symbol map to be used if this font wins. */
-private void
+static void
 score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
     const pl_font_t *fp, pl_symbol_map_t **mapp, match_score_t score)
 {

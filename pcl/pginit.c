@@ -54,7 +54,7 @@ hpgl_default_font_params(
  * do not make sense if the horizontal picture frame has never been
  * set.
  */
-  private void
+  static void
 hpgl_default_coordinate_system(
     hpgl_state_t *  pcs
 )
@@ -187,7 +187,7 @@ hpgl_do_reset(
 
 /* ------ Copy the HP-GL/2 state for macro call/overlay/exit. */
 
-  private int
+  static int
 hpgl_do_copy(
     pcl_state_t *           psaved,
     const pcl_state_t *     pcs,

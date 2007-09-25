@@ -4,12 +4,12 @@
  * Some extra TTF parsing magic that isn't covered by the graphics library.
  */
 
-private inline int u16(byte *p)
+static inline int u16(byte *p)
 {
         return (p[0] << 8) | p[1];
 }
 
-private inline int u32(byte *p)
+static inline int u32(byte *p)
 {
         return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
 }
@@ -63,7 +63,7 @@ static const char *pl_mac_names[258] = {
  * truetype (loca/glyf) flavored opentypes.
  */
 
-private gs_glyph
+static gs_glyph
 xps_true_callback_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t spc)
 {
     xps_font_t *font = pfont->client_data;
@@ -74,13 +74,13 @@ xps_true_callback_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t spc)
     return value;
 }
 
-private gs_char
+static gs_char
 xps_true_callback_decode_glyph(gs_font *p42, gs_glyph glyph)
 {
     return GS_NO_CHAR;
 }
 
-private int
+static int
 xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *pstr)
 {
     /* This funciton is copied verbatim from plfont.c */
@@ -203,7 +203,7 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
     }
 }
 
-private int
+static int
 xps_true_callback_string_proc(gs_font_type42 *p42, ulong offset, uint length, const byte **pdata)
 {
     /* NB bounds check offset + length - use gs_object_size for memory buffers - if file read should fail */
@@ -212,7 +212,7 @@ xps_true_callback_string_proc(gs_font_type42 *p42, ulong offset, uint length, co
     return 0;
 }
 
-private int
+static int
 xps_true_callback_build_char(gs_text_enum_t *ptextenum, gs_state *pgs, gs_font *pfont,
 	gs_char chr, gs_glyph glyph)
 {

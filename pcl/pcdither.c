@@ -40,7 +40,7 @@ pcl_udither_get_threshold(
 /*
  * Free a dither matrix structure.
  */
-  private void
+  static void
 free_dither_matrix(
     gs_memory_t *       pmem,
     void *              pvdither,
@@ -59,7 +59,7 @@ free_dither_matrix(
  *
  * Download dither matrix.
  */
-  private int
+  static int
 download_dither_matrix(
     pcl_args_t *            pargs,
     pcl_state_t *           pcs
@@ -140,7 +140,7 @@ download_dither_matrix(
  * There is no reset or copy procedure for this module, as both functions are
  * handled at the palette level.
  */
-  private int
+  static int
 udither_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *    pmem

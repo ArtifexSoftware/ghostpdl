@@ -38,7 +38,7 @@
 /* with the elements in native byte order. */
 /* We don't deal with mappings: we just widen 8-bit to 16-bit characters */
 /* and hope for the best.... */
-private int
+static int
 px_widen_font_name(px_value_t *pfnv, px_state_t *pxs)
 {	uint type = pfnv->type;
 
@@ -81,7 +81,7 @@ px_widen_font_name(px_value_t *pfnv, px_state_t *pxs)
  * saves ram/rom not storing 10 different versions.
  */
 
-private int
+static int
 px_lineprinter_font_alias_name(px_value_t *pfnv, px_state_t *pxs)
 {	
     /* NB:coupling: depends on this being the first LinePrinter font in plftable.c */

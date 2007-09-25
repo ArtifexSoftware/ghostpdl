@@ -17,7 +17,7 @@
 #include "pcommand.h"
 #include "pcstate.h"
 
-private int /* ESC & s <bool> C */
+static int /* ESC & s <bool> C */
 pcl_end_of_line_wrap(pcl_args_t *pargs, pcl_state_t *pcs)
 {	uint i = uint_arg(pargs);
 
@@ -27,7 +27,7 @@ pcl_end_of_line_wrap(pcl_args_t *pargs, pcl_state_t *pcs)
 	return 0;
 }
 
-private int /* ESC Y */
+static int /* ESC Y */
 pcl_enable_display_functions(pcl_args_t *pargs, pcl_state_t *pcs)
 {	pcs->display_functions = true;
 	return 0;
@@ -41,7 +41,7 @@ pcl_disable_display_functions(pcl_args_t *pargs, pcl_state_t *pcs)
 }
 
 /* Initialization */
-private int
+static int
 pcmisc_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *mem)
@@ -55,7 +55,7 @@ pcmisc_do_registration(
 			   pcl_disable_display_functions, pca_in_macro)
 	return 0;
 }
-private void
+static void
 pcmisc_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) )
 	  { pcs->end_of_line_wrap = false;

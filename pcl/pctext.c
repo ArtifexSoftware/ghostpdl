@@ -38,7 +38,7 @@
 #include "gxstate.h"
 
 /* Define the text parsing methods. */
-private const pcl_text_parsing_method_t pcl_tpm_0 = pcl_tpm_0_data,
+static const pcl_text_parsing_method_t pcl_tpm_0 = pcl_tpm_0_data,
                                         pcl_tpm_21 = pcl_tpm_21_data,
                                         pcl_tpm_31 = pcl_tpm_31_data,
                                         pcl_tpm_38 = pcl_tpm_38_data;
@@ -50,7 +50,7 @@ private const pcl_text_parsing_method_t pcl_tpm_0 = pcl_tpm_0_data,
 /*
  * Install a font in the graphic state.
  */
-  private void
+  static void
 set_gs_font(
     pcl_state_t *   pcs
 )
@@ -71,7 +71,7 @@ set_gs_font(
 /*
  * Check if a character code is considered "printable" by given symbol set.
  */
-  private bool
+  static bool
 is_printable(
     const pcl_state_t * pcs,
     gs_char                 chr,
@@ -142,7 +142,7 @@ is_printable(
  * Returns 0 on success, 2 if the string is exhausted. Note that it is not an
  * error for the string to end in the middle of a 2-byte sequence.
  */
-  private int
+  static int
 get_next_char(
     pcl_state_t *   pcs,
     const byte **   ppb,
@@ -206,7 +206,7 @@ get_next_char(
  * Draw the foreground of a character. For transparent text this is the only
  * part that must be drawn.
  */
-private int
+static int
 show_char_foreground(
     const pcl_state_t * pcs,
     const gs_char *        pbuff
@@ -267,7 +267,7 @@ show_char_foreground(
  * the pattern affects only for the foreground pixels of the source; the back-
  * ground must be rendered as a solid, opaque white.
  */
-  private int
+  static int
 show_char_background(
     pcl_state_t *       pcs,
     const gs_char *        pbuff
@@ -357,7 +357,7 @@ show_char_background(
 /*
  * get the advance width.
  */
- private floatp
+ static floatp
 pcl_get_width(pcl_state_t *pcs, gs_point *advance_vector, const gs_point *pscale, gs_char chr, bool is_space)
 {
     pcl_font_selection_t *  pfp = &(pcs->font_selection[pcs->font_selected]);
@@ -441,7 +441,7 @@ pcl_get_width(pcl_state_t *pcs, gs_point *advance_vector, const gs_point *pscale
  * (transparent) text command: ESC & p <nbytes> X. This distinction is
  * important for characters that are not mapped by the current symbol set.  */
 
-  private int
+  static int
 pcl_show_chars_slow(
     pcl_state_t *           pcs,
     const gs_point *        pscale,
@@ -780,7 +780,7 @@ pcl_do_underline(
  *
  * Unparsed text command
  */
-  private int
+  static int
 pcl_transparent_mode(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -797,7 +797,7 @@ pcl_transparent_mode(
  * NB: If underlining is already enabled, this command is ignored. Underlining
  *     must be specifically disabled to switch from fixed to floating.
  */
-  private int
+  static int
 pcl_enable_underline(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -828,7 +828,7 @@ pcl_enable_underline(
  *
  * Disable underlining
  */
-  private int
+  static int
 pcl_disable_underline(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -851,7 +851,7 @@ pcl_disable_underline(
  *
  * Select the text parsing method.
  */
-  private int
+  static int
 pcl_text_parsing_method(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -889,7 +889,7 @@ pcl_text_parsing_method(
  *
  * Set the text path direction - not yet implemented.
  */
-  private int
+  static int
 pcl_text_path_direction(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -913,7 +913,7 @@ pcl_text_path_direction(
 }
 
 /* ------ Initialization ------ */
-  private int
+  static int
 pctext_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   mem
@@ -965,7 +965,7 @@ pctext_do_registration(
     return 0;
 }
 
-  private void
+  static void
 pctext_do_reset(
     pcl_state_t *       pcs,
     pcl_reset_type_t    type

@@ -53,7 +53,7 @@ px_free_pattern(gs_memory_t *mem, void *vptr, client_name_t cname)
 	rc_decrement(pattern, cname);
 }
 /* Define the real freeing procedure for patterns. */
-private void
+static void
 rc_free_px_pattern(gs_memory_t *mem, void *vptr, client_name_t cname)
 {	px_pattern_t *pattern = vptr;
 
@@ -65,7 +65,7 @@ rc_free_px_pattern(gs_memory_t *mem, void *vptr, client_name_t cname)
 /* Define the purging procedure for the Pattern cache. */
 /* The proc_data points to a pxePatternPersistence_t that specifies */
 /* the maximum persistence level to purge. */
-private bool
+static bool
 px_pattern_purge_proc(gx_color_tile *ctile, void *proc_data)
 {	return ctile->uid.id % pxePatternPersistence_next <=
 	  *(pxePatternPersistence_t *)proc_data;
@@ -130,7 +130,7 @@ gs_private_st_suffix_add2(st_px_image_enum, px_image_enum_t, "px_image_enum_t",
 /* Extract the parameters for reading a bitmap image or raster pattern. */
 /* Attributes: pxaColorMapping, pxaColorDepth, pxaSourceWidth, */
 /* pxaSourceHeight, pxaDestinationSize. */
-private int
+static int
 begin_bitmap(px_bitmap_params_t *params, px_bitmap_enum_t *benum,
   const px_args_t *par, const px_state_t *pxs)
 {	px_gstate_t *pxgs = pxs->pxgs;
@@ -160,7 +160,7 @@ begin_bitmap(px_bitmap_params_t *params, px_bitmap_enum_t *benum,
 	return 0;
 }
 
-private int
+static int
 stream_error(stream_state * st, const char *str)
 {
     dprintf1("pxl stream error %s\n", str );
@@ -168,7 +168,7 @@ stream_error(stream_state * st, const char *str)
 }
 
 
-private int
+static int
 read_jpeg_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 {
     uint data_per_row = benum->data_per_row; /* jpeg doesn't pad */
@@ -225,7 +225,7 @@ read_jpeg_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
     return (pos_in_row < data_per_row ? pxNeedData : 1);
 }
 
-private int
+static int
 read_uncompressed_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 {
     int code;
@@ -265,7 +265,7 @@ read_uncompressed_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *
     return code;
 }
 
-private int
+static int
 read_rle_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 {
     stream_RLD_state *ss = (&benum->rld_stream_state);
@@ -375,7 +375,7 @@ read_rle_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
  *  1 == end of row
  *  eNeedData == on need more input
  */
-private int
+static int
 read_deltarow_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 {
   deltarow_state_t *deltarow = &benum->deltarow_state;
@@ -510,7 +510,7 @@ read_deltarow_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
  * scan line is available).
  * Attributes: pxaStartLine (ignored), pxaBlockHeight, pxaCompressMode.
  */
-private int
+static int
 read_bitmap(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 {	
     benum->compress_type = par->pv[2]->value.i;
@@ -700,7 +700,7 @@ pxBeginRastPattern(px_args_t *par, px_state_t *pxs)
 	uint psize;
 	byte *pdata;
 	int code = begin_bitmap(&params, &benum, par, pxs);
-        private const gs_memory_struct_type_t st_px_pattern = 
+        static const gs_memory_struct_type_t st_px_pattern = 
             {sizeof(px_pattern_t), "", 0, 0, 0, 0, 0};
 
 	if ( code < 0 )

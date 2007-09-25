@@ -251,7 +251,7 @@ hpgl_LA(
 
 /* constant data for default pattern percentages,  */
 
-private const hpgl_line_type_t  hpgl_fixed_pats[8] = {
+static const hpgl_line_type_t  hpgl_fixed_pats[8] = {
     { 2, { 0.0, 1.0 } },
     { 2, { 0.5, 0.5 } },
     { 2, { 0.7, 0.3 } },
@@ -262,7 +262,7 @@ private const hpgl_line_type_t  hpgl_fixed_pats[8] = {
     { 8, { 0.5, 0.1, 0.0, 0.1, 0.1, 0.1, 0.0, 0.1 } }
 };
 
-private const hpgl_line_type_t  hpgl_adaptive_pats[8] = {
+static const hpgl_line_type_t  hpgl_adaptive_pats[8] = {
     { 3, { 0.0, 1.0, 0.0 } },
     { 3, { 0.25, 0.5, 0.25 } },
     { 3, { 0.35, 0.3, 0.35 } },
@@ -875,7 +875,7 @@ hpgl_WU(
 /*
  * Initialization
  */
-  private int
+  static int
 pglfill_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   mem

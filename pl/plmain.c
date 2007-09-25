@@ -68,7 +68,7 @@ extern pl_interp_implementation_t pjl_implementation;
 extern pl_interp_implementation_t const * const pdl_implementation[];	/* zero-terminated list */
 
 /* Define the usage message. */
-private const char *pl_usage = "\
+static const char *pl_usage = "\
 Usage: %s [option* file]+...\n\
 Options: -dNOPAUSE -E[#] -h -C -L<PCL|PCLXL> -n -K<maxK> -P<PCL5C|PCL5E|RTL> -Z...\n\
          -sDEVICE=<dev> -g<W>x<H> -r<X>[x<Y>] -d{First|Last}Page=<#>\n\
@@ -110,14 +110,14 @@ pl_main_universe_select(
 	gs_param_list                    *params                 /* device params to use */
 );
 
-private pl_interp_implementation_t const *
+static pl_interp_implementation_t const *
 pl_auto_sense(
    const char*                      name,         /* stream  */
    int                              buffer_length, /* length of stream */
    pl_interp_implementation_t const * const impl_array[] /* implementations to choose from */
 );
 
-private pl_interp_implementation_t const *
+static pl_interp_implementation_t const *
 pl_select_implementation(
   pl_interp_instance_t *pjl_instance,
   pl_main_instance_t *pmi, 
@@ -126,7 +126,7 @@ pl_select_implementation(
 
 
 /* Process the options on the command line. */
-private FILE *pl_main_arg_fopen(const char *fname, void *ignore_data);
+static FILE *pl_main_arg_fopen(const char *fname, void *ignore_data);
 
 /* Initialize the instance parameters. */
 void pl_main_init_instance(pl_main_instance_t *pmi, gs_memory_t *memory);
@@ -144,7 +144,7 @@ int pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 pl_interp_implementation_t const *
 pl_auto_sense(const char* buf, int buf_len, pl_interp_implementation_t const * const impl_array[]);
 
-private pl_interp_implementation_t const *
+static pl_interp_implementation_t const *
 pl_pjl_select(pl_interp_instance_t *pjl_instance,
 	      pl_interp_implementation_t const * const impl_array[]);
 
@@ -175,7 +175,7 @@ void pl_main_cursor_close(pl_top_cursor_t *cursor);
 
 
 /* return index in gs device list -1 if not found */
-private inline int
+static inline int
 get_device_index(const gs_memory_t *mem, const char *value)
 {
     const gx_device *const *dev_list;
@@ -192,7 +192,7 @@ get_device_index(const gs_memory_t *mem, const char *value)
     return di;
 }
 
-private int
+static int
 close_job(pl_main_universe_t *universe, pl_main_instance_t *pti)
 {	
     if ( pti->print_page_count )
@@ -733,7 +733,7 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
 /* -------- Command-line processing ------ */
 
 /* Create a default device if not already defined. */
-private int
+static int
 pl_top_create_device(pl_main_instance_t *pti, int index, bool is_default)
 {	
     int code = 0;
@@ -768,7 +768,7 @@ pl_top_create_device(pl_main_instance_t *pti, int index, bool is_default)
 
 
 /* Process the options on the command line. */
-private FILE *
+static FILE *
 pl_main_arg_fopen(const char *fname, void *ignore_data)
 {	return fopen(fname, "r");
 }
@@ -1032,7 +1032,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 
 /* either the (1) implementation has been selected on the command line or
    (2) it has been selected in PJL or (3) we need to auto sense. */
-private pl_interp_implementation_t const *
+static pl_interp_implementation_t const *
 pl_select_implementation(pl_interp_instance_t *pjl_instance, pl_main_instance_t *pmi, pl_top_cursor_t r)
 {
     /* Determine language of file to interpret. We're making the incorrect */
@@ -1049,7 +1049,7 @@ pl_select_implementation(pl_interp_instance_t *pjl_instance, pl_main_instance_t 
 }
 
 /* Find default language implementation */
-private pl_interp_implementation_t const *
+static pl_interp_implementation_t const *
 pl_pjl_select(pl_interp_instance_t *pjl_instance,
 	      pl_interp_implementation_t const * const impl_array[] /* implementations to choose from */
 )
@@ -1066,7 +1066,7 @@ pl_pjl_select(pl_interp_instance_t *pjl_instance,
 }
 
 /* Find default language implementation */
-private pl_interp_implementation_t const *
+static pl_interp_implementation_t const *
 pl_auto_sense(
    const char*                      name,         /* stream  */
    int                              buffer_length, /* length of stream */

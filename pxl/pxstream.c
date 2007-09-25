@@ -24,7 +24,7 @@
 /* ---------------- Internal procedures ---------------- */
 
 /* Tag a stream name with its character width. */
-private int
+static int
 tag_stream_name(const px_value_t *psnv, gs_string *pstr,
   gs_memory_t *mem, client_name_t cname)
 {       uint size = array_value_size(psnv);

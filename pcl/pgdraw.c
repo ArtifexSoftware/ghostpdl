@@ -45,7 +45,7 @@ extern  int     abs( int );
 #define round(x)    (((x) < 0.0) ? (ceil ((x) - 0.5)) : (floor ((x) + 0.5)))
 
 
-private inline gs_point
+static inline gs_point
 hpgl_picture_frame_scale(hpgl_state_t *pgls)
 {
     gs_point scale;
@@ -70,7 +70,7 @@ hpgl_picture_frame_scale(hpgl_state_t *pgls)
     return scale;
 }
  
-private int
+static int
 hpgl_set_picture_frame_scaling(hpgl_state_t *pgls)
 {
     if ( pgls->g.scaling_type != hpgl_scaling_point_factor ) {
@@ -246,7 +246,7 @@ hpgl_set_ctm(hpgl_state_t *pgls)
    isotropic scaling we need 4% of the distance of the plotter unit
    equivalent of the scaling SC coordinates xmin, xmax, ymin, and
    ymax.. */
- private floatp
+static floatp
 hpgl_get_line_pattern_length(hpgl_state_t *pgls)
 {
     /* dispense with the unusual "isotropic relative" case first.  The
@@ -286,7 +286,7 @@ hpgl_get_line_pattern_length(hpgl_state_t *pgls)
 	    (mm_2_plu(pgls->g.line.current.pattern_length)));
 }
 
- private int
+static int
 hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
 {
 	int entry = abs(pgls->g.line.current.type);
@@ -377,7 +377,7 @@ hpgl_get_selected_pen(hpgl_state_t *pgls)
 /*
  * set up joins, caps, miter limit, and line width
  */
- private int
+static int
 hpgl_set_graphics_line_attribute_state(
     hpgl_state_t *          pgls,
     hpgl_rendering_mode_t   render_mode
@@ -460,7 +460,7 @@ vector:
  * A bounding box for the current polygon -- used for HPGL/2 vector
  * fills.
  */
- private int
+static int
 hpgl_polyfill_bbox(
     hpgl_state_t *  pgls,
     gs_rect *       bbox
@@ -551,7 +551,7 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 }
 
 /* Plot one vector for vector fill all these use absolute coordinates. */
-  private int
+static int
 hpgl_draw_vector_absolute(
     hpgl_state_t *          pgls,
     hpgl_real_t             x0,
@@ -579,7 +579,7 @@ hpgl_draw_vector_absolute(
     return 0;
 }
 
- private int
+static int
 hpgl_get_adjusted_corner(
     hpgl_real_t x_fill_increment,
     hpgl_real_t y_fill_increment,
@@ -604,7 +604,7 @@ hpgl_get_adjusted_corner(
     return 0;
 }
 
- private void
+static void
 hpgl_alternate_line_pattern_offset(hpgl_state_t *pgls, uint lines_filled)
 {
     if ( lines_filled & 1 )
@@ -625,7 +625,7 @@ hpgl_alternate_line_pattern_offset(hpgl_state_t *pgls, uint lines_filled)
  * +Y.  Not quite right - anchor corner not yet supported.
  * pgls->g.anchor_corner needs to be used to set dash offsets
  */
- private int
+static int
 hpgl_polyfill(
     hpgl_state_t *              pgls,
      hpgl_rendering_mode_t      render_mode
@@ -839,7 +839,7 @@ hpgl_polyfill(
    be either a transparent or white.  In the former case we don't have
    to do anything.  We expect the fill area of the object to already
    be defined in the graphics state. */
- private int
+static int
 hpgl_fill_polyfill_background(hpgl_state_t *pgls)
 {
     /* conditionally mark page as dirty */
@@ -857,7 +857,7 @@ hpgl_fill_polyfill_background(hpgl_state_t *pgls)
     return 0;
 }
     
- private int
+static int
 hpgl_polyfill_using_current_line_type(
     hpgl_state_t *        pgls,
     hpgl_rendering_mode_t render_mode
@@ -880,7 +880,7 @@ hpgl_polyfill_using_current_line_type(
     return 0;
 }
 
-private gs_rop3_t
+static gs_rop3_t
 hpgl_rop(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
     gs_rop3_t rop = pgls->logical_op;
@@ -1059,7 +1059,7 @@ fill:
     return code;
 }
 
- private int
+static int
 hpgl_set_drawing_state(
     hpgl_state_t *           pgls,
     hpgl_rendering_mode_t    render_mode
@@ -1197,7 +1197,7 @@ hpgl_add_pcl_point_to_path(hpgl_state_t *pgls, const gs_point *pcl_pt)
 	return 0;
 }
 
-private floatp 
+static floatp 
 compute_chord_angle(floatp chord_angle)
 {
     floatp ca = fmod(chord_angle, 360);

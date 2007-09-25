@@ -23,7 +23,7 @@
 /* ---------------- Command definition ---------------- */
 
 /* Register a command.  Return true if this is a redefinition. */
-private bool
+static bool
 hpgl_register_command(hpgl_parser_state_t *pgl_parser_state,
 		      byte *pindex, 
 		      const hpgl_command_definition_t *pcmd)
@@ -197,7 +197,7 @@ x:	pr->ptr = p;
  * argument, a pointer to the value if an argument is present, or longjmp if
  * need more data.  Note that no errors are possible.
  */
-private const hpgl_value_t *
+static const hpgl_value_t *
 hpgl_arg(const gs_memory_t *mem, 
 	 hpgl_parser_state_t *pst)
 {	const byte *p;

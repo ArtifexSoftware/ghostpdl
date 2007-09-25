@@ -297,7 +297,7 @@ hpgl_IN(
 
 /* derive the current picture frame coordinates */
 
- private int
+static int
 hpgl_picture_frame_coords(hpgl_state_t *pgls, gs_int_rect *gl2_win)
 {
 	gs_rect dev_win; /* device window */
@@ -641,7 +641,7 @@ pxy:		scale_params.pmin.x = xy[0];
 
 /* BP - Begin Plot 
 */
-private int
+static int
 hpgl_BP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
     hpgl_args_t args;
@@ -693,7 +693,7 @@ hpgl_BP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 }
 
 /* Initialization */
-private int
+static int
 pgconfig_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *mem

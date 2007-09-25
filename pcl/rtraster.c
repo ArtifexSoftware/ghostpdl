@@ -101,7 +101,7 @@ gs_private_st_ptrs2( st_raster_t,
                      );
 
 /* forward declaration */
-private int     process_zero_rows( gs_state * pgs, pcl_raster_t * prast, int nrows );
+static int     process_zero_rows( gs_state * pgs, pcl_raster_t * prast, int nrows );
 
 
 /*
@@ -110,7 +110,7 @@ private int     process_zero_rows( gs_state * pgs, pcl_raster_t * prast, int nro
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+  static int
 clear_cons_buff(
     pcl_raster_t *  prast
 )
@@ -137,7 +137,7 @@ clear_cons_buff(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+  static int
 clear_mask_buff(
     pcl_raster_t *  prast
 )
@@ -165,7 +165,7 @@ clear_mask_buff(
  * library sense). This code takes much advantage of the knowledge that the
  * mutliple source case is always direct and one bit per pixel.
  */
-  private void
+  static void
 gen_mask_multisrc(
     pcl_raster_t *  prast
 )
@@ -190,7 +190,7 @@ gen_mask_multisrc(
  * number of pixels fit within one byte, and this routine takes advantage of
  * that situation.
  */
-  private void
+  static void
 gen_mask_subbyte(
     pcl_raster_t *  prast
 )
@@ -223,7 +223,7 @@ gen_mask_subbyte(
 /*
  * Generate a mask from input data that has one byte per pixel.
  */
-  private void
+  static void
 gen_mask_1byte(
     pcl_raster_t *  prast
 )
@@ -294,7 +294,7 @@ gen_mask_multibyte(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+  static int
 consolidate_row(
     pcl_raster_t *  prast
 )
@@ -360,7 +360,7 @@ consolidate_row(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+  static int
 create_mask_enumerator(
     pcl_raster_t *              prast
 )
@@ -452,7 +452,7 @@ create_mask_enumerator(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+  static int
 create_image_enumerator(
     pcl_raster_t *              prast
 )
@@ -560,7 +560,7 @@ create_image_enumerator(
  *     however, as process_zero_rows will call this routine with complete set
  *     set to false.
  */
-  private void
+  static void
 close_raster(
     gs_state *      pgs,
     pcl_raster_t *  prast,
@@ -616,7 +616,7 @@ close_raster(
  * this varies from HP's practice, and can give unexpected results if an
  * inverting color lookup table is used.
  */
-  private int
+  static int
 process_mask_row(
     pcl_raster_t *  prast
 )
@@ -642,7 +642,7 @@ process_mask_row(
     return code;
 }
 
-  private int
+  static int
 process_zero_mask_rows(
     pcl_raster_t *  prast,
     int             nrows
@@ -700,7 +700,7 @@ process_zero_mask_rows(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+  static int
 process_zero_rows(
     gs_state *          pgs,
     pcl_raster_t *      prast,
@@ -817,7 +817,7 @@ process_zero_rows(
  * The compression mode is provided to allow this routine to fill in any
  * missing rows. For adaptive compression (mode 5), this will be 0.
  */
-  private int
+  static int
 process_row(
     pcl_raster_t *  prast,
     int             comp_mode   /* modified compression mode */
@@ -910,7 +910,7 @@ process_row(
 /*
  * Process an input data buffer using adpative compression.
  */
-  private int
+  static int
 process_adaptive_compress(
     gs_state *          pgs, 
     pcl_raster_t *      prast,
@@ -986,7 +986,7 @@ process_adaptive_compress(
  * Add a raster plane. The second operand indicates whether or not this is the
  * final plane of a row.
  */
-  private int
+  static int
 add_raster_plane(
     const byte *    pdata,
     uint            nbytes,
@@ -1295,7 +1295,7 @@ pcl_complete_raster(pcl_state_t *pcs)
  *
  * Add a plane buffer to the current set.
  */
-  private int
+  static int
 transfer_raster_plane(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -1310,7 +1310,7 @@ transfer_raster_plane(
  * Add a plane buffer to the current buffered set, and complete the current
  * raster row.
  */
-  private int
+  static int
 transfer_raster_row(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -1338,7 +1338,7 @@ transfer_raster_row(
  * Note that any incomplete plane data for the current row is discarded by this
  * command.
  */
-  private int
+  static int
 raster_y_offset(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -1358,7 +1358,7 @@ raster_y_offset(
  *
  * set raster print direction
  */
-  private int
+  static int
 set_line_path(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -1377,7 +1377,7 @@ set_line_path(
  * There is also no explicit reset routine, as the required work is handled
  * at a higher level.
  */
-  private int
+  static int
 raster_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem    /* ignored */
@@ -1418,7 +1418,7 @@ raster_do_registration(
     return 0;
 }
 
-  private void
+  static void
 raster_do_reset(
     pcl_state_t *       pcs,
     pcl_reset_type_t    type

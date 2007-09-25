@@ -42,7 +42,7 @@
  * a non-standard halftone might end up mapping white to black (definitely
  * undesirable).
  */
-private const gs_paint_color    white_paint = {{ 1.0, 0.0, 0.0, 0.0 }};
+static const gs_paint_color    white_paint = {{ 1.0, 0.0, 0.0, 0.0 }};
 
 /* GC routines */
 private_st_ccolor_t();
@@ -52,7 +52,7 @@ private_st_ccolor_t();
  * Convert a color value specified as a three-element byte array, or an index
  * to a palette, into a gs_paint_color structure.
  */
-private void
+static void
 convert_color_to_paint(
     const byte *        pcomp,
     gs_paint_color *    ppaint
@@ -64,7 +64,7 @@ convert_color_to_paint(
     ppaint->values[3] = 0.0;
 }
 
-private void
+static void
 convert_index_to_paint(
     int                 indx,
     gs_paint_color *    ppaint
@@ -82,7 +82,7 @@ convert_index_to_paint(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-private int
+static int
 set_ht_crd_from_palette(
     pcl_state_t *       pcs
 )
@@ -108,7 +108,7 @@ set_ht_crd_from_palette(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-private int
+static int
 set_ht_crd_from_foreground(
     pcl_state_t *       pcs
 )
@@ -128,7 +128,7 @@ set_ht_crd_from_foreground(
 /*
  * Free a PCL client color structure.
  */
-private void
+static void
 free_ccolor(
     gs_memory_t *   pmem,
     void *          pvccolor,
@@ -163,7 +163,7 @@ free_ccolor(
  *
  * Newly created colors are solid white.
  */
-private int
+static int
 unshare_ccolor(
     pcl_state_t *   pcs,
     pcl_ccolor_t ** ppccolor,
@@ -224,7 +224,7 @@ unshare_ccolor(
  *
  * Exactly one of the pair of operands pbase and pindex shoud be non-null.
  */
-private int
+static int
 set_unpatterned_color(
     pcl_state_t *           pcs,
     pcl_cs_indexed_t *      pindexed,
@@ -282,7 +282,7 @@ set_unpatterned_color(
  * Set a patterned color space. Note that this is a substantially different
  * operation from setting a solid (unpatterned) color.
  */
-private int
+static int
 set_patterned_color(
     pcl_state_t *       pcs,
     pcl_ccolor_t *      pnew
@@ -336,7 +336,7 @@ set_patterned_color(
  * these fields are ignored for colored patterns, and for mask patterns changes
  * only require another call to gs_setpattern.
  */
-private bool
+static bool
 check_pattern_rendering(
     pcl_state_t *           pcs,
     pcl_pattern_t *         pptrn,
@@ -406,7 +406,7 @@ check_pattern_rendering(
  * rendered.
  *
  */
-private int
+static int
 render_pattern(
     pcl_state_t *           pcs,
     pcl_pattern_t *         pptrn,
@@ -534,7 +534,7 @@ render_pattern(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-private int
+static int
 set_frgrnd_pattern(
     pcl_state_t *       pcs,
     pcl_pattern_t *     pptrn,
@@ -603,7 +603,7 @@ set_frgrnd_pattern(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-private int
+static int
 set_uncolored_palette_pattern(
     pcl_state_t *       pcs,
     pcl_pattern_t *     pptrn,
@@ -654,7 +654,7 @@ set_uncolored_palette_pattern(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-private int
+static int
 set_colored_pattern(
     pcl_state_t *       pcs,
     pcl_pattern_t *     pptrn
@@ -868,7 +868,7 @@ set_colored_pattern(
  * should be done only when necessary.
  */
 
-private int
+static int
 pattern_set_white(
     pcl_state_t *   pcs,
     int             arg1,   /* ignored */
@@ -898,13 +898,13 @@ pattern_set_white(
     return code;
 }
 
-private int     pattern_set_shade_gl(
+static int     pattern_set_shade_gl(
     pcl_state_t *   pcs,
     int             inten,  /* intensity value */
     int             pen     /* pen number for foreground */
 );
 
-  private int
+  static int
 pattern_set_pen(
     pcl_state_t *       pcs,
     int                 pen,
@@ -936,7 +936,7 @@ pattern_set_pen(
     return code;
 }
 
-  private int
+  static int
 pattern_set_frgrnd(
     pcl_state_t *   pcs,
     int             arg1,   /* ignored */
@@ -982,7 +982,7 @@ pattern_set_frgrnd(
     return code;
 }
 
-  private int
+  static int
 pattern_set_shade_pcl(
     pcl_state_t *   pcs,
     int             inten,  /* intensity value */
@@ -1006,7 +1006,7 @@ pattern_set_shade_pcl(
     }
 }
 
-  private int
+  static int
 pattern_set_shade_gl(
     pcl_state_t *   pcs,
     int             inten,  /* intensity value */
@@ -1026,7 +1026,7 @@ pattern_set_shade_gl(
     return set_uncolored_palette_pattern(pcs, pptrn, pen);
 }
 
-  private int
+  static int
 pattern_set_hatch_pcl(
     pcl_state_t *   pcs,
     int             indx,   /* cross-hatch pattern index */
@@ -1048,7 +1048,7 @@ pattern_set_hatch_pcl(
     }
 }
 
-  private int
+  static int
 pattern_set_hatch_gl(
     pcl_state_t *   pcs,
     int             indx,   /* cross-hatch pattern index */
@@ -1067,7 +1067,7 @@ pattern_set_hatch_gl(
     return set_uncolored_palette_pattern(pcs, pptrn, pen);
 }
 
-  private int
+  static int
 pattern_set_user_pcl(
     pcl_state_t *   pcs,
     int             id,     /* pattern id. */
@@ -1091,7 +1091,7 @@ pattern_set_user_pcl(
     }
 }
 
-  private int
+  static int
 pattern_set_user_gl(
     pcl_state_t *   pcs,
     int             id,     /* pattern id. */
@@ -1117,7 +1117,7 @@ pattern_set_user_gl(
     }
 }
 
-  private int
+  static int
 pattern_set_gl_RF(
     pcl_state_t *   pcs,
     int             indx,   /* GL/2 RF pattern index */
@@ -1222,7 +1222,7 @@ pcl_pattern_get_proc_SV(
  *
  * Set the pattern id.
  */
-private int
+static int
 set_pattern_id(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -1237,7 +1237,7 @@ set_pattern_id(
  *
  * Set source transparency mode
  */
-  private int
+  static int
 set_source_transparency_mode(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -1257,7 +1257,7 @@ set_source_transparency_mode(
  *
  * Set pattern transparency mode.
  */
-private int
+static int
 set_pattern_transparency_mode(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -1277,7 +1277,7 @@ set_pattern_transparency_mode(
  *
  * Set current pattern id.
  */
-  private int
+  static int
 select_current_pattern(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -1309,7 +1309,7 @@ typedef struct driver_configuration_s {
     char arguments;
 } driver_configuration_t;
 
-  private int
+  static int
 set_driver_configuration(
     pcl_args_t *    pargs,  /* ignored */
     pcl_state_t *   pcs     /* ignored */
@@ -1374,7 +1374,7 @@ set_driver_configuration(
 /*
  * Initialization and reset routines.
  */
-private int
+static int
 pattern_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem
@@ -1421,7 +1421,7 @@ pattern_do_registration(
  
 }
 
-  private void
+  static void
 pattern_do_reset(
     pcl_state_t *       pcs,
     pcl_reset_type_t    type

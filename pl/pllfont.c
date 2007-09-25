@@ -44,7 +44,7 @@
 /* utilities for poking around in tt files. It returns true if it a tt
    file, false if not.  Also returns false if there are any I/O
    failures */
-private bool
+static bool
 is_ttfile(stream *ttfile)
 {
     /* check if an open file a ttfile saving and restoring the file position */
@@ -73,7 +73,7 @@ is_ttfile(stream *ttfile)
 #define WINDOWSNAME 4
 #define PSNAME 6
 
-private 
+static 
 int get_name_from_tt_file(stream *tt_file, gs_memory_t *mem, char *pfontfilename, int nameoffset)
 {
     /* check if an open file a ttfile saving and restoring the file position */
@@ -157,7 +157,7 @@ int get_name_from_tt_file(stream *tt_file, gs_memory_t *mem, char *pfontfilename
 }
 
 #ifdef DEBUG
-private bool
+static bool
 lookup_pjl_number(pl_dict_t *pfontdict, int pjl_font_number)
 {
     pl_dict_enum_t dictp;
@@ -172,7 +172,7 @@ lookup_pjl_number(pl_dict_t *pfontdict, int pjl_font_number)
     return false;
 }
 
-private void
+static void
 check_resident_fonts(pl_dict_t *pfontdict, gs_memory_t *mem)
 {
     int i;

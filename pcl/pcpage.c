@@ -53,7 +53,7 @@
  * Preserve the current point and text margin set by transfroming them into
  * logical page space.
  */
-  private void
+  static void
 preserve_cap_and_margins(
     const pcl_state_t *  pcs,
     gs_point *           pcur_pt,
@@ -78,7 +78,7 @@ preserve_cap_and_margins(
  * Convert the current point and text margin set back into "pseudo print
  * direction" space.
  */
-  private void
+  static void
 restore_cap_and_margins(
     pcl_state_t *    pcs,
     const gs_point * pcur_pt,
@@ -117,7 +117,7 @@ restore_cap_and_margins(
  * The paper size, left/top offsets, logical page orientation, and print
  * direction should be set before this procedure is called.
  */
-  private void
+  static void
 update_xfm_state(
     pcl_state_t *               pcs,
     bool                        reset_initial
@@ -263,7 +263,7 @@ update_xfm_state(
  * not relocate) the margins, the preint direction does change the location of
  * the default margins.
  */
-  private void
+  static void
 reset_vertical_margins(
       pcl_state_t *   pcs,
       bool            for_passthrough
@@ -287,7 +287,7 @@ reset_vertical_margins(
  * not relocate) the margins, the preint direction does change the location of
  * the default margins.
  */
-  private void
+  static void
 reset_horizontal_margins(
     pcl_state_t *   pcs
 )
@@ -301,7 +301,7 @@ reset_horizontal_margins(
 /*
  * Reset both the horizontal and vertical margins
  */
-private void
+static void
 reset_margins(
     pcl_state_t *   pcs,
     bool            for_passthrough
@@ -401,7 +401,7 @@ new_page_size(
 #define p_size(t, n, w, h, offp, offl)                                  \
     { (t), (n), { (w) * 24L, (h) * 24L, (offp) * 24L, (offl) * 24L } }
 
-private struct {
+static struct {
     uint                    tag;
     const char *            pname;
     pcl_paper_size_t        psize;
@@ -614,7 +614,7 @@ pcl_end_page(
  *
  * Select paper size
  */
-  private int
+  static int
 set_page_size(
     pcl_args_t *                pargs,
     pcl_state_t *               pcs
@@ -656,7 +656,7 @@ set_page_size(
  *
  * Set paper source
  */
-  private int
+  static int
 set_paper_source(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -687,7 +687,7 @@ set_paper_source(
  * Note that this shifts the logical page, but does NOT change its size nor
  * does it reset any logical-page related parameters.
  */
-  private int
+  static int
 set_left_offset_registration(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -704,7 +704,7 @@ set_left_offset_registration(
  * Note that this shifts the logical page, but does NOT change its size nor
  * does it reset any logical-page related parameters.
  */
-  private int
+  static int
 set_top_offset_registration(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -720,7 +720,7 @@ set_top_offset_registration(
  *
  * Set logical page orientation.
  */
-  private int
+  static int
 set_logical_page_orientation(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -758,7 +758,7 @@ set_logical_page_orientation(
 /*
  * ESC & a <angle> P
  */
-  private int
+  static int
 set_print_direction(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -787,7 +787,7 @@ set_print_direction(
  *
  * Set left margin.
  */
-  private int
+  static int
 set_left_margin(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -814,7 +814,7 @@ set_left_margin(
  * Set right margin. The right margin is set to the *right* edge of the
  * specified column, so we need to add 1 to the column number.
  */
-  private int
+  static int
 set_right_margin(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -838,7 +838,7 @@ set_right_margin(
  *
  * Clear horizontal margins.
  */
-  private int
+  static int
 clear_horizontal_margins(
     pcl_args_t *    pargs,  /* ignored */
     pcl_state_t *   pcs
@@ -854,7 +854,7 @@ clear_horizontal_margins(
  *
  * Set top margin. This will also reset the page length.
  */
-  private int
+  static int
 set_top_margin(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -889,7 +889,7 @@ set_top_margin(
  *
  * Set text length (which indirectly sets the bottom margin).
  */
-  private int
+  static int
 set_text_length(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -915,7 +915,7 @@ set_text_length(
  * to vertical motion than to margins, the command is included here because it
  * resets the vertical margins (top margin and text length) to their defaults.
  */
-  private int
+  static int
 set_perforation_skip(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -935,7 +935,7 @@ set_perforation_skip(
  *
  * Set media type.
  */
-  private int
+  static int
 pcl_media_type(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -960,7 +960,7 @@ pcl_media_type(
  *
  * Set print quality.
  */
-  private int
+  static int
 pcl_print_quality(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -981,7 +981,7 @@ pcl_print_quality(
 /*
  * Initialization
  */
-  private int
+  static int
 pcpage_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem    /* ignored */
@@ -1109,7 +1109,7 @@ pcl_get_default_paper(
     return &(paper_sizes[1].psize);
 }
     
-  private void
+  static void
 pcpage_do_reset(
     pcl_state_t *       pcs,
     pcl_reset_type_t    type

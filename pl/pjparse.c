@@ -68,7 +68,7 @@ typedef struct pjl_parser_state_s {
 /* provide factory defaults for pjl commands.  Note these are not pjl
    defaults but initial values set in the printer when shipped.  In an
    embedded system these would be defined in ROM */
-private const pjl_envir_var_t pjl_factory_defaults[] = {
+static const pjl_envir_var_t pjl_factory_defaults[] = {
     {"formlines", "60"},
     {"widea4", "no"},
     {"fontsource", "I"},
@@ -107,7 +107,7 @@ private const pjl_envir_var_t pjl_factory_defaults[] = {
    host based systems.  Entries are seperated with a semi-colon.  Note
    there is some unnecessary overlap in the factory default and font
    source table. */
-private const pjl_fontsource_t pjl_fontsource_table[] = {
+static const pjl_fontsource_t pjl_fontsource_table[] = {
     { "I", "fonts/;urwfonts/;/windows/fonts/;/win95/fonts/;/winnt/fonts/" },
     { "C", "CART0/", "" },
     { "C1", "CART1/", "" },
@@ -162,7 +162,7 @@ typedef struct pjl_lookup_table_s {
     pjl_token_type_t pjl_token;
 } pjl_lookup_table_t;
 
-private const pjl_lookup_table_t pjl_table[] = {
+static const pjl_lookup_table_t pjl_table[] = {
     { "@PJL", PREFIX },
     { "SET", SET },
     { "DEFAULT", DEFAULT },
@@ -199,7 +199,7 @@ unsigned char pjl_permanent_soft_fonts[MAX_PERMANENT_FONTS / 8];
 /* ----- private functions and definitions ------------ */
 
 /* forward declaration */
-private int pjl_set(pjl_parser_state_t *pst, char *variable, char *value, bool defaults);
+static int pjl_set(pjl_parser_state_t *pst, char *variable, char *value, bool defaults);
 
 /* handle pjl variables which affect the state of other variables - we
    don't handle all of these yet.  NB not complete. */
@@ -218,7 +218,7 @@ pjl_side_effects(pjl_parser_state_t *pst, char *variable, char *value, bool defa
 }
 
 /* set a pjl environment or default variable. */
- private int
+static int
 pjl_set(pjl_parser_state_t *pst, char *variable, char *value, bool defaults)
 {
     pjl_envir_var_t *table = (defaults ? pst->defaults : pst->envir);
@@ -240,7 +240,7 @@ pjl_set(pjl_parser_state_t *pst, char *variable, char *value, bool defaults)
 }
     
 /* get next token from the command line buffer */
- private pjl_token_type_t
+static pjl_token_type_t
 pjl_get_token(pjl_parser_state_t *pst, char token[])
 {
     int c;
@@ -318,7 +318,7 @@ pjl_get_token(pjl_parser_state_t *pst, char token[])
 }
 
 /* check if fonts exist in the current font source path */
- private char *
+static char *
 pjl_check_font_path(char *path_list, gs_memory_t *mem)
 {
     /* lookup a font path and check if any files (presumably fonts are
@@ -366,7 +366,7 @@ pjl_check_font_path(char *path_list, gs_memory_t *mem)
    (pcl) to provide information about 'S' permanent soft fonts.  For
    all other resources we check for filenames which should correspond
    to fonts. */
- private void
+static void
 pjl_reset_fontsource_fontnumbers(pjl_parser_state_t* pst)
 {
     char default_font_number[] = "0"; /* default number if resources are present */
@@ -388,7 +388,7 @@ pjl_reset_fontsource_fontnumbers(pjl_parser_state_t* pst)
  * result in fnamep, 
  * ie: ""0:\\dir\subdir\file"" --> "PJL_VOLUME_0/dir/subdir/file"
  */
-private void
+static void
 pjl_parsed_filename_to_string(char *fnamep, const char *pathname)
 {
     int i;
@@ -430,7 +430,7 @@ pjl_parsed_filename_to_string(char *fnamep, const char *pathname)
 /* Verify a file write operation is ok.  The filesystem must be 0: or
    1:, no other pjl files can have pending writes, and the pjl
    disklock state variable must be false */
-private int
+static int
 pjl_verify_file_operation(pjl_parser_state_t *pst, char *fname)
 {
     /* make sure we are playing in the pjl sandbox */
@@ -452,7 +452,7 @@ pjl_verify_file_operation(pjl_parser_state_t *pst, char *fname)
 }
 
 /* debugging procedure to warn about writing to an extant file */
-private void
+static void
 pjl_warn_exists(const gs_memory_t *mem, char *fname) 
 {
     FILE *fpdownload;
@@ -464,7 +464,7 @@ pjl_warn_exists(const gs_memory_t *mem, char *fname)
 }
 
 /* open a file for writing or appending */
-private FILE *
+static FILE *
 pjl_setup_file_for_writing(pjl_parser_state_t *pst, char *pathname, int size, bool append)
 {
     FILE *fp;
@@ -488,7 +488,7 @@ pjl_setup_file_for_writing(pjl_parser_state_t *pst, char *pathname, int size, bo
 }
 
 /* set up the state to download date to a pjl file */
-private int
+static int
 pjl_set_fs_download_state(pjl_parser_state_t *pst, char *pathname, int size)
 {
     /* somethink is wrong if the state indicates we are already writing to a file */
@@ -502,7 +502,7 @@ pjl_set_fs_download_state(pjl_parser_state_t *pst, char *pathname, int size)
 
 /* set up the state to append subsequent data from the input stream to
    a file */
- private int
+static int
 pjl_set_append_state(pjl_parser_state_t *pst, char *pathname, int size)
 {
     FILE *fp = pjl_setup_file_for_writing(pst, pathname, size, true /* append */); 
@@ -515,7 +515,7 @@ pjl_set_append_state(pjl_parser_state_t *pst, char *pathname, int size)
 
 /* create a pjl volume, this should create the volume 0: or 1: we
    simply create a directory with the volume name. */
-private int
+static int
 pjl_fsinit(pjl_parser_state_t *pst, char *pathname)
 {
     char fname[MAXPATHLEN];
@@ -615,7 +615,7 @@ pjl_fsdirlist(pjl_parser_state_t *pst, char *pathname, int entry, int count)
     return -1;
 }
 
-inline private int
+inline static int
 pjl_write_remaining_data(pjl_parser_state_t *pst, const byte **pptr, const byte **pplimit)
 {
     const byte *ptr = *pptr;
@@ -639,7 +639,7 @@ pjl_write_remaining_data(pjl_parser_state_t *pst, const byte **pptr, const byte 
     return 0;
 }
 
-private int
+static int
 pjl_delete_file(pjl_parser_state_t *pst, char *pathname)
 {
     char fname[MAXPATHLEN];
@@ -652,7 +652,7 @@ pjl_delete_file(pjl_parser_state_t *pst, char *pathname)
 /* handle pattern foo = setting, e.g. volume = "0:", name = 0:]pcl.
    the setting will be returned in "token" if successful.  Return 0
    for success and -1 if we fail */
-private int
+static int
 pjl_get_setting(pjl_parser_state_t *pst, pjl_token_type_t tok, char *token)
 {
     pjl_token_type_t lhs = pjl_get_token(pst, token);
@@ -666,7 +666,7 @@ pjl_get_setting(pjl_parser_state_t *pst, pjl_token_type_t tok, char *token)
 }
     
 /* parse and set up state for one line of pjl commands */
- private int
+static int
 pjl_parse_and_process_line(pjl_parser_state_t *pst)
 {
     pjl_token_type_t tok;
@@ -800,7 +800,7 @@ var:            defaults = (tok == DEFAULT);
 }
 
 /* get a file from 0: or 1: volume */
-private FILE *
+static FILE *
 get_fp(pjl_parser_state_t *pst, char *name)
 {
     char result[MAXPATHLEN];
@@ -990,7 +990,7 @@ pjl_skip_to_uel(stream_cursor_read * pr)
 
 /* PJL symbol set environment variable -> pcl symbol set numbers.
    This probably should not be defined here :-( */
-private const struct {
+static const struct {
     const char *symname;
     const char *pcl_selectcode;
 } symbol_sets[] = {

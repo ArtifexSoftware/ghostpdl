@@ -94,7 +94,7 @@ ps_impl_characteristics(
 
 
 /* Don't need to do anything to PS interpreter */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 ps_impl_allocate_interp(
   pl_interp_t                      **interp,       /* RETURNS abstract interpreter struct */
   const pl_interp_implementation_t *impl,  /* implementation of interpereter to alloc */
@@ -117,7 +117,7 @@ ps_impl_allocate_interp(
 #endif
 
 /* Do per-instance interpreter allocation/init. No device is set yet */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 ps_impl_allocate_interp_instance(
   pl_interp_instance_t   **instance,     /* RETURNS instance struct */
   pl_interp_t            *interp,        /* dummy interpreter */
@@ -239,7 +239,7 @@ ps_impl_allocate_interp_instance(
 /* NB this pointer should be placed in the ps instance */
 
 /* Set a client language into an interperter instance */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 ps_impl_set_client_instance(
   pl_interp_instance_t   *instance,     /* interp instance to use */
   pl_interp_instance_t   *client,       /* client to set */
@@ -250,7 +250,7 @@ ps_impl_set_client_instance(
 }
 
 /* Set an interpreter instance's pre-page action */
-private int   /* ret 0 ok, else -ve err */
+static int   /* ret 0 ok, else -ve err */
 ps_impl_set_pre_page_action(
   pl_interp_instance_t   *instance,     /* interp instance to use */
   pl_page_action_t       action,        /* action to execute (rets 1 to abort w/o err) */
@@ -264,7 +264,7 @@ ps_impl_set_pre_page_action(
 }
 
 /* Set an interpreter instance's post-page action */
-private int   /* ret 0 ok, else -ve err */
+static int   /* ret 0 ok, else -ve err */
 ps_impl_set_post_page_action(
   pl_interp_instance_t   *instance,     /* interp instance to use */
   pl_page_action_t       action,        /* action to execute */
@@ -278,7 +278,7 @@ ps_impl_set_post_page_action(
 }
 
 /* Set a device into an interperter instance */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 ps_impl_set_device(
   pl_interp_instance_t   *instance,     /* interp instance to use */
   gx_device              *device        /* device to set (open or closed) */
@@ -298,7 +298,7 @@ ps_impl_set_device(
 /* fetch the gs_memory_t ptr so that the device and ps use the same 
  * garbage collection aware a memory
  */
-private int   
+static int   
 ps_impl_get_device_memory(
   pl_interp_instance_t   *instance,     /* interp instance to use */
   gs_memory_t **pmem)
@@ -320,7 +320,7 @@ gs_main_instance *ps_impl_get_minst( const gs_memory_t *mem )
 }
   
 /* Prepare interp instance for the next "job" */
-private int	/* ret 0 ok, else -ve error code */
+static int	/* ret 0 ok, else -ve error code */
 ps_impl_init_job(
 	pl_interp_instance_t   *instance         /* interp instance to start job in */
 )
@@ -336,7 +336,7 @@ ps_impl_init_job(
 }
 
 /* Parse a buffer full of data */
-private int	/* ret 0 or +ve if ok, else -ve error code */
+static int	/* ret 0 or +ve if ok, else -ve error code */
 ps_impl_process(
 	pl_interp_instance_t *instance,        /* interp instance to process data job in */
 	stream_cursor_read   *cursor           /* data to process */
@@ -408,7 +408,7 @@ ps_impl_process(
 }
 
 /* Skip to end of job ret 1 if done, 0 ok but EOJ not found, else -ve error code */
-private int
+static int
 ps_impl_flush_to_eoj(
 	pl_interp_instance_t *instance,        /* interp instance to flush for */
 	stream_cursor_read   *cursor           /* data to process */
@@ -434,7 +434,7 @@ ps_impl_flush_to_eoj(
 }
 
 /* Parser action for end-of-file */
-private int	/* ret 0 or +ve if ok, else -ve error code */
+static int	/* ret 0 or +ve if ok, else -ve error code */
 ps_impl_process_eof(
 	pl_interp_instance_t *instance        /* interp instance to process data job in */
 )
@@ -445,7 +445,7 @@ ps_impl_process_eof(
 }
 
 /* Report any errors after running a job */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 ps_impl_report_errors(pl_interp_instance_t *instance,      /* interp instance to wrap up job in */
 		      int                  code,           /* prev termination status */
 		      long                 file_position,  /* file position of error, -1 if unknown */
@@ -458,7 +458,7 @@ ps_impl_report_errors(pl_interp_instance_t *instance,      /* interp instance to
 }
 
 /* Wrap up interp instance after a "job" */
-private int	/* ret 0 ok, else -ve error code */
+static int	/* ret 0 ok, else -ve error code */
 ps_impl_dnit_job(
 	pl_interp_instance_t *instance         /* interp instance to wrap up job in */
 )
@@ -508,7 +508,7 @@ ps_impl_dnit_job(
 }
 
 /* Remove a device from an interperter instance */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 ps_impl_remove_device(
   pl_interp_instance_t   *instance     /* interp instance to use */
 )
@@ -527,7 +527,7 @@ ps_impl_remove_device(
 }
 
 /* Deallocate a interpreter instance */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 ps_impl_deallocate_interp_instance(
   pl_interp_instance_t   *instance     /* instance to dealloc */
 )
@@ -547,7 +547,7 @@ ps_impl_deallocate_interp_instance(
 }
 
 /* Do static deinit of PS interpreter */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 ps_impl_deallocate_interp(
   pl_interp_t        *interp       /* interpreter to deallocate */
 )

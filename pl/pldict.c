@@ -41,13 +41,13 @@ public_st_pl_dict();
 gs_private_st_composite(st_pl_dict_entry, pl_dict_entry_t, "pl_dict_entry_t",
   pl_dict_entry_enum_ptrs, pl_dict_entry_reloc_ptrs);
 #define pde ((pl_dict_entry_t *)vptr)
-private ENUM_PTRS_BEGIN(pl_dict_entry_enum_ptrs) return 0;
+static ENUM_PTRS_BEGIN(pl_dict_entry_enum_ptrs) return 0;
 	ENUM_CONST_STRING_PTR(0, pl_dict_entry_t, key);
 	ENUM_PTR(1, pl_dict_entry_t, value);
 	ENUM_PTR(2, pl_dict_entry_t, next);
 	ENUM_PTR(3, pl_dict_entry_t, link);
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(pl_dict_entry_reloc_ptrs) {
+static RELOC_PTRS_BEGIN(pl_dict_entry_reloc_ptrs) {
 	RELOC_CONST_STRING_PTR(pl_dict_entry_t, key);
 	RELOC_PTR(pl_dict_entry_t, value);
 	RELOC_PTR(pl_dict_entry_t, next);
@@ -58,7 +58,7 @@ private RELOC_PTRS_BEGIN(pl_dict_entry_reloc_ptrs) {
 /* ---------------- Utilities ---------------- */
 
 /* Provide a standard procedure for freeing a value. */
-private void
+static void
 pl_dict_value_free(gs_memory_t *mem, void *value, client_name_t cname)
 {	gs_free_object(mem, value, cname);
 }
@@ -67,7 +67,7 @@ pl_dict_value_free(gs_memory_t *mem, void *value, client_name_t cname)
  * Look up an entry in a dictionary.  Return a pointer to the pointer to the
  * entry.
  */
-private pl_dict_entry_t **
+static pl_dict_entry_t **
 pl_dict_lookup_entry(pl_dict_t *pdict, const byte *kdata, uint ksize)
 {	pl_dict_entry_t **ppde = &pdict->entries;
 	pl_dict_entry_t *pde;
@@ -81,7 +81,7 @@ pl_dict_lookup_entry(pl_dict_t *pdict, const byte *kdata, uint ksize)
 }
 
 /* Delete a dictionary entry. */
-private void
+static void
 pl_dict_free(pl_dict_t *pdict, pl_dict_entry_t **ppde, client_name_t cname)
 {	pl_dict_entry_t *pde = *ppde;
 	gs_memory_t *mem = pdict->memory;
@@ -134,7 +134,7 @@ pl_dict_lookup(pl_dict_t *pdict, const byte *kdata, uint ksize, void **pvalue,
 /*
  * make a new dictionary entry.
  */
-private int
+static int
 pl_dict_build_new_entry(pl_dict_t *pdict, const byte *kdata, uint ksize,
 			void *value, pl_dict_entry_t *link)
 {	/* Make a new entry. */

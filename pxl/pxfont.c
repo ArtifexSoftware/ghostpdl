@@ -52,7 +52,7 @@ pxfont_init(px_state_t *pxs)
 /* ---------------- Operator utilities ---------------- */
 
 /* Compute the symbol map from the font and symbol set. */
-private void
+static void
 set_symbol_map(px_state_t *pxs)
 {	px_gstate_t *pxgs = pxs->pxgs;
 	px_font_t *pxfont = pxgs->base_font;
@@ -79,7 +79,7 @@ set_symbol_map(px_state_t *pxs)
 	  }
 }
 
-private int
+static int
 px_set_char_matrix(px_state_t *pxs)
 {	px_gstate_t *pxgs = pxs->pxgs;
 	px_font_t *pxfont = pxgs->base_font;
@@ -266,7 +266,7 @@ px_concat_font_name(char *message, uint max_message, const px_value_t *pfnv)
 /** Convert pxl text arguments into an array of gs_chars 
  * caller must allocate the correct size array pchar and free it later
  */
-private void
+static void
 px_str_to_gschars( px_args_t *par, px_state_t *pxs, gs_char *pchr)
 {
     const px_value_t *pstr = par->pv[0];
@@ -290,7 +290,7 @@ px_str_to_gschars( px_args_t *par, px_state_t *pxs, gs_char *pchr)
 }
 
 /* startup for the processing text */
-private int
+static int
 px_text_setup(gs_state * pgs, const gs_char * str, uint size,
 		const float *x_widths, const float *y_widths,
 		uint widths_size, gs_memory_t * mem, gs_text_enum_t ** ppte,

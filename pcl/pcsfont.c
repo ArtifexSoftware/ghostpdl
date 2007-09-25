@@ -47,7 +47,7 @@ typedef enum {
 
 /* Delete a soft font.  If it is the currently selected font, or the */
 /* current primary or secondary font, cause a new one to be chosen. */
-private void
+static void
 pcl_delete_soft_font(pcl_state_t *pcs, const byte *key, uint ksize,
   void *value)
 {
@@ -74,7 +74,7 @@ pcl_delete_soft_font(pcl_state_t *pcs, const byte *key, uint ksize,
 
 /* ------ Commands ------ */
 
-private int /* ESC * c <id> D */
+static int /* ESC * c <id> D */
 pcl_assign_font_id(pcl_args_t *pargs, pcl_state_t *pcs)
 {       uint id = uint_arg(pargs);
         id_set_value(pcs->font_id, id);
@@ -87,7 +87,7 @@ pcl_assign_font_id(pcl_args_t *pargs, pcl_state_t *pcs)
    involves a deep copy and a new font.  Copying a resident font
    creates a link to the original (source) font */
 
-private int
+static int
 pcl_make_resident_font_copy(pcl_state_t *pcs)
 {
     pl_dict_enum_t dictp;
@@ -118,7 +118,7 @@ pcl_make_resident_font_copy(pcl_state_t *pcs)
 }
 
 
-private int /* ESC * c <fc_enum> F */
+static int /* ESC * c <fc_enum> F */
 pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcs)
 {       
     gs_const_string key;
@@ -210,7 +210,7 @@ pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcs)
     return 0;
 }
 
-private int /* ESC ) s <count> W */
+static int /* ESC ) s <count> W */
 pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
 {       uint count = uint_arg(pargs);
         const byte *data = arg_data(pargs);
@@ -431,14 +431,14 @@ bitmap:     pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
         return gs_definefont(pcs->font_dir, plfont->pfont);
 }
 
-private int /* ESC * c <char_code> E */
+static int /* ESC * c <char_code> E */
 pcl_character_code(pcl_args_t *pargs, pcl_state_t *pcs)
 {       
     pcs->character_code = uint_arg(pargs);
     return 0;
 }
 
-private int /* ESC ( s <count> W */
+static int /* ESC ( s <count> W */
 pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
 {       
     uint count = uint_arg(pargs);
@@ -647,7 +647,7 @@ typedef enum resource_type_enum {
     
 /* look up a macro in the macro dictionary, if it is not found search
    on disk and add the macro to the macro dictionary */
-private void *
+static void *
 pcl_find_resource(pcl_state_t *pcs,
                   const byte string_id[],
                   int string_id_size,
@@ -697,7 +697,7 @@ f:  if ( pl_dict_find(dict,
     return value;
 }
 
-private int /* ESC & n <count> W [operation][string ID] */
+static int /* ESC & n <count> W [operation][string ID] */
 pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcs)
 {
         uint count = uint_arg(pargs);
@@ -838,7 +838,7 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcs)
 }
         
 /* Initialization */
-private int
+static int
 pcsfont_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *mem
@@ -862,7 +862,7 @@ pcsfont_do_registration(
                                   pcl_alphanumeric_id_data, pca_bytes)
         return 0;
 }
-private void
+static void
 pcsfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {       
     if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) ) { 
@@ -883,7 +883,7 @@ pcsfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
             pcs->alpha_font_id.id = 0;
     }
 }
-private int
+static int
 pcsfont_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
   pcl_copy_operation_t operation)
 {       if ( operation & pcl_copy_after )

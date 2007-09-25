@@ -34,7 +34,7 @@
 /*
  * ESC * v <cc> A
  */
-  private int
+  static int
 set_color_comp_1(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -50,7 +50,7 @@ set_color_comp_1(
 /*
  * ESC * v <cc> B
  */
-  private int
+  static int
 set_color_comp_2(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -66,7 +66,7 @@ set_color_comp_2(
 /*
  * ESC * v <cc> C
  */
-  private int
+  static int
 set_color_comp_3(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -91,7 +91,7 @@ set_color_comp_3(
  * the color component registers are NOT cleared, while positive indices are 
  * interpreted modulo the palette size.
  */
-  private int
+  static int
 assign_color_index(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -114,7 +114,7 @@ assign_color_index(
 /*
  * Initialization
  */
-  private int
+  static int
 color_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem
@@ -157,7 +157,7 @@ color_do_registration(
 /*
  * Handle the various forms of reset.
  */
-  private void
+  static void
 color_do_reset(
     pcl_state_t *        pcs,
     pcl_reset_type_t    type

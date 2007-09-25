@@ -22,7 +22,7 @@ private_st_lookup_tbl_t();
 /*
  * Free lookup table.
  */
-  private void
+  static void
 free_lookup_tbl(
     gs_memory_t *       pmem,
     void *              pvlktbl,
@@ -41,7 +41,7 @@ free_lookup_tbl(
  *
  * Set color lookup table.
  */
-  private int
+  static int
 set_lookup_tbl(
     pcl_args_t *        pargs,
     pcl_state_t *       pcs
@@ -113,7 +113,7 @@ set_lookup_tbl(
  *
  * Set gamma correction
  */
-  private int
+  static int
 set_gamma_correction(
     pcl_args_t *        pargs,
     pcl_state_t *       pcs
@@ -133,7 +133,7 @@ set_gamma_correction(
  * There is no copy or reset code for this module, as both copying and reset
  * are handled by the PCL palette module (using macros defined in pclookup.h).
  */
-  private int
+  static int
 lookup_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem

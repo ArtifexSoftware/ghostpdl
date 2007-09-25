@@ -62,7 +62,7 @@ void pxpcl_pagestatereset(void);
 
 /* NB: tests for this function are used to flag pxl snippet mode 
  */
-private int
+static int
 pcl_end_page_noop(pcl_state_t *pcs, int num_copies, int flush)
 {
     return pxPassThrough;
@@ -122,7 +122,7 @@ pxPassthrough_pcl_state_nonpage_exceptions(px_state_t *pxs)
 }
 
 /* retrieve the current pcl state and initialize pcl */
-private int
+static int
 pxPassthrough_init(px_state_t *pxs) 
 {
     int code;

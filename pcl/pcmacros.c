@@ -23,7 +23,7 @@
 
 /* Execute a macro.  We're willing to use C recursion for this because */
 /* the PCL5 specification only allows 2 levels of call. */
-private int
+static int
 do_copies(pcl_state_t *psaved, pcl_state_t *pcs,
   pcl_copy_operation_t copy)
 {	const pcl_init_t **init = pcl_init_table;
@@ -78,7 +78,7 @@ enum {
   macro_delete_temporary = 7
 };
 
-private int /* ESC & f <mc_enum> X */
+static int /* ESC & f <mc_enum> X */
 pcl_macro_control(pcl_args_t *pargs, pcl_state_t *pcs)
 {	int i = int_arg(pargs);
 	gs_const_string key;
@@ -197,7 +197,7 @@ pcl_macro_control(pcl_args_t *pargs, pcl_state_t *pcs)
 	  }
 }
 
-private int /* ESC & f <id> Y */
+static int /* ESC & f <id> Y */
 pcl_assign_macro_id(pcl_args_t *pargs, pcl_state_t *pcs)
 {	uint id = uint_arg(pargs);
 	id_set_value(pcs->macro_id, id);
@@ -206,7 +206,7 @@ pcl_assign_macro_id(pcl_args_t *pargs, pcl_state_t *pcs)
 }
 
 /* Initialization */
-private int
+static int
 pcmacros_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *mem)
@@ -221,7 +221,7 @@ pcmacros_do_registration(
 	END_CLASS
 	return 0;
 }
-private void
+static void
 pcmacros_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer) )
 	  { pcs->overlay_enabled = false;
@@ -253,7 +253,7 @@ pcmacros_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 	if ( type & pcl_reset_permanent )
 	    pl_dict_release(&pcs->macros);
 }
-private int
+static int
 pcmacros_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
   pcl_copy_operation_t operation)
 {	if ( operation & pcl_copy_after )

@@ -28,7 +28,7 @@
 /* ------ Internal procedures ------ */
 
 /* Define font parameters (AD, SD). */
-private int
+static int
 hpgl_font_definition(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 {	/*
 	 * Since these commands take an arbitrary number of arguments,
@@ -137,7 +137,7 @@ hpgl_font_definition(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 	return 0;
 }
 /* Define label drawing direction (DI, DR). */
-private int
+static int
 hpgl_label_direction(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 {	hpgl_real_t run = 1, rise = 0;
 
@@ -157,10 +157,10 @@ hpgl_label_direction(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 }
 
 /* forward declaration */
-private int hpgl_select_font(hpgl_state_t *pgls, int index);
+static int hpgl_select_font(hpgl_state_t *pgls, int index);
 
 /* Select font by ID (FI, FN). */
-private int
+static int
 hpgl_select_font_by_id(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 {	pcl_font_selection_t *pfs = &pgls->g.font_selection[index];
 	int32 id;
@@ -199,7 +199,7 @@ hpgl_select_font_by_id(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 }
 
 /* Select font (SA, SS). */
-private int
+static int
 hpgl_select_font(hpgl_state_t *pgls, int index)
 {
     pgls->g.font_selected = index;
@@ -527,7 +527,7 @@ hpgl_TD(hpgl_args_t *pargs, hpgl_state_t *pgls)
 }
 
 /* Initialization */
-private int
+static int
 pgchar_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *mem)

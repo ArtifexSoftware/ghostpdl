@@ -32,7 +32,7 @@
 /*
  * Intersect a rectangle with the positive quadrant.
  */
-  private void
+  static void
 intersect_with_positive_quadrant(
     gs_rect *   prect
 )
@@ -50,7 +50,7 @@ intersect_with_positive_quadrant(
 /*
  * Get the effective printing region in raster space
  */
-private void
+static void
 get_raster_print_rect( const gs_memory_t *mem, 
 		       const gs_rect *      plp_print_rect,
 		       gs_rect *            prst_print_rect,
@@ -372,7 +372,7 @@ pcl_end_graphics_mode(
  * The value provided will be rounded up to the nearest legal value or down to 600dpi. 
  * 75 100 150 200 300 600 are legal;  120 and 85.7143 are multiples of 75 but not legal.
  */
-  private int
+  static int
 set_graphics_resolution(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -400,7 +400,7 @@ set_graphics_resolution(
  * This command is ignored if values other than 0 and 3 are provided, ignoring
  * any sign. The command is also ignored inside graphics mode.
  */
-  private int
+  static int
 set_graphics_presentation_mode(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -428,7 +428,7 @@ set_graphics_presentation_mode(
  *
  * This command is ignored in graphics mode.
  */
-  private int
+  static int
 set_src_raster_width(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -451,7 +451,7 @@ set_src_raster_width(
  *
  * This command is ignored in graphics mode.
  */
-  private int
+  static int
 set_src_raster_height(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -479,7 +479,7 @@ set_src_raster_height(
  * transfered. Hence, the transfer raster data command must perform the required
  * check.
  */
-  private int
+  static int
 set_compression_method(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -504,7 +504,7 @@ set_compression_method(
  * Though it is not noted in the "PCL 5 Color Technical Reference Manual", this
  * command is ignored in graphics mode.
  */
-  private int
+  static int
 set_dest_raster_width(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -534,7 +534,7 @@ set_dest_raster_width(
  * Though it is not noted in the "PCL 5 Color Technical Reference Manual", this
  * command is ignored in graphics mode.
  */
-  private int
+  static int
 set_dest_raster_height(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -562,7 +562,7 @@ set_dest_raster_height(
  * a discussion of the rather curios manner in which the left raster graphics
  * margin is set below.
  */
-  private int
+  static int
 start_graphics_mode(
     pcl_args_t *            pargs,
     pcl_state_t *           pcs
@@ -590,7 +590,7 @@ start_graphics_mode(
  *
  * End raster graphics mode - old style.
  */
-  private int
+  static int
 end_graphics_mode_B(
     pcl_args_t *        pargs,
     pcl_state_t *       pcs
@@ -607,7 +607,7 @@ end_graphics_mode_B(
  * End raster graphics mode - new style. This resets the compression mode and
  * the left grahics margin, in addition to ending graphics mode.
  */
-  private int
+  static int
 end_graphics_mode_C(
     pcl_args_t *        pargs,
     pcl_state_t *       pcs
@@ -624,7 +624,7 @@ end_graphics_mode_C(
 /*
  * Initialization
  */
-  private int
+  static int
 gmode_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem    /* ignored */
@@ -705,7 +705,7 @@ gmode_do_registration(
     return 0;
 }
 
-  private void
+  static void
 gmode_do_reset(
     pcl_state_t *       pcs,
     pcl_reset_type_t    type

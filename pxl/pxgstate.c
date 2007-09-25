@@ -94,7 +94,7 @@ px_gstate_rc_adjust(px_gstate_t *pxgs, int delta, gs_memory_t *mem)
 {	px_paint_rc_adjust(&pxgs->pen, delta, mem);
 	px_paint_rc_adjust(&pxgs->brush, delta, mem);
 }
-private void *
+static void *
 px_gstate_client_alloc(gs_memory_t *mem)
 {	
     px_gstate_t *pxgs = 
@@ -116,7 +116,7 @@ px_gstate_client_alloc(gs_memory_t *mem)
     px_dict_init(&pxgs->temp_pattern_dict, mem, px_free_pattern);
     return pxgs;
 }
-private int
+static int
 px_gstate_client_copy_for(void *to, void *from, gs_state_copy_reason_t reason)
 {
 #define pxfrom ((px_gstate_t *)from)
@@ -187,7 +187,7 @@ copy:	      if ( phtt->data )
 #undef pxfrom
 #undef pxto
 }
-private void
+static void
 px_gstate_client_free(void *old, gs_memory_t *mem)
 {	px_gstate_t *pxgs = old;
 
@@ -203,7 +203,7 @@ px_gstate_client_free(void *old, gs_memory_t *mem)
 	px_gstate_rc_adjust(old, -1, mem);
 	gs_free_object(mem, old, "px_gstate_free");
 }
-private const gs_state_client_procs px_gstate_procs = {
+static const gs_state_client_procs px_gstate_procs = {
   px_gstate_client_alloc,
   0,				/* copy -- superseded by copy_for */
   px_gstate_client_free,
@@ -309,7 +309,7 @@ px_initclip(px_state_t *pxs)
     return gx_clip_to_rectangle(pxs->pgs, &pxs->pxgs->initial_clip_rect);
 }
 
-private bool
+static bool
 px_is_currentcolor_pattern(const gs_state *pgs)
 {
     return (gs_color_space_num_components(gs_currentcolorspace(pgs)) < 1);
@@ -380,7 +380,7 @@ px_image_color_space(gs_image_t *pim,
     return_error(errorClipModeMismatch)
 
 /* Record the most recent character transformation. */
-private void
+static void
 add_char_transform(px_gstate_t *pxgs, px_char_transform_t trans)
 {	/* Promote this transformation to the head of the list. */
 	if ( pxgs->char_transforms[2] == trans )
@@ -502,7 +502,7 @@ SetFillMode
 */
 
 /* assembled (little endian) stream */
-private const byte pxSetDefaultGSstr[] = {
+static const byte pxSetDefaultGSstr[] = {
     192,2,248,3,106,200,193,3,0,0,0,0,248,11,99,193,
     0,0,248,161,100,116,200,193,3,0,0,0,0,248,11,121,192,1,248,75,122,192,
     0,248,45,124,192,0,248,45,120,192,252,248,44,123,192,0,248,71,113,192,
@@ -979,7 +979,7 @@ pxSetPageScale(px_args_t *par, px_state_t *pxs)
     int code;
     real sx = 1;
     real sy = 1;
-    private const real units_conversion_table[3][3] = {
+    static const real units_conversion_table[3][3] = {
         { 1, 25.4, 254 },     /* in -> in, mill, 1/10 mill */
         { 0.0394, 1, 10 },    /* mill -> in, mill, 1/10 mill */
         { 0.00394, .1, 1 }    /* 1/10 mill -> in, mill, 1/10 mill */ 

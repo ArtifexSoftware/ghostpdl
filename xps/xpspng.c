@@ -15,7 +15,7 @@ struct xps_png_io_s
     byte *lim;
 };
 
-private void xps_png_read(png_structp png, png_bytep data, png_size_t length)
+static void xps_png_read(png_structp png, png_bytep data, png_size_t length)
 {
     struct xps_png_io_s *io = png_get_io_ptr(png);
     if (io->ptr + length > io->lim)
@@ -24,13 +24,13 @@ private void xps_png_read(png_structp png, png_bytep data, png_size_t length)
     io->ptr += length;
 }
 
-private png_voidp xps_png_malloc(png_structp png, png_size_t size)
+static png_voidp xps_png_malloc(png_structp png, png_size_t size)
 {
     gs_memory_t *mem = png_get_mem_ptr(png);
     return gs_alloc_bytes(mem, size, "libpng");
 }
 
-private void xps_png_free(png_structp png, png_voidp ptr)
+static void xps_png_free(png_structp png, png_voidp ptr)
 {
     gs_memory_t *mem = png_get_mem_ptr(png);
     gs_free_object(mem, ptr, "libpng");

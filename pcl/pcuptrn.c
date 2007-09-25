@@ -38,7 +38,7 @@ private_st_pattern_t();
 /*
  * Free routine for pattern data structure.
  */
-  private void
+  static void
 free_pattern_data(
     gs_memory_t *           pmem,
     void *                  pvpat_data,
@@ -53,8 +53,8 @@ free_pattern_data(
 }
 
 /*
- * Build a pattern data structure. This routine is private as pattern data
- * structures may only be built as part of a pattern.
+ * Build a pattern data structure. This routine is static as pattern 
+ * data structures may only be built as part of a pattern.
  *
  * All pattern data structure are built as "temporary". Routines that build
  * internal patterns should modify this as soon as the pattern is built.
@@ -62,7 +62,7 @@ free_pattern_data(
  * Returns 0 on success, < 0 in the event of an error. In the latter case,
  * *pppat_data will be set to NULL.
  */
-  private int
+  static int
 build_pattern_data(
     pcl_pattern_data_t **   pppat_data,
     const gs_depth_bitmap * ppixinfo,
@@ -97,7 +97,7 @@ build_pattern_data(
 /*
  * Free the rendered portion of a pattern.
  */
-private void
+static void
 free_pattern_rendering(const gs_memory_t *mem,
 		       pcl_pattern_t * pptrn
 )
@@ -216,7 +216,7 @@ pcl_pattern_get_pcl_uptrn( pcl_state_t *pcs, int id )
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+  static int
 define_pcl_ptrn(
     pcl_state_t *   pcs,
     int             id,
@@ -241,7 +241,7 @@ define_pcl_ptrn(
  * Delete all temporary patterns or all patterns, based on the value of
  * the operand.
  */
-  private void
+  static void
 delete_all_pcl_ptrns(
     bool            renderings,
     bool            tmp_only,
@@ -386,7 +386,7 @@ typedef struct pcl_upattern1_s {
  *
  * Download Pattern
  */
-  private int
+  static int
 download_pcl_pattern(
     pcl_args_t *            pargs,
     pcl_state_t *           pcs
@@ -479,7 +479,7 @@ download_pcl_pattern(
  *
  * Pattern contorl.
  */
-  private int
+  static int
 pattern_control(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -524,7 +524,7 @@ pattern_control(
     return 0;
 }
 
- private int
+static int
 upattern_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
   pcl_copy_operation_t operation)
 {	
@@ -543,7 +543,7 @@ upattern_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
 /*
  * Initialization and reset routines.
  */ 
-  private int
+  static int
 upattern_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem
@@ -565,7 +565,7 @@ upattern_do_registration(
     return 0;
 }
 
-  private void
+  static void
 upattern_do_reset(
     pcl_state_t *                   pcs,
     pcl_reset_type_t                type

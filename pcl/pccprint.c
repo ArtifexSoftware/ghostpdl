@@ -26,7 +26,7 @@
  *
  * Set logical operation.
  */
-  private int
+  static int
 pcl_logical_operation(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -52,7 +52,7 @@ pcl_logical_operation(
  * Set prixel placement. Note that this feature is not yet properly
  * implemented.
  */
-  private int
+  static int
 pcl_pixel_placement(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -71,7 +71,7 @@ pcl_pixel_placement(
 /*
  * Initialization
  */
-  private int
+  static int
 pccprint_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem
@@ -97,7 +97,7 @@ pccprint_do_registration(
     return 0;
 }
 
-  private void
+  static void
 pccprint_do_reset(
     pcl_state_t *       pcs,
     pcl_reset_type_t    type

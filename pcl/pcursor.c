@@ -282,7 +282,7 @@ pcl_set_cap_y(
     return 0;
 }
 
-private inline float 
+static inline float 
 motion_args(pcl_args_t *pargs, bool truncate)
 {
     float arg = float_arg(pargs);
@@ -293,7 +293,7 @@ motion_args(pcl_args_t *pargs, bool truncate)
         
 /* some convenient short-hand for the cursor movement commands */
 
-private inline void
+static inline void
 do_horiz_motion(
    pcl_args_t  *pargs,
    pcl_state_t *pcs,
@@ -306,7 +306,7 @@ do_horiz_motion(
 }
 
 
-private inline int
+static inline int
 do_vertical_move(pcl_state_t *pcs, pcl_args_t *pargs, float mul, 
                  bool use_margins, bool by_row, bool by_row_command, bool truncate_arg) 
 {
@@ -426,7 +426,7 @@ pcl_updated_hmi(
  *
  * Set horizontal motion index.
  */
-  private int
+  static int
 set_horiz_motion_index(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -451,7 +451,7 @@ set_horiz_motion_index(
  */
 
 #define HP_VERT_MOTION_NEW
-  private int
+  static int
 set_vert_motion_index(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -476,7 +476,7 @@ set_vert_motion_index(
  * Set line spacing. Though it is not documented anywhere, various HP devices
  * agree that a zero operand specifies 12 lines per inch (NOT the default).
  */
-  private int
+  static int
 set_line_spacing(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -494,7 +494,7 @@ set_line_spacing(
 /*
  * ESC & k G
  */
-  private int
+  static int
 set_line_termination(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -511,7 +511,7 @@ set_line_termination(
 /*
  * ESC & a <cols> C
  */
-  private int
+  static int
 horiz_cursor_pos_columns(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -524,7 +524,7 @@ horiz_cursor_pos_columns(
 /*
  * ESC & a <dp> H
  */
-  private int
+  static int
 horiz_cursor_pos_decipoints(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -537,7 +537,7 @@ horiz_cursor_pos_decipoints(
 /*
  * ESC * p <units> X
  */
-  private int
+  static int
 horiz_cursor_pos_units(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -552,7 +552,7 @@ horiz_cursor_pos_units(
 /*
  * CR
  */
-  private int
+  static int
 cmd_CR(
     pcl_args_t *    pargs,  /* ignored */
     pcl_state_t *   pcs
@@ -565,7 +565,7 @@ cmd_CR(
 /*
  * BS
  */
-  private int
+  static int
 cmd_BS(
     pcl_args_t *    pargs,  /* ignored */
     pcl_state_t *   pcs
@@ -581,7 +581,7 @@ cmd_BS(
  *
  * Tabs occur at ever 8 columns, measure from the left text margin.
  */
-  private int
+  static int
 cmd_HT(
     pcl_args_t *    pargs,  /* ignored */
     pcl_state_t *   pcs
@@ -604,7 +604,7 @@ cmd_HT(
 /*
  * ESC & a <rows> R
  */
-  private int
+  static int
 vert_cursor_pos_rows(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -616,7 +616,7 @@ vert_cursor_pos_rows(
 /*
  * ESC & a <dp> V
  */
-  private int
+  static int
 vert_cursor_pos_decipoints(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -628,7 +628,7 @@ vert_cursor_pos_decipoints(
 /*
  * ESC * p <units> Y
  */
-  private int
+  static int
 vert_cursor_pos_units(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -642,7 +642,7 @@ vert_cursor_pos_units(
 /*
  * ESC =
  */
-  private int
+  static int
 half_line_feed(
     pcl_args_t *    pargs,  /* ignored */
     pcl_state_t *   pcs
@@ -660,7 +660,7 @@ half_line_feed(
 /*
  * LF
  */
-  private int
+  static int
 cmd_LF(
     pcl_args_t *    pargs,  /* ignored */
     pcl_state_t *   pcs
@@ -674,7 +674,7 @@ cmd_LF(
 /*
  * FF
  */
-  private int
+  static int
 cmd_FF(
     pcl_args_t *    pargs,  /* ignored */
     pcl_state_t *   pcs
@@ -693,7 +693,7 @@ cmd_FF(
  * Reference Manual", October 1992 ed., p. 6-16, pushd cursors are stored
  * in logical page space, not device space.
  */
-  private int
+  static int
 push_pop_cursor(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -727,7 +727,7 @@ push_pop_cursor(
     return 0;
 }
 
-private int
+static int
 pcursor_do_copy(pcl_state_t *psaved, 
 		const pcl_state_t *pcs, pcl_copy_operation_t operation)
 {
@@ -753,7 +753,7 @@ pcursor_do_copy(pcl_state_t *psaved,
 /*
  * Initialization
  */
-  private int
+  static int
 pcursor_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem
@@ -853,7 +853,7 @@ pcursor_do_registration(
     return 0;
 }
 
-  private void
+  static void
 pcursor_do_reset(
     pcl_state_t *       pcs,
     pcl_reset_type_t    type

@@ -29,7 +29,7 @@
  * ith row and jth column of the given matrix, multiplied by -1 if
  * (i + j) is odd.
  */
-  private floatp
+  static floatp
 calc_cofactor(
     int                 i,
     int                 j,
@@ -51,7 +51,7 @@ calc_cofactor(
  *
  * For this routine, pinmtx and poutmtx must be different.
  */
-  private void
+  static void
 make_cofactor_mtx(
     const pcl_mtx3_t *  pinmtx,
     pcl_mtx3_t *        poutmtx

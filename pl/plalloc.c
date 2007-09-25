@@ -19,7 +19,7 @@ extern const gs_memory_struct_type_t st_bytes;
 
 /* assume doubles are the largest primitive types and malloc alignment
    is consistent.  Covers the machines we care about */
-inline private uint
+inline static uint
 round_up_to_align(uint size)
 {
     return ARCH_ALIGN_MEMORY_MOD;
@@ -27,7 +27,7 @@ round_up_to_align(uint size)
 
 /* aceesors to get size and type given the pointer returned to the
    client, *not* the pointer returned by malloc or realloc */
-inline private uint
+inline static uint
 get_size(byte *ptr)
 {
     /* unpack the unsigned long we stored 2 words behind the object at
@@ -201,7 +201,7 @@ pl_mem_node_free_all_remaining(gs_memory_t *mem)
 
 /* all of the allocation routines modulo realloc reduce to the this
    function */
-private byte *
+static byte *
 pl_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_name_t cname)
 {
 
@@ -237,54 +237,54 @@ pl_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_name_t c
     }
 }
 
-private byte *
+static byte *
 pl_alloc_bytes_immovable(gs_memory_t * mem, uint size, client_name_t cname)
 {
     return pl_alloc(mem, size, &st_bytes, cname);
 }
 
-private byte *
+static byte *
 pl_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 {
     return pl_alloc(mem, size, &st_bytes, cname);
 }
 
-private void *
+static void *
 pl_alloc_struct_immovable(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
 			 client_name_t cname)
 {
     return pl_alloc(mem, pstype->ssize, pstype, cname);
 }
 
-private void *
+static void *
 pl_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
 	       client_name_t cname)
 {
     return pl_alloc(mem, pstype->ssize, pstype, cname);
 }
 
-private byte *
+static byte *
 pl_alloc_byte_array_immovable(gs_memory_t * mem, uint num_elements,
 			     uint elt_size, client_name_t cname)
 {
     return pl_alloc_bytes(mem, num_elements * elt_size, cname);
 }
 
-private byte *
+static byte *
 pl_alloc_byte_array(gs_memory_t * mem, uint num_elements, uint elt_size,
 		   client_name_t cname)
 {
     return pl_alloc_bytes(mem, num_elements * elt_size, cname);
 }
 
-private void *
+static void *
 pl_alloc_struct_array_immovable(gs_memory_t * mem, uint num_elements,
 			   gs_memory_type_ptr_t pstype, client_name_t cname)
 {
     return pl_alloc(mem, num_elements * pstype->ssize, pstype, cname);
 }
 
-private void *
+static void *
 pl_alloc_struct_array(gs_memory_t * mem, uint num_elements,
 		     gs_memory_type_ptr_t pstype, client_name_t cname)
 {
@@ -292,7 +292,7 @@ pl_alloc_struct_array(gs_memory_t * mem, uint num_elements,
 }
 
 
-private void *
+static void *
 pl_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements, client_name_t cname)
 {
     byte *ptr;
@@ -320,7 +320,7 @@ pl_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements, client_nam
 }
 
 	
-private void
+static void
 pl_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 {
     if ( ptr != NULL ) {
@@ -344,21 +344,21 @@ pl_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     }
 }
 
-private byte *
+static byte *
 pl_alloc_string_immovable(gs_memory_t * mem, uint nbytes, client_name_t cname)
 {
     /* we just alloc bytes here */
     return pl_alloc_bytes(mem, nbytes, cname);
 }
 
-private byte *
+static byte *
 pl_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
 {
     /* we just alloc bytes here */
     return pl_alloc_bytes(mem, nbytes, cname);
 }
 
-private byte *
+static byte *
 pl_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
 		client_name_t cname)
 {
@@ -366,7 +366,7 @@ pl_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
     return pl_resize_object(mem, data, new_num, cname);
 }
 
-private void
+static void
 pl_free_string(gs_memory_t * mem, byte * data, uint nbytes,
 	      client_name_t cname)
 {
@@ -375,58 +375,58 @@ pl_free_string(gs_memory_t * mem, byte * data, uint nbytes,
 }
 
 
-private void
+static void
 pl_status(gs_memory_t * mem, gs_memory_status_t * pstat)
 {
     return;
 }
 
-private void
+static void
 pl_enable_free(gs_memory_t * mem, bool enable)
 {
     return;
 }
 
-private void
+static void
 pl_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
 {
     return;
 }
 
-private void
+static void
 pl_consolidate_free(gs_memory_t *mem)
 {
     return;
 }
 
 
-private uint
+static uint
 pl_object_size(const gs_memory_t * mem, const void /*obj_header_t */ *obj)
 {
     return get_size((byte *)obj);
 }
 
-private gs_memory_type_ptr_t
+static gs_memory_type_ptr_t
 pl_object_type(const gs_memory_t * mem, const void /*obj_header_t */ *obj)
 {
     return get_type((byte *)obj);
 }
 
-private int
+static int
 pl_register_root(gs_memory_t * mem, gs_gc_root_t * rp, gs_ptr_type_t ptype,
 		 void **up, client_name_t cname)
 {
     return 0;
 }
 
-private void
+static void
 pl_unregister_root(gs_memory_t * mem, gs_gc_root_t * rp, client_name_t cname)
 {
     return;
 }
 
 /* Define a vacuous recovery procedure. */
-private gs_memory_recover_status_t
+static gs_memory_recover_status_t
 no_recover_proc(gs_memory_retrying_t *rmem, void *proc_data)
 {
     return RECOVER_STATUS_NO_RETRY;
@@ -434,7 +434,7 @@ no_recover_proc(gs_memory_retrying_t *rmem, void *proc_data)
 
 
 /* forward decl */
-private gs_memory_t * pl_stable(gs_memory_t *mem);
+static gs_memory_t * pl_stable(gs_memory_t *mem);
 
 
 gs_memory_retrying_t pl_mem = {
@@ -471,7 +471,7 @@ gs_memory_retrying_t pl_mem = {
     NULL             /* recovery data */
 };
 
-private gs_memory_t *
+static gs_memory_t *
 pl_stable(gs_memory_t *mem)
 {
     return (gs_memory_t *)&pl_mem;
@@ -514,7 +514,7 @@ const gs_malloc_memory_t pl_malloc_memory = {
 
 #ifndef PSI_INCLUDED
 /* retrun the c-heap manager set the global default as well. */
-private gs_memory_t *
+static gs_memory_t *
 pl_malloc_init(void)
 {
     return (gs_memory_t *)&pl_malloc_memory;

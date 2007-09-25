@@ -22,7 +22,7 @@
  * Find the first white point in a palette. If none are found, the palette
  * size is returned.
  */
-  private int
+  static int
 find_first_white(
     const byte *    ptbl,
     int             num_entries
@@ -43,7 +43,7 @@ find_first_white(
  *
  * It is also assumed that ptbl points to a table of at least 256 entries.
  */
-  private void
+  static void
 build_remap_array8(
     byte *  pmap,           /* existing (general) re-map array */
     int     num_entries,    /* number of entries in re-map array */
@@ -83,7 +83,7 @@ build_remap_array8(
  * Returns true if a re-map table formed and remapping is required, false
  * otherwise.
  */
-  private bool
+  static bool
 build_remap_array(
     const byte *    ptbl,
     int             num_entries,
@@ -147,7 +147,7 @@ build_remap_array(
  * 8 (i.e.: there is an integral number of pixels in a byte). In this case
  * all pixels within a byte can be mapped at once.
  */
-  private void
+  static void
 remap_raster_ary8(
     const byte *    inp,        /* array to read from */
     byte *          outp,       /* array to write to; may be same as inp */
@@ -168,7 +168,7 @@ remap_raster_ary8(
  *
  * This will work for any number of bits per pixel <= 8.
  */
-  private void
+  static void
 remap_raster_ary(
     const byte *    inp,        /* array to read from */
     byte *          outp,       /* array to write to; may be same as inp */

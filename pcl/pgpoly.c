@@ -30,7 +30,7 @@
 #define DO_RELATIVE 2
 
 /* clear the polygon buffer by entering and exiting polygon mode. */
-private int
+static int
 hpgl_clear_polygon_buffer(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {
     hpgl_args_setup(pargs);
@@ -41,7 +41,7 @@ hpgl_clear_polygon_buffer(hpgl_args_t *pargs, hpgl_state_t *pgls)
 }
     
 /* Build a rectangle in polygon mode used by (EA, ER, RA, RR). */
-private int
+static int
 hpgl_rectangle(hpgl_args_t *pargs,  hpgl_state_t *pgls, int flags, bool do_poly)
 {	hpgl_real_t x2, y2;
 	if ( !hpgl_arg_units(pgls->memory, pargs, &x2) || 
@@ -85,7 +85,7 @@ hpgl_rectangle(hpgl_args_t *pargs,  hpgl_state_t *pgls, int flags, bool do_poly)
 }
 
 /* Fill or edge a wedge (EW, WG). */
-private int
+static int
 hpgl_wedge(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t radius, start, sweep, chord = 5.0;
 
@@ -190,7 +190,7 @@ hpgl_EW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	return 0;
 }
 
- private hpgl_rendering_mode_t
+static hpgl_rendering_mode_t
 hpgl_get_poly_render_mode(
     hpgl_state_t *              pgls
 )
@@ -368,7 +368,7 @@ hpgl_WG(hpgl_args_t *pargs, hpgl_state_t *pgls)
 }
 
 /* Initialization */
-private int
+static int
 pgpoly_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *mem)

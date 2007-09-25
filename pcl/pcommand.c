@@ -61,7 +61,7 @@ float_value(
 /*
  * "put" parameters to the device.
  */
-  private int
+  static int
 end_param1(
     gs_c_param_list *   alist,
     pcl_state_t *       pcs

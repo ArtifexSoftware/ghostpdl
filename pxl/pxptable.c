@@ -47,57 +47,57 @@
 #define ok_iff(test)\
   ((test) ? 0 : gs_note_error(errorIllegalAttributeValue))
 
-private int
+static int
 checkCharAngle(const px_value_t *pv)
 {       real v = real_value(pv, 0);
         return ok_iff(v >= -360 && v <= 360);
 }
-private int
+static int
 checkCharBoldValue(const px_value_t *pv)
 {       return ok_iff(pv->value.r >= 0 && pv->value.r <= 1);
 }
-private int
+static int
 checkCharScale(const px_value_t *pv)
 {       real x = real_value(pv, 0), y = real_value(pv, 1);
         return ok_iff(x >= -32768 && x <= 32767 && y >= -32768 && y <= 32767);
 }
 #define checkCharShear checkCharScale
-private int
+static int
 checkDestinationSize(const px_value_t *pv)
 {       return ok_iff(pv->value.ia[0] != 0 && pv->value.ia[1] != 0);
 }
-private int
+static int
 checkDitherMatrixDataType(const px_value_t *pv)
 {       return ok_iff(pv->value.i == eUByte);
 }
-private int
+static int
 checkDitherMatrixDepth(const px_value_t *pv)
 {       return ok_iff(pv->value.i == e8Bit);
 }
-private int
+static int
 checkDitherMatrixSize(const px_value_t *pv)
 {       return ok_iff(pv->value.i >= 1 && pv->value.i <= 256);
 }
-private int
+static int
 checkGrayLevel(const px_value_t *pv)
 {       return ok_iff(pv->type & pxd_any_real ?
                       pv->value.r >= 0 && pv->value.r <= 1 :
                       true);
 }
 
-private int
+static int
 checkPageAngle(const px_value_t *pv)
 {       
     /* XL 1.0 generates an error for non-orthogonal page angles */
     return 0;
 }
 
-private int
+static int
 checkPageScale(const px_value_t *pv)
 {       real x = real_value(pv, 0), y = real_value(pv, 1);
         return ok_iff(x >= 0 && x <= 32767 && y >= 0 && y <= 32767);
 }
-private int
+static int
 checkRGBColor(const px_value_t *pv)
 {       if ( pv->value.array.size != 3 )
           return_error(errorIllegalArraySize);
@@ -112,12 +112,12 @@ checkRGBColor(const px_value_t *pv)
           }
         return 0;
 }
-private int
+static int
 checkSourceHeight(const px_value_t *pv)
 {       return ok_iff(pv->value.i >= 1);
 }
 #define checkSourceWidth checkSourceHeight
-private int
+static int
 checkUnitsPerMeasure(const px_value_t *pv)
 {       real x = real_value(pv, 0), y = real_value(pv, 1);
         return ok_iff(x > 0 && x <= 65535 && y > 0 && y <= 65535);
@@ -502,8 +502,8 @@ const char *px_operator_names[0x80] = {
   extern const byte /*px_attribute*/ args[]
 
 /* Define the implementation of undefined operators. */
-private const byte apxBadOperator[] = {0, 0};
-private int
+static const byte apxBadOperator[] = {0, 0};
+static int
 pxBadOperator(px_args_t *par, px_state_t *pxs)
 {       return_error(errorIllegalTag);
 }

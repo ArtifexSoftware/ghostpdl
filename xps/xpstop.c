@@ -60,7 +60,7 @@ xps_imp_characteristics(const pl_interp_implementation_t *pimpl)
     return &xps_characteristics;
 }
 
-private int  
+static int  
 xps_imp_allocate_interp(pl_interp_t **ppinterp,
 	const pl_interp_implementation_t *pimpl,
 	gs_memory_t *pmem)
@@ -71,7 +71,7 @@ xps_imp_allocate_interp(pl_interp_t **ppinterp,
 }
 
 /* Do per-instance interpreter allocation/init. No device is set yet */
-private int
+static int
 xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
 	pl_interp_t *pinterp,
 	gs_memory_t *pmem)
@@ -136,7 +136,7 @@ dputs("xps_imp_allocate_interp_instance!\n");
 }
 
 /* Set a client language into an interperter instance */
-private int
+static int
 xps_imp_set_client_instance(pl_interp_instance_t *pinstance,
 	pl_interp_instance_t *pclient,
 	pl_interp_instance_clients_t which_client)
@@ -145,7 +145,7 @@ xps_imp_set_client_instance(pl_interp_instance_t *pinstance,
     return 0;
 }
 
-private int
+static int
 xps_imp_set_pre_page_action(pl_interp_instance_t *pinstance,
 	pl_page_action_t action, void *closure)
 {
@@ -155,7 +155,7 @@ xps_imp_set_pre_page_action(pl_interp_instance_t *pinstance,
     return 0;
 }
 
-private int
+static int
 xps_imp_set_post_page_action(pl_interp_instance_t *pinstance,
 	pl_page_action_t action, void *closure)
 {
@@ -165,7 +165,7 @@ xps_imp_set_post_page_action(pl_interp_instance_t *pinstance,
     return 0;
 }
 
-private int
+static int
 xps_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
 {
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
@@ -206,7 +206,7 @@ cleanup_setdevice:
     return code;
 }
 
-private int   
+static int   
 xps_imp_get_device_memory(pl_interp_instance_t *pinstance, gs_memory_t **ppmem)
 {
     /* huh? we do nothing here */
@@ -214,7 +214,7 @@ xps_imp_get_device_memory(pl_interp_instance_t *pinstance, gs_memory_t **ppmem)
 }
 
 /* Parse a cursor-full of data */
-private int
+static int
 xps_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *pcursor)
 {
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;    
@@ -225,7 +225,7 @@ xps_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *pcursor)
 /* Skip to end of job.
  * Return 1 if done, 0 ok but EOJ not found, else negative error code.
  */
-private int
+static int
 xps_imp_flush_to_eoj(pl_interp_instance_t *pinstance, stream_cursor_read *pcursor)
 {
     /* assume XPS cannot be pjl embedded */
@@ -234,14 +234,14 @@ xps_imp_flush_to_eoj(pl_interp_instance_t *pinstance, stream_cursor_read *pcurso
 }
 
 /* Parser action for end-of-file */
-private int
+static int
 xps_imp_process_eof(pl_interp_instance_t *pinstance)
 {
     return 0;
 }
 
 /* Report any errors after running a job */
-private int
+static int
 xps_imp_report_errors(pl_interp_instance_t *pinstance,
 	int code,           /* prev termination status */
 	long file_position, /* file position of error, -1 if unknown */
@@ -252,21 +252,21 @@ xps_imp_report_errors(pl_interp_instance_t *pinstance,
 }
 
 /* Prepare interp instance for the next "job" */
-private int
+static int
 xps_imp_init_job(pl_interp_instance_t *pinstance)
 {
     return 0;
 }
 
 /* Wrap up interp instance after a "job" */
-private int
+static int
 xps_imp_dnit_job(pl_interp_instance_t *pinstance)
 {
     return 0;
 }
 
 /* Remove a device from an interperter instance */
-private int
+static int
 xps_imp_remove_device(pl_interp_instance_t *pinstance)
 {
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
@@ -288,7 +288,7 @@ xps_imp_remove_device(pl_interp_instance_t *pinstance)
 }
 
 /* Deallocate a interpreter instance */
-private int
+static int
 xps_imp_deallocate_interp_instance(pl_interp_instance_t *pinstance)
 {
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
@@ -333,7 +333,7 @@ dputs("xps_imp_deallocate_interp_instance!\n");
 }
 
 /* Do static deinit of XPS interpreter */
-private int
+static int
 xps_imp_deallocate_interp(pl_interp_t *pinterp)
 {
     /* nothing to do */

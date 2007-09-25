@@ -148,7 +148,7 @@ pjl_impl_set_post_page_action(
 	return gs_error_undefined;   /* this operation is undefined for PJL */
 }
 
-private int   
+static int   
 pjl_impl_get_device_memory(
   pl_interp_instance_t   *instance,     /* interp instance to use */
   gs_memory_t **pmem)

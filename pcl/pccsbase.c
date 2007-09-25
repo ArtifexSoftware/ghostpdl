@@ -152,19 +152,19 @@ private_st_cs_base_t();
  *         for which chromaticities have been provided (only luminance-
  *         chrominance space)
  */
-private const pcl_cid_minmax_t  cielab_range_default = {
+static const pcl_cid_minmax_t  cielab_range_default = {
     { { 0.0, 100.0 }, { -100.0, 100.0 }, { -100.0, 100.0 } }
 };
 
-private const pcl_cid_minmax_t  colmet_range_default = {
+static const pcl_cid_minmax_t  colmet_range_default = {
     { { 0.0, 1.0 }, { 0.0, 1.0 }, { 0.0, 1.0 } }
 };
 
-private const pcl_cid_minmax_t  lumchrom_range_default = {
+static const pcl_cid_minmax_t  lumchrom_range_default = {
     { { 0.0, 1.0 }, { -0.89, 0.89 }, { -0.70, 0.70 } }
 };
 
-private const pcl_cid_col_common_t  chroma_default = {
+static const pcl_cid_col_common_t  chroma_default = {
     {
         { 0.640, 0.340 },   /* "red" primary chromaticity */
         { 0.310, 0.595 },   /* "green" primary chromaticity */
@@ -174,12 +174,12 @@ private const pcl_cid_col_common_t  chroma_default = {
     { { 1, 1.0 }, { 1, 1.0 }, { 1, 1.0 } }
 };
 
-private const float     lumchrom_xform_default[9] = {
+static const float     lumchrom_xform_default[9] = {
     0.30, 0.59, 0.11, -0.30, -0.59, 0.89, 0.70, -0.59, -0.11
 };
 
 /* structure of default values for all color spaces */
-private const struct {
+static const struct {
     const pcl_cid_minmax_t *        pminmax;
     const pcl_cid_col_common_t *    pchroma;
     const float *                   pxform;
@@ -201,7 +201,7 @@ private const struct {
 /*
  * Set the range parameters for a color space.
  */
-  private void
+  static void
 set_client_info_range(
     pcl_cs_client_data_t *      pdata,
     const pcl_cid_minmax_t *    pminmax
@@ -219,7 +219,7 @@ set_client_info_range(
 /*
  * Set the gamma/gain information for a color space.
  */
-  private void
+  static void
 set_client_info_chroma(
     pcl_cs_client_data_t *          pdata,
     const pcl_cid_col_common_t *    pchroma
@@ -239,7 +239,7 @@ set_client_info_chroma(
 /*
  * Build the client information structure for a color space.
  */
-  private void
+  static void
 build_client_data(
     pcl_cs_client_data_t *          pdata,
     const pcl_cid_data_t *          pcid,
@@ -273,7 +273,7 @@ build_client_data(
 /*
  * Init a client data structure from an existing client data structure.
  */
-private void
+static void
 init_client_data_from( pcl_cs_client_data_t *          pnew,
 		       const pcl_cs_client_data_t *    pfrom
 )
@@ -286,7 +286,7 @@ init_client_data_from( pcl_cs_client_data_t *          pnew,
 /*
  * Update the lookup table information in a PCL base color space.
  */
-  private void
+  static void
 update_lookup_tbls(
     pcl_cs_client_data_t *  pdata,
     pcl_lookup_tbl_t *      plktbl1,
@@ -424,7 +424,7 @@ update_lookup_tbls(
  * are the same, except for the array index used.
  */
 #define colmet_DecodeABC_proc(procname, indx)                               \
-      private float                                                         \
+      static float                                                         \
     procname(                                                               \
         floatp                          val,                                \
         const gs_cie_abc *              pabc                                \
@@ -454,7 +454,7 @@ colmet_DecodeABC_proc(colmet_DecodeABC_0, 0)
 colmet_DecodeABC_proc(colmet_DecodeABC_1, 1)
 colmet_DecodeABC_proc(colmet_DecodeABC_2, 2)
 
-private const gs_cie_abc_proc3  colmet_DecodeABC = {
+static const gs_cie_abc_proc3  colmet_DecodeABC = {
     { colmet_DecodeABC_0, colmet_DecodeABC_1, colmet_DecodeABC_2 }
 };
 
@@ -464,7 +464,7 @@ private const gs_cie_abc_proc3  colmet_DecodeABC = {
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+  static int
 build_colmet_conv_mtx(
     const pcl_cid_col_common_t *    pdata,
     pcl_vec3_t *                    pwhite_pt,
@@ -501,7 +501,7 @@ build_colmet_conv_mtx(
 /*
  * Finish the creation of a colorimetric RGB color space.
  */
-  private int
+  static int
 finish_colmet_cspace(
     gs_color_space *                pcspace,
     const pcl_cid_data_t *          pcid
@@ -650,7 +650,7 @@ finish_colmet_cspace(
  * conv_code operand allows for this difference.
  */
 #define lab_DecodeABC_proc(procname, indx, conv_code)                       \
-      private float                                                         \
+      static float                                                         \
     procname(                                                               \
         floatp                          val,                                \
         const gs_cie_abc *              pabc                                \
@@ -673,11 +673,11 @@ lab_DecodeABC_proc(lab_DecodeABC_0, 0, (val = (val + 16.0) / 116.0))
 lab_DecodeABC_proc(lab_DecodeABC_1, 1, (val /= 500))
 lab_DecodeABC_proc(lab_DecodeABC_2, 2, (val /= 200))
 
-private const gs_cie_abc_proc3  lab_DecodeABC = {
+static const gs_cie_abc_proc3  lab_DecodeABC = {
     { lab_DecodeABC_0, lab_DecodeABC_1, lab_DecodeABC_2 }
 };
 
-private const gs_matrix3    lab_MatrixABC = {
+static const gs_matrix3    lab_MatrixABC = {
     { 1, 1, 1 }, { 1, 0, 0 }, { 0, 0, -1 },
     false
 };
@@ -689,7 +689,7 @@ private const gs_matrix3    lab_MatrixABC = {
  * to 1.0, but it guards against future variations.
  */
 #define lab_DecodeLMN_proc(procname, indx)                          \
-      private float                                                 \
+      static float                                                 \
     procname(                                                       \
         floatp                  val,                                \
         const gs_cie_common *   pcie                                \
@@ -707,17 +707,17 @@ lab_DecodeLMN_proc(lab_DecodeLMN_0, 0)
 lab_DecodeLMN_proc(lab_DecodeLMN_1, 1)
 lab_DecodeLMN_proc(lab_DecodeLMN_2, 2)
 
-private const gs_cie_common_proc3   lab_DecodeLMN = {
+static const gs_cie_common_proc3   lab_DecodeLMN = {
     { lab_DecodeLMN_0, lab_DecodeLMN_1, lab_DecodeLMN_2 }
 };
 
-private const gs_vector3    lab_WhitePoint = { .9504, 1.0, 1.0889 };
+static const gs_vector3    lab_WhitePoint = { .9504, 1.0, 1.0889 };
 
 
 /*
  * Finish the creation of a CIE L*a*b* color space.
  */
-  private int
+  static int
 finish_lab_cspace(
     gs_color_space *                pcspace,
     const pcl_cid_data_t *          pcid
@@ -766,7 +766,7 @@ finish_lab_cspace(
  * The DecodeABC procedures for luminance-chrominance color space are simple.
  */
 #define lumchrom_DecodeABC_proc(procname, indx)                             \
-      private float                                                         \
+      static float                                                         \
     procname(                                                               \
         floatp                          val,                                \
         const gs_cie_abc *              pabc                                \
@@ -788,7 +788,7 @@ lumchrom_DecodeABC_proc(lumchrom_DecodeABC_0, 0)
 lumchrom_DecodeABC_proc(lumchrom_DecodeABC_1, 1)
 lumchrom_DecodeABC_proc(lumchrom_DecodeABC_2, 2)
 
-private const gs_cie_abc_proc3  lumchrom_DecodeABC = {
+static const gs_cie_abc_proc3  lumchrom_DecodeABC = {
     { lumchrom_DecodeABC_0, lumchrom_DecodeABC_1, lumchrom_DecodeABC_2 }
 };
 
@@ -798,7 +798,7 @@ private const gs_cie_abc_proc3  lumchrom_DecodeABC = {
  * for the XYZ components, this procedure checks the range of its output.
  */
 #define lumchrom_DecodeLMN_proc(procname, indx)                             \
-      private float                                                         \
+      static float                                                         \
     procname(                                                               \
         floatp                          val,                                \
         const gs_cie_common *           pcie                                \
@@ -829,7 +829,7 @@ lumchrom_DecodeLMN_proc(lumchrom_DecodeLMN_0, 0)
 lumchrom_DecodeLMN_proc(lumchrom_DecodeLMN_1, 1)
 lumchrom_DecodeLMN_proc(lumchrom_DecodeLMN_2, 2)
 
-private const gs_cie_common_proc3   lumchrom_DecodeLMN = {
+static const gs_cie_common_proc3   lumchrom_DecodeLMN = {
     { lumchrom_DecodeLMN_0, lumchrom_DecodeLMN_1, lumchrom_DecodeLMN_2 }
 };
 
@@ -841,7 +841,7 @@ private const gs_cie_common_proc3   lumchrom_DecodeLMN = {
  *
  * Return 0 on success, < 0 in the event of an error.
  */
-  private int
+  static int
 build_lum_chrom_mtxABC(
     const float     pin_mtx[9],
     pcl_mtx3_t *    pmtxABC
@@ -864,7 +864,7 @@ build_lum_chrom_mtxABC(
 /*
  * Finish the creation of a luminance-chrominance color space.
  */
-  private int
+  static int
 finish_lumchrom_cspace(
     gs_color_space *                pcspace,
     const pcl_cid_data_t *          pcid
@@ -902,7 +902,7 @@ finish_lumchrom_cspace(
     return 0;
 }
 
-private int (*const finish_cspace[(int)pcl_cspace_num])( gs_color_space *,
+static int (*const finish_cspace[(int)pcl_cspace_num])( gs_color_space *,
                                                         const pcl_cid_data_t *
                                                         ) = {
     0,                      /* pcl_cspace_RGB */
@@ -918,7 +918,7 @@ private int (*const finish_cspace[(int)pcl_cspace_num])( gs_color_space *,
  * GS color space, and frees any lookup tables that might have been
  * used (device independent color spaces only).
  */
-  private void
+  static void
 free_base_cspace(
     gs_memory_t *   pmem,
     void *          pvbase,
@@ -941,7 +941,7 @@ free_base_cspace(
  *
  * Returns 0 on success, e_Memory in the event of a memory error.
  */
-  private int
+  static int
 alloc_base_cspace(
     pcl_cs_base_t **    ppbase,
     pcl_cspace_type_t   type,
@@ -1000,7 +1000,7 @@ alloc_base_cspace(
  * graphic library color space will still be present in this case, but its
  * client data may have been changed).
  */
-private int
+static int
 unshare_base_cspace(const gs_memory_t *mem, 
 		    pcl_cs_base_t **    ppbase
 )

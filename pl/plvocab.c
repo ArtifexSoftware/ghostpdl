@@ -25,7 +25,7 @@ typedef struct pl_glyph_mapping_s {
 
 /* Map from MSL to Unicode.  Derived from the HP book of characters
    and the HP comparison guide appendix D. */
-private const pl_glyph_mapping_t pl_map_m2u[] = {
+static const pl_glyph_mapping_t pl_map_m2u[] = {
     {0, 0x0020}, /* space code */
     {1, 0x0021}, /* exclamation mark */ /* u */
     {2, 0x0022}, /* Neutral Double Quote */ /* u */

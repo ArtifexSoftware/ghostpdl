@@ -24,7 +24,7 @@ private_st_frgrnd_t();
 /*
  * Free a pcl foreground object.
  */
-private void
+static void
 free_foreground(
     gs_memory_t *   pmem,
     void *          pvfrgrnd,
@@ -47,7 +47,7 @@ free_foreground(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+  static int
 alloc_foreground(
     pcl_state_t *pcs,		 
     pcl_frgrnd_t ** ppfrgrnd,
@@ -80,7 +80,7 @@ alloc_foreground(
  *
  * Returns 0 on success, < 0 in the event of an error
  */
-  private int
+  static int
 build_foreground(
     pcl_state_t *               pcs,
     pcl_frgrnd_t **             ppfrgrnd,
@@ -178,7 +178,7 @@ pcl_frgrnd_set_default_foreground(
  *
  * Set foreground. It is not clear the handling of negative values is accurate.
  */
-  private int
+  static int
 set_foreground(
     pcl_args_t *        pargs,
     pcl_state_t *       pcs
@@ -208,7 +208,7 @@ set_foreground(
  * There is no reset procedure for this module, as the function is accomplished
  * by the palette module.
  */
-   private int
+   static int
 frgrnd_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *mem
@@ -223,7 +223,7 @@ frgrnd_do_registration(
     return 0;
 }
 
-private void
+static void
 frgrnd_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {
     if ( type & (pcl_reset_permanent) ) {
@@ -233,7 +233,7 @@ frgrnd_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
     }
 }
 
-  private int
+  static int
 frgrnd_do_copy(
     pcl_state_t *           psaved,
     const pcl_state_t *     pcs,

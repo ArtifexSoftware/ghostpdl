@@ -34,7 +34,7 @@ extern  const pcl_init_t *  pcl_init_table[];
 /*
  * ESC % <enum> B
  */ 
-  private int
+  static int
 rtl_enter_hpgl_mode(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -116,7 +116,7 @@ rtl_enter_pcl_mode(
 /*
  * ESC & b <count> W
  */
-  private int
+  static int
 pcl_appletalk_configuration(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -144,7 +144,7 @@ pcl_appletalk_configuration(
 /*
  * ESC & a <bool> N
  */
-  private int
+  static int
 pcl_negative_motion(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -160,7 +160,7 @@ pcl_negative_motion(
 }
 
 /* ---------------- Initialization ---------------- */
-  private int
+  static int
 rtmisc_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   mem
@@ -223,7 +223,7 @@ rtmisc_do_registration(
  * the host system, and it is not clear an "HP LaserJet 4" device will
  * generate color output (this may vary from host to host).
  */
-  private void
+  static void
 rtmisc_do_reset(
     pcl_state_t *       pcs,
     pcl_reset_type_t    type

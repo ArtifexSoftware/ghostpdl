@@ -29,7 +29,7 @@
 /*
  * Uncompressed data.
  */
-  private void
+  static void
 uncompress_0(
     pcl_seed_row_t *    pout,
     const byte *        pin,
@@ -47,7 +47,7 @@ uncompress_0(
 /*
  * Run-length compression.
  */
-  private void
+  static void
 uncompress_1(
     pcl_seed_row_t *    pout,
     const byte *        pin,
@@ -75,7 +75,7 @@ uncompress_1(
 /*
  * TIFF "Packbits" compression.
  */
-  private void
+  static void
 uncompress_2(
     pcl_seed_row_t *    pout,
     const byte *        pin,
@@ -116,7 +116,7 @@ uncompress_2(
 /*
  * Delta row compression
  */
-  private void
+  static void
 uncompress_3(
     pcl_seed_row_t *    pout,
     const byte *        pin,
@@ -171,7 +171,7 @@ uncompress_3(
  * as many input bytes as required are read until at leas this many output
  * bytes have been replaced.
  */
-  private void
+  static void
 uncompress_9(
     pcl_seed_row_t *    pout,
     const byte *        pin,

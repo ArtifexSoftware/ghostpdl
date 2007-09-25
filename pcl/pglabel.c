@@ -51,13 +51,13 @@
 #define ARC_FONT_TYPEFACE 50
 
 /* currently selected font */
-private pl_font_t *
+static pl_font_t *
 hpgl_currentfont(const hpgl_state_t *pgls)
 {
     return pgls->g.font_selection[pgls->g.font_selected].font;
 }
 
-private bool
+static bool
 hpgl_is_currentfont_stick(const hpgl_state_t *pgls)
 {
     pl_font_t *plfont = hpgl_currentfont(pgls);
@@ -68,7 +68,7 @@ hpgl_is_currentfont_stick(const hpgl_state_t *pgls)
 }
 
 /* convert points 2 plu - agfa uses 72.307 points per inch */
-private floatp
+static floatp
 hpgl_points_2_plu(const hpgl_state_t *pgls, floatp points)
 {	
     const pcl_font_selection_t *pfs =
@@ -83,7 +83,7 @@ hpgl_points_2_plu(const hpgl_state_t *pgls, floatp points)
 
 /* is it a printable character - duplicate of pcl algorithm in
    pctext.c */
-private bool
+static bool
 hpgl_is_printable(
     const pl_symbol_map_t * psm,
     gs_char                 chr,
@@ -102,7 +102,7 @@ hpgl_is_printable(
 /*
  * Map a character through the symbol set, if needed.
  */
-private gs_char
+static gs_char
 hpgl_map_symbol(uint chr, const hpgl_state_t *pgls)
 {	
     const pcl_font_selection_t *pfs =
@@ -118,7 +118,7 @@ hpgl_map_symbol(uint chr, const hpgl_state_t *pgls)
 /* ------ Font selection ------- */
 
 /* Select primary (0) or alternate (1) font. */
-private void
+static void
 hpgl_select_font_pri_alt(hpgl_state_t *pgls, int index)
 {
     if ( pgls->g.font_selected != index ) {
@@ -130,10 +130,10 @@ hpgl_select_font_pri_alt(hpgl_state_t *pgls, int index)
 }
 
 /* forward decl */
-private int hpgl_recompute_font(hpgl_state_t *pgls);
+static int hpgl_recompute_font(hpgl_state_t *pgls);
 
 /* Ensure a font is available. */
-private int
+static int
 hpgl_ensure_font(hpgl_state_t *pgls) 
 {
     if ( ( pgls->g.font == 0 ) || ( pgls->g.font->pfont == 0 ) )
@@ -147,13 +147,13 @@ hpgl_ensure_font(hpgl_state_t *pgls)
  * described in the Comparison Guide.  We set the bits for MSL Basic Latin
  * (63) and for Unicode ASCII (31), and Latin 1 (30).
  */
-private const byte stick_character_complement[8] = {
+static const byte stick_character_complement[8] = {
   0x7f, 0xff, 0xff, 0xff, 0x3f, 0xff, 0xff, 0xfe
 };
 
 /* Select the stick font, creating it if necessary. */
 /* We break this out only for readability: it's only called in one place. */
-private int
+static int
 hpgl_select_stick_font(hpgl_state_t *pgls)
 {	pcl_font_selection_t *pfs =
 	  &pgls->g.font_selection[pgls->g.font_selected];
@@ -207,7 +207,7 @@ hpgl_select_stick_font(hpgl_state_t *pgls)
 }
 
 /* Check whether the stick font supports a given symbol set. */
-private bool
+static bool
 hpgl_stick_font_supports(const pcl_state_t *pcs, uint symbol_set)
 {	
     pl_glyph_vocabulary_t gv = 
@@ -224,7 +224,7 @@ hpgl_stick_font_supports(const pcl_state_t *pcs, uint symbol_set)
 }
 
 /* Recompute the current font if necessary. */
-private int
+static int
 hpgl_recompute_font(hpgl_state_t *pgls)
 {	pcl_font_selection_t *pfs =
 	  &pgls->g.font_selection[pgls->g.font_selected];
@@ -252,7 +252,7 @@ hpgl_recompute_font(hpgl_state_t *pgls)
 /* ------ Position management ------ */
 
 /* accessor for character extra space takes line feed direction into account */
-private inline hpgl_real_t
+static inline hpgl_real_t
 hpgl_get_character_extra_space_x(const hpgl_state_t *pgls) 
 {
     return (pgls->g.character.line_feed_direction < 0) ? 
@@ -260,7 +260,7 @@ hpgl_get_character_extra_space_x(const hpgl_state_t *pgls)
 	pgls->g.character.extra_space.x;
 }
 
-private inline hpgl_real_t
+static inline hpgl_real_t
 hpgl_get_character_extra_space_y(const hpgl_state_t *pgls) 
 {
     return (pgls->g.character.line_feed_direction < 0) ? 
@@ -270,7 +270,7 @@ hpgl_get_character_extra_space_y(const hpgl_state_t *pgls)
 
 /* Get a character width in the current font, plus extra space if any. */
 /* If the character isn't defined, return 1, otherwise return 0. */
-private int
+static int
 hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width)
 {
     uint glyph = hpgl_map_symbol(ch, pgls);
@@ -334,7 +334,7 @@ hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width)
 }
 /* Get the cell height or character height in the current font, */
 /* plus extra space if any. */
-private int
+static int
 hpgl_get_current_cell_height(const hpgl_state_t *pgls, hpgl_real_t *height)
 {
 	const pcl_font_selection_t *pfs =
@@ -372,7 +372,7 @@ hpgl_get_current_cell_height(const hpgl_state_t *pgls, hpgl_real_t *height)
 }
 
 /* distance tranformation for character slant */
- private int
+static int
 hpgl_slant_transform_distance(hpgl_state_t *pgls, gs_point *dxy, gs_point *s_dxy)
 {
     if ( pgls->g.character.slant && !pgls->g.bitmap_fonts_allowed ) {
@@ -386,7 +386,7 @@ hpgl_slant_transform_distance(hpgl_state_t *pgls, gs_point *dxy, gs_point *s_dxy
 }
 
 /* distance tranformation for character direction */
- private int
+static int
 hpgl_rotation_transform_distance(hpgl_state_t *pgls, gs_point *dxy, gs_point *r_dxy)
 {
     double  run = pgls->g.character.direction.x;
@@ -408,7 +408,7 @@ hpgl_rotation_transform_distance(hpgl_state_t *pgls, gs_point *dxy, gs_point *r_
 /* Reposition the cursor.  This does all the work for CP, and is also */
 /* used to handle some control characters within LB. */
 /* If pwidth != 0, it points to a precomputed horizontal space width. */
-private int
+static int
 hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
   hpgl_real_t lines, const hpgl_real_t *pwidth)
 {
@@ -484,7 +484,7 @@ hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
 }
 
 /* Execute a CR for CP or LB. */
-private int
+static int
 hpgl_do_CR(hpgl_state_t *pgls)
 {	
     return hpgl_add_point_to_path(pgls, pgls->g.carriage_return_pos.x,
@@ -521,7 +521,7 @@ hpgl_CP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 /* initialize the character buffer, setting state pointers for the
    beginning of the character buffer and the current character within
    the buffer to position 0. */
-private int
+static int
 hpgl_init_label_buffer(hpgl_state_t *pgls)
 {
 	pgls->g.label.char_count = 0;
@@ -534,7 +534,7 @@ hpgl_init_label_buffer(hpgl_state_t *pgls)
 }
 
 /* release the character buffer */
-private int
+static int
 hpgl_destroy_label_buffer(hpgl_state_t *pgls)
 {
 	gs_free_object(pgls->memory, pgls->g.label.buffer,
@@ -546,7 +546,7 @@ hpgl_destroy_label_buffer(hpgl_state_t *pgls)
 }
 
 /* add a single character to the line buffer */
-private int
+static int
 hpgl_buffer_char(hpgl_state_t *pgls, byte ch)
 {
 	/* check if there is room for the new character and resize if
@@ -572,7 +572,7 @@ hpgl_buffer_char(hpgl_state_t *pgls, byte ch)
  * Test if the gl/2 drawing primitives should draw the character or
  * "show" can be used directly.
  */
-private bool
+static bool
 hpgl_use_show(hpgl_state_t *pgls, pl_font_t *pfont)
 {
 
@@ -642,7 +642,7 @@ hpgl_current_char_scale(const hpgl_state_t *pgls)
 /*
  * build the path and render it
  */
-private int
+static int
 hpgl_print_char(
     hpgl_state_t *                  pgls,
     uint                            ch
@@ -947,7 +947,7 @@ hpgl_print_char(
 
 /* Determine whether labels can concatenate. */
 /* Note that LO requires a pre-scan iff this is false. */
-private bool
+static bool
 hpgl_can_concat_labels(const hpgl_state_t *pgls)
 {	/* The following is per TRM 23-78. */
 	static const byte can_concat[22] = {
@@ -962,7 +962,7 @@ hpgl_can_concat_labels(const hpgl_state_t *pgls)
  
 
 /* return relative coordinates to compensate for origin placement -- LO */
-private int
+static int
 hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
 				 hpgl_real_t width, hpgl_real_t height,
 				 gs_point *offset)
@@ -1095,7 +1095,7 @@ hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
 			  
 /* Prints a buffered line of characters. */
 /* If there is a CR, it is the last character in the buffer. */
-private int
+static int
 hpgl_process_buffer(hpgl_state_t *pgls, gs_point *offset)
 {
     hpgl_real_t label_length = 0.0, label_height = 0.0;
@@ -1287,7 +1287,7 @@ print:	     {
  *  (prev << 8) & curr -> 16 bit
  *  have_16bits allows per byte call with true on 16bit boundary.
  */ 
-private 
+static 
 bool is_terminator( hpgl_state_t *pgls, byte prev, byte curr, bool have_16bits )
 {
     return 
@@ -1428,7 +1428,7 @@ hpgl_print_symbol_mode_char(hpgl_state_t *pgls)
 }
 
 /* Initialization */
-private int
+static int
 pglabel_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *mem

@@ -340,7 +340,7 @@ const char *pl_mac_names[258] = {
 
 extern ulong tt_find_table(gs_font_type42 *pfont, const char *tname, uint *plen);
 
-private int
+static int
 pl_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *pstr)
 {	
     uint table_length;
@@ -439,7 +439,7 @@ pl_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *pstr)
 
 extern gs_char last_char;
 /* Get the unicode valude for a glyph */
-private gs_char
+static gs_char
 pl_decode_glyph(gs_font *font,  gs_glyph glyph)
 {	
     return last_char;

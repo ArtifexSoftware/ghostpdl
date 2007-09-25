@@ -48,8 +48,8 @@ PIF_STATE pIFS = &IFS;
 /*
  * fco and plugin handles which must be freed when the interpreter shuts down
  */
-private SW16  fcHndlPlAry[16];
-private bool  plugins_opened = false;
+static SW16  fcHndlPlAry[16];
+static bool  plugins_opened = false;
 
 /* NB fixme - we might as well require an environment variable for the
    fco names and plugins, these change every UFST release */
@@ -69,7 +69,7 @@ const char *UFSTPLUGINS="mtfonts/pcl45/mt3/plug__xi.fco";
 /* return a null terminated array of strings on the heap from
    str0:str1:str:.  Use gs separator */
 
-private 
+static 
 char **build_strs(gs_memory_t *mem, char *str, char separator)
 {
     int i;
@@ -131,7 +131,7 @@ char **build_strs(gs_memory_t *mem, char *str, char separator)
     return list;
 }
 
-private void
+static void
 free_strs(gs_memory_t *mem, char **str_of_strs)
 {
     int i;
@@ -149,7 +149,7 @@ free_strs(gs_memory_t *mem, char **str_of_strs)
 
 /* these are lists of fco's and plugins relative to the root directory
    they can be set by an environment variable or defaults.  */
-private char **
+static char **
 pl_ufst_get_list(gs_memory_t *mem, char *key, char *defaultval)
 {
     char pathname[MAXPATHLEN];

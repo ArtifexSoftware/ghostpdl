@@ -28,7 +28,7 @@
 /*
  * Bitmap arrays for the built-in patterns.
  */
-private const byte  bi_data_array[(PCL_NUM_SHADE_PATTERNS + PCL_NUM_CROSSHATCH_PATTERNS) * 2 * 16] = {
+static const byte  bi_data_array[(PCL_NUM_SHADE_PATTERNS + PCL_NUM_CROSSHATCH_PATTERNS) * 2 * 16] = {
 
     /* shade 1% to 2% */
     0x80, 0x80,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00,
@@ -113,7 +113,7 @@ private const byte  bi_data_array[(PCL_NUM_SHADE_PATTERNS + PCL_NUM_CROSSHATCH_P
 #define make_pixmap(indx)                                           \
     { (byte *)(bi_data_array + indx * 2 * 16), 2, {16, 16}, 0, 1, 1 }
 
-private const gs_depth_bitmap   bi_pixmap_array[PCL_NUM_CROSSHATCH_PATTERNS +
+static const gs_depth_bitmap   bi_pixmap_array[PCL_NUM_CROSSHATCH_PATTERNS +
 					        PCL_NUM_SHADE_PATTERNS] = {
     make_pixmap(0),
     make_pixmap(1),
@@ -154,8 +154,8 @@ private const gs_depth_bitmap   bi_pixmap_array[PCL_NUM_CROSSHATCH_PATTERNS +
  * pattern above, two copies of this structure are required: a prototype
  * (qualified as const) and the pattern actually used.
  */
-private const byte solid_pattern_data = 0xff;
-private const gs_depth_bitmap   solid_pattern_pixmap = {
+static const byte solid_pattern_data = 0xff;
+static const gs_depth_bitmap   solid_pattern_pixmap = {
     (byte *)&solid_pattern_data, 1, {1, 1}, 0, 1, 1
 };
 
@@ -167,8 +167,8 @@ private const gs_depth_bitmap   solid_pattern_pixmap = {
  * the GL/2 documentation describes as source transparency is actually pattern
  * transparency).
  */
-private const byte unsolid_pattern_data = 0x0;
-private const gs_depth_bitmap   unsolid_pattern_pixmap = {
+static const byte unsolid_pattern_data = 0x0;
+static const gs_depth_bitmap   unsolid_pattern_pixmap = {
     (byte *)&unsolid_pattern_data, 1, {1, 1}, 0, 1, 1
 };
 
@@ -232,7 +232,7 @@ pcl_pattern_clear_bi_patterns(pcl_state_t *pcs)
 
 /* #define DEVICE_RES_PATTERNS */
 
- private int
+static int
 pcl_get_pattern_resolution(pcl_state_t *pcs, gs_point *pattern_res)
 {
     /* default is 300 */
@@ -261,7 +261,7 @@ pcl_get_pattern_resolution(pcl_state_t *pcs, gs_point *pattern_res)
 /*
  * Return the pointer to a built-in pattern, building it if inecessary.
  */
-  private pcl_pattern_t *
+  static pcl_pattern_t *
 get_bi_pattern(pcl_state_t *pcs, int indx)
 {
     if (pcs->bi_pattern_array[indx] == 0) {

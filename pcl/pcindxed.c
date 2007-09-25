@@ -21,10 +21,10 @@
 #include "pcpalet.h"
 
 /* default GL/2 pen width, in plotter units (1016 ploter units per inch) */
-private const float dflt_pen_width = 14.0;
+static const float dflt_pen_width = 14.0;
 
 /* the image data configuration for the default color space */
-private const pcl_cid_hdr_t  dflt_cid_hdr = {
+static const pcl_cid_hdr_t  dflt_cid_hdr = {
     pcl_cspace_RGB,                /* color space type */
     pcl_penc_indexed_by_plane,     /* pixel encoding type */
     1,                             /* bits per index */
@@ -34,7 +34,7 @@ private const pcl_cid_hdr_t  dflt_cid_hdr = {
 /*
  * GC routines
  */
-  private
+  static
 ENUM_PTRS_BEGIN(pcl_cs_indexed_enum_ptrs)
         return 0;
     ENUM_PTR(0, pcl_cs_indexed_t, pbase);
@@ -42,7 +42,7 @@ ENUM_PTRS_BEGIN(pcl_cs_indexed_enum_ptrs)
     ENUM_STRING_PTR(2, pcl_cs_indexed_t, palette);
 ENUM_PTRS_END
 
-  private
+  static
 RELOC_PTRS_BEGIN(pcl_cs_indexed_reloc_ptrs)
     RELOC_PTR(pcl_cs_indexed_t, pbase);
     RELOC_PTR(pcl_cs_indexed_t, pcspace);
@@ -57,7 +57,7 @@ private_st_cs_indexed_t();
  * or equal to the given number; 8 => 2^3 12 => 2^4
  * Note: in/out should be unsigned.
  */
-  private int
+  static int
 get_pow_2(
     int     num
 )
@@ -73,7 +73,7 @@ get_pow_2(
 /*
  * Free a PCL indexed color space structure.
  */
-  private void
+  static void
 free_indexed_cspace(
     gs_memory_t *       pmem,
     void *              pvindexed,
@@ -103,7 +103,7 @@ free_indexed_cspace(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+  static int
 alloc_indexed_cspace(
     pcl_cs_indexed_t ** ppindexed,
     pcl_cs_base_t *     pbase,
@@ -165,7 +165,7 @@ alloc_indexed_cspace(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+  static int
 unshare_indexed_cspace(
     pcl_cs_indexed_t ** ppindexed
 )
@@ -233,7 +233,7 @@ unshare_indexed_cspace(
 /*
  * Convert a device-independent color intensity value to the range [0, 255].
  */
-  private int
+  static int
 convert_comp_val(
     floatp  val,
     floatp  min_val,
@@ -247,7 +247,7 @@ convert_comp_val(
 /*
  * Set the default palette for device specific color spaces.
  */
-  private void
+  static void
 set_dev_specific_default_palette(
     pcl_cs_base_t *     pbase,      /* ignored in this case */
     byte *              palette,
@@ -287,7 +287,7 @@ set_dev_specific_default_palette(
  *
  * An adjustment is made for the specified ranges.
  */
-  private void
+  static void
 set_colmet_default_palette(
     pcl_cs_base_t *     pbase,
     byte *              palette,
@@ -337,7 +337,7 @@ set_colmet_default_palette(
  * color lookup table is subsequently installed, but it is as much as can be
  * achieved under the current arrangement.
  */
-  private void
+  static void
 set_CIELab_default_palette(
     pcl_cs_base_t *     pbase,
     byte *              palette,
@@ -382,7 +382,7 @@ set_CIELab_default_palette(
  * 
  * An adjustment is made for the specified ranges.
  */
-  private void
+  static void
 set_lumchrom_default_palette(
     pcl_cs_base_t *             pbase,
     byte *                      palette,
@@ -433,7 +433,7 @@ set_lumchrom_default_palette(
  *
  * Returns 0 if successful, < 0 in case of an error.
  */
-  private int
+  static int
 set_default_entries(
     pcl_cs_indexed_t  * pindexed,
     int                 start,

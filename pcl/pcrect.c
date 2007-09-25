@@ -43,7 +43,7 @@
  * Note that this code is designed to work with no fill adjustment in the
  * graphic library.
  */
-  private int
+  static int
 adjust_render_rectangle(
     pcl_state_t *           pcs
 )
@@ -128,7 +128,7 @@ adjust_render_rectangle(
 /*
  * ESC * c <dp> H
  */
-  private int
+  static int
 pcl_horiz_rect_size_decipoints(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -141,7 +141,7 @@ pcl_horiz_rect_size_decipoints(
 /*
  * ESC * c <units> A
  */
-  private int
+  static int
 pcl_horiz_rect_size_units(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -154,7 +154,7 @@ pcl_horiz_rect_size_units(
 /*
  * ESC * c <dp> V
  */
-  private int
+  static int
 pcl_vert_rect_size_decipoints(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -167,7 +167,7 @@ pcl_vert_rect_size_decipoints(
 /*
  * ESC * c B
  */
-  private int
+  static int
 pcl_vert_rect_size_units(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -180,7 +180,7 @@ pcl_vert_rect_size_units(
 /*
  * ESC * c <fill_enum> P
  */
-  private int
+  static int
 pcl_fill_rect_area(
     pcl_args_t *            pargs,
     pcl_state_t *           pcs
@@ -221,7 +221,7 @@ pcl_fill_rect_area(
 /*
  * Initialization
  */
-  private int
+  static int
 pcrect_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   mem
@@ -268,7 +268,7 @@ pcrect_do_registration(
     return 0;
 }
 
-  private void
+  static void
 pcrect_do_reset(
     pcl_state_t *       pcs,
     pcl_reset_type_t    type

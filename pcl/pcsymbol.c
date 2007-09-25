@@ -21,14 +21,14 @@
 #include "pcsymbol.h"
 
 
-private int /* ESC * c <id> R */
+static int /* ESC * c <id> R */
 pcl_symbol_set_id_code(pcl_args_t *pargs, pcl_state_t *pcs)
 {	uint id = uint_arg(pargs);
 	id_set_value(pcs->symbol_set_id, id);
 	return 0;
 }
 
-private int /* ESC ( f <count> W */
+static int /* ESC ( f <count> W */
 pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcs)
 {	uint count = uint_arg(pargs);
 	const pl_symbol_map_t *psm = (pl_symbol_map_t *)arg_data(pargs);
@@ -111,7 +111,7 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcs)
 	return 0;
 }
 
-private int /* ESC * c <ssc_enum> S */
+static int /* ESC * c <ssc_enum> S */
 pcl_symbol_set_control(pcl_args_t *pargs, pcl_state_t *pcs)
 {	gs_const_string key;
 	void *value;
@@ -164,7 +164,7 @@ pcl_symbol_set_control(pcl_args_t *pargs, pcl_state_t *pcs)
 	  }
 }
 
-private void	/* free any symbol maps as well as dict value entry */
+static void	/* free any symbol maps as well as dict value entry */
 pcsymbol_dict_value_free(gs_memory_t *mem, void *value, client_name_t cname)
 {	pcl_symbol_set_t *ssp = (pcl_symbol_set_t *)value;
 	pl_glyph_vocabulary_t gx;
@@ -180,7 +180,7 @@ pcsymbol_dict_value_free(gs_memory_t *mem, void *value, client_name_t cname)
 	gs_free_object(mem, value, cname);
 }
 
-private int
+static int
 pcl_load_built_in_symbol_sets(pcl_state_t *pcs)
 {
 	const pl_symbol_map_t **maplp;
@@ -267,7 +267,7 @@ pcl_find_symbol_map(const pcl_state_t *pcs, const byte *id,
 }
 
 /* Initialization */
-private int
+static int
 pcsymbol_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *mem
@@ -284,7 +284,7 @@ pcsymbol_do_registration(
 	return 0;
 }
 
-private void
+static void
 pcsymbol_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {	
     if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) ) {
@@ -315,7 +315,7 @@ pcsymbol_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
     }
 }
 
-private int
+static int
 pcsymbol_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
   pcl_copy_operation_t operation)
 {	if ( operation & pcl_copy_after )

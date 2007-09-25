@@ -33,7 +33,7 @@ private_st_pstack_entry_t();
 /*
  * Free a PCL palette.
  */
-private void
+static void
 free_palette(
     gs_memory_t *   pmem,
     void *          pvpalet,
@@ -83,7 +83,7 @@ pcl_free_default_objects(
  * Free procedure for palettes to be used by the dictionary which implements
  * the palette store.
  */
-  private void
+  static void
 dict_free_palette(
     gs_memory_t *   pmem,
     void *          pvpalet,
@@ -100,7 +100,7 @@ dict_free_palette(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+  static int
 alloc_palette(
     pcl_state_t *       pcs,
     pcl_palette_t **    pppalet,
@@ -153,7 +153,7 @@ alloc_palette(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+  static int
 unshare_palette(
     pcl_state_t *       pcs
 )
@@ -189,7 +189,7 @@ unshare_palette(
  * Build a default palette, and define it to be the currently selected
  * palette.
  */
-  private int
+  static int
 build_default_palette(
     pcl_state_t *   pcs
 )
@@ -261,7 +261,7 @@ clear_palette_stack(
  * Note the need to redefine the select palette id. in the event that a palette
  * is popped.
  */
-  private int
+  static int
 push_pop_palette(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -731,7 +731,7 @@ pcl_palette_check_complete(
  * Change the select palette id. Note that, since the pointer to the palette in
  * the pcl state does not count as a reference, no reference counts are adjusted.
  */
-  private int
+  static int
 set_sel_palette_id(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -761,7 +761,7 @@ set_sel_palette_id(
  *
  * Set the palette control id.
  */
-  private int
+  static int
 set_ctrl_palette_id(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -782,7 +782,7 @@ set_ctrl_palette_id(
  * bother removing it. This is helpful when working with memory leak detection
  * tools.
  */
-  private void
+  static void
 clear_palette_store(
     pcl_state_t *   pcs
 )
@@ -809,7 +809,7 @@ clear_palette_store(
  *
  * Palette control
  */
-  private int
+  static int
 palette_control(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -871,7 +871,7 @@ palette_control(
  * halftone structure, but the setting command is included here because it
  * must run via the palette mechanism.
  */
-  private int
+  static int
 set_render_algorithm(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -888,32 +888,32 @@ static gx_cm_color_map_procs device_cm_procs;
 /* needs type */
 static dev_proc_get_color_mapping_procs(*saved_get_color_map_proc);
 
-private void
+static void
 pcl_gray_cs_to_cm(gx_device * dev, frac gray, frac out[])
 {
     /* just pass it along */
     device_cm_procs.map_gray(dev, gray, out );
 }
 
-private void
+static void
 pcl_rgb_cs_to_cm(gx_device * dev, const gs_imager_state * pis, frac r, frac g, frac b, frac out[])
 {
     frac gray = color_rgb_to_gray(r, g, b, NULL);
     device_cm_procs.map_rgb(dev, pis, gray, gray, gray, out);
 }
 
-private void
+static void
 pcl_cmyk_cs_to_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
     frac gray = color_cmyk_to_gray(c, m, y, k, NULL);
     device_cm_procs.map_cmyk(dev, gray, gray, gray, gray, out);
 }
 
-private const gx_cm_color_map_procs pcl_mono_procs = {
+static const gx_cm_color_map_procs pcl_mono_procs = {
     pcl_gray_cs_to_cm, pcl_rgb_cs_to_cm, pcl_cmyk_cs_to_cm
 };
 
-private const gx_cm_color_map_procs *
+static const gx_cm_color_map_procs *
 pcl_mono_color_mapping_procs(const gx_device * dev)
 {
     return &pcl_mono_procs;
@@ -924,7 +924,7 @@ pcl_mono_color_mapping_procs(const gx_device * dev)
    currently have a device that does what we need with
    ProcessColorModel.  We assume non color devices will simply ignore
    the parameter.  */
-private int
+static int
 pcl_update_mono(pcl_state_t *pcs)
 {
     gx_device *dev = gs_currentdevice(pcs->pgs);
@@ -955,7 +955,7 @@ pcl_update_mono(pcl_state_t *pcs)
  * The monochrome print mode command is ignored if the page is dirty.
  * 
  */
-  private int
+  static int
 set_print_mode(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -983,7 +983,7 @@ set_print_mode(
 /*
  * Initialization routine for palettes.
  */
-  private int
+  static int
 palette_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *    pmem
@@ -1042,7 +1042,7 @@ palette_do_registration(
 /*
  * Reset routine for palettes.
  */
-  private void
+  static void
 palette_do_reset(
     pcl_state_t *       pcs,
     pcl_reset_type_t    type
@@ -1118,7 +1118,7 @@ palette_do_reset(
  * explicitly release this reference (an example of the asymmetric define/
  * undefine properties of the pl_dict_t object).
  */
-  private int
+  static int
 palette_do_copy(
     pcl_state_t *           psaved,
     const pcl_state_t *     pcs,

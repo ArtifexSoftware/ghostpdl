@@ -56,7 +56,7 @@ px_operator_proc(pxSetPageDefaultCTM);
 #define m_default 50, 50, 50, 50
 #define m_data(ms_enum, res, width, height)\
   {ms_enum, width * 300 / (res), height * 300 / (res), m_default},
-private px_media_t known_media[] = {
+static px_media_t known_media[] = {
   px_enumerate_media(m_data)
   /* The list ends with a comma, so add a dummy entry */
   /* that can't be matched because its key is a duplicate. */
@@ -68,7 +68,7 @@ private px_media_t known_media[] = {
 /* table to associate paper name string with paper name enumeration.
    Note these paper string names correspond exactly with the PJL paper
    nomenclature. */
-private const struct {
+static const struct {
     const char *pname;
     pxeMediaSize_t paper_enum;
 } pxl_paper_sizes[] = {
@@ -98,7 +98,7 @@ private const struct {
 };
 
 /* system paper size string (same as pjl paper size) to pxl enumeration type */
-private pxeMediaSize_t
+static pxeMediaSize_t
 px_paper_string_to_media(pjl_envvar_t *paper_str)
 {
     /* table to map pjl paper type strings to pxl enums */
@@ -112,13 +112,13 @@ px_paper_string_to_media(pjl_envvar_t *paper_str)
 }
 
 /* Define the mapping from the Measure enumeration to points. */
-private const double measure_to_points[] = pxeMeasure_to_points;
+static const double measure_to_points[] = pxeMeasure_to_points;
 
 /* ---------------- Internal procedures ---------------- */
 
 
 /* return the default media set up in the XL state */
-private px_media_t * 
+static px_media_t * 
 px_get_default_media(px_state_t *pxs)
 {
     int i;
@@ -138,7 +138,7 @@ px_get_default_media_size(px_state_t *pxs, gs_point *pt)
 }
 
 /* Finish putting one device parameter. */
-private int
+static int
 px_put1(gx_device *dev, gs_c_param_list *plist, int ecode)
 {	int code = ecode;
 	if ( code >= 0 )
@@ -150,7 +150,7 @@ px_put1(gx_device *dev, gs_c_param_list *plist, int ecode)
 }
 
 /* Adjust one scale factor to an integral value if we can. */
-private double
+static double
 px_adjust_scale(double value, double extent)
 {	/* If we can make the value an integer with a total error */
 	/* of less than 1/2 pixel over the entire page, we do it. */
@@ -160,7 +160,7 @@ px_adjust_scale(double value, double extent)
 }
 
 /* Clean up at the end of a page, but before rendering. */
-private void
+static void
 px_end_page_cleanup(px_state_t *pxs)
 {	px_dict_release(&pxs->page_pattern_dict);
 	/* Clean up stray gstate information. */
@@ -175,7 +175,7 @@ px_end_page_cleanup(px_state_t *pxs)
 }
 
 /* Purge all */
-private bool
+static bool
 purge_all(const gs_memory_t *mem, cached_char *cc, void *dummy)
 {	
     return true;
@@ -183,7 +183,7 @@ purge_all(const gs_memory_t *mem, cached_char *cc, void *dummy)
 
 /* clears the entire cache */
 /* Clean up at the end of a session. */
-private void
+static void
 px_end_session_cleanup(px_state_t *pxs)
 {	if ( pxs->data_source_open )
 	  pxCloseDataSource(NULL, pxs);

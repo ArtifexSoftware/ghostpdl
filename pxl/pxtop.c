@@ -57,8 +57,8 @@ px_operator_proc(pxEndPage);
 px_operator_proc(pxBeginSession);
 
 /* Forward decls */
-private int pxl_end_page_top(px_state_t *pxs, int num_copies, int flush);
-private int px_top_init(px_parser_state_t *st, px_state_t *pxs, bool big_endian);
+static int pxl_end_page_top(px_state_t *pxs, int num_copies, int flush);
+static int px_top_init(px_parser_state_t *st, px_state_t *pxs, bool big_endian);
 
 
 /* ------------ PCXL stream header processor ------- */
@@ -71,7 +71,7 @@ typedef struct px_stream_header_process_s {
 
 
 /* Initialize stream header processor */
-private void
+static void
 px_stream_header_init(
 	px_stream_header_process_t *process,     /* header state to init */
 	px_parser_state_t          *st,          /* parser state to refer to */
@@ -84,7 +84,7 @@ px_stream_header_init(
 }
 
 /* Process stream header input */
-private int	/* ret -ve error, 0 if needs more input, 1 if done successfully */
+static int	/* ret -ve error, 0 if needs more input, 1 if done successfully */
 px_stream_header_process(
 	px_stream_header_process_t *process,     /* header state to refer */
 	stream_cursor_read         *cursor       /* cusor to read data */
@@ -129,7 +129,7 @@ px_stream_header_process(
 }
 
 /* De-initialize stream header processor */
-private void
+static void
 px_stream_header_dnit(
 	px_stream_header_process_t *process      /* header state to dnit */
 )
@@ -190,7 +190,7 @@ pxl_impl_characteristics(
 }
 
 /* Don't need to do anything to PXL interpreter */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pxl_impl_allocate_interp(
   pl_interp_t                      **interp,       /* RETURNS abstract interpreter struct */
   const pl_interp_implementation_t *impl,  /* implementation of interpereter to alloc */
@@ -205,7 +205,7 @@ pxl_impl_allocate_interp(
 }
 
 /* Do per-instance interpreter allocation/init. No device is set yet */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pxl_impl_allocate_interp_instance(
   pl_interp_instance_t   **instance,     /* RETURNS instance struct */
   pl_interp_t            *interp,        /* dummy interpreter */
@@ -255,7 +255,7 @@ pxl_impl_allocate_interp_instance(
 }
 
 /* Set a client language into an interperter instance */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pxl_impl_set_client_instance(
   pl_interp_instance_t         *instance,     /* interp instance to use */
   pl_interp_instance_t         *client,       /* client to set */
@@ -272,7 +272,7 @@ pxl_impl_set_client_instance(
 }
 
 /* Set an interpreter instance's pre-page action */
-private int   /* ret 0 ok, else -ve err */
+static int   /* ret 0 ok, else -ve err */
 pxl_impl_set_pre_page_action(
   pl_interp_instance_t   *instance,     /* interp instance to use */
   pl_page_action_t       action,        /* action to execute (rets 1 to abort w/o err) */
@@ -286,7 +286,7 @@ pxl_impl_set_pre_page_action(
 }
 
 /* Set an interpreter instance's post-page action */
-private int   /* ret 0 ok, else -ve err */
+static int   /* ret 0 ok, else -ve err */
 pxl_impl_set_post_page_action(
   pl_interp_instance_t   *instance,     /* interp instance to use */
   pl_page_action_t       action,        /* action to execute */
@@ -300,7 +300,7 @@ pxl_impl_set_post_page_action(
 }
 
 /* Set a device into an interperter instance */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pxl_impl_set_device(
   pl_interp_instance_t   *instance,     /* interp instance to use */
   gx_device              *device        /* device to set (open or closed) */
@@ -361,7 +361,7 @@ pisdEnd:
 	return code;
 }
 
-private int   
+static int   
 pxl_impl_get_device_memory(
   pl_interp_instance_t   *instance,     /* interp instance to use */
   gs_memory_t **pmem)
@@ -370,7 +370,7 @@ pxl_impl_get_device_memory(
 }
 
 /* Prepare interp instance for the next "job" */
-private int	/* ret 0 ok, else -ve error code */
+static int	/* ret 0 ok, else -ve error code */
 pxl_impl_init_job(
 	pl_interp_instance_t   *instance         /* interp instance to start job in */
 )
@@ -388,7 +388,7 @@ pxl_impl_init_job(
 }
 
 /* Parse a cursor-full of data */
-private int	/* ret 0 or +ve if ok, else -ve error code */
+static int	/* ret 0 or +ve if ok, else -ve error code */
 pxl_impl_process(
 	pl_interp_instance_t *instance,        /* interp instance to process data job in */
 	stream_cursor_read   *cursor           /* data to process */
@@ -450,7 +450,7 @@ pxl_impl_process(
 }
 
 /* Skip to end of job ret 1 if done, 0 ok but EOJ not found, else -ve error code */
-private int
+static int
 pxl_impl_flush_to_eoj(
 	pl_interp_instance_t *instance,        /* interp instance to flush for */
 	stream_cursor_read   *cursor           /* data to process */
@@ -476,7 +476,7 @@ pxl_impl_flush_to_eoj(
 }
 
 /* Parser action for end-of-file */
-private int	/* ret 0 or +ve if ok, else -ve error code */
+static int	/* ret 0 or +ve if ok, else -ve error code */
 pxl_impl_process_eof(
 	pl_interp_instance_t *instance        /* interp instance to process data job in */
 )
@@ -489,7 +489,7 @@ pxl_impl_process_eof(
 }
 
 /* Report any errors after running a job */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pxl_impl_report_errors(
 	pl_interp_instance_t *instance,         /* interp instance to wrap up job in */
    int                  code,              /* prev termination status */
@@ -532,7 +532,7 @@ pxl_impl_report_errors(
 }
 
 /* Wrap up interp instance after a "job" */
-private int	/* ret 0 ok, else -ve error code */
+static int	/* ret 0 ok, else -ve error code */
 pxl_impl_dnit_job(
 	pl_interp_instance_t *instance         /* interp instance to wrap up job in */
 )
@@ -544,7 +544,7 @@ pxl_impl_dnit_job(
 }
 
 /* Remove a device from an interperter instance */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pxl_impl_remove_device(
   pl_interp_instance_t   *instance     /* interp instance to use */
 )
@@ -564,7 +564,7 @@ pxl_impl_remove_device(
 }
 
 /* Deallocate a interpreter instance */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pxl_impl_deallocate_interp_instance(
   pl_interp_instance_t   *instance     /* instance to dealloc */
 )
@@ -585,7 +585,7 @@ pxl_impl_deallocate_interp_instance(
 }
 
 /* Do static deinit of PXL interpreter */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pxl_impl_deallocate_interp(
   pl_interp_t        *interp       /* interpreter to deallocate */
 )
@@ -597,7 +597,7 @@ pxl_impl_deallocate_interp(
 /* 
  * End-of-page called back by PXL
  */
-private int
+static int
 pxl_end_page_top(
     px_state_t *            pxls,
     int                     num_copies,
@@ -658,7 +658,7 @@ const pl_interp_implementation_t pxl_implementation = {
 /* ---------- Utility Procs ----------- */
 /* Initialize the parser state, and session parameters in case we get */
 /* an error before the session is established. */
-private int
+static int
 px_top_init(px_parser_state_t *st, px_state_t *pxs, bool big_endian)
 {
     px_args_t args;

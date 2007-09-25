@@ -28,7 +28,7 @@
  * All of the matrices are pure rotations; they have no scaling or translation
  * components.
  */
-private const gs_matrix rot_mtx[4] = {
+static const gs_matrix rot_mtx[4] = {
     {  1.0,  0.0,  0.0,  1.0,  0.0,  0.0 },     /*   0 degrees */
     {  0.0, -1.0,  1.0,  0.0,  0.0,  0.0 },     /*  90 degrees */
     { -1.0,  0.0,  0.0, -1.0,  0.0,  0.0 },     /* 180 degrees */
@@ -185,7 +185,7 @@ pcl_make_rotation(
 /*
  * Convert a floating point number that is nearly an integer to an integer.
  */
-  private floatp
+  static floatp
 adjust_param(
     floatp  val
 )
@@ -306,7 +306,7 @@ pcl_xfm_gl_set_pat_ref_pt(
  * Set pattern reference point.
  *
  */
-  private int
+  static int
 set_pat_ref_pt(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -333,7 +333,7 @@ set_pat_ref_pt(
  * routine is required, as a reset of the logical page will reset the pattern
  * reference point as well.
  */
-  private int
+  static int
 xfm_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem

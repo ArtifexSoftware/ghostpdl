@@ -51,13 +51,13 @@ pcl_do_printer_reset(pcl_state_t *pcs)
     return pcl_do_resets(pcs, pcl_reset_printer);
 }
     
-private int /* ESC E */
+static int /* ESC E */
 pcl_printer_reset(pcl_args_t *pargs, pcl_state_t *pcs)
 {	
     return pcl_do_printer_reset(pcs);
 }
 
-private int /* ESC % -12345 X */
+static int /* ESC % -12345 X */
 pcl_exit_language(pcl_args_t *pargs, pcl_state_t *pcs)
 {	if ( int_arg(pargs) != -12345 )
 	   return e_Range;
@@ -66,7 +66,7 @@ pcl_exit_language(pcl_args_t *pargs, pcl_state_t *pcs)
 	}
 }
 
-private int /* ESC & l <num_copies> X */
+static int /* ESC & l <num_copies> X */
 pcl_number_of_copies(pcl_args_t *pargs, pcl_state_t *pcs)
 {	int i = int_arg(pargs);
 	if ( i < 1 )
@@ -75,7 +75,7 @@ pcl_number_of_copies(pcl_args_t *pargs, pcl_state_t *pcs)
 	return put_param1_int(pcs, "NumCopies", i);
 }
 
-private int /* ESC & l <sd_enum> S */
+static int /* ESC & l <sd_enum> S */
 pcl_simplex_duplex_print(pcl_args_t *pargs, pcl_state_t *pcs)
 {	int code;
 	bool reopen = false;
@@ -132,7 +132,7 @@ pcl_simplex_duplex_print(pcl_args_t *pargs, pcl_state_t *pcs)
 		0);
 }
 
-private int /* ESC & a <side_enum> G */
+static int /* ESC & a <side_enum> G */
 pcl_duplex_page_side_select(pcl_args_t *pargs, pcl_state_t *pcs)
 {	uint i = uint_arg(pargs);
 	int code;
@@ -152,7 +152,7 @@ pcl_duplex_page_side_select(pcl_args_t *pargs, pcl_state_t *pcs)
 	return 0;
 }
 
-private int /* ESC & l 1 T */
+static int /* ESC & l 1 T */
 pcl_job_separation(pcl_args_t *pargs, pcl_state_t *pcs)
 {	int i = int_arg(pargs);
 	if ( i != 1 )
@@ -161,7 +161,7 @@ pcl_job_separation(pcl_args_t *pargs, pcl_state_t *pcs)
 	return 0;
 }
 
-private int /* ESC & l <bin_enum> G */
+static int /* ESC & l <bin_enum> G */
 pcl_output_bin_selection(pcl_args_t *pargs, pcl_state_t *pcs)
 {	uint i = uint_arg(pargs);
 	if ( i < 1 || i > 2 )
@@ -169,7 +169,7 @@ pcl_output_bin_selection(pcl_args_t *pargs, pcl_state_t *pcs)
 	return put_param1_int(pcs, "OutputBin", i);
 }
 
-private int /* ESC & u <upi> B */
+static int /* ESC & u <upi> B */
 pcl_set_unit_of_measure(pcl_args_t *pargs, pcl_state_t *pcs)
 {	int num = int_arg(pargs);
 
@@ -198,7 +198,7 @@ pcl_set_unit_of_measure(pcl_args_t *pargs, pcl_state_t *pcs)
 }
 
 /* Initialization */
-private int
+static int
 pcjob_do_registration(pcl_parser_state_t *pcl_parser_state, gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_ESCAPE_ARGS('E', "Printer Reset", pcl_printer_reset, pca_in_rtl)
@@ -228,7 +228,7 @@ pcjob_do_registration(pcl_parser_state_t *pcl_parser_state, gs_memory_t *mem)
 	END_CLASS	  
 	return 0;
 }
-private void
+static void
 pcjob_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {	
     if ( type & (pcl_reset_initial | pcl_reset_printer) ) { 

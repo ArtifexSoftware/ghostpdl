@@ -56,7 +56,7 @@ pcl_cid_get_bits_per_primary(const pcl_cid_data_t *pcid, int index)
  * of non-numbers (+-inf, nan); there are not enough non-IEEE processors that
  * this code is likely to run on to make the effort worth-while.
  */
-  private float
+  static float
 make_float(
     const byte *    pbuff
 )
@@ -86,7 +86,7 @@ make_float(
  * Convert an array of 32-bit floats from the HP big-endian form into the
  * native form required by the host processor.
  */
-  private void
+  static void
 convert_float_array(
     int             num_floats,
     const byte *    pinbuff,
@@ -102,7 +102,7 @@ convert_float_array(
 /*
  * Convert a 16-bit integer in HP's big-endian order into native byte order.
  */
-  private int
+  static int
 make_int16(
     const byte *    pbuff
 )
@@ -117,7 +117,7 @@ make_int16(
  * Convert an array of 16-bit integers from HP's big-endian form to the
  * native byte order required by the host processor.
  */
-  private void
+  static void
 convert_int16_array(
     int             num_ints,
     const byte *    pinbuff,
@@ -135,7 +135,7 @@ convert_int16_array(
  * Build the  various long-form configure image data structures.
  * Returns 0 on success, < 0 in case of an error.
  */
-  private int
+  static int
 build_cid_dev_long(
     pcl_cid_data_t *        pcid,
     const byte *            pbuff
@@ -153,7 +153,7 @@ build_cid_dev_long(
 /* The documentation is not clear if these are specified 0..255 or 0..1
    all cid long examples in the ats tests use 0..255.  We use 0..1 for
    the short form */
- private void
+static void
 normalize_cid_minmax_valrange_long(float *minmax)
 {
     int i;
@@ -162,7 +162,7 @@ normalize_cid_minmax_valrange_long(float *minmax)
     }
 }
 
-  private int
+  static int
 build_cid_col_long(
     pcl_cid_data_t *        pcid,
     const byte *            pbuff
@@ -179,7 +179,7 @@ build_cid_col_long(
     return 0;
 }
 
-  private int
+  static int
 build_cid_lab_long(
     pcl_cid_data_t *        pcid,
     const byte *            pbuff
@@ -193,7 +193,7 @@ build_cid_lab_long(
     return 0;
 }
 
-  private int
+  static int
 build_cid_lum_long(
     pcl_cid_data_t *        pcid,
     const byte *            pbuff
@@ -210,7 +210,7 @@ build_cid_lum_long(
     return 0;
 }
 
-private int (*const build_cid_longform[])( pcl_cid_data_t *, const byte * ) = {
+static int (*const build_cid_longform[])( pcl_cid_data_t *, const byte * ) = {
     build_cid_dev_long, /* pcl_cspace_RGB */
     build_cid_dev_long, /* pcl_cspace_CMY */
     build_cid_col_long, /* pcl_cspace_Colorimetric */
@@ -227,7 +227,7 @@ private int (*const build_cid_longform[])( pcl_cid_data_t *, const byte * ) = {
  *
  * Returns 0 on success, < 0 in case of an error.
  */
-  private int
+  static int
 check_cid_hdr(
       pcl_state_t *pcs,
       pcl_cid_hdr_t * pcid
@@ -302,7 +302,7 @@ check_cid_hdr(
     return 0;
 }
 
- private int
+static int
 substitute_colorimetric_cs(
 	   pcl_state_t *pcs,
 	   pcl_cid_data_t *pcid
@@ -352,7 +352,7 @@ substitute_colorimetric_cs(
  *
  * Returns 0 if successful, < 0 in case of error.
  */
-  private int
+  static int
 install_cid_data(
     int                 len,        /* length of data */
     const byte *        pbuff,      /* the data provided with command */
@@ -395,7 +395,7 @@ install_cid_data(
  *  overwrite the current palette. This routine is separated out because it
  *  is required by both the simple color space command and the reset code.
  */
-  private int
+  static int
 set_simple_color_mode(
     int             type,
     pcl_state_t *   pcs
@@ -432,7 +432,7 @@ set_simple_color_mode(
  * This command creates only the basic element of the the palette: the cid_data
  * array. Other parts are created as needed.
  */
-  private int
+  static int
 pcl_configure_image_data(
     pcl_args_t *        pargs,
     pcl_state_t *       pcs
@@ -454,7 +454,7 @@ pcl_configure_image_data(
  * Simple color space command. Note that all the simple color spaces are
  * variations of the RGB/CMY device-specific color space.
  */
-  private int
+  static int
 pcl_simple_color_space(
     pcl_args_t *        pargs,
     pcl_state_t *       pcs
@@ -476,7 +476,7 @@ pcl_simple_color_space(
  * This routine will convert the whitepoint to the form anticipated by the
  * gs_cie_render structure (i.e., Y = 1.0).
  */
-  private int
+  static int
 set_view_illuminant(
     pcl_args_t *        pargs,
     pcl_state_t *       pcs
@@ -540,7 +540,7 @@ pcl_cid_IN(
  * required is performed at the palette level. Similarly, there is no reset
  * code, as reset is handled at the palette level.
  */
-  private int
+  static int
 pcl_cid_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem
@@ -563,7 +563,7 @@ pcl_cid_do_registration(
     return 0;
 }
 
-private void
+static void
 pcl_cid_do_reset(pcl_state_t *       pcs,
           pcl_reset_type_t    type
 )

@@ -31,7 +31,7 @@
 /* ---------------- Command definition ---------------- */
 
 /* Register a command.  Return true if this is a redefinition. */
-private bool
+static bool
 pcl_register_command(byte *pindex, const pcl_command_definition_t *pcmd, 
 		     pcl_parser_state_t *pcl_parser_state)
 {	int index = pcl_parser_state->definitions->pcl_command_next_index;
@@ -87,7 +87,7 @@ pcl_define_escape_command(int/*char*/ chr,
 /*
  * Convert escape classes to second level dispatch indices.
  */
-private const byte pcl_escape_class_indices[max_escape_class - min_escape_class + 1] = {
+static const byte pcl_escape_class_indices[max_escape_class - min_escape_class + 1] = {
     0, 0, 0, 0, 1/*%*/, 2/*&*/, 0, 3/*(*/, 4/*)*/, 5/***/, 0, 0, 0, 0, 0
 };
 
@@ -136,7 +136,7 @@ pcl_define_class_commands(int/*char*/ class,
  *	ESC ? b <arg> c	'?', 'b', 'c'
  * The caller is responsible for providing valid arguments.
  */
-private const pcl_command_definition_t *
+static const pcl_command_definition_t *
 pcl_get_command_definition(pcl_parser_state_t *pcl_parser_state, 
 			   int/*char*/ class, 
 			   int/*char*/ group,
@@ -180,7 +180,7 @@ pcl_process_init(pcl_parser_state_t *pst)
 
 /* Adjust the argument value according to the command's argument type. */
 /* Return 1 if the command should be ignored. */
-private int
+static int
 pcl_adjust_arg(pcl_args_t *pargs, const pcl_command_definition_t *pdefn)
 {	uint acts = pdefn->actions;
 
@@ -213,7 +213,7 @@ pcl_adjust_arg(pcl_args_t *pargs, const pcl_command_definition_t *pdefn)
 }
 
 /* Append some just-scanned input data to the macro being defined. */
-private int
+static int
 append_macro(const byte *from, const byte *to, pcl_state_t *pcs)
 {	uint count = to - from;
 	uint size = gs_object_size(pcs->memory, pcs->macro_definition);

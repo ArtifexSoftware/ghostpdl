@@ -23,7 +23,7 @@
 
 
 /* utility procedure to print n blank lines */
-private inline void
+static inline void
 print_blank_lines(pcl_state_t *pcs, int count)
 {
     while( count-- ) {
@@ -100,7 +100,7 @@ pcl_print_font_page(pcl_args_t *pargs, pcl_state_t *pcs)
     return 0;
 }
 
-private int
+static int
 pcfontpg_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *mem

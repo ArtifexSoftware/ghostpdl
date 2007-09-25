@@ -103,7 +103,7 @@ pl_device_does_color_conversion()
 
 /* CIEBasedABC definitions */
 /* Decode LMN procedures for srgb color spaces or sRGB gamma transform. */
-inline private float
+inline static float
 pl_decodeLMN(floatp val, const gs_cie_common *pcie)
 {
     if ( val <= 0.03928 )
@@ -113,30 +113,30 @@ pl_decodeLMN(floatp val, const gs_cie_common *pcie)
 }
 
 
-private float
+static float
 pl_DecodeLMN_0(floatp val, const gs_cie_common *pcie)
 {
     return pl_decodeLMN(val, pcie);
 }
 
-private float
+static float
 pl_DecodeLMN_1(floatp val, const gs_cie_common *pcie)
 {
     return pl_decodeLMN(val, pcie);
 }
 
-private float
+static float
 pl_DecodeLMN_2(floatp val, const gs_cie_common *pcie)
 {
     return pl_decodeLMN(val, pcie);
 }
 
-private const gs_cie_common_proc3 pl_DecodeLMN = {
+static const gs_cie_common_proc3 pl_DecodeLMN = {
     { pl_DecodeLMN_0, pl_DecodeLMN_1, pl_DecodeLMN_2 }
 };
 
 /* LMN matrix for srgb. sRGB to XYZ (D65) matrix (ITU-R BT.709-2 Primaries) */
-private const gs_matrix3 pl_MatrixLMN = {
+static const gs_matrix3 pl_MatrixLMN = {
     {0.412457, 0.212673, 0.019334},
     {0.357576, 0.715152, 0.119192},
     {0.180437, 0.072175, 0.950301},
@@ -144,7 +144,7 @@ private const gs_matrix3 pl_MatrixLMN = {
 };
 
 /* LMN matrix for the crd, just the inverse of the color spaces LMN. */
-private const gs_matrix3 pl_MatrixCRDLMN = {
+static const gs_matrix3 pl_MatrixCRDLMN = {
     {3.240449, -0.969265, 0.055643},
     {-1.537136, 1.876011, -0.204026},
     {-0.498531, 0.041556, 1.057229},
@@ -152,18 +152,18 @@ private const gs_matrix3 pl_MatrixCRDLMN = {
 };
 
 /* D65 white point */
-private const gs_vector3 pl_WhitePoint = {0.9505, 1.0, 1.0890};
-private const gs_vector3 pl_BlackPoint = {0.0, 0.0, 0.0};
+static const gs_vector3 pl_WhitePoint = {0.9505, 1.0, 1.0890};
+static const gs_vector3 pl_BlackPoint = {0.0, 0.0, 0.0};
 
 /* Bradford Cone Space - www.srgb.com */
-private const gs_matrix3 pl_MatrixPQR = {
+static const gs_matrix3 pl_MatrixPQR = {
     {0.8951, -0.7502, 0.0389},
     {0.2664, 1.7135, -0.0685},
     {-0.1614, 0.0367, 1.0296},
     false
 };
 
-private const gs_range3 pl_RangePQR = {
+static const gs_range3 pl_RangePQR = {
     {{-0.5, 2.0},
      {-0.5, 2.0},
      {-0.5, 2.0}}
@@ -171,7 +171,7 @@ private const gs_range3 pl_RangePQR = {
 
 
 /* tranform pqr */
-private int
+static int
 pl_TransformPQR_proc(int indx, floatp val, const gs_cie_wbsd *cs_wbsd,
                   gs_cie_render *pcrd, float *pnew_val)
 {
@@ -181,7 +181,7 @@ pl_TransformPQR_proc(int indx, floatp val, const gs_cie_wbsd *cs_wbsd,
     return 0;
 }
 
-private const gs_cie_transform_proc3 pl_TransformPQR = {
+static const gs_cie_transform_proc3 pl_TransformPQR = {
     pl_TransformPQR_proc,
     NULL,
     { NULL, 0 },
@@ -190,7 +190,7 @@ private const gs_cie_transform_proc3 pl_TransformPQR = {
 
 
 /* ABC - inverse srgb gamma transform */
-inline private float
+inline static float
 pl_encodeABC(floatp in, const gs_cie_render * pcrd)
 {
     if ( in <= 0.00304 )
@@ -198,25 +198,25 @@ pl_encodeABC(floatp in, const gs_cie_render * pcrd)
     return (float)(pow(in, (1.0 / 2.4)) * 1.055 - 0.055);
 }
 
-private float
+static float
 pl_EncodeABC_0(floatp in, const gs_cie_render * pcrd)
 {
     return pl_encodeABC(in, pcrd);
 }
 
-private float
+static float
 pl_EncodeABC_1(floatp in, const gs_cie_render * pcrd)
 {
     return pl_encodeABC(in, pcrd);
 }
 
-private float
+static float
 pl_EncodeABC_2(floatp in, const gs_cie_render * pcrd)
 {
     return pl_encodeABC(in, pcrd);
 }
 
-private const gs_cie_render_proc3 pl_EncodeABC_procs = {
+static const gs_cie_render_proc3 pl_EncodeABC_procs = {
     {pl_EncodeABC_0, pl_EncodeABC_1, pl_EncodeABC_2}
 };
 
@@ -230,7 +230,7 @@ private const gs_cie_render_proc3 pl_EncodeABC_procs = {
  *
  */
 
-private bool
+static bool
 pl_read_device_CRD(gs_cie_render *pcrd, gs_state *pgs)
 {
     gx_device *     pdev = gs_currentdevice(pgs);
@@ -291,7 +291,7 @@ gs_cie_render *pl_pcrd;
 bool pl_pcrd_built = false; /* the crd has been built */
 
 
-private int
+static int
 pl_build_crd(gs_state *pgs)
 {
     int code;
@@ -360,7 +360,7 @@ pl_cspace_init_SRGB(gs_color_space **ppcs, const gs_state *pgs)
 }
 
 /* set the srgb color space */
-private int
+static int
 pl_setSRGB(gs_state *pgs)
 {
     gs_color_space *pcs;

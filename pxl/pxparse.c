@@ -36,7 +36,7 @@
 gs_private_st_composite(st_px_parser_state, px_parser_state_t,
   "px_parser_state_t", parser_state_enum_ptrs, parser_state_reloc_ptrs);
 #define st ((px_parser_state_t *)vptr)
-private ENUM_PTRS_BEGIN(parser_state_enum_ptrs)
+static ENUM_PTRS_BEGIN(parser_state_enum_ptrs)
 	/* Mark from array pointers on the stack. */
 	if ( index < st->stack_count )
 	  { px_value_t *pv = &st->stack[index];
@@ -45,7 +45,7 @@ private ENUM_PTRS_BEGIN(parser_state_enum_ptrs)
 	  }
 	return 0;
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(parser_state_reloc_ptrs) {
+static RELOC_PTRS_BEGIN(parser_state_reloc_ptrs) {
 	px_parser_state_t *st_new =
 	    (*gc_proc(gcst, reloc_struct_ptr))((const void *)st, gcst);
 	long diff = (byte *)st_new - (byte *)st;
@@ -96,7 +96,7 @@ typedef struct px_tag_syntax_s {
 #define A(n) {n,ptsData,ptsData,ptsData}	/* attribute */
 
 /* Define the syntax of all tags. */
-private const px_tag_syntax_t tag_syntax[256] = {
+static const px_tag_syntax_t tag_syntax[256] = {
 /*0x*/
   I,I,I,I,I,I,I,I, I,I,I,I,I,I,I,I,
 /*1x*/
@@ -217,7 +217,7 @@ px_process_init(px_parser_state_t *st, bool big_endian)
 
 /* Move an array to the heap for persistence if needed. */
 /* See pxoper.h for details. */
-private int
+static int
 px_save_array(px_value_t *pv, px_state_t *pxs, client_name_t cname,
   uint nbytes)
 {	if ( pv->type & pxd_on_heap )
@@ -260,7 +260,7 @@ px_save_array(px_value_t *pv, px_state_t *pxs, client_name_t cname,
 		      dputc('\n');\
 		    }\
 		  while (0)
-private void
+static void
 trace_array_data(const char *label, const px_value_t *pav)
 {	px_data_type_t type = pav->type;
 	const byte *ptr = pav->value.array.data;

@@ -27,7 +27,7 @@
 /*
  * PC [pen[,primary1,primary2,primary3];
  */
-  private int
+  static int
 hpgl_PC(
     hpgl_args_t *   pargs,
     hpgl_state_t *  pgls
@@ -99,7 +99,7 @@ hpgl_NP(
  * Initialization. There is no reset or copy command, as those operations are
  * carried out by the palette mechanism.
  */
-  private int
+  static int
 pgcolor_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *mem

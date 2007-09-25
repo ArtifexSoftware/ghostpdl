@@ -43,7 +43,7 @@
 
 
 /* Load a built-in (TrueType) font from external storage. */
-private int
+static int
 pl_append_tt_data(gs_memory_t *mem, char **ppheader, char *buffer, int length)
 {
     if (*ppheader == NULL) {
@@ -63,7 +63,7 @@ pl_append_tt_data(gs_memory_t *mem, char **ppheader, char *buffer, int length)
     return 0;
 }
 
-private int
+static int
 pl_load_romtt_font(gs_font_dir *pdir, gs_memory_t *mem, long unique_id, pl_font_t **pplfont, char *font_name, unsigned char *font_data)
 {	
     bool compressed;

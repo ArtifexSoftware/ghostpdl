@@ -49,7 +49,7 @@
 /* ------ Halftones ------ */
 
 /* Define a transfer function without gamma correction. */
-private float
+static float
 identity_transfer(floatp tint, const gx_transfer_map *ignore_map)
 {	return tint;
 }
@@ -128,7 +128,7 @@ static const byte order16x16[256] = {
 };
 
 /* Set the size for a default halftone screen. */
-private void
+static void
 px_set_default_screen_size(px_state_t *pxs, int method)
 {	px_gstate_t *pxgs = pxs->pxgs;
 
@@ -206,13 +206,13 @@ px_set_halftone(px_state_t *pxs)
  * the pattern so that its size is an exact multiple of the halftone size.
  */
 
-private uint
+static uint
 ilcm(uint x, uint y)
 {	return x * (y / igcd(x, y));
 }
 
 /* Render a pattern. */
-private int
+static int
 px_paint_pattern(const gs_client_color *pcc, gs_state *pgs)
 {	const gs_client_pattern *ppat = gs_getpattern(pcc);
 	const px_pattern_t *pattern = ppat->client_data;
@@ -268,7 +268,7 @@ px_paint_pattern(const gs_client_color *pcc, gs_state *pgs)
 }
 
 /* Create the rendering of a pattern. */
-private int
+static int
 render_pattern(gs_client_color *pcc, const px_pattern_t *pattern,
   const px_value_t *porigin, const px_value_t *pdsize, px_state_t *pxs)
 {	px_gstate_t *pxgs = pxs->pxgs;
@@ -395,7 +395,7 @@ render_pattern(gs_client_color *pcc, const px_pattern_t *pattern,
 /* Check parameters and execute SetBrushSource or SetPenSource: */
 /* pxaRGBColor, pxaGrayLevel, pxaNullBrush/Pen, pxaPatternSelectID, */
 /* pxaPatternOrigin, pxaNewDestinationSize */
-private ulong
+static ulong
 int_type_max(px_data_type_t type)
 {	return
 	  (type & pxd_ubyte ? 255 :
@@ -404,7 +404,7 @@ int_type_max(px_data_type_t type)
 	   type & pxd_uint32 ? (ulong)0xffffffff :
 	   /* type & pxd_sint32 */ 0x7fffffff);
 }
-private real
+static real
 fraction_value(const px_value_t *pv, int i)
 {	px_data_type_t type = pv->type;
 	real v;
@@ -430,7 +430,7 @@ typedef enum {
 } pxl_source_t;
 
 /* given a paint type decide if a halftone is necessary */
-private bool
+static bool
 px_needs_halftone(const gs_memory_t *mem, px_paint_t *ppt)
 {
     bool needs_halftone;
@@ -456,7 +456,7 @@ px_needs_halftone(const gs_memory_t *mem, px_paint_t *ppt)
     return needs_halftone;
 }
 	    
-private int
+static int
 set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
 {
     px_gstate_t *pxgs = pxs->pxgs;

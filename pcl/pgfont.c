@@ -36,7 +36,7 @@
  * The stick/arc fonts themselves use Roman-8 (8U) indexing.
  */
 extern const pl_symbol_map_t map_8U_unicode;
-private gs_glyph
+static gs_glyph
 hpgl_stick_arc_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t not_used)
 {	
     int i;
@@ -54,7 +54,7 @@ hpgl_stick_arc_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t not_use
 
 /* The stick font is fixed-pitch. 
  */
-private int
+static int
 hpgl_stick_char_width(const pl_font_t *plfont, const void *pgs, uint uni_code, gs_point *pwidth)
 {	
     /* first map uni_code to roman-8 */
@@ -69,7 +69,7 @@ hpgl_stick_char_width(const pl_font_t *plfont, const void *pgs, uint uni_code, g
     return 0;
 }
 
-private int
+static int
 hpgl_stick_char_metrics(const pl_font_t *plfont, const void *pgs, uint uni_code, float metrics[4])
 {
     gs_point width;
@@ -87,7 +87,7 @@ hpgl_stick_char_metrics(const pl_font_t *plfont, const void *pgs, uint uni_code,
 }    
 
 /* The arc font is proportionally spaced. */
-private int
+static int
 hpgl_arc_char_width(const pl_font_t *plfont, const void *pgs, uint uni_code, gs_point *pwidth)
 {	
     /* first map uni_code to roman-8 */
@@ -105,7 +105,7 @@ hpgl_arc_char_width(const pl_font_t *plfont, const void *pgs, uint uni_code, gs_
     return 0;
 }
 
-private int
+static int
 hpgl_arc_char_metrics(const pl_font_t *plfont, const void *pgs, uint uni_code, float metrics[4])
 {
     gs_point width;
@@ -122,7 +122,7 @@ hpgl_arc_char_metrics(const pl_font_t *plfont, const void *pgs, uint uni_code, f
 }    
 
 /* Add a symbol to the path. */
-private int
+static int
 hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
   gs_glyph uni_code, hpgl_font_type_t font_type)
 {	
@@ -160,13 +160,13 @@ hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
     return 0;
 }
 
-private int
+static int
 hpgl_stick_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
   gs_char ignore_chr, gs_glyph uni_code)
 {	
    return hpgl_stick_arc_build_char(penum, pgs, pfont, uni_code, HPGL_STICK_FONT);
 }
-private int
+static int
 hpgl_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
   gs_char ignore_chr, gs_glyph uni_code)
 {	return hpgl_stick_arc_build_char(penum, pgs, pfont, uni_code, HPGL_ARC_FONT);
@@ -174,7 +174,7 @@ hpgl_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 }
 
 /* Fill in stick/arc font boilerplate. */
-private void
+static void
 hpgl_fill_in_stick_arc_font(gs_font_base *pfont, long unique_id)
 {	/* The way the code is written requires FontMatrix = identity. */
 	gs_make_identity(&pfont->FontMatrix);

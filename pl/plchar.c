@@ -95,14 +95,14 @@ pl_font_lookup_glyph(const pl_font_t *plfont, gs_glyph glyph)
 
 /* Encode a character for a bitmap font.  This is simple, because */
 /* bitmap fonts are always bound. */
-private gs_glyph
+static gs_glyph
 pl_bitmap_encode_char(gs_font *pfont, gs_char chr, gs_glyph not_used)
 {       return (gs_glyph)chr;
 }
 
 /* Get character existence and escapement for a bitmap font. */
 /* This is simple for the same reason. */
-private int
+static int
 pl_bitmap_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth)
 {       
     const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
@@ -131,7 +131,7 @@ pl_bitmap_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, g
     return 0;
 }
 
-private int
+static int
 pl_bitmap_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4])
 {
     gs_point width;
@@ -161,14 +161,14 @@ pl_bitmap_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code,
  */
 
 /* Allocate the line buffer for bolding.  We need 2 + bold scan lines. */
-private byte *
+static byte *
 alloc_bold_lines(gs_memory_t *mem, uint width, int bold, client_name_t cname)
 {       return gs_alloc_byte_array(mem, 2 + bold, bitmap_raster(width + bold),
                                    cname);
 }
 
 /* Merge one (aligned) scan line into another, for vertical smearing. */
-private void
+static void
 bits_merge(byte *dest, const byte *src, uint nbytes)
 {       long *dp = (long *)dest;
         const long *sp = (const long *)src;
@@ -182,7 +182,7 @@ bits_merge(byte *dest, const byte *src, uint nbytes)
 
 /* Smear a scan line horizontally.  Note that the output is wider than */
 /* the input by the amount of bolding (smear_width). */
-private void
+static void
 bits_smear_horizontally(byte *dest, const byte *src, uint width,
   uint smear_width)
 {       uint bits_on = 0;
@@ -363,7 +363,7 @@ image_bitmap_char(gs_image_enum *ienum, const gs_image_t *pim,
 
 /* Render a character for a bitmap font. */
 /* This handles both format 0 (PCL XL) and format 4 (PCL5 bitmap). */
-private int
+static int
 pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
   gs_char chr, gs_glyph glyph)
 {       pl_font_t *plfont = (pl_font_t *)pfont->client_data;
@@ -470,7 +470,7 @@ out:      gs_free_object(pgs->memory, bold_lines,
 /* Look up a character in the TrueType character-to-TT-glyph map. */
 /* Return a pointer to the glyph's slot (chr != gs_no_char) or where */
 /* it should be added (chr == gs_no_char). */
-private pl_tt_char_glyph_t *
+static pl_tt_char_glyph_t *
 pl_tt_lookup_char(const pl_font_t *plfont, gs_glyph glyph)
 {       uint size = plfont->char_glyphs.size;
         uint skip = plfont->char_glyphs.skip;
@@ -489,7 +489,7 @@ pl_tt_lookup_char(const pl_font_t *plfont, gs_glyph glyph)
 }
 
 /* Get a string from a TrueType font. */
-private int
+static int
 pl_tt_string_proc(gs_font_type42 *pfont, ulong offset, uint length, const byte **pdata)
 {       pl_font_t *plfont = pfont->client_data;
 
@@ -500,7 +500,7 @@ pl_tt_string_proc(gs_font_type42 *pfont, ulong offset, uint length, const byte *
 
 /* Return the vertical substitute for a glyph, if it has one; */
 /* otherwise return gs_no_glyph. */
-private gs_glyph
+static gs_glyph
 pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t *plfont)
 {       long VT = plfont->offsets.VT;
         const byte *vtseg;
@@ -764,7 +764,7 @@ pl_cmap_lookup(const uint key, const byte *table, uint *pvalue)
 
 /* Encode a character using the TrueType cmap tables. */
 /* (We think this is never used for downloaded fonts.) */
-private gs_glyph
+static gs_glyph
 pl_tt_cmap_encode_char(gs_font_type42 *pfont, ulong cmap_offset,
   uint cmap_len, gs_char chr)
 {       const byte *cmap;
@@ -796,7 +796,7 @@ pl_tt_cmap_encode_char(gs_font_type42 *pfont, ulong cmap_offset,
 }
 
 /* Encode a character using the map built for downloaded TrueType fonts. */
-private gs_glyph
+static gs_glyph
 pl_tt_dynamic_encode_char(const gs_font_type42 *pfont, gs_char chr)
 {       pl_font_t *plfont = pfont->client_data;
         const pl_tt_char_glyph_t *ptcg = pl_tt_lookup_char(plfont, chr);
@@ -808,7 +808,7 @@ pl_tt_dynamic_encode_char(const gs_font_type42 *pfont, gs_char chr)
 /* otherwise return gs_no_char. */
 /* Note that we return 0xffff for a character that is explicitly */
 /* designated as undefined. */
-private gs_char
+static gs_char
 pl_font_galley_character(gs_char chr, const pl_font_t *plfont)
 {       long GC = plfont->offsets.GC;
         const byte *gcseg;
@@ -882,7 +882,7 @@ pl_tt_encode_char(gs_font *pfont_generic, gs_char chr, gs_glyph not_used)
 
 
 /* Get metrics */
-private int
+static int
 pl_tt_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4])
 {
     gs_glyph unused_glyph = gs_no_glyph;
@@ -895,7 +895,7 @@ pl_tt_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, flo
 }
 
 /* Get character existence and escapement for a TrueType font. */
-private int
+static int
 pl_tt_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth)
 {       gs_font *pfont = plfont->pfont;
         gs_char chr = char_code;
@@ -927,7 +927,7 @@ pl_tt_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_po
 
 
 /* Render a TrueType character. */
-private int
+static int
 pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
   gs_char chr, gs_glyph orig_glyph)
 {       gs_glyph glyph = orig_glyph;
@@ -1116,7 +1116,7 @@ out:      gs_free_object(pgs->memory, bold_lines, "pl_tt_build_char(bold_lines)"
 
 /* We don't have to do any character encoding, since Intellifonts are */
 /* indexed by character code (if bound) or MSL code (if unbound). */
-private gs_glyph
+static gs_glyph
 pl_intelli_encode_char(gs_font *pfont, gs_char pchr, gs_glyph not_used)
 {       return (gs_glyph)pchr;
 }
@@ -1131,7 +1131,7 @@ typedef struct intelli_metrics_s {
 
 /* Merge the bounding box of a character into the composite box, */
 /* and set the escapement.  Return true if the character is defined. */
-private bool
+static bool
 pl_intelli_merge_box(float wbox[6], const pl_font_t *plfont, gs_glyph glyph)
 {       const byte *cdata = pl_font_lookup_glyph(plfont, glyph)->data;
 
@@ -1171,7 +1171,7 @@ pl_intelli_merge_box(float wbox[6], const pl_font_t *plfont, gs_glyph glyph)
 
 /* Do the work for rendering an Intellifont character. */
 /* The caller has done the setcachedevice. */
-private int
+static int
 pl_intelli_show_char(gs_state *pgs, const pl_font_t *plfont, gs_glyph glyph)
 {    
     int code;
@@ -1352,7 +1352,7 @@ cleanup:
 }
 
 /* Get character existence and escapement for an Intellifont. */
- private int
+static int
 pl_intelli_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth)
 {       
         const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
@@ -1394,7 +1394,7 @@ pl_intelli_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, 
         return 0;
 }
 
-private int
+static int
 pl_intelli_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4])
 
 {
@@ -1430,7 +1430,7 @@ pl_intelli_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code
 }
 
 /* Render a character for an Intellifont. */
-private int
+static int
 pl_intelli_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
   gs_char chr, gs_glyph glyph)
 {       const pl_font_t *plfont = (const pl_font_t *)pfont->client_data;
@@ -1566,7 +1566,7 @@ pl_font_alloc_glyph_table(pl_font_t *plfont, uint num_glyphs, gs_memory_t *mem,
 }
 
 /* Expand the glyph table. */
-private int
+static int
 expand_glyph_table(pl_font_t *plfont, gs_memory_t *mem)
 {       pl_glyph_table_t old_table;
         int code;
@@ -1612,7 +1612,7 @@ pl_tt_alloc_char_glyphs(pl_font_t *plfont, uint num_chars, gs_memory_t *mem,
 }
 
 /* Expand the character to glyph index map. */
-private int
+static int
 expand_char_glyph_table(pl_font_t *plfont, gs_memory_t *mem)
 {       pl_tt_char_glyph_table_t old_table;
         int code;
@@ -1637,7 +1637,7 @@ typedef struct font_glyph_s {
   gs_font *font;
   gs_glyph glyph;
 } font_glyph_t;
-private bool
+static bool
 match_font_glyph(const gs_memory_t *mem, cached_char *cc, void *vpfg)
 {       const font_glyph_t *pfg = vpfg;
         return (cc->pair->font == pfg->font && cc->code == pfg->glyph);

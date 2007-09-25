@@ -137,14 +137,14 @@ static const byte bitrev[256] =
     0x1f, 0x9f, 0x5f, 0xdf, 0x3f, 0xbf, 0x7f, 0xff
 };
 
-private int
+static int
 xps_report_error(stream_state * st, const char *str)
 {
     (void) gs_throw1(-1, "%s", str);
     return 0;
 }
 
-private inline int
+static inline int
 readbyte(xps_tiff_t *tiff)
 {
     if (tiff->rp < tiff->ep)
@@ -152,7 +152,7 @@ readbyte(xps_tiff_t *tiff)
     return EOF;
 }
 
-private inline unsigned
+static inline unsigned
 readshort(xps_tiff_t *tiff)
 {
     unsigned a = readbyte(tiff);
@@ -162,7 +162,7 @@ readshort(xps_tiff_t *tiff)
     return (a << 8) | b;
 }
 
-private inline unsigned
+static inline unsigned
 readlong(xps_tiff_t *tiff)
 {
     unsigned a = readbyte(tiff);
@@ -174,14 +174,14 @@ readlong(xps_tiff_t *tiff)
     return (a << 24) | (b << 16) | (c << 8) | d;
 }
 
-private int
+static int
 xps_decode_tiff_uncompressed(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
     memcpy(wp, tiff->rp, wl - wp);
     return gs_okay;
 }
 
-private int
+static int
 xps_decode_tiff_packbits(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
     stream_RLD_state state;
@@ -207,7 +207,7 @@ xps_decode_tiff_packbits(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl,
     return gs_okay;
 }
 
-private int
+static int
 xps_decode_tiff_lzw(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
     stream_LZW_state state;
@@ -253,7 +253,7 @@ xps_decode_tiff_lzw(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, byte
     return gs_okay;
 }
 
-private int
+static int
 xps_decode_tiff_flate(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
     stream_zlib_state state;
@@ -284,7 +284,7 @@ xps_decode_tiff_flate(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, by
     return gs_okay;
 }
 
-private int
+static int
 xps_decode_tiff_fax(gs_memory_t *mem, xps_tiff_t *tiff, int comp, byte *rp, byte *rl, byte *wp, byte *wl)
 {
     stream_CFD_state state;
@@ -335,7 +335,7 @@ xps_decode_tiff_fax(gs_memory_t *mem, xps_tiff_t *tiff, int comp, byte *rp, byte
  * wrappers directly for doing the actual decoding.
  */
 
-private int
+static int
 xps_decode_tiff_jpeg(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
     stream_DCT_state state; /* used by gs_jpeg_* wrappers */
@@ -427,7 +427,7 @@ xps_decode_tiff_jpeg(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, byt
     return gs_okay;
 }
 
-private inline int
+static inline int
 getcomp(byte *line, int x, int bpc)
 {
     switch (bpc)
@@ -440,7 +440,7 @@ getcomp(byte *line, int x, int bpc)
     return 0;
 }
 
-private inline void
+static inline void
 putcomp(byte *line, int x, int bpc, int value)
 {
     int maxval = (1 << bpc) - 1;
@@ -462,7 +462,7 @@ putcomp(byte *line, int x, int bpc, int value)
     }
 }
 
-private void
+static void
 xps_unpredict_tiff(byte *line, int width, int comps, int bits)
 {
     byte left[32];
@@ -484,7 +484,7 @@ xps_unpredict_tiff(byte *line, int width, int comps, int bits)
     }
 }
 
-private void
+static void
 xps_invert_tiff(byte *line, int width, int comps, int bits)
 {
     int i, k, v;
@@ -501,7 +501,7 @@ xps_invert_tiff(byte *line, int width, int comps, int bits)
     }
 }
 
-private int
+static int
 xps_expand_colormap(gs_memory_t *mem, xps_tiff_t *tiff, xps_image_t *image)
 {
     int maxval = 1 << image->bits;
@@ -561,7 +561,7 @@ xps_expand_colormap(gs_memory_t *mem, xps_tiff_t *tiff, xps_image_t *image)
     return gs_okay;
 }
 
-private int
+static int
 xps_decode_tiff_strips(gs_memory_t *mem, xps_tiff_t *tiff, xps_image_t *image)
 {
     int error;
@@ -750,7 +750,7 @@ xps_decode_tiff_strips(gs_memory_t *mem, xps_tiff_t *tiff, xps_image_t *image)
     return gs_okay;
 }
 
-private void
+static void
 xps_read_tiff_tag_value(unsigned *p, xps_tiff_t *tiff, unsigned type, unsigned ofs, unsigned n)
 {
     tiff->rp = tiff->bp + ofs;
@@ -774,7 +774,7 @@ xps_read_tiff_tag_value(unsigned *p, xps_tiff_t *tiff, unsigned type, unsigned o
     }
 }
 
-private int 
+static int 
 xps_read_tiff_tag(gs_memory_t *mem, xps_tiff_t *tiff, unsigned offset)
 {
     unsigned tag;
@@ -984,7 +984,7 @@ xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image)
     return gs_okay;
 }
 
-private void
+static void
 xps_debug_tiff(gs_memory_t *mem, xps_tiff_t *tiff)
 {
     int n;

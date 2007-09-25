@@ -119,7 +119,7 @@ const pcl_init_t *    pcl_init_table[] = {
 /*
  * Define the gstate client procedures.
  */
-  private void *
+  static void *
 pcl_gstate_client_alloc(
     gs_memory_t *   mem
 )
@@ -136,7 +136,7 @@ pcl_gstate_client_alloc(
  * set and get for pcl's target device.  This is the device at the end
  * of the pipeline.  
  */
-  private int
+  static int
 pcl_gstate_client_copy_for(
     void *                  to,
     void *                  from,
@@ -146,14 +146,14 @@ pcl_gstate_client_copy_for(
     return 0;
 }
 
-  private void
+  static void
 pcl_gstate_client_free(
     void *          old,
     gs_memory_t *   mem
 )
 {}
 
-private const gs_state_client_procs pcl_gstate_procs = {
+static const gs_state_client_procs pcl_gstate_procs = {
     pcl_gstate_client_alloc,
     0,				/* copy -- superseded by copy_for */
     pcl_gstate_client_free,
@@ -215,7 +215,7 @@ pcl_get_gstate(pl_interp_instance_t *instance)
 }
 
 /* Do static init of PCL interpreter, since there's nothing to allocate */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pcl_impl_allocate_interp(
   pl_interp_t                      **interp,       /* RETURNS abstract interpreter struct */
   const pl_interp_implementation_t *impl,  /* implementation of interpereter to alloc */
@@ -230,7 +230,7 @@ pcl_impl_allocate_interp(
 }
 
 /* Do per-instance interpreter allocation/init. No device is set yet */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pcl_impl_allocate_interp_instance(
   pl_interp_instance_t   **instance,     /* RETURNS instance struct */
   pl_interp_t            *interp,        /* dummy interpreter */
@@ -280,7 +280,7 @@ pcl_impl_allocate_interp_instance(
 }
 
 /* Set a client language into an interperter instance */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pcl_impl_set_client_instance(
   pl_interp_instance_t         *instance,     /* interp instance to use */
   pl_interp_instance_t         *client,        /* client to set */
@@ -296,7 +296,7 @@ pcl_impl_set_client_instance(
 }
 
 /* Set an interpreter instance's pre-page action */
-private int   /* ret 0 ok, else -ve err */
+static int   /* ret 0 ok, else -ve err */
 pcl_impl_set_pre_page_action(
   pl_interp_instance_t   *instance,     /* interp instance to use */
   pl_page_action_t       action,        /* action to execute (rets 1 to abort w/o err) */
@@ -310,7 +310,7 @@ pcl_impl_set_pre_page_action(
 }
 
 /* Set an interpreter instance's post-page action */
-private int   /* ret 0 ok, else -ve err */
+static int   /* ret 0 ok, else -ve err */
 pcl_impl_set_post_page_action(
   pl_interp_instance_t   *instance,     /* interp instance to use */
   pl_page_action_t       action,        /* action to execute */
@@ -325,7 +325,7 @@ pcl_impl_set_post_page_action(
 
 /* if the device option string PCL is not given, the default
    arrangement is 1 bit devices use pcl5e other devices use pcl5c. */
-private pcl_personality_t
+static pcl_personality_t
 pcl_set_personality(pl_interp_instance_t *instance, gx_device *device)
 {
     if ( !strcmp(instance->pcl_personality, "PCL5C" ) )
@@ -343,7 +343,7 @@ pcl_set_personality(pl_interp_instance_t *instance, gx_device *device)
 #include "plmain.h"
 
 /* Set a device into an interperter instance */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pcl_impl_set_device(
   pl_interp_instance_t   *instance,     /* interp instance to use */
   gx_device              *device        /* device to set (open or closed) */
@@ -410,7 +410,7 @@ pcl_impl_set_device(
     return code;
 }
 
-private int   
+static int   
 pcl_impl_get_device_memory(
   pl_interp_instance_t   *instance,     /* interp instance to use */
   gs_memory_t **pmem)
@@ -420,7 +420,7 @@ pcl_impl_get_device_memory(
   
 
 /* Prepare interp instance for the next "job" */
-private int	/* ret 0 ok, else -ve error code */
+static int	/* ret 0 ok, else -ve error code */
 pcl_impl_init_job(
 	pl_interp_instance_t   *instance         /* interp instance to start job in */
 )
@@ -432,7 +432,7 @@ pcl_impl_init_job(
 }
 
 /* Parse a cursor-full of data */
-private int	/* ret 0 or +ve if ok, else -ve error code */
+static int	/* ret 0 or +ve if ok, else -ve error code */
 pcl_impl_process(
 	pl_interp_instance_t *instance,        /* interp instance to process data job in */
 	stream_cursor_read   *cursor           /* data to process */
@@ -444,7 +444,7 @@ pcl_impl_process(
 }
 
 /* Skip to end of job ret 1 if done, 0 ok but EOJ not found, else -ve error code */
-private int	
+static int	
 pcl_impl_flush_to_eoj(
 	pl_interp_instance_t *instance,        /* interp instance to flush for */
 	stream_cursor_read   *cursor           /* data to process */
@@ -470,7 +470,7 @@ pcl_impl_flush_to_eoj(
 }
 
 /* Parser action for end-of-file */
-private int	/* ret 0 or +ve if ok, else -ve error code */
+static int	/* ret 0 or +ve if ok, else -ve error code */
 pcl_impl_process_eof(
 	pl_interp_instance_t *instance        /* interp instance to process data job in */
 )
@@ -486,7 +486,7 @@ pcl_impl_process_eof(
 }
 
 /* Report any errors after running a job */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pcl_impl_report_errors(
 	pl_interp_instance_t *instance,         /* interp instance to wrap up job in */
    int                  code,              /* prev termination status */
@@ -505,7 +505,7 @@ pcl_impl_report_errors(
 }
 
 /* Wrap up interp instance after a "job" */
-private int	/* ret 0 ok, else -ve error code */
+static int	/* ret 0 ok, else -ve error code */
 pcl_impl_dnit_job(
 	pl_interp_instance_t *instance         /* interp instance to wrap up job in */
 )
@@ -514,7 +514,7 @@ pcl_impl_dnit_job(
 }
 
 /* Remove a device from an interperter instance */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pcl_impl_remove_device(
   pl_interp_instance_t   *instance     /* interp instance to use */
 )
@@ -540,7 +540,7 @@ pcl_impl_remove_device(
 }
 
 /* Deallocate a interpreter instance */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pcl_impl_deallocate_interp_instance(
   pl_interp_instance_t   *instance     /* instance to dealloc */
 )
@@ -569,7 +569,7 @@ pcl_impl_deallocate_interp_instance(
 }
 
 /* Do static deinit of PCL interpreter */
-private int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pcl_impl_deallocate_interp(
   pl_interp_t        *interp       /* interpreter to deallocate */
 )
