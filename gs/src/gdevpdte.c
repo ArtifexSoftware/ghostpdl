@@ -36,11 +36,11 @@
 #include "gdevpdts.h"
 #include "gdevpdtt.h"
 
-private int pdf_char_widths(gx_device_pdf *const pdev,
+static int pdf_char_widths(gx_device_pdf *const pdev,
 			    pdf_font_resource_t *pdfont, int ch,
 			    gs_font_base *font,
 			    pdf_glyph_widths_t *pwidths /* may be NULL */);
-private int pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
+static int pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 			       const gs_matrix *pfmat,
 			       pdf_text_process_state_t *ppts,
 			       const gs_glyph *gdata);
@@ -133,7 +133,7 @@ typedef struct {
     pdf_resource_type_t rtype;
 } pdf_resource_enum_data_t;
 
-private int 
+static int 
 process_resources2(void *client_data, const byte *key_data, uint key_size, const cos_value_t *v)
 {
     pdf_resource_enum_data_t *data = (pdf_resource_enum_data_t *)client_data;
@@ -145,7 +145,7 @@ process_resources2(void *client_data, const byte *key_data, uint key_size, const
     return 0;
 }
 
-private int 
+static int 
 process_resources1(void *client_data, const byte *key_data, uint key_size, const cos_value_t *v)
 {
     pdf_resource_enum_data_t *data = (pdf_resource_enum_data_t *)client_data;
@@ -190,7 +190,7 @@ pdf_used_charproc_resources(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
  *
  * Sets *ppdfont.
  */
-private int
+static int
 pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfont,
 		  gs_char ch, const gs_glyph *gdata)
 {
@@ -284,7 +284,7 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
 /*
  * Estimate text bbox.
  */
-private int
+static int
 process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
 			  const gs_const_string *pstr,
 			  const gs_matrix *pfmat,
@@ -406,12 +406,12 @@ pdf_shift_text_currentpoint(pdf_text_enum_t *penum, gs_point *wpt)
  * necessary glyphs.  penum->current_font provides the gs_font for getting
  * glyph metrics, but this font's Encoding is not used.
  */
-private int process_text_return_width(const pdf_text_enum_t *pte,
+static int process_text_return_width(const pdf_text_enum_t *pte,
 				      gs_font_base *font,
 				      pdf_text_process_state_t *ppts,
 				      const gs_const_string *pstr, const gs_glyph *gdata,
 				      gs_point *pdpt, int *accepted);
-private int
+static int
 pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 		   const gs_matrix *pfmat,
 		   pdf_text_process_state_t *ppts, const gs_glyph *gdata)
@@ -568,7 +568,7 @@ finish:
  * in a simple font.  May add the widths to the widths cache (pdfont->Widths
  * and pdf_font_cache_elem::real_widths).  Return 1 if the widths were not cached.
  */
-private int
+static int
 pdf_char_widths(gx_device_pdf *const pdev,
 		pdf_font_resource_t *pdfont, int ch, gs_font_base *font,
 		pdf_glyph_widths_t *pwidths /* may be NULL */)
@@ -660,7 +660,7 @@ pdf_char_widths(gx_device_pdf *const pdev,
  * Convert glyph widths (.Width.xy and .real_widths.xy) from design to PDF text space
  * Zero-out one of Width.xy.x/y per PDF Ref 5.3.3 "Text Space Details"
  */
-private void
+static void
 pdf_char_widths_to_uts(pdf_font_resource_t *pdfont /* may be NULL for non-Type3 */,
 		       pdf_glyph_widths_t *pwidths)
 {
@@ -687,7 +687,7 @@ pdf_char_widths_to_uts(pdf_font_resource_t *pdfont /* may be NULL for non-Type3 
  * Compute the total text width (in user space).  Return 1 if any
  * character had real_width != Width, otherwise 0.
  */
-private int
+static int
 process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
 			  pdf_text_process_state_t *ppts,
 			  const gs_const_string *pstr, const gs_glyph *gdata,
@@ -771,7 +771,7 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
 /*
  * Retrieve glyph origing shift for WMode = 1 in design units.
  */
-private void 
+static void 
 pdf_glyph_origin(pdf_font_resource_t *pdfont, int ch, int WMode, gs_point *p)
 {
     /* For CID fonts PDF viewers provide glyph origin shift automatically.

@@ -203,7 +203,7 @@ psdf_round(double v, int precision, int radix)
  * Since we only have 8 bits of color to start with, round the
  * values to 3 digits for more compact output.
  */
-private inline double
+static inline double
 round_byte_color(gx_color_index cv)
 {
     return (int)((uint)cv * (1000.0 / 255.0) + 0.5) / 1000.0;

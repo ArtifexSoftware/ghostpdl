@@ -151,7 +151,7 @@ typedef struct alloc_temp_save_s {
 	ref rlast;
 } alloc_temp_save_t;
 /* Temporarily save the state of an allocator. */
-private void
+static void
 alloc_temp_save(alloc_temp_save_t *pats, gs_ref_memory_t *mem)
 {
     chunk_t *pcc = mem->pcc;
@@ -170,7 +170,7 @@ alloc_temp_save(alloc_temp_save_t *pats, gs_ref_memory_t *mem)
     }
 }
 /* Restore the temporarily saved state. */
-private void
+static void
 alloc_temp_restore(alloc_temp_save_t *pats, gs_ref_memory_t *mem)
 {
     chunk_t *pcc = mem->pcc;
@@ -274,7 +274,7 @@ ialloc_validate_memory(const gs_ref_memory_t * mem, gc_state_t * gcst)
 }
 
 /* Check the validity of an object's size. */
-inline private bool
+static inline bool
 object_size_valid(const obj_header_t * pre, uint size, const chunk_t * cp)
 {
     return (pre->o_alone ? (const byte *)pre == cp->cbase :
@@ -285,11 +285,11 @@ object_size_valid(const obj_header_t * pre, uint size, const chunk_t * cp)
 #if IGC_PTR_STABILITY_CHECK
 void ialloc_validate_pointer_stability(const obj_header_t * ptr_from, 
 				   const obj_header_t * ptr_to);
-private void ialloc_validate_ref(const ref *, gc_state_t *, const obj_header_t *pre_fr);
-private void ialloc_validate_ref_packed(const ref_packed *, gc_state_t *, const obj_header_t *pre_fr);
+static void ialloc_validate_ref(const ref *, gc_state_t *, const obj_header_t *pre_fr);
+static void ialloc_validate_ref_packed(const ref_packed *, gc_state_t *, const obj_header_t *pre_fr);
 #else
-private void ialloc_validate_ref(const ref *, gc_state_t *);
-private void ialloc_validate_ref_packed(const ref_packed *, gc_state_t *);
+static void ialloc_validate_ref(const ref *, gc_state_t *);
+static void ialloc_validate_ref_packed(const ref_packed *, gc_state_t *);
 #endif
 void
 ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
@@ -348,7 +348,7 @@ ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
 }
 /* Validate a ref. */
 #if IGC_PTR_STABILITY_CHECK
-private void
+static void
 ialloc_validate_ref_packed(const ref_packed * rp, gc_state_t * gcst, const obj_header_t *pre_fr)
 {
     const gs_memory_t *cmem = gcst->spaces.memories.named.system->stable_memory;
@@ -363,7 +363,7 @@ ialloc_validate_ref_packed(const ref_packed * rp, gc_state_t * gcst, const obj_h
     }
 }
 #else
-private void
+static void
 ialloc_validate_ref_packed(const ref_packed * rp, gc_state_t * gcst)
 {
     const gs_memory_t *cmem = gcst->spaces.memories.named.system->stable_memory;
@@ -378,7 +378,7 @@ ialloc_validate_ref_packed(const ref_packed * rp, gc_state_t * gcst)
     }
 }
 #endif
-private void
+static void
 ialloc_validate_ref(const ref * pref, gc_state_t * gcst
 #		    if IGC_PTR_STABILITY_CHECK
 			, const obj_header_t *pre_fr

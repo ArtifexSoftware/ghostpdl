@@ -110,7 +110,7 @@
 #include "gdevprn.h"
 
 /* The device descriptors */
-private dev_proc_print_page(dmp_print_page);
+static dev_proc_print_page(dmp_print_page);
 
 /* Standard DMP device */
 const gx_device_printer far_data gs_appledmp_device =
@@ -160,7 +160,7 @@ prn_device(prn_std_procs, "iwlq",
 #define IWLQ 4
 
 /* Send the page to the printer. */
-private int
+static int
 dmp_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {	
 	int dev_type;

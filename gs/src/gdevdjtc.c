@@ -35,9 +35,9 @@
 #define LINE_SIZE ((X_DPI * 85 / 10 + 63) / 64 * 8)
 
 /* The device descriptors */
-private dev_proc_print_page(djet500c_print_page);
+static dev_proc_print_page(djet500c_print_page);
 
-private gx_device_procs djet500c_procs =
+static gx_device_procs djet500c_procs =
   prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
     gdev_pcl_3bit_map_rgb_color, gdev_pcl_3bit_map_color_rgb);
 
@@ -50,7 +50,7 @@ const gx_device_printer far_data gs_djet500c_device =
     3, djet500c_print_page);
 
 /* Forward references */
-private int djet500c_print_page(gx_device_printer *, FILE *);
+static int djet500c_print_page(gx_device_printer *, FILE *);
 
 static int mode2compress(byte *row, byte *end_row, byte *compressed);
 
@@ -63,7 +63,7 @@ static int mode2compress(byte *row, byte *end_row, byte *compressed);
 /* since computer-to-printer communication time is often a bottleneck. */
 /* The DeskJet Color can compress (mode 2) */
 
-private int
+static int
 djet500c_print_page(gx_device_printer *pdev, FILE *fprn)
 {
     byte *bitData=NULL;

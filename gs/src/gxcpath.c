@@ -28,7 +28,7 @@
 #include "gzacpath.h"
 
 /* Forward references */
-private void gx_clip_list_from_rectangle(gx_clip_list *, gs_fixed_rect *);
+static void gx_clip_list_from_rectangle(gx_clip_list *, gs_fixed_rect *);
 
 /* Other structure types */
 public_st_clip_rect();
@@ -40,7 +40,7 @@ private_st_cpath_enum();
 private_st_cpath_path_list();
 
 /* GC procedures for gx_clip_path */
-private 
+static 
 ENUM_PTRS_WITH(clip_path_enum_ptrs, gx_clip_path *cptr) return ENUM_USING(st_path, &cptr->path, sizeof(cptr->path), index - 2);
 
 case 0:
@@ -49,7 +49,7 @@ return ENUM_OBJ((cptr->rect_list == &cptr->local_list ? 0 :
 case 1:
 return ENUM_OBJ(cptr->path_list);
 ENUM_PTRS_END
-private
+static
 RELOC_PTRS_WITH(clip_path_reloc_ptrs, gx_clip_path *cptr)
 {
     if (cptr->rect_list != &cptr->local_list)
@@ -60,7 +60,7 @@ RELOC_PTRS_WITH(clip_path_reloc_ptrs, gx_clip_path *cptr)
 RELOC_PTRS_END
 
 /* GC procedures for gx_device_clip */
-private
+static
 ENUM_PTRS_WITH(device_clip_enum_ptrs, gx_device_clip *cptr)
 {
     if (index < st_clip_list_max_ptrs + 1)
@@ -74,7 +74,7 @@ case 0:
 ENUM_RETURN((cptr->current == &cptr->list.single ? NULL :
 	     (void *)cptr->current));
 ENUM_PTRS_END
-private
+static
 RELOC_PTRS_WITH(device_clip_reloc_ptrs, gx_device_clip *cptr)
 {
     if (cptr->current == &cptr->list.single)
@@ -87,22 +87,22 @@ RELOC_PTRS_WITH(device_clip_reloc_ptrs, gx_device_clip *cptr)
 RELOC_PTRS_END
 
 /* Define an empty clip list. */
-private const gx_clip_list clip_list_empty = {
+static const gx_clip_list clip_list_empty = {
     {0, 0, min_int, max_int, 0, 0},
     0, 0, 0, 0, 0
 };
 
 /* ------ Clipping path memory management ------ */
 
-private rc_free_proc(rc_free_cpath_list);
-private rc_free_proc(rc_free_cpath_list_local);
-private rc_free_proc(rc_free_cpath_path_list);
+static rc_free_proc(rc_free_cpath_list);
+static rc_free_proc(rc_free_cpath_list_local);
+static rc_free_proc(rc_free_cpath_path_list);
 
 /*
  * Initialize those parts of the contents of a clip path that aren't
  * part of the path.
  */
-private void
+static void
 cpath_init_rectangle(gx_clip_path * pcpath, gs_fixed_rect * pbox)
 {
     gx_clip_list_from_rectangle(&pcpath->rect_list->list, pbox);
@@ -112,7 +112,7 @@ cpath_init_rectangle(gx_clip_path * pcpath, gs_fixed_rect * pbox)
     gx_cpath_set_outer_box(pcpath);
     pcpath->id = gs_next_ids(pcpath->path.memory, 1);	/* path changed => change id */
 }
-private void
+static void
 cpath_init_own_contents(gx_clip_path * pcpath)
 {    /* We could make null_rect static, but then it couldn't be const. */
     gs_fixed_rect null_rect;
@@ -121,7 +121,7 @@ cpath_init_own_contents(gx_clip_path * pcpath)
     cpath_init_rectangle(pcpath, &null_rect);
     pcpath->path_list = NULL;
 }
-private void
+static void
 cpath_share_own_contents(gx_clip_path * pcpath, const gx_clip_path * shared)
 {
     pcpath->inner_box = shared->inner_box;
@@ -131,7 +131,7 @@ cpath_share_own_contents(gx_clip_path * pcpath, const gx_clip_path * shared)
 }
 
 /* Allocate only the segments of a clipping path on the heap. */
-private int
+static int
 cpath_alloc_list(gx_clip_rect_list ** prlist, gs_memory_t * mem,
 		 client_name_t cname)
 {
@@ -317,7 +317,7 @@ gx_cpath_assign_free(gx_clip_path * pcpto, gx_clip_path * pcpfrom)
 }
 
 /* Free the clipping list when its reference count goes to zero. */
-private void
+static void
 rc_free_cpath_list_local(gs_memory_t * mem, void *vrlist,
 			 client_name_t cname)
 {
@@ -325,14 +325,14 @@ rc_free_cpath_list_local(gs_memory_t * mem, void *vrlist,
 
     gx_clip_list_free(&rlist->list, mem);
 }
-private void
+static void
 rc_free_cpath_list(gs_memory_t * mem, void *vrlist, client_name_t cname)
 {
     rc_free_cpath_list_local(mem, vrlist, cname);
     gs_free_object(mem, vrlist, cname);
 }
 
-private void
+static void
 rc_free_cpath_path_list(gs_memory_t * mem, void *vplist, client_name_t cname)
 {
     gx_cpath_path_list *plist = (gx_cpath_path_list *)vplist;
@@ -344,7 +344,7 @@ rc_free_cpath_path_list(gs_memory_t * mem, void *vplist, client_name_t cname)
 /* Allocate a new clip path list node. The created node has a ref count
    of 1, and "steals" the reference to next (i.e. does not increment
    its reference count). */
-private int
+static int
 gx_cpath_path_list_new(gs_memory_t *mem, gx_clip_path *pcpath, int rule, 
 			gx_path *ppfrom, gx_cpath_path_list *next, gx_cpath_path_list **pnew)
 {
@@ -483,7 +483,7 @@ gx_cpath_list(const gx_clip_path *pcpath)
     return &pcpath->rect_list->list;
 }
 /* Internal non-const version of the same accessor. */
-inline private gx_clip_list *
+static inline gx_clip_list *
 gx_cpath_list_private(const gx_clip_path *pcpath)
 {
     return &pcpath->rect_list->list;
@@ -495,7 +495,7 @@ gx_cpath_list_private(const gx_clip_path *pcpath)
 /* Create a rectangular clipping path. */
 /* The supplied rectangle may not be oriented correctly, */
 /* but it will be oriented correctly upon return. */
-private int
+static int
 cpath_set_rectangle(gx_clip_path * pcpath, gs_fixed_rect * pbox)
 {
     gx_clip_rect_list *rlist = pcpath->rect_list;
@@ -741,7 +741,7 @@ gx_clip_list_init(gx_clip_list * clp)
 /* Initialize a clip list to a rectangle. */
 /* The supplied rectangle may not be oriented correctly, */
 /* but it will be oriented correctly upon return. */
-private void
+static void
 gx_clip_list_from_rectangle(register gx_clip_list * clp,
 			    register gs_fixed_rect * rp)
 {
@@ -1065,7 +1065,7 @@ gx_cpath_copy(const gx_clip_path * from, gx_clip_path * pcpath)
 #ifdef DEBUG
 
 /* Print a clipping list. */
-private void
+static void
 gx_clip_list_print(const gx_clip_list *list)
 {
     const gx_clip_rect *pr;

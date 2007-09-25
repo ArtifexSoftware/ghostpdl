@@ -34,7 +34,7 @@
 /* Put a printer file (which might be stdout) into binary or text mode. */
 /* This is not a standard gp procedure, */
 /* but all MS-DOS configurations need it. */
-private int
+static int
 setmode_binary(int fno, bool binary)
 {
     /* Use non-standard setmode that almost all NT compilers offer. */

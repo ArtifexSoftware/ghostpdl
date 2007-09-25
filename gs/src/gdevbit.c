@@ -33,17 +33,17 @@
 #endif
 
 /* The device descriptor */
-private dev_proc_get_color_mapping_procs(bittag_get_color_mapping_procs);
-private dev_proc_map_rgb_color(bittag_rgb_map_rgb_color);
-private dev_proc_map_color_rgb(bittag_map_color_rgb);
-private dev_proc_put_params(bittag_put_params);
-private dev_proc_map_rgb_color(bit_mono_map_color);
-private dev_proc_map_rgb_color(bit_forcemono_map_rgb_color);
-private dev_proc_map_color_rgb(bit_map_color_rgb);
-private dev_proc_map_cmyk_color(bit_map_cmyk_color);
-private dev_proc_get_params(bit_get_params);
-private dev_proc_put_params(bit_put_params);
-private dev_proc_print_page(bit_print_page);
+static dev_proc_get_color_mapping_procs(bittag_get_color_mapping_procs);
+static dev_proc_map_rgb_color(bittag_rgb_map_rgb_color);
+static dev_proc_map_color_rgb(bittag_map_color_rgb);
+static dev_proc_put_params(bittag_put_params);
+static dev_proc_map_rgb_color(bit_mono_map_color);
+static dev_proc_map_rgb_color(bit_forcemono_map_rgb_color);
+static dev_proc_map_color_rgb(bit_map_color_rgb);
+static dev_proc_map_cmyk_color(bit_map_cmyk_color);
+static dev_proc_get_params(bit_get_params);
+static dev_proc_put_params(bit_put_params);
+static dev_proc_print_page(bit_print_page);
 
 #define bit_procs(encode_color)\
 {	gdev_prn_open,\
@@ -112,7 +112,7 @@ private dev_proc_print_page(bit_print_page);
 #define REAL_NUM_COMPONENTS(dev) (dev->dname[3] == 'c' ? 4 : \
 				  dev->dname[3] == 'r' ? 3 : 1)
 
-private const gx_device_procs bitmono_procs =
+static const gx_device_procs bitmono_procs =
 bit_procs(bit_mono_map_color);
 const gx_device_printer gs_bit_device =
 {prn_device_body(gx_device_printer, bitmono_procs, "bit",
@@ -122,7 +122,7 @@ const gx_device_printer gs_bit_device =
 		 1, 1, 1, 0, 2, 1, bit_print_page)
 };
 
-private const gx_device_procs bitrgb_procs =
+static const gx_device_procs bitrgb_procs =
 bit_procs(gx_default_rgb_map_rgb_color);
 const gx_device_printer gs_bitrgb_device =
 {prn_device_body(gx_device_printer, bitrgb_procs, "bitrgb",
@@ -132,7 +132,7 @@ const gx_device_printer gs_bitrgb_device =
 		 3, 4, 1, 1, 2, 2, bit_print_page)
 };
 
-private const gx_device_procs bitcmyk_procs =
+static const gx_device_procs bitcmyk_procs =
 bit_procs(bit_map_cmyk_color);
 const gx_device_printer gs_bitcmyk_device =
 {prn_device_body(gx_device_printer, bitcmyk_procs, "bitcmyk",
@@ -315,7 +315,7 @@ cmyk_cs_to_rgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 };
 
 static void
-static_rgb_cs_to_rgb_cm(gx_device * dev, const gs_imager_state *pis,
+private_rgb_cs_to_rgb_cm(gx_device * dev, const gs_imager_state *pis,
 				  frac r, frac g, frac b, frac out[])
 {
     out[0] = r;
@@ -331,16 +331,16 @@ gray_cs_to_rgb_cm(gx_device * dev, frac gray, frac out[])
 
 
 static const gx_cm_color_map_procs bittag_DeviceRGB_procs = {
-    gray_cs_to_rgb_cm, static_rgb_cs_to_rgb_cm, cmyk_cs_to_rgb_cm
+    gray_cs_to_rgb_cm, private_rgb_cs_to_rgb_cm, cmyk_cs_to_rgb_cm
 };
 
-private const gx_cm_color_map_procs *
+static const gx_cm_color_map_procs *
 bittag_get_color_mapping_procs(const gx_device *dev)
 {
     return &bittag_DeviceRGB_procs;
 }
 
-private gx_color_index
+static gx_color_index
 bittag_rgb_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
     return
@@ -350,7 +350,7 @@ bittag_rgb_map_rgb_color(gx_device * dev, const gx_color_value cv[])
         ((ulong)gs_current_object_tag() << 24);
 }
 
-private int
+static int
 bittag_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value cv[4])
 {
     int depth = 24;
@@ -372,7 +372,7 @@ bittag_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value cv[4]
 
 /* Map gray to color. */
 /* Note that 1-bit monochrome is a special case. */
-private gx_color_index
+static gx_color_index
 bit_mono_map_color(gx_device * dev, const gx_color_value cv[])
 {
     int bpc = dev->color_info.depth;
@@ -384,7 +384,7 @@ bit_mono_map_color(gx_device * dev, const gx_color_value cv[])
 
 /* Map RGB to gray shade. */
 /* Only used in CMYK mode when put_params has set ForceMono=1 */
-private gx_color_index
+static gx_color_index
 bit_forcemono_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
     gx_color_value color;
@@ -406,7 +406,7 @@ bit_forcemono_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 
 /* Map color to RGB.  This has 3 separate cases, but since it is rarely */
 /* used, we do a case test rather than providing 3 separate routines. */
-private int
+static int
 bit_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value cv[4])
 {
     int depth = dev->color_info.depth;
@@ -456,7 +456,7 @@ bit_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value cv[4])
 }
 
 /* Map CMYK to color. */
-private gx_color_index
+static gx_color_index
 bit_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
 {
     int bpc = dev->color_info.depth / 4;
@@ -470,14 +470,14 @@ bit_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
     return (color == gx_no_color_index ? color ^ 1 : color);
 }
 
-private int
+static int
 bittag_put_params(gx_device * pdev, gs_param_list * plist)
 {
     gs_enable_object_tagging();
     return gdev_prn_put_params(pdev, plist);
 }
 /* Get parameters.  We provide a default CRD. */
-private int
+static int
 bit_get_params(gx_device * pdev, gs_param_list * plist)
 {
     int code, ecode;
@@ -511,7 +511,7 @@ bit_get_params(gx_device * pdev, gs_param_list * plist)
 
 /* Set parameters.  We allow setting the number of bits per component. */
 /* Also, ForceMono=1 forces monochrome output from RGB/CMYK devices. */
-private int
+static int
 bit_put_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_color_info save_info;
@@ -616,7 +616,7 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
 }
 
 /* Send the page to the printer. */
-private int
+static int
 bit_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {				/* Just dump the bits on the file. */
     /* If the file is 'nul', don't even do the writes. */

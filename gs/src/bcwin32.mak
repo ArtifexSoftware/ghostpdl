@@ -115,14 +115,6 @@ DEBUG=0
 TDEBUG=0
 !endif
 
-# Setting NOPRIVATE=1 makes private (static) procedures and variables
-# public, so they are visible to the debugger and profiler.  There is no
-# execution time or space penalty, just larger .OBJ and .EXE files.
-
-!ifndef NOPRIVATE
-NOPRIVATE=0
-!endif
-
 # Define the names of the executable files.
 
 !ifndef GS
@@ -525,12 +517,6 @@ ASMFPU=
 FPFLAGS=
 FPLIB=
 
-!if $(NOPRIVATE)!=0
-CP=-DNOPRIVATE
-!else
-CP=
-!endif
-
 !if $(DEBUG)!=0
 CD=-DDEBUG
 !else
@@ -563,7 +549,7 @@ COMPILE_FOR_EXE=-WE
 COMPILE_FOR_CONSOLE_EXE=-WC
 
 # The -tWM is for multi-thread-safe compilation.
-GENOPT=$(CP) $(CD) $(CT) $(CS) $(CMT)
+GENOPT=$(CD) $(CT) $(CS) $(CMT)
 
 CCFLAGS0=$(GENOPT) $(PLATOPT) $(CPFLAGS) $(FPFLAGS) $(CFLAGS) $(XCFLAGS)
 CCFLAGS=$(CCFLAGS0)

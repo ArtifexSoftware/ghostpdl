@@ -22,7 +22,7 @@
 #include "gdevpsf.h"
 
 /* Begin enumerating the glyphs in a font or a font subset. */
-private int
+static int
 enumerate_font_next(psf_glyph_enum_t *ppge, gs_glyph *pglyph)
 {
     gs_font *font = ppge->font;
@@ -33,7 +33,7 @@ enumerate_font_next(psf_glyph_enum_t *ppge, gs_glyph *pglyph)
     ppge->index = index;
     return (index == 0 ? 1 : code < 0 ? code : 0);
 }
-private int
+static int
 enumerate_glyphs_next(psf_glyph_enum_t *ppge, gs_glyph *pglyph)
 {
     if (ppge->index >= ppge->subset.size)
@@ -41,7 +41,7 @@ enumerate_glyphs_next(psf_glyph_enum_t *ppge, gs_glyph *pglyph)
     *pglyph = ppge->subset.selected.list[ppge->index++];
     return 0;
 }
-private int
+static int
 enumerate_range_next(psf_glyph_enum_t *ppge, gs_glyph *pglyph)
 {
     if (ppge->index >= ppge->subset.size)
@@ -65,7 +65,7 @@ psf_enumerate_list_begin(psf_glyph_enum_t *ppge, gs_font *font,
 }
 
 /* Begin enumerating CID or TT glyphs in a subset given by a bit vector. */
-private int
+static int
 enumerate_bits_next(psf_glyph_enum_t *ppge, gs_glyph *pglyph)
 {
     for (; ppge->index < ppge->subset.size; ppge->index++)
@@ -146,7 +146,7 @@ psf_add_subset_pieces(gs_glyph *glyphs, uint *pcount, uint max_count,
  * Sort a list of glyphs and remove duplicates.  Return the number of glyphs
  * in the result.
  */
-private int
+static int
 compare_glyphs(const void *pg1, const void *pg2)
 {
     gs_glyph g1 = *(const gs_glyph *)pg1, g2 = *(const gs_glyph *)pg2;

@@ -935,65 +935,65 @@ typedef	struct {
 /*							Prototypes										*/
 /****************************************************************************/
 
-private int		photoex_open( gx_device *pdev );
-private	int		photoex_print_page( PDEV *dev, FILE *prn_stream );
-private	CINX	photoex_map_rgb_color( DEV *dev, CVAL r, CVAL g, CVAL b );
-private int		photoex_map_color_rgb( DEV *dev, CINX index, CVAL prgb[3] );
-private	int		photoex_get_params( DEV *dev, PLIST *plist );
-private	int		photoex_put_params( DEV *dev, PLIST *plist );
+static int		photoex_open( gx_device *pdev );
+static	int		photoex_print_page( PDEV *dev, FILE *prn_stream );
+static	CINX	photoex_map_rgb_color( DEV *dev, CVAL r, CVAL g, CVAL b );
+static int		photoex_map_color_rgb( DEV *dev, CINX index, CVAL prgb[3] );
+static	int		photoex_get_params( DEV *dev, PLIST *plist );
+static	int		photoex_put_params( DEV *dev, PLIST *plist );
 
-private int 	PutInt( PLIST *plist, PNAME name, int *val,
+static int 	PutInt( PLIST *plist, PNAME name, int *val,
 						int minval, int maxval, int code );
-private	int		GetInt( PLIST *list, PNAME name, int *value, int code );
+static	int		GetInt( PLIST *list, PNAME name, int *value, int code );
 
-private	int		Cmy2A( int c, int m, int y );
+static	int		Cmy2A( int c, int m, int y );
 
-private	void	SchedulerInit( SCHEDUL *p );
-private	int		ScheduleLines( SCHEDUL *p );
-private	void	ScheduleLeading( SCHEDUL *p );
-private	void	ScheduleMiddle( SCHEDUL *p );
-private	void	ScheduleTrailing( SCHEDUL *p );
-private	void	ScheduleBand( SCHEDUL *p, int mask );
+static	void	SchedulerInit( SCHEDUL *p );
+static	int		ScheduleLines( SCHEDUL *p );
+static	void	ScheduleLeading( SCHEDUL *p );
+static	void	ScheduleMiddle( SCHEDUL *p );
+static	void	ScheduleTrailing( SCHEDUL *p );
+static	void	ScheduleBand( SCHEDUL *p, int mask );
 
-private	void	RenderPage( RENDER *p );
-private	void	RenderLine( RENDER *p, int line );
-private	int		IsScanlineEmpty( RENDER *p, byte *line );
+static	void	RenderPage( RENDER *p );
+static	void	RenderLine( RENDER *p, int line );
+static	int		IsScanlineEmpty( RENDER *p, byte *line );
 
-private	int		RleCompress( RAWLINE *raw, int min, int max, byte *rle_data );
-private	int		RleFlush( byte *first, byte *reps, byte *now, byte *out );
+static	int		RleCompress( RAWLINE *raw, int min, int max, byte *rle_data );
+static	int		RleFlush( byte *first, byte *reps, byte *now, byte *out );
 
-private	void	SendReset( FILE *stream );
-private	void	SendMargin( FILE *stream, int top, int bot );
-private	void	SendPaper( FILE *stream, int length );
-private	void	SendGmode( FILE *stream, int on );
-private void	SendUnit( FILE *stream, int res );
-private	void	SendUnidir( FILE *stream, int on );
-private	void	SendMicro( FILE *stream, int on );
-private void	SendInk( FILE *stream, int x );
-private	void	SendDown( FILE *stream, int x );
-private	void	SendRight( FILE *stream, int amount );
-private	void	SendColour( FILE *stream, int col );
-private void	SendData( FILE *stream, int hres, int vres, int noz, int col );
-private	void	SendString( FILE *stream, const char *s );
+static	void	SendReset( FILE *stream );
+static	void	SendMargin( FILE *stream, int top, int bot );
+static	void	SendPaper( FILE *stream, int length );
+static	void	SendGmode( FILE *stream, int on );
+static void	SendUnit( FILE *stream, int res );
+static	void	SendUnidir( FILE *stream, int on );
+static	void	SendMicro( FILE *stream, int on );
+static void	SendInk( FILE *stream, int x );
+static	void	SendDown( FILE *stream, int x );
+static	void	SendRight( FILE *stream, int amount );
+static	void	SendColour( FILE *stream, int col );
+static void	SendData( FILE *stream, int hres, int vres, int noz, int col );
+static	void	SendString( FILE *stream, const char *s );
 
-private	void	HalftonerStart( RENDER *render, int line );
-private	int		HalftoneThold( RENDER *render );
-private	void	HalftoneLine( RENDER *render, int line, byte *data );
+static	void	HalftonerStart( RENDER *render, int line );
+static	int		HalftoneThold( RENDER *render );
+static	void	HalftoneLine( RENDER *render, int line, byte *data );
 
-private	int		BendorThold( RENDER *p );
-private	void	BendorStart( RENDER *p, int line );
-private	void	BendorEol( RENDER *p, int line );
-private	void	BendorLine( HTONE *htone, int y );
+static	int		BendorThold( RENDER *p );
+static	void	BendorStart( RENDER *p, int line );
+static	void	BendorEol( RENDER *p, int line );
+static	void	BendorLine( HTONE *htone, int y );
 
-private	int		FloydSThold( RENDER *p );
-private	void	FloydSStart( RENDER *p, int line );
-private	void	FloydSEol( RENDER *p, int line );
-private	void	FloydSLine( HTONE *htone, int y );
+static	int		FloydSThold( RENDER *p );
+static	void	FloydSStart( RENDER *p, int line );
+static	void	FloydSEol( RENDER *p, int line );
+static	void	FloydSLine( HTONE *htone, int y );
 
-private	int		DitherThold( RENDER *p );
-private	void	DitherStart( RENDER *p, int line );
-private	void	DitherEol( RENDER *p, int line );
-private	void	DitherLine( HTONE *htone, int y );
+static	int		DitherThold( RENDER *p );
+static	void	DitherStart( RENDER *p, int line );
+static	void	DitherEol( RENDER *p, int line );
+static	void	DitherLine( HTONE *htone, int y );
 
 /****************************************************************************/
 /*							Static data										*/
@@ -1003,7 +1003,7 @@ private	void	DitherLine( HTONE *htone, int y );
 *	Halftoner function table
 */
 
-private	const HFUNCS	htable[ MAXHTONE ] = {
+static	const HFUNCS	htable[ MAXHTONE ] = {
 
 	{ FloydSThold, FloydSStart, FloydSEol, FloydSLine },
 	{ DitherThold, DitherStart, DitherEol, DitherLine },
@@ -1016,7 +1016,7 @@ private	const HFUNCS	htable[ MAXHTONE ] = {
 *	define here are the photoex_ functions.
 */
 
-private	gx_device_procs photoex_device_procs = prn_color_params_procs(
+static	gx_device_procs photoex_device_procs = prn_color_params_procs(
 
 	photoex_open,					/* Opens the device						*/
 	gdev_prn_output_page,
@@ -1030,7 +1030,7 @@ private	gx_device_procs photoex_device_procs = prn_color_params_procs(
 /*
 *	Device descriptor structure - this is what GhostScript looks
 *	for and uses to identify our device.
-*	Do not make it private (or static) !
+*	Do not make it static !
 */
 
 gx_photoex_device far_data gs_photoex_device = {
@@ -1078,7 +1078,7 @@ gx_photoex_device far_data gs_photoex_device = {
 *	few runs if we are in 720 dpi mode.
 */
 
-private	const int	start_720[ HEAD_SPACING ][ NOZZLES ] = {
+static	const int	start_720[ HEAD_SPACING ][ NOZZLES ] = {
 
 	{	  0,	  8,	 16,	 24,	 32,	 40,	 48,	 56,
 		 64,	 72,	 80,	 88,	 96,	104,	112,	120,
@@ -1127,7 +1127,7 @@ private	const int	start_720[ HEAD_SPACING ][ NOZZLES ] = {
 *	few lines if we are in 1440 dpi mode
 */
 
-private	const int	start_1440[ 2 ][ HEAD_SPACING ][ NOZZLES ] = {
+static	const int	start_1440[ 2 ][ HEAD_SPACING ][ NOZZLES ] = {
   {
 	{	  0,	  8,	 16,	 24,	 32,	 40,	 48,	 56,
 		 64,	 72,	 80,	 88,	 96,	104,	112,	120,
@@ -1219,7 +1219,7 @@ private	const int	start_1440[ 2 ][ HEAD_SPACING ][ NOZZLES ] = {
 *	It is a shameless copy of Ghostscript's own ...
 */
 
-private	byte	dmatrix[ DMATRIX_Y ][ DMATRIX_X ] = {
+static	byte	dmatrix[ DMATRIX_Y ][ DMATRIX_X ] = {
 	{
 		0x0e, 0x8e, 0x2e, 0xae, 0x06, 0x86, 0x26, 0xa6,
 		0x0c, 0x8c, 0x2c, 0xac, 0x04, 0x84, 0x24, 0xa4
@@ -1347,7 +1347,7 @@ static const unsigned char	xtrans[ 256 ] = {
 /*							Device opening									*/
 /****************************************************************************/
 
-private int		photoex_open( DEV *pdev )
+static int		photoex_open( DEV *pdev )
 {
 double	height;
 double	width;
@@ -1379,7 +1379,7 @@ float	margins[ 4 ];						/* L, B, R, T					*/
 *	color_index being at least 32 bit !!!
 */
 
-private	CINX	photoex_map_rgb_color( DEV *dev, CVAL r, CVAL g, CVAL b )
+static	CINX	photoex_map_rgb_color( DEV *dev, CVAL r, CVAL g, CVAL b )
 {
 int		c, y, m, k;
 int		a, s, f;
@@ -1446,7 +1446,7 @@ int		i;
 *	It does not do any ink transfer compensation, colour compensation etc.
 */
 
-private int		photoex_map_color_rgb( DEV *dev, CINX index, CVAL prgb[3] )
+static int		photoex_map_color_rgb( DEV *dev, CINX index, CVAL prgb[3] )
 {
 uint	c, m, y, k;
 CVAL	r, g, b;
@@ -1496,7 +1496,7 @@ CVAL	r, g, b;
 *		   1530 cyan 
 */
 
-private	int		Cmy2A( int c, int m, int y )
+static	int		Cmy2A( int c, int m, int y )
 {
 int		black;
 int		maxim;
@@ -1562,7 +1562,7 @@ int		a;
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	int		photoex_get_params( DEV *device, PLIST *plist )
+static	int		photoex_get_params( DEV *device, PLIST *plist )
 {
 int		code;
 EDEV	*dev;
@@ -1586,7 +1586,7 @@ EDEV	*dev;
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	int		photoex_put_params( DEV *device, PLIST *plist )
+static	int		photoex_put_params( DEV *device, PLIST *plist )
 {
 int		code;
 EDEV	*dev;
@@ -1614,7 +1614,7 @@ EDEV	*dev;
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private int 	PutInt( PLIST *plist, PNAME name, int *val,
+static int 	PutInt( PLIST *plist, PNAME name, int *val,
 						int minval, int maxval, int code )
 {
 int		new;
@@ -1656,7 +1656,7 @@ int		new;
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	int		GetInt( PLIST *list, PNAME name, int *value, int code )
+static	int		GetInt( PLIST *list, PNAME name, int *value, int code )
 {
 	if ( code < 0 ) return( code );
 	return( param_write_int( list, name, value ) );
@@ -1671,7 +1671,7 @@ private	int		GetInt( PLIST *list, PNAME name, int *value, int code )
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	int		photoex_print_page( PDEV *device, FILE *stream )
+static	int		photoex_print_page( PDEV *device, FILE *stream )
 {
 int			pixels;						/* Length of the line 				*/
 int			x;							/* Work vars						*/
@@ -1803,7 +1803,7 @@ double		psize;
 *	~~~~~~~~~~~~~~
 */
 
-private	void	RenderPage( RENDER *p )
+static	void	RenderPage( RENDER *p )
 {
 int		last_done;					/* The last line rendered				*/
 int		last_need;					/* The largest line number we need		*/
@@ -1937,7 +1937,7 @@ int		i, j, l, col;
 *	When it sees a nonempty line again, it restarts the renderer.
 */
 
-private	void	RenderLine( RENDER *p, int line )
+static	void	RenderLine( RENDER *p, int line )
 {
 byte	*data;
 int		i;
@@ -1994,7 +1994,7 @@ int		i;
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	int		IsScanlineEmpty( RENDER *r, byte *line )
+static	int		IsScanlineEmpty( RENDER *r, byte *line )
 {
 int		i;
 long	*p;
@@ -2034,7 +2034,7 @@ long	*p;
 *	for the page.
 */
 	
-private	int	ScheduleLines( SCHEDUL *p )
+static	int	ScheduleLines( SCHEDUL *p )
 {
 int		i;
 
@@ -2100,7 +2100,7 @@ int		i;
 *	~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	void	SchedulerInit( SCHEDUL *p )
+static	void	SchedulerInit( SCHEDUL *p )
 {
 int		i;
 			
@@ -2137,7 +2137,7 @@ int		i;
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	void	ScheduleLeading( SCHEDUL *p )
+static	void	ScheduleLeading( SCHEDUL *p )
 {
 int		i;
 
@@ -2228,7 +2228,7 @@ int		i;
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	void	ScheduleMiddle( SCHEDUL *p )
+static	void	ScheduleMiddle( SCHEDUL *p )
 {
 int		ph0, ph1;
 int		line, mask;
@@ -2290,7 +2290,7 @@ int		i;
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	void	ScheduleTrailing( SCHEDUL *p )
+static	void	ScheduleTrailing( SCHEDUL *p )
 {
 int		mask;
 
@@ -2332,7 +2332,7 @@ int		mask;
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	void	ScheduleBand( SCHEDUL *p, int mask )
+static	void	ScheduleBand( SCHEDUL *p, int mask )
 {
 int		i;
 int		line;
@@ -2365,7 +2365,7 @@ int		line;
 *	result is pixnum/8 (rounded up).
 */
 
-private	void	PackLine( byte *input, int pixnum, int lev_on, int step,
+static	void	PackLine( byte *input, int pixnum, int lev_on, int step,
 						  RAWLINE *line )
 {
 byte	bits;
@@ -2414,7 +2414,7 @@ int		i, j, k;
 *	Returns the length of the RLE data.
 */
 								 
-private	int		RleCompress( RAWLINE *raw, int min, int max, byte *rle_data )
+static	int		RleCompress( RAWLINE *raw, int min, int max, byte *rle_data )
 {
 int		i, n;
 byte	pbyte;
@@ -2538,7 +2538,7 @@ int 	len;
 *	with that for now.
 */
 				
-private	int		RleFlush( byte *first, byte *reps, byte *now, byte *out )
+static	int		RleFlush( byte *first, byte *reps, byte *now, byte *out )
 {
 int		count;
 int		l;
@@ -2622,12 +2622,12 @@ int		l;
 /*		Low level procedures to send various commands to the printer		*/
 /****************************************************************************/
 
-private	void	SendReset( FILE *stream )
+static	void	SendReset( FILE *stream )
 {
 	SendString( stream, ESC "@" );
 }
 
-private	void	SendMargin( FILE *stream, int top, int bot )
+static	void	SendMargin( FILE *stream, int top, int bot )
 {
 	SendString( stream, ESC "(c" );
 	SendWord( stream, 4 );
@@ -2635,41 +2635,41 @@ private	void	SendMargin( FILE *stream, int top, int bot )
 	SendWord( stream, top );
 }
 
-private	void	SendPaper( FILE *stream, int length )
+static	void	SendPaper( FILE *stream, int length )
 {
 	SendString( stream, ESC "(C" );
 	SendWord( stream, 2 );
 	SendWord( stream, length );
 }
 
-private	void	SendGmode( FILE *stream, int on )
+static	void	SendGmode( FILE *stream, int on )
 {
 	SendString( stream, ESC "(G" );
 	SendWord( stream, 1 );
 	SendByte( stream, on );
 }
 
-private void	SendUnit( FILE *stream, int res )
+static void	SendUnit( FILE *stream, int res )
 {
 	SendString( stream, ESC "(U" );
 	SendWord( stream, 1 );
 	SendByte( stream, res );
 }
 
-private	void	SendUnidir( FILE *stream, int on )
+static	void	SendUnidir( FILE *stream, int on )
 {
 	SendString( stream, ESC "U" );
 	SendByte( stream, on );
 }
 
-private	void	SendMicro( FILE *stream, int on )
+static	void	SendMicro( FILE *stream, int on )
 {
 	SendString( stream, ESC "(i" );
 	SendWord( stream, 1 );
 	SendByte( stream, on );
 }
 
-private void	SendInk( FILE *stream, int x )
+static void	SendInk( FILE *stream, int x )
 {
 	SendString( stream, ESC "(e" );
 	SendWord( stream, 2 );
@@ -2677,14 +2677,14 @@ private void	SendInk( FILE *stream, int x )
 	SendByte( stream, x );
 }
 
-private	void	SendDown( FILE *stream, int x )
+static	void	SendDown( FILE *stream, int x )
 {
 	SendString( stream, ESC "(v" );
 	SendWord( stream, 2 );
 	SendWord( stream, x );
 }
 
-private	void	SendRight( FILE *stream, int amount )
+static	void	SendRight( FILE *stream, int amount )
 {
 	SendString( stream, ESC "(\\" );
 	SendWord( stream, 4 );
@@ -2692,7 +2692,7 @@ private	void	SendRight( FILE *stream, int amount )
 	SendWord( stream, amount );
 }
 
-private	void	SendColour( FILE *stream, int col )
+static	void	SendColour( FILE *stream, int col )
 {
 static	int	ccode[] = { 0x000, 0x200, 0x100, 0x400, 0x201, 0x101 };
 
@@ -2701,7 +2701,7 @@ static	int	ccode[] = { 0x000, 0x200, 0x100, 0x400, 0x201, 0x101 };
 	SendWord( stream, ccode[ col ] );
 }
 
-private void	SendData( FILE *stream, int hres, int vres, int noz, int col ) 
+static void	SendData( FILE *stream, int hres, int vres, int noz, int col ) 
 {
 	SendString( stream, ESC "." );
 	SendByte( stream, 1 );				/* Run-length encoded data */
@@ -2727,7 +2727,7 @@ private void	SendData( FILE *stream, int hres, int vres, int noz, int col )
 	SendWord( stream, col );
 }
 		
-private	void	SendString( FILE *stream, const char *s )
+static	void	SendString( FILE *stream, const char *s )
 {
 	while ( *s ) SendByte( stream, *s++ );
 }
@@ -2741,7 +2741,7 @@ private	void	SendString( FILE *stream, const char *s )
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	void	HalftonerStart( RENDER *render, int line )
+static	void	HalftonerStart( RENDER *render, int line )
 {
 	(*(htable[ render->dev->halftoner ].hstrt))( render, line );
 }
@@ -2751,7 +2751,7 @@ private	void	HalftonerStart( RENDER *render, int line )
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	int		HalftoneThold( RENDER *render )
+static	int		HalftoneThold( RENDER *render )
 {
 	return( (*(htable[ render->dev->halftoner ].hthld))( render ) );
 }
@@ -2766,7 +2766,7 @@ private	int		HalftoneThold( RENDER *render )
 *	It calls the mono halftoner with the K, C, M, Y components.
 */
 
-private	void	HalftoneLine( RENDER *render, int line, byte *data )
+static	void	HalftoneLine( RENDER *render, int line, byte *data )
 {
 void		(*htone)( HTONE *, int );
 EDEV		*dev;
@@ -2953,7 +2953,7 @@ int			i;
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	int		FloydSThold( RENDER *p )
+static	int		FloydSThold( RENDER *p )
 {
 	return( 5 );
 }
@@ -2963,7 +2963,7 @@ private	int		FloydSThold( RENDER *p )
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	void	FloydSStart( RENDER *p, int line )
+static	void	FloydSStart( RENDER *p, int line )
 {
 	memset( p->err, 0, ICOLN * MAX_PIXELS*2 );
 	p->error[ 0 ] = p->err[ 0 ];
@@ -2974,7 +2974,7 @@ private	void	FloydSStart( RENDER *p, int line )
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	void	FloydSEol( RENDER *p, int line )
+static	void	FloydSEol( RENDER *p, int line )
 {
 	/* Since we use single error buffering, nothing to do */
 }
@@ -2993,7 +2993,7 @@ private	void	FloydSEol( RENDER *p, int line )
 *
 */
 
-private	void   FloydSLine( HTONE *htone, int y )
+static	void   FloydSLine( HTONE *htone, int y )
 {
 int		x;							/* Counts the pixels					*/
 int		pixel;						/* Current pixel value					*/
@@ -3077,7 +3077,7 @@ short	*l0;						/* Error buffer pointer					*/
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	int		DitherThold( RENDER *p )
+static	int		DitherThold( RENDER *p )
 {
 	return( 0 );
 }
@@ -3087,7 +3087,7 @@ private	int		DitherThold( RENDER *p )
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	void	DitherStart( RENDER *p, int line )
+static	void	DitherStart( RENDER *p, int line )
 {
 	/* Nothing to initialise */
 }
@@ -3097,7 +3097,7 @@ private	void	DitherStart( RENDER *p, int line )
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	void	DitherEol( RENDER *p, int line )
+static	void	DitherEol( RENDER *p, int line )
 {
 	/* Nothing to do - dithering has no memory */
 }
@@ -3107,7 +3107,7 @@ private	void	DitherEol( RENDER *p, int line )
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	void   DitherLine( HTONE *htone, int y )
+static	void   DitherLine( HTONE *htone, int y )
 {
 int		x;							/* Counts the pixels					*/
 int		pixel;						/* Current pixel value					*/
@@ -3190,7 +3190,7 @@ int		lval, hval;					/* Halftoned high/low values			*/
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	int		BendorThold( RENDER *p )
+static	int		BendorThold( RENDER *p )
 {
 	return( 5 );
 }
@@ -3200,7 +3200,7 @@ private	int		BendorThold( RENDER *p )
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	void	BendorStart( RENDER *p, int line )
+static	void	BendorStart( RENDER *p, int line )
 {
 	memset( p->err, 0, 2 * ICOLN * MAX_PIXELS*2 );
 	p->error[ 0 ] = p->err[ 0 ];
@@ -3212,7 +3212,7 @@ private	void	BendorStart( RENDER *p, int line )
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-private	void	BendorEol( RENDER *p, int line )
+static	void	BendorEol( RENDER *p, int line )
 {
 void	*x;
 
@@ -3259,7 +3259,7 @@ void	*x;
 *	This parameter is user definable, too.
 */
 
-private	void   BendorLine( HTONE *htone, int y )
+static	void   BendorLine( HTONE *htone, int y )
 {
 int		x;							/* Counts the pixels					*/
 int		pixel;						/* Current pixel value					*/

@@ -105,19 +105,19 @@ gs_public_st_suffix_add0_final(st_device_pclxl, gx_device_pclxl,
 			   (depth > 1 ? 256 : 2), (depth > 8 ? 256 : 1))
 
 /* Driver procedures */
-private dev_proc_open_device(pclxl_open_device);
-private dev_proc_output_page(pclxl_output_page);
-private dev_proc_close_device(pclxl_close_device);
-private dev_proc_copy_mono(pclxl_copy_mono);
-private dev_proc_copy_color(pclxl_copy_color);
-private dev_proc_fill_mask(pclxl_fill_mask);
+static dev_proc_open_device(pclxl_open_device);
+static dev_proc_output_page(pclxl_output_page);
+static dev_proc_close_device(pclxl_close_device);
+static dev_proc_copy_mono(pclxl_copy_mono);
+static dev_proc_copy_color(pclxl_copy_color);
+static dev_proc_fill_mask(pclxl_fill_mask);
 
-private dev_proc_get_params(pclxl_get_params);
-private dev_proc_put_params(pclxl_put_params);
+static dev_proc_get_params(pclxl_get_params);
+static dev_proc_put_params(pclxl_put_params);
 
-/*private dev_proc_draw_thin_line(pclxl_draw_thin_line); */
-private dev_proc_begin_image(pclxl_begin_image);
-private dev_proc_strip_copy_rop(pclxl_strip_copy_rop);
+/*static dev_proc_draw_thin_line(pclxl_draw_thin_line); */
+static dev_proc_begin_image(pclxl_begin_image);
+static dev_proc_strip_copy_rop(pclxl_strip_copy_rop);
 
 #define pclxl_device_procs(map_rgb_color, map_color_rgb)\
 {\
@@ -171,14 +171,14 @@ const gx_device_pclxl gs_pxlcolor_device = {
 
 /* ---------------- Other utilities ---------------- */
 
-inline private stream *
+static inline stream *
 pclxl_stream(gx_device_pclxl *xdev)
 {
     return gdev_vector_stream((gx_device_vector *)xdev);
 }
 
 /* Initialize for a page. */
-private void
+static void
 pclxl_page_init(gx_device_pclxl * xdev)
 {
     gdev_vector_init((gx_device_vector *)xdev);
@@ -194,7 +194,7 @@ pclxl_page_init(gx_device_pclxl * xdev)
 #define RGB_IS_GRAY(ci) ((ci) >> 8 == ((ci) & 0xffff))
 
 /* Set the color space and (optionally) palette. */
-private void
+static void
 pclxl_set_color_space(gx_device_pclxl * xdev, pxeColorSpace_t color_space)
 {
     if (xdev->color_space != color_space) {
@@ -205,7 +205,7 @@ pclxl_set_color_space(gx_device_pclxl * xdev, pxeColorSpace_t color_space)
 	xdev->color_space = color_space;
     }
 }
-private void
+static void
 pclxl_set_color_palette(gx_device_pclxl * xdev, pxeColorSpace_t color_space,
 			const byte * palette, uint palette_size)
 {
@@ -232,7 +232,7 @@ pclxl_set_color_palette(gx_device_pclxl * xdev, pxeColorSpace_t color_space,
 }
 
 /* Set a drawing RGB color. */
-private int
+static int
 pclxl_set_color(gx_device_pclxl * xdev, const gx_drawing_color * pdc,
 		px_attribute_t null_source, px_tag_t op)
 {
@@ -263,7 +263,7 @@ pclxl_set_color(gx_device_pclxl * xdev, const gx_drawing_color * pdc,
 
 /* Test whether we can handle a given color space in an image. */
 /* We cannot handle ICCBased color spaces. */
-private bool
+static bool
 pclxl_can_handle_color_space(const gs_color_space * pcs)
 {
     gs_color_space_index index = gs_color_space_get_index(pcs);
@@ -280,7 +280,7 @@ pclxl_can_handle_color_space(const gs_color_space * pcs)
 }
 
 /* Set brush, pen, and mode for painting a path. */
-private void
+static void
 pclxl_set_paints(gx_device_pclxl * xdev, gx_path_type_t type)
 {
     stream *s = pclxl_stream(xdev);
@@ -319,7 +319,7 @@ pclxl_set_paints(gx_device_pclxl * xdev, gx_path_type_t type)
 }
 
 /* Set the cursor. */
-private int
+static int
 pclxl_set_cursor(gx_device_pclxl * xdev, int x, int y)
 {
     stream *s = pclxl_stream(xdev);
@@ -332,13 +332,13 @@ pclxl_set_cursor(gx_device_pclxl * xdev, int x, int y)
 /* ------ Paths ------ */
 
 /* Flush any buffered path points. */
-private void
+static void
 px_put_np(stream * s, int count, pxeDataType_t dtype)
 {
     px_put_uba(s, (byte)count, pxaNumberOfPoints);
     px_put_uba(s, (byte)dtype, pxaPointType);
 }
-private int
+static int
 pclxl_flush_points(gx_device_pclxl * xdev)
 {
     int count = xdev->points.count;
@@ -450,14 +450,14 @@ pclxl_flush_points(gx_device_pclxl * xdev)
 
 /* ------ Images ------ */
 
-private image_enum_proc_plane_data(pclxl_image_plane_data);
-private image_enum_proc_end_image(pclxl_image_end_image);
-private const gx_image_enum_procs_t pclxl_image_enum_procs = {
+static image_enum_proc_plane_data(pclxl_image_plane_data);
+static image_enum_proc_end_image(pclxl_image_end_image);
+static const gx_image_enum_procs_t pclxl_image_enum_procs = {
     pclxl_image_plane_data, pclxl_image_end_image
 };
 
 /* Begin an image. */
-private void
+static void
 pclxl_write_begin_image(gx_device_pclxl * xdev, uint width, uint height,
 			uint dest_width, uint dest_height)
 {
@@ -471,7 +471,7 @@ pclxl_write_begin_image(gx_device_pclxl * xdev, uint width, uint height,
 
 /* Write rows of an image. */
 /****** IGNORES data_bit ******/
-private void
+static void
 pclxl_write_image_data(gx_device_pclxl * xdev, const byte * data, int data_bit,
 		       uint raster, uint width_bits, int y, int height)
 {
@@ -555,7 +555,7 @@ pclxl_write_image_data(gx_device_pclxl * xdev, const byte * data, int data_bit,
 }
 
 /* End an image. */
-private void
+static void
 pclxl_write_end_image(gx_device_pclxl * xdev)
 {
     spputc(xdev->strm, pxtEndImage);
@@ -564,7 +564,7 @@ pclxl_write_end_image(gx_device_pclxl * xdev)
 /* ------ Fonts ------ */
 
 /* Write a string (single- or double-byte). */
-private void
+static void
 px_put_string(stream * s, const byte * data, uint len, bool wide)
 {
     if (wide) {
@@ -579,7 +579,7 @@ px_put_string(stream * s, const byte * data, uint len, bool wide)
 }
 
 /* Write a 16-bit big-endian value. */
-private void
+static void
 px_put_us_be(stream * s, uint i)
 {
     spputc(s, (byte) (i >> 8));
@@ -588,7 +588,7 @@ px_put_us_be(stream * s, uint i)
 
 /* Define a bitmap font.  The client must call px_put_string */
 /* with the font name immediately before calling this procedure. */
-private void
+static void
 pclxl_define_bitmap_font(gx_device_pclxl * xdev)
 {
     stream *s = pclxl_stream(xdev);
@@ -615,7 +615,7 @@ pclxl_define_bitmap_font(gx_device_pclxl * xdev)
 
 /* Set the font.  The client must call px_put_string */
 /* with the font name immediately before calling this procedure. */
-private void
+static void
 pclxl_set_font(gx_device_pclxl * xdev)
 {
     stream *s = pclxl_stream(xdev);
@@ -629,7 +629,7 @@ pclxl_set_font(gx_device_pclxl * xdev)
 
 /* Define a character in a bitmap font.  The client must call px_put_string */
 /* with the font name immediately before calling this procedure. */
-private void
+static void
 pclxl_define_bitmap_char(gx_device_pclxl * xdev, uint ccode,
 	       const byte * data, uint raster, uint width_bits, uint height)
 {
@@ -657,7 +657,7 @@ pclxl_define_bitmap_char(gx_device_pclxl * xdev, uint ccode,
 }
 
 /* Write the name of the only font we define. */
-private void
+static void
 pclxl_write_font_name(gx_device_pclxl * xdev)
 {
     stream *s = pclxl_stream(xdev);
@@ -667,7 +667,7 @@ pclxl_write_font_name(gx_device_pclxl * xdev)
 
 /* Look up a bitmap id, return the index in the character table. */
 /* If the id is missing, return an index for inserting. */
-private int
+static int
 pclxl_char_index(gx_device_pclxl * xdev, gs_id id)
 {
     int i, i_empty = -1;
@@ -690,7 +690,7 @@ pclxl_char_index(gx_device_pclxl * xdev, gs_id id)
 }
 
 /* Remove the character table entry at a given index. */
-private void
+static void
 pclxl_remove_char(gx_device_pclxl * xdev, int index)
 {
     uint ccode = xdev->chars.table[index];
@@ -715,7 +715,7 @@ pclxl_remove_char(gx_device_pclxl * xdev, int index)
 /* Write a bitmap as a text character if possible. */
 /* The caller must set the color, cursor, and RasterOp. */
 /* We know id != gs_no_id. */
-private int
+static int
 pclxl_copy_text_char(gx_device_pclxl * xdev, const byte * data,
 		     int raster, gx_bitmap_id id, int w, int h)
 {
@@ -772,7 +772,7 @@ pclxl_copy_text_char(gx_device_pclxl * xdev, const byte * data,
 
 /* ---------------- Vector implementation procedures ---------------- */
 
-private int
+static int
 pclxl_beginpage(gx_device_vector * vdev)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)vdev;
@@ -804,7 +804,7 @@ pclxl_beginpage(gx_device_vector * vdev)
     return 0;
 }
 
-private int
+static int
 pclxl_setlinewidth(gx_device_vector * vdev, floatp width)
 {
     stream *s = gdev_vector_stream(vdev);
@@ -814,7 +814,7 @@ pclxl_setlinewidth(gx_device_vector * vdev, floatp width)
     return 0;
 }
 
-private int
+static int
 pclxl_setlinecap(gx_device_vector * vdev, gs_line_cap cap)
 {
     stream *s = gdev_vector_stream(vdev);
@@ -825,7 +825,7 @@ pclxl_setlinecap(gx_device_vector * vdev, gs_line_cap cap)
     return 0;
 }
 
-private int
+static int
 pclxl_setlinejoin(gx_device_vector * vdev, gs_line_join join)
 {
     stream *s = gdev_vector_stream(vdev);
@@ -836,7 +836,7 @@ pclxl_setlinejoin(gx_device_vector * vdev, gs_line_join join)
     return 0;
 }
 
-private int
+static int
 pclxl_setmiterlimit(gx_device_vector * vdev, floatp limit)
 {
     stream *s = gdev_vector_stream(vdev);
@@ -851,7 +851,7 @@ pclxl_setmiterlimit(gx_device_vector * vdev, floatp limit)
     return 0;
 }
 
-private int
+static int
 pclxl_setdash(gx_device_vector * vdev, const float *pattern, uint count,
 	      floatp offset)
 {
@@ -884,7 +884,7 @@ pclxl_setdash(gx_device_vector * vdev, const float *pattern, uint count,
     return 0;
 }
 
-private int
+static int
 pclxl_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
 	       gs_logical_operation_t diff)
 {
@@ -905,14 +905,14 @@ pclxl_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
     return 0;
 }
 
-private int
+static int
 pclxl_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis, 
                    const gx_drawing_color * pdc)
 {
     return false;
 }
 
-private int
+static int
 pclxl_setfillcolor(gx_device_vector * vdev, const gs_imager_state * pis, 
                    const gx_drawing_color * pdc)
 {
@@ -921,7 +921,7 @@ pclxl_setfillcolor(gx_device_vector * vdev, const gs_imager_state * pis,
     return pclxl_set_color(xdev, pdc, pxaNullBrush, pxtSetBrushSource);
 }
 
-private int
+static int
 pclxl_setstrokecolor(gx_device_vector * vdev, const gs_imager_state * pis, 
                      const gx_drawing_color * pdc)
 {
@@ -930,7 +930,7 @@ pclxl_setstrokecolor(gx_device_vector * vdev, const gs_imager_state * pis,
     return pclxl_set_color(xdev, pdc, pxaNullPen, pxtSetPenSource);
 }
 
-private int
+static int
 pclxl_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
 	     fixed y1, gx_path_type_t type)
 {
@@ -962,7 +962,7 @@ pclxl_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
     return 0;
 }
 
-private int
+static int
 pclxl_beginpath(gx_device_vector * vdev, gx_path_type_t type)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)vdev;
@@ -974,7 +974,7 @@ pclxl_beginpath(gx_device_vector * vdev, gx_path_type_t type)
     return 0;
 }
 
-private int
+static int
 pclxl_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 	     gx_path_type_t type)
 {
@@ -988,7 +988,7 @@ pclxl_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 			    xdev->points.current.y = (int)y);
 }
 
-private int
+static int
 pclxl_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 	     gx_path_type_t type)
 {
@@ -1014,7 +1014,7 @@ pclxl_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
     return 0;
 }
 
-private int
+static int
 pclxl_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
 	   floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
 	      gx_path_type_t type)
@@ -1045,7 +1045,7 @@ pclxl_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
     return 0;
 }
 
-private int
+static int
 pclxl_closepath(gx_device_vector * vdev, floatp x, floatp y,
 		floatp x_start, floatp y_start, gx_path_type_t type)
 {
@@ -1061,7 +1061,7 @@ pclxl_closepath(gx_device_vector * vdev, floatp x, floatp y,
     return 0;
 }
 
-private int
+static int
 pclxl_endpath(gx_device_vector * vdev, gx_path_type_t type)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)vdev;
@@ -1093,7 +1093,7 @@ pclxl_endpath(gx_device_vector * vdev, gx_path_type_t type)
 
 /* Vector implementation procedures */
 
-private const gx_device_vector_procs pclxl_vector_procs = {
+static const gx_device_vector_procs pclxl_vector_procs = {
 	/* Page management */
     pclxl_beginpage,
 	/* Imager state */
@@ -1124,7 +1124,7 @@ private const gx_device_vector_procs pclxl_vector_procs = {
 /* ------ Open/close/page ------ */
 
 /* Open the device. */
-private int
+static int
 pclxl_open_device(gx_device * dev)
 {
     gx_device_vector *const vdev = (gx_device_vector *)dev;
@@ -1153,7 +1153,7 @@ pclxl_open_device(gx_device * dev)
 
 /* Wrap up ("output") a page. */
 /* We only support flush = true, and we don't support num_copies != 1. */
-private int
+static int
 pclxl_output_page(gx_device * dev, int num_copies, int flush)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)dev;
@@ -1174,7 +1174,7 @@ pclxl_output_page(gx_device * dev, int num_copies, int flush)
 /* Close the device. */
 /* Note that if this is being called as a result of finalization, */
 /* the stream may no longer exist. */
-private int
+static int
 pclxl_close_device(gx_device * dev)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)dev;
@@ -1188,12 +1188,12 @@ pclxl_close_device(gx_device * dev)
 
 /* ------ One-for-one images ------ */
 
-private const byte eBit_values[] = {
+static const byte eBit_values[] = {
     0, e1Bit, 0, 0, e4Bit, 0, 0, 0, e8Bit
 };
 
 /* Copy a monochrome bitmap. */
-private int
+static int
 pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
 		gx_bitmap_id id, int x, int y, int w, int h,
 		gx_color_index zero, gx_color_index one)
@@ -1275,7 +1275,7 @@ pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
 }
 
 /* Copy a color bitmap. */
-private int
+static int
 pclxl_copy_color(gx_device * dev,
 		 const byte * base, int sourcex, int raster, gx_bitmap_id id,
 		 int x, int y, int w, int h)
@@ -1315,7 +1315,7 @@ pclxl_copy_color(gx_device * dev,
 }
 
 /* Fill a mask. */
-private int
+static int
 pclxl_fill_mask(gx_device * dev,
 		const byte * data, int data_x, int raster, gx_bitmap_id id,
 		int x, int y, int w, int h,
@@ -1367,7 +1367,7 @@ pclxl_fill_mask(gx_device * dev,
 }
 
 /* Do a RasterOp. */
-private int
+static int
 pclxl_strip_copy_rop(gx_device * dev, const byte * sdata, int sourcex,
 		     uint sraster, gx_bitmap_id id,
 		     const gx_color_index * scolors,
@@ -1399,7 +1399,7 @@ gs_private_st_suffix_add1(st_pclxl_image_enum, pclxl_image_enum_t,
 			  rows.data);
 
 /* Start processing an image. */
-private int
+static int
 pclxl_begin_image(gx_device * dev,
 		  const gs_imager_state * pis, const gs_image_t * pim,
 		  gs_image_format_t format, const gs_int_rect * prect,
@@ -1539,19 +1539,19 @@ pclxl_begin_image(gx_device * dev,
 }
 
 /* Write one strip of an image, from pie->rows.first_y to pie->y. */
-private int
+static int
 image_transform_x(const pclxl_image_enum_t *pie, int sx)
 {
     return (int)((pie->mat.tx + sx * pie->mat.xx + 0.5) /
 		 ((const gx_device_pclxl *)pie->dev)->scale.x);
 }
-private int
+static int
 image_transform_y(const pclxl_image_enum_t *pie, int sy)
 {
     return (int)((pie->mat.ty + sy * pie->mat.yy + 0.5) /
 		 ((const gx_device_pclxl *)pie->dev)->scale.y);
 }
-private int
+static int
 pclxl_image_write_rows(pclxl_image_enum_t *pie)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)pie->dev;
@@ -1580,7 +1580,7 @@ pclxl_image_write_rows(pclxl_image_enum_t *pie)
 }
 
 /* Process the next piece of an image. */
-private int
+static int
 pclxl_image_plane_data(gx_image_enum_common_t * info,
 		       const gx_image_plane_t * planes, int height,
 		       int *rows_used)
@@ -1613,7 +1613,7 @@ pclxl_image_plane_data(gx_image_enum_common_t * info,
 }
 
 /* Clean up by releasing the buffers. */
-private int
+static int
 pclxl_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 {
     pclxl_image_enum_t *pie = (pclxl_image_enum_t *) info;
@@ -1631,7 +1631,7 @@ pclxl_image_end_image(gx_image_enum_common_t * info, bool draw_last)
  * 'pclxl_get_params()' - Get pagedevice parameters.
  */
 
-private int				/* O - Error status */
+static int				/* O - Error status */
 pclxl_get_params(gx_device     *dev,	/* I - Device info */
                  gs_param_list *plist)	/* I - Parameter list */
 {
@@ -1670,7 +1670,7 @@ pclxl_get_params(gx_device     *dev,	/* I - Device info */
  * 'pclxl_put_params()' - Set pagedevice parameters.
  */
 
-private int				/* O - Error status */
+static int				/* O - Error status */
 pclxl_put_params(gx_device     *dev,	/* I - Device info */
                  gs_param_list *plist)	/* I - Parameter list */
 {

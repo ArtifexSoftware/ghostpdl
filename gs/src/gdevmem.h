@@ -72,12 +72,12 @@
 dev_proc_get_initial_matrix(mem_get_initial_matrix);
 dev_proc_close_device(mem_close);
 #define declare_mem_map_procs(map_rgb_color, map_color_rgb)\
-  private dev_proc_map_rgb_color(map_rgb_color);\
-  private dev_proc_map_color_rgb(map_color_rgb)
+  static dev_proc_map_rgb_color(map_rgb_color);\
+  static dev_proc_map_color_rgb(map_color_rgb)
 #define declare_mem_procs(copy_mono, copy_color, fill_rectangle)\
-  private dev_proc_copy_mono(copy_mono);\
-  private dev_proc_copy_color(copy_color);\
-  private dev_proc_fill_rectangle(fill_rectangle)
+  static dev_proc_copy_mono(copy_mono);\
+  static dev_proc_copy_color(copy_color);\
+  static dev_proc_fill_rectangle(fill_rectangle)
 /*
  * We define one relatively low-usage drawing procedure that is common to
  * all memory devices so that we have a reliable way to implement

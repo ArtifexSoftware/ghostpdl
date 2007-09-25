@@ -28,7 +28,7 @@
 public_st_device_memory();
 
 /* GC procedures */
-private 
+static 
 ENUM_PTRS_WITH(device_memory_enum_ptrs, gx_device_memory *mptr)
 {
     return ENUM_USING(st_device_forward, vptr, sizeof(gx_device_forward), index - 3);
@@ -37,7 +37,7 @@ case 0: ENUM_RETURN((mptr->foreign_bits ? NULL : (void *)mptr->base));
 case 1: ENUM_RETURN((mptr->foreign_line_pointers ? NULL : (void *)mptr->line_ptrs));
 ENUM_STRING_PTR(2, gx_device_memory, palette);
 ENUM_PTRS_END
-private
+static
 RELOC_PTRS_WITH(device_memory_reloc_ptrs, gx_device_memory *mptr)
 {
     if (!mptr->foreign_bits) {
@@ -60,13 +60,13 @@ RELOC_PTRS_WITH(device_memory_reloc_ptrs, gx_device_memory *mptr)
 RELOC_PTRS_END
 
 /* Define the palettes for monobit devices. */
-private const byte b_w_palette_string[6] = {
+static const byte b_w_palette_string[6] = {
     0xff, 0xff, 0xff, 0, 0, 0
 };
 const gs_const_string mem_mono_b_w_palette = {
     b_w_palette_string, 6
 };
-private const byte w_b_palette_string[6] = {
+static const byte w_b_palette_string[6] = {
     0, 0, 0, 0xff, 0xff, 0xff
 };
 const gs_const_string mem_mono_w_b_palette = {
@@ -77,7 +77,7 @@ const gs_const_string mem_mono_w_b_palette = {
 
 /* Return the appropriate memory device for a given */
 /* number of bits per pixel (0 if none suitable). */
-private const gx_device_memory *const mem_devices[65] = {
+static const gx_device_memory *const mem_devices[65] = {
     0, &mem_mono_device, &mem_mapped2_device, 0, &mem_mapped4_device,
     0, 0, 0, &mem_mapped8_device,
     0, 0, 0, 0, 0, 0, 0, &mem_true16_device,
@@ -95,7 +95,7 @@ gdev_mem_device_for_bits(int bits_per_pixel)
 	    mem_devices[bits_per_pixel]);
 }
 /* Do the same for a word-oriented device. */
-private const gx_device_memory *const mem_word_devices[65] = {
+static const gx_device_memory *const mem_word_devices[65] = {
     0, &mem_mono_device, &mem_mapped2_word_device, 0, &mem_mapped4_word_device,
     0, 0, 0, &mem_mapped8_word_device,
     0, 0, 0, 0, 0, 0, 0, 0 /*no 16-bit word device*/,

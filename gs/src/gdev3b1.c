@@ -109,7 +109,7 @@ dev_proc_fill_rectangle(att3b1_fill_rectangle);
 dev_proc_copy_mono(att3b1_copy_mono);
 dev_proc_output_page(att3b1_output_page);
 
-private gx_device_procs att3b1_procs = {
+static gx_device_procs att3b1_procs = {
     att3b1_open,
     gx_default_get_initial_matrix,
     gx_default_sync_output,
@@ -430,7 +430,7 @@ do_help(gx_device *dev)
     write(att3b1dev->fd, "\033[2J\033[99;1H", 11);
 }
 
-private int
+static int
 att3b1_do_output_page(gx_device *dev, int num_copies, int flush)
 {
     struct urdata ur;

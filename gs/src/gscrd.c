@@ -33,7 +33,7 @@ extern_gs_lib_device_list();
 
 /* Allocator structure type */
 public_st_cie_render1();
-private 
+static 
 ENUM_PTRS_WITH(cie_render1_enum_ptrs, gs_cie_render *pcrd) return 0;
 case 0: return ENUM_OBJ(pcrd->client_data);
 case 1: return ENUM_OBJ(pcrd->RenderTable.lookup.table);
@@ -41,7 +41,7 @@ case 2: return (pcrd->RenderTable.lookup.table ?
 		ENUM_CONST_STRING(&pcrd->TransformPQR.proc_data) :
 		0);
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(cie_render1_reloc_ptrs, gs_cie_render *pcrd);
+static RELOC_PTRS_WITH(cie_render1_reloc_ptrs, gs_cie_render *pcrd);
 RELOC_OBJ_VAR(pcrd->client_data);
 if (pcrd->RenderTable.lookup.table)
 {
@@ -52,7 +52,7 @@ RELOC_PTRS_END
 
 /* Default CRD procedures. */
 
-private int
+static int
 tpqr_identity(int index, floatp in, const gs_cie_wbsd * pwbsd,
 	      gs_cie_render * pcrd, float *out)
 {
@@ -60,7 +60,7 @@ tpqr_identity(int index, floatp in, const gs_cie_wbsd * pwbsd,
     return 0;
 }
 
-private int
+static int
 tpqr_from_cache(int index, floatp in, const gs_cie_wbsd * pwbsd,
 		gs_cie_render * pcrd, float *out)
 {
@@ -73,12 +73,12 @@ tpqr_from_cache(int index, floatp in, const gs_cie_wbsd * pwbsd,
     return 0;
 }
 
-private float
+static float
 render_identity(floatp in, const gs_cie_render * pcrd)
 {
     return in;
 }
-private frac
+static frac
 render_table_identity(byte in, const gs_cie_render * pcrd)
 {
     return byte2frac(in);
@@ -86,60 +86,60 @@ render_table_identity(byte in, const gs_cie_render * pcrd)
 
 /* Transformation procedures that just consult the cache. */
 
-private float
+static float
 EncodeABC_cached_A(floatp in, const gs_cie_render * pcrd)
 {
     return gs_cie_cached_value(in, &pcrd->caches.EncodeABC[0].floats);
 }
-private float
+static float
 EncodeABC_cached_B(floatp in, const gs_cie_render * pcrd)
 {
     return gs_cie_cached_value(in, &pcrd->caches.EncodeABC[1].floats);
 }
-private float
+static float
 EncodeABC_cached_C(floatp in, const gs_cie_render * pcrd)
 {
     return gs_cie_cached_value(in, &pcrd->caches.EncodeABC[2].floats);
 }
-private float
+static float
 EncodeLMN_cached_L(floatp in, const gs_cie_render * pcrd)
 {
     return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN.caches[0].floats);
 }
-private float
+static float
 EncodeLMN_cached_M(floatp in, const gs_cie_render * pcrd)
 {
     return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN.caches[1].floats);
 }
-private float
+static float
 EncodeLMN_cached_N(floatp in, const gs_cie_render * pcrd)
 {
     return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN.caches[2].floats);
 }
 
-private frac
+static frac
 RTT_cached(byte in, const gs_cie_render * pcrd, int i)
 {
     return pcrd->caches.RenderTableT[i].fracs.values[
 	in * (gx_cie_cache_size - 1) / 255
     ];
 }
-private frac
+static frac
 RTT_cached_0(byte in, const gs_cie_render * pcrd)
 {
     return RTT_cached(in, pcrd, 0);
 }
-private frac
+static frac
 RTT_cached_1(byte in, const gs_cie_render * pcrd)
 {
     return RTT_cached(in, pcrd, 1);
 }
-private frac
+static frac
 RTT_cached_2(byte in, const gs_cie_render * pcrd)
 {
     return RTT_cached(in, pcrd, 2);
 }
-private frac
+static frac
 RTT_cached_3(byte in, const gs_cie_render * pcrd)
 {
     return RTT_cached(in, pcrd, 3);
@@ -147,7 +147,7 @@ RTT_cached_3(byte in, const gs_cie_render * pcrd)
 
 /* Define the TransformPQR trampoline procedure that looks up proc_name. */
 
-private int
+static int
 tpqr_do_lookup(gs_cie_render *pcrd, const gx_device *dev_proto)
 {
     gx_device *dev;
@@ -181,7 +181,7 @@ tpqr_do_lookup(gs_cie_render *pcrd, const gx_device *dev_proto)
     gs_free_object(mem, dev, "tpqr_do_lookup(device)");
     return code;
 }
-private int
+static int
 tpqr_lookup(int index, floatp in, const gs_cie_wbsd * pwbsd,
 	    gs_cie_render * pcrd, float *out)
 {

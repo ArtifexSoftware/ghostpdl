@@ -43,7 +43,7 @@ int ztype0_get_cmap(const gs_cmap_t ** ppcmap, const ref * pfdepvector,
 /* ---------------- Internal procedures ---------------- */
 
 /* Free a code map in case of VMerror. */
-private void
+static void
 free_code_map(gx_code_map_t * pcmap, gs_memory_t * mem)
 {
     if (pcmap->lookup) {
@@ -61,7 +61,7 @@ free_code_map(gx_code_map_t * pcmap, gs_memory_t * mem)
 }
 
 /* Convert code ranges to internal form. */
-private int
+static int
 acquire_code_ranges(gs_cmap_adobe1_t *cmap, const ref *pref, gs_memory_t *mem)
 {
     uint num_ranges = 0;
@@ -117,7 +117,7 @@ acquire_code_ranges(gs_cmap_adobe1_t *cmap, const ref *pref, gs_memory_t *mem)
 }
 
 /* Convert a code map to internal form. */
-private int
+static int
 acquire_code_map(gx_code_map_t *pcmap, const ref *pref, gs_cmap_adobe1_t *root,
 		 gs_memory_t *mem)
 {
@@ -252,7 +252,7 @@ acquire_code_map(gx_code_map_t *pcmap, const ref *pref, gs_cmap_adobe1_t *root,
  * Acquire the CIDSystemInfo array from a dictionary.  If missing, fabricate
  * a 0-element array and return 1.
  */
-private int
+static int
 acquire_cid_system_info(ref *psia, const ref *op)
 {
     ref *prcidsi;
@@ -275,7 +275,7 @@ acquire_cid_system_info(ref *psia, const ref *op)
  * Get one element of a CIDSystemInfo array.  If the element is missing or
  * null, return 1.
  */
-private int
+static int
 get_cid_system_info(const gs_memory_t *mem, gs_cid_system_info_t *pcidsi, const ref *psia, uint index)
 {
     ref rcidsi;
@@ -291,13 +291,13 @@ get_cid_system_info(const gs_memory_t *mem, gs_cid_system_info_t *pcidsi, const 
 #ifdef CHECK_CID_SYSTEM_INFO_COMPATIBILITY
 
 /* Check compatibility of CIDSystemInfo. */
-private bool
+static bool
 bytes_eq(const gs_const_string *pcs1, const gs_const_string *pcs2)
 {
     return !bytes_compare(pcs1->data, pcs1->size,
 			  pcs2->data, pcs2->size);
 }
-private bool
+static bool
 cid_system_info_compatible(const gs_cid_system_info_t * psi1,
 			   const gs_cid_system_info_t * psi2)
 {
@@ -375,7 +375,7 @@ ztype0_get_cmap(const gs_cmap_t **ppcmap, const ref *pfdepvector,
  * UIDOffset, XUID, WMode, and .CodeMapData elements of the CMap dictionary.
  * For details, see lib/gs_cmap.ps and the Adobe documentation.
  */
-private int
+static int
 zfcmap_glyph_name(const gs_memory_t *mem, 
 		  gs_glyph glyph, gs_const_string *pstr, void *proc_data)
 {
@@ -390,7 +390,7 @@ zfcmap_glyph_name(const gs_memory_t *mem,
     pstr->size = r_size(&nsref);
     return 0;
 }
-private int
+static int
 zbuildcmap(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

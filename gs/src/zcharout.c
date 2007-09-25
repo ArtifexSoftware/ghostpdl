@@ -281,8 +281,8 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
  * Get the CharString data corresponding to a glyph.  Return typecheck
  * if it isn't a string.
  */
-private bool charstring_is_notdef_proc(const gs_memory_t *mem, const ref *);
-private int charstring_make_notdef(gs_glyph_data_t *, gs_font *);
+static bool charstring_is_notdef_proc(const gs_memory_t *mem, const ref *);
+static int charstring_make_notdef(gs_glyph_data_t *, gs_font *);
 int
 zchar_charstring_data(gs_font *font, const ref *pgref, gs_glyph_data_t *pgd)
 {
@@ -311,7 +311,7 @@ zchar_charstring_data(gs_font *font, const ref *pgref, gs_glyph_data_t *pgd)
 			      NULL);
     return 0;
 }
-private bool
+static bool
 charstring_is_notdef_proc(const gs_memory_t *mem, const ref *pcstr)
 {
     if (r_is_array(pcstr) && r_size(pcstr) == 4) {
@@ -337,7 +337,7 @@ charstring_is_notdef_proc(const gs_memory_t *mem, const ref *pcstr)
     }
     return false;
 }
-private int
+static int
 charstring_make_notdef(gs_glyph_data_t *pgd, gs_font *font)
 {
     gs_font_type1 *const pfont = (gs_font_type1 *)font;

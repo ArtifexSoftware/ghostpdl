@@ -28,7 +28,7 @@ gs_public_st_ptrs5(st_TFace, TFace, "TFace",
 gs_public_st_composite(st_TInstance, TInstance,
     "TInstance", TInstance_enum_ptrs, TInstance_reloc_ptrs);
 
-private 
+static 
 ENUM_PTRS_BEGIN(TInstance_enum_ptrs) return 0;
     ENUM_PTR(0, TInstance, face);
     ENUM_PTR(1, TInstance, FDefs);
@@ -40,7 +40,7 @@ ENUM_PTRS_BEGIN(TInstance_enum_ptrs) return 0;
     ENUM_PTR(7, TInstance, storage);
 ENUM_PTRS_END
 
-private RELOC_PTRS_WITH(TInstance_reloc_ptrs, TInstance *mptr)
+static RELOC_PTRS_WITH(TInstance_reloc_ptrs, TInstance *mptr)
     RELOC_PTR(TInstance, face);
     RELOC_PTR(TInstance, FDefs);
     RELOC_PTR(TInstance, IDefs);
@@ -55,7 +55,7 @@ RELOC_PTRS_END
 gs_public_st_composite(st_TExecution_Context, TExecution_Context,
     "TExecution_Context", TExecution_Context_enum_ptrs, TExecution_Context_reloc_ptrs);
 
-private 
+static 
 ENUM_PTRS_BEGIN(TExecution_Context_enum_ptrs) return 0;
     ENUM_PTR(0, TExecution_Context, current_face);
     /* ENUM_PTR(1, TExecution_Context, code); // local, no gc invocations */
@@ -87,7 +87,7 @@ ENUM_PTRS_BEGIN(TExecution_Context_enum_ptrs) return 0;
     ENUM_PTR(22, TExecution_Context, memory);
 ENUM_PTRS_END
 
-private RELOC_PTRS_WITH(TExecution_Context_reloc_ptrs, TExecution_Context *mptr)
+static RELOC_PTRS_WITH(TExecution_Context_reloc_ptrs, TExecution_Context *mptr)
 {
     RELOC_PTR(TExecution_Context, current_face);
     /* RELOC_PTR(TExecution_Context, code);  // local, no gc invocations */
@@ -124,7 +124,7 @@ RELOC_PTRS_END
 gs_public_st_composite(st_ttfFont, ttfFont,
     "ttfFont", ttfFont_enum_ptrs, ttfFont_reloc_ptrs);
 
-private 
+static 
 ENUM_PTRS_BEGIN(ttfFont_enum_ptrs) return 0;
     ENUM_PTR(0, ttfFont, face);
     ENUM_PTR(1, ttfFont, inst);
@@ -132,7 +132,7 @@ ENUM_PTRS_BEGIN(ttfFont_enum_ptrs) return 0;
     ENUM_PTR(3, ttfFont, tti);
 ENUM_PTRS_END
 
-private RELOC_PTRS_WITH(ttfFont_reloc_ptrs, ttfFont *mptr)
+static RELOC_PTRS_WITH(ttfFont_reloc_ptrs, ttfFont *mptr)
     RELOC_PTR(ttfFont, face);
     RELOC_PTR(ttfFont, inst);
     RELOC_PTR(ttfFont, exec);

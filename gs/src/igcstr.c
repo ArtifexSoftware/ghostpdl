@@ -21,7 +21,7 @@
 #include "igcstr.h"
 
 /* Forward references */
-private bool gc_mark_string(const byte *, uint, bool, const chunk_t *);
+static bool gc_mark_string(const byte *, uint, bool, const chunk_t *);
 
 /* (Un)mark the strings in a chunk. */
 void
@@ -57,7 +57,7 @@ typedef string_mark_unit bword;
 #endif
 
 /* (Un)mark a string in a known chunk.  Return true iff any new marks. */
-private bool
+static bool
 gc_mark_string(const byte * ptr, uint size, bool set, const chunk_t * cp)
 {
     uint offset = ptr - cp->sbase;
@@ -189,7 +189,7 @@ gc_strings_clear_reloc(chunk_t * cp)
 }
 
 /* Count the 0-bits in a byte. */
-private const byte count_zero_bits_table[256] =
+static const byte count_zero_bits_table[256] =
 {
 #define o4(n) n,n-1,n-1,n-2
 #define o16(n) o4(n),o4(n-1),o4(n-1),o4(n-2)

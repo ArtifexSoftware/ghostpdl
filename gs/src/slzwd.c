@@ -46,7 +46,7 @@ gs_private_st_simple(st_lzw_decode, lzw_decode, "lzw_decode");
 
 /* Initialize LZWDecode filter */
 /* We separate out the reset function for some non-stream clients. */
-private int
+static int
 s_LZWD_reset(stream_state * st)
 {
     stream_LZW_state *const ss = (stream_LZW_state *) st;
@@ -66,7 +66,7 @@ s_LZWD_reset(stream_state * st)
 	dc->datum = i, dc->len = 1, dc->prefix = code_eod;
     return 0;
 }
-private int
+static int
 s_LZWD_init(stream_state * st)
 {
     stream_LZW_state *const ss = (stream_LZW_state *) st;
@@ -84,7 +84,7 @@ s_LZWD_init(stream_state * st)
 }
 
 /* Process a buffer */
-private int
+static int
 s_LZWD_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {

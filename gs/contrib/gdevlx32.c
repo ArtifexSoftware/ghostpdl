@@ -47,32 +47,32 @@
 #endif
 
 /* Prototypes for public routines */
-private dev_proc_map_rgb_color(lxm3200_map_rgb_color);
-private dev_proc_map_color_rgb(lxm3200_map_color_rgb);
-private dev_proc_print_page(lxm3200_print_page);
-private dev_proc_get_params(lxm3200_get_params);
-private dev_proc_put_params(lxm3200_put_params);
-private dev_proc_open_device(lxm3200_open);
+static dev_proc_map_rgb_color(lxm3200_map_rgb_color);
+static dev_proc_map_color_rgb(lxm3200_map_color_rgb);
+static dev_proc_print_page(lxm3200_print_page);
+static dev_proc_get_params(lxm3200_get_params);
+static dev_proc_put_params(lxm3200_put_params);
+static dev_proc_open_device(lxm3200_open);
 
 /* Prototypes for internal routines */
-private void freeresources(gx_device *pdev);
-private byte calccheck8(byte *data);
-private void outputepilogue(void);
-private void skiplines(int skipcol, int skipin);
-private void fillheader(int head, int numcol, int firstcol, int bytes);
-private void finalizeheader(int vskip, int newhead);
-private void convbuf(int head, int numcols, int firstcol);
-private void encode_bw_buf(void);
-private void encode_col_buf(int head);
-private int fill_mono_buffer(int vline);
-private int init_buffer(void);
-private int qualify_buffer(void);
-private int roll_buffer(void);
-private void calclinemargins(byte *data, int mask, int *left, int *right);
-private void calcbufmargins(int head);
-private void print_color_page(void);
-private void print_mono_page(void);
-private void print_photo_page(void);
+static void freeresources(gx_device *pdev);
+static byte calccheck8(byte *data);
+static void outputepilogue(void);
+static void skiplines(int skipcol, int skipin);
+static void fillheader(int head, int numcol, int firstcol, int bytes);
+static void finalizeheader(int vskip, int newhead);
+static void convbuf(int head, int numcols, int firstcol);
+static void encode_bw_buf(void);
+static void encode_col_buf(int head);
+static int fill_mono_buffer(int vline);
+static int init_buffer(void);
+static int qualify_buffer(void);
+static int roll_buffer(void);
+static void calclinemargins(byte *data, int mask, int *left, int *right);
+static void calcbufmargins(int head);
+static void print_color_page(void);
+static void print_mono_page(void);
+static void print_photo_page(void);
 
 /* Codes for the color indexes. */
 #define WHITE        0x00  /* Pure white */
@@ -190,7 +190,7 @@ private void print_photo_page(void);
  */
 
 /* Device procedures */
-private gx_device_procs lxm3200_procs =
+static gx_device_procs lxm3200_procs =
   prn_color_params_procs(lxm3200_open, gdev_prn_output_page, gdev_prn_close,
 	  lxm3200_map_rgb_color, lxm3200_map_color_rgb, lxm3200_get_params, 
     lxm3200_put_params); 
@@ -245,8 +245,8 @@ lxm_device far_data gs_lxm3200_device =
 /* --------- Static data --------- */
 
 /* Lookup tables to speed up bitwise operations */
-private byte bits[8] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
-private byte ibits[8] = { 0x7f, 0xbf, 0xdf, 0xef, 0xf7, 0xfb, 0xfd, 0xfe };
+static byte bits[8] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
+static byte ibits[8] = { 0x7f, 0xbf, 0xdf, 0xef, 0xf7, 0xfb, 0xfd, 0xfe };
 
 /* Lookup table for masking color pens in color/photo cartridges.
  * This is used to check the raster buffer for the presence of a 
@@ -256,7 +256,7 @@ private byte ibits[8] = { 0x7f, 0xbf, 0xdf, 0xef, 0xf7, 0xfb, 0xfd, 0xfe };
  * is the pen number (0 is the upper pen, 1 the middle pen, 2 the
  * lower pen) on that cartridge.
  */
-private byte colmask[2][3] =
+static byte colmask[2][3] =
 {	
 	{ LIGHTCYAN, LIGHTMAGENTA, BLACK},
 	{ CYAN, MAGENTA, YELLOW }
@@ -269,7 +269,7 @@ private byte colmask[2][3] =
  * of each color pen relative to the vertical position of the 
  * color/photo cartridge.
  */
-private int penofs[3];
+static int penofs[3];
 
 /* Lookup table for vertical alignment of the cartridges relative to
  * each other. Parameter is the cartridge type: 0 = color cartridge,
@@ -279,19 +279,19 @@ private int penofs[3];
  * be no alignment problems (a single cartridge is always aligned
  * with itself, otherwise the printer tray is faulty).
  */
-private int valign[3];
+static int valign[3];
 
 /* Lookup table for horizontal offsets. First parameter is the
  * head, second parameter the printing direction.
  */
-private int hoffset[2][2];
+static int hoffset[2][2];
 
 /* Initialization sequence needed at the beginning of the data stream.
  * This is invariant and contains a reset sequence, meaning each single
  * page in a multiple page output is sent to the printer as an independent 
  * print job.
  */
-private byte init_sequence[] =
+static byte init_sequence[] =
 {
 	0x1b, 0x2a, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x1b, 0x33, 0x00, 0x00, 0x00, 0x00, 0x00, 0x33,
@@ -299,7 +299,7 @@ private byte init_sequence[] =
 	0x1b, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x21
 };              
 
-private byte z12_init_sequence[] =
+static byte z12_init_sequence[] =
 {
         0x1b, 0x2a, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x1b, 0x33, 0x00, 0x00, 0x00, 0x00, 0x00, 0x33,
@@ -369,7 +369,7 @@ typedef struct pagedata_s
 
 } pagedata;
 
-private pagedata gendata;
+static pagedata gendata;
 
 /* --------- Interface routines --------- */
 
@@ -382,7 +382,7 @@ private pagedata gendata;
  * This routine is inspired by the omologous 
  * routine from the "gdevbj10" driver.
  */
-private int
+static int
 lxm3200_open(gx_device *pdev)
 {
 	float linewidth;
@@ -421,7 +421,7 @@ lxm3200_open(gx_device *pdev)
  * value to the driver's internal representation
  * of the nearest color.
  */
-private gx_color_index
+static gx_color_index
 lxm3200_map_rgb_color(gx_device *dev, const gx_color_value cv[])
 {
 	gx_color_index col;
@@ -493,7 +493,7 @@ lxm3200_map_rgb_color(gx_device *dev, const gx_color_value cv[])
  * internal representation of a color to a
  * RGB value. 
  */
-private int
+static int
 lxm3200_map_color_rgb(gx_device *dev, gx_color_index color,
 											gx_color_value prgb[3])
 {
@@ -556,7 +556,7 @@ lxm3200_map_color_rgb(gx_device *dev, gx_color_index color,
  * and calls the proper page printing routines
  * depending on the selected printing mode. 
  */
-private int 
+static int 
 lxm3200_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
 	/* Store data passed by ghostscript to the driver */
@@ -788,7 +788,7 @@ lxm3200_print_page(gx_device_printer *pdev, FILE *prn_stream)
  * I won't comment it because I haven't even tried
  * to understand this code... :)
  */
-private int
+static int
 lxm3200_get_params(gx_device *pdev, gs_param_list *plist)
 {
   int code;
@@ -833,7 +833,7 @@ lxm3200_get_params(gx_device *pdev, gs_param_list *plist)
  * I won't comment it because I haven't even tried
  * to understand this code... :)
  */
-private int
+static int
 lxm3200_put_params(gx_device *pdev, gs_param_list *plist)
 {       
   int algnA = ((lxm_device *)pdev)->algnA;
@@ -943,7 +943,7 @@ lxm3200_put_params(gx_device *pdev, gs_param_list *plist)
 /* --------- Internal routines --------- */
 
 /* Free the resources allocated by the driver */
-private void
+static void
 freeresources(gx_device *pdev)
 {
 	if(gendata.scanbuf)
@@ -962,7 +962,7 @@ freeresources(gx_device *pdev)
  * data: pointer to the first of the 8 characters
  *       of an escape sequence.
  */
-private byte 
+static byte 
 calccheck8(byte *data)
 {
 	int ck, i;
@@ -977,7 +977,7 @@ calccheck8(byte *data)
  * the escape sequence needed to eject the page and
  * take the printheads to the "park" position.
  */
-private void 
+static void 
 outputepilogue(void)
 {
 	byte trailer[24];
@@ -1032,7 +1032,7 @@ outputepilogue(void)
  * skiprow: number of buffer lines to skip
  * vskip  : fixed offset, in 1200ths of an inch
  */
-private void
+static void
 skiplines(int skiprow, int skipin)
 {
 	byte escape[8];
@@ -1072,7 +1072,7 @@ skiplines(int skiprow, int skipin)
  * bytes:    total number of bytes in the stripe, including directories
  *           (but excluding the 24 bytes of the header).
  */
-private void 
+static void 
 fillheader(int head, int numcol, int firstcol, int bytes)
 {
 	int len, offs1, startabs;
@@ -1218,7 +1218,7 @@ fillheader(int head, int numcol, int firstcol, int bytes)
  * vskip  : number of lines to skip to reach next stripe
  * newhead: head used for the next stripe (LEFT or RIGHT)
  */
-private void 
+static void 
 finalizeheader(int vskip, int newhead)
 {
 	int offs2, nstartabs, back, fwd;
@@ -1411,7 +1411,7 @@ finalizeheader(int vskip, int newhead)
  * numcols : number of columns in the buffer.
  * firstcol: first column to print.
  */
-private void
+static void
 convbuf(int head, int numcols, int firstcol)
 {
 	byte *read, *write;
@@ -1580,7 +1580,7 @@ convbuf(int head, int numcols, int firstcol)
  * prints the black part, which of course is the only
  * one if we are printing in monochrome mode.
  */
-private void
+static void
 encode_bw_buf(void)
 {
 	int left, right, x, y, nn, mod;
@@ -1931,7 +1931,7 @@ encode_bw_buf(void)
  * head: the head we are calculating the buffer for. It will
  *       be LEFT for a photo cartridge or RIGHT for a color one.
  */
-private void 
+static void 
 encode_col_buf(int head)
 {
 	int left, right, x, y, nn, mod;
@@ -2206,7 +2206,7 @@ encode_col_buf(int head)
  * 
  * vline: the line from which to start searching for data.
  */
-private int
+static int
 fill_mono_buffer(int vline)
 {
 	byte *in_data, *data;
@@ -2319,7 +2319,7 @@ fill_mono_buffer(int vline)
  * printing commands to the printer only when there is something
  * to print, there is no speed impact. 
  */
-private int 
+static int 
 init_buffer(void)
 {
 	byte *in_data, *data;
@@ -2394,7 +2394,7 @@ init_buffer(void)
  * When we are printing in monochrome mode we directly skip 
  * over blank lines, so this routine is not needed.
  */
-private int
+static int
 qualify_buffer(void)
 {
 	int i, j, k, ret;
@@ -2497,7 +2497,7 @@ qualify_buffer(void)
  * and on the last pass we read the same line once more
  * to lay down the cyan component.
  */
-private int
+static int
 roll_buffer(void)
 {
 	int i, ret, fline, vl, ofs;
@@ -2575,7 +2575,7 @@ roll_buffer(void)
  * left:  calculated left margin (output variable)
  * right: calculated right margin (output variable)
  */
-private void 
+static void 
 calclinemargins(byte *data, int mask, int *left, int *right)
 {
 	int l,r,num;
@@ -2601,7 +2601,7 @@ calclinemargins(byte *data, int mask, int *left, int *right)
  * head: the code of the head we are calculating
  *       margins for (LEFT or RIGHT)
  */
-private void
+static void
 calcbufmargins(int head)
 {
 	int i, l1, r1, q, k;
@@ -2704,7 +2704,7 @@ calcbufmargins(int head)
  * This is the main routine that prints in
  * standard color mode.
  */
-private void
+static void
 print_color_page(void)
 {
 	int res, lline, cmask;
@@ -3079,7 +3079,7 @@ print_color_page(void)
  * only much simpler because now we are printing
  * with only one head.
  */
-private void
+static void
 print_mono_page(void)
 {	
 	int res, lline;
@@ -3179,7 +3179,7 @@ print_mono_page(void)
  * no need to care for different heights of the
  * printing pens (i.e.: no "lastblack" tricks).
  */ 
-private void
+static void
 print_photo_page(void)
 {
 	int res, lline;

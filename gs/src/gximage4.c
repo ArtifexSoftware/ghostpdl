@@ -23,15 +23,15 @@
 #include "stream.h"
 
 /* Forward references */
-private dev_proc_begin_typed_image(gx_begin_image4);
+static dev_proc_begin_typed_image(gx_begin_image4);
 
 /* Structure descriptor */
 private_st_gs_image4();
 
 /* Define the image type for ImageType 4 images. */
-private image_proc_sput(gx_image4_sput);
-private image_proc_sget(gx_image4_sget);
-private image_proc_release(gx_image4_release);
+static image_proc_sput(gx_image4_sput);
+static image_proc_sget(gx_image4_sget);
+static image_proc_release(gx_image4_release);
 const gx_image_type_t gs_image_type_4 = {
     &st_gs_image4, gx_begin_image4, gx_data_image_source_size,
     gx_image4_sput, gx_image4_sget, gx_image4_release, 4
@@ -41,7 +41,7 @@ const gx_image_type_t gs_image_type_4 = {
  * enum_procs.
  */
 /*
-  private const gx_image_enum_procs_t image4_enum_procs = {
+  static const gx_image_enum_procs_t image4_enum_procs = {
     gx_image1_plane_data, gx_image1_end_image
   };
 */
@@ -56,7 +56,7 @@ gs_image4_t_init(gs_image4_t * pim, gs_color_space * color_space)
 }
 
 /* Start processing an ImageType 4 image. */
-private int
+static int
 gx_begin_image4(gx_device * dev,
 		const gs_imager_state * pis, const gs_matrix * pmat,
 		const gs_image_common_t * pic, const gs_int_rect * prect,
@@ -109,7 +109,7 @@ gx_begin_image4(gx_device * dev,
 
 /* Serialization */
 
-private int
+static int
 gx_image4_sput(const gs_image_common_t *pic, stream *s,
 	       const gs_color_space **ppcs)
 {
@@ -129,7 +129,7 @@ gx_image4_sput(const gs_image_common_t *pic, stream *s,
     return 0;
 }
 
-private int
+static int
 gx_image4_sget(gs_image_common_t *pic, stream *s,
 	       gs_color_space *pcs)
 {
@@ -150,7 +150,7 @@ gx_image4_sget(gs_image_common_t *pic, stream *s,
     return 0;
 }
 
-private void
+static void
 gx_image4_release(gs_image_common_t *pic, gs_memory_t *mem)
 {
     gx_pixel_image_release((gs_pixel_image_t *)pic, mem);

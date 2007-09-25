@@ -33,8 +33,8 @@
 /* <file> token <obj> -true- */
 /* <string> token <post> <obj> -true- */
 /* <string|file> token -false- */
-private int ztoken_continue(i_ctx_t *);
-private int token_continue(i_ctx_t *, scanner_state *, bool);
+static int ztoken_continue(i_ctx_t *);
+static int token_continue(i_ctx_t *, scanner_state *, bool);
 int
 ztoken(i_ctx_t *i_ctx_p)
 {
@@ -86,7 +86,7 @@ ztoken(i_ctx_t *i_ctx_p)
 }
 /* Continue reading a token after an interrupt or callout. */
 /* *op is the scanner state. */
-private int
+static int
 ztoken_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -97,7 +97,7 @@ ztoken_continue(i_ctx_t *i_ctx_p)
     return token_continue(i_ctx_p, pstate, false);
 }
 /* Common code for token reading. */
-private int
+static int
 token_continue(i_ctx_t *i_ctx_p, scanner_state * pstate, bool save)
 {
     os_ptr op = osp;
@@ -149,7 +149,7 @@ again:
 /* This is different from token + exec because literal procedures */
 /* are not executed (although binary object sequences ARE executed). */
 int ztokenexec_continue(i_ctx_t *);	/* export for interpreter */
-private int tokenexec_continue(i_ctx_t *, scanner_state *, bool);
+static int tokenexec_continue(i_ctx_t *, scanner_state *, bool);
 int
 ztokenexec(i_ctx_t *i_ctx_p)
 {
@@ -177,7 +177,7 @@ ztokenexec_continue(i_ctx_t *i_ctx_p)
     return tokenexec_continue(i_ctx_p, pstate, false);
 }
 /* Common code for token reading + execution. */
-private int
+static int
 tokenexec_continue(i_ctx_t *i_ctx_p, scanner_state * pstate, bool save)
 {
     os_ptr op;

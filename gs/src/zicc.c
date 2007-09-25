@@ -58,7 +58,7 @@
  * the operand is a dictionary, is readable, and defines the key /N
  * (number of components).
  */
-private int
+static int
 zseticcspace(i_ctx_t * i_ctx_p)
 {
     os_ptr                  op = osp;

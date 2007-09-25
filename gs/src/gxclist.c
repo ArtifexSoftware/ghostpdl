@@ -30,7 +30,7 @@ extern dev_proc_open_device(pattern_clist_open_device);
 
 /* GC information */
 extern_st(st_imager_state);
-private
+static
 ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
     if (index < st_device_forward_max_ptrs) {
 	gs_ptr_type_t ret = ENUM_USING_PREFIX(st_device_forward, 0);
@@ -63,7 +63,7 @@ ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
             return 0;
     }
 ENUM_PTRS_END
-private
+static
 RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
 {
     RELOC_PREFIX(st_device_forward);
@@ -86,14 +86,14 @@ RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
 public_st_device_clist();
 
 /* Forward declarations of driver procedures */
-private dev_proc_open_device(clist_open);
-private dev_proc_output_page(clist_output_page);
-private dev_proc_close_device(clist_close);
-private dev_proc_get_band(clist_get_band);
+static dev_proc_open_device(clist_open);
+static dev_proc_output_page(clist_output_page);
+static dev_proc_close_device(clist_close);
+static dev_proc_get_band(clist_get_band);
 /* Driver procedures defined in other files are declared in gxcldev.h. */
 
 /* Other forward declarations */
-private int clist_put_current_params(gx_device_clist_writer *cldev);
+static int clist_put_current_params(gx_device_clist_writer *cldev);
 
 /* The device procedures */
 const gx_device_procs gs_clist_device_procs = {
@@ -200,7 +200,7 @@ const gs_imager_state clist_imager_state_initial =
 /*
  * Calculate the desired size for the tile cache.
  */
-private uint
+static uint
 clist_tile_cache_size(const gx_device * target, uint data_size)
 {
     uint bits_size =
@@ -220,7 +220,7 @@ clist_tile_cache_size(const gx_device * target, uint data_size)
  * Initialize the allocation for the tile cache.  Sets: tile_hash_mask,
  * tile_max_count, tile_table, chunk (structure), bits (structure).
  */
-private int
+static int
 clist_init_tile_cache(gx_device * dev, byte * init_data, ulong data_size)
 {
     gx_device_clist_writer * const cdev =
@@ -267,7 +267,7 @@ clist_init_tile_cache(gx_device * dev, byte * init_data, ulong data_size)
  * Initialize the allocation for the bands.  Requires: target.  Sets:
  * page_band_height (=page_info.band_params.BandHeight), nbands.
  */
-private int
+static int
 clist_init_bands(gx_device * dev, gx_device_memory *bdev, uint data_size,
 		 int band_width, int band_height)
 {
@@ -300,7 +300,7 @@ clist_init_bands(gx_device * dev, gx_device_memory *bdev, uint data_size,
  * Initialize the allocation for the band states, which are used only
  * when writing.  Requires: nbands.  Sets: states, cbuf, cend.
  */
-private int
+static int
 clist_init_states(gx_device * dev, byte * init_data, uint data_size)
 {
     gx_device_clist_writer * const cdev =
@@ -325,7 +325,7 @@ clist_init_states(gx_device * dev, byte * init_data, uint data_size)
  * page_tile_cache_size, page_info.band_params.BandWidth,
  * page_info.band_params.BandBufferSpace, + see above.
  */
-private int
+static int
 clist_init_data(gx_device * dev, byte * init_data, uint data_size)
 {
     gx_device_clist_writer * const cdev =
@@ -394,7 +394,7 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
  * Reset the device state (for writing).  This routine requires only
  * data, data_size, and target to be set, and is idempotent.
  */
-private int
+static int
 clist_reset(gx_device * dev)
 {
     gx_device_clist_writer * const cdev =
@@ -464,7 +464,7 @@ clist_reset(gx_device * dev)
  * Initialize the device state (for writing).  This routine requires only
  * data, data_size, and target to be set, and is idempotent.
  */
-private int
+static int
 clist_init(gx_device * dev)
 {
     gx_device_clist_writer * const cdev =
@@ -481,7 +481,7 @@ clist_init(gx_device * dev)
 }
 
 /* (Re)init open band files for output (set block size, etc). */
-private int	/* ret 0 ok, -ve error code */
+static int	/* ret 0 ok, -ve error code */
 clist_reinit_output_file(gx_device *dev)
 {    gx_device_clist_writer * const cdev =
 	&((gx_device_clist *)dev)->writer;
@@ -511,7 +511,7 @@ clist_reinit_output_file(gx_device *dev)
 
 /* Write out the current parameters that must be at the head of each page */
 /* if async rendering is in effect */
-private int
+static int
 clist_emit_page_header(gx_device *dev)
 {
     gx_device_clist_writer * const cdev =
@@ -531,7 +531,7 @@ clist_emit_page_header(gx_device *dev)
 }
 
 /* Reset parameters for the beginning of a page. */
-private void
+static void
 clist_reset_page(gx_device_clist_writer *cwdev)
 {
     cwdev->page_bfile_end_pos = 0;
@@ -542,7 +542,7 @@ clist_reset_page(gx_device_clist_writer *cwdev)
 }
 
 /* Open the device's bandfiles */
-private int
+static int
 clist_open_output_file(gx_device *dev)
 {
     gx_device_clist_writer * const cdev =
@@ -606,7 +606,7 @@ clist_close_output_file(gx_device *dev)
 
 /* Open the device by initializing the device state and opening the */
 /* scratch files. */
-private int
+static int
 clist_open(gx_device *dev)
 {
     gx_device_clist_writer * const cdev =
@@ -623,7 +623,7 @@ clist_open(gx_device *dev)
     return code;
 }
 
-private int
+static int
 clist_close(gx_device *dev)
 {
     gx_device_clist_writer * const cdev =
@@ -639,7 +639,7 @@ clist_close(gx_device *dev)
 }
 
 /* The output_page procedure should never be called! */
-private int
+static int
 clist_output_page(gx_device * dev, int num_copies, int flush)
 {
     return_error(gs_error_Fatal);
@@ -826,7 +826,7 @@ clist_VMerror_recover_flush(gx_device_clist_writer *cldev,
 }
 
 /* Write the target device's current parameter list */
-private int	/* ret 0 all ok, -ve error */
+static int	/* ret 0 all ok, -ve error */
 clist_put_current_params(gx_device_clist_writer *cldev)
 {
     gx_device *target = cldev->target;
@@ -855,7 +855,7 @@ clist_put_current_params(gx_device_clist_writer *cldev)
 
 /* ---------------- Driver interface ---------------- */
 
-private int
+static int
 clist_get_band(gx_device * dev, int y, int *band_start)
 {
     gx_device_clist_writer * const cdev =

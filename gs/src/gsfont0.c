@@ -26,11 +26,11 @@
 #include "gxfont0.h"
 
 /* Structure descriptor */
-private struct_proc_enum_ptrs(font_type0_enum_ptrs);
-private struct_proc_reloc_ptrs(font_type0_reloc_ptrs);
+static struct_proc_enum_ptrs(font_type0_enum_ptrs);
+static struct_proc_reloc_ptrs(font_type0_reloc_ptrs);
 
 public_st_gs_font_type0();
-private 
+static 
 ENUM_PTRS_WITH(font_type0_enum_ptrs, gs_font_type0 *pfont)
 ENUM_PREFIX(st_gs_font, gs_type0_data_max_ptrs);
 ENUM_PTR(0, gs_font_type0, data.Encoding);
@@ -47,7 +47,7 @@ switch (pfont->data.FMapType)
 	ENUM_RETURN(0);
 }
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(font_type0_reloc_ptrs, gs_font_type0 *pfont)
+static RELOC_PTRS_WITH(font_type0_reloc_ptrs, gs_font_type0 *pfont)
 RELOC_PREFIX(st_gs_font);
 RELOC_PTR(gs_font_type0, data.Encoding);
 RELOC_PTR(gs_font_type0, data.FDepVector);
@@ -66,7 +66,7 @@ RELOC_PTRS_END
 
 /* Adjust a composite font by concatenating a given matrix */
 /* to the FontMatrix of all descendant composite fonts. */
-private int
+static int
 gs_type0_adjust_matrix(gs_font_dir * pdir, gs_font_type0 * pfont,
 		       const gs_matrix * pmat)
 {

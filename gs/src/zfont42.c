@@ -30,15 +30,15 @@
 #include "store.h"
 
 /* Forward references */
-private int z42_string_proc(gs_font_type42 *, ulong, uint, const byte **);
-private uint z42_get_glyph_index(gs_font_type42 *, gs_glyph);
-private int z42_gdir_get_outline(gs_font_type42 *, uint, gs_glyph_data_t *);
-private font_proc_enumerate_glyph(z42_enumerate_glyph);
-private font_proc_enumerate_glyph(z42_gdir_enumerate_glyph);
-private font_proc_encode_char(z42_encode_char);
-private font_proc_glyph_info(z42_glyph_info);
-private font_proc_glyph_outline(z42_glyph_outline);
-private font_proc_font_info(z42_font_info);
+static int z42_string_proc(gs_font_type42 *, ulong, uint, const byte **);
+static uint z42_get_glyph_index(gs_font_type42 *, gs_glyph);
+static int z42_gdir_get_outline(gs_font_type42 *, uint, gs_glyph_data_t *);
+static font_proc_enumerate_glyph(z42_enumerate_glyph);
+static font_proc_enumerate_glyph(z42_gdir_enumerate_glyph);
+static font_proc_encode_char(z42_encode_char);
+static font_proc_glyph_info(z42_glyph_info);
+static font_proc_glyph_outline(z42_glyph_outline);
+static font_proc_font_info(z42_font_info);
 
 /* <string|name> <font_dict> .buildfont11/42 <string|name> <font> */
 /* Build a type 11 (TrueType CID-keyed) or 42 (TrueType) font. */
@@ -103,7 +103,7 @@ build_gs_TrueType_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_type42 **ppfont,
     pfont->procs.glyph_outline = z42_glyph_outline;
     return 0;
 }
-private int
+static int
 zbuildfont42(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -247,7 +247,7 @@ const op_def zfont42_op_defs[] =
 };
 
 /* Reduce a glyph name to a glyph index if needed. */
-private gs_glyph
+static gs_glyph
 glyph_to_index(const gs_font *font, gs_glyph glyph)
 {
     ref gref;
@@ -266,7 +266,7 @@ glyph_to_index(const gs_font *font, gs_glyph glyph)
     }
     return GS_MIN_GLYPH_INDEX;	/* glyph 0 is notdef */
 }
-private uint
+static uint
 z42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
 {
     gs_glyph gid = glyph_to_index((gs_font *)pfont, glyph);
@@ -306,7 +306,7 @@ font_gdir_get_outline(const gs_memory_t *mem,
     }
     return 0;
 }
-private int
+static int
 z42_gdir_get_outline(gs_font_type42 * pfont, uint glyph_index,
 		     gs_glyph_data_t *pgd)
 {
@@ -317,7 +317,7 @@ z42_gdir_get_outline(gs_font_type42 * pfont, uint glyph_index,
 }
 
 /* Enumerate glyphs from CharStrings or loca / glyf. */
-private int
+static int
 z42_enumerate_glyph(gs_font *font, int *pindex, gs_glyph_space_t glyph_space,
 		    gs_glyph *pglyph)
 {
@@ -331,7 +331,7 @@ z42_enumerate_glyph(gs_font *font, int *pindex, gs_glyph_space_t glyph_space,
 }
 
 /* Enumerate glyphs (keys) from GlyphDirectory instead of loca / glyf. */
-private int
+static int
 z42_gdir_enumerate_glyph(gs_font *font, int *pindex,
 			 gs_glyph_space_t glyph_space, gs_glyph *pglyph)
 {
@@ -367,7 +367,7 @@ z42_gdir_enumerate_glyph(gs_font *font, int *pindex,
  * Define font procedures that accept either a character name or a glyph
  * index as the glyph.
  */
-private gs_glyph
+static gs_glyph
 z42_encode_char(gs_font *font, gs_char chr, gs_glyph_space_t glyph_space)
 {
     gs_glyph glyph = zfont_encode_char(font, chr, glyph_space);
@@ -375,14 +375,14 @@ z42_encode_char(gs_font *font, gs_char chr, gs_glyph_space_t glyph_space)
     return (glyph_space == GLYPH_SPACE_INDEX && glyph != gs_no_glyph ?
 	    glyph_to_index(font, glyph) : glyph);
 }
-private int
+static int
 z42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat,
 		  gx_path *ppath, double sbw[4])
 {
     return gs_type42_glyph_outline(font, WMode, glyph_to_index(font, glyph),
 				   pmat, ppath, sbw);
 }
-private int
+static int
 z42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	       int members, gs_glyph_info_t *info)
 {   /* fixme : same as z1_glyph_info. */
@@ -395,7 +395,7 @@ z42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
  * Return code : 0 - success, <0 - error, 
  *               >0 - number of accessible bytes (client must cycle).
  */
-private int
+static int
 z42_string_proc(gs_font_type42 * pfont, ulong offset, uint length,
 		const byte ** pdata)
 {
@@ -404,7 +404,7 @@ z42_string_proc(gs_font_type42 * pfont, ulong offset, uint length,
 				    &pfont_data(pfont)->u.type42.mru_sfnts_pos, pdata);
 }
 
-private int
+static int
 z42_font_info(gs_font *font, const gs_point *pscale, int members,
 	   gs_font_info_t *info)
 {

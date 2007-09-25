@@ -21,7 +21,7 @@
 #include "gdevprn.h"
 
 /* Driver for NEC P6 */
-private dev_proc_print_page (necp6_print_page);
+static dev_proc_print_page (necp6_print_page);
 const gx_device_printer far_data gs_necp6_device =
   prn_device (prn_std_procs, "necp6",
 	      DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -32,7 +32,7 @@ const gx_device_printer far_data gs_necp6_device =
 
 /* Driver for Epson LQ850 */
 /* I've tested this driver on a BJ300 with LQ850 emulation and there it produce correct 360x360dpi output. */
-private dev_proc_print_page (lq850_print_page);
+static dev_proc_print_page (lq850_print_page);
 const gx_device_printer gs_lq850_device =
   prn_device (prn_std_procs, "lq850",
 	      DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -43,11 +43,11 @@ const gx_device_printer gs_lq850_device =
 /* ------ Internal routines ------ */
 
 /* Forward references */
-private void dot24_output_run (byte *, int, int, FILE *);
-private void dot24_improve_bitmap (byte *, int);
+static void dot24_output_run (byte *, int, int, FILE *);
+static void dot24_improve_bitmap (byte *, int);
 
 /* Send the page to the printer. */
-private int
+static int
 dot24_print_page (gx_device_printer *pdev, FILE *prn_stream, char *init_string, int init_len)
 {
   int xres = (int)pdev->x_pixels_per_inch;
@@ -229,7 +229,7 @@ dot24_print_page (gx_device_printer *pdev, FILE *prn_stream, char *init_string, 
 }
 
 /* Output a single graphics command. */
-private void
+static void
 dot24_output_run (byte *data, int count, int x_high, FILE *prn_stream)
 {
   int xcount = count / 3;
@@ -244,7 +244,7 @@ dot24_output_run (byte *data, int count, int x_high, FILE *prn_stream)
 /* If xdpi == 360, the P6 / LQ850 cannot print adjacent pixels.  Clear the
    second last pixel of every run of set pixels, so that the last pixel
    is always printed.  */
-private void
+static void
 dot24_improve_bitmap (byte *data, int count)
 {
   int i;
@@ -263,7 +263,7 @@ dot24_improve_bitmap (byte *data, int count)
 }
 
 
-private int
+static int
 necp6_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
   char necp6_init_string [] = "\033@\033P\033l\000\r\034\063\001\033Q";
@@ -272,7 +272,7 @@ necp6_print_page(gx_device_printer *pdev, FILE *prn_stream)
 }
 
 
-private int
+static int
 lq850_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
   char lq850_init_string [] = "\033@\033P\033l\000\r\033\053\001\033Q";

@@ -71,7 +71,7 @@
 /* ---------------- Utilities ---------------- */
 
 /* Test whether a font is a CharString font. */
-private bool
+static bool
 font_uses_charstrings(const gs_font *pfont)
 {
     return (pfont->FontType == ft_encrypted ||
@@ -80,7 +80,7 @@ font_uses_charstrings(const gs_font *pfont)
 }
 
 /* Initialize a Type 1 interpreter. */
-private int
+static int
 type1_exec_init(gs_type1_state *pcis, gs_text_enum_t *penum,
 		gs_state *pgs, gs_font_type1 *pfont1)
 {
@@ -145,36 +145,36 @@ gs_private_st_suffix_add1(st_gs_type1exec_state, gs_type1exec_state,
 			  i_ctx_p);
 
 /* Forward references */
-private int bbox_continue(i_ctx_t *);
-private int nobbox_continue(i_ctx_t *);
-private int type1_push_OtherSubr(i_ctx_t *, const gs_type1exec_state *,
+static int bbox_continue(i_ctx_t *);
+static int nobbox_continue(i_ctx_t *);
+static int type1_push_OtherSubr(i_ctx_t *, const gs_type1exec_state *,
 				 int (*)(i_ctx_t *), const ref *);
-private int type1_call_OtherSubr(i_ctx_t *, const gs_type1exec_state *,
+static int type1_call_OtherSubr(i_ctx_t *, const gs_type1exec_state *,
 				 int (*)(i_ctx_t *), const ref *);
-private int type1_callout_dispatch(i_ctx_t *, int (*)(i_ctx_t *), int);
-private int type1_continue_dispatch(i_ctx_t *, gs_type1exec_state *,
+static int type1_callout_dispatch(i_ctx_t *, int (*)(i_ctx_t *), int);
+static int type1_continue_dispatch(i_ctx_t *, gs_type1exec_state *,
 				    const ref *, ref *, int);
-private int op_type1_cleanup(i_ctx_t *);
-private void op_type1_free(i_ctx_t *);
-private int bbox_getsbw_continue(i_ctx_t *);
-private int type1exec_bbox(i_ctx_t *, gs_text_enum_t *, gs_type1exec_state *, gs_font *, op_proc_t *exec_cont);
-private int bbox_finish_fill(i_ctx_t *);
-private int bbox_finish_stroke(i_ctx_t *);
-private int bbox_fill(i_ctx_t *);
-private int bbox_stroke(i_ctx_t *);
-private int nobbox_finish(i_ctx_t *, gs_type1exec_state *);
-private int nobbox_draw(i_ctx_t *, int (*)(gs_state *));
-private int nobbox_fill(i_ctx_t *);
-private int nobbox_stroke(i_ctx_t *);
+static int op_type1_cleanup(i_ctx_t *);
+static void op_type1_free(i_ctx_t *);
+static int bbox_getsbw_continue(i_ctx_t *);
+static int type1exec_bbox(i_ctx_t *, gs_text_enum_t *, gs_type1exec_state *, gs_font *, op_proc_t *exec_cont);
+static int bbox_finish_fill(i_ctx_t *);
+static int bbox_finish_stroke(i_ctx_t *);
+static int bbox_fill(i_ctx_t *);
+static int bbox_stroke(i_ctx_t *);
+static int nobbox_finish(i_ctx_t *, gs_type1exec_state *);
+static int nobbox_draw(i_ctx_t *, int (*)(gs_state *));
+static int nobbox_fill(i_ctx_t *);
+static int nobbox_stroke(i_ctx_t *);
 
 /* <font> <code|name> <name> <charstring> .type1execchar - */
-private int
+static int
 ztype1execchar(i_ctx_t *i_ctx_p)
 {
     return charstring_execchar(i_ctx_p, (1 << (int)ft_encrypted) |
 			       (1 << (int)ft_disk_based));
 }
-private int
+static int
 charstring_execchar_aux(i_ctx_t *i_ctx_p, gs_text_enum_t *penum, gs_font *pfont)
 {
     os_ptr op = osp;
@@ -325,7 +325,7 @@ charstring_execchar(i_ctx_t *i_ctx_p, int font_type_mask)
 
 /* Do all the work for the case where we have a bounding box. */
 /* Returns exec_cont - a function, which must be called by caller after this function. */
-private int
+static int
 type1exec_bbox(i_ctx_t *i_ctx_p, gs_text_enum_t *penum, gs_type1exec_state * pcxs,
 	       gs_font * pfont, op_proc_t *exec_cont)
 {
@@ -384,7 +384,7 @@ type1exec_bbox(i_ctx_t *i_ctx_p, gs_text_enum_t *penum, gs_type1exec_state * pcx
 }
 
 /* Continue from an OtherSubr callout while getting metrics. */
-private int
+static int
 bbox_getsbw_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -424,8 +424,8 @@ bbox_getsbw_continue(i_ctx_t *i_ctx_p)
 
 /* <font> <code|name> <name> <charstring> <sbx> <sby> %bbox_{fill|stroke} - */
 /* <font> <code|name> <name> <charstring> %bbox_{fill|stroke} - */
-private int bbox_finish(i_ctx_t *i_ctx_p, op_proc_t cont, op_proc_t *exec_cont);
-private int
+static int bbox_finish(i_ctx_t *i_ctx_p, op_proc_t cont, op_proc_t *exec_cont);
+static int
 bbox_finish_fill(i_ctx_t *i_ctx_p)
 {
     op_proc_t exec_cont = 0;
@@ -436,7 +436,7 @@ bbox_finish_fill(i_ctx_t *i_ctx_p)
 	code = exec_cont(i_ctx_p);
     return code;
 }
-private int
+static int
 bbox_finish_stroke(i_ctx_t *i_ctx_p)
 {
     op_proc_t exec_cont = 0;
@@ -448,7 +448,7 @@ bbox_finish_stroke(i_ctx_t *i_ctx_p)
     return code;
 }
 
-private int
+static int
 bbox_finish(i_ctx_t *i_ctx_p, op_proc_t cont, op_proc_t *exec_cont)
 {   /* Returns exec_cont - a function, which must be called by caller after this function. */
     os_ptr op = osp;
@@ -517,7 +517,7 @@ bbox_finish(i_ctx_t *i_ctx_p, op_proc_t cont, op_proc_t *exec_cont)
     }
 }
 
-private int
+static int
 bbox_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -539,7 +539,7 @@ bbox_continue(i_ctx_t *i_ctx_p)
  * of type1execchar are still on the o-stack.
  * Returns exec_cont - a function, which must be called by caller after this function.
  */
-private int
+static int
 bbox_draw(i_ctx_t *i_ctx_p, int (*draw)(gs_state *), op_proc_t *exec_cont)
 {
     os_ptr op = osp;
@@ -608,7 +608,7 @@ bbox_draw(i_ctx_t *i_ctx_p, int (*draw)(gs_state *), op_proc_t *exec_cont)
     code = type1exec_bbox(i_ctx_p, penum, &cxs, pfont, exec_cont);
     return code;
 }
-private int
+static int
 bbox_fill(i_ctx_t *i_ctx_p)
 {
     op_proc_t exec_cont = 0;
@@ -620,7 +620,7 @@ bbox_fill(i_ctx_t *i_ctx_p)
 	code = (*exec_cont)(i_ctx_p);
     return code;
 }
-private int
+static int
 bbox_stroke(i_ctx_t *i_ctx_p)
 {
     op_proc_t exec_cont = 0;
@@ -636,7 +636,7 @@ bbox_stroke(i_ctx_t *i_ctx_p)
 
 /* Handle the results of interpreting the CharString. */
 /* pcref points to a t_string ref. */
-private int
+static int
 type1_continue_dispatch(i_ctx_t *i_ctx_p, gs_type1exec_state *pcxs,
 			const ref * pcref, ref *pos, int num_args)
 {
@@ -689,7 +689,7 @@ type1_continue_dispatch(i_ctx_t *i_ctx_p, gs_type1exec_state *pcxs,
  * Push a continuation, the arguments removed for the OtherSubr, and
  * the OtherSubr procedure.
  */
-private int
+static int
 type1_push_OtherSubr(i_ctx_t *i_ctx_p, const gs_type1exec_state *pcxs,
 		     int (*cont)(i_ctx_t *), const ref *pos)
 {
@@ -713,7 +713,7 @@ type1_push_OtherSubr(i_ctx_t *i_ctx_p, const gs_type1exec_state *pcxs,
  * Do a callout to an OtherSubr implemented in PostScript.
  * The caller must have done a check_estack(4 + num_args).
  */
-private int
+static int
 type1_call_OtherSubr(i_ctx_t *i_ctx_p, const gs_type1exec_state * pcxs,
 		     int (*cont) (i_ctx_t *),
 		     const ref * pos)
@@ -734,7 +734,7 @@ type1_call_OtherSubr(i_ctx_t *i_ctx_p, const gs_type1exec_state * pcxs,
 }
 
 /* Continue from an OtherSubr callout while building the path. */
-private int
+static int
 type1_callout_dispatch(i_ctx_t *i_ctx_p, int (*cont)(i_ctx_t *),
 		       int num_args)
 {
@@ -759,13 +759,13 @@ type1_callout_dispatch(i_ctx_t *i_ctx_p, int (*cont)(i_ctx_t *),
 }
 
 /* Clean up after a Type 1 callout. */
-private int
+static int
 op_type1_cleanup(i_ctx_t *i_ctx_p)
 {
     ifree_object(r_ptr(esp + 2, void), "op_type1_cleanup");
     return 0;
 }
-private void
+static void
 op_type1_free(i_ctx_t *i_ctx_p)
 {
     ifree_object(r_ptr(esp, void), "op_type1_free");
@@ -781,7 +781,7 @@ op_type1_free(i_ctx_t *i_ctx_p)
 
 /* -------- no-bbox case -------- */
 
-private int
+static int
 nobbox_continue(i_ctx_t *i_ctx_p)
 {
     int code = type1_callout_dispatch(i_ctx_p, nobbox_continue, 4);
@@ -802,7 +802,7 @@ nobbox_continue(i_ctx_t *i_ctx_p)
 /* Finish the no-FontBBox case after constructing the path. */
 /* If we are oversampling for anti-aliasing, we have to go around again. */
 /* <font> <code|name> <name> <charstring> %nobbox_continue - */
-private int
+static int
 nobbox_finish(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs)
 {
     os_ptr op = osp;
@@ -857,7 +857,7 @@ nobbox_finish(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs)
     }
 }
 /* Finish by popping the operands and filling or stroking. */
-private int
+static int
 nobbox_draw(i_ctx_t *i_ctx_p, int (*draw)(gs_state *))
 {
     int code = draw(igs);
@@ -866,13 +866,13 @@ nobbox_draw(i_ctx_t *i_ctx_p, int (*draw)(gs_state *))
 	pop(4);
     return code;
 }
-private int
+static int
 nobbox_fill(i_ctx_t *i_ctx_p)
 {
     /* See above re GS_CHAR_FILL. */
     return nobbox_draw(i_ctx_p, GS_CHAR_FILL);
 }
-private int
+static int
 nobbox_stroke(i_ctx_t *i_ctx_p)
 {
     /* As a compatibility to Adobe, use the exact "StrokeWidth".
@@ -887,7 +887,7 @@ nobbox_stroke(i_ctx_t *i_ctx_p)
 }
 
 /* <font> <array> .setweightvector - */
-private int
+static int
 zsetweightvector(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -933,7 +933,7 @@ const op_def zchar1_op_defs[] =
 
 /* ------ Auxiliary procedures for type 1 fonts ------ */
 
-private int
+static int
 z1_glyph_data(gs_font_type1 * pfont, gs_glyph glyph, gs_glyph_data_t *pgd)
 {
     ref gref;
@@ -942,7 +942,7 @@ z1_glyph_data(gs_font_type1 * pfont, gs_glyph glyph, gs_glyph_data_t *pgd)
     return zchar_charstring_data((gs_font *)pfont, &gref, pgd);
 }
 
-private int
+static int
 z1_subr_data(gs_font_type1 * pfont, int index, bool global,
 	     gs_glyph_data_t *pgd)
 {
@@ -961,7 +961,7 @@ z1_subr_data(gs_font_type1 * pfont, int index, bool global,
     return 0;
 }
 
-private int
+static int
 z1_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph,
 	     gs_const_string *gstr, gs_glyph_data_t *pgd)
 {
@@ -983,7 +983,7 @@ z1_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph,
     return code;
 }
 
-private int
+static int
 z1_push(void *callback_data, const fixed * pf, int count)
 {
     gs_type1exec_state *pcxs = callback_data;
@@ -999,7 +999,7 @@ z1_push(void *callback_data, const fixed * pf, int count)
     return 0;
 }
 
-private int
+static int
 z1_pop(void *callback_data, fixed * pf)
 {
     gs_type1exec_state *pcxs = callback_data;

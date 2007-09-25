@@ -23,7 +23,7 @@
  *  TEMPLATE_spot_into_scanlines - the name of the procedure to generate.
 */
 
-private int
+static int
 TEMPLATE_spot_into_scanlines (line_list *ll, fixed band_mask)
 {
     const fill_options fo = *ll->fo;

@@ -38,7 +38,7 @@
 private_st_jbig2decode_state();	/* creates a gc object for our state, defined in sjbig2.h */
 
 /* error callback for jbig2 decoder */
-private int
+static int
 s_jbig2decode_error(void *error_callback_data, const char *msg, Jbig2Severity severity,
 	       int32_t seg_idx)
 {
@@ -78,7 +78,7 @@ s_jbig2decode_error(void *error_callback_data, const char *msg, Jbig2Severity se
 /* invert the bits in a buffer */
 /* jbig2 and postscript have different senses of what pixel
    value is black, so we must invert the image */
-private void
+static void
 s_jbig2decode_invert_buffer(unsigned char *buf, int length)
 {
     int i;
@@ -89,7 +89,7 @@ s_jbig2decode_invert_buffer(unsigned char *buf, int length)
 
 /* parse a globals stream packed into a gs_bytestring for us by the postscript
    layer and stuff the resulting context into a pointer for use in later decoding */
-public int
+int
 s_jbig2decode_make_global_data(byte *data, uint length, void **result)
 {
     Jbig2Ctx *ctx = NULL;
@@ -122,7 +122,7 @@ s_jbig2decode_make_global_data(byte *data, uint length, void **result)
 }
 
 /* release a global ctx pointer */
-public void
+void
 s_jbig2decode_free_global_data(void *data)
 {
     Jbig2GlobalCtx *global_ctx = (Jbig2GlobalCtx*)data;
@@ -131,7 +131,7 @@ s_jbig2decode_free_global_data(void *data)
 }
 
 /* store a global ctx pointer in our state structure */
-public int
+int
 s_jbig2decode_set_global_data(stream_state *ss, void *data)
 {
     stream_jbig2decode_state *state = (stream_jbig2decode_state*)ss;
@@ -143,7 +143,7 @@ s_jbig2decode_set_global_data(stream_state *ss, void *data)
    this involves allocating the context structures, and
    initializing the global context from the /JBIG2Globals object reference
  */
-private int
+static int
 s_jbig2decode_init(stream_state * ss)
 {
     stream_jbig2decode_state *const state = (stream_jbig2decode_state *) ss;
@@ -160,7 +160,7 @@ s_jbig2decode_init(stream_state * ss)
 /* process a section of the input and return any decoded data.
    see strimpl.h for return codes.
  */
-private int
+static int
 s_jbig2decode_process(stream_state * ss, stream_cursor_read * pr,
 		  stream_cursor_write * pw, bool last)
 {
@@ -212,7 +212,7 @@ s_jbig2decode_process(stream_state * ss, stream_cursor_read * pr,
 /* stream release.
    free all our decoder state.
  */
-private void
+static void
 s_jbig2decode_release(stream_state *ss)
 {
     stream_jbig2decode_state *const state = (stream_jbig2decode_state *) ss;
@@ -229,7 +229,7 @@ s_jbig2decode_release(stream_state *ss)
    pointers. we use it similarly just to NULL all the pointers.
    (could just be done in _init?)
  */
-private void
+static void
 s_jbig2decode_set_defaults(stream_state *ss)
 {
     stream_jbig2decode_state *const state = (stream_jbig2decode_state *) ss;

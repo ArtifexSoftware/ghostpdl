@@ -57,7 +57,7 @@ dev_proc_copy_mono(herc_copy_mono);
 dev_proc_copy_color(herc_copy_color);
 
 /* The device descriptor */
-private gx_device_procs herc_procs = {
+static gx_device_procs herc_procs = {
 	herc_open,
 	gx_default_get_initial_matrix,
 	gx_default_sync_output,
@@ -84,11 +84,11 @@ gx_device far_data gs_herc_device = {
 
 
 /* Forward declarations */
-private int herc_get_mode(void);
-private void herc_set_mode(int);
+static int herc_get_mode(void);
+static void herc_set_mode(int);
 
 /* Save the HERC mode */
-private int herc_save_mode = -1;
+static int herc_save_mode = -1;
 
 /* Reinitialize the herc for text mode */
 int
@@ -100,7 +100,7 @@ herc_close(gx_device *dev)
 /* ------ Internal routines ------ */
 
 /* Read the device mode */
-private int
+static int
 herc_get_mode(void)
 {	registers regs;
 	regs.h.ah = 0xf;
@@ -109,7 +109,7 @@ herc_get_mode(void)
 }
 
 /* Set the device mode */
-private void
+static void
 herc_set_mode(int mode)
 {	registers regs;
 	regs.h.ah = 0;

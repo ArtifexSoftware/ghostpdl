@@ -31,10 +31,10 @@
 
 /* Define whether we validate memory before/after save/restore. */
 /* Note that we only actually do this if DEBUG is set and -Z? is selected. */
-private const bool I_VALIDATE_BEFORE_SAVE = true;
-private const bool I_VALIDATE_AFTER_SAVE = true;
-private const bool I_VALIDATE_BEFORE_RESTORE = true;
-private const bool I_VALIDATE_AFTER_RESTORE = true;
+static const bool I_VALIDATE_BEFORE_SAVE = true;
+static const bool I_VALIDATE_AFTER_SAVE = true;
+static const bool I_VALIDATE_BEFORE_RESTORE = true;
+static const bool I_VALIDATE_AFTER_RESTORE = true;
 
 /* 'Save' structure */
 typedef struct vm_save_s vm_save_t;
@@ -46,7 +46,7 @@ gs_private_st_ptrs1(st_vm_save, vm_save_t, "savetype",
 		    vm_save_enum_ptrs, vm_save_reloc_ptrs, gsave);
 
 /* Clean up the stacks and validate storage. */
-private void
+static void
 ivalidate_clean_spaces(i_ctx_t *i_ctx_p)
 {
     if (gs_debug_c('?')) {
@@ -99,9 +99,9 @@ zsave(i_ctx_t *i_ctx_p)
 }
 
 /* <save> restore - */
-private int restore_check_operand(os_ptr, alloc_save_t **, gs_dual_memory_t *);
-private int restore_check_stack(const i_ctx_t *i_ctx_p, const ref_stack_t *, const alloc_save_t *, bool);
-private void restore_fix_stack(ref_stack_t *, const alloc_save_t *, bool);
+static int restore_check_operand(os_ptr, alloc_save_t **, gs_dual_memory_t *);
+static int restore_check_stack(const i_ctx_t *i_ctx_p, const ref_stack_t *, const alloc_save_t *, bool);
+static void restore_fix_stack(ref_stack_t *, const alloc_save_t *, bool);
 int
 zrestore(i_ctx_t *i_ctx_p)
 {
@@ -177,7 +177,7 @@ zrestore(i_ctx_t *i_ctx_p)
     return 0;
 }
 /* Check the operand of a restore. */
-private int
+static int
 restore_check_operand(os_ptr op, alloc_save_t ** pasave,
 		      gs_dual_memory_t *idmem)
 {
@@ -197,7 +197,7 @@ restore_check_operand(os_ptr op, alloc_save_t ** pasave,
     return 0;
 }
 /* Check a stack to make sure all its elements are older than a save. */
-private int
+static int
 restore_check_stack(const i_ctx_t *i_ctx_p, const ref_stack_t * pstack,
 		    const alloc_save_t * asave, bool is_estack)
 {
@@ -305,7 +305,7 @@ restore_check_stack(const i_ctx_t *i_ctx_p, const ref_stack_t * pstack,
  *
  * Note that this procedure is only called if restore_check_stack succeeded.
  */
-private void
+static void
 restore_fix_stack(ref_stack_t * pstack, const alloc_save_t * asave,
 		  bool is_estack)
 {
@@ -352,7 +352,7 @@ restore_fix_stack(ref_stack_t * pstack, const alloc_save_t * asave,
 }
 
 /* - vmstatus <save_level> <vm_used> <vm_maximum> */
-private int
+static int
 zvmstatus(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -377,7 +377,7 @@ zvmstatus(i_ctx_t *i_ctx_p)
 /* ------ Non-standard extensions ------ */
 
 /* <save> .forgetsave - */
-private int
+static int
 zforgetsave(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

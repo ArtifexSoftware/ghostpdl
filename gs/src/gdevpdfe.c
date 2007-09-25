@@ -28,7 +28,7 @@
 #include "ConvertUTF.h"
 
 
-private void 
+static void 
 copy_bytes(stream *s, const byte **data, int *data_length, int n)
 {
     while (n-- && (*data_length)--) {
@@ -37,7 +37,7 @@ copy_bytes(stream *s, const byte **data, int *data_length, int n)
 }
 
 /* Write XML data */
-private void
+static void
 pdf_xml_data_write(stream *s, const byte *data, int data_length)
 {
     int l = data_length;
@@ -77,14 +77,14 @@ pdf_xml_data_write(stream *s, const byte *data, int data_length)
 }
 
 /* Write XML string */
-private inline void
+static inline void
 pdf_xml_string_write(stream *s, const char *data)
 {
     pdf_xml_data_write(s, (const byte *)data, strlen(data));
 }
 
 /* Begin an opening XML tag */
-private inline void
+static inline void
 pdf_xml_tag_open_beg(stream *s, const char *data)
 {
     stream_putc(s, '<');
@@ -92,21 +92,21 @@ pdf_xml_tag_open_beg(stream *s, const char *data)
 }
 
 /* End an XML tag */
-private inline void
+static inline void
 pdf_xml_tag_end(stream *s)
 {
     stream_putc(s, '>');
 }
 
 /* End an empty XML tag */
-private inline void
+static inline void
 pdf_xml_tag_end_empty(stream *s)
 {
     stream_puts(s, "/>");
 }
 
 /* Write an opening XML tag */
-private inline void
+static inline void
 pdf_xml_tag_open(stream *s, const char *data)
 {
     stream_putc(s, '<');
@@ -115,7 +115,7 @@ pdf_xml_tag_open(stream *s, const char *data)
 }
 
 /* Write a closing XML tag */
-private inline void
+static inline void
 pdf_xml_tag_close(stream *s, const char *data)
 {
     stream_puts(s, "</");
@@ -124,7 +124,7 @@ pdf_xml_tag_close(stream *s, const char *data)
 }
 
 /* Write an attribute name */
-private inline void
+static inline void
 pdf_xml_attribute_name(stream *s, const char *data)
 {
     stream_putc(s, ' ');
@@ -133,7 +133,7 @@ pdf_xml_attribute_name(stream *s, const char *data)
 }
 
 /* Write a attribute value */
-private inline void
+static inline void
 pdf_xml_attribute_value(stream *s, const char *data)
 {
     stream_putc(s, '\'');
@@ -141,7 +141,7 @@ pdf_xml_attribute_value(stream *s, const char *data)
     stream_putc(s, '\'');
 }
 /* Write a attribute value */
-private inline void
+static inline void
 pdf_xml_attribute_value_data(stream *s, const byte *data, int data_length)
 {
     stream_putc(s, '\'');
@@ -150,7 +150,7 @@ pdf_xml_attribute_value_data(stream *s, const byte *data, int data_length)
 }
 
 /* Begin an  XML instruction */
-private inline void
+static inline void
 pdf_xml_ins_beg(stream *s, const char *data)
 {
     stream_puts(s, "<?");
@@ -158,21 +158,21 @@ pdf_xml_ins_beg(stream *s, const char *data)
 }
 
 /* End an XML instruction */
-private inline void
+static inline void
 pdf_xml_ins_end(stream *s)
 {
     stream_puts(s, "?>");
 }
 
 /* Write a newline character */
-private inline void
+static inline void
 pdf_xml_newline(stream *s)
 {
     stream_puts(s, "\n");
 }
 
 /* Copy to XML output */
-private inline void
+static inline void
 pdf_xml_copy(stream *s, const char *data)
 {
     stream_puts(s, data);
@@ -181,7 +181,7 @@ pdf_xml_copy(stream *s, const char *data)
 
 /* --------------------------------------------  */
 
-private int
+static int
 pdf_xmp_time(char *buf, int buf_length)
 {
     /* We don't write a day time because we don't have a time zone. */
@@ -198,7 +198,7 @@ pdf_xmp_time(char *buf, int buf_length)
     return strlen(buf);
 }
 
-private int
+static int
 pdf_xmp_convert_time(char *dt, int dtl, char *buf, int bufl)
 {   /* The 'dt' buffer is of same size as 'buf'. */
     /* Input  sample : D:199812231952?08'00' */
@@ -255,7 +255,7 @@ pdf_xmp_convert_time(char *dt, int dtl, char *buf, int bufl)
     return 25;
 }
 	
-private int
+static int
 pdf_get_docinfo_item(gx_device_pdf *pdev, const char *key, char *buf, int buf_length)
 {
     const cos_value_t *v = cos_dict_find(pdev->Info, (const byte *)key, strlen(key));
@@ -281,7 +281,7 @@ pdf_get_docinfo_item(gx_device_pdf *pdev, const char *key, char *buf, int buf_le
     return l;
 }
 
-private inline byte
+static inline byte
 decode_escape(const byte *data, int data_length, int *index)
 {
     byte c;
@@ -315,7 +315,7 @@ decode_escape(const byte *data, int data_length, int *index)
     return c; /* A wrong escapement sequence. */
 }
 
-private int
+static int
 pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int data_length,
 			 void(*write)(stream *s, const byte *data, int data_length))
 {
@@ -369,7 +369,7 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
     }
 }
 
-private int
+static int
 pdf_xmp_write_docinfo_item(gx_device_pdf *pdev, stream *s, const char *key, const char *default_value,
 			   void(*write)(stream *s, const byte *data, int data_length))
 {
@@ -389,7 +389,7 @@ pdf_xmp_write_docinfo_item(gx_device_pdf *pdev, stream *s, const char *key, cons
     }
 }
 
-private uint64_t
+static uint64_t
 pdf_uuid_time(gx_device_pdf *pdev)
 {   
     long *dt = pdev->uuid_time; /* In seconds since Jan. 1, 1980 and fraction in nanoseconds. */
@@ -403,7 +403,7 @@ pdf_uuid_time(gx_device_pdf *pdev)
     return t;
 }
 
-private void writehex(char **p, ulong v, int l)
+static void writehex(char **p, ulong v, int l)
 {
     int i = l * 2;
     static const char digit[] = "0123456789abcdef";
@@ -412,7 +412,7 @@ private void writehex(char **p, ulong v, int l)
 	*((*p)++) = digit[v >> (i * 4) & 15];
 }
 
-private void
+static void
 pdf_make_uuid(const byte node[6], uint64_t uuid_time, ulong time_seq, char *buf, int buf_length)
 {   
     char b[40], *p = b;
@@ -439,7 +439,7 @@ pdf_make_uuid(const byte node[6], uint64_t uuid_time, ulong time_seq, char *buf,
     strncpy(buf, b, buf_length);
 }
 
-private int
+static int
 pdf_make_instance_uuid(gx_device_pdf *pdev, const byte digest[6], char *buf, int buf_length)
 {
     if (pdev->InstanceUUID.size) {
@@ -452,7 +452,7 @@ pdf_make_instance_uuid(gx_device_pdf *pdev, const byte digest[6], char *buf, int
     return 0;
 }
 
-private int
+static int
 pdf_make_document_uuid(gx_device_pdf *pdev, const byte digest[6], char *buf, int buf_length)
 {
     if (pdev->DocumentUUID.size) {
@@ -470,7 +470,7 @@ static const char dd[]={'\'', '\357', '\273', '\277', '\'', 0};
 /* --------------------------------------------  */
 
 /* Write Document metadata */
-private int
+static int
 pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
 {
     char instance_uuid[40], document_uuid[40], cre_date_time[40], mod_date_time[40], date_time_buf[40];
@@ -676,7 +676,7 @@ pdf_document_metadata(gx_device_pdf *pdev)
 /* --------------------------------------------  */
 
 /* Write Font metadata */
-private int
+static int
 pdf_write_font_metadata(gx_device_pdf *pdev, const pdf_base_font_t *pbfont, 
 			const byte *digest, int digest_length)
 {

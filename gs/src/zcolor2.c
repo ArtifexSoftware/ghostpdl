@@ -31,7 +31,7 @@
  * color space and makes use of that color space (e.g.: a Separation
  * color space for a component not supported by the process color model.
  */
-private int
+static int
 zusealternate(i_ctx_t * i_ctx_p)
 {
     os_ptr                  op = osp;

@@ -35,13 +35,13 @@
 
 /* The color map for dynamically assignable colors. */
 #define first_dc_index 64
-private int next_dc_index;
+static int next_dc_index;
 
 #define dc_hash_size 293	/* prime, >num_dc */
 typedef struct {
     ushort rgb, index;
 } dc_entry;
-private dc_entry dynamic_colors[dc_hash_size + 1];
+static dc_entry dynamic_colors[dc_hash_size + 1];
 
 #define XDPI   60		/* to get a more-or-less square aspect ratio */
 #define YDPI   60
@@ -62,17 +62,17 @@ typedef struct gx_device_lvga256 {
 
 #define lvga256dev ((gx_device_lvga256 *)dev)
 
-private dev_proc_open_device(lvga256_open);
-private dev_proc_close_device(lvga256_close);
-private dev_proc_map_rgb_color(lvga256_map_rgb_color);
-private dev_proc_map_color_rgb(lvga256_map_color_rgb);
-private dev_proc_fill_rectangle(lvga256_fill_rectangle);
-private dev_proc_tile_rectangle(lvga256_tile_rectangle);
-private dev_proc_copy_mono(lvga256_copy_mono);
-private dev_proc_copy_color(lvga256_copy_color);
-private dev_proc_draw_line(lvga256_draw_line);
+static dev_proc_open_device(lvga256_open);
+static dev_proc_close_device(lvga256_close);
+static dev_proc_map_rgb_color(lvga256_map_rgb_color);
+static dev_proc_map_color_rgb(lvga256_map_color_rgb);
+static dev_proc_fill_rectangle(lvga256_fill_rectangle);
+static dev_proc_tile_rectangle(lvga256_tile_rectangle);
+static dev_proc_copy_mono(lvga256_copy_mono);
+static dev_proc_copy_color(lvga256_copy_color);
+static dev_proc_draw_line(lvga256_draw_line);
 
-private gx_device_procs lvga256_procs =
+static gx_device_procs lvga256_procs =
 {
     lvga256_open,
     NULL,			/* get_initial_matrix */

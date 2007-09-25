@@ -22,7 +22,7 @@
 
 /* ---------------- Utilities ---------------- */
 
-private void
+static void
 gs_x_free(gs_memory_t *mem, void *obj, client_name_t cname)
 {
     gs_free(mem, obj, 0 /*ignored*/, 0 /*ignored*/, cname);
@@ -34,7 +34,7 @@ gs_x_free(gs_memory_t *mem, void *obj, client_name_t cname)
 
 /* Install a standard color map in the device. */
 /* Sets std_cmap.* except for free_map. */
-private bool
+static bool
 set_cmap_values(x11_cmap_values_t *values, int maxv, int mult)
 {
     int i;
@@ -51,7 +51,7 @@ set_cmap_values(x11_cmap_values_t *values, int maxv, int mult)
     values->pixel_shift = i;
     return true;
 }
-private void
+static void
 set_std_cmap(gx_device_X *xdev, XStandardColormap *map)
 {
     xdev->cman.std_cmap.map = map;
@@ -63,7 +63,7 @@ set_std_cmap(gx_device_X *xdev, XStandardColormap *map)
 
 /* Get the Standard colormap if available. */
 /* Uses: dpy, scr, cmap. */
-private XStandardColormap *
+static XStandardColormap *
 x_get_std_cmap(gx_device_X * xdev, Atom prop)
 {
     int i;
@@ -82,7 +82,7 @@ x_get_std_cmap(gx_device_X * xdev, Atom prop)
 /* Create a Standard colormap for a TrueColor or StaticGray display. */
 /* Return true if the allocation was successful. */
 /* Uses: vinfo.  Sets: std_cmap.*. */
-private bool
+static bool
 alloc_std_cmap(gx_device_X *xdev, bool colored)
 {
     XStandardColormap *cmap = XAllocStandardColormap();
@@ -128,7 +128,7 @@ alloc_std_cmap(gx_device_X *xdev, bool colored)
 
 /* Allocate the dynamic color table, if needed and possible. */
 /* Uses: vinfo, cman.num_rgb.  Sets: cman.dynamic.*. */
-private void
+static void
 alloc_dynamic_colors(gx_device_X * xdev, int num_colors)
 {
     if (num_colors > 0) {
@@ -150,7 +150,7 @@ alloc_dynamic_colors(gx_device_X * xdev, int num_colors)
 
 /* Allocate an X color, updating the reverse map. */
 /* Return true if the allocation was successful. */
-private bool
+static bool
 x_alloc_color(gx_device_X *xdev, XColor *xcolor)
 {
     x11_rgb_t rgb;
@@ -170,7 +170,7 @@ x_alloc_color(gx_device_X *xdev, XColor *xcolor)
 }
 
 /* Free X colors, updating the reverse map. */
-private void
+static void
 x_free_colors(gx_device_X *xdev, x_pixel *pixels /*[count]*/, int count)
 {
     int i;
@@ -184,7 +184,7 @@ x_free_colors(gx_device_X *xdev, x_pixel *pixels /*[count]*/, int count)
 
 /* Free a partially filled color cube or ramp. */
 /* Uses: dpy, cmap.  Uses and sets: cman.dither_ramp. */
-private void
+static void
 free_ramp(gx_device_X * xdev, int num_used, int size)
 {
     if (num_used - 1 > 0)
@@ -197,7 +197,7 @@ free_ramp(gx_device_X * xdev, int num_used, int size)
 /* Return true if the operation succeeded. */
 /* Uses: dpy, cmap, foreground, background, cman.color_mask. */
 /* Sets: cman.dither_ramp. */
-private bool
+static bool
 setup_cube(gx_device_X * xdev, int ramp_size, bool colors)
 {
     int step, num_entries;
@@ -519,36 +519,36 @@ gdev_x_free_colors(gx_device_X *xdev)
 /* integer multiply and divide are slow on all platforms. */
 #define CV_FRACTION(n, d) ((X_color_value)(X_max_color_value * (n) / (d)))
 #define ND(n, d) CV_FRACTION(n, d)
-private const X_color_value cv_tab1[] = {
+static const X_color_value cv_tab1[] = {
     ND(0,1), ND(1,1)
 };
-private const X_color_value cv_tab2[] = {
+static const X_color_value cv_tab2[] = {
     ND(0,2), ND(1,2), ND(2,2)
 };
-private const X_color_value cv_tab3[] = {
+static const X_color_value cv_tab3[] = {
     ND(0,3), ND(1,3), ND(2,3), ND(3,3)
 };
-private const X_color_value cv_tab4[] = {
+static const X_color_value cv_tab4[] = {
     ND(0,4), ND(1,4), ND(2,4), ND(3,4), ND(4,4)
 };
-private const X_color_value cv_tab5[] = {
+static const X_color_value cv_tab5[] = {
     ND(0,5), ND(1,5), ND(2,5), ND(3,5), ND(4,5), ND(5,5)
 };
-private const X_color_value cv_tab6[] = {
+static const X_color_value cv_tab6[] = {
     ND(0,6), ND(1,6), ND(2,6), ND(3,6), ND(4,6), ND(5,6), ND(6,6)
 };
-private const X_color_value cv_tab7[] = {
+static const X_color_value cv_tab7[] = {
     ND(0,7), ND(1,7), ND(2,7), ND(3,7), ND(4,7), ND(5,7), ND(6,7), ND(7,7)
 };
 #undef ND
-private const X_color_value *const cv_tables[] =
+static const X_color_value *const cv_tables[] =
 {
     0, cv_tab1, cv_tab2, cv_tab3, cv_tab4, cv_tab5, cv_tab6, cv_tab7
 };
 
 /* Some C compilers don't declare the abs function in math.h. */
 /* Provide one of our own. */
-private inline int
+static inline int
 iabs(int x)
 {
     return (x < 0 ? -x : x);

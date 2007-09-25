@@ -27,7 +27,7 @@ typedef struct gx_device_jpx_s {
 } gx_device_jpx;
 
 /* The device descriptor */
-private dev_proc_print_page(jpx_print_page);
+static dev_proc_print_page(jpx_print_page);
 
 /* ------ The device descriptors ------ */
 
@@ -39,10 +39,10 @@ private dev_proc_print_page(jpx_print_page);
 #  define Y_DPI 72
 #endif
 
-private dev_proc_print_page(jpx_print_page);
+static dev_proc_print_page(jpx_print_page);
 
 /* 24 bit RGB default */
-private const gx_device_procs jpxrgb_procs =
+static const gx_device_procs jpxrgb_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		       gx_default_rgb_map_rgb_color,
 		       gx_default_rgb_map_color_rgb);
@@ -56,7 +56,7 @@ const gx_device_printer gs_jpxrgb_device = {
 };
 
 /* 8 bit Grayscale */
-private const gx_device_procs jpxgray_procs =
+static const gx_device_procs jpxgray_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		       gx_default_gray_map_rgb_color,
 		       gx_default_gray_map_color_rgb);
@@ -70,9 +70,9 @@ const gx_device_printer gs_jpxgray_device = {
 };
 
 /* 32 bit CMKY */
-private dev_proc_map_color_rgb(jpx_cmyk_map_color_rgb);
-private dev_proc_map_cmyk_color(jpx_cmyk_map_cmyk_color);
-private const gx_device_procs jpxcmyk_procs = 
+static dev_proc_map_color_rgb(jpx_cmyk_map_color_rgb);
+static dev_proc_map_cmyk_color(jpx_cmyk_map_cmyk_color);
+static const gx_device_procs jpxcmyk_procs = 
 {       gdev_prn_open,
         gx_default_get_initial_matrix,
         NULL,   /* sync_output */
@@ -105,7 +105,7 @@ const gx_device_printer gs_jpxcmyk_device = {
 
 /* private color conversion routines; 
    we don't seem to have defaults for cmyk. */
-private int
+static int
 jpx_cmyk_map_color_rgb(gx_device * dev, gx_color_index color,
                         gx_color_value prgb[3])
 {
@@ -120,7 +120,7 @@ jpx_cmyk_map_color_rgb(gx_device * dev, gx_color_index color,
     return 0;
 }
 
-private gx_color_index
+static gx_color_index
 jpx_cmyk_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
 {
     gx_color_index color = ~(
@@ -134,7 +134,7 @@ jpx_cmyk_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
 
 
 /* Send the page to the file. */
-private int
+static int
 jpx_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     gx_device_jpx *jdev = (gx_device_jpx *) pdev;

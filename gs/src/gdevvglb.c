@@ -54,17 +54,17 @@ typedef struct gx_device_vgalib {
 #define YSIZE 11.69
 #endif
 
-private dev_proc_open_device(vgalib_open);
-private dev_proc_close_device(vgalib_close);
-private dev_proc_map_rgb_color(vgalib_map_rgb_color);
-private dev_proc_map_color_rgb(vgalib_map_color_rgb);
-private dev_proc_fill_rectangle(vgalib_fill_rectangle);
-private dev_proc_tile_rectangle(vgalib_tile_rectangle);
-private dev_proc_copy_mono(vgalib_copy_mono);
-private dev_proc_copy_color(vgalib_copy_color);
-private dev_proc_get_bits(vgalib_get_bits);
-private dev_proc_get_params(vgalib_get_params);
-private dev_proc_put_params(vgalib_put_params);
+static dev_proc_open_device(vgalib_open);
+static dev_proc_close_device(vgalib_close);
+static dev_proc_map_rgb_color(vgalib_map_rgb_color);
+static dev_proc_map_color_rgb(vgalib_map_color_rgb);
+static dev_proc_fill_rectangle(vgalib_fill_rectangle);
+static dev_proc_tile_rectangle(vgalib_tile_rectangle);
+static dev_proc_copy_mono(vgalib_copy_mono);
+static dev_proc_copy_color(vgalib_copy_color);
+static dev_proc_get_bits(vgalib_get_bits);
+static dev_proc_get_params(vgalib_get_params);
+static dev_proc_put_params(vgalib_put_params);
 
 const gx_device_vgalib gs_vgalib_device =
 {
@@ -94,7 +94,7 @@ const gx_device_vgalib gs_vgalib_device =
     -1				/* display_mode */
 };
 
-private int
+static int
 vgalib_open(gx_device * dev)
 {
     int VGAMODE = vga_dev->display_mode;
@@ -141,28 +141,28 @@ vgalib_open(gx_device * dev)
     return 0;
 }
 
-private int
+static int
 vgalib_close(gx_device * dev)
 {
     vga_setmode(TEXT);
     return 0;
 }
 
-private gx_color_index
+static gx_color_index
 vgalib_map_rgb_color(gx_device * dev, gx_color_value red,
 		     gx_color_value green, gx_color_value blue)
 {
     return pc_4bit_map_rgb_color(dev, red, green, blue);
 }
 
-private int
+static int
 vgalib_map_color_rgb(gx_device * dev, gx_color_index index,
 		     unsigned short rgb[3])
 {
     return pc_4bit_map_color_rgb(dev, index, rgb);
 }
 
-private int
+static int
 vgalib_tile_rectangle(gx_device * dev, const gx_tile_bitmap * tile,
 		      int x, int y, int w, int h, gx_color_index czero,
 		      gx_color_index cone, int px, int py)
@@ -175,7 +175,7 @@ vgalib_tile_rectangle(gx_device * dev, const gx_tile_bitmap * tile,
 				     py);
 }
 
-private int
+static int
 vgalib_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 		      gx_color_index color)
 {
@@ -198,7 +198,7 @@ vgalib_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     return 0;
 }
 
-private int
+static int
 vgalib_copy_mono(gx_device * dev, const byte * base, int sourcex,
 		 int raster, gx_bitmap_id id, int x, int y, int width,
 		 int height, gx_color_index zero, gx_color_index one)
@@ -250,7 +250,7 @@ vgalib_copy_mono(gx_device * dev, const byte * base, int sourcex,
 
 /* Copy a color pixel map.  This is just like a bitmap, except that */
 /* each pixel takes 4 bits instead of 1 when device driver has color. */
-private int
+static int
 vgalib_copy_color(gx_device * dev, const byte * base, int sourcex,
 		  int raster, gx_bitmap_id id, int x, int y,
 		  int width, int height)
@@ -304,7 +304,7 @@ vgalib_copy_color(gx_device * dev, const byte * base, int sourcex,
 }
 
 /* Read bits back from the device. */
-private int
+static int
 vgalib_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
 {
     int x;
@@ -329,7 +329,7 @@ vgalib_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
 }
 
 /* Get/put the display mode parameter. */
-private int
+static int
 vgalib_get_params(gx_device * dev, gs_param_list * plist)
 {
     int code = gx_default_get_params(dev, plist);
@@ -338,7 +338,7 @@ vgalib_get_params(gx_device * dev, gs_param_list * plist)
 	return code;
     return param_write_int(plist, "DisplayMode", &vga_dev->display_mode);
 }
-private int
+static int
 vgalib_put_params(gx_device * dev, gs_param_list * plist)
 {
     int ecode = 0;

@@ -262,12 +262,7 @@ allow this.  Every global constant should have exactly one definition, in a
 <b><tt>.c</tt></b> file, and preferably just one <b><tt>extern</tt></b>
 declaration, in a header file.
 
-<li>Use <b><tt>private</tt></b> instead of <b><tt>static</tt></b> for
-procedures and variables declared at the outermost scope of a file.  This
-allows making such constructs either visible or invisible to profilers by
-changing a single <b><tt>#define</tt></b>.
-
-<li><b><tt>static</tt></b> or <b><tt>private</tt></b> variables must be
+<li><b><tt>static</tt></b> or variables must be
 <b><tt>const</tt></b> and initialized: non-<b><tt>const</tt></b> statically
 allocated variables are incompatible with reentrancy, and we're in the
 process of eliminating all of them.
@@ -278,11 +273,11 @@ as in <a href="../src/iconf.c">iconf.c</a>).  There are too many such
 <b><tt>extern</tt></b>s in the code now: we are eliminating them over time.
 
 <li>Do not declare the same name as both <b><tt>static</tt></b>
-(<b><tt>private</tt></b>) and non-<b><tt>static</tt></b> within the same
+and non-<b><tt>static</tt></b> within the same
 compilation.  (Some compilers complain, some do not.)  This is especially a
 problem for procedures: it is easy to declare a procedure as
-<b><tt>private</tt></b> near the beginning of a file and accidentally not
-declare it <b><tt>private</tt></b> where it is defined later in the file.
+<b><tt>static</tt></b> near the beginning of a file and accidentally not
+declare it <b><tt>static</tt></b> where it is defined later in the file.
 
 <li>Even though the ANSI standard allows initialized external declarations
 (<b><tt>extern&nbsp;int&nbsp;x&nbsp;=&nbsp;0</tt></b>), don't use them.
@@ -487,7 +482,7 @@ Restrictions:
 
 <li>Provide a prototype for every procedure, and make sure the prototype is
 available at every call site.  If the procedure is local to a file
-(<b><tt>private</tt></b>), the prototype should precede the procedure, in
+(<b><tt>static</tt></b>), the prototype should precede the procedure, in
 the same file; if the procedure is global, the prototype should be in a
 header file.
 
@@ -556,6 +551,12 @@ list.  Instead, use <b><tt>gs_stdin</tt></b> et al.
 
 <dl>
 
+<dt><b><tt>static</tt></b>
+
+<dd>Ghostscript assumes the compiler supports the <b><tt>static</tt></b> 
+keyword for declaring variables and procedures as local to a particular
+source file.
+
 <dt><b><tt>inline</tt></b>
 
 <dd><b><tt>inline</tt></b> is available even if the compiler does not
@@ -574,19 +575,6 @@ produce multiple closed copies, causing duplicate name errors at link time.
 Unfortunately, the only way we've found to make this fully portable involves
 a fair amount of boilerplate.  For details, please see <a
 href="../src/stdpre.h">stdpre.h</a>.
-
-<dt><b><tt>private</tt></b>
-
-<dd><b>Use <tt>private</tt></b> instead of <b><tt>static</tt></b> for all
-file-local procedures, and also for file-local variables defined at the
-outermost level.  However, use <b><tt>static</tt></b>, not
-<b><tt>private</tt></b>, for variables defined within a procedure.
-
-<p>
-<b><tt>private</tt></b> is normally #define'd as <b><tt>static</tt></b>.
-However, it can also be #define'd as empty, which allows profilers to
-measure all procedures, and 'nm' to list all interesting statically
-allocated variables, not just public ones.
 
 </dl>
 
@@ -1051,13 +1039,12 @@ treats memory as opaque.
 
 <h3><a name="Procedures_style"></a>Procedures</h3>
 
-<p>
-In general, don't create procedures that are private and only called from
-one place.  However, if a compound statement (especially an arm of a
-conditional) is too long for the eye easily to match its enclosing braces
-"<b><tt>{...}</tt></b>" -- that is, longer than 10 or 15 lines -- and it
-doesn't use or set a lot of state held in outer local variables, it may be
-more readable if you put it in a procedure.
+<p> In general, don't create procedures that are private and only called 
+from one place. However, if a compound statement (especially an arm of 
+a conditional) is too long for the eye easily to match its enclosing 
+braces "<b><tt>{...}</tt></b>" -- that is, longer than 10 or 15 lines -- 
+and it doesn't use or set a lot of state held in outer local variables, 
+it may be more readable if you put it in a procedure.
 
 <h3>Miscellany</h3>
 
@@ -1361,7 +1348,7 @@ beginning, the line:
 In much existing code, structure descriptors are declared as
 <b><tt>public</tt></b>, which allows clients to allocate instances of the
 structure directly.  We now consider this bad design.  Instead, structure
-descriptors should always be <b><tt>private</tt></b>; the implementation
+descriptors should always be <b><tt>static</tt></b>; the implementation
 file should provide one or more procedures for allocating instances, e.g.,
 
 <blockquote>

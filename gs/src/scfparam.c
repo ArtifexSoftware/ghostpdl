@@ -24,7 +24,7 @@
 #include "scfx.h"
 
 /* Define the CCITTFax parameters. */
-private const gs_param_item_t s_CF_param_items[] =
+static const gs_param_item_t s_CF_param_items[] =
 {
 #define cfp(key, type, memb) { key, type, offset_of(stream_CF_state, memb) }
     cfp("Uncompressed", gs_param_type_bool, Uncompressed),

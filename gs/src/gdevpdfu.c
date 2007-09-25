@@ -84,7 +84,7 @@ private_st_pdf_pattern();
  * Note that this may store into the string.
  */
 /* This function copied from geninit.c . */
-private char *
+static char *
 doit(char *line, bool intact)
 {
     char *str = line;
@@ -152,7 +152,7 @@ doit(char *line, bool intact)
 }
 
 
-private int
+static int
 copy_ps_file_stripping(stream *s, const char *fname, bool HaveTrueTypes)
 {
     FILE *f;
@@ -225,7 +225,7 @@ copy_ps_file_stripping(stream *s, const char *fname, bool HaveTrueTypes)
     return 0;
 }
 
-private int
+static int
 copy_procsets(stream *s, const gs_param_string *path, bool HaveTrueTypes)
 {
     char fname[gp_file_name_sizeof];
@@ -270,7 +270,7 @@ copy_procsets(stream *s, const gs_param_string *path, bool HaveTrueTypes)
     return 0;
 }
 
-private int
+static int
 encode(stream **s, const stream_template *t, gs_memory_t *mem)
 {
     stream_state *st = s_alloc_state(mem, t->stype, "pdf_open_document.encode");
@@ -350,7 +350,7 @@ pdf_open_document(gx_device_pdf * pdev)
 /* ------ Objects ------ */
 
 /* Allocate an object ID. */
-private long
+static long
 pdf_next_id(gx_device_pdf * pdev)
 {
     return (pdev->next_id)++;
@@ -423,12 +423,12 @@ pdf_end_obj(gx_device_pdf * pdev)
 /* ------ Page contents ------ */
 
 /* Handle transitions between contexts. */
-private int
+static int
     none_to_stream(gx_device_pdf *), stream_to_text(gx_device_pdf *),
     string_to_text(gx_device_pdf *), text_to_stream(gx_device_pdf *),
     stream_to_none(gx_device_pdf *);
 typedef int (*context_proc) (gx_device_pdf *);
-private const context_proc context_procs[4][4] =
+static const context_proc context_procs[4][4] =
 {
     {0, none_to_stream, none_to_stream, none_to_stream},
     {stream_to_none, 0, stream_to_text, stream_to_text},
@@ -437,7 +437,7 @@ private const context_proc context_procs[4][4] =
 };
 
 /* Compute an object encryption key. */
-private int
+static int
 pdf_object_key(const gx_device_pdf * pdev, gs_id object_id, byte key[16])
 {
     gs_md5_state_t md5;
@@ -511,7 +511,7 @@ pdf_end_encrypt(gx_device_pdf * pdev)
 }
 
 /* Enter stream context. */
-private int
+static int
 none_to_stream(gx_device_pdf * pdev)
 {
     stream *s;
@@ -613,7 +613,7 @@ none_to_stream(gx_device_pdf * pdev)
     return PDF_IN_STREAM;
 }
 /* Enter text context from stream context. */
-private int
+static int
 stream_to_text(gx_device_pdf * pdev)
 {
     int code;
@@ -636,7 +636,7 @@ stream_to_text(gx_device_pdf * pdev)
     return (code < 0 ? code : PDF_IN_TEXT);
 }
 /* Exit string context to text context. */
-private int
+static int
 string_to_text(gx_device_pdf * pdev)
 {
     int code = pdf_from_string_to_text(pdev);
@@ -644,7 +644,7 @@ string_to_text(gx_device_pdf * pdev)
     return (code < 0 ? code : PDF_IN_TEXT);
 }
 /* Exit text context to stream context. */
-private int
+static int
 text_to_stream(gx_device_pdf * pdev)
 {
     int code;
@@ -657,7 +657,7 @@ text_to_stream(gx_device_pdf * pdev)
     return PDF_IN_STREAM;
 }
 /* Exit stream context. */
-private int
+static int
 stream_to_none(gx_device_pdf * pdev)
 {
     stream *s = pdev->strm;
@@ -787,7 +787,7 @@ pdf_forget_resource(gx_device_pdf * pdev, pdf_resource_t *pres1, pdf_resource_ty
     }
 }
 
-private int 
+static int 
 nocheck(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1)
 {
     return 1;
@@ -1425,7 +1425,7 @@ pdf_put_matrix(gx_device_pdf * pdev, const char *before,
  * null <00>, and the machinery for selecting the put_name_chars procedure
  * depending on CompatibilityLevel is no longer needed.
  */
-private int
+static int
 pdf_put_name_chars_1_2(stream *s, const byte *nstr, uint size)
 {
     uint i;
@@ -1475,7 +1475,7 @@ pdf_put_name(const gx_device_pdf *pdev, const byte *nstr, uint size)
 }
 
 /* Write an encoded string with encryption. */
-private int
+static int
 pdf_encrypt_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size, gs_id object_id)
 {
     stream sinp, sstr, sout;
@@ -1519,7 +1519,7 @@ pdf_encrypt_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size
 }
 
 /* Write an encoded string with possible encryption. */
-private int
+static int
 pdf_put_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size, gs_id object_id)
 {
     if (!pdev->KeyLength || object_id == (gs_id)-1) {
@@ -1529,7 +1529,7 @@ pdf_put_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size, gs
 	return pdf_encrypt_encoded_string(pdev, str, size, object_id);
 }
 /* Write an encoded hexadecimal string with possible encryption. */
-private int
+static int
 pdf_put_encoded_hex_string(const gx_device_pdf *pdev, const byte *str, uint size, gs_id object_id)
 {
     eprintf("Unimplemented function : pdf_put_encoded_hex_string\n");
@@ -1543,7 +1543,7 @@ pdf_put_encoded_hex_string(const gx_device_pdf *pdev, const byte *str, uint size
     Other items are passed identically.
     Note we don't reconstruct the nesting of arrays|dictionaries.
 */
-private int
+static int
 pdf_scan_item(const gx_device_pdf * pdev, const byte * p, uint l, gs_id object_id)
 {
     const byte *q = p;
@@ -1562,7 +1562,7 @@ pdf_scan_item(const gx_device_pdf * pdev, const byte * p, uint l, gs_id object_i
 }
 
 /* Write a serialized array or dictionary with possible encryption. */
-private int
+static int
 pdf_put_composite(const gx_device_pdf * pdev, const byte * vstr, uint size, gs_id object_id)
 {
     if (!pdev->KeyLength || object_id == (gs_id)-1) {
@@ -1727,7 +1727,7 @@ pdf_put_filters(cos_dict_t *pcd, gx_device_pdf *pdev, stream *s,
 }
 
 /* Add a Flate compression filter to a binary writer. */
-private int
+static int
 pdf_flate_binary(gx_device_pdf *pdev, psdf_binary_writer *pbw)
 {
     const stream_template *template = (pdev->CompatibilityLevel < 1.3 ? 
@@ -1851,7 +1851,7 @@ pdf_end_data(pdf_data_writer_t *pdw)
 }
 
 /* Create a Function object. */
-private int pdf_function_array(gx_device_pdf *pdev, cos_array_t *pca,
+static int pdf_function_array(gx_device_pdf *pdev, cos_array_t *pca,
 			       const gs_function_info_t *pinfo);
 int
 pdf_function_scaled(gx_device_pdf *pdev, const gs_function_t *pfn,
@@ -1891,7 +1891,7 @@ pdf_function_scaled(gx_device_pdf *pdev, const gs_function_t *pfn,
 	return code;
     }
 }
-private int
+static int
 pdf_function_aux(gx_device_pdf *pdev, const gs_function_t *pfn,
 	     pdf_resource_t **ppres)
 {
@@ -1987,7 +1987,7 @@ pdf_function_aux(gx_device_pdf *pdev, const gs_function_t *pfn,
 	return code;
     return gs_function_get_params(pfn, (gs_param_list *)&rlist);
 }
-private int 
+static int 
 functions_equal(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1)
 {
     return true;
@@ -2006,7 +2006,7 @@ pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn, cos_value_t *pvalue)
     COS_OBJECT_VALUE(pvalue, pres->object);
     return 0;
 }
-private int pdf_function_array(gx_device_pdf *pdev, cos_array_t *pca,
+static int pdf_function_array(gx_device_pdf *pdev, cos_array_t *pca,
 			       const gs_function_info_t *pinfo)
 {
     int i, code = 0;

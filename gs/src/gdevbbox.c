@@ -31,34 +31,34 @@
 public_st_device_bbox();
 
 /* Device procedures */
-private dev_proc_open_device(bbox_open_device);
-private dev_proc_close_device(bbox_close_device);
-private dev_proc_output_page(bbox_output_page);
-private dev_proc_fill_rectangle(bbox_fill_rectangle);
-private dev_proc_copy_mono(bbox_copy_mono);
-private dev_proc_copy_color(bbox_copy_color);
-private dev_proc_get_params(bbox_get_params);
-private dev_proc_put_params(bbox_put_params);
-private dev_proc_copy_alpha(bbox_copy_alpha);
-private dev_proc_fill_path(bbox_fill_path);
-private dev_proc_stroke_path(bbox_stroke_path);
-private dev_proc_fill_mask(bbox_fill_mask);
-private dev_proc_fill_trapezoid(bbox_fill_trapezoid);
-private dev_proc_fill_parallelogram(bbox_fill_parallelogram);
-private dev_proc_fill_triangle(bbox_fill_triangle);
-private dev_proc_draw_thin_line(bbox_draw_thin_line);
-private dev_proc_strip_tile_rectangle(bbox_strip_tile_rectangle);
-private dev_proc_strip_copy_rop(bbox_strip_copy_rop);
-private dev_proc_begin_typed_image(bbox_begin_typed_image);
-private dev_proc_create_compositor(bbox_create_compositor);
-private dev_proc_text_begin(bbox_text_begin);
+static dev_proc_open_device(bbox_open_device);
+static dev_proc_close_device(bbox_close_device);
+static dev_proc_output_page(bbox_output_page);
+static dev_proc_fill_rectangle(bbox_fill_rectangle);
+static dev_proc_copy_mono(bbox_copy_mono);
+static dev_proc_copy_color(bbox_copy_color);
+static dev_proc_get_params(bbox_get_params);
+static dev_proc_put_params(bbox_put_params);
+static dev_proc_copy_alpha(bbox_copy_alpha);
+static dev_proc_fill_path(bbox_fill_path);
+static dev_proc_stroke_path(bbox_stroke_path);
+static dev_proc_fill_mask(bbox_fill_mask);
+static dev_proc_fill_trapezoid(bbox_fill_trapezoid);
+static dev_proc_fill_parallelogram(bbox_fill_parallelogram);
+static dev_proc_fill_triangle(bbox_fill_triangle);
+static dev_proc_draw_thin_line(bbox_draw_thin_line);
+static dev_proc_strip_tile_rectangle(bbox_strip_tile_rectangle);
+static dev_proc_strip_copy_rop(bbox_strip_copy_rop);
+static dev_proc_begin_typed_image(bbox_begin_typed_image);
+static dev_proc_create_compositor(bbox_create_compositor);
+static dev_proc_text_begin(bbox_text_begin);
 
 /* The device prototype */
 /*
- * Normally this would be private, but if the device is going to be used
+ * Normally this would be static, but if the device is going to be used
  * stand-alone, it has to be public.
  */
-/*private */ const
+/*static*/ const
 /*
  * The bbox device sets the resolution to some value R (currently 4000), and
  * the page size in device pixels to slightly smaller than the largest
@@ -200,7 +200,7 @@ bbox_default_in_rect(const void *pdata, const gs_fixed_rect *pbox)
 #define BBOX_IN_RECT(bdev, pbox)\
     bdev->box_procs.in_rect(bdev->box_proc_data, pbox)
 
-private const gx_device_bbox_procs_t box_procs_default = {
+static const gx_device_bbox_procs_t box_procs_default = {
     bbox_default_init_box, bbox_default_get_box, bbox_default_add_rect,
     bbox_default_in_rect
 };
@@ -211,7 +211,7 @@ private const gx_device_bbox_procs_t box_procs_default = {
      /* ---------------- Open/close/page ---------------- */
 
 /* Copy device parameters back from the target. */
-private void
+static void
 bbox_copy_params(gx_device_bbox * bdev, bool remap_colors)
 {
     gx_device *tdev = bdev->target;
@@ -229,7 +229,7 @@ bbox_copy_params(gx_device_bbox * bdev, bool remap_colors)
 #define GX_DC_IS_TRANSPARENT(pdevc, bdev)\
   (gx_dc_pure_color(pdevc) == (bdev)->transparent && gx_dc_is_pure(pdevc))
 
-private int
+static int
 bbox_close_device(gx_device * dev)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
@@ -331,7 +331,7 @@ gx_device_bbox_bbox(gx_device_bbox * dev, gs_rect * pbbox)
     }
 }
 
-private int
+static int
 bbox_open_device(gx_device * dev)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
@@ -354,7 +354,7 @@ bbox_open_device(gx_device * dev)
     }
 }
 
-private int
+static int
 bbox_output_page(gx_device * dev, int num_copies, int flush)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
@@ -377,7 +377,7 @@ bbox_output_page(gx_device * dev, int num_copies, int flush)
 
 /* ---------------- Low-level drawing ---------------- */
 
-private int
+static int
 bbox_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 		    gx_color_index color)
 {
@@ -398,7 +398,7 @@ bbox_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     return code;
 }
 
-private int
+static int
 bbox_copy_mono(gx_device * dev, const byte * data,
 	    int dx, int raster, gx_bitmap_id id, int x, int y, int w, int h,
 	       gx_color_index zero, gx_color_index one)
@@ -418,7 +418,7 @@ bbox_copy_mono(gx_device * dev, const byte * data,
     return code;
 }
 
-private int
+static int
 bbox_copy_color(gx_device * dev, const byte * data,
 	    int dx, int raster, gx_bitmap_id id, int x, int y, int w, int h)
 {
@@ -434,7 +434,7 @@ bbox_copy_color(gx_device * dev, const byte * data,
     return code;
 }
 
-private int
+static int
 bbox_copy_alpha(gx_device * dev, const byte * data, int data_x,
 		int raster, gx_bitmap_id id, int x, int y, int w, int h,
 		gx_color_index color, int depth)
@@ -451,7 +451,7 @@ bbox_copy_alpha(gx_device * dev, const byte * data, int data_x,
     return code;
 }
 
-private int
+static int
 bbox_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
    int x, int y, int w, int h, gx_color_index color0, gx_color_index color1,
 			  int px, int py)
@@ -472,7 +472,7 @@ bbox_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     return code;
 }
 
-private int
+static int
 bbox_strip_copy_rop(gx_device * dev,
 		    const byte * sdata, int sourcex, uint sraster,
 		    gx_bitmap_id id,
@@ -498,7 +498,7 @@ bbox_strip_copy_rop(gx_device * dev,
 /* ---------------- Parameters ---------------- */
 
 /* We implement get_params to provide a way to read out the bounding box. */
-private int
+static int
 bbox_get_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
@@ -532,7 +532,7 @@ bbox_get_params(gx_device * dev, gs_param_list * plist)
 /* We implement put_params to ensure that we keep the important */
 /* device parameters up to date, and to prevent an /undefined error */
 /* from PageBoundingBox. */
-private int
+static int
 bbox_put_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
@@ -584,14 +584,14 @@ bbox_put_params(gx_device * dev, gs_param_list * plist)
 
 /* ---------------- Polygon drawing ---------------- */
 
-private fixed
+static fixed
 edge_x_at_y(const gs_fixed_edge * edge, fixed y)
 {
     return fixed_mult_quo(edge->end.x - edge->start.x,
 			  y - edge->start.y,
 			  edge->end.y - edge->start.y) + edge->start.x;
 }
-private int
+static int
 bbox_fill_trapezoid(gx_device * dev,
 		    const gs_fixed_edge * left, const gs_fixed_edge * right,
 		    fixed ybot, fixed ytop, bool swap_axes,
@@ -630,7 +630,7 @@ bbox_fill_trapezoid(gx_device * dev,
     return code;
 }
 
-private int
+static int
 bbox_fill_parallelogram(gx_device * dev,
 			fixed px, fixed py, fixed ax, fixed ay,
 			fixed bx, fixed by, const gx_device_color * pdevc,
@@ -668,7 +668,7 @@ bbox_fill_parallelogram(gx_device * dev,
     return code;
 }
 
-private int
+static int
 bbox_fill_triangle(gx_device * dev,
 		   fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by,
 		   const gx_device_color * pdevc, gs_logical_operation_t lop)
@@ -705,7 +705,7 @@ bbox_fill_triangle(gx_device * dev,
     return code;
 }
 
-private int
+static int
 bbox_draw_thin_line(gx_device * dev,
 		    fixed fx0, fixed fy0, fixed fx1, fixed fy1,
 		    const gx_device_color * pdevc, gs_logical_operation_t lop)
@@ -743,7 +743,7 @@ bbox_draw_thin_line(gx_device * dev,
 ((pbox)->p.x -= (adj).x, (pbox)->p.y -= (adj).y,\
  (pbox)->q.x += (adj).x, (pbox)->q.y += (adj).y)
 
-private int
+static int
 bbox_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	       const gx_fill_params * params, const gx_device_color * pdevc,
 	       const gx_clip_path * pcpath)
@@ -803,7 +803,7 @@ bbox_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	return fill_path(tdev, pis, ppath, params, pdevc, pcpath);
 }
 
-private int
+static int
 bbox_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 		 const gx_stroke_params * params,
 		 const gx_drawing_color * pdevc, const gx_clip_path * pcpath)
@@ -865,7 +865,7 @@ bbox_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     return code;
 }
 
-private int
+static int
 bbox_fill_mask(gx_device * dev,
 	       const byte * data, int dx, int raster, gx_bitmap_id id,
 	       int x, int y, int w, int h,
@@ -916,16 +916,16 @@ gs_private_st_suffix_add2(st_bbox_image_enum, bbox_image_enum,
   "bbox_image_enum", bbox_image_enum_enum_ptrs, bbox_image_enum_reloc_ptrs,
   st_gx_image_enum_common, pcpath, target_info);
 
-private image_enum_proc_plane_data(bbox_image_plane_data);
-private image_enum_proc_end_image(bbox_image_end_image);
-private image_enum_proc_flush(bbox_image_flush);
-private image_enum_proc_planes_wanted(bbox_image_planes_wanted);
-private const gx_image_enum_procs_t bbox_image_enum_procs = {
+static image_enum_proc_plane_data(bbox_image_plane_data);
+static image_enum_proc_end_image(bbox_image_end_image);
+static image_enum_proc_flush(bbox_image_flush);
+static image_enum_proc_planes_wanted(bbox_image_planes_wanted);
+static const gx_image_enum_procs_t bbox_image_enum_procs = {
     bbox_image_plane_data, bbox_image_end_image,
     bbox_image_flush, bbox_image_planes_wanted
 };
 
-private int
+static int
 bbox_image_begin(const gs_imager_state * pis, const gs_matrix * pmat,
 		 const gs_image_common_t * pic, const gs_int_rect * prect,
 		 const gx_clip_path * pcpath, gs_memory_t * memory,
@@ -968,7 +968,7 @@ bbox_image_begin(const gs_imager_state * pis, const gs_matrix * pmat,
     return 0;
 }
 
-private void
+static void
 bbox_image_copy_target_info(bbox_image_enum * pbe)
 {
     const gx_image_enum_common_t *target_info = pbe->target_info;
@@ -980,7 +980,7 @@ bbox_image_copy_target_info(bbox_image_enum * pbe)
 	   pbe->num_planes * sizeof(pbe->plane_widths[0]));
 }
 
-private int
+static int
 bbox_begin_typed_image(gx_device * dev,
 		       const gs_imager_state * pis, const gs_matrix * pmat,
 		   const gs_image_common_t * pic, const gs_int_rect * prect,
@@ -1036,7 +1036,7 @@ bbox_begin_typed_image(gx_device * dev,
     return 0;
 }
 
-private int
+static int
 bbox_image_plane_data(gx_image_enum_common_t * info,
 		      const gx_image_plane_t * planes, int height,
 		      int *rows_used)
@@ -1095,7 +1095,7 @@ bbox_image_plane_data(gx_image_enum_common_t * info,
     return code;
 }
 
-private int
+static int
 bbox_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 {
     bbox_image_enum *pbe = (bbox_image_enum *) info;
@@ -1105,7 +1105,7 @@ bbox_image_end_image(gx_image_enum_common_t * info, bool draw_last)
     return code;
 }
 
-private int
+static int
 bbox_image_flush(gx_image_enum_common_t * info)
 {
     bbox_image_enum *pbe = (bbox_image_enum *) info;
@@ -1114,7 +1114,7 @@ bbox_image_flush(gx_image_enum_common_t * info)
     return (target_info ? gx_image_flush(target_info) : 0);
 }
 
-private bool
+static bool
 bbox_image_planes_wanted(const gx_image_enum_common_t * info, byte *wanted)
 {
     /* This is only used if target_info != 0. */
@@ -1125,40 +1125,40 @@ bbox_image_planes_wanted(const gx_image_enum_common_t * info, byte *wanted)
 
 /* Compositing */
 
-private bool
+static bool
 bbox_forward_init_box(void *pdata)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *)pdata;
 
     return BBOX_INIT_BOX(bdev);
 }
-private void
+static void
 bbox_forward_get_box(const void *pdata, gs_fixed_rect *pbox)
 {
     const gx_device_bbox *const bdev = (const gx_device_bbox *)pdata;
 
     BBOX_GET_BOX(bdev, pbox);
 }
-private void
+static void
 bbox_forward_add_rect(void *pdata, fixed x0, fixed y0, fixed x1, fixed y1)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *)pdata;
 
     BBOX_ADD_RECT(bdev, x0, y0, x1, y1);
 }
-private bool
+static bool
 bbox_forward_in_rect(const void *pdata, const gs_fixed_rect *pbox)
 {
     const gx_device_bbox *const bdev = (const gx_device_bbox *)pdata;
 
     return BBOX_IN_RECT(bdev, pbox);
 }
-private const gx_device_bbox_procs_t box_procs_forward = {
+static const gx_device_bbox_procs_t box_procs_forward = {
     bbox_forward_init_box, bbox_forward_get_box, bbox_forward_add_rect,
     bbox_forward_in_rect
 };
 
-private int
+static int
 bbox_create_compositor(gx_device * dev,
 		       gx_device ** pcdev, const gs_composite_t * pcte,
 		       gs_imager_state * pis, gs_memory_t * memory)
@@ -1208,7 +1208,7 @@ bbox_create_compositor(gx_device * dev,
 
 /* ------ Text imaging ------ */
 
-private int
+static int
 bbox_text_begin(gx_device * dev, gs_imager_state * pis,
 		const gs_text_params_t * text, gs_font * font,
 		gx_path * path, const gx_device_color * pdcolor,

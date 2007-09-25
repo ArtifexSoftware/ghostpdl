@@ -27,7 +27,7 @@ public_st_cid_system_info_element();
 /* CID-keyed font structure descriptors */
 public_st_gs_font_cid_data();
 public_st_gs_font_cid0();
-private
+static
 ENUM_PTRS_WITH(font_cid0_enum_ptrs, gs_font_cid0 *pfcid0)
 {
     index -= 2;
@@ -39,7 +39,7 @@ ENUM_PTRS_WITH(font_cid0_enum_ptrs, gs_font_cid0 *pfcid0)
 ENUM_PTR(0, gs_font_cid0, cidata.FDArray);
 ENUM_PTR(1, gs_font_cid0, cidata.proc_data);
 ENUM_PTRS_END
-private
+static
 RELOC_PTRS_WITH(font_cid0_reloc_ptrs, gs_font_cid0 *pfcid0);
     RELOC_PREFIX(st_gs_font_base);
     RELOC_USING(st_gs_font_cid_data, &pfcid0->cidata.common,
@@ -48,7 +48,7 @@ RELOC_PTRS_WITH(font_cid0_reloc_ptrs, gs_font_cid0 *pfcid0);
     RELOC_VAR(pfcid0->cidata.proc_data);
 RELOC_PTRS_END
 public_st_gs_font_cid1();
-private
+static
 ENUM_PTRS_WITH(font_cid1_enum_ptrs, gs_font_cid1 *pfcid1)
 {
     if (index < st_cid_system_info_num_ptrs)
@@ -57,14 +57,14 @@ ENUM_PTRS_WITH(font_cid1_enum_ptrs, gs_font_cid1 *pfcid1)
     ENUM_PREFIX(st_gs_font_base, st_cid_system_info_num_ptrs);
 }
 ENUM_PTRS_END
-private
+static
 RELOC_PTRS_WITH(font_cid1_reloc_ptrs, gs_font_cid1 *pfcid1);
     RELOC_PREFIX(st_gs_font_base);
     RELOC_USING(st_cid_system_info, &pfcid1->cidata.CIDSystemInfo,
 		sizeof(st_cid_system_info));
 RELOC_PTRS_END
 public_st_gs_font_cid2();
-private
+static
 ENUM_PTRS_WITH(font_cid2_enum_ptrs, gs_font_cid2 *pfcid2)
 {
     if (index < st_gs_font_cid_data_num_ptrs)
@@ -73,7 +73,7 @@ ENUM_PTRS_WITH(font_cid2_enum_ptrs, gs_font_cid2 *pfcid2)
     ENUM_PREFIX(st_gs_font_type42, st_gs_font_cid_data_num_ptrs);
 }
 ENUM_PTRS_END
-private
+static
 RELOC_PTRS_WITH(font_cid2_reloc_ptrs, gs_font_cid2 *pfcid2);
     RELOC_PREFIX(st_gs_font_type42);
     RELOC_USING(st_gs_font_cid_data, &pfcid2->cidata.common,

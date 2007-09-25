@@ -95,7 +95,7 @@ param_init_enumerator(gs_param_enumerator_t * enumerator)
 }
 
 /* Transfer a collection of parameters. */
-private const byte xfer_item_sizes[] = {
+static const byte xfer_item_sizes[] = {
     GS_PARAM_TYPE_SIZES(0)
 };
 int

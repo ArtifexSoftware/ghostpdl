@@ -62,7 +62,7 @@ pdf_has_subset_prefix(const byte *str, uint size)
     return true;
 }
 
-private inline ulong
+static inline ulong
 hash(ulong v, int index, ushort w)
 {
     return v * 3141592653u + w;
@@ -102,7 +102,7 @@ pdf_add_subset_prefix(const gx_device_pdf *pdev, gs_string *pstr, byte *used, in
 }
 
 /* Finish writing FontFile* data. */
-private int
+static int
 pdf_end_fontfile(gx_device_pdf *pdev, pdf_data_writer_t *pdw)
 {
     /* We would like to call pdf_end_data,
@@ -378,7 +378,7 @@ pdf_write_FontFile_entry(gx_device_pdf *pdev, pdf_base_font_t *pbfont)
 /*
  * Adjust font name for Acrobat Reader 3.
  */
-private int
+static int
 pdf_adjust_font_name(gx_device_pdf *pdev, long id, pdf_base_font_t *pbfont)
 {
     /*

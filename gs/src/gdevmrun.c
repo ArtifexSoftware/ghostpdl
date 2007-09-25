@@ -102,7 +102,7 @@ typedef struct run_line_s {
 } run_line;
 
 /* Insert/delete */
-private void
+static void
 rp_delete_next(run_ptr *prpc, run *data, run_line *line)
 {
     run_ptr rpn, rpn2;
@@ -115,7 +115,7 @@ rp_delete_next(run_ptr *prpc, run *data, run_line *line)
     RP_PREV(rpn) = 0;
     line->free = rpn.index;
 }
-private int
+static int
 rp_insert_next(run_ptr *prpc, run *data, run_line *line, run_ptr *prpn)
 {
     run_index new = line->free;
@@ -133,7 +133,7 @@ rp_insert_next(run_ptr *prpc, run *data, run_line *line, run_ptr *prpn)
     prpn->ptr = prnew;
     return 0;
 }
-private int
+static int
 rp_insert_prev(run_ptr *prpc, run *data, run_line *line, run_ptr *prpp)
 {
     run_index new = line->free;
@@ -153,13 +153,13 @@ rp_insert_prev(run_ptr *prpc, run *data, run_line *line, run_ptr *prpp)
 }
 
 /* Define the run-oriented device procedures. */
-private dev_proc_copy_mono(run_copy_mono);
-private dev_proc_copy_color(run_copy_color);
-private dev_proc_fill_rectangle(run_fill_rectangle);
-private dev_proc_copy_alpha(run_copy_alpha);
-private dev_proc_strip_tile_rectangle(run_strip_tile_rectangle);
-private dev_proc_strip_copy_rop(run_strip_copy_rop);
-private dev_proc_get_bits_rectangle(run_get_bits_rectangle);
+static dev_proc_copy_mono(run_copy_mono);
+static dev_proc_copy_color(run_copy_color);
+static dev_proc_fill_rectangle(run_fill_rectangle);
+static dev_proc_copy_alpha(run_copy_alpha);
+static dev_proc_strip_tile_rectangle(run_strip_tile_rectangle);
+static dev_proc_strip_copy_rop(run_strip_copy_rop);
+static dev_proc_get_bits_rectangle(run_get_bits_rectangle);
 
 /*
  * Convert a memory device to run-length form.  The mdev argument should be
@@ -211,7 +211,7 @@ gdev_run_from_mem(gx_device_run *rdev, gx_device_memory *mdev)
 }
 
 /* Convert a scan line to expanded form in place. */
-private int
+static int
 run_expand(gx_device_run *rdev, int y)
 {
     const run_line *line = RDEV_LINE(rdev, y);
@@ -252,7 +252,7 @@ run_expand(gx_device_run *rdev, int y)
 /*
  * Convert a range of scan lines to standard form.
  */
-private int
+static int
 run_standardize(gx_device_run *rdev, int y, int h)
 {
     int ye, iy;
@@ -278,7 +278,7 @@ run_standardize(gx_device_run *rdev, int y, int h)
 }
 
 /* Trampoline rendering procedures */
-private int
+static int
 run_copy_mono(gx_device * dev, const byte * data, int dx, int raster,
 	      gx_bitmap_id id, int x, int y, int w, int h,
 	      gx_color_index zero, gx_color_index one)
@@ -290,7 +290,7 @@ run_copy_mono(gx_device * dev, const byte * data, int dx, int raster,
 				      data, dx, raster, id,
 				      x, y, w, h, zero, one);
 }
-private int
+static int
 run_copy_color(gx_device * dev, const byte * data,
 	       int data_x, int raster, gx_bitmap_id id,
 	       int x, int y, int w, int h)
@@ -302,7 +302,7 @@ run_copy_color(gx_device * dev, const byte * data,
 				       data, data_x, raster, id,
 				       x, y, w, h);
 }
-private int
+static int
 run_copy_alpha(gx_device * dev, const byte * data, int data_x, int raster,
 	       gx_bitmap_id id, int x, int y, int w, int h,
 	       gx_color_index color, int depth)
@@ -314,7 +314,7 @@ run_copy_alpha(gx_device * dev, const byte * data, int data_x, int raster,
 				       data, data_x, raster, id,
 				       x, y, w, h, color, depth);
 }
-private int
+static int
 run_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
    int x, int y, int w, int h, gx_color_index color0, gx_color_index color1,
 				int px, int py)
@@ -326,7 +326,7 @@ run_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 						 tiles, x, y, w, h,
 						 color0, color1, px, py);
 }
-private int
+static int
 run_strip_copy_rop(gx_device * dev, const byte * sdata, int sourcex,
 		   uint sraster, gx_bitmap_id id,
 		   const gx_color_index * scolors,
@@ -343,7 +343,7 @@ run_strip_copy_rop(gx_device * dev, const byte * sdata, int sourcex,
 					   id, scolors, textures, tcolors,
 					   x, y, w, h, px, py, lop);
 }
-private int
+static int
 run_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 		       gs_get_bits_params_t * params, gs_int_rect **unread)
 {
@@ -356,7 +356,7 @@ run_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 
 /* Finish initializing a line.  This is a separate procedure only */
 /* for readability. */
-private void
+static void
 run_line_initialize(gx_device_run *rdev, int y)
 {
     run_line *line = RDEV_LINE(rdev, y);
@@ -400,7 +400,7 @@ run_line_initialize(gx_device_run *rdev, int y)
  * that does all the interesting work.  We assume the line has been
  * initialized, and that 0 <= xo < xe <= dev->width.
  */
-private int
+static int
 run_fill_interval(run_line *line, int xo, int xe, run_value new)
 {
     run *data = RL_DATA(line);
@@ -559,7 +559,7 @@ run_fill_interval(run_line *line, int xo, int xe, run_value new)
 }
 
 /* Replace a rectangle with a new value. */
-private int
+static int
 run_fill_rectangle(gx_device *dev, int x, int y, int w, int h,
 		   gx_color_index color)
 {

@@ -28,11 +28,11 @@
 /* ================ Standard (byte-oriented) device ================ */
 
 /* Procedures */
-private dev_proc_map_rgb_color(mem_mono_map_rgb_color);
-private dev_proc_map_color_rgb(mem_mono_map_color_rgb);
-private dev_proc_copy_mono(mem_mono_copy_mono);
-private dev_proc_fill_rectangle(mem_mono_fill_rectangle);
-private dev_proc_strip_tile_rectangle(mem_mono_strip_tile_rectangle);
+static dev_proc_map_rgb_color(mem_mono_map_rgb_color);
+static dev_proc_map_color_rgb(mem_mono_map_color_rgb);
+static dev_proc_copy_mono(mem_mono_copy_mono);
+static dev_proc_fill_rectangle(mem_mono_fill_rectangle);
+static dev_proc_strip_tile_rectangle(mem_mono_strip_tile_rectangle);
 
 /* The device descriptor. */
 /* The instance is public. */
@@ -45,14 +45,14 @@ mem_full_alpha_device("image1", 0, 1, mem_open,
 		      mem_get_bits_rectangle);
 
 /* Map color to/from RGB.  This may be inverted. */
-private gx_color_index
+static gx_color_index
 mem_mono_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     return (gx_default_w_b_map_rgb_color(dev, cv) ^ mdev->palette.data[0]) & 1;
 }
 
-private int
+static int
 mem_mono_map_color_rgb(gx_device * dev, gx_color_index color,
 		       gx_color_value prgb[3])
 {
@@ -62,7 +62,7 @@ mem_mono_map_color_rgb(gx_device * dev, gx_color_index color,
 }
 
 /* Fill a rectangle with a color. */
-private int
+static int
 mem_mono_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 			gx_color_index color)
 {
@@ -116,11 +116,11 @@ mem_mono_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
      CFETCH_RIGHT((const chunk *)(cptr) + 1, skew, cskew))
 #else /* little-endian */
 #  define chunk bits16
-private const bits16 right_masks2[9] =
+static const bits16 right_masks2[9] =
 {
     0xffff, 0x7f7f, 0x3f3f, 0x1f1f, 0x0f0f, 0x0707, 0x0303, 0x0101, 0x0000
 };
-private const bits16 left_masks2[9] =
+static const bits16 left_masks2[9] =
 {
     0xffff, 0xfefe, 0xfcfc, 0xf8f8, 0xf0f0, 0xe0e0, 0xc0c0, 0x8080, 0x0000
 };
@@ -162,7 +162,7 @@ typedef struct {
  * Map from <color0,color1> to copy_mode.
  * Logically, this is a 2-D array.
  * The indexing is (transparent, 0, 1, unused). */
-private const copy_mode copy_modes[16] = {
+static const copy_mode copy_modes[16] = {
     {~0, COPY_FUNNY},		/* NN */
     {~0, COPY_AND},		/* N0 */
     {0, COPY_OR},		/* N1 */
@@ -186,7 +186,7 @@ private const copy_mode copy_modes[16] = {
   (invert ? gs_note_error(-1) :\
    mem_mono_fill_rectangle(dev, x, y, w, h, color0))
 
-private int
+static int
 mem_mono_copy_mono(gx_device * dev,
  const byte * source_data, int source_x, int source_raster, gx_bitmap_id id,
    int x, int y, int w, int h, gx_color_index color0, gx_color_index color1)
@@ -451,7 +451,7 @@ mem_mono_copy_mono(gx_device * dev,
 /* Strip-tile with a monochrome halftone. */
 /* This is a performance bottleneck for monochrome devices, */
 /* so we re-implement it, even though it takes a lot of code. */
-private int
+static int
 mem_mono_strip_tile_rectangle(gx_device * dev,
 			      register const gx_strip_bitmap * tiles,
 int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
@@ -678,8 +678,8 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
 #if !arch_is_big_endian
 
 /* Procedures */
-private dev_proc_copy_mono(mem1_word_copy_mono);
-private dev_proc_fill_rectangle(mem1_word_fill_rectangle);
+static dev_proc_copy_mono(mem1_word_copy_mono);
+static dev_proc_fill_rectangle(mem1_word_fill_rectangle);
 
 #define mem1_word_strip_tile_rectangle gx_default_strip_tile_rectangle
 
@@ -693,7 +693,7 @@ mem_full_alpha_device("image1w", 0, 1, mem_open,
 		      mem_word_get_bits_rectangle);
 
 /* Fill a rectangle with a color. */
-private int
+static int
 mem1_word_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 			 gx_color_index color)
 {
@@ -711,7 +711,7 @@ mem1_word_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 }
 
 /* Copy a bitmap. */
-private int
+static int
 mem1_word_copy_mono(gx_device * dev,
  const byte * source_data, int source_x, int source_raster, gx_bitmap_id id,
    int x, int y, int w, int h, gx_color_index color0, gx_color_index color1)

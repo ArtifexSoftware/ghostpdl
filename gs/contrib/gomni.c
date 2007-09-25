@@ -279,41 +279,41 @@ typedef gx_device_omni omni_device;
   0, 0L\
 }
 
-private int  PrintPage            (gx_device_printer            *pgx_prt_dev,
+static int  PrintPage            (gx_device_printer            *pgx_prt_dev,
                                    FILE                         *prn_stream,
                                    int                           num_copies);
-private int  omni_print_page      (gx_device_printer            *pdev,
+static int  omni_print_page      (gx_device_printer            *pdev,
                                    FILE                         *prn_stream);
-private int  SetupDevice          (gx_device                    *pgxdev,
+static int  SetupDevice          (gx_device                    *pgxdev,
                                    gs_param_list                *plist);
-private int  OpenDevice           (gx_device                    *pdev);
-private int  CloseDevice          (gx_device                    *pdev);
-private int  GetDeviceParams      (gx_device                    *pgxdev,
+static int  OpenDevice           (gx_device                    *pdev);
+static int  CloseDevice          (gx_device                    *pdev);
+static int  GetDeviceParams      (gx_device                    *pgxdev,
                                    gs_param_list                *plist);
-private int  BufferPage           (gx_device_printer            *pgx_prt_dev,
+static int  BufferPage           (gx_device_printer            *pgx_prt_dev,
                                    FILE                         *file,
                                    int                           num_copies);
-private void RenderThread         (void                         *params);
-private int  StartRenderThread    (gdev_prn_start_render_params *params);
-private int  OpenRenderDevice     (gx_device_printer            *ppdev);
-private void GetSpaceParams       (const gx_device_printer      *pgx_prt_dev,
+static void RenderThread         (void                         *params);
+static int  StartRenderThread    (gdev_prn_start_render_params *params);
+static int  OpenRenderDevice     (gx_device_printer            *ppdev);
+static void GetSpaceParams       (const gx_device_printer      *pgx_prt_dev,
                                    gdev_prn_space_params        *space_params);
 
 /* Print-page, parameters and miscellaneous procedures */
-private      dev_proc_print_page_copies       (PrintPage);
-private      prn_dev_proc_buffer_page         (BufferPage);
-private      prn_dev_proc_start_render_thread (StartRenderThread);
-private      dev_proc_open_device             (OpenDevice);
-private      dev_proc_print_page              (omni_print_page);
-private      dev_proc_close_device            (CloseDevice);
-private      dev_proc_get_params              (GetDeviceParams);
-private      dev_proc_put_params              (SetupDevice);
-private      dev_proc_output_page             (PrintPageMultiple);
-private      prn_dev_proc_get_space_params    (GetSpaceParams);
+static      dev_proc_print_page_copies       (PrintPage);
+static      prn_dev_proc_buffer_page         (BufferPage);
+static      prn_dev_proc_start_render_thread (StartRenderThread);
+static      dev_proc_open_device             (OpenDevice);
+static      dev_proc_print_page              (omni_print_page);
+static      dev_proc_close_device            (CloseDevice);
+static      dev_proc_get_params              (GetDeviceParams);
+static      dev_proc_put_params              (SetupDevice);
+static      dev_proc_output_page             (PrintPageMultiple);
+static      prn_dev_proc_get_space_params    (GetSpaceParams);
 
 /* 24-bit color. only want 16M colors  */
 
-private gx_device_procs omni16m_procs = {
+static gx_device_procs omni16m_procs = {
                   OpenDevice,                       /*  open_device */
                   NULL,                             /*  get_initial_matrix */
                   NULL,                             /*  sync_output */
@@ -347,7 +347,7 @@ gx_device_omni far_data gs_omni_device =
 /* ------------------------------------------------------*/
 
 /* Generic routine to send the page to the printer. */
-private int
+static int
 PrintPageMultiple (gx_device *pDev, int iCopies, int flush)
 {
    /*
@@ -370,7 +370,7 @@ PrintPageMultiple (gx_device *pDev, int iCopies, int flush)
 /* ------------ Writer Instance procedures ---------- */
 
 /* Writer's open procedure */
-private int
+static int
 OpenDevice (gx_device *pdev  /* Driver instance to open */)
 {
    gx_device_omni * const pwdev              = (gx_device_omni *)pdev;
@@ -474,7 +474,7 @@ OpenDevice (gx_device *pdev  /* Driver instance to open */)
    }
 }
 
-private int
+static int
 CloseDevice (gx_device * pdev)
 {
    gx_device_omni * const pwdev = (gx_device_omni *)pdev;
@@ -551,7 +551,7 @@ CloseDevice (gx_device * pdev)
 /*                                                                          */
 /* -------------------------------------------------------------------------*/
 
-private int
+static int
 GetDeviceParams (gx_device *pgxdev, gs_param_list *plist)
 {
    omni_device *const      odev                = (omni_device *) pgxdev;
@@ -658,7 +658,7 @@ GetDeviceParams (gx_device *pgxdev, gs_param_list *plist)
 /* Put device parameters. */
 /* IMPORTANT: async drivers must NOT CLOSE the device while doing put_params.*/
 
-private int
+static int
 SetupDevice (gx_device *pgxdev, gs_param_list *plist)
 {
    int                     iReturnCode,
@@ -1266,7 +1266,7 @@ SetupDevice (gx_device *pgxdev, gs_param_list *plist)
    return iReturnCode;  /* likely not be a failure */
 }
 
-private int
+static int
 omni_print_page (gx_device_printer *pdev, FILE *prn_stream)
 {
    return PrintPage (pdev, prn_stream, 1);
@@ -1275,7 +1275,7 @@ omni_print_page (gx_device_printer *pdev, FILE *prn_stream)
 /* ------------------------------------------------------*/
 /* ------------------------------------------------------*/
 
-private int
+static int
 PrintPage (gx_device_printer *pgx_prt_dev, FILE *prn_stream, int num_copies)
 {
    gx_device_omni * const pasyncDev        = (gx_device_omni *)pgx_prt_dev;
@@ -1724,7 +1724,7 @@ done:
 /* -------------- Renderer instance procedures ----------*/
 
 /* Thread to do rendering, started by StartRenderThread */
-private void
+static void
 RenderThread (void *params)
 {
 #ifdef OMNI_ASYNC
@@ -1735,7 +1735,7 @@ RenderThread (void *params)
 /* ------------------------------------------------------*/
 /* ------------------------------------------------------*/
 
-private int /* rets 0 ok, -ve error if couldn't start thread */
+static int /* rets 0 ok, -ve error if couldn't start thread */
 StartRenderThread (gdev_prn_start_render_params *params)
 {
    return gp_create_thread(RenderThread, params);
@@ -1744,7 +1744,7 @@ StartRenderThread (gdev_prn_start_render_params *params)
 /* ------------------------------------------------------*/
 /* ------------------------------------------------------*/
 
-private int
+static int
 OpenRenderDevice (gx_device_printer *ppdev)
 {
    gx_device_omni * const pasyncDev = (gx_device_omni *)ppdev;
@@ -1764,7 +1764,7 @@ OpenRenderDevice (gx_device_printer *ppdev)
 /* ------------------------------------------------------*/
 
 /* Buffer a (partial) rasterized page & optionally print result multiple times. */
-private int
+static int
 BufferPage (gx_device_printer *pgx_prt_dev, FILE *file, int num_copies)
 {
 #ifndef OMNI_ASYNC
@@ -1891,7 +1891,7 @@ done:
 /* ------------------------------------------------------*/
 
 /* Compute space parameters */
-private void
+static void
 GetSpaceParams (const gx_device_printer *pgx_prt_dev,
                 gdev_prn_space_params   *space_params)
 {

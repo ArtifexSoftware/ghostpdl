@@ -43,12 +43,12 @@
  *	  o-stack after resuming, in case the predicate has odd side-efects
  */
 
-private int zsort(i_ctx_t *i_ctx_p);
-private int zsort_continue(i_ctx_t *i_ctx_p);
-private int zsort_cleanup(i_ctx_t *i_ctx_p);
+static int zsort(i_ctx_t *i_ctx_p);
+static int zsort_continue(i_ctx_t *i_ctx_p);
+static int zsort_cleanup(i_ctx_t *i_ctx_p);
 
 /* <array> <lt> .sort <array> */
-private int
+static int
 zsort(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -104,7 +104,7 @@ zsort(i_ctx_t *i_ctx_p)
 }
 
 /* Continuation operator for .sort */
-private int
+static int
 zsort_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -189,7 +189,7 @@ H8:		ref_assign_old(&arry, &Rn[i], &R, ".sort(H8)");
 }
 
 /* No-op cleanup routine for .sort */
-private int
+static int
 zsort_cleanup(i_ctx_t *i_ctx_p)
 {
     return 0;

@@ -57,21 +57,21 @@ get_real(void)
 /*#define CAPTURE */
 
 /* Test programs */
-private int test1(gs_state *, gs_memory_t *);	/* kaleidoscope */
-private int test2(gs_state *, gs_memory_t *);	/* pattern fill */
-private int test3(gs_state *, gs_memory_t *);	/* RasterOp */
-private int test4(gs_state *, gs_memory_t *);	/* set resolution */
-private int test5(gs_state *, gs_memory_t *);	/* images */
-private int test6(gs_state *, gs_memory_t *);	/* CIE API, snapping */
-private int test7(gs_state *, gs_memory_t *);	/* non-monot HT */
-private int test8(gs_state *, gs_memory_t *);	/* transp patterns */
+static int test1(gs_state *, gs_memory_t *);	/* kaleidoscope */
+static int test2(gs_state *, gs_memory_t *);	/* pattern fill */
+static int test3(gs_state *, gs_memory_t *);	/* RasterOp */
+static int test4(gs_state *, gs_memory_t *);	/* set resolution */
+static int test5(gs_state *, gs_memory_t *);	/* images */
+static int test6(gs_state *, gs_memory_t *);	/* CIE API, snapping */
+static int test7(gs_state *, gs_memory_t *);	/* non-monot HT */
+static int test8(gs_state *, gs_memory_t *);	/* transp patterns */
 
 #ifdef CAPTURE
 #include "k/capture.c"
-private int test10(gs_state *, gs_memory_t *);	/* captured data */
+static int test10(gs_state *, gs_memory_t *);	/* captured data */
 
 #endif
-private int (*tests[]) (gs_state *, gs_memory_t *) =
+static int (*tests[]) (gs_state *, gs_memory_t *) =
 {
     test1, test2, test3, test4, test5,
 	test6, test7, test8, 0
@@ -84,7 +84,7 @@ private int (*tests[]) (gs_state *, gs_memory_t *) =
 extern_gs_lib_device_list();
 
 /* Forward references */
-private float odsf(floatp, floatp);
+static float odsf(floatp, floatp);
 
 
 int
@@ -214,7 +214,7 @@ main(int argc, const char *argv[])
 #undef mem
 }
 /* Ordered dither spot function */
-private float
+static float
 odsf(floatp x, floatp y)
 {
     static const byte dither[256] =
@@ -243,7 +243,7 @@ odsf(floatp x, floatp y)
 }
 
 /* Fill a rectangle. */
-private int
+static int
 fill_rect1(gs_state * pgs, floatp x, floatp y, floatp w, floatp h)
 {
     gs_rect r;
@@ -291,7 +291,7 @@ gs_abort(const gs_memory_t *mem)
 
 /* Return the number with the magnitude of x and the sign of y. */
 /* This is a BSD addition to libm; not all compilers have it. */
-private double
+static double
 gs_copysign(floatp x, floatp y)
 {
    return ( y >= 0  ? fabs(x) : -fabs(x) );
@@ -302,8 +302,8 @@ gs_copysign(floatp x, floatp y)
 /* Draw a colored kaleidoscope. */
 
 /* Random number generator */
-private long rand_state = 1;
-private long
+static long rand_state = 1;
+static long
 rand(void)
 {
 #define A 16807
@@ -320,7 +320,7 @@ rand(void)
 #undef R
     return rand_state;
 }
-private int
+static int
 test1(gs_state * pgs, gs_memory_t * mem)
 {
     int n;
@@ -354,7 +354,7 @@ test1(gs_state * pgs, gs_memory_t * mem)
 /* ---------------- Test program 2 ---------------- */
 /* Fill an area with a pattern. */
 
-private int
+static int
 test2(gs_state * pgs, gs_memory_t * mem)
 {
     gs_client_color cc;
@@ -415,7 +415,7 @@ test2(gs_state * pgs, gs_memory_t * mem)
 /* Exercise RasterOp a little. */
 /* Currently, this only works with monobit devices. */
 
-private int
+static int
 test3(gs_state * pgs, gs_memory_t * mem)
 {
     gx_device *dev = gs_currentdevice(pgs);
@@ -457,7 +457,7 @@ test3(gs_state * pgs, gs_memory_t * mem)
 /* ---------------- Test program 4 ---------------- */
 /* Set the resolution dynamically. */
 
-private int
+static int
 test4(gs_state * pgs, gs_memory_t * mem)
 {
     gs_c_param_list list;
@@ -504,7 +504,7 @@ test4(gs_state * pgs, gs_memory_t * mem)
 /* ---------------- Test program 5 ---------------- */
 /* Test masked (and non-masked) images. */
 
-private int
+static int
 test5(gs_state * pgs, gs_memory_t * mem)
 {
     gx_device *dev = gs_currentdevice(pgs);
@@ -732,7 +732,7 @@ test5(gs_state * pgs, gs_memory_t * mem)
 /* ---------------- Test program 6 ---------------- */
 /* Test the C API for CIE CRDs, and color snapping. */
 
-private void
+static void
 spectrum(gs_state * pgs, int n)
 {
     float den = n;
@@ -755,12 +755,12 @@ spectrum(gs_state * pgs, int n)
 			   size, size);
 	    }
 }
-private float
+static float
 render_abc(floatp v, const gs_cie_render * ignore_crd)
 {
     return v / 2;
 }
-private int
+static int
 set_cmap_method(gx_device_cmap *cmdev, gx_device_color_mapping_method_t method,
 		gs_state *pgs, gs_memory_t *mem)
 {
@@ -775,7 +775,7 @@ set_cmap_method(gx_device_cmap *cmdev, gx_device_color_mapping_method_t method,
     gs_setdevice_no_init(pgs, (gx_device *)cmdev);
     return 0;
 }
-private int
+static int
 test6(gs_state * pgs, gs_memory_t * mem)
 {
     gs_color_space *pcs;
@@ -838,7 +838,7 @@ test6(gs_state * pgs, gs_memory_t * mem)
 /* ---------------- Test program 7 ---------------- */
 /* Test the C API for non-monotonic halftones. */
 
-private int
+static int
 test7(gs_state * pgs, gs_memory_t * mem)
 {
     /* Define a non-monotonic 4 x 4 halftone with 4 gray levels. */
@@ -875,7 +875,7 @@ test7(gs_state * pgs, gs_memory_t * mem)
 /* ---------------- Test program 8 ---------------- */
 /* Test partially transparent patterns */
 
-private int
+static int
 test8(gs_state * pgs, gs_memory_t * mem)
 {
     /*
@@ -950,16 +950,16 @@ test8(gs_state * pgs, gs_memory_t * mem)
 /* ---------------- Test program 10 ---------------- */
 /* Replay captured data for printer output. */
 
-private const char outfile[] = "t.pbm";
-private const float ypage_wid = 11.0;
-private const float xpage_len = 17.0;
-private const int rotate_value = 0;
-private const float scale_x = 0.45;
-private const float scale_y = 0.45;
-private const float xmove_origin = 0.0;
-private const float ymove_origin = 0.0;
+static const char outfile[] = "t.pbm";
+static const float ypage_wid = 11.0;
+static const float xpage_len = 17.0;
+static const int rotate_value = 0;
+static const float scale_x = 0.45;
+static const float scale_y = 0.45;
+static const float xmove_origin = 0.0;
+static const float ymove_origin = 0.0;
 
-private int
+static int
 test10(gs_state * pgs, gs_memory_t * mem)
 {
     gs_c_param_list list;

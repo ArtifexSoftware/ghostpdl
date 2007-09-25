@@ -30,12 +30,12 @@
  */
 #define NB SFREE_NB
 #if NB == 4
-private uint
+static uint
 get_uu32(const byte *ptr)
 {
     return (ptr[0] << 24) + (ptr[1] << 16) + (ptr[2] << 8) + ptr[3];
 }
-private void
+static void
 put_uu32(byte *ptr, uint val)
 {
     ptr[0] = val >> 24;
@@ -48,7 +48,7 @@ put_uu32(byte *ptr, uint val)
 /* Allocate a string. */
 /* Scan the current chunk's free list if the request is large enough. */
 /* Currently we require an exact match of the block size. */
-private byte *
+static byte *
 sf_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
@@ -81,7 +81,7 @@ sf_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
 }
 
 /* Free a string. */
-private void
+static void
 sf_free_string(gs_memory_t * mem, byte * str, uint size, client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
@@ -216,7 +216,7 @@ sf_free_string(gs_memory_t * mem, byte * str, uint size, client_name_t cname)
 }
 
 /* Enable or disable freeing. */
-private void
+static void
 sf_enable_free(gs_memory_t * mem, bool enable)
 {
     (*gs_ref_memory_procs.enable_free) (mem, enable);
@@ -225,7 +225,7 @@ sf_enable_free(gs_memory_t * mem, bool enable)
 }
 
 /* Merge free strings at the bottom of a chunk's string storage. */
-private void
+static void
 sf_merge_strings(chunk_t * cp)
 {
     for (;;) {
@@ -250,7 +250,7 @@ sf_merge_strings(chunk_t * cp)
 }
 
 /* Consolidate free space. */
-private void
+static void
 sf_consolidate_free(gs_memory_t *mem)
 {
     gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
@@ -302,7 +302,7 @@ sf_consolidate_free(gs_memory_t *mem)
  * within the chunk if possible.
  */
 
-private void use_string_freelists(gs_ref_memory_t *mem);
+static void use_string_freelists(gs_ref_memory_t *mem);
 void
 gs_nogc_reclaim(vm_spaces * pspaces, bool global)
 {
@@ -325,7 +325,7 @@ gs_nogc_reclaim(vm_spaces * pspaces, bool global)
 #ifdef VMS
 #pragma optimize ansi_alias=off
 #endif
-private void
+static void
 use_string_freelists(gs_ref_memory_t *rmem)
 {
     /*

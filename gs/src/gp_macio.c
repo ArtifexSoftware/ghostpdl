@@ -178,15 +178,15 @@ failed:
 /* ====== Substitute for stdio ====== */
 
 /* Forward references */
-private void mac_std_init(void);
-private stream_proc_process(mac_stdin_read_process);
-private stream_proc_process(mac_stdout_write_process);
-private stream_proc_process(mac_stderr_write_process);
-private stream_proc_available(mac_std_available);
+static void mac_std_init(void);
+static stream_proc_process(mac_stdin_read_process);
+static stream_proc_process(mac_stdout_write_process);
+static stream_proc_process(mac_stderr_write_process);
+static stream_proc_available(mac_std_available);
 
 /* Use a pseudo IODevice to get mac_stdio_init called at the right time. */
 /* This is bad architecture; we'll fix it later. */
-private iodev_proc_init(mac_stdio_init);
+static iodev_proc_init(mac_stdio_init);
 const gx_io_device gs_iodev_macstdio =
 {
     "macstdio", "Special",
@@ -198,7 +198,7 @@ const gx_io_device gs_iodev_macstdio =
 };
 
 /* Do one-time initialization */
-private int
+static int
 mac_stdio_init(gx_io_device * iodev, gs_memory_t * mem)
 {
     mac_std_init();		/* redefine stdin/out/err to our window routines */
@@ -208,7 +208,7 @@ mac_stdio_init(gx_io_device * iodev, gs_memory_t * mem)
 /* Define alternate 'open' routines for our stdin/out/err streams. */
 
 extern const gx_io_device gs_iodev_stdin;
-private int
+static int
 mac_stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
 	       gs_memory_t * mem)
 {
@@ -224,7 +224,7 @@ mac_stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
 }
 
 extern const gx_io_device gs_iodev_stdout;
-private int
+static int
 mac_stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
 		gs_memory_t * mem)
 {
@@ -240,7 +240,7 @@ mac_stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
 }
 
 extern const gx_io_device gs_iodev_stderr;
-private int
+static int
 mac_stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
 		gs_memory_t * mem)
 {
@@ -256,7 +256,7 @@ mac_stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
 }
 
 /* Patch stdin/out/err to use our windows. */
-private void
+static void
 mac_std_init(void)
 {
     /* If stdxxx is the console, replace the 'open' routines, */
@@ -276,7 +276,7 @@ mac_std_init(void)
 }
 
 
-private int
+static int
 mac_stdin_read_process(stream_state *st, stream_cursor_read *ignore_pr,
   stream_cursor_write *pw, bool last)
 {
@@ -289,7 +289,7 @@ mac_stdin_read_process(stream_state *st, stream_cursor_read *ignore_pr,
 }
 
 
-private int
+static int
 mac_stdout_write_process(stream_state *st, stream_cursor_read *pr,
   stream_cursor_write *ignore_pw, bool last)
 {	uint count = pr->limit - pr->ptr;
@@ -300,7 +300,7 @@ mac_stdout_write_process(stream_state *st, stream_cursor_read *pr,
 	return 0;
 }
 
-private int
+static int
 mac_stderr_write_process(stream_state *st, stream_cursor_read *pr,
   stream_cursor_write *ignore_pw, bool last)
 {	uint count = pr->limit - pr->ptr;
@@ -311,7 +311,7 @@ mac_stderr_write_process(stream_state *st, stream_cursor_read *pr,
 	return 0;
 }
 
-private int
+static int
 mac_std_available(register stream * s, long *pl)
 {
     *pl = -1;		// EOF, since we can't do it

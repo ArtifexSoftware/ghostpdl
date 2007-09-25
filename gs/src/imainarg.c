@@ -78,38 +78,38 @@ extern int zflushpage(i_ctx_t *);
 #define runInit 1
 #define runFlush 2
 #define runBuffer 4
-private int swproc(gs_main_instance *, const char *, arg_list *);
-private int argproc(gs_main_instance *, const char *);
-private int run_buffered(gs_main_instance *, const char *);
-private int esc_strlen(const char *);
-private void esc_strcat(char *, const char *);
-private int runarg(gs_main_instance *, const char *, const char *, const char *, int);
-private int run_string(gs_main_instance *, const char *, int);
-private int run_finish(gs_main_instance *, int, int, ref *);
-private int try_stdout_redirect(gs_main_instance * minst, 
+static int swproc(gs_main_instance *, const char *, arg_list *);
+static int argproc(gs_main_instance *, const char *);
+static int run_buffered(gs_main_instance *, const char *);
+static int esc_strlen(const char *);
+static void esc_strcat(char *, const char *);
+static int runarg(gs_main_instance *, const char *, const char *, const char *, int);
+static int run_string(gs_main_instance *, const char *, int);
+static int run_finish(gs_main_instance *, int, int, ref *);
+static int try_stdout_redirect(gs_main_instance * minst, 
 				const char *command, const char *filename);
 
 /* Forward references for help printout */
-private void print_help(gs_main_instance *);
-private void print_revision(const gs_main_instance *);
-private void print_version(const gs_main_instance *);
-private void print_usage(const gs_main_instance *);
-private void print_devices(const gs_main_instance *);
-private void print_emulators(const gs_main_instance *);
-private void print_paths(gs_main_instance *);
-private void print_help_trailer(const gs_main_instance *);
+static void print_help(gs_main_instance *);
+static void print_revision(const gs_main_instance *);
+static void print_version(const gs_main_instance *);
+static void print_usage(const gs_main_instance *);
+static void print_devices(const gs_main_instance *);
+static void print_emulators(const gs_main_instance *);
+static void print_paths(gs_main_instance *);
+static void print_help_trailer(const gs_main_instance *);
 
 /* ------ Main program ------ */
 
 /* Process the command line with a given instance. */
-private FILE *
+static FILE *
 gs_main_arg_fopen(const char *fname, void *vminst)
 {
     gs_main_set_lib_paths((gs_main_instance *) vminst);
     return lib_fopen(&((gs_main_instance *)vminst)->lib_path, 
 		     ((gs_main_instance *)vminst)->heap, fname);
 }
-private void
+static void
 set_debug_flags(const char *arg, char *flags)
 {
     byte value = (*arg == '-' ? (++arg, 0) : 0xff);
@@ -233,7 +233,7 @@ gs_main_run_start(gs_main_instance * minst)
 
 /* Process switches.  Return 0 if processed, 1 for unknown switch, */
 /* <0 if error. */
-private int
+static int
 swproc(gs_main_instance * minst, const char *arg, arg_list * pal)
 {
     char sw = arg[1];
@@ -680,12 +680,12 @@ run_stdin:
 /* This is so we can enter escaped characters regardless of whether */
 /* the Level 1 convention of ignoring \s in strings-within-strings */
 /* is being observed (sigh). */
-private int
+static int
 esc_strlen(const char *str)
 {
     return strlen(str) * 2 + 2;
 }
-private void
+static void
 esc_strcat(char *dest, const char *src)
 {
     char *d = dest + strlen(dest);
@@ -704,7 +704,7 @@ esc_strcat(char *dest, const char *src)
 }
 
 /* Process file names */
-private int
+static int
 argproc(gs_main_instance * minst, const char *arg)
 {
     int code = gs_main_init1(minst);		/* need i_ctx_p to proceed */
@@ -723,7 +723,7 @@ argproc(gs_main_instance * minst, const char *arg)
 	return runarg(minst, "", filearg, ".runfile", runInit | runFlush);
     }
 }
-private int
+static int
 run_buffered(gs_main_instance * minst, const char *arg)
 {
     FILE *in = gp_fopen(arg, gp_fmode_rb);
@@ -762,7 +762,7 @@ run_buffered(gs_main_instance * minst, const char *arg)
     zflushpage(minst->i_ctx_p);
     return run_finish(minst, code, exit_code, &error_object);
 }
-private int
+static int
 runarg(gs_main_instance * minst, const char *pre, const char *arg,
        const char *post, int options)
 {
@@ -789,7 +789,7 @@ runarg(gs_main_instance * minst, const char *pre, const char *arg,
     minst->i_ctx_p->starting_arg_file = false;
     return code;
 }
-private int
+static int
 run_string(gs_main_instance * minst, const char *str, int options)
 {
     int exit_code;
@@ -803,7 +803,7 @@ run_string(gs_main_instance * minst, const char *str, int options)
     }
     return run_finish(minst, code, exit_code, &error_object);
 }
-private int
+static int
 run_finish(gs_main_instance *minst, int code, int exit_code,
 	   ref * perror_object)
 {
@@ -829,7 +829,7 @@ run_finish(gs_main_instance *minst, int code, int exit_code,
  * File is closed at program exit (if not stdout/err)
  * or when -sstdout is used again.
  */
-private int 
+static int 
 try_stdout_redirect(gs_main_instance * minst, 
     const char *command, const char *filename)
 {
@@ -868,25 +868,25 @@ try_stdout_redirect(gs_main_instance * minst,
  * the Watcom compiler has a limit of 510 characters for a single token.
  * For PC displays, we want to limit the strings to 24 lines.
  */
-private const char help_usage1[] = "\
+static const char help_usage1[] = "\
 Usage: gs [switches] [file1.ps file2.ps ...]\n\
 Most frequently used switches: (you can use # in place of =)\n\
  -dNOPAUSE           no pause after page   | -q       `quiet', fewer messages\n\
  -g<width>x<height>  page size in pixels   | -r<res>  pixels/inch resolution\n";
-private const char help_usage2[] = "\
+static const char help_usage2[] = "\
  -sDEVICE=<devname>  select device         | -dBATCH  exit after last file\n\
  -sOutputFile=<file> select output file: - for stdout, |command for pipe,\n\
                                          embed %d or %ld for page #\n";
-private const char help_trailer[] = "\
+static const char help_trailer[] = "\
 For more information, see %s.\n\
 Please report bugs to bugs.ghostscript.com.\n";
-private const char help_devices[] = "Available devices:";
-private const char help_default_device[] = "Default output device:";
-private const char help_emulators[] = "Input formats:";
-private const char help_paths[] = "Search path:";
+static const char help_devices[] = "Available devices:";
+static const char help_default_device[] = "Default output device:";
+static const char help_emulators[] = "Input formats:";
+static const char help_paths[] = "Search path:";
 
 /* Print the standard help message. */
-private void
+static void
 print_help(gs_main_instance * minst)
 {
     print_revision(minst);
@@ -901,7 +901,7 @@ print_help(gs_main_instance * minst)
 }
 
 /* Print the revision, revision date, and copyright. */
-private void
+static void
 print_revision(const gs_main_instance *minst)
 {
     printf_program_ident(minst->heap, gs_product, gs_revision);
@@ -913,14 +913,14 @@ print_revision(const gs_main_instance *minst)
 }
 
 /* Print the version number. */
-private void
+static void
 print_version(const gs_main_instance *minst)
 {
     printf_program_ident(minst->heap, NULL, gs_revision);
 }
 
 /* Print usage information. */
-private void
+static void
 print_usage(const gs_main_instance *minst)
 {
     outprintf(minst->heap, "%s", help_usage1);
@@ -928,14 +928,14 @@ print_usage(const gs_main_instance *minst)
 }
 
 /* compare function for qsort */
-private int
+static int
 cmpstr(const void *v1, const void *v2)
 {
     return strcmp( *(char * const *)v1, *(char * const *)v2 );
 }
 
 /* Print the list of available devices. */
-private void
+static void
 print_devices(const gs_main_instance *minst)
 {
     outprintf(minst->heap, "%s", help_default_device);
@@ -982,7 +982,7 @@ print_devices(const gs_main_instance *minst)
 }
 
 /* Print the list of language emulators. */
-private void
+static void
 print_emulators(const gs_main_instance *minst)
 {
     outprintf(minst->heap, "%s", help_emulators);
@@ -1003,7 +1003,7 @@ print_emulators(const gs_main_instance *minst)
 }
 
 /* Print the search paths. */
-private void
+static void
 print_paths(gs_main_instance * minst)
 {
     outprintf(minst->heap, "%s", help_paths);
@@ -1046,7 +1046,7 @@ print_paths(gs_main_instance * minst)
 }
 
 /* Print the help trailer. */
-private void
+static void
 print_help_trailer(const gs_main_instance *minst)
 {
     char buffer[gp_file_name_sizeof];

@@ -26,7 +26,7 @@
 #include "gxalloc.h"
 
 /* - currentpacking <bool> */
-private int
+static int
 zcurrentpacking(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -61,7 +61,7 @@ zpackedarray(i_ctx_t *i_ctx_p)
 }
 
 /* <bool> setpacking - */
-private int
+static int
 zsetpacking(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

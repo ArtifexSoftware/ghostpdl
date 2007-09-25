@@ -117,13 +117,13 @@ typedef struct upd_device_s {      /** The driver must typedef ... */
 /* Major Driver-Functions                                              */
 /* ------------------------------------------------------------------- */
 
-private dev_proc_print_page(upd_print_page); /** print a page (required) */
+static dev_proc_print_page(upd_print_page); /** print a page (required) */
 
-private dev_proc_open_device(upd_open);      /** device-initialization (opt) */
-private dev_proc_close_device(upd_close);    /** device-release (opt) */
+static dev_proc_open_device(upd_open);      /** device-initialization (opt) */
+static dev_proc_close_device(upd_close);    /** device-release (opt) */
 
-private dev_proc_get_params(upd_get_params); /** export parameters (opt) */
-private dev_proc_put_params(upd_put_params); /** import parameters (opt) */
+static dev_proc_get_params(upd_get_params); /** export parameters (opt) */
+static dev_proc_put_params(upd_put_params); /** import parameters (opt) */
 
 /**
 A `normal' Device-Driver wil only implement one of the following pairs
@@ -138,11 +138,11 @@ RGB-Values, but promises to deal with R==G==B-Values when asking to map.
 The second pair deals with RGB-Values.
 */
 
-private dev_proc_encode_color( upd_rgb_1color);  /** Gray-Gray->Index */
-private dev_proc_decode_color( upd_1color_rgb);  /** Gray-Index->Gray */
+static dev_proc_encode_color( upd_rgb_1color);  /** Gray-Gray->Index */
+static dev_proc_decode_color( upd_1color_rgb);  /** Gray-Index->Gray */
 
-private dev_proc_encode_color( upd_rgb_3color);  /** RGB->RGB-Index */
-private dev_proc_decode_color( upd_3color_rgb);  /** RGB-Index->RGB */
+static dev_proc_encode_color( upd_rgb_3color);  /** RGB->RGB-Index */
+static dev_proc_decode_color( upd_3color_rgb);  /** RGB-Index->RGB */
 
 /**
 The third pair maps RGB-Values into four components, which one might
@@ -150,8 +150,8 @@ expect to be KCMY-Values, but they are not: "uniprint" considers this four
 Values as White+RGB Values!
 */
 
-private dev_proc_encode_color( upd_rgb_4color);  /** RGB->WRGB-Index */
-private dev_proc_decode_color(upd_4color_rgb);   /** WRGB-Index->RGB */
+static dev_proc_encode_color( upd_rgb_4color);  /** RGB->WRGB-Index */
+static dev_proc_decode_color(upd_4color_rgb);   /** WRGB-Index->RGB */
 
 /**
 The fourth pair deals with KCMY-Values. The Mapping-Function
@@ -160,8 +160,8 @@ inverse-Function is of the same type, and expects RGB-Values to be
 deliverd into the receiving 3-Component-Array!
 */
 
-private dev_proc_encode_color(upd_cmyk_icolor); /** KCMY->KCMY-Index */
-private dev_proc_decode_color( upd_icolor_rgb);  /** KCMY->RGB-Index */
+static dev_proc_encode_color(upd_cmyk_icolor); /** KCMY->KCMY-Index */
+static dev_proc_decode_color( upd_icolor_rgb);  /** KCMY->RGB-Index */
 
 /**
 The difference between the icolor-pair and the kcolor-pair is the enforced
@@ -169,8 +169,8 @@ black-generation in the forward-mapping. that is taken into account by the
 reverse-mapping too.
 */
 
-private dev_proc_encode_color(upd_cmyk_kcolor); /** adds black generation */
-private dev_proc_decode_color( upd_kcolor_rgb);  /** watches black-gen */
+static dev_proc_encode_color(upd_cmyk_kcolor); /** adds black generation */
+static dev_proc_decode_color( upd_kcolor_rgb);  /** watches black-gen */
 
 /**
 "ovcolor" is CMYK with Black-Generation and Undercolor-Removal, which
@@ -180,7 +180,7 @@ with
    K'   = min(C,M,Y)
 */
 
-private dev_proc_encode_color(upd_rgb_ovcolor);  /** RGB->CMYK-Index */
+static dev_proc_encode_color(upd_rgb_ovcolor);  /** RGB->CMYK-Index */
 #define upd_ovcolor_rgb upd_icolor_rgb            /** CMYK-Index->RGB */
 
 /**
@@ -191,7 +191,7 @@ with
    K'   = min(C,M,Y)
 */
 
-private dev_proc_encode_color(upd_rgb_novcolor); /** RGB->CMYK-Index */
+static dev_proc_encode_color(upd_rgb_novcolor); /** RGB->CMYK-Index */
 #define upd_novcolor_rgb upd_icolor_rgb           /** CMYK-Index->RGB */
 
 /**
@@ -201,7 +201,7 @@ only active, if there is a valid device-structure for then.
 upd_procs_map performs this task.
 */
 
-private int             upd_procs_map( upd_device *udev);
+static int             upd_procs_map( upd_device *udev);
 
 /* ------------------------------------------------------------------- */
 /* Prototype of the Device-Structure (the only thing exported!)        */
@@ -216,7 +216,7 @@ prn_std_procs instead of defining their own procedure-table.
 #define upd_set_dev_proc(dev, p, proc) \
    ((dev)->std_procs.p = (dev)->orig_procs.p = (proc))
 
-private gx_device_procs upd_procs = {  /** Table of procedures */
+static gx_device_procs upd_procs = {  /** Table of procedures */
    upd_open,                      /** open-function, upd-special */
    gx_default_get_initial_matrix, /** retrieve matrix */
    gx_default_sync_output,        /** sync display */
@@ -743,8 +743,8 @@ Most prominent are "upd_open_map" and "upd_close_map", which
 do the proper actions when opening and closing the device.
 */
 
-private int             upd_open_map( upd_device *udev);
-private int             upd_close_map(upd_device *udev);
+static int             upd_open_map( upd_device *udev);
+static int             upd_close_map(upd_device *udev);
 
 /**
 But "upd_truncate" and "upd_expand" are also mentionable. They are
@@ -754,12 +754,12 @@ and this is what "upd_truncate" does, in the most general manner i can
 think of and with O(log(n)) in time. "upd_expand" is required for the
 reverse mapping-functions and is a constant-time `algorithm'.
 */
-private inline uint32_t   upd_truncate(upd_pc,int,gx_color_value);
+static inline uint32_t   upd_truncate(upd_pc,int,gx_color_value);
 
 /* ------------------------------------------------------------------- */
 /* Return the gx_color_value for a given component                     */
 /* ------------------------------------------------------------------- */
-private inline gx_color_value
+static inline gx_color_value
 upd_expand(upd_pc upd,int i,gx_color_index ci0)
 {
    const updcmap_pc cmap = upd->cmap + i;    /* Writing-Shortcut */
@@ -781,18 +781,18 @@ is called for each scanline. Actually a fourth function is provided,
 that is invoked at the beginning of each page to be printed, but the
 current algorithms do not need it.
 */
-private void            upd_open_render(   upd_device *udev);
-private void            upd_close_render(  upd_device *udev);
+static void            upd_open_render(   upd_device *udev);
+static void            upd_close_render(  upd_device *udev);
 
-private void            upd_open_fscomp(   upd_device *udev);
-private int             upd_fscomp(        upd_p upd);
-private void            upd_close_fscomp(  upd_device *udev);
+static void            upd_open_fscomp(   upd_device *udev);
+static int             upd_fscomp(        upd_p upd);
+static void            upd_close_fscomp(  upd_device *udev);
 
-private void            upd_open_fscmyk(   upd_device *udev);
-private int             upd_fscmyk(        upd_p upd);
+static void            upd_open_fscmyk(   upd_device *udev);
+static int             upd_fscmyk(        upd_p upd);
 
-private void            upd_open_fscmy_k(  upd_device *udev);
-private int             upd_fscmy_k(       upd_p upd);
+static void            upd_open_fscmy_k(  upd_device *udev);
+static int             upd_fscmy_k(       upd_p upd);
 
 /**
 I hope that the formatting stuff can be kept simple and thus most
@@ -801,10 +801,10 @@ During open, there is a call to a format-specific open-function, but
 this is only for checking and determining the amount of of bytes required
 for the output-buffer (and limit-values in the scan-buffer).
 */
-private int             upd_open_writer(   upd_device *udev);
-private void            upd_close_writer(  upd_device *udev);
+static int             upd_open_writer(   upd_device *udev);
+static void            upd_close_writer(  upd_device *udev);
 #if UPD_SIGNAL
-private void            upd_signal_handler(int sig);
+static void            upd_signal_handler(int sig);
 #endif
 
 /**
@@ -815,9 +815,9 @@ it is a violation of UPD's rules: the start-routine computes the Begin-Page
 sequence (the Rasterfile header) since it would be a nuisance to provide
 this code within each (test-)personalization in PostScript.
 */
-private int             upd_open_rascomp(   upd_device *udev);
-private int             upd_start_rascomp(  upd_p upd, FILE *out);
-private int             upd_rascomp(        upd_p upd, FILE *out);
+static int             upd_open_rascomp(   upd_device *udev);
+static int             upd_start_rascomp(  upd_p upd, FILE *out);
+static int             upd_rascomp(        upd_p upd, FILE *out);
 
 /**
 The second format is ESC/P, the format introduced with the first Epson
@@ -826,9 +826,9 @@ It is also uncompressed. This formatter supports X- and Y-Weaving,
 which makes it the most sophisticated one inside this driver.
 */
 
-private void            upd_limits(        upd_p upd, bool check);
-private int             upd_open_wrtescp(  upd_device *udev);
-private int             upd_wrtescp(       upd_p upd, FILE *out);
+static void            upd_limits(        upd_p upd, bool check);
+static int             upd_open_wrtescp(  upd_device *udev);
+static int             upd_wrtescp(       upd_p upd, FILE *out);
 
 /**
 The third format is ESC/P2, the format use by the newer Epson-Printers.
@@ -837,40 +837,40 @@ This formatter does not allow for X-Weaving.
 
 The fourth writer is a ESC/P2-Writer, that supports X-Weaving
 */
-private int             upd_rle(byte *out,const byte *in,int nbytes);
-private int             upd_open_wrtescp2( upd_device *udev);
-private int             upd_wrtescp2(      upd_p upd, FILE *out);
-private int             upd_wrtescp2x(     upd_p upd, FILE *out);
+static int             upd_rle(byte *out,const byte *in,int nbytes);
+static int             upd_open_wrtescp2( upd_device *udev);
+static int             upd_wrtescp2(      upd_p upd, FILE *out);
+static int             upd_wrtescp2x(     upd_p upd, FILE *out);
 
 /**
 The fifth writer is a HP-RTL/PCL-Writer
 */
 
-private int             upd_open_wrtrtl(   upd_device *udev);
-private int             upd_wrtrtl(        upd_p upd, FILE *out);
+static int             upd_open_wrtrtl(   upd_device *udev);
+static int             upd_wrtrtl(        upd_p upd, FILE *out);
 
 /**
 The sixth writer is for Canon Extended Mode (currently BJC610) (hr)
 */
 
-private int             upd_open_wrtcanon( upd_device *udev);
-private int             upd_wrtcanon(      upd_p upd, FILE *out);
+static int             upd_open_wrtcanon( upd_device *udev);
+static int             upd_wrtcanon(      upd_p upd, FILE *out);
 
 /**
 The seventh writer is for ESC P/2 Nozzle Map Mode (currently Stylus Color 300) (GR)
 */
 
-private int             upd_wrtescnm(      upd_p upd, FILE *out);
+static int             upd_wrtescnm(      upd_p upd, FILE *out);
 
 
 /**
 Generalized Pixel Get & Read
 */
-private uint32_t upd_pxlfwd(upd_p upd);
-private uint32_t upd_pxlrev(upd_p upd);
+static uint32_t upd_pxlfwd(upd_p upd);
+static uint32_t upd_pxlrev(upd_p upd);
 #define upd_pxlget(UPD) (*UPD->pxlget)(UPD)
 
-private void *upd_cast(const void *);
+static void *upd_cast(const void *);
 
 /* ------------------------------------------------------------------- */
 /* Macros to deal with the Parameter-Memory                            */
@@ -982,7 +982,7 @@ static const float upd_data_xfer[2] = { 0.0, 1.0 };
 /* upd_cast: keeps some compilers more happy [dangerous]               */
 /* ------------------------------------------------------------------- */
 
-private void *
+static void *
 upd_cast(const void *data)
 {
   return (void *) data;
@@ -994,7 +994,7 @@ upd_cast(const void *data)
 
 #if UPD_SIGNAL
 static upd_p sigupd = NULL;
-private void
+static void
 upd_signal_handler(int sig)
 {
   if(sigupd) sigupd->flags |= B_ABORT;
@@ -1035,7 +1035,7 @@ must be done here, since during the initialisation, the device is
 usually opened several times, before obtaining a valid state.
 */
 
-private int
+static int
 upd_print_page(gx_device_printer *pdev, FILE *out)
 {
    upd_device *const udev  = (upd_device *) pdev;
@@ -1249,7 +1249,7 @@ alternative would be "upd_print_page", but i often print 100 pages or
 more, but i never experienced more than 5-6 open-calls.
 */
 
-private int
+static int
 upd_open(gx_device *pdev)
 {
    upd_device *const udev    =  (upd_device *) pdev;
@@ -1464,7 +1464,7 @@ buffer for the raw raster-data
 /* upd_close: Release everything allocated in upd_open                 */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_close(gx_device *pdev)
 {
    upd_device *const udev    =  (upd_device *) pdev;
@@ -1542,7 +1542,7 @@ upd_close(gx_device *pdev)
 #define UPD_EXIT_GET(Err,Dev,List) if(0 > Err) return_error(Err);
 #endif
 
-private int
+static int
 upd_get_params(gx_device *pdev, gs_param_list *plist)
 {
    upd_device *const udev    =  (upd_device *) pdev;
@@ -1666,7 +1666,7 @@ upd_get_params(gx_device *pdev, gs_param_list *plist)
 /* upd_put_params: Load Parameters into the device-structure           */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_put_params(gx_device *pdev, gs_param_list *plist)
 {
    upd_device *const      udev       = (upd_device *) pdev;
@@ -2167,7 +2167,7 @@ it is necessary to do some truncation and shifting. For the truncation
 reverses this in the reverse-mapping procedures.
 */
 
-private gx_color_index
+static gx_color_index
 upd_cmyk_icolor(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
@@ -2224,7 +2224,7 @@ in the W- or K-Component.
 /* upd_icolor_rgb: Stored KCMY back to a RGB                           */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_icolor_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
@@ -2282,7 +2282,7 @@ upd_icolor_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 /* upd_rgb_1color: Grayscale->Grayscale-index-Mapping              */
 /* ------------------------------------------------------------------- */
 
-private gx_color_index
+static gx_color_index
 upd_rgb_1color(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
@@ -2308,7 +2308,7 @@ upd_rgb_1color(gx_device *pdev, const gx_color_value cv[])
 /* upd_1color_rgb: reversal of the above                               */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_1color_rgb(gx_device *pdev, gx_color_index color, gx_color_value cv[1])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
@@ -2334,7 +2334,7 @@ upd_1color_rgb(gx_device *pdev, gx_color_index color, gx_color_value cv[1])
 /* upd_rgb_3color: component-wise RGB->RGB-Mapping                     */
 /* ------------------------------------------------------------------- */
 
-private gx_color_index
+static gx_color_index
 upd_rgb_3color(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
@@ -2367,7 +2367,7 @@ upd_rgb_3color(gx_device *pdev, const gx_color_value cv[])
 /* upd_3color_rgb: reversal of the above                               */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_3color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
@@ -2399,7 +2399,7 @@ upd_3color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 /* upd_rgb_4color: Create an WRGB-Index from RGB                       */
 /* ------------------------------------------------------------------- */
 
-private gx_color_index
+static gx_color_index
 upd_rgb_4color(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
@@ -2448,7 +2448,7 @@ upd_rgb_4color(gx_device *pdev, const gx_color_value cv[])
 /* upd_4color_rgb: Stored WRGB-Index back to a RGB                     */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_4color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
@@ -2489,7 +2489,7 @@ upd_4color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 /* upd_cmyk_kcolor: KCMY->KCMY-Index Mapping with Black Generation     */
 /* ------------------------------------------------------------------- */
 
-private gx_color_index
+static gx_color_index
 upd_cmyk_kcolor(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
@@ -2547,7 +2547,7 @@ upd_cmyk_kcolor(gx_device *pdev, const gx_color_value cv[])
 /* upd_kcolor_rgb: Stored CMY+generated K back to a RGB                */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_kcolor_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
@@ -2602,7 +2602,7 @@ upd_kcolor_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 /* upd_rgb_ovcolor: Create an KCMY-Index from RGB                      */
 /* ------------------------------------------------------------------- */
 
-private gx_color_index
+static gx_color_index
 upd_rgb_ovcolor(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
@@ -2683,7 +2683,7 @@ upd_rgb_ovcolor(gx_device *pdev, const gx_color_value cv[])
 /* upd_rgb_novcolor: Create an KCMY-Index from RGB                      */
 /* ------------------------------------------------------------------- */
 
-private gx_color_index
+static gx_color_index
 upd_rgb_novcolor(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
@@ -2746,7 +2746,7 @@ upd_rgb_novcolor(gx_device *pdev, const gx_color_value cv[])
 /* Truncate a gx_color_value to the desired number of bits.            */
 /* ------------------------------------------------------------------- */
 
-private uint32_t
+static uint32_t
 upd_truncate(upd_pc upd,int i,gx_color_value v) {
    const updcmap_pc cmap = upd->cmap + i;
    int32_t           s; /* step size */
@@ -2788,7 +2788,7 @@ upd_truncate(upd_pc upd,int i,gx_color_value v) {
 /* upd_open_map: install the color-mapping                             */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_open_map(upd_device *udev)
 {
    const upd_p      upd   = udev->upd;
@@ -3110,7 +3110,7 @@ upd_open_map(upd_device *udev)
 /* upd_procs_map: (de-) install the color-mapping-procedures           */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_procs_map(upd_device *udev)
 {
    int imap;
@@ -3186,7 +3186,7 @@ upd_procs_map(upd_device *udev)
 /* upd_close_map: remove color mapping                                 */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_close_map(upd_device *udev)
 {
    const upd_p      upd   = udev->upd;
@@ -3230,7 +3230,7 @@ suitable for the device.
 /* upd_open_render: Initialize rendering                               */
 /* ------------------------------------------------------------------- */
 
-private void
+static void
 upd_open_render(upd_device *udev)
 {
    const upd_p upd = udev->upd;
@@ -3284,7 +3284,7 @@ upd_open_render(upd_device *udev)
 /* upd_close_render: Deinitialize rendering                            */
 /* ------------------------------------------------------------------- */
 
-private void
+static void
 upd_close_render(upd_device *udev)
 {
    const upd_p upd = udev->upd;
@@ -3315,7 +3315,7 @@ upd_close_render(upd_device *udev)
 #if UPD_MESSAGES & UPD_M_FSBUF
 static int32_t fs_emin[UPD_VALPTR_MAX],fs_emax[UPD_VALPTR_MAX];
 #endif
-private void
+static void
 upd_open_fscomp(upd_device *udev)
 {
    const upd_p upd = udev->upd;
@@ -3511,7 +3511,7 @@ The render-Routine acts as an indicator, which render-close is to use!
 /* upd_close_fscomp: Deinitialize Component-Floyd-Steinberg            */
 /* ------------------------------------------------------------------- */
 
-private void
+static void
 upd_close_fscomp(upd_device *udev)
 {
    const upd_p upd = udev->upd;
@@ -3587,7 +3587,7 @@ upd_close_fscomp(upd_device *udev)
       if(!(bit >>= 1)) { bit = 0x80; ibyte++; }\
    }             /* Inc/Dec Bit */
 
-private int
+static int
 upd_fscomp(upd_p upd)
 {
    const updscan_p  scan    = upd->scnbuf[upd->yscnbuf & upd->scnmsk];
@@ -3772,7 +3772,7 @@ upd_fscomp(upd_p upd)
 /* upd_open_fscmyk: Initialize Component-Floyd-Steinberg               */
 /* ------------------------------------------------------------------- */
 
-private void
+static void
 upd_open_fscmyk(upd_device *udev)
 {
    const upd_p upd = udev->upd;
@@ -3796,7 +3796,7 @@ upd_open_fscmyk(upd_device *udev)
 /* upd_fscmyk: 32 Bit, K-CMY-Order Dithering                           */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_fscmyk(upd_p upd)
 {
    const updscan_p  scan   = upd->scnbuf[upd->yscnbuf & upd->scnmsk];
@@ -3964,7 +3964,7 @@ upd_fscmyk(upd_p upd)
 /* upd_open_fscmy_k: Initialize for CMY_K Printing                     */
 /* ------------------------------------------------------------------- */
 
-private void
+static void
 upd_open_fscmy_k(upd_device *udev)
 {
    const upd_p upd = udev->upd;
@@ -3984,7 +3984,7 @@ upd_open_fscmy_k(upd_device *udev)
 /* upd_fscmy_k: CMY_K rendering                                        */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_fscmy_k(upd_p upd)
 {
    const updscan_p  scan    = upd->scnbuf[upd->yscnbuf & upd->scnmsk];
@@ -4139,7 +4139,7 @@ upd_fscmy_k(upd_p upd)
 /* upd_open_writer: Initialize rendering                               */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_open_writer(upd_device *udev)
 {
    const upd_p upd                 = udev->upd;
@@ -4524,7 +4524,7 @@ upd_open_writer(upd_device *udev)
 /* upd_close_writer: Deinitialize rendering                            */
 /* ------------------------------------------------------------------- */
 
-private void
+static void
 upd_close_writer(upd_device *udev)
 {
    const upd_p upd = udev->upd;
@@ -4579,7 +4579,7 @@ upd_close_writer(upd_device *udev)
 /* upd_limits: Establish passwise limits, after rendering              */
 /* ------------------------------------------------------------------- */
 
-private void
+static void
 upd_limits(upd_p upd, bool check)
 {
    updscan_p  scans = upd->scnbuf[upd->yscnbuf & upd->scnmsk], scan;
@@ -4642,7 +4642,7 @@ upd_limits(upd_p upd, bool check)
 /* upd_open_rascomp: ncomp * 1Bit Raster-Writer                        */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_open_rascomp(upd_device *udev)
 {
    const upd_p upd = udev->upd;
@@ -4680,7 +4680,7 @@ upd_open_rascomp(upd_device *udev)
    putc( (I32)     &255,Out)
 #endif
 
-private int
+static int
 upd_start_rascomp(upd_p upd, FILE *out) {
 
 /** if no begin-sequence externally set */
@@ -4785,7 +4785,7 @@ upd_start_rascomp(upd_p upd, FILE *out) {
 /* ------------------------------------------------------------------- */
 /* upd_rascomp: assemble & write a scanline                            */
 /* ------------------------------------------------------------------- */
-private int
+static int
 upd_rascomp(upd_p upd, FILE *out) {
    updscan_p scan = upd->scnbuf[upd->yscan & upd->scnmsk];
    uint bits = upd->pwidth;
@@ -4828,7 +4828,7 @@ upd_rascomp(upd_p upd, FILE *out) {
 /* upd_open_wrtescp: ESC/P Writer intended for ESC * m commands        */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_open_wrtescp(upd_device *udev)
 {
    const upd_p      upd  = udev->upd;
@@ -4973,7 +4973,7 @@ It must hold:
 /* upd_wrtescp: Write a pass                                           */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_wrtescp(upd_p upd, FILE *out)
 {
    int  pinbot,pin,pintop,xbegin,x,xend,icomp,ybegin,yend,y,ioutbuf,n,ixpass;
@@ -5232,7 +5232,7 @@ upd_wrtescp(upd_p upd, FILE *out)
 /* upd_open_wrtescp2: ESC/P2 Writer intended for ESC . 1  commands     */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_open_wrtescp2(upd_device *udev)
 {
    const upd_p      upd             = udev->upd;
@@ -5617,7 +5617,7 @@ It must hold:
 /* upd_wrtescp2: Write a pass                                          */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_wrtescp2(upd_p upd, FILE *out)
 {
    int  pinbot,pin,pintop,xbegin,x,xend,icomp,ybegin,yend,y,ioutbuf,n;
@@ -5857,7 +5857,7 @@ upd_wrtescp2(upd_p upd, FILE *out)
 
 /*GR copied from upd_wrtescp2 and modified */
  
-private int
+static int
 upd_wrtescnm(upd_p upd, FILE *out)
 {
    int  pinbot,pin,pintop,xbegin,x,xend,icomp,ybegin,yend,y,ioutbuf,n;
@@ -6143,7 +6143,7 @@ upd_wrtescnm(upd_p upd, FILE *out)
 /* upd_wrtescp2x: Write an ESC/P2-pass with X-Weaving                  */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_wrtescp2x(upd_p upd, FILE *out)
 {
    int  pinbot,pin,pintop,xbegin,x,xend,icomp,ybegin,yend,y,ioutbuf,n,ixpass;
@@ -6388,7 +6388,7 @@ upd_wrtescp2x(upd_p upd, FILE *out)
 /* upd_rle: The Runlength-Compressor                                   */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_rle(byte *out,const byte *in,int nbytes)
 {
 
@@ -6450,7 +6450,7 @@ upd_rle(byte *out,const byte *in,int nbytes)
 /* upd_open_wrtrtl: Basic HP-RTL Writer                                */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_open_wrtrtl(upd_device *udev)
 {
    const upd_p      upd  = udev->upd;
@@ -6999,7 +6999,7 @@ It must hold:
 /* upd_wrtrtl: Write a pass                                            */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_wrtrtl(upd_p upd, FILE *out)
 {
    const updscan_p scan = upd->scnbuf[upd->yscan & upd->scnmsk];
@@ -7079,7 +7079,7 @@ upd_wrtrtl(upd_p upd, FILE *out)
 /* upd_open_wrtcanon: Basic Canon Extended Mode Writer (hr)            */
 /* ------------------------------------------------------------------- */
 
-private int
+static int
 upd_open_wrtcanon(upd_device *udev)
 {
   const upd_p upd = udev->upd;
@@ -7102,7 +7102,7 @@ upd_open_wrtcanon(upd_device *udev)
 #define ESC 0x1B
 #define CR  0x0D
 
-private int
+static int
 upd_wrtcanon(upd_p upd, FILE *out)
 {
   const updscan_p scan = upd->scnbuf[upd->yscan & upd->scnmsk];
@@ -7207,57 +7207,57 @@ upd_wrtcanon(upd_p upd, FILE *out)
 
 /* That bunch of Pixel-Get Routines */
 
-private upd_proc_pxlget(upd_pxlgetnix); /* A Dummy */
+static upd_proc_pxlget(upd_pxlgetnix); /* A Dummy */
 
-private upd_proc_pxlget(upd_pxlget1f1); /* 1 Bit Forward */
-private upd_proc_pxlget(upd_pxlget1f2);
-private upd_proc_pxlget(upd_pxlget1f3);
-private upd_proc_pxlget(upd_pxlget1f4);
-private upd_proc_pxlget(upd_pxlget1f5);
-private upd_proc_pxlget(upd_pxlget1f6);
-private upd_proc_pxlget(upd_pxlget1f7);
-private upd_proc_pxlget(upd_pxlget1f8);
+static upd_proc_pxlget(upd_pxlget1f1); /* 1 Bit Forward */
+static upd_proc_pxlget(upd_pxlget1f2);
+static upd_proc_pxlget(upd_pxlget1f3);
+static upd_proc_pxlget(upd_pxlget1f4);
+static upd_proc_pxlget(upd_pxlget1f5);
+static upd_proc_pxlget(upd_pxlget1f6);
+static upd_proc_pxlget(upd_pxlget1f7);
+static upd_proc_pxlget(upd_pxlget1f8);
 
-private upd_proc_pxlget(upd_pxlget1r1); /* 1 Bit Reverse */
-private upd_proc_pxlget(upd_pxlget1r2);
-private upd_proc_pxlget(upd_pxlget1r3);
-private upd_proc_pxlget(upd_pxlget1r4);
-private upd_proc_pxlget(upd_pxlget1r5);
-private upd_proc_pxlget(upd_pxlget1r6);
-private upd_proc_pxlget(upd_pxlget1r7);
-private upd_proc_pxlget(upd_pxlget1r8);
+static upd_proc_pxlget(upd_pxlget1r1); /* 1 Bit Reverse */
+static upd_proc_pxlget(upd_pxlget1r2);
+static upd_proc_pxlget(upd_pxlget1r3);
+static upd_proc_pxlget(upd_pxlget1r4);
+static upd_proc_pxlget(upd_pxlget1r5);
+static upd_proc_pxlget(upd_pxlget1r6);
+static upd_proc_pxlget(upd_pxlget1r7);
+static upd_proc_pxlget(upd_pxlget1r8);
 
-private upd_proc_pxlget(upd_pxlget2f1); /* 2 Bit Forward */
-private upd_proc_pxlget(upd_pxlget2f2);
-private upd_proc_pxlget(upd_pxlget2f3);
-private upd_proc_pxlget(upd_pxlget2f4);
+static upd_proc_pxlget(upd_pxlget2f1); /* 2 Bit Forward */
+static upd_proc_pxlget(upd_pxlget2f2);
+static upd_proc_pxlget(upd_pxlget2f3);
+static upd_proc_pxlget(upd_pxlget2f4);
 
-private upd_proc_pxlget(upd_pxlget2r1); /* 2 Bit Reverse */
-private upd_proc_pxlget(upd_pxlget2r2);
-private upd_proc_pxlget(upd_pxlget2r3);
-private upd_proc_pxlget(upd_pxlget2r4);
+static upd_proc_pxlget(upd_pxlget2r1); /* 2 Bit Reverse */
+static upd_proc_pxlget(upd_pxlget2r2);
+static upd_proc_pxlget(upd_pxlget2r3);
+static upd_proc_pxlget(upd_pxlget2r4);
 
-private upd_proc_pxlget(upd_pxlget4f1); /* 4 Bit Forward */
-private upd_proc_pxlget(upd_pxlget4f2);
+static upd_proc_pxlget(upd_pxlget4f1); /* 4 Bit Forward */
+static upd_proc_pxlget(upd_pxlget4f2);
 
-private upd_proc_pxlget(upd_pxlget4r1); /* 4 Bit Reverse */
-private upd_proc_pxlget(upd_pxlget4r2);
+static upd_proc_pxlget(upd_pxlget4r1); /* 4 Bit Reverse */
+static upd_proc_pxlget(upd_pxlget4r2);
 
-private upd_proc_pxlget(upd_pxlget8f);  /* 8 Bit Forward */
-private upd_proc_pxlget(upd_pxlget8r);  /* 8 Bit Reverse */
+static upd_proc_pxlget(upd_pxlget8f);  /* 8 Bit Forward */
+static upd_proc_pxlget(upd_pxlget8r);  /* 8 Bit Reverse */
 
-private upd_proc_pxlget(upd_pxlget16f); /* 16 Bit Forward */
-private upd_proc_pxlget(upd_pxlget16r); /* 16Bit Reverse */
+static upd_proc_pxlget(upd_pxlget16f); /* 16 Bit Forward */
+static upd_proc_pxlget(upd_pxlget16r); /* 16Bit Reverse */
 
-private upd_proc_pxlget(upd_pxlget24f); /* 24 Bit Forward */
-private upd_proc_pxlget(upd_pxlget24r); /* 24 Bit Reverse */
+static upd_proc_pxlget(upd_pxlget24f); /* 24 Bit Forward */
+static upd_proc_pxlget(upd_pxlget24r); /* 24 Bit Reverse */
 
-private upd_proc_pxlget(upd_pxlget32f); /* 32 Bit Forward */
-private upd_proc_pxlget(upd_pxlget32r); /* 32 Bit Reverse */
+static upd_proc_pxlget(upd_pxlget32f); /* 32 Bit Forward */
+static upd_proc_pxlget(upd_pxlget32r); /* 32 Bit Reverse */
 
 /* Initialize Forward-Run */
 
-private uint32_t
+static uint32_t
 upd_pxlfwd(upd_p upd)
 {
    if(!(upd->pxlptr = upd->gsscan)) {
@@ -7287,56 +7287,56 @@ upd_pxlfwd(upd_p upd)
 
 /* 1 Bit Forward */
 
-private uint32_t
+static uint32_t
 upd_pxlget1f1(upd_p upd)
 {
    upd->pxlget = upd_pxlget1f2;
    return *upd->pxlptr   & 0x80 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget1f2(upd_p upd)
 {
    upd->pxlget = upd_pxlget1f3;
    return *upd->pxlptr   & 0x40 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget1f3(upd_p upd)
 {
    upd->pxlget = upd_pxlget1f4;
    return *upd->pxlptr   & 0x20 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget1f4(upd_p upd)
 {
    upd->pxlget = upd_pxlget1f5;
    return *upd->pxlptr   & 0x10 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget1f5(upd_p upd)
 {
    upd->pxlget = upd_pxlget1f6;
    return *upd->pxlptr   & 0x08 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget1f6(upd_p upd)
 {
    upd->pxlget = upd_pxlget1f7;
    return *upd->pxlptr   & 0x04 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget1f7(upd_p upd)
 {
    upd->pxlget = upd_pxlget1f8;
    return *upd->pxlptr   & 0x02 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget1f8(upd_p upd)
 {
    upd->pxlget = upd_pxlget1f1;
@@ -7345,28 +7345,28 @@ upd_pxlget1f8(upd_p upd)
 
 /* 2 Bit Forward */
 
-private uint32_t
+static uint32_t
 upd_pxlget2f1(upd_p upd)
 {
    upd->pxlget = upd_pxlget2f2;
    return ((uint32_t) (*upd->pxlptr  ) & (uint32_t) 0xC0) >> 6;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget2f2(upd_p upd)
 {
    upd->pxlget = upd_pxlget2f3;
    return ((uint32_t) (*upd->pxlptr  ) & (uint32_t) 0x30) >> 4;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget2f3(upd_p upd)
 {
    upd->pxlget = upd_pxlget2f4;
    return ((uint32_t) (*upd->pxlptr  ) & (uint32_t) 0x0C) >> 2;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget2f4(upd_p upd)
 {
    upd->pxlget = upd_pxlget2f1;
@@ -7375,14 +7375,14 @@ upd_pxlget2f4(upd_p upd)
 
 
 /* 4 Bit Forward */
-private uint32_t
+static uint32_t
 upd_pxlget4f1(upd_p upd)
 {
    upd->pxlget = upd_pxlget4f2;
    return ((uint32_t) (*upd->pxlptr  ) & (uint32_t) 0xF0) >> 4;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget4f2(upd_p upd)
 {
    upd->pxlget = upd_pxlget4f1;
@@ -7391,7 +7391,7 @@ upd_pxlget4f2(upd_p upd)
 
 
 /* 8 Bit Forward */
-private uint32_t
+static uint32_t
 upd_pxlget8f(upd_p upd)
 {
    return (uint32_t) (*upd->pxlptr++);
@@ -7399,7 +7399,7 @@ upd_pxlget8f(upd_p upd)
 
 
 /* 16 Bit Forward */
-private uint32_t
+static uint32_t
 upd_pxlget16f(upd_p upd)
 {
    uint32_t ci  = (uint32_t) (*upd->pxlptr++) << 8;
@@ -7408,7 +7408,7 @@ upd_pxlget16f(upd_p upd)
 }
 
 /* 24 Bit Forward */
-private uint32_t
+static uint32_t
 upd_pxlget24f(upd_p upd)
 {
    uint32_t ci  = (uint32_t) (*upd->pxlptr++) << 16;
@@ -7418,7 +7418,7 @@ upd_pxlget24f(upd_p upd)
 }
 
 /* 32 Bit Forward */
-private uint32_t
+static uint32_t
 upd_pxlget32f(upd_p upd)
 {
    uint32_t ci  = (uint32_t) (*upd->pxlptr++) << 24;
@@ -7431,7 +7431,7 @@ upd_pxlget32f(upd_p upd)
 
 /* Dummy-Routine */
 
-private uint32_t
+static uint32_t
 upd_pxlgetnix(upd_p upd)
 {
    return (uint32_t) 0;
@@ -7439,7 +7439,7 @@ upd_pxlgetnix(upd_p upd)
 
 /* Initialize Reverse-Run */
 
-private uint32_t
+static uint32_t
 upd_pxlrev(upd_p upd)
 {
    const uint width = upd->pwidth < upd->gswidth ? upd->pwidth : upd->gswidth;
@@ -7503,56 +7503,56 @@ upd_pxlrev(upd_p upd)
 
 /* 1 Bit Reverse */
 
-private uint32_t
+static uint32_t
 upd_pxlget1r1(upd_p upd)
 {
    upd->pxlget = upd_pxlget1r8;
    return *upd->pxlptr-- & 0x80 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget1r2(upd_p upd)
 {
    upd->pxlget = upd_pxlget1r1;
    return *upd->pxlptr   & 0x40 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget1r3(upd_p upd)
 {
    upd->pxlget = upd_pxlget1r2;
    return *upd->pxlptr   & 0x20 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget1r4(upd_p upd)
 {
    upd->pxlget = upd_pxlget1r3;
    return *upd->pxlptr   & 0x10 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget1r5(upd_p upd)
 {
    upd->pxlget = upd_pxlget1r4;
    return *upd->pxlptr   & 0x08 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget1r6(upd_p upd)
 {
    upd->pxlget = upd_pxlget1r5;
    return *upd->pxlptr   & 0x04 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget1r7(upd_p upd)
 {
    upd->pxlget = upd_pxlget1r6;
    return *upd->pxlptr   & 0x02 ? (uint32_t) 1 : (uint32_t) 0;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget1r8(upd_p upd)
 {
    upd->pxlget = upd_pxlget1r7;
@@ -7561,28 +7561,28 @@ upd_pxlget1r8(upd_p upd)
 
 /* 2 Bit Reverse */
 
-private uint32_t
+static uint32_t
 upd_pxlget2r1(upd_p upd)
 {
    upd->pxlget = upd_pxlget2r4;
    return ((uint32_t) (*upd->pxlptr--) & (uint32_t) 0xC0) >> 6;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget2r2(upd_p upd)
 {
    upd->pxlget = upd_pxlget2r1;
    return ((uint32_t) (*upd->pxlptr  ) & (uint32_t) 0x30) >> 4;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget2r3(upd_p upd)
 {
    upd->pxlget = upd_pxlget2r2;
    return ((uint32_t) (*upd->pxlptr  ) & (uint32_t) 0x0C) >> 2;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget2r4(upd_p upd)
 {
    upd->pxlget = upd_pxlget2r3;
@@ -7591,14 +7591,14 @@ upd_pxlget2r4(upd_p upd)
 
 /* 4 Bit Reverse */
 
-private uint32_t
+static uint32_t
 upd_pxlget4r1(upd_p upd)
 {
    upd->pxlget = upd_pxlget4r2;
    return ((uint32_t) (*upd->pxlptr--) & (uint32_t) 0xF0) >> 4;
 }
 
-private uint32_t
+static uint32_t
 upd_pxlget4r2(upd_p upd)
 {
    upd->pxlget = upd_pxlget4r1;
@@ -7607,7 +7607,7 @@ upd_pxlget4r2(upd_p upd)
 
 
 /* 8 Bit Reverse */
-private uint32_t
+static uint32_t
 upd_pxlget8r(upd_p upd)
 {
    return (uint32_t) (*upd->pxlptr--);
@@ -7615,7 +7615,7 @@ upd_pxlget8r(upd_p upd)
 
 
 /* 16 Bit Reverse */
-private uint32_t
+static uint32_t
 upd_pxlget16r(upd_p upd)
 {
    uint32_t ci  =                   *upd->pxlptr--;
@@ -7624,7 +7624,7 @@ upd_pxlget16r(upd_p upd)
 }
 
 /* 24 Bit Reverse */
-private uint32_t
+static uint32_t
 upd_pxlget24r(upd_p upd)
 {
    uint32_t ci  =           *upd->pxlptr--;
@@ -7634,7 +7634,7 @@ upd_pxlget24r(upd_p upd)
 }
 
 /* 32 Bit Reverse */
-private uint32_t
+static uint32_t
 upd_pxlget32r(upd_p upd)
 {
    uint32_t ci  =                   *upd->pxlptr--;

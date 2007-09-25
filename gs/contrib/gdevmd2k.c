@@ -35,15 +35,15 @@
 #define RIGHT_MARGIN  3.4 / MM_PER_INCH
 
 /* The device descriptor */
-private dev_proc_open_device(alps_open);
-private dev_proc_get_params(alps_get_params);
-private dev_proc_put_params(alps_put_params);
-private dev_proc_print_page(md2k_print_page);
-private dev_proc_print_page(md5k_print_page);
-private dev_proc_map_cmyk_color(alps_map_cmyk_color);
-private dev_proc_map_cmyk_color(alps_map_cmy_color);
-private dev_proc_map_rgb_color(alps_map_rgb_color);
-private dev_proc_map_color_rgb(alps_map_color_rgb);
+static dev_proc_open_device(alps_open);
+static dev_proc_get_params(alps_get_params);
+static dev_proc_put_params(alps_put_params);
+static dev_proc_print_page(md2k_print_page);
+static dev_proc_print_page(md5k_print_page);
+static dev_proc_map_cmyk_color(alps_map_cmyk_color);
+static dev_proc_map_cmyk_color(alps_map_cmy_color);
+static dev_proc_map_rgb_color(alps_map_rgb_color);
+static dev_proc_map_color_rgb(alps_map_color_rgb);
 
 
 struct gx_device_alps_s {
@@ -65,7 +65,7 @@ typedef struct gx_device_alps_s gx_device_alps;
 
 #define dev_alps ((gx_device_alps *) pdev)
 
-private gx_device_procs alps_procs = {
+static gx_device_procs alps_procs = {
     alps_open,
     gx_default_get_initial_matrix,
     NULL,			/* sync_output */
@@ -109,7 +109,7 @@ typedef enum {
 } alps_printer_type;
 
 
-private int
+static int
 alps_open(gx_device *pdev)
 {
     int xdpi = pdev->x_pixels_per_inch;
@@ -140,7 +140,7 @@ alps_open(gx_device *pdev)
 }
 
 
-private int
+static int
 alps_get_params(gx_device *pdev, gs_param_list *plist)
 {
     gs_param_string mediaType = { "", 1, false };
@@ -164,7 +164,7 @@ alps_get_params(gx_device *pdev, gs_param_list *plist)
     return code;
 }
 
-private int
+static int
 alps_put_param_bool(gs_param_list *plist, gs_param_name pname, int *pvalue,
 		   int ecode)
 {
@@ -180,7 +180,7 @@ alps_put_param_bool(gs_param_list *plist, gs_param_name pname, int *pvalue,
     }
 }
 
-private int
+static int
 alps_put_param_int(gs_param_list *plist, gs_param_name pname, int *pvalue,
 		   int minval, int maxval, int ecode)
 {
@@ -199,7 +199,7 @@ alps_put_param_int(gs_param_list *plist, gs_param_name pname, int *pvalue,
 }
 
 /* Put properties. */
-private int
+static int
 alps_put_params(gx_device *pdev, gs_param_list *plist)
 {
     int code = 0;
@@ -339,7 +339,7 @@ alps_put_params(gx_device *pdev, gs_param_list *plist)
 /*
  * get a component of CMYK from raster data
  */
-private int
+static int
 cmyk_to_bit(byte *out, byte *in, int length, int c_comp)
 {
     byte *p_in = in, *p_out = out, *p_end;
@@ -370,7 +370,7 @@ cmyk_to_bit(byte *out, byte *in, int length, int c_comp)
 /*
  * run-length compression
  */
-private int
+static int
 runlength(byte *out, byte *in, int length)
 {
     byte *p_in = in, *p_out = out, *p_end;
@@ -419,7 +419,7 @@ runlength(byte *out, byte *in, int length)
     fputc(cmd2, stream); \
 }
 
-private void
+static void
 alps_init(gx_device_printer *pdev, FILE *prn_stream, alps_printer_type ptype)
 {
     short height;		/* page height (unit: dots) */
@@ -482,7 +482,7 @@ alps_init(gx_device_printer *pdev, FILE *prn_stream, alps_printer_type ptype)
 }
 
 /* Send the page to the printer. */
-private int
+static int
 alps_print_page(gx_device_printer *pdev, FILE *prn_stream,
 		alps_printer_type ptype)
 {
@@ -601,13 +601,13 @@ alps_print_page(gx_device_printer *pdev, FILE *prn_stream,
     return 0;
 }
 
-private int
+static int
 md2k_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
     return alps_print_page(pdev, prn_stream, MD2000);
 }
 
-private int
+static int
 md5k_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
     return alps_print_page(pdev, prn_stream, MD5000);
@@ -637,7 +637,7 @@ md5k_print_page(gx_device_printer *pdev, FILE *prn_stream)
     (y) = gx_bits_to_color_value(((v) >> (b)) & ((1 << (b)) - 1), (b)), \
     (k) = gx_bits_to_color_value((v) & ((1 << (b)) - 1), (b))
 
-private gx_color_index
+static gx_color_index
 alps_map_cmyk_color(gx_device* pdev,
 		    const gx_color_value cv[])
 {
@@ -675,7 +675,7 @@ alps_map_cmyk_color(gx_device* pdev,
    return color;
 }
 
-private gx_color_index
+static gx_color_index
 alps_map_cmy_color(gx_device* pdev,
 		   const gx_color_value cv[])
 {
@@ -694,7 +694,7 @@ alps_map_cmy_color(gx_device* pdev,
 
 /* Mapping of RGB colors to gray values. */
 
-private gx_color_index
+static gx_color_index
 alps_map_rgb_color(gx_device *pdev,
 		   const gx_color_value cv[])
 {
@@ -731,7 +731,7 @@ alps_map_rgb_color(gx_device *pdev,
 
 /* Mapping of CMYK colors. */
 
-private int
+static int
 alps_map_color_rgb(gx_device *pdev,
 		   gx_color_index color, gx_color_value prgb[3])
 {

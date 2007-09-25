@@ -119,9 +119,9 @@ zchar42_set_cache(i_ctx_t *i_ctx_p, gs_font_base *pbfont, ref *cnref,
 }
 
 /* <font> <code|name> <name> <glyph_index> .type42execchar - */
-private int type42_fill(i_ctx_t *);
-private int type42_stroke(i_ctx_t *);
-private int
+static int type42_fill(i_ctx_t *);
+static int type42_stroke(i_ctx_t *);
+static int
 ztype42execchar(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -174,9 +174,9 @@ ztype42execchar(i_ctx_t *i_ctx_p)
 }
 
 /* Continue after a CDevProc callout. */
-private int type42_finish(i_ctx_t *i_ctx_p,
+static int type42_finish(i_ctx_t *i_ctx_p,
 			  int (*cont)(gs_state *));
-private int
+static int
 type42_fill(i_ctx_t *i_ctx_p)
 {
     int code;
@@ -188,14 +188,14 @@ type42_fill(i_ctx_t *i_ctx_p)
                                        but this isn't harmful. */
     return code;
 }
-private int
+static int
 type42_stroke(i_ctx_t *i_ctx_p)
 {
     return type42_finish(i_ctx_p, gs_stroke);
 }
 /* <font> <code|name> <name> <glyph_index> <sbx> <sby> %type42_{fill|stroke} - */
 /* <font> <code|name> <name> <glyph_index> %type42_{fill|stroke} - */
-private int
+static int
 type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
 {
     os_ptr op = osp;

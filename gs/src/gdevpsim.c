@@ -39,7 +39,7 @@
 #endif
 
 /* Write the file (if necessary) and page headers. */
-private void
+static void
 ps_image_write_headers(FILE *f, gx_device_printer *pdev,
 		       const char *const setup[],
 		       gx_device_pswrite_common_t *pdpc)
@@ -80,8 +80,8 @@ ps_image_write_headers(FILE *f, gx_device_printer *pdev,
  */
 
 /* The device descriptor */
-private dev_proc_print_page(psmono_print_page);
-private dev_proc_close_device(psmono_close);
+static dev_proc_print_page(psmono_print_page);
+static dev_proc_close_device(psmono_close);
 
 const gx_device_printer gs_psmono_device =
 prn_device(prn_std_procs, "psmono",
@@ -90,7 +90,7 @@ prn_device(prn_std_procs, "psmono",
 	   0, 0, 0, 0,		/* margins */
 	   1, psmono_print_page);
 
-private const gx_device_procs psgray_procs =
+static const gx_device_procs psgray_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, psmono_close,
 	      gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
 
@@ -102,7 +102,7 @@ const gx_device_printer gs_psgray_device = {
 		    1, 8, 255, 0, 256, 1, psmono_print_page)
 };
 
-private const char *const psmono_setup[] = {
+static const char *const psmono_setup[] = {
 		/* Initialize the strings for filling runs. */
     "/.ImageFills [ 0 1 255 {",
     "  256 string dup 0 1 7 { 3 index put dup } for { 8 16 32 64 128 } {",
@@ -158,8 +158,8 @@ static const gx_device_pswrite_common_t psmono_values =
 #define max_repeat_run 255
 
 /* Send the page to the printer. */
-private void write_data_run(const byte *, int, FILE *, byte);
-private int
+static void write_data_run(const byte *, int, FILE *, byte);
+static int
 psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
@@ -243,7 +243,7 @@ psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
 }
 
 /* Close the file. */
-private int
+static int
 psmono_close(gx_device *dev)
 {
     int code = psw_end_file(((gx_device_printer *)dev)->file, dev, 
@@ -255,7 +255,7 @@ psmono_close(gx_device *dev)
 }
 
 /* Write a run of data on the file. */
-private void
+static void
 write_data_run(const byte * data, int count, FILE * f, byte invert)
 {
     const byte *p = data;
@@ -307,10 +307,10 @@ write_data_run(const byte * data, int count, FILE * f, byte invert)
  */
 
 /* The device descriptor */
-private dev_proc_print_page(psrgb_print_page);
-private dev_proc_close_device(psrgb_close);
+static dev_proc_print_page(psrgb_print_page);
+static dev_proc_close_device(psrgb_close);
 
-private const gx_device_procs psrgb_procs =
+static const gx_device_procs psrgb_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, psrgb_close,
 		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
 
@@ -322,7 +322,7 @@ const gx_device_printer gs_psrgb_device = {
 		    3, 24, 255, 255, 256, 256, psrgb_print_page)
 };
 
-private const char *const psrgb_setup[] = {
+static const char *const psrgb_setup[] = {
     "/rgbimage {",		/* <width> <height> rgbimage - */
     "  gsave 2 copy scale /h exch def /w exch def",
     "  /s1 w string def /s2 w string def /s3 w string def",
@@ -337,7 +337,7 @@ static const gx_device_pswrite_common_t psrgb_values =
     PSWRITE_COMMON_VALUES(2, 0 /*false*/, 1);
 
 /* Send the page to the printer. */
-private int
+static int
 psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     gs_memory_t *mem = pdev->memory;
@@ -413,7 +413,7 @@ psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
 }
 
 /* Close the file. */
-private int
+static int
 psrgb_close(gx_device *dev)
 {
     int code = psw_end_file(((gx_device_printer *)dev)->file, dev,

@@ -35,11 +35,11 @@
 
 /* Define whether or not to cache characters rotated by angles other than */
 /* multiples of 90 degrees. */
-private const bool CACHE_ROTATED_CHARS = true;
+static const bool CACHE_ROTATED_CHARS = true;
 
 /* Define the maximum size of a full temporary bitmap when rasterizing, */
 /* in bits (not bytes). */
-private const uint MAX_TEMP_BITMAP_BITS = 80000;
+static const uint MAX_TEMP_BITMAP_BITS = 80000;
 
 /* Define whether the show operation uses the character outline data, */
 /* as opposed to just needing the width (or nothing). */
@@ -50,14 +50,14 @@ private const uint MAX_TEMP_BITMAP_BITS = 80000;
 public_st_gs_show_enum();
 extern_st(st_gs_text_enum);
 extern_st(st_gs_state);		/* only for testing */
-private 
+static 
 ENUM_PTRS_BEGIN(show_enum_enum_ptrs)
      return ENUM_USING(st_gs_text_enum, vptr, size, index - 5);
 ENUM_PTR(0, gs_show_enum, pgs);
 ENUM_PTR(1, gs_show_enum, show_gstate);
 ENUM_PTR3(2, gs_show_enum, dev_cache, dev_cache2, dev_null);
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(show_enum_reloc_ptrs, gs_show_enum *eptr)
+static RELOC_PTRS_WITH(show_enum_reloc_ptrs, gs_show_enum *eptr)
 {
     RELOC_USING(st_gs_text_enum, vptr, size);		/* superclass */
     RELOC_VAR(eptr->pgs);
@@ -67,13 +67,13 @@ private RELOC_PTRS_WITH(show_enum_reloc_ptrs, gs_show_enum *eptr)
 RELOC_PTRS_END
 
 /* Forward declarations */
-private int continue_kshow(gs_show_enum *);
-private int continue_show(gs_show_enum *);
-private int continue_show_update(gs_show_enum *);
-private void show_set_scale(const gs_show_enum *, gs_log2_scale_point *log2_scale);
-private int show_cache_setup(gs_show_enum *);
-private int show_state_setup(gs_show_enum *);
-private int show_origin_setup(gs_state *, fixed, fixed, gs_show_enum * penum);
+static int continue_kshow(gs_show_enum *);
+static int continue_show(gs_show_enum *);
+static int continue_show_update(gs_show_enum *);
+static void show_set_scale(const gs_show_enum *, gs_log2_scale_point *log2_scale);
+static int show_cache_setup(gs_show_enum *);
+static int show_state_setup(gs_show_enum *);
+static int show_origin_setup(gs_state *, fixed, fixed, gs_show_enum * penum);
 
 /* Accessors for current_char and current_glyph. */
 #define CURRENT_CHAR(penum) ((penum)->returned.current_char)
@@ -109,15 +109,15 @@ gs_show_enum_alloc(gs_memory_t * mem, gs_state * pgs, client_name_t cname)
 
 /* ------ Driver procedure ------ */
 
-private text_enum_proc_resync(gx_show_text_resync);
-private text_enum_proc_process(gx_show_text_process);
-private text_enum_proc_is_width_only(gx_show_text_is_width_only);
-private text_enum_proc_current_width(gx_show_text_current_width);
-private text_enum_proc_set_cache(gx_show_text_set_cache);
-private text_enum_proc_retry(gx_show_text_retry);
-private text_enum_proc_release(gx_show_text_release); /* not default */
+static text_enum_proc_resync(gx_show_text_resync);
+static text_enum_proc_process(gx_show_text_process);
+static text_enum_proc_is_width_only(gx_show_text_is_width_only);
+static text_enum_proc_current_width(gx_show_text_current_width);
+static text_enum_proc_set_cache(gx_show_text_set_cache);
+static text_enum_proc_retry(gx_show_text_retry);
+static text_enum_proc_release(gx_show_text_release); /* not default */
 
-private const gs_text_enum_procs_t default_text_procs = {
+static const gs_text_enum_procs_t default_text_procs = {
     gx_show_text_resync, gx_show_text_process,
     gx_show_text_is_width_only, gx_show_text_current_width,
     gx_show_text_set_cache, gx_show_text_retry,
@@ -280,12 +280,12 @@ gx_default_text_restore_state(gs_text_enum_t *pte)
 }
 /* ------ Width/cache setting ------ */
 
-private int
+static int
     set_cache_device(gs_show_enum *penum, gs_state *pgs,
 		     floatp llx, floatp lly, floatp urx, floatp ury);
 
 /* This is the default implementation of text enumerator set_cache. */
-private int
+static int
 gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
 			  gs_text_cache_control_t control)
 {
@@ -455,7 +455,7 @@ gx_compute_text_oversampling(const gs_show_enum * penum, const gs_font *pfont,
 }
 
 /* Compute glyph raster parameters */
-private int
+static int
 compute_glyph_raster_params(gs_show_enum *penum, bool in_setcachedevice, int *alpha_bits, 
 		    int *depth,
                     gs_fixed_point *subpix_origin, gs_log2_scale_point *log2_scale)
@@ -508,7 +508,7 @@ compute_glyph_raster_params(gs_show_enum *penum, bool in_setcachedevice, int *al
 /* Set up the cache device if relevant. */
 /* Return 1 if we just set up a cache device. */
 /* Used by setcachedevice and setcachedevice2. */
-private int
+static int
 set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 		 floatp urx, floatp ury)
 {
@@ -720,7 +720,7 @@ gs_incachedevice(const gs_state *pgs)
 /*
  * Set the encode_char procedure in an enumerator.
  */
-private void
+static void
 show_set_encode_char(gs_show_enum * penum)
 {
     penum->encode_char =
@@ -733,7 +733,7 @@ show_set_encode_char(gs_show_enum * penum)
  * Resync a text operation with a different set of parameters.
  * Currently this is implemented only for changing the data source.
  */
-private int
+static int
 gx_show_text_resync(gs_text_enum_t *pte, const gs_text_enum_t *pfrom)
 {
     gs_show_enum *const penum = (gs_show_enum *)pte;
@@ -750,7 +750,7 @@ gx_show_text_resync(gs_text_enum_t *pte, const gs_text_enum_t *pfrom)
 }
 
 /* Do the next step of a show (or stringwidth) operation */
-private int
+static int
 gx_show_text_process(gs_text_enum_t *pte)
 {
     gs_show_enum *const penum = (gs_show_enum *)pte;
@@ -759,11 +759,11 @@ gx_show_text_process(gs_text_enum_t *pte)
 }
 
 /* Continuation procedures */
-private int show_update(gs_show_enum * penum);
-private int show_move(gs_show_enum * penum);
-private int show_proceed(gs_show_enum * penum);
-private int show_finish(gs_show_enum * penum);
-private int
+static int show_update(gs_show_enum * penum);
+static int show_move(gs_show_enum * penum);
+static int show_proceed(gs_show_enum * penum);
+static int show_finish(gs_show_enum * penum);
+static int
 continue_show_update(gs_show_enum * penum)
 {
     int code = show_update(penum);
@@ -775,14 +775,14 @@ continue_show_update(gs_show_enum * penum)
 	return code;
     return show_proceed(penum);
 }
-private int
+static int
 continue_show(gs_show_enum * penum)
 {
     return show_proceed(penum);
 }
 /* For kshow, the CTM or font may have changed, so we have to reestablish */
 /* the cached values in the enumerator. */
-private int
+static int
 continue_kshow(gs_show_enum * penum)
 {   int code;
     gs_state *pgs = penum->pgs;
@@ -798,7 +798,7 @@ continue_kshow(gs_show_enum * penum)
 }
 
 /* Update position */
-private int
+static int
 show_update(gs_show_enum * penum)
 {
     gs_state *pgs = penum->pgs;
@@ -871,7 +871,7 @@ show_update(gs_show_enum * penum)
 }
 
 /* Move to next character */
-private inline int
+static inline int
 show_fast_move(gs_state * pgs, gs_fixed_point * pwxy)
 {
     return gs_moveto_aux((gs_imager_state *)pgs, pgs->path,
@@ -907,7 +907,7 @@ int gx_current_char(const gs_text_enum_t * pte)
     return chr;
 }
 
-private int
+static int
 show_move(gs_show_enum * penum)
 {
     gs_state *pgs = penum->pgs;
@@ -969,7 +969,7 @@ show_move(gs_show_enum * penum)
     return 0;
 }
 /* Process next character */
-private int
+static int
 show_proceed(gs_show_enum * penum)
 {
     gs_state *pgs = penum->pgs;
@@ -1316,7 +1316,7 @@ show_proceed(gs_show_enum * penum)
  * Prepare to retry rendering of the current character.  (This is only used
  * in one place in zchar1.c; a different approach may be better.)
  */
-private int
+static int
 gx_show_text_retry(gs_text_enum_t *pte)
 {
     gs_show_enum *const penum = (gs_show_enum *)pte;
@@ -1335,7 +1335,7 @@ gx_show_text_retry(gs_text_enum_t *pte)
 }
 
 /* Finish show or stringwidth */
-private int
+static int
 show_finish(gs_show_enum * penum)
 {
     gs_state *pgs = penum->pgs;
@@ -1353,7 +1353,7 @@ show_finish(gs_show_enum * penum)
 }
 
 /* Release the structure. */
-private void
+static void
 gx_show_text_release(gs_text_enum_t *pte, client_name_t cname)
 {
     gs_show_enum *const penum = (gs_show_enum *)pte;
@@ -1389,7 +1389,7 @@ gs_show_in_charpath(const gs_show_enum * penum)
 /* This is only meaningful just before calling gs_setcharwidth or */
 /* gs_setcachedevice[2]. */
 /* Note that we can't do this if the procedure has done any extra [g]saves. */
-private bool
+static bool
 gx_show_text_is_width_only(const gs_text_enum_t *pte)
 {
     const gs_show_enum *const penum = (const gs_show_enum *)pte;
@@ -1401,7 +1401,7 @@ gx_show_text_is_width_only(const gs_text_enum_t *pte)
 }
 
 /* Return the width of the just-enumerated character (for cshow). */
-private int
+static int
 gx_show_text_current_width(const gs_text_enum_t *pte, gs_point *pwidth)
 {
     const gs_show_enum *const penum = (const gs_show_enum *)pte;
@@ -1421,7 +1421,7 @@ gs_show_current_font(const gs_show_enum * penum)
 
 /* ------ Internal routines ------ */
 
-private inline bool
+static inline bool
 is_matrix_good_for_caching(const gs_matrix_fixed *m)
 {
     /* Skewing or non-rectangular rotation are not supported,
@@ -1441,7 +1441,7 @@ is_matrix_good_for_caching(const gs_matrix_fixed *m)
 /* We do this both when starting the show operation, */
 /* and when returning from the kshow callout. */
 /* Uses only penum->pgs, penum->fstack. */
-private int
+static int
 show_state_setup(gs_show_enum * penum)
 {
     gs_state *pgs = penum->pgs;
@@ -1515,7 +1515,7 @@ show_state_setup(gs_show_enum * penum)
 }
 
 /* Set the suggested oversampling scale for character rendering. */
-private void
+static void
 show_set_scale(const gs_show_enum * penum, gs_log2_scale_point *log2_scale)
 {
     /*
@@ -1566,7 +1566,7 @@ show_set_scale(const gs_show_enum * penum, gs_log2_scale_point *log2_scale)
 /* Set up the cache device and related information. */
 /* Note that we always allocate both cache devices, */
 /* even if we only use one of them. */
-private int
+static int
 show_cache_setup(gs_show_enum * penum)
 {
     gs_state *pgs = penum->pgs;
@@ -1604,7 +1604,7 @@ show_cache_setup(gs_show_enum * penum)
 /* Set the character origin as the origin of the coordinate system. */
 /* Used before rendering characters, and for moving the origin */
 /* in setcachedevice2 when WMode=1. */
-private int
+static int
 show_origin_setup(gs_state * pgs, fixed cpt_x, fixed cpt_y, gs_show_enum * penum)
 {
     if (penum->charpath_flag == cpm_show) {

@@ -36,10 +36,10 @@
 #include "gxhttile.h"
 
 /* Forward references */
-private byte *compress_alpha_bits(const cached_char *, gs_memory_t *);
+static byte *compress_alpha_bits(const cached_char *, gs_memory_t *);
 
 /* Define a scale factor of 1. */
-private const gs_log2_scale_point scale_log2_1 =
+static const gs_log2_scale_point scale_log2_1 =
 {0, 0};
 
 void
@@ -471,7 +471,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
  * Compress a mask with 2 or 4 bits of alpha to a monobit mask.
  * Allocate and return the address of the monobit mask.
  */
-private byte *
+static byte *
 compress_alpha_bits(const cached_char * cc, gs_memory_t * mem)
 {
     const byte *data = cc_const_bits(cc);

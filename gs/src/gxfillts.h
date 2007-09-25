@@ -24,7 +24,7 @@
 */
 
 
-private inline int
+static inline int
 TEMPLATE_slant_into_trapezoids (const line_list *ll, 
 	const active_line *flp, const active_line *alp, fixed y, fixed y1)
 {

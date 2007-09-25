@@ -40,7 +40,7 @@ void gx_set_effective_transfer(gs_state *);
  * The width field is available for this purpose at it is nominally
  * unused in a well-tempered screening halftone.
  */
-private const ushort    ht_wts_suppress_release = (ushort)(-1);
+static const ushort    ht_wts_suppress_release = (ushort)(-1);
 
 
 /* Structure types */
@@ -52,14 +52,14 @@ public_st_device_halftone();
 
 /* GC procedures */
 
-private
+static
 ENUM_PTRS_WITH(ht_order_enum_ptrs, gx_ht_order *porder) return 0;
 case 0: ENUM_RETURN((porder->data_memory ? porder->levels : 0));
 case 1: ENUM_RETURN((porder->data_memory ? porder->bit_data : 0));
 case 2: ENUM_RETURN(porder->cache);
 case 3: ENUM_RETURN(porder->transfer);
 ENUM_PTRS_END
-private
+static
 RELOC_PTRS_WITH(ht_order_reloc_ptrs, gx_ht_order *porder)
 {
     if (porder->data_memory) {
@@ -71,7 +71,7 @@ RELOC_PTRS_WITH(ht_order_reloc_ptrs, gx_ht_order *porder)
 }
 RELOC_PTRS_END
 
-private 
+static 
 ENUM_PTRS_WITH(halftone_enum_ptrs, gs_halftone *hptr) return 0;
 case 0:
 switch (hptr->type)
@@ -109,7 +109,7 @@ switch (hptr->type) {
 }
 ENUM_PTRS_END
 
-private RELOC_PTRS_WITH(halftone_reloc_ptrs, gs_halftone *hptr)
+static RELOC_PTRS_WITH(halftone_reloc_ptrs, gs_halftone *hptr)
 {
     switch (hptr->type) {
 	case ht_type_spot:
@@ -320,7 +320,7 @@ gx_ht_alloc_ht_order(gx_ht_order * porder, uint width, uint height,
 /*
  * Procedure to copy a halftone order.
  */
-private int
+static int
 gx_ht_copy_ht_order(gx_ht_order * pdest, gx_ht_order * psrc, gs_memory_t * mem)
 {
     int code;
@@ -348,7 +348,7 @@ gx_ht_copy_ht_order(gx_ht_order * pdest, gx_ht_order * psrc, gs_memory_t * mem)
  * Set the destination component to match the source component, and
  * "assume ownership" of all of the refrernced data structures.
  */
-private void
+static void
 gx_ht_move_ht_order(gx_ht_order * pdest, gx_ht_order * psrc)
 {
     uint    width = psrc->width, height = psrc->height, shift = psrc->shift;
@@ -442,7 +442,7 @@ gx_ht_alloc_client_order(gx_ht_order * porder, uint width, uint height,
 }
 
 /* Compare keys ("masks", actually sample values) for qsort. */
-private int
+static int
 compare_samples(const void *p1, const void *p2)
 {
     ht_sample_t m1 = ((const gx_ht_bit *)p1)->mask;

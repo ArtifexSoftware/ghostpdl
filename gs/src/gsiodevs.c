@@ -31,7 +31,7 @@ const char iodev_dtype_stdio[] = "Special";
 }
 
 #define STDIO_BUF_SIZE 128
-private int
+static int
 stdio_close_file(stream *s)
 {
     /* Don't close stdio files, but do free the buffer. */
@@ -41,7 +41,7 @@ stdio_close_file(stream *s)
     gs_free_object(mem, s->cbuf, "stdio_close_file(buffer)");
     return 0;
 }
-private int
+static int
 stdio_open(gx_io_device * iodev, const char *access, stream ** ps,
 	   gs_memory_t * mem, char rw, FILE *file,
 	   void (*srw_file)(stream *, FILE *, byte *, uint))
@@ -64,7 +64,7 @@ stdio_open(gx_io_device * iodev, const char *access, stream ** ps,
     return 0;
 }
 
-private int
+static int
 stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
 	   gs_memory_t * mem)
 {
@@ -73,7 +73,7 @@ stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
 }
 const gx_io_device gs_iodev_stdin = iodev_stdio("%stdin%", stdin_open);
 
-private int
+static int
 stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
 	    gs_memory_t * mem)
 {
@@ -82,7 +82,7 @@ stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
 }
 const gx_io_device gs_iodev_stdout = iodev_stdio("%stdout%", stdout_open);
 
-private int
+static int
 stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
 	    gs_memory_t * mem)
 {

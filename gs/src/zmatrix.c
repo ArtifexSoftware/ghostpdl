@@ -21,19 +21,19 @@
 #include "store.h"
 
 /* Forward references */
-private int common_transform(i_ctx_t *,
+static int common_transform(i_ctx_t *,
 		int (*)(gs_state *, floatp, floatp, gs_point *),
 		int (*)(floatp, floatp, const gs_matrix *, gs_point *));
 
 /* - initmatrix - */
-private int
+static int
 zinitmatrix(i_ctx_t *i_ctx_p)
 {
     return gs_initmatrix(igs);
 }
 
 /* <matrix> defaultmatrix <matrix> */
-private int
+static int
 zdefaultmatrix(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -44,7 +44,7 @@ zdefaultmatrix(i_ctx_t *i_ctx_p)
 }
 
 /* - .currentmatrix <xx> <xy> <yx> <yy> <tx> <ty> */
-private int
+static int
 zcurrentmatrix(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -61,7 +61,7 @@ zcurrentmatrix(i_ctx_t *i_ctx_p)
 }
 
 /* <xx> <xy> <yx> <yy> <tx> <ty> .setmatrix - */
-private int
+static int
 zsetmatrix(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -77,7 +77,7 @@ zsetmatrix(i_ctx_t *i_ctx_p)
 }
 
 /* <matrix|null> .setdefaultmatrix - */
-private int
+static int
 zsetdefaultmatrix(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -101,7 +101,7 @@ zsetdefaultmatrix(i_ctx_t *i_ctx_p)
 
 /* <tx> <ty> translate - */
 /* <tx> <ty> <matrix> translate <matrix> */
-private int
+static int
 ztranslate(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -132,7 +132,7 @@ ztranslate(i_ctx_t *i_ctx_p)
 
 /* <sx> <sy> scale - */
 /* <sx> <sy> <matrix> scale <matrix> */
-private int
+static int
 zscale(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -163,7 +163,7 @@ zscale(i_ctx_t *i_ctx_p)
 
 /* <angle> rotate - */
 /* <angle> <matrix> rotate <matrix> */
-private int
+static int
 zrotate(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -193,7 +193,7 @@ zrotate(i_ctx_t *i_ctx_p)
 }
 
 /* <matrix> concat - */
-private int
+static int
 zconcat(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -210,7 +210,7 @@ zconcat(i_ctx_t *i_ctx_p)
 }
 
 /* <matrix1> <matrix2> <matrix> concatmatrix <matrix> */
-private int
+static int
 zconcatmatrix(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -230,7 +230,7 @@ zconcatmatrix(i_ctx_t *i_ctx_p)
 
 /* <x> <y> transform <xt> <yt> */
 /* <x> <y> <matrix> transform <xt> <yt> */
-private int
+static int
 ztransform(i_ctx_t *i_ctx_p)
 {
     return common_transform(i_ctx_p, gs_transform, gs_point_transform);
@@ -238,7 +238,7 @@ ztransform(i_ctx_t *i_ctx_p)
 
 /* <dx> <dy> dtransform <dxt> <dyt> */
 /* <dx> <dy> <matrix> dtransform <dxt> <dyt> */
-private int
+static int
 zdtransform(i_ctx_t *i_ctx_p)
 {
     return common_transform(i_ctx_p, gs_dtransform, gs_distance_transform);
@@ -246,7 +246,7 @@ zdtransform(i_ctx_t *i_ctx_p)
 
 /* <xt> <yt> itransform <x> <y> */
 /* <xt> <yt> <matrix> itransform <x> <y> */
-private int
+static int
 zitransform(i_ctx_t *i_ctx_p)
 {
     return common_transform(i_ctx_p, gs_itransform, gs_point_transform_inverse);
@@ -254,14 +254,14 @@ zitransform(i_ctx_t *i_ctx_p)
 
 /* <dxt> <dyt> idtransform <dx> <dy> */
 /* <dxt> <dyt> <matrix> idtransform <dx> <dy> */
-private int
+static int
 zidtransform(i_ctx_t *i_ctx_p)
 {
     return common_transform(i_ctx_p, gs_idtransform, gs_distance_transform_inverse);
 }
 
 /* Common logic for [i][d]transform */
-private int
+static int
 common_transform(i_ctx_t *i_ctx_p,
 	int (*ptproc)(gs_state *, floatp, floatp, gs_point *),
 	int (*matproc)(floatp, floatp, const gs_matrix *, gs_point *))
@@ -318,7 +318,7 @@ out:
 }
 
 /* <matrix> <inv_matrix> invertmatrix <inv_matrix> */
-private int
+static int
 zinvertmatrix(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

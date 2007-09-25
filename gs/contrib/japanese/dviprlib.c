@@ -39,8 +39,8 @@
 
 
 /*--- forward declarations ---*/
-private int dviprt_read_S_cfg(dviprt_cfg_t *,dviprt_cfg_i *);
-private int dviprt_read_QR_cfg(dviprt_cfg_t *,dviprt_cfg_i *);
+static int dviprt_read_S_cfg(dviprt_cfg_t *,dviprt_cfg_i *);
+static int dviprt_read_QR_cfg(dviprt_cfg_t *,dviprt_cfg_i *);
      
 /*--- library functions ---*/
 int 
@@ -79,7 +79,7 @@ dviprt_readcfg(char *ifname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
 }
 
 /*--- internal routines ---*/
-private int 
+static int 
 dviprt_read_S_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
 {
   FILE *ifp;
@@ -197,7 +197,7 @@ dviprt_read_S_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
   return 0;
 }
 
-private int 
+static int 
 dviprt_read_QR_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
 {
 #define	TYPE_BIT		0xc0
@@ -428,22 +428,22 @@ typedef struct {
 } dviprt_cfg_limit_t;
 
 /*--- forward declarations ---*/
-private int dviprt_set_select
+static int dviprt_set_select
   (dviprt_cfg_item_t *,uchar **,dviprt_cfg_t *,dviprt_cfg_i *);
-private int dviprt_set_integer
+static int dviprt_set_integer
   (dviprt_cfg_item_t *, uchar *, dviprt_cfg_t *,dviprt_cfg_i *);
-private int dviprt_set_strings
+static int dviprt_set_strings
   (dviprt_cfg_item_t *,uchar *,dviprt_cfg_t *,dviprt_cfg_i *);
-private int dviprt_set_rpexpr
+static int dviprt_set_rpexpr
   (dviprt_cfg_item_t *,uchar *,int , dviprt_cfg_t *,dviprt_cfg_i *,int);
-private int dviprt_set_code
+static int dviprt_set_code
   (dviprt_cfg_item_t *,uchar *,dviprt_cfg_t *,dviprt_cfg_i *);
 
-private long dviprt_oct2long(uchar *,uchar *,uchar **);
-private long dviprt_dec2long(uchar *,uchar *,uchar **);
-private long dviprt_hex2long(uchar *,uchar *,uchar **);
+static long dviprt_oct2long(uchar *,uchar *,uchar **);
+static long dviprt_dec2long(uchar *,uchar *,uchar **);
+static long dviprt_hex2long(uchar *,uchar *,uchar **);
      
-private int dviprt_printtokenerror(dviprt_cfg_i *,char *,int ,int);
+static int dviprt_printtokenerror(dviprt_cfg_i *,char *,int ,int);
      
 /*--- macros ---*/
 #define strlcmp(tmplt,str,len) \
@@ -777,7 +777,7 @@ dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
 }
 
 /*--- internal routines ---*/
-private int 
+static int 
 dviprt_set_integer(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
     dviprt_cfg_i *pinfo)
 {
@@ -828,7 +828,7 @@ dviprt_set_integer(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
   return 0;
 }
 
-private int 
+static int 
 dviprt_set_strings(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
     dviprt_cfg_i *pinfo)
 {
@@ -851,7 +851,7 @@ dviprt_set_strings(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
   return 0;
 }
 
-private int
+static int
 dviprt_set_select(dviprt_cfg_item_t *pitem,uchar **buf,dviprt_cfg_t *pcfg,
     dviprt_cfg_i *pinfo)
 {
@@ -880,7 +880,7 @@ dviprt_set_select(dviprt_cfg_item_t *pitem,uchar **buf,dviprt_cfg_t *pcfg,
 #define CFG_TOKEN_LIMIT_BIT 0x100
 #define CFG_TOKEN_FMT       0x200
 
-private int 
+static int 
 dviprt_get_codetype_token(dviprt_cfg_i *pinfo,uchar *pstart,uchar *pend,uchar *stopescseqchars,
     uchar *limitchars)
 {
@@ -965,7 +965,7 @@ dviprt_get_codetype_token(dviprt_cfg_i *pinfo,uchar *pstart,uchar *pend,uchar *s
   }
 }
 
-private long 
+static long 
 dviprt_dec2long(uchar *start,uchar *end,uchar **next)
 {
   long v = 0;
@@ -979,7 +979,7 @@ dviprt_dec2long(uchar *start,uchar *end,uchar **next)
   return v;
 }
 
-private long 
+static long 
 dviprt_oct2long(uchar *start,uchar *end,uchar **next)
 {
   long v = 0;
@@ -993,7 +993,7 @@ dviprt_oct2long(uchar *start,uchar *end,uchar **next)
   return v;
 }
 
-private long 
+static long 
 dviprt_hex2long(uchar *start,uchar *end,uchar **next)
 {
   long v = 0;
@@ -1009,7 +1009,7 @@ dviprt_hex2long(uchar *start,uchar *end,uchar **next)
   return v;
 }
 
-private int 
+static int 
 dviprt_set_rpexpr(dviprt_cfg_item_t *pitem,uchar *pbuf,int len,dviprt_cfg_t *pcfg,
     dviprt_cfg_i *pinfo,int sp)
 {
@@ -1160,7 +1160,7 @@ dviprt_set_rpexpr(dviprt_cfg_item_t *pitem,uchar *pbuf,int len,dviprt_cfg_t *pcf
   return code;
 }
 
-private int 
+static int 
 dviprt_set_code(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
     dviprt_cfg_i *pinfo)
 {
@@ -1383,7 +1383,7 @@ dviprt_set_code(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
   return obytes;
 }
 
-private char *
+static char *
 dviprt_src_errorno2message(int type)
 {
   switch (type) {
@@ -1406,7 +1406,7 @@ dviprt_src_errorno2message(int type)
   }
 }
 
-private int 
+static int 
 dviprt_printtokenerror(dviprt_cfg_i *pinfo,char *token,int len,int type)
 {
   char *msg;
@@ -1434,9 +1434,9 @@ char *dviprt_prtcodename[] = { CFG_PRTCODE_NAME, NULL };
 char *dviprt_encodename[] = { CFG_ENCODE_NAME, NULL };
 
 #if 0
-private FILE *dviprt_messagestream = stderr;
+static FILE *dviprt_messagestream = stderr;
 #else  /* patch for glibc 2.1.x by Shin Fukui <shita@april.co.jp> */
-private FILE *dviprt_messagestream;
+static FILE *dviprt_messagestream;
 #endif
 
 /*--- library functions ---*/
@@ -1448,7 +1448,7 @@ dviprt_setmessagestream(FILE *fp)
 }
 
 /*--- internal routines ---*/
-liblocal int 
+static int 
 dviprt_initcfg_(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
 {
   int i;
@@ -1466,7 +1466,7 @@ dviprt_initcfg_(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
   return 0;
 }
 
-liblocal int 
+static int 
 dviprt_setcfgbuffer_(dviprt_cfg_i *pinfo,int rsize,int csize)
 {
   pinfo->temp_readbuf_f = pinfo->temp_codebuf_f = 0;
@@ -1495,7 +1495,7 @@ dviprt_setcfgbuffer_(dviprt_cfg_i *pinfo,int rsize,int csize)
   return 0;
 }
 
-liblocal int 
+static int 
 dviprt_resetcfgbuffer_(dviprt_cfg_i *pinfo)
 {
   if (pinfo->temp_readbuf_f) free(pinfo->readbuf);
@@ -1506,7 +1506,7 @@ dviprt_resetcfgbuffer_(dviprt_cfg_i *pinfo)
 
 char dviprt_message_buffer[128];
 
-liblocal int
+static int
 dviprt_printmessage(char *str,int len)
 {
   if (dviprt_messagestream && str) {
@@ -1517,7 +1517,7 @@ dviprt_printmessage(char *str,int len)
   return 0;
 }
 
-private int
+static int
 dviprt_printcfgerrorheader(dviprt_cfg_i *pinfo)
 {
   if (pinfo) {
@@ -1533,7 +1533,7 @@ dviprt_printcfgerrorheader(dviprt_cfg_i *pinfo)
   return 0;
 }
 
-liblocal int
+static int
 dviprt_printerror(char *msg,int len)
 {
   dviprt_printmessage("*ERROR* ",-1);
@@ -1541,7 +1541,7 @@ dviprt_printerror(char *msg,int len)
   return 0;
 }
 
-liblocal int 
+static int 
 dviprt_printcfgerror(dviprt_cfg_i *pinfo,char *msg,int len)
 {
   dviprt_printcfgerrorheader(pinfo);
@@ -1549,7 +1549,7 @@ dviprt_printcfgerror(dviprt_cfg_i *pinfo,char *msg,int len)
   return 0;
 }
 
-liblocal int
+static int
 dviprt_printwarning(char *msg,int len)
 {
   dviprt_printmessage("*WARNING* ",-1);
@@ -1557,7 +1557,7 @@ dviprt_printwarning(char *msg,int len)
   return 0;
 }
 
-liblocal int 
+static int 
 dviprt_printcfgwarning(dviprt_cfg_i *pinfo,char *msg,int len)
 {
   dviprt_printcfgerrorheader(pinfo);
@@ -1572,16 +1572,16 @@ dviprt_printcfgwarning(dviprt_cfg_i *pinfo,char *msg,int len)
 
 
 /*--- forward declarations ---*/
-private int dviprt_getmaximalwidth(dviprt_print *);
-private int dviprt_flush_buffer(dviprt_print *,uchar far *);
-private int dviprt_output_transpose(dviprt_print *,uchar far *,uint);
-private int dviprt_output_nontranspose(dviprt_print *,uchar far *,uint);
-private int dviprt_output_nontranspose_reverse(dviprt_print *,uchar far *,uint);
-private int dviprt_reverse_bits(uchar far *,uint);
-private int dviprt_transpose8x8(uchar far *,uint, uchar far *,uint);
-private int dviprt_output_expr(dviprt_print *,int,uint,uint);
-private int dviprt_default_outputproc(uchar far *,long ,void *);
-private long dviprt_getbuffersize(dviprt_print *);
+static int dviprt_getmaximalwidth(dviprt_print *);
+static int dviprt_flush_buffer(dviprt_print *,uchar far *);
+static int dviprt_output_transpose(dviprt_print *,uchar far *,uint);
+static int dviprt_output_nontranspose(dviprt_print *,uchar far *,uint);
+static int dviprt_output_nontranspose_reverse(dviprt_print *,uchar far *,uint);
+static int dviprt_reverse_bits(uchar far *,uint);
+static int dviprt_transpose8x8(uchar far *,uint, uchar far *,uint);
+static int dviprt_output_expr(dviprt_print *,int,uint,uint);
+static int dviprt_default_outputproc(uchar far *,long ,void *);
+static long dviprt_getbuffersize(dviprt_print *);
      
 /*--- library functions ---*/
 long
@@ -1766,13 +1766,13 @@ dviprt_output(dviprt_print *pprint,uchar far *buf,long s)
 }
 
 /*--- internal routines ---*/
-private int
+static int
 dviprt_getmaximalwidth(dviprt_print *pprint)
 {
   return MIN(pprint->printer->integer[CFG_MAXIMAL_UNIT],pprint->bitmap_width);
 }
 
-private long
+static long
 dviprt_getbuffersize(dviprt_print *pprint)
 {
   long w = dviprt_getmaximalwidth(pprint);
@@ -1786,7 +1786,7 @@ dviprt_getbuffersize(dviprt_print *pprint)
   }
 }
 
-private int
+static int
 dviprt_flush_buffer(dviprt_print *pprint,uchar far *fb)
 {
   dviprt_cfg_t *pprt;
@@ -1816,7 +1816,7 @@ dviprt_flush_buffer(dviprt_print *pprint,uchar far *fb)
   return 0;
 }
 
-private int
+static int
 dviprt_output_nontranspose(dviprt_print *pprint,uchar far *fb,uint width)
 {
   int code;
@@ -1857,7 +1857,7 @@ dviprt_output_nontranspose(dviprt_print *pprint,uchar far *fb,uint width)
 }
 
 
-private int
+static int
 dviprt_output_nontranspose_reverse(dviprt_print *pprint,uchar far *fb,uint width)
 {
   uchar far *psrc;
@@ -1914,7 +1914,7 @@ dviprt_output_nontranspose_reverse(dviprt_print *pprint,uchar far *fb,uint width
   return 0;
 }
 
-private int
+static int
 dviprt_output_transpose(dviprt_print *pprint,uchar far *fb,uint width)
 {
   uchar far *psrc;
@@ -1981,7 +1981,7 @@ dviprt_output_transpose(dviprt_print *pprint,uchar far *fb,uint width)
   return 0;
 }
 
-private int
+static int
 dviprt_transpose8x8(uchar far *inp,uint line_size,uchar far *outp,uint dist)
 {
   register uint ae, bf, cg, dh;
@@ -2057,7 +2057,7 @@ dviprt_transpose8x8(uchar far *inp,uint line_size,uchar far *outp,uint dist)
   return 0;
 }
 
-private int
+static int
 dviprt_reverse_bits(uchar far *buf,uint s)
 {
   static uchar rev[256] = {
@@ -2102,7 +2102,7 @@ dviprt_reverse_bits(uchar far *buf,uint s)
 }
 
 
-private int
+static int
 dviprt_output_expr(dviprt_print *pprint,int numb,uint width,uint dsize)
 {
   uchar *pcode;
@@ -2244,7 +2244,7 @@ dviprt_output_expr(dviprt_print *pprint,int numb,uint width,uint dsize)
   return 0;
 }
 
-private int
+static int
 dviprt_default_outputproc(uchar far *buf,long s,void *fp)
 {
 #ifdef __MSDOS_REAL__
@@ -2268,22 +2268,22 @@ dviprt_default_outputproc(uchar far *buf,long s,void *fp)
 #define DVIPRT_SUPPORT_PCL 1
 
 /*--- forward declarations ---*/
-private long dviprt_null_getworksize(dviprt_print *,long );
-private long dviprt_null_encode(dviprt_print *,long ,int );
-private long dviprt_hex_getworksize(dviprt_print *,long );
-private long dviprt_hex_encode(dviprt_print *,long ,int );
+static long dviprt_null_getworksize(dviprt_print *,long );
+static long dviprt_null_encode(dviprt_print *,long ,int );
+static long dviprt_hex_getworksize(dviprt_print *,long );
+static long dviprt_hex_encode(dviprt_print *,long ,int );
 #if DVIPRT_SUPPORT_FAX
-private long dviprt_fax_getworksize(dviprt_print *,long );
-private long dviprt_fax_encode(dviprt_print *,long ,int );
+static long dviprt_fax_getworksize(dviprt_print *,long );
+static long dviprt_fax_encode(dviprt_print *,long ,int );
 #endif
 #if DVIPRT_SUPPORT_PCL
-private long dviprt_pcl1_getworksize(dviprt_print *,long );
-private long dviprt_pcl1_encode(dviprt_print *,long ,int );
-private long dviprt_pcl2_getworksize(dviprt_print *,long );
-private long dviprt_pcl2_encode(dviprt_print *,long ,int );
+static long dviprt_pcl1_getworksize(dviprt_print *,long );
+static long dviprt_pcl1_encode(dviprt_print *,long ,int );
+static long dviprt_pcl2_getworksize(dviprt_print *,long );
+static long dviprt_pcl2_encode(dviprt_print *,long ,int );
 #endif
      
-private dviprt_encoder dviprt_encoder_list[] = {
+static dviprt_encoder dviprt_encoder_list[] = {
   { CFG_ENCODE_NULL, dviprt_null_getworksize,dviprt_null_encode},
   { CFG_ENCODE_HEX, dviprt_hex_getworksize,dviprt_hex_encode},
 #if DVIPRT_SUPPORT_FAX
@@ -2298,7 +2298,7 @@ private dviprt_encoder dviprt_encoder_list[] = {
 
 /*--- internal routines ---*/
 /* The users MUST NOT USE these functions */
-liblocal dviprt_encoder *
+static dviprt_encoder *
 dviprt_getencoder_(int no)
 {
   int i;
@@ -2308,24 +2308,24 @@ dviprt_getencoder_(int no)
   return NULL;
 }
 
-private long 
+static long 
 dviprt_null_getworksize(dviprt_print *pprint,long s)
 {
   return 0;
 }
-private long 
+static long 
 dviprt_null_encode(dviprt_print *pprint,long s,int f)
 {
   pprint->poutput = pprint->psource;
   return s;
 }
 
-private long 
+static long 
 dviprt_hex_getworksize(dviprt_print *pprint,long s)
 {
   return s*2;
 }
-private long 
+static long 
 dviprt_hex_encode(dviprt_print *pprint,long s,int f)
 {
   if (f) {
@@ -2345,12 +2345,12 @@ dviprt_hex_encode(dviprt_print *pprint,long s,int f)
 }
 
 #if DVIPRT_SUPPORT_PCL
-private long
+static long
 dviprt_pcl1_getworksize(dviprt_print *pprint,long s)
 {
   return s*2;
 }
-private long 
+static long 
 dviprt_pcl1_encode(dviprt_print *pprint,long s,int f)
 {
   uchar far *src;
@@ -2384,12 +2384,12 @@ dviprt_pcl1_encode(dviprt_print *pprint,long s,int f)
   return total;
 }
 
-private long 
+static long 
 dviprt_pcl2_getworksize(dviprt_print *pprint,long s)
 {
   return s + s/127 + 1;
 }
-private long 
+static long 
 dviprt_pcl2_encode(dviprt_print *pprint,long s,int f)
 {
   uchar far *exam;
@@ -2450,7 +2450,7 @@ dviprt_pcl2_encode(dviprt_print *pprint,long s,int f)
 #endif /* DVIPRT_SUPPORT_PCL */
 
 #if DVIPRT_SUPPORT_FAX
-private long 
+static long 
 dviprt_fax_getworksize(dviprt_print *pprint,long s)
 {
   long size = s * 8 + 7;
@@ -2472,11 +2472,11 @@ typedef struct {
   int o_count;
   int o_bufcount;
 } FaxEncodeInfo;
-private int dviprt_fax_set_white(int,FaxEncodeInfo *);
-private int dviprt_fax_set_black(int,FaxEncodeInfo *);
-private int dviprt_fax_set_bitcount(FaxEncode_t *,FaxEncodeInfo *);
+static int dviprt_fax_set_white(int,FaxEncodeInfo *);
+static int dviprt_fax_set_black(int,FaxEncodeInfo *);
+static int dviprt_fax_set_bitcount(FaxEncode_t *,FaxEncodeInfo *);
      
-private long 
+static long 
 dviprt_fax_encode(dviprt_print *pprint,long s,int f)
 {
   static FaxEncode_t eol_code = {0x800,12};
@@ -2563,7 +2563,7 @@ dviprt_fax_encode(dviprt_print *pprint,long s,int f)
   return info.o_bufcount;
 }
 
-private int 
+static int 
 dviprt_fax_set_bitcount(FaxEncode_t *pt,FaxEncodeInfo *info)
 {
   int	data, length;
@@ -2582,7 +2582,7 @@ dviprt_fax_set_bitcount(FaxEncode_t *pt,FaxEncodeInfo *info)
   return 0;
 }
 
-private int 
+static int 
 dviprt_fax_set_white(int count,FaxEncodeInfo *info)
 {
   static FaxEncode_t white_count_list[]={
@@ -2706,7 +2706,7 @@ dviprt_fax_set_white(int count,FaxEncodeInfo *info)
   return 0;
 }
 
-private int 
+static int 
 dviprt_fax_set_black(int count,FaxEncodeInfo *info)
 {
   static FaxEncode_t black_count_list[]={

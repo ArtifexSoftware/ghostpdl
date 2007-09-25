@@ -63,9 +63,9 @@ copies.  */
 #endif
 
 /* The device descriptor */
-private dev_proc_print_page(bj10v_print_page);
+static dev_proc_print_page(bj10v_print_page);
 #if 0
-private dev_proc_get_initial_matrix(bj10v_get_initial_matrix);
+static dev_proc_get_initial_matrix(bj10v_get_initial_matrix);
 #endif
 
 #if 0
@@ -99,7 +99,7 @@ gx_device_printer gs_bj10vh_device =
 #if 0
 /* Shift the origin from the top left corner of the pysical page to the
    first printable pixel, as defined by the top and left margins. */
-private void
+static void
 bj10v_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
 {	gx_default_get_initial_matrix(dev, pmat);
 	pmat->tx -= dev_l_margin(dev) * dev->x_pixels_per_inch;
@@ -115,13 +115,13 @@ bj10v_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
 	 data directly to get correct results.  */
 
 #ifdef PC9801
-private int
+static int
 is_printer(gx_device_printer *pdev)
 {
 	return (strlen(pdev->fname) == 0 || strcmp(pdev->fname, "PRN") == 0);
 }
 
-private void
+static void
 pc98_prn_out(int c)
 {
 	while(!(inportb(0x42) & 0x04));
@@ -130,7 +130,7 @@ pc98_prn_out(int c)
 	outportb(0x46, 0x0f);
 }
 
-private int
+static int
 prn_putc(gx_device_printer *pdev, int c)
 {
 	if(is_printer(pdev)) {
@@ -140,7 +140,7 @@ prn_putc(gx_device_printer *pdev, int c)
 	return fputc(c, pdev->file);
 }
 
-private int
+static int
 prn_puts(gx_device_printer *pdev, char *ptr)
 {
 	if(is_printer(pdev)) {
@@ -151,7 +151,7 @@ prn_puts(gx_device_printer *pdev, char *ptr)
 	return fputs(ptr, pdev->file);
 }
 
-private int
+static int
 prn_write(gx_device_printer *pdev, char *ptr, int size)
 {
 	if(is_printer(pdev)) {
@@ -162,7 +162,7 @@ prn_write(gx_device_printer *pdev, char *ptr, int size)
 	return fwrite(ptr, 1, size, pdev->file);
 }
 
-private int
+static int
 prn_flush(gx_device_printer *pdev)
 {
 	if(is_printer(pdev))
@@ -181,7 +181,7 @@ prn_flush(gx_device_printer *pdev)
 
 /* ------ internal routines ------ */
 
-private void
+static void
 bj10v_output_run(byte *data, int dnum, int bytes,
 				 char *mode, gx_device_printer *pdev)
 {
@@ -193,7 +193,7 @@ bj10v_output_run(byte *data, int dnum, int bytes,
 }
 
 /* Send the page to the printer. */
-private int
+static int
 bj10v_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {	int line_size = gdev_prn_raster((gx_device *)pdev);
 	int xres = pdev->x_pixels_per_inch;

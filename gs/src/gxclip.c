@@ -27,19 +27,19 @@
 /* Device for clipping with a region. */
 /* We forward non-drawing operations, but we must be sure to intercept */
 /* all drawing operations. */
-private dev_proc_open_device(clip_open);
-private dev_proc_fill_rectangle(clip_fill_rectangle);
-private dev_proc_copy_mono(clip_copy_mono);
-private dev_proc_copy_color(clip_copy_color);
-private dev_proc_copy_alpha(clip_copy_alpha);
-private dev_proc_fill_mask(clip_fill_mask);
-private dev_proc_strip_tile_rectangle(clip_strip_tile_rectangle);
-private dev_proc_strip_copy_rop(clip_strip_copy_rop);
-private dev_proc_get_clipping_box(clip_get_clipping_box);
-private dev_proc_get_bits_rectangle(clip_get_bits_rectangle);
+static dev_proc_open_device(clip_open);
+static dev_proc_fill_rectangle(clip_fill_rectangle);
+static dev_proc_copy_mono(clip_copy_mono);
+static dev_proc_copy_color(clip_copy_color);
+static dev_proc_copy_alpha(clip_copy_alpha);
+static dev_proc_fill_mask(clip_fill_mask);
+static dev_proc_strip_tile_rectangle(clip_strip_tile_rectangle);
+static dev_proc_strip_copy_rop(clip_strip_copy_rop);
+static dev_proc_get_clipping_box(clip_get_clipping_box);
+static dev_proc_get_bits_rectangle(clip_get_bits_rectangle);
 
 /* The device descriptor. */
-private const gx_device_clip gs_clip_device =
+static const gx_device_clip gs_clip_device =
 {std_device_std_body(gx_device_clip, 0, "clipper",
 		     0, 0, 1, 1),
  {clip_open,
@@ -140,7 +140,7 @@ struct stats_clip_s {
          loops, out, in_y, in, in1, down, up, x, no_x;
 } stats_clip;
 
-private const uint clip_interval = 10000;
+static const uint clip_interval = 10000;
 
 # define INCR(v) (++(stats_clip.v))
 # define INCR_THEN(v, e) (INCR(v), (e))
@@ -153,7 +153,7 @@ private const uint clip_interval = 10000;
  * Enumerate the rectangles of the x,w,y,h argument that fall within
  * the clipping region.
  */
-private int
+static int
 clip_enumerate_rest(gx_device_clip * rdev,
 		    int x, int y, int xe, int ye,
 		    int (*process)(clip_callback_data_t * pccd,
@@ -261,7 +261,7 @@ clip_enumerate_rest(gx_device_clip * rdev,
     return 0;
 }
 
-private int
+static int
 clip_enumerate(gx_device_clip * rdev, int x, int y, int w, int h,
 	       int (*process)(clip_callback_data_t * pccd,
 			      int xc, int yc, int xec, int yec),
@@ -288,7 +288,7 @@ clip_enumerate(gx_device_clip * rdev, int x, int y, int w, int h,
 }
 
 /* Open a clipping device */
-private int
+static int
 clip_open(gx_device * dev)
 {
     gx_device_clip *const rdev = (gx_device_clip *) dev;
@@ -314,7 +314,7 @@ clip_call_fill_rectangle(clip_callback_data_t * pccd, int xc, int yc, int xec, i
     return (*dev_proc(pccd->tdev, fill_rectangle))
 	(pccd->tdev, xc, yc, xec - xc, yec - yc, pccd->color[0]);
 }
-private int
+static int
 clip_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 		    gx_color_index color)
 {
@@ -370,7 +370,7 @@ clip_call_copy_mono(clip_callback_data_t * pccd, int xc, int yc, int xec, int ye
 	 pccd->sourcex + xc - pccd->x, pccd->raster, gx_no_bitmap_id,
 	 xc, yc, xec - xc, yec - yc, pccd->color[0], pccd->color[1]);
 }
-private int
+static int
 clip_copy_mono(gx_device * dev,
 	       const byte * data, int sourcex, int raster, gx_bitmap_id id,
 	       int x, int y, int w, int h,
@@ -413,7 +413,7 @@ clip_call_copy_color(clip_callback_data_t * pccd, int xc, int yc, int xec, int y
 	 pccd->sourcex + xc - pccd->x, pccd->raster, gx_no_bitmap_id,
 	 xc, yc, xec - xc, yec - yc);
 }
-private int
+static int
 clip_copy_color(gx_device * dev,
 		const byte * data, int sourcex, int raster, gx_bitmap_id id,
 		int x, int y, int w, int h)
@@ -434,7 +434,7 @@ clip_call_copy_alpha(clip_callback_data_t * pccd, int xc, int yc, int xec, int y
 	 pccd->sourcex + xc - pccd->x, pccd->raster, gx_no_bitmap_id,
 	 xc, yc, xec - xc, yec - yc, pccd->color[0], pccd->depth);
 }
-private int
+static int
 clip_copy_alpha(gx_device * dev,
 		const byte * data, int sourcex, int raster, gx_bitmap_id id,
 		int x, int y, int w, int h,
@@ -458,7 +458,7 @@ clip_call_fill_mask(clip_callback_data_t * pccd, int xc, int yc, int xec, int ye
 	 xc, yc, xec - xc, yec - yc, pccd->pdcolor, pccd->depth,
 	 pccd->lop, NULL);
 }
-private int
+static int
 clip_fill_mask(gx_device * dev,
 	       const byte * data, int sourcex, int raster, gx_bitmap_id id,
 	       int x, int y, int w, int h,
@@ -485,7 +485,7 @@ clip_call_strip_tile_rectangle(clip_callback_data_t * pccd, int xc, int yc, int 
 	(pccd->tdev, pccd->tiles, xc, yc, xec - xc, yec - yc,
 	 pccd->color[0], pccd->color[1], pccd->phase.x, pccd->phase.y);
 }
-private int
+static int
 clip_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 			  int x, int y, int w, int h,
      gx_color_index color0, gx_color_index color1, int phase_x, int phase_y)
@@ -510,7 +510,7 @@ clip_call_strip_copy_rop(clip_callback_data_t * pccd, int xc, int yc, int xec, i
 	 xc, yc, xec - xc, yec - yc, pccd->phase.x, pccd->phase.y,
 	 pccd->lop);
 }
-private int
+static int
 clip_strip_copy_rop(gx_device * dev,
 	      const byte * sdata, int sourcex, uint raster, gx_bitmap_id id,
 		    const gx_color_index * scolors,
@@ -529,7 +529,7 @@ clip_strip_copy_rop(gx_device * dev,
 }
 
 /* Get the (outer) clipping box, in client coordinates. */
-private void
+static void
 clip_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
 {
     gx_device_clip *const rdev = (gx_device_clip *) dev;
@@ -576,7 +576,7 @@ clip_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
 }
 
 /* Get bits back from the device. */
-private int
+static int
 clip_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 			gs_get_bits_params_t * params, gs_int_rect ** unread)
 {

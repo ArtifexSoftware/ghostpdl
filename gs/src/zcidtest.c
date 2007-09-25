@@ -29,7 +29,7 @@
 #include "store.h"
 
 /* - .wrapfont - */
-private int
+static int
 zwrapfont(i_ctx_t *i_ctx_p)
 {
     gs_font *font = gs_currentfont(igs);
@@ -78,14 +78,14 @@ zwrapfont(i_ctx_t *i_ctx_p)
 }
 
 /* <file> <cmap> .writecmap - */
-private int
+static int
 zfcmap_put_name_default(stream *s, const byte *str, uint size)
 {
     stream_putc(s, '/');
     stream_write(s, str, size);
     return 0;
 }
-private int
+static int
 zwritecmap(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -108,7 +108,7 @@ zwritecmap(i_ctx_t *i_ctx_p)
 }
 
 /* <file> <cid9font> .writefont9 - */
-private int
+static int
 zwritefont9(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

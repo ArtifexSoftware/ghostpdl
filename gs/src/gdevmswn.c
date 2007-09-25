@@ -27,7 +27,7 @@
 #include "gsdll.h"
 
 /* Forward references */
-private int win_set_bits_per_pixel(gx_device_win *, int);
+static int win_set_bits_per_pixel(gx_device_win *, int);
 
 #define TIMER_ID 1
 
@@ -416,7 +416,7 @@ win_makepalette(gx_device_win * wdev)
 }
 
 
-private int
+static int
 win_set_bits_per_pixel(gx_device_win * wdev, int bpp)
 {
     static const gx_device_color_info win_24bit_color = dci_color(24, 255, 255);

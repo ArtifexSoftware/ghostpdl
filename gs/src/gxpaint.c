@@ -21,7 +21,7 @@
 #include "gxpath.h"
 #include "gxfont.h"
 
-private bool caching_an_outline_font(const gs_state * pgs)
+static bool caching_an_outline_font(const gs_state * pgs)
 {
     return pgs->in_cachedevice > 1 &&
 	    pgs->font != NULL &&

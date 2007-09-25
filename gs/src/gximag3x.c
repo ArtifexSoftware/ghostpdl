@@ -31,11 +31,11 @@
 extern_st(st_color_space);
 
 /* Forward references */
-private dev_proc_begin_typed_image(gx_begin_image3x);
-private image_enum_proc_plane_data(gx_image3x_plane_data);
-private image_enum_proc_end_image(gx_image3x_end_image);
-private image_enum_proc_flush(gx_image3x_flush);
-private image_enum_proc_planes_wanted(gx_image3x_planes_wanted);
+static dev_proc_begin_typed_image(gx_begin_image3x);
+static image_enum_proc_plane_data(gx_image3x_plane_data);
+static image_enum_proc_end_image(gx_image3x_end_image);
+static image_enum_proc_flush(gx_image3x_flush);
+static image_enum_proc_planes_wanted(gx_image3x_planes_wanted);
 
 /* GC descriptor */
 private_st_gs_image3x();
@@ -46,13 +46,13 @@ const gx_image_type_t gs_image_type_3x = {
     gx_image_no_sput, gx_image_no_sget, gx_image_default_release,
     IMAGE3X_IMAGETYPE
 };
-private const gx_image_enum_procs_t image3x_enum_procs = {
+static const gx_image_enum_procs_t image3x_enum_procs = {
     gx_image3x_plane_data, gx_image3x_end_image,
     gx_image3x_flush, gx_image3x_planes_wanted
 };
 
 /* Initialize an ImageType 3x image. */
-private void
+static void
 gs_image3x_mask_init(gs_image3x_mask_t *pimm)
 {
     pimm->InterleaveType = 0;	/* not a valid type */
@@ -116,7 +116,7 @@ typedef struct image3x_channel_values_s {
     gs_int_rect rect;
     gs_image_t image;
 } image3x_channel_values_t;
-private int check_image3x_mask(const gs_image3x_t *pim,
+static int check_image3x_mask(const gs_image3x_t *pim,
 			       const gs_image3x_mask_t *pimm,
 			       const image3x_channel_values_t *ppcv,
 			       image3x_channel_values_t *pmcv,
@@ -351,7 +351,7 @@ gx_begin_image3x_generic(gx_device * dev,
     gs_free_object(mem, penum, "gx_begin_image3x");
     return code;
 }
-private bool
+static bool
 check_image3x_extent(floatp mask_coeff, floatp data_coeff)
 {
     if (mask_coeff == 0)
@@ -366,7 +366,7 @@ check_image3x_extent(floatp mask_coeff, floatp data_coeff)
  * pmcs->{InterleaveType,width,height,full_height,depth,data,y,skip}.
  * If the mask is omitted, sets pmcs->depth = 0 and returns normally.
  */
-private bool
+static bool
 check_image3x_mask(const gs_image3x_t *pim, const gs_image3x_mask_t *pimm,
 		   const image3x_channel_values_t *ppcv,
 		   image3x_channel_values_t *pmcv,
@@ -452,7 +452,7 @@ check_image3x_mask(const gs_image3x_t *pim, const gs_image3x_mask_t *pimm,
  * Return > 0 if we want more data from channel 1 now, < 0 if we want more
  * from channel 2 now, 0 if we want both.
  */
-private int
+static int
 channel_next(const image3x_channel_state_t *pics1,
 	     const image3x_channel_state_t *pics2)
 {
@@ -480,8 +480,8 @@ channel_next(const image3x_channel_state_t *pics1,
 }
 
 /* Define the default implementation of ImageType 3 processing. */
-private IMAGE3X_MAKE_MID_PROC(make_midx_default); /* check prototype */
-private int
+static IMAGE3X_MAKE_MID_PROC(make_midx_default); /* check prototype */
+static int
 make_midx_default(gx_device **pmidev, gx_device *dev, int width, int height,
 		 int depth, gs_memory_t *mem)
 {
@@ -515,8 +515,8 @@ make_midx_default(gx_device **pmidev, gx_device *dev, int width, int height,
     *pmidev = (gx_device *)midev;
     return 0;
 }
-private IMAGE3X_MAKE_MCDE_PROC(make_mcdex_default);  /* check prototype */
-private int
+static IMAGE3X_MAKE_MCDE_PROC(make_mcdex_default);  /* check prototype */
+static int
 make_mcdex_default(gx_device *dev, const gs_imager_state *pis,
 		   const gs_matrix *pmat, const gs_image_common_t *pic,
 		   const gs_int_rect *prect, const gx_drawing_color *pdcolor,
@@ -555,7 +555,7 @@ make_mcdex_default(gx_device *dev, const gs_imager_state *pis,
     *pmcdev = (gx_device *)bbdev;
     return 0;
 }
-private int
+static int
 gx_begin_image3x(gx_device * dev,
 		const gs_imager_state * pis, const gs_matrix * pmat,
 		const gs_image_common_t * pic, const gs_int_rect * prect,
@@ -568,7 +568,7 @@ gx_begin_image3x(gx_device * dev,
 }
 
 /* Process the next piece of an ImageType 3 image. */
-private int
+static int
 gx_image3x_plane_data(gx_image_enum_common_t * info,
 		     const gx_image_plane_t * planes, int height,
 		     int *rows_used)
@@ -759,7 +759,7 @@ gx_image3x_plane_data(gx_image_enum_common_t * info,
 }
 
 /* Flush buffered data. */
-private int
+static int
 gx_image3x_flush(gx_image_enum_common_t * info)
 {
     gx_image3x_enum_t * const penum = (gx_image3x_enum_t *) info;
@@ -773,7 +773,7 @@ gx_image3x_flush(gx_image_enum_common_t * info)
 }
 
 /* Determine which data planes are wanted. */
-private bool
+static bool
 gx_image3x_planes_wanted(const gx_image_enum_common_t * info, byte *wanted)
 {
     const gx_image3x_enum_t * const penum = (const gx_image3x_enum_t *) info;
@@ -825,7 +825,7 @@ gx_image3x_planes_wanted(const gx_image_enum_common_t * info, byte *wanted)
 }
 
 /* Clean up after processing an ImageType 3x image. */
-private int
+static int
 gx_image3x_end_image(gx_image_enum_common_t * info, bool draw_last)
 {
     gx_image3x_enum_t *penum = (gx_image3x_enum_t *) info;

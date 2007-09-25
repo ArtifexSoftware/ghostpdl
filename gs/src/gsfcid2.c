@@ -26,7 +26,7 @@
 /*
  * Create a Type 2 CIDFont from a Type 42 font.
  */
-private int
+static int
 identity_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
 {
     ulong cid = glyph - gs_min_cid_glyph;
@@ -87,7 +87,7 @@ gs_private_st_suffix_add1(st_cmap_tt_16bit_format4, gs_cmap_tt_16bit_format4_t,
   cmap_tt_16bit_format4_enum_ptrs, cmap_tt_16bit_format4_reloc_ptrs,
   st_cmap, font);
 
-private int
+static int
 tt_16bit_format4_decode_next(const gs_cmap_t * pcmap_in,
 		       const gs_const_string * pstr,
 		       uint * pindex, uint * pfidx,
@@ -139,7 +139,7 @@ tt_16bit_format4_decode_next(const gs_cmap_t * pcmap_in,
     *pfidx = 0;
     return 0;
 }
-private int
+static int
 tt_16bit_format4_next_range(gs_cmap_ranges_enum_t *penum)
 {
     /* There is just a single 2-byte range. */
@@ -152,16 +152,16 @@ tt_16bit_format4_next_range(gs_cmap_ranges_enum_t *penum)
     }
     return 1;
 }
-private const gs_cmap_ranges_enum_procs_t tt_16bit_format4_range_procs = {
+static const gs_cmap_ranges_enum_procs_t tt_16bit_format4_range_procs = {
     tt_16bit_format4_next_range
 };
-private void
+static void
 tt_16bit_format4_enum_ranges(const gs_cmap_t *pcmap,
 			     gs_cmap_ranges_enum_t *pre)
 {
     gs_cmap_ranges_enum_setup(pre, pcmap, &tt_16bit_format4_range_procs);
 }
-private int
+static int
 tt_16bit_format4_next_lookup(gs_cmap_lookups_enum_t *penum)
 {
     if (penum->index[0] == 0) {
@@ -175,7 +175,7 @@ tt_16bit_format4_next_lookup(gs_cmap_lookups_enum_t *penum)
     }
     return 1;
 }
-private int
+static int
 tt_16bit_format4_next_entry(gs_cmap_lookups_enum_t *penum)
 {
     /* index[1] is segment # << 17 + first code. */
@@ -228,10 +228,10 @@ tt_16bit_format4_next_entry(gs_cmap_lookups_enum_t *penum)
     penum->index[1] = (segment2 << 16) + next;
     return 0;
 }
-private const gs_cmap_lookups_enum_procs_t tt_16bit_format4_lookup_procs = {
+static const gs_cmap_lookups_enum_procs_t tt_16bit_format4_lookup_procs = {
     tt_16bit_format4_next_lookup, tt_16bit_format4_next_entry
 };
-private void
+static void
 tt_16bit_format4_enum_lookups(const gs_cmap_t *pcmap, int which,
 			gs_cmap_lookups_enum_t *pre)
 {
@@ -240,7 +240,7 @@ tt_16bit_format4_enum_lookups(const gs_cmap_t *pcmap, int which,
 				&tt_16bit_format4_lookup_procs));
 }
 
-private const gs_cmap_procs_t tt_16bit_format4_procs = {
+static const gs_cmap_procs_t tt_16bit_format4_procs = {
     tt_16bit_format4_decode_next,
     tt_16bit_format4_enum_ranges,
     tt_16bit_format4_enum_lookups,

@@ -59,7 +59,7 @@ typedef struct calc_value_s {
 } calc_value_t;
 
 /* Store a float. */
-private inline void
+static inline void
 store_float(calc_value_t *vsp, floatp f)
 {
     vsp->value.f = f;
@@ -101,7 +101,7 @@ typedef enum {
 } gs_PtCr_typed_opcode_t;
 
 /* Evaluate a PostScript Calculator function. */
-private int
+static int
 fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 {
     const gs_function_PtCr_t *pfn = (const gs_function_PtCr_t *)pfn_common;
@@ -560,7 +560,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 }
 
 /* Test whether a PostScript Calculator function is monotonic. */
-private int
+static int
 fn_PtCr_is_monotonic(const gs_function_t * pfn_common,
 		     const float *lower, const float *upper, uint *mask)
 {
@@ -575,7 +575,7 @@ fn_PtCr_is_monotonic(const gs_function_t * pfn_common,
 }
 
 /* Write the function definition in symbolic form on a stream. */
-private int
+static int
 calc_put_ops(stream *s, const byte *ops, uint size)
 {
     const byte *p;
@@ -654,7 +654,7 @@ calc_put_ops(stream *s, const byte *ops, uint size)
     spputc(s, '}');
     return 0;
 }
-private int
+static int
 calc_put(stream *s, const gs_function_PtCr_t *pfn)
 {
     calc_put_ops(s, pfn->params.ops.data, pfn->params.ops.size - 1);
@@ -662,7 +662,7 @@ calc_put(stream *s, const gs_function_PtCr_t *pfn)
 }
 
 /* Access the symbolic definition as a DataSource. */
-private int
+static int
 calc_access(const gs_data_source_t *psrc, ulong start, uint length,
 	    byte *buf, const byte **ptr)
 {
@@ -699,7 +699,7 @@ calc_access(const gs_data_source_t *psrc, ulong start, uint length,
 }
 
 /* Return PostScript Calculator function information. */
-private void
+static void
 fn_PtCr_get_info(const gs_function_t *pfn_common, gs_function_info_t *pfi)
 {
     const gs_function_PtCr_t *const pfn =
@@ -718,7 +718,7 @@ fn_PtCr_get_info(const gs_function_t *pfn_common, gs_function_info_t *pfi)
 }
 
 /* Make a scaled copy of a PostScript Calculator function. */
-private int
+static int
 fn_PtCr_make_scaled(const gs_function_PtCr_t *pfn, gs_function_PtCr_t **ppsfn,
 		    const gs_range_t *pranges, gs_memory_t *mem)
 {
@@ -789,7 +789,7 @@ gs_function_PtCr_free_params(gs_function_PtCr_params_t * params, gs_memory_t * m
 }
 
 /* Serialize. */
-private int
+static int
 gs_function_PtCr_serialize(const gs_function_t * pfn, stream *s)
 {
     uint n;

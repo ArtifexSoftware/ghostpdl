@@ -25,27 +25,27 @@ char vd_flags[128] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0""\0\0\0\0\0\0\0\0\0\0\0\0
                      "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0""\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
                      "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0""\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
 
-private double px, py;
+static double px, py;
 
 #define NullRET if(vd_trace1 == NULL) return
 
-private inline double scale_x(vd_trace_interface *I, double x)
+static inline double scale_x(vd_trace_interface *I, double x)
 { return (x - I->orig_x) * I->scale_x + I->shift_x;
 }
 
-private inline double scale_y(vd_trace_interface *I, double y)
+static inline double scale_y(vd_trace_interface *I, double y)
 { return (y - I->orig_y) * I->scale_y + I->shift_y;
 }
 
 #define SX(x) scale_x(vd_trace1, x)
 #define SY(y) scale_y(vd_trace1, y)
 
-private inline double bezier_point(double p0, double p1, double p2, double p3, double t)
+static inline double bezier_point(double p0, double p1, double p2, double p3, double t)
 {   double s = 1-t;
     return p0*s*s*s + 3*p1*s*s*t + 3*p2*s*t*t + p3*t*t*t;
 }
 
-private void vd_flatten(double p0x, double p0y, double p1x, double p1y, double p2x, double p2y, double p3x, double p3y)
+static void vd_flatten(double p0x, double p0y, double p1x, double p1y, double p2x, double p2y, double p3x, double p3y)
 {   
 #ifdef DEBUG
     double flat = 0.5;

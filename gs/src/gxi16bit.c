@@ -33,7 +33,7 @@
 
 /* ---------------- Unpacking procedures ---------------- */
 
-private const byte *
+static const byte *
 sample_unpack_16(byte * bptr, int *pdata_x, const byte * data,
 		 int data_x, uint dsize, const sample_map *ignore_smap, int spread,
 		 int ignore_num_components_per_plane)

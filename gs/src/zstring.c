@@ -26,7 +26,7 @@
 /* length, and forall) are implemented in zgeneric.c. */
 
 /* <int> .bytestring <bytestring> */
-private int
+static int
 zbytestring(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -66,7 +66,7 @@ zstring(i_ctx_t *i_ctx_p)
 }
 
 /* <name> .namestring <string> */
-private int
+static int
 znamestring(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -78,7 +78,7 @@ znamestring(i_ctx_t *i_ctx_p)
 
 /* <string> <pattern> anchorsearch <post> <match> -true- */
 /* <string> <pattern> anchorsearch <string> -false- */
-private int
+static int
 zanchorsearch(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -103,7 +103,7 @@ zanchorsearch(i_ctx_t *i_ctx_p)
 
 /* <string> <pattern> search <post> <match> <pre> -true- */
 /* <string> <pattern> search <string> -false- */
-private int
+static int
 zsearch(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -149,7 +149,7 @@ found:
 }
 
 /* <string> <charstring> .stringbreak <int|null> */
-private int
+static int
 zstringbreak(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -171,7 +171,7 @@ zstringbreak(i_ctx_t *i_ctx_p)
 }
 
 /* <obj> <pattern> .stringmatch <bool> */
-private int
+static int
 zstringmatch(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

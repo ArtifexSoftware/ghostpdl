@@ -25,8 +25,8 @@
 int interrupted;
 
 /* Forward declarations */
-private void signalhandler(int);
-private FILE *rbfopen(char *, char *);
+static void signalhandler(int);
+static FILE *rbfopen(char *, char *);
 
 /* Do platform-dependent initialization */
 void
@@ -48,7 +48,7 @@ gp_do_exit(int exit_status)
     exit(exit_status);
 }
 
-private void
+static void
 signalhandler(int sig)
 {
     clearerr(stdin);

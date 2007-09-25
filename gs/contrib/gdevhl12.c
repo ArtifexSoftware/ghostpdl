@@ -153,13 +153,13 @@ typedef struct gx_device_hl1250_s {
     hl1250_tray_t source_tray;
 } gx_device_hl1250;
 
-private dev_proc_open_device(hl1250_open);
-private dev_proc_close_device(hl1250_close);
-private dev_proc_print_page_copies(hl1250_print_page_copies);
-private dev_proc_get_params(hl1250_get_params);
-private dev_proc_put_params(hl1250_put_params);
+static dev_proc_open_device(hl1250_open);
+static dev_proc_close_device(hl1250_close);
+static dev_proc_print_page_copies(hl1250_print_page_copies);
+static dev_proc_get_params(hl1250_get_params);
+static dev_proc_put_params(hl1250_put_params);
 
-private const gx_device_procs prn_hl1250_procs =
+static const gx_device_procs prn_hl1250_procs =
 prn_params_procs(hl1250_open, gdev_prn_output_page, hl1250_close,
 		 hl1250_get_params, hl1250_put_params);
 
@@ -216,7 +216,7 @@ typedef unsigned short u16;
 #if arch_is_big_endian
 #define cpu_to_be16(x) (x)
 #else
-private u16
+static u16
 cpu_to_be16(u16 x)
 {
     return (x >> 8) | (x << 8);
@@ -244,7 +244,7 @@ typedef struct hl1250_state_s {
    returns 0 if the band is completely white, else 1
    XXX - it should be faster to scan 32-bit (instead of 16-bit) words
  */
-private int
+static int
 hl1250_check_area(hl1250_state_t * s)
 {
     unsigned int x, y, xleft, xright, ytop, ybottom;
@@ -291,7 +291,7 @@ hl1250_check_area(hl1250_state_t * s)
    Repeat each line using vertical compression, effectively reducing
    resolution to 1200x300 dpi.  This shouldn't happen too often.
  */
-private void
+static void
 hl1250_lose_resolution(hl1250_state_t * s)
 {
     unsigned int x, y;
@@ -324,7 +324,7 @@ hl1250_lose_resolution(hl1250_state_t * s)
    Return 1 on success, 0 on failure (data doesn't compress
    well enough to fit in MAX_BAND_WORDS words, truncated).
  */
-private int
+static int
 hl1250_compress_line(hl1250_state_t * s, unsigned int y)
 {
     unsigned int total_len;	/* total data words after compression */
@@ -437,7 +437,7 @@ hl1250_compress_line(hl1250_state_t * s, unsigned int y)
 /*
    send a 16-bit big endian value
  */
-private void
+static void
 put_be16(FILE * fp, u16 data)
 {
     putc(data >> 8, fp);
@@ -449,7 +449,7 @@ put_be16(FILE * fp, u16 data)
    s->xl,xr,yt,yb,in_buf = band (max 64 lines), coordinates band-relative
    band = Y coordinate of the band from top of page
  */
-private void
+static void
 hl1250_compress_band(FILE * prn_stream, hl1250_state_t * s, unsigned int band)
 {
     unsigned int y, ytop, ybottom;
@@ -492,7 +492,7 @@ hl1250_compress_band(FILE * prn_stream, hl1250_state_t * s, unsigned int band)
 }
 
 
-private int
+static int
 hl1250_print_1200dpi(gx_device_printer * pdev, FILE * prn_stream,
 		     int num_copies, const char *page_init)
 {
@@ -556,7 +556,7 @@ hl1250_print_1200dpi(gx_device_printer * pdev, FILE * prn_stream,
 }
 
 
-private int
+static int
 hl1250_open(gx_device * pdev)
 {
     /* margins: left, bottom, right, top */
@@ -588,7 +588,7 @@ hl1250_open(gx_device * pdev)
 /* XXX - how to get the name of the job (PS file) being printed? */
 #define PJL_JOB_NAME "Ghost"
 
-private int
+static int
 hl1250_close(gx_device * pdev)
 {
     int code = gdev_prn_open_printer(pdev, 1);
@@ -606,7 +606,7 @@ hl1250_close(gx_device * pdev)
 }
 
 
-private int
+static int
 hl1250_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 			 int num_copies)
 {
@@ -673,7 +673,7 @@ hl1250_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     return hl1250_print_1200dpi(pdev, prn_stream, num_copies, tray_pcl);
 }
 
-private int
+static int
 hl1250_put_param_int(gs_param_list * plist, gs_param_name pname,
 		     int *pvalue, int minval, int maxval, int ecode)
 {
@@ -693,7 +693,7 @@ hl1250_put_param_int(gs_param_list * plist, gs_param_name pname,
     }
 }
 
-private int
+static int
 hl1250_get_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_hl1250 *hl1250 = (gx_device_hl1250 *) pdev;
@@ -715,7 +715,7 @@ hl1250_get_params(gx_device * pdev, gs_param_list * plist)
     return code;
 }
 
-private int
+static int
 hl1250_put_params(gx_device * pdev, gs_param_list * plist)
 {
     int code = 0;

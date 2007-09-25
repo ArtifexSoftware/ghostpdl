@@ -20,8 +20,8 @@
 #include "gxclmem.h"
 #include "szlibx.h"
 
-private stream_zlib_state cl_zlibE_state;
-private stream_zlib_state cl_zlibD_state;
+static stream_zlib_state cl_zlibE_state;
+static stream_zlib_state cl_zlibD_state;
 
 /* Initialize the states to be copied. */
 int

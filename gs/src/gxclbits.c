@@ -66,7 +66,7 @@ clist_bitmap_bytes(uint width_bits, uint height, int compression_mask,
  * Compress a bitmap, skipping extra padding bytes at the end of each row if
  * necessary.  We require height >= 1, raster >= bitmap_raster(width_bits).
  */
-private int
+static int
 cmd_compress_bitmap(stream_state * st, const byte * data, uint width_bits,
 		    uint raster, uint height, stream_cursor_write * pw)
 {
@@ -236,7 +236,7 @@ out:
 }
 
 /* Add a command to set the tile size and depth. */
-private uint
+static uint
 cmd_size_tile_params(const gx_strip_bitmap * tile)
 {
     return 2 + cmd_size_w(tile->rep_width) + cmd_size_w(tile->rep_height) +
@@ -246,7 +246,7 @@ cmd_size_tile_params(const gx_strip_bitmap * tile)
 	 cmd_size_w(tile->size.y / tile->rep_height)) +
 	(tile->rep_shift == 0 ? 0 : cmd_size_w(tile->rep_shift));
 }
-private void
+static void
 cmd_store_tile_params(byte * dp, const gx_strip_bitmap * tile, int depth,
 		      uint csize)
 {
@@ -273,7 +273,7 @@ cmd_store_tile_params(byte * dp, const gx_strip_bitmap * tile, int depth,
 
 /* Add a command to set the tile index. */
 /* This is a relatively high-frequency operation, so we declare it `inline'. */
-inline private int
+static inline int
 cmd_put_tile_index(gx_device_clist_writer *cldev, gx_clist_state *pcls,
 		   uint indx)
 {
@@ -356,7 +356,7 @@ typedef struct tile_loc_s {
 
 /* Look up a tile or character in the cache.  If found, set the index and */
 /* pointer; if not, set the index to the insertion point. */
-private bool
+static bool
 clist_find_bits(gx_device_clist_writer * cldev, gx_bitmap_id id, tile_loc * ploc)
 {
     uint index = tile_id_hash(id);
@@ -380,7 +380,7 @@ clist_find_bits(gx_device_clist_writer * cldev, gx_bitmap_id id, tile_loc * ploc
 }
 
 /* Delete a tile from the cache. */
-private void
+static void
 clist_delete_tile(gx_device_clist_writer * cldev, tile_slot * slot)
 {
     tile_hash *table = cldev->tile_table;
@@ -417,7 +417,7 @@ clist_delete_tile(gx_device_clist_writer * cldev, tile_slot * slot)
 /* Add a tile to the cache. */
 /* tile->raster holds the raster for the replicated tile; */
 /* we pass the raster of the actual data separately. */
-private int
+static int
 clist_add_tile(gx_device_clist_writer * cldev, const gx_strip_bitmap * tiles,
 	       uint sraster, int depth)
 {
@@ -497,7 +497,7 @@ clist_add_tile(gx_device_clist_writer * cldev, const gx_strip_bitmap * tiles,
 
 /* Change the tile parameters (size and depth). */
 /* Currently we do this for all bands at once. */
-private void
+static void
 clist_new_tile_params(gx_strip_bitmap * new_tile, const gx_strip_bitmap * tiles,
 		      int depth, const gx_device_clist_writer * cldev)
 {				/*

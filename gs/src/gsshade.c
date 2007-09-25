@@ -38,7 +38,7 @@
 private_st_shading();
 private_st_shading_mesh();
 
-private
+static
 ENUM_PTRS_WITH(shading_mesh_enum_ptrs, gs_shading_mesh_t *psm)
 {
     index -= 2;
@@ -50,7 +50,7 @@ ENUM_PTRS_WITH(shading_mesh_enum_ptrs, gs_shading_mesh_t *psm)
 ENUM_PTR2(0, gs_shading_mesh_t, params.Function, params.Decode);
 ENUM_PTRS_END
 
-private
+static
 RELOC_PTRS_WITH(shading_mesh_reloc_ptrs, gs_shading_mesh_t *psm)
 {
     RELOC_PREFIX(st_shading);
@@ -62,7 +62,7 @@ RELOC_PTRS_END
 
 /* Check ColorSpace, BBox, and Function (if present). */
 /* Free variables: params. */
-private int
+static int
 check_CBFD(const gs_shading_params_t * params,
 	   const gs_function_t * function, const float *domain, int m)
 {
@@ -88,7 +88,7 @@ check_CBFD(const gs_shading_params_t * params,
 }
 
 /* Check parameters for a mesh shading. */
-private int
+static int
 check_mesh(const gs_shading_mesh_params_t * params)
 {
     const float *domain;
@@ -117,7 +117,7 @@ check_mesh(const gs_shading_mesh_params_t * params)
 }
 
 /* Check the BitsPerFlag value.  Return the value or an error code. */
-private int
+static int
 check_BPF(const gs_data_source_t *pds, int bpf)
 {
     if (data_source_is_array(*pds))
@@ -131,7 +131,7 @@ check_BPF(const gs_data_source_t *pds, int bpf)
 }
 
 /* Initialize common shading parameters. */
-private void
+static void
 shading_params_init(gs_shading_params_t *params)
 {
     params->ColorSpace = 0;	/* must be set by client */
@@ -142,7 +142,7 @@ shading_params_init(gs_shading_params_t *params)
 }
 
 /* Initialize common mesh shading parameters. */
-private void
+static void
 mesh_shading_params_init(gs_shading_mesh_params_t *params)
 {
     shading_params_init((gs_shading_params_t *)params);
@@ -182,7 +182,7 @@ gs_shading_Fb_params_init(gs_shading_Fb_params_t * params)
 }
 
 /* Allocate and initialize a Function-based shading. */
-private const gs_shading_procs_t shading_Fb_procs = {
+static const gs_shading_procs_t shading_Fb_procs = {
     gs_shading_Fb_fill_rectangle
 };
 int
@@ -220,7 +220,7 @@ gs_shading_A_params_init(gs_shading_A_params_t * params)
 }
 
 /* Allocate and initialize an Axial shading. */
-private const gs_shading_procs_t shading_A_procs = {
+static const gs_shading_procs_t shading_A_procs = {
     gs_shading_A_fill_rectangle
 };
 int
@@ -255,7 +255,7 @@ gs_shading_R_params_init(gs_shading_R_params_t * params)
 }
 
 /* Allocate and initialize a Radial shading. */
-private const gs_shading_procs_t shading_R_procs = {
+static const gs_shading_procs_t shading_R_procs = {
     gs_shading_R_fill_rectangle
 };
 int
@@ -290,7 +290,7 @@ gs_shading_FfGt_params_init(gs_shading_FfGt_params_t * params)
 }
 
 /* Allocate and initialize a Free-form Gouraud triangle mesh shading. */
-private const gs_shading_procs_t shading_FfGt_procs = {
+static const gs_shading_procs_t shading_FfGt_procs = {
     gs_shading_FfGt_fill_rectangle
 };
 int
@@ -327,7 +327,7 @@ gs_shading_LfGt_params_init(gs_shading_LfGt_params_t * params)
 }
 
 /* Allocate and initialize a Lattice-form Gouraud triangle mesh shading. */
-private const gs_shading_procs_t shading_LfGt_procs = {
+static const gs_shading_procs_t shading_LfGt_procs = {
     gs_shading_LfGt_fill_rectangle
 };
 int
@@ -359,7 +359,7 @@ gs_shading_Cp_params_init(gs_shading_Cp_params_t * params)
 }
 
 /* Allocate and initialize a Coons patch mesh shading. */
-private const gs_shading_procs_t shading_Cp_procs = {
+static const gs_shading_procs_t shading_Cp_procs = {
     gs_shading_Cp_fill_rectangle
 };
 int
@@ -393,7 +393,7 @@ gs_shading_Tpp_params_init(gs_shading_Tpp_params_t * params)
 }
 
 /* Allocate and initialize a Tensor product patch mesh shading. */
-private const gs_shading_procs_t shading_Tpp_procs = {
+static const gs_shading_procs_t shading_Tpp_procs = {
     gs_shading_Tpp_fill_rectangle
 };
 int

@@ -24,8 +24,8 @@
 #include "gxiodev.h"
 
 /* The pipe IODevice */
-private iodev_proc_fopen(pipe_fopen);
-private iodev_proc_fclose(pipe_fclose);
+static iodev_proc_fopen(pipe_fopen);
+static iodev_proc_fclose(pipe_fclose);
 const gx_io_device gs_iodev_pipe = {
     "%pipe%", "Special",
     {iodev_no_init, iodev_no_open_device,
@@ -38,7 +38,7 @@ const gx_io_device gs_iodev_pipe = {
 
 /* The file device procedures */
 
-private int
+static int
 pipe_fopen(gx_io_device * iodev, const char *fname, const char *access,
 	   FILE ** pfile, char *rfname, uint rnamelen)
 {
@@ -61,7 +61,7 @@ pipe_fopen(gx_io_device * iodev, const char *fname, const char *access,
     return 0;
 }
 
-private int
+static int
 pipe_fclose(gx_io_device * iodev, FILE * file)
 {
     pclose(file);

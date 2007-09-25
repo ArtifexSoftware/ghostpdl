@@ -78,12 +78,12 @@
  *** (The intention is, that this source can live alone)
  ***/
 
-private stc_proc_dither(stc_gscmyk);   /* resides in this file */
-private stc_proc_dither(stc_hscmyk);   /* resides in this file */
+static stc_proc_dither(stc_gscmyk);   /* resides in this file */
+static stc_proc_dither(stc_hscmyk);   /* resides in this file */
 
 #include <stdlib.h> /* for rand, used in stc_hscmyk */
 
-private const stc_dither_t stc_dither[] = {
+static const stc_dither_t stc_dither[] = {
   {"gscmyk", stc_gscmyk, DeviceCMYK|STC_BYTE|STC_DIRECT,0,{0.0,1.0}},
   {"hscmyk", stc_hscmyk,
   DeviceCMYK|STC_LONG|STC_CMYK10|STC_DIRECT|1*STC_SCAN,1+2*4,
@@ -99,36 +99,36 @@ private const stc_dither_t stc_dither[] = {
 /* Primary Device functions
  * (I've the idea to rename the driver to stc)
  */
-private dev_proc_print_page(stc_print_page);
-private dev_proc_open_device(stc_open);
-private dev_proc_close_device(stc_close);
-private dev_proc_get_params(stc_get_params);
-private dev_proc_put_params(stc_put_params);
+static dev_proc_print_page(stc_print_page);
+static dev_proc_open_device(stc_open);
+static dev_proc_close_device(stc_close);
+static dev_proc_get_params(stc_get_params);
+static dev_proc_put_params(stc_put_params);
 
 /*
  * Color-Mapping-functions.
  */
 
 /* routines for monochrome monochrome modi */
-private dev_proc_map_rgb_color(stc_map_gray_color);
-private dev_proc_map_color_rgb(stc_map_color_gray);
+static dev_proc_map_rgb_color(stc_map_gray_color);
+static dev_proc_map_color_rgb(stc_map_color_gray);
 
 /* routines for RGB-Modi */
-private dev_proc_map_rgb_color(stc_map_rgb_color);
-private dev_proc_map_color_rgb(stc_map_color_rgb);
+static dev_proc_map_rgb_color(stc_map_rgb_color);
+static dev_proc_map_color_rgb(stc_map_color_rgb);
 
 /* routines for general CMYK-Modi */
-private dev_proc_map_cmyk_color(stc_map_cmyk_color);
-private dev_proc_map_color_rgb(stc_map_color_cmyk);
+static dev_proc_map_cmyk_color(stc_map_cmyk_color);
+static dev_proc_map_color_rgb(stc_map_color_cmyk);
 
 /* routines for 10Bit/Component CMYK */
-private dev_proc_map_cmyk_color(stc_map_cmyk10_color);
-private dev_proc_map_color_rgb(stc_map_color_cmyk10);
+static dev_proc_map_cmyk_color(stc_map_cmyk10_color);
+static dev_proc_map_color_rgb(stc_map_color_cmyk10);
 
 /***
  *** Table of Device-Procedures
  ***/
-private gx_device_procs stcolor_procs = {
+static gx_device_procs stcolor_procs = {
         stc_open,
         gx_default_get_initial_matrix,
         gx_default_sync_output,
@@ -151,7 +151,7 @@ private gx_device_procs stcolor_procs = {
  *** A local dummy-array for extvals
  ***/
 
-private float defext[] = { 0.0, 1.0 };
+static float defext[] = { 0.0, 1.0 };
 
 /***
  *** Main device-control structure
@@ -184,7 +184,7 @@ stcolor_device far_data gs_stcolor_device = {
 /***
  *** Test for white scan-lines
  ***/
-private bool stc_iswhite(stcolor_device *, int, byte *);
+static bool stc_iswhite(stcolor_device *, int, byte *);
 
 /***
  *** Functions used for conversion inside the print-loop
@@ -192,31 +192,31 @@ private bool stc_iswhite(stcolor_device *, int, byte *);
 #define stc_proc_iconvert(Name) \
 byte * Name(stcolor_device *sd,byte *ext_data,int prt_pixels,byte *alg_line)
 
-private stc_proc_iconvert(stc_any_depth);    /* general input-conversion */
-private stc_proc_iconvert(stc_rgb24_long);   /* 24Bit RGB  -> long's */
+static stc_proc_iconvert(stc_any_depth);    /* general input-conversion */
+static stc_proc_iconvert(stc_rgb24_long);   /* 24Bit RGB  -> long's */
 
-private stc_proc_iconvert(stc_cmyk32_long);  /* 32Bit CMYK -> long's */
-private stc_proc_iconvert(stc_any_direct);   /* use ext_data as input */
+static stc_proc_iconvert(stc_cmyk32_long);  /* 32Bit CMYK -> long's */
+static stc_proc_iconvert(stc_any_direct);   /* use ext_data as input */
 
-private stc_proc_iconvert(stc_cmyk10_byte);  /* CMYK10->vals-> any type */
-private stc_proc_iconvert(stc_cmyk10_long);  /* CMYK10->vals-> any type */
-private stc_proc_iconvert(stc_cmyk10_float); /* CMYK10->vals-> any type */
-private stc_proc_iconvert(stc_cmyk10_dbyte); /* CMYK10 direct bytes */
-private stc_proc_iconvert(stc_cmyk10_dlong); /* CMYK10 direct longs */
+static stc_proc_iconvert(stc_cmyk10_byte);  /* CMYK10->vals-> any type */
+static stc_proc_iconvert(stc_cmyk10_long);  /* CMYK10->vals-> any type */
+static stc_proc_iconvert(stc_cmyk10_float); /* CMYK10->vals-> any type */
+static stc_proc_iconvert(stc_cmyk10_dbyte); /* CMYK10 direct bytes */
+static stc_proc_iconvert(stc_cmyk10_dlong); /* CMYK10 direct longs */
 
 /***
  *** Print-functions
  ***/
-private void stc_print_weave(stcolor_device *sd,FILE *prn_stream);
-private void stc_print_bands(stcolor_device *sd,FILE *prn_stream);
-private void stc_print_delta(stcolor_device *sd,FILE *prn_stream);
-private int  stc_print_setup(stcolor_device *sd);
+static void stc_print_weave(stcolor_device *sd,FILE *prn_stream);
+static void stc_print_bands(stcolor_device *sd,FILE *prn_stream);
+static void stc_print_delta(stcolor_device *sd,FILE *prn_stream);
+static int  stc_print_setup(stcolor_device *sd);
 
 /***
  *** compute the ESC/P2 specific values
  ***/
 
-private int 
+static int 
 stc_print_setup(stcolor_device *sd) 
 {
 
@@ -342,7 +342,7 @@ stc_print_setup(stcolor_device *sd)
  *** stc_print_page: here we go to do the nasty work
  ***/
 
-private int
+static int
 stc_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
    stcolor_device *sd    = (stcolor_device *) pdev;
@@ -794,7 +794,7 @@ stc_print_page(gx_device_printer * pdev, FILE * prn_stream)
 /*
  * white-check
  */
-private bool 
+static bool 
 stc_iswhite(stcolor_device *sd, int prt_pixels,byte *ext_data)
 {
    long  b2do = (prt_pixels*sd->color_info.depth+7)>>3;
@@ -816,7 +816,7 @@ stc_iswhite(stcolor_device *sd, int prt_pixels,byte *ext_data)
 /***
  *** A bunch of routines that convert gslines into algorithms format.
  ***/
-private byte *
+static byte *
 stc_any_depth(stcolor_device *sd,byte *ext_data,int prt_pixels,byte *alg_line)
 { /* general conversion */
 
@@ -886,7 +886,7 @@ stc_any_depth(stcolor_device *sd,byte *ext_data,int prt_pixels,byte *alg_line)
 /*
  * rgb-data with depth=24, can use a faster algorithm
  */
-private byte *
+static byte *
 stc_rgb24_long(stcolor_device *sd,byte *ext_data,int prt_pixels,byte *alg_line)
 { /* convert 3 bytes into appropriate long-Values */
   register int   p;
@@ -907,7 +907,7 @@ stc_rgb24_long(stcolor_device *sd,byte *ext_data,int prt_pixels,byte *alg_line)
 /*
  * cmyk-data with depth=32, can use a faster algorithm
  */
-private byte *
+static byte *
 stc_cmyk32_long(stcolor_device *sd,byte *ext_data,int prt_pixels,byte *alg_line)
 { /* convert 4 bytes into appropriate long-Values */
   register int   p;
@@ -965,19 +965,19 @@ stc_cmyk32_long(stcolor_device *sd,byte *ext_data,int prt_pixels,byte *alg_line)
                                                                             \
       return alg_line;
 
-private byte *
+static byte *
 stc_cmyk10_byte(stcolor_device *sd,
                 byte *ext_data,int prt_pixels,byte *alg_line)
 {
    STC_CMYK10_ANY(byte)
 }
-private byte *
+static byte *
 stc_cmyk10_long(stcolor_device *sd,
                 byte *ext_data,int prt_pixels,byte *alg_line)
 {
    STC_CMYK10_ANY(long)
 }
-private byte *
+static byte *
 stc_cmyk10_float(stcolor_device *sd,
                 byte *ext_data,int prt_pixels,byte *alg_line)
 {
@@ -1018,13 +1018,13 @@ stc_cmyk10_float(stcolor_device *sd,
       return alg_line;
 
 
-private byte *
+static byte *
 stc_cmyk10_dbyte(stcolor_device *sd,
                 byte *ext_data,int prt_pixels,byte *alg_line)
 {
    STC_CMYK10_DANY(byte)
 }
-private byte *
+static byte *
 stc_cmyk10_dlong(stcolor_device *sd,
                 byte *ext_data,int prt_pixels,byte *alg_line)
 {
@@ -1037,7 +1037,7 @@ stc_cmyk10_dlong(stcolor_device *sd,
  * if the algorithm uses bytes & bytes are in ext_data, use them
  */
 /*ARGSUSED*/
-private byte *
+static byte *
 stc_any_direct(stcolor_device *sd,byte *ext_data,int prt_pixels,byte *alg_line)
 { /* return ext_data */
   return ext_data;
@@ -1046,7 +1046,7 @@ stc_any_direct(stcolor_device *sd,byte *ext_data,int prt_pixels,byte *alg_line)
 /* ----------------------------------------------------------------------- */
 /* stc_rle: epson ESC/P2 RLE-Encoding
  */
-private int 
+static int 
 stc_rle(byte *out,const byte *in,int width)
 {
 
@@ -1108,7 +1108,7 @@ stc_rle(byte *out,const byte *in,int width)
 /*
  * Horizontal & vertical positioning, color-selection, "ESC ."
  */
-private int 
+static int 
 stc_print_escpcmd(stcolor_device *sd, FILE *prn_stream,
    int escp_used, int color,int m,int wbytes)
 {
@@ -1183,7 +1183,7 @@ stc_print_escpcmd(stcolor_device *sd, FILE *prn_stream,
 /*
  * compute width of a group of scanlines
  */
-private int 
+static int 
 stc_bandwidth(stcolor_device *sd,int color,int m,int npass)
 {
    int ncolor = sd->color_info.num_components == 1 ? 1 : 4;
@@ -1201,7 +1201,7 @@ stc_bandwidth(stcolor_device *sd,int color,int m,int npass)
 /*
  * Multi-Pass Printing-Routine
  */
-private void 
+static void 
 stc_print_weave(stcolor_device *sd, FILE *prn_stream)
 {
 
@@ -1276,7 +1276,7 @@ stc_print_weave(stcolor_device *sd, FILE *prn_stream)
 /*
  * Single-Pass printing-Routine
  */
-private void 
+static void 
 stc_print_bands(stcolor_device *sd, FILE *prn_stream)
 {
 
@@ -1343,7 +1343,7 @@ stc_print_bands(stcolor_device *sd, FILE *prn_stream)
 }
 /* ----------------------------------------------------------------------- */
 
-private int 
+static int 
 stc_deltarow(byte *out,const byte *in,int width,byte *seed)
 {
 
@@ -1425,7 +1425,7 @@ stc_deltarow(byte *out,const byte *in,int width,byte *seed)
 /*
  * Slightly different single-pass printing
  */
-private void
+static void
 stc_print_delta(stcolor_device *sd, FILE *prn_stream)
 {
 
@@ -1524,7 +1524,7 @@ stc_print_delta(stcolor_device *sd, FILE *prn_stream)
 /***
  *** Free-Data: release the specific-Arrays
  ***/
-private void 
+static void 
 stc_freedata(gs_memory_t *mem, stc_t *stc)
 {
    int i,j;
@@ -1558,7 +1558,7 @@ stc_freedata(gs_memory_t *mem, stc_t *stc)
  *** open the device and initialize margins & arrays
  ***/
 
-private int 
+static int 
 stc_open(gx_device *pdev) /* setup margins & arrays */
 {
   stcolor_device *sd = (stcolor_device *) pdev;
@@ -1921,7 +1921,7 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
 /***
  *** stc_close: release the internal data
  ***/
-private int 
+static int 
 stc_close(gx_device *pdev)
 {
    stc_freedata(pdev->memory, &((stcolor_device *) pdev)->stc);
@@ -1933,7 +1933,7 @@ stc_close(gx_device *pdev)
 /***
  *** Function for Bit-Truncation, including direct-byte-transfer
  ***/
-private gx_color_value 
+static gx_color_value 
 stc_truncate(stcolor_device *sd,int i,gx_color_value v)
 {
 
@@ -1976,7 +1976,7 @@ stc_truncate(stcolor_device *sd,int i,gx_color_value v)
    return v;
 }
 
-private gx_color_value
+static gx_color_value
 stc_truncate1(stcolor_device *sd,int i,gx_color_value v)
 {
 
@@ -1986,7 +1986,7 @@ stc_truncate1(stcolor_device *sd,int i,gx_color_value v)
 /***
  *** Expansion of indices for reverse-mapping
  ***/
-private gx_color_value 
+static gx_color_value 
 stc_expand(stcolor_device *sd,int i,gx_color_index col)
 {
 
@@ -2018,7 +2018,7 @@ stc_expand(stcolor_device *sd,int i,gx_color_index col)
 /***
  *** color-mapping of gray-scales
  ***/
-private gx_color_index 
+static gx_color_index 
 stc_map_gray_color(gx_device *pdev, const gx_color_value cv[])
 {
 
@@ -2064,7 +2064,7 @@ stc_map_gray_color(gx_device *pdev, const gx_color_value cv[])
    return rv;
 }
 
-private int 
+static int 
 stc_map_color_gray(gx_device *pdev, gx_color_index color,gx_color_value prgb[3])
 {
    stcolor_device *sd = (stcolor_device *) pdev;
@@ -2079,7 +2079,7 @@ stc_map_color_gray(gx_device *pdev, gx_color_index color,gx_color_value prgb[3])
 /***
  *** color-mapping of rgb-values
  ***/
-private gx_color_index 
+static gx_color_index 
 stc_map_rgb_color(gx_device *pdev, const gx_color_value cv[])
 {
 
@@ -2129,7 +2129,7 @@ stc_map_rgb_color(gx_device *pdev, const gx_color_value cv[])
    return rv;
 }
 
-private int 
+static int 
 stc_map_color_rgb(gx_device *pdev, gx_color_index color,gx_color_value prgb[3])
 {
 
@@ -2147,7 +2147,7 @@ stc_map_color_rgb(gx_device *pdev, gx_color_index color,gx_color_value prgb[3])
 /***
  *** color-mapping of cmyk-values
  ***/
-private gx_color_index 
+static gx_color_index 
 stc_map_cmyk_color(gx_device *pdev, const gx_color_value cv[])
 {
 
@@ -2241,7 +2241,7 @@ stc_map_cmyk_color(gx_device *pdev, const gx_color_value cv[])
 }
 
 /* Modified to be a "decode_color" routine */
-private int 
+static int 
 stc_map_color_cmyk(gx_device *pdev, gx_color_index color,gx_color_value cv[4])
 {
 
@@ -2267,7 +2267,7 @@ stc_map_color_cmyk(gx_device *pdev, gx_color_index color,gx_color_value cv[4])
 /***
  *** color-mapping of cmyk10-values
  ***/
-private gx_color_index 
+static gx_color_index 
 stc_map_cmyk10_color(gx_device *pdev, const gx_color_value cv[])
 {
 
@@ -2400,7 +2400,7 @@ stc_map_cmyk10_color(gx_device *pdev, const gx_color_value cv[])
    return rv;
 }
 
-private int 
+static int 
 stc_map_color_cmyk10(gx_device *pdev, gx_color_index color,
                      gx_color_value cv[3])
 {
@@ -2523,7 +2523,7 @@ stc_map_color_cmyk10(gx_device *pdev, gx_color_index color,
  *** Get parameters == Make them accessable via PostScript
  ***/
 
-private int 
+static int 
 stc_get_params(gx_device *pdev, gs_param_list *plist)
 {
    int code,nc;
@@ -2672,7 +2672,7 @@ stc_get_params(gx_device *pdev, gs_param_list *plist)
  *** put parameters == Store them in the device-structure
  ***/
 
-private int 
+static int 
 stc_put_params(gx_device *pdev, gs_param_list *plist)
 {
    int code,error,i,l;
@@ -3322,7 +3322,7 @@ stc_put_params(gx_device *pdev, gs_param_list *plist)
  * 1Bit CMYK-Algorithm
  */
 
-private int
+static int
 stc_gscmyk(stcolor_device *sdev,int npixel,byte *in,byte *buf,byte *out)
 {
 
@@ -3378,7 +3378,7 @@ stc_gscmyk(stcolor_device *sdev,int npixel,byte *in,byte *buf,byte *out)
 /*
  * The following is an algorithm under test
  */
-private int
+static int
 stc_hscmyk(stcolor_device *sdev,int npixel,byte *in,byte *buf,byte *out)
 {
 

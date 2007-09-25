@@ -112,13 +112,13 @@
 #define T_MARGIN_ENV4 0.20
 
 /* The device descriptors */
-private dev_proc_open_device(npdl_open);
-private dev_proc_open_device(npdl_close);
-private dev_proc_print_page_copies(npdl_print_page_copies);
-private dev_proc_put_params(npdl_put_params);
-private dev_proc_image_out(npdl_image_out);
+static dev_proc_open_device(npdl_open);
+static dev_proc_open_device(npdl_close);
+static dev_proc_print_page_copies(npdl_print_page_copies);
+static dev_proc_put_params(npdl_put_params);
+static dev_proc_image_out(npdl_image_out);
 
-private gx_device_procs npdl_prn_procs =
+static gx_device_procs npdl_prn_procs =
 prn_params_procs(npdl_open, gdev_prn_output_page, npdl_close,
 		 lprn_get_params, npdl_put_params);
 
@@ -145,7 +145,7 @@ lprn_duplex_device(gx_device_lprn, npdl_prn_procs, "npdl",
 #define PAPER_SIZE_ENV4 34
 
 /* terminating code */
-private char
+static char
 terminating[2][64][13] = {{
 /* white */
 "00110101",     "000111",       "0111",         "1000",         /*  0 -  3 */
@@ -185,7 +185,7 @@ terminating[2][64][13] = {{
 }};
 
 /* make-up code */
-private char
+static char
 makeup[2][40][14] = {{
 /* white */
 "11011",        "10010",        "010111",       "0110111",      /*   64- 256 */
@@ -213,22 +213,22 @@ makeup[2][40][14] = {{
 }};
 
 /* EOL (end of line) code */
-private char
+static char
      eol[] = "000000000001";
 
 /* FILL bit */
-private char
+static char
      fill[] = "0";
 
 #define MAX_RUNLENGTH 2623	/* Max value of makeup(2560) + terminating(63) */
 #define EOL_SIZE 12		/* Size of EOL (end of line) code */
 
-private byte
+static byte
         mask[] =
 {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
 
 /* Write MH code to buffer */
-private int
+static int
 mh_write_to_buffer(byte * out, int chunk_size, int num_bits, char *code)
 {
     int code_length, i, p, q;
@@ -261,7 +261,7 @@ mh_write_to_buffer(byte * out, int chunk_size, int num_bits, char *code)
 }
 
 /* Set run-length code */
-private int
+static int
 mh_set_runlength(byte * out, int chunk_size, int num_bits, int phase, int count)
 {
     int n, code_length;
@@ -285,14 +285,14 @@ mh_set_runlength(byte * out, int chunk_size, int num_bits, int phase, int count)
 }
 
 /* Set EOL (end of line) code */
-private int
+static int
 mh_set_eol(byte * out, int chunk_size, int num_bits)
 {
     return mh_write_to_buffer(out, chunk_size, num_bits, eol);
 }
 
 /* Set RTC (return to control) code and FILL bits */
-private int
+static int
 mh_set_rtc(byte * out, int chunk_size, int num_bits)
 {
     int i, n, code_length, num_fills;
@@ -321,7 +321,7 @@ mh_set_rtc(byte * out, int chunk_size, int num_bits)
 }
 
 /* Data compression by MH coding */
-private int
+static int
 mh_compression(byte * in, byte * out, int line_size, int column_size)
 {
     int i, p, q, r, n;
@@ -405,7 +405,7 @@ mh_compression(byte * in, byte * out, int line_size, int column_size)
 
 /* Get the paper size code based on the width and the height. 
    modified from gdevpcl.c and gdevmjc.c */
-private int
+static int
 npdl_get_paper_size(gx_device * dev)
 {
     float media_height = (dev->MediaSize[0] > dev->MediaSize[1]) ? dev->MediaSize[0] : dev->MediaSize[1];
@@ -421,7 +421,7 @@ npdl_get_paper_size(gx_device * dev)
 	    PAPER_SIZE_POSTCARD);
 }
 
-private int
+static int
 npdl_set_page_layout(gx_device * dev)
 {
     int code;
@@ -526,7 +526,7 @@ npdl_set_page_layout(gx_device * dev)
 }
 
 /* Open the printer, and set the margins. */
-private int
+static int
 npdl_open(gx_device * dev)
 {
     int xdpi = dev->x_pixels_per_inch;
@@ -544,7 +544,7 @@ npdl_open(gx_device * dev)
     return gdev_prn_open(dev);
 }
 
-private int
+static int
 npdl_close(gx_device *pdev)
 {
     gx_device_printer *const ppdev = (gx_device_printer *) pdev;
@@ -555,7 +555,7 @@ npdl_close(gx_device *pdev)
 }
 
 
-private int
+static int
 npdl_put_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
@@ -572,7 +572,7 @@ npdl_put_params(gx_device * pdev, gs_param_list * plist)
 
 /* Send the page to the printer.  For speed, compress each scan line,
    since computer-to-printer communication time is often a bottleneck. */
-private int
+static int
 npdl_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copies)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
@@ -685,7 +685,7 @@ npdl_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copi
 }
 
 /* Output data */
-private void
+static void
 npdl_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int width, int height)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;

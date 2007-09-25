@@ -27,25 +27,25 @@
 #include "store.h"
 
 /* Forward references */
-private void init_block(ref_stack_t *pstack, const ref *pblock_array,
+static void init_block(ref_stack_t *pstack, const ref *pblock_array,
 			uint used);
-private int ref_stack_push_block(ref_stack_t *pstack, uint keep, uint add);
+static int ref_stack_push_block(ref_stack_t *pstack, uint keep, uint add);
 
 /* GC descriptors and procedures */
 private_st_ref_stack_params();
-private 
+static 
 CLEAR_MARKS_PROC(ref_stack_clear_marks)
 {
     ref_stack_t *const sptr = vptr;
 
     r_clear_attrs(&sptr->current, l_mark);
 }
-private 
+static 
 ENUM_PTRS_WITH(ref_stack_enum_ptrs, ref_stack_t *sptr) return 0;
 case 0: ENUM_RETURN_REF(&sptr->current);
 case 1: return ENUM_OBJ(sptr->params);
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(ref_stack_reloc_ptrs, ref_stack_t *sptr)
+static RELOC_PTRS_WITH(ref_stack_reloc_ptrs, ref_stack_t *sptr)
 {
     /* Note that the relocation must be a multiple of sizeof(ref_packed) */
     /* * align_packed_per_ref, but it need not be a multiple of */
@@ -492,7 +492,7 @@ ref_stack_push(ref_stack_t *pstack, uint count)
  * are trying to add.  Requires keep <= count.  May return overflow_error or
  * e_VMerror.
  */
-private int
+static int
 ref_stack_push_block(ref_stack_t *pstack, uint keep, uint add)
 {
     const ref_stack_params_t *params = pstack->params;
@@ -608,7 +608,7 @@ ref_stack_free(ref_stack_t *pstack)
 /* ------ Internal routines ------ */
 
 /* Initialize the guards and body of a stack block. */
-private void
+static void
 init_block(ref_stack_t *pstack, const ref *psb, uint used)
 {
     ref_stack_params_t *params = pstack->params;

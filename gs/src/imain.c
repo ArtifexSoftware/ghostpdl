@@ -88,7 +88,7 @@ gs_main_alloc_instance(gs_memory_t *mem)
 
 /* ------ Forward references ------ */
 
-private int gs_run_init_file(gs_main_instance *, int *, ref *);
+static int gs_run_init_file(gs_main_instance *, int *, ref *);
 void print_resource_usage(const gs_main_instance *,
 				  gs_dual_memory_t *, const char *);
 
@@ -186,7 +186,7 @@ gs_main_init1(gs_main_instance * minst)
 }
 
 /* Initialization to be done before running any files. */
-private void
+static void
 init2_make_string_array(i_ctx_t *i_ctx_p, const ref * srefs, const char *aname)
 {
     const ref *ifp = srefs;
@@ -202,7 +202,7 @@ init2_make_string_array(i_ctx_t *i_ctx_p, const ref * srefs, const char *aname)
  * Invoke the interpreter. This layer doesn't do much (previously stdio
  * callouts were handled here instead of in the stream processing.
  */
-private int
+static int
 gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors, 
 	int *pexit_code, ref * perror_object)
 {
@@ -278,7 +278,7 @@ gs_main_init2(gs_main_instance * minst)
 
 /* Internal routine to add a set of directories to a search list. */
 /* Returns 0 or an error code. */
-private int
+static int
 file_path_add(gs_file_path * pfp, const char *dirs)
 {
     uint len = r_size(&pfp->list);
@@ -426,7 +426,7 @@ gs_main_run_file_open(gs_main_instance * minst, const char *file_name, ref * pfr
 }
 
 /* Open and run the very first initialization file. */
-private int
+static int
 gs_run_init_file(gs_main_instance * minst, int *pexit_code, ref * perror_object)
 {
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
@@ -534,7 +534,7 @@ gs_main_run_string_end(gs_main_instance * minst, int user_errors,
 
 /* These are built for comfort, not for speed. */
 
-private int
+static int
 push_value(gs_main_instance *minst, ref * pvalue)
 {
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
@@ -584,7 +584,7 @@ gs_push_string(gs_main_instance * minst, byte * chars, uint length,
     return push_value(minst, &vref);
 }
 
-private int
+static int
 pop_value(i_ctx_t *i_ctx_p, ref * pvalue)
 {
     if (!ref_stack_count(&o_stack))
@@ -681,7 +681,7 @@ gs_pop_string(gs_main_instance * minst, gs_string * result)
  * the interpreter finishes, and then delete the files 
  * after the interpreter has closed all files.
  */
-private char *gs_main_tempnames(gs_main_instance *minst)
+static char *gs_main_tempnames(gs_main_instance *minst)
 {
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
     ref *SAFETY;

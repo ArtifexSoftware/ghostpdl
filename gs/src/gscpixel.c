@@ -26,12 +26,12 @@
 #include "stream.h"
 
 /* Define the DevicePixel color space type. */
-private cs_proc_restrict_color(gx_restrict_DevicePixel);
-private cs_proc_remap_concrete_color(gx_remap_concrete_DevicePixel);
-private cs_proc_concretize_color(gx_concretize_DevicePixel);
-private cs_proc_set_overprint(gx_set_overprint_DevicePixel);
-private cs_proc_serialize(gx_serialize_DevicePixel);
-private const gs_color_space_type gs_color_space_type_DevicePixel = {
+static cs_proc_restrict_color(gx_restrict_DevicePixel);
+static cs_proc_remap_concrete_color(gx_remap_concrete_DevicePixel);
+static cs_proc_concretize_color(gx_concretize_DevicePixel);
+static cs_proc_set_overprint(gx_set_overprint_DevicePixel);
+static cs_proc_serialize(gx_serialize_DevicePixel);
+static const gs_color_space_type gs_color_space_type_DevicePixel = {
     gs_color_space_index_DevicePixel, true, false,
     &st_base_color_space, gx_num_components_1,
     gx_init_paint_1, gx_restrict_DevicePixel,
@@ -73,7 +73,7 @@ gs_cspace_new_DevicePixel(gs_memory_t *mem, gs_color_space **ppcs, int depth)
 /* ------ Internal routines ------ */
 
 /* Force a DevicePixel color into legal range. */
-private void
+static void
 gx_restrict_DevicePixel(gs_client_color * pcc, const gs_color_space * pcs)
 {
     /****** NOT ENOUGH BITS IN float OR frac ******/
@@ -86,7 +86,7 @@ gx_restrict_DevicePixel(gs_client_color * pcc, const gs_color_space * pcs)
 
 /* Remap a DevicePixel color. */
 
-private int
+static int
 gx_concretize_DevicePixel(const gs_client_color * pc, const gs_color_space * pcs,
 			  frac * pconc, const gs_imager_state * pis)
 {
@@ -95,7 +95,7 @@ gx_concretize_DevicePixel(const gs_client_color * pc, const gs_color_space * pcs
     return 0;
 }
 
-private int
+static int
 gx_remap_concrete_DevicePixel(const frac * pconc, const gs_color_space * pcs,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 			      gs_color_select_t select)
@@ -105,7 +105,7 @@ gx_remap_concrete_DevicePixel(const frac * pconc, const gs_color_space * pcs,
 }
 
 /* DevicePixel disables overprint */
-private int
+static int
 gx_set_overprint_DevicePixel(const gs_color_space * pcs, gs_state * pgs)
 {
     gs_overprint_params_t   params;
@@ -118,7 +118,7 @@ gx_set_overprint_DevicePixel(const gs_color_space * pcs, gs_state * pgs)
 
 /* ---------------- Serialization. -------------------------------- */
 
-private int 
+static int 
 gx_serialize_DevicePixel(const gs_color_space * pcs, stream * s)
 {
     const gs_device_pixel_params * p = &pcs->params.pixel;

@@ -63,7 +63,7 @@ client_custom_color_params_t demo_callback = {
  */
 
 /* <string> .pantonecallback <string> */
-private int
+static int
 zpantonecallback(i_ctx_t *i_ctx_p)
 {
 #if ENABLE_CUSTOM_COLOR_CALLBACK

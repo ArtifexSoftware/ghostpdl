@@ -31,7 +31,7 @@
  * multiple-row RasterOp buffer.  (We are always willing to allocate
  * one row, no matter how wide.)
  */
-private const uint max_rop_bitmap = 1000;
+static const uint max_rop_bitmap = 1000;
 
 /* ---------------- Debugging aids ---------------- */
 
@@ -193,7 +193,7 @@ out:
 /* ---------------- Default memory device copy_rop ---------------- */
 
 /* Convert color constants to standard RGB representation. */
-private void
+static void
 unpack_colors_to_standard(gx_device * dev, gx_color_index real_colors[2],
 			  const gx_color_index * colors, int depth)
 {
@@ -218,7 +218,7 @@ unpack_colors_to_standard(gx_device * dev, gx_color_index real_colors[2],
  * Convert RGB to the device's native format.  We special-case this for
  * 1-bit CMYK devices.
  */
-private void
+static void
 pack_cmyk_1bit_from_standard(gx_device * dev, byte * dest, int destx,
 			     const byte * src, int width, int depth,
 			     int src_depth)
@@ -250,7 +250,7 @@ pack_cmyk_1bit_from_standard(gx_device * dev, byte * dest, int destx,
 
 }
 
-private gx_color_index
+static gx_color_index
 map_rgb_to_color_via_cmyk(gx_device * dev, const gx_color_value rgbcv[])
 {
     gx_color_value cmykcv[4];
@@ -266,7 +266,7 @@ map_rgb_to_color_via_cmyk(gx_device * dev, const gx_color_value rgbcv[])
 
     return (*dev_proc(dev, map_cmyk_color)) (dev, cmykcv);
 }
-private void
+static void
 pack_from_standard(gx_device * dev, byte * dest, int destx, const byte * src,
 		   int width, int depth, int src_depth)
 {

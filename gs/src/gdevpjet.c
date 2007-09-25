@@ -27,11 +27,11 @@
 #define LINE_SIZE ((X_DPI * 85 / 10 + 63) / 64 * 8)
 
 /* The device descriptors */
-private dev_proc_print_page(lj250_print_page);
-private dev_proc_print_page(paintjet_print_page);
-private dev_proc_print_page(pjetxl_print_page);
-private int pj_common_print_page(gx_device_printer *, FILE *, int, const char *);
-private gx_device_procs paintjet_procs =
+static dev_proc_print_page(lj250_print_page);
+static dev_proc_print_page(paintjet_print_page);
+static dev_proc_print_page(pjetxl_print_page);
+static int pj_common_print_page(gx_device_printer *, FILE *, int, const char *);
+static gx_device_procs paintjet_procs =
   prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
     gdev_pcl_3bit_map_rgb_color, gdev_pcl_3bit_map_color_rgb);
 const gx_device_printer far_data gs_lj250_device =
@@ -48,7 +48,7 @@ const gx_device_printer far_data gs_paintjet_device =
 	X_DPI, Y_DPI,
 	0.25, 0, 0.25, 0,		/* margins */
 	3, paintjet_print_page);
-private gx_device_procs pjetxl_procs =
+static gx_device_procs pjetxl_procs =
   prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
     gdev_pcl_3bit_map_rgb_color, gdev_pcl_3bit_map_color_rgb);
 const gx_device_printer far_data gs_pjetxl_device =
@@ -60,13 +60,13 @@ const gx_device_printer far_data gs_pjetxl_device =
 	3, pjetxl_print_page);
 
 /* Forward references */
-private int compress1_row(const byte *, const byte *, byte *);
+static int compress1_row(const byte *, const byte *, byte *);
 
 /* ------ Internal routines ------ */
 
 /* Send a page to the LJ250.  We need to enter and exit */
 /* the PaintJet emulation mode. */
-private int
+static int
 lj250_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {	fputs("\033%8", prn_stream);	/* Enter PCL emulation mode */
 	/* ends raster graphics to set raster graphics resolution */
@@ -76,7 +76,7 @@ lj250_print_page(gx_device_printer *pdev, FILE *prn_stream)
 }
 
 /* Send a page to the PaintJet. */
-private int
+static int
 paintjet_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {	/* ends raster graphics to set raster graphics resolution */
 	fputs("\033*rB", prn_stream);
@@ -84,7 +84,7 @@ paintjet_print_page(gx_device_printer *pdev, FILE *prn_stream)
 }
 
 /* Send a page to the PaintJet XL. */
-private int
+static int
 pjetxl_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {	/* Initialize PaintJet XL for printing */
 	fputs("\033E", prn_stream);
@@ -93,7 +93,7 @@ pjetxl_print_page(gx_device_printer *pdev, FILE *prn_stream)
 }
 
 /* Send the page to the printer.  Compress each scan line. */
-private int
+static int
 pj_common_print_page(gx_device_printer *pdev, FILE *prn_stream, int y_origin,
   const char *end_page)
 {
@@ -224,7 +224,7 @@ pj_common_print_page(gx_device_printer *pdev, FILE *prn_stream, int y_origin,
  * We complement the bytes at the same time, because
  * we accumulated the image in complemented form.
  */
-private int
+static int
 compress1_row(const byte *row, const byte *end_row,
   byte *compressed)
 {	register const byte *in = row;

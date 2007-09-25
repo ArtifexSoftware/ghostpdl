@@ -39,19 +39,19 @@
 #endif
 
 /* The device descriptor */
-private dev_proc_open_device(psd_prn_open);
-private dev_proc_get_params(psd_get_params);
-private dev_proc_put_params(psd_put_params);
-private dev_proc_print_page(psd_print_page);
-private dev_proc_map_color_rgb(psd_map_color_rgb);
-private dev_proc_get_color_mapping_procs(get_psdrgb_color_mapping_procs);
-private dev_proc_get_color_mapping_procs(get_psd_color_mapping_procs);
-private dev_proc_get_color_comp_index(psd_get_color_comp_index);
-private dev_proc_encode_color(psd_encode_color);
-private dev_proc_decode_color(psd_decode_color);
-private dev_proc_encode_color(psd_encode_compressed_color);
-private dev_proc_decode_color(psd_decode_compressed_color);
-private dev_proc_update_spot_equivalent_colors(psd_update_spot_equivalent_colors);
+static dev_proc_open_device(psd_prn_open);
+static dev_proc_get_params(psd_get_params);
+static dev_proc_put_params(psd_put_params);
+static dev_proc_print_page(psd_print_page);
+static dev_proc_map_color_rgb(psd_map_color_rgb);
+static dev_proc_get_color_mapping_procs(get_psdrgb_color_mapping_procs);
+static dev_proc_get_color_mapping_procs(get_psd_color_mapping_procs);
+static dev_proc_get_color_comp_index(psd_get_color_comp_index);
+static dev_proc_encode_color(psd_encode_color);
+static dev_proc_decode_color(psd_decode_color);
+static dev_proc_encode_color(psd_encode_compressed_color);
+static dev_proc_decode_color(psd_decode_compressed_color);
+static dev_proc_update_spot_equivalent_colors(psd_update_spot_equivalent_colors);
 
 /* This is redundant with color_info.cm_name. We may eliminate this
    typedef and use the latter string for everything. */
@@ -91,7 +91,7 @@ typedef struct psd_device_s {
 } psd_device;
 
 /* GC procedures */
-private 
+static 
 ENUM_PTRS_WITH(psd_device_enum_ptrs, psd_device *pdev)
 {
     if (index == 0)
@@ -105,7 +105,7 @@ ENUM_PTRS_WITH(psd_device_enum_ptrs, psd_device *pdev)
 }
 ENUM_PTRS_END
 
-private RELOC_PTRS_WITH(psd_device_reloc_ptrs, psd_device *pdev)
+static RELOC_PTRS_WITH(psd_device_reloc_ptrs, psd_device *pdev)
 {
     RELOC_PREFIX(st_device_printer);
     {
@@ -122,7 +122,7 @@ RELOC_PTRS_END
 /* Even though psd_device_finalize is the same as gx_device_finalize, */
 /* we need to implement it separately because st_composite_final */
 /* declares all 3 procedures as private. */
-private void
+static void
 psd_device_finalize(void *vpdev)
 {
     gx_device_finalize(vpdev);
@@ -199,12 +199,12 @@ gs_private_st_composite_final(st_psd_device, psd_device,
 }
 
 
-private fixed_colorant_name DeviceGrayComponents[] = {
+static fixed_colorant_name DeviceGrayComponents[] = {
 	"Gray",
 	0		/* List terminator */
 };
 
-private fixed_colorant_name DeviceRGBComponents[] = {
+static fixed_colorant_name DeviceRGBComponents[] = {
 	"Red",
 	"Green",
 	"Blue",
@@ -233,7 +233,7 @@ private fixed_colorant_name DeviceRGBComponents[] = {
 /*
  * PSD device with RGB process color model.
  */
-private const gx_device_procs spot_rgb_procs =
+static const gx_device_procs spot_rgb_procs =
     device_procs(get_psdrgb_color_mapping_procs, psd_encode_color, psd_decode_color);
 
 const psd_device gs_psdrgb_device =
@@ -277,7 +277,7 @@ const psd_device gs_psdrgb_device =
 /*
  * PSD device with CMYK process color model and spot color support.
  */
-private const gx_device_procs spot_cmyk_procs
+static const gx_device_procs spot_cmyk_procs
 	= device_procs(get_psd_color_mapping_procs, ENCODE_COLOR, DECODE_COLOR);
 
 const psd_device gs_psdcmyk_device =
@@ -323,20 +323,20 @@ psd_prn_open(gx_device * pdev)
 /* 2007/05/04
 psdgray device
 */
-private void
+static void
 gray_cs_to_psdgray_cm(gx_device * dev, frac gray, frac out[])
 {
     out[0] = gray;
 }
 
-private void
+static void
 rgb_cs_to_psdgray_cm(gx_device * dev, const gs_imager_state *pis,
 				   frac r, frac g, frac b, frac out[])
 {
     out[0] = color_rgb_to_gray(r, g, b, NULL);
 }
 
-private void
+static void
 cmyk_cs_to_psdgray_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
     out[0] = color_cmyk_to_gray(c, m, y, k, NULL);
@@ -347,7 +347,7 @@ cmyk_cs_to_psdgray_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[
  * The following procedures are used to map the standard color spaces into
  * the color components for the psdrgb device.
  */
-private void
+static void
 gray_cs_to_psdrgb_cm(gx_device * dev, frac gray, frac out[])
 {
     int i = ((psd_device *)dev)->devn_params.separations.num_separations;
@@ -357,7 +357,7 @@ gray_cs_to_psdrgb_cm(gx_device * dev, frac gray, frac out[])
         out[2 + i] = 0;
 }
 
-private void
+static void
 rgb_cs_to_psdrgb_cm(gx_device * dev, const gs_imager_state *pis,
 				  frac r, frac g, frac b, frac out[])
 {
@@ -370,7 +370,7 @@ rgb_cs_to_psdrgb_cm(gx_device * dev, const gs_imager_state *pis,
         out[2 + i] = 0;
 }
 
-private void
+static void
 cmyk_cs_to_psdrgb_cm(gx_device * dev,
 			frac c, frac m, frac y, frac k, frac out[])
 {
@@ -383,7 +383,7 @@ cmyk_cs_to_psdrgb_cm(gx_device * dev,
 
 /* Color mapping routines for the psdcmyk device */
 
-private void
+static void
 gray_cs_to_psdcmyk_cm(gx_device * dev, frac gray, frac out[])
 {
     int * map = ((psd_device *) dev)->devn_params.separation_order_map;
@@ -391,7 +391,7 @@ gray_cs_to_psdcmyk_cm(gx_device * dev, frac gray, frac out[])
     gray_cs_to_devn_cm(dev, map, gray, out);
 }
 
-private void
+static void
 rgb_cs_to_psdcmyk_cm(gx_device * dev, const gs_imager_state *pis,
 			   frac r, frac g, frac b, frac out[])
 {
@@ -400,7 +400,7 @@ rgb_cs_to_psdcmyk_cm(gx_device * dev, const gs_imager_state *pis,
     rgb_cs_to_devn_cm(dev, map, pis, r, g, b, out);
 }
 
-private void
+static void
 cmyk_cs_to_psdcmyk_cm(gx_device * dev,
 			frac c, frac m, frac y, frac k, frac out[])
 {
@@ -409,7 +409,7 @@ cmyk_cs_to_psdcmyk_cm(gx_device * dev,
     cmyk_cs_to_devn_cm(dev, map, c, m, y, k, out);
 }
 
-private void
+static void
 cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
     psd_device *xdev = (psd_device *)dev;
@@ -442,13 +442,13 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
     }
 }
 
-private void
+static void
 gray_cs_to_spotn_cm(gx_device * dev, frac gray, frac out[])
 {
     cmyk_cs_to_spotn_cm(dev, 0, 0, 0, (frac)(frac_1 - gray), out);
 }
 
-private void
+static void
 rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
 				   frac r, frac g, frac b, frac out[])
 {
@@ -479,19 +479,19 @@ rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
     }
 }
 
-private const gx_cm_color_map_procs psdGray_procs = {/* 2007/05/04 Test */
+static const gx_cm_color_map_procs psdGray_procs = {/* 2007/05/04 Test */
     gray_cs_to_psdgray_cm, rgb_cs_to_psdgray_cm, cmyk_cs_to_psdgray_cm
 };
 
-private const gx_cm_color_map_procs psdRGB_procs = {
+static const gx_cm_color_map_procs psdRGB_procs = {
     gray_cs_to_psdrgb_cm, rgb_cs_to_psdrgb_cm, cmyk_cs_to_psdrgb_cm
 };
 
-private const gx_cm_color_map_procs psdCMYK_procs = {
+static const gx_cm_color_map_procs psdCMYK_procs = {
     gray_cs_to_psdcmyk_cm, rgb_cs_to_psdcmyk_cm, cmyk_cs_to_psdcmyk_cm
 };
 
-private const gx_cm_color_map_procs psdN_procs = {
+static const gx_cm_color_map_procs psdN_procs = {
     gray_cs_to_spotn_cm, rgb_cs_to_spotn_cm, cmyk_cs_to_spotn_cm
 };
 
@@ -499,13 +499,13 @@ private const gx_cm_color_map_procs psdN_procs = {
  * These are the handlers for returning the list of color space
  * to color model conversion routines.
  */
-private const gx_cm_color_map_procs *
+static const gx_cm_color_map_procs *
 get_psdrgb_color_mapping_procs(const gx_device * dev)
 {
     return &psdRGB_procs;
 }
 
-private const gx_cm_color_map_procs *
+static const gx_cm_color_map_procs *
 get_psd_color_mapping_procs(const gx_device * dev)
 {
     const psd_device *xdev = (const psd_device *)dev;
@@ -525,7 +525,7 @@ get_psd_color_mapping_procs(const gx_device * dev)
 /*
  * Encode a list of colorant values into a gx_color_index_value.
  */
-private gx_color_index
+static gx_color_index
 psd_encode_color(gx_device *dev, const gx_color_value colors[])
 {
     int bpc = ((psd_device *)dev)->devn_params.bitspercomponent;
@@ -544,7 +544,7 @@ psd_encode_color(gx_device *dev, const gx_color_value colors[])
 /*
  * Decode a gx_color_index value back to a list of colorant values.
  */
-private int
+static int
 psd_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
 {
     int bpc = ((psd_device *)dev)->devn_params.bitspercomponent;
@@ -565,7 +565,7 @@ psd_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
  * With 64 bit gx_color_index values, we compress the colorant values.  This
  * allows us to handle more than 8 colorants.
  */
-private gx_color_index
+static gx_color_index
 psd_encode_compressed_color(gx_device *dev, const gx_color_value colors[])
 {
     return devn_encode_compressed_color(dev, colors, &(((psd_device *)dev)->devn_params));
@@ -576,7 +576,7 @@ psd_encode_compressed_color(gx_device *dev, const gx_color_value colors[])
  * With 64 bit gx_color_index values, we compress the colorant values.  This
  * allows us to handle more than 8 colorants.
  */
-private int
+static int
 psd_decode_compressed_color(gx_device * dev, gx_color_index color, gx_color_value * out)
 {
     return devn_decode_compressed_color(dev, color, out,
@@ -586,7 +586,7 @@ psd_decode_compressed_color(gx_device * dev, gx_color_index color, gx_color_valu
 /*
  * Convert a gx_color_index to RGB.
  */
-private int
+static int
 psd_map_color_rgb(gx_device *dev, gx_color_index color, gx_color_value rgb[3])
 {
     psd_device *xdev = (psd_device *)dev;
@@ -603,7 +603,7 @@ psd_map_color_rgb(gx_device *dev, gx_color_index color, gx_color_value rgb[3])
 /*
  *  Device proc for updating the equivalent CMYK color for spot colors.
  */
-private int
+static int
 psd_update_spot_equivalent_colors(gx_device *pdev, const gs_state * pgs)
 {
     psd_device * psdev = (psd_device *)pdev;
@@ -614,7 +614,7 @@ psd_update_spot_equivalent_colors(gx_device *pdev, const gs_state * pgs)
 }
 
 #if ENABLE_ICC_PROFILE
-private int
+static int
 psd_open_profile(psd_device *xdev, char *profile_fn, icmLuBase **pluo,
 		 int *poutn)
 {
@@ -639,7 +639,7 @@ psd_open_profile(psd_device *xdev, char *profile_fn, icmLuBase **pluo,
     return 0;
 }
 
-private int
+static int
 psd_open_profiles(psd_device *xdev)
 {
     int code = 0;
@@ -660,7 +660,7 @@ psd_open_profiles(psd_device *xdev)
 #endif
 
 /* Get parameters.  We provide a default CRD. */
-private int
+static int
 psd_get_params(gx_device * pdev, gs_param_list * plist)
 {
     psd_device *xdev = (psd_device *)pdev;
@@ -704,7 +704,7 @@ psd_get_params(gx_device * pdev, gs_param_list * plist)
 }
 
 #if ENABLE_ICC_PROFILE
-private int
+static int
 psd_param_read_fn(gs_param_list *plist, const char *name,
 		  gs_param_string *pstr, uint max_len)
 {
@@ -728,7 +728,7 @@ param_string_eq(const gs_param_string *pcs, const char *str)
 	    !strncmp(str, (const char *)pcs->data, pcs->size));
 }
 
-private int
+static int
 psd_set_color_model(psd_device *xdev, psd_color_model color_model)
 {
     xdev->color_model = color_model;
@@ -760,7 +760,7 @@ psd_set_color_model(psd_device *xdev, psd_color_model color_model)
 }
 
 /* Set parameters.  We allow setting the number of bits per component. */
-private int
+static int
 psd_put_params(gx_device * pdev, gs_param_list * plist)
 {
     psd_device * const pdevn = (psd_device *) pdev;
@@ -850,7 +850,7 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
  * This routine returns a positive value (0 to n) which is the device colorant
  * number if the name is found.  It returns a negative value if not found.
  */
-private int
+static int
 psd_get_color_comp_index(gx_device * dev, const char * pname,
 					int name_size, int component_type)
 {
@@ -889,7 +889,7 @@ typedef struct {
     int image_data_off;
 } psd_write_ctx;
 
-private int
+static int
 psd_setup(psd_write_ctx *xc, psd_device *dev)
 {
     int i;
@@ -928,7 +928,7 @@ psd_setup(psd_write_ctx *xc, psd_device *dev)
     return 0;
 }
 
-private int
+static int
 psd_write(psd_write_ctx *xc, const byte *buf, int size) {
     int code;
 
@@ -938,13 +938,13 @@ psd_write(psd_write_ctx *xc, const byte *buf, int size) {
     return 0;
 }
 
-private int
+static int
 psd_write_8(psd_write_ctx *xc, byte v)
 {
     return psd_write(xc, (byte *)&v, 1);
 }
 
-private int
+static int
 psd_write_16(psd_write_ctx *xc, bits16 v)
 {
     bits16 buf;
@@ -953,7 +953,7 @@ psd_write_16(psd_write_ctx *xc, bits16 v)
     return psd_write(xc, (byte *)&buf, 2);
 }
 
-private int
+static int
 psd_write_32(psd_write_ctx *xc, bits32 v)
 {
     bits32 buf;
@@ -962,7 +962,7 @@ psd_write_32(psd_write_ctx *xc, bits32 v)
     return psd_write(xc, (byte *)&buf, 4);
 }
 
-private int
+static int
 psd_write_header(psd_write_ctx *xc, psd_device *pdev)
 {
     int code = 0;
@@ -1058,7 +1058,7 @@ psd_write_header(psd_write_ctx *xc, psd_device *pdev)
     return code;
 }
 
-private void
+static void
 psd_calib_row(psd_write_ctx *xc, byte **tile_data, const byte *row, 
 		int channel, icmLuBase *luo)
 {
@@ -1105,7 +1105,7 @@ psd_calib_row(psd_write_ctx *xc, byte **tile_data, const byte *row,
  * data, we will write out any separation data which is specified in the
  * SeparationOrder data.
  */
-private int
+static int
 psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
 {
     int code = 0;

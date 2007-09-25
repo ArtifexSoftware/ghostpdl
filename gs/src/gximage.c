@@ -237,7 +237,7 @@ gx_image_default_release(gs_image_common_t *pic, gs_memory_t *mem)
 }
 
 #ifdef DEBUG
-private void
+static void
 debug_b_print_matrix(const gs_pixel_image_t *pim)
 {
     if_debug6('b', "      ImageMatrix=[%g %g %g %g %g %g]\n",
@@ -245,7 +245,7 @@ debug_b_print_matrix(const gs_pixel_image_t *pim)
 	      pim->ImageMatrix.yx, pim->ImageMatrix.yy,
 	      pim->ImageMatrix.tx, pim->ImageMatrix.ty);
 }
-private void
+static void
 debug_b_print_decode(const gs_pixel_image_t *pim, int num_decode)
 {
     if (gs_debug_c('b')) {

@@ -80,7 +80,7 @@ mem_full_alpha_device("image64", 64, 0, mem_open,
 #define dest32 ((bits32 *)dest)
 
 /* Fill a rectangle with a color. */
-private int
+static int
 mem_true64_fill_rectangle(gx_device * dev,
 			  int x, int y, int w, int h, gx_color_index color)
 {
@@ -201,7 +201,7 @@ mem_true64_fill_rectangle(gx_device * dev,
 }
 
 /* Copy a monochrome bitmap. */
-private int
+static int
 mem_true64_copy_mono(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
@@ -318,7 +318,7 @@ mem_true64_copy_mono(gx_device * dev,
 }
 
 /* Copy a color bitmap. */
-private int
+static int
 mem_true64_copy_color(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 		      int x, int y, int w, int h)
@@ -349,7 +349,7 @@ mem_full_device("image64w", 64, 0, mem_open,
 		gx_no_strip_copy_rop, mem_word_get_bits_rectangle);
 
 /* Fill a rectangle with a color. */
-private int
+static int
 mem64_word_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 			  gx_color_index color)
 {
@@ -367,7 +367,7 @@ mem64_word_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 }
 
 /* Copy a bitmap. */
-private int
+static int
 mem64_word_copy_mono(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
@@ -389,7 +389,7 @@ mem64_word_copy_mono(gx_device * dev,
 }
 
 /* Copy a color bitmap. */
-private int
+static int
 mem64_word_copy_color(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 		      int x, int y, int w, int h)

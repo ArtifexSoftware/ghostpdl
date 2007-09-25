@@ -21,13 +21,13 @@
 #include "gxclipm.h"
 
 /* Device procedures */
-private dev_proc_fill_rectangle(mask_clip_fill_rectangle);
-private dev_proc_copy_mono(mask_clip_copy_mono);
-private dev_proc_copy_color(mask_clip_copy_color);
-private dev_proc_copy_alpha(mask_clip_copy_alpha);
-private dev_proc_strip_tile_rectangle(mask_clip_strip_tile_rectangle);
-private dev_proc_strip_copy_rop(mask_clip_strip_copy_rop);
-private dev_proc_get_clipping_box(mask_clip_get_clipping_box);
+static dev_proc_fill_rectangle(mask_clip_fill_rectangle);
+static dev_proc_copy_mono(mask_clip_copy_mono);
+static dev_proc_copy_color(mask_clip_copy_color);
+static dev_proc_copy_alpha(mask_clip_copy_alpha);
+static dev_proc_strip_tile_rectangle(mask_clip_strip_tile_rectangle);
+static dev_proc_strip_copy_rop(mask_clip_strip_copy_rop);
+static dev_proc_get_clipping_box(mask_clip_get_clipping_box);
 
 /* The device descriptor. */
 const gx_device_mask_clip gs_mask_clip_device =
@@ -98,7 +98,7 @@ const gx_device_mask_clip gs_mask_clip_device =
 };
 
 /* Fill a rectangle by painting through the mask. */
-private int
+static int
 mask_clip_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 			 gx_color_index color)
 {
@@ -150,7 +150,7 @@ mask_clip_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 	END
 
 /* Copy a monochrome bitmap by playing Boolean games. */
-private int
+static int
 mask_clip_copy_mono(gx_device * dev,
 		const byte * data, int sourcex, int raster, gx_bitmap_id id,
 		    int x, int y, int w, int h,
@@ -205,7 +205,7 @@ mask_clip_copy_mono(gx_device * dev,
  * the BitBlt tricks: we have to scan for runs of 1s.  There are obvious
  * ways to speed this up; we'll implement some if we need to.
  */
-private int
+static int
 clip_runs_enumerate(gx_device_mask_clip * cdev,
 		    int (*process) (clip_callback_data_t * pccd, int xc, int yc, int xec, int yec),
 		    clip_callback_data_t * pccd)
@@ -298,7 +298,7 @@ clip_runs_enumerate(gx_device_mask_clip * cdev,
 }
 
 /* Copy a color rectangle */
-private int
+static int
 mask_clip_copy_color(gx_device * dev,
 		const byte * data, int sourcex, int raster, gx_bitmap_id id,
 		     int x, int y, int w, int h)
@@ -313,7 +313,7 @@ mask_clip_copy_color(gx_device * dev,
 }
 
 /* Copy a rectangle with alpha */
-private int
+static int
 mask_clip_copy_alpha(gx_device * dev,
 		const byte * data, int sourcex, int raster, gx_bitmap_id id,
 		int x, int y, int w, int h, gx_color_index color, int depth)
@@ -328,7 +328,7 @@ mask_clip_copy_alpha(gx_device * dev,
     return clip_runs_enumerate(cdev, clip_call_copy_alpha, &ccdata);
 }
 
-private int
+static int
 mask_clip_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 			       int x, int y, int w, int h,
 			       gx_color_index color0, gx_color_index color1,
@@ -345,7 +345,7 @@ mask_clip_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     return clip_runs_enumerate(cdev, clip_call_strip_tile_rectangle, &ccdata);
 }
 
-private int
+static int
 mask_clip_strip_copy_rop(gx_device * dev,
 	       const byte * data, int sourcex, uint raster, gx_bitmap_id id,
 			 const gx_color_index * scolors,
@@ -365,7 +365,7 @@ mask_clip_strip_copy_rop(gx_device * dev,
     return clip_runs_enumerate(cdev, clip_call_strip_copy_rop, &ccdata);
 }
 
-private void
+static void
 mask_clip_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
 {
     gx_device_mask_clip *cdev = (gx_device_mask_clip *) dev;

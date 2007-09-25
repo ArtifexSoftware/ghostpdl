@@ -37,7 +37,7 @@
  */
 
 /* The device descriptor */
-private dev_proc_print_page(sj48_print_page);
+static dev_proc_print_page(sj48_print_page);
 gx_device_printer far_data gs_sj48_device =
   prn_device(prn_std_procs, "sj48",
 	80,				/* width_10ths, 8" */
@@ -78,7 +78,7 @@ gx_device_printer far_data gs_sj48_device =
 
 
 /* Send the page to the printer. */
-private int
+static int
 sj48_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {	int line_size = gx_device_raster((gx_device *)pdev, 0);
 	int xres = pdev->x_pixels_per_inch;

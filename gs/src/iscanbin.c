@@ -68,7 +68,7 @@ typedef enum {
 #define NUM_BIN_TOKEN_TYPES (MAX_BIN_TOKEN_TYPE - MIN_BIN_TOKEN_TYPE + 1)
 
 /* Define the number of required initial bytes for binary tokens. */
-private const byte bin_token_bytes[NUM_BIN_TOKEN_TYPES] =
+static const byte bin_token_bytes[NUM_BIN_TOKEN_TYPES] =
 {
     4, 4, 4, 4, 5, 5, 3, 3, 2, 2, 5, 5, 5,
     2, 2, 3, 3, 2, 2, 2, 2, 4,
@@ -76,7 +76,7 @@ private const byte bin_token_bytes[NUM_BIN_TOKEN_TYPES] =
 };
 
 /* Define the number formats for those binary tokens that need them. */
-private const byte bin_token_num_formats[NUM_BIN_TOKEN_TYPES] =
+static const byte bin_token_num_formats[NUM_BIN_TOKEN_TYPES] =
 {
     num_msb + num_float_IEEE,	/* BT_SEQ_IEEE_MSB */
     num_lsb + num_float_IEEE,	/* BT_SEQ_IEEE_LSB */
@@ -133,15 +133,15 @@ typedef enum {
 #define SIZEOF_BIN_SEQ_OBJ ((uint)8)
 
 /* Forward references */
-private int scan_bos(i_ctx_t *, ref *, scanner_state *);
-private void scan_bos_error(scanner_state *, const char *);
-private int scan_bin_scalar(i_ctx_t *, ref *, scanner_state *);
-private int scan_bin_get_name(scanner_state *, const gs_memory_t *mem, const ref *, int, ref *, const char *);
-private int scan_bin_num_array_continue(i_ctx_t *, ref *, scanner_state *);
-private int scan_bin_string_continue(i_ctx_t *, ref *, scanner_state *);
-private int scan_bos_continue(i_ctx_t *, ref *, scanner_state *);
-private byte *scan_bos_resize(i_ctx_t *, scanner_state *, uint, uint);
-private int scan_bos_string_continue(i_ctx_t *, ref *, scanner_state *);
+static int scan_bos(i_ctx_t *, ref *, scanner_state *);
+static void scan_bos_error(scanner_state *, const char *);
+static int scan_bin_scalar(i_ctx_t *, ref *, scanner_state *);
+static int scan_bin_get_name(scanner_state *, const gs_memory_t *mem, const ref *, int, ref *, const char *);
+static int scan_bin_num_array_continue(i_ctx_t *, ref *, scanner_state *);
+static int scan_bin_string_continue(i_ctx_t *, ref *, scanner_state *);
+static int scan_bos_continue(i_ctx_t *, ref *, scanner_state *);
+static byte *scan_bos_resize(i_ctx_t *, scanner_state *, uint, uint);
+static int scan_bos_string_continue(i_ctx_t *, ref *, scanner_state *);
 
 /* Scan a binary token.  Called from the main scanner */
 /* when it encounters an ASCII code 128-159, */
@@ -178,7 +178,7 @@ scan_binary_token(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
 }
 
 /* Scan a binary object sequence. */
-private int
+static int
 scan_bos(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
 {
     stream *const s = pstate->s_file.value.pfile;
@@ -273,7 +273,7 @@ scan_bos(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
 }
 
 /* Report an error in a binary object sequence. */
-private void
+static void
 scan_bos_error(scanner_state *pstate, const char *msg)
 {
     snprintf(pstate->s_error.string, sizeof(pstate->s_error.string),
@@ -284,7 +284,7 @@ scan_bos_error(scanner_state *pstate, const char *msg)
 }
 
 /* Scan a non-sequence binary token. */
-private int
+static int
 scan_bin_scalar(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
 {
     stream *const s = pstate->s_file.value.pfile;
@@ -426,7 +426,7 @@ scan_bin_scalar(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
 }
 
 /* Get a system or user name. */
-private int
+static int
 scan_bin_get_name(scanner_state *pstate, const gs_memory_t *mem,
 		  const ref *pnames /*t_array*/, int index, ref *pref,
 		  const char *usstring)
@@ -444,7 +444,7 @@ scan_bin_get_name(scanner_state *pstate, const gs_memory_t *mem,
 }
 
 /* Continue collecting a binary string. */
-private int
+static int
 scan_bin_string_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
 {
     stream *const s = pstate->s_file.value.pfile;
@@ -470,7 +470,7 @@ scan_bin_string_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
 }
 
 /* Continue scanning a binary number array. */
-private int
+static int
 scan_bin_num_array_continue(i_ctx_t *i_ctx_p, ref * pref,
 			    scanner_state * pstate)
 {
@@ -515,7 +515,7 @@ scan_bin_num_array_continue(i_ctx_t *i_ctx_p, ref * pref,
  * If this turns out to be wrong, we may have to reallocate, and adjust
  * all the pointers.
  */
-private int
+static int
 scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
 {
     stream *const s = pstate->s_file.value.pfile;
@@ -708,7 +708,7 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
 
 /* Reallocate the strings for a binary object sequence, */
 /* adjusting all the pointers to them from objects. */
-private byte *
+static byte *
 scan_bos_resize(i_ctx_t *i_ctx_p, scanner_state * pstate, uint new_size,
 		uint index)
 {
@@ -734,7 +734,7 @@ scan_bos_resize(i_ctx_t *i_ctx_p, scanner_state * pstate, uint new_size,
 }
 
 /* Continue reading the strings for a binary object sequence. */
-private int
+static int
 scan_bos_string_continue(i_ctx_t *i_ctx_p, ref * pref,
 			 scanner_state * pstate)
 {

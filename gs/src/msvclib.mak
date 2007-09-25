@@ -83,14 +83,6 @@ DEBUG=0
 TDEBUG=1
 !endif
 
-# Setting NOPRIVATE=1 makes private (static) procedures and variables public,
-# so they are visible to the debugger and profiler.
-# No execution time or space penalty, just larger .OBJ and .EXE files.
-
-!ifndef NOPRIVATE
-NOPRIVATE=0
-!endif
-
 # Define the name of the executable file.
 
 !ifndef GS

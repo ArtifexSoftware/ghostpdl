@@ -27,7 +27,7 @@ typedef struct gx_device_jbig2_s {
 } gx_device_jbig2;
 
 /* The device descriptor */
-private dev_proc_print_page(jbig2_print_page);
+static dev_proc_print_page(jbig2_print_page);
 
 /* ------ The device descriptors ------ */
 
@@ -39,7 +39,7 @@ private dev_proc_print_page(jbig2_print_page);
 #  define Y_DPI 72
 #endif
 
-private dev_proc_print_page(jbig2_print_page);
+static dev_proc_print_page(jbig2_print_page);
 
 /* Monochrome only */
 
@@ -52,7 +52,7 @@ prn_device(prn_std_procs, "jbig2",
 
 
 /* Send the page to the file. */
-private int
+static int
 jbig2_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     gx_device_jbig2 *jdev = (gx_device_jbig2 *) pdev;

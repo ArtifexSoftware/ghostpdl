@@ -59,7 +59,7 @@ extern const gs_color_space_type gs_color_space_type_Indexed;
 
 /* Print a bitmap for tracing */
 #ifdef DEBUG
-private void
+static void
 cmd_print_bits(const byte * data, int width, int height, int raster)
 {
     int i, j;
@@ -86,7 +86,7 @@ cmd_print_bits(const byte * data, int width, int height, int raster)
     else { const byte *_cbp; var = cmd_get_w(p, &_cbp); p = _cbp; }\
   END
 
-private long
+static long
 cmd_get_w(const byte * p, const byte ** rp)
 {
     int val = *p++ & 0x7f;
@@ -103,7 +103,7 @@ cmd_get_w(const byte * p, const byte ** rp)
     if ( !(*p & 1) ) var = (*p++) << 24;\
     else { const byte *_cbp; var = cmd_get_frac31(p, &_cbp); p = _cbp; }\
   END
-private frac31
+static frac31
 cmd_get_frac31(const byte * p, const byte ** rp)
 {
     frac31 val = (*p++ & 0xFE) << 24;
@@ -133,7 +133,7 @@ typedef struct command_buf_s {
 } command_buf_t;
 
 /* Set the end of a command buffer. */
-private void
+static void
 set_cb_end(command_buf_t *pcb, const byte *end)
 {
     pcb->end = end;
@@ -143,7 +143,7 @@ set_cb_end(command_buf_t *pcb, const byte *end)
 }
 
 /* Read more data into a command buffer. */
-private const byte *
+static const byte *
 top_up_cbuf(command_buf_t *pcb, const byte *cbp)
 {
     uint nread;
@@ -163,7 +163,7 @@ top_up_cbuf(command_buf_t *pcb, const byte *cbp)
 }
 
 /* Read data from the command buffer and stream. */
-private const byte *
+static const byte *
 cmd_read_data(command_buf_t *pcb, byte *ptr, uint rsize, const byte *cbp)
 {
     if (pcb->end - cbp >= rsize) {
@@ -182,7 +182,7 @@ cmd_read_data(command_buf_t *pcb, byte *ptr, uint rsize, const byte *cbp)
   cbp = cmd_read_data(&cbuf, ptr, rsize, cbp)
 
 /* Read a fixed-size value from the command buffer. */
-inline private const byte *
+static inline const byte *
 cmd_copy_value(void *pvar, int var_size, const byte *cbp)
 {
     memcpy(pvar, cbp, var_size);
@@ -207,43 +207,43 @@ typedef struct ht_buff_s {
  * Render one band to a specified target device.  Note that if
  * action == setup, target may be 0.
  */
-private int read_set_tile_size(command_buf_t *pcb, tile_slot *bits);
-private int read_set_bits(command_buf_t *pcb, tile_slot *bits,
+static int read_set_tile_size(command_buf_t *pcb, tile_slot *bits);
+static int read_set_bits(command_buf_t *pcb, tile_slot *bits,
                           int compress, gx_clist_state *pcls,
                           gx_strip_bitmap *tile, tile_slot **pslot,
                           gx_device_clist_reader *cdev, gs_memory_t *mem);
-private int read_set_misc2(command_buf_t *pcb, gs_imager_state *pis,
+static int read_set_misc2(command_buf_t *pcb, gs_imager_state *pis,
                            segment_notes *pnotes);
-private int read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
+static int read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
                                  gs_color_space **ppcs,
                                  gs_memory_t *mem);
-private int read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
+static int read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
                              gs_color_space *pcs);
-private int read_put_params(command_buf_t *pcb, gs_imager_state *pis,
+static int read_put_params(command_buf_t *pcb, gs_imager_state *pis,
                             gx_device_clist_reader *cdev,
                             gs_memory_t *mem);
-private int read_create_compositor(command_buf_t *pcb, gs_imager_state *pis,
+static int read_create_compositor(command_buf_t *pcb, gs_imager_state *pis,
                                    gx_device_clist_reader *cdev,
                                    gs_memory_t *mem, gx_device ** ptarget);
-private int read_alloc_ht_buff(ht_buff_t *, uint, gs_memory_t *);
-private int read_ht_segment(ht_buff_t *, command_buf_t *, gs_imager_state *,
+static int read_alloc_ht_buff(ht_buff_t *, uint, gs_memory_t *);
+static int read_ht_segment(ht_buff_t *, command_buf_t *, gs_imager_state *,
 			    gx_device *, gs_memory_t *);
 
-private const byte *cmd_read_rect(int, gx_cmd_rect *, const byte *);
-private const byte *cmd_read_matrix(gs_matrix *, const byte *);
-private const byte *cmd_read_short_bits(command_buf_t *pcb, byte *data,
+static const byte *cmd_read_rect(int, gx_cmd_rect *, const byte *);
+static const byte *cmd_read_matrix(gs_matrix *, const byte *);
+static const byte *cmd_read_short_bits(command_buf_t *pcb, byte *data,
                                         int width_bytes, int height,
                                         uint raster, const byte *cbp);
-private int cmd_select_map(cmd_map_index, cmd_map_contents,
+static int cmd_select_map(cmd_map_index, cmd_map_contents,
                            gs_imager_state *, int **,
                            frac **, uint *, gs_memory_t *);
-private int cmd_create_dev_ht(gx_device_halftone **, gs_memory_t *);
-private int cmd_resize_halftone(gx_device_halftone **, uint,
+static int cmd_create_dev_ht(gx_device_halftone **, gs_memory_t *);
+static int cmd_resize_halftone(gx_device_halftone **, uint,
                                 gs_memory_t *);
-private int clist_decode_segment(gx_path *, int, fixed[6],
+static int clist_decode_segment(gx_path *, int, fixed[6],
                                  gs_fixed_point *, int, int,
                                  segment_notes);
-private int clist_do_polyfill(gx_device *, gx_path *,
+static int clist_do_polyfill(gx_device *, gx_path *,
                               const gx_drawing_color *,
                               gs_logical_operation_t);
 
@@ -1698,7 +1698,7 @@ idata:			data_size = 0;
  * and update it there.
  */
 
-private int
+static int
 read_set_tile_size(command_buf_t *pcb, tile_slot *bits)
 {
     const byte *cbp = pcb->ptr;
@@ -1738,7 +1738,7 @@ read_set_tile_size(command_buf_t *pcb, tile_slot *bits)
     return 0;
 }
 
-private int
+static int
 read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
 	      gx_clist_state *pcls, gx_strip_bitmap *tile, tile_slot **pslot,
 	      gx_device_clist_reader *cdev, gs_memory_t *mem)
@@ -1852,7 +1852,7 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
 }
 
 /* if necessary, allocate a buffer to hold a serialized halftone */
-private int
+static int
 read_alloc_ht_buff(ht_buff_t * pht_buff, uint ht_size, gs_memory_t * mem)
 {
     /* free the existing buffer, if any (usually none) */
@@ -1877,7 +1877,7 @@ read_alloc_ht_buff(ht_buff_t * pht_buff, uint ht_size, gs_memory_t * mem)
 }
 
 /* read a halftone segment; if it is the final segment, build the halftone */
-private int
+static int
 read_ht_segment(
     ht_buff_t *                 pht_buff,
     command_buf_t *             pcb,
@@ -1930,7 +1930,7 @@ read_ht_segment(
 }
 
 
-private int
+static int
 read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)
 {
     const byte *cbp = pcb->ptr;
@@ -2004,7 +2004,7 @@ read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)
     return 0;
 }
 
-private int
+static int
 read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
 		     gs_color_space **ppcs, gs_memory_t *mem)
 {
@@ -2091,7 +2091,7 @@ out:
     return code;
 }
 
-private int
+static int
 read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
 		 gs_color_space *pcs)
 {
@@ -2109,7 +2109,7 @@ read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
     return code;
 }
 
-private int
+static int
 read_put_params(command_buf_t *pcb, gs_imager_state *pis,
 		gx_device_clist_reader *cdev, gs_memory_t *mem)
 {
@@ -2198,7 +2198,7 @@ out:
  */
 extern_gs_find_compositor();
 
-private int
+static int
 read_create_compositor(
     command_buf_t *             pcb,
     gs_imager_state *           pis,
@@ -2260,7 +2260,7 @@ read_create_compositor(
 /* ---------------- Utilities ---------------- */
 
 /* Read and unpack a short bitmap */
-private const byte *
+static const byte *
 cmd_read_short_bits(command_buf_t *pcb, byte *data, int width_bytes,
 		    int height, uint raster, const byte *cbp)
 {
@@ -2294,7 +2294,7 @@ cmd_read_short_bits(command_buf_t *pcb, byte *data, int width_bytes,
 }
 
 /* Read a rectangle. */
-private const byte *
+static const byte *
 cmd_read_rect(int op, gx_cmd_rect * prect, const byte * cbp)
 {
     cmd_getw(prect->x, cbp);
@@ -2313,7 +2313,7 @@ cmd_read_rect(int op, gx_cmd_rect * prect, const byte * cbp)
 }
 
 /* Read a transformation matrix. */
-private const byte *
+static const byte *
 cmd_read_matrix(gs_matrix * pmat, const byte * cbp)
 {
     stream s;
@@ -2335,7 +2335,7 @@ cmd_read_matrix(gs_matrix * pmat, const byte * cbp)
  *		 be sent for this map.
  *   *pcount - the size of the map (in bytes).
  */
-private int
+static int
 cmd_select_map(cmd_map_index map_index, cmd_map_contents cont,
 	       gs_imager_state * pis, int ** pcomp_num, frac ** pmdata,
 	       uint * pcount, gs_memory_t * mem)
@@ -2427,7 +2427,7 @@ alloc:	    if (cont == cmd_map_none) {
 }
 
 /* Create a device halftone for the imager if necessary. */
-private int
+static int
 cmd_create_dev_ht(gx_device_halftone **ppdht, gs_memory_t *mem)
 {
     gx_device_halftone *pdht = *ppdht;
@@ -2447,7 +2447,7 @@ cmd_create_dev_ht(gx_device_halftone **ppdht, gs_memory_t *mem)
 }
 
 /* Resize the halftone components array if necessary. */
-private int
+static int
 cmd_resize_halftone(gx_device_halftone **ppdht, uint num_comp,
 		    gs_memory_t * mem)
 {
@@ -2505,7 +2505,7 @@ cmd_resize_halftone(gx_device_halftone **ppdht, uint num_comp,
 /* ------ Path operations ------ */
 
 /* Decode a path segment. */
-private int
+static int
 clist_decode_segment(gx_path * ppath, int op, fixed vs[6],
 		 gs_fixed_point * ppos, int x0, int y0, segment_notes notes)
 {
@@ -2628,7 +2628,7 @@ vhc:	    E = B + D, F = D = A + C, C = B, B = A, A = 0;
  * a single line or point.  We must check for this so we don't try to
  * access non-existent segments.
  */
-private int
+static int
 clist_do_polyfill(gx_device *dev, gx_path *ppath,
 		  const gx_drawing_color *pdcolor,
 		  gs_logical_operation_t lop)

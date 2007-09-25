@@ -45,7 +45,7 @@ zarray(i_ctx_t *i_ctx_p)
 }
 
 /* <array> aload <obj_0> ... <obj_n-1> <array> */
-private int
+static int
 zaload(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -85,7 +85,7 @@ zaload(i_ctx_t *i_ctx_p)
 }
 
 /* <obj_0> ... <obj_n-1> <array> astore <array> */
-private int
+static int
 zastore(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

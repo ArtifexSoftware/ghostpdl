@@ -29,10 +29,10 @@
 #include "estack.h"
 
 /* Forward references */
-private int write_string(ref *, stream *);
-private int handle_read_status(i_ctx_t *, int, const ref *, const uint *,
+static int write_string(ref *, stream *);
+static int handle_read_status(i_ctx_t *, int, const ref *, const uint *,
 			       op_proc_t);
-private int handle_write_status(i_ctx_t *, int, const ref *, const uint *,
+static int handle_write_status(i_ctx_t *, int, const ref *, const uint *,
 				op_proc_t);
 
 /* ------ Operators ------ */
@@ -63,7 +63,7 @@ zclosefile(i_ctx_t *i_ctx_p)
 
 /* <file> read <int> -true- */
 /* <file> read -false- */
-private int
+static int
 zread(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -116,11 +116,11 @@ zwrite(i_ctx_t *i_ctx_p)
 }
 
 /* <file> <string> readhexstring <substring> <filled_bool> */
-private int zreadhexstring_continue(i_ctx_t *);
+static int zreadhexstring_continue(i_ctx_t *);
 
 /* We pack the odd digit above the the current position for the  */
 /* convenience of reusing procedures that take 1 state parameter */
-private int
+static int
 zreadhexstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint start, int odd)
 {
     stream *s;
@@ -164,7 +164,7 @@ zreadhexstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint start, int odd)
     make_false(op);
     return 0;
 }
-private int
+static int
 zreadhexstring(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -174,7 +174,7 @@ zreadhexstring(i_ctx_t *i_ctx_p)
 }
 /* Continue a readhexstring operation after a callout. */
 /* *op contains the index within the string and the odd flag. */
-private int
+static int
 zreadhexstring_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -194,8 +194,8 @@ zreadhexstring_continue(i_ctx_t *i_ctx_p)
 }
 
 /* <file> <string> writehexstring - */
-private int zwritehexstring_continue(i_ctx_t *);
-private int
+static int zwritehexstring_continue(i_ctx_t *);
+static int
 zwritehexstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint odd)
 {
     register stream *s;
@@ -248,7 +248,7 @@ zwritehexstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint odd)
     return 0;
 #undef MAX_HEX
 }
-private int
+static int
 zwritehexstring(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -257,7 +257,7 @@ zwritehexstring(i_ctx_t *i_ctx_p)
 }
 /* Continue a writehexstring operation after a callout. */
 /* *op is the odd/even hex digit flag for the first byte. */
-private int
+static int
 zwritehexstring_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -273,8 +273,8 @@ zwritehexstring_continue(i_ctx_t *i_ctx_p)
 }
 
 /* <file> <string> readstring <substring> <filled_bool> */
-private int zreadstring_continue(i_ctx_t *);
-private int
+static int zreadstring_continue(i_ctx_t *);
+static int
 zreadstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint start)
 {
     stream *s;
@@ -308,7 +308,7 @@ zreadstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint start)
     make_bool(op, (rlen == len ? 1 : 0));
     return 0;
 }
-private int
+static int
 zreadstring(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -317,7 +317,7 @@ zreadstring(i_ctx_t *i_ctx_p)
 }
 /* Continue a readstring operation after a callout. */
 /* *op is the index within the string. */
-private int
+static int
 zreadstring_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -333,7 +333,7 @@ zreadstring_continue(i_ctx_t *i_ctx_p)
 }
 
 /* <file> <string> writestring - */
-private int
+static int
 zwritestring(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -351,8 +351,8 @@ zwritestring(i_ctx_t *i_ctx_p)
 }
 
 /* <file> <string> readline <substring> <bool> */
-private int zreadline(i_ctx_t *);
-private int zreadline_continue(i_ctx_t *);
+static int zreadline(i_ctx_t *);
+static int zreadline_continue(i_ctx_t *);
 
 /*
  * We could handle readline the same way as readstring,
@@ -364,7 +364,7 @@ private int zreadline_continue(i_ctx_t *);
  * we use start=0 (which we have just ruled out as a possible start value
  * for readline_continue) to indicate interruption after the CR.
  */
-private int
+static int
 zreadline_at(i_ctx_t *i_ctx_p, os_ptr op, uint count, bool in_eol)
 {
     stream *s;
@@ -400,7 +400,7 @@ zreadline_at(i_ctx_t *i_ctx_p, os_ptr op, uint count, bool in_eol)
     make_bool(op, status == 0);
     return 0;
 }
-private int
+static int
 zreadline(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -409,7 +409,7 @@ zreadline(i_ctx_t *i_ctx_p)
 }
 /* Continue a readline operation after a callout. */
 /* *op is the index within the string, or 0 for an interrupt after a CR. */
-private int
+static int
 zreadline_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -446,7 +446,7 @@ zreadline_from(stream *s, gs_string *buf, gs_memory_t *bufmem,
 }
 
 /* <file> bytesavailable <int> */
-private int
+static int
 zbytesavailable(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -490,7 +490,7 @@ zflush(i_ctx_t *i_ctx_p)
 }
 
 /* <file> flushfile - */
-private int
+static int
 zflushfile(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -520,7 +520,7 @@ zflushfile(i_ctx_t *i_ctx_p)
 }
 
 /* <file> resetfile - */
-private int
+static int
 zresetfile(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -535,7 +535,7 @@ zresetfile(i_ctx_t *i_ctx_p)
 }
 
 /* <string> print - */
-private int
+static int
 zprint(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -566,7 +566,7 @@ zprint(i_ctx_t *i_ctx_p)
 }
 
 /* <bool> echo - */
-private int
+static int
 zecho(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -580,7 +580,7 @@ zecho(i_ctx_t *i_ctx_p)
 /* ------ Level 2 extensions ------ */
 
 /* <file> fileposition <int> */
-private int
+static int
 zfileposition(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -597,7 +597,7 @@ zfileposition(i_ctx_t *i_ctx_p)
     return 0;
 }
 /* <file> .fileposition <int> */
-private int
+static int
 zxfileposition(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -613,7 +613,7 @@ zxfileposition(i_ctx_t *i_ctx_p)
 }
 
 /* <file> <int> setfileposition - */
-private int
+static int
 zsetfileposition(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -631,7 +631,7 @@ zsetfileposition(i_ctx_t *i_ctx_p)
 
 /* <file> .filename <string> true */
 /* <file> .filename false */
-private int
+static int
 zfilename(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -659,7 +659,7 @@ zfilename(i_ctx_t *i_ctx_p)
 }
 
 /* <file> .isprocfilter <bool> */
-private int
+static int
 zisprocfilter(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -673,7 +673,7 @@ zisprocfilter(i_ctx_t *i_ctx_p)
 }
 
 /* <file> <string> .peekstring <substring> <filled_bool> */
-private int
+static int
 zpeekstring(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -716,7 +716,7 @@ zpeekstring(i_ctx_t *i_ctx_p)
 }
 
 /* <file> <int> .unread - */
-private int
+static int
 zunread(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -735,8 +735,8 @@ zunread(i_ctx_t *i_ctx_p)
 }
 
 /* <file> <obj> <==flag> .writecvp - */
-private int zwritecvp_continue(i_ctx_t *);
-private int
+static int zwritecvp_continue(i_ctx_t *);
+static int
 zwritecvp_at(i_ctx_t *i_ctx_p, os_ptr op, uint start, bool first)
 {
     stream *s;
@@ -790,14 +790,14 @@ zwritecvp_at(i_ctx_t *i_ctx_p, os_ptr op, uint start, bool first)
 	pop(4);
     return 0;
 }
-private int
+static int
 zwritecvp(i_ctx_t *i_ctx_p)
 {
     return zwritecvp_at(i_ctx_p, osp, 0, true);
 }
 /* Continue a .writecvp after a callout. */
 /* *op is the index within the string. */
-private int
+static int
 zwritecvp_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -886,7 +886,7 @@ file_switch_to_write(const ref * op)
 
 /* Write a string on a file.  The file and string have been validated. */
 /* If the status is INTC or CALLC, updates the string on the o-stack. */
-private int
+static int
 write_string(ref * op, stream * s)
 {
     const byte *data = op->value.const_bytes;
@@ -909,7 +909,7 @@ write_string(ref * op, stream * s)
  * Look for a stream error message that needs to be copied to
  * $error.errorinfo, if any.
  */
-private int
+static int
 copy_error_string(i_ctx_t *i_ctx_p, const ref *fop)
 {
     stream *s;
@@ -930,7 +930,7 @@ copy_error_string(i_ctx_t *i_ctx_p, const ref *fop)
 /* fop points to the ref for the stream. */
 /* ch may be any stream exceptional value. */
 /* Return 0, 1 (EOF), o_push_estack, or an error. */
-private int
+static int
 handle_read_status(i_ctx_t *i_ctx_p, int ch, const ref * fop,
 		   const uint * pindex, op_proc_t cont)
 {
@@ -957,7 +957,7 @@ handle_read_status(i_ctx_t *i_ctx_p, int ch, const ref * fop,
 /* fop points to the ref for the stream. */
 /* ch may be any stream exceptional value. */
 /* Return 0, 1 (EOF), o_push_estack, or an error. */
-private int
+static int
 handle_write_status(i_ctx_t *i_ctx_p, int ch, const ref * fop,
 		    const uint * pindex, op_proc_t cont)
 {

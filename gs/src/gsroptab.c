@@ -23,7 +23,7 @@
  */
 
 #define ROP_PROC(pname, expr)\
-private rop_operand pname(rop_operand D, rop_operand S, rop_operand T)\
+static rop_operand pname(rop_operand D, rop_operand S, rop_operand T)\
 { return expr; }
 
 #define a(u,v) (u&v)

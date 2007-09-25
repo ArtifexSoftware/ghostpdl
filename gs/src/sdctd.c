@@ -26,13 +26,13 @@
 /* ------ DCTDecode ------ */
 
 /* JPEG source manager procedures */
-private void
+static void
 dctd_init_source(j_decompress_ptr dinfo)
 {
 }
 static const JOCTET fake_eoi[2] =
 {0xFF, JPEG_EOI};
-private boolean
+static boolean
 dctd_fill_input_buffer(j_decompress_ptr dinfo)
 {
     jpeg_decompress_data *jddp =
@@ -49,7 +49,7 @@ dctd_fill_input_buffer(j_decompress_ptr dinfo)
     jddp->faked_eoi = true;	/* so process routine doesn't use next_input_byte */
     return TRUE;
 }
-private void
+static void
 dctd_skip_input_data(j_decompress_ptr dinfo, long num_bytes)
 {
     struct jpeg_source_mgr *src = dinfo->src;
@@ -68,20 +68,20 @@ dctd_skip_input_data(j_decompress_ptr dinfo, long num_bytes)
 	src->bytes_in_buffer -= num_bytes;
     }
 }
-private void
+static void
 dctd_term_source(j_decompress_ptr dinfo)
 {
 }
 
 /* Set the defaults for the DCTDecode filter. */
-private void
+static void
 s_DCTD_set_defaults(stream_state * st)
 {
     s_DCT_set_defaults(st);
 }
 
 /* Initialize DCTDecode filter */
-private int
+static int
 s_DCTD_init(stream_state * st)
 {
     stream_DCT_state *const ss = (stream_DCT_state *) st;
@@ -102,7 +102,7 @@ s_DCTD_init(stream_state * st)
 }
 
 /* Process a buffer */
-private int
+static int
 s_DCTD_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
@@ -263,7 +263,7 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
 }
 
 /* Release the stream */
-private void
+static void
 s_DCTD_release(stream_state * st)
 {
     stream_DCT_state *const ss = (stream_DCT_state *) st;

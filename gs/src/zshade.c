@@ -36,12 +36,12 @@
 #include "store.h"
 
 /* Forward references */
-private int shading_param(const_os_ptr op, const gs_shading_t ** ppsh);
+static int shading_param(const_os_ptr op, const gs_shading_t ** ppsh);
 
 /* ---------------- Standard operators ---------------- */
 
 /* - currentsmoothness <smoothness> */
-private int
+static int
 zcurrentsmoothness(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -52,7 +52,7 @@ zcurrentsmoothness(i_ctx_t *i_ctx_p)
 }
 
 /* <smoothness> setsmoothness - */
-private int
+static int
 zsetsmoothness(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -68,7 +68,7 @@ zsetsmoothness(i_ctx_t *i_ctx_p)
 }
 
 /* <shading> .shfill - */
-private int
+static int
 zshfill(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -84,7 +84,7 @@ zshfill(i_ctx_t *i_ctx_p)
 /* ------ Non-standard operators ------ */
 
 /* <pattern> <matrix> <shading> .buildshadingpattern <pattern> <instance> */
-private int
+static int
 zbuildshadingpattern(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -120,7 +120,7 @@ zbuildshadingpattern(i_ctx_t *i_ctx_p)
 /* ------ Internal procedures ------ */
 
 /* Get a shading parameter. */
-private int
+static int
 shading_param(const_os_ptr op, const gs_shading_t ** ppsh)
 {	/*
 	 * Since shadings form a subclass hierarchy, we currently have
@@ -147,7 +147,7 @@ typedef int (*build_shading_proc_t)
 /* Operators */
 
 /* Common framework for building shadings. */
-private int
+static int
 build_shading(i_ctx_t *i_ctx_p, build_shading_proc_t proc)
 {
     os_ptr op = osp;
@@ -241,7 +241,7 @@ fail:
 }
 
 /* Collect a Function value. */
-private int
+static int
 build_shading_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
 	         int num_inputs, gs_memory_t *mem, const float *shading_domain)
 {
@@ -299,7 +299,7 @@ build_shading_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
  * this applies to any shading dictionary that contains a Function entry."
  * Adobe interpreters follow PLRM in this respect and we follow them.
  */
-private int
+static int
 check_indexed_vs_function(i_ctx_t *i_ctx_p, const ref *op,
                           const gs_color_space *pcs, const gs_function_t *funct)
 { if (funct && gs_color_space_get_index(pcs) == gs_color_space_index_Indexed) {
@@ -315,7 +315,7 @@ check_indexed_vs_function(i_ctx_t *i_ctx_p, const ref *op,
 /* ------ Build shadings ------ */
 
 /* Build a ShadingType 1 (Function-based) shading. */
-private int
+static int
 build_shading_1(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pcommon,
 		gs_shading_t ** ppsh, gs_memory_t *mem)
 {
@@ -361,14 +361,14 @@ build_shading_1(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pc
     return code;
 }
 /* <dict> .buildshading1 <shading_struct> */
-private int
+static int
 zbuildshading1(i_ctx_t *i_ctx_p)
 {
     return build_shading(i_ctx_p, build_shading_1);
 }
 
 /* Collect parameters for an Axial or Radial shading. */
-private int
+static int
 build_directional_shading(i_ctx_t *i_ctx_p, const ref * op, float *Coords, int num_Coords,
 			  float Domain[2], gs_function_t ** pFunction,
 			  bool Extend[2], gs_memory_t *mem)
@@ -408,7 +408,7 @@ build_directional_shading(i_ctx_t *i_ctx_p, const ref * op, float *Coords, int n
 }
 
 /* Build a ShadingType 2 (Axial) shading. */
-private int
+static int
 build_shading_2(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pcommon,
 		gs_shading_t ** ppsh, gs_memory_t *mem)
 {
@@ -427,14 +427,14 @@ build_shading_2(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pc
     return code;
 }
 /* <dict> .buildshading2 <shading_struct> */
-private int
+static int
 zbuildshading2(i_ctx_t *i_ctx_p)
 {
     return build_shading(i_ctx_p, build_shading_2);
 }
 
 /* Build a ShadingType 3 (Radial) shading. */
-private int
+static int
 build_shading_3(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pcommon,
 		gs_shading_t ** ppsh, gs_memory_t *mem)
 {
@@ -455,14 +455,14 @@ build_shading_3(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pc
     return code;
 }
 /* <dict> .buildshading3 <shading_struct> */
-private int
+static int
 zbuildshading3(i_ctx_t *i_ctx_p)
 {
     return build_shading(i_ctx_p, build_shading_3);
 }
 
 /* Collect parameters for a mesh shading. */
-private int
+static int
 build_mesh_shading(i_ctx_t *i_ctx_p, const ref * op,
 		   gs_shading_mesh_params_t * params,
 		   float **pDecode, gs_function_t ** pFunction,
@@ -550,7 +550,7 @@ build_mesh_shading(i_ctx_t *i_ctx_p, const ref * op,
 }
 
 /* Collect the BitsPerFlag parameter, if relevant. */
-private int
+static int
 flag_bits_param(const ref * op, const gs_shading_mesh_params_t * params,
 		int *pBitsPerFlag)
 {
@@ -563,7 +563,7 @@ flag_bits_param(const ref * op, const gs_shading_mesh_params_t * params,
 }
 
 /* Build a ShadingType 4 (Free-form Gouraud triangle mesh) shading. */
-private int
+static int
 build_shading_4(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pcommon,
 		gs_shading_t ** ppsh, gs_memory_t *mem)
 {
@@ -585,14 +585,14 @@ build_shading_4(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pc
     return code;
 }
 /* <dict> .buildshading4 <shading_struct> */
-private int
+static int
 zbuildshading4(i_ctx_t *i_ctx_p)
 {
     return build_shading(i_ctx_p, build_shading_4);
 }
 
 /* Build a ShadingType 5 (Lattice-form Gouraud triangle mesh) shading. */
-private int
+static int
 build_shading_5(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pcommon,
 		gs_shading_t ** ppsh, gs_memory_t *mem)
 {
@@ -614,14 +614,14 @@ build_shading_5(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pc
     return code;
 }
 /* <dict> .buildshading5 <shading_struct> */
-private int
+static int
 zbuildshading5(i_ctx_t *i_ctx_p)
 {
     return build_shading(i_ctx_p, build_shading_5);
 }
 
 /* Build a ShadingType 6 (Coons patch mesh) shading. */
-private int
+static int
 build_shading_6(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pcommon,
 		gs_shading_t ** ppsh, gs_memory_t *mem)
 {
@@ -643,14 +643,14 @@ build_shading_6(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pc
     return code;
 }
 /* <dict> .buildshading6 <shading_struct> */
-private int
+static int
 zbuildshading6(i_ctx_t *i_ctx_p)
 {
     return build_shading(i_ctx_p, build_shading_6);
 }
 
 /* Build a ShadingType 7 (Tensor product patch mesh) shading. */
-private int
+static int
 build_shading_7(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pcommon,
 		gs_shading_t ** ppsh, gs_memory_t *mem)
 {
@@ -672,7 +672,7 @@ build_shading_7(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pc
     return code;
 }
 /* <dict> .buildshading7 <shading_struct> */
-private int
+static int
 zbuildshading7(i_ctx_t *i_ctx_p)
 {
     return build_shading(i_ctx_p, build_shading_7);

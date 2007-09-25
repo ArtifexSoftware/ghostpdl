@@ -27,7 +27,7 @@
 #include "ialloc.h"
 
 /* Private utilities */
-private uint
+static uint
 subr_bias(const ref * psubrs)
 {
     uint size = r_size(psubrs);
@@ -84,7 +84,7 @@ type2_font_params(const_os_ptr op, charstring_font_refs_t *pfr,
 
 /* <string|name> <font_dict> .buildfont2 <string|name> <font> */
 /* Build a type 2 (compact Adobe encrypted) font. */
-private int
+static int
 zbuildfont2(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

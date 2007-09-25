@@ -37,7 +37,7 @@ s_1248_init(stream_1248_state *ss, int Columns, int samples_per_pixel)
 }
 
 /* Initialize the state. */
-private int
+static int
 s_1_init(stream_state * st)
 {
     stream_1248_state *const ss = (stream_1248_state *) st;
@@ -46,7 +46,7 @@ s_1_init(stream_state * st)
     ss->bits_per_sample = 1;
     return 0;
 }
-private int
+static int
 s_2_init(stream_state * st)
 {
     stream_1248_state *const ss = (stream_1248_state *) st;
@@ -55,7 +55,7 @@ s_2_init(stream_state * st)
     ss->bits_per_sample = 2;
     return 0;
 }
-private int
+static int
 s_4_init(stream_state * st)
 {
     stream_1248_state *const ss = (stream_1248_state *) st;
@@ -64,7 +64,7 @@ s_4_init(stream_state * st)
     ss->bits_per_sample = 4;
     return 0;
 }
-private int
+static int
 s_12_init(stream_state * st)
 {
     stream_1248_state *const ss = (stream_1248_state *) st;
@@ -105,7 +105,7 @@ s_12_init(stream_state * st)
 #define END_FOREACH_N_8\
 	  }\
 	}
-private int
+static int
 s_N_8_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
@@ -176,7 +176,7 @@ s_N_8_process(stream_state * st, stream_cursor_read * pr,
 }
 
 /* 12-to-8 "expansion" */
-private int
+static int
 s_12_8_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
@@ -222,7 +222,7 @@ s_12_8_process(stream_state * st, stream_cursor_read * pr,
 	    q[1] = out;\
 	  }\
 	}
-private int
+static int
 s_8_N_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
@@ -321,7 +321,7 @@ s_C2R_init(stream_C2R_state *ss, const gs_imager_state *pis)
 }
 
 /* Set default parameter values (actually, just clear pointers). */
-private void
+static void
 s_C2R_set_defaults(stream_state * st)
 {
     stream_C2R_state *const ss = (stream_C2R_state *) st;
@@ -330,7 +330,7 @@ s_C2R_set_defaults(stream_state * st)
 }
 
 /* Process one buffer. */
-private int
+static int
 s_C2R_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
@@ -362,12 +362,12 @@ const stream_template s_C2R_template = {
 /* ------ Convert any color space to Indexed ------ */
 
 private_st_IE_state();
-private
+static
 ENUM_PTRS_WITH(ie_state_enum_ptrs, stream_IE_state *st) return 0;
 case 0: return ENUM_OBJ(st->Decode);
 case 1: return ENUM_BYTESTRING(&st->Table);
 ENUM_PTRS_END
-private
+static
 RELOC_PTRS_WITH(ie_state_reloc_ptrs, stream_IE_state *st)
 {
     RELOC_VAR(st->Decode);
@@ -376,7 +376,7 @@ RELOC_PTRS_WITH(ie_state_reloc_ptrs, stream_IE_state *st)
 RELOC_PTRS_END
 
 /* Set defaults. */
-private void
+static void
 s_IE_set_defaults(stream_state * st)
 {
     stream_IE_state *const ss = (stream_IE_state *) st;
@@ -386,7 +386,7 @@ s_IE_set_defaults(stream_state * st)
 }
 
 /* Initialize the state. */
-private int
+static int
 s_IE_init(stream_state * st)
 {
     stream_IE_state *const ss = (stream_IE_state *) st;
@@ -409,7 +409,7 @@ s_IE_init(stream_state * st)
 }
 
 /* Process a buffer. */
-private int
+static int
 s_IE_process(stream_state * st, stream_cursor_read * pr,
 	     stream_cursor_write * pw, bool last)
 {
@@ -580,7 +580,7 @@ s_Downsample_size_out(int size_in, int factor, bool pad)
     return ((pad ? size_in + factor - 1 : size_in) / factor);
 }
 
-private void
+static void
 s_Downsample_set_defaults(register stream_state * st)
 {
     stream_Downsample_state *const ss = (stream_Downsample_state *)st;
@@ -594,7 +594,7 @@ gs_private_st_simple(st_Subsample_state, stream_Subsample_state,
 		     "stream_Subsample_state");
 
 /* Initialize the state. */
-private int
+static int
 s_Subsample_init(stream_state * st)
 {
     stream_Subsample_state *const ss = (stream_Subsample_state *) st;
@@ -604,7 +604,7 @@ s_Subsample_init(stream_state * st)
 }
 
 /* Process one buffer. */
-private int
+static int
 s_Subsample_process(stream_state * st, stream_cursor_read * pr,
 		    stream_cursor_write * pw, bool last)
 {
@@ -660,7 +660,7 @@ const stream_template s_Subsample_template = {
 private_st_Average_state();
 
 /* Set default parameter values (actually, just clear pointers). */
-private void
+static void
 s_Average_set_defaults(stream_state * st)
 {
     stream_Average_state *const ss = (stream_Average_state *) st;
@@ -671,7 +671,7 @@ s_Average_set_defaults(stream_state * st)
 }
 
 /* Initialize the state. */
-private int
+static int
 s_Average_init(stream_state * st)
 {
     stream_Average_state *const ss = (stream_Average_state *) st;
@@ -690,7 +690,7 @@ s_Average_init(stream_state * st)
 }
 
 /* Release the state. */
-private void
+static void
 s_Average_release(stream_state * st)
 {
     stream_Average_state *const ss = (stream_Average_state *) st;
@@ -699,7 +699,7 @@ s_Average_release(stream_state * st)
 }
 
 /* Process one buffer. */
-private int
+static int
 s_Average_process(stream_state * st, stream_cursor_read * pr,
 		  stream_cursor_write * pw, bool last)
 {
@@ -763,7 +763,7 @@ const stream_template s_Average_template = {
 private_st_compr_chooser_state();
 
 /* Initialize the state. */
-private int
+static int
 s_compr_chooser_init(stream_state * st)
 {
     stream_compr_chooser_state *const ss = (stream_compr_chooser_state *) st;
@@ -795,7 +795,7 @@ s_compr_chooser_set_dimensions(stream_compr_chooser_state * ss, int width,
 }
 
 /* Release state. */
-private void
+static void
 s_compr_chooser_release(stream_state * st)
 {
     stream_compr_chooser_state *const ss = (stream_compr_chooser_state *) st;
@@ -804,7 +804,7 @@ s_compr_chooser_release(stream_state * st)
 }
 
 /* Estimate a row for photo/lineart recognition. */
-private void
+static void
 s_compr_chooser__estimate_row(stream_compr_chooser_state *const ss, byte *p)
 {   
     /*	This function uses a statistical algorithm being not well defined.
@@ -901,7 +901,7 @@ s_compr_chooser__estimate_row(stream_compr_chooser_state *const ss, byte *p)
 }
 
 /* Recognize photo/lineart. */
-private void
+static void
 s_compr_chooser__recognize(stream_compr_chooser_state * ss)
 {
     int i;
@@ -913,7 +913,7 @@ s_compr_chooser__recognize(stream_compr_chooser_state * ss)
 }
 
 /* Uppack data and recognize photo/lineart. */
-private void
+static void
 s_compr_chooser__unpack_and_recognize(stream_compr_chooser_state *const ss, 
 				      const byte *data, int length)
 {   
@@ -962,7 +962,7 @@ s_compr_chooser__unpack_and_recognize(stream_compr_chooser_state *const ss,
 }
 
 /* Process a buffer. */
-private int
+static int
 s_compr_chooser_process(stream_state * st, stream_cursor_read * pr,
 	     stream_cursor_write * pw, bool last)
 {
@@ -1002,7 +1002,7 @@ s_compr_chooser__get_choice(stream_compr_chooser_state *ss, bool force)
 private_st_image_colors_state();
 
 /* Initialize the state. */
-private int
+static int
 s_image_colors_init(stream_state * st)
 {
     stream_image_colors_state *const ss = (stream_image_colors_state *) st;
@@ -1029,7 +1029,7 @@ s_image_colors_init(stream_state * st)
     return 0;
 }
 
-private int 
+static int 
 s_image_colors_convert_color_to_mask(stream_image_colors_state *ss)
 {
     int i, ii;
@@ -1042,7 +1042,7 @@ s_image_colors_convert_color_to_mask(stream_image_colors_state *ss)
     return 0;
 }
 
-private int
+static int
 s_image_colors_convert_to_device_color(stream_image_colors_state * ss)
 {
     gs_client_color cc;
@@ -1107,7 +1107,7 @@ s_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *pdev,
 
 
 /* Process a buffer. */
-private int
+static int
 s_image_colors_process(stream_state * st, stream_cursor_read * pr,
 	     stream_cursor_write * pw, bool last)
 {

@@ -23,7 +23,7 @@
 private_st_A85D_state();
 
 /* Initialize the state */
-private int
+static int
 s_A85D_init(stream_state * st)
 {
     stream_A85D_state *const ss = (stream_A85D_state *) st;
@@ -32,8 +32,8 @@ s_A85D_init(stream_state * st)
 }
 
 /* Process a buffer */
-private int a85d_finish(int, ulong, stream_cursor_write *);
-private int
+static int a85d_finish(int, ulong, stream_cursor_write *);
+static int
 s_A85D_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
@@ -162,7 +162,7 @@ s_A85D_process(stream_state * st, stream_cursor_read * pr,
     return status;
 }
 /* Handle the end of input data. */
-private int
+static int
 a85d_finish(int ccount, ulong word, stream_cursor_write * pw)
 {
     /* Assume there is enough room in the output buffer! */

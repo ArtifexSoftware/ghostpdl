@@ -61,26 +61,26 @@ typedef struct FAPI_outline_handler_s {
     bool close_path, need_close; /* This stuff fixes unclosed paths being rendered with UFST */
 } FAPI_outline_handler;
 
-private inline int import_shift(int x, int n)
+static inline int import_shift(int x, int n)
 {   return n > 0 ? x << n : x >> -n;
 }
 
-private inline int export_shift(int x, int n)
+static inline int export_shift(int x, int n)
 {   return n > 0 ? x >> n : x << -n;
 }
 
-private inline int fapi_round(double x)
+static inline int fapi_round(double x)
 {   return (int)(x + 0.5);
 }
 
-private int add_closepath(FAPI_path *I)
+static int add_closepath(FAPI_path *I)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
 
     olh->need_close = false;
     return gx_path_close_subpath_notes(olh->path, 0);
 }
 
-private int add_move(FAPI_path *I, FracInt x, FracInt y)
+static int add_move(FAPI_path *I, FracInt x, FracInt y)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
     int code;
 
@@ -91,14 +91,14 @@ private int add_move(FAPI_path *I, FracInt x, FracInt y)
     return gx_path_add_point(olh->path, import_shift(x, I->shift) + olh->x0, -import_shift(y, I->shift) + olh->y0);
 }
 
-private int add_line(FAPI_path *I, FracInt x, FracInt y)
+static int add_line(FAPI_path *I, FracInt x, FracInt y)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
 
     olh->need_close = true;
     return gx_path_add_line_notes(olh->path, import_shift(x, I->shift) + olh->x0, -import_shift(y, I->shift) + olh->y0, 0);
 }
 
-private int add_curve(FAPI_path *I, FracInt x0, FracInt y0, FracInt x1, FracInt y1, FracInt x2, FracInt y2)
+static int add_curve(FAPI_path *I, FracInt x0, FracInt y0, FracInt x1, FracInt y1, FracInt x2, FracInt y2)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
 
     olh->need_close = true;
@@ -107,16 +107,16 @@ private int add_curve(FAPI_path *I, FracInt x0, FracInt y0, FracInt x1, FracInt 
 					      import_shift(x2, I->shift) + olh->x0, -import_shift(y2, I->shift) + olh->y0, 0);
 }
 
-private FAPI_path path_interface_stub = { NULL, 0, add_move, add_line, add_curve, add_closepath };
+static FAPI_path path_interface_stub = { NULL, 0, add_move, add_line, add_curve, add_closepath };
 
-private inline bool IsCIDFont(const gs_font_base *pbfont)
+static inline bool IsCIDFont(const gs_font_base *pbfont)
 {   return (pbfont->FontType == ft_CID_encrypted ||
             pbfont->FontType == ft_CID_user_defined ||
             pbfont->FontType == ft_CID_TrueType);
     /* The font type 10 (ft_CID_user_defined) must not pass to FAPI. */
 }
 
-private inline bool IsType1GlyphData(const gs_font_base *pbfont)
+static inline bool IsType1GlyphData(const gs_font_base *pbfont)
 {   return pbfont->FontType == ft_encrypted ||
            pbfont->FontType == ft_encrypted2 ||
            pbfont->FontType == ft_CID_encrypted;
@@ -140,7 +140,7 @@ struct sfnts_reader_s {
     void (*seek)(sfnts_reader *r, ulong pos);
 };
 
-private void sfnts_next_elem(sfnts_reader *r)
+static void sfnts_next_elem(sfnts_reader *r)
 {   ref s;
 
     if (r->error)
@@ -154,26 +154,26 @@ private void sfnts_next_elem(sfnts_reader *r)
     r->offset = 0;
 }
 
-private inline byte sfnts_reader_rbyte_inline(sfnts_reader *r)
+static inline byte sfnts_reader_rbyte_inline(sfnts_reader *r)
 {   if (r->offset >= r->length)
         sfnts_next_elem(r);
     return (r->error ? 0 : r->p[r->offset++]);
 }
 
-private byte sfnts_reader_rbyte(sfnts_reader *r) /* old compiler compatibility */
+static byte sfnts_reader_rbyte(sfnts_reader *r) /* old compiler compatibility */
 {   return sfnts_reader_rbyte_inline(r);
 }
 
-private ushort sfnts_reader_rword(sfnts_reader *r)
+static ushort sfnts_reader_rword(sfnts_reader *r)
 {   return (sfnts_reader_rbyte_inline(r) << 8) + sfnts_reader_rbyte_inline(r);
 }
 
-private ulong sfnts_reader_rlong(sfnts_reader *r)
+static ulong sfnts_reader_rlong(sfnts_reader *r)
 {   return (sfnts_reader_rbyte_inline(r) << 24) + (sfnts_reader_rbyte_inline(r) << 16) + 
            (sfnts_reader_rbyte_inline(r) << 8) + sfnts_reader_rbyte_inline(r);
 }
 
-private void sfnts_reader_rstring(sfnts_reader *r, byte *v, int length)
+static void sfnts_reader_rstring(sfnts_reader *r, byte *v, int length)
 {   if (length < 0)
         return;
     while (!r->error) {
@@ -187,7 +187,7 @@ private void sfnts_reader_rstring(sfnts_reader *r, byte *v, int length)
     }
 }
 
-private void sfnts_reader_seek(sfnts_reader *r, ulong pos)
+static void sfnts_reader_seek(sfnts_reader *r, ulong pos)
 {   /* fixme : optimize */
     ulong skipped = 0;
 
@@ -200,7 +200,7 @@ private void sfnts_reader_seek(sfnts_reader *r, ulong pos)
     r->offset = pos - skipped;
 }
 
-private void sfnts_reader_init(sfnts_reader *r, ref *pdr)
+static void sfnts_reader_init(sfnts_reader *r, ref *pdr)
 {   r->rbyte = sfnts_reader_rbyte;
     r->rword = sfnts_reader_rword;
     r->rlong = sfnts_reader_rlong;
@@ -226,14 +226,14 @@ struct sfnts_writer_s {
     void (*wstring)(sfnts_writer *w, byte *v, int length);
 };
 
-private void sfnts_writer_wbyte(sfnts_writer *w, byte v)
+static void sfnts_writer_wbyte(sfnts_writer *w, byte v)
 {   if (w->buf + w->buf_size < w->p + 1)
         return; /* safety */
     w->p[0] = v;
     w->p++;
 }
 
-private void sfnts_writer_wword(sfnts_writer *w, ushort v)
+static void sfnts_writer_wword(sfnts_writer *w, ushort v)
 {   if (w->buf + w->buf_size < w->p + 2)
         return; /* safety */
     w->p[0] = v / 256;
@@ -241,7 +241,7 @@ private void sfnts_writer_wword(sfnts_writer *w, ushort v)
     w->p += 2;
 }
 
-private void sfnts_writer_wlong(sfnts_writer *w, ulong v)
+static void sfnts_writer_wlong(sfnts_writer *w, ulong v)
 {   if (w->buf + w->buf_size < w->p + 4)
         return; /* safety */
     w->p[0] = v >> 24;
@@ -251,14 +251,14 @@ private void sfnts_writer_wlong(sfnts_writer *w, ulong v)
     w->p += 4;
 }
 
-private void sfnts_writer_wstring(sfnts_writer *w, byte *v, int length)
+static void sfnts_writer_wstring(sfnts_writer *w, byte *v, int length)
 {   if (w->buf + w->buf_size < w->p + length)
         return; /* safety */
     memcpy(w->p, v, length);
     w->p += length;
 }
 
-private const sfnts_writer sfnts_writer_stub = {
+static const sfnts_writer sfnts_writer_stub = {
     0, 0, 0,
     sfnts_writer_wbyte,
     sfnts_writer_wword,
@@ -268,7 +268,7 @@ private const sfnts_writer sfnts_writer_stub = {
 
 /* -------------------------------------------------------- */
 
-private inline bool sfnts_need_copy_table(byte *tag)
+static inline bool sfnts_need_copy_table(byte *tag)
 { return memcmp(tag, "glyf", 4) &&
          memcmp(tag, "glyx", 4) && /* Presents in files created by AdobePS5.dll Version 5.1.2 */
          memcmp(tag, "loca", 4) &&
@@ -276,7 +276,7 @@ private inline bool sfnts_need_copy_table(byte *tag)
          memcmp(tag, "cmap", 4);
 }
 
-private void sfnt_copy_table(sfnts_reader *r, sfnts_writer *w, int length)
+static void sfnt_copy_table(sfnts_reader *r, sfnts_writer *w, int length)
 {   byte buf[1024];
 
     while (length > 0 && !r->error) {
@@ -287,7 +287,7 @@ private void sfnt_copy_table(sfnts_reader *r, sfnts_writer *w, int length)
     }
 }
 
-private ulong sfnts_copy_except_glyf(sfnts_reader *r, sfnts_writer *w)
+static ulong sfnts_copy_except_glyf(sfnts_reader *r, sfnts_writer *w)
 {   /* Note : TTC is not supported and probably is unuseful for Type 42. */
     /* This skips glyf, loca and cmap from copying. */
     struct {
@@ -357,14 +357,14 @@ private ulong sfnts_copy_except_glyf(sfnts_reader *r, sfnts_writer *w)
     return size_new;
 }
 
-private ulong true_type_size(ref *pdr)
+static ulong true_type_size(ref *pdr)
 {   sfnts_reader r;
 
     sfnts_reader_init(&r, pdr);
     return sfnts_copy_except_glyf(&r, 0);
 }
 
-private ushort FAPI_FF_serialize_tt_font(FAPI_font *ff, void *buf, int buf_size)
+static ushort FAPI_FF_serialize_tt_font(FAPI_font *ff, void *buf, int buf_size)
 {   ref *pdr = (ref *)ff->client_font_data2;
     sfnts_reader r;
     sfnts_writer w = sfnts_writer_stub;
@@ -377,11 +377,11 @@ private ushort FAPI_FF_serialize_tt_font(FAPI_font *ff, void *buf, int buf_size)
     return r.error;
 }
 
-private inline ushort float_to_ushort(float v)
+static inline ushort float_to_ushort(float v)
 {   return (ushort)(v * 16); /* fixme : the scale may depend on renderer */
 }
 
-private ushort FAPI_FF_get_word(FAPI_font *ff, fapi_font_feature var_id, int index)
+static ushort FAPI_FF_get_word(FAPI_font *ff, fapi_font_feature var_id, int index)
 {   gs_font_type1 *pfont = (gs_font_type1 *)ff->client_font_data;
     ref *pdr = (ref *)ff->client_font_data2;
 
@@ -438,7 +438,7 @@ private ushort FAPI_FF_get_word(FAPI_font *ff, fapi_font_feature var_id, int ind
     return 0;
 }
 
-private ulong FAPI_FF_get_long(FAPI_font *ff, fapi_font_feature var_id, int index)
+static ulong FAPI_FF_get_long(FAPI_font *ff, fapi_font_feature var_id, int index)
 {   gs_font_type1 *pfont = (gs_font_type1 *)ff->client_font_data;
     ref *pdr = (ref *)ff->client_font_data2;
 
@@ -468,7 +468,7 @@ private ulong FAPI_FF_get_long(FAPI_font *ff, fapi_font_feature var_id, int inde
     return 0;
 }
 
-private float FAPI_FF_get_float(FAPI_font *ff, fapi_font_feature var_id, int index)
+static float FAPI_FF_get_float(FAPI_font *ff, fapi_font_feature var_id, int index)
 {   gs_font_base *pbfont = (gs_font_base *)ff->client_font_data;
 
     switch((int)var_id) {
@@ -487,7 +487,7 @@ private float FAPI_FF_get_float(FAPI_font *ff, fapi_font_feature var_id, int ind
     return 0;
 }
 
-private inline void decode_bytes(byte *p, const byte *s, int l, int lenIV)
+static inline void decode_bytes(byte *p, const byte *s, int l, int lenIV)
 {   ushort state = 4330;
 
     for (; l; s++, l--) {
@@ -502,7 +502,7 @@ private inline void decode_bytes(byte *p, const byte *s, int l, int lenIV)
     }
 }
 
-private ushort get_type1_data(FAPI_font *ff, const ref *type1string,
+static ushort get_type1_data(FAPI_font *ff, const ref *type1string,
 			      byte *buf, ushort buf_length)
 {   gs_font_type1 *pfont = (gs_font_type1 *)ff->client_font_data;
     int lenIV = max(pfont->data.lenIV, 0);
@@ -518,7 +518,7 @@ private ushort get_type1_data(FAPI_font *ff, const ref *type1string,
     return length;
 }
 
-private ushort FAPI_FF_get_subr(FAPI_font *ff, int index, byte *buf, ushort buf_length)
+static ushort FAPI_FF_get_subr(FAPI_font *ff, int index, byte *buf, ushort buf_length)
 {   ref *pdr = (ref *)ff->client_font_data2;
     ref *Private, *Subrs, *GlobalSubrs, subr;
     int n1, n2, n;
@@ -546,7 +546,7 @@ private ushort FAPI_FF_get_subr(FAPI_font *ff, int index, byte *buf, ushort buf_
     return get_type1_data(ff, &subr, buf, buf_length);
 }
 
-private bool sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index, ulong *offset0, ulong *offset1)
+static bool sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index, ulong *offset0, ulong *offset1)
 {   /* Note : TTC is not supported and probably is unuseful for Type 42. */
     sfnts_reader r;
     int glyf_elem_size = (2 << pfont42->data.indexToLocFormat);
@@ -558,7 +558,7 @@ private bool sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index,
     return r.error;
 }
 
-private int get_GlyphDirectory_data_ptr(const gs_memory_t *mem,
+static int get_GlyphDirectory_data_ptr(const gs_memory_t *mem,
 					ref *pdr, int char_code, const byte **ptr)
 {
     ref *GlyphDirectory, glyph0, *glyph = &glyph0, glyph_index;
@@ -575,7 +575,7 @@ private int get_GlyphDirectory_data_ptr(const gs_memory_t *mem,
     return -1;
 }
 
-private bool get_MetricsCount(FAPI_font *ff)
+static bool get_MetricsCount(FAPI_font *ff)
 {   if (!ff->is_type1 && ff->is_cid) {
 	gs_font_cid2 *pfcid = (gs_font_cid2 *)ff->client_font_data;
 
@@ -586,7 +586,7 @@ private bool get_MetricsCount(FAPI_font *ff)
 
 
 
-private ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort buf_length)
+static ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort buf_length)
 {   /* 
      * We assume that renderer requests glyph data with multiple consequtive
      * calls to this function. 
@@ -675,7 +675,7 @@ private ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort
     return glyph_length;
 }
 
-private const FAPI_font ff_stub = {
+static const FAPI_font ff_stub = {
     0, /* server_font_data */
     0, /* need_decrypt */
     NULL, /* const gs_memory_t */
@@ -699,7 +699,7 @@ private const FAPI_font ff_stub = {
     FAPI_FF_serialize_tt_font
 };
 
-private int FAPI_get_xlatmap(i_ctx_t *i_ctx_p, char **xlatmap)
+static int FAPI_get_xlatmap(i_ctx_t *i_ctx_p, char **xlatmap)
 {   ref *pref;
     int code;
 
@@ -715,14 +715,14 @@ private int FAPI_get_xlatmap(i_ctx_t *i_ctx_p, char **xlatmap)
     return 0;
 }
 
-private int renderer_retcode(i_ctx_t *i_ctx_p, FAPI_server *I, FAPI_retcode rc)
+static int renderer_retcode(i_ctx_t *i_ctx_p, FAPI_server *I, FAPI_retcode rc)
 {   if (rc == 0)
 	return 0;
     eprintf2("Error: Font Renderer Plugin ( %s ) return code = %d\n", I->ig.d->subtype, rc);
     return rc < 0 ? rc : e_invalidfont;
 }
 
-private int zFAPIavailable(i_ctx_t *i_ctx_p)
+static int zFAPIavailable(i_ctx_t *i_ctx_p)
 {   i_plugin_holder *h = i_plugin_get_list(i_ctx_p);
     bool available = true;
     os_ptr op = osp;
@@ -737,7 +737,7 @@ private int zFAPIavailable(i_ctx_t *i_ctx_p)
     return 0;
 } 
 
-private void get_server_param(i_ctx_t *i_ctx_p, const char *subtype, const byte **server_param, int *server_param_size)
+static void get_server_param(i_ctx_t *i_ctx_p, const char *subtype, const byte **server_param, int *server_param_size)
 {   ref *FAPIconfig, *options, *server_options;
 
     if (dict_find_string(systemdict, ".FAPIconfig", &FAPIconfig) >= 0 && r_has_type(FAPIconfig, t_dictionary)) {
@@ -750,7 +750,7 @@ private void get_server_param(i_ctx_t *i_ctx_p, const char *subtype, const byte 
     }
 }
 
-private int FAPI_find_plugin(i_ctx_t *i_ctx_p, const char *subtype, FAPI_server **pI)
+static int FAPI_find_plugin(i_ctx_t *i_ctx_p, const char *subtype, FAPI_server **pI)
 {   i_plugin_holder *h = i_plugin_get_list(i_ctx_p);
     int code;
 
@@ -769,7 +769,7 @@ private int FAPI_find_plugin(i_ctx_t *i_ctx_p, const char *subtype, FAPI_server 
     return_error(e_invalidfont);
 }
 
-private inline void release_typeface(FAPI_server *I, void **server_font_data)
+static inline void release_typeface(FAPI_server *I, void **server_font_data)
 {
     I->release_typeface(I, *server_font_data);
     I->face.font_id = gs_no_id;
@@ -778,7 +778,7 @@ private inline void release_typeface(FAPI_server *I, void **server_font_data)
     *server_font_data = 0;
 }
 
-private int FAPI_prepare_font(i_ctx_t *i_ctx_p, FAPI_server *I, ref *pdr, gs_font_base *pbfont, 
+static int FAPI_prepare_font(i_ctx_t *i_ctx_p, FAPI_server *I, ref *pdr, gs_font_base *pbfont, 
                               const char *font_file_path, const FAPI_font_scale *font_scale, 
 			      const char *xlatmap, int BBox[4], const char **decodingID)
 {   /* Returns 1 iff BBox is set. */
@@ -904,7 +904,7 @@ private int FAPI_prepare_font(i_ctx_t *i_ctx_p, FAPI_server *I, ref *pdr, gs_fon
     }
 }
 
-private int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, const char *font_file_path)
+static int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, const char *font_file_path)
 {   ref *pdr = op;  /* font dict */
     double size, size1;
     int BBox[4], scale;
@@ -989,7 +989,7 @@ private int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, 
     return 0;
 }
 
-private int notify_remove_font(void *proc_data, void *event_data)
+static int notify_remove_font(void *proc_data, void *event_data)
 {   /* gs_font_finalize passes event_data == NULL, so check it here. */
     if (event_data == NULL) {
         gs_font_base *pbfont = proc_data;
@@ -1013,7 +1013,7 @@ private int notify_remove_font(void *proc_data, void *event_data)
     This operator must not be called with devices which embed fonts.
 
 */
-private int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
+static int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
 {   os_ptr op = osp;
     build_proc_refs build;
     gs_font *pfont;
@@ -1069,7 +1069,7 @@ private int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
     return code;
 }
 
-private ulong array_find(const gs_memory_t *mem, ref *Encoding, ref *char_name) {
+static ulong array_find(const gs_memory_t *mem, ref *Encoding, ref *char_name) {
     ulong n = r_size(Encoding), i;
     ref v;
     for (i = 0; i < n; i++)
@@ -1080,7 +1080,7 @@ private ulong array_find(const gs_memory_t *mem, ref *Encoding, ref *char_name) 
     return 0;
 }
 
-private int outline_char(i_ctx_t *i_ctx_p, FAPI_server *I, int import_shift_v, gs_show_enum *penum_s, struct gx_path_s *path, bool close_path)
+static int outline_char(i_ctx_t *i_ctx_p, FAPI_server *I, int import_shift_v, gs_show_enum *penum_s, struct gx_path_s *path, bool close_path)
 {   FAPI_path path_interface = path_interface_stub;
     FAPI_outline_handler olh;
     int code;
@@ -1100,7 +1100,7 @@ private int outline_char(i_ctx_t *i_ctx_p, FAPI_server *I, int import_shift_v, g
     return 0;
 }
 
-private void compute_em_scale(const gs_font_base *pbfont, FAPI_metrics *metrics, double FontMatrix_div, double *em_scale_x, double *em_scale_y)
+static void compute_em_scale(const gs_font_base *pbfont, FAPI_metrics *metrics, double FontMatrix_div, double *em_scale_x, double *em_scale_y)
 {   /* optimize : move this stuff to FAPI_refine_font */
     gs_matrix *m = &pbfont->base->orig_FontMatrix;
     int rounding_x, rounding_y; /* Striking out the 'float' representation error in FontMatrix. */
@@ -1116,7 +1116,7 @@ private void compute_em_scale(const gs_font_base *pbfont, FAPI_metrics *metrics,
     *em_scale_y = (int)(sy * rounding_y + 0.5) / (double)rounding_y;
 }
 
-private int fapi_copy_mono(gx_device *dev1, FAPI_raster *rast, int dx, int dy)
+static int fapi_copy_mono(gx_device *dev1, FAPI_raster *rast, int dx, int dy)
 {   if ((rast->line_step & (align_bitmap_mod - 1)) == 0)
         return dev_proc(dev1, copy_mono)(dev1, rast->p, 0, rast->line_step, 0, dx, dy, rast->width, rast->height, 0, 1);
     else { /* bitmap data needs to be aligned, make the aligned copy : */
@@ -1134,9 +1134,9 @@ private int fapi_copy_mono(gx_device *dev1, FAPI_raster *rast, int dx, int dy)
     }
 }
 
-private const int frac_pixel_shift = 4;
+static const int frac_pixel_shift = 4;
 
-private int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_server *I)
+static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_server *I)
 {   gs_text_enum_t *penum = op_show_find(i_ctx_p);
     gs_show_enum *penum_s = (gs_show_enum *)penum;
     gs_state *pgs = penum_s->pgs;
@@ -1222,7 +1222,7 @@ private int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_
     return 0;
 }
 
-private int fapi_finish_render(i_ctx_t *i_ctx_p)
+static int fapi_finish_render(i_ctx_t *i_ctx_p)
 {   os_ptr op = osp;
     gs_font *pfont;
     int code = font_param(op - 1, &pfont);
@@ -1236,7 +1236,7 @@ private int fapi_finish_render(i_ctx_t *i_ctx_p)
     return code;
 }
 
-private const byte *
+static const byte *
 find_substring(const byte *where, int length, const char *what)
 {
     int l = strlen(what);
@@ -1252,7 +1252,7 @@ find_substring(const byte *where, int length, const char *what)
 #define GET_U16_MSB(p) (((uint)((p)[0]) << 8) + (p)[1])
 #define GET_S16_MSB(p) (int)((GET_U16_MSB(p) ^ 0x8000) - 0x8000)
 
-private int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, char *font_file_path, bool bBuildGlyph, ref *charstring)
+static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, char *font_file_path, bool bBuildGlyph, ref *charstring)
 {   /* Stack : <font> <code|name> --> - */
     os_ptr op = osp;
     ref *pdr = op - 1;
@@ -1735,7 +1735,7 @@ retry_oversampling:
     return code;
 }
 
-private int FAPI_char(i_ctx_t *i_ctx_p, bool bBuildGlyph, ref *charstring)
+static int FAPI_char(i_ctx_t *i_ctx_p, bool bBuildGlyph, ref *charstring)
 {   /* Stack : <font> <code|name> --> - */
     ref *v;
     char *font_file_path = NULL;
@@ -1754,7 +1754,7 @@ private int FAPI_char(i_ctx_t *i_ctx_p, bool bBuildGlyph, ref *charstring)
     return code;
 }
 
-private int FAPIBuildGlyph9aux(i_ctx_t *i_ctx_p)
+static int FAPIBuildGlyph9aux(i_ctx_t *i_ctx_p)
 {   os_ptr op = osp;                  /* <font0> <cid> <font9> <cid> */
     ref font9 = *pfont_dict(gs_currentfont(igs));
     ref *rFDArray, f;
@@ -1780,18 +1780,18 @@ private int FAPIBuildGlyph9aux(i_ctx_t *i_ctx_p)
 }
 
 /* <font> <code> .FAPIBuildChar - */
-private int zFAPIBuildChar(i_ctx_t *i_ctx_p)
+static int zFAPIBuildChar(i_ctx_t *i_ctx_p)
 {   return FAPI_char(i_ctx_p, false, NULL);
 }
 
 /* non-CID : <font> <code> .FAPIBuildGlyph - */
 /*     CID : <font> <name> .FAPIBuildGlyph - */
-private int zFAPIBuildGlyph(i_ctx_t *i_ctx_p)
+static int zFAPIBuildGlyph(i_ctx_t *i_ctx_p)
 {   return FAPI_char(i_ctx_p, true, NULL);
 }
 
 /* <font> <cid> .FAPIBuildGlyph9 - */
-private int zFAPIBuildGlyph9(i_ctx_t *i_ctx_p)
+static int zFAPIBuildGlyph9(i_ctx_t *i_ctx_p)
 {   /*  The alghorithm is taken from %Type9BuildGlyph - see gs_cidfn.ps .  */
     os_ptr op = osp;
     int cid, code;
@@ -1822,7 +1822,7 @@ private int zFAPIBuildGlyph9(i_ctx_t *i_ctx_p)
     return code;
 }
 
-private int do_FAPIpassfont(i_ctx_t *i_ctx_p, char *font_file_path, bool *success)
+static int do_FAPIpassfont(i_ctx_t *i_ctx_p, char *font_file_path, bool *success)
 {   ref *pdr = osp;  /* font dict */
     gs_font *pfont;
     int code = font_param(osp, &pfont);
@@ -1875,7 +1875,7 @@ private int do_FAPIpassfont(i_ctx_t *i_ctx_p, char *font_file_path, bool *succes
 /* <font_dict> .FAPIpassfont bool <font_dict> */
 /* must insert /FAPI to font dictionary */
 /* This operator must not be called with devices which embed fonts. */
-private int zFAPIpassfont(i_ctx_t *i_ctx_p)
+static int zFAPIpassfont(i_ctx_t *i_ctx_p)
 {   os_ptr op = osp;
     int code;
     bool found = false;

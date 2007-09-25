@@ -33,7 +33,7 @@
 
 /* ---------------- Unpacking procedures ---------------- */
 
-private const byte *
+static const byte *
 sample_unpack_12(byte * bptr, int *pdata_x, const byte * data,
 		 int data_x, uint dsize, const sample_map *ignore_smap, int spread,
 		 int ignore_num_components_per_plane)
@@ -97,7 +97,7 @@ const sample_unpack_proc_t sample_unpack_12_proc = sample_unpack_12;
 iclass_proc(gs_image_class_2_fracs);
 
 /* Use special (slow) logic for 12-bit source values. */
-private irender_proc(image_render_frac);
+static irender_proc(image_render_frac);
 irender_proc_t
 gs_image_class_2_fracs(gx_image_enum * penum)
 {
@@ -140,7 +140,7 @@ typedef union {
 #endif
 
 /* Test whether a color is transparent. */
-private bool
+static bool
 mask_color12_matches(const frac *v, const gx_image_enum *penum,
 		   int num_components)
 {
@@ -156,7 +156,7 @@ mask_color12_matches(const frac *v, const gx_image_enum *penum,
 
 /* Render an image with more than 8 bits per sample. */
 /* The samples have been expanded into fracs. */
-private int
+static int
 image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 		  uint w, int h, gx_device * dev)
 {

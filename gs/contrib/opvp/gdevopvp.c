@@ -145,102 +145,102 @@ typedef	struct {
 /* ----- private function prototypes ----- */
 
 /* Utilities */
-private	int opvp_startpage(gx_device *);
-private	int opvp_endpage(void);
-private	char *opvp_alloc_string(char **, const char *);
-private	char *opvp_cat_string(char **, const char *);
-private	char *opvp_adjust_num_string(char *);
-private	char **opvp_gen_dynamic_lib_name(void);
-private	char *opvp_to_utf8(char *);
+static	int opvp_startpage(gx_device *);
+static	int opvp_endpage(void);
+static	char *opvp_alloc_string(char **, const char *);
+static	char *opvp_cat_string(char **, const char *);
+static	char *opvp_adjust_num_string(char *);
+static	char **opvp_gen_dynamic_lib_name(void);
+static	char *opvp_to_utf8(char *);
 #define	opvp_check_in_page(pdev)	\
 		((beginPage) || (inkjet) ? 0 \
 		    : (*vdev_proc(pdev, beginpage))((gx_device_vector*)pdev))
-private	int opvp_get_papertable_index(gx_device *);
-private	char *opvp_get_sizestring(float, float);
-/* not used	private	const char *opvp_get_papersize_region(gx_device *);*/
-/* not used	private	const char *opvp_get_papersize_name(gx_device *);*/
-/* not used	private	char *opvp_get_papersize_inch(gx_device *);*/
-/* not used	private	const char *opvp_get_papersize(gx_device *);*/
-private	char *opvp_get_mediasize(gx_device *);
-private	char *opvp_gen_page_info(gx_device *);
-private	char *opvp_gen_doc_info(gx_device *);
-private	char *opvp_gen_job_info(gx_device *);
-private	int opvp_set_brush_color(gx_device_opvp *, gx_color_index,
+static	int opvp_get_papertable_index(gx_device *);
+static	char *opvp_get_sizestring(float, float);
+/* not used	static	const char *opvp_get_papersize_region(gx_device *);*/
+/* not used	static	const char *opvp_get_papersize_name(gx_device *);*/
+/* not used	static	char *opvp_get_papersize_inch(gx_device *);*/
+/* not used	static	const char *opvp_get_papersize(gx_device *);*/
+static	char *opvp_get_mediasize(gx_device *);
+static	char *opvp_gen_page_info(gx_device *);
+static	char *opvp_gen_doc_info(gx_device *);
+static	char *opvp_gen_job_info(gx_device *);
+static	int opvp_set_brush_color(gx_device_opvp *, gx_color_index,
                                  OPVP_Brush *);
-private	int opvp_draw_image(gx_device_opvp *, int,
+static	int opvp_draw_image(gx_device_opvp *, int,
                             int, int, int, int, int, /*const*/ byte *);
 
 /* load/unload vector driver */
-private	int opvp_load_vector_driver(void);
-private	int opvp_unload_vector_driver(void);
-private	int prepare_open(gx_device *);
+static	int opvp_load_vector_driver(void);
+static	int opvp_unload_vector_driver(void);
+static	int prepare_open(gx_device *);
 
 /* driver procs */
-private	int opvp_open(gx_device *);
-private	int oprp_open(gx_device *);
-private	void opvp_get_initial_matrix(gx_device *, gs_matrix *);
-private	int opvp_output_page(gx_device *, int, int);
-private	int opvp_close(gx_device *);
+static	int opvp_open(gx_device *);
+static	int oprp_open(gx_device *);
+static	void opvp_get_initial_matrix(gx_device *, gs_matrix *);
+static	int opvp_output_page(gx_device *, int, int);
+static	int opvp_close(gx_device *);
 #if GS_VERSION_MAJOR >= 8
-private	gx_color_index opvp_map_rgb_color(gx_device *, gx_color_value *);	/* modified for gs 8.15 */
+static	gx_color_index opvp_map_rgb_color(gx_device *, gx_color_value *);	/* modified for gs 8.15 */
 #else
-private	gx_color_index opvp_map_rgb_color(gx_device *, gx_color_value,
+static	gx_color_index opvp_map_rgb_color(gx_device *, gx_color_value,
 	               gx_color_value, gx_color_value);
 #endif
-private	int opvp_map_color_rgb(gx_device *, gx_color_index, gx_color_value *);
-private	int opvp_copy_mono(gx_device *, /*const*/ byte *, int, int,
+static	int opvp_map_color_rgb(gx_device *, gx_color_index, gx_color_value *);
+static	int opvp_copy_mono(gx_device *, /*const*/ byte *, int, int,
                            gx_bitmap_id, int, int, int, int,
                            gx_color_index, gx_color_index);
-private	int opvp_copy_color(gx_device *, /*const*/ byte *, int, int,
+static	int opvp_copy_color(gx_device *, /*const*/ byte *, int, int,
                             gx_bitmap_id, int, int, int, int);
-private	int _get_params(gs_param_list *);
-private	int opvp_get_params(gx_device *, gs_param_list *);
-private	int oprp_get_params(gx_device *, gs_param_list *);
-private	int _put_params(gs_param_list *);
-private	int opvp_put_params(gx_device *, gs_param_list *);
-private	int oprp_put_params(gx_device *, gs_param_list *);
-private	int opvp_fill_path(gx_device *, const gs_imager_state *, gx_path *,
+static	int _get_params(gs_param_list *);
+static	int opvp_get_params(gx_device *, gs_param_list *);
+static	int oprp_get_params(gx_device *, gs_param_list *);
+static	int _put_params(gs_param_list *);
+static	int opvp_put_params(gx_device *, gs_param_list *);
+static	int oprp_put_params(gx_device *, gs_param_list *);
+static	int opvp_fill_path(gx_device *, const gs_imager_state *, gx_path *,
 	                   const gx_fill_params *, const gx_device_color *, 
 	                   const gx_clip_path *);
-private	int opvp_stroke_path(gx_device *, const gs_imager_state *, gx_path *,
+static	int opvp_stroke_path(gx_device *, const gs_imager_state *, gx_path *,
 	                     const gx_stroke_params *, const gx_drawing_color *,
 	                     const gx_clip_path *);
-private	int opvp_fill_mask(gx_device *, const byte *, int, int, gx_bitmap_id,
+static	int opvp_fill_mask(gx_device *, const byte *, int, int, gx_bitmap_id,
 	                   int, int, int, int, const gx_drawing_color *,
 	                   int, gs_logical_operation_t, const gx_clip_path *);
 
 /* vector driver procs */
-private	int opvp_beginpage(gx_device_vector *);
-private	int opvp_setlinewidth(gx_device_vector *, floatp);
-private	int opvp_setlinecap(gx_device_vector *, gs_line_cap);
-private	int opvp_setlinejoin(gx_device_vector *, gs_line_join);
-private	int opvp_setmiterlimit(gx_device_vector *, floatp);
-private	int opvp_setdash(gx_device_vector *, const float *, uint, floatp);
-private	int opvp_setflat(gx_device_vector *, floatp);
-private	int opvp_setlogop(gx_device_vector *, gs_logical_operation_t,
+static	int opvp_beginpage(gx_device_vector *);
+static	int opvp_setlinewidth(gx_device_vector *, floatp);
+static	int opvp_setlinecap(gx_device_vector *, gs_line_cap);
+static	int opvp_setlinejoin(gx_device_vector *, gs_line_join);
+static	int opvp_setmiterlimit(gx_device_vector *, floatp);
+static	int opvp_setdash(gx_device_vector *, const float *, uint, floatp);
+static	int opvp_setflat(gx_device_vector *, floatp);
+static	int opvp_setlogop(gx_device_vector *, gs_logical_operation_t,
 	                  gs_logical_operation_t);
 #if GS_VERSION_MAJOR >= 8
-private	int opvp_can_handle_hl_color(gx_device_vector *, const gs_imager_state *, const gx_drawing_color *);
-private	int opvp_setfillcolor(gx_device_vector *, const gs_imager_state *, const gx_drawing_color *);
-private	int opvp_setstrokecolor(gx_device_vector *, const gs_imager_state *,const gx_drawing_color *);
+static	int opvp_can_handle_hl_color(gx_device_vector *, const gs_imager_state *, const gx_drawing_color *);
+static	int opvp_setfillcolor(gx_device_vector *, const gs_imager_state *, const gx_drawing_color *);
+static	int opvp_setstrokecolor(gx_device_vector *, const gs_imager_state *,const gx_drawing_color *);
 #else
-private	int opvp_setfillcolor(gx_device_vector *, const gx_drawing_color *);
-private	int opvp_setstrokecolor(gx_device_vector *, const gx_drawing_color *);
+static	int opvp_setfillcolor(gx_device_vector *, const gx_drawing_color *);
+static	int opvp_setstrokecolor(gx_device_vector *, const gx_drawing_color *);
 #endif
-private	int opvp_vector_dopath(gx_device_vector *, const gx_path *,
+static	int opvp_vector_dopath(gx_device_vector *, const gx_path *,
 	                       gx_path_type_t, const gs_matrix *);
-private	int opvp_vector_dorect(gx_device_vector *, fixed, fixed, fixed, fixed,
+static	int opvp_vector_dorect(gx_device_vector *, fixed, fixed, fixed, fixed,
 	                       gx_path_type_t);
-private	int opvp_beginpath(gx_device_vector *, gx_path_type_t);
-private	int opvp_moveto(gx_device_vector *, floatp, floatp, floatp, floatp,
+static	int opvp_beginpath(gx_device_vector *, gx_path_type_t);
+static	int opvp_moveto(gx_device_vector *, floatp, floatp, floatp, floatp,
 	                gx_path_type_t);
-private	int opvp_lineto(gx_device_vector *, floatp, floatp, floatp, floatp,
+static	int opvp_lineto(gx_device_vector *, floatp, floatp, floatp, floatp,
 	                gx_path_type_t);
-private	int opvp_curveto(gx_device_vector *, floatp, floatp, floatp, floatp,
+static	int opvp_curveto(gx_device_vector *, floatp, floatp, floatp, floatp,
 	                 floatp, floatp, floatp, floatp, gx_path_type_t);
-private	int opvp_closepath(gx_device_vector *, floatp, floatp, floatp, floatp,
+static	int opvp_closepath(gx_device_vector *, floatp, floatp, floatp, floatp,
 	                   gx_path_type_t);
-private	int opvp_endpath(gx_device_vector *, gx_path_type_t);
+static	int opvp_endpath(gx_device_vector *, gx_path_type_t);
 
 /* ----- Paper definition ----- */
 OPVP_Paper	paperTable[] =
@@ -266,19 +266,19 @@ OPVP_Paper	paperTable[] =
 /* ----- Driver definition ----- */
 
 /* Driver procedures */
-private	dev_proc_open_device(opvp_open);
-private	dev_proc_open_device(oprp_open);
-private	dev_proc_output_page(opvp_output_page);
-private	dev_proc_print_page(oprp_print_page);
-private	dev_proc_close_device(opvp_close);
-private	dev_proc_get_params(opvp_get_params);
-private	dev_proc_get_params(oprp_get_params);
-private	dev_proc_put_params(opvp_put_params);
-private	dev_proc_put_params(oprp_put_params);
-private	dev_proc_fill_rectangle(opvp_fill_rectangle);
-private	dev_proc_begin_image(opvp_begin_image);
-private	image_enum_proc_plane_data(opvp_image_plane_data);
-private	image_enum_proc_end_image(opvp_image_end_image);
+static	dev_proc_open_device(opvp_open);
+static	dev_proc_open_device(oprp_open);
+static	dev_proc_output_page(opvp_output_page);
+static	dev_proc_print_page(oprp_print_page);
+static	dev_proc_close_device(opvp_close);
+static	dev_proc_get_params(opvp_get_params);
+static	dev_proc_get_params(oprp_get_params);
+static	dev_proc_put_params(opvp_put_params);
+static	dev_proc_put_params(oprp_put_params);
+static	dev_proc_fill_rectangle(opvp_fill_rectangle);
+static	dev_proc_begin_image(opvp_begin_image);
+static	image_enum_proc_plane_data(opvp_image_plane_data);
+static	image_enum_proc_end_image(opvp_image_end_image);
 
 gs_public_st_suffix_add0_final(
 	st_device_opvp,
@@ -358,7 +358,7 @@ gs_public_st_suffix_add0_final(
 }
 
 /* vector procs */
-private	gx_device_vector_procs	opvp_vector_procs =
+static	gx_device_vector_procs	opvp_vector_procs =
 {
 	/* Page management */
 	opvp_beginpage,
@@ -409,7 +409,7 @@ const	gx_device_opvp		gs_opvp_device =
 };
 
 /* for inkjet */
-private	gx_device_procs		prn_oprp_procs =
+static	gx_device_procs		prn_oprp_procs =
 	prn_color_params_procs(
 		oprp_open,
 		opvp_output_page,
@@ -461,7 +461,7 @@ static	bool			zooming = false;
 static  bool			beginPage = false;
 
 /* for image */
-private	const
+static	const
 gx_image_enum_procs_t	opvp_image_enum_procs =
 {
 	opvp_image_plane_data,
@@ -500,7 +500,7 @@ typedef struct bbox_image_enum_s {
 
 
 /* ----- Utilities ----- */
-private	int
+static	int
 opvp_startpage(
 	gx_device		*dev
 	)
@@ -526,7 +526,7 @@ static	char			*page_info = NULL;
 	return ecode;
 }
 
-private	int
+static	int
 opvp_endpage(
 	void
 	)
@@ -546,7 +546,7 @@ opvp_endpage(
 	return ecode;
 }
 
-private	char *
+static	char *
 opvp_alloc_string(
 	char			**destin,
 const	char			*source
@@ -575,7 +575,7 @@ const	char			*source
 	return *destin;
 }
 
-private	char *
+static	char *
 opvp_cat_string(
 	char			**destin,
 const	char			*string
@@ -592,7 +592,7 @@ const	char			*string
 	return *destin;
 }
 
-private	char *
+static	char *
 opvp_adjust_num_string(
 	char			*num_string
 	)
@@ -616,7 +616,7 @@ opvp_adjust_num_string(
 	return num_string;
 }
 
-private	char **
+static	char **
 opvp_gen_dynamic_lib_name(
 	void
 	)
@@ -653,7 +653,7 @@ static	char			*buff[5] = {NULL,NULL,NULL,NULL,NULL};
 	return buff;
 }
 
-private	char *
+static	char *
 opvp_to_utf8(
 	char			*string
 	)
@@ -706,13 +706,13 @@ opvp_to_utf8(
 	return ostring;
 }
 
-private float
+static float
 opvp_fabsf(float f)
 {
 	return (float)fabs((double)f);
 }
 
-private	int
+static	int
 opvp_get_papertable_index(
 	gx_device		*pdev
 	)
@@ -847,7 +847,7 @@ opvp_get_papertable_index(
 	return paper;
 }
 
-private	char *
+static	char *
 opvp_get_sizestring(
 	float			width,
 	float			height
@@ -872,7 +872,7 @@ static	char			*buff = NULL;
 }
 
 /* not used
-private	const	char *
+static	const	char *
 opvp_get_papersize_region(
 	gx_device		*pdev
 	)
@@ -882,7 +882,7 @@ opvp_get_papersize_region(
 */
 
 /* not used
-private	const	char *
+static	const	char *
 opvp_get_papersize_name(
 	gx_device		*pdev
 	)
@@ -892,7 +892,7 @@ opvp_get_papersize_name(
 */
 
 /* not used
-private	char *
+static	char *
 opvp_get_papersize_inch(
 	gx_device		*pdev
 	)
@@ -909,7 +909,7 @@ opvp_get_papersize_inch(
 */
 
 /* not used
-private	const	char *
+static	const	char *
 opvp_get_papersize(
 	gx_device		*pdev
 	)
@@ -923,7 +923,7 @@ const	char			*paper;
 }
 */
 
-private	char *
+static	char *
 opvp_get_mediasize(
 	gx_device		*pdev
 	)
@@ -975,7 +975,7 @@ const	char			*unit;
 	return buff;
 }
 
-private	char *
+static	char *
 opvp_gen_page_info(
 	gx_device		*dev
 	)
@@ -1009,7 +1009,7 @@ static	char			*buff = NULL;
 	return buff;
 }
 
-private	char *
+static	char *
 opvp_gen_doc_info(
 	gx_device		*dev
 	)
@@ -1017,7 +1017,7 @@ opvp_gen_doc_info(
 	return opvp_gen_page_info(dev);
 }
 
-private	char *
+static	char *
 opvp_gen_job_info(
 	gx_device		*dev
 	)
@@ -1025,7 +1025,7 @@ opvp_gen_job_info(
 	return opvp_gen_doc_info(dev);
 }
 
-private	int
+static	int
 opvp_set_brush_color(
 	gx_device_opvp		*pdev,
 	gx_color_index		color,
@@ -1062,7 +1062,7 @@ opvp_set_brush_color(
 	return ecode;
 }
 
-private	int
+static	int
 opvp_draw_image(
 	gx_device_opvp		*pdev,
 	int			depth,
@@ -1138,7 +1138,7 @@ opvp_draw_image(
 /*
  * load vector-driver
  */
-private	int
+static	int
 opvp_load_vector_driver(
 	void
 	)
@@ -1182,7 +1182,7 @@ opvp_load_vector_driver(
 /*
  * unload vector-driver
  */
-private	int
+static	int
 opvp_unload_vector_driver(
 	void
 	)
@@ -1199,7 +1199,7 @@ opvp_unload_vector_driver(
 /*
  * prepare open
  */
-private	int
+static	int
 prepare_open(
 	gx_device		*dev
 	)
@@ -1328,7 +1328,7 @@ prepare_open(
 /*
  * open device
  */
-private	int
+static	int
 opvp_open(
 	gx_device		*dev
 	)
@@ -1548,7 +1548,7 @@ opvp_open(
 /*
  * open device for inkjet
  */
-private	int
+static	int
 oprp_open(
 	gx_device		*dev
 	)
@@ -1565,7 +1565,7 @@ oprp_open(
 /*
  * get initial matrix
  */
-private	void
+static	void
 opvp_get_initial_matrix(
 	gx_device		*dev,
 	gs_matrix		*pmat
@@ -1609,7 +1609,7 @@ opvp_get_initial_matrix(
 /*
  * output page
  */
-private	int
+static	int
 opvp_output_page(
 	gx_device		*dev,
 	int			num_copies,
@@ -1651,7 +1651,7 @@ opvp_output_page(
 /*
  * print page
  */
-private	int
+static	int
 oprp_print_page(
 	gx_device_printer	*pdev,
 	FILE			*prn_stream
@@ -1780,7 +1780,7 @@ oprp_print_page(
 /*
  * close device
  */
-private	int
+static	int
 opvp_close(
 	gx_device		*dev
 	)
@@ -1826,13 +1826,13 @@ opvp_close(
  * map rgb color
  */
 #if GS_VERSION_MAJOR >= 8
-private	gx_color_index
+static	gx_color_index
 opvp_map_rgb_color(
 	gx_device		*dev,
 	gx_color_value	*prgb		/* modified for gs 8.15 */
 	)
 #else
-private	gx_color_index
+static	gx_color_index
 opvp_map_rgb_color(
 	gx_device		*dev,
 	gx_color_value		r,
@@ -1945,7 +1945,7 @@ opvp_map_rgb_color(
 /*
  * map color rgb
  */
-private	int
+static	int
 opvp_map_color_rgb(
 	gx_device		*dev,
 	gx_color_index		color,
@@ -2031,7 +2031,7 @@ opvp_map_color_rgb(
 /*
  * fill rectangle
  */
-private	int
+static	int
 opvp_fill_rectangle(
 	gx_device		*dev,
 	int			x,
@@ -2132,7 +2132,7 @@ opvp_fill_rectangle(
 /*
  * copy mono
  */
-private	int
+static	int
 opvp_copy_mono(
 	gx_device		*dev,
 /*const*/
@@ -2325,7 +2325,7 @@ opvp_copy_mono(
 /*
  * copy color
  */
-private	int
+static	int
 opvp_copy_color(
 	gx_device		*dev,
 /*const*/
@@ -2447,7 +2447,7 @@ opvp_copy_color(
 /*
  * get params
  */
-private	int
+static	int
 _get_params(
 	gs_param_list		*plist
 	)
@@ -2576,7 +2576,7 @@ _get_params(
 /*
  * get params for vector
  */
-private	int
+static	int
 opvp_get_params(
 	gx_device		*dev,
 	gs_param_list		*plist
@@ -2595,7 +2595,7 @@ opvp_get_params(
 /*
  * get params for inkjet
  */
-private	int
+static	int
 oprp_get_params(
 	gx_device		*dev,
 	gs_param_list		*plist
@@ -2614,7 +2614,7 @@ oprp_get_params(
 /*
  * put params
  */
-private	int
+static	int
 _put_params(
 	gs_param_list		*plist
 	)
@@ -2834,7 +2834,7 @@ _put_params(
 /*
  * put params for vector
  */
-private	int
+static	int
 opvp_put_params(
 	gx_device		*dev,
 	gs_param_list		*plist
@@ -2853,7 +2853,7 @@ opvp_put_params(
 /*
  * put params for inkjet
  */
-private	int
+static	int
 oprp_put_params(
 	gx_device		*dev,
 	gs_param_list		*plist
@@ -2872,7 +2872,7 @@ oprp_put_params(
 /*
  * fill path
  */
-private	int
+static	int
 opvp_fill_path(
 	gx_device		*dev,
 const	gs_imager_state		*pis,
@@ -2909,7 +2909,7 @@ const	gx_clip_path		*pxpath
 /*
  * stroke path
  */
-private	int
+static	int
 opvp_stroke_path(
 	gx_device		*dev,
 const	gs_imager_state		*pis,
@@ -2947,7 +2947,7 @@ const	gx_clip_path		*pxpath
 /*
  * fill mask
  */
-private	int
+static	int
 opvp_fill_mask(
 	gx_device		*dev,
 const	byte			*data,
@@ -2981,7 +2981,7 @@ const	gx_clip_path		*pcpath
 /*
  * begin image
  */
-private	int
+static	int
 opvp_begin_image(
 		gx_device				*dev,
 const	gs_imager_state			*pis,
@@ -3270,7 +3270,7 @@ const	gs_color_space		*pcs = pim->ColorSpace;
 /*
  * plane data
  */
-private	int
+static	int
 opvp_image_plane_data(
 		gx_image_enum_common_t	*info,
 const	gx_image_plane_t		*planes,
@@ -3483,7 +3483,7 @@ const	gx_image_plane_t		*planes,
 /*
  * end image
  */
-private	int
+static	int
 opvp_image_end_image(
 	gx_image_enum_common_t	*info,
 	bool					draw_last
@@ -3538,7 +3538,7 @@ opvp_image_end_image(
 /*
  * begin page
  */
-private	int
+static	int
 opvp_beginpage(
 	gx_device_vector	*vdev
 	)
@@ -3565,7 +3565,7 @@ opvp_beginpage(
 /*
  * set line width
  */
-private	int
+static	int
 opvp_setlinewidth(
 	gx_device_vector	*vdev,
 	floatp			width
@@ -3597,7 +3597,7 @@ opvp_setlinewidth(
 /*
  * set line cap
  */
-private	int
+static	int
 opvp_setlinecap(
 	gx_device_vector	*vdev,
 	gs_line_cap		cap
@@ -3640,7 +3640,7 @@ opvp_setlinecap(
 /*
  * set line join
  */
-private	int
+static	int
 opvp_setlinejoin(
 	gx_device_vector	*vdev,
 	gs_line_join		join
@@ -3684,7 +3684,7 @@ opvp_setlinejoin(
 /*
  * set miter limit
  */
-private	int
+static	int
 opvp_setmiterlimit(
 	gx_device_vector	*vdev,
 	floatp			limit
@@ -3712,7 +3712,7 @@ opvp_setmiterlimit(
 /*
  * set dash
  */
-private	int
+static	int
 opvp_setdash(
 	gx_device_vector	*vdev,
 	const	float		*pattern,
@@ -3781,7 +3781,7 @@ opvp_setdash(
 /*
  * set flat
  */
-private	int
+static	int
 opvp_setflat(
 	gx_device_vector	*vdev,
 	floatp			flatness
@@ -3802,7 +3802,7 @@ opvp_setflat(
 /*
  * set logical operation
  */
-private	int
+static	int
 opvp_setlogop(
 	gx_device_vector	*vdev,
 	gs_logical_operation_t	lop,
@@ -3884,7 +3884,7 @@ static	int			pnum = 0;
 
 #if GS_VERSION_MAJOR >= 8
 /*--- added for Ghostscritp 8.15 ---*/
-private int
+static int
 opvp_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis1, 
               const gx_drawing_color * pdc)
 {
@@ -3896,14 +3896,14 @@ opvp_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis1,
  * set fill color
  */
 #if GS_VERSION_MAJOR >= 8
-private	int
+static	int
 opvp_setfillcolor(
 	gx_device_vector	*vdev,
 	const	gs_imager_state		*pis,		/* added for gs 8.15 */
 const	gx_drawing_color	*pdc
 	)
 #else
-private	int
+static	int
 opvp_setfillcolor(
 	gx_device_vector	*vdev,
 const	gx_drawing_color	*pdc
@@ -3940,14 +3940,14 @@ static	OPVP_Brush		brush;
  * set stroke color
  */
 #if GS_VERSION_MAJOR >= 8
-private	int
+static	int
 opvp_setstrokecolor(
 	gx_device_vector	*vdev,
 	const	gs_imager_state		*pis,		/* added for gs 8.15 */
 const	gx_drawing_color	*pdc
 	)
 #else
-private	int
+static	int
 opvp_setstrokecolor(
 	gx_device_vector	*vdev,
 const	gx_drawing_color	*pdc
@@ -3984,7 +3984,7 @@ const	gx_drawing_color	*pdc
 /*
  * vector do path
  */
-private	int
+static	int
 opvp_vector_dopath(
 	gx_device_vector	*vdev,
 const	gx_path			*ppath,
@@ -4289,7 +4289,7 @@ const	gs_matrix		*pmat
 /*
  * vector do rect
  */
-private	int
+static	int
 opvp_vector_dorect(
 	gx_device_vector	*vdev,
 	fixed			x0,
@@ -4352,7 +4352,7 @@ opvp_vector_dorect(
 /*
  * begin path
  */
-private	int
+static	int
 opvp_beginpath(
 	gx_device_vector	*vdev,
 	gx_path_type_t		type
@@ -4386,7 +4386,7 @@ opvp_beginpath(
 /*
  * move to
  */
-private	int
+static	int
 opvp_moveto(
 	gx_device_vector	*vdev,
 	floatp			x0,
@@ -4419,7 +4419,7 @@ opvp_moveto(
 /*
  * line to
  */
-private	int
+static	int
 opvp_lineto(
 	gx_device_vector	*vdev,
 	floatp			x0,
@@ -4454,7 +4454,7 @@ opvp_lineto(
 /*
  * curve to
  */
-private	int
+static	int
 opvp_curveto(
 	gx_device_vector	*vdev,
 	floatp			x0,
@@ -4510,7 +4510,7 @@ opvp_curveto(
 /*
  * close path
  */
-private	int
+static	int
 opvp_closepath(
 	gx_device_vector	*vdev,
 	floatp			x,
@@ -4545,7 +4545,7 @@ opvp_closepath(
 /*
  * end path
  */
-private	int
+static	int
 opvp_endpath(
 	gx_device_vector	*vdev,
 	gx_path_type_t		type

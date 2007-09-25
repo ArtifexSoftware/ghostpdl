@@ -190,7 +190,7 @@ typedef struct gp_thread_creation_closure_s {
 } gp_thread_creation_closure_t;
 
 /* Wrapper procedure called to start the new thread. */
-private void *
+static void *
 gp_thread_begin_wrapper(void *thread_data /* gp_thread_creation_closure_t * */)
 {
     gp_thread_creation_closure_t closure;

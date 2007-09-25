@@ -32,9 +32,9 @@
 
 /* The procedure descriptors */
 /* declare functions */
-private dev_proc_print_page(lxm5700m_print_page);
-private dev_proc_get_params(lxm_get_params);
-private dev_proc_put_params(lxm_put_params);
+static dev_proc_print_page(lxm5700m_print_page);
+static dev_proc_get_params(lxm_get_params);
+static dev_proc_put_params(lxm_put_params);
 
 /* set up dispatch table.  I follow gdevdjet in using gdev_prn_output_page */
 static const gx_device_procs lxm5700m_procs = 
@@ -139,7 +139,7 @@ lxm_device far_data gs_lxm5700m_device = {
 
 
 /* Send the page to the printer. */
-private int
+static int
 lxm5700m_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {	
     int lnum,minX, maxX, i, l, highestX, leastX, extent;
@@ -380,7 +380,7 @@ quit_ignomiously: /* and a goto into an if statement is pretty ignomious! */
  * I've copied my routines from gdevcdj.c
  */
 
-private int
+static int
 lxm_get_params(gx_device *pdev, gs_param_list *plist)
 {       
     lxm_device* const ldev = (lxm_device*)pdev;
@@ -395,7 +395,7 @@ lxm_get_params(gx_device *pdev, gs_param_list *plist)
 }
 
 /* put_params is supposed to check all the parameters before setting any. */
-private int
+static int
 lxm_put_params(gx_device *pdev, gs_param_list *plist)
 {
     int ecode;

@@ -32,20 +32,20 @@
 #define DPI 300
 
 /* The device descriptors */
-private dev_proc_open_device(escpage_open);
-private dev_proc_open_device(lp2000_open);
-private dev_proc_close_device(escpage_close);
-private dev_proc_print_page_copies(escpage_print_page_copies);
-private dev_proc_print_page_copies(lp2000_print_page_copies);
-private dev_proc_image_out(escpage_image_out);
+static dev_proc_open_device(escpage_open);
+static dev_proc_open_device(lp2000_open);
+static dev_proc_close_device(escpage_close);
+static dev_proc_print_page_copies(escpage_print_page_copies);
+static dev_proc_print_page_copies(lp2000_print_page_copies);
+static dev_proc_image_out(escpage_image_out);
 
-private void escpage_printer_initialize(gx_device_printer * pdev, FILE * fp, int);
-private void escpage_paper_set(gx_device_printer * pdev, FILE * fp);
+static void escpage_printer_initialize(gx_device_printer * pdev, FILE * fp, int);
+static void escpage_paper_set(gx_device_printer * pdev, FILE * fp);
 
-private gx_device_procs lp2000_prn_procs =
+static gx_device_procs lp2000_prn_procs =
 lprn_procs(lp2000_open, gdev_prn_output_page, gdev_prn_close);
 
-private gx_device_procs escpage_prn_procs =
+static gx_device_procs escpage_prn_procs =
 lprn_procs(escpage_open, gdev_prn_output_page, escpage_close);
 
 gx_device_lprn far_data gs_lp2000_device =
@@ -63,7 +63,7 @@ lprn_duplex_device(gx_device_lprn, escpage_prn_procs, "escpage",
 static char *epson_remote_start = "\033\001@EJL \r\n";
 
 /* Open the printer. */
-private int
+static int
 escpage_open(gx_device * pdev)
 {
     int xdpi = pdev->x_pixels_per_inch;
@@ -78,7 +78,7 @@ escpage_open(gx_device * pdev)
     return gdev_prn_open(pdev);
 }
 
-private int
+static int
 lp2000_open(gx_device * pdev)
 {
     int xdpi = pdev->x_pixels_per_inch;
@@ -93,7 +93,7 @@ lp2000_open(gx_device * pdev)
     return gdev_prn_open(pdev);
 }
 
-private int
+static int
 escpage_close(gx_device * pdev)
 {
     gdev_prn_open_printer(pdev, 1);
@@ -105,7 +105,7 @@ escpage_close(gx_device * pdev)
     return gdev_prn_close(pdev);
 }
 
-private int
+static int
 escpage_print_page_copies(gx_device_printer * pdev, FILE * fp, int num_coipes)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
@@ -130,7 +130,7 @@ escpage_print_page_copies(gx_device_printer * pdev, FILE * fp, int num_coipes)
     return lp2000_print_page_copies(pdev, fp, num_coipes);
 }
 
-private int
+static int
 lp2000_print_page_copies(gx_device_printer * pdev, FILE * fp, int num_coipes)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
@@ -164,7 +164,7 @@ lp2000_print_page_copies(gx_device_printer * pdev, FILE * fp, int num_coipes)
 }
 
 /* Output data */
-private void
+static void
 escpage_image_out(gx_device_printer * pdev, FILE * fp, int x, int y, int width, int height)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
@@ -199,7 +199,7 @@ static char can_inits[] =
     GS, '0', ';', '0', 'i', 'u', 'E', /* Paper Feed Unit (Auto) */
 };
 
-private void
+static void
 escpage_printer_initialize(gx_device_printer * pdev, FILE * fp, int copies)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
@@ -265,7 +265,7 @@ static EpagPaperTable epagPaperTable[] =
     {0, 0, -1},			/* Undefined */
 };
 
-private void
+static void
 escpage_paper_set(gx_device_printer * pdev, FILE * fp)
 {
     int width, height, w, h, wp, hp, bLandscape;

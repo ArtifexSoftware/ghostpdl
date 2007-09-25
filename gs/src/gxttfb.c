@@ -39,7 +39,7 @@
 gs_public_st_composite(st_gx_ttfReader, gx_ttfReader,
     "gx_ttfReader", gx_ttfReader_enum_ptrs, gx_ttfReader_reloc_ptrs);
 
-private 
+static 
 ENUM_PTRS_WITH(gx_ttfReader_enum_ptrs, gx_ttfReader *mptr)
     {
 	/* The fields 'pfont' and 'glyph_data' may contain pointers from global 
@@ -53,12 +53,12 @@ ENUM_PTRS_WITH(gx_ttfReader_enum_ptrs, gx_ttfReader *mptr)
     ENUM_PTR(0, gx_ttfReader, memory);
 ENUM_PTRS_END
 
-private RELOC_PTRS_WITH(gx_ttfReader_reloc_ptrs, gx_ttfReader *mptr)
+static RELOC_PTRS_WITH(gx_ttfReader_reloc_ptrs, gx_ttfReader *mptr)
     DISCARD(mptr);
     RELOC_PTR(gx_ttfReader, memory);
 RELOC_PTRS_END
 
-private bool gx_ttfReader__Eof(ttfReader *this)
+static bool gx_ttfReader__Eof(ttfReader *this)
 {
     gx_ttfReader *r = (gx_ttfReader *)this;
 
@@ -69,7 +69,7 @@ private bool gx_ttfReader__Eof(ttfReader *this)
     return false;
 }
 
-private void gx_ttfReader__Read(ttfReader *this, void *p, int n)
+static void gx_ttfReader__Read(ttfReader *this, void *p, int n)
 {
     gx_ttfReader *r = (gx_ttfReader *)this;
     const byte *q;
@@ -95,28 +95,28 @@ private void gx_ttfReader__Read(ttfReader *this, void *p, int n)
     r->pos += n;
 }
 
-private void gx_ttfReader__Seek(ttfReader *this, int nPos)
+static void gx_ttfReader__Seek(ttfReader *this, int nPos)
 {
     gx_ttfReader *r = (gx_ttfReader *)this;
 
     r->pos = nPos;
 }
 
-private int gx_ttfReader__Tell(ttfReader *this)
+static int gx_ttfReader__Tell(ttfReader *this)
 {
     gx_ttfReader *r = (gx_ttfReader *)this;
 
     return r->pos;
 }
 
-private bool gx_ttfReader__Error(ttfReader *this)
+static bool gx_ttfReader__Error(ttfReader *this)
 {
     gx_ttfReader *r = (gx_ttfReader *)this;
 
     return r->error;
 }
 
-private int gx_ttfReader__LoadGlyph(ttfReader *this, int glyph_index, const byte **p, int *size)
+static int gx_ttfReader__LoadGlyph(ttfReader *this, int glyph_index, const byte **p, int *size)
 {
     gx_ttfReader *r = (gx_ttfReader *)this;
     gs_font_type42 *pfont = r->pfont;
@@ -143,7 +143,7 @@ private int gx_ttfReader__LoadGlyph(ttfReader *this, int glyph_index, const byte
     return 2; /* found */
 }
 
-private void gx_ttfReader__ReleaseGlyph(ttfReader *this, int glyph_index)
+static void gx_ttfReader__ReleaseGlyph(ttfReader *this, int glyph_index)
 {
     gx_ttfReader *r = (gx_ttfReader *)this;
 
@@ -153,7 +153,7 @@ private void gx_ttfReader__ReleaseGlyph(ttfReader *this, int glyph_index)
     gs_glyph_data_free(&r->glyph_data, "gx_ttfReader__ReleaseExtraGlyph");
 }
 
-private void gx_ttfReader__Reset(gx_ttfReader *this)
+static void gx_ttfReader__Reset(gx_ttfReader *this)
 {
     if (this->extra_glyph_index != -1) {
 	this->extra_glyph_index = -1;
@@ -191,7 +191,7 @@ void gx_ttfReader__destroy(gx_ttfReader *this)
     gs_free_object(this->memory, this, "gx_ttfReader__destroy");
 }
 
-private int 
+static int 
 gx_ttfReader__default_get_metrics(const ttfReader *ttf, uint glyph_index, bool bVertical, 
 				  short *sideBearing, unsigned short *nAdvance)
 {
@@ -225,11 +225,11 @@ void gx_ttfReader__set_font(gx_ttfReader *this, gs_font_type42 *pfont)
 
 /*----------------------------------------------*/
 
-private void DebugRepaint(ttfFont *ttf)
+static void DebugRepaint(ttfFont *ttf)
 {
 }
 
-private int DebugPrint(ttfFont *ttf, const char *fmt, ...)
+static int DebugPrint(ttfFont *ttf, const char *fmt, ...)
 {
     char buf[500];
     va_list args;
@@ -246,7 +246,7 @@ private int DebugPrint(ttfFont *ttf, const char *fmt, ...)
     return 0;
 }
 
-private void WarnBadInstruction(gs_font_type42 *pfont, int glyph_index)
+static void WarnBadInstruction(gs_font_type42 *pfont, int glyph_index)
 {
     char buf[gs_font_name_max + 1];
     int l;
@@ -270,7 +270,7 @@ private void WarnBadInstruction(gs_font_type42 *pfont, int glyph_index)
     }
 }
 
-private void WarnPatented(gs_font_type42 *pfont, ttfFont *ttf, const char *txt)
+static void WarnPatented(gs_font_type42 *pfont, ttfFont *ttf, const char *txt)
 {
     if (!ttf->design_grid) {
 	char buf[gs_font_name_max + 1];
@@ -299,21 +299,21 @@ struct gx_ttfMemory_s {
 gs_private_st_simple(st_gx_ttfMemory, gx_ttfMemory, "gx_ttfMemory");
 /* st_gx_ttfMemory::memory points to a root. */
 
-private void *gx_ttfMemory__alloc_bytes(ttfMemory *this, int size,  const char *cname)
+static void *gx_ttfMemory__alloc_bytes(ttfMemory *this, int size,  const char *cname)
 {
     gs_memory_t *mem = ((gx_ttfMemory *)this)->memory;
 
     return gs_alloc_bytes(mem, size, cname);
 }
 
-private void *gx_ttfMemory__alloc_struct(ttfMemory *this, const ttfMemoryDescriptor *d,  const char *cname)
+static void *gx_ttfMemory__alloc_struct(ttfMemory *this, const ttfMemoryDescriptor *d,  const char *cname)
 {
     gs_memory_t *mem = ((gx_ttfMemory *)this)->memory;
 
     return mem->procs.alloc_struct(mem, (const gs_memory_struct_type_t *)d, cname);
 }
 
-private void gx_ttfMemory__free(ttfMemory *this, void *p,  const char *cname)
+static void gx_ttfMemory__free(ttfMemory *this, void *p,  const char *cname)
 {
     gs_memory_t *mem = ((gx_ttfMemory *)this)->memory;
 
@@ -327,7 +327,7 @@ static inline float reminder(float v, int x)
     return ((v / x) - floor(v / x)) * x;
 }
 
-private void decompose_matrix(const gs_font_type42 *pfont, const gs_matrix * char_tm, 
+static void decompose_matrix(const gs_font_type42 *pfont, const gs_matrix * char_tm, 
     const gs_log2_scale_point *log2_scale, bool design_grid,
     gs_point *char_size, gs_point *subpix_origin, gs_matrix *post_transform, bool *dg)
 {
@@ -457,7 +457,7 @@ typedef struct gx_ttfExport_s {
     bool monotonize;
 } gx_ttfExport;
 
-private void gx_ttfExport__MoveTo(ttfExport *this, FloatPoint *p)
+static void gx_ttfExport__MoveTo(ttfExport *this, FloatPoint *p)
 {
     gx_ttfExport *e = (gx_ttfExport *)this;
 
@@ -465,7 +465,7 @@ private void gx_ttfExport__MoveTo(ttfExport *this, FloatPoint *p)
 	e->error = gx_path_add_point(e->path, float2fixed(p->x), float2fixed(p->y));
 }
 
-private void gx_ttfExport__LineTo(ttfExport *this, FloatPoint *p)
+static void gx_ttfExport__LineTo(ttfExport *this, FloatPoint *p)
 {
     gx_ttfExport *e = (gx_ttfExport *)this;
 
@@ -473,7 +473,7 @@ private void gx_ttfExport__LineTo(ttfExport *this, FloatPoint *p)
 	e->error = gx_path_add_line_notes(e->path, float2fixed(p->x), float2fixed(p->y), sn_none);
 }
 
-private void gx_ttfExport__CurveTo(ttfExport *this, FloatPoint *p0, FloatPoint *p1, FloatPoint *p2)
+static void gx_ttfExport__CurveTo(ttfExport *this, FloatPoint *p0, FloatPoint *p1, FloatPoint *p2)
 {
     gx_ttfExport *e = (gx_ttfExport *)this;
 
@@ -493,7 +493,7 @@ private void gx_ttfExport__CurveTo(ttfExport *this, FloatPoint *p0, FloatPoint *
     }
 }
 
-private void gx_ttfExport__Close(ttfExport *this)
+static void gx_ttfExport__Close(ttfExport *this)
 {
     gx_ttfExport *e = (gx_ttfExport *)this;
 
@@ -501,12 +501,12 @@ private void gx_ttfExport__Close(ttfExport *this)
 	e->error = gx_path_close_subpath_notes(e->path, sn_none);
 }
 
-private void gx_ttfExport__Point(ttfExport *this, FloatPoint *p, bool bOnCurve, bool bNewPath)
+static void gx_ttfExport__Point(ttfExport *this, FloatPoint *p, bool bOnCurve, bool bNewPath)
 {
     /* Never called. */
 }
 
-private void gx_ttfExport__SetWidth(ttfExport *this, FloatPoint *p)
+static void gx_ttfExport__SetWidth(ttfExport *this, FloatPoint *p)
 {
     gx_ttfExport *e = (gx_ttfExport *)this;
 
@@ -514,13 +514,13 @@ private void gx_ttfExport__SetWidth(ttfExport *this, FloatPoint *p)
     e->w.y = float2fixed(p->y); 
 }
 
-private void gx_ttfExport__DebugPaint(ttfExport *this)
+static void gx_ttfExport__DebugPaint(ttfExport *this)
 {
 }
 
 /*----------------------------------------------*/
 
-private int
+static int
 path_to_hinter(t1_hinter *h, gx_path *path)
 {   int code;
     gs_path_enum penum;
@@ -566,7 +566,7 @@ path_to_hinter(t1_hinter *h, gx_path *path)
 
 #define exch(a,b) a^=b; b^=a; a^=b;
 
-private void
+static void
 transpose_path(gx_path *path)
 {   segment *s = (segment *)path->first_subpath;
 
@@ -589,7 +589,7 @@ typedef struct {
     fixed midx;
 } t1_hinter_aux;
 
-private int 
+static int 
 stem_hint_handler(void *client_data, gx_san_sect *ss)
 {
     t1_hinter_aux *h = (t1_hinter_aux *)client_data;
@@ -620,7 +620,7 @@ stem_hint_handler(void *client_data, gx_san_sect *ss)
 			  fixme : remove side_mask from gxhintn.c .
 			  */
 
-private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path, 
+static int grid_fit(gx_device_spot_analyzer *padev, gx_path *path, 
 	gs_font_type42 *pfont, const gs_log2_scale_point *pscale, gx_ttfExport *e, ttfOutliner *o)
 {
     /* Not completed yet. */

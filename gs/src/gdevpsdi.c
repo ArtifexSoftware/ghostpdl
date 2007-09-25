@@ -49,7 +49,7 @@ extern stream_state_proc_put_params(s_CF_put_params, stream_CF_state);
  * At least one of bpc_in and bpc_out is 8; the other is 1, 2, 4, or 8,
  * except if bpc_out is 8, bpc_in may be 12.
  */
-private int
+static int
 pixel_resize(psdf_binary_writer * pbw, int width, int num_components,
 	     int bpc_in, int bpc_out)
 {
@@ -87,7 +87,7 @@ pixel_resize(psdf_binary_writer * pbw, int width, int num_components,
     return 0;
 }
 
-private int
+static int
 convert_color(gx_device *pdev, const gs_color_space *pcs, const gs_imager_state * pis, 
 	      gs_client_color *cc, float c[3])
 {
@@ -105,7 +105,7 @@ convert_color(gx_device *pdev, const gs_color_space *pcs, const gs_imager_state 
 }
 
 /* A hewristic choice of DCT compression parameters - see bug 687174. */
-private int 
+static int 
 choose_DCT_params(gx_device *pdev, const gs_color_space *pcs, 
 		  const gs_imager_state * pis, 
 		  gs_c_param_list *list, gs_c_param_list **param, 
@@ -208,7 +208,7 @@ done:
 }
 
 /* Add the appropriate image compression filter, if any. */
-private int
+static int
 setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 			const gs_pixel_image_t * pim, const gs_imager_state * pis, 
 			bool lossless)
@@ -377,7 +377,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 }
 
 /* Determine whether an image should be downsampled. */
-private bool
+static bool
 do_downsample(const psdf_image_params *pdip, const gs_pixel_image_t *pim,
 	      floatp resolution)
 {
@@ -390,7 +390,7 @@ do_downsample(const psdf_image_params *pdip, const gs_pixel_image_t *pim,
 /* Add downsampling, antialiasing, and compression filters. */
 /* Uses AntiAlias, Depth, DownsampleThreshold, DownsampleType, Resolution. */
 /* Assumes do_downsampling() is true. */
-private int
+static int
 setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
 		   gs_pixel_image_t * pim, const gs_imager_state * pis, 
 		   floatp resolution, bool lossless)
@@ -458,7 +458,7 @@ psdf_is_converting_image_to_RGB(const gx_device_psdf * pdev,
 	    gs_color_space_index_DeviceCMYK;
 }
 
-private inline void 
+static inline void 
 adjust_auto_filter_strategy(gx_device_psdf *pdev, 
 		psdf_image_params *params, gs_c_param_list *plist, 
 		const gs_pixel_image_t * pim, bool in_line)
@@ -475,7 +475,7 @@ adjust_auto_filter_strategy(gx_device_psdf *pdev,
 #endif
 }
 
-private inline void 
+static inline void 
 adjust_auto_filter_strategy_mono(gx_device_psdf *pdev, 
 		psdf_image_params *params, gs_c_param_list *plist, 
 		const gs_pixel_image_t * pim, bool in_line)

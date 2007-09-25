@@ -34,7 +34,7 @@
 /* Takes lines off of y_list and adds them to */
 /* x_list as needed.  band_mask limits the size of each band, */
 /* by requiring that ((y1 - 1) & band_mask) == (y0 & band_mask). */
-private int
+static int
 TEMPLATE_spot_into_trapezoids (line_list *ll, fixed band_mask)
 {
     const fill_options fo = *ll->fo;

@@ -62,11 +62,11 @@ gx_device_free_local(gx_device *dev)
 }
 
 /* GC procedures */
-private 
+static 
 ENUM_PTRS_WITH(device_forward_enum_ptrs, gx_device_forward *fdev) return 0;
 case 0: ENUM_RETURN(gx_device_enum_ptr(fdev->target));
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(device_forward_reloc_ptrs, gx_device_forward *fdev)
+static RELOC_PTRS_WITH(device_forward_reloc_ptrs, gx_device_forward *fdev)
 {
     fdev->target = gx_device_reloc_ptr(fdev->target, gcst);
 }
@@ -207,7 +207,7 @@ gs_getdevice(int index)
 }
 
 /* Fill in the GC structure descriptor for a device. */
-private void
+static void
 gx_device_make_struct_type(gs_memory_struct_type_t *st,
 			   const gx_device *dev)
 {
@@ -337,7 +337,7 @@ gs_imager_putdeviceparams(gs_imager_state *pis, gx_device *dev,
 	gx_set_cmap_procs(pis, dev);
     return code;
 }
-private void
+static void
 gs_state_update_device(gs_state *pgs)
 {
     gx_set_cmap_procs((gs_imager_state *)pgs, pgs->device);
@@ -570,7 +570,7 @@ gx_device_set_margins(gx_device * dev, const float *margins /*[4] */ ,
     }
 }
 
-private void
+static void
 gx_device_set_hwsize_from_media(gx_device *dev)
 {
     int rot = (dev->LeadingEdge & 1);
@@ -581,7 +581,7 @@ gx_device_set_hwsize_from_media(gx_device *dev)
     dev->height = (int)(rot_media_y * dev->HWResolution[1] / 72.0 + 0.5);
 }
 
-private void
+static void
 gx_device_set_media_from_hwsize(gx_device *dev)
 {
     int rot = (dev->LeadingEdge & 1);
@@ -718,7 +718,7 @@ gx_device_copy_params(gx_device *dev, const gx_device *target)
  *
  * If there was a format, then return the max_width
  */
-private int
+static int
 gx_parse_output_format(gs_parsed_file_name_t *pfn, const char **pfmt)
 {
     bool have_format = false, field;

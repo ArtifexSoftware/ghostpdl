@@ -41,31 +41,31 @@
 /* in the VAX C compiler. */
 /* We have to split up the definition of the table itself because of a bug */
 /*  in the IBM AIX 3.2 C compiler. */
-private const gx_color_value q0[] = {
+static const gx_color_value q0[] = {
     0
 };
-private const gx_color_value q1[] = {
+static const gx_color_value q1[] = {
     0, frac_color_(1, 1)
 };
-private const gx_color_value q2[] = {
+static const gx_color_value q2[] = {
     0, frac_color_(1, 2), frac_color_(2, 2)
 };
-private const gx_color_value q3[] = {
+static const gx_color_value q3[] = {
     0, frac_color_(1, 3), frac_color_(2, 3), frac_color_(3, 3)
 };
-private const gx_color_value q4[] = {
+static const gx_color_value q4[] = {
     0, frac_color_(1, 4), frac_color_(2, 4), frac_color_(3, 4),
     frac_color_(4, 4)
 };
-private const gx_color_value q5[] = {
+static const gx_color_value q5[] = {
     0, frac_color_(1, 5), frac_color_(2, 5), frac_color_(3, 5),
     frac_color_(4, 5), frac_color_(5, 5)
 };
-private const gx_color_value q6[] = {
+static const gx_color_value q6[] = {
     0, frac_color_(1, 6), frac_color_(2, 6), frac_color_(3, 6),
     frac_color_(4, 6), frac_color_(5, 6), frac_color_(6, 6)
 };
-private const gx_color_value q7[] = {
+static const gx_color_value q7[] = {
     0, frac_color_(1, 7), frac_color_(2, 7), frac_color_(3, 7),
     frac_color_(4, 7), frac_color_(5, 7), frac_color_(6, 7), frac_color_(7, 7)
 };
@@ -88,7 +88,7 @@ const gx_color_value *const fc_color_quo[8] = {
  * fill_rectangle. Does it affect correctness? I don't think so, but
  * it needs to be tested.
  **/
-private int
+static int
 gx_render_device_DeviceN_wts(frac * pcolor,
 			     gx_device_color * pdevc, gx_device * dev,
 			     gx_device_halftone * pdht,

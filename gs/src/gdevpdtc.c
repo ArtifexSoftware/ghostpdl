@@ -180,7 +180,7 @@ process_composite_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 /*
  * Process a text string in a composite font with FMapType == 9 (CMap).
  */
-private const char *const standard_cmap_names[] = {
+static const char *const standard_cmap_names[] = {
     /* The following were added in PDF 1.5. */
 
     "UniGB-UTF16-H", "UniGB-UTF16-V",
@@ -241,7 +241,7 @@ private const char *const standard_cmap_names[] = {
     0
 };
 
-private int
+static int
 attach_cmap_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, 
 		const gs_cmap_t *pcmap, int font_index_only)
 {
@@ -334,7 +334,7 @@ attach_cmap_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
 }
 
 /* Record widths and CID => GID mappings. */
-private int
+static int
 scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
 {
     gx_device_pdf *pdev = (gx_device_pdf *)pte->dev;

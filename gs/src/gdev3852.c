@@ -38,8 +38,8 @@ Modified by L. Peter Deutsch <ghost@aladdin.com> 1999-01-10 to remove _ss
 #define LINE_SIZE ((X_DPI * 86 / 10 + 63) / 64 * 8)
 
 /* The device descriptor */
-private dev_proc_print_page(jetp3852_print_page);
-private gx_device_procs jetp3852_procs =
+static dev_proc_print_page(jetp3852_print_page);
+static gx_device_procs jetp3852_procs =
   prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
     gdev_pcl_3bit_map_rgb_color, gdev_pcl_3bit_map_color_rgb);
 const gx_device_printer far_data gs_jetp3852_device =
@@ -54,7 +54,7 @@ const gx_device_printer far_data gs_jetp3852_device =
 /* ------ Internal routines ------ */
 
 /* Send the page to the printer.  */
-private int
+static int
 jetp3852_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
 #define DATA_SIZE (LINE_SIZE * 8)

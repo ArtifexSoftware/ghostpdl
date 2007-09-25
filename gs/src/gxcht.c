@@ -49,13 +49,13 @@
 /* Define the colored halftone device color type. */
 gs_private_st_ptrs1(st_dc_ht_colored, gx_device_color, "dc_ht_colored",
     dc_ht_colored_enum_ptrs, dc_ht_colored_reloc_ptrs, colors.colored.c_ht);
-private dev_color_proc_save_dc(gx_dc_ht_colored_save_dc);
-private dev_color_proc_get_dev_halftone(gx_dc_ht_colored_get_dev_halftone);
-private dev_color_proc_load(gx_dc_ht_colored_load);
-private dev_color_proc_fill_rectangle(gx_dc_ht_colored_fill_rectangle);
-private dev_color_proc_equal(gx_dc_ht_colored_equal);
-private dev_color_proc_write(gx_dc_ht_colored_write);
-private dev_color_proc_read(gx_dc_ht_colored_read);
+static dev_color_proc_save_dc(gx_dc_ht_colored_save_dc);
+static dev_color_proc_get_dev_halftone(gx_dc_ht_colored_get_dev_halftone);
+static dev_color_proc_load(gx_dc_ht_colored_load);
+static dev_color_proc_fill_rectangle(gx_dc_ht_colored_fill_rectangle);
+static dev_color_proc_equal(gx_dc_ht_colored_equal);
+static dev_color_proc_write(gx_dc_ht_colored_write);
+static dev_color_proc_read(gx_dc_ht_colored_read);
 const gx_device_color_type_t gx_dc_type_data_ht_colored = {
     &st_dc_ht_colored,
     gx_dc_ht_colored_save_dc, gx_dc_ht_colored_get_dev_halftone,
@@ -71,7 +71,7 @@ const gx_device_color_type_t *const gx_dc_type_ht_colored =
 #define gx_dc_type_ht_colored (&gx_dc_type_data_ht_colored)
 
 /* save information about the operand device color */
-private void
+static void
 gx_dc_ht_colored_save_dc(const gx_device_color * pdevc,
 			 gx_device_color_saved * psdc)
 {
@@ -87,14 +87,14 @@ gx_dc_ht_colored_save_dc(const gx_device_color * pdevc,
 }
 
 /* get the halftone used for the operand device color */
-private const gx_device_halftone *
+static const gx_device_halftone *
 gx_dc_ht_colored_get_dev_halftone(const gx_device_color * pdevc)
 {
     return pdevc->colors.colored.c_ht;
 }
 
 /* Compare two colored halftones for equality. */
-private bool
+static bool
 gx_dc_ht_colored_equal(const gx_device_color * pdevc1,
 		       const gx_device_color * pdevc2)
 {
@@ -129,10 +129,10 @@ gx_dc_ht_colored_equal(const gx_device_color * pdevc1,
  * The halftone is never transmitted as part of a device color, so there
  * is no flag for it.
  */
-private const int   dc_ht_colored_has_base = 0x01;
-private const int   dc_ht_colored_has_level = 0x02;
-private const int   dc_ht_colored_has_alpha = 0x04;
-private const int   dc_ht_colored_alpha_is_max = 0x08;
+static const int   dc_ht_colored_has_base = 0x01;
+static const int   dc_ht_colored_has_level = 0x02;
+static const int   dc_ht_colored_has_alpha = 0x04;
+static const int   dc_ht_colored_alpha_is_max = 0x08;
 
 /*
  * Serialize a device color that uses a traditional colored halftone.
@@ -180,7 +180,7 @@ private const int   dc_ht_colored_alpha_is_max = 0x08;
  *  < 0, != gs_error_rangecheck, in the event of some other error
  *  (currently none); in this case *psize is not changed.
  */
-private int
+static int
 gx_dc_ht_colored_write(
     const gx_device_color *         pdevc,
     const gx_device_color_saved *   psdc0,
@@ -344,7 +344,7 @@ gx_dc_ht_colored_write(
  *
  *  # of bytes read if everthing OK, < 0 in the event of an error
  */
-private int
+static int
 gx_dc_ht_colored_read(
     gx_device_color *       pdevc,
     const gs_imager_state * pis,
@@ -519,9 +519,9 @@ typedef struct color_values_pair_s {
 	      int nplanes\
 	      )
 
-private SET_HT_COLORS_PROC(set_ht_colors_le_4);
-private SET_HT_COLORS_PROC(set_cmyk_1bit_colors);
-private SET_HT_COLORS_PROC(set_ht_colors_gt_4);
+static SET_HT_COLORS_PROC(set_ht_colors_le_4);
+static SET_HT_COLORS_PROC(set_cmyk_1bit_colors);
+static SET_HT_COLORS_PROC(set_ht_colors_gt_4);
 
 #define SET_COLOR_HT_PROC(proc)\
   void proc(\
@@ -543,11 +543,11 @@ private SET_HT_COLORS_PROC(set_ht_colors_gt_4);
 				/* actually [nplanes] */\
 		)
 
-private SET_COLOR_HT_PROC(set_color_ht_le_4);
-private SET_COLOR_HT_PROC(set_color_ht_gt_4);
+static SET_COLOR_HT_PROC(set_color_ht_le_4);
+static SET_COLOR_HT_PROC(set_color_ht_gt_4);
 
 /* Prepare to use a colored halftone, by loading the default cache. */
-private int
+static int
 gx_dc_ht_colored_load(gx_device_color * pdevc, const gs_imager_state * pis,
 		      gx_device * ignore_dev, gs_color_select_t select)
 {
@@ -558,7 +558,7 @@ gx_dc_ht_colored_load(gx_device_color * pdevc, const gs_imager_state * pis,
 
 /* Fill a rectangle with a colored halftone. */
 /* Note that we treat this as "texture" for RasterOp. */
-private int
+static int
 gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc,
 				int x, int y, int w, int h,
 				gx_device * dev, gs_logical_operation_t lop,
@@ -780,11 +780,11 @@ fit:				/* Now the tile will definitely fit. */
  * or DeviceN components).
  */
 
-private const struct {
+static const struct {
     ulong pad;			/* to get bytes aligned properly */
     byte bytes[sizeof(ulong) * 8];	/* 8 is arbitrary */
 } ht_no_bitmap_data = { 0 };
-private const gx_const_strip_bitmap ht_no_bitmap = {
+static const gx_const_strip_bitmap ht_no_bitmap = {
     &ht_no_bitmap_data.bytes[0], sizeof(ulong),
     {sizeof(ulong) * 8, sizeof(ht_no_bitmap_data.bytes) / sizeof(ulong)},
     gx_no_bitmap_id, 1, 1, 0, 0
@@ -828,7 +828,7 @@ private const gx_const_strip_bitmap ht_no_bitmap = {
   END
 
 /* Set up the colors and the individual plane halftone bitmaps. */
-private int
+static int
 set_ht_colors_le_4(color_values_pair_t *pvp /* only used internally */,
 		   gx_color_index colors[MAX_DCC_16] /* 16 used */,
 		   const gx_const_strip_bitmap * sbits[MAX_DCC],
@@ -952,7 +952,7 @@ c2:	    case 2:
 }
 
 /* Set up colors using the standard 1-bit CMYK mapping. */
-private int
+static int
 set_cmyk_1bit_colors(color_values_pair_t *ignore_pvp,
 		     gx_color_index colors[MAX_DCC_16] /*2 used*/,
 		     const gx_const_strip_bitmap * sbits[MAX_DCC /*4 used*/],
@@ -1016,7 +1016,7 @@ set_cmyk_1bit_colors(color_values_pair_t *ignore_pvp,
  * for a color by a bit wise or of the gx_color_index values of the individual
  * components.)
  */
-private int
+static int
 set_ht_colors_gt_4(color_values_pair_t *pvp,
 		   gx_color_index colors[MAX_DCC_16 /* 2 * nplanes */],
 		   const gx_const_strip_bitmap * sbits[MAX_DCC],
@@ -1077,7 +1077,7 @@ typedef struct tile_cursor_s {
  * Initialize one plane cursor, including setting up for the first row
  * (data and bit_shift).
  */
-private void
+static void
 init_tile_cursor(int i, tile_cursor_t *ptc, const gx_const_strip_bitmap *btile,
 		 int endx, int lasty)
 {
@@ -1100,7 +1100,7 @@ init_tile_cursor(int i, tile_cursor_t *ptc, const gx_const_strip_bitmap *btile,
 }
 
 /* Step a cursor to the next row. */
-private void
+static void
 wrap_shifted_cursor(tile_cursor_t *ptc, const gx_const_strip_bitmap *psbit)
 {
     ptc->row += ptc->raster * (psbit->size.y - 1);
@@ -1130,7 +1130,7 @@ wrap_shifted_cursor(tile_cursor_t *ptc, const gx_const_strip_bitmap *psbit)
   END
 
 /* Define a table for expanding 8x1 bits to 8x4. */
-private const bits32 expand_8x1_to_8x4[256] = {
+static const bits32 expand_8x1_to_8x4[256] = {
 #define X16(c)\
   c+0, c+1, c+0x10, c+0x11, c+0x100, c+0x101, c+0x110, c+0x111,\
   c+0x1000, c+0x1001, c+0x1010, c+0x1011, c+0x1100, c+0x1101, c+0x1110, c+0x1111
@@ -1144,7 +1144,7 @@ private const bits32 expand_8x1_to_8x4[256] = {
 /*
  * Render the combined halftone for nplanes <= 4.
  */
-private void
+static void
 set_color_ht_le_4(byte *dest_data, uint dest_raster, int px, int py,
 		  int w, int h, int depth, int special, int nplanes,
 		  gx_color_index plane_mask, gx_device *ignore_dev,
@@ -1335,7 +1335,7 @@ set_color_ht_le_4(byte *dest_data, uint dest_raster, int px, int py,
  * that we can form a gx_color_index value by the bitwise or index values
  * for each of the individual components.
  */
-private void
+static void
 set_color_ht_gt_4(byte *dest_data, uint dest_raster, int px, int py,
 		  int w, int h, int depth, int special, int num_planes,
 		  gx_color_index plane_mask, gx_device *dev,

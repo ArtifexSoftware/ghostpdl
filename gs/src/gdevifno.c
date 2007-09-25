@@ -47,22 +47,22 @@ struct Rectangle {
 	Point min;
 	Point max;
 };
-private Point ZP = { 0, 0 };
+static Point ZP = { 0, 0 };
 
-private WImage* initwriteimage(FILE *f, Rectangle r, int ldepth);
-private int writeimageblock(WImage *w, uchar *data, int ndata);
-private int bytesperline(Rectangle, int);
-private int rgb2cmap(int, int, int);
-private long cmap2rgb(int);
+static WImage* initwriteimage(FILE *f, Rectangle r, int ldepth);
+static int writeimageblock(WImage *w, uchar *data, int ndata);
+static int bytesperline(Rectangle, int);
+static int rgb2cmap(int, int, int);
+static long cmap2rgb(int);
 
 #define X_DPI	100
 #define Y_DPI	100
 
-private dev_proc_map_rgb_color(inferno_rgb2cmap);
-private dev_proc_map_color_rgb(inferno_cmap2rgb);
-private dev_proc_open_device(inferno_open);
-private dev_proc_close_device(inferno_close);
-private dev_proc_print_page(inferno_print_page);
+static dev_proc_map_rgb_color(inferno_rgb2cmap);
+static dev_proc_map_color_rgb(inferno_cmap2rgb);
+static dev_proc_open_device(inferno_open);
+static dev_proc_close_device(inferno_close);
+static dev_proc_print_page(inferno_print_page);
 
 typedef struct inferno_device_s {
 	gx_device_common;
@@ -74,7 +74,7 @@ typedef struct inferno_device_s {
 	int nbits;
 } inferno_device;
 
-private const gx_device_procs inferno_procs =
+static const gx_device_procs inferno_procs =
 	prn_color_params_procs(inferno_open, gdev_prn_output_page, inferno_close,
 		inferno_rgb2cmap, inferno_cmap2rgb,
 		gdev_prn_get_params, gdev_prn_put_params);
@@ -98,7 +98,7 @@ inferno_device far_data gs_inferno_device =
  * ghostscript asks us how to convert between
  * rgb and color map entries
  */
-private gx_color_index 
+static gx_color_index 
 inferno_rgb2cmap(gx_device *dev, const gx_color_value cv[]) {
 	int shift;
 	inferno_device *bdev = (inferno_device*) dev;
@@ -149,7 +149,7 @@ inferno_rgb2cmap(gx_device *dev, const gx_color_value cv[]) {
 	return ((((blue<<4)|green)<<4)|red);
 }
 
-private int 
+static int 
 inferno_cmap2rgb(gx_device *dev, gx_color_index color,
   gx_color_value rgb[3]) {
 	int shift, i;
@@ -223,7 +223,7 @@ void init_p9color(void)		/* init at run time since p9color[] is so big */
  * inferno_open() is supposed to initialize the device.
  * there's not much to do.
  */
-private int
+static int
 inferno_open(gx_device *dev)
 {
 	inferno_device *bdev = (inferno_device*) dev;
@@ -240,7 +240,7 @@ inferno_open(gx_device *dev)
  * inferno_close() is called at the end, once everything
  * is finished.  we have nothing to do.
  */
-private int
+static int
 inferno_close(gx_device *dev)
 {
 	int code;
@@ -255,7 +255,7 @@ inferno_close(gx_device *dev)
  * (actually once for each copy of each page, but we won't
  * worry about that).
  */
-private int
+static int
 inferno_print_page(gx_device_printer *pdev, FILE *f)
 {
 	uchar buf[16384];	/* == 8192 dots across */
@@ -424,7 +424,7 @@ struct WImage {
 	int needhash;
 };
 
-private void
+static void
 zerohash(WImage *w)
 {
 	memset(w->hash, 0, sizeof(w->hash));
@@ -433,7 +433,7 @@ zerohash(WImage *w)
 	w->needhash = 1;
 }
 
-private int
+static int
 addbuf(WImage *w, uchar *buf, int nbuf)
 {
 	int n;
@@ -458,7 +458,7 @@ addbuf(WImage *w, uchar *buf, int nbuf)
 }
 
 /* return 0 on success, -1 if buffer is full */
-private int
+static int
 flushdump(WImage *w)
 {
 	int n = w->dump.ndump;
@@ -475,7 +475,7 @@ flushdump(WImage *w)
 	return 0;
 }
 
-private void
+static void
 updatehash(WImage *w, uchar *p, uchar *ep)
 {
 	uchar *q;
@@ -512,7 +512,7 @@ updatehash(WImage *w, uchar *p, uchar *ep)
  * the buffer and return 0.
  * otherwise we return bpl
  */
-private int
+static int
 gobbleline(WImage *w)
 {
 	int runlen, n, offs;
@@ -608,7 +608,7 @@ gobbleline(WImage *w)
 	return w->bpl;
 }
 
-private uchar*
+static uchar*
 shiftwindow(WImage *w, uchar *data, uchar *edata)
 {
 	int n, m;
@@ -635,7 +635,7 @@ shiftwindow(WImage *w, uchar *data, uchar *edata)
 	return data;
 }
 
-private WImage*
+static WImage*
 initwriteimage(FILE *f, Rectangle r, int ldepth)
 {
 	WImage *w;
@@ -672,7 +672,7 @@ initwriteimage(FILE *f, Rectangle r, int ldepth)
 	return w;
 }
 
-private int
+static int
 writeimageblock(WImage *w, uchar *data, int ndata)
 {
 	uchar *edata;
@@ -706,7 +706,7 @@ writeimageblock(WImage *w, uchar *data, int ndata)
 /*
  * functions from the Plan9/Brazil drawing libraries 
  */
-private int
+static int
 bytesperline(Rectangle r, int ld)
 {
 	ulong ws, l, t;
@@ -724,7 +724,7 @@ bytesperline(Rectangle r, int ld)
 	return l;
 }
 
-private int
+static int
 rgb2cmap(int cr, int cg, int cb)
 {
 	int r, g, b, v, cv;
@@ -756,7 +756,7 @@ rgb2cmap(int cr, int cg, int cb)
 /*
  * go the other way; not currently used.
  *
-private long
+static long
 cmap2rgb(int c)
 {
 	int j, num, den, r, g, b, v, rgb;

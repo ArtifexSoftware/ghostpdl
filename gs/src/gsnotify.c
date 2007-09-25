@@ -53,7 +53,7 @@ gs_notify_register(gs_notify_list_t *nlist, gs_notify_proc_t proc,
  * If proc_data is 0, unregister all registrations of that proc; otherwise,
  * unregister only the registration of that procedure with that proc_data.
  */
-private void
+static void
 no_unreg_proc(void *pdata)
 {
 }

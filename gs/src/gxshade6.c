@@ -52,7 +52,7 @@ static int min_linear_grades = 255; /* The minimal number of device color grades
 
 /* ================ Utilities ================ */
 
-private int
+static int
 allocate_color_stack(patch_fill_state_t *pfs, gs_memory_t *memory)
 {
     if (pfs->color_stack != NULL)
@@ -70,7 +70,7 @@ allocate_color_stack(patch_fill_state_t *pfs, gs_memory_t *memory)
     return 0;
 }
 
-private inline byte *
+static inline byte *
 reserve_colors_inline(patch_fill_state_t *pfs, patch_color_t *c[], int n)
 {
     int i;
@@ -92,7 +92,7 @@ reserve_colors(patch_fill_state_t *pfs, patch_color_t *c[], int n)
     return reserve_colors_inline(pfs, c, n);
 }
 
-private inline void
+static inline void
 release_colors_inline(patch_fill_state_t *pfs, byte *ptr, int n)
 {
 #if 0 /* Saving the invariant for records. */
@@ -109,7 +109,7 @@ release_colors(patch_fill_state_t *pfs, byte *ptr, int n)
 }
 
 /* Get colors for patch vertices. */
-private int
+static int
 shade_next_colors(shade_coord_stream_t * cs, patch_curve_t * curves,
 		  int num_vertices)
 {
@@ -123,7 +123,7 @@ shade_next_colors(shade_coord_stream_t * cs, patch_curve_t * curves,
 }
 
 /* Get a Bezier or tensor patch element. */
-private int
+static int
 shade_next_curve(shade_coord_stream_t * cs, patch_curve_t * curve)
 {
     int code = shade_next_coords(cs, &curve->vertex.p, 1);
@@ -138,7 +138,7 @@ shade_next_curve(shade_coord_stream_t * cs, patch_curve_t * curve)
  * Parse the next patch out of the input stream.  Return 1 if done,
  * 0 if patch, <0 on error.
  */
-private int
+static int
 shade_next_patch(shade_coord_stream_t * cs, int BitsPerFlag,
 	patch_curve_t curve[4], gs_fixed_point interior[4] /* 0 for Coons patch */ )
 {
@@ -183,7 +183,7 @@ vx:	    if ((code = shade_next_coords(cs, curve[1].control, 2)) < 0 ||
     return 0;
 }
 
-private inline bool
+static inline bool
 is_linear_color_applicable(const patch_fill_state_t *pfs)
 {
     if (!USE_LINEAR_COLOR_PROCS)
@@ -195,7 +195,7 @@ is_linear_color_applicable(const patch_fill_state_t *pfs)
     return true;
 }
 
-private int 
+static int 
 alloc_patch_fill_memory(patch_fill_state_t *pfs, gs_memory_t *memory, const gs_color_space *pcs)
 {
     int code;
@@ -276,7 +276,7 @@ term_patch_fill_state(patch_fill_state_t *pfs)
 }
 
 /* Resolve a patch color using the Function if necessary. */
-inline private void
+static inline void
 patch_resolve_color_inline(patch_color_t * ppcr, const patch_fill_state_t *pfs)
 {
     if (pfs->Function) {
@@ -300,7 +300,7 @@ patch_resolve_color(patch_color_t * ppcr, const patch_fill_state_t *pfs)
  * We use the name ppcr rather than ppc because an Apple compiler defines
  * ppc when compiling on PowerPC systems (!).
  */
-private void
+static void
 patch_interpolate_color(patch_color_t * ppcr, const patch_color_t * ppc0,
        const patch_color_t * ppc1, const patch_fill_state_t *pfs, floatp t)
 {
@@ -345,7 +345,7 @@ patch_interpolate_color(patch_color_t * ppcr, const patch_color_t * ppc0,
 /* ---------------- Common code ---------------- */
 
 /* Evaluate a curve at a given point. */
-private void
+static void
 curve_eval(gs_fixed_point * pt, const gs_fixed_point * p0,
 	   const gs_fixed_point * p1, const gs_fixed_point * p2,
 	   const gs_fixed_point * p3, floatp t)
@@ -368,7 +368,7 @@ curve_eval(gs_fixed_point * pt, const gs_fixed_point * p0,
 /* ---------------- Coons patch shading ---------------- */
 
 /* Calculate the device-space coordinate corresponding to (u,v). */
-private void
+static void
 Cp_transform(gs_fixed_point * pt, const patch_curve_t curve[4],
 	     const gs_fixed_point ignore_interior[4], floatp u, floatp v)
 {
@@ -446,7 +446,7 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 /* ---------------- Tensor product patch shading ---------------- */
 
 /* Calculate the device-space coordinate corresponding to (u,v). */
-private void
+static void
 Tpp_transform(gs_fixed_point * pt, const patch_curve_t curve[4],
 	      const gs_fixed_point interior[4], floatp u, floatp v)
 {
@@ -670,7 +670,7 @@ wedge_vertex_list_elem_buffer_free(patch_fill_state_t *pfs)
     pfs->free_wedge_vertex = NULL;
 }
 
-private inline wedge_vertex_list_elem_t *
+static inline wedge_vertex_list_elem_t *
 wedge_vertex_list_elem_reserve(patch_fill_state_t *pfs)
 {
     wedge_vertex_list_elem_t *e = pfs->free_wedge_vertex;
@@ -684,14 +684,14 @@ wedge_vertex_list_elem_reserve(patch_fill_state_t *pfs)
     return NULL;
 }
 
-private inline void
+static inline void
 wedge_vertex_list_elem_release(patch_fill_state_t *pfs, wedge_vertex_list_elem_t *e)
 {
     e->next = pfs->free_wedge_vertex;
     pfs->free_wedge_vertex = e;
 }
 
-private inline void
+static inline void
 release_wedge_vertex_list_interval(patch_fill_state_t *pfs, 
     wedge_vertex_list_elem_t *beg, wedge_vertex_list_elem_t *end)
 {
@@ -705,7 +705,7 @@ release_wedge_vertex_list_interval(patch_fill_state_t *pfs,
     }
 }
 
-private inline int
+static inline int
 release_wedge_vertex_list(patch_fill_state_t *pfs, wedge_vertex_list_t *ll, int n)
 {
     int i;
@@ -726,7 +726,7 @@ release_wedge_vertex_list(patch_fill_state_t *pfs, wedge_vertex_list_t *ll, int 
     return 0;
 }
 
-private inline wedge_vertex_list_elem_t *
+static inline wedge_vertex_list_elem_t *
 wedge_vertex_list_find(wedge_vertex_list_elem_t *beg, const wedge_vertex_list_elem_t *end, 
 	    int level)
 {
@@ -740,13 +740,13 @@ wedge_vertex_list_find(wedge_vertex_list_elem_t *beg, const wedge_vertex_list_el
     return NULL;
 }
 
-private inline void
+static inline void
 init_wedge_vertex_list(wedge_vertex_list_t *l, int n)
 {
     memset(l, 0, sizeof(*l) * n);
 }
 
-private void
+static void
 draw_patch(const tensor_patch *p, bool interior, ulong rgbcolor)
 {
 #ifdef DEBUG
@@ -770,7 +770,7 @@ draw_patch(const tensor_patch *p, bool interior, ulong rgbcolor)
 #endif
 }
 
-private inline void
+static inline void
 draw_triangle(const gs_fixed_point *p0, const gs_fixed_point *p1, 
 		const gs_fixed_point *p2, ulong rgbcolor)
 {
@@ -781,7 +781,7 @@ draw_triangle(const gs_fixed_point *p0, const gs_fixed_point *p1,
 #endif
 }
 
-private inline void
+static inline void
 draw_quadrangle(const quadrangle_patch *p, ulong rgbcolor)
 {
 #ifdef DEBUG
@@ -793,7 +793,7 @@ draw_quadrangle(const quadrangle_patch *p, ulong rgbcolor)
 #endif
 }
 
-private inline int
+static inline int
 curve_samples(patch_fill_state_t *pfs, 
 		const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
 {
@@ -828,14 +828,14 @@ curve_samples(patch_fill_state_t *pfs,
     return 1 << k;
 }
 
-private inline bool
+static inline bool
 intersection_of_small_bars(const gs_fixed_point q[4], int i0, int i1, int i2, int i3, fixed *ry, fixed *ey)
 {
     /* This function is only used with QUADRANGLES. */
     return gx_intersect_small_bars(q[i0].x, q[i0].y, q[i1].x, q[i1].y, q[i2].x, q[i2].y, q[i3].x, q[i3].y, ry, ey);
 }
 
-private inline void
+static inline void
 adjust_swapped_boundary(fixed *b, bool swap_axes)
 {
     if (swap_axes) {
@@ -851,7 +851,7 @@ adjust_swapped_boundary(fixed *b, bool swap_axes)
     }
 }
 
-private inline void
+static inline void
 make_trapezoid(const gs_fixed_point q[4], 
 	int vi0, int vi1, int vi2, int vi3, fixed ybot, fixed ytop, 
 	bool swap_axes, bool orient, gs_fixed_edge *le, gs_fixed_edge *re)
@@ -871,7 +871,7 @@ make_trapezoid(const gs_fixed_point q[4],
     adjust_swapped_boundary(&re->end.x, swap_axes);
 }
 
-private inline int 
+static inline int 
 gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4], 
 	int vi0, int vi1, int vi2, int vi3, fixed ybot0, fixed ytop0, 
 	bool swap_axes, const gx_device_color *pdevc, bool orient)
@@ -897,7 +897,7 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
     return code;
 }
 
-private inline void
+static inline void
 dc2fc(const patch_fill_state_t *pfs, gx_color_index c, 
 	    frac31 fc[GX_DEVICE_COLOR_MAX_COMPONENTS])
 {
@@ -914,7 +914,7 @@ dc2fc(const patch_fill_state_t *pfs, gx_color_index c,
 
 #define DEBUG_COLOR_INDEX_CACHE 0
 
-private inline int
+static inline int
 patch_color_to_device_color_inline(const patch_fill_state_t *pfs, const patch_color_t *c, gx_device_color *pdevc, frac31 *frac_values)
 {
     /* Must return 2 if the color is not pure. 
@@ -979,7 +979,7 @@ patch_color_to_device_color(const patch_fill_state_t *pfs, const patch_color_t *
     return patch_color_to_device_color_inline(pfs, c, pdevc, NULL);
 }
 
-private inline double
+static inline double
 color_span(const patch_fill_state_t *pfs, const patch_color_t *c0, const patch_color_t *c1)
 {
     int n = pfs->num_components, i;
@@ -992,7 +992,7 @@ color_span(const patch_fill_state_t *pfs, const patch_color_t *c0, const patch_c
     return m;
 }
 
-private inline void
+static inline void
 color_diff(const patch_fill_state_t *pfs, const patch_color_t *c0, const patch_color_t *c1, patch_color_t *d)
 {
     int n = pfs->num_components, i;
@@ -1001,7 +1001,7 @@ color_diff(const patch_fill_state_t *pfs, const patch_color_t *c0, const patch_c
 	d->cc.paint.values[i] = c1->cc.paint.values[i] - c0->cc.paint.values[i];
 }
 
-private inline double
+static inline double
 color_norm(const patch_fill_state_t *pfs, const patch_color_t *c)
 {
     int n = pfs->num_components, i;
@@ -1013,7 +1013,7 @@ color_norm(const patch_fill_state_t *pfs, const patch_color_t *c)
     return m;
 }
 
-private inline int
+static inline int
 isnt_color_monotonic(const patch_fill_state_t *pfs, const patch_color_t *c0, const patch_color_t *c1)
 {   /* checks whether the color is monotonic in the n-dimensional interval,
        where n is the number of parameters in c0->t, c1->t.
@@ -1038,13 +1038,13 @@ isnt_color_monotonic(const patch_fill_state_t *pfs, const patch_color_t *c0, con
     return code;
 }
 
-private inline bool
+static inline bool
 covers_pixel_centers(fixed ybot, fixed ytop)
 {
     return fixed_pixround(ybot) < fixed_pixround(ytop);
 }
 
-private inline int
+static inline int
 constant_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge *re, 
 	fixed ybot, fixed ytop, bool swap_axes, const patch_color_t *c)
 {
@@ -1068,7 +1068,7 @@ constant_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_ed
     return code;
 }
 
-private inline float
+static inline float
 function_linearity(const patch_fill_state_t *pfs, const patch_color_t *c0, const patch_color_t *c1)
 {
     float s = 0;
@@ -1099,7 +1099,7 @@ function_linearity(const patch_fill_state_t *pfs, const patch_color_t *c0, const
     return s;
 }
 
-private inline int
+static inline int
 is_color_linear(const patch_fill_state_t *pfs, const patch_color_t *c0, const patch_color_t *c1)
 {   /* returns : 1 = linear, 0 = unlinear, <0 = error. */
     if (pfs->unlinear)
@@ -1119,7 +1119,7 @@ is_color_linear(const patch_fill_state_t *pfs, const patch_color_t *c0, const pa
     }
 }
 
-private int
+static int
 decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge *re, 
 	fixed ybot, fixed ytop, bool swap_axes, const patch_color_t *c0, 
 	const patch_color_t *c1)
@@ -1252,7 +1252,7 @@ out:
     return code;
 }
 
-private inline int 
+static inline int 
 linear_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_point q[4], int i0, int i1, int i2, int i3, 
 		fixed ybot, fixed ytop, bool swap_axes, const patch_color_t *c0, const patch_color_t *c1, 
 		bool orient)
@@ -1264,7 +1264,7 @@ linear_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_point q[4], int i0, int
     return decompose_linear_color(pfs, &le, &re, ybot, ytop, swap_axes, c0, c1);
 }
 
-private int
+static int
 wedge_trap_decompose(patch_fill_state_t *pfs, gs_fixed_point q[4],
 	fixed ybot, fixed ytop, const patch_color_t *c0, const patch_color_t *c1, 
 	bool swap_axes, bool self_intersecting)
@@ -1296,7 +1296,7 @@ wedge_trap_decompose(patch_fill_state_t *pfs, gs_fixed_point q[4],
     }
 }
 
-private inline int
+static inline int
 fill_wedge_trap(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_point *p1, 
 	    const gs_fixed_point *q0, const gs_fixed_point *q1, const patch_color_t *c0, const patch_color_t *c1, 
 	    bool swap_axes, bool self_intersecting)
@@ -1322,7 +1322,7 @@ fill_wedge_trap(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixe
     return wedge_trap_decompose(pfs, p, p[2].y, p[3].y, cc0, cc1, swap_axes, self_intersecting);
 }
 
-private void
+static void
 split_curve_s(const gs_fixed_point *pole, gs_fixed_point *q0, gs_fixed_point *q1, int pole_step)
 {
     /*	This copies a code fragment from split_curve_midpoint,
@@ -1356,14 +1356,14 @@ split_curve_s(const gs_fixed_point *pole, gs_fixed_point *q0, gs_fixed_point *q1
 #undef midpoint
 }
 
-private void
+static void
 split_curve(const gs_fixed_point pole[4], gs_fixed_point q0[4], gs_fixed_point q1[4])
 {
     split_curve_s(pole, q0, q1, 1);
 }
 
 
-private void
+static void
 generate_inner_vertices(gs_fixed_point *p, const gs_fixed_point pole[4], int k)
 {
     /* Recure to get exactly same points as when devided a patch. */
@@ -1378,7 +1378,7 @@ generate_inner_vertices(gs_fixed_point *p, const gs_fixed_point pole[4], int k)
     }
 }
 
-private inline void
+static inline void
 do_swap_axes(gs_fixed_point *p, int k)
 {
     int i;
@@ -1388,7 +1388,7 @@ do_swap_axes(gs_fixed_point *p, int k)
     }
 }
 
-private inline void
+static inline void
 y_extreme_vertice(gs_fixed_point *q, const gs_fixed_point *p, int k, int minmax)
 {
     int i;
@@ -1400,7 +1400,7 @@ y_extreme_vertice(gs_fixed_point *q, const gs_fixed_point *p, int k, int minmax)
     *q = r;	
 }
 
-private inline fixed
+static inline fixed
 span_x(const gs_fixed_point *p, int k)
 {
     int i;
@@ -1413,7 +1413,7 @@ span_x(const gs_fixed_point *p, int k)
     return xmax - xmin;
 }
 
-private inline fixed
+static inline fixed
 span_y(const gs_fixed_point *p, int k)
 {
     int i;
@@ -1426,7 +1426,7 @@ span_y(const gs_fixed_point *p, int k)
     return ymax - ymin;
 }
 
-private inline void
+static inline void
 draw_wedge(const gs_fixed_point *p, int n)
 {
 #ifdef DEBUG
@@ -1447,7 +1447,7 @@ draw_wedge(const gs_fixed_point *p, int n)
 #endif
 }
 
-private inline fixed
+static inline fixed
 manhattan_dist(const gs_fixed_point *p0, const gs_fixed_point *p1)
 {
     fixed dx = any_abs(p1->x - p0->x), dy = any_abs(p1->y - p0->y);
@@ -1455,7 +1455,7 @@ manhattan_dist(const gs_fixed_point *p0, const gs_fixed_point *p1)
     return max(dx, dy);
 }
 
-private inline int
+static inline int
 create_wedge_vertex_list(patch_fill_state_t *pfs, wedge_vertex_list_t *l, 
 	const gs_fixed_point *p0, const gs_fixed_point *p1)
 {
@@ -1476,7 +1476,7 @@ create_wedge_vertex_list(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
     return 0;
 }
 
-private inline int
+static inline int
 insert_wedge_vertex_list_elem(patch_fill_state_t *pfs, wedge_vertex_list_t *l, 
 			      const gs_fixed_point *p, wedge_vertex_list_elem_t **r)
 {
@@ -1512,7 +1512,7 @@ insert_wedge_vertex_list_elem(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
     return 0;
 }
 
-private inline int
+static inline int
 open_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
 	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *pm,
 	wedge_vertex_list_elem_t **r)
@@ -1574,7 +1574,7 @@ open_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
     return 0;
 }
 
-private inline int
+static inline int
 make_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l, 
 	wedge_vertex_list_t *l0, bool forth, 
 	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *pm)
@@ -1592,10 +1592,10 @@ make_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
     return code;
 }
 
-private int fill_wedge_from_list(patch_fill_state_t *pfs, const wedge_vertex_list_t *l,
+static int fill_wedge_from_list(patch_fill_state_t *pfs, const wedge_vertex_list_t *l,
 	    const patch_color_t *c0, const patch_color_t *c1);
 
-private inline int
+static inline int
 close_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
 	const patch_color_t *c0, const patch_color_t *c1)
 {
@@ -1610,7 +1610,7 @@ close_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
     return 0;
 }
 
-private inline void
+static inline void
 move_wedge(wedge_vertex_list_t *l, const wedge_vertex_list_t *l0, bool forth)
 {
     if (!l->last_side ^ !forth) {
@@ -1622,7 +1622,7 @@ move_wedge(wedge_vertex_list_t *l, const wedge_vertex_list_t *l0, bool forth)
     }
 }
 
-private inline int 
+static inline int 
 fill_triangle_wedge_aux(patch_fill_state_t *pfs,
 	    const shading_vertex_t *q0, const shading_vertex_t *q1, const shading_vertex_t *q2)
 {   int code;
@@ -1668,7 +1668,7 @@ fill_triangle_wedge_aux(patch_fill_state_t *pfs,
     }
 }
 
-private inline int
+static inline int
 try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
 	const shading_vertex_t *p0, const shading_vertex_t *p1, 
 	const shading_vertex_t *p2)
@@ -1748,7 +1748,7 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
     }
 }
 
-private inline int 
+static inline int 
 fill_triangle_wedge(patch_fill_state_t *pfs,
 	    const shading_vertex_t *q0, const shading_vertex_t *q1, const shading_vertex_t *q2)
 {
@@ -1765,7 +1765,7 @@ fill_triangle_wedge(patch_fill_state_t *pfs,
     return fill_triangle_wedge_aux(pfs, q0, q1, q2);
 }
 
-private inline int
+static inline int
 fill_triangle_wedge_from_list(patch_fill_state_t *pfs, 
     const wedge_vertex_list_elem_t *beg, const wedge_vertex_list_elem_t *end, 
     const wedge_vertex_list_elem_t *mid,
@@ -1790,7 +1790,7 @@ fill_triangle_wedge_from_list(patch_fill_state_t *pfs,
     return code;
 }
 
-private int 
+static int 
 fill_wedge_from_list_rec(patch_fill_state_t *pfs, 
 	    wedge_vertex_list_elem_t *beg, const wedge_vertex_list_elem_t *end, 
 	    int level, const patch_color_t *c0, const patch_color_t *c1)
@@ -1834,7 +1834,7 @@ fill_wedge_from_list_rec(patch_fill_state_t *pfs,
     }
 }
 
-private int 
+static int 
 fill_wedge_from_list(patch_fill_state_t *pfs, const wedge_vertex_list_t *l,
 	    const patch_color_t *c0, const patch_color_t *c1)
 {
@@ -1842,7 +1842,7 @@ fill_wedge_from_list(patch_fill_state_t *pfs, const wedge_vertex_list_t *l,
 		    max(l->beg->level, l->end->level), c0, c1);
 }
 
-private inline int
+static inline int
 terminate_wedge_vertex_list(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
 	const patch_color_t *c0, const patch_color_t *c1)
 {
@@ -1856,7 +1856,7 @@ terminate_wedge_vertex_list(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
     return 0;
 }
 
-private int
+static int
 wedge_by_triangles(patch_fill_state_t *pfs, int ka, 
 	const gs_fixed_point pole[4], const patch_color_t *c0, const patch_color_t *c1)
 {   /* Assuming ka >= 2, see fill_wedges. */
@@ -1945,7 +1945,7 @@ mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_p
      */
 }
 
-private inline void
+static inline void
 bbox_of_points(gs_fixed_rect *r, 
 	const gs_fixed_point *p0, const gs_fixed_point *p1,
 	const gs_fixed_point *p2, const gs_fixed_point *p3)
@@ -1984,7 +1984,7 @@ bbox_of_points(gs_fixed_rect *r,
 	r->q.y = p3->y;
 }
 
-private int
+static int
 fill_wedges_aux(patch_fill_state_t *pfs, int k, int ka, 
 	const gs_fixed_point pole[4], const patch_color_t *c0, const patch_color_t *c1,
 	int wedge_type)
@@ -2037,7 +2037,7 @@ fill_wedges_aux(patch_fill_state_t *pfs, int k, int ka,
     }
 }
 
-private int
+static int
 fill_wedges(patch_fill_state_t *pfs, int k0, int k1, 
 	const gs_fixed_point *pole, int pole_step, 
 	const patch_color_t *c0, const patch_color_t *c1, 
@@ -2059,7 +2059,7 @@ fill_wedges(patch_fill_state_t *pfs, int k0, int k1,
     return fill_wedges_aux(pfs, k0, k1 / k0, p, c0, c1, wedge_type);
 }
 
-private inline void
+static inline void
 make_vertices(gs_fixed_point q[4], const quadrangle_patch *p)
 {
     q[0] = p->p[0][0]->p;
@@ -2068,7 +2068,7 @@ make_vertices(gs_fixed_point q[4], const quadrangle_patch *p)
     q[3] = p->p[1][0]->p;
 }
 
-private inline void
+static inline void
 wrap_vertices_by_y(gs_fixed_point q[4], const gs_fixed_point s[4])
 {
     fixed y = s[0].y;
@@ -2086,7 +2086,7 @@ wrap_vertices_by_y(gs_fixed_point q[4], const gs_fixed_point s[4])
     q[3] = s[(i + 3) % 4];
 }
 
-private int 
+static int 
 ordered_triangle(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge *re, patch_color_t *c)
 {
     gs_fixed_edge ue;
@@ -2128,7 +2128,7 @@ ordered_triangle(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge *re, 
     return code;
 }
 
-private int 
+static int 
 constant_color_triangle(patch_fill_state_t *pfs,
 	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2)
 {
@@ -2169,7 +2169,7 @@ constant_color_triangle(patch_fill_state_t *pfs,
 }
 
 
-private inline int 
+static inline int 
 constant_color_quadrangle_aux(patch_fill_state_t *pfs, const quadrangle_patch *p, bool self_intersecting,
 	patch_color_t *c[3])
 {
@@ -2378,7 +2378,7 @@ constant_color_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bo
     return code;
 }
 
-private inline void
+static inline void
 divide_quadrangle_by_v(patch_fill_state_t *pfs, quadrangle_patch *s0, quadrangle_patch *s1, 
 	    shading_vertex_t q[2], const quadrangle_patch *p, patch_color_t *c[2])
 {
@@ -2398,7 +2398,7 @@ divide_quadrangle_by_v(patch_fill_state_t *pfs, quadrangle_patch *s0, quadrangle
     s1->p[1][1] = p->p[1][1];
 }
 
-private inline void
+static inline void
 divide_quadrangle_by_u(patch_fill_state_t *pfs, quadrangle_patch *s0, quadrangle_patch *s1, 
 	    shading_vertex_t q[2], const quadrangle_patch *p, patch_color_t *c[2])
 {
@@ -2418,7 +2418,7 @@ divide_quadrangle_by_u(patch_fill_state_t *pfs, quadrangle_patch *s0, quadrangle
     s1->p[1][1] = p->p[1][1];
 }
 
-private inline int
+static inline int
 is_quadrangle_color_monotonic(const patch_fill_state_t *pfs, const quadrangle_patch *p, 
 			      bool *not_monotonic_by_u, bool *not_monotonic_by_v) 
 {   /* returns : 1 = monotonic, 0 = don't know, <0 = error. */
@@ -2435,7 +2435,7 @@ is_quadrangle_color_monotonic(const patch_fill_state_t *pfs, const quadrangle_pa
     return !code;
 }
 
-private inline bool
+static inline bool
 quadrangle_bbox_covers_pixel_centers(const quadrangle_patch *p)
 {
     fixed xbot, xtop, ybot, ytop;
@@ -2455,7 +2455,7 @@ quadrangle_bbox_covers_pixel_centers(const quadrangle_patch *p)
     return false;
 }
 
-private inline void
+static inline void
 divide_bar(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, int radix, shading_vertex_t *p,
 	patch_color_t *c)
@@ -2466,7 +2466,7 @@ divide_bar(patch_fill_state_t *pfs,
     patch_interpolate_color(c, p0->c, p1->c, pfs, (double)(radix - 1) / radix);
 }
 
-private int 
+static int 
 triangle_by_4(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2, 
 	wedge_vertex_list_t *l01, wedge_vertex_list_t *l12, wedge_vertex_list_t *l20,
@@ -2590,7 +2590,7 @@ out:
     return code;
 }
 
-private inline int 
+static inline int 
 fill_triangle(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2,
 	wedge_vertex_list_t *l01, wedge_vertex_list_t *l12, wedge_vertex_list_t *l20)
@@ -2616,7 +2616,7 @@ fill_triangle(patch_fill_state_t *pfs,
     return triangle_by_4(pfs, p0, p1, p2, l01, l12, l20, cd, sd);
 }
 
-private int 
+static int 
 small_mesh_triangle(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2)
 {
@@ -2721,7 +2721,7 @@ gx_fill_triangle_small(gx_device *dev, const gs_fill_attributes *fa,
     return small_mesh_triangle(pfs, &p[0], &p[1], &p[2]);
 }
 
-private int
+static int
 mesh_triangle_rec(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2)
 {
@@ -2807,7 +2807,7 @@ mesh_triangle(patch_fill_state_t *pfs,
     return mesh_triangle_rec(pfs, p0, p1, p2);
 }
 
-private inline int 
+static inline int 
 triangles4(patch_fill_state_t *pfs, const quadrangle_patch *p, bool dummy_argument)
 {
     shading_vertex_t p0001, p1011, q;
@@ -2851,7 +2851,7 @@ triangles4(patch_fill_state_t *pfs, const quadrangle_patch *p, bool dummy_argume
     return code;
 }
 
-private inline int 
+static inline int 
 triangles2(patch_fill_state_t *pfs, const quadrangle_patch *p, bool dummy_argument)
 {
     wedge_vertex_list_t l;
@@ -2871,7 +2871,7 @@ triangles2(patch_fill_state_t *pfs, const quadrangle_patch *p, bool dummy_argume
     return 0;
 }
 
-private inline void 
+static inline void 
 make_quadrangle(const tensor_patch *p, shading_vertex_t qq[2][2], 
 	wedge_vertex_list_t l[4], quadrangle_patch *q)
 {
@@ -2893,7 +2893,7 @@ make_quadrangle(const tensor_patch *p, shading_vertex_t qq[2][2],
     q->l1000 = &l[3];
 }
 
-private inline int
+static inline int
 is_quadrangle_color_linear_by_u(const patch_fill_state_t *pfs, const quadrangle_patch *p)
 {   /* returns : 1 = linear, 0 = unlinear, <0 = error. */
     int code;
@@ -2904,7 +2904,7 @@ is_quadrangle_color_linear_by_u(const patch_fill_state_t *pfs, const quadrangle_
     return is_color_linear(pfs, p->p[1][0]->c, p->p[1][1]->c);
 }
 
-private inline int
+static inline int
 is_quadrangle_color_linear_by_v(const patch_fill_state_t *pfs, const quadrangle_patch *p)
 {   /* returns : 1 = linear, 0 = unlinear, <0 = error. */
     int code;
@@ -2915,7 +2915,7 @@ is_quadrangle_color_linear_by_v(const patch_fill_state_t *pfs, const quadrangle_
     return is_color_linear(pfs, p->p[0][1]->c, p->p[1][1]->c);
 }
 
-private inline int
+static inline int
 is_quadrangle_color_linear_by_diagonals(const patch_fill_state_t *pfs, const quadrangle_patch *p)
 {   /* returns : 1 = linear, 0 = unlinear, <0 = error. */
     int code;
@@ -2934,7 +2934,7 @@ typedef enum {
     color_change_general
 } color_change_type_t;
 
-private inline color_change_type_t
+static inline color_change_type_t
 quadrangle_color_change(const patch_fill_state_t *pfs, const quadrangle_patch *p, 
 			bool is_big_u, bool is_big_v, double size_u, double size_v, 
 			bool *divide_u, bool *divide_v)
@@ -3012,7 +3012,7 @@ quadrangle_color_change(const patch_fill_state_t *pfs, const quadrangle_patch *p
     return color_change_general;
 }
 
-private int 
+static int 
 fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 {
     /* The quadrangle is flattened enough by V and U, so ignore inner poles. */
@@ -3271,7 +3271,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 
 
 
-private inline void
+static inline void
 split_stripe(patch_fill_state_t *pfs, tensor_patch *s0, tensor_patch *s1, const tensor_patch *p, patch_color_t *c[2])
 {
     s0->c[0][1] = c[0];
@@ -3290,7 +3290,7 @@ split_stripe(patch_fill_state_t *pfs, tensor_patch *s0, tensor_patch *s1, const 
     s1->c[1][1] = p->c[1][1];
 }
 
-private inline void
+static inline void
 split_patch(patch_fill_state_t *pfs, tensor_patch *s0, tensor_patch *s1, const tensor_patch *p, patch_color_t *c[2])
 {
     s0->c[1][0] = c[0];
@@ -3309,7 +3309,7 @@ split_patch(patch_fill_state_t *pfs, tensor_patch *s0, tensor_patch *s1, const t
     s1->c[1][1] = p->c[1][1];
 }
 
-private inline void
+static inline void
 tensor_patch_bbox(gs_fixed_rect *r, const tensor_patch *p)
 {
     int i, j;
@@ -3332,7 +3332,7 @@ tensor_patch_bbox(gs_fixed_rect *r, const tensor_patch *p)
     }
 }
 
-private int 
+static int 
 decompose_stripe(patch_fill_state_t *pfs, const tensor_patch *p, int ku)
 {
     if (ku > 1) {
@@ -3400,7 +3400,7 @@ decompose_stripe(patch_fill_state_t *pfs, const tensor_patch *p, int ku)
     }
 }
 
-private int 
+static int 
 fill_stripe(patch_fill_state_t *pfs, const tensor_patch *p)
 {
     /* The stripe is flattened enough by V, so ignore inner poles. */
@@ -3436,7 +3436,7 @@ fill_stripe(patch_fill_state_t *pfs, const tensor_patch *p)
     return fill_wedges(pfs, ku[3], kum, p->pole[3], 1, p->c[1][0], p->c[1][1], inpatch_wedge);
 }
 
-private inline bool
+static inline bool
 is_curve_x_monotonic(const gs_fixed_point *pole, int pole_step)
 {   /* true = monotonic, false = don't know. */
     return (pole[0 * pole_step].x <= pole[1 * pole_step].x && 
@@ -3447,7 +3447,7 @@ is_curve_x_monotonic(const gs_fixed_point *pole, int pole_step)
 	    pole[2 * pole_step].x >= pole[3 * pole_step].x);
 }
 
-private inline bool
+static inline bool
 is_curve_y_monotonic(const gs_fixed_point *pole, int pole_step)
 {   /* true = monotonic, false = don't know. */
     return (pole[0 * pole_step].y <= pole[1 * pole_step].y && 
@@ -3458,7 +3458,7 @@ is_curve_y_monotonic(const gs_fixed_point *pole, int pole_step)
 	    pole[2 * pole_step].y >= pole[3 * pole_step].y);
 }
 
-private inline bool neqs(int *a, int b)
+static inline bool neqs(int *a, int b)
 {   /* Unequal signs. Assuming -1, 0, 1 only. */
     if (*a * b < 0)
 	return true;
@@ -3467,7 +3467,7 @@ private inline bool neqs(int *a, int b)
     return false;
 }
 
-private inline int
+static inline int
 vector_pair_orientation(const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *p2)
 {   fixed dx1 = p1->x - p0->x, dy1 = p1->y - p0->y;
     fixed dx2 = p2->x - p0->x, dy2 = p2->y - p0->y;
@@ -3476,7 +3476,7 @@ vector_pair_orientation(const gs_fixed_point *p0, const gs_fixed_point *p1, cons
     return (vp > 0 ? 1 : vp < 0 ? -1 : 0);
 }
 
-private inline bool
+static inline bool
 is_x_bended(const tensor_patch *p)
 {   
     int sign = vector_pair_orientation(&p->pole[0][0], &p->pole[0][1], &p->pole[1][0]);
@@ -3517,7 +3517,7 @@ is_x_bended(const tensor_patch *p)
     return false;
 }
 
-private inline bool
+static inline bool
 is_y_bended(const tensor_patch *p)
 {   
     int sign = vector_pair_orientation(&p->pole[0][0], &p->pole[1][0], &p->pole[0][1]);
@@ -3558,7 +3558,7 @@ is_y_bended(const tensor_patch *p)
     return false;
 }
 
-private inline bool
+static inline bool
 is_curve_x_small(const patch_fill_state_t *pfs, const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
 {   /* Is curve within a single pixel, or smaller than half pixel ? */
     fixed xmin0 = min(pole[0 * pole_step].x, pole[1 * pole_step].x);
@@ -3573,7 +3573,7 @@ is_curve_x_small(const patch_fill_state_t *pfs, const gs_fixed_point *pole, int 
     return false;	
 }
 
-private inline bool
+static inline bool
 is_curve_y_small(const patch_fill_state_t *pfs, const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
 {   /* Is curve within a single pixel, or smaller than half pixel ? */
     fixed ymin0 = min(pole[0 * pole_step].y, pole[1 * pole_step].y);
@@ -3588,7 +3588,7 @@ is_curve_y_small(const patch_fill_state_t *pfs, const gs_fixed_point *pole, int 
     return false;	
 }
 
-private inline bool
+static inline bool
 is_patch_narrow(const patch_fill_state_t *pfs, const tensor_patch *p)
 {
     if (!is_curve_x_small(pfs, &p->pole[0][0], 4, pfs->fixed_flat))
@@ -3610,7 +3610,7 @@ is_patch_narrow(const patch_fill_state_t *pfs, const tensor_patch *p)
     return true;
 }
 
-private int 
+static int 
 fill_patch(patch_fill_state_t *pfs, const tensor_patch *p, int kv, int kv0, int kv1)
 {
     if (kv <= 1) {
@@ -3695,18 +3695,18 @@ fill_patch(patch_fill_state_t *pfs, const tensor_patch *p, int kv, int kv0, int 
     }
 }
 
-private inline fixed
+static inline fixed
 lcp1(fixed p0, fixed p3)
 {   /* Computing the 1st pole of a 3d order besier, which applears a line. */
     return (p0 + p0 + p3) / 3;
 }
-private inline fixed
+static inline fixed
 lcp2(fixed p0, fixed p3)
 {   /* Computing the 2nd pole of a 3d order besier, which applears a line. */
     return (p0 + p3 + p3) / 3;
 }
 
-private void
+static void
 patch_set_color(const patch_fill_state_t *pfs, patch_color_t *c, const float *cc)
 {
     if (pfs->Function) {
@@ -3716,7 +3716,7 @@ patch_set_color(const patch_fill_state_t *pfs, patch_color_t *c, const float *cc
 	memcpy(c->cc.paint.values, cc, sizeof(c->cc.paint.values[0]) * pfs->num_components);
 }
 
-private void
+static void
 make_tensor_patch(const patch_fill_state_t *pfs, tensor_patch *p, const patch_curve_t curve[4],
 	   const gs_fixed_point interior[4])
 {

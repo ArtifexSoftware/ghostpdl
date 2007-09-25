@@ -77,7 +77,7 @@ typedef struct cff_glyph_subset_s {
 /* ------ String tables ------ */
 
 /* Initialize a string table. */
-private void
+static void
 cff_string_table_init(cff_string_table_t *pcst, cff_string_item_t *items,
 		      int size)
 {
@@ -94,7 +94,7 @@ cff_string_table_init(cff_string_table_t *pcst, cff_string_item_t *items,
 }
 
 /* Add a string to a string table. */
-private int
+static int
 cff_string_add(cff_string_table_t *pcst, const byte *data, uint size)
 {
     int index;
@@ -110,7 +110,7 @@ cff_string_add(cff_string_table_t *pcst, const byte *data, uint size)
 
 /* Look up a string, optionally adding it. */
 /* Return 1 if the string was added. */
-private int
+static int
 cff_string_index(cff_string_table_t *pcst, const byte *data, uint size,
 		 bool enter, int *pindex)
 {
@@ -140,7 +140,7 @@ cff_string_index(cff_string_table_t *pcst, const byte *data, uint size,
 }
 
 /* Get the SID for a string or a glyph. */
-private int
+static int
 cff_string_sid(cff_writer_t *pcw, const byte *data, uint size)
 {
     int index;
@@ -154,7 +154,7 @@ cff_string_sid(cff_writer_t *pcw, const byte *data, uint size)
     }
     return index;
 }
-private int
+static int
 cff_glyph_sid(cff_writer_t *pcw, gs_glyph glyph)
 {
     gs_const_string str;
@@ -168,13 +168,13 @@ cff_glyph_sid(cff_writer_t *pcw, gs_glyph glyph)
 
 /* ------ Low level ------ */
 
-private void
+static void
 put_card16(cff_writer_t *pcw, uint c16)
 {
     sputc(pcw->strm, (byte)(c16 >> 8));
     sputc(pcw->strm, (byte)c16);
 }
-private int
+static int
 offset_size(uint offset)
 {
     int size = 1;
@@ -183,7 +183,7 @@ offset_size(uint offset)
 	offset >>= 8, ++size;
     return size;
 }
-private void
+static void
 put_offset(cff_writer_t *pcw, int offset)
 {
     int i;
@@ -191,7 +191,7 @@ put_offset(cff_writer_t *pcw, int offset)
     for (i = pcw->offset_size - 1; i >= 0; --i)
 	sputc(pcw->strm, (byte)(offset >> (i * 8)));
 }
-private int
+static int
 put_bytes(stream * s, const byte *ptr, uint count)
 {
     uint used;
@@ -199,7 +199,7 @@ put_bytes(stream * s, const byte *ptr, uint count)
     sputs(s, ptr, count, &used);
     return (int)used;
 }
-private int
+static int
 check_ioerror(stream * s)
 {
     uint used;
@@ -210,7 +210,7 @@ check_ioerror(stream * s)
 /* ------ Data types ------ */
 
 #define CE_OFFSET 32
-private void
+static void
 cff_put_op(cff_writer_t *pcw, int op)
 {
     if (op >= CE_OFFSET) {
@@ -219,7 +219,7 @@ cff_put_op(cff_writer_t *pcw, int op)
     } else
 	sputc(pcw->strm, (byte)op);
 }
-private void
+static void
 cff_put_int(cff_writer_t *pcw, int i)
 {
     stream *s = pcw->strm;
@@ -239,30 +239,30 @@ cff_put_int(cff_writer_t *pcw, int i)
 	put_card16(pcw, i & 0xffff);
     }
 }
-private void
+static void
 cff_put_int_value(cff_writer_t *pcw, int i, int op)
 {
     cff_put_int(pcw, i);
     cff_put_op(pcw, op);
 }
-private void
+static void
 cff_put_int_if_ne(cff_writer_t *pcw, int i, int i_default, int op)
 {
     if (i != i_default)
 	cff_put_int_value(pcw, i, op);
 }
-private void
+static void
 cff_put_bool(cff_writer_t *pcw, bool b)
 {
     cff_put_int(pcw, (b ? 1 : 0));
 }
-private void
+static void
 cff_put_bool_value(cff_writer_t *pcw, bool b, int op)
 {
     cff_put_bool(pcw, b);
     cff_put_op(pcw, op);
 }
-private void
+static void
 cff_put_real(cff_writer_t *pcw, floatp f)
 {
     if (f == (int)f)
@@ -312,19 +312,19 @@ cff_put_real(cff_writer_t *pcw, floatp f)
 	sputc(pcw->strm, b);
     }
 }
-private void
+static void
 cff_put_real_value(cff_writer_t *pcw, floatp f, int op)
 {
     cff_put_real(pcw, f);
     cff_put_op(pcw, op);
 }
-private void
+static void
 cff_put_real_if_ne(cff_writer_t *pcw, floatp f, floatp f_default, int op)
 {
     if ((float)f != (float)f_default)
 	cff_put_real_value(pcw, f, op);
 }
-private void
+static void
 cff_put_real_deltarray(cff_writer_t *pcw, const float *pf, int count, int op)
 {
     float prev = 0;
@@ -340,7 +340,7 @@ cff_put_real_deltarray(cff_writer_t *pcw, const float *pf, int count, int op)
     }
     cff_put_op(pcw, op);
 }
-private int
+static int
 cff_put_string(cff_writer_t *pcw, const byte *data, uint size)
 {
     int sid = cff_string_sid(pcw, data, size);
@@ -350,7 +350,7 @@ cff_put_string(cff_writer_t *pcw, const byte *data, uint size)
     cff_put_int(pcw, sid);
     return 0;
 }
-private int
+static int
 cff_put_string_value(cff_writer_t *pcw, const byte *data, uint size, int op)
 {
     int code = cff_put_string(pcw, data, size);
@@ -359,19 +359,19 @@ cff_put_string_value(cff_writer_t *pcw, const byte *data, uint size, int op)
 	cff_put_op(pcw, op);
     return code;
 }
-private int
+static int
 cff_extra_lenIV(const cff_writer_t *pcw, const gs_font_type1 *pfont)
 {
     return (pcw->options & WRITE_TYPE2_NO_LENIV ?
 	    max(pfont->data.lenIV, 0) : 0);
 }
-private bool
+static bool
 cff_convert_charstrings(const cff_writer_t *pcw, const gs_font_base *pfont)
 {
     return (pfont->FontType != ft_encrypted2 &&
 	    (pcw->options & WRITE_TYPE2_CHARSTRINGS) != 0);
 }
-private int
+static int
 cff_put_CharString(cff_writer_t *pcw, const byte *data, uint size,
 		   gs_font_type1 *pfont)
 {
@@ -407,13 +407,13 @@ cff_put_CharString(cff_writer_t *pcw, const byte *data, uint size,
     }
     return 0;
 }
-private uint
+static uint
 cff_Index_size(uint count, uint total)
 {
     return (count == 0 ? 2 :
 	    3 + offset_size(total + 1) * (count + 1) + total);
 }
-private void
+static void
 cff_put_Index_header(cff_writer_t *pcw, uint count, uint total)
 {
     put_card16(pcw, count);
@@ -423,7 +423,7 @@ cff_put_Index_header(cff_writer_t *pcw, uint count, uint total)
 	put_offset(pcw, 1);
     }
 }
-private void
+static void
 cff_put_Index(cff_writer_t *pcw, const cff_string_table_t *pcst)
 {
     uint j, offset;
@@ -446,7 +446,7 @@ cff_put_Index(cff_writer_t *pcw, const cff_string_table_t *pcst)
 /* ------ Header ------ */
 
 /* Write the header, setting offset_size. */
-private int
+static int
 cff_write_header(cff_writer_t *pcw, uint end_offset)
 {
     pcw->offset_size = (end_offset > 0x7fff ? 3 : 2);
@@ -513,7 +513,7 @@ typedef enum {
     TOP_FontName = 70		/* only used in FDArray "fonts" */
 } Top_op;
 
-private int
+static int
 cff_get_Top_info_common(cff_writer_t *pcw, gs_font_base *pbfont,
 			bool full_info, gs_font_info_t *pinfo)
 {
@@ -534,7 +534,7 @@ cff_get_Top_info_common(cff_writer_t *pcw, gs_font_base *pbfont,
 	  FONT_INFO_FAMILY_NAME | FONT_INFO_FULL_NAME),
 	 pinfo);
 }
-private void
+static void
 cff_write_Top_common(cff_writer_t *pcw, gs_font_base *pbfont,
 		     bool write_FontMatrix, const gs_font_info_t *pinfo)
 {
@@ -625,7 +625,7 @@ cff_write_Top_common(cff_writer_t *pcw, gs_font_base *pbfont,
 }
 
 /* Type 1 or Type 2 font */
-private void
+static void
 cff_write_Top_font(cff_writer_t *pcw, uint Encoding_offset,
 		   uint charset_offset, uint CharStrings_offset,
 		   uint Private_offset, uint Private_size)
@@ -650,14 +650,14 @@ cff_write_Top_font(cff_writer_t *pcw, uint Encoding_offset,
 }
 
 /* CIDFontType 0 CIDFont */
-private void
+static void
 cff_write_ROS(cff_writer_t *pcw, const gs_cid_system_info_t *pcidsi)
 {
     cff_put_string(pcw, pcidsi->Registry.data, pcidsi->Registry.size);
     cff_put_string(pcw, pcidsi->Ordering.data, pcidsi->Ordering.size);
     cff_put_int_value(pcw, pcidsi->Supplement, TOP_ROS);
 }
-private void
+static void
 cff_write_Top_cidfont(cff_writer_t *pcw, uint charset_offset,
 		      uint CharStrings_offset, uint FDSelect_offset,
 		      uint Font_offset, const gs_font_info_t *pinfo)
@@ -681,7 +681,7 @@ cff_write_Top_cidfont(cff_writer_t *pcw, uint charset_offset,
 }
 
 /* FDArray Index for CIDFont (offsets only) */
-private void
+static void
 cff_write_FDArray_offsets(cff_writer_t *pcw, uint *FDArray_offsets,
 			  int num_fonts)
 {
@@ -694,7 +694,7 @@ cff_write_FDArray_offsets(cff_writer_t *pcw, uint *FDArray_offsets,
 }
 
 /* FDArray entry for CIDFont */
-private void
+static void
 cff_write_Top_fdarray(cff_writer_t *pcw, gs_font_base *pbfont,
 		      uint Private_offset, uint Private_size)
 {
@@ -752,7 +752,7 @@ typedef enum {
 
 const long default_defaultWidthX = defaultWidthX_DEFAULT; /* For gdevpsfx.c */
 
-private void
+static void
 cff_write_Private(cff_writer_t *pcw, uint Subrs_offset,
 		  const gs_font_type1 *pfont)
 {
@@ -808,7 +808,7 @@ cff_write_Private(cff_writer_t *pcw, uint Subrs_offset,
 /* ------ CharStrings Index ------ */
 
 /* These are separate procedures only for readability. */
-private int
+static int
 cff_write_CharStrings_offsets(cff_writer_t *pcw, psf_glyph_enum_t *penum,
 			      uint *pcount)
 {
@@ -851,7 +851,7 @@ cff_write_CharStrings_offsets(cff_writer_t *pcw, psf_glyph_enum_t *penum,
     *pcount = count;
     return offset - 1;
 }
-private void
+static void
 cff_write_CharStrings(cff_writer_t *pcw, psf_glyph_enum_t *penum,
 		      uint charstrings_count, uint charstrings_size)
 {
@@ -886,7 +886,7 @@ cff_write_CharStrings(cff_writer_t *pcw, psf_glyph_enum_t *penum,
  * We will fix this someday.
  */
 
-private uint
+static uint
 cff_write_Subrs_offsets(cff_writer_t *pcw, uint *pcount, gs_font_type1 *pfont,
 			bool global)
 {
@@ -910,7 +910,7 @@ cff_write_Subrs_offsets(cff_writer_t *pcw, uint *pcount, gs_font_type1 *pfont,
     return offset - 1;
 }
 
-private void
+static void
 cff_write_Subrs(cff_writer_t *pcw, uint subrs_count, uint subrs_size,
 		gs_font_type1 *pfont, bool global)
 {
@@ -935,7 +935,7 @@ cff_write_Subrs(cff_writer_t *pcw, uint subrs_count, uint subrs_size,
 
 /* ------ Encoding/charset ------ */
 
-private uint
+static uint
 cff_Encoding_size(int num_encoded, int num_encoded_chars)
 {
     int n = min(num_encoded, 255);
@@ -945,7 +945,7 @@ cff_Encoding_size(int num_encoded, int num_encoded_chars)
 	 1 + (num_encoded_chars - n) * 3 : 0);
 }
 
-private int
+static int
 cff_write_Encoding(cff_writer_t *pcw, cff_glyph_subset_t *pgsub)
 {
     stream *s = pcw->strm;
@@ -1006,7 +1006,7 @@ cff_write_Encoding(cff_writer_t *pcw, cff_glyph_subset_t *pgsub)
     return 0;
 }
 
-private int
+static int
 cff_write_charset(cff_writer_t *pcw, cff_glyph_subset_t *pgsub)
 {
     int j;
@@ -1016,7 +1016,7 @@ cff_write_charset(cff_writer_t *pcw, cff_glyph_subset_t *pgsub)
 	put_card16(pcw, cff_glyph_sid(pcw, pgsub->glyphs.subset_data[j]));
     return 0;
 }
-private int
+static int
 cff_write_cidset(cff_writer_t *pcw, psf_glyph_enum_t *penum)
 {
     gs_glyph glyph;
@@ -1035,7 +1035,7 @@ cff_write_cidset(cff_writer_t *pcw, psf_glyph_enum_t *penum)
 /* ------ FDSelect ------ */
 
 /* Determine the size of FDSelect. */
-private uint
+static uint
 cff_FDSelect_size(cff_writer_t *pcw, psf_glyph_enum_t *penum, uint *pformat)
 {
     gs_font_cid0 *const pfont = (gs_font_cid0 *)pcw->pfont;
@@ -1067,7 +1067,7 @@ cff_FDSelect_size(cff_writer_t *pcw, psf_glyph_enum_t *penum, uint *pformat)
 }
 
 /* Write FDSelect.  size and format were returned by cff_FDSelect_size. */
-private int
+static int
 cff_write_FDSelect(cff_writer_t *pcw, psf_glyph_enum_t *penum, uint size,
 		   int format)
 {
@@ -1476,7 +1476,7 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
 }
 
 /* Write the CFF definition of a CIDFontType 0 font (CIDFont). */
-private int
+static int
 cid0_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *pgd,
 		gs_font_type1 **ppfont)
 {
@@ -1489,7 +1489,7 @@ cid0_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *pgd,
     return code;
 }
 #ifdef DEBUG
-private int
+static int
 offset_error(const char *msg)
 {
     if_debug1('l', "[l]%s offset error\n", msg);

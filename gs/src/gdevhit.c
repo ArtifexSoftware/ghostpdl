@@ -26,7 +26,7 @@ const int gs_hit_detected = gs_error_hit_detected;
  * Define a minimal device for insideness testing.
  * It returns e_hit whenever it is asked to actually paint any pixels.
  */
-private dev_proc_fill_rectangle(hit_fill_rectangle);
+static dev_proc_fill_rectangle(hit_fill_rectangle);
 const gx_device gs_hit_device = {
  std_device_std_body(gx_device, 0, "hit detector",
 		     0, 0, 1, 1),
@@ -76,7 +76,7 @@ const gx_device gs_hit_device = {
 };
 
 /* Test for a hit when filling a rectangle. */
-private int
+static int
 hit_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 		   gx_color_index color)
 {

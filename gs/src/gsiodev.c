@@ -29,7 +29,7 @@ extern_gx_io_device_table();
 
 /* Define a table of local copies of the IODevices, */
 /* allocated at startup.  This just postpones the day of reckoning.... */
-private gx_io_device **io_device_table;
+static gx_io_device **io_device_table;
 
 private_st_io_device();
 gs_private_st_ptr(st_io_device_ptr, gx_io_device *, "gx_io_device *",
@@ -41,11 +41,11 @@ gs_private_st_element(st_io_device_ptr_element, gx_io_device *,
 /* Define the OS (%os%) device. */
 iodev_proc_fopen(iodev_os_fopen);
 iodev_proc_fclose(iodev_os_fclose);
-private iodev_proc_delete_file(os_delete);
-private iodev_proc_rename_file(os_rename);
-private iodev_proc_file_status(os_status);
-private iodev_proc_enumerate_files(os_enumerate);
-private iodev_proc_get_params(os_get_params);
+static iodev_proc_delete_file(os_delete);
+static iodev_proc_rename_file(os_rename);
+static iodev_proc_file_status(os_status);
+static iodev_proc_enumerate_files(os_enumerate);
+static iodev_proc_get_params(os_get_params);
 const gx_io_device gs_iodev_os =
 {
     "%os%", "FileSystem",
@@ -199,33 +199,33 @@ iodev_os_fclose(gx_io_device * iodev, FILE * file)
     return 0;
 }
 
-private int
+static int
 os_delete(gx_io_device * iodev, const char *fname)
 {
     return (unlink(fname) == 0 ? 0 : gs_error_ioerror);
 }
 
-private int
+static int
 os_rename(gx_io_device * iodev, const char *from, const char *to)
 {
     return (rename(from, to) == 0 ? 0 : gs_error_ioerror);
 }
 
-private int
+static int
 os_status(gx_io_device * iodev, const char *fname, struct stat *pstat)
 {				/* The RS/6000 prototype for stat doesn't include const, */
     /* so we have to explicitly remove the const modifier. */
     return (stat((char *)fname, pstat) < 0 ? gs_error_undefinedfilename : 0);
 }
 
-private file_enum *
+static file_enum *
 os_enumerate(gx_io_device * iodev, const char *pat, uint patlen,
 	     gs_memory_t * mem)
 {
     return gp_enumerate_files_init(pat, patlen, mem);
 }
 
-private int
+static int
 os_get_params(gx_io_device * iodev, gs_param_list * plist)
 {
     int code;

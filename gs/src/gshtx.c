@@ -26,7 +26,7 @@
 /*
  * Procedure to free the set of components when a halftone is released.
  */
-private void
+static void
 free_comps(
 	      gs_memory_t * pmem,
 	      void *pvht,
@@ -43,7 +43,7 @@ free_comps(
  * Stub transfer function, to be applied to components that are not provided
  * with a transfer function.
  */
-private float
+static float
 null_closure_transfer(
 			 floatp val,
 			 const gx_transfer_map * pmap_dummy,	/* NOTUSED */
@@ -206,7 +206,7 @@ gs_ht_release(
 /*
  *  Verify that a gs_ht halftone is legitimate.
  */
-private int
+static int
 check_ht(
 	    gs_ht * pht
 )
@@ -227,7 +227,7 @@ check_ht(
 /*
  *  Load a transfer map from a gs_ht_transfer_proc function.
  */
-private void
+static void
 build_transfer_map(
 		      gs_ht_component * phtc,
 		      gx_transfer_map * pmap
@@ -261,7 +261,7 @@ build_transfer_map(
  *  some elementary initialization. This will also build the component index
  *  to order index map.
  */
-private gx_ht_order_component *
+static gx_ht_order_component *
 alloc_ht_order(
 		  const gs_ht * pht,
 		  gs_memory_t * pmem,
@@ -316,7 +316,7 @@ alloc_ht_order(
 /*
  *  Build the halftone order for one component.
  */
-private int
+static int
 build_component(
 		   gs_ht_component * phtc,
 		   gx_ht_order * porder,
@@ -377,7 +377,7 @@ build_component(
 /*
  * Free an order array and all elements it points to.
  */
-private void
+static void
 free_order_array(
 		    gx_ht_order_component * pocs,
 		    int num_comps,
@@ -477,7 +477,7 @@ gs_ht_install(
  * silly, because the rendering machinery actually wants masks, but doing
  * it right seems to require too many changes in existing code.
  */
-private int
+static int
 create_mask_bits(const byte * mask1, const byte * mask2,
 		 int width, int height, gx_ht_bit * bits)
 {
@@ -501,7 +501,7 @@ create_mask_bits(const byte * mask1, const byte * mask2,
 	}
     return count;
 }
-private int
+static int
 create_mask_order(gx_ht_order * porder, gs_state * pgs,
 		  const gs_client_order_halftone * phcop,
 		  gs_memory_t * mem)
@@ -542,7 +542,7 @@ create_mask_order(gx_ht_order * porder, gs_state * pgs,
 }
 
 /* Define the client-order halftone procedure structure. */
-private const gs_client_order_ht_procs_t mask_order_procs =
+static const gs_client_order_ht_procs_t mask_order_procs =
 {
     create_mask_order
 };

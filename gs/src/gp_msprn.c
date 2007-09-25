@@ -54,9 +54,9 @@
  * The "\\spool\" is not a UNC name and causes confusion.
  */
 
-private iodev_proc_init(mswin_printer_init);
-private iodev_proc_fopen(mswin_printer_fopen);
-private iodev_proc_fclose(mswin_printer_fclose);
+static iodev_proc_init(mswin_printer_init);
+static iodev_proc_fopen(mswin_printer_fopen);
+static iodev_proc_fclose(mswin_printer_fclose);
 const gx_io_device gs_iodev_printer = {
     "%printer%", "FileSystem",
     {mswin_printer_init, iodev_no_open_device,
@@ -133,7 +133,7 @@ void mswin_printer_thread(void *arg)
 }
 
 /* The file device procedures */
-private int
+static int
 mswin_printer_init(gx_io_device * iodev, gs_memory_t * mem)
 {
     /* state -> structure containing thread handle */
@@ -145,7 +145,7 @@ mswin_printer_init(gx_io_device * iodev, gs_memory_t * mem)
 }
 
 
-private int
+static int
 mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
 	   FILE ** pfile, char *rfname, uint rnamelen)
 {
@@ -207,7 +207,7 @@ mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
     return 0;
 }
 
-private int
+static int
 mswin_printer_fclose(gx_io_device * iodev, FILE * file)
 {
     unsigned long *ptid = &((tid_t *)(iodev->state))->tid;

@@ -48,7 +48,7 @@ cid_system_info_param(gs_cid_system_info_t *pcidsi, const ref *prcidsi)
 }
 
 /* Convert a CID into TT char code or to TT glyph index. */
-private bool 
+static bool 
 TT_char_code_from_CID_no_subst(const gs_memory_t *mem, 
 			       const ref *Decoding, const ref *TT_cmap, uint nCID, uint *c)
 {   ref *DecodingArray, char_code, char_code1, ih, glyph_index;
@@ -132,7 +132,7 @@ cid_to_TT_charcode(const gs_memory_t *mem,
 }
 
 /* Set a CIDMap element. */
-private int 
+static int 
 set_CIDMap_element(const gs_memory_t *mem, ref *CIDMap, uint cid, uint glyph_index)
 {   /* Assuming the CIDMap is already type-checked. */
     /* Assuming GDBytes == 2. */

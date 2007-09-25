@@ -62,7 +62,7 @@ public:
 
         void AppendFileNew(const char *filename);
 
-private:
+static:
 	BOOL m_bNoCopy;
 	BOOL m_bUseCommon;
 	BOOL m_bQuit;

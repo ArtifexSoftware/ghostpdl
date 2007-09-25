@@ -71,14 +71,14 @@ gs_private_st_ptrs1(st_pdf_bitmap_fonts, pdf_bitmap_fonts_t,
   "pdf_bitmap_fonts_t", pdf_bitmap_fonts_enum_ptrs,
   pdf_bitmap_fonts_reloc_ptrs, open_font);
 
-inline private long
+static inline long
 pdf_char_proc_id(const pdf_char_proc_t *pcp)
 {
     return pdf_resource_id((const pdf_resource_t *)pcp);
 }
 
 /* Assign a code for a char_proc. */
-private int
+static int
 assign_char_code(gx_device_pdf * pdev, gs_text_enum_t *pte)
 {
     pdf_bitmap_fonts_t *pbfs = pdev->text->bitmap_fonts;
@@ -238,7 +238,7 @@ pdf_char_image_y_offset(const gx_device_pdf *pdev, int x, int y, int h)
 }
 
 /* Attach a CharProc to a font. */
-private int
+static int
 pdf_attach_charproc(gx_device_pdf * pdev, pdf_font_resource_t *pdfont, pdf_char_proc_t *pcp,
 		    gs_glyph glyph, gs_char char_code, const gs_const_string *gnstr)
 {
@@ -667,7 +667,7 @@ pdf_exit_substream(gx_device_pdf *pdev)
     return code;
 }
 
-private bool 
+static bool 
 pdf_is_same_charproc_attrs1(gx_device_pdf *pdev, pdf_char_proc_t *pcp0, pdf_char_proc_t *pcp1)
 {
     if (pcp0->real_width.x != pcp1->real_width.x)
@@ -689,7 +689,7 @@ typedef struct charproc_compatibility_data_s {
     gs_font *font;
 } charproc_compatibility_data_t;
 
-private bool
+static bool
 is_char_code_used(pdf_font_resource_t *pdfont, gs_char char_code)
 {
     pdf_char_proc_ownership_t *pcpo;
@@ -702,7 +702,7 @@ is_char_code_used(pdf_font_resource_t *pdfont, gs_char char_code)
     return false;
 }
 
-private int 
+static int 
 pdf_is_charproc_compatible(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1)
 {
     charproc_compatibility_data_t *data = (charproc_compatibility_data_t *)pdev->find_resource_param;
@@ -766,7 +766,7 @@ pdf_is_charproc_compatible(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_reso
     return 1;
 }
 
-private int 
+static int 
 pdf_find_same_charproc_aux(gx_device_pdf *pdev, 
 	    pdf_font_resource_t **ppdfont, pdf_char_proc_t **ppcp)
 {
@@ -796,7 +796,7 @@ pdf_find_same_charproc_aux(gx_device_pdf *pdev,
     }
     return pdf_find_same_resource(pdev, resourceCharProc, (pdf_resource_t **)ppcp, pdf_is_charproc_compatible);
 }
-private int 
+static int 
 pdf_find_same_charproc(gx_device_pdf *pdev, 
 	    pdf_font_resource_t **ppdfont, const pdf_char_glyph_pairs_t *cgp, 
 	    pdf_char_proc_t **ppcp, gs_glyph glyph, gs_char char_code,
@@ -817,7 +817,7 @@ pdf_find_same_charproc(gx_device_pdf *pdev,
     return code;
 }
 
-private bool
+static bool
 pdf_is_charproc_defined(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, gs_char ch)
 {
     pdf_char_proc_ownership_t *pcpo;
@@ -829,7 +829,7 @@ pdf_is_charproc_defined(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, gs_cha
     return false;
 }
 
-private int
+static int
 complete_adding_char(gx_device_pdf *pdev, gs_font *font, 
 		     gs_glyph glyph, gs_char ch, pdf_char_proc_t *pcp,
 		     const gs_const_string *gnstr)
@@ -870,7 +870,7 @@ complete_adding_char(gx_device_pdf *pdev, gs_font *font,
     return 0;
 }
 
-private int
+static int
 pdf_char_widths_from_charprocs(gx_device_pdf *pdev, gs_font *font)
 {
     pdf_font_resource_t *pdfont;

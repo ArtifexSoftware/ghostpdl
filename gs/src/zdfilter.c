@@ -33,7 +33,7 @@
 /* pushpdf14devicefilter is defined in ztrans.c */
 
 /* - .popdevicefilter - */
-private int
+static int
 zpopdevicefilter(i_ctx_t *i_ctx_p)
 {
     gs_memory_t *mem = gs_memory_stable(imemory);

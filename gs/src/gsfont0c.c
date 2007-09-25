@@ -25,7 +25,7 @@
 /* ---------------- Private ---------------- */
 
 /* Create a Type 0 wrapper for a CIDFont/CMap pair. */
-private int
+static int
 type0_from_cidfont_cmap(gs_font_type0 **ppfont0, gs_font *font,
 			gs_cmap_t *pcmap, int wmode, const gs_matrix *psmat,
 			gs_memory_t *mem)

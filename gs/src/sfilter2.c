@@ -26,7 +26,7 @@
 private_st_A85E_state();
 
 /* Initialize the state */
-private int
+static int
 s_A85E_init(stream_state * st)
 {
     stream_A85E_state *const ss = (stream_A85E_state *) st;
@@ -36,7 +36,7 @@ s_A85E_init(stream_state * st)
 
 /* Process a buffer */
 #define LINE_LIMIT 79		/* not 80, to satisfy Genoa FTS */
-private int
+static int
 s_A85E_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
@@ -238,7 +238,7 @@ const stream_template s_A85E_template = {
 private_st_BT_state();
 
 /* Process a buffer.  Note that the same code serves for both streams. */
-private int
+static int
 s_BT_process(stream_state * st, stream_cursor_read * pr,
 	     stream_cursor_write * pw, bool last)
 {

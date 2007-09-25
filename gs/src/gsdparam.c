@@ -29,7 +29,7 @@
 /* ================ Getting parameters ================ */
 
 /* Forward references */
-private bool param_HWColorMap(gx_device *, byte *);
+static bool param_HWColorMap(gx_device *, byte *);
 
 /* Get the device parameters. */
 int
@@ -201,7 +201,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 }
 
 /* Get the color map for a device.  Return true if there is one. */
-private bool
+static bool
 param_HWColorMap(gx_device * dev, byte * palette /* 3 << 8 */ )
 {
     int depth = dev->color_info.depth;
@@ -236,7 +236,7 @@ gx_default_get_hardware_params(gx_device * dev, gs_param_list * plist)
 /* ---------------- Input and output media ---------------- */
 
 /* Finish defining input or output media. */
-private int
+static int
 finish_media(gs_param_list * mlist, gs_param_name key, const char *media_type)
 {
     int code = 0;
@@ -382,16 +382,16 @@ gdev_end_output_media(gs_param_list * mlist, gs_param_dict * pdict)
 /* ================ Putting parameters ================ */
 
 /* Forward references */
-private int param_normalize_anti_alias_bits( uint max_gray, int bits );
-private int param_anti_alias_bits(gs_param_list *, gs_param_name, int *);
-private int param_MediaSize(gs_param_list *, gs_param_name,
+static int param_normalize_anti_alias_bits( uint max_gray, int bits );
+static int param_anti_alias_bits(gs_param_list *, gs_param_name, int *);
+static int param_MediaSize(gs_param_list *, gs_param_name,
 			    const float *, gs_param_float_array *);
 
-private int param_check_bool(gs_param_list *, gs_param_name, bool, bool);
-private int param_check_long(gs_param_list *, gs_param_name, long, bool);
+static int param_check_bool(gs_param_list *, gs_param_name, bool, bool);
+static int param_check_long(gs_param_list *, gs_param_name, long, bool);
 #define param_check_int(plist, pname, ival, is_defined)\
   param_check_long(plist, pname, (long)(ival), is_defined)
-private int param_check_bytes(gs_param_list *, gs_param_name, const byte *,
+static int param_check_bytes(gs_param_list *, gs_param_name, const byte *,
 			      uint, bool);
 #define param_check_string(plist, pname, str, is_defined)\
   param_check_bytes(plist, pname, (const byte *)(str), \
@@ -825,7 +825,7 @@ gx_device_request_leadingedge(gx_device *dev, int le_req)
 /* Limit the anti-alias bit values to the maximum legal value for the
  * current color depth.
  */
-private int
+static int
 param_normalize_anti_alias_bits( uint max_gray, int bits )
 {
 	int	max_bits = ilog2( max_gray + 1);
@@ -834,7 +834,7 @@ param_normalize_anti_alias_bits( uint max_gray, int bits )
 }
 
 /* Read TextAlphaBits or GraphicsAlphaBits. */
-private int
+static int
 param_anti_alias_bits(gs_param_list * plist, gs_param_name param_name, int *pa)
 {
     int code = param_read_int(plist, param_name, pa);
@@ -857,7 +857,7 @@ param_anti_alias_bits(gs_param_list * plist, gs_param_name param_name, int *pa)
 
 
 /* Read .MediaSize or, if supported as a synonym, PageSize. */
-private int
+static int
 param_MediaSize(gs_param_list * plist, gs_param_name pname,
 		const float *res, gs_param_float_array * pa)
 {
@@ -885,7 +885,7 @@ param_MediaSize(gs_param_list * plist, gs_param_name pname,
 
 /* Check that a nominally read-only parameter is being set to */
 /* its existing value. */
-private int
+static int
 param_check_bool(gs_param_list * plist, gs_param_name pname, bool value,
 		 bool is_defined)
 {
@@ -907,7 +907,7 @@ param_check_bool(gs_param_list * plist, gs_param_name pname, bool value,
     }
     return code;
 }
-private int
+static int
 param_check_long(gs_param_list * plist, gs_param_name pname, long value,
 		 bool is_defined)
 {
@@ -929,7 +929,7 @@ param_check_long(gs_param_list * plist, gs_param_name pname, long value,
     }
     return code;
 }
-private int
+static int
 param_check_bytes(gs_param_list * plist, gs_param_name pname, const byte * str,
 		  uint size, bool is_defined)
 {

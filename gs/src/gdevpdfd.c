@@ -71,21 +71,21 @@ gdev_pdf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 
 /* ------ Vector device implementation ------ */
 
-private int
+static int
 pdf_setlinewidth(gx_device_vector * vdev, floatp width)
 {
     /* Acrobat Reader doesn't accept negative line widths. */
     return psdf_setlinewidth(vdev, fabs(width));
 }
 
-private int
+static int
 pdf_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis, 
 		 const gx_drawing_color * pdc)
 {
     return pis != NULL;
 }
 
-private int
+static int
 pdf_setfillcolor(gx_device_vector * vdev, const gs_imager_state * pis, 
 		 const gx_drawing_color * pdc)
 {
@@ -106,7 +106,7 @@ pdf_setfillcolor(gx_device_vector * vdev, const gs_imager_state * pis,
 				 &psdf_set_fill_color_commands);
 }
 
-private int
+static int
 pdf_setstrokecolor(gx_device_vector * vdev, const gs_imager_state * pis, 
                    const gx_drawing_color * pdc)
 {
@@ -127,7 +127,7 @@ pdf_setstrokecolor(gx_device_vector * vdev, const gs_imager_state * pis,
 				 &psdf_set_stroke_color_commands);
 }
 
-private int
+static int
 pdf_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
 	   gx_path_type_t type)
 {
@@ -171,7 +171,7 @@ pdf_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
     return psdf_dorect(vdev, x0, y0, x1, y1, type);
 }
 
-private int
+static int
 pdf_endpath(gx_device_vector * vdev, gx_path_type_t type)
 {
     return 0;			/* always handled by caller */
@@ -224,7 +224,7 @@ pdf_remember_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 }
 
 /* Check if same clipping path. */
-private int
+static int
 pdf_is_same_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 {
     /* Used for skipping redundant clip paths. SF bug #624168. */
@@ -290,7 +290,7 @@ pdf_must_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 }
 
 /* Put a single element of a clipping path list. */
-private int
+static int
 pdf_put_clip_path_list_elem(gx_device_pdf * pdev, gx_cpath_path_list *e, 
 	gs_path_enum *cenum, gdev_vector_dopath_state_t *state,
 	gs_fixed_point vs[3])
@@ -423,7 +423,7 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
  * CTM will be multiplied by *pscale, and all coordinates will be divided by
  * *pscale.
  */
-private bool
+static bool
 make_rect_scaling(const gx_device_pdf *pdev, const gs_fixed_rect *bbox,
 		  floatp prescale, double *pscale)
 {
@@ -449,7 +449,7 @@ make_rect_scaling(const gx_device_pdf *pdev, const gs_fixed_rect *bbox,
  * Return 1 if there is nothing to paint.
  * Changes *box to the clipping box.
  */
-private int
+static int
 prepare_fill_with_clip(gx_device_pdf *pdev, const gs_imager_state * pis,
 	      gs_fixed_rect *box, bool have_path,
 	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath)
@@ -501,7 +501,7 @@ prepare_fill_with_clip(gx_device_pdf *pdev, const gs_imager_state * pis,
 
 public_st_pdf_lcvd_t();
 
-private int 
+static int 
 lcvd_fill_rectangle_shifted(gx_device *dev, int x, int y, int width, int height, gx_color_index color)
 {
     pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
@@ -509,7 +509,7 @@ lcvd_fill_rectangle_shifted(gx_device *dev, int x, int y, int width, int height,
     return cvd->std_fill_rectangle((gx_device *)&cvd->mdev, 
 	x - cvd->mdev.mapped_x, y - cvd->mdev.mapped_y, width, height, color);
 }
-private int 
+static int 
 lcvd_fill_rectangle_shifted2(gx_device *dev, int x, int y, int width, int height, gx_color_index color)
 {
     pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
@@ -522,7 +522,7 @@ lcvd_fill_rectangle_shifted2(gx_device *dev, int x, int y, int width, int height
     return cvd->std_fill_rectangle((gx_device *)&cvd->mdev, 
 	x - cvd->mdev.mapped_x, y - cvd->mdev.mapped_y, width, height, color);
 }
-private void
+static void
 lcvd_get_clipping_box_shifted_from_mdev(gx_device *dev, gs_fixed_rect *pbox)
 {
     fixed ofs;
@@ -536,7 +536,7 @@ lcvd_get_clipping_box_shifted_from_mdev(gx_device *dev, gs_fixed_rect *pbox)
     pbox->p.y += ofs;
     pbox->q.y += ofs;
 }
-private int 
+static int 
 lcvd_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
 		gs_pattern1_instance_t *pinst, pattern_manage_t function)
 {
@@ -544,7 +544,7 @@ lcvd_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
 	return 1; /* Request shading area. */
     return 0;
 }
-private int 
+static int 
 lcvd_close_device_with_writing(gx_device *pdev)
 {
     /* Assuming 'mdev' is being closed before 'mask' - see gx_image3_end_image. */
@@ -556,7 +556,7 @@ lcvd_close_device_with_writing(gx_device *pdev)
     return code < 0 ? code : code1;
 }
 
-private int
+static int
 write_image(gx_device_pdf *pdev, gx_device_memory *mdev, gs_matrix *m)
 {
     gs_image_t image;
@@ -575,7 +575,7 @@ write_image(gx_device_pdf *pdev, gx_device_memory *mdev, gs_matrix *m)
 	code = pdf_do_image(pdev, writer.pres, NULL, true);
     return code;
 }
-private int
+static int
 write_mask(gx_device_pdf *pdev, gx_device_memory *mdev, gs_matrix *m)
 {
     const int sourcex = 0;
@@ -595,7 +595,7 @@ write_mask(gx_device_pdf *pdev, gx_device_memory *mdev, gs_matrix *m)
     return code;
 }
 
-private void
+static void
 max_subimage_width(int width, byte *base, int x0, long count1, int *x1, long *count)
 {
     long c = 0, c1 = count1 - 1;
@@ -627,7 +627,7 @@ ex:
     *x1 = x;
 }
 
-private void
+static void
 compute_subimage(int width, int height, int raster, byte *base, 
 	    	 int x0, int y0, long MaxClipPathSize, int *x1, int *y1)
 {
@@ -668,7 +668,7 @@ compute_subimage(int width, int height, int raster, byte *base,
     }
 }
 
-private int
+static int
 image_line_to_clip(gx_device_pdf *pdev, byte *base, int x0, int x1, int y0, int y1, bool started)
 {   /* returns the number of segments or error code. */
     int x = x0, xx;
@@ -713,7 +713,7 @@ image_line_to_clip(gx_device_pdf *pdev, byte *base, int x0, int x1, int y0, int 
     return c;
 }
 
-private int
+static int
 mask_to_clip(gx_device_pdf *pdev, int width, int height, 
 	     int raster, byte *base, int x0, int y0, int x1, int y1)
 {
@@ -737,7 +737,7 @@ mask_to_clip(gx_device_pdf *pdev, int width, int height,
     return code < 0 ? code : has_segments ? 1 : 0;
 }
 
-private int
+static int
 write_subimage(gx_device_pdf *pdev, gx_device_memory *mdev, int x, int y, int x1, int y1)
 {
     gs_image_t image;
@@ -760,7 +760,7 @@ write_subimage(gx_device_pdf *pdev, gx_device_memory *mdev, int x, int y, int x1
     return pdf_do_image(pdev, writer.pres, NULL, true);
 }
 
-private int 
+static int 
 write_image_with_clip(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
 {
     int x = 0, y = 0;
@@ -870,7 +870,7 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
 		0, 0, cvd->mdev.width, cvd->mdev.height, (gx_color_index)0);
     return code;
 }
-private int
+static int
 lcvd_handle_fill_path_as_shading_coverage(gx_device *dev,
     const gs_imager_state *pis, gx_path *ppath,
     const gx_fill_params *params,

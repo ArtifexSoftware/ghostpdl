@@ -35,11 +35,11 @@
 extern const gs_type1_data_procs_t z1_data_procs;
 font_proc_glyph_info(z1_glyph_info);
 /* Font procedures defined here */
-private font_proc_same_font(z1_same_font);
+static font_proc_same_font(z1_same_font);
 
 /* ------ Private utilities ------ */
 
-private void
+static void
 find_zone_height(float *pmax_height, int count, const float *values)
 {
     int i;
@@ -52,7 +52,7 @@ find_zone_height(float *pmax_height, int count, const float *values)
 
 /* ------ Font procedures ------ */
 
-private int
+static int
 z1_enumerate_glyph(gs_font * pfont, int *pindex, gs_glyph_space_t ignored,
 		   gs_glyph * pglyph)
 {
@@ -234,7 +234,7 @@ build_charstring_font(i_ctx_t *i_ctx_p, os_ptr op, build_proc_refs *pbuild,
 /* ------ Operators ------ */
 
 /* Build a Type 1 or Type 4 font. */
-private int
+static int
 buildfont1or4(i_ctx_t *i_ctx_p, os_ptr op, build_proc_refs * pbuild,
 	      font_type ftype, build_font_options_t options)
 {
@@ -253,7 +253,7 @@ buildfont1or4(i_ctx_t *i_ctx_p, os_ptr op, build_proc_refs * pbuild,
 
 /* <string|name> <font_dict> .buildfont1 <string|name> <font> */
 /* Build a type 1 (Adobe encrypted) font. */
-private int
+static int
 zbuildfont1(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -269,7 +269,7 @@ zbuildfont1(i_ctx_t *i_ctx_p)
 
 /* <string|name> <font_dict> .buildfont4 <string|name> <font> */
 /* Build a type 4 (disk-based Adobe encrypted) font. */
-private int
+static int
 zbuildfont4(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -293,7 +293,7 @@ const op_def zfont1_op_defs[] =
 /* ------ Font procedures for Type 1 fonts ------ */
 
 /* same_font procedure */
-private bool
+static bool
 same_font_dict(const font_data *pdata, const font_data *podata,
 	       const char *key)
 {
@@ -306,7 +306,7 @@ same_font_dict(const font_data *pdata, const font_data *podata,
     return (present == opresent &&
 	    (present <= 0 || obj_eq(dict_mem(pdict), pvalue, povalue)));
 }
-private int
+static int
 z1_same_font(const gs_font *font, const gs_font *ofont, int mask)
 {
     if (ofont->FontType != font->FontType)

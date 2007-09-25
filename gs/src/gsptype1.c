@@ -48,7 +48,7 @@ private_st_pattern1_template();
 private_st_pattern1_instance();
 
 /* GC procedures */
-private ENUM_PTRS_BEGIN(pattern1_instance_enum_ptrs) {
+static ENUM_PTRS_BEGIN(pattern1_instance_enum_ptrs) {
     if (index < st_pattern1_template_max_ptrs) {
 	gs_ptr_type_t ptype =
 	    ENUM_SUPER_ELT(gs_pattern1_instance_t, st_pattern1_template,
@@ -60,17 +60,17 @@ private ENUM_PTRS_BEGIN(pattern1_instance_enum_ptrs) {
     }
     ENUM_PREFIX(st_pattern_instance, st_pattern1_template_max_ptrs);
 } ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(pattern1_instance_reloc_ptrs) {
+static RELOC_PTRS_BEGIN(pattern1_instance_reloc_ptrs) {
     RELOC_PREFIX(st_pattern_instance);
     RELOC_SUPER(gs_pattern1_instance_t, st_pattern1_template, template);
 } RELOC_PTRS_END
 
 /* Define a PatternType 1 pattern. */
-private pattern_proc_uses_base_space(gs_pattern1_uses_base_space);
-private pattern_proc_make_pattern(gs_pattern1_make_pattern);
-private pattern_proc_get_pattern(gs_pattern1_get_pattern);
-private pattern_proc_set_color(gs_pattern1_set_color);
-private const gs_pattern_type_t gs_pattern1_type = {
+static pattern_proc_uses_base_space(gs_pattern1_uses_base_space);
+static pattern_proc_make_pattern(gs_pattern1_make_pattern);
+static pattern_proc_get_pattern(gs_pattern1_get_pattern);
+static pattern_proc_set_color(gs_pattern1_set_color);
+static const gs_pattern_type_t gs_pattern1_type = {
     1, {
 	gs_pattern1_uses_base_space, gs_pattern1_make_pattern,
 	gs_pattern1_get_pattern, gs_pattern1_remap_color,
@@ -112,7 +112,7 @@ gs_pattern1_init(gs_pattern1_template_t * ppat)
 }
 
 /* Make an instance of a PatternType 1 pattern. */
-private int compute_inst_matrix(gs_pattern1_instance_t * pinst,
+static int compute_inst_matrix(gs_pattern1_instance_t * pinst,
 	const gs_state * saved, gs_rect * pbbox, int width, int height);
 int
 gs_makepattern(gs_client_color * pcc, const gs_pattern1_template_t * pcp,
@@ -121,7 +121,7 @@ gs_makepattern(gs_client_color * pcc, const gs_pattern1_template_t * pcp,
     return gs_pattern1_make_pattern(pcc, (const gs_pattern_template_t *)pcp,
 				    pmat, pgs, mem);
 }
-private int
+static int
 gs_pattern1_make_pattern(gs_client_color * pcc,
 			 const gs_pattern_template_t * ptemp,
 			 const gs_matrix * pmat, gs_state * pgs,
@@ -292,7 +292,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
  * the page.  We allocate a buffer for holding the pattern.  We need to
  * prevent this buffer from getting too large.
  */
-private int
+static int
 clamp_pattern_bbox(gs_pattern1_instance_t * pinst, gs_rect * pbbox,
 		    int width, int height, const gs_matrix * pmat)
 {
@@ -391,7 +391,7 @@ clamp_pattern_bbox(gs_pattern1_instance_t * pinst, gs_rect * pbbox,
 
 /* Compute the stepping matrix and device space instance bounding box */
 /* from the step values and the saved matrix. */
-private int
+static int
 compute_inst_matrix(gs_pattern1_instance_t * pinst, const gs_state * saved,
 			    gs_rect * pbbox, int width, int height)
 {
@@ -434,7 +434,7 @@ compute_inst_matrix(gs_pattern1_instance_t * pinst, const gs_state * saved,
 }
 
 /* Test whether a PatternType 1 pattern uses a base space. */
-private bool
+static bool
 gs_pattern1_uses_base_space(const gs_pattern_template_t *ptemp)
 {
     return ((const gs_pattern1_template_t *)ptemp)->PaintType == 2;
@@ -442,7 +442,7 @@ gs_pattern1_uses_base_space(const gs_pattern_template_t *ptemp)
 
 /* getpattern for PatternType 1 */
 /* This is only intended for the benefit of pattern PaintProcs. */
-private const gs_pattern_template_t *
+static const gs_pattern_template_t *
 gs_pattern1_get_pattern(const gs_pattern_instance_t *pinst)
 {
     return (const gs_pattern_template_t *)
@@ -495,7 +495,7 @@ gx_dc_is_pattern1_color(const gx_device_color *pdevc)
  *     change in color space required to set a normal color will
  *     reset the overprint information as required.
  */
-private int
+static int
 gs_pattern1_set_color(const gs_client_color * pcc, gs_state * pgs)
 {
     gs_pattern1_instance_t * pinst = (gs_pattern1_instance_t *)pcc->pattern;
@@ -576,7 +576,7 @@ gs_private_st_suffix_add1(st_pixmap_info,
  *  Note that this routine does NOT release the data in the original pixmap;
  *  that remains the responsibility of the client.
  */
-private void
+static void
 free_pixmap_pattern(
     gs_memory_t *           pmem,
     void *                  pvpinst,
@@ -593,9 +593,9 @@ free_pixmap_pattern(
 /*
  *  PaintProcs for bitmap and pixmap patterns.
  */
-private int bitmap_paint(gs_image_enum * pen, gs_data_image_t * pim,
+static int bitmap_paint(gs_image_enum * pen, gs_data_image_t * pim,
 			 const gs_depth_bitmap * pbitmap, gs_state * pgs);
-private int
+static int
 mask_PaintProc(const gs_client_color * pcolor, gs_state * pgs)
 {
     const pixmap_info *ppmap = gs_getpattern(pcolor)->client_data;
@@ -612,7 +612,7 @@ mask_PaintProc(const gs_client_color * pcolor, gs_state * pgs)
     gs_image_init(pen, &mask, false, pgs);
     return bitmap_paint(pen, (gs_data_image_t *) & mask, pbitmap, pgs);
 }
-private int
+static int
 image_PaintProc(const gs_client_color * pcolor, gs_state * pgs)
 {
     const pixmap_info *ppmap = gs_getpattern(pcolor)->client_data;
@@ -681,7 +681,7 @@ image_PaintProc(const gs_client_color * pcolor, gs_state * pgs)
     return code;
 }
 /* Finish painting any kind of bitmap pattern. */
-private int
+static int
 bitmap_paint(gs_image_enum * pen, gs_data_image_t * pim,
 	     const gs_depth_bitmap * pbitmap, gs_state * pgs)
 {
@@ -843,25 +843,25 @@ gs_makebitmappattern_xform(
  * 'masked_fill_rect' instead of 'masked_fill_rectangle' in order to limit
  * identifier lengths to 32 characters.
  */
-private dev_color_proc_get_dev_halftone(gx_dc_pattern_get_dev_halftone);
-private dev_color_proc_load(gx_dc_pattern_load);
+static dev_color_proc_get_dev_halftone(gx_dc_pattern_get_dev_halftone);
+static dev_color_proc_load(gx_dc_pattern_load);
 /*dev_color_proc_fill_rectangle(gx_dc_pattern_fill_rectangle); *//*gxp1fill.h */
-private dev_color_proc_equal(gx_dc_pattern_equal);
-private dev_color_proc_load(gx_dc_pure_masked_load);
+static dev_color_proc_equal(gx_dc_pattern_equal);
+static dev_color_proc_load(gx_dc_pure_masked_load);
 
-private dev_color_proc_get_dev_halftone(gx_dc_pure_masked_get_dev_halftone);
+static dev_color_proc_get_dev_halftone(gx_dc_pure_masked_get_dev_halftone);
 /*dev_color_proc_fill_rectangle(gx_dc_pure_masked_fill_rect); *//*gxp1fill.h */
-private dev_color_proc_equal(gx_dc_pure_masked_equal);
-private dev_color_proc_load(gx_dc_binary_masked_load);
+static dev_color_proc_equal(gx_dc_pure_masked_equal);
+static dev_color_proc_load(gx_dc_binary_masked_load);
 
-private dev_color_proc_get_dev_halftone(gx_dc_binary_masked_get_dev_halftone);
+static dev_color_proc_get_dev_halftone(gx_dc_binary_masked_get_dev_halftone);
 /*dev_color_proc_fill_rectangle(gx_dc_binary_masked_fill_rect); *//*gxp1fill.h */
-private dev_color_proc_equal(gx_dc_binary_masked_equal);
-private dev_color_proc_load(gx_dc_colored_masked_load);
+static dev_color_proc_equal(gx_dc_binary_masked_equal);
+static dev_color_proc_load(gx_dc_colored_masked_load);
 
-private dev_color_proc_get_dev_halftone(gx_dc_colored_masked_get_dev_halftone);
+static dev_color_proc_get_dev_halftone(gx_dc_colored_masked_get_dev_halftone);
 /*dev_color_proc_fill_rectangle(gx_dc_colored_masked_fill_rect); *//*gxp1fill.h */
-private dev_color_proc_equal(gx_dc_colored_masked_equal);
+static dev_color_proc_equal(gx_dc_colored_masked_equal);
 
 /* The device color types are exported for gxpcmap.c. */
 gs_private_st_composite(st_dc_pattern, gx_device_color, "dc_pattern",
@@ -920,7 +920,7 @@ const gx_device_color_type_t *const gx_dc_type_pattern = &gx_dc_pattern;
 #define gx_dc_type_pattern (&gx_dc_pattern)
 
 /* GC procedures */
-private 
+static 
 ENUM_PTRS_WITH(dc_pattern_enum_ptrs, gx_device_color *cptr)
 {
     return ENUM_USING(st_dc_pure_masked, vptr, size, index - 1);
@@ -932,7 +932,7 @@ case 0:
     ENUM_RETURN((tile == 0 ? tile : tile - tile->index));
 }
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(dc_pattern_reloc_ptrs, gx_device_color *cptr)
+static RELOC_PTRS_WITH(dc_pattern_reloc_ptrs, gx_device_color *cptr)
 {
     gx_color_tile *tile = cptr->colors.pattern.p_tile;
 
@@ -944,7 +944,7 @@ private RELOC_PTRS_WITH(dc_pattern_reloc_ptrs, gx_device_color *cptr)
     RELOC_USING(st_dc_pure_masked, vptr, size);
 }
 RELOC_PTRS_END
-private ENUM_PTRS_WITH(dc_masked_enum_ptrs, gx_device_color *cptr)
+static ENUM_PTRS_WITH(dc_masked_enum_ptrs, gx_device_color *cptr)
 ENUM_SUPER(gx_device_color, st_client_color, ccolor, 1);
 case 0:
 {
@@ -953,7 +953,7 @@ case 0:
     ENUM_RETURN((mask == 0 ? mask : mask - mask->index));
 }
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(dc_masked_reloc_ptrs, gx_device_color *cptr)
+static RELOC_PTRS_WITH(dc_masked_reloc_ptrs, gx_device_color *cptr)
 {
     gx_color_tile *mask = cptr->mask.m_tile;
 
@@ -965,7 +965,7 @@ private RELOC_PTRS_WITH(dc_masked_reloc_ptrs, gx_device_color *cptr)
     }
 }
 RELOC_PTRS_END
-private ENUM_PTRS_BEGIN(dc_binary_masked_enum_ptrs)
+static ENUM_PTRS_BEGIN(dc_binary_masked_enum_ptrs)
 {
     return ENUM_USING(st_dc_ht_binary, vptr, size, index - 2);
 }
@@ -973,7 +973,7 @@ case 0:
 case 1:
 return ENUM_USING(st_dc_pure_masked, vptr, size, index);
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(dc_binary_masked_reloc_ptrs)
+static RELOC_PTRS_BEGIN(dc_binary_masked_reloc_ptrs)
 {
     RELOC_USING(st_dc_pure_masked, vptr, size);
     RELOC_USING(st_dc_ht_binary, vptr, size);
@@ -1012,7 +1012,7 @@ gx_dc_pattern_save_dc(
  * halftones may be used by the PaintProc procedure. Hence, we can only
  * hope this is a contone device.
  */
-private const gx_device_halftone *
+static const gx_device_halftone *
 gx_dc_pattern_get_dev_halftone(const gx_device_color * pdevc)
 {
     return 0;
@@ -1023,19 +1023,19 @@ gx_dc_pattern_get_dev_halftone(const gx_device_color * pdevc)
  * base color. Ideally this would be returned via an inhereted method,
  * but the device color structure does not support such an arrangement.
  */
-private const gx_device_halftone *
+static const gx_device_halftone *
 gx_dc_pure_masked_get_dev_halftone(const gx_device_color * pdevc)
 {
     return 0;
 }
 
-private const gx_device_halftone *
+static const gx_device_halftone *
 gx_dc_binary_masked_get_dev_halftone(const gx_device_color * pdevc)
 {
     return pdevc->colors.binary.b_ht;
 }
 
-private const gx_device_halftone *
+static const gx_device_halftone *
 gx_dc_colored_masked_get_dev_halftone(const gx_device_color * pdevc)
 {
     return pdevc->colors.colored.c_ht;
@@ -1051,7 +1051,7 @@ gx_dc_colored_masked_get_dev_halftone(const gx_device_color * pdevc)
 	return code;
 
 /* Ensure that a colored Pattern is loaded in the cache. */
-private int
+static int
 gx_dc_pattern_load(gx_device_color * pdevc, const gs_imager_state * pis,
 		   gx_device * dev, gs_color_select_t select)
 {
@@ -1060,7 +1060,7 @@ gx_dc_pattern_load(gx_device_color * pdevc, const gs_imager_state * pis,
     FINISH_PATTERN_LOAD
 }
 /* Ensure that an uncolored Pattern is loaded in the cache. */
-private int
+static int
 gx_dc_pure_masked_load(gx_device_color * pdevc, const gs_imager_state * pis,
 		       gx_device * dev, gs_color_select_t select)
 {
@@ -1070,7 +1070,7 @@ gx_dc_pure_masked_load(gx_device_color * pdevc, const gs_imager_state * pis,
 	return code;
     FINISH_PATTERN_LOAD
 }
-private int
+static int
 gx_dc_binary_masked_load(gx_device_color * pdevc, const gs_imager_state * pis,
 			 gx_device * dev, gs_color_select_t select)
 {
@@ -1080,7 +1080,7 @@ gx_dc_binary_masked_load(gx_device_color * pdevc, const gs_imager_state * pis,
 	return code;
     FINISH_PATTERN_LOAD
 }
-private int
+static int
 gx_dc_colored_masked_load(gx_device_color * pdevc, const gs_imager_state * pis,
 			  gx_device * dev, gs_color_select_t select)
 {
@@ -1140,7 +1140,7 @@ gx_pattern_cache_lookup(gx_device_color * pdevc, const gs_imager_state * pis,
 #undef FINISH_PATTERN_LOAD
 
 /* Compare two Pattern colors for equality. */
-private bool
+static bool
 gx_dc_pattern_equal(const gx_device_color * pdevc1,
 		    const gx_device_color * pdevc2)
 {
@@ -1166,21 +1166,21 @@ gx_dc_pattern_get_nonzero_comps(
 }
 
 
-private bool
+static bool
 gx_dc_pure_masked_equal(const gx_device_color * pdevc1,
 			const gx_device_color * pdevc2)
 {
     return (*gx_dc_type_pure->equal) (pdevc1, pdevc2) &&
 	pdevc1->mask.id == pdevc2->mask.id;
 }
-private bool
+static bool
 gx_dc_binary_masked_equal(const gx_device_color * pdevc1,
 			  const gx_device_color * pdevc2)
 {
     return (*gx_dc_type_ht_binary->equal) (pdevc1, pdevc2) &&
 	pdevc1->mask.id == pdevc2->mask.id;
 }
-private bool
+static bool
 gx_dc_colored_masked_equal(const gx_device_color * pdevc1,
 			   const gx_device_color * pdevc2)
 {

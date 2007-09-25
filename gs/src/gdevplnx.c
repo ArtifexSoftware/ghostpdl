@@ -36,12 +36,12 @@
 #define COPY_ROP_TEXTURE_BUF_SIZE 100
 
 /* GC procedures */
-private 
+static 
 ENUM_PTRS_WITH(device_plane_extract_enum_ptrs, gx_device_plane_extract *edev)
     ENUM_PREFIX(st_device_forward, 1);
 case 0: ENUM_RETURN(gx_device_enum_ptr(edev->target));
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(device_plane_extract_reloc_ptrs, gx_device_plane_extract *edev)
+static RELOC_PTRS_WITH(device_plane_extract_reloc_ptrs, gx_device_plane_extract *edev)
 {
     RELOC_PREFIX(st_device_forward);
     edev->plane_dev = gx_device_reloc_ptr(edev->plane_dev, gcst);
@@ -50,23 +50,23 @@ RELOC_PTRS_END
 public_st_device_plane_extract();
 
 /* Driver procedures */
-private dev_proc_open_device(plane_open_device);
-private dev_proc_fill_rectangle(plane_fill_rectangle);
-private dev_proc_copy_mono(plane_copy_mono);
-private dev_proc_copy_color(plane_copy_color);
-private dev_proc_copy_alpha(plane_copy_alpha);
-private dev_proc_fill_path(plane_fill_path);
-private dev_proc_stroke_path(plane_stroke_path);
-private dev_proc_fill_mask(plane_fill_mask);
-private dev_proc_fill_parallelogram(plane_fill_parallelogram);
-private dev_proc_fill_triangle(plane_fill_triangle);
-private dev_proc_strip_tile_rectangle(plane_strip_tile_rectangle);
-private dev_proc_strip_copy_rop(plane_strip_copy_rop);
-private dev_proc_begin_typed_image(plane_begin_typed_image);
-private dev_proc_get_bits_rectangle(plane_get_bits_rectangle);
+static dev_proc_open_device(plane_open_device);
+static dev_proc_fill_rectangle(plane_fill_rectangle);
+static dev_proc_copy_mono(plane_copy_mono);
+static dev_proc_copy_color(plane_copy_color);
+static dev_proc_copy_alpha(plane_copy_alpha);
+static dev_proc_fill_path(plane_fill_path);
+static dev_proc_stroke_path(plane_stroke_path);
+static dev_proc_fill_mask(plane_fill_mask);
+static dev_proc_fill_parallelogram(plane_fill_parallelogram);
+static dev_proc_fill_triangle(plane_fill_triangle);
+static dev_proc_strip_tile_rectangle(plane_strip_tile_rectangle);
+static dev_proc_strip_copy_rop(plane_strip_copy_rop);
+static dev_proc_begin_typed_image(plane_begin_typed_image);
+static dev_proc_get_bits_rectangle(plane_get_bits_rectangle);
 
 /* Device prototype */
-private const gx_device_plane_extract gs_plane_extract_device = {
+static const gx_device_plane_extract gs_plane_extract_device = {
     std_device_std_body(gx_device_plane_extract, 0, "plane_extract",
 			0, 0, 72, 72),
     {
@@ -145,7 +145,7 @@ typedef enum {
 #define REDUCE_PURE(edev, pixel)\
   ((pixel) == (edev)->plane_white && !(edev)->any_marks ?  REDUCE_SKIP :\
    ((edev)->any_marks = true, REDUCE_DRAW))
-private reduced_color_t
+static reduced_color_t
 reduce_drawing_color(gx_device_color *ppdc, gx_device_plane_extract *edev,
 		     const gx_drawing_color *pdevc,
 		     gs_logical_operation_t *plop)
@@ -278,7 +278,7 @@ typedef struct tiling_state_s {
 /*
  * Extract the plane's data from one subrectangle of a source tile.
  */
-inline private int /* ignore the return value */
+static inline int /* ignore the return value */
 extract_partial_tile(const tiling_state_t *pts)
 {
     const gx_device_plane_extract * const edev = pts->edev;
@@ -303,7 +303,7 @@ extract_partial_tile(const tiling_state_t *pts)
  * Set up to start (possibly) tiling.  Return 0 if the entire tile fit,
  * 1 if a partial tile fit, or a negative error code.
  */
-private int
+static int
 begin_tiling(tiling_state_t *pts, gx_device_plane_extract *edev,
     const byte *data, int data_x, uint raster, int width, int height,
     byte *local_buffer, uint buffer_size, bool partial_ok)
@@ -355,7 +355,7 @@ begin_tiling(tiling_state_t *pts, gx_device_plane_extract *edev,
 /*
  * Advance to the next tile.  Return true if there are more tiles to do.
  */
-private bool
+static bool
 next_tile(tiling_state_t *pts)
 {
     if ((pts->offset.x += pts->size.x) >= pts->width) {
@@ -373,7 +373,7 @@ next_tile(tiling_state_t *pts)
 /*
  * Finish tiling by freeing the buffer if necessary.
  */
-private void
+static void
 end_tiling(tiling_state_t *pts)
 {
     if (pts->buffer.on_heap)
@@ -410,7 +410,7 @@ plane_device_init(gx_device_plane_extract *edev, gx_device *target,
 
 /* ---------------- Driver procedures ---------------- */
 
-private int
+static int
 plane_open_device(gx_device *dev)
 {
     gx_device_plane_extract * const edev = (gx_device_plane_extract *)dev;
@@ -427,7 +427,7 @@ plane_open_device(gx_device *dev)
     return 0;
 }
 
-private int
+static int
 plane_fill_rectangle(gx_device *dev,
     int x, int y, int w, int h, gx_color_index color)
 {
@@ -443,7 +443,7 @@ plane_fill_rectangle(gx_device *dev,
 	(plane_dev, x, y, w, h, pixel);
 }
 
-private int
+static int
 plane_copy_mono(gx_device *dev,
     const byte *data, int data_x, int raster, gx_bitmap_id id,
     int x, int y, int w, int h,
@@ -467,7 +467,7 @@ plane_copy_mono(gx_device *dev,
 	(plane_dev, data, data_x, raster, id, x, y, w, h, pixel0, pixel1);
 }
 
-private int
+static int
 plane_copy_color(gx_device *dev,
     const byte *data, int data_x, int raster, gx_bitmap_id id,
     int x, int y, int w, int h)
@@ -510,7 +510,7 @@ plane_copy_color(gx_device *dev,
     return code;
 }
 
-private int
+static int
 plane_copy_alpha(gx_device *dev, const byte *data, int data_x,
     int raster, gx_bitmap_id id, int x, int y, int w, int h,
     gx_color_index color, int depth)
@@ -527,7 +527,7 @@ plane_copy_alpha(gx_device *dev, const byte *data, int data_x,
 	(plane_dev, data, data_x, raster, id, x, y, w, h, pixel, depth);
 }
 
-private int
+static int
 plane_fill_path(gx_device *dev,
     const gs_imager_state *pis, gx_path *ppath,
     const gx_fill_params *params,
@@ -560,7 +560,7 @@ plane_fill_path(gx_device *dev,
     }
 }
 
-private int
+static int
 plane_stroke_path(gx_device *dev,
     const gs_imager_state *pis, gx_path *ppath,
     const gx_stroke_params *params,
@@ -593,7 +593,7 @@ plane_stroke_path(gx_device *dev,
     }
 }
 
-private int
+static int
 plane_fill_mask(gx_device *dev,
     const byte *data, int data_x, int raster, gx_bitmap_id id,
     int x, int y, int w, int h,
@@ -617,7 +617,7 @@ plane_fill_mask(gx_device *dev,
     }
 }
 
-private int
+static int
 plane_fill_parallelogram(gx_device * dev,
     fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by,
     const gx_drawing_color * pdcolor, gs_logical_operation_t lop)
@@ -638,7 +638,7 @@ plane_fill_parallelogram(gx_device * dev,
     }
 }
 
-private int
+static int
 plane_fill_triangle(gx_device * dev,
     fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by,
     const gx_drawing_color * pdcolor, gs_logical_operation_t lop)
@@ -659,7 +659,7 @@ plane_fill_triangle(gx_device * dev,
     }
 }
 
-private int
+static int
 plane_strip_tile_rectangle(gx_device *dev,
     const gx_strip_bitmap *tiles, int x, int y, int w, int h,
     gx_color_index color0, gx_color_index color1,
@@ -710,7 +710,7 @@ plane_strip_tile_rectangle(gx_device *dev,
 	(plane_dev, tiles, x, y, w, h, pixel0, pixel1, phase_x, phase_y);
 }
 
-private int
+static int
 plane_strip_copy_rop(gx_device *dev,
     const byte *sdata, int sourcex, uint sraster, gx_bitmap_id id,
     const gx_color_index *scolors,
@@ -829,7 +829,7 @@ gs_private_st_suffix_add3(st_plane_image_enum, plane_image_enum_t,
  * the plane_image_enum_t.
  */
 
-private void
+static void
 plane_cmap_gray(frac gray, gx_device_color * pdc,
     const gs_imager_state *pis_image, gx_device *dev, gs_color_select_t select)
 {
@@ -844,7 +844,7 @@ plane_cmap_gray(frac gray, gx_device_color * pdc,
 			   (gx_device *)edev, select);
     reduce_drawing_color(pdc, edev, &dcolor, &lop);
 }
-private void
+static void
 plane_cmap_rgb(frac r, frac g, frac b, gx_device_color * pdc,
     const gs_imager_state *pis_image, gx_device *dev, gs_color_select_t select)
 {
@@ -859,7 +859,7 @@ plane_cmap_rgb(frac r, frac g, frac b, gx_device_color * pdc,
 			  (gx_device *)edev, select);
     reduce_drawing_color(pdc, edev, &dcolor, &lop);
 }
-private void
+static void
 plane_cmap_cmyk(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     const gs_imager_state *pis_image, gx_device *dev, gs_color_select_t select)
 {
@@ -874,7 +874,7 @@ plane_cmap_cmyk(frac c, frac m, frac y, frac k, gx_device_color * pdc,
 			   (gx_device *)edev, select);
     reduce_drawing_color(pdc, edev, &dcolor, &lop);
 }
-private void
+static void
 plane_cmap_rgb_alpha(frac r, frac g, frac b, frac alpha, gx_device_color * pdc,
     const gs_imager_state *pis_image, gx_device *dev, gs_color_select_t select)
 {
@@ -889,30 +889,30 @@ plane_cmap_rgb_alpha(frac r, frac g, frac b, frac alpha, gx_device_color * pdc,
 				(gx_device *)edev, select);
     reduce_drawing_color(pdc, edev, &dcolor, &lop);
 }
-private bool
+static bool
 plane_cmap_is_halftoned(const gs_imager_state *pis_image, gx_device *dev)
 {
     return false;
 }
 
-private const gx_color_map_procs plane_color_map_procs = {
+static const gx_color_map_procs plane_color_map_procs = {
     plane_cmap_gray, plane_cmap_rgb, plane_cmap_cmyk, plane_cmap_rgb_alpha,
     NULL, NULL, plane_cmap_is_halftoned
 };
-private const gx_color_map_procs *
+static const gx_color_map_procs *
 plane_get_cmap_procs(const gs_imager_state *pis, const gx_device *dev)
 {
     return &plane_color_map_procs;
 }
 
 /* Define the image processing procedures. */
-private image_enum_proc_plane_data(plane_image_plane_data);
-private image_enum_proc_end_image(plane_image_end_image);
-private const gx_image_enum_procs_t plane_image_enum_procs = {
+static image_enum_proc_plane_data(plane_image_plane_data);
+static image_enum_proc_end_image(plane_image_end_image);
+static const gx_image_enum_procs_t plane_image_enum_procs = {
     plane_image_plane_data, plane_image_end_image
 };
 
-private int
+static int
 plane_begin_typed_image(gx_device * dev,
 			const gs_imager_state * pis, const gs_matrix * pmat,
 		   const gs_image_common_t * pic, const gs_int_rect * prect,
@@ -995,7 +995,7 @@ fail:
 					pdcolor, pcpath, memory, pinfo);
 }
 
-private int
+static int
 plane_image_plane_data(gx_image_enum_common_t * info,
 		       const gx_image_plane_t * planes, int height,
 		       int *rows_used)
@@ -1005,7 +1005,7 @@ plane_image_plane_data(gx_image_enum_common_t * info,
     return gx_image_plane_data_rows(ppie->info, planes, height, rows_used);
 }
 
-private int
+static int
 plane_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 {
     plane_image_enum_t * const ppie = (plane_image_enum_t *)info;
@@ -1019,7 +1019,7 @@ plane_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 
 /* ---------------- Reading back bits ---------------- */
 
-private int
+static int
 plane_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 			 gs_get_bits_params_t * params, gs_int_rect ** unread)
 {

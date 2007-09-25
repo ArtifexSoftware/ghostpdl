@@ -31,13 +31,13 @@
 #ifdef DEBUG
 const char *const cmd_op_names[16] =
 {cmd_op_name_strings};
-private const char *const cmd_misc_op_names[16] =
+static const char *const cmd_misc_op_names[16] =
 {cmd_misc_op_name_strings};
-private const char *const cmd_misc2_op_names[16] =
+static const char *const cmd_misc2_op_names[16] =
 {cmd_misc2_op_name_strings};
-private const char *const cmd_segment_op_names[16] =
+static const char *const cmd_segment_op_names[16] =
 {cmd_segment_op_name_strings};
-private const char *const cmd_path_op_names[16] =
+static const char *const cmd_path_op_names[16] =
 {cmd_path_op_name_strings};
 const char *const *const cmd_sub_op_names[16] =
 {cmd_misc_op_names, 0, 0, 0, 0, 0, 0, 0,
@@ -125,7 +125,7 @@ cmd_print_stats(void)
 /* ---------------- Writing utilities ---------------- */
 
 /* Write the commands for one band or band range. */
-private int	/* ret 0 all ok, -ve error code, or +1 ok w/low-mem warning */
+static int	/* ret 0 all ok, -ve error code, or +1 ok w/low-mem warning */
 cmd_write_band(gx_device_clist_writer * cldev, int band_min, int band_max,
 	       cmd_list * pcl, gx_band_complexity_t *band_complexity, byte cmd_end)
 {
@@ -389,7 +389,7 @@ const gx_color_index cmd_delta_offsets[] = {
 	tab_entry(0x0808080808080808),
 	};
 
-private const gx_color_index cmd_delta_masks[] = {
+static const gx_color_index cmd_delta_masks[] = {
 	tab_entry(0),
 	tab_entry(0),
 	tab_entry(0x0f0f),
@@ -694,7 +694,7 @@ cmd_put_params(gx_device_clist_writer *cldev,
 }
 
 /* Initialize CCITTFax filters. */
-private void
+static void
 clist_cf_init(stream_CF_state *ss, int width)
 {
     ss->K = -1;

@@ -39,10 +39,10 @@
 #include <memory.h>
 
 /* Forward references */
-private FILE *prefix_open(const char *prefix, const char *inname);
-private void merge_to_c(const char *prefix, const char *inname, FILE * in,
+static FILE *prefix_open(const char *prefix, const char *inname);
+static void merge_to_c(const char *prefix, const char *inname, FILE * in,
 			FILE * config, FILE * out);
-private void merge_to_ps(const char *prefix, const char *inname, FILE * in,
+static void merge_to_ps(const char *prefix, const char *inname, FILE * in,
 			 FILE * config, FILE * out);
 
 #define LINE_SIZE 128
@@ -102,7 +102,7 @@ or     geninit [-(I|i) lib/] gs_init.ps gconfig.h -c gs_init.c\n");
 
 /* Translate a path from Postscript notation to platform notation. */
 
-private void
+static void
 translate_path(char *path)
 {
     /* 
@@ -123,7 +123,7 @@ translate_path(char *path)
 }
 
 /* Open a file with a name prefix. */
-private FILE *
+static FILE *
 prefix_open(const char *prefix, const char *inname)
 {
     char fname[LINE_SIZE + 1];
@@ -145,7 +145,7 @@ prefix_open(const char *prefix, const char *inname)
 }
 
 /* Read a line from the input. */
-private bool
+static bool
 rl(FILE * in, char *str, int len)
 {
     /*
@@ -174,7 +174,7 @@ rl(FILE * in, char *str, int len)
 }
 
 /* Write a string or a line on the output. */
-private void
+static void
 wsc(FILE * out, const byte *str, int len)
 {
     int n = 0;
@@ -195,7 +195,7 @@ wsc(FILE * out, const byte *str, int len)
     if (n != 0)
 	fputc('\n', out);
 }
-private void
+static void
 ws(FILE * out, const byte *str, int len, bool to_c)
 {
     if (to_c)
@@ -203,7 +203,7 @@ ws(FILE * out, const byte *str, int len, bool to_c)
     else
 	fwrite(str, 1, len, out);
 }
-private void
+static void
 wl(FILE * out, const char *str, bool to_c)
 {
     ws(out, (const byte *)str, strlen(str), to_c);
@@ -215,7 +215,7 @@ wl(FILE * out, const char *str, bool to_c)
  * Return a pointer to any string that remains, or NULL if none.
  * Note that this may store into the string.
  */
-private char *
+static char *
 doit(char *line, bool intact)
 {
     char *str = line;
@@ -283,7 +283,7 @@ doit(char *line, bool intact)
 }
 
 /* Copy a hex string to the output as a binary token. */
-private void
+static void
 hex_string_to_binary(FILE *out, FILE *in, bool to_c)
 {
 #define MAX_STR 0xffff	/* longest possible PostScript string token */
@@ -334,7 +334,7 @@ hex_string_to_binary(FILE *out, FILE *in, bool to_c)
 }
 
 /* Merge a file from input to output. */
-private void
+static void
 flush_buf(FILE * out, char *buf, bool to_c)
 {
     if (buf[0] != 0) {
@@ -342,7 +342,7 @@ flush_buf(FILE * out, char *buf, bool to_c)
 	buf[0] = 0;
     }
 }
-private void
+static void
 mergefile(const char *prefix, const char *inname, FILE * in, FILE * config,
 	  FILE * out, bool to_c, bool intact)
 {
@@ -443,7 +443,7 @@ mergefile(const char *prefix, const char *inname, FILE * in, FILE * config,
 }
 
 /* Merge and produce a C file. */
-private void
+static void
 merge_to_c(const char *prefix, const char *inname, FILE * in, FILE * config,
 	   FILE * out)
 {
@@ -463,7 +463,7 @@ merge_to_c(const char *prefix, const char *inname, FILE * in, FILE * config,
 }
 
 /* Merge and produce a PostScript file. */
-private void
+static void
 merge_to_ps(const char *prefix, const char *inname, FILE * in, FILE * config,
 	    FILE * out)
 {

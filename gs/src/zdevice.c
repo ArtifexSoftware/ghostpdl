@@ -33,7 +33,7 @@
 #include "store.h"
 
 /* <device> <keep_open> .copydevice2 <newdevice> */
-private int
+static int
 zcopydevice2(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -68,7 +68,7 @@ zcurrentdevice(i_ctx_t *i_ctx_p)
 }
 
 /* <device> .devicename <string> */
-private int
+static int
 zdevicename(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -82,7 +82,7 @@ zdevicename(i_ctx_t *i_ctx_p)
 }
 
 /* - .doneshowpage - */
-private int
+static int
 zdoneshowpage(i_ctx_t *i_ctx_p)
 {
     gx_device *dev = gs_currentdevice(igs);
@@ -102,7 +102,7 @@ zflushpage(i_ctx_t *i_ctx_p)
 
 /* <device> <x> <y> <width> <max_height> <alpha?> <std_depth|null> <string> */
 /*   .getbitsrect <height> <substring> */
-private int
+static int
 zgetbitsrect(i_ctx_t *i_ctx_p)
 {	/*
 	 * alpha? is 0 for no alpha, -1 for alpha first, 1 for alpha last.
@@ -188,7 +188,7 @@ zgetbitsrect(i_ctx_t *i_ctx_p)
 }
 
 /* <int> .getdevice <device> */
-private int
+static int
 zgetdevice(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -208,7 +208,7 @@ zgetdevice(i_ctx_t *i_ctx_p)
 }
 
 /* Common functionality of zgethardwareparms & zgetdeviceparams */
-private int
+static int
 zget_device_params(i_ctx_t *i_ctx_p, bool is_hardware)
 {
     os_ptr op = osp;
@@ -239,20 +239,20 @@ zget_device_params(i_ctx_t *i_ctx_p, bool is_hardware)
     return 0;
 }
 /* <device> <key_dict|null> .getdeviceparams <mark> <name> <value> ... */
-private int
+static int
 zgetdeviceparams(i_ctx_t *i_ctx_p)
 {
     return zget_device_params(i_ctx_p, false);
 }
 /* <device> <key_dict|null> .gethardwareparams <mark> <name> <value> ... */
-private int
+static int
 zgethardwareparams(i_ctx_t *i_ctx_p)
 {
     return zget_device_params(i_ctx_p, true);
 }
 
 /* <matrix> <width> <height> <palette> <word?> makewordimagedevice <device> */
-private int
+static int
 zmakewordimagedevice(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -306,7 +306,7 @@ zmakewordimagedevice(i_ctx_t *i_ctx_p)
 
 /* - nulldevice - */
 /* Note that nulldevice clears the current pagedevice. */
-private int
+static int
 znulldevice(i_ctx_t *i_ctx_p)
 {
     gs_nulldevice(igs);
@@ -318,7 +318,7 @@ extern void print_resource_usage(const gs_main_instance *, gs_dual_memory_t *,
                      const char *);
 
 /* <num_copies> <flush_bool> .outputpage - */
-private int
+static int
 zoutputpage(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -353,7 +353,7 @@ zoutputpage(i_ctx_t *i_ctx_p)
 /* the result will be an /undefined error; if require_all is false, */
 /* the key will be ignored. */
 /* Note that .putdeviceparams clears the current pagedevice. */
-private int
+static int
 zputdeviceparams(i_ctx_t *i_ctx_p)
 {
     uint count = ref_stack_counttomark(&o_stack);

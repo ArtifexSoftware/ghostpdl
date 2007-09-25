@@ -38,7 +38,7 @@
 /* Check the prototype. */
 iclass_proc(gs_image_class_3_mono);
 
-private irender_proc(image_render_mono);
+static irender_proc(image_render_mono);
 irender_proc_t
 gs_image_class_3_mono(gx_image_enum * penum)
 {
@@ -81,7 +81,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
  * Separation, Indexed), and color masking. This procedure handles a
  * single scan line.
  */
-private int
+static int
 image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 		  uint w, int h, gx_device * dev)
 {

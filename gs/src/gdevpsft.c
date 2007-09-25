@@ -62,7 +62,7 @@
 /* ---------------- Utilities ---------------- */
 
 /* Pad to a multiple of 4 bytes. */
-private void
+static void
 put_pad(stream *s, uint length)
 {
     static const byte pad_to_4[3] = {0, 0, 0};
@@ -71,19 +71,19 @@ put_pad(stream *s, uint length)
 }
 
 /* Put short and long values on a stream. */
-private void
+static void
 put_ushort(stream *s, uint v)
 {
     stream_putc(s, (byte)(v >> 8));
     stream_putc(s, (byte)v);
 }
-private void
+static void
 put_ulong(stream *s, ulong v)
 {
     put_ushort(s, (uint)(v >> 16));
     put_ushort(s, (uint)v);
 }
-private void
+static void
 put_loca(stream *s, ulong offset, int indexToLocFormat)
 {
     if (indexToLocFormat)
@@ -98,19 +98,19 @@ put_loca(stream *s, ulong offset, int indexToLocFormat)
 #define U16(p) (((uint)((p)[0]) << 8) + (p)[1])
 #define S16(p) (int)((U16(p) ^ 0x8000) - 0x8000)
 #define u32(p) get_u32_msb(p)
-private void
+static void
 put_u16(byte *p, uint v)
 {
     p[0] = (byte)(v >> 8);
     p[1] = (byte)v;
 }
-private void
+static void
 put_u32(byte *p, ulong v)
 {
     put_u16(p, (ushort)(v >> 16));
     put_u16(p + 2, (ushort)v);
 }
-private ulong
+static ulong
 put_table(byte tab[16], const char *tname, ulong checksum, ulong offset,
 	  uint length)
 {
@@ -122,7 +122,7 @@ put_table(byte tab[16], const char *tname, ulong checksum, ulong offset,
 }
 
 /* Write one range of a TrueType font. */
-private int
+static int
 write_range(stream *s, gs_font_type42 *pfont, ulong start, uint length)
 {
     ulong base = start, size = length;
@@ -149,7 +149,7 @@ write_range(stream *s, gs_font_type42 *pfont, ulong start, uint length)
  * Determine the Macintosh glyph number for a given character, if any.
  * If no glyph can be found, return -1 and store the name in *pstr.
  */
-private int
+static int
 mac_glyph_index(gs_font *font, int ch, gs_const_string *pstr, int *index)
 {
     gs_glyph glyph = font->procs.encode_char(font, (gs_char)ch,
@@ -271,7 +271,7 @@ static const byte cmap_sub_initial[] = {
  * inconsistently.
  */
 #define CMAP_ENTRIES_SIZE (256 * 2)
-private void
+static void
 write_cmap_0(stream *s, byte* entries /*[CMAP_ENTRIES_SIZE]*/, uint num_glyphs)
 {
     int i;
@@ -281,7 +281,7 @@ write_cmap_0(stream *s, byte* entries /*[CMAP_ENTRIES_SIZE]*/, uint num_glyphs)
     for (i = 0; i <= 0xff; ++i)
 	sputc(s, (byte)entries[2 * i + 1]);
 }
-private void
+static void
 write_cmap_6(stream *s, byte *entries /*[CMAP_ENTRIES_SIZE]*/, uint first_code,
 	     uint first_entry, uint num_entries)
 {
@@ -301,7 +301,7 @@ write_cmap_6(stream *s, byte *entries /*[CMAP_ENTRIES_SIZE]*/, uint first_code,
     stream_write(s, cmap_data, sizeof(cmap_data));
     stream_write(s, entries + first_entry * 2, num_entries * 2);
 }
-private void
+static void
 write_cmap(stream *s, gs_font *font, uint first_code, int num_glyphs,
 	   gs_glyph max_glyph, int options, uint cmap_length)
 {
@@ -376,7 +376,7 @@ write_cmap(stream *s, gs_font *font, uint first_code, int num_glyphs,
     stream_write(s, entries + first_entry * 2, num_entries * 2);
     put_pad(s, cmap_length);
 }
-private uint
+static uint
 size_cmap(gs_font *font, uint first_code, int num_glyphs, gs_glyph max_glyph,
 	  int options)
 {
@@ -390,7 +390,7 @@ size_cmap(gs_font *font, uint first_code, int num_glyphs, gs_glyph max_glyph,
 
 /* ------ hmtx/vmtx ------ */
 
-private void
+static void
 write_mtx(stream *s, gs_font_type42 *pfont, const gs_type42_mtx_t *pmtx,
 	  int wmode)
 {
@@ -413,7 +413,7 @@ write_mtx(stream *s, gs_font_type42 *pfont, const gs_type42_mtx_t *pmtx,
 }
 
 /* Compute the metrics from the glyph_info. */
-private uint
+static uint
 size_mtx(gs_font_type42 *pfont, gs_type42_mtx_t *pmtx, uint max_glyph,
 	 int wmode)
 {
@@ -453,12 +453,12 @@ static const byte name_initial[] = {
     0, 0,			/* length *VARIABLE* */
     0, 0			/* start of string within string storage */
 };
-private uint
+static uint
 size_name(const gs_const_string *font_name)
 {
     return sizeof(name_initial) + font_name->size;
 }
-private void
+static void
 write_name(stream *s, const gs_const_string *font_name)
 {
     byte name_bytes[sizeof(name_initial)];
@@ -475,7 +475,7 @@ write_name(stream *s, const gs_const_string *font_name)
 /* Write a generated OS/2 table. */
 #define OS_2_LENGTH1 offset_of(ttf_OS_2_t, sxHeight[0]) /* OS/2 version 1. */
 #define OS_2_LENGTH2 sizeof(ttf_OS_2_t) /* OS/2 version 2. */
-private void
+static void
 update_OS_2(ttf_OS_2_t *pos2, uint first_glyph, int num_glyphs)
 {
     put_u16(pos2->usFirstCharIndex, first_glyph);
@@ -490,7 +490,7 @@ update_OS_2(ttf_OS_2_t *pos2, uint first_glyph, int num_glyphs)
     }
 #endif
 }
-private void
+static void
 write_OS_2(stream *s, gs_font *font, uint first_glyph, int num_glyphs)
 {
     ttf_OS_2_t os2;
@@ -519,7 +519,7 @@ typedef struct post_glyph_s {
     byte size;
     ushort glyph_index;
 } post_glyph_t;
-private int
+static int
 compare_post_glyphs(const void *pg1, const void *pg2)
 {
     gs_glyph g1 = ((const post_glyph_t *)pg1)->glyph_index,
@@ -537,7 +537,7 @@ typedef struct post_s {
  * If necessary, compute the length of the post table.  Note that we
  * only generate post entries for characters in the Encoding.
  */
-private int
+static int
 compute_post(gs_font *font, post_t *post)
 {
     int i;
@@ -582,7 +582,7 @@ compute_post(gs_font *font, post_t *post)
 }
 
 /* Write the post table */
-private int
+static int
 write_post(stream *s, gs_font *font, post_t *post)
 {
     byte post_initial[32 + 2];
@@ -638,14 +638,14 @@ write_post(stream *s, gs_font *font, post_t *post)
 /* ---------------- Main program ---------------- */
 
 /* Write the definition of a TrueType font. */
-private int
+static int
 compare_table_tags(const void *pt1, const void *pt2)
 {
     ulong t1 = u32(pt1), t2 = u32(pt2);
 
     return (t1 < t2 ? -1 : t1 > t2 ? 1 : 0);
 }
-private int
+static int
 psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 			psf_glyph_enum_t *penum, bool is_subset,
 			const gs_const_string *alt_font_name)

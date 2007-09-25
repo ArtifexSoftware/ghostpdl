@@ -38,7 +38,7 @@ typedef uint byte_var;
   bit_table_8(0,v80,v40,v20,v10,v8,v4,v2,v1)
 
 /* Convert 3Mx1 to 3x1. */
-private int
+static int
 flip3x1(byte * buffer, const byte ** planes, int offset, int nbytes)
 {
     byte *out = buffer;
@@ -61,7 +61,7 @@ flip3x1(byte * buffer, const byte ** planes, int offset, int nbytes)
 }
 
 /* Convert 3Mx2 to 3x2. */
-private int
+static int
 flip3x2(byte * buffer, const byte ** planes, int offset, int nbytes)
 {
     byte *out = buffer;
@@ -84,7 +84,7 @@ flip3x2(byte * buffer, const byte ** planes, int offset, int nbytes)
 }
 
 /* Convert 3Mx4 to 3x4. */
-private int
+static int
 flip3x4(byte * buffer, const byte ** planes, int offset, int nbytes)
 {
     byte *out = buffer;
@@ -104,7 +104,7 @@ flip3x4(byte * buffer, const byte ** planes, int offset, int nbytes)
 }
 
 /* Convert 3Mx8 to 3x8. */
-private int
+static int
 flip3x8(byte * buffer, const byte ** planes, int offset, int nbytes)
 {
     byte *out = buffer;
@@ -122,7 +122,7 @@ flip3x8(byte * buffer, const byte ** planes, int offset, int nbytes)
 }
 
 /* Convert 3Mx12 to 3x12. */
-private int
+static int
 flip3x12(byte * buffer, const byte ** planes, int offset, int nbytes)
 {
     byte *out = buffer;
@@ -152,7 +152,7 @@ flip3x12(byte * buffer, const byte ** planes, int offset, int nbytes)
 }
 
 /* Convert 4Mx1 to 4x1. */
-private int
+static int
 flip4x1(byte * buffer, const byte ** planes, int offset, int nbytes)
 {
     byte *out = buffer;
@@ -182,7 +182,7 @@ flip4x1(byte * buffer, const byte ** planes, int offset, int nbytes)
 }
 
 /* Convert 4Mx2 to 4x2. */
-private int
+static int
 flip4x2(byte * buffer, const byte ** planes, int offset, int nbytes)
 {
     byte *out = buffer;
@@ -211,7 +211,7 @@ flip4x2(byte * buffer, const byte ** planes, int offset, int nbytes)
 }
 
 /* Convert 4Mx4 to 4x4. */
-private int
+static int
 flip4x4(byte * buffer, const byte ** planes, int offset, int nbytes)
 {
     byte *out = buffer;
@@ -233,7 +233,7 @@ flip4x4(byte * buffer, const byte ** planes, int offset, int nbytes)
 }
 
 /* Convert 4Mx8 to 4x8. */
-private int
+static int
 flip4x8(byte * buffer, const byte ** planes, int offset, int nbytes)
 {
     byte *out = buffer;
@@ -253,7 +253,7 @@ flip4x8(byte * buffer, const byte ** planes, int offset, int nbytes)
 }
 
 /* Convert 4Mx12 to 4x12. */
-private int
+static int
 flip4x12(byte * buffer, const byte ** planes, int offset, int nbytes)
 {
     byte *out = buffer;
@@ -299,7 +299,7 @@ flip4x12(byte * buffer, const byte ** planes, int offset, int nbytes)
 }
 
 /* Convert NMx{1,2,4,8} to Nx{1,2,4,8}. */
-private int
+static int
 flipNx1to8(byte * buffer, const byte ** planes, int offset, int nbytes,
 	   int num_planes, int bits_per_sample)
 {
@@ -321,7 +321,7 @@ flipNx1to8(byte * buffer, const byte ** planes, int offset, int nbytes,
 }
 
 /* Convert NMx12 to Nx12. */
-private int
+static int
 flipNx12(byte * buffer, const byte ** planes, int offset, int nbytes,
 	 int num_planes, int ignore_bits_per_sample)
 {
@@ -345,29 +345,29 @@ flipNx12(byte * buffer, const byte ** planes, int offset, int nbytes,
 
 /* Flip data given number of planes and bits per pixel. */
 typedef int (*image_flip_proc) (byte *, const byte **, int, int);
-private int
+static int
 flip_fail(byte * buffer, const byte ** planes, int offset, int nbytes)
 {
     return -1;
 }
-private const image_flip_proc image_flip3_procs[13] = {
+static const image_flip_proc image_flip3_procs[13] = {
     flip_fail, flip3x1, flip3x2, flip_fail, flip3x4,
     flip_fail, flip_fail, flip_fail, flip3x8,
     flip_fail, flip_fail, flip_fail, flip3x12
 };
-private const image_flip_proc image_flip4_procs[13] = {
+static const image_flip_proc image_flip4_procs[13] = {
     flip_fail, flip4x1, flip4x2, flip_fail, flip4x4,
     flip_fail, flip_fail, flip_fail, flip4x8,
     flip_fail, flip_fail, flip_fail, flip4x12
 };
 typedef int (*image_flipN_proc) (byte *, const byte **, int, int, int, int);
-private int
+static int
 flipN_fail(byte * buffer, const byte ** planes, int offset, int nbytes,
 	   int num_planes, int bits_per_sample)
 {
     return -1;
 }
-private const image_flipN_proc image_flipN_procs[13] = {
+static const image_flipN_proc image_flipN_procs[13] = {
     flipN_fail, flipNx1to8, flipNx1to8, flipN_fail, flipNx1to8,
     flipN_fail, flipN_fail, flipN_fail, flipNx1to8,
     flipN_fail, flipN_fail, flipN_fail, flipNx12

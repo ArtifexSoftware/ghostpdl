@@ -57,7 +57,7 @@ const char gp_current_directory_name[] = ".";
 
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
-private FILE *
+static FILE *
 gp_open_scratch_file_generic(const char *prefix, char fname[gp_file_name_sizeof],
 		     const char *mode, bool b64)
 {	/* The -8 is for XXXXXX plus a possible final / and -. */
@@ -171,7 +171,7 @@ gs_private_st_ptrs3(st_file_enum, struct file_enum_s, "file_enum",
 
 /* Do a wild-card match. */
 #ifdef DEBUG
-private bool
+static bool
 wmatch(const byte * str, uint len, const byte * pstr, uint plen,
        const string_match_params * psmp)
 {
@@ -194,7 +194,7 @@ wmatch(const byte * str, uint len, const byte * pstr, uint plen,
 
 /* Search a string backward for a character. */
 /* (This substitutes for strrchr, which some systems don't provide.) */
-private char *
+static char *
 rchr(char *str, char ch, int len)
 {
     register char *p = str + len;
@@ -206,7 +206,7 @@ rchr(char *str, char ch, int len)
 }
 
 /* Pop a directory from the enumeration stack. */
-private bool
+static bool
 popdir(file_enum * pfen)
 {
     dirstack *d = pfen->dstack;

@@ -82,7 +82,7 @@ stats_fill_t stats_fill;
  * Y value, or, of the x_current values are equal, greater Y values
  * (if any: this Y value might be the end of both lines).
  */
-private int
+static int
 x_order(const active_line *lp1, const active_line *lp2)
 {
     bool s1;
@@ -130,7 +130,7 @@ gs_private_st_simple(st_active_line, active_line, "active_line");
 
 #ifdef DEBUG
 /* Internal procedures for printing and checking active lines. */
-private void
+static void
 print_active_line(const char *label, const active_line * alp)
 {
     dlprintf5("[f]%s 0x%lx(%d): x_current=%f x_next=%f\n",
@@ -143,7 +143,7 @@ print_active_line(const char *label, const active_line * alp)
     dlprintf2("    prev=0x%lx next=0x%lx\n",
 	      (ulong) alp->prev, (ulong) alp->next);
 }
-private void
+static void
 print_line_list(const active_line * flp)
 {
     const active_line *lp;
@@ -159,7 +159,7 @@ print_line_list(const active_line * flp)
 	dputc('\n');
     }
 }
-inline private void
+static inline void
 print_al(const char *label, const active_line * alp)
 {
     if (gs_debug_c('F'))
@@ -169,7 +169,7 @@ print_al(const char *label, const active_line * alp)
 #define print_al(label,alp) DO_NOTHING
 #endif
 
-private inline bool
+static inline bool
 is_spotan_device(gx_device * dev)
 {
     /* Use open_device procedure to identify the type of the device
@@ -181,18 +181,18 @@ is_spotan_device(gx_device * dev)
 }
 
 /* Forward declarations */
-private void free_line_list(line_list *);
-private int add_y_list(gx_path *, line_list *);
-private int add_y_line_aux(const segment * prev_lp, const segment * lp, 
+static void free_line_list(line_list *);
+static int add_y_list(gx_path *, line_list *);
+static int add_y_line_aux(const segment * prev_lp, const segment * lp, 
 	    const gs_fixed_point *curr, const gs_fixed_point *prev, int dir, line_list *ll);
-private void insert_x_new(active_line *, line_list *);
-private int  end_x_line(active_line *, const line_list *, bool);
-private int step_al(active_line *alp, bool move_iterator);
+static void insert_x_new(active_line *, line_list *);
+static int  end_x_line(active_line *, const line_list *, bool);
+static int step_al(active_line *alp, bool move_iterator);
 
 
 #define FILL_LOOP_PROC(proc) int proc(line_list *, fixed band_mask)
-private FILL_LOOP_PROC(spot_into_scan_lines);
-private FILL_LOOP_PROC(spot_into_trapezoids);
+static FILL_LOOP_PROC(spot_into_scan_lines);
+static FILL_LOOP_PROC(spot_into_trapezoids);
 
 /*
  * This is the general path filling algorithm.
@@ -211,7 +211,7 @@ private FILL_LOOP_PROC(spot_into_trapezoids);
  */
 
 /* Initialize the line list for a path. */
-private inline void
+static inline void
 init_line_list(line_list *ll, gs_memory_t * mem)
 {
     ll->memory = mem;
@@ -235,7 +235,7 @@ init_line_list(line_list *ll, gs_memory_t * mem)
 
 
 /* Unlink any line_close segments added temporarily. */
-private inline void
+static inline void
 unclose_path(gx_path * ppath, int count)
 {
     subpath *psub;
@@ -287,7 +287,7 @@ gx_adjust_if_empty(const gs_fixed_rect * pbox, gs_fixed_point * adjust)
 /*
  * The general fill  path algorithm.
  */
-private int
+static int
 gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 		     gx_path * ppath, const gx_fill_params * params,
 		 const gx_device_color * pdevc, const gx_clip_path * pcpath)
@@ -555,7 +555,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     return code;
 }
 
-private int
+static int
 pass_shading_area_through_clip_path_device(gx_device * pdev, const gs_imager_state * pis,
 		     gx_path * ppath, const gx_fill_params * params,
 		 const gx_device_color * pdevc, const gx_clip_path * pcpath)
@@ -683,7 +683,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 }
 
 /* Free the line list. */
-private void
+static void
 free_line_list(line_list *ll)
 {
     /* Free any individually allocated active_lines. */
@@ -699,7 +699,7 @@ free_line_list(line_list *ll)
     free_all_margins(ll);
 }
 
-private inline active_line *
+static inline active_line *
 make_al(line_list *ll)
 {
     active_line *alp = ll->next_active;
@@ -719,7 +719,7 @@ make_al(line_list *ll)
 }
 
 /* Insert the new line in the Y ordering */
-private void
+static void
 insert_y_line(line_list *ll, active_line *alp)
 {
     active_line *yp = ll->y_line;
@@ -771,7 +771,7 @@ typedef struct contour_cursor_s {
     bool crossing;
 } contour_cursor;
 
-private inline int
+static inline int
 compute_dir(const fill_options *fo, fixed y0, fixed y1)
 {
     if (max(y0, y1) < fo->ymin)
@@ -782,7 +782,7 @@ compute_dir(const fill_options *fo, fixed y0, fixed y1)
 	    y0 > y1 ? DIR_DOWN : DIR_HORIZONTAL);
 }
 
-private inline int
+static inline int
 add_y_curve_part(line_list *ll, segment *s0, segment *s1, int dir, 
     gx_flattened_iterator *fi, bool more1, bool step_back, bool monotonic_x)
 {
@@ -816,13 +816,13 @@ add_y_curve_part(line_list *ll, segment *s0, segment *s1, int dir,
     return 0;
 }
 
-private inline int
+static inline int
 add_y_line(const segment * prev_lp, const segment * lp, int dir, line_list *ll)
 {
     return add_y_line_aux(prev_lp, lp, &lp->pt, &prev_lp->pt, dir, ll);
 }
 
-private inline int
+static inline int
 start_al_pair(line_list *ll, contour_cursor *q, contour_cursor *p)
 {
     int code;
@@ -843,7 +843,7 @@ start_al_pair(line_list *ll, contour_cursor *q, contour_cursor *p)
 }
 
 /* Start active lines from a minimum of a possibly non-monotonic curve. */
-private int
+static int
 start_al_pair_from_min(line_list *ll, contour_cursor *q)
 {
     int dir, code;
@@ -893,7 +893,7 @@ start_al_pair_from_min(line_list *ll, contour_cursor *q)
        which may vary due to arithmetic errors. */
 }
 
-private inline int
+static inline int
 init_contour_cursor(line_list *ll, contour_cursor *q) 
 {
     const fill_options * const fo = ll->fo;
@@ -929,7 +929,7 @@ init_contour_cursor(line_list *ll, contour_cursor *q)
     return 0;
 }
 
-private int
+static int
 scan_contour(line_list *ll, contour_cursor *q)
 {
     contour_cursor p;
@@ -1067,7 +1067,7 @@ scan_contour(line_list *ll, contour_cursor *q)
  * curve segments where one endpoint is locally Y-minimal, and horizontal
  * lines that might color some additional pixels.
  */
-private int
+static int
 add_y_list(gx_path * ppath, line_list *ll)
 {
     subpath *psub = ppath->first_subpath;
@@ -1119,7 +1119,7 @@ add_y_list(gx_path * ppath, line_list *ll)
 }
 
 
-private int
+static int
 step_al(active_line *alp, bool move_iterator)
 {
     bool forth = (alp->direction == DIR_UP || !alp->fi.curve);
@@ -1150,7 +1150,7 @@ step_al(active_line *alp, bool move_iterator)
     return 0;
 }
 
-private int
+static int
 init_al(active_line *alp, const segment *s0, const segment *s1, const line_list *ll)
 {
     const segment *ss = (alp->direction == DIR_UP ? s1 : s0);
@@ -1213,7 +1213,7 @@ init_al(active_line *alp, const segment *s0, const segment *s1, const line_list 
  * Internal routine to test a segment and add it to the pending list if
  * appropriate.
  */
-private int
+static int
 add_y_line_aux(const segment * prev_lp, const segment * lp, 
 	    const gs_fixed_point *curr, const gs_fixed_point *prev, int dir, line_list *ll)
 {
@@ -1251,7 +1251,7 @@ add_y_line_aux(const segment * prev_lp, const segment * lp,
 /* ---------------- Filling loop utilities ---------------- */
 
 /* Insert a newly active line in the X ordering. */
-private void
+static void
 insert_x_new(active_line * alp, line_list *ll)
 {
     active_line *next;
@@ -1278,7 +1278,7 @@ insert_x_new(active_line * alp, line_list *ll)
 /* todo : optimize with maintaining ordered interval list;
    Unite contacting inrevals, like we did in add_margin.
  */
-private inline void
+static inline void
 insert_h_new(active_line * alp, line_list *ll)
 {
     alp->next = ll->h_list0;
@@ -1296,7 +1296,7 @@ insert_h_new(active_line * alp, line_list *ll)
      */
 }
 
-private inline void
+static inline void
 remove_al(const line_list *ll, active_line *alp)
 {
     active_line *nlp = alp->next;
@@ -1311,7 +1311,7 @@ remove_al(const line_list *ll, active_line *alp)
  * Handle a line segment that just ended.  Return true iff this was
  * the end of a line sequence.
  */
-private int
+static int
 end_x_line(active_line *alp, const line_list *ll, bool update)
 {
     const segment *pseg = alp->pseg;
@@ -1362,20 +1362,20 @@ end_x_line(active_line *alp, const line_list *ll, bool update)
     return false;
 }
 
-private inline int 
+static inline int 
 add_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
 {   vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(255, 255, 255));
     vd_bar(flp->start.x, flp->start.y, flp->end.x, flp->end.y, 1, RGB(255, 255, 255));
     return continue_margin_common(ll, &ll->margin_set0, flp, alp, y0, y1);
 }
 
-private inline int 
+static inline int 
 continue_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
 {   
     return continue_margin_common(ll, &ll->margin_set0, flp, alp, y0, y1);
 }
 
-private inline int 
+static inline int 
 complete_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
 {   
     return continue_margin_common(ll, &ll->margin_set1, flp, alp, y0, y1);
@@ -1386,7 +1386,7 @@ complete_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, 
  * To do this exactly right requires filling a central trapezoid
  * (or rectangle) plus two horizontal almost-rectangles.
  */
-private int
+static int
 fill_slant_adjust(const line_list *ll, 
 	const active_line *flp, const active_line *alp, fixed y, fixed y1)
 {
@@ -1497,7 +1497,7 @@ fill_slant_adjust(const line_list *ll,
 }
 
 /* Re-sort the x list by moving alp backward to its proper spot. */
-private inline void
+static inline void
 resort_x_line(active_line * alp)
 {
     active_line *prev = alp->prev;
@@ -1520,7 +1520,7 @@ resort_x_line(active_line * alp)
 }
 
 /* Move active lines by Y. */
-private inline int
+static inline int
 move_al_by_y(line_list *ll, fixed y1)
 {
     fixed x;
@@ -1590,7 +1590,7 @@ move_al_by_y(line_list *ll, fixed y1)
 }
 
 /* Process horizontal segment of curves. */
-private inline int
+static inline int
 process_h_segments(line_list *ll, fixed y)
 {
     active_line *alp, *nlp;
@@ -1611,7 +1611,7 @@ process_h_segments(line_list *ll, fixed y)
     /* After this should call move_al_by_y and step to the next band. */
 }
 
-private inline int
+static inline int
 loop_fill_trap_np(const line_list *ll, const gs_fixed_edge *le, const gs_fixed_edge *re, fixed y, fixed y1)
 {
     const fill_options * const fo = ll->fo;
@@ -1644,7 +1644,7 @@ loop_fill_trap_np(const line_list *ll, const gs_fixed_edge *le, const gs_fixed_e
 
 /* Find an intersection within y, y1. */
 /* lp->x_current, lp->x_next must be set for y, y1. */
-private bool
+static bool
 intersect(active_line *endp, active_line *alp, fixed y, fixed y1, fixed *p_y_new)
 {
     fixed y_new, dy;
@@ -1715,7 +1715,7 @@ intersect(active_line *endp, active_line *alp, fixed y, fixed y1, fixed *p_y_new
     return true;
 }
 
-private inline void
+static inline void
 set_x_next(active_line *endp, active_line *alp, fixed x)
 {
     while(endp != alp) {
@@ -1724,7 +1724,7 @@ set_x_next(active_line *endp, active_line *alp, fixed x)
     }
 }
 
-private inline int
+static inline int
 coord_weight(const active_line *alp)
 {
     return 1 + min(any_abs((int)((int64_t)alp->diff.y * 8 / alp->diff.x)), 256);
@@ -1733,7 +1733,7 @@ coord_weight(const active_line *alp)
 
 /* Find intersections of active lines within the band. 
    Intersect and reorder them, and correct the bund top. */
-private void
+static void
 intersect_al(line_list *ll, fixed y, fixed *y_top, int draw, bool all_bands)
 {
     fixed x = min_fixed, y1 = *y_top;
@@ -2058,7 +2058,7 @@ static inline int sign(int a)
 /* Main filling loop.  Takes lines off of y_list and adds them to */
 /* x_list as needed.  band_mask limits the size of each band, */
 /* by requiring that ((y1 - 1) & band_mask) == (y0 & band_mask). */
-private int
+static int
 spot_into_trapezoids(line_list *ll, fixed band_mask)
 {
     /* For better porformance, choose a specialized algorithm : */
@@ -2146,7 +2146,7 @@ typedef struct coord_range_list_s {
     coord_range_t first, last;
 } coord_range_list_t;
 
-private coord_range_t *
+static coord_range_t *
 range_alloc(coord_range_list_t *pcrl)
 {
     coord_range_t *pcr;
@@ -2167,7 +2167,7 @@ range_alloc(coord_range_list_t *pcrl)
     return pcr;
 }
 
-private void
+static void
 range_delete(coord_range_list_t *pcrl, coord_range_t *pcr)
 {
     if_debug3('Q', "[Qr]delete 0x%lx: [%d,%d)\n", (ulong)pcr, pcr->rmin,
@@ -2178,7 +2178,7 @@ range_delete(coord_range_list_t *pcrl, coord_range_t *pcr)
     pcrl->freed = pcr;
 }
 
-private void
+static void
 range_list_clear(coord_range_list_t *pcrl)
 {
     if_debug0('Q', "[Qr]clearing\n");
@@ -2190,8 +2190,8 @@ range_list_clear(coord_range_list_t *pcrl)
 /* ------ "Public" procedures ------ */
 
 /* Initialize a range list.  We require num_local >= 2. */
-private void range_list_clear(coord_range_list_t *);
-private void
+static void range_list_clear(coord_range_list_t *);
+static void
 range_list_init(coord_range_list_t *pcrl, coord_range_t *pcr_local,
 		int num_local, gs_memory_t *mem)
 {
@@ -2207,7 +2207,7 @@ range_list_init(coord_range_list_t *pcrl, coord_range_t *pcr_local,
 }
 
 /* Reset an initialized range list to the empty state. */
-private void
+static void
 range_list_reset(coord_range_list_t *pcrl)
 {
     if (pcrl->first.next != &pcrl->last) {
@@ -2222,14 +2222,14 @@ range_list_reset(coord_range_list_t *pcrl)
  * the next added ranges will roughly parallel the existing ones.
  * (Only affects performance, not function.)
  */
-inline private void
+static inline void
 range_list_rescan(coord_range_list_t *pcrl)
 {
     pcrl->current = pcrl->first.next;
 }
 
 /* Free a range list. */
-private void
+static void
 range_list_free(coord_range_list_t *pcrl)
 {
     coord_range_t *pcr;
@@ -2243,7 +2243,7 @@ range_list_free(coord_range_list_t *pcrl)
 }
 
 /* Add a range. */
-private int
+static int
 range_list_add(coord_range_list_t *pcrl, coord_value_t rmin, coord_value_t rmax)
 {
     coord_range_t *pcr = pcrl->current;
@@ -2324,7 +2324,7 @@ range_list_add(coord_range_list_t *pcrl, coord_value_t rmin, coord_value_t rmax)
  * segments, up to the end of the sampling band or the end of the segment,
  * into the range list.
  */
-private int
+static int
 merge_ranges(coord_range_list_t *pcrl, const line_list *ll, fixed y_min, fixed y_top)
 {
     active_line *alp, *nlp;
@@ -2393,7 +2393,7 @@ merge_ranges(coord_range_list_t *pcrl, const line_list *ll, fixed y_min, fixed y
 #undef FILL_DIRECT
 #undef TEMPLATE_spot_into_scanlines
 
-private int
+static int
 spot_into_scan_lines(line_list *ll, fixed band_mask)
 {
     if (ll->fo->fill_direct)

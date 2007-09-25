@@ -23,7 +23,7 @@
 private_st_RLD_state();
 
 /* Set defaults */
-private void
+static void
 s_RLD_set_defaults(stream_state * st)
 {
     stream_RLD_state *const ss = (stream_RLD_state *) st;
@@ -32,7 +32,7 @@ s_RLD_set_defaults(stream_state * st)
 }
 
 /* Initialize */
-private int
+static int
 s_RLD_init(stream_state * st)
 {
     stream_RLD_state *const ss = (stream_RLD_state *) st;
@@ -41,7 +41,7 @@ s_RLD_init(stream_state * st)
 }
 
 /* Refill the buffer */
-private int
+static int
 s_RLD_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {

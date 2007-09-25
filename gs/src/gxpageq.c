@@ -40,7 +40,7 @@ struct gx_page_queue_s {
 /*
  * Null initializer for entry page_info (used by gx_page_queue_add_page() ).
  */
-private const gx_band_page_info_t null_page_info = { PAGE_INFO_NULL_VALUES };
+static const gx_band_page_info_t null_page_info = { PAGE_INFO_NULL_VALUES };
 
 #define private_st_gx_page_queue()\
   gs_private_st_ptrs4(st_gx_page_queue, gx_page_queue_t, "gx_page_queue",\
@@ -54,7 +54,7 @@ private_st_gx_page_queue_entry();
 private_st_gx_page_queue();
 
 /* ------------ Forward Decl's --------------------------- */
-private gx_page_queue_entry_t *	/* removed entry, 0 if none avail */
+static gx_page_queue_entry_t *	/* removed entry, 0 if none avail */
     gx_page_queue_remove_first(
 			       gx_page_queue_t * queue	/* page queue to retrieve from */
 			       );
@@ -171,7 +171,7 @@ gx_page_queue_dnit(
 /* -------- low-level queue add/remove ---------- */
 
 /* Retrieve & remove firstin queue entry */
-private gx_page_queue_entry_t *	/* removed entry, 0 if none avail */
+static gx_page_queue_entry_t *	/* removed entry, 0 if none avail */
 gx_page_queue_remove_first(
 			      gx_page_queue_t * queue	/* page queue to retrieve from */
 )
@@ -196,7 +196,7 @@ gx_page_queue_remove_first(
 }
 
 /* Add entry to queue at end */
-private void
+static void
 gx_page_queue_add_last(
 			  gx_page_queue_entry_t * entry	/* entry to add */
 )

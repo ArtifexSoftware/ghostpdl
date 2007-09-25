@@ -32,7 +32,7 @@
 /*
  * escp2c_pick best scans for best matching color 
  */
-private byte *
+static byte *
 escp2c_pick_best(byte *col)
 {
     static byte colour[8][3] = {
@@ -113,7 +113,7 @@ escp2c_pick_best(byte *col)
 /*
  * escp2c_conv_stc converts into the ouput format used by stcolor
  */
-private void
+static void
 escp2c_conv_stc(byte *p, byte *q, int i)
 {
     for(; i; p+=3, i-=3)

@@ -106,21 +106,21 @@ struct gx_device_pm_s {
 /* Device procedures */
 
 /* See gxdevice.h for the definitions of the procedures. */
-private dev_proc_open_device(pm_open);
-private dev_proc_get_initial_matrix(pm_get_initial_matrix);
-private dev_proc_sync_output(pm_sync_output);
-private dev_proc_output_page(pm_output_page);
-private dev_proc_close_device(pm_close);
-private dev_proc_map_rgb_color(pm_map_rgb_color);
-private dev_proc_map_color_rgb(pm_map_color_rgb);
-private dev_proc_fill_rectangle(pm_fill_rectangle);
-private dev_proc_copy_mono(pm_copy_mono);
-private dev_proc_copy_color(pm_copy_color);
-private dev_proc_get_bits(pm_get_bits);
-private dev_proc_get_params(pm_get_params);
-private dev_proc_put_params(pm_put_params);
+static dev_proc_open_device(pm_open);
+static dev_proc_get_initial_matrix(pm_get_initial_matrix);
+static dev_proc_sync_output(pm_sync_output);
+static dev_proc_output_page(pm_output_page);
+static dev_proc_close_device(pm_close);
+static dev_proc_map_rgb_color(pm_map_rgb_color);
+static dev_proc_map_color_rgb(pm_map_color_rgb);
+static dev_proc_fill_rectangle(pm_fill_rectangle);
+static dev_proc_copy_mono(pm_copy_mono);
+static dev_proc_copy_color(pm_copy_color);
+static dev_proc_get_bits(pm_get_bits);
+static dev_proc_get_params(pm_get_params);
+static dev_proc_put_params(pm_put_params);
 
-private gx_device_procs pm_procs =
+static gx_device_procs pm_procs =
 {
     pm_open,
     pm_get_initial_matrix,
@@ -177,13 +177,13 @@ gx_device_pm far_data gs_os2pm_device =
    ((z) >> (gx_color_value_bits - 3)))
 
 /* prototypes for internal procedures */
-private void pm_makepalette(gx_device_pm *);
-private void pm_update(gx_device_pm *);
-private uint pm_set_bits_per_pixel(gx_device_pm *, int);
-private uint pm_palette_size(gx_device_pm *);
-private int pm_alloc_bitmap(gx_device_pm *, gx_device *);
-private int pm_run_gspmdrv(gx_device_pm *);
-private void pm_write_bmp(gx_device_pm *);
+static void pm_makepalette(gx_device_pm *);
+static void pm_update(gx_device_pm *);
+static uint pm_set_bits_per_pixel(gx_device_pm *, int);
+static uint pm_palette_size(gx_device_pm *);
+static int pm_alloc_bitmap(gx_device_pm *, gx_device *);
+static int pm_run_gspmdrv(gx_device_pm *);
+static void pm_write_bmp(gx_device_pm *);
 
 /* Open the pm driver */
 int
@@ -371,7 +371,7 @@ pm_open(gx_device * dev)
 
 /* Get the initial matrix.  BMPs, unlike most displays, */
 /* put (0,0) in the lower left corner. */
-private void
+static void
 pm_get_initial_matrix(gx_device * dev, gs_matrix * pmat)
 {
     pmat->xx = dev->x_pixels_per_inch / 72.0;
@@ -413,7 +413,7 @@ pm_sync_output(gx_device * dev)
 
 /* Make the output appear on the screen  */
 /* and bring image window to foreground. */
-private int
+static int
 pm_do_output_page(gx_device * dev, int copies, int flush)
 {
     int code;
@@ -659,7 +659,7 @@ pm_map_color_rgb(gx_device * dev, gx_color_index color,
 #define pmmproc(proc) (*dev_proc(&pmdev->mdev, proc))
 
 /* Fill a rectangle. */
-private int
+static int
 pm_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 		  gx_color_index color)
 {
@@ -670,7 +670,7 @@ pm_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 
 /* Copy a monochrome bitmap.  The colors are given explicitly. */
 /* Color = gx_no_color_index means transparent (no effect on the image). */
-private int
+static int
 pm_copy_mono(gx_device * dev,
 	     const byte * base, int sourcex, int raster, gx_bitmap_id id,
 	     int x, int y, int w, int h,
@@ -684,7 +684,7 @@ pm_copy_mono(gx_device * dev,
 
 /* Copy a color pixel map.  This is just like a bitmap, except that */
 /* each pixel takes 8 or 4 bits instead of 1 when device driver has color. */
-private int
+static int
 pm_copy_color(gx_device * dev,
 	      const byte * base, int sourcex, int raster, gx_bitmap_id id,
 	      int x, int y, int w, int h)
@@ -904,7 +904,7 @@ gsdll_lock_device(unsigned char *device, int flag)
 
 
 /* start gspmdrv.exe */
-private int
+static int
 pm_run_gspmdrv(gx_device_pm * pmdev)
 {
     int ccode;
@@ -988,7 +988,7 @@ pm_run_gspmdrv(gx_device_pm * pmdev)
 }
 
 /* Allocate the backing bitmap. */
-private int
+static int
 pm_alloc_bitmap(gx_device_pm * pmdev, gx_device * param_dev)
 {
     gx_device_memory mdev;
@@ -1051,7 +1051,7 @@ pm_alloc_bitmap(gx_device_pm * pmdev, gx_device * param_dev)
     return 0;
 }
 
-private void
+static void
 pm_makepalette(gx_device_pm * pmdev)
 {
     int i, val;
@@ -1101,7 +1101,7 @@ pm_makepalette(gx_device_pm * pmdev)
 
 
 /* Cause display to be updated periodically */
-private void
+static void
 pm_update(gx_device_pm * pmdev)
 {
     if (pmdev->updating)
@@ -1125,7 +1125,7 @@ pm_update(gx_device_pm * pmdev)
  * This is a utility routine to build the display device's color_info
  * structure (except for the anti alias info).
  */
-private void
+static void
 set_color_info(gx_device_color_info * pdci, int nc, int depth, int maxgray, int maxcolor)
 {
     pdci->num_components = pdci->max_components = nc;
@@ -1158,7 +1158,7 @@ set_color_info(gx_device_color_info * pdci, int nc, int depth, int maxgray, int 
  * This is an utility routine to set up the color procs for the display
  * device.  The display device can change its setup.
  */
-private void
+static void
 set_color_procs(gx_device * pdev, 
 	dev_t_proc_encode_color((*encode_color), gx_device),
 	dev_t_proc_decode_color((*decode_color), gx_device),
@@ -1179,7 +1179,7 @@ set_color_procs(gx_device * pdev,
  * This is an utility routine to set up the color procs for the display
  * device.  This routine is used when the display device is Gray.
  */
-private void
+static void
 set_gray_color_procs(gx_device * pdev, 
 	dev_t_proc_encode_color((*encode_color), gx_device),
 	dev_t_proc_decode_color((*decode_color), gx_device))
@@ -1193,7 +1193,7 @@ set_gray_color_procs(gx_device * pdev,
  * This is an utility routine to set up the color procs for the display
  * device.  This routine is used when the display device is RGB.
  */
-private void
+static void
 set_rgb_color_procs(gx_device * pdev, 
 	dev_t_proc_encode_color((*encode_color), gx_device),
 	dev_t_proc_decode_color((*decode_color), gx_device))
@@ -1203,7 +1203,7 @@ set_rgb_color_procs(gx_device * pdev,
 	gx_default_DevRGB_get_color_comp_index);
 }
 
-private uint
+static uint
 pm_set_bits_per_pixel(gx_device_pm * pmdev, int bpp)
 {
     gx_device * pdev = (gx_device *) pmdev;
@@ -1246,7 +1246,7 @@ pm_set_bits_per_pixel(gx_device_pm * pmdev, int bpp)
 }
 
 /* return length of BMP palette in bytes */
-private uint
+static uint
 pm_palette_size(gx_device_pm * pmdev)
 {
     switch (pmdev->color_info.depth) {
@@ -1263,7 +1263,7 @@ pm_palette_size(gx_device_pm * pmdev)
 
 /* This is used for testing */
 /* Write out a BMP file to "out.bmp" */
-private void
+static void
 pm_write_bmp(gx_device_pm * pmdev)
 {
     BITMAPFILEHEADER2 bmfh;

@@ -42,9 +42,9 @@ extern_gx_image_type_table();
 static const bool USE_HL_IMAGES = true;
 
 /* Forward references */
-private int cmd_put_set_data_x(gx_device_clist_writer * cldev,
+static int cmd_put_set_data_x(gx_device_clist_writer * cldev,
 			       gx_clist_state * pcls, int data_x);
-private bool check_rect_for_trivial_clip(
+static bool check_rect_for_trivial_clip(
     const gx_clip_path *pcpath,  /* May be NULL, clip to evaluate */
     int px, int py, int qx, int qy  /* corners of box to test */
 );
@@ -256,27 +256,27 @@ gs_private_st_suffix_add3(st_clist_image_enum, clist_image_enum,
 			  clist_image_enum_reloc_ptrs, st_gx_image_enum_common,
 			  pis, pcpath, color_space.space);
 
-private image_enum_proc_plane_data(clist_image_plane_data);
-private image_enum_proc_end_image(clist_image_end_image);
-private const gx_image_enum_procs_t clist_image_enum_procs =
+static image_enum_proc_plane_data(clist_image_plane_data);
+static image_enum_proc_end_image(clist_image_end_image);
+static const gx_image_enum_procs_t clist_image_enum_procs =
 {
     clist_image_plane_data, clist_image_end_image
 };
 
 /* Forward declarations */
-private bool image_band_box(gx_device * dev, const clist_image_enum * pie,
+static bool image_band_box(gx_device * dev, const clist_image_enum * pie,
 			    int y, int h, gs_int_rect * pbox);
-private int begin_image_command(byte *buf, uint buf_size,
+static int begin_image_command(byte *buf, uint buf_size,
 				const gs_image_common_t *pic);
-private int cmd_image_plane_data(gx_device_clist_writer * cldev,
+static int cmd_image_plane_data(gx_device_clist_writer * cldev,
 				 gx_clist_state * pcls,
 				 const gx_image_plane_t * planes,
 				 const gx_image_enum_common_t * pie,
 				 uint bytes_per_plane,
 				 const uint * offsets, int dx, int h);
-private uint clist_image_unknowns(gx_device *dev,
+static uint clist_image_unknowns(gx_device *dev,
 				  const clist_image_enum *pie);
-private int write_image_end_all(gx_device *dev,
+static int write_image_end_all(gx_device *dev,
 				const clist_image_enum *pie);
 
 /*
@@ -287,7 +287,7 @@ private int write_image_end_all(gx_device *dev,
  * subrectangles, but for now, don't use the high-level approach if it would
  * cause the data to explode because of this.
  */
-private bool
+static bool
 image_matrix_ok_to_band(const gs_matrix * pmat)
 {
     double t;
@@ -542,7 +542,7 @@ use_default:
 }
 
 /* Error cleanup for clist_image_plane_data. */
-private inline int
+static inline int
 clist_image_plane_data_retry_cleanup(gx_device *dev, clist_image_enum *pie, int yh_used, int code)
 {
     gx_device_clist_writer * const cdev =
@@ -562,7 +562,7 @@ clist_image_plane_data_retry_cleanup(gx_device *dev, clist_image_enum *pie, int 
 }
 
 /* Process the next piece of an image. */
-private int
+static int
 clist_image_plane_data(gx_image_enum_common_t * info,
 		       const gx_image_plane_t * planes, int yh,
 		       int *rows_used)
@@ -808,7 +808,7 @@ error_in_rect:
 }
 
 /* Clean up by releasing the buffers. */
-private int
+static int
 clist_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 {
     gx_device *dev = info->dev;
@@ -907,7 +907,7 @@ clist_create_compositor(gx_device * dev,
 /* ------ Utilities ------ */
 
 /* Add a command to set data_x. */
-private int
+static int
 cmd_put_set_data_x(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		   int data_x)
 {
@@ -1161,7 +1161,7 @@ cmd_put_color_mapping(gx_device_clist_writer * cldev,
  */
 #define I_FLOOR(x) ((int)floor(x))
 #define I_CEIL(x) ((int)ceil(x))
-private void
+static void
 box_merge_point(gs_int_rect * pbox, floatp x, floatp y)
 {
     int t;
@@ -1175,7 +1175,7 @@ box_merge_point(gs_int_rect * pbox, floatp x, floatp y)
     if ((t = I_CEIL(y)) > pbox->q.y)
 	pbox->q.y = t;
 }
-private bool
+static bool
 image_band_box(gx_device * dev, const clist_image_enum * pie, int y, int h,
 	       gs_int_rect * pbox)
 {
@@ -1330,7 +1330,7 @@ image_band_box(gx_device * dev, const clist_image_enum * pie, int y, int h,
 }
 
 /* Determine which image-related properties are unknown */
-private uint	/* mask of unknown properties(see pcls->known) */
+static uint	/* mask of unknown properties(see pcls->known) */
 clist_image_unknowns(gx_device *dev, const clist_image_enum *pie)
 {
     gx_device_clist_writer * const cdev =
@@ -1399,7 +1399,7 @@ clist_image_unknowns(gx_device *dev, const clist_image_enum *pie)
 }
 
 /* Construct the begin_image command. */
-private int
+static int
 begin_image_command(byte *buf, uint buf_size, const gs_image_common_t *pic)
 {
     int i;
@@ -1420,7 +1420,7 @@ begin_image_command(byte *buf, uint buf_size, const gs_image_common_t *pic)
 }
 
 /* Write data for a partial image. */
-private int
+static int
 cmd_image_plane_data(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		     const gx_image_plane_t * planes,
 		     const gx_image_enum_common_t * pie,
@@ -1458,7 +1458,7 @@ cmd_image_plane_data(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 }
 
 /* Write image_end commands into all bands */
-private int	/* ret 0 ok, else -ve error status */
+static int	/* ret 0 ok, else -ve error status */
 write_image_end_all(gx_device *dev, const clist_image_enum *pie)
 {
     gx_device_clist_writer * const cdev =
@@ -1506,7 +1506,7 @@ error_in_rect:
  * path, if the rectangle is unclipped, or if the clipping path is a
  * rectangle and intersects the given rectangle.
  */
-private bool
+static bool
 check_rect_for_trivial_clip(
     const gx_clip_path *pcpath,	/* May be NULL, clip to evaluate */
     int px, int py, int qx, int qy	/* corners of box to test */

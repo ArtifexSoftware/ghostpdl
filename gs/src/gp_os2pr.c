@@ -57,9 +57,9 @@
  * thread within ghostscript.
  */
 
-private iodev_proc_init(os2_printer_init);
-private iodev_proc_fopen(os2_printer_fopen);
-private iodev_proc_fclose(os2_printer_fclose);
+static iodev_proc_init(os2_printer_init);
+static iodev_proc_fopen(os2_printer_fopen);
+static iodev_proc_fclose(os2_printer_fclose);
 const gx_io_device gs_iodev_printer = {
     "%printer%", "FileSystem",
     {os2_printer_init, iodev_no_open_device,
@@ -76,7 +76,7 @@ typedef struct os2_printer_s {
 } os2_printer_t;
 
 /* The file device procedures */
-private int
+static int
 os2_printer_init(gx_io_device * iodev, gs_memory_t * mem)
 {
     /* state -> structure containing thread handle */
@@ -89,7 +89,7 @@ os2_printer_init(gx_io_device * iodev, gs_memory_t * mem)
 }
 
 
-private int
+static int
 os2_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
 	   FILE ** pfile, char *rfname, uint rnamelen)
 {
@@ -114,7 +114,7 @@ os2_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
     return 0;
 }
 
-private int
+static int
 os2_printer_fclose(gx_io_device * iodev, FILE * file)
 {
     os2_printer_t *pr = (os2_printer_t *)iodev->state;

@@ -22,15 +22,15 @@
 
 /* Forward declarations */
 int s_close_disable(stream *);
-private int sreadbuf(stream *, stream_cursor_write *);
-private int swritebuf(stream *, stream_cursor_read *, bool);
-private void stream_compact(stream *, bool);
+static int sreadbuf(stream *, stream_cursor_write *);
+static int swritebuf(stream *, stream_cursor_read *, bool);
+static void stream_compact(stream *, bool);
 
 /* Structure types for allocating streams. */
 public_st_stream();
 public_st_stream_state();	/* default */
 /* GC procedures */
-private 
+static 
 ENUM_PTRS_WITH(stream_enum_ptrs, stream *st) return 0;
 case 0:
 if (st->foreign)
@@ -43,7 +43,7 @@ ENUM_PTR3(1, stream, strm, prev, next);
 ENUM_PTR(4, stream, state);
 case 5: return ENUM_CONST_STRING(&st->file_name);
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(stream_reloc_ptrs, stream *st)
+static RELOC_PTRS_WITH(stream_reloc_ptrs, stream *st)
 {
     byte *cbuf_old = st->cbuf;
 
@@ -71,7 +71,7 @@ RELOC_PTRS_END
 /* Finalize a stream by closing it. */
 /* We only do this for file streams, because other kinds of streams */
 /* may attempt to free storage when closing. */
-private void
+static void
 stream_finalize(void *vptr)
 {
     stream *const st = vptr;
@@ -90,7 +90,7 @@ stream_finalize(void *vptr)
 }
 
 /* Dummy template for streams that don't have a separate state. */
-private const stream_template s_no_template = {
+static const stream_template s_no_template = {
     &st_stream_state, 0, 0, 1, 1, 0
 };
 
@@ -767,7 +767,7 @@ s_process_write_buf(stream * s, bool last)
  * normally the same as s->end_status, except that if s->procs.process
  * returned 1, sreadbuf sets s->end_status to 0, but returns 1.
  */
-private int
+static int
 sreadbuf(stream * s, stream_cursor_write * pbuf)
 {
     stream *prev = 0;
@@ -841,7 +841,7 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 }
 
 /* Write to a pipeline. */
-private int
+static int
 swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
 {
     stream *prev = 0;
@@ -967,7 +967,7 @@ stream_move(stream_cursor_read * pr, stream_cursor_write * pw)
 }
 
 /* If possible, compact the information in a stream buffer to the bottom. */
-private void
+static void
 stream_compact(stream * s, bool always)
 {
     if (s->cursor.r.ptr >= s->cbuf && (always || s->end_status >= 0)) {
@@ -984,7 +984,7 @@ stream_compact(stream * s, bool always)
 /* ------ String streams ------ */
 
 /* String stream procedures */
-private int
+static int
     s_string_available(stream *, long *),
     s_string_read_seek(stream *, long),
     s_string_write_seek(stream *, long),
@@ -1009,13 +1009,13 @@ sread_string(register stream *s, const byte *ptr, uint len)
     s->srlimit = s->swlimit;
 }
 /* Initialize a reusable stream for reading a string. */
-private void
+static void
 s_string_reusable_reset(stream *s)
 {
     s->srptr = s->cbuf - 1;	/* just reset to the beginning */
     s->srlimit = s->srptr + s->bsize;  /* might have gotten reset */
 }
-private int
+static int
 s_string_reusable_flush(stream *s)
 {
     s->srptr = s->srlimit = s->cbuf + s->bsize - 1;  /* just set to the end */
@@ -1039,7 +1039,7 @@ sread_string_reusable(stream *s, const byte *ptr, uint len)
 }
 
 /* Return the number of available bytes when reading from a string. */
-private int
+static int
 s_string_available(stream *s, long *pl)
 {
     *pl = sbufavailable(s);
@@ -1049,7 +1049,7 @@ s_string_available(stream *s, long *pl)
 }
 
 /* Seek in a string being read.  Return 0 if OK, ERRC if not. */
-private int
+static int
 s_string_read_seek(register stream * s, long pos)
 {
     if (pos < 0 || pos > s->bsize)
@@ -1084,7 +1084,7 @@ swrite_string(register stream * s, byte * ptr, uint len)
 }
 
 /* Seek in a string being written.  Return 0 if OK, ERRC if not. */
-private int
+static int
 s_string_write_seek(register stream * s, long pos)
 {
     if (pos < 0 || pos > s->bsize)
@@ -1096,7 +1096,7 @@ s_string_write_seek(register stream * s, long pos)
 /* Since we initialize the input buffer of a string read stream */
 /* to contain all of the data in the string, if we are ever asked */
 /* to refill the buffer, we should signal EOF. */
-private int
+static int
 s_string_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 		      stream_cursor_write * pw, bool last)
 {
@@ -1104,7 +1104,7 @@ s_string_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 }
 /* Similarly, if we are ever asked to empty the buffer, it means that */
 /* there has been an overrun (unless we are closing the stream). */
-private int
+static int
 s_string_write_process(stream_state * st, stream_cursor_read * pr,
 		       stream_cursor_write * ignore_pw, bool last)
 {
@@ -1113,7 +1113,7 @@ s_string_write_process(stream_state * st, stream_cursor_read * pr,
 
 /* ------ Position-tracking stream ------ */
 
-private int
+static int
     s_write_position_process(stream_state *, stream_cursor_read *,
 			     stream_cursor_write *, bool);
 
@@ -1127,7 +1127,7 @@ swrite_position_only(stream *s)
     s->procs.process = s_write_position_process;
 }
 
-private int
+static int
 s_write_position_process(stream_state * st, stream_cursor_read * pr,
 			 stream_cursor_write * ignore_pw, bool last)
 {
@@ -1270,7 +1270,7 @@ file_close_disable(stream * s)
 /* ------ NullEncode/Decode ------ */
 
 /* Process a buffer */
-private int
+static int
 s_Null_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {

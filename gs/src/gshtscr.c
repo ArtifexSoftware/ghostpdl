@@ -31,7 +31,7 @@ static const bool FORCE_STRIP_HALFTONES = false;
 private_st_gs_screen_enum();
 
 /* GC procedures */
-private 
+static 
 ENUM_PTRS_WITH(screen_enum_enum_ptrs, gs_screen_enum *eptr)
 {
     if (index < 1 + st_ht_order_max_ptrs) {
@@ -48,7 +48,7 @@ ENUM_PTRS_WITH(screen_enum_enum_ptrs, gs_screen_enum *eptr)
 }
 ENUM_PTR(0, gs_screen_enum, pgs);
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(screen_enum_reloc_ptrs, gs_screen_enum *eptr)
+static RELOC_PTRS_WITH(screen_enum_reloc_ptrs, gs_screen_enum *eptr)
 {
     RELOC_PTR(gs_screen_enum, pgs);
     RELOC_USING(st_halftone, &eptr->halftone, sizeof(gs_halftone));
@@ -59,7 +59,7 @@ RELOC_PTRS_END
 /* Define the default value of AccurateScreens that affects setscreen
    and setcolorscreen. Note that this is effectively a global, and
    thus gets in the way of reentrancy. We'll want to fix that. */
-private bool screen_accurate_screens;
+static bool screen_accurate_screens;
 
 /* Default AccurateScreens control */
 void
@@ -75,7 +75,7 @@ gs_currentaccuratescreens(void)
 
 /* As with AccurateScreens, this is also effectively a global. However,
    it is going away soon. */
-private bool screen_use_wts;
+static bool screen_use_wts;
 
 void
 gs_setusewts(bool use_wts)
@@ -89,7 +89,7 @@ gs_currentusewts(void)
 }
 
 /* Define the MinScreenLevels user parameter similarly. */
-private uint screen_min_screen_levels;
+static uint screen_min_screen_levels;
 
 void
 gs_setminscreenlevels(uint levels)
@@ -179,7 +179,7 @@ gx_compute_cell_values(gx_ht_cell_params_t * phcp)
 }
 
 /* Forward references */
-private int pick_cell_size(gs_screen_halftone * ph,
+static int pick_cell_size(gs_screen_halftone * ph,
      const gs_matrix * pmat, ulong max_size, uint min_levels, bool accurate,
 			   gx_ht_cell_params_t * phcp);
 
@@ -304,7 +304,7 @@ gs_screen_order_init_memory(gx_ht_order * porder, const gs_state * pgs,
  */
 /* ph->frequency and ph->angle are input parameters; */
 /* the routine sets ph->actual_frequency and ph->actual_angle. */
-private int
+static int
 pick_cell_size(gs_screen_halftone * ph, const gs_matrix * pmat, ulong max_size,
                uint min_levels, bool accurate, gx_ht_cell_params_t * phcp)
 {

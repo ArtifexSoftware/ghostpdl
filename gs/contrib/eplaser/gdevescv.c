@@ -89,15 +89,15 @@
 /* ---------------- Device definition ---------------- */
 
 /* Device procedures */
-private dev_proc_open_device(escv_open);
-private dev_proc_output_page(escv_output_page);
-private dev_proc_close_device(escv_close);
-private dev_proc_copy_mono(escv_copy_mono);
-private dev_proc_copy_color(escv_copy_color);
-private dev_proc_put_params(escv_put_params);
-private dev_proc_get_params(escv_get_params);
-private dev_proc_fill_mask(escv_fill_mask);
-private dev_proc_begin_image(escv_begin_image);
+static dev_proc_open_device(escv_open);
+static dev_proc_output_page(escv_output_page);
+static dev_proc_close_device(escv_close);
+static dev_proc_copy_mono(escv_copy_mono);
+static dev_proc_copy_color(escv_copy_color);
+static dev_proc_put_params(escv_put_params);
+static dev_proc_get_params(escv_get_params);
+static dev_proc_fill_mask(escv_fill_mask);
+static dev_proc_begin_image(escv_begin_image);
 
 
 gs_public_st_suffix_add0_final(st_device_escv, gx_device_escv,
@@ -342,82 +342,82 @@ gx_device_escv far_data gs_lps6500_device ={escv_device_body("lps6500"), escv_pr
 
 /* Vector device implementation */
 #if ( 6 > GS_VERSION_MAJOR )
-private int escv_beginpage(P1(gx_device_vector * vdev));
-private int escv_setfillcolor(P2(gx_device_vector * vdev, const gx_drawing_color * pdc));
-private int escv_setstrokecolor(P2(gx_device_vector * vdev, const gx_drawing_color * pdc));
-private int escv_setdash(P4(gx_device_vector * vdev, const float *pattern, 
+static int escv_beginpage(P1(gx_device_vector * vdev));
+static int escv_setfillcolor(P2(gx_device_vector * vdev, const gx_drawing_color * pdc));
+static int escv_setstrokecolor(P2(gx_device_vector * vdev, const gx_drawing_color * pdc));
+static int escv_setdash(P4(gx_device_vector * vdev, const float *pattern, 
 			    uint count, floatp offset));
-private int escv_setflat(P2(gx_device_vector * vdev, floatp flatness));
-private int escv_setlogop(P3(gx_device_vector * vdev, gs_logical_operation_t lop, 
+static int escv_setflat(P2(gx_device_vector * vdev, floatp flatness));
+static int escv_setlogop(P3(gx_device_vector * vdev, gs_logical_operation_t lop, 
 			     gs_logical_operation_t diff));
-private int escv_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
+static int escv_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
 			       fixed y1, gx_path_type_t type);
-private int escv_vector_dopath(gx_device_vector * vdev, const gx_path * ppath,
+static int escv_vector_dopath(gx_device_vector * vdev, const gx_path * ppath,
 			       gx_path_type_t type);
-private int escv_beginpath(P2(gx_device_vector * vdev, gx_path_type_t type));
-private int escv_moveto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
+static int escv_beginpath(P2(gx_device_vector * vdev, gx_path_type_t type));
+static int escv_moveto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
 			   floatp x, floatp y, gx_path_type_t type));
-private int escv_lineto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
+static int escv_lineto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
 			   floatp x, floatp y, gx_path_type_t type));
-private int escv_curveto(P10(gx_device_vector * vdev, floatp x0, floatp y0,
+static int escv_curveto(P10(gx_device_vector * vdev, floatp x0, floatp y0,
 			     floatp x1, floatp y1, floatp x2, floatp y2,
 			     floatp x3, floatp y3, gx_path_type_t type));
-private int escv_closepath(P6(gx_device_vector * vdev, floatp x, floatp y,
+static int escv_closepath(P6(gx_device_vector * vdev, floatp x, floatp y,
 			      floatp x_start, floatp y_start, gx_path_type_t type));
 
-private int escv_endpath(P2(gx_device_vector * vdev, gx_path_type_t type));
-private int escv_setlinewidth(gx_device_vector * vdev, floatp width);
-private int escv_setlinecap(gx_device_vector * vdev, gs_line_cap cap);
-private int escv_setlinejoin(gx_device_vector * vdev, gs_line_join join);
-private int escv_setmiterlimit(gx_device_vector * vdev, floatp limit);
+static int escv_endpath(P2(gx_device_vector * vdev, gx_path_type_t type));
+static int escv_setlinewidth(gx_device_vector * vdev, floatp width);
+static int escv_setlinecap(gx_device_vector * vdev, gs_line_cap cap);
+static int escv_setlinejoin(gx_device_vector * vdev, gs_line_join join);
+static int escv_setmiterlimit(gx_device_vector * vdev, floatp limit);
 
 #else /* 6 <= GS_VERSION_MAJOR */
 
 /* Page management */
-private int escv_beginpage (gx_device_vector * vdev);
+static int escv_beginpage (gx_device_vector * vdev);
 /* Imager state */
-private int escv_setlinewidth (gx_device_vector * vdev, floatp width);
-private int escv_setlinecap (gx_device_vector * vdev, gs_line_cap cap);
-private int escv_setlinejoin (gx_device_vector * vdev, gs_line_join join);
-private int escv_setmiterlimit (gx_device_vector * vdev, floatp limit);
-private int escv_setdash (gx_device_vector * vdev, const float *pattern,
+static int escv_setlinewidth (gx_device_vector * vdev, floatp width);
+static int escv_setlinecap (gx_device_vector * vdev, gs_line_cap cap);
+static int escv_setlinejoin (gx_device_vector * vdev, gs_line_join join);
+static int escv_setmiterlimit (gx_device_vector * vdev, floatp limit);
+static int escv_setdash (gx_device_vector * vdev, const float *pattern,
 			  uint count, floatp offset);
-private int escv_setflat (gx_device_vector * vdev, floatp flatness);
-private int escv_setlogop (gx_device_vector * vdev, gs_logical_operation_t lop,
+static int escv_setflat (gx_device_vector * vdev, floatp flatness);
+static int escv_setlogop (gx_device_vector * vdev, gs_logical_operation_t lop,
 			   gs_logical_operation_t diff);
 /* Other state */
 #if ( 8 <= GS_VERSION_MAJOR )
-private bool escv_can_handle_hl_color (gx_device_vector * vdev, const gs_imager_state * pis,
+static bool escv_can_handle_hl_color (gx_device_vector * vdev, const gs_imager_state * pis,
 				       const gx_drawing_color * pdc);
-private int escv_setfillcolor (gx_device_vector * vdev, const gs_imager_state * pis, 
+static int escv_setfillcolor (gx_device_vector * vdev, const gs_imager_state * pis, 
 			       const gx_drawing_color * pdc);
-private int escv_setstrokecolor (gx_device_vector * vdev, const gs_imager_state * pis,
+static int escv_setstrokecolor (gx_device_vector * vdev, const gs_imager_state * pis,
 				 const gx_drawing_color * pdc);
 #else
-private int escv_setfillcolor (gx_device_vector * vdev, const gx_drawing_color * pdc);
-private int escv_setstrokecolor (gx_device_vector * vdev, const gx_drawing_color * pdc);
+static int escv_setfillcolor (gx_device_vector * vdev, const gx_drawing_color * pdc);
+static int escv_setstrokecolor (gx_device_vector * vdev, const gx_drawing_color * pdc);
 #endif
 /* Paths */
 /* dopath and dorect are normally defaulted */
-private int escv_vector_dopath (gx_device_vector * vdev, const gx_path * ppath,
+static int escv_vector_dopath (gx_device_vector * vdev, const gx_path * ppath,
 				gx_path_type_t type, const gs_matrix *pmat);
-private int escv_vector_dorect (gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
+static int escv_vector_dorect (gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
 				fixed y1, gx_path_type_t type);
-private int escv_beginpath (gx_device_vector * vdev, gx_path_type_t type);
-private int escv_moveto (gx_device_vector * vdev, floatp x0, floatp y0,
+static int escv_beginpath (gx_device_vector * vdev, gx_path_type_t type);
+static int escv_moveto (gx_device_vector * vdev, floatp x0, floatp y0,
 			 floatp x, floatp y, gx_path_type_t type);
-private int escv_lineto (gx_device_vector * vdev, floatp x0, floatp y0,
+static int escv_lineto (gx_device_vector * vdev, floatp x0, floatp y0,
 			 floatp x, floatp y, gx_path_type_t type);
-private int escv_curveto (gx_device_vector * vdev, floatp x0, floatp y0,
+static int escv_curveto (gx_device_vector * vdev, floatp x0, floatp y0,
 			  floatp x1, floatp y1, floatp x2, floatp y2,
 			  floatp x3, floatp y3, gx_path_type_t type);
-private int escv_closepath (gx_device_vector * vdev, floatp x0, floatp y0,
+static int escv_closepath (gx_device_vector * vdev, floatp x0, floatp y0,
 			    floatp x_start, floatp y_start, gx_path_type_t type);
-private int escv_endpath (gx_device_vector * vdev, gx_path_type_t type);
+static int escv_endpath (gx_device_vector * vdev, gx_path_type_t type);
 
 #endif /* GS_VERSION_MAJOR */
 
-private const gx_device_vector_procs escv_vector_procs =
+static const gx_device_vector_procs escv_vector_procs =
   {
     /* Page management */
     escv_beginpage,
@@ -446,16 +446,16 @@ private const gx_device_vector_procs escv_vector_procs =
     escv_endpath
   };
 
-private void escv_write_begin(gx_device *dev, int bits, int x, int y, int sw, int sh, int dw, int dh, int roll);
-private void escv_write_data(gx_device *dev, int bits, char *buf, int bsize, int w, int ras);
-private void escv_write_end(gx_device *dev, int bits);
+static void escv_write_begin(gx_device *dev, int bits, int x, int y, int sw, int sh, int dw, int dh, int roll);
+static void escv_write_data(gx_device *dev, int bits, char *buf, int bsize, int w, int ras);
+static void escv_write_end(gx_device *dev, int bits);
 
 
 /* ---------------- Utilities ---------------- */
 
 /* Put a string on a stream.
    This function is copy of `pputs' in gdevpstr.c */
-private int
+static int
 lputs(stream * s, const char *str)
 {
   uint	len = strlen(str);
@@ -468,7 +468,7 @@ lputs(stream * s, const char *str)
 }
 
 /* Write a string on a stream. */
-private void
+static void
 put_bytes(stream * s, const byte * data, uint count)
 {
   uint used;
@@ -477,7 +477,7 @@ put_bytes(stream * s, const byte * data, uint count)
 }
 
 
-private int
+static int
 escv_range_check(gx_device * dev)
 {
   int width = dev->MediaSize[0];
@@ -518,7 +518,7 @@ escv_range_check(gx_device * dev)
 
 /* ---------------- Vector device implementation ---------------- */
 
-private int
+static int
 escv_vector_dopath(gx_device_vector * vdev, const gx_path * ppath,
 		   gx_path_type_t type
 #if ( 6 <= GS_VERSION_MAJOR )
@@ -639,7 +639,7 @@ escv_vector_dopath(gx_device_vector * vdev, const gx_path * ppath,
 }
 
 
-private int
+static int
 escv_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
 		   fixed y1, gx_path_type_t type)
 {
@@ -676,7 +676,7 @@ escv_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
 
 /* ---------- */
 
-private const EPaperTable ePaperTable[NUM_OF_PAPER_TABLES] =
+static const EPaperTable ePaperTable[NUM_OF_PAPER_TABLES] =
   {
     {933, 1369, 72, "A3PLUS"},	/* A3 NOBI */
     {842, 1191, 13, "A3"},	/* A3 */
@@ -703,7 +703,7 @@ private const EPaperTable ePaperTable[NUM_OF_PAPER_TABLES] =
     {  0,    0, -1, ""}		/* Undefined */
   };
 
-private const EPaperTable *
+static const EPaperTable *
 escv_checkpapersize(gx_device_vector * vdev)
 {
   gx_device_escv	*const pdev = (gx_device_escv *)vdev;
@@ -837,7 +837,7 @@ escv_checkpapersize(gx_device_vector * vdev)
   }
 }
 
-private char *
+static char *
 get_sysname ( void )
 {
   char *result = NULL;
@@ -855,7 +855,7 @@ get_sysname ( void )
           1 completed.
 	  -1 error.  ... This value not return now.
  */
-private int
+static int
 trans_modelname ( char *dest, const char * src, size_t dest_len )
 {
   const char *cp = src;
@@ -893,7 +893,7 @@ trans_modelname ( char *dest, const char * src, size_t dest_len )
 }
 
 
-private int
+static int
 escv_beginpage(gx_device_vector * vdev)
 {
   gx_device_escv	*const pdev = (gx_device_escv *)vdev;
@@ -1297,7 +1297,7 @@ escv_beginpage(gx_device_vector * vdev)
 }
 
 
-private int
+static int
 escv_setlinewidth(gx_device_vector * vdev, floatp width)
 {
   stream			*s = gdev_vector_stream(vdev);
@@ -1332,7 +1332,7 @@ escv_setlinewidth(gx_device_vector * vdev, floatp width)
 }
 
 
-private int
+static int
 escv_setlinecap(gx_device_vector * vdev, gs_line_cap cap)
 {
   stream			*s = gdev_vector_stream(vdev);
@@ -1354,7 +1354,7 @@ escv_setlinecap(gx_device_vector * vdev, gs_line_cap cap)
 }
 
 
-private int
+static int
 escv_setlinejoin(gx_device_vector * vdev, gs_line_join join)
 {
   stream			*s = gdev_vector_stream(vdev);
@@ -1386,7 +1386,7 @@ escv_setlinejoin(gx_device_vector * vdev, gs_line_join join)
 }
 
 
-private int
+static int
 escv_setmiterlimit(gx_device_vector * vdev, floatp limit)
 {
   stream			*s = gdev_vector_stream(vdev);
@@ -1414,7 +1414,7 @@ escv_setmiterlimit(gx_device_vector * vdev, floatp limit)
 
 
 #if ( 8 <= GS_VERSION_MAJOR )
-private bool
+static bool
 escv_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis, 
                          const gx_drawing_color * pdc)
 {
@@ -1423,7 +1423,7 @@ escv_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis,
 #endif
 
 
-private int
+static int
 escv_setfillcolor(gx_device_vector * vdev,
 #if ( 8 <= GS_VERSION_MAJOR )
 		  const gs_imager_state * pis,
@@ -1468,7 +1468,7 @@ escv_setfillcolor(gx_device_vector * vdev,
 }
 
 
-private int
+static int
 escv_setstrokecolor(gx_device_vector * vdev,
 #if ( 8 <= GS_VERSION_MAJOR )
 		    const gs_imager_state * pis,
@@ -1517,7 +1517,7 @@ escv_setstrokecolor(gx_device_vector * vdev,
 
 
 /* 線種指定命令 */
-private int
+static int
 escv_setdash(gx_device_vector * vdev, const float *pattern, uint count, floatp offset)
 {
   stream			*s = gdev_vector_stream(vdev);
@@ -1580,14 +1580,14 @@ escv_setdash(gx_device_vector * vdev, const float *pattern, uint count, floatp o
 
 
 /* パス平滑度指定 */
-private int
+static int
 escv_setflat(gx_device_vector * vdev, floatp flatness)
 {
   return 0;
 }
 
 
-private int
+static int
 escv_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
 	      gs_logical_operation_t diff)
 {
@@ -1596,7 +1596,7 @@ escv_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
 }
 
 
-private int
+static int
 escv_beginpath(gx_device_vector * vdev, gx_path_type_t type)
 {
   stream		*s = gdev_vector_stream(vdev);
@@ -1614,7 +1614,7 @@ escv_beginpath(gx_device_vector * vdev, gx_path_type_t type)
 }
 
 
-private int
+static int
 escv_moveto(gx_device_vector * vdev,
 	    floatp x0, floatp y0, floatp x1, floatp y1, gx_path_type_t type)
 {
@@ -1629,7 +1629,7 @@ escv_moveto(gx_device_vector * vdev,
 }
 
 
-private int
+static int
 escv_lineto(gx_device_vector * vdev,
 	    floatp x0, floatp y0, floatp x1, floatp y1, gx_path_type_t type)
 {
@@ -1645,7 +1645,7 @@ escv_lineto(gx_device_vector * vdev,
 }
 
 
-private int
+static int
 escv_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
 	     floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
 	     gx_path_type_t type)
@@ -1664,7 +1664,7 @@ escv_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
 }
 
 
-private int
+static int
 escv_closepath(gx_device_vector * vdev, floatp x, floatp y,
 	       floatp x_start, floatp y_start, gx_path_type_t type)
 {
@@ -1675,7 +1675,7 @@ escv_closepath(gx_device_vector * vdev, floatp x, floatp y,
 }
 
 
-private int
+static int
 escv_endpath(gx_device_vector * vdev, gx_path_type_t type)
 {
   stream	*s = gdev_vector_stream(vdev);
@@ -1720,7 +1720,7 @@ escv_endpath(gx_device_vector * vdev, gx_path_type_t type)
 /* ------ Open/close/page ------ */
 
 /* Open the device. */
-private int
+static int
 escv_open(gx_device * dev)
 {
   gx_device_vector	*const vdev = (gx_device_vector *) dev;
@@ -1770,7 +1770,7 @@ escv_open(gx_device * dev)
 
 
 /* Wrap up ("output") a page. */
-private int
+static int
 escv_output_page(gx_device * dev, int num_copies, int flush)
 {
   gx_device_vector *const vdev = (gx_device_vector *) dev;
@@ -1790,7 +1790,7 @@ escv_output_page(gx_device * dev, int num_copies, int flush)
 }
 
 
-private int
+static int
 escv_close(gx_device *dev)
 {
   gx_device_vector	*const vdev = (gx_device_vector *) dev;
@@ -1811,7 +1811,7 @@ escv_close(gx_device *dev)
 /* ---------------- Get/put parameters ---------------- */
 
 
-private int
+static int
 escv_get_str_param( gs_param_list * plist, gs_param_name key, gs_param_string *pgsstr, int code )
 {
     int             ncode;
@@ -1825,7 +1825,7 @@ escv_get_str_param( gs_param_list * plist, gs_param_name key, gs_param_string *p
 }
 
 /* Get parameters. */
-private int
+static int
 escv_get_params(gx_device * dev, gs_param_list * plist)
 {
   gx_device_escv	*const pdev = (gx_device_escv *) dev;
@@ -1878,7 +1878,7 @@ escv_get_params(gx_device * dev, gs_param_list * plist)
 }
 
 
-private int
+static int
 escv_set_str_param( gs_param_list * plist, const char * key, char *strvalue, int bufmax, int ecode )
 {
     gs_param_name	param_name;
@@ -1902,7 +1902,7 @@ escv_set_str_param( gs_param_list * plist, const char * key, char *strvalue, int
 }
 
 /* Put parameters. */
-private int
+static int
 escv_put_params(gx_device * dev, gs_param_list * plist)
 {
   gx_device_escv	*const pdev = (gx_device_escv *) dev;
@@ -2074,7 +2074,7 @@ escv_put_params(gx_device * dev, gs_param_list * plist)
 /* ---------------- Images ---------------- */
 
 
-private int
+static int
 escv_copy_mono(gx_device * dev, const byte * data,
 	       int data_x, int raster, gx_bitmap_id id, int x, int y, int w, int h,
 	       gx_color_index zero, gx_color_index one)
@@ -2239,7 +2239,7 @@ escv_copy_mono(gx_device * dev, const byte * data,
 
 
 /* Copy a color bitmap. */
-private int
+static int
 escv_copy_color(gx_device * dev,
 		const byte * data, int data_x, int raster, gx_bitmap_id id,
 		int x, int y, int w, int h)
@@ -2287,7 +2287,7 @@ escv_copy_color(gx_device * dev,
 
 
 /* Fill a mask. */
-private int
+static int
 escv_fill_mask(gx_device * dev,
 	       const byte * data, int data_x, int raster, gx_bitmap_id id,
 	       int x, int y, int w, int h,
@@ -2404,16 +2404,16 @@ escv_fill_mask(gx_device * dev,
 
 /* ---------------- High-level images ---------------- */
 
-private image_enum_proc_plane_data(escv_image_plane_data);
-private image_enum_proc_end_image(escv_image_end_image);
-private const gx_image_enum_procs_t escv_image_enum_procs =
+static image_enum_proc_plane_data(escv_image_plane_data);
+static image_enum_proc_end_image(escv_image_end_image);
+static const gx_image_enum_procs_t escv_image_enum_procs =
   {
     escv_image_plane_data, escv_image_end_image
   };
 
 
 /* Start processing an image. */
-private int
+static int
 escv_begin_image(gx_device * dev,
 		 const gs_imager_state * pis, const gs_image_t * pim,
 		 gs_image_format_t format, const gs_int_rect * prect,
@@ -2587,7 +2587,7 @@ escv_begin_image(gx_device * dev,
 
 
 /* Process the next piece of an image. */
-private int
+static int
 #if GS_VERSION_MAJOR >= 6
 escv_image_plane_data(gx_image_enum_common_t *info, const gx_image_plane_t *planes, int height, int *rows_used)
 #else
@@ -2803,7 +2803,7 @@ escv_image_plane_data(gx_image_enum_common_t *info, const gx_image_plane_t *plan
 }
 
 
-private int
+static int
 #if GS_VERSION_MAJOR >= 6
 escv_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 #else
@@ -2841,7 +2841,7 @@ escv_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 }
 
 
-private void escv_write_begin(gx_device *dev, int bits, int x, int y, int sw, int sh, int dw, int dh, int roll)
+static void escv_write_begin(gx_device *dev, int bits, int x, int y, int sw, int sh, int dw, int dh, int roll)
 {
   gx_device_vector *const     vdev = (gx_device_vector *) dev;
   gx_device_escv   *const     pdev = (gx_device_escv *)dev;
@@ -2932,7 +2932,7 @@ private void escv_write_begin(gx_device *dev, int bits, int x, int y, int sw, in
 }
 
 
-private void escv_write_data(gx_device *dev, int bits, char *buf, int bsize, int w, int ras)
+static void escv_write_data(gx_device *dev, int bits, char *buf, int bsize, int w, int ras)
 {
   gx_device_vector *const     vdev = (gx_device_vector *) dev;
   gx_device_escv *const       pdev = (gx_device_escv *) dev;
@@ -3014,7 +3014,7 @@ private void escv_write_data(gx_device *dev, int bits, char *buf, int bsize, int
 }
 
 
-private void escv_write_end(gx_device *dev, int bits)
+static void escv_write_end(gx_device *dev, int bits)
 {
   gx_device_escv *const       pdev = (gx_device_escv *) dev;
   stream			*s = gdev_vector_stream((gx_device_vector *)pdev);

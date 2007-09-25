@@ -32,10 +32,10 @@
 #include "opdef.h"		/* for marking oparray names */
 
 /* Define whether to force all garbage collections to be global. */
-private const bool I_FORCE_GLOBAL_GC = false;
+static const bool I_FORCE_GLOBAL_GC = false;
 
 /* Define whether to bypass the collector entirely. */
-private const bool I_BYPASS_GC = false;
+static const bool I_BYPASS_GC = false;
 
 /* Define an entry on the mark stack. */
 typedef struct {
@@ -65,33 +65,33 @@ struct gc_mark_stack_s {
 
 /* Forward references */
 
-private void gc_init_mark_stack(gc_mark_stack *, uint);
-private void gc_objects_clear_marks(const gs_memory_t *mem, chunk_t *);
-private void gc_unmark_names(name_table *);
-private int gc_trace(gs_gc_root_t *, gc_state_t *, gc_mark_stack *);
-private int gc_rescan_chunk(chunk_t *, gc_state_t *, gc_mark_stack *);
-private int gc_trace_chunk(const gs_memory_t *mem, chunk_t *, gc_state_t *, gc_mark_stack *);
-private bool gc_trace_finish(gc_state_t *);
-private void gc_clear_reloc(chunk_t *);
-private void gc_objects_set_reloc(chunk_t *);
-private void gc_do_reloc(chunk_t *, gs_ref_memory_t *, gc_state_t *);
-private void gc_objects_compact(chunk_t *, gc_state_t *);
-private void gc_free_empty_chunks(gs_ref_memory_t *);
+static void gc_init_mark_stack(gc_mark_stack *, uint);
+static void gc_objects_clear_marks(const gs_memory_t *mem, chunk_t *);
+static void gc_unmark_names(name_table *);
+static int gc_trace(gs_gc_root_t *, gc_state_t *, gc_mark_stack *);
+static int gc_rescan_chunk(chunk_t *, gc_state_t *, gc_mark_stack *);
+static int gc_trace_chunk(const gs_memory_t *mem, chunk_t *, gc_state_t *, gc_mark_stack *);
+static bool gc_trace_finish(gc_state_t *);
+static void gc_clear_reloc(chunk_t *);
+static void gc_objects_set_reloc(chunk_t *);
+static void gc_do_reloc(chunk_t *, gs_ref_memory_t *, gc_state_t *);
+static void gc_objects_compact(chunk_t *, gc_state_t *);
+static void gc_free_empty_chunks(gs_ref_memory_t *);
 
 /* Forward references for pointer types */
-private ptr_proc_unmark(ptr_struct_unmark);
-private ptr_proc_mark(ptr_struct_mark);
-private ptr_proc_unmark(ptr_string_unmark);
-private ptr_proc_mark(ptr_string_mark);
+static ptr_proc_unmark(ptr_struct_unmark);
+static ptr_proc_mark(ptr_struct_mark);
+static ptr_proc_unmark(ptr_string_unmark);
+static ptr_proc_mark(ptr_string_mark);
 /*ptr_proc_unmark(ptr_ref_unmark); *//* in igc.h */
 /*ptr_proc_mark(ptr_ref_mark); *//* in igc.h */
-private ptr_proc_reloc(igc_reloc_struct_ptr, void);
+static ptr_proc_reloc(igc_reloc_struct_ptr, void);
 
 ptr_proc_reloc(igc_reloc_ref_ptr, ref_packed);	/* in igcref.c */
 refs_proc_reloc(igc_reloc_refs);	/* in igcref.c */
 
 /* Define this GC's procedure vector. */
-private const gc_procs_with_refs_t igc_procs = {
+static const gc_procs_with_refs_t igc_procs = {
     igc_reloc_struct_ptr, igc_reloc_string, igc_reloc_const_string,
     igc_reloc_param_string, igc_reloc_ref_ptr, igc_reloc_refs
 };
@@ -115,7 +115,7 @@ const gs_ptr_procs_t ptr_ref_procs =
 
 /* Top level of garbage collector. */
 #ifdef DEBUG
-private void
+static void
 end_phase(const char *str)
 {
     if (gs_debug_c('6')) {
@@ -125,7 +125,7 @@ end_phase(const char *str)
     }
 }
 static const char *const depth_dots_string = "..........";
-private const char *
+static const char *
 depth_dots(const ms_entry * sp, const gc_mark_stack * pms)
 {
     int depth = sp - pms->entries - 1;
@@ -135,7 +135,7 @@ depth_dots(const ms_entry * sp, const gc_mark_stack * pms)
 	depth += pss->count - 1;
     return depth_dots_string + (depth >= 10 ? 0 : 10 - depth);
 }
-private void
+static void
 gc_validate_spaces(gs_ref_memory_t **spaces, int max_space, gc_state_t *gcst)
 {
     int i;
@@ -566,7 +566,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 /* ------ Unmarking phase ------ */
 
 /* Unmark a single struct. */
-private void
+static void
 ptr_struct_unmark(enum_ptr_t *pep, gc_state_t * ignored)
 {
     void *const vptr = (void *)pep->ptr; /* break const */
@@ -576,14 +576,14 @@ ptr_struct_unmark(enum_ptr_t *pep, gc_state_t * ignored)
 }
 
 /* Unmark a single string. */
-private void
+static void
 ptr_string_unmark(enum_ptr_t *pep, gc_state_t * gcst)
 {
     discard(gc_string_mark(pep->ptr, pep->size, false, gcst));
 }
 
 /* Unmark the objects in a chunk. */
-private void
+static void
 gc_objects_clear_marks(const gs_memory_t *mem, chunk_t * cp)
 {
     if_debug_chunk('6', "[6]unmarking chunk", cp);
@@ -606,7 +606,7 @@ gc_objects_clear_marks(const gs_memory_t *mem, chunk_t * cp)
 
 /* Mark 0- and 1-character names, and those referenced from the */
 /* op_array_nx_table, and unmark all the rest. */
-private void
+static void
 gc_unmark_names(name_table * nt)
 {
     uint i;
@@ -627,7 +627,7 @@ gc_unmark_names(name_table * nt)
 /* ------ Marking phase ------ */
 
 /* Initialize (a segment of) the mark stack. */
-private void
+static void
 gc_init_mark_stack(gc_mark_stack * pms, uint count)
 {
     pms->next = 0;
@@ -639,7 +639,7 @@ gc_init_mark_stack(gc_mark_stack * pms, uint count)
 
 /* Mark starting from all marked objects in the interval of a chunk */
 /* needing rescanning. */
-private int
+static int
 gc_rescan_chunk(chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
 {
     byte *sbot = cp->rescan_bot;
@@ -706,7 +706,7 @@ gc_rescan_chunk(chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
 /* Mark starting from all the objects in a chunk. */
 /* We assume that pstate->min_collect > avm_system, */
 /* so we don't have to trace names. */
-private int
+static int
 gc_trace_chunk(const gs_memory_t *mem, chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
 {
     gs_gc_root_t root;
@@ -763,8 +763,8 @@ gc_trace_chunk(const gs_memory_t *mem, chunk_t * cp, gc_state_t * pstate, gc_mar
 /* Return -1 if we overflowed the mark stack, */
 /* 0 if we completed successfully without marking any new objects, */
 /* 1 if we completed and marked some new objects. */
-private int gc_extend_stack(gc_mark_stack *, gc_state_t *);
-private int
+static int gc_extend_stack(gc_mark_stack *, gc_state_t *);
+static int
 gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
 {
     int min_trace = pstate->min_collect;
@@ -1016,7 +1016,7 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
 }
 /* Link to, attempting to allocate if necessary, */
 /* another chunk of mark stack. */
-private int
+static int
 gc_extend_stack(gc_mark_stack * pms, gc_state_t * pstate)
 {
     if (pms->next == 0) {	/* Try to allocate another segment. */
@@ -1057,7 +1057,7 @@ gc_extend_stack(gc_mark_stack * pms, gc_state_t * pstate)
 }
 
 /* Mark a struct.  Return true if new mark. */
-private bool
+static bool
 ptr_struct_mark(enum_ptr_t *pep, gc_state_t * ignored)
 {
     obj_header_t *ptr = (obj_header_t *)pep->ptr;
@@ -1072,14 +1072,14 @@ ptr_struct_mark(enum_ptr_t *pep, gc_state_t * ignored)
 }
 
 /* Mark a string.  Return true if new mark. */
-private bool
+static bool
 ptr_string_mark(enum_ptr_t *pep, gc_state_t * gcst)
 {
     return gc_string_mark(pep->ptr, pep->size, true, gcst);
 }
 
 /* Finish tracing by marking names. */
-private bool
+static bool
 gc_trace_finish(gc_state_t * pstate)
 {
     name_table *nt = pstate->ntable;
@@ -1110,7 +1110,7 @@ gc_trace_finish(gc_state_t * pstate)
 /* ------ Relocation planning phase ------ */
 
 /* Initialize the relocation information in the chunk header. */
-private void
+static void
 gc_init_reloc(chunk_t * cp)
 {
     chunk_head_t *chead = cp->chead;
@@ -1123,7 +1123,7 @@ gc_init_reloc(chunk_t * cp)
 }
 
 /* Set marks and clear relocation for chunks that won't be compacted. */
-private void
+static void
 gc_clear_reloc(chunk_t * cp)
 {
     byte *pfree = (byte *) & cp->chead->free;
@@ -1145,7 +1145,7 @@ gc_clear_reloc(chunk_t * cp)
 
 /* Set the relocation for the objects in a chunk. */
 /* This will never be called for a chunk with any o_untraced objects. */
-private void
+static void
 gc_objects_set_reloc(chunk_t * cp)
 {
     uint reloc = 0;
@@ -1191,7 +1191,7 @@ gc_objects_set_reloc(chunk_t * cp)
 /* ------ Relocation phase ------ */
 
 /* Relocate the pointers in all the objects in a chunk. */
-private void
+static void
 gc_do_reloc(chunk_t * cp, gs_ref_memory_t * mem, gc_state_t * pstate)
 {
     chunk_head_t *chead = cp->chead;
@@ -1238,7 +1238,7 @@ print_reloc_proc(const void *obj, const char *cname, const void *robj)
 
 /* Relocate a pointer to an (aligned) object. */
 /* See gsmemory.h for why the argument is const and the result is not. */
-private void /*obj_header_t */ *
+static void /*obj_header_t */ *
 igc_reloc_struct_ptr(const void /*obj_header_t */ *obj, gc_state_t * gcst)
 {
     const obj_header_t *const optr = (const obj_header_t *)obj;
@@ -1296,7 +1296,7 @@ igc_reloc_struct_ptr(const void /*obj_header_t */ *obj, gc_state_t * gcst)
 
 /* Compact the objects in a chunk. */
 /* This will never be called for a chunk with any o_untraced objects. */
-private void
+static void
 gc_objects_compact(chunk_t * cp, gc_state_t * gcst)
 {
     chunk_head_t *chead = cp->chead;
@@ -1336,7 +1336,7 @@ gc_objects_compact(chunk_t * cp, gc_state_t * gcst)
 /* ------ Cleanup ------ */
 
 /* Free empty chunks. */
-private void
+static void
 gc_free_empty_chunks(gs_ref_memory_t * mem)
 {
     chunk_t *cp;

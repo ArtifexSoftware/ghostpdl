@@ -60,8 +60,8 @@ const gs_font_procs gs_font_procs_default = {
 };
 
 private_st_font_dir();
-private struct_proc_enum_ptrs(font_enum_ptrs);
-private struct_proc_reloc_ptrs(font_reloc_ptrs);
+static struct_proc_enum_ptrs(font_enum_ptrs);
+static struct_proc_reloc_ptrs(font_reloc_ptrs);
 
 public_st_gs_font_info();
 public_st_gs_font();
@@ -87,7 +87,7 @@ public_st_gs_font_ptr_element();
  * relocation phase of the GC.  */
 
 /* Font directory GC procedures */
-private 
+static 
 ENUM_PTRS_WITH(font_dir_enum_ptrs, gs_font_dir *dir)
 {
     /* Enumerate pointers from cached characters to f/m pairs, */
@@ -121,7 +121,7 @@ return 0;
 font_dir_do_ptrs(e1)
 #undef e1
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(font_dir_reloc_ptrs, gs_font_dir *dir);
+static RELOC_PTRS_WITH(font_dir_reloc_ptrs, gs_font_dir *dir);
     /* Relocate the pointers from cached characters to f/m pairs. */
     /* See gxfcache.h for why we do this here. */
 {
@@ -190,7 +190,7 @@ gs_font_finalize(void *vptr)
 	*ppfirst = next;
     gs_notify_release(&pfont->notify_list);
 }
-private 
+static 
 ENUM_PTRS_WITH(font_enum_ptrs, gs_font *pfont) return ENUM_USING(st_gs_notify_list, &pfont->notify_list, sizeof(gs_notify_list_t), index - 5);
 	/* We don't enumerate next or prev of base fonts. */
 	/* See above for details. */
@@ -198,7 +198,7 @@ case 0: ENUM_RETURN((pfont->base == pfont ? 0 : pfont->next));
 case 1: ENUM_RETURN((pfont->base == pfont ? 0 : pfont->prev));
 ENUM_PTR3(2, gs_font, dir, base, client_data);
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(font_reloc_ptrs, gs_font *pfont);
+static RELOC_PTRS_WITH(font_reloc_ptrs, gs_font *pfont);
 RELOC_USING(st_gs_notify_list, &pfont->notify_list, sizeof(gs_notify_list_t));
 	/* We *do* always relocate next and prev. */
 	/* Again, see above for details. */
@@ -208,7 +208,7 @@ RELOC_PTR3(gs_font, dir, base, client_data);
 RELOC_PTRS_END
 
 /* Allocate a font directory */
-private bool
+static bool
 cc_no_mark_glyph(const gs_memory_t *mem, gs_glyph glyph, void *ignore_data)
 {
     return false;
@@ -377,7 +377,7 @@ gs_font_notify_unregister(gs_font *font, gs_notify_proc_t proc, void *proc_data)
 }
 
 /* Link an element at the head of a chain. */
-private void
+static void
 font_link_first(gs_font **pfirst, gs_font *elt)
 {
     gs_font *first = elt->next = *pfirst;

@@ -39,15 +39,15 @@ public_st_device_spot_analyzer();
 private_st_san_trap();
 private_st_san_trap_contact();
 
-private dev_proc_close_device(san_close);
-private dev_proc_get_clipping_box(san_get_clipping_box);
+static dev_proc_close_device(san_close);
+static dev_proc_get_clipping_box(san_get_clipping_box);
 
 
 /* --------------------- List management ------------------------- */
 /* fixme : use something like C++ patterns to generate same functions for various types. */
 
 
-private inline void
+static inline void
 free_trap_list(gs_memory_t *mem, gx_san_trap **list)
 {
     gx_san_trap *t = *list, *t1;
@@ -59,7 +59,7 @@ free_trap_list(gs_memory_t *mem, gx_san_trap **list)
     *list = 0;
 }
 
-private inline void
+static inline void
 free_cont_list(gs_memory_t *mem, gx_san_trap_contact **list)
 {
     gx_san_trap_contact *t = *list, *t1;
@@ -71,7 +71,7 @@ free_cont_list(gs_memory_t *mem, gx_san_trap_contact **list)
     *list = 0;
 }
 
-private inline gx_san_trap *
+static inline gx_san_trap *
 trap_reserve(gx_device_spot_analyzer *padev)
 {
     gx_san_trap *t = padev->trap_free;
@@ -96,7 +96,7 @@ trap_reserve(gx_device_spot_analyzer *padev)
     return t;
 }
 
-private inline gx_san_trap_contact *
+static inline gx_san_trap_contact *
 cont_reserve(gx_device_spot_analyzer *padev)
 {
     gx_san_trap_contact *t = padev->cont_free;
@@ -121,7 +121,7 @@ cont_reserve(gx_device_spot_analyzer *padev)
     return t;
 }
 
-private inline int
+static inline int
 trap_unreserve(gx_device_spot_analyzer *padev, gx_san_trap *t)
 {
     /* Assuming the last reserved one. */
@@ -131,7 +131,7 @@ trap_unreserve(gx_device_spot_analyzer *padev, gx_san_trap *t)
     return 0;
 }
 
-private inline int
+static inline int
 cont_unreserve(gx_device_spot_analyzer *padev, gx_san_trap_contact *t)
 {
     /* Assuming the last reserved one. */
@@ -141,21 +141,21 @@ cont_unreserve(gx_device_spot_analyzer *padev, gx_san_trap_contact *t)
     return 0;
 }
 
-private inline gx_san_trap *
+static inline gx_san_trap *
 band_list_last(const gx_san_trap *list)
 {
     /* Assuming a non-empty cyclic list, and the anchor points to the first element.  */
     return list->prev;
 }
 
-private inline gx_san_trap_contact *
+static inline gx_san_trap_contact *
 cont_list_last(const gx_san_trap_contact *list)
 {
     /* Assuming a non-empty cyclic list, and the anchor points to the first element.  */
     return list->prev;
 }
 
-private inline void
+static inline void
 band_list_remove(gx_san_trap **list, gx_san_trap *t)
 {
     /* Assuming a cyclic list, and the element is in it. */
@@ -170,7 +170,7 @@ band_list_remove(gx_san_trap **list, gx_san_trap *t)
     t->next = t->prev = NULL; /* Safety. */
 }
 
-private inline void
+static inline void
 band_list_insert_last(gx_san_trap **list, gx_san_trap *t)
 {
     /* Assuming a cyclic list. */
@@ -186,7 +186,7 @@ band_list_insert_last(gx_san_trap **list, gx_san_trap *t)
     }
 }
 
-private inline void
+static inline void
 cont_list_insert_last(gx_san_trap_contact **list, gx_san_trap_contact *t)
 {
     /* Assuming a cyclic list. */
@@ -202,7 +202,7 @@ cont_list_insert_last(gx_san_trap_contact **list, gx_san_trap_contact *t)
     }
 }
 
-private inline bool
+static inline bool
 trap_is_last(const gx_san_trap *list, const gx_san_trap *t)
 {
     /* Assuming a non-empty cyclic list, and the anchor points to the first element.  */
@@ -213,7 +213,7 @@ trap_is_last(const gx_san_trap *list, const gx_san_trap *t)
 
 /* The device descriptor */
 /* Many of these procedures won't be called; they are set to NULL. */
-private const gx_device_spot_analyzer gx_spot_analyzer_device =
+static const gx_device_spot_analyzer gx_spot_analyzer_device =
 {std_device_std_body(gx_device_spot_analyzer, 0, "spot analyzer",
 		     0, 0, 1, 1),
  {san_open,
@@ -286,7 +286,7 @@ san_open(register gx_device * dev)
     return 0;
 }
 
-private int
+static int
 san_close(gx_device * dev)
 {
     gx_device_spot_analyzer * const padev = (gx_device_spot_analyzer *)dev;
@@ -314,7 +314,7 @@ san_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
 
 /* --------------------- Utilities ------------------------- */
 
-private inline int
+static inline int
 check_band_list(const gx_san_trap *list)
 {
 #ifdef DEBUG
@@ -331,7 +331,7 @@ check_band_list(const gx_san_trap *list)
     return 0;
 }
 
-private int
+static int
 try_unite_last_trap(gx_device_spot_analyzer *padev, fixed xlbot)
 {
     if (padev->bot_band != NULL && padev->top_band != NULL) {
@@ -373,13 +373,13 @@ try_unite_last_trap(gx_device_spot_analyzer *padev, fixed xlbot)
     return 0;
 }
 
-private inline double 
+static inline double 
 trap_area(gx_san_trap *t)
 {
     return (double)(t->xrbot - t->xlbot + t->xrtop - t->xltop) * (t->ytop - t->ybot) / 2;
 }
 
-private inline double 
+static inline double 
 trap_axis_length(gx_san_trap *t)
 {
     double xbot = (t->xlbot + t->xrbot) / 2.0;
@@ -388,7 +388,7 @@ trap_axis_length(gx_san_trap *t)
     return hypot(xtop - xbot, (double)t->ytop - t->ybot); /* See Bug 687238 */
 }
 
-private inline bool
+static inline bool
 is_stem_boundaries(gx_san_trap *t, int side_mask)
 {
     double dx, norm, cosine;
@@ -573,7 +573,7 @@ gx_san_end(const gx_device_spot_analyzer *padev)
 {
 }
 
-private int
+static int
 hint_by_trap(gx_device_spot_analyzer *padev, int side_mask,
     void *client_data, gx_san_trap *t0, gx_san_trap *t1, double ave_width,
     int (*handler)(void *client_data, gx_san_sect *ss))
@@ -617,7 +617,7 @@ hint_by_trap(gx_device_spot_analyzer *padev, int side_mask,
     return 0;
 }
 
-private inline void
+static inline void
 choose_by_vector(fixed x0, fixed y0, fixed x1, fixed y1, const segment *s, 
 	double *slope, double *len, const segment **store_segm, fixed *store_x, fixed *store_y)
 {
@@ -635,7 +635,7 @@ choose_by_vector(fixed x0, fixed y0, fixed x1, fixed y1, const segment *s,
     }
 }
 
-private inline void
+static inline void
 choose_by_tangent(const segment *p, const segment *s, 
 	double *slope, double *len, const segment **store_segm, fixed *store_x, fixed *store_y,
 	fixed ybot, fixed ytop)
@@ -654,7 +654,7 @@ choose_by_tangent(const segment *p, const segment *s,
     }
 }
 
-private gx_san_trap * 
+static gx_san_trap * 
 upper_neighbour(gx_san_trap *t0, int left_right)
 {
     gx_san_trap_contact *cont = t0->upper, *c0 = cont, *c;
@@ -671,7 +671,7 @@ upper_neighbour(gx_san_trap *t0, int left_right)
     return cont->upper;
 }
 
-private int
+static int
 hint_by_tangent(gx_device_spot_analyzer *padev, int side_mask,
     void *client_data, gx_san_trap *t0, gx_san_trap *t1, double ave_width,
     int (*handler)(void *client_data, gx_san_sect *ss))
@@ -728,7 +728,7 @@ hint_by_tangent(gx_device_spot_analyzer *padev, int side_mask,
 }
 
 /* Generate stems. */
-private int 
+static int 
 gx_san_generate_stems_aux(gx_device_spot_analyzer *padev, 
 		bool overall_hints, void *client_data,
 		int (*handler)(void *client_data, gx_san_sect *ss))

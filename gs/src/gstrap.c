@@ -20,17 +20,17 @@
 #include "gsparamx.h"
 
 /* Put a float parameter. */
-private bool
+static bool
 check_unit(float *pval)
 {
     return (*pval >= 0 && *pval <= 1);
 }
-private bool
+static bool
 check_positive(float *pval)
 {
     return (*pval > 0);
 }
-private int
+static int
 trap_put_float_param(gs_param_list * plist, gs_param_name param_name,
 		     float *pval, bool(*check) (float *pval), int ecode)
 {

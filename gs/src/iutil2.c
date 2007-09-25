@@ -98,7 +98,7 @@ param_check_password(gs_param_list * plist, const password * ppass)
 
 /* Read a password from, or write a password into, a dictionary */
 /* (presumably systemdict). */
-private int
+static int
 dict_find_password(ref ** ppvalue, const ref * pdref, const char *kstr)
 {
     ref *pvalue;

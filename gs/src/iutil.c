@@ -84,7 +84,7 @@ refset_null_new(ref * to, uint size, uint new_mask)
 }
 
 /* Compare two objects for equality. */
-private bool fid_eq(const gs_memory_t *mem, const gs_font *pfont1,
+static bool fid_eq(const gs_memory_t *mem, const gs_font *pfont1,
 		    const gs_font *pfont2);
 bool
 obj_eq(const gs_memory_t *mem, const ref * pref1, const ref * pref2)
@@ -195,7 +195,7 @@ obj_eq(const gs_memory_t *mem, const ref * pref1, const ref * pref2)
  * Genoa CET.
  */
 /* (This is a single-use procedure, for clearer code.) */
-private bool
+static bool
 fid_eq(const gs_memory_t *mem, const gs_font *pfont1, const gs_font *pfont2)
 {
     while (pfont1->base != pfont1)
@@ -301,7 +301,7 @@ obj_string_data(const gs_memory_t *mem, const ref *op, const byte **pchars, uint
  * repeatedly to print on a stream, which may require suspending at any
  * point to handle stream callouts.
  */
-private void ensure_dot(char *);
+static void ensure_dot(char *);
 int
 obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 	int full_print, uint start_pos, const gs_memory_t *mem, bool restart)
@@ -562,7 +562,7 @@ nl: if (size < start_pos)
  * or a decimal point, so it won't be mistaken for an integer.
  * Re-format the exponent to satisfy Genoa CET test.
  */
-private void
+static void
 ensure_dot(char *buf)
 {
     char *pe = strchr(buf, 'e');

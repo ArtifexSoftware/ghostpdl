@@ -221,7 +221,7 @@ gs_register_struct_root(gs_memory_t *mem, gs_gc_root_t *root,
 
 #ifdef DEBUG
 
-private const char *
+static const char *
 rc_object_type_name(const void *vp, const rc_header *prc)
 {
     gs_memory_type_ptr_t pstype;

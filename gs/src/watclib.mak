@@ -29,9 +29,6 @@ DEBUG=1
 !ifndef TDEBUG
 TDEBUG=1
 !endif
-!ifndef NOPRIVATE
-NOPRIVATE=1
-!endif
 
 GS=gslib
 

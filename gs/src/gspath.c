@@ -86,7 +86,7 @@ gx_current_path(const gs_state * pgs)
  */
 #define max_coord_fixed (max_fixed - int2fixed(1000))	/* arbitrary */
 #define min_coord_fixed (-max_coord_fixed)
-private inline void
+static inline void
 clamp_point(gs_fixed_point * ppt, floatp x, floatp y)
 {
 #define clamp_coord(xy)\
@@ -107,7 +107,7 @@ gs_currentpoint(gs_state * pgs, gs_point * ppt)
 			      pgs->current_point.y, ppt);
 }
 
-private inline int 
+static inline int 
 gs_point_transform_compat(floatp x, floatp y, const gs_matrix_fixed *m, gs_point *pt)
 {
 #if !PRECISE_CURRENTPOINT
@@ -124,7 +124,7 @@ gs_point_transform_compat(floatp x, floatp y, const gs_matrix_fixed *m, gs_point
 #endif
 }
 
-private inline int 
+static inline int 
 gs_distance_transform_compat(floatp x, floatp y, const gs_matrix_fixed *m, gs_point *pt)
 {
 #if !PRECISE_CURRENTPOINT
@@ -141,7 +141,7 @@ gs_distance_transform_compat(floatp x, floatp y, const gs_matrix_fixed *m, gs_po
 #endif
 }
 
-private inline int
+static inline int
 clamp_point_aux(bool clamp_coordinates, gs_fixed_point *ppt, floatp x, floatp y)
 {
     if (!f_fits_in_bits(x, fixed_int_bits) || !f_fits_in_bits(y, fixed_int_bits)) {
@@ -203,7 +203,7 @@ gs_rmoveto(gs_state * pgs, floatp x, floatp y)
 		dd.x + pgs->current_point.x, dd.y + pgs->current_point.y);
 }
 
-private inline int
+static inline int
 gs_lineto_aux(gs_state * pgs, floatp x, floatp y)
 {
     gx_path *ppath = pgs->path;
@@ -249,7 +249,7 @@ gs_rlineto(gs_state * pgs, floatp x, floatp y)
 
 /* ------ Curves ------ */
 
-private inline int
+static inline int
 gs_curveto_aux(gs_state * pgs,
 	   floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3)
 {
@@ -319,7 +319,7 @@ gs_rcurveto(gs_state * pgs,
 /* ------ Clipping ------ */
 
 /* Forward references */
-private int common_clip(gs_state *, int);
+static int common_clip(gs_state *, int);
 
 /*
  * Return the effective clipping path of a graphics state.  Sometimes this
@@ -403,7 +403,7 @@ gx_effective_clip_path(gs_state * pgs, gx_clip_path ** ppcpath)
 
 #ifdef DEBUG
 /* Note that we just set the clipping path (internal). */
-private void
+static void
 note_set_clip_path(const gs_state * pgs)
 {
     if (gs_debug_c('P')) {
@@ -457,7 +457,7 @@ gs_eoclip(gs_state * pgs)
     return common_clip(pgs, gx_rule_even_odd);
 }
 
-private int
+static int
 common_clip(gs_state * pgs, int rule)
 {
     int code = gx_cpath_clip(pgs, pgs->clip_path, pgs->path, rule);

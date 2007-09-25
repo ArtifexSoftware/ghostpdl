@@ -79,20 +79,20 @@ struct gx_device_dmprt_s {
 };
 
 /* declarations of main functions */
-private dev_proc_get_params(gdev_dmprt_get_params);
-private dev_proc_put_params(gdev_dmprt_put_params);
-private dev_proc_get_initial_matrix(gdev_dmprt_get_initial_matrix);
-private dev_proc_open_device(gdev_dmprt_open);
-private dev_proc_print_page(gdev_dmprt_print_page);
-private dev_proc_close_device(gdev_dmprt_close);
+static dev_proc_get_params(gdev_dmprt_get_params);
+static dev_proc_put_params(gdev_dmprt_put_params);
+static dev_proc_get_initial_matrix(gdev_dmprt_get_initial_matrix);
+static dev_proc_open_device(gdev_dmprt_open);
+static dev_proc_print_page(gdev_dmprt_print_page);
+static dev_proc_close_device(gdev_dmprt_close);
 
 /* declarations of sub functions to get printer properties. */
-private void gdev_dmprt_init_printer_props(gx_device_dmprt *);
-private int gdev_dmprt_get_printer_props(gx_device_dmprt *,char *);
-private int gdev_dmprt_check_code_props(byte * ,int );
-private FILE *gdev_dmprt_dviprt_lib_fopen(const char *,char *);
+static void gdev_dmprt_init_printer_props(gx_device_dmprt *);
+static int gdev_dmprt_get_printer_props(gx_device_dmprt *,char *);
+static int gdev_dmprt_check_code_props(byte * ,int );
+static FILE *gdev_dmprt_dviprt_lib_fopen(const char *,char *);
 
-private int gdev_dmprt_error_no_dviprt_to_gs(int );
+static int gdev_dmprt_error_no_dviprt_to_gs(int );
 
 /* The device descriptor */
 gx_device_procs prn_dmprt_procs = {
@@ -152,7 +152,7 @@ typedef struct {
   char *name;
   int no;
 } dmprt_encoding;
-private dmprt_encoding gdev_dmprt_encode_list[] = {
+static dmprt_encoding gdev_dmprt_encode_list[] = {
   {"Null",CFG_ENCODE_NULL},
   {"AsciiHex",CFG_ENCODE_HEX },
   {"CCITTFax",CFG_ENCODE_FAX },
@@ -163,11 +163,11 @@ private dmprt_encoding gdev_dmprt_encode_list[] = {
 
 
 /* --- Get properties of printer device. --- */
-private int gdev_dmprt_get_dmprt_params(gx_device *pdev, gs_param_list *plist);
-private int
+static int gdev_dmprt_get_dmprt_params(gx_device *pdev, gs_param_list *plist);
+static int
 gdev_dmprt_get_dviprt_params(gx_device *pdev, gs_param_list *plist);
 
-private int
+static int
 gdev_dmprt_get_params(gx_device *pdev, gs_param_list *plist)
 {
   int code;
@@ -211,7 +211,7 @@ gdev_dmprt_get_params(gx_device *pdev, gs_param_list *plist)
 }
 
 /* internal routines for get_params */
-private int
+static int
 gdev_dmprt_get_dmprt_params(gx_device *pdev, gs_param_list *plist)
 {
   int code;
@@ -260,7 +260,7 @@ gdev_dmprt_get_dmprt_params(gx_device *pdev, gs_param_list *plist)
   return code;
 }
 
-private int
+static int
 gdev_dmprt_get_dviprt_params(gx_device *pdev, gs_param_list *plist)
 {
   dviprt_cfg_t *pprt = &pddev->dmprt.prtcfg;
@@ -346,17 +346,17 @@ gdev_dmprt_get_dviprt_params(gx_device *pdev, gs_param_list *plist)
 
 
 /* --- Put properties of printer device. --- */
-private int gdev_dmprt_put_dmprt_params(gx_device *pdev, gs_param_list *plist);
-private int
+static int gdev_dmprt_put_dmprt_params(gx_device *pdev, gs_param_list *plist);
+static int
 gdev_dmprt_put_dviprt_params(gx_device *pdev, gs_param_list *plist);
-private int gdev_dmprt_put_prt_code_param(gs_param_list *plist,
+static int gdev_dmprt_put_prt_code_param(gs_param_list *plist,
 					  dviprt_cfg_t *pprt,
 					  const char* name, int idx);
-private int
+static int
 gdev_dmprt_put_prt_string_param(gs_param_list *plist,
 				dviprt_cfg_t *pprt, const char* name, int idx);
 
-private int
+static int
 gdev_dmprt_put_params(gx_device *pdev, gs_param_list *plist)
 {
   int code = 0;
@@ -412,7 +412,7 @@ gdev_dmprt_put_params(gx_device *pdev, gs_param_list *plist)
 
 /* internal routines for put_params */
 
-private int
+static int
 gdev_dmprt_put_dmprt_params(gx_device *pdev, gs_param_list *plist)
 {
   int code;
@@ -462,7 +462,7 @@ gdev_dmprt_put_dmprt_params(gx_device *pdev, gs_param_list *plist)
   return code;
 }
 
-private int
+static int
 gdev_dmprt_put_dviprt_params(gx_device *pdev, gs_param_list *plist)
 {
   int code;
@@ -575,7 +575,7 @@ gdev_dmprt_put_dviprt_params(gx_device *pdev, gs_param_list *plist)
   return code;
 }
 
-private int
+static int
 gdev_dmprt_put_prt_code_param(gs_param_list *plist,
 			      dviprt_cfg_t *pprt, const char* name, int idx)
 {
@@ -597,7 +597,7 @@ gdev_dmprt_put_prt_code_param(gs_param_list *plist,
   return code;
 }
 
-private int
+static int
 gdev_dmprt_put_prt_string_param(gs_param_list *plist,
 				dviprt_cfg_t *pprt, const char* name, int idx)
 {
@@ -619,7 +619,7 @@ gdev_dmprt_put_prt_string_param(gs_param_list *plist,
 
 
 /* --- Get initial matrix. --- */
-private void
+static void
 gdev_dmprt_get_initial_matrix(gx_device *pdev, gs_matrix *pmat)
 {
   gx_default_get_initial_matrix(pdev,pmat);
@@ -628,7 +628,7 @@ gdev_dmprt_get_initial_matrix(gx_device *pdev, gs_matrix *pmat)
 }
 
 /* --- Open printer device. --- */
-private int
+static int
 gdev_dmprt_open(gx_device *pdev)
 {
   int code;
@@ -651,7 +651,7 @@ gdev_dmprt_open(gx_device *pdev)
 }
 
 /* --- Close printer device. --- */
-private int
+static int
 gdev_dmprt_close(gx_device *pdev)
 {
   int code;
@@ -673,7 +673,7 @@ gdev_dmprt_close(gx_device *pdev)
 }
 
 /* Output the PAGE. */
-private int
+static int
 gdev_dmprt_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
   int code = 0;
@@ -746,7 +746,7 @@ error_ex:
 /************************** Internal Routines **************************/
 
 /************************ Get printer properties. ***********************/
-private int
+static int
 gdev_dmprt_check_code_props(byte *str,int len)
 {
   byte *end = str+len;
@@ -770,7 +770,7 @@ gdev_dmprt_check_code_props(byte *str,int len)
   return str == end ? 0 : e_rangecheck;
 }
 
-private void
+static void
 gdev_dmprt_init_printer_props(gx_device_dmprt *pdev)
 {
   dviprt_cfg_t *pprt;
@@ -789,7 +789,7 @@ gdev_dmprt_init_printer_props(gx_device_dmprt *pdev)
   pdev->dmprt.prtcfg_init_f = 1;
 }
 
-private int
+static int
 gdev_dmprt_get_printer_props(gx_device_dmprt *pdev,char *fnamebase)
 {
   int code;
@@ -833,8 +833,8 @@ gdev_dmprt_get_printer_props(gx_device_dmprt *pdev,char *fnamebase)
   return code;
 }
 
-private const char * gp_file_name_concat_string(const char *, unsigned);
-private FILE *
+static const char * gp_file_name_concat_string(const char *, unsigned);
+static FILE *
 gdev_dmprt_dviprt_lib_fopen(const char *fnamebase,char *fname)
 {
   FILE *fp;
@@ -855,7 +855,7 @@ gdev_dmprt_dviprt_lib_fopen(const char *fnamebase,char *fname)
 }
 
 /* Misc. */
-private int
+static int
 gdev_dmprt_error_no_dviprt_to_gs(int code)
 {
   switch (code) {
@@ -872,7 +872,7 @@ gdev_dmprt_error_no_dviprt_to_gs(int code)
 /* Answer the string to be used for combining a directory/device prefix */
 /* with a base file name. The prefix directory/device is examined to    */
 /* determine if a separator is needed and may return an empty string    */
-private const char *
+static const char *
 gp_file_name_concat_string(const char *prefix, unsigned plen)
 {
     if (plen > 0 && prefix[plen - 1] == '/')

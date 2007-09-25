@@ -24,14 +24,14 @@
 private_st_device_tile_clip();
 
 /* Device procedures */
-private dev_proc_fill_rectangle(tile_clip_fill_rectangle);
-private dev_proc_copy_mono(tile_clip_copy_mono);
-private dev_proc_copy_color(tile_clip_copy_color);
-private dev_proc_copy_alpha(tile_clip_copy_alpha);
-private dev_proc_strip_copy_rop(tile_clip_strip_copy_rop);
+static dev_proc_fill_rectangle(tile_clip_fill_rectangle);
+static dev_proc_copy_mono(tile_clip_copy_mono);
+static dev_proc_copy_color(tile_clip_copy_color);
+static dev_proc_copy_alpha(tile_clip_copy_alpha);
+static dev_proc_strip_copy_rop(tile_clip_strip_copy_rop);
 
 /* The device descriptor. */
-private const gx_device_tile_clip gs_tile_clip_device =
+static const gx_device_tile_clip gs_tile_clip_device =
 {std_device_std_body_open(gx_device_tile_clip, 0, "tile clipper",
 			  0, 0, 1, 1),
  {gx_default_open_device,
@@ -124,7 +124,7 @@ tile_clip_set_phase(gx_device_tile_clip * cdev, int px, int py)
 }
 
 /* Fill a rectangle by tiling with the mask. */
-private int
+static int
 tile_clip_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 			 gx_color_index color)
 {
@@ -145,7 +145,7 @@ tile_clip_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 /* Copy a monochrome bitmap.  We divide it up into maximal chunks */
 /* that line up with a single tile, and then do the obvious Boolean */
 /* combination of the tile mask and the source. */
-private int
+static int
 tile_clip_copy_mono(gx_device * dev,
 		const byte * data, int sourcex, int raster, gx_bitmap_id id,
 		    int x, int y, int w, int h,
@@ -246,7 +246,7 @@ tile_clip_copy_mono(gx_device * dev,
 	}
 
 /* Copy a color rectangle. */
-private int
+static int
 tile_clip_copy_color(gx_device * dev,
 		const byte * data, int sourcex, int raster, gx_bitmap_id id,
 		     int x, int y, int w, int h)
@@ -267,7 +267,7 @@ tile_clip_copy_color(gx_device * dev,
 }
 
 /* Copy an alpha rectangle similarly. */
-private int
+static int
 tile_clip_copy_alpha(gx_device * dev,
 		const byte * data, int sourcex, int raster, gx_bitmap_id id,
 		int x, int y, int w, int h, gx_color_index color, int depth)
@@ -288,7 +288,7 @@ tile_clip_copy_alpha(gx_device * dev,
 }
 
 /* Copy a RasterOp rectangle similarly. */
-private int
+static int
 tile_clip_strip_copy_rop(gx_device * dev,
 	       const byte * data, int sourcex, uint raster, gx_bitmap_id id,
 			 const gx_color_index * scolors,

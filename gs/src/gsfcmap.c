@@ -41,7 +41,7 @@ gs_private_st_suffix_add0_local(st_cmap_identity, gs_cmap_identity_t,
 /*
  * Create an Identity CMap.
  */
-private uint
+static uint
 get_integer_bytes(const byte *src, int count)
 {
     uint v = 0;
@@ -51,7 +51,7 @@ get_integer_bytes(const byte *src, int count)
 	v = (v << 8) + src[i];
     return v;
 }
-private int
+static int
 identity_decode_next(const gs_cmap_t *pcmap, const gs_const_string *str,
 		     uint *pindex, uint *pfidx,
 		     gs_char *pchr, gs_glyph *pglyph)
@@ -72,7 +72,7 @@ identity_decode_next(const gs_cmap_t *pcmap, const gs_const_string *str,
     *pfidx = 0;
     return pcimap->code;
 }
-private int
+static int
 identity_next_range(gs_cmap_ranges_enum_t *penum)
 {
     if (penum->index == 0) {
@@ -87,15 +87,15 @@ identity_next_range(gs_cmap_ranges_enum_t *penum)
     }
     return 1;
 }
-private const gs_cmap_ranges_enum_procs_t identity_range_procs = {
+static const gs_cmap_ranges_enum_procs_t identity_range_procs = {
     identity_next_range
 };
-private void
+static void
 identity_enum_ranges(const gs_cmap_t *pcmap, gs_cmap_ranges_enum_t *pre)
 {
     gs_cmap_ranges_enum_setup(pre, pcmap, &identity_range_procs);
 }
-private int
+static int
 identity_next_lookup(gs_cmap_lookups_enum_t *penum)
 {
     if (penum->index[0] == 0) {
@@ -117,12 +117,12 @@ identity_next_lookup(gs_cmap_lookups_enum_t *penum)
     }
     return 1;
 }
-private int
+static int
 no_next_lookup(gs_cmap_lookups_enum_t *penum)
 {
     return 1;
 }
-private int
+static int
 identity_next_entry(gs_cmap_lookups_enum_t *penum)
 {
     const gs_cmap_identity_t *const pcimap =
@@ -140,13 +140,13 @@ identity_next_entry(gs_cmap_lookups_enum_t *penum)
     return 1;
 }
 
-private const gs_cmap_lookups_enum_procs_t identity_lookup_procs = {
+static const gs_cmap_lookups_enum_procs_t identity_lookup_procs = {
     identity_next_lookup, identity_next_entry
 };
 const gs_cmap_lookups_enum_procs_t gs_cmap_no_lookups_procs = {
     no_next_lookup, 0
 };
-private void
+static void
 identity_enum_lookups(const gs_cmap_t *pcmap, int which,
 		      gs_cmap_lookups_enum_t *pre)
 {
@@ -154,17 +154,17 @@ identity_enum_lookups(const gs_cmap_t *pcmap, int which,
 			       (which ? &gs_cmap_no_lookups_procs :
 				&identity_lookup_procs));
 }
-private bool
+static bool
 identity_is_identity(const gs_cmap_t *pcmap, int font_index_only)
 {
     return true;
 }
 
-private const gs_cmap_procs_t identity_procs = {
+static const gs_cmap_procs_t identity_procs = {
     identity_decode_next, identity_enum_ranges, identity_enum_lookups, identity_is_identity
 };
 
-private int
+static int
 gs_cmap_identity_alloc(gs_cmap_t **ppcmap, int num_bytes, int varying_bytes,
 		       int return_code, const char *cmap_name, int wmode,
 		       gs_memory_t *mem)
@@ -412,7 +412,7 @@ gs_cmap_compute_identity(const gs_cmap_t *pcmap, int font_index_only)
  * allows to write code pairs into the closure data.
  */
 
-private const int gs_cmap_ToUnicode_code_bytes = 2;
+static const int gs_cmap_ToUnicode_code_bytes = 2;
 
 typedef struct gs_cmap_ToUnicode_s {
     GS_CMAP_COMMON;
@@ -425,7 +425,7 @@ gs_private_st_suffix_add0(st_cmap_ToUnicode, gs_cmap_ToUnicode_t,
     "gs_cmap_ToUnicode_t", cmap_ToUnicode_enum_ptrs, cmap_ToUnicode_reloc_ptrs,
     st_cmap);
 
-private int
+static int
 gs_cmap_ToUnicode_next_range(gs_cmap_ranges_enum_t *penum)
 {   const gs_cmap_ToUnicode_t *cmap = (gs_cmap_ToUnicode_t *)penum->cmap;
     if (penum->index == 0) {
@@ -438,11 +438,11 @@ gs_cmap_ToUnicode_next_range(gs_cmap_ranges_enum_t *penum)
     return 1;
 }
 
-private const gs_cmap_ranges_enum_procs_t gs_cmap_ToUnicode_range_procs = {
+static const gs_cmap_ranges_enum_procs_t gs_cmap_ToUnicode_range_procs = {
     gs_cmap_ToUnicode_next_range
 };
 
-private int
+static int
 gs_cmap_ToUnicode_decode_next(const gs_cmap_t *pcmap, const gs_const_string *str,
 		     uint *pindex, uint *pfidx,
 		     gs_char *pchr, gs_glyph *pglyph)
@@ -450,13 +450,13 @@ gs_cmap_ToUnicode_decode_next(const gs_cmap_t *pcmap, const gs_const_string *str
     return_error(gs_error_unregistered);
 }
 
-private void
+static void
 gs_cmap_ToUnicode_enum_ranges(const gs_cmap_t *pcmap, gs_cmap_ranges_enum_t *pre)
 {
     gs_cmap_ranges_enum_setup(pre, pcmap, &gs_cmap_ToUnicode_range_procs);
 }
 
-private int
+static int
 gs_cmap_ToUnicode_next_lookup(gs_cmap_lookups_enum_t *penum)
 {   const gs_cmap_ToUnicode_t *cmap = (gs_cmap_ToUnicode_t *)penum->cmap;
     
@@ -473,7 +473,7 @@ gs_cmap_ToUnicode_next_lookup(gs_cmap_lookups_enum_t *penum)
     return 0;
 }
 
-private int
+static int
 gs_cmap_ToUnicode_next_entry(gs_cmap_lookups_enum_t *penum)
 {   const gs_cmap_ToUnicode_t *cmap = (gs_cmap_ToUnicode_t *)penum->cmap;
     const uchar *map = cmap->glyph_name_data;
@@ -509,11 +509,11 @@ gs_cmap_ToUnicode_next_entry(gs_cmap_lookups_enum_t *penum)
     return 0;
 }
 
-private const gs_cmap_lookups_enum_procs_t gs_cmap_ToUnicode_lookup_procs = {
+static const gs_cmap_lookups_enum_procs_t gs_cmap_ToUnicode_lookup_procs = {
     gs_cmap_ToUnicode_next_lookup, gs_cmap_ToUnicode_next_entry
 };
 
-private void
+static void
 gs_cmap_ToUnicode_enum_lookups(const gs_cmap_t *pcmap, int which,
 		      gs_cmap_lookups_enum_t *pre)
 {
@@ -522,13 +522,13 @@ gs_cmap_ToUnicode_enum_lookups(const gs_cmap_t *pcmap, int which,
 				&gs_cmap_ToUnicode_lookup_procs));
 }
 
-private bool
+static bool
 gs_cmap_ToUnicode_is_identity(const gs_cmap_t *pcmap, int font_index_only)
 {   const gs_cmap_ToUnicode_t *cmap = (gs_cmap_ToUnicode_t *)pcmap;
     return cmap->is_identity;
 }
 
-private const gs_cmap_procs_t gs_cmap_ToUnicode_procs = {
+static const gs_cmap_procs_t gs_cmap_ToUnicode_procs = {
     gs_cmap_ToUnicode_decode_next,
     gs_cmap_ToUnicode_enum_ranges,
     gs_cmap_ToUnicode_enum_lookups,

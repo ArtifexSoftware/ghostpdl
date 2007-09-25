@@ -35,15 +35,15 @@
 
 struct IF_STATE;
 
-private LPUB8 stub_PCLEO_charptr(FSP LPUB8 pfont_hdr, UW16  sym_code)
+static LPUB8 stub_PCLEO_charptr(FSP LPUB8 pfont_hdr, UW16  sym_code)
 {   return NULL;
 }
 
-private LPUB8 stub_PCLchId2ptr(FSP UW16 chId)
+static LPUB8 stub_PCLchId2ptr(FSP UW16 chId)
 {   return NULL;
 }
 
-private LPUB8 stub_PCLglyphID2Ptr(FSP UW16 glyphID)
+static LPUB8 stub_PCLglyphID2Ptr(FSP UW16 glyphID)
 {   return NULL;
 }
 

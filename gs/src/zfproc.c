@@ -30,7 +30,7 @@
 /* ---------------- Generic ---------------- */
 
 /* GC procedures */
-private 
+static 
 CLEAR_MARKS_PROC(sproc_clear_marks)
 {
     stream_proc_state *const pptr = vptr;
@@ -38,14 +38,14 @@ CLEAR_MARKS_PROC(sproc_clear_marks)
     r_clear_attrs(&pptr->proc, l_mark);
     r_clear_attrs(&pptr->data, l_mark);
 }
-private 
+static 
 ENUM_PTRS_WITH(sproc_enum_ptrs, stream_proc_state *pptr) return 0;
 case 0:
 ENUM_RETURN_REF(&pptr->proc);
 case 1:
 ENUM_RETURN_REF(&pptr->data);
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(sproc_reloc_ptrs, stream_proc_state *pptr);
+static RELOC_PTRS_WITH(sproc_reloc_ptrs, stream_proc_state *pptr);
 RELOC_REF_VAR(pptr->proc);
 r_clear_attrs(&pptr->proc, l_mark);
 RELOC_REF_VAR(pptr->data);
@@ -57,7 +57,7 @@ private_st_stream_proc_state();
 
 /* Allocate and open a procedure-based filter. */
 /* The caller must have checked that *sop is a procedure. */
-private int
+static int
 s_proc_init(ref * sop, stream ** psstrm, uint mode,
 	    const stream_template * temp, const stream_procs * procs,
 	    gs_ref_memory_t *imem)
@@ -88,7 +88,7 @@ s_proc_init(ref * sop, stream ** psstrm, uint mode,
 /* Handle an interrupt during a stream operation. */
 /* This is logically unrelated to procedure streams, */
 /* but it is also associated with the interpreter stream machinery. */
-private int
+static int
 s_handle_intc(i_ctx_t *i_ctx_p, const ref *pstate, int nstate,
 	      op_proc_t cont)
 {
@@ -113,7 +113,7 @@ s_handle_intc(i_ctx_t *i_ctx_p, const ref *pstate, int nstate,
 }
 
 /* Set default parameter values (actually, just clear pointers). */
-private void
+static void
 s_proc_set_defaults(stream_state * st)
 {
     stream_proc_state *const ss = (stream_proc_state *) st;
@@ -125,15 +125,15 @@ s_proc_set_defaults(stream_state * st)
 /* ---------------- Read streams ---------------- */
 
 /* Forward references */
-private stream_proc_process(s_proc_read_process);
-private int s_proc_read_continue(i_ctx_t *);
+static stream_proc_process(s_proc_read_process);
+static int s_proc_read_continue(i_ctx_t *);
 
 /* Stream templates */
-private const stream_template s_proc_read_template = {
+static const stream_template s_proc_read_template = {
     &st_sproc_state, NULL, s_proc_read_process, 1, 1,
     NULL, s_proc_set_defaults
 };
-private const stream_procs s_proc_read_procs = {
+static const stream_procs s_proc_read_procs = {
     s_std_noavailable, s_std_noseek, s_std_read_reset,
     s_std_read_flush, s_std_null, NULL
 };
@@ -154,7 +154,7 @@ sread_proc(ref * sop, stream ** psstrm, gs_ref_memory_t *imem)
 }
 
 /* Handle an input request. */
-private int
+static int
 s_proc_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 		    stream_cursor_write * pw, bool last)
 {
@@ -211,7 +211,7 @@ s_handle_read_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
 /* osp[0] contains the file (pushed on the e-stack by handle_read_status); */
 /* osp[-1] contains the new data string (pushed by the procedure). */
 /* The top of the e-stack contains the real continuation. */
-private int
+static int
 s_proc_read_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -235,16 +235,16 @@ s_proc_read_continue(i_ctx_t *i_ctx_p)
 /* ---------------- Write streams ---------------- */
 
 /* Forward references */
-private stream_proc_flush(s_proc_write_flush);
-private stream_proc_process(s_proc_write_process);
-private int s_proc_write_continue(i_ctx_t *);
+static stream_proc_flush(s_proc_write_flush);
+static stream_proc_process(s_proc_write_process);
+static int s_proc_write_continue(i_ctx_t *);
 
 /* Stream templates */
-private const stream_template s_proc_write_template = {
+static const stream_template s_proc_write_template = {
     &st_sproc_state, NULL, s_proc_write_process, 1, 1,
     NULL, s_proc_set_defaults
 };
-private const stream_procs s_proc_write_procs = {
+static const stream_procs s_proc_write_procs = {
     s_std_noavailable, s_std_noseek, s_std_write_reset,
     s_proc_write_flush, s_std_null, NULL
 };
@@ -259,7 +259,7 @@ swrite_proc(ref * sop, stream ** psstrm, gs_ref_memory_t *imem)
 }
 
 /* Handle an output request. */
-private int
+static int
 s_proc_write_process(stream_state * st, stream_cursor_read * pr,
 		     stream_cursor_write * ignore_pw, bool last)
 {
@@ -289,7 +289,7 @@ s_proc_write_process(stream_state * st, stream_cursor_read * pr,
 
 /* Flush the output.  This is non-standard because it must call the */
 /* procedure. */
-private int
+static int
 s_proc_write_flush(stream *s)
 {
     int result = s_process_write_buf(s, false);
@@ -341,7 +341,7 @@ s_handle_write_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
 /* osp[0] contains the file (pushed on the e-stack by handle_write_status); */
 /* osp[-1] contains the new buffer string (pushed by the procedure). */
 /* The top of the e-stack contains the real continuation. */
-private int
+static int
 s_proc_write_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

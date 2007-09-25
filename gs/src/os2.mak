@@ -79,12 +79,6 @@ DEBUG=0
 
 GDEBUG=0
 
-# Setting NOPRIVATE=1 makes private (static) procedures and variables public,
-# so they are visible to the debugger and profiler.
-# No execution time or space penalty, just larger .OBJ and .EXE files.
-
-NOPRIVATE=0
-
 # Setting MAKEDLL=1 makes the target a DLL instead of an EXE
 MAKEDLL=1
 
@@ -406,12 +400,6 @@ $(PSOBJ)iutilasm.$(OBJ): $(PSSRC)iutilasm.asm
 
 # Define the compilation flags.
 
-!if $(NOPRIVATE)
-CP=-DNOPRIVATE
-!else
-CP=
-!endif
-
 !if $(DEBUG)
 CD=-DDEBUG
 !else
@@ -444,7 +432,7 @@ CDLL=
 CEXE=-Zomf
 !endif
 
-GENOPT=$(CP) $(CD) $(CGDB) $(CDLL) $(CO) $(CPNG)
+GENOPT=$(CD) $(CGDB) $(CDLL) $(CO) $(CPNG)
 
 CCFLAGS0=$(GENOPT) $(PLATOPT) -D__OS2__ $(GCIFLAGS)
 CCFLAGS=$(CCFLAGS0) 

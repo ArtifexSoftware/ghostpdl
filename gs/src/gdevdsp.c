@@ -59,40 +59,40 @@
 /* Device procedures */
 
 /* See gxdevice.h for the definitions of the procedures. */
-private dev_proc_open_device(display_open);
-private dev_proc_get_initial_matrix(display_get_initial_matrix);
-private dev_proc_sync_output(display_sync_output);
-private dev_proc_output_page(display_output_page);
-private dev_proc_close_device(display_close);
+static dev_proc_open_device(display_open);
+static dev_proc_get_initial_matrix(display_get_initial_matrix);
+static dev_proc_sync_output(display_sync_output);
+static dev_proc_output_page(display_output_page);
+static dev_proc_close_device(display_close);
 
-private dev_proc_map_rgb_color(display_map_rgb_color_device4);
-private dev_proc_map_color_rgb(display_map_color_rgb_device4);
-private dev_proc_encode_color(display_encode_color_device8);
-private dev_proc_decode_color(display_decode_color_device8);
-private dev_proc_map_rgb_color(display_map_rgb_color_device16);
-private dev_proc_map_color_rgb(display_map_color_rgb_device16);
-private dev_proc_map_rgb_color(display_map_rgb_color_rgb);
-private dev_proc_map_color_rgb(display_map_color_rgb_rgb);
-private dev_proc_map_rgb_color(display_map_rgb_color_bgr24);
-private dev_proc_map_color_rgb(display_map_color_rgb_bgr24);
+static dev_proc_map_rgb_color(display_map_rgb_color_device4);
+static dev_proc_map_color_rgb(display_map_color_rgb_device4);
+static dev_proc_encode_color(display_encode_color_device8);
+static dev_proc_decode_color(display_decode_color_device8);
+static dev_proc_map_rgb_color(display_map_rgb_color_device16);
+static dev_proc_map_color_rgb(display_map_color_rgb_device16);
+static dev_proc_map_rgb_color(display_map_rgb_color_rgb);
+static dev_proc_map_color_rgb(display_map_color_rgb_rgb);
+static dev_proc_map_rgb_color(display_map_rgb_color_bgr24);
+static dev_proc_map_color_rgb(display_map_color_rgb_bgr24);
 
-private dev_proc_fill_rectangle(display_fill_rectangle);
-private dev_proc_copy_mono(display_copy_mono);
-private dev_proc_copy_color(display_copy_color);
-private dev_proc_get_bits(display_get_bits);
-private dev_proc_get_params(display_get_params);
-private dev_proc_put_params(display_put_params);
-private dev_proc_finish_copydevice(display_finish_copydevice);
+static dev_proc_fill_rectangle(display_fill_rectangle);
+static dev_proc_copy_mono(display_copy_mono);
+static dev_proc_copy_color(display_copy_color);
+static dev_proc_get_bits(display_get_bits);
+static dev_proc_get_params(display_get_params);
+static dev_proc_put_params(display_put_params);
+static dev_proc_finish_copydevice(display_finish_copydevice);
 
-private dev_proc_get_color_mapping_procs(display_separation_get_color_mapping_procs);
-private dev_proc_get_color_comp_index(display_separation_get_color_comp_index);
-private dev_proc_encode_color(display_separation_encode_color);
-private dev_proc_decode_color(display_separation_decode_color);
-private dev_proc_update_spot_equivalent_colors(display_update_spot_equivalent_colors);
-private dev_proc_ret_devn_params(display_ret_devn_params);
+static dev_proc_get_color_mapping_procs(display_separation_get_color_mapping_procs);
+static dev_proc_get_color_comp_index(display_separation_get_color_comp_index);
+static dev_proc_encode_color(display_separation_encode_color);
+static dev_proc_decode_color(display_separation_decode_color);
+static dev_proc_update_spot_equivalent_colors(display_update_spot_equivalent_colors);
+static dev_proc_ret_devn_params(display_ret_devn_params);
 
 
-private const gx_device_procs display_procs =
+static const gx_device_procs display_procs =
 {
     display_open,
     display_get_initial_matrix,
@@ -161,7 +161,7 @@ private const gx_device_procs display_procs =
 /* GC descriptor */
 public_st_device_display();
 
-private 
+static 
 ENUM_PTRS_WITH(display_enum_ptrs, gx_device_display *ddev)
     if (index == 0) {
 	if (ddev->mdev) {
@@ -175,7 +175,7 @@ ENUM_PTRS_WITH(display_enum_ptrs, gx_device_display *ddev)
 	return 0;
 ENUM_PTRS_END
 
-private 
+static 
 RELOC_PTRS_WITH(display_reloc_ptrs, gx_device_display *ddev)
     if (ddev->mdev) {
 	ddev->mdev = (gx_device_memory *)
@@ -220,15 +220,15 @@ const gx_device_display gs_display_device =
 
 
 /* prototypes for internal procedures */
-private int display_check_structure(gx_device_display *dev);
-private void display_free_bitmap(gx_device_display * dev);
-private int display_alloc_bitmap(gx_device_display *, gx_device *);
-private int display_set_color_format(gx_device_display *dev, int nFormat);
-private int display_set_separations(gx_device_display *dev);
-private int display_raster(gx_device_display *dev);
+static int display_check_structure(gx_device_display *dev);
+static void display_free_bitmap(gx_device_display * dev);
+static int display_alloc_bitmap(gx_device_display *, gx_device *);
+static int display_set_color_format(gx_device_display *dev, int nFormat);
+static int display_set_separations(gx_device_display *dev);
+static int display_raster(gx_device_display *dev);
 
 /* Open the display driver. */
-private int
+static int
 display_open(gx_device * dev)
 {
     gx_device_display *ddev = (gx_device_display *) dev;
@@ -286,7 +286,7 @@ display_open(gx_device * dev)
     return 0;
 }
 
-private void
+static void
 display_get_initial_matrix(gx_device * dev, gs_matrix * pmat)
 {
     gx_device_display *ddev = (gx_device_display *) dev;
@@ -329,7 +329,7 @@ display_output_page(gx_device * dev, int copies, int flush)
 }
 
 /* Close the display driver */
-private int
+static int
 display_close(gx_device * dev)
 {
     gx_device_display *ddev = (gx_device_display *) dev;
@@ -352,7 +352,7 @@ display_close(gx_device * dev)
 /*
  * This routine will encode a 1 Black on white color.
  */
-private gx_color_index
+static gx_color_index
 gx_b_w_gray_encode(gx_device * dev, const gx_color_value cv[])
 {
     return 1 - (cv[0] >> (gx_color_value_bits - 1));
@@ -360,14 +360,14 @@ gx_b_w_gray_encode(gx_device * dev, const gx_color_value cv[])
 
 /* DISPLAY_COLORS_NATIVE, 4bit/pixel */
 /* Map a r-g-b color to a color code */
-private gx_color_index
+static gx_color_index
 display_map_rgb_color_device4(gx_device * dev, const gx_color_value cv[])
 {
     return pc_4bit_map_rgb_color(dev, cv);
 }
 
 /* Map a color code to r-g-b. */
-private int
+static int
 display_map_color_rgb_device4(gx_device * dev, gx_color_index color,
 		 gx_color_value prgb[3])
 {
@@ -377,7 +377,7 @@ display_map_color_rgb_device4(gx_device * dev, gx_color_index color,
 
 /* DISPLAY_COLORS_NATIVE, 8bit/pixel */
 /* Map a r-g-b-k color to a color code */
-private gx_color_index
+static gx_color_index
 display_encode_color_device8(gx_device * dev, const gx_color_value cv[])
 {
     /* palette of 96 colors */
@@ -414,7 +414,7 @@ display_encode_color_device8(gx_device * dev, const gx_color_value cv[])
 }
 
 /* Map a color code to r-g-b-k. */
-private int
+static int
 display_decode_color_device8(gx_device * dev, gx_color_index color,
 		 gx_color_value prgb[4])
 {
@@ -442,7 +442,7 @@ display_decode_color_device8(gx_device * dev, gx_color_index color,
 
 /* DISPLAY_COLORS_NATIVE, 16bit/pixel */
 /* Map a r-g-b color to a color code */
-private gx_color_index
+static gx_color_index
 display_map_rgb_color_device16(gx_device * dev, const gx_color_value cv[])
 {
     gx_device_display *ddev = (gx_device_display *) dev;
@@ -479,7 +479,7 @@ display_map_rgb_color_device16(gx_device * dev, const gx_color_value cv[])
 
 
 /* Map a color code to r-g-b. */
-private int
+static int
 display_map_color_rgb_device16(gx_device * dev, gx_color_index color,
 		 gx_color_value prgb[3])
 {
@@ -556,7 +556,7 @@ display_map_color_rgb_device16(gx_device * dev, gx_color_index color,
 
 
 /* Map a r-g-b color to a color code */
-private gx_color_index
+static gx_color_index
 display_map_rgb_color_rgb(gx_device * dev, const gx_color_value cv[])
 {
     gx_device_display *ddev = (gx_device_display *) dev;
@@ -596,7 +596,7 @@ display_map_rgb_color_rgb(gx_device * dev, const gx_color_value cv[])
 }
 
 /* Map a color code to r-g-b. */
-private int
+static int
 display_map_color_rgb_rgb(gx_device * dev, gx_color_index color,
 		 gx_color_value prgb[3])
 {
@@ -679,7 +679,7 @@ display_map_color_rgb_rgb(gx_device * dev, gx_color_index color,
 }
 
 /* Map a r-g-b color to a color code */
-private gx_color_index
+static gx_color_index
 display_map_rgb_color_bgr24(gx_device * dev, const gx_color_value cv[])
 {
     gx_color_value r = cv[0];
@@ -691,7 +691,7 @@ display_map_rgb_color_bgr24(gx_device * dev, const gx_color_value cv[])
 }
 
 /* Map a color code to r-g-b. */
-private int
+static int
 display_map_color_rgb_bgr24(gx_device * dev, gx_color_index color,
 		 gx_color_value prgb[3])
 {
@@ -702,7 +702,7 @@ display_map_color_rgb_bgr24(gx_device * dev, gx_color_index color,
 }
 
 /* Fill a rectangle */
-private int
+static int
 display_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 		  gx_color_index color)
 {
@@ -717,7 +717,7 @@ display_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 }
 
 /* Copy a monochrome bitmap */
-private int
+static int
 display_copy_mono(gx_device * dev,
 	     const byte * base, int sourcex, int raster, gx_bitmap_id id,
 	     int x, int y, int w, int h,
@@ -734,7 +734,7 @@ display_copy_mono(gx_device * dev,
 }
 
 /* Copy a color pixel map  */
-private int
+static int
 display_copy_color(gx_device * dev,
 	      const byte * base, int sourcex, int raster, gx_bitmap_id id,
 	      int x, int y, int w, int h)
@@ -749,7 +749,7 @@ display_copy_color(gx_device * dev,
     return 0;
 }
 
-private int
+static int
 display_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
 {
     gx_device_display *ddev = (gx_device_display *) dev;
@@ -759,7 +759,7 @@ display_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
 	y, str, actual_data);
 }
 
-private int
+static int
 display_get_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_display *ddev = (gx_device_display *) dev;
@@ -808,7 +808,7 @@ display_get_params(gx_device * dev, gs_param_list * plist)
  * can be changed when the device is closed, but not when open.
  * The device width and height can be changed when open.
  */
-private int
+static int
 display_put_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_display *ddev = (gx_device_display *) dev;
@@ -1069,7 +1069,7 @@ display_finish_copydevice(gx_device *dev, const gx_device *from_dev)
  * The following procedures are used to map the standard color spaces into
  * the separation color components for the display device.
  */
-private void
+static void
 display_separation_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
 {
     int * map =
@@ -1078,7 +1078,7 @@ display_separation_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
     gray_cs_to_devn_cm(dev, map, gray, out);
 }
 
-private void
+static void
 display_separation_rgb_cs_to_cmyk_cm(gx_device * dev, 
     const gs_imager_state *pis, frac r, frac g, frac b, frac out[])
 {
@@ -1088,7 +1088,7 @@ display_separation_rgb_cs_to_cmyk_cm(gx_device * dev,
     rgb_cs_to_devn_cm(dev, map, pis, r, g, b, out);
 }
 
-private void
+static void
 display_separation_cmyk_cs_to_cmyk_cm(gx_device * dev, 
     frac c, frac m, frac y, frac k, frac out[])
 {
@@ -1098,13 +1098,13 @@ display_separation_cmyk_cs_to_cmyk_cm(gx_device * dev,
     cmyk_cs_to_devn_cm(dev, map, c, m, y, k, out);
 }
 
-private const gx_cm_color_map_procs display_separation_cm_procs = {
+static const gx_cm_color_map_procs display_separation_cm_procs = {
     display_separation_gray_cs_to_cmyk_cm, 
     display_separation_rgb_cs_to_cmyk_cm, 
     display_separation_cmyk_cs_to_cmyk_cm
 };
 
-private const gx_cm_color_map_procs *
+static const gx_cm_color_map_procs *
 display_separation_get_color_mapping_procs(const gx_device * dev)
 {
     return &display_separation_cm_procs;
@@ -1114,7 +1114,7 @@ display_separation_get_color_mapping_procs(const gx_device * dev)
 /*
  * Encode a list of colorant values into a gx_color_index_value.
  */
-private gx_color_index
+static gx_color_index
 display_separation_encode_color(gx_device *dev, const gx_color_value colors[])
 {
     int bpc = ((gx_device_display *)dev)->devn_params.bitspercomponent;
@@ -1135,7 +1135,7 @@ display_separation_encode_color(gx_device *dev, const gx_color_value colors[])
 /*
  * Decode a gx_color_index value back to a list of colorant values.
  */
-private int
+static int
 display_separation_decode_color(gx_device * dev, gx_color_index color, 
     gx_color_value * out)
 {
@@ -1157,7 +1157,7 @@ display_separation_decode_color(gx_device * dev, gx_color_index color,
 /*
  *  Device proc for updating the equivalent CMYK color for spot colors.
  */
-private int
+static int
 display_update_spot_equivalent_colors(gx_device * dev, const gs_state * pgs)
 {
     gx_device_display * ddev = (gx_device_display *)dev;
@@ -1171,7 +1171,7 @@ display_update_spot_equivalent_colors(gx_device * dev, const gs_state * pgs)
 /*
  *  Device proc for returning a pointer to DeviceN parameter structure
  */
-private gs_devn_params *
+static gs_devn_params *
 display_ret_devn_params(gx_device * dev)
 {
     gx_device_display * pdev = (gx_device_display *)dev;
@@ -1193,7 +1193,7 @@ display_ret_devn_params(gx_device * dev)
  * the colorant is not being used due to a SeparationOrder device parameter.
  * It returns a negative value if not found.
  */
-private int
+static int
 display_separation_get_color_comp_index(gx_device * dev, 
     const char * pname, int name_size, int component_type)
 {
@@ -1208,7 +1208,7 @@ display_separation_get_color_comp_index(gx_device * dev,
 
 /* Make sure we have been given a valid structure */
 /* Return 0 on success, gs_error_rangecheck on failure */
-private int display_check_structure(gx_device_display *ddev)
+static int display_check_structure(gx_device_display *ddev)
 {
     if (ddev->callback == 0)
 	return_error(gs_error_rangecheck);
@@ -1252,7 +1252,7 @@ private int display_check_structure(gx_device_display *ddev)
     return 0;
 }
 
-private void
+static void
 display_free_bitmap(gx_device_display * ddev)
 {
     if (ddev->callback == NULL)
@@ -1280,7 +1280,7 @@ display_free_bitmap(gx_device_display * ddev)
 }
 
 /* calculate byte length of a row */
-private int 
+static int 
 display_raster(gx_device_display *dev)
 {
     int align = 0;
@@ -1310,7 +1310,7 @@ display_raster(gx_device_display *dev)
 }
 
 /* Allocate the backing bitmap. */
-private int
+static int
 display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
 {
     int ccode;
@@ -1394,7 +1394,7 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
     return ccode;
 }
 
-private int 
+static int 
 display_set_separations(gx_device_display *dev)
 {
     if (((dev->nFormat & DISPLAY_COLORS_MASK) == DISPLAY_COLORS_SEPARATION) &&
@@ -1479,7 +1479,7 @@ typedef enum DISPLAY_MODEL_e {
  * This is a utility routine to build the display device's color_info
  * structure (except for the anti alias info).
  */
-private void
+static void
 set_color_info(gx_device_color_info * pdci, DISPLAY_MODEL model, 
     int nc, int depth, int maxgray, int maxcolor)
 {
@@ -1526,7 +1526,7 @@ set_color_info(gx_device_color_info * pdci, DISPLAY_MODEL model,
  * This is an utility routine to set up the color procs for the display
  * device.  The display device can change its setup.
  */
-private void
+static void
 set_color_procs(gx_device * pdev, 
 	dev_t_proc_encode_color((*encode_color), gx_device),
 	dev_t_proc_decode_color((*decode_color), gx_device),
@@ -1547,7 +1547,7 @@ set_color_procs(gx_device * pdev,
  * This is an utility routine to set up the color procs for the display
  * device.  This routine is used when the display device is Gray.
  */
-private void
+static void
 set_gray_color_procs(gx_device * pdev, 
 	dev_t_proc_encode_color((*encode_color), gx_device),
 	dev_t_proc_decode_color((*decode_color), gx_device))
@@ -1561,7 +1561,7 @@ set_gray_color_procs(gx_device * pdev,
  * This is an utility routine to set up the color procs for the display
  * device.  This routine is used when the display device is RGB.
  */
-private void
+static void
 set_rgb_color_procs(gx_device * pdev, 
 	dev_t_proc_encode_color((*encode_color), gx_device),
 	dev_t_proc_decode_color((*decode_color), gx_device))
@@ -1575,7 +1575,7 @@ set_rgb_color_procs(gx_device * pdev,
  * This is an utility routine to set up the color procs for the display
  * device.  This routine is used when the display device is RGBK.
  */
-private void
+static void
 set_rgbk_color_procs(gx_device * pdev, 
 	dev_t_proc_encode_color((*encode_color), gx_device),
 	dev_t_proc_decode_color((*decode_color), gx_device))
@@ -1589,7 +1589,7 @@ set_rgbk_color_procs(gx_device * pdev,
  * This is an utility routine to set up the color procs for the display
  * device.  This routine is used when the display device is CMYK.
  */
-private void
+static void
 set_cmyk_color_procs(gx_device * pdev, 
 	dev_t_proc_encode_color((*encode_color), gx_device),
 	dev_t_proc_decode_color((*decode_color), gx_device))
@@ -1600,7 +1600,7 @@ set_cmyk_color_procs(gx_device * pdev,
 }
 
 /* Set the color_info and mapping functions for this instance of the device */
-private int
+static int
 display_set_color_format(gx_device_display *ddev, int nFormat)
 {
     gx_device * pdev = (gx_device *) ddev;

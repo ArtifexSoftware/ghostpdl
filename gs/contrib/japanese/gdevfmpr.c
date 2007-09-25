@@ -24,7 +24,7 @@ copies.  */
 
 #include "gdevprn.h"
 
-private dev_proc_print_page(fmpr_print_page);
+static dev_proc_print_page(fmpr_print_page);
 
 #define A4
 
@@ -43,25 +43,25 @@ gx_device_printer gs_fmpr_device =
 
 /* ---- Printer output routines ---- */
 
-private int
+static int
 prn_putc(gx_device_printer *pdev, int c)
 {
   return fputc(c, pdev->file);
 }
 
-private int
+static int
 prn_puts(gx_device_printer *pdev, char *ptr)
 {
   return fputs(ptr, pdev->file);
 }
 
-private int
+static int
 prn_write(gx_device_printer *pdev, char *ptr, int size)
 {
   return fwrite(ptr, 1, size, pdev->file);
 }
 
-private int
+static int
 prn_flush(gx_device_printer *pdev)
 {
   return fflush(pdev->file);
@@ -70,7 +70,7 @@ prn_flush(gx_device_printer *pdev)
 /* ------ internal routines ------ */
 
 /* Transpose a block of 8x8 bits */
-private int
+static int
 fmpr_transpose_8x8(byte *src, int src_step, byte *dst, int dst_step)
 {
   byte mask, s, d0, d1, d2, d3, d4, d5, d6, d7;
@@ -104,7 +104,7 @@ fmpr_transpose_8x8(byte *src, int src_step, byte *dst, int dst_step)
 }
 
 /* Send the page to the printer. */
-private int
+static int
 fmpr_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
   int line_size = gdev_prn_raster(pdev);

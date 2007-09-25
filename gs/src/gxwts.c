@@ -32,14 +32,14 @@
 
 /* todo: trace and relocate pointers */
 gs_private_st_simple(st_dc_wts, gx_device_color, "dc_wts");
-private dev_color_proc_save_dc(gx_dc_wts_save_dc);
-private dev_color_proc_get_dev_halftone(gx_dc_wts_get_dev_halftone);
-private dev_color_proc_load(gx_dc_wts_load);
-private dev_color_proc_fill_rectangle(gx_dc_wts_fill_rectangle);
-private dev_color_proc_equal(gx_dc_wts_equal);
-private dev_color_proc_write(gx_dc_wts_write);
-private dev_color_proc_read(gx_dc_wts_read);
-private dev_color_proc_get_nonzero_comps(gx_dc_wts_get_nonzero_comps);
+static dev_color_proc_save_dc(gx_dc_wts_save_dc);
+static dev_color_proc_get_dev_halftone(gx_dc_wts_get_dev_halftone);
+static dev_color_proc_load(gx_dc_wts_load);
+static dev_color_proc_fill_rectangle(gx_dc_wts_fill_rectangle);
+static dev_color_proc_equal(gx_dc_wts_equal);
+static dev_color_proc_write(gx_dc_wts_write);
+static dev_color_proc_read(gx_dc_wts_read);
+static dev_color_proc_get_nonzero_comps(gx_dc_wts_get_nonzero_comps);
 const gx_device_color_type_t gx_dc_type_data_wts = {
     &st_dc_wts,
     gx_dc_wts_save_dc, gx_dc_wts_get_dev_halftone,
@@ -67,7 +67,7 @@ const gx_device_color_type_t *const gx_dc_type_wts =
  * Return value: result.
  **/
 #ifdef GXWTS_USE_DOUBLE
-private int
+static int
 mul_shr_16 (int a, int b)
 {
   return (int)floor(((double) a) * ((double) b) * (1.0 / (1 << 16)));
@@ -78,7 +78,7 @@ mul_shr_16 (int a, int b)
 
 /* Implementation of wts_get_samples for rational cells. */
 #if 0
-private int
+static int
 wts_get_samples_rat(const wts_screen_t *ws, int x, int y,
 		    int *pcellx, int *pcelly, int *p_nsamples)
 {
@@ -96,7 +96,7 @@ wts_get_samples_rat(const wts_screen_t *ws, int x, int y,
 
 #ifdef WTS_CACHE_SIZE_X
 /* Implementation of wts_get_samples for Screen J, with cache. */
-private int
+static int
 wts_get_samples_j(wts_screen_t *ws, int x, int y,
 		  int *pcellx, int *pcelly, int *p_nsamples)
 {
@@ -163,7 +163,7 @@ wts_get_samples_j(wts_screen_t *ws, int x, int y,
 }
 #else
 /* Implementation of wts_get_samples for Screen J. */
-private int
+static int
 wts_get_samples_j(wts_screen_t *ws, int x, int y,
 		  int *pcellx, int *pcelly, int *p_nsamples)
 {
@@ -207,7 +207,7 @@ wts_get_samples_j(wts_screen_t *ws, int x, int y,
 }
 #endif
 
-private int
+static int
 wts_screen_h_offset(int x, double p1, int m1, int m2)
 {
     /* todo: this is a linear search; constant time should be feasible */
@@ -230,7 +230,7 @@ wts_screen_h_offset(int x, double p1, int m1, int m2)
 }
 
 /* Implementation of wts_get_samples for Screen H. */
-private int
+static int
 wts_get_samples_h(const wts_screen_t *ws, int x, int y,
 		  int *pcellx, int *pcelly, int *p_nsamples)
 {
@@ -282,7 +282,7 @@ wts_get_samples(wts_screen_t *ws, int x, int y,
 
 /* Device color methods follow. */
 
-private void
+static void
 gx_dc_wts_save_dc(const gx_device_color * pdevc, gx_device_color_saved * psdc)
 {
     psdc->type = pdevc->type;
@@ -292,13 +292,13 @@ gx_dc_wts_save_dc(const gx_device_color * pdevc, gx_device_color_saved * psdc)
     psdc->phase = pdevc->phase;
 }
 
-private const gx_device_halftone *
+static const gx_device_halftone *
 gx_dc_wts_get_dev_halftone(const gx_device_color * pdevc)
 {
     return pdevc->colors.wts.w_ht;
 }
 
-private int
+static int
 gx_dc_wts_load(gx_device_color *pdevc, const gs_imager_state * pis,
 	       gx_device *ignore_dev, gs_color_select_t select)
 {
@@ -327,7 +327,7 @@ gx_dc_wts_load(gx_device_color *pdevc, const gs_imager_state * pis,
  *
  * Return value: 0 on success.
  **/
-private int
+static int
 wts_draw(wts_screen_t *ws, wts_screen_sample_t shade,
 	 byte *data, int data_raster,
 	 int x, int y, int w, int h)
@@ -371,7 +371,7 @@ wts_draw(wts_screen_t *ws, wts_screen_sample_t shade,
  * Special case implementation for one component. When we do plane_mask,
  * we'll want to generalize this to handle any single-bit plane_mask.
  **/
-private int
+static int
 gx_dc_wts_fill_rectangle_1(const gx_device_color *pdevc,
 			   int x, int y, int w, int h,
 			   gx_device *dev, gs_logical_operation_t lop,
@@ -412,7 +412,7 @@ gx_dc_wts_fill_rectangle_1(const gx_device_color *pdevc,
     return code;
 }
 
-private int
+static int
 gx_dc_wts_write(
     const gx_device_color *         pdevc,
     const gx_device_color_saved *   psdc,
@@ -424,7 +424,7 @@ gx_dc_wts_write(
     return_error(gs_error_unknownerror);
 }
 
-private int
+static int
 gx_dc_wts_read(
     gx_device_color *       pdevc,
     const gs_imager_state * pis,
@@ -447,7 +447,7 @@ gx_dc_wts_read(
  * Note: we round w up to an even value. We're counting on the
  * subsequent copy_color to ignore any extra bits.
  **/
-private void
+static void
 wts_repack_tile_4(unsigned char *ctile_data, int ctile_raster,
 		  const unsigned char **tile_data, int tile_raster,
 		  const gx_color_index *plane_vector, bool invert,
@@ -499,7 +499,7 @@ wts_repack_tile_4(unsigned char *ctile_data, int ctile_raster,
  * Looking at this code, it should generalize to more than four
  * components. Probably the repack code should get factored out.
  */
-private int
+static int
 gx_dc_wts_fill_rectangle_4(const gx_device_color *pdevc,
 			   int x, int y, int w, int h,
 			   gx_device *dev, gs_logical_operation_t lop,
@@ -553,7 +553,7 @@ gx_dc_wts_fill_rectangle_4(const gx_device_color *pdevc,
     return code;
 }
 
-private int
+static int
 gx_dc_wts_fill_rectangle(const gx_device_color *pdevc,
 			 int x, int y, int w, int h,
 			 gx_device *dev, gs_logical_operation_t lop,
@@ -570,7 +570,7 @@ gx_dc_wts_fill_rectangle(const gx_device_color *pdevc,
 }
 
 /* Compare two wts colors for equality. */
-private int
+static int
 gx_dc_wts_equal(const gx_device_color *pdevc1,
 		const gx_device_color *pdevc2)
 {

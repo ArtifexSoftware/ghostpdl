@@ -55,7 +55,7 @@ psf_get_type1_glyphs(psf_outline_glyphs_t *pglyphs, gs_font_type1 *pfont,
 /* ------ Main program ------ */
 
 /* Write a (named) array of floats. */
-private int
+static int
 write_float_array(gs_param_list *plist, const char *key, const float *values,
 		  int count)
 {
@@ -70,7 +70,7 @@ write_float_array(gs_param_list *plist, const char *key, const float *values,
 }
 
 /* Write a UniqueID and/or XUID. */
-private void
+static void
 write_uid(stream *s, const gs_uid *puid)
 {
     if (uid_is_UniqueID(puid))
@@ -86,7 +86,7 @@ write_uid(stream *s, const gs_uid *puid)
 }
 
 /* Write the font name. */
-private void
+static void
 write_font_name(stream *s, const gs_font_type1 *pfont,
 		const gs_const_string *alt_font_name)
 {
@@ -99,7 +99,7 @@ write_font_name(stream *s, const gs_font_type1 *pfont,
  * Write the Encoding array.  This is a separate procedure only for
  * readability.
  */
-private int
+static int
 write_Encoding(stream *s, gs_font_type1 *pfont, int options,
 	      gs_glyph *subset_glyphs, uint subset_size, gs_glyph notdef)
 {
@@ -157,7 +157,7 @@ write_Encoding(stream *s, gs_font_type1 *pfont, int options,
  * Subrs and CharStrings when the font's lenIV == -1 but we are writing
  * the font with lenIV = 0.
  */
-private int
+static int
 write_Private(stream *s, gs_font_type1 *pfont,
 	      gs_glyph *subset_glyphs, uint subset_size,
 	      gs_glyph notdef, int lenIV,
@@ -176,7 +176,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
     stream_puts(s, "/|-{noaccess def}executeonly def\n");
     stream_puts(s, "/|{noaccess put}executeonly def\n");
     {
-	private const gs_param_item_t private_items[] = {
+	static const gs_param_item_t private_items[] = {
 	    {"BlueFuzz", gs_param_type_int,
 	     offset_of(gs_type1_data, BlueFuzz)},
 	    {"BlueScale", gs_param_type_float,
@@ -321,7 +321,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
 }
 
 /* Encrypt and write a CharString. */
-private int
+static int
 stream_write_encrypted(stream *s, const void *ptr, uint count)
 {
     const byte *const data = ptr;
@@ -339,7 +339,7 @@ stream_write_encrypted(stream *s, const void *ptr, uint count)
 }
 
 /* Write one FontInfo entry. */
-private void
+static void
 write_font_info(stream *s, const char *key, const gs_const_string *pvalue,
 		int do_write)
 {
@@ -434,7 +434,7 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
 	     pfont->FontBBox.p.x, pfont->FontBBox.p.y,
 	     pfont->FontBBox.q.x, pfont->FontBBox.q.y);
     {
-	private const gs_param_item_t font_items[] = {
+	static const gs_param_item_t font_items[] = {
 	    {"FontType", gs_param_type_int,
 	     offset_of(gs_font_type1, FontType)},
 	    {"PaintType", gs_param_type_int,

@@ -42,14 +42,14 @@
 extern bool CPSI_mode;
 
 /* Forward references */
-private bool map_glyph_to_char(const gs_memory_t *mem, 
+static bool map_glyph_to_char(const gs_memory_t *mem, 
 			       const ref *, const ref *, ref *);
-private int finish_show(i_ctx_t *);
-private int op_show_cleanup(i_ctx_t *);
-private int op_show_return_width(i_ctx_t *, uint, double *);
+static int finish_show(i_ctx_t *);
+static int op_show_cleanup(i_ctx_t *);
+static int op_show_return_width(i_ctx_t *, uint, double *);
 
 /* <string> show - */
-private int
+static int
 zshow(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -68,7 +68,7 @@ zshow(i_ctx_t *i_ctx_p)
 }
 
 /* <ax> <ay> <string> ashow - */
-private int
+static int
 zashow(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -89,7 +89,7 @@ zashow(i_ctx_t *i_ctx_p)
 }
 
 /* <cx> <cy> <char> <string> widthshow - */
-private int
+static int
 zwidthshow(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -123,7 +123,7 @@ zwidthshow(i_ctx_t *i_ctx_p)
 }
 
 /* <cx> <cy> <char> <ax> <ay> <string> awidthshow - */
-private int
+static int
 zawidthshow(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -160,7 +160,7 @@ zawidthshow(i_ctx_t *i_ctx_p)
 }
 
 /* <proc> <string> kshow - */
-private int
+static int
 zkshow(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -191,14 +191,14 @@ zkshow(i_ctx_t *i_ctx_p)
 
 /* Common finish procedure for all show operations. */
 /* Doesn't have to do anything. */
-private int
+static int
 finish_show(i_ctx_t *i_ctx_p)
 {
     return 0;
 }
 
 /* <string> stringwidth <wx> <wy> */
-private int
+static int
 zstringwidth(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -233,7 +233,7 @@ finish_stringwidth(i_ctx_t *i_ctx_p)
 }
 
 /* Common code for charpath and .charboxpath. */
-private int
+static int
 zchar_path(i_ctx_t *i_ctx_p, op_proc_t proc, 
 	   int (*begin)(gs_state *, const byte *, uint,
 			bool, gs_memory_t *, gs_text_enum_t **))
@@ -256,13 +256,13 @@ zchar_path(i_ctx_t *i_ctx_p, op_proc_t proc,
     return op_show_continue_pop(i_ctx_p, 2);
 }
 /* <string> <outline_bool> charpath - */
-private int
+static int
 zcharpath(i_ctx_t *i_ctx_p)
 {
     return zchar_path(i_ctx_p, zcharpath, gs_charpath_begin);
 }
 /* <string> <box_bool> .charboxpath - */
-private int
+static int
 zcharboxpath(i_ctx_t *i_ctx_p)
 {
     return zchar_path(i_ctx_p, zcharboxpath, gs_charboxpath_begin);
@@ -319,7 +319,7 @@ zsetcachedevice2(i_ctx_t *i_ctx_p)
 }
 
 /* <wx> <wy> setcharwidth - */
-private int
+static int
 zsetcharwidth(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -342,7 +342,7 @@ zsetcharwidth(i_ctx_t *i_ctx_p)
 
 /* <dict> .fontbbox <llx> <lly> <urx> <ury> -true- */
 /* <dict> .fontbbox -false- */
-private int
+static int
 zfontbbox(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -368,7 +368,7 @@ zfontbbox(i_ctx_t *i_ctx_p)
  * PS unterpreter, ignores color operations in the inappropriate context.
  */
 /* - .incachedevice <bool> */
-private int
+static int
 zincachedevice(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -683,7 +683,7 @@ err:
     }
 }
 /* Reverse-map a glyph name to a character code for glyphshow. */
-private bool
+static bool
 map_glyph_to_char(const gs_memory_t *mem, const ref * pgref, const ref * pencoding, ref * pch)
 {
     uint esize = r_size(pencoding);
@@ -702,7 +702,7 @@ map_glyph_to_char(const gs_memory_t *mem, const ref * pgref, const ref * pencodi
 
 /* Find the index of the e-stack mark for the current show enumerator. */
 /* Return 0 if we can't find the mark. */
-private uint
+static uint
 op_show_find_index(i_ctx_t *i_ctx_p)
 {
     ref_stack_enum_t rsenum;
@@ -761,7 +761,7 @@ zchar_show_width_only(const gs_text_enum_t * penum)
 /* of the setcharwidth or the setcachedevice[2] if we are in */
 /* a stringwidth or cshow, or if we are only collecting the scalable */
 /* width for an xfont character. */
-private int
+static int
 op_show_return_width(i_ctx_t *i_ctx_p, uint npop, double *pwidth)
 {
     uint index = op_show_find_index(i_ctx_p);
@@ -796,7 +796,7 @@ op_show_return_width(i_ctx_t *i_ctx_p, uint npop, double *pwidth)
  * Restore state after finishing, or unwinding from an error within, a show
  * operation.  Note that we assume op == osp, and may reset osp.
  */
-private int
+static int
 op_show_restore(i_ctx_t *i_ctx_p, bool for_error)
 {
     register es_ptr ep = esp + snumpush;
@@ -852,7 +852,7 @@ op_show_restore(i_ctx_t *i_ctx_p, bool for_error)
     return code;
 }
 /* Clean up after an error. */
-private int
+static int
 op_show_cleanup(i_ctx_t *i_ctx_p)
 {
     return op_show_restore(i_ctx_p, true);

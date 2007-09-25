@@ -119,7 +119,7 @@ gs_private_st_composite(st_gs_image_enum, gs_image_enum, "gs_image_enum",
 #define gs_image_enum_num_ptrs 2
 
 /* GC procedures */
-private 
+static 
 ENUM_PTRS_WITH(gs_image_enum_enum_ptrs, gs_image_enum *eptr)
 {
     /* Enumerate the data planes. */
@@ -134,7 +134,7 @@ ENUM_PTRS_WITH(gs_image_enum_enum_ptrs, gs_image_enum *eptr)
 ENUM_PTR(0, gs_image_enum, dev);
 ENUM_PTR(1, gs_image_enum, info);
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(gs_image_enum_reloc_ptrs, gs_image_enum *eptr)
+static RELOC_PTRS_WITH(gs_image_enum_reloc_ptrs, gs_image_enum *eptr)
 {
     int i;
 
@@ -147,7 +147,7 @@ private RELOC_PTRS_WITH(gs_image_enum_reloc_ptrs, gs_image_enum *eptr)
 }
 RELOC_PTRS_END
 
-private int
+static int
 is_image_visible(const gs_image_common_t * pic, gs_state * pgs, gx_clip_path *pcpath)
 {
     /* HACK : We need the source image size here, 
@@ -232,7 +232,7 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
 }
 
 /* Allocate an image enumerator. */
-private void
+static void
 image_enum_init(gs_image_enum * penum)
 {
     /* Clean pointers for GC. */
@@ -300,7 +300,7 @@ gs_image_bytes_per_plane_row(const gs_image_enum * penum, int plane)
 }
 
 /* Cache information when initializing, or after transferring plane data. */
-private void
+static void
 cache_planes(gs_image_enum *penum)
 {
     int i;
@@ -317,7 +317,7 @@ cache_planes(gs_image_enum *penum)
     }
 }
 /* Advance to the next wanted plane. */
-private void
+static void
 next_plane(gs_image_enum *penum)
 {
     int px = penum->plane_index;
@@ -332,7 +332,7 @@ next_plane(gs_image_enum *penum)
  * Initialize plane_index and (if appropriate) wanted and
  * wanted_varies at the beginning of a group of planes.
  */
-private void
+static void
 begin_planes(gs_image_enum *penum)
 {
     cache_planes(penum);
@@ -419,14 +419,14 @@ gs_image_planes_wanted(gs_image_enum *penum)
  * Because some PostScript files use save/restore within an image data
  * reading procedure, this must be a stable allocator.
  */
-private gs_memory_t *
+static gs_memory_t *
 gs_image_row_memory(const gs_image_enum *penum)
 {
     return gs_memory_stable(penum->memory);
 }
 
 /* Free the row buffers when cleaning up. */
-private void
+static void
 free_row_buffers(gs_image_enum *penum, int num_planes, client_name_t cname)
 {
     int i;

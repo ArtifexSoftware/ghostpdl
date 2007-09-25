@@ -79,7 +79,7 @@
 
 /* Set up compositor type table. */
 #define compositor_(comp_type) &comp_type,
-private const gs_composite_type_t *const gx_compositor_list[] = {
+static const gs_composite_type_t *const gx_compositor_list[] = {
 #include "gconf.h"
     0
 };
@@ -88,7 +88,7 @@ private const gs_composite_type_t *const gx_compositor_list[] = {
 /* Set up the device table. */
 #define device_(dev) (const gx_device *)&dev,
 #define device2_(dev) &dev,
-private const gx_device *gx_device_list[1024] = {
+static const gx_device *gx_device_list[1024] = {
   /* as shared library are adding drivers here, so removed constness */
 #include "gconf.h"
 	 0

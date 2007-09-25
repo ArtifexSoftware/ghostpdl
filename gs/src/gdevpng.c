@@ -61,15 +61,15 @@
 #define X_DPI 72
 #define Y_DPI 72
 
-private dev_proc_print_page(png_print_page);
-private dev_proc_open_device(pngalpha_open);
-private dev_proc_encode_color(pngalpha_encode_color);
-private dev_proc_decode_color(pngalpha_decode_color);
-private dev_proc_copy_alpha(pngalpha_copy_alpha);
-private dev_proc_fill_rectangle(pngalpha_fill_rectangle);
-private dev_proc_get_params(pngalpha_get_params);
-private dev_proc_put_params(pngalpha_put_params);
-private dev_proc_create_buf_device(pngalpha_create_buf_device);
+static dev_proc_print_page(png_print_page);
+static dev_proc_open_device(pngalpha_open);
+static dev_proc_encode_color(pngalpha_encode_color);
+static dev_proc_decode_color(pngalpha_decode_color);
+static dev_proc_copy_alpha(pngalpha_copy_alpha);
+static dev_proc_fill_rectangle(pngalpha_fill_rectangle);
+static dev_proc_get_params(pngalpha_get_params);
+static dev_proc_put_params(pngalpha_put_params);
+static dev_proc_create_buf_device(pngalpha_create_buf_device);
 
 /* Monochrome. */
 
@@ -82,7 +82,7 @@ prn_device(prn_std_procs, "pngmono",
 
 /* 4-bit planar (EGA/VGA-style) color. */
 
-private const gx_device_procs png16_procs =
+static const gx_device_procs png16_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
 const gx_device_printer gs_png16_device = {
@@ -96,7 +96,7 @@ const gx_device_printer gs_png16_device = {
 /* 8-bit (SuperVGA-style) color. */
 /* (Uses a fixed palette of 3,3,2 bits.) */
 
-private const gx_device_procs png256_procs =
+static const gx_device_procs png256_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
 const gx_device_printer gs_png256_device = {
@@ -109,7 +109,7 @@ const gx_device_printer gs_png256_device = {
 
 /* 8-bit gray */
 
-private const gx_device_procs pnggray_procs =
+static const gx_device_procs pnggray_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 	      gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
 const gx_device_printer gs_pnggray_device =
@@ -122,7 +122,7 @@ const gx_device_printer gs_pnggray_device =
 
 /* 24-bit color. */
 
-private const gx_device_procs png16m_procs =
+static const gx_device_procs png16m_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
 const gx_device_printer gs_png16m_device =
@@ -134,7 +134,7 @@ prn_device(png16m_procs, "png16m",
 
 /* 48 bit color. */
 
-private const gx_device_procs png48_procs =
+static const gx_device_procs png48_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
 const gx_device_printer gs_png48_device =
@@ -160,7 +160,7 @@ struct gx_device_pngalpha_s {
     dev_t_proc_fill_rectangle((*orig_fill_rectangle), gx_device);
     int background;
 };
-private const gx_device_procs pngalpha_procs =
+static const gx_device_procs pngalpha_procs =
 {
 	pngalpha_open,
 	NULL,	/* get_initial_matrix */
@@ -255,7 +255,7 @@ const gx_device_pngalpha gs_pngalpha_device = {
 
 /* Write out a page in PNG format. */
 /* This routine is used for all formats. */
-private int
+static int
 png_print_page(gx_device_printer * pdev, FILE * file)
 {
     gs_memory_t *mem = pdev->memory;
@@ -423,7 +423,7 @@ png_push_fill_buffer(png_structp png_ptr, png_bytep buffer,
 }
 #endif
 
-private int
+static int
 pngalpha_open(gx_device * pdev)
 {
     gx_device_pngalpha *ppdev = (gx_device_pngalpha *)pdev;
@@ -446,7 +446,7 @@ pngalpha_open(gx_device * pdev)
     return code;
 }
 
-private int 
+static int 
 pngalpha_create_buf_device(gx_device **pbdev, gx_device *target,
    const gx_render_plane_t *render_plane, gs_memory_t *mem,
    gx_band_complexity_t *band_complexity)
@@ -459,7 +459,7 @@ pngalpha_create_buf_device(gx_device **pbdev, gx_device *target,
     return code;
 }
 
-private int
+static int
 pngalpha_put_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_pngalpha *ppdev = (gx_device_pngalpha *)pdev;
@@ -495,7 +495,7 @@ pngalpha_put_params(gx_device * pdev, gs_param_list * plist)
 }
 
 /* Get device parameters */
-private int
+static int
 pngalpha_get_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_pngalpha *ppdev = (gx_device_pngalpha *)pdev;
@@ -509,7 +509,7 @@ pngalpha_get_params(gx_device * pdev, gs_param_list * plist)
 
 /* RGB mapping for 32-bit RGBA color devices */
 
-private gx_color_index
+static gx_color_index
 pngalpha_encode_color(gx_device * dev, const gx_color_value cv[])
 {
     /* bits 0-7 are alpha, stored inverted to avoid white/opaque 
@@ -525,7 +525,7 @@ pngalpha_encode_color(gx_device * dev, const gx_color_value cv[])
 }
 
 /* Map a color index to a r-g-b color. */
-private int
+static int
 pngalpha_decode_color(gx_device * dev, gx_color_index color,
 			     gx_color_value prgb[3])
 {
@@ -535,7 +535,7 @@ pngalpha_decode_color(gx_device * dev, gx_color_index color,
     return 0;
 }
 
-private int
+static int
 pngalpha_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 		  gx_color_index color)
 {
@@ -550,7 +550,7 @@ pngalpha_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 
 /* Implementation for 32-bit RGBA in a memory buffer */
 /* Derived from gx_default_copy_alpha, but now maintains alpha channel. */
-private int
+static int
 pngalpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	   int raster, gx_bitmap_id id, int x, int y, int width, int height,
 		      gx_color_index color, int depth)

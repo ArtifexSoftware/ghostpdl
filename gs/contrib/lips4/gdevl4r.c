@@ -25,30 +25,30 @@
 #include "gdevlips.h"
 
 /* The device descriptors */
-private dev_proc_open_device(lips2p_open);
-private dev_proc_open_device(lips3_open);
-private dev_proc_open_device(bjc880j_open);
-private dev_proc_open_device(lips4_open);
+static dev_proc_open_device(lips2p_open);
+static dev_proc_open_device(lips3_open);
+static dev_proc_open_device(bjc880j_open);
+static dev_proc_open_device(lips4_open);
 
-private dev_proc_close_device(lips_close);
+static dev_proc_close_device(lips_close);
 
-private dev_proc_print_page_copies(lips2p_print_page_copies);
-private dev_proc_print_page_copies(lips3_print_page_copies);
-private dev_proc_print_page_copies(bjc880j_print_page_copies);
-private dev_proc_print_page_copies(lips4_print_page_copies);
+static dev_proc_print_page_copies(lips2p_print_page_copies);
+static dev_proc_print_page_copies(lips3_print_page_copies);
+static dev_proc_print_page_copies(bjc880j_print_page_copies);
+static dev_proc_print_page_copies(lips4_print_page_copies);
 
-private dev_proc_get_params(lips_get_params);
-private dev_proc_get_params(lips4_get_params);
+static dev_proc_get_params(lips_get_params);
+static dev_proc_get_params(lips4_get_params);
 
-private dev_proc_put_params(lips_put_params);
-private dev_proc_put_params(lips4_put_params);
+static dev_proc_put_params(lips_put_params);
+static dev_proc_put_params(lips4_put_params);
 
 #if 0
-private dev_proc_image_out(lips_image_out);
+static dev_proc_image_out(lips_image_out);
 
 #endif
-private dev_proc_image_out(lips2p_image_out);
-private dev_proc_image_out(lips4_image_out);
+static dev_proc_image_out(lips2p_image_out);
+static dev_proc_image_out(lips4_image_out);
 
 #define lips_device(dtype, procs, dname, xdpi, ydpi, lm, bm, rm, tm, color_bits,\
 		    print_page_copies, image_out, cassetFeed, username)\
@@ -99,19 +99,19 @@ struct gx_device_lips4_s {
     lips4_params_common;
 };
 
-private gx_device_procs lips2p_prn_procs =
+static gx_device_procs lips2p_prn_procs =
 prn_params_procs(lips2p_open, gdev_prn_output_page, lips_close,
 		 lips_get_params, lips_put_params);
 
-private gx_device_procs lips3_prn_procs =
+static gx_device_procs lips3_prn_procs =
 prn_params_procs(lips3_open, gdev_prn_output_page, lips_close,
 		 lips_get_params, lips_put_params);
 
-private gx_device_procs bjc880j_prn_color_procs =
+static gx_device_procs bjc880j_prn_color_procs =
 prn_params_procs(bjc880j_open, gdev_prn_output_page, lips_close,
 		       lips4_get_params, lips4_put_params);
 
-private gx_device_procs lips4_prn_procs =
+static gx_device_procs lips4_prn_procs =
 prn_params_procs(lips4_open, gdev_prn_output_page, lips_close,
 		       lips4_get_params, lips4_put_params);
 
@@ -172,46 +172,46 @@ typedef enum {
 } lips_printer_type;
 
 /* Forward references */
-private void lips_job_start(gx_device_printer * dev, lips_printer_type ptype, FILE * fp, int num_copies);
-private void lips_job_end(gx_device_printer * pdev, FILE * fp);
-private int lips_open(gx_device * pdev, lips_printer_type ptype);
-private int lips4c_output_page(gx_device_printer * pdev, FILE * prn_stream);
-private int lips_delta_encode(byte * inBuff, byte * prevBuff, byte * outBuff, byte * diffBuff, int Length);
-private int lips_byte_cat(byte * TotalBuff, byte * Buff, int TotalLen, int Len);
-private int lips_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, lips_printer_type ptype, int numcopies);
+static void lips_job_start(gx_device_printer * dev, lips_printer_type ptype, FILE * fp, int num_copies);
+static void lips_job_end(gx_device_printer * pdev, FILE * fp);
+static int lips_open(gx_device * pdev, lips_printer_type ptype);
+static int lips4c_output_page(gx_device_printer * pdev, FILE * prn_stream);
+static int lips_delta_encode(byte * inBuff, byte * prevBuff, byte * outBuff, byte * diffBuff, int Length);
+static int lips_byte_cat(byte * TotalBuff, byte * Buff, int TotalLen, int Len);
+static int lips_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, lips_printer_type ptype, int numcopies);
 #if GS_VERSION_MAJOR >= 8
-private int lips_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, lips_printer_type ptype, int numcopies);
-private int lips4type_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copies, int ptype);
+static int lips_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, lips_printer_type ptype, int numcopies);
+static int lips4type_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copies, int ptype);
 #else
-private int lips_print_page_copies(P4(gx_device_printer * pdev, FILE * prn_stream, lips_printer_type ptype, int numcopies));
-private int lips_print_page_copies(P4(gx_device_printer * pdev, FILE * prn_stream, lips_printer_type ptype, int numcopies));
+static int lips_print_page_copies(P4(gx_device_printer * pdev, FILE * prn_stream, lips_printer_type ptype, int numcopies));
+static int lips_print_page_copies(P4(gx_device_printer * pdev, FILE * prn_stream, lips_printer_type ptype, int numcopies));
 #endif
-private int
+static int
 lips2p_open(gx_device * pdev)
 {
     return lips_open(pdev, LIPS2P);
 }
 
-private int
+static int
 lips3_open(gx_device * pdev)
 {
     return lips_open(pdev, LIPS3);
 }
 
-private int
+static int
 bjc880j_open(gx_device * pdev)
 {
     return lips_open(pdev, BJC880J);
 }
 
-private int
+static int
 lips4_open(gx_device * pdev)
 {
     return lips_open(pdev, LIPS4);
 }
 
 /* Open the printer, adjusting the margins if necessary. */
-private int
+static int
 lips_open(gx_device * pdev, lips_printer_type ptype)
 {
     int width = pdev->MediaSize[0];
@@ -254,7 +254,7 @@ lips_open(gx_device * pdev, lips_printer_type ptype)
     return gdev_prn_open(pdev);
 }
 
-private int
+static int
 lips_close(gx_device * pdev)
 {
     gx_device_printer *const ppdev = (gx_device_printer *) pdev;
@@ -274,7 +274,7 @@ lips_close(gx_device * pdev)
 }
 
 /* Get properties for the lips drivers. */
-private int
+static int
 lips_get_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_lips *const lips = (gx_device_lips *) pdev;
@@ -313,7 +313,7 @@ lips_get_params(gx_device * pdev, gs_param_list * plist)
     return param_write_string(plist, LIPS_OPTION_USER_NAME, &usern);
 }
 
-private int
+static int
 lips4_get_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_lips4 *const lips4 = (gx_device_lips4 *) pdev;
@@ -343,7 +343,7 @@ lips4_get_params(gx_device * pdev, gs_param_list * plist)
 }
 
 /* Put properties for the lips drivers. */
-private int
+static int
 lips_put_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_lips *const lips = (gx_device_lips *) pdev;
@@ -463,7 +463,7 @@ lips_put_params(gx_device * pdev, gs_param_list * plist)
     return 0;
 }
 
-private int
+static int
 lips4_put_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_lips4 *const lips4 = (gx_device_lips4 *) pdev;
@@ -575,13 +575,13 @@ lips4_put_params(gx_device * pdev, gs_param_list * plist)
 
 /* ------ Internal routines ------ */
 
-private int
+static int
 lips2p_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copies)
 {
     return lips_print_page_copies(pdev, prn_stream, LIPS2P, num_copies);
 }
 
-private int
+static int
 lips3_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copies)
 {
     return lips_print_page_copies(pdev, prn_stream, LIPS3, num_copies);
@@ -590,7 +590,7 @@ lips3_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_cop
 #define NUM_LINES 24		/* raster height */
 #define NUM_LINES_4C 256
 
-private int
+static int
 lips_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, lips_printer_type ptype, int num_copies)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
@@ -620,19 +620,19 @@ lips_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, lips_printer
     return 0;
 }
 
-private int
+static int
 bjc880j_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copies)
 {
   return lips4type_print_page_copies(pdev, prn_stream, num_copies, BJC880J);
 }
 
-private int
+static int
 lips4_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copies)
 {
   return lips4type_print_page_copies(pdev, prn_stream, num_copies, LIPS4);
 }
 
-private int
+static int
 lips4type_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copies, int ptype)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
@@ -687,7 +687,7 @@ lips4type_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num
 
 #if 0
 /* Send the page to the printer.  */
-private int
+static int
 lips4c_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copies)
 {
     int code;
@@ -707,7 +707,7 @@ lips4c_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_co
 }
 #endif
 
-private void
+static void
 move_cap(gx_device_printer * pdev, FILE * prn_stream, int x, int y)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
@@ -730,7 +730,7 @@ move_cap(gx_device_printer * pdev, FILE * prn_stream, int x, int y)
     }
 }
 
-private void
+static void
 draw_bubble(FILE * prn_stream, int width, int height)
 {
     /* Draw a rectangle */
@@ -744,7 +744,7 @@ draw_bubble(FILE * prn_stream, int width, int height)
 
 #if 0
 /* Non Compression Version of image_out */
-private void
+static void
 lips_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int width, int height)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
@@ -770,7 +770,7 @@ lips_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int wi
 }
 #endif
 
-private void
+static void
 lips2p_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int width, int height)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
@@ -799,7 +799,7 @@ lips2p_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int 
 	draw_bubble(prn_stream, width, height);
 }
 
-private void
+static void
 lips4_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int width, int height)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
@@ -843,7 +843,7 @@ lips4_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int w
 	draw_bubble(prn_stream, width, height);
 }
 
-private int
+static int
 lips4c_write_raster(gx_device_printer * pdev, FILE * prn_stream, byte * pBuff, byte * prevBuff, byte * ComBuff, byte * TotalBuff, byte * diffBuff, int lnum, int raster_height)
 {
     int bits_per_pixel = pdev->color_info.depth;
@@ -896,7 +896,7 @@ lips4c_write_raster(gx_device_printer * pdev, FILE * prn_stream, byte * pBuff, b
     return 0;
 }
 
-private int
+static int
 lips4c_output_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     byte *pBuff, *ComBuff, *prevBuff, *TotalBuff, *diffBuff;
@@ -941,7 +941,7 @@ lips4c_output_page(gx_device_printer * pdev, FILE * prn_stream)
 }
 
 
-private void
+static void
 lips_job_start(gx_device_printer * pdev, lips_printer_type ptype, FILE * prn_stream, int num_copies)
 {
     gx_device_lips *const lips = (gx_device_lips *) pdev;
@@ -1206,16 +1206,16 @@ lips_job_start(gx_device_printer * pdev, lips_printer_type ptype, FILE * prn_str
     lips->prev_paper_height = height;
 }
 
-private void
+static void
 lips_job_end(gx_device_printer * pdev, FILE * prn_stream)
 {
     /* Paper eject command */
     fprintf(prn_stream, "\r%c", LIPS_FF);
 }
 
-private int lips_delta_compress(byte * inBuff, byte * prevBuff, byte * diffBuff, int Length);
+static int lips_delta_compress(byte * inBuff, byte * prevBuff, byte * diffBuff, int Length);
 
-private int
+static int
 lips_delta_encode(byte * inBuff, byte * prevBuff, byte * outBuff, byte * diffBuff, int Length)
 {
     int i, j, k, com_size;
@@ -1250,7 +1250,7 @@ lips_delta_encode(byte * inBuff, byte * prevBuff, byte * outBuff, byte * diffBuf
     return i + j + 1;
 }
 
-private int
+static int
 lips_delta_compress(byte * inBuff, byte * prevBuff, byte * diffBuff, int Length)
 {
     int i, j;
@@ -1346,7 +1346,7 @@ lips_delta_compress(byte * inBuff, byte * prevBuff, byte * diffBuff, int Length)
 }
 
 /* This routine work like ``strcat'' */
-private int
+static int
 lips_byte_cat(byte * TotalBuff, byte * Buff, int TotalLen, int Len)
 {
     int i;

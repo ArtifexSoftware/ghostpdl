@@ -30,7 +30,7 @@
  * divisor of 8 and thus a power of 2, which implies that 8 / depth is
  * also a power of 2.
  */
-private void
+static void
 unpack_scanline_lt8(
     gx_color_index *    destp,
     const byte *        srcp,
@@ -68,7 +68,7 @@ unpack_scanline_lt8(
  * Pack a scanline for a depth of < 8. Note that data prior to dest_offset
  * and any data beyond the width must be left undisturbed.
  */
-private void
+static void
 pack_scanline_lt8(
     const gx_color_index *  srcp,
     byte *                  destp,
@@ -112,7 +112,7 @@ pack_scanline_lt8(
  * Unpack a scanline for a depth >= 8. In this case, the depth must be
  * a multiple of 8.
  */
-private void
+static void
 unpack_scanline_ge8(
     gx_color_index *    destp,
     const byte *        srcp,
@@ -141,7 +141,7 @@ unpack_scanline_ge8(
 /*
  * Pack a scanline for depth >= 8.
  */
-private void
+static void
 pack_scanline_ge8(
     const gx_color_index *  srcp,
     byte *                  destp,
@@ -350,12 +350,12 @@ gx_overprint_generic_fill_rectangle(
 /*
  * Replication of 2 and 4 bit patterns to fill a mem_mono_chunk.
  */
-private mono_fill_chunk fill_pat_2[4] = {
+static mono_fill_chunk fill_pat_2[4] = {
     mono_fill_make_pattern(0x00), mono_fill_make_pattern(0x55),
     mono_fill_make_pattern(0xaa), mono_fill_make_pattern(0xff)
 };
 
-private mono_fill_chunk fill_pat_4[16] = {
+static mono_fill_chunk fill_pat_4[16] = {
     mono_fill_make_pattern(0x00), mono_fill_make_pattern(0x11),
     mono_fill_make_pattern(0x22), mono_fill_make_pattern(0x33),
     mono_fill_make_pattern(0x44), mono_fill_make_pattern(0x55),
@@ -372,7 +372,7 @@ private mono_fill_chunk fill_pat_4[16] = {
  * Since sizeof(mono_fill_chunk) is a power of 2, this will be the case
  * if depth is a power of 2 and depth <= 8 * sizeof(mono_fill_chunk).
  */
-private mono_fill_chunk
+static mono_fill_chunk
 replicate_color(int depth, mono_fill_chunk color)
 {
     switch (depth) {

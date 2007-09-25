@@ -80,7 +80,7 @@ struct pdf_text_state_s {
     gs_point line_start;
     gs_point out_pos;		/* output position */
 };
-private const pdf_text_state_t ts_default = {
+static const pdf_text_state_t ts_default = {
     /* State as seen by client */
     { TEXT_STATE_VALUES_DEFAULT },	/* in */
     { 0, 0 },			/* start */
@@ -109,7 +109,7 @@ gs_private_st_ptrs2(st_pdf_text_state, pdf_text_state_t,  "pdf_text_state_t",
  * direction, return <0 and do nothing.  (This is different from
  * pdf_append_chars.)  Requires pts->buffer.count_chars > 0.
  */
-private int
+static int
 append_text_move(pdf_text_state_t *pts, floatp dw)
 {
     int count = pts->buffer.count_moves;
@@ -143,7 +143,7 @@ append_text_move(pdf_text_state_t *pts, floatp dw)
 /*
  * Set *pdist to the distance (dx,dy), in the space defined by *pmat.
  */
-private int
+static int
 set_text_distance(gs_point *pdist, floatp dx, floatp dy, const gs_matrix *pmat)
 {
     int code = gs_distance_transform_inverse(dx, dy, pmat, pdist);
@@ -170,7 +170,7 @@ set_text_distance(gs_point *pdist, floatp dx, floatp dy, const gs_matrix *pmat)
 /*
  * Test whether the transformation parts of two matrices are compatible.
  */
-private bool
+static bool
 matrix_is_compatible(const gs_matrix *pmat1, const gs_matrix *pmat2)
 {
     return (pmat2->xx == pmat1->xx && pmat2->xy == pmat1->xy &&
@@ -181,7 +181,7 @@ matrix_is_compatible(const gs_matrix *pmat1, const gs_matrix *pmat2)
  * Try to handle a change of text position with TJ or a space
  * character.  If successful, return >=0, if not, return <0.
  */
-private int
+static int
 add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
 {
     pdf_text_state_t *const pts = pdev->text->text_state;
@@ -246,7 +246,7 @@ add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
  * a Y translation, set use_leading so the next text string will be written
  * with ' rather than Tj; otherwise, write a Td command.
  */
-private int
+static int
 pdf_set_text_matrix(gx_device_pdf * pdev)
 {
     pdf_text_state_t *pts = pdev->text->text_state;
@@ -375,7 +375,7 @@ pdf_get_stoted_text_size(pdf_text_state_t *state)
 /*
  *  Flush text from buffer.
  */
-private int
+static int
 flush_text_buffer(gx_device_pdf *pdev)
 {
     pdf_text_state_t *pts = pdev->text->text_state;
@@ -421,7 +421,7 @@ flush_text_buffer(gx_device_pdf *pdev)
 /*
  * Transition from string context to text context.
  */
-private int
+static int
 sync_text_state(gx_device_pdf *pdev)
 {
     pdf_text_state_t *pts = pdev->text->text_state;

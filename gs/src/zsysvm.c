@@ -28,7 +28,7 @@
  */
 
 /* Execute an operator with a specific VM selected as current VM. */
-private int
+static int
 specific_vm_op(i_ctx_t *i_ctx_p, op_proc_t opproc, uint space)
 {
     uint save_space = icurrent_space;
@@ -41,91 +41,91 @@ specific_vm_op(i_ctx_t *i_ctx_p, op_proc_t opproc, uint space)
 }
 
 /* <int> .globalvmarray <array> */
-private int
+static int
 zglobalvmarray(i_ctx_t *i_ctx_p)
 {
     return specific_vm_op(i_ctx_p, zarray, avm_global);
 }
 
 /* <int> .globalvmdict <dict> */
-private int
+static int
 zglobalvmdict(i_ctx_t *i_ctx_p)
 {
     return specific_vm_op(i_ctx_p, zdict, avm_global);
 }
 
 /* <obj_0> ... <obj_n-1> <n> .globalvmpackedarray <packedarray> */
-private int
+static int
 zglobalvmpackedarray(i_ctx_t *i_ctx_p)
 {
     return specific_vm_op(i_ctx_p, zpackedarray, avm_global);
 }
 
 /* <int> .globalvmstring <string> */
-private int
+static int
 zglobalvmstring(i_ctx_t *i_ctx_p)
 {
     return specific_vm_op(i_ctx_p, zstring, avm_global);
 }
 
 /* <int> .localvmarray <array> */
-private int
+static int
 zlocalvmarray(i_ctx_t *i_ctx_p)
 {
     return specific_vm_op(i_ctx_p, zarray, avm_local);
 }
 
 /* <int> .localvmdict <dict> */
-private int
+static int
 zlocalvmdict(i_ctx_t *i_ctx_p)
 {
     return specific_vm_op(i_ctx_p, zdict, avm_local);
 }
 
 /* <obj_0> ... <obj_n-1> <n> .localvmpackedarray <packedarray> */
-private int
+static int
 zlocalvmpackedarray(i_ctx_t *i_ctx_p)
 {
     return specific_vm_op(i_ctx_p, zpackedarray, avm_local);
 }
 
 /* <int> .localvmstring <string> */
-private int
+static int
 zlocalvmstring(i_ctx_t *i_ctx_p)
 {
     return specific_vm_op(i_ctx_p, zstring, avm_local);
 }
 
 /* <int> .systemvmarray <array> */
-private int
+static int
 zsystemvmarray(i_ctx_t *i_ctx_p)
 {
     return specific_vm_op(i_ctx_p, zarray, avm_system);
 }
 
 /* <int> .systemvmdict <dict> */
-private int
+static int
 zsystemvmdict(i_ctx_t *i_ctx_p)
 {
     return specific_vm_op(i_ctx_p, zdict, avm_system);
 }
 
 /* <obj_0> ... <obj_n-1> <n> .systemvmpackedarray <packedarray> */
-private int
+static int
 zsystemvmpackedarray(i_ctx_t *i_ctx_p)
 {
     return specific_vm_op(i_ctx_p, zpackedarray, avm_system);
 }
 
 /* <int> .systemvmstring <string> */
-private int
+static int
 zsystemvmstring(i_ctx_t *i_ctx_p)
 {
     return specific_vm_op(i_ctx_p, zstring, avm_system);
 }
 
 /* <name_string> <access_string> .systemvmfile <file> */
-private int
+static int
 zsystemvmfile(i_ctx_t *i_ctx_p)
 {
     return specific_vm_op(i_ctx_p, zfile, avm_system);
@@ -133,7 +133,7 @@ zsystemvmfile(i_ctx_t *i_ctx_p)
 
 /* <string> .systemvmlibfile <file> true */
 /* <string> .systemvmlibfile <string> false */
-private int
+static int
 zsystemvmlibfile(i_ctx_t *i_ctx_p)
 {
     return specific_vm_op(i_ctx_p, zlibfile, avm_system);
@@ -142,14 +142,14 @@ zsystemvmlibfile(i_ctx_t *i_ctx_p)
 /* <source> <EODcount> <EODstring> .systemvmSFD <file> */
 /* <source> <dict> <EODcount> <EODstring> .systemvmSFD <file> */
 /* <source> <dict> .systemvmSFD <file> *//* (LL3 only) */
-private int
+static int
 zsystemvmSFD(i_ctx_t *i_ctx_p)
 {
     return specific_vm_op(i_ctx_p, zSFD, avm_system);
 }
 
 /* <any> .systemvmcheck <bool> */
-private int
+static int
 zsystemvmcheck(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

@@ -54,7 +54,7 @@ typedef struct {
 } cv_stem_hint_table;
 
 /* Skip over the initial bytes in a Charstring, if any. */
-private void
+static void
 skip_iv(gs_type1_state *pcis)
 {
     int skip = pcis->pfont->data.lenIV;
@@ -74,7 +74,7 @@ skip_iv(gs_type1_state *pcis)
  * Only uses the following elements of *pfont:
  *	data.lenIV
  */
-private void
+static void
 type1_next_init(gs_type1_state *pcis, const gs_glyph_data_t *pgd,
 		gs_font_type1 *pfont)
 {
@@ -85,14 +85,14 @@ type1_next_init(gs_type1_state *pcis, const gs_glyph_data_t *pgd,
 }
 
 /* Clear the Type 1 operand stack. */
-inline private void
+static inline void
 type1_clear(gs_type1_state *pcis)
 {
     pcis->os_count = 0;
 }
 
 /* Execute a callsubr. */
-private int
+static int
 type1_callsubr(gs_type1_state *pcis, int index)
 {
     gs_font_type1 *pfont = pcis->pfont;
@@ -108,7 +108,7 @@ type1_callsubr(gs_type1_state *pcis, int index)
 }
 
 /* Add 1 or 3 stem hints. */
-private int
+static int
 type1_stem1(gs_type1_state *pcis, cv_stem_hint_table *psht, const fixed *pv,
 	    fixed lsb, byte *active_hints)
 {
@@ -140,7 +140,7 @@ type1_stem1(gs_type1_state *pcis, cv_stem_hint_table *psht, const fixed *pv,
     psht->count++;
     return 0;
 }
-private void
+static void
 type1_stem3(gs_type1_state *pcis, cv_stem_hint_table *psht, const fixed *pv3,
 	    fixed lsb, byte *active_hints)
 {
@@ -153,7 +153,7 @@ type1_stem3(gs_type1_state *pcis, cv_stem_hint_table *psht, const fixed *pv3,
  * Get the next operator from a Type 1 Charstring.  This procedure handles
  * numbers, div, blend, pop, and callsubr/return.
  */
-private int
+static int
 type1_next(gs_type1_state *pcis)
 {
     ip_state_t *ipsp = &pcis->ipstack[pcis->ips_count - 1];
@@ -292,13 +292,13 @@ type1_next(gs_type1_state *pcis)
 /* ------ Output ------ */
 
 /* Put 2 or 4 bytes on a stream (big-endian). */
-private void
+static void
 sputc2(stream *s, int i)
 {
     sputc(s, (byte)(i >> 8));
     sputc(s, (byte)i);
 }
-private void
+static void
 sputc4(stream *s, int i)
 {
     sputc2(s, i >> 16);
@@ -306,7 +306,7 @@ sputc4(stream *s, int i)
 }
 
 /* Put a Type 2 operator on a stream. */
-private void
+static void
 type2_put_op(stream *s, int op)
 {
     if (op >= CE_OFFSET) {
@@ -317,7 +317,7 @@ type2_put_op(stream *s, int op)
 }
 
 /* Put a Type 2 number on a stream. */
-private void
+static void
 type2_put_int(stream *s, int i)
 {
     if (i >= -107 && i <= 107)
@@ -344,7 +344,7 @@ type2_put_int(stream *s, int i)
 }
 
 /* Put a fixed value on a stream. */
-private void
+static void
 type2_put_fixed(stream *s, fixed v)
 {
     if (fixed_is_int(v))
@@ -361,7 +361,7 @@ type2_put_fixed(stream *s, fixed v)
 }
 
 /* Put a stem hint table on a stream. */
-private void
+static void
 type2_put_stems(stream *s, int os_count, const cv_stem_hint_table *psht, int op)
 {
     fixed prev = 0;
@@ -384,7 +384,7 @@ type2_put_stems(stream *s, int os_count, const cv_stem_hint_table *psht, int op)
 }
 
 /* Put out a hintmask command. */
-private void
+static void
 type2_put_hintmask(stream *s, const byte *mask, uint size)
 {
     uint ignore;

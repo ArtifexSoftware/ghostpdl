@@ -35,20 +35,20 @@
 #define OPTIMIZE_CIE_MAPPING
 
 /* Forward references */
-private int cie_joint_caches_init(gx_cie_joint_caches *,
+static int cie_joint_caches_init(gx_cie_joint_caches *,
 				  const gs_cie_common *,
 				  gs_cie_render *);
-private void cie_joint_caches_complete(gx_cie_joint_caches *,
+static void cie_joint_caches_complete(gx_cie_joint_caches *,
 				       const gs_cie_common *,
 				       const gs_cie_abc *,
 				       const gs_cie_render *);
-private void cie_cache_restrict(cie_cache_floats *, const gs_range *);
-private void cie_mult3(const gs_vector3 *, const gs_matrix3 *,
+static void cie_cache_restrict(cie_cache_floats *, const gs_range *);
+static void cie_mult3(const gs_vector3 *, const gs_matrix3 *,
 		       gs_vector3 *);
-private void cie_matrix_mult3(const gs_matrix3 *, const gs_matrix3 *,
+static void cie_matrix_mult3(const gs_matrix3 *, const gs_matrix3 *,
 			      gs_matrix3 *);
-private void cie_invert3(const gs_matrix3 *, gs_matrix3 *);
-private void cie_matrix_init(gs_matrix3 *);
+static void cie_invert3(const gs_matrix3 *, gs_matrix3 *);
+static void cie_matrix_init(gs_matrix3 *);
 
 /* Allocator structure types */
 private_st_joint_caches();
@@ -78,7 +78,7 @@ extern_st(st_imager_state);
  * Determine whether a function is a linear transformation of the form
  * f(x) = scale * x + origin.
  */
-private bool
+static bool
 cache_is_linear(cie_linear_params_t *params, const cie_cache_floats *pcf)
 {
     double origin = pcf->values[0];
@@ -96,7 +96,7 @@ cache_is_linear(cie_linear_params_t *params, const cie_cache_floats *pcf)
     return (params->is_linear = true);
 }
 
-private void
+static void
 cache_set_linear(cie_cache_floats *pcf)
 {
 	if (pcf->params.is_identity) {
@@ -120,7 +120,7 @@ cache_set_linear(cie_cache_floats *pcf)
 	    if_debug1('c', "[c]linear(0x%lx) = false\n", (ulong)pcf);
 #endif
 }
-private void
+static void
 cache3_set_linear(gx_cie_vector_cache3_t *pvc)
 {
     cache_set_linear(&pvc->caches[0].floats);
@@ -129,12 +129,12 @@ cache3_set_linear(gx_cie_vector_cache3_t *pvc)
 }
 
 #ifdef DEBUG
-private void
+static void
 if_debug_vector3(const char *str, const gs_vector3 *vec)
 {
     if_debug4('c', "%s[%g %g %g]\n", str, vec->u, vec->v, vec->w);
 }
-private void
+static void
 if_debug_matrix3(const char *str, const gs_matrix3 *mat)
 {
     if_debug10('c', "%s [%g %g %g] [%g %g %g] [%g %g %g]\n", str,
@@ -151,101 +151,101 @@ if_debug_matrix3(const char *str, const gs_matrix3 *mat)
 
 /* Default transformation procedures. */
 
-private float
+static float
 a_identity(floatp in, const gs_cie_a * pcie)
 {
     return in;
 }
-private float
+static float
 a_from_cache(floatp in, const gs_cie_a * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches.DecodeA.floats);
 }
 
-private float
+static float
 abc_identity(floatp in, const gs_cie_abc * pcie)
 {
     return in;
 }
-private float
+static float
 abc_from_cache_0(floatp in, const gs_cie_abc * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches.DecodeABC.caches[0].floats);
 }
-private float
+static float
 abc_from_cache_1(floatp in, const gs_cie_abc * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches.DecodeABC.caches[1].floats);
 }
-private float
+static float
 abc_from_cache_2(floatp in, const gs_cie_abc * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches.DecodeABC.caches[2].floats);
 }
 
-private float
+static float
 def_identity(floatp in, const gs_cie_def * pcie)
 {
     return in;
 }
-private float
+static float
 def_from_cache_0(floatp in, const gs_cie_def * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches_def.DecodeDEF[0].floats);
 }
-private float
+static float
 def_from_cache_1(floatp in, const gs_cie_def * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches_def.DecodeDEF[1].floats);
 }
-private float
+static float
 def_from_cache_2(floatp in, const gs_cie_def * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches_def.DecodeDEF[2].floats);
 }
 
-private float
+static float
 defg_identity(floatp in, const gs_cie_defg * pcie)
 {
     return in;
 }
-private float
+static float
 defg_from_cache_0(floatp in, const gs_cie_defg * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches_defg.DecodeDEFG[0].floats);
 }
-private float
+static float
 defg_from_cache_1(floatp in, const gs_cie_defg * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches_defg.DecodeDEFG[1].floats);
 }
-private float
+static float
 defg_from_cache_2(floatp in, const gs_cie_defg * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches_defg.DecodeDEFG[2].floats);
 }
-private float
+static float
 defg_from_cache_3(floatp in, const gs_cie_defg * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches_defg.DecodeDEFG[3].floats);
 }
 
-private float
+static float
 common_identity(floatp in, const gs_cie_common * pcie)
 {
     return in;
 }
-private float
+static float
 lmn_from_cache_0(floatp in, const gs_cie_common * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches.DecodeLMN[0].floats);
 }
-private float
+static float
 lmn_from_cache_1(floatp in, const gs_cie_common * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches.DecodeLMN[1].floats);
 }
-private float
+static float
 lmn_from_cache_2(floatp in, const gs_cie_common * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches.DecodeLMN[2].floats);
@@ -323,7 +323,7 @@ gx_init_CIE(gs_client_color * pcc, const gs_color_space * pcs)
 
 /* Restrict CIE colors. */
 
-inline private void
+static inline void
 cie_restrict(float *pv, const gs_range *range)
 {
     if (*pv <= range->rmin)
@@ -372,9 +372,9 @@ gx_restrict_CIEA(gs_client_color * pcc, const gs_color_space * pcs)
 
 /* ------ Install a CIE color space ------ */
 
-private void cie_cache_mult(gx_cie_vector_cache *, const gs_vector3 *,
+static void cie_cache_mult(gx_cie_vector_cache *, const gs_vector3 *,
 			    const cie_cache_floats *, floatp);
-private bool cie_cache_mult3(gx_cie_vector_cache3_t *,
+static bool cie_cache_mult3(gx_cie_vector_cache3_t *,
 			     const gs_matrix3 *, floatp);
 
 int
@@ -530,7 +530,7 @@ gx_cie_common_complete(gs_cie_common *pcie)
  * Restrict the DecodeDEF[G] cache according to RangeHIJ[K], and scale to
  * the dimensions of Table.
  */
-private void
+static void
 gs_cie_defx_scale(float *values, const gs_range *range, int dim)
 {
     double scale = (dim - 1.0) / (range->rmax - range->rmin);
@@ -604,7 +604,7 @@ typedef struct cie_cache_range_temp_s {
     cie_cached_value prev;
     int imin, imax;
 } cie_cache_range_temp_t;
-private inline void
+static inline void
 check_interpolation_required(cie_cache_range_temp_t *pccr,
 			     cie_cached_value cur, int i, floatp threshold)
 {
@@ -618,7 +618,7 @@ check_interpolation_required(cie_cache_range_temp_t *pccr,
     }
     pccr->prev = cur;
 }
-private void
+static void
 cie_cache_set_interpolation(gx_cie_vector_cache *pcache, floatp threshold)
 {
     cie_cached_value base = pcache->vecs.params.base;
@@ -658,7 +658,7 @@ cie_cache_set_interpolation(gx_cie_vector_cache *pcache, floatp threshold)
  * values by a vector.  Also set the range where interpolation is needed.
  * This procedure is idempotent.
  */
-private void
+static void
 cie_cache_mult(gx_cie_vector_cache * pcache, const gs_vector3 * pvec,
 	       const cie_cache_floats * pcf, floatp threshold)
 {
@@ -684,7 +684,7 @@ cie_cache_mult(gx_cie_vector_cache * pcache, const gs_vector3 * pvec,
  * Set the interpolation ranges in a 3-vector cache, based on the ranges in
  * the individual vector caches.  This procedure is idempotent.
  */
-private void
+static void
 cie_cache3_set_interpolation(gx_cie_vector_cache3_t * pvc)
 {
     int j, k;
@@ -712,7 +712,7 @@ cie_cache3_set_interpolation(gx_cie_vector_cache3_t * pvc)
  * Return true iff the resulting cache is an identity transformation.
  * This procedure is idempotent.
  */
-private bool
+static bool
 cie_cache_mult3(gx_cie_vector_cache3_t * pvc, const gs_matrix3 * pmat,
 		floatp threshold)
 {
@@ -887,7 +887,7 @@ gs_cie_cache_init(cie_cache_params * pcache, gs_sample_loop_params_t * pslp,
  * Compute the derived values in a CRD that don't involve the cached
  * procedure values.  This procedure is idempotent.
  */
-private void cie_transform_range3(const gs_range3 *, const gs_matrix3 *,
+static void cie_transform_range3(const gs_range3 *, const gs_matrix3 *,
 				  gs_range3 *);
 int
 gs_cie_render_init(gs_cie_render * pcrd)
@@ -976,7 +976,7 @@ gs_cie_render_sample(gs_cie_render * pcrd)
 }
 
 /* Transform a set of ranges. */
-private void
+static void
 cie_transform_range(const gs_range3 * in, floatp mu, floatp mv, floatp mw,
 		    gs_range * out)
 {
@@ -994,7 +994,7 @@ cie_transform_range(const gs_range3 * in, floatp mu, floatp mv, floatp mw,
     out->rmin = umin + vmin + wmin;
     out->rmax = umax + vmax + wmax;
 }
-private void
+static void
 cie_transform_range3(const gs_range3 * in, const gs_matrix3 * mat,
 		     gs_range3 * out)
 {
@@ -1109,7 +1109,7 @@ gs_cie_render_complete(gs_cie_render * pcrd)
 }
 
 /* Apply a range restriction to a cache. */
-private void
+static void
 cie_cache_restrict(cie_cache_floats * pcache, const gs_range * prange)
 {
     int i;
@@ -1252,7 +1252,7 @@ gs_cie_compute_points_sd(gx_cie_joint_caches *pjc,
  * Sample the TransformPQR procedure for the joint caches.
  * This routine is idempotent.
  */
-private int
+static int
 cie_joint_caches_init(gx_cie_joint_caches * pjc,
 		      const gs_cie_common * pcie,
 		      gs_cie_render * pcrd)
@@ -1295,7 +1295,7 @@ cie_joint_caches_init(gx_cie_joint_caches * pjc,
  * Complete the loading of the joint caches.
  * This routine is idempotent.
  */
-private void
+static void
 cie_joint_caches_complete(gx_cie_joint_caches * pjc,
 			  const gs_cie_common * pcie,
 			  const gs_cie_abc * pabc /* NULL if CIEA */,
@@ -1488,7 +1488,7 @@ gx_cie_to_xyz_free(gs_imager_state *pis)
 
 /* Multiply a vector by a matrix. */
 /* Note that we are computing M * V where v is a column vector. */
-private void
+static void
 cie_mult3(const gs_vector3 * in, register const gs_matrix3 * mat,
 	  gs_vector3 * out)
 {
@@ -1508,7 +1508,7 @@ cie_mult3(const gs_vector3 * in, register const gs_matrix3 * mat,
  * Multiply two matrices.  Note that the composition of the transformations
  * M1 followed by M2 is M2 * M1, not M1 * M2.  (See gscie.h for details.)
  */
-private void
+static void
 cie_matrix_mult3(const gs_matrix3 *ma, const gs_matrix3 *mb, gs_matrix3 *mc)
 {
     gs_matrix3 mprod;
@@ -1527,7 +1527,7 @@ cie_matrix_mult3(const gs_matrix3 *ma, const gs_matrix3 *mb, gs_matrix3 *mc)
 
 /* Invert a matrix. */
 /* The output must not be an alias for the input. */
-private void
+static void
 cie_invert3(const gs_matrix3 *in, gs_matrix3 *out)
 {	/* This is a brute force algorithm; maybe there are better. */
     /* We label the array elements */
@@ -1572,7 +1572,7 @@ cie_invert3(const gs_matrix3 *in, gs_matrix3 *out)
 }
 
 /* Set the is_identity flag that accelerates multiplication. */
-private void
+static void
 cie_matrix_init(register gs_matrix3 * mat)
 {
     mat->is_identity =

@@ -35,11 +35,11 @@
 /* We round up the LINE_SIZE to a multiple of a ulong for faster scanning. */
 #define W sizeof(word)
 
-private dev_proc_open_device(ljet5_open);
-private dev_proc_close_device(ljet5_close);
-private dev_proc_print_page(ljet5_print_page);
+static dev_proc_open_device(ljet5_open);
+static dev_proc_close_device(ljet5_close);
+static dev_proc_print_page(ljet5_print_page);
 
-private const gx_device_procs ljet5_procs =
+static const gx_device_procs ljet5_procs =
 prn_procs(ljet5_open, gdev_prn_output_page, ljet5_close);
 
 const gx_device_printer gs_lj5mono_device =
@@ -49,7 +49,7 @@ prn_device(ljet5_procs, "lj5mono",
 	   0, 0, 0, 0,
 	   1, ljet5_print_page);
 
-private const gx_device_procs lj5gray_procs =
+static const gx_device_procs lj5gray_procs =
 prn_color_procs(ljet5_open, gdev_prn_output_page, ljet5_close,
 		gx_default_gray_map_rgb_color,
 		gx_default_gray_map_color_rgb);
@@ -63,7 +63,7 @@ const gx_device_printer gs_lj5gray_device = {
 };
 
 /* Open the printer, writing the stream header. */
-private int
+static int
 ljet5_open(gx_device * pdev)
 {
     int code = gdev_prn_open(pdev);
@@ -88,7 +88,7 @@ ljet5_open(gx_device * pdev)
 }
 
 /* Close the printer, writing the stream trailer. */
-private int
+static int
 ljet5_close(gx_device * pdev)
 {
     gx_device_printer *const ppdev = (gx_device_printer *)pdev;
@@ -101,7 +101,7 @@ ljet5_close(gx_device * pdev)
 }
 
 /* Send the page to the printer.  For now, just send the whole image. */
-private int
+static int
 ljet5_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     gs_memory_t *mem = pdev->memory;

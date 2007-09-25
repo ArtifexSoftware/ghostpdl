@@ -67,7 +67,7 @@ extern uint
     SYS$FILESCAN(descrip *, uint *, uint *),
     SYS$PUTMSG(uint *, int (*)(), descrip *, uint);
 
-private uint
+static uint
 strlength(char *str, uint maxlen, char term)
 {
     uint i = 0;
@@ -288,7 +288,7 @@ gp_setmode_binary(FILE * pfile, bool binary)
 
 /* ------ Wild card file search procedures ------ */
 
-private void
+static void
 gp_free_enumeration(file_enum * pfen)
 {
     if (pfen) {

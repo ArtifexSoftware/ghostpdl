@@ -221,9 +221,9 @@
 /*-------------------------------------------*/ 
 /* The device descriptor */ 
 
-private dev_proc_print_page(imagen_print_page); 
-private dev_proc_open_device(imagen_prn_open);
-private dev_proc_close_device(imagen_prn_close);
+static dev_proc_print_page(imagen_print_page); 
+static dev_proc_open_device(imagen_prn_open);
+static dev_proc_close_device(imagen_prn_close);
 
 gx_device_procs imagen_procs =
 	prn_procs(imagen_prn_open, gdev_prn_output_page, imagen_prn_close);
@@ -244,7 +244,7 @@ const gx_device_printer far_data gs_imagen_device =
 /*-------------------------------------------*/ 
 
 /*-------------------------------------------*/ 
-private void 
+static void 
 iWrite(FILE *Out, byte Val) 
 { /* iWrite */ 
   char *hexList = "0123456789ABCDEF"; 
@@ -276,7 +276,7 @@ iWrite2(FILE *Out, int Val)
  
 /* --------------------------------------------------------- */ 
 
-private int
+static int
 imagen_prn_open(gx_device *pdev)
 { /* imagen_prn_open */
   int	code;
@@ -312,7 +312,7 @@ imagen_prn_open(gx_device *pdev)
   return code;
 } /* imagen_prn_open */
 
-private int
+static int
 imagen_prn_close(gx_device *pdev)
 { /* imagen_prn_close */
   int		code;
@@ -346,7 +346,7 @@ imagen_prn_close(gx_device *pdev)
 
 /*-------------------------------------------*/ 
 /* Send the page to the printer. */ 
-private int 
+static int 
 imagen_print_page(gx_device_printer *pdev, FILE *prn_stream) 
 { 
   int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev); 

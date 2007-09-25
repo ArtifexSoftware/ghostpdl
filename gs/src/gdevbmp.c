@@ -18,8 +18,8 @@
 
 /* ------ The device descriptors ------ */
 
-private dev_proc_print_page(bmp_print_page);
-private dev_proc_print_page(bmp_cmyk_print_page);
+static dev_proc_print_page(bmp_print_page);
+static dev_proc_print_page(bmp_cmyk_print_page);
 
 /* Monochrome. */
 
@@ -33,7 +33,7 @@ prn_device(prn_std_procs, "bmpmono",
 /* 8-bit (SuperVGA-style) grayscale . */
 /* (Uses a fixed palette of 256 gray levels.) */
 
-private const gx_device_procs bmpgray_procs =
+static const gx_device_procs bmpgray_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
 const gx_device_printer gs_bmpgray_device = {
@@ -52,7 +52,7 @@ const gx_device_printer gs_bmpgray_device = {
     gdev_prn_get_params, gdev_prn_put_params,\
     p_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device
 
-private const gx_device_procs bmpsep1_procs = {
+static const gx_device_procs bmpsep1_procs = {
     bmp_cmyk_procs(cmyk_1bit_map_color_rgb, cmyk_1bit_map_cmyk_color)
 };
 const gx_device_printer gs_bmpsep1_device = {
@@ -65,7 +65,7 @@ const gx_device_printer gs_bmpsep1_device = {
 
 /* 8-bit-per-plane separated CMYK color. */
 
-private const gx_device_procs bmpsep8_procs = {
+static const gx_device_procs bmpsep8_procs = {
     bmp_cmyk_procs(cmyk_8bit_map_color_rgb, cmyk_8bit_map_cmyk_color)
 };
 const gx_device_printer gs_bmpsep8_device = {
@@ -78,7 +78,7 @@ const gx_device_printer gs_bmpsep8_device = {
 
 /* 4-bit planar (EGA/VGA-style) color. */
 
-private const gx_device_procs bmp16_procs =
+static const gx_device_procs bmp16_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
 const gx_device_printer gs_bmp16_device = {
@@ -92,7 +92,7 @@ const gx_device_printer gs_bmp16_device = {
 /* 8-bit (SuperVGA-style) color. */
 /* (Uses a fixed palette of 3,3,2 bits.) */
 
-private const gx_device_procs bmp256_procs =
+static const gx_device_procs bmp256_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
 const gx_device_printer gs_bmp256_device = {
@@ -105,7 +105,7 @@ const gx_device_printer gs_bmp256_device = {
 
 /* 24-bit color. */
 
-private const gx_device_procs bmp16m_procs =
+static const gx_device_procs bmp16m_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		bmp_map_16m_rgb_color, bmp_map_16m_color_rgb);
 const gx_device_printer gs_bmp16m_device =
@@ -117,7 +117,7 @@ prn_device(bmp16m_procs, "bmp16m",
 
 /* 32-bit CMYK color (outside the BMP specification). */
 
-private const gx_device_procs bmp32b_procs = {
+static const gx_device_procs bmp32b_procs = {
     bmp_cmyk_procs(cmyk_8bit_map_color_rgb, gx_default_cmyk_map_cmyk_color)
 };
 const gx_device_printer gs_bmp32b_device =
@@ -131,7 +131,7 @@ prn_device(bmp32b_procs, "bmp32b",
 
 /* Write out a page in BMP format. */
 /* This routine is used for all non-separated formats. */
-private int
+static int
 bmp_print_page(gx_device_printer * pdev, FILE * file)
 {
     uint raster = gdev_prn_raster(pdev);
@@ -167,7 +167,7 @@ done:
 
 /* Write out a page in separated CMYK format. */
 /* This routine is used for all formats. */
-private int
+static int
 bmp_cmyk_print_page(gx_device_printer * pdev, FILE * file)
 {
     int plane_depth = pdev->color_info.depth / 4;

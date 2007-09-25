@@ -723,14 +723,14 @@ do { \
  ************************************************************************/
 				/* The procedure descriptors */
 				/* declare functions */
-private dev_proc_print_page(lx5000_print_page);
-private dev_proc_get_params(lx5000_get_params);
-private dev_proc_put_params(lx5000_put_params);
+static dev_proc_print_page(lx5000_print_page);
+static dev_proc_get_params(lx5000_get_params);
+static dev_proc_put_params(lx5000_put_params);
 
-private dev_proc_map_cmyk_color(lx5000_map_cmyk_color);
-private dev_proc_map_color_rgb(lx5000_map_color_rgb);
+static dev_proc_map_cmyk_color(lx5000_map_cmyk_color);
+static dev_proc_map_color_rgb(lx5000_map_color_rgb);
 
-private const gx_device_procs lx5000_procs = 
+static const gx_device_procs lx5000_procs = 
     lx5000_proctab(
                      lx5000_get_params,
 		     lx5000_put_params,
@@ -827,7 +827,7 @@ lx5000_device far_data gs_lx5000_device = {
     true			/* isCMYK - defaults to using colour	*/
 };
 
-private const gx_device_color_info color_info_cmy =
+static const gx_device_color_info color_info_cmy =
      dci_values(NUM_COMPONENTS_CMY,
 		BITS_PER_PIXEL_CMY,
 		MAX_GREY_CMY,
@@ -835,7 +835,7 @@ private const gx_device_color_info color_info_cmy =
 		DITHER_GREYS_CMY,
 		DITHER_COLOURS_CMY);
 
-private const gx_device_color_info color_info_blk =
+static const gx_device_color_info color_info_blk =
      dci_values(NUM_COMPONENTS_BLK,
 		BITS_PER_PIXEL_BLK,
 		MAX_GREY_BLK,
@@ -857,7 +857,7 @@ private const gx_device_color_info color_info_blk =
  *	i n i t P e n C o n s t a n t s ( )				*
  *----------------------------------------------------------------------*
  *----------------------------------------------------------------------*/
-private void
+static void
 initPenConstants( lx5000_device *lx5000dev,
 		  penData pens[NUM_COLOURS][PENS_PER_COLOUR] )
 {
@@ -965,7 +965,7 @@ initPenConstants( lx5000_device *lx5000dev,
  *	p a g e I n i t ( )						*
  *----------------------------------------------------------------------*
  *----------------------------------------------------------------------*/
-private void
+static void
 pageInit( unsigned int alignA, unsigned int alignB, FILE *prn_stream )
 {
     static char page_init[] = {
@@ -982,7 +982,7 @@ pageInit( unsigned int alignA, unsigned int alignB, FILE *prn_stream )
  *	p a g e E n d ( )						*
  *----------------------------------------------------------------------*
  *----------------------------------------------------------------------*/
-private void
+static void
 pageEnd( FILE *prn_stream )
 {
     static const char page_end[] = {
@@ -999,7 +999,7 @@ pageEnd( FILE *prn_stream )
  *	f e e d P a p e r ( )						*
  *----------------------------------------------------------------------*
  *----------------------------------------------------------------------*/
-private void
+static void
 feedPaper( lx5000_device *lx5000dev, int newLine, int *currentLine,
 	   penData pens[NUM_COLOURS][PENS_PER_COLOUR],
 	   FILE *prn_stream )
@@ -1206,7 +1206,7 @@ getColourBufs( lx5000_device *lx5000dev,
   
   Things like dithering may well end up in here.
  *----------------------------------------------------------------------*/
-private void
+static void
 processCMYKline( lx5000_device *lx5000dev, int linenum,
 		 byte *lineBuffer, byte *scanLine,
 		 byte *colourBufs[NUM_COLOURS],
@@ -1351,7 +1351,7 @@ processCMYKline( lx5000_device *lx5000dev, int linenum,
  On return, nextLineToPrint must be set to the said line number, or beyond
  the end of the page, if no more remain to be printed.
  *----------------------------------------------------------------------*/
-private void
+static void
 refreshBuffer( lx5000_device *lx5000dev,
 	       int *nextLineToGet, int *nextLineToPrint,
 	       byte *lineBuffer, byte *colourBufs[],
@@ -1474,7 +1474,7 @@ refreshBuffer( lx5000_device *lx5000dev,
   a line less than the current colour head position will be returned.
   If colour is not defined, return a value off the end of the page.
  *----------------------------------------------------------------------*/
-private int
+static int
 cartridgeMoveTo( lx5000_device *lx5000dev,
 		 penData pens[NUM_COLOURS][PENS_PER_COLOUR],
 		 int _1stColour, int lastColour )
@@ -1511,7 +1511,7 @@ cartridgeMoveTo( lx5000_device *lx5000dev,
   _1stColumn, lastColumn and columnExtent variables, calculate and set
   these column variables after stripping leading and trailing white space.
  *----------------------------------------------------------------------*/
-private void
+static void
 setColourColumnExtent( lx5000_device *lx5000dev, byte *colourBuf,
 		       bool lineEmpty[COLOUR_BUF_LINES],
 		       int _1stLine, int _1stNozzle, int lastLine,
@@ -1579,7 +1579,7 @@ setColourColumnExtent( lx5000_device *lx5000dev, byte *colourBuf,
   to the first actual column of each line, taking account of even and odd
   nozzle numbers.
  *----------------------------------------------------------------------*/
-private void
+static void
 setColourLines( lx5000_device *lx5000dev,
 		byte *colourBuf, bufBit colourLines[COLOUR_BUF_LINES],
 		int _1stLine, int _1stNozzle, int lastLine, int direction,
@@ -1684,7 +1684,7 @@ setColourLines( lx5000_device *lx5000dev,
  *	p r i n t S w i p e ( )						*
  *----------------------------------------------------------------------*
  *----------------------------------------------------------------------*/
-private void
+static void
 printSwipe( lx5000_device *lx5000dev, byte *colourBufs[NUM_COLOURS],
 	     bufBit
 	     colourLines[NUM_COLOURS][PENS_PER_COLOUR][COLOUR_BUF_LINES],
@@ -2024,7 +2024,7 @@ printSwipe( lx5000_device *lx5000dev, byte *colourBufs[NUM_COLOURS],
  *----------------------------------------------------------------------*
   Send the page to the printer.
  *----------------------------------------------------------------------*/
-private int
+static int
 lx5000_print_page( gx_device_printer *pdev, FILE *prn_stream )
 {
     /*
@@ -2355,7 +2355,7 @@ lx5000_print_page( gx_device_printer *pdev, FILE *prn_stream )
 /*----------------------------------------------------------------------*
  *	l x 5 0 0 0 b _ g e t _ p a r a m s ( )				*
  *----------------------------------------------------------------------*/
-private int
+static int
 lx5000_get_params( gx_device *pdev, gs_param_list *plist )
 /*----------------------------------------------------------------------*/
 {       
@@ -2380,7 +2380,7 @@ lx5000_get_params( gx_device *pdev, gs_param_list *plist )
 /*----------------------------------------------------------------------*
  *	l x 5 0 0 0 b _ p u t _ p a r a m _ i n t ( )			*
  *----------------------------------------------------------------------*/
-private int
+static int
 lx5000_put_param_int(
 		      gs_param_list *plist, gs_param_name pname,
 		      int *pvalue,  int minval, int maxval, int ecode
@@ -2410,7 +2410,7 @@ lx5000_put_param_int(
 /*----------------------------------------------------------------------*
  *	l x 5 0 0 0 b _ p u t _ p a r a m _ b o o l ( )			*
  *----------------------------------------------------------------------*/
-private int
+static int
 lx5000_put_param_bool(
 		      gs_param_list *plist, gs_param_name pname,
 		      bool *pvalue,  int ecode
@@ -2434,7 +2434,7 @@ lx5000_put_param_bool(
 /*----------------------------------------------------------------------*
  *	l x 5 0 0 0 b _ p u t _ p a r a m s ( )				*
  *----------------------------------------------------------------------*/
-private int
+static int
 lx5000_put_params( gx_device *pdev, gs_param_list *plist )
 /*----------------------------------------------------------------------*/
 /* put_params is supposed to check all the parameters before setting any. */
@@ -2571,7 +2571,7 @@ lx5000_put_params( gx_device *pdev, gs_param_list *plist )
  *----------------------------------------------------------------------*/
 /* Map color to RGB.  This has 3 separate cases, but since it is rarely */
 /* used, we do a case test rather than providing 3 separate routines. */
-private int
+static int
 lx5000_map_color_rgb(gx_device * dev, gx_color_index color,
 		     gx_color_value rgb[3])
 {
@@ -2603,7 +2603,7 @@ lx5000_map_color_rgb(gx_device * dev, gx_color_index color,
 }
 
 /* Map CMYK to color. */
-private gx_color_index
+static gx_color_index
 lx5000_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
 {
     int bpc = dev->color_info.depth / 4;

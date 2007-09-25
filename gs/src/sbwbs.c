@@ -26,7 +26,7 @@
 private_st_buffered_state();
 
 /* Initialize */
-private void
+static void
 s_buffered_set_defaults(stream_state * st)
 {
     stream_buffered_state *const ss = (stream_buffered_state *) st;
@@ -34,7 +34,7 @@ s_buffered_set_defaults(stream_state * st)
     /* Clear pointers */
     ss->buffer = 0;
 }
-private int
+static int
 s_buffered_no_block_init(stream_state * st)
 {
     stream_buffered_state *const ss = (stream_buffered_state *) st;
@@ -44,7 +44,7 @@ s_buffered_no_block_init(stream_state * st)
     ss->bpos = 0;
     return 0;
 }
-private int
+static int
 s_buffered_block_init(stream_state * st)
 {
     stream_buffered_state *const ss = (stream_buffered_state *) st;
@@ -62,7 +62,7 @@ s_buffered_block_init(stream_state * st)
 /* we reached the end of input data. */
 /* In the latter case, also set filling = false. */
 /* Note that this procedure doesn't take pw as an argument. */
-private int
+static int
 s_buffered_process(stream_state * st, stream_cursor_read * pr, bool last)
 {
     stream_buffered_state *const ss = (stream_buffered_state *) st;
@@ -88,7 +88,7 @@ s_buffered_process(stream_state * st, stream_cursor_read * pr, bool last)
 }
 
 /* Release */
-private void
+static void
 s_buffered_release(stream_state * st)
 {
     stream_buffered_state *const ss = (stream_buffered_state *) st;
@@ -99,10 +99,10 @@ s_buffered_release(stream_state * st)
 /* ------ Common code for Burrows/Wheeler block sorting filters ------ */
 
 private_st_BWBS_state();
-private void s_BWBS_release(stream_state *);
+static void s_BWBS_release(stream_state *);
 
 /* Set default parameter values (actually, just clear pointers). */
-private void
+static void
 s_BWBS_set_defaults(stream_state * st)
 {
     stream_BWBS_state *const ss = (stream_BWBS_state *) st;
@@ -112,7 +112,7 @@ s_BWBS_set_defaults(stream_state * st)
 }
 
 /* Initialize */
-private int
+static int
 bwbs_init(stream_state * st, uint osize)
 {
     stream_BWBS_state *const ss = (stream_BWBS_state *) st;
@@ -134,7 +134,7 @@ bwbs_init(stream_state * st, uint osize)
 }
 
 /* Release the filter. */
-private void
+static void
 s_BWBS_release(stream_state * st)
 {
     stream_BWBS_state *const ss = (stream_BWBS_state *) st;
@@ -146,7 +146,7 @@ s_BWBS_release(stream_state * st)
 /* ------ BWBlockSortEncode ------ */
 
 /* Initialize */
-private int
+static int
 s_BWBSE_init(stream_state * st)
 {
     stream_BWBS_state *const ss = (stream_BWBS_state *) st;
@@ -155,8 +155,8 @@ s_BWBSE_init(stream_state * st)
 }
 
 /* Compare two rotated strings for sorting. */
-private stream_BWBS_state *bwbs_compare_ss;
-private int
+static stream_BWBS_state *bwbs_compare_ss;
+static int
 bwbs_compare_rotations(const void *p1, const void *p2)
 {
     const byte *buffer = bwbs_compare_ss->buffer;
@@ -193,7 +193,7 @@ bwbs_compare_rotations(const void *p1, const void *p2)
     return 0;
 }
 /* Sort the strings. */
-private void
+static void
 bwbse_sort(const byte * buffer, uint * indices, int N)
 {
     offsets_full Cs;
@@ -223,7 +223,7 @@ bwbse_sort(const byte * buffer, uint * indices, int N)
 }
 
 /* Encode a buffer */
-private int
+static int
 s_BWBSE_process(stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
@@ -344,7 +344,7 @@ typedef struct {
 #endif /* (!)SHORT_OFFSETS */
 
 /* Initialize */
-private int
+static int
 s_BWBSD_init(stream_state * st)
 {
     stream_BWBS_state *const ss = (stream_BWBS_state *) st;
@@ -357,7 +357,7 @@ s_BWBSD_init(stream_state * st)
 
 #ifdef SHORT_OFFSETS
 
-private void
+static void
 bwbsd_construct_offsets(stream_BWBS_state * sst, offsets_full * po64k,
 			offsets_4k * po4k, byte * po1, int N)
 {
@@ -418,7 +418,7 @@ bwbsd_construct_offsets(stream_BWBS_state * sst, offsets_full * po64k,
 
 #else /* !SHORT_OFFSETS */
 
-private void
+static void
 bwbsd_construct_offsets(stream_BWBS_state * sst, int *po, int N)
 {
     offsets_full Cs;
@@ -449,7 +449,7 @@ bwbsd_construct_offsets(stream_BWBS_state * sst, int *po, int N)
 #endif /* (!)SHORT_OFFSETS */
 
 /* Decode a buffer */
-private int
+static int
 s_BWBSD_process(stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {

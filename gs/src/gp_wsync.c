@@ -156,7 +156,7 @@ typedef struct gp_thread_creation_closure_s {
 } gp_thread_creation_closure;
 
 /* Origin of new threads started by gp_create_thread */
-private void
+static void
 gp_thread_begin_wrapper(
 			void *thread_data	/* gp_thread_creation_closure passed as magic data */
 )

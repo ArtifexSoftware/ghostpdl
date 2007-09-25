@@ -28,10 +28,10 @@ extern void vesa_set_mode(int);
 
 /* ------ The S3 86C911 device ------ */
 
-private dev_proc_open_device(s3_open);
-private dev_proc_fill_rectangle(s3_fill_rectangle);
-private dev_proc_copy_mono(s3_copy_mono);
-private const gx_device_procs s3_procs =
+static dev_proc_open_device(s3_open);
+static dev_proc_fill_rectangle(s3_fill_rectangle);
+static dev_proc_copy_mono(s3_copy_mono);
+static const gx_device_procs s3_procs =
 {
     s3_open,
     NULL,			/* get_initial_matrix */
@@ -64,7 +64,7 @@ svga_device(s3_procs, "s3vga", vesa_get_mode, vesa_set_mode, NULL);
 #define log2_cache_height 8
 #define log2_cache_capacity (cache_x_bits + cache_y_bits)
 #define cache_capacity (1 << log2_cache_capacity)
-private gx_bitmap_id cache_ids[cache_capacity];
+static gx_bitmap_id cache_ids[cache_capacity];
 
 /* Define additional registers and I/O addresses. */
 #define crtc_addr 0x3d4		/* (color) */
@@ -98,7 +98,7 @@ private gx_bitmap_id cache_ids[cache_capacity];
   (outport(s3_x_pos, x), outport(s3_y_pos, y),\
    outport(s3_width, (w) - 1), outport(s3_height, (h) - 1))
 
-private int
+static int
 s3_open(gx_device * dev)
 {
     static const mode_info mode_table[] =
@@ -144,7 +144,7 @@ s3_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 
 /* Copy a monochrome bitmap.  The colors are given explicitly. */
 /* Color = gx_no_color_index means transparent (no effect on the image). */
-private int
+static int
 s3_copy_mono(gx_device * dev,
 	     const byte * base, int sourcex, int raster, gx_bitmap_id id,
       int x, int y, int w, int h, gx_color_index czero, gx_color_index cone)

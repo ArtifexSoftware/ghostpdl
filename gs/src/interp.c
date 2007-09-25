@@ -74,7 +74,7 @@ public_st_op_stack();
  * The procedure to call if an operator requests rescheduling.
  * This causes an error unless the context machinery has been installed.
  */
-private int
+static int
 no_reschedule(i_ctx_t **pi_ctx_p)
 {
     return_error(e_invalidcontext);
@@ -99,7 +99,7 @@ int gs_interp_time_slice_ticks = 0x7fff;
  * through a procedure.
  */
 #ifdef DEBUG
-private int
+static int
 call_operator(op_proc_t op_proc, i_ctx_t *i_ctx_p)
 {
     int code = op_proc(i_ctx_p);
@@ -128,20 +128,20 @@ struct stats_interp_s {
 #endif
 
 /* Forward references */
-private int estack_underflow(i_ctx_t *);
-private int interp(i_ctx_t **, const ref *, ref *);
-private int interp_exit(i_ctx_t *);
-private void set_gc_signal(i_ctx_t *, int *, int);
-private int copy_stack(i_ctx_t *, const ref_stack_t *, int skip, ref *);
-private int oparray_pop(i_ctx_t *);
-private int oparray_cleanup(i_ctx_t *);
-private int zerrorexec(i_ctx_t *);
-private int zfinderrorobject(i_ctx_t *);
-private int errorexec_find(i_ctx_t *, ref *);
-private int errorexec_pop(i_ctx_t *);
-private int errorexec_cleanup(i_ctx_t *);
-private int zsetstackprotect(i_ctx_t *);
-private int zcurrentstackprotect(i_ctx_t *);
+static int estack_underflow(i_ctx_t *);
+static int interp(i_ctx_t **, const ref *, ref *);
+static int interp_exit(i_ctx_t *);
+static void set_gc_signal(i_ctx_t *, int *, int);
+static int copy_stack(i_ctx_t *, const ref_stack_t *, int skip, ref *);
+static int oparray_pop(i_ctx_t *);
+static int oparray_cleanup(i_ctx_t *);
+static int zerrorexec(i_ctx_t *);
+static int zfinderrorobject(i_ctx_t *);
+static int errorexec_find(i_ctx_t *, ref *);
+static int errorexec_pop(i_ctx_t *);
+static int errorexec_cleanup(i_ctx_t *);
+static int zsetstackprotect(i_ctx_t *);
+static int zcurrentstackprotect(i_ctx_t *);
 
 /* Stack sizes */
 
@@ -383,7 +383,7 @@ gs_interp_reset(i_ctx_t *i_ctx_p)
 }
 /* Report an e-stack block underflow.  The bottom guard slots of */
 /* e-stack blocks contain a pointer to this procedure. */
-private int
+static int
 estack_underflow(i_ctx_t *i_ctx_p)
 {
     return e_ExecStackUnderflow;
@@ -435,7 +435,7 @@ interp_reclaim(i_ctx_t **pi_ctx_p, int space)
  * In case of a quit or a fatal error, also store the exit code.
  * Set *perror_object to null or the error object.
  */
-private int gs_call_interp(i_ctx_t **, ref *, int, int *, ref *);
+static int gs_call_interp(i_ctx_t **, ref *, int, int *, ref *);
 int
 gs_interpret(i_ctx_t **pi_ctx_p, ref * pref, int user_errors, int *pexit_code,
 	     ref * perror_object)
@@ -454,7 +454,7 @@ gs_interpret(i_ctx_t **pi_ctx_p, ref * pref, int user_errors, int *pexit_code,
     set_gc_signal(i_ctx_p, NULL, 0);
     return code;
 }
-private int
+static int
 gs_call_interp(i_ctx_t **pi_ctx_p, ref * pref, int user_errors,
 	       int *pexit_code, ref * perror_object)
 {
@@ -651,14 +651,14 @@ again:
     }
     goto again;
 }
-private int
+static int
 interp_exit(i_ctx_t *i_ctx_p)
 {
     return e_InterpreterExit;
 }
 
 /* Set the GC signal for all VMs. */
-private void
+static void
 set_gc_signal(i_ctx_t *i_ctx_p, int *psignal, int value)
 {
     gs_memory_gc_status_t stat;
@@ -684,7 +684,7 @@ set_gc_signal(i_ctx_t *i_ctx_p, int *psignal, int value)
 }
 
 /* Copy the contents of an overflowed stack into a (local) array. */
-private int
+static int
 copy_stack(i_ctx_t *i_ctx_p, const ref_stack_t * pstack, int skip, ref * arr)
 {
     uint size = ref_stack_count(pstack) - skip;
@@ -736,7 +736,7 @@ gs_errorinfo_put_string(i_ctx_t *i_ctx_p, const char *str)
 /* If execution terminates normally, return e_InterpreterExit. */
 /* If an error occurs, leave the current object in *perror_object */
 /* and return a (negative) error code. */
-private int
+static int
 interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
        const ref * pref /* object to interpret */,
        ref * perror_object)
@@ -1736,7 +1736,7 @@ res:
 }
 
 /* Pop the bookkeeping information for a normal exit from a t_oparray. */
-private int
+static int
 oparray_pop(i_ctx_t *i_ctx_p)
 {
     esp -= 4;
@@ -1745,7 +1745,7 @@ oparray_pop(i_ctx_t *i_ctx_p)
 
 /* Restore the stack pointers after an error inside a t_oparray procedure. */
 /* This procedure is called only from pop_estack. */
-private int
+static int
 oparray_cleanup(i_ctx_t *i_ctx_p)
 {				/* esp points just below the cleanup procedure. */
     es_ptr ep = esp;
@@ -1764,14 +1764,14 @@ oparray_cleanup(i_ctx_t *i_ctx_p)
 }
 
 /* Don't restore the stack pointers. */
-private int
+static int
 oparray_no_cleanup(i_ctx_t *i_ctx_p)
 {
     return 0;
 }
 
 /* Find the innermost oparray. */
-private ref *
+static ref *
 oparray_find(i_ctx_t *i_ctx_p)
 {
     long i;
@@ -1790,7 +1790,7 @@ oparray_find(i_ctx_t *i_ctx_p)
 /* <errorobj> <obj> .errorexec ... */
 /* Execute an object, substituting errorobj for the 'command' if an error */
 /* occurs during the execution.  Cf .execfile (in zfile.c). */
-private int
+static int
 zerrorexec(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -1813,7 +1813,7 @@ zerrorexec(i_ctx_t *i_ctx_p)
 /* - .finderrorobject false */
 /* If we are within an .errorexec or oparray, return the error object */
 /* and true, otherwise return false. */
-private int
+static int
 zfinderrorobject(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -1835,7 +1835,7 @@ zfinderrorobject(i_ctx_t *i_ctx_p)
  * .errorexec with errobj != null, store it in *perror_object and return 1,
  * otherwise return 0;
  */
-private int
+static int
 errorexec_find(i_ctx_t *i_ctx_p, ref *perror_object)
 {
     long i;
@@ -1865,7 +1865,7 @@ errorexec_find(i_ctx_t *i_ctx_p, ref *perror_object)
 }
 
 /* Pop the bookkeeping information on a normal exit from .errorexec. */
-private int
+static int
 errorexec_pop(i_ctx_t *i_ctx_p)
 {
     esp -= 2;
@@ -1873,7 +1873,7 @@ errorexec_pop(i_ctx_t *i_ctx_p)
 }
 
 /* Clean up when unwinding the stack on an error.  (No action needed.) */
-private int
+static int
 errorexec_cleanup(i_ctx_t *i_ctx_p)
 {
     return 0;
@@ -1881,7 +1881,7 @@ errorexec_cleanup(i_ctx_t *i_ctx_p)
 
 /* <bool> .setstackprotect - */
 /* Set whether to protect the stack for the innermost oparray. */
-private int
+static int
 zsetstackprotect(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -1898,7 +1898,7 @@ zsetstackprotect(i_ctx_t *i_ctx_p)
 
 /* - .currentstackprotect <bool> */
 /* Return the stack protection status. */
-private int
+static int
 zcurrentstackprotect(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

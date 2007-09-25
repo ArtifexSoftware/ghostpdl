@@ -31,7 +31,7 @@
 
 /* <source> ASCIIHexEncode/filter <file> */
 /* <source> <dict> ASCIIHexEncode/filter <file> */
-private int
+static int
 zAXE(i_ctx_t *i_ctx_p)
 {
     return filter_write_simple(i_ctx_p, &s_AXE_template);
@@ -39,7 +39,7 @@ zAXE(i_ctx_t *i_ctx_p)
 
 /* <target> ASCIIHexDecode/filter <file> */
 /* <target> <dict> ASCIIHexDecode/filter <file> */
-private int
+static int
 zAXD(i_ctx_t *i_ctx_p)
 {
     return filter_read_simple(i_ctx_p, &s_AXD_template);
@@ -47,7 +47,7 @@ zAXD(i_ctx_t *i_ctx_p)
 
 /* <target> NullEncode/filter <file> */
 /* <target> <dict_ignored> NullEncode/filter <file> */
-private int
+static int
 zNullE(i_ctx_t *i_ctx_p)
 {
     return filter_write_simple(i_ctx_p, &s_NullE_template);
@@ -55,7 +55,7 @@ zNullE(i_ctx_t *i_ctx_p)
 
 /* <source> <bool> PFBDecode/filter <file> */
 /* <source> <dict> <bool> PFBDecode/filter <file> */
-private int
+static int
 zPFBD(i_ctx_t *i_ctx_p)
 {
     os_ptr sop = osp;
@@ -68,7 +68,7 @@ zPFBD(i_ctx_t *i_ctx_p)
 
 /* <target> PSStringEncode/filter <file> */
 /* <target> <dict> PSStringEncode/filter <file> */
-private int
+static int
 zPSSE(i_ctx_t *i_ctx_p)
 {
     return filter_write_simple(i_ctx_p, &s_PSSE_template);
@@ -77,7 +77,7 @@ zPSSE(i_ctx_t *i_ctx_p)
 /* ------ RunLength filters ------ */
 
 /* Common setup for RLE and RLD filters. */
-private int
+static int
 rl_setup(os_ptr dop, bool * eod)
 {
     if (r_has_type(dop, t_dictionary)) {
@@ -95,7 +95,7 @@ rl_setup(os_ptr dop, bool * eod)
 
 /* <target> <record_size> RunLengthEncode/filter <file> */
 /* <target> <dict> <record_size> RunLengthEncode/filter <file> */
-private int
+static int
 zRLE(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -113,7 +113,7 @@ zRLE(i_ctx_t *i_ctx_p)
 
 /* <source> RunLengthDecode/filter <file> */
 /* <source> <dict> RunLengthDecode/filter <file> */
-private int
+static int
 zRLD(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -171,7 +171,7 @@ zSFD(i_ctx_t *i_ctx_p)
 /* ------ Utilities ------ */
 
 /* Forward references */
-private int filter_ensure_buf(stream **, uint, gs_ref_memory_t *, bool, int );
+static int filter_ensure_buf(stream **, uint, gs_ref_memory_t *, bool, int );
 
 /* Set up an input filter. */
 int
@@ -335,7 +335,7 @@ filter_write_simple(i_ctx_t *i_ctx_p, const stream_template * template)
 
 /* Define a byte-at-a-time NullDecode filter for intermediate buffers. */
 /* (The standard NullDecode filter can read ahead too far.) */
-private int
+static int
 s_Null1D_process(stream_state * st, stream_cursor_read * pr,
 		 stream_cursor_write * pw, bool last)
 {
@@ -346,26 +346,26 @@ s_Null1D_process(stream_state * st, stream_cursor_read * pr,
     *++(pw->ptr) = *++(pr->ptr);
     return 1;
 }
-private const stream_template s_Null1D_template = {
+static const stream_template s_Null1D_template = {
     &st_stream_state, NULL, s_Null1D_process, 1, 1
 };
 
 /* A utility filter that returns an immediate EOF without consuming */
 /* any data from its source. Used by PDF interpreter for unknown    */
 /* filter types.                                                    */
-private int
+static int
 s_EOFD_process(stream_state * st, stream_cursor_read * pr,
 		 stream_cursor_write * pw, bool last)
 {
     return EOFC;
 }
-private const stream_template s_EOFD_template = {
+static const stream_template s_EOFD_template = {
     &st_stream_state, NULL, s_EOFD_process, 1, 1
 };
 
 /* <target> /.EOFDecode filter <file> */
 /* <target> <dict> /.EOFDecode filter <file> */
-private int
+static int
 zEOFD(i_ctx_t *i_ctx_p)
 {
     return filter_read_simple(i_ctx_p, &s_EOFD_template);
@@ -374,7 +374,7 @@ zEOFD(i_ctx_t *i_ctx_p)
 
 /* Ensure a minimum buffer size for a filter. */
 /* This may require creating an intermediate stream. */
-private int
+static int
 filter_ensure_buf(stream ** ps, uint min_buf_size, gs_ref_memory_t *imem,
 		  bool writing, int close)
 {

@@ -86,14 +86,14 @@ typedef struct param_set_s {
 } param_set;
 
 /* Forward references */
-private int setparams(i_ctx_t *, gs_param_list *, const param_set *);
-private int currentparams(i_ctx_t *, const param_set *);
-private int currentparam1(i_ctx_t *, const param_set *);
+static int setparams(i_ctx_t *, gs_param_list *, const param_set *);
+static int currentparams(i_ctx_t *, const param_set *);
+static int currentparam1(i_ctx_t *, const param_set *);
 
 /* ------ Passwords ------ */
 
 /* <string|int> .checkpassword <0|1|2> */
-private int
+static int
 zcheckpassword(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -124,24 +124,24 @@ zcheckpassword(i_ctx_t *i_ctx_p)
 /* ------ System parameters ------ */
 
 /* Integer values */
-private long
+static long
 current_BuildTime(i_ctx_t *i_ctx_p)
 {
     return gs_buildtime;
 }
-private long
+static long
 current_MaxFontCache(i_ctx_t *i_ctx_p)
 {
     return gs_currentcachesize(ifont_dir);
 }
-private int
+static int
 set_MaxFontCache(i_ctx_t *i_ctx_p, long val)
 {
     return gs_setcachesize(ifont_dir,
 			   (uint)(val < 0 ? 0 : val > max_uint ? max_uint :
 				   val));
 }
-private long
+static long
 current_CurFontCache(i_ctx_t *i_ctx_p)
 {
     uint cstat[7];
@@ -149,7 +149,7 @@ current_CurFontCache(i_ctx_t *i_ctx_p)
     gs_cachestatus(ifont_dir, cstat);
     return cstat[0];
 }
-private long
+static long
 current_MaxGlobalVM(i_ctx_t *i_ctx_p)
 {
     gs_memory_gc_status_t stat;
@@ -157,7 +157,7 @@ current_MaxGlobalVM(i_ctx_t *i_ctx_p)
     gs_memory_gc_status(iimemory_global, &stat);
     return stat.max_vm;
 }
-private int
+static int
 set_MaxGlobalVM(i_ctx_t *i_ctx_p, long val)
 {
     gs_memory_gc_status_t stat;
@@ -167,12 +167,12 @@ set_MaxGlobalVM(i_ctx_t *i_ctx_p, long val)
     gs_memory_set_gc_status(iimemory_global, &stat);
     return 0;
 }
-private long
+static long
 current_Revision(i_ctx_t *i_ctx_p)
 {
     return gs_revision;
 }
-private const long_param_def_t system_long_params[] =
+static const long_param_def_t system_long_params[] =
 {
     {"BuildTime", min_long, max_long, current_BuildTime, NULL},
 {"MaxFontCache", 0, MAX_UINT_PARAM, current_MaxFontCache, set_MaxFontCache},
@@ -183,18 +183,18 @@ private const long_param_def_t system_long_params[] =
 };
 
 /* Boolean values */
-private bool
+static bool
 current_ByteOrder(i_ctx_t *i_ctx_p)
 {
     return !arch_is_big_endian;
 }
-private const bool_param_def_t system_bool_params[] =
+static const bool_param_def_t system_bool_params[] =
 {
     {"ByteOrder", current_ByteOrder, NULL}
 };
 
 /* String values */
-private void
+static void
 current_RealFormat(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
 #if ARCH_FLOATS_ARE_IEEE
@@ -207,13 +207,13 @@ current_RealFormat(i_ctx_t *i_ctx_p, gs_param_string * pval)
     pval->size = strlen(rfs);
     pval->persistent = true;
 }
-private const string_param_def_t system_string_params[] =
+static const string_param_def_t system_string_params[] =
 {
     {"RealFormat", current_RealFormat, NULL}
 };
 
 /* The system parameter set */
-private const param_set system_param_set =
+static const param_set system_param_set =
 {
     system_long_params, countof(system_long_params),
     system_bool_params, countof(system_bool_params),
@@ -221,7 +221,7 @@ private const param_set system_param_set =
 };
 
 /* <dict> .setsystemparams - */
-private int
+static int
 zsetsystemparams(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -286,14 +286,14 @@ zsetsystemparams(i_ctx_t *i_ctx_p)
 }
 
 /* - .currentsystemparams <name1> <value1> ... */
-private int
+static int
 zcurrentsystemparams(i_ctx_t *i_ctx_p)
 {
     return currentparams(i_ctx_p, &system_param_set);
 }
 
 /* <name> .getsystemparam <value> */
-private int
+static int
 zgetsystemparam(i_ctx_t *i_ctx_p)
 {
     return currentparam1(i_ctx_p, &system_param_set);
@@ -302,67 +302,67 @@ zgetsystemparam(i_ctx_t *i_ctx_p)
 /* ------ User parameters ------ */
 
 /* Integer values */
-private long
+static long
 current_JobTimeout(i_ctx_t *i_ctx_p)
 {
     return 0;
 }
-private int
+static int
 set_JobTimeout(i_ctx_t *i_ctx_p, long val)
 {
     return 0;
 }
-private long
+static long
 current_MaxFontItem(i_ctx_t *i_ctx_p)
 {
     return gs_currentcacheupper(ifont_dir);
 }
-private int
+static int
 set_MaxFontItem(i_ctx_t *i_ctx_p, long val)
 {
     return gs_setcacheupper(ifont_dir, val);
 }
-private long
+static long
 current_MinFontCompress(i_ctx_t *i_ctx_p)
 {
     return gs_currentcachelower(ifont_dir);
 }
-private int
+static int
 set_MinFontCompress(i_ctx_t *i_ctx_p, long val)
 {
     return gs_setcachelower(ifont_dir, val);
 }
-private long
+static long
 current_MaxOpStack(i_ctx_t *i_ctx_p)
 {
     return ref_stack_max_count(&o_stack);
 }
-private int
+static int
 set_MaxOpStack(i_ctx_t *i_ctx_p, long val)
 {
     return ref_stack_set_max_count(&o_stack, val);
 }
-private long
+static long
 current_MaxDictStack(i_ctx_t *i_ctx_p)
 {
     return ref_stack_max_count(&d_stack);
 }
-private int
+static int
 set_MaxDictStack(i_ctx_t *i_ctx_p, long val)
 {
     return ref_stack_set_max_count(&d_stack, val);
 }
-private long
+static long
 current_MaxExecStack(i_ctx_t *i_ctx_p)
 {
     return ref_stack_max_count(&e_stack);
 }
-private int
+static int
 set_MaxExecStack(i_ctx_t *i_ctx_p, long val)
 {
     return ref_stack_set_max_count(&e_stack, val);
 }
-private long
+static long
 current_MaxLocalVM(i_ctx_t *i_ctx_p)
 {
     gs_memory_gc_status_t stat;
@@ -370,7 +370,7 @@ current_MaxLocalVM(i_ctx_t *i_ctx_p)
     gs_memory_gc_status(iimemory_local, &stat);
     return stat.max_vm;
 }
-private int
+static int
 set_MaxLocalVM(i_ctx_t *i_ctx_p, long val)
 {
     gs_memory_gc_status_t stat;
@@ -380,7 +380,7 @@ set_MaxLocalVM(i_ctx_t *i_ctx_p, long val)
     gs_memory_set_gc_status(iimemory_local, &stat);
     return 0;
 }
-private long
+static long
 current_VMReclaim(i_ctx_t *i_ctx_p)
 {
     gs_memory_gc_status_t gstat, lstat;
@@ -389,7 +389,7 @@ current_VMReclaim(i_ctx_t *i_ctx_p)
     gs_memory_gc_status(iimemory_local, &lstat);
     return (!gstat.enabled ? -2 : !lstat.enabled ? -1 : 0);
 }
-private long
+static long
 current_VMThreshold(i_ctx_t *i_ctx_p)
 {
     gs_memory_gc_status_t stat;
@@ -397,50 +397,50 @@ current_VMThreshold(i_ctx_t *i_ctx_p)
     gs_memory_gc_status(iimemory_local, &stat);
     return stat.vm_threshold;
 }
-private long
+static long
 current_WaitTimeout(i_ctx_t *i_ctx_p)
 {
     return 0;
 }
-private int
+static int
 set_WaitTimeout(i_ctx_t *i_ctx_p, long val)
 {
     return 0;
 }
-private long
+static long
 current_MinScreenLevels(i_ctx_t *i_ctx_p)
 {
     return gs_currentminscreenlevels();
 }
-private int
+static int
 set_MinScreenLevels(i_ctx_t *i_ctx_p, long val)
 {
     gs_setminscreenlevels((uint) val);
     return 0;
 }
-private long
+static long
 current_AlignToPixels(i_ctx_t *i_ctx_p)
 {
     return gs_currentaligntopixels(ifont_dir);
 }
-private int
+static int
 set_AlignToPixels(i_ctx_t *i_ctx_p, long val)
 {
     gs_setaligntopixels(ifont_dir, (uint)val);
     return 0;
 }
-private long
+static long
 current_GridFitTT(i_ctx_t *i_ctx_p)
 {
     return gs_currentgridfittt(ifont_dir);
 }
-private int
+static int
 set_GridFitTT(i_ctx_t *i_ctx_p, long val)
 {
     gs_setgridfittt(ifont_dir, (uint)val);
     return 0;
 }
-private const long_param_def_t user_long_params[] =
+static const long_param_def_t user_long_params[] =
 {
     {"JobTimeout", 0, MAX_UINT_PARAM,
      current_JobTimeout, set_JobTimeout},
@@ -472,35 +472,35 @@ private const long_param_def_t user_long_params[] =
 };
 
 /* Boolean values */
-private bool
+static bool
 current_AccurateScreens(i_ctx_t *i_ctx_p)
 {
     return gs_currentaccuratescreens();
 }
-private int
+static int
 set_AccurateScreens(i_ctx_t *i_ctx_p, bool val)
 {
     gs_setaccuratescreens(val);
     return 0;
 }
 /* Boolean values */
-private bool
+static bool
 current_UseWTS(i_ctx_t *i_ctx_p)
 {
     return gs_currentusewts();
 }
-private int
+static int
 set_UseWTS(i_ctx_t *i_ctx_p, bool val)
 {
     gs_setusewts(val);
     return 0;
 }
-private bool
+static bool
 current_LockFilePermissions(i_ctx_t *i_ctx_p)
 {
     return i_ctx_p->LockFilePermissions;
 }
-private int
+static int
 set_LockFilePermissions(i_ctx_t *i_ctx_p, bool val)
 {
     /* allow locking even if already locked */
@@ -509,7 +509,7 @@ set_LockFilePermissions(i_ctx_t *i_ctx_p, bool val)
     i_ctx_p->LockFilePermissions = val;
     return 0;
 }
-private const bool_param_def_t user_bool_params[] =
+static const bool_param_def_t user_bool_params[] =
 {
     {"AccurateScreens", current_AccurateScreens, set_AccurateScreens},
     {"UseWTS", current_UseWTS, set_UseWTS},
@@ -517,7 +517,7 @@ private const bool_param_def_t user_bool_params[] =
 };
 
 /* The user parameter set */
-private const param_set user_param_set =
+static const param_set user_param_set =
 {
     user_long_params, countof(user_long_params),
     user_bool_params, countof(user_bool_params),
@@ -540,7 +540,7 @@ set_user_params(i_ctx_t *i_ctx_p, const ref *paramdict)
     iparam_list_release(&list);
     return code;
 }
-private int
+static int
 zsetuserparams(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -556,14 +556,14 @@ zsetuserparams(i_ctx_t *i_ctx_p)
 }
 
 /* - .currentuserparams <name1> <value1> ... */
-private int
+static int
 zcurrentuserparams(i_ctx_t *i_ctx_p)
 {
     return currentparams(i_ctx_p, &user_param_set);
 }
 
 /* <name> .getuserparam <value> */
-private int
+static int
 zgetuserparam(i_ctx_t *i_ctx_p)
 {
     return currentparam1(i_ctx_p, &user_param_set);
@@ -591,7 +591,7 @@ const op_def zusparam_op_defs[] =
 
 /* Set the values of a parameter set from a parameter list. */
 /* We don't attempt to back out if anything fails. */
-private int
+static int
 setparams(i_ctx_t *i_ctx_p, gs_param_list * plist, const param_set * pset)
 {
     int i, code;
@@ -633,7 +633,7 @@ setparams(i_ctx_t *i_ctx_p, gs_param_list * plist, const param_set * pset)
 }
 
 /* Get the current values of a parameter set to the stack. */
-private bool
+static bool
 pname_matches(const char *pname, const ref * psref)
 {
     return
@@ -641,7 +641,7 @@ pname_matches(const char *pname, const ref * psref)
 	 !bytes_compare((const byte *)pname, strlen(pname),
 			psref->value.const_bytes, r_size(psref)));
 }
-private int
+static int
 current_param_list(i_ctx_t *i_ctx_p, const param_set * pset,
 		   const ref * psref /*t_string */ )
 {
@@ -695,14 +695,14 @@ current_param_list(i_ctx_t *i_ctx_p, const param_set * pset,
 }
 
 /* Get the current values of a parameter set to the stack. */
-private int
+static int
 currentparams(i_ctx_t *i_ctx_p, const param_set * pset)
 {
     return current_param_list(i_ctx_p, pset, NULL);
 }
 
 /* Get the value of a single parameter to the stack, or signal an error. */
-private int
+static int
 currentparam1(i_ctx_t *i_ctx_p, const param_set * pset)
 {
     os_ptr op = osp;

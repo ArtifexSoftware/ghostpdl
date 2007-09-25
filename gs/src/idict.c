@@ -68,7 +68,7 @@ bool dict_default_pack = true;
   (pds && dstack_dict_is_permanent(pds, pdref) && !ref_saving_in(mem))
 
 /* Forward references */
-private int dict_create_contents(uint size, const ref * pdref, bool pack);
+static int dict_create_contents(uint size, const ref * pdref, bool pack);
 
 /* Debugging statistics */
 #ifdef DEBUG
@@ -156,7 +156,7 @@ dict_alloc(gs_ref_memory_t * mem, uint size, ref * pdref)
 }
 /* Create unpacked keys for a dictionary. */
 /* The keys are allocated using the same allocator as the dictionary. */
-private int
+static int
 dict_create_unpacked_keys(uint asize, const ref * pdref)
 {
     dict *pdict = pdref->value.pdict;
@@ -178,7 +178,7 @@ dict_create_unpacked_keys(uint asize, const ref * pdref)
 /* Create the contents (keys and values) of a newly allocated dictionary. */
 /* Allocate in the current VM space, which is assumed to be the same as */
 /* the VM space where the dictionary is allocated. */
-private int
+static int
 dict_create_contents(uint size, const ref * pdref, bool pack)
 {
     dict *pdict = pdref->value.pdict;
@@ -677,7 +677,7 @@ dict_max_index(const ref * pdref /* t_dictionary */ )
  */
 #define COPY_NEW_ONLY 1
 #define COPY_FOR_RESIZE 2
-private int
+static int
 dict_copy_elements(const ref * pdrfrom /* t_dictionary */ ,
 		  ref * pdrto /* t_dictionary */ , int options,
 		  dict_stack_t *pds)

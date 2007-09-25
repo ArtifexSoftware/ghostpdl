@@ -1643,7 +1643,7 @@ typedef struct gx_device_type_s {
 } gx_device_type;
 
 #define device_type(dtname, stype, initproc)\
-private dev_type_proc_initialize(initproc);\
+static dev_type_proc_initialize(initproc);\
 const gx_device_type dtname = { &stype, initproc }
 
 /*dev_type_proc_initialize(gdev_initialize); */

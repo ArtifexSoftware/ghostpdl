@@ -42,13 +42,13 @@ are compressed to an ascii count and a single character.
 #include "gdevprn.h"
 
 /* Forward references */
-private int sixel_print_page(gx_device_printer *pdev,
+static int sixel_print_page(gx_device_printer *pdev,
 			     FILE *prn_stream, const char *init);
 
 /* The device descriptor */
-private dev_proc_output_page(sixel_output_page);
-private dev_proc_print_page(xes_print_page);
-private gx_device_procs xes_procs =
+static dev_proc_output_page(sixel_output_page);
+static dev_proc_print_page(xes_print_page);
+static gx_device_procs xes_procs =
   prn_procs(gdev_prn_open, sixel_output_page, gdev_prn_close);
 
 #ifdef A4
@@ -77,7 +77,7 @@ gx_device_printer gs_xes_device =
 #define XES_GRAPHICS \
  "\033gw1;"
 
-private int
+static int
 xes_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
     return (sixel_print_page(pdev,prn_stream,XES_RESET));
@@ -87,7 +87,7 @@ xes_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
 /* Open the printer in text mode before gdev_prn_output_page */
 /* opens it in binary mode. */
-private int
+static int
 sixel_output_page(gx_device *pdev, int num_copies, int flush)
 {	int code = gdev_prn_open_printer(pdev, 0);
 	if ( code < 0 )
@@ -96,7 +96,7 @@ sixel_output_page(gx_device *pdev, int num_copies, int flush)
 }
 
 /* Send the page to the printer. */
-private int
+static int
 sixel_print_page(gx_device_printer *pdev, FILE *prn_stream, const char *init)
 {
     byte *buf, *b, *end;

@@ -102,9 +102,9 @@ static byte lx7_pageinit[]={LX7_INIT4, LX7_INIT4, LX7_INIT5, LX7_INIT6};
 
 /* The procedure descriptors */
 /* declare functions */
-private dev_proc_print_page(lxmgen_print_page);
-private dev_proc_get_params(lxm_get_params);
-private dev_proc_put_params(lxm_put_params);
+static dev_proc_print_page(lxmgen_print_page);
+static dev_proc_get_params(lxm_get_params);
+static dev_proc_put_params(lxm_put_params);
 
 /* set up dispatch table.  I follow gdevdjet in using gdev_prn_output_page */
 static const gx_device_procs lxm7000m_procs = 
@@ -244,9 +244,9 @@ lxm_device far_data gs_lex2050_device = {
 #define LX_LINE_EMPTY(buf,len) \
    (buf[0]==0 && memcmp(buf,buf+1,len-1)==0)
 
-private byte ofs8[8]={128,64,32,16,8,4,2,1};
+static byte ofs8[8]={128,64,32,16,8,4,2,1};
 /* Lexmark 5xxx, 7xxx page eject */
-private void lex_eject(FILE *out)
+static void lex_eject(FILE *out)
 {
    byte buf[4]={0x1b,0x2a,0x7,0x65};
 #ifdef DEBUG
@@ -261,7 +261,7 @@ private void lex_eject(FILE *out)
  * 384 for 192 pixels or
  * 416 for 208 pixels etc...
  */
-private void paper_shift(FILE *out,int offset)
+static void paper_shift(FILE *out,int offset)
 {
    byte buf[5]={0x1b,0x2a,0x3,0x0,0x0};
    buf[3]=(byte)(offset >> 8);   /* just to be endian safe we don't use short */
@@ -274,7 +274,7 @@ private void paper_shift(FILE *out,int offset)
 }
 
 /* return coordinate of leftmost pixel (in pixels) */
-private int leftmost_pixel(byte *buf, int bytelen)
+static int leftmost_pixel(byte *buf, int bytelen)
 {
    int i;
    byte *r=buf;
@@ -296,7 +296,7 @@ private int leftmost_pixel(byte *buf, int bytelen)
 }
 
 /* return coordinate of rightmost pixel (in pixels) */
-private int rightmost_pixel(byte *buf, int bytelen)
+static int rightmost_pixel(byte *buf, int bytelen)
 {
    int i;
    byte *r=buf+(bytelen-1);
@@ -327,7 +327,7 @@ private int rightmost_pixel(byte *buf, int bytelen)
  * leftmost,
  *  rightmost - output
  */
-private void find_lr_pixels(byte *buf[],int bytelen,int bufheight,
+static void find_lr_pixels(byte *buf[],int bytelen,int bufheight,
       int interlaced, int intershift,
       int *leftmost, int *rightmost)
 {
@@ -367,18 +367,18 @@ private void find_lr_pixels(byte *buf[],int bytelen,int bufheight,
 /* ------ Driver procedures ------ */
 
 /*** THIS NEED TO BE REWORKED SOON ***/
-private const int LEFT_MARGIN=50;
-private const int VERTSIZE=LX7_BSW_H;
+static const int LEFT_MARGIN=50;
+static const int VERTSIZE=LX7_BSW_H;
 /* offsets to print line sequence (defined in outbuf)
  */
-private const int IDX_SEQLEN=5;
-private const int IDX_HORRES=8;
-private const int IDX_PACKETS=13;
-private const int IDX_5700DIF=12;
-private const int IDX_HSTART=15;
-private const int IDX_HEND=17;
-private const int IDX_DATA=26;
-private const int IDX_CARTRIDGE=10;
+static const int IDX_SEQLEN=5;
+static const int IDX_HORRES=8;
+static const int IDX_PACKETS=13;
+static const int IDX_5700DIF=12;
+static const int IDX_HSTART=15;
+static const int IDX_HEND=17;
+static const int IDX_DATA=26;
+static const int IDX_CARTRIDGE=10;
 
 #define DIV8(x) ( (x) >> 3 )
 #define MOD8(x) ( (x) & 0x7 )
@@ -393,7 +393,7 @@ private const int IDX_CARTRIDGE=10;
  * by lxmgen_print_page() to avoid large static array
  * in gs binary
  */
-private byte outb[]={0x1B,0x2A,0x04,0x00,0x00,0xFF,0xFF,
+static byte outb[]={0x1B,0x2A,0x04,0x00,0x00,0xFF,0xFF,
    /* number of packets ----     vvvvvvvvv */ 
    0x00,0x02,0x01,0x01,0x1A,0x11,0xFF,0xFF,
    /* horiz start, horiz end: packets = (horiz end - horiz start) +1 */
@@ -401,7 +401,7 @@ private byte outb[]={0x1B,0x2A,0x04,0x00,0x00,0xFF,0xFF,
 
 #define BITSTART12 4096
 
-private int print_cols(FILE *prn_stream,gx_device_printer *pdev,
+static int print_cols(FILE *prn_stream,gx_device_printer *pdev,
       byte *outbuf,
       int left,int right,int vstart, int vend,byte *buf[],
       int width,int LR_SHIFT)
@@ -559,7 +559,7 @@ private int print_cols(FILE *prn_stream,gx_device_printer *pdev,
 
 /* Send the page to the printer. */
 /* Lexmark generic print page routine */
-private int
+static int
 lxmgen_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {	
    int pheight=pdev->height; /* page height (pixels) */
@@ -812,7 +812,7 @@ lxmgen_print_page(gx_device_printer *pdev, FILE *prn_stream)
    return 0;
 }
 
-   private int
+   static int
 lxm_get_params(gx_device *pdev, gs_param_list *plist)
 {       
     lxm_device* const ldev = (lxm_device*)pdev;
@@ -827,7 +827,7 @@ lxm_get_params(gx_device *pdev, gs_param_list *plist)
 }
 
 /* put_params is supposed to check all the parameters before setting any. */
-private int
+static int
 lxm_put_params(gx_device *pdev, gs_param_list *plist)
 {
     int ecode;

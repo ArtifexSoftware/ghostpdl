@@ -46,13 +46,13 @@
 #include "gdevbjc_.h"
 
 /* ------ The device descriptors ------ */
-private dev_proc_print_page(bjc_print_page);
-private dev_proc_print_page(bjc_print_page_mono);
-private dev_proc_print_page(bjc_print_page_gray);
-private dev_proc_print_page(bjc_print_page_cmyk);
-private dev_proc_print_page(bjc_print_page_color);
-private dev_proc_put_params(gdev_bjc_put_params);
-private dev_proc_get_params(gdev_bjc_get_params);
+static dev_proc_print_page(bjc_print_page);
+static dev_proc_print_page(bjc_print_page_mono);
+static dev_proc_print_page(bjc_print_page_gray);
+static dev_proc_print_page(bjc_print_page_cmyk);
+static dev_proc_print_page(bjc_print_page_color);
+static dev_proc_put_params(gdev_bjc_put_params);
+static dev_proc_get_params(gdev_bjc_get_params);
 const stringParamDescription *
  paramValueToParam(const stringParamDescription *, int);
 const stringParamDescription *
@@ -143,7 +143,7 @@ stringParamDescription strInk[] = {
     { {0} }
 };
 
-private stringParamDescription strMedia[] = {
+static stringParamDescription strMedia[] = {
   {{"PlainPaper", 10, false}, 0},
   {{"CoatedPaper", 11, false}, 1},
   {{"TransparencyFilm", 16, false}, 2},
@@ -213,7 +213,7 @@ static media_t media_codes[] = {
 /* ------------------------- 1 bit Monochrome ---------------------------- */
 /***************************************************************************/
 
-private const gx_device_procs bjcmono_procs =
+static const gx_device_procs bjcmono_procs =
 prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		 NULL, NULL,
 		 gdev_bjc_get_params, gdev_bjc_put_params);
@@ -236,7 +236,7 @@ bjc_device(bjcmono_procs, "bjcmono",
 /* -------------------------- 8 bit Grayscale ---------------------------- */
 /***************************************************************************/
 
-private const gx_device_procs bjcgray_procs =
+static const gx_device_procs bjcgray_procs =
 prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		 gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb,
 		 gdev_bjc_get_params, gdev_bjc_put_params);
@@ -261,7 +261,7 @@ bjc_device(bjcgray_procs, "bjcgray",
 
 
 
-private const gx_device_procs bjc_cmykcolor_procs =
+static const gx_device_procs bjc_cmykcolor_procs =
 bjc_cmyk_param_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
                      cmyk_1bit_map_color_rgb, cmyk_1bit_map_cmyk_color,
 	             gdev_bjc_get_params, gdev_bjc_put_params);
@@ -286,7 +286,7 @@ bjc_device(bjc_cmykcolor_procs, "bjccmyk",
 
 
 
-private const gx_device_procs bjc_truecolor_procs =
+static const gx_device_procs bjc_truecolor_procs =
 bjc_cmyk_param_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
                      cmyk_8bit_map_color_rgb, cmyk_8bit_map_cmyk_color,
 	             gdev_bjc_get_params, gdev_bjc_put_params);
@@ -310,7 +310,7 @@ bjc_device(bjc_truecolor_procs, "bjccolor",
 /***************************************************************************/
 
 /*
-private int
+static int
 bjc_print_page(gx_device_printer * pdev, FILE * file)
 {
 #define ppdev ((gx_device_bjc_printer *) pdev)
@@ -396,7 +396,7 @@ paramStringToParam(const stringParamDescription * params,
 
 /* Get parameters.  BJC printer devices add several more parameters */
 /* to the default set. */
-private int
+static int
 gdev_bjc_get_params(gx_device * pdev, gs_param_list * plist)
 {
     const gx_device_bjc_printer * ppdev = (gx_device_bjc_printer *)pdev;
@@ -435,7 +435,7 @@ gdev_bjc_get_params(gx_device * pdev, gs_param_list * plist)
 }
 
 /* Put parameters. */
-private int
+static int
 gdev_bjc_put_params(gx_device * pdev, gs_param_list * plist)
 {
     int code, ecode = 0;
@@ -567,7 +567,7 @@ label:							\
 #undef ppdev
 }
 
-private int
+static int
 bjc_print_page_mono(gx_device_printer * pdev, FILE * file)
 {
 #define ppdev ((gx_device_bjc_printer *) pdev)
@@ -639,7 +639,7 @@ bjc_print_page_mono(gx_device_printer * pdev, FILE * file)
 #undef ppdev
 }
 
-private int
+static int
 bjc_print_page_gray(gx_device_printer * pdev, FILE * file)
 {
 #define ppdev ((gx_device_bjc_printer *) pdev)
@@ -724,7 +724,7 @@ bjc_print_page_gray(gx_device_printer * pdev, FILE * file)
 #undef ppdev
 }
 
-private int
+static int
 bjc_print_page_cmyk(gx_device_printer * pdev, FILE * file)
 {
 #define ppdev ((gx_device_bjc_printer *) pdev)
@@ -843,7 +843,7 @@ bjc_print_page_cmyk(gx_device_printer * pdev, FILE * file)
 #undef ppdev
 }
 
-private int
+static int
 bjc_print_page_color(gx_device_printer * pdev, FILE * file)
 {
 #define ppdev ((gx_device_bjc_printer *) pdev)

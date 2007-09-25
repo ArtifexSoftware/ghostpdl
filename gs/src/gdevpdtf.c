@@ -40,7 +40,7 @@ private_st_pdf_standard_font();
 private_st_pdf_standard_font_element();
 private_st_pdf_outline_fonts();
 
-private
+static
 ENUM_PTRS_WITH(pdf_font_resource_enum_ptrs, pdf_font_resource_t *pdfont)
 ENUM_PREFIX(st_pdf_resource, 12);
 case 0: return ENUM_STRING(&pdfont->BaseFont);
@@ -103,7 +103,7 @@ case 11: switch (pdfont->FontType) {
      ENUM_RETURN(0);
 }
 ENUM_PTRS_END
-private
+static
 RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
 {
     RELOC_PREFIX(st_pdf_resource);
@@ -154,7 +154,7 @@ typedef struct pdf_standard_font_info_s {
     int size;
     gs_encoding_index_t base_encoding;
 } pdf_standard_font_info_t;
-private const pdf_standard_font_info_t standard_font_info[] = {
+static const pdf_standard_font_info_t standard_font_info[] = {
     {"Courier",                7, ENCODING_INDEX_STANDARD},
     {"Courier-Bold",          12, ENCODING_INDEX_STANDARD},
     {"Courier-Oblique",       15, ENCODING_INDEX_STANDARD},
@@ -173,7 +173,7 @@ private const pdf_standard_font_info_t standard_font_info[] = {
 };
 
 /* Return the index of a standard font name, or -1 if missing. */
-private int
+static int
 pdf_find_standard_font_name(const byte *str, uint size)
 {
     const pdf_standard_font_info_t *ppsf;
@@ -192,7 +192,7 @@ pdf_find_standard_font_name(const byte *str, uint size)
  * identical properties, and return the standard-font index; otherwise,
  * set *psame to 0 and return -1.
  */
-private int
+static int
 find_std_appearance(const gx_device_pdf *pdev, gs_font_base *bfont,
 		    int mask, pdf_char_glyph_pair_t *pairs, int num_glyphs)
 {
@@ -246,7 +246,7 @@ find_std_appearance(const gx_device_pdf *pdev, gs_font_base *bfont,
  * were found.  A font is recognized as standard if it was loaded as a
  * resource, it has a UniqueId, and it has a standard name.
  */
-private bool
+static bool
 scan_for_standard_fonts(gx_device_pdf *pdev, const gs_font_dir *dir)
 {
     bool found = false;
@@ -328,7 +328,7 @@ pdf_clean_standard_fonts(const gx_device_pdf *pdev)
 /* ------ Private ------ */
 
 
-private int 
+static int 
 pdf_resize_array(gs_memory_t *mem, void **p, int elem_size, int old_size, int new_size)
 {
     void *q = gs_alloc_byte_array(mem, new_size, elem_size, "pdf_resize_array");
@@ -345,7 +345,7 @@ pdf_resize_array(gs_memory_t *mem, void **p, int elem_size, int old_size, int ne
 /*
  * Allocate and (minimally) initialize a font resource.
  */
-private int
+static int
 font_resource_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 		    pdf_resource_type_t rtype, gs_id rid, font_type ftype,
 		    int chars_count,
@@ -422,7 +422,7 @@ pdf_assign_font_object_id(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     return 0;
 }
 
-private int
+static int
 font_resource_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 			   gs_id rid, font_type ftype, int chars_count,
 			   pdf_font_write_contents_proc_t write_contents)
@@ -488,7 +488,7 @@ font_resource_encoded_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 /*
  * Record whether a Type 1 or Type 2 font is a Multiple Master instance.
  */
-private void
+static void
 set_is_MM_instance(pdf_font_resource_t *pdfont, const gs_font_base *pfont)
 {
     switch (pfont->FontType) {
@@ -588,7 +588,7 @@ pdf_font_resource_font(const pdf_font_resource_t *pdfont, bool complete)
  * 14, store its index (0..13) in *pindex and its similarity to the base
  * font (as determined by the font's same_font procedure) in *psame.
  */
-private bool
+static bool
 font_is_symbolic(const gs_font *font)
 {
     if (font->FontType == ft_composite)
@@ -603,7 +603,7 @@ font_is_symbolic(const gs_font *font)
 	return true;
     }
 }
-private bool
+static bool
 embed_list_includes(const gs_param_string_array *psa, const byte *chars,
 		    uint size)
 {
@@ -614,7 +614,7 @@ embed_list_includes(const gs_param_string_array *psa, const byte *chars,
 	    return true;
     return false;
 }
-private bool
+static bool
 embed_as_standard(gx_device_pdf *pdev, gs_font *font, int index,
 		  pdf_char_glyph_pair_t *pairs, int num_glyphs)
 {
@@ -629,7 +629,7 @@ embed_as_standard(gx_device_pdf *pdev, gs_font *font, int index,
     return (find_std_appearance(pdev, (gs_font_base *)font, -1,
 				pairs, num_glyphs) == index);
 }
-private bool
+static bool
 has_extension_glyphs(gs_font *pfont)
 {
     psf_glyph_enum_t genum;

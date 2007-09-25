@@ -114,7 +114,7 @@ static const calc_op_t calc_ops[] = {
 };
 
 /* Fix up an if or ifelse forward reference. */
-private void
+static void
 psc_fixup(byte *p, byte *to)
 {
     int skip = to - (p + 3);
@@ -124,7 +124,7 @@ psc_fixup(byte *p, byte *to)
 }
 
 /* Check whether the ref is a given operator or resolves to it */
-private bool
+static bool
 resolves_to_oper(i_ctx_t *i_ctx_p, const ref *pref, const op_proc_t proc)
 {
     if (!r_has_attr(pref, a_executable))
@@ -151,7 +151,7 @@ resolves_to_oper(i_ctx_t *i_ctx_p, const ref *pref, const op_proc_t proc)
  * Note that we arbitrarily limit the depth of procedure nesting.  pref is
  * known to be a procedure.
  */
-private int
+static int
 check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int *psize)
 {
     uint i;

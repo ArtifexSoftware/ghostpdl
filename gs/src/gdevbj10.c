@@ -100,11 +100,11 @@ bottom margins, use 0" and 0.5".
 #define BJ200_LETTER_SIDE_MARGIN	0.25
 #define BJ200_A4_SIDE_MARGIN		0.13
 
-private dev_proc_open_device(bj200_open);
+static dev_proc_open_device(bj200_open);
 
-private dev_proc_print_page(bj10e_print_page);
+static dev_proc_print_page(bj10e_print_page);
 
-private gx_device_procs prn_bj200_procs =
+static gx_device_procs prn_bj200_procs =
   prn_procs(bj200_open, gdev_prn_output_page, gdev_prn_close);
 
 const gx_device_printer far_data gs_bj200_device =
@@ -137,9 +137,9 @@ const gx_device_printer far_data gs_bj200_device =
 #define BJ10E_TOP_MARGIN		0.33
 #define BJ10E_BOTTOM_MARGIN		(0.50 + 0.04)
 
-private dev_proc_open_device(bj10e_open);
+static dev_proc_open_device(bj10e_open);
 
-private gx_device_procs prn_bj10e_procs =
+static gx_device_procs prn_bj10e_procs =
   prn_procs(bj10e_open, gdev_prn_output_page, gdev_prn_close);
 
 const gx_device_printer far_data gs_bj10e_device =
@@ -199,7 +199,7 @@ in the initialization sequence).)
 /* ------ Internal routines ------ */
 
 /* Open the printer, and set the margins. */
-private int
+static int
 bj200_open(gx_device *pdev)
 {
 	/* Change the margins according to the paper size.
@@ -224,7 +224,7 @@ bj200_open(gx_device *pdev)
 	return gdev_prn_open(pdev);
 }
 
-private int
+static int
 bj10e_open(gx_device *pdev)
 {
         /* See bj200_open() */
@@ -245,7 +245,7 @@ bj10e_open(gx_device *pdev)
 }
 
 /* Send the page to the printer. */
-private int
+static int
 bj10e_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {	int line_size = gx_device_raster((gx_device *)pdev, 0);
 	int xres = (int)pdev->x_pixels_per_inch;

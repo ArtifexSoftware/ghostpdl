@@ -31,9 +31,9 @@
 #include "gscencs.h"
 
 /* Forward references */
-private int make_font(i_ctx_t *, const gs_matrix *);
-private void make_uint_array(os_ptr, const uint *, int);
-private int setup_unicode_decoder(i_ctx_t *i_ctx_p, ref *Decoding);
+static int make_font(i_ctx_t *, const gs_matrix *);
+static void make_uint_array(os_ptr, const uint *, int);
+static int setup_unicode_decoder(i_ctx_t *i_ctx_p, ref *Decoding);
 
 /* The (global) font directory */
 gs_font_dir *ifont_dir = 0;	/* needed for buildfont */
@@ -47,7 +47,7 @@ zfont_mark_glyph_name(const gs_memory_t *mem, gs_glyph glyph, void *ignore_data)
 }
 
 /* Get a global glyph code.  */
-private int 
+static int 
 zfont_global_glyph_code(const gs_memory_t *mem, gs_const_string *gstr, gs_glyph *pglyph)
 {
     ref v;
@@ -60,7 +60,7 @@ zfont_global_glyph_code(const gs_memory_t *mem, gs_const_string *gstr, gs_glyph 
 }
 
 /* Initialize the font operators */
-private int
+static int
 zfont_init(i_ctx_t *i_ctx_p)
 {
     ifont_dir = gs_font_dir_alloc2(imemory, imemory->non_gc_memory);
@@ -71,7 +71,7 @@ zfont_init(i_ctx_t *i_ctx_p)
 }
 
 /* <font> <scale> scalefont <new_font> */
-private int
+static int
 zscalefont(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -87,7 +87,7 @@ zscalefont(i_ctx_t *i_ctx_p)
 }
 
 /* <font> <matrix> makefont <new_font> */
-private int
+static int
 zmakefont(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -114,7 +114,7 @@ zsetfont(i_ctx_t *i_ctx_p)
 }
 
 /* - currentfont <font> */
-private int
+static int
 zcurrentfont(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -125,7 +125,7 @@ zcurrentfont(i_ctx_t *i_ctx_p)
 }
 
 /* - cachestatus <mark> <bsize> <bmax> <msize> <mmax> <csize> <cmax> <blimit> */
-private int
+static int
 zcachestatus(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -138,7 +138,7 @@ zcachestatus(i_ctx_t *i_ctx_p)
 }
 
 /* <blimit> setcachelimit - */
-private int
+static int
 zsetcachelimit(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -150,7 +150,7 @@ zsetcachelimit(i_ctx_t *i_ctx_p)
 }
 
 /* <mark> <size> <lower> <upper> setcacheparams - */
-private int
+static int
 zsetcacheparams(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -178,7 +178,7 @@ zsetcacheparams(i_ctx_t *i_ctx_p)
 }
 
 /* - currentcacheparams <mark> <size> <lower> <upper> */
-private int
+static int
 zcurrentcacheparams(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -194,7 +194,7 @@ zcurrentcacheparams(i_ctx_t *i_ctx_p)
 }
 
 /* <font> .registerfont - */
-private int
+static int
 zregisterfont(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -210,7 +210,7 @@ zregisterfont(i_ctx_t *i_ctx_p)
 
 
 /* <Decoding> .setupUnicodeDecoder - */
-private int
+static int
 zsetupUnicodeDecoder(i_ctx_t *i_ctx_p)
 {   /* The allocation mode must be global. */
     os_ptr op = osp;
@@ -287,7 +287,7 @@ add_FID(i_ctx_t *i_ctx_p, ref * fp /* t_dictionary */ , gs_font * pfont,
 }
 
 /* Make a transformed font (common code for makefont/scalefont). */
-private int
+static int
 make_font(i_ctx_t *i_ctx_p, const gs_matrix * pmat)
 {
     os_ptr op = osp;
@@ -430,7 +430,7 @@ zdefault_make_font(gs_font_dir * pdir, const gs_font * oldfont,
 }
 
 /* Convert an array of (unsigned) integers to stack form. */
-private void
+static void
 make_uint_array(register os_ptr op, const uint * intp, int count)
 {
     int i;
@@ -441,7 +441,7 @@ make_uint_array(register os_ptr op, const uint * intp, int count)
 
 /* Remove scaled font and character cache entries that would be */
 /* invalidated by a restore. */
-private bool
+static bool
 purge_if_name_removed(const gs_memory_t *mem, cached_char * cc, void *vsave)
 {
     return alloc_name_index_is_since_save(mem, cc->code, vsave);
@@ -551,7 +551,7 @@ top:
 /* ------ Font procedures for PostScript fonts ------ */
 
 /* font_info procedure */
-private bool
+static bool
 zfont_info_has(const ref *pfidict, const char *key, gs_const_string *pmember)
 {
     ref *pvalue;
@@ -604,18 +604,18 @@ typedef struct gs_unicode_decoder_s {
 } gs_unicode_decoder;
 
 /* GC procedures */
-private 
+static 
 CLEAR_MARKS_PROC(unicode_decoder_clear_marks)
 {   gs_unicode_decoder *const pptr = vptr;
 
     r_clear_attrs(&pptr->data, l_mark);
 }
-private 
+static 
 ENUM_PTRS_WITH(unicode_decoder_enum_ptrs, gs_unicode_decoder *pptr) return 0;
 case 0:
 ENUM_RETURN_REF(&pptr->data);
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(unicode_decoder_reloc_ptrs, gs_unicode_decoder *pptr);
+static RELOC_PTRS_WITH(unicode_decoder_reloc_ptrs, gs_unicode_decoder *pptr);
 RELOC_REF_VAR(pptr->data);
 r_clear_attrs(&pptr->data, l_mark);
 RELOC_PTRS_END
@@ -633,7 +633,7 @@ zfont_get_to_unicode_map(gs_font_dir *dir)
     return (pud == NULL ? NULL : &pud->data);
 }
 
-private int
+static int
 setup_unicode_decoder(i_ctx_t *i_ctx_p, ref *Decoding)
 {
     gs_unicode_decoder *pud = gs_alloc_struct(imemory, gs_unicode_decoder, 

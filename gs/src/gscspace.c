@@ -29,16 +29,16 @@
 #include "gzstate.h"
 #include "stream.h"
 
-private cs_proc_install_cspace(gx_install_DeviceGray);
-private cs_proc_install_cspace(gx_install_DeviceRGB);
-private cs_proc_install_cspace(gx_install_DeviceCMYK);
+static cs_proc_install_cspace(gx_install_DeviceGray);
+static cs_proc_install_cspace(gx_install_DeviceRGB);
+static cs_proc_install_cspace(gx_install_DeviceCMYK);
 /*
  * Define the standard color space types.  We include DeviceCMYK in the base
  * build because it's too awkward to omit it, but we don't provide any of
  * the PostScript operator procedures (setcmykcolor, etc.) for dealing with
  * it.
  */
-private const gs_color_space_type gs_color_space_type_DeviceGray = {
+static const gs_color_space_type gs_color_space_type_DeviceGray = {
     gs_color_space_index_DeviceGray, true, true,
     &st_base_color_space, gx_num_components_1,
     gx_init_paint_1, gx_restrict01_paint_1,
@@ -50,7 +50,7 @@ private const gs_color_space_type gs_color_space_type_DeviceGray = {
     gx_serialize_cspace_type,
     gx_cspace_is_linear_default
 };
-private const gs_color_space_type gs_color_space_type_DeviceRGB = {
+static const gs_color_space_type gs_color_space_type_DeviceRGB = {
     gs_color_space_index_DeviceRGB, true, true,
     &st_base_color_space, gx_num_components_3,
     gx_init_paint_3, gx_restrict01_paint_3,
@@ -63,9 +63,9 @@ private const gs_color_space_type gs_color_space_type_DeviceRGB = {
     gx_cspace_is_linear_default
 };
 
-private cs_proc_set_overprint(gx_set_overprint_DeviceCMYK);
+static cs_proc_set_overprint(gx_set_overprint_DeviceCMYK);
 
-private const gs_color_space_type gs_color_space_type_DeviceCMYK = {
+static const gs_color_space_type gs_color_space_type_DeviceCMYK = {
     gs_color_space_index_DeviceCMYK, true, true,
     &st_base_color_space, gx_num_components_4,
     gx_init_paint_4, gx_restrict01_paint_4,
@@ -85,7 +85,7 @@ public_st_base_color_space();
 /* ------ Create/copy/destroy ------ */
 
 
-private void
+static void
 gs_cspace_final(void *vptr)
 {
     gs_color_space *pcs = (gs_color_space *)vptr;
@@ -105,7 +105,7 @@ gs_cspace_final(void *vptr)
     rc_decrement_only(pcs->base_space, "gs_cspace_final");
 }
 
-private gs_color_space *
+static gs_color_space *
 gs_cspace_alloc_with_id(gs_memory_t *mem, ulong id,
 		   const gs_color_space_type *pcstype)
 {
@@ -122,9 +122,9 @@ gs_cspace_alloc_with_id(gs_memory_t *mem, ulong id,
     return pcs;
 }
 
-private cs_proc_install_cspace(gx_install_DeviceGray);
-private cs_proc_install_cspace(gx_install_DeviceRGB);
-private cs_proc_install_cspace(gx_install_DeviceCMYK);
+static cs_proc_install_cspace(gx_install_DeviceGray);
+static cs_proc_install_cspace(gx_install_DeviceRGB);
+static cs_proc_install_cspace(gx_install_DeviceCMYK);
 
 /*
  * Generic allocation function for colorspace implementations. Return
@@ -183,7 +183,7 @@ gs_color_space_restrict_color(gs_client_color *pcc, const gs_color_space *pcs)
 }
 
 /* Install a DeviceGray color space. */
-private int
+static int
 gx_install_DeviceGray(gs_color_space * pcs, gs_state * pgs)
 {
 #if ENABLE_CUSTOM_COLOR_CALLBACK
@@ -236,7 +236,7 @@ gx_no_install_cspace(gs_color_space * pcs, gs_state * pgs)
 }
   
 /* Install a DeviceRGB color space. */
-private int
+static int
 gx_install_DeviceRGB(gs_color_space * pcs, gs_state * pgs)
 {
 #if ENABLE_CUSTOM_COLOR_CALLBACK
@@ -254,7 +254,7 @@ gx_install_DeviceRGB(gs_color_space * pcs, gs_state * pgs)
 }
 
 /* Install a DeviceCMYK color space. */
-private int
+static int
 gx_install_DeviceCMYK(gs_color_space * pcs, gs_state * pgs)
 {
 #if ENABLE_CUSTOM_COLOR_CALLBACK
@@ -292,7 +292,7 @@ gx_spot_colors_set_overprint(const gs_color_space * pcs, gs_state * pgs)
 }
 
 
-private bool
+static bool
 check_single_comp(int comp, frac targ_val, int ncomps, const frac * pval)
 {
     int     i;
@@ -320,7 +320,7 @@ check_single_comp(int comp, frac targ_val, int ncomps, const frac * pval)
  * If the color model is a "DeviceCMYK" color model, return the set of
  * process color components; otherwise return 0.
  */
-private gx_color_index
+static gx_color_index
 check_cmyk_color_model_comps(gx_device * dev)
 {
     gx_device_color_info *          pcinfo = &dev->color_info;
@@ -394,7 +394,7 @@ check_cmyk_color_model_comps(gx_device * dev)
  * color is set, the device color needs to be considered in setting up
  * the set of drawn components.
  */
-private int
+static int
 gx_set_overprint_DeviceCMYK(const gs_color_space * pcs, gs_state * pgs)
 {
     gx_device *             dev = pgs->device;
@@ -448,14 +448,14 @@ gx_cspace_no_linear(const gs_color_space *cs, const gs_imager_state * pis,
     return_error(gs_error_rangecheck);
 }
 
-private inline int
+static inline int
 cc2dc(const gs_color_space *cs, const gs_imager_state * pis, gx_device *dev,
 	    gx_device_color *dc, const gs_client_color *cc)
 {
     return cs->type->remap_color(cc, cs, dc, pis, dev, gs_color_select_texture);
 }
 
-private inline void
+static inline void
 interpolate_cc(gs_client_color *c, 
 	const gs_client_color *c0, const gs_client_color *c1, double t, int n)
 {
@@ -465,7 +465,7 @@ interpolate_cc(gs_client_color *c,
 	c->paint.values[i] = c0->paint.values[i] * t + c1->paint.values[i] * (1 - t);
 }
 
-private inline bool
+static inline bool
 is_dc_nearly_linear(const gx_device *dev, const gx_device_color *c, 
 	const gx_device_color *c0, const gx_device_color *c1, 
 	double t, int n, float smoothness)
@@ -498,7 +498,7 @@ is_dc_nearly_linear(const gx_device *dev, const gx_device_color *c,
 }
 
 /* Default color mapping linearity check, a 2-points case. */
-private int
+static int
 gx_cspace_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pis,
 		gx_device *dev, 
 		const gs_client_color *c0, const gs_client_color *c1,
@@ -531,7 +531,7 @@ gx_cspace_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pi
 }
 
 /* Default color mapping linearity check, a triangle case. */
-private int
+static int
 gx_cspace_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state * pis,
 		gx_device *dev, 
 		const gs_client_color *c0, const gs_client_color *c1,
@@ -620,7 +620,7 @@ gx_serialize_cspace_type(const gs_color_space * pcs, stream * s)
 
 /* GC procedures */
 
-private 
+static 
 ENUM_PTRS_BEGIN_PROC(color_space_enum_ptrs)
 {
     EV_CONST gs_color_space *pcs = vptr;
@@ -632,7 +632,7 @@ ENUM_PTRS_BEGIN_PROC(color_space_enum_ptrs)
     return ENUM_USING(*pcs->type->stype, vptr, size, index - 2);
     ENUM_PTRS_END_PROC
 }
-private 
+static 
 RELOC_PTRS_WITH(color_space_reloc_ptrs, gs_color_space *pcs)
 {
     RELOC_VAR(pcs->base_space);

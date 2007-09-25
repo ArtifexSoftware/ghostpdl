@@ -44,7 +44,7 @@ stream_puts(stream * s, const char *str)
 
 /* Print a format string up to the first variable substitution. */
 /* Return a pointer to the %, or to the terminating 0 if no % found. */
-private const char *
+static const char *
 pprintf_scan(stream * s, const char *format)
 {
     const char *fp = format;
@@ -61,7 +61,7 @@ pprintf_scan(stream * s, const char *format)
 }
 
 /* Print a short string on a stream. */
-private void
+static void
 pputs_short(stream *s, const char *str)
 {
     const char *p = str;

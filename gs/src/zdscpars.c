@@ -100,11 +100,11 @@ typedef struct dsc_data_s {
 } dsc_data_t;
 
 /* Structure descriptors */
-private void dsc_finalize(void *vptr);
+static void dsc_finalize(void *vptr);
 gs_private_st_simple_final(st_dsc_data_t, dsc_data_t, "dsc_data_struct", dsc_finalize);
 
 /* Define the key name for storing the instance pointer in a dictionary. */
-private const char * const dsc_dict_name = "DSC_struct";
+static const char * const dsc_dict_name = "DSC_struct";
 
 /* ---------------- Initialization / finalization ---------------- */
 
@@ -112,7 +112,7 @@ private const char * const dsc_dict_name = "DSC_struct";
  * If we return CDSC_OK then Russell's parser will make it best guess when
  * it encounters unexpected comment situations.
  */
-private int
+static int
 dsc_error_handler(void *caller_data, CDSC *dsc, unsigned int explanation,
 		  const char *line, unsigned int line_len)
 {
@@ -123,7 +123,7 @@ dsc_error_handler(void *caller_data, CDSC *dsc, unsigned int explanation,
  * This operator creates a new, initialized instance of the DSC parser.
  */
 /* <dict> .initialize_dsc_parser - */
-private int
+static int
 zinitialize_dsc_parser(i_ctx_t *i_ctx_p)
 {
     ref local_ref;
@@ -149,7 +149,7 @@ zinitialize_dsc_parser(i_ctx_t *i_ctx_p)
 /*
  * This routine will free the memory associated with Russell's parser.
  */
-private void
+static void
 dsc_finalize(void *vptr)
 {
     dsc_data_t * const st = vptr;
@@ -165,14 +165,14 @@ dsc_finalize(void *vptr)
 /* ------ Utilities for returning values ------ */
 
 /* Return an integer value. */
-private int
+static int
 dsc_put_int(gs_param_list *plist, const char *keyname, int value)
 {
     return param_write_int(plist, keyname, &value);
 }
 
 /* Return a string value. */
-private int
+static int
 dsc_put_string(gs_param_list *plist, const char *keyname,
 	       const char *string)
 {
@@ -183,7 +183,7 @@ dsc_put_string(gs_param_list *plist, const char *keyname,
 }
 
 /* Return a BoundingBox value. */
-private int
+static int
 dsc_put_bounding_box(gs_param_list *plist, const char *keyname,
 		     const CDSCBBOX *pbbox)
 {
@@ -209,43 +209,43 @@ dsc_put_bounding_box(gs_param_list *plist, const char *keyname,
  * These routines transfer data from the C structure into Postscript
  * key/value pairs in a dictionary.
  */
-private int
+static int
 dsc_adobe_header(gs_param_list *plist, const CDSC *pData)
 {
     return dsc_put_int(plist, "EPSF", (int)(pData->epsf? 1: 0));
 }
 
-private int
+static int
 dsc_creator(gs_param_list *plist, const CDSC *pData)
 {
     return dsc_put_string(plist, "Creator", pData->dsc_creator );
 }
 
-private int
+static int
 dsc_creation_date(gs_param_list *plist, const CDSC *pData)
 {
     return dsc_put_string(plist, "CreationDate", pData->dsc_date );
 }
 
-private int
+static int
 dsc_title(gs_param_list *plist, const CDSC *pData)
 {
     return dsc_put_string(plist, "Title", pData->dsc_title );
 }
 
-private int
+static int
 dsc_for(gs_param_list *plist, const CDSC *pData)
 {
     return dsc_put_string(plist, "For", pData->dsc_for);
 }
 
-private int
+static int
 dsc_bounding_box(gs_param_list *plist, const CDSC *pData)
 {
     return dsc_put_bounding_box(plist, "BoundingBox", pData->bbox);
 }
 
-private int
+static int
 dsc_page(gs_param_list *plist, const CDSC *pData)
 {
     int page_num = pData->page_count;
@@ -257,13 +257,13 @@ dsc_page(gs_param_list *plist, const CDSC *pData)
         return dsc_put_int(plist, "PageNum", 0 );
 }
 
-private int
+static int
 dsc_pages(gs_param_list *plist, const CDSC *pData)
 {
     return dsc_put_int(plist, "NumPages", pData->page_pages);
 }
 
-private int
+static int
 dsc_page_bounding_box(gs_param_list *plist, const CDSC *pData)
 {
     return dsc_put_bounding_box(plist, "PageBoundingBox", pData->page_bbox);
@@ -272,7 +272,7 @@ dsc_page_bounding_box(gs_param_list *plist, const CDSC *pData)
 /*
  * Translate Russell's defintions of orientation into Postscript's.
  */
-private int
+static int
 convert_orient(CDSC_ORIENTATION_ENUM orient)
 {
     switch (orient) {
@@ -284,7 +284,7 @@ convert_orient(CDSC_ORIENTATION_ENUM orient)
     }
 }
 
-private int
+static int
 dsc_page_orientation(gs_param_list *plist, const CDSC *pData)
 {
     int page_num = pData->page_count;
@@ -302,14 +302,14 @@ dsc_page_orientation(gs_param_list *plist, const CDSC *pData)
 			   convert_orient(pData->page_orientation));
 }
 
-private int
+static int
 dsc_orientation(gs_param_list *plist, const CDSC *pData)
 {
     return dsc_put_int(plist, "Orientation", 
 			   convert_orient(pData->page_orientation));
 }
 
-private int
+static int
 dsc_viewing_orientation(gs_param_list *plist, const CDSC *pData)
 {
     int page_num = pData->page_count;
@@ -352,7 +352,7 @@ typedef struct cmd_list_s {
 				   key/value pairs. */
 } cmdlist_t;
 
-private const cmdlist_t DSCcmdlist[] = { 
+static const cmdlist_t DSCcmdlist[] = { 
     { CDSC_PSADOBE,	    "Header",		dsc_adobe_header },
     { CDSC_CREATOR,	    "Creator",		dsc_creator },
     { CDSC_CREATIONDATE,    "CreationDate",	dsc_creation_date },
@@ -380,7 +380,7 @@ private const cmdlist_t DSCcmdlist[] = {
  * appropriate for our situation.  So we use this list to check for this
  * type of comment and do not send it to Russell's parser if found.
  */
-private const char * const BadCmdlist[] = {
+static const char * const BadCmdlist[] = {
     "%%BeginData:",
     "%%EndData",
     "%%BeginBinary:",
@@ -390,7 +390,7 @@ private const char * const BadCmdlist[] = {
 
 /* See comments at start of module for description. */
 /* <dict> <string> .parse_dsc_comments <dict> <dsc code> */
-private int
+static int
 zparse_dsc_comments(i_ctx_t *i_ctx_p)
 {
 #define MAX_DSC_MSG_SIZE (DSC_LINE_LENGTH + 4)	/* Allow for %% and CR/LF */

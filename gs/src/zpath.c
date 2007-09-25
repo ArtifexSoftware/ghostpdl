@@ -22,20 +22,20 @@
 #include "store.h"
 
 /* Forward references */
-private int common_to(i_ctx_t *,
+static int common_to(i_ctx_t *,
 		      int (*)(gs_state *, floatp, floatp));
-private int common_curve(i_ctx_t *,
+static int common_curve(i_ctx_t *,
   int (*)(gs_state *, floatp, floatp, floatp, floatp, floatp, floatp));
 
 /* - newpath - */
-private int
+static int
 znewpath(i_ctx_t *i_ctx_p)
 {
     return gs_newpath(igs);
 }
 
 /* - currentpoint <x> <y> */
-private int
+static int
 zcurrentpoint(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -79,7 +79,7 @@ zrlineto(i_ctx_t *i_ctx_p)
 }
 
 /* Common code for [r](move/line)to */
-private int
+static int
 common_to(i_ctx_t *i_ctx_p,
 	  int (*add_proc)(gs_state *, floatp, floatp))
 {
@@ -110,7 +110,7 @@ zrcurveto(i_ctx_t *i_ctx_p)
 }
 
 /* Common code for [r]curveto */
-private int
+static int
 common_curve(i_ctx_t *i_ctx_p,
 	     int (*add_proc)(gs_state *, floatp, floatp, floatp, floatp, floatp, floatp))
 {
@@ -134,21 +134,21 @@ zclosepath(i_ctx_t *i_ctx_p)
 }
 
 /* - initclip - */
-private int
+static int
 zinitclip(i_ctx_t *i_ctx_p)
 {
     return gs_initclip(igs);
 }
 
 /* - clip - */
-private int
+static int
 zclip(i_ctx_t *i_ctx_p)
 {
     return gs_clip(igs);
 }
 
 /* - eoclip - */
-private int
+static int
 zeoclip(i_ctx_t *i_ctx_p)
 {
     return gs_eoclip(igs);

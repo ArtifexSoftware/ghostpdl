@@ -33,13 +33,13 @@ typedef struct gx_device_tiff_s {
     gdev_tiff_state tiff;
 } gx_device_tiff;
 
-private dev_proc_print_page(tiff12_print_page);
-private dev_proc_print_page(tiff24_print_page);
+static dev_proc_print_page(tiff12_print_page);
+static dev_proc_print_page(tiff24_print_page);
 
-private const gx_device_procs tiff12_procs =
+static const gx_device_procs tiff12_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
-private const gx_device_procs tiff24_procs =
+static const gx_device_procs tiff24_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
 
@@ -73,7 +73,7 @@ typedef struct tiff_rgb_values_s {
     TIFF_ushort bps[3];
 } tiff_rgb_values;
 
-private const tiff_rgb_directory dir_rgb_template =
+static const tiff_rgb_directory dir_rgb_template =
 {
 	/* C's ridiculous rules about & and arrays require bps[0] here: */
     {TIFFTAG_BitsPerSample, TIFF_SHORT | TIFF_INDIRECT, 3, offset_of(tiff_rgb_values, bps[0])},
@@ -83,17 +83,17 @@ private const tiff_rgb_directory dir_rgb_template =
     {TIFFTAG_SamplesPerPixel, TIFF_SHORT, 1, 3},
 };
 
-private const tiff_rgb_values val_12_template = {
+static const tiff_rgb_values val_12_template = {
     {4, 4, 4}
 };
 
-private const tiff_rgb_values val_24_template = {
+static const tiff_rgb_values val_24_template = {
     {8, 8, 8}
 };
 
 /* ------ Private functions ------ */
 
-private int
+static int
 tiff12_print_page(gx_device_printer * pdev, FILE * file)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
@@ -145,7 +145,7 @@ tiff12_print_page(gx_device_printer * pdev, FILE * file)
     return code;
 }
 
-private int
+static int
 tiff24_print_page(gx_device_printer * pdev, FILE * file)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;

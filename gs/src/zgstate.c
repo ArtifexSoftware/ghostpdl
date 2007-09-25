@@ -32,7 +32,7 @@ private_st_int_remap_color_info();
 
 /* ------ Utilities ------ */
 
-private int
+static int
 zset_real(i_ctx_t *i_ctx_p, int (*set_proc)(gs_state *, floatp))
 {
     os_ptr op = osp;
@@ -47,7 +47,7 @@ zset_real(i_ctx_t *i_ctx_p, int (*set_proc)(gs_state *, floatp))
     return code;
 }
 
-private int
+static int
 zset_bool(i_ctx_t *i_ctx_p, void (*set_proc)(gs_state *, bool))
 {
     os_ptr op = osp;
@@ -58,7 +58,7 @@ zset_bool(i_ctx_t *i_ctx_p, void (*set_proc)(gs_state *, bool))
     return 0;
 }
 
-private int
+static int
 zcurrent_bool(i_ctx_t *i_ctx_p, bool (*current_proc)(const gs_state *))
 {
     os_ptr op = osp;
@@ -68,7 +68,7 @@ zcurrent_bool(i_ctx_t *i_ctx_p, bool (*current_proc)(const gs_state *))
     return 0;
 }
 
-private int
+static int
 zset_uint(i_ctx_t *i_ctx_p, void (*set_proc)(gs_state *, uint))
 {
     os_ptr op = osp;
@@ -79,7 +79,7 @@ zset_uint(i_ctx_t *i_ctx_p, void (*set_proc)(gs_state *, uint))
     return 0;
 }
 
-private int
+static int
 zcurrent_uint(i_ctx_t *i_ctx_p, uint (*current_proc)(const gs_state *))
 {
     os_ptr op = osp;
@@ -92,10 +92,10 @@ zcurrent_uint(i_ctx_t *i_ctx_p, uint (*current_proc)(const gs_state *))
 /* ------ Operations on the entire graphics state ------ */
 
 /* "Client" procedures */
-private void *gs_istate_alloc(gs_memory_t * mem);
-private int gs_istate_copy(void *to, const void *from);
-private void gs_istate_free(void *old, gs_memory_t * mem);
-private const gs_state_client_procs istate_procs = {
+static void *gs_istate_alloc(gs_memory_t * mem);
+static int gs_istate_copy(void *to, const void *from);
+static void gs_istate_free(void *old, gs_memory_t * mem);
+static const gs_state_client_procs istate_procs = {
     gs_istate_alloc,
     gs_istate_copy,
     gs_istate_free,
@@ -167,7 +167,7 @@ zgrestoreall(i_ctx_t *i_ctx_p)
 }
 
 /* - initgraphics - */
-private int
+static int
 zinitgraphics(i_ctx_t *i_ctx_p)
 {
     /*
@@ -181,7 +181,7 @@ zinitgraphics(i_ctx_t *i_ctx_p)
 /* ------ Operations on graphics state elements ------ */
 
 /* <num> setlinewidth - */
-private int
+static int
 zsetlinewidth(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -202,7 +202,7 @@ zsetlinewidth(i_ctx_t *i_ctx_p)
 }
 
 /* - currentlinewidth <num> */
-private int
+static int
 zcurrentlinewidth(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -213,7 +213,7 @@ zcurrentlinewidth(i_ctx_t *i_ctx_p)
 }
 
 /* <cap_int> .setlinecap - */
-private int
+static int
 zsetlinecap(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -227,7 +227,7 @@ zsetlinecap(i_ctx_t *i_ctx_p)
 }
 
 /* - currentlinecap <cap_int> */
-private int
+static int
 zcurrentlinecap(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -238,7 +238,7 @@ zcurrentlinecap(i_ctx_t *i_ctx_p)
 }
 
 /* <join_int> .setlinejoin - */
-private int
+static int
 zsetlinejoin(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -252,7 +252,7 @@ zsetlinejoin(i_ctx_t *i_ctx_p)
 }
 
 /* - currentlinejoin <join_int> */
-private int
+static int
 zcurrentlinejoin(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -263,14 +263,14 @@ zcurrentlinejoin(i_ctx_t *i_ctx_p)
 }
 
 /* <num> setmiterlimit - */
-private int
+static int
 zsetmiterlimit(i_ctx_t *i_ctx_p)
 {
     return zset_real(i_ctx_p, gs_setmiterlimit);
 }
 
 /* - currentmiterlimit <num> */
-private int
+static int
 zcurrentmiterlimit(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -281,7 +281,7 @@ zcurrentmiterlimit(i_ctx_t *i_ctx_p)
 }
 
 /* <array> <offset> setdash - */
-private int
+static int
 zsetdash(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -323,7 +323,7 @@ zsetdash(i_ctx_t *i_ctx_p)
 }
 
 /* - currentdash <array> <offset> */
-private int
+static int
 zcurrentdash(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -335,14 +335,14 @@ zcurrentdash(i_ctx_t *i_ctx_p)
 }
 
 /* <num> setflat - */
-private int
+static int
 zsetflat(i_ctx_t *i_ctx_p)
 {
     return zset_real(i_ctx_p, gs_setflat);
 }
 
 /* - currentflat <num> */
-private int
+static int
 zcurrentflat(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -355,21 +355,21 @@ zcurrentflat(i_ctx_t *i_ctx_p)
 /* ------ Extensions ------ */
 
 /* <bool> .setaccuratecurves - */
-private int
+static int
 zsetaccuratecurves(i_ctx_t *i_ctx_p)
 {
     return zset_bool(i_ctx_p, gs_setaccuratecurves);
 }
 
 /* - .currentaccuratecurves <bool> */
-private int
+static int
 zcurrentaccuratecurves(i_ctx_t *i_ctx_p)
 {
     return zcurrent_bool(i_ctx_p, gs_currentaccuratecurves);
 }
 
 /* <join_int|-1> .setcurvejoin - */
-private int
+static int
 zsetcurvejoin(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -386,7 +386,7 @@ zsetcurvejoin(i_ctx_t *i_ctx_p)
 }
 
 /* - .currentcurvejoin <join_int|-1> */
-private int
+static int
 zcurrentcurvejoin(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -397,7 +397,7 @@ zcurrentcurvejoin(i_ctx_t *i_ctx_p)
 }
 
 /* <adjust.x> <adjust.y> .setfilladjust2 - */
-private int
+static int
 zsetfilladjust2(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -414,7 +414,7 @@ zsetfilladjust2(i_ctx_t *i_ctx_p)
 }
 
 /* - .currentfilladjust2 <adjust.x> <adjust.y> */
-private int
+static int
 zcurrentfilladjust2(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -428,21 +428,21 @@ zcurrentfilladjust2(i_ctx_t *i_ctx_p)
 }
 
 /* <bool> .setdashadapt - */
-private int
+static int
 zsetdashadapt(i_ctx_t *i_ctx_p)
 {
     return zset_bool(i_ctx_p, gs_setdashadapt);
 }
 
 /* - .currentdashadapt <bool> */
-private int
+static int
 zcurrentdashadapt(i_ctx_t *i_ctx_p)
 {
     return zcurrent_bool(i_ctx_p, gs_currentdashadapt);
 }
 
 /* <num> <bool> .setdotlength - */
-private int
+static int
 zsetdotlength(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -460,7 +460,7 @@ zsetdotlength(i_ctx_t *i_ctx_p)
 }
 
 /* - .currentdotlength <num> <bool> */
-private int
+static int
 zcurrentdotlength(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -472,42 +472,42 @@ zcurrentdotlength(i_ctx_t *i_ctx_p)
 }
 
 /* - .setdotorientation - */
-private int
+static int
 zsetdotorientation(i_ctx_t *i_ctx_p)
 {
     return gs_setdotorientation(igs);
 }
 
 /* - .dotorientation - */
-private int
+static int
 zdotorientation(i_ctx_t *i_ctx_p)
 {
     return gs_dotorientation(igs);
 }
 
 /* <bool> .setlimitclamp - */
-private int
+static int
 zsetlimitclamp(i_ctx_t *i_ctx_p)
 {
     return zset_bool(i_ctx_p, gs_setlimitclamp);
 }
 
 /* - .currentlimitclamp <bool> */
-private int
+static int
 zcurrentlimitclamp(i_ctx_t *i_ctx_p)
 {
     return zcurrent_bool(i_ctx_p, gs_currentlimitclamp);
 }
 
 /* <int> .settextrenderingmode - */
-private int
+static int
 zsettextrenderingmode(i_ctx_t *i_ctx_p)
 {
     return zset_uint(i_ctx_p, gs_settextrenderingmode);
 }
 
 /* - .currenttextrenderingmode <int> */
-private int
+static int
 zcurrenttextrenderingmode(i_ctx_t *i_ctx_p)
 {
     return zcurrent_uint(i_ctx_p, gs_currenttextrenderingmode);
@@ -561,14 +561,14 @@ const op_def zgstate3_op_defs[] = {
 /* ------ Internal routines ------ */
 
 /* Allocate the interpreter's part of a graphics state. */
-private void *
+static void *
 gs_istate_alloc(gs_memory_t * mem)
 {
     return gs_alloc_struct(mem, int_gstate, &st_int_gstate, "int_gsave");
 }
 
 /* Copy the interpreter's part of a graphics state. */
-private int
+static int
 gs_istate_copy(void *to, const void *from)
 {
     *(int_gstate *) to = *(const int_gstate *)from;
@@ -576,7 +576,7 @@ gs_istate_copy(void *to, const void *from)
 }
 
 /* Free the interpreter's part of a graphics state. */
-private void
+static void
 gs_istate_free(void *old, gs_memory_t * mem)
 {
     gs_free_object(mem, old, "int_grestore");

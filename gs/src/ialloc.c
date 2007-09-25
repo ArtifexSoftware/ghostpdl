@@ -130,7 +130,7 @@ ialloc_reset_requested(gs_dual_memory_t * dmem)
 /* ================ Refs ================ */
 
 #ifdef DEBUG
-private int
+static int
 ialloc_trace_space(const gs_ref_memory_t *imem)
 {
     return imem->space + (imem->stable_memory == (const gs_memory_t *)imem);

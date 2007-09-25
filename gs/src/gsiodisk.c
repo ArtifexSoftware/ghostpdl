@@ -107,16 +107,16 @@
 #include "gsutil.h"
 
 /* Function prototypes */
-private iodev_proc_init(iodev_diskn_init);
-private iodev_proc_fopen(iodev_diskn_fopen);
-private iodev_proc_delete_file(diskn_delete);
-private iodev_proc_rename_file(diskn_rename);
-private iodev_proc_file_status(diskn_status);
-private iodev_proc_enumerate_files(diskn_enumerate_files);
-private iodev_proc_enumerate_next(diskn_enumerate_next);
-private iodev_proc_enumerate_close(diskn_enumerate_close);
-private iodev_proc_get_params(diskn_get_params);
-private iodev_proc_put_params(diskn_put_params);
+static iodev_proc_init(iodev_diskn_init);
+static iodev_proc_fopen(iodev_diskn_fopen);
+static iodev_proc_delete_file(diskn_delete);
+static iodev_proc_rename_file(diskn_rename);
+static iodev_proc_file_status(diskn_status);
+static iodev_proc_enumerate_files(diskn_enumerate_files);
+static iodev_proc_enumerate_next(diskn_enumerate_next);
+static iodev_proc_enumerate_close(diskn_enumerate_close);
+static iodev_proc_get_params(diskn_get_params);
+static iodev_proc_put_params(diskn_put_params);
 iodev_proc_put_params(diskn_os_put_params);
 
 /* Define a diskn (%diskn%) device macro */
@@ -173,15 +173,15 @@ typedef struct map_file_enum_s {
 gs_private_st_ptrs2(st_map_file_enum, struct map_file_enum_s, "map_file_enum",
     map_file_enum_enum_ptrs, map_file_enum_reloc_ptrs, pattern, root);
 
-private void * map_file_enum_init(gs_memory_t *, const char *, const char *);
-private bool map_file_enum_next(void *, char *);
-private void map_file_enum_close(void *);
-private bool map_file_name_get(const char *, const char *, char *);
-private void map_file_name_add(const char *, const char *);
-private void map_file_name_ren(const char*, const char *, const char *);
-private void map_file_name_del(const char *, const char *);
+static void * map_file_enum_init(gs_memory_t *, const char *, const char *);
+static bool map_file_enum_next(void *, char *);
+static void map_file_enum_close(void *);
+static bool map_file_name_get(const char *, const char *, char *);
+static void map_file_name_add(const char *, const char *);
+static void map_file_name_ren(const char*, const char *, const char *);
+static void map_file_name_del(const char *, const char *);
 
-private int
+static int
 iodev_diskn_init(gx_io_device * iodev, gs_memory_t * mem)
 {
     diskn_state * pstate = gs_alloc_struct(mem, diskn_state, &st_diskn_state,
@@ -196,7 +196,7 @@ iodev_diskn_init(gx_io_device * iodev, gs_memory_t * mem)
 }
 
 
-private int
+static int
 iodev_diskn_fopen(gx_io_device * iodev, const char *fname, const char *access,
 	       FILE ** pfile, char *rfname, uint rnamelen)
 {
@@ -220,7 +220,7 @@ iodev_diskn_fopen(gx_io_device * iodev, const char *fname, const char *access,
     return iodev_os_fopen(iodev_default, realname, access, pfile, rfname, rnamelen);
 }
 
-private int
+static int
 diskn_delete(gx_io_device * iodev, const char *fname)
 {
     char realname[gp_file_name_sizeof];
@@ -238,7 +238,7 @@ diskn_delete(gx_io_device * iodev, const char *fname)
     return (unlink(realname) == 0 ? 0 : gs_error_ioerror);
 }
 
-private int
+static int
 diskn_rename(gx_io_device * iodev, const char *from, const char *to)
 {
     char toreal[gp_file_name_sizeof];
@@ -265,7 +265,7 @@ diskn_rename(gx_io_device * iodev, const char *from, const char *to)
     return code;
 }
 
-private int
+static int
 diskn_status(gx_io_device * iodev, const char *fname, struct stat *pstat)
 {
     char realname[gp_file_name_sizeof];
@@ -282,7 +282,7 @@ diskn_status(gx_io_device * iodev, const char *fname, struct stat *pstat)
     return (stat((char *)realname, pstat) < 0 ? gs_error_undefinedfilename : 0);
 }
 
-private file_enum *
+static file_enum *
 diskn_enumerate_files_init(gx_io_device * iodev, const char *pat, uint patlen,
 	     gs_memory_t * mem)
 {
@@ -294,13 +294,13 @@ diskn_enumerate_files_init(gx_io_device * iodev, const char *pat, uint patlen,
     return (file_enum *)map_file_enum_init(mem, (char *)pstate->root, patstr);
 }
 
-private void
+static void
 diskn_enumerate_close(file_enum *pfen)
 {
     map_file_enum_close((void *)pfen);
 }
 
-private uint
+static uint
 diskn_enumerate_next(file_enum *pfen, char *ptr, uint maxlen)
 {
     if (map_file_enum_next((void *)pfen, ptr))
@@ -310,7 +310,7 @@ diskn_enumerate_next(file_enum *pfen, char *ptr, uint maxlen)
     return ~(uint) 0;
 }
 
-private int
+static int
 diskn_get_params(gx_io_device * iodev, gs_param_list * plist)
 {
     int code;
@@ -355,7 +355,7 @@ diskn_get_params(gx_io_device * iodev, gs_param_list * plist)
     }
 }
 
-private int
+static int
 diskn_put_params(gx_io_device *iodev, gs_param_list *plist)
 {
     gs_param_string rootstr;
@@ -407,7 +407,7 @@ diskn_put_params(gx_io_device *iodev, gs_param_list *plist)
  * attributes - File attributes string
  * Returns - NULL if error, file structure pointer if no error
  */
-private FILE *
+static FILE *
 MapFileOpen(const char * rootpath, const char * filename, const char * attributes)
 {
     char fullname[BUFFER_LENGTH];
@@ -425,7 +425,7 @@ MapFileOpen(const char * rootpath, const char * filename, const char * attribute
  * value - pointer to version number storage location
  * Returns 1 if data read, else 0
  */
-private int
+static int
 MapFileReadVersion(FILE * mapfile, int * value)
 {
     int code = fscanf(mapfile, "FileVersion\t%d\t", value) == 1 ? 1 : 0;
@@ -449,7 +449,7 @@ MapFileReadVersion(FILE * mapfile, int * value)
  * stream - File structure pointer
  * value - version number
  */
-private void
+static void
 MapFileWriteVersion(FILE * mapfile, int value)
 {
     fprintf(mapfile,
@@ -465,7 +465,7 @@ MapFileWriteVersion(FILE * mapfile, int value)
  * value - pointer to file number storage location
  * Returns 1 if data read, else 0
  */
-private int
+static int
 MapFileRead(FILE * mapfile, char * namebuf, int * value)
 {
     int count = 0;
@@ -496,7 +496,7 @@ MapFileRead(FILE * mapfile, char * namebuf, int * value)
  * namebuf - Buffer for the file name storage
  * value - file number
  */
-private void
+static void
 MapFileWrite(FILE * mapfile, const char * namebuf, int value)
 {
     fprintf(mapfile, " %d\t%s\n", value, namebuf);
@@ -508,7 +508,7 @@ MapFileWrite(FILE * mapfile, const char * namebuf, int value)
  * rootpath - Path to base disk location.
  * filename - File name string
  */
-private void
+static void
 MapFileUnlink(const char * rootpath, const char * filename)
 {
     char fullname[BUFFER_LENGTH];
@@ -526,7 +526,7 @@ MapFileUnlink(const char * rootpath, const char * filename)
  * oldfilename - Old file name string
  * newfilename - New file name string
  */
-private void
+static void
 MapFileRename(const char * rootpath, const char * newfilename, const char * oldfilename)
 {
     char oldfullname[BUFFER_LENGTH];
@@ -550,7 +550,7 @@ MapFileRename(const char * rootpath, const char * newfilename, const char * oldf
  * name            char*   string to search pattern for full match (font\Ryumin-Light)
  * returns	    -1 if file not found, file number if found.
  */
-private int
+static int
 MapToFile(const char* rootpath, const char* name)
 {
     FILE * mapfile;
@@ -589,7 +589,7 @@ MapToFile(const char* rootpath, const char* name)
  *                          NULL means all files
  * Returns:		    NULL if error, else pointer to enumeration structure.
  */
-private void *
+static void *
 map_file_enum_init(gs_memory_t * mem, const char * root_name, const char * search_pattern)
 {
     int file_version;
@@ -640,7 +640,7 @@ map_file_enum_init(gs_memory_t * mem, const char * root_name, const char * searc
  * enum_mem        void*   pointer for map file enum structure
  * search_pattern  char*   string array for next target
  */
-private bool
+static bool
 map_file_enum_next(void * enum_mem, char* target)
 {
     int d = -1;
@@ -676,7 +676,7 @@ map_file_enum_next(void * enum_mem, char* target)
  * cleans up after an enumeration, this may only be called
  * if map_file_enum_init did not fail
  */
-private void
+static void
 map_file_enum_close(void * enum_mem)
 {
     map_file_enum * mapfileenum = (map_file_enum *) enum_mem;
@@ -702,7 +702,7 @@ map_file_enum_close(void * enum_mem)
  * Fname           char*   name of the entry to find in the map
  * osname          char*   resulting os specific path to the file
  */
-private bool
+static bool
 map_file_name_get(const char * root_name, const char * Fname, char * osname)
 {
     int d = MapToFile(root_name, Fname);
@@ -727,7 +727,7 @@ map_file_name_get(const char * root_name, const char * Fname, char * osname)
  * root_name       char*   string of the base path where in disk0 reside (C:\PS\Disk0\)
  * Fname           char*   name of the entry to add to the map
  */
-private void
+static void
 map_file_name_del(const char * root_name, const char * Fname)
 {
     /*  search for target entry */
@@ -778,7 +778,7 @@ map_file_name_del(const char * root_name, const char * Fname)
  * root_name       char*   string of the base path where in disk0 reside (C:\PS\Disk0\)
  * Fname           char*   name of the entry to add to the map
  */
-private void
+static void
 map_file_name_add(const char * root_name, const char * Fname)
 {
     /* 
@@ -836,7 +836,7 @@ map_file_name_add(const char * root_name, const char * Fname)
  * oldname         char*   name currently existing in the map
  * newname         char*   name to change the entry indicated by oldname into
  */
-private void
+static void
 map_file_name_ren(const char* root_name, const char * oldname, const char * newname)
 {   
     /*  search for target entry */

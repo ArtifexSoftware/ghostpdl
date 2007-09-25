@@ -35,11 +35,11 @@
  *      pdfmark - see gdevpdfm.c
  *	DSC - processed in this file
  */
-private int pdf_dsc_process(gx_device_pdf * pdev,
+static int pdf_dsc_process(gx_device_pdf * pdev,
 			    const gs_param_string_array * pma);
 
-private const int CoreDistVersion = 5000;	/* Distiller 5.0 */
-private const gs_param_item_t pdf_param_items[] = {
+static const int CoreDistVersion = 5000;	/* Distiller 5.0 */
+static const gs_param_item_t pdf_param_items[] = {
 #define pi(key, type, memb) { key, type, offset_of(gx_device_pdf, memb) }
 
 	/* Acrobat Distiller 4 parameters */
@@ -212,7 +212,7 @@ gdev_pdf_get_params(gx_device * dev, gs_param_list * plist)
 /* ---------------- Put parameters ---------------- */
 
 /* Put parameters, implementation */
-private int
+static int
 gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_param_list * plist)
 {
     int ecode, code;
@@ -550,7 +550,7 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 
 /* ---------------- Process DSC comments ---------------- */
 
-private int
+static int
 pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 {
     /*

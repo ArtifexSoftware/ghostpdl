@@ -25,7 +25,7 @@
 private_st_AXE_state();
 
 /* Initialize the state */
-private int
+static int
 s_AXE_init(stream_state * st)
 {
     stream_AXE_state *const ss = (stream_AXE_state *) st;
@@ -34,7 +34,7 @@ s_AXE_init(stream_state * st)
 }
 
 /* Process a buffer */
-private int
+static int
 s_AXE_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
@@ -77,7 +77,7 @@ const stream_template s_AXE_template =
 private_st_AXD_state();
 
 /* Initialize the state */
-private int
+static int
 s_AXD_init(stream_state * st)
 {
     stream_AXD_state *const ss = (stream_AXD_state *) st;
@@ -86,7 +86,7 @@ s_AXD_init(stream_state * st)
 }
 
 /* Process a buffer */
-private int
+static int
 s_AXD_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
@@ -143,7 +143,7 @@ const stream_template s_AXD_template =
 /* ------ PSStringEncode ------ */
 
 /* Process a buffer */
-private int
+static int
 s_PSSE_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
@@ -229,7 +229,7 @@ s_PSSD_init(stream_state * st)
 }
 
 /* Process a buffer */
-private int
+static int
 s_PSSD_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {

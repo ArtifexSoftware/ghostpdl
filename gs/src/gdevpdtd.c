@@ -145,14 +145,14 @@ gs_public_st_basic_super(st_pdf_sub_font_descriptor,
 /* ---------------- Private ---------------- */
 
 /* Get the ID of font descriptor metrics. */
-inline private long
+static inline long
 pdf_font_descriptor_common_id(const pdf_font_descriptor_common_t *pfdc)
 {
     return pdf_resource_id((const pdf_resource_t *)pfdc);
 }
 
 /* Write the common part of a FontDescriptor, aside from the final >>. */
-private int
+static int
 write_FontDescriptor_common(gx_device_pdf *pdev,
 			    const pdf_font_descriptor_common_t *pfd)
 {

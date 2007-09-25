@@ -25,7 +25,7 @@ typedef ulong word;
 
 /* The device descriptors */
 
-private dev_proc_print_page(coslw_print_page);
+static dev_proc_print_page(coslw_print_page);
 
 const gx_device_printer gs_coslw2p_device =
 prn_device(prn_std_procs, "coslw2p",
@@ -44,7 +44,7 @@ prn_device(prn_std_procs, "coslwxl",
 /* ------ Internal routines ------ */
 
 /* Send the page to the printer. */
-private int
+static int
 coslw_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);

@@ -115,7 +115,7 @@ typedef struct {
     int l;
 } wts_vec_t;
 
-private void
+static void
 wts_vec_set(wts_vec_t *wv, int u, int v, int k, int l)
 {
     wv->u = u;
@@ -124,7 +124,7 @@ wts_vec_set(wts_vec_t *wv, int u, int v, int k, int l)
     wv->l = l;
 }
 
-private wts_bigint
+static wts_bigint
 wts_vec_smag(const wts_vec_t *a)
 {
     wts_bigint u = a->u;
@@ -132,7 +132,7 @@ wts_vec_smag(const wts_vec_t *a)
     return u * u + v * v;
 }
 
-private void
+static void
 wts_vec_add(wts_vec_t *a, const wts_vec_t *b, const wts_vec_t *c)
 {
     a->u = b->u + c->u;
@@ -141,7 +141,7 @@ wts_vec_add(wts_vec_t *a, const wts_vec_t *b, const wts_vec_t *c)
     a->l = b->l + c->l;
 }
 
-private void
+static void
 wts_vec_sub(wts_vec_t *a, const wts_vec_t *b, const wts_vec_t *c)
 {
     a->u = b->u - c->u;
@@ -164,7 +164,7 @@ wts_vec_sub(wts_vec_t *a, const wts_vec_t *b, const wts_vec_t *c)
  *
  * On return, @a and @b contain the result. @c is destroyed.
  **/
-private void
+static void
 wts_vec_gcd3(wts_vec_t *a, wts_vec_t *b, wts_vec_t *c)
 {
     wts_vec_t d, e;
@@ -215,7 +215,7 @@ wts_vec_gcd3(wts_vec_t *a, wts_vec_t *b, wts_vec_t *c)
     }
 }
 
-private wts_bigint
+static wts_bigint
 wts_vec_cross(const wts_vec_t *a, const wts_vec_t *b)
 {
     wts_bigint au = a->u;
@@ -225,7 +225,7 @@ wts_vec_cross(const wts_vec_t *a, const wts_vec_t *b)
     return au * bv - av * bu;
 }
 
-private void
+static void
 wts_vec_neg(wts_vec_t *a)
 {
     a->u = -a->u;
@@ -235,7 +235,7 @@ wts_vec_neg(wts_vec_t *a)
 }
 
 /* compute k mod m */
-private void
+static void
 wts_vec_modk(wts_vec_t *a, int m)
 {
     while (a->k < 0) a->k += m;
@@ -243,7 +243,7 @@ wts_vec_modk(wts_vec_t *a, int m)
 }
 
 /* Compute modulo in rational cell. */
-private void
+static void
 wts_vec_modkls(wts_vec_t *a, int m, int i, int s)
 {
     while (a->l < 0) {
@@ -258,7 +258,7 @@ wts_vec_modkls(wts_vec_t *a, int m, int i, int s)
     while (a->k >= m) a->k -= m;
 }
 
-private void
+static void
 wts_set_mat(gx_wts_cell_params_t *wcp, double sratiox, double sratioy,
 	    double sangledeg)
 {
@@ -274,7 +274,7 @@ wts_set_mat(gx_wts_cell_params_t *wcp, double sratiox, double sratioy,
 /**
  * Calculate Screen H cell sizes.
  **/
-private void
+static void
 wts_cell_calc_h(double inc, int *px1, int *pxwidth, double *pp1, double memw)
 {
     double minrep = pow(2, memw) * 50 / pow(2, 7.5);
@@ -317,7 +317,7 @@ wts_cell_calc_h(double inc, int *px1, int *pxwidth, double *pp1, double memw)
 
 /* Implementation for Screen H. This is optimized for 0 and 45 degree
    rotations. */
-private gx_wts_cell_params_t *
+static gx_wts_cell_params_t *
 wts_pick_cell_size_h(double sratiox, double sratioy, double sangledeg,
 		     double memw)
 {
@@ -345,7 +345,7 @@ wts_pick_cell_size_h(double sratiox, double sratioy, double sangledeg,
     return &wcph->base;
 }
 
-private double
+static double
 wts_qart(double r, double rbase, double p, double pbase)
 {
    if (p < 1e-5) {
@@ -356,7 +356,7 @@ wts_qart(double r, double rbase, double p, double pbase)
 }
 
 #ifdef VERBOSE
-private void
+static void
 wts_print_j_jump(const gx_wts_cell_params_j_t *wcpj, const char *name,
 		 double pa, int xa, int ya)
 {
@@ -366,7 +366,7 @@ wts_print_j_jump(const gx_wts_cell_params_j_t *wcpj, const char *name,
 	      wcpj->vfast_a * xa + wcpj->vslow_a * ya);
 }
 
-private void
+static void
 wts_j_add_jump(const gx_wts_cell_params_j_t *wcpj, double *pu, double *pv, 
 	       double pa, int xa, int ya)
 {
@@ -378,7 +378,7 @@ wts_j_add_jump(const gx_wts_cell_params_j_t *wcpj, double *pu, double *pv,
     *pv += pa * jump_v;
 }
 
-private void
+static void
 wts_print_j(const gx_wts_cell_params_j_t *wcpj)
 {
     double uf, vf;
@@ -423,7 +423,7 @@ wts_print_j(const gx_wts_cell_params_j_t *wcpj)
  *
  * Return value: Quality score for parameters chosen.
  **/
-private double
+static double
 wts_set_scr_jxi_try(gx_wts_cell_params_j_t *wcpj, int m, double qb,
 		    double jmem)
 {
@@ -668,7 +668,7 @@ wts_set_scr_jxi_try(gx_wts_cell_params_j_t *wcpj, int m, double qb,
     return qbi;
 }
 
-private int
+static int
 wts_double_to_int_cap(double d)
 {
     if (d > 0x7fffffff)
@@ -689,7 +689,7 @@ wts_double_to_int_cap(double d)
  *
  * Return value: Quality score for parameters chosen.
  **/
-private double
+static double
 wts_set_scr_jxi(gx_wts_cell_params_j_t *wcpj, double jmem)
 {
     int i, imax;
@@ -724,7 +724,7 @@ wts_set_scr_jxi(gx_wts_cell_params_j_t *wcpj, double jmem)
 }
 
 /* Implementation for Screen J. This is optimized for general angles. */
-private gx_wts_cell_params_t *
+static gx_wts_cell_params_t *
 wts_pick_cell_size_j(double sratiox, double sratioy, double sangledeg,
 		     double memw)
 {
@@ -754,13 +754,13 @@ typedef struct {
     double memw;
 } wts_cell_size_key;
 
-private void *
+static void *
 wts_cache_alloc_callback(void *data, int bytes)
 {
     return malloc(bytes);
 }
 
-private void
+static void
 store_be32(byte *ptr, int x)
 {
     ptr[0] = (x >> 24) & 0xff;
@@ -874,7 +874,7 @@ typedef struct {
     double uslow2, vslow2;
 } gs_wts_screen_enum_h_t;
 
-private gs_wts_screen_enum_t *
+static gs_wts_screen_enum_t *
 gs_wts_screen_enum_j_new(gx_wts_cell_params_t *wcp)
 {
     gs_wts_screen_enum_j_t *wsej;
@@ -891,7 +891,7 @@ gs_wts_screen_enum_j_new(gx_wts_cell_params_t *wcp)
     return (gs_wts_screen_enum_t *)wsej;
 }
 
-private int
+static int
 gs_wts_screen_enum_j_currentpoint(gs_wts_screen_enum_t *self,
 				  gs_point *ppt)
 {
@@ -915,7 +915,7 @@ gs_wts_screen_enum_j_currentpoint(gs_wts_screen_enum_t *self,
     return 0;
 }
 
-private gs_wts_screen_enum_t *
+static gs_wts_screen_enum_t *
 gs_wts_screen_enum_h_new(gx_wts_cell_params_t *wcp)
 {
     gs_wts_screen_enum_h_t *wseh;
@@ -950,7 +950,7 @@ gs_wts_screen_enum_h_new(gx_wts_cell_params_t *wcp)
     return &wseh->base;
 }
 
-private int
+static int
 gs_wts_screen_enum_h_currentpoint(gs_wts_screen_enum_t *self,
 				  gs_point *ppt)
 {
@@ -1023,7 +1023,7 @@ gs_wts_screen_enum_next(gs_wts_screen_enum_t *wse, floatp value)
 
 /* Run the enum with a square dot. This is useful for testing. */
 #ifdef UNIT_TEST
-private void
+static void
 wts_run_enum_squaredot(gs_wts_screen_enum_t *wse)
 {
     int code;
@@ -1040,7 +1040,7 @@ wts_run_enum_squaredot(gs_wts_screen_enum_t *wse)
 }
 #endif /* UNIT_TEST */
 
-private int
+static int
 wts_sample_cmp(const void *av, const void *bv) {
     const bits32 *const *a = (const bits32 *const *)av;
     const bits32 *const *b = (const bits32 *const *)bv;
@@ -1077,7 +1077,7 @@ wts_sort_cell(gs_wts_screen_enum_t *wse)
  *
  * Return value: newly allocated bump.
  **/
-private bits32 *
+static bits32 *
 wts_blue_bump(const gs_wts_screen_enum_t *wse)
 {
     const gx_wts_cell_params_t *wcp;
@@ -1252,7 +1252,7 @@ wts_sort_blue(const gs_wts_screen_enum_t *wse)
     return 0;
 }
 
-private wts_screen_t *
+static wts_screen_t *
 wts_screen_from_enum_j(const gs_wts_screen_enum_t *wse)
 {
     const gs_wts_screen_enum_j_t *wsej = (const gs_wts_screen_enum_j_t *)wse;
@@ -1296,7 +1296,7 @@ wts_screen_from_enum_j(const gs_wts_screen_enum_t *wse)
     return &wsj->base;
 }
 
-private wts_screen_t *
+static wts_screen_t *
 wts_screen_from_enum_h(const gs_wts_screen_enum_t *wse)
 {
     const gs_wts_screen_enum_h_t *wseh = (const gs_wts_screen_enum_h_t *)wse;
@@ -1487,7 +1487,7 @@ gs_wts_from_buf(const byte *buf, int bufsize)
 
 #if 0 /* Never called. */
 /* Return value is size of buf in bytes */
-private int
+static int
 gs_wts_to_buf(const wts_screen_t *ws, byte **pbuf)
 {
     int size = wts_size(ws);
@@ -1507,7 +1507,7 @@ gs_wts_to_buf(const wts_screen_t *ws, byte **pbuf)
 #endif
 
 #ifdef UNIT_TEST
-private int
+static int
 dump_thresh(const wts_screen_t *ws, int width, int height)
 {
     int x, y;

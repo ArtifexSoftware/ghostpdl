@@ -35,15 +35,15 @@
 /* ================ Packed coordinate streams ================ */
 
 /* Forward references */
-private int cs_next_packed_value(shade_coord_stream_t *, int, uint *);
-private int cs_next_array_value(shade_coord_stream_t *, int, uint *);
-private int cs_next_packed_decoded(shade_coord_stream_t *, int,
+static int cs_next_packed_value(shade_coord_stream_t *, int, uint *);
+static int cs_next_array_value(shade_coord_stream_t *, int, uint *);
+static int cs_next_packed_decoded(shade_coord_stream_t *, int,
 				   const float[2], float *);
-private int cs_next_array_decoded(shade_coord_stream_t *, int,
+static int cs_next_array_decoded(shade_coord_stream_t *, int,
 				  const float[2], float *);
-private void cs_packed_align(shade_coord_stream_t *cs, int radix);
-private void cs_array_align(shade_coord_stream_t *cs, int radix);
-private bool cs_eod(const shade_coord_stream_t * cs);
+static void cs_packed_align(shade_coord_stream_t *cs, int radix);
+static void cs_array_align(shade_coord_stream_t *cs, int radix);
+static bool cs_eod(const shade_coord_stream_t * cs);
 
 /* Initialize a packed value stream. */
 void
@@ -85,7 +85,7 @@ shade_next_init(shade_coord_stream_t * cs,
 }
 
 /* Check for the End-Of-Data state form a stream. */
-private bool
+static bool
 cs_eod(const shade_coord_stream_t * cs)
 {
     return cs->ds_EOF;
@@ -93,7 +93,7 @@ cs_eod(const shade_coord_stream_t * cs)
 
 /* Get the next (integer) value from a packed value stream. */
 /* 1 <= num_bits <= sizeof(uint) * 8. */
-private int
+static int
 cs_next_packed_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
 {
     uint bits = cs->bits;
@@ -139,7 +139,7 @@ cs_next_packed_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
  * Get the next (integer) value from an unpacked array.  Note that
  * num_bits may be 0 if we are reading a coordinate or color value.
  */
-private int
+static int
 cs_next_array_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
 {
     float value;
@@ -160,7 +160,7 @@ cs_next_array_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
 }
 
 /* Get the next decoded floating point value. */
-private int
+static int
 cs_next_packed_decoded(shade_coord_stream_t * cs, int num_bits,
 		       const float decode[2], float *pvalue)
 {
@@ -182,7 +182,7 @@ cs_next_packed_decoded(shade_coord_stream_t * cs, int num_bits,
 }
 
 /* Get the next floating point value from an array, without decoding. */
-private int
+static int
 cs_next_array_decoded(shade_coord_stream_t * cs, int num_bits,
 		      const float decode[2], float *pvalue)
 {
@@ -199,13 +199,13 @@ cs_next_array_decoded(shade_coord_stream_t * cs, int num_bits,
     return 0;
 }
 
-private void
+static void
 cs_packed_align(shade_coord_stream_t *cs, int radix)
 {
     cs->left = cs->left / radix * radix;
 }
 
-private void
+static void
 cs_array_align(shade_coord_stream_t *cs, int radix)
 {
 }

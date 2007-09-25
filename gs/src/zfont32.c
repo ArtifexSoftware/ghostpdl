@@ -25,7 +25,7 @@
 #include "ichar.h"
 
 /* The encode_char procedure of a Type 32 font should never be called. */
-private gs_glyph
+static gs_glyph
 zfont_no_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t ignored)
 {
     return gs_no_glyph;
@@ -33,7 +33,7 @@ zfont_no_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t ignored)
 
 /* <string|name> <font_dict> .buildfont32 <string|name> <font> */
 /* Build a type 32 (bitmap) font. */
-private int
+static int
 zbuildfont32(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -63,7 +63,7 @@ zbuildfont32(i_ctx_t *i_ctx_p)
 
 /* - .getshowoperator <oper|null> */
 /* Get the calling operator for error reporting in %Type32BuildGlyph */
-private int
+static int
 zgetshowoperator(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

@@ -18,9 +18,9 @@
 #include "gdevfax.h"
 
 /* The device descriptors */
-private dev_proc_print_page(faxg3_print_page);
-private dev_proc_print_page(faxg32d_print_page);
-private dev_proc_print_page(faxg4_print_page);
+static dev_proc_print_page(faxg3_print_page);
+static dev_proc_print_page(faxg32d_print_page);
+static dev_proc_print_page(faxg4_print_page);
 
 /* Define procedures that adjust the paper size. */
 const gx_device_procs gdev_fax_std_procs =
@@ -96,7 +96,7 @@ gdev_fax_put_params(gx_device * dev, gs_param_list * plist)
 /* Initialize the stream state with a set of default parameters. */
 /* These select the same defaults as the CCITTFaxEncode filter, */
 /* except we set BlackIs1 = true. */
-private void
+static void
 gdev_fax_init_state_adjust(stream_CFE_state *ss,
 			   const gx_device_fax *fdev,
 			   int adjust_width)
@@ -238,7 +238,7 @@ gdev_fax_print_page(gx_device_printer * pdev, FILE * prn_stream,
 }
 
 /* Print a 1-D Group 3 page. */
-private int
+static int
 faxg3_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     stream_CFE_state state;
@@ -250,7 +250,7 @@ faxg3_print_page(gx_device_printer * pdev, FILE * prn_stream)
 }
 
 /* Print a 2-D Group 3 page. */
-private int
+static int
 faxg32d_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     stream_CFE_state state;
@@ -263,7 +263,7 @@ faxg32d_print_page(gx_device_printer * pdev, FILE * prn_stream)
 }
 
 /* Print a Group 4 page. */
-private int
+static int
 faxg4_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     stream_CFE_state state;

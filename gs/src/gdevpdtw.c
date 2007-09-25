@@ -30,7 +30,7 @@
 #include "gdevpdtv.h"
 #include "sarc4.h"
 
-private const char *const encoding_names[] = {
+static const char *const encoding_names[] = {
     KNOWN_REAL_ENCODING_NAMES
 };
 
@@ -39,7 +39,7 @@ private const char *const encoding_names[] = {
 /* ---------------- Private ---------------- */
 
 /* Write the Widths for a font. */
-private int
+static int
 pdf_write_Widths(gx_device_pdf *pdev, int first, int last, const double *widths)
 {
     stream *s = pdev->strm;
@@ -55,7 +55,7 @@ pdf_write_Widths(gx_device_pdf *pdev, int first, int last, const double *widths)
 }
 
 /* Check strings equality. */
-private bool 
+static bool 
 strings_equal(const gs_const_string *str0, const gs_const_string *str1)
 {
     return str0->size == str1->size &&
@@ -63,7 +63,7 @@ strings_equal(const gs_const_string *str0, const gs_const_string *str1)
 }
 
 /* Check if an encoding element differs from a standard one. */
-private int
+static int
 pdf_different_encoding_element(const pdf_font_resource_t *pdfont, int ch, int encoding_index)
 {
     if (pdfont->u.simple.Encoding[ch].is_difference)
@@ -101,7 +101,7 @@ pdf_different_encoding_index(const pdf_font_resource_t *pdfont, int ch0)
 }
 
 /* Check for unknown encode (simple fonts only). */
-private bool
+static bool
 pdf_simple_font_needs_ToUnicode(const pdf_font_resource_t *pdfont)
 {
     int ch;
@@ -204,7 +204,7 @@ pdf_write_encoding_ref(gx_device_pdf *pdev,
 }
 
 /* Write the Subtype and Encoding for a simple font. */
-private int
+static int
 pdf_write_simple_contents(gx_device_pdf *pdev,
 			  const pdf_font_resource_t *pdfont)
 {
@@ -235,7 +235,7 @@ pdf_write_simple_contents(gx_device_pdf *pdev,
  * Write the W[2] entries for a CIDFont.  *pdfont is known to be a
  * CIDFont (type 0 or 2).
  */
-private bool
+static bool
 pdf_compute_CIDFont_default_widths(const pdf_font_resource_t *pdfont, int wmode, int *pdw, int *pdv)
 {
     psf_glyph_enum_t genum;
@@ -295,7 +295,7 @@ pdf_compute_CIDFont_default_widths(const pdf_font_resource_t *pdfont, int wmode,
  * Write the [D]W[2] entries for a CIDFont.  *pdfont is known to be a
  * CIDFont (type 0 or 2).
  */
-private int
+static int
 pdf_write_CIDFont_widths(gx_device_pdf *pdev,
 			 const pdf_font_resource_t *pdfont, int wmode)
 {
@@ -455,7 +455,7 @@ pdf_write_contents_simple(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 }
 
 /* Write the contents of a CIDFont resource. */
-private int
+static int
 write_contents_cid_common(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
 			  int subtype)
 {
@@ -539,7 +539,7 @@ pdf_write_contents_cid2(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 /* ---------------- External entries ---------------- */
 
 /* Write a font resource. */
-private int
+static int
 pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 {
     stream *s;
@@ -600,7 +600,7 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
  * Close the text-related parts of a document, including writing out font
  * and related resources.
  */
-private int
+static int
 write_font_resources(gx_device_pdf *pdev, pdf_resource_list_t *prlist)
 {
     int j;
@@ -674,7 +674,7 @@ pdf_close_text_document(gx_device_pdf *pdev)
 /*
  * Write the CIDSystemInfo for a CIDFont or a CMap.
  */
-private int
+static int
 pdf_write_cid_system_info_to_stream(gx_device_pdf *pdev, stream *s,
 			  const gs_cid_system_info_t *pcidsi, gs_id object_id)
 {

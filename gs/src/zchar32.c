@@ -27,7 +27,7 @@
 
 /* ([wx wy llx lly urx ury] | [w0x w0y llx lly urx ury w1x w1y vx vy]) */
 /*   <bitmap> <cid> <type32font> <str22> .makeglyph32 <<same with substr>> */
-private int
+static int
 zmakeglyph32(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -110,7 +110,7 @@ typedef struct {
     gs_glyph cid_min, cid_max;
     gs_font *font;
 } font_cid_range_t;
-private bool
+static bool
 select_cid_range(const gs_memory_t *mem, cached_char * cc, void *range_ptr)
 {
     const font_cid_range_t *range = range_ptr;
@@ -119,7 +119,7 @@ select_cid_range(const gs_memory_t *mem, cached_char * cc, void *range_ptr)
 	    cc->code <= range->cid_max &&
 	    cc->pair->font == range->font);
 }
-private int
+static int
 zremoveglyphs(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -143,7 +143,7 @@ zremoveglyphs(i_ctx_t *i_ctx_p)
 
 /* <str5/14/22> .getmetrics32 <width> <height> <wx> ... <ury> 5/14 */
 /* <str5/14/22> .getmetrics32 <width> <height> <w0x> ... <vy> 22 */
-private int
+static int
 zgetmetrics32(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

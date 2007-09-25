@@ -38,12 +38,12 @@
 extern /*const*/ gx_color_map_procs *const cmap_procs_default;
 
 /* GC procedures for gx_line_params */
-private
+static
 ENUM_PTRS_WITH(line_params_enum_ptrs, gx_line_params *plp) return 0;
     case 0: return ENUM_OBJ((plp->dash.pattern_size == 0 ?
 			     NULL : plp->dash.pattern));
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(line_params_reloc_ptrs, gx_line_params *plp)
+static RELOC_PTRS_WITH(line_params_reloc_ptrs, gx_line_params *plp)
 {
     if (plp->dash.pattern_size)
 	RELOC_VAR(plp->dash.pattern);
@@ -58,7 +58,7 @@ private_st_line_params();
  * pointers are handled in this manner.
  */
 public_st_imager_state();
-private 
+static 
 ENUM_PTRS_BEGIN(imager_state_enum_ptrs)
     ENUM_SUPER(gs_imager_state, st_line_params, line_params, st_imager_state_num_ptrs - st_line_params_num_ptrs);
     ENUM_PTR(0, gs_imager_state, client_data);
@@ -69,7 +69,7 @@ ENUM_PTRS_BEGIN(imager_state_enum_ptrs)
     gs_cr_state_do_ptrs(E1)
 #undef E1
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(imager_state_reloc_ptrs)
+static RELOC_PTRS_BEGIN(imager_state_reloc_ptrs)
 {
     RELOC_SUPER(gs_imager_state, st_line_params, line_params);
     RELOC_PTR(gs_imager_state, client_data);

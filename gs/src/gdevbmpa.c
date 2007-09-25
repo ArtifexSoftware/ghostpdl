@@ -59,25 +59,25 @@ typedef struct gx_device_async_s {
     0, 0, { 0, 0, 0, 0 }\
 }
 
-private dev_proc_open_device(bmpa_writer_open);
-private dev_proc_open_device(bmpa_cmyk_writer_open);
-private prn_dev_proc_open_render_device(bmpa_reader_open_render_device);
-private dev_proc_print_page_copies(bmpa_reader_print_page_copies);
+static dev_proc_open_device(bmpa_writer_open);
+static dev_proc_open_device(bmpa_cmyk_writer_open);
+static prn_dev_proc_open_render_device(bmpa_reader_open_render_device);
+static dev_proc_print_page_copies(bmpa_reader_print_page_copies);
 /* VMS limits procedure names to 31 characters. */
-private dev_proc_print_page_copies(bmpa_cmyk_reader_print_copies);
-private prn_dev_proc_buffer_page(bmpa_reader_buffer_page);
-private prn_dev_proc_buffer_page(bmpa_cmyk_reader_buffer_page);
-private dev_proc_output_page(bmpa_reader_output_page);
-private dev_proc_get_params(bmpa_get_params);
-private dev_proc_put_params(bmpa_put_params);
-private dev_proc_get_hardware_params(bmpa_get_hardware_params);
-private prn_dev_proc_start_render_thread(bmpa_reader_start_render_thread);
-private prn_dev_proc_get_space_params(bmpa_get_space_params);
+static dev_proc_print_page_copies(bmpa_cmyk_reader_print_copies);
+static prn_dev_proc_buffer_page(bmpa_reader_buffer_page);
+static prn_dev_proc_buffer_page(bmpa_cmyk_reader_buffer_page);
+static dev_proc_output_page(bmpa_reader_output_page);
+static dev_proc_get_params(bmpa_get_params);
+static dev_proc_put_params(bmpa_put_params);
+static dev_proc_get_hardware_params(bmpa_get_hardware_params);
+static prn_dev_proc_start_render_thread(bmpa_reader_start_render_thread);
+static prn_dev_proc_get_space_params(bmpa_get_space_params);
 #define default_print_page 0	/* not needed becoz print_page_copies def'd */
 
 /* Monochrome. */
 
-private const gx_device_procs bmpamono_procs =
+static const gx_device_procs bmpamono_procs =
   prn_procs(bmpa_writer_open, gdev_prn_output_page, gdev_prn_close);
 const gx_device_async gs_bmpamono_device =
   async_device(bmpamono_procs, "bmpamono",
@@ -94,7 +94,7 @@ const gx_device_async gs_bmpamono_device =
     bmpa_get_params, bmpa_put_params,\
     p_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device
 
-private const gx_device_procs bmpasep1_procs = {
+static const gx_device_procs bmpasep1_procs = {
     bmpa_cmyk_procs(bmpa_cmyk_writer_open, cmyk_1bit_map_color_rgb,
 		    cmyk_1bit_map_cmyk_color)
 };
@@ -108,7 +108,7 @@ const gx_device_async gs_bmpasep1_device = {
 
 /* 8-bit-per-plane separated CMYK color. */
 
-private const gx_device_procs bmpasep8_procs = {
+static const gx_device_procs bmpasep8_procs = {
     bmpa_cmyk_procs(bmpa_cmyk_writer_open, cmyk_8bit_map_color_rgb,
 		    cmyk_8bit_map_cmyk_color)
 };
@@ -122,7 +122,7 @@ const gx_device_async gs_bmpasep8_device = {
 
 /* 4-bit (EGA/VGA-style) color. */
 
-private const gx_device_procs bmpa16_procs =
+static const gx_device_procs bmpa16_procs =
   prn_color_procs(bmpa_writer_open, gdev_prn_output_page, gdev_prn_close,
     pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
 const gx_device_async gs_bmpa16_device =
@@ -135,7 +135,7 @@ const gx_device_async gs_bmpa16_device =
 /* 8-bit (SuperVGA-style) color. */
 /* (Uses a fixed palette of 3,3,2 bits.) */
 
-private const gx_device_procs bmpa256_procs =
+static const gx_device_procs bmpa256_procs =
   prn_color_procs(bmpa_writer_open, gdev_prn_output_page, gdev_prn_close,
     pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
 const gx_device_async gs_bmpa256_device =
@@ -147,7 +147,7 @@ const gx_device_async gs_bmpa256_device =
 
 /* 24-bit color. */
 
-private const gx_device_procs bmpa16m_procs =
+static const gx_device_procs bmpa16m_procs =
   prn_color_procs(bmpa_writer_open, gdev_prn_output_page, gdev_prn_close,
     bmp_map_16m_rgb_color, bmp_map_16m_color_rgb);
 const gx_device_async gs_bmpa16m_device =
@@ -159,7 +159,7 @@ const gx_device_async gs_bmpa16m_device =
 
 /* 32-bit CMYK color (outside the BMP specification). */
 
-private const gx_device_procs bmpa32b_procs = {
+static const gx_device_procs bmpa32b_procs = {
     bmpa_cmyk_procs(bmpa_writer_open, gx_default_map_color_rgb,
 		    gx_default_cmyk_map_cmyk_color)
 };
@@ -172,12 +172,12 @@ const gx_device_async gs_bmpa32b_device =
 
 /* --------- Forward declarations ---------- */
 
-private void bmpa_reader_thread(void *);
+static void bmpa_reader_thread(void *);
 
 /* ------------ Writer Instance procedures ---------- */
 
 /* Writer's open procedure */
-private int
+static int
 bmpa_open_writer(gx_device *pdev  /* Driver instance to open */,
 		 dev_proc_print_page_copies((*reader_print_page_copies)),
 		 prn_dev_proc_buffer_page((*reader_buffer_page)))
@@ -222,13 +222,13 @@ bmpa_open_writer(gx_device *pdev  /* Driver instance to open */,
 				     max_raster, min_band_height,
 				     max_src_image_row);
 }
-private int
+static int
 bmpa_writer_open(gx_device *pdev  /* Driver instance to open */)
 {
     return bmpa_open_writer(pdev, bmpa_reader_print_page_copies,
 			    bmpa_reader_buffer_page);
 }
-private int
+static int
 bmpa_cmyk_writer_open(gx_device *pdev  /* Driver instance to open */)
 {
     return bmpa_open_writer(pdev, bmpa_cmyk_reader_print_copies,
@@ -238,25 +238,25 @@ bmpa_cmyk_writer_open(gx_device *pdev  /* Driver instance to open */)
 /* -------------- Renderer instance procedures ----------*/
 
 /* Forward declarations */
-private int
+static int
     bmpa_reader_buffer_planes(gx_device_printer *pdev, FILE *prn_stream,
 			      int num_copies, int first_plane,
 			      int last_plane, int raster);
 
 /* Thread to do rendering, started by bmpa_reader_start_render_thread */
-private void 
+static void 
 bmpa_reader_thread(void *params)
 {
     gdev_prn_async_render_thread((gdev_prn_start_render_params *)params);
 }
 
-private int	/* rets 0 ok, -ve error if couldn't start thread */
+static int	/* rets 0 ok, -ve error if couldn't start thread */
 bmpa_reader_start_render_thread(gdev_prn_start_render_params *params)
 {
     return gp_create_thread(bmpa_reader_thread, params);
 }
 
-private int
+static int
 bmpa_reader_open_render_device(gx_device_printer *ppdev)
 {
     /*
@@ -271,7 +271,7 @@ bmpa_reader_open_render_device(gx_device_printer *ppdev)
 }
 
 /* Generic routine to send the page to the printer. */
-private int
+static int
 bmpa_reader_output_page(gx_device *pdev, int num_copies, int flush)
 {
     /*
@@ -287,7 +287,7 @@ bmpa_reader_output_page(gx_device *pdev, int num_copies, int flush)
     return gdev_prn_output_page(pdev, num_copies, flush);
 }
 
-private int
+static int
 bmpa_reader_print_planes(gx_device_printer *pdev, FILE *prn_stream,
 			 int num_copies, int first_plane, int last_plane,
 			 int raster)
@@ -359,19 +359,19 @@ done:
     prdev->buffered_page_exists = 0;
     return code;
 }
-private int
+static int
 bmpa_reader_print_page_copies(gx_device_printer *pdev, FILE *prn_stream,
 			      int num_copies)
 {
     return bmpa_reader_print_planes(pdev, prn_stream, num_copies, -1, -1,
 				    gdev_prn_raster(pdev));
 }
-private int
+static int
 bmpa_cmyk_plane_raster(gx_device_printer *pdev)
 {
     return bitmap_raster(pdev->width * (pdev->color_info.depth / 4));
 }
-private int
+static int
 bmpa_cmyk_reader_print_copies(gx_device_printer *pdev, FILE *prn_stream,
 			      int num_copies)
 {
@@ -380,7 +380,7 @@ bmpa_cmyk_reader_print_copies(gx_device_printer *pdev, FILE *prn_stream,
 }
 
 /* Buffer a (partial) rasterized page & optionally print result multiple times. */
-private int
+static int
 bmpa_reader_buffer_planes(gx_device_printer *pdev, FILE *file, int num_copies,
 			  int first_plane, int last_plane, int raster)
 {
@@ -518,14 +518,14 @@ bmpa_reader_buffer_planes(gx_device_printer *pdev, FILE *file, int num_copies,
     prdev->buffered_page_exists = (code >= 0);
     return code;
 }
-private int
+static int
 bmpa_reader_buffer_page(gx_device_printer *pdev, FILE *prn_stream,
 			int num_copies)
 {
     return bmpa_reader_buffer_planes(pdev, prn_stream, num_copies, -1, -1,
 				     gdev_prn_raster(pdev));
 }
-private int
+static int
 bmpa_cmyk_reader_buffer_page(gx_device_printer *pdev, FILE *prn_stream,
 			     int num_copies)
 {
@@ -536,7 +536,7 @@ bmpa_cmyk_reader_buffer_page(gx_device_printer *pdev, FILE *prn_stream,
 /*------------ Procedures common to writer & renderer -------- */
 
 /* Compute space parameters */
-private void
+static void
 bmpa_get_space_params(const gx_device_printer *pdev,
  gdev_prn_space_params *space_params)
 {
@@ -662,7 +662,7 @@ bmpa_get_space_params(const gx_device_printer *pdev,
 }
 
 /* Get device parameters. */
-private int
+static int
 bmpa_get_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_async * const bdev = (gx_device_async *)pdev;
@@ -675,7 +675,7 @@ bmpa_get_params(gx_device * pdev, gs_param_list * plist)
 /* IMPORTANT: async drivers must NOT CLOSE the device while doing put_params.*/
 /* IMPORTANT: async drivers must NOT CLOSE the device while doing put_params.*/
 /* IMPORTANT: async drivers must NOT CLOSE the device while doing put_params.*/
-private int
+static int
 bmpa_put_params(gx_device *pdev, gs_param_list *plist)
 {
     /*
@@ -692,7 +692,7 @@ bmpa_put_params(gx_device *pdev, gs_param_list *plist)
 
 /* Get hardware-detected parameters. */
 /* This proc defines a only one param: a useless value for testing */
-private int
+static int
 bmpa_get_hardware_params(gx_device *dev, gs_param_list *plist)
 {
     static const char *const test_value = "Test value";

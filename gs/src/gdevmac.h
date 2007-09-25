@@ -90,11 +90,11 @@ dev_proc_copy_alpha(mac_copy_alpha);
 dev_proc_get_xfont_procs(mac_get_xfont_procs);
 
 /* Declare the xfont procedures */
-private xfont_proc_lookup_font(mac_lookup_font);
-private xfont_proc_char_xglyph(mac_char_xglyph);
-private xfont_proc_char_metrics(mac_char_metrics);
-private xfont_proc_render_char(mac_render_char);
-private xfont_proc_release(mac_release);
+static xfont_proc_lookup_font(mac_lookup_font);
+static xfont_proc_char_xglyph(mac_char_xglyph);
+static xfont_proc_char_metrics(mac_char_metrics);
+static xfont_proc_render_char(mac_render_char);
+static xfont_proc_release(mac_release);
 
 
 /* Define a MacOS xfont. */
@@ -156,16 +156,16 @@ typedef struct {
 
 /* Helper function definitions */
 
-private int		mac_save_pict(gx_device * dev);
-private void	mac_convert_rgb_hsv(colorRGB *inRGB, colorHSV *HSV);
-private void	mac_convert_hsv_rgb(colorHSV *inHSV, colorRGB *RGB);
+static int		mac_save_pict(gx_device * dev);
+static void	mac_convert_rgb_hsv(colorRGB *inRGB, colorHSV *HSV);
+static void	mac_convert_hsv_rgb(colorHSV *inHSV, colorRGB *RGB);
 
-private void	mac_find_font_family(ConstStringPtr fname, int len,
+static void	mac_find_font_family(ConstStringPtr fname, int len,
 									 FMFontFamily *fontFamilyID, FMFontStyle *fontFace);
-private int		mac_get_font_encoding(mac_xfont *macxf);
-private void	mac_get_font_resource(mac_xfont *macxf, ResType *resType, short *resID);
+static int		mac_get_font_encoding(mac_xfont *macxf);
+static void	mac_get_font_resource(mac_xfont *macxf, ResType *resType, short *resID);
 
-private int     mac_set_colordepth(gx_device *dev, int depth);
+static int     mac_set_colordepth(gx_device *dev, int depth);
 
 
 /* additional DLL function definition */

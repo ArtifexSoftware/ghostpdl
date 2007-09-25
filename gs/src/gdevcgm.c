@@ -41,21 +41,21 @@ gs_private_st_suffix_add1_final(st_device_cgm, gx_device_cgm,
 				gx_device_finalize, st_device, st);
 
 /* Device procedures */
-private dev_proc_open_device(cgm_open);
-private dev_proc_output_page(cgm_output_page);
-private dev_proc_close_device(cgm_close);
-private dev_proc_fill_rectangle(cgm_fill_rectangle);
+static dev_proc_open_device(cgm_open);
+static dev_proc_output_page(cgm_output_page);
+static dev_proc_close_device(cgm_close);
+static dev_proc_fill_rectangle(cgm_fill_rectangle);
 
 #if 0
-private dev_proc_tile_rectangle(cgm_tile_rectangle);
+static dev_proc_tile_rectangle(cgm_tile_rectangle);
 
 #else
 #define cgm_tile_rectangle NULL
 #endif
-private dev_proc_copy_mono(cgm_copy_mono);
-private dev_proc_copy_color(cgm_copy_color);
-private dev_proc_get_params(cgm_get_params);
-private dev_proc_put_params(cgm_put_params);
+static dev_proc_copy_mono(cgm_copy_mono);
+static dev_proc_copy_color(cgm_copy_color);
+static dev_proc_get_params(cgm_get_params);
+static dev_proc_put_params(cgm_put_params);
 
 /* In principle, all the drawing operations should be polymorphic, */
 /* but it's just as easy just to test the depth, since we're not */
@@ -98,14 +98,14 @@ cgm_device("cgm24", 24, 255, 255,
 	   gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
 
 /* Define allocator procedures for the CGM library. */
-private void *
+static void *
 cgm_gs_alloc(void *private_data, uint size)
 {
     gx_device_cgm *cdev = private_data;
 
     return gs_alloc_bytes(cdev->memory, size, "cgm_gs_alloc");
 }
-private void
+static void
 cgm_gs_free(void *private_data, void *obj)
 {
     gx_device_cgm *cdev = private_data;
@@ -116,7 +116,7 @@ cgm_gs_free(void *private_data, void *obj)
 /* ---------------- Utilities ---------------- */
 
 /* Convert a CGM result code to our error values. */
-private int
+static int
 cgm_error_code(cgm_result result)
 {
     switch (result) {
@@ -135,7 +135,7 @@ cgm_error_code(cgm_result result)
 /* ---------------- Device control ---------------- */
 
 /* Open the device */
-private int
+static int
 cgm_open(gx_device * dev)
 {
     gx_device_cgm *cdev = (gx_device_cgm *) dev;
@@ -181,7 +181,7 @@ cgm_open(gx_device * dev)
 }
 
 /* Output a page */
-private int
+static int
 cgm_output_page(gx_device * dev, int num_copies, int flush)
 {
     gx_device_cgm *cdev = (gx_device_cgm *) dev;
@@ -197,7 +197,7 @@ cgm_output_page(gx_device * dev, int num_copies, int flush)
 }
 
 /* Close the device */
-private int
+static int
 cgm_close(gx_device * dev)
 {
     gx_device_cgm *cdev = (gx_device_cgm *) dev;
@@ -217,7 +217,7 @@ cgm_close(gx_device * dev)
 }
 
 /* Get parameters.  CGM devices add OutputFile to the default set. */
-private int
+static int
 cgm_get_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_cgm *cdev = (gx_device_cgm *) dev;
@@ -233,7 +233,7 @@ cgm_get_params(gx_device * dev, gs_param_list * plist)
 }
 
 /* Put parameters. */
-private int
+static int
 cgm_put_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_cgm *cdev = (gx_device_cgm *) dev;
@@ -304,7 +304,7 @@ cgm_put_params(gx_device * dev, gs_param_list * plist)
 /* Begin a picture if necessary. */
 #define begin_picture(cdev)\
   if ( !cdev->in_picture ) cgm_begin_picture(cdev)
-private int
+static int
 cgm_begin_picture(gx_device_cgm * cdev)
 {
     cgm_picture_elements pic;
@@ -363,7 +363,7 @@ cgm_begin_picture(gx_device_cgm * cdev)
 }
 
 /* Convert a gx_color_index to a CGM color. */
-private void
+static void
 cgm_color_from_color_index(cgm_color * pcc, const gx_device_cgm * cdev,
 			   gx_color_index color)
 {
@@ -377,7 +377,7 @@ cgm_color_from_color_index(cgm_color * pcc, const gx_device_cgm * cdev,
 }
 
 /* Fill a rectangle. */
-private int
+static int
 cgm_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 		   gx_color_index color)
 {
@@ -407,7 +407,7 @@ cgm_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 
 #if 0
 /* Tile a rectangle.  We should do this with a pattern if possible. */
-private int
+static int
 cgm_tile_rectangle(gx_device * dev, const gx_tile_bitmap * tile,
 	int x, int y, int w, int h, gx_color_index zero, gx_color_index one,
 		   int px, int py)
@@ -422,7 +422,7 @@ cgm_tile_rectangle(gx_device * dev, const gx_tile_bitmap * tile,
 /* the destination region is still white; if so, we can use a cell array */
 /* (or, even better, a pattern).  However, we still need the slow method */
 /* for the case where we don't know the background color or it isn't white. */
-private int
+static int
 cgm_copy_mono(gx_device * dev,
 	      const byte * base, int sourcex, int raster, gx_bitmap_id id,
 	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
@@ -469,7 +469,7 @@ cgm_copy_mono(gx_device * dev,
 }
 
 /* Copy a color bitmap. */
-private int
+static int
 cgm_copy_color(gx_device * dev,
 	       const byte * base, int sourcex, int raster, gx_bitmap_id id,
 	       int x, int y, int w, int h)

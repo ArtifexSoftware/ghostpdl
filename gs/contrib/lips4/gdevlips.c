@@ -68,8 +68,8 @@ lips_media_selection(int width, int height)
     return pt->num_unit + landscape;
 }
 
-private int GetNumSameData(const byte * curPtr, const int maxnum);
-private int GetNumWrongData(const byte * curPtr, const int maxnum);
+static int GetNumSameData(const byte * curPtr, const int maxnum);
+static int GetNumWrongData(const byte * curPtr, const int maxnum);
 
 /* This routine talkes from LipsIVRunLengthEncode in Yoshiharu ITO's patch  */
 int
@@ -137,7 +137,7 @@ lips_mode3format_encode(byte * inBuff, byte * outBuff, int Length)
     return (size);
 }
 
-private int
+static int
 GetNumSameData(const byte * curPtr, const int maxnum)
 {
     int count = 1;
@@ -152,7 +152,7 @@ GetNumSameData(const byte * curPtr, const int maxnum)
     return (count);
 }
 
-private int
+static int
 GetNumWrongData(const byte * curPtr, const int maxnum)
 {
     int count = 0;

@@ -69,7 +69,7 @@ static char rgb_color[2][2][2] =	{
 
 /* Map an RGB color to a printer color. */
 #define cv_shift (sizeof(gx_color_value) * 8 - 1)
-private gx_color_index
+static gx_color_index
 epson_map_rgb_color(gx_device *dev, const gx_color_value cv[])
 {
 
@@ -85,7 +85,7 @@ epson_map_rgb_color(gx_device *dev, const gx_color_value cv[])
 }
 
 /* Map the printer color back to RGB. */
-private int
+static int
 epson_map_color_rgb(gx_device *dev, gx_color_index color,
   gx_color_value prgb[3])
 {
@@ -116,9 +116,9 @@ if (gx_device_has_color(dev))
 }
 
 /* The device descriptor */
-private dev_proc_print_page(epsc_print_page);
+static dev_proc_print_page(epsc_print_page);
 
-private gx_device_procs epson_procs =
+static gx_device_procs epson_procs =
   prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
     epson_map_rgb_color, epson_map_color_rgb); 
 
@@ -132,11 +132,11 @@ const gx_device_printer far_data gs_epsonc_device =
 /* ------ Internal routines ------ */
 
 /* Forward references */
-private void epsc_output_run(byte *, int, int, char, FILE *, int);
+static void epsc_output_run(byte *, int, int, char, FILE *, int);
 
 /* Send the page to the printer. */
 #define DD 0x80				/* double density flag */
-private int
+static int
 epsc_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {	static int graphics_modes_9[5] =
 	   {	-1, 0 /*60*/, 1	/*120*/, -1, DD+3 /*240*/
@@ -422,7 +422,7 @@ epsc_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
 /* Output a single graphics command. */
 /* pass=0 for all columns, 1 for even columns, 2 for odd columns. */
-private void
+static void
 epsc_output_run(byte *data, int count, int y_mult,
   char start_graphics, FILE *prn_stream, int pass)
 {	int xcount = count / y_mult;

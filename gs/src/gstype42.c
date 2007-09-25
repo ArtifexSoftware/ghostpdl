@@ -40,11 +40,11 @@
 public_st_gs_font_type42();
 
 /* Forward references */
-private int append_outline_fitted(uint glyph_index, const gs_matrix * pmat,
+static int append_outline_fitted(uint glyph_index, const gs_matrix * pmat,
 	       gx_path * ppath, cached_fm_pair * pair, 
 	       const gs_log2_scale_point * pscale, bool design_grid);
-private uint default_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph);
-private int default_get_outline(gs_font_type42 *pfont, uint glyph_index,
+static uint default_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph);
+static int default_get_outline(gs_font_type42 *pfont, uint glyph_index,
 				gs_glyph_data_t *pgd);
 font_proc_font_info(gs_type42_font_info); /* Type check. */
 font_proc_font_info(gs_truetype_font_info); /* Type check. */
@@ -83,7 +83,7 @@ gs_type42_read_data(gs_font_type42 * pfont, ulong pos, uint length, byte *buf)
 }
 
 /* Get the offset to a glyph using the loca table */
-private inline ulong
+static inline ulong
 get_glyph_offset(gs_font_type42 *pfont, uint glyph_index) 
 {
     ulong result;
@@ -109,7 +109,7 @@ typedef struct gs_type42_font_init_sort_s {
     ulong glyph_offset;
     int glyph_num;
 } gs_type42_font_init_sort_t;
-private int
+static int
 gs_type42_font_init_compare (const void *a, const void *b)
 {
     ulong a_offset = ((const gs_type42_font_init_sort_t *)a)->glyph_offset;
@@ -368,7 +368,7 @@ gs_len_glyphs_release(void *data, void *event)
  * bother to parse the component index, since the caller can do this so
  * easily.
  */
-private void
+static void
 parse_component(const byte **pdata, uint *pflags, gs_matrix_fixed *psmat,
 		int *pmp /*[2], may be null*/, const gs_font_type42 *pfont,
 		const gs_matrix_fixed *pmat)
@@ -443,7 +443,7 @@ no_scale:
 }
 
 /* Compute the total number of points in a (possibly composite) glyph. */
-private int
+static int
 total_points(gs_font_type42 *pfont, uint glyph_index)
 {
     gs_glyph_data_t glyph_data;
@@ -492,7 +492,7 @@ total_points(gs_font_type42 *pfont, uint glyph_index)
  * gs_glyph.  This is trivial for integer ("CID" but representing a GID)
  * gs_glyph values, and not implemented for name glyphs.
  */
-private uint
+static uint
 default_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
 {
     return (glyph < GS_MIN_CID_GLYPH ? 0 : /* undefined */
@@ -502,7 +502,7 @@ default_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
 /* Define the default implementation for getting the outline data for */
 /* a glyph, using indexToLocFormat and the loca and glyf tables. */
 /* Set pglyph->data = 0 if the glyph is empty. */
-private int
+static int
 default_get_outline(gs_font_type42 * pfont, uint glyph_index,
 		    gs_glyph_data_t *pgd)
 {
@@ -594,7 +594,7 @@ gs_type42_get_outline_from_TT_file(gs_font_type42 * pfont, stream *s, uint glyph
 }
 
 /* Parse a glyph into pieces, if any. */
-private int
+static int
 parse_pieces(gs_font_type42 *pfont, gs_glyph glyph, gs_glyph *pieces,
 	     int *pnum_pieces)
 {
@@ -775,7 +775,7 @@ gs_type42_enumerate_glyph(gs_font *font, int *pindex,
 }
 
 /* Get the metrics of a simple glyph. */
-private int
+static int
 simple_glyph_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 		     float sbw[4])
 {
@@ -931,7 +931,7 @@ gs_type42_append(uint glyph_index, gs_state * pgs,
 }
 
 /* Add 2nd degree Bezier to the path */
-private int
+static int
 add_quadratic_curve(gx_path * const ppath, const gs_fixed_point * const a,
      const gs_fixed_point * const b, const gs_fixed_point * const c)
 {
@@ -943,7 +943,7 @@ add_quadratic_curve(gx_path * const ppath, const gs_fixed_point * const a,
  * Append a simple glyph outline to a path (ppath != 0) and/or return
  * its list of points (ppts != 0).
  */
-private int
+static int
 append_simple(const byte *gdata, float sbw[4], const gs_matrix_fixed *pmat,
 	      gx_path *ppath, gs_fixed_point *ppts, gs_font_type42 * pfont,
 	      bool subglyph)
@@ -1137,7 +1137,7 @@ append_simple(const byte *gdata, float sbw[4], const gs_matrix_fixed *pmat,
 }
 
 /* Append a glyph outline. */
-private int
+static int
 check_component(uint glyph_index, const gs_matrix_fixed *pmat,
 		gx_path *ppath, gs_font_type42 *pfont, gs_fixed_point *ppts,
 		gs_glyph_data_t *pgd, bool subglyph)
@@ -1167,7 +1167,7 @@ check_component(uint glyph_index, const gs_matrix_fixed *pmat,
     *pgd = glyph_data;
     return 1;			/* composite */
 }
-private int
+static int
 append_component(uint glyph_index, const gs_matrix_fixed * pmat,
 		 gx_path * ppath, gs_fixed_point *ppts, int point_index,
 		 gs_font_type42 * pfont, bool subglyph)
@@ -1227,7 +1227,7 @@ append_component(uint glyph_index, const gs_matrix_fixed * pmat,
     return code;
 }
 
-private int
+static int
 append_outline_fitted(uint glyph_index, const gs_matrix * pmat,
 	       gx_path * ppath, cached_fm_pair * pair, 
 	       const gs_log2_scale_point * pscale, bool design_grid)
@@ -1244,7 +1244,7 @@ append_outline_fitted(uint glyph_index, const gs_matrix * pmat,
 
 /* ---------------------------------------------- */
 
-private int get_from_names_table(gs_font_type42 *pfont, gs_font_info_t *info,  
+static int get_from_names_table(gs_font_type42 *pfont, gs_font_info_t *info,  
 			   gs_const_string *pmember, int member, uint name_id)
 {
     int (*string_proc)(gs_font_type42 *, ulong, uint, const byte **) =

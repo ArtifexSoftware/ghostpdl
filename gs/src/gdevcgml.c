@@ -17,53 +17,53 @@
 #include "gdevcgmx.h"
 
 /* Forward references to command-writing procedures */
-private void begin_command(cgm_state *, cgm_op_index);
+static void begin_command(cgm_state *, cgm_op_index);
 
 #define OP(op) begin_command(st, op)
-private cgm_result end_command(cgm_state *);
+static cgm_result end_command(cgm_state *);
 
 #define END_OP (void)end_command(st)
 #define DONE return end_command(st)
 /* Parameters */
-private void put_int(cgm_state *, cgm_int, int);
+static void put_int(cgm_state *, cgm_int, int);
 
 #define CI(ci) put_int(st, ci, st->metafile.color_index_precision)
 #define I(i) put_int(st, i, st->metafile.integer_precision)
 #define IX(ix) put_int(st, ix, st->metafile.index_precision)
 #define E(e) put_int(st, (int)(e), 16)
-private void put_real(cgm_state *, cgm_real, const cgm_precision *);
+static void put_real(cgm_state *, cgm_real, const cgm_precision *);
 
 #define R(r) put_real(st, r, &st->metafile.real_precision)
-private void put_vdc(cgm_state *, const cgm_vdc *);
+static void put_vdc(cgm_state *, const cgm_vdc *);
 
 #define VDC(vdc) put_vdc(st, vdc)
 #define VDC2(vdc1, vdc2) VDC(vdc1); VDC(vdc2)
 #define VDC4(vdc1, vdc2, vdc3, vdc4) VDC2(vdc1, vdc2); VDC2(vdc3, vdc4)
-private void put_vdc_r(cgm_state *, const cgm_line_marker_extent *, cgm_line_marker_specification_mode);
+static void put_vdc_r(cgm_state *, const cgm_line_marker_extent *, cgm_line_marker_specification_mode);
 
 #define VDC_R(vdcr, mode) put_vdc_r(st, vdcr, mode)
-private void put_point(cgm_state *, const cgm_point *);
+static void put_point(cgm_state *, const cgm_point *);
 
 #define P(p) put_point(st, p)
-private void put_points(cgm_state *, const cgm_point *, int);
+static void put_points(cgm_state *, const cgm_point *, int);
 
 #define nP(p, n) put_points(st, p, n)
-private void put_string(cgm_state *, const char *, uint);
+static void put_string(cgm_state *, const char *, uint);
 
 #define S(s, l) put_string(st, s, l)
-private void put_color(cgm_state *, const cgm_color *);
+static void put_color(cgm_state *, const cgm_color *);
 
 #define CO(co) put_color(st, co)
-private void put_rgb(cgm_state *, const cgm_rgb *);
+static void put_rgb(cgm_state *, const cgm_rgb *);
 
 #define CD(cd) put_rgb(st, cd)
 /* Other data types */
 #define put_byte(st, b)\
   if ( st->command_count == command_max_count ) write_command(st, false);\
   st->command[st->command_count++] = (byte)(b)
-private void put_bytes(cgm_state *, const byte *, uint);
-private void write_command(cgm_state *, bool);
-private void put_real_precision(cgm_state *, const cgm_precision *);
+static void put_bytes(cgm_state *, const byte *, uint);
+static void write_command(cgm_state *, bool);
+static void put_real_precision(cgm_state *, const cgm_precision *);
 
 /* ================ Public routines ================ */
 
@@ -943,7 +943,7 @@ cgm_ASPECT_SOURCE_FLAGS(cgm_state * st, const cgm_aspect_source_flag * flags, in
 /* ================ Internal routines ================ */
 
 /* Begin a command. */
-private void
+static void
 begin_command(cgm_state * st, cgm_op_index op)
 {
     uint op_word = (uint) op << cgm_op_id_shift;
@@ -957,7 +957,7 @@ begin_command(cgm_state * st, cgm_op_index op)
 
 /* Write the buffer for a partial command. */
 /* Note that we always write an even number of bytes. */
-private void
+static void
 write_command(cgm_state * st, bool last)
 {
     byte *command = st->command;
@@ -993,7 +993,7 @@ write_command(cgm_state * st, bool last)
 }
 
 /* End a command. */
-private cgm_result
+static cgm_result
 end_command(cgm_state * st)
 {
     write_command(st, true);
@@ -1001,7 +1001,7 @@ end_command(cgm_state * st)
 }
 
 /* Put an integer value. */
-private void
+static void
 put_int(cgm_state * st, cgm_int value, int precision)
 {
     switch (precision) {
@@ -1017,7 +1017,7 @@ put_int(cgm_state * st, cgm_int value, int precision)
 }
 
 /* Put a real value. */
-private void
+static void
 put_real(cgm_state * st, cgm_real value, const cgm_precision * pr)
 {
     if (pr->representation == cgm_representation_floating) {
@@ -1044,7 +1044,7 @@ put_real(cgm_state * st, cgm_real value, const cgm_precision * pr)
 }
 
 /* Put a real precision. */
-private void
+static void
 put_real_precision(cgm_state * st, const cgm_precision * precision)
 {
     I((int)precision->representation);
@@ -1053,7 +1053,7 @@ put_real_precision(cgm_state * st, const cgm_precision * precision)
 }
 
 /* Put a VDC. */
-private void
+static void
 put_vdc(cgm_state * st, const cgm_vdc * pvdc)
 {
     if (st->metafile.vdc_type == cgm_vdc_integer)
@@ -1063,7 +1063,7 @@ put_vdc(cgm_state * st, const cgm_vdc * pvdc)
 }
 
 /* Put a VDC or a real. */
-private void
+static void
 put_vdc_r(cgm_state * st, const cgm_line_marker_extent * extent,
 	  cgm_line_marker_specification_mode mode)
 {
@@ -1074,7 +1074,7 @@ put_vdc_r(cgm_state * st, const cgm_line_marker_extent * extent,
 }
 
 /* Put a point (pair of VDCs). */
-private void
+static void
 put_point(cgm_state * st, const cgm_point * ppt)
 {
     if (st->metafile.vdc_type == cgm_vdc_integer) {
@@ -1087,7 +1087,7 @@ put_point(cgm_state * st, const cgm_point * ppt)
 }
 
 /* Put a list of points. */
-private void
+static void
 put_points(cgm_state * st, const cgm_point * ppt, int count)
 {
     int i;
@@ -1097,7 +1097,7 @@ put_points(cgm_state * st, const cgm_point * ppt, int count)
 }
 
 /* Put bytes. */
-private void
+static void
 put_bytes(cgm_state * st, const byte * data, uint length)
 {
     int count;
@@ -1114,7 +1114,7 @@ put_bytes(cgm_state * st, const byte * data, uint length)
 }
 
 /* Put a string. */
-private void
+static void
 put_string(cgm_state * st, const char *data, uint length)
 {				/* The CGM specification seems to imply that the continuation */
     /* mechanism for commands and the mechanism for strings */
@@ -1133,7 +1133,7 @@ put_string(cgm_state * st, const char *data, uint length)
 }
 
 /* Put a color. */
-private void
+static void
 put_color(cgm_state * st, const cgm_color * color)
 {
     if (st->picture.color_selection_mode == cgm_color_selection_indexed)
@@ -1143,7 +1143,7 @@ put_color(cgm_state * st, const cgm_color * color)
 }
 
 /* Put an RGB value. */
-private void
+static void
 put_rgb(cgm_state * st, const cgm_rgb * rgb)
 {
     put_int(st, rgb->r, st->metafile.color_precision);

@@ -33,7 +33,7 @@
  * its argument conforms to the Functions array in the parameter structure,
  * but it (necessarily) deconstifies it.
  */
-private void
+static void
 fn_free_functions(const gs_function_t *const * Functions, int count,
 		  gs_memory_t * mem)
 {
@@ -50,7 +50,7 @@ fn_free_functions(const gs_function_t *const * Functions, int count,
  * be propagated unchanged (step_ranges = false) or divided among the
  * (1-output) subfunctions (step_ranges = true).
  */
-private int
+static int
 fn_scale_functions(gs_function_t ***ppsfns, const gs_function_t *const *pfns,
 		   int count, const gs_range_t *pranges, bool step_ranges,
 		   gs_memory_t *mem)
@@ -86,7 +86,7 @@ typedef struct gs_function_ElIn_s {
 private_st_function_ElIn();
 
 /* Evaluate an Exponential Interpolation function. */
-private int
+static int
 fn_ElIn_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 {
     const gs_function_ElIn_t *const pfn =
@@ -120,7 +120,7 @@ fn_ElIn_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 }
 
 /* Test whether an Exponential function is monotonic.  (They always are.) */
-private int
+static int
 fn_ElIn_is_monotonic(const gs_function_t * pfn_common,
 		     const float *lower, const float *upper, uint *mask)
 {
@@ -136,7 +136,7 @@ fn_ElIn_is_monotonic(const gs_function_t * pfn_common,
 }
 
 /* Write Exponential Interpolation function parameters on a parameter list. */
-private int
+static int
 fn_ElIn_get_params(const gs_function_t *pfn_common, gs_param_list *plist)
 {
     const gs_function_ElIn_t *const pfn =
@@ -160,7 +160,7 @@ fn_ElIn_get_params(const gs_function_t *pfn_common, gs_param_list *plist)
 }
 
 /* Make a scaled copy of an Exponential Interpolation function. */
-private int
+static int
 fn_ElIn_make_scaled(const gs_function_ElIn_t *pfn,
 		     gs_function_ElIn_t **ppsfn,
 		     const gs_range_t *pranges, gs_memory_t *mem)
@@ -209,7 +209,7 @@ gs_function_ElIn_free_params(gs_function_ElIn_params_t * params,
 }
 
 /* Serialize. */
-private int
+static int
 gs_function_ElIn_serialize(const gs_function_t * pfn, stream *s)
 {
     uint n;
@@ -288,7 +288,7 @@ typedef struct gs_function_1ItSg_s {
 private_st_function_1ItSg();
 
 /* Evaluate a 1-Input Stitching function. */
-private int
+static int
 fn_1ItSg_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 {
     const gs_function_1ItSg_t *const pfn =
@@ -321,7 +321,7 @@ fn_1ItSg_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 }
 
 /* Test whether a 1-Input Stitching function is monotonic. */
-private int
+static int
 fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
 		      const float *lower, const float *upper, uint *mask)
 {
@@ -398,7 +398,7 @@ fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
 }
 
 /* Return 1-Input Stitching function information. */
-private void
+static void
 fn_1ItSg_get_info(const gs_function_t *pfn_common, gs_function_info_t *pfi)
 {
     const gs_function_1ItSg_t *const pfn =
@@ -410,7 +410,7 @@ fn_1ItSg_get_info(const gs_function_t *pfn_common, gs_function_info_t *pfi)
 }
 
 /* Write 1-Input Stitching function parameters on a parameter list. */
-private int
+static int
 fn_1ItSg_get_params(const gs_function_t *pfn_common, gs_param_list *plist)
 {
     const gs_function_1ItSg_t *const pfn =
@@ -428,7 +428,7 @@ fn_1ItSg_get_params(const gs_function_t *pfn_common, gs_param_list *plist)
 }
 
 /* Make a scaled copy of a 1-Input Stitching function. */
-private int
+static int
 fn_1ItSg_make_scaled(const gs_function_1ItSg_t *pfn,
 		     gs_function_1ItSg_t **ppsfn,
 		     const gs_range_t *pranges, gs_memory_t *mem)
@@ -475,7 +475,7 @@ gs_function_1ItSg_free_params(gs_function_1ItSg_params_t * params,
 }
 
 /* Serialize. */
-private int
+static int
 gs_function_1ItSg_serialize(const gs_function_t * pfn, stream *s)
 {
     uint n;
@@ -567,7 +567,7 @@ typedef struct gs_function_AdOt_s {
 private_st_function_AdOt();
 
 /* Evaluate an Arrayed Output function. */
-private int
+static int
 fn_AdOt_evaluate(const gs_function_t *pfn_common, const float *in0, float *out)
 {
     const gs_function_AdOt_t *const pfn =
@@ -600,7 +600,7 @@ fn_AdOt_evaluate(const gs_function_t *pfn_common, const float *in0, float *out)
 }
 
 /* Test whether an Arrayed Output function is monotonic. */
-private int
+static int
 fn_AdOt_is_monotonic(const gs_function_t * pfn_common,
 		     const float *lower, const float *upper, uint *mask)
 {
@@ -619,7 +619,7 @@ fn_AdOt_is_monotonic(const gs_function_t * pfn_common,
 }
 
 /* Return Arrayed Output function information. */
-private void
+static void
 fn_AdOt_get_info(const gs_function_t *pfn_common, gs_function_info_t *pfi)
 {
     const gs_function_AdOt_t *const pfn =
@@ -631,7 +631,7 @@ fn_AdOt_get_info(const gs_function_t *pfn_common, gs_function_info_t *pfi)
 }
 
 /* Make a scaled copy of an Arrayed Output function. */
-private int
+static int
 fn_AdOt_make_scaled(const gs_function_AdOt_t *pfn, gs_function_AdOt_t **ppsfn,
 		    const gs_range_t *pranges, gs_memory_t *mem)
 {
@@ -667,7 +667,7 @@ gs_function_AdOt_free_params(gs_function_AdOt_params_t * params,
 }
 
 /* Serialize. */
-private int
+static int
 gs_function_AdOt_serialize(const gs_function_t * pfn, stream *s)
 {
     const gs_function_AdOt_params_t * p = (const gs_function_AdOt_params_t *)&pfn->params;

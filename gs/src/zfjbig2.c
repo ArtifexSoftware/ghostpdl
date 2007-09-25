@@ -48,14 +48,14 @@ typedef struct jbig2_global_data_s {
 	void *data;
 } jbig2_global_data_t;
 
-private void jbig2_global_data_finalize(void *vptr);
+static void jbig2_global_data_finalize(void *vptr);
 gs_private_st_simple_final(st_jbig2_global_data_t, jbig2_global_data_t,
 	"jbig2globaldata", jbig2_global_data_finalize);
 
 
 /* <source> /JBIG2Decode <file> */
 /* <source> <dict> /JBIG2Decode <file> */
-private int
+static int
 z_jbig2decode(i_ctx_t * i_ctx_p)
 {
     os_ptr op = osp;
@@ -94,7 +94,7 @@ z_jbig2decode(i_ctx_t * i_ctx_p)
    pointer to the global context is stored in an astruct object
    and returned that way since it lives outside the interpreters
    memory management */
-private int
+static int
 z_jbig2makeglobalctx(i_ctx_t * i_ctx_p)
 {
 	void *global = NULL;
@@ -127,7 +127,7 @@ z_jbig2makeglobalctx(i_ctx_t * i_ctx_p)
 }
 
 /* free our referenced global context data */
-private void jbig2_global_data_finalize(void *vptr)
+static void jbig2_global_data_finalize(void *vptr)
 {
 	jbig2_global_data_t *st = vptr;
 	
@@ -135,8 +135,8 @@ private void jbig2_global_data_finalize(void *vptr)
 	st->data = NULL;
 }
    
-/* match the above routine to the corresponding filter name
-   this is how our 'private' routines get called externally */
+/* Match the above routine to the corresponding filter name.
+   This is how our static routines get called externally. */
 const op_def zfjbig2_op_defs[] = {
     {"1.jbig2makeglobalctx", z_jbig2makeglobalctx},
     op_def_begin_filter(),

@@ -31,11 +31,11 @@
 extern void ialloc_gc_prepare(gs_ref_memory_t *);
 
 /* Forward references */
-private void gs_vmreclaim(gs_dual_memory_t *, bool);
+static void gs_vmreclaim(gs_dual_memory_t *, bool);
 
 /* Initialize the GC hook in the allocator. */
-private int ireclaim(gs_dual_memory_t *, int);
-private int
+static int ireclaim(gs_dual_memory_t *, int);
+static int
 ireclaim_init(i_ctx_t *i_ctx_p)
 {
     gs_imemory.reclaim = ireclaim;
@@ -44,7 +44,7 @@ ireclaim_init(i_ctx_t *i_ctx_p)
 
 /* GC hook called when the allocator signals a GC is needed (space = -1), */
 /* or for vmreclaim (space = the space to collect). */
-private int
+static int
 ireclaim(gs_dual_memory_t * dmem, int space)
 {
     bool global;
@@ -95,7 +95,7 @@ ireclaim(gs_dual_memory_t * dmem, int space)
 }
 
 /* Interpreter entry to garbage collector. */
-private void
+static void
 gs_vmreclaim(gs_dual_memory_t *dmem, bool global)
 {
     /* HACK: we know the gs_dual_memory_t is embedded in a context state. */

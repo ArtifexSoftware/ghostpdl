@@ -21,7 +21,7 @@
 /* ---------------- Forwarding procedures ---------------- */
 
 /* Additional finalization for forwarding devices. */
-private void
+static void
 gx_device_forward_finalize(gx_device *dev)
 {
     gx_device *target = ((gx_device_forward *)dev)->target;
@@ -867,24 +867,24 @@ gx_forward_ret_devn_params(gx_device *dev)
 
 /* ---------------- The null device(s) ---------------- */
 
-private dev_proc_get_initial_matrix(gx_forward_upright_get_initial_matrix);
-private dev_proc_fill_rectangle(null_fill_rectangle);
-private dev_proc_copy_mono(null_copy_mono);
-private dev_proc_copy_color(null_copy_color);
-private dev_proc_put_params(null_put_params);
-private dev_proc_copy_alpha(null_copy_alpha);
-private dev_proc_copy_rop(null_copy_rop);
-private dev_proc_fill_path(null_fill_path);
-private dev_proc_stroke_path(null_stroke_path);
-private dev_proc_fill_trapezoid(null_fill_trapezoid);
-private dev_proc_fill_parallelogram(null_fill_parallelogram);
-private dev_proc_fill_triangle(null_fill_triangle);
-private dev_proc_draw_thin_line(null_draw_thin_line);
-private dev_proc_decode_color(null_decode_color);
+static dev_proc_get_initial_matrix(gx_forward_upright_get_initial_matrix);
+static dev_proc_fill_rectangle(null_fill_rectangle);
+static dev_proc_copy_mono(null_copy_mono);
+static dev_proc_copy_color(null_copy_color);
+static dev_proc_put_params(null_put_params);
+static dev_proc_copy_alpha(null_copy_alpha);
+static dev_proc_copy_rop(null_copy_rop);
+static dev_proc_fill_path(null_fill_path);
+static dev_proc_stroke_path(null_stroke_path);
+static dev_proc_fill_trapezoid(null_fill_trapezoid);
+static dev_proc_fill_parallelogram(null_fill_parallelogram);
+static dev_proc_fill_triangle(null_fill_triangle);
+static dev_proc_draw_thin_line(null_draw_thin_line);
+static dev_proc_decode_color(null_decode_color);
 /* We would like to have null implementations of begin/data/end image, */
 /* but we can't do this, because image_data must keep track of the */
 /* Y position so it can return 1 when done. */
-private dev_proc_strip_copy_rop(null_strip_copy_rop);
+static dev_proc_strip_copy_rop(null_strip_copy_rop);
 
 #define null_procs(get_initial_matrix, get_page_device) {\
 	gx_default_open_device,\
@@ -961,7 +961,7 @@ std_device_std_body_type_open(gx_device_null, 0, "nullpage", &st_device_null,
     0				/* target */
 };
 
-private void
+static void
 gx_forward_upright_get_initial_matrix(gx_device * dev, gs_matrix * pmat)
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
@@ -973,34 +973,34 @@ gx_forward_upright_get_initial_matrix(gx_device * dev, gs_matrix * pmat)
 	dev_proc(tdev, get_initial_matrix)(tdev, pmat);
 }
 
-private int
+static int
 null_decode_color(gx_device * dev, gx_color_index cindex, gx_color_value colors[])
 {
     colors[0] = (cindex & 1) ?  gx_max_color_value : 0;
     return 0;
 }
 
-private int
+static int
 null_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 		    gx_color_index color)
 {
     return 0;
 }
-private int
+static int
 null_copy_mono(gx_device * dev, const byte * data, int dx, int raster,
 	       gx_bitmap_id id, int x, int y, int w, int h,
 	       gx_color_index zero, gx_color_index one)
 {
     return 0;
 }
-private int
+static int
 null_copy_color(gx_device * dev, const byte * data,
 		int data_x, int raster, gx_bitmap_id id,
 		int x, int y, int width, int height)
 {
     return 0;
 }
-private int
+static int
 null_put_params(gx_device * dev, gs_param_list * plist)
 {
     /*
@@ -1014,14 +1014,14 @@ null_put_params(gx_device * dev, gs_param_list * plist)
     dev->width = dev->height = 0;
     return code;
 }
-private int
+static int
 null_copy_alpha(gx_device * dev, const byte * data, int data_x, int raster,
 		gx_bitmap_id id, int x, int y, int width, int height,
 		gx_color_index color, int depth)
 {
     return 0;
 }
-private int
+static int
 null_copy_rop(gx_device * dev,
 	      const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
 	      const gx_color_index * scolors,
@@ -1031,21 +1031,21 @@ null_copy_rop(gx_device * dev,
 {
     return 0;
 }
-private int
+static int
 null_fill_path(gx_device * dev, const gs_imager_state * pis,
 	       gx_path * ppath, const gx_fill_params * params,
 	       const gx_drawing_color * pdcolor, const gx_clip_path * pcpath)
 {
     return 0;
 }
-private int
+static int
 null_stroke_path(gx_device * dev, const gs_imager_state * pis,
 		 gx_path * ppath, const gx_stroke_params * params,
 		 const gx_drawing_color * pdcolor, const gx_clip_path * pcpath)
 {
     return 0;
 }
-private int
+static int
 null_fill_trapezoid(gx_device * dev,
 		    const gs_fixed_edge * left, const gs_fixed_edge * right,
 		    fixed ybot, fixed ytop, bool swap_axes,
@@ -1054,7 +1054,7 @@ null_fill_trapezoid(gx_device * dev,
 {
     return 0;
 }
-private int
+static int
 null_fill_parallelogram(gx_device * dev, fixed px, fixed py,
 			fixed ax, fixed ay, fixed bx, fixed by,
 			const gx_drawing_color * pdcolor,
@@ -1062,7 +1062,7 @@ null_fill_parallelogram(gx_device * dev, fixed px, fixed py,
 {
     return 0;
 }
-private int
+static int
 null_fill_triangle(gx_device * dev,
 		   fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by,
 		   const gx_drawing_color * pdcolor,
@@ -1070,7 +1070,7 @@ null_fill_triangle(gx_device * dev,
 {
     return 0;
 }
-private int
+static int
 null_draw_thin_line(gx_device * dev,
 		    fixed fx0, fixed fy0, fixed fx1, fixed fy1,
 		    const gx_drawing_color * pdcolor,
@@ -1078,7 +1078,7 @@ null_draw_thin_line(gx_device * dev,
 {
     return 0;
 }
-private int
+static int
 null_strip_copy_rop(gx_device * dev, const byte * sdata, int sourcex,
 		    uint sraster, gx_bitmap_id id,
 		    const gx_color_index * scolors,

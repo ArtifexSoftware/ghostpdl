@@ -30,10 +30,10 @@
 
 /* Monochrome. */
 
-private dev_proc_print_page(pcxmono_print_page);
+static dev_proc_print_page(pcxmono_print_page);
 
 /* Use the default RGB->color map, so we get black=0, white=1. */
-private const gx_device_procs pcxmono_procs =
+static const gx_device_procs pcxmono_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		gx_default_map_rgb_color, gx_default_map_color_rgb);
 const gx_device_printer gs_pcxmono_device =
@@ -45,9 +45,9 @@ prn_device(pcxmono_procs, "pcxmono",
 
 /* Chunky 8-bit gray scale. */
 
-private dev_proc_print_page(pcx256_print_page);
+static dev_proc_print_page(pcx256_print_page);
 
-private const gx_device_procs pcxgray_procs =
+static const gx_device_procs pcxgray_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 	      gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
 const gx_device_printer gs_pcxgray_device =
@@ -60,9 +60,9 @@ const gx_device_printer gs_pcxgray_device =
 
 /* 4-bit planar (EGA/VGA-style) color. */
 
-private dev_proc_print_page(pcx16_print_page);
+static dev_proc_print_page(pcx16_print_page);
 
-private const gx_device_procs pcx16_procs =
+static const gx_device_procs pcx16_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
 const gx_device_printer gs_pcx16_device =
@@ -76,7 +76,7 @@ const gx_device_printer gs_pcx16_device =
 /* Chunky 8-bit (SuperVGA-style) color. */
 /* (Uses a fixed palette of 3,3,2 bits.) */
 
-private const gx_device_procs pcx256_procs =
+static const gx_device_procs pcx256_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
 const gx_device_printer gs_pcx256_device =
@@ -89,9 +89,9 @@ const gx_device_printer gs_pcx256_device =
 
 /* 24-bit color, 3 8-bit planes. */
 
-private dev_proc_print_page(pcx24b_print_page);
+static dev_proc_print_page(pcx24b_print_page);
 
-private const gx_device_procs pcx24b_procs =
+static const gx_device_procs pcx24b_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
 const gx_device_printer gs_pcx24b_device =
@@ -103,9 +103,9 @@ prn_device(pcx24b_procs, "pcx24b",
 
 /* 4-bit chunky CMYK color. */
 
-private dev_proc_print_page(pcxcmyk_print_page);
+static dev_proc_print_page(pcxcmyk_print_page);
 
-private const gx_device_procs pcxcmyk_procs =
+static const gx_device_procs pcxcmyk_procs =
 {
     gdev_prn_open,
     NULL,			/* get_initial_matrix */
@@ -171,7 +171,7 @@ typedef struct pcx_header_s {
 } pcx_header;
 
 /* Define the prototype header. */
-private const pcx_header pcx_header_prototype =
+static const pcx_header pcx_header_prototype =
 {
     10,				/* manuf */
     0,				/* version (variable) */
@@ -207,11 +207,11 @@ private const pcx_header pcx_header_prototype =
 #define dcx_max_pages 1023
 
 /* Forward declarations */
-private void pcx_write_rle(const byte *, const byte *, int, FILE *);
-private int pcx_write_page(gx_device_printer *, FILE *, pcx_header *, bool);
+static void pcx_write_rle(const byte *, const byte *, int, FILE *);
+static int pcx_write_page(gx_device_printer *, FILE *, pcx_header *, bool);
 
 /* Write a monochrome PCX page. */
-private int
+static int
 pcxmono_print_page(gx_device_printer * pdev, FILE * file)
 {
     pcx_header header;
@@ -234,7 +234,7 @@ static const byte pcx_ega_palette[16 * 3] =
     0x55, 0x55, 0x55, 0x55, 0x55, 0xff, 0x55, 0xff, 0x55, 0x55, 0xff, 0xff,
     0xff, 0x55, 0x55, 0xff, 0x55, 0xff, 0xff, 0xff, 0x55, 0xff, 0xff, 0xff
 };
-private int
+static int
 pcx16_print_page(gx_device_printer * pdev, FILE * file)
 {
     pcx_header header;
@@ -250,7 +250,7 @@ pcx16_print_page(gx_device_printer * pdev, FILE * file)
 }
 
 /* Write a "new" PCX page. */
-private int
+static int
 pcx256_print_page(gx_device_printer * pdev, FILE * file)
 {
     pcx_header header;
@@ -272,7 +272,7 @@ pcx256_print_page(gx_device_printer * pdev, FILE * file)
 }
 
 /* Write a 24-bit color PCX page. */
-private int
+static int
 pcx24b_print_page(gx_device_printer * pdev, FILE * file)
 {
     pcx_header header;
@@ -293,7 +293,7 @@ static const byte pcx_cmyk_palette[16 * 3] =
     0x00, 0xff, 0xff, 0x00, 0x0f, 0x0f, 0x00, 0xff, 0x00, 0x00, 0x0f, 0x00,
     0x00, 0x00, 0xff, 0x00, 0x00, 0x0f, 0x1f, 0x1f, 0x1f, 0x0f, 0x0f, 0x0f,
 };
-private int
+static int
 pcxcmyk_print_page(gx_device_printer * pdev, FILE * file)
 {
     pcx_header header;
@@ -311,7 +311,7 @@ pcxcmyk_print_page(gx_device_printer * pdev, FILE * file)
 /* Write out a page in PCX format. */
 /* This routine is used for all formats. */
 /* The caller has set header->bpp, nplanes, and palette. */
-private int
+static int
 pcx_write_page(gx_device_printer * pdev, FILE * file, pcx_header * phdr,
 	       bool planar)
 {
@@ -420,7 +420,7 @@ pcx_write_page(gx_device_printer * pdev, FILE * file, pcx_header * phdr,
 /* ------ Internal routines ------ */
 
 /* Write one line in PCX run-length-encoded format. */
-private void
+static void
 pcx_write_rle(const byte * from, const byte * end, int step, FILE * file)
 {				/*
 				 * The PCX format theoretically allows encoding runs of 63

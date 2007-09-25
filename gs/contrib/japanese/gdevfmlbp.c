@@ -39,14 +39,14 @@ copies.  */
 #define Y_DPI 400
 
 /* The device descriptors */
-private dev_proc_print_page(fmlbp_print_page);
+static dev_proc_print_page(fmlbp_print_page);
 
 #ifdef	FMLBP_NOADJUST_MARGIN
 #define	PRNFMLBP	prn_std_procs
 #else
 /* Adjust margin for ghostscript 2.6.1 */
 #define	PRNFMLBP	prn_fmlbp_procs
-private dev_proc_get_initial_matrix(fmlbp_get_initial_matrix);
+static dev_proc_get_initial_matrix(fmlbp_get_initial_matrix);
 gx_device_procs prn_fmlbp_procs =
   prn_matrix_procs(gdev_prn_open, fmlbp_get_initial_matrix,
     gdev_prn_output_page, gdev_prn_close);
@@ -54,7 +54,7 @@ gx_device_procs prn_fmlbp_procs =
 /* Shift the origin from the top left corner of the pysical page to the
    first printable pixel, as defined by the top and left margins. */
 /* modified from gdevsppr.c. */
-private void
+static void
 fmlbp_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
 { gx_default_get_initial_matrix(dev, pmat);
   pmat->tx -= (dev->l_margin * dev->x_pixels_per_inch);
@@ -99,7 +99,7 @@ static char can_inits[] ={ ESC, 'c',              /* Software reset */
 
 /* Get the paper size code, based on width and height. */
 /* modified from gdevpcl.c, gdevmjc.c and gdevnpdl.c. */
-private char *
+static char *
 gdev_fmlbp_paper_size(gx_device_printer *dev)
 { static char paper[16];
   int    landscape = 0;	/* portrait */
@@ -130,7 +130,7 @@ gdev_fmlbp_paper_size(gx_device_printer *dev)
 
 
 /* move down and move across */
-private void goto_xy(FILE *prn_stream,int x,int y)
+static void goto_xy(FILE *prn_stream,int x,int y)
   {
     unsigned char buff[20];
     unsigned char *p=buff;
@@ -158,7 +158,7 @@ private void goto_xy(FILE *prn_stream,int x,int y)
   }
 
 /* Send the page to the printer.  */
-private int
+static int
 fmlbp_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
   int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);

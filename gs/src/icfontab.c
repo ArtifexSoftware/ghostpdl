@@ -28,7 +28,7 @@
 # include GCONFIGF_H
 #endif
 
-private const ccfont_fproc fprocs[] = {
+static const ccfont_fproc fprocs[] = {
 #undef font_
 #define font_(fname, fproc, zfproc) fproc,  /* fname, zfproc are not needed */
 #ifndef GCONFIGF_H

@@ -46,7 +46,7 @@ mesh_init_fill_state(mesh_fill_state_t * pfs, const gs_shading_mesh_t * psh,
 
 /* ---------------- Gouraud triangle shadings ---------------- */
 
-private int
+static int
 Gt_next_vertex(const gs_shading_mesh_t * psh, shade_coord_stream_t * cs,
 	       shading_vertex_t * vertex, patch_color_t *c)
 {
@@ -63,7 +63,7 @@ Gt_next_vertex(const gs_shading_mesh_t * psh, shade_coord_stream_t * cs,
     return code;
 }
 
-inline private int
+static inline int
 Gt_fill_triangle(patch_fill_state_t * pfs, const shading_vertex_t * va,
 		 const shading_vertex_t * vb, const shading_vertex_t * vc)
 {

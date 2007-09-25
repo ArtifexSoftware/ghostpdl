@@ -28,7 +28,7 @@
 /* ------ %null% ------ */
 
 /* This represents the null output file. */
-private iodev_proc_open_device(null_open);
+static iodev_proc_open_device(null_open);
 const gx_io_device gs_iodev_null = {
     "%null%", "Special",
     {
@@ -40,7 +40,7 @@ const gx_io_device gs_iodev_null = {
     }
 };
 
-private int
+static int
 null_open(gx_io_device * iodev, const char *access, stream ** ps,
 	  gs_memory_t * mem)
 {
@@ -55,7 +55,7 @@ null_open(gx_io_device * iodev, const char *access, stream ** ps,
 /* ------ Operators ------ */
 
 /* <iodevice> .getdevparams <mark> <name> <value> ... */
-private int
+static int
 zgetdevparams(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -80,7 +80,7 @@ zgetdevparams(i_ctx_t *i_ctx_p)
 }
 
 /* <mark> <name> <value> ... <iodevice> .putdevparams */
-private int
+static int
 zputdevparams(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

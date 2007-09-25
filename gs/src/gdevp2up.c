@@ -33,8 +33,8 @@ extern gx_device_printer gs_pcx256_device;
 
 /* This device only supports SVGA 8-bit color. */
 
-private dev_proc_open_device(pcx2up_open);
-private dev_proc_print_page(pcx2up_print_page);
+static dev_proc_open_device(pcx2up_open);
+static dev_proc_print_page(pcx2up_print_page);
 
 typedef struct gx_device_2up_s {
     gx_device_common;
@@ -43,7 +43,7 @@ typedef struct gx_device_2up_s {
     gx_saved_page odd_page;
 } gx_device_2up;
 
-private const gx_device_procs pcx2up_procs =
+static const gx_device_procs pcx2up_procs =
 prn_color_procs(pcx2up_open, gdev_prn_output_page, gdev_prn_close,
 		pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
 gx_device_2up gs_pcx2up_device =
@@ -56,7 +56,7 @@ gx_device_2up gs_pcx2up_device =
 
 /* Open the device.  We reimplement this to force banding with */
 /* delayed rasterizing. */
-private int
+static int
 pcx2up_open(gx_device * dev)
 {
     gx_device_printer *pdev = (gx_device_printer *) dev;
@@ -75,7 +75,7 @@ pcx2up_open(gx_device * dev)
 }
 
 /* Write the page. */
-private int
+static int
 pcx2up_print_page(gx_device_printer * pdev, FILE * file)
 {
     gx_device_2up *pdev2 = (gx_device_2up *) pdev;

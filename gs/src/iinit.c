@@ -87,7 +87,7 @@ const char *const gs_error_names[] =
 op_array_table op_array_table_global, op_array_table_local;	/* definitions of `operator' procedures */
 
 /* Enter a name and value into a dictionary. */
-private int
+static int
 i_initial_enter_name_in(i_ctx_t *i_ctx_p, ref *pdict, const char *nstr,
 			const ref * pref)
 {
@@ -160,7 +160,7 @@ const char *const initial_dstack[] =
  * We export this for gs_init1 in imain.c.
  * This is slow, but we only call it a couple of times.
  */
-private int
+static int
 gs_op_language_level(void)
 {
     const op_def *const *tptr;
@@ -186,7 +186,7 @@ gs_have_level2(void)
 }
 
 /* Create an initial dictionary if necessary. */
-private ref *
+static ref *
 make_initial_dict(i_ctx_t *i_ctx_p, const char *iname, ref idicts[])
 {
     int i;
@@ -402,7 +402,7 @@ zop_init(i_ctx_t *i_ctx_p)
 }
 
 /* Create an op_array table. */
-private int
+static int
 alloc_op_array_table(i_ctx_t *i_ctx_p, uint size, uint space,
 		     op_array_table *opt)
 {

@@ -50,19 +50,19 @@ extern_gx_io_device_table();
 extern const char iodev_dtype_stdio[];
 
 /* Forward references: file name parsing. */
-private int parse_file_name(const ref * op, gs_parsed_file_name_t * pfn, bool safemode);
-private int parse_real_file_name(const ref * op,
+static int parse_file_name(const ref * op, gs_parsed_file_name_t * pfn, bool safemode);
+static int parse_real_file_name(const ref * op,
 				 gs_parsed_file_name_t * pfn,
 				 gs_memory_t *mem, client_name_t cname);
-private int parse_file_access_string(const ref *op, char file_access[4]);
+static int parse_file_access_string(const ref *op, char file_access[4]);
 
 /* Forward references: other. */
-private int execfile_finish(i_ctx_t *);
-private int execfile_cleanup(i_ctx_t *);
-private int zopen_file(i_ctx_t *, const gs_parsed_file_name_t *pfn,
+static int execfile_finish(i_ctx_t *);
+static int execfile_cleanup(i_ctx_t *);
+static int zopen_file(i_ctx_t *, const gs_parsed_file_name_t *pfn,
 		       const char *file_access, stream **ps,
 		       gs_memory_t *mem);
-private iodev_proc_open_file(iodev_os_open_file);
+static iodev_proc_open_file(iodev_os_open_file);
 stream_proc_report_error(filter_report_error);
 
 /*
@@ -110,11 +110,11 @@ stream_proc_report_error(filter_report_error);
 extern const uint file_default_buffer_size;
 
 /* An invalid file object */
-private stream invalid_file_stream;
+static stream invalid_file_stream;
 stream *const invalid_file_entry = &invalid_file_stream;
 
 /* Initialize the file table */
-private int
+static int
 zfile_init(i_ctx_t *i_ctx_p)
 {
     /* Create and initialize an invalid (closed) stream. */
@@ -139,7 +139,7 @@ make_invalid_file(ref * fp)
 
 /* Check a file name for permission by stringmatch on one of the */
 /* strings of the permitgroup array. */
-private int
+static int
 check_file_permissions_reduced(i_ctx_t *i_ctx_p, const char *fname, int len,
 			const char *permitgroup)
 {
@@ -205,7 +205,7 @@ check_file_permissions_reduced(i_ctx_t *i_ctx_p, const char *fname, int len,
 
 /* Check a file name for permission by stringmatch on one of the */
 /* strings of the permitgroup array */
-private int
+static int
 check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
 			const char *permitgroup)
 {
@@ -287,7 +287,7 @@ zfile(i_ctx_t *i_ctx_p)
  * temp directory is not explicitly named on the PermitFile... path 
  * The names 'SAFETY' and 'tempfiles' are defined by gs_init.ps
 */
-private bool
+static bool
 file_is_tempfile(i_ctx_t *i_ctx_p, const ref *op)
 {
     ref *SAFETY;
@@ -306,7 +306,7 @@ file_is_tempfile(i_ctx_t *i_ctx_p, const ref *op)
 /* ------ Level 2 extensions ------ */
 
 /* <string> deletefile - */
-private int
+static int
 zdeletefile(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -331,9 +331,9 @@ zdeletefile(i_ctx_t *i_ctx_p)
 }
 
 /* <template> <proc> <scratch> filenameforall - */
-private int file_continue(i_ctx_t *);
-private int file_cleanup(i_ctx_t *);
-private int
+static int file_continue(i_ctx_t *);
+static int file_cleanup(i_ctx_t *);
+static int
 zfilenameforall(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -377,7 +377,7 @@ zfilenameforall(i_ctx_t *i_ctx_p)
     return (code == o_pop_estack ? o_push_estack : code);
 }
 /* Continuation operator for enumerating files */
-private int
+static int
 file_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -408,7 +408,7 @@ file_continue(i_ctx_t *i_ctx_p)
     }
 }
 /* Cleanup procedure for enumerating files */
-private int
+static int
 file_cleanup(i_ctx_t *i_ctx_p)
 {
     gx_io_device *iodev = r_ptr(esp + 2, gx_io_device);
@@ -418,7 +418,7 @@ file_cleanup(i_ctx_t *i_ctx_p)
 }
 
 /* <string1> <string2> renamefile - */
-private int
+static int
 zrenamefile(i_ctx_t *i_ctx_p)
 {
     int code;
@@ -469,7 +469,7 @@ zrenamefile(i_ctx_t *i_ctx_p)
 /* <file> status <open_bool> */
 /* <string> status <pages> <bytes> <ref_time> <creation_time> true */
 /* <string> status false */
-private int
+static int
 zstatus(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -539,7 +539,7 @@ zstatus(i_ctx_t *i_ctx_p)
 /* ------ Non-standard extensions ------ */
 
 /* <executable_file> .execfile - */
-private int
+static int
 zexecfile(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -552,7 +552,7 @@ zexecfile(i_ctx_t *i_ctx_p)
     return zexec(i_ctx_p);
 }
 /* Finish normally. */
-private int
+static int
 execfile_finish(i_ctx_t *i_ctx_p)
 {
     check_ostack(1);
@@ -561,7 +561,7 @@ execfile_finish(i_ctx_t *i_ctx_p)
     return o_pop_estack;
 }
 /* Clean up by closing the file. */
-private int
+static int
 execfile_cleanup(i_ctx_t *i_ctx_p)
 {
     check_ostack(1);
@@ -570,7 +570,7 @@ execfile_cleanup(i_ctx_t *i_ctx_p)
 }
 
 /* - .filenamelistseparator <string> */
-private int
+static int
 zfilenamelistseparator(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -582,7 +582,7 @@ zfilenamelistseparator(i_ctx_t *i_ctx_p)
 }
 
 /* <name> .filenamesplit <dir> <base> <extension> */
-private int
+static int
 zfilenamesplit(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -654,7 +654,7 @@ zlibfile(i_ctx_t *i_ctx_p)
 
 /* A "simple" prefix is defined as a (possibly empty) string of
    alphanumeric, underscore, and hyphen characters. */
-private bool
+static bool
 prefix_is_simple(const char *pstr)
 {
     int i;
@@ -669,7 +669,7 @@ prefix_is_simple(const char *pstr)
 }
 
 /* <prefix|null> <access_string> .tempfile <name_string> <file> */
-private int
+static int
 ztempfile(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -759,7 +759,7 @@ const op_def zfile_op_defs[] =
 
 /* Parse a file name into device and individual name. */
 /* See gsfname.c for details. */
-private int
+static int
 parse_file_name(const ref * op, gs_parsed_file_name_t * pfn, bool safemode)
 {
     int code;
@@ -782,7 +782,7 @@ parse_file_name(const ref * op, gs_parsed_file_name_t * pfn, bool safemode)
 
 /* Parse a real (non-device) file name and convert to a C string. */
 /* See gsfname.c for details. */
-private int
+static int
 parse_real_file_name(const ref *op, gs_parsed_file_name_t *pfn,
 		     gs_memory_t *mem, client_name_t cname)
 {
@@ -793,7 +793,7 @@ parse_real_file_name(const ref *op, gs_parsed_file_name_t *pfn,
 
 /* Parse the access string for opening a file. */
 /* [4] is for r/w, +, b, \0. */
-private int
+static int
 parse_file_access_string(const ref *op, char file_access[4])
 {
     const byte *astr;
@@ -831,7 +831,7 @@ parse_file_access_string(const ref *op, char file_access[4])
  * Open a file specified by a parsed file name (which may be only a
  * device).
  */
-private int
+static int
 zopen_file(i_ctx_t *i_ctx_p, const gs_parsed_file_name_t *pfn,
 	   const char *file_access, stream **ps, gs_memory_t *mem)
 {
@@ -860,7 +860,7 @@ zopen_file(i_ctx_t *i_ctx_p, const gs_parsed_file_name_t *pfn,
  * Define the file_open procedure for the %os% IODevice (also used, as the
  * default, for %pipe% and possibly others).
  */
-private int
+static int
 iodev_os_open_file(gx_io_device * iodev, const char *fname, uint len,
 		   const char *file_access, stream ** ps, gs_memory_t * mem)
 {
@@ -886,7 +886,7 @@ make_stream_file(ref * pfile, stream * s, const char *access)
     }
 }
 
-private int
+static int
 check_file_permissions_aux(i_ctx_t *i_ctx_p, char *fname, uint flen)
 {   /* i_ctx_p is NULL running init files. */
     /* fname must be reduced. */

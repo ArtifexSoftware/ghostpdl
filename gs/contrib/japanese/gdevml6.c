@@ -28,11 +28,11 @@ copies.  */
 #include "gdevprn.h"
 
 /* The device descriptors */
-private dev_proc_open_device(ml600_open);
-private dev_proc_close_device(ml600_close);
-private dev_proc_print_page(ml600_print_page);
+static dev_proc_open_device(ml600_open);
+static dev_proc_close_device(ml600_close);
+static dev_proc_print_page(ml600_print_page);
 
-private gx_device_procs ml600_procs =
+static gx_device_procs ml600_procs =
 	prn_procs(ml600_open, gdev_prn_output_page, ml600_close);
 
 gx_device_printer gs_ml600_device =
@@ -45,36 +45,36 @@ gx_device_printer gs_ml600_device =
 
 
 /* ------ prototype ------ */
-private int
+static int
 ml_finish(
 	gx_device_printer	*pdev,
 	FILE	*fp);
 
-private int
+static int
 ml_init(
 	gx_device_printer	*pdev,
 	FILE	*fp);
 
-private int
+static int
 move_pos(
 	FILE	*fp,
 	int	n,
 	int	m);
 
-private int
+static int
 make_line_data(
 	byte	*curr_data,
 	byte	*last_data,
 	int	line_size,
 	byte	*buf);
 
-private int
+static int
 send_line(
 	byte	*buf,
 	int	cnt,
 	FILE	*fp);
 
-private int
+static int
 page_header(
 	gx_device_printer	*pdev,
 	FILE	*fp);
@@ -86,7 +86,7 @@ page_header(
 #define ppdev	((gx_device_printer *)pdev)
 
 
-private int
+static int
 ml600_open(
 	gx_device	*pdev)
 {
@@ -106,7 +106,7 @@ ml600_open(
 	return ml_init(ppdev, prn_stream);
 }
 
-private int
+static int
 ml600_close(
 	gx_device	*pdev)
 {
@@ -125,7 +125,7 @@ ml600_close(
 
 
 /* Send the page to the printer.  */
-private int
+static int
 ml600_print_page(
 	gx_device_printer	*pdev,
 	FILE	*prn_stream)
@@ -203,7 +203,7 @@ ml600_print_page(
 }
 
 
-private int
+static int
 move_pos(
 	FILE	*fp,
 	int	n,
@@ -226,7 +226,7 @@ move_pos(
 }
 
 
-private int
+static int
 make_line_data(
 	byte	*curr_data,
 	byte	*last_data,
@@ -286,7 +286,7 @@ make_line_data(
 }
 
 
-private int
+static int
 send_line(
 	byte	*buf,
 	int	cnt,
@@ -298,7 +298,7 @@ send_line(
 }
 
 
-private int
+static int
 ml_init(
 	gx_device_printer	*pdev,
 	FILE	*fp)
@@ -311,7 +311,7 @@ ml_init(
 }
 
 
-private int
+static int
 page_header(
 	gx_device_printer	*pdev,
 	FILE	*fp)
@@ -342,7 +342,7 @@ page_header(
 }
 
 
-private int
+static int
 ml_finish(
 	gx_device_printer	*pdev,
 	FILE	*fp)

@@ -41,11 +41,11 @@
 /* The only ones we use are GC-able and not persistent. */
 gs_private_st_composite(st_gs_param_string, gs_param_string, "gs_param_string",
 			param_string_enum_ptrs, param_string_reloc_ptrs);
-private
+static
 ENUM_PTRS_WITH(param_string_enum_ptrs, gs_param_string *pstr) return 0;
 case 0: return ENUM_CONST_STRING(pstr);
 ENUM_PTRS_END
-private
+static
 RELOC_PTRS_WITH(param_string_reloc_ptrs, gs_param_string *pstr)
 {
     gs_const_string str;
@@ -95,7 +95,7 @@ typedef struct psdf_image_filter_name_s {
     psdf_version min_version;
 } psdf_image_filter_name;
 
-private const psdf_image_filter_name Poly_filters[] = {
+static const psdf_image_filter_name Poly_filters[] = {
     {"DCTEncode", &s_DCTE_template},
     {"FlateEncode", &s_zlibE_template, psdf_version_ll3},
     {"LZWEncode", &s_LZWE_template},
@@ -105,7 +105,7 @@ private const psdf_image_filter_name Poly_filters[] = {
     {0, 0}
 };
 
-private const psdf_image_filter_name Mono_filters[] = {
+static const psdf_image_filter_name Mono_filters[] = {
     {"CCITTFaxEncode", &s_CFE_template},
     {"FlateEncode", &s_zlibE_template, psdf_version_ll3},
     {"LZWEncode", &s_LZWE_template},
@@ -143,7 +143,7 @@ typedef struct psdf_image_param_names_s {
       gs_param_item_end\
     }
 
-private const psdf_image_param_names_t Color_names = {
+static const psdf_image_param_names_t Color_names = {
     psdf_image_param_names(
 	"ColorACSImageDict", "AntiAliasColorImages", "AutoFilterColorImages",
 	"ColorImageDepth", "ColorImageDict",
@@ -153,7 +153,7 @@ private const psdf_image_param_names_t Color_names = {
 	"ColorImageResolution", 0
     )
 };
-private const psdf_image_param_names_t Gray_names = {
+static const psdf_image_param_names_t Gray_names = {
     psdf_image_param_names(
 	"GrayACSImageDict", "AntiAliasGrayImages", "AutoFilterGrayImages",
 	"GrayImageDepth", "GrayImageDict",
@@ -163,7 +163,7 @@ private const psdf_image_param_names_t Gray_names = {
 	"GrayImageResolution", 0
     )
 };
-private const psdf_image_param_names_t Mono_names = {
+static const psdf_image_param_names_t Mono_names = {
     psdf_image_param_names(
 	0, "AntiAliasMonoImages", 0,
 	"MonoImageDepth", "MonoImageDict",
@@ -173,7 +173,7 @@ private const psdf_image_param_names_t Mono_names = {
 	"MonoImageResolution", 0
     )
 };
-private const psdf_image_param_names_t Color_names15 = {
+static const psdf_image_param_names_t Color_names15 = {
     psdf_image_param_names(
 	"ColorACSImageDict", "AntiAliasColorImages", "AutoFilterColorImages",
 	"ColorImageDepth", "ColorImageDict",
@@ -183,7 +183,7 @@ private const psdf_image_param_names_t Color_names15 = {
 	"ColorImageResolution", "ColorAutoFilterStrategy"
     )
 };
-private const psdf_image_param_names_t Gray_names15 = {
+static const psdf_image_param_names_t Gray_names15 = {
     psdf_image_param_names(
 	"GrayACSImageDict", "AntiAliasGrayImages", "AutoFilterGrayImages",
 	"GrayImageDepth", "GrayImageDict",
@@ -194,32 +194,32 @@ private const psdf_image_param_names_t Gray_names15 = {
     )
 };
 #undef pi
-private const char *const AutoRotatePages_names[] = {
+static const char *const AutoRotatePages_names[] = {
     psdf_arp_names, 0
 };
-private const char *const ColorConversionStrategy_names[] = {
+static const char *const ColorConversionStrategy_names[] = {
     psdf_ccs_names, 0
 };
-private const char *const DownsampleType_names[] = {
+static const char *const DownsampleType_names[] = {
     psdf_ds_names, 0
 };
-private const char *const Binding_names[] = {
+static const char *const Binding_names[] = {
     psdf_binding_names, 0
 };
-private const char *const DefaultRenderingIntent_names[] = {
+static const char *const DefaultRenderingIntent_names[] = {
     psdf_ri_names, 0
 };
-private const char *const TransferFunctionInfo_names[] = {
+static const char *const TransferFunctionInfo_names[] = {
     psdf_tfi_names, 0
 };
-private const char *const UCRandBGInfo_names[] = {
+static const char *const UCRandBGInfo_names[] = {
     psdf_ucrbg_names, 0
 };
-private const char *const CannotEmbedFontPolicy_names[] = {
+static const char *const CannotEmbedFontPolicy_names[] = {
     psdf_cefp_names, 0
 };
 
-private const gs_param_item_t psdf_param_items[] = {
+static const gs_param_item_t psdf_param_items[] = {
 #define pi(key, type, memb) { key, type, offset_of(psdf_distiller_params, memb) }
 
     /* General parameters */
@@ -260,7 +260,7 @@ private const gs_param_item_t psdf_param_items[] = {
 
 /* -------- Get parameters -------- */
 
-private int
+static int
 psdf_write_name(gs_param_list *plist, const char *key, const char *str)
 {
     gs_param_string pstr;
@@ -269,7 +269,7 @@ psdf_write_name(gs_param_list *plist, const char *key, const char *str)
     return param_write_name(plist, key, &pstr);
 }
 
-private int
+static int
 psdf_write_string_param(gs_param_list *plist, const char *key,
 			const gs_const_string *pstr)
 {
@@ -285,7 +285,7 @@ psdf_write_string_param(gs_param_list *plist, const char *key,
  * Get an image Dict parameter.  Note that we return a default (empty)
  * dictionary if the parameter has never been set.
  */
-private int
+static int
 psdf_get_image_dict_param(gs_param_list * plist, const gs_param_name pname,
 			  gs_c_param_list *plvalue)
 {
@@ -306,7 +306,7 @@ psdf_get_image_dict_param(gs_param_list * plist, const gs_param_name pname,
 }
 
 /* Get a set of image-related parameters. */
-private int
+static int
 psdf_get_image_params(gs_param_list * plist,
 	  const psdf_image_param_names_t * pnames, psdf_image_params * params)
 {
@@ -352,7 +352,7 @@ psdf_get_image_params(gs_param_list * plist,
 }
 
 /* Get a font embedding parameter. */
-private int
+static int
 psdf_get_embed_param(gs_param_list *plist, gs_param_name allpname,
 		     const gs_param_string_array *psa)
 {
@@ -430,7 +430,7 @@ extern stream_state_proc_put_params(s_CF_put_params, stream_CF_state);
 extern stream_state_proc_put_params(s_DCTE_put_params, stream_DCT_state);
 typedef stream_state_proc_put_params((*ss_put_params_t), stream_state);
 
-private int
+static int
 psdf_read_string_param(gs_param_list *plist, const char *key,
 		       gs_const_string *pstr, gs_memory_t *mem, int ecode)
 {
@@ -461,7 +461,7 @@ psdf_read_string_param(gs_param_list *plist, const char *key,
  * The arguments and return value for psdf_put_enum are different because
  * we must cast the value both going in and coming out.
  */
-private int
+static int
 psdf_put_enum(gs_param_list *plist, const char *key, int value,
 	      const char *const pnames[], int *pecode)
 {
@@ -469,7 +469,7 @@ psdf_put_enum(gs_param_list *plist, const char *key, int value,
     return value;
 }
 
-private int
+static int
 psdf_CF_put_params(gs_param_list * plist, stream_state * st)
 {
     stream_CFE_state *const ss = (stream_CFE_state *) st;
@@ -480,7 +480,7 @@ psdf_CF_put_params(gs_param_list * plist, stream_state * st)
     return s_CF_put_params(plist, (stream_CF_state *) ss);
 }
 
-private int
+static int
 psdf_DCT_put_params(gs_param_list * plist, stream_state * st)
 {
     return psdf_DCT_filter(plist, st, 8 /*nominal*/, 8 /*ibid.*/, 3 /*ibid.*/,
@@ -488,7 +488,7 @@ psdf_DCT_put_params(gs_param_list * plist, stream_state * st)
 }
 
 /* Put [~](Always|Never)Embed parameters. */
-private int
+static int
 param_read_embed_array(gs_param_list * plist, gs_param_name pname,
 		       gs_param_string_array * psa, int ecode)
 {
@@ -505,12 +505,12 @@ param_read_embed_array(gs_param_list * plist, gs_param_name pname,
     }
     return ecode;
 }
-private bool
+static bool
 param_string_eq(const gs_param_string *ps1, const gs_param_string *ps2)
 {
     return !bytes_compare(ps1->data, ps1->size, ps2->data, ps2->size);
 }
-private int
+static int
 add_embed(gs_param_string_array *prsa, const gs_param_string_array *psa,
 	  gs_memory_t *mem)
 {
@@ -541,7 +541,7 @@ add_embed(gs_param_string_array *prsa, const gs_param_string_array *psa,
     prsa->size = count;
     return 0;
 }
-private void
+static void
 delete_embed(gs_param_string_array *prsa, const gs_param_string_array *pnsa,
 	     gs_memory_t *mem)
 {
@@ -564,7 +564,7 @@ delete_embed(gs_param_string_array *prsa, const gs_param_string_array *pnsa,
     }
     prsa->size = count;
 }
-private int
+static int
 psdf_put_embed_param(gs_param_list * plist, gs_param_name notpname,
 		     gs_param_name allpname, gs_param_string_array * psa,
 		     gs_memory_t *mem, int ecode)
@@ -649,7 +649,7 @@ psdf_put_embed_param(gs_param_list * plist, gs_param_name notpname,
 }
 
 /* Put an image Dict parameter. */
-private int
+static int
 psdf_put_image_dict_param(gs_param_list * plist, const gs_param_name pname,
 			  gs_c_param_list **pplvalue,
 			  const stream_template * template,
@@ -707,7 +707,7 @@ psdf_put_image_dict_param(gs_param_list * plist, const gs_param_name pname,
 }
 
 /* Put a set of image-related parameters. */
-private int
+static int
 psdf_put_image_params(const gx_device_psdf * pdev, gs_param_list * plist,
 		      const psdf_image_param_names_t * pnames,
 		      psdf_image_params * params, int ecode)

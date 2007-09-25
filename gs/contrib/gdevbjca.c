@@ -46,35 +46,35 @@
 #include <math.h>
 #include <time.h>
 
-private void bjc_put_bytes(FILE *file, const char *data, int count);
-private void bjc_put_hi_lo(FILE *file, int value);
-private void bjc_put_lo_hi(FILE *file, int value);
-private void bjc_put_command(FILE *file, char command, int count);
+static void bjc_put_bytes(FILE *file, const char *data, int count);
+static void bjc_put_hi_lo(FILE *file, int value);
+static void bjc_put_lo_hi(FILE *file, int value);
+static void bjc_put_command(FILE *file, char command, int count);
 
 /* ---------------- Utilities ---------------- */
 
-private void
+static void
 bjc_put_bytes(FILE *file, const char *data, int count)
 {
 
     fwrite(data, count, 1, file);
 }
 
-private void
+static void
 bjc_put_hi_lo(FILE *file, int value)
 {
     fputc(((value & 0xffff) >> 8), file);
     fputc(value & 0xff, file);
 }
 
-private void
+static void
 bjc_put_lo_hi(FILE *file, int value)
 {
     fputc(value & 0xff, file);
     fputc(((value & 0xffff) >> 8), file);
 }
 
-private void
+static void
 bjc_put_command(FILE *file, char command, int count)
 {   char tmp[3] = { '\033', '(', ' '};
     tmp[2] = command;

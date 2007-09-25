@@ -24,10 +24,10 @@
 #include "vdtrace.h"
 
 /* Forward declarations */
-private void adjust_point_to_tangent(segment *, const segment *,
+static void adjust_point_to_tangent(segment *, const segment *,
 				     const gs_fixed_point *);
 
-private inline int
+static inline int
 break_line_if_long(gx_path *ppath, const segment *pseg)
 {
     fixed x0 = ppath->position.x;
@@ -269,7 +269,7 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
  * use is 0.25 * the value we just derived.  We must check that
  * numerical instabilities don't lead to a negative value of T.
  */
-private void
+static void
 adjust_point_to_tangent(segment * pseg, const segment * next,
 			const gs_fixed_point * p1)
 {
@@ -666,7 +666,7 @@ gx_curve_monotonic_points(fixed v0, fixed v1, fixed v2, fixed v3,
 
 /* ---------------- Path optimization for the filling algorithm. ---------------- */
 
-private bool
+static bool
 find_contacting_segments(const subpath *sp0, segment *sp0last, 
 			 const subpath *sp1, segment *sp1last, 
 			 segment **sc0, segment **sc1)

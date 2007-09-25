@@ -26,19 +26,19 @@
 
 /* <state> <from_string> <to_string> .type1encrypt <new_state> <substring> */
 /* <state> <from_string> <to_string> .type1decrypt <new_state> <substring> */
-private int type1crypt(i_ctx_t *,
+static int type1crypt(i_ctx_t *,
 		       int (*)(byte *, const byte *, uint, ushort *));
-private int
+static int
 ztype1encrypt(i_ctx_t *i_ctx_p)
 {
     return type1crypt(i_ctx_p, gs_type1_encrypt);
 }
-private int
+static int
 ztype1decrypt(i_ctx_t *i_ctx_p)
 {
     return type1crypt(i_ctx_p, gs_type1_decrypt);
 }
-private int
+static int
 type1crypt(i_ctx_t *i_ctx_p,
 	   int (*proc)(byte *, const byte *, uint, ushort *))
 {
@@ -66,7 +66,7 @@ type1crypt(i_ctx_t *i_ctx_p,
 
 /* Get the seed parameter for eexecEncode/Decode. */
 /* Return npop if OK. */
-private int
+static int
 eexec_param(os_ptr op, ushort * pcstate)
 {
     int npop = 1;
@@ -82,7 +82,7 @@ eexec_param(os_ptr op, ushort * pcstate)
 
 /* <target> <seed> eexecEncode/filter <file> */
 /* <target> <seed> <dict_ignored> eexecEncode/filter <file> */
-private int
+static int
 zexE(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -96,7 +96,7 @@ zexE(i_ctx_t *i_ctx_p)
 
 /* <source> <seed> eexecDecode/filter <file> */
 /* <source> <dict> eexecDecode/filter <file> */
-private int
+static int
 zexD(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

@@ -33,7 +33,7 @@
 /* ------ Bounded Huffman code filters ------ */
 
 /* Common setup for encoding and decoding filters */
-private int
+static int
 bhc_setup(os_ptr op, stream_BHC_state * pbhcs)
 {
     int code;
@@ -109,7 +109,7 @@ bhc_setup(os_ptr op, stream_BHC_state * pbhcs)
 }
 
 /* <target> <dict> BoundedHuffmanEncode/filter <file> */
-private int
+static int
 zBHCE(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -122,7 +122,7 @@ zBHCE(i_ctx_t *i_ctx_p)
 }
 
 /* <source> <dict> BoundedHuffmanDecode/filter <file> */
-private int
+static int
 zBHCD(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -139,7 +139,7 @@ zBHCD(i_ctx_t *i_ctx_p)
 /* the code counts; the remaining elements will be replaced with */
 /* the code values.  This is the form needed for the Tables element of */
 /* the dictionary parameter for the BoundedHuffman filters. */
-private int
+static int
 zcomputecodes(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -201,7 +201,7 @@ zcomputecodes(i_ctx_t *i_ctx_p)
 /* ------ Burrows/Wheeler block sorting filters ------ */
 
 /* Common setup for encoding and decoding filters */
-private int
+static int
 bwbs_setup(os_ptr op, stream_BWBS_state * pbwbss)
 {
     int code =
@@ -214,7 +214,7 @@ bwbs_setup(os_ptr op, stream_BWBS_state * pbwbss)
 }
 
 /* <target> <dict> BWBlockSortEncode/filter <file> */
-private int
+static int
 zBWBSE(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -230,7 +230,7 @@ zBWBSE(i_ctx_t *i_ctx_p)
 }
 
 /* <source> <dict> BWBlockSortDecode/filter <file> */
-private int
+static int
 zBWBSD(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -245,7 +245,7 @@ zBWBSD(i_ctx_t *i_ctx_p)
 /* ------ Byte translation filters ------ */
 
 /* Common setup */
-private int
+static int
 bt_setup(os_ptr op, stream_BT_state * pbts)
 {
     check_read_type(*op, t_string);
@@ -257,7 +257,7 @@ bt_setup(os_ptr op, stream_BT_state * pbts)
 
 /* <target> <table> ByteTranslateEncode/filter <file> */
 /* <target> <table> <dict> ByteTranslateEncode/filter <file> */
-private int
+static int
 zBTE(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -271,7 +271,7 @@ zBTE(i_ctx_t *i_ctx_p)
 
 /* <target> <table> ByteTranslateDecode/filter <file> */
 /* <target> <table> <dict> ByteTranslateDecode/filter <file> */
-private int
+static int
 zBTD(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -287,7 +287,7 @@ zBTD(i_ctx_t *i_ctx_p)
 
 /* <target> MoveToFrontEncode/filter <file> */
 /* <target> <dict> MoveToFrontEncode/filter <file> */
-private int
+static int
 zMTFE(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -297,7 +297,7 @@ zMTFE(i_ctx_t *i_ctx_p)
 
 /* <source> MoveToFrontDecode/filter <file> */
 /* <source> <dict> MoveToFrontDecode/filter <file> */
-private int
+static int
 zMTFD(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

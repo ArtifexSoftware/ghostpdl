@@ -86,7 +86,7 @@ const byte gs_map_mac_to_iso[256] =
 
 /* The xfont procedure record. */
 
-private const gx_xfont_procs mac_xfont_procs =
+static const gx_xfont_procs mac_xfont_procs =
 {
     mac_lookup_font,
     mac_char_xglyph,
@@ -116,7 +116,7 @@ mac_get_xfont_procs(gx_device *dev)
 
 /* lookup_font */
 
-private gx_xfont *
+static gx_xfont *
 mac_lookup_font(gx_device *dev, const byte *fname, uint len,
 				int encoding_index, const gs_uid *puid,
 				const gs_matrix *pmat, gs_memory_t *mem)
@@ -205,7 +205,7 @@ mac_lookup_font(gx_device *dev, const byte *fname, uint len,
 
 /* char_xglyph */
 
-private gx_xglyph
+static gx_xglyph
 mac_char_xglyph(gx_xfont *xf, gs_char chr, int encoding_index,
 		gs_glyph glyph, const gs_const_string *glyph_name)
 {
@@ -237,7 +237,7 @@ mac_char_xglyph(gx_xfont *xf, gs_char chr, int encoding_index,
 
 /* char_metrics */
 
-private int
+static int
 mac_char_metrics(gx_xfont *xf, gx_xglyph xg, int wmode,
 				 gs_point *pwidth, gs_int_rect *pbbox)
 {
@@ -261,7 +261,7 @@ mac_char_metrics(gx_xfont *xf, gx_xglyph xg, int wmode,
 
 /* render_char */
 
-private int
+static int
 mac_render_char(gx_xfont *xf, gx_xglyph xg, gx_device *dev,
 				int xo, int yo, gx_color_index color, int required)
 {
@@ -310,7 +310,7 @@ mac_render_char(gx_xfont *xf, gx_xglyph xg, gx_device *dev,
 
 /* release */
 
-private int
+static int
 mac_release(gx_xfont *xf, gs_memory_t *mem)
 {
 	if (mem != NULL)
@@ -323,7 +323,7 @@ mac_release(gx_xfont *xf, gs_memory_t *mem)
 
 /* try to extract font family and style from name and find a suitable font */
 
-private void
+static void
 mac_find_font_family(ConstStringPtr fname, int len, FMFontFamily *fontID, FMFontStyle *fontFace)
 {
 	char			fontNameStr[512];
@@ -381,7 +381,7 @@ mac_find_font_family(ConstStringPtr fname, int len, FMFontFamily *fontID, FMFont
 
 /* extract a font's platform id (encoding) */
 
-private int
+static int
 mac_get_font_encoding(mac_xfont *macxf)
 {
 	int			encoding = ENCODING_INDEX_UNKNOWN;
@@ -429,7 +429,7 @@ mac_get_font_encoding(mac_xfont *macxf)
 
 /* get a handle to a font resource */
 
-private void
+static void
 mac_get_font_resource(mac_xfont *macxf, ResType *resType, short *resID)
 {
 	FMInput		fontInput = {0, 0, 0, true, 0, {1,1}, {1,1}};

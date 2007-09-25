@@ -32,7 +32,7 @@ private_st_pattern2_template();
 private_st_pattern2_instance();
 
 /* GC procedures */
-private ENUM_PTRS_BEGIN(pattern2_instance_enum_ptrs) {
+static ENUM_PTRS_BEGIN(pattern2_instance_enum_ptrs) {
     if (index < st_pattern2_template_max_ptrs) {
         gs_ptr_type_t ptype =
             ENUM_SUPER_ELT(gs_pattern2_instance_t, st_pattern2_template,
@@ -45,18 +45,18 @@ private ENUM_PTRS_BEGIN(pattern2_instance_enum_ptrs) {
     ENUM_PREFIX(st_pattern_instance, st_pattern2_template_max_ptrs);
 }
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(pattern2_instance_reloc_ptrs) {
+static RELOC_PTRS_BEGIN(pattern2_instance_reloc_ptrs) {
     RELOC_PREFIX(st_pattern_instance);
     RELOC_SUPER(gs_pattern2_instance_t, st_pattern2_template, template);
 } RELOC_PTRS_END
 
 /* Define a PatternType 2 pattern. */
-private pattern_proc_uses_base_space(gs_pattern2_uses_base_space);
-private pattern_proc_make_pattern(gs_pattern2_make_pattern);
-private pattern_proc_get_pattern(gs_pattern2_get_pattern);
-private pattern_proc_remap_color(gs_pattern2_remap_color);
-private pattern_proc_set_color(gs_pattern2_set_color);
-private const gs_pattern_type_t gs_pattern2_type = {
+static pattern_proc_uses_base_space(gs_pattern2_uses_base_space);
+static pattern_proc_make_pattern(gs_pattern2_make_pattern);
+static pattern_proc_get_pattern(gs_pattern2_get_pattern);
+static pattern_proc_remap_color(gs_pattern2_remap_color);
+static pattern_proc_set_color(gs_pattern2_set_color);
+static const gs_pattern_type_t gs_pattern2_type = {
     2, {
         gs_pattern2_uses_base_space, gs_pattern2_make_pattern,
         gs_pattern2_get_pattern, gs_pattern2_remap_color,
@@ -72,14 +72,14 @@ gs_pattern2_init(gs_pattern2_template_t * ppat)
 }
 
 /* Test whether a PatternType 2 pattern uses a base space. */
-private bool
+static bool
 gs_pattern2_uses_base_space(const gs_pattern_template_t *ptemp)
 {
     return false;
 }
 
 /* Make an instance of a PatternType 2 pattern. */
-private int
+static int
 gs_pattern2_make_pattern(gs_client_color * pcc,
                          const gs_pattern_template_t * pcp,
                          const gs_matrix * pmat, gs_state * pgs,
@@ -100,7 +100,7 @@ gs_pattern2_make_pattern(gs_client_color * pcc,
 }
 
 /* Get the template of a PatternType 2 pattern instance. */
-private const gs_pattern_template_t *
+static const gs_pattern_template_t *
 gs_pattern2_get_pattern(const gs_pattern_instance_t *pinst)
 {
     return (const gs_pattern_template_t *)
@@ -128,11 +128,11 @@ gs_private_st_ptrs_add0(st_dc_pattern2, gx_device_color, "dc_pattern2",
                         dc_pattern2_enum_ptrs, dc_pattern2_reloc_ptrs,
                         st_client_color, ccolor);
 
-private dev_color_proc_get_dev_halftone(gx_dc_pattern2_get_dev_halftone);
-private dev_color_proc_load(gx_dc_pattern2_load);
-private dev_color_proc_fill_rectangle(gx_dc_pattern2_fill_rectangle);
-private dev_color_proc_equal(gx_dc_pattern2_equal);
-private dev_color_proc_save_dc(gx_dc_pattern2_save_dc);
+static dev_color_proc_get_dev_halftone(gx_dc_pattern2_get_dev_halftone);
+static dev_color_proc_load(gx_dc_pattern2_load);
+static dev_color_proc_fill_rectangle(gx_dc_pattern2_fill_rectangle);
+static dev_color_proc_equal(gx_dc_pattern2_equal);
+static dev_color_proc_save_dc(gx_dc_pattern2_save_dc);
 /*
  * Define the PatternType 2 Pattern device color type.  This is public only
  * for testing when writing PDF or PostScript.
@@ -158,14 +158,14 @@ gx_dc_is_pattern2_color(const gx_device_color *pdevc)
  * The device halftone used by a PatternType 2 patter is that current in
  * the graphic state at the time of the makepattern call.
  */
-private const gx_device_halftone *
+static const gx_device_halftone *
 gx_dc_pattern2_get_dev_halftone(const gx_device_color * pdevc)
 {
     return ((gs_pattern2_instance_t *)pdevc->ccolor.pattern)->saved->dev_ht;
 }
 
 /* Load a PatternType 2 color into the cache.  (No effect.) */
-private int
+static int
 gx_dc_pattern2_load(gx_device_color *pdevc, const gs_imager_state *ignore_pis,
                     gx_device *ignore_dev, gs_color_select_t ignore_select)
 {
@@ -173,7 +173,7 @@ gx_dc_pattern2_load(gx_device_color *pdevc, const gs_imager_state *ignore_pis,
 }
 
 /* Remap a PatternType 2 color. */
-private int
+static int
 gs_pattern2_remap_color(const gs_client_color * pc, const gs_color_space * pcs,
                         gx_device_color * pdc, const gs_imager_state * pis,
                         gx_device * dev, gs_color_select_t select)
@@ -191,7 +191,7 @@ gs_pattern2_remap_color(const gs_client_color * pc, const gs_color_space * pcs,
  * information as required by that color space. We temporarily disable
  * overprint_mode, as it is never applicable when using shading patterns.
  */
-private int
+static int
 gs_pattern2_set_color(const gs_client_color * pcc, gs_state * pgs)
 {
     gs_pattern2_instance_t * pinst = (gs_pattern2_instance_t *)pcc->pattern;
@@ -209,7 +209,7 @@ gs_pattern2_set_color(const gs_client_color * pcc, gs_state * pgs)
    to allow the clipent to optimize the clipping 
    with changing the order of clip patrhs and rects.
    The client must clip with the shading BBOx before calling this function. */
-private int
+static int
 gx_dc_pattern2_fill_rectangle(const gx_device_color * pdevc, int x, int y,
                               int w, int h, gx_device * dev,
                               gs_logical_operation_t lop,
@@ -234,7 +234,7 @@ gx_dc_pattern2_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 }
 
 /* Compare two PatternType 2 colors for equality. */
-private bool
+static bool
 gx_dc_pattern2_equal(const gx_device_color * pdevc1,
                      const gx_device_color * pdevc2)
 {
@@ -250,7 +250,7 @@ gx_dc_pattern2_equal(const gx_device_color * pdevc1,
  * for the current implementation of pdfwrite.
  * It is not sufficient for restoring the pattern from the saved color.
  */
-private void
+static void
 gx_dc_pattern2_save_dc(
     const gx_device_color * pdevc, 
     gx_device_color_saved * psdc )
@@ -307,7 +307,7 @@ gx_dc_pattern2_color_has_bbox(const gx_device_color * pdevc)
 }
 
 /* Create a path from a PatternType 2 shading BBox to a path. */
-private int
+static int
 gx_dc_shading_path_add_box(gx_path *ppath, const gx_device_color * pdevc)
 {
     gs_pattern2_instance_t *pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;

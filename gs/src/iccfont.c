@@ -39,7 +39,7 @@
 /* ------ Private code ------ */
 
 /* Forward references */
-private int cfont_ref_from_string(i_ctx_t *, ref *, const char *, uint);
+static int cfont_ref_from_string(i_ctx_t *, ref *, const char *, uint);
 
 typedef struct {
     i_ctx_t *i_ctx_p;
@@ -47,7 +47,7 @@ typedef struct {
     ref next;
 } str_enum;
 
-inline private void
+static inline void
 init_str_enum(str_enum *pse, i_ctx_t *i_ctx_p, const char *ksa)
 {
     pse->i_ctx_p = i_ctx_p;
@@ -59,7 +59,7 @@ typedef struct {
     str_enum strings;
 } key_enum;
 
-inline private void
+static inline void
 init_key_enum(key_enum *pke, i_ctx_t *i_ctx_p, const cfont_dict_keys *pkeys,
 	      const char *ksa)
 {
@@ -68,7 +68,7 @@ init_key_enum(key_enum *pke, i_ctx_t *i_ctx_p, const cfont_dict_keys *pkeys,
 }
 
 /* Check for reaching the end of the keys. */
-inline private bool
+static inline bool
 more_keys(const key_enum *pke)
 {
     return (pke->keys.num_enc_keys | pke->keys.num_str_keys);
@@ -77,7 +77,7 @@ more_keys(const key_enum *pke)
 /* Get the next string from a string array. */
 /* Return 1 if it was a string, 0 if it was something else, */
 /* or an error code. */
-private int
+static int
 cfont_next_string(str_enum * pse)
 {
     const byte *str = (const byte *)pse->str_array;
@@ -105,7 +105,7 @@ cfont_next_string(str_enum * pse)
 
 /* Put the next entry into a dictionary. */
 /* We know that more_keys(kp) is true. */
-private int
+static int
 cfont_put_next(ref * pdict, key_enum * kep, const ref * pvalue)
 {
     i_ctx_t *i_ctx_p = kep->strings.i_ctx_p;
@@ -146,7 +146,7 @@ cfont_put_next(ref * pdict, key_enum * kep, const ref * pvalue)
 /* ------ Routines called from compiled font initialization ------ */
 
 /* Create a dictionary with general ref values. */
-private int
+static int
 cfont_ref_dict_create(i_ctx_t *i_ctx_p, ref *pdict,
 		      const cfont_dict_keys *kp, cfont_string_array ksa,
 		      const ref *values)
@@ -168,7 +168,7 @@ cfont_ref_dict_create(i_ctx_t *i_ctx_p, ref *pdict,
 }
 
 /* Create a dictionary with string/null values. */
-private int
+static int
 cfont_string_dict_create(i_ctx_t *i_ctx_p, ref *pdict,
 			 const cfont_dict_keys *kp, cfont_string_array ksa,
 			 cfont_string_array kva)
@@ -200,7 +200,7 @@ cfont_string_dict_create(i_ctx_t *i_ctx_p, ref *pdict,
 }
 
 /* Create a dictionary with number values. */
-private int
+static int
 cfont_num_dict_create(i_ctx_t *i_ctx_p, ref * pdict,
 		      const cfont_dict_keys * kp, cfont_string_array ksa,
 		      const ref * values, const char *lengths)
@@ -232,7 +232,7 @@ cfont_num_dict_create(i_ctx_t *i_ctx_p, ref * pdict,
 }
 
 /* Create an array with name values. */
-private int
+static int
 cfont_name_array_create(i_ctx_t *i_ctx_p, ref * parray, cfont_string_array ksa,
 			int size)
 {
@@ -261,7 +261,7 @@ cfont_name_array_create(i_ctx_t *i_ctx_p, ref * parray, cfont_string_array ksa,
 }
 
 /* Create an array with string/null values. */
-private int
+static int
 cfont_string_array_create(i_ctx_t *i_ctx_p, ref * parray,
 			  cfont_string_array ksa, int size, uint attrs)
 {
@@ -292,7 +292,7 @@ cfont_string_array_create(i_ctx_t *i_ctx_p, ref * parray,
 }
 
 /* Create an array with scalar values. */
-private int
+static int
 cfont_scalar_array_create(i_ctx_t *i_ctx_p, ref * parray,
 			  const ref *va, int size, uint attrs)
 {
@@ -311,14 +311,14 @@ cfont_scalar_array_create(i_ctx_t *i_ctx_p, ref * parray,
 }
 
 /* Create a name. */
-private int
+static int
 cfont_name_create(i_ctx_t *i_ctx_p, ref * pnref, const char *str)
 {
     return name_ref(imemory, (const byte *)str, strlen(str), pnref, 0);
 }
 
 /* Create an object by parsing a string. */
-private int
+static int
 cfont_ref_from_string(i_ctx_t *i_ctx_p, ref * pref, const char *str, uint len)
 {
     scanner_state sstate;
@@ -335,7 +335,7 @@ cfont_ref_from_string(i_ctx_t *i_ctx_p, ref * pref, const char *str, uint len)
 /* ------ Initialization ------ */
 
 /* Procedure vector passed to font initialization procedures. */
-private const cfont_procs ccfont_procs = {
+static const cfont_procs ccfont_procs = {
     cfont_ref_dict_create,
     cfont_string_dict_create,
     cfont_num_dict_create,
@@ -348,7 +348,7 @@ private const cfont_procs ccfont_procs = {
 
 /* null    .getccfont    <number-of-fonts> */
 /* <int>   .getccfont    <font-object> */
-private int
+static int
 zgetccfont(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

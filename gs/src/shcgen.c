@@ -41,7 +41,7 @@ struct count_node_s {
 #ifdef DEBUG
 #  define debug_print_nodes(nodes, n, tag, lengths)\
      if ( gs_debug_c('W') ) print_nodes_proc(nodes, n, tag, lengths);
-private void
+static void
 print_nodes_proc(const count_node * nodes, int n, const char *tag, int lengths)
 {
     int i;
@@ -71,7 +71,7 @@ print_nodes_proc(const count_node * nodes, int n, const char *tag, int lengths)
 #define pn1 ((const count_node *)p1)
 #define pn2 ((const count_node *)p2)
 /* Sort by decreasing frequency. */
-private int
+static int
 compare_freqs(const void *p1, const void *p2)
 {
     long diff = pn2->freq - pn1->freq;
@@ -79,7 +79,7 @@ compare_freqs(const void *p1, const void *p2)
     return (diff < 0 ? -1 : diff > 0 ? 1 : 0);
 }
 /* Sort by increasing code length, and secondarily by decreasing frequency. */
-private int
+static int
 compare_code_lengths(const void *p1, const void *p2)
 {
     int diff = pn1->code_length - pn2->code_length;
@@ -87,7 +87,7 @@ compare_code_lengths(const void *p1, const void *p2)
     return (diff < 0 ? -1 : diff > 0 ? 1 : compare_freqs(p1, p2));
 }
 /* Sort by increasing code value. */
-private int
+static int
 compare_values(const void *p1, const void *p2)
 {
     return (pn1->value < pn2->value ? -1 :
@@ -99,7 +99,7 @@ compare_values(const void *p1, const void *p2)
 /* Adjust code lengths so that none of them exceeds max_length. */
 /* We break this out just to help organize the code; it's only called */
 /* from one place in hc_compute. */
-private void
+static void
 hc_limit_code_lengths(count_node * nodes, uint num_values, int max_length)
 {
     int needed;			/* # of max_length codes we need to free up */

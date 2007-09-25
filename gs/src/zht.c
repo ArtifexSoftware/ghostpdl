@@ -29,14 +29,14 @@
 #include "store.h"
 
 /* Forward references */
-private int screen_sample(i_ctx_t *);
-private int set_screen_continue(i_ctx_t *);
-private int screen_cleanup(i_ctx_t *);
+static int screen_sample(i_ctx_t *);
+static int set_screen_continue(i_ctx_t *);
+static int screen_cleanup(i_ctx_t *);
 
 /* - .currenthalftone <dict> 0 */
 /* - .currenthalftone <frequency> <angle> <proc> 1 */
 /* - .currenthalftone <red_freq> ... <gray_proc> 2 */
-private int
+static int
 zcurrenthalftone(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -92,7 +92,7 @@ zcurrenthalftone(i_ctx_t *i_ctx_p)
 }
 
 /* - .currentscreenlevels <int> */
-private int
+static int
 zcurrentscreenlevels(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -117,10 +117,10 @@ zcurrentscreenlevels(i_ctx_t *i_ctx_p)
 #define senum r_ptr(esp, gs_screen_enum)
 
 /* Forward references */
-private int setscreen_finish(i_ctx_t *);
+static int setscreen_finish(i_ctx_t *);
 
 /* <frequency> <angle> <proc> setscreen - */
-private int
+static int
 zsetscreen(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -175,7 +175,7 @@ zscreen_enum_init(i_ctx_t *i_ctx_p, const gx_ht_order * porder,
     return o_push_estack;
 }
 /* Set up the next sample */
-private int
+static int
 screen_sample(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -206,7 +206,7 @@ screen_sample(i_ctx_t *i_ctx_p)
     return o_push_estack;
 }
 /* Continuation procedure for processing sampled pixels. */
-private int
+static int
 set_screen_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -222,7 +222,7 @@ set_screen_continue(i_ctx_t *i_ctx_p)
     return screen_sample(i_ctx_p);
 }
 /* Finish setscreen. */
-private int
+static int
 setscreen_finish(i_ctx_t *i_ctx_p)
 {
     gs_screen_install(senum);
@@ -234,7 +234,7 @@ setscreen_finish(i_ctx_t *i_ctx_p)
     return 0;
 }
 /* Clean up after screen enumeration */
-private int
+static int
 screen_cleanup(i_ctx_t *i_ctx_p)
 {
     gs_screen_enum *penum = r_ptr(esp + snumpush, gs_screen_enum);

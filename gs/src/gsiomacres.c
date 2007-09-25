@@ -75,22 +75,22 @@ typedef struct {
     int n_resources;
 } resource_list;
 
-private
+static
 int get_int32(byte *p) {
     return (p[0]&0xFF)<<24 | (p[1]&0xFF)<<16 | (p[2]&0xFF)<<8 | (p[3]&0xFF);
 }
 
-private
+static
 int get_int24(byte *p) {
     return (p[0]&0xFF)<<16 | (p[1]&0xFF)<<8 | (p[2]&0xFF);
 }
 
-private
+static
 int get_int16(byte *p) {
     return (p[0]&0xFF)<<8 | (p[1]&0xFF);
 }
 
-private
+static
 int read_int32(FILE *in, void *p)
 {
 	byte w[4], err;
@@ -102,7 +102,7 @@ int read_int32(FILE *in, void *p)
 	return 0;
 }
 
-private
+static
 int read_int24(FILE *in, void *p)
 {
 	byte w[3], err;
@@ -114,7 +114,7 @@ int read_int24(FILE *in, void *p)
 	return 0;
 }
 
-private
+static
 int read_int16(FILE *in, void *p)
 {
 	byte w[2], err;
@@ -126,7 +126,7 @@ int read_int16(FILE *in, void *p)
 	return 0;
 }
 
-private
+static
 int read_int8(FILE *in, void *p)
 {
 	byte c = fgetc(in);
@@ -137,7 +137,7 @@ int read_int8(FILE *in, void *p)
 }
 
 /* convert a 4-character typecode from C string to uint32 representation */
-private unsigned int res_string2type(const char *type_string)
+static unsigned int res_string2type(const char *type_string)
 {
 	unsigned int type = type_string[0] << 24 |
            				type_string[1] << 16 |
@@ -146,7 +146,7 @@ private unsigned int res_string2type(const char *type_string)
     return (type);
 }
 /* convert a 4-character typecode from unsigned int to C string representation */
-private char * res_type2string(const unsigned int type, char *type_string)
+static char * res_type2string(const unsigned int type, char *type_string)
 {
 	if (type_string == NULL) return NULL;
 	
@@ -159,7 +159,7 @@ private char * res_type2string(const unsigned int type, char *type_string)
     return (type_string);
 }
 
-private
+static
 resource_header *read_resource_header(FILE *in, int offset)
 {
 	resource_header *header = malloc(sizeof(*header));
@@ -179,7 +179,7 @@ resource_header *read_resource_header(FILE *in, int offset)
 	return header;
 }
 
-private
+static
 resource_list *read_resource_map(FILE *in, resource_header *header)
 {
     resource_list *list;
@@ -266,7 +266,7 @@ resource_list *read_resource_map(FILE *in, resource_header *header)
 	return list;
 }
 
-private
+static
 void load_resource(FILE *in, resource_header *header, resource *res)
 {
     unsigned int len;
@@ -283,7 +283,7 @@ void load_resource(FILE *in, resource_header *header, resource *res)
     return;
 }
 
-private
+static
 int read_datafork_resource(byte *buf, const char *fname, const uint type, const ushort id)
 {
     resource_header *header;
@@ -337,8 +337,8 @@ int read_datafork_resource(byte *buf, const char *fname, const uint type, const 
 
 
 /* prototypes */
-private iodev_proc_init(iodev_macresource_init);
-private iodev_proc_open_file(iodev_macresource_open_file);
+static iodev_proc_init(iodev_macresource_init);
+static iodev_proc_open_file(iodev_macresource_open_file);
 /* there is no close_file()...stream closure takes care of it */
 /* ignore rest for now */
 
@@ -358,14 +358,14 @@ const gx_io_device gs_iodev_macresource =
 };
 
 /* init state. don't know if we need state yet--probably not */
-private int
+static int
 iodev_macresource_init(gx_io_device *iodev, gs_memory_t *mem)
 {
     return 0;
 }
 
 /* open the requested file return (in ps) a stream containing the resource data */
-private int
+static int
 iodev_macresource_open_file(gx_io_device *iodev, const char *fname, uint namelen,
     const char *access, stream **ps, gs_memory_t *mem)
 {

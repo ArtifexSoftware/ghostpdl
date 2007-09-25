@@ -23,7 +23,7 @@
 #include "stream.h"
 
 /* The identity matrix */
-private const gs_matrix gs_identity_matrix =
+static const gs_matrix gs_identity_matrix =
 {identity_matrix_body};
 
 /* ------ Matrix creation ------ */
@@ -312,7 +312,7 @@ gs_points_bbox(const gs_point pts[4], gs_rect * pbox)
 
 /* Transform or inverse-transform a bounding box. */
 /* Return gs_error_undefinedresult if the matrix is not invertible. */
-private int
+static int
 bbox_transform_either_only(const gs_rect * pbox_in, const gs_matrix * pmat,
 			   gs_point pts[4],
      int (*point_xform) (floatp, floatp, const gs_matrix *, gs_point *))
@@ -328,7 +328,7 @@ bbox_transform_either_only(const gs_rect * pbox_in, const gs_matrix * pmat,
     return code;
 }
 
-private int
+static int
 bbox_transform_either(const gs_rect * pbox_in, const gs_matrix * pmat,
 		      gs_rect * pbox_out,
      int (*point_xform) (floatp, floatp, const gs_matrix *, gs_point *))

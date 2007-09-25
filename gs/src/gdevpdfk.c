@@ -30,7 +30,7 @@
 /* ------ CIE space synthesis ------ */
 
 /* Add a /Range entry to a CIE-based color space dictionary. */
-private int
+static int
 pdf_cie_add_ranges(cos_dict_t *pcd, const gs_range *prange, int n, bool clamp)
 {
     cos_array_t *pca = cos_array_alloc(pcd->pdev, "pdf_cie_add_ranges");
@@ -58,7 +58,7 @@ pdf_cie_add_ranges(cos_dict_t *pcd, const gs_range *prange, int n, bool clamp)
 }
 
 /* Transform a CIEBased color to XYZ. */
-private int
+static int
 cie_to_xyz(const double *in, double out[3], const gs_color_space *pcs,
 	   const gs_imager_state *pis)
 {
@@ -79,7 +79,7 @@ cie_to_xyz(const double *in, double out[3], const gs_color_space *pcs,
 /* ------ Lab space writing and synthesis ------ */
 
 /* Transform XYZ values to Lab. */
-private double
+static double
 lab_g_inverse(double v)
 {
     if (v >= (6.0 * 6.0 * 6.0) / (29 * 29 * 29))
@@ -87,7 +87,7 @@ lab_g_inverse(double v)
     else
 	return (v * (841.0 / 108) + 4.0 / 29);
 }
-private void
+static void
 xyz_to_lab(const double xyz[3], double lab[3], const gs_cie_common *pciec)
 {
     const gs_vector3 *const pWhitePoint = &pciec->points.WhitePoint;
@@ -109,7 +109,7 @@ xyz_to_lab(const double xyz[3], double lab[3], const gs_cie_common *pciec)
 }
 
 /* Create a PDF Lab color space corresponding to a CIEBased color space. */
-private int
+static int
 lab_range(gs_range range_out[3] /* only [1] and [2] used */,
 	  const gs_color_space *pcs, const gs_cie_common *pciec,
 	  const gs_range *ranges, gs_memory_t *mem)
@@ -165,7 +165,7 @@ pdf_put_lab_color_space(cos_array_t *pca, cos_dict_t *pcd,
  * Create a Lab color space for a CIEBased space that can't be represented
  * directly as a Calxxx or Lab space.
  */
-private int
+static int
 pdf_convert_cie_to_lab(gx_device_pdf *pdev, cos_array_t *pca,
 		       const gs_color_space *pcs,
 		       const gs_cie_common *pciec, const gs_range *prange)
@@ -193,7 +193,7 @@ pdf_convert_cie_to_lab(gx_device_pdf *pdev, cos_array_t *pca,
  * Create an ICCBased color space object (internal).  The client must write
  * the profile data on *ppcstrm.
  */
-private int
+static int
 pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
 		  const gs_range *prange /*[4]*/,
 		  const gs_color_space *pcs_alt,
@@ -278,7 +278,7 @@ pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
 /*
  * Finish writing the data stream for an ICCBased color space object.
  */
-private int
+static int
 pdf_finish_iccbased(cos_stream_t *pcstrm)
 {
     /*
@@ -306,7 +306,7 @@ struct profile_table_s {
     const void *write_data;
     const gs_range_t *ranges;
 };
-private profile_table_t *
+static profile_table_t *
 add_table(profile_table_t **ppnt, const char *tag, const byte *data,
 	  uint length)
 {
@@ -319,7 +319,7 @@ add_table(profile_table_t **ppnt, const char *tag, const byte *data,
     pnt->ranges = NULL;
     return pnt;
 }
-private void
+static void
 set_uint32(byte bytes[4], uint value)
 {
     bytes[0] = (byte)(value >> 24);
@@ -327,12 +327,12 @@ set_uint32(byte bytes[4], uint value)
     bytes[2] = (byte)(value >> 8);
     bytes[3] = (byte)value;
 }
-private void
+static void
 set_XYZ(byte bytes[4], floatp value)
 {
     set_uint32(bytes, (uint)(int)(value * 65536));
 }
-private void
+static void
 add_table_xyz3(profile_table_t **ppnt, const char *tag, byte bytes[20],
 	       const gs_vector3 *pv)
 {
@@ -342,7 +342,7 @@ add_table_xyz3(profile_table_t **ppnt, const char *tag, byte bytes[20],
     set_XYZ(bytes + 16, pv->w);
     DISCARD(add_table(ppnt, tag, bytes, 20));
 }
-private void
+static void
 set_sample16(byte *p, floatp v)
 {
     int value = (int)(v * 65535);
@@ -355,9 +355,9 @@ set_sample16(byte *p, floatp v)
     p[1] = (byte)value;
 }
 /* Create and write a TRC curve table. */
-private int write_trc_abc(cos_stream_t *, const profile_table_t *, gs_memory_t *);
-private int write_trc_lmn(cos_stream_t *, const profile_table_t *, gs_memory_t *);
-private profile_table_t *
+static int write_trc_abc(cos_stream_t *, const profile_table_t *, gs_memory_t *);
+static int write_trc_lmn(cos_stream_t *, const profile_table_t *, gs_memory_t *);
+static profile_table_t *
 add_trc(profile_table_t **ppnt, const char *tag, byte bytes[12],
 	const gs_cie_common *pciec, cie_cache_one_step_t one_step)
 {
@@ -372,7 +372,7 @@ add_trc(profile_table_t **ppnt, const char *tag, byte bytes[12],
     pnt->write_data = (const gs_cie_abc *)pciec;
     return pnt;
 }
-private int
+static int
 rgb_to_index(const profile_table_t *pnt)
 {
     switch (pnt->tag[0]) {
@@ -381,7 +381,7 @@ rgb_to_index(const profile_table_t *pnt)
     case 'b': default: /* others can't happen */ return 2;
     }
 }
-private double
+static double
 cache_arg(int i, int denom, const gs_range_t *range)
 {
     double arg = i / (double)denom;
@@ -393,7 +393,7 @@ cache_arg(int i, int denom, const gs_range_t *range)
     return arg;
 }
 
-private int
+static int
 write_trc_abc(cos_stream_t *pcstrm, const profile_table_t *pnt,
 	      gs_memory_t *ignore_mem)
 {
@@ -410,7 +410,7 @@ write_trc_abc(cos_stream_t *pcstrm, const profile_table_t *pnt,
 			     pabc));
     return cos_stream_add_bytes(pcstrm, samples, gx_cie_cache_size * 2);
 }
-private int
+static int
 write_trc_lmn(cos_stream_t *pcstrm, const profile_table_t *pnt,
 	      gs_memory_t *ignore_mem)
 {
@@ -437,8 +437,8 @@ typedef struct icc_a2b0_s {
     int num_points;		/* on each axis of LUT */
     int count;			/* total # of entries in LUT */
 } icc_a2b0_t;
-private int write_a2b0(cos_stream_t *, const profile_table_t *, gs_memory_t *);
-private profile_table_t *
+static int write_a2b0(cos_stream_t *, const profile_table_t *, gs_memory_t *);
+static profile_table_t *
 add_a2b0(profile_table_t **ppnt, icc_a2b0_t *pa2b, int ncomps,
 	 const gs_color_space *pcs)
 {
@@ -476,7 +476,7 @@ add_a2b0(profile_table_t **ppnt, icc_a2b0_t *pa2b, int ncomps,
     pnt->write_data = pa2b;
     return pnt;
 }
-private int
+static int
 write_a2b0(cos_stream_t *pcstrm, const profile_table_t *pnt,
 	   gs_memory_t *mem)
 {
@@ -535,7 +535,7 @@ write_a2b0(cos_stream_t *pcstrm, const profile_table_t *pnt,
 
     return cos_stream_add_bytes(pcstrm, v01, 3 * 4);
 }
-private int
+static int
 pdf_convert_cie_to_iccbased(gx_device_pdf *pdev, cos_array_t *pca,
 			    const gs_color_space *pcs, const char *dcsname,
 			    const gs_cie_common *pciec, const gs_range *prange,

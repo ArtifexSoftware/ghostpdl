@@ -32,8 +32,8 @@
 int z2copy(i_ctx_t *);
 
 /* Forward references */
-private int z2copy_gstate(i_ctx_t *);
-private int push_callout(i_ctx_t *, const char *);
+static int z2copy_gstate(i_ctx_t *);
+static int push_callout(i_ctx_t *, const char *);
 
 /* Extend the `copy' operator to deal with gstates. */
 /* This is done with a hack -- we know that gstates are the only */
@@ -54,7 +54,7 @@ z2copy(i_ctx_t *i_ctx_p)
 
 /* - .currentshowpagecount <count> true */
 /* - .currentshowpagecount false */
-private int
+static int
 zcurrentshowpagecount(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -72,7 +72,7 @@ zcurrentshowpagecount(i_ctx_t *i_ctx_p)
 }
 
 /* - .currentpagedevice <dict> <bool> */
-private int
+static int
 zcurrentpagedevice(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -90,7 +90,7 @@ zcurrentpagedevice(i_ctx_t *i_ctx_p)
 }
 
 /* <local_dict|null> .setpagedevice - */
-private int
+static int
 zsetpagedevice(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -126,7 +126,7 @@ zsetpagedevice(i_ctx_t *i_ctx_p)
 /* that just call the procedure in the device. */
 
 /* - .callinstall - */
-private int
+static int
 zcallinstall(i_ctx_t *i_ctx_p)
 {
     gx_device *dev = gs_currentdevice(igs);
@@ -141,7 +141,7 @@ zcallinstall(i_ctx_t *i_ctx_p)
 }
 
 /* <showpage_count> .callbeginpage - */
-private int
+static int
 zcallbeginpage(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -159,7 +159,7 @@ zcallbeginpage(i_ctx_t *i_ctx_p)
 }
 
 /* <showpage_count> <reason_int> .callendpage <flush_bool> */
-private int
+static int
 zcallendpage(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -191,7 +191,7 @@ zcallendpage(i_ctx_t *i_ctx_p)
 /* any way around it. */
 
 /* Check whether we need to call out to create the page device dictionary. */
-private bool
+static bool
 save_page_device(gs_state *pgs)
 {
     return 
@@ -200,7 +200,7 @@ save_page_device(gs_state *pgs)
 }
 
 /* - gsave - */
-private int
+static int
 z2gsave(i_ctx_t *i_ctx_p)
 {
     if (!save_page_device(igs))
@@ -209,7 +209,7 @@ z2gsave(i_ctx_t *i_ctx_p)
 }
 
 /* - save - */
-private int
+static int
 z2save(i_ctx_t *i_ctx_p)
 {
     if (!save_page_device(igs))
@@ -218,7 +218,7 @@ z2save(i_ctx_t *i_ctx_p)
 }
 
 /* - gstate <gstate> */
-private int
+static int
 z2gstate(i_ctx_t *i_ctx_p)
 {
     if (!save_page_device(igs))
@@ -227,7 +227,7 @@ z2gstate(i_ctx_t *i_ctx_p)
 }
 
 /* <gstate1> <gstate2> copy <gstate2> */
-private int
+static int
 z2copy_gstate(i_ctx_t *i_ctx_p)
 {
     if (!save_page_device(igs))
@@ -236,7 +236,7 @@ z2copy_gstate(i_ctx_t *i_ctx_p)
 }
 
 /* <gstate> currentgstate <gstate> */
-private int
+static int
 z2currentgstate(i_ctx_t *i_ctx_p)
 {
     if (!save_page_device(igs))
@@ -247,7 +247,7 @@ z2currentgstate(i_ctx_t *i_ctx_p)
 /* ------ Wrappers for operators that reset the graphics state. ------ */
 
 /* Check whether we need to call out to restore the page device. */
-private bool
+static bool
 restore_page_device(const gs_state * pgs_old, const gs_state * pgs_new)
 {
     gx_device *dev_old = gs_currentdevice(pgs_old);
@@ -280,7 +280,7 @@ restore_page_device(const gs_state * pgs_old, const gs_state * pgs_new)
 }
 
 /* - grestore - */
-private int
+static int
 z2grestore(i_ctx_t *i_ctx_p)
 {
     if (!restore_page_device(igs, gs_state_saved(igs)))
@@ -289,7 +289,7 @@ z2grestore(i_ctx_t *i_ctx_p)
 }
 
 /* - grestoreall - */
-private int
+static int
 z2grestoreall(i_ctx_t *i_ctx_p)
 {
     for (;;) {
@@ -306,7 +306,7 @@ z2grestoreall(i_ctx_t *i_ctx_p)
 }
 
 /* <save> restore - */
-private int
+static int
 z2restore(i_ctx_t *i_ctx_p)
 {
     while (gs_state_saved(gs_state_saved(igs))) {
@@ -320,7 +320,7 @@ z2restore(i_ctx_t *i_ctx_p)
 }
 
 /* <gstate> setgstate - */
-private int
+static int
 z2setgstate(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -361,7 +361,7 @@ const op_def zdevice2_l2_op_defs[] =
 /* ------ Internal routines ------ */
 
 /* Call out to a PostScript procedure. */
-private int
+static int
 push_callout(i_ctx_t *i_ctx_p, const char *callout_name)
 {
     int code;

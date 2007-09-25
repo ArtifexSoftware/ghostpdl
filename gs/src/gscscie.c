@@ -43,8 +43,8 @@ private_st_cie_defg();
 gs_private_st_ptrs1(st_color_space_CIEDEFG, gs_color_space,
      "gs_color_space(CIEDEFG)", cs_CIEDEFG_enum_ptrs, cs_CIEDEFG_reloc_ptrs,
 		    params.defg);
-private cs_proc_final(gx_final_CIEDEFG);
-private cs_proc_serialize(gx_serialize_CIEDEFG);
+static cs_proc_final(gx_final_CIEDEFG);
+static cs_proc_serialize(gx_serialize_CIEDEFG);
 const gs_color_space_type gs_color_space_type_CIEDEFG = {
     gs_color_space_index_CIEDEFG, true, true,
     &st_color_space_CIEDEFG, gx_num_components_4,
@@ -67,8 +67,8 @@ const gs_color_space_type gs_color_space_type_CIEDEFG = {
 gs_private_st_ptrs1(st_color_space_CIEDEF, gs_color_space,
 	"gs_color_space(CIEDEF)", cs_CIEDEF_enum_ptrs, cs_CIEDEF_reloc_ptrs,
 		    params.def);
-private cs_proc_final(gx_final_CIEDEF);
-private cs_proc_serialize(gx_serialize_CIEDEF);
+static cs_proc_final(gx_final_CIEDEF);
+static cs_proc_serialize(gx_serialize_CIEDEF);
 const gs_color_space_type gs_color_space_type_CIEDEF = {
     gs_color_space_index_CIEDEF, true, true,
     &st_color_space_CIEDEF, gx_num_components_3,
@@ -91,8 +91,8 @@ const gs_color_space_type gs_color_space_type_CIEDEF = {
 gs_private_st_ptrs1(st_color_space_CIEABC, gs_color_space,
 	"gs_color_space(CIEABC)", cs_CIEABC_enum_ptrs, cs_CIEABC_reloc_ptrs,
 		    params.abc);
-private cs_proc_final(gx_final_CIEABC);
-private cs_proc_serialize(gx_serialize_CIEABC);
+static cs_proc_final(gx_final_CIEABC);
+static cs_proc_serialize(gx_serialize_CIEABC);
 const gs_color_space_type gs_color_space_type_CIEABC = {
     gs_color_space_index_CIEABC, true, true,
     &st_color_space_CIEABC, gx_num_components_3,
@@ -110,8 +110,8 @@ const gs_color_space_type gs_color_space_type_CIEABC = {
 gs_private_st_ptrs1(st_color_space_CIEA, gs_color_space,
 	      "gs_color_space(CIEA)", cs_CIEA_enum_ptrs, cs_CIEA_reloc_ptrs,
 		    params.a);
-private cs_proc_final(gx_final_CIEA);
-private cs_proc_serialize(gx_serialize_CIEA);
+static cs_proc_final(gx_final_CIEA);
+static cs_proc_serialize(gx_serialize_CIEA);
 const gs_color_space_type gs_color_space_type_CIEA = {
     gs_color_space_index_CIEA, true, true,
     &st_color_space_CIEA, gx_num_components_1,
@@ -156,25 +156,25 @@ gx_install_CIE(gs_color_space * pcs, gs_state * pgs)
 }
 
 /* Free params for a CIE color space */
-private void
+static void
 gx_final_CIEDEFG(const gs_color_space * pcs)
 {
     rc_adjust_const(pcs->params.defg, -1, "gx_adjust_cspace_CIEDEFG");
 }
 
-private void
+static void
 gx_final_CIEDEF(const gs_color_space * pcs)
 {
     rc_adjust_const(pcs->params.def, -1, "gx_adjust_cspace_CIEDEF");
 }
 
-private void
+static void
 gx_final_CIEABC(const gs_color_space * pcs)
 {
     rc_adjust_const(pcs->params.abc, -1, "gx_adjust_cspace_CIEABC");
 }
 
-private void
+static void
 gx_final_CIEA(const gs_color_space * pcs)
 {
     rc_adjust_const(pcs->params.a, -1, "gx_adjust_cspace_CIEA");
@@ -209,7 +209,7 @@ gx_set_common_cie_defaults(gs_cie_common * pcommon, void *client_data)
  * Set defaults for a CIEBasedABC color space.  This is also used for
  * CIEBasedDEF and CIEBasedDEFG color spaces.
  */
-private void
+static void
 set_cie_abc_defaults(gs_cie_abc * pabc, void *client_data)
 {
     gx_set_common_cie_defaults(&pabc->common, client_data);
@@ -224,7 +224,7 @@ set_cie_abc_defaults(gs_cie_abc * pabc, void *client_data)
  * from the input and output component numbers) are intended only to make
  * the system fail in a predictable manner.
  */
-private void
+static void
 set_ctbl_defaults(gx_color_lookup_table * plktblp, int num_comps)
 {
     int i;
@@ -376,7 +376,7 @@ gs_cie_defx_set_lookup_table(gs_color_space * pcspace, int *pdims,
 
 /* ---------------- Serialization. -------------------------------- */
 
-private int
+static int
 gx_serialize_cie_cache(const cie_cache_floats *c, stream * s)
 { /* p->DecodeA : */
     const uint cache_size = count_of(c->values);
@@ -417,7 +417,7 @@ gx_serialize_cie_common_elements(const gs_color_space * pcs, stream * s)
 			sizeof(p->common.points), &n);
 }
 
-private int 
+static int 
 gx_serialize_CIEA(const gs_color_space * pcs, stream * s)
 {
     const gs_cie_a * p = pcs->params.a;
@@ -435,7 +435,7 @@ gx_serialize_CIEA(const gs_color_space * pcs, stream * s)
     return sputs(s, (const byte *)&p->MatrixA, sizeof(p->MatrixA), &n);
 }
 
-private int 
+static int 
 gx_serialize_CIEABC(const gs_color_space * pcs, stream * s)
 {
     const gs_cie_abc * p = pcs->params.abc;
@@ -459,7 +459,7 @@ gx_serialize_CIEABC(const gs_color_space * pcs, stream * s)
     return sputs(s, (const byte *)&p->MatrixABC, sizeof(p->MatrixABC), &n);
 }
 
-private int 
+static int 
 gx_serialize_lookup_table(const gx_color_lookup_table * t, stream * s)
 {
     uint n;
@@ -479,7 +479,7 @@ gx_serialize_lookup_table(const gx_color_lookup_table * t, stream * s)
     return sputs(s, (const byte *)&t->table->data, t->table->size, &n);
 }
 
-private int 
+static int 
 gx_serialize_CIEDEF(const gs_color_space * pcs, stream * s)
 {
     const gs_cie_def * p = pcs->params.def;
@@ -501,7 +501,7 @@ gx_serialize_CIEDEF(const gs_color_space * pcs, stream * s)
     return gx_serialize_lookup_table(&p->Table, s);
 }
 
-private int 
+static int 
 gx_serialize_CIEDEFG(const gs_color_space * pcs, stream * s)
 {
     const gs_cie_defg * p = pcs->params.defg;

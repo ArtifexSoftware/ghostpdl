@@ -23,7 +23,7 @@
 private_st_MD5E_state();
 
 /* Initialize the state. */
-private int
+static int
 s_MD5E_init(stream_state * st)
 {
     stream_MD5E_state *const ss = (stream_MD5E_state *) st;
@@ -33,7 +33,7 @@ s_MD5E_init(stream_state * st)
 }
 
 /* Process a buffer. */
-private int
+static int
 s_MD5E_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
@@ -80,7 +80,7 @@ err:
 }
 
 /* Process a buffer. */
-private int
+static int
 s_MD5C_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {

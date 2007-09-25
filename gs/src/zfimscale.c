@@ -31,7 +31,7 @@
 
 /* <source> <dict> imscale/filter <file> */
 
-private int
+static int
 z_imscale_d(i_ctx_t * i_ctx_p)
 {
     os_ptr op = osp;		/* i_ctx_p->op_stack.stack.p defined in osstack.h */
@@ -64,8 +64,8 @@ z_imscale_d(i_ctx_t * i_ctx_p)
 		       (stream_state *) & state, 0);
 }
 
-/* match the above routines to their postscript filter names
-   this is how our 'private' routines get called externally */
+/* Match the above routines to their postscript filter names.
+   This is how our static routines get called externally. */
 const op_def zfimscale_op_defs[] = {
     op_def_begin_filter(),
     {"2ImscaleDecode", z_imscale_d},

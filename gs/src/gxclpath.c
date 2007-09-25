@@ -37,7 +37,7 @@ ulong stats_cmd_diffs[5];
 #endif
 
 /* Forward declarations */
-private int cmd_put_path(gx_device_clist_writer * cldev,
+static int cmd_put_path(gx_device_clist_writer * cldev,
 			 gx_clist_state * pcls, const gx_path * ppath,
 			 fixed ymin, fixed ymax, byte op,
 			 bool implicit_close, segment_notes keep_notes);
@@ -45,7 +45,7 @@ private int cmd_put_path(gx_device_clist_writer * cldev,
 /* ------ Utilities ------ */
 
 /* Compute the colors used by a colored halftone. */
-private gx_color_index
+static gx_color_index
 colored_halftone_colors_used(gx_device_clist_writer *cldev,
 			     const gx_drawing_color *pdcolor)
 {
@@ -231,7 +231,7 @@ cmd_check_clip_path(gx_device_clist_writer * cldev, const gx_clip_path * pcpath)
 #define FILL_KNOWN\
  (cj_ac_sa_known | flatness_known | op_bm_tk_known | opacity_alpha_known |\
   shape_alpha_known | fill_adjust_known | alpha_known | clip_path_known)
-private void
+static void
 cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_imager_state *pis,
 		     floatp flatness, const gs_fixed_point *padjust,
 		     const gx_clip_path *pcpath, uint *punknown)
@@ -832,7 +832,7 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
  * sometimes used for images, so its performance does matter.
  */
 
-private int
+static int
 clist_put_polyfill(gx_device *dev, fixed px, fixed py,
 		   const gs_fixed_point *points, int num_points,
 		   const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
@@ -945,7 +945,7 @@ typedef struct cmd_segment_writer_s {
 cmd_segment_writer;
 
 /* Put out a path segment command. */
-private int
+static int
 cmd_put_segment(cmd_segment_writer * psw, byte op,
 		const fixed * operands, segment_notes notes)
 {
@@ -1081,7 +1081,7 @@ cmd_put_segment(cmd_segment_writer * psw, byte op,
  * Write a path.  We go to a lot of trouble to omit segments that are
  * entirely outside the band.
  */
-private int
+static int
 cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	     const gx_path * ppath, fixed ymin, fixed ymax, byte path_op,
 	     bool implicit_close, segment_notes keep_notes)

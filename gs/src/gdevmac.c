@@ -92,7 +92,7 @@ gx_device_macos gs_macos_device = {
 
 
 
-private int
+static int
 mac_open(register gx_device *dev)
 {
 	gx_device_macos				* mdev = (gx_device_macos *)dev;
@@ -157,7 +157,7 @@ mac_open(register gx_device *dev)
 
 
 
-private void
+static void
 mac_get_initial_matrix(register gx_device *dev, register gs_matrix *pmat)
 {
 	pmat->xx = dev->x_pixels_per_inch /  72.0;
@@ -211,7 +211,7 @@ mac_output_page(gx_device * dev, int copies, int flush)
 }
 
 
-private int
+static int
 mac_save_pict(gx_device * dev)
 {
 	gx_device_macos		* mdev = (gx_device_macos *)dev;
@@ -234,7 +234,7 @@ mac_save_pict(gx_device * dev)
 
 
 /* Close the device. */
-private int
+static int
 mac_close(register gx_device *dev)
 {
 	gx_device_macos	* mdev = (gx_device_macos *)dev;
@@ -262,7 +262,7 @@ mac_close(register gx_device *dev)
 
 
 /* Fill a rectangle with a color. */
-private int
+static int
 mac_fill_rectangle(register gx_device *dev,
 					  int x, int y, int w, int h,
 					  gx_color_index color)
@@ -289,7 +289,7 @@ mac_fill_rectangle(register gx_device *dev,
 
 
 /* Draw a line */
-private int
+static int
 mac_draw_line (register gx_device *dev,
 				  int x0, int y0,
 				  int x1, int y1,
@@ -311,7 +311,7 @@ mac_draw_line (register gx_device *dev,
 
 
 /* Copy a monochrome bitmap. */
-private int
+static int
 mac_copy_mono (register gx_device *dev,
 				  const unsigned char *base, int data_x, int raster, gx_bitmap_id id,
 				  int x, int y, int w, int h,
@@ -361,7 +361,7 @@ mac_copy_mono (register gx_device *dev,
 /* Fill a region with a color and apply a per-pixel alpha-value */
 /* alpha value is simulated by changed the value to white. Full transparency means white color */
 /* that's why this will only work on a fully white background!!!! */
-private int
+static int
 mac_copy_alpha(gx_device *dev, const unsigned char *base, int data_x,
 		   int raster, gx_bitmap_id id, int x, int y, int w, int h,
 		   gx_color_index color, int depth)
@@ -529,7 +529,7 @@ mac_convert_hsv_rgb(colorHSV *inHSV, colorRGB *RGB)
 
 
 // set color info and procedures according to pixeldepth
-private int
+static int
 mac_set_colordepth(gx_device *dev, int depth)
 {
 	gx_device_macos				* mdev = (gx_device_macos *)dev;
@@ -595,7 +595,7 @@ mac_set_colordepth(gx_device *dev, int depth)
 }
 
 
-private int
+static int
 mac_put_params(gx_device *dev, gs_param_list *plist)
 {	
 	gx_device_macos		*mdev	= (gx_device_macos *)dev;
@@ -663,7 +663,7 @@ mac_put_params(gx_device *dev, gs_param_list *plist)
 }
 
 
-private int
+static int
 mac_get_params(gx_device *dev, gs_param_list *plist)
 {
 	gx_device_macos		*mdev	= (gx_device_macos *)dev;
@@ -720,7 +720,7 @@ gsdll_get_pict(unsigned char *dev, PicHandle *thePict)
 #if 0
 /* NOT FUNCTIONAL !!! */
 /* Copy a color bitmap. */
-private int
+static int
 mac_copy_color (register gx_device *dev,
 				const unsigned char *base, int data_x, int raster,  gx_bitmap_id id,
 				int x, int y, int w, int h)
@@ -803,7 +803,7 @@ mac_copy_color (register gx_device *dev,
 
 #if 0
 /* tile a rectangle with a bitmap or pixmap */
-private int
+static int
 mac_strip_tile_rectangle(register gx_device *dev, const gx_strip_bitmap *tile,
 						 int x, int y, int w, int h,
 						 gx_color_index color_0, gx_color_index color_1,

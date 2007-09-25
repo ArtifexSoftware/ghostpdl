@@ -19,21 +19,21 @@
 #include "igstate.h"
 
 /* - fill - */
-private int
+static int
 zfill(i_ctx_t *i_ctx_p)
 {
     return gs_fill(igs);
 }
 
 /* - eofill - */
-private int
+static int
 zeofill(i_ctx_t *i_ctx_p)
 {
     return gs_eofill(igs);
 }
 
 /* - stroke - */
-private int
+static int
 zstroke(i_ctx_t *i_ctx_p)
 {
     return gs_stroke(igs);
@@ -42,14 +42,14 @@ zstroke(i_ctx_t *i_ctx_p)
 /* ------ Non-standard operators ------ */
 
 /* - .fillpage - */
-private int
+static int
 zfillpage(i_ctx_t *i_ctx_p)
 {
     return gs_fillpage(igs);
 }
 
 /* <width> <height> <data> .imagepath - */
-private int
+static int
 zimagepath(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

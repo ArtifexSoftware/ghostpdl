@@ -65,7 +65,7 @@ HINSTANCE phInstance;
 BOOL is_win32s = FALSE;
 
 const LPSTR szAppName = "Ghostscript";
-private int is_printer(const char *name);
+static int is_printer(const char *name);
 
 
 /* ====== Generic platform procedures ====== */
@@ -111,7 +111,7 @@ int gp_cache_query(int type, byte* key, int keylen, void **buffer,
 /* ------ Printer accessing ------ */
 
 /* Forward references */
-private int gp_printfile(const char *, const char *);
+static int gp_printfile(const char *, const char *);
 
 /* Open a connection to a printer.  A null file name means use the */
 /* standard printer connected to the machine, if any. */
@@ -201,7 +201,7 @@ is_spool(const char *queue)
 }
 
 
-private int
+static int
 is_printer(const char *name)
 {
     /* is printer if no name given */
@@ -223,7 +223,7 @@ is_printer(const char *name)
 /* This is messy because of past support for old version of Windows. */
 
 /* Win95, WinNT: Use OpenPrinter, WritePrinter etc. */
-private int gp_printfile_win32(const char *filename, char *port);
+static int gp_printfile_win32(const char *filename, char *port);
 
 /*
  * Valid values for pmport are:
@@ -237,7 +237,7 @@ private int gp_printfile_win32(const char *filename, char *port);
  *              THIS IS CURRENTLY BROKEN
  */
 /* Print File */
-private int
+static int
 gp_printfile(const char *filename, const char *pmport)
 {
     if (strlen(pmport) == 0) {	/* get default printer */
@@ -349,7 +349,7 @@ get_queuename(char *portname, const char *queue)
 }
 
 /* True Win32 method, using OpenPrinter, WritePrinter etc. */
-private int
+static int
 gp_printfile_win32(const char *filename, char *port)
 {
     DWORD count;

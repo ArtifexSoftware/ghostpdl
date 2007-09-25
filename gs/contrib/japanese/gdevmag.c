@@ -31,20 +31,20 @@ copies.  */
 #define DPI (8000.0/HEIGHT_10THS)
 #define WIDTH_10THS (6400.0 / DPI)
 
-private dev_proc_print_page(mag_4bit_print_page);
-private dev_proc_open_device(gdev_mag_4bit_open);
-private dev_proc_print_page(mag_8bit_print_page);
-private dev_proc_open_device(gdev_mag_8bit_open);
+static dev_proc_print_page(mag_4bit_print_page);
+static dev_proc_open_device(gdev_mag_4bit_open);
+static dev_proc_print_page(mag_8bit_print_page);
+static dev_proc_open_device(gdev_mag_8bit_open);
 
 /* internal routines. */
-private int mag_make_flag(gx_device_printer *,int ,int ,byte **, byte *,byte *);
-private int mag_comp_flag(gx_device_printer *,int ,byte * ,byte *,byte *, int, byte *);
-private int mag_write_palette(gx_device_printer * ,int );
-private int mag_print_page(gx_device_printer * , int , FILE * );
+static int mag_make_flag(gx_device_printer *,int ,int ,byte **, byte *,byte *);
+static int mag_comp_flag(gx_device_printer *,int ,byte * ,byte *,byte *, int, byte *);
+static int mag_write_palette(gx_device_printer * ,int );
+static int mag_print_page(gx_device_printer * , int , FILE * );
 
 /* 4-bit planar (PC-9801 style) color. */
 
-private gx_device_procs mag16_procs =
+static gx_device_procs mag16_procs =
   prn_color_procs(gdev_mag_4bit_open, gdev_prn_output_page, gdev_prn_close,
     pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
 gx_device_printer far_data gs_mag16_device =
@@ -56,7 +56,7 @@ gx_device_printer far_data gs_mag16_device =
 
 /* 8-bit planar color. */
 
-private gx_device_procs mag256_procs =
+static gx_device_procs mag256_procs =
   prn_color_procs(gdev_mag_8bit_open, gdev_prn_output_page, gdev_prn_close,
     pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
 gx_device_printer far_data gs_mag256_device =
@@ -68,33 +68,33 @@ gx_device_printer far_data gs_mag256_device =
 
 /* ------ Private definitions ------ */
 
-private int
+static int
 gdev_mag_4bit_open(gx_device *dev)
 {
   dev->width = (dev->width + 7) / 8 * 8;
   return gdev_prn_open(dev);
 }
 
-private int
+static int
 gdev_mag_8bit_open(gx_device *dev)
 {
   dev->width = (dev->width + 3) / 4 * 4;
   return gdev_prn_open(dev);
 }
 
-private int
+static int
 mag_4bit_print_page(gx_device_printer *pdev,FILE *file)
 {  return mag_print_page(pdev,4,file);
 }
 
-private int
+static int
 mag_8bit_print_page(gx_device_printer *pdev,FILE *file)
 {  return mag_print_page(pdev,8,file);
 }
 
 /* Write out a page in MAG format. */
 /* This routine is used for all formats. */
-private int
+static int
 mag_print_page(gx_device_printer *pdev, int depth, FILE *file)
 {
     int code = 0;			/* return code */
@@ -228,7 +228,7 @@ mag_done:
 }
 
 /* make flag and pixel data */
-private int
+static int
 mag_make_flag(gx_device_printer *pdev,int line_no, int depth,
   byte **row, byte *flag,byte *pixel)
 {
@@ -287,7 +287,7 @@ mag_make_flag(gx_device_printer *pdev,int line_no, int depth,
 }
 
 /* compress flags (make flag A and B) */
-private int
+static int
 mag_comp_flag(gx_device_printer *pdev, int size,byte *f0,byte *f1,
   byte *flag_a,int next_bit,byte *flag_b)
 {
@@ -316,7 +316,7 @@ mag_comp_flag(gx_device_printer *pdev, int size,byte *f0,byte *f1,
 }
 
 /* write palette */
-private int
+static int
 mag_write_palette(gx_device_printer *pdev,int depth)
 {
   uint i;

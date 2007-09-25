@@ -100,7 +100,7 @@ gx_curve_log2_samples(fixed x0, fixed y0, const curve_segment * pc,
  * Curve and Surface Representation," B. A. Barsky and A. D. DeRose, IEEE,
  * 1985, courtesy of Crispin Goswell.
  */
-private void
+static void
 split_curve_midpoint(fixed x0, fixed y0, const curve_segment * pc,
 		     curve_segment * pc1, curve_segment * pc2)
 {				/*
@@ -133,7 +133,7 @@ split_curve_midpoint(fixed x0, fixed y0, const curve_segment * pc,
 #undef midpoint
 }
 
-private inline void
+static inline void
 print_points(const gs_fixed_point *points, int count)
 {
 #ifdef DEBUG    
@@ -265,7 +265,7 @@ gx_flattened_iterator__init(gx_flattened_iterator *this,
     return true;
 }
 
-private inline bool 
+static inline bool 
 check_diff_overflow(fixed v0, fixed v1)
 {
     if (v0 < v1) {
@@ -335,7 +335,7 @@ gx_flattened_iterator__init_line(gx_flattened_iterator *this,
 }
 
 #ifdef DEBUG
-private inline void
+static inline void
 gx_flattened_iterator__print_state(gx_flattened_iterator *this)
 {
     if (!gs_debug_c('3'))
@@ -451,7 +451,7 @@ last:
     return false;
 }
 
-private inline void
+static inline void
 gx_flattened_iterator__unaccum(gx_flattened_iterator *this)
 {
 #   define unaccum(i, r, di, dr, rmask)\
@@ -527,7 +527,7 @@ gx_flattened_iterator__switch_to_backscan(gx_flattened_iterator *this, bool not_
 
 #define max_points 50		/* arbitrary */
 
-private int
+static int
 generate_segments(gx_path * ppath, const gs_fixed_point *points, 
 		    int count, segment_notes notes)
 {
@@ -550,7 +550,7 @@ generate_segments(gx_path * ppath, const gs_fixed_point *points,
     }
 }
 
-private int
+static int
 gx_subdivide_curve_rec(gx_flattened_iterator *this, 
 		  gx_path * ppath, int k, curve_segment * pc,
 		  segment_notes notes, gs_fixed_point *points)

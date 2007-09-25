@@ -102,10 +102,6 @@ GS_INIT=gs_init.ps
 #	includes debugging features (-Z switch) in the code.
 #	  Code runs substantially slower even if no debugging switches
 #	  are set.
-# -DNOPRIVATE
-#	makes private (static) procedures and variables public,
-#	  so they are visible to the debugger and profiler.
-#	  No execution time or space penalty.
 
 GENOPT=
 

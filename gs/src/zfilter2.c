@@ -34,7 +34,7 @@
 /* ------ CCITTFaxEncode filter ------ */
 
 /* <target> <dict> CCITTFaxEncode/filter <file> */
-private int
+static int
 zCFE(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -127,7 +127,7 @@ filter_write_predictor(i_ctx_t *i_ctx_p, int npop,
 
 /* <target> LZWEncode/filter <file> */
 /* <target> <dict> LZWEncode/filter <file> */
-private int
+static int
 zLZWE(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

@@ -92,7 +92,7 @@ private_st_cos_array_element();
 private_st_cos_dict_element();
 
 /* GC procedures */
-private
+static
 ENUM_PTRS_WITH(cos_value_enum_ptrs, cos_value_t *pcv) return 0;
  case 0:
     switch (pcv->value_type) {
@@ -106,7 +106,7 @@ ENUM_PTRS_WITH(cos_value_enum_ptrs, cos_value_t *pcv) return 0;
     }
     return 0;
 ENUM_PTRS_END
-private
+static
 RELOC_PTRS_WITH(cos_value_reloc_ptrs, cos_value_t *pcv)
 {
     switch (pcv->value_type) {
@@ -121,7 +121,7 @@ RELOC_PTRS_WITH(cos_value_reloc_ptrs, cos_value_t *pcv)
     }
 }
 RELOC_PTRS_END
-private
+static
 ENUM_PTRS_WITH(cos_array_element_enum_ptrs, cos_array_element_t *pcae)
 {
     return (index < cos_element_num_ptrs ?
@@ -130,14 +130,14 @@ ENUM_PTRS_WITH(cos_array_element_enum_ptrs, cos_array_element_t *pcae)
 		       index - cos_element_num_ptrs));
 }
 ENUM_PTRS_END
-private
+static
 RELOC_PTRS_WITH(cos_array_element_reloc_ptrs, cos_array_element_t *pcae)
 {
     RELOC_PREFIX(st_cos_element);
     RELOC_USING(st_cos_value, &pcae->value, sizeof(cos_value_t));
 }
 RELOC_PTRS_END
-private
+static
 ENUM_PTRS_WITH(cos_dict_element_enum_ptrs, cos_dict_element_t *pcde)
 {
     return (index < cos_element_num_ptrs ?
@@ -148,7 +148,7 @@ ENUM_PTRS_WITH(cos_dict_element_enum_ptrs, cos_dict_element_t *pcde)
 	    pcde->owns_key ? ENUM_STRING(&pcde->key) : ENUM_OBJ(NULL));
 }
 ENUM_PTRS_END
-private
+static
 RELOC_PTRS_WITH(cos_dict_element_reloc_ptrs, cos_dict_element_t *pcde)
 {
     RELOC_PREFIX(st_cos_element);
@@ -161,7 +161,7 @@ RELOC_PTRS_END
 /* ---------------- Generic support ---------------- */
 
 /* Initialize a just-allocated cos object. */
-private void
+static void
 cos_object_init(cos_object_t *pco, gx_device_pdf *pdev,
 		const cos_object_procs_t *procs)
 {
@@ -299,7 +299,7 @@ cos_value_free(const cos_value_t *pcv, const cos_object_t *pco,
 }
 
 /* Write a value on the output. */
-private int
+static int
 cos_value_write_spaced(const cos_value_t *pcv, gx_device_pdf *pdev,
 		       bool do_space, gs_id object_id)
 {
@@ -348,7 +348,7 @@ cos_value_write(const cos_value_t *pcv, gx_device_pdf *pdev)
 }
 
 /* Copy a value if necessary for putting into an array or dictionary. */
-private int
+static int
 cos_copy_element_value(cos_value_t *pcv, gs_memory_t *mem,
 		       const cos_value_t *pvalue, bool copy)
 {
@@ -367,7 +367,7 @@ cos_copy_element_value(cos_value_t *pcv, gs_memory_t *mem,
 }
 
 /* Release a value copied for putting, if the operation fails. */
-private void
+static void
 cos_uncopy_element_value(cos_value_t *pcv, gs_memory_t *mem, bool copy)
 {
     if (pcv->value_type == COS_VALUE_SCALAR && copy)
@@ -376,7 +376,7 @@ cos_uncopy_element_value(cos_value_t *pcv, gs_memory_t *mem, bool copy)
 }
 
 /* Compare 2 cos values for equality. */
-private int
+static int
 cos_value_equal(const cos_value_t *pcv0, const cos_value_t *pcv1, gx_device_pdf *pdev)
 {
     if (pcv0->value_type != pcv1->value_type)
@@ -411,9 +411,9 @@ cos_value_equal(const cos_value_t *pcv0, const cos_value_t *pcv1, gx_device_pdf 
 
 /* ------ Generic objects ------ */
 
-private cos_proc_release(cos_generic_release);
-private cos_proc_write(cos_generic_write);
-private cos_proc_equal(cos_generic_equal);
+static cos_proc_release(cos_generic_release);
+static cos_proc_write(cos_generic_write);
+static cos_proc_equal(cos_generic_equal);
 const cos_object_procs_t cos_generic_procs = {
     cos_generic_release, cos_generic_write, cos_generic_equal
 };
@@ -429,19 +429,19 @@ cos_object_alloc(gx_device_pdf *pdev, client_name_t cname)
     return pco;
 }
 
-private void
+static void
 cos_generic_release(cos_object_t *pco, client_name_t cname)
 {
     /* Do nothing. */
 }
 
-private int
+static int
 cos_generic_write(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
 {
     return_error(gs_error_Fatal);
 }
 
-private int
+static int
 cos_generic_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_pdf *pdev)
 {
     return_error(gs_error_Fatal);
@@ -449,9 +449,9 @@ cos_generic_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_
 
 /* ------ Arrays ------ */
 
-private cos_proc_release(cos_array_release);
-private cos_proc_write(cos_array_write);
-private cos_proc_equal(cos_array_equal);
+static cos_proc_release(cos_array_release);
+static cos_proc_write(cos_array_write);
+static cos_proc_equal(cos_array_equal);
 const cos_object_procs_t cos_array_procs = {
     cos_array_release, cos_array_write, cos_array_equal
 };
@@ -487,7 +487,7 @@ cos_array_from_floats(gx_device_pdf *pdev, const float *pf, uint size,
     return pca;
 }
 
-private void
+static void
 cos_array_release(cos_object_t *pco, client_name_t cname)
 {
     gs_memory_t *mem = cos_object_memory(pco);
@@ -503,9 +503,9 @@ cos_array_release(cos_object_t *pco, client_name_t cname)
     pca->elements = 0;
 }
 
-private cos_array_element_t *cos_array_reorder(const cos_array_t *pca,
+static cos_array_element_t *cos_array_reorder(const cos_array_t *pca,
 					       cos_array_element_t *first);
-private int
+static int
 cos_array_write(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
 {
     stream *s = pdev->strm;
@@ -527,7 +527,7 @@ cos_array_write(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
     return 0;
 }
 
-private int
+static int
 cos_array_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_pdf *pdev)
 {
     const cos_array_t *const pca0 = (const cos_array_t *)pco0;
@@ -596,7 +596,7 @@ cos_array_put_no_copy(cos_array_t *pca, long index, const cos_value_t *pvalue)
     pcae->value = *pvalue;
     return 0;
 }
-private long
+static long
 cos_array_next_index(const cos_array_t *pca)
 {
     return (pca->elements ? pca->elements->index + 1 : 0L);
@@ -689,7 +689,7 @@ cos_array_element_next(const cos_array_element_t *pca, long *pindex,
  *	...
  *	cos_array_reorder(pca, first_element);
  */
-private cos_array_element_t *
+static cos_array_element_t *
 cos_array_reorder(const cos_array_t *pca, cos_array_element_t *first)
 {
     cos_array_element_t *last;
@@ -704,9 +704,9 @@ cos_array_reorder(const cos_array_t *pca, cos_array_element_t *first)
 
 /* ------ Dictionaries ------ */
 
-private cos_proc_release(cos_dict_release);
-private cos_proc_write(cos_dict_write);
-private cos_proc_equal(cos_dict_equal);
+static cos_proc_release(cos_dict_release);
+static cos_proc_write(cos_dict_write);
+static cos_proc_equal(cos_dict_equal);
 const cos_object_procs_t cos_dict_procs = {
     cos_dict_release, cos_dict_write, cos_dict_equal
 };
@@ -722,7 +722,7 @@ cos_dict_alloc(gx_device_pdf *pdev, client_name_t cname)
     return pcd;
 }
 
-private void
+static void
 cos_dict_element_free(cos_dict_t *pcd, cos_dict_element_t *pcde,
 		      client_name_t cname)
 {
@@ -734,7 +734,7 @@ cos_dict_element_free(cos_dict_t *pcd, cos_dict_element_t *pcde,
     gs_free_object(mem, pcde, cname);
 }
 
-private void
+static void
 cos_dict_release(cos_object_t *pco, client_name_t cname)
 {
     cos_dict_t *const pcd = (cos_dict_t *)pco;
@@ -749,7 +749,7 @@ cos_dict_release(cos_object_t *pco, client_name_t cname)
 }
 
 /* Write the elements of a dictionary. */
-private int
+static int
 cos_elements_write(stream *s, const cos_dict_element_t *pcde,
 		   gx_device_pdf *pdev, bool do_space, gs_id object_id)
 {
@@ -782,7 +782,7 @@ cos_dict_elements_write(const cos_dict_t *pcd, gx_device_pdf *pdev)
     return cos_elements_write(pdev->strm, pcd->elements, pdev, true, pcd->id);
 }
 
-private int
+static int
 cos_dict_write(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
 {
     stream *s = pdev->strm;
@@ -835,7 +835,7 @@ cos_dict_objects_delete(cos_dict_t *pcd)
 #define DICT_COPY_VALUE 2
 #define DICT_FREE_KEY 4
 #define DICT_COPY_ALL (DICT_COPY_KEY | DICT_COPY_VALUE | DICT_FREE_KEY)
-private int
+static int
 cos_dict_put_copy(cos_dict_t *pcd, const byte *key_data, uint key_size,
 		  const cos_value_t *pvalue, int flags)
 {
@@ -1095,8 +1095,8 @@ cos_dict_forall(const cos_dict_t *pcd, void *client_data,
 /* Set up a parameter list that writes into a Cos dictionary. */
 
 /* We'll implement the other printers later if we have to. */
-private param_proc_xmit_typed(cos_param_put_typed);
-private const gs_param_list_procs cos_param_list_writer_procs = {
+static param_proc_xmit_typed(cos_param_put_typed);
+static const gs_param_list_procs cos_param_list_writer_procs = {
     cos_param_put_typed,
     NULL /* begin_collection */ ,
     NULL /* end_collection */ ,
@@ -1104,7 +1104,7 @@ private const gs_param_list_procs cos_param_list_writer_procs = {
     gs_param_request_default,
     gs_param_requested_default
 };
-private int
+static int
 cos_param_put_typed(gs_param_list * plist, gs_param_name pkey,
 		    gs_param_typed_value * pvalue)
 {
@@ -1197,9 +1197,9 @@ cos_param_list_writer_init(cos_param_list_writer_t *pclist, cos_dict_t *pcd,
 
 /* ------ Streams ------ */
 
-private cos_proc_release(cos_stream_release);
-private cos_proc_write(cos_stream_write);
-private cos_proc_equal(cos_stream_equal);
+static cos_proc_release(cos_stream_release);
+static cos_proc_write(cos_stream_write);
+static cos_proc_equal(cos_stream_equal);
 const cos_object_procs_t cos_stream_procs = {
     cos_stream_release, cos_stream_write, cos_stream_equal
 };
@@ -1215,7 +1215,7 @@ cos_stream_alloc(gx_device_pdf *pdev, client_name_t cname)
     return pcs;
 }
 
-private void
+static void
 cos_stream_release(cos_object_t *pco, client_name_t cname)
 {
     gs_memory_t *mem = cos_object_memory(pco);
@@ -1231,7 +1231,7 @@ cos_stream_release(cos_object_t *pco, client_name_t cname)
     cos_dict_release(pco, cname);
 }
 
-private int
+static int
 cos_stream_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_pdf *pdev)
 {
     const cos_stream_t *pcs0 = (const cos_stream_t *)pco0;
@@ -1343,7 +1343,7 @@ cos_stream_contents_write(const cos_stream_t *pcs, gx_device_pdf *pdev)
     return code;
 }
 
-private int
+static int
 cos_stream_write(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
 {
     stream *s = pdev->strm;
@@ -1475,7 +1475,7 @@ gs_private_st_suffix_add4(st_cos_write_stream_state, cos_write_stream_state_t,
 			  cos_ws_state_enum_ptrs, cos_ws_state_reloc_ptrs,
 			  st_stream_state, pcs, pdev, s, target);
 
-private int
+static int
 cos_write_stream_process(stream_state * st, stream_cursor_read * pr,
 			 stream_cursor_write * ignore_pw, bool last)
 {
@@ -1492,7 +1492,7 @@ cos_write_stream_process(stream_state * st, stream_cursor_read * pr,
     code = cos_stream_add(ss->pcs, (uint)(stell(pdev->streams.strm) - start_pos));
     return (code < 0 ? ERRC : 0);
 }
-private int
+static int
 cos_write_stream_close(stream *s)
 {
     cos_write_stream_state_t *ss = (cos_write_stream_state_t *)s->state;
@@ -1503,11 +1503,11 @@ cos_write_stream_close(stream *s)
     return (status < 0 ? status : s_std_close(s));
 }
 
-private const stream_procs cos_s_procs = {
+static const stream_procs cos_s_procs = {
     s_std_noavailable, s_std_noseek, s_std_write_reset,
     s_std_write_flush, cos_write_stream_close, cos_write_stream_process
 };
-private const stream_template cos_write_stream_template = {
+static const stream_template cos_write_stream_template = {
     &st_cos_write_stream_state, 0, cos_write_stream_process, 1, 1
 };
 stream *

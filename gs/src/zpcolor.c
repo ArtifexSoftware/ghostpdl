@@ -43,15 +43,15 @@
 extern const gs_color_space_type gs_color_space_type_Pattern;
 
 /* Forward references */
-private int zPaintProc(const gs_client_color *, gs_state *);
-private int pattern_paint_prepare(i_ctx_t *);
-private int pattern_paint_finish(i_ctx_t *);
+static int zPaintProc(const gs_client_color *, gs_state *);
+static int pattern_paint_prepare(i_ctx_t *);
+static int pattern_paint_finish(i_ctx_t *);
 
 /* GC descriptors */
 private_st_int_pattern();
 
 /* Initialize the Pattern cache. */
-private int
+static int
 zpcolor_init(i_ctx_t *i_ctx_p)
 {
     gstate_set_pattern_cache(igs,
@@ -76,7 +76,7 @@ int_pattern_alloc(int_pattern **ppdata, const ref *op, gs_memory_t *mem)
 }
 
 /* <pattern> <matrix> .buildpattern1 <pattern> <instance> */
-private int
+static int
 zbuildpattern1(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -162,7 +162,7 @@ zbuildpattern1(i_ctx_t *i_ctx_p)
 /* <array> .setpatternspace - */
 /* In the case of uncolored patterns, the current color space is */
 /* the base space for the pattern space. */
-private int
+static int
 zsetpatternspace(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -217,8 +217,8 @@ const op_def zpcolor_l2_op_defs[] =
 /* ------ Internal procedures ------ */
 
 /* Render the pattern by calling the PaintProc. */
-private int pattern_paint_cleanup(i_ctx_t *);
-private int
+static int pattern_paint_cleanup(i_ctx_t *);
+static int
 zPaintProc(const gs_client_color * pcc, gs_state * pgs)
 {
     /* Just schedule a call on the real PaintProc. */
@@ -228,7 +228,7 @@ zPaintProc(const gs_client_color * pcc, gs_state * pgs)
     return_error(e_RemapColor);
 }
 /* Prepare to run the PaintProc. */
-private int
+static int
 pattern_paint_prepare(i_ctx_t *i_ctx_p)
 {
     gs_state *pgs = igs;
@@ -312,7 +312,7 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
     return o_push_estack;
 }
 /* Save the rendered pattern. */
-private int
+static int
 pattern_paint_finish(i_ctx_t *i_ctx_p)
 {
     int o_stack_adjust = ref_stack_count(&o_stack) - esp->value.intval;
@@ -337,7 +337,7 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
 }
 /* Clean up after rendering a pattern.  Note that iff the rendering */
 /* succeeded, closing the accumulator won't free the bits. */
-private int
+static int
 pattern_paint_cleanup(i_ctx_t *i_ctx_p)
 {
     gx_device_pattern_accum *const pdev = 

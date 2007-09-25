@@ -198,7 +198,7 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
 
 /* Set the cached values computed from the top entry on the dstack. */
 /* See idstack.h for details. */
-private const ref_packed no_packed_keys[2] =
+static const ref_packed no_packed_keys[2] =
 {packed_key_deleted, packed_key_empty};
 void
 dstack_set_top(dict_stack_t * pds)

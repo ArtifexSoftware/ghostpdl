@@ -167,8 +167,8 @@ e:	param_signal_error(plist, oname, code);\
 	pa.data = 0;		/* mark as not filled */\
   }
 
-private int cdj_param_check_bytes(gs_param_list *, gs_param_name, const byte *, uint, bool);
-private int cdj_param_check_float(gs_param_list *, gs_param_name, floatp, bool);
+static int cdj_param_check_bytes(gs_param_list *, gs_param_name, const byte *, uint, bool);
+static int cdj_param_check_float(gs_param_list *, gs_param_name, floatp, bool);
 #define cdj_param_check_string(plist, pname, str, is_defined)\
   cdj_param_check_bytes(plist, pname, (const byte *)(str), strlen(str),\
 			is_defined)
@@ -247,48 +247,48 @@ private int cdj_param_check_float(gs_param_list *, gs_param_name, floatp, bool);
 #define HEAD_ROWS_COLOUR 16
 
 /* Colour mapping procedures */
-private dev_proc_map_cmyk_color (gdev_cmyk_map_cmyk_color);
-private dev_proc_map_rgb_color (gdev_cmyk_map_rgb_color);
+static dev_proc_map_cmyk_color (gdev_cmyk_map_cmyk_color);
+static dev_proc_map_rgb_color (gdev_cmyk_map_rgb_color);
 
-private dev_proc_map_rgb_color (gdev_pcl_map_rgb_color);
-private dev_proc_map_color_rgb (gdev_pcl_map_color_rgb);
-private dev_proc_decode_color  (gdev_cmyk_map_color_cmyk);
+static dev_proc_map_rgb_color (gdev_pcl_map_rgb_color);
+static dev_proc_map_color_rgb (gdev_pcl_map_color_rgb);
+static dev_proc_decode_color  (gdev_cmyk_map_color_cmyk);
 
 /* Print-page, parameters and miscellaneous procedures */
-private dev_proc_open_device(dj500c_open);
-private dev_proc_open_device(dj550c_open);
-private dev_proc_open_device(dj505j_open);
-private dev_proc_open_device(dnj650c_open);
-private dev_proc_open_device(lj4dith_open);
-private dev_proc_open_device(pj_open);
-private dev_proc_open_device(pjxl_open);
-private dev_proc_open_device(pjxl300_open);
-private dev_proc_open_device(escp_open);
-private dev_proc_open_device(bjc_open);
+static dev_proc_open_device(dj500c_open);
+static dev_proc_open_device(dj550c_open);
+static dev_proc_open_device(dj505j_open);
+static dev_proc_open_device(dnj650c_open);
+static dev_proc_open_device(lj4dith_open);
+static dev_proc_open_device(pj_open);
+static dev_proc_open_device(pjxl_open);
+static dev_proc_open_device(pjxl300_open);
+static dev_proc_open_device(escp_open);
+static dev_proc_open_device(bjc_open);
 
-private dev_proc_print_page(declj250_print_page);
-private dev_proc_print_page(dj500c_print_page);
-private dev_proc_print_page(dj550c_print_page);
-private dev_proc_print_page(dj505j_print_page);
-private dev_proc_print_page(picty180_print_page);
-private dev_proc_print_page(dnj650c_print_page);
-private dev_proc_print_page(lj4dith_print_page);
-private dev_proc_print_page(lj4dithp_print_page);
-private dev_proc_print_page(pj_print_page);
-private dev_proc_print_page(pjxl_print_page);
-private dev_proc_print_page(pjxl300_print_page);
-private dev_proc_print_page(escp_print_page);
-private dev_proc_print_page(bjc_print_page);
+static dev_proc_print_page(declj250_print_page);
+static dev_proc_print_page(dj500c_print_page);
+static dev_proc_print_page(dj550c_print_page);
+static dev_proc_print_page(dj505j_print_page);
+static dev_proc_print_page(picty180_print_page);
+static dev_proc_print_page(dnj650c_print_page);
+static dev_proc_print_page(lj4dith_print_page);
+static dev_proc_print_page(lj4dithp_print_page);
+static dev_proc_print_page(pj_print_page);
+static dev_proc_print_page(pjxl_print_page);
+static dev_proc_print_page(pjxl300_print_page);
+static dev_proc_print_page(escp_print_page);
+static dev_proc_print_page(bjc_print_page);
 
-private dev_proc_get_params(cdj_get_params);
-private dev_proc_get_params(pjxl_get_params);
-private dev_proc_get_params(bjc_get_params);
+static dev_proc_get_params(cdj_get_params);
+static dev_proc_get_params(pjxl_get_params);
+static dev_proc_get_params(bjc_get_params);
 #define ep_get_params cdj_get_params
 
-private dev_proc_put_params(cdj_put_params);
-private dev_proc_put_params(pj_put_params);
-private dev_proc_put_params(pjxl_put_params);
-private dev_proc_put_params(bjc_put_params);
+static dev_proc_put_params(cdj_put_params);
+static dev_proc_put_params(pj_put_params);
+static dev_proc_put_params(pjxl_put_params);
+static dev_proc_put_params(bjc_put_params);
 #define ep_put_params cdj_put_params
 
 /* The device descriptors */
@@ -527,39 +527,39 @@ typedef struct {
 	gdev_cmyk_map_color_cmyk	/* decode_color */\
 }
 
-private gx_device_procs cdj500_procs =
+static gx_device_procs cdj500_procs =
 hp_colour_procs(dj500c_open, cdj_get_params, cdj_put_params);
 
-private gx_device_procs cdj550_procs =
+static gx_device_procs cdj550_procs =
 hp_colour_procs(dj550c_open, cdj_get_params, cdj_put_params);
 
 #ifdef USE_CDJ550_CMYK
-private gx_device_procs cdj550cmyk_procs =
+static gx_device_procs cdj550cmyk_procs =
 cmyk_colour_procs(dj550c_open, cdj_get_params, cdj_put_params);
 #endif
 
-private gx_device_procs dj505j_procs =
+static gx_device_procs dj505j_procs =
 hp_colour_procs(dj505j_open, cdj_get_params, cdj_put_params);
 
-private gx_device_procs dnj650c_procs =
+static gx_device_procs dnj650c_procs =
 hp_colour_procs(dnj650c_open, cdj_get_params, cdj_put_params);
 
-private gx_device_procs lj4dith_procs =
+static gx_device_procs lj4dith_procs =
 hp_colour_procs(lj4dith_open, cdj_get_params, cdj_put_params);
 
-private gx_device_procs pj_procs =
+static gx_device_procs pj_procs =
 hp_colour_procs(pj_open, gdev_prn_get_params, pj_put_params);
 
-private gx_device_procs pjxl_procs =
+static gx_device_procs pjxl_procs =
 hp_colour_procs(pjxl_open, pjxl_get_params, pjxl_put_params);
 
-private gx_device_procs pjxl300_procs =
+static gx_device_procs pjxl300_procs =
 hp_colour_procs(pjxl300_open, pjxl_get_params, pjxl_put_params);
 
-private gx_device_procs bjc_procs =
+static gx_device_procs bjc_procs =
 cmyk_colour_procs(bjc_open, bjc_get_params, bjc_put_params);
 
-private gx_device_procs escp_procs =
+static gx_device_procs escp_procs =
 hp_colour_procs(escp_open, ep_get_params, ep_put_params);
 
 gx_device_cdj far_data gs_cdjmono_device =
@@ -674,15 +674,15 @@ gx_device_bjc800 far_data gs_bjc800_device =
 	BJC800_DEFAULT_PRINTCOLORS);
 
 /* Forward references */
-private int gdev_pcl_mode1compress(const byte *, const byte *, byte *);
-private int hp_colour_open(gx_device *, int);
-private int hp_colour_print_page(gx_device_printer *, FILE *, int);
-private int cdj_put_param_int(gs_param_list *, gs_param_name, int *, int, int, int);
-private uint gdev_prn_rasterwidth(const gx_device_printer *, int);
-private int cdj_put_param_bpp(gx_device *, gs_param_list *, int, int, int);
-private int cdj_set_bpp(gx_device *, int, int);
-private void cdj_expand_line(word *, int, short, int, int);
-private int bjc_fscmyk(byte**, byte*[4][4], int**, int, int);
+static int gdev_pcl_mode1compress(const byte *, const byte *, byte *);
+static int hp_colour_open(gx_device *, int);
+static int hp_colour_print_page(gx_device_printer *, FILE *, int);
+static int cdj_put_param_int(gs_param_list *, gs_param_name, int *, int, int, int);
+static uint gdev_prn_rasterwidth(const gx_device_printer *, int);
+static int cdj_put_param_bpp(gx_device *, gs_param_list *, int, int, int);
+static int cdj_set_bpp(gx_device *, int, int);
+static void cdj_expand_line(word *, int, short, int, int);
+static int bjc_fscmyk(byte**, byte*[4][4], int**, int, int);
 
 /* String parameters manipulation */
 
@@ -691,67 +691,67 @@ typedef struct {
     int p_value;
 } stringParamDescription;
 
-private const byte* paramValueToString(const stringParamDescription*, int);
-private int paramStringValue(const stringParamDescription*,
+static const byte* paramValueToString(const stringParamDescription*, int);
+static int paramStringValue(const stringParamDescription*,
     const byte*, int, int*);
 
-private int put_param_string(gs_param_list*, const byte*,
+static int put_param_string(gs_param_list*, const byte*,
     gs_param_string*, const stringParamDescription*, int *, int);
-private int get_param_string(gs_param_list*, const byte*,
+static int get_param_string(gs_param_list*, const byte*,
     gs_param_string*, const stringParamDescription*, int, bool, int);
 
 /* Open the printer and set up the margins. */
-private int
+static int
 dj500c_open(gx_device *pdev)
 { return hp_colour_open(pdev, DJ500C);
 }
 
-private int
+static int
 dj550c_open(gx_device *pdev)
 {  return hp_colour_open(pdev, DJ550C);
 }
 
-private int
+static int
 dj505j_open(gx_device *pdev)
 { return hp_colour_open(pdev, DJ505J);
 }
 
-private int
+static int
 dnj650c_open(gx_device *pdev)
 { return hp_colour_open(pdev, DNJ650C);
 }
 
-private int
+static int
 lj4dith_open(gx_device *pdev)
 { return hp_colour_open(pdev, LJ4DITH);
 }
 
-private int
+static int
 pjxl300_open(gx_device *pdev)
 { return hp_colour_open(pdev, PJXL300);
 }
 
-private int
+static int
 pj_open(gx_device *pdev)
 { return hp_colour_open(pdev, PJ180);
 }
 
-private int
+static int
 pjxl_open(gx_device *pdev)
 { return hp_colour_open(pdev, PJXL180);
 }
 
-private int
+static int
 escp_open(gx_device *pdev)
 { return hp_colour_open(pdev, ESC_P);
 }
 
-private int
+static int
 bjc_open(gx_device *pdev)
 {  return hp_colour_open(pdev, bjc->ptype);
 }
 
-private int
+static int
 hp_colour_open(gx_device *pdev, int ptype)
 {	/* Change the margins if necessary. */
   static const float dj_a4[4] = { DESKJET_MARGINS_A4 };
@@ -870,7 +870,7 @@ hp_colour_open(gx_device *pdev, int ptype)
 /* Get parameters.  In addition to the standard and printer 
  * parameters, we supply shingling and depletion parameters,
  * and control over the bits-per-pixel used in output rendering */
-private int
+static int
 cdj_get_params(gx_device *pdev, gs_param_list *plist)
 {	int code = gdev_prn_get_params(pdev, plist);
 	if ( code < 0 ||
@@ -884,7 +884,7 @@ cdj_get_params(gx_device *pdev, gs_param_list *plist)
 }
 
 /* Put parameters. */
-private int
+static int
 cdj_put_params(gx_device *pdev, gs_param_list *plist)
 {	int correction = cdj->correction;
 	int shingling = cdj->shingling;
@@ -914,7 +914,7 @@ cdj_put_params(gx_device *pdev, gs_param_list *plist)
 /* Get parameters.  In addition to the standard and printer
  * parameters, we supply print_quality and render_type 
  * parameters, together with bpp control. */
-private int
+static int
 pjxl_get_params(gx_device *pdev, gs_param_list *plist)
 {	int code = gdev_prn_get_params(pdev, plist);
 	if ( code < 0 ||
@@ -927,7 +927,7 @@ pjxl_get_params(gx_device *pdev, gs_param_list *plist)
 }
 
 /* Put parameters. */
-private int
+static int
 pjxl_put_params(gx_device *pdev, gs_param_list *plist)
 {	int printqual = pjxl->printqual;
 	int rendertype = pjxl->rendertype;
@@ -960,7 +960,7 @@ pjxl_put_params(gx_device *pdev, gs_param_list *plist)
 
 /* Put parameters.  In addition to the standard and printer */
 /* parameters, we allow control of the bits-per-pixel */
-private int
+static int
 pj_put_params(gx_device *pdev, gs_param_list *plist)
 {	int bpp = 0;
 	int code = cdj_put_param_int(plist, "BitsPerPixel", &bpp, 1, 32, 0);
@@ -970,14 +970,14 @@ pj_put_params(gx_device *pdev, gs_param_list *plist)
 	return cdj_put_param_bpp(pdev, plist, bpp, bpp, 0);
 }
 
-private stringParamDescription bjc_processColorsStrings[] = {
+static stringParamDescription bjc_processColorsStrings[] = {
     { "DeviceGray",		1 },
     { "DeviceRGB",		3 },
     { "DeviceCMYK",		4 },
     { 0 }
 };
 
-private stringParamDescription bjc_mediaTypeStrings[] = {
+static stringParamDescription bjc_mediaTypeStrings[] = {
     { "PlainPaper",		BJC_MEDIA_PLAINPAPER },
     { "CoatedPaper",		BJC_MEDIA_COATEDPAPER },
     { "TransparencyFilm",	BJC_MEDIA_TRANSPARENCYFILM },
@@ -987,14 +987,14 @@ private stringParamDescription bjc_mediaTypeStrings[] = {
     { 0 }
 };
 
-private stringParamDescription bjc600_printQualityStrings[] = {
+static stringParamDescription bjc600_printQualityStrings[] = {
     { "Normal",	0 },
     { "High",	1 },
     { "Draft",  2 },
     { 0 }
 };
 
-private stringParamDescription bjc800_printQualityStrings[] = {
+static stringParamDescription bjc800_printQualityStrings[] = {
     { "Normal",		0 },
     { "High",		1 },
     { "Low",    	3 },
@@ -1002,13 +1002,13 @@ private stringParamDescription bjc800_printQualityStrings[] = {
     { 0 },
 };
 
-private stringParamDescription bjc_ditheringTypeStrings[] = {
+static stringParamDescription bjc_ditheringTypeStrings[] = {
     { "None",			BJC_DITHER_NONE },
     { "Floyd-Steinberg",	BJC_DITHER_FS },
     { 0 }
 };
 
-private int
+static int
 bjc_get_params(gx_device *pdev, gs_param_list *plist)
 {
     int code = gdev_prn_get_params(pdev, plist);
@@ -1087,7 +1087,7 @@ bjc_get_params(gx_device *pdev, gs_param_list *plist)
 
 /* Put properties for the bjc drivers. */
 
-private int
+static int
 bjc_put_params(gx_device *pdev, gs_param_list *plist)
 {
     int bpp = 0, ccomps = 0;
@@ -1259,14 +1259,14 @@ mwe:   	    param_signal_error(plist, oname, code = ncode);
 /* ------ Internal routines ------ */
 
 /* The DeskJet500C can compress (mode 9) */
-private int
+static int
 dj500c_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
   return hp_colour_print_page(pdev, prn_stream, DJ500C);
 }
 
 /* The DeskJet550C can compress (mode 9) */
-private int
+static int
 dj550c_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
   return hp_colour_print_page(pdev, prn_stream, DJ550C);
@@ -1274,7 +1274,7 @@ dj550c_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
 /* The Picty180C can compress (mode 9) */
 /* This printer need switching mode using PJL */
-private int
+static int
 picty180_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {  int ret_code;
   /* Ensure we're operating in PCL mode */
@@ -1286,26 +1286,26 @@ picty180_print_page(gx_device_printer * pdev, FILE * prn_stream)
 }
 
 /* The DeskJet505J can compress  */
-private int
+static int
 dj505j_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
   return hp_colour_print_page(pdev, prn_stream, DJ505J);
 }
 
 /* The DesignJet650C can compress (mode 1) */
-private int
+static int
 dnj650c_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
   return hp_colour_print_page(pdev, prn_stream, DNJ650C);
 }
 
-private int
+static int
 lj4dith_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
   return hp_colour_print_page(pdev, prn_stream, LJ4DITH);
 }
 
-private int
+static int
 lj4dithp_print_page(gx_device_printer * pdev, FILE * prn_stream)
 { int ret_code;
   /* Ensure we're operating in PCL mode */
@@ -1317,7 +1317,7 @@ lj4dithp_print_page(gx_device_printer * pdev, FILE * prn_stream)
 }
 
 /* The PJXL300 can compress (modes 2 & 3) */
-private int
+static int
 pjxl300_print_page(gx_device_printer * pdev, FILE * prn_stream)
 { int ret_code;
   /* Ensure we're operating in PCL mode */
@@ -1329,21 +1329,21 @@ pjxl300_print_page(gx_device_printer * pdev, FILE * prn_stream)
 }
 
 /* The PaintJet XL can compress (modes 2 & 3) */
-private int
+static int
 pjxl_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
   return hp_colour_print_page(pdev, prn_stream, PJXL180);
 }
 
 /* The PaintJet can compress (mode 1) */
-private int
+static int
 pj_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
   return hp_colour_print_page(pdev, prn_stream, PJ180);
 }
 
 /* The LJ250 can compress (mode 1) */
-private int
+static int
 declj250_print_page(gx_device_printer * pdev, FILE * prn_stream)
 { int ret_code;
   fputs("\033%8", prn_stream);	/* Enter PCL emulation mode */
@@ -1353,14 +1353,14 @@ declj250_print_page(gx_device_printer * pdev, FILE * prn_stream)
 }
 
 /* The BJC-600 cannot compress w/o raster image commands. */
-private int
+static int
 escp_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
   return hp_colour_print_page(pdev, prn_stream, ESC_P);
 }
 
 /* The BJC-600 can compress w/ raster image commands. */
-private int
+static int
 bjc_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
   return hp_colour_print_page(pdev, prn_stream, bjc->ptype);
@@ -1600,7 +1600,7 @@ bjc_print_page(gx_device_printer * pdev, FILE * prn_stream)
  */
 #define fputshort(n, f) fputc((n)%256,f);fputc((n)/256,f)
 
-private int
+static int
 bjc_cmd(byte cmd, int argsize, byte* arg, gx_device_printer* pdev,
     FILE* f)
 {
@@ -1613,7 +1613,7 @@ bjc_cmd(byte cmd, int argsize, byte* arg, gx_device_printer* pdev,
 }
 
 
-private int
+static int
 bjc_raster_cmd_sub(char c, int rastsize, byte* data, FILE* f)
 {
   fputs("\033(A", f);
@@ -1625,7 +1625,7 @@ bjc_raster_cmd_sub(char c, int rastsize, byte* data, FILE* f)
   return 0;
 }
 
-private int
+static int
 bjc_raster_cmd(int c_id, int rastsize, byte* data, gx_device_printer* pdev,
     FILE* f)
 {
@@ -1643,7 +1643,7 @@ bjc_raster_cmd(int c_id, int rastsize, byte* data, gx_device_printer* pdev,
 		bjc_raster_cmd_sub('C', rastsize, data, f);
 	}
     }else {			/* Color decomposition */
-	private byte ymckCodes[] = {
+	static byte ymckCodes[] = {
 	    BJC_COLOR_YELLOW,
 	    BJC_COLOR_MAGENTA,
 	    BJC_COLOR_CYAN,
@@ -1658,7 +1658,7 @@ bjc_raster_cmd(int c_id, int rastsize, byte* data, gx_device_printer* pdev,
     return 0;
 }
 
-private int
+static int
 bjc_init_page(gx_device_printer* pdev, FILE* f)
 {
     byte pagemargins[3], resolution[4], paperloading[2];
@@ -1761,7 +1761,7 @@ bjc_init_page(gx_device_printer* pdev, FILE* f)
     return 0;
 }
 
-private int
+static int
 bjc_v_skip(int n, gx_device_printer* pdev, FILE* f)
 {
     if (n) {
@@ -1775,7 +1775,7 @@ bjc_v_skip(int n, gx_device_printer* pdev, FILE* f)
     return 0;
 }
 
-private int
+static int
 bjc_finish_page(gx_device_printer* pdev, FILE* f)
 {
     bjc_cmd('a', 1, (byte*) "\000", pdev, f);
@@ -1789,7 +1789,7 @@ bjc_finish_page(gx_device_printer* pdev, FILE* f)
 /* 1D runlength compression for BJC-600
  * this code is borrowed from gdevpcl.c:gdev_pcl_mode2compress.
  */
-private int
+static int
 bjc_compress(const byte *row, const byte *end_row, byte *compressed)
 {
   register const byte *exam = row;
@@ -1874,10 +1874,10 @@ bjc_compress(const byte *row, const byte *end_row, byte *compressed)
  * For the ESC/P mode, resolution is fixed as 360dpi and we must transform
  * image data to serialized data.
  */
-private word *ep_storage;
-private uint ep_storage_size_words;
-private byte *ep_raster_buf[4][BJC_HEAD_ROWS], *ep_print_buf;
-private int ep_num_comps, ep_plane_size, img_rows=BJC_HEAD_ROWS;
+static word *ep_storage;
+static uint ep_storage_size_words;
+static byte *ep_raster_buf[4][BJC_HEAD_ROWS], *ep_print_buf;
+static int ep_num_comps, ep_plane_size, img_rows=BJC_HEAD_ROWS;
 
 
 #define row_bytes (img_rows / 8)
@@ -1885,7 +1885,7 @@ private int ep_num_comps, ep_plane_size, img_rows=BJC_HEAD_ROWS;
 #define min_rows (32)		/* for optimization of text image printing */
 
 
-private int
+static int
 ep_print_image(FILE *prn_stream, char cmd, byte *data, int size)
 {
   static int ln_idx=0, vskip1=0, vskip2=0, real_rows;
@@ -2034,7 +2034,7 @@ ep_print_image(FILE *prn_stream, char cmd, byte *data, int size)
 
 
 /* Send the page to the printer.  Compress each scan line. */
-private int
+static int
 hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 {
   uint raster_width = gdev_prn_rasterwidth(pdev, 1);
@@ -2788,7 +2788,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
  * We complement the bytes at the same time, because
  * we accumulated the image in complemented form.
  */
-private int
+static int
 gdev_pcl_mode1compress(const byte *row, const byte *end_row, byte *compressed)
 {	register const byte *in = row;
 	register byte *out = compressed;
@@ -2834,7 +2834,7 @@ gdev_pcl_mode1compress(const byte *row, const byte *end_row, byte *compressed)
     (m) = gx_bits_to_color_value(((v) >> (b)) & ((1 << (b)) - 1), (b)), \
     (y) = gx_bits_to_color_value((v) & ((1 << (b)) - 1), (b))
 
-private gx_color_index
+static gx_color_index
 gdev_cmyk_map_cmyk_color(gx_device* pdev, const gx_color_value cv[])
 {
     gx_color_value cyan, magenta, yellow, black;
@@ -2859,7 +2859,7 @@ gdev_cmyk_map_cmyk_color(gx_device* pdev, const gx_color_value cv[])
 
 /* Mapping of RGB colors to gray values. */
 
-private gx_color_index
+static gx_color_index
 gdev_cmyk_map_rgb_color(gx_device *pdev, const gx_color_value cv[])
 {
     gx_color_value r, g, b;
@@ -2893,7 +2893,7 @@ gdev_cmyk_map_rgb_color(gx_device *pdev, const gx_color_value cv[])
 
 /* Mapping of CMYK colors. */
 
-private int
+static int
 gdev_cmyk_map_color_cmyk(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 {
     switch (pdev->color_info.depth) {
@@ -2947,7 +2947,7 @@ gdev_cmyk_map_color_cmyk(gx_device *pdev, gx_color_index color, gx_color_value p
         y = yv - kv; m = mv - kv; c = cv -kv; k = kv; \
    } while (0)
 
-private gx_color_index
+static gx_color_index
 gdev_pcl_map_rgb_color(gx_device *pdev, const gx_color_value cv[])
 {
   gx_color_value r, g, b;
@@ -3018,7 +3018,7 @@ gdev_pcl_map_rgb_color(gx_device *pdev, const gx_color_value cv[])
 }
     
 /* Map a color index to a r-g-b color. */
-private int
+static int
 gdev_pcl_map_color_rgb(gx_device *pdev, gx_color_index color,
 			    gx_color_value prgb[3])
 {
@@ -3088,7 +3088,7 @@ gdev_pcl_map_color_rgb(gx_device *pdev, gx_color_index color,
  *
  */
 
-private void
+static void
 cdj_expand_line(word *line, int linesize, short cmyk, int bpp, int ebpp)
 {
   int endline = linesize;
@@ -3193,7 +3193,7 @@ cdj_expand_line(word *line, int linesize, short cmyk, int bpp, int ebpp)
   }
 }
 
-private int
+static int
 cdj_put_param_int(gs_param_list *plist, gs_param_name pname, int *pvalue,
   int minval, int maxval, int ecode)
 {	int code, value;
@@ -3211,7 +3211,7 @@ cdj_put_param_int(gs_param_list *plist, gs_param_name pname, int *pvalue,
 	}
 }	
 
-private int
+static int
 cdj_set_bpp(gx_device *pdev, int bpp, int ccomps)
 { gx_device_color_info *ci = &pdev->color_info;
 
@@ -3404,7 +3404,7 @@ cce:  default: return gs_error_rangecheck;
    If new_bpp != 0, it must be the value of the BitsPerPixel element of
      the plist; real_bpp may differ from new_bpp.
 */
-private int
+static int
 cdj_put_param_bpp(gx_device *pdev, gs_param_list *plist, int new_bpp,
   int real_bpp, int ccomps)
 {
@@ -3445,7 +3445,7 @@ cdj_put_param_bpp(gx_device *pdev, gs_param_list *plist, int new_bpp,
 
 /* This returns either the number of pixels in a scan line, or the number
  * of bytes required to store the line, both clipped to the page margins */
-private uint
+static uint
 gdev_prn_rasterwidth(const gx_device_printer *pdev, int pixelcount)
 {
   ulong raster_width = (ulong)(pdev->width - 
@@ -3457,7 +3457,7 @@ gdev_prn_rasterwidth(const gx_device_printer *pdev, int pixelcount)
 
 /* Functions for manipulation params strings */
 
-private const byte*
+static const byte*
 paramValueToString(const stringParamDescription* params, int value)
 {
 
@@ -3470,7 +3470,7 @@ paramValueToString(const stringParamDescription* params, int value)
     return (const byte*) 0;
 }
 
-private int
+static int
 paramStringValue(const stringParamDescription* params,
     const byte* name, int namelen, int* value)
 {
@@ -3486,7 +3486,7 @@ paramStringValue(const stringParamDescription* params,
     return 0;
 }
 
-private int
+static int
 put_param_string(gs_param_list* plist,
     const byte* pname, gs_param_string* pstring,
     const stringParamDescription* params, int *pvalue, int code)
@@ -3512,7 +3512,7 @@ put_param_string(gs_param_list* plist,
     return code;
 }
 
-private int
+static int
 get_param_string(gs_param_list* plist,
     const byte* pname, gs_param_string* pstring,
     const stringParamDescription* params, int pvalue, bool persist, int code)
@@ -3541,7 +3541,7 @@ get_param_string(gs_param_list* plist,
  *
  */
 
-private int
+static int
 cdj_param_check_bytes(gs_param_list *plist, gs_param_name pname,
 		      const byte *str, uint size, bool is_defined)
 {       int code;
@@ -3568,7 +3568,7 @@ e:              param_signal_error(plist, pname, code);
 
 /* This is original code. */
 
-private int
+static int
 cdj_param_check_float(gs_param_list *plist, gs_param_name pname, floatp fval,
 		      bool is_defined)
 {       int code;
@@ -3665,7 +3665,7 @@ Just about the features of the code:
 #define ODX_Y	     0
 #define ODX_K	     3
 
-private int
+static int
 bjc_fscmyk(byte** inplanes, byte* outplanes[4][4], int** errplanes,
     int plane_size, int scan) {
 

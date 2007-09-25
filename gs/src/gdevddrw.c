@@ -40,7 +40,7 @@
 /* ---------------- Polygon and line drawing ---------------- */
 
 /* Define the 'remainder' analogue of fixed_mult_quo. */
-private fixed
+static fixed
 fixed_mult_rem(fixed a, fixed b, fixed c)
 {
     /* All kinds of truncation may happen here, but it's OK. */
@@ -108,7 +108,7 @@ typedef struct trap_gradient_s {
  * (edge.end.x - edge.start.x) is a parameter; the y extent (h member)
  * has already been set.  Also adjust x for the initial y.
  */
-inline private void
+static inline void
 compute_dx(trap_line *tl, fixed xd, fixed ys)
 {
     fixed h = tl->h;
@@ -136,7 +136,7 @@ compute_dx(trap_line *tl, fixed xd, fixed ys)
 #define YMULT_LIMIT (max_fixed / fixed_1)
 
 /* Compute ldi, ldf, and xf similarly. */
-inline private void
+static inline void
 compute_ldx(trap_line *tl, fixed ys)
 {
     int di = tl->di;
@@ -160,7 +160,7 @@ compute_ldx(trap_line *tl, fixed ys)
     }
 }
 
-private inline int
+static inline int
 init_gradient(trap_gradient *g, const gs_fill_attributes *fa,
 		const gs_linear_color_edge *e, const gs_linear_color_edge *e1,
 		const trap_line *l, fixed ybot, int num_components)
@@ -198,7 +198,7 @@ init_gradient(trap_gradient *g, const gs_fill_attributes *fa,
     return 0;
 }
 
-private inline void
+static inline void
 step_gradient(trap_gradient *g, int num_components)
 {
     int i;
@@ -219,7 +219,7 @@ step_gradient(trap_gradient *g, int num_components)
     }
 }
 
-private inline bool
+static inline bool
 check_gradient_overflow(const gs_linear_color_edge *le, const gs_linear_color_edge *re,
 		int num_components)
 {
@@ -246,7 +246,7 @@ check_gradient_overflow(const gs_linear_color_edge *le, const gs_linear_color_ed
 }
 
 
-private inline int
+static inline int
 set_x_gradient_nowedge(trap_gradient *xg, const trap_gradient *lg, const trap_gradient *rg, 
 	     const trap_line *l, const trap_line *r, int il, int ir, int num_components)
 {
@@ -297,7 +297,7 @@ set_x_gradient_nowedge(trap_gradient *xg, const trap_gradient *lg, const trap_gr
     return 0;
 }
 
-private inline int
+static inline int
 set_x_gradient(trap_gradient *xg, const trap_gradient *lg, const trap_gradient *rg, 
 	     const trap_line *l, const trap_line *r, int il, int ir, int num_components)
 {
@@ -326,7 +326,7 @@ set_x_gradient(trap_gradient *xg, const trap_gradient *lg, const trap_gradient *
 #define EDGE_TYPE gs_fixed_edge  /* Common for non-shading variants. */
 #define FILL_ATTRS gs_logical_operation_t  /* Common for non-shading variants. */
 
-#define GX_FILL_TRAPEZOID private int gx_fill_trapezoid_as_fd
+#define GX_FILL_TRAPEZOID static int gx_fill_trapezoid_as_fd
 #define CONTIGUOUS_FILL 0
 #define SWAP_AXES 1
 #define FILL_DIRECT 1
@@ -336,7 +336,7 @@ set_x_gradient(trap_gradient *xg, const trap_gradient *lg, const trap_gradient *
 #undef SWAP_AXES
 #undef FILL_DIRECT
 
-#define GX_FILL_TRAPEZOID private int gx_fill_trapezoid_as_nd
+#define GX_FILL_TRAPEZOID static int gx_fill_trapezoid_as_nd
 #define CONTIGUOUS_FILL 0
 #define SWAP_AXES 1
 #define FILL_DIRECT 0
@@ -346,7 +346,7 @@ set_x_gradient(trap_gradient *xg, const trap_gradient *lg, const trap_gradient *
 #undef SWAP_AXES
 #undef FILL_DIRECT
 
-#define GX_FILL_TRAPEZOID private int gx_fill_trapezoid_ns_fd
+#define GX_FILL_TRAPEZOID static int gx_fill_trapezoid_ns_fd
 #define CONTIGUOUS_FILL 0
 #define SWAP_AXES 0
 #define FILL_DIRECT 1
@@ -356,7 +356,7 @@ set_x_gradient(trap_gradient *xg, const trap_gradient *lg, const trap_gradient *
 #undef SWAP_AXES
 #undef FILL_DIRECT
 
-#define GX_FILL_TRAPEZOID private int gx_fill_trapezoid_ns_nd
+#define GX_FILL_TRAPEZOID static int gx_fill_trapezoid_ns_nd
 #define CONTIGUOUS_FILL 0
 #define SWAP_AXES 0
 #define FILL_DIRECT 0
@@ -394,7 +394,7 @@ set_x_gradient(trap_gradient *xg, const trap_gradient *lg, const trap_gradient *
 #define EDGE_TYPE gs_linear_color_edge /* Common for shading variants. */
 #define FILL_ATTRS const gs_fill_attributes *  /* Common for non-shading variants. */
 
-#define GX_FILL_TRAPEZOID private int gx_fill_trapezoid_ns_lc
+#define GX_FILL_TRAPEZOID static int gx_fill_trapezoid_ns_lc
 #define CONTIGUOUS_FILL 0
 #define SWAP_AXES 0
 #define FILL_DIRECT 1
@@ -404,7 +404,7 @@ set_x_gradient(trap_gradient *xg, const trap_gradient *lg, const trap_gradient *
 #undef SWAP_AXES
 #undef FILL_DIRECT
 
-#define GX_FILL_TRAPEZOID private int gx_fill_trapezoid_as_lc
+#define GX_FILL_TRAPEZOID static int gx_fill_trapezoid_as_lc
 #define CONTIGUOUS_FILL 0
 #define SWAP_AXES 1
 #define FILL_DIRECT 1
@@ -439,7 +439,7 @@ gx_default_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
     }
 }
 
-private inline void
+static inline void
 middle_frac31_color(frac31 *c, const frac31 *c0, const frac31 *c2, int num_components)
 {
     /* Assuming non-negative values. */
@@ -449,7 +449,7 @@ middle_frac31_color(frac31 *c, const frac31 *c0, const frac31 *c2, int num_compo
 	c[i] = (int32_t)(((uint32_t)c0[i] + (uint32_t)c2[i]) >> 1);
 }
 
-private inline int
+static inline int
 fill_linear_color_trapezoid_nocheck(gx_device *dev, const gs_fill_attributes *fa,
 	const gs_linear_color_edge *le, const gs_linear_color_edge *re)
 {
@@ -505,7 +505,7 @@ gx_default_fill_linear_color_trapezoid(gx_device *dev, const gs_fill_attributes 
     return fill_linear_color_trapezoid_nocheck(dev, fa, &le, &re);
 }
 
-private inline int 
+static inline int 
 fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *fa,
 	const gs_fixed_point *p0, const gs_fixed_point *p1,
 	const gs_fixed_point *p2,
@@ -834,13 +834,13 @@ gx_default_draw_line(gx_device * dev,
 /* GC structures for image enumerator */
 public_st_gx_image_enum_common();
 
-private 
+static 
 ENUM_PTRS_WITH(image_enum_common_enum_ptrs, gx_image_enum_common_t *eptr)
     return 0;
 case 0: return ENUM_OBJ(gx_device_enum_ptr(eptr->dev));
 ENUM_PTRS_END
 
-private RELOC_PTRS_WITH(image_enum_common_reloc_ptrs, gx_image_enum_common_t *eptr)
+static RELOC_PTRS_WITH(image_enum_common_reloc_ptrs, gx_image_enum_common_t *eptr)
 {
     eptr->dev = gx_device_reloc_ptr(eptr->dev, gcst);
 }
@@ -851,7 +851,7 @@ RELOC_PTRS_END
  * the argument types are different, and if the device provides a
  * begin_typed_image procedure, we should use it.  See gxdevice.h.
  */
-private int
+static int
 gx_no_begin_image(gx_device * dev,
 		  const gs_imager_state * pis, const gs_image_t * pim,
 		  gs_image_format_t format, const gs_int_rect * prect,

@@ -27,10 +27,10 @@
 extern char *mktemp(char *);	/* in gp_mktmp.c */
 
 /* Define a substitute for stdprn (see below). */
-private FILE *gs_stdprn;
+static FILE *gs_stdprn;
 
 /* Forward declarations */
-private void handle_FPE(int);
+static void handle_FPE(int);
 
 /* Do platform-dependent initialization. */
 void
@@ -43,7 +43,7 @@ gp_init(void)
 
 /* Trap numeric exceptions.  Someday we will do something */
 /* more appropriate with these. */
-private void
+static void
 handle_FPE(int sig)
 {
     eprintf("Numeric exception:\n");

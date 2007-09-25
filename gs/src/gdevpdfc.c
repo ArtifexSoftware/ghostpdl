@@ -85,7 +85,7 @@ public_st_pdf_color_space();
 #define CC_KEY_A CC_KEY(CC_INDEX_A)
 #define CC_KEY_B CC_KEY(CC_INDEX_B)
 
-private bool
+static bool
 cie_values_are_exponential(floatp v0, floatp va, floatp vb, floatp k,
 			   float *pexpt)
 {
@@ -102,7 +102,7 @@ cie_values_are_exponential(floatp v0, floatp va, floatp vb, floatp k,
     return true;
 }
 
-private bool
+static bool
 cie_scalar_cache_is_exponential(const gx_cie_scalar_cache * pc, float *pexpt)
 {
     return cie_values_are_exponential(pc->floats.values[0],
@@ -116,7 +116,7 @@ cie_scalar_cache_is_exponential(const gx_cie_scalar_cache * pc, float *pexpt)
    cie_scalar_cache_is_exponential(&(pca)[1], &(expts).v) &&\
    cie_scalar_cache_is_exponential(&(pca)[2], &(expts).w))
 
-private bool
+static bool
 cie_vector_cache_is_exponential(const gx_cie_vector_cache * pc, float *pexpt)
 {
     return cie_values_are_exponential(pc->vecs.values[0].u,
@@ -139,7 +139,7 @@ cie_vector_cache_is_exponential(const gx_cie_vector_cache * pc, float *pexpt)
  * Test whether a cached CIEBasedABC space consists only of a single
  * Decode step followed by a single Matrix step.
  */
-private cie_cache_one_step_t
+static cie_cache_one_step_t
 cie_cached_abc_is_one_step(const gs_cie_abc *pcie, const gs_matrix3 **ppmat)
 {
     /* The order of steps is, DecodeABC, MatrixABC, DecodeLMN, MatrixLMN. */
@@ -166,7 +166,7 @@ cie_cached_abc_is_one_step(const gs_cie_abc *pcie, const gs_matrix3 **ppmat)
 /*
  * Test whether a cached CIEBasedABC space is a L*a*b* space.
  */
-private bool
+static bool
 cie_scalar_cache_is_lab_lmn(const gs_cie_abc *pcie, int i)
 {
     double k = CC_KEY(i);
@@ -184,7 +184,7 @@ cie_scalar_cache_is_lab_lmn(const gs_cie_abc *pcie, int i)
 #undef CC_V
 #undef CC_WP
 }
-private bool
+static bool
 cie_vector_cache_is_lab_abc(const gx_cie_vector_cache3_t *pvc, int i)
 {
     const gx_cie_vector_cache *const pc3 = pvc->caches;
@@ -205,7 +205,7 @@ cie_vector_cache_is_lab_abc(const gx_cie_vector_cache3_t *pvc, int i)
 	    );
 }
 
-private bool
+static bool
 cie_is_lab(const gs_cie_abc *pcie)
 {
     int i;
@@ -235,7 +235,7 @@ cie_is_lab(const gs_cie_abc *pcie)
 #undef CC_KEY
 
 /* Test whether one or more CIE-based ranges are [0..1]. */
-private bool
+static bool
 cie_ranges_are_0_1(const gs_range *prange, int n)
 {
     int i;
@@ -249,7 +249,7 @@ cie_ranges_are_0_1(const gs_range *prange, int n)
 /* ------ Utilities ------ */
 
 /* Add a 3-element vector to a Cos array or dictionary. */
-private int
+static int
 cos_array_add_vector3(cos_array_t *pca, const gs_vector3 *pvec)
 {
     int code = cos_array_add_real(pca, pvec->u);
@@ -260,7 +260,7 @@ cos_array_add_vector3(cos_array_t *pca, const gs_vector3 *pvec)
 	code = cos_array_add_real(pca, pvec->w);
     return code;
 }
-private int
+static int
 cos_dict_put_c_key_vector3(cos_dict_t *pcd, const char *key,
 			   const gs_vector3 *pvec)
 {
@@ -330,7 +330,7 @@ pdf_cspace_init_Device(gs_memory_t *mem, gs_color_space **ppcs,
 }
 
 /* Create a Separation or DeviceN color space (internal). */
-private int
+static int
 pdf_separation_color_space(gx_device_pdf *pdev,
 			   cos_array_t *pca, const char *csname,
 			   const cos_value_t *snames,
@@ -359,7 +359,7 @@ pdf_separation_color_space(gx_device_pdf *pdev,
  * Create an Indexed color space.  This is a single-use procedure,
  * broken out only for readability.
  */
-private int
+static int
 pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 			const gs_color_space *pcs, cos_array_t *pca)
 {
@@ -491,7 +491,7 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 /* 
  * Find a color space resource by seriialized data. 
  */
-private pdf_resource_t *
+static pdf_resource_t *
 pdf_find_cspace_resource(gx_device_pdf *pdev, const byte *serialized, uint serialized_size) 
 {
     pdf_resource_t **pchain = pdev->resources[resourceColorSpace].chains;
@@ -970,7 +970,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 /* ---------------- Miscellaneous ---------------- */
 
 /* Create colored and uncolored Pattern color spaces. */
-private int
+static int
 pdf_pattern_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 		  pdf_resource_t **ppres, const char *cs_name)
 {

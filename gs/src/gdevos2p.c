@@ -68,20 +68,20 @@ typedef struct gx_device_os2prn_s gx_device_os2prn;
 /* Device procedures */
 
 /* See gxdevice.h for the definitions of the procedures. */
-private dev_proc_open_device(os2prn_open);
-private dev_proc_close_device(os2prn_close);
-private dev_proc_print_page(os2prn_print_page);
-private dev_proc_map_rgb_color(os2prn_map_rgb_color);
-private dev_proc_map_color_rgb(os2prn_map_color_rgb);
-private dev_proc_put_params(os2prn_put_params);
-private dev_proc_get_params(os2prn_get_params);
+static dev_proc_open_device(os2prn_open);
+static dev_proc_close_device(os2prn_close);
+static dev_proc_print_page(os2prn_print_page);
+static dev_proc_map_rgb_color(os2prn_map_rgb_color);
+static dev_proc_map_color_rgb(os2prn_map_color_rgb);
+static dev_proc_put_params(os2prn_put_params);
+static dev_proc_get_params(os2prn_get_params);
 
-private void os2prn_set_bpp(gx_device * dev, int depth);
-private int os2prn_get_queue_list(gs_memory_t *mem, OS2QL * ql);
-private void os2prn_free_queue_list(gs_memory_t *mem, OS2QL * ql);
+static void os2prn_set_bpp(gx_device * dev, int depth);
+static int os2prn_get_queue_list(gs_memory_t *mem, OS2QL * ql);
+static void os2prn_free_queue_list(gs_memory_t *mem, OS2QL * ql);
 int os2prn_get_printer(OS2QL * ql);
 
-private gx_device_procs os2prn_procs =
+static gx_device_procs os2prn_procs =
 prn_color_params_procs(os2prn_open, gdev_prn_output_page, os2prn_close,
 		       os2prn_map_rgb_color, os2prn_map_color_rgb,
 		       os2prn_get_params, os2prn_put_params);
@@ -115,7 +115,7 @@ gx_device_os2prn far_data gs_os2prn_device =
 };
 
 /* Open the os2prn driver */
-private int
+static int
 os2prn_open(gx_device * dev)
 {
     int code;
@@ -293,7 +293,7 @@ os2prn_open(gx_device * dev)
 }
 
 /* Close the os2prn driver */
-private int
+static int
 os2prn_close(gx_device * dev)
 {
     int code;
@@ -411,7 +411,7 @@ os2prn_put_params(gx_device * dev, gs_param_list * plist)
 
 /* Write BMP header to memory, then send bitmap to printer */
 /* one scan line at a time */
-private int
+static int
 os2prn_print_page(gx_device_printer * pdev, FILE * file)
 {
     int raster = gdev_prn_raster(pdev);
@@ -558,7 +558,7 @@ os2prn_print_page(gx_device_printer * pdev, FILE * file)
 /* Note that OS/2 expects RGB values in the order B,G,R. */
 
 /* Encode a r-g-b color to a color index. */
-private gx_color_index
+static gx_color_index
 os2prn_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
     gx_color_value r = cv[0];
@@ -570,7 +570,7 @@ os2prn_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 }
 
 /* Decode a color index to a r-g-b color. */
-private int
+static int
 os2prn_map_color_rgb(gx_device * dev, gx_color_index color,
 		     gx_color_value prgb[3])
 {
@@ -612,7 +612,7 @@ os2prn_set_bpp(gx_device * dev, int depth)
 
 /* Get list of queues from SplEnumQueue */
 /* returns 0 if OK, non-zero for error */
-private int
+static int
 os2prn_get_queue_list(gs_memory_t *mem, OS2QL * ql)
 {
     SPLERR splerr;
@@ -665,7 +665,7 @@ os2prn_get_queue_list(gs_memory_t *mem, OS2QL * ql)
 }
 
 
-private void
+static void
 os2prn_free_queue_list(gs_memory_t *mem, OS2QL * ql)
 {
     gs_free(mem, (char *)ql->prq, ql->len, 1, "os2prn queue list");

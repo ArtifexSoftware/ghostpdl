@@ -86,16 +86,16 @@
 
 int GDI_BAND_WIDTH[] = {4768, 4928};
 
-private int gdi_print_page(gx_device_printer *pdev, FILE *prn_stream);
-private int gdi_open(gx_device *pdev);
-private int gdi_close(gx_device *pdev);
+static int gdi_print_page(gx_device_printer *pdev, FILE *prn_stream);
+static int gdi_open(gx_device *pdev);
+static int gdi_close(gx_device *pdev);
 
 /* The device descriptors */
-private dev_proc_open_device(gdi_open);
-private dev_proc_close_device(gdi_close);
-private dev_proc_print_page(gdi_print_page);
+static dev_proc_open_device(gdi_open);
+static dev_proc_close_device(gdi_close);
+static dev_proc_print_page(gdi_print_page);
 
-private gx_device_procs prn_gdi_procs =
+static gx_device_procs prn_gdi_procs =
     prn_params_procs(gdi_open, gdev_prn_output_page, gdi_close,
 		   gdev_prn_get_params, gdev_prn_put_params);
 
@@ -115,23 +115,23 @@ gx_device_printer far_data gs_samsunggdi_device =
 	1,                      /* color bit */ 
         gdi_print_page);
 
-private FILE *WritePJLHeaderData(gx_device_printer *pdev, FILE *fp);
-private FILE *WriteBandHeader(FILE *fp, unsigned int usBandNo, 
+static FILE *WritePJLHeaderData(gx_device_printer *pdev, FILE *fp);
+static FILE *WriteBandHeader(FILE *fp, unsigned int usBandNo, 
                      unsigned char ubCompMode, unsigned int usBandWidth, 
                      unsigned int usBandHeight, unsigned long ulBandSize);
-private FILE *WriteTrailerData(FILE *fp);
-private unsigned long FrameTiffComp(unsigned char *pubDest, unsigned char *pubSrc, 
+static FILE *WriteTrailerData(FILE *fp);
+static unsigned long FrameTiffComp(unsigned char *pubDest, unsigned char *pubSrc, 
                                unsigned int usTotalLines, unsigned int usBytesPerLine, 
                                unsigned char ubMode);
-private unsigned int  FrameTiff_Comp(unsigned char *lpSrcBuf, unsigned char *lpTgtBuf, 
+static unsigned int  FrameTiff_Comp(unsigned char *lpSrcBuf, unsigned char *lpTgtBuf, 
                                unsigned int nSrcBytes);
-private unsigned int  PreTiffComp(unsigned char *lpSrcBuf, unsigned int nSrcBytes);
-private long bmp2run(unsigned char *out_buf, unsigned char *in_buf, unsigned int sizeY, unsigned int sizeX, unsigned char ubMode);
+static unsigned int  PreTiffComp(unsigned char *lpSrcBuf, unsigned int nSrcBytes);
+static long bmp2run(unsigned char *out_buf, unsigned char *in_buf, unsigned int sizeY, unsigned int sizeX, unsigned char ubMode);
 
 #define ppdev ((gx_device_printer *)pdev)
 
 /* Open the printer, adjusting the margins if necessary. */
-private int
+static int
 gdi_open(gx_device *pdev)
 {	/* Change the margins if necessary. */
 	const float *m = 0;
@@ -150,7 +150,7 @@ gdi_open(gx_device *pdev)
 }
 
 /* gdi_close is only here to eject odd numbered pages in duplex mode. */
-private int
+static int
 gdi_close(gx_device *pdev)
 {	if ( ppdev->Duplex_set >= 0 && ppdev->Duplex )
 	  {	gdev_prn_open_printer(pdev, 1);
@@ -167,7 +167,7 @@ gdi_close(gx_device *pdev)
 /* allow it to specify coordinates at 600 dpi. */
 /* It too needs its coordinate system translated slightly. */
 
-private int
+static int
 gdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
         int band_width_bytes;

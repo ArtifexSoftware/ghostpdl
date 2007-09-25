@@ -41,24 +41,24 @@
 /* Guaranteed size of operand stack accoeding to PLRM */
 #define MAXOPSTACK 500
 
-private int psw_open_printer(gx_device * dev);
-private int psw_close_printer(gx_device * dev);
+static int psw_open_printer(gx_device * dev);
+static int psw_close_printer(gx_device * dev);
 
 /* ---------------- Device definition ---------------- */
 
 /* Device procedures */
-private dev_proc_open_device(psw_open);
-private dev_proc_output_page(psw_output_page);
-private dev_proc_close_device(psw_close);
-private dev_proc_fill_rectangle(psw_fill_rectangle);
-private dev_proc_copy_mono(psw_copy_mono);
-private dev_proc_copy_color(psw_copy_color);
-private dev_proc_put_params(psw_put_params);
-private dev_proc_get_params(psw_get_params);
-private dev_proc_fill_path(psw_fill_path);
-private dev_proc_stroke_path(psw_stroke_path);
-private dev_proc_fill_mask(psw_fill_mask);
-private dev_proc_begin_image(psw_begin_image);
+static dev_proc_open_device(psw_open);
+static dev_proc_output_page(psw_output_page);
+static dev_proc_close_device(psw_close);
+static dev_proc_fill_rectangle(psw_fill_rectangle);
+static dev_proc_copy_mono(psw_copy_mono);
+static dev_proc_copy_color(psw_copy_color);
+static dev_proc_put_params(psw_put_params);
+static dev_proc_get_params(psw_get_params);
+static dev_proc_fill_path(psw_fill_path);
+static dev_proc_stroke_path(psw_stroke_path);
+static dev_proc_fill_mask(psw_fill_mask);
+static dev_proc_begin_image(psw_begin_image);
 
 #define X_DPI 720
 #define Y_DPI 720
@@ -174,7 +174,7 @@ const gx_device_pswrite gs_epswrite_device = {
 };
 
 /* Vector device implementation */
-private int
+static int
     psw_beginpage(gx_device_vector * vdev),
     psw_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis, 
                   const gx_drawing_color * pdc),
@@ -193,7 +193,7 @@ private int
     psw_closepath(gx_device_vector * vdev, floatp x0, floatp y0,
 		  floatp x_start, floatp y_start, gx_path_type_t type),
     psw_endpath(gx_device_vector * vdev, gx_path_type_t type);
-private const gx_device_vector_procs psw_vector_procs = {
+static const gx_device_vector_procs psw_vector_procs = {
 	/* Page management */
     psw_beginpage,
 	/* Imager state */
@@ -226,7 +226,7 @@ private const gx_device_vector_procs psw_vector_procs = {
  * definitions change.
  */
 
-private const char *const psw_procset[] = {
+static const char *const psw_procset[] = {
     "/!{bind def}bind def/#{load def}!/N/counttomark #",
 	/* <rbyte> <gbyte> <bbyte> rG - */
 	/* <graybyte> G - */
@@ -275,11 +275,11 @@ private const char *const psw_procset[] = {
     0
 };
 
-private const char *const psw_1_procset[] = {
+static const char *const psw_1_procset[] = {
     0
 };
 
-private const char *const psw_1_x_procset[] = {
+static const char *const psw_1_x_procset[] = {
 	/* <w> <h> <name> <length> <src> |X <w> <h> <data> */
 	/* <w> <h> <name> (<length>|) $X <w> <h> <data> */
     "/|X{exch string readhexstring |=}!/$X{+ @ |X}!",
@@ -288,13 +288,13 @@ private const char *const psw_1_x_procset[] = {
     0
 };
 
-private const char *const psw_1_5_procset[] = {
+static const char *const psw_1_5_procset[] = {
 	/* <x> <y> <w> <h> <src> <bpc> Ic - */
     "/Ic{exch Ix false 3 colorimage}!",
     0
 };
 
-private const char *const psw_2_procset[] = {
+static const char *const psw_2_procset[] = {
 	/* <src> <w> <h> -mark- ... F <g4src> */
 	/* <src> <w> <h> FX <g4src> */
     "/F{/Columns counttomark 3 add -2 roll/Rows exch/K -1/BlackIs1 true>>",
@@ -327,7 +327,7 @@ private const char *const psw_2_procset[] = {
  * Output the file header.  This must write to a file, not a stream,
  * because it may be called during finalization.
  */
-private int
+static int
 psw_begin_file(gx_device_pswrite *pdev, const gs_rect *pbbox)
 {
     int code;
@@ -360,7 +360,7 @@ psw_begin_file(gx_device_pswrite *pdev, const gs_rect *pbbox)
 }
 
 /* Reset the image cache. */
-private void
+static void
 image_cache_reset(gx_device_pswrite * pdev)
 {
     int i;
@@ -373,7 +373,7 @@ image_cache_reset(gx_device_pswrite * pdev)
 /* Look up or enter image parameters in the cache. */
 /* Return -1 if the key is not in the cache, or its index. */
 /* If id is gx_no_bitmap_id or enter is false, do not enter it. */
-private int
+static int
 image_cache_lookup(gx_device_pswrite * pdev, gx_bitmap_id id,
 		   int width, int height, bool enter)
 {
@@ -407,7 +407,7 @@ image_cache_lookup(gx_device_pswrite * pdev, gx_bitmap_id id,
  * Prepare the encoding stream for image data.
  * Return 1 if using ASCII (Hex or 85) encoding, 0 if binary.
  */
-private int
+static int
 psw_image_stream_setup(gx_device_pswrite * pdev, bool binary_ok)
 {
     int code;
@@ -440,7 +440,7 @@ psw_image_stream_setup(gx_device_pswrite * pdev, bool binary_ok)
 }
 
 /* Clean up after writing an image. */
-private int
+static int
 psw_image_cleanup(gx_device_pswrite * pdev)
 {
     int code = 0;
@@ -453,7 +453,7 @@ psw_image_cleanup(gx_device_pswrite * pdev)
 }
 
 /* Write data for an image.  Assumes width > 0, height > 0. */
-private int
+static int
 psw_put_bits(stream * s, const byte * data, int data_x_bit, uint raster,
 	     uint width_bits, int height)
 {
@@ -479,7 +479,7 @@ psw_put_bits(stream * s, const byte * data, int data_x_bit, uint raster,
     }
     return 0;
 }
-private int
+static int
 psw_put_image_bits(gx_device_pswrite *pdev, const char *op,
 		   const byte * data, int data_x, uint raster,
 		   int width, int height, int depth)
@@ -494,7 +494,7 @@ psw_put_image_bits(gx_device_pswrite *pdev, const char *op,
     psw_image_cleanup(pdev);
     return 0;
 }
-private int
+static int
 psw_put_image(gx_device_pswrite *pdev, const char *op, int encode,
 	      const byte * data, int data_x, uint raster,
 	      int width, int height, int depth)
@@ -511,7 +511,7 @@ psw_put_image(gx_device_pswrite *pdev, const char *op, int encode,
     return psw_put_image_bits(pdev, op, data, data_x, raster,
 			      width, height, depth);
 }
-private int
+static int
 psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
 		const byte * data, int data_x, uint raster, gx_bitmap_id id,
 		int x, int y, int width, int height, int depth)
@@ -609,7 +609,7 @@ psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
 }
 
 /* Print a matrix. */
-private void
+static void
 psw_put_matrix(stream * s, const gs_matrix * pmat)
 {
     pprintg6(s, "[%g %g %g %g %g %g]",
@@ -617,7 +617,7 @@ psw_put_matrix(stream * s, const gs_matrix * pmat)
 }
 
 /* Check for a deferred erasepage. */
-private int
+static int
 psw_check_erasepage(gx_device_pswrite *pdev)
 {
     int code = 0;
@@ -648,7 +648,7 @@ psw_check_erasepage(gx_device_pswrite *pdev)
   END
 
 /* Check if we write each page into separate file. */
-private bool 
+static bool 
 psw_is_separate_pages(gx_device_vector *const vdev)
 {
     const char *fmt;
@@ -660,7 +660,7 @@ psw_is_separate_pages(gx_device_vector *const vdev)
 
 /* ---------------- Vector device implementation ---------------- */
 
-private int
+static int
 psw_beginpage(gx_device_vector * vdev)
 {
     gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
@@ -688,14 +688,14 @@ psw_beginpage(gx_device_vector * vdev)
 }
 
 
-private int
+static int
 psw_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis1, 
               const gx_drawing_color * pdc)
 {
     return false; /* High level color is not implemented yet. */
 }
 
-private int
+static int
 psw_setcolors(gx_device_vector * vdev, const gs_imager_state * pis1, 
               const gx_drawing_color * pdc)
 {
@@ -732,7 +732,7 @@ psw_setcolors(gx_device_vector * vdev, const gs_imager_state * pis1,
 }
 
 /* Redefine dorect to recognize rectangle fills. */
-private int
+static int
 psw_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
 	   gx_path_type_t type)
 {
@@ -751,12 +751,12 @@ psw_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
  * we only need to write coordinates with 2 decimals of precision,
  * since this is 10 times more precise than any existing output device.
  */
-inline private double
+static inline double
 round_coord2(floatp v)
 {
     return floor(v * 100 + 0.5) / 100.0;
 }
-private void
+static void
 print_coord2(stream * s, floatp x, floatp y, const char *str)
 {
     pprintg2(s, "%g %g ", round_coord2(x), round_coord2(y));
@@ -764,7 +764,7 @@ print_coord2(stream * s, floatp x, floatp y, const char *str)
 	stream_puts(s, str);
 }
 
-private int
+static int
 psw_beginpath(gx_device_vector * vdev, gx_path_type_t type)
 {
     gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
@@ -794,7 +794,7 @@ psw_beginpath(gx_device_vector * vdev, gx_path_type_t type)
     return 0;
 }
 
-private int
+static int
 psw_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 	   gx_path_type_t type)
 {
@@ -818,7 +818,7 @@ psw_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
     return 0;
 }
 
-private int
+static int
 psw_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 	   gx_path_type_t type)
 {
@@ -858,7 +858,7 @@ psw_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
     return 0;
 }
 
-private int
+static int
 psw_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
 	    floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
 	    gx_path_type_t type)
@@ -891,7 +891,7 @@ psw_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
     return 0;
 }
 
-private int
+static int
 psw_closepath(gx_device_vector * vdev, floatp x0, floatp y0,
 	      floatp x_start, floatp y_start, gx_path_type_t type)
 {
@@ -907,7 +907,7 @@ psw_closepath(gx_device_vector * vdev, floatp x0, floatp y0,
     return 0;
 }
 
-private int
+static int
 psw_endpath(gx_device_vector * vdev, gx_path_type_t type)
 {
     stream *s = vdev->strm;
@@ -940,7 +940,7 @@ psw_endpath(gx_device_vector * vdev, gx_path_type_t type)
 /* ------ Open/close/page ------ */
 
 /* Open the device. */
-private int
+static int
 psw_open(gx_device * dev)
 {
     gs_memory_t *mem = gs_memory_stable(dev->memory);
@@ -973,7 +973,7 @@ psw_open(gx_device * dev)
 }
 
 /* Wrap up ("output") a page. */
-private int
+static int
 psw_output_page(gx_device * dev, int num_copies, int flush)
 {
     int code;
@@ -1007,7 +1007,7 @@ psw_output_page(gx_device * dev, int num_copies, int flush)
 /* Close the device. */
 /* Note that if this is being called as a result of finalization, */
 /* the stream may have been finalized; but the file will still be open. */
-private int
+static int
 psw_close(gx_device * dev)
 {
     gx_device_vector *const vdev = (gx_device_vector *)dev;
@@ -1030,7 +1030,7 @@ psw_close(gx_device * dev)
 /* ---------------- Get/put parameters ---------------- */
 
 /* Get parameters. */
-private int
+static int
 psw_get_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_pswrite *const pdev = (gx_device_pswrite *)dev;
@@ -1045,7 +1045,7 @@ psw_get_params(gx_device * dev, gs_param_list * plist)
 }
 
 /* Put parameters. */
-private int
+static int
 psw_put_params(gx_device * dev, gs_param_list * plist)
 {
     int ecode = 0;
@@ -1094,7 +1094,7 @@ psw_put_params(gx_device * dev, gs_param_list * plist)
 
 /* ---------------- Rectangles ---------------- */
 
-private int
+static int
 psw_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 		   gx_color_index color)
 {
@@ -1125,7 +1125,7 @@ psw_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
  * Open the printer's output file if necessary.
  */
 
-private int 
+static int 
 psw_open_printer(gx_device * dev)
 {
     gx_device_vector *const vdev = (gx_device_vector *)dev;
@@ -1152,7 +1152,7 @@ psw_open_printer(gx_device * dev)
  * Close the printer's output file.
  */
 
-private int 
+static int 
 psw_close_printer(gx_device * dev)
 {
     int code;
@@ -1194,7 +1194,7 @@ psw_close_printer(gx_device * dev)
 /* ---------------- Images ---------------- */
 
 /* Copy a monochrome bitmap. */
-private int
+static int
 psw_copy_mono(gx_device * dev, const byte * data,
 	int data_x, int raster, gx_bitmap_id id, int x, int y, int w, int h,
 	      gx_color_index zero, gx_color_index one)
@@ -1239,7 +1239,7 @@ psw_copy_mono(gx_device * dev, const byte * data,
 }
 
 /* Copy a color bitmap. */
-private int
+static int
 psw_copy_color(gx_device * dev,
 	       const byte * data, int data_x, int raster, gx_bitmap_id id,
 	       int x, int y, int w, int h)
@@ -1275,7 +1275,7 @@ psw_copy_color(gx_device * dev,
 
 /* Fill or stroke a path. */
 /* We redefine these to skip empty paths, and to allow optimization. */
-private int
+static int
 psw_fill_path(gx_device * dev, const gs_imager_state * pis,
 	      gx_path * ppath, const gx_fill_params * params,
 	      const gx_device_color * pdevc, const gx_clip_path * pcpath)
@@ -1287,7 +1287,7 @@ psw_fill_path(gx_device * dev, const gs_imager_state * pis,
     gdev_vector_update_clip_path((gx_device_vector *)dev, pcpath);
     return gdev_vector_fill_path(dev, pis, ppath, params, pdevc, pcpath);
 }
-private int
+static int
 psw_stroke_path(gx_device * dev, const gs_imager_state * pis,
 		gx_path * ppath, const gx_stroke_params * params,
 		const gx_device_color * pdcolor, const gx_clip_path * pcpath)
@@ -1345,7 +1345,7 @@ psw_stroke_path(gx_device * dev, const gs_imager_state * pis,
 }
 
 /* Fill a mask. */
-private int
+static int
 psw_fill_mask(gx_device * dev,
 	      const byte * data, int data_x, int raster, gx_bitmap_id id,
 	      int x, int y, int w, int h,
@@ -1381,14 +1381,14 @@ psw_fill_mask(gx_device * dev,
 
 /* ---------------- High-level images ---------------- */
 
-private image_enum_proc_plane_data(psw_image_plane_data);
-private image_enum_proc_end_image(psw_image_end_image);
-private const gx_image_enum_procs_t psw_image_enum_procs = {
+static image_enum_proc_plane_data(psw_image_plane_data);
+static image_enum_proc_end_image(psw_image_end_image);
+static const gx_image_enum_procs_t psw_image_enum_procs = {
     psw_image_plane_data, psw_image_end_image
 };
 
 /* Start processing an image. */
-private int
+static int
 psw_begin_image(gx_device * dev,
 		const gs_imager_state * pis, const gs_image_t * pim,
 		gs_image_format_t format, const gs_int_rect * prect,
@@ -1604,7 +1604,7 @@ psw_begin_image(gx_device * dev,
 }
 
 /* Process the next piece of an image. */
-private int
+static int
 psw_image_plane_data(gx_image_enum_common_t * info,
 		     const gx_image_plane_t * planes, int height,
 		     int *rows_used)
@@ -1635,7 +1635,7 @@ psw_image_plane_data(gx_image_enum_common_t * info,
 }
 
 /* Clean up by releasing the buffers. */
-private int
+static int
 psw_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 {
     gx_device *dev = info->dev;

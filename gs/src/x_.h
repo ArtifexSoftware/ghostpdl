@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -16,9 +16,6 @@
 
 #ifndef x__INCLUDED
 #  define x__INCLUDED
-
-/* Some versions of the X library use `private' as a member name, so: */
-#undef private
 
 /* Most X implementations have _Xdebug, but VMS DECWindows doesn't. */
 #ifndef VMS
@@ -163,8 +160,5 @@
 #    undef XInitImage
 #    define XInitImage(im) 1	/* non-zero = success */
 #  endif
-
-/* Restore the definition of `private'. */
-#define private private_
 
 #endif /* x__INCLUDED */

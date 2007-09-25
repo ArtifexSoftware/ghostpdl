@@ -60,7 +60,7 @@
  */
 
 /* Read a source file into memory. */
-private char *
+static char *
 read_file(FILE *in, char *cname)
 {
     int len, nread;
@@ -81,7 +81,7 @@ read_file(FILE *in, char *cname)
 }
 
 /* Parse a Halftone resource file into memory. */
-private bool
+static bool
 parse_line(char **pstr, char **pline)
 {
     char *str = *pstr;
@@ -102,7 +102,7 @@ top:
     *pstr = str + 1;
     return true;
 }
-private int
+static int
 parse_halftone(gx_device_halftone_resource_t *phtr, byte **pThresholds,
 	       char **pprefix, char **pcont)
 {
@@ -230,7 +230,7 @@ parse_halftone(gx_device_halftone_resource_t *phtr, byte **pThresholds,
 }
 
 /* Write a halftone as a C procedure. */
-private int
+static int
 write_halftone(FILE *out, gx_device_halftone_resource_t *phtr,
 	       const char *prefix, int index)
 {

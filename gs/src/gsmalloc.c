@@ -34,26 +34,26 @@
  * blocks so we can free them at cleanup time.
  */
 /* Raw memory procedures */
-private gs_memory_proc_alloc_bytes(gs_heap_alloc_bytes);
-private gs_memory_proc_resize_object(gs_heap_resize_object);
-private gs_memory_proc_free_object(gs_heap_free_object);
-private gs_memory_proc_stable(gs_heap_stable);
-private gs_memory_proc_status(gs_heap_status);
-private gs_memory_proc_free_all(gs_heap_free_all);
+static gs_memory_proc_alloc_bytes(gs_heap_alloc_bytes);
+static gs_memory_proc_resize_object(gs_heap_resize_object);
+static gs_memory_proc_free_object(gs_heap_free_object);
+static gs_memory_proc_stable(gs_heap_stable);
+static gs_memory_proc_status(gs_heap_status);
+static gs_memory_proc_free_all(gs_heap_free_all);
 
 /* Object memory procedures */
-private gs_memory_proc_alloc_struct(gs_heap_alloc_struct);
-private gs_memory_proc_alloc_byte_array(gs_heap_alloc_byte_array);
-private gs_memory_proc_alloc_struct_array(gs_heap_alloc_struct_array);
-private gs_memory_proc_object_size(gs_heap_object_size);
-private gs_memory_proc_object_type(gs_heap_object_type);
-private gs_memory_proc_alloc_string(gs_heap_alloc_string);
-private gs_memory_proc_resize_string(gs_heap_resize_string);
-private gs_memory_proc_free_string(gs_heap_free_string);
-private gs_memory_proc_register_root(gs_heap_register_root);
-private gs_memory_proc_unregister_root(gs_heap_unregister_root);
-private gs_memory_proc_enable_free(gs_heap_enable_free);
-private const gs_memory_procs_t gs_malloc_memory_procs =
+static gs_memory_proc_alloc_struct(gs_heap_alloc_struct);
+static gs_memory_proc_alloc_byte_array(gs_heap_alloc_byte_array);
+static gs_memory_proc_alloc_struct_array(gs_heap_alloc_struct_array);
+static gs_memory_proc_object_size(gs_heap_object_size);
+static gs_memory_proc_object_type(gs_heap_object_type);
+static gs_memory_proc_alloc_string(gs_heap_alloc_string);
+static gs_memory_proc_resize_string(gs_heap_resize_string);
+static gs_memory_proc_free_string(gs_heap_free_string);
+static gs_memory_proc_register_root(gs_heap_register_root);
+static gs_memory_proc_unregister_root(gs_heap_unregister_root);
+static gs_memory_proc_enable_free(gs_heap_enable_free);
+static const gs_memory_procs_t gs_malloc_memory_procs =
 {
     /* Raw memory procedures */
     gs_heap_alloc_bytes,
@@ -103,7 +103,7 @@ struct gs_malloc_block_s {
 };
 
 /* Initialize a malloc allocator. */
-private long heap_available(void);
+static long heap_available(void);
 gs_malloc_memory_t *
 gs_malloc_memory_init(void)
 {
@@ -128,7 +128,7 @@ gs_malloc_memory_init(void)
  */
 #define max_malloc_probes 20
 #define malloc_probe_size 64000
-private long
+static long
 heap_available()
 {
     long avail = 0;
@@ -148,7 +148,7 @@ heap_available()
 }
 
 /* Allocate various kinds of blocks. */
-private byte *
+static byte *
 gs_heap_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 {
     gs_malloc_memory_t *mmem = (gs_malloc_memory_t *) mem;
@@ -206,7 +206,7 @@ gs_heap_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
     return ptr;
 #undef set_msg
 }
-private void *
+static void *
 gs_heap_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
 		     client_name_t cname)
 {
@@ -218,7 +218,7 @@ gs_heap_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
     ((gs_malloc_block_t *) ptr)[-1].type = pstype;
     return ptr;
 }
-private byte *
+static byte *
 gs_heap_alloc_byte_array(gs_memory_t * mem, uint num_elements, uint elt_size,
 			 client_name_t cname)
 {
@@ -228,7 +228,7 @@ gs_heap_alloc_byte_array(gs_memory_t * mem, uint num_elements, uint elt_size,
 	return 0;
     return gs_heap_alloc_bytes(mem, (uint) lsize, cname);
 }
-private void *
+static void *
 gs_heap_alloc_struct_array(gs_memory_t * mem, uint num_elements,
 			   gs_memory_type_ptr_t pstype, client_name_t cname)
 {
@@ -241,7 +241,7 @@ gs_heap_alloc_struct_array(gs_memory_t * mem, uint num_elements,
     ((gs_malloc_block_t *) ptr)[-1].type = pstype;
     return ptr;
 }
-private void *
+static void *
 gs_heap_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements,
 		      client_name_t cname)
 {
@@ -273,17 +273,17 @@ gs_heap_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements,
 		      gs_alloc_fill_alloc, new_size - old_size);
     return new_ptr + 1;
 }
-private uint
+static uint
 gs_heap_object_size(gs_memory_t * mem, const void *ptr)
 {
     return ((const gs_malloc_block_t *)ptr)[-1].size;
 }
-private gs_memory_type_ptr_t
+static gs_memory_type_ptr_t
 gs_heap_object_type(const gs_memory_t * mem, const void *ptr)
 {
     return ((const gs_malloc_block_t *)ptr)[-1].type;
 }
-private void
+static void
 gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 {
     gs_malloc_memory_t *mmem = (gs_malloc_memory_t *) mem;
@@ -342,12 +342,12 @@ gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	free((char *)((gs_malloc_block_t *) ptr - 1));
     }
 }
-private byte *
+static byte *
 gs_heap_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
 {
     return gs_heap_alloc_bytes(mem, nbytes, cname);
 }
-private byte *
+static byte *
 gs_heap_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
 		      client_name_t cname)
 {
@@ -356,30 +356,30 @@ gs_heap_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num
 		 client_name_string(cname), (ulong) data);
     return gs_heap_resize_object(mem, data, new_num, cname);
 }
-private void
+static void
 gs_heap_free_string(gs_memory_t * mem, byte * data, uint nbytes,
 		    client_name_t cname)
 {
     /****** SHOULD CHECK SIZE IF DEBUGGING ******/
     gs_heap_free_object(mem, data, cname);
 }
-private int
+static int
 gs_heap_register_root(gs_memory_t * mem, gs_gc_root_t * rp,
 		      gs_ptr_type_t ptype, void **up, client_name_t cname)
 {
     return 0;
 }
-private void
+static void
 gs_heap_unregister_root(gs_memory_t * mem, gs_gc_root_t * rp,
 			client_name_t cname)
 {
 }
-private gs_memory_t *
+static gs_memory_t *
 gs_heap_stable(gs_memory_t *mem)
 {
     return mem;			/* heap memory is stable */
 }
-private void
+static void
 gs_heap_status(gs_memory_t * mem, gs_memory_status_t * pstat)
 {
     gs_malloc_memory_t *mmem = (gs_malloc_memory_t *) mem;
@@ -387,7 +387,7 @@ gs_heap_status(gs_memory_t * mem, gs_memory_status_t * pstat)
     pstat->allocated = mmem->used + heap_available();
     pstat->used = mmem->used;
 }
-private void
+static void
 gs_heap_enable_free(gs_memory_t * mem, bool enable)
 {
     if (enable)
@@ -399,7 +399,7 @@ gs_heap_enable_free(gs_memory_t * mem, bool enable)
 }
 
 /* Release all memory acquired by this allocator. */
-private void
+static void
 gs_heap_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
 {
     gs_malloc_memory_t *const mmem = (gs_malloc_memory_t *) mem;

@@ -50,7 +50,7 @@
 	return type2_sbw(pcis, csp, cstack, ipsp, explicit_width);\
       }\
   END
-private int
+static int
 type2_sbw(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack, ip_state_t * ipsp,
 	  bool explicit_width)
 {
@@ -92,7 +92,7 @@ type2_sbw(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack, ip_state_t * ipsp,
     }
     return type1_result_sbw;
 }
-private int
+static int
 type2_vstem(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack)
 {
     fixed x = 0;

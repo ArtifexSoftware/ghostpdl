@@ -39,7 +39,7 @@
 
 /* <source> /JPXDecode <file> */
 /* <source> <dict> /JPXDecode <file> */
-private int
+static int
 z_jpx_decode(i_ctx_t * i_ctx_p)
 {
     os_ptr op = osp;
@@ -83,8 +83,8 @@ z_jpx_decode(i_ctx_t * i_ctx_p)
 }
 
 
-/* match the above routine to the corresponding filter name
-   this is how our 'private' routines get called externally */
+/* Match the above routine to the corresponding filter name.
+   This is how our static routines get called externally. */
 const op_def zfjpx_op_defs[] = {
     op_def_begin_filter(),
     {"2JPXDecode", z_jpx_decode},

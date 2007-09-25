@@ -21,7 +21,7 @@ copies.  */
 /* Star JJ-100 printer driver for Ghostscript */
 #include "gdevprn.h"
 
-private dev_proc_print_page(jj100_print_page);
+static dev_proc_print_page(jj100_print_page);
 
 /*
  * The only available resolutions are 360 x 360.
@@ -40,7 +40,7 @@ gx_device_printer gs_jj100_device =
 /* ------ internal routines ------ */
 
 /* Transpose a block of 8x8 bits */
-private int
+static int
 jj100_transpose_8x8(byte *src, int src_step, byte *dst, int dst_step)
 {
 	byte mask, s, d0, d1, d2, d3, d4, d5, d6, d7;
@@ -74,7 +74,7 @@ jj100_transpose_8x8(byte *src, int src_step, byte *dst, int dst_step)
 }
 
 /* Send the page to the printer. */
-private int
+static int
 jj100_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {	int line_size = gdev_prn_raster(pdev);
 	int height = pdev->height;

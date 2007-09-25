@@ -26,7 +26,7 @@
 /* <pagedict> <attrdict> <policydict> <keys> .matchmedia <key> true */
 /* <pagedict> <attrdict> <policydict> <keys> .matchmedia false */
 /* <pagedict> null <policydict> <keys> .matchmedia null true */
-private int zmatch_page_size(const gs_memory_t *mem,
+static int zmatch_page_size(const gs_memory_t *mem,
 			     const ref * pvreq, const ref * pvmed,
 			     int policy, int orient, bool roll,
 			     float *best_mismatch, gs_matrix * pmat,
@@ -35,14 +35,14 @@ typedef struct match_record_s {
     ref best_key, match_key;
     uint priority, no_match_priority;
 } match_record_t;
-private void
+static void
 reset_match(match_record_t *match)
 {
     make_null(&match->best_key);
     make_null(&match->match_key);
     match->priority = match->no_match_priority;
 }
-private int
+static int
 zmatchmedia(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -230,7 +230,7 @@ no:;
  *     <policy> <orient|null> <roll> <matrix|null> .matchpagesize
  *   <matrix|null> <med_x> <med_y> true   -or-  false
  */
-private int
+static int
 zmatchpagesize(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -275,13 +275,13 @@ zmatchpagesize(i_ctx_t *i_ctx_p)
     return 0;
 }
 /* Match the PageSize.  See below for details. */
-private int
+static int
 match_page_size(const gs_point * request,
 			     const gs_rect * medium,
 			     int policy, int orient, bool roll,
 			     float *best_mismatch, gs_matrix * pmat,
 			     gs_point * pmsize);
-private int
+static int
 zmatch_page_size(const gs_memory_t *mem, const ref * pvreq, const ref * pvmed,
 		 int policy, int orient, bool roll,
 		 float *best_mismatch, gs_matrix * pmat, gs_point * pmsize)
@@ -335,11 +335,11 @@ zmatch_page_size(const gs_memory_t *mem, const ref * pvreq, const ref * pvmed,
  * NOTE: The algorithm here doesn't work properly for variable-size media
  * when the match isn't exact.  We'll fix it if we ever need to.
  */
-private void make_adjustment_matrix(const gs_point * request,
+static void make_adjustment_matrix(const gs_point * request,
 				    const gs_rect * medium,
 				    gs_matrix * pmat,
 				    bool scale, int rotate);
-private int
+static int
 match_page_size(const gs_point * request, const gs_rect * medium, int policy,
 		int orient, bool roll, float *best_mismatch, gs_matrix * pmat,
 		gs_point * pmsize)
@@ -450,7 +450,7 @@ match_page_size(const gs_point * request, const gs_rect * medium, int policy,
  * we must adjust its size in that dimension to match the request.
  * We recognize this by an unreasonably small medium->p.{x,y}.
  */
-private void 
+static void 
 make_adjustment_matrix(const gs_point * request, const gs_rect * medium,
 		       gs_matrix * pmat, bool scale, int rotate)
 {

@@ -91,15 +91,15 @@
 /* ---------------- Device definition ---------------- */
 
 /* Device procedures */
-private dev_proc_open_device(lips4v_open);
-private dev_proc_output_page(lips4v_output_page);
-private dev_proc_close_device(lips4v_close);
-private dev_proc_copy_mono(lips4v_copy_mono);
-private dev_proc_copy_color(lips4v_copy_color);
-private dev_proc_put_params(lips4v_put_params);
-private dev_proc_get_params(lips4v_get_params);
-private dev_proc_fill_mask(lips4v_fill_mask);
-private dev_proc_begin_image(lips4v_begin_image);
+static dev_proc_open_device(lips4v_open);
+static dev_proc_output_page(lips4v_output_page);
+static dev_proc_close_device(lips4v_close);
+static dev_proc_copy_mono(lips4v_copy_mono);
+static dev_proc_copy_color(lips4v_copy_color);
+static dev_proc_put_params(lips4v_put_params);
+static dev_proc_get_params(lips4v_get_params);
+static dev_proc_fill_mask(lips4v_fill_mask);
+static dev_proc_begin_image(lips4v_begin_image);
 
 
 #define X_DPI 600
@@ -231,79 +231,79 @@ gx_device_lips4v far_data gs_lips4v_device = {
 
 /* Vector device implementation */
 #if GS_VERSION_MAJOR >= 8
-private int lips4v_beginpage(gx_device_vector * vdev);
-private int lips4v_setfillcolor(gx_device_vector * vdev, const gs_imager_state * pis,
+static int lips4v_beginpage(gx_device_vector * vdev);
+static int lips4v_setfillcolor(gx_device_vector * vdev, const gs_imager_state * pis,
 				   						const gx_drawing_color * pdc);
-private int lips4v_setstrokecolor(gx_device_vector * vdev, const gs_imager_state * pis,
+static int lips4v_setstrokecolor(gx_device_vector * vdev, const gs_imager_state * pis,
 				     					const gx_drawing_color * pdc);
-private int lips4v_setdash(gx_device_vector * vdev, const float *pattern,
+static int lips4v_setdash(gx_device_vector * vdev, const float *pattern,
 			      uint count, floatp offset);
-private int lips4v_setflat(gx_device_vector * vdev, floatp flatness);
-private int
+static int lips4v_setflat(gx_device_vector * vdev, floatp flatness);
+static int
 lips4v_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
 		 gs_logical_operation_t diff);
-private int lips4v_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis, 
+static int lips4v_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis, 
                   const gx_drawing_color * pdc);
-private int
+static int
 
 lips4v_beginpath(gx_device_vector * vdev, gx_path_type_t type);
-private int
+static int
 lips4v_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
 	       floatp y, gx_path_type_t type);
-private int
+static int
 lips4v_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
 	       floatp y, gx_path_type_t type);
-private int
+static int
 lips4v_curveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x1,
 		floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
 		gx_path_type_t type);
-private int
+static int
 lips4v_closepath(gx_device_vector * vdev, floatp x, floatp y, floatp x_start,
 		  floatp y_start, gx_path_type_t type);
 
-private int lips4v_endpath(gx_device_vector * vdev, gx_path_type_t type);
+static int lips4v_endpath(gx_device_vector * vdev, gx_path_type_t type);
 #else
-private int lips4v_beginpage(P1(gx_device_vector * vdev));
-private int lips4v_setfillcolor(P2(gx_device_vector * vdev,
+static int lips4v_beginpage(P1(gx_device_vector * vdev));
+static int lips4v_setfillcolor(P2(gx_device_vector * vdev,
 				   const gx_drawing_color * pdc));
-private int lips4v_setstrokecolor(P2(gx_device_vector * vdev,
+static int lips4v_setstrokecolor(P2(gx_device_vector * vdev,
 				     const gx_drawing_color * pdc));
-private int lips4v_setdash(P4(gx_device_vector * vdev, const float *pattern,
+static int lips4v_setdash(P4(gx_device_vector * vdev, const float *pattern,
 			      uint count, floatp offset));
-private int lips4v_setflat(P2(gx_device_vector * vdev, floatp flatness));
-private int
+static int lips4v_setflat(P2(gx_device_vector * vdev, floatp flatness));
+static int
 lips4v_setlogop(P3
 
 		(gx_device_vector * vdev, gs_logical_operation_t lop,
 		 gs_logical_operation_t diff));
-private int
+static int
 
 lips4v_beginpath(P2(gx_device_vector * vdev, gx_path_type_t type));
-private int
+static int
 lips4v_moveto(P6
 	      (gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
 	       floatp y, gx_path_type_t type));
-private int
+static int
 lips4v_lineto(P6
 	      (gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
 	       floatp y, gx_path_type_t type));
-private int
+static int
 lips4v_curveto(P10
 	       (gx_device_vector * vdev, floatp x0, floatp y0, floatp x1,
 		floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
 		gx_path_type_t type));
-private int
+static int
 lips4v_closepath(P6
 		 (gx_device_vector * vdev, floatp x, floatp y, floatp x_start,
 		  floatp y_start, gx_path_type_t type));
 
-private int lips4v_endpath(P2(gx_device_vector * vdev, gx_path_type_t type));
+static int lips4v_endpath(P2(gx_device_vector * vdev, gx_path_type_t type));
 #endif
-private int lips4v_setlinewidth(gx_device_vector * vdev, floatp width);
-private int lips4v_setlinecap(gx_device_vector * vdev, gs_line_cap cap);
-private int lips4v_setlinejoin(gx_device_vector * vdev, gs_line_join join);
-private int lips4v_setmiterlimit(gx_device_vector * vdev, floatp limit);
-private const gx_device_vector_procs lips4v_vector_procs = {
+static int lips4v_setlinewidth(gx_device_vector * vdev, floatp width);
+static int lips4v_setlinecap(gx_device_vector * vdev, gs_line_cap cap);
+static int lips4v_setlinejoin(gx_device_vector * vdev, gs_line_join join);
+static int lips4v_setmiterlimit(gx_device_vector * vdev, floatp limit);
+static const gx_device_vector_procs lips4v_vector_procs = {
     /* Page management */
     lips4v_beginpage,
     /* Imager state */
@@ -333,25 +333,25 @@ private const gx_device_vector_procs lips4v_vector_procs = {
 
 /* ---------------- File header ---------------- */
 
-private const char *l4v_file_header1 =
+static const char *l4v_file_header1 =
 
     "\033%-12345X@PJL CJLMODE\n@PJL JOB\n\033%-12345X@PJL CJLMODE\n";
-private const char *l4v_file_header2 = "@PJL SET LPARM : LIPS SW2 = ON\n";
-private const char *l4v_file_header3 = "@PJL ENTER LANGUAGE = LIPS\n";
-private const char *l4v_file_header4 = "\033%@\033P41;";
+static const char *l4v_file_header2 = "@PJL SET LPARM : LIPS SW2 = ON\n";
+static const char *l4v_file_header3 = "@PJL ENTER LANGUAGE = LIPS\n";
+static const char *l4v_file_header4 = "\033%@\033P41;";
 
 
-private const char *l4vmono_file_header =
+static const char *l4vmono_file_header =
 
     ";1J" L4VMONO_STRING LIPS_VERSION "\033\\\033[0\"p\033<";
 
-private const char *l4vcolor_file_header =
+static const char *l4vcolor_file_header =
 
     ";1J" L4VCOLOR_STRING LIPS_VERSION "\033\\\033[1\"p\033<";
 
 /* ---------------- Utilities ---------------- */
 
-private void
+static void
 lips_param(int param, char *c)
 {
     int i, j;
@@ -380,7 +380,7 @@ lips_param(int param, char *c)
     }
 }
 
-private void
+static void
 sput_lips_int(stream * s, int param)
 {
     int i;
@@ -393,7 +393,7 @@ sput_lips_int(stream * s, int param)
 
 /* Put a string on a stream.
    This function is copy of `pputs' in gdevpstr.c */
-private int
+static int
 lputs(stream * s, const char *str)
 {
     uint len = strlen(str);
@@ -404,7 +404,7 @@ lputs(stream * s, const char *str)
 }
 
 /* Write a string on a stream. */
-private void
+static void
 put_bytes(stream * s, const byte * data, uint count)
 {
     uint used;
@@ -413,14 +413,14 @@ put_bytes(stream * s, const byte * data, uint count)
 }
 
 /* for Font Downloading */
-private void
+static void
 put_int(stream * s, uint number)
 {
     sputc(s, number >> 8);
     sputc(s, number & 0xff);
 }
 
-private int
+static int
 lips4v_range_check(gx_device * dev)
 {
     int width = dev->MediaSize[0];
@@ -453,7 +453,7 @@ lips4v_range_check(gx_device * dev)
 }
 
 
-private void
+static void
 lips4v_set_cap(gx_device * dev, int x, int y)
 {
 
@@ -485,7 +485,7 @@ lips4v_set_cap(gx_device * dev, int x, int y)
 #define POINT 18
 
 /* Font Downloading Routine */
-private int
+static int
 lips4v_copy_text_char(gx_device * dev, const byte * data,
 		      int raster, gx_bitmap_id id, int x, int y, int w, int h)
 {
@@ -630,7 +630,7 @@ lips4v_copy_text_char(gx_device * dev, const byte * data,
     return 0;
 }
 
-private void
+static void
 reverse_buffer(byte * buf, int Len)
 {
     int i;
@@ -639,7 +639,7 @@ reverse_buffer(byte * buf, int Len)
 	*(buf + i) = ~*(buf + i);
 }
 
-private void
+static void
 lips4v_write_image_data(gx_device_vector * vdev, byte * buf, int tbyte,
 			int reverse)
 {
@@ -688,7 +688,7 @@ lips4v_write_image_data(gx_device_vector * vdev, byte * buf, int tbyte,
 
 /* ---------------- Vector device implementation ---------------- */
 
-private int
+static int
 lips4v_beginpage(gx_device_vector * vdev)
 {				/*
 				 * We can't use gdev_vector_stream here, because this may be called
@@ -959,7 +959,7 @@ lips4v_beginpage(gx_device_vector * vdev)
 }
 
 
-private int
+static int
 lips4v_setlinewidth(gx_device_vector * vdev, floatp width)
 {
     stream *s = gdev_vector_stream(vdev);
@@ -994,7 +994,7 @@ lips4v_setlinewidth(gx_device_vector * vdev, floatp width)
     return 0;
 }
 
-private int
+static int
 lips4v_setlinecap(gx_device_vector * vdev, gs_line_cap cap)
 {
     stream *s = gdev_vector_stream(vdev);
@@ -1028,7 +1028,7 @@ lips4v_setlinecap(gx_device_vector * vdev, gs_line_cap cap)
     return 0;
 }
 
-private int
+static int
 lips4v_setlinejoin(gx_device_vector * vdev, gs_line_join join)
 {
     stream *s = gdev_vector_stream(vdev);
@@ -1066,7 +1066,7 @@ lips4v_setlinejoin(gx_device_vector * vdev, gs_line_join join)
     return 0;
 }
 
-private int
+static int
 lips4v_setmiterlimit(gx_device_vector * vdev, floatp limit)
 {
     stream *s = gdev_vector_stream(vdev);
@@ -1088,10 +1088,10 @@ lips4v_setmiterlimit(gx_device_vector * vdev, floatp limit)
 }
 
 #if GS_VERSION_MAJOR >= 8
-private int
+static int
 lips4v_setfillcolor(gx_device_vector * vdev, const gs_imager_state * pis, const gx_drawing_color * pdc)
 #else
-private int
+static int
 lips4v_setfillcolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
 #endif
 {
@@ -1156,10 +1156,10 @@ lips4v_setfillcolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
 }
 
 #if GS_VERSION_MAJOR >= 8
-private int
+static int
 lips4v_setstrokecolor(gx_device_vector * vdev, const gs_imager_state * pis, const gx_drawing_color * pdc)
 #else
-private int
+static int
 lips4v_setstrokecolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
 #endif
 {
@@ -1198,7 +1198,7 @@ lips4v_setstrokecolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
 }
 
 /* 線種指定命令 */
-private int
+static int
 lips4v_setdash(gx_device_vector * vdev, const float *pattern, uint count,
 	       floatp offset)
 {
@@ -1269,7 +1269,7 @@ lips4v_setdash(gx_device_vector * vdev, const float *pattern, uint count,
 }
 
 /* パス平滑度指定 */
-private int
+static int
 lips4v_setflat(gx_device_vector * vdev, floatp flatness)
 {
     stream *s = gdev_vector_stream(vdev);
@@ -1287,7 +1287,7 @@ lips4v_setflat(gx_device_vector * vdev, floatp flatness)
     return 0;
 }
 
-private int
+static int
 lips4v_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
 		gs_logical_operation_t diff)
 {
@@ -1297,7 +1297,7 @@ lips4v_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
 
 #if GS_VERSION_MAJOR >= 8
 /*--- added for Ghostscritp 8.15 ---*/
-private int
+static int
 lips4v_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis1, 
               const gx_drawing_color * pdc)
 {
@@ -1305,7 +1305,7 @@ lips4v_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis1
 }
 #endif
 
-private int
+static int
 lips4v_beginpath(gx_device_vector * vdev, gx_path_type_t type)
 {
     stream *s = gdev_vector_stream(vdev);
@@ -1327,7 +1327,7 @@ lips4v_beginpath(gx_device_vector * vdev, gx_path_type_t type)
     return 0;
 }
 
-private int
+static int
 lips4v_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
 	      floatp y, gx_path_type_t type)
 {
@@ -1342,7 +1342,7 @@ lips4v_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
     return 0;
 }
 
-private int
+static int
 lips4v_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
 	      floatp y, gx_path_type_t type)
 {
@@ -1364,7 +1364,7 @@ lips4v_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
     return 0;
 }
 
-private int
+static int
 lips4v_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
 	       floatp x1, floatp y1, floatp x2, floatp y2, floatp x3,
 	       floatp y3, gx_path_type_t type)
@@ -1384,7 +1384,7 @@ lips4v_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
     return 0;
 }
 
-private int
+static int
 lips4v_closepath(gx_device_vector * vdev, floatp x, floatp y,
 		 floatp x_start, floatp y_start, gx_path_type_t type)
 {
@@ -1395,7 +1395,7 @@ lips4v_closepath(gx_device_vector * vdev, floatp x, floatp y,
     return 0;
 }
 
-private int
+static int
 lips4v_endpath(gx_device_vector * vdev, gx_path_type_t type)
 {
     stream *s = gdev_vector_stream(vdev);
@@ -1436,7 +1436,7 @@ lips4v_endpath(gx_device_vector * vdev, gx_path_type_t type)
 /* ------ Open/close/page ------ */
 
 /* Open the device. */
-private int
+static int
 lips4v_open(gx_device * dev)
 {
     gx_device_vector *const vdev = (gx_device_vector *) dev;
@@ -1475,7 +1475,7 @@ lips4v_open(gx_device * dev)
 }
 
 /* Wrap up ("output") a page. */
-private int
+static int
 lips4v_output_page(gx_device * dev, int num_copies, int flush)
 {
     gx_device_vector *const vdev = (gx_device_vector *) dev;
@@ -1508,7 +1508,7 @@ lips4v_output_page(gx_device * dev, int num_copies, int flush)
     return 0;
 }
 
-private int
+static int
 lips4v_close(gx_device * dev)
 {
     gx_device_vector *const vdev = (gx_device_vector *) dev;
@@ -1534,7 +1534,7 @@ lips4v_close(gx_device * dev)
 /* ---------------- Get/put parameters ---------------- */
 
 /* Get parameters. */
-private int
+static int
 lips4v_get_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_lips4v *const pdev = (gx_device_lips4v *) dev;
@@ -1606,7 +1606,7 @@ lips4v_get_params(gx_device * dev, gs_param_list * plist)
 }
 
 /* Put parameters. */
-private int
+static int
 lips4v_put_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_lips4v *const pdev = (gx_device_lips4v *) dev;
@@ -1866,7 +1866,7 @@ lips4v_put_params(gx_device * dev, gs_param_list * plist)
 
 /* ---------------- Images ---------------- */
 
-private int
+static int
 lips4v_copy_mono(gx_device * dev, const byte * data,
 		 int data_x, int raster, gx_bitmap_id id, int x, int y, int w,
 		 int h, gx_color_index zero, gx_color_index one)
@@ -2052,7 +2052,7 @@ lips4v_copy_mono(gx_device * dev, const byte * data,
 }
 
 /* Copy a color bitmap. */
-private int
+static int
 lips4v_copy_color(gx_device * dev,
 		  const byte * data, int data_x, int raster, gx_bitmap_id id,
 		  int x, int y, int w, int h)
@@ -2128,7 +2128,7 @@ lips4v_copy_color(gx_device * dev,
 }
 
 /* Fill a mask. */
-private int
+static int
 lips4v_fill_mask(gx_device * dev,
 		 const byte * data, int data_x, int raster, gx_bitmap_id id,
 		 int x, int y, int w, int h,
@@ -2206,14 +2206,14 @@ lips4v_fill_mask(gx_device * dev,
 
 /* ---------------- High-level images ---------------- */
 
-private image_enum_proc_plane_data(lips4v_image_plane_data);
-private image_enum_proc_end_image(lips4v_image_end_image);
-private const gx_image_enum_procs_t lips4v_image_enum_procs = {
+static image_enum_proc_plane_data(lips4v_image_plane_data);
+static image_enum_proc_end_image(lips4v_image_end_image);
+static const gx_image_enum_procs_t lips4v_image_enum_procs = {
     lips4v_image_plane_data, lips4v_image_end_image
 };
 
 /* Start processing an image. */
-private int
+static int
 lips4v_begin_image(gx_device * dev,
 		   const gs_imager_state * pis, const gs_image_t * pim,
 		   gs_image_format_t format, const gs_int_rect * prect,
@@ -2409,7 +2409,7 @@ lips4v_begin_image(gx_device * dev,
 }
 
 /* Process the next piece of an image. */
-private int
+static int
 lips4v_image_plane_data(gx_image_enum_common_t * info,
 			const gx_image_plane_t * planes, int height,
 			int *rows_used)
@@ -2466,7 +2466,7 @@ lips4v_image_plane_data(gx_image_enum_common_t * info,
     return (pie->y += height) >= pie->height;
 }
 
-private int
+static int
 lips4v_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 {
     gx_device *dev = info->dev;

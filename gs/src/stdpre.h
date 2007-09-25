@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -394,23 +394,6 @@ typedef double floatp;
 typedef const char *client_name_t;
 /****** WHAT TO DO ABOUT client_name_string ? ******/
 #define client_name_string(cname) (cname)
-
-/*
- * If we are debugging, make all static variables and procedures public
- * so they get passed through the linker.
- */
-#define public			/* */
-/*
- * We separate out the definition of private this way so that
- * we can temporarily #undef it to handle the X Windows headers,
- * which define a member named private.
- */
-#ifdef NOPRIVATE
-# define private_		/* */
-#else
-# define private_ static
-#endif
-#define private private_
 
 /*
  * Define the now-deprecated Pn macros for pre-ANSI compiler compatibility.

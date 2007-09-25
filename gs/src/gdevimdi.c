@@ -47,9 +47,9 @@
 
 typedef struct gx_device_imdi_s gx_device_imdi;
 
-private dev_proc_open_device(imdi_open_device);
-private dev_proc_close_device(imdi_close_device);
-private dev_proc_print_page(imdi_print_page);
+static dev_proc_open_device(imdi_open_device);
+static dev_proc_close_device(imdi_close_device);
+static dev_proc_print_page(imdi_print_page);
 
 struct gx_device_imdi_s
 {
@@ -62,7 +62,7 @@ struct gx_device_imdi_s
     imdi *mdo;
 };
 
-private const gx_device_procs imdi_procs =
+static const gx_device_procs imdi_procs =
 {
     imdi_open_device, NULL, NULL, gdev_prn_output_page, imdi_close_device,
     gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb,
@@ -80,17 +80,17 @@ const gx_device_imdi gs_imdi_device =
 	    3, 24, 255, 255, 256, 256, imdi_print_page)
 };
 
-private double incurve(void *ctx, int ch, double val)
+static double incurve(void *ctx, int ch, double val)
 {
     return val;
 }
 
-private double outcurve(void *ctx, int ch, double val)
+static double outcurve(void *ctx, int ch, double val)
 {
     return val;
 }
 
-private void mdtable(void *ctx, double *outvals, double *invals)
+static void mdtable(void *ctx, double *outvals, double *invals)
 {
     icmLuBase *luo = ctx;
     luo->lookup(luo, outvals, invals);
@@ -101,7 +101,7 @@ private void mdtable(void *ctx, double *outvals, double *invals)
  * Load ICC device link profile (to map sRGB to FOGRA CMYK).
  */
 
-private int
+static int
 imdi_open_device(gx_device *dev)
 {
     gx_device_imdi *idev = (gx_device_imdi*)dev;
@@ -170,7 +170,7 @@ imdi_open_device(gx_device *dev)
  * Close device and clean up ICC structures.
  */
 
-private int
+static int
 imdi_close_device(gx_device *dev)
 {
     gx_device_imdi *idev = (gx_device_imdi*)dev;
@@ -188,7 +188,7 @@ imdi_close_device(gx_device *dev)
  * Output the page raster.
  */
 
-private int
+static int
 imdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
     gx_device_imdi *idev = (gx_device_imdi*)pdev;

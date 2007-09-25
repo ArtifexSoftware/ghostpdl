@@ -48,7 +48,7 @@ struct gs_glyph_cache_elem_s {
 gs_public_st_composite(st_glyph_cache_elem, gs_glyph_cache_elem, "gs_glyph_cache_elem",
     gs_glyph_cache_elem_enum_ptrs, gs_glyph_cache_elem_reloc_ptrs);
 
-private 
+static 
 ENUM_PTRS_WITH(gs_glyph_cache_elem_enum_ptrs, gs_glyph_cache_elem *e)
 {
     index --;
@@ -58,7 +58,7 @@ ENUM_PTRS_WITH(gs_glyph_cache_elem_enum_ptrs, gs_glyph_cache_elem *e)
 }
 ENUM_PTR(0, gs_glyph_cache_elem, next);
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(gs_glyph_cache_elem_reloc_ptrs, gs_glyph_cache_elem *e)
+static RELOC_PTRS_WITH(gs_glyph_cache_elem_reloc_ptrs, gs_glyph_cache_elem *e)
 {
     RELOC_PTR(gs_glyph_cache_elem, next);
     RELOC_USING(st_glyph_data, &e->gd, sizeof(e->gd));
@@ -122,7 +122,7 @@ gs_glyph_cache__release(void *data, void *event)
     return 0;
 }
 
-private gs_glyph_cache_elem **
+static gs_glyph_cache_elem **
 gs_glyph_cache_elem__locate(gs_glyph_cache *this, uint glyph_index)
 {   /* If not fond, returns an unlocked element. */ 
     gs_glyph_cache_elem **e = &this->list, **p_unlocked = NULL;
@@ -138,7 +138,7 @@ gs_glyph_cache_elem__locate(gs_glyph_cache *this, uint glyph_index)
     return p_unlocked;
 }
 
-private inline void
+static inline void
 gs_glyph_cache_elem__move_to_head(gs_glyph_cache *this, gs_glyph_cache_elem **pe)
 {   gs_glyph_cache_elem *e = *pe;
 
@@ -148,13 +148,13 @@ gs_glyph_cache_elem__move_to_head(gs_glyph_cache *this, gs_glyph_cache_elem **pe
 }
 
 /* Manage the glyph data using the font's allocator. */
-private void
+static void
 gs_glyph_cache_elem__free_data(gs_glyph_data_t *pgd, client_name_t cname)
 {   gs_glyph_cache_elem *e = (gs_glyph_cache_elem *)pgd->proc_data;
 
     e->lock_count--;
 }
-private int
+static int
 gs_glyph_cache_elem__substring(gs_glyph_data_t *pgd, uint offset, uint size)
 {   gs_glyph_cache_elem *e = (gs_glyph_cache_elem *)pgd->proc_data;
 
@@ -162,7 +162,7 @@ gs_glyph_cache_elem__substring(gs_glyph_data_t *pgd, uint offset, uint size)
     return_error(gs_error_unregistered); /* Unsupported; should not happen. */
 }			       
 
-private const gs_glyph_data_procs_t gs_glyph_cache_elem_procs = {
+static const gs_glyph_data_procs_t gs_glyph_cache_elem_procs = {
     gs_glyph_cache_elem__free_data, gs_glyph_cache_elem__substring
 };
 

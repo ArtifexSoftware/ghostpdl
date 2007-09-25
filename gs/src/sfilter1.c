@@ -24,7 +24,7 @@
 private_st_PFBD_state();
 
 /* Initialize the state */
-private int
+static int
 s_PFBD_init(stream_state * st)
 {
     stream_PFBD_state *const ss = (stream_PFBD_state *) st;
@@ -34,7 +34,7 @@ s_PFBD_init(stream_state * st)
 }
 
 /* Process a buffer */
-private int
+static int
 s_PFBD_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
@@ -145,7 +145,7 @@ const stream_template s_PFBD_template = {
 private_st_SFD_state();
 
 /* Set default parameter values. */
-private void
+static void
 s_SFD_set_defaults(stream_state * st)
 {
     stream_SFD_state *const ss = (stream_SFD_state *) st;
@@ -157,7 +157,7 @@ s_SFD_set_defaults(stream_state * st)
 }
 
 /* Initialize the stream */
-private int
+static int
 s_SFD_init(stream_state * st)
 {
     stream_SFD_state *const ss = (stream_SFD_state *) st;
@@ -170,7 +170,7 @@ s_SFD_init(stream_state * st)
 }
 
 /* Refill the buffer */
-private int
+static int
 s_SFD_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {

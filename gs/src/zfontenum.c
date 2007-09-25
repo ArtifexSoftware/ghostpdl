@@ -39,7 +39,7 @@ typedef struct fontenum_s {
 } fontenum_t;
 
 /* .getnativefonts [ [<name> <path>] ... ] */
-private int
+static int
 z_fontenum(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -125,8 +125,8 @@ z_fontenum(i_ctx_t *i_ctx_p)
 }
 
 
-/* match the above routines to their postscript filter names
-   this is how our 'private' routines get called externally */
+/* Match the above routines to their postscript filter names.
+   This is how our static routines get called externally. */
 const op_def zfontenum_op_defs[] = {
     {"0.getnativefonts", z_fontenum},
     op_def_end(0)

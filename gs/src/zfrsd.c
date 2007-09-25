@@ -37,7 +37,7 @@
 /* <dict|null> .rsdparams <filters> <decodeparms|null> */
 /* filters is always an array; decodeparms is always either an array */
 /* of the same length as filters, or null. */
-private int
+static int
 zrsdparams(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -115,12 +115,12 @@ zrsdparams(i_ctx_t *i_ctx_p)
  * Reusable streams are also reusable sources, but they look just like
  * ordinary file or string streams.
  */
-private int make_rss(i_ctx_t *i_ctx_p, os_ptr op, const byte * data,
+static int make_rss(i_ctx_t *i_ctx_p, os_ptr op, const byte * data,
 		     uint size, uint space, long offset, long length,
 		     bool is_bytestring);
-private int make_rfs(i_ctx_t *i_ctx_p, os_ptr op, stream *fs,
+static int make_rfs(i_ctx_t *i_ctx_p, os_ptr op, stream *fs,
 		     long offset, long length);
-private int
+static int
 zreusablestream(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -199,7 +199,7 @@ rs:
 }
 
 /* Make a reusable string stream. */
-private int
+static int
 make_rss(i_ctx_t *i_ctx_p, os_ptr op, const byte * data, uint size,
 	 uint string_space, long offset, long length, bool is_bytestring)
 {
@@ -220,7 +220,7 @@ make_rss(i_ctx_t *i_ctx_p, os_ptr op, const byte * data, uint size,
 }
 
 /* Make a reusable file stream. */
-private int
+static int
 make_rfs(i_ctx_t *i_ctx_p, os_ptr op, stream *fs, long offset, long length)
 {
     uint save_space = icurrent_space;

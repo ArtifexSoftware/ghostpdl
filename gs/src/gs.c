@@ -31,7 +31,7 @@
 /* Define an optional array of strings for testing. */
 /*#define RUN_STRINGS */
 #ifdef RUN_STRINGS
-private const char *run_strings[] =
+static const char *run_strings[] =
 {
     "2 vmreclaim /SAVE save def 2 vmreclaim",
     "(saved\n) print flush",
@@ -50,7 +50,7 @@ private const char *run_strings[] =
  * Linux sends a SEGV signal if the access happens below the stack pointer.
  * Pre-loading the stack pages resolves the problem.
  */
-private void 
+static void 
 commit_stack_pages( void )
 {
     char buf[65536]; /* In most cases GS lives in 64K stack */

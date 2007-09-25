@@ -35,7 +35,7 @@
 public_st_gs_text_params();
 public_st_gs_text_enum();
 
-private 
+static 
 ENUM_PTRS_WITH(text_params_enum_ptrs, gs_text_params_t *tptr) return 0;
 case 0:
 if (tptr->operation & TEXT_FROM_STRING) {
@@ -55,7 +55,7 @@ case 2:
 return ENUM_OBJ(tptr->operation & TEXT_REPLACE_WIDTHS ?
 		tptr->y_widths : NULL);
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(text_params_reloc_ptrs, gs_text_params_t *tptr)
+static RELOC_PTRS_WITH(text_params_reloc_ptrs, gs_text_params_t *tptr)
 {
     if (tptr->operation & TEXT_FROM_STRING) {
 	gs_const_string str;
@@ -77,7 +77,7 @@ private RELOC_PTRS_WITH(text_params_reloc_ptrs, gs_text_params_t *tptr)
 }
 RELOC_PTRS_END
 
-private ENUM_PTRS_WITH(text_enum_enum_ptrs, gs_text_enum_t *eptr)
+static ENUM_PTRS_WITH(text_enum_enum_ptrs, gs_text_enum_t *eptr)
 {
     if (index == 8) {
 	if (eptr->pair != 0)
@@ -97,7 +97,7 @@ ENUM_PTR3(2, gs_text_enum_t, pis, orig_font, path);
 ENUM_PTR3(5, gs_text_enum_t, pdcolor, pcpath, current_font);
 ENUM_PTRS_END
 
-private RELOC_PTRS_WITH(text_enum_reloc_ptrs, gs_text_enum_t *eptr)
+static RELOC_PTRS_WITH(text_enum_reloc_ptrs, gs_text_enum_t *eptr)
 {
     int i;
 
@@ -145,7 +145,7 @@ gx_device_text_begin(gx_device * dev, gs_imager_state * pis,
  * Initialize a newly created text enumerator.  Implementations of
  * text_begin must call this just after allocating the enumerator.
  */
-private int
+static int
 gs_text_enum_init_dynamic(gs_text_enum_t *pte, gs_font *font)
 {
     pte->current_font = font;
@@ -291,7 +291,7 @@ gs_text_update_dev_color(gs_state * pgs, gs_text_enum_t * pte)
     return 0;
 }
 
-private inline uint text_do_draw(gs_state * pgs)
+static inline uint text_do_draw(gs_state * pgs)
 {
     return (pgs->text_rendering_mode == 3 ? TEXT_DO_NONE : TEXT_DO_DRAW);
 }
@@ -410,7 +410,7 @@ gs_xyshow_begin(gs_state * pgs, const byte * str, uint size,
     return gs_text_begin(pgs, &text, mem, ppte);
 }
 
-private void
+static void
 setup_FontBBox_as_Metrics2 (gs_text_enum_t * pte, gs_font * pfont)
 {
     /* When we exec a operator like `show' that has a a chance to get

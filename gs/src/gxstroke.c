@@ -82,7 +82,7 @@
  * check and covers many common cases.  Clients that care always have the
  * option of using strokepath to get an exact result.
  */
-private float join_expansion_factor(const gs_imager_state *, gs_line_join);
+static float join_expansion_factor(const gs_imager_state *, gs_line_join);
 int
 gx_stroke_path_expansion(const gs_imager_state * pis, const gx_path * ppath,
 			 gs_fixed_point * ppt)
@@ -155,7 +155,7 @@ not_exact:
 
     return result;
 }
-private float
+static float
 join_expansion_factor(const gs_imager_state *pis, gs_line_join join)
 {
     switch (join) {
@@ -208,18 +208,18 @@ typedef partial_line *pl_ptr;
   ((pp)->x = (p).x, (pp)->y = (p).y)
 
 /* Other forward declarations */
-private bool width_is_thin(pl_ptr);
-private void adjust_stroke(pl_ptr, const gs_imager_state *, bool, bool);
-private int line_join_points(const gx_line_params * pgs_lp,
+static bool width_is_thin(pl_ptr);
+static void adjust_stroke(pl_ptr, const gs_imager_state *, bool, bool);
+static int line_join_points(const gx_line_params * pgs_lp,
 			     pl_ptr plp, pl_ptr nplp,
 			     gs_fixed_point * join_points,
 			     const gs_matrix * pmat, gs_line_join join,
 			     bool reflected);
-private void compute_caps(pl_ptr);
-private int add_points(gx_path *, const gs_fixed_point *,
+static void compute_caps(pl_ptr);
+static int add_points(gx_path *, const gs_fixed_point *,
 		       int, bool);
-private int add_round_cap(gx_path *, const_ep_ptr);
-private int cap_points(gs_line_cap, const_ep_ptr,
+static int add_round_cap(gx_path *, const_ep_ptr);
+static int cap_points(gs_line_cap, const_ep_ptr,
 		       gs_fixed_point * /*[3] */ );
 
 /* Define the default implementation of the device stroke_path procedure. */
@@ -260,10 +260,10 @@ gx_default_stroke_path(gx_device * dev, const gs_imager_state * pis,
 	   gs_line_join, bool)
 typedef stroke_line_proc((*stroke_line_proc_t));
 
-private stroke_line_proc(stroke_add);
-private stroke_line_proc(stroke_add_compat);
-private stroke_line_proc(stroke_fill);
-private int stroke_add_initial_cap_compat(gx_path * ppath, pl_ptr plp, bool adlust_longitude,
+static stroke_line_proc(stroke_add);
+static stroke_line_proc(stroke_add_compat);
+static stroke_line_proc(stroke_fill);
+static int stroke_add_initial_cap_compat(gx_path * ppath, pl_ptr plp, bool adlust_longitude,
 	   const gx_device_color * pdevc, gx_device * dev,
 	   const gs_imager_state * pis);
 
@@ -282,7 +282,7 @@ typedef enum {
  * the clipping path, as for to_path == NULL.  This is almost never
  * what is wanted.
  */
-private int
+static int
 gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	       const gs_imager_state * pis, const gx_stroke_params * params,
 		 const gx_device_color * pdevc, const gx_clip_path * pcpath)
@@ -830,7 +830,7 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
  * Unfortunately, the width values we computed are perpendicular to the
  * line in *user* space, so we may have to do some extra work.
  */
-private bool
+static bool
 width_is_thin(pl_ptr plp)
 {
     fixed dx, dy, wx = plp->width.x, wy = plp->width.y;
@@ -867,7 +867,7 @@ width_is_thin(pl_ptr plp)
 }
 
 /* Adjust the endpoints and width of a stroke segment along a specified axis */
-private void
+static void
 adjust_stroke_transversal(pl_ptr plp, const gs_imager_state * pis, bool thin, bool horiz)
 {
     fixed *pw;
@@ -915,7 +915,7 @@ adjust_stroke_transversal(pl_ptr plp, const gs_imager_state * pis, bool thin, bo
     }
 }
 
-private void 
+static void 
 adjust_stroke_longitude(pl_ptr plp, const gs_imager_state * pis, bool thin, bool horiz)
 {
 
@@ -964,7 +964,7 @@ adjust_stroke_longitude(pl_ptr plp, const gs_imager_state * pis, bool thin, bool
 /* Adjust the endpoints and width of a stroke segment */
 /* to achieve more uniform rendering. */
 /* Only o.p, e.p, e.cdelta, and width have been set. */
-private void
+static void
 adjust_stroke(pl_ptr plp, const gs_imager_state * pis, bool thin, bool adjust_longitude)
 {
     bool horiz;
@@ -988,7 +988,7 @@ adjust_stroke(pl_ptr plp, const gs_imager_state * pis, bool thin, bool adjust_lo
 /* If the lines are (nearly) parallel, return -1 without setting *pi; */
 /* otherwise, return 0 if the intersection is beyond *pp1 and *pp2 in */
 /* the direction determined by *pd1 and *pd2, and 1 otherwise. */
-private int
+static int
 line_intersect(
 		  p_ptr pp1,	/* point on 1st line */
 		  p_ptr pd1,	/* slope of 1st line (dx,dy) */
@@ -1034,7 +1034,7 @@ line_intersect(
 
 /* Set up the width and delta parameters for a thin line. */
 /* We only approximate the width and height. */
-private void
+static void
 set_thin_widths(register pl_ptr plp)
 {
     fixed dx = plp->e.p.x - plp->o.p.x, dy = plp->e.p.y - plp->o.p.y;
@@ -1052,7 +1052,7 @@ set_thin_widths(register pl_ptr plp)
 
 /* Draw a line on the device. */
 /* Treat no join the same as a bevel join. */
-private int
+static int
 stroke_fill(gx_path * ppath, int first, register pl_ptr plp, pl_ptr nplp,
 	    const gx_device_color * pdevc, gx_device * dev,
 	    const gs_imager_state * pis, const gx_stroke_params * params,
@@ -1152,7 +1152,7 @@ stroke_fill(gx_path * ppath, int first, register pl_ptr plp, pl_ptr nplp,
 }
 
 /* Add a segment to the path.  This handles all the complex cases. */
-private int
+static int
 stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 	   const gx_device_color * pdevc, gx_device * dev,
 	   const gs_imager_state * pis, const gx_stroke_params * params,
@@ -1221,7 +1221,7 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 }
 
 /* Add a CPSI-compatible segment to the path.  This handles all the complex cases. */
-private int
+static int
 stroke_add_compat(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 	   const gx_device_color * pdevc, gx_device * dev,
 	   const gs_imager_state * pis, const gx_stroke_params * params,
@@ -1321,7 +1321,7 @@ stroke_add_compat(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 }
 
 /* Add a CPSI-compatible segment to the path.  This handles all the complex cases. */
-private int
+static int
 stroke_add_initial_cap_compat(gx_path * ppath, pl_ptr plp, bool adlust_longitude,
 	   const gx_device_color * pdevc, gx_device * dev,
 	   const gs_imager_state * pis)
@@ -1364,7 +1364,7 @@ stroke_add_initial_cap_compat(gx_path * ppath, pl_ptr plp, bool adlust_longitude
 }
 
 /* Add lines with a possible initial moveto. */
-private int
+static int
 add_points(gx_path * ppath, const gs_fixed_point * points, int npoints,
 	   bool moveto_first)
 {
@@ -1391,7 +1391,7 @@ add_points(gx_path * ppath, const gs_fixed_point * points, int npoints,
 /* Treat no join the same as a bevel join. */
 /* If pmat != 0, we must inverse-transform the distances for */
 /* the miter check. */
-private int
+static int
 line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 		 gs_fixed_point * join_points, const gs_matrix * pmat,
 		 gs_line_join join, bool reflected)
@@ -1598,7 +1598,7 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 
 /* Compute the endpoints of the two caps of a segment. */
 /* Only o.p, e.p, width, and cdelta have been set. */
-private void
+static void
 compute_caps(pl_ptr plp)
 {
     fixed wx2 = plp->width.x;
@@ -1634,7 +1634,7 @@ compute_caps(pl_ptr plp)
 
 /* Add a round cap to a path. */
 /* Assume the current point is the cap origin (endp->co). */
-private int
+static int
 add_round_cap(gx_path * ppath, const_ep_ptr endp)
 {
     int code;
@@ -1663,7 +1663,7 @@ add_round_cap(gx_path * ppath, const_ep_ptr endp)
 
 /* Compute the points for a non-round cap. */
 /* Return the number of points. */
-private int
+static int
 cap_points(gs_line_cap type, const_ep_ptr endp, gs_fixed_point *pts /*[3]*/)
 {
 #define PUT_POINT(i, px, py)\

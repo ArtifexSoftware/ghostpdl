@@ -19,19 +19,19 @@
 		 num_comp, depth, max_gray, max_color, max_gray+1, max_color+1, \
 		 print_page)}
 
-private dev_proc_map_rgb_color(sgi_map_rgb_color);
-private dev_proc_map_color_rgb(sgi_map_color_rgb);
+static dev_proc_map_rgb_color(sgi_map_rgb_color);
+static dev_proc_map_color_rgb(sgi_map_color_rgb);
 
-private dev_proc_print_page(sgi_print_page);
+static dev_proc_print_page(sgi_print_page);
 
-private gx_device_procs sgi_procs =
+static gx_device_procs sgi_procs =
   prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		  sgi_map_rgb_color, sgi_map_color_rgb);
 
 const gx_device_printer far_data gs_sgirgb_device =
   sgi_prn_device(sgi_procs, "sgirgb", 3, 24, 255, 255, sgi_print_page);
 
-private gx_color_index
+static gx_color_index
 sgi_map_rgb_color(gx_device * dev, const ushort cv[])
 {      ushort bitspercolor = dev->color_info.depth / 3;
        ulong max_value = (1 << bitspercolor) - 1;
@@ -43,7 +43,7 @@ sgi_map_rgb_color(gx_device * dev, const ushort cv[])
 	      (blue*max_value / gx_max_color_value);
 }
 
-private int
+static int
 sgi_map_color_rgb(gx_device *dev, gx_color_index color, ushort prgb[3])
 {	ushort bitspercolor = dev->color_info.depth / 3;
 	ushort colormask = (1 << bitspercolor) - 1;
@@ -65,7 +65,7 @@ typedef struct sgi_cursor_s {
   int lnum;
 } sgi_cursor;
 
-private int
+static int
 sgi_begin_page(gx_device_printer *bdev, FILE *pstream, sgi_cursor *pcur)
 {
      uint line_size = gdev_mem_bytes_per_scan_line((gx_device_printer*)bdev);
@@ -98,7 +98,7 @@ sgi_begin_page(gx_device_printer *bdev, FILE *pstream, sgi_cursor *pcur)
      return 0;
 }
 
-private int
+static int
 sgi_next_row(sgi_cursor *pcur)
 {    if (pcur->lnum < 0)
        return 1;
@@ -109,7 +109,7 @@ sgi_next_row(sgi_cursor *pcur)
 
 #define bdev ((gx_device_printer *)pdev)
 
-private int
+static int
 sgi_print_page(gx_device_printer *pdev, FILE *pstream)
 {      sgi_cursor cur;
        int code = sgi_begin_page(bdev, pstream, &cur);

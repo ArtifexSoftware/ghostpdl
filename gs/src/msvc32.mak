@@ -144,14 +144,6 @@ DEBUGSYM=0
 !endif
 
 
-# Setting NOPRIVATE=1 makes private (static) procedures and variables public,
-# so they are visible to the debugger and profiler.
-# No execution time or space penalty, just larger .OBJ and .EXE files.
-
-!ifndef NOPRIVATE
-NOPRIVATE=0
-!endif
-
 # We can compile for a 32-bit or 64-bit target
 # WIN32 and WIN64 are mutually exclusive.  WIN32 is the default.
 !if !defined(WIN32) && !defined(Win64)

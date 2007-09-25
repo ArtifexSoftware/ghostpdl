@@ -40,14 +40,6 @@ typedef unsigned int GSWORD;	/* must be at least 16 bits */
 # define DSC_OFFSET_FORMAT "lu"	/* for printf */
 #endif
 
-#ifndef dsc_private
-# ifdef private
-#  define dsc_private private
-# else
-#  define dsc_private static
-# endif
-#endif
-
 #ifndef min
 # define min(a,b)  ((a) < (b) ? (a) : (b))
 #endif

@@ -32,15 +32,15 @@
 #include "store.h"		/* for make_null */
 
 /* Forward references */
-private int zcrd1_proc_params(const gs_memory_t *mem, os_ptr op, ref_cie_render_procs * pcprocs);
-private int zcrd1_params(os_ptr op, gs_cie_render * pcrd,
+static int zcrd1_proc_params(const gs_memory_t *mem, os_ptr op, ref_cie_render_procs * pcprocs);
+static int zcrd1_params(os_ptr op, gs_cie_render * pcrd,
 			 ref_cie_render_procs * pcprocs, gs_memory_t * mem);
-private int cache_colorrendering1(i_ctx_t *i_ctx_p, gs_cie_render * pcrd,
+static int cache_colorrendering1(i_ctx_t *i_ctx_p, gs_cie_render * pcrd,
 				  const ref_cie_render_procs * pcprocs,
 				  gs_ref_memory_t * imem);
 
 /* - currentcolorrendering <dict> */
-private int
+static int
 zcurrentcolorrendering(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -51,7 +51,7 @@ zcurrentcolorrendering(i_ctx_t *i_ctx_p)
 }
 
 /* <dict> .buildcolorrendering1 <crd> */
-private int
+static int
 zbuildcolorrendering1(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -83,7 +83,7 @@ zbuildcolorrendering1(i_ctx_t *i_ctx_p)
 }
 
 /* <dict> .builddevicecolorrendering1 <crd> */
-private int
+static int
 zbuilddevicecolorrendering1(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -116,7 +116,7 @@ zbuilddevicecolorrendering1(i_ctx_t *i_ctx_p)
 }
 
 /* <dict> <crd> .setcolorrendering1 - */
-private int
+static int
 zsetcolorrendering1(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -143,7 +143,7 @@ zsetcolorrendering1(i_ctx_t *i_ctx_p)
 }
 
 /* <dict> <crd> .setdevicecolorrendering1 - */
-private int
+static int
 zsetdevicecolorrendering1(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -168,7 +168,7 @@ zsetdevicecolorrendering1(i_ctx_t *i_ctx_p)
 }
 
 /* Get ColorRenderingType 1 procedures from the PostScript dictionary. */
-private int
+static int
 zcrd1_proc_params(const gs_memory_t *mem, 
 		  os_ptr op, ref_cie_render_procs * pcprocs)
 {
@@ -206,7 +206,7 @@ zcrd1_proc_params(const gs_memory_t *mem,
 }
 
 /* Get ColorRenderingType 1 parameters from the PostScript dictionary. */
-private int
+static int
 zcrd1_params(os_ptr op, gs_cie_render * pcrd,
 	     ref_cie_render_procs * pcprocs, gs_memory_t * mem)
 {
@@ -251,8 +251,8 @@ zcrd1_params(os_ptr op, gs_cie_render * pcrd,
 }
 
 /* Cache the results of the color rendering procedures. */
-private int cie_cache_render_finish(i_ctx_t *);
-private int
+static int cie_cache_render_finish(i_ctx_t *);
+static int
 cache_colorrendering1(i_ctx_t *i_ctx_p, gs_cie_render * pcrd,
 		      const ref_cie_render_procs * pcrprocs,
 		      gs_ref_memory_t * imem)
@@ -294,7 +294,7 @@ cache_colorrendering1(i_ctx_t *i_ctx_p, gs_cie_render * pcrd,
 }
 
 /* Finish up after loading the rendering caches. */
-private int
+static int
 cie_cache_render_finish(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -325,7 +325,7 @@ cie_cache_render_finish(i_ctx_t *i_ctx_p)
 /* ------ Internal procedures ------ */
 
 /* Load the joint caches. */
-private int
+static int
     cie_exec_tpqr(i_ctx_t *),
     cie_post_exec_tpqr(i_ctx_t *),
     cie_tpqr_finish(i_ctx_t *);
@@ -384,7 +384,7 @@ cie_cache_joint(i_ctx_t *i_ctx_p, const ref_cie_render_procs * pcrprocs,
 
 /* Private operator to shuffle arguments for the TransformPQR procedure: */
 /* v [ws wd bs bd] proc -> -mark- ws wd bs bd v proc + exec */
-private int
+static int
 cie_exec_tpqr(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -405,7 +405,7 @@ cie_exec_tpqr(i_ctx_t *i_ctx_p)
 
 /* Remove extraneous values from the stack after executing */
 /* the TransformPQR procedure.  -mark- ... v -> v */
-private int
+static int
 cie_post_exec_tpqr(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -421,7 +421,7 @@ cie_post_exec_tpqr(i_ctx_t *i_ctx_p)
 }
 
 /* Free the procs array and complete the joint caches. */
-private int
+static int
 cie_tpqr_finish(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -445,7 +445,7 @@ cie_tpqr_finish(i_ctx_t *i_ctx_p)
    This TransformPQR implements a relative colorimetric intent by scaling
    the XYZ values relative to the white and black points.
 */
-private int
+static int
 ztpqr_scale_wb_common(i_ctx_t *i_ctx_p, int idx)
 {
     os_ptr op = osp;
@@ -475,21 +475,21 @@ ztpqr_scale_wb_common(i_ctx_t *i_ctx_p, int idx)
 }
 
 /* Ws Bs Wd Bd Ps .TransformPQR_scale_wb0 Pd */
-private int
+static int
 ztpqr_scale_wb0(i_ctx_t *i_ctx_p)
 {
     return ztpqr_scale_wb_common(i_ctx_p, 3);
 }
 
 /* Ws Bs Wd Bd Ps .TransformPQR_scale_wb2 Pd */
-private int
+static int
 ztpqr_scale_wb1(i_ctx_t *i_ctx_p)
 {
     return ztpqr_scale_wb_common(i_ctx_p, 4);
 }
 
 /* Ws Bs Wd Bd Ps .TransformPQR_scale_wb2 Pd */
-private int
+static int
 ztpqr_scale_wb2(i_ctx_t *i_ctx_p)
 {
     return ztpqr_scale_wb_common(i_ctx_p, 5);

@@ -131,12 +131,6 @@ FPFLAGS=
 
 !endif
 
-!if $(NOPRIVATE)!=0
-CP=/DNOPRIVATE
-!else
-CP=
-!endif
-
 !if $(DEBUG)!=0
 CD=/DDEBUG
 !else

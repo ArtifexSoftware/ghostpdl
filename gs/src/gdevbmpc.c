@@ -89,7 +89,7 @@ typedef struct bmp_quad_s {
 } bmp_quad;
 
 /* Write the BMP file header. */
-private int
+static int
 write_bmp_depth_header(gx_device_printer *pdev, FILE *file, int depth,
 		       const byte *palette /* [4 << depth] */,
 		       int raster)

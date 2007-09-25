@@ -22,7 +22,7 @@
 #	GS_LIB_DEFAULT, SEARCH_HERE_FIRST, GS_INIT, FEATURE_DEVS,
 #	DEVICE_DEVS*, COMPILE_INITS, BAND_LIST_*
 #   Configuration, internal, generic:
-#	PLATFORM, MAKEFILE, AK, CC*, DEBUG, NOPRIVATE, CP_, RM_, RMN_
+#	PLATFORM, MAKEFILE, AK, CC*, DEBUG, CP_, RM_, RMN_
 #   Configuration, internal, specific to DOS/Windows:
 #	TDEBUG, USE_ASM, ASM,
 #	COMPDIR, LIBPATHS,
@@ -191,13 +191,6 @@ dosdefault: default
 
 # Define the compilation flags.
 
-# Privacy
-!ifneq NOPRIVATE 0
-CP=-dNOPRIVATE
-!else
-CP=
-!endif
-
 # Run-time debugging and stack checking
 !ifneq DEBUG 0
 CD=-dDEBUG
@@ -216,7 +209,7 @@ CT=-d1
 LCT=DEBUG LINES
 !endif
 
-GENOPT=$(CP) $(CD) $(CT) $(CS)
+GENOPT=$(CD) $(CT) $(CS)
 
 CCOPT=-d+ -i=$(INCDIRS) -zq -zp8 -ei
 CCFLAGS=$(CCOPT) $(GENOPT) $(PLATOPT) $(FPFLAGS) $(CFLAGS) $(XCFLAGS)

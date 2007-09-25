@@ -31,13 +31,13 @@
 
 /* Structure descriptor */
 public_st_device_color();
-private 
+static 
 ENUM_PTRS_WITH(device_color_enum_ptrs, gx_device_color *cptr)
 {
 	return ENUM_USING(*cptr->type->stype, vptr, size, index);
 }
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(device_color_reloc_ptrs, gx_device_color *cptr)
+static RELOC_PTRS_WITH(device_color_reloc_ptrs, gx_device_color *cptr)
 {
     RELOC_USING(*cptr->type->stype, vptr, size);
 }
@@ -467,32 +467,32 @@ gx_error_get_color_comp_index(gx_device * dev, const char * pname,
 
 /* ---------------- Device color rendering ---------------- */
 
-private cmap_proc_gray(cmap_gray_halftoned);
-private cmap_proc_gray(cmap_gray_direct);
+static cmap_proc_gray(cmap_gray_halftoned);
+static cmap_proc_gray(cmap_gray_direct);
 
-private cmap_proc_rgb(cmap_rgb_halftoned);
-private cmap_proc_rgb(cmap_rgb_direct);
+static cmap_proc_rgb(cmap_rgb_halftoned);
+static cmap_proc_rgb(cmap_rgb_direct);
 
 #define cmap_cmyk_halftoned cmap_cmyk_direct
-private cmap_proc_cmyk(cmap_cmyk_direct);
+static cmap_proc_cmyk(cmap_cmyk_direct);
 
-private cmap_proc_rgb_alpha(cmap_rgb_alpha_halftoned);
-private cmap_proc_rgb_alpha(cmap_rgb_alpha_direct);
+static cmap_proc_rgb_alpha(cmap_rgb_alpha_halftoned);
+static cmap_proc_rgb_alpha(cmap_rgb_alpha_direct);
 
 /* Procedure names are only guaranteed unique to 23 characters.... */
-private cmap_proc_rgb_alpha(cmap_rgb_alpha_halftoned);
-private cmap_proc_rgb_alpha(cmap_rgb_alpha_direct);
+static cmap_proc_rgb_alpha(cmap_rgb_alpha_halftoned);
+static cmap_proc_rgb_alpha(cmap_rgb_alpha_direct);
 
-private cmap_proc_separation(cmap_separation_halftoned);
-private cmap_proc_separation(cmap_separation_direct);
+static cmap_proc_separation(cmap_separation_halftoned);
+static cmap_proc_separation(cmap_separation_direct);
 
-private cmap_proc_devicen(cmap_devicen_halftoned);
-private cmap_proc_devicen(cmap_devicen_direct);
+static cmap_proc_devicen(cmap_devicen_halftoned);
+static cmap_proc_devicen(cmap_devicen_direct);
 
-private cmap_proc_is_halftoned(cmap_halftoned_is_halftoned);
-private cmap_proc_is_halftoned(cmap_direct_is_halftoned);
+static cmap_proc_is_halftoned(cmap_halftoned_is_halftoned);
+static cmap_proc_is_halftoned(cmap_direct_is_halftoned);
 
-private const gx_color_map_procs cmap_few = {
+static const gx_color_map_procs cmap_few = {
      cmap_gray_halftoned, 
      cmap_rgb_halftoned, 
      cmap_cmyk_halftoned,
@@ -501,7 +501,7 @@ private const gx_color_map_procs cmap_few = {
      cmap_devicen_halftoned,
      cmap_halftoned_is_halftoned
     };
-private const gx_color_map_procs cmap_many = {
+static const gx_color_map_procs cmap_many = {
      cmap_gray_direct,
      cmap_rgb_direct,
      cmap_cmyk_direct,
@@ -846,7 +846,7 @@ gx_remap_DeviceCMYK(const gs_client_color * pc, const gs_color_space * pcs,
 
 /* ------ Render Gray color. ------ */
 
-private void
+static void
 cmap_gray_halftoned(frac gray, gx_device_color * pdc,
      const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
 {
@@ -871,7 +871,7 @@ cmap_gray_halftoned(frac gray, gx_device_color * pdc,
 	gx_color_load_select(pdc, pis, dev, select);
 }
 
-private void
+static void
 cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_imager_state * pis,
 		 gx_device * dev, gs_color_select_t select)
 {
@@ -906,7 +906,7 @@ cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_imager_state * pis,
 
 /* ------ Render RGB color. ------ */
 
-private void
+static void
 cmap_rgb_halftoned(frac r, frac g, frac b, gx_device_color * pdc,
      const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
 {
@@ -931,7 +931,7 @@ cmap_rgb_halftoned(frac r, frac g, frac b, gx_device_color * pdc,
 	gx_color_load_select(pdc, pis, dev, select);
 }
 
-private void
+static void
 cmap_rgb_direct(frac r, frac g, frac b, gx_device_color * pdc,
      const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
 {
@@ -966,7 +966,7 @@ cmap_rgb_direct(frac r, frac g, frac b, gx_device_color * pdc,
 
 /* ------ Render CMYK color. ------ */
 
-private void
+static void
 cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
      const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
 {
@@ -1011,7 +1011,7 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     }
 }
 
-private void
+static void
 cmap_rgb_alpha_halftoned(frac r, frac g, frac b, frac alpha,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 			 gs_color_select_t select)
@@ -1049,7 +1049,7 @@ cmap_rgb_alpha_halftoned(frac r, frac g, frac b, frac alpha,
 	gx_color_load_select(pdc, pis, dev, select);
 }
 
-private void
+static void
 cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha, gx_device_color * pdc,
      const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
 {
@@ -1113,7 +1113,7 @@ cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha, gx_device_color * pdc,
  * Returns:
  *    Mapped components in plist.
  */
-private inline void
+static inline void
 map_components_to_colorants(const frac * pcc,
 	const gs_devicen_color_map * pcolor_component_map, frac * plist)
 {
@@ -1133,7 +1133,7 @@ map_components_to_colorants(const frac * pcc,
     }
 }
 
-private void
+static void
 cmap_separation_halftoned(frac all, gx_device_color * pdc,
      const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
 {
@@ -1175,7 +1175,7 @@ cmap_separation_halftoned(frac all, gx_device_color * pdc,
 	gx_color_load_select(pdc, pis, dev, select);
 }
 
-private void
+static void
 cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * pis,
 		 gx_device * dev, gs_color_select_t select)
 {
@@ -1231,7 +1231,7 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
  * This routine is called to map a DeviceN colorspace to a DeviceN
  * output device which requires halftoning.  T
  */
-private void
+static void
 cmap_devicen_halftoned(const frac * pcc, 
     gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
     gs_color_select_t select)
@@ -1263,7 +1263,7 @@ cmap_devicen_halftoned(const frac * pcc,
  * This routine is called to map a DeviceN colorspace to a DeviceN
  * output device which does not require halftoning.
  */
-private void
+static void
 cmap_devicen_direct(const frac * pcc, 
     gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
     gs_color_select_t select)
@@ -1298,13 +1298,13 @@ cmap_devicen_direct(const frac * pcc,
 
 /* ------ Halftoning check ----- */
 
-private bool
+static bool
 cmap_halftoned_is_halftoned(const gs_imager_state * pis, gx_device * dev)
 {
     return true;
 }
 
-private bool
+static bool
 cmap_direct_is_halftoned(const gs_imager_state * pis, gx_device * dev)
 {
     return false;

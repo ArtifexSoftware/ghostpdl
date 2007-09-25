@@ -20,7 +20,7 @@
 #include "gshsb.h"
 
 /* - currenthsbcolor <hue> <saturation> <brightness> */
-private int
+static int
 zcurrenthsbcolor(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -33,7 +33,7 @@ zcurrenthsbcolor(i_ctx_t *i_ctx_p)
 }
 
 /* <hue> <saturation> <brightness> sethsbcolor - */
-private int
+static int
 zsethsbcolor(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

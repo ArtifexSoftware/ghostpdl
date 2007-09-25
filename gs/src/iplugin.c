@@ -31,12 +31,12 @@
 
 extern_i_plugin_table();
 
-private void *i_plugin_mem_alloc(i_plugin_client_memory *mem, unsigned int nbytes, const char *cname)
+static void *i_plugin_mem_alloc(i_plugin_client_memory *mem, unsigned int nbytes, const char *cname)
 {   gs_memory_t *mem_raw = mem->client_data;
     return mem_raw->procs.alloc_bytes_immovable(mem_raw, nbytes, cname);
 }
 
-private void i_plugin_mem_free(i_plugin_client_memory *mem, void *data, const char *cname)
+static void i_plugin_mem_free(i_plugin_client_memory *mem, void *data, const char *cname)
 {   gs_memory_t *mem_raw = mem->client_data;
     mem_raw->procs.free_object(mem_raw, data, cname);
 }

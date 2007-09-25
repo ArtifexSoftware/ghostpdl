@@ -18,7 +18,7 @@
 #include "szlibxx.h"
 
 /* Initialize the filter. */
-private int
+static int
 s_zlibE_init(stream_state * st)
 {
     stream_zlib_state *const ss = (stream_zlib_state *)st;
@@ -34,7 +34,7 @@ s_zlibE_init(stream_state * st)
 }
 
 /* Reinitialize the filter. */
-private int
+static int
 s_zlibE_reset(stream_state * st)
 {
     stream_zlib_state *const ss = (stream_zlib_state *)st;
@@ -45,7 +45,7 @@ s_zlibE_reset(stream_state * st)
 }
 
 /* Process a buffer */
-private int
+static int
 s_zlibE_process(stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
@@ -78,7 +78,7 @@ s_zlibE_process(stream_state * st, stream_cursor_read * pr,
 }
 
 /* Release the stream */
-private void
+static void
 s_zlibE_release(stream_state * st)
 {
     stream_zlib_state *const ss = (stream_zlib_state *)st;

@@ -18,14 +18,14 @@
 #include "gdevfax.h"
  
 /* The device descriptor */
-private dev_proc_print_page(cfax_print_page);
-private dev_proc_close_device(cfax_prn_close);
+static dev_proc_print_page(cfax_print_page);
+static dev_proc_close_device(cfax_prn_close);
 
 /* Define procedures for cfax. For sff multipage documents  */
 /* a special close procedure is required because sff needs  */
 /* an additional "end of document" signature after the last */ 
 /* "end page" signature */
-private const gx_device_procs gdev_cfax_std_procs =
+static const gx_device_procs gdev_cfax_std_procs =
     prn_params_procs(gdev_prn_open, gdev_prn_output_page, cfax_prn_close,
 		     gdev_fax_get_params, gdev_fax_put_params);
 
@@ -35,20 +35,20 @@ const gx_device_fax gs_cfax_device = {
 
 /* ---------------- SFF output ----------------- */
 
-private void
+static void
 cfax_byte(uint c, FILE * file)
 {
     fputc(c & 0xff, file);
 }
 
-private void
+static void
 cfax_word(ushort c, FILE * file)
 {
     cfax_byte(c & 0xff, file);
     cfax_byte(c >> 8, file);
 }
 
-private void
+static void
 cfax_dword(ulong c, FILE * file)
 {
     cfax_byte(c & 0xff, file);
@@ -57,7 +57,7 @@ cfax_dword(ulong c, FILE * file)
     cfax_byte(c >> 24, file);
 }
 
-private void
+static void
 cfax_doc_hdr(FILE * file)
 {
     cfax_byte('S', file);
@@ -73,7 +73,7 @@ cfax_doc_hdr(FILE * file)
     cfax_dword(0, file);
 }
 
-private void
+static void
 cfax_page_hdr(gx_device_printer * pdev, FILE * file)
 {
     cfax_byte(254, file);
@@ -88,7 +88,7 @@ cfax_page_hdr(gx_device_printer * pdev, FILE * file)
     cfax_dword(0, file);
 }
 
-private void
+static void
 cfax_doc_end(FILE * file)
 {
     cfax_byte(254, file);
@@ -96,7 +96,7 @@ cfax_doc_end(FILE * file)
 }
 
 /* Send the page to the printer. */
-private int
+static int
 cfax_stream_print_page_width(gx_device_printer * pdev, FILE * prn_stream,
 			     const stream_template * temp, stream_state * ss, 
                		     int width)
@@ -180,7 +180,7 @@ cfax_stream_print_page_width(gx_device_printer * pdev, FILE * prn_stream,
 }
 
 /* Begin a capi fax page. */
-private int
+static int
 cfax_begin_page(gx_device_printer * pdev, FILE * fp, int width)
 {
     /* Patch the width to reflect fax page width adjustment. */
@@ -197,7 +197,7 @@ cfax_begin_page(gx_device_printer * pdev, FILE * fp, int width)
 }
 
 /* Print an capi fax (sff-encoded) page. */
-private int
+static int
 cfax_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     stream_CFE_state state;
@@ -217,7 +217,7 @@ cfax_print_page(gx_device_printer * pdev, FILE * prn_stream)
 }
 
 /* Close an capi fax (sff-encoded) document. */
-private int
+static int
 cfax_prn_close(gx_device * pdev)
 {
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;

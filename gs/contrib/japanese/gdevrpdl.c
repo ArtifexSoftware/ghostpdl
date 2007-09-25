@@ -26,14 +26,14 @@
 #define DPI 240
 
 /* The device descriptors */
-private dev_proc_open_device(rpdl_open);
-private dev_proc_close_device(rpdl_close);
-private dev_proc_print_page_copies(rpdl_print_page_copies);
-private dev_proc_image_out(rpdl_image_out);
-private void rpdl_printer_initialize(gx_device_printer * pdev, FILE * prn_stream, int num_copies);
-private void rpdl_paper_set(gx_device_printer * pdev, FILE * prn_stream);
+static dev_proc_open_device(rpdl_open);
+static dev_proc_close_device(rpdl_close);
+static dev_proc_print_page_copies(rpdl_print_page_copies);
+static dev_proc_image_out(rpdl_image_out);
+static void rpdl_printer_initialize(gx_device_printer * pdev, FILE * prn_stream, int num_copies);
+static void rpdl_paper_set(gx_device_printer * pdev, FILE * prn_stream);
 
-private gx_device_procs rpdl_prn_procs =
+static gx_device_procs rpdl_prn_procs =
 lprn_procs(rpdl_open, gdev_prn_output_page, rpdl_close);
 
 gx_device_lprn far_data gs_rpdl_device =
@@ -44,7 +44,7 @@ lprn_device(gx_device_lprn, rpdl_prn_procs, "rpdl",
 #define ppdev ((gx_device_printer *)pdev)
 
 /* Open the printer. */
-private int
+static int
 rpdl_open(gx_device * pdev)
 {
     int xdpi = pdev->x_pixels_per_inch;
@@ -59,7 +59,7 @@ rpdl_open(gx_device * pdev)
     return gdev_prn_open(pdev);
 }
 
-private int
+static int
 rpdl_close(gx_device * pdev)
 {
     gdev_prn_open_printer(pdev, 1);
@@ -69,7 +69,7 @@ rpdl_close(gx_device * pdev)
     return gdev_prn_close(pdev);
 }
 
-private int
+static int
 rpdl_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_coipes)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
@@ -98,7 +98,7 @@ rpdl_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_coip
 }
 
 /* Output data */
-private void
+static void
 rpdl_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int width, int height)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
@@ -134,7 +134,7 @@ rpdl_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int wi
 
 /* ------ Internal routines ------ */
 
-private void
+static void
 rpdl_printer_initialize(gx_device_printer * pdev, FILE * prn_stream, int num_copies)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
@@ -227,7 +227,7 @@ rpdl_printer_initialize(gx_device_printer * pdev, FILE * prn_stream, int num_cop
     fprintf(prn_stream, "\033\022N%d ", num_copies);
 }
 
-private void
+static void
 rpdl_paper_set(gx_device_printer * pdev, FILE * prn_stream)
 {
     int width, height, w, h, wp, hp;

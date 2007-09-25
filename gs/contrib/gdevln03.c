@@ -42,15 +42,15 @@ nb 1999-05-03 added dl2100 code (nick.brown@coe.int)
 #include "gdevprn.h"
 
 /* Forward references */
-private int sixel_print_page(gx_device_printer *pdev, FILE *prn_stream,
+static int sixel_print_page(gx_device_printer *pdev, FILE *prn_stream,
                              const char *init, const char *eject);
 
 /* The device descriptor */
-private dev_proc_output_page(sixel_output_page);
-private dev_proc_print_page(ln03_print_page);
+static dev_proc_output_page(sixel_output_page);
+static dev_proc_print_page(ln03_print_page);
 /* We have to supply our own procs, since we have to intercept */
 /* output_page so we can open the printer in text mode. */
-private gx_device_procs sixel_procs =
+static gx_device_procs sixel_procs =
   prn_procs(gdev_prn_open, sixel_output_page, gdev_prn_close);
 
 #ifdef A4
@@ -85,7 +85,7 @@ gx_device_printer gs_ln03_device =
       <FF>		FF	form feed */
 #define LN03_EJECT "\033\\\f"
 
-private int
+static int
 ln03_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
     return (sixel_print_page(pdev,prn_stream,LN03_INIT,LN03_EJECT));
@@ -94,7 +94,7 @@ ln03_print_page(gx_device_printer *pdev, FILE *prn_stream)
 /*
  * DEClaser 2100 printer - very similar to the LN03.
  */
-private dev_proc_print_page(dl2100_print_page);
+static dev_proc_print_page(dl2100_print_page);
 gx_device_printer gs_dl2100_device =
     prn_device(sixel_procs, "dl2100",
 	       DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -109,7 +109,7 @@ gx_device_printer gs_dl2100_device =
 #define DL2100_INIT \
  "\033[!p\033[11h\033[7 I\033[?52h\033[0t\033[1;2475s\033[1;3510r\033P0;0;1q\"1;1"
 
-private int
+static int
 dl2100_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
     return (sixel_print_page(pdev,prn_stream,DL2100_INIT,LN03_EJECT));
@@ -119,7 +119,7 @@ dl2100_print_page(gx_device_printer *pdev, FILE *prn_stream)
  * LA50 dot matrix printer device.
  * This uses North American 8.5 x 11 inch paper size.
  */
-private dev_proc_print_page(la50_print_page);
+static dev_proc_print_page(la50_print_page);
 gx_device_printer gs_la50_device =
     prn_device(sixel_procs, "la50",
 	       85,
@@ -136,7 +136,7 @@ gx_device_printer gs_la50_device =
       <FF>		FF	form feed */
 #define LA50_EJECT "\033\\\f"
 
-private int
+static int
 la50_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
     return (sixel_print_page(pdev,prn_stream,LA50_INIT,LA50_EJECT));
@@ -146,7 +146,7 @@ la50_print_page(gx_device_printer *pdev, FILE *prn_stream)
  * LA70 dot matrix printer device.
  * This uses North American 8.5 x 11 inch paper size.
  */
-private dev_proc_print_page(la70_print_page);
+static dev_proc_print_page(la70_print_page);
 gx_device_printer gs_la70_device =
     prn_device(sixel_procs, "la70",
 	       85,
@@ -162,7 +162,7 @@ gx_device_printer gs_la70_device =
       <FF>		FF	form feed */
 #define LA70_EJECT "\033\\\f"
 
-private int
+static int
 la70_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
     return (sixel_print_page(pdev,prn_stream,LA70_INIT,LA70_EJECT));
@@ -172,7 +172,7 @@ la70_print_page(gx_device_printer *pdev, FILE *prn_stream)
  * LA75 dot matrix printer device.
  * This uses North American 8.5 x 11 inch paper size.
  */
-private dev_proc_print_page(la75_print_page);
+static dev_proc_print_page(la75_print_page);
 gx_device_printer gs_la75_device =
     prn_device(sixel_procs, "la75",
 	       85,
@@ -188,7 +188,7 @@ gx_device_printer gs_la75_device =
       <FF>		FF	form feed */
 #define LA75_EJECT "\033\\\f"
 
-private int
+static int
 la75_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
     return (sixel_print_page(pdev,prn_stream,LA75_INIT,LA75_EJECT));
@@ -199,7 +199,7 @@ la75_print_page(gx_device_printer *pdev, FILE *prn_stream)
  * This uses either A4 or US paper size.
  * Last changed: 03.02.94 -abp
  */
-private dev_proc_print_page(la75plus_print_page);
+static dev_proc_print_page(la75plus_print_page);
 gx_device_printer gs_la75plus_device =
     prn_device(sixel_procs, "la75plus",
                85,
@@ -222,7 +222,7 @@ gx_device_printer gs_la75plus_device =
       <FF>		FF	form feed */
 #define LA75PLUS_EJECT "\033\\\f"
 
-private int
+static int
 la75plus_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
     return (sixel_print_page(pdev,prn_stream,LA75PLUS_INIT,LA75PLUS_EJECT));
@@ -233,7 +233,7 @@ la75plus_print_page(gx_device_printer *pdev, FILE *prn_stream)
  * Parameters set so MSKERMIT using sixels matches native EGA.
  * COBE/DMR prefers (145, 100, 56.8, 28.5) to match its program DPSI.
  */
-private dev_proc_print_page(sxlcrt_print_page);
+static dev_proc_print_page(sxlcrt_print_page);
 gx_device_printer gs_sxlcrt_device =
     prn_device(sixel_procs,
                "sxlcrt",
@@ -249,7 +249,7 @@ gx_device_printer gs_sxlcrt_device =
 /* leave sixel graphics mode, home cursor */
 #define SXLCRT_EJECT "\033\\\033[23;0H"
 
-private int
+static int
 sxlcrt_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
     return (sixel_print_page(pdev,prn_stream,SXLCRT_INIT,SXLCRT_EJECT));
@@ -259,7 +259,7 @@ sxlcrt_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
 /* Open the printer in text mode before gdev_prn_output_page */
 /* opens it in binary mode. */
-private int
+static int
 sixel_output_page(gx_device *pdev, int num_copies, int flush)
 {	int code = gdev_prn_open_printer(pdev, 0);
 	if ( code < 0 )
@@ -269,7 +269,7 @@ sixel_output_page(gx_device *pdev, int num_copies, int flush)
 
 /* Send the page to the printer. */
 /* Keep all lines <= 80 chars */
-private int
+static int
 sixel_print_page(gx_device_printer *pdev, FILE *prn_stream,
                  const char *init, const char *eject)
 {

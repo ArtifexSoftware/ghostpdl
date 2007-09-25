@@ -24,12 +24,12 @@
 #include "ifilter.h"
 
 /* Define null handlers for the BCP out-of-band signals. */
-private int
+static int
 no_bcp_signal_interrupt(stream_state * st)
 {
     return 0;
 }
-private int
+static int
 no_bcp_request_status(stream_state * st)
 {
     return 0;
@@ -37,7 +37,7 @@ no_bcp_request_status(stream_state * st)
 
 /* <source> BCPEncode/filter <file> */
 /* <source> <dict> BCPEncode/filter <file> */
-private int
+static int
 zBCPE(i_ctx_t *i_ctx_p)
 {
     return filter_write_simple(i_ctx_p, &s_BCPE_template);
@@ -45,7 +45,7 @@ zBCPE(i_ctx_t *i_ctx_p)
 
 /* <target> BCPDecode/filter <file> */
 /* <target> <dict> BCPDecode/filter <file> */
-private int
+static int
 zBCPD(i_ctx_t *i_ctx_p)
 {
     stream_BCPD_state state;
@@ -57,7 +57,7 @@ zBCPD(i_ctx_t *i_ctx_p)
 
 /* <source> TBCPEncode/filter <file> */
 /* <source> <dict> TBCPEncode/filter <file> */
-private int
+static int
 zTBCPE(i_ctx_t *i_ctx_p)
 {
     return filter_write_simple(i_ctx_p, &s_TBCPE_template);
@@ -65,7 +65,7 @@ zTBCPE(i_ctx_t *i_ctx_p)
 
 /* <target> TBCPDecode/filter <file> */
 /* <target> <dict> TBCPDecode/filter <file> */
-private int
+static int
 zTBCPD(i_ctx_t *i_ctx_p)
 {
     stream_BCPD_state state;

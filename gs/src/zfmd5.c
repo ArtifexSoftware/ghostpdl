@@ -25,7 +25,7 @@
 
 /* <source> MD5Encode/filter <file> */
 /* <source> <dict> MD5Encode/filter <file> */
-private int
+static int
 zMD5E(i_ctx_t *i_ctx_p)
 {
     return filter_write_simple(i_ctx_p, &s_MD5E_template);

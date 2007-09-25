@@ -68,7 +68,7 @@ int (*scan_comment_proc) (const byte *, uint) = NULL;
 /* ------ Dynamic strings ------ */
 
 /* Begin collecting a dynamically allocated string. */
-inline private void
+static inline void
 dynamic_init(da_ptr pda, gs_memory_t *mem)
 {
     pda->is_dynamic = false;
@@ -78,7 +78,7 @@ dynamic_init(da_ptr pda, gs_memory_t *mem)
 }
 
 /* Free a dynamic string. */
-private void
+static void
 dynamic_free(da_ptr pda)
 {
     if (pda->is_dynamic)
@@ -87,7 +87,7 @@ dynamic_free(da_ptr pda)
 
 /* Resize a dynamic string. */
 /* If the allocation fails, return e_VMerror; otherwise, return 0. */
-private int
+static int
 dynamic_resize(da_ptr pda, uint new_size)
 {
     uint old_size = da_size(pda);
@@ -117,7 +117,7 @@ dynamic_resize(da_ptr pda, uint new_size)
 /* Return 0 if the allocation failed, the new 'next' ptr if OK. */
 /* Return 0 or an error code, updating pda->next to point to the first */
 /* available byte after growing. */
-private int
+static int
 dynamic_grow(da_ptr pda, byte * next, uint max_size)
 {
     uint old_size = da_size(pda);
@@ -139,7 +139,7 @@ dynamic_grow(da_ptr pda, byte * next, uint max_size)
 
 /* Ensure that a dynamic string is either on the heap or in the */
 /* private buffer. */
-private void
+static void
 dynamic_save(da_ptr pda)
 {
     if (!pda->is_dynamic && pda->base != pda->buf) {
@@ -150,7 +150,7 @@ dynamic_save(da_ptr pda)
 }
 
 /* Finish collecting a dynamic string. */
-private int
+static int
 dynamic_make_string(i_ctx_t *i_ctx_p, ref * pref, da_ptr pda, byte * next)
 {
     uint size = (pda->next = next) - pda->base;
@@ -168,7 +168,7 @@ dynamic_make_string(i_ctx_t *i_ctx_p, ref * pref, da_ptr pda, byte * next)
 
 /* GC procedures */
 #define ssarray ssptr->s_ss.binary.bin_array
-private 
+static 
 CLEAR_MARKS_PROC(scanner_clear_marks)
 {
     scanner_state *const ssptr = vptr;
@@ -177,7 +177,7 @@ CLEAR_MARKS_PROC(scanner_clear_marks)
     r_clear_attrs(&ssarray, l_mark);
     r_clear_attrs(&ssptr->s_error.object, l_mark);
 }
-private 
+static 
 ENUM_PTRS_WITH(scanner_enum_ptrs, scanner_state *ssptr) return 0;
 case 0:
     ENUM_RETURN_REF(&ssptr->s_file);
@@ -194,7 +194,7 @@ case 3:
 	return 0;
     ENUM_RETURN_REF(&ssarray);
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(scanner_reloc_ptrs, scanner_state *ssptr)
+static RELOC_PTRS_WITH(scanner_reloc_ptrs, scanner_state *ssptr)
 {
     RELOC_REF_VAR(ssptr->s_file);
     r_clear_attrs(&ssptr->s_file, l_mark);
@@ -334,7 +334,7 @@ scan_handle_refill(i_ctx_t *i_ctx_p, scanner_state * sstate,
  * Handle a comment.  The 'saved' argument is needed only for
  * tracing printout.
  */
-private int
+static int
 scan_comment(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate,
 	     const byte * base, const byte * end, bool saved)
 {

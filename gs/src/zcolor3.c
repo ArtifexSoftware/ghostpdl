@@ -34,7 +34,7 @@
  * only under controlled conditions. Hence, it does not do any operand
  * checking.
  */
-private int
+static int
 zsetuseciecolor(i_ctx_t * i_ctx_p)
 {
     os_ptr  op = osp;
@@ -45,7 +45,7 @@ zsetuseciecolor(i_ctx_t * i_ctx_p)
 }
 
 /* - .currentrenderingintent <int> */
-private int
+static int
 zcurrentrenderingintent(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -58,7 +58,7 @@ zcurrentrenderingintent(i_ctx_t *i_ctx_p)
 /* <int> .setrenderingintent - 
  * See the comment in gsstate.c about the argumet interepretation.
  */
-private int
+static int
 zsetrenderingintent(i_ctx_t * i_ctx_p)
 {
     os_ptr op = osp;

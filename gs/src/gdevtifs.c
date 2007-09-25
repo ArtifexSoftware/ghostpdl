@@ -50,7 +50,7 @@ typedef struct TIFF_std_directory_values_s {
     char softwareValue[maxSoftware];	/* Software indirect value */
     char dateTimeValue[20];	/* DateTime indirect value */
 } TIFF_std_directory_values;
-private const TIFF_std_directory_entries std_entries_initial =
+static const TIFF_std_directory_entries std_entries_initial =
 {
     {TIFFTAG_SubFileType, TIFF_LONG, 1, SubFileType_page},
     {TIFFTAG_ImageWidth, TIFF_LONG, 1},
@@ -71,7 +71,7 @@ private const TIFF_std_directory_entries std_entries_initial =
     {TIFFTAG_DateTime, TIFF_ASCII | TIFF_INDIRECT, 20,
      offset_of(TIFF_std_directory_values, dateTimeValue[0])}
 };
-private const TIFF_std_directory_values std_values_initial =
+static const TIFF_std_directory_values std_values_initial =
 {
     0,
     {0, 1},
@@ -82,7 +82,7 @@ private const TIFF_std_directory_values std_values_initial =
 
 /* Fix up tag values on big-endian machines if necessary. */
 #if arch_is_big_endian
-private void
+static void
 tiff_fixup_tag(TIFF_dir_entry * dp)
 {
     switch (dp->type) {

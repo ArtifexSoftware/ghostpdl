@@ -11,8 +11,8 @@
 
 /* The device descriptor */
 
-private dev_proc_print_page(lbp310PrintPage);
-private dev_proc_print_page(lbp320PrintPage);
+static dev_proc_print_page(lbp310PrintPage);
+static dev_proc_print_page(lbp320PrintPage);
 
 gx_device_printer far_data gs_lbp310_device =
         prn_device(prn_std_procs,
@@ -56,7 +56,7 @@ struct	ppi
 		int	id;
 	};
 
-private	const struct	ppi PaperInfo[] =
+static	const struct	ppi PaperInfo[] =
         {
 		{2100, 2960, 14}, /* A4 */
 		{1485, 2098, 16}, /* A5 */
@@ -65,10 +65,10 @@ private	const struct	ppi PaperInfo[] =
 		{2100, 2790, 14}  /* Letter */
 	};
 
-private void BoundImage(gx_device_printer *, struct bounding *);
-private long CompressImage(gx_device_printer *, struct bounding *, FILE *, const char *);
+static void BoundImage(gx_device_printer *, struct bounding *);
+static long CompressImage(gx_device_printer *, struct bounding *, FILE *, const char *);
 
-private int
+static int
 lbp310PrintPage(gx_device_printer *pDev, FILE *fp)
 {
 	int	i;
@@ -90,7 +90,7 @@ lbp310PrintPage(gx_device_printer *pDev, FILE *fp)
 	return(0);
 }
 
-private int
+static int
 lbp320PrintPage(gx_device_printer *pDev, FILE *fp)
 {
 	int	i;
@@ -120,7 +120,7 @@ lbp320PrintPage(gx_device_printer *pDev, FILE *fp)
 	return(0);
 }
 
-private void
+static void
 BoundImage(gx_device_printer *pDev, struct bounding *pBox)
 {
 	int	x, y, flag;
@@ -175,7 +175,7 @@ BoundImage(gx_device_printer *pDev, struct bounding *pBox)
 	gs_free(gs_lib_ctx_get_non_gc_memory_t(), Buf, 1, LineSize, "LineBuffer");
 }
 
-private long
+static long
 CompressImage(gx_device_printer *pDev, struct bounding *pBox, FILE *fp, const char *format)
 {
 	int	x, y, i, count = 255;

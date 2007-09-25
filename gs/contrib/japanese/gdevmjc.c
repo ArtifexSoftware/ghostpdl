@@ -143,31 +143,31 @@ copies.  */
 #define MJ_HEAD_ROWS_COLOUR 16
 
 /* Colour mapping procedures */
-private dev_proc_map_rgb_color (gdev_mjc_map_rgb_color);
-private dev_proc_map_color_rgb (gdev_mjc_map_color_rgb);
+static dev_proc_map_rgb_color (gdev_mjc_map_rgb_color);
+static dev_proc_map_color_rgb (gdev_mjc_map_color_rgb);
 
 /* Print-page, properties and miscellaneous procedures */
-private dev_proc_open_device(mj700v2c_open);
-private dev_proc_open_device(mj500c_open);
-private dev_proc_open_device(mj6000c_open);
-private dev_proc_open_device(mj8000c_open);
-private dev_proc_print_page(mj700v2c_print_page);
-private dev_proc_print_page(mj500c_print_page);
-private dev_proc_print_page(mj6000c_print_page);
-private dev_proc_print_page(mj8000c_print_page);
+static dev_proc_open_device(mj700v2c_open);
+static dev_proc_open_device(mj500c_open);
+static dev_proc_open_device(mj6000c_open);
+static dev_proc_open_device(mj8000c_open);
+static dev_proc_print_page(mj700v2c_print_page);
+static dev_proc_print_page(mj500c_print_page);
+static dev_proc_print_page(mj6000c_print_page);
+static dev_proc_print_page(mj8000c_print_page);
 
-private dev_proc_get_params(mj_get_params);
-private dev_proc_put_params(mj700v2c_put_params);
-private dev_proc_put_params(mj500c_put_params);
+static dev_proc_get_params(mj_get_params);
+static dev_proc_put_params(mj700v2c_put_params);
+static dev_proc_put_params(mj500c_put_params);
 
-private int mj_open(gx_device * pdev, int ptype);
-private int mj_put_params(gx_device * pdev, gs_param_list * plist, int ptype);
-private int mj_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype);
-private void expand_line(word *, int, int, int);
-private int put_param_int(gs_param_list *, gs_param_name, int *, int, int, int);
-private void set_bpp(gx_device *, int);
-private void mj500c_set_bpp(gx_device *, int);
-private gx_color_index mjc_correct_color(gx_device_printer *, gx_color_index);
+static int mj_open(gx_device * pdev, int ptype);
+static int mj_put_params(gx_device * pdev, gs_param_list * plist, int ptype);
+static int mj_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype);
+static void expand_line(word *, int, int, int);
+static int put_param_int(gs_param_list *, gs_param_name, int *, int, int, int);
+static void set_bpp(gx_device *, int);
+static void mj500c_set_bpp(gx_device *, int);
+static gx_color_index mjc_correct_color(gx_device_printer *, gx_color_index);
 
 /* The device descriptors */
 struct gx_device_mj_s {
@@ -228,16 +228,16 @@ typedef struct gx_device_mj_s gx_device_mj;
 	proc_put_params\
 }
 
-private gx_device_procs mj700v2c_procs =
+static gx_device_procs mj700v2c_procs =
 mj_colour_procs(mj700v2c_open, mj_get_params, mj700v2c_put_params);
 
-private gx_device_procs mj500c_procs =
+static gx_device_procs mj500c_procs =
 mj_colour_procs(mj500c_open, mj_get_params, mj500c_put_params);
 
-private gx_device_procs mj6000c_procs =
+static gx_device_procs mj6000c_procs =
 mj_colour_procs(mj6000c_open, mj_get_params, mj700v2c_put_params);
 
-private gx_device_procs mj8000c_procs =
+static gx_device_procs mj8000c_procs =
 mj_colour_procs(mj8000c_open, mj_get_params, mj700v2c_put_params);
 
 gx_device_mj far_data gs_mj700v2c_device =
@@ -257,7 +257,7 @@ mjcmyk_device(mj8000c_procs, "mj8000c", 360, 360, BITSPERPIXEL,
           mj8000c_print_page, 1024, 1024, 1024, 1024, 1024, 0, 1, 1);
 
 /* Get the paper size code, based on width and height. */
-private int
+static int
 gdev_mjc_paper_size(gx_device *dev)
 {
   int width = dev->MediaSize[0];
@@ -269,32 +269,32 @@ gdev_mjc_paper_size(gx_device *dev)
     return PAPER_SIZE_A4;
 }
 
-private int
+static int
 mj700v2c_open(gx_device * pdev)
 {
   return mj_open(pdev, MJ700V2C);
 }
 
-private int
+static int
 mj500c_open(gx_device * pdev)
 {
   return mj_open(pdev, MJ700V2C);
 }
 
-private int
+static int
 mj6000c_open(gx_device * pdev)
 {
   return mj_open(pdev, MJ700V2C);
 }
 
-private int
+static int
 mj8000c_open(gx_device * pdev)
 {
   return mj_open(pdev, MJ700V2C);
 }
 
 /* Open the printer and set up the margins. */
-private int
+static int
 mj_open(gx_device *pdev, int ptype)
 {       /* Change the margins if necessary. */
   int xdpi = pdev->x_pixels_per_inch;
@@ -349,7 +349,7 @@ mj_open(gx_device *pdev, int ptype)
  * and control over the bits-per-pixel used in output rendering */
 /* Added properties for DeskJet 5xxC */
 
-private int
+static int
 mj_get_params(gx_device *pdev, gs_param_list *plist)
 {
 	int code = gdev_prn_get_params(pdev, plist);
@@ -370,19 +370,19 @@ mj_get_params(gx_device *pdev, gs_param_list *plist)
 }
 
 /* Put properties. */
-private int
+static int
 mj700v2c_put_params(gx_device *pdev, gs_param_list *plist)
 {
   return mj_put_params(pdev, plist, MJ700V2C);
 }
 
-private int
+static int
 mj500c_put_params(gx_device *pdev, gs_param_list *plist)
 {
   return mj_put_params(pdev, plist, MJ500C);
 }
 
-private int
+static int
 mj_put_params(gx_device *pdev,  gs_param_list *plist, int ptype)
 {
         int old_bpp = mj->color_info.depth;
@@ -587,7 +587,7 @@ mj_put_params(gx_device *pdev,  gs_param_list *plist, int ptype)
 #define min_rows (32)		/* for optimization of text image printing */
 
 
-private int 
+static int 
 mj_raster_cmd(int c_id, int in_size, byte* in, byte* buf2,
 	      gx_device_printer* pdev, FILE* prn_stream)
 {
@@ -739,7 +739,7 @@ mj_raster_cmd(int c_id, int in_size, byte* in, byte* buf2,
   return 0;
 }
 
-private int
+static int
 mj_v_skip(int n, gx_device_printer *pdev, FILE *stream)
 {
 	/* This is a kind of magic number. */
@@ -764,8 +764,7 @@ mj_v_skip(int n, gx_device_printer *pdev, FILE *stream)
 
 /* NOZ */
 
-/* private void bld_barrier( short **bar , int x ) */
-private void 
+static void 
 bld_barrier( short **bar , int x )
 {
 	int i , j;
@@ -805,7 +804,7 @@ bld_barrier( short **bar , int x )
 }
 
 
-private void
+static void
 DifSubK( int d0 , short *a4 , short *a5 )
 {
 /*
@@ -827,7 +826,7 @@ DifSubK( int d0 , short *a4 , short *a5 )
 
 
 /* a4.w , a5.w , */
-private  byte
+static  byte
 Xtal( byte bitmask , short d0 , int x , short **bar , short *b1 , short *b2 )
 {
 	short *a2;
@@ -856,7 +855,7 @@ Xtal( byte bitmask , short d0 , int x , short **bar , short *b1 , short *b2 )
 }
 
 
-private void
+static void
 xtal_plane( byte *dp , short *buf[] , byte *oP , short **bar , int plane_size , int xtalbuff_size )
 {
 	int i;
@@ -903,32 +902,32 @@ xtal_plane( byte *dp , short *buf[] , byte *oP , short **bar , int plane_size , 
 	bar[15] = p;
 }
 
-private int
+static int
 mj700v2c_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
   return mj_print_page(pdev, prn_stream, MJ700V2C);
 }
 
-private int
+static int
 mj500c_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
   return mj_print_page(pdev, prn_stream, MJ500C);
 }
 
-private int
+static int
 mj6000c_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
   return mj_print_page(pdev, prn_stream, MJ6000C);
 }
 
-private int
+static int
 mj8000c_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
   return mj_print_page(pdev, prn_stream, MJ8000C);
 }
 
 /* Send the page to the printer.  Compress each scan line. */
-private int
+static int
 mj_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 {
 /*  int line_size = gdev_prn_rasterwidth(pdev, 0); */
@@ -1402,7 +1401,7 @@ mj_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
   return 0;
 }
 
-private void
+static void
 mj_color_correct(gx_color_value *Rptr ,gx_color_value *Gptr , gx_color_value *Bptr )
 								/* R,G,B : 0 to 255 */
 {
@@ -1508,7 +1507,7 @@ mj_color_correct(gx_color_value *Rptr ,gx_color_value *Gptr , gx_color_value *Bp
  * and correct the greenish cast resulting from an equal mix of the
  * c, m, y, inks by reducing the cyan component to give a truer black.
  */
-private gx_color_index
+static gx_color_index
 gdev_mjc_map_rgb_color(gx_device *pdev, const gx_color_value cv[])
 {
   gx_color_value r, g, b;
@@ -1577,7 +1576,7 @@ gdev_mjc_map_rgb_color(gx_device *pdev, const gx_color_value cv[])
 }
     
 /* Map a color index to a r-g-b color. */
-private int
+static int
 gdev_mjc_map_color_rgb(gx_device *pdev, gx_color_index color,
 			    gx_color_value prgb[3])
 {
@@ -1637,7 +1636,7 @@ gdev_mjc_map_color_rgb(gx_device *pdev, gx_color_index color,
  *       (b)    16 -> 32 bit   (2-stage)
  *   or  (c)    24 -> 32 bit   (1-stage)
  */
-private void
+static void
 expand_line(word *line, int linesize, int bpp, int ebpp)
 {
   int endline = linesize;
@@ -1678,7 +1677,7 @@ expand_line(word *line, int linesize, int bpp, int ebpp)
     }
 }
 
-private int
+static int
 put_param_int(gs_param_list *plist, gs_param_name pname, int *pvalue, int minval, int maxval, int ecode)
 {       int code, value;
         switch ( code = param_read_int(plist, pname, &value) )
@@ -1695,7 +1694,7 @@ put_param_int(gs_param_list *plist, gs_param_name pname, int *pvalue, int minval
         }
 }	
 
-private void
+static void
 set_bpp(gx_device *pdev, int bits_per_pixel)
 { gx_device_color_info *ci = &pdev->color_info;
   /* Only valid bits-per-pixel are 1, 3, 8, 16, 24, 32 */
@@ -1710,7 +1709,7 @@ set_bpp(gx_device *pdev, int bits_per_pixel)
   mj->colorcomp = (bpp == 8 ? 1 : 4);
 }
 
-private void
+static void
 mj500c_set_bpp(gx_device *pdev, int bits_per_pixel)
 { gx_device_color_info *ci = &pdev->color_info;
   /* Only valid bits-per-pixel are 1, 3, 8, 16, 24, 32 */
@@ -1725,7 +1724,7 @@ mj500c_set_bpp(gx_device *pdev, int bits_per_pixel)
   mj->colorcomp = (bpp == 8 ? 1 : 3);
 }
 
-private gx_color_index
+static gx_color_index
 mjc_correct_color(gx_device_printer *pdev, gx_color_index ci)
 {
   gx_color_index c, m, y, k, co;

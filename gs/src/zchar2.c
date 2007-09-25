@@ -23,7 +23,7 @@
 #include "ichar1.h"
 
 /* <font> <code|name> <name> <charstring> .type2execchar - */
-private int
+static int
 ztype2execchar(i_ctx_t *i_ctx_p)
 {
     return charstring_execchar(i_ctx_p, (1 << (int)ft_encrypted2));

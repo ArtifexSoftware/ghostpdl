@@ -90,11 +90,11 @@
 #define byte unsigned char
 
 /* The device descriptors */
-private dev_proc_open_device(oki4w_open);
-private dev_proc_close_device(oki4w_close);
-private dev_proc_print_page(oki4w_print_page);
+static dev_proc_open_device(oki4w_open);
+static dev_proc_close_device(oki4w_close);
+static dev_proc_print_page(oki4w_print_page);
 
-private gx_device_procs prn_hp_procs =
+static gx_device_procs prn_hp_procs =
   prn_params_procs(oki4w_open, gdev_prn_output_page, oki4w_close,
 		   gdev_prn_get_params, gdev_prn_put_params);
 
@@ -108,7 +108,7 @@ gx_device_printer far_data gs_oki4w_device =
 #define ppdev ((gx_device_printer *)pdev)
 
 /* Find out paper size code */
-private int
+static int
 oki_paper_size(gx_device *dev)
 {
 	float height_inches = dev->height / dev->y_pixels_per_inch;
@@ -121,7 +121,7 @@ oki_paper_size(gx_device *dev)
 }
 
 /* Open the printer, adjusting the margins if necessary. */
-private int
+static int
 oki4w_open(gx_device *pdev)
 {	/* Change the margins if necessary. */
 	const float *m = 0;
@@ -134,7 +134,7 @@ oki4w_open(gx_device *pdev)
 }
 
 /* oki4w_close is only here to eject odd numbered pages in duplex mode. */
-private int
+static int
 oki4w_close(gx_device *pdev)
 {
 /*
@@ -152,7 +152,7 @@ oki4w_close(gx_device *pdev)
 
 /* ------ Internal routines ------ */
 
-private int
+static int
 oki_compress(byte *src, byte *dst, int count)
 {
 	int dcnt = 0;
@@ -227,7 +227,7 @@ oki_compress(byte *src, byte *dst, int count)
 
 /* Send the page to the printer.  For speed, compress each scan line, */
 /* since computer-to-printer communication time is often a bottleneck. */
-private int
+static int
 oki4w_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
 	int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);

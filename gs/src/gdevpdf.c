@@ -48,7 +48,7 @@ private_st_pdf_substream_save();
 private_st_pdf_substream_save_element();
 
 /* GC procedures */
-private 
+static 
 ENUM_PTRS_WITH(device_pdfwrite_enum_ptrs, gx_device_pdf *pdev)
 {
     index -= gx_device_pdf_num_ptrs + gx_device_pdf_num_param_strings;
@@ -74,7 +74,7 @@ gx_device_pdf_do_param_strings(e1)
 gx_device_pdf_do_const_strings(e1)
 #undef e1
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(device_pdfwrite_reloc_ptrs, gx_device_pdf *pdev)
+static RELOC_PTRS_WITH(device_pdfwrite_reloc_ptrs, gx_device_pdf *pdev)
 {
     RELOC_PREFIX(st_device_psdf);
 #define r1(i,elt) RELOC_PTR(gx_device_pdf,elt);
@@ -102,16 +102,16 @@ RELOC_PTRS_END
 /* Even though device_pdfwrite_finalize is the same as gx_device_finalize, */
 /* we need to implement it separately because st_composite_final */
 /* declares all 3 procedures as private. */
-private void
+static void
 device_pdfwrite_finalize(void *vpdev)
 {
     gx_device_finalize(vpdev);
 }
 
 /* Driver procedures */
-private dev_proc_open_device(pdf_open);
-private dev_proc_output_page(pdf_output_page);
-private dev_proc_close_device(pdf_close);
+static dev_proc_open_device(pdf_open);
+static dev_proc_output_page(pdf_output_page);
+static dev_proc_close_device(pdf_close);
 /* Driver procedures defined in other files are declared in gdevpdfx.h. */
 
 #ifndef X_DPI
@@ -149,7 +149,7 @@ private dev_proc_close_device(pdf_close);
 /* ---------------- Device open/close ---------------- */
 
 /* Close and remove temporary files. */
-private int
+static int
 pdf_close_temp_file(gx_device_pdf *pdev, pdf_temp_file_t *ptf, int code)
 {
     int err = 0;
@@ -183,7 +183,7 @@ pdf_close_temp_file(gx_device_pdf *pdev, pdf_temp_file_t *ptf, int code)
     return
 	(code < 0 ? code : err != 0 ? gs_note_error(gs_error_ioerror) : code);
 }
-private int
+static int
 pdf_close_files(gx_device_pdf * pdev, int code)
 {
     code = pdf_close_temp_file(pdev, &pdev->pictures, code);
@@ -193,7 +193,7 @@ pdf_close_files(gx_device_pdf * pdev, int code)
 }
 
 /* Reset the state of the current page. */
-private void
+static void
 pdf_reset_page(gx_device_pdf * pdev)
 {
     pdev->page_dsc_info = gs_pdfwrite_device.page_dsc_info;
@@ -207,7 +207,7 @@ pdf_reset_page(gx_device_pdf * pdev)
 }
 
 /* Open a temporary file, with or without a stream. */
-private int
+static int
 pdf_open_temp_file(gx_device_pdf *pdev, pdf_temp_file_t *ptf)
 {
     char fmode[4];
@@ -221,7 +221,7 @@ pdf_open_temp_file(gx_device_pdf *pdev, pdf_temp_file_t *ptf)
 	return_error(gs_error_invalidfileaccess);
     return 0;
 }
-private int
+static int
 pdf_open_temp_stream(gx_device_pdf *pdev, pdf_temp_file_t *ptf)
 {
     int code = pdf_open_temp_file(pdev, ptf);
@@ -294,7 +294,7 @@ pdf_initialize_ids(gx_device_pdf * pdev)
     pdf_create_named_dict(pdev, NULL, &pdev->Pages, 0L);
 }
 
-private int
+static int
 pdf_compute_fileID(gx_device_pdf * pdev)
 {
     /* We compute a file identifier when beginning a document
@@ -330,12 +330,12 @@ pdf_compute_fileID(gx_device_pdf * pdev)
     return 0;
 }
 
-private const byte pad[32] = { 0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41, 
+static const byte pad[32] = { 0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41, 
 			       0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
 			       0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80,
 			       0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A};
 
-private inline void
+static inline void
 copy_padded(byte buf[32], gs_param_string *str)
 {
     memcpy(buf, str->data, min(str->size, 32));
@@ -343,7 +343,7 @@ copy_padded(byte buf[32], gs_param_string *str)
 	memcpy(buf + str->size, pad, 32 - str->size);
 }
 
-private void
+static void
 Adobe_magic_loop_50(byte digest[16], int key_length)
 {
     gs_md5_state_t md5;
@@ -356,7 +356,7 @@ Adobe_magic_loop_50(byte digest[16], int key_length)
     }
 }
 
-private void
+static void
 Adobe_magic_loop_19(byte *data, int data_size, const byte *key, int key_size)
 {
     stream_arcfour_state sarc4;
@@ -371,7 +371,7 @@ Adobe_magic_loop_19(byte *data, int data_size, const byte *key, int key_size)
     }
 }
 
-private int
+static int
 pdf_compute_encryption_data(gx_device_pdf * pdev)
 {
     gs_md5_state_t md5;
@@ -568,7 +568,7 @@ pdf_reset_text(gx_device_pdf * pdev)
 }
 
 /* Open the device. */
-private int
+static int
 pdf_open(gx_device * dev)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *) dev;
@@ -671,7 +671,7 @@ pdf_open(gx_device * dev)
 }
 
 /* Detect I/O errors. */
-private int
+static int
 pdf_ferror(gx_device_pdf *pdev)
 {
     fflush(pdev->file);
@@ -686,7 +686,7 @@ pdf_ferror(gx_device_pdf *pdev)
 }
 
 /* Compute the dominant text orientation of a page. */
-private int
+static int
 pdf_dominant_rotation(const pdf_text_rotation_t *ptr)
 {
     int i, imax = -1;
@@ -703,7 +703,7 @@ pdf_dominant_rotation(const pdf_text_rotation_t *ptr)
 }
 
 /* Print a Rotate command, if requested and possible. */
-private void
+static void
 pdf_print_orientation(gx_device_pdf * pdev, pdf_page_t *page)
 {
     stream *s = pdev->strm;
@@ -775,7 +775,7 @@ pdf_print_orientation(gx_device_pdf * pdev, pdf_page_t *page)
 
 
 /* Close the current page. */
-private int
+static int
 pdf_close_page(gx_device_pdf * pdev)
 {
     int page_num = ++(pdev->next_page);
@@ -884,12 +884,12 @@ pdf_close_page(gx_device_pdf * pdev)
 }
 
 /* Write the page object. */
-private double
+static double
 round_box_coord(floatp xy)
 {
     return (int)(xy * 100 + 0.5) / 100.0;
 }
-private int
+static int
 pdf_write_page(gx_device_pdf *pdev, int page_num)
 {
     long page_id = pdf_page_id(pdev, page_num);
@@ -1016,7 +1016,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
 }
 
 /* Wrap up ("output") a page. */
-private int
+static int
 pdf_output_page(gx_device * dev, int num_copies, int flush)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *) dev;
@@ -1028,7 +1028,7 @@ pdf_output_page(gx_device * dev, int num_copies, int flush)
 }
 
 /* Close the device. */
-private int
+static int
 pdf_close(gx_device * dev)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *) dev;

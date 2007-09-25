@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -215,8 +215,8 @@ extern_st(st_const_string_element);
 
 /* ================ Macros for defining structure types ================ */
 
-#define public_st public const gs_memory_struct_type_t
-#define private_st private const gs_memory_struct_type_t
+#define public_st const gs_memory_struct_type_t
+#define private_st static const gs_memory_struct_type_t
 
 /*
  * As an alternative to defining different enum_ptrs and reloc_ptrs
@@ -279,9 +279,9 @@ struct_proc_enum_ptrs(basic_enum_ptrs);
 struct_proc_reloc_ptrs(basic_reloc_ptrs);
 
 #define BASIC_PTRS(elts)\
-  private const gc_ptr_element_t elts[] =
+  static const gc_ptr_element_t elts[] =
 #define gs__st_basic_with_super_final(scope_st, stname, stype, sname, nelts, elts, sdata, supst, supoff, pfinal)\
-  private const gc_struct_data_t sdata = {\
+  static const gc_struct_data_t sdata = {\
     nelts, supoff, supst, elts\
   };\
   scope_st stname = {\
@@ -328,7 +328,7 @@ struct_proc_reloc_ptrs(basic_reloc_ptrs);
 
  */
 /*
- * We have to pull the 'private' outside the ENUM_PTRS_BEGIN and
+ * We have to pull the 'static' keyword outside the ENUM_PTRS_BEGIN and
  * RELOC_PTRS_BEGIN macros because of a bug in the Borland C++ preprocessor.
  * We also have to make sure there is more on the line after these
  * macros, so as not to confuse ansi2knr.
@@ -544,10 +544,10 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
   gs__st_complex_only(private_st, stname, stype, sname, pclear, penum, preloc, pfinal)
 
 #define gs__st_complex(scope_st, stname, stype, sname, pclear, penum, preloc, pfinal)\
-  private struct_proc_clear_marks(pclear);\
-  private struct_proc_enum_ptrs(penum);\
-  private struct_proc_reloc_ptrs(preloc);\
-  private struct_proc_finalize(pfinal);\
+  static struct_proc_clear_marks(pclear);\
+  static struct_proc_enum_ptrs(penum);\
+  static struct_proc_reloc_ptrs(preloc);\
+  static struct_proc_finalize(pfinal);\
   gs__st_complex_only(scope_st, stname, stype, sname, pclear, penum, preloc, pfinal)
 #define gs_public_st_complex(stname, stype, sname, pclear, penum, preloc, pfinal)\
   gs__st_complex(public_st, stname, stype, sname, pclear, penum, preloc, pfinal)
@@ -557,8 +557,8 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
 	/* Composite structures with their own enum and reloc procedures. */
 
 #define gs__st_composite(scope_st, stname, stype, sname, penum, preloc)\
-  private struct_proc_enum_ptrs(penum);\
-  private struct_proc_reloc_ptrs(preloc);\
+  static struct_proc_enum_ptrs(penum);\
+  static struct_proc_reloc_ptrs(preloc);\
   gs__st_complex_only(scope_st, stname, stype, sname, 0, penum, preloc, 0)
 #define gs_public_st_composite(stname, stype, sname, penum, preloc)\
   gs__st_composite(public_st, stname, stype, sname, penum, preloc)
@@ -568,8 +568,8 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
 	/* Composite structures with inherited finalization. */
 
 #define gs__st_composite_use_final(scope_st, stname, stype, sname, penum, preloc, pfinal)\
-  private struct_proc_enum_ptrs(penum);\
-  private struct_proc_reloc_ptrs(preloc);\
+  static struct_proc_enum_ptrs(penum);\
+  static struct_proc_reloc_ptrs(preloc);\
   gs__st_complex_only(scope_st, stname, stype, sname, 0, penum, preloc, pfinal)
 #define gs_public_st_composite_use_final(stname, stype, sname, penum, preloc, pfinal)\
   gs__st_composite_use_final(public_st, stname, stype, sname, penum, preloc, pfinal)
@@ -579,7 +579,7 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
 	/* Composite structures with finalization. */
 
 #define gs__st_composite_final(scope_st, stname, stype, sname, penum, preloc, pfinal)\
-  private struct_proc_finalize(pfinal);\
+  static struct_proc_finalize(pfinal);\
   gs__st_composite_use_final(scope_st, stname, stype, sname, penum, preloc, pfinal)
 #define gs_public_st_composite_final(stname, stype, sname, penum, preloc, pfinal)\
   gs__st_composite_final(public_st, stname, stype, sname, penum, preloc, pfinal)
@@ -603,13 +603,13 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
 	/* enum_ptrs procedure always return the same number of pointers. */
 
 #define gs__st_element(scope_st, stname, stype, sname, penum, preloc, basest)\
-  private ENUM_PTRS_BEGIN_PROC(penum) {\
+  static ENUM_PTRS_BEGIN_PROC(penum) {\
     uint count = size / (uint)sizeof(stype);\
     if ( count == 0 ) return 0;\
     return ENUM_USING(basest, (EV_CONST char *)vptr + (index % count) * sizeof(stype),\
       sizeof(stype), index / count);\
   } ENUM_PTRS_END_PROC\
-  private RELOC_PTRS_BEGIN(preloc) {\
+  static RELOC_PTRS_BEGIN(preloc) {\
     uint count = size / (uint)sizeof(stype);\
     for ( ; count; count--, vptr = (char *)vptr + sizeof(stype) )\
       RELOC_USING(basest, vptr, sizeof(stype));\
@@ -625,10 +625,10 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
 	/* Fortunately, C's bizarre 'const' syntax does what we want here. */
 
 #define gs__st_ptr(scope_st, stname, stype, sname, penum, preloc)\
-  private ENUM_PTRS_BEGIN(penum) return 0;\
+  static ENUM_PTRS_BEGIN(penum) return 0;\
     case 0: return ENUM_OBJ(*(stype const *)vptr);\
   ENUM_PTRS_END\
-  private RELOC_PTRS_BEGIN(preloc) ;\
+  static RELOC_PTRS_BEGIN(preloc) ;\
     RELOC_VAR(*(stype *)vptr);\
   RELOC_PTRS_END\
   gs__st_composite_only(scope_st, stname, stype, sname, penum, preloc)
@@ -830,10 +830,10 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
 	/* which would perturb things too much right now. */
 
 #define gs__st_suffix_add0_final(scope_st, stname, stype, sname, penum, preloc, pfinal, supstname)\
-  private ENUM_PTRS_BEGIN_PROC(penum) {\
+  static ENUM_PTRS_BEGIN_PROC(penum) {\
     ENUM_PREFIX(supstname, 0);\
   } ENUM_PTRS_END_PROC\
-  private RELOC_PTRS_BEGIN(preloc) {\
+  static RELOC_PTRS_BEGIN(preloc) {\
     RELOC_PREFIX(supstname);\
   } RELOC_PTRS_END\
   gs__st_complex_only(scope_st, stname, stype, sname, 0, penum, preloc, pfinal)

@@ -38,13 +38,13 @@
  * by mem_mono_strip_copy_rop (see below).  Currently we just punt to
  * the slow, general case; we could do a lot better.
  */
-private int
+static int
 mem_gray_rop_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 			    gx_color_index color)
 {
     return -1;
 }
-private int
+static int
 mem_gray_rop_copy_mono(gx_device * dev, const byte * data,
 		       int dx, int raster, gx_bitmap_id id,
 		       int x, int y, int w, int h,
@@ -52,7 +52,7 @@ mem_gray_rop_copy_mono(gx_device * dev, const byte * data,
 {
     return -1;
 }
-private int
+static int
 mem_gray_rop_strip_tile_rectangle(gx_device * dev,
 				  const gx_strip_bitmap * tiles,
 				  int x, int y, int w, int h,

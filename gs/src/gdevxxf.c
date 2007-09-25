@@ -35,12 +35,12 @@ extern const byte gs_map_std_to_iso[256];
 extern const byte gs_map_iso_to_std[256];
 
 /* Declare the xfont procedures */
-private xfont_proc_lookup_font(x_lookup_font);
-private xfont_proc_char_xglyph(x_char_xglyph);
-private xfont_proc_char_metrics(x_char_metrics);
-private xfont_proc_render_char(x_render_char);
-private xfont_proc_release(x_release);
-private const gx_xfont_procs x_xfont_procs =
+static xfont_proc_lookup_font(x_lookup_font);
+static xfont_proc_char_xglyph(x_char_xglyph);
+static xfont_proc_char_metrics(x_char_metrics);
+static xfont_proc_render_char(x_render_char);
+static xfont_proc_release(x_release);
+static const gx_xfont_procs x_xfont_procs =
 {
     x_lookup_font,
     x_char_xglyph,
@@ -73,7 +73,7 @@ gs_private_st_dev_ptrs1(st_x_xfont, x_xfont, "x_xfont",
 /* ---------------- Utilities ---------------- */
 
 /* Search one set of font maps for a font with a given name. */
-private x11fontmap *
+static x11fontmap *
 find_fontmap(x11fontmap *fmps, const byte *fname, uint len)
 {
     x11fontmap *fmp = fmps;
@@ -88,7 +88,7 @@ find_fontmap(x11fontmap *fmps, const byte *fname, uint len)
 }
 
 /* Find an X font with a given name, encoding, and size. */
-private char *
+static char *
 find_x_font(gx_device_X *xdev, char x11template[256], x11fontmap *fmp,
 	    const char *encoding_name, x11fontlist *fls, int xheight,
 	    bool *scalable_font)
@@ -127,7 +127,7 @@ find_x_font(gx_device_X *xdev, char x11template[256], x11fontmap *fmp,
 /* ---------------- xfont procedures ---------------- */
 
 /* Look up a font. */
-private gx_xfont *
+static gx_xfont *
 x_lookup_font(gx_device * dev, const byte * fname, uint len,
 	    int encoding_index, const gs_uid * puid, const gs_matrix * pmat,
 	      gs_memory_t * mem)
@@ -256,7 +256,7 @@ sym:	fmp = find_fontmap(fmp, fname, len);
 }
 
 /* Convert a character name or index to an xglyph code. */
-private gx_xglyph
+static gx_xglyph
 x_char_xglyph(gx_xfont * xf, gs_char chr, int encoding_index,
 	      gs_glyph glyph, const gs_const_string *glyph_name)
 {
@@ -289,7 +289,7 @@ x_char_xglyph(gx_xfont * xf, gs_char chr, int encoding_index,
 }
 
 /* Get the metrics for a character. */
-private int
+static int
 x_char_metrics(gx_xfont * xf, gx_xglyph xg, int wmode,
 	       gs_point * pwidth, gs_int_rect * pbbox)
 {
@@ -328,7 +328,7 @@ x_char_metrics(gx_xfont * xf, gx_xglyph xg, int wmode,
 }
 
 /* Render a character. */
-private int
+static int
 x_render_char(gx_xfont * xf, gx_xglyph xg, gx_device * dev,
 	      int xo, int yo, gx_color_index color, int required)
 {
@@ -453,7 +453,7 @@ x_render_char(gx_xfont * xf, gx_xglyph xg, gx_device * dev,
 }
 
 /* Release an xfont. */
-private int
+static int
 x_release(gx_xfont * xf, gs_memory_t * mem)
 {
 #if 0

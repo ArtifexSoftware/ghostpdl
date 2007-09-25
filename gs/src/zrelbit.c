@@ -37,7 +37,7 @@
   }
 
 /* Forward references */
-private int obj_le(os_ptr, os_ptr);
+static int obj_le(os_ptr, os_ptr);
 
 /* <obj1> <obj2> eq <bool> */
 int
@@ -124,7 +124,7 @@ zlt(i_ctx_t *i_ctx_p)
 
 /* <num1> <num2> .max <num> */
 /* <str1> <str2> .max <str> */
-private int
+static int
 zmax(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -141,7 +141,7 @@ zmax(i_ctx_t *i_ctx_p)
 
 /* <num1> <num2> .min <num> */
 /* <str1> <str2> .min <str> */
-private int
+static int
 zmin(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -269,7 +269,7 @@ zbitshift(i_ctx_t *i_ctx_p)
 /* ------ Extensions ------ */
 
 /* <obj1> <obj2> .identeq <bool> */
-private int
+static int
 zidenteq(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -283,7 +283,7 @@ zidenteq(i_ctx_t *i_ctx_p)
 }
 
 /* <obj1> <obj2> .identne <bool> */
-private int
+static int
 zidentne(i_ctx_t *i_ctx_p)
 {
 	/* We'll just be lazy and use .identeq. */
@@ -322,7 +322,7 @@ const op_def zrelbit_op_defs[] =
 /* Compare two operands (both numeric, or both strings). */
 /* Return 1 if op[-1] <= op[0], 0 if op[-1] > op[0], */
 /* or a (negative) error code. */
-private int
+static int
 obj_le(register os_ptr op1, register os_ptr op)
 {
     switch (r_type(op1)) {

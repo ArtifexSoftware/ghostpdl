@@ -29,7 +29,7 @@ extern_gx_device_halftone_list();
 /*
  * Construct a standard-representation order from a threshold array.
  */
-private int
+static int
 construct_ht_order_default(gx_ht_order *porder, const byte *thresholds)
 {
     gx_ht_bit *bits = (gx_ht_bit *)porder->bit_data;
@@ -46,7 +46,7 @@ construct_ht_order_default(gx_ht_order *porder, const byte *thresholds)
  * Uses porder->width, num_levels, num_bits, levels, bit_data;
  * sets porder->levels[], bit_data[].
  */
-private int
+static int
 construct_ht_order_short(gx_ht_order *porder, const byte *thresholds)
 {
     uint size = porder->num_bits;
@@ -117,7 +117,7 @@ construct_ht_order_short(gx_ht_order *porder, const byte *thresholds)
 }
 
 /* Return the bit coordinate using the standard representation. */
-private int
+static int
 ht_bit_index_default(const gx_ht_order *porder, uint index, gs_int_point *ppt)
 {
     const gx_ht_bit *phtb = &((const gx_ht_bit *)porder->bit_data)[index];
@@ -132,7 +132,7 @@ ht_bit_index_default(const gx_ht_order *porder, uint index, gs_int_point *ppt)
 }
 
 /* Return the bit coordinate using the short representation. */
-private int
+static int
 ht_bit_index_short(const gx_ht_order *porder, uint index, gs_int_point *ppt)
 {
     uint bit_index = ((const ushort *)porder->bit_data)[index];
@@ -144,7 +144,7 @@ ht_bit_index_short(const gx_ht_order *porder, uint index, gs_int_point *ppt)
 }
 
 /* Update a halftone tile using the default order representation. */
-private int
+static int
 render_ht_default(gx_ht_tile *pbt, int level, const gx_ht_order *porder)
 {
     int old_level = pbt->level;
@@ -206,7 +206,7 @@ render_ht_default(gx_ht_tile *pbt, int level, const gx_ht_order *porder)
 }
 
 /* Update a halftone tile using the short representation. */
-private int
+static int
 render_ht_short(gx_ht_tile *pbt, int level, const gx_ht_order *porder)
 {
     int old_level = pbt->level;

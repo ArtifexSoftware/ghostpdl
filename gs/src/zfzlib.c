@@ -26,7 +26,7 @@
 #include "ifwpred.h"
 
 /* Common setup for zlib (Flate) filter */
-private int
+static int
 filter_zlib(i_ctx_t *i_ctx_p, stream_zlib_state *pzls)
 {
     os_ptr op = osp;
@@ -40,7 +40,7 @@ filter_zlib(i_ctx_t *i_ctx_p, stream_zlib_state *pzls)
 
 /* <source> zlibEncode/filter <file> */
 /* <source> <dict> zlibEncode/filter <file> */
-private int
+static int
 zzlibE(i_ctx_t *i_ctx_p)
 {
     stream_zlib_state zls;
@@ -53,7 +53,7 @@ zzlibE(i_ctx_t *i_ctx_p)
 
 /* <target> zlibDecode/filter <file> */
 /* <target> <dict> zlibDecode/filter <file> */
-private int
+static int
 zzlibD(i_ctx_t *i_ctx_p)
 {
     stream_zlib_state zls;
@@ -64,7 +64,7 @@ zzlibD(i_ctx_t *i_ctx_p)
 
 /* <source> FlateEncode/filter <file> */
 /* <source> <dict> FlateEncode/filter <file> */
-private int
+static int
 zFlateE(i_ctx_t *i_ctx_p)
 {
     stream_zlib_state zls;
@@ -78,7 +78,7 @@ zFlateE(i_ctx_t *i_ctx_p)
 
 /* <target> FlateDecode/filter <file> */
 /* <target> <dict> FlateDecode/filter <file> */
-private int
+static int
 zFlateD(i_ctx_t *i_ctx_p)
 {
     stream_zlib_state zls;

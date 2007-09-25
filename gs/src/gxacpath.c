@@ -28,20 +28,20 @@
 #include "gzacpath.h"
 
 /* Device procedures */
-private dev_proc_open_device(accum_open_device);
-private dev_proc_close_device(accum_close);
-private dev_proc_fill_rectangle(accum_fill_rectangle);
-private dev_proc_pattern_manage(accum_pattern_manage);
+static dev_proc_open_device(accum_open_device);
+static dev_proc_close_device(accum_close);
+static dev_proc_fill_rectangle(accum_fill_rectangle);
+static dev_proc_pattern_manage(accum_pattern_manage);
 
 /* GC information */
 extern_st(st_clip_list);
-private
+static
 ENUM_PTRS_WITH(device_cpath_accum_enum_ptrs, gx_device_cpath_accum *pdev)
     if (index >= st_device_max_ptrs)
 	return ENUM_USING(st_clip_list, &pdev->list, sizeof(gx_clip_list), index - st_device_max_ptrs);
     ENUM_PREFIX(st_device, 0);
 ENUM_PTRS_END
-private
+static
 RELOC_PTRS_WITH(device_cpath_accum_reloc_ptrs, gx_device_cpath_accum *pdev)
 {   RELOC_PREFIX(st_device);
     RELOC_USING(st_clip_list, &pdev->list, size);
@@ -51,7 +51,7 @@ public_st_device_cpath_accum();
 
 /* The device descriptor */
 /* Many of these procedures won't be called; they are set to NULL. */
-private const gx_device_cpath_accum gs_cpath_accum_device =
+static const gx_device_cpath_accum gs_cpath_accum_device =
 {std_device_std_body(gx_device_cpath_accum, 0, "clip list accumulator",
 		     0, 0, 1, 1),
  {accum_open_device,
@@ -217,7 +217,7 @@ gx_cpath_intersect_path_slow(gx_clip_path * pcpath, gx_path * ppath,
 
 #ifdef DEBUG
 /* Validate a clipping path after accumulation. */
-private bool
+static bool
 clip_list_validate(const gx_clip_list * clp)
 {
     if (clp->count <= 1)
@@ -261,7 +261,7 @@ accum_open_device(register gx_device * dev)
 }
 
 /* Close the accumulation device. */
-private int
+static int
 accum_close(gx_device * dev)
 {
     gx_device_cpath_accum * const adev = (gx_device_cpath_accum *)dev;
@@ -313,7 +313,7 @@ static const gx_clip_rect clip_head_rect = {
 static const gx_clip_rect clip_tail_rect = {
     0, 0, max_int, max_int, max_int, max_int
 };
-private gx_clip_rect *
+static gx_clip_rect *
 accum_alloc_rect(gx_device_cpath_accum * adev)
 {
     gs_memory_t *mem = adev->list_memory;
@@ -392,7 +392,7 @@ accum_alloc_rect(gx_device_cpath_accum * adev)
  * rectangle, we take special care to merge Y-adjacent rectangles when
  * this is possible.
  */
-private int
+static int
 accum_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 		     gx_color_index color)
 {

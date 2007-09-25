@@ -39,14 +39,14 @@
 #endif
 
 /* The device descriptor */
-private dev_proc_get_params(rinkj_get_params);
-private dev_proc_put_params(rinkj_put_params);
-private dev_proc_print_page(rinkj_print_page);
-private dev_proc_map_color_rgb(rinkj_map_color_rgb);
-private dev_proc_get_color_mapping_procs(get_rinkj_color_mapping_procs);
-private dev_proc_get_color_comp_index(rinkj_get_color_comp_index);
-private dev_proc_encode_color(rinkj_encode_color);
-private dev_proc_decode_color(rinkj_decode_color);
+static dev_proc_get_params(rinkj_get_params);
+static dev_proc_put_params(rinkj_put_params);
+static dev_proc_print_page(rinkj_print_page);
+static dev_proc_map_color_rgb(rinkj_map_color_rgb);
+static dev_proc_get_color_mapping_procs(get_rinkj_color_mapping_procs);
+static dev_proc_get_color_comp_index(rinkj_get_color_comp_index);
+static dev_proc_encode_color(rinkj_encode_color);
+static dev_proc_decode_color(rinkj_decode_color);
 
 /*
  * Type definitions associated with the fixed color model names.
@@ -175,19 +175,19 @@ typedef struct rinkj_device_s {
 }
 
 
-private const fixed_colorant_names_list DeviceGrayComponents = {
+static const fixed_colorant_names_list DeviceGrayComponents = {
 	"Gray",
 	0		/* List terminator */
 };
 
-private const fixed_colorant_names_list DeviceRGBComponents = {
+static const fixed_colorant_names_list DeviceRGBComponents = {
 	"Red",
 	"Green",
 	"Blue",
 	0		/* List terminator */
 };
 
-private const fixed_colorant_names_list DeviceCMYKComponents = {
+static const fixed_colorant_names_list DeviceCMYKComponents = {
 	"Cyan",
 	"Magenta",
 	"Yellow",
@@ -196,7 +196,7 @@ private const fixed_colorant_names_list DeviceCMYKComponents = {
 };
 
 
-private const gx_device_procs spot_cmyk_procs = device_procs(get_rinkj_color_mapping_procs);
+static const gx_device_procs spot_cmyk_procs = device_procs(get_rinkj_color_mapping_procs);
 
 const rinkj_device gs_rinkj_device =
 {   
@@ -224,7 +224,7 @@ const rinkj_device gs_rinkj_device =
  * The following procedures are used to map the standard color spaces into
  * the color components for the spotrgb device.
  */
-private void
+static void
 gray_cs_to_spotrgb_cm(gx_device * dev, frac gray, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
@@ -235,7 +235,7 @@ gray_cs_to_spotrgb_cm(gx_device * dev, frac gray, frac out[])
         out[2 + i] = 0;
 }
 
-private void
+static void
 rgb_cs_to_spotrgb_cm(gx_device * dev, const gs_imager_state *pis,
 				  frac r, frac g, frac b, frac out[])
 {
@@ -249,7 +249,7 @@ rgb_cs_to_spotrgb_cm(gx_device * dev, const gs_imager_state *pis,
         out[2 + i] = 0;
 }
 
-private void
+static void
 cmyk_cs_to_spotrgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
@@ -260,7 +260,7 @@ cmyk_cs_to_spotrgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[
         out[2 + i] = 0;
 };
 
-private void
+static void
 gray_cs_to_spotcmyk_cm(gx_device * dev, frac gray, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
@@ -272,7 +272,7 @@ gray_cs_to_spotcmyk_cm(gx_device * dev, frac gray, frac out[])
         out[3 + i] = 0;
 }
 
-private void
+static void
 rgb_cs_to_spotcmyk_cm(gx_device * dev, const gs_imager_state *pis,
 				   frac r, frac g, frac b, frac out[])
 {
@@ -286,7 +286,7 @@ rgb_cs_to_spotcmyk_cm(gx_device * dev, const gs_imager_state *pis,
 	out[4 + i] = 0;
 }
 
-private void
+static void
 cmyk_cs_to_spotcmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
@@ -302,7 +302,7 @@ cmyk_cs_to_spotcmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out
 	out[4 + i] = 0;
 };
 
-private void
+static void
 cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
@@ -319,7 +319,7 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 	out[4 + i] = 0;
 };
 
-private void
+static void
 gray_cs_to_spotn_cm(gx_device * dev, frac gray, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
@@ -327,7 +327,7 @@ gray_cs_to_spotn_cm(gx_device * dev, frac gray, frac out[])
     cmyk_cs_to_spotn_cm(dev, 0, 0, 0, frac_1 - gray, out);
 }
 
-private void
+static void
 rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
 				   frac r, frac g, frac b, frac out[])
 {
@@ -339,15 +339,15 @@ rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
 			out);
 }
 
-private const gx_cm_color_map_procs spotRGB_procs = {
+static const gx_cm_color_map_procs spotRGB_procs = {
     gray_cs_to_spotrgb_cm, rgb_cs_to_spotrgb_cm, cmyk_cs_to_spotrgb_cm
 };
 
-private const gx_cm_color_map_procs spotCMYK_procs = {
+static const gx_cm_color_map_procs spotCMYK_procs = {
     gray_cs_to_spotcmyk_cm, rgb_cs_to_spotcmyk_cm, cmyk_cs_to_spotcmyk_cm
 };
 
-private const gx_cm_color_map_procs spotN_procs = {
+static const gx_cm_color_map_procs spotN_procs = {
     gray_cs_to_spotn_cm, rgb_cs_to_spotn_cm, cmyk_cs_to_spotn_cm
 };
 
@@ -356,7 +356,7 @@ private const gx_cm_color_map_procs spotN_procs = {
  * to color model conversion routines.
  */
 
-private const gx_cm_color_map_procs *
+static const gx_cm_color_map_procs *
 get_rinkj_color_mapping_procs(const gx_device * dev)
 {
     const rinkj_device *rdev = (const rinkj_device *)dev;
@@ -374,7 +374,7 @@ get_rinkj_color_mapping_procs(const gx_device * dev)
 /*
  * Encode a list of colorant values into a gx_color_index_value.
  */
-private gx_color_index
+static gx_color_index
 rinkj_encode_color(gx_device *dev, const gx_color_value colors[])
 {
     int bpc = ((rinkj_device *)dev)->bitspercomponent;
@@ -393,7 +393,7 @@ rinkj_encode_color(gx_device *dev, const gx_color_value colors[])
 /*
  * Decode a gx_color_index value back to a list of colorant values.
  */
-private int
+static int
 rinkj_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
 {
     int bpc = ((rinkj_device *)dev)->bitspercomponent;
@@ -412,7 +412,7 @@ rinkj_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
 /*
  * Convert a gx_color_index to RGB.
  */
-private int
+static int
 rinkj_map_color_rgb(gx_device *dev, gx_color_index color, gx_color_value rgb[3])
 {
     rinkj_device *rdev = (rinkj_device *)dev;
@@ -426,7 +426,7 @@ rinkj_map_color_rgb(gx_device *dev, gx_color_index color, gx_color_value rgb[3])
     return 0;
 }
 
-private int
+static int
 rinkj_open_profile(rinkj_device *rdev, char *profile_fn, icmLuBase **pluo,
 		 int *poutn)
 {
@@ -453,7 +453,7 @@ rinkj_open_profile(rinkj_device *rdev, char *profile_fn, icmLuBase **pluo,
     return 0;
 }
 
-private int
+static int
 rinkj_open_profiles(rinkj_device *rdev)
 {
     int code = 0;
@@ -468,7 +468,7 @@ rinkj_open_profiles(rinkj_device *rdev)
   (a.data = d, a.size = s, a.persistent = false);
 
 /* Get parameters.  We provide a default CRD. */
-private int
+static int
 rinkj_get_params(gx_device * pdev, gs_param_list * plist)
 {
     rinkj_device *rdev = (rinkj_device *)pdev;
@@ -510,7 +510,7 @@ rinkj_get_params(gx_device * pdev, gs_param_list * plist)
  * This routine will check if a name matches any item in a list of process model
  * color component names.
  */
-private bool
+static bool
 check_process_color_names(const fixed_colorant_names_list * pcomp_list,
 			  const gs_param_string * pstring)
 {
@@ -575,7 +575,7 @@ e:	param_signal_error(plist, param_name, ecode);\
     }\
     END
 
-private int
+static int
 rinkj_param_read_fn(gs_param_list *plist, const char *name,
 		  gs_param_string *pstr, int max_len)
 {
@@ -598,7 +598,7 @@ param_string_eq(const gs_param_string *pcs, const char *str)
 	    !strncmp(str, (const char *)pcs->data, pcs->size));
 }
 
-private int
+static int
 rinkj_set_color_model(rinkj_device *rdev, rinkj_color_model color_model)
 {
     int bpc = 8;
@@ -635,7 +635,7 @@ rinkj_set_color_model(rinkj_device *rdev, rinkj_color_model color_model)
 }
 
 /* Set parameters.  We allow setting the number of bits per component. */
-private int
+static int
 rinkj_put_params(gx_device * pdev, gs_param_list * plist)
 {
     rinkj_device * const pdevn = (rinkj_device *) pdev;
@@ -756,7 +756,7 @@ rinkj_put_params(gx_device * pdev, gs_param_list * plist)
  * This routine returns a positive value (0 to n) which is the device colorant
  * number if the name is found.  It returns a negative value if not found.
  */
-private int
+static int
 rinkj_get_color_comp_index(const gx_device * dev, const char * pname, int name_size, int src_index)
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */

@@ -33,11 +33,11 @@ public_st_client_color();
 public_st_transfer_map();
 
 /* GC procedures */
-private 
+static 
 ENUM_PTRS_WITH(transfer_map_enum_ptrs, gx_transfer_map *mptr) return 0;
 case 0: ENUM_RETURN((mptr->proc == 0 ? mptr->closure.data : 0));
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(transfer_map_reloc_ptrs, gx_transfer_map *mptr)
+static RELOC_PTRS_WITH(transfer_map_reloc_ptrs, gx_transfer_map *mptr)
 {
     if (mptr->proc == 0)
 	RELOC_PTR(gx_transfer_map, closure.data);
@@ -240,7 +240,7 @@ gx_set_device_color_1(gs_state * pgs)
  * Load one cached transfer map.  We export this for gscolor1.c.
  * Note that we must deal with both old (proc) and new (closure) maps.
  */
-private float
+static float
 transfer_use_proc(floatp value, const gx_transfer_map * pmap,
 		  const void *ignore_proc_data)
 {

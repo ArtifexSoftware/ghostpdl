@@ -65,10 +65,10 @@ gs_private_st_ptrs2(st_IIEncode_state, stream_IIEncode_state,
     prev, cur);
 
 /* Forward references */
-private void s_IIEncode_release(stream_state * st);
+static void s_IIEncode_release(stream_state * st);
 
 /* Initialize the filter. */
-private int
+static int
 s_IIEncode_init(stream_state * st)
 {
     stream_IIEncode_state *const ss = (stream_IIEncode_state *) st;
@@ -117,7 +117,7 @@ s_IIEncode_init(stream_state * st)
 }
 
 /* Process a buffer. */
-private int
+static int
 s_IIEncode_process(stream_state * st, stream_cursor_read * pr,
 		   stream_cursor_write * pw, bool last)
 {
@@ -232,7 +232,7 @@ top:
 }
 
 /* Release the filter's storage. */
-private void
+static void
 s_IIEncode_release(stream_state * st)
 {
     stream_IIEncode_state *const ss = (stream_IIEncode_state *) st;

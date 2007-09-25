@@ -153,13 +153,13 @@ gs_private_st_composite(st_color_space_Indexed, gs_color_space,
 /* ------ Color space ------ */
 
 /* Define the Indexed color space type. */
-private cs_proc_restrict_color(gx_restrict_Indexed);
-private cs_proc_concrete_space(gx_concrete_space_Indexed);
-private cs_proc_concretize_color(gx_concretize_Indexed);
-private cs_proc_install_cspace(gx_install_Indexed);
-private cs_proc_set_overprint(gx_set_overprint_Indexed);
-private cs_proc_final(gx_final_Indexed);
-private cs_proc_serialize(gx_serialize_Indexed);
+static cs_proc_restrict_color(gx_restrict_Indexed);
+static cs_proc_concrete_space(gx_concrete_space_Indexed);
+static cs_proc_concretize_color(gx_concretize_Indexed);
+static cs_proc_install_cspace(gx_install_Indexed);
+static cs_proc_set_overprint(gx_set_overprint_Indexed);
+static cs_proc_final(gx_final_Indexed);
+static cs_proc_serialize(gx_serialize_Indexed);
 const gs_color_space_type gs_color_space_type_Indexed = {
     gs_color_space_index_Indexed, false, false,
     &st_color_space_Indexed, gx_num_components_1,
@@ -175,12 +175,12 @@ const gs_color_space_type gs_color_space_type_Indexed = {
 
 /* GC procedures. */
 
-private uint
+static uint
 indexed_table_size(const gs_color_space *pcs)
 {
     return (pcs->params.indexed.hival + 1) * pcs->params.indexed.n_comps;
 }
-private 
+static 
 ENUM_PTRS_WITH(cs_Indexed_enum_ptrs, gs_color_space *pcs) return 0;
 case 0:
 if (pcs->params.indexed.use_proc)
@@ -189,7 +189,7 @@ else
     return ENUM_CONST_STRING2(pcs->params.indexed.lookup.table.data,
 			      indexed_table_size(pcs));
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(cs_Indexed_reloc_ptrs, gs_color_space *pcs)
+static RELOC_PTRS_WITH(cs_Indexed_reloc_ptrs, gs_color_space *pcs)
 {
     if (pcs->params.indexed.use_proc)
 	RELOC_PTR(gs_color_space, params.indexed.lookup.map);
@@ -207,7 +207,7 @@ RELOC_PTRS_END
 
 /* Color space installation for an Indexed color space. */
 
-private int
+static int
 gx_install_Indexed(gs_color_space * pcs, gs_state * pgs)
 {
     return (*pcs->base_space->type->install_cspace)
@@ -216,7 +216,7 @@ gx_install_Indexed(gs_color_space * pcs, gs_state * pgs)
 
 /* Color space overprint setting ditto. */
 
-private int
+static int
 gx_set_overprint_Indexed(const gs_color_space * pcs, gs_state * pgs)
 {
     return (*pcs->base_space->type->set_overprint)
@@ -225,7 +225,7 @@ gx_set_overprint_Indexed(const gs_color_space * pcs, gs_state * pgs)
 
 /* Color space finalization ditto. */
 
-private void
+static void
 gx_final_Indexed(const gs_color_space * pcs)
 {
     if (pcs->params.indexed.use_proc) {
@@ -242,14 +242,14 @@ gx_final_Indexed(const gs_color_space * pcs)
  * 3, and 4 entry palettes, and a general case. Note that these procedures
  * do not range-check their input values.
  */
-private int
+static int
 map_palette_entry_1(const gs_color_space * pcs, int indx, float *values)
 {
     values[0] = pcs->params.indexed.lookup.map->values[indx];
     return 0;
 }
 
-private int
+static int
 map_palette_entry_3(const gs_color_space * pcs, int indx, float *values)
 {
     const float *pv = &(pcs->params.indexed.lookup.map->values[3 * indx]);
@@ -260,7 +260,7 @@ map_palette_entry_3(const gs_color_space * pcs, int indx, float *values)
     return 0;
 }
 
-private int
+static int
 map_palette_entry_4(const gs_color_space * pcs, int indx, float *values)
 {
     const float *pv = &(pcs->params.indexed.lookup.map->values[4 * indx]);
@@ -272,7 +272,7 @@ map_palette_entry_4(const gs_color_space * pcs, int indx, float *values)
     return 0;
 }
 
-private int
+static int
 map_palette_entry_n(const gs_color_space * pcs, int indx, float *values)
 {
     int m = cs_num_components(pcs->base_space);
@@ -288,7 +288,7 @@ map_palette_entry_n(const gs_color_space * pcs, int indx, float *values)
 /*
  * Allocate an indexed map to be used as a palette for indexed color space.
  */
-private gs_indexed_map *
+static gs_indexed_map *
 alloc_indexed_palette(
 			 const gs_color_space * pbase_cspace,
 			 int nvals,
@@ -402,7 +402,7 @@ gs_cspace_indexed_set_proc(
 /* ------ Colors ------ */
 
 /* Force an Indexed color into legal range. */
-private void
+static void
 gx_restrict_Indexed(gs_client_color * pcc, const gs_color_space * pcs)
 {
     float value = pcc->paint.values[0];
@@ -414,14 +414,14 @@ gx_restrict_Indexed(gs_client_color * pcc, const gs_color_space * pcs)
 }
 
 /* Color remapping for Indexed color spaces. */
-private const gs_color_space *
+static const gs_color_space *
 gx_concrete_space_Indexed(const gs_color_space * pcs,
 			  const gs_imager_state * pis)
 {
     return cs_concrete_space(pcs->base_space, pis);
 }
 
-private int
+static int
 gx_concretize_Indexed(const gs_client_color * pc, const gs_color_space * pcs,
 		      frac * pconc, const gs_imager_state * pis)
 {
@@ -477,7 +477,7 @@ gs_cspace_indexed_lookup(const gs_color_space *pcs, int index,
 
 /* ---------------- Serialization. -------------------------------- */
 
-private int 
+static int 
 gx_serialize_Indexed(const gs_color_space * pcs, stream * s)
 {
     const gs_indexed_params * p = &pcs->params.indexed;

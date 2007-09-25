@@ -25,7 +25,7 @@
 #include "gxfont.h"
 
 /* Forward declarations */
-private int show_n_begin(gs_show_enum *penum, gs_state *pgs, int code,
+static int show_n_begin(gs_show_enum *penum, gs_state *pgs, int code,
 			 gs_text_enum_t *pte);
 
 /* Structure descriptors */
@@ -334,7 +334,7 @@ gs_show_width(const gs_show_enum * penum, gs_point * ppt)
  * Force the enumerator to be a gs_show_enum *, which the current
  * implementation code requires.
  */
-private int
+static int
 show_n_begin(gs_show_enum *penum, gs_state *pgs, int code, gs_text_enum_t *pte)
 {
     if (code < 0)

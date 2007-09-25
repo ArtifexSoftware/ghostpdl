@@ -112,7 +112,7 @@ gs_private_st_ptrs1(st_transparency_state, gs_transparency_state_t,
 		    "gs_transparency_state_t", transparency_state_enum_ptrs,
 		    transparency_state_reloc_ptrs, saved);
 #if PUSH_TS
-private int
+static int
 push_transparency_stack(gs_state *pgs, gs_transparency_state_type_t type,
 			client_name_t cname)
 {
@@ -128,7 +128,7 @@ push_transparency_stack(gs_state *pgs, gs_transparency_state_type_t type,
     return 0;
 }
 #endif
-private void
+static void
 pop_transparency_stack(gs_state *pgs, client_name_t cname)
 {
     gs_transparency_state_t *pts = pgs->transparency_stack; /* known non-0 */
@@ -145,7 +145,7 @@ pop_transparency_stack(gs_state *pgs, client_name_t cname)
  * create_compositor will update its parameters but not create a new
  * compositor device.
  */
-private int
+static int
 gs_state_update_pdf14trans(gs_state * pgs, gs_pdf14trans_params_t * pparams)
 {
     gs_imager_state * pis = (gs_imager_state *)pgs;
@@ -282,7 +282,7 @@ gx_end_transparency_group(gs_imager_state * pis, gx_device * pdev)
 /*
  * Handler for identity mask transfer functions.
  */
-private int
+static int
 mask_transfer_identity(floatp in, float *out, void *proc_data)
 {
     *out = (float) in;

@@ -67,15 +67,15 @@ private_st_device_pattern_accum();
 /* ------ Pattern rendering ------ */
 
 /* Device procedures */
-private dev_proc_open_device(pattern_accum_open);
-private dev_proc_close_device(pattern_accum_close);
-private dev_proc_fill_rectangle(pattern_accum_fill_rectangle);
-private dev_proc_copy_mono(pattern_accum_copy_mono);
-private dev_proc_copy_color(pattern_accum_copy_color);
-private dev_proc_get_bits_rectangle(pattern_accum_get_bits_rectangle);
+static dev_proc_open_device(pattern_accum_open);
+static dev_proc_close_device(pattern_accum_close);
+static dev_proc_fill_rectangle(pattern_accum_fill_rectangle);
+static dev_proc_copy_mono(pattern_accum_copy_mono);
+static dev_proc_copy_color(pattern_accum_copy_color);
+static dev_proc_get_bits_rectangle(pattern_accum_get_bits_rectangle);
 
 /* The device descriptor */
-private const gx_device_pattern_accum gs_pattern_accum_device =
+static const gx_device_pattern_accum gs_pattern_accum_device =
 {std_device_std_body_open(gx_device_pattern_accum, 0,
 			  "pattern accumulator",
 			  0, 0, 72, 72),
@@ -140,7 +140,7 @@ private const gx_device_pattern_accum gs_pattern_accum_device =
 };
 
 
-private int 
+static int 
 dummy_free_up_bandlist_memory(gx_device *cldev, bool b)
 {
     return 0;
@@ -153,7 +153,7 @@ pattern_clist_open_device(gx_device *dev)
     return gs_clist_device_procs.open_device(dev);
 }
 
-private dev_proc_create_buf_device(dummy_create_buf_device)
+static dev_proc_create_buf_device(dummy_create_buf_device)
 {
     gx_device_memory *mdev = (gx_device_memory *)*pbdev;
 
@@ -161,15 +161,15 @@ private dev_proc_create_buf_device(dummy_create_buf_device)
 		mem, 0, target);
     return 0;
 }
-private dev_proc_size_buf_device(dummy_size_buf_device)
+static dev_proc_size_buf_device(dummy_size_buf_device)
 {
     return 0;
 }
-private dev_proc_setup_buf_device(dummy_setup_buf_device)
+static dev_proc_setup_buf_device(dummy_setup_buf_device)
 {
     return 0;
 }
-private dev_proc_destroy_buf_device(dummy_destroy_buf_device)
+static dev_proc_destroy_buf_device(dummy_destroy_buf_device)
 {
 }
 
@@ -292,7 +292,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
  *
  * Note that mask and bits accumulators are only created if necessary.
  */
-private int
+static int
 pattern_accum_open(gx_device * dev)
 {
     gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
@@ -388,7 +388,7 @@ pattern_accum_open(gx_device * dev)
 }
 
 /* Close an accumulator and free the bits. */
-private int
+static int
 pattern_accum_close(gx_device * dev)
 {
     gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
@@ -411,7 +411,7 @@ pattern_accum_close(gx_device * dev)
 }
 
 /* Fill a rectangle */
-private int
+static int
 pattern_accum_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 			     gx_color_index color)
 {
@@ -428,7 +428,7 @@ pattern_accum_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 }
 
 /* Copy a monochrome bitmap. */
-private int
+static int
 pattern_accum_copy_mono(gx_device * dev, const byte * data, int data_x,
 		    int raster, gx_bitmap_id id, int x, int y, int w, int h,
 			gx_color_index color0, gx_color_index color1)
@@ -459,7 +459,7 @@ pattern_accum_copy_mono(gx_device * dev, const byte * data, int data_x,
 }
 
 /* Copy a color bitmap. */
-private int
+static int
 pattern_accum_copy_color(gx_device * dev, const byte * data, int data_x,
 		    int raster, gx_bitmap_id id, int x, int y, int w, int h)
 {
@@ -477,7 +477,7 @@ pattern_accum_copy_color(gx_device * dev, const byte * data, int data_x,
 
 /* Read back a rectangle of bits. */
 /****** SHOULD USE MASK TO DEFINE UNREAD AREA *****/
-private int
+static int
 pattern_accum_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 		       gs_get_bits_params_t * params, gs_int_rect ** unread)
 {
@@ -497,12 +497,12 @@ pattern_accum_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 /* ------ Color space implementation ------ */
 
 /* Free all entries in a pattern cache. */
-private bool
+static bool
 pattern_cache_choose_all(gx_color_tile * ctile, void *proc_data)
 {
     return true;
 }
-private void
+static void
 pattern_cache_free_all(gx_pattern_cache * pcache)
 {
     gx_pattern_cache_winnow(pcache, pattern_cache_choose_all, NULL);
@@ -546,7 +546,7 @@ gx_pattern_alloc_cache(gs_memory_t * mem, uint num_tiles, ulong max_bits)
     return pcache;
 }
 /* Ensure that an imager has a Pattern cache. */
-private int
+static int
 ensure_pattern_cache(gs_imager_state * pis)
 {
     if (pis->pattern_cache == 0) {
@@ -575,7 +575,7 @@ gstate_set_pattern_cache(gs_state * pgs, gx_pattern_cache * pcache)
 }
 
 /* Free a Pattern cache entry. */
-private void
+static void
 gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 {
     if ((ctile->id != gx_no_bitmap_id) && !ctile->is_dummy) {
@@ -625,7 +625,7 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
  * device, but it may zero out the bitmap_memory pointers to prevent
  * the accumulated bitmaps from being freed when the device is closed.
  */
-private void make_bitmap(gx_strip_bitmap *, const gx_device_memory *, gx_bitmap_id);
+static void make_bitmap(gx_strip_bitmap *, const gx_device_memory *, gx_bitmap_id);
 int
 gx_pattern_cache_add_entry(gs_imager_state * pis,
 		   gx_device_forward * fdev, gx_color_tile ** pctile)
@@ -787,7 +787,7 @@ gx_pattern_cache_add_dummy_entry(gs_imager_state *pis,
     pcache->tiles_used++;
     return 0;
 }
-private void
+static void
 make_bitmap(register gx_strip_bitmap * pbm, const gx_device_memory * mdev,
 	    gx_bitmap_id id)
 {

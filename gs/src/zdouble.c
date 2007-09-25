@@ -33,10 +33,10 @@
  */
 
 /* Forward references */
-private int double_params_result(os_ptr, int, double *);
-private int double_params(os_ptr, int, double *);
-private int double_result(i_ctx_t *, int, double);
-private int double_unary(i_ctx_t *, double (*)(double));
+static int double_params_result(os_ptr, int, double *);
+static int double_params(os_ptr, int, double *);
+static int double_result(i_ctx_t *, int, double);
+static int double_unary(i_ctx_t *, double (*)(double));
 
 #define dbegin_unary()\
 	os_ptr op = osp;\
@@ -57,7 +57,7 @@ private int double_unary(i_ctx_t *, double (*)(double));
 /* ------ Arithmetic ------ */
 
 /* <dnum1> <dnum2> <dresult> .dadd <dresult> */
-private int
+static int
 zdadd(i_ctx_t *i_ctx_p)
 {
     dbegin_binary();
@@ -65,7 +65,7 @@ zdadd(i_ctx_t *i_ctx_p)
 }
 
 /* <dnum1> <dnum2> <dresult> .ddiv <dresult> */
-private int
+static int
 zddiv(i_ctx_t *i_ctx_p)
 {
     dbegin_binary();
@@ -75,7 +75,7 @@ zddiv(i_ctx_t *i_ctx_p)
 }
 
 /* <dnum1> <dnum2> <dresult> .dmul <dresult> */
-private int
+static int
 zdmul(i_ctx_t *i_ctx_p)
 {
     dbegin_binary();
@@ -83,7 +83,7 @@ zdmul(i_ctx_t *i_ctx_p)
 }
 
 /* <dnum1> <dnum2> <dresult> .dsub <dresult> */
-private int
+static int
 zdsub(i_ctx_t *i_ctx_p)
 {
     dbegin_binary();
@@ -93,28 +93,28 @@ zdsub(i_ctx_t *i_ctx_p)
 /* ------ Simple functions ------ */
 
 /* <dnum> <dresult> .dabs <dresult> */
-private int
+static int
 zdabs(i_ctx_t *i_ctx_p)
 {
     return double_unary(i_ctx_p, fabs);
 }
 
 /* <dnum> <dresult> .dceiling <dresult> */
-private int
+static int
 zdceiling(i_ctx_t *i_ctx_p)
 {
     return double_unary(i_ctx_p, ceil);
 }
 
 /* <dnum> <dresult> .dfloor <dresult> */
-private int
+static int
 zdfloor(i_ctx_t *i_ctx_p)
 {
     return double_unary(i_ctx_p, floor);
 }
 
 /* <dnum> <dresult> .dneg <dresult> */
-private int
+static int
 zdneg(i_ctx_t *i_ctx_p)
 {
     dbegin_unary();
@@ -122,7 +122,7 @@ zdneg(i_ctx_t *i_ctx_p)
 }
 
 /* <dnum> <dresult> .dround <dresult> */
-private int
+static int
 zdround(i_ctx_t *i_ctx_p)
 {
     dbegin_unary();
@@ -130,7 +130,7 @@ zdround(i_ctx_t *i_ctx_p)
 }
 
 /* <dnum> <dresult> .dsqrt <dresult> */
-private int
+static int
 zdsqrt(i_ctx_t *i_ctx_p)
 {
     dbegin_unary();
@@ -140,7 +140,7 @@ zdsqrt(i_ctx_t *i_ctx_p)
 }
 
 /* <dnum> <dresult> .dtruncate <dresult> */
-private int
+static int
 zdtruncate(i_ctx_t *i_ctx_p)
 {
     dbegin_unary();
@@ -149,27 +149,27 @@ zdtruncate(i_ctx_t *i_ctx_p)
 
 /* ------ Transcendental functions ------ */
 
-private int
+static int
 darc(i_ctx_t *i_ctx_p, double (*afunc)(double))
 {
     dbegin_unary();
     return double_result(i_ctx_p, 1, (*afunc)(num) * radians_to_degrees);
 }
 /* <dnum> <dresult> .darccos <dresult> */
-private int
+static int
 zdarccos(i_ctx_t *i_ctx_p)
 {
     return darc(i_ctx_p, acos);
 }
 /* <dnum> <dresult> .darcsin <dresult> */
-private int
+static int
 zdarcsin(i_ctx_t *i_ctx_p)
 {
     return darc(i_ctx_p, asin);
 }
 
 /* <dnum> <ddenom> <dresult> .datan <dresult> */
-private int
+static int
 zdatan(i_ctx_t *i_ctx_p)
 {
     double result;
@@ -188,14 +188,14 @@ zdatan(i_ctx_t *i_ctx_p)
 }
 
 /* <dnum> <dresult> .dcos <dresult> */
-private int
+static int
 zdcos(i_ctx_t *i_ctx_p)
 {
     return double_unary(i_ctx_p, gs_cos_degrees);
 }
 
 /* <dbase> <dexponent> <dresult> .dexp <dresult> */
-private int
+static int
 zdexp(i_ctx_t *i_ctx_p)
 {
     double ipart;
@@ -208,7 +208,7 @@ zdexp(i_ctx_t *i_ctx_p)
     return double_result(i_ctx_p, 2, pow(num[0], num[1]));
 }
 
-private int
+static int
 dlog(i_ctx_t *i_ctx_p, double (*lfunc)(double))
 {
     dbegin_unary();
@@ -217,20 +217,20 @@ dlog(i_ctx_t *i_ctx_p, double (*lfunc)(double))
     return double_result(i_ctx_p, 1, (*lfunc)(num));
 }
 /* <dposnum> <dresult> .dln <dresult> */
-private int
+static int
 zdln(i_ctx_t *i_ctx_p)
 {
     return dlog(i_ctx_p, log);
 }
 /* <dposnum> <dresult> .dlog <dresult> */
-private int
+static int
 zdlog(i_ctx_t *i_ctx_p)
 {
     return dlog(i_ctx_p, log10);
 }
 
 /* <dnum> <dresult> .dsin <dresult> */
-private int
+static int
 zdsin(i_ctx_t *i_ctx_p)
 {
     return double_unary(i_ctx_p, gs_sin_degrees);
@@ -238,7 +238,7 @@ zdsin(i_ctx_t *i_ctx_p)
 
 /* ------ Comparison ------ */
 
-private int
+static int
 dcompare(i_ctx_t *i_ctx_p, int mask)
 {
     os_ptr op = osp;
@@ -254,37 +254,37 @@ dcompare(i_ctx_t *i_ctx_p, int mask)
     return 0;
 }
 /* <dnum1> <dnum2> .deq <bool> */
-private int
+static int
 zdeq(i_ctx_t *i_ctx_p)
 {
     return dcompare(i_ctx_p, 2);
 }
 /* <dnum1> <dnum2> .dge <bool> */
-private int
+static int
 zdge(i_ctx_t *i_ctx_p)
 {
     return dcompare(i_ctx_p, 6);
 }
 /* <dnum1> <dnum2> .dgt <bool> */
-private int
+static int
 zdgt(i_ctx_t *i_ctx_p)
 {
     return dcompare(i_ctx_p, 4);
 }
 /* <dnum1> <dnum2> .dle <bool> */
-private int
+static int
 zdle(i_ctx_t *i_ctx_p)
 {
     return dcompare(i_ctx_p, 3);
 }
 /* <dnum1> <dnum2> .dlt <bool> */
-private int
+static int
 zdlt(i_ctx_t *i_ctx_p)
 {
     return dcompare(i_ctx_p, 1);
 }
 /* <dnum1> <dnum2> .dne <bool> */
-private int
+static int
 zdne(i_ctx_t *i_ctx_p)
 {
     return dcompare(i_ctx_p, 5);
@@ -296,7 +296,7 @@ zdne(i_ctx_t *i_ctx_p)
 #define MAX_CHARS 50
 
 /* <dnum> <dresult> .cvd <dresult> */
-private int
+static int
 zcvd(i_ctx_t *i_ctx_p)
 {
     dbegin_unary();
@@ -304,7 +304,7 @@ zcvd(i_ctx_t *i_ctx_p)
 }
 
 /* <string> <dresult> .cvsd <dresult> */
-private int
+static int
 zcvsd(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -342,7 +342,7 @@ zcvsd(i_ctx_t *i_ctx_p)
 }
 
 /* <dnum> .dcvi <int> */
-private int
+static int
 zdcvi(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -363,7 +363,7 @@ zdcvi(i_ctx_t *i_ctx_p)
 }
 
 /* <dnum> .dcvr <real> */
-private int
+static int
 zdcvr(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -385,7 +385,7 @@ zdcvr(i_ctx_t *i_ctx_p)
 }
 
 /* <dnum> <string> .dcvs <substring> */
-private int
+static int
 zdcvs(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -472,7 +472,7 @@ const op_def zdouble2_op_defs[] = {
 /* ------ Internal procedures ------ */
 
 /* Get some double arguments. */
-private int
+static int
 double_params(os_ptr op, int count, double *pval)
 {
     pval += count;
@@ -503,7 +503,7 @@ double_params(os_ptr op, int count, double *pval)
 }
 
 /* Get some double arguments, and check for a double result. */
-private int
+static int
 double_params_result(os_ptr op, int count, double *pval)
 {
     check_write_type(*op, t_string);
@@ -513,7 +513,7 @@ double_params_result(os_ptr op, int count, double *pval)
 }
 
 /* Return a double result. */
-private int
+static int
 double_result(i_ctx_t *i_ctx_p, int count, double result)
 {
     os_ptr op = osp;
@@ -526,7 +526,7 @@ double_result(i_ctx_t *i_ctx_p, int count, double result)
 }
 
 /* Apply a unary function to a double operand. */
-private int
+static int
 double_unary(i_ctx_t *i_ctx_p, double (*func)(double))
 {
     dbegin_unary();

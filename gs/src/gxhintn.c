@@ -147,15 +147,15 @@ static const char *s_stem_snap_vote_array = "t1_hinter stem_snap_vote array";
 typedef int32_t int24;
 #define HAVE_INT64_T
 
-private const unsigned int split_bits = 12;
-private const unsigned int max_coord_bits = 24; /* = split_bits * 2 */
-private const unsigned int matrix_bits = 19; /* <= sizeof(int) * 8 - 1 - split_bits */
-private const unsigned int g2o_bitshift = 12; /* <= matrix_bits + max_coord_bits - (sizeof(int) * 8 + 1) */
-private const int32_t FFFFF000 = ~(int32_t)0xFFF; /* = ~(((int32_t)1 << split_bits) - 1) */
+static const unsigned int split_bits = 12;
+static const unsigned int max_coord_bits = 24; /* = split_bits * 2 */
+static const unsigned int matrix_bits = 19; /* <= sizeof(int) * 8 - 1 - split_bits */
+static const unsigned int g2o_bitshift = 12; /* <= matrix_bits + max_coord_bits - (sizeof(int) * 8 + 1) */
+static const int32_t FFFFF000 = ~(int32_t)0xFFF; /* = ~(((int32_t)1 << split_bits) - 1) */
 /* Constants above must satisfy expressions given in comments. */
 
 /* Computes (a*b)>>s, s <= 12 */
-private inline int32_t mul_shift(int24 a, int19 b, unsigned int s) 
+static inline int32_t mul_shift(int24 a, int19 b, unsigned int s) 
 {   
 #ifdef HAVE_INT64_T
     return ( (int64_t)a * (int64_t)b ) >> s; /* unrounded result */
@@ -168,7 +168,7 @@ private inline int32_t mul_shift(int24 a, int19 b, unsigned int s)
 }
 
 /* Computes (a*b)>>s, s <= 12, with rounding */
-private inline int32_t mul_shift_round(int24 a, int19 b, unsigned int s) 
+static inline int32_t mul_shift_round(int24 a, int19 b, unsigned int s) 
 {
 #ifdef HAVE_INT64_T
     return (( ( (int64_t)a * (int64_t)b ) >> (s - 1)) + 1) >> 1;
@@ -180,34 +180,34 @@ private inline int32_t mul_shift_round(int24 a, int19 b, unsigned int s)
 #endif
 }
 
-private inline int32_t shift_rounded(int32_t v, unsigned int s)
+static inline int32_t shift_rounded(int32_t v, unsigned int s)
 {   return ((v >> (s - 1)) + 1) >> 1;
 }
 
-private inline int32_t Max(int32_t a, int32_t b)
+static inline int32_t Max(int32_t a, int32_t b)
 {   return a > b ? a : b;
 }
 
-private inline int32_t Min(int32_t a, int32_t b)
+static inline int32_t Min(int32_t a, int32_t b)
 {   return a < b ? a : b;
 }
 
-private inline long rshift(long a, int b)
+static inline long rshift(long a, int b)
 {   return b > 0 ? a << b : a >> -b;
 }
-private inline ulong urshift(ulong a, int b)
+static inline ulong urshift(ulong a, int b)
 {   return b > 0 ? a << b : a >> -b;
 }
 /*---------------------- members of matrix classes -------------------------*/
 
-private inline void double_matrix__set(double_matrix * this, const gs_matrix_fixed * m)
+static inline void double_matrix__set(double_matrix * this, const gs_matrix_fixed * m)
 {   this->xx = m->xx;
     this->xy = m->xy;
     this->yx = m->yx;
     this->yy = m->yy;
 }
 
-private inline int double_matrix__invert_to(const double_matrix * this, double_matrix * m)
+static inline int double_matrix__invert_to(const double_matrix * this, double_matrix * m)
 {   double det = this->xx * this->yy - this->xy * this->yx;
 
     if (fabs(det) * 1000000 <= fabs(this->xx) + fabs(this->xy) + fabs(this->yx) + fabs(this->yy))
@@ -219,7 +219,7 @@ private inline int double_matrix__invert_to(const double_matrix * this, double_m
     return 0;
 }
 
-private void fraction_matrix__drop_bits(fraction_matrix * this, unsigned int bits)
+static void fraction_matrix__drop_bits(fraction_matrix * this, unsigned int bits)
 {   this->xx = shift_rounded(this->xx, bits);
     this->xy = shift_rounded(this->xy, bits);
     this->yx = shift_rounded(this->yx, bits);
@@ -228,7 +228,7 @@ private void fraction_matrix__drop_bits(fraction_matrix * this, unsigned int bit
     this->bitshift -= bits;
 }
 
-private void fraction_matrix__set(fraction_matrix * this, const double_matrix * pmat)
+static void fraction_matrix__set(fraction_matrix * this, const double_matrix * pmat)
 {   double axx = fabs(pmat->xx), axy = fabs(pmat->xy);
     double ayx = fabs(pmat->yx), ayy = fabs(pmat->yy);
     double scale = max(axx + axy, ayx + ayy);
@@ -253,7 +253,7 @@ private void fraction_matrix__set(fraction_matrix * this, const double_matrix * 
     }
 }
 
-private inline int fraction_matrix__to_double(const fraction_matrix * this, double_matrix * pmat)
+static inline int fraction_matrix__to_double(const fraction_matrix * this, double_matrix * pmat)
 {   
     if (this->denominator == 0)
 	return_error(gs_error_rangecheck);
@@ -264,7 +264,7 @@ private inline int fraction_matrix__to_double(const fraction_matrix * this, doub
     return 0;
 }
 
-private int fraction_matrix__invert_to(const fraction_matrix * this, fraction_matrix * pmat)
+static int fraction_matrix__invert_to(const fraction_matrix * this, fraction_matrix * pmat)
 {   double_matrix m, M;
     int code;
 
@@ -278,25 +278,25 @@ private int fraction_matrix__invert_to(const fraction_matrix * this, fraction_ma
     return 0;
 }
 
-private inline int32_t fraction_matrix__transform_x(fraction_matrix *this, int24 x, int24 y, unsigned int s)
+static inline int32_t fraction_matrix__transform_x(fraction_matrix *this, int24 x, int24 y, unsigned int s)
 {   return mul_shift_round(x, this->xx, s) + mul_shift_round(y, this->yx, s);
 }
-private inline int32_t fraction_matrix__transform_y(fraction_matrix *this, int24 x, int24 y, unsigned int s)
+static inline int32_t fraction_matrix__transform_y(fraction_matrix *this, int24 x, int24 y, unsigned int s)
 {   return mul_shift_round(x, this->xy, s) + mul_shift_round(y, this->yy, s);
 }
 
 
 /*--------------------------- friends ------------------------------*/
 
-private inline int ranger_step_f(int i, int beg, int end)
+static inline int ranger_step_f(int i, int beg, int end)
 {   return (i == end ? beg : i + 1);
 }
 
-private inline int ranger_step_b(int i, int beg, int end)
+static inline int ranger_step_b(int i, int beg, int end)
 {   return (i == beg ? end : i - 1);
 }
 
-private inline fixed o2d(const t1_hinter *h, t1_hinter_space_coord v)
+static inline fixed o2d(const t1_hinter *h, t1_hinter_space_coord v)
 {   
     int s = h->g2o_fraction_bits - _fixed_shift;
 
@@ -308,7 +308,7 @@ private inline fixed o2d(const t1_hinter *h, t1_hinter_space_coord v)
 	return v << -s;
 }
 
-private inline fixed d2o(const t1_hinter *h, t1_hinter_space_coord v)
+static inline fixed d2o(const t1_hinter *h, t1_hinter_space_coord v)
 {   int s = h->g2o_fraction_bits - _fixed_shift;
 
     if (s >= 0)
@@ -317,16 +317,16 @@ private inline fixed d2o(const t1_hinter *h, t1_hinter_space_coord v)
 	return v >> -s;
 }
 
-private inline void g2o(t1_hinter * h, t1_glyph_space_coord gx, t1_glyph_space_coord gy, t1_hinter_space_coord *ox, t1_hinter_space_coord *oy)
+static inline void g2o(t1_hinter * h, t1_glyph_space_coord gx, t1_glyph_space_coord gy, t1_hinter_space_coord *ox, t1_hinter_space_coord *oy)
 {   *ox = fraction_matrix__transform_x(&h->ctmf, gx, gy, g2o_bitshift);
     *oy = fraction_matrix__transform_y(&h->ctmf, gx, gy, g2o_bitshift);
 }
 
-private inline t1_hinter_space_coord g2o_dist(t1_glyph_space_coord gd, int19 coef)
+static inline t1_hinter_space_coord g2o_dist(t1_glyph_space_coord gd, int19 coef)
 {   return mul_shift(gd, coef, g2o_bitshift);
 }
 
-private inline void g2d(t1_hinter * h, t1_glyph_space_coord gx, t1_glyph_space_coord gy, fixed *dx, fixed *dy)
+static inline void g2d(t1_hinter * h, t1_glyph_space_coord gx, t1_glyph_space_coord gy, fixed *dx, fixed *dy)
 {   *dx = fraction_matrix__transform_x(&h->ctmf, gx, gy, g2o_bitshift);
     *dy = fraction_matrix__transform_y(&h->ctmf, gx, gy, g2o_bitshift);
     *dx = o2d(h, *dx);
@@ -335,25 +335,25 @@ private inline void g2d(t1_hinter * h, t1_glyph_space_coord gx, t1_glyph_space_c
     *dy += h->orig_dy;
 }
 
-private inline void o2g(t1_hinter * h, t1_hinter_space_coord ox, t1_hinter_space_coord oy, t1_glyph_space_coord *gx, t1_glyph_space_coord *gy)
+static inline void o2g(t1_hinter * h, t1_hinter_space_coord ox, t1_hinter_space_coord oy, t1_glyph_space_coord *gx, t1_glyph_space_coord *gy)
 {   *gx = fraction_matrix__transform_x(&h->ctmi, ox, oy, split_bits);
     *gy = fraction_matrix__transform_y(&h->ctmi, ox, oy, split_bits);
     *gx = shift_rounded(*gx, h->g2o_fraction_bits + h->ctmi.bitshift - _fixed_shift - split_bits);
     *gy = shift_rounded(*gy, h->g2o_fraction_bits + h->ctmi.bitshift - _fixed_shift - split_bits);
 }
 
-private inline t1_glyph_space_coord o2g_dist(t1_hinter * h, t1_hinter_space_coord od, int19 coef)
+static inline t1_glyph_space_coord o2g_dist(t1_hinter * h, t1_hinter_space_coord od, int19 coef)
 {   return shift_rounded(mul_shift(od, coef, split_bits), h->g2o_fraction_bits + h->ctmi.bitshift - _fixed_shift - split_bits);
 }
 
-private inline void o2g_float(t1_hinter * h, t1_hinter_space_coord ox, t1_hinter_space_coord oy, t1_glyph_space_coord *gx, t1_glyph_space_coord *gy)
+static inline void o2g_float(t1_hinter * h, t1_hinter_space_coord ox, t1_hinter_space_coord oy, t1_glyph_space_coord *gx, t1_glyph_space_coord *gy)
 {   *gx = (long)(((double)ox * h->ctmi.xx + (double)oy * h->ctmi.yx) * fixed_scale / h->g2o_fraction / h->ctmi.denominator);
     *gy = (long)(((double)ox * h->ctmi.xy + (double)oy * h->ctmi.yy) * fixed_scale / h->g2o_fraction / h->ctmi.denominator);
 }
 
 /* --------------------- t1_hint class members ---------------------*/
 
-private void t1_hint__set_aligned_coord(t1_hint * this, t1_glyph_space_coord gc, t1_pole * pole, enum t1_align_type align, int quality)
+static void t1_hint__set_aligned_coord(t1_hint * this, t1_glyph_space_coord gc, t1_pole * pole, enum t1_align_type align, int quality)
 {   t1_glyph_space_coord g = (this->type == hstem ? pole->gy : pole->gx); 
 
     if (any_abs(this->g0 - g) < any_abs(this->g1 - g)) {
@@ -367,7 +367,7 @@ private void t1_hint__set_aligned_coord(t1_hint * this, t1_glyph_space_coord gc,
 
 /* --------------------- t1_hinter class members - debug graphics --------------------*/
 
-private void t1_hinter__paint_glyph(t1_hinter * this, bool aligned)
+static void t1_hinter__paint_glyph(t1_hinter * this, bool aligned)
 {
 #if VD_TRACE
 #define X(j) *member_prt(t1_glyph_space_coord, &this->pole[j], offset_x)
@@ -417,7 +417,7 @@ private void t1_hinter__paint_glyph(t1_hinter * this, bool aligned)
 #endif
 }
 
-private void  t1_hinter__paint_raster_grid(t1_hinter * this)
+static void  t1_hinter__paint_raster_grid(t1_hinter * this)
 {
 #if VD_TRACE
     int i;
@@ -530,7 +530,7 @@ void t1_hinter__init(t1_hinter * this, gx_path *output_path)
     this->stem_snap[0][0] = this->stem_snap[1][0] = 100; /* default */
 }
 
-private inline void t1_hinter__free_arrays(t1_hinter * this)
+static inline void t1_hinter__free_arrays(t1_hinter * this)
 {   if (this->pole != this->pole0)
 	gs_free_object(this->memory, this->pole, s_pole_array);
     if (this->hint != this->hint0)
@@ -561,7 +561,7 @@ private inline void t1_hinter__free_arrays(t1_hinter * this)
     this->stem_snap_vote = 0;
 }
 
-private inline void t1_hinter__init_outline(t1_hinter * this)
+static inline void t1_hinter__init_outline(t1_hinter * this)
 {   this->contour_count = 0;
     this->pole_count = 0;
     this->contour[0] = 0;
@@ -571,7 +571,7 @@ private inline void t1_hinter__init_outline(t1_hinter * this)
     this->path_opened = false;
 }
 
-private void t1_hinter__compute_rat_transform_coef(t1_hinter * this)
+static void t1_hinter__compute_rat_transform_coef(t1_hinter * this)
 {
     /* Round towards zero for a better view of mirrored characters : */
     this->heigt_transform_coef_rat = (int19)(this->heigt_transform_coef * this->ctmf.denominator + 0.5);
@@ -580,7 +580,7 @@ private void t1_hinter__compute_rat_transform_coef(t1_hinter * this)
     this->width_transform_coef_inv = (int19)(this->ctmi.denominator / this->width_transform_coef + 0.5);
 }
 
-private inline void t1_hinter__adjust_matrix_precision(t1_hinter * this, fixed xx, fixed yy)
+static inline void t1_hinter__adjust_matrix_precision(t1_hinter * this, fixed xx, fixed yy)
 {   fixed x = any_abs(xx), y = any_abs(yy);
     fixed c = (x > y ? x : y);
 
@@ -599,7 +599,7 @@ private inline void t1_hinter__adjust_matrix_precision(t1_hinter * this, fixed x
     }
 }
 
-private inline void t1_hinter__set_origin(t1_hinter * this, fixed dx, fixed dy)
+static inline void t1_hinter__set_origin(t1_hinter * this, fixed dx, fixed dy)
 {   
     fixed align_x = rshift(fixed_1, (this->align_to_pixels ? (int)this->log2_pixels_x : this->log2_subpixels_x));
     fixed align_y = rshift(fixed_1, (this->align_to_pixels ? (int)this->log2_pixels_y : this->log2_subpixels_y));
@@ -745,7 +745,7 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm,
     return 0;
 }
 
-private void t1_hinter__make_zone(t1_hinter * this, t1_zone *zone, float * blues, enum t1_zone_type type, t1_glyph_space_coord blue_fuzz)
+static void t1_hinter__make_zone(t1_hinter * this, t1_zone *zone, float * blues, enum t1_zone_type type, t1_glyph_space_coord blue_fuzz)
 {   t1_glyph_space_coord d = 0;
 
     zone->type = type;
@@ -759,7 +759,7 @@ private void t1_hinter__make_zone(t1_hinter * this, t1_zone *zone, float * blues
     t1_hinter__adjust_matrix_precision(this, zone->y_min, zone->y_max);
 }
 
-private bool t1_hinter__realloc_array(gs_memory_t *mem, void **a, void *a0, int *max_count, int elem_size, int enhancement, const char *cname)
+static bool t1_hinter__realloc_array(gs_memory_t *mem, void **a, void *a0, int *max_count, int elem_size, int enhancement, const char *cname)
 {
     void *aa = gs_alloc_bytes(mem, (*max_count + enhancement * 2) * elem_size, cname);
 
@@ -773,7 +773,7 @@ private bool t1_hinter__realloc_array(gs_memory_t *mem, void **a, void *a0, int 
     return false;
 }
 
-private int t1_hinter__set_alignment_zones(t1_hinter * this, float * blues, int count, enum t1_zone_type type, bool family)
+static int t1_hinter__set_alignment_zones(t1_hinter * this, float * blues, int count, enum t1_zone_type type, bool family)
 {   int count2 = count / 2, i, j;
 
     if (!family) {
@@ -802,7 +802,7 @@ private int t1_hinter__set_alignment_zones(t1_hinter * this, float * blues, int 
     return 0;
 }
 
-private int t1_hinter__set_stem_snap(t1_hinter * this, float * value, int count, unsigned short hv)
+static int t1_hinter__set_stem_snap(t1_hinter * this, float * value, int count, unsigned short hv)
 {   int count0 = this->stem_snap_count[hv], i, j;
     t1_glyph_space_coord pixel_g = (!hv ? this->pixel_gh : this->pixel_gw);
 
@@ -860,7 +860,7 @@ private int t1_hinter__set_stem_snap(t1_hinter * this, float * value, int count,
        */
 }
 
-private void enable_draw_import(void)
+static void enable_draw_import(void)
 {   /* CAUTION: can't close DC on import error */
     vd_get_dc('h');
     vd_set_shift(VD_SHIFT_X, VD_SHIFT_Y);
@@ -935,7 +935,7 @@ int t1_hinter__set_font42_data(t1_hinter * this, int FontType, gs_type42_data *p
     return 0;
 }
 
-private inline int t1_hinter__can_add_pole(t1_hinter * this, t1_pole **pole)
+static inline int t1_hinter__can_add_pole(t1_hinter * this, t1_pole **pole)
 {   if (this->pole_count >= this->max_pole_count)
         if(t1_hinter__realloc_array(this->memory, (void **)&this->pole, this->pole0, &this->max_pole_count, 
 				    sizeof(this->pole0) / count_of(this->pole0), T1_MAX_POLES, s_pole_array))
@@ -944,7 +944,7 @@ private inline int t1_hinter__can_add_pole(t1_hinter * this, t1_pole **pole)
     return 0;
 }
 
-private inline int t1_hinter__add_pole(t1_hinter * this, t1_glyph_space_coord xx, t1_glyph_space_coord yy, enum t1_pole_type type)
+static inline int t1_hinter__add_pole(t1_hinter * this, t1_glyph_space_coord xx, t1_glyph_space_coord yy, enum t1_pole_type type)
 {   t1_pole *pole;
     int code = t1_hinter__can_add_pole(this, &pole);
 
@@ -976,7 +976,7 @@ int t1_hinter__sbw_seac(t1_hinter * this, fixed sbx, fixed sby)
     return 0;
 }
 
-private bool t1_hinter__find_flex(t1_hinter * this, int k, int contour_beg, int contour_end, 
+static bool t1_hinter__find_flex(t1_hinter * this, int k, int contour_beg, int contour_end, 
 		       t1_glyph_space_coord pixel_g, t1_glyph_space_coord threshold, 
 		       int i0, int i1, int N, int *j0, int *j1, 
 		       t1_glyph_space_coord *gm)
@@ -1076,7 +1076,7 @@ private bool t1_hinter__find_flex(t1_hinter * this, int k, int contour_beg, int 
     return false;
 }
 
-private void t1_hinter__compact_flex(t1_hinter * this, int contour_beg, int contour_end, int i0, int i1, int *pi)
+static void t1_hinter__compact_flex(t1_hinter * this, int contour_beg, int contour_end, int i0, int i1, int *pi)
 {
     if (i0 > i1) {
 	t1_hinter__compact_flex(this, contour_beg, contour_end, i0, contour_end, pi);
@@ -1109,7 +1109,7 @@ private void t1_hinter__compact_flex(t1_hinter * this, int contour_beg, int cont
     }
 }
 
-private void t1_hinter__adjust_stem_hints_by_missed_flex(t1_hinter * this, t1_glyph_space_coord g0, 
+static void t1_hinter__adjust_stem_hints_by_missed_flex(t1_hinter * this, t1_glyph_space_coord g0, 
 							 t1_glyph_space_coord gm, int k)
 {
     /* While fixing a missed flex, a part of outline is shifted.
@@ -1140,7 +1140,7 @@ private void t1_hinter__adjust_stem_hints_by_missed_flex(t1_hinter * this, t1_gl
 	}
 }
 
-private void t1_hinter__fix_missed_flex(t1_hinter * this)
+static void t1_hinter__fix_missed_flex(t1_hinter * this)
 {
     int contour_beg, contour_end;
     int i, j, k, pj, n, j0, j1;
@@ -1265,7 +1265,7 @@ int t1_hinter__rmoveto(t1_hinter * this, fixed xx, fixed yy)
     return code;
 }
 
-private inline void t1_hinter__skip_degenerate_segnment(t1_hinter * this, int npoles)
+static inline void t1_hinter__skip_degenerate_segnment(t1_hinter * this, int npoles)
 {   /* Degenerate segments amy appear due to import shift with bbox > 4096 */
     int contour_beg = this->contour[this->contour_count], i;
 
@@ -1415,7 +1415,7 @@ int t1_hinter__end_subglyph(t1_hinter * this)
     return 0;
 }
 
-private inline int t1_hinter__can_add_hint(t1_hinter * this, t1_hint **hint)
+static inline int t1_hinter__can_add_hint(t1_hinter * this, t1_hint **hint)
 {   if (this->hint_count >= this->max_hint_count)
         if(t1_hinter__realloc_array(this->memory, (void **)&this->hint, this->hint0, &this->max_hint_count, 
 				    sizeof(this->hint0) / count_of(this->hint0), T1_MAX_HINTS, s_hint_array))
@@ -1505,7 +1505,7 @@ int t1_hinter__flex_end(t1_hinter * this, fixed flex_height)
     return 0;
 }
 
-private inline int t1_hinter__can_add_hint_range(t1_hinter * this, t1_hint_range **hint_range)
+static inline int t1_hinter__can_add_hint_range(t1_hinter * this, t1_hint_range **hint_range)
 {   if (this->hint_range_count >= this->max_hint_range_count)
         if(t1_hinter__realloc_array(this->memory, (void **)&this->hint_range, this->hint_range0, &this->max_hint_range_count, 
 				    sizeof(this->hint_range0) / count_of(this->hint_range0), T1_MAX_HINTS, s_hint_range_array))
@@ -1514,7 +1514,7 @@ private inline int t1_hinter__can_add_hint_range(t1_hinter * this, t1_hint_range
     return 0;
 }
 
-private inline int t1_hinter__can_add_hint_applying(t1_hinter * this, t1_hint_applying **hint_applying)
+static inline int t1_hinter__can_add_hint_applying(t1_hinter * this, t1_hint_applying **hint_applying)
 {   if (this->hint_applying_count >= this->max_hint_applying_count)
         if(t1_hinter__realloc_array(this->memory, (void **)&this->hint_applying, this->hint_applying0, &this->max_hint_applying_count, 
 				    sizeof(this->hint_applying0) / count_of(this->hint_applying0), T1_MAX_HINTS, s_hint_applying_array))
@@ -1573,7 +1573,7 @@ int t1_hinter__drop_hints(t1_hinter * this)
     return t1_hinter__hint_mask(this, NULL);
 }
 
-private inline int t1_hinter__stem(t1_hinter * this, enum t1_hint_type type, unsigned short stem3_index
+static inline int t1_hinter__stem(t1_hinter * this, enum t1_hint_type type, unsigned short stem3_index
                                                   , fixed v0, fixed v1, int side_mask)
 {   t1_hint *hint;
     t1_glyph_space_coord s = (type == hstem ? this->subglyph_orig_gy : this->subglyph_orig_gx);
@@ -1683,7 +1683,7 @@ int t1_hinter__is_x_fitting(t1_hinter * this)
 
 /* --------------------- t1_hinter class members - the hinting --------------------*/
 
-private inline int t1_hinter__segment_beg(t1_hinter * this, int pole_index)
+static inline int t1_hinter__segment_beg(t1_hinter * this, int pole_index)
 {   int contour_index = this->pole[pole_index].contour_index;
     int beg_contour_pole = this->contour[contour_index];
     int end_contour_pole = this->contour[contour_index + 1] - 2;
@@ -1694,7 +1694,7 @@ private inline int t1_hinter__segment_beg(t1_hinter * this, int pole_index)
     return prev;
 }
 
-private inline int t1_hinter__segment_end(t1_hinter * this, int pole_index)
+static inline int t1_hinter__segment_end(t1_hinter * this, int pole_index)
 {   int contour_index = this->pole[pole_index].contour_index;
     int beg_contour_pole = this->contour[contour_index];
     int end_contour_pole = this->contour[contour_index + 1] - 2;
@@ -1705,7 +1705,7 @@ private inline int t1_hinter__segment_end(t1_hinter * this, int pole_index)
     return next;
 }
 
-private void t1_hinter__compute_y_span(t1_hinter * this)
+static void t1_hinter__compute_y_span(t1_hinter * this)
 {
     int n = this->pole_count - 1;
     int i;
@@ -1728,7 +1728,7 @@ private void t1_hinter__compute_y_span(t1_hinter * this)
     this->ymid = (this->ymax + this->ymin) / 2;
 }
 
-private void t1_hinter__simplify_representation(t1_hinter * this)
+static void t1_hinter__simplify_representation(t1_hinter * this)
 {   int i, j;
     int last_pole = this->pole_count - 1;
     int primary_hint_count = this->primary_hint_count;
@@ -1794,7 +1794,7 @@ private void t1_hinter__simplify_representation(t1_hinter * this)
     }
 }
 
-private inline bool t1_hinter__is_small_angle(t1_hinter * this, int pole_index0, int pole_index1, 
+static inline bool t1_hinter__is_small_angle(t1_hinter * this, int pole_index0, int pole_index1, 
 	long tan_x, long tan_y, int alpha, int alpha_div, int *quality)
 {   long gx = this->pole[pole_index1].gx - this->pole[pole_index0].gx;
     long gy = this->pole[pole_index1].gy - this->pole[pole_index0].gy;
@@ -1818,7 +1818,7 @@ private inline bool t1_hinter__is_small_angle(t1_hinter * this, int pole_index0,
     return true;
 }
 
-private inline bool t1_hinter__is_conjugated(t1_hinter * this, int pole_index)
+static inline bool t1_hinter__is_conjugated(t1_hinter * this, int pole_index)
 {   int prev = t1_hinter__segment_beg(this, pole_index);
     int next = t1_hinter__segment_end(this, pole_index);
     long gx0 = this->pole[prev].gx - this->pole[pole_index].gx;
@@ -1835,7 +1835,7 @@ private inline bool t1_hinter__is_conjugated(t1_hinter * this, int pole_index)
     return any_abs(vp) < -sp / 1000; /* The threshold is taken from scratch. */
 }
 
-private inline bool t1_hinter__next_contour_pole(t1_hinter * this, int pole_index)
+static inline bool t1_hinter__next_contour_pole(t1_hinter * this, int pole_index)
 {   int contour_index = this->pole[pole_index].contour_index;
     int beg_contour_pole = this->contour[contour_index];
     int end_contour_pole = this->contour[contour_index + 1] - 2;
@@ -1843,7 +1843,7 @@ private inline bool t1_hinter__next_contour_pole(t1_hinter * this, int pole_inde
     return ranger_step_f(pole_index, beg_contour_pole, end_contour_pole);
 }
 
-private inline bool t1_hinter__is_good_tangent(t1_hinter * this, int pole_index, long tan_x, long tan_y, int *quality)
+static inline bool t1_hinter__is_good_tangent(t1_hinter * this, int pole_index, long tan_x, long tan_y, int *quality)
 {   int contour_index = this->pole[pole_index].contour_index;
     int beg_contour_pole = this->contour[contour_index];
     int end_contour_pole = this->contour[contour_index + 1] - 2, prev, next;
@@ -1863,7 +1863,7 @@ private inline bool t1_hinter__is_good_tangent(t1_hinter * this, int pole_index,
     return good0 || good1;
 }
 
-private void t1_hinter__compute_type1_stem_ranges(t1_hinter * this)
+static void t1_hinter__compute_type1_stem_ranges(t1_hinter * this)
 {   int j;
     int end_range_pole = this->pole_count - 3;
     int primary_hint_count = this->primary_hint_count;
@@ -1883,7 +1883,7 @@ private void t1_hinter__compute_type1_stem_ranges(t1_hinter * this)
     */
 }
 
-private void t1_hinter__compute_type2_stem_ranges(t1_hinter * this)
+static void t1_hinter__compute_type2_stem_ranges(t1_hinter * this)
 {   int i;
 
     for (i = 0; i < this->hint_range_count; i++)
@@ -1891,7 +1891,7 @@ private void t1_hinter__compute_type2_stem_ranges(t1_hinter * this)
 	    this->hint_range[i].end_pole = this->pole_count - 2;
 }
 
-private bool t1_hinter__is_stem_boundary_near(t1_hinter * this, const t1_hint *hint, 
+static bool t1_hinter__is_stem_boundary_near(t1_hinter * this, const t1_hint *hint, 
 		t1_glyph_space_coord g, int boundary)
 {
     t1_glyph_space_coord const fuzz = this->blue_fuzz; /* comparefiles/tpc2.ps */
@@ -1899,7 +1899,7 @@ private bool t1_hinter__is_stem_boundary_near(t1_hinter * this, const t1_hint *h
     return any_abs(g - (boundary ? hint->g1 : hint->g0)) <= fuzz;
 }
 
-private int t1_hinter__is_stem_hint_applicable(t1_hinter * this, t1_hint *hint, int pole_index, int *quality)
+static int t1_hinter__is_stem_hint_applicable(t1_hinter * this, t1_hint *hint, int pole_index, int *quality)
 {   /* We don't check hint->side_mask because the unused coord should be outside the design bbox. */
     int k;
 
@@ -1916,7 +1916,7 @@ private int t1_hinter__is_stem_hint_applicable(t1_hinter * this, t1_hint *hint, 
     return 0;
 }
 
-private t1_zone * t1_hinter__find_zone(t1_hinter * this, t1_glyph_space_coord pole_y, bool curve, bool convex, bool concave)
+static t1_zone * t1_hinter__find_zone(t1_hinter * this, t1_glyph_space_coord pole_y, bool curve, bool convex, bool concave)
 {   bool maybe_top = !curve || convex;
     bool maybe_bot = !curve || concave;
     int i;
@@ -1931,7 +1931,7 @@ private t1_zone * t1_hinter__find_zone(t1_hinter * this, t1_glyph_space_coord po
     /*todo: optimize narrowing the search range */
 }
 
-private void t1_hinter__align_to_grid__general(t1_hinter * this, int32_t unit,
+static void t1_hinter__align_to_grid__general(t1_hinter * this, int32_t unit,
 	    t1_glyph_space_coord gx, t1_glyph_space_coord gy, 
 	    t1_hinter_space_coord *pdx, t1_hinter_space_coord *pdy, 
 	    bool align_to_pixels, bool absolute)
@@ -1959,7 +1959,7 @@ private void t1_hinter__align_to_grid__general(t1_hinter * this, int32_t unit,
     *pdy = dy;
 }
 
-private void t1_hinter__align_to_grid__final(t1_hinter * this,
+static void t1_hinter__align_to_grid__final(t1_hinter * this,
 	    t1_glyph_space_coord *x, t1_glyph_space_coord *y, 
 	    t1_hinter_space_coord dx, t1_hinter_space_coord dy)
 {
@@ -1976,7 +1976,7 @@ private void t1_hinter__align_to_grid__final(t1_hinter * this,
     }
 }
 
-private void t1_hinter__hint_stem_snap_range(t1_hinter * this, 
+static void t1_hinter__hint_stem_snap_range(t1_hinter * this, 
 					t1_glyph_space_coord w0, t1_glyph_space_coord w1, bool horiz,
 					short *index0, short *index1)
 {   int k = (horiz ? 0 : 1), i;
@@ -1997,7 +1997,7 @@ private void t1_hinter__hint_stem_snap_range(t1_hinter * this,
     }
 }
 
-private void t1_hinter__align_to_grid(t1_hinter * this, int32_t unit, 
+static void t1_hinter__align_to_grid(t1_hinter * this, int32_t unit, 
 	    t1_glyph_space_coord *x, t1_glyph_space_coord *y, bool align_to_pixels)
 {   if (unit > 0) {
         t1_hinter_space_coord dx, dy;
@@ -2007,7 +2007,7 @@ private void t1_hinter__align_to_grid(t1_hinter * this, int32_t unit,
     }
 }
 
-private void t1_hinter_compute_stem_snap_range_hv(t1_hinter * this, int hv)
+static void t1_hinter_compute_stem_snap_range_hv(t1_hinter * this, int hv)
 {
     const enum t1_hint_type T[] = {hstem, vstem};
     int i, j;
@@ -2050,7 +2050,7 @@ private void t1_hinter_compute_stem_snap_range_hv(t1_hinter * this, int hv)
     }
 }
 
-private void t1_hinter_compute_stem_snap_range(t1_hinter * this)
+static void t1_hinter_compute_stem_snap_range(t1_hinter * this)
 {
     if (this->stem_snap_count[0] > 1)
 	t1_hinter_compute_stem_snap_range_hv(this, 0);
@@ -2058,7 +2058,7 @@ private void t1_hinter_compute_stem_snap_range(t1_hinter * this)
 	t1_hinter_compute_stem_snap_range_hv(this, 1);
 }
 
-private void t1_hinter__align_stem_width(t1_hinter * this, t1_glyph_space_coord *pgw, const t1_hint *hint)
+static void t1_hinter__align_stem_width(t1_hinter * this, t1_glyph_space_coord *pgw, const t1_hint *hint)
 {   
     bool horiz = (hint->type == hstem);
     t1_glyph_space_coord gw = *pgw;
@@ -2082,7 +2082,7 @@ private void t1_hinter__align_stem_width(t1_hinter * this, t1_glyph_space_coord 
     *pgw = gw;
 }
 
-private void t1_hinter__align_stem_to_grid(t1_hinter * this, int32_t unit, 
+static void t1_hinter__align_stem_to_grid(t1_hinter * this, int32_t unit, 
 	    t1_glyph_space_coord *x0, t1_glyph_space_coord *y0, 
 	    t1_glyph_space_coord  x1, t1_glyph_space_coord  y1, 
 	    bool align_to_pixels, const t1_hint *hint)
@@ -2121,7 +2121,7 @@ private void t1_hinter__align_stem_to_grid(t1_hinter * this, int32_t unit,
 }
 
 #if ADOBE_OVERSHOOT_COMPATIBILIY
-private inline t1_hinter_space_coord g2o_dist_blue(t1_hinter * h, t1_glyph_space_coord gw)
+static inline t1_hinter_space_coord g2o_dist_blue(t1_hinter * h, t1_glyph_space_coord gw)
 {   double W = fixed2float(gw);
     double w = W * (h->resolution * h->font_size * h->base_font_scale - h->BlueScale) + 1;
 
@@ -2129,7 +2129,7 @@ private inline t1_hinter_space_coord g2o_dist_blue(t1_hinter * h, t1_glyph_space
     /* todo : exclude floating point */
 }
 
-private void t1_hinter__add_overshoot(t1_hinter * this, t1_zone * zone, t1_glyph_space_coord * x, t1_glyph_space_coord * y)
+static void t1_hinter__add_overshoot(t1_hinter * this, t1_zone * zone, t1_glyph_space_coord * x, t1_glyph_space_coord * y)
 {   t1_glyph_space_coord gy = *y;
     /* t1_glyph_space_coord gw = any_abs(zone->overshoot_y - zone->y); */
     t1_glyph_space_coord gw = any_abs(gy - zone->y);
@@ -2141,7 +2141,7 @@ private void t1_hinter__add_overshoot(t1_hinter * this, t1_zone * zone, t1_glyph
 }
 #endif
 
-private enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * this, 
+static enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * this, 
 	    t1_glyph_space_coord * gc, int segment_index, fixed t, const t1_hint *hint,
 	    enum t1_align_type align0)
 {   /* Returns true, if alignment zone is applied. */
@@ -2277,7 +2277,7 @@ private enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * this,
                                    1 - preserve iff slanted in design space
 				   2 - always preserve */
 
-private int t1_hinter__find_stem_middle(t1_hinter * this, fixed *t, int pole_index, bool horiz)
+static int t1_hinter__find_stem_middle(t1_hinter * this, fixed *t, int pole_index, bool horiz)
 {   
     /* *t = 0 preserves slant; *t = fixed_half deminishes slant (don't apply to curves). */
     if (PRESERVE_STEM_SLANT == 2) {
@@ -2306,7 +2306,7 @@ private int t1_hinter__find_stem_middle(t1_hinter * this, fixed *t, int pole_ind
     }
 }
 
-private int t1_hinter__skip_stem(t1_hinter * this, int pole_index, bool horiz)
+static int t1_hinter__skip_stem(t1_hinter * this, int pole_index, bool horiz)
 {   /* We assume proper glyphs, see Type 1 spec, chapter 4. */
     int i = pole_index;
     int next_pole = t1_hinter__next_contour_pole(this, i);
@@ -2328,7 +2328,7 @@ private int t1_hinter__skip_stem(t1_hinter * this, int pole_index, bool horiz)
     return i;
 }
 
-private void t1_hinter__mark_existing_stems(t1_hinter * this)
+static void t1_hinter__mark_existing_stems(t1_hinter * this)
 {   /* fixme: Duplicated code with t1_hinter__align_stem_commands. */
     int i, j, jj, k;
 
@@ -2362,7 +2362,7 @@ private void t1_hinter__mark_existing_stems(t1_hinter * this)
 	    }
 }
 
-private void t1_hinter__add_boundary_length(t1_hinter * this, t1_hint *hint,
+static void t1_hinter__add_boundary_length(t1_hinter * this, t1_hint *hint,
 					    int pole_index0, int pole_index1)
 {   const t1_pole *pole = &this->pole[pole_index0];
     int contour_index = pole->contour_index;
@@ -2381,7 +2381,7 @@ private void t1_hinter__add_boundary_length(t1_hinter * this, t1_hint *hint,
 				: any_abs(this->pole[i0].gy - this->pole[i1].gy));
 }
 
-private void t1_hinter__align_stem_commands(t1_hinter * this)
+static void t1_hinter__align_stem_commands(t1_hinter * this)
 {   int i, j, jj, k;
 
     for(i = 0; i < this->hint_count; i++) {
@@ -2443,7 +2443,7 @@ private void t1_hinter__align_stem_commands(t1_hinter * this)
     }
 }
 
-private void t1_hinter__unfix_opposite_to_common(t1_hinter * this)
+static void t1_hinter__unfix_opposite_to_common(t1_hinter * this)
 {    /* Implemented for Bug 687578 "T1 hinter disturbs stem width". */
     int i, j, k, m, n;
     t1_glyph_space_coord d, md;
@@ -2503,7 +2503,7 @@ private void t1_hinter__unfix_opposite_to_common(t1_hinter * this)
     }
 }
 
-private void t1_hinter__compute_opposite_stem_coords(t1_hinter * this)
+static void t1_hinter__compute_opposite_stem_coords(t1_hinter * this)
 {   int i;
 
     for (i = 0; i < this->hint_count; i++)
@@ -2555,7 +2555,7 @@ private void t1_hinter__compute_opposite_stem_coords(t1_hinter * this)
         }
 }
 
-private int t1_hinter__store_hint_applying(t1_hinter * this, t1_hint *hint, int pole_index)
+static int t1_hinter__store_hint_applying(t1_hinter * this, t1_hint *hint, int pole_index)
 {
     t1_hint_applying *ha;
     int code = t1_hinter__can_add_hint_applying(this, &ha);
@@ -2568,7 +2568,7 @@ private int t1_hinter__store_hint_applying(t1_hinter * this, t1_hint *hint, int 
     return 0;
 }
 
-private int t1_hinter__align_stem_poles(t1_hinter * this)
+static int t1_hinter__align_stem_poles(t1_hinter * this)
 {   int i, j, k;
     t1_glyph_space_coord const fuzz = this->blue_fuzz; /* comparefiles/tpc2.ps */
     int code = 0;
@@ -2657,7 +2657,7 @@ private int t1_hinter__align_stem_poles(t1_hinter * this)
     return 0;
 }
 
-private t1_hint * t1_hinter__find_vstem_by_center(t1_hinter * this, t1_glyph_space_coord gx)
+static t1_hint * t1_hinter__find_vstem_by_center(t1_hinter * this, t1_glyph_space_coord gx)
 {   /* Find vstem with axis near gx : */
     int i;
     t1_hint * hint = NULL;
@@ -2675,7 +2675,7 @@ private t1_hint * t1_hinter__find_vstem_by_center(t1_hinter * this, t1_glyph_spa
     return hint;
 }
 
-private void t1_hinter__process_dotsection(t1_hinter * this, int beg_pole, int end_pole)
+static void t1_hinter__process_dotsection(t1_hinter * this, int beg_pole, int end_pole)
 {   /*  Since source outline must have oncurve poles at XY extremes,
         we compute bounding box from poles.
     */
@@ -2739,7 +2739,7 @@ private void t1_hinter__process_dotsection(t1_hinter * this, int beg_pole, int e
     }
 }
 
-private void t1_hinter__process_dotsections(t1_hinter * this)
+static void t1_hinter__process_dotsections(t1_hinter * this)
 {   int i;
 
     for(i = 0; i < this->hint_count; i++)
@@ -2753,7 +2753,7 @@ private void t1_hinter__process_dotsections(t1_hinter * this)
         }
 }
 
-private void t1_hinter__interpolate_other_poles(t1_hinter * this)
+static void t1_hinter__interpolate_other_poles(t1_hinter * this)
 {   int i, j, k;
 
     for (k = 0; k<2; k++) { /* X, Y */
@@ -2921,7 +2921,7 @@ private void t1_hinter__interpolate_other_poles(t1_hinter * this)
     }
 }
 
-private int t1_hinter__export(t1_hinter * this)
+static int t1_hinter__export(t1_hinter * this)
 {   int i, j, code;
     fixed fx, fy;
 
@@ -2968,7 +2968,7 @@ private int t1_hinter__export(t1_hinter * this)
     return 0;
 }
 
-private int t1_hinter__add_trailing_moveto(t1_hinter * this)
+static int t1_hinter__add_trailing_moveto(t1_hinter * this)
 {   t1_glyph_space_coord gx = this->width_gx, gy = this->width_gy;
 
 #if 0 /* This appears wrong due to several reasons :

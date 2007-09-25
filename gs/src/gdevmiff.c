@@ -22,9 +22,9 @@
 #define X_DPI 72
 #define Y_DPI 72
 
-private dev_proc_print_page(miff24_print_page);
+static dev_proc_print_page(miff24_print_page);
 
-private const gx_device_procs miff24_procs =
+static const gx_device_procs miff24_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
 const gx_device_printer gs_miff24_device =
@@ -35,7 +35,7 @@ prn_device(miff24_procs, "miff24",
 	   24, miff24_print_page);
 
 /* Print one page in 24-bit RLE direct color format. */
-private int
+static int
 miff24_print_page(gx_device_printer * pdev, FILE * file)
 {
     int raster = gx_device_raster((gx_device *) pdev, true);

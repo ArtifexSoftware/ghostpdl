@@ -45,7 +45,7 @@ private_st_x11fontmap();
 /* ---------------- Opening/initialization ---------------- */
 
 /* Forward references */
-private void gdev_x_setup_fontmap(gx_device_X *);
+static void gdev_x_setup_fontmap(gx_device_X *);
 
 /* Catch the alloc error when there is not enough resources for the
  * backing pixmap.  Automatically shut off backing pixmap and let the
@@ -55,13 +55,13 @@ private void gdev_x_setup_fontmap(gx_device_X *);
  * these variables must be allocated statically.  We do not see how this
  * code can work reliably in the presence of multi-threading.
  */
-private struct xv_ {
+static struct xv_ {
     Boolean alloc_error;
     XErrorHandler orighandler;
     XErrorHandler oldhandler;
 } x_error_handler;
 
-private int
+static int
 x_catch_alloc(Display * dpy, XErrorEvent * err)
 {
     if (err->error_code == BadAlloc)
@@ -499,7 +499,7 @@ gdev_x_open(gx_device_X * xdev)
 }
 
 /* Set up or take down buffering in a RAM image. */
-private int
+static int
 x_set_buffer(gx_device_X * xdev)
 {
     /*
@@ -684,7 +684,7 @@ gdev_x_clear_window(gx_device_X * xdev)
 /* ------ Initialize font mapping ------ */
 
 /* Extract the PostScript font name from the font map resource. */
-private const char *
+static const char *
 get_ps_name(const char **cpp, int *len)
 {
     const char *ret;
@@ -709,7 +709,7 @@ get_ps_name(const char **cpp, int *len)
 }
 
 /* Extract the X11 font name from the font map resource. */
-private const char *
+static const char *
 get_x11_name(const char **cpp, int *len)
 {
     const char *ret;
@@ -742,7 +742,7 @@ get_x11_name(const char **cpp, int *len)
 }
 
 /* Scan one resource and build font map records. */
-private void
+static void
 scan_font_resource(const char *resource, x11fontmap **pmaps, gs_memory_t *mem)
 {
     const char *ps_name;
@@ -790,7 +790,7 @@ scan_font_resource(const char *resource, x11fontmap **pmaps, gs_memory_t *mem)
 }
 
 /* Scan all the font resources and set up the maps. */
-private void
+static void
 gdev_x_setup_fontmap(gx_device_X * xdev)
 {
     if (!xdev->useXFonts)
@@ -971,7 +971,7 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
 /* ---------------- Closing/finalization ---------------- */
 
 /* Free fonts when closing the device. */
-private void
+static void
 free_x_fontmaps(x11fontmap **pmaps, gs_memory_t *mem)
 {
     while (*pmaps) {

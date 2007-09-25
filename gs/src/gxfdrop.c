@@ -50,7 +50,7 @@ void init_section(section *sect, int i0, int i1)
     }
 }
 
-private margin * alloc_margin(line_list * ll)
+static margin * alloc_margin(line_list * ll)
 {   margin *m;
 
     if (ll->free_margin_list != 0) {
@@ -67,7 +67,7 @@ private margin * alloc_margin(line_list * ll)
     return m;
 }
 
-private void release_margin_list(line_list * ll, margin_set *ms)
+static void release_margin_list(line_list * ll, margin_set *ms)
 {   margin * m1 = ms->margin_list;
 
     if (m1 == 0)
@@ -92,7 +92,7 @@ void free_all_margins(line_list * ll)
     }
 }
 
-private int store_margin(line_list * ll, margin_set * set, int ii0, int ii1)
+static int store_margin(line_list * ll, margin_set * set, int ii0, int ii1)
 {
     /*
      * We need to add margin to the ordered margin list.
@@ -210,15 +210,15 @@ private int store_margin(line_list * ll, margin_set * set, int ii0, int ii1)
     return 0;
 }
 
-private inline int to_interval(int x, int l, int u)
+static inline int to_interval(int x, int l, int u)
 {   return x < l ? l : x > u ? u : x;
 }
 
-private inline fixed Y_AT_X(active_line *alp, fixed xp)
+static inline fixed Y_AT_X(active_line *alp, fixed xp)
 {   return alp->start.y + fixed_mult_quo(xp - alp->start.x,  alp->diff.y, alp->diff.x);
 }
 
-private int margin_boundary(line_list * ll, margin_set * set, active_line * alp, 
+static int margin_boundary(line_list * ll, margin_set * set, active_line * alp, 
 			    fixed xx0, fixed xx1, fixed yy0, fixed yy1, int dir, fixed y0, fixed y1)
 {   section *sect = set->sect;
     fixed x0, x1, xmin, xmax;
@@ -342,7 +342,7 @@ int continue_margin_common(line_list * ll, margin_set * set, active_line * flp, 
     return margin_boundary(ll, set, alp, 0, 0, yy0, yy1, -1, y0, y1);
 }
 
-private inline int mark_margin_interior(line_list * ll, margin_set * set, active_line * flp, active_line * alp, fixed y, fixed y0, fixed y1)
+static inline int mark_margin_interior(line_list * ll, margin_set * set, active_line * flp, active_line * alp, fixed y, fixed y0, fixed y1)
 {
     section *sect = set->sect;
     fixed x0 = (y == y0 ? flp->x_current : y == y1 ? flp->x_next : AL_X_AT_Y(flp, y));
@@ -386,7 +386,7 @@ int margin_interior(line_list * ll, active_line * flp, active_line * alp, fixed 
     return 0;
 }
 
-private inline int process_h_sect(line_list * ll, margin_set * set, active_line * hlp0, 
+static inline int process_h_sect(line_list * ll, margin_set * set, active_line * hlp0, 
     active_line * plp, active_line * flp, int side, fixed y0, fixed y1)
 {
     active_line *hlp = hlp0;
@@ -411,7 +411,7 @@ private inline int process_h_sect(line_list * ll, margin_set * set, active_line 
     return 0;	
 }
 
-private inline int process_h_side(line_list * ll, margin_set * set, active_line * hlp, 
+static inline int process_h_side(line_list * ll, margin_set * set, active_line * hlp, 
     active_line * plp, active_line * flp, active_line * alp, int side, fixed y0, fixed y1)
 {   if (plp != 0 || flp != 0 || (plp == 0 && flp == 0 && alp == 0)) {
 	/* We don't know here, whether the opposite (-) side is painted with
@@ -431,7 +431,7 @@ private inline int process_h_side(line_list * ll, margin_set * set, active_line 
     return 0;
 }
 
-private inline int process_h_list(line_list * ll, active_line * hlp, active_line * plp, 
+static inline int process_h_list(line_list * ll, active_line * hlp, active_line * plp, 
     active_line * flp, active_line * alp, int side, fixed y0, fixed y1)
 {   fixed y = hlp->start.y;
 
@@ -472,7 +472,7 @@ int process_h_lists(line_list * ll, active_line * plp, active_line * flp, active
     return 0;
 }
 
-private inline int compute_padding(section *s)
+static inline int compute_padding(section *s)
 {
     return (s->y0 < 0 || s->y1 < 0 ? -2 : /* contacts a trapezoid - don't paint */
 	    s->y1 < fixed_half ? 0 : 
@@ -480,7 +480,7 @@ private inline int compute_padding(section *s)
 	    fixed_half - s->y0 < s->y1 - fixed_half ? 1 : 0);
 }
 
-private int fill_margin(gx_device * dev, const line_list * ll, margin_set *ms, int i0, int i1)
+static int fill_margin(gx_device * dev, const line_list * ll, margin_set *ms, int i0, int i1)
 {   /* Returns the new index (positive) or return code (negative). */
     section *sect = ms->sect;
     int iy = fixed2int_var_pixround(ms->y);

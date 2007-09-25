@@ -50,7 +50,7 @@ extern const gs_color_space_type gs_color_space_type_DeviceN;
 
 /* <array> .setseparationspace - */
 /* The current color space is the alternate space for the separation space. */
-private int
+static int
 zsetseparationspace(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -132,7 +132,7 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
 }
 
 /* - currentoverprint <bool> */
-private int
+static int
 zcurrentoverprint(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -143,7 +143,7 @@ zcurrentoverprint(i_ctx_t *i_ctx_p)
 }
 
 /* <bool> setoverprint - */
-private int
+static int
 zsetoverprint(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -155,7 +155,7 @@ zsetoverprint(i_ctx_t *i_ctx_p)
 }
 
 /* - .currentoverprintmode <int> */
-private int
+static int
 zcurrentoverprintmode(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -166,7 +166,7 @@ zcurrentoverprintmode(i_ctx_t *i_ctx_p)
 }
 
 /* <int> .setoverprintmode - */
-private int
+static int
 zsetoverprintmode(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

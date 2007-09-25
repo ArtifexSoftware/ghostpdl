@@ -25,9 +25,9 @@
 #include "store.h"
 
 /* Forward references */
-private int common_arc(i_ctx_t *,
+static int common_arc(i_ctx_t *,
 	  int (*)(gs_state *, floatp, floatp, floatp, floatp, floatp));
-private int common_arct(i_ctx_t *, float *);
+static int common_arct(i_ctx_t *, float *);
 
 /* <x> <y> <r> <ang1> <ang2> arc - */
 int
@@ -44,7 +44,7 @@ zarcn(i_ctx_t *i_ctx_p)
 }
 
 /* Common code for arc[n] */
-private int
+static int
 common_arc(i_ctx_t *i_ctx_p,
       int (*aproc)(gs_state *, floatp, floatp, floatp, floatp, floatp))
 {
@@ -73,7 +73,7 @@ zarct(i_ctx_t *i_ctx_p)
 }
 
 /* <x1> <y1> <x2> <y2> <r> arcto <xt1> <yt1> <xt2> <yt2> */
-private int
+static int
 zarcto(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -91,7 +91,7 @@ zarcto(i_ctx_t *i_ctx_p)
 }
 
 /* Common code for arct[o] */
-private int
+static int
 common_arct(i_ctx_t *i_ctx_p, float *tanxy)
 {
     os_ptr op = osp;
@@ -104,42 +104,42 @@ common_arct(i_ctx_t *i_ctx_p, float *tanxy)
 }
 
 /* - .dashpath - */
-private int
+static int
 zdashpath(i_ctx_t *i_ctx_p)
 {
     return gs_dashpath(igs);
 }
 
 /* - flattenpath - */
-private int
+static int
 zflattenpath(i_ctx_t *i_ctx_p)
 {
     return gs_flattenpath(igs);
 }
 
 /* - reversepath - */
-private int
+static int
 zreversepath(i_ctx_t *i_ctx_p)
 {
     return gs_reversepath(igs);
 }
 
 /* - strokepath - */
-private int
+static int
 zstrokepath(i_ctx_t *i_ctx_p)
 {
     return gs_strokepath(igs);
 }
 
 /* - clippath - */
-private int
+static int
 zclippath(i_ctx_t *i_ctx_p)
 {
     return gs_clippath(igs);
 }
 
 /* <bool> .pathbbox <llx> <lly> <urx> <ury> */
-private int
+static int
 z1pathbbox(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -163,7 +163,7 @@ z1pathbbox(i_ctx_t *i_ctx_p)
  * operator, not an operator procedure, even though it has a trivial
  * definition as a procedure.
  */
-private int
+static int
 zpathbbox(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -179,9 +179,9 @@ zpathbbox(i_ctx_t *i_ctx_p)
 }
 
 /* <moveproc> <lineproc> <curveproc> <closeproc> pathforall - */
-private int path_continue(i_ctx_t *);
-private int path_cleanup(i_ctx_t *);
-private int
+static int path_continue(i_ctx_t *);
+static int path_cleanup(i_ctx_t *);
+static int
 zpathforall(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -211,8 +211,8 @@ zpathforall(i_ctx_t *i_ctx_p)
     return o_push_estack;
 }
 /* Continuation procedure for pathforall */
-private void pf_push(i_ctx_t *, gs_point *, int);
-private int
+static void pf_push(i_ctx_t *, gs_point *, int);
+static int
 path_continue(i_ctx_t *i_ctx_p)
 {
     gs_path_enum *penum = r_ptr(esp, gs_path_enum);
@@ -251,7 +251,7 @@ path_continue(i_ctx_t *i_ctx_p)
     return o_push_estack;
 }
 /* Internal procedure to push one or more points */
-private void
+static void
 pf_push(i_ctx_t *i_ctx_p, gs_point * ppts, int n)
 {
     os_ptr op = osp;
@@ -265,7 +265,7 @@ pf_push(i_ctx_t *i_ctx_p, gs_point * ppts, int n)
     osp = op;
 }
 /* Clean up after a pathforall */
-private int
+static int
 path_cleanup(i_ctx_t *i_ctx_p)
 {
     gs_path_enum *penum = r_ptr(esp + 6, gs_path_enum);

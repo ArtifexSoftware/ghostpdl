@@ -341,17 +341,15 @@ typedef struct {
   long (*encode)(dviprt_print *,long,int);
 } dviprt_encoder;
 
-#define liblocal private
-
-liblocal dviprt_encoder *dviprt_getencoder_(int);
-liblocal int dviprt_setcfgbuffer_(dviprt_cfg_i *,int ,int);
-liblocal int dviprt_resetcfgbuffer_(dviprt_cfg_i *);
-liblocal int dviprt_initcfg_(dviprt_cfg_t *,dviprt_cfg_i *);
-liblocal int dviprt_printmessage(char *,int);
-liblocal int dviprt_printerror(char *,int);
-liblocal int dviprt_printwarning(char *,int);
-liblocal int dviprt_printcfgerror(dviprt_cfg_i *,char *,int);
-liblocal int dviprt_printcfgwarning(dviprt_cfg_i *,char *,int);
+static dviprt_encoder *dviprt_getencoder_(int);
+static int dviprt_setcfgbuffer_(dviprt_cfg_i *,int ,int);
+static int dviprt_resetcfgbuffer_(dviprt_cfg_i *);
+static int dviprt_initcfg_(dviprt_cfg_t *,dviprt_cfg_i *);
+static int dviprt_printmessage(char *,int);
+static int dviprt_printerror(char *,int);
+static int dviprt_printwarning(char *,int);
+static int dviprt_printcfgerror(dviprt_cfg_i *,char *,int);
+static int dviprt_printcfgwarning(dviprt_cfg_i *,char *,int);
 
 extern int dviprt_print_headercomment_(char *,char *,char *,FILE *);
 extern char dviprt_message_buffer[];

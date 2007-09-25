@@ -24,15 +24,15 @@
 /* Define the standard device color types. */
 
 /* 'none' means the color is not defined. */
-private dev_color_proc_save_dc(gx_dc_no_save_dc);
-private dev_color_proc_get_dev_halftone(gx_dc_no_get_dev_halftone);
-private dev_color_proc_load(gx_dc_no_load);
-private dev_color_proc_fill_rectangle(gx_dc_no_fill_rectangle);
-private dev_color_proc_fill_masked(gx_dc_no_fill_masked);
-private dev_color_proc_equal(gx_dc_no_equal);
-private dev_color_proc_write(gx_dc_no_write);
-private dev_color_proc_read(gx_dc_no_read);
-private dev_color_proc_get_nonzero_comps(gx_dc_no_get_nonzero_comps);
+static dev_color_proc_save_dc(gx_dc_no_save_dc);
+static dev_color_proc_get_dev_halftone(gx_dc_no_get_dev_halftone);
+static dev_color_proc_load(gx_dc_no_load);
+static dev_color_proc_fill_rectangle(gx_dc_no_fill_rectangle);
+static dev_color_proc_fill_masked(gx_dc_no_fill_masked);
+static dev_color_proc_equal(gx_dc_no_equal);
+static dev_color_proc_write(gx_dc_no_write);
+static dev_color_proc_read(gx_dc_no_read);
+static dev_color_proc_get_nonzero_comps(gx_dc_no_get_nonzero_comps);
 const gx_device_color_type_t gx_dc_type_data_none = {
     &st_bytes,
     gx_dc_no_save_dc, gx_dc_no_get_dev_halftone, gx_dc_no_get_phase,
@@ -44,11 +44,11 @@ const gx_device_color_type_t *const gx_dc_type_none = &gx_dc_type_data_none;
 #define gx_dc_type_none (&gx_dc_type_data_none)
 
 /* 'null' means the color has no effect when used for drawing. */
-private dev_color_proc_load(gx_dc_null_load);
-private dev_color_proc_fill_rectangle(gx_dc_null_fill_rectangle);
-private dev_color_proc_fill_masked(gx_dc_null_fill_masked);
-private dev_color_proc_equal(gx_dc_null_equal);
-private dev_color_proc_read(gx_dc_null_read);
+static dev_color_proc_load(gx_dc_null_load);
+static dev_color_proc_fill_rectangle(gx_dc_null_fill_rectangle);
+static dev_color_proc_fill_masked(gx_dc_null_fill_masked);
+static dev_color_proc_equal(gx_dc_null_equal);
+static dev_color_proc_read(gx_dc_null_read);
 const gx_device_color_type_t gx_dc_type_data_null = {
     &st_bytes,
     gx_dc_no_save_dc, gx_dc_no_get_dev_halftone, gx_dc_no_get_phase,
@@ -59,13 +59,13 @@ const gx_device_color_type_t gx_dc_type_data_null = {
 const gx_device_color_type_t *const gx_dc_type_null = &gx_dc_type_data_null;
 #define gx_dc_type_null (&gx_dc_type_data_null)
 
-private dev_color_proc_save_dc(gx_dc_pure_save_dc);
-private dev_color_proc_load(gx_dc_pure_load);
-private dev_color_proc_fill_rectangle(gx_dc_pure_fill_rectangle);
-private dev_color_proc_fill_masked(gx_dc_pure_fill_masked);
-private dev_color_proc_equal(gx_dc_pure_equal);
-private dev_color_proc_write(gx_dc_pure_write);
-private dev_color_proc_read(gx_dc_pure_read);
+static dev_color_proc_save_dc(gx_dc_pure_save_dc);
+static dev_color_proc_load(gx_dc_pure_load);
+static dev_color_proc_fill_rectangle(gx_dc_pure_fill_rectangle);
+static dev_color_proc_fill_masked(gx_dc_pure_fill_masked);
+static dev_color_proc_equal(gx_dc_pure_equal);
+static dev_color_proc_write(gx_dc_pure_write);
+static dev_color_proc_read(gx_dc_pure_read);
 const gx_device_color_type_t gx_dc_type_data_pure = {
     &st_bytes,
     gx_dc_pure_save_dc, gx_dc_no_get_dev_halftone, gx_dc_no_get_phase,
@@ -127,8 +127,8 @@ gx_device_decache_colors(gx_device *dev)
 }
 
 /* Set a null RasterOp source. */
-private const gx_rop_source_t gx_rop_no_source_0 = {gx_rop_no_source_body(0)};
-private const gx_rop_source_t gx_rop_no_source_1 = {gx_rop_no_source_body(1)};
+static const gx_rop_source_t gx_rop_no_source_0 = {gx_rop_no_source_body(0)};
+static const gx_rop_source_t gx_rop_no_source_1 = {gx_rop_no_source_body(1)};
 void
 gx_set_rop_no_source(const gx_rop_source_t **psource,
 		     gx_rop_source_t *pno_source, gx_device *dev)
@@ -174,7 +174,7 @@ gx_device_color_equal(const gx_device_color *pdevc1,
  *
  * Returns gs_error_unknownerror for an unrecognized type.
  */
-private  const gx_device_color_type_t * dc_color_type_table[] = {
+static  const gx_device_color_type_t * dc_color_type_table[] = {
     gx_dc_type_none,            /* unset device color */
     gx_dc_type_null,            /* blank (transparent) device color */
     gx_dc_type_pure,            /* pure device color */
@@ -223,26 +223,26 @@ gx_dc_ht_get_phase(const gx_device_color * pdevc, gs_int_point * pphase)
 }
 
 /* ------ Undefined color ------ */
-private void
+static void
 gx_dc_no_save_dc(const gx_device_color * pdevc, gx_device_color_saved * psdc)
 {
     psdc->type = pdevc->type;
 }
 
-private const gx_device_halftone *
+static const gx_device_halftone *
 gx_dc_no_get_dev_halftone(const gx_device_color * pdevc)
 {
     return 0;
 }
 
-private int
+static int
 gx_dc_no_load(gx_device_color *pdevc, const gs_imager_state *ignore_pis,
 	      gx_device *ignore_dev, gs_color_select_t ignore_select)
 {
     return 0;
 }
 
-private int
+static int
 gx_dc_no_fill_rectangle(const gx_device_color *pdevc, int x, int y,
 			int w, int h, gx_device *dev,
 			gs_logical_operation_t lop,
@@ -258,7 +258,7 @@ gx_dc_no_fill_rectangle(const gx_device_color *pdevc, int x, int y,
     return gx_dc_pure_fill_rectangle(&filler, x, y, w, h, dev, lop, source);
 }
 
-private int
+static int
 gx_dc_no_fill_masked(const gx_device_color *pdevc, const byte *data,
 		     int data_x, int raster, gx_bitmap_id id,
 		     int x, int y, int w, int h, gx_device *dev,
@@ -269,13 +269,13 @@ gx_dc_no_fill_masked(const gx_device_color *pdevc, const byte *data,
     return_error(gs_error_Fatal);
 }
 
-private bool
+static bool
 gx_dc_no_equal(const gx_device_color *pdevc1, const gx_device_color *pdevc2)
 {
     return false;
 }
 
-private int
+static int
 gx_dc_no_write(
     const gx_device_color *         pdevc,      /* ignored */
     const gx_device_color_saved *   psdc,       /* ignored */
@@ -287,7 +287,7 @@ gx_dc_no_write(
     return psdc != 0 && psdc->type == pdevc->type ? 1 : 0;
 }
 
-private int
+static int
 gx_dc_no_read(
     gx_device_color *       pdevc,
     const gs_imager_state * pis,                /* ignored */
@@ -301,7 +301,7 @@ gx_dc_no_read(
     return 0;
 }
 
-private int
+static int
 gx_dc_no_get_nonzero_comps(
     const gx_device_color * pdevc_ignored,
     const gx_device *       dev_ignored,
@@ -312,14 +312,14 @@ gx_dc_no_get_nonzero_comps(
 
 /* ------ Null color ------ */
 
-private int
+static int
 gx_dc_null_load(gx_device_color *pdevc, const gs_imager_state *ignore_pis,
 		gx_device *ignore_dev, gs_color_select_t ignore_select)
 {
     return 0;
 }
 
-private int
+static int
 gx_dc_null_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 			  int w, int h, gx_device * dev,
 			  gs_logical_operation_t lop,
@@ -328,7 +328,7 @@ gx_dc_null_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     return 0;
 }
 
-private int
+static int
 gx_dc_null_fill_masked(const gx_device_color * pdevc, const byte * data,
 		       int data_x, int raster, gx_bitmap_id id,
 		       int x, int y, int w, int h, gx_device * dev,
@@ -337,13 +337,13 @@ gx_dc_null_fill_masked(const gx_device_color * pdevc, const byte * data,
     return 0;
 }
 
-private bool
+static bool
 gx_dc_null_equal(const gx_device_color * pdevc1, const gx_device_color * pdevc2)
 {
     return pdevc2->type == pdevc1->type;
 }
 
-private int
+static int
 gx_dc_null_read(
     gx_device_color *       pdevc,
     const gs_imager_state * pis,                /* ignored */
@@ -359,14 +359,14 @@ gx_dc_null_read(
 
 /* ------ Pure color ------ */
 
-private void
+static void
 gx_dc_pure_save_dc(const gx_device_color * pdevc, gx_device_color_saved * psdc)
 {
     psdc->type = pdevc->type;
     psdc->colors.pure = pdevc->colors.pure;
 }
 
-private int
+static int
 gx_dc_pure_load(gx_device_color * pdevc, const gs_imager_state * ignore_pis,
 		gx_device * ignore_dev, gs_color_select_t ignore_select)
 {
@@ -375,7 +375,7 @@ gx_dc_pure_load(gx_device_color * pdevc, const gs_imager_state * ignore_pis,
 
 /* Fill a rectangle with a pure color. */
 /* Note that we treat this as "texture" for RasterOp. */
-private int
+static int
 gx_dc_pure_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 		  int w, int h, gx_device * dev, gs_logical_operation_t lop,
 			  const gx_rop_source_t * source)
@@ -399,7 +399,7 @@ gx_dc_pure_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 
 /* Fill a mask with a pure color. */
 /* Note that there is no source in this case: the mask is the source. */
-private int
+static int
 gx_dc_pure_fill_masked(const gx_device_color * pdevc, const byte * data,
 	int data_x, int raster, gx_bitmap_id id, int x, int y, int w, int h,
 		   gx_device * dev, gs_logical_operation_t lop, bool invert)
@@ -432,7 +432,7 @@ gx_dc_pure_fill_masked(const gx_device_color * pdevc, const byte * data,
     }
 }
 
-private bool
+static bool
 gx_dc_pure_equal(const gx_device_color * pdevc1, const gx_device_color * pdevc2)
 {
     return pdevc2->type == pdevc1->type &&
@@ -470,7 +470,7 @@ gx_dc_pure_equal(const gx_device_color * pdevc1, const gx_device_color * pdevc2)
  *  < 0, != gs_error_rangecheck, in the event of some other error; in this
  *  case *psize is not changed.
  */
-private int
+static int
 gx_dc_pure_write(
     const gx_device_color *         pdevc,
     const gx_device_color_saved *   psdc,       /* ignored */
@@ -516,7 +516,7 @@ gx_dc_pure_write(
  *
  *  # of bytes read if everthing OK, < 0 in the event of an error
  */
-private int
+static int
 gx_dc_pure_read(
     gx_device_color *       pdevc,
     const gs_imager_state * pis,                /* ignored */

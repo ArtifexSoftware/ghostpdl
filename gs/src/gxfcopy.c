@@ -93,12 +93,12 @@ struct gs_copied_glyph_s {
 gs_private_st_composite(st_gs_copied_glyph_element, gs_copied_glyph_t,
 			"gs_copied_glyph_t[]", copied_glyph_element_enum_ptrs,
 			copied_glyph_element_reloc_ptrs);
-private ENUM_PTRS_WITH(copied_glyph_element_enum_ptrs, gs_copied_glyph_t *pcg)
+static ENUM_PTRS_WITH(copied_glyph_element_enum_ptrs, gs_copied_glyph_t *pcg)
      if (index < size / (uint)sizeof(gs_copied_glyph_t))
 	 return ENUM_CONST_STRING(&pcg[index].gdata);
      return 0;
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(copied_glyph_element_reloc_ptrs, gs_copied_glyph_t *pcg)
+static RELOC_PTRS_WITH(copied_glyph_element_reloc_ptrs, gs_copied_glyph_t *pcg)
 {
     uint count = size / (uint)sizeof(gs_copied_glyph_t);
     gs_copied_glyph_t *p = pcg;
@@ -131,7 +131,7 @@ gs_private_st_composite(st_gs_copied_glyph_name_element,
 			"gs_copied_glyph_name_t[]",
 			copied_glyph_name_enum_ptrs,
 			copied_glyph_name_reloc_ptrs);
-private ENUM_PTRS_WITH(copied_glyph_name_enum_ptrs, gs_copied_glyph_name_t *pcgn)
+static ENUM_PTRS_WITH(copied_glyph_name_enum_ptrs, gs_copied_glyph_name_t *pcgn)
      if (index < size / (uint)sizeof(gs_copied_glyph_name_t)) {
 	 const gs_copied_glyph_name_t *const p = &pcgn[index];
 
@@ -145,7 +145,7 @@ private ENUM_PTRS_WITH(copied_glyph_name_enum_ptrs, gs_copied_glyph_name_t *pcgn
         the gs_font_dir instance. Will mark in gs_copied_font_data_enum_ptrs.
       */
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(copied_glyph_name_reloc_ptrs, gs_copied_glyph_name_t *pcgn)
+static RELOC_PTRS_WITH(copied_glyph_name_reloc_ptrs, gs_copied_glyph_name_t *pcgn)
 {
     uint count = size / (uint)sizeof(gs_copied_glyph_name_t);
     gs_copied_glyph_name_t *p = pcgn;
@@ -204,7 +204,7 @@ struct gs_copied_font_data_s {
     bool ordered;
 };
 extern_st(st_gs_font_info);
-private 
+static 
 ENUM_PTRS_WITH(gs_copied_font_data_enum_ptrs, gs_copied_font_data_t *cfdata)
     if (index == 12) {
 	gs_copied_glyph_name_t *names = cfdata->names;
@@ -226,7 +226,7 @@ ENUM_PTRS_WITH(gs_copied_font_data_enum_ptrs, gs_copied_font_data_t *cfdata)
     ENUM_PTR3(9, gs_copied_font_data_t, global_subrs.starts, parent, dir);
 ENUM_PTRS_END
 
-private RELOC_PTRS_WITH(gs_copied_font_data_reloc_ptrs, gs_copied_font_data_t *cfdata)
+static RELOC_PTRS_WITH(gs_copied_font_data_reloc_ptrs, gs_copied_font_data_t *cfdata)
 {
     RELOC_PTR3(gs_copied_font_data_t, glyphs, names, extra_names);
     RELOC_PTR3(gs_copied_font_data_t, data, Encoding, CIDMap);
@@ -239,7 +239,7 @@ RELOC_PTRS_END
 gs_private_st_composite(st_gs_copied_font_data, gs_copied_font_data_t, "gs_copied_font_data_t",\
     gs_copied_font_data_enum_ptrs, gs_copied_font_data_reloc_ptrs);
 
-inline private gs_copied_font_data_t *
+static inline gs_copied_font_data_t *
 cf_data(const gs_font *font)
 {
     return (gs_copied_font_data_t *)font->client_data;
@@ -250,7 +250,7 @@ cf_data(const gs_font *font)
 /* ---------------- Private utilities ---------------- */
 
 /* Copy a string.  Return 0 or gs_error_VMerror. */
-private int
+static int
 copy_string(gs_memory_t *mem, gs_const_string *pstr, client_name_t cname)
 {
     const byte *data = pstr->data;
@@ -268,7 +268,7 @@ copy_string(gs_memory_t *mem, gs_const_string *pstr, client_name_t cname)
 }
 
 /* Free a copied string. */
-private void
+static void
 uncopy_string(gs_memory_t *mem, gs_const_string *pstr, client_name_t cname)
 {
     if (pstr->data)
@@ -278,7 +278,7 @@ uncopy_string(gs_memory_t *mem, gs_const_string *pstr, client_name_t cname)
 /*
  * Allocate an Encoding for a Type 1 or Type 42 font.
  */
-private int
+static int
 copied_Encoding_alloc(gs_font *copied)
 {
     gs_copied_font_data_t *const cfdata = cf_data(copied);
@@ -299,7 +299,7 @@ copied_Encoding_alloc(gs_font *copied)
  * Allocate and set up data copied from a TrueType or CID font.
  * stell(*s) + extra is the length of the data.
  */
-private int
+static int
 copied_data_alloc(gs_font *copied, stream *s, uint extra, int code)
 {
     gs_copied_font_data_t *const cfdata = cf_data(copied);
@@ -321,7 +321,7 @@ copied_data_alloc(gs_font *copied, stream *s, uint extra, int code)
 /*
  * Copy Subrs or GSubrs from a font.
  */
-private int
+static int
 copy_subrs(gs_font_type1 *pfont, bool global, gs_subr_info_t *psi,
 	   gs_memory_t *mem)
 {
@@ -384,7 +384,7 @@ copy_subrs(gs_font_type1 *pfont, bool global, gs_subr_info_t *psi,
  * == 0, and return gs_error_undefined; if the glyph is defined, store the
  * pointer and return 0.
  */
-private int
+static int
 copied_glyph_slot(gs_copied_font_data_t *cfdata, gs_glyph glyph,
 		  gs_copied_glyph_t **pslot)
 {
@@ -413,13 +413,13 @@ copied_glyph_slot(gs_copied_font_data_t *cfdata, gs_glyph glyph,
 	return_error(gs_error_undefined);
     return 0;
 }
-private int
+static int
 named_glyph_slot_none(gs_copied_font_data_t *cfdata, gs_glyph glyph,
 			gs_copied_glyph_t **pslot)
 {
     return_error(gs_error_rangecheck);
 }
-private int
+static int
 named_glyph_slot_hashed(gs_copied_font_data_t *cfdata, gs_glyph glyph,
 			gs_copied_glyph_t **pslot)
 {
@@ -445,7 +445,7 @@ named_glyph_slot_hashed(gs_copied_font_data_t *cfdata, gs_glyph glyph,
     *pslot = &cfdata->glyphs[hash];
     return 0;
 }
-private int
+static int
 named_glyph_slot_linear(gs_copied_font_data_t *cfdata, gs_glyph glyph,
 			gs_copied_glyph_t **pslot)
 {
@@ -479,7 +479,7 @@ named_glyph_slot_linear(gs_copied_font_data_t *cfdata, gs_glyph glyph,
  * Return 1 if the glyph was already defined, 0 if newly added (or an
  * error per options).
  */
-private int
+static int
 copy_glyph_data(gs_font *font, gs_glyph glyph, gs_font *copied, int options,
 		gs_glyph_data_t *pgdata, const byte *prefix, int prefix_bytes)
 {
@@ -536,7 +536,7 @@ copy_glyph_data(gs_font *font, gs_glyph glyph, gs_font *copied, int options,
 /*
  * Copy a glyph name into the names table.
  */
-private int
+static int
 copy_glyph_name(gs_font *font, gs_glyph glyph, gs_font *copied,
 		gs_glyph copied_glyph)
 {
@@ -584,7 +584,7 @@ copy_glyph_name(gs_font *font, gs_glyph glyph, gs_font *copied,
 /*
  * Find the .notdef glyph in a font.
  */
-private gs_glyph
+static gs_glyph
 find_notdef(gs_font_base *font)
 {
     int index = 0;
@@ -601,7 +601,7 @@ find_notdef(gs_font_base *font)
 /*
  * Add an Encoding entry to a character-indexed font (Type 1/2/42).
  */
-private int
+static int
 copied_char_add_encoding(gs_font *copied, gs_char chr, gs_glyph glyph)
 {
     gs_copied_font_data_t *const cfdata = cf_data(copied);
@@ -625,7 +625,7 @@ copied_char_add_encoding(gs_font *copied, gs_char chr, gs_glyph glyph)
 }
 
 /* Don't allow adding an Encoding entry. */
-private int
+static int
 copied_no_add_encoding(gs_font *copied, gs_char chr, gs_glyph glyph)
 {
     return_error(gs_error_invalidaccess);
@@ -633,7 +633,7 @@ copied_no_add_encoding(gs_font *copied, gs_char chr, gs_glyph glyph)
 
 /* ---------------- Font procedures ---------------- */
 
-private int
+static int
 copied_font_info(gs_font *font, const gs_point *pscale, int members,
 		 gs_font_info_t *info)
 {
@@ -643,7 +643,7 @@ copied_font_info(gs_font *font, const gs_point *pscale, int members,
     return 0;
 }
 
-private gs_glyph
+static gs_glyph
 copied_encode_char(gs_font *copied, gs_char chr, gs_glyph_space_t glyph_space)
 {
     gs_copied_font_data_t *const cfdata = cf_data(copied);
@@ -654,7 +654,7 @@ copied_encode_char(gs_font *copied, gs_char chr, gs_glyph_space_t glyph_space)
     return Encoding[chr];
 }
 
-private int
+static int
 copied_enumerate_glyph(gs_font *font, int *pindex,
 		       gs_glyph_space_t glyph_space, gs_glyph *pglyph)
 {
@@ -686,7 +686,7 @@ copied_enumerate_glyph(gs_font *font, int *pindex,
     return 0;
 }
 
-private int
+static int
 copied_glyph_name(gs_font *font, gs_glyph glyph, gs_const_string *pstr)
 {
     gs_copied_font_data_t *const cfdata = cf_data(font);
@@ -700,7 +700,7 @@ copied_glyph_name(gs_font *font, gs_glyph glyph, gs_const_string *pstr)
     return 0;
 }
 
-private int
+static int
 copied_build_char(gs_show_enum *pte, gs_state *pgs, gs_font *font,
 		  gs_char chr, gs_glyph glyph)
 {
@@ -746,7 +746,7 @@ copied_build_char(gs_show_enum *pte, gs_state *pgs, gs_font *font,
     }
 }
 
-private inline bool 
+static inline bool 
 compare_arrays(const float *v0, int l0, const float *v1, int l1)
 {
     if (l0 != l1)
@@ -758,7 +758,7 @@ compare_arrays(const float *v0, int l0, const float *v1, int l1)
 
 #define compare_tables(a, b) compare_arrays(a.values, a.count, b.values, b.count)
 
-private int
+static int
 compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs, 
 			   int num_glyphs, int glyphs_step, int level)
 {
@@ -910,7 +910,7 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
 
 /* ------ Type 1 ------ */
 
-private int
+static int
 copied_type1_glyph_data(gs_font_type1 * pfont, gs_glyph glyph,
 			gs_glyph_data_t *pgd)
 {
@@ -925,7 +925,7 @@ copied_type1_glyph_data(gs_font_type1 * pfont, gs_glyph glyph,
     return 0;
 }
 
-private int
+static int
 copied_type1_subr_data(gs_font_type1 * pfont, int subr_num, bool global,
 		       gs_glyph_data_t *pgd)
 {
@@ -942,7 +942,7 @@ copied_type1_subr_data(gs_font_type1 * pfont, int subr_num, bool global,
     return 0;
 }
 
-private int
+static int
 copied_type1_seac_data(gs_font_type1 * pfont, int ccode,
 		       gs_glyph * pglyph, gs_const_string *gstr, gs_glyph_data_t *pgd)
 {
@@ -970,19 +970,19 @@ copied_type1_seac_data(gs_font_type1 * pfont, int ccode,
 	return 0;
 }
 
-private int
+static int
 copied_type1_push_values(void *callback_data, const fixed *values, int count)
 {
     return_error(gs_error_unregistered);
 }
 
-private int
+static int
 copied_type1_pop_value(void *callback_data, fixed *value)
 {
     return_error(gs_error_unregistered);
 }
 
-private int
+static int
 copy_font_type1(gs_font *font, gs_font *copied)
 {
     gs_font_type1 *font1 = (gs_font_type1 *)font;
@@ -1014,7 +1014,7 @@ copy_font_type1(gs_font *font, gs_font *copied)
     return 0;
 }
 
-private int
+static int
 copy_glyph_type1(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 {
     gs_glyph_data_t gdata;
@@ -1035,7 +1035,7 @@ copy_glyph_type1(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
     return (code < 0 ? code : rcode);
 }
 
-private int
+static int
 copied_type1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
 			   const gs_matrix *pmat, gx_path *ppath, double sbw[4])
 {   /* 
@@ -1095,13 +1095,13 @@ copied_type1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
     }
 }
 
-private const gs_copied_font_procs_t copied_procs_type1 = {
+static const gs_copied_font_procs_t copied_procs_type1 = {
     copy_font_type1, copy_glyph_type1, copied_char_add_encoding,
     named_glyph_slot_hashed,
     copied_encode_char, gs_type1_glyph_info, copied_type1_glyph_outline
 };
 
-private bool 
+static bool 
 same_type1_subrs(const gs_font_type1 *cfont, const gs_font_type1 *ofont, 
 		 bool global)
 {
@@ -1148,7 +1148,7 @@ same_type1_subrs(const gs_font_type1 *cfont, const gs_font_type1 *ofont,
     return code;
 }
 
-private bool 
+static bool 
 same_type1_hinting(const gs_font_type1 *cfont, const gs_font_type1 *ofont)
 {
     const gs_type1_data *d0 = &cfont->data, *d1 = &ofont->data;
@@ -1203,7 +1203,7 @@ same_type1_hinting(const gs_font_type1 *cfont, const gs_font_type1 *ofont)
 
 /* ------ Type 42 ------ */
 
-private int
+static int
 copied_type42_string_proc(gs_font_type42 *font, ulong offset, uint len,
 			  const byte **pstr)
 {
@@ -1215,7 +1215,7 @@ copied_type42_string_proc(gs_font_type42 *font, ulong offset, uint len,
     return 0;
 }
 
-private int
+static int
 copied_type42_get_outline(gs_font_type42 *font, uint glyph_index,
 			  gs_glyph_data_t *pgd)
 {
@@ -1232,7 +1232,7 @@ copied_type42_get_outline(gs_font_type42 *font, uint glyph_index,
     return 0;
 }
 
-private int
+static int
 copied_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,
 			  gs_type42_metrics_options_t options, float sbw[4])
 {
@@ -1249,7 +1249,7 @@ copied_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,
     return gs_type42_default_get_metrics(pfont, glyph_index, options, sbw);
 }
 
-private uint
+static uint
 copied_type42_get_glyph_index(gs_font_type42 *font, gs_glyph glyph)
 {
     gs_copied_font_data_t *const cfdata = cf_data((gs_font *)font);
@@ -1261,7 +1261,7 @@ copied_type42_get_glyph_index(gs_font_type42 *font, gs_glyph glyph)
     return pcg - cfdata->glyphs;
 }
 
-private int
+static int
 copy_font_type42(gs_font *font, gs_font *copied)
 {
     gs_font_type42 *const font42 = (gs_font_type42 *)font;
@@ -1324,7 +1324,7 @@ copy_font_type42(gs_font *font, gs_font *copied)
     return code;
 }
 
-private int
+static int
 copy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 {
     gs_glyph_data_t gdata;
@@ -1374,7 +1374,7 @@ copy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
     return (code < 0 ? code : rcode);
 }
 
-private gs_glyph
+static gs_glyph
 copied_type42_encode_char(gs_font *copied, gs_char chr,
 			  gs_glyph_space_t glyph_space)
 {
@@ -1398,26 +1398,26 @@ copied_type42_encode_char(gs_font *copied, gs_char chr,
 }
 
 
-private const gs_copied_font_procs_t copied_procs_type42 = {
+static const gs_copied_font_procs_t copied_procs_type42 = {
     copy_font_type42, copy_glyph_type42, copied_char_add_encoding,
     named_glyph_slot_linear,
     copied_type42_encode_char, gs_type42_glyph_info, gs_type42_glyph_outline
 };
 
-private inline int
+static inline int
 access_type42_data(gs_font_type42 *pfont, ulong base, ulong length, 
 		   const byte **vptr)
 {
     return pfont->data.string_proc(pfont, base, length, vptr);
 }
 
-private inline uint
+static inline uint
 U16(const byte *p)
 {
     return ((uint)p[0] << 8) + p[1];
 }
 
-private int
+static int
 same_type42_hinting(gs_font_type42 *font0, gs_font_type42 *font1)
 {
     gs_type42_data *d0 = &font0->data, *d1 = &font1->data;
@@ -1490,7 +1490,7 @@ same_type42_hinting(gs_font_type42 *font0, gs_font_type42 *font1)
 
 /* ------ CIDFont shared ------ */
 
-private int
+static int
 copy_font_cid_common(gs_font *font, gs_font *copied, gs_font_cid_data *pcdata)
 {
     return (copy_string(copied->memory, &pcdata->CIDSystemInfo.Registry,
@@ -1501,7 +1501,7 @@ copy_font_cid_common(gs_font *font, gs_font *copied, gs_font_cid_data *pcdata)
 
 /* ------ CIDFontType 0 ------ */
 
-private int
+static int
 copied_cid0_glyph_data(gs_font_base *font, gs_glyph glyph,
 		       gs_glyph_data_t *pgd, int *pfidx)
 {
@@ -1527,7 +1527,7 @@ copied_cid0_glyph_data(gs_font_base *font, gs_glyph glyph,
 				  pcg->gdata.size - fdbytes, NULL);
     return 0;
 }
-private int
+static int
 copied_sub_type1_glyph_data(gs_font_type1 * pfont, gs_glyph glyph,
 			    gs_glyph_data_t *pgd)
 {
@@ -1536,7 +1536,7 @@ copied_sub_type1_glyph_data(gs_font_type1 * pfont, gs_glyph glyph,
 			     glyph, pgd, NULL);
 }
 
-private int
+static int
 cid0_subfont(gs_font *copied, gs_glyph glyph, gs_font_type1 **pfont1)
 {
     int fidx;
@@ -1553,7 +1553,7 @@ cid0_subfont(gs_font *copied, gs_glyph glyph, gs_font_type1 **pfont1)
     return code;
 }
 
-private int
+static int
 copied_cid0_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		       int members, gs_glyph_info_t *info)
 {
@@ -1587,7 +1587,7 @@ copied_cid0_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 				      members, info);
 }
 
-private int
+static int
 copied_cid0_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
 			  const gs_matrix *pmat, gx_path *ppath, double sbw[4])
 {
@@ -1600,7 +1600,7 @@ copied_cid0_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
 					 ppath, sbw);
 }
 
-private int
+static int
 copy_font_cid0(gs_font *font, gs_font *copied)
 {
     gs_font_cid0 *copied0 = (gs_font_cid0 *)copied;
@@ -1670,7 +1670,7 @@ copy_font_cid0(gs_font *font, gs_font *copied)
     return code;
 }
 
-private int
+static int
 copy_glyph_cid0(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 {
     gs_glyph_data_t gdata;
@@ -1694,13 +1694,13 @@ copy_glyph_cid0(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
     return copy_glyph_data(font, glyph, copied, options, &gdata, prefix, fdbytes);
 }
 
-private const gs_copied_font_procs_t copied_procs_cid0 = {
+static const gs_copied_font_procs_t copied_procs_cid0 = {
     copy_font_cid0, copy_glyph_cid0, copied_no_add_encoding,
     named_glyph_slot_none,
     gs_no_encode_char, copied_cid0_glyph_info, copied_cid0_glyph_outline
 };
 
-private int
+static int
 same_cid0_hinting(const gs_font_cid0 *cfont, const gs_font_cid0 *ofont)
 {
     int i;
@@ -1719,7 +1719,7 @@ same_cid0_hinting(const gs_font_cid0 *cfont, const gs_font_cid0 *ofont)
 
 /* ------ CIDFontType 2 ------ */
 
-private int
+static int
 copied_cid2_CIDMap_proc(gs_font_cid2 *fcid2, gs_glyph glyph)
 {
     uint cid = glyph - GS_MIN_CID_GLYPH;
@@ -1733,7 +1733,7 @@ copied_cid2_CIDMap_proc(gs_font_cid2 *fcid2, gs_glyph glyph)
     return CIDMap[cid];
 }
 
-private uint
+static uint
 copied_cid2_get_glyph_index(gs_font_type42 *font, gs_glyph glyph)
 {
     int glyph_index = copied_cid2_CIDMap_proc((gs_font_cid2 *)font, glyph);
@@ -1743,7 +1743,7 @@ copied_cid2_get_glyph_index(gs_font_type42 *font, gs_glyph glyph)
     return glyph_index;
 }
 
-private int
+static int
 copy_font_cid2(gs_font *font, gs_font *copied)
 {
     gs_font_cid2 *copied2 = (gs_font_cid2 *)copied;
@@ -1776,7 +1776,7 @@ copy_font_cid2(gs_font *font, gs_font *copied)
     return 0;
 }
 
-private int expand_CIDMap(gs_font_cid2 *copied2, uint CIDCount)
+static int expand_CIDMap(gs_font_cid2 *copied2, uint CIDCount)
 {
     ushort *CIDMap;
     gs_copied_font_data_t *const cfdata = cf_data((gs_font *)copied2);
@@ -1796,7 +1796,7 @@ private int expand_CIDMap(gs_font_cid2 *copied2, uint CIDCount)
     return 0;
 }
 
-private int
+static int
 copy_glyph_cid2(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 {
     gs_font_cid2 *fcid2 = (gs_font_cid2 *)font;
@@ -1835,13 +1835,13 @@ copy_glyph_cid2(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
     return code;
 }
 
-private const gs_copied_font_procs_t copied_procs_cid2 = {
+static const gs_copied_font_procs_t copied_procs_cid2 = {
     copy_font_cid2, copy_glyph_cid2, copied_no_add_encoding,
     named_glyph_slot_none,
     gs_no_encode_char, gs_type42_glyph_info, gs_type42_glyph_outline
 };
 
-private int
+static int
 same_cid2_hinting(const gs_font_cid2 *cfont, const gs_font_cid2 *ofont)
 {
     return same_type42_hinting((gs_font_type42 *)cfont, (gs_font_type42 *)ofont);
@@ -1852,9 +1852,9 @@ same_cid2_hinting(const gs_font_cid2 *cfont, const gs_font_cid2 *ofont)
 /*
  * Procedure vector for copied fonts.
  */
-private font_proc_font_info(copied_font_info);
-private font_proc_enumerate_glyph(copied_enumerate_glyph);
-private const gs_font_procs copied_font_procs = {
+static font_proc_font_info(copied_font_info);
+static font_proc_enumerate_glyph(copied_enumerate_glyph);
+static const gs_font_procs copied_font_procs = {
     0,				/* define_font, not supported */
     0,				/* make_font, not supported */
     copied_font_info,
@@ -1871,7 +1871,7 @@ private const gs_font_procs copied_font_procs = {
 };
 
 #if GLYPHS_SIZE_IS_PRIME
-private const int some_primes[] = {
+static const int some_primes[] = {
     /* Arbitrary choosen prime numbers, being reasonable for a Type 1|2 font size. 
        We start with 257 to fit 256 glyphs and .notdef .
        Smaller numbers aren't useful, because we don't know whether a font
@@ -2362,7 +2362,7 @@ copied_drop_extension_glyphs(gs_font *copied)
     return 0;
 }
 
-private int
+static int
 compare_glyph_names(const void *pg1, const void *pg2)
 {
     const gs_copied_glyph_name_t * gn1 = *(const gs_copied_glyph_name_t **)pg1;
@@ -2373,7 +2373,7 @@ compare_glyph_names(const void *pg1, const void *pg2)
 
 
 /* Order font data to avoid a serialization indeterminism. */
-private int
+static int
 order_font_data(gs_copied_font_data_t *cfdata, gs_memory_t *memory)
 {
     int i, j = 0;

@@ -28,7 +28,7 @@ private_st_clip_stack();
 /*
  * When we free a clip stack entry and the associated clip path.
  */
-private void
+static void
 rc_free_clip_stack(gs_memory_t * mem, void *vstack, client_name_t cname)
 {
     gx_clip_stack_t *stack = (gx_clip_stack_t *)vstack;

@@ -46,7 +46,7 @@ const int   zcolor_remap_one_estack = 3;
 
 
 /* utility to test whether a Pattern instance uses a base space */
-private inline bool
+static inline bool
 pattern_instance_uses_base_space(const gs_pattern_instance_t * pinst)
 {
     return pinst->type->procs.uses_base_space(
@@ -69,7 +69,7 @@ pattern_instance_uses_base_space(const gs_pattern_instance_t * pinst)
  * equally legitimate, and avoids special handling of indexed color
  * spaces.
  */
-private int
+static int
 zcurrentcolor(i_ctx_t * i_ctx_p)
 {
     os_ptr                  op = osp;
@@ -120,7 +120,7 @@ zcurrentcolor(i_ctx_t * i_ctx_p)
  * istate->color_space.array field will now always have a legitimate
  * (array) value.
  */
-private int
+static int
 zcurrentcolorspace(i_ctx_t * i_ctx_p)
 {
     os_ptr  op = osp;   /* required by "push" macro */
@@ -161,7 +161,7 @@ zcurrentcolorspace(i_ctx_t * i_ctx_p)
  * interpreter is always initialized with this parameter set to false, and
  * it can only be updated (via setpagedevice) in language level 3.
  */
-private int
+static int
 zgetuseciecolor(i_ctx_t * i_ctx_p)
 {
     os_ptr  op = osp;
@@ -188,7 +188,7 @@ zgetuseciecolor(i_ctx_t * i_ctx_p)
  * only be invoked under controlled situations. Hence, it does no operand
  * checking.
  */
-private int
+static int
 zsetcolor(i_ctx_t * i_ctx_p)
 {
     os_ptr                  op = osp;
@@ -249,7 +249,7 @@ zsetcolor(i_ctx_t * i_ctx_p)
  * definition. Because error cheching is performed by the pseudo-
  * operator, it need not be repeated here.
  */
-private int
+static int
 zsetcolorspace(i_ctx_t * i_ctx_p)
 {
     os_ptr  op = osp;
@@ -264,7 +264,7 @@ zsetcolorspace(i_ctx_t * i_ctx_p)
  *
  * See the comment for gs_includecolorspace in gscolor2.c .
  */
-private int
+static int
 zincludecolorspace(i_ctx_t * i_ctx_p)
 {
     os_ptr  op = osp;
@@ -297,7 +297,7 @@ zincludecolorspace(i_ctx_t * i_ctx_p)
  * As with setcolorspace, this operator is called only under controlled
  * circumstances, hence it does no operand error checking.
  */
-private int
+static int
 zsetdevcspace(i_ctx_t * i_ctx_p)
 {
 
@@ -328,7 +328,7 @@ zsetdevcspace(i_ctx_t * i_ctx_p)
 
 
 /*  -   currenttransfer   <proc> */
-private int
+static int
 zcurrenttransfer(i_ctx_t *i_ctx_p)
 {
     os_ptr  op = osp;
@@ -344,7 +344,7 @@ zcurrenttransfer(i_ctx_t *i_ctx_p)
  * Note: this is an undocumented operator that is not supported
  * in Level 2.
  */
-private int
+static int
 zprocesscolors(i_ctx_t * i_ctx_p)
 {
     os_ptr  op = osp;
@@ -355,7 +355,7 @@ zprocesscolors(i_ctx_t * i_ctx_p)
 }
 
 /* <proc> settransfer - */
-private int
+static int
 zsettransfer(i_ctx_t * i_ctx_p)
 {
     os_ptr  op = osp;
@@ -426,7 +426,7 @@ zcolor_remap_one(
 }
 
 /* Store the result of remapping a component. */
-private int
+static int
 zcolor_remap_one_store(i_ctx_t *i_ctx_p, floatp min_value)
 {
     int i;
@@ -482,7 +482,7 @@ zcolor_remap_color(i_ctx_t *i_ctx_p)
  *
  * encode and decode color to allow mapping to be tested.
  */
-private int
+static int
 zcolor_test(i_ctx_t *i_ctx_p)
 {
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -516,7 +516,7 @@ zcolor_test(i_ctx_t *i_ctx_p)
  * Test encode/decode color procedures for a range of values.
  * Return value with the worst error in a single component.
  */
-private int
+static int
 zcolor_test_all(i_ctx_t *i_ctx_p)
 {
     os_ptr                  op = osp;

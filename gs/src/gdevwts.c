@@ -56,11 +56,11 @@ typedef struct gx_device_wts_s {
     wts_cooked_halftone wcooked[4];
 } gx_device_wts;
 
-private dev_proc_print_page(wtscmyk_print_page);
+static dev_proc_print_page(wtscmyk_print_page);
 
 /* 8-bit-per-plane separated CMYK color. */
 
-private const gx_device_procs wtscmyk_procs = {
+static const gx_device_procs wtscmyk_procs = {
     gdev_prn_open, NULL, NULL, gdev_prn_output_page, gdev_prn_close,
     NULL, cmyk_8bit_map_color_cmyk, NULL, NULL, NULL, NULL, NULL, NULL,
     gdev_prn_get_params, gdev_prn_put_params,
@@ -77,13 +77,13 @@ const gx_device_wts gs_wtscmyk_device = {
 
 /* RGB with imdi conversion to CMYK and wts halftoning */
 
-private dev_proc_open_device(wtsimdi_open_device);
-private dev_proc_close_device(wtsimdi_close_device);
-private dev_proc_print_page(wtsimdi_print_page);
-private dev_proc_create_buf_device(wtsimdi_create_buf_device);
-private dev_proc_get_bits(wtsimdi_get_bits);
-private dev_proc_get_bits_rectangle(wtsimdi_contone_get_bits_rectangle);
-private dev_proc_get_bits_rectangle(wtsimdi_halftoned_get_bits_rectangle);
+static dev_proc_open_device(wtsimdi_open_device);
+static dev_proc_close_device(wtsimdi_close_device);
+static dev_proc_print_page(wtsimdi_print_page);
+static dev_proc_create_buf_device(wtsimdi_create_buf_device);
+static dev_proc_get_bits(wtsimdi_get_bits);
+static dev_proc_get_bits_rectangle(wtsimdi_contone_get_bits_rectangle);
+static dev_proc_get_bits_rectangle(wtsimdi_halftoned_get_bits_rectangle);
 
 typedef struct cached_color_s {
     gx_color_index color_index;
@@ -127,7 +127,7 @@ typedef struct gx_device_wtsimdi_s {
 #endif
 } gx_device_wtsimdi;
 
-private const gx_device_procs wtsimdi_procs =
+static const gx_device_procs wtsimdi_procs =
 {
     wtsimdi_open_device, NULL, NULL, gdev_prn_output_page, wtsimdi_close_device,
     gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb,
@@ -145,7 +145,7 @@ const gx_device_wtsimdi gs_wtsimdi_device = {
 };
 
 #if DUMMY_WTS_HALFTONE_LINE
-private void
+static void
 wts_halftone_line(void **wts, int y, int width, int n_planes,
 		  long band_offset_x, long band_offset_y,
 		  byte **dst, const byte *src)
@@ -171,7 +171,7 @@ wts_halftone_line(void **wts, int y, int width, int n_planes,
 }
 #endif
 
-private void
+static void
 wts_halftone_line_16(wts_cooked_halftone *wch, int y, int width, int n_planes,
 		     long band_offset_x, long band_offset_y,
 		     byte **dst, const byte *src)
@@ -234,7 +234,7 @@ wts_halftone_line_16(wts_cooked_halftone *wch, int y, int width, int n_planes,
     }
 }
 
-private void
+static void
 wts_halftone_line_8(wts_cooked_halftone *wch, int y, int width, int n_planes,
 		    long band_offset_x, long band_offset_y,
 		    byte * dst, const byte * src)
@@ -278,7 +278,7 @@ wts_halftone_line_8(wts_cooked_halftone *wch, int y, int width, int n_planes,
     }
 }
 
-private int
+static int
 wts_load_halftone(gs_memory_t *mem, wts_cooked_halftone *wch, const char *fn)
 {
     FILE *f = fopen(fn, "rb");
@@ -331,7 +331,7 @@ wts_load_halftone(gs_memory_t *mem, wts_cooked_halftone *wch, const char *fn)
     return 0;
 }
 
-private int
+static int
 wts_init_halftones(gx_device_wts *wdev, int n_planes)
 {
     int i;
@@ -350,7 +350,7 @@ wts_init_halftones(gx_device_wts *wdev, int n_planes)
     return 0;
 }
 
-private int
+static int
 wtscmyk_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
     gx_device_wts *wdev = (gx_device_wts *)pdev;
@@ -428,17 +428,17 @@ out:
 
 /* Code that follows is adapted from imdi device */
 
-private double incurve(void *ctx, int ch, double val)
+static double incurve(void *ctx, int ch, double val)
 {
     return val;
 }
 
-private double outcurve(void *ctx, int ch, double val)
+static double outcurve(void *ctx, int ch, double val)
 {
     return val;
 }
 
-private void mdtable(void *ctx, double *outvals, double *invals)
+static void mdtable(void *ctx, double *outvals, double *invals)
 {
     icmLuBase *luo = ctx;
     luo->lookup(luo, outvals, invals);
@@ -449,7 +449,7 @@ private void mdtable(void *ctx, double *outvals, double *invals)
  * Load ICC device link profile (to map sRGB to FOGRA CMYK).
  */
 
-private int
+static int
 wtsimdi_open_device(gx_device *dev)
 {
     gx_device_wtsimdi *idev = (gx_device_wtsimdi*)dev;
@@ -535,7 +535,7 @@ wtsimdi_open_device(gx_device *dev)
  * Close device and clean up ICC structures.
  */
 
-private int
+static int
 wtsimdi_close_device(gx_device *dev)
 {
     gx_device_wtsimdi *idev = (gx_device_wtsimdi*)dev;
@@ -550,7 +550,7 @@ wtsimdi_close_device(gx_device *dev)
 }
 
 /* Resolve a color to cmyk values, using the one-element cache. */
-private int
+static int
 wtsimdi_resolve_one(gx_device_wtsimdi *idev, gx_color_index color)
 {
     if (color != idev->current_color.color_index) { /* quick out for same color */
@@ -599,7 +599,7 @@ wtsimdi_resolve_one(gx_device_wtsimdi *idev, gx_color_index color)
 }
 
 /* Fill a rectangle with a color. */
-private int
+static int
 wtsimdi_fill_rectangle(gx_device * dev,
 			  int x, int y, int w, int h, gx_color_index color)
 {
@@ -702,7 +702,7 @@ wtsimdi_fill_rectangle(gx_device * dev,
     return 0;
 }
 
-private int
+static int
 wtsimdi_copy_mono(gx_device * dev,
 		  const byte * data, int sourcex, int sraster, gx_bitmap_id id,
 	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
@@ -948,7 +948,7 @@ wtsimdi_contone_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
  * We need to create custom memory buffer devices.  We use the default
  * create_buf_device routine and then we set our custom device procedures.
  */
-private int 
+static int 
 wtsimdi_create_buf_device(gx_device **pbdev, gx_device *target,
    const gx_render_plane_t *render_plane, gs_memory_t *mem,
    gx_band_complexity_t *band_complexity)
@@ -983,7 +983,7 @@ wtsimdi_create_buf_device(gx_device **pbdev, gx_device *target,
  * The input data is 1 bit per component CMYK.  The data is separated
  * into planes.
  */
-private void
+static void
 write_pkmraw_row(int width, byte * data, FILE * pstream)
 {
     if (pstream == NULL)
@@ -1040,7 +1040,7 @@ write_pkmraw_row(int width, byte * data, FILE * pstream)
  * Output the page raster.
  */
 
-private int
+static int
 wtsimdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
     gx_device_wtsimdi *idev = (gx_device_wtsimdi*)pdev;

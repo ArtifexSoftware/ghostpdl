@@ -50,7 +50,7 @@ private_st_jpxd_state(); /* creates a gc object for our state,
 /** callback for the codec library */
 
 /* memory allocation */
-private void * JP2_Callback_Conv
+static void * JP2_Callback_Conv
 s_jpx_alloc(long size, JP2_Callback_Param param)
 {
     void *result = malloc(size);
@@ -59,7 +59,7 @@ s_jpx_alloc(long size, JP2_Callback_Param param)
 }
 
 /* memory free */
-private JP2_Error JP2_Callback_Conv
+static JP2_Error JP2_Callback_Conv
 s_jpx_free(void *ptr, JP2_Callback_Param param)
 {
     free(ptr);
@@ -68,7 +68,7 @@ s_jpx_free(void *ptr, JP2_Callback_Param param)
 }
 
 /* pass any available input to the library */
-private unsigned long JP2_Callback_Conv
+static unsigned long JP2_Callback_Conv
 s_jpxd_read_data(unsigned char *pucData,
 			    unsigned long ulPos, unsigned long ulSize, 
 			    JP2_Callback_Param param)
@@ -82,7 +82,7 @@ s_jpxd_read_data(unsigned char *pucData,
 }
 
 /* write decompressed data into our image buffer */
-private JP2_Error JP2_Callback_Conv
+static JP2_Error JP2_Callback_Conv
 s_jpxd_write_data(unsigned char * pucData,
 			       short sComponent,
 			       unsigned long ulRow,
@@ -117,7 +117,7 @@ s_jpxd_write_data(unsigned char * pucData,
     return cJP2_Error_OK;
 }
 
-private int
+static int
 s_jpxd_inbuf(stream_jpxd_state *state, stream_cursor_read * pr)
 {
     long in_size = pr->limit - pr->ptr;
@@ -161,7 +161,7 @@ s_jpxd_inbuf(stream_jpxd_state *state, stream_cursor_read * pr)
    this involves allocating the stream and image structures, and
    initializing the decoder.
  */
-private int
+static int
 s_jpxd_init(stream_state * ss)
 {
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
@@ -188,7 +188,7 @@ s_jpxd_init(stream_state * ss)
 /* process a secton of the input and return any decoded data.
    see strimpl.h for return codes.
  */
-private int
+static int
 s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
                  stream_cursor_write * pw, bool last)
 {
@@ -380,7 +380,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 /* stream release.
    free all our decoder state.
  */
-private void
+static void
 s_jpxd_release(stream_state *ss)
 {
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
@@ -414,7 +414,7 @@ const stream_template s_jpxd_template = {
 private_st_jpxe_state();
 
 /* callback for uncompressed data input */
-private JP2_Error JP2_Callback_Conv
+static JP2_Error JP2_Callback_Conv
 s_jpxe_read(unsigned char *buffer, short component,
 		unsigned long row, unsigned long start,
 		unsigned long num, JP2_Callback_Param param)
@@ -450,7 +450,7 @@ s_jpxe_read(unsigned char *buffer, short component,
 }
 
 /* callback for compressed data output */
-private JP2_Error JP2_Callback_Conv
+static JP2_Error JP2_Callback_Conv
 s_jpxe_write(unsigned char *buffer,
 		unsigned long pos, unsigned long size,
 		JP2_Callback_Param param)
@@ -493,7 +493,7 @@ s_jpxe_write(unsigned char *buffer,
 }
 
 /* set defaults for user-configurable parameters */
-private void
+static void
 s_jpxe_set_defaults(stream_state *ss)
 {
     stream_jpxe_state *state = (stream_jpxe_state *)ss;
@@ -507,7 +507,7 @@ s_jpxe_set_defaults(stream_state *ss)
 }
 
 /* initialize the stream */
-private int
+static int
 s_jpxe_init(stream_state *ss)
 {
     stream_jpxe_state *state = (stream_jpxe_state *)ss;
@@ -655,7 +655,7 @@ s_jpxe_init(stream_state *ss)
 
 /* process input and return any encoded data.
    see strimpl.h for return codes. */
-private int
+static int
 s_jpxe_process(stream_state *ss, stream_cursor_read *pr,
 		stream_cursor_write *pw, bool last)
 {
@@ -738,7 +738,7 @@ s_jpxe_process(stream_state *ss, stream_cursor_read *pr,
 }
 
 /* stream release. free all our state. */
-private void
+static void
 s_jpxe_release(stream_state *ss)
 {
     stream_jpxe_state *state = (stream_jpxe_state *)ss;

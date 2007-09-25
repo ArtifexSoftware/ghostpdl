@@ -37,7 +37,7 @@ copies.  */
 
 enum{PR201, PR1000, PR150, PR1K4};
 
-private dev_proc_print_page(pr201_print_page);
+static dev_proc_print_page(pr201_print_page);
 
 /* The device descriptor */
 gx_device_printer gs_pr201_device =
@@ -78,7 +78,7 @@ gx_device_printer gs_pr1000_4_device =
 
 
 /* Transpose a block of 8x8 bits */
-private int
+static int
 pr201_transpose_8x8(byte *src, int src_step, byte *dst, int dst_step)
 {
 	byte mask, s, d0, d1, d2, d3, d4, d5, d6, d7;
@@ -111,7 +111,7 @@ pr201_transpose_8x8(byte *src, int src_step, byte *dst, int dst_step)
 	return 0;
 }
 
-private int
+static int
 check_mode(const char* modename)
 {
 	if (!strcmp(modename, "pr201"))
@@ -125,7 +125,7 @@ check_mode(const char* modename)
 }
 
 /* Send the page to the printer. */
-private int
+static int
 pr201_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {	int line_size;
 	int height;

@@ -21,7 +21,7 @@
 
 /* GC procedures */
 private_st_device_rop_texture();
-private ENUM_PTRS_BEGIN(device_rop_texture_enum_ptrs) {
+static ENUM_PTRS_BEGIN(device_rop_texture_enum_ptrs) {
     if (index < st_device_color_max_ptrs) {
 	gs_ptr_type_t ptype =
 	    ENUM_SUPER_ELT(gx_device_rop_texture, st_device_color, texture, 0);
@@ -32,18 +32,18 @@ private ENUM_PTRS_BEGIN(device_rop_texture_enum_ptrs) {
     }
     ENUM_PREFIX(st_device_forward, st_device_color_max_ptrs);
 } ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(device_rop_texture_reloc_ptrs) {
+static RELOC_PTRS_BEGIN(device_rop_texture_reloc_ptrs) {
     RELOC_PREFIX(st_device_forward);
     RELOC_SUPER(gx_device_rop_texture, st_device_color, texture);
 } RELOC_PTRS_END
 
 /* Device for providing source data for RasterOp. */
-private dev_proc_fill_rectangle(rop_texture_fill_rectangle);
-private dev_proc_copy_mono(rop_texture_copy_mono);
-private dev_proc_copy_color(rop_texture_copy_color);
+static dev_proc_fill_rectangle(rop_texture_fill_rectangle);
+static dev_proc_copy_mono(rop_texture_copy_mono);
+static dev_proc_copy_color(rop_texture_copy_color);
 
 /* The device descriptor. */
-private const gx_device_rop_texture gs_rop_texture_device = {
+static const gx_device_rop_texture gs_rop_texture_device = {
     std_device_std_body(gx_device_rop_texture, 0, "rop source",
 			0, 0, 1, 1),
     {NULL,				/* open_device */
@@ -141,7 +141,7 @@ gx_make_rop_texture_device(gx_device_rop_texture * dev, gx_device * target,
 }
 
 /* Fill a rectangle */
-private int
+static int
 rop_texture_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 			   gx_color_index color)
 {
@@ -160,7 +160,7 @@ rop_texture_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 }
 
 /* Copy a monochrome rectangle */
-private int
+static int
 rop_texture_copy_mono(gx_device * dev,
 		const byte * data, int sourcex, int raster, gx_bitmap_id id,
 		      int x, int y, int w, int h,
@@ -188,7 +188,7 @@ rop_texture_copy_mono(gx_device * dev,
 }
 
 /* Copy a color rectangle */
-private int
+static int
 rop_texture_copy_color(gx_device * dev,
 		const byte * data, int sourcex, int raster, gx_bitmap_id id,
 		       int x, int y, int w, int h)

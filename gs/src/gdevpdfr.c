@@ -387,7 +387,7 @@ pdf_scan_token_composite(const byte **pscan, const byte * end,
 }
 
 /* Replace object names with object references in a (parameter) string. */
-private const byte *
+static const byte *
 pdfmark_next_object(const byte * scan, const byte * end, const byte **pname,
 		    cos_object_t **ppco, gx_device_pdf * pdev)
 {

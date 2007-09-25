@@ -375,7 +375,7 @@ ztruncate(i_ctx_t *i_ctx_p)
 /* Non-standard operators */
 
 /* <int1> <int2> .bitadd <sum> */
-private int
+static int
 zbitadd(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

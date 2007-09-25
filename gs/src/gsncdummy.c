@@ -143,7 +143,7 @@ gs_private_st_ptrs1(st_demo_color_space_data, demo_color_space_data_t,
 /*
  * Dummy install routine for color spaces which are not handled by the client.
  */
-private bool
+static bool
 client_install_no_op(client_custom_color_params_t * pparams,
 	    gs_color_space * pcs, gs_state * pgs)
 {
@@ -154,7 +154,7 @@ client_install_no_op(client_custom_color_params_t * pparams,
  * Dummy convert routine for simple color spaces (gray, RGB, CMYK, DeviceN,
  * and Separation) which are not handled by the client.
  */
-private int
+static int
 client_remap_simple_no_op(client_custom_color_params_t * pparams,
     const frac * pconc, const gs_color_space * pcs, gx_device_color * pdc,
     const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
@@ -171,7 +171,7 @@ client_remap_simple_no_op(client_custom_color_params_t * pparams,
  * CIEBasedDEF, CIEBasedDEF, CIEBasedDEFG, ICCBased) which are not handled
  * by the client.
  */
-private int
+static int
 client_remap_complex_no_op(client_custom_color_params_t * pparams,
     const gs_client_color * pc, const gs_color_space * pcs,
     gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
@@ -189,7 +189,7 @@ client_remap_complex_no_op(client_custom_color_params_t * pparams,
  * malloc and free routines instead of the normal GS memory management
  * routines.
  */
-private void
+static void
 client_adjust_cspace_count(const gs_color_space * pcs, int delta)
 {
     demo_color_space_data_t * pdata = 
@@ -212,7 +212,7 @@ client_adjust_cspace_count(const gs_color_space * pcs, int delta)
  * to make the code simpler. We also provide sample hooks for a client
  * that wants to convert ALL CIEBased color spaces to XYZ (or Lab).
  */
-private demo_color_space_data_t *
+static demo_color_space_data_t *
 allocate_client_data_block(int initial_ref_count, gs_memory_t *mem)
 {
     /*
@@ -240,7 +240,7 @@ allocate_client_data_block(int initial_ref_count, gs_memory_t *mem)
     return pdata;
 }
 
-private bool
+static bool
 client_install_generic(client_custom_color_params_t * pparams,
 	    gs_color_space * pcs, gs_state * pgs)
 {
@@ -264,7 +264,7 @@ client_install_generic(client_custom_color_params_t * pparams,
  * Check if we want to use the PANTONE color processing logic for the given
  * Separation color space.
  */
-private bool
+static bool
 client_pantone_install_Separation(client_custom_color_params_t * pparam,
 			gs_color_space * pcs, gs_state * pgs)
 {
@@ -314,7 +314,7 @@ client_pantone_install_Separation(client_custom_color_params_t * pparam,
  * Check if we want to use the PANTONE color processing logic for the given
  * DeviceN color space.
  */
-private bool
+static bool
 client_pantone_install_DeviceN(client_custom_color_params_t * pparam,
 			gs_color_space * pcs, gs_state * pgs)
 {
@@ -435,7 +435,7 @@ client_pantone_install_DeviceN(client_custom_color_params_t * pparam,
  * PDF 1.4 transparency.  The compositing devices may have a process color
  * models which differ from the final output device.)
  */
-private int
+static int
 client_pantone_remap_color(client_custom_color_params_t * pparam,
 	const frac * pconc, const demo_color_space_data_t * pparams,
        	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
@@ -502,7 +502,7 @@ client_pantone_remap_color(client_custom_color_params_t * pparam,
 /*
  * Convert a Separation color (with PANTONE colorants) into device color.
  */
-private int
+static int
 client_pantone_remap_Separation(client_custom_color_params_t * pparam,
 	const frac * pconc, const gs_color_space * pcs, gx_device_color * pdc,
        	const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
@@ -515,7 +515,7 @@ client_pantone_remap_Separation(client_custom_color_params_t * pparam,
 /*
  * Convert a DeviceN color (with PANTONE colorants) into device color.
  */
-private int
+static int
 client_pantone_remap_DeviceN(client_custom_color_params_t * pparam,
 	const frac * pconc, const gs_color_space * pcs, gx_device_color * pdc,
        	const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
@@ -529,7 +529,7 @@ client_pantone_remap_DeviceN(client_custom_color_params_t * pparam,
 /*
  * Install a DeviceGray color space.
  */
-private bool
+static bool
 client_install_DeviceGray(client_custom_color_params_t * pparams,
 	    gs_color_space * pcs, gs_state * pgs)
 {
@@ -541,7 +541,7 @@ client_install_DeviceGray(client_custom_color_params_t * pparams,
  * For demo and debug purposes, make our colors a function of the
  * intensity of the given colors and the object type.
  */
-private int
+static int
 convert_intensity_into_device_color(const frac intensity,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 	gs_color_select_t select)
@@ -572,7 +572,7 @@ convert_intensity_into_device_color(const frac intensity,
 /*
  * Convert a DeviceGray color into device color.
  */
-private int
+static int
 client_remap_DeviceGray(client_custom_color_params_t * pparams,
     const frac * pconc, const gs_color_space * pcs, gx_device_color * pdc,
     const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
@@ -590,7 +590,7 @@ client_remap_DeviceGray(client_custom_color_params_t * pparams,
 /*
  * Install a DeviceRGB color space.
  */
-private bool
+static bool
 client_install_DeviceRGB(client_custom_color_params_t * pparams,
 	    gs_color_space * pcs, gs_state * pgs)
 {
@@ -602,7 +602,7 @@ client_install_DeviceRGB(client_custom_color_params_t * pparams,
 /*
  * Convert a DeviceRGB color into device color.
  */
-private int
+static int
 client_remap_DeviceRGB(client_custom_color_params_t * pparams,
 	const frac * pconc, const gs_color_space * pcs, gx_device_color * pdc,
        	const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
@@ -620,7 +620,7 @@ client_remap_DeviceRGB(client_custom_color_params_t * pparams,
 /*
  * Install a DeviceCMYK color space.
  */
-private bool
+static bool
 client_install_DeviceCMYK(client_custom_color_params_t * pparams,
 	    gs_color_space * pcs, gs_state * pgs)
 {
@@ -631,7 +631,7 @@ client_install_DeviceCMYK(client_custom_color_params_t * pparams,
 /*
  * Convert a DeviceGray color into device color.
  */
-private int
+static int
 client_remap_DeviceCMYK(client_custom_color_params_t * pparams,
 	const frac * pconc, const gs_color_space * pcs, gx_device_color * pdc,
        	const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
@@ -784,7 +784,7 @@ client_install_ICCtoXYZ(client_custom_color_params_t * pparams,
 /*
  * Convert a CIEBasedA color into device color.
  */
-private int
+static int
 client_remap_CIEBasedA(client_custom_color_params_t * pparams,
     const gs_client_color * pc, const gs_color_space * pcs,
     gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
@@ -817,7 +817,7 @@ client_remap_CIEBasedA(client_custom_color_params_t * pparams,
 /*
  * Convert a CIEBasedABC color into device color.
  */
-private int
+static int
 client_remap_CIEBasedABC(client_custom_color_params_t * pparams,
     const gs_client_color * pc, const gs_color_space * pcs,
     gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
@@ -854,7 +854,7 @@ client_remap_CIEBasedABC(client_custom_color_params_t * pparams,
 /*
  * Convert a CIEBasedDEF color into device color.
  */
-private int
+static int
 client_remap_CIEBasedDEF(client_custom_color_params_t * pparams,
     const gs_client_color * pc, const gs_color_space * pcs,
     gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
@@ -891,7 +891,7 @@ client_remap_CIEBasedDEF(client_custom_color_params_t * pparams,
 /*
  * Convert a CIEBasedDEFG color into device color.
  */
-private int
+static int
 client_remap_CIEBasedDEFG(client_custom_color_params_t * pparams,
     const gs_client_color * pc, const gs_color_space * pcs,
     gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
@@ -929,7 +929,7 @@ client_remap_CIEBasedDEFG(client_custom_color_params_t * pparams,
 /*
  * Convert a ICCBased color into device color.
  */
-private int
+static int
 client_remap_ICCBased(client_custom_color_params_t * pparams,
     const gs_client_color * pc, const gs_color_space * pcs,
     gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,

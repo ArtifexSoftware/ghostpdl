@@ -47,21 +47,21 @@ gs_private_st_simple(st_font_cache_bytes, byte, "font cache bytes");
 /* GC procedures */
 /* We do all the work in font_dir_enum/reloc_ptrs in gsfont.c. */
 /* See gxfcache.h for details. */
-private 
+static 
 ENUM_PTRS_BEGIN(cc_ptr_enum_ptrs) return 0;
 
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(cc_ptr_reloc_ptrs)
+static RELOC_PTRS_BEGIN(cc_ptr_reloc_ptrs)
 {
 }
 RELOC_PTRS_END
 
 /* Forward references */
-private gx_xfont * lookup_xfont_by_name(gx_device *, const gx_xfont_procs *, gs_font_name *, int, const cached_fm_pair *, const gs_matrix *);
-private int alloc_char(gs_font_dir *, ulong, cached_char **);
-private int alloc_char_in_chunk(gs_font_dir *, ulong, cached_char **);
-private void hash_remove_cached_char(gs_font_dir *, uint);
-private void shorten_cached_char(gs_font_dir *, cached_char *, uint);
+static gx_xfont * lookup_xfont_by_name(gx_device *, const gx_xfont_procs *, gs_font_name *, int, const cached_fm_pair *, const gs_matrix *);
+static int alloc_char(gs_font_dir *, ulong, cached_char **);
+static int alloc_char_in_chunk(gs_font_dir *, ulong, cached_char **);
+static void hash_remove_cached_char(gs_font_dir *, uint);
+static void shorten_cached_char(gs_font_dir *, cached_char *, uint);
 
 /* ====== Initialization ====== */
 
@@ -162,7 +162,7 @@ gx_purge_selected_cached_chars(gs_font_dir * dir,
 
 /* ====== font-matrix pair lists ====== */
 
-private int
+static int
 fm_pair_remove_from_list(gs_font_dir * dir, cached_fm_pair *pair, uint *head)
 {
     if (dir->fmcache.mdata + pair->index != pair)
@@ -188,7 +188,7 @@ fm_pair_remove_from_list(gs_font_dir * dir, cached_fm_pair *pair, uint *head)
     return 0;
 }
 
-private int
+static int
 fm_pair_insert_into_list(gs_font_dir * dir, cached_fm_pair *pair, uint *head)
 {
     if (dir->fmcache.mdata + pair->index != pair)
@@ -213,7 +213,7 @@ fm_pair_insert_into_list(gs_font_dir * dir, cached_fm_pair *pair, uint *head)
 
 /* ====== Font-level routines ====== */
 
-private int 
+static int 
 gx_attach_tt_interpreter(gs_font_dir * dir,
 	       gs_font_type42 *font, cached_fm_pair *pair,
 	       const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale,
@@ -244,7 +244,7 @@ gx_attach_tt_interpreter(gs_font_dir * dir,
     return code;
 }
 
-private inline bool
+static inline bool
 does_font_need_tt_interpreter(gs_font *font)
 {
     if (font->FontType == ft_TrueType || font->FontType == ft_CID_TrueType) {
@@ -443,19 +443,19 @@ gx_lookup_xfont(const gs_state * pgs, cached_fm_pair * pair, int encoding_index)
 /* Purge from the caches all references to a given font/matrix pair, */
 /* or just characters that depend on its xfont. */
 #define cpair ((cached_fm_pair *)vpair)
-private bool
+static bool
 purge_fm_pair_char(const gs_memory_t *mem, cached_char * cc, void *vpair)
 {
     return cc_pair(cc) == cpair;
 }
-private bool
+static bool
 purge_fm_pair_char_xfont(const gs_memory_t *mem, cached_char * cc, void *vpair)
 {
     return cc_pair(cc) == cpair && cpair->xfont == 0 && !cc_has_bits(cc);
 }
 #undef cpair
 
-private inline void
+static inline void
 gs_clean_fm_pair_attributes(gs_font_dir * dir, cached_fm_pair * pair)
 {
     if (pair->ttr)
@@ -519,7 +519,7 @@ gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
 /* Look up an xfont by name. */
 /* The caller must already have done get_xfont_device to get the proper */
 /* device to pass as the first argument to lookup_font. */
-private gx_xfont *
+static gx_xfont *
 lookup_xfont_by_name(gx_device * fdev, const gx_xfont_procs * procs,
       gs_font_name * pfstr, int encoding_index, const cached_fm_pair * pair,
 		     const gs_matrix * pmat)
@@ -892,7 +892,7 @@ gx_add_char_bits(gs_font_dir * dir, cached_char * cc,
 }
 
 /* Purge from the caches all references to a given font. */
-private int
+static int
 gs_purge_font_from_char_caches_forced(gs_font * font, bool force)
 {
     gs_font_dir * dir;
@@ -967,7 +967,7 @@ gs_purge_font_from_char_caches_completely(gs_font * font)
 /* ------ Internal routines ------ */
 
 /* Allocate data space for a cached character, adding a new chunk if needed. */
-private int
+static int
 alloc_char(gs_font_dir * dir, ulong icdsize, cached_char **pcc)
 {				/* Try allocating at the current position first. */
     cached_char *cc;
@@ -1036,7 +1036,7 @@ alloc_char(gs_font_dir * dir, ulong icdsize, cached_char **pcc)
 }
 
 /* Allocate a character in the current chunk. */
-private int
+static int
 alloc_char_in_chunk(gs_font_dir * dir, ulong icdsize, cached_char **pcc)
 {
     char_cache_chunk *cck = dir->ccache.chunks;
@@ -1090,7 +1090,7 @@ alloc_char_in_chunk(gs_font_dir * dir, ulong icdsize, cached_char **pcc)
 
 /* Remove the cached_char at a given index in the hash table. */
 /* In order not to slow down lookup, we relocate following entries. */
-private void
+static void
 hash_remove_cached_char(gs_font_dir * dir, uint chi)
 {
     uint mask = dir->ccache.table_mask;
@@ -1117,7 +1117,7 @@ hash_remove_cached_char(gs_font_dir * dir, uint chi)
 
 /* Shorten a cached character. */
 /* diff >= sizeof(cached_char_head). */
-private void
+static void
 shorten_cached_char(gs_font_dir * dir, cached_char * cc, uint diff)
 {
     gx_bits_cache_shorten((gx_bits_cache *) & dir->ccache, &cc->head,

@@ -19,11 +19,11 @@
 #define WIDTH_10THS 85
 #define HEIGHT_10THS 110
 
-private dev_proc_print_page(t4693d_print_page);
-private dev_proc_map_rgb_color(gdev_t4693d_map_rgb_color);
-private dev_proc_map_color_rgb(gdev_t4693d_map_color_rgb);
+static dev_proc_print_page(t4693d_print_page);
+static dev_proc_map_rgb_color(gdev_t4693d_map_rgb_color);
+static dev_proc_map_color_rgb(gdev_t4693d_map_color_rgb);
 
-private gx_device_procs t4693d_procs =
+static gx_device_procs t4693d_procs =
 	prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		gdev_t4693d_map_rgb_color, gdev_t4693d_map_color_rgb);
 
@@ -37,7 +37,7 @@ const gx_device_printer gs_t4693d2_device = t4693d_prn_device("t4693d2",8, 3);
 const gx_device_printer gs_t4693d4_device = t4693d_prn_device("t4693d4",16, 15);
 const gx_device_printer gs_t4693d8_device = t4693d_prn_device("t4693d8",24, 255);
 
-private gx_color_index
+static gx_color_index
 gdev_t4693d_map_rgb_color(gx_device *dev, const gx_color_value cv[])
 {
 	ushort bitspercolor = prn_dev->color_info.depth / 3;
@@ -56,7 +56,7 @@ gdev_t4693d_map_rgb_color(gx_device *dev, const gx_color_value cv[])
 		(b*max_value/gx_max_color_value);
 }
 
-private int
+static int
 gdev_t4693d_map_color_rgb(gx_device *dev, gx_color_index color, ushort prgb[3])
 {
         ushort bitspercolor = prn_dev->color_info.depth / 3;
@@ -73,7 +73,7 @@ gdev_t4693d_map_color_rgb(gx_device *dev, gx_color_index color, ushort prgb[3])
 	return(0);
 }
 
-private int
+static int
 t4693d_print_page(gx_device_printer *dev, FILE *ps_stream)
 {
 	char header[32];

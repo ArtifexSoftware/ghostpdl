@@ -29,12 +29,12 @@
 /* ---------------- Writing ---------------- */
 
 /* Internal procedures for writing parameter values. */
-private void
+static void
 store_vector3(float *p, const gs_vector3 * pvec)
 {
     p[0] = pvec->u, p[1] = pvec->v, p[2] = pvec->w;
 }
-private int
+static int
 write_floats(gs_param_list * plist, gs_param_name key,
 	     const float *values, int size, gs_memory_t * mem)
 {
@@ -51,7 +51,7 @@ write_floats(gs_param_list * plist, gs_param_name key,
     fa.persistent = true;
     return param_write_float_array(plist, key, &fa);
 }
-private int
+static int
 write_vector3(gs_param_list * plist, gs_param_name key,
 	      const gs_vector3 * pvec, gs_memory_t * mem)
 {
@@ -60,7 +60,7 @@ write_vector3(gs_param_list * plist, gs_param_name key,
     store_vector3(values, pvec);
     return write_floats(plist, key, values, 3, mem);
 }
-private int
+static int
 write_matrix3(gs_param_list * plist, gs_param_name key,
 	      const gs_matrix3 * pmat, gs_memory_t * mem)
 {
@@ -73,7 +73,7 @@ write_matrix3(gs_param_list * plist, gs_param_name key,
     store_vector3(values + 6, &pmat->cw);
     return write_floats(plist, key, values, 9, mem);
 }
-private int
+static int
 write_range3(gs_param_list * plist, gs_param_name key,
 	     const gs_range3 * prange, gs_memory_t * mem)
 {
@@ -86,7 +86,7 @@ write_range3(gs_param_list * plist, gs_param_name key,
     values[4] = prange->ranges[2].rmin, values[5] = prange->ranges[2].rmax;
     return write_floats(plist, key, values, 6, mem);
 }
-private int
+static int
 write_proc3(gs_param_list * plist, gs_param_name key,
 	    const gs_cie_render * pcrd, const gs_cie_render_proc3 * procs,
 	    const gs_range3 * domain, gs_memory_t * mem)
@@ -266,12 +266,12 @@ param_put_cie_render1(gs_param_list * plist, gs_cie_render * pcrd,
 /* ---------------- Reading ---------------- */
 
 /* Internal procedures for reading parameter values. */
-private void
+static void
 load_vector3(gs_vector3 * pvec, const float *p)
 {
     pvec->u = p[0], pvec->v = p[1], pvec->w = p[2];
 }
-private int
+static int
 read_floats(gs_param_list * plist, gs_param_name key, float *values, int count)
 {
     gs_param_float_array fa;
@@ -285,7 +285,7 @@ read_floats(gs_param_list * plist, gs_param_name key, float *values, int count)
 
     return 0;
 }
-private int
+static int
 read_vector3(gs_param_list * plist, gs_param_name key,
 	     gs_vector3 * pvec, const gs_vector3 * dflt)
 {
@@ -304,7 +304,7 @@ read_vector3(gs_param_list * plist, gs_param_name key,
     }
     return code;
 }
-private int
+static int
 read_matrix3(gs_param_list * plist, gs_param_name key, gs_matrix3 * pmat)
 {
     float values[9];
@@ -323,7 +323,7 @@ read_matrix3(gs_param_list * plist, gs_param_name key, gs_matrix3 * pmat)
     }
     return code;
 }
-private int
+static int
 read_range3(gs_param_list * plist, gs_param_name key, gs_range3 * prange)
 {
     float values[6];
@@ -345,7 +345,7 @@ read_range3(gs_param_list * plist, gs_param_name key, gs_range3 * prange)
     }
     return code;
 }
-private int
+static int
 read_proc3(gs_param_list * plist, gs_param_name key,
 	   float values[gx_cie_cache_size * 3])
 {
@@ -382,7 +382,7 @@ typedef struct encode_data_s {
 } encode_data_t;
 
 /* Define procedures that retrieve the Encode values read from the list. */
-private float
+static float
 encode_from_data(floatp v, const float values[gx_cie_cache_size],
 		 const gs_range * range)
 {
@@ -395,7 +395,7 @@ encode_from_data(floatp v, const float values[gx_cie_cache_size],
  * The repetitive boilerplate in the next 10 procedures really sticks in
  * my craw, but I've got a mandate not to use macros....
  */
-private float
+static float
 encode_lmn_0_from_data(floatp v, const gs_cie_render * pcrd)
 {
     const encode_data_t *data = pcrd->client_data;
@@ -403,7 +403,7 @@ encode_lmn_0_from_data(floatp v, const gs_cie_render * pcrd)
     return encode_from_data(v, &data->lmn[0],
 			    &pcrd->DomainLMN.ranges[0]);
 }
-private float
+static float
 encode_lmn_1_from_data(floatp v, const gs_cie_render * pcrd)
 {
     const encode_data_t *data = pcrd->client_data;
@@ -411,7 +411,7 @@ encode_lmn_1_from_data(floatp v, const gs_cie_render * pcrd)
     return encode_from_data(v, &data->lmn[gx_cie_cache_size],
 			    &pcrd->DomainLMN.ranges[1]);
 }
-private float
+static float
 encode_lmn_2_from_data(floatp v, const gs_cie_render * pcrd)
 {
     const encode_data_t *data = pcrd->client_data;
@@ -419,7 +419,7 @@ encode_lmn_2_from_data(floatp v, const gs_cie_render * pcrd)
     return encode_from_data(v, &data->lmn[gx_cie_cache_size * 2],
 			    &pcrd->DomainLMN.ranges[2]);
 }
-private float
+static float
 encode_abc_0_from_data(floatp v, const gs_cie_render * pcrd)
 {
     const encode_data_t *data = pcrd->client_data;
@@ -427,7 +427,7 @@ encode_abc_0_from_data(floatp v, const gs_cie_render * pcrd)
     return encode_from_data(v, &data->abc[0],
 			    &pcrd->DomainABC.ranges[0]);
 }
-private float
+static float
 encode_abc_1_from_data(floatp v, const gs_cie_render * pcrd)
 {
     const encode_data_t *data = pcrd->client_data;
@@ -435,7 +435,7 @@ encode_abc_1_from_data(floatp v, const gs_cie_render * pcrd)
     return encode_from_data(v, &data->abc[gx_cie_cache_size],
 			    &pcrd->DomainABC.ranges[1]);
 }
-private float
+static float
 encode_abc_2_from_data(floatp v, const gs_cie_render * pcrd)
 {
     const encode_data_t *data = pcrd->client_data;
@@ -443,7 +443,7 @@ encode_abc_2_from_data(floatp v, const gs_cie_render * pcrd)
     return encode_from_data(v, &data->abc[gx_cie_cache_size * 2],
 			    &pcrd->DomainABC.ranges[2]);
 }
-private frac
+static frac
 render_table_t_0_from_data(byte v, const gs_cie_render * pcrd)
 {
     const encode_data_t *data = pcrd->client_data;
@@ -452,7 +452,7 @@ render_table_t_0_from_data(byte v, const gs_cie_render * pcrd)
 				       &data->t[0],
 				       &Range3_default.ranges[0]));
 }
-private frac
+static frac
 render_table_t_1_from_data(byte v, const gs_cie_render * pcrd)
 {
     const encode_data_t *data = pcrd->client_data;
@@ -461,7 +461,7 @@ render_table_t_1_from_data(byte v, const gs_cie_render * pcrd)
 				       &data->t[gx_cie_cache_size],
 				       &Range3_default.ranges[0]));
 }
-private frac
+static frac
 render_table_t_2_from_data(byte v, const gs_cie_render * pcrd)
 {
     const encode_data_t *data = pcrd->client_data;
@@ -470,7 +470,7 @@ render_table_t_2_from_data(byte v, const gs_cie_render * pcrd)
 				       &data->t[gx_cie_cache_size * 2],
 				       &Range3_default.ranges[0]));
 }
-private frac
+static frac
 render_table_t_3_from_data(byte v, const gs_cie_render * pcrd)
 {
     const encode_data_t *data = pcrd->client_data;
@@ -479,13 +479,13 @@ render_table_t_3_from_data(byte v, const gs_cie_render * pcrd)
 				       &data->t[gx_cie_cache_size * 3],
 				       &Range3_default.ranges[0]));
 }
-private const gs_cie_render_proc3 EncodeLMN_from_data = {
+static const gs_cie_render_proc3 EncodeLMN_from_data = {
     {encode_lmn_0_from_data, encode_lmn_1_from_data, encode_lmn_2_from_data}
 };
-private const gs_cie_render_proc3 EncodeABC_from_data = {
+static const gs_cie_render_proc3 EncodeABC_from_data = {
     {encode_abc_0_from_data, encode_abc_1_from_data, encode_abc_2_from_data}
 };
-private const gs_cie_render_table_procs RenderTableT_from_data = {
+static const gs_cie_render_table_procs RenderTableT_from_data = {
     {render_table_t_0_from_data, render_table_t_1_from_data,
      render_table_t_2_from_data, render_table_t_3_from_data
     }

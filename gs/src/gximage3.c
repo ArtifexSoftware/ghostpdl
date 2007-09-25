@@ -27,11 +27,11 @@
 #include "gxistate.h"
 
 /* Forward references */
-private dev_proc_begin_typed_image(gx_begin_image3);
-private image_enum_proc_plane_data(gx_image3_plane_data);
-private image_enum_proc_end_image(gx_image3_end_image);
-private image_enum_proc_flush(gx_image3_flush);
-private image_enum_proc_planes_wanted(gx_image3_planes_wanted);
+static dev_proc_begin_typed_image(gx_begin_image3);
+static image_enum_proc_plane_data(gx_image3_plane_data);
+static image_enum_proc_end_image(gx_image3_end_image);
+static image_enum_proc_flush(gx_image3_flush);
+static image_enum_proc_planes_wanted(gx_image3_planes_wanted);
 
 /* GC descriptor */
 private_st_gs_image3();
@@ -41,7 +41,7 @@ const gx_image_type_t gs_image_type_3 = {
     &st_gs_image3, gx_begin_image3, gx_data_image_source_size,
     gx_image_no_sput, gx_image_no_sget, gx_image_default_release, 3
 };
-private const gx_image_enum_procs_t image3_enum_procs = {
+static const gx_image_enum_procs_t image3_enum_procs = {
     gx_image3_plane_data, gx_image3_end_image,
     gx_image3_flush, gx_image3_planes_wanted
 };
@@ -91,8 +91,8 @@ gs_private_st_suffix_add6(st_image3_enum, gx_image3_enum_t, "gx_image3_enum_t",
   mdev, pcdev, pixel_info, mask_info, pixel_data, mask_data);
 
 /* Define the default implementation of ImageType 3 processing. */
-private IMAGE3_MAKE_MID_PROC(make_mid_default); /* check prototype */
-private int
+static IMAGE3_MAKE_MID_PROC(make_mid_default); /* check prototype */
+static int
 make_mid_default(gx_device **pmidev, gx_device *dev, int width, int height,
 		 gs_memory_t *mem)
 {
@@ -120,8 +120,8 @@ make_mid_default(gx_device **pmidev, gx_device *dev, int width, int height,
     *pmidev = (gx_device *)midev;
     return 0;
 }
-private IMAGE3_MAKE_MCDE_PROC(make_mcde_default);  /* check prototype */
-private int
+static IMAGE3_MAKE_MCDE_PROC(make_mcde_default);  /* check prototype */
+static int
 make_mcde_default(gx_device *dev, const gs_imager_state *pis,
 		  const gs_matrix *pmat, const gs_image_common_t *pic,
 		  const gs_int_rect *prect, const gx_drawing_color *pdcolor,
@@ -163,7 +163,7 @@ make_mcde_default(gx_device *dev, const gs_imager_state *pis,
     *pmcdev = (gx_device *)mcdev;
     return 0;
 }
-private int
+static int
 gx_begin_image3(gx_device * dev,
 		const gs_imager_state * pis, const gs_matrix * pmat,
 		const gs_image_common_t * pic, const gs_int_rect * prect,
@@ -179,7 +179,7 @@ gx_begin_image3(gx_device * dev,
  * Begin a generic ImageType 3 image, with client handling the creation of
  * the mask image and mask clip devices.
  */
-private bool check_image3_extent(floatp mask_coeff, floatp data_coeff);
+static bool check_image3_extent(floatp mask_coeff, floatp data_coeff);
 int
 gx_begin_image3_generic(gx_device * dev,
 			const gs_imager_state *pis, const gs_matrix *pmat,
@@ -436,7 +436,7 @@ gx_begin_image3_generic(gx_device * dev,
     gs_free_object(mem, penum, "gx_begin_image3");
     return code;
 }
-private bool
+static bool
 check_image3_extent(floatp mask_coeff, floatp data_coeff)
 {
     if (mask_coeff == 0)
@@ -450,7 +450,7 @@ check_image3_extent(floatp mask_coeff, floatp data_coeff)
  * Return > 0 if we want more mask now, < 0 if we want more data now,
  * 0 if we want both.
  */
-private int
+static int
 planes_next(const gx_image3_enum_t *penum)
 {
     /*
@@ -477,7 +477,7 @@ planes_next(const gx_image3_enum_t *penum)
 }
 
 /* Process the next piece of an ImageType 3 image. */
-private int
+static int
 gx_image3_plane_data(gx_image_enum_common_t * info,
 		     const gx_image_plane_t * planes, int height,
 		     int *rows_used)
@@ -667,7 +667,7 @@ gx_image3_plane_data(gx_image_enum_common_t * info,
 }
 
 /* Flush buffered data. */
-private int
+static int
 gx_image3_flush(gx_image_enum_common_t * info)
 {
     gx_image3_enum_t * const penum = (gx_image3_enum_t *) info;
@@ -679,7 +679,7 @@ gx_image3_flush(gx_image_enum_common_t * info)
 }
 
 /* Determine which data planes are wanted. */
-private bool
+static bool
 gx_image3_planes_wanted(const gx_image_enum_common_t * info, byte *wanted)
 {
     const gx_image3_enum_t * const penum = (const gx_image3_enum_t *) info;
@@ -721,7 +721,7 @@ gx_image3_planes_wanted(const gx_image_enum_common_t * info, byte *wanted)
 }
 
 /* Clean up after processing an ImageType 3 image. */
-private int
+static int
 gx_image3_end_image(gx_image_enum_common_t * info, bool draw_last)
 {
     gx_image3_enum_t *penum = (gx_image3_enum_t *) info;

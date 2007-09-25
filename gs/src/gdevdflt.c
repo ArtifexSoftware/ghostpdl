@@ -46,7 +46,7 @@ set_cinfo_polarity(gx_device * dev, gx_color_polarity_t new_polarity)
 }
 
 
-private gx_color_index
+static gx_color_index
 (*get_encode_color(gx_device *dev))(gx_device *, const gx_color_value *)
 {
     dev_proc_encode_color(*encode_proc);
@@ -112,7 +112,7 @@ private gx_color_index
  * a tolerance of .01, which is arbitrarily selected.
  */
 
-private bool
+static bool
 is_like_DeviceRGB(gx_device * dev)
 {
     const gx_cm_color_map_procs *   cm_procs;
@@ -150,7 +150,7 @@ is_like_DeviceRGB(gx_device * dev)
 /*
  * Similar to is_like_DeviceRGB, but for DeviceCMYK.
  */
-private bool
+static bool
 is_like_DeviceCMYK(gx_device * dev)
 {
     const gx_cm_color_map_procs *   cm_procs;
@@ -191,7 +191,7 @@ is_like_DeviceCMYK(gx_device * dev)
  * These will make use of the map_color_rgb routine, and use the first
  * component of the returned value or its inverse.
  */
-private int
+static int
 gx_default_1_add_decode_color(
     gx_device *     dev,
     gx_color_index  color,
@@ -204,7 +204,7 @@ gx_default_1_add_decode_color(
     return code;
 }
 
-private int
+static int
 gx_default_1_sub_decode_color(
     gx_device *     dev,
     gx_color_index  color,
@@ -227,7 +227,7 @@ gx_default_1_sub_decode_color(
  * removal and black generation. This may not be accurate, but is the
  * best that can be done in the general case without other information.
  */
-private int
+static int
 gx_default_cmyk_decode_color(
     gx_device *     dev,
     gx_color_index  color,
@@ -256,7 +256,7 @@ gx_default_cmyk_decode_color(
  * Special case default color decode routine for a canonical 1-bit per
  * component DeviceCMYK color model.
  */
-private int
+static int
 gx_1bit_cmyk_decode_color(
     gx_device *     dev,
     gx_color_index  color,
@@ -269,7 +269,7 @@ gx_1bit_cmyk_decode_color(
     return 0;
 }
 
-private int
+static int
 (*get_decode_color(gx_device * dev))(gx_device *, gx_color_index, gx_color_value *)
 {
     /* if a method has already been provided, use it */

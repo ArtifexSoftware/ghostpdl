@@ -85,7 +85,7 @@
   }
 
 
-  private Int  Order64( Int64  z )
+  static Int  Order64( Int64  z )
   {
     int  j = 0;
     while ( z )

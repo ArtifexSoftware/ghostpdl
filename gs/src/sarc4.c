@@ -68,7 +68,7 @@ s_arcfour_set_key(stream_arcfour_state * state, const unsigned char *key,
 /* (de)crypt a section of text--the procedure is the same
  * in each direction. see strimpl.h for return codes.
  */
-private int
+static int
 s_arcfour_process(stream_state * ss, stream_cursor_read * pr,
 		  stream_cursor_write * pw, bool last)
 {

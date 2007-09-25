@@ -27,8 +27,8 @@ typedef struct gx_device_mgr_s gx_device_mgr;
 
 static struct nclut clut[256];
 
-private unsigned int clut2mgr(int, int);
-private void swap_bwords(unsigned char *, int);
+static unsigned int clut2mgr(int, int);
+static void swap_bwords(unsigned char *, int);
 
 /* ------ The device descriptors ------ */
 
@@ -50,24 +50,24 @@ private void swap_bwords(unsigned char *, int);
 }
 
 /* For all mgr variants we do some extra things at opening time. */
-/* private dev_proc_open_device(gdev_mgr_open); */
+/* static dev_proc_open_device(gdev_mgr_open); */
 #define gdev_mgr_open gdev_prn_open		/* no we don't! */
 
 /* And of course we need our own print-page routines. */
-private dev_proc_print_page(mgr_print_page);
-private dev_proc_print_page(mgrN_print_page);
-private dev_proc_print_page(cmgrN_print_page);
+static dev_proc_print_page(mgr_print_page);
+static dev_proc_print_page(mgrN_print_page);
+static dev_proc_print_page(cmgrN_print_page);
 
 /* The device procedures */
-private gx_device_procs mgr_procs =
+static gx_device_procs mgr_procs =
     prn_procs(gdev_mgr_open, gdev_prn_output_page, gdev_prn_close);
-private gx_device_procs mgrN_procs =
+static gx_device_procs mgrN_procs =
     prn_color_procs(gdev_mgr_open, gdev_prn_output_page, gdev_prn_close,
 	gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
-private gx_device_procs cmgr4_procs =
+static gx_device_procs cmgr4_procs =
     prn_color_procs(gdev_mgr_open, gdev_prn_output_page, gdev_prn_close,
 	pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
-private gx_device_procs cmgr8_procs =
+static gx_device_procs cmgr8_procs =
     prn_color_procs(gdev_mgr_open, gdev_prn_output_page, gdev_prn_close,
 	mgr_8bit_map_rgb_color, mgr_8bit_map_color_rgb);
 
@@ -98,7 +98,7 @@ typedef struct mgr_cursor_s {
 
 /* Begin an MGR output page. */
 /* Write the header information and initialize the cursor. */
-private int
+static int
 mgr_begin_page(gx_device_mgr *bdev, FILE *pstream, mgr_cursor *pcur)
 {	struct b_header head;
 	uint line_size =
@@ -124,7 +124,7 @@ mgr_begin_page(gx_device_mgr *bdev, FILE *pstream, mgr_cursor *pcur)
 }
 
 /* Advance to the next row.  Return 0 if more, 1 if done. */
-private int
+static int
 mgr_next_row(mgr_cursor *pcur)
 {	if ( pcur->lnum >= pcur->dev->height )
 	{	gs_free(((gx_device_printer *)pcur->dev)->memory,
@@ -142,7 +142,7 @@ mgr_next_row(mgr_cursor *pcur)
 #define bdev ((gx_device_mgr *)pdev)
 
 /* Print a monochrome page. */
-private int
+static int
 mgr_print_page(gx_device_printer *pdev, FILE *pstream)
 {	mgr_cursor cur;
 	int mgr_wide;
@@ -165,7 +165,7 @@ mgr_print_page(gx_device_printer *pdev, FILE *pstream)
 /* Print a gray-mapped page. */
 static unsigned char bgreytable[16], bgreybacktable[16];
 static unsigned char bgrey256table[256], bgrey256backtable[256];        
-private int
+static int
 mgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 {	mgr_cursor cur;
 	int i = 0, j, k, mgr_wide;
@@ -269,7 +269,7 @@ mgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 }
 
 /* Print a color page. */
-private int
+static int
 cmgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 {	mgr_cursor cur;
 	int i = 0, j, mgr_wide, r, g, b, colors8 = 0;
@@ -396,7 +396,7 @@ mgr_8bit_map_color_rgb(gx_device *dev, gx_color_index color,
 
 
 /* convert the 8-bit look-up table into the standard MGR look-up table */
-private unsigned int
+static unsigned int
 clut2mgr(
   register int v,		/* value in clut */
   register int bits		/* number of bits in clut */
@@ -412,7 +412,7 @@ clut2mgr(
 /*
  * s w a p _ b w o r d s
  */
-private void
+static void
 swap_bwords(register unsigned char *p, int n)
 {
   register unsigned char c;

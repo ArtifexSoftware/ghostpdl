@@ -40,7 +40,7 @@ zdict(i_ctx_t *i_ctx_p)
 }
 
 /* <dict> maxlength <int> */
-private int
+static int
 zmaxlength(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -161,7 +161,7 @@ zdef(i_ctx_t *i_ctx_p)
 }
 
 /* <key> load <value> */
-private int
+static int
 zload(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -203,7 +203,7 @@ zload(i_ctx_t *i_ctx_p)
 
 /* <dict> <key> .undef - */
 /* <dict> <key> undef - */
-private int
+static int
 zundef(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -221,7 +221,7 @@ zundef(i_ctx_t *i_ctx_p)
 }
 
 /* <dict> <key> known <bool> */
-private int
+static int
 zknown(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -310,7 +310,7 @@ zcopy_dict(i_ctx_t *i_ctx_p)
 }
 
 /* - currentdict <dict> */
-private int
+static int
 zcurrentdict(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -321,7 +321,7 @@ zcurrentdict(i_ctx_t *i_ctx_p)
 }
 
 /* - countdictstack <int> */
-private int
+static int
 zcountdictstack(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -335,7 +335,7 @@ zcountdictstack(i_ctx_t *i_ctx_p)
 }
 
 /* <array> dictstack <subarray> */
-private int
+static int
 zdictstack(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -354,7 +354,7 @@ zdictstack(i_ctx_t *i_ctx_p)
 }
 
 /* - cleardictstack - */
-private int
+static int
 zcleardictstack(i_ctx_t *i_ctx_p)
 {
     while (zend(i_ctx_p) >= 0)
@@ -366,7 +366,7 @@ zcleardictstack(i_ctx_t *i_ctx_p)
 
 /* -mark- <key0> <value0> <key1> <value1> ... .dicttomark <dict> */
 /* This is the Level 2 >> operator. */
-private int
+static int
 zdicttomark(i_ctx_t *i_ctx_p)
 {
     uint count2 = ref_stack_counttomark(&o_stack);
@@ -404,7 +404,7 @@ zdicttomark(i_ctx_t *i_ctx_p)
  * writable.  Hence it is in the same category of "dangerous" operators as
  * .forceput and .forceundef.
  */
-private int
+static int
 zforcecopynew(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -432,7 +432,7 @@ zforcecopynew(i_ctx_t *i_ctx_p)
  * Like .forceput, it is meant to be used only in a few special situations,
  * and should not be accessible by name after initialization.
  */
-private int
+static int
 zforceundef(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -446,7 +446,7 @@ zforceundef(i_ctx_t *i_ctx_p)
 
 /* <dict> <key> .knownget <value> true */
 /* <dict> <key> .knownget false */
-private int
+static int
 zknownget(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -466,7 +466,7 @@ zknownget(i_ctx_t *i_ctx_p)
 }
 
 /* <dict> <key> .knownundef <bool> */
-private int
+static int
 zknownundef(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -482,7 +482,7 @@ zknownundef(i_ctx_t *i_ctx_p)
 }
 
 /* <dict> <int> .setmaxlength - */
-private int
+static int
 zsetmaxlength(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

@@ -63,7 +63,7 @@ gs_private_st_ptrs3(st_ISpecialDownScale_state, stream_ISpecialDownScale_state,
     dst, src, tmp);
 
 /* Apply filter to downscale horizontally from src to tmp. */
-private void
+static void
 idownscale_x(void /* PixelIn */ * tmp, const void /* PixelIn */ *src, stream_ISpecialDownScale_state *const ss)
 {
     int c, i;
@@ -141,7 +141,7 @@ idownscale_x(void /* PixelIn */ * tmp, const void /* PixelIn */ *src, stream_ISp
  * This is simpler because we can treat all columns identically
  * without regard to the number of samples per pixel.
  */
-private void
+static void
 idownscale_y(void /*PixelOut */ *dst, const void /* PixelIn */ *tmp,
 	     stream_ISpecialDownScale_state *const ss)
 {
@@ -190,10 +190,10 @@ idownscale_y(void /*PixelOut */ *dst, const void /* PixelIn */ *tmp,
 
 
 /* Forward references */
-private void s_ISpecialDownScale_release(stream_state * st);
+static void s_ISpecialDownScale_release(stream_state * st);
 
 /* Set default parameter values (actually, just clear pointers). */
-private void
+static void
 s_ISpecialDownScale_set_defaults(stream_state * st)
 {
     stream_ISpecialDownScale_state *const ss = (stream_ISpecialDownScale_state *) st;
@@ -204,7 +204,7 @@ s_ISpecialDownScale_set_defaults(stream_state * st)
 }
 
 /* Initialize the filter. */
-private int
+static int
 s_ISpecialDownScale_init(stream_state * st)
 {
     stream_ISpecialDownScale_state *const ss = (stream_ISpecialDownScale_state *) st;
@@ -244,7 +244,7 @@ s_ISpecialDownScale_init(stream_state * st)
 }
 
 /* Process a buffer.  Note that this handles Encode and Decode identically. */
-private int
+static int
 s_ISpecialDownScale_process(stream_state * st, stream_cursor_read * pr,
 		 stream_cursor_write * pw, bool last)
 {
@@ -333,7 +333,7 @@ adv:	++(ss->dst_y);
 }
 
 /* Release the filter's storage. */
-private void
+static void
 s_ISpecialDownScale_release(stream_state * st)
 {
     stream_ISpecialDownScale_state *const ss = (stream_ISpecialDownScale_state *) st;

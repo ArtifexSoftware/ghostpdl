@@ -28,7 +28,7 @@
 #include "ialloc.h"
 
 /* <dict> .image3 - */
-private int
+static int
 zimage3(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -81,7 +81,7 @@ zimage3(i_ctx_t *i_ctx_p)
 }
 
 /* <dict> .image4 - */
-private int
+static int
 zimage4(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

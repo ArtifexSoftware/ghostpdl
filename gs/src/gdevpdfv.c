@@ -60,7 +60,7 @@ extern const gx_device_color_type_t gx_dc_pattern2;
 /* ---------------- Utilities ---------------- */
 
 /* Write a matrix parameter. */
-private int
+static int
 cos_dict_put_matrix(cos_dict_t *pscd, const char *key, const gs_matrix *pmat)
 {
     float matrix[6];
@@ -83,12 +83,12 @@ cos_dict_put_matrix(cos_dict_t *pscd, const char *key, const gs_matrix *pmat)
  * including the NULL pattern.
  ****** WE DON'T HANDLE NULL PATTERNS YET ******
  */
-private uint
+static uint
 tile_size(const gx_strip_bitmap *tile, int depth)
 {
     return (tile->rep_width * depth + 7) / 8 * tile->rep_height;
 }
-private bool
+static bool
 tile_size_ok(const gx_device_pdf *pdev, const gx_color_tile *p_tile,
 	     const gx_color_tile *m_tile)
 {
@@ -103,7 +103,7 @@ tile_size_ok(const gx_device_pdf *pdev, const gx_color_tile *p_tile,
     return (max(p_size, m_size) <= 65500);
 }
 
-private int
+static int
 pdf_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	    const gx_color_tile *p_tile, const gx_color_tile *m_tile,
 	    cos_stream_t *pcs_image, pdf_resource_t **ppres)
@@ -246,7 +246,7 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
 }
 
 /* Set the ImageMatrix, Width, and Height for a Pattern image. */
-private void
+static void
 pdf_set_pattern_image(gs_data_image_t *pic, const gx_strip_bitmap *tile)
 {
     pic->ImageMatrix.xx = (float)(pic->Width = tile->rep_width);
@@ -254,7 +254,7 @@ pdf_set_pattern_image(gs_data_image_t *pic, const gx_strip_bitmap *tile)
 }
 
 /* Write the mask for a Pattern (colored or uncolored). */
-private int
+static int
 pdf_put_pattern_mask(gx_device_pdf *pdev, const gx_color_tile *m_tile,
 		     cos_stream_t **ppcs_mask)
 {
@@ -483,7 +483,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 /* ---------------- PatternType 2 colors ---------------- */
 
 /* Write parameters common to all Shadings. */
-private int
+static int
 pdf_put_shading_common(cos_dict_t *pscd, const gs_shading_t *psh,
 		       bool shfill, const gs_range_t **ppranges)
 {
@@ -523,7 +523,7 @@ pdf_put_shading_common(cos_dict_t *pscd, const gs_shading_t *psh,
 }
 
 /* Write an optional Function parameter. */
-private int
+static int
 pdf_put_shading_Function(cos_dict_t *pscd, const gs_function_t *pfn,
 			 const gs_range_t *pranges)
 {
@@ -539,7 +539,7 @@ pdf_put_shading_Function(cos_dict_t *pscd, const gs_function_t *pfn,
 }
 
 /* Write a linear (Axial / Radial) Shading. */
-private int
+static int
 pdf_put_linear_shading(cos_dict_t *pscd, const float *Coords,
 		       int num_coords, const float *Domain /*[2]*/,
 		       const gs_function_t *Function,
@@ -569,7 +569,7 @@ pdf_put_linear_shading(cos_dict_t *pscd, const float *Coords,
 
 /* Write a scalar (non-mesh) Shading. */
 /* (Single-use procedure for readability.) */
-private int
+static int
 pdf_put_scalar_shading(cos_dict_t *pscd, const gs_shading_t *psh,
 		       const gs_range_t *pranges)
 {
@@ -609,7 +609,7 @@ pdf_put_scalar_shading(cos_dict_t *pscd, const gs_shading_t *psh,
 }
 
 /* Add a floating point range to an array. */
-private int
+static int
 pdf_array_add_real2(cos_array_t *pca, floatp lower, floatp upper)
 {
     int code = cos_array_add_real(pca, lower);
@@ -629,7 +629,7 @@ typedef struct pdf_mesh_data_params_s {
 } pdf_mesh_data_params_t;
 
 /* Put a clamped value into a data stream.  num_bytes < sizeof(int). */
-private void
+static void
 put_clamped(byte *p, floatp v, int num_bytes)
 {
     int limit = 1 << (num_bytes * 8);
@@ -644,7 +644,7 @@ put_clamped(byte *p, floatp v, int num_bytes)
     for (shift = (num_bytes - 1) * 8; shift >= 0; shift -= 8)
 	*p++ = (byte)(i >> shift);
 }
-inline private void
+static inline void
 put_clamped_coord(byte *p, floatp v, int num_bytes)
 {
     put_clamped(p, ENCODE_MESH_COORDINATE(v), num_bytes);
@@ -653,7 +653,7 @@ put_clamped_coord(byte *p, floatp v, int num_bytes)
 /* Convert floating-point mesh data to packed binary. */
 /* BitsPerFlag = 8, BitsPerCoordinate = 24, BitsPerComponent = 16, */
 /* scaling is as defined below. */
-private int
+static int
 put_float_mesh_data(cos_stream_t *pscs, shade_coord_stream_t *cs,
 		    int flag, const pdf_mesh_data_params_t *pmdp)
 {
@@ -710,7 +710,7 @@ put_float_mesh_data(cos_stream_t *pscs, shade_coord_stream_t *cs,
 }
 
 /* Write a mesh Shading. */
-private int
+static int
 pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
 		     const gs_range_t *pranges)
 {

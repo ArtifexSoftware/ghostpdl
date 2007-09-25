@@ -24,11 +24,11 @@
 /* ------ Object definition and creation ------ */
 
 /* Define RasterOp-compositing objects. */
-private composite_create_default_compositor_proc(c_rop_create_default_compositor);
-private composite_equal_proc(c_rop_equal);
-private composite_write_proc(c_rop_write);
-private composite_read_proc(c_rop_read);
-private const gs_composite_type_t gs_composite_rop_type =
+static composite_create_default_compositor_proc(c_rop_create_default_compositor);
+static composite_equal_proc(c_rop_equal);
+static composite_write_proc(c_rop_write);
+static composite_read_proc(c_rop_read);
+static const gs_composite_type_t gs_composite_rop_type =
 {
     {
 	c_rop_create_default_compositor,
@@ -63,7 +63,7 @@ gs_create_composite_rop(gs_composite_t ** ppcte,
 
 #define prcte ((const gs_composite_rop_t *)pcte)
 
-private bool
+static bool
 c_rop_equal(const gs_composite_t * pcte, const gs_composite_t * pcte2)
 {
     return (pcte2->type == pcte->type &&
@@ -76,13 +76,13 @@ c_rop_equal(const gs_composite_t * pcte, const gs_composite_t * pcte2)
 #undef prcte2
 }
 
-private int
+static int
 c_rop_write(const gs_composite_t * pcte, byte * data, uint * psize)
 {
 /****** NYI ******/
 }
 
-private int
+static int
 c_rop_read(gs_composite_t ** ppcte, const byte * data, uint size,
 	   gs_memory_t * mem)
 {
@@ -102,12 +102,12 @@ gs_private_st_suffix_add1_final(st_device_composite_rop,
 	device_c_rop_enum_ptrs, device_c_rop_reloc_ptrs, gx_device_finalize,
 				st_device_forward, params.texture);
 /* The device descriptor. */
-private dev_proc_close_device(dcr_close);
-private dev_proc_fill_rectangle(dcr_fill_rectangle);
-private dev_proc_copy_mono(dcr_copy_mono);
-private dev_proc_copy_color(dcr_copy_color);
-private dev_proc_copy_alpha(dcr_copy_alpha);
-private const gx_device_composite_rop gs_composite_rop_device =
+static dev_proc_close_device(dcr_close);
+static dev_proc_fill_rectangle(dcr_fill_rectangle);
+static dev_proc_copy_mono(dcr_copy_mono);
+static dev_proc_copy_color(dcr_copy_color);
+static dev_proc_copy_alpha(dcr_copy_alpha);
+static const gx_device_composite_rop gs_composite_rop_device =
 {std_device_std_body_open(gx_device_composite_rop, 0,
 			  "RasterOp compositor", 0, 0, 1, 1),
  {gx_default_open_device,
@@ -192,7 +192,7 @@ c_rop_create_default_compositor(const gs_composite_t * pcte,
 }
 
 /* Close the device and free its storage. */
-private int
+static int
 dcr_close(gx_device * dev)
 {				/*
 				 * Finalization will call close again: avoid a recursion loop.
@@ -207,7 +207,7 @@ dcr_close(gx_device * dev)
 /* Import the existing RasterOp implementations. */
 extern dev_proc_strip_copy_rop(gx_default_strip_copy_rop);
 
-private int
+static int
 dcr_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 		   gx_color_index color)
 {
@@ -271,7 +271,7 @@ dcr_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 	return_error(gs_error_rangecheck);
 }
 
-private int
+static int
 dcr_copy_mono(gx_device * dev, const byte * data,
 	    int dx, int raster, gx_bitmap_id id, int x, int y, int w, int h,
 	      gx_color_index zero, gx_color_index one)
@@ -281,7 +281,7 @@ dcr_copy_mono(gx_device * dev, const byte * data,
 				zero, one);
 }
 
-private int
+static int
 dcr_copy_color(gx_device * dev, const byte * data,
 	       int dx, int raster, gx_bitmap_id id,
 	       int x, int y, int w, int h)
@@ -290,7 +290,7 @@ dcr_copy_color(gx_device * dev, const byte * data,
     return gx_default_copy_color(dev, data, dx, raster, id, x, y, w, h);
 }
 
-private int
+static int
 dcr_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	   int raster, gx_bitmap_id id, int x, int y, int width, int height,
 	       gx_color_index color, int depth)

@@ -32,8 +32,8 @@
 /* Forward declarations */
 #ifdef DEBUG
 #define trace_ctm(pgs) trace_matrix_fixed(&(pgs)->ctm)
-private void trace_matrix_fixed(const gs_matrix_fixed *);
-private void trace_matrix(const gs_matrix *);
+static void trace_matrix_fixed(const gs_matrix_fixed *);
+static void trace_matrix(const gs_matrix *);
 
 #endif
 
@@ -51,7 +51,7 @@ private void trace_matrix(const gs_matrix *);
 		if ( code < 0 ) return code;\
 	   }
 
-private int
+static int
 ctm_set_inverse(gs_state * pgs)
 {
     int code = gs_matrix_invert(&ctm_only(pgs), &pgs->ctm_inverse);
@@ -515,7 +515,7 @@ fixed_coeff_mult(fixed value, long coeff, const fixed_coeff *pfc, int maxb)
 #ifdef DEBUG
 
 /* Print a matrix */
-private void
+static void
 trace_matrix_fixed(const gs_matrix_fixed * pmat)
 {
     trace_matrix((const gs_matrix *)pmat);
@@ -527,7 +527,7 @@ trace_matrix_fixed(const gs_matrix_fixed * pmat)
 	dputs("\t\tt_fixed not valid\n");
     }
 }
-private void
+static void
 trace_matrix(register const gs_matrix * pmat)
 {
     dlprintf6("\t[%6g %6g %6g %6g %6g %6g]\n",

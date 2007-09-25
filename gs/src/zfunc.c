@@ -33,7 +33,7 @@
 /* ------ Operators ------ */
 
 /* Create a function procedure from a function structure. */
-private int
+static int
 make_function_proc(i_ctx_t *i_ctx_p, ref *op, gs_function_t *pfn)
 {
     ref cref;			/* closure */
@@ -50,7 +50,7 @@ make_function_proc(i_ctx_t *i_ctx_p, ref *op, gs_function_t *pfn)
 }
 
 /* <dict> .buildfunction <function_proc> */
-private int
+static int
 zbuildfunction(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -68,7 +68,7 @@ zbuildfunction(i_ctx_t *i_ctx_p)
 #ifdef TEST
 
 /* <function_proc> <array> .scalefunction <function_proc> */
-private int
+static int
 zscalefunction(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -184,7 +184,7 @@ zexecfunction(i_ctx_t *i_ctx_p)
  * be executed without executing the interpreter.  These functions can be
  * executed directly from within C code inside the graphics library.
  */
-private int
+static int
 zisencapfunction(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

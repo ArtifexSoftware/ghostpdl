@@ -81,7 +81,7 @@
 #define AP3250_R_MARGIN 0.28  /* US paper */
 
 /* The device descriptor */
-private dev_proc_print_page(escp2_print_page);
+static dev_proc_print_page(escp2_print_page);
 
 /* Stylus 800 device */
 const gx_device_printer far_data gs_st800_device =
@@ -104,7 +104,7 @@ const gx_device_printer far_data gs_ap3250_device =
 /* ------ Internal routines ------ */
 
 /* Send the page to the printer. */
-private int
+static int
 escp2_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {	
 	int line_size = gdev_prn_raster((gx_device_printer *)pdev);

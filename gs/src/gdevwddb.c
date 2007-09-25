@@ -30,26 +30,26 @@ typedef struct gx_device_win_ddb_s gx_device_win_ddb;
 #define wdev ((gx_device_win_ddb *)dev)
 
 /* Forward references */
-private void near win_addtool(gx_device_win_ddb *, int);
-private void near win_maketools(gx_device_win_ddb *, HDC);
-private void near win_destroytools(gx_device_win_ddb *);
+static void near win_addtool(gx_device_win_ddb *, int);
+static void near win_maketools(gx_device_win_ddb *, HDC);
+static void near win_destroytools(gx_device_win_ddb *);
 
 /* Device procedures */
 
 /* See gxdevice.h for the definitions of the procedures. */
-private dev_proc_open_device(win_ddb_open);
-private dev_proc_close_device(win_ddb_close);
-private dev_proc_map_rgb_color(win_ddb_map_rgb_color);
-private dev_proc_fill_rectangle(win_ddb_fill_rectangle);
-private dev_proc_tile_rectangle(win_ddb_tile_rectangle);
-private dev_proc_copy_mono(win_ddb_copy_mono);
-private dev_proc_copy_color(win_ddb_copy_color);
+static dev_proc_open_device(win_ddb_open);
+static dev_proc_close_device(win_ddb_close);
+static dev_proc_map_rgb_color(win_ddb_map_rgb_color);
+static dev_proc_fill_rectangle(win_ddb_fill_rectangle);
+static dev_proc_tile_rectangle(win_ddb_tile_rectangle);
+static dev_proc_copy_mono(win_ddb_copy_mono);
+static dev_proc_copy_color(win_ddb_copy_color);
 
 /* Windows-specific procedures */
-private win_proc_copy_to_clipboard(win_ddb_copy_to_clipboard);
-private win_proc_repaint(win_ddb_repaint);
-private win_proc_alloc_bitmap(win_ddb_alloc_bitmap);
-private win_proc_free_bitmap(win_ddb_free_bitmap);
+static win_proc_copy_to_clipboard(win_ddb_copy_to_clipboard);
+static win_proc_repaint(win_ddb_repaint);
+static win_proc_alloc_bitmap(win_ddb_alloc_bitmap);
+static win_proc_free_bitmap(win_ddb_free_bitmap);
 
 /* The device descriptor */
 struct gx_device_win_ddb_s {
@@ -83,7 +83,7 @@ struct gx_device_win_ddb_s {
     HDC FAR hdcmono;
     gx_bitmap_id bm_id;
 };
-private const gx_device_procs win_ddb_procs =
+static const gx_device_procs win_ddb_procs =
 {
     win_ddb_open,
     NULL,			/* get_initial_matrix */
@@ -123,7 +123,7 @@ gx_device_win_ddb far_data gs_mswin_device =
 };
 
 /* Open the win_ddb driver */
-private int
+static int
 win_ddb_open(gx_device * dev)
 {
     int code = win_open(dev);
@@ -169,7 +169,7 @@ win_ddb_open(gx_device * dev)
 }
 
 /* Close the win_ddb driver */
-private int
+static int
 win_ddb_close(gx_device * dev)
 {
     /* Free resources */
@@ -187,7 +187,7 @@ win_ddb_close(gx_device * dev)
 }
 
 /* Map a r-g-b color to the colors available under Windows */
-private gx_color_index
+static gx_color_index
 win_ddb_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
 		      gx_color_value b)
 {
@@ -226,7 +226,7 @@ FillRect(wdev->hdcbit, &rect, wdev->hbrushs[(int)color])
 
 
 /* Fill a rectangle. */
-private int
+static int
 win_ddb_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 		       gx_color_index color)
 {
@@ -247,7 +247,7 @@ win_ddb_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 /* pre-clear the rectangle to color0 and just tile with color1. */
 /* This is faster because of how win_copy_mono is implemented. */
 /* Note that this also does the right thing for colored tiles. */
-private int
+static int
 win_ddb_tile_rectangle(gx_device * dev, const gx_tile_bitmap * tile,
       int x, int y, int w, int h, gx_color_index czero, gx_color_index cone,
 		       int px, int py)
@@ -317,7 +317,7 @@ win_ddb_tile_rectangle(gx_device * dev, const gx_tile_bitmap * tile,
 
 /* Copy a monochrome bitmap.  The colors are given explicitly. */
 /* Color = gx_no_color_index means transparent (no effect on the image). */
-private int
+static int
 win_ddb_copy_mono(gx_device * dev,
 		const byte * base, int sourcex, int raster, gx_bitmap_id id,
 		  int x, int y, int w, int h,
@@ -420,7 +420,7 @@ win_ddb_copy_mono(gx_device * dev,
 
 /* Copy a color pixel map.  This is just like a bitmap, except that */
 /* each pixel takes 8 or 4 bits instead of 1 when device driver has color. */
-private int
+static int
 win_ddb_copy_color(gx_device * dev,
 		const byte * base, int sourcex, int raster, gx_bitmap_id id,
 		   int x, int y, int w, int h)
@@ -501,7 +501,7 @@ win_ddb_copy_color(gx_device * dev,
 
 
 /* Copy the bitmap to the clipboard. */
-private void
+static void
 win_ddb_copy_to_clipboard(gx_device_win * dev)
 {				/* make somewhere to put it and copy */
     HDC hdcbit = wdev->hdcbit;
@@ -527,7 +527,7 @@ win_ddb_copy_to_clipboard(gx_device_win * dev)
 
 
 /* Repaint a section of the window. */
-private void
+static void
 win_ddb_repaint(gx_device_win * dev, HDC hdc, int dx, int dy, int wx, int wy,
 		int sx, int sy)
 {
@@ -536,7 +536,7 @@ win_ddb_repaint(gx_device_win * dev, HDC hdc, int dx, int dy, int wx, int wy,
 
 
 /* Allocate the backing bitmap. */
-private int
+static int
 win_ddb_alloc_bitmap(gx_device_win * dev, gx_device * param_dev)
 {
     HDC hdc;
@@ -567,7 +567,7 @@ win_ddb_alloc_bitmap(gx_device_win * dev, gx_device * param_dev)
 
 
 /* Free the backing bitmap. */
-private void
+static void
 win_ddb_free_bitmap(gx_device_win * dev)
 {
     DeleteDC(wdev->hdcbit);	/* must do this first */
@@ -580,7 +580,7 @@ win_ddb_free_bitmap(gx_device_win * dev)
 #undef wdev
 
 
-private void near
+static void near
 win_addtool(gx_device_win_ddb * wdev, int i)
 {
     wdev->hpens[i] = CreatePen(PS_SOLID, 1, PALETTEINDEX(i));
@@ -588,7 +588,7 @@ win_addtool(gx_device_win_ddb * wdev, int i)
 }
 
 
-private void near
+static void near
 win_maketools(gx_device_win_ddb * wdev, HDC hdc)
 {
     int i;
@@ -612,7 +612,7 @@ win_maketools(gx_device_win_ddb * wdev, HDC hdc)
 }
 
 
-private void near
+static void near
 win_destroytools(gx_device_win_ddb * wdev)
 {
     int i;

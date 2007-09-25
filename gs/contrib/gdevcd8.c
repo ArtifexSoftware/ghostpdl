@@ -1,4 +1,3 @@
-/* 	$Id: gdevcd8.c,v 1.5 2002/07/30 18:53:21 easysw Exp $	 */
 /*
    Copyright (C) 2000 Hewlett-Packard Company
    Portions Copyright (C) 1996-1998  <Uli Wortmann uliw@erdw.ethz.ch>.
@@ -29,7 +28,7 @@
    copyright notice and this notice be preserved on all copies.
  */
 
-/* gdevcd8.c */
+/* 	$Id: gdevcd8.c,v 1.5 2002/07/30 18:53:21 easysw Exp $	 */
 
 /*----------------------------------------------------------------
 
@@ -196,7 +195,7 @@
 typedef struct hp850_cmyk_init_s {
     byte a[26];
 } hp850_cmyk_init_t;
-private const hp850_cmyk_init_t hp850_cmyk_init =
+static const hp850_cmyk_init_t hp850_cmyk_init =
 {
     {
 	0x02,			/* format */
@@ -244,7 +243,7 @@ typedef struct {
     int correct[256];		/* potential undercolor black correction */
 } Gamma;
 
-private const Gamma gammat850 =
+static const Gamma gammat850 =
 {
   /* Lookup values for cyan */
     {0, 0, 0, 2, 2, 2, 3, 3, 3, 5, 5, 5, 7, 7, 6, 7, 7, 6, 7, 7, 7, 8, 8,
@@ -316,7 +315,7 @@ private const Gamma gammat850 =
 };
 
 
-private const Gamma gammat890 =
+static const Gamma gammat890 =
 {
 /* Lookup values for cyan */
 {0, 2, 3, 5, 7, 8, 10, 12, 13, 15, 16, 18, 20, 21, 23, 25, 26, 28, 29,
@@ -399,7 +398,7 @@ private const Gamma gammat890 =
 169, 173, 178, 183, 189, 196, 207, 255},
 };
 
-private const Gamma * const gammat[] =
+static const Gamma * const gammat[] =
 {
     &gammat850,			/* CDJ670 */
     &gammat850,			/* CDJ850 */
@@ -408,20 +407,20 @@ private const Gamma * const gammat[] =
     &gammat850			/* CDJ1600 */
 };
 
-private int
+static int
     rescale_byte_wise1x1(int bytecount, const byte * inbytea,
 			 const byte * inbyteb, byte * outbyte);
-private int
+static int
     rescale_byte_wise2x1(int bytecount, const byte * inbytea,
 			 const byte * inbyteb, byte * outbyte);
-private int
+static int
     rescale_byte_wise1x2(int bytecount, const byte * inbytea,
 			 const byte * inbyteb, byte * outbyte);
-private int
+static int
     rescale_byte_wise2x2(int bytecount, const byte * inbytea,
 			 const byte * inbyteb, byte * outbyte);
 
-private int (* const rescale_color_plane[2][2]) (int, const byte *, const byte *, byte *) = {
+static int (* const rescale_color_plane[2][2]) (int, const byte *, const byte *, byte *) = {
     {
 	rescale_byte_wise1x1, rescale_byte_wise1x2
     },
@@ -475,24 +474,24 @@ typedef enum {
 /*
  *  Colour mapping procedures
  */
-private dev_proc_map_cmyk_color(gdev_cmyk_map_cmyk_color);
-private dev_proc_map_rgb_color(gdev_cmyk_map_rgb_color);
-private dev_proc_map_color_rgb(gdev_cmyk_map_color_rgb);
+static dev_proc_map_cmyk_color(gdev_cmyk_map_cmyk_color);
+static dev_proc_map_rgb_color(gdev_cmyk_map_rgb_color);
+static dev_proc_map_color_rgb(gdev_cmyk_map_color_rgb);
 
-private dev_proc_map_rgb_color(gdev_pcl_map_rgb_color);
-private dev_proc_map_color_rgb(gdev_pcl_map_color_rgb);
+static dev_proc_map_rgb_color(gdev_pcl_map_rgb_color);
+static dev_proc_map_color_rgb(gdev_pcl_map_color_rgb);
 
 
 /*
  *  Print-page, parameters and miscellaneous procedures
  */
-private dev_proc_open_device(hp_colour_open);
+static dev_proc_open_device(hp_colour_open);
 
-private dev_proc_get_params(cdj850_get_params);
-private dev_proc_put_params(cdj850_put_params);
+static dev_proc_get_params(cdj850_get_params);
+static dev_proc_put_params(cdj850_put_params);
 
-private dev_proc_print_page(cdj850_print_page);
-private dev_proc_print_page(chp2200_print_page);
+static dev_proc_print_page(cdj850_print_page);
+static dev_proc_print_page(chp2200_print_page);
 
 /* The device descriptors */
 
@@ -728,11 +727,11 @@ typedef struct {
 /*  Printer-specific functions.  Most printers are handled by the cdj850_xx()
  *  functions.
  */
-private void
+static void
      cdj850_start_raster_mode(gx_device_printer * pdev,
 			      int papersize, FILE * prn_stream);
 
-private void
+static void
      cdj850_print_non_blank_lines(gx_device_printer * pdev,
 				  struct ptr_arrays *data_ptrs,
 				  struct misc_struct *misc_vars,
@@ -740,17 +739,17 @@ private void
 				  const Gamma *gamma,
 				  FILE * prn_stream);
 
-private void
+static void
      cdj850_terminate_page(gx_device_printer * pdev, FILE * prn_stream);
 
 /*  The 880C and siblings need a separate set of functions because they seem
  *  to require a somewhat different version of PCL3+.
  */
-private void
+static void
      cdj880_start_raster_mode(gx_device_printer * pdev,
 			      int papersize, FILE * prn_stream);
 
-private void
+static void
      cdj880_print_non_blank_lines(gx_device_printer * pdev,
 				  struct ptr_arrays *data_ptrs,
 				  struct misc_struct *misc_vars,
@@ -758,55 +757,55 @@ private void
 				  const Gamma *gamma,
 				  FILE * prn_stream);
 
-private void
+static void
      cdj880_terminate_page(gx_device_printer * pdev, FILE * prn_stream);
 
 /*  Functions for the 1600C.
  */
-private void
+static void
      cdj1600_start_raster_mode(gx_device_printer * pdev,
 			       int papersize, FILE * prn_stream);
-private void
+static void
      cdj1600_print_non_blank_lines(gx_device_printer * pdev,
 				   struct ptr_arrays *data_ptrs,
 				   struct misc_struct *misc_vars,
 				   struct error_val_field *error_values,
 				   const Gamma *gamma,
 				   FILE * prn_stream);
-private void
+static void
      cdj1600_terminate_page(gx_device_printer * pdev, FILE * prn_stream);
 
 /*  Functions for the HP2200C */
-private void
+static void
      chp2200_start_raster_mode(gx_device_printer * pdev,
 			       int papersize, FILE * prn_stream);
 
-private void
+static void
      chp2200_terminate_page(gx_device_printer * pdev, FILE * prn_stream);
 
 
-private const gx_device_procs cdj670_procs =
+static const gx_device_procs cdj670_procs =
 cmyk_colour_procs(hp_colour_open, cdj850_get_params, cdj850_put_params,
 		  NULL, gdev_cmyk_map_color_rgb, gdev_cmyk_map_cmyk_color);
 
-private const gx_device_procs cdj850_procs =
+static const gx_device_procs cdj850_procs =
 cmyk_colour_procs(hp_colour_open, cdj850_get_params, cdj850_put_params,
 		  NULL, gdev_cmyk_map_color_rgb, gdev_cmyk_map_cmyk_color);
 
-private const gx_device_procs cdj880_procs =
+static const gx_device_procs cdj880_procs =
 cmyk_colour_procs(hp_colour_open, cdj850_get_params, cdj850_put_params,
 		  NULL, gdev_cmyk_map_color_rgb, gdev_cmyk_map_cmyk_color);
 
-private const gx_device_procs cdj890_procs =
+static const gx_device_procs cdj890_procs =
 cmyk_colour_procs(hp_colour_open, cdj850_get_params, cdj850_put_params,
 		  NULL, gdev_cmyk_map_color_rgb, gdev_cmyk_map_cmyk_color);
 
-private const gx_device_procs cdj1600_procs =
+static const gx_device_procs cdj1600_procs =
 cmyk_colour_procs(hp_colour_open, cdj850_get_params, cdj850_put_params,
 		  gdev_pcl_map_rgb_color, gdev_pcl_map_color_rgb, NULL);
 
 /* HP2200 is a RGB printer */
-private const gx_device_procs chp2200_procs =
+static const gx_device_procs chp2200_procs =
 cmyk_colour_procs(hp_colour_open, cdj850_get_params, cdj850_put_params,
 		  gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb, NULL);
 
@@ -855,12 +854,12 @@ chp_2200_device(chp2200_procs, "chp2200", 300, 300, 24, chp2200_print_page, 0,
 	       chp2200_terminate_page);
 
 /* Forward references */
-private int cdj_put_param_int(gs_param_list *, gs_param_name,
+static int cdj_put_param_int(gs_param_list *, gs_param_name,
 			      int *, int, int, int);
-private int cdj_put_param_float(gs_param_list *, gs_param_name, float
+static int cdj_put_param_float(gs_param_list *, gs_param_name, float
 				*, float, float, int);
-private int cdj_put_param_bpp(gx_device *, gs_param_list *, int, int, int);
-private int cdj_set_bpp(gx_device *, int, int);
+static int cdj_put_param_bpp(gx_device *, gs_param_list *, int, int, int);
+static int cdj_set_bpp(gx_device *, int, int);
 
 
 /*  hp_colour_open()
@@ -870,7 +869,7 @@ private int cdj_set_bpp(gx_device *, int, int);
  *
  *  Inputs:  gx_device                  ptr to the device
  */
-private int
+static int
 hp_colour_open(gx_device * pdev)
 {				/* Change the margins if necessary. */
     static const float dj_a4[4] = {
@@ -1020,7 +1019,7 @@ hp_colour_open(gx_device * pdev)
 }
 
 /* Added parameters for DeskJet 850C */
-private int
+static int
 cdj850_get_params(gx_device * pdev, gs_param_list * plist)
 {
     int code = gdev_prn_get_params(pdev, plist);
@@ -1046,7 +1045,7 @@ cdj850_get_params(gx_device * pdev, gs_param_list * plist)
     return code;
 }
 
-private int
+static int
 cdj850_put_params(gx_device * pdev, gs_param_list * plist)
 {
     int quality = cdj850->quality;
@@ -1101,77 +1100,77 @@ cdj850_put_params(gx_device * pdev, gs_param_list * plist)
 #define calc_buffsize(a, b) (((((a) + ((b) * W) - 1) / ((b) * W))) * W)
 
 /* internal functions */
-private void
+static void
      FSDlinebw(int scan, int plane_size,
 	       struct error_val_field *error_values,
 	       byte * kP,
 	       int n, int *ep, byte * dp);
-private void
+static void
      FSDlinec2(int scan, int plane_size,
 	       struct error_val_field *error_values,
 	       byte * cPa, byte * mPa, byte * yPa, int n,
 	       byte * dp, int *ep);
-private void
+static void
      FSDlinec3(int scan, int plane_size,
 	       struct error_val_field *error_values,
 	       byte * cPa, byte * mPa, byte * yPa,
 	       byte * cPb, byte * mPb, byte * yPb,
 	       int n, byte * dp, int *ep);
-private void
+static void
      FSDlinec4(int scan, int plane_size,
 	       struct error_val_field *error_values,
 	       byte * cPa, byte * mPa, byte * yPa,
 	       byte * cPb, byte * mPb, byte * yPb,
 	       int n, byte * dp, int *ep);
-private void
+static void
      init_error_buffer(struct misc_struct *misc_vars,
 		       struct ptr_arrays *data_ptrs);
-private void
+static void
      do_floyd_steinberg(int scan, int cscan, int plane_size,
 			int plane_size_c, int n,
 			struct ptr_arrays *data_ptrs,
 			gx_device_printer * pdev,
 			struct error_val_field *error_values);
-private int
+static int
     do_gcr(int bytecount, byte * inbyte, const byte * kvalues,
 	   const byte * cvalues, const byte * mvalues,
 	   const byte * yvalues, const int *kcorrect,
 	   word * inword);
 
 /* UNUSED
- *private int
+ *static int
  *test_scan (P4(int size, 
  *            byte * current,
  *            byte * last, 
  *            byte * control));
- *private void
+ *static void
  *save_color_data(P3(int size,
  *                 byte * current,
  *                 byte * saved));
  *
  */
-private void
+static void
      send_scan_lines(gx_device_printer * pdev,
 		     struct ptr_arrays *data_ptrs,
 		     struct misc_struct *misc_vars,
 		     struct error_val_field *error_values,
 		     const Gamma *gamma,
 		     FILE * prn_stream);
-private void
+static void
      do_gamma(float mastergamma, float gammaval, byte * values);
-private void
+static void
      do_black_correction(float kvalue, int *kcorrect);
 
-private void
+static void
      init_data_structure(gx_device_printer * pdev,
 			 struct ptr_arrays *data_ptrs,
 			 struct misc_struct *misc_vars);
-private void
+static void
      calculate_memory_size(gx_device_printer * pdev,
 			   struct misc_struct *misc_vars);
 
 
-private void
+static void
 assign_dpi(int dpi, byte * msb)
 {
     if (dpi == 600) {
@@ -1183,7 +1182,7 @@ assign_dpi(int dpi, byte * msb)
     }
 }
 
-private void
+static void
 cdj850_terminate_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     fputs("0M", prn_stream);	/* Reset compression */
@@ -1191,7 +1190,7 @@ cdj850_terminate_page(gx_device_printer * pdev, FILE * prn_stream)
     fputs("\033&l0H", prn_stream);	/* eject page */
 }
 
-private void
+static void
 cdj880_terminate_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     fputs("\033*rC\f\033E", prn_stream);  /* End graphics, FF, Reset */
@@ -1199,7 +1198,7 @@ cdj880_terminate_page(gx_device_printer * pdev, FILE * prn_stream)
 }
 
 /* HP2200 terminate page routine */
-private void
+static void
 chp2200_terminate_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     fputs("\033*rC\f\033E", prn_stream);  /* End graphics, FF, Reset */
@@ -1207,7 +1206,7 @@ chp2200_terminate_page(gx_device_printer * pdev, FILE * prn_stream)
 }
 
 /* Here comes the hp850 output routine -------------------- */
-private int
+static int
 cdj850_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
 
@@ -1312,7 +1311,7 @@ enum
     eCachedColor    = 0x3
 };
 
-private inline unsigned int
+static inline unsigned int
 getPixel(byte* pixAddress, unsigned int pixelOffset)
 {
     pixAddress += (pixelOffset*3);    /* assume 3 bytes for each RGB pixel */
@@ -1329,7 +1328,7 @@ getPixel(byte* pixAddress, unsigned int pixelOffset)
     */
 }
 
-private inline void
+static inline void
 putPixel(byte* pixAddress, unsigned int pixelOffset, unsigned int pixel)
 {
     pixAddress += (pixelOffset*3);    /* assume 3 bytes for each RGB pixel*/
@@ -1346,7 +1345,7 @@ putPixel(byte* pixAddress, unsigned int pixelOffset, unsigned int pixel)
     */
 }
 
-private inline unsigned int
+static inline unsigned int
 ShortDelta(byte* curPtr, byte* seedPtr, unsigned int pixelOffset)
 {
     int dr, dg, db;
@@ -1372,7 +1371,7 @@ ShortDelta(byte* curPtr, byte* seedPtr, unsigned int pixelOffset)
 }
 
 /* HP2200C - mode 10 compression for RGB data */
-private unsigned int
+static unsigned int
 Mode10(unsigned int planeWidthInPixels,
        byte * pbyColorScanPtr, /*input scanline in RGBRGBRGB format*/
        byte * pbyColorSeedPtr,
@@ -1669,7 +1668,7 @@ Mode10(unsigned int planeWidthInPixels,
    Since white is 0xFFFFFF (24 bits), there must be non-white pixels if
    there is a byte which is not 0xFF
 */
-private int
+static int
 IsScanlineDirty(byte* pScanline, int iWidth)
 {
     byte * pCurr = pScanline;
@@ -1690,7 +1689,7 @@ IsScanlineDirty(byte* pScanline, int iWidth)
 #define INIT_WHITE(pBuf, uiWidth)     memset((void*)(pBuf), 0xFF, (uiWidth))
 
 /* HP2200 output routine -------------------- */
-private int
+static int
 chp2200_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     gs_memory_t *mem = pdev->memory;
@@ -1785,7 +1784,7 @@ chp2200_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
 #define odd(i) ((i & 01) != 0)
 
-private int
+static int
 GetScanLine(gx_device_printer * pdev, int *lnum,
 	    struct ptr_arrays *data_ptrs,
 	    struct misc_struct *misc_vars,
@@ -1811,7 +1810,7 @@ GetScanLine(gx_device_printer * pdev, int *lnum,
 }
 
 /* Send the scan lines to the printer */
-private void
+static void
 send_scan_lines(gx_device_printer * pdev,
 		struct ptr_arrays *data_ptrs,
 		struct misc_struct *misc_vars,
@@ -1875,7 +1874,7 @@ send_scan_lines(gx_device_printer * pdev,
 }
 
 /* print_line compresses (mode 9) and outputs one plane */
-private void
+static void
 print_c9plane(FILE * prn_stream, char plane_code, int plane_size,
 	      const byte * curr, const byte * prev, byte * out_data)
 {
@@ -1895,7 +1894,7 @@ print_c9plane(FILE * prn_stream, char plane_code, int plane_size,
  *  Compresses a single plane with mode 2 (TIFF 4 format) and sends the
  *  result to the output.
  */
-private void
+static void
 print_c2plane(FILE *prn_stream, char plane_code, int plane_size,
               const byte *curr, byte *out_data)
 {
@@ -1918,7 +1917,7 @@ print_c2plane(FILE *prn_stream, char plane_code, int plane_size,
  *
  *  Outputs a plane with no compression.
  */
-private void
+static void
 print_c0plane(FILE *prn_stream, char plane_code, int plane_size,
               const byte *curr, byte *out_data)
 {
@@ -1929,7 +1928,7 @@ print_c0plane(FILE *prn_stream, char plane_code, int plane_size,
 
 
 /* Printing non-blank lines */
-private void
+static void
 cdj850_print_non_blank_lines(gx_device_printer * pdev,
 			     struct ptr_arrays *data_ptrs,
 			     struct misc_struct *misc_vars,
@@ -2007,7 +2006,7 @@ cdj850_print_non_blank_lines(gx_device_printer * pdev,
 }
 
 /* Printing non-blank lines */
-private void
+static void
 cdj880_print_non_blank_lines(gx_device_printer * pdev,
 			     struct ptr_arrays *data_ptrs,
 			     struct misc_struct *misc_vars,
@@ -2090,7 +2089,7 @@ cdj880_print_non_blank_lines(gx_device_printer * pdev,
 
 /* moved that code into his own subroutine, otherwise things get
    somewhat clumsy */
-private void
+static void
 do_floyd_steinberg(int scan, int cscan, int plane_size,
 		   int plane_size_c, int n,
 		   struct ptr_arrays *data_ptrs,
@@ -2142,7 +2141,7 @@ do_floyd_steinberg(int scan, int cscan, int plane_size,
 }
 
 /* here we do our own gamma-correction */
-private void
+static void
 do_gamma(float mastergamma, float gammaval, byte values[256])
 {
     int i;
@@ -2165,7 +2164,7 @@ do_gamma(float mastergamma, float gammaval, byte values[256])
 
 /* here we calculate a lookup-table which is used to compensate the
    relative loss of color due to undercolor-removal */
-private void 
+static void 
 do_black_correction(float kvalue, int kcorrect[256])
 {
     int i;
@@ -2239,7 +2238,7 @@ do_black_correction(float kvalue, int kcorrect[256])
 /* Since resolution can be different on different planes, we need to
    do real color separation, here we try a real grey component
    replacement */
-private int
+static int
 do_gcr(int bytecount, byte * inbyte, const byte kvalues[256],
        const byte cvalues[256], const byte mvalues[256],
        const byte yvalues[256], const int kcorrect[256],
@@ -2340,7 +2339,7 @@ do_gcr(int bytecount, byte * inbyte, const byte kvalues[256],
 
 /* Since resolution can be different on different planes, we need to
    rescale the data byte by byte */
-private int
+static int
 rescale_byte_wise2x2(int bytecount, const byte * inbytea, const byte * inbyteb,
 		     byte * outbyte)
 {
@@ -2364,7 +2363,7 @@ rescale_byte_wise2x2(int bytecount, const byte * inbytea, const byte * inbyteb,
 
 /* Since resolution can be different on different planes, we need to
    rescale the data byte by byte */
-private int
+static int
 rescale_byte_wise2x1(int bytecount, const byte * inbytea, const byte * inbyteb,
 		     byte * outbyte)
 {
@@ -2385,7 +2384,7 @@ rescale_byte_wise2x1(int bytecount, const byte * inbytea, const byte * inbyteb,
 
 /* Since resolution can be different on different planes, we need to
    rescale the data byte by byte */
-private int
+static int
 rescale_byte_wise1x2(int bytecount, const byte * inbytea, const byte * inbyteb,
 		     byte * outbyte)
 {
@@ -2404,7 +2403,7 @@ rescale_byte_wise1x2(int bytecount, const byte * inbytea, const byte * inbyteb,
 
 /* Since resolution can be different on different planes, we need to
    rescale the data byte by byte */
-private int
+static int
 rescale_byte_wise1x1(int bytecount, const byte * inbytea, const byte * inbyteb,
 		     byte * outbyte)
 {
@@ -2485,7 +2484,7 @@ have a pixel rate >50%.
 /* --------------------------- */
 
 /* initialise the error_buffer */
-private void 
+static void 
 init_error_buffer(struct misc_struct * misc_vars, 
 		  struct  ptr_arrays * data_ptrs)
 {
@@ -2548,7 +2547,7 @@ init_error_buffer(struct misc_struct * misc_vars,
  *
  *  Returns: Nothing.
  */
-private void
+static void
 FSDlinebw(int scan, int plane_size, 
 	  struct error_val_field * error_values,
 	  byte * kP, int n, int * ep, byte * dp)
@@ -2600,7 +2599,7 @@ FSDlinebw(int scan, int plane_size,
 
 /* Since bw has already been dithered for the hp850c, we need
    an adapted dither algorythm */
-private void
+static void
 FSDlinec2(int scan, int plane_size,
 	  struct error_val_field *error_values,
 	  byte * cPa, byte * mPa, byte * yPa, int n,
@@ -2665,7 +2664,7 @@ FSDlinec2(int scan, int plane_size,
 }
 
 /* On ordinary paper, we'll only use 3 intensities with the hp850  */
-private void
+static void
 FSDlinec3(int scan, int plane_size,
 	  struct error_val_field *error_values,
 	  byte * cPa, byte * mPa, byte * yPa,
@@ -2749,7 +2748,7 @@ FSDlinec3(int scan, int plane_size,
 
 /* The hp850c knows about 4 intensity levels per color. Once more, we need
    an adapted dither algorythm */
-private void
+static void
 FSDlinec4(int scan, int plane_size,
 	  struct error_val_field *error_values,
 	  byte * cPa, byte * mPa, byte * yPa,
@@ -2808,7 +2807,7 @@ FSDlinec4(int scan, int plane_size,
 
 
 /* calculate the needed memory */
-private void
+static void
 calculate_memory_size(gx_device_printer * pdev,
 		      struct misc_struct *misc_vars)
 {
@@ -2870,7 +2869,7 @@ calculate_memory_size(gx_device_printer * pdev,
 
 
 /* Initialise the needed pointers */
-private void
+static void
 init_data_structure(gx_device_printer * pdev,
 		    struct ptr_arrays *data_ptrs,
 		    struct misc_struct *misc_vars)
@@ -2958,7 +2957,7 @@ init_data_structure(gx_device_printer * pdev,
 }				/* end init_data_structure */
 
 /* Configure the printer and start Raster mode */
-private void
+static void
 cdj850_start_raster_mode(gx_device_printer * pdev, int paper_size,
 			 FILE * prn_stream)
 {
@@ -3017,7 +3016,7 @@ cdj850_start_raster_mode(gx_device_printer * pdev, int paper_size,
 }				/* end configure raster-mode */
 
 /* Configure the printer and start Raster mode */
-private void
+static void
 cdj880_start_raster_mode(gx_device_printer * pdev, int paper_size,
 			 FILE * prn_stream)
 {
@@ -3089,7 +3088,7 @@ cdj880_start_raster_mode(gx_device_printer * pdev, int paper_size,
 #define LOBYTE(w)	((byte)(w))
 
 /* Start Raster mode for HP2200 */
-private void
+static void
 chp2200_start_raster_mode(gx_device_printer * pdev, int paper_size,
 			 FILE * prn_stream)
 {
@@ -3154,7 +3153,7 @@ chp2200_start_raster_mode(gx_device_printer * pdev, int paper_size,
     return;
 }				/* end configure raster-mode */
 
-private int near
+static int near
 cdj_put_param_int(gs_param_list * plist, gs_param_name pname, int *pvalue,
 		  int minval, int maxval, int ecode)
 {
@@ -3173,7 +3172,7 @@ cdj_put_param_int(gs_param_list * plist, gs_param_name pname, int *pvalue,
     }
 }
 
-private int near
+static int near
 cdj_put_param_float(gs_param_list * plist, gs_param_name pname, float *pvalue,
 		    float minval, float maxval, int ecode)
 {
@@ -3193,7 +3192,7 @@ cdj_put_param_float(gs_param_list * plist, gs_param_name pname, float *pvalue,
     }
 }
 
-private int
+static int
 cdj_set_bpp(gx_device * pdev, int bpp, int ccomps)
 {
     gx_device_color_info *ci = &pdev->color_info;
@@ -3395,7 +3394,7 @@ cdj_set_bpp(gx_device * pdev, int bpp, int ccomps)
     (m) = gx_bits_to_color_value(((v) >> (b)) & ((1 << (b)) - 1), (b)), \
     (y) = gx_bits_to_color_value((v) & ((1 << (b)) - 1), (b))
 
-private gx_color_index
+static gx_color_index
 gdev_cmyk_map_cmyk_color(gx_device * pdev,
 			 const gx_color_value cv[])
 {
@@ -3434,7 +3433,7 @@ gdev_cmyk_map_cmyk_color(gx_device * pdev,
 
 /* Mapping of RGB colors to gray values. */
 
-private gx_color_index
+static gx_color_index
 gdev_cmyk_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 {
     gx_color_value r, g, b;
@@ -3468,7 +3467,7 @@ gdev_cmyk_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 }
 
 /* Mapping of CMYK colors. */
-private int
+static int
 gdev_cmyk_map_color_rgb(gx_device * pdev, gx_color_index color,
 			gx_color_value prgb[3])
 {
@@ -3526,7 +3525,7 @@ gdev_cmyk_map_color_rgb(gx_device * pdev, gx_color_index color,
     return 0;
 }
 
-private gx_color_index
+static gx_color_index
 gdev_pcl_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 {
     gx_color_value r, g, b;
@@ -3581,7 +3580,7 @@ gdev_pcl_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 }
 
 /* Map a color index to a r-g-b color. */
-private int
+static int
 gdev_pcl_map_color_rgb(gx_device * pdev, gx_color_index color,
 		       gx_color_value prgb[3])
 {
@@ -3646,7 +3645,7 @@ gdev_pcl_map_color_rgb(gx_device * pdev, gx_color_index color,
    If new_bpp != 0, it must be the value of the BitsPerPixel element of
    the plist; real_bpp may differ from new_bpp.
  */
-private int
+static int
 cdj_put_param_bpp(gx_device * pdev, gs_param_list * plist, int new_bpp,
 		  int real_bpp, int ccomps)
 {
@@ -3686,7 +3685,7 @@ cdj_put_param_bpp(gx_device * pdev, gs_param_list * plist, int new_bpp,
 
 /* the following code was in the original driver but is unused
 
- * private int
+ * static int
  * x_mul_div (int a, int b, int c)
  * { 
  *   int result;
@@ -3695,7 +3694,7 @@ cdj_put_param_bpp(gx_device * pdev, gs_param_list * plist, int new_bpp,
  *  return result;
  * }
  *   
- * private void 
+ * static void 
  * save_color_data(int size,
  *              byte * current,
  *              byte * saved)
@@ -3707,7 +3706,7 @@ cdj_put_param_bpp(gx_device * pdev, gs_param_list * plist, int new_bpp,
  *   return;
  * }
  * 
- * private int 
+ * static int 
  * test_scan (int size, 
  *         byte * current,
  *         byte * last, 
@@ -3730,7 +3729,7 @@ cdj_put_param_bpp(gx_device * pdev, gs_param_list * plist, int new_bpp,
  * }
  * 
  * * Transform from cmy into hsv 
- * private void
+ * static void
  * cmy2hsv(int *c, int *m, int *y, int *h, int *s, int *v)
  * {
  *   int hue;
@@ -3783,7 +3782,7 @@ cdj_put_param_bpp(gx_device * pdev, gs_param_list * plist, int new_bpp,
 /************************ the routines for the cdj1600 printer ***************/
 
 /* Configure the printer and start Raster mode */
-private void
+static void
 cdj1600_start_raster_mode(gx_device_printer * pdev, int paper_size,
 			  FILE * prn_stream)
 {
@@ -3834,7 +3833,7 @@ cdj1600_start_raster_mode(gx_device_printer * pdev, int paper_size,
 }				/* end configure raster-mode */
 
 /* print_plane compresses (mode 3) and outputs one plane */
-private void
+static void
 print_c3plane(FILE * prn_stream, char plane_code, int plane_size,
 	      const byte * curr, byte * prev, byte * out_data)
 {
@@ -3850,7 +3849,7 @@ print_c3plane(FILE * prn_stream, char plane_code, int plane_size,
     }
 }
 
-private int
+static int
 copy_color_data(byte * dest, const byte * src, int n)
 {
     /* copy word by word */
@@ -3865,7 +3864,7 @@ copy_color_data(byte * dest, const byte * src, int n)
 }
 
 /* Printing non-blank lines */
-private void
+static void
 cdj1600_print_non_blank_lines(gx_device_printer * pdev,
 			      struct ptr_arrays *data_ptrs,
 			      struct misc_struct *misc_vars,
@@ -3899,7 +3898,7 @@ cdj1600_print_non_blank_lines(gx_device_printer * pdev,
     misc_vars->cscan = 1 - misc_vars->cscan;
 }
 
-private void
+static void
 cdj1600_terminate_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     cdj850_terminate_page(pdev, prn_stream);

@@ -320,7 +320,7 @@ static const string_list_t init_config_lists[] = {
 };
 
 /* Forward definitions */
-private void *mrealloc(void *, size_t, size_t);
+static void *mrealloc(void *, size_t, size_t);
 int alloc_list(string_list_t *);
 void dev_file_name(char *);
 int process_replaces(config_t *);
@@ -526,7 +526,7 @@ main(int argc, char *argv[])
  * (e.g., some Linux versions).  Also, this procedure does the right thing
  * if old_ptr = NULL.
  */
-private void *
+static void *
 mrealloc(void *old_ptr, size_t old_size, size_t new_size)
 {
     void *new_ptr = malloc(new_size);
@@ -623,7 +623,7 @@ process_replaces(config_t * pconf)
  * of the uniq_mode_ts of all (direct and indirect) items in the file.
  * Return the file_contents item for the file.
  */
-private string_item_t *
+static string_item_t *
 read_file(config_t * pconf, const char *fname)
 {
     char *cname = malloc(strlen(fname) + strlen(pconf->file_prefix) + 1);
@@ -905,7 +905,7 @@ add_item(string_list_t * list, const char *str, int file_index)
  * In case of duplicates, remove all but the earliest (if last = false)
  * or the latest (if last = true).
  */
-private int
+static int
 cmp_index(const void *p1, const void *p2)
 {
     const string_item_t *const psi1 = (const string_item_t *)p1;
@@ -914,7 +914,7 @@ cmp_index(const void *p1, const void *p2)
 
     return (cmp < 0 ? -1 : cmp > 0 ? 1 : 0);
 }
-private int
+static int
 cmp_str(const void *p1, const void *p2)
 {
     const string_item_t *const psi1 = (const string_item_t *)p1;

@@ -53,7 +53,7 @@ typedef struct Fb_fill_state_s {
 } Fb_fill_state_t;
 /****** NEED GC DESCRIPTOR ******/
 
-private inline void
+static inline void
 make_other_poles(patch_curve_t curve[4])
 {
     int i, j;
@@ -68,7 +68,7 @@ make_other_poles(patch_curve_t curve[4])
     }
 }
 
-private int
+static int
 Fb_fill_region(Fb_fill_state_t * pfs, const gs_fixed_rect *rect)
 {
     patch_fill_state_t pfs1;
@@ -167,7 +167,7 @@ typedef struct A_fill_state_s {
 
 /* Note t0 and t1 vary over [0..1], not the Domain. */
 
-private int
+static int
 A_fill_region(A_fill_state_t * pfs, patch_fill_state_t *pfs1)
 {
     const gs_shading_A_t * const psh = pfs->psh;
@@ -194,7 +194,7 @@ A_fill_region(A_fill_state_t * pfs, patch_fill_state_t *pfs1)
     return patch_fill(pfs1, curve, NULL, NULL);
 }
 
-private inline int
+static inline int
 gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 			    const gs_fixed_rect *clip_rect,
 			    gx_device * dev, gs_imager_state * pis)
@@ -290,7 +290,7 @@ gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 
 /* ---------------- Radial shading ---------------- */
 
-private int 
+static int 
 R_tensor_annulus(patch_fill_state_t *pfs, const gs_rect *rect,
     double x0, double y0, double r0, double t0,
     double x1, double y1, double r1, double t1)
@@ -378,7 +378,7 @@ R_tensor_annulus(patch_fill_state_t *pfs, const gs_rect *rect,
 }
 
 
-private int
+static int
 R_outer_circle(patch_fill_state_t *pfs, const gs_rect *rect, 
 	double x0, double y0, double r0, 
 	double x1, double y1, double r1, 
@@ -437,7 +437,7 @@ R_outer_circle(patch_fill_state_t *pfs, const gs_rect *rect,
     return 0;
 }
 
-private double 
+static double 
 R_rect_radius(const gs_rect *rect, double x0, double y0)
 {
     double d, dd;
@@ -452,7 +452,7 @@ R_rect_radius(const gs_rect *rect, double x0, double y0)
     return dd;
 }
 
-private int
+static int
 R_fill_triangle_new(patch_fill_state_t *pfs, const gs_rect *rect, 
     double x0, double y0, double x1, double y1, double x2, double y2, double t)
 {
@@ -478,7 +478,7 @@ R_fill_triangle_new(patch_fill_state_t *pfs, const gs_rect *rect,
     return code;
 }
 
-private int
+static int
 R_obtuse_cone(patch_fill_state_t *pfs, const gs_rect *rect,
 	double x0, double y0, double r0, 
 	double x1, double y1, double r1, double t0, double r_rect)
@@ -539,7 +539,7 @@ R_obtuse_cone(patch_fill_state_t *pfs, const gs_rect *rect,
     }
 }
 
-private int
+static int
 R_tensor_cone_apex(patch_fill_state_t *pfs, const gs_rect *rect,
 	double x0, double y0, double r0, 
 	double x1, double y1, double r1, double t)
@@ -552,7 +552,7 @@ R_tensor_cone_apex(patch_fill_state_t *pfs, const gs_rect *rect,
 }
 
 
-private int
+static int
 R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *rect, 
 	double t0, double t1, bool Extend0, bool Extend1)
 {
@@ -639,7 +639,7 @@ R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *
     return 0;
 }
 
-private int
+static int
 R_fill_rect_with_const_color(patch_fill_state_t *pfs, const gs_fixed_rect *clip_rect, float t)
 {
 #if 0 /* Disabled because the clist writer device doesn't pass 
@@ -703,7 +703,7 @@ typedef struct radial_shading_attrs_s {
 
 #define Pw2(a) ((a)*(a))
 
-private void
+static void
 radial_shading_external_contact(radial_shading_attrs_t *rsa, int point_index, double t, double r0, double r1, bool at_corner, int root_index)
 {
     double cx = rsa->x0 + (rsa->x1 - rsa->x0) * t;
@@ -727,7 +727,7 @@ radial_shading_external_contact(radial_shading_attrs_t *rsa, int point_index, do
     }
 }
 
-private void
+static void
 store_roots(radial_shading_attrs_t *rsa, const bool have_root[2], const double t[2], double r0, double r1, int point_index, bool at_corner)
 {
     int i;
@@ -753,7 +753,7 @@ store_roots(radial_shading_attrs_t *rsa, const bool have_root[2], const double t
     }
 }
 
-private void
+static void
 compute_radial_shading_span_extended_side(radial_shading_attrs_t *rsa, double r0, double r1, int point_index)
 {
     double cc, c;
@@ -798,7 +798,7 @@ compute_radial_shading_span_extended_side(radial_shading_attrs_t *rsa, double r0
     store_roots(rsa, have_root, t, r0, r1, point_index, false);
 }
 
-private int
+static int
 compute_radial_shading_span_extended_point(radial_shading_attrs_t *rsa, double r0, double r1, int point_index)
 {
     double p1x = rsa->x1 - rsa->x0;
@@ -849,7 +849,7 @@ compute_radial_shading_span_extended_point(radial_shading_attrs_t *rsa, double r
 
 #undef Pw2
 
-private int
+static int
 compute_radial_shading_span_extended(radial_shading_attrs_t *rsa, double r0, double r1)
 {
     int span_type0, span_type1;
@@ -873,7 +873,7 @@ compute_radial_shading_span_extended(radial_shading_attrs_t *rsa, double r0, dou
     return span_type0;
 }
 
-private int
+static int
 compute_radial_shading_span(radial_shading_attrs_t *rsa, float x0, float y0, floatp r0, float x1, float y1, floatp r1, const gs_rect * rect)
 {
     /* If the shading area is much larger than the path bbox,
@@ -988,7 +988,7 @@ compute_radial_shading_span(radial_shading_attrs_t *rsa, float x0, float y0, flo
     return span_type;
 }
 
-private bool
+static bool
 shorten_radial_shading(float *x0, float *y0, floatp *r0, float *d0, float *x1, float *y1, floatp *r1, float *d1, double span_[2])
 {
     double s0 = span_[0], s1 = span_[1], w;
@@ -1022,7 +1022,7 @@ shorten_radial_shading(float *x0, float *y0, floatp *r0, float *d0, float *x1, f
     return true;
 }
 
-private bool inline
+static bool inline
 is_radial_shading_large(double x0, double y0, double r0, double d0, double x1, double y1, double r1, const gs_rect * rect)
 {
     const double d = hypot(x1 - x0, y1 - y0);
@@ -1046,7 +1046,7 @@ is_radial_shading_large(double x0, double y0, double r0, double d0, double x1, d
     return false;
 }
 
-private int
+static int
 gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 			    const gs_fixed_rect *clip_rect,
 			    gx_device * dev, gs_imager_state * pis)

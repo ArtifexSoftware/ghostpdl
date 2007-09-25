@@ -40,12 +40,12 @@ typedef struct gx_device_jpeg_s {
 } gx_device_jpeg;
 
 /* The device descriptor */
-private dev_proc_get_params(jpeg_get_params);
-private dev_proc_get_initial_matrix(jpeg_get_initial_matrix);
-private dev_proc_put_params(jpeg_put_params);
-private dev_proc_print_page(jpeg_print_page);
-private dev_proc_map_color_rgb(jpegcmyk_map_color_rgb);
-private dev_proc_map_cmyk_color(jpegcmyk_map_cmyk_color);
+static dev_proc_get_params(jpeg_get_params);
+static dev_proc_get_initial_matrix(jpeg_get_initial_matrix);
+static dev_proc_put_params(jpeg_put_params);
+static dev_proc_print_page(jpeg_print_page);
+static dev_proc_map_color_rgb(jpegcmyk_map_color_rgb);
+static dev_proc_map_cmyk_color(jpegcmyk_map_cmyk_color);
 
 /* ------ The device descriptors ------ */
 
@@ -59,7 +59,7 @@ private dev_proc_map_cmyk_color(jpegcmyk_map_cmyk_color);
 
 /* 24-bit color */
 
-private const gx_device_procs jpeg_procs =
+static const gx_device_procs jpeg_procs =
 {
     gdev_prn_open,
     jpeg_get_initial_matrix,	/* get_initial_matrix */
@@ -95,7 +95,7 @@ const gx_device_jpeg gs_jpeg_device =
 
 /* 8-bit gray */
 
-private const gx_device_procs jpeggray_procs =
+static const gx_device_procs jpeggray_procs =
 {
     gdev_prn_open,
     jpeg_get_initial_matrix,	/* get_initial_matrix */
@@ -132,7 +132,7 @@ const gx_device_jpeg gs_jpeggray_device =
 };
 /* 32-bit CMYK */
 
-private const gx_device_procs jpegcmyk_procs =
+static const gx_device_procs jpegcmyk_procs =
 {	gdev_prn_open,
 	gx_default_get_initial_matrix,
 	NULL,	/* sync_output */
@@ -168,7 +168,7 @@ const gx_device_jpeg gs_jpegcmyk_device =
 
 /* Apparently Adobe Photoshop and some other applications that	*/
 /* accept JPEG CMYK images expect color values to be inverted.	*/
-private int
+static int
 jpegcmyk_map_color_rgb(gx_device * dev, gx_color_index color,
 			gx_color_value prgb[3])
 {
@@ -184,7 +184,7 @@ jpegcmyk_map_color_rgb(gx_device * dev, gx_color_index color,
     return 0;
 }
 
-private gx_color_index
+static gx_color_index
 jpegcmyk_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
 {
     gx_color_index color = ~(
@@ -197,7 +197,7 @@ jpegcmyk_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
 }
 
 /* Get parameters. */
-private int
+static int
 jpeg_get_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_jpeg *jdev = (gx_device_jpeg *) dev;
@@ -228,7 +228,7 @@ jpeg_get_params(gx_device * dev, gs_param_list * plist)
 }
 
 /* Put parameters. */
-private int
+static int
 jpeg_put_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_jpeg *jdev = (gx_device_jpeg *) dev;
@@ -352,7 +352,7 @@ multiples of the HWResolution.
 
 ***************************************************************************/
 
-private void
+static void
 jpeg_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
 {
     gx_device_jpeg *pdev = (gx_device_jpeg *)dev;
@@ -400,7 +400,7 @@ jpeg_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
 }
 
 /* Send the page to the file. */
-private int
+static int
 jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     gx_device_jpeg *jdev = (gx_device_jpeg *) pdev;

@@ -38,7 +38,7 @@ typedef struct gs_function_Sd_s {
 
 /* GC descriptor */
 private_st_function_Sd();
-private
+static
 ENUM_PTRS_WITH(function_Sd_enum_ptrs, gs_function_Sd_t *pfn)
 {
     index -= 6;
@@ -50,7 +50,7 @@ ENUM_PTRS_WITH(function_Sd_enum_ptrs, gs_function_Sd_t *pfn)
 ENUM_PTR3(0, gs_function_Sd_t, params.Encode, params.Decode, params.Size);
 ENUM_PTR3(3, gs_function_Sd_t, params.pole, params.array_step, params.stream_step);
 ENUM_PTRS_END
-private
+static
 RELOC_PTRS_WITH(function_Sd_reloc_ptrs, gs_function_Sd_t *pfn)
 {
     RELOC_PREFIX(st_function);
@@ -76,7 +76,7 @@ RELOC_PTRS_END
 	data_source_access(&pfn->params.DataSource, offset >> 3,\
 			   nbytes, buf, &p)
 
-private int
+static int
 fn_gets_1(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
 {
     SETUP_SAMPLES(1, ((offset & 7) + n + 7) >> 3);
@@ -87,7 +87,7 @@ fn_gets_1(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
     }
     return 0;
 }
-private int
+static int
 fn_gets_2(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
 {
     SETUP_SAMPLES(2, (((offset & 7) >> 1) + n + 3) >> 2);
@@ -98,7 +98,7 @@ fn_gets_2(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
     }
     return 0;
 }
-private int
+static int
 fn_gets_4(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
 {
     SETUP_SAMPLES(4, (((offset & 7) >> 2) + n + 1) >> 1);
@@ -107,7 +107,7 @@ fn_gets_4(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
     }
     return 0;
 }
-private int
+static int
 fn_gets_8(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
 {
     SETUP_SAMPLES(8, n);
@@ -116,7 +116,7 @@ fn_gets_8(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
     }
     return 0;
 }
-private int
+static int
 fn_gets_12(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
 {
     SETUP_SAMPLES(12, (((offset & 7) >> 2) + 3 * n + 1) >> 1);
@@ -129,7 +129,7 @@ fn_gets_12(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
     }
     return 0;
 }
-private int
+static int
 fn_gets_16(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
 {
     SETUP_SAMPLES(16, n * 2);
@@ -139,7 +139,7 @@ fn_gets_16(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
     }
     return 0;
 }
-private int
+static int
 fn_gets_24(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
 {
     SETUP_SAMPLES(24, n * 3);
@@ -149,7 +149,7 @@ fn_gets_24(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
     }
     return 0;
 }
-private int
+static int
 fn_gets_32(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
 {
     SETUP_SAMPLES(32, n * 4);
@@ -160,7 +160,7 @@ fn_gets_32(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
     return 0;
 }
 
-private int (*const fn_get_samples[]) (const gs_function_Sd_t * pfn,
+static int (*const fn_get_samples[]) (const gs_function_Sd_t * pfn,
 				       ulong offset, uint * samples) =
 {
     0, fn_gets_1, fn_gets_2, 0, fn_gets_4, 0, 0, 0,
@@ -177,7 +177,7 @@ private int (*const fn_get_samples[]) (const gs_function_Sd_t * pfn,
  * http://www.cs.uwa.edu.au/undergraduate/units/233.413/Handouts/Lecture04.html
  * (thanks to Raph Levien for the reference).
  */
-private double
+static double
 interpolate_cubic(floatp x, floatp f0, floatp f1, floatp f2, floatp f3)
 {
     /*
@@ -210,14 +210,14 @@ interpolate_cubic(floatp x, floatp f0, floatp f1, floatp f2, floatp f3)
  * f(0) = f0, f(1) = f1, f'(1) = (f2 - f0) / 2, but now we
  * match what we believe is Acrobat Reader's behavior.
  */
-inline private double
+static inline double
 interpolate_quadratic(floatp x, floatp f0, floatp f1, floatp f2)
 {
     return interpolate_cubic(x + 1, f0, f0, f1, f2);
 }
 
 /* Calculate a result by multicubic interpolation. */
-private void
+static void
 fn_interpolate_cubic(const gs_function_Sd_t *pfn, const float *fparts,
 		     const int *iparts, const ulong *factors,
 		     float *samples, ulong offset, int m)
@@ -288,7 +288,7 @@ top:
 }
 
 /* Calculate a result by multilinear interpolation. */
-private void
+static void
 fn_interpolate_linear(const gs_function_Sd_t *pfn, const float *fparts,
 		 const ulong *factors, float *samples, ulong offset, int m)
 {
@@ -319,7 +319,7 @@ top:
     }
 }
 
-private inline double 
+static inline double 
 fn_Sd_encode(const gs_function_Sd_t *pfn, int i, double sample)
 {
     float d0, d1, r0, r1;
@@ -347,7 +347,7 @@ fn_Sd_encode(const gs_function_Sd_t *pfn, int i, double sample)
 
 /* Evaluate a Sampled function. */
 /* A generic algorithm with a recursion by dimentions. */
-private int
+static int
 fn_Sd_evaluate_general(const gs_function_t * pfn_common, const float *in, float *out)
 {
     const gs_function_Sd_t *pfn = (const gs_function_Sd_t *)pfn_common;
@@ -417,7 +417,7 @@ fn_Sd_evaluate_general(const gs_function_t * pfn_common, const float *in, float 
 
 static const double double_stub = 1e90;
 
-private inline void
+static inline void
 fn_make_cubic_poles(double *p, double f0, double f1, double f2, double f3, 
 	    const int pole_step_minor)
 {   /* The following is poles of the polinomial,
@@ -428,7 +428,7 @@ fn_make_cubic_poles(double *p, double f0, double f1, double f2, double f3,
     p[pole_step_minor * 2] = (-a*f1 + 3*f2 + a*f3)/3.0;
 }
 
-private void
+static void
 fn_make_poles(double *p, const int pole_step, int power, int bias)
 {
     const int pole_step_minor = pole_step / 3;
@@ -463,7 +463,7 @@ fn_make_poles(double *p, const int pole_step, int power, int bias)
 /* This implementation is a particular case of 1 dimension. 
    maybe we'll use as an optimisation of the generic case,
    so keep it for a while. */
-private int
+static int
 fn_Sd_evaluate_cubic_cached_1d(const gs_function_Sd_t *pfn, const float *in, float *out)
 {
     float d0 = pfn->params.Domain[2 * 0];
@@ -521,7 +521,7 @@ fn_Sd_evaluate_cubic_cached_1d(const gs_function_Sd_t *pfn, const float *in, flo
     return 0;
 }
 
-private inline void
+static inline void
 decode_argument(const gs_function_Sd_t *pfn, const float *in, double T[max_Sd_m], int I[max_Sd_m])
 {
     int i;
@@ -542,7 +542,7 @@ decode_argument(const gs_function_Sd_t *pfn, const float *in, double T[max_Sd_m]
     }
 }
 
-private inline void
+static inline void
 index_span(const gs_function_Sd_t *pfn, int *I, double *T, int ii, int *Ii, int *ib, int *ie)
 {
     *Ii = I[ii];
@@ -555,7 +555,7 @@ index_span(const gs_function_Sd_t *pfn, int *I, double *T, int ii, int *Ii, int 
     }
 }
 
-private inline int
+static inline int
 load_vector_to(const gs_function_Sd_t *pfn, int s_offset, double *V)
 {
     uint sdata[max_Sd_n];
@@ -569,7 +569,7 @@ load_vector_to(const gs_function_Sd_t *pfn, int s_offset, double *V)
     return 0;
 }
 
-private inline int
+static inline int
 load_vector(const gs_function_Sd_t *pfn, int a_offset, int s_offset)
 {
     if (*(pfn->params.pole + a_offset) == double_stub) {
@@ -585,7 +585,7 @@ load_vector(const gs_function_Sd_t *pfn, int a_offset, int s_offset)
     return 0;
 }
 
-private inline void
+static inline void
 interpolate_vector(const gs_function_Sd_t *pfn, int offset, int pole_step, int power, int bias)
 {
     int k;
@@ -594,7 +594,7 @@ interpolate_vector(const gs_function_Sd_t *pfn, int offset, int pole_step, int p
 	fn_make_poles(pfn->params.pole + offset + k, pole_step, power, bias);
 }
 
-private inline void
+static inline void
 interpolate_tensors(const gs_function_Sd_t *pfn, int *I, double *T, 
 	int offset, int pole_step, int power, int bias, int ii)
 {
@@ -615,7 +615,7 @@ interpolate_tensors(const gs_function_Sd_t *pfn, int *I, double *T,
     }
 }
 
-private inline bool 
+static inline bool 
 is_tensor_done(const gs_function_Sd_t *pfn, int *I, double *T, int a_offset, int ii)
 {
     /* Check an inner pole of the cell. */
@@ -632,7 +632,7 @@ is_tensor_done(const gs_function_Sd_t *pfn, int *I, double *T, int a_offset, int
 }
 
 /* Creates a tensor of Bezier coefficients by node interpolation. */
-private inline int
+static inline int
 make_interpolation_tensor(const gs_function_Sd_t *pfn, int *I, double *T,
 			    int a_offset, int s_offset, int ii)
 {
@@ -716,7 +716,7 @@ make_interpolation_tensor(const gs_function_Sd_t *pfn, int *I, double *T,
 }
 
 /* Creates a subarray of samples. */
-private inline int
+static inline int
 make_interpolation_nodes(const gs_function_Sd_t *pfn, double *T0, double *T1,
 			    int *I, double *T,
 			    int a_offset, int s_offset, int ii)
@@ -755,7 +755,7 @@ make_interpolation_nodes(const gs_function_Sd_t *pfn, double *T0, double *T1,
     return 0;
 }
 
-private inline int
+static inline int
 evaluate_from_tenzor(const gs_function_Sd_t *pfn, int *I, double *T, int offset, int ii, double *y)
 {
     int s = pfn->params.array_step[ii], k, l, code;
@@ -787,7 +787,7 @@ evaluate_from_tenzor(const gs_function_Sd_t *pfn, int *I, double *T, int offset,
 /* Evaluate a Sampled function. */
 /* A cubic interpolation with pole cache. */
 /* Allows a fast check for extreme suspection with is_tensor_monotonic. */
-private int
+static int
 fn_Sd_evaluate_multicubic_cached(const gs_function_Sd_t *pfn, const float *in, float *out)
 {
     double T[max_Sd_m], y[max_Sd_n];
@@ -811,7 +811,7 @@ fn_Sd_evaluate_multicubic_cached(const gs_function_Sd_t *pfn, const float *in, f
 }
 
 /* Evaluate a Sampled function. */
-private int
+static int
 fn_Sd_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 {
     const gs_function_Sd_t *pfn = (const gs_function_Sd_t *)pfn_common;
@@ -841,7 +841,7 @@ fn_Sd_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 }
 
 /* Map a function subdomain to the sample index subdomain. */
-private inline int
+static inline int
 get_scaled_range(const gs_function_Sd_t *const pfn,
 		   const float *lower, const float *upper, 
 		   int i, float *pw0, float *pw1)
@@ -882,7 +882,7 @@ get_scaled_range(const gs_function_Sd_t *const pfn,
 }
 
 /* Copy a tensor to a differently indexed pole array. */
-private int
+static int
 copy_poles(const gs_function_Sd_t *pfn, int *I, double *T0, double *T1, int a_offset,
 		int ii, double *pole, int p_offset, int pole_step)
 {
@@ -908,7 +908,7 @@ copy_poles(const gs_function_Sd_t *pfn, int *I, double *T0, double *T1, int a_of
     return 0;
 }
 
-private inline void
+static inline void
 subcurve(double *pole, int pole_step, double t0, double t1)
 {
     /* Generated with subcurve.nb using Mathematica 3.0. */
@@ -936,7 +936,7 @@ subcurve(double *pole, int pole_step, double t0, double t1)
 	pole[pole_step * 2] = pole[pole_step * 3];
 }
 
-private inline void
+static inline void
 subline(double *pole, int pole_step, double t0, double t1)
 {
     double q0 = pole[pole_step * 0];
@@ -946,7 +946,7 @@ subline(double *pole, int pole_step, double t0, double t1)
     pole[pole_step * 1] = (1 - t1) * q0 + t1 * q1;
 }
 
-private void
+static void
 clamp_poles(double *T0, double *T1, int ii, int i, double * pole, 
 		int p_offset, int pole_step, int pole_step_i, int order)
 {
@@ -966,7 +966,7 @@ clamp_poles(double *T0, double *T1, int ii, int i, double * pole,
     }
 }
 
-private inline int /* 3 - don't know, 2 - decreesing, 0 - constant, 1 - increasing. */
+static inline int /* 3 - don't know, 2 - decreesing, 0 - constant, 1 - increasing. */
 curve_monotonity(double *pole, int pole_step)
 {
     double p0 = pole[pole_step * 0];
@@ -987,7 +987,7 @@ curve_monotonity(double *pole, int pole_step)
     return 3;
 }
 
-private inline int /* 2 - decreesing, 0 - constant, 1 - increasing. */
+static inline int /* 2 - decreesing, 0 - constant, 1 - increasing. */
 line_monotonity(double *pole, int pole_step)
 {
     double p0 = pole[pole_step * 0];
@@ -1000,7 +1000,7 @@ line_monotonity(double *pole, int pole_step)
     return 0;
 }
 
-private int /* 3 bits per guide : 3 - non-monotonic or don't know, 
+static int /* 3 bits per guide : 3 - non-monotonic or don't know, 
 		    2 - decreesing, 0 - constant, 1 - increasing. 
 		    The number of guides is order+1. */
 tensor_dimension_monotonity(const double *T0, const double *T1, int ii, int i0, double *pole, 
@@ -1032,7 +1032,7 @@ tensor_dimension_monotonity(const double *T0, const double *T1, int ii, int i0, 
     }
 }
 
-private inline int
+static inline int
 is_tensor_monotonic_by_dimension(const gs_function_Sd_t *pfn, int *I, double *T0, double *T1, int i0, int k,
 		    uint *mask /* 3 bits per guide : 3 - non-monotonic or don't know, 
 		    2 - decreesing, 0 - constant, 1 - increasing. 
@@ -1066,7 +1066,7 @@ is_tensor_monotonic_by_dimension(const gs_function_Sd_t *pfn, int *I, double *T0
     return 0;
 }
 
-private int /* error code */
+static int /* error code */
 is_lattice_monotonic_by_dimension(const gs_function_Sd_t *pfn, const double *T0, const double *T1, 
 	int *I, double *S0, double *S1, int ii, int i0, int k,
 	uint *mask /* 3 bits per guide : 1 - non-monotonic or don't know, 0 - monotonic;
@@ -1106,7 +1106,7 @@ is_lattice_monotonic_by_dimension(const gs_function_Sd_t *pfn, const double *T0,
     }
 }
 
-private inline int /* error code */
+static inline int /* error code */
 is_lattice_monotonic(const gs_function_Sd_t *pfn, const double *T0, const double *T1, 
 	 int *I, double *S0, double *S1,
 	 int k, uint *mask /* 1 bit per dimension : 1 - non-monotonic or don't know, 
@@ -1128,7 +1128,7 @@ is_lattice_monotonic(const gs_function_Sd_t *pfn, const double *T0, const double
     return 0;
 }
 
-private int /* 3 bits per result : 3 - non-monotonic or don't know, 		    
+static int /* 3 bits per result : 3 - non-monotonic or don't know, 		    
 	       2 - decreesing, 0 - constant, 1 - increasing,
 	       <0 - error. */
 fn_Sd_1arg_linear_monotonic_rec(const gs_function_Sd_t *const pfn, int i0, int i1, 
@@ -1163,7 +1163,7 @@ fn_Sd_1arg_linear_monotonic_rec(const gs_function_Sd_t *const pfn, int i0, int i
     }
 }
 
-private int
+static int
 fn_Sd_1arg_linear_monotonic(const gs_function_Sd_t *const pfn, double T0, double T1,
 			    uint *mask /* 1 - non-monotonic or don't know, 0 - monotonic. */)
 {
@@ -1193,7 +1193,7 @@ fn_Sd_1arg_linear_monotonic(const gs_function_Sd_t *const pfn, double T0, double
 #define DEBUG_Sd_1arg 0
 
 /* Test whether a Sampled function is monotonic. */
-private int /* 1 = monotonic, 0 = not or don't know, <0 = error. */
+static int /* 1 = monotonic, 0 = not or don't know, <0 = error. */
 fn_Sd_is_monotonic_aux(const gs_function_Sd_t *const pfn,
 		   const float *lower, const float *upper, 
 		   uint *mask /* 1 bit per dimension : 1 - non-monotonic or don't know, 
@@ -1256,7 +1256,7 @@ fn_Sd_is_monotonic_aux(const gs_function_Sd_t *const pfn,
 
 /* Test whether a Sampled function is monotonic. */
 /* 1 = monotonic, 0 = don't know, <0 = error. */
-private int
+static int
 fn_Sd_is_monotonic(const gs_function_t * pfn_common,
 		   const float *lower, const float *upper, uint *mask)
 {
@@ -1267,7 +1267,7 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
 }
 
 /* Return Sampled function information. */
-private void
+static void
 fn_Sd_get_info(const gs_function_t *pfn_common, gs_function_info_t *pfi)
 {
     const gs_function_Sd_t *const pfn =
@@ -1284,7 +1284,7 @@ fn_Sd_get_info(const gs_function_t *pfn_common, gs_function_info_t *pfi)
 }
 
 /* Write Sampled function parameters on a parameter list. */
-private int
+static int
 fn_Sd_get_params(const gs_function_t *pfn_common, gs_param_list *plist)
 {
     const gs_function_Sd_t *const pfn =
@@ -1320,7 +1320,7 @@ fn_Sd_get_params(const gs_function_t *pfn_common, gs_param_list *plist)
 }
 
 /* Make a scaled copy of a Sampled function. */
-private int
+static int
 fn_Sd_make_scaled(const gs_function_Sd_t *pfn, gs_function_Sd_t **ppsfn,
 		  const gs_range_t *pranges, gs_memory_t *mem)
 {
@@ -1365,7 +1365,7 @@ gs_function_Sd_free_params(gs_function_Sd_params_t * params, gs_memory_t * mem)
 }
 
 /* aA helper for gs_function_Sd_serialize. */
-private int serialize_array(const float *a, int half_size, stream *s)
+static int serialize_array(const float *a, int half_size, stream *s)
 {
     uint n;
     const float dummy[2] = {0, 0};
@@ -1382,7 +1382,7 @@ private int serialize_array(const float *a, int half_size, stream *s)
 }
 
 /* Serialize. */
-private int
+static int
 gs_function_Sd_serialize(const gs_function_t * pfn, stream *s)
 {
     uint n;

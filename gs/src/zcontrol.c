@@ -24,18 +24,18 @@
 #include "store.h"
 
 /* Forward references */
-private int check_for_exec(const_os_ptr);
-private int no_cleanup(i_ctx_t *);
-private uint count_exec_stack(i_ctx_t *, bool);
-private uint count_to_stopped(i_ctx_t *, long);
-private int unmatched_exit(os_ptr, op_proc_t);
+static int check_for_exec(const_os_ptr);
+static int no_cleanup(i_ctx_t *);
+static uint count_exec_stack(i_ctx_t *, bool);
+static uint count_to_stopped(i_ctx_t *, long);
+static int unmatched_exit(os_ptr, op_proc_t);
 
 /* See the comment in opdef.h for an invariant which allows */
 /* more efficient implementation of for, loop, and repeat. */
 
 /* <[test0 body0 ...]> .cond - */
-private int cond_continue(i_ctx_t *);
-private int
+static int cond_continue(i_ctx_t *);
+static int
 zcond(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -58,7 +58,7 @@ zcond(i_ctx_t *i_ctx_p)
     pop(1);
     return o_push_estack;
 }
-private int
+static int
 cond_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -119,7 +119,7 @@ zexec(i_ctx_t *i_ctx_p)
 }
 
 /* <obj1> ... <objn> <n> .execn - */
-private int
+static int
 zexecn(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -156,8 +156,8 @@ zexecn(i_ctx_t *i_ctx_p)
 }
 
 /* <obj> superexec - */
-private int end_superexec(i_ctx_t *);
-private int
+static int end_superexec(i_ctx_t *);
+static int
 zsuperexec(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -176,7 +176,7 @@ zsuperexec(i_ctx_t *i_ctx_p)
     i_ctx_p->in_superexec++;
     return o_push_estack;
 }
-private int
+static int
 end_superexec(i_ctx_t *i_ctx_p)
 {
     i_ctx_p->in_superexec--;
@@ -190,9 +190,9 @@ end_superexec(i_ctx_t *i_ctx_p)
 /* 	After execution, the array will be placed on  the top of the	*/
 /*	operand stack (on top of any elemetns pushed by <executable>	*/
 /*	for both the normal case and for the error case.		*/
-private int end_runandhide(i_ctx_t *);
-private int err_end_runandhide(i_ctx_t *);
-private int
+static int end_runandhide(i_ctx_t *);
+static int err_end_runandhide(i_ctx_t *);
+static int
 zrunandhide(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -218,7 +218,7 @@ zrunandhide(i_ctx_t *i_ctx_p)
     pop(2);
     return o_push_estack;
 }
-private int
+static int
 runandhide_restore_hidden(i_ctx_t *i_ctx_p, ref *obj, ref *attrs)
 {
     os_ptr op = osp;
@@ -232,7 +232,7 @@ runandhide_restore_hidden(i_ctx_t *i_ctx_p, ref *obj, ref *attrs)
 }
 
 /* - %end_runandhide hiddenobject */
-private int
+static int
 end_runandhide(i_ctx_t *i_ctx_p)
 {
     int code;
@@ -244,7 +244,7 @@ end_runandhide(i_ctx_t *i_ctx_p)
 }
 
 /* restore hidden object for error returns */
-private int
+static int
 err_end_runandhide(i_ctx_t *i_ctx_p)
 {
     int code;
@@ -294,7 +294,7 @@ zifelse(i_ctx_t *i_ctx_p)
 }
 
 /* <init> <step> <limit> <proc> for - */
-private int
+static int
     for_pos_int_continue(i_ctx_t *),
     for_neg_int_continue(i_ctx_t *),
     for_real_continue(i_ctx_t *);
@@ -357,7 +357,7 @@ zfor(i_ctx_t *i_ctx_p)
 /* Execution stack contains mark, control variable, increment, */
 /* limit, and procedure (procedure is topmost.) */
 /* Continuation operator for positive integers. */
-private int
+static int
 for_pos_int_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -376,7 +376,7 @@ for_pos_int_continue(i_ctx_t *i_ctx_p)
     return o_push_estack;
 }
 /* Continuation operator for negative integers. */
-private int
+static int
 for_neg_int_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -395,7 +395,7 @@ for_neg_int_continue(i_ctx_t *i_ctx_p)
     return o_push_estack;
 }
 /* Continuation operator for reals. */
-private int
+static int
 for_real_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -425,7 +425,7 @@ for_real_continue(i_ctx_t *i_ctx_p)
  *
  * NOTE: This computation must match the SAMPLE_LOOP_VALUE macro in gscie.h.
  */
-private int for_samples_continue(i_ctx_t *);
+static int for_samples_continue(i_ctx_t *);
 /* <first> <count> <last> <proc> %for_samples - */
 int
 zfor_samples(i_ctx_t *i_ctx_p)
@@ -449,7 +449,7 @@ zfor_samples(i_ctx_t *i_ctx_p)
     return o_push_estack;
 }
 /* Continuation procedure */
-private int
+static int
 for_samples_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -472,7 +472,7 @@ for_samples_continue(i_ctx_t *i_ctx_p)
 }
 
 /* <int> <proc> repeat - */
-private int repeat_continue(i_ctx_t *);
+static int repeat_continue(i_ctx_t *);
 int
 zrepeat(i_ctx_t *i_ctx_p)
 {
@@ -492,7 +492,7 @@ zrepeat(i_ctx_t *i_ctx_p)
     return repeat_continue(i_ctx_p);
 }
 /* Continuation operator for repeat */
-private int
+static int
 repeat_continue(i_ctx_t *i_ctx_p)
 {
     es_ptr ep = esp;		/* saved proc */
@@ -508,8 +508,8 @@ repeat_continue(i_ctx_t *i_ctx_p)
 }
 
 /* <proc> loop */
-private int loop_continue(i_ctx_t *);
-private int
+static int loop_continue(i_ctx_t *);
+static int
 zloop(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -525,7 +525,7 @@ zloop(i_ctx_t *i_ctx_p)
     return loop_continue(i_ctx_p);
 }
 /* Continuation operator for loop */
-private int
+static int
 loop_continue(i_ctx_t *i_ctx_p)
 {
     register es_ptr ep = esp;	/* saved proc */
@@ -536,7 +536,7 @@ loop_continue(i_ctx_t *i_ctx_p)
 }
 
 /* - exit - */
-private int
+static int
 zexit(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -575,7 +575,7 @@ zexit(i_ctx_t *i_ctx_p)
 
 /* In the normal (no-error) case, pop the mask from the e-stack, */
 /* and move the result to the o-stack. */
-private int
+static int
 stopped_push(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -590,7 +590,7 @@ stopped_push(i_ctx_t *i_ctx_p)
 /* Equivalent to true 1 .stop. */
 /* This is implemented in C because if were a pseudo-operator, */
 /* the stacks would get restored in case of an error. */
-private int
+static int
 zstop(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -615,7 +615,7 @@ zstop(i_ctx_t *i_ctx_p)
 }
 
 /* <result> <mask> .stop - */
-private int
+static int
 zzstop(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -648,7 +648,7 @@ zzstop(i_ctx_t *i_ctx_p)
 /* Equivalent to false 1 .stopped. */
 /* This is implemented in C because if were a pseudo-operator, */
 /* the stacks would get restored in case of an error. */
-private int
+static int
 zstopped(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -668,7 +668,7 @@ zstopped(i_ctx_t *i_ctx_p)
 }
 
 /* <obj> <result> <mask> .stopped <result> */
-private int
+static int
 zzstopped(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -688,7 +688,7 @@ zzstopped(i_ctx_t *i_ctx_p)
 
 /* <mask> .instopped false */
 /* <mask> .instopped <result> true */
-private int
+static int
 zinstopped(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -708,7 +708,7 @@ zinstopped(i_ctx_t *i_ctx_p)
 /* <include_marks> .countexecstack <int> */
 /* - countexecstack <int> */
 /* countexecstack is an operator solely for the sake of the Genoa tests. */
-private int
+static int
 zcountexecstack(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -717,7 +717,7 @@ zcountexecstack(i_ctx_t *i_ctx_p)
     make_int(op, count_exec_stack(i_ctx_p, false));
     return 0;
 }
-private int
+static int
 zcountexecstack1(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -730,9 +730,9 @@ zcountexecstack1(i_ctx_t *i_ctx_p)
 /* <array> <include_marks> .execstack <subarray> */
 /* <array> execstack <subarray> */
 /* execstack is an operator solely for the sake of the Genoa tests. */
-private int execstack_continue(i_ctx_t *);
-private int execstack2_continue(i_ctx_t *);
-private int
+static int execstack_continue(i_ctx_t *);
+static int execstack2_continue(i_ctx_t *);
+static int
 push_execstack(i_ctx_t *i_ctx_p, os_ptr op1, bool include_marks,
 	       op_proc_t cont)
 {
@@ -765,14 +765,14 @@ push_execstack(i_ctx_t *i_ctx_p, os_ptr op1, bool include_marks,
     push_op_estack(cont);
     return o_push_estack;
 }
-private int
+static int
 zexecstack(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
     return push_execstack(i_ctx_p, op, false, execstack_continue);
 }
-private int
+static int
 zexecstack2(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -782,7 +782,7 @@ zexecstack2(i_ctx_t *i_ctx_p)
 }
 /* Continuation operator to do the actual transfer. */
 /* r_size(op1) was set just above. */
-private int
+static int
 do_execstack(i_ctx_t *i_ctx_p, bool include_marks, os_ptr op1)
 {
     os_ptr op = osp;
@@ -831,14 +831,14 @@ do_execstack(i_ctx_t *i_ctx_p, bool include_marks, os_ptr op1)
     pop(op - op1);
     return 0;
 }
-private int
+static int
 execstack_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
     return do_execstack(i_ctx_p, false, op);
 }
-private int
+static int
 execstack2_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -847,14 +847,14 @@ execstack2_continue(i_ctx_t *i_ctx_p)
 }
 
 /* - .needinput - */
-private int
+static int
 zneedinput(i_ctx_t *i_ctx_p)
 {
     return e_NeedInput;		/* interpreter will exit to caller */
 }
 
 /* <obj> <int> .quit - */
-private int
+static int
 zquit(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -865,8 +865,8 @@ zquit(i_ctx_t *i_ctx_p)
 }
 
 /* - currentfile <file> */
-private ref *zget_current_file(i_ctx_t *);
-private int
+static ref *zget_current_file(i_ctx_t *);
+static int
 zcurrentfile(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -899,7 +899,7 @@ zcurrentfile(i_ctx_t *i_ctx_p)
     return 0;
 }
 /* Get the current file from which the interpreter is reading. */
-private ref *
+static ref *
 zget_current_file(i_ctx_t *i_ctx_p)
 {
     ref_stack_enum_t rsenum;
@@ -977,7 +977,7 @@ const op_def zcontrol3_op_defs[] = {
  * interpreter to catch them, so that we can signal the error with the
  * object still on the operand stack.
  */
-private bool
+static bool
 check_for_exec(const_os_ptr op)
 {
     if (!r_has_attr(op, a_execute) && /* only true if noaccess */
@@ -990,7 +990,7 @@ check_for_exec(const_os_ptr op)
 }
 
 /* Vacuous cleanup routine */
-private int
+static int
 no_cleanup(i_ctx_t *i_ctx_p)
 {
     return 0;
@@ -1000,7 +1000,7 @@ no_cleanup(i_ctx_t *i_ctx_p)
  * Count the number of elements on the exec stack, with or without
  * the normally invisible elements (*op is a Boolean that indicates this).
  */
-private uint
+static uint
 count_exec_stack(i_ctx_t *i_ctx_p, bool include_marks)
 {
     uint count = ref_stack_count(&e_stack);
@@ -1021,7 +1021,7 @@ count_exec_stack(i_ctx_t *i_ctx_p, bool include_marks)
  * mark on the e-stack with a given mask.  Return 0 if there is no 'stopped'
  * mark.
  */
-private uint
+static uint
 count_to_stopped(i_ctx_t *i_ctx_p, long mask)
 {
     ref_stack_enum_t rsenum;
@@ -1074,7 +1074,7 @@ pop_estack(i_ctx_t *i_ctx_p, uint count)
  * enclosing control scope (loop or stopped).  The caller has already
  * ensured two free slots on the top of the o-stack.
  */
-private int
+static int
 unmatched_exit(os_ptr op, op_proc_t opproc)
 {
     make_oper(op - 1, 0, opproc);

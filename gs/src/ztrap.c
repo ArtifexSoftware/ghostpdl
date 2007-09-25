@@ -24,7 +24,7 @@
 gs_trap_params_t i_trap_params;
 
 /* <dict> .settrapparams - */
-private int
+static int
 zsettrapparams(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -44,7 +44,7 @@ zsettrapparams(i_ctx_t *i_ctx_p)
 }
 
 /* - settrapzone - */
-private int
+static int
 zsettrapzone(i_ctx_t *i_ctx_p)
 {
 /****** NYI ******/

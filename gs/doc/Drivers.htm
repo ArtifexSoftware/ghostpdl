@@ -645,7 +645,7 @@ before anything has been drawn on a page.
 
 <p> The device's <tt><b>open_device</b></tt> procedure may change
 <b><tt>color_info</tt></b> field values. These changes should be done before
-calling any other procedures are called.
+any other procedures are called.
 
 <p>
 The Ghostscript graphics library
@@ -771,9 +771,10 @@ the <a href="#Parameters">description of the <b><tt>get_params</tt></b> and
 <br><b><tt>gx_strip_bitmap</tt></b> (defined in
 <a href="../src/gxbitmap.h">gxbitmap.h</a>)
 <dd>These structure types represent bitmaps to be used as a tile for
-filling a region (rectangle).  <b><tt>gx_tile_bitmap</tt></b> is an older
-type lacking <b><tt>shift</tt></b> and <b><tt>rep_shift</tt></b>;
-<b><tt>gx_strip_bitmap</tt></b> has superseded it, and it should not be
+filling a region (rectangle).  <b><tt>gx_tile_bitmap</tt></b> is an 
+older, deprecated type lacking <b><tt>shift</tt></b> and 
+<b><tt>rep_shift</tt></b>;
+<b><tt>gx_strip_bitmap</tt></b> has superseded it, and should be
 used in new code.  Here is a copy of the relevant part of the file:
 
 <blockquote>
@@ -908,7 +909,7 @@ requires a client name, like <b><tt>gs_malloc</tt></b>.
 
 <h3><a name="Driver_instance_allocation"></a>Driver instance allocation</h3>
 
-<p>i
+<p>
 All driver instances allocated by Ghostscript's standard allocator must
 point to a "structure descriptor" that tells the garbage collector how to
 trace pointers in the structure. For drivers registered in the normal way
@@ -2022,9 +2023,9 @@ paint any pixel. In this case the graphics library will perform a subdivision of
 into smaller triangles and call the function again with smaller areas.
 <dd>
 <b><em>Important note :</em></b> Do not try to decompose the area within
-the implementation of <b><tt> fill_linear_color_triangle </tt></b>, because
+the implementation of <b><tt> fill_linear_color_triangle</tt></b>, because
 it can break the plane coverage contiguity and cause a dropout.
-Instead that request graphics library to perform the decomposition.
+Instead request that graphics library to perform the decomposition.
 The graphics libary is smart enough to do that properly.
 <dd>
 <b><em>Important note :</em></b>
@@ -2219,8 +2220,8 @@ given parameters, with the given color.  The clip path pointer may be
 The implementation must paint the path with the specified device color,
 which may be either a pure color, or a pattern. If the device can't
 handle non-pure colors, it should check the color type and
-call the default implementation gx_default_fill_path for cases,
-which the device can't handle. The default implementation will perform
+call the default implementation gx_default_fill_path for cases
+which it can't handle. The default implementation will perform
 a subdivision of the area to be painted, and will
 call other device virtual functions (such as fill_linear_color_triangle)
 with simpler areas.
@@ -3251,7 +3252,7 @@ non-rotated case.
 <hr>
 
 <p>
-<small>Copyright &copy; 2000-2006 Artifex Software, Inc.  All rights reserved.</small>
+<small>Copyright &copy; 2000-2007 Artifex Software, Inc.  All rights reserved.</small>
 
 <p>
 This software is provided AS-IS with no warranty, either express or

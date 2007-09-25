@@ -39,7 +39,7 @@
 #include "strimpl.h"
 
 /* forward decl */
-private int gx_clist_reader_read_band_complexity(gx_device_clist *dev);
+static int gx_clist_reader_read_band_complexity(gx_device_clist *dev);
 
 /* ------ Band file reading stream ------ */
 
@@ -58,7 +58,7 @@ typedef struct stream_band_read_state_s {
     cmd_block b_this;
 } stream_band_read_state;
 
-private int
+static int
 s_band_read_init(stream_state * st)
 {
     stream_band_read_state *const ss = (stream_band_read_state *) st;
@@ -72,7 +72,7 @@ s_band_read_init(stream_state * st)
     return 0;
 }
 
-private int
+static int
 s_band_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 		    stream_cursor_write * pw, bool last)
 {
@@ -134,7 +134,7 @@ rb:
 }
 
 /* Stream template */
-private const stream_template s_band_read_template = {
+static const stream_template s_band_read_template = {
     &st_stream_state, s_band_read_init, s_band_read_process, 1, cbuf_size
 };
 
@@ -143,14 +143,14 @@ private const stream_template s_band_read_template = {
 
 /* Forward references */
 
-private int clist_render_init(gx_device_clist *);
-private int clist_rasterize_lines(gx_device *dev, int y, int lineCount,
+static int clist_render_init(gx_device_clist *);
+static int clist_rasterize_lines(gx_device *dev, int y, int lineCount,
 				  gx_device *bdev,
 				  const gx_render_plane_t *render_plane,
 				  int *pmy);
 
 /* Calculate the raster for a chunky or planar device. */
-private int
+static int
 clist_plane_raster(const gx_device *dev, const gx_render_plane_t *render_plane)
 {
     return bitmap_raster(dev->width *
@@ -159,7 +159,7 @@ clist_plane_raster(const gx_device *dev, const gx_render_plane_t *render_plane)
 }
 
 /* Select full-pixel rendering if required for RasterOp. */
-private void
+static void
 clist_select_render_plane(gx_device *dev, int y, int height,
 			  gx_render_plane_t *render_plane, int index)
 {
@@ -202,7 +202,7 @@ clist_setup_params(gx_device *dev)
     return code;
 }
 
-private int 
+static int 
 clist_reader_init(gx_device_clist *cldev)
 {
     gx_device_clist_reader * const crdev = &cldev->reader;
@@ -220,7 +220,7 @@ clist_reader_init(gx_device_clist *cldev)
 }
 
 /* Initialize for reading. */
-private int
+static int
 clist_render_init(gx_device_clist *dev)
 {
     gx_device_clist_reader * const crdev = &dev->reader;
@@ -363,7 +363,7 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
 
 /* Copy scan lines to the client.  This is where rendering gets done. */
 /* Processes min(requested # lines, # lines available thru end of band) */
-private int	/* returns -ve error code, or # scan lines copied */
+static int	/* returns -ve error code, or # scan lines copied */
 clist_rasterize_lines(gx_device *dev, int y, int line_count,
 		      gx_device *bdev, const gx_render_plane_t *render_plane,
 		      int *pmy)
@@ -612,7 +612,7 @@ void gx_clist_reader_free_band_complexity_array( gx_device_clist *cldev )
 
 /* call once per read page to read the band complexity from clist file 
  */
-private int
+static int
 gx_clist_reader_read_band_complexity(gx_device_clist *dev)
 {
     int code = -1;  /* no dev bad call */

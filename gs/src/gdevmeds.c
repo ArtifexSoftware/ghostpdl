@@ -26,7 +26,7 @@
 #define INCH      * 0.0254
 #define TOLERANCE 0.1 CM
 
-private const struct {
+static const struct {
 	const char* name;
 	float       width;
 	float       height;

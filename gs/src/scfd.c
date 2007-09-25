@@ -25,7 +25,7 @@
 private_st_CFD_state();
 
 /* Set default parameter values. */
-private void
+static void
 s_CFD_set_defaults(register stream_state * st)
 {
     stream_CFD_state *const ss = (stream_CFD_state *) st;
@@ -34,7 +34,7 @@ s_CFD_set_defaults(register stream_state * st)
 }
 
 /* Initialize CCITTFaxDecode filter */
-private int
+static int
 s_CFD_init(stream_state * st)
 {
     stream_CFD_state *const ss = (stream_CFD_state *) st;
@@ -75,7 +75,7 @@ s_CFD_init(stream_state * st)
 }
 
 /* Release the filter. */
-private void
+static void
 s_CFD_release(stream_state * st)
 {
     stream_CFD_state *const ss = (stream_CFD_state *) st;
@@ -195,11 +195,11 @@ d:			memset(q, black_byte, rlen >> 3);\
 		*q ^= ((1 << rlen) - 1) << qbit
 
 /* Buffer refill for CCITTFaxDecode filter */
-private int cf_decode_eol(stream_CFD_state *, stream_cursor_read *);
-private int cf_decode_1d(stream_CFD_state *, stream_cursor_read *);
-private int cf_decode_2d(stream_CFD_state *, stream_cursor_read *);
-private int cf_decode_uncompressed(stream_CFD_state *, stream_cursor_read *);
-private int
+static int cf_decode_eol(stream_CFD_state *, stream_cursor_read *);
+static int cf_decode_1d(stream_CFD_state *, stream_cursor_read *);
+static int cf_decode_2d(stream_CFD_state *, stream_cursor_read *);
+static int cf_decode_uncompressed(stream_CFD_state *, stream_cursor_read *);
+static int
 s_CFD_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
@@ -398,7 +398,7 @@ ck_eol:
  * if we detected an N-bit non-EOL, we know that at least N bits of data
  * are available in the buffer.
  */
-private int
+static int
 cf_decode_eol(stream_CFD_state * ss, stream_cursor_read * pr)
 {
     hcd_declare_state;
@@ -436,7 +436,7 @@ cf_decode_eol(stream_CFD_state * ss, stream_cursor_read * pr)
 }
 
 /* Decode a 1-D scan line. */
-private int
+static int
 cf_decode_1d(stream_CFD_state * ss, stream_cursor_read * pr)
 {
     cfd_declare_state;
@@ -521,7 +521,7 @@ cf_decode_1d(stream_CFD_state * ss, stream_cursor_read * pr)
 }
 
 /* Decode a 2-D scan line. */
-private int
+static int
 cf_decode_2d(stream_CFD_state * ss, stream_cursor_read * pr)
 {
     cfd_declare_state;
@@ -761,7 +761,7 @@ v0:	    skip_bits(1);
 }
 
 #if 1				/*************** */
-private int
+static int
 cf_decode_uncompressed(stream_CFD_state * ss, stream_cursor_read * pr)
 {
     return ERRC;
@@ -771,7 +771,7 @@ cf_decode_uncompressed(stream_CFD_state * ss, stream_cursor_read * pr)
 /* Decode uncompressed data. */
 /* (Not tested: no sample data available!) */
 /****** DOESN'T CHECK FOR OVERFLOWING SCAN LINE ******/
-private int
+static int
 cf_decode_uncompressed(stream * s)
 {
     cfd_declare_state;

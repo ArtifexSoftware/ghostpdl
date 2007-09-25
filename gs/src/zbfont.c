@@ -36,18 +36,18 @@
 
 /* Structure descriptor and GC procedures for font_data */
 public_st_font_data();
-private
+static
 CLEAR_MARKS_PROC(font_data_clear_marks)
 {
     ref_struct_clear_marks(cmem, vptr, offset_of(font_data, u.type42.mru_sfnts_index)/*size*/, pstype);
 }
-private
+static
 ENUM_PTRS_BEGIN_PROC(font_data_enum_ptrs)
 {
     return ref_struct_enum_ptrs(mem, vptr, offset_of(font_data, u.type42.mru_sfnts_index)/*size*/, index, pep, pstype, gcst);
 }
 ENUM_PTRS_END_PROC
-private
+static
 RELOC_PTRS_BEGIN(font_data_reloc_ptrs)
 {
     ref_struct_reloc_ptrs(vptr, offset_of(font_data, u.type42.mru_sfnts_index)/*size*/, pstype, gcst);
@@ -56,7 +56,7 @@ RELOC_PTRS_END
 
 /* <string|name> <font_dict> .buildfont3 <string|name> <font> */
 /* Build a type 3 (user-defined) font. */
-private int
+static int
 zbuildfont3(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -120,7 +120,7 @@ zfont_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t gspace)
 }
 
 /* Get the name of a glyph. */
-private int
+static int
 zfont_glyph_name(gs_font *font, gs_glyph index, gs_const_string *pstr)
 {
     ref nref, sref;
@@ -142,7 +142,7 @@ zfont_glyph_name(gs_font *font, gs_glyph index, gs_const_string *pstr)
     return 0;
 }
 
-private gs_char 
+static gs_char 
 gs_font_map_glyph_by_dict(const gs_memory_t *mem, const ref *map, gs_glyph glyph)
 {
     ref *v, n;
@@ -270,7 +270,7 @@ build_gs_font_procs(os_ptr op, build_proc_refs * pbuild)
     return 0;
 }
 
-private int font_with_same_UID_and_another_metrics(const gs_font *pfont0, const gs_font *pfont1)
+static int font_with_same_UID_and_another_metrics(const gs_font *pfont0, const gs_font *pfont1)
 {
     const gs_font_base *pbfont0 = (const gs_font_base *)pfont0;
     const gs_font_base *pbfont1 = (const gs_font_base *)pfont1;
@@ -366,7 +366,7 @@ build_gs_primitive_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
 /* Build a FDArray entry for a CIDFontType 0 font. */
 /* Note that as of Adobe PostScript version 3011, this may be either */
 /* a Type 1 or Type 2 font. */
-private int
+static int
 build_FDArray_sub_font(i_ctx_t *i_ctx_p, ref *op,
 		       gs_font_base **ppfont,
 		       font_type ftype, gs_memory_type_ptr_t pstype,
@@ -582,7 +582,7 @@ lookup_gs_simple_font_encoding(gs_font_base * pfont)
 }
 
 /* Get FontMatrix and FontName parameters. */
-private int
+static int
 sub_font_params(gs_memory_t *mem, const ref *op, gs_matrix *pmat, gs_matrix *pomat, ref *pfname)
 {
     ref *pmatrix, *pfontname, *pfontstyle, *porigfont, *pfontinfo;

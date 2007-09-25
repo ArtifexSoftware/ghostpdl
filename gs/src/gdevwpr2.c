@@ -138,17 +138,17 @@ typedef struct gx_device_win_pr2_s gx_device_win_pr2;
 /* Device procedures */
 
 /* See gxdevice.h for the definitions of the procedures. */
-private dev_proc_open_device(win_pr2_open);
-private dev_proc_close_device(win_pr2_close);
-private dev_proc_print_page(win_pr2_print_page);
-private dev_proc_map_rgb_color(win_pr2_map_rgb_color);
-private dev_proc_map_color_rgb(win_pr2_map_color_rgb);
-private dev_proc_get_params(win_pr2_get_params);
-private dev_proc_put_params(win_pr2_put_params);
+static dev_proc_open_device(win_pr2_open);
+static dev_proc_close_device(win_pr2_close);
+static dev_proc_print_page(win_pr2_print_page);
+static dev_proc_map_rgb_color(win_pr2_map_rgb_color);
+static dev_proc_map_color_rgb(win_pr2_map_color_rgb);
+static dev_proc_get_params(win_pr2_get_params);
+static dev_proc_put_params(win_pr2_put_params);
 
-private void win_pr2_set_bpp(gx_device * dev, int depth);
+static void win_pr2_set_bpp(gx_device * dev, int depth);
 
-private const gx_device_procs win_pr2_procs =
+static const gx_device_procs win_pr2_procs =
 prn_color_params_procs(win_pr2_open, gdev_prn_output_page, win_pr2_close,
 		       win_pr2_map_rgb_color, win_pr2_map_color_rgb,
 		       win_pr2_get_params, win_pr2_put_params);
@@ -233,18 +233,18 @@ gx_device_win_pr2 far_data gs_mswinpr2_device =
 
 /********************************************************************************/
 
-private int win_pr2_getdc(gx_device_win_pr2 * dev);
-private int win_pr2_update_dev(gx_device_win_pr2 * dev, LPDEVMODE pdevmode);
-private int win_pr2_update_win(gx_device_win_pr2 * dev, LPDEVMODE pdevmode);
-private int win_pr2_print_setup_interaction(gx_device_win_pr2 * dev, int mode);
-private int win_pr2_write_user_settings(gx_device_win_pr2 * dev, gs_param_list * plist);
-private int win_pr2_read_user_settings(gx_device_win_pr2 * dev, gs_param_list * plist);
-private void win_pr2_copy_check(gx_device_win_pr2 * dev);
+static int win_pr2_getdc(gx_device_win_pr2 * dev);
+static int win_pr2_update_dev(gx_device_win_pr2 * dev, LPDEVMODE pdevmode);
+static int win_pr2_update_win(gx_device_win_pr2 * dev, LPDEVMODE pdevmode);
+static int win_pr2_print_setup_interaction(gx_device_win_pr2 * dev, int mode);
+static int win_pr2_write_user_settings(gx_device_win_pr2 * dev, gs_param_list * plist);
+static int win_pr2_read_user_settings(gx_device_win_pr2 * dev, gs_param_list * plist);
+static void win_pr2_copy_check(gx_device_win_pr2 * dev);
 
 /********************************************************************************/
 
 /* Open the win_pr2 driver */
-private int
+static int
 win_pr2_open(gx_device * dev)
 {
     int code;
@@ -411,7 +411,7 @@ win_pr2_open(gx_device * dev)
 };
 
 /* Close the win_pr2 driver */
-private int
+static int
 win_pr2_close(gx_device * dev)
 {
     int code;
@@ -468,7 +468,7 @@ win_pr2_close(gx_device * dev)
 
 /* Write BMP header to memory, then send bitmap to printer */
 /* one scan line at a time */
-private int
+static int
 win_pr2_print_page(gx_device_printer * pdev, FILE * file)
 {
     int raster = gdev_prn_raster(pdev);
@@ -610,7 +610,7 @@ win_pr2_print_page(gx_device_printer * pdev, FILE * file)
 /* Note that Windows expects RGB values in the order B,G,R. */
 
 /* Map a r-g-b color to a color index. */
-private gx_color_index
+static gx_color_index
 win_pr2_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
     gx_color_value r = cv[0];
@@ -635,7 +635,7 @@ win_pr2_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 }
 
 /* Map a color index to a r-g-b color. */
-private int
+static int
 win_pr2_map_color_rgb(gx_device * dev, gx_color_index color,
 		      gx_color_value prgb[3])
 {
@@ -858,7 +858,7 @@ win_pr2_put_params(gx_device * pdev, gs_param_list * plist)
 
 
 /* Get Device Context for printer */
-private int
+static int
 win_pr2_getdc(gx_device_win_pr2 * wdev)
 {
     char *device;
@@ -1065,7 +1065,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
  *  UserSettings parameters).
  */
 
-private int
+static int
 win_pr2_update_dev(gx_device_win_pr2 * dev, LPDEVMODE pdevmode)
 {
     if (pdevmode == 0)
@@ -1092,7 +1092,7 @@ win_pr2_update_dev(gx_device_win_pr2 * dev, LPDEVMODE pdevmode)
     return TRUE;
 }
 
-private int
+static int
 win_pr2_update_win(gx_device_win_pr2 * dev, LPDEVMODE pdevmode)
 {
     if (dev->Duplex_set > 0) {
@@ -1149,7 +1149,7 @@ e:	param_signal_error(dict.list, param_name, ecode);\
 
 /* Put the user params from UserSettings into our */
 /* internal variables. */
-private int
+static int
 win_pr2_read_user_settings(gx_device_win_pr2 * wdev, gs_param_list * plist)
 {
     gs_param_dict dict;
@@ -1235,7 +1235,7 @@ win_pr2_read_user_settings(gx_device_win_pr2 * wdev, gs_param_list * plist)
 }
 
 
-private int
+static int
 win_pr2_write_user_settings(gx_device_win_pr2 * wdev, gs_param_list * plist)
 {
     gs_param_dict dict;
@@ -1319,7 +1319,7 @@ error:
  *  instead of asking the user.
  */
 
-private int
+static int
 win_pr2_print_setup_interaction(gx_device_win_pr2 * wdev, int mode)
 {
     PRINTDLG pd;
@@ -1426,7 +1426,7 @@ win_pr2_print_setup_interaction(gx_device_win_pr2 * wdev, int mode)
  *  copy the original's handles to the associated Win32 params.
  */
 
-private void
+static void
 win_pr2_copy_check(gx_device_win_pr2 * wdev)
 {
     HGLOBAL hdevmode = wdev->win32_hdevmode;

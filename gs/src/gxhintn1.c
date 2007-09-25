@@ -27,19 +27,19 @@
 
 #define CURVE_FLATTENING (fixed_1) /* Design units in 'fixed'. */
 
-private double inline line_area_2(fixed p0x, fixed p0y, fixed p1x, fixed p1y)
+static double inline line_area_2(fixed p0x, fixed p0y, fixed p1x, fixed p1y)
 {   /* Returns area * 2.*/
     return ((double)p0x*p1y - (double)p0y*p1x);
 }
 
-private double inline bezier_area_2(fixed p0x, fixed p0y, fixed p1x, fixed p1y, 
+static double inline bezier_area_2(fixed p0x, fixed p0y, fixed p1x, fixed p1y, 
 				  fixed p2x, fixed p2y, fixed p3x, fixed p3y)
 {   /* Returns area * 2.*/
     return (-(p0y*(6.0*p1x + 3.0*p2x + p3x)) + p0x*(6.0*p1y + 3.0*p2y + p3y) - 
      3*((double)p1y*p2x + (double)p1y*p3x + 2.0*p2y*p3x - 2.0*p2x*p3y - (double)p1x*(p2y + p3y)))/10;
 }
 
-private void t1_hinter__reverse_contour(t1_hinter * this, int c)
+static void t1_hinter__reverse_contour(t1_hinter * this, int c)
 {
     int b = this->contour[c];
     int e = this->contour[c + 1] - 1; /* Skip 'close'. */
@@ -59,7 +59,7 @@ private void t1_hinter__reverse_contour(t1_hinter * this, int c)
 
 #define CONTACT_SIGNAL -100000.0
 
-private double inline bar_winding_angle(fixed x0, fixed y0, fixed x1, fixed y1)
+static double inline bar_winding_angle(fixed x0, fixed y0, fixed x1, fixed y1)
 {
     double vp = (double)x0 * y1 - (double)y0 * x1;
     double sp = (double)x0 * x1 + (double)y0 * y1;
@@ -76,7 +76,7 @@ private double inline bar_winding_angle(fixed x0, fixed y0, fixed x1, fixed y1)
     return A;
 }
 
-private double
+static double
 curve_winding_angle_rec(int k, fixed x0, fixed y0, fixed x1, fixed y1, fixed x2, fixed y2, fixed x3, fixed y3)
 {
     if (k <= 1)
@@ -117,7 +117,7 @@ curve_winding_angle_rec(int k, fixed x0, fixed y0, fixed x1, fixed y1, fixed x2,
     }
 }
 
-private int curve_log2_samples(fixed x0, fixed y0, fixed x1, fixed y1, fixed x2, fixed y2, fixed x3, fixed y3)
+static int curve_log2_samples(fixed x0, fixed y0, fixed x1, fixed y1, fixed x2, fixed y2, fixed x3, fixed y3)
 {
     curve_segment s;
 
@@ -130,14 +130,14 @@ private int curve_log2_samples(fixed x0, fixed y0, fixed x1, fixed y1, fixed x2,
     return gx_curve_log2_samples(x0, y0, &s, (fixed)CURVE_FLATTENING);
 }
 
-private double curve_winding_angle(fixed x0, fixed y0, fixed x1, fixed y1, fixed x2, fixed y2, fixed x3, fixed y3)
+static double curve_winding_angle(fixed x0, fixed y0, fixed x1, fixed y1, fixed x2, fixed y2, fixed x3, fixed y3)
 {
     int k = curve_log2_samples(x0, y0, x1, y1, x2, y2, x3, y3);
 
     return curve_winding_angle_rec(k, x0, y0, x1, y1, x2, y2, x3, y3);
 }
 
-private int t1_hinter__is_inside(t1_hinter * this, t1_glyph_space_coord gx, t1_glyph_space_coord gy, int c)
+static int t1_hinter__is_inside(t1_hinter * this, t1_glyph_space_coord gx, t1_glyph_space_coord gy, int c)
 {
     int b = this->contour[c];
     int e = this->contour[c + 1] - 1;
@@ -165,7 +165,7 @@ private int t1_hinter__is_inside(t1_hinter * this, t1_glyph_space_coord gx, t1_g
     return 1;
 }
 
-private inline bool
+static inline bool
 intersect_bar_bar(fixed q0x, fixed q0y, fixed q1x, fixed q1y, fixed q2x, fixed q2y, fixed q3x, fixed q3y)
 {
     if (q1x == q0x && q1y == q0y)
@@ -218,7 +218,7 @@ intersect_bar_bar(fixed q0x, fixed q0y, fixed q1x, fixed q1y, fixed q2x, fixed q
     }
 }
 
-private inline bool
+static inline bool
 t1_hinter__intersect_bar_bar(t1_hinter * this, int i, int j)
 {
     fixed q0x = this->pole[i + 0].gx;
@@ -233,7 +233,7 @@ t1_hinter__intersect_bar_bar(t1_hinter * this, int i, int j)
     return intersect_bar_bar(q0x, q0y, q1x, q1y, q2x, q2y, q3x, q3y);
 }
 
-private bool intersect_curve_bar_rec(int m, int k, fixed X1, fixed Y1, 
+static bool intersect_curve_bar_rec(int m, int k, fixed X1, fixed Y1, 
 				     fixed x0, fixed y0, fixed x1, fixed y1, fixed x2, fixed y2, fixed x3, fixed y3)
 {
     if (m <= 1)
@@ -316,7 +316,7 @@ private bool intersect_curve_bar_rec(int m, int k, fixed X1, fixed Y1,
     return false;
 }
 
-private int bar_samples(fixed dx, fixed dy)
+static int bar_samples(fixed dx, fixed dy)
 {
     int l = (any_abs(dx) | any_abs(dy)) / CURVE_FLATTENING, m = 0;
     while (l) {
@@ -326,7 +326,7 @@ private int bar_samples(fixed dx, fixed dy)
     return m;
 }
 
-private bool t1_hinter__intersect_curve_bar(t1_hinter * this, int i, int j)
+static bool t1_hinter__intersect_curve_bar(t1_hinter * this, int i, int j)
 {
     fixed X0 = this->pole[j].gx;
     fixed Y0 = this->pole[j].gy;
@@ -346,7 +346,7 @@ private bool t1_hinter__intersect_curve_bar(t1_hinter * this, int i, int j)
     return intersect_curve_bar_rec(m, k, X1, Y1, x0, y0, x1, y1, x2, y2, x3, y3);
 }
 
-private bool intersect_curve_curve_rec(int ka, int kb,
+static bool intersect_curve_curve_rec(int ka, int kb,
 				     fixed ax0, fixed ay0, fixed ax1, fixed ay1, fixed ax2, fixed ay2, fixed ax3, fixed ay3,
 				     fixed bx0, fixed by0, fixed bx1, fixed by1, fixed bx2, fixed by2, fixed bx3, fixed by3)
 {
@@ -456,7 +456,7 @@ private bool intersect_curve_curve_rec(int ka, int kb,
     return false;
 }
 
-private bool t1_hinter__intersect_curve_curve(t1_hinter * this, int i, int j)
+static bool t1_hinter__intersect_curve_curve(t1_hinter * this, int i, int j)
 {
     fixed ax0 = this->pole[i].gx;
     fixed ay0 = this->pole[i].gy;
@@ -482,7 +482,7 @@ private bool t1_hinter__intersect_curve_curve(t1_hinter * this, int i, int j)
 				     bx0, by0, bx1, by1, bx2, by2, bx3, by3);
 }
 
-private bool t1_hinter__contour_intersection(t1_hinter * this, int c0, int c1)
+static bool t1_hinter__contour_intersection(t1_hinter * this, int c0, int c1)
 {
     int b0 = this->contour[c0];
     int e0 = this->contour[c0 + 1] - 1;
@@ -524,7 +524,7 @@ private bool t1_hinter__contour_intersection(t1_hinter * this, int c0, int c1)
 
 #define MAX_NORMALIZING_CONTOURS 5
 
-private void t1_hinter__fix_subglyph_contour_signs(t1_hinter * this, int first_contour, int last_contour)
+static void t1_hinter__fix_subglyph_contour_signs(t1_hinter * this, int first_contour, int last_contour)
 {
     double area[MAX_NORMALIZING_CONTOURS];
     int i, j, k, l, m;

@@ -38,14 +38,14 @@
 /* The type descriptor must be public for Pattern types. */
 gs_public_st_composite(st_dc_ht_binary, gx_device_color, "dc_ht_binary",
 		       dc_ht_binary_enum_ptrs, dc_ht_binary_reloc_ptrs);
-private dev_color_proc_save_dc(gx_dc_ht_binary_save_dc);
-private dev_color_proc_get_dev_halftone(gx_dc_ht_binary_get_dev_halftone);
-private dev_color_proc_load(gx_dc_ht_binary_load);
-private dev_color_proc_fill_rectangle(gx_dc_ht_binary_fill_rectangle);
-private dev_color_proc_fill_masked(gx_dc_ht_binary_fill_masked);
-private dev_color_proc_equal(gx_dc_ht_binary_equal);
-private dev_color_proc_write(gx_dc_ht_binary_write);
-private dev_color_proc_read(gx_dc_ht_binary_read);
+static dev_color_proc_save_dc(gx_dc_ht_binary_save_dc);
+static dev_color_proc_get_dev_halftone(gx_dc_ht_binary_get_dev_halftone);
+static dev_color_proc_load(gx_dc_ht_binary_load);
+static dev_color_proc_fill_rectangle(gx_dc_ht_binary_fill_rectangle);
+static dev_color_proc_fill_masked(gx_dc_ht_binary_fill_masked);
+static dev_color_proc_equal(gx_dc_ht_binary_equal);
+static dev_color_proc_write(gx_dc_ht_binary_write);
+static dev_color_proc_read(gx_dc_ht_binary_read);
 const gx_device_color_type_t
       gx_dc_type_data_ht_binary =
 {&st_dc_ht_binary,
@@ -63,7 +63,7 @@ const gx_device_color_type_t *const gx_dc_type_ht_binary =
 
 #define gx_dc_type_ht_binary (&gx_dc_type_data_ht_binary)
 /* GC procedures */
-private 
+static 
 ENUM_PTRS_WITH(dc_ht_binary_enum_ptrs, gx_device_color *cptr) return 0;
 ENUM_PTR(0, gx_device_color, colors.binary.b_ht);
 case 1:
@@ -73,7 +73,7 @@ case 1:
     ENUM_RETURN(tile ? tile - tile->index : 0);
 }
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(dc_ht_binary_reloc_ptrs, gx_device_color *cptr)
+static RELOC_PTRS_WITH(dc_ht_binary_reloc_ptrs, gx_device_color *cptr)
 {
     gx_ht_tile *tile = cptr->colors.binary.b_tile;
     uint index = tile ? tile->index : 0;
@@ -86,13 +86,13 @@ RELOC_PTRS_END
 
 /* Other GC procedures */
 private_st_ht_tiles();
-private 
+static 
 ENUM_PTRS_BEGIN_PROC(ht_tiles_enum_ptrs)
 {
     return 0;
 }
 ENUM_PTRS_END_PROC
-private RELOC_PTRS_BEGIN(ht_tiles_reloc_ptrs)
+static RELOC_PTRS_BEGIN(ht_tiles_reloc_ptrs)
 {
     /* Reset the bitmap pointers in the tiles. */
     /* We know the first tile points to the base of the bits. */
@@ -209,9 +209,9 @@ gx_check_tile_size(const gs_imager_state * pis, int w, int y, int h,
 }
 
 /* Render a given level into a halftone cache. */
-private int render_ht(gx_ht_tile *, int, const gx_ht_order *,
+static int render_ht(gx_ht_tile *, int, const gx_ht_order *,
 		      gx_bitmap_id);
-private gx_ht_tile *
+static gx_ht_tile *
 gx_render_ht_default(gx_ht_cache * pcache, int b_level)
 {
     const gx_ht_order *porder = &pcache->order;
@@ -227,7 +227,7 @@ gx_render_ht_default(gx_ht_cache * pcache, int b_level)
     return bt;
 }
 /* Faster code if num_tiles == 1. */
-private gx_ht_tile *
+static gx_ht_tile *
 gx_render_ht_1_tile(gx_ht_cache * pcache, int b_level)
 {
     const gx_ht_order *porder = &pcache->order;
@@ -243,7 +243,7 @@ gx_render_ht_1_tile(gx_ht_cache * pcache, int b_level)
     return bt;
 }
 /* Faster code if levels_per_tile == 1. */
-private gx_ht_tile *
+static gx_ht_tile *
 gx_render_ht_1_level(gx_ht_cache * pcache, int b_level)
 {
     const gx_ht_order *porder = &pcache->order;
@@ -260,7 +260,7 @@ gx_render_ht_1_level(gx_ht_cache * pcache, int b_level)
 }
 
 /* save information about the operand binary halftone color */
-private void
+static void
 gx_dc_ht_binary_save_dc(const gx_device_color * pdevc,
                         gx_device_color_saved * psdc)
 {
@@ -273,14 +273,14 @@ gx_dc_ht_binary_save_dc(const gx_device_color * pdevc,
 }
 
 /* get the halftone used for a binary halftone color */
-private const gx_device_halftone *
+static const gx_device_halftone *
 gx_dc_ht_binary_get_dev_halftone(const gx_device_color * pdevc)
 {
     return pdevc->colors.binary.b_ht;
 }
 
 /* Load the device color into the halftone cache if needed. */
-private int
+static int
 gx_dc_ht_binary_load(gx_device_color * pdevc, const gs_imager_state * pis,
 		     gx_device * dev, gs_color_select_t select)
 {
@@ -308,7 +308,7 @@ gx_dc_ht_binary_load(gx_device_color * pdevc, const gs_imager_state * pis,
 /*
  * Load the half tone tile in the halftone cache.
  */
-private int
+static int
 gx_dc_ht_binary_load_cache(const gx_device_color * pdevc)
 {
     int component_index = pdevc->colors.binary.b_index;
@@ -331,7 +331,7 @@ gx_dc_ht_binary_load_cache(const gx_device_color * pdevc)
 
 /* Fill a rectangle with a binary halftone. */
 /* Note that we treat this as "texture" for RasterOp. */
-private int
+static int
 gx_dc_ht_binary_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 		  int w, int h, gx_device * dev, gs_logical_operation_t lop,
 			       const gx_rop_source_t * source)
@@ -370,7 +370,7 @@ gx_dc_ht_binary_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 					     lop);
 }
 
-private int
+static int
 gx_dc_ht_binary_fill_masked(const gx_device_color * pdevc, const byte * data,
 	int data_x, int raster, gx_bitmap_id id, int x, int y, int w, int h,
 		   gx_device * dev, gs_logical_operation_t lop, bool invert)
@@ -391,7 +391,7 @@ gx_dc_ht_binary_fill_masked(const gx_device_color * pdevc, const byte * data,
 }
 
 /* Compare two binary halftones for equality. */
-private bool
+static bool
 gx_dc_ht_binary_equal(const gx_device_color * pdevc1,
 		      const gx_device_color * pdevc2)
 {
@@ -412,10 +412,10 @@ gx_dc_ht_binary_equal(const gx_device_color * pdevc1,
  * The binary halftone tile is never transmitted as part of the string
  * representation, so there is also no flag bit for it.
  */
-private const int   dc_ht_binary_has_color0 = 0x01;
-private const int   dc_ht_binary_has_color1 = 0x02;
-private const int   dc_ht_binary_has_level = 0x04;
-private const int   dc_ht_binary_has_index = 0x08;
+static const int   dc_ht_binary_has_color0 = 0x01;
+static const int   dc_ht_binary_has_color1 = 0x02;
+static const int   dc_ht_binary_has_level = 0x04;
+static const int   dc_ht_binary_has_index = 0x08;
 
 
 /*
@@ -448,7 +448,7 @@ private const int   dc_ht_binary_has_index = 0x08;
  *  < 0, != gs_error_rangecheck, in the event of some other error; in this
  *  case *psize is not changed.
  */
-private int
+static int
 gx_dc_ht_binary_write(
     const gx_device_color *         pdevc,
     const gx_device_color_saved *   psdc0,
@@ -576,7 +576,7 @@ gx_dc_ht_binary_write(
  *
  *  # of bytes read if everthing OK, < 0 in the event of an error
  */
-private int
+static int
 gx_dc_ht_binary_read(
     gx_device_color *       pdevc,
     const gs_imager_state * pis,
@@ -791,7 +791,7 @@ gx_ht_init_cache(const gs_memory_t *mem, gx_ht_cache * pcache, const gx_ht_order
  * don't change abruptly.  Note that the "level" is the number of bits,
  * not the index in the levels vector.
  */
-private int
+static int
 render_ht(gx_ht_tile * pbt, int level /* [1..num_bits-1] */ ,
 	  const gx_ht_order * porder, gx_bitmap_id new_id)
 {

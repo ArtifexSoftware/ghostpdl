@@ -327,7 +327,7 @@ struct gx_path_s {
     gx_path_procs *procs;
 };
 
-/* st_path should be private, but it's needed for the clip_path subclass. */
+/* st_path should be static, but it's needed for the clip_path subclass. */
 extern_st(st_path);
 #define public_st_path()	/* in gxpath.c */\
   gs_public_st_ptrs2(st_path, gx_path, "path",\

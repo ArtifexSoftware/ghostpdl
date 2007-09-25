@@ -30,68 +30,68 @@
  */
 #define DENT(v, f)\
   (v <= 0.5 ? v * f : (v - 0.5) * (1 - (0.5 * f)) / 0.5 + 0.5 * f)
-private const gs_vector3 bit_WhitePoint = {(float)0.9505, 1, (float)1.0890};
-private const gs_range3 bit_RangePQR = {
+static const gs_vector3 bit_WhitePoint = {(float)0.9505, 1, (float)1.0890};
+static const gs_range3 bit_RangePQR = {
     {{0, (float)0.9505}, {0, 1}, {0, (float)1.0890}}
 };
-private const float dent_PQR = 1.0;
-private int
+static const float dent_PQR = 1.0;
+static int
 bit_TransformPQR_proc(int index, floatp in, const gs_cie_wbsd * pwbsd,
 		      gs_cie_render * pcrd, float *out)
 {
     *out = DENT(in, dent_PQR);
     return 0;
 }
-private const gs_cie_transform_proc3 bit_TransformPQR = {
+static const gs_cie_transform_proc3 bit_TransformPQR = {
     bit_TransformPQR_proc, "bitTPQRDefault", {0, 0}, 0
 };
-private const float dent_LMN = 1.0;
-private float
+static const float dent_LMN = 1.0;
+static float
 bit_EncodeLMN_proc(floatp in, const gs_cie_render * pcrd)
 {
     return DENT(in, dent_LMN);
 }
-private const gs_cie_render_proc3 bit_EncodeLMN = { /* dummy */
+static const gs_cie_render_proc3 bit_EncodeLMN = { /* dummy */
     {bit_EncodeLMN_proc, bit_EncodeLMN_proc, bit_EncodeLMN_proc}
 };
-private const gs_range3 bit_RangeLMN = {
+static const gs_range3 bit_RangeLMN = {
     {{0, (float)0.9505}, {0, 1}, {0, (float)1.0890}}
 };
-private const gs_matrix3 bit_MatrixABC = {
+static const gs_matrix3 bit_MatrixABC = {
     {(float) 3.24063, (float)-0.96893, (float) 0.05571},
     {(float)-1.53721, (float) 1.87576, (float)-0.20402},
     {(float)-0.49863, (float) 0.04152, (float) 1.05700}
 };
-private float
+static float
 bit_EncodeABC_proc(floatp in, const gs_cie_render * pcrd)
 {
     return pow(max(in, 0.0), 0.45);
 }
-private const gs_cie_render_proc3 bit_EncodeABC = {
+static const gs_cie_render_proc3 bit_EncodeABC = {
     {bit_EncodeABC_proc, bit_EncodeABC_proc, bit_EncodeABC_proc}
 };
 /* These RenderTables are no-ops. */
-private const byte bit_rtt0[2*2*3] = {
+static const byte bit_rtt0[2*2*3] = {
     /*0,0,0*/ 0,0,0,
     /*0,0,1*/ 0,0,255,
     /*0,1,0*/ 0,255,0,
     /*0,1,1*/ 0,255,255
 };
-private const byte bit_rtt1[2*2*3] = {
+static const byte bit_rtt1[2*2*3] = {
     /*1,0,0*/ 255,0,0,
     /*1,0,1*/ 255,0,255,
     /*1,1,0*/ 255,255,0,
     /*1,1,1*/ 255,255,255
 };
-private const gs_const_string bit_rt_data[2] = {
+static const gs_const_string bit_rt_data[2] = {
     {bit_rtt0, 2*2*3}, {bit_rtt1, 2*2*3}
 };
-private frac
+static frac
 bit_rt_proc(byte in, const gs_cie_render *pcrd)
 {
     return frac_1 * in / 255;
 }
-private const gs_cie_render_table_t bit_RenderTable = {	/* dummy */
+static const gs_cie_render_table_t bit_RenderTable = {	/* dummy */
     {3, {2, 2, 2}, 3, bit_rt_data},
     {{bit_rt_proc, bit_rt_proc, bit_rt_proc}}
 };

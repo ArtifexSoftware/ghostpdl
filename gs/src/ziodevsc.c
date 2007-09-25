@@ -46,18 +46,18 @@ const char iodev_dtype_stdio[] = "Special";
  */
 
 #define STDIN_BUF_SIZE 1024
-private iodev_proc_init(stdin_init);
-private iodev_proc_open_device(stdin_open);
+static iodev_proc_init(stdin_init);
+static iodev_proc_open_device(stdin_open);
 const gx_io_device gs_iodev_stdin =
     iodev_special("%stdin%", stdin_init, stdin_open);
 
 #define STDOUT_BUF_SIZE 128
-private iodev_proc_open_device(stdout_open);
+static iodev_proc_open_device(stdout_open);
 const gx_io_device gs_iodev_stdout =
     iodev_special("%stdout%", iodev_no_init, stdout_open);
 
 #define STDERR_BUF_SIZE 128
-private iodev_proc_open_device(stderr_open);
+static iodev_proc_open_device(stderr_open);
 const gx_io_device gs_iodev_stderr =
     iodev_special("%stderr%", iodev_no_init, stderr_open);
 
@@ -71,11 +71,11 @@ const gx_io_device gs_iodev_stderr =
  * call to file_close_disable.
  */
 
-private int
+static int
     s_stdin_read_process(stream_state *, stream_cursor_read *,
 			 stream_cursor_write *, bool);
 
-private int
+static int
 stdin_init(gx_io_device * iodev, gs_memory_t * mem)
 {
     mem->gs_lib_ctx->stdin_is_interactive = true;
@@ -84,7 +84,7 @@ stdin_init(gx_io_device * iodev, gs_memory_t * mem)
 
 /* Read from stdin into the buffer. */
 /* If interactive, only read one character. */
-private int
+static int
 s_stdin_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 		     stream_cursor_write * pw, bool last)
 {
@@ -109,7 +109,7 @@ s_stdin_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     return ((count < 0) ? ERRC : (count == 0) ? EOFC : count);
 }
 
-private int
+static int
 stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
 	   gs_memory_t * mem)
 {
@@ -177,7 +177,7 @@ zis_stdin(const stream *s)
 }
 
 /* Write a buffer to stdout, potentially writing to callback */
-private int
+static int
 s_stdout_write_process(stream_state * st, stream_cursor_read *pr,
 		     stream_cursor_write *ignore_pw, bool last)
 {
@@ -193,7 +193,7 @@ s_stdout_write_process(stream_state * st, stream_cursor_read *pr,
     return 0;
 }
 
-private int
+static int
 stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
 	    gs_memory_t * mem)
 {
@@ -248,7 +248,7 @@ zget_stdout(i_ctx_t *i_ctx_p, stream ** ps)
 }
 
 /* Write a buffer to stderr, potentially writing to callback */
-private int
+static int
 s_stderr_write_process(stream_state * st, stream_cursor_read *pr,
 		     stream_cursor_write *ignore_pw, bool last)
 {
@@ -264,7 +264,7 @@ s_stderr_write_process(stream_state * st, stream_cursor_read *pr,
     return 0;
 }
 
-private int
+static int
 stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
 	    gs_memory_t * mem)
 {

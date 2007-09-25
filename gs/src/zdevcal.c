@@ -21,7 +21,7 @@
 
 /* ------ %Calendar% ------ */
 
-private iodev_proc_get_params(calendar_get_params);
+static iodev_proc_get_params(calendar_get_params);
 const gx_io_device gs_iodev_calendar = {
     "%Calendar%", "Special",
     { iodev_no_init, iodev_no_open_device, iodev_no_open_file,
@@ -33,7 +33,7 @@ const gx_io_device gs_iodev_calendar = {
 };
 
 /* Get the date and time. */
-private int
+static int
 calendar_get_params(gx_io_device * iodev, gs_param_list * plist)
 {
     int code;

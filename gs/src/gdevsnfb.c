@@ -22,10 +22,10 @@ typedef	long	off_t;
 #include <newsiop/framebuf.h>
 
 /* The device descriptor */
-private dev_proc_open_device(sonyfb_open);
-private dev_proc_output_page(sonyfb_output_page);
-private dev_proc_close_device(sonyfb_close);
-private gx_device_procs sonyfb_procs =
+static dev_proc_open_device(sonyfb_open);
+static dev_proc_output_page(sonyfb_output_page);
+static dev_proc_close_device(sonyfb_close);
+static gx_device_procs sonyfb_procs =
   prn_procs(sonyfb_open, sonyfb_output_page, sonyfb_close);
 const gx_device_printer far_data gs_sonyfb_device =
   prn_device(sonyfb_procs, "sonyfb",
@@ -36,10 +36,10 @@ const gx_device_printer far_data gs_sonyfb_device =
 	0,0,0,0,			/* margins */
 	1, 0);
 
-private int fb_file = -1;
+static int fb_file = -1;
 sPrimRect prect;
 
-private int
+static int
 sonyfb_open(gx_device *dev)
 {
   sScrType stype;
@@ -56,7 +56,7 @@ sonyfb_open(gx_device *dev)
   return gdev_prn_open(dev);
 }
 
-private int
+static int
 sonyfb_close(gx_device *dev)
 {
   if(fb_file >= 0)
@@ -70,7 +70,7 @@ sonyfb_close(gx_device *dev)
 #define FRAME_WIDTH	1024
 
 /* Send the page to the printer. */
-private int
+static int
 sonyfb_output_page(gx_device *dev, int num_copies, int flush)
 {
   int l, i, byte_width, height;

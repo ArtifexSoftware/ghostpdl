@@ -51,13 +51,13 @@
 #define Y_DPI 600
 #define LINE_SIZE ((X_DPI * 84 / 10 + 7) / 8)	/* bytes per line for letter */
 
-private int md50_print_page(gx_device_printer *, FILE *, const char *, int);
-private dev_proc_open_device(md_open);
-private dev_proc_print_page(md50m_print_page);
-private dev_proc_print_page(md50e_print_page);
-private dev_proc_print_page(md1xm_print_page);
+static int md50_print_page(gx_device_printer *, FILE *, const char *, int);
+static dev_proc_open_device(md_open);
+static dev_proc_print_page(md50m_print_page);
+static dev_proc_print_page(md50e_print_page);
+static dev_proc_print_page(md1xm_print_page);
 
-private gx_device_procs prn_md_procs =
+static gx_device_procs prn_md_procs =
   prn_procs(md_open, gdev_prn_output_page, gdev_prn_close);
 
 gx_device_printer far_data gs_md50Mono_device =
@@ -152,7 +152,7 @@ static const char end_md[] = {
 /* ------ Internal routines ------ */
 
 /* Open the printer, and set the margins. */
-private int
+static int
 md_open(gx_device *pdev)
 {
 	static const float md_margins[4] =
@@ -165,21 +165,21 @@ md_open(gx_device *pdev)
 }
 
 /* MD5000 monochrome mode entrance. */
-private int
+static int
 md50m_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
   return(md50_print_page(pdev, prn_stream, init_50mono, sizeof(init_50mono)));
 }
 
 /* MD5000 Eco mode monochrome mode entrance. */
-private int
+static int
 md50e_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
   return(md50_print_page(pdev, prn_stream, init_50eco, sizeof(init_50eco)));
 }
 
 /* MD5000 monochrome mode print. */
-private int
+static int
 md50_print_page(gx_device_printer *pdev, FILE *prn_stream,
 	      const char *init_str, int init_size)
 {
@@ -239,7 +239,7 @@ md50_print_page(gx_device_printer *pdev, FILE *prn_stream,
 }
 
 /* all? MD series monochrome mode print with data compression. */
-private int
+static int
 md1xm_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
   int lnum;

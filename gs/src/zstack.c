@@ -83,7 +83,7 @@ zindex(i_ctx_t *i_ctx_p)
 }
 
 /* <obj_n> ... <obj_0> <n> .argindex <obj_n> ... <obj_0> <obj_n> */
-private int
+static int
 zargindex(i_ctx_t *i_ctx_p)
 {
     int code = zindex(i_ctx_p);
@@ -239,7 +239,7 @@ zroll(i_ctx_t *i_ctx_p)
 /* |- ... clear |- */
 /* The function name is changed, because the IRIS library has */
 /* a function called zclear. */
-private int
+static int
 zclear_stack(i_ctx_t *i_ctx_p)
 {
     ref_stack_clear(&o_stack);
@@ -247,7 +247,7 @@ zclear_stack(i_ctx_t *i_ctx_p)
 }
 
 /* |- <obj_n-1> ... <obj_0> count <obj_n-1> ... <obj_0> <n> */
-private int
+static int
 zcount(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -258,7 +258,7 @@ zcount(i_ctx_t *i_ctx_p)
 }
 
 /* - mark <mark> */
-private int
+static int
 zmark(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -282,7 +282,7 @@ zcleartomark(i_ctx_t *i_ctx_p)
 
 /* <mark> <obj_n-1> ... <obj_0> counttomark */
 /*      <mark> <obj_n-1> ... <obj_0> <n> */
-private int
+static int
 zcounttomark(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

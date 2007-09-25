@@ -23,7 +23,7 @@
 #include "ialloc.h"
 
 /* <array> .setdevicepixelspace - */
-private int
+static int
 zsetdevicepixelspace(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

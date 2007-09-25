@@ -92,10 +92,10 @@
 #endif
 
 /* The device descriptors */
-private dev_proc_print_page(epson_print_page);
-private dev_proc_print_page(eps9mid_print_page); 
-private dev_proc_print_page(eps9high_print_page);
-private dev_proc_print_page(ibmpro_print_page);
+static dev_proc_print_page(epson_print_page);
+static dev_proc_print_page(eps9mid_print_page); 
+static dev_proc_print_page(eps9high_print_page);
+static dev_proc_print_page(ibmpro_print_page);
 
 /* Standard Epson device */
 const gx_device_printer far_data gs_epson_device =
@@ -133,11 +133,11 @@ const gx_device_printer far_data gs_ibmpro_device =
 /* ------ Driver procedures ------ */
 
 /* Forward references */
-private void eps_output_run(byte *, int, int, char, FILE *, int);
+static void eps_output_run(byte *, int, int, char, FILE *, int);
 
 /* Send the page to the printer. */
 #define DD 0x40				/* double density flag */
-private int
+static int
 eps_print_page(gx_device_printer *pdev, FILE *prn_stream, int y_9pin_high,
   const char *init_string, int init_length, const char *end_string,
   int archaic, int tab_hiccup)
@@ -397,7 +397,7 @@ eps_print_page(gx_device_printer *pdev, FILE *prn_stream, int y_9pin_high,
 
 /* Output a single graphics command. */
 /* pass=0 for all columns, 1 for even columns, 2 for odd columns. */
-private void
+static void
 eps_output_run(byte *data, int count, int y_mult,
   char start_graphics, FILE *prn_stream, int pass)
 {	
@@ -445,7 +445,7 @@ eps_output_run(byte *data, int count, int y_mult,
 #endif
 
 #define ESC 0x1b
-private const char eps_init_string[] = {
+static const char eps_init_string[] = {
 #if ARCHAIC
 	ESC, '@', 022 /*^R*/, ESC, 'Q'
 #else
@@ -453,7 +453,7 @@ private const char eps_init_string[] = {
 #endif
 };
 
-private int
+static int
 epson_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
 	return eps_print_page(pdev, prn_stream, 0, eps_init_string,
@@ -461,7 +461,7 @@ epson_print_page(gx_device_printer *pdev, FILE *prn_stream)
 			      ARCHAIC, TAB_HICCUP);
 }
 
-private int
+static int
 eps9high_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
 	return eps_print_page(pdev, prn_stream, 1, eps_init_string,
@@ -469,7 +469,7 @@ eps9high_print_page(gx_device_printer *pdev, FILE *prn_stream)
 			      ARCHAIC, TAB_HICCUP);
 }
 
-private int
+static int
 eps9mid_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
 	return eps_print_page(pdev, prn_stream, 2, eps_init_string,
@@ -477,7 +477,7 @@ eps9mid_print_page(gx_device_printer *pdev, FILE *prn_stream)
 			      ARCHAIC, TAB_HICCUP);
 }
 
-private int
+static int
 ibmpro_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
     /*

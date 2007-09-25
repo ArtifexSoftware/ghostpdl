@@ -30,7 +30,7 @@
 
 /* GC descriptors */
 public_st_pdf_image_writer();
-private ENUM_PTRS_WITH(pdf_image_writer_enum_ptrs, pdf_image_writer *piw)
+static ENUM_PTRS_WITH(pdf_image_writer_enum_ptrs, pdf_image_writer *piw)
      index -= 4;
      if (index < psdf_binary_writer_max_ptrs * piw->alt_writer_count) {
 	 gs_ptr_type_t ret =
@@ -47,7 +47,7 @@ case 1: ENUM_RETURN(piw->data);
 case 2: ENUM_RETURN(piw->named);
 case 3: ENUM_RETURN(piw->pres_mask);
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(pdf_image_writer_reloc_ptrs, pdf_image_writer *piw)
+static RELOC_PTRS_WITH(pdf_image_writer_reloc_ptrs, pdf_image_writer *piw)
 {
     int i;
 
@@ -77,7 +77,7 @@ const pdf_image_names_t pdf_image_names_short = {
 /* Store the values of image parameters other than filters. */
 /* pdev is used only for updating procsets. */
 /* pcsvalue is not used for masks. */
-private int
+static int
 pdf_put_pixel_image_values(cos_dict_t *pcd, gx_device_pdf *pdev,
 			   const gs_pixel_image_t *pim,
 			   const gs_color_space *pcs,
@@ -568,11 +568,11 @@ pdf_copy_color_bits(stream *s, const byte *base, int sourcex, int raster,
 }
 
 /* Choose image compression - auxiliary procs */
-private inline bool much_bigger__DL(long l1, long l2)
+static inline bool much_bigger__DL(long l1, long l2)
 {
     return l1 > 1024*1024 && l2 < l1 / 3;
 }
-private void
+static void
 pdf_choose_compression_cos(pdf_image_writer *piw, cos_stream_t *s[2], bool force)
 {   /*	Assume s[0] is Flate, s[1] is DCT, s[2] is chooser. */
     long l0, l1;

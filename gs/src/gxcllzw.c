@@ -19,8 +19,8 @@
 #include "gxclmem.h"
 #include "slzwx.h"
 
-private stream_LZW_state cl_LZWE_state;
-private stream_LZW_state cl_LZWD_state;
+static stream_LZW_state cl_LZWE_state;
+static stream_LZW_state cl_LZWD_state;
 
 /* Initialize the states to be copied. */
 int

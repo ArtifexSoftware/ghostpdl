@@ -78,12 +78,6 @@ DEBUG=0
 
 TDEBUG=0
 
-# Setting NOPRIVATE=1 makes private (static) procedures and variables public,
-# so they are visible to the debugger and profiler.
-# No execution time or space penalty, just larger .OBJ and .EXE files.
-
-NOPRIVATE=0
-
 # Define the name of the executable file.
 
 GS=gswin32
@@ -334,12 +328,6 @@ FPFLAGS=
 !endif
 
 
-!ifneq NOPRIVATE 0
-CP=/DNOPRIVATE
-!else
-CP=
-!endif
-
 !ifneq DEBUG 0
 CD=-dDEBUG
 !else
@@ -372,7 +360,7 @@ COMPILE_FOR_DLL=-bd
 COMPILE_FOR_EXE=
 COMPILE_FOR_CONSOLE_EXE=
 
-GENOPT=-d+ $(CP) $(CD) $(CT) $(CS) -zq -zp8
+GENOPT=-d+ $(CD) $(CT) $(CS) -zq -zp8
 
 CCFLAGS=$(PLATOPT) $(FPFLAGS) $(CPFLAGS) $(CFLAGS) $(XCFLAGS)
 CC=$(COMP) $(CCFLAGS) @$(GLGENDIR)\ccf32.tr

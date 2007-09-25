@@ -122,7 +122,7 @@ bpc_to_depth(int ncomp, int bpc)
  * This routine will check if a name matches any item in a list of process
  * color model colorant names.
  */
-private bool
+static bool
 check_process_color_names(fixed_colorant_names_list plist,
 			  const gs_param_string * pstring)
 {
@@ -593,7 +593,7 @@ devn_printer_put_params(gx_device * pdev, gs_param_list * plist,
  */
 
 /* GC procedures */
-private 
+static 
 ENUM_PTRS_WITH(compressed_color_list_enum_ptrs, compressed_color_list_t *plist)
 {
     if (index < plist->num_sub_level_ptrs)
@@ -602,7 +602,7 @@ ENUM_PTRS_WITH(compressed_color_list_enum_ptrs, compressed_color_list_t *plist)
 }
 ENUM_PTRS_END
 
-private RELOC_PTRS_WITH(compressed_color_list_reloc_ptrs, compressed_color_list_t *plist)
+static RELOC_PTRS_WITH(compressed_color_list_reloc_ptrs, compressed_color_list_t *plist)
 {
     int i;
 
@@ -726,7 +726,7 @@ free_separation_names(gs_memory_t * mem,
  * Add a new set of bit mapped colorant lists to our list of encoded color
  * colorants.
  */
-private bool
+static bool
 sub_level_add_compressed_color_list(gs_memory_t * mem,
 		comp_bit_map_list_t * pnew_comp_bit_map,
 		compressed_color_list_t * pcomp_list, gx_color_index * plist_index)
@@ -801,7 +801,7 @@ sub_level_add_compressed_color_list(gs_memory_t * mem,
  * process color colorants since these are the ones most likely to be mixed
  * with spot colors.
  */
-private bool
+static bool
 add_compressed_color_list(gs_memory_t * mem,
 	comp_bit_map_list_t * pnew_comp_bit_map,
 	compressed_color_list_t * pcomp_list, gx_color_index * plist_index)
@@ -850,7 +850,7 @@ add_compressed_color_list(gs_memory_t * mem,
  * colors (or less) and no process colors.  These are placed at the start of
  * the list to minimize the add and search times for these common situations.
  */
-private compressed_color_list_t * 
+static compressed_color_list_t * 
 init_compressed_color_list(gs_memory_t *mem)
 {
     /*
@@ -966,7 +966,7 @@ int comp_bit_factor[MAX_ENCODED_COMPONENTS + 1] = {
  *    			(return value).
  *    returns true if the bit map is found.
  */
-private bool
+static bool
 search_compressed_color_list(int num_comp, compressed_color_list_t * pcomp_list,
 	comp_bit_map_list_t * pnew_comp_bit_map, gx_color_index * plist_index,
 	comp_bit_map_list_t * * pcomp_bit_map)
@@ -1424,15 +1424,15 @@ devn_unpack_row(gx_device * dev, int num_comp, gs_devn_params * pdevn_params,
 #endif
 
 /* The device descriptor */
-private dev_proc_open_device(spotcmyk_prn_open);
-private dev_proc_get_params(spotcmyk_get_params);
-private dev_proc_put_params(spotcmyk_put_params);
-private dev_proc_print_page(spotcmyk_print_page);
-private dev_proc_get_color_mapping_procs(get_spotcmyk_color_mapping_procs);
-private dev_proc_get_color_mapping_procs(get_devicen_color_mapping_procs);
-private dev_proc_get_color_comp_index(spotcmyk_get_color_comp_index);
-private dev_proc_encode_color(spotcmyk_encode_color);
-private dev_proc_decode_color(spotcmyk_decode_color);
+static dev_proc_open_device(spotcmyk_prn_open);
+static dev_proc_get_params(spotcmyk_get_params);
+static dev_proc_put_params(spotcmyk_put_params);
+static dev_proc_print_page(spotcmyk_print_page);
+static dev_proc_get_color_mapping_procs(get_spotcmyk_color_mapping_procs);
+static dev_proc_get_color_mapping_procs(get_devicen_color_mapping_procs);
+static dev_proc_get_color_comp_index(spotcmyk_get_color_comp_index);
+static dev_proc_encode_color(spotcmyk_encode_color);
+static dev_proc_decode_color(spotcmyk_decode_color);
 
 /*
  * A structure definition for a DeviceN type device
@@ -1445,7 +1445,7 @@ typedef struct spotcmyk_device_s {
 
 /* GC procedures */
 
-private 
+static 
 ENUM_PTRS_WITH(spotcmyk_device_enum_ptrs, spotcmyk_device *pdev)
 {
     if (index < pdev->devn_params.separations.num_separations)
@@ -1455,7 +1455,7 @@ ENUM_PTRS_WITH(spotcmyk_device_enum_ptrs, spotcmyk_device *pdev)
 }
 
 ENUM_PTRS_END
-private RELOC_PTRS_WITH(spotcmyk_device_reloc_ptrs, spotcmyk_device *pdev)
+static RELOC_PTRS_WITH(spotcmyk_device_reloc_ptrs, spotcmyk_device *pdev)
 {
     RELOC_PREFIX(st_device_printer);
     {
@@ -1471,7 +1471,7 @@ RELOC_PTRS_END
 /* Even though spotcmyk_device_finalize is the same as gx_device_finalize, */
 /* we need to implement it separately because st_composite_final */
 /* declares all 3 procedures as private. */
-private void
+static void
 spotcmyk_device_finalize(void *vpdev)
 {
     gx_device_finalize(vpdev);
@@ -1573,7 +1573,7 @@ fixed_colorant_name DeviceCMYKComponents[] = {
 /*
  * Example device with CMYK and spot color support
  */
-private const gx_device_procs spot_cmyk_procs = device_procs(get_spotcmyk_color_mapping_procs);
+static const gx_device_procs spot_cmyk_procs = device_procs(get_spotcmyk_color_mapping_procs);
 
 const spotcmyk_device gs_spotcmyk_device =
 {   
@@ -1593,7 +1593,7 @@ const spotcmyk_device gs_spotcmyk_device =
 /*
  * Example DeviceN color device
  */
-private const gx_device_procs devicen_procs = device_procs(get_devicen_color_mapping_procs);
+static const gx_device_procs devicen_procs = device_procs(get_devicen_color_mapping_procs);
 
 const spotcmyk_device gs_devicen_device =
 {   
@@ -1623,7 +1623,7 @@ spotcmyk_prn_open(gx_device * pdev)
 
 /* Color mapping routines for the spotcmyk device */
 
-private void
+static void
 gray_cs_to_spotcmyk_cm(gx_device * dev, frac gray, frac out[])
 {
     int * map = ((spotcmyk_device *) dev)->devn_params.separation_order_map;
@@ -1631,7 +1631,7 @@ gray_cs_to_spotcmyk_cm(gx_device * dev, frac gray, frac out[])
     gray_cs_to_devn_cm(dev, map, gray, out);
 }
 
-private void
+static void
 rgb_cs_to_spotcmyk_cm(gx_device * dev, const gs_imager_state *pis,
 				   frac r, frac g, frac b, frac out[])
 {
@@ -1640,7 +1640,7 @@ rgb_cs_to_spotcmyk_cm(gx_device * dev, const gs_imager_state *pis,
     rgb_cs_to_devn_cm(dev, map, pis, r, g, b, out);
 }
 
-private void
+static void
 cmyk_cs_to_spotcmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
     int * map = ((spotcmyk_device *) dev)->devn_params.separation_order_map;
@@ -1648,11 +1648,11 @@ cmyk_cs_to_spotcmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out
     cmyk_cs_to_devn_cm(dev, map, c, m, y, k, out);
 }
 
-private const gx_cm_color_map_procs spotCMYK_procs = {
+static const gx_cm_color_map_procs spotCMYK_procs = {
     gray_cs_to_spotcmyk_cm, rgb_cs_to_spotcmyk_cm, cmyk_cs_to_spotcmyk_cm
 };
 
-private const gx_cm_color_map_procs *
+static const gx_cm_color_map_procs *
 get_spotcmyk_color_mapping_procs(const gx_device * dev)
 {
     return &spotCMYK_procs;
@@ -1660,7 +1660,7 @@ get_spotcmyk_color_mapping_procs(const gx_device * dev)
 
 /* Also use the spotcmyk procs for the devicen device. */
 
-private const gx_cm_color_map_procs *
+static const gx_cm_color_map_procs *
 get_devicen_color_mapping_procs(const gx_device * dev)
 {
     return &spotCMYK_procs;
@@ -1670,7 +1670,7 @@ get_devicen_color_mapping_procs(const gx_device * dev)
 /*
  * Encode a list of colorant values into a gx_color_index_value.
  */
-private gx_color_index
+static gx_color_index
 spotcmyk_encode_color(gx_device *dev, const gx_color_value colors[])
 {
     int bpc = ((spotcmyk_device *)dev)->devn_params.bitspercomponent;
@@ -1689,7 +1689,7 @@ spotcmyk_encode_color(gx_device *dev, const gx_color_value colors[])
 /*
  * Decode a gx_color_index value back to a list of colorant values.
  */
-private int
+static int
 spotcmyk_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
 {
     int bpc = ((spotcmyk_device *)dev)->devn_params.bitspercomponent;
@@ -1706,7 +1706,7 @@ spotcmyk_decode_color(gx_device * dev, gx_color_index color, gx_color_value * ou
 }
 
 /* Get parameters. */
-private int
+static int
 spotcmyk_get_params(gx_device * pdev, gs_param_list * plist)
 {
     int code = gdev_prn_get_params(pdev, plist);
@@ -1718,7 +1718,7 @@ spotcmyk_get_params(gx_device * pdev, gs_param_list * plist)
 }
 
 /* Set parameters. */
-private int
+static int
 spotcmyk_put_params(gx_device * pdev, gs_param_list * plist)
 {
     return devn_printer_put_params(pdev, plist,
@@ -1739,7 +1739,7 @@ spotcmyk_put_params(gx_device * pdev, gs_param_list * plist)
  * the colorant is not being used due to a SeparationOrder device parameter.
  * It returns a negative value if not found.
  */
-private int
+static int
 spotcmyk_get_color_comp_index(gx_device * dev, const char * pname,
 					int name_size, int component_type)
 {
@@ -1826,7 +1826,7 @@ repack_data(byte * source, byte * dest, int depth, int first_bit,
     return length;
 }
 
-private int devn_write_pcx_file(gx_device_printer * pdev, char * filename, int ncomp,
+static int devn_write_pcx_file(gx_device_printer * pdev, char * filename, int ncomp,
 			    int bpc, int pcmlinelength);
 /* 
  * This is an example print page routine for a DeviceN device.  This routine
@@ -1858,7 +1858,7 @@ private int devn_write_pcx_file(gx_device_printer * pdev, char * filename, int n
  * Note:  The PCX implementation is not complete.  There are many (most)
  * combinations of bits per pixel and number of colorants that are not supported.
  */
-private int
+static int
 spotcmyk_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
@@ -1999,7 +1999,7 @@ typedef struct pcx_header_s {
 } pcx_header;
 
 /* Define the prototype header. */
-private const pcx_header pcx_header_prototype =
+static const pcx_header pcx_header_prototype =
 {
     10,				/* manuf */
     0,				/* version (variable) */
@@ -2024,8 +2024,8 @@ private const pcx_header pcx_header_prototype =
 
 
 /* Forward declarations */
-private void devn_pcx_write_rle(const byte *, const byte *, int, FILE *);
-private int devn_pcx_write_page(gx_device_printer * pdev, FILE * infile,
+static void devn_pcx_write_rle(const byte *, const byte *, int, FILE *);
+static int devn_pcx_write_page(gx_device_printer * pdev, FILE * infile,
     int linesize, FILE * outfile, pcx_header * phdr, bool planar, int depth);
 
 static const byte pcx_cmyk_palette[16 * 3] =
@@ -2059,7 +2059,7 @@ static const byte pcx_ega_palette[16 * 3] =
  *   bits_per_plane - The number of bits per plane.
  *   num_planes - The number of planes.
  */
-private bool
+static bool
 devn_setup_pcx_header(gx_device_printer * pdev, pcx_header * phdr, int num_planes, int bits_per_plane)
 {
     bool planar = true; /* Invalid cases could cause an indeterminizm. */
@@ -2157,7 +2157,7 @@ devn_setup_pcx_header(gx_device_printer * pdev, pcx_header * phdr, int num_plane
 }
 
 /* Write a palette on a file. */
-private int
+static int
 pc_write_mono_palette(gx_device * dev, uint max_index, FILE * file)
 {
     uint i, c;
@@ -2187,7 +2187,7 @@ pc_write_mono_palette(gx_device * dev, uint max_index, FILE * file)
  *   bits_per_plane - The number of bits per plane.
  *   num_planes - The number of planes.
  */
-private int
+static int
 devn_finish_pcx_file(gx_device_printer * pdev, FILE * file, pcx_header * header, int num_planes, int bits_per_plane)
 {
     switch (num_planes) {
@@ -2261,7 +2261,7 @@ devn_finish_pcx_file(gx_device_printer * pdev, FILE * file, pcx_header * header,
 }
 
 /* Send the page to the printer. */
-private int
+static int
 devn_write_pcx_file(gx_device_printer * pdev, char * filename, int ncomp,
 			    int bpc, int linesize)
 {
@@ -2296,7 +2296,7 @@ devn_write_pcx_file(gx_device_printer * pdev, char * filename, int ncomp,
 /* Write out a page in PCX format. */
 /* This routine is used for all formats. */
 /* The caller has set header->bpp, nplanes, and palette. */
-private int
+static int
 devn_pcx_write_page(gx_device_printer * pdev, FILE * infile, int linesize, FILE * outfile,
 	       pcx_header * phdr, bool planar, int depth)
 {
@@ -2405,7 +2405,7 @@ devn_pcx_write_page(gx_device_printer * pdev, FILE * infile, int linesize, FILE 
 /* ------ Internal routines ------ */
 
 /* Write one line in PCX run-length-encoded format. */
-private void
+static void
 devn_pcx_write_rle(const byte * from, const byte * end, int step, FILE * file)
 {  /*
     * The PCX format theoretically allows encoding runs of 63

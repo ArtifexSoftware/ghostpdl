@@ -123,10 +123,10 @@ typedef struct {
 /* We need a boolean : true , we got it from gdevprn.h */
 
 /* Other constants */
-private const int DumpFinished = 0;
-private const int DumpContinue = 1;
-private const int HL7X0_LENGTH = 5; /* Length of a command to tell the size of the data to be sent to the printer*/
-private void  makeCommandsForSequence(Byte     * pSource,
+static const int DumpFinished = 0;
+static const int DumpContinue = 1;
+static const int HL7X0_LENGTH = 5; /* Length of a command to tell the size of the data to be sent to the printer*/
+static void  makeCommandsForSequence(Byte     * pSource,
 				      short      length,
 				      ByteList * pCommandList,
 				      short      offset,
@@ -137,16 +137,16 @@ private void  makeCommandsForSequence(Byte     * pSource,
 
 
 
-private int dumpPage(gx_device_printer * pSource,
+static int dumpPage(gx_device_printer * pSource,
 		      Byte              * pLineTmp,
 		      ByteList          * pCommandList,
 		      Summary           * pSummary
 		      );
-private void initSummary(Summary * s,short pw, short ph, short resolution);
+static void initSummary(Summary * s,short pw, short ph, short resolution);
 
-private void resetPreviousData(Summary * s);
+static void resetPreviousData(Summary * s);
 
-private void makeFullLine( Byte      * pCurrentLine,
+static void makeFullLine( Byte      * pCurrentLine,
 			   Byte      * pPreviousLine,
 			   short       lineWidth,
 			   ByteList  * commandsList,
@@ -158,19 +158,19 @@ private void makeFullLine( Byte      * pCurrentLine,
 /*
  * Initialize a list of Bytes structure
  */
-private void initByteList(ByteList *list, Byte *array, short maxSize,short initCurrent);
-private void addByte(ByteList *list,Byte value );
-private void addArray(ByteList *list, Byte *source, short nb);
-private void addNBytes(ByteList * list, Byte value, short nb);
-private Byte * currentPosition(ByteList * list);
-private void addCodedNumber(ByteList * list, short number);
-private int isThereEnoughRoom(ByteList * list, short biggest);
-private short roomLeft(ByteList * list);
-private void dumpToPrinter(ByteList * list,FILE * printStream);
+static void initByteList(ByteList *list, Byte *array, short maxSize,short initCurrent);
+static void addByte(ByteList *list,Byte value );
+static void addArray(ByteList *list, Byte *source, short nb);
+static void addNBytes(ByteList * list, Byte value, short nb);
+static Byte * currentPosition(ByteList * list);
+static void addCodedNumber(ByteList * list, short number);
+static int isThereEnoughRoom(ByteList * list, short biggest);
+static short roomLeft(ByteList * list);
+static void dumpToPrinter(ByteList * list,FILE * printStream);
 
 /* Real Print function */
 
-private int hl7x0_print_page(gx_device_printer *, FILE *, int, int, ByteList *);
+static int hl7x0_print_page(gx_device_printer *, FILE *, int, int, ByteList *);
 
 
 
@@ -195,7 +195,7 @@ private int hl7x0_print_page(gx_device_printer *, FILE *, int, int, ByteList *);
 #define LETTER_WIDTH 5100
 #define LEFT_MARGIN  30
 /* The following table is not actually used.... */
-private const PaperFormat tableOfFormats[] = {
+static const PaperFormat tableOfFormats[] = {
     /*  0 P LETTER */ { 2550, 3300 },
     /*  1 P LEGAL  */ { 2550, 4200 },
     /*  2 P EXEC   */ { 2175, 3150 },
@@ -223,7 +223,7 @@ private const PaperFormat tableOfFormats[] = {
 
 
 /* Compute the maximum length of a compressed line */
-private short MaxLineLength(short resolution){
+static short MaxLineLength(short resolution){
 return (((156 * resolution / 150 ) * 5 )/4) + 8;
 } 
 
@@ -258,14 +258,14 @@ return (((156 * resolution / 150 ) * 5 )/4) + 8;
 
 
 /* The device descriptors */
-private dev_proc_open_device(hl7x0_open);
-private dev_proc_close_device(hl7x0_close);
-private dev_proc_print_page(hl720_print_page);
-private dev_proc_print_page(hl730_print_page);
+static dev_proc_open_device(hl7x0_open);
+static dev_proc_close_device(hl7x0_close);
+static dev_proc_print_page(hl720_print_page);
+static dev_proc_print_page(hl730_print_page);
 
 
 
-private const gx_device_procs prn_hl_procs =
+static const gx_device_procs prn_hl_procs =
   prn_params_procs(hl7x0_open, gdev_prn_output_page, hl7x0_close,
 		   gdev_prn_get_params, gdev_prn_put_params);
 
@@ -281,7 +281,7 @@ const gx_device_printer far_data gs_hl7x0_device =
 
 /* Open the printer, adjusting the margins if necessary. */
 
-private int 
+static int 
 hl7x0_open(gx_device *pdev)
 {	/* Change the margins if necessary. */
 	static const float m_a4[4] = { HL7X0_MARGINS_A4 };
@@ -295,7 +295,7 @@ hl7x0_open(gx_device *pdev)
 
 
 /* The orders sent are those provided in the Brother DOS example */
-private int 
+static int 
 hl7x0_close(gx_device *pdev)
 {
     gx_device_printer *const ppdev = (gx_device_printer *)pdev;
@@ -310,7 +310,7 @@ hl7x0_close(gx_device *pdev)
 /* ------ Internal routines ------ */
 
 /* The HL 720 can compress*/
-private int
+static int
 hl720_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
 	Byte prefix[] ={
@@ -336,14 +336,14 @@ hl720_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	       &initCommand);
 }
 /* The HL 730 can compress  */
-private int
+static int
 hl730_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {	return hl720_print_page(pdev, prn_stream);
 }
 
 /* Send the page to the printer.  For speed, compress each scan line, */
 /* since computer-to-printer communication time is often a bottleneck. */
-private int 
+static int 
 hl7x0_print_page(gx_device_printer *pdev, FILE *printStream, int ptype,
   int dots_per_inch, ByteList *initCommand)
 {
@@ -410,7 +410,7 @@ hl7x0_print_page(gx_device_printer *pdev, FILE *printStream, int ptype,
  */
 
 
-private short stripTrailingBlanks(Byte * line, short length){
+static short stripTrailingBlanks(Byte * line, short length){
   short positionOfFirstZero = length - 1;
   while (positionOfFirstZero > 0) {
     if (line[positionOfFirstZero] != 0) {
@@ -433,7 +433,7 @@ private short stripTrailingBlanks(Byte * line, short length){
  * correct, but it now looks to be pretty close visually,
  * and works correctly at 600dpi and 300dpi.
  */
-private short horizontalOffset(short pixWidth,
+static short horizontalOffset(short pixWidth,
 			      short pixOffset,
 			      short resolution){
 return (((LETTER_WIDTH * resolution/600 - pixWidth) + pixOffset * 2) + 7) / 8; 
@@ -445,7 +445,7 @@ return (((LETTER_WIDTH * resolution/600 - pixWidth) + pixOffset * 2) + 7) / 8;
 /*
  * First values in a Summary
  */ 
-private void initSummary(Summary * s,short pw, short ph, short resolution){
+static void initSummary(Summary * s,short pw, short ph, short resolution){
   s->previousSize = -1 ;
   s->nbBlankLines = 1;
   s->nbLinesSent = 0;
@@ -458,7 +458,7 @@ private void initSummary(Summary * s,short pw, short ph, short resolution){
 /*
  * The previous line was blank, so we need to clean the corresponding array
  */
-private void resetPreviousData(Summary * s){
+static void resetPreviousData(Summary * s){
  memset(s->previousData,0,s->pageWidth);
 }
 
@@ -467,7 +467,7 @@ private void resetPreviousData(Summary * s){
  * dumpPage :
  *
  */
-private int dumpPage(gx_device_printer * pSource,
+static int dumpPage(gx_device_printer * pSource,
 		      Byte              * pLineTmp,
 		      ByteList          * pCommandList,
 		      Summary           * pSummary
@@ -595,7 +595,7 @@ private int dumpPage(gx_device_printer * pSource,
 
 
 
-private void makeFullLine( Byte      * pCurrentLine,
+static void makeFullLine( Byte      * pCurrentLine,
 			   Byte      * pPreviousLine,
 			   short       lineWidth,
 			   ByteList  * commandsList,
@@ -725,13 +725,13 @@ private void makeFullLine( Byte      * pCurrentLine,
 /* 
  *  Declarations of functions that are defined further in the file 
  */
-private void makeSequenceWithoutRepeat(
+static void makeSequenceWithoutRepeat(
 				  Byte     * pSequence,
 				  short      lengthOfSequence,
 				  ByteList * pCommandList, 
 				  short      offset             );
 
-private void makeSequenceWithRepeat(
+static void makeSequenceWithRepeat(
 				  Byte     * pSequence,
 				  short      lengthOfSequence,
 				  ByteList * pCommandList, 
@@ -743,7 +743,7 @@ private void makeSequenceWithRepeat(
  * Process a sequence of new bytes (i.e. different from the ones on the former line)
  */
 
-private void makeCommandsForSequence(Byte     * pSource,
+static void makeCommandsForSequence(Byte     * pSource,
 				     short      length,
 				     ByteList * pCommandList,
 				     short      offset,
@@ -856,7 +856,7 @@ private void makeCommandsForSequence(Byte     * pSource,
 /*
  * makeSequenceWithoutRepeat
  */
-private void makeSequenceWithoutRepeat(
+static void makeSequenceWithoutRepeat(
 				  Byte     * pSequence,
 				  short      lengthOfSequence,
 				  ByteList * pCommandList, 
@@ -909,7 +909,7 @@ private void makeSequenceWithoutRepeat(
 /*
  * makeSequenceWithRepeat
  */
-private void makeSequenceWithRepeat(
+static void makeSequenceWithRepeat(
 				  Byte     * pSequence,
 				  short      lengthOfSequence,
 				  ByteList * pCommandList, 
@@ -963,7 +963,7 @@ private void makeSequenceWithRepeat(
 /*
  * Initialize a list of Bytes structure
  */
-private void initByteList(ByteList *list, Byte *array, short maxSize, short initCurrent) {
+static void initByteList(ByteList *list, Byte *array, short maxSize, short initCurrent) {
   list->current = initCurrent;
   list->maxSize = maxSize;
   list->data = array;
@@ -972,7 +972,7 @@ private void initByteList(ByteList *list, Byte *array, short maxSize, short init
 /*
  * Add a Byte to a list of Bytes
  */
-private void addByte(ByteList *list,Byte value ) {
+static void addByte(ByteList *list,Byte value ) {
  if (list->current < list->maxSize)
   list->data[list->current++] = value;
  else
@@ -984,7 +984,7 @@ private void addByte(ByteList *list,Byte value ) {
  * Add a copy of an array to a list of Bytes
  */
 
-private void addArray(ByteList *list, Byte *source, short nb){
+static void addArray(ByteList *list, Byte *source, short nb){
   if (list->current <= list->maxSize - nb)
   {
     memcpy(list->data + list->current, source , (size_t) nb);
@@ -999,7 +999,7 @@ private void addArray(ByteList *list, Byte *source, short nb){
  * Add N bytes to a list of Bytes
  */
 
-private void addNBytes(ByteList * list, Byte value, short nb){
+static void addNBytes(ByteList * list, Byte value, short nb){
   int i;
   if (list->current <= list->maxSize - nb)
   {
@@ -1016,7 +1016,7 @@ private void addNBytes(ByteList * list, Byte value, short nb){
 /*
  * Get pointer to the current byte
  */
-private Byte * currentPosition(ByteList * list) {
+static Byte * currentPosition(ByteList * list) {
   return &(list->data[list->current]);
 }
 
@@ -1027,7 +1027,7 @@ private Byte * currentPosition(ByteList * list) {
  * where q is the quotient of the number divided by 0xff and r is the
  * remainder.
  */
-private void addCodedNumber(ByteList * list, short number){
+static void addCodedNumber(ByteList * list, short number){
  short q = number / 0xff;
  short r = number % 0xff;
  
@@ -1041,20 +1041,20 @@ private void addCodedNumber(ByteList * list, short number){
  *
  */
 
-private int isThereEnoughRoom(ByteList * list, short biggest){
+static int isThereEnoughRoom(ByteList * list, short biggest){
   return ((list->maxSize-list->current) >= biggest);
 }
 /*
  * Tell how much room is left 
  */
-private short roomLeft(ByteList * list){
+static short roomLeft(ByteList * list){
   return list->maxSize - list->current;
 }
 /*
  * Dump all commands to the printer and reset the structure
  *
  */
-private void dumpToPrinter(ByteList * list,FILE * printStream){
+static void dumpToPrinter(ByteList * list,FILE * printStream){
   short loopCounter;
   /* Actual dump */
   /* Please note that current is the first empty byte */

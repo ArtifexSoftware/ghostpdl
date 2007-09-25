@@ -102,34 +102,34 @@ typedef struct gx_device_pbm_s gx_device_pbm;
 }
 
 /* For all but PBM, we need our own color mapping and alpha procedures. */
-private dev_proc_map_rgb_color(pgm_map_rgb_color);
-private dev_proc_map_rgb_color(ppm_map_rgb_color);
-private dev_proc_map_color_rgb(pgm_map_color_rgb);
-private dev_proc_map_color_rgb(ppm_map_color_rgb);
-private dev_proc_map_cmyk_color(pkm_map_cmyk_color);
-private dev_proc_map_color_rgb(pkm_map_color_rgb);
-private dev_proc_get_params(ppm_get_params);
-private dev_proc_put_params(ppm_put_params);
-private dev_proc_copy_alpha(pnm_copy_alpha);
-private dev_proc_begin_typed_image(pnm_begin_typed_image);
+static dev_proc_map_rgb_color(pgm_map_rgb_color);
+static dev_proc_map_rgb_color(ppm_map_rgb_color);
+static dev_proc_map_color_rgb(pgm_map_color_rgb);
+static dev_proc_map_color_rgb(ppm_map_color_rgb);
+static dev_proc_map_cmyk_color(pkm_map_cmyk_color);
+static dev_proc_map_color_rgb(pkm_map_color_rgb);
+static dev_proc_get_params(ppm_get_params);
+static dev_proc_put_params(ppm_put_params);
+static dev_proc_copy_alpha(pnm_copy_alpha);
+static dev_proc_begin_typed_image(pnm_begin_typed_image);
 
 /* We need to initialize uses_color when opening the device, */
 /* and after each showpage. */
-private dev_proc_open_device(ppm_open);
-private dev_proc_output_page(ppm_output_page);
+static dev_proc_open_device(ppm_open);
+static dev_proc_output_page(ppm_output_page);
 
 /* And of course we need our own print-page routines. */
-private dev_proc_print_page(pbm_print_page);
-private dev_proc_print_page(pgm_print_page);
-private dev_proc_print_page(ppm_print_page);
-private dev_proc_print_page(pkm_print_page);
-private dev_proc_print_page(psm_print_page);
-private dev_proc_print_page(psm_print_page);
-private dev_proc_print_page(pam_print_page);
+static dev_proc_print_page(pbm_print_page);
+static dev_proc_print_page(pgm_print_page);
+static dev_proc_print_page(ppm_print_page);
+static dev_proc_print_page(pkm_print_page);
+static dev_proc_print_page(psm_print_page);
+static dev_proc_print_page(psm_print_page);
+static dev_proc_print_page(pam_print_page);
 
-private int pam_print_row(gx_device_printer * pdev, byte * data, int depth,
+static int pam_print_row(gx_device_printer * pdev, byte * data, int depth,
 	       FILE * pstream);
-private int pam_print_page(gx_device_printer * pdev, FILE * pstream);
+static int pam_print_page(gx_device_printer * pdev, FILE * pstream);
 
 /* The device procedures */
 
@@ -141,22 +141,22 @@ private int pam_print_page(gx_device_printer * pdev, FILE * pstream);
 	p_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device\
 }
 
-private const gx_device_procs pbm_procs =
+static const gx_device_procs pbm_procs =
     pgpm_procs(gdev_prn_open, gdev_prn_get_params,
 	       gdev_prn_map_rgb_color, gdev_prn_map_color_rgb, NULL);
-private const gx_device_procs pgm_procs =
+static const gx_device_procs pgm_procs =
     pgpm_procs(ppm_open, gdev_prn_get_params,
 	       pgm_map_rgb_color, pgm_map_color_rgb, NULL);
-private const gx_device_procs ppm_procs =
+static const gx_device_procs ppm_procs =
     pgpm_procs(ppm_open, ppm_get_params,
 	       gx_default_rgb_map_rgb_color, ppm_map_color_rgb, NULL);
-private const gx_device_procs pnm_procs =
+static const gx_device_procs pnm_procs =
     pgpm_procs(ppm_open, ppm_get_params,
 	       ppm_map_rgb_color, ppm_map_color_rgb, NULL);
-private const gx_device_procs pkm_procs =
+static const gx_device_procs pkm_procs =
     pgpm_procs(ppm_open, ppm_get_params,
 	       NULL, cmyk_1bit_map_color_rgb, cmyk_1bit_map_cmyk_color);
-private const gx_device_procs pam_procs =
+static const gx_device_procs pam_procs =
     pgpm_procs(ppm_open, ppm_get_params,
 	       NULL, cmyk_8bit_map_color_rgb, cmyk_8bit_map_cmyk_color);
 
@@ -215,7 +215,7 @@ pbm_prn_device(pbm_procs, "plan9bm", '9', 1, 1, 1, 1, 1, 1,
 /* ------ Initialization ------ */
 
 /* Set the copy_alpha and color mapping procedures if necessary. */
-private void
+static void
 ppm_set_dev_procs(gx_device * pdev)
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
@@ -248,7 +248,7 @@ ppm_set_dev_procs(gx_device * pdev)
  * a planar device.
  */
 
-private int
+static int
 ppm_open(gx_device * pdev)
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
@@ -264,7 +264,7 @@ ppm_open(gx_device * pdev)
 }
 
 /* Print a page, and reset uses_color if this is a showpage. */
-private int
+static int
 ppm_output_page(gx_device * pdev, int num_copies, int flush)
 {
     int code = gdev_prn_output_page(pdev, num_copies, flush);
@@ -281,7 +281,7 @@ ppm_output_page(gx_device * pdev, int num_copies, int flush)
 
 /* Map an RGB color to a PGM gray value. */
 /* Keep track of whether the image is black-and-white or gray. */
-private gx_color_index
+static gx_color_index
 pgm_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 {				/* We round the value rather than truncating it. */
     gx_color_value gray;
@@ -308,7 +308,7 @@ pgm_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 }
 
 /* Map a PGM gray value back to an RGB color. */
-private int
+static int
 pgm_map_color_rgb(gx_device * dev, gx_color_index color,
 		  gx_color_value prgb[3])
 {
@@ -330,7 +330,7 @@ pgm_map_color_rgb(gx_device * dev, gx_color_index color,
  * comp_bits, and comp_mask) be setup.
  */
 
-private gx_color_index
+static gx_color_index
 gx_old_default_rgb_map_rgb_color(gx_device * dev,
 		       gx_color_value r, gx_color_value g, gx_color_value b)
 {
@@ -348,7 +348,7 @@ gx_old_default_rgb_map_rgb_color(gx_device * dev,
 
 /* Map an RGB color to a PPM color tuple. */
 /* Keep track of whether the image is black-and-white, gray, or colored. */
-private gx_color_index
+static gx_color_index
 ppm_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
@@ -366,7 +366,7 @@ ppm_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 }
 
 /* Map a PPM color tuple back to an RGB color. */
-private int
+static int
 ppm_map_color_rgb(gx_device * dev, gx_color_index color,
 		  gx_color_value prgb[3])
 {
@@ -384,7 +384,7 @@ ppm_map_color_rgb(gx_device * dev, gx_color_index color,
 }
 
 /* Map a CMYK color to a pixel value. */
-private gx_color_index
+static gx_color_index
 pkm_map_cmyk_color(gx_device * pdev, const gx_color_value cv[])
 {
     uint bpc = pdev->color_info.depth >> 2;
@@ -400,7 +400,7 @@ pkm_map_cmyk_color(gx_device * pdev, const gx_color_value cv[])
 }
 
 /* Map a CMYK pixel value to RGB. */
-private int
+static int
 pkm_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value rgb[3])
 {
     int bpc = dev->color_info.depth >> 2;
@@ -425,7 +425,7 @@ pkm_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value rgb[3])
 
 /* Augment get/put_params to add UsePlanarBuffer */
 
-private int
+static int
 ppm_get_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
@@ -437,7 +437,7 @@ ppm_get_params(gx_device * pdev, gs_param_list * plist)
     return code;
 }
 
-private int
+static int
 ppm_put_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
@@ -526,7 +526,7 @@ ppm_put_params(gx_device * pdev, gs_param_list * plist)
 
 /* Copy an alpha map, noting whether we may generate some non-black/white */
 /* colors through blending. */
-private int
+static int
 pnm_copy_alpha(gx_device * pdev, const byte * data, int data_x,
 	   int raster, gx_bitmap_id id, int x, int y, int width, int height,
 	       gx_color_index color, int depth)
@@ -545,7 +545,7 @@ pnm_copy_alpha(gx_device * pdev, const byte * data, int data_x,
 
 /* Begin processing an image, noting whether we may generate some */
 /* non-black/white colors in the process. */
-private int 
+static int 
 pnm_begin_typed_image(gx_device *dev,
                       const gs_imager_state *pis, const gs_matrix *pmat,
                       const gs_image_common_t *pim, const gs_int_rect *prect,
@@ -586,7 +586,7 @@ pnm_begin_typed_image(gx_device *dev,
 /* ------ Internal routines ------ */
 
 /* Print a page using a given row printing routine. */
-private int
+static int
 pbm_print_page_loop(gx_device_printer * pdev, char magic, FILE * pstream,
 	     int (*row_proc) (gx_device_printer *, byte *, int, FILE *))
 {
@@ -654,7 +654,7 @@ pbm_print_page_loop(gx_device_printer * pdev, char magic, FILE * pstream,
 /* ------ Individual page printing routines ------ */
 
 /* Print a monobit page. */
-private int
+static int
 pbm_print_row(gx_device_printer * pdev, byte * data, int depth,
 	      FILE * pstream)
 {
@@ -676,7 +676,7 @@ pbm_print_row(gx_device_printer * pdev, byte * data, int depth,
     }
     return 0;
 }
-private int
+static int
 pbm_print_page(gx_device_printer * pdev, FILE * pstream)
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
@@ -685,7 +685,7 @@ pbm_print_page(gx_device_printer * pdev, FILE * pstream)
 }
 
 /* Print a gray-mapped page. */
-private int
+static int
 pgm_print_row(gx_device_printer * pdev, byte * data, int depth,
 	      FILE * pstream)
 {				/* Note that bpp <= 8 for raw format, bpp <= 16 for plain. */
@@ -728,7 +728,7 @@ pgm_print_row(gx_device_printer * pdev, byte * data, int depth,
 	}
     return 0;
 }
-private int
+static int
 pxm_pbm_print_row(gx_device_printer * pdev, byte * data, int depth,
 		  FILE * pstream)
 {				/* Compress a PGM or PPM row to a PBM row. */
@@ -772,7 +772,7 @@ pxm_pbm_print_row(gx_device_printer * pdev, byte * data, int depth,
 	*dest = out;
     return pbm_print_row(pdev, data, 1, pstream);
 }
-private int
+static int
 pgm_print_page(gx_device_printer * pdev, FILE * pstream)
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
@@ -785,7 +785,7 @@ pgm_print_page(gx_device_printer * pdev, FILE * pstream)
 }
 
 /* Print a color-mapped page. */
-private int
+static int
 ppgm_print_row(gx_device_printer * pdev, byte * data, int depth,
 	       FILE * pstream, bool color)
 {				/* If color=false, write only one value per pixel; */
@@ -851,19 +851,19 @@ ppgm_print_row(gx_device_printer * pdev, byte * data, int depth,
 	}
     return 0;
 }
-private int
+static int
 ppm_print_row(gx_device_printer * pdev, byte * data, int depth,
 	      FILE * pstream)
 {
     return ppgm_print_row(pdev, data, depth, pstream, true);
 }
-private int
+static int
 ppm_pgm_print_row(gx_device_printer * pdev, byte * data, int depth,
 		  FILE * pstream)
 {
     return ppgm_print_row(pdev, data, depth, pstream, false);
 }
-private int
+static int
 ppm_print_page(gx_device_printer * pdev, FILE * pstream)
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
@@ -878,7 +878,7 @@ ppm_print_page(gx_device_printer * pdev, FILE * pstream)
 				pxm_pbm_print_row));
 }
 
-private int
+static int
 pam_print_row(gx_device_printer * pdev, byte * data, int depth,
 	       FILE * pstream)
 {
@@ -887,7 +887,7 @@ pam_print_row(gx_device_printer * pdev, byte * data, int depth,
     return 0;
 }
 
-private int
+static int
 pam_print_page(gx_device_printer * pdev, FILE * pstream)
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
@@ -899,7 +899,7 @@ pam_print_page(gx_device_printer * pdev, FILE * pstream)
 /* Print a faux CMYK page. */
 /* Print a row where each pixel occupies 4 bits (depth == 4). */
 /* In this case, we also know pdev->color_info.max_color == 1. */
-private int
+static int
 pkm_print_row_4(gx_device_printer * pdev, byte * data, int depth,
 		FILE * pstream)
 {
@@ -958,7 +958,7 @@ pkm_print_row_4(gx_device_printer * pdev, byte * data, int depth,
     return 0;
 }
 /* Print a row where each pixel occupies 1 or more bytes (depth >= 8). */
-private int
+static int
 pkm_print_row(gx_device_printer * pdev, byte * data, int depth,
 	      FILE * pstream)
 {
@@ -1006,7 +1006,7 @@ pkm_print_row(gx_device_printer * pdev, byte * data, int depth,
     }
     return 0;
 }
-private int
+static int
 pkm_print_page(gx_device_printer * pdev, FILE * pstream)
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
@@ -1018,7 +1018,7 @@ pkm_print_page(gx_device_printer * pdev, FILE * pstream)
 }
 
 /* Print individual separations on a single file. */
-private int
+static int
 psm_print_page(gx_device_printer * pdev, FILE * pstream)
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;

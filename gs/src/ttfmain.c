@@ -25,7 +25,7 @@
 #include "ttinterp.h"
 #include "ttcalc.h"
 
-private const bool skip_instructions = 0; /* Debug purpose only. */
+static const bool skip_instructions = 0; /* Debug purpose only. */
 
 typedef struct { 
     TT_Fixed a, b, c, d, tx, ty;
@@ -40,35 +40,35 @@ struct ttfSubGlyphUsage_s {
 
 /*------------------------------------------------------------------- */
 
-private TT_Fixed AVE(F26Dot6 a, F26Dot6 b)
+static TT_Fixed AVE(F26Dot6 a, F26Dot6 b)
 {   return (a + b) / 2;
 }
 
-private F26Dot6 shortToF26Dot6(short a)
+static F26Dot6 shortToF26Dot6(short a)
 {   return (F26Dot6)a << 6;
 }
 
-private F26Dot6 floatToF26Dot6(float a)
+static F26Dot6 floatToF26Dot6(float a)
 {   return (F26Dot6)(a * (1 << 6) + 0.5);
 }
 
-private TT_Fixed floatToF16Dot16(float a)
+static TT_Fixed floatToF16Dot16(float a)
 {   return (F26Dot6)(a * (1 << 16) + 0.5);
 }
 
-private void TransformF26Dot6PointFix(F26Dot6Point *pt, F26Dot6 dx, F26Dot6 dy, FixMatrix *m)
+static void TransformF26Dot6PointFix(F26Dot6Point *pt, F26Dot6 dx, F26Dot6 dy, FixMatrix *m)
 {   pt->x = MulDiv(dx, m->a, 65536) + MulDiv(dy, m->c, 65536) + (m->tx >> 10);
     pt->y = MulDiv(dx, m->b, 65536) + MulDiv(dy, m->d, 65536) + (m->ty >> 10);
 }
 
-private void TransformF26Dot6PointFloat(FloatPoint *pt, F26Dot6 dx, F26Dot6 dy, FloatMatrix *m)
+static void TransformF26Dot6PointFloat(FloatPoint *pt, F26Dot6 dx, F26Dot6 dy, FloatMatrix *m)
 {   pt->x = dx * m->a / 64 + dy * m->c / 64 + m->tx;
     pt->y = dx * m->b / 64 + dy * m->d / 64 + m->ty;
 }
 
 /*-------------------------------------------------------------------*/
 
-private ttfPtrElem *ttfFont__get_table_ptr(ttfFont *f, char *id)
+static ttfPtrElem *ttfFont__get_table_ptr(ttfFont *f, char *id)
 {
     if (!memcmp(id, "cvt ", 4))
 	return &f->t_cvt_;
@@ -352,7 +352,7 @@ FontError ttfFont__Open(ttfInterpreter *tti, ttfFont *this, ttfReader *r,
     return code;
 }
 
-private void ttfFont__StartGlyph(ttfFont *this)
+static void ttfFont__StartGlyph(ttfFont *this)
 {   Context_Load( this->exec, this->inst );
     if ( this->inst->GS.instruct_control & 2 )
 	this->exec->GS = Default_GraphicsState;
@@ -361,14 +361,14 @@ private void ttfFont__StartGlyph(ttfFont *this)
     this->tti->usage_top = 0;
 }
 
-private void ttfFont__StopGlyph(ttfFont *this)
+static void ttfFont__StopGlyph(ttfFont *this)
 {
     Context_Save(this->exec, this->inst);
 }
 
 /*-------------------------------------------------------------------*/
 
-private void  mount_zone( PGlyph_Zone  source,
+static void  mount_zone( PGlyph_Zone  source,
                           PGlyph_Zone  target )
 {
     Int  np, nc;
@@ -388,7 +388,7 @@ private void  mount_zone( PGlyph_Zone  source,
     target->n_contours = 0;
 }
 
-private void  Init_Glyph_Component( PSubglyph_Record    element,
+static void  Init_Glyph_Component( PSubglyph_Record    element,
                                    PSubglyph_Record    original,
                                    PExecution_Context  exec )
 {
@@ -422,7 +422,7 @@ private void  Init_Glyph_Component( PSubglyph_Record    element,
     element->advanceWidth = 0;
   }
 
-private void  cur_to_org( Int  n, PGlyph_Zone  zone )
+static void  cur_to_org( Int  n, PGlyph_Zone  zone )
 {
     Int  k;
 
@@ -433,7 +433,7 @@ private void  cur_to_org( Int  n, PGlyph_Zone  zone )
 	zone->org_y[k] = zone->cur_y[k];
 }
 
-private void  org_to_cur( Int  n, PGlyph_Zone  zone )
+static void  org_to_cur( Int  n, PGlyph_Zone  zone )
 {
     Int  k;
 
@@ -458,7 +458,7 @@ void ttfOutliner__init(ttfOutliner *this, ttfFont *f, ttfReader *r, ttfExport *e
     this->exp = exp;
 }
 
-private void MoveGlyphOutline(TGlyph_Zone *pts, int nOffset, ttfGlyphOutline *out, FixMatrix *m)
+static void MoveGlyphOutline(TGlyph_Zone *pts, int nOffset, ttfGlyphOutline *out, FixMatrix *m)
 {   F26Dot6* x = pts->org_x + nOffset;
     F26Dot6* y = pts->org_y + nOffset;
     short count = out->pointCount;
@@ -475,7 +475,7 @@ private void MoveGlyphOutline(TGlyph_Zone *pts, int nOffset, ttfGlyphOutline *ou
     }
 }
 
-private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyphIndex, 
+static FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyphIndex, 
 	    FixMatrix *m_orig, ttfGlyphOutline* gOutline)
 {   ttfFont *pFont = this->pFont;
     ttfReader *r = this->r;
@@ -831,7 +831,7 @@ ex:;
     return error;
 }
 
-private FontError ttfOutliner__BuildGlyphOutline(ttfOutliner *this, int glyphIndex, 
+static FontError ttfOutliner__BuildGlyphOutline(ttfOutliner *this, int glyphIndex, 
 	    float orig_x, float orig_y, ttfGlyphOutline* gOutline)
 {
     FixMatrix m_orig = {1 << 16, 0, 0, 1 << 16, 0, 0};

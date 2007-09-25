@@ -27,15 +27,15 @@ public_st_gs_image1();
  * Note that opaque images and masks have different types, although
  * they have the same ImageType.
  */
-private image_proc_sput(gx_image1_sput);
-private image_proc_sget(gx_image1_sget);
-private image_proc_release(gx_image1_release);
+static image_proc_sput(gx_image1_sput);
+static image_proc_sget(gx_image1_sget);
+static image_proc_release(gx_image1_release);
 const gx_image_type_t gs_image_type_1 = {
     &st_gs_image1, gx_begin_image1, gx_data_image_source_size,
     gx_image1_sput, gx_image1_sget, gx_image1_release, 1
 };
-private image_proc_sput(gx_image1_mask_sput);
-private image_proc_sget(gx_image1_mask_sget);
+static image_proc_sput(gx_image1_mask_sput);
+static image_proc_sget(gx_image1_mask_sget);
 /*
  * Image masks are not actually pixel images, so they don't need to
  * worry about releasing the color space.
@@ -99,7 +99,7 @@ gx_begin_image1(gx_device * dev,
  * We add the Alpha value to the control word.
  */
 
-private int
+static int
 gx_image1_sput(const gs_image_common_t *pic, stream *s,
 	       const gs_color_space **ppcs)
 {
@@ -109,7 +109,7 @@ gx_image1_sput(const gs_image_common_t *pic, stream *s,
 			       (int)pim->Alpha);
 }
 
-private int
+static int
 gx_image1_sget(gs_image_common_t *pic, stream *s,
 	       gs_color_space *pcs)
 {
@@ -147,7 +147,7 @@ gx_image1_sget(gs_image_common_t *pic, stream *s,
 #define MI_BPC_MASK 0xf
 #define MI_BITS 10
 
-private int
+static int
 gx_image1_mask_sput(const gs_image_common_t *pic, stream *s,
 		    const gs_color_space **ignore_ppcs)
 {
@@ -169,7 +169,7 @@ gx_image1_mask_sput(const gs_image_common_t *pic, stream *s,
     return 0;
 }
 
-private int
+static int
 gx_image1_mask_sget(gs_image_common_t *pic, stream *s,
 		    gs_color_space *ignore_pcs)
 {
@@ -196,7 +196,7 @@ gx_image1_mask_sget(gs_image_common_t *pic, stream *s,
     return 0;
 }
 
-private void
+static void
 gx_image1_release(gs_image_common_t *pic, gs_memory_t *mem)
 {
     gx_pixel_image_release((gs_pixel_image_t *)pic, mem);
