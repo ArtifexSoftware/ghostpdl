@@ -389,7 +389,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
     dup /Threads .knownget {
         omforce dup //null ne { { omvisit } forall } { pop } ifelse
     } if
-    dup /AcroForm .knownget { omvisit } if
+    dup /AcroForm .knownget { omvisitnopage } if
     pop
   } visited
 } bind def
@@ -433,7 +433,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
     exch omvisit
 		% Visit Annots, if any.
 		% We don't try to defer the drawing information.
-    dup /Annots .knownget { omvisit } if
+    dup /Annots .knownget { omvisitnopage } if
 		% Visit beads.
     dup /B .knownget { omvisit } if
 		% Visit resources dictionaries.
