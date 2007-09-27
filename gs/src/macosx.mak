@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2006 Artifex Software, Inc.
+#  Copyright (C) 2001-2007 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -58,11 +58,14 @@ prefix = /Library/Frameworks/$(FRAMEWORK_NAME)$(FRAMEWORK_EXT)
 exec_prefix = $(prefix)
 bindir = $(exec_prefix)/bin
 scriptdir = $(bindir)
+includedir = $(prefix)/include
 libdir = $(exec_prefix)/lib
 mandir = $(prefix)/man
 man1ext = 1
 datadir = $(prefix)/Resources
 gsdatadir = $(prefix)/Versions/$(GS_DOT_VERSION)/Resources
+gssharedir = $(libdir)/ghostscript/$(GS_DOT_VERSION)
+gsincludedir = $(includedir)/ghostscript/
 
 docdir=$(gsdatadir)/doc
 exdir=$(gsdatadir)/examples

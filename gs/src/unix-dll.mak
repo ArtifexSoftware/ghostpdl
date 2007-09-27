@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2006 Artifex Software, Inc.
+#  Copyright (C) 2001-2007 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -60,7 +60,7 @@ LDFLAGS_SO=-shared -Wl,-soname=$(GS_SONAME_MAJOR)
 #LDFLAGS_SO=-dynamiclib -install-name $(GS_SONAME_MAJOR_MINOR)
 
 GS_SO=$(BINDIR)/$(GS_SONAME)
-GS_SO_MAJOR=$(BINDIR)/$(GS_SONAME_MAJOR)
+GS_SO_MAJOR=$(BINDIR)/$(GS_SONAME_MAJOR) 
 GS_SO_MAJOR_MINOR=$(BINDIR)/$(GS_SONAME_MAJOR_MINOR)
 
 # Shared object is built by redefining GS_XE in a recursive make.
@@ -114,6 +114,7 @@ install-so: so
 	-mkdir -p $(DESTDIR)$(gsdatadir)
 	-mkdir -p $(DESTDIR)$(bindir)
 	-mkdir -p $(DESTDIR)$(libdir)
+	-mkdir -p $(DESTDIR)$(gsincludedir)
 	$(INSTALL_PROGRAM) $(GSSOC) $(DESTDIR)$(bindir)/$(GSSOC_XENAME)
 	$(INSTALL_PROGRAM) $(GSSOX) $(DESTDIR)$(bindir)/$(GSSOX_XENAME)
 	$(INSTALL_PROGRAM) $(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME_MAJOR_MINOR) $(DESTDIR)$(libdir)/$(GS_SONAME_MAJOR_MINOR)
@@ -121,6 +122,8 @@ install-so: so
 	ln -s $(GS_SONAME_MAJOR_MINOR) $(DESTDIR)$(libdir)/$(GS_SONAME)
 	$(RM_) $(DESTDIR)$(libdir)/$(GS_SONAME_MAJOR)
 	ln -s $(GS_SONAME_MAJOR_MINOR) $(DESTDIR)$(libdir)/$(GS_SONAME_MAJOR)
+	$(INSTALL_PROGRAM) $(PSSRC)iapi.h $(DESTDIR)$(gsincludedir)/iapi.h
+	$(INSTALL_PROGRAM) $(PSSRC)ierrors.h $(DESTDIR)$(gsincludedir)/ierrors.h
 
 soinstall: install-so install-scripts install-data
 
