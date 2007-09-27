@@ -860,6 +860,13 @@ AC_ARG_ENABLE(dynamic, [  --enable-dynamic        enable dynamically loaded driv
 		DYNAMIC_LIBS=""
 		X_DEVS=""
 		;;
+		Darwin*)
+		INSTALL_SHARED="install-shared"
+		DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
+		DYNAMIC_LDFLAGS="-dynamiclib"
+		DYNAMIC_LIBS=""
+		X_DEVS=""
+		;;
 		SunOS)
 		DYNAMIC_CFLAGS="-KPIC"
 		DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
