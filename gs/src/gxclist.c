@@ -331,10 +331,9 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
     gx_device_clist_writer * const cdev =
 	&((gx_device_clist *)dev)->writer;
     gx_device *target = cdev->target;
+    /* BandWidth can't be smaller than target device width */
     const int band_width =
-	cdev->page_info.band_params.BandWidth =
-	(cdev->band_params.BandWidth ? cdev->band_params.BandWidth :
-	 target->width);
+	cdev->page_info.band_params.BandWidth = max(target->width, cdev->band_params.BandWidth);
     int band_height = cdev->band_params.BandHeight;
     bool page_uses_transparency = cdev->page_uses_transparency;
     const uint band_space =
