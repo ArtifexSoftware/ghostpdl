@@ -284,6 +284,9 @@ mostlyclean : config-clean
 	$(RMN_) $(GENARCH_XE) $(GENCONF_XE) $(GENDEV_XE) $(GENHT_XE) $(GENINIT_XE)
 	$(RMN_) $(ECHOGS_XE)
 	$(RMN_) $(GSGEN)gs_init.c $(BEGINFILES)
+	$(RMN_) $(MKROMFS_XE)
+	$(RMN_) $(PSGEN)$(GS_INIT)
+	$(RMN_) $(GSGEN)gsromfs.c
 
 # Remove only configuration-dependent information.
 #****** FOLLOWING IS WRONG, NEEDS TO BE PER-SUBSYSTEM ******
