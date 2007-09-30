@@ -1453,7 +1453,9 @@ currentdict /PDF2PS_matrix_key undef
   } ifelse
   grestore
   % Draw the annotations
-  /Annots knownoget { { oforce drawannot } forall } if
+  //systemdict /ShowAnnots .knownget not { //true } if {
+    /Annots knownoget { { oforce drawannot } forall } if
+  } if
   //systemdict /ShowAcroForm .knownget { //true eq } { //false } ifelse {
     Trailer /Root oget /AcroForm knownoget { draw_acro_form } if
   } if

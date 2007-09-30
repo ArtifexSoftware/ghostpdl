@@ -622,12 +622,20 @@ regressions and should not be used routinely.
 </dl>
 
 <dl>
+<dt><b><tt>-dShowAnnots=false</tt></b>
+<dd>
+Don't enumerate anntoations associated with the page objects through
+<b><tt>Annots</tt></b> attribute. Annotations are shown by default.
+</dl>
+
+
+<dl>
 <dt><b><tt>-dShowAcroForm</tt></b>
 <dd>
-Show the content of the Interactive Form Dictionary (AcroForm dictionary).
-By default, AcroForm is not shown because some field types are not yet
-implemented. Adobe Acrobat doesn't always skips AcroForm, but it is
-not known yet when it does.
+Show annotations referred from the Interactive Form Dictionary (AcroForm dictionary).
+By default, AcroForm is not enumerated because Adobe Acrobat doesn't do this.
+This option may be useful for debugging or recovery of incorrect PDF files
+that don't associate all annotations with the page objects.
 </dl>
 
 <dl>
