@@ -138,12 +138,60 @@ currentdict /tt_tag_dict .undef
   exch pop
 } bind def
 
+% Make /MacRomanEncodingForTrueType including additional
+% characters in Mac OS Roman encoding, which is missing
+% in /MacRomanEncoding. See PDF spec 1.7, p. 431 or
+% "Inside Macintosh: Text" 1-55, Figure 1-36.
+% This is useful to exploit the glyphs via Apple Roman
+% TrueType cmap subtable, but not appropriate for information
+% interchange.
+
+/MacRomanEncodingForTrueType
+  /MacRomanEncoding .findencoding
+  dup length array copy
+  <<
+	/notequal	173
+	/infinity	176
+	/lessequal	178
+	/greaterequal	179
+	/partialdiff	182
+	/summation	183
+	/product	184
+	/pi		185
+	/integral	186
+	/Omega		189
+	/radical	195
+	/approxequal	197
+	/Delta		198
+	/lozenge	215
+	/Euro		219
+	/apple		240
+  >> {
+    TTFDEBUG { (Extend MacRomanEncodingForTrueType for TrueType: ) =only } if
+
+    % check /.notdef to avoid overwriting
+    2 index 1 index get dup /.notdef eq {
+      TTFDEBUG { (insert /) =only 2 index =only ( @ ) =only 1 index == } if
+      pop
+      exch 2 index 3 1 roll put
+    } {
+      TTFDEBUG { (cannot insert /) =only 2 index =only ( @ ) =only 1 index =only ( used for ) =only dup == } if
+      pop
+      pop pop
+    } ifelse
+  } forall
+  aload pop
+  256 packedarray
+  5 1 index .registerencoding
+.defineencoding
+
 % Define the Macintosh standard mapping from characters to glyph indices.
 /MacRomanEncoding dup .findencoding def
 /MacGlyphEncoding dup .findencoding def
+/MacRomanEncodingForTrueType dup .findencoding def
 
 % Invert the MacRomanEncoding.
-/.romanmacdict MacRomanEncoding .invert_encoding def
+/.romanmacdict MacRomanEncodingForTrueType .invert_encoding def
 
 % Define remapping for misnamed glyphs in TrueType 'post' tables.
 % There are probably a lot more than this!
@@ -1798,7 +1846,12 @@ currentdict /postalias undef
       <00010000> .findcmap {
         TTFDEBUG { (Using cmap 1.0 for non-symbolic.) = } if
 	.romanmacdict .pdfmapchars 
-        /Encoding /MacRomanEncoding .findencoding
+        /Encoding
+        prebuilt_encoding null ne {
+          prebuilt_encoding
+        } {
+          /MacRomanEncodingForTrueType .findencoding
+        } ifelse
       } {
         % Apply the default algorithm for using the 'post'.
 	.charkeys
