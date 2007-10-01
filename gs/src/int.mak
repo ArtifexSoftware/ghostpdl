@@ -980,7 +980,7 @@ $(PSOBJ)iccinit1.$(OBJ) :  $(PSSRC)iccinit1.c $(stdpre_h) $(GLOBJ)gsromfs.$(OBJ)
 
 # All the gs_*.ps files should be prerequisites of gs_init.c but we don't have
 # any convenient list of them so we just use lib/gs_init.ps == $(PSLIB)$(GS_INIT).
-$(PSGEN)gs_init.ps : $(PSLIB)$(GS_INIT) $(GENINIT_XE) $(gconfig_h)
+$(PSGEN)$(GS_INIT) : $(PSLIB)$(GS_INIT) $(GENINIT_XE) $(gconfig_h)
 	$(EXP)$(GENINIT_XE) -I $(PSLIB) $(GS_INIT) $(gconfig_h) $(PSGEN)gs_init.ps
 
 # The following list of files needed by the interpreter is maintained here.
@@ -997,8 +997,13 @@ RESOURCE_LIST=ColorSpace/ Decoding/ Font/ ProcSet/ IdiomSet/ CIDFont/ CMap/
 
 # PCLXL_ PJL and XPS hooks are for other parsers that may be built with a PS
 # language switch build.
-$(GLOBJ)gsromfs.c : $(MKROMFS_XE) $(PSGEN)gs_init.ps $(arch_h)
-	$(EXP)$(MKROMFS_XE) -o $(GLOBJ)gsromfs.c -X .svn $(UFST_ROMFS_ARGS) $(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS) $(UFST_ROMGS_ARGS) -c -P $(PSRESDIR)$(D) -d Resource/ $(RESOURCE_LIST) -d lib/ -P $(PSGEN) gs_init.ps -P $(PSLIB) $(EXTRA_INIT_FILES) 
+$(GLGEN)gsromfs.c : $(MKROMFS_XE) $(PSGEN)$(GS_INIT) $(arch_h)
+	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs.c \
+	 -X .svn $(UFST_ROMFS_ARGS) \
+	 $(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS) \
+	 -c -P $(PSRESDIR)$(D) -d Resource/ $(RESOURCE_LIST) \
+	 -d lib/ -P $(PSGEN) $(GS_INIT) -P $(PSLIB) \
+	 $(EXTRA_INIT_FILES) 
 
 # ---------------- Stochastic halftone ---------------- #
 
