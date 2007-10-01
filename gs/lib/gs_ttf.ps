@@ -1761,8 +1761,29 @@ currentdict /postalias undef
     <00030001> .findcmap {
       prebuilt_encoding null ne {
         TTFDEBUG { (Using cmap 3.1 with prebuilt_encoding for non-symbolic.) = } if
+
+        % The character code in /prebuilt_encoding[] is not guaranteed to be
+        % compatible with the Microsoft UCS2 TrueType cmap subtable.
+        % If the glyphname is known by AdobeGlyphList, the charcode for the glyph
+        % is replaced by UCS2 charcode from AdobeGlyphList. Otherwise it is left
+        % as in /prebuilt_encoding[]. /.pdfmapchars should dredge them.
+
   	/.allow_uniXXXX_glyph_names //true def
-        prebuilt_encoding .invert_encoding .pdfmapchars
+        AdobeGlyphList prebuilt_encoding .invert_encoding dup {    % <<AGL>> <<pbe>> <glyphname> <pbecode>
+          pop                                                      % <<AGL>> <<pbe>> <glyphname>
+          TTFDEBUG { (check glypname /) print dup =only flush } if
+          2 index 1 index .knownget {                              % <<AGL>> <<pbe>> <glyphname> <AGLcode>
+            2 index 3 1 roll                                       % <<AGL>> <<pbe>> <<pbe>> <glyphname> <AGLcode>
+            TTFDEBUG { ( redefine codepoint by AdobeGlyphList, ) print dup == flush } if
+            put                                                    % <<AGL>> <<pbe>>
+          } {                                                      % <<AGL>> <<pbe>> <glyphname>
+            TTFDEBUG { ( unknown glyphname, leave as it is ) print flush } if
+            pop                                                    % <<AGL>> <<pbe>>
+          } ifelse
+        } forall
+        exch pop                                                   % <<pbe>>
+        TTFDEBUG { dup (<<\n) print { exch (    ) print =only (\t) print == } forall (>>\n) print flush } if
+        .pdfmapchars
         /Encoding prebuilt_encoding
       } {
         % Likely this branch is now obsolete.
