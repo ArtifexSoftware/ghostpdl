@@ -821,10 +821,10 @@ if test -n "$P_DEVS"; then
 # Remove contributed drivers if requested and make sure we don't have any 
 # duplicates in there, add $(DD)foo.dev constructs
 	noncontribmakefiles=`find . -name '*.mak' -print | grep -v '^\./contrib/'`
-	PRINTERS=`(for i in $P_DEVS; do d='$(DD)'${i}.dev; if ( grep -q '^'$d $noncontribmakefiles ) || ( ! test -z "$CONTRIBINCLUDE" ); then echo $d; fi; done) | sort | uniq | tr '\012' ' '`
+	PRINTERS=`(for i in $P_DEVS; do d='$(DD)'${i}.dev; if ( grep '^'$d $noncontribmakefiles 2>&1 >/dev/null ) || ( ! test -z "$CONTRIBINCLUDE" ); then echo $d; fi; done) | sort | uniq | tr '\012' ' '`
 fi
 if test -n "$F_DEVS"; then
-	FILES=`(for i in $F_DEVS; do d='$(DD)'${i}.dev; if ( grep -q '^'$d $noncontribmakefiles ) || ( ! test -z "$CONTRIBINCLUDE" ); then echo $d; fi; done) | sort | uniq | tr '\012' ' '`
+	FILES=`(for i in $F_DEVS; do d='$(DD)'${i}.dev; if ( grep '^'$d $noncontribmakefiles  2>&1 >/dev/null) || ( ! test -z "$CONTRIBINCLUDE" ); then echo $d; fi; done) | sort | uniq | tr '\012' ' '`
 fi
 AC_SUBST(PRINTERS)
 AC_SUBST(FILES)
