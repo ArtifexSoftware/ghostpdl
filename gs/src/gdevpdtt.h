@@ -322,4 +322,7 @@ int pdf_shift_text_currentpoint(pdf_text_enum_t *penum, gs_point *wpt);
 
 void adjust_first_last_char(pdf_font_resource_t *pdfont, byte *str, int size);
 
+float pdf_calculate_text_size(gs_imager_state *pis, pdf_font_resource_t *pdfont, 
+			      const gs_matrix *pfmat, gs_matrix *smat, gs_matrix *tmat,
+			      gs_font *font, gx_device_pdf *pdev);
 #endif /* gdevpdtt_INCLUDED */

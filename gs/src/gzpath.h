@@ -307,6 +307,9 @@ struct gx_path_s {
     gs_memory_t *memory;
     gx_path_allocation_t allocation;	/* how this path was allocated */
     gx_path_segments *segments;
+    segment *last_charpath_segment; /* Used only by pdfwrite at present, 
+				     * last segment added by a charpath operation 
+				     */
     gs_fixed_rect bbox;		/* bounding box (in device space) */
     segment *box_last;		/* bbox incorporates segments */
 				/* up to & including this one */
@@ -330,9 +333,9 @@ struct gx_path_s {
 /* st_path should be static, but it's needed for the clip_path subclass. */
 extern_st(st_path);
 #define public_st_path()	/* in gxpath.c */\
-  gs_public_st_ptrs2(st_path, gx_path, "path",\
-    path_enum_ptrs, path_reloc_ptrs, segments, box_last)
-#define st_path_max_ptrs 2
+  gs_public_st_ptrs3(st_path, gx_path, "path",\
+    path_enum_ptrs, path_reloc_ptrs, segments, box_last, last_charpath_segment)
+#define st_path_max_ptrs 3
 
 /* Path enumeration structure */
 struct gs_path_enum_s {

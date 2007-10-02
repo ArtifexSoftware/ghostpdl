@@ -21,6 +21,7 @@
 #include "gdevpdtx.h"
 #include "gdevpdtf.h"		/* for pdfont->FontType */
 #include "gdevpdts.h"
+#include "gdevpdtt.h"
 
 /* ================ Types and structures ================ */
 
@@ -652,4 +653,112 @@ pdf_append_chars(gx_device_pdf * pdev, const byte * str, uint size,
     pts->out_pos.x += wx;
     pts->out_pos.y += wy;
     return 0;
+}
+
+/* Check a new piece of charpath text to see if its safe to combine
+ * with a previous text operation using text rendering modes.
+ */
+bool pdf_compare_text_state_for_charpath(pdf_text_state_t *pts, gx_device_pdf *pdev, 
+					 gs_imager_state *pis, gs_font *font, 
+					 const gs_text_params_t *text)
+{
+    int code;
+    float size;
+    gs_matrix smat, tmat;
+    struct pdf_font_resource_s *pdfont;
+
+    /* check to ensure the new text has the same length as the saved text */
+    if(text->size != pts->buffer.count_chars)
+	return(false);
+
+    if(font->FontType == ft_user_defined)
+	return(false);
+
+    /* check to ensure the new text has the same data as the saved text */
+    if(memcmp(text->data.bytes, &pts->buffer.chars, text->size))
+	return(false);
+
+    /* See if the same font is in use by checking the attahced pdfont resource for
+     * the currrent font and comparing with the saved text state
+     */
+    code = pdf_attached_font_resource(pdev, font, &pdfont, NULL, NULL, NULL, NULL);
+    if(code < 0)
+	return(false);
+
+    if(!pdfont || pdfont != pts->in.pdfont)
+	return(false);
+
+    /* Check to see the new text starts at the same point as the saved text. 
+     * NB! only check 2 decimal places, allow some slack in the match. This
+     * still may prove to be too tight a requirement.
+     */
+    if((int)(pts->start.x * 100) != (int)(pis->current_point.x * 100) || 
+	(int)(pts->start.y * 100) != (int)(pis->current_point.y * 100))
+	return(false);
+
+    size = pdf_calculate_text_size(pis, pdfont, &font->FontMatrix, &smat, &tmat, font, pdev);
+
+    /* Finally, check the calculated size against the size stored in
+     * the text state.
+     */
+    if(size != pts->in.size)
+	return(false);
+
+    return(true);
+}
+
+/* Add a render mode to the rendering mode of the current text.
+ * mode 0 = fill
+ * mode 1 = stroke
+ * mode 2 = clip
+ * If the modes are not compatible returns 0. NB currently only
+ * a stroke rendering mode is supported.
+ */
+int pdf_modify_text_render_mode(pdf_text_state_t *pts, int render_mode)
+{
+    switch (pts->in.render_mode) {
+	case 0:
+	    if (render_mode == 1) {
+		pts->in.render_mode = 2;
+		return(1);
+	    }
+	    break;
+	case 1:
+	    if (render_mode == 1) 
+		return(1);
+	    break;
+	case 2:
+	    if (render_mode == 1) 
+		return(1);
+	    break;
+	case 3:
+	    if (render_mode == 1) {
+	        pts->in.render_mode = 1;
+		return(1);
+	    }
+	    break;
+	case 4:
+	    if (render_mode == 1) {
+	        pts->in.render_mode = 6;
+		return(1);
+	    }
+	    break;
+	case 5:
+	    if (render_mode == 1) 
+		return(1);
+	    break;
+        case 6:
+	    if (render_mode == 1) 
+		return(1);
+	    break;
+	case 7:
+	    if (render_mode == 1) {
+	        pts->in.render_mode = 5;
+		return(1);
+	    }
+	    break;
+	default:
+	    break;
+    }
+    return(0);
 }

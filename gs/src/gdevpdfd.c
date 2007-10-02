@@ -34,6 +34,8 @@
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"
 #include "gsutil.h"
+#include "gdevpdtf.h"
+#include "gdevpdts.h"
 
 /* ---------------- Drawing ---------------- */
 
@@ -1213,8 +1215,37 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
 	return 0;		/* won't mark the page */
     if (pdf_must_put_clip_path(pdev, pcpath))
 	code = pdf_unclip(pdev);
-    else 
-	code = pdf_open_page(pdev, PDF_IN_STREAM);
+    else if ((pdev->last_charpath_op & TEXT_DO_FALSE_CHARPATH) && ppath->current_subpath && 
+	(ppath->last_charpath_segment == ppath->current_subpath->last)) {
+	bool hl_color = pdf_can_handle_hl_color((gx_device_vector *)pdev, pis, pdcolor);
+	const gs_imager_state *pis_for_hl_color = (hl_color ? pis : NULL);
+	
+	if (pdf_modify_text_render_mode(pdev->text->text_state, 1)) {
+	    /* Set the colour for the stroke */
+	    code = pdf_reset_color(pdev, pis_for_hl_color, pdcolor, &pdev->saved_stroke_color, 
+			&pdev->stroke_used_process_color, &psdf_set_stroke_color_commands);
+	    if(code == 0) {
+		s = pdev->strm;
+		/* Text is emitted scaled so that the CTM is an identity matrix, the line width 
+		 * needs to be scaled to match otherwise we will get the default, or the current
+		 * width scaled by the CTM before the text, either of which would be wrong.
+		 */
+		pprintg1(s, "%g w\n", (pis->line_params.half_width * 2));
+		/* Some trickery here. We have altered the colour, text render mode and linewidth,
+		 * we don't want those to persist. By switching to a stream context we will flush the 
+		 * pending text. This has the beneficial side effect of executing a grestore. So
+		 * everything works out neatly.
+		 */
+		code = pdf_open_page(pdev, PDF_IN_STREAM);
+		return(code);
+	    }
+	}
+	/* Can only get here if any of the above steps fail, in which case we proceed to
+	 * emit the charpath as a normal path, and stroke it.
+	 */
+        code = pdf_open_page(pdev, PDF_IN_STREAM);
+    } else
+        code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
     code = pdf_prepare_stroke(pdev, pis);

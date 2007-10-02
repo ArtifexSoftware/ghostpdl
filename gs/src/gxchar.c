@@ -1341,6 +1341,11 @@ show_finish(gs_show_enum * penum)
     gs_state *pgs = penum->pgs;
     int code, rcode;
 
+    if ((penum->text.operation & TEXT_DO_FALSE_CHARPATH) || 
+	(penum->text.operation & TEXT_DO_TRUE_CHARPATH)) {
+	if (pgs->path->current_subpath)
+	    pgs->path->last_charpath_segment = pgs->path->current_subpath->last;
+    }
     if (penum->auto_release)
 	penum->procs->release((gs_text_enum_t *)penum, "show_finish");
     if (!SHOW_IS_STRINGWIDTH(penum))

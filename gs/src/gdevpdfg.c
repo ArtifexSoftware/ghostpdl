@@ -286,15 +286,14 @@ is_pattern2_allowed_in_strategy(gx_device_pdf * pdev, const gx_drawing_color *pd
 }
 
 /* Set the fill or stroke color. */
-static int
+int
 pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis, 
 	        const gx_drawing_color *pdc, gx_hl_saved_color * psc,
 		bool *used_process_color,
 		const psdf_set_color_commands_t *ppscc)
 {
-    int code;
+    int code = 0;
     gx_hl_saved_color temp;
-    bool process_color;
     const gs_color_space *pcs, *pcs2;
     const gs_client_color *pcc; /* fixme: not needed due to gx_hld_get_color_component. */
     cos_value_t cs_value;
@@ -304,23 +303,14 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 
     if (pdev->skip_colors)
 	return 0;
-    process_color = !gx_hld_save_color(pis, pdc, &temp);
+    gx_hld_save_color(pis, pdc, &temp);
     /* Since pdfwrite never applies halftones and patterns, but monitors
      * halftone/pattern IDs separately, we don't need to compare
      * halftone/pattern bodies here.
      */
     if (gx_hld_saved_color_equal(&temp, psc))
 	return 0;
-    /*
-     * In principle, we can set colors in either stream or text
-     * context.  However, since we currently enclose all text
-     * strings inside a gsave/grestore, this causes us to lose
-     * track of the color when we leave text context.  Therefore,
-     * we require stream context for setting colors.
-     */
-    code = pdf_open_page(pdev, PDF_IN_STREAM);
-    if (code < 0)
-	return code;
+
     switch (gx_hld_get_color_space_and_ccolor(pis, pdc, &pcs, &pcc)) {
 	case non_pattern_color_space:
 	    switch (gs_color_space_get_index(pcs)) {
@@ -459,6 +449,34 @@ pdf_set_drawing_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 		      bool *used_process_color,
 		      const psdf_set_color_commands_t *ppscc)
 {
+    gx_hl_saved_color temp;
+    int code;
+
+    /* This section of code was in pdf_reset_color above, but was moved into this 
+     * routine (and below) in order to isolate the switch to a stream context. This
+     * now allows us the opportunity to write colours in any context, in particular
+     * when in a text context, by using pdf_reset_color.
+     */
+    if (pdev->skip_colors)
+	return 0;
+    gx_hld_save_color(pis, pdc, &temp);
+    /* Since pdfwrite never applies halftones and patterns, but monitors
+     * halftone/pattern IDs separately, we don't need to compare
+     * halftone/pattern bodies here.
+     */
+    if (gx_hld_saved_color_equal(&temp, psc))
+	return 0;
+    /*
+     * In principle, we can set colors in either stream or text
+     * context.  However, since we currently enclose all text
+     * strings inside a gsave/grestore, this causes us to lose
+     * track of the color when we leave text context.  Therefore,
+     * we require stream context for setting colors.
+     */
+    code = pdf_open_page(pdev, PDF_IN_STREAM);
+    if (code < 0)
+	return code;
+
     return pdf_reset_color(pdev, pis, pdc, psc, used_process_color, ppscc);
 }
 int
@@ -468,8 +486,31 @@ pdf_set_pure_color(gx_device_pdf * pdev, gx_color_index color,
 		   const psdf_set_color_commands_t *ppscc)
 {
     gx_drawing_color dcolor;
+    gx_hl_saved_color temp;
+    int code;
 
     set_nonclient_dev_color(&dcolor, color);
+
+    if (pdev->skip_colors)
+	return 0;
+    gx_hld_save_color(NULL, &dcolor, &temp);
+    /* Since pdfwrite never applies halftones and patterns, but monitors
+     * halftone/pattern IDs separately, we don't need to compare
+     * halftone/pattern bodies here.
+     */
+    if (gx_hld_saved_color_equal(&temp, psc))
+	return 0;
+    /*
+     * In principle, we can set colors in either stream or text
+     * context.  However, since we currently enclose all text
+     * strings inside a gsave/grestore, this causes us to lose
+     * track of the color when we leave text context.  Therefore,
+     * we require stream context for setting colors.
+     */
+    code = pdf_open_page(pdev, PDF_IN_STREAM);
+    if (code < 0)
+	return code;
+
     return pdf_reset_color(pdev, NULL, &dcolor, psc, used_process_color, ppscc);
 }
 

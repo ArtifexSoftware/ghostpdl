@@ -105,6 +105,7 @@ gx_path_init_contents(gx_path * ppath)
     path_update_newpath(ppath);
     ppath->bbox_set = 0;
     ppath->bbox_accurate = 0;
+    ppath->last_charpath_segment = 0;
 }
 
 /*
@@ -947,6 +948,7 @@ path_alloc_copy(gx_path * ppath)
 	gx_path_free(&path_new, "path_alloc_copy error");
 	return code;
     }
+    ppath->last_charpath_segment = 0;
     return gx_path_assign_free(ppath, &path_new);
 }
 

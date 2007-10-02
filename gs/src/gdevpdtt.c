@@ -40,6 +40,7 @@
 #include "gdevpdtt.h"
 #include "gdevpdti.h"
 #include "gxhldevc.h"
+#include "gzpath.h"
 
 /* ================ Text enumerator ================ */
 
@@ -334,6 +335,12 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	else
 	    i = 4;
 	pdf_current_page(pdev)->text_rotation.counts[i] += text->size;
+    }
+
+    pdev->last_charpath_op = 0;
+    if ((text->operation & TEXT_DO_ANY_CHARPATH) && !path0->first_subpath) {
+	if(pdf_compare_text_state_for_charpath(pdev->text->text_state, pdev, pis, font, text))
+	    pdev->last_charpath_op = text->operation & TEXT_DO_ANY_CHARPATH;
     }
 
     if (font->FontType == ft_user_defined &&
@@ -1892,25 +1899,17 @@ transform_delta_inverse(const gs_point *pdelta, const gs_matrix *pmat,
     }
     return 0;
 }
-int
-pdf_update_text_state(pdf_text_process_state_t *ppts,
-		      const pdf_text_enum_t *penum,
-		      pdf_font_resource_t *pdfont, const gs_matrix *pfmat)
+
+float pdf_calculate_text_size(gs_imager_state *pis, pdf_font_resource_t *pdfont, 
+			      const gs_matrix *pfmat, gs_matrix *smat, gs_matrix *tmat,
+			      gs_font *font, gx_device_pdf *pdev)
 {
-    gx_device_pdf *const pdev = (gx_device_pdf *)penum->dev;
-    gs_font *font = penum->current_font;
-    gs_fixed_point cpt;
-    gs_matrix orig_matrix, smat, tmat;
+    gs_matrix orig_matrix;
     double
 	sx = pdev->HWResolution[0] / 72.0,
 	sy = pdev->HWResolution[1] / 72.0;
     float size;
-    float c_s = 0, w_s = 0;
-    int mask = 0;
-    int code = gx_path_current_point(penum->path, &cpt);
 
-    if (code < 0)
-	return code;
 
     /* Get the original matrix of the base font. */
 
@@ -1937,21 +1936,43 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
 
     /* Compute the scaling matrix and combined matrix. */
 
-    gs_matrix_invert(&orig_matrix, &smat);
-    gs_matrix_multiply(&smat, pfmat, &smat);
-    tmat = ctm_only(penum->pis);
-    tmat.tx = tmat.ty = 0;
-    gs_matrix_multiply(&smat, &tmat, &tmat);
+    gs_matrix_invert(&orig_matrix, smat);
+    gs_matrix_multiply(smat, pfmat, smat);
+    *tmat = ctm_only(pis);
+    tmat->tx = tmat->ty = 0;
+    gs_matrix_multiply(smat, tmat, tmat);
 
     /* Try to find a reasonable size value.  This isn't necessary, */
     /* but it's worth a little effort. */
 
-    size = hypot(tmat.yx, tmat.yy) / sy;
+    size = hypot(tmat->yx, tmat->yy) / sy;
     if (size < 0.01)
-	size = hypot(tmat.xx, tmat.xy) / sx;
+	size = hypot(tmat->xx, tmat->xy) / sx;
     if (size < 0.01)
 	size = 1;
 
+    return(size);
+}
+
+int
+pdf_update_text_state(pdf_text_process_state_t *ppts,
+		      const pdf_text_enum_t *penum,
+		      pdf_font_resource_t *pdfont, const gs_matrix *pfmat)
+{
+    gx_device_pdf *const pdev = (gx_device_pdf *)penum->dev;
+    gs_font *font = penum->current_font;
+    gs_fixed_point cpt;
+    gs_matrix smat, tmat;
+    float size;
+    float c_s = 0, w_s = 0;
+    int mask = 0;
+    int code = gx_path_current_point(penum->path, &cpt);
+
+    if (code < 0)
+	return code;
+
+
+    size = pdf_calculate_text_size(penum->pis, pdfont, pfmat, &smat, &tmat, penum->current_font, pdev);
     /* Check for spacing parameters we can handle, and transform them. */
 
     if (penum->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {

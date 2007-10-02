@@ -381,6 +381,7 @@ typedef struct pdf_substream_save_s {
     bool		accumulating_a_global_object;
     pdf_resource_t      *pres_soft_mask_dict;
     gs_const_string		objname;
+    int			last_charpath_op;
 } pdf_substream_save;
 
 #define private_st_pdf_substream_save()\
@@ -650,6 +651,7 @@ struct gx_device_pdf_s {
     gs_const_string objname;
     int OPDFRead_procset_length;      /* PS2WRITE only. */
     void *find_resource_param; /* WARNING : not visible for garbager. */
+    int last_charpath_op; /* true or false state of last charpath */
 };
 
 #define is_in_page(pdev)\

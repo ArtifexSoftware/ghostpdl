@@ -601,6 +601,7 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     pdev->sbstack[sbstack_ptr].accumulating_a_global_object = pdev->accumulating_a_global_object;
     pdev->sbstack[sbstack_ptr].pres_soft_mask_dict = pdev->pres_soft_mask_dict;
     pdev->sbstack[sbstack_ptr].objname = pdev->objname;
+    pdev->sbstack[sbstack_ptr].last_charpath_op = pdev->last_charpath_op;
     pdev->skip_colors = false;
     pdev->charproc_just_accumulated = false;
     pdev->pres_soft_mask_dict = NULL;
@@ -612,6 +613,7 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     pdev->font3 = 0;
     pdev->context = PDF_IN_STREAM;
     pdev->accumulating_substream_resource = pres;
+    pdev->last_charpath_op = 0;
     pdf_reset_graphics(pdev);
     *ppres = pres;
     return 0;
@@ -660,6 +662,7 @@ pdf_exit_substream(gx_device_pdf *pdev)
     pdev->accumulating_a_global_object = pdev->sbstack[sbstack_ptr].accumulating_a_global_object;
     pdev->pres_soft_mask_dict = pdev->sbstack[sbstack_ptr].pres_soft_mask_dict;
     pdev->objname = pdev->sbstack[sbstack_ptr].objname;
+    pdev->last_charpath_op = pdev->sbstack[sbstack_ptr].last_charpath_op;
     pdev->sbstack_depth = sbstack_ptr;
     code1 = pdf_restore_viewer_state(pdev, NULL);
     if (code1 < 0 && code >= 0)
