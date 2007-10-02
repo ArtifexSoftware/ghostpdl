@@ -1893,6 +1893,11 @@ $(PSD)pdfread.dev : $(INT_MAK) $(ECHOGS_XE) $(GLOBJ)gxi16bit.$(OBJ)\
 	$(ADDMOD) $(PSD)pdfread -ps pdf_rbld
 	$(ADDMOD) $(PSD)pdfread -ps pdf_base pdf_draw pdf_font pdf_main pdf_sec
 
+# Optional Illustrator CS2/CS3 layer info extractor
+
+$(PSD)cslayer.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)pdfread.dev
+	$(SETMOD) $(PSD)cslayer -ps pdf_cslayer
+
 # ---------------- Font API ---------------- #
 
 $(PSD)fapi.dev : $(INT_MAK) $(ECHOGS_XE) $(PSOBJ)zfapi.$(OBJ)\
