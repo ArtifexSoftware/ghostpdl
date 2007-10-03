@@ -4,6 +4,7 @@
 
 #define REL_START_PART "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation"
 #define REL_REQUIRED_RESOURCE "http://schemas.microsoft.com/xps/2005/06/required-resource"
+#define REL_REQUIRED_RESOURCE_RECURSIVE "http://schemas.microsoft.com/xps/2005/06/required-resource#recursive"
 
 #define CT_FIXDOC "application/vnd.ms-package.xps-fixeddocument+xml"
 #define CT_FIXDOCSEQ "application/vnd.ms-package.xps-fixeddocumentsequence+xml"
@@ -155,12 +156,9 @@ xps_get_content_type(xps_context_t *ctx, char *partname)
     char *extension;
     char *type;
 
-    dprintf1("getting type for part '%s'\n", partname);
-
     type = xps_find_override(ctx->overrides, partname);
     if (type)
     {
-	dprintf1("  override -> %s\n", type);
 	return type;
     }
 
@@ -171,7 +169,6 @@ xps_get_content_type(xps_context_t *ctx, char *partname)
     type = xps_find_default(ctx->defaults, extension);
     if (type)
     {
-	dprintf1("  extension -> %s\n", type);
 	return type;
     }
 
@@ -671,11 +668,10 @@ xps_parse_content_relations_imp(void *zp, char *name, char **atts)
 	    {
 		xps_absolute_path(path, ctx->pwd, atts[i+1]);
 		xps_trim_url(path);
-		xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
+		xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE_RECURSIVE);
 	    }
 	}
     }
-
 
     if (!strcmp(name, "SolidColorBrush") || !strcmp(name, "GradientStop"))
     {
@@ -724,12 +720,45 @@ xps_parse_content_relations(xps_context_t *ctx, xps_part_t *part)
     return 0;
 }
 
+static int
+xps_validate_resources(xps_context_t *ctx, xps_part_t *part)
+{
+    xps_relation_t *rel;
+    xps_part_t *subpart;
+
+    for (rel = part->relations; rel; rel = rel->next)
+    {
+	if (!strcmp(rel->type, REL_REQUIRED_RESOURCE_RECURSIVE))
+	{
+	    subpart = xps_find_part(ctx, rel->target);
+	    if (!subpart || !subpart->complete)
+		return 0;
+	    if (!subpart->relations_complete)
+	    {
+		xps_parse_content_relations(ctx, subpart);
+		subpart->relations_complete = 1;
+	    }
+	    if (!xps_validate_resources(ctx, subpart))
+		return 0;
+	}
+
+	if (!strcmp(rel->type, REL_REQUIRED_RESOURCE))
+	{
+	    subpart = xps_find_part(ctx, rel->target);
+	    if (!subpart || !subpart->complete)
+		return 0;
+	}
+    }
+
+    return 1;
+}
+
 int
 xps_process_part(xps_context_t *ctx, xps_part_t *part)
 {
     xps_document_t *fixdoc;
 
-    dprintf2("processing part '%s' (%s)\n", part->name, part->complete ? "final" : "piece");
+    dprintf2("doc: processing %s %s\n", part->name, part->complete ? "" : "(piece)");
 
     /*
      * These two are magic Open Packaging Convention names.
@@ -768,7 +797,6 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
     if (!ctx->start_part)
     {
 	xps_part_t *rootpart;
-	dputs("looking for start part...\n");
 	rootpart = xps_find_part(ctx, "/");
 	if (rootpart)
 	{
@@ -846,19 +874,7 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
 		pagepart->relations_complete = 1;
 	    }
 
-	    have_resources = 1;
-	    for (rel = pagepart->relations; rel; rel = rel->next)
-	    {
-		if (!strcmp(rel->type, REL_REQUIRED_RESOURCE))
-		{
-		    xps_part_t *respart;
-		    respart = xps_find_part(ctx, rel->target);
-		    if (!respart || !respart->complete)
-			have_resources = 0;
-		}
-	    }
-
-	    if (have_resources)
+	    if (xps_validate_resources(ctx, pagepart))
 	    {
 		int code = xps_parse_fixed_page(ctx, pagepart);
 		if (code < 0)
