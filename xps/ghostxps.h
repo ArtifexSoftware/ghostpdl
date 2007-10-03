@@ -269,6 +269,7 @@ struct xps_image_s
 int xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
 int xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
 int xps_decode_tiff(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
+int xps_decode_hdphoto(gs_memory_t *mem, byte *buf, int len, xps_image_t *image);
 
 /*
  * Fonts.

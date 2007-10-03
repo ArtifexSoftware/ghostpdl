@@ -3,7 +3,7 @@ XPSGEN      = $(XPSGENDIR)$(D)
 XPSOBJ      = $(XPSOBJDIR)$(D)
 XPSO_       = $(O_)$(XPSOBJ)
 
-XPSCCC  = $(CC_) $(I_)$(XPSSRCDIR)$(_I) $(I_)$(XPSGENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(EXPATINCDIR)$(_I) $(C_) -I/opt/local/include
+XPSCCC  = $(CC_) $(I_)$(XPSSRCDIR)$(_I) $(I_)$(XPSGENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(EXPATINCDIR)$(_I) $(C_) -I/opt/local/include -std=c99
 
 # Define the name of this makefile.
 XPS_MAK     = $(XPSSRC)xps.mak
@@ -38,6 +38,9 @@ $(XPSOBJ)xpspng.$(OBJ): $(XPSSRC)xpspng.c $(XPSINCLUDES) $(PSRCDIR)$(D)png.h
 
 $(XPSOBJ)xpstiff.$(OBJ): $(XPSSRC)xpstiff.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpstiff.c $(XPSO_)xpstiff.$(OBJ)
+
+$(XPSOBJ)xpshdp.$(OBJ): $(XPSSRC)xpshdp.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xpshdp.c $(XPSO_)xpshdp.$(OBJ)
 
 $(XPSOBJ)xpszip.$(OBJ): $(XPSSRC)xpszip.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpszip.c $(XPSO_)xpszip.$(OBJ)
@@ -102,6 +105,7 @@ XPS_OBJS=\
     $(XPSOBJ)xpsjpeg.$(OBJ) \
     $(XPSOBJ)xpspng.$(OBJ) \
     $(XPSOBJ)xpstiff.$(OBJ) \
+    $(XPSOBJ)xpshdp.$(OBJ) \
     $(XPSOBJ)xpszip.$(OBJ) \
     $(XPSOBJ)xpsxml.$(OBJ) \
     $(XPSOBJ)xpsdoc.$(OBJ) \

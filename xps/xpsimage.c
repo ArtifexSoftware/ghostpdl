@@ -106,6 +106,8 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
 	error = xps_decode_jpeg(ctx->memory, buf, len, image);
     else if (memcmp(buf, "\211PNG\r\n\032\n", 8) == 0)
 	error = xps_decode_png(ctx->memory, buf, len, image);
+    else if (memcmp(buf, "II", 2) == 0 && buf[2] == 0xBC)
+	error = xps_decode_hdphoto(ctx->memory, buf, len, image);
     else if (memcmp(buf, "MM", 2) == 0)
 	error = xps_decode_tiff(ctx->memory, buf, len, image);
     else if (memcmp(buf, "II", 2) == 0)

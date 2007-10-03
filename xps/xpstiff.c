@@ -933,12 +933,12 @@ xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image)
     tiff->order = TII;
     tiff->order = readshort(tiff);
     if (tiff->order != TII && tiff->order != TMM)
-        gs_throw(-1, "not a TIFF file, wrong magic marker");
+        return gs_throw(-1, "not a TIFF file, wrong magic marker");
 
     /* check version */
     version = readshort(tiff);
     if (version != 42)
-        gs_throw(-1, "not a TIFF file, wrong version marker");
+        return gs_throw(-1, "not a TIFF file, wrong version marker");
 
     /* get offset of IFD */
     offset = readlong(tiff);
