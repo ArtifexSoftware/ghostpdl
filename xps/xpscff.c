@@ -589,6 +589,7 @@ xps_post_callback_decode_glyph(gs_font *p42, gs_glyph glyph)
 static int
 xps_post_callback_glyph_name(gs_font *pf, gs_glyph glyph, gs_const_string *pstr)
 {
+    dprintf1("asking for CFF glyph name %d\n", glyph);
     return -1;
 }
 
@@ -596,6 +597,7 @@ static int
 xps_post_callback_glyph_info(gs_font *font, gs_glyph glyph,
 	const gs_matrix *pmat, int members, gs_glyph_info_t *info)
 {
+    dprintf1("asking for CFF glyph info %d\n", glyph);
     return -1;
 }
 
@@ -603,6 +605,7 @@ static int
 xps_post_callback_glyph_outline(gs_font *font, int wmode, gs_glyph glyph,
 	const gs_matrix *pmat, gx_path *ppath, double sbw[4])
 {
+    dprintf1("asking for CFF glyph outline %d\n", glyph);
     return -1;
 }
 
@@ -859,7 +862,9 @@ xps_init_postscript_font(xps_context_t *ctx, xps_font_t *font)
     pt1->procs.next_char_glyph = gs_default_next_char_glyph;
     pt1->procs.build_char = xps_post_callback_build_char;
 
-    pt1->font_name.size = 0;
+    strcpy(pt1->font_name.chars, "PostScriptFont");
+    pt1->font_name.size = strlen(pt1->font_name.chars);
+
     pt1->key_name.size = 0;
 
     /* Base font specific */

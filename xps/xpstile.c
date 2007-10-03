@@ -39,9 +39,8 @@ xps_paint_tiling_brush_clipped(struct tile_closure_s *c)
      */
 
     saved_bounds = ctx->bounds;
-    dprintf4("tiled bounds [%g %g %g %g]\n",
-	    saved_bounds.p.x, saved_bounds.p.y,
-	    saved_bounds.q.x, saved_bounds.q.y);
+
+    // dprintf4("tiled bounds [%g %g %g %g]\n", saved_bounds.p.x, saved_bounds.p.y, saved_bounds.q.x, saved_bounds.q.y);
 
     ctx->bounds = c->viewbox; // transform?
 

@@ -63,6 +63,15 @@ static const char *pl_mac_names[258] = {
  * truetype (loca/glyf) flavored opentypes.
  */
 
+static int
+xps_true_callback_string_proc(gs_font_type42 *p42, ulong offset, uint length, const byte **pdata)
+{
+    /* NB bounds check offset + length */
+    xps_font_t *font = p42->client_data;
+    *pdata = font->data + offset;
+    return 0;
+}
+
 static gs_glyph
 xps_true_callback_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t spc)
 {
@@ -152,7 +161,7 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
     /* mac easy */
     if ( glyph_name_index < 258 )
     {
-	dprintf2("glyph name (mac) %d = %s\n", glyph, pl_mac_names[glyph_name_index]);
+	// dprintf2("glyph name (mac) %d = %s\n", glyph, pl_mac_names[glyph_name_index]);
 	pstr->data = pl_mac_names[glyph_name_index];
 	pstr->size = strlen(pstr->data);
 	return 0;
@@ -197,19 +206,10 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
 	pstr->data = mydata;
 
 	mydata[pstr->size] = 0;
-	dprintf2("glyph name (tbl) %d = %s\n", glyph, pstr->data);
+	// dprintf2("glyph name (tbl) %d = %s\n", glyph, pstr->data);
 
 	return 0;
     }
-}
-
-static int
-xps_true_callback_string_proc(gs_font_type42 *p42, ulong offset, uint length, const byte **pdata)
-{
-    /* NB bounds check offset + length - use gs_object_size for memory buffers - if file read should fail */
-    xps_font_t *font = p42->client_data;
-    *pdata = font->data + offset;
-    return 0;
 }
 
 static int
@@ -319,7 +319,9 @@ int xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font)
 	p42->procs.encode_char = xps_true_callback_encode_char;
 	p42->procs.build_char = xps_true_callback_build_char;
 
-	p42->font_name.size = 0;
+	strcpy(p42->font_name.chars, "TrueTypeFont");
+	p42->font_name.size = strlen(p42->font_name.chars);
+
 	p42->key_name.size = 0;
 
 	/* Base font specific: */

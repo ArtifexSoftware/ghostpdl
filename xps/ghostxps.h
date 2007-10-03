@@ -96,6 +96,9 @@ typedef struct xps_glyph_metrics_s xps_glyph_metrics_t;
 #define xps_free(ctx, ptr) \
     gs_free_object(ctx->memory, ptr, __FUNCTION__);
 
+size_t xps_strlcpy(char *destination, const char *source, size_t size);
+size_t xps_strlcat(char *destination, const char *source, size_t size);
+
 char *xps_strdup_imp(xps_context_t *ctx, const char *str, const char *function);
 char *xps_clean_path(char *name);
 void xps_absolute_path(char *output, char *pwd, char *path);

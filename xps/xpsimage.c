@@ -198,7 +198,6 @@ xps_paint_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
     {
 	if (image->alpha)
 	{
-	    dputs("xps_paint_image_brush opacity-only with alpha channel\n");
 	    xps_paint_image_brush_imp(ctx, image, 1);
 	}
 	return 0;
@@ -209,8 +208,6 @@ xps_paint_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 	gs_transparency_mask_params_t params;
 	gs_transparency_group_params_t tgp;
 	gs_rect bbox;
-
-	dputs("xps_paint_image_brush with alpha channel\n");
 
 	xps_bounds_in_user_space(ctx, &bbox);
 
@@ -226,7 +223,6 @@ xps_paint_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
     }
     else
     {
-	dputs("xps_paint_image_brush solid color\n");
 	xps_paint_image_brush_imp(ctx, image, 0);
     }
 

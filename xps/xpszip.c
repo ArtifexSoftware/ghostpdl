@@ -136,18 +136,19 @@ xps_new_part(xps_context_t *ctx, char *name, int capacity)
 void
 xps_free_part_caches(xps_context_t *ctx, xps_part_t *part)
 {
-    if (part->font) xps_free_font(ctx, part->font);
-    if (part->image) xps_free_image(ctx, part->image);
-    // if (part->icc) xps_free_colorspace(ctx, part->icc);
-    part->font = NULL;
-    part->image = NULL;
-    part->icc = NULL;
+    // if (part->font) { xps_free_font(ctx, part->font); part->font = NULL; }
+    if (part->image) { xps_free_image(ctx, part->image); part->image = NULL; }
+    // if (part->icc) { xps_free_colorspace(ctx, part->icc); part->icc = NULL; }
 }
 
 void
 xps_free_part(xps_context_t *ctx, xps_part_t *part)
 {
     xps_free_part_caches(ctx, part);
+
+    /* Nu-uh, can't free fonts because pdfwrite needs them alive */
+    if (part->font)
+	return;
 
     if (part->name) xps_free(ctx, part->name);
     if (part->data) xps_free(ctx, part->data);
@@ -194,8 +195,6 @@ xps_prepare_part(xps_context_t *ctx)
 	if (p)
 	    *p = 0;
     }
-
-    dprintf3("zip: preparing part '%s' (piece=%d) (last=%d)\n", ctx->zip_file_name, piece, last_piece);
 
     part = xps_find_part(ctx, ctx->zip_file_name);
     if (!part)
@@ -258,8 +257,6 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 
     if (ctx->zip_method == 8)
     {
-	// dputs("zip: inflate data\n");
-
 	if (part->size >= part->capacity)
 	{
 	    /* dprintf2("growing buffer (%d/%d)\n", part->size, part->capacity); */
@@ -301,8 +298,6 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 	 * allowed by a brain damaged spec and written by a brain damaged company.
 	 */
 
-	// dputs("zip: stored data of unknown size! (bad style, fix the generator)\n");
-
 	sixteen = ctx->zip_version < 45 ? 16 : 24;
 
 	while (1)
@@ -324,8 +319,6 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 	    {
 		if (scan4(part->data + part->size - sixteen) == ZIP_DATA_DESC_SIG)
 		{
-		    dprintf1("zip: found data descriptor signature in stream (size=%d)\n", part->size - part->interleave - sixteen);
-
 		    if (ctx->zip_version < 45)
 		    {
 			crc32 = scan4(part->data + part->size - 12);
@@ -339,8 +332,6 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 			usize = scan4(part->data + part->size - 8);
 		    }
 
-		    dprintf3("zip: crc32=%08x csize=%d usize=%d\n", crc32, csize, usize);
-
 		    if (csize == usize && usize == part->size - part->interleave - sixteen)
 		    {
 			if (crc32 == xps_crc32(0, part->data + part->interleave, part->size - part->interleave - sixteen))
@@ -349,8 +340,6 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 			    return 1;
 			}
 		    }
-
-		    dputs("zip: crc32 didn't match ... resuming\n");
 		}
 	    }
 
@@ -367,8 +356,6 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 	/* For stored parts we usually know the size,
 	 * and then capacity is set to the actual size of the data.
 	 */
-
-	// dprintf1("zip: stored data of known size: %d\n", ctx->zip_uncompressed_size);
 
 	if (ctx->zip_uncompressed_size == 0)
 	    return 1;
@@ -399,7 +386,6 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 	{
 	case -1:
 	    /* at the end, or error condition. toss data. */
-	    // dputs("at end of zip (or in fail mode)\n");
 	    buf->ptr = buf->limit;
 	    return 1;
 
@@ -412,11 +398,11 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		signature = read4(ctx, buf);
 		if (signature == ZIP_LOCAL_FILE_SIG)
 		{
-		    dputs("zip: local file signature\n");
+		    /* dputs("zip: local file signature\n"); */
 		}
 		else if (signature == ZIP_DATA_DESC_SIG)
 		{
-		    dputs("zip: data desc signature\n");
+		    /* dputs("zip: data desc signature\n"); */
 		    if (ctx->zip_version >= 45)
 		    {
 			(void) read4(ctx, buf); /* crc32 */
@@ -432,14 +418,14 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		}
 		else if (signature == ZIP_CENTRAL_DIRECTORY_SIG)
 		{
+		    /* dputs("zip: central directory signature\n"); */
 		    ctx->zip_state = -1;
-		    dputs("zip: central directory signature\n");
 		    return 0;
 		}
 		else
 		{
+		    /* dprintf1("zip: unknown signature 0x%x\n", signature); */
 		    ctx->zip_state = -1;
-		    dprintf1("zip: unknown signature 0x%x\n", signature);
 		    return 0;
 		}
 	    }
@@ -462,10 +448,6 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		ctx->zip_uncompressed_size = read4(ctx, buf);
 		ctx->zip_name_length = read2(ctx, buf);
 		ctx->zip_extra_length = read2(ctx, buf);
-
-		dprintf5("zip: version=%d general=0x%04x method=%d csize=%d usize=%d\n",
-			ctx->zip_version, ctx->zip_general, ctx->zip_method,
-			ctx->zip_compressed_size, ctx->zip_uncompressed_size);
 	    }
 	    ctx->zip_state ++;
 
@@ -479,7 +461,7 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		readall(ctx, buf, (byte*)ctx->zip_file_name + 1, ctx->zip_name_length);
 		ctx->zip_file_name[ctx->zip_name_length + 1] = 0;
 
-		dprintf1("zip: file name '%s'\n", ctx->zip_file_name);
+		/* dprintf1("zip: entry %s\n", ctx->zip_file_name); */
 	    }
 	    ctx->zip_state ++;
 

@@ -136,6 +136,8 @@ xps_parse_color(xps_context_t *ctx, char *string, gs_color_space **csp, float *s
 	if (n == 5) /* alpha + CMYK */
 	    *csp = ctx->cmyk;
 
+#if 0 /* disable ICC profiles for beta */
+
 	/* Find ICC colorspace part */
 
 	xps_absolute_path(partname, ctx->pwd, profile);
@@ -151,6 +153,7 @@ xps_parse_color(xps_context_t *ctx, char *string, gs_color_space **csp, float *s
 	}
 
 	*csp = part->icc;
+#endif
 
 	return 0;
     }

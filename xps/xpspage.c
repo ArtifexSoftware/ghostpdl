@@ -101,7 +101,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     gs_point pt0, pt1;
     gs_rect rc;
 
-    dprintf1("processing page %s\n", part->name);
+    dprintf1("-- drawing page %s --\n", part->name);
 
     root = xps_parse_xml(ctx, part->data, part->size);
     if (!root)

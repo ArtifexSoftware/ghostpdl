@@ -33,14 +33,10 @@ xps_parse_visual_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
 
     xps_resolve_resource_reference(ctx, dict, &visual_att, &visual_tag);
 
-    dputs("drawing visual brush\n");
-
     if (visual_tag)
     {
 	xps_parse_tiling_brush(ctx, dict, root, xps_paint_visual_brush, visual_tag);
     }
-
-    dputs("finished visual brush\n");
 
     return 0;
 }
