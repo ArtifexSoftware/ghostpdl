@@ -15,8 +15,9 @@
 
 % $Id$
 
-% May add general FAPIfontmap records here like this :
-/Wingdings-Regular << /Path FCOfontfile2 /FontType 1 /FAPI /UFST /SubfontId 0 /Encoding /Wingdings /Decoding /FCO_Wingdings>> ;
+FCOfontfile2 ReadFCOfontmap:
+0     Wingdings-Regular DingbatsEncoding FCO_Dingbats
+EndFCOfontmap
 
 % Mapping Postscript fonts to ps3___xh.fco FCO members :
 FCOfontfile ReadFCOfontmap:
