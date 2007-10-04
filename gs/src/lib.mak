@@ -874,7 +874,7 @@ $(GLOBJ)gsparam.$(OBJ) : $(GLSRC)gsparam.c $(GXERR) $(memory__h) $(string__h)\
 $(GLOBJ)gsparamx.$(OBJ) : $(GLSRC)gsparamx.c $(string__h)\
  $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gsparam_h) $(gsparamx_h)\
  $(gstypes_h)
-	$(GLCCSHARED) $(GLO_)gsparamx.$(OBJ) $(C_) $(GLSRC)gsparamx.c
+	$(GLCC) $(GLO_)gsparamx.$(OBJ) $(C_) $(GLSRC)gsparamx.c
 
 # Future replacement for gsparams.c
 $(GLOBJ)gsparam2.$(OBJ) : $(GLSRC)gsparam2.c $(GXERR) $(memory__h)\
@@ -1077,7 +1077,7 @@ $(GLOBJ)gdevnfwd.$(OBJ) : $(GLSRC)gdevnfwd.c $(GXERR)\
 
 # Provide a mapping between StandardEncoding and ISOLatin1Encoding.
 $(GLOBJ)gdevemap.$(OBJ) : $(GLSRC)gdevemap.c $(AK) $(std_h)
-	$(GLCCSHARED) $(GLO_)gdevemap.$(OBJ) $(C_) $(GLSRC)gdevemap.c
+	$(GLCC) $(GLO_)gdevemap.$(OBJ) $(C_) $(GLSRC)gdevemap.c
 
 ###### Create a pseudo-"feature" for the entire graphics library.
 
