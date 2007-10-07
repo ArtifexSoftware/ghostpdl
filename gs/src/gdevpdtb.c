@@ -198,9 +198,23 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
 		goto fail;
 	}
         code = gs_copy_font_complete((gs_font *)font, complete);
-	if (code < 0)
+	if (code < 0 && pbfont->do_subset == DO_SUBSET_NO) {
+	    char buf[gs_font_name_max + 1];
+	    int l = min(copied->font_name.size, sizeof(buf) - 1);
+
+	    memcpy(buf, copied->font_name.chars, l);
+	    buf[l] = 0;
+    	    eprintf1("Can't embed the complete font %s due to font error.\n", buf);
 	    goto fail;
-	if (pbfont->num_glyphs < 0) { /* Type 1 */
+	}
+	if (code < 0) {
+	    /* A font error happened, but it may be caused by a glyph, 
+	       which is not used in the document. Continue with subsetting the font.
+	       If the failed glyph will be used in the document, 
+	       another error will hgappen when the glyph is used.
+	     */
+	    complete = copied;
+	} else if (pbfont->num_glyphs < 0) { /* Type 1 */
 	    int index, count;
 	    gs_glyph glyph;
 

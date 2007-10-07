@@ -818,6 +818,8 @@ gs_default_font_info(gs_font *font, const gs_point *pscale, int members,
 	int fixed_width = 0;
 	int index;
 	int code = 0; /* Quiet compiler. */
+	int ecode = 0;
+	bool has_glyphs = false;
 
 	for (index = 0;
 	     fixed_width >= 0 &&
@@ -829,8 +831,10 @@ gs_default_font_info(gs_font *font, const gs_point *pscale, int members,
 	    code = font->procs.glyph_info(font, glyph, pmat,
 					  (GLYPH_INFO_WIDTH0 << wmode),
 					  &glyph_info);
-	    if (code < 0)
-		return code;
+	    if (code < 0) {
+		ecode = code;
+		continue;
+	    }
 	    if (notdef == gs_no_glyph && gs_font_glyph_is_notdef(bfont, glyph)) {
 		notdef = glyph;
 		info->MissingWidth = (int)glyph_info.width[wmode].x;
@@ -842,9 +846,10 @@ gs_default_font_info(gs_font *font, const gs_point *pscale, int members,
 		fixed_width = (int)glyph_info.width[wmode].x;
 	    else if (glyph_info.width[wmode].x != fixed_width)
 		fixed_width = min_int;
+	    has_glyphs = true;
 	}
-	if (code < 0)
-	    return code;
+	if (ecode < 0 && !has_glyphs)
+	    return ecode;
 	if (fixed_width > 0) {
 	    info->Flags |= FONT_IS_FIXED_WIDTH;
 	    info->members |= FONT_INFO_AVG_WIDTH | FONT_INFO_MAX_WIDTH |
