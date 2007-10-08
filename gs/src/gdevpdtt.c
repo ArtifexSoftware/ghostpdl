@@ -2385,7 +2385,7 @@ pdf_text_process(gs_text_enum_t *pte)
 	gs_glyph glyphs[BUF_SIZE / sizeof(gs_glyph)];
     } buf;
 
-    if (!penum->pte_default && !penum->charproc_accum) {
+     if (!penum->pte_default && !penum->charproc_accum) {
 	/* Don't need to sync before exiting charproc. */
 	code = pdf_prepare_text_drawing(pdev, pte);
 	if (code == gs_error_rangecheck) {
@@ -2417,6 +2417,27 @@ pdf_text_process(gs_text_enum_t *pte)
 	    code = pdf_choose_output_glyph_hame(pdev, penum, &gnstr, pte_default->returned.current_glyph);
 	    if (code < 0)
 		return code;
+
+	    if ((penum->current_font->FontType == ft_user_defined) && stell(pdev->strm) == 0)
+	    {
+		char glyph[256], FontName[gs_font_name_max + 1], KeyName[256];
+		int len;
+
+		len = min(gs_font_name_max, gnstr.size);
+		memcpy(glyph, gnstr.data, len);
+		glyph[len] = 0x00;
+		len = min(255, penum->current_font->font_name.size);
+		memcpy(FontName, penum->current_font->font_name.chars, len);
+		FontName[len] = 0x00;
+		len = min(255, penum->current_font->key_name.size);
+		memcpy(KeyName, penum->current_font->key_name.chars, len);
+		KeyName[len] = 0x00;
+
+		eprintf4("ERROR: Page %d used undefined glyph '%s' from type 3 font '%s', key '%s'\n",
+		    pdev->next_page, glyph, FontName, KeyName);
+	        stream_puts(pdev->strm, "0 0 0 0 0 0 d1\n");
+	    }
+	    
 	    code = pdf_end_charproc_accum(pdev, penum->current_font, penum->cgp, 
 			pte_default->returned.current_glyph, penum->output_char_code, &gnstr);
 	    if (code < 0)
