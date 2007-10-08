@@ -615,7 +615,7 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
 		pdf_xml_attribute_name(s, "rdf:about");
 		pdf_xml_attribute_value(s, instance_uuid);
 		pdf_xml_attribute_name(s, "xmlns:pdfaid");
-		pdf_xml_attribute_value(s, "http://www.aiim.org/pdfa/ns/id.html");
+		pdf_xml_attribute_value(s, "http://www.aiim.org/pdfa/ns/id/");
 		pdf_xml_attribute_name(s, "pdfaid:part");
 		pdf_xml_attribute_value(s,"1");
 		pdf_xml_attribute_name(s, "pdfaid:conformance");
