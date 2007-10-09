@@ -525,16 +525,23 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 	ncomp = 1;
     } else {
 	ncomp = gs_color_space_num_components(pim->ColorSpace);
-	if (ncomp == 1) {
-	    if (bpc == 1)
-		params = pdev->params.MonoImage;
-	    else
-		params = pdev->params.GrayImage;
-	    if (params.Depth == -1)
-		params.Depth = bpc;
-	} else {
+	if (pim->ColorSpace->type->index == gs_color_space_index_Indexed) {
 	    params = pdev->params.ColorImage;
+	    /* Ensure we don't use JPEG on a /Indexed colour space */
+	    params.AutoFilter = false;
+	    params.Filter = "FlateEncode";
+	} else {
+	    if (ncomp == 1) {
+		if (bpc == 1)
+		    params = pdev->params.MonoImage;
+    		else
+		    params = pdev->params.GrayImage;
+		if (params.Depth == -1)
+		    params.Depth = bpc;
+	    } else {
+		params = pdev->params.ColorImage;
 	    /* params.Depth is reset below */
+	    }
 	}
     }
 
@@ -556,7 +563,7 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 	resolution = 1.0 / hypot(pt.x / pdev->HWResolution[0],
 				 pt.y / pdev->HWResolution[1]);
     }
-    if (ncomp == 1) {
+    if (ncomp == 1 && pim->ColorSpace && pim->ColorSpace->type->index != gs_color_space_index_Indexed) {
 	/* Monochrome, gray, or mask */
 	/* Check for downsampling. */
 	if (do_downsample(&params, pim, resolution)) {

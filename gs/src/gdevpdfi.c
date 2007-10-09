@@ -631,7 +631,8 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 				    (pim->Width <= 64 && pim->Height <= 64) ||
 				    pdev->transfer_not_identity ? 1 : 2);
     if (image[0].pixel.ColorSpace != NULL &&
-	image[0].pixel.ColorSpace->type->index == gs_color_space_index_Indexed)
+	image[0].pixel.ColorSpace->type->index == gs_color_space_index_Indexed 
+	&& pdev->params.ColorImage.DownsampleType != ds_Subsample)
 	pie->writer.alt_writer_count = 1;
     image[1] = image[0];
     names = (in_line ? &pdf_color_space_names_short : &pdf_color_space_names);
