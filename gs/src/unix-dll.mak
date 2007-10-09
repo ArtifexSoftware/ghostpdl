@@ -126,7 +126,7 @@ install-so: so
 	$(INSTALL_PROGRAM) $(PSSRC)iapi.h $(DESTDIR)$(gsincludedir)/iapi.h
 	$(INSTALL_PROGRAM) $(PSSRC)ierrors.h $(DESTDIR)$(gsincludedir)/ierrors.h
 
-soinstall: install-so install-scripts install-data
+soinstall: install-so install-scripts install-data $(INSTALL_SHARED) $(INSTALL_CONTRIB)
 
 # Make the build directories
 SODIRS: STDDIRS
