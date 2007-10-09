@@ -344,7 +344,9 @@ currentdict end def
       dup /CIDSystemInfo get /Ordering get cvn
     } if
     dup type /nametype eq {
-      //SubstNWP exch get                              % <<font>> [SubstNWP]
+      //SubstNWP exch .knownget not {
+        []
+      } if                                   % <<font>> [SubstNWP]
     } if
     1 index exch /SubstNWP exch put
   } if
