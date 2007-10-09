@@ -207,7 +207,7 @@ static FAPI_retcode ensure_open(FAPI_server *server, const byte *server_param, i
 	    return code;
 	}
     }
-    gx_set_UFST_Callbacks(NULL, impl_PCLchId2ptr, NULL);
+    gx_set_UFST_Callbacks(NULL, impl_PCLchId2ptr, impl_PCLchId2ptr);
     return 0;
 }
 
@@ -928,6 +928,9 @@ static FAPI_retcode get_char_width(FAPI_server *server, FAPI_font *ff, FAPI_char
     int code;
     FSA_FROM_SERVER;
 
+#if !UFST_REENTRANT
+    static_server_ptr_for_ufst_callback = r;
+#endif
     make_asciiz_char_name(PSchar_name, sizeof(PSchar_name), c);
     r->ff = ff;
     CGIFchIdptr(FSA &cc, PSchar_name);
