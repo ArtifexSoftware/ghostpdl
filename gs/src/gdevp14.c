@@ -1330,13 +1330,15 @@ pdf14_cmykspot_put_image(gx_device * dev, gs_imager_state * pis, gx_device * tar
 {
     pdf14_device * pdev = (pdf14_device *)dev;
     int code = 0;
-    int width = pdev->width;
-    int height = pdev->height;
     int x, y, tmp, comp_num, output_comp_num;
     pdf14_buf *buf = pdev->ctx->stack;
+    int x1 = min(pdev->width, buf->rect.q.x);
+    int y1 = min(pdev->height, buf->rect.q.y);
+    int width = x1 - buf->rect.p.x;
+    int height = y1 - buf->rect.p.y;
     int planestride = buf->planestride;
     int num_comp = buf->n_chan - 1;
-    byte *buf_ptr = buf->data;
+    byte *buf_ptr = buf->data + buf->rect.p.y * buf->rowstride + buf->rect.p.x;
     const byte bg = pdev->ctx->additive ? gx_max_color_value : 0;
     gx_color_index color;
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -1413,7 +1415,8 @@ pdf14_cmykspot_put_image(gx_device * dev, gs_imager_state * pis, gx_device * tar
 		}
 	    }
 	    color = dev_proc(target, encode_color)(target, cv);
-	    code = dev_proc(target, fill_rectangle)(target, x, y, 1, 1, color);
+	    code = dev_proc(target, fill_rectangle)(target, x + buf->rect.p.x, 
+							    y + buf->rect.p.y, 1, 1, color);
 	}
 
 	buf_ptr += buf->rowstride;
@@ -1438,13 +1441,15 @@ pdf14_custom_put_image(gx_device * dev, gs_imager_state * pis, gx_device * targe
 {
     pdf14_device * pdev = (pdf14_device *)dev;
     int code = 0;
-    int width = pdev->width;
-    int height = pdev->height;
     int x, y, tmp, comp_num;
     pdf14_buf *buf = pdev->ctx->stack;
+    int x1 = min(pdev->width, buf->rect.q.x);
+    int y1 = min(pdev->height, buf->rect.q.y);
+    int width = x1 - buf->rect.p.x;
+    int height = y1 - buf->rect.p.y;
     int planestride = buf->planestride;
     int num_comp = buf->n_chan - 1;
-    byte *buf_ptr = buf->data;
+    byte *buf_ptr = buf->data + buf->rect.p.y * buf->rowstride + buf->rect.p.x;
     const byte bg = pdev->ctx->additive ? gx_max_color_value : 0;
     gx_color_index color;
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -1479,7 +1484,8 @@ pdf14_custom_put_image(gx_device * dev, gs_imager_state * pis, gx_device * targe
 		}
 	    }
 	    color = dev_proc(target, encode_color)(target, cv);
-	    code = dev_proc(target, fill_rectangle)(target, x, y, 1, 1, color);
+	    code = dev_proc(target, fill_rectangle)(target, x + buf->rect.p.x, 
+							    y + buf->rect.p.y, 1, 1, color);
 	}
 
 	buf_ptr += buf->rowstride;
