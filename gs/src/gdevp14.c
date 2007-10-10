@@ -565,10 +565,11 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape,
 	    memset (result->data + alpha_g_plane * planestride, 0, planestride);
 	}
     }
-    result->bbox.p.x = max_int;
-    result->bbox.p.y = max_int;
-    result->bbox.q.x = min_int;
-    result->bbox.q.y = min_int;
+    /* Initialize bbox with the reversed rectangle for further accumulation : */
+    result->bbox.p.x = rect->q.x;
+    result->bbox.p.y = rect->q.y;
+    result->bbox.q.x = rect->p.x;
+    result->bbox.q.y = rect->p.y;
     return result;
 }
 
@@ -1080,8 +1081,12 @@ dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
 {
     int rowstride = pbuf->rowstride, planestride = pbuf->planestride;
     int rowbytes = width << 2;
-    int width = pbuf->rect.q.x - pbuf->rect.p.x;
-    int height = pbuf->rect.q.y - pbuf->rect.p.y;
+    gs_int_rect rect = buf->rect;
+    int x1 = min(pdev->width, rect.q.x);
+    int y1 = min(pdev->height, rect.q.y);
+    int width = x1 - rect.p.x;
+    int height = y1 - rect.p.y;
+    byte *buf_ptr = buf->data + rect.p.y * buf->rowstride + rect.p.x;
     byte *row = gs_malloc(mem, rowbytes, 1, "png raster buffer");
     png_struct *png_ptr =
     png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -1090,7 +1095,6 @@ dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
     const char *software_key = "Software";
     char software_text[256];
     png_text text_png;
-    const byte *buf_ptr = pbuf->data + pbuf->rect.p.y * pbuf->rowstride + pbuf->rect.p.x;;
     FILE *file;
     int code;
     int y;
@@ -1198,24 +1202,27 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
     gx_image_enum_common_t *info;
     pdf14_buf *buf = pdev->ctx->stack;
     gs_int_rect rect = buf->rect;
-    int x1 = min(pdev->width, rect.q.x);
-    int y1 = min(pdev->height, rect.q.y);
-    int width = x1 - rect.p.x;
-    int height = y1 - rect.p.y;
     int y;
     int planestride = buf->planestride;
     int num_comp = buf->n_chan - 1;
-    byte *buf_ptr = buf->data + rect.p.y * buf->rowstride + rect.p.x;
     byte *linebuf;
     gs_color_space *pcs;
     const byte bg = pdev->ctx->additive ? 255 : 0;
+    int x1, y1, width, height;
+    byte *buf_ptr;
 
+    if_debug0('v', "[v]pdf14_put_image\n");
+    rect_intersect(rect, buf->bbox);
+    x1 = min(pdev->width, rect.q.x);
+    y1 = min(pdev->height, rect.q.y);
+    width = x1 - rect.p.x;
+    height = y1 - rect.p.y;
 #ifdef DUMP_TO_PNG
     dump_planar_rgba(pdev->memory, buf);
 #endif
-
     if (width <= 0 || height <= 0 || buf->data == NULL)
 	return 0;
+    buf_ptr = buf->data + rect.p.y * buf->rowstride + rect.p.x;
 
 #if 0
     /* Set graphics state device to target, so that image can set up
@@ -1224,7 +1231,6 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
     gs_setdevice_no_init(pgs, target);
 #endif
 
-    if_debug0('v', "[v]pdf14_put_image\n");
     /*
      * Set color space to either Gray, RGB, or CMYK in preparation for sending
      * an image.
@@ -1342,13 +1348,8 @@ pdf14_cmykspot_put_image(gx_device * dev, gs_imager_state * pis, gx_device * tar
     int x, y, tmp, comp_num, output_comp_num;
     pdf14_buf *buf = pdev->ctx->stack;
     gs_int_rect rect = buf->rect;
-    int x1 = min(pdev->width, rect.q.x);
-    int y1 = min(pdev->height, rect.q.y);
-    int width = x1 - rect.p.x;
-    int height = y1 - rect.p.y;
     int planestride = buf->planestride;
     int num_comp = buf->n_chan - 1;
-    byte *buf_ptr = buf->data + rect.p.y * buf->rowstride + rect.p.x;
     const byte bg = pdev->ctx->additive ? gx_max_color_value : 0;
     gx_color_index color;
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -1361,11 +1362,18 @@ pdf14_cmykspot_put_image(gx_device * dev, gs_imager_state * pis, gx_device * tar
     gs_devn_params * pdevn_params = &pdev->devn_params;
     gs_separations * pseparations = &pdevn_params->separations;
     int num_sep = pseparations->num_separations++;
+    int x1, y1, width, height;
+    byte *buf_ptr;
 
     if_debug0('v', "[v]pdf14_cmykspot_put_image\n");
-
+    rect_intersect(rect, buf->bbox);
+    x1 = min(pdev->width, rect.q.x);
+    y1 = min(pdev->height, rect.q.y);
+    width = x1 - rect.p.x;
+    height = y1 - rect.p.y;
     if (width <= 0 || height <= 0 || buf->data == NULL)
 	return 0;
+    buf_ptr = buf->data + rect.p.y * buf->rowstride + rect.p.x;
 
     /*
      * The process color model for the PDF 1.4 compositor device is CMYK plus
@@ -1458,23 +1466,25 @@ pdf14_custom_put_image(gx_device * dev, gs_imager_state * pis, gx_device * targe
     int x, y, tmp, comp_num;
     pdf14_buf *buf = pdev->ctx->stack;
     gs_int_rect rect = buf->rect;
-    int x1 = min(pdev->width, rect.q.x);
-    int y1 = min(pdev->height, rect.q.y);
-    int width = x1 - rect.p.x;
-    int height = y1 - rect.p.y;
     int planestride = buf->planestride;
     int num_comp = buf->n_chan - 1;
-    byte *buf_ptr = buf->data + rect.p.y * buf->rowstride + rect.p.x;
     const byte bg = pdev->ctx->additive ? gx_max_color_value : 0;
     gx_color_index color;
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value comp;
     byte a;
+    int x1, y1, width, height;
+    byte *buf_ptr;
 
     if_debug0('v', "[v]pdf14_custom_put_image\n");
-
+    rect_intersect(rect, buf->bbox);
+    x1 = min(pdev->width, rect.q.x);
+    y1 = min(pdev->height, rect.q.y);
+    width = x1 - rect.p.x;
+    height = y1 - rect.p.y;
     if (width <= 0 || height <= 0 || buf->data == NULL)
 	return 0;
+    buf_ptr = buf->data + rect.p.y * buf->rowstride + rect.p.x;
 
     /* Send pixel data to the target device. */
     for (y = 0; y < height; y++) {
