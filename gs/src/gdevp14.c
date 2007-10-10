@@ -547,7 +547,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape,
     result->rowstride = rowstride;
     result->transfer_fn = NULL;
     
-    if (height < 0) {
+    if (height <= 0) {
 	/* Empty clipping - will skip all drawings. */
 	result->planestride = 0;
 	result->data = 0;
@@ -598,7 +598,8 @@ pdf14_ctx_new(gs_int_rect *rect, int n_chan, bool additive, gs_memory_t	*memory)
     }
     if_debug3('v', "[v]base buf: %d x %d, %d channels\n",
 	      buf->rect.q.x, buf->rect.q.y, buf->n_chan);
-    memset(buf->data, 0, buf->planestride * buf->n_planes);
+    if (buf->data != NULL)
+	memset(buf->data, 0, buf->planestride * buf->n_planes);
     buf->saved = NULL;
     result->stack = buf;
     result->maskbuf = NULL;
@@ -674,6 +675,9 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect,
 
     buf->saved = tos;
     ctx->stack = buf;
+
+    if (buf->data == NULL)
+	return 0;
 
     backdrop = pdf14_find_backdrop_buf(ctx);
     if (backdrop == NULL) {
@@ -905,7 +909,8 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 
     buf->saved = ctx->stack;
     ctx->stack = buf;
-    memset(buf->data, 0, buf->planestride * buf->n_chan);
+    if (buf->data != NULL)
+	memset(buf->data, 0, buf->planestride * buf->n_chan);
     return 0;
 }
 
@@ -1090,7 +1095,10 @@ dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
     int code;
     int y;
 
-	file = fopen ("c:\\temp\\tmp.png", "wb");
+    if (buf->data == NULL)
+	return 0;
+
+    file = fopen ("c:\\temp\\tmp.png", "wb");
 
     if_debug0('v', "[v]pnga_output_page\n");
 
@@ -1205,7 +1213,7 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
     dump_planar_rgba(pdev->memory, buf);
 #endif
 
-    if (width <= 0 || height <= 0)
+    if (width <= 0 || height <= 0 || buf->data == NULL)
 	return 0;
 
 #if 0
@@ -1353,6 +1361,10 @@ pdf14_cmykspot_put_image(gx_device * dev, gs_imager_state * pis, gx_device * tar
     int num_sep = pseparations->num_separations++;
 
     if_debug0('v', "[v]pdf14_cmykspot_put_image\n");
+
+    if (width <= 0 || height <= 0 || buf->data == NULL)
+	return 0;
+
     /*
      * The process color model for the PDF 1.4 compositor device is CMYK plus
      * spot colors.  The target device may have only some of these colorants due
@@ -1457,6 +1469,9 @@ pdf14_custom_put_image(gx_device * dev, gs_imager_state * pis, gx_device * targe
     byte a;
 
     if_debug0('v', "[v]pdf14_custom_put_image\n");
+
+    if (width <= 0 || height <= 0 || buf->data == NULL)
+	return 0;
 
     /* Send pixel data to the target device. */
     for (y = 0; y < height; y++) {
@@ -2245,6 +2260,9 @@ pdf14_mark_fill_rectangle(gx_device * dev,
     byte shape = 0; /* Quiet compiler. */
     byte src_alpha;
 
+    if (buf->data == NULL)
+	return 0;
+
     /* NB: gx_color_index is 4 or 8 bytes */
     if (sizeof(color) <= sizeof(ulong))
 	if_debug7('v', "[v]pdf14_mark_fill_rectangle, (%d, %d), %d x %d color = %lx  bm %d, nc %d,\n", 
@@ -2335,6 +2353,9 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
     bool has_shape = buf->has_shape;
     byte opacity;
     bool additive = pdev->ctx->additive;
+
+    if (buf->data == NULL)
+	return 0;
 
     if (sizeof(color) <= sizeof(ulong))
 	if_debug6('v', "[v]pdf14_mark_fill_rectangle_ko_simple, (%d, %d), %d x %d color = %lx, nc %d,\n", 
