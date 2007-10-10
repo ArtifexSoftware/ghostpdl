@@ -24,9 +24,10 @@
 
 cups_=	$(GLOBJ)gdevcups.$(OBJ)
 
-CUPSSERVER=`cups-config --serverbin`
-CUPSCONFIG=`cups-config --serverroot`
-CUPSDATA=`cups-config --datadir`
+# These are set in the toplevel Makefile via autoconf(1)
+# CUPSSERVERBIN=`cups-config --serverbin`
+# CUPSSERVERROOT=`cups-config --serverroot`
+# CUPSDATA=`cups-config --datadir`
 
 $(DD)cups.dev:	$(cups_) $(GLD)page.dev
 	$(ADDMOD) $(DD)cups -lib cupsimage -lib cups
@@ -38,11 +39,11 @@ $(GLOBJ)gdevcups.$(OBJ): cups/gdevcups.c $(PDEVH)
 install:	install-cups
 
 install-cups:
-	-mkdir -p $(DESTDIR)$(CUPSSERVER)/filter
-	$(INSTALL_PROGRAM) cups/pstoraster $(DESTDIR)$(CUPSSERVER)/filter
-	$(INSTALL_PROGRAM) cups/pstopxl $(DESTDIR)$(CUPSSERVER)/filter
-	-mkdir -p $(DESTDIR)$(CUPSCONFIG)
-	$(INSTALL_DATA) cups/pstoraster.convs $(DESTDIR)$(CUPSCONFIG)
+	-mkdir -p $(DESTDIR)$(CUPSSERVERBIN)/filter
+	$(INSTALL_PROGRAM) cups/pstoraster $(DESTDIR)$(CUPSSERVERBIN)/filter
+	$(INSTALL_PROGRAM) cups/pstopxl $(DESTDIR)$(CUPSSERVERBIN)/filter
+	-mkdir -p $(DESTDIR)$(CUPSSERVERROOT)
+	$(INSTALL_DATA) cups/pstoraster.convs $(DESTDIR)$(CUPSSERVERROOT)
 	-mkdir -p $(DESTDIR)$(CUPSDATA)/model
 	$(INSTALL_DATA) cups/pxlcolor.ppd $(DESTDIR)$(CUPSDATA)/model
 	$(INSTALL_DATA) cups/pxlmono.ppd $(DESTDIR)$(CUPSDATA)/model

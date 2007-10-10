@@ -350,9 +350,9 @@ AC_ARG_ENABLE(cups, [  --enable-cups           turn on CUPS support, default=yes
 CUPSDEV=""
 CUPSINCLUDE=""
 CUPSCONFIG="${CUPSCONFIG:=}"
-cups_datadir="/usr/share/cups"
-cups_serverroot="/etc/cups"
-cups_serverbin="/usr/lib/cups"
+CUPSSERVERBIN=""
+CUPSSERVERROOT=""
+CUPSDATA=""
 
 if ( test -d cups ); then
     if test x$enable_cups != xno; then
@@ -363,9 +363,9 @@ if ( test -d cups ); then
 #	    LIBS="`$CUPSCONFIG --ldflags` `$CUPSCONFIG --static --image --libs | sed -e '1,$s/-lssl//'` $LIBS"
 	    LIBS="`$CUPSCONFIG --ldflags` `$CUPSCONFIG --image --libs` $LIBS"
 	    CFLAGS="`$CUPSCONFIG --cflags` $CFLAGS"
-	    cups_serverroot="`$CUPSCONFIG --serverroot`"
-	    cups_serverbin="`$CUPSCONFIG --serverbin`"
-	    cups_datadir="`$CUPSCONFIG --datadir`"
+	    CUPSSERVERROOT="`$CUPSCONFIG --serverroot`"
+	    CUPSSERVERBIN="`$CUPSCONFIG --serverbin`"
+	    CUPSDATA="`$CUPSCONFIG --datadir`"
 	    CUPSINCLUDE="include cups/cups.mak"
 	    CUPSDEV="\$(DD)cups.dev"
 	fi
@@ -373,11 +373,11 @@ if ( test -d cups ); then
 fi
 
 AC_SUBST(CUPSDEV)
-AC_SUBST(CUPSCONFIG)
 AC_SUBST(CUPSINCLUDE)
-AC_SUBST(cups_datadir)
-AC_SUBST(cups_serverroot)
-AC_SUBST(cups_serverbin)
+AC_SUBST(CUPSSERVERBIN)
+AC_SUBST(CUPSSERVERROOT)
+AC_SUBST(CUPSDATA)
+
 
 dnl look for IJS implementation
 AC_ARG_WITH(ijs, AC_HELP_STRING([--with-ijs],[include IJS driver support]))
