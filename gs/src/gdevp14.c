@@ -1197,14 +1197,15 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
     gs_matrix pmat;
     gx_image_enum_common_t *info;
     pdf14_buf *buf = pdev->ctx->stack;
-    int x1 = min(pdev->width, buf->rect.q.x);
-    int y1 = min(pdev->height, buf->rect.q.y);
-    int width = x1 - buf->rect.p.x;
-    int height = y1 - buf->rect.p.y;
+    gs_int_rect rect = buf->rect;
+    int x1 = min(pdev->width, rect.q.x);
+    int y1 = min(pdev->height, rect.q.y);
+    int width = x1 - rect.p.x;
+    int height = y1 - rect.p.y;
     int y;
     int planestride = buf->planestride;
     int num_comp = buf->n_chan - 1;
-    byte *buf_ptr = buf->data + buf->rect.p.y * buf->rowstride + buf->rect.p.x;
+    byte *buf_ptr = buf->data + rect.p.y * buf->rowstride + rect.p.x;
     byte *linebuf;
     gs_color_space *pcs;
     const byte bg = pdev->ctx->additive ? 255 : 0;
@@ -1254,8 +1255,8 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
     pmat.xy = 0;
     pmat.yx = 0;
     pmat.yy = (float)height;
-    pmat.tx = (float)buf->rect.p.x;
-    pmat.ty = (float)buf->rect.p.y;
+    pmat.tx = (float)rect.p.x;
+    pmat.ty = (float)rect.p.y;
     code = dev_proc(target, begin_typed_image) (target,
 						pis, &pmat,
 						(gs_image_common_t *)&image,
@@ -1340,13 +1341,14 @@ pdf14_cmykspot_put_image(gx_device * dev, gs_imager_state * pis, gx_device * tar
     int code = 0;
     int x, y, tmp, comp_num, output_comp_num;
     pdf14_buf *buf = pdev->ctx->stack;
-    int x1 = min(pdev->width, buf->rect.q.x);
-    int y1 = min(pdev->height, buf->rect.q.y);
-    int width = x1 - buf->rect.p.x;
-    int height = y1 - buf->rect.p.y;
+    gs_int_rect rect = buf->rect;
+    int x1 = min(pdev->width, rect.q.x);
+    int y1 = min(pdev->height, rect.q.y);
+    int width = x1 - rect.p.x;
+    int height = y1 - rect.p.y;
     int planestride = buf->planestride;
     int num_comp = buf->n_chan - 1;
-    byte *buf_ptr = buf->data + buf->rect.p.y * buf->rowstride + buf->rect.p.x;
+    byte *buf_ptr = buf->data + rect.p.y * buf->rowstride + rect.p.x;
     const byte bg = pdev->ctx->additive ? gx_max_color_value : 0;
     gx_color_index color;
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -1427,8 +1429,8 @@ pdf14_cmykspot_put_image(gx_device * dev, gs_imager_state * pis, gx_device * tar
 		}
 	    }
 	    color = dev_proc(target, encode_color)(target, cv);
-	    code = dev_proc(target, fill_rectangle)(target, x + buf->rect.p.x, 
-							    y + buf->rect.p.y, 1, 1, color);
+	    code = dev_proc(target, fill_rectangle)(target, x + rect.p.x, 
+							    y + rect.p.y, 1, 1, color);
 	}
 
 	buf_ptr += buf->rowstride;
@@ -1455,13 +1457,14 @@ pdf14_custom_put_image(gx_device * dev, gs_imager_state * pis, gx_device * targe
     int code = 0;
     int x, y, tmp, comp_num;
     pdf14_buf *buf = pdev->ctx->stack;
-    int x1 = min(pdev->width, buf->rect.q.x);
-    int y1 = min(pdev->height, buf->rect.q.y);
-    int width = x1 - buf->rect.p.x;
-    int height = y1 - buf->rect.p.y;
+    gs_int_rect rect = buf->rect;
+    int x1 = min(pdev->width, rect.q.x);
+    int y1 = min(pdev->height, rect.q.y);
+    int width = x1 - rect.p.x;
+    int height = y1 - rect.p.y;
     int planestride = buf->planestride;
     int num_comp = buf->n_chan - 1;
-    byte *buf_ptr = buf->data + buf->rect.p.y * buf->rowstride + buf->rect.p.x;
+    byte *buf_ptr = buf->data + rect.p.y * buf->rowstride + rect.p.x;
     const byte bg = pdev->ctx->additive ? gx_max_color_value : 0;
     gx_color_index color;
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -1499,8 +1502,8 @@ pdf14_custom_put_image(gx_device * dev, gs_imager_state * pis, gx_device * targe
 		}
 	    }
 	    color = dev_proc(target, encode_color)(target, cv);
-	    code = dev_proc(target, fill_rectangle)(target, x + buf->rect.p.x, 
-							    y + buf->rect.p.y, 1, 1, color);
+	    code = dev_proc(target, fill_rectangle)(target, x + rect.p.x, 
+							    y + rect.p.y, 1, 1, color);
 	}
 
 	buf_ptr += buf->rowstride;
