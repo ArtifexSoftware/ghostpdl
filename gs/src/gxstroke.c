@@ -236,7 +236,7 @@ gx_default_stroke_path(gx_device * dev, const gs_imager_state * pis,
 /* Fill a partial stroked path.  Free variables: */
 /* to_path, stroke_path_body, fill_params, always_thin, pis, dev, pdevc, */
 /* code, ppath, exit(label). */
-#define FILL_STROKE_PATH(thin, pcpath)\
+#define FILL_STROKE_PATH(dev, thin, pcpath)\
   if(to_path==&stroke_path_body && !gx_path_is_void(&stroke_path_body)) {\
     fill_params.adjust.x = STROKE_ADJUSTMENT(thin, pis, x);\
     fill_params.adjust.y = STROKE_ADJUSTMENT(thin, pis, y);\
@@ -276,7 +276,7 @@ typedef enum {
 
 /*
  * Stroke a path.  If to_path != 0, append the stroke outline to it;
- * if to_path == 0, draw the strokes on dev.
+ * if to_path == 0, draw the strokes on pdev.
  *
  * Note that gx_stroke_path_only with to_path != NULL may clip the path to
  * the clipping path, as for to_path == NULL.  This is almost never
@@ -285,7 +285,7 @@ typedef enum {
 static int
 gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	       const gs_imager_state * pis, const gx_stroke_params * params,
-		 const gx_device_color * pdevc, const gx_clip_path * pcpath0)
+		 const gx_device_color * pdevc, const gx_clip_path * pcpath)
 {
     extern bool CPSI_mode;
     stroke_line_proc_t line_proc =
@@ -302,7 +302,6 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
     const gx_path *spath;
     float xx = pis->ctm.xx, xy = pis->ctm.xy;
     float yx = pis->ctm.yx, yy = pis->ctm.yy;
-    const gx_clip_path * pcpath = pcpath0;
     /*
      * We are dealing with a reflected coordinate system
      * if transform(1,0) is counter-clockwise from transform(0,1).
@@ -406,7 +405,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
     if (pcpath)
 	gx_cpath_inner_box(pcpath, &cbox);
     else if (pdevc)
-	(*dev_proc(dev, get_clipping_box)) (dev, &cbox);
+	(*dev_proc(pdev, get_clipping_box)) (pdev, &cbox);
     else {
 	/* This is strokepath, not stroke.  Don't clip. */
 	cbox = ibox;
@@ -434,14 +433,23 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	 * If we had to flatten the path, this is where we would
 	 * recompute its bbox and make the tests again,
 	 * but we don't bother right now.
-	 *
-	 * If there is a clipping path, set up a clipping device.
 	 */
-	if (pcpath) {
-	    gx_make_clip_device_on_stack(&cdev, pcpath, dev);
-	    cdev.max_fill_band = dev->max_fill_band;
-	    dev = (gx_device *) & cdev;
-	    pcpath = NULL;
+	/*
+	 * If there is a clipping path, set up a clipping device.
+	 * for stroke_fill because, because the latter uses low level methods 
+	 * which don't accept a clipping path.
+	 * Note that in some cases stroke_fill appends the path to stroke_path_body
+	 * instead a real painting, and it is painted with FILL_STROKE_PATH.
+	 * 
+	 * Contrary to that, FILL_STROKE_PATH paints a path with 
+	 * the fill_path method, which handles a clipping path,
+	 * so we don't pass the clipper device to FILL_STROKE_PATH
+	 * to prevent an appearence of superposing clippers.
+	 */
+	if (pcpath && line_proc == stroke_fill) {
+	    gx_make_clip_device_on_stack(&cdev, pcpath, pdev);
+	    cdev.max_fill_band = pdev->max_fill_band;
+	    dev = (gx_device *)&cdev;
 	}
     }
     fill_params.rule = gx_rule_winding_number;
@@ -758,7 +766,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 				     uniform, join, initial_matrix_reflected);
 		if (code < 0)
 		    goto exit;
-		FILL_STROKE_PATH(always_thin, pcpath);
+		FILL_STROKE_PATH(pdev, always_thin, pcpath);
 	    } else
 		pl_first = pl;
 	    pl_prev = pl;
@@ -780,13 +788,13 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 				 initial_matrix_reflected);
 	    if (code < 0)
 		goto exit;
-	    FILL_STROKE_PATH(always_thin, pcpath);
+	    FILL_STROKE_PATH(pdev, always_thin, pcpath);
 	    if (CPSI_mode && lptr == 0 && pgs_lp->cap != gs_cap_butt) {
 		/* Create the initial cap at last. */
 		code = stroke_add_initial_cap_compat(to_path, &pl_first, index == 1, pdevc, dev, pis);
 		if (code < 0)
 		    goto exit;
-		FILL_STROKE_PATH(always_thin, pcpath);
+		FILL_STROKE_PATH(pdev, always_thin, pcpath);
 	    }
 	}
 	psub = (const subpath *)pseg;
