@@ -1422,7 +1422,7 @@ pdf14_cmykspot_put_image(gx_device * dev, gs_imager_state * pis, gx_device * tar
 		a ^= 0xff;
 		for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
 		    comp  = buf_ptr[x + planestride * input_map[comp_num]];
-		    tmp = ((bg - comp) * a) + 0x80;
+		    tmp = ((comp - bg) * a) + 0x80;
 		    comp += tmp + (tmp >> 8);
 		    cv[output_map[comp_num]] = comp;
 		}
