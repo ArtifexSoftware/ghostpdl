@@ -206,10 +206,10 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 	{
 	    *pargs++ = s++;
 	}
-	else if ((*s >= '0' && *s <= '9') || *s == '.' || *s == '+' || *s == '-' || *s == 'e')
+	else if ((*s >= '0' && *s <= '9') || *s == '.' || *s == '+' || *s == '-' || *s == 'e' || *s == 'E')
 	{
 	    *pargs++ = s;
-	    while ((*s >= '0' && *s <= '9') || *s == '.' || *s == '+' || *s == '-' || *s == 'e')
+	    while ((*s >= '0' && *s <= '9') || *s == '.' || *s == '+' || *s == '-' || *s == 'e' || *s == 'E')
 		s ++;
 	}
 	else
