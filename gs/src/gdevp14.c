@@ -61,6 +61,11 @@
 
 # define INCR(v) DO_NOTHING
 
+/* Prototypes to quiet gcc warnings */
+void pdf14_cmyk_cs_to_cmyk_cm(gx_device *, frac, frac, frac, frac, frac *);
+int gs_pdf14_device_push(gs_memory_t *, gs_imager_state *, gx_device **,
+			gx_device *, const gs_pdf14trans_t *);
+
 /* Buffer stack	data structure */
 
 #define	PDF14_MAX_PLANES GX_DEVICE_COLOR_MAX_COMPONENTS
@@ -3750,7 +3755,7 @@ pdf14_clist_get_param_compressed_color_list(pdf14_device * p14dev)
     code = get_param_compressed_color_list_elem(p14dev,
 		(gs_param_list *)&param_list,
 		p14dev->devn_params.compressed_color_list,
-       		PDF14CompressedColorListParamName, &pkeyname_list_head);
+       		(char *)PDF14CompressedColorListParamName, &pkeyname_list_head);
     get_param_spot_color_names(p14dev, (gs_param_list *)&param_list,
 		   	 &pkeyname_list_head);
     if (code >= 0) {
@@ -3795,7 +3800,7 @@ pdf14_put_devn_params(gx_device * pdev, gs_devn_params * pdevn_params,
 {
     int code = put_param_compressed_color_list_elem(pdev, plist,
 	    &pdevn_params->pdf14_compressed_color_list,
-	    PDF14CompressedColorListParamName, TOP_ENCODED_LEVEL);
+	    (char *)PDF14CompressedColorListParamName, TOP_ENCODED_LEVEL);
     if (code >= 0)
        code = put_param_pdf14_spot_names(pdev,
 		       &pdevn_params->pdf14_separations, plist);
@@ -4301,6 +4306,7 @@ pdf14_cmykspot_get_color_comp_index(gx_device * dev, const char * pname,
     gs_devn_params * pdevn_params = &pdev->devn_params;
     gs_separations * pseparations = &pdevn_params->separations;
     int comp_index;
+    dev_proc_get_color_comp_index(*target_get_color_comp_index) = dev_proc(tdev, get_color_comp_index);
 
     /*
      * If this is not a separation name then simply forward it to the target
@@ -4323,8 +4329,10 @@ pdf14_cmykspot_get_color_comp_index(gx_device * dev, const char * pname,
     /*
      * If we do not know this color, check if the output (target) device does.
      */
-     comp_index = dev_proc(tdev, get_color_comp_index)
-				(tdev, pname, name_size, component_type);
+    
+    if (target_get_color_comp_index == pdf14_cmykspot_get_color_comp_index)
+	target_get_color_comp_index = ((pdf14_clist_device *)pdev)->saved_target_get_color_comp_index;
+    comp_index = (*target_get_color_comp_index)(tdev, pname, name_size, component_type);
     /*
      * Ignore color if unknown to the output device or if color is not being
      * imaged due to the SeparationOrder device parameter.
