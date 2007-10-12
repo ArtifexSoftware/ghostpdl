@@ -310,6 +310,7 @@ int xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font)
 	p42->WMode = 0;
 	p42->PaintType = 0;
 	p42->StrokeWidth = 0;
+	p42->is_cached = 0;
 
 	p42->procs.init_fstack = gs_default_init_fstack;
 	p42->procs.next_char_glyph = gs_default_next_char_glyph;
@@ -337,8 +338,8 @@ int xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font)
 
 	uid_set_UniqueID(&p42->UID, p42->id);
 
-	p42->encoding_index = ENCODING_INDEX_UNKNOWN;
-	p42->nearest_encoding_index = ENCODING_INDEX_UNKNOWN;
+	p42->encoding_index = ENCODING_INDEX_ISOLATIN1;
+	p42->nearest_encoding_index = ENCODING_INDEX_ISOLATIN1;
 
 	p42->FAPI = 0;
 	p42->FAPI_font_data = 0;

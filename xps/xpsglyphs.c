@@ -162,6 +162,33 @@ int xps_flush_text_buffer(xps_context_t *ctx, xps_font_t *font,
 
     // dprintf1("flushing text buffer (%d glyphs)\n", buf->count);
 
+#if 1 /* one glyph at a time */
+
+    for (i = 0; i < buf->count; i++)
+    {
+	gs_moveto(ctx->pgs, buf->x[i], buf->y[i]);
+
+	params.operation = TEXT_FROM_SINGLE_GLYPH;
+	if (is_charpath)
+	    params.operation |= TEXT_DO_FALSE_CHARPATH;
+	else
+	    params.operation |= TEXT_DO_DRAW;
+	params.data.d_glyph = buf->g[i];
+	params.size = 1;
+
+	code = gs_text_begin(ctx->pgs, &params, ctx->memory, &textenum);
+	if (code != 0)
+	    return gs_throw1(-1, "cannot gs_text_begin() (%d)", code);
+
+	code = gs_text_process(textenum);
+	if (code != 0)
+	    return gs_throw1(-1, "cannot gs_text_process() (%d)", code);
+
+	gs_text_release(textenum, "gslt font render");
+    }
+
+#else
+
     gs_moveto(ctx->pgs, x, y);
 
     params.operation = TEXT_FROM_GLYPHS | TEXT_REPLACE_WIDTHS;
@@ -194,6 +221,7 @@ int xps_flush_text_buffer(xps_context_t *ctx, xps_font_t *font,
 	return gs_throw1(-1, "cannot gs_text_process() (%d)", code);
 
     gs_text_release(textenum, "gslt font render");
+#endif
 
     buf->count = 0;
 
