@@ -4308,13 +4308,15 @@ pdf14_cmykspot_get_color_comp_index(gx_device * dev, const char * pname,
     int comp_index;
     dev_proc_get_color_comp_index(*target_get_color_comp_index) = dev_proc(tdev, get_color_comp_index);
 
+    /* The pdf14_clist_create_compositor may have set the color procs. We need the real target procs */
+    if (target_get_color_comp_index == pdf14_cmykspot_get_color_comp_index)
+	target_get_color_comp_index = ((pdf14_clist_device *)pdev)->saved_target_get_color_comp_index;
     /*
      * If this is not a separation name then simply forward it to the target
      * device.
      */
     if (component_type == NO_COMP_NAME_TYPE)
-	return dev_proc(tdev, get_color_comp_index)
-				(tdev, pname, name_size, component_type);
+	return  (*target_get_color_comp_index)(tdev, pname, name_size, component_type);
     /*
      * Check if the component is in either the process color model list
      * or in the SeparationNames list.
@@ -4329,9 +4331,6 @@ pdf14_cmykspot_get_color_comp_index(gx_device * dev, const char * pname,
     /*
      * If we do not know this color, check if the output (target) device does.
      */
-    
-    if (target_get_color_comp_index == pdf14_cmykspot_get_color_comp_index)
-	target_get_color_comp_index = ((pdf14_clist_device *)pdev)->saved_target_get_color_comp_index;
     comp_index = (*target_get_color_comp_index)(tdev, pname, name_size, component_type);
     /*
      * Ignore color if unknown to the output device or if color is not being
