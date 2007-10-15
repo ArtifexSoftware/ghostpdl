@@ -273,16 +273,25 @@ pdf_initialize_ids(gx_device_pdf * pdev)
      * PostScript file.  We think this is wrong, but we do the same.
      */
     {
-	struct tm tms;
+        struct tm tms;
 	time_t t;
-	char buf[1+2+4+2+2+2+2+2+2+1+1+7]; /* (D:yyyymmddhhmmssZhh'mm')\0 */
+        char buf[1+2+4+2+2+2+2+2+1+2+1+2+1+1+1]; /* (D:yyyymmddhhmmssZhh'mm')\0 */
+	int timeoffset;
+        char timesign;
 
 	time(&t);
 	tms = *gmtime(&t);
-	sprintf(buf,
-		"(D:%04d%02d%02d%02d%02d%02dZ)",
-		tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
-		tms.tm_hour, tms.tm_min, tms.tm_sec);
+        tms.tm_isdst = -1;
+	timeoffset = (int)difftime(t, mktime(&tms)); /* tz+dst in seconds */
+        timesign = (timeoffset == 0 ? 'Z' : timeoffset < 0 ? '-' : '+');
+	timeoffset = any_abs(timeoffset) / 60;
+        tms = *localtime(&t);
+
+	sprintf(buf, "(D:%04d%02d%02d%02d%02d%02d%c%02d\'%02d\')",
+	    tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
+	    tms.tm_hour, tms.tm_min, tms.tm_sec,
+	    timesign, timeoffset / 60, timeoffset % 60);
+
 	cos_dict_put_c_key_string(pdev->Info, "/CreationDate", (byte *)buf,
 				  strlen(buf));
 	cos_dict_put_c_key_string(pdev->Info, "/ModDate", (byte *)buf,
