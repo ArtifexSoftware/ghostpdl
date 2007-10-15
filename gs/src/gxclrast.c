@@ -1302,7 +1302,7 @@ idata:			data_size = 0;
 		continue;
 	    case cmd_op_segment >> 4:
 		{
-		    int i, code;
+		    int i;
 		    static const byte op_num_operands[] = {
 			cmd_segment_op_num_operands_values
 		    };
