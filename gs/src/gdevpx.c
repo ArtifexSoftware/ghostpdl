@@ -1534,6 +1534,10 @@ pclxl_begin_image(gx_device * dev,
     gs_free_object(mem, row_data, "pclxl_begin_image(rows)");
     gs_free_object(mem, pie, "pclxl_begin_image");
  use_default:
+    if (dev->color_info.num_components == 1)
+        pclxl_set_color_space(xdev, eGray);
+    else
+        pclxl_set_color_space(xdev, eRGB);
     return gx_default_begin_image(dev, pis, pim, format, prect,
 				  pdcolor, pcpath, mem, pinfo);
 }
