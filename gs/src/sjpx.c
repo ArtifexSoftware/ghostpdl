@@ -52,9 +52,8 @@ s_jpxd_init(stream_state * ss)
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
     int status = 0;
 
-    s_jpxd_set_defaults(ss);
     state->jpx_memory = ss->memory ? ss->memory->non_gc_memory : gs_lib_ctx_get_non_gc_memory_t();
-            
+
     status = jas_init();
     jas_set_error_cb(s_jpx_jas_error_cb);
 #ifdef JPX_DEBUG
@@ -430,21 +429,22 @@ s_jpxd_release(stream_state *ss)
 }
 
 /* set stream defaults.
-   this hook exists to avoid confusing the gc with bogus
-   pointers. we use it similarly just to NULL all the pointers.
-   (could just be done in _init?)
+   This hook exists to avoid confusing the gc with bogus
+   pointers. We also set a default for client-settable 
+   parameters like the requested output colorspace.
  */
 static void
 s_jpxd_set_defaults(stream_state *ss)
 {
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
-    
+
     state->stream = NULL;
     state->image = NULL;
     state->offset = 0;
     state->buffer = NULL;
     state->bufsize = 0;
     state->buffill = 0;
+    /* the following can be set by the client before calling init() */
     state->colorspace = gs_jpx_cs_unset;
 }
 

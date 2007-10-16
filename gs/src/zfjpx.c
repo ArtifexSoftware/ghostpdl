@@ -13,9 +13,9 @@
 
 /* $Id$ */
 
-/* this is the ps interpreter interface to the JPXDecode filter
+/* This is the ps interpreter interface to the JPXDecode filter
    used for (JPEG2000) scanned image compression. PDF only specifies
-   a decoder filter, and we don't currently implement anything else */
+   a decoder filter, and we don't currently implement anything else. */
 
 #include "memory_.h"
 #include "ghost.h"
@@ -47,6 +47,8 @@ z_jpx_decode(i_ctx_t * i_ctx_p)
     ref *csname = NULL;
     stream_jpxd_state state;
 
+    /* it's our responsibility to call set_defaults() */
+    (*s_jpxd_template.set_defaults)(&state);
     state.jpx_memory = imemory->non_gc_memory;
     if (r_has_type(op, t_dictionary)) {
         check_dict_read(*op);
