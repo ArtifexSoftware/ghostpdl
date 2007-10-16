@@ -88,12 +88,39 @@ write_uid(stream *s, const gs_uid *puid)
 /* Write the font name. */
 static void
 write_font_name(stream *s, const gs_font_type1 *pfont,
-		const gs_const_string *alt_font_name)
+		const gs_const_string *alt_font_name, bool as_name)
 {
-    if (alt_font_name)
-	stream_write(s, alt_font_name->data, alt_font_name->size);
-    else
-	stream_write(s, pfont->font_name.chars, pfont->font_name.size);
+    const byte *c;
+    const byte *name = (alt_font_name ? alt_font_name->data : pfont->font_name.chars);
+    int         n    = (alt_font_name ? alt_font_name->size : pfont->font_name.size);
+
+    if (n == 0)
+	/* empty name, may need to write it as empty string */
+	stream_puts(s, (as_name ? "/" : "()"));
+    else {
+	for (c = (byte *)"()<>[]{}/% \n\r\t\b\f\004\033"; *c; c++)
+	    if (memchr(name, *c, n))
+		break;
+	if (*c || memchr(name, 0, n)) {
+	    /* name contains whitespace (NUL included) or a PostScript separator */
+	    byte pssebuf[1 + 4 * gs_font_name_max + 1]; /* "(" + "\ooo" * gs_font_name_max + ")" */
+	    stream_cursor_read  r;
+	    stream_cursor_write w;
+
+	    pssebuf[0] = '(';
+	    r.limit = (r.ptr = name - 1) + n;
+	    w.limit = (w.ptr = pssebuf) + sizeof pssebuf - 1;
+	    s_PSSE_template.process(NULL, &r, &w, true);
+	    stream_write(s, pssebuf, w.ptr - pssebuf + 1);
+	    if (as_name)
+		stream_puts(s, " cvn");
+	} else {
+	    /* name without any special characters */
+	    if (as_name)
+		stream_putc(s, '/');
+	    stream_write(s, name, n);
+	}
+    }
 }
 /*
  * Write the Encoding array.  This is a separate procedure only for
@@ -390,7 +417,7 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
     /* Write the font header. */
 
     stream_puts(s, "%!FontType1-1.0: ");
-    write_font_name(s, pfont, alt_font_name);
+    write_font_name(s, pfont, alt_font_name, false);
     stream_puts(s, "\n11 dict begin\n");
 
     /* Write FontInfo. */
@@ -418,8 +445,8 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
 
     /* Write the main font dictionary. */
 
-    stream_puts(s, "/FontName /");
-    write_font_name(s, pfont, alt_font_name);
+    stream_puts(s, "/FontName ");
+    write_font_name(s, pfont, alt_font_name, true);
     stream_puts(s, " def\n");
     code = write_Encoding(s, pfont, options, glyphs.subset_glyphs,
 			  glyphs.subset_size, glyphs.notdef);

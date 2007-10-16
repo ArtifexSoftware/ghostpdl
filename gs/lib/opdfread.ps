@@ -925,6 +925,35 @@ currentdict end readonly def
   /Subtype get 1 index exch /FontFileType exch put
 } bind def
 
+/UnPDFEscape {	% <namepdf> UnPDFEscape <nameps>
+  dup dup length string cvs				    % /namepdf (name)
+  dup (#) search {
+    % name contains PDF-style escapes ("#hh") that need to be removed
+    {												% ... (po..st) (#) (pre)
+      pop											% ... (po..st) (#)
+      (16#--) 2 index 0 2 getinterval				% ... (po..st) (#) (16#--) (po)
+      1 index 3 2 getinterval copy pop				% ... (po..st) (#) (16#po)
+      cvi											% ... (po..st) (#) 16#po
+      0 exch put									% ... (po..st); 16#po patched into (#)
+      0												% ... (po..st) 0
+      1 index 2 1 index length 2 sub getinterval    % ... (po..st) 0 (..st)
+      3 copy putinterval							% ... (..stst) 0 (XXst)
+      length										% ... (..stst) 0 LEN_OF_(po..st)-2
+      3 copy exch put								% ... (..st\0t) 0 LEN_OF_(po..st)-2
+      getinterval									% ... (..st), stored at begining of old (po..st)
+      (#) search not {
+	pop exit				    % /namepdf (nameps\0..)
+      } if
+    } loop
+    % we have a '\0' marker (not allowed in PDF names) after all usefull characters
+    (\0) search pop exch pop exch pop
+    cvn
+    exch pop
+  } {
+    pop pop
+  } ifelse
+} bind def
+
 /TypeDaemons <<  % <id> <obj> proc <id> <obj>
   /Page 
   { //PDFR_DEBUG {
@@ -943,6 +972,9 @@ currentdict end readonly def
   /FontDescriptor
   { //PDFR_DEBUG {
       (Recognized a font descriptor.) =
+    } if
+    dup /FontName //knownget exec {
+	1 index /FontName 3 -1 roll //UnPDFEscape exec put
     } if
     {
       dup dup /FontFile known {/FontFile} {/FontFile2} ifelse 
@@ -963,6 +995,7 @@ currentdict end readonly def
       (Recognized a font resource.) =
     } if
     dup /BaseFont //knownget exec {
+      //UnPDFEscape exec 2 copy /BaseFont exch put
       % cache the installed font (if any) before replacing it.
       //PDFReader /RemoveFontNamePrefix get exec
       currentglobal exch % A hack against HP LaserJet 1320 bug :
