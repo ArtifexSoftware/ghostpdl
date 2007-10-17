@@ -247,7 +247,7 @@ jp2_box_t *jp2_box_get(jas_stream_t *in)
 	box = 0;
 	tmpstream = 0;
 
-	if (!(box = jas_malloc(sizeof(jp2_box_t)))) {
+	if (!(box = jas_calloc(1, sizeof(jp2_box_t)))) {
 		goto error;
 	}
 	box->ops = &jp2_boxinfo_unk.ops;

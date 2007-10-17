@@ -1219,7 +1219,7 @@ static int jpc_dec_process_siz(jpc_dec_t *dec, jpc_ms_t *ms)
 	dec->numhtiles = JPC_CEILDIV(dec->xend - dec->tilexoff, dec->tilewidth);
 	dec->numvtiles = JPC_CEILDIV(dec->yend - dec->tileyoff, dec->tileheight);
 	dec->numtiles = dec->numhtiles * dec->numvtiles;
-	if (!(dec->tiles = jas_malloc(dec->numtiles * sizeof(jpc_dec_tile_t)))) {
+	if (!(dec->tiles = jas_calloc(dec->numtiles, sizeof(jpc_dec_tile_t)))) {
 		return -1;
 	}
 
@@ -1243,7 +1243,7 @@ static int jpc_dec_process_siz(jpc_dec_t *dec, jpc_ms_t *ms)
 		tile->pkthdrstreampos = 0;
 		tile->pptstab = 0;
 		tile->cp = 0;
-		if (!(tile->tcomps = jas_malloc(dec->numcomps *
+		if (!(tile->tcomps = jas_calloc(dec->numcomps,
 		  sizeof(jpc_dec_tcomp_t)))) {
 			return -1;
 		}
