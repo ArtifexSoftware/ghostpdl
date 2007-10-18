@@ -1,4 +1,4 @@
-#  Copyright (C) 2004-2006 Artifex Software, Inc.
+#  Copyright (C) 2004-2007 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -159,7 +159,7 @@ JAS_EXCF_=\
         $(D_)EXCLUDE_PNG_SUPPORT$(_D_)1$(_D)
 
 # define our specific compiler
-JAS_CC=$(CC_) $(I_)$(JASGEN) $(II)$(JPXI_)$(_I) $(JPXCF_) $(JAS_EXCF_) $(CFLAGS)
+JAS_CC=$(CC_) $(I_)$(JASGEN) $(II)$(JPXI_)$(_I) $(JPXCF_) $(JAS_EXCF_)
 JASO_=$(O_)$(JASOBJ)
 
 # switch in the selected .dev
