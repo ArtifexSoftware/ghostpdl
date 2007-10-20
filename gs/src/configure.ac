@@ -1,4 +1,4 @@
-dnl  Copyright (C) 2001-2006 Artifex Software, Inc.
+dnl  Copyright (C) 2001-2007 Artifex Software, Inc.
 dnl  All Rights Reserved.
 
 dnl  This software is provided AS-IS with no warranty, either express or
@@ -185,7 +185,7 @@ if test "$enable_fontconfig" != "no"; then
 	AC_PATH_PROG(PKGCONFIG, pkg-config)
 
 	if test "x$PKGCONFIG" != x; then
-		AC_MSG_CHECKING(for fontconfig)
+		AC_MSG_CHECKING(for fontconfig with pkg-config)
 		if $PKGCONFIG --exists fontconfig; then
 			AC_MSG_RESULT(yes)
 			CFLAGS="$CFLAGS `$PKGCONFIG --cflags fontconfig`"
@@ -194,6 +194,14 @@ if test "$enable_fontconfig" != "no"; then
 		else
 			AC_MSG_RESULT(no)
 		fi
+	fi
+	if test -z "$HAVE_FONTCONFIG"; then
+		AC_CHECK_LIB([fontconfig], [FcInitLoadConfigAndFonts], [
+		  AC_CHECK_HEADER([fontconfig/fontconfig.h], [
+		    FONTCONFIG_LIBS="-lfontconfg"
+		    HAVE_FONTCONFIG="-DHAVE_FONTCONFIG"
+		  ])
+		])
 	fi
 fi
 AC_SUBST(HAVE_FONTCONFIG)
