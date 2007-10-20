@@ -266,6 +266,10 @@ CFLAGS_SO=@DYNAMIC_CFLAGS@
 #   gcc to accept ANSI-style function prototypes and function definitions.
 XCFLAGS=@DYNAMIC_FLAGS@
 
+# fontconfig flags, used by unix-aux.mak
+FONTCONFIG_CFLAGS=@FONTCONFIG_CFLAGS@
+FONTCONFIG_LIBS=@FONTCONFIG_LIBS@
+
 # defines from autoconf; note that we don't use these at present.
 ACDEFS=@DEFS@
 

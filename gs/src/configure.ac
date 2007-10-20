@@ -176,6 +176,7 @@ AC_PATH_PROG(PKGCONFIG, pkg-config)
 
 dnl Fontconfig support
 HAVE_FONTCONFIG=""
+FONTCONFIG_CFLAGS=""
 FONTCONFIG_LIBS=""
 AC_ARG_ENABLE(fontconfig, [  --disable-fontconfig    Don't use fontconfig to list system fonts])
 if test "$enable_fontconfig" != "no"; then
@@ -186,7 +187,7 @@ if test "$enable_fontconfig" != "no"; then
 		AC_MSG_CHECKING(for fontconfig with pkg-config)
 		if $PKGCONFIG --exists fontconfig; then
 			AC_MSG_RESULT(yes)
-			CFLAGS="$CFLAGS `$PKGCONFIG --cflags fontconfig`"
+			FONTCONFIG_CFLAGS="$CFLAGS `$PKGCONFIG --cflags fontconfig`"
 			FONTCONFIG_LIBS="`$PKGCONFIG --libs fontconfig`"
 			HAVE_FONTCONFIG=-DHAVE_FONTCONFIG
 		else
@@ -203,6 +204,7 @@ if test "$enable_fontconfig" != "no"; then
 	fi
 fi
 AC_SUBST(HAVE_FONTCONFIG)
+AC_SUBST(FONTCONFIG_CFLAGS)
 AC_SUBST(FONTCONFIG_LIBS)
 
 dnl --------------------------------------------------
