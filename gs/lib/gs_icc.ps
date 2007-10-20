@@ -123,9 +123,14 @@ colorspacedict
         /Alternate .knownget
           {
             //.cs_validate exec
-            //.cs_potential_icc_alternate exec not
-              //setcspace_rangecheck
-            if
+            dup //.cs_potential_icc_alternate exec not
+              {
+                0 get /ICCBased ne
+                  //setcspace_rangecheck
+                if
+              }
+              { pop }
+            ifelse
           }
         if
       }
