@@ -19,10 +19,8 @@
 
 #include "gxbitmap.h"
 
-#ifdef DEBUG
-#define IGC_PTR_STABILITY_CHECK 0
-#else
-#define IGC_PTR_STABILITY_CHECK 0
+#ifndef IGC_PTR_STABILITY_CHECK
+#  define IGC_PTR_STABILITY_CHECK 0
 #endif
 
 /* ================ Objects ================ */
