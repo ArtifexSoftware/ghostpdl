@@ -182,8 +182,6 @@ if test "$enable_fontconfig" != "no"; then
 	# We MUST NOT use PKG_CHECK_MODULES since it is a) not a standard
 	# autoconf macro and b) requires pkg-config on the system, which is
 	# NOT standard on ANY OS, including Linux!
-	AC_PATH_PROG(PKGCONFIG, pkg-config)
-
 	if test "x$PKGCONFIG" != x; then
 		AC_MSG_CHECKING(for fontconfig with pkg-config)
 		if $PKGCONFIG --exists fontconfig; then
