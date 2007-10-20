@@ -739,16 +739,27 @@ end
 	% so for simplicity, we always do it.
   PDFfile fileposition 3 1 roll
   q
-  null sc1 null SC1
+  //null sc1 //null SC1
 
   % save old value of pdfemptycount on opstack, set to new value
   pdfemptycount /pdfemptycount count 3 sub def 3 1 roll
-  exch false resolvestream pdfopdict .pdfruncontext
+  countdictstack 3 1 roll
+
+  exch //false resolvestream pdfopdict .pdfruncontext
+
+  countdictstack exch sub dup 0 gt { 
+     (   **** Warning: Pattern stream has imbalanced q/Q operators (too many q's)\n)
+     pdfformaterror
+     { Q } repeat
+   } {
+     pop
+   } ifelse
+
   % restore pdfemptycount
   /pdfemptycount exch def
 
   Q
-  PDFDEBUG { pdfdict /PDFSTEPcount .knownget { 1 le } { true } ifelse { (%End PaintProc) print dup === flush } if } if
+  PDFDEBUG { pdfdict /PDFSTEPcount .knownget { 1 le } { //true } ifelse { (%End PaintProc) print dup === flush } if } if
   PDFfile exch setfileposition
 } bdef
 
