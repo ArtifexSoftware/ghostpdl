@@ -31,10 +31,12 @@
 
 % Note:  This procedure is also used by non-rebuild code.
 % Store a line in the xref array (Actually Objects and Generations arrays)
-% <obj num> (strm num> <obj loc> <gen num>  setxrefentry <obj num> strm num>
-% 						 	 <obj loc> <gen num>
+% <obj num> (strm num> <obj loc> <gen num> <rebuild>
+%                         setxrefentry <obj num> strm num> <obj loc> <gen num>
 /setxrefentry
-{	% We store generation numbers as value + 1
+{
+  5 1 roll
+       	% We store generation numbers as value + 1
 	% We reserve 0 to indicate an free xref entry
   1 add			% increment generation number
 	% To save space, generations numbers are stored in a lstring unless we
@@ -70,7 +72,7 @@
     } if
 	% Set error flag if we have equal object and generation numbers
     Generations 4 index lget 1 index eq { /dup_obj_gen_num true def } if
-  } ifelse
+  } 8 -1 roll { ifelse } { pop if } ifelse  % Run 'else' only when rebuilding.
 } bind def
 
 % Print the contents of the xref array.  This actually consists of three
@@ -274,7 +276,7 @@
 	      % save xref parameters into ObjectStream, Objects and Generations
 	      1 index 0			% rearrange parms for setxrefentry
 	      4 index PDFoffset sub 3 index
-	      setxrefentry		% save parameters
+	      //true setxrefentry	% save parameters
 	      pop pop pop pop		% clear parameters
 	    } if			% check if name is 'obj'
           } if				% check if we got 'obj" string

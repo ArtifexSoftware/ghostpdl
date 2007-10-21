@@ -277,11 +277,9 @@ pdfdict begin
        pop			% Stack: <err count> <obj#> <loc> <gen#> <tag>
        dup /n eq {		% xref line tag is /n
 	 pop			% pop dup of line tag
-         Objects 3 index lget null eq {	% later update might have set it
-	   0 3 1 roll		% Set ObjectStream object number = 0
-	   setxrefentry		% Save xref entry
-	   3 -1 roll pop	% Remove ObjectStream object onumber
-         } if
+	 0 3 1 roll		% Set ObjectStream object number = 0
+	 //false setxrefentry	% Save xref entry, don't change existing entries
+	 3 -1 roll pop		% Remove ObjectStream object onumber
        }
        {			% xref line tag was not /n
 	 /f ne			% verify that the tag was /f
@@ -341,7 +339,7 @@ pdfdict begin
 %    (loc: ) print 1 index pdfstring cvs print ( ) print
 %    (gen: ) print dup === flush
     0 3 1 roll			% set stream number = 0
-    setxrefentry
+    //false setxrefentry
     3 -1 roll pop		% remove stream number
   } bind
 	% XRef entry type 2 - compressed object type xref entry
@@ -350,7 +348,7 @@ pdfdict begin
 %    (obj num: ) print 2 index pdfstring cvs print ( ) print
 %    (field 2: ) print 1 index pdfstring cvs print ( ) print
 %    (field 3: ) print dup === flush
-    0 setxrefentry pop		% set generation number = 0
+    0 //false setxrefentry pop	% set generation number = 0
   } bind
 ] def
 
