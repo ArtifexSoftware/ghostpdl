@@ -227,6 +227,7 @@ pdfdict begin
   /R { /resolveR cvx 3 packedarray cvx } bind	% see Objects below
   /startxref /exit load
   /startref /exit load	% Some application (unknown) misspells startxref
+  /xref /exit load  % Adobe Acrobat 8.1 drops startxref in hybrid files.
 .dicttomark readonly def
 
 % Because of EOL conversion, lines with fixed contents might be followed
