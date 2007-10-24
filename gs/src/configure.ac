@@ -28,6 +28,41 @@ CPPFLAGS="${CPPFLAGS:=}"
 CXXFLAGS="${CXXFLAGS:=}"
 LDFLAGS="${LDFLAGS:=}"
 
+dnl --------------------------------------------------
+dnl Local utilities
+dnl --------------------------------------------------
+
+dnl GS_SPLIT_LIBS( LIBS, LINKLINE )
+dnl Split a unix-style link line into a list of 
+dnl bare library names. For example, the line
+dnl '-L/usr/X11R6/lib -lX11 -lXt' splits into
+dnl LIB='X11 Xt'
+dnl
+AC_DEFUN([GS_SPLIT_LIBS], [
+# the makefile wants a list of just the library names 
+for gs_item in $2; do
+  gs_stripped_item=`echo "$gs_item" | sed -e 's/-l//'`
+  if test "x$gs_stripped_item" != "x$gs_item"; then
+    $1="$[$1] $gs_stripped_item"
+  fi
+done
+])
+
+dnl GS_SPLIT_LIBPATHS( LIBPATHS, LINKLINE )
+dnl Split a unix-style link line into a list of
+dnl bare search path entries. For example,
+dnl '-L/usr/X11R6/lib -lX11 -L/opt/lib -lXt'
+dnl splits to LIBPATHS='/usr/X11R6/lib /opt/lib'
+dnl
+AC_DEFUN([GS_SPLIT_LIBPATHS], [
+for gs_item in $2; do
+  gs_stripped_item=`echo "$gs_item" | sed -e 's/-L//'`
+  if test "x$gs_stripped_item" != "x$gs_item"; then
+    $1="$[$1] $gs_stripped_item"
+  fi
+done
+])
+
 dnl --------------------------------------------------  
 dnl Check for programs
 dnl --------------------------------------------------  
@@ -599,14 +634,9 @@ if test x$no_x != xyes; then
 	if test "$ac_cv_lib_Xt_XtAppCreateShell" = yes; then
 		X11DEVS="\$(DD)x11.dev \$(DD)x11alpha.dev \$(DD)x11cmyk.dev \$(DD)x11mono.dev \$(DD)x11_.dev \$(DD)x11alt_.dev \$(DD)x11cmyk2.dev \$(DD)x11cmyk4.dev \$(DD)x11cmyk8.dev \$(DD)x11rg16x.dev \$(DD)x11rg32x.dev \$(DD)x11gray2.dev \$(DD)x11gray4.dev"
 		X_DEVS=$X11DEVS
-		# the makefile wants a list of just the library names in XLIBS
-		for item  in -lXt $X_PRE_LIBS -lXext -lX11 $X_EXTRA_LIBS; do
-			stripped=`echo "$item" | sed -e 's/-l//'`
-			if test "x$stripped" != "x$item"; then
-				XLIBS="$XLIBS $stripped"
-			fi
-		done
-		X_LIBS=$XLIBS
+		# the makefile wants a list of just the library names in X_LIBS
+		GS_SPLIT_LIBS([X_LIBS], 
+			[-lXt $X_PRE_LIBS -lXext -lX11 $X_EXTRA_LIBS])
 	fi
 fi
 
