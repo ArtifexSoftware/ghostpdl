@@ -185,6 +185,15 @@ type1_next(gs_type1_state *pcis)
 		decode_num4(lw, cip, state, encrypted);
 		CS_CHECK_PUSH(csp, pcis->ostack);
 		*++csp = int2fixed(lw);
+		if (lw != fixed2long(*csp)) {
+		    /*
+		     * The integer was too large to handle in fixed point.
+		     * Handle this case specially.
+		     */
+		    code = gs_type1_check_float(&state, encrypted, &cip, csp, lw);
+		    if (code < 0)
+		       return code;
+		}
 	    } else		/* not possible */
 		return_error(gs_error_invalidfont);
 	    continue;

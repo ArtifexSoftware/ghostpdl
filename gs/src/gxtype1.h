@@ -238,6 +238,8 @@ typedef fixed *cs_ptr;
     sign_extend_num4(lw);\
   END
 
+int gs_type1_check_float(crypt_state *state, bool encrypted, const byte **cip, cs_ptr csp, long lw);
+
 /* ------ Shared Type 1 / Type 2 charstring utilities ------ */
 
 void gs_type1_finish_init(gs_type1_state * pcis);

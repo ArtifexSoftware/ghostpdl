@@ -38,6 +38,60 @@
  */
 #define ALWAYS_DO_FLEX_AS_CURVE 0
 
+/* ------ Interpreter subroutines ------ */
+
+/*
+ * According to "Adobe Type 1 Font Format", 
+ * Section 6.2 "CharString Number Encoding", in particular the Note at 
+ * the end of the section:
+ * "Numbers with absolute values larger than 32,000 must be followed by a 
+ * div operator such that the result of the div is less than 32,000."
+ * 
+ * This function looks ahead for the div operator
+ * and applies it in the compile time, so that the big numbers
+ * are not placed onto the stack.
+ */
+int gs_type1_check_float(crypt_state *state, bool encrypted, const byte **ci, cs_ptr csp, long lw)
+{
+    long denom;
+    uint c0;
+    int c;
+    const byte *cip = *ci;
+
+    c0 = *cip++;
+    charstring_next(c0, *state, c, encrypted);
+    if (c < c_num1)
+	return_error(gs_error_rangecheck);
+    if (c < c_pos2_0)
+	decode_num1(denom, c);
+    else if (c < cx_num4)
+	decode_num2(denom, c, cip, *state, encrypted);
+    else if (c == cx_num4)
+	decode_num4(denom, cip, *state, encrypted);
+    else
+	return_error(gs_error_invalidfont);
+    c0 = *cip++;
+    charstring_next(c0, *state, c, encrypted);
+    if (c != cx_escape)
+	return_error(gs_error_rangecheck);
+    c0 = *cip++;
+    charstring_next(c0, *state, c, encrypted);
+    if (c != ce1_div)
+	return_error(gs_error_rangecheck);
+    /* Rather "Adobe Type 1 Font Format" restricts the div result with 32,000, 
+       We don't want to check it here as a compatibility to the old code,
+       and because Type 2 doesn't set this limitation.
+       Instead that we're checking here just for 'fixed' overflow,
+       which is a weaker limit.
+     */
+    if (any_abs(lw / denom) > max_int_in_fixed) {
+	return_error(gs_error_rangecheck);
+    }
+    *csp = float2fixed((double)lw / denom);
+    *ci = cip;
+    return(0);
+}
+
 /* ------ Main interpreter ------ */
 
 /*
@@ -71,8 +125,8 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
     cs_ptr csp;
 #define clear CLEAR_CSTACK(cstack, csp)
     ip_state_t *ipsp = &pcis->ipstack[pcis->ips_count - 1];
-    register const byte *cip;
-    register crypt_state state;
+    const byte *cip;
+    crypt_state state;
     register int c;
     int code = 0;
     fixed ftx = pcis->origin.x, fty = pcis->origin.y;
@@ -137,33 +191,13 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		*++csp = int2fixed(lw);
 		if (lw != fixed2long(*csp)) {
 		    /*
-		     * We handle the only case we've ever seen that
-		     * actually uses such large numbers specially.
+		     * The integer was too large to handle in fixed point.
+		     * Handle this case specially.
 		     */
-		    long denom;
-
-		    c0 = *cip++;
-		    charstring_next(c0, state, c, encrypted);
-		    if (c < c_num1)
-			return_error(gs_error_rangecheck);
-		    if (c < c_pos2_0)
-			decode_num1(denom, c);
-		    else if (c < cx_num4)
-			decode_num2(denom, c, cip, state, encrypted);
-		    else if (c == cx_num4)
-			decode_num4(denom, cip, state, encrypted);
-		    else
-			return_error(gs_error_invalidfont);
-		    c0 = *cip++;
-		    charstring_next(c0, state, c, encrypted);
-		    if (c != cx_escape)
-			return_error(gs_error_rangecheck);
-		    c0 = *cip++;
-		    charstring_next(c0, state, c, encrypted);
-		    if (c != ce1_div)
-			return_error(gs_error_rangecheck);
-		    *csp = float2fixed((double)lw / denom);
-		}
+		    code = gs_type1_check_float(&state, encrypted, &cip, csp, lw);
+		    if (code < 0)
+		        return code;
+	        }
 	    } else		/* not possible */
 		return_error(gs_error_invalidfont);
 	  pushed:if_debug3('1', "[1]%d: (%d) %f\n",
