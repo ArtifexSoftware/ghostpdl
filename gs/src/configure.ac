@@ -616,7 +616,6 @@ if test x$no_x != xyes; then
 		x_libraries="NONE"
 	fi
 	if test ! "$x_libraries" = "NONE" -a ! "$x_libraries" = ""; then
-		LDFLAGS="-L$x_libraries $LDFLAGS"
 		X_LDFLAGS="-L$x_libraries"
 		if test "$uname" = "SunOS"; then
 			X_LDFLAGS="$X_LDFLAGS -R$x_libraries"
@@ -632,11 +631,14 @@ if test x$no_x != xyes; then
 	fi
 
 	SAVELIBS="$LIBS"
+	SAVELDFLAGS="$LDFLAGS"
+	LDFLAGS="$LDFLAGS $X_LDFLAGS"
 
 	AC_CHECK_LIB(X11,XOpenDisplay)
 	AC_CHECK_LIB(Xext,XdbeQueryExtension)
 	AC_CHECK_LIB(Xt,XtAppCreateShell)
 
+	LDFLAGS="$SAVELDFLAGS"
 	LIBS="$SAVELIBS"
 
 	if test "$ac_cv_lib_Xt_XtAppCreateShell" = yes; then
