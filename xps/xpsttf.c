@@ -1,5 +1,7 @@
 #include "ghostxps.h"
 
+#include <gxfont.h>
+
 /*
  * Some extra TTF parsing magic that isn't covered by the graphics library.
  */
@@ -13,8 +15,6 @@ static inline int u32(byte *p)
 {
         return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
 }
-
-extern ulong tt_find_table(gs_font_type42 *pfont, const char *tname, uint *plen);
 
 static const char *pl_mac_names[258] = {
     ".notdef", ".null", "nonmarkingreturn", "space", "exclam", "quotedbl",
@@ -122,13 +122,13 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
 	}
     }
 
-    table_offset = tt_find_table((gs_font_type42 *)pfont, "post", &table_length);
+    table_offset = xps_find_sfnt_table((xps_font_t*)pfont->client_data, "post", &table_length);
 
     /* no post table */
-    if ( table_offset == 0 )
+    if (table_offset < 0)
 	return gs_throw(-1, "no post table");
 
-    /* this shoudn't happen but... */
+       /* this shoudn't happen but... */
     if ( table_length == 0 )
 	return gs_throw(-1, "zero-size post table");
 
@@ -303,7 +303,7 @@ int xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font)
 	gs_make_identity(&p42->orig_FontMatrix); /* NB ... original or zeroes? */
 
 	p42->FontType = ft_TrueType;
-	p42->BitmapWidths = true;
+	p42->BitmapWidths = false;
 	p42->ExactSize = fbit_use_outlines;
 	p42->InBetweenSize = fbit_use_outlines;
 	p42->TransformedChar = fbit_use_outlines;
@@ -312,22 +312,27 @@ int xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font)
 	p42->StrokeWidth = 0;
 	p42->is_cached = 0;
 
-	p42->procs.init_fstack = gs_default_init_fstack;
-	p42->procs.next_char_glyph = gs_default_next_char_glyph;
-	p42->procs.glyph_name = xps_true_callback_glyph_name;
-	p42->procs.decode_glyph = xps_true_callback_decode_glyph;
 	p42->procs.define_font = gs_no_define_font;
 	p42->procs.make_font = gs_no_make_font;
-	p42->procs.font_info = gs_default_font_info;
-	p42->procs.glyph_info = gs_default_glyph_info;
-	p42->procs.glyph_outline = gs_no_glyph_outline;
+	p42->procs.font_info = gs_type42_font_info;
+	p42->procs.same_font = gs_default_same_font;
 	p42->procs.encode_char = xps_true_callback_encode_char;
+	p42->procs.decode_glyph = xps_true_callback_decode_glyph;
+	p42->procs.enumerate_glyph = gs_type42_enumerate_glyph;
+	p42->procs.glyph_info = gs_type42_glyph_info;
+	p42->procs.glyph_outline = gs_type42_glyph_outline;
+	p42->procs.glyph_name = xps_true_callback_glyph_name;
+	p42->procs.init_fstack = gs_default_init_fstack;
+	p42->procs.next_char_glyph = gs_default_next_char_glyph;
 	p42->procs.build_char = xps_true_callback_build_char;
 
-	strcpy(p42->font_name.chars, "TrueTypeFont");
+	memset(p42->font_name.chars, 0, sizeof(p42->font_name.chars));
+	xps_load_sfnt_name(font, p42->font_name.chars);
 	p42->font_name.size = strlen(p42->font_name.chars);
 
-	p42->key_name.size = 0;
+	memset(p42->key_name.chars, 0, sizeof(p42->key_name.chars));
+	strcpy(p42->key_name.chars, p42->font_name.chars);
+	p42->key_name.size = strlen(p42->key_name.chars);
 
 	/* Base font specific: */
 
@@ -338,7 +343,7 @@ int xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font)
 
 	uid_set_UniqueID(&p42->UID, p42->id);
 
-	p42->encoding_index = ENCODING_INDEX_ISOLATIN1;
+	p42->encoding_index = ENCODING_INDEX_UNKNOWN;
 	p42->nearest_encoding_index = ENCODING_INDEX_ISOLATIN1;
 
 	p42->FAPI = 0;

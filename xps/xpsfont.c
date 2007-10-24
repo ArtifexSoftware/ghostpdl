@@ -162,6 +162,54 @@ xps_find_sfnt_table(xps_font_t *font, char *name, int *lengthp)
     return -1;
 }
 
+/*
+ * Get the windows truetype font file name - position 4 in the name table.
+ */
+int xps_load_sfnt_name(xps_font_t *font, char *namep)
+{
+    byte *namedata;
+    int offset, length;
+    int format, count, stringoffset;
+    int i;
+
+    strcpy(namep, "Unknown");
+
+    offset = xps_find_sfnt_table(font, "name", &length);
+    if (offset < 0)
+	return -1;
+    if (length < 6)
+	return -1;
+
+    namedata = font->data + offset;
+
+    format = u16(namedata + 0);
+    count = u16(namedata + 2);
+    stringoffset = u16(namedata + 4);
+
+    for (i = 0; i < count; i++)
+    {
+	byte *record = namedata + 6 + i * 12;
+	int pid = u16(record + 0);
+	int eid = u16(record + 2);
+	int langid = u16(record + 4);
+	int nameid = u16(record + 6);
+	length = u16(record + 8);
+	offset = u16(record + 10);
+
+	/* Mac Roman English */
+	if (pid == 1 && eid == 0 && langid == 0)
+	{
+	    /* Full font name or postscript name */
+	    if (nameid == 4 || nameid == 6)
+	    {
+		memcpy(namep, namedata + stringoffset + offset, length);
+		namep[length] = 0;
+	    }
+	}
+    }
+
+    return 0;
+}
 
 /*
  * Locate the 'cmap' table and count the number of subtables.
