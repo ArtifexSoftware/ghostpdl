@@ -284,8 +284,13 @@ IMDISRCDIR=imdi
 
 # Define any other compilation flags.
 
+# support XCFLAGS for parity with the unix makefiles
+!ifndef XCFLAGS
+XCFLAGS=
+!endif
+
 !ifndef CFLAGS
-CFLAGS=
+CFLAGS=$(XCFLAGS)
 !endif
 
 # 1 --> Use 64 bits for gx_color_index.  This is required only for
