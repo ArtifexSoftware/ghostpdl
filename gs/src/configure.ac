@@ -392,6 +392,9 @@ AC_ARG_ENABLE(cups, [  --enable-cups           turn on CUPS support, default=yes
 
 CUPSDEV=""
 CUPSINCLUDE=""
+CUPSCFLAGS=""
+CUPSLIBS=""
+CUPSLIBDIRS=""
 CUPSCONFIG="${CUPSCONFIG:=}"
 CUPSSERVERBIN=""
 CUPSSERVERROOT=""
@@ -400,12 +403,14 @@ CUPSDATA=""
 if ( test -d cups ); then
     if test x$enable_cups != xno; then
 	AC_PATH_PROG(CUPSCONFIG,cups-config)
-	AC_CHECK_HEADER([cups/raster.h],[],[CUPSCONFIG=""])
+	dnl AC_CHECK_HEADER([cups/raster.h],[],[CUPSCONFIG=""])
 	if test "x$CUPSCONFIG" != x; then
 	    dnl Use values from CUPS config...
-#	    LIBS="`$CUPSCONFIG --ldflags` `$CUPSCONFIG --static --image --libs | sed -e '1,$s/-lssl//'` $LIBS"
-	    LIBS="`$CUPSCONFIG --ldflags` `$CUPSCONFIG --image --libs` $LIBS"
-	    CFLAGS="`$CUPSCONFIG --cflags` $CFLAGS"
+	    CUPSCFLAGS="`$CUPSCONFIG --cflags` $CFLAGS"
+#	    CUPSLINK="`$CUPSCONFIG --ldflags` `$CUPSCONFIG --static --image --libs | sed -e '1,$s/-lssl//'` $LIBS"
+	    CUPSLINK="`$CUPSCONFIG --ldflags` `$CUPSCONFIG --image --libs`"
+	    GS_SPLIT_LIBS([CUPSLIBS], [$CUPSLINK])
+	    GS_SPLIT_LIBPATHS([CUPSLIBDIRS],[$CUPSLINK])
 	    CUPSSERVERROOT="`$CUPSCONFIG --serverroot`"
 	    CUPSSERVERBIN="`$CUPSCONFIG --serverbin`"
 	    CUPSDATA="`$CUPSCONFIG --datadir`"
@@ -416,6 +421,9 @@ if ( test -d cups ); then
 fi
 
 AC_SUBST(CUPSDEV)
+AC_SUBST(CUPSCFLAGS)
+AC_SUBST(CUPSLIBS)
+AC_SUBST(CUPSLIBDIRS)
 AC_SUBST(CUPSINCLUDE)
 AC_SUBST(CUPSSERVERBIN)
 AC_SUBST(CUPSSERVERROOT)

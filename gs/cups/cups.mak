@@ -4,6 +4,7 @@
 # CUPS driver makefile for Ghostscript.
 #
 # Copyright 2001-2005 by Easy Software Products.
+# Copyright 2007 Artifex Software, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,21 +21,26 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
+# define the name of this makefile
+CUPS_MAK=cups/cups.mak
+
 ### ----------------- CUPS Ghostscript Driver ---------------------- ###
 
 cups_=	$(GLOBJ)gdevcups.$(OBJ)
 
 # These are set in the toplevel Makefile via autoconf(1)
+# CUPSCFLAGS=`cups-config --cflags`
 # CUPSSERVERBIN=`cups-config --serverbin`
 # CUPSSERVERROOT=`cups-config --serverroot`
 # CUPSDATA=`cups-config --datadir`
 
-$(DD)cups.dev:	$(cups_) $(GLD)page.dev
-	$(ADDMOD) $(DD)cups -lib cupsimage -lib cups
+$(DD)cups.dev : $(CUPS_MAK) $(cups_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)cups $(cups_)
+	$(ADDMOD) $(DD)cups -libpath $(CUPSLIBDIRS)
+	$(ADDMOD) $(DD)cups -lib $(CUPSLIBS)
 
-$(GLOBJ)gdevcups.$(OBJ): cups/gdevcups.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevcups.$(OBJ) $(C_) cups/gdevcups.c
+$(GLOBJ)gdevcups.$(OBJ) : cups/gdevcups.c $(PDEVH)
+	$(GLCC) $(CUPSCFLAGS) $(GLO_)gdevcups.$(OBJ) $(C_) cups/gdevcups.c
 
 install:	install-cups
 

@@ -75,6 +75,9 @@ exdir=$(gsdatadir)/examples
 GS_DOCDIR=$(docdir)
 
 # Define install location for 'cups' device/filter support
+CUPSCFLAGS=@CUPSCFLAGS@
+CUPSLIBS=@CUPSLIBS@
+CUPSLIBDIRS=@CUPSLIBDIRS@
 CUPSSERVERBIN=@CUPSSERVERBIN@
 CUPSSERVERROOT=@CUPSSERVERROOT@
 CUPSDATA=@CUPSDATA@
