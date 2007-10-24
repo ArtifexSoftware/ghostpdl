@@ -962,6 +962,11 @@ if test "x$fontpath" = "x"; then
 	# These font directories are used by Solaris...
 	fontpath="${fontpath}:/usr/openwin/lib/X11/fonts/Type1"
 	fontpath="${fontpath}:/usr/openwin/lib/X11/fonts/TrueType"
+
+	# This font directory is used by CUPS...
+	if test "x$CUPSCONFIG" != x; then
+	  fontpath="${fontpath}:`$CUPSCONFIG --datadir`/fonts"
+	fi
 fi
 
 AC_SUBST(fontpath)
