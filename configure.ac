@@ -11,6 +11,7 @@ dnl AC_REVISION([$Rev$])
 
 # Checks for programs.
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_RANLIB
 
 # platform specific compiler flags
