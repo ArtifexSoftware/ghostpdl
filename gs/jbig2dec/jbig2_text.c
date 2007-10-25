@@ -112,7 +112,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     Jbig2Image *IB;
     Jbig2WordStream *ws = NULL;
     Jbig2HuffmanState *hs = NULL;
-    Jbig2HuffmanTable *SBSYMCODES;
+    Jbig2HuffmanTable *SBSYMCODES = NULL;
     Jbig2ArithState *as = NULL;
     Jbig2ArithIntCtx *IADT = NULL;
     Jbig2ArithIntCtx *IAFS = NULL;

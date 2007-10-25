@@ -169,7 +169,6 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
   const int GRH = image->height;
   const int stride = image->stride;
   const int refstride = params->reference->stride;
-  const int dx = params->DX;
   const int dy = params->DY;
   byte *grreg_line = (byte *)image->data;
   byte *grref_line = (byte *)params->reference->data;
