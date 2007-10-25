@@ -1295,16 +1295,33 @@ Examples :
 </tt></b></blockquote>
 
 <p>
-Note that the font file path uses Postscript syntax for strings.
-Due to that backslashes must be represented as a double backslash each.
+Note that the font file path uses Postscript syntax.
+Because of this, backslashes in the paths must be 
+represented as a double backslash.
+
+<p>
+This can complicate substitutions for fonts with non-Roman names. 
+For example, if a PDF file asks for a font with the name
+<tt>/#82l#82r#83S#83V#83b#83N</tt>. This cannot be used directly
+in a cidfmap file because the #xx notation in names is a PDF-only
+encoding. Instead, try something like:
+<blockquote>
+<tt>&lt;82C68272835383568362834E&gt;cvn << /Path 
+(C:/WINDOWS/Fonts/msmincho.ttc) /FileType /TrueType /SubfontID 0 /CSI 
+[(Japan1) 3] >> ;</tt>
+</blockquote>
+Where <tt>&lt;82C68272835383568362834E&gt;</tt> is the same byte 
+sequence converted to a hex string. This lets you specify a name
+using any sequence of bytes through the encodings available for 
+Postscript strings.
 
 <p>
 Note that loading truetype fonts directly from 
-<b>><tt>/Resources/CIDFont</tt></b> is no longer supported. 
+<b><tt>/Resources/CIDFont</tt></b> is no longer supported. 
 There is no reliable way to generate a character ordering for truetype
 fonts. The 7.0x versions of Ghostscript supported this by assuming a Japanese
-character ordering. This is replaced in the 8.0x and later releases with the more
-general <b><tt>cidfmap</tt></b> mechanism.
+character ordering. This is replaced in the 8.0x and later releases with 
+the more general <b><tt>cidfmap</tt></b> mechanism.
 
 <p>
 The PDF specification requires CID font files to be embedded,
