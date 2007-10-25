@@ -456,7 +456,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		      return NULL;
 		  } else {
 		      /* 6.5.8.2.2 */
-		      bool SBHUFF = params->SDHUFF;
+		      /* bool SBHUFF = params->SDHUFF; */
 		      Jbig2RefinementRegionParams rparams;
 		      Jbig2Image *image;
 		      uint32_t ID;
