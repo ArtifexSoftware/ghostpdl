@@ -423,6 +423,7 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
     cv_stem_hint_table hstem_hints;	/* horizontal stem hints */
     cv_stem_hint_table vstem_hints;	/* vertical stem hints */
     bool first = true;
+    bool need_moveto = true;
     bool replace_hints = false;
     bool hints_changed = false;
     enum {
@@ -546,6 +547,40 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 	int i;
 	fixed mx, my;
 
+        if (need_moveto && ((c >= cx_rlineto && c <= cx_rrcurveto) || 
+	    c == cx_vhcurveto || c == cx_hvcurveto))
+        {
+	    mx = my = 0;
+	    need_moveto = false;
+	    CHECK_OP();
+	    if (first) {
+	        if (cis.os_count)
+		    type2_put_fixed(s, *csp); /* width */
+		mx += cis.lsb.x + mx0, my += cis.lsb.y + my0;
+		first = false;
+		/* We need to move all the stored numeric values up by
+		 * one in the stack, eliminating the width, so that later 
+		 * processing when we handle the drswing operator emits the correct
+		 * values. This is different to the 'move' case below.
+		 */
+		cis.os_count--;
+   		for (i = 0; i < cis.os_count; ++i)
+		    cis.ostack[i] = cis.ostack[i+1];
+	    }
+	    CHECK_HINTS_CHANGED();
+	    if (mx == 0) {
+	        type2_put_fixed(s, my);
+	        depth = 1, prev_op = cx_vmoveto;
+	    } else if (my == 0) {
+	        type2_put_fixed(s, mx);
+	        depth = 1, prev_op = cx_hmoveto;
+	    } else {
+	        type2_put_fixed(s, mx);
+	        type2_put_fixed(s, my);
+	        depth = 2, prev_op = cx_rmoveto;
+	    }
+	}
+
 	switch (c) {
 	default:
 	    if (c < 0)
@@ -590,6 +625,7 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 	    HINTS_CHANGED();
 	    continue;
 	case c1_closepath:
+	    need_moveto = true;
 	    continue;
 	case CE_OFFSET + ce1_setcurrentpoint:
 	    if (first) {
@@ -609,6 +645,7 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 	    mx = csp[-1], my = *csp;
 	    POP(2);
 	move:
+	    need_moveto = false;
 	    CHECK_OP();
 	    if (first) {
 		if (cis.os_count)
