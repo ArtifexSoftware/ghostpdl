@@ -2520,10 +2520,19 @@ or <b><tt>-sstdout=-</tt></b>.
 
 <dl>
 <dt><b><tt>-dTTYPAUSE</tt></b>
-<dd>Causes Ghostscript to read a character from <b><tt>/dev/tty</tt></b>,
+<dd>
+Causes Ghostscript to read a character from <b><tt>/dev/tty</tt></b>,
 rather than standard input, at the end of each page.  This may be useful if
 input is coming from a pipe.  Note that <b><tt>-dTTYPAUSE</tt></b>
 overrides <b><tt>-dNOPAUSE</tt></b>.
+
+Also note that <tt>-dTTYPAUSE</tt> requires openning the terminal 
+device directly, and may cause problems in combination with -dSAFER. 
+Permission errors  can be avoided by adding the device to the permitted 
+reading list before invoking safer mode. For example:
+<tt>gs -dTTYPAUSE -dDELAYSAFER 
+-c '<< /PermitFileReading [ (/dev/tty)] >>
+setuserparams .locksafe' -dSAFER</tt>
 </dl>
 
 <h4><a name="Output_selection_parameters"></a>Device and output selection parameters</h4>
