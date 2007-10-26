@@ -1,6 +1,7 @@
 #!/usr/bin/tclsh
 
-#    Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1999-2007 Artifex Software, Inc.
+#    All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -18,32 +19,8 @@
 # $Id$
 
 # Make various Ghostscript filesets.  Assumes the current directory is gs.
-#   maketars
-#	ghostscript-#.#[#].tar.gz
-#	    ({doc,examples,lib,man,src,toolbin}/* => gs#.#[#]/*/*)
-#	ghostscript-#.#[#].tar.bz2
-#	    (--same--)
-#	ghostscript-#.#[#]gnu.tar.gz
-#	    (gnu/*/* => gs#.#[#]/)
-#   makefonts [#.#[#]]
-#	ghostscript-fonts-std-#.#[#].tar.gz
-#	    (fonts/?0*l.*, fonts/metrics/?0*l.* => fonts/)
-#	gnu-gs-fonts-std-#.#[#].tar.gz
-#	    (--same--)
-#	ghostscript-fonts-other-#.#[#].tar.gz
-#	    (...other fonts...)
-#	gnu-gs-fonts-other-#.#[#].tar.gz
-#	    (--same--)
 #   makehist
 #	(merges doc/News.htm and doc/Changes.htm into doc/History#.htm)
-#   makewin
-#	gs###.zip
-#	    ({man,src,doc,examples,lib,toolbin}/* => gs#.#[#]/*/*,
-#	     fonts/*.*, fonts/metrics/*.* => fonts/,
-#	     {jpeg,libpng,zlib}/* => ibid.,
-#	     gs###.bat)
-#   makemaster
-#	(moves the maketars & makefonts files to master/###/)
 
 # Acquire the Ghostscript version numbers.
 proc setnum {num3} {
@@ -103,79 +80,6 @@ proc movelist {name files todir} {
 
 # Create a symbolic link from name to path.
 proc ln-s {path name} {sh ln -s $path $name}
-
-# Make the tarballs for the code and documentation.
-proc maketars {} {
-    global Dir Dot
-
-    set agz ghostscript-$Dot.tar.gz
-    set abz2 ghostscript-$Dot.tar.bz2
-    set agnu ghostscript-${Dot}gnu.tar.gz
-
-    file delete $agz $abz2 $Dir
-    ln-s . $Dir
-    sh tar -chf ghostscript-$Dot.tar --exclude=\\*CVS\\* --exclude=\\*.mak.tcl $Dir/src $Dir/icclib $Dir/doc $Dir/lib $Dir/man $Dir/examples $Dir/toolbin
-    file delete $Dir
-    sh time bzip2 -c4 ghostscript-$Dot.tar > $abz2
-    sh time gzip ghostscript-$Dot.tar
-    ln-s ./gnu $Dir
-    sh tar -czhf $agnu --exclude=\\*CVS\\* $Dir/*
-    file delete $Dir
-    sh ls -l ghostscript-$Dot*.tar.*
-}
-
-# Assemble the fonts and metrics with a given license in $tmp/fonts.
-proc licensefonts {tmp annot eol} {
-    set ftmp $tmp/fonts
-
-    sh rm -rf $ftmp
-    sh mkdir -p $ftmp
-    sh cp -p /gs/fonts/*.*f* /gs/fonts/fonts.* $ftmp
-    sh cp -p /gs/fonts/metrics/*.?f? $ftmp
-    sh chmod 644 $ftmp/*
-    sh -c "\
-	    cd $tmp/fonts;\
-	    /gs/gs -I/gs/lib -dNODISPLAY /gs/aladdin/anntfont.ps -c $annot quit;\
-	    ctf $eol *.afm *.pfa *.gsf"
-}
-
-# Make the tarballs for the fonts.
-proc makefonts {{dot ""}} {
-    global Dot
-
-    if {$dot != ""} {
-	if {![regexp {^[0-9]+\.(0|[0-9][0-9])$} $dot]} {
-	    puts stderr "Version numbers must be #.0 or #.##."
-	    exit 1
-	}
-	setnum [expr "int($dot * 100)"]
-    }
-    set cwd [pwd]
-    set afonts $cwd/ghostscript-fonts-std-$Dot.tar.gz
-    set ofonts $cwd/ghostscript-fonts-other-$Dot.tar.gz
-    set agfonts $cwd/gnu-gs-fonts-std-$Dot.tar.gz
-    set ogfonts $cwd/gnu-gs-fonts-other-$Dot.tar.gz
-
-    file delete $afonts $ofonts $agfonts $ogfonts
-    set tmp /tmp/[pid].tmp
-
-    licensefonts $tmp annotURWAladdin -u
-    sh -c "\
-	    cd $tmp;\
-	    tar -czf $afonts fonts/?0*l.pfb fonts/?0*l.afm fonts/?0*l.pfm fonts/fonts.*;\
-	    rm -f fonts/?0*l.?f?;\
-	    tar -czf $ofonts fonts/*.pf\[ab\] fonts/*.gsf fonts/*.afm fonts/*.pfm"
-
-    licensefonts $tmp annotURWGPL -u
-    sh -c "\
-	    cd $tmp;\
-	    tar -czf $agfonts fonts/?0*l.pfb fonts/?0*l.afm fonts/?0*l.pfm fonts/fonts.*;\
-	    rm -f fonts/?0*l.?f?;\
-	    tar -czf $ogfonts fonts/*.pf\[ab\] fonts/*.gsf fonts/*.afm fonts/*.pfm"
-
-    sh rm -rf $tmp
-    sh ls -l $afonts $ofonts $agfonts $ogfonts
-}
 
 # Merge News and Changes into History#.
 proc mergehist {news changes histn tmph details detailn tmpd} {
@@ -428,59 +332,6 @@ proc makehist {} {
     }
 }
 
-# Make the zip file for building on Windows.
-proc makewin {} {
-    global Dir Num3 Work
-
-    set cwd [pwd]
-    set atmp $cwd/gs${Num3}.zip
-    set asetup gs${Num3}.bat
-    set tmp /tmp/[pid].tmp
-
-    file delete $atmp $asetup $Dir
-    ln-s . $Dir
-
-    set out [open $asetup w]
-    # The dir\NUL test is per Microsoft....
-    puts $out "if not exist $Work\\$Dir\\bin\\NUL mkdir $Work\\$Dir\\bin"
-    puts $out "if not exist $Work\\$Dir\\obj\\NUL mkdir $Work\\$Dir\\obj"
-    puts $out "set GS_LIB=$Work\\$Dir\\lib;$Work\\fonts"
-    puts $out "set MOREPATH=%MOREPATH%$Work\\$Dir\\bin;$Work\\$Dir\\lib;"
-    puts $out "call \\postboot.bat"
-    puts $out "cd $Dir"
-    close $out
-
-    sh zip -q -l $atmp $asetup $Dir/src/* $Dir/icclib $Dir/man/* -x $Dir/\\*/CVS/ $Dir/\\*.mak.tcl
-    sh zip -q -l -g $atmp $Dir/lib/* $Dir/doc/* $Dir/examples/* $Dir/toolbin/* -x $Dir/\\*/CVS/
-    sh zip -q -l -r -g $atmp $Dir/jpeg $Dir/libpng $Dir/zlib
-    
-    licensefonts $tmp annotURWAladdin -d
-    sh -c "\
-	    cd $tmp;\
-	    zip -q -g $atmp fonts/*.pfa fonts/*.pfb fonts/*.gsf fonts/*.afm fonts/*.pfm fonts/fonts.*"
-
-    file delete $asetup $Dir
-    sh ls -l $atmp
-}
-
-# Move the tar archives to the 'master' directory.
-proc makemaster {} {
-    global Dot Num3
-
-    set todir master/$Num3
-
-    set agz ghostscript-$Dot.tar.gz
-    set abz2 ghostscript-$Dot.tar.bz2
-    set agnu ghostscript-${Dot}gnu.tar.gz
-    movelist Code [list $agz $abz2 $agnu] $todir
-
-    set afonts ghostscript-fonts-std-$Dot.tar.gz
-    set ofonts ghostscript-fonts-other-$Dot.tar.gz
-    set agfonts gnu-gs-fonts-std-$Dot.tar.gz
-    set ogfonts gnu-gs-fonts-other-$Dot.tar.gz
-    movelist Font [list $afonts $ofonts $agfonts $ogfonts] $todir
-}
-
 # Call the procedure selected by the first switch (-makexxx) if any,
 # otherwise by the link name.
 if {[llength $argv] >= 1 && [string range [lindex $argv 0] 0 4] == "-make"} {
@@ -491,9 +342,5 @@ if {[llength $argv] >= 1 && [string range [lindex $argv 0] 0 4] == "-make"} {
     set args $argv
 }
 switch $progname {
-    maketars {eval maketars $args}
-    makefonts {eval makefonts $args}
     makehist {eval makehist $args}
-    makewin {eval makewin $args}
-    makemaster {eval makemaster $args}
 }
