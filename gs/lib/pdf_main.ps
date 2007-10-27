@@ -136,7 +136,7 @@ systemdict begin
 currentdict /runpdfstring .undef
 
 
-/runpdfbegin {		% <file> runpdf -
+/runpdfbegin {		% <file> runpdfbegin - 
    userdict begin
 	% It turns out that the PDF interpreter uses memory more
 	% effectively if it is run under at least one level of save.
@@ -151,6 +151,9 @@ currentdict /runpdfstring .undef
    GS_PDF_ProcSet begin
    pdfdict begin
    pdfopen begin
+} bind def
+
+/runpdfpagerange {	% - runpdfpagerange <firstpage#> <lastpage#>
    /FirstPage where 
     { pop FirstPage dup pdfpagecount gt
       { (\nRequested FirstPage is greater than the number of pages in the file: ) print
@@ -194,11 +197,67 @@ currentdict /runpdfstring .undef
    2 vmreclaim		% couldn't hurt
 } bind def
 
-/runpdf {		% <file> runpdf -
-  runpdfbegin
-  dopdfpages
-  runpdfend
+% - pdf_collection_files [temp_files] show_container
+/pdf_collection_files {
+  {} //true
+  Trailer /Root oget /Collection knownoget {
+    /D knownoget { % We have default document in the collection
+      Trailer /Root oget /Names knownoget {
+        /EmbeddedFiles knownoget {
+          exch nameoget dup //null ne {
+            /EF knownoget {
+              /F knownoget {
+                //true resolvestream    % {} true strm
+                //null (w) .tempfile    % {} true strm (name) file
+                3 -1 roll               % {} true (name) file strm
+                32768 string            % {} true (name) file strm (buf)
+                { 3 copy readstring     % {} true (name) file strm (buf) file (data) bool
+                  3 1 roll              % {} true (name) file strm (buf) bool file (data)
+                  writestring           % {} true (name) file strm (buf) bool
+                  not { exit } if
+                } loop                  
+                pop closefile           % {} true (name) file
+                closefile               % {} true (name)
+                3 1 roll pop pop        % (name)
+                .currentglobal //true .setglobal
+                exch dup length string copy 1 array astore
+                exch .setglobal //false
+              } if
+            } if
+          } {
+            pop
+          } ifelse
+        } {
+          pop
+        } ifelse
+      } {
+        pop
+      } ifelse
+    } if
+  } if
 } bind def
+
+/runpdf {		% <file> runpdf -
+  //runpdfbegin exec
+  //pdf_collection_files exec {
+    copy_trailer_attrs
+    //runpdfpagerange exec
+    //dopdfpages exec
+  } if
+  //runpdfend exec
+  {
+    dup (r) file
+    //runpdfbegin exec
+    copy_trailer_attrs
+    //runpdfpagerange exec
+    //dopdfpages exec
+    //runpdfend exec
+    deletefile
+  } forall
+} bind def
+
+{/runpdfbegin /runpdfpagerange /dopdfpages /runpdfend /pdf_collection_files}
+{ currentdict exch .undef } forall
 
 end			% systemdict
 % Redefine the procedure that the C code uses for running piped input.
@@ -468,6 +527,10 @@ pdfdict begin
    if
   pdfopenfile begin
   pdfopencache
+  currentdict end
+} bind def
+
+/copy_trailer_attrs {  % - copy_trailer_attrs -
   writeoutputintents
   .writepdfmarks {
 	% Copy bookmarks (outline) to the output.
@@ -477,7 +540,6 @@ pdfdict begin
       } if
     } if
   } if		% end .writepdfmarks
-  currentdict end
 } bind def
 
 % Verify that each entry in the xref table is pointing at an object with
