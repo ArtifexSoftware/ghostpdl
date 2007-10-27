@@ -1459,6 +1459,7 @@ idata:			data_size = 0;
 				    byte colors_mask, i, j, m = 1;
 				    gs_fill_attributes fa;
 				    gs_fixed_rect clip;
+				    fixed hh = int2fixed(swap_axes ? target->width : target->height);
 
 				    if (cbuf.end - cbp < 5 * cmd_max_intsize(sizeof(frac31)))
 					cbp = top_up_cbuf(&cbuf, cbp);
@@ -1470,6 +1471,10 @@ idata:			data_size = 0;
 				    clip.p.y -= y0f;
 				    clip.q.x -= x0f;
 				    clip.q.y -= y0f;
+				    if (clip.p.y < 0)
+					clip.p.y = 0;
+				    if (clip.q.y > hh)
+					clip.q.y = hh;
 				    fa.clip = &clip;
 				    fa.swap_axes = swap_axes;
 				    fa.ht = NULL;
@@ -1496,9 +1501,8 @@ idata:			data_size = 0;
 					code = 0;
 #					endif
 					if (code == 0) {
-					    /* Fixme : The target device didn't fill the trapezoid and
-					       requests a decomposition. Call a code from gxshade6.c 
-					       for subdividing into smaller triangles : */
+					    /* The target device didn't fill the trapezoid and
+					       requests a decomposition. Subdivide into smaller triangles : */
 					    if (pfs.dev == NULL)
 						code = gx_init_patch_fill_state_for_clist(tdev, &pfs, mem);
 					    if (code >= 0) {
