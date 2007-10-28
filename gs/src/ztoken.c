@@ -312,6 +312,18 @@ ztoken_handle_comment(i_ctx_t *i_ctx_p, scanner_state *sstate,
     return o_push_estack;
 }
 
+typedef struct named_scanner_option_s {
+    const char *pname;
+    int option;
+} named_scanner_option_t;
+static const named_scanner_option_t named_options[] = {
+    {"PDFScanRules", SCAN_PDF_RULES},
+    {"ProcessComment", SCAN_PROCESS_COMMENTS},
+    {"ProcessDSCComment", SCAN_PROCESS_DSC_COMMENTS},
+    {"PDFScanInvNum", SCAN_PDF_INV_NUM},
+    {"PDFScanUnsigned", SCAN_PDF_UNSIGNED}
+};
+
 /*
  * Update the cached scanner_options in the context state after doing a
  * setuserparams.  (We might move this procedure somewhere else eventually.)
@@ -319,17 +331,6 @@ ztoken_handle_comment(i_ctx_t *i_ctx_p, scanner_state *sstate,
 int
 ztoken_scanner_options(const ref *upref, int old_options)
 {
-    typedef struct named_scanner_option_s {
-	const char *pname;
-	int option;
-    } named_scanner_option_t;
-    static const named_scanner_option_t named_options[] = {
-	{"ProcessComment", SCAN_PROCESS_COMMENTS},
-	{"ProcessDSCComment", SCAN_PROCESS_DSC_COMMENTS},
-	{"PDFScanRules", SCAN_PDF_RULES},
-	{"PDFScanInvNum", SCAN_PDF_INV_NUM},
-	{"PDFScanUnsigned", SCAN_PDF_UNSIGNED}
-    };
     int options = old_options;
     int i;
 
@@ -347,6 +348,24 @@ ztoken_scanner_options(const ref *upref, int old_options)
 	}
     }
     return options;
+}
+/*
+ * Get the value for a scanner option.
+ * return -1 if no such option, 1/0 for on/off and option's name in *pname as a C string
+ */
+int
+ztoken_get_scanner_option(const ref *psref, int options, const char **pname)
+{
+    const named_scanner_option_t *pnso;
+
+    for (pnso = named_options + countof(named_options); pnso-- != named_options;) {
+	if (!bytes_compare((const byte *)pnso->pname, strlen(pnso->pname),
+			psref->value.const_bytes, r_size(psref))) {
+	    *pname = pnso->pname;
+	    return (options & pnso->option ? 1 : 0);
+	}
+    }
+    return -1;
 }
 
 /* ------ Initialization procedure ------ */

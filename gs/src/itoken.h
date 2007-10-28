@@ -40,5 +40,10 @@ int ztoken_handle_comment(i_ctx_t *i_ctx_p,
  * setuserparams.  (We might move this procedure somewhere else eventually.)
  */
 int ztoken_scanner_options(const ref *upref, int old_options);
+/*
+ * Get the value for a scanner option.
+ * return -1 if no such option, 1/0 for on/off and option's name in *pname as a C string
+ */
+int ztoken_get_scanner_option(const ref *psref, int options, const char **pname);
 
 #endif /* itoken_INCLUDED */

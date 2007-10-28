@@ -177,10 +177,18 @@ pdfdict begin
     } ifelse
   } ifelse
 } bind def
+/PDFScanRules_true << /PDFScanRules true >> def
+/PDFScanRules_null << /PDFScanRules null >> def
 /.pdfrun {			% <file> <opdict> .pdfrun -
 	% Construct a procedure with the stack depth, file and opdict
 	% bound into it.
-  1 index cvlit count 2 sub 3 1 roll mark mark 5 2 roll
+  1 index cvlit count 2 sub 3 1 roll mark
+  /PDFScanRules .getuserparam //null eq {
+    //PDFScanRules_true { setuserparams } 0 get % force PDF scanning mode
+    mark 7 4 roll
+  } {
+    mark 5 2 roll
+  } ifelse
   {	% Stack: ..operands.. count opdict file
     { token } stopped {
       dup type /filetype eq { pop } if % pop the operand if it is restored
@@ -211,12 +219,17 @@ pdfdict begin
     } ifelse
   }
   aload pop .packtomark cvx
-  /loop cvx 2 packedarray cvx
-  { stopped /PDFsource } aload pop
-  PDFsource
+  { loop } 0 get 2 packedarray cvx
+  { stopped } 0 get
+  /PDFScanRules .getuserparam //null eq {
+    //PDFScanRules_null { setuserparams } 0 get % reset PDF scannig mode if it was off
+  } if
+  /PDFsource PDFsource
   { store { stop } if } aload pop .packtomark cvx
   /PDFsource 3 -1 roll store exec
 } bind def
+currentdict /PDFScanRules_true undef
+currentdict /PDFScanRules_null undef
 
 % Execute a file, like .pdfrun, for a marking context.
 % This temporarily rebinds LocalResources and DefaultQstate.

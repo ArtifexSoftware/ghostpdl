@@ -313,9 +313,17 @@ def
 } bind def
 
 % As .pdfrun, but decrypt strings with key <key>.
+/PDFScanRules_true << /PDFScanRules true >> def
+/PDFScanRules_null << /PDFScanRules null >> def
 /.decpdfrun			% <file> <keystring> <opdict> .decpdfrun -
  {	% Construct a procedure with the file, opdict and key bound into it.
-   2 index cvlit mark mark 5 2 roll
+   2 index cvlit mark
+   /PDFScanRules .getuserparam //null eq {
+     //PDFScanRules_true { setuserparams } 0 get % force PDF scanning mode
+     mark 7 4 roll
+   } {
+     mark 5 2 roll
+   } ifelse
     { .pdftoken not { (%%EOF) cvn cvx } if
       dup xcheck
        { PDFDEBUG { dup == flush } if
@@ -374,12 +382,17 @@ def
       ifelse
     }
    aload pop .packtomark cvx
-   /loop cvx 2 packedarray cvx
-    { stopped /PDFsource } aload pop
-   PDFsource
+   { loop } 0 get 2 packedarray cvx
+    { stopped } 0 get
+   /PDFScanRules .getuserparam //null eq {
+     //PDFScanRules_null { setuserparams } 0 get % reset PDF scannig mode if it was off
+   } if
+   /PDFsource PDFsource
     { store { stop } if } aload pop .packtomark cvx 
    /PDFsource 3 -1 roll store exec
  } bind def
+currentdict /PDFScanRules_true undef
+currentdict /PDFScanRules_null undef
 
 % Run the code to resolve an object reference.
 /pdf_run_resolve

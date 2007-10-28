@@ -684,6 +684,30 @@ current_param_list(i_ctx_t *i_ctx_p, const param_set * pset,
 		return code;
 	}
     }
+    if (psref) {
+	/*
+	 * Scanner options can be read, but only individually by .getuserparam.
+	 * This avoids putting them into userparams, and being affected by save/restore.
+	 */
+	const char *pname;
+	bool val;
+	int code;
+
+	switch (ztoken_get_scanner_option(psref, i_ctx_p->scanner_options, &pname)) {
+	    case 0:
+		code = param_write_null(plist, pname);
+		break;
+	    case 1:
+		val = true;
+		code = param_write_bool(plist, pname, &val);
+		break;
+	    default:
+		code = 0;
+		break;
+	}
+	if (code < 0)
+	    return code;
+    }
 #if ENABLE_CUSTOM_COLOR_CALLBACK
     if (pset == &system_param_set) {
         /* The custom_color callback pointer */
