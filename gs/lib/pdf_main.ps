@@ -175,15 +175,13 @@ currentdict /runpdfstring .undef
 } bind def
 
 /dopdfpages {   % firstpage# lastpage# dopdfpages -
-  << /PDFScanRules true >> setuserparams	% set scanning rules for PDF vs. PS
-  true .setaccuratecurves			% unlike PS, PDF seems to need this
+  << /PDFScanRules //true >> setuserparams	% set scanning rules for PDF vs. PS
   1 exch
     { dup /Page# exch store
       QUIET not { (Page ) print dup == flush } if
       pdfgetpage pdfshowpage
     } for
-  false .setaccuratecurves			% restore accuratecurves behaviour
-  << /PDFScanRules null >> setuserparams	% restore scanning rules for PS
+  << /PDFScanRules //null >> setuserparams	% restore scanning rules for PS
 } bind def
 
 /runpdfend {
