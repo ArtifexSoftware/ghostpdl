@@ -274,19 +274,19 @@ pdfdict begin
 % Read the cross-reference and trailer sections.
 
 /traileropdict mark
-  (<<) cvn { mark } bind
+  (<<) cvn { /dictlevelcount dictlevelcount 1 add store mark } bind
   (>>) cvn { { .dicttomark } stopped {
 	      (   **** File has unbalanced >> in trailer.\n) pdfformaterror
-             } if } bind
+             } if
+	     /dictlevelcount dictlevelcount 1 sub def
+             dictlevelcount 0 eq { exit } if
+           } bind
   ([) cvn { mark } bind		% ditto
   (]) cvn dup load
 %  /true true		% see .pdfexectoken in pdf_base.ps
 %  /false false		% ibid.
 %  /null null		% ibid.
   /R { /resolveR cvx 3 packedarray cvx } bind	% see Objects below
-  /startxref /exit load
-  /startref /exit load	% Some application (unknown) misspells startxref
-  /xref /exit load  % Adobe Acrobat 8.1 drops startxref in hybrid files.
 .dicttomark readonly def
 
 % Because of EOL conversion, lines with fixed contents might be followed
@@ -356,6 +356,7 @@ pdfdict begin
      (   **** Warning:  length of some xref entries is not equal to 20 bytes.\n)
      pdfformaterror
    } if
+   /dictlevelcount 0 def
    PDFfile traileropdict .pdfrun
  } bind def
 

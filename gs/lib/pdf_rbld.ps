@@ -209,6 +209,7 @@
   exch 2 div lt { search_start_trailer } { search_end_trailer } ifelse
   % get the trailer
   PDFfile exch setfileposition		% set to the specified trailer location
+  /dictlevelcount 0 def
   PDFfile traileropdict .pdfrun		% read trailer info
   /Trailer exch def
 } bind def
