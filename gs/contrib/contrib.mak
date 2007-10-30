@@ -536,7 +536,7 @@ $(GLOBJ)gdevl4r.$(OBJ): $(LIPS_SRC)gdevl4r.c $(LIPS_SRC)gdevlips.h $(PDEVH)
 	$(GLCC) -DA4 $(GLO_)gdevl4r.$(OBJ) $(LIPS_OPT) $(C_)\
  $(LIPS_SRC)gdevl4r.c
 
-$(GLOBJ)gdevlips.$(OBJ): $(LIPS_SRC)gdevlips.c
+$(GLOBJ)gdevlips.$(OBJ): $(GX) $(LIPS_SRC)gdevlips.c
 	$(GLCC) $(GLO_)gdevlips.$(OBJ) $(LIPS_OPT) $(C_) $(LIPS_SRC)gdevlips.c
 
 $(DD)lips4.dev: $(lipsr_) $(DD)page.dev
@@ -700,17 +700,17 @@ eprn_=$(GLOBJ)gdeveprn.$(OBJ) $(GLOBJ)pagecount.$(OBJ) \
   $(GLOBJ)eprnfs.$(OBJ)
 
 # List of eprn headers needed when gdeveprn.h is included:
-eprn_headers=$(eprn_src)mediasize.h $(eprn_src)gdeveprn.h
+eprn_headers=$(eprn_src)mediasize.h $(eprn_src)gdeveprn.h $(PDEVH)
 
 #------------------------------------------------------------------------------
 
 # Rules for individual files
 
-$(GLOBJ)mediasize.$(OBJ): $(eprn_src)mediasize.c $(eprn_src)mediasize.h
+$(GLOBJ)mediasize.$(OBJ): $(std_h) \
+  $(eprn_src)mediasize.c $(eprn_src)mediasize.h
 	$(GLCC) $(C_) $(O_)$@ $(eprn_opts) $(eprn_src)mediasize.c
 
-$(GLOBJ)gdeveprn.$(OBJ): $(eprn_src)gdeveprn.c $(eprn_headers) \
-	  $(eprn_src)pagecount.h
+$(GLOBJ)gdeveprn.$(OBJ): $(eprn_headers) $(eprn_src)pagecount.h
 	$(GLCC) $(C_) $(O_)$@ $(eprn_opts) $(eprn_src)gdeveprn.c
 
 $(GLOBJ)eprnparm.$(OBJ): $(eprn_src)eprnparm.c $(eprn_headers)
@@ -724,7 +724,8 @@ $(GLOBJ)eprnfs.$(OBJ): $(eprn_src)eprnfs.c $(eprn_headers)
 	  $(eprn_src)eprnfs.c
 
 # File also used by hpdj:
-$(GLOBJ)pagecount.$(OBJ): $(eprn_src)pagecount.c $(eprn_src)pagecount.h
+$(GLOBJ)pagecount.$(OBJ): $(std_h) \
+  $(eprn_src)pagecount.c $(eprn_src)pagecount.h
 	$(GLCC) $(C_) $(O_)$@ $(eprn_opts) $(eprn_src)pagecount.c
 
 #==============================================================================
