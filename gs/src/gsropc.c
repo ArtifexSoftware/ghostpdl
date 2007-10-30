@@ -80,12 +80,14 @@ static int
 c_rop_write(const gs_composite_t * pcte, byte * data, uint * psize)
 {
 /****** NYI ******/
+    if_debug('v', "[v]c_rop_write\n");
 }
 
 static int
 c_rop_read(gs_composite_t ** ppcte, const byte * data, uint size,
 	   gs_memory_t * mem)
 {
+    if_debug('v', "[v]c_rop_read)\n");
 /****** NYI ******/
 }
 

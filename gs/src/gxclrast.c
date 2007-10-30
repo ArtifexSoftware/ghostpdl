@@ -918,12 +918,12 @@ set_phase:	/*
 			    gs_matrix mat;
 
 			    cbp = cmd_read_matrix(&mat, cbp);
-			    mat.tx -= x0;
-			    mat.ty -= y0;
-			    gs_imager_setmatrix(&imager_state, &mat);
 			    if_debug6('L', " [%g %g %g %g %g %g]\n",
 				      mat.xx, mat.xy, mat.yx, mat.yy,
 				      mat.tx, mat.ty);
+			    mat.tx -= x0;
+			    mat.ty -= y0;
+			    gs_imager_setmatrix(&imager_state, &mat);
 			}
 			continue;
 		    case cmd_opv_set_misc2:
