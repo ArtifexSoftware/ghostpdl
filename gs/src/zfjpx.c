@@ -48,7 +48,7 @@ z_jpx_decode(i_ctx_t * i_ctx_p)
     stream_jpxd_state state;
 
     /* it's our responsibility to call set_defaults() */
-    (*s_jpxd_template.set_defaults)(&state);
+    (*s_jpxd_template.set_defaults)((stream_state *)&state);
     state.jpx_memory = imemory->non_gc_memory;
     if (r_has_type(op, t_dictionary)) {
         check_dict_read(*op);
