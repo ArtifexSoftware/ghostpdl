@@ -1401,11 +1401,19 @@ per component for a standard color space.
 <dl>
 <dt><b><tt>&lt;index&gt; .getdevice &lt;device&gt;</tt></b>
 <dd>Returns a device from the set of devices known to the system.  The
-first device, which is the default, is numbered 0.  If the
-<b><tt>index</tt></b> is out of range, causes a <b><tt>rangecheck</tt></b>
-error.  This device is actually a prototype, not a directly usable device,
+first device is numbered 0.  If the <b><tt>index</tt></b> is out of 
+range, a <b><tt>rangecheck</tt></b> error occurs.
+This device is actually a prototype, not a directly usable device,
 and is marked read-only; it cannot have its parameters changed or be
 installed as the current device.
+</dl>
+
+<dl>
+<dt><b><tt>- .getdefaultdevice &lt;device&gt;</tt></b>
+<dd>Returns the default device. This device is actually a prototype,
+and is marked read-only; it cannot have its parameters changed or 
+be installed as the current device. 
+Use <tt><b>copydevice</b></tt> to obtain a workable device.
 </dl>
 
 <dl>

@@ -207,6 +207,22 @@ zgetdevice(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* - .getdefaultdevice <device> */
+static int
+zgetdefaultdevice(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    const gx_device *dev;
+
+    dev = gs_getdefaultdevice();
+    if (dev == 0) /* couldn't find a default device */
+	return_error(e_unknownerror);
+    push(1);
+    make_tav(op, t_device, avm_foreign | a_readonly, pdevice,
+		(gx_device *) dev);
+    return 0;
+}
+
 /* Common functionality of zgethardwareparms & zgetdeviceparams */
 static int
 zget_device_params(i_ctx_t *i_ctx_p, bool is_hardware)
@@ -460,6 +476,7 @@ const op_def zdevice_op_defs[] =
     {"0flushpage", zflushpage},
     {"7.getbitsrect", zgetbitsrect},
     {"1.getdevice", zgetdevice},
+    {"1.getdefaultdevice", zgetdefaultdevice},
     {"2.getdeviceparams", zgetdeviceparams},
     {"2.gethardwareparams", zgethardwareparams},
     {"5makewordimagedevice", zmakewordimagedevice},
