@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -210,34 +210,36 @@ gs_getdevice(int index)
 const gx_device *
 gs_getdefaultdevice(void)
 {
-    gs_memory_t *mem = gs_lib_ctx_get_non_gc_memory_t();
     const gx_device *const *list;
     int count = gs_lib_device_list(&list, NULL);
+    const char *name, *end, *fin;
     int i;
-    char *token, *search, *end;
-    char *name;
 
     /* Search the compiled in device list for a known device name */
-    token = gs_dev_defaults;
-    end = token + strlen(token);
-    while (token < end) {
-      while ((token < end) && (token[0] == ' ')) token++;
-      search = token;
-      while ((search < end) && (search[0] != ' ')) search++;
-      name = gs_alloc_bytes(mem, search - token + 1, "gs_getdefaultdevice");
-      memcpy(name, token, search - token);
-      name[search-token] = '\0';
+    name = gs_dev_defaults;
+    fin = name + strlen(name);
+
+    /* iterate through each name in the string */
+    while (name < fin) {
+
+      /* split a name from any whitespace */
+      while ((name < fin) && (*name == ' ' || *name == '\t')) 
+	name++;
+      end = name;
+      while ((end < fin) && (*end != ' ') && (*end != '\t'))
+	end++;
+
+      /* return any matches */
       for (i = 0; i < count; i++)
-	/* return any matches */
-	if (!memcmp(name, list[i]->dname, search - token))
-	  return gs_getdevice(i);
-      gs_free_object(mem, name, "gs_getdefaultdevice");
+        if ((end - name) == strlen(list[i]->dname))
+	  if (!memcmp(name, list[i]->dname, end - name))
+	    return gs_getdevice(i);
 
       /* otherwise, try the next device name */
-      token = search;
+      name = end;
     }
 
-    /* Fall back the first device in the list. */
+    /* Fall back to the first device in the list. */
     return gs_getdevice(0);
 }
 
