@@ -210,6 +210,34 @@ gs_getdevice(int index)
 const gx_device *
 gs_getdefaultdevice(void)
 {
+    gs_memory_t *mem = gs_lib_ctx_get_non_gc_memory_t();
+    const gx_device *const *list;
+    int count = gs_lib_device_list(&list, NULL);
+    int i;
+    char *token, *search, *end;
+    char *name;
+
+    /* Search the compiled in device list for a known device name */
+    token = gs_dev_defaults;
+    end = token + strlen(token);
+    while (token < end) {
+      while ((token < end) && (token[0] == ' ')) token++;
+      search = token;
+      while ((search < end) && (search[0] != ' ')) search++;
+      name = gs_alloc_bytes(mem, search - token + 1, "gs_getdefaultdevice");
+      memcpy(name, token, search - token);
+      name[search-token] = '\0';
+      for (i = 0; i < count; i++)
+	/* return any matches */
+	if (!memcmp(name, list[i]->dname, search - token))
+	  return gs_getdevice(i);
+      gs_free_object(mem, name, "gs_getdefaultdevice");
+
+      /* otherwise, try the next device name */
+      token = search;
+    }
+
+    /* Fall back the first device in the list. */
     return gs_getdevice(0);
 }
 

@@ -26,6 +26,8 @@
 #	GS - the name of the executable (without the extension, if any).
 #	GS_LIB_DEFAULT - the default directory/ies for searching for the
 #	    initialization and font files at run time.
+#	GS_DEV_DEFAULT - array of default device names, in order of
+#	    preference. If empty the first DEVICE_DEV will be used.
 #	GS_CACHE_DIR - the default directory for caching data between
 #	    ghostscript invocations.
 #	SEARCH_HERE_FIRST - the default setting of -P (whether or not to
@@ -435,6 +437,7 @@ $(gconfig_h) : $(ld_tr)
 # save our set of makefile variables that are defined in every build (paths, etc.)
 $(gconfigd_h) : $(ECHOGS_XE) $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)/version.mak
 	$(EXP)$(ECHOGS_XE) -w $(gconfigd_h) -x 23 define -s -u GS_LIB_DEFAULT -x 2022 $(GS_LIB_DEFAULT) -x 22
+	$(EXP)$(ECHOGS_XE) -a $(gconfigd_h) -x 23 define -s -u GS_DEV_DEFAULT -x 2022 $(GS_DEV_DEFAULT) -x 22
 	$(EXP)$(ECHOGS_XE) -a $(gconfigd_h) -x 23 define -s -u GS_CACHE_DIR -x 2022 $(GS_CACHE_DIR) -x 22
 	$(EXP)$(ECHOGS_XE) -a $(gconfigd_h) -x 23 define -s -u SEARCH_HERE_FIRST -s $(SEARCH_HERE_FIRST)
 	$(EXP)$(ECHOGS_XE) -a $(gconfigd_h) -x 23 define -s -u GS_DOCDIR -x 2022 $(GS_DOCDIR) -x 22

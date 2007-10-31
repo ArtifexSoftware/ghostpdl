@@ -83,3 +83,9 @@ const char *const gs_lib_default_path = GS_LIB_DEFAULT;
 
 /* Define the interpreter initialization file. */
 const char *const gs_init_file = GS_INIT;
+
+/* Define the default devices list. */
+#ifndef GS_DEV_DEFAULT
+#define GS_DEV_DEFAULT ""
+#endif
+const char *const gs_dev_defaults = GS_DEV_DEFAULT;
