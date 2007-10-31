@@ -206,6 +206,13 @@ gs_getdevice(int index)
     return list[index];
 }
 
+/* Get the default device from the known device list */
+const gx_device *
+gs_getdefaultdevice(void)
+{
+    return gs_getdevice(0);
+}
+
 /* Fill in the GC structure descriptor for a device. */
 static void
 gx_device_make_struct_type(gs_memory_struct_type_t *st,

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -39,9 +39,11 @@ typedef struct gs_param_list_s gs_param_list;
 
 /* Device procedures not involving a graphics state. */
 
+const gx_device *gs_getdevice(int);
+const gx_device *gs_getdefaultdevice(void);
+
 int gs_opendevice(gx_device *);
 int gs_copyscanlines(gx_device *, int, byte *, uint, int *, uint *);
-const gx_device *gs_getdevice(int);
 int gs_copydevice(gx_device **, const gx_device *, gs_memory_t *);
 /*
  * If keep_open is true and dev->is_open is true, the copy *may* have

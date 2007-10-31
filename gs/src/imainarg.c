@@ -939,7 +939,7 @@ static void
 print_devices(const gs_main_instance *minst)
 {
     outprintf(minst->heap, "%s", help_default_device);
-    outprintf(minst->heap, " %s\n", gs_devicename(gs_getdevice(0)));
+    outprintf(minst->heap, " %s\n", gs_devicename(gs_getdefaultdevice()));
     outprintf(minst->heap, "%s", help_devices);
     {
 	int i;
