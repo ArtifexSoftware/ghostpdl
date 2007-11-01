@@ -522,8 +522,6 @@ op_get_name_string(op_proc_t opproc)
     const op_def *const *tptr;
     int code;
 
-    /* Enter each operator into the appropriate dictionary. */
-
     for (tptr = op_defs_all; *tptr != 0; tptr++) {
 	const op_def *def;
 
