@@ -288,14 +288,36 @@ typedef enum {
     PDF_IMAGE_TYPE3_MASK,	/* no in-line, don't render */
     PDF_IMAGE_TYPE3_DATA	/* no in-line */
 } pdf_typed_image_context_t;
+
+/*
+ * We define this union because psdf_setup_image_filters may alter the
+ * gs_pixel_image_t part, but pdf_begin_image_data must also have access
+ * to the type-specific parameters.
+ */
+typedef union image_union_s {
+    gs_pixel_image_t pixel;	/* we may change some components */
+    gs_image1_t type1;
+    gs_image3_t type3;
+    gs_image3x_t type3x;
+    gs_image4_t type4;
+} image_union_t;
+
+static int pdf_begin_typed_image(gx_device_pdf *pdev,
+    const gs_imager_state * pis, const gs_matrix *pmat,
+    const gs_image_common_t *pic, const gs_int_rect * prect,
+    const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
+    gs_memory_t * mem, gx_image_enum_common_t ** pinfo,
+    pdf_typed_image_context_t context);
+
 static int
-pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
+pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
 		      const gs_matrix *pmat, const gs_image_common_t *pic,
 		      const gs_int_rect * prect,
 		      const gx_drawing_color * pdcolor,
 		      const gx_clip_path * pcpath, gs_memory_t * mem,
 		      gx_image_enum_common_t ** pinfo,
-		      pdf_typed_image_context_t context)
+		      pdf_typed_image_context_t context,
+                      image_union_t *image)
 {
     cos_dict_t *pnamed = 0;
     const gs_pixel_image_t *pim;
@@ -307,18 +329,6 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     int num_components;
     bool is_mask = false, in_line = false;
     gs_int_rect rect;
-    /*
-     * We define this union because psdf_setup_image_filters may alter the
-     * gs_pixel_image_t part, but pdf_begin_image_data must also have access
-     * to the type-specific parameters.
-     */
-    union iu_ {
-	gs_pixel_image_t pixel;	/* we may change some components */
-	gs_image1_t type1;
-	gs_image3_t type3;
-	gs_image3x_t type3x;
-	gs_image4_t type4;
-    } image[4];
     int width, height;
     const gs_range_t *pranges = 0;
     const pdf_color_space_names_t *names;
@@ -805,6 +815,28 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	((gx_device *)pdev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
 	 pinfo);
 }
+
+static int
+pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
+		      const gs_matrix *pmat, const gs_image_common_t *pic,
+		      const gs_int_rect * prect,
+		      const gx_drawing_color * pdcolor,
+		      const gx_clip_path * pcpath, gs_memory_t * mem,
+		      gx_image_enum_common_t ** pinfo,
+		      pdf_typed_image_context_t context)
+{
+  int code;
+  image_union_t *image = (image_union_t *)gs_malloc(mem->non_gc_memory, 4,
+                       sizeof(image_union_t), "pdf_begin_typed_image(image)");
+  if (image == 0)
+      return_error(gs_error_VMerror);
+  code = pdf_begin_typed_image_impl(pdev, pis, pmat, pic, prect,
+         pdcolor, pcpath, mem, pinfo, context, image);
+  gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
+                                              "pdf_begin_typed_image(image)");
+  return code;
+}
+
 int
 gdev_pdf_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
 			   const gs_matrix *pmat, const gs_image_common_t *pic,
