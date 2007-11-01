@@ -41,6 +41,7 @@
 #include "itoken.h"
 #include "iutil.h"		/* for array_get */
 #include "ivmspace.h"
+#include "iinit.h"
 #include "dstack.h"
 #include "files.h"		/* for file_check_read */
 #include "oper.h"
@@ -102,9 +103,13 @@ int gs_interp_time_slice_ticks = 0x7fff;
 static int
 call_operator(op_proc_t op_proc, i_ctx_t *i_ctx_p)
 {
-    int code = op_proc(i_ctx_p);
+    int code;
 
-    return code;
+#   ifdef DEBUG_TRACE_PS_OPERATORS
+    if_debug1('!', "[!]operator %s\n", op_get_name_string(op_proc));
+#   endif
+    code = op_proc(i_ctx_p);
+    return code; /* A good place for a conditional breakpoint. */
 }
 #else
 #  define call_operator(proc, p) ((*(proc))(p))

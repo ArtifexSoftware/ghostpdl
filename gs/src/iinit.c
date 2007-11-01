@@ -512,3 +512,27 @@ op_init(i_ctx_t *i_ctx_p)
 
     return 0;
 }
+
+#ifdef DEBUG_TRACE_PS_OPERATORS
+static const char *unknown_op_name = "unknown_op";
+
+const char *
+op_get_name_string(op_proc_t opproc)
+{
+    const op_def *const *tptr;
+    int code;
+
+    /* Enter each operator into the appropriate dictionary. */
+
+    for (tptr = op_defs_all; *tptr != 0; tptr++) {
+	const op_def *def;
+
+	for (def = *tptr; def->oname != 0; def++)
+	    if (!op_def_is_begin_dict(def)) {
+		if (def->proc == opproc)
+		    return def->oname;
+	    }
+    }
+    return unknown_op_name;
+}
+#endif		   
