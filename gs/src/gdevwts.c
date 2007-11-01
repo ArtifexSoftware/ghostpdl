@@ -407,7 +407,9 @@ wtscmyk_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
     /* For each raster line */
     for (y = 0; y < pdev->height; y++) {
-	gdev_prn_get_bits(pdev, y, cmyk_line, &data);
+	code = gdev_prn_get_bits(pdev, y, cmyk_line, &data);
+	if (code < 0)
+	    break;		/* return the code below after cleanup */
 	wts_halftone_line_8(wdev->wcooked, y, pdev->width, n_planes, 
 			    wdev->band_offset_x, wdev->band_offset_y, dst, data);
 	for (i = 0; i < n_planes; i++)
@@ -1102,7 +1104,9 @@ wtsimdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	 * The get_bit routines for our device returns a halftoned copy of
 	 * the output data.  Print this data to the output file.
 	 */
-	gdev_prn_get_bits(pdev, y, halftoned_buffer, &halftoned_data);
+	code = gdev_prn_get_bits(pdev, y, halftoned_buffer, &halftoned_data);
+	if (code < 0)
+	    break;		/* return code below after cleanup */
 	if (!output_is_nul)
 	    write_pkmraw_row(width, halftoned_data, prn_stream);
     }
