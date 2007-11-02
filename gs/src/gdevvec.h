@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -96,6 +96,12 @@ typedef enum {
 typedef struct gx_device_vector_procs_s {
     /* Page management */
     int (*beginpage) (gx_device_vector * vdev);
+    /* The beginpage proc is actually called from gdev_vector_stream(),
+       so this accessor must be used from all other procs that want
+       to be called after beginpage and *cannot* be used from within 
+       beginpage. in_page must also be set to false in the device's 
+       output_page method to request that beginpage be called again 
+       when drawing next occurs. */ 
     /* Imager state */
     int (*setlinewidth) (gx_device_vector * vdev, floatp width);
     int (*setlinecap) (gx_device_vector * vdev, gs_line_cap cap);
