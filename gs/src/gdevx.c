@@ -239,9 +239,7 @@ GC gc, XImage * pi, int sx, int sy, int dx, int dy, unsigned w, unsigned h);
 
 #define put_image(dpy,win,gc,im,sx,sy,x,y,w,h)\
   BEGIN\
-    if ( xdev->useXPutImage ) {\
-      if (XInitImage(im) == 0)\
-	return_error(gs_error_unknownerror);\
+    if ( xdev->useXPutImage && !(XInitImage(im) == 0) ) {\
       XPutImage(dpy,win,gc,im,sx,sy,x,y,w,h);\
     } else {\
       int code_ = alt_put_image(dev,dpy,win,gc,im,sx,sy,x,y,w,h);\
