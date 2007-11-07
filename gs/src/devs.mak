@@ -119,8 +119,9 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 # High-level file formats:
 #	epswrite  EPS output (like PostScript Distillery)
 #	pdfwrite  PDF output (like Adobe Acrobat Distiller)
-#	pswrite  PostScript output (like PostScript Distillery)
-#	pxlmono  Black-and-white PCL XL
+#	pswrite   PostScript output (like PostScript Distillery)
+#	txtwrite  ASCII or Unicode text output
+#	pxlmono   Black-and-white PCL XL
 #	pxlcolor  Color PCL XL
 # Other raster file formats and devices:
 #	bit	Plain bits, monochrome
@@ -792,6 +793,17 @@ $(GLOBJ)gdevps.$(OBJ) : $(GLSRC)gdevps.c $(GDEV)\
  $(sa85x_h) $(sstring_h) $(strimpl_h)\
  $(gdevpsdf_h) $(gdevpsu_h) $(spprint_h)
 	$(GLCC) $(GLO_)gdevps.$(OBJ) $(C_) $(GLSRC)gdevps.c
+
+# Plain text writer
+
+txtwrite_=$(GLOBJ)gdevtxtw.$(OBJ)
+$(DD)txtwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(txtwrite_)
+	$(SETDEV2) $(DD)txtwrite $(txtwrite_)
+
+$(GLOBJ)gdevtxtw.$(OBJ) : $(GLSRC)gdevtxtw.c $(GDEV)\
+ $(math__h) $(memory__h) $(string__h) $(time__h)
+	$(GLCC) $(GLO_)gdevtxtw.$(OBJ) $(C_) $(GLSRC)gdevtxtw.c
+
 
 ################ BEGIN PDF WRITER ################
 
