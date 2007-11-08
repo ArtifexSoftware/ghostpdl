@@ -192,6 +192,7 @@ currentdict /tt_tag_dict .undef
 
 % Invert the MacRomanEncoding.
 /.romanmacdict MacRomanEncodingForTrueType .invert_encoding def
+/.latin1isodict ISOLatin1Encoding .invert_encoding def
 
 % Define remapping for misnamed glyphs in TrueType 'post' tables.
 % There are probably a lot more than this!
@@ -621,7 +622,21 @@ currentdict /tt_tag_dict .undef
 	postglyphs postpos //get_from_stringarray exec
         postglyphs postpos 1 add 2 index //getinterval_from_stringarray exec cvn
 	exch postpos add 1 add /postpos exch def
-        2 index 3 1 roll put
+        2 index 3 1 roll
+        % Some TrueType fonts converted by "Windows Type 1 Installer" have
+        % problematic post table including MacGlyphEncoding entries which
+        % should be omitted. Such extra entries in the beginning of glyphName
+        % array make /Encoding broken. If we find populary predefined
+        % ISOLatin1Encoding glyph name in the post table, empty encoding is
+        % returned. Some TrueType fonts for Microsoft Windows redefines
+        % MacGlyphEncoding glyph name out of predefined range). To permit
+        % such fonts, ISOLatin1Encoding is used to find broken post. Bug 689495.
+        .latin1isodict 1 index known {
+          TTFDEBUG { (ignore post table that redefines ISOLatin1Encoding glyph name /) print dup == flush } if
+          pop pop pop pop [ ] /numglyphs 0 def exit
+        } {
+          put
+        } ifelse
       } for
       /postnames exch def
       numglyphs array 0 1 numglyphs 1 sub {
