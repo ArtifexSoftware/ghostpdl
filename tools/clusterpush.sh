@@ -13,6 +13,7 @@ fi
 
 echo "Pushing to $DEST/$TARGET on the cluster..."
 rsync -avz \
-  --exclude .svn --exclude obj --exclude bin \
+  --exclude .svn \
+  --exclude bin --exclude obj --exclude debugobj \
   --exclude ufst --exclude ufst-obj \
   ./* $HOST:$DEST/$TARGET
