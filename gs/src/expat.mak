@@ -38,9 +38,9 @@ expat.clean-not-config-clean :
 	$(RM_) $(EXPATOBJ)*.$(OBJ)
 
 expat.config-clean :
-	$(RM_) $(EXPATGEN)expat*.dev
-
-PDEP=$(AK)
+	$(RM_) $(EXPATGEN)expat.dev
+	$(RM_) $(EXPATGEN)expat_0.dev
+	$(RM_) $(EXPATGEN)expat_1.dev
 
 expat_=$(EXPATOBJ)xmlparse.$(OBJ) \
 	$(EXPATOBJ)xmltok.$(OBJ) \
