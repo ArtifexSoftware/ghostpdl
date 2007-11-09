@@ -137,7 +137,7 @@ PNGSRCDIR=sys$library:
 .else
 PNGSRCDIR=[--.libpng]
 .endif
-PNGVERSION=10208
+PNGVERSION=10222
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
