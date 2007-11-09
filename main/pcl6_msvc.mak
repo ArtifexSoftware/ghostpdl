@@ -34,9 +34,6 @@ JVERSION=6
 !ifndef PNGSRCDIR
 PNGSRCDIR=..\gs\libpng
 !endif
-!ifndef PNGVERSION
-PNGVERSION=10005
-!endif
 !ifndef ZSRCDIR
 ZSRCDIR=..\gs\zlib
 !endif
