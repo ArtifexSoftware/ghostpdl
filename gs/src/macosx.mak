@@ -152,8 +152,8 @@ JPEG_NAME=jpeg
 # You may need to change this if the libpng version changes.
 # See libpng.mak for more information.
 
-PSRCDIR=libpng
-PVERSION=10218
+PNGSRCDIR=libpng
+PNGVERSION=10218
 
 # Choose whether to use a shared version of the PNG library, and if so,
 # what its name is.

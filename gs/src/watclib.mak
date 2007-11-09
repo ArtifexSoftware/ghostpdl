@@ -60,11 +60,11 @@ JSRCDIR=jpeg
 JVERSION=6
 !endif
 
-!ifndef PSRCDIR
-PSRCDIR=libpng
+!ifndef PNGSRCDIR
+PNGSRCDIR=libpng
 !endif
-!ifndef PVERSION
-PVERSION=10218
+!ifndef PNGVERSION
+PNGVERSION=10218
 !endif
 
 !ifndef ZSRCDIR

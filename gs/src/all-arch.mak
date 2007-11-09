@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2006 Artifex Software, Inc.
+#  Copyright (C) 2001-2007 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -180,8 +180,7 @@ COMMON_ARGS		= DEVICE_DEVS_EXTRA='$(DEVICE_DEVS_EXTRA)' \
 			  GS_LIB_DEFAULT='$(GS_LIB_DEFAULT)' \
 			  JSRCDIR='$(JSRCDIR)' \
 			  PNGSRCDIR='$(PNGSRCDIR)' \
-			  PSRCDIR='$(PNGSRCDIR)' \
-			  PVERSION=10218 \
+			  PNGVERSION=10218 \
 			  SHARE_LIBPNG='$(SHARE_LIBPNG)' \
 			  SHARE_ZLIB='$(SHARE_ZLIB)' \
 			  XCFLAGS='$(XCFLAGS)' \

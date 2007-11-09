@@ -174,7 +174,7 @@ JPEG_NAME=jpeg
 # See libpng.mak for more information.
 
 SHARE_LIBPNG=@SHARE_LIBPNG@
-PSRCDIR=@LIBPNGDIR@
+PNGSRCDIR=@LIBPNGDIR@
 LIBPNG_NAME=png
 
 # Define the directory where the zlib sources are stored.

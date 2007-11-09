@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2006 Artifex Software, Inc.
+#  Copyright (C) 2001-2007 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -47,8 +47,8 @@ JVERSION=6
 SHARE_JPEG=0
 JPEG_NAME=jpeg
 
-PSRCDIR=libpng
-PVERSION=10218
+PNGSRCDIR=libpng
+PNGVERSION=10218
 SHARE_LIBPNG=1
 LIBPNG_NAME=png
 

@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2006 Artifex Software, Inc.
+#  Copyright (C) 2001-2007 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -37,7 +37,7 @@
 #	JSRCDIR - the directory where the IJG JPEG library source code
 #	    is stored (at compilation time).
 #	JVERSION - the major version number of the IJG JPEG library.
-#	PSRCDIR, PVERSION - the same for libpng.
+#	PNGSRCDIR, PNGVERSION - the same for libpng.
 #	ZSRCDIR - the same for zlib.
 #	SHARE_JPEG - normally 0; if set to 1, asks the linker to use
 #	    an existing compiled libjpeg (-ljpeg) instead of compiling and
@@ -326,7 +326,7 @@ IJSCF_=
 JI_=$(JSRCDIR)
 JF_=
 JCF_=$(D_)SHARE_JPEG=$(SHARE_JPEG)$(_D)
-PI_=$(PSRCDIR) $(II)$(ZSRCDIR)
+PI_=$(PNGSRCDIR) $(II)$(ZSRCDIR)
 # PF_ should include PNG_USE_CONST, but this doesn't work.
 #PF_=-DPNG_USE_CONST
 PF_=

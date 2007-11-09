@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2006 Artifex Software, Inc.
+#  Copyright (C) 2001-2007 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -27,8 +27,6 @@
 #         versions prior 0.90 is not supported.
 #	SHARE_LIBPNG - 0 to compile libpng, 1 to share
 #	LIBPNG_NAME - if SHARE_LIBPNG=1, the name of the shared library
-# NOTE: currently users of this makefile define PSRCDIR and PVERSION,
-# not PNGSRCDIR and PNGVERSION.  This is a bug.
 
 # This partial makefile compiles the png library for use in the Ghostscript
 # PNG drivers.  You can get the source code for this library from:
@@ -57,8 +55,6 @@
 #   http://www.w3.org/pub/WWW/TR/WD-png
 
 # (Rename directories.)
-PNGSRCDIR=$(PSRCDIR)
-PNGVERSION=$(PVERSION)
 PNGSRC=$(PNGSRCDIR)$(D)
 PNGGEN=$(PNGGENDIR)$(D)
 PNGOBJ=$(PNGOBJDIR)$(D)

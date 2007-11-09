@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2006 Artifex Software, Inc.
+#  Copyright (C) 2001-2007 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -133,11 +133,11 @@ JVERSION=6
 # See libpng.mak for more information.
 
 .ifdef SYSLIB
-PSRCDIR=sys$library:
+PNGSRCDIR=sys$library:
 .else
-PSRCDIR=[--.libpng]
+PNGSRCDIR=[--.libpng]
 .endif
-PVERSION=10208
+PNGVERSION=10208
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.

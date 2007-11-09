@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2006 Artifex Software, Inc.
+#  Copyright (C) 2001-2007 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -119,8 +119,8 @@ JPEG_NAME=jpeg
 # You may need to change this if the libpng version changes.
 # See libpng.mak for more information.
 
-PSRCDIR=libpng
-PVERSION=10218
+PNGSRCDIR=libpng
+PNGVERSION=10218
 
 # Choose whether to use a shared version of the PNG library (-lpng).
 # See gs.mak and Make.htm for more information.
