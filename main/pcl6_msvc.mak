@@ -31,11 +31,11 @@ JSRCDIR=..\gs\jpeg
 !ifndef JVERSION
 JVERSION=6
 !endif
-!ifndef PSRCDIR
-PSRCDIR=..\gs\libpng
+!ifndef PNGSRCDIR
+PNGSRCDIR=..\gs\libpng
 !endif
-!ifndef PVERSION
-PVERSION=10005
+!ifndef PNGVERSION
+PNGVERSION=10005
 !endif
 !ifndef ZSRCDIR
 ZSRCDIR=..\gs\zlib

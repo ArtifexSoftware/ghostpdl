@@ -27,7 +27,7 @@ PSSRCDIR?=../gs/src
 PSISRCDIR?=../psi
 PSLIBDIR?=../gs/lib
 ICCSRCDIR?=../gs/icclib
-PSRCDIR?=../gs/libpng
+PNGSRCDIR?=../gs/libpng
 # Path for including gs/Resource into romfs (replaces the gs default) :
 PSRESDIR?=../gs/Resource
 

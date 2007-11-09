@@ -27,7 +27,7 @@ PSSRCDIR?=../gs/src
 XPSSRCDIR?=../xps
 PSLIBDIR?=../gs/lib
 ICCSRCDIR?=../gs/icclib
-PSRCDIR?=../gs/libpng
+PNGSRCDIR?=../gs/libpng
 
 # PLPLATFORM indicates should be set to 'ps' for language switch
 # builds and null otherwise.

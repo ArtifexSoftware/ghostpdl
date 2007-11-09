@@ -35,7 +35,7 @@ ZOBJDIR?=$(GENDIR)
 SHARE_ZLIB?=0
 SHARE_LIBPNG?=0
 
-PSRCDIR?=../gs/libpng
+PNGSRCDIR?=../gs/libpng
 # only relevant if not shared
 PNGCCFLAGS?=-DPNG_USER_MEM_SUPPORTED
 

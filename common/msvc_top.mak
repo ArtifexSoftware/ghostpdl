@@ -1,6 +1,15 @@
-#    Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
-#    Unauthorized use, copying, and/or distribution prohibited.
-
+#  Copyright (C) 1997-2007 Artifex Software, Inc.
+#  All Rights Reserved.
+#
+#  This software is provided AS-IS with no warranty, either express or
+#  implied.
+#
+#  This software is distributed under license and may not be copied, modified
+#  or distributed except as expressly authorized under the terms of that
+#  license.  Refer to licensing information at http://www.artifex.com/
+#  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+#  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+#
 # msvc_top.mak
 # Generic top-level makefile for Win32 Microsoft Visual C (ver >= 4.1)
 
@@ -94,7 +103,7 @@ $(GENDIR)/ldgs.tr: FORCE
 	GLSRCDIR="$(GLSRCDIR)" DEBUG=$(DEBUG) NOPRIVATE=$(NOPRIVATE) \
 	GLGENDIR="$(GLGENDIR)" GLOBJDIR="$(GLOBJDIR)" \
 	ICCSRCDIR="$(ICCSRCDIR)" IMDISRCDIR="$(IMDISRCDIR)" \
-	PSRCDIR="$(PSRCDIR)" PVERSION="$(PVERSION)" \
+	PNGSRCDIR="$(PNGSRCDIR)" PNGVERSION="$(PNGVERSION)" \
 	JSRCDIR="$(JSRCDIR)" JVERSION="$(JVERSION)" \
 	ZSRCDIR="$(ZSRCDIR)" ZGENDIR="$(ZGENDIR)" ZOBJDIR="$(ZOBJDIR)" ZLIB_NAME="$(ZLIB_NAME)" SHARE_ZLIB="$(SHARE_ZLIB)" \
 	PSSRCDIR=$(PSSRCDIR) PSGENDIR=$(GENDIR) \
@@ -129,7 +138,7 @@ $(GENDIR)/ldgs.tr: FORCE
 	$(MAKE) /F $(GLSRCDIR)\msvclib.mak MSVC_VERSION="$(MSVC_VERSION)" \
 	GLSRCDIR="$(GLSRCDIR)" DEBUG=$(DEBUG) NOPRIVATE=$(NOPRIVATE) \
 	GLGENDIR="$(GLGENDIR)" GLOBJDIR="$(GLOBJDIR)" \
-	PSRCDIR="$(PSRCDIR)" PVERSION="$(PVERSION)" \
+	PNGSRCDIR="$(PNGSRCDIR)" PNGVERSION="$(PNGVERSION)" \
 	JSRCDIR="$(JSRCDIR)" JVERSION="$(JVERSION)" \
 	ZSRCDIR="$(ZSRCDIR)" ZGENDIR="$(ZGENDIR)" ZOBJDIR="$(ZOBJDIR)" ZLIB_NAME="$(ZLIB_NAME)" SHARE_ZLIB="$(SHARE_ZLIB)" \
 	PSSRCDIR=$(PSSRCDIR) PSGENDIR=$(GENDIR) \

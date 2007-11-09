@@ -1,6 +1,15 @@
-#    Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
-#    Unauthorized use, copying, and/or distribution prohibited.
-
+#  Copyright (C) 1997-2007 Artifex Software, Inc.
+#  All Rights Reserved.
+#
+#  This software is provided AS-IS with no warranty, either express or
+#  implied.
+#
+#  This software is distributed under license and may not be copied, modified
+#  or distributed except as expressly authorized under the terms of that
+#  license.  Refer to licensing information at http://www.artifex.com/
+#  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+#  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+#
 # ugcc_top.mak
 # Generic top-level makefile for Unix/gcc platforms.
 
@@ -77,8 +86,9 @@ $(GENDIR)/ldgs.tr: FORCE
           COMPILE_INITS=$(COMPILE_INITS) PCLXL_ROMFS_ARGS='$(PCLXL_ROMFS_ARGS)' PJL_ROMFS_ARGS='$(PJL_ROMFS_ARGS)' \
 	  UFST_ROOT=$(UFST_ROOT) UFST_BRIDGE=$(UFST_BRIDGE) UFST_LIB_EXT=$(UFST_LIB_EXT) \
 	  UFST_ROMFS_ARGS='$(UFST_ROMFS_ARGS)' \
-	  PSRCDIR=$(PSRCDIR) PVERSION=$(PVERSION) PSOBJDIR=$(GENDIR) SHARE_LIBPNG=$(SHARE_LIBPNG) PNGCCFLAGS=$(PNGCCFLAGS) \
-	  IJSSRCDIR=../gs/ijs \
+	  PNGSRCDIR=$(PNGSRCDIR) PNGVERSION=$(PNGVERSION) \
+	  SHARE_LIBPNG=$(SHARE_LIBPNG) PNGCCFLAGS=$(PNGCCFLAGS) \
+	  PSOBJDIR=$(GENDIR) IJSSRCDIR=../gs/ijs \
 	  -f $(GLSRCDIR)/unix-gcc.mak\
 	  $(GLOBJDIR)/ld.tr \
 	  $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gsfemu.o \
@@ -115,8 +125,9 @@ $(GENDIR)/ldgs.tr: FORCE
 	  UFST_ROOT=$(UFST_ROOT) UFST_BRIDGE=$(UFST_BRIDGE) UFST_LIB_EXT=$(UFST_LIB_EXT) \
 	  UFST_ROMFS_ARGS='$(UFST_ROMFS_ARGS)' \
 	  UFST_CFLAGS='$(UFST_CFLAGS)' \
-	  PSRCDIR=$(PSRCDIR) PVERSION=$(PVERSION) PSOBJDIR=$(GENDIR) SHARE_LIBPNG=$(SHARE_LIBPNG) PNGCCFLAGS=$(PNGCCFLAGS) \
-	  IJSSRCDIR=../gs/ijs \
+	  PNGSRCDIR=$(PNGSRCDIR) PNGVERSION=$(PNGVERSION) \
+	  SHARE_LIBPNG=$(SHARE_LIBPNG) PNGCCFLAGS=$(PNGCCFLAGS) \
+	  PSOBJDIR=$(GENDIR) IJSSRCDIR=../gs/ijs \
 	  -f $(GLSRCDIR)/ugcclib.mak \
 	  $(GLOBJDIR)/ld.tr \
 	  $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gsfemu.o \
