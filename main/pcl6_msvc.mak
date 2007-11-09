@@ -28,9 +28,6 @@ COMMONDIR=..\common
 !ifndef JSRCDIR
 JSRCDIR=..\gs\jpeg
 !endif
-!ifndef JVERSION
-JVERSION=6
-!endif
 !ifndef PNGSRCDIR
 PNGSRCDIR=..\gs\libpng
 !endif
