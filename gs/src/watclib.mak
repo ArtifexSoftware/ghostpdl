@@ -56,9 +56,6 @@ GLD=$(GLGENDIR)\$(NUL)
 !ifndef JSRCDIR
 JSRCDIR=jpeg
 !endif
-!ifndef JVERSION
-JVERSION=6
-!endif
 
 !ifndef PNGSRCDIR
 PNGSRCDIR=libpng

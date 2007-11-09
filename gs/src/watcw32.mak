@@ -105,7 +105,6 @@ MAKEDLL=1
 # See jpeg.mak for more information.
 
 JSRCDIR=jpeg
-JVERSION=6
 
 # Define the directory where the PNG library sources are stored,
 # and the version of the library that is stored there.

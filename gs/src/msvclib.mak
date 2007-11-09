@@ -121,7 +121,6 @@ GLD=$(GLGENDIR)\$(NUL)
 
 !ifndef JSRCDIR
 JSRCDIR=jpeg
-JVERSION=6
 !endif
 
 # Define the directory where the PNG library sources are stored,

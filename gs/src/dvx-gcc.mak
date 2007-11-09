@@ -104,7 +104,6 @@ BUILD_TIME_GS=gs
 # See jpeg.mak for more information.
 
 JSRCDIR=jpeg
-JVERSION=6
 
 # Note: if a shared library is used, it may not contain the
 # D_MAX_BLOCKS_IN_MCU patch, and thus may not be able to read

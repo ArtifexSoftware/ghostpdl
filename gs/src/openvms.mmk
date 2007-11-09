@@ -125,7 +125,6 @@ JSRCDIR=sys$library:
 .else
 JSRCDIR=[--.jpeg]
 .endif
-JVERSION=6
 
 # Define the directory where the PNG library sources are stored,
 # and the version of the library that is stored there.
