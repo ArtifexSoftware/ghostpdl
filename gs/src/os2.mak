@@ -124,7 +124,6 @@ JVERSION=6
 # See libpng.mak for more information.
 
 PNGSRCDIR=libpng
-PNGVERSION=10222
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
@@ -205,9 +204,7 @@ EMXPATH=/emx
 COMPDIR=$(COMPBASE)\bin
 INCDIR=$(EMXPATH)/include
 LIBDIR=$(EMXPATH)/lib
-!if $(PNGVERSION) >= 10009
 CPNG=-DPNGAPI=
-!endif
 !endif
 
 !if $(IBMCPP)

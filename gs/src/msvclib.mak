@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2006 Artifex Software, Inc.
+#  Copyright (C) 2001-2007 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -131,7 +131,6 @@ JVERSION=6
 
 !ifndef PNGSRCDIR
 PNGSRCDIR=libpng
-PNGVERSION=10222
 !endif
 
 # Define the directory where the zlib sources are stored.

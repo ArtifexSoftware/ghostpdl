@@ -37,7 +37,7 @@
 #	JSRCDIR - the directory where the IJG JPEG library source code
 #	    is stored (at compilation time).
 #	JVERSION - the major version number of the IJG JPEG library.
-#	PNGSRCDIR, PNGVERSION - the same for libpng.
+#	PNGSRCDIR - the same for libpng.
 #	ZSRCDIR - the same for zlib.
 #	SHARE_JPEG - normally 0; if set to 1, asks the linker to use
 #	    an existing compiled libjpeg (-ljpeg) instead of compiling and

@@ -19,12 +19,6 @@
 #	PNGSRCDIR - the source directory
 #	PNGGENDIR - the generated intermediate file directory
 #	PNGOBJDIR - the object directory
-#	PNGVERSION - the library version number ("90", "95", "96",
-#	  and "10001" through "10012" and "10201").
-#	  For historical reasons, "101" and "102" are also acceptable,
-#	  even though they don't match libpng's numbering scheme
-#	  (see png.h for more details).
-#         versions prior 0.90 is not supported.
 #	SHARE_LIBPNG - 0 to compile libpng, 1 to share
 #	LIBPNG_NAME - if SHARE_LIBPNG=1, the name of the shared library
 
@@ -79,7 +73,7 @@ png.config-clean :
 PDEP=$(AK)
 
 png_1=$(PNGOBJ)png.$(OBJ) $(PNGOBJ)pngmem.$(OBJ) $(PNGOBJ)pngerror.$(OBJ) $(PNGOBJ)pngset.$(OBJ)
-png_2=$(PNGOBJ)pngtrans.$(OBJ) $(PNGOBJ)pngwrite.$(OBJ) $(PNGOBJ)pngwtran.$(OBJ) $(PNGOBJ)pngwutil.$(OBJ)
+png_2=$(PNGOBJ)pngtrans.$(OBJ) $(PNGOBJ)pngwrite.$(OBJ) $(PNGOBJ)pngwtran.$(OBJ) $(PNGOBJ)pngwutil.$(OBJ) $(PNGOBJ)pngwio.$(OBJ)
 png_3=$(PNGOBJ)pngread.$(OBJ) $(PNGOBJ)pngrutil.$(OBJ) $(PNGOBJ)pngrtran.$(OBJ) $(PNGOBJ)pngrio.$(OBJ) $(PNGOBJ)pngget.$(OBJ)
 
 # libpng modules
@@ -139,11 +133,10 @@ $(PNGGEN)libpng_1.dev : $(TOP_MAKEFILES) $(LIBPNG_MAK) $(ECHOGS_XE) $(PZGEN)zlib
 
 # Define the non-shared version of libpng.
 $(PNGGEN)libpng_0.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(png_1) $(png_2) $(png_3)\
- $(PZGEN)zlibe.dev $(PNGGEN)lpg$(PNGVERSION).dev
+ $(PZGEN)zlibe.dev $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
 	$(SETMOD) $(PNGGEN)libpng_0 $(png_1)
 	$(ADDMOD) $(PNGGEN)libpng_0 $(png_2)
 	$(ADDMOD) $(PNGGEN)libpng_0 $(png_3)
-	$(ADDMOD) $(PNGGEN)libpng_0 -include $(PZGEN)zlibe.dev $(PNGGEN)lpg$(PNGVERSION).dev
+	$(ADDMOD) $(PNGGEN)libpng_0 $(PNGOBJ)pngwio.$(OBJ)
+	$(ADDMOD) $(PNGGEN)libpng_0 -include $(PZGEN)zlibe.dev $(PZGEN)crc32.dev
 
-$(PNGGEN)lpg$(PNGVERSION).dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
-	$(SETMOD) $(PNGGEN)lpg$(PNGVERSION) $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev

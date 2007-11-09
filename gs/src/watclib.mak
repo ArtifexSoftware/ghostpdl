@@ -63,9 +63,6 @@ JVERSION=6
 !ifndef PNGSRCDIR
 PNGSRCDIR=libpng
 !endif
-!ifndef PNGVERSION
-PNGVERSION=10222
-!endif
 
 !ifndef ZSRCDIR
 ZSRCDIR=zlib
