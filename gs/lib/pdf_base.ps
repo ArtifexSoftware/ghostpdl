@@ -254,19 +254,47 @@ currentdict /PDFScanRules_null undef
 % Read a token, but simply return false (no token read) in the case of an
 % error.  This is messy because 'token' either may or may not pop its operand
 % if an error occurs, and because the return values are different depending
-% on whether the source is a file or a string.
+% on whether the source is a file or a string. To avoid closing the file
+% check for '{' before trying 'token'.
+/token_nofail_dict mark
+  ( )  { dup ( ) readstring pop pop } bind
+  (\t) 1 index
+  (\r) 1 index
+  (\n) 1 index
+  (\000) 1 index
+  ({) { //null //true exit } bind
+.dicttomark def
+
 /token_nofail {		% <file|string> token_nofail false
 			% <file> token_nofail <token> true
 			% <string> token_nofail <post> <token> true
-  null 1 index			% stack: source null source
-  { token } .internalstopped {	% stack: source null [source]
-    null ne { pop } if pop false
-  } {				% stack: source null ([post] token true | false)
-    { 1 index null eq { 3 1 } { 4 2 } ifelse roll pop pop true }
-    { pop pop false }
-    ifelse
-  } ifelse
+  dup type /filetype eq {
+    { dup ( ) .peekstring not { ({) } if
+      //token_nofail_dict exch .knownget not {
+        //null 1 index { token } .internalstopped exit
+      } if
+      exec
+    } loop
+    {                                   % stack: source null [source]
+      //null ne { pop } if pop //false
+    } {			         	% stack: source null ([post] token true | false)
+      { 3 1 roll pop pop //true }
+      { pop pop //false }
+      ifelse
+    } ifelse
+  } {
+    //null 1 index			% stack: source null source
+    { token } .internalstopped {	% stack: source null [source]
+      //null ne { pop } if pop //false
+    } {			         	% stack: source null ([post] token true | false)
+      { 4 2 roll pop pop //true }
+      { pop pop //false }
+      ifelse
+    } ifelse
+   } ifelse
 } bind def
+
+currentdict /token_nofail_dict .undef
 
 % ================================ Objects ================================ %
 
