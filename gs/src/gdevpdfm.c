@@ -368,7 +368,10 @@ pdfmark_bind_named_object(gx_device_pdf *pdev, const gs_const_string *objname,
 	}
     }
     if ((*pres)->object->id == -1) {
-	code = pdf_substitute_resource(pdev, pres, resourceXObject, NULL, true);
+	if(objname != NULL && objname->size)
+	    code = pdf_substitute_resource(pdev, pres, resourceXObject, NULL, false);
+	else
+	    code = pdf_substitute_resource(pdev, pres, resourceXObject, NULL, true);
 	if (code < 0)
 	    return code;
     } else {
