@@ -63,6 +63,13 @@ static const char *pl_mac_names[258] = {
  * truetype (loca/glyf) flavored opentypes.
  */
 
+static unsigned int
+xps_true_get_glyph_index(gs_font_type42 *pfont42, gs_glyph glyph)
+{
+    /* identity */
+    return glyph;
+}
+
 static int
 xps_true_callback_string_proc(gs_font_type42 *p42, ulong offset, uint length, const byte **pdata)
 {
@@ -76,11 +83,14 @@ xps_true_callback_string_proc(gs_font_type42 *p42, ulong offset, uint length, co
     return 0;
 }
 
+static gs_char xps_last_char = GS_NO_CHAR; /* same hack as in PCL */
+
 static gs_glyph
 xps_true_callback_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t spc)
 {
     xps_font_t *font = pfont->client_data;
     int value;
+    xps_last_char = chr; /* save the char we're encoding for the decode_glyph hack */
     value = xps_encode_font_char(font, chr);
     if (value == 0)
 	return gs_no_glyph;
@@ -88,9 +98,13 @@ xps_true_callback_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t spc)
 }
 
 static gs_char
-xps_true_callback_decode_glyph(gs_font *p42, gs_glyph glyph)
+xps_true_callback_decode_glyph(gs_font *pfont, gs_glyph glyph)
 {
-    return GS_NO_CHAR;
+    /* We should do a reverse cmap lookup here to match PS/PDF. */
+    /* However, a complete rearchitecture of our text and font processing
+     * would be necessary to match XPS unicode mapping with the
+     * cluster maps. Alas, we cheat similarly to PCL. */
+    return xps_last_char;
 }
 
 static int
@@ -353,7 +367,9 @@ int xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font)
 
 	p42->data.string_proc = xps_true_callback_string_proc;
 	p42->data.proc_data = font;
+
 	gs_type42_font_init(p42, font->subfontid);
+	p42->data.get_glyph_index = xps_true_get_glyph_index;
     }
 
     gs_definefont(ctx->fontdir, font->font);

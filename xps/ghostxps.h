@@ -317,6 +317,7 @@ int xps_fill_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, float x, 
 
 int xps_find_sfnt_table(xps_font_t *font, char *name, int *lengthp);
 int xps_load_sfnt_cmap(xps_font_t *font);
+int xps_load_sfnt_name(xps_font_t *font, char *namep);
 int xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font);
 int xps_init_postscript_font(xps_context_t *ctx, xps_font_t *font);
 
