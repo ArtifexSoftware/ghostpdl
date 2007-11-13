@@ -2054,3 +2054,22 @@ pdf_write_font_bbox(gx_device_pdf *pdev, const gs_int_rect *pbox)
 	     pbox->p.x, pbox->p.y, x, y);
     return 0;
 }
+
+/* Write a FontBBox dictionary element using floats for the values. */
+int
+pdf_write_font_bbox_float(gx_device_pdf *pdev, const gs_rect *pbox)
+{
+    stream *s = pdev->strm;
+    /*
+     * AR 4 doesn't like fonts with empty FontBBox, which
+     * happens when the font contains only space characters.
+     * Small bbox causes AR 4 to display a hairline. So we use
+     * the full BBox.
+     */ 
+    float x = pbox->q.x + ((pbox->p.x == pbox->q.x) ? 1000 : 0);
+    float y = pbox->q.y + ((pbox->p.y == pbox->q.y) ? 1000 : 0);
+
+    pprintg4(s, "/FontBBox[%f %f %f %f]",
+	     pbox->p.x, pbox->p.y, x, y);
+    return 0;
+}

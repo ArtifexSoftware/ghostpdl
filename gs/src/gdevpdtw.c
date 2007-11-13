@@ -430,7 +430,7 @@ pdf_finish_write_contents_type3(gx_device_pdf *pdev,
 {
     stream *s = pdev->strm;
 
-    pdf_write_font_bbox(pdev, &pdfont->u.simple.s.type3.FontBBox);
+    pdf_write_font_bbox_float(pdev, &pdfont->u.simple.s.type3.FontBBox);
     pdf_write_Widths(pdev, pdfont->u.simple.FirstChar, 
 		    pdfont->u.simple.LastChar, pdfont->Widths);
     stream_puts(s, "/Subtype/Type3>>\n");

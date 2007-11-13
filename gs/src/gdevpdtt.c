@@ -1029,10 +1029,10 @@ pdf_make_font3_resource(gx_device_pdf *pdev, gs_font *font,
 			bfont->nearest_encoding_index, true);
     pdfont->u.simple.s.type3.char_procs = NULL;
     pdfont->u.simple.s.type3.cached = cached;
-    pdfont->u.simple.s.type3.FontBBox.p.x = (int)floor(bfont->FontBBox.p.x);
-    pdfont->u.simple.s.type3.FontBBox.p.y = (int)floor(bfont->FontBBox.p.y);
-    pdfont->u.simple.s.type3.FontBBox.q.x = (int)ceil(bfont->FontBBox.q.x);
-    pdfont->u.simple.s.type3.FontBBox.q.y = (int)ceil(bfont->FontBBox.q.y);
+    pdfont->u.simple.s.type3.FontBBox.p.x = bfont->FontBBox.p.x;
+    pdfont->u.simple.s.type3.FontBBox.p.y = bfont->FontBBox.p.y;
+    pdfont->u.simple.s.type3.FontBBox.q.x = bfont->FontBBox.q.x;
+    pdfont->u.simple.s.type3.FontBBox.q.y = bfont->FontBBox.q.y;
     pdfont->u.simple.s.type3.FontMatrix = bfont->FontMatrix;
     pdfont->u.simple.s.type3.Resources = cos_dict_alloc(pdev, "pdf_make_font3_resource");
     if (pdfont->u.simple.s.type3.Resources == NULL)

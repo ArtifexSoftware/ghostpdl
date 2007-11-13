@@ -1069,6 +1069,7 @@ int pdf_write_function(gx_device_pdf *pdev, const gs_function_t *pfn,
 
 /* Write a FontBBox dictionary element. */
 int pdf_write_font_bbox(gx_device_pdf *pdev, const gs_int_rect *pbox);
+int pdf_write_font_bbox_float(gx_device_pdf *pdev, const gs_rect *pbox);
 
 /* ---------------- Exported by gdevpdfm.c ---------------- */
 

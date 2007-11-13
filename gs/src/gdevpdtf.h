@@ -285,7 +285,7 @@ struct pdf_font_resource_s {
 		} truetype;
 
 		struct /*type3*/ {
-		    gs_int_rect FontBBox;
+		    gs_rect FontBBox;
 		    gs_matrix FontMatrix;
 		    pdf_char_proc_ownership_t *char_procs;
 		    int max_y_offset;
