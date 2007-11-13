@@ -1,8 +1,9 @@
+#include "memory_.h"
+#include "math_.h"
+
 #include <stdlib.h>
 #include <ctype.h> /* for toupper() */
 
-#include "memory_.h"
-#include "math_.h"
 #include "gsgc.h"
 #include "gstypes.h"
 #include "gsstate.h"
