@@ -995,15 +995,8 @@ EXTRA_INIT_FILES= Fontmap cidfmap xlatmap FAPI FCOfontmap-PCLPS2 gs_cet.ps
 
 RESOURCE_LIST=ColorSpace/ Decoding/ Encoding/ Font/ ProcSet/ IdiomSet/ CIDFont/ CMap/
 
-# PCLXL_ PJL and XPS hooks are for other parsers that may be built with a PS
-# language switch build.
-$(GLGEN)gsromfs.c : $(MKROMFS_XE) $(PSGEN)$(GS_INIT) $(arch_h)
-	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs.c \
-	 -X .svn $(UFST_ROMFS_ARGS) \
-	 $(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS) \
-	 -c -P $(PSRESDIR)$(D) -d Resource/ $(RESOURCE_LIST) \
-	 -d lib/ -P $(PSGEN) $(GS_INIT) -P $(PSLIB) \
-	 $(EXTRA_INIT_FILES) 
+PS_ROMFS_DEPENDENCIES=$(PSGEN)$(GS_INIT)
+PS_ROMFS_ARGS=-c -P $(PSRESDIR)$(D) -d Resource/ $(RESOURCE_LIST)-d lib/ -P $(PSGEN) $(GS_INIT) -P $(PSLIB)
 
 # ---------------- Stochastic halftone ---------------- #
 

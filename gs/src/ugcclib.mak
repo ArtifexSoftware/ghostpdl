@@ -107,7 +107,7 @@ FEATURE_DEVS=$(GLD)dps2lib.dev $(GLD)psl2cs.dev $(GLD)cielib.dev\
  $(GLD)psl3lib.dev $(GLD)path1lib.dev $(GLD)patlib.dev $(GLD)htxlib.dev \
  $(GLD)roplib.dev $(GLD)devcmap.dev
 
-COMPILE_INITS=0
+COMPILE_INITS?=0
 BAND_LIST_STORAGE=file
 BAND_LIST_COMPRESSOR=zlib
 FILE_IMPLEMENTATION=stdio
