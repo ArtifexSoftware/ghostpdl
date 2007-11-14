@@ -65,6 +65,7 @@ GLOBJDIR=$(GENDIR)
 !ifndef PLGENDIR
 PLGENDIR=$(GENDIR)
 !endif
+
 !ifndef PLOBJDIR
 PLOBJDIR=$(GENDIR)
 !endif
@@ -72,13 +73,15 @@ PLOBJDIR=$(GENDIR)
 !ifndef PCLGENDIR
 PCLGENDIR=$(GENDIR)
 !endif
+
 !ifndef PCLOBJDIR
 PCLOBJDIR=$(GENDIR)
 !endif
-
+        
 !ifndef PXLGENDIR
 PXLGENDIR=$(GENDIR)
 !endif
+
 !ifndef PXLOBJDIR
 PXLOBJDIR=$(GENDIR)
 !endif
@@ -86,6 +89,7 @@ PXLOBJDIR=$(GENDIR)
 !ifndef JGENDIR
 JGENDIR=$(GENDIR)
 !endif
+
 !ifndef JOBJDIR
 JOBJDIR=$(GENDIR)
 !endif
@@ -93,12 +97,21 @@ JOBJDIR=$(GENDIR)
 !ifndef ZGENDIR
 ZGENDIR=$(GENDIR)
 !endif
+
 !ifndef ZOBJDIR
 ZOBJDIR=$(GENDIR)
 !endif
 
 !ifndef DD
 DD=$(GLGENDIR)
+!endif
+
+!ifndef XPSGENDIR
+XPSGENDIR=$(GENDIR)
+!endif
+
+!ifndef XPSOBJDIR
+XPSOBJDIR=$(GENDIR)
 !endif
 
 # Executable path\name w/o the .EXE extension
@@ -167,9 +180,17 @@ PXL_TOP_OBJ=$(PXLOBJDIR)\pxtop.$(OBJ)
 !ifndef PSI_TOP_OBJ
 PSI_TOP_OBJ=
 !endif
-!ifndef TOP_OBJ
-TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(PSI_TOP_OBJ)
+
+!ifdef XPS_INCLUDED
+!ifndef XPS_TOP_OBJ
+XPS_TOP_OBJ=$(XPSOBJDIR)/xpstop.$(OBJ)
 !endif
+!endif
+
+!ifndef TOP_OBJ
+TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ)
+!endif
+
 
 # Pick a font system technology.  PCL and XL do not need to use the
 # same scaler, but it is necessary to tinker with pl.mak to get it
@@ -210,6 +231,7 @@ UFST_BRIDGE=1
 !ifndef UFST_INCLUDES
 UFST_INCLUDES=$(I_)$(UFST_ROOT)\rts\inc $(I_)$(UFST_ROOT)\sys\inc $(I_)$(UFST_ROOT)\rts\fco $(I_)$(UFST_ROOT)\rts\gray $(I_)$(UFST_ROOT)\rts\tt -DAGFA_FONT_TABLE
 !endif
+
 !ifndef UFST_CFLAGS
 UFST_CFLAGS= -DUFST_BRIDGE=$(UFST_BRIDGE) -DUFST_LIB_EXT=.lib -DMSVC -DUFST_ROOT=$(UFST_ROOT)
 !endif
@@ -217,10 +239,15 @@ UFST_CFLAGS= -DUFST_BRIDGE=$(UFST_BRIDGE) -DUFST_LIB_EXT=.lib -DMSVC -DUFST_ROOT
 !ifndef EXTRALIBS
 EXTRALIBS= $(UFST_LIB)if_lib.lib $(UFST_LIB)fco_lib.lib $(UFST_LIB)tt_lib.lib $(UFST_LIB)if_lib.lib
 !endif
+
 !ifndef UFSTFONTDIR
 UFSTFONTDIR=/usr/local/fontdata5.0/
 !endif
 
+!endif
+
+!ifdef XPS_INCLUDED
+EXTRALIBS=$(EXPATLIB)
 !endif
 
 
@@ -228,6 +255,10 @@ UFSTFONTDIR=/usr/local/fontdata5.0/
 # but we define them here just to keep all parameters in one place.
 !ifndef TARGET_DEVS
 TARGET_DEVS=$(PXLOBJDIR)\pjl.dev $(PXLOBJDIR)\pxl.dev $(PCLOBJDIR)\pcl5c.dev $(PCLOBJDIR)\hpgl2c.dev
+!endif
+
+!ifdef XPS_INCLUDED
+TARGET_DEVS= $(TARGET_DEVS) $(XPSOBJDIR)/xps.dev
 !endif
 
 !ifndef DEVICE_DEVS
@@ -300,3 +331,7 @@ config-clean: pl.config-clean pxl.config-clean
 !include $(PLSRCDIR)\pl.mak
 !include $(PCLSRCDIR)\pcl.mak
 !include $(PXLSRCDIR)\pxl.mak
+
+!ifdef XPS_INCLUDED
+!include $(XPSSRCDIR)\xps.mak
+!endif
