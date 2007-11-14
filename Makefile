@@ -46,9 +46,8 @@ pcl_test:
 pcl_clean:
 	$(MAKE) -C main -f pcl6_gcc.mak clean
 	rm -f fonts
-
-
 xps_debug: 
+
 	$(MAKE) -C xps -f xps_gcc.mak debug
 
 xps: 
@@ -116,24 +115,21 @@ ls_uclean:
 
 uproduct: ufst
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" product
-	cp *.icc ./language_switch/ufst-obj
-	cp wts_* ./language_switch/ufst-obj
-
-udebug: ufst
-	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" debug
 	cp *.icc ./main/ufst-obj
 	cp wts_* ./main/ufst-obj
+
+udebug: ufst
+	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" debug
+	cp *.icc ./main/ufst-debugobj
+	cp wts_* ./main/ufst-debugobj
 
 uclean:
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
 
-
 all_debug: pcl_debug udebug ls_debug ls_udebug xps_debug
-
 
 all_clean: clean uclean ls_uclean ls_clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
-
 
 .PHONY: all clean test check install uninstall product profile pcl pcl_debug pcl_test pcl_install pcl_uninstall pcl_clean xps xps_debug ls_clean ls_test ls_install ls_product ls_profile ls_udebug udebug ufst
