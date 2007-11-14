@@ -75,7 +75,7 @@ $(GENDIR)/ldgs.tr: FORCE
           DEVICE_DEVS9= DEVICE_DEVS10= DEVICE_DEVS11= DEVICE_DEVS12= \
           DEVICE_DEVS13= DEVICE_DEVS14= DEVICE_DEVS15= DEVICE_DEVS16= \
           DEVICE_DEVS17= DEVICE_DEVS18= DEVICE_DEVS19= DEVICE_DEVS20= \
-	  STDLIBS=$(STDLIBS) \
+	  DEVICE_DEVS21= STDLIBS=$(STDLIBS) \
 	  SYNC=$(SYNC) \
 	  BAND_LIST_STORAGE=memory BAND_LIST_COMPRESSOR=zlib \
 	  ZSRCDIR=$(ZSRCDIR) ZGENDIR=$(ZGENDIR) ZOBJDIR=$(ZOBJDIR) ZLIB_NAME=$(ZLIB_NAME) SHARE_ZLIB=$(SHARE_ZLIB) \
@@ -102,6 +102,11 @@ FORCE:
 
 else
 
+# COMPILE_INITS=1 means we need to make sure the gsromfs is built (PS includes
+# it in 'int.mak'
+ifeq ($(COMPILE_INITS), 1)
+ROMFS=$(GLOBJDIR)/gsromfs.o
+endif
 
 # Build the required GS library files.  It's simplest always to build
 # the floating point emulator, even though we don't always link it in.
@@ -135,7 +140,7 @@ $(GENDIR)/ldgs.tr: FORCE
 	  -f $(GLSRCDIR)/ugcclib.mak \
 	  $(GLOBJDIR)/ld.tr \
 	  $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gsfemu.o \
-	  $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o
+	  $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o $(ROMFS)
 	  cp $(GLOBJDIR)/ld.tr $(GENDIR)/ldgs.tr
 
 FORCE:
