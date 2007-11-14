@@ -142,11 +142,6 @@ endif # ROMFONTS
 
 endif # PL_SCALER = afs
 
-ifeq ($(XPS_INCLUDED), TRUE)
-# include the xml parser library
-EXTRALIBS+=-lexpat
-endif 
-
 # a 64 bit type is needed for devicen color space/model support but
 # carries a performance burden.  Use this definition (uncomment) for
 # devicen support.
