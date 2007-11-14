@@ -46,8 +46,8 @@ pcl_test:
 pcl_clean:
 	$(MAKE) -C main -f pcl6_gcc.mak clean
 	rm -f fonts
-xps_debug: 
 
+xps_debug:
 	$(MAKE) -C xps -f xps_gcc.mak debug
 
 xps: 
