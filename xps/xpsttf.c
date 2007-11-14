@@ -151,16 +151,21 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
     format = u32(postp);
 
     /* Format 1.0 (mac encoding) is a simple table see the TT spec.
-       We don't implement this because we don't see it in practice. */
-    if ( format == 0x10000 )
-	return -1;
-
-    /* Format 3.0 means that there is no post data in the font file.  */
-    if ( format == 0x30000 )
-	return -1;
-
+     * We don't implement this because we don't see it in practice.
+     * Format 2.5 is deprecated.
+     * Format 3.0 means that there is no post data in the font file.
+     * We see this a lot but can't do much about it.
+     * The only format we support is 2.0.
+     */
     if ( format != 0x20000 )
-	return gs_throw1(-1, "unknown post table format 0x%x", format);
+    {
+	/* Invent a name if we don't know the table format. */
+	char buf[16];
+	sprintf(buf, "glyph%d", glyph);
+	pstr->data = buf;
+	pstr->size = strlen(pstr->data);
+	return 0;
+    }
 
     /* skip over the post header */
     numGlyphs = u16(postp + 32);
