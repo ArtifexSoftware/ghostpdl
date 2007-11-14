@@ -15,10 +15,11 @@
 #
 # Users of this makefile must define the following:
 #	SHARE_EXPAT - 1 to link a system (shared) library
-#		      0 to compile in the referenced source, 
-#	EXPATSRCDIR - the expat source top-level directory
-#	EXPATGENDIR - directory for intermediate generated files
-#	EXPATOBJDIR - directory for object files
+#		      0 to compile in the referenced source,
+#	EXPAT_CFLAGS - Compiler flags for building the source,
+#	EXPATSRCDIR - the expat source top-level directory,
+#	EXPATGENDIR - directory for intermediate generated files,
+#	EXPATOBJDIR - directory for object files.
 
 # Define the name of this makefile
 EXPAT_MAK=$(GLSRC)expat.mak
@@ -29,7 +30,7 @@ EXPATGEN=$(EXPATGENDIR)$(D)
 EXPATOBJ=$(EXPATOBJDIR)$(D)
 EXPATO_=$(O_)$(EXPATOBJ)
 
-EXPATCC=$(CC_) $(I_)$(EXPATSRC)lib$(_I)
+EXPATCC=$(CC_) $(I_)$(EXPATSRC)lib$(_I) $(EXPAT_CFLAGS)
 
 expat.clean : expat.config-clean expat.clean-not-config-clean
 
@@ -52,7 +53,7 @@ expat_xmlparse_hdrs=$(EXPATSRC)expat.h \
 
 expat_xmlrole_hdrs=$(EXPATSRC)ascii.h \
 	$(EXPATSRC)xmlrole.h \
-	$(EXPATSRC)expat_internal.h \
+	$(EXPATSRC)expat_external.h \
 	$(EXPATSRC)internal.h
 
 expat_xmltok_hdrs=$(EXPATSRC)xmltok_impl.c \
@@ -62,10 +63,10 @@ expat_xmltok_hdrs=$(EXPATSRC)xmltok_impl.c \
 	$(EXPATSRC)iasciitab.h \
 	$(EXPATSRC)latin1tab.h \
 	$(EXPATSRC)nametab.h \
-	$(EXPATSRC)uft8tab.h \
+	$(EXPATSRC)utf8tab.h \
 	$(EXPATSRC)xmltok.h \
 	$(EXPATSRC)xmltok_impl.h \
-	$(EXPATSRC)expat_internal.h \
+	$(EXPATSRC)expat_external.h \
 	$(EXPATSRC)internal.h
 
 $(EXPATOBJ)xmlparse.$(OBJ) : $(EXPATSRC)xmlparse.c $(expat_xmlparse_hdrs)
