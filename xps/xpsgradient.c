@@ -554,13 +554,13 @@ xps_draw_linear_gradient(xps_context_t *ctx, xps_item_t *root, int spread, gs_fu
     int code;
     int i;
 
+    char *start_point_att = xps_att(root, "StartPoint");
+    char *end_point_att = xps_att(root, "EndPoint");
+
     x0 = 0;
     y0 = 0;
     x1 = 0;
     y1 = 1;
-
-    char *start_point_att = xps_att(root, "StartPoint");
-    char *end_point_att = xps_att(root, "EndPoint");
 
     if (start_point_att)
 	sscanf(start_point_att, "%g,%g", &x0, &y0);
