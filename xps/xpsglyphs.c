@@ -162,7 +162,7 @@ int xps_flush_text_buffer(xps_context_t *ctx, xps_font_t *font,
 
     // dprintf1("flushing text buffer (%d glyphs)\n", buf->count);
 
-#if 1 /* one glyph at a time */
+#if 0 /* one glyph at a time */
 
     for (i = 0; i < buf->count; i++)
     {
