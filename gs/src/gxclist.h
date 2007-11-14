@@ -133,6 +133,7 @@ typedef struct cmd_prefix_s cmd_prefix;
 struct cmd_prefix_s {
     cmd_prefix *next;
     uint size;
+    ulong id;  /* Debug purpose only. */
 };
 
 /* Define the pointers for managing a list of command runs in the buffer. */
@@ -250,6 +251,7 @@ typedef struct gx_device_clist_writer_s {
 	gs_pattern1_instance_t *pinst; /* Used when it is a pattern clist. */
 	bool cropping_by_path;
 	int cropping_min, cropping_max;
+    ulong ins_count;   /* Debug purpose only. */
 } gx_device_clist_writer;
 
 /* Bits for gx_device_clist_writer.disable_mask. Bit set disables behavior */

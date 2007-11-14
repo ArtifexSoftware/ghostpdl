@@ -149,6 +149,11 @@ top_up_cbuf(command_buf_t *pcb, const byte *cbp)
     uint nread;
     byte *cb_top = pcb->data + (pcb->end - cbp);
 
+    if (seofp(pcb->s)) {
+	/* Return early because s_close did reset s->state. */
+	pcb->end_status = pcb->s->end_status;
+	return cbp;
+    }
     memmove(pcb->data, cbp, pcb->end - cbp);
     nread = pcb->end - cb_top;
     pcb->end_status = sgets(pcb->s, cb_top, nread, &nread);
