@@ -160,6 +160,8 @@ cmd_write_band(gx_device_clist_writer * cldev, int band_min, int band_max,
 		    return_error(gs_error_Fatal);
 		}
 #endif
+		if_debug2('L',"[L]Wrote cmd id=%ld at %ld\n", cp->id, 
+		    (long)cldev->page_info.io_procs->ftell(cfile));
 		cldev->page_info.io_procs->fwrite_chars(cp + 1, cp->size, cfile);
 	    }
 	    pcl->head = pcl->tail = 0;
@@ -268,6 +270,9 @@ cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
 	pcl->tail = cp;
 	cldev->ccl = pcl;
 	cp->size = size;
+	cp->id = cldev->ins_count;
+	if_debug1('L', ", id=%ld ", cldev->ins_count);
+	cldev->ins_count++;
     }
     cldev->cnext = dp + size;
     return dp;

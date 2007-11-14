@@ -378,6 +378,7 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
 	if (band_height == 0)
 	    return_error(gs_error_rangecheck);
     }
+    cdev->ins_count = 0;
     code = clist_init_tile_cache(dev, data, bits_size);
     if (code < 0)
 	return code;

@@ -43,6 +43,14 @@ static int gx_clist_reader_read_band_complexity(gx_device_clist *dev);
 
 /* ------ Band file reading stream ------ */
 
+#ifdef DEBUG
+/* An auxiliary table for mapping clist buffer offsets to cfile offsets. */
+typedef struct {
+    uint buffered;
+    int64_t file_offset;
+} cbuf_offset_map_elem;
+#endif
+
 /*
  * To separate banding per se from command list interpretation,
  * we make the command list interpreter simply read from a stream.
@@ -56,6 +64,11 @@ typedef struct stream_band_read_state_s {
     int band_first, band_last;
     uint left;			/* amount of data left in this run */
     cmd_block b_this;
+#ifdef DEBUG
+    cbuf_offset_map_elem *offset_map;
+    int offset_map_length;
+    int offset_map_max_length;
+#endif
 } stream_band_read_state;
 
 static int
@@ -71,6 +84,33 @@ s_band_read_init(stream_state * st)
     io_procs->rewind(ss->page_bfile, false, ss->page_bfname);
     return 0;
 }
+
+#ifdef DEBUG
+static int
+s_band_read_init_offset_map(stream_state * st, gs_memory_t *memory)
+{
+    stream_band_read_state *const ss = (stream_band_read_state *) st;
+    const clist_io_procs_t *io_procs = ss->page_info.io_procs;
+
+    ss->offset_map_length = 0;
+    ss->offset_map_max_length = cbuf_size + 1; /* fixme: Wanted a more accurate implementation. */
+    ss->offset_map = (cbuf_offset_map_elem *)gs_alloc_byte_array(memory, 
+		ss->offset_map_max_length, sizeof(*ss->offset_map), "s_band_read_init_offset_map");
+    if (ss->offset_map == NULL)
+	return_error(gs_error_VMerror);
+    ss->offset_map[0].buffered = 0;
+    return 0;
+}
+
+static void
+s_band_read_dnit_offset_map(stream_state * st, gs_memory_t *memory)
+{
+    stream_band_read_state *const ss = (stream_band_read_state *) st;
+
+    gs_free_object(memory, ss->offset_map, "s_band_read_dnit_offset_map");
+}
+#endif
+
 
 static int
 s_band_read_process(stream_state * st, stream_cursor_read * ignore_pr,
@@ -90,6 +130,9 @@ s_band_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 	if (left) {		/* Read more data for the current run. */
 	    if (count > left)
 		count = left;
+#	    ifdef DEBUG
+	    ss->offset_map[ss->offset_map_length - 1].buffered += count;
+#	    endif
 	    io_procs->fread_chars(q + 1, count, cfile);
 	    if (io_procs->ferror_code(cfile) < 0) {
 		status = ERRC;
@@ -98,7 +141,7 @@ s_band_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 	    q += count;
 	    left -= count;
 	    process_interrupts(st->memory);
-	    continue;
+continue;
 	}
 rb:
 	/*
@@ -119,6 +162,15 @@ rb:
 	    if (!(ss->band_last >= bmin && ss->band_first <= bmax))
 		goto rb;
 	    io_procs->fseek(cfile, pos, SEEK_SET, ss->page_cfname);
+#	    ifdef DEBUG
+	    if (ss->offset_map_length >= ss->offset_map_max_length) {
+		gs_note_error(gs_error_unregistered); /* Must not happen. */
+		return ERRC;
+	    }
+	    ss->offset_map[ss->offset_map_length].file_offset = ss->b_this.pos;
+	    ss->offset_map[ss->offset_map_length].buffered = 0;
+	    ss->offset_map_length++;
+#	    endif
 	    left = (uint) (ss->b_this.pos - pos);
 	    if_debug7('l', 
 		      "[l]reading for bands (%d,%d) at bfile %ld, cfile %ld, length %u color %d rop %d\n",
@@ -129,7 +181,7 @@ rb:
 	}
     }
     pw->ptr = q;
-    ss->left = left;
+   ss->left = left;
     return status;
 }
 
@@ -137,6 +189,58 @@ rb:
 static const stream_template s_band_read_template = {
     &st_stream_state, s_band_read_init, s_band_read_process, 1, cbuf_size
 };
+
+#ifdef DEBUG
+int
+buffer_segment_index(const stream_band_read_state *ss, uint buffer_offset, uint *poffset0)
+{
+    uint i, offset0, offset = 0;
+
+    for (i = 0; i < ss->offset_map_length; i++) {
+	offset0 = offset;
+	offset += ss->offset_map[i].buffered;
+	if (buffer_offset < offset) {
+	    *poffset0 = offset0;
+	    return i;
+	}
+    }
+    gs_note_error(gs_error_unregistered); /* Must not happen. */
+    return -1;
+}
+
+int64_t
+clist_file_offset(const stream_state * st, uint buffer_offset)
+{
+    const stream_band_read_state *ss = (const stream_band_read_state *) st;
+    uint offset0;
+    int i = buffer_segment_index(ss, buffer_offset, &offset0);
+
+    if (i < 0)
+	return -1;
+    return ss->offset_map[i].file_offset + (uint)(buffer_offset - offset0);
+}
+
+
+void
+top_up_offset_map(stream_state * st, const byte *buf, const byte *ptr, const byte *end)
+{
+    stream_band_read_state *const ss = (stream_band_read_state *) st;
+
+    if (ptr == end)
+	ss->offset_map_length = 0;
+    else {
+	uint buffer_offset = ptr - buf;
+	uint offset0, consumed;
+	int i = buffer_segment_index(ss, buffer_offset, &offset0);
+	
+	consumed = buffer_offset - offset0;
+	ss->offset_map[i].buffered -= consumed;
+	ss->offset_map[i].file_offset += consumed;
+	memmove(ss->offset_map, ss->offset_map + i, 
+		(ss->offset_map_length - i) * sizeof(*ss->offset_map));
+    }
+}
+#endif /* DEBUG */
 
 
 /* ------ Reading/rendering ------ */
@@ -542,12 +646,14 @@ clist_playback_file_bands(clist_playback_action action,
 	};
 
 	s_band_read_init((stream_state *)&rs);
+#	ifdef DEBUG
+	s_band_read_init_offset_map((stream_state *)&rs, crdev->memory);
+#	endif
 	  /* The stream doesn't need a memory, but we'll need to access s.memory->gs_lib_ctx. */
 	s_init(&s, mem);
 	s_std_init(&s, sbuf, cbuf_size, &no_procs, s_mode_read);
 	s.foreign = 1;
 	s.state = (stream_state *)&rs;
-
 
 	vd_get_dc('s');
 	vd_set_shift(0, 0);
@@ -556,6 +662,9 @@ clist_playback_file_bands(clist_playback_action action,
 	vd_erase(RGB(192, 192, 192));
 	code = clist_playback_band(action, crdev, &s, target, x0, y0, mem);
 	vd_release_dc;
+#	ifdef DEBUG
+	s_band_read_dnit_offset_map((stream_state *)&rs, crdev->memory);
+#	endif
     }
 
     /* Close the files if we just opened them. */

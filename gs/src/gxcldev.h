@@ -713,4 +713,9 @@ int clist_playback_file_bands(clist_playback_action action,
 			  gx_device_clist_reader *crdev,
 			  gx_band_page_info_t *page_info, gx_device *target,
 			  int band_first, int band_last, int x0, int y0);
+#ifdef DEBUG 
+int64_t clist_file_offset(const stream_state *st, uint buffer_offset);
+void top_up_offset_map(stream_state * st, const byte *buf, const byte *ptr, const byte *end);
+#endif
+
 #endif /* gxcldev_INCLUDED */

@@ -150,10 +150,13 @@ top_up_cbuf(command_buf_t *pcb, const byte *cbp)
     byte *cb_top = pcb->data + (pcb->end - cbp);
 
     if (seofp(pcb->s)) {
-	/* Return early because s_close did reset s->state. */
+	/* Can't use offset_map, because s_close resets s->state. Don't top up. */
 	pcb->end_status = pcb->s->end_status;
 	return cbp;
     }
+#   ifdef DEBUG
+	top_up_offset_map(pcb->s->state, pcb->data, cbp, pcb->end);
+#   endif
     memmove(pcb->data, cbp, pcb->end - cbp);
     nread = pcb->end - cb_top;
     pcb->end_status = sgets(pcb->s, cb_top, nread, &nread);
@@ -319,6 +322,7 @@ clist_playback_band(clist_playback_action playback_action,
     gx_device_clip clipper_dev;
     bool clipper_dev_open;
     patch_fill_state_t pfs;
+    stream_state *st = s->state; /* Save because s_close resets s->state. */
 
     cbuf.data = (byte *)cbuf_storage;
     cbuf.size = cbuf_size;
@@ -410,11 +414,13 @@ in:				/* Initialize for a new page. */
 #ifdef DEBUG
 	if (gs_debug_c('L')) {
 	    const char *const *sub = cmd_sub_op_names[op >> 4];
+	    long offset = (long)clist_file_offset(st, cbp - 1 - cbuf.data);
 
 	    if (sub)
-		dlprintf1("[L]%s:", sub[op & 0xf]);
+		dlprintf1("[L]%s", sub[op & 0xf]);
 	    else
-		dlprintf2("[L]%s %d:", cmd_op_names[op >> 4], op & 0xf);
+		dlprintf2("[L]%s %d", cmd_op_names[op >> 4], op & 0xf);
+	    dlprintf1("(offset=%ld):", offset);
 	}
 #endif
 	switch (op >> 4) {
