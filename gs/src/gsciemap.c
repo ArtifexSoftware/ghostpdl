@@ -644,7 +644,7 @@ cie_lookup_mult3(cie_cached_vector3 * pvec,
     cie_cached_value u, v, w;
 
 #ifdef CIE_CACHE_USE_FIXED
-#  define LOOKUP_INTERPOLATE_BETWEEN(v0, v1, i, ftemp)\
+#  define LOOKUP_INTERPOLATE_BETWEEN(v0, v1, i)\
      cie_interpolate_between(v0, v1, i)
 #else
     float ftemp;
