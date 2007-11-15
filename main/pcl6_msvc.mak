@@ -191,6 +191,7 @@ PSI_TOP_OBJ=
 !ifdef XPS_INCLUDED
 !ifndef XPS_TOP_OBJ
 XPS_TOP_OBJ=$(XPSOBJDIR)/xpstop.$(OBJ)
+XCFLAGS=/DXPS_INCLUDED
 !endif
 !endif
 
