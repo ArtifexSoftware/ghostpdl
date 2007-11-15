@@ -22,6 +22,9 @@ PCLSRCDIR=..\pcl
 !ifndef PXLSRCDIR
 PXLSRCDIR=..\pxl
 !endif
+!ifndef ICCSRCDIR
+ICCSRCDIR=..\gs\icclib
+!endif
 !ifndef COMMONDIR
 COMMONDIR=..\common
 !endif
@@ -37,6 +40,10 @@ ZSRCDIR=..\gs\zlib
 
 !ifndef SHARE_ZLIB
 SHARE_ZLIB=0
+!endif
+
+!ifndef SHARE_LIBPNG
+SHARE_LIBPNG=0
 !endif
 
 !ifndef IMDISRCDIR
@@ -274,7 +281,8 @@ DEVICE_DEVS=$(DD)\ljet4.dev\
  $(DD)\tiffcrle.dev $(DD)\tiffg3.dev $(DD)\tiffg32d.dev $(DD)\tiffg4.dev\
  $(DD)\tifflzw.dev $(DD)\tiffpack.dev\
  $(DD)\tiff12nc.dev $(DD)\tiff24nc.dev \
- $(DD)\pswrite.dev $(DD)\jpeg.dev $(DD)\pdfwrite.dev
+ $(DD)\pswrite.dev $(DD)\jpeg.dev $(DD)\pdfwrite.dev \
+ $(DD)\wtscmyk.dev $(DD)\wtsimdi.dev $(DD)\imdi.dev
 !endif
 
 # GS options
@@ -293,12 +301,15 @@ FEATURE_DEVS    = $(DD)\dps2lib.dev   \
                   $(DD)\cielib.dev    \
                   $(DD)\htxlib.dev    \
                   $(DD)\psl3lib.dev   \
+		  $(DD)\libpng_$(SHARE_LIBPNG).dev \
                   $(DD)\seprlib.dev   \
                   $(DD)\translib.dev  \
                   $(DD)\cidlib.dev    \
                   $(DD)\psf1lib.dev   \
 		  $(DD)\psf0lib.dev   \
-                  $(DD)\sdctd.dev
+                  $(DD)\sdctd.dev     \
+                  $(DD)\psf2lib.dev   \
+	          $(DD)\lzwd.dev
 !endif
 
 
