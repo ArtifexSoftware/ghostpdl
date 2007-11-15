@@ -239,18 +239,18 @@ typedef struct gx_device_clist_writer_s {
     gs_id device_halftone_id;	/* id of device halftone */
     gs_id image_enum_id;	/* non-0 if we are inside an image */
 				/* that we are passing through */
-	int error_is_retryable;		/* Extra status used to distinguish hard VMerrors */
-	                           /* from warnings upgraded to VMerrors. */
-	                           /* T if err ret'd by cmd_put_op et al can be retried */
-	int permanent_error;		/* if < 0, error only cleared by clist_reset() */
-	int driver_call_nesting;	/* nesting level of non-retryable driver calls */
-	int ignore_lo_mem_warnings;	/* ignore warnings from clist file/mem */
-		/* Following must be set before writing */
-	proc_free_up_bandlist_memory((*free_up_bandlist_memory)); /* if nz, proc to free some bandlist memory */
-	int disable_mask;		/* mask of routines to disable clist_disable_xxx */
-	gs_pattern1_instance_t *pinst; /* Used when it is a pattern clist. */
-	bool cropping_by_path;
-	int cropping_min, cropping_max;
+    int error_is_retryable;		/* Extra status used to distinguish hard VMerrors */
+			       /* from warnings upgraded to VMerrors. */
+			       /* T if err ret'd by cmd_put_op et al can be retried */
+    int permanent_error;		/* if < 0, error only cleared by clist_reset() */
+    int driver_call_nesting;	/* nesting level of non-retryable driver calls */
+    int ignore_lo_mem_warnings;	/* ignore warnings from clist file/mem */
+	    /* Following must be set before writing */
+    proc_free_up_bandlist_memory((*free_up_bandlist_memory)); /* if nz, proc to free some bandlist memory */
+    int disable_mask;		/* mask of routines to disable clist_disable_xxx */
+    gs_pattern1_instance_t *pinst; /* Used when it is a pattern clist. */
+    bool cropping_by_path;
+    int cropping_min, cropping_max;
     ulong ins_count;
 } gx_device_clist_writer;
 
@@ -272,6 +272,7 @@ typedef struct gx_device_clist_reader_s {
     const gx_placed_page *pages;
     int num_pages;
     gx_band_complexity_t *band_complexity_array;  /* num_bands elements */
+    void *offset_map; /* Just against collecting the map as garbage. */
 } gx_device_clist_reader;
 
 union gx_device_clist_s {

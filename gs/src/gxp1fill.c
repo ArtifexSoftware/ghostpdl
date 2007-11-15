@@ -249,6 +249,7 @@ tile_pattern_clist(const tile_fill_state_t * ptfs,
     gx_device *dev = ptfs->orig_dev;
     int code;
 
+    crdev->offset_map = NULL;
     crdev->page_info.io_procs->rewind(crdev->page_info.bfile, false, NULL);
     crdev->page_info.io_procs->rewind(crdev->page_info.cfile, false, NULL);
     code = clist_playback_file_bands(playback_action_render,

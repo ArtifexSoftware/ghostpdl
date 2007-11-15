@@ -246,6 +246,7 @@ cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
 	    lprintf1("cmd_put_list_op error at 0x%lx\n", (ulong) pcl->tail);
 	}
 #endif
+	if_debug2('L', ", to id=%ld , offset=%ld", pcl->tail->id, pcl->tail->size);
 	pcl->tail->size += size;
     } else {
 	/* Skip to an appropriate alignment boundary. */

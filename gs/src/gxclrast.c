@@ -143,19 +143,28 @@ set_cb_end(command_buf_t *pcb, const byte *end)
 }
 
 /* Read more data into a command buffer. */
-static const byte *
-top_up_cbuf(command_buf_t *pcb, const byte *cbp)
+static int
+top_up_cbuf(command_buf_t *pcb, const byte **pcbp)
 {
     uint nread;
+    const byte *cbp = *pcbp;
     byte *cb_top = pcb->data + (pcb->end - cbp);
+#   ifdef DEBUG
+    stream_state *st = pcb->s->state;
+#   endif
 
     if (seofp(pcb->s)) {
 	/* Can't use offset_map, because s_close resets s->state. Don't top up. */
 	pcb->end_status = pcb->s->end_status;
-	return cbp;
+	return 0;
     }
 #   ifdef DEBUG
-	top_up_offset_map(pcb->s->state, pcb->data, cbp, pcb->end);
+    {
+	int code = top_up_offset_map(st, pcb->data, cbp, pcb->end);
+
+	if (code < 0)
+	    return code;
+    }
 #   endif
     memmove(pcb->data, cbp, pcb->end - cbp);
     nread = pcb->end - cb_top;
@@ -167,7 +176,8 @@ top_up_cbuf(command_buf_t *pcb, const byte *cbp)
     }
     set_cb_end(pcb, cb_top + nread);
     process_interrupts(pcb->s->memory);
-    return pcb->data;
+    *pcbp = pcb->data;
+    return 0;
 }
 
 /* Read data from the command buffer and stream. */
@@ -268,7 +278,7 @@ clist_playback_band(clist_playback_action playback_action,
     /* must be aligned */
 #define data_bits_size cbuf_size
     byte *data_bits = 0;
-    register const byte *cbp;
+    const byte *cbp;
     int dev_depth;		/* May vary due to compositing devices */
     int dev_depth_bytes;
     int odd_delta_shift;
@@ -407,7 +417,9 @@ in:				/* Initialize for a new page. */
 		    break;
 		}
 	    } else {
-		cbp = top_up_cbuf(&cbuf, cbp);
+		code = top_up_cbuf(&cbuf, &cbp);
+		if (code < 0)
+		    return code;
 	    }
 	}
 	op = *cbp++;
@@ -782,9 +794,14 @@ in:				/* Initialize for a new page. */
 			/* the uncompressed size. */
 			uint cleft = cbuf.end - cbp;
 
-			if (cleft < bytes) {
+			if (cleft < bytes  && !cbuf.end_status) {
 			    uint nread = cbuf_size - cleft;
 
+#			    ifdef DEBUG
+				code = top_up_offset_map(st, cbuf.data, cbp, cbuf.end);
+				if (code < 0)
+				    return code;
+#			    endif
 			    memmove(cbuf.data, cbp, cleft);
 			    cbuf.end_status = sgets(s, cbuf.data + cleft, nread, &nread);
 			    set_cb_end(&cbuf, cbuf.data + cleft + nread);
@@ -1116,7 +1133,9 @@ ibegin:			if_debug0('L', "\n");
 				if (flags & 1) {
 				    if (cbuf.end - cbp <
 					2 * cmd_max_intsize(sizeof(uint)))
-					cbp = top_up_cbuf(&cbuf, cbp);
+					code = top_up_cbuf(&cbuf, &cbp);
+					if (code < 0)
+					    return code;
 				    cmd_getw(planes[plane].raster, cbp);
 				    if ((raster1 = planes[plane].raster) != 0)
 					cmd_getw(data_x, cbp);
@@ -1162,7 +1181,9 @@ idata:			data_size = 0;
 			data_size *= data_height;
 			data_on_heap = 0;
 			if (cbuf.end - cbp < data_size)
-			    cbp = top_up_cbuf(&cbuf, cbp);
+			    code = top_up_cbuf(&cbuf, &cbp);
+			    if (code < 0)
+				return code;
 			if (cbuf.end - cbp >= data_size) {
 			    planes[0].data = cbp;
 			    cbp += data_size;
@@ -1289,8 +1310,11 @@ idata:			data_size = 0;
 					goto out;
 				    }
 				    enc_u_getw(color_size, cbp);
-				    if (cbp + color_size > cbuf.limit)
-					cbp = top_up_cbuf(&cbuf, cbp);
+				    if (cbp + color_size > cbuf.limit) {
+					code = top_up_cbuf(&cbuf, &cbp);
+					if (code < 0)
+					    return code;
+				    }
 				    code = pdct->read(&dev_color, &imager_state,
 						      &dev_color, tdev, cbp,
 						      color_size, mem);
@@ -1472,8 +1496,11 @@ idata:			data_size = 0;
 				    gs_fixed_rect clip;
 				    fixed hh = int2fixed(swap_axes ? target->width : target->height);
 
-				    if (cbuf.end - cbp < 5 * cmd_max_intsize(sizeof(frac31)))
-					cbp = top_up_cbuf(&cbuf, cbp);
+				    if (cbuf.end - cbp < 5 * cmd_max_intsize(sizeof(frac31))) {
+					code = top_up_cbuf(&cbuf, &cbp);
+					if (code < 0)
+					    return code;
+				    }
 				    cmd_getw(clip.p.x, cbp);
 				    cmd_getw(clip.p.y, cbp);
 				    cmd_getw(clip.q.x, cbp);
@@ -1495,8 +1522,11 @@ idata:			data_size = 0;
 				    cmd_getw(colors_mask, cbp);
 				    for (i = 0; i < 4; i++, m <<= 1) {
 					if (colors_mask & m) {
-					    if (cbuf.end - cbp < num_components * cmd_max_intsize(sizeof(frac31)))
-						cbp = top_up_cbuf(&cbuf, cbp);
+					    if (cbuf.end - cbp < num_components * cmd_max_intsize(sizeof(frac31))) {
+						code = top_up_cbuf(&cbuf, &cbp);
+						if (code < 0)
+						    return code;
+					    }
 					    cc[i] = c[i];
 					    for (j = 0; j < num_components; j++)
 						cmd_getfrac(c[i][j], cbp);
@@ -1802,9 +1832,18 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
 	 */
 	uint cleft = pcb->end - cbp;
 
-	if (cleft < bytes) {
+	if (cleft < bytes && !pcb->end_status) {
 	    uint nread = cbuf_size - cleft;
+	    stream_state *st = pcb->s->state;
 
+#	    ifdef DEBUG
+	    {
+		int code = top_up_offset_map(st, pcb->data, cbp, pcb->end);
+
+		if (code < 0)
+		    return code;
+	    }
+#	    endif
 	    memmove(pcb->data, cbp, cleft);
 	    pcb->end_status = sgets(pcb->s, pcb->data + cleft, nread, &nread);
 	    set_cb_end(pcb, pcb->data + cleft + nread);
@@ -1907,8 +1946,11 @@ read_ht_segment(
 
     /* get the segment size; refill command buffer if necessary */
     enc_u_getw(seg_size, cbp);
-    if (cbp + seg_size > pcb->limit)
-        cbp = top_up_cbuf(pcb, cbp);
+    if (cbp + seg_size > pcb->limit) {
+        code = top_up_cbuf(pcb, &cbp);
+	if (code < 0)
+	    return code;
+    }
 
     if (pht_buff->pbuff == 0) {
         /* if not separate buffer, must be only one segment */
@@ -2116,7 +2158,9 @@ read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
     int code;
 
     /* This is sloppy, but we don't have enough information to do better. */
-    pcb->ptr = top_up_cbuf(pcb, pcb->ptr);
+    code = top_up_cbuf(pcb, &pcb->ptr);
+    if (code < 0)
+	return code;
     s_init(&s, NULL);
     sread_string(&s, pcb->ptr, pcb->end - pcb->ptr);
     code = image_type->sget(pic, &s, pcs);
@@ -2135,7 +2179,7 @@ read_put_params(command_buf_t *pcb, gs_imager_state *pis,
     bool alloc_data_on_heap = false;
     byte *param_buf;
     uint param_length;
-    int code = 0;
+    int code;
 
     cmd_get_value(param_length, cbp);
     if_debug1('L', " length=%d\n", param_length);
@@ -2146,7 +2190,9 @@ read_put_params(command_buf_t *pcb, gs_imager_state *pis,
 
     /* Make sure entire serialized param list is in cbuf */
     /* + force void* alignment */
-    cbp = top_up_cbuf(pcb, cbp);
+    code = top_up_cbuf(pcb, &cbp);
+    if (code < 0)
+	return code;
     if (pcb->end - cbp >= param_length) {
 	param_buf = (byte *)cbp;
 	cbp += param_length;
@@ -2228,8 +2274,11 @@ read_create_compositor(
     gx_device *                 tdev = *ptarget;
 
     /* fill the command buffer (see comment above) */
-	if (pcb->end - cbp < MAX_CLIST_COMPOSITOR_SIZE + sizeof(comp_id))
-		cbp = top_up_cbuf(pcb, cbp);
+    if (pcb->end - cbp < MAX_CLIST_COMPOSITOR_SIZE + sizeof(comp_id)) {
+	code = top_up_cbuf(pcb, &cbp);
+	if (code < 0)
+	    return code;
+    }
 
     /* find the appropriate compositor method vector */
     comp_id = *cbp++;

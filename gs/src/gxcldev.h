@@ -715,7 +715,7 @@ int clist_playback_file_bands(clist_playback_action action,
 			  int band_first, int band_last, int x0, int y0);
 #ifdef DEBUG 
 int64_t clist_file_offset(const stream_state *st, uint buffer_offset);
-void top_up_offset_map(stream_state * st, const byte *buf, const byte *ptr, const byte *end);
+int top_up_offset_map(stream_state * st, const byte *buf, const byte *ptr, const byte *end);
 #endif
 
 #endif /* gxcldev_INCLUDED */

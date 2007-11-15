@@ -59,7 +59,9 @@ ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
          */
         if (index == 0)
             return ENUM_OBJ(cdev->reader.band_complexity_array);
-        else
+        else if (index == 1)
+	    return ENUM_OBJ(cdev->reader.offset_map);
+	else
             return 0;
     }
 ENUM_PTRS_END
@@ -75,13 +77,14 @@ RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
 	RELOC_VAR(cdev->writer.pinst);
         RELOC_USING(st_imager_state, &cdev->writer.imager_state,
             sizeof(gs_imager_state));
-    }
-    else
+    } else {
         /* 041207
          * clist is reader.
          * See note above in ENUM_PTRS_WITH section.
          */
         RELOC_VAR(cdev->reader.band_complexity_array);
+        RELOC_VAR(cdev->reader.offset_map);
+    }
 } RELOC_PTRS_END
 public_st_device_clist();
 
