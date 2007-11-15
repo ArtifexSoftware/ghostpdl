@@ -46,6 +46,10 @@ EXPATSRCDIR=..\gs\expat
 SHARE_EXPAT=0
 !endif
 
+!ifndef EXPAT_CFLAGS
+EXPAT_CFLAGS=/DHAVE_MEMMOVE
+!endif
+
 !ifndef PSRCDIR
 PSRCDIR=..\gs\libpng
 !endif
@@ -88,6 +92,14 @@ ZGENDIR=$(GENDIR)
 
 !ifndef ZOBJDIR
 ZOBJDIR=$(GENDIR)
+!endif
+
+!ifndef EXPATGENDIR
+EXPATGENDIR=$(GENDIR)
+!endif
+
+!ifndef EXPATOBJDIR
+EXPATOBJDIR=$(GENDIR)
 !endif
 
 # Executable path\name w/o the .EXE extension
