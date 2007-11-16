@@ -134,10 +134,13 @@ FORCE:
 # the floating point emulator, even though we don't always link it in.
 # HACK * HACK * HACK - we force this make to occur since we have no
 # way to determine if gs .c files are out of date.
+# We make a dummy gs_init.ps since this is hard coded as a dependency of gsromfs.c
+# to avoid having to define everything in the top level makefiles (also of a hack)
 $(GENDIR)/ldgs.tr: FORCE
 	-echo $(PSICFLAGS)
 	-mkdir $(GLGENDIR)
 	-mkdir $(GLOBJDIR)
+	echo > $(GLOBJDIR)/gs_init.ps
 	$(MAKE) /F $(GLSRCDIR)\msvclib.mak MSVC_VERSION="$(MSVC_VERSION)" \
 	GLSRCDIR="$(GLSRCDIR)" DEBUG=$(DEBUG) NOPRIVATE=$(NOPRIVATE) \
 	GLGENDIR="$(GLGENDIR)" GLOBJDIR="$(GLOBJDIR)" \

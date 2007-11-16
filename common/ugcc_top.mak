@@ -112,9 +112,12 @@ endif
 # the floating point emulator, even though we don't always link it in.
 # HACK * HACK * HACK - we force this make to occur since we have no
 # way to determine if gs files are out of date.
+# We make a dummy gs_init.ps since this is hard coded as a dependency of gsromfs.c
+# to avoid having to define everything in the top level makefiles (also of a hack)
 $(GENDIR)/ldgs.tr: FORCE
 	-mkdir $(GLGENDIR)
 	-mkdir $(GLOBJDIR)
+	touch $(GLOBJDIR)/gs_init.ps
 	$(MAKE) \
 	  GCFLAGS='$(GCFLAGS)' FPU_TYPE='$(FPU_TYPE)'\
 	  CONFIG='$(CONFIG)' FEATURE_DEVS='$(FEATURE_DEVS)' \
