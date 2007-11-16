@@ -508,15 +508,9 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
 					pcs->memory,
 					&pcs->built_in_fonts,
 					pcs->font_dir, (int)pcds_internal,
-					false /* do not use unicode font names for keys */ )) {
-		if ( pcs->personality == rtl )
-		    /* rtl doesn't use fonts */
-		    return 0;
-		else {
-		    dprintf("No built-in fonts found during initialization\n");
-		    return -1;
-		}
-	    }
+					false /* do not use unicode font names for keys */ )) 
+                /* simply continue without fonts if none are found */
+                return 0;
 	    pcl_data_storage = pcds_internal;
 	    break;
 	case 'S':
