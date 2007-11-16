@@ -645,7 +645,8 @@ gx_dc_ht_binary_read(
         devc.colors.binary.b_index = *pdata++;
     }
 
-    /* set the phase as required (select value is arbitrary) */
+    if (pis->dev_ht == NULL)
+	return_error(gs_error_unregistered); /* Must not happen. */
     /* set the phase as required (select value is arbitrary) */
     color_set_phase_mod( &devc,
                          pis->screen_phase[0].x,

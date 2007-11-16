@@ -339,7 +339,7 @@ clist_setup_params(gx_device *dev)
 }
 
 static int 
-clist_reader_init(gx_device_clist *cldev)
+clist_close_writer_and_init_reader(gx_device_clist *cldev)
 {
     gx_device_clist_reader * const crdev = &cldev->reader;
     
@@ -347,7 +347,6 @@ clist_reader_init(gx_device_clist *cldev)
 
     /* Initialize for rendering if we haven't done so yet. */
     if (crdev->ymin < 0) {
-	crdev->offset_map = NULL;
 	code = clist_end_page(&cldev->writer);
 	if (code < 0)
 	    return code;
@@ -422,7 +421,7 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
 	    }
     }
 
-    if (0 > (code = clist_reader_init(cldev)))
+    if (0 > (code = clist_close_writer_and_init_reader(cldev)))
 	return code;
 
     clist_select_render_plane(dev, y, line_count, &render_plane, plane_index);
