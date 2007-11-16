@@ -33479,7 +33479,7 @@ Add the experimental spot analysis source files to the developer file roadmap.
 2003-12-07 16:17 Igor Melichev</strong> (<a href="Details8.htm#2003-12-07_1617">details</a>)</p>
 <blockquote>
 <pre>
-Generalize the trapezoid fillling algorithm for curves, step 4.
+Generalize the trapezoid filling algorithm for curves, step 4.
 
 </pre>
 <p>[src/gxfdrop.c 1.5]</p>
@@ -33530,7 +33530,7 @@ Fix : (type 1 hinter) Invalid contours with <=2 segments caused an infinite loop
 2003-12-04 16:19 Igor Melichev</strong> (<a href="Details8.htm#2003-12-04_1619">details</a>)</p>
 <blockquote>
 <pre>
-Generalize the trapezoid fillling algorithm for curves, step 3.
+Generalize the trapezoid filling algorithm for curves, step 3.
 
 </pre>
 <p>[src/gxfill.c 1.57, src/gxpflat.c 1.10, src/gzpath.h 1.12]</p>
@@ -33568,7 +33568,7 @@ Fix : Cygwin/gcc compiler claimed possibly uninitialized variables.
 2003-12-04 11:09 Igor Melichev</strong> (<a href="Details8.htm#2003-12-04_1109">details</a>)</p>
 <blockquote>
 <pre>
-Generalize the trapezoid fillling algorithm for curves, step 2.
+Generalize the trapezoid filling algorithm for curves, step 2.
 
 </pre>
 <p>[src/gx.h 1.18, src/gxfdrop.c 1.4, src/gxfill.c 1.55, src/gxfill.h 1.4, src/gxpflat.c 1.9, src/gzpath.h 1.11]</p>
@@ -33721,7 +33721,7 @@ Fix : A misspelled TRAPEZIOD.
 2003-11-25 00:21 Igor Melichev</strong> (<a href="Details8.htm#2003-11-25_0021">details</a>)</p>
 <blockquote>
 <pre>
-Generailze the trapezoid fillling algorithm for curves, step 1.
+Generalize the trapezoid filling algorithm for curves, step 1.
 The new code is disabled with CURVED_TRAPEZIOD_FILL 0 in gx.h .
 
 </pre>
@@ -34003,7 +34003,7 @@ Fix bug 686779 from the customer 131
 <blockquote>
 <pre>
 First attempt to add information requested by Igor to identify when the
-basline was set for a particular 'DIFFER' case. Bug #687142.
+baseline was set for a particular 'DIFFER' case. Bug #687142.
 </pre>
 <p>[toolbin/tests/gscheck_pdfwrite.py 1.15, toolbin/tests/gscheck_raster.py 1.6]</p>
 </blockquote>
@@ -34184,7 +34184,7 @@ Fix bug 687116
 2003-11-01 13:18 Igor Melichev</strong> (<a href="Details8.htm#2003-11-01_1318">details</a>)</p>
 <blockquote>
 <pre>
-Fix (font resource machinery) : Dont try reloading fonts if the platform has no native fonts.
+Fix (font resource machinery) : Don't try reloading fonts if the platform has no native fonts.
 
 </pre>
 <p>[lib/gs_fonts.ps 1.44]</p>
@@ -34215,7 +34215,7 @@ Fix (font resource machinery) : Provide correct font names for graphics library.
 2003-10-30 14:56 Igor Melichev</strong> (<a href="Details8.htm#2003-10-30_1456">details</a>)</p>
 <blockquote>
 <pre>
-Fix (dropout prevention) : The expression for choosing a pixel to paint with narrow trapesoids
+Fix (dropout prevention) : The expression for choosing a pixel to paint with narrow trapezoids
 was wrong (An improved revision).
 
 </pre>
@@ -34327,7 +34327,7 @@ Fix : Simplify the filling algorithm (step 1).
 2003-10-28 14:44 Igor Melichev</strong> (<a href="Details8.htm#2003-10-28_1444">details</a>)</p>
 <blockquote>
 <pre>
-Fix (dropout prevention) : The expression for choosing a pixel to paint with narrow trapesoids
+Fix (dropout prevention) : The expression for choosing a pixel to paint with narrow trapezoids
 was wrong. The old code sometimes unreasonably shifted stems in 1 pixel.
 
 </pre>
@@ -34668,7 +34668,7 @@ Fix : Disable the grid fitting while charproc accumulation.
 <pre>
 Don't cache glyphs with a suspect bounding box. The patch tests for
 (urx!=0 && llx==urx) || (ury!=0 && lly==ury) but suggestions of a
-better test are allways welcome.
+better test are always welcome.
 Fix bug 687015 from customer 440
 </pre>
 <p>[lib/pdf_font.ps 1.58]</p>
@@ -34715,7 +34715,7 @@ Fix (pdfwrite) : Fonts used in a charproc were not added to Resources of some pa
 2003-10-16 13:37 Igor Melichev</strong> (<a href="Details8.htm#2003-10-16_1337">details</a>)</p>
 <blockquote>
 <pre>
-Fix (pdfwrite) : The font copying routine was inprecise.
+Fix (pdfwrite) : The font copying routine was imprecise.
 
 </pre>
 <p>[src/gdevpsft.c 1.31, src/gstype42.c 1.40, src/gxfcopy.c 1.35]</p>
@@ -34830,7 +34830,7 @@ Add new header file src/gdevdevn.h to doc/Develop.htm.
 <blockquote>
 <pre>
 Fix (True Type font loader) : 'glyf' and 'loca' were loaded emulating a CID font with True Type,
-causing an unuseful huge memory consumtion.
+causing an unuseful huge memory consumption.
 
 </pre>
 <p>[lib/gs_ttf.ps 1.33]</p>
@@ -35163,7 +35163,7 @@ Implementing a bridge to the True Type bytecode interpreter (step 6).
 2003-10-06 16:42 Igor Melichev</strong> (<a href="Details8.htm#2003-10-06_1642">details</a>)</p>
 <blockquote>
 <pre>
-Fix (pdfwrite) : A bug convertinging a CID to a glyph index.
+Fix (pdfwrite) : A bug converting a CID to a glyph index.
 
 </pre>
 <p>[src/gstype42.c 1.36]</p>
@@ -35530,7 +35530,7 @@ Fix (pdfwrite) : Image XObject was not added into pattern's Resources.
 2003-09-09 20:35 Igor Melichev</strong> (<a href="Details8.htm#2003-09-09_2035">details</a>)</p>
 <blockquote>
 <pre>
-pdfwrite : Apply the color space serialization for color space comparizon (continued).
+pdfwrite : Apply the color space serialization for color space comparison (continued).
 
 </pre>
 <p>[src/gdevpdfc.c 1.39, src/gdevpdfg.c 1.40, src/gdevpdfg.h 1.26, src/gdevpdfv.c 1.30, src/gspcolor.c 1.12]</p>
@@ -35550,7 +35550,7 @@ pdfwrite : A minor code cleanup.
 2003-09-09 16:03 Igor Melichev</strong> (<a href="Details8.htm#2003-09-09_1603">details</a>)</p>
 <blockquote>
 <pre>
-pdfwrite : Apply the color space serialization for color space comparizon.
+pdfwrite : Apply the color space serialization for color space comparison.
 
 </pre>
 <p>[src/devs.mak 1.96, src/gdevpdfc.c 1.37, src/gdevpdfg.h 1.25]</p>
@@ -35599,7 +35599,7 @@ Fix : Cygwin/gcc compiler warnings.
 2003-09-08 13:19 Igor Melichev</strong> (<a href="Details8.htm#2003-09-08_1319">details</a>)</p>
 <blockquote>
 <pre>
-Fix : Impproving the coordinate precision in function fill_rectangle_hl_color.
+Fix : Improving the coordinate precision in function fill_rectangle_hl_color.
 
 </pre>
 <p>[src/gdevdflt.c 1.13, src/gdevnfwd.c 1.11, src/gdevpdfd.c 1.33, src/gsdps1.c 1.9, src/gspaint.c 1.8, src/gxdevcli.h 1.18]</p>
@@ -35620,7 +35620,7 @@ Fix : Cygwin/gcc compiler warnings.
 <blockquote>
 <pre>
 Defining a new device virtual function fill_rectangle_hl_color.
-This fuction is used to implement gs_rectfill and gs_fillpage
+This function is used to implement gs_rectfill and gs_fillpage
 with a high level color handling.
 
 </pre>
@@ -35903,7 +35903,7 @@ A preparation for high level color handling in vector devices.
 
 THIS IS INCOMPATIBLE CHANGE for devices derived from gx_device_vector.
 Now they must implement the new virtual function can_handle_hl_color.
-A simplest impementation compatible to the old behavior is to return false.
+A simplest implementation compatible to the old behavior is to return false.
 
 </pre>
 <p>[src/gdevpdfd.c 1.30, src/gdevpdfg.c 1.36, src/gdevpdfg.h 1.23, src/gdevpdfx.h 1.73, src/gdevpdtt.c 1.56, src/gdevps.c 1.36, src/gdevpsdf.h 1.19, src/gdevpsdu.c 1.18, src/gdevpx.c 1.14, src/gdevvec.c 1.20, src/gdevvec.h 1.12, src/gsdcolor.h 1.12, src/gxdcolor.c 1.12, src/gxhldevc.h 1.2, src/lib.mak 1.133]</p>
@@ -36325,7 +36325,7 @@ bug #686922.
 <blockquote>
 <pre>
 Convert ASCII range font names found during the FONTPATH scanning to
-simole ASCII aliases (original Unicode names preserved). Fixes bug 686861
+simple ASCII aliases (original Unicode names preserved). Fixes bug 686861
 for customer 131.
 
 </pre>
@@ -36695,7 +36695,7 @@ Remove a redundant dependency definition.
 2003-08-01 15:40 giles</strong></p>
 <blockquote>
 <pre>
-Set release dates on the documenation.
+Set release dates on the documentation.
 </pre>
 <p>[doc/News.htm 1.132, man/dvipdf.1 1.25, man/font2c.1 1.25, man/gs.1 1.26, man/gslp.1 1.25, man/gsnd.1 1.25, man/pdf2dsc.1 1.24, man/pdf2ps.1 1.26, man/pdfopt.1 1.24, man/pf2afm.1 1.25, man/pfbtopfa.1 1.26, man/printafm.1 1.25, man/ps2ascii.1 1.24, man/ps2epsi.1 1.23, man/ps2pdf.1 1.30, man/ps2pdfwr.1 1.29, man/ps2ps.1 1.32, man/wftopfa.1 1.25]</p>
 </blockquote>
@@ -36812,7 +36812,7 @@ the cyan component for a gray color space.
 2003-07-25 14:08 giles</strong></p>
 <blockquote>
 <pre>
-Build fix of the jbig2 makefile. OOur portable (v)snprintf implementation is
+Build fix of the jbig2 makefile. Our portable (v)snprintf implementation is
 in snprintf.c, notvsnprintf.c. Reported in but 686966.
 </pre>
 <p>[src/jbig2.mak 1.6]</p>
@@ -37009,7 +37009,7 @@ include paths.
 2003-07-10 18:42 raph</strong></p>
 <blockquote>
 <pre>
-First batch of transparency improvments. With these changes,
+First batch of transparency improvements. With these changes,
 ChineseOpera.ai and a number of other files using soft mask groups
 should render correctly.
 </pre>
@@ -37375,7 +37375,7 @@ Fix : Improving an error message.
 2003-06-24 10:57 igor</strong></p>
 <blockquote>
 <pre>
-Fix : gs/Resource/Decoding/Unicode contained wrong codes for Cyrillic and Herbrew.
+Fix : gs/Resource/Decoding/Unicode contained wrong codes for Cyrillic and Hebrew.
 </pre>
 <p>[Resource/Decoding/Unicode 1.2]</p>
 </blockquote>
@@ -37497,7 +37497,7 @@ prevent spurious comments starting with '%%' from disturbing the parser.
 2003-06-18 19:56 alexcher</strong></p>
 <blockquote>
 <pre>
-Fix mis-identificaion of every DSC-conforming file as EPS.
+Fix mis-identification of every DSC-conforming file as EPS.
 </pre>
 <p>[src/gdevpdfp.c 1.32]</p>
 </blockquote>
@@ -37708,8 +37708,8 @@ Fix (PDF interpreter) : Account Encoding while building CharStrings for TrueType
 2003-06-06 17:50 igor</strong> (<a href="Details8.htm#2003-06-06_1750">details</a>)</p>
 <blockquote>
 <pre>
-Fix (pdfwrite) : Convert Type 0 fonts with multiple CID font descendents into
-Type 0 fonts with single CID font descendents (the part 3).
+Fix (pdfwrite) : Convert Type 0 fonts with multiple CID font descendants into
+Type 0 fonts with single CID font descendants (the part 3).
 
 </pre>
 <p>[src/gdevdevn.c 1.7, src/gdevpdtc.c 1.22, src/gdevpdtd.c 1.12, src/gdevpdtf.c 1.29, src/gdevpdtt.c 1.47, src/gdevpsf.h 1.24, src/gdevpsft.c 1.30, src/gdevpsfu.c 1.11, src/gdevtrac.c 1.5, src/gsccode.h 1.10, src/gstype42.c 1.31, src/gxfcopy.c 1.27, src/gxfont42.h 1.15, src/zfcid1.c 1.17, src/zfont42.c 1.15]</p>
@@ -37731,7 +37731,7 @@ Fixes bug 686907 from customer 1060.
 2003-06-03 07:31 igor</strong></p>
 <blockquote>
 <pre>
-pdfwrite : Don't add subset prefix when a font doesn't embeed.
+pdfwrite : Don't add subset prefix when a font doesn't embed.
 Ghostscript Bug 686893  NeverEmbed for Japanese CID fonts doesn't work correctly
 Patch from Koji Nakamaru.
 </pre>
@@ -37743,10 +37743,10 @@ Patch from Koji Nakamaru.
 <blockquote>
 <pre>
 Fix for 686785 segfault with PDF 1.4.  The PDF interpreter was calling
-PDF 1.4 transparency features (begin_trasnparency_group) even though
-the alpha involved was 1.0.  THe fix is to set a flag when the need
+PDF 1.4 transparency features (begin_transparency_group) even though
+the alpha involved was 1.0.  The fix is to set a flag when the need
 for transparency is done at the start of a page and then testing it
-when transparency may be needed durng the page.
+when transparency may be needed during the page.
 </pre>
 <p>[lib/pdf_draw.ps 1.70, lib/pdf_main.ps 1.74]</p>
 </blockquote>
@@ -37928,8 +37928,8 @@ Fixes Bug #686859 for customer #600.
 2003-05-22 23:37 igor</strong> (<a href="Details8.htm#2003-05-22_2337">details</a>)</p>
 <blockquote>
 <pre>
-pdfwrite : Convert Type 0 fonts with multiple CID font descendents into
-Type 0 fonts with single CID font descendents (part 2).
+pdfwrite : Convert Type 0 fonts with multiple CID font descendants into
+Type 0 fonts with single CID font descendants (part 2).
 
 </pre>
 <p>[src/gdevpdfv.c 1.26, src/gdevpdtc.c 1.20, src/gdevpdtf.c 1.27, src/gdevpdtf.h 1.18, src/gdevpdtt.c 1.46, src/gdevpdtt.h 1.17, src/zfcid0.c 1.20]</p>
@@ -37968,8 +37968,8 @@ processing with 'execform'. Bug #686884 for customer #150.
 2003-05-22 15:41 igor</strong> (<a href="Details8.htm#2003-05-22_1541">details</a>)</p>
 <blockquote>
 <pre>
-Fix (pdfwrite) : Convert Type 0 fonts with multiple CID font descendents into
-Type 0 fonts with single CID font descendents.
+Fix (pdfwrite) : Convert Type 0 fonts with multiple CID font descendants into
+Type 0 fonts with single CID font descendants.
 
 </pre>
 <p>[src/gdevpdfm.c 1.31, src/gdevpdfv.c 1.25, src/gdevpdtb.c 1.19, src/gdevpdtc.c 1.19, src/gdevpdtf.c 1.26, src/gdevpdtf.h 1.17, src/gdevpdtt.c 1.45, src/gdevpdtt.h 1.16, src/gdevpdtw.c 1.18, src/gdevpdtw.h 1.3, src/gdevpsf.h 1.23, src/gdevpsfm.c 1.14, src/gsfcmap.c 1.22, src/gxfcmap.h 1.15, src/zcidtest.c 1.3]</p>
@@ -38001,7 +38001,7 @@ Bump version number after the 8.10 release.
 The 8.10 release is an incremental release from 8.00. It contains
 some fairly substantial reworking of important modules, most notably
 in the font rendering. Because of the extent of the changes, we're
-labelling this as a beta release. It should be quite usable, but
+labeling this as a beta release. It should be quite usable, but
 it hasn't been as thoroughly wrung out as our production releases.
 <p>
 The major new feature improved font rendering by Igor Melichev. The
@@ -38229,7 +38229,7 @@ Update open bug list for release.
 <p><strong><a name="2003-05-20_2006"></a>
 2003-05-20 20:06 Ralph Giles</strong></p>
 <blockquote><pre>
-Add a missing dependendency definition.
+Add a missing dependency definition.
 </pre></blockquote>
 
 <p><strong><a name="2003-05-20_1955"></a>
@@ -38299,7 +38299,7 @@ with the same object numbers and the same generation numbers.
 <p><strong><a name="2003-05-19_0520"></a>
 2003-05-19 05:20 Dan Coby</strong> (<a href="Details8.htm#2003-05-19_0520">details</a>)</p>
 <blockquote><pre>
-1.  Ignore data after %%EOF whicl scanning for objects or trailer.
+1.  Ignore data after %%EOF while scanning for objects or trailer.
 2.  Allow objects with duplicate object and generation numbers.
 3.  Change heuristic for finding the trailer dictionary.
 
@@ -38405,7 +38405,7 @@ corrects the problem.
 2003-05-15 18:46 Alex Cherepanov</strong></p>
 <blockquote><pre>
 Fix negative shift count in operator << .
-On 80x86 processors the shift argument is implicitely masked by 31.
+On 80x86 processors the shift argument is implicitly masked by 31.
 Fixes bug #686743.
 </pre></blockquote>
 
@@ -38442,7 +38442,7 @@ corrects the problem.
 2003-05-14 13:36 Alex Cherepanov</strong></p>
 <blockquote><pre>
 Following PDF spec make MatrixA equal to WhitePoint of CalGray color 
-space. To avoud clipping set the max values of RangeLMN to the
+space. To avoid clipping set the max values of RangeLMN to the
 corresponding values of WhitePoint.
 Fixes bug 686749
 </pre></blockquote>
@@ -38806,7 +38806,7 @@ Fix (pdfwrite) : Applying a generic resource writing method to charprocs.
 2003-04-18 14:57 Ralph Giles</strong></p>
 <blockquote><pre>
 Calling the gsapi polling function from the Macintosh gp_check_interrupts
-function voilates the layering of the interpreter over the graphics library.
+function violates the layering of the interpreter over the graphics library.
 Therefore we isolate the offending code to a separate module 'macpoll.dev'
 in a fashion analogous to the mspoll feature dev available on the windows
 build. Enable this by default in the CodeWarrior build.
@@ -39222,7 +39222,7 @@ stream process if no callback is defined. Closes bug 686768.
 <blockquote><pre>
 Implementation of the SeparationOrder parameter.  This implementation
 is only applicable for the spotcmyk and devicen devices.  This change
-also removes the uuused spotrgb device.
+also removes the unused spotrgb device.
 </pre></blockquote>
 
 <p><strong><a name="2003-04-04_1710"></a>
@@ -39423,7 +39423,7 @@ required for libjbig2 integration.
 <p><strong><a name="2003-03-22_1247"></a>
 2003-03-22 12:47 Igor Melichev</strong></p>
 <blockquote><pre>
-Fix (CFF parser) : Warn and ingore missed tables instead giving up.
+Fix (CFF parser) : Warn and ignore missed tables instead giving up.
 Bug 686772 "PDf file breaks in ghostscript works on other PDF rips".
 </pre></blockquote>
 
@@ -39504,7 +39504,7 @@ which wrote a wrong numLongMetrics.
 <p><strong><a name="2003-03-16_2050"></a>
 2003-03-16 20:50 Igor Melichev</strong></p>
 <blockquote><pre>
-Fix : Increasing the threshould for the dropout prevention invocation.
+Fix : Increasing the threshold for the dropout prevention invocation.
 </pre></blockquote>
 
 <p><strong><a name="2003-03-16_2007"></a>
@@ -39517,7 +39517,7 @@ Fix (file_name_combine) : A bug in gs_fapi.ps .
 2003-03-15 08:09 Igor Melichev</strong> (<a href="Details8.htm#2003-03-15_0809">details</a>)</p>
 <blockquote><pre>
 Fix (pdfwrite) : Unwinding a part of the previous patch
-and improve the OS/2 table writing ann embedded CIDFontType2.
+and improve the OS/2 table writing an embedded CIDFontType2.
 Bugzilla Bug 686759 "pdf to pdf doesnt work".
 
 </pre></blockquote>
@@ -39546,7 +39546,7 @@ work beyond the end of the written file, pad out the length of the image
 data section so we can fill in the rows in proper bottom-to-top order.
 
 Note that the bmp output code does not convert RGB to BGR; this is not
-critical as the output is only used for hilighting differences.
+critical as the output is only used for highlighting differences.
 
 Closes bug #686739.
 </pre></blockquote>
@@ -39728,7 +39728,7 @@ file_name_combine : Adding the 'no_neighbour' argument.
 2003-03-04 16:10 Igor Melichev</strong></p>
 <blockquote><pre>
 Fix (file_name_combine) : Relative paths in GS command line did not work.
-This patch cnanges a disabled code only.
+This patch changes a disabled code only.
 </pre></blockquote>
 
 <p><strong><a name="2003-03-04_1524"></a>
@@ -39856,7 +39856,7 @@ Correct typo somehow a /* comment crept in -- changed to %
 <blockquote><pre>
 Add .endjob procedure for use by job servers. Remainder of job encapsulation
 and documentation to follow later. Also fix potential "invalidrestore"
-problem with "extiserver" and "true <passwd> startjob" caused by stuff left
+problem with "exitserver" and "true <passwd> startjob" caused by stuff left
 on the opstack or dictstack.
 </pre></blockquote>
 
@@ -39919,7 +39919,7 @@ Fixes bug #643398
 2003-02-22 18:05 Ralph Giles</strong></p>
 <blockquote><pre>
 Use the correct debug macro in the recently committed struct_array
-allocation checks. Only relevent to the debug build.
+allocation checks. Only relevant to the debug build.
 </pre></blockquote>
 
 <p><strong><a name="2003-02-22_0550"></a>
@@ -39969,7 +39969,7 @@ names rather than paths.
 <p><strong><a name="2003-02-20_1834"></a>
 2003-02-20 18:34 Igor Melichev</strong> (<a href="Details8.htm#2003-02-20_1834">details</a>)</p>
 <blockquote><pre>
-Fix : A structure discriptor was wrong allocating an array of gs_cid_system_info.
+Fix : A structure descriptor was wrong allocating an array of gs_cid_system_info.
 
 </pre></blockquote>
 
@@ -40026,7 +40026,7 @@ Fix : Improving the seekability of the init string file.
 2003-02-15 22:37 Ray Johnston</strong></p>
 <blockquote><pre>
 Change the fixed point precision for device coordinates to 8 bits. The
-previous 12 bits was too large to accomodate large format inkjet printers
+previous 12 bits was too large to accommodate large format inkjet printers
 at modern resolutions of 720 and 1200 dpi.
 </pre></blockquote>
 
@@ -40277,7 +40277,7 @@ Fixing a garbager problem with gs_cmap_adobe1.
 <p><strong><a name="2003-02-03_1632"></a>
 2003-02-03 16:32 Igor Melichev</strong></p>
 <blockquote><pre>
-Fix (FAPI) : SubstNWP erroneusely used with non-CID fonts.
+Fix (FAPI) : SubstNWP erroneously used with non-CID fonts.
 </pre></blockquote>
 
 <p><strong><a name="2003-02-03_1606"></a>
@@ -40517,7 +40517,7 @@ releases of Metrowerks CodeWarrior to the older __MACINTOSH__.
 <p><strong><a name="2003-01-25_1632"></a>
 2003-01-25 16:32 Igor Melichev</strong> (<a href="Details8.htm#2003-01-25_1632">details</a>)</p>
 <blockquote><pre>
-Fix (dropout prevention) : Insetred a check for VMerror.
+Fix (dropout prevention) : Inserted a check for VMerror.
 
 </pre></blockquote>
 
@@ -40531,7 +40531,7 @@ Supply local macros to replace non-portable min() and max() functions from MSVC.
 2003-01-24 22:30 Dan Coby</strong></p>
 <blockquote><pre>
 This is a temporary backout of rev 1.12 while its changes are being
-investigated.  This is being done to prevenet interference with some
+investigated.  This is being done to prevent interference with some
 other efforts.
 </pre></blockquote>
 
@@ -40669,7 +40669,7 @@ convert fonts to raster except for Type 3.
 <p><strong><a name="2003-01-21_2357"></a>
 2003-01-21 23:57 Igor Melichev</strong></p>
 <blockquote><pre>
-Fixing gcc compiter warnings in gxfill.c, gxdtfill.h .
+Fixing gcc compiler warnings in gxfill.c, gxdtfill.h .
 </pre></blockquote>
 
 <p><strong><a name="2003-01-20_2241"></a>
@@ -40691,7 +40691,7 @@ Fix (pdfwrite) : Improving a comment about ashow, awidthshow.
 <p><strong><a name="2003-01-19_1959"></a>
 2003-01-19 19:59 Igor Melichev</strong> (<a href="Details8.htm#2003-01-19_1959">details</a>)</p>
 <blockquote><pre>
-Fix (pdfwrite) : With CID fonts 'show' set up cache devive and
+Fix (pdfwrite) : With CID fonts 'show' set up cache device and
 inconsistently skipped any rendering to it. It must not set up cache device.
 Thanks to Toshia Suzuki for spotting the problem.
 
@@ -41376,7 +41376,7 @@ MacOS build.
 2002-12-12 01:44 Dan Coby</strong> (<a href="Details8.htm#2002-12-12_0144">details</a>)</p>
 <blockquote><pre>
 Fix for [ 652147 ] overprintmode not boolean.  Adobe TN5145 defines
-the paramters to/from setoverprintmode/currentoverprintmode as being
+the parameters to/from setoverprintmode/currentoverprintmode as being
 boolean.  This change modifies the implementation to match the TN.
 
 </pre></blockquote>
@@ -41877,7 +41877,7 @@ Bug #631974 (lib/ps2pdfxx.bat [1.13]: 2002/11/20 03:01:23 alexcher)
 
 </pre><h2><a name="8.00-Drivers"></a>Drivers</h2><pre>
 
-Documents the old macos output device as deprecated. This is superceeded by
+Documents the old macos output device as deprecated. This is superseded by
 the gdevdsp. (gdevmac.c [1.7]: 2002/11/20 18:24:44 giles)
 
 </pre><h2><a name="8.00-PDF_writer"></a>PDF writer</h2><pre>
