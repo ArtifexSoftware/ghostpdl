@@ -2685,7 +2685,7 @@ $(GLD)romfs1.dev : $(LIB_MAK) $(ECHO_XE) $(romfs_)
 $(GLD)romfs0.dev :  $(LIB_MAK) $(ECHO_XE) 
 	$(SETMOD) $(GLD)romfs0 
 
-$(GLGEN)gsromfs.c : $(MKROMFS_XE) $(PS_ROMFS_DEPENDENCIES)
+$(GLGEN)gsromfs.c : $(MKROMFS_XE) $(GLGEN)gs_init.ps
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs.c -X .svn $(UFST_ROMFS_ARGS) \
 	$(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS) \
 	$(PS_ROMFS_ARGS) $(EXTRA_INIT_FILES) 

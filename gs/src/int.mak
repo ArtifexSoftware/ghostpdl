@@ -995,8 +995,7 @@ EXTRA_INIT_FILES= Fontmap cidfmap xlatmap FAPI FCOfontmap-PCLPS2 gs_cet.ps
 
 RESOURCE_LIST=ColorSpace/ Decoding/ Encoding/ Font/ ProcSet/ IdiomSet/ CIDFont/ CMap/
 
-PS_ROMFS_DEPENDENCIES=$(PSGEN)$(GS_INIT)
-PS_ROMFS_ARGS=-c -P $(PSRESDIR)$(D) -d Resource/ $(RESOURCE_LIST)-d lib/ -P $(PSGEN) $(GS_INIT) -P $(PSLIB)
+PS_ROMFS_ARGS=-c -P $(PSRESDIR)$(D) -d Resource/ $(RESOURCE_LIST) -d lib/ -P $(PSGEN) $(GS_INIT) -P $(PSLIB)
 
 # ---------------- Stochastic halftone ---------------- #
 
