@@ -627,6 +627,10 @@ pcfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {	
     if ((type & pcl_reset_initial) != 0) {
 	pcs->font_dir = gs_font_dir_alloc(pcs->memory);
+	pcs->font = 0;
+	pcs->font_selection[0].font =
+		pcs->font_selection[1].font = 0;
+	pcs->font_selected = primary;
 	pl_dict_init(&pcs->built_in_fonts, pcs->memory, pl_free_font);
 	pl_dict_init(&pcs->soft_fonts, pcs->memory, pl_free_font);
 	pl_dict_init(&pcs->cartridge_fonts, pcs->memory, pl_free_font);
