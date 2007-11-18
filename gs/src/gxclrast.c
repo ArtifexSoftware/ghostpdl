@@ -593,7 +593,7 @@ in:				/* Initialize for a new page. */
 			    gx_color_index delta = 0;
 			    uint data;
 
-			    dev_depth = cdev->color_info.depth;
+			    dev_depth = tdev->color_info.depth;
 			    dev_depth_bytes = (dev_depth + 7) >> 3;
 		            switch (dev_depth_bytes) {
 				/* For cases with an even number of bytes */
@@ -672,7 +672,7 @@ in:				/* Initialize for a new page. */
 		else {
 		    gx_color_index color = 0;
 
-		    dev_depth = cdev->color_info.depth;
+		    dev_depth = tdev->color_info.depth;
 		    dev_depth_bytes = (dev_depth + 7) >> 3;
 		    switch (dev_depth_bytes - num_zero_bytes) {
 			case 8:
@@ -740,7 +740,7 @@ in:				/* Initialize for a new page. */
 		    if (!(op & 8))
 			depth = *cbp++;
 		} else 
-		    depth = cdev->color_info.depth;
+		    depth = tdev->color_info.depth;
 	      copy:cmd_getw(state.rect.x, cbp);
 		cmd_getw(state.rect.y, cbp);
 		if (op & 8) {	/* Use the current "tile". */
