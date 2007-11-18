@@ -243,7 +243,7 @@ gx_begin_transparency_group(gs_imager_state * pis, gx_device * pdev,
 	    GS_COLOR_SPACE_TYPE_NAMES
 	};
 
-	dlprintf5("[v](0x%lx)begin_transparency_group [%g %g %g %g]\n",
+	dlprintf5("[v](0x%lx)gx_begin_transparency_group [%g %g %g %g]\n",
 		  (ulong)pis, bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
 	if (tgp.ColorSpace)
 	    dprintf1("     CS = %s",
@@ -266,6 +266,7 @@ gs_end_transparency_group(gs_state *pgs)
 {
     gs_pdf14trans_params_t params = { 0 };
 
+    if_debug0('v', "[v]gs_end_transparency_group\n");
     params.pdf14_op = PDF14_END_TRANS_GROUP;  /* Other parameters not used */
     return gs_state_update_pdf14trans(pgs, &params);
 }
@@ -273,6 +274,7 @@ gs_end_transparency_group(gs_state *pgs)
 int
 gx_end_transparency_group(gs_imager_state * pis, gx_device * pdev)
 {
+    if_debug0('v', "[v]gx_end_transparency_group\n");
     if (dev_proc(pdev, end_transparency_group) != 0)
 	return (*dev_proc(pdev, end_transparency_group)) (pdev, pis, NULL);
     else

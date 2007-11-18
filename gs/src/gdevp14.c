@@ -1703,6 +1703,7 @@ static	void
 pdf14_set_params(gs_imager_state * pis,	gx_device * dev,
 				const gs_pdf14trans_params_t * pparams)
 {
+    if_debug0('v', "[v]pdf14_set_params\n");
     if (pparams->changed & PDF14_SET_BLEND_MODE)
 	pis->blend_mode = pparams->blend_mode;
     if (pparams->changed & PDF14_SET_TEXT_KNOCKOUT)
@@ -1972,6 +1973,7 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_imager_state * pis,
 	    pdf14_recreate_device(mem, pis, pdev, pdf14pct);
 	    break;
 	case PDF14_POP_DEVICE:
+	    if_debug0('v', "[v]gx_update_pdf14_compositor(PDF14_POP_DEVICE)\n");
 	    pis->get_cmap_procs = p14dev->save_get_cmap_procs;
 	    gx_set_cmap_procs(pis, p14dev->target);
 	    /* Send image out raster data to output device */
