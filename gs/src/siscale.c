@@ -66,7 +66,7 @@ typedef double AccumTmp;
 #define num_weight_bits 0		/* Not used for floating point */
 #define fixedScaleFactor 1		/* Straight scaling for floating point */
 #define scale_PixelWeight(factor) (factor)
-#define unscale_AccumTmp(atemp, fraction_bits) ((int)(atemp))
+#define unscale_AccumTmp(atemp, fraction_bits) ((int)(atemp + 0.5))
 /*#undef NEED_FRACTION_BITS*/
 
 #endif /* USE_FPU */
@@ -265,18 +265,24 @@ calculate_contrib(
 	for (j = 0; j < npixels; ++j)
 	    p[j].weight = 0;
 	if (squeeze) {
+            double sum = 0;
+	    for (j = left; j <= right; ++j)
+		sum += fproc((center - j) / fscale) / fscale;
 	    for (j = left; j <= right; ++j) {
-		double weight =
-		fproc((center - j) / fscale) / fscale;
+		double weight = fproc((center - j) / fscale) / fscale / sum;
 		int n = clamp_pixel(j);
 		int k = n - first_pixel;
 
-		p[k].weight +=
+                p[k].weight +=
 		    (PixelWeight) (weight * scaled_factor);
 	    }
+
 	} else {
+            double sum = 0;
+	    for (j = left; j <= right; ++j)
+		sum += fproc(center - j);
 	    for (j = left; j <= right; ++j) {
-		double weight = fproc(center - j);
+		double weight = fproc(center - j) / sum;
 		int n = clamp_pixel(j);
 		int k = n - first_pixel;
 
