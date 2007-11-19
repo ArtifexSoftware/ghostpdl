@@ -34,10 +34,13 @@ with -O instead of -O2.
 The same executables can be built with Microsoft Visual C by running
 the appropriate *_mvsc.mak file through nmake. For example:
 
+cd xps
+nmake -f xps_msvc.mak
+
+or
+
 cd main
 nmake -f pcl6_msvc.mak
-
-Building GhostXPS under MSVC isn't currently supported.
 
 The makefiles default to supporting MSVC 8 (2005) To use another 
 version, append it to the nmake command line, for example:
@@ -47,7 +50,7 @@ nmake -f pcl6_msvc.mak MSVC_VERSION=6
 
 ===
 
-To build the just xps interpreter, type:
+To build the just xps interpreter with GNU make and gcc, type:
 
 make xps
 
