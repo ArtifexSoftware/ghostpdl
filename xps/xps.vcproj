@@ -20,7 +20,6 @@
 			IntermediateDirectory="Debug"
 			ConfigurationType="0"
 			>
-                        <DebugSettings Command="$(TargetPath)gxps.exe"/>
 			<Tool
 				Name="VCNMakeTool"
 				BuildCommandLine="nmake -f xps_msvc.mak "
@@ -41,8 +40,7 @@
 			IntermediateDirectory="Release"
 			ConfigurationType="0"
 			>
-                        <DebugSettings Command="$(Targetpath)gxps.exe"/>
-			<Tool
+                        <Tool
 				Name="VCNMakeTool"
 				BuildCommandLine="nmake -f xps_msvc.mak DEBUG=0 TDEBUG=0 DEBUGSYM=0"
 				ReBuildCommandLine="nmake -f xps_msvc.mak /A DEBUG=0 TDEBUG=0 DEBUGSYM=0"
