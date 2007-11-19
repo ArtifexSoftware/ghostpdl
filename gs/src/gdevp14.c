@@ -2240,7 +2240,7 @@ pdf14_begin_transparency_mask(gx_device	*dev,
 					       "pdf14_push_transparency_mask");
 
     if (ptmp->Background_components)
-	bg_alpha = (int)(255 * ptmp->Background[0] + 0.5);
+	bg_alpha = (int)(255 * ptmp->GrayBackground + 0.5);
     if_debug1('v', "begin transparency mask, bg_alpha = %d\n", bg_alpha);
     memcpy(transfer_fn, ptmp->transfer_fn, size_of(ptmp->transfer_fn));
     return pdf14_push_transparency_mask(pdev->ctx, &pdev->ctx->rect, bg_alpha,
