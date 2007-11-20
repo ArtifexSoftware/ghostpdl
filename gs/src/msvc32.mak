@@ -405,7 +405,7 @@ DEVSTUDIO=C:\Program Files\Microsoft Visual Studio
 COMPBASE=
 SHAREDBASE=
 !else
-COMPBASE=$(DEVSTUDIO)\VC98
+COMPBASE=%MSVCDir%
 SHAREDBASE=$(DEVSTUDIO)\Common\MSDev98
 !endif
 !endif
