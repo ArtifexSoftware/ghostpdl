@@ -87,6 +87,9 @@ typedef struct xps_glyph_metrics_s xps_glyph_metrics_t;
  * Context and memory.
  */
 
+#ifndef __FUNCTION__ /* Provide a fallback if this symbol is unsupported */
+#define __FUNCTION__ "ghostxps"
+#endif
 
 #define xps_alloc(ctx, size) \
     ((void*)gs_alloc_bytes(ctx->memory, size, __FUNCTION__));
