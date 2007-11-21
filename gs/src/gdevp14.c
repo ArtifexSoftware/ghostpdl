@@ -4186,8 +4186,9 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
 	     * Ensure that the tranfer functions, etc.  are current before we
 	     * dump our transparency image to the output device.
 	     */
-	    code = cmd_put_halftone((gx_device_clist_writer *)
-			(((pdf14_clist_device *)dev)->target), pis->dev_ht);
+            if (pis->dev_ht)
+                code = cmd_put_halftone((gx_device_clist_writer *)
+                              (((pdf14_clist_device *)dev)->target), pis->dev_ht);
 	    break;
 	default:
 	    break;		/* do nothing for remaining ops */
