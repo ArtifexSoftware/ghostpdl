@@ -37,6 +37,9 @@ PNGSRCDIR=..\gs\libpng
 !ifndef ZSRCDIR
 ZSRCDIR=..\gs\zlib
 !endif
+!ifndef ICCSRCDIR
+ICCSRCDIR=..\gs\icclib
+!endif
 
 !ifndef SHARE_ZLIB
 SHARE_ZLIB=0
@@ -128,13 +131,13 @@ TARGET_XE=$(GENDIR)\pcl6
 
 # Debugging options
 !ifndef DEBUG
-DEBUG=1
+DEBUG=0
 !endif
 !ifndef TDEBUG
-TDEBUG=1
+TDEBUG=0
 !endif
 !ifndef DEBUGSYM
-DEBUGSYM=1
+DEBUGSYM=0
 !endif
 
 !ifndef NOPRIVATE
@@ -271,6 +274,7 @@ TARGET_DEVS= $(TARGET_DEVS) $(XPSOBJDIR)/xps.dev
 
 !ifndef DEVICE_DEVS
 DEVICE_DEVS=$(DD)\ljet4.dev\
+ $(DD)\wtsimdi.dev\
  $(DD)\bmpmono.dev $(DD)\bmp16m.dev $(DD)\bmp32b.dev\
  $(DD)\bitcmyk.dev $(DD)\bitrgb.dev $(DD)\bit.dev\
  $(DD)\pkmraw.dev $(DD)\ppmraw.dev $(DD)\pgmraw.dev $(DD)\pbmraw.dev\
@@ -347,3 +351,4 @@ config-clean: pl.config-clean pxl.config-clean
 !ifdef XPS_INCLUDED
 !include $(XPSSRCDIR)\xps.mak
 !endif
+
