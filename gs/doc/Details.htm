@@ -8,6 +8,86 @@
 </head>
 <body>
 
+<p><strong><a name="2007-11-21T194440.574652Z"></a>
+2007-11-21T19:44:40.574652Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Revert the change to using an environment variable for the MSVC LIBPATH. 
+
+Details:
+
+This wasn't effective in addressing the problem and could cause 
+additional trouble if the environment isn't configured. The changes
+in r8394 should properly address the issue of quote interpretation
+with MSVC6.
+</pre>
+<p>[src/msvc32.mak]</p>
+</blockquote>
+
+<p><strong><a name="2007-11-21T061053.144641Z"></a>
+2007-11-21T06:10:53.144641Z Henry Stiles</strong></p>
+<blockquote>
+<pre>
+Check that a device halftone exists before writing it.  Fixes
+segmentation fault in xps.  No differences expected.
+</pre>
+<p>[src/gdevp14.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-11-21T055723.672501Z"></a>
+2007-11-21T05:57:23.672501Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix compiler flag conflict for non-debug build (seen when switching
+PCL6 build to default to non-debug default). Changes /ZI to /Zi.
+</pre>
+<p>[src/msvccmd.mak]</p>
+</blockquote>
+
+<p><strong><a name="2007-11-20T183658.009554Z"></a>
+2007-11-20T18:36:58.009554Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix broken MSVC 6 build issue caused by change in src/msvccmd.mak that puts
+a LIBPATH into the link command line. MSVC linker can't handle spaces in the
+LIBPATH even if within " ". We use an environment variable set by Microsoft
+MSVC 6 'vcvars32.bat' instead. This can be manually set if needed.
+</pre>
+<p>[src/msvc32.mak]</p>
+</blockquote>
+
+<p><strong><a name="2007-11-20T114222.623309Z"></a>
+2007-11-20T11:42:22.623309Z Ken Sharp</strong></p>
+<blockquote>
+<pre>
+Batch file to create MSVC solution and projects.
+
+Usage:
+msvcxml gs obj\ld.tr > ghostscript.sln
+
+This is the first attempt, and very poor.
+</pre>
+<p>[toolbin/msvcxml.bat]</p>
+</blockquote>
+
+<p><strong><a name="2007-11-19T235746.396323Z"></a>
+2007-11-19T23:57:46.396323Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Change the product name for the release.
+</pre>
+<p>[src/gscdef.c]</p>
+</blockquote>
+
+<p><strong><a name="2007-11-19T235628.975783Z"></a>
+2007-11-19T23:56:28.975783Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update changelogs for release.
+</pre>
+<p>[doc/Changes.htm doc/History8.htm doc/News.htm doc/Details8.htm doc/Details.htm]</p>
+</blockquote>
+
 <p><strong><a name="2007-11-19T203607.538187Z"></a>
 2007-11-19T20:36:07.538187Z Igor Melichev</strong></p>
 <blockquote>
