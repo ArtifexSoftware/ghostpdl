@@ -34,7 +34,11 @@ QI0f=/QI0f
 
 # Define separate CCAUX command-line switch that must be at END of line.
 
+!if $(MSVC_VERSION) < 7
+CCAUX_TAIL= /link
+!else
 CCAUX_TAIL= /link /LIBPATH:"$(COMPBASE)\lib"
+!endif
 
 !endif
 #endif #$(MSVC_VERSION) == 4
@@ -79,12 +83,12 @@ VC8WARN=
 !endif
 
 !if ($(MSVC_VERSION) < 8)
-CDCC=/Gi /ZI
+CDCC=/Gi /Zi
 !else
 !ifdef WIN64
 CDCC=/Zi
 !else
-CDCC=/ZI
+CDCC=/Zi
 !endif
 !endif
 
