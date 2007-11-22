@@ -438,18 +438,13 @@ cd ..
 </pre></blockquote>
 
 <p>
-The xml changelog file can now be deleted. Run
-
-<blockquote><pre>
-toolbin/makehist.tcl
-</pre></blockquote>
+The xml changelog file can now be deleted.
 
 <p>
-This updates <b><tt>doc/History#.htm</tt></b> from
-<b><tt>doc/News.htm</tt></b> and <b><tt>doc/Changes.htm</tt></b>.
-
-<p><strong>N.B. this is currently broken; changelog updates have to be 
-manually copied into the History and Details files.</strong>
+Copy the contents of News.htm and Changes.htm into a new section in 
+History8.htm, and News.htm and Details.htm into Details8.htm. Then 
+update the hyperlinks in History8.htm to point to Details8.htm instead  
+of Details.htm so these remain valid after the next release.
 
 <p>
 Then run
@@ -481,7 +476,7 @@ tag names, or a '.<i>n</i>' tiny release number to post-release fixes.
 Pull a fresh copy for distribution from the repository:
 
 <blockquote><pre>
-<tt>svn export http://svn.ghostscript.com:8080/ghostscript/tags/ghostscript-#.##</tt>
+<tt>svn export http://svn.ghostscript.com/ghostscript/tags/ghostscript-#.##</tt>
 </pre></blockquote>
 
 
@@ -491,7 +486,6 @@ Generate the text versions of the README and PUBLIC documents:
 <blockquote>
 <pre><tt>cd ghostscript-#.##</tt>
 <tt>lynx -dump -nolist doc/Readme.htm &gt; doc/README</tt>
-<tt>lynx -dump -nolist doc/Public.htm &gt; doc/PUBLIC</tt></pre>
 </blockquote>
 
 <p>
