@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- Mode: python -*-
 
-#    Copyright (C) 2001-2006 Artifex Software Inc.
+#    Copyright (C) 2001-2007 Artifex Software Inc.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -137,7 +137,7 @@ def change_gsproduct(file):
     tmpfile = "%s.tmp" % (file,)
 
     startre = re.compile("^#ifndef\ GS_PRODUCT$")
-    changere = re.compile("^.*?\"[A-Za-z -]+\".*?$")
+    changere = re.compile("^.*?["A-Za-z -]+.*?$")
     endre = re.compile("^$")
 
     old = open(file, "r")
@@ -155,7 +155,7 @@ def change_gsproduct(file):
             m = changere.search(line)
             if m:
                 state = 2
-                new.write("\t\"AFPL Ghostscript\"\n")
+                new.write("\t\"GPL Ghostscript\"\n")
             else:
                 new.write(line)
         elif state == 2:
