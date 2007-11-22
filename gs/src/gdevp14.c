@@ -3681,7 +3681,7 @@ get_param_spot_color_names(pdf14_clist_device * pdev,
 	pkeyname_list_elem->next = *pkeyname_list;
 	pkeyname_list_elem->key_name = keyname_buf;
 	*pkeyname_list = pkeyname_list_elem;
-	sprintf(keyname_buf, "%PDF14SpotName_%d", i);
+	sprintf(keyname_buf, "PDF14SpotName_%d", i);
 	str.size = separations->names[i].size;
 	str.data = separations->names[i].data;
 	str.persistent = false;
