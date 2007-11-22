@@ -135,7 +135,8 @@ gsDoubleInclusionOK = [
     'src/gxfilltr.h',
     'src/gxfillts.h',
     'src/gxsamplp.h',
-    'src/gdevpdfb.h'
+    'src/gdevpdfb.h',
+    'src/idicttpl.h'
     ]
 
 # Add the tests defined in this file to a suite.

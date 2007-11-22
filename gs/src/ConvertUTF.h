@@ -22,6 +22,8 @@
 
 /* $Id$*/
 
+#ifndef ConvertUTF_INCLUDED
+#define ConvertUTF_INCLUDED
 
 /* ---------------------------------------------------------------------
 
@@ -150,3 +152,5 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd);
 #endif
 
 /* --------------------------------------------------------------------- */
+
+#endif /* ConvertUTF_INCLUDED */
