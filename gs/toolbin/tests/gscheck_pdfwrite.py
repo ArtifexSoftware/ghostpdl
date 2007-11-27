@@ -1,21 +1,16 @@
 #!/usr/bin/env python
 
 #    Copyright (C) 2001-2004 Artifex Software Inc.
-# 
-# This file is part of AFPL Ghostscript.
-# 
-# AFPL Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author or
-# distributor accepts any responsibility for the consequences of using it, or
-# for whether it serves any particular purpose or works at all, unless he or
-# she says so in writing.  Refer to the Aladdin Free Public License (the
-# "License") for full details.
-# 
-# Every copy of AFPL Ghostscript must include a copy of the License, normally
-# in a plain ASCII text file named PUBLIC.  The License grants you the right
-# to copy, modify and redistribute AFPL Ghostscript, but only under certain
-# conditions described in the License.  Among other things, the License
-# requires that the copyright notice and this notice be preserved on all
-# copies.
+#    All Rights Reserved.
+#  
+# This software is provided AS-IS with no warranty, either express or
+# implied.
+#
+# This software is distributed under license and may not be copied, modified
+# or distributed except as expressly authorized under the terms of that
+# license.  Refer to licensing information at http://www.artifex.com/
+# or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+# San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 # $Id$
 
