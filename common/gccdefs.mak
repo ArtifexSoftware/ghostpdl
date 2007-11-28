@@ -5,4 +5,4 @@
 # Definitions for compilation with gcc.
 
 CC_=gcc $(GENOPT) $(CFLAGS) $(XCFLAGS) -c
-CCAUX=gcc
+CCAUX=gcc $(CFLAGS)
