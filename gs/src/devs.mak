@@ -142,7 +142,7 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	jpeggray  JPEG format, gray output
 #	jpegcmyk  JPEG format, cmyk output
 #	miff24	ImageMagick MIFF format, 24-bit direct color, RLE compressed
-#	pam	Portable Arbitrary Map file format
+#	pamcmyk32	Portable Arbitrary Map file format 32-bit CMYK
 #	pcxmono	PCX file format, monochrome (1-bit black and white)
 #	pcxgray	PCX file format, 8-bit gray scale
 #	pcx16	PCX file format, 4-bit planar (EGA/VGA) color
@@ -1469,6 +1469,10 @@ $(DD)plan9bm.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
 
 ### Portable Arbitrary Map (PAM, magic number "P7", CMYK)
 
+$(DD)pamcmyk32.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)pamcmyk32 $(pxm_)
+
+# Keep the older (non-descriptive) name in case it is being used
 $(DD)pam.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pam $(pxm_)
 

@@ -113,7 +113,7 @@ BAND_LIST_COMPRESSOR=zlib
 FILE_IMPLEMENTATION=stdio
 STDIO_IMPLEMENTATION=
 DEVICE_DEVS=$(DD)x11cmyk.dev $(DD)x11mono.dev $(DD)x11.dev $(DD)x11alpha.dev\
- $(DD)djet500.dev $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev\
+ $(DD)djet500.dev $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)pamcmyk32.dev\
  $(DD)bitcmyk.dev $(GLD)bbox.dev
 DEVICE_DEVS1=
 DEVICE_DEVS2=
