@@ -94,6 +94,8 @@ tiffgray_print_page(gx_device_printer * pdev, FILE * file)
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
 
+    if (pdev->height > (max_long - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
+	return_error(gs_error_rangecheck);  /* this will overflow max_long */
     /* Write the page directory. */
     code = gdev_tiff_begin_page(pdev, &tfdev->tiff, file,
 				(const TIFF_dir_entry *)&dir_gray_template,
@@ -186,7 +188,10 @@ tiff32nc_print_page(gx_device_printer * pdev, FILE * file)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
+    ulong cur_size = gdev_prn_file_is_new(pdev) ? 0 : tfdev->tiff.dir_off;
 
+    if (pdev->height > (max_long - cur_size)/(pdev->width*4)) /* note width is never 0 in print_page */
+	return_error(gs_error_rangecheck);  /* this will overflow max_long */
     /* Write the page directory. */
     code = gdev_tiff_begin_page(pdev, &tfdev->tiff, file,
 				(const TIFF_dir_entry *)&dir_cmyk_template,
@@ -373,7 +378,7 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
 	  (int)((long)(DEFAULT_WIDTH_10THS) * (X_DPI) / 10),\
 	  (int)((long)(DEFAULT_HEIGHT_10THS) * (Y_DPI) / 10),\
 	  X_DPI, Y_DPI,\
-    	  GX_DEVICE_COLOR_MAX_COMPONENTS,	/* MaxComponents */\
+    	  ncomp,		/* MaxComponents */\
 	  ncomp,		/* NumComp */\
 	  pol,			/* Polarity */\
 	  depth, 0,		/* Depth, GrayIndex */\
@@ -397,15 +402,15 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
  * use a simple non-compressable encoding.
  */
 #if USE_COMPRESSED_ENCODING
-#define NC GX_DEVICE_COLOR_MAX_COMPONENTS 
-#define SL GX_CINFO_SEP_LIN_NONE
-#define ENCODE_COLOR tiffsep_encode_compressed_color
-#define DECODE_COLOR tiffsep_decode_compressed_color
+#   define NC GX_DEVICE_COLOR_MAX_COMPONENTS 
+#   define SL GX_CINFO_SEP_LIN_NONE
+#   define ENCODE_COLOR tiffsep_encode_compressed_color
+#   define DECODE_COLOR tiffsep_decode_compressed_color
 #else
-#define NC ARCH_SIZEOF_GX_COLOR_INDEX
-#define SL GX_CINFO_SEP_LIN
-#define ENCODE_COLOR tiffsep_encode_color
-#define DECODE_COLOR tiffsep_decode_color
+#   define NC ARCH_SIZEOF_GX_COLOR_INDEX
+#   define SL GX_CINFO_SEP_LIN
+#   define ENCODE_COLOR tiffsep_encode_color
+#   define DECODE_COLOR tiffsep_decode_color
 #endif
 #define GCIB (ARCH_SIZEOF_GX_COLOR_INDEX * 8)
 
@@ -963,6 +968,8 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
     
     /* Write the page directory for the CMYK equivalent file. */
     pdev->color_info.depth = 32;	/* Create directory for 32 bit cmyk */
+    if (pdev->height > (max_long - ftell(file))/(pdev->width*4)) /* note width is never 0 in print_page */
+	return_error(gs_error_rangecheck);  /* this will overflow max_long */
     code = gdev_tiff_begin_page(pdev, &tfdev->tiff_comp, file,
 				(const TIFF_dir_entry *)&dir_cmyk_template,
 			  sizeof(dir_cmyk_template) / sizeof(TIFF_dir_entry),
@@ -1003,6 +1010,8 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 
         /* Write the page directory. */
 	pdev->color_info.depth = 8;	/* Create files for 8 bit gray */
+	if (pdev->height > (max_long - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
+	    return_error(gs_error_rangecheck);  /* this will overflow max_long */
         code = gdev_tiff_begin_page(pdev, &(tfdev->tiff[comp_num]),
 			tfdev->sep_file[comp_num],
 		 	(const TIFF_dir_entry *)&dir_gray_template,
