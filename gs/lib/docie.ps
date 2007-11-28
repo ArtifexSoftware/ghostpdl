@@ -101,7 +101,7 @@ DOCIEDEBUG { (After MatrixLMN Decode: ) print3 } if
  } bind def
 
 /csciea		% <csdict> <a> csciea <csdict> <x> <y> <z>
- { 1 index /RangeA .knownget not { r1default } if restrict
+ { 1 index /RangeA .knownget not { r1default aload pop } if restrict
 DOCIEDEBUG { (After RangeA Decode: ) print1 } if
    1 index /DecodeA .knownget { exec } if
 DOCIEDEBUG { (After DecodeA Decode: ) print1 } if
@@ -210,7 +210,9 @@ DOCIEDEBUG { (After RangeABC Encode: ) print3 } if
 
 /mapdict mark
   /CIEBasedA { 1 get exch csciea currentcolorrendering 4 1 roll crmap } bind
+  /DeviceGray { pop /DefaultGray /ColorSpace findresource 1 get exch csciea currentcolorrendering 4 1 roll crmap } bind
   /CIEBasedABC { 1 get 4 1 roll cscieabc currentcolorrendering 4 1 roll crmap } bind
+  /DeviceRGB { pop /DefaultRGB /ColorSpace findresource 1 get 4 1 roll cscieabc currentcolorrendering 4 1 roll crmap } bind
 .dicttomark def
 /mapcie		% <a> mapcie <v1> ...
 		% <a> <b> <c> mapcie <v1> ...
