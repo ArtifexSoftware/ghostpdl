@@ -4,8 +4,6 @@ High Priority Problems
 Font style simulation.
 ICC profile colorspaces.
 Gradient colorspace conversion.
-Radial gradient bug when gradient origin is outside the circle.
-Arc calculation bug.
 
 Low Priority Problems
 =====================
