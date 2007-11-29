@@ -227,7 +227,7 @@ static	dev_proc_fill_rectangle(pdf14_fill_rectangle);
 static	dev_proc_fill_rectangle(pdf14_mark_fill_rectangle);
 static	dev_proc_fill_rectangle(pdf14_mark_fill_rectangle_ko_simple);
 static	dev_proc_fill_path(pdf14_fill_path);
-static dev_proc_copy_mono(pdf14_copy_mono);
+static  dev_proc_copy_mono(pdf14_copy_mono);
 static	dev_proc_stroke_path(pdf14_stroke_path);
 static	dev_proc_begin_typed_image(pdf14_begin_typed_image);
 static	dev_proc_text_begin(pdf14_text_begin);
@@ -237,6 +237,7 @@ static	dev_proc_begin_transparency_group(pdf14_begin_transparency_group);
 static	dev_proc_end_transparency_group(pdf14_end_transparency_group);
 static	dev_proc_begin_transparency_mask(pdf14_begin_transparency_mask);
 static	dev_proc_end_transparency_mask(pdf14_end_transparency_mask);
+static  dev_proc_pattern_manage(pdf14_pattern_manage);
 static int pdf14_clist_get_param_compressed_color_list(pdf14_device * p14dev);
 
 static	const gx_color_map_procs *
@@ -302,7 +303,7 @@ static	const gx_color_map_procs *
 	get_color_comp_index,		/* get_color_comp_index */\
 	encode_color,			/* encode_color */\
 	decode_color,			/* decode_color */\
-	NULL,				/* pattern_manage */\
+	pdf14_pattern_manage,		/* pattern_manage */\
 	NULL,				/* fill_rectangle_hl_color */\
 	NULL,				/* include_color_space */\
 	NULL,				/* fill_linear_color_scanline */\
@@ -2685,6 +2686,14 @@ pdf14_get_cmap_procs(const gs_imager_state *pis, const gx_device * dev)
     return &pdf14_cmap_many;
 }
 
+static int 
+pdf14_pattern_manage(gx_device *pdev, gx_bitmap_id id,
+		gs_pattern1_instance_t *pinst, pattern_manage_t function)
+{
+    if (function == pattern_manage__shfill_doesnt_need_path)
+	return 1;
+    return gx_default_pattern_manage(pdev, id, pinst, function);
+}
 
 int
 gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
@@ -3164,7 +3173,7 @@ send_pdf14trans(gs_imager_state	* pis, gx_device * dev,
 	get_color_comp_index,		/* get_color_comp_index */\
 	encode_color,			/* encode_color */\
 	decode_color,			/* decode_color */\
-	NULL,				/* pattern_manage */\
+	clist_pattern_manage,	/* pattern_manage */\
 	NULL,				/* fill_rectangle_hl_color */\
 	NULL,				/* include_color_space */\
 	NULL,				/* fill_linear_color_scanline */\

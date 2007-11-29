@@ -604,7 +604,12 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     {
 	gs_fixed_rect bbox;
 
-	gx_path_bbox(ppath, &bbox);
+	if (ppath != NULL)
+	    gx_path_bbox(ppath, &bbox);
+	else {
+	    /* gx_default_fill_path passes the clip path for shfill. */
+	    gx_cpath_outer_box(pcpath, &bbox);
+	}
 	ry = fixed2int(bbox.p.y) - 1;
 	rheight = fixed2int_ceiling(bbox.q.y) - ry + 1;
 	fit_fill_y(dev, ry, rheight);
