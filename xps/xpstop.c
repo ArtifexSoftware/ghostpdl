@@ -80,7 +80,7 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     xps_context_t *ctx;
     gs_state *pgs;
 
-dputs("xps_imp_allocate_interp_instance!\n");
+    dputs("-- initializing xps interpeter --\n");
 
     instance = (xps_interp_instance_t *) gs_alloc_bytes(pmem,
 	    sizeof(xps_interp_instance_t), "xps_imp_allocate_interp_instance");
@@ -295,7 +295,7 @@ xps_imp_deallocate_interp_instance(pl_interp_instance_t *pinstance)
     xps_context_t *ctx = instance->ctx;
     gs_memory_t *mem = ctx->memory;
 
-dputs("xps_imp_deallocate_interp_instance!\n");
+    dputs("-- freeing xps interpeter --\n");
 
     if (getenv("XPS_DEBUG_PARTS"))
 	xps_debug_parts(ctx);

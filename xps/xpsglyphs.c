@@ -96,7 +96,8 @@ xps_deobfuscate_font_resource(xps_context_t *ctx, xps_part_t *part)
 	part->data[i+16] ^= key[15-i];
     }
 
-    if (0) {
+    if (getenv("XPS_SAVE_FONTS"))
+    {
 	static int id = 0;
 	char buf[25];
 	FILE *fp;

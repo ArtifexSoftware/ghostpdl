@@ -10,6 +10,8 @@
 #define CT_FIXDOCSEQ "application/vnd.ms-package.xps-fixeddocumentsequence+xml"
 #define CT_FIXPAGE "application/vnd.ms-package.xps-fixedpage+xml"
 
+int xps_doc_trace = 0;
+
 /*
  * Content types are stored in two separate binary trees.
  * One lists Override entries, which map a part name to a type.
@@ -32,8 +34,6 @@ static xps_type_map_t *
 xps_new_type_map(xps_context_t *ctx, char *name, char *type)
 {
     xps_type_map_t *node;
-
-    // dprintf2("doc: adding type map from %s to %s\n", name, type);
 
     node = xps_alloc(ctx, sizeof(xps_type_map_t));
     if (!node)
@@ -101,7 +101,6 @@ xps_free_type_map(xps_context_t *ctx, xps_type_map_t *node)
 static void
 xps_add_override(xps_context_t *ctx, char *part_name, char *content_type)
 {
-    // dprintf2("doc: override part=%s type=%s\n", part_name, content_type);
     if (ctx->overrides == NULL)
 	ctx->overrides = xps_new_type_map(ctx, part_name, content_type);
     else
@@ -111,7 +110,6 @@ xps_add_override(xps_context_t *ctx, char *part_name, char *content_type)
 static void
 xps_add_default(xps_context_t *ctx, char *extension, char *content_type)
 {
-    // dprintf2("doc: default extension=%s type=%s\n", extension, content_type);
     if (ctx->defaults == NULL)
 	ctx->defaults = xps_new_type_map(ctx, extension, content_type);
     else
@@ -198,8 +196,6 @@ xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type)
 {
     xps_relation_t *node;
     xps_part_t *part;
-
-    // dprintf3("doc: relation source=%s target=%s type=%s\n", source, target, type);
 
     part = xps_find_part(ctx, source);
 
@@ -291,7 +287,8 @@ xps_add_fixed_document(xps_context_t *ctx, char *name)
 	if (!strcmp(fixdoc->name, name))
 	    return 0;
 
-    dprintf1("doc: adding fixdoc %s\n", name);
+    if (xps_doc_trace)
+	dprintf1("doc: adding fixdoc %s\n", name);
 
     fixdoc = xps_alloc(ctx, sizeof(xps_document_t));
     if (!fixdoc)
@@ -343,7 +340,8 @@ xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
 	if (!strcmp(page->name, name))
 	    return 0;
 
-    dprintf1("doc: adding page %s\n", name);
+    if (xps_doc_trace)
+	dprintf1("doc: adding page %s\n", name);
 
     page = xps_alloc(ctx, sizeof(xps_page_t));
     if (!page)
@@ -695,7 +693,8 @@ xps_parse_content_relations(xps_context_t *ctx, xps_part_t *part)
 
     ctx->state = part->name;
 
-    dprintf1("parsing relations from content (%s)\n", part->name);
+    if (xps_doc_trace)
+	dprintf1("doc: parsing relations from content (%s)\n", part->name);
 
     xp = XML_ParserCreate(NULL);
     if (!xp)
@@ -709,13 +708,14 @@ xps_parse_content_relations(xps_context_t *ctx, xps_part_t *part)
 
     XML_ParserFree(xp);
 
-    ctx->state = NULL;
-
+    if (xps_doc_trace)
     {
 	xps_relation_t *rel;
 	for (rel = part->relations; rel; rel = rel->next)
 	    dprintf1("  relation %s\n", rel->target);
     }
+
+    ctx->state = NULL;
 
     return 0;
 }
@@ -758,7 +758,11 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
 {
     xps_document_t *fixdoc;
 
-    dprintf2("doc: processing %s %s\n", part->name, part->complete ? "" : "(piece)");
+    if (getenv("XPS_DOC_TRACE"))
+	xps_doc_trace = 1;
+
+    if (xps_doc_trace)
+	dprintf2("doc: found part %s %s\n", part->name, part->complete ? "" : "(piece)");
 
     /*
      * These two are magic Open Packaging Convention names.
@@ -808,7 +812,9 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
 		    xps_part_t *startpart;
 
 		    ctx->start_part = rel->target;
-		    dprintf1("doc: we know the start part '%s'\n", ctx->start_part);
+
+		    if (xps_doc_trace)
+			dprintf1("doc: adding start part '%s'\n", ctx->start_part);
 
 		    startpart = xps_find_part(ctx, rel->target);
 		    if (startpart)
