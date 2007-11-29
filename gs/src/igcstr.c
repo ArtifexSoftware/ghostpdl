@@ -110,6 +110,17 @@ gc_mark_string(const byte * ptr, uint size, bool set, const chunk_t * cp)
     return marks != 0;
 }
 
+/* Print a string for debugging.  We need this because there is no d---
+ * equivalent of fwrite.
+ */
+static void
+dfwrite(const byte *ptr, uint count)
+{
+    uint i;
+    for (i = 0; i < count; ++i)
+	dputc(ptr[i]);
+}
+
 /* Mark a string.  Return true if any new marks. */
 bool
 gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
@@ -120,7 +131,7 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
     if (size == 0)
 	return false;
 #define dprintstr()\
-  dputc('('); fwrite(ptr, 1, min(size, 20), dstderr);\
+  dputc('('); dfwrite(ptr, min(size, 20));\
   dputs((size <= 20 ? ")" : "...)"))
     if (!(cp = gc_locate(ptr, gcst))) {		/* not in a chunk */
 #ifdef DEBUG

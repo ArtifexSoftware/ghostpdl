@@ -59,13 +59,6 @@ bool gs_debug_c(int /*char */ );
 /* If debugging, direct all error output to gs_debug_out. */
 extern FILE *gs_debug_out;
 
-#ifdef DEBUG
-#undef dstderr
-#define dstderr gs_debug_out
-#undef estderr
-#define estderr gs_debug_out
-#endif
-
 /* Debugging printout macros. */
 #ifdef DEBUG
 #  define if_debug0(c,s)\

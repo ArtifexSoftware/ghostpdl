@@ -918,7 +918,7 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
 	dputc('\n');
 	osp = save_osp;
 	esp = save_esp;
-	fflush(dstderr);
+	dflush();
     }
 #endif
 /* Objects that have attributes (arrays, dictionaries, files, and strings) */
