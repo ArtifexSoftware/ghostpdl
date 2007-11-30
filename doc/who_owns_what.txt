@@ -108,7 +108,7 @@ imasklib.dev: alex
 imdi.dev: ray
 iodevice.dev: ray and henry
 iscale.dev: alex
-isupport.dev: alex
+isupport.dev: igor
 jasper.dev: ray and henry
 jasper_0.dev: ray and henry
 jbig2.dev: ken
@@ -315,3 +315,5 @@ xps.dev: tor
 zfrsd.dev: alex
 zlibd.dev: third party
 zlibe.dev: third party
+windows makefiles:ray
+non windows makefiles:ralph
