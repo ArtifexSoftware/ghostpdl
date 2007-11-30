@@ -473,6 +473,7 @@ pl_alloc_font(gs_memory_t *mem, client_name_t cname)
 	    plfont->char_glyphs.table = 0;
 	    /* Initialize other defaults. */
 	    plfont->orient = 0;
+            plfont->allow_vertical_substitutes = false;
 	    plfont->bold_fraction = 0;
 	    plfont->font_file = 0;
 	    plfont->resolution.x = plfont->resolution.y = 0;
