@@ -411,7 +411,7 @@ igc_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
 	/* The following assignment is logically unnecessary; */
 	/* we do it only for convenience in debugging. */
 	pref = (ref *) rp;
-	if_debug3('8', "  [8]relocating %s %d ref at 0x%lx",
+	if_debug3('8', "  [8]relocating %s %d ref at 0x%lx\n",
 		  (r_has_attr(pref, l_mark) ? "marked" : "unmarked"),
 		  r_btype(pref), (ulong) pref);
 	if ((r_has_attr(pref, l_mark) || do_all) &&
@@ -539,10 +539,10 @@ igc_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
 		default:
 		    goto no_reloc; /* don't print trace message */
 	    }
-	    if_debug2('8', ", 0x%lx => 0x%lx", (ulong)before, (ulong)after);
+	    if_debug2('8', "  [8]relocated 0x%lx => 0x%lx\n",
+		      (ulong)before, (ulong)after);
 	}
 no_reloc:
-	if_debug0('8', "\n");
 	rp += packed_per_ref;
     }
 }
