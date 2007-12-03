@@ -283,10 +283,7 @@ render_pattern(gs_client_color *pcc, const px_pattern_t *pattern,
 	 * halftone seams.
 	 */
 	{ gx_device *dev = gs_currentdevice(pgs);
-	  if ( dev->color_info.max_gray > 31 &&
-	       (dev->color_info.num_components == 1 ||
-		dev->color_info.max_color > 31)
-	     )
+          if (!gx_device_must_halftone(dev))
 	    { /* No halftoning. */
 	      full_width = rep_width;
 	      full_height = rep_height;
