@@ -335,7 +335,7 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
 	return cs_concretize_color(&cc, pacs, pconc, pis);
     }
     else {
-    	pconc[0] = unit_frac(pc->paint.values[0], ftemp);
+    	pconc[0] = gx_unit_frac(pc->paint.values[0]);
     }
     return 0;
 }

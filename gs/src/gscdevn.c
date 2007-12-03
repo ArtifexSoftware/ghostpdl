@@ -379,7 +379,7 @@ gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
 	int i;
 
 	for (i = pcs->params.device_n.num_components; --i >= 0;)
-	    pconc[i] = unit_frac(pc->paint.values[i], ftemp);
+	    pconc[i] = gx_unit_frac(pc->paint.values[i]);
 	return 0;
     }
     return (code < 0 || tcode == 0 ? code : tcode);

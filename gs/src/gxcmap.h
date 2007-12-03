@@ -279,9 +279,10 @@ dev_proc_encode_color(gx_backwards_compatible_gray_encode);
 dev_proc_decode_color(gx_error_decode_color);
 dev_proc_decode_color(gx_default_decode_color);
 
-
-#define unit_frac(v, ftemp)\
-  (ftemp = (v),\
-   (is_fneg(ftemp) ? frac_0 : is_fge1(ftemp) ? frac_1 : float2frac(ftemp)))
+/*
+ * convert a float paint value to a fractional value with clamping to
+ * [0,1]
+ */
+frac gx_unit_frac(float fvalue);
 
 #endif /* gxcmap_INCLUDED */
