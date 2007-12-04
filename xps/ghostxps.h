@@ -87,7 +87,8 @@ typedef struct xps_glyph_metrics_s xps_glyph_metrics_t;
  * Context and memory.
  */
 
-#ifndef __FUNCTION__ /* Provide a fallback if this symbol is unsupported */
+#if (defined(_MSC_VER) && _MSC_VER < 1310) || !defined(__GNUC__)
+/* Provide a fallback if this symbol is unsupported */
 #define __FUNCTION__ "ghostxps"
 #endif
 
