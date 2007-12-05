@@ -46,7 +46,7 @@ done
 
 # See if we have a filename on the command-line...
 if test -z "$6"; then
-	ifile="-"
+	ifile="-_"
 else
 	ifile="$6"
 fi
