@@ -148,7 +148,9 @@ composite_clist_read_update(gx_default_composite_clist_read_update);
 #define gs_composite_common\
 	const gs_composite_type_t *type;\
 	gs_id id;		/* see gscompt.h */\
-	rc_header rc
+	rc_header rc; \
+	struct gs_composite_s *prev /* A queue link for clist_playback_band. */ 
+
 struct gs_composite_s {
     gs_composite_common;
 };

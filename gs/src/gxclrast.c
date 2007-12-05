@@ -265,6 +265,51 @@ static int clist_do_polyfill(gx_device *, gx_path *,
                               const gx_drawing_color *,
                               gs_logical_operation_t);
 
+
+static inline void
+enqueue_compositor(gs_composite_t **ppcomp_first, gs_composite_t **ppcomp_last, gs_composite_t *pcomp)
+{
+    if (*ppcomp_last == NULL) {
+	pcomp->prev = NULL;
+	*ppcomp_last = *ppcomp_first = pcomp;
+    } else {
+	pcomp->prev = *ppcomp_last;
+	*ppcomp_last = pcomp;
+    }
+}
+
+static inline gs_composite_t * 
+dequeue_last_compositor(gs_composite_t **ppcomp_first, gs_composite_t **ppcomp_last)
+{
+    gs_composite_t *pcomp = *ppcomp_last;
+
+    if (*ppcomp_first == *ppcomp_last)
+	*ppcomp_first = *ppcomp_last = NULL;
+    else {
+	*ppcomp_last = (*ppcomp_last)->prev;
+    }
+    return pcomp;
+}
+
+static inline void
+free_compositor(gs_composite_t *pcomp)
+{
+    /* Fixme: todo. */
+}
+
+static inline bool
+is_null_compositor_op(const byte *cbp, int *length)
+{
+    /* Fixme: todo. */
+    return false;
+}
+
+is_closing_compositor(gs_composite_t *pcomp0, gs_composite_t *pcomp1)
+{
+    /* Fixme: todo. */
+    return false;
+}
+
 int
 clist_playback_band(clist_playback_action playback_action,
 		    gx_device_clist_reader *cdev, stream *s,
@@ -333,7 +378,7 @@ clist_playback_band(clist_playback_action playback_action,
     bool clipper_dev_open;
     patch_fill_state_t pfs;
     stream_state *st = s->state; /* Save because s_close resets s->state. */
-    gs_composite_t *pcomp;
+    gs_composite_t *pcomp_first = NULL, *pcomp_last = NULL;
 
     cbuf.data = (byte *)cbuf_storage;
     cbuf.size = cbuf_size;
@@ -1274,15 +1319,50 @@ idata:			data_size = 0;
 				 */
 				gx_imager_setscreenphase(&imager_state,
 					    -x0, -y0, gs_color_select_all);
-				code = read_create_compositor(&cbuf, mem, &pcomp);
-				if (code < 0)
-				    goto out;
-				cbp = cbuf.ptr;
-				if (pcomp != NULL) {
-				    code = apply_create_compositor(cdev, &imager_state, mem, pcomp, &target);
-				    if (code < 0)
-					goto out;
-				    tdev = target;
+				cbp -= 2; /* Step back to simplify the cycle invariant below. */
+				for (;;) {
+				    int len;
+
+				    if (cbp[0] == cmd_opv_extend && cbp[1] == cmd_opv_ext_create_compositor) {
+					gs_composite_t *pcomp;
+
+					cbuf.ptr = cbp += 2;
+					code = read_create_compositor(&cbuf, mem, &pcomp);
+					if (code < 0)
+					    goto out;
+					cbp = cbuf.ptr;
+					if (pcomp == NULL)
+					    continue;
+					if (pcomp_last != NULL && is_closing_compositor(pcomp_last, pcomp)) {
+					    /* Annigilate the 2 compositors. */
+					    free_compositor(pcomp);
+					    pcomp = dequeue_last_compositor(&pcomp_first, &pcomp_last);
+					    free_compositor(pcomp);
+					} else 
+					    enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
+				    } else if (is_null_compositor_op(cbp, &len)) {
+					cbuf.ptr = cbp += len;
+				    } else if (pcomp_first != NULL) {
+					gs_composite_t *pcomp = pcomp_last, *pcomp_ahead, *pcomp_back = NULL;
+
+					/* Reverse the queue: */
+					while (pcomp != NULL) {
+					    pcomp_ahead = pcomp->prev;
+					    pcomp->prev = pcomp_back;
+					    pcomp_back = pcomp;
+					    pcomp = pcomp_ahead;
+					}
+					/* Apply and clean the queue: */
+					while (pcomp_last != NULL) {
+					    pcomp = dequeue_last_compositor(&pcomp_first, &pcomp_last);
+					    code = apply_create_compositor(cdev, &imager_state, 
+						    mem, pcomp, &target); /* Releases the compositor. */
+					    if (code < 0)
+						goto out;
+					    tdev = target;
+					}
+					break;
+				    }
 				}
 				break;
 			    case cmd_opv_ext_put_halftone:
@@ -1712,6 +1792,13 @@ idata:			data_size = 0;
     }
     ht_buff.ht_size = 0;
     ht_buff.read_size = 0;
+
+    /* Release the compositor queue. */
+    while (pcomp_last != NULL) {
+	gs_composite_t *pcomp = dequeue_last_compositor(&pcomp_first, &pcomp_last);
+	
+	free_compositor(pcomp);
+    }
 
     rc_decrement(pcs, "clist_playback_band");
     gx_cpath_free(&clip_path, "clist_render_band exit");
