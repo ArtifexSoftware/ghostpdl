@@ -240,9 +240,9 @@ static int read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
 static int read_put_params(command_buf_t *pcb, gs_imager_state *pis,
                             gx_device_clist_reader *cdev,
                             gs_memory_t *mem);
-static int read_create_compositor(command_buf_t *pcb, gs_imager_state *pis,
-                                   gx_device_clist_reader *cdev,
-                                   gs_memory_t *mem, gx_device ** ptarget);
+static int read_create_compositor(command_buf_t *pcb, gs_memory_t *mem, gs_composite_t **ppcomp);
+static int apply_create_compositor(gx_device_clist_reader *cdev, gs_imager_state *pis, 
+				   gs_memory_t *mem, gs_composite_t *pcomp, gx_device **ptarget);
 static int read_alloc_ht_buff(ht_buff_t *, uint, gs_memory_t *);
 static int read_ht_segment(ht_buff_t *, command_buf_t *, gs_imager_state *,
 			    gx_device *, gs_memory_t *);
@@ -333,6 +333,7 @@ clist_playback_band(clist_playback_action playback_action,
     bool clipper_dev_open;
     patch_fill_state_t pfs;
     stream_state *st = s->state; /* Save because s_close resets s->state. */
+    gs_composite_t *pcomp;
 
     cbuf.data = (byte *)cbuf_storage;
     cbuf.size = cbuf_size;
@@ -1273,12 +1274,16 @@ idata:			data_size = 0;
 				 */
 				gx_imager_setscreenphase(&imager_state,
 					    -x0, -y0, gs_color_select_all);
-				code = read_create_compositor(&cbuf, &imager_state,
-							      cdev, mem, &target);
-				cbp = cbuf.ptr;
-				tdev = target;
+				code = read_create_compositor(&cbuf, mem, &pcomp);
 				if (code < 0)
 				    goto out;
+				cbp = cbuf.ptr;
+				if (pcomp != NULL) {
+				    code = apply_create_compositor(cdev, &imager_state, mem, pcomp, &target);
+				    if (code < 0)
+					goto out;
+				    tdev = target;
+				}
 				break;
 			    case cmd_opv_ext_put_halftone:
                                 {
@@ -2261,17 +2266,11 @@ extern_gs_find_compositor();
 
 static int
 read_create_compositor(
-    command_buf_t *             pcb,
-    gs_imager_state *           pis,
-    gx_device_clist_reader *    cdev,
-    gs_memory_t *               mem,
-    gx_device **                ptarget )
+    command_buf_t *pcb,  gs_memory_t *mem, gs_composite_t **ppcomp)
 {
     const byte *                cbp = pcb->ptr;
     int                         comp_id = 0, code = 0;
     const gs_composite_type_t * pcomp_type = 0;
-    gs_composite_t *            pcomp;
-    gx_device *                 tdev = *ptarget;
 
     /* fill the command buffer (see comment above) */
     if (pcb->end - cbp < MAX_CLIST_COMPOSITOR_SIZE + sizeof(comp_id)) {
@@ -2286,7 +2285,7 @@ read_create_compositor(
         return_error(gs_error_unknownerror);
 
     /* de-serialize the compositor */
-    code = pcomp_type->procs.read(&pcomp, cbp, pcb->end - cbp, mem);
+    code = pcomp_type->procs.read(ppcomp, cbp, pcb->end - cbp, mem);
     
     /* If we read more than the maximum expected, return a rangecheck error */
     if ( code > MAX_CLIST_COMPOSITOR_SIZE )
@@ -2295,8 +2294,14 @@ read_create_compositor(
     if (code > 0)
         cbp += code;
     pcb->ptr = cbp;
-    if (code < 0 || pcomp == 0)
-        return code;
+    return code;
+}
+
+static int apply_create_compositor(gx_device_clist_reader *cdev, gs_imager_state *pis, 
+				   gs_memory_t *mem, gs_composite_t *pcomp, gx_device **ptarget)
+{
+    gx_device *tdev = *ptarget;
+    int code;
 
     /*
      * Apply the compositor to the target device; note that this may
@@ -2315,8 +2320,7 @@ read_create_compositor(
         return code;
 
     /* free the compositor object */
-    if (pcomp != 0)
-        gs_free_object(mem, pcomp, "read_create_compositor");
+    gs_free_object(mem, pcomp, "read_create_compositor");
 
     return code;
 }
