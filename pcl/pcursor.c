@@ -887,10 +887,12 @@ pcursor_do_reset(
 	 */
         if ((type & pcl_reset_initial) != 0) {
             pcs->underline_enabled = false;
+	    /* WRONG why is the cap set to 0 and then the
+	       pcl_home_cursor(pcs) */
 	    pcs->cap.x = pcs->cap.y = 0;
 	}
-        pcl_home_cursor(pcs);
     }
+    pcl_home_cursor(pcs);
 }
 
 const pcl_init_t    pcursor_init = { pcursor_do_registration, pcursor_do_reset, pcursor_do_copy };
