@@ -105,6 +105,15 @@ typedef struct gs_composite_type_procs_s {
     composite_read_proc((*read));
 
     /*
+     * Convert the string representation of a function back to
+     * a structure, allocating the structure. Return the number of
+     * bytes read, or < 0 in the event of an error.
+     */
+#define composite_adjust_ctm_proc(proc)\
+  int proc(gs_composite_t *pcte, int x0, int y0, gs_imager_state *pis)
+    composite_adjust_ctm_proc((*adjust_ctm));
+
+    /*
      * Update the clist write device when a compositor device is created.
      */
 #define composite_clist_write_update(proc)\
@@ -132,6 +141,11 @@ typedef struct gs_composite_type_s {
  * The default does nothing.
  */
 composite_clist_write_update(gx_default_composite_clist_write_update);
+
+/*
+ * Default handler for adjusting a compositor's CTM. */
+composite_adjust_ctm_proc(gx_default_composite_adjust_ctm);
+
 
 /*
  * Default implementation for adjusting the clist reader when a compositor

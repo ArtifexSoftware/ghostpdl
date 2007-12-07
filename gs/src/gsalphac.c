@@ -100,6 +100,7 @@ const gs_composite_type_t gs_composite_alpha_type =
 	c_alpha_equal,
 	c_alpha_write,
 	c_alpha_read,
+	gx_default_composite_adjust_ctm,
 	gx_default_composite_clist_write_update,
 	gx_default_composite_clist_read_update
     }

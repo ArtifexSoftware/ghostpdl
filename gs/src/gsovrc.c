@@ -200,6 +200,11 @@ c_overprint_read(
 
 
 static composite_create_default_compositor_proc(c_overprint_create_default_compositor);
+static composite_create_default_compositor_proc(c_overprint_create_default_compositor);
+static composite_equal_proc(c_overprint_equal);
+static composite_write_proc(c_overprint_write);
+static composite_read_proc(c_overprint_read);
+static composite_adjust_ctm_proc(c_overprint_adjust_ctm);
 
 /* methods for the overprint compositor */
 const gs_composite_type_t   gs_composite_overprint_type = {
@@ -209,6 +214,7 @@ const gs_composite_type_t   gs_composite_overprint_type = {
         c_overprint_equal,                      /* procs.equal */
         c_overprint_write,                      /* procs.write */
         c_overprint_read,                       /* procs.read */
+	gx_default_composite_adjust_ctm,
 	gx_default_composite_clist_write_update,/* procs.composite_clist_write_update */
 	gx_default_composite_clist_read_update	/* procs.composite_clist_reade_update */
     }                                           /* procs */

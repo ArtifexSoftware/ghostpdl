@@ -748,3 +748,16 @@ clist_rld_init(stream_RLD_state *ss)
     s_RLD_set_defaults_inline(ss);
     s_RLD_init_inline(ss);
 }
+
+/* Read a transformation matrix. */
+const byte *
+cmd_read_matrix(gs_matrix * pmat, const byte * cbp)
+{
+    stream s;
+
+    s_init(&s, NULL);
+    sread_string(&s, cbp, 1 + sizeof(*pmat));
+    sget_matrix(&s, pmat);
+    return cbp + stell(&s);
+}
+

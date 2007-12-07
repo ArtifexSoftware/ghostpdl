@@ -246,6 +246,7 @@ void cmd_clear_known(gx_device_clist_writer * cldev, uint known);
 
 /* Compute the written CTM length. */
 int cmd_write_ctm_return_length(gx_device_clist_writer * cldev, const gs_matrix *m);
+int cmd_write_ctm_return_length_nodevice(const gs_matrix *m);
 /* Write out CTM. */
 int cmd_write_ctm(const gs_matrix *m, byte *dp, int len);
 

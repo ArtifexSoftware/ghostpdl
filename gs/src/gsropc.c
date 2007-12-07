@@ -35,6 +35,7 @@ static const gs_composite_type_t gs_composite_rop_type =
 	c_rop_equal,
 	c_rop_write,
 	c_rop_read,
+	gx_default_composite_adjust_ctm,
 	gx_default_composite_clist_write_update,
 	gx_default_composite_clist_read_update
     }

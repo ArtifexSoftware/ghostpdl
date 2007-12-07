@@ -846,6 +846,14 @@ gx_default_composite_clist_write_update(const gs_composite_t *pcte, gx_device * 
 }
 
 /*
+ * Default handler for adjusting a compositor's CTM. */
+int
+gx_default_composite_adjust_ctm(gs_composite_t *pcte, int x0, int y0, gs_imager_state *pis)
+{
+    return 0;
+}
+
+/*
  * Default handler for updating the clist device when reading a compositing
  * device.
  */

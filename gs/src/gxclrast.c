@@ -242,13 +242,13 @@ static int read_put_params(command_buf_t *pcb, gs_imager_state *pis,
                             gs_memory_t *mem);
 static int read_create_compositor(command_buf_t *pcb, gs_memory_t *mem, gs_composite_t **ppcomp);
 static int apply_create_compositor(gx_device_clist_reader *cdev, gs_imager_state *pis, 
-				   gs_memory_t *mem, gs_composite_t *pcomp, gx_device **ptarget);
+				   gs_memory_t *mem, gs_composite_t *pcomp, 
+				   int x0, int y0, gx_device **ptarget);
 static int read_alloc_ht_buff(ht_buff_t *, uint, gs_memory_t *);
 static int read_ht_segment(ht_buff_t *, command_buf_t *, gs_imager_state *,
 			    gx_device *, gs_memory_t *);
 
 static const byte *cmd_read_rect(int, gx_cmd_rect *, const byte *);
-static const byte *cmd_read_matrix(gs_matrix *, const byte *);
 static const byte *cmd_read_short_bits(command_buf_t *pcb, byte *data,
                                         int width_bytes, int height,
                                         uint raster, const byte *cbp);
@@ -1352,11 +1352,14 @@ idata:			data_size = 0;
 					    pcomp_back = pcomp;
 					    pcomp = pcomp_ahead;
 					}
+					pcomp_back = pcomp_last;
+					pcomp_last = pcomp_first;
+					pcomp_first = pcomp_back;
 					/* Apply and clean the queue: */
 					while (pcomp_last != NULL) {
 					    pcomp = dequeue_last_compositor(&pcomp_first, &pcomp_last);
 					    code = apply_create_compositor(cdev, &imager_state, 
-						    mem, pcomp, &target); /* Releases the compositor. */
+						    mem, pcomp, x0, y0, &target); /* Releases the compositor. */
 					    if (code < 0)
 						goto out;
 					    tdev = target;
@@ -2385,11 +2388,15 @@ read_create_compositor(
 }
 
 static int apply_create_compositor(gx_device_clist_reader *cdev, gs_imager_state *pis, 
-				   gs_memory_t *mem, gs_composite_t *pcomp, gx_device **ptarget)
+				   gs_memory_t *mem, gs_composite_t *pcomp, 
+				   int x0, int y0, gx_device **ptarget)
 {
     gx_device *tdev = *ptarget;
     int code;
 
+    code = pcomp->type->procs.adjust_ctm(pcomp, x0, y0, pis);
+    if (code < 0)
+        return code;
     /*
      * Apply the compositor to the target device; note that this may
      * change the target device.
@@ -2399,6 +2406,8 @@ static int apply_create_compositor(gx_device_clist_reader *cdev, gs_imager_state
         rc_increment(tdev);
         *ptarget = tdev;
     }
+    if (code < 0)
+        return code;
 
     /* Perform any updates for the clist device required */
     code = pcomp->type->procs.clist_compositor_read_update(pcomp,
@@ -2465,18 +2474,6 @@ cmd_read_rect(int op, gx_cmd_rect * prect, const byte * cbp)
 	cmd_getw(prect->height, cbp);
     }
     return cbp;
-}
-
-/* Read a transformation matrix. */
-static const byte *
-cmd_read_matrix(gs_matrix * pmat, const byte * cbp)
-{
-    stream s;
-
-    s_init(&s, NULL);
-    sread_string(&s, cbp, 1 + sizeof(*pmat));
-    sget_matrix(&s, pmat);
-    return cbp + stell(&s);
 }
 
 /*

@@ -301,6 +301,18 @@ cmd_write_ctm_return_length(gx_device_clist_writer * cldev, const gs_matrix *m)
     return (uint)stell(&s);
 }
 
+/* Compute the written CTM length. */
+int
+cmd_write_ctm_return_length_nodevice(const gs_matrix *m)
+{
+    stream s;
+
+    s_init(&s, NULL);
+    swrite_position_only(&s);
+    sput_matrix(&s, m);
+    return (uint)stell(&s);
+}
+
 /* Write out CTM. */
 int
 cmd_write_ctm(const gs_matrix *m, byte *dp, int len)

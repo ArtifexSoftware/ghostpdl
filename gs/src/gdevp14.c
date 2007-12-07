@@ -39,6 +39,7 @@
 #include "gstrans.h"
 #include "gsutil.h"
 #include "gxcldev.h"
+#include "gxclpath.h"
 #include "gxdcconv.h"
 
 /*
@@ -2776,15 +2777,23 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize)
     const gs_pdf14trans_params_t * pparams = &((const gs_pdf14trans_t *)pct)->params;
     int need, avail = *psize;
 	/* Must be large enough for largest data struct */
-    byte buf[21 + sizeof(pparams->Background)
+    byte buf[25 /* See sput_matrix. */ +
+	     21 + sizeof(pparams->Background)
 		+ sizeof(pparams->GrayBackground) + sizeof(pparams->bbox)];
     byte * pbuf = buf;
     int opcode = pparams->pdf14_op;
     int mask_size = 0;
+    int len, code;
 
     /* Write PDF 1.4 compositor data into the clist */
 
     *pbuf++ = opcode;			/* 1 byte */
+    len = cmd_write_ctm_return_length_nodevice(&pparams->ctm);
+    pbuf--; /* For cmd_write_ctm. */
+    code = cmd_write_ctm(&pparams->ctm, pbuf, len);
+    if (code < 0)
+	return code;
+    pbuf += len + 1;
     switch (opcode) {
 	default:			/* Should not occur. */
 	    break;
@@ -2861,7 +2870,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize)
 }
 
 /* Function prototypes */
-int gs_create_pdf14trans( gs_composite_t ** ppct,
+static int gs_create_pdf14trans( gs_composite_t ** ppct,
 		const gs_pdf14trans_params_t * pparams,
 		gs_memory_t * mem );
 
@@ -2888,6 +2897,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
     params.pdf14_op = *data++;
     if_debug2('v', "[v] c_pdf14trans_read: opcode = %s  avail = %d",
 				pdf14_opcode_names[params.pdf14_op], size);
+    data = cmd_read_matrix(&params.ctm, data);
     switch (params.pdf14_op) {
 	default:			/* Should not occur. */
 	    break;
@@ -2975,6 +2985,24 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
 }
 
 /*
+ * Adjust the compositor's CTM.
+ */
+static int
+c_pdf14trans_adjust_ctm(gs_composite_t * pct0, int x0, int y0, gs_imager_state *pis)
+{
+    gs_pdf14trans_t *pct = (gs_pdf14trans_t *)pct0;
+
+    gs_matrix mat = pct->params.ctm;
+    if_debug6('L', " [%g %g %g %g %g %g]\n",
+	      mat.xx, mat.xy, mat.yx, mat.yy,
+	      mat.tx, mat.ty);
+    mat.tx -= x0;
+    mat.ty -= y0;
+    gs_imager_setmatrix(pis, &mat);
+    return 0;
+}
+
+/*
  * Create a PDF 1.4 transparency compositor.
  *
  * Note that this routine will be called only if the device is not already
@@ -3006,8 +3034,14 @@ c_pdf14trans_create_default_compositor(const gs_composite_t * pct,
     return code;
 }
 
+static composite_create_default_compositor_proc(c_pdf14trans_create_default_compositor);
+static composite_equal_proc(c_pdf14trans_equal);
+static composite_write_proc(c_pdf14trans_write);
+static composite_read_proc(c_pdf14trans_read);
+static composite_adjust_ctm_proc(c_pdf14trans_adjust_ctm);
 static	composite_clist_write_update(c_pdf14trans_clist_write_update);
 static	composite_clist_read_update(c_pdf14trans_clist_read_update);
+
 
 /*
  * Methods for the PDF 1.4 transparency compositor
@@ -3024,6 +3058,7 @@ const gs_composite_type_t   gs_composite_pdf14trans_type = {
 	c_pdf14trans_equal,                      /* procs.equal */
 	c_pdf14trans_write,                      /* procs.write */
 	c_pdf14trans_read,                       /* procs.read */
+	c_pdf14trans_adjust_ctm,		 /* procs.adjust_ctm */
 		/* Create a PDF 1.4 clist write device */
 	c_pdf14trans_clist_write_update,   /* procs.composite_clist_write_update */
 	c_pdf14trans_clist_read_update	   /* procs.composite_clist_reade_update */
@@ -3037,6 +3072,7 @@ const gs_composite_type_t   gs_composite_pdf14trans_no_clist_writer_type = {
 	c_pdf14trans_equal,                      /* procs.equal */
 	c_pdf14trans_write,                      /* procs.write */
 	c_pdf14trans_read,                       /* procs.read */
+	c_pdf14trans_adjust_ctm,		 /* procs.adjust_ctm */
 		/* The PDF 1.4 clist writer already exists, Do not create it. */
 	gx_default_composite_clist_write_update, /* procs.composite_clist_write_update */
 	c_pdf14trans_clist_read_update	   /* procs.composite_clist_reade_update */
@@ -3056,7 +3092,7 @@ gs_is_pdf14trans_compositor(const gs_composite_t * pct)
 /*
  * Create a PDF 1.4 transparency compositor data structure.
  */
-int
+static int
 gs_create_pdf14trans(
     gs_composite_t **               ppct,
     const gs_pdf14trans_params_t *  pparams,
@@ -3087,6 +3123,7 @@ send_pdf14trans(gs_imager_state	* pis, gx_device * dev,
     gs_composite_t * pct = NULL;
     int code;
 
+    pparams->ctm = ctm_only(pis);
     code = gs_create_pdf14trans(&pct, pparams, mem);
     if (code < 0)
 	return code;
@@ -4161,6 +4198,12 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
     const gs_pdf14trans_t * pdf14pct = (const gs_pdf14trans_t *) pcte;
     pdf14_clist_device * p14dev;
     int code = 0;
+
+    {	gx_device_clist_writer * const cdev =
+			&((gx_device_clist *)dev)->writer;
+
+	state_update(ctm); /* See c_pdf14trans_write. */
+    }
 
     /* We only handle the push/pop operations */
     switch (pdf14pct->params.pdf14_op) {

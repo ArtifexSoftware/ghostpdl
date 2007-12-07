@@ -605,6 +605,10 @@ typedef struct cmd_rects_enum_s {
 #define RECT_RECOVER(codevar) (codevar < 0 && (codevar = clist_VMerror_recover(cdev, codevar)) >= 0)
 #define SET_BAND_CODE(codevar) (re.band_code = codevar)
 
+/* Read a transformation matrix. */
+const byte *cmd_read_matrix(gs_matrix * pmat, const byte * cbp);
+
+
 /* ------ Exported by gxclrect.c ------ */
 
 /* Put out a fill or tile rectangle command. */

@@ -19,6 +19,7 @@
 
 #include "gstparam.h"
 #include "gxcomp.h"
+#include "gsmatrix.h"
 
 /*
  * Define the operations for the PDF 1.4 transparency compositor.
@@ -89,6 +90,7 @@ struct gs_pdf14trans_params_s {
     gs_transparency_source_t opacity;
     gs_transparency_source_t shape;
     bool mask_is_image;
+    gs_matrix ctm;
 };
 
 #ifndef gs_pdf14trans_params_DEFINED
