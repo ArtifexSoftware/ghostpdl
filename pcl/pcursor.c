@@ -868,14 +868,8 @@ pcursor_do_reset(
 
     pcs->line_termination = 0;
     pcs->hmi_cp = HMI_DEFAULT;
-    /* NB needs testing on formline, default needs to be correct for all paper sizes
-     * formline = get_vmi_default( based on paper and pjl.formlines ) ?
-     * 
-     *  pcs->vmi_cp = pcs->margins.length
-     *	  / pjl_proc_vartoi(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "formlines"));
-     */
-    pcs->vmi_cp = VMI_DEFAULT;
-
+    pcs->vmi_cp = pcs->margins.length
+    	  / pjl_proc_vartoi(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "formlines"));
     if ( (type & pcl_reset_overlay) == 0 ) {
         pcs->cursor_stk_size = 0;
 
