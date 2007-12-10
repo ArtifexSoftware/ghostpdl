@@ -79,6 +79,7 @@ ENUM_PTRS_WITH(pdf14_buf_enum_ptrs, pdf14_buf *buf)
     case 0: return ENUM_OBJ(buf->saved);
     case 1: return ENUM_OBJ(buf->data);
     case 2: return ENUM_OBJ(buf->transfer_fn);
+    case 3: return ENUM_OBJ(buf->maskbuf);
 ENUM_PTRS_END
 
 static
@@ -87,6 +88,7 @@ RELOC_PTRS_WITH(pdf14_buf_reloc_ptrs, pdf14_buf	*buf)
     RELOC_VAR(buf->saved);
     RELOC_VAR(buf->data);
     RELOC_VAR(buf->transfer_fn);
+    RELOC_VAR(buf->maskbuf);
 }
 RELOC_PTRS_END
 
