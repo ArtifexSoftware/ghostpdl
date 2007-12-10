@@ -56,6 +56,9 @@ struct pdf14_buf_s {
     byte *transfer_fn;
 
     gs_int_rect bbox;
+
+    /* the associated transparency mask */
+    pdf14_buf *maskbuf;
 };
 
 struct pdf14_ctx_s {
