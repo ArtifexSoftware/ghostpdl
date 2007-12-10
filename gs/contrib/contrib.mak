@@ -524,7 +524,7 @@ $(DD)lxm3200.dev: $(lxm3200_) $(DD)page.dev
 ###                                                                      ###
 LIPS_DIR=$(CONTRIBSRC)lips4
 LIPS_SRC=$(LIPS_DIR)$(D)
-LIPS_OPT=-DGS_VERSION_MAJOR=$(GS_VERSION_MAJOR) $(I_) $(LIPS_SRC)
+LIPS_OPT=-DGS_VERSION_MAJOR=$(GS_VERSION_MAJOR) $(I_)$(LIPS_SRC)
 
 $(GLOBJ)gdevlprn.$(OBJ): $(LIPS_SRC)gdevlprn.c $(LIPS_SRC)gdevlprn.h\
  $(gdevprn_h) $(PDEVH)
