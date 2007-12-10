@@ -70,6 +70,7 @@ libjbig2_HDRS=\
         $(JBIG2SRC)jbig2_mmr.h \
         $(JBIG2SRC)jbig2_priv.h \
         $(JBIG2SRC)jbig2_symbol_dict.h \
+        $(JBIG2SRC)jbig2_text.h \
         $(JBIG2SRC)jbig2_metadata.h \
         $(JBIG2SRC)config_win32.h
 

@@ -32,42 +32,7 @@
 #include "jbig2_huffman.h"
 #include "jbig2_generic.h"
 #include "jbig2_symbol_dict.h"
-
-typedef enum {
-    JBIG2_CORNER_BOTTOMLEFT = 0,
-    JBIG2_CORNER_TOPLEFT = 1,
-    JBIG2_CORNER_BOTTOMRIGHT = 2,
-    JBIG2_CORNER_TOPRIGHT = 3
-} Jbig2RefCorner;
-
-typedef struct {
-    bool SBHUFF;
-    bool SBREFINE;
-    bool SBDEFPIXEL;
-    Jbig2ComposeOp SBCOMBOP;
-    bool TRANSPOSED;
-    Jbig2RefCorner REFCORNER;
-    int SBDSOFFSET;
-    /* SBW */
-    /* SBH */
-    uint32_t SBNUMINSTANCES;
-    int LOGSBSTRIPS;
-    int SBSTRIPS;
-    /* SBNUMSYMS */
-    /* SBSYMCODES */
-    /* SBSYMCODELEN */
-    /* SBSYMS */
-    Jbig2HuffmanTable *SBHUFFFS;
-    Jbig2HuffmanTable *SBHUFFDS;
-    Jbig2HuffmanTable *SBHUFFDT;
-    Jbig2HuffmanTable *SBHUFFRDW;
-    Jbig2HuffmanTable *SBHUFFRDH;
-    Jbig2HuffmanTable *SBHUFFRDX;
-    Jbig2HuffmanTable *SBHUFFRDY;
-    Jbig2HuffmanTable *SBHUFFRSIZE;
-    bool SBRTEMPLATE;
-    int8_t sbrat[4];
-} Jbig2TextRegionParams;
+#include "jbig2_text.h"
 
 
 /**
@@ -87,13 +52,13 @@ typedef struct {
  *
  * returns: 0 on success
  **/
-static int
+int
 jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
                              const Jbig2TextRegionParams *params,
                              const Jbig2SymbolDict * const *dicts, const int n_dicts,
                              Jbig2Image *image,
                              const byte *data, const size_t size,
-			     Jbig2ArithCx *GR_stats)
+			     Jbig2ArithCx *GR_stats, Jbig2ArithState *as, Jbig2WordStream *ws)
 {
     /* relevent bits of 6.4.4 */
     uint32_t NINSTANCES;
@@ -110,20 +75,8 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     bool first_symbol;
     uint32_t index, SBNUMSYMS;
     Jbig2Image *IB;
-    Jbig2WordStream *ws = NULL;
     Jbig2HuffmanState *hs = NULL;
     Jbig2HuffmanTable *SBSYMCODES = NULL;
-    Jbig2ArithState *as = NULL;
-    Jbig2ArithIntCtx *IADT = NULL;
-    Jbig2ArithIntCtx *IAFS = NULL;
-    Jbig2ArithIntCtx *IADS = NULL;
-    Jbig2ArithIntCtx *IAIT = NULL;
-    Jbig2ArithIaidCtx *IAID = NULL;
-    Jbig2ArithIntCtx *IARI = NULL;
-    Jbig2ArithIntCtx *IARDW = NULL;
-    Jbig2ArithIntCtx *IARDH = NULL;
-    Jbig2ArithIntCtx *IARDX = NULL;
-    Jbig2ArithIntCtx *IARDY = NULL;
     int code = 0;
     int RI;
     
@@ -134,24 +87,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
         "symbol list contains %d glyphs in %d dictionaries", SBNUMSYMS, n_dicts);
     
-    ws = jbig2_word_stream_buf_new(ctx, data, size);
-    if (!params->SBHUFF) {
-	int SBSYMCODELEN;
-
-        as = jbig2_arith_new(ctx, ws);
-        IADT = jbig2_arith_int_ctx_new(ctx);
-        IAFS = jbig2_arith_int_ctx_new(ctx);
-        IADS = jbig2_arith_int_ctx_new(ctx);
-        IAIT = jbig2_arith_int_ctx_new(ctx);
-	/* Table 31 */
-	for (SBSYMCODELEN = 0; (1 << SBSYMCODELEN) < SBNUMSYMS; SBSYMCODELEN++);
-        IAID = jbig2_arith_iaid_ctx_new(ctx, SBSYMCODELEN);
-	IARI = jbig2_arith_int_ctx_new(ctx);
-	IARDW = jbig2_arith_int_ctx_new(ctx);
-	IARDH = jbig2_arith_int_ctx_new(ctx);
-	IARDX = jbig2_arith_int_ctx_new(ctx);
-	IARDY = jbig2_arith_int_ctx_new(ctx);
-    } else {
+    if (params->SBHUFF) {
 	Jbig2HuffmanTable *runcodes;
 	Jbig2HuffmanParams runcodeparams;
 	Jbig2HuffmanLine runcodelengths[35];
@@ -263,7 +199,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     if (params->SBHUFF) {
         STRIPT = jbig2_huffman_get(hs, params->SBHUFFDT, &code);
     } else {
-        code = jbig2_arith_int_decode(IADT, as, &STRIPT);
+        code = jbig2_arith_int_decode(params->IADT, as, &STRIPT);
     }
 
     /* 6.4.5 (2) */
@@ -277,7 +213,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
         if (params->SBHUFF) {
             DT = jbig2_huffman_get(hs, params->SBHUFFDT, &code);
         } else {
-            code = jbig2_arith_int_decode(IADT, as, &DT);
+            code = jbig2_arith_int_decode(params->IADT, as, &DT);
         }
         DT *= params->SBSTRIPS;
         STRIPT += DT;
@@ -291,7 +227,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		if (params->SBHUFF) {
 		    DFS = jbig2_huffman_get(hs, params->SBHUFFFS, &code);
 		} else {
-		    code = jbig2_arith_int_decode(IAFS, as, &DFS);
+		    code = jbig2_arith_int_decode(params->IAFS, as, &DFS);
 		}
 		FIRSTS += DFS;
 		CURS = FIRSTS;
@@ -302,7 +238,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		if (params->SBHUFF) {
 		    IDS = jbig2_huffman_get(hs, params->SBHUFFDS, &code);
 		} else {
-		    code = jbig2_arith_int_decode(IADS, as, &IDS);
+		    code = jbig2_arith_int_decode(params->IADS, as, &IDS);
 		}
 		if (code) {
 		    break;
@@ -316,7 +252,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	    } else if (params->SBHUFF) {
 		CURT = jbig2_huffman_get_bits(hs, params->LOGSBSTRIPS);
 	    } else {
-		code = jbig2_arith_int_decode(IAIT, as, &CURT);
+		code = jbig2_arith_int_decode(params->IAIT, as, &CURT);
 	    }
 	    T = STRIPT + CURT;
 
@@ -324,7 +260,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	    if (params->SBHUFF) {
 		ID = jbig2_huffman_get(hs, SBSYMCODES, &code);
 	    } else {
-		code = jbig2_arith_iaid_decode(IAID, as, (int *)&ID);
+		code = jbig2_arith_iaid_decode(params->IAID, as, (int *)&ID);
 	    }
 	    if (ID >= SBNUMSYMS) {
 		return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
@@ -344,7 +280,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	      if (params->SBHUFF) {
 		RI = jbig2_huffman_get_bits(hs, 1);
 	      } else {
-		code = jbig2_arith_int_decode(IARI, as, &RI);
+		code = jbig2_arith_int_decode(params->IARI, as, &RI);
 	      }
 	    } else {
 		RI = 0;
@@ -358,10 +294,10 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 
 		/* 6.4.11 (1, 2, 3, 4) */
 		if (!params->SBHUFF) {
-		  code = jbig2_arith_int_decode(IARDW, as, &RDW);
-		  code = jbig2_arith_int_decode(IARDH, as, &RDH);
-		  code = jbig2_arith_int_decode(IARDX, as, &RDX);
-		  code = jbig2_arith_int_decode(IARDY, as, &RDY);
+		  code = jbig2_arith_int_decode(params->IARDW, as, &RDW);
+		  code = jbig2_arith_int_decode(params->IARDH, as, &RDH);
+		  code = jbig2_arith_int_decode(params->IARDX, as, &RDX);
+		  code = jbig2_arith_int_decode(params->IARDY, as, &RDY);
 		} else {
 		  RDW = jbig2_huffman_get(hs, params->SBHUFFRDW, &code);
 		  RDH = jbig2_huffman_get(hs, params->SBHUFFRDH, &code);
@@ -450,20 +386,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 
     if (params->SBHUFF) {
       jbig2_release_huffman_table(ctx, SBSYMCODES);
-    } else {
-	jbig2_arith_int_ctx_free(ctx, IADT);
-	jbig2_arith_int_ctx_free(ctx, IAFS);
-	jbig2_arith_int_ctx_free(ctx, IADS);
-	jbig2_arith_int_ctx_free(ctx, IAIT);
-	jbig2_arith_iaid_ctx_free(ctx, IAID);
-	jbig2_arith_int_ctx_free(ctx, IARI);
-	jbig2_arith_int_ctx_free(ctx, IARDW);
-	jbig2_arith_int_ctx_free(ctx, IARDH);
-	jbig2_arith_int_ctx_free(ctx, IARDX);
-	jbig2_arith_int_ctx_free(ctx, IARDY);
-	jbig2_free(ctx->allocator, as);
-	jbig2_word_stream_buf_free(ctx, ws);
-    }
+    } 
     
     return 0;
 }
@@ -484,6 +407,8 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     uint16_t huffman_flags = 0;
     Jbig2ArithCx *GR_stats = NULL;
     int code = 0;
+    Jbig2WordStream *ws = NULL; 
+    Jbig2ArithState *as = NULL; 
     
     /* 7.4.1 */
     if (segment->data_length < 17)
@@ -748,10 +673,35 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 
     image = jbig2_image_new(ctx, region_info.width, region_info.height);
 
+    ws = jbig2_word_stream_buf_new(ctx, segment_data + offset, segment->data_length - offset);
+    if (!params.SBHUFF) {
+	int SBSYMCODELEN, index;
+        int SBNUMSYMS = 0;
+	for (index = 0; index < n_dicts; index++) {
+	    SBNUMSYMS += dicts[index]->n_symbols;
+	}
+
+	as = jbig2_arith_new(ctx, ws);
+	ws = 0;
+
+        params.IADT = jbig2_arith_int_ctx_new(ctx);
+        params.IAFS = jbig2_arith_int_ctx_new(ctx);
+        params.IADS = jbig2_arith_int_ctx_new(ctx);
+        params.IAIT = jbig2_arith_int_ctx_new(ctx);
+	/* Table 31 */
+	for (SBSYMCODELEN = 0; (1 << SBSYMCODELEN) < SBNUMSYMS; SBSYMCODELEN++);
+        params.IAID = jbig2_arith_iaid_ctx_new(ctx, SBSYMCODELEN);
+	params.IARI = jbig2_arith_int_ctx_new(ctx);
+	params.IARDW = jbig2_arith_int_ctx_new(ctx);
+	params.IARDH = jbig2_arith_int_ctx_new(ctx);
+	params.IARDX = jbig2_arith_int_ctx_new(ctx);
+	params.IARDY = jbig2_arith_int_ctx_new(ctx);
+    }
+
     code = jbig2_decode_text_region(ctx, segment, &params,
                 (const Jbig2SymbolDict * const *)dicts, n_dicts, image,
                 segment_data + offset, segment->data_length - offset,
-		GR_stats);
+		GR_stats, as, ws);
 
     if (!params.SBHUFF && params.SBREFINE) {
 	jbig2_free(ctx->allocator, GR_stats);
@@ -766,6 +716,20 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
       jbig2_release_huffman_table(ctx, params.SBHUFFRDW);
       jbig2_release_huffman_table(ctx, params.SBHUFFRDH);
       jbig2_release_huffman_table(ctx, params.SBHUFFRSIZE);
+    }
+    else {
+	jbig2_arith_int_ctx_free(ctx, params.IADT);
+	jbig2_arith_int_ctx_free(ctx, params.IAFS);
+	jbig2_arith_int_ctx_free(ctx, params.IADS);
+	jbig2_arith_int_ctx_free(ctx, params.IAIT);
+	jbig2_arith_iaid_ctx_free(ctx, params.IAID);
+	jbig2_arith_int_ctx_free(ctx, params.IARI);
+	jbig2_arith_int_ctx_free(ctx, params.IARDW);
+	jbig2_arith_int_ctx_free(ctx, params.IARDH);
+	jbig2_arith_int_ctx_free(ctx, params.IARDX);
+	jbig2_arith_int_ctx_free(ctx, params.IARDY);
+	jbig2_free(ctx->allocator, as);
+	jbig2_word_stream_buf_free(ctx, ws);
     }
 
     jbig2_free(ctx->allocator, dicts);
