@@ -237,6 +237,8 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   Jbig2ArithIntCtx *IARDX = NULL;
   Jbig2ArithIntCtx *IARDY = NULL;
   int code = 0;
+  Jbig2SymbolDict **refagg_dicts;
+  int n_refagg_dicts = 1;
 
   Jbig2TextRegionParams *tparams = NULL;
 
@@ -395,52 +397,38 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
 		  if (REFAGGNINST > 1) {
 		      Jbig2Image *image;
-		      Jbig2SymbolDict **dicts;
-		      int n_dicts = 1, i;
+		      int i;
 
-		      dicts = jbig2_alloc(ctx->allocator, sizeof(Jbig2SymbolDict *) * n_dicts);
-		      if (dicts == NULL) {
-			  code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-			   "Out of memory allocating dictionary array");
-		          return NULL;
-		      }
-		      dicts[0] = jbig2_sd_new(ctx, params->SDNUMINSYMS + params->SDNUMNEWSYMS);
-		      if (dicts[0] == NULL) {
-			  code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-			   "Out of memory allocating symbol dictionary");
-		          jbig2_free(ctx->allocator, dicts);
-		          return NULL;
-		      }
-		      dicts[0]->n_symbols = params->SDNUMINSYMS + params->SDNUMNEWSYMS;
-		      for (i=0;i < params->SDNUMINSYMS;i++)
+		      if (tparams == NULL) 
 		      {
-			  dicts[0]->glyphs[i] = jbig2_image_clone(ctx, params->SDINSYMS->glyphs[i]);
-		      }
-		      for (i=0;i < (int)NSYMSDECODED;i++)
-		      {
-			  dicts[0]->glyphs[params->SDNUMINSYMS + i] = jbig2_image_clone(ctx, SDNEWSYMS->glyphs[i]);
-		      }
-
-      		      image = jbig2_image_new(ctx, SYMWIDTH, HCHEIGHT);
-		      if (image == NULL) {
-			  code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-			   "Out of memory creating symbol image");
-			  jbig2_sd_release(ctx, dicts[0]);
-		          jbig2_free(ctx->allocator, dicts);
-		          return NULL;
-		      }
-
-		      if (tparams == NULL) {
 			  /* First time through, we need to initialise the */
 			  /* various tables for Huffman or adaptive encoding */
 			  /* as well as the text region parameters structure */
-		          tparams = jbig2_alloc(ctx->allocator, sizeof(Jbig2TextRegionParams));
+			  refagg_dicts = jbig2_alloc(ctx->allocator, sizeof(Jbig2SymbolDict *) * n_refagg_dicts);
+		          if (refagg_dicts == NULL) {
+			      code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+			       "Out of memory allocating dictionary array");
+		              return NULL;
+		          }
+		          refagg_dicts[0] = jbig2_sd_new(ctx, params->SDNUMINSYMS + params->SDNUMNEWSYMS);
+		          if (refagg_dicts[0] == NULL) {
+			      code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+			       "Out of memory allocating symbol dictionary");
+		              jbig2_free(ctx->allocator, refagg_dicts);
+		              return NULL;
+		          }
+		          refagg_dicts[0]->n_symbols = params->SDNUMINSYMS + params->SDNUMNEWSYMS;
+		          for (i=0;i < params->SDNUMINSYMS;i++)
+		          {
+			      refagg_dicts[0]->glyphs[i] = jbig2_image_clone(ctx, params->SDINSYMS->glyphs[i]);
+		          }
+
+			  tparams = jbig2_alloc(ctx->allocator, sizeof(Jbig2TextRegionParams));
 			  if (tparams == NULL) {
 			      code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 			      "Out of memory creating text region params");
-			      jbig2_free(ctx->allocator, image);
-			      jbig2_sd_release(ctx, dicts[0]);
-			      jbig2_free(ctx->allocator, dicts);
+			      jbig2_sd_release(ctx, refagg_dicts[0]);
+			      jbig2_free(ctx->allocator, refagg_dicts);
 			      return NULL;
 			  }
     		          if (!params->SDHUFF) {
@@ -486,14 +474,22 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		      }
 		      tparams->SBNUMINSTANCES = REFAGGNINST;
 
+      		      image = jbig2_image_new(ctx, SYMWIDTH, HCHEIGHT);
+		      if (image == NULL) {
+			  code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+			   "Out of memory creating symbol image");
+		          jbig2_free(ctx->allocator, tparams);
+			  jbig2_sd_release(ctx, refagg_dicts[0]);
+		          jbig2_free(ctx->allocator, refagg_dicts);
+		          return NULL;
+		      }
 
 		      /* multiple symbols are handled as a text region */
-		      jbig2_decode_text_region(ctx, segment, tparams, (const Jbig2SymbolDict * const *)dicts, 
-			  n_dicts, image, data, size, GR_stats, as, (Jbig2WordStream *)NULL);
+		      jbig2_decode_text_region(ctx, segment, tparams, (const Jbig2SymbolDict * const *)refagg_dicts, 
+			  n_refagg_dicts, image, data, size, GR_stats, as, (Jbig2WordStream *)NULL);
 
 		      SDNEWSYMS->glyphs[NSYMSDECODED] = image;
-		      jbig2_sd_release(ctx, dicts[0]);
-		      jbig2_free(ctx->allocator, dicts);
+		      refagg_dicts[0]->glyphs[params->SDNUMINSYMS + NSYMSDECODED] = jbig2_image_clone(ctx, SDNEWSYMS->glyphs[NSYMSDECODED]);
 		  } else {
 		      /* 6.5.8.2.2 */
 		      /* bool SBHUFF = params->SDHUFF; */
@@ -652,20 +648,35 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
   } /* end of symbol decode loop */
 
-  if (!params->SDHUFF && tparams != NULL)
+  if (tparams != NULL) 
   {
-      jbig2_arith_int_ctx_free(ctx, tparams->IADT);
-      jbig2_arith_int_ctx_free(ctx, tparams->IAFS);
-      jbig2_arith_int_ctx_free(ctx, tparams->IADS);
-      jbig2_arith_int_ctx_free(ctx, tparams->IAIT);
-      jbig2_arith_iaid_ctx_free(ctx, tparams->IAID);
-      jbig2_arith_int_ctx_free(ctx, tparams->IARI);
-      jbig2_arith_int_ctx_free(ctx, tparams->IARDW);
-      jbig2_arith_int_ctx_free(ctx, tparams->IARDH);
-      jbig2_arith_int_ctx_free(ctx, tparams->IARDX);
-      jbig2_arith_int_ctx_free(ctx, tparams->IARDY);
+      if (!params->SDHUFF)
+      {
+          jbig2_arith_int_ctx_free(ctx, tparams->IADT);
+          jbig2_arith_int_ctx_free(ctx, tparams->IAFS);
+          jbig2_arith_int_ctx_free(ctx, tparams->IADS);
+          jbig2_arith_int_ctx_free(ctx, tparams->IAIT);
+          jbig2_arith_iaid_ctx_free(ctx, tparams->IAID);
+          jbig2_arith_int_ctx_free(ctx, tparams->IARI);
+          jbig2_arith_int_ctx_free(ctx, tparams->IARDW);
+          jbig2_arith_int_ctx_free(ctx, tparams->IARDH);
+          jbig2_arith_int_ctx_free(ctx, tparams->IARDX);
+          jbig2_arith_int_ctx_free(ctx, tparams->IARDY);
+      }
+      else
+      {
+          jbig2_release_huffman_table(ctx, tparams->SBHUFFFS);
+          jbig2_release_huffman_table(ctx, tparams->SBHUFFDS);
+          jbig2_release_huffman_table(ctx, tparams->SBHUFFDT);
+          jbig2_release_huffman_table(ctx, tparams->SBHUFFRDX);
+          jbig2_release_huffman_table(ctx, tparams->SBHUFFRDY);
+          jbig2_release_huffman_table(ctx, tparams->SBHUFFRDW);
+          jbig2_release_huffman_table(ctx, tparams->SBHUFFRDH);
+      }
       jbig2_free(ctx->allocator, tparams);
       tparams = NULL;
+      jbig2_sd_release(ctx, refagg_dicts[0]);
+      jbig2_free(ctx->allocator, refagg_dicts);
   }
 
   jbig2_free(ctx->allocator, GB_stats);
