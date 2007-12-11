@@ -103,7 +103,7 @@ unsigned long v
 #endif
 ) {
 	fprintf(stderr,"imdi_tabl: internal failure - unexpected write size!\n");
-*((char *)NULL) = 0;	// ~~999
+*((char *)NULL) = 0;	/* ~~999 */
 	exit(-1);
 }
 
@@ -477,16 +477,18 @@ imdi_tab(
 					}
 				}
 			}
-	
-//printf("~~Verticies   = ");
-//for (i = 0; i <= gs->id; i++)
-//	printf("%d ",vcmb[i]);
-//printf("\n");
 
-//printf("~~Parm -> Abs = ");
-//for (e = 0; e < gs->id; e++)
-//	printf("%d ",comb[nsplx][e]);
-//printf("\n");
+/*	
+printf("~~Verticies   = ");
+for (i = 0; i <= gs->id; i++)
+	printf("%d ",vcmb[i]);
+printf("\n");
+
+printf("~~Parm -> Abs = ");
+for (e = 0; e < gs->id; e++)
+	printf("%d ",comb[nsplx][e]);
+printf("\n");
+*/
 
 			/* Increment the counter value */
 			XCB_INC(vcmb);
@@ -511,11 +513,13 @@ imdi_tab(
 			double wvscale = (1 << gs->prec);	/* Weighting value scale */
 			int sx;				/* Simplex */
 
-//printf("Param coord =");
-//for (e = gs->id-1; e >= 0; e--) {
-//	printf(" %d",ps[e]);
-//}
-//printf("\n");
+/*
+printf("Param coord =");
+for (e = gs->id-1; e >= 0; e--) {
+	printf(" %d",ps[e]);
+}
+printf("\n");
+*/
 			for (e = 0; e < gs->id; e++) {
 				/* (Should try wvscale + 0.49999999, or something ?) */
 				double tt = (wvscale * (double)ps[e])/((double)gs->stres);
@@ -539,11 +543,13 @@ imdi_tab(
 			}
 #endif
 
-//printf("Baricentric coord =");
-//for (e = gs->id; e >= 0; e--) {
-//	printf(" %d",we[e]);
-//}
-//printf("\n");
+/*
+printf("Baricentric coord =");
+for (e = gs->id; e >= 0; e--) {
+	printf(" %d",we[e]);
+}
+printf("\n");
+*/
 
 			/* For each simplex, compute the interp. and */
 			/* and entry offsets, and write the entry. */

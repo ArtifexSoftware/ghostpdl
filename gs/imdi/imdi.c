@@ -105,7 +105,7 @@ imdi *new_imdi(
 		} else {
 			/* compute the needed stres (Assumint not sort) */
 			stres = ((1 << gs.prec)-1 + res-2)/(res-1);
-//			stres = ((1024)-1 + res-2)/(res-1);
+/*			stres = ((1024)-1 + res-2)/(res-1); */
 
 #ifdef VERBOSE
 		printf("gres = %d, sres = %d\n",res,stres);

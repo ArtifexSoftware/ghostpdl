@@ -614,7 +614,7 @@ mach_arch *ar
 	ar->shfm   = 0;		/* Use shifts to mask values */
 	ar->oscale = 8;		/* Has scaled indexing up to * 8 */
 	ar->smmul  = 0;		/* Doesn't have fast small multiply for index scaling */
-// ~~99
+/* ~~99 */
 	ar->nords  = 3;		/* Number of ord types */
 	ar->natord = 2;		/* Most natural type (assume unsigned int) */
 	ar->nints  = 3;		/* Number of int types */

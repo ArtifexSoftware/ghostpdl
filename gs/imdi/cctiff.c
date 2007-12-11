@@ -205,7 +205,7 @@ char **inknames					/* Return ASCII inknames if non NULL */
 ) {
 	switch(cspace) {
 		case icSigCmyData:
-			return 0xffff;	// ~~9999
+			return 0xffff;	/* ~~9999 */
 			if (inknames != NULL) {
 				*inknames = "cyan\000magenta\000yellow\000\000";
 				*len = zzstrlen(*inknames);
