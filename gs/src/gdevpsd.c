@@ -52,6 +52,7 @@ static dev_proc_decode_color(psd_decode_color);
 static dev_proc_encode_color(psd_encode_compressed_color);
 static dev_proc_decode_color(psd_decode_compressed_color);
 static dev_proc_update_spot_equivalent_colors(psd_update_spot_equivalent_colors);
+static dev_proc_ret_devn_params(psd_ret_devn_params);
 
 /* This is redundant with color_info.cm_name. We may eliminate this
    typedef and use the latter string for everything. */
@@ -195,7 +196,8 @@ gs_private_st_composite_final(st_psd_device, psd_device,
 	NULL,				/* fill_linear_color_scanline */\
 	NULL,				/* fill_linear_color_trapezoid */\
 	NULL,				/* fill_linear_color_triangle */\
-	psd_update_spot_equivalent_colors /* update_spot_equivalent_colors */\
+	psd_update_spot_equivalent_colors, /* update_spot_equivalent_colors */\
+	psd_ret_devn_params		/* ret_devn_params */\
 }
 
 
@@ -611,6 +613,17 @@ psd_update_spot_equivalent_colors(gx_device *pdev, const gs_state * pgs)
     update_spot_equivalent_cmyk_colors(pdev, pgs,
 		    &psdev->devn_params, &psdev->equiv_cmyk_colors);
     return 0;
+}
+
+/*
+ *  Device proc for returning a pointer to DeviceN parameter structure
+ */
+static gs_devn_params *
+psd_ret_devn_params(gx_device * dev)
+{
+    psd_device * pdev = (psd_device *)dev;
+
+    return &pdev->devn_params;
 }
 
 #if ENABLE_ICC_PROFILE
