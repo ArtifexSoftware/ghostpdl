@@ -52,13 +52,8 @@ struct pdf14_buf_s {
     int n_chan; /* number of pixel planes including alpha */
     int n_planes; /* total number of planes including alpha, shape, alpha_g */
     byte *data;
-
     byte *transfer_fn;
-
     gs_int_rect bbox;
-
-    /* the associated transparency mask */
-    pdf14_buf *maskbuf;
 };
 
 struct pdf14_ctx_s {

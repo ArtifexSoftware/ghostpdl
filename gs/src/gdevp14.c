@@ -71,29 +71,9 @@ int gs_pdf14_device_push(gs_memory_t *, gs_imager_state *, gx_device **,
 
 #define	PDF14_MAX_PLANES GX_DEVICE_COLOR_MAX_COMPONENTS
 
-/* GC procedures for buffer stack */
-
-static
-ENUM_PTRS_WITH(pdf14_buf_enum_ptrs, pdf14_buf *buf)
-    return 0;
-    case 0: return ENUM_OBJ(buf->saved);
-    case 1: return ENUM_OBJ(buf->data);
-    case 2: return ENUM_OBJ(buf->transfer_fn);
-    case 3: return ENUM_OBJ(buf->maskbuf);
-ENUM_PTRS_END
-
-static
-RELOC_PTRS_WITH(pdf14_buf_reloc_ptrs, pdf14_buf	*buf)
-{
-    RELOC_VAR(buf->saved);
-    RELOC_VAR(buf->data);
-    RELOC_VAR(buf->transfer_fn);
-    RELOC_VAR(buf->maskbuf);
-}
-RELOC_PTRS_END
-
-gs_private_st_composite(st_pdf14_buf, pdf14_buf, "pdf14_buf",
-			pdf14_buf_enum_ptrs, pdf14_buf_reloc_ptrs);
+gs_private_st_ptrs3(st_pdf14_buf, pdf14_buf, "pdf14_buf",
+		    pdf14_buf_enum_ptrs, pdf14_buf_reloc_ptrs,
+		    saved, data, transfer_fn);
 
 gs_private_st_ptrs2(st_pdf14_ctx, pdf14_ctx, "pdf14_ctx",
 		    pdf14_ctx_enum_ptrs, pdf14_ctx_reloc_ptrs,
@@ -555,7 +535,6 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape,
     result->n_planes = n_planes;
     result->rowstride = rowstride;
     result->transfer_fn = NULL;
-    result->maskbuf = NULL;
 
     if (height <= 0) {
 	/* Empty clipping - will skip all drawings. */
@@ -586,10 +565,6 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape,
 static	void
 pdf14_buf_free(pdf14_buf *buf, gs_memory_t *memory)
 {
-    if (buf->maskbuf) {
-	errprintf("forgot to free transparency maskbuf\n");
-	pdf14_buf_free(buf->maskbuf, memory);
-    }
     gs_free_object(memory, buf->transfer_fn, "pdf14_buf_free");
     gs_free_object(memory, buf->data, "pdf14_buf_free");
     gs_free_object(memory, buf, "pdf14_buf_free");
@@ -691,14 +666,6 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect,
     buf->saved = tos;
     ctx->stack = buf;
 
-    /* If a transparency mask is used for this group, this function call will have
-       been preceded by pdf14_push_transparency_mask ... pdf14_pop_transparency_mask
-       calls to create the mask buffer. This mask is stored in ctx->maskbuf.
-       We pick it up here when pushing the group (instead of when popping)
-       so that nested transparency groups and masks will work. */
-    buf->maskbuf = ctx->maskbuf;
-    ctx->maskbuf = NULL;
-
     if (buf->data == NULL)
 	return 0;
 
@@ -747,7 +714,7 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
 {
     pdf14_buf *tos = ctx->stack;
     pdf14_buf *nos = tos->saved;
-    pdf14_buf *maskbuf = tos->maskbuf;
+    pdf14_buf *maskbuf = ctx->maskbuf;
     int y0 = max(tos->rect.p.y, nos->rect.p.y);
     int y1 = min(tos->rect.q.y, nos->rect.q.y);
     int x0 = max(tos->rect.p.x, nos->rect.p.x);
@@ -902,11 +869,11 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
 
     ctx->stack = nos;
     if_debug0('v', "[v]pop buf\n");
+    pdf14_buf_free(tos, ctx->memory);
     if (maskbuf != NULL) {
 	pdf14_buf_free(maskbuf, ctx->memory);
-	tos->maskbuf = NULL;
+	ctx->maskbuf = NULL;
     }
-    pdf14_buf_free(tos, ctx->memory);
     return 0;
 }
 
@@ -949,14 +916,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx)
     pdf14_buf *tos = ctx->stack;
 
     ctx->stack = tos->saved;
-
-    /* After creating the mask buffer we're storing it in ctx->maskbuf so
-       that the next pdf14_push_transparency_group call can pick
-       it up. */
-    if (ctx->maskbuf != NULL)
-	errprintf("programmer error. we lost a transparency mask.\n");
     ctx->maskbuf = tos;
-
     return 0;
 }
 
