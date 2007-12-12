@@ -71,9 +71,9 @@ int gs_pdf14_device_push(gs_memory_t *, gs_imager_state *, gx_device **,
 
 #define	PDF14_MAX_PLANES GX_DEVICE_COLOR_MAX_COMPONENTS
 
-gs_private_st_ptrs3(st_pdf14_buf, pdf14_buf, "pdf14_buf",
+gs_private_st_ptrs4(st_pdf14_buf, pdf14_buf, "pdf14_buf",
 		    pdf14_buf_enum_ptrs, pdf14_buf_reloc_ptrs,
-		    saved, data, transfer_fn);
+		    saved, data, transfer_fn, maskbuf);
 
 gs_private_st_ptrs2(st_pdf14_ctx, pdf14_ctx, "pdf14_ctx",
 		    pdf14_ctx_enum_ptrs, pdf14_ctx_reloc_ptrs,
@@ -663,6 +663,11 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect,
     buf->shape = shape;
     buf->blend_mode = blend_mode;
 
+    buf->maskbuf = ctx->maskbuf; /* Save becasuse the group rendering may set up 
+				    another (nested) mask. */
+    ctx->maskbuf = NULL; /* Clean the mask field for rendring this group. 
+			    See pdf14_pop_transparency_group how to handle it. */
+
     buf->saved = tos;
     ctx->stack = buf;
 
@@ -714,11 +719,14 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
 {
     pdf14_buf *tos = ctx->stack;
     pdf14_buf *nos = tos->saved;
-    pdf14_buf *maskbuf = ctx->maskbuf;
     int y0 = max(tos->rect.p.y, nos->rect.p.y);
     int y1 = min(tos->rect.q.y, nos->rect.q.y);
     int x0 = max(tos->rect.p.x, nos->rect.p.x);
     int x1 = min(tos->rect.q.x, nos->rect.q.x);
+    pdf14_buf *maskbuf = tos->maskbuf;
+
+    ctx->maskbuf = maskbuf;  /* Restore the mask saved by pdf14_push_transparency_group. */
+    tos->maskbuf = NULL;     /* Clean the pointer sinse the mask ownership is now passed to ctx. */
     if (x0 < x1 && y0 < y1) {
 	int n_chan = ctx->n_chan;
 	int num_comp = n_chan - 1;

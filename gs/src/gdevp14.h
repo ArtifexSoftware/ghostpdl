@@ -54,6 +54,7 @@ struct pdf14_buf_s {
     byte *data;
     byte *transfer_fn;
     gs_int_rect bbox;
+    pdf14_buf *maskbuf; /* Save pdf14_ctx_s::maksbuf. */
 };
 
 struct pdf14_ctx_s {
