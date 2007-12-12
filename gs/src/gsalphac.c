@@ -120,9 +120,10 @@ gs_create_composite_alpha(gs_composite_t ** ppcte,
 {
     gs_composite_alpha_t *pcte;
 
-    rc_alloc_struct_0(pcte, gs_composite_alpha_t, &st_composite_alpha,
-		      mem, return_error(gs_error_VMerror),
-		      "gs_create_composite_alpha");
+    pcte = gs_alloc_struct(mem, gs_composite_alpha_t, &st_composite_alpha,
+			     "gs_create_composite_alpha");
+    if (pcte == NULL)
+	return_error(gs_error_VMerror);
     pcte->type = &gs_composite_alpha_type;
     pcte->id = gs_next_ids(mem, 1);
     pcte->params = *params;

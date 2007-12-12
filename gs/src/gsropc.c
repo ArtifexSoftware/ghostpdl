@@ -50,9 +50,10 @@ gs_create_composite_rop(gs_composite_t ** ppcte,
 {
     gs_composite_rop_t *pcte;
 
-    rc_alloc_struct_0(pcte, gs_composite_rop_t, &st_composite_rop,
-		      mem, return_error(gs_error_VMerror),
-		      "gs_create_composite_rop");
+    pcte = gs_alloc_struct(mem, gs_composite_rop_t, &st_composite_rop,
+			     "gs_create_composite_rop");
+    if (pcte == NULL)
+	return_error(gs_error_VMerror);
     pcte->type = &gs_composite_rop_type;
     pcte->id = gs_next_ids(1);
     pcte->params = *params;

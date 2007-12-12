@@ -234,12 +234,10 @@ gs_create_overprint(
 {
     gs_overprint_t *                pct;
 
-    rc_alloc_struct_0( pct,
-                       gs_overprint_t,
-                       &st_overprint,
-                       mem,
-                       return_error(gs_error_VMerror),
-                       "gs_create_overprint" );
+    pct = gs_alloc_struct(mem, gs_overprint_t, &st_overprint,
+			     "gs_create_overprint");
+    if (pct == NULL)
+	return_error(gs_error_VMerror);
     pct->type = &gs_composite_overprint_type;
     pct->id = gs_next_ids(mem, 1);
     pct->params = *pparams;
