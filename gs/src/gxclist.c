@@ -309,17 +309,21 @@ clist_init_states(gx_device * dev, byte * init_data, uint data_size)
     gx_device_clist_writer * const cdev =
 	&((gx_device_clist *)dev)->writer;
     ulong state_size = cdev->nbands * (ulong) sizeof(gx_clist_state);
+    /* Align to the natural boundary for ARM processors, bug 689600 */
+    long alignment = (-(long)init_data) & (sizeof(init_data) - 1);
 
     /*
      * The +100 in the next line is bogus, but we don't know what the
      * real check should be. We're effectively assuring that at least 100
      * bytes will be available to buffer command operands.
      */
-    if (state_size + sizeof(cmd_prefix) + cmd_largest_size + 100 > data_size)
+    if (state_size + sizeof(cmd_prefix) + cmd_largest_size + 100 + alignment > data_size)
 	return_error(gs_error_rangecheck);
+    /* The end buffer position is not affected by alignment */
+    cdev->cend = init_data + data_size;
+    init_data +=  alignment;
     cdev->states = (gx_clist_state *) init_data;
     cdev->cbuf = init_data + state_size;
-    cdev->cend = init_data + data_size;
     return 0;
 }
 
