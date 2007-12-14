@@ -193,6 +193,20 @@ sdecodelong(const byte * p, int format)
     return v;
 }
 
+
+/* Decode a 32-bit number. Return the resukt through a pointer */
+/* to work around a gcc 4.2.1 bug on PowerPC, bug 689586 */
+static void
+sdecodebits32(const byte * p, int format, bits32 *v)
+{
+  int a = p[0], b = p[1], c = p[2], d = p[3];
+  *v = (num_is_lsb(format) ?
+	    ((long)d << 24) + ((long)c << 16) + (b << 8) + a :
+	    ((long)a << 24) + ((long)b << 16) + (c << 8) + d);
+
+}
+
+
 /* Decode a float.  We assume that native floats occupy 32 bits. */
 /* If the float is an IEEE NaN or Inf, return e_undefinedresult. */
 int
@@ -211,7 +225,7 @@ sdecode_float(const byte * p, int format, float *pfnum)
 #endif
 	lnum = *(bits32 *)pfnum;
     } else {
-	lnum = (bits32) sdecodelong(p, format);
+	sdecodebits32(p, format, &lnum);
 
 #if !ARCH_FLOATS_ARE_IEEE
 	{
