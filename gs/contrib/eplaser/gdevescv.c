@@ -1552,7 +1552,7 @@ escv_setdash(gx_device_vector * vdev, const float *pattern, uint count, floatp o
 		    (int)(pattern[0] * scale / vdev->x_pixels_per_inch + 0.5),
 		    (int)(pattern[0] * scale / vdev->x_pixels_per_inch + 0.5));
 #else
-      (void)sprintf(obuf, ESC_GS "1;%d;%ddlG", pattern[0], pattern[0]);
+      (void)sprintf(obuf, ESC_GS "1;%d;%ddlG", (int) pattern[0], (int) pattern[0]);
 #endif
       lputs(s, obuf);
     } else {
@@ -1567,7 +1567,7 @@ escv_setdash(gx_device_vector * vdev, const float *pattern, uint count, floatp o
 	(void)sprintf(obuf, ";%d", (int)(pattern[i] * scale / vdev->x_pixels_per_inch + 0.5));
 
 #else
-	(void)sprintf(obuf, ";%d", pattern[i]);
+	(void)sprintf(obuf, ";%d", (int) pattern[i]);
 #endif
 	lputs(s, obuf);
       }
