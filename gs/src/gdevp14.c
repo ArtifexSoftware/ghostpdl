@@ -643,6 +643,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect,
     pdf14_buf *buf, *backdrop;
     bool has_shape;
 
+    if_debug0('v', "[v]pdf14_push_transparency_group\n");
     /* todo: fix this hack, which makes all knockout groups isolated.
        For the vast majority of files, there won't be any visible
        effects, but it still isn't correct. The pixel compositing code
@@ -897,7 +898,7 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 {
     pdf14_buf *buf;
 
-    if_debug0('v', "[v]pdf_push_transparency_mask\n");
+    if_debug0('v', "[v]pdf14_push_transparency_mask\n");
     buf = pdf14_buf_new(rect, false, false, ctx->n_chan, ctx->memory);
     if (buf == NULL)
 	return_error(gs_error_VMerror);
@@ -923,6 +924,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx)
 {
     pdf14_buf *tos = ctx->stack;
 
+    if_debug0('v', "[v]pdf14_pop_transparency_mask\n");
     ctx->stack = tos->saved;
     ctx->maskbuf = tos;
     return 0;
@@ -2201,7 +2203,7 @@ pdf14_begin_transparency_group(gx_device *dev,
 	rect.q.x = rect.p.x;
     if (rect.q.y < rect.p.y)
 	rect.q.y = rect.p.y;
-    if_debug4('v', "[v]begin_transparency_group, I = %d, K = %d, alpha = %g, bm = %d\n",
+    if_debug4('v', "[v]pdf14_begin_transparency_group, I = %d, K = %d, alpha = %g, bm = %d\n",
 	      ptgp->Isolated, ptgp->Knockout, alpha, pis->blend_mode);
     code = pdf14_push_transparency_group(pdev->ctx, &rect,
 					 ptgp->Isolated, ptgp->Knockout,
@@ -2219,7 +2221,7 @@ pdf14_end_transparency_group(gx_device *dev,
     pdf14_device *pdev = (pdf14_device *)dev;
     int code;
 
-    if_debug0('v', "[v]end_transparency_group\n");
+    if_debug0('v', "[v]pdf14_end_transparency_group\n");
     code = pdf14_pop_transparency_group(pdev->ctx, pdev->blend_procs);
     return code;
 }
@@ -2235,11 +2237,11 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     pdf14_device *pdev = (pdf14_device *)dev;
     byte bg_alpha = 0;
     byte *transfer_fn = (byte *)gs_alloc_bytes(pdev->ctx->memory, 256,
-					       "pdf14_push_transparency_mask");
+					       "pdf14_begin_transparency_mask");
 
     if (ptmp->Background_components)
 	bg_alpha = (int)(255 * ptmp->GrayBackground + 0.5);
-    if_debug1('v', "begin transparency mask, bg_alpha = %d\n", bg_alpha);
+    if_debug1('v', "pdf14_begin_transparency_mask, bg_alpha = %d\n", bg_alpha);
     memcpy(transfer_fn, ptmp->transfer_fn, size_of(ptmp->transfer_fn));
     return pdf14_push_transparency_mask(pdev->ctx, &pdev->ctx->rect, bg_alpha,
 					transfer_fn);
@@ -2251,7 +2253,7 @@ pdf14_end_transparency_mask(gx_device *dev,
 {
     pdf14_device *pdev = (pdf14_device *)dev;
 
-    if_debug0('v', "end transparency mask!\n");
+    if_debug0('v', "pdf14_end_transparency_mask\n");
     return pdf14_pop_transparency_mask(pdev->ctx);
 }
 
@@ -2847,8 +2849,12 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize)
     /* check for fit */
     need = (pbuf - buf) + mask_size;
     *psize = need;
-    if (need > avail)
-	return_error(gs_error_rangecheck);
+    if (need > avail) {
+	if (avail)
+	    return_error(gs_error_rangecheck);
+	else
+	    return gs_error_rangecheck;
+    }
 
 	/* If we are writing more than the maximum ever expected,
 	 * return a rangecheck error.
