@@ -300,6 +300,9 @@ typedef struct pcl_hpgl_state_s {
 	  byte *buffer;		/* start of line buffer pointer */
           uint buffer_size;	/* size of the current buffer */
 	  uint char_count;	/* count of chars in the buffer */
+          byte ch;
+          byte prev_ch;
+          bool have_16bits;     /* two byte terminators need 16 bits */
 	} label;
 	bool transparent_data;
 	uint font_id[2];

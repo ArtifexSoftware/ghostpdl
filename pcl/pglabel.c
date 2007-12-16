@@ -271,9 +271,9 @@ hpgl_get_character_extra_space_y(const hpgl_state_t *pgls)
 /* Get a character width in the current font, plus extra space if any. */
 /* If the character isn't defined, return 1, otherwise return 0. */
 static int
-hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width)
+hpgl_get_char_width(const hpgl_state_t *pgls, gs_char ch, hpgl_real_t *width)
 {
-    uint glyph = hpgl_map_symbol(ch, pgls);
+    gs_glyph glyph = hpgl_map_symbol(ch, pgls);
     const pcl_font_selection_t *pfs =
 	&pgls->g.font_selection[pgls->g.font_selected];
     int code = 0;
@@ -1092,7 +1092,19 @@ hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
     /* convert to user units */
     return 0;
 }
-			  
+
+static gs_char
+hpgl_next_char(hpgl_state_t *pgls, byte **ppb)
+{
+    byte *pb = *ppb;
+    gs_char chr = *pb++;
+    
+    if (pgls->g.label.double_byte)
+        chr = (chr << 8) + *pb++;
+    *ppb = pb;
+    return chr;
+}
+
 /* Prints a buffered line of characters. */
 /* If there is a CR, it is the last character in the buffer. */
 static int
@@ -1100,6 +1112,19 @@ hpgl_process_buffer(hpgl_state_t *pgls, gs_point *offset)
 {
     hpgl_real_t label_length = 0.0, label_height = 0.0;
     bool vertical = hpgl_text_is_vertical(pgls->g.character.text_path);
+    int i, inc;
+
+    /* a peculiar side effect of LABEL parsing double byte characters
+       is it leaves an extra byte in the buffer - fix that now, and
+       properly set the increment for the parallel loops below. */
+    if ( pgls->g.label.double_byte ) {
+        pgls->g.label.char_count--;
+        inc = 2;
+    } else {
+        inc = 1;
+    }
+    
+
     /*
      * NOTE: the two loops below must be consistent with each other!
      */
@@ -1107,11 +1132,11 @@ hpgl_process_buffer(hpgl_state_t *pgls, gs_point *offset)
     {
         hpgl_real_t width = 0.0, height = 0.0;
         int save_index = pgls->g.font_selected;
-        int i = 0;
         bool first_char_on_line = true;
-        while ( i < pgls->g.label.char_count ) {
-            byte ch = pgls->g.label.buffer[i++];
+        byte *b = pgls->g.label.buffer;
 
+        for ( i=0; i < pgls->g.label.char_count; i+=inc ) {
+            gs_char ch = hpgl_next_char(pgls, &b);
             if ( ch < 0x20 && !pgls->g.transparent_data )
 		switch (ch) {
 		case BS :
@@ -1178,10 +1203,9 @@ acc_ht:	    hpgl_call(hpgl_get_current_cell_height(pgls, &height));
                                      hpgl_plot_move_relative, false));
 
     {
-        int i;
-        for ( i = 0; i < pgls->g.label.char_count; ++i ) { 
-            byte ch = pgls->g.label.buffer[i];
-
+        byte *b = pgls->g.label.buffer;
+        for ( i = 0; i < pgls->g.label.char_count; i+=inc ) { 
+            gs_char ch = hpgl_next_char(pgls, &b);
             if ( ch < 0x20 && !pgls->g.transparent_data ) { 
                 hpgl_real_t spaces, lines;
 
@@ -1296,15 +1320,16 @@ bool is_terminator( hpgl_state_t *pgls, byte prev, byte curr, bool have_16bits )
 	( curr == pgls->g.label.terminator );
 }  
 
+#define GL_LB_HAVE_16BITS (pgls->g.label.have_16bits)
+#define GL_LB_CH (pgls->g.label.ch)
+#define GL_LB_PREV_CH (pgls->g.label.prev_ch)
+
 /* LB ..text..terminator */
 int
 hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	const byte *p = pargs->source.ptr;
 	const byte *rlimit = pargs->source.limit;
 	bool print_terminator = pgls->g.label.print_terminator;
-	byte ch = 0xff;
-	byte prev_ch = 0xff;     /* for two byte terminators */ 
-	bool have_16bits = true; /* two byte terminators need 16 bits */
 
 	if ( pargs->phase == 0 )
 	  {
@@ -1314,19 +1339,23 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    hpgl_call(hpgl_set_ctm(pgls));
 	    hpgl_call(hpgl_set_clipping_region(pgls, hpgl_rm_vector));
 	    pgls->g.label.initial_pos = pgls->g.pos;
+            GL_LB_HAVE_16BITS = true;
+            GL_LB_CH = 0xff;
+            GL_LB_PREV_CH = 0xff;     /* for two byte terminators */ 
 	    pargs->phase = 1;
 	  }
 
 	while ( p < rlimit )
 	  { 
-	    have_16bits = !have_16bits; 
-	    prev_ch = ch;           
-	    ch = *++p;          
+            /* This is not ugly and unintuitive */
+	    GL_LB_HAVE_16BITS = !GL_LB_HAVE_16BITS;
+	    GL_LB_PREV_CH = GL_LB_CH;
+	    GL_LB_CH = *++p;
 	    if_debug1('I',
-		      (ch == '\\' ? " \\%c" : ch >= 33 && ch <= 126 ? " %c" :
+		      (GL_LB_CH == '\\' ? " \\%c" : GL_LB_CH >= 33 && GL_LB_CH <= 126 ? " %c" :
 		       " \\%03o"),
-		      ch);
-	    if ( is_terminator(pgls, prev_ch, ch, have_16bits) )
+		      GL_LB_CH);
+	    if ( is_terminator(pgls, GL_LB_PREV_CH, GL_LB_CH, GL_LB_HAVE_16BITS) )
 	      {
 		if ( !print_terminator )
 		  {
@@ -1371,8 +1400,8 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
                treat the label origin correctly, and initialize a new
                buffer */
 
-	    hpgl_call(hpgl_buffer_char(pgls, ch));
-	    if ( ch == CR && !pgls->g.transparent_data )
+	    hpgl_call(hpgl_buffer_char(pgls, GL_LB_CH));
+	    if ( GL_LB_CH == CR && !pgls->g.transparent_data )
             {
                 gs_point lo_offsets;
 		hpgl_call(hpgl_process_buffer(pgls, &lo_offsets));
