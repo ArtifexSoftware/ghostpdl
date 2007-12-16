@@ -674,6 +674,12 @@ setglobal
   0 () /SubFileDecode filter
 } bdef
 
+% Adobe Acrobat doesn't skip space characters after eexec
+/eexec_pdf_param_dict mark
+  .eexec_param_dict {} forall
+  /keep_spaces true
+.dicttomark readonly def
+
 % When Type 1 font reading procedure is executing, a copy of this dictionary is current.
 % We have to do something special about embedded fonts that execute definefont
 % more than once -- that is the function of topFontDict.
@@ -706,7 +712,7 @@ setglobal
   /eexec {
 	% Assume the font dictionary is directly below the file on the stack
     count 0 gt { /topFontDict 2 index cvlit store } if
-    //.eexec_param_dict /eexecDecode filter
+    //eexec_pdf_param_dict /eexecDecode filter
 
     //missing-type1-procs begin
     /userdict .systemvar begin
@@ -722,6 +728,8 @@ setglobal
   /missing-type1-procs undef
 
 end readonly def
+
+currentdict /eexec_pdf_param_dict .undef
 
 /readtype1 {		% <font-resource> <stream-dict> readtype1 <font>
    1 index exch                       % res res stream

@@ -54,6 +54,7 @@ typedef struct stream_exD_state_s {
     int lenIV;			/* # of initial decoded bytes to skip */
     stream_PFBD_state *pfb_state;	/* state of underlying */
 				/* PFBDecode stream, if any */
+    bool keep_spaces;           /* PS skips spaces after eexec, PDF doesn't */
     /* The following change dynamically. */
     int odd;			/* odd digit */
     long record_left;		/* data left in binary record in .PFB file, */

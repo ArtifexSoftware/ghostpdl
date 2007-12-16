@@ -71,6 +71,7 @@ s_exD_set_defaults(stream_state * st)
     ss->hex_left = max_long;
     /* Clear pointers for GC */
     ss->pfb_state = 0;
+    ss->keep_spaces = false;    /* PS mode */
 }
 
 /* Initialize the state for reading and decrypting. */
@@ -106,10 +107,11 @@ s_exD_process(stream_state * st, stream_cursor_read * pr,
 	const byte *const decoder = scan_char_decoder;
 	int i;
 
-        if (ss->pfb_state == 0) {
+        if (ss->pfb_state == 0 && !ss->keep_spaces) {
 	    /*
 	     * Skip '\t', '\r', '\n', ' ' at the beginning of the input stream,
-	     * because Adobe interpreters do this. Don't skip '\0' or '\f'.
+	     * because Adobe PS interpreters do this. Don't skip '\0' or '\f'.
+             * Acrobat Reader doesn't skip spaces at all.
 	     */
 	    for (; rcount; rcount--, p++) {
 		byte c = p[1];

@@ -1611,12 +1611,15 @@ bytes.
 <dt><b><tt>&lt;source&gt; &lt;dict&gt; /eexecDecode filter &lt;file&gt;</tt></b>
 <dd>Creates a filter for decrypting data encrypted as described in the Adobe
 Type 1 Font Format documentation.  The <b><tt>seed_integer</tt></b> must be
-55665 or 4330 as described just above.  Recognized dictionary keys are:
+55665 or 4330 as described just above.  PDF interpreters don't skip space characters
+after operator <b><tt>eexec</tt></b>.  Use <b><tt>keep_spaces = true</tt></b> for
+decoding embedded PDF fonts.  Recognized dictionary keys are:
 
 <blockquote>
 <b><tt>seed &lt;16-bit integer&gt;</tt></b> (required)<br>
 <b><tt>lenIV &lt;non-negative integer&gt;</tt></b> (default=4)<br>
-<b><tt>eexec &lt;bool&gt;</tt></b> (default=<b><tt>false</b></tt>)
+<b><tt>eexec &lt;bool&gt;</tt></b> (default=<b><tt>false</b></tt>)<br>
+<b><tt>keep_spaces &lt;bool&gt;</tt></b> (default=<b><tt>false</b></tt>)
 </blockquote>
 </dl>
 

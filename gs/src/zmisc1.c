@@ -114,7 +114,9 @@ zexD(i_ctx_t *i_ctx_p)
 	    (code = dict_int_param(op, "lenIV", 0, max_int, 4,
 				   &state.lenIV)) < 0 ||
 	    (code = dict_bool_param(op, "eexec", false,
-				   &is_eexec)) < 0
+				   &is_eexec)) < 0 ||
+	    (code = dict_bool_param(op, "keep_spaces", false,
+				   &state.keep_spaces)) < 0
 	    )
 	    return code;
 	state.cstate = cstate;
