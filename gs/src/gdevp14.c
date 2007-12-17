@@ -535,6 +535,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape,
     result->n_planes = n_planes;
     result->rowstride = rowstride;
     result->transfer_fn = NULL;
+    result->maskbuf = NULL;
 
     if (height <= 0) {
 	/* Empty clipping - will skip all drawings. */
