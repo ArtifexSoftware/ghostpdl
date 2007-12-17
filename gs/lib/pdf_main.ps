@@ -857,7 +857,26 @@ pdfdict begin
     { 2 index /Count knownoget { 0 lt { neg } if } if
       /Count exch 3 index
     }
-   ifelse { linkdest } stopped 
+    ifelse
+    {
+      dup /A knownoget {
+        dup /URI known {
+          /A mark 3 2 roll    % <<>> /A [ <<action>>
+          { oforce } forall
+          .dicttomark
+          3 2 roll
+        } {
+          dup /D knownoget {
+            exch pop exch dup length dict copy dup /Dest 4 -1 roll put
+          } {
+            /N knownoget {                % Assume /S /Named
+               namedactions exch .knownget { exec } if
+             } if
+          } ifelse
+        } ifelse
+      } if
+      linkdest
+    } stopped
     {
       cleartomark	% ignore this link
       (   **** Warning: Outline has invalid link that was discarded.\n)
