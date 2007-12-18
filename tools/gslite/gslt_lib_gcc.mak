@@ -137,9 +137,9 @@ gslt_image_threads_test: $(GSLTOBJ)gslt_image_threads_test.$(OBJ) $(gslt_OBJS)
 
 
 test: $(GSLITE_LIB) gslt_image_test gslt_font_test gslt_image_threads_test
-      (export LD_LIBRARY_PATH=.; ./gslt_image_test tiger.jpg; \
-      ./gslt_font_test ../../urwfonts/CenturySchL-Bold.ttf; ./gslt_image_threads_test tiger.jpg)
-
+	LD_LIBRARY_PATH=. ./gslt_image_test tiger.jpg
+	LD_LIBRARY_PATH=. ./gslt_image_threads_test tiger.jpg
+	LD_LIBRARY_PATH=. ./gslt_font_test ../../urwfonts/CenturySchL-Bold.ttf
 
 clean:
 	$(RM) *.pnm *.pbm *.so *.o *~ obj/* gslt_image_test gslt_font_test gslt_image_threads_test
