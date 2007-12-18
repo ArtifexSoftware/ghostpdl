@@ -943,8 +943,8 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
 		pdev->PDFXTrimBoxToMediaBoxOffset.data[3] >= 0) {
 	    trimbox[0] = mediabox[0] + pdev->PDFXTrimBoxToMediaBoxOffset.data[0];
 	    trimbox[1] = mediabox[1] + pdev->PDFXTrimBoxToMediaBoxOffset.data[3];
-	    trimbox[2] = mediabox[2] + pdev->PDFXTrimBoxToMediaBoxOffset.data[1];
-	    trimbox[3] = mediabox[3] + pdev->PDFXTrimBoxToMediaBoxOffset.data[2];
+	    trimbox[2] = mediabox[2] - pdev->PDFXTrimBoxToMediaBoxOffset.data[1];
+	    trimbox[3] = mediabox[3] - pdev->PDFXTrimBoxToMediaBoxOffset.data[2];
 	}
 	if (pdev->PDFXSetBleedBoxToMediaBox)
 	    print_bleedbox = true;
