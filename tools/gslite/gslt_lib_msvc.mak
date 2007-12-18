@@ -140,7 +140,7 @@ gslt_font_test.exe: $(GSLTOBJ)gslt_font_test.$(OBJ) $(GSLT_OBJS) $(GSLITE_LIB)
 
 
 test: gslt_font_test.exe gslt_image_test.exe
-	gslt_font_test CenturySchL-Bold.ttf
+	gslt_font_test ..\..\urwfonts\CenturySchL-Bold.ttf
 	gslt_image_test tiger.jpg
 
 clean:
