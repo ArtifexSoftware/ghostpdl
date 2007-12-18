@@ -1826,9 +1826,6 @@ $(GLOBJ)gshtx.$(OBJ) : $(GLSRC)gshtx.c $(GXERR) $(memory__h)\
 # ---------------- RasterOp et al ---------------- #
 # Note that noroplib is a default, roplib replaces it.
 
-gsropc_h=$(GLSRC)gsropc.h $(gscompt_h) $(gsropt_h)
-gxropc_h=$(GLSRC)gxropc.h $(gsropc_h) $(gxcomp_h)
-
 noroplib_=$(GLOBJ)gsnorop.$(OBJ)
 $(GLD)noroplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(noroplib_)
 	$(SETMOD) $(GLD)noroplib $(noroplib_)
@@ -1883,11 +1880,6 @@ $(GLOBJ)gsrop.$(OBJ) : $(GLSRC)gsrop.c $(GXERR)\
 
 $(GLOBJ)gsroptab.$(OBJ) : $(GLSRC)gsroptab.c $(stdpre_h) $(gsropt_h)
 	$(GLCC) $(GLO_)gsroptab.$(OBJ) $(C_) $(GLSRC)gsroptab.c
-
-# The following is not used yet.
-$(GLOBJ)gsropc.$(OBJ) : $(GLSRC)gsropc.c $(GXERR)\
- $(gsutil_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxropc_h)
-	$(GLCC) $(GLO_)gsropc.$(OBJ) $(C_) $(GLSRC)gsropc.c
 
 # ---------------- Async rendering ---------------- #
 
