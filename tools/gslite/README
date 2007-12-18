@@ -12,7 +12,7 @@ with Microsoft Platform SDK for Windows Server 2003 R2.
    # build the library see DEBUG options in the makefile
    nmake /f gslt_lib_msvc.mak DEVSTUDIO=
    # build and run the the test files.
-   nmake /f gslt_lib_msvc.mak test
+   nmake /f gslt_lib_msvc.mak check
 
 how to build and test gslite library with Linux 2.6.12 and gcc version
 3.4.4 20050721 (Red Hat 3.4.4-2)
@@ -20,12 +20,12 @@ how to build and test gslite library with Linux 2.6.12 and gcc version
    # go to the glite directory and build the library.
    make -f gslt_lib_gcc.mak
    # test the library.
-   make test
+   make check
 
 Note the linux makefile supports a threads test
 (gslt_image_threads_test), it is the same as gslt_image_test except it
 tests rendering 2 images in 2 concurrent threads of execution.  To get
-this to run on windows wouuld require installing POSIX threads.
+this to run on windows would require installing POSIX threads.
 
 
 vsvars32.bat patch

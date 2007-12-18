@@ -136,7 +136,7 @@ gslt_image_threads_test: $(GSLTOBJ)gslt_image_threads_test.$(OBJ) $(gslt_OBJS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(INCLUDES) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 
-test: $(GSLITE_LIB) gslt_image_test gslt_font_test gslt_image_threads_test
+check: $(GSLITE_LIB) gslt_image_test gslt_font_test gslt_image_threads_test
 	LD_LIBRARY_PATH=. ./gslt_image_test tiger.jpg
 	LD_LIBRARY_PATH=. ./gslt_image_threads_test tiger.jpg
 	LD_LIBRARY_PATH=. ./gslt_font_test ../../urwfonts/CenturySchL-Bold.ttf
@@ -144,4 +144,4 @@ test: $(GSLITE_LIB) gslt_image_test gslt_font_test gslt_image_threads_test
 clean:
 	$(RM) *.pnm *.pbm *.so *.o *~ obj/* gslt_image_test gslt_font_test gslt_image_threads_test
 
-.PHONY: clean test all
+.PHONY: clean check all
