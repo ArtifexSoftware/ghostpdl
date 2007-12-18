@@ -216,7 +216,7 @@ pdf_font_descriptor_alloc(gx_device_pdf *pdev, pdf_font_descriptor_t **ppfd,
     pdf_base_font_t *pbfont;
     int code = pdf_base_font_alloc(pdev, &pbfont, font, 
 		(font->orig_FontMatrix.xx == 0 && font->orig_FontMatrix.xy == 0 
-		    ? &font->FontMatrix : &font->orig_FontMatrix), false, !embed);
+		    ? &font->FontMatrix : &font->orig_FontMatrix), false, false);
 
     if (code < 0)
 	return code;
@@ -369,18 +369,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     default:
 	break;
     }
-    /*
-     * See the note on FONT_IS_ADOBE_ROMAN / FONT_USES_STANDARD_ENCODING
-     * in gdevpdtd.h for why the following substitution is made.
-     */
-#if 0
-#  define CONSIDER_FONT_SYMBOLIC(pdev, bfont) font_is_symbolic(bfont)
-#else
-#  define CONSIDER_FONT_SYMBOLIC(pdev, bfont)\
-  ((bfont)->encoding_index != ENCODING_INDEX_STANDARD) && (!pdev->PDFA || bfont->FontType != ft_TrueType)
-#endif
-    if (CONSIDER_FONT_SYMBOLIC(pdev, bfont))
-	desc.Flags |= FONT_IS_SYMBOLIC;
+
     /*
      * Scan the entire glyph space to compute Ascent, Descent, FontBBox, and
      * the fixed width if any.  For non-symbolic fonts, also note the
@@ -397,6 +386,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 	 ) {
 	gs_glyph_info_t info;
 	gs_const_string gname;
+	gs_glyph glyph_known_enc;
 
 	code = bfont->procs.glyph_info((gs_font *)bfont, glyph, pmat, members, &info);
 	if (code == gs_error_VMerror)
@@ -434,9 +424,23 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 	if (is_cid)
 	    continue;
 	code = bfont->procs.glyph_name((gs_font *)bfont, glyph, &gname);
-	if (code < 0)
+	if (code < 0) {
+	    /* If we fail to get the glyph name, best assume this is a symbolic font */
+	    desc.Flags |= FONT_IS_SYMBOLIC;
 	    continue;
-	switch (gname.size) {
+	}
+	/* See if the glyph name is in any of the known encodings */
+        glyph_known_enc = gs_c_name_glyph(gname.data, gname.size);
+	if (glyph_known_enc == gs_no_glyph) {
+	    desc.Flags |= FONT_IS_SYMBOLIC;
+	    continue;
+	}
+	/* Finally check if the encoded glyph is in Standard Encoding */
+	if (gs_c_decode(glyph_known_enc, 0) == gs_no_glyph) {
+	    desc.Flags |= FONT_IS_SYMBOLIC;
+	    continue;
+	}
+        switch (gname.size) {
 	case 5:
 	    if (!memcmp(gname.data, "colon", 5))
 		bbox_colon = info.bbox, have_colon = true;
@@ -450,6 +454,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 	default:
 	    continue;
 	}
+
 	if (gname.data[0] >= 'A' && gname.data[0] <= 'Z') {
 	    cap_height = max(cap_height, (int)info.bbox.q.y);
 	    if (gname.data[0] == 'I')
