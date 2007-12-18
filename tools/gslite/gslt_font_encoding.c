@@ -101,7 +101,7 @@ gslt_select_font_encoding(gslt_font_t *xf, int idx)
  * TODO: extend this to cover more cmap formats.
  */
 
-private int
+static int
 gslt_encode_font_char_int(gslt_font_t *xf, int code)
 {
     byte *table;

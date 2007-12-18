@@ -85,22 +85,22 @@ int gslt_init_postscript_font(gs_memory_t *mem, gs_font_dir *xfc, struct gslt_fo
  * Big-endian memory accessor functions
  */
 
-private inline int s16(byte *p)
+static inline int s16(byte *p)
 {
     return (signed short)( (p[0] << 8) | p[1] );
 }
 
-private inline int u16(byte *p)
+static inline int u16(byte *p)
 {
     return (p[0] << 8) | p[1];
 }
 
-private inline int u24(byte *p)
+static inline int u24(byte *p)
 {
     return (p[0] << 16) | (p[1] << 8) | p[2];
 }
 
-private inline int u32(byte *p)
+static inline int u32(byte *p)
 {
     return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
 }

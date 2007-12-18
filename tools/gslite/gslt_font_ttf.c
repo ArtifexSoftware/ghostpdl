@@ -23,7 +23,7 @@
  * truetype (loca/glyf) flavored opentypes.
  */
 
-private gs_glyph
+static gs_glyph
 gslt_true_callback_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t spc)
 {
     gslt_font_t *xf = pfont->client_data;
@@ -34,19 +34,19 @@ gslt_true_callback_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t spc
     return value;
 }
 
-private gs_char
+static gs_char
 gslt_true_callback_decode_glyph(gs_font *p42, gs_glyph glyph)
 {
     return GS_NO_CHAR;
 }
 
-private int
+static int
 gslt_true_callback_glyph_name(gs_font *pf, gs_glyph glyph, gs_const_string *pstr)
 {
     return 0;
 }
 
-private int
+static int
 gslt_true_callback_string_proc(gs_font_type42 *p42, ulong offset, uint length, const byte **pdata)
 {
     /* NB bounds check offset + length - use gs_object_size for memory
@@ -57,7 +57,7 @@ gslt_true_callback_string_proc(gs_font_type42 *p42, ulong offset, uint length, c
     return 0;
 }
 
-private int
+static int
 gslt_true_callback_build_char(gs_text_enum_t *ptextenum, gs_state *pgs, gs_font *pfont,
         gs_char chr, gs_glyph glyph)
 {

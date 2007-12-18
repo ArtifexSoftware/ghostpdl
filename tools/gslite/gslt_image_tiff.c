@@ -159,18 +159,18 @@ static const byte bitrev[256] =
 };
 
 #ifdef GSLT_DEBUG_TIFF
-private void
+static void
 gslt_debug_tiff(gs_memory_t *mem, gslt_tiff_t *tiff);
 #endif
 
-private int
+static int
 gslt_report_error(stream_state * st, const char *str)
 {
     (void) gs_throw1(-1, "%s", str);
     return 0;
 }
 
-private inline int
+static inline int
 readbyte(gslt_tiff_t *tiff)
 {
     if (tiff->rp < tiff->ep)
@@ -178,7 +178,7 @@ readbyte(gslt_tiff_t *tiff)
     return EOF;
 }
 
-private inline unsigned
+static inline unsigned
 readshort(gslt_tiff_t *tiff)
 {
     unsigned a = readbyte(tiff);
@@ -188,7 +188,7 @@ readshort(gslt_tiff_t *tiff)
     return (a << 8) | b;
 }
 
-private inline unsigned
+static inline unsigned
 readlong(gslt_tiff_t *tiff)
 {
     unsigned a = readbyte(tiff);
@@ -200,14 +200,14 @@ readlong(gslt_tiff_t *tiff)
     return (a << 24) | (b << 16) | (c << 8) | d;
 }
 
-private int
+static int
 gslt_decode_tiff_uncompressed(gs_memory_t *mem, gslt_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
     memcpy(wp, tiff->rp, wl - wp);
     return gs_okay;
 }
 
-private int
+static int
 gslt_decode_tiff_packbits(gs_memory_t *mem, gslt_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
     stream_RLD_state state;
@@ -233,7 +233,7 @@ gslt_decode_tiff_packbits(gs_memory_t *mem, gslt_tiff_t *tiff, byte *rp, byte *r
     return gs_okay;
 }
 
-private int
+static int
 gslt_decode_tiff_lzw(gs_memory_t *mem, gslt_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
     stream_LZW_state state;
@@ -279,7 +279,7 @@ gslt_decode_tiff_lzw(gs_memory_t *mem, gslt_tiff_t *tiff, byte *rp, byte *rl, by
     return gs_okay;
 }
 
-private int
+static int
 gslt_decode_tiff_flate(gs_memory_t *mem, gslt_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
     stream_zlib_state state;
@@ -310,7 +310,7 @@ gslt_decode_tiff_flate(gs_memory_t *mem, gslt_tiff_t *tiff, byte *rp, byte *rl, 
     return gs_okay;
 }
 
-private int
+static int
 gslt_decode_tiff_fax(gs_memory_t *mem, gslt_tiff_t *tiff, int comp, byte *rp, byte *rl, byte *wp, byte *wl)
 {
     stream_CFD_state state;
@@ -361,7 +361,7 @@ gslt_decode_tiff_fax(gs_memory_t *mem, gslt_tiff_t *tiff, int comp, byte *rp, by
  * wrappers directly for doing the actual decoding.
  */
 
-private int
+static int
 gslt_decode_tiff_jpeg(gs_memory_t *mem, gslt_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
     stream_DCT_state state; /* used by gs_jpeg_* wrappers */
@@ -453,7 +453,7 @@ gslt_decode_tiff_jpeg(gs_memory_t *mem, gslt_tiff_t *tiff, byte *rp, byte *rl, b
     return gs_okay;
 }
 
-private inline int
+static inline int
 getcomp(byte *line, int x, int bpc)
 {
     switch (bpc)
@@ -466,7 +466,7 @@ getcomp(byte *line, int x, int bpc)
     return 0;
 }
 
-private inline void
+static inline void
 putcomp(byte *line, int x, int bpc, int value)
 {
     int maxval = (1 << bpc) - 1;
@@ -488,7 +488,7 @@ putcomp(byte *line, int x, int bpc, int value)
     }
 }
 
-private void
+static void
 gslt_unpredict_tiff(byte *line, int width, int components, int bits)
 {
     byte left[32];
@@ -510,7 +510,7 @@ gslt_unpredict_tiff(byte *line, int width, int components, int bits)
     }
 }
 
-private void
+static void
 gslt_invert_tiff(byte *line, int width, int components, int bits)
 {
     int i, k, v;
@@ -527,7 +527,7 @@ gslt_invert_tiff(byte *line, int width, int components, int bits)
     }
 }
 
-private int
+static int
 gslt_expand_colormap(gs_memory_t *mem, gslt_tiff_t *tiff, gslt_image_t *image)
 {
     int maxval = 1 << image->bits;
@@ -587,7 +587,7 @@ gslt_expand_colormap(gs_memory_t *mem, gslt_tiff_t *tiff, gslt_image_t *image)
     return gs_okay;
 }
 
-private int
+static int
 gslt_decode_tiff_strips(gs_memory_t *mem, gslt_tiff_t *tiff, gslt_image_t *image)
 {
     int error;
@@ -773,7 +773,7 @@ gslt_decode_tiff_strips(gs_memory_t *mem, gslt_tiff_t *tiff, gslt_image_t *image
     return gs_okay;
 }
 
-private void
+static void
 gslt_read_tiff_tag_value(unsigned *p, gslt_tiff_t *tiff, unsigned type, unsigned ofs, unsigned n)
 {
     tiff->rp = tiff->bp + ofs;
@@ -797,7 +797,7 @@ gslt_read_tiff_tag_value(unsigned *p, gslt_tiff_t *tiff, unsigned type, unsigned
     }
 }
 
-private int 
+static int 
 gslt_read_tiff_tag(gs_memory_t *mem, gslt_tiff_t *tiff, unsigned offset)
 {
     unsigned tag;
@@ -1028,7 +1028,7 @@ gslt_image_decode_tiff(gs_memory_t *mem, byte *buf, int len)
 }
 
 #ifdef GSLT_DEBUG_TIFF
-private void
+static void
 gslt_debug_tiff(gs_memory_t *mem, gslt_tiff_t *tiff)
 {
     int n;

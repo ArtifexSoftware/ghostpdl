@@ -45,7 +45,7 @@ public_st_gslt_image();
  * Strip alpha channel from an image
  * assumes a collapsed stride
  */
-private void 
+static void 
 gslt_strip_alpha(gslt_image_t *image)
 {
     gslt_image_colorspace cs = image->colorspace;

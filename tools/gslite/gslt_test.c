@@ -49,19 +49,19 @@
 #include "gxpath.h"
 
 /* Test programs */
-private int test1(gs_state *, gs_memory_t *);	/* kaleidoscope */
-private int test2(gs_state *, gs_memory_t *);	/* pattern fill */
-private int test3(gs_state *, gs_memory_t *);	/* RasterOp */
-private int test4(gs_state *, gs_memory_t *);	/* set resolution */
-private int test5(gs_state *, gs_memory_t *);	/* images */
-private int test6(gs_state *, gs_memory_t *);	/* CIE API, snapping */
+static int test1(gs_state *, gs_memory_t *);	/* kaleidoscope */
+static int test2(gs_state *, gs_memory_t *);	/* pattern fill */
+static int test3(gs_state *, gs_memory_t *);	/* RasterOp */
+static int test4(gs_state *, gs_memory_t *);	/* set resolution */
+static int test5(gs_state *, gs_memory_t *);	/* images */
+static int test6(gs_state *, gs_memory_t *);	/* CIE API, snapping */
 #ifdef HALFTONE_FIX
-private int test7(gs_state *, gs_memory_t *);	/* non-monot HT */
+static int test7(gs_state *, gs_memory_t *);	/* non-monot HT */
 #endif
-private int test8(gs_state *, gs_memory_t *);	/* transp patterns */
-private int test9(gs_state *, gs_memory_t *);	/* type 42 font */
+static int test8(gs_state *, gs_memory_t *);	/* transp patterns */
+static int test9(gs_state *, gs_memory_t *);	/* type 42 font */
 
-private int (*tests[]) (gs_state *, gs_memory_t *) =
+static int (*tests[]) (gs_state *, gs_memory_t *) =
 {
     test1, test2, test3, test4, test5,
     test6,
@@ -77,11 +77,11 @@ private int (*tests[]) (gs_state *, gs_memory_t *) =
 extern_gs_lib_device_list();
 
 /* Forward references */
-private float odsf(floatp, floatp);
+static float odsf(floatp, floatp);
 
 
 /* return index in gs device list -1 if not found */
-private inline int
+static inline int
 get_device_index(const gs_memory_t *mem, const char *value)
 {
     const gx_device *const *dev_list;
@@ -224,7 +224,7 @@ main(int argc, const char *argv[])
 #undef mem
 }
 /* Ordered dither spot function */
-private float
+static float
 odsf(floatp x, floatp y)
 {
     static const byte dither[256] =
@@ -253,7 +253,7 @@ odsf(floatp x, floatp y)
 }
 
 /* Fill a rectangle. */
-private int
+static int
 fill_rect1(gs_state * pgs, floatp x, floatp y, floatp w, floatp h)
 {
     gs_rect r;
@@ -301,7 +301,7 @@ gs_abort(const gs_memory_t *mem)
 
 /* Return the number with the magnitude of x and the sign of y. */
 /* This is a BSD addition to libm; not all compilers have it. */
-private double
+static double
 gs_copysign(floatp x, floatp y)
 {
    return ( y >= 0  ? fabs(x) : -fabs(x) );
@@ -312,8 +312,8 @@ gs_copysign(floatp x, floatp y)
 /* Draw a colored kaleidoscope. */
 
 /* Random number generator */
-private long rand_state = 1;
-private long
+static long rand_state = 1;
+static long
 rand(void)
 {
 #define A 16807
@@ -330,7 +330,7 @@ rand(void)
 #undef R
     return rand_state;
 }
-private int
+static int
 test1(gs_state * pgs, gs_memory_t * mem)
 {
     int n;
@@ -364,7 +364,7 @@ test1(gs_state * pgs, gs_memory_t * mem)
 /* ---------------- Test program 2 ---------------- */
 /* Fill an area with a pattern. */
 
-private int
+static int
 test2(gs_state * pgs, gs_memory_t * mem)
 {
     gs_client_color cc;
@@ -425,7 +425,7 @@ test2(gs_state * pgs, gs_memory_t * mem)
 /* Exercise RasterOp a little. */
 /* Currently, this only works with monobit devices. */
 
-private int
+static int
 test3(gs_state * pgs, gs_memory_t * mem)
 {
     gx_device *dev = gs_currentdevice(pgs);
@@ -467,7 +467,7 @@ test3(gs_state * pgs, gs_memory_t * mem)
 /* ---------------- Test program 4 ---------------- */
 /* Set the resolution dynamically. */
 
-private int
+static int
 test4(gs_state * pgs, gs_memory_t * mem)
 {
     gs_c_param_list list;
@@ -514,7 +514,7 @@ test4(gs_state * pgs, gs_memory_t * mem)
 /* ---------------- Test program 5 ---------------- */
 /* Test masked (and non-masked) images. */
 
-private int
+static int
 test5(gs_state * pgs, gs_memory_t * mem)
 {
     gx_device *dev = gs_currentdevice(pgs);
@@ -744,7 +744,7 @@ test5(gs_state * pgs, gs_memory_t * mem)
 /* ---------------- Test program 6 ---------------- */
 /* Test the C API for CIE CRDs, and color snapping. */
 
-private void
+static void
 spectrum(gs_state * pgs, int n)
 {
     float den = n;
@@ -767,13 +767,13 @@ spectrum(gs_state * pgs, int n)
 			   size, size);
 	    }
 }
-private float
+static float
 render_abc(floatp v, const gs_cie_render * ignore_crd)
 {
     return v / 2;
 }
 
-private int
+static int
 test6(gs_state * pgs, gs_memory_t * mem)
 {
     gs_color_space *pcs;
@@ -845,7 +845,7 @@ test6(gs_state * pgs, gs_memory_t * mem)
 /* Test the C API for non-monotonic halftones. */
 
 #ifdef HALFTONE_FIX
-private int
+static int
 test7(gs_state * pgs, gs_memory_t * mem)
 {
     /* Define a non-monotonic 4 x 4 halftone with 4 gray levels. */
@@ -883,7 +883,7 @@ test7(gs_state * pgs, gs_memory_t * mem)
 /* ---------------- Test program 8 ---------------- */
 /* Test partially transparent patterns */
 
-private int
+static int
 test8(gs_state * pgs, gs_memory_t * mem)
 {
     /*
@@ -966,25 +966,25 @@ test8(gs_state * pgs, gs_memory_t * mem)
 #define get_int16(bptr)\
     (((int)get_uint16(bptr) ^ 0x8000) - 0x8000)
 
-private int
+static int
 test9_get_int16(const byte *bptr)
 {	
     return get_int16(bptr);
 }
 
-private uint
+static uint
 test9_get_uint16(const byte *bptr)
 {	
     return get_uint16(bptr);
 }
 
-private long
+static long
 test9_get_int32(const byte *bptr)
 {	
     return ((long)get_int16(bptr) << 16) | get_uint16(bptr + 2);
 }
 
-private ulong
+static ulong
 test9_get_uint32(const byte *bptr)
 {	
     return ((ulong)get_uint16(bptr) << 16) | get_uint16(bptr + 2);
@@ -1030,26 +1030,26 @@ test9_tt_find_table(gs_font_type42 *pfont, const char *tname, uint *plen)
 }
 
 /* encode, derived from plchar.c */
-private gs_glyph
+static gs_glyph
 test9_tt_encode_char(gs_font *p42, gs_char chr, gs_glyph not_used)
 {
     /* NB encode me */
     return chr - 29;
 }
 
-private gs_char
+static gs_char
 test9_tt_decode_glyph(gs_font *p42, gs_glyph glyph)
 {
     return GS_NO_CHAR;
 }
 
-private int
+static int
 test9_tt_glyph_name(gs_font *pf, gs_glyph glyph, gs_const_string *pstr)
 {
     return 0;
 }
 
-private int
+static int
 test9_tt_string_proc(gs_font *p42, ulong offset, uint length, const byte **pdata)
 {
     
@@ -1060,7 +1060,7 @@ test9_tt_string_proc(gs_font *p42, ulong offset, uint length, const byte **pdata
 }
 
 /* derived from plchar.c */
-private int
+static int
 test9_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont, gs_char chr, gs_glyph glyph)
 {
     int code;
@@ -1146,7 +1146,7 @@ test9_load_font_data(const char *filename, gs_memory_t * mem)
 
 */
 
-private int
+static int
 test9(gs_state * pgs, gs_memory_t * mem)
 {
         

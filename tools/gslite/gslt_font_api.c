@@ -70,7 +70,7 @@ struct gslt_font_s
     int cmapsubtable;
 };
 
-private int gslt_init_truetype_font(gs_memory_t *mem, gs_font_dir *xfc, gslt_font_t *xf, int wmode);
+static int gslt_init_truetype_font(gs_memory_t *mem, gs_font_dir *xfc, gslt_font_t *xf, int wmode);
 
 /*
  * The font cache is a gs_font_dir.
@@ -112,17 +112,17 @@ gslt_free_font_cache(gs_memory_t *mem, gs_font_dir *fontdir)
  * Big-endian memory accessor functions
  */
 
-private inline int u16(byte *p)
+static inline int u16(byte *p)
 {
     return (p[0] << 8) | p[1];
 }
 
-private inline int s16(byte *p)
+static inline int s16(byte *p)
 {
     return (signed short)( (p[0] << 8) | p[1] );
 }
 
-private inline int u32(byte *p)
+static inline int u32(byte *p)
 {
     return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
 }
@@ -132,7 +132,7 @@ private inline int u32(byte *p)
  * Return -1 if no table by the specified name is found.
  */
 
-private int
+static int
 gslt_find_sfnt_table(gslt_font_t *xf, char *name, int *lengthp)
 {
     uint ntables;
@@ -163,7 +163,7 @@ gslt_find_sfnt_table(gslt_font_t *xf, char *name, int *lengthp)
  * Locate the 'cmap' table and count the number of subtables.
  */
 
-private int
+static int
 gslt_load_sfnt_cmap(gslt_font_t *xf)
 {
     byte *cmapdata;
@@ -373,7 +373,7 @@ gslt_encode_font_char(gslt_font_t *xf, int key)
  * is the build_char function.
  */
 
-private gs_glyph
+static gs_glyph
 gslt_callback_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t spc)
 {
     gslt_font_t *xf = pfont->client_data;
@@ -384,19 +384,19 @@ gslt_callback_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t spc)
     return value;
 }
 
-private gs_char
+static gs_char
 gslt_callback_decode_glyph(gs_font *p42, gs_glyph glyph)
 {
     return GS_NO_CHAR;
 }
 
-private int
+static int
 gslt_callback_glyph_name(gs_font *pf, gs_glyph glyph, gs_const_string *pstr)
 {
     return 0;
 }
 
-private int
+static int
 gslt_callback_string_proc(gs_font_type42 *p42, ulong offset, uint length, const byte **pdata)
 {
     /* NB bounds check offset + length - use gs_object_size for memory
@@ -406,7 +406,7 @@ gslt_callback_string_proc(gs_font_type42 *p42, ulong offset, uint length, const 
     return 0;
 }
 
-private int
+static int
 gslt_callback_build_char(gs_text_enum_t *ptextenum, gs_state *pgs, gs_font *pfont,
         gs_char chr, gs_glyph glyph)
 {
@@ -465,7 +465,7 @@ gslt_callback_build_char(gs_text_enum_t *ptextenum, gs_state *pgs, gs_font *pfon
  * (type42 in postscript terminology) font.
  */
 
-private int
+static int
 gslt_init_truetype_font(gs_memory_t *mem, gs_font_dir *fontdir, gslt_font_t *xf, int wmode)
 {
     xf->font = (void*) gs_alloc_struct(mem, gs_font_type42, &st_gs_font_type42, "gslt_font type42");

@@ -35,15 +35,15 @@
 // gxtype1.c
 // gxfont1.h
 
-private byte * gslt_count_cff_index(byte *p, byte *e, int *countp);
-private byte * gslt_find_cff_index(byte *p, byte *e, int idx, byte **pp, byte **ep);
+static byte * gslt_count_cff_index(byte *p, byte *e, int *countp);
+static byte * gslt_find_cff_index(byte *p, byte *e, int idx, byte **pp, byte **ep);
 
-private int subrbias(int count)
+static int subrbias(int count)
 {
     return count < 1240 ? 107 : count < 33900 ? 1131 : 32768;
 }
 
-private int uofs(byte *p, int offsize)
+static int uofs(byte *p, int offsize)
 {
     if (offsize == 1) return p[0];
     if (offsize == 2) return u16(p);
@@ -52,7 +52,7 @@ private int uofs(byte *p, int offsize)
     return 0;
 }
 
-private byte *
+static byte *
 gslt_read_cff_real(byte *p, byte *e, float *val)
 {
     char buf[64];
@@ -90,7 +90,7 @@ gslt_read_cff_real(byte *p, byte *e, float *val)
     return p;
 }
 
-private byte *
+static byte *
 gslt_read_cff_integer(byte *p, byte *e, int b0, int *val)
 {
     int b1, b2, b3, b4;
@@ -151,7 +151,7 @@ gslt_read_cff_integer(byte *p, byte *e, int b0, int *val)
     return p;
 }
 
-private int
+static int
 gslt_read_cff_dict(byte *p, byte *e, gslt_font_t *fontobj, gs_font_type1 *pt1)
 {
     struct { int ival; float fval; } args[48];
@@ -363,7 +363,7 @@ gslt_read_cff_dict(byte *p, byte *e, gslt_font_t *fontobj, gs_font_type1 *pt1)
  * a pointer to the end of the INDEX or NULL on
  * failure.
  */
-private byte *
+static byte *
 gslt_count_cff_index(byte *p, byte *e, int *countp)
 {
     int count, offsize, last;
@@ -416,7 +416,7 @@ gslt_count_cff_index(byte *p, byte *e, int *countp)
  * Return pointer to the end of the index,
  * or NULL on failure.
  */
-private byte *
+static byte *
 gslt_find_cff_index(byte *p, byte *e, int idx, byte **pp, byte **ep)
 {
     int count, offsize, sofs, eofs, last;
@@ -481,7 +481,7 @@ gslt_find_cff_index(byte *p, byte *e, int idx, byte **pp, byte **ep)
  * Scan the CFF file structure and extract important data.
  */
 
-private int
+static int
 gslt_read_cff_file(gslt_font_t *fontobj, gs_font_type1 *pt1)
 {
     byte *p = fontobj->cffdata;
@@ -568,7 +568,7 @@ gslt_read_cff_file(gslt_font_t *fontobj, gs_font_type1 *pt1)
  *
  */
 
-private gs_glyph
+static gs_glyph
 gslt_post_callback_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t spc)
 {
     gslt_font_t *xf = pfont->client_data;
@@ -579,26 +579,26 @@ gslt_post_callback_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t spc
     return value;
 }
 
-private gs_char
+static gs_char
 gslt_post_callback_decode_glyph(gs_font *p42, gs_glyph glyph)
 {
     return GS_NO_CHAR;
 }
 
-private int
+static int
 gslt_post_callback_glyph_name(gs_font *pf, gs_glyph glyph, gs_const_string *pstr)
 {
     return -1;
 }
 
-private int
+static int
 gslt_post_callback_glyph_info(gs_font *font, gs_glyph glyph,
 	const gs_matrix *pmat, int members, gs_glyph_info_t *info)
 {
     return -1;
 }
 
-private int
+static int
 gslt_post_callback_glyph_outline(gs_font *font, int wmode, gs_glyph glyph,
 	const gs_matrix *pmat, gx_path *ppath, double sbw[4])
 {
@@ -622,7 +622,7 @@ typedef struct gs_type1exec_state_s
     bool AlignToPixels;
 } gs_type1exec_state;
 
-private int
+static int
 gslt_post_callback_glyph_data(gs_font_type1 * pfont, gs_glyph glyph, gs_glyph_data_t *pgd)
 {
     gslt_font_t *fontobj = pfont->client_data;
@@ -644,7 +644,7 @@ gslt_post_callback_glyph_data(gs_font_type1 * pfont, gs_glyph glyph, gs_glyph_da
     return 0;
 }
 
-private int
+static int
 gslt_post_callback_subr_data(gs_font_type1 * pfont,
 	int subr_num, bool global, gs_glyph_data_t *pgd)
 {
@@ -672,27 +672,27 @@ gslt_post_callback_subr_data(gs_font_type1 * pfont,
     return 0;
 }
 
-private int
+static int
 gslt_post_callback_seac_data(gs_font_type1 * pfont, int ccode, gs_glyph * pglyph,
 	gs_const_string *gstr, gs_glyph_data_t *pgd)
 {
     return gs_throw(-1, "seac is deprecated in CFF fonts");
 }
 
-private int
+static int
 gslt_post_callback_push(void *callback_data, const fixed *values, int count)
 {
     return gs_throw(-1, "push not implemented");;
 }
 
-private int
+static int
 gslt_post_callback_pop(void *callback_data, fixed *value)
 {
     return gs_throw(-1, "pop not implemented");;
 }
 
 
-private int
+static int
 gslt_cff_append(gs_state *pgs, gs_font_type1 *pt1, gs_glyph glyph, int donthint)
 {
     int code, value;
@@ -751,7 +751,7 @@ gslt_cff_append(gs_state *pgs, gs_font_type1 *pt1, gs_glyph glyph, int donthint)
     }
 }
 
-private int
+static int
 gslt_post_callback_build_char(gs_text_enum_t *ptextenum, gs_state *pgs,
 	gs_font *pfont, gs_char chr, gs_glyph glyph)
 {
