@@ -723,9 +723,25 @@ setglobal
     { stop } if
   } bdef
 
-  currentdict dup
+  /readonly-op-dict <<
+    /stringtype 0
+    /arraytype 0
+    /packedarraytype 0
+    /dicttype 0
+  >> readonly def
+
+  /readonly { % bug 689617
+    dup type //readonly-op-dict exch known {
+    readonly
+  } {
+    (   **** Warning: Type 1 font applies operator readonly to a wrong type.\n)
+    pdfformaterror
+  } ifelse } .bind def
+
+  currentdict dup dup
   /undef_proc_warning undef
   /missing-type1-procs undef
+  /readonly-op-dict undef
 
 end readonly def
 
