@@ -13,14 +13,8 @@
 
 /* $Id$ */
 /* Test program for Ghostscript library */
-/* Capture stdin/out/err before gsio.h redefines them. */
+
 #include "stdio_.h"
-static FILE *real_stdin, *real_stdout, *real_stderr;
-static void
-get_real(void)
-{
-    real_stdin = stdin, real_stdout = stdout, real_stderr = stderr;
-}
 #include "math_.h"
 #include "string_.h"
 #include "gx.h"
@@ -29,6 +23,7 @@ get_real(void)
 #include "gscdefs.h"
 #include "gserrors.h"
 #include "gslib.h"
+#include "gsexit.h"
 #include "gsmatrix.h"
 #include "gsstate.h"
 #include "gscspace.h"
@@ -80,7 +75,8 @@ static int (*tests[]) (gs_state *, gs_memory_t *) =
 #endif
 };
 
-/* Include the extern for the device list. */
+/* Include the extern for the device stuff. */
+extern init_proc(gs_iodev_init);
 extern_gs_lib_device_list();
 
 /* Forward references */
@@ -90,10 +86,9 @@ static float odsf(floatp, floatp);
 int
 main(int argc, const char *argv[])
 {
-    char achar;
-    gs_ref_memory_t *imem;
+    char achar = '0';
+    gs_memory_t *mem;
 
-#define mem ((gs_memory_t *)imem)
     gs_state *pgs;
     const gx_device *const *list;
     gx_device *dev;
@@ -101,23 +96,18 @@ main(int argc, const char *argv[])
     int code;
 
     gp_init();
-    get_real();
-    gs_stdin = real_stdin;
-    gs_stdout = real_stdout;
-    gs_stderr = real_stderr;
-    gs_lib_init(stdout);
+    mem =  gs_lib_ctx_get_non_gc_memory_t();
+    gs_lib_init1(mem);
     if (argc < 2 || (achar = argv[1][0]) < '1' ||
 	achar > '0' + countof(tests)
 	) {
-	lprintf1("Usage: gslib 1..%c\n", '0' + countof(tests));
-	exit(1);
+	lprintf1("Usage: gslib 1..%c\n", '0' + (char)countof(tests));
+	gs_abort(mem);
     }
     gs_debug['@'] = 1;
     gs_debug['?'] = 1;
 /*gs_debug['B'] = 1; *//****** PATCH ******/
 /*gs_debug['L'] = 1; *//****** PATCH ******/
-    imem = ialloc_alloc_state(&gs_memory_default, 20000);
-    imem->space = 0;
     /*
      * gs_iodev_init must be called after the rest of the inits, for
      * obscure reasons that really should be documented!
@@ -141,13 +131,13 @@ main(int argc, const char *argv[])
 	code = gs_getdeviceparams(dev, (gs_param_list *) & list);
 	if (code < 0) {
 	    lprintf1("getdeviceparams failed! code = %d\n", code);
-	    exit(1);
+	    gs_abort(mem);
 	}
 	gs_c_param_list_read(&list);
 	code = param_read_string((gs_param_list *) & list, "Name", &nstr);
 	if (code < 0) {
 	    lprintf1("reading Name failed! code = %d\n", code);
-	    exit(1);
+	    gs_abort(mem);
 	}
 	dputs("Device name = ");
 	debug_print_string(nstr.data, nstr.size);
@@ -167,14 +157,14 @@ main(int argc, const char *argv[])
 	code = param_write_string((gs_param_list *)&list, "OutputFile", &nstr);
 	if (code < 0) {
 	    lprintf1("writing OutputFile failed! code = %d\n", code);
-	    exit(1);
+	    gs_abort(mem);
 	}
 	gs_c_param_list_read(&list);
 	code = gs_putdeviceparams(dev, (gs_param_list *)&list);
 	gs_c_param_list_release(&list);
 	if (code < 0 && code != gs_error_undefined) {
 	    lprintf1("putdeviceparams failed! code = %d\n", code);
-	    exit(1);
+	    gs_abort(mem);
 	}
     }
     dev = (gx_device *) bbdev;
@@ -208,8 +198,8 @@ main(int argc, const char *argv[])
     if (code)
 	dprintf1("**** Test returned code = %d.\n", code);
     dputs("Done.  Press <enter> to exit.");
-    fgetc(gs_stdin);
-    gs_lib_finit(0, 0);
+    fgetc(mem->gs_lib_ctx->fstdin);
+    gs_lib_finit(0, 0, mem);
     return 0;
 #undef mem
 }
@@ -275,19 +265,16 @@ gs_reloc_const_string(gs_const_string * sptr, gc_state_t * gcst)
 }
 
 /* Other stubs */
-void
-gs_to_exit(const gs_memory_t *mem, int exit_status)
-{
-    gs_lib_finit(mem, exit_status, 0);
-}
-
-void
+#if 0
+static void
 gs_abort(const gs_memory_t *mem)
 {
-    gs_to_exit(mem, 1); /* cleanup */
-    gp_do_exit(1); /* system independent exit() */	
-}
+    int exit_status = 1;
 
+    gs_lib_finit(exit_status, 0, mem);
+    gp_do_exit(exit_status); /* system independent exit() */	
+}
+#endif
 
 /* Return the number with the magnitude of x and the sign of y. */
 /* This is a BSD addition to libm; not all compilers have it. */
@@ -439,7 +426,7 @@ test3(gs_state * pgs, gs_memory_t * mem)
     tile.data = pbytes;
     tile.raster = align_bitmap_mod;
     tile.size.x = tile.size.y = 4;
-    tile.id = gs_next_ids(1);
+    tile.id = gs_next_ids(mem, 1);
     tile.rep_width = tile.rep_height = 4;
     (*dev_proc(dev, copy_rop))
 	(dev, NULL, 0, 0, gx_no_bitmap_id, black2,
@@ -475,14 +462,14 @@ test4(gs_state * pgs, gs_memory_t * mem)
 				   "HWResolution", &ares);
     if (code < 0) {
 	lprintf1("Writing HWResolution failed: %d\n", code);
-	exit(1);
+	gs_abort(mem);
     }
     gs_c_param_list_read(&list);
     code = gs_putdeviceparams(dev, (gs_param_list *) & list);
     gs_c_param_list_release(&list);
     if (code < 0) {
 	lprintf1("Setting HWResolution failed: %d\n", code);
-	exit(1);
+	gs_abort(mem);
     }
     gs_initmatrix(pgs);
     gs_initclip(pgs);
@@ -490,7 +477,7 @@ test4(gs_state * pgs, gs_memory_t * mem)
 	code = (*dev_proc(dev, open_device)) (dev);
 	if (code < 0) {
 	    lprintf1("Reopening device failed: %d\n", code);
-	    exit(1);
+	    gs_abort(mem);
 	}
     }
     gs_moveto(pgs, 0.0, 72.0);
@@ -519,9 +506,7 @@ test5(gs_state * pgs, gs_memory_t * mem)
 	0x88, 0xcc, 0x00, 0x44,
 	0xcc, 0x00, 0x44, 0x88
     };
-    gs_color_space gray_cs;
-
-    gs_cspace_init_DeviceGray(mem, &gray_cs);
+    gs_color_space *gray_cs = gs_cspace_new_DeviceGray(mem);
 
     /*
      * Neither ImageType 3 nor 4 needs a current color,
@@ -573,10 +558,10 @@ test5(gs_state * pgs, gs_memory_t * mem)
     {
 	gs_image1_t image1;
 	void *info1;
-        gs_color_space cs;
+        gs_color_space *cs;
 
-        gs_cspace_init_DeviceGray(mem, &cs);
-	gs_image_t_init(&image1, &cs);
+	cs = gs_cspace_new_DeviceGray(mem);
+	gs_image_t_init(&image1, cs);
 	/* image */
 	image1.ImageMatrix.xx = W;
 	image1.ImageMatrix.yy = -H;
@@ -601,6 +586,7 @@ test5(gs_state * pgs, gs_memory_t * mem)
 /****** TEST code == 1 ******/
 	code = gx_image_end(info1, true);
 /****** TEST code >= 0 ******/
+	gs_free_object(mem, cs, "colorspace");
     }
     gs_grestore(pgs);
 
@@ -627,7 +613,7 @@ test5(gs_state * pgs, gs_memory_t * mem)
 	    0x66
 	};
 
-	gs_image3_t_init(&image3, &gray_cs, interleave_scan_lines);
+	gs_image3_t_init(&image3, gray_cs, interleave_scan_lines);
 	/* image */
 	image3.ImageMatrix.xx = W;
 	image3.ImageMatrix.yy = -H;
@@ -698,7 +684,7 @@ test5(gs_state * pgs, gs_memory_t * mem)
 	gs_image4_t image4;
 	const byte *data4 = data3;
 
-	gs_image4_t_init(&image4, &gray_cs);
+	gs_image4_t_init(&image4, gray_cs);
 	/* image */
 	image4.ImageMatrix.xx = W;
 	image4.ImageMatrix.yy = -H;
@@ -722,7 +708,7 @@ test5(gs_state * pgs, gs_memory_t * mem)
 	do_image(image4, data4);
     }
     gs_grestore(pgs);
-
+    gs_free_object(mem, gray_cs, "test5 gray_cs");
 #undef W
 #undef H
 #undef do_image
@@ -789,20 +775,20 @@ test6(gs_state * pgs, gs_memory_t * mem)
     };
     gx_device_cmap *cmdev;
     int code;
-    gs_color_space rgb_cs;
+    gs_color_space *rgb_cs;
 
-    gs_cspace_init_DeviceRGB(&rgb_cs);
+    rgb_cs = gs_cspace_new_DeviceRGB(mem);
 
     gs_scale(pgs, 150.0, 150.0);
     gs_translate(pgs, 0.5, 0.5);
-    gs_setcolorspace(pgs, &rgb_cs);
+    gs_setcolorspace(pgs, rgb_cs);
     spectrum(pgs, 5);
     gs_translate(pgs, 1.2, 0.0);
     /* We must set the CRD before the color space. */
     code = gs_cie_render1_build(&pcrd, mem, "test6");
     if (code < 0)
 	return code;
-    gs_cie_render1_initialize(pcrd, NULL, &white_point, NULL,
+    gs_cie_render1_initialize(mem, pcrd, NULL, &white_point, NULL,
 			      NULL, NULL, NULL,
 			      NULL, NULL, NULL,
 			      NULL, &encode_abc, NULL,
@@ -832,6 +818,7 @@ test6(gs_state * pgs, gs_memory_t * mem)
     gs_translate(pgs, -1.2, 1.2);
     set_cmap_method(cmdev, device_cmap_color_to_black_over_white, pgs, mem);
     spectrum(pgs, 5);
+    gs_free_object(mem, rgb_cs, "test6 rgb_cs");
     return 0;
 }
 
@@ -905,14 +892,14 @@ test8(gs_state * pgs, gs_memory_t * mem)
     gs_const_string table;
     gs_color_space *pcs;
     gs_client_color ccolor;
-    gs_color_space rgb_cs;
+    gs_color_space *rgb_cs;
 
-    gs_cspace_init_DeviceRGB(&rgb_cs);
+    rgb_cs = gs_cspace_new_DeviceRGB(mem);
 
     table.data =
 	(const byte *)"\377\377\377\377\000\000\000\377\000\000\000\000";
     table.size = 12;
-    gs_cspace_build_Indexed(&pcs, &rgb_cs, 4, &table, mem);
+    gs_cspace_build_Indexed(&pcs, rgb_cs, 4, &table, mem);
     ptile.data = pdata;
     ptile.raster = 4;
     ptile.size.x = ptile.size.y = 16;
@@ -941,6 +928,7 @@ test8(gs_state * pgs, gs_memory_t * mem)
 	gs_settexturetransparent(pgs, false);
 	gs_rectfill(pgs, &r, 1);
     }
+    gs_free_object(mem, rgb_cs, "test8 rgb_cs");
     return 0;
 }
 
@@ -979,19 +967,19 @@ test10(gs_state * pgs, gs_memory_t * mem)
     code = gs_getdeviceparams(dev, (gs_param_list *) & list);
     if (code < 0) {
 	lprintf1("getdeviceparams failed! code = %d\n", code);
-	exit(1);
+	gs_abort(mem);
     }
     gs_c_param_list_read(&list);
     code = param_read_string((gs_param_list *) & list, "Name", &nstr);
     if (code < 0) {
 	lprintf1("reading Name failed! code = %d\n", code);
-	exit(1);
+	gs_abort(mem);
     }
     code = param_read_int_array((gs_param_list *) & list,
 				"HWSize", &HWSa);
     if (code < 0) {
 	lprintf1("reading HWSize failed! code = %d\n", code);
-	exit(1);
+	gs_abort(mem);
     }
     eprintf3("HWSize[%d] = [ %d, %d ]\n", HWSa.size,
 	     HWSa.data[0], HWSa.data[1]);
@@ -999,7 +987,7 @@ test10(gs_state * pgs, gs_memory_t * mem)
 				  "HWResolution", &HWRa);
     if (code < 0) {
 	lprintf1("reading Resolution failed! code = %d\n", code);
-	exit(1);
+	gs_abort(mem);
     }
     eprintf3("HWResolution[%d] = [ %f, %f ]\n", HWRa.size,
 	     HWRa.data[0], HWRa.data[1]);
@@ -1007,7 +995,7 @@ test10(gs_state * pgs, gs_memory_t * mem)
 				  "PageSize", &PSa);
     if (code < 0) {
 	lprintf1("reading PageSize failed! code = %d\n", code);
-	exit(1);
+	gs_abort(mem);
     }
     eprintf3("PageSize[%d] = [ %f, %f ]\n", PSa.size,
 	     PSa.data[0], PSa.data[1]);
@@ -1015,7 +1003,7 @@ test10(gs_state * pgs, gs_memory_t * mem)
 			   "MaxBitmap", &MaxBitmap);
     if (code < 0) {
 	lprintf1("reading MaxBitmap failed! code = %d\n", code);
-	exit(1);
+	gs_abort(mem);
     }
     eprintf1("MaxBitmap = %ld\n", MaxBitmap);
     /* Switch to param list functions to "write" */
@@ -1036,7 +1024,7 @@ test10(gs_state * pgs, gs_memory_t * mem)
 	if (code < 0) {
 	    lprintf1("setting OutputFile name failed, code=%d\n",
 		     code);
-	    exit(1);
+	    gs_abort(mem);
 	}
 	if (nstr.data[0] == 'x') {
 	    HWResolution[0] = HWResolution[1] = 72.0;
@@ -1066,10 +1054,9 @@ test10(gs_state * pgs, gs_memory_t * mem)
     gs_erasepage(pgs);
     gs_initgraphics(pgs);
     {
-        gs_color_space cs;
-
-        gs_cspace_init_DeviceGray(mem, &cs);
-        gs_setcolorspace(pgs, &cs);
+        gs_color_space *cs = gs_cspace_new_DeviceGray(mem);
+        gs_setcolorspace(pgs, cs);
+	gs_free_object(mem, cs, "test10 DeviceGray");
     }
     
     gs_clippath(pgs);
