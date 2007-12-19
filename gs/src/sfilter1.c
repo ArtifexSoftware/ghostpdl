@@ -73,6 +73,21 @@ top:
 	    ss->record_left = p[3] + ((uint) p[4] << 8) +
 		((ulong) p[5] << 16) +
 		((ulong) p[6] << 24);
+
+            /* Check for an invalid counter found in an Adobe font, bug 689617 */
+            if (ss->record_left == 0 && ss->record_type == 1) {
+               if (p + 7 < pr->limit) {
+                   if (p[6] ==  128)
+                     ; /* normal empty block */
+                   else {
+                     ss->record_type = 4; /* ASCII stuff between blocks */
+                     ss->record_left = ~0;
+                   }
+               } else {
+                   if (!last)
+		      goto out;
+               }
+            }
 	    p += 6;
 	    goto top;
 	case 1:		/* text data */
@@ -118,6 +133,22 @@ top:
 		memcpy(q + 1, p + 1, count);
 		p += count;
 		q += count;
+	    }
+	    break;
+	case 4:
+            /* Treat the text after empty ASCII block as ACSII stream */
+	    /* Translate \r to \n. */
+	    {
+		int count = (wcount < rcount ? (status = 1, wcount) : rcount);
+		for (; count != 0; count--) {
+		    c = *++p;
+                    if (c == 128)
+                      { --p;
+                        ss->record_left = 0;
+                        break;
+                      }
+		    *++q = (c == '\r' ? '\n' : c);
+		}
 	    }
 	    break;
     }
