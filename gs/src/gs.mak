@@ -386,7 +386,7 @@ DEVS_ALL=$(GLGENDIR)$(D)$(PLATFORM).dev\
  $(DEVICE_DEVS10) $(DEVICE_DEVS11) $(DEVICE_DEVS12) $(DEVICE_DEVS13) \
  $(DEVICE_DEVS14) $(DEVICE_DEVS15) $(DEVICE_DEVS16) $(DEVICE_DEVS17) \
  $(DEVICE_DEVS18) $(DEVICE_DEVS19) $(DEVICE_DEVS20) $(DEVICE_DEVS21) \
- $(DEVICE_DEVS_EXTRA) $(PSD)romfs$(COMPILE_INITS).dev 
+ $(DEVICE_DEVS_EXTRA) $(GLD)romfs$(COMPILE_INITS).dev 
 
 devs_tr=$(GLGENDIR)$(D)devs.tr
 $(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
@@ -416,7 +416,7 @@ $(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS20)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS21)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS_EXTRA)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(PSD)romfs$(COMPILE_INITS).dev
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(GLD)romfs$(COMPILE_INITS).dev
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) - $(GLGENDIR)$(D)libcore
 
 # GCONFIG_EXTRAS can be set on the command line.
