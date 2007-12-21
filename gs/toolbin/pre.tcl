@@ -1,19 +1,16 @@
 #!/usr/bin/tclsh
 
-#    Copyright (C) 2000-2002 Artifex Software, Inc. All rights reserved.
+# Copyright (C) 2000-2007 Artifex Software, Inc.
+# All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
 # 
-# This software is distributed under license and may not be copied,
-# modified or distributed except as expressly authorized under the terms
-# of the license contained in the file LICENSE in this distribution.
-# 
-# For more information about licensing, please refer to
-# http://www.ghostscript.com/licensing/. For information on
-# commercial licensing, go to http://www.artifex.com/licensing/ or
-# contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-# San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+# This software is distributed under license and may not be copied, modified
+# or distributed except as expressly authorized under the terms of that
+# license.  Refer to licensing information at http://www.artifex.com/
+# or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
+# San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 # $Id$
 
@@ -155,10 +152,19 @@ foreach d "[glob doc/*.htm] doc/gs-vms.hlp" {
 }
 
 if {$argv == {update}} {
-	# Update dates in .htm and .1 files.
+    # Update dates in .htm and .1 files.
     proc updoc {doc before after} {
-	set tmpfile /tmp/[pid]
-	catch {file delete $tmpfile}
+	set tmpfile [file join /tmp [pid]]
+	set access [list RDWR CREAT EXCL TRUNC]
+	set perm 0600
+	if {[catch {open $tmpfile $access $perm} fid ]} {
+	    # something went wrong
+	     error "Could not open tempfile."
+	}
+	if {[catch {close $fid} err]} {
+	    error "Failed closing temporary file: $err"
+	}
+
 	exec perl -pwe "s{$before}{$after}" < $doc > $tmpfile
 	file rename -force $tmpfile $doc
     }
@@ -223,7 +229,7 @@ foreach doc $manlist {
     # We must be careful not to include the string $,I,d,: in any pattern,
     # since CVS/RCS will substitute for it!
     if {![regexp {^\.\\" [$]Id: ([^ ]+) ([0-9.]+) ([0-9][0-9][0-9][0-9])/([0-9][0-9])/([0-9][0-9])} $idline skip file idrevision idyear idmonth idday]} {
-	message "In $doc, can't parse $Id line: $idline"
+	message "In $doc, can't parse \$Id line: $idline"
 	continue
     }
     if {$file != [file tail $doc]} {
