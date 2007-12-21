@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -23,7 +23,6 @@
 #include "gscdefs.h"
 #include "gserrors.h"
 #include "gslib.h"
-#include "gsexit.h"
 #include "gsmatrix.h"
 #include "gsstate.h"
 #include "gscspace.h"
@@ -81,7 +80,7 @@ extern_gs_lib_device_list();
 
 /* Forward references */
 static float odsf(floatp, floatp);
-
+static void gs_abort(const gs_memory_t *);
 
 int
 main(int argc, const char *argv[])
@@ -96,12 +95,12 @@ main(int argc, const char *argv[])
     int code;
 
     gp_init();
-    mem =  gs_lib_ctx_get_non_gc_memory_t();
+    mem =  gs_malloc_init(NULL);
     gs_lib_init1(mem);
     if (argc < 2 || (achar = argv[1][0]) < '1' ||
-	achar > '0' + countof(tests)
+	achar > '0' + countof(tests) - 1 
 	) {
-	lprintf1("Usage: gslib 1..%c\n", '0' + (char)countof(tests));
+	lprintf1("Usage: gslib 1..%c\n", '0' + (char)countof(tests) - 1);
 	gs_abort(mem);
     }
     gs_debug['@'] = 1;
@@ -265,7 +264,6 @@ gs_reloc_const_string(gs_const_string * sptr, gc_state_t * gcst)
 }
 
 /* Other stubs */
-#if 0
 static void
 gs_abort(const gs_memory_t *mem)
 {
@@ -274,7 +272,6 @@ gs_abort(const gs_memory_t *mem)
     gs_lib_finit(exit_status, 0, mem);
     gp_do_exit(exit_status); /* system independent exit() */	
 }
-#endif
 
 /* Return the number with the magnitude of x and the sign of y. */
 /* This is a BSD addition to libm; not all compilers have it. */
@@ -1056,7 +1053,8 @@ test10(gs_state * pgs, gs_memory_t * mem)
     {
         gs_color_space *cs = gs_cspace_new_DeviceGray(mem);
         gs_setcolorspace(pgs, cs);
-	gs_free_object(mem, cs, "test10 DeviceGray");
+        gs_setcolorspace(pgs, cs);
+	gs_decrement(cs, "test10 DeviceGray");
     }
     
     gs_clippath(pgs);

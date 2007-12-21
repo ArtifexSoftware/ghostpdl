@@ -104,7 +104,8 @@ FPU_TYPE=1
 SYNC=posync
 
 FEATURE_DEVS=$(GLD)dps2lib.dev $(GLD)psl2cs.dev $(GLD)cielib.dev\
- $(GLD)psl3lib.dev $(GLD)path1lib.dev $(GLD)patlib.dev $(GLD)htxlib.dev \
+ $(GLD)psl3lib.dev $(GLD)path1lib.dev $(GLD)patlib.dev $(GLD)htxlib.dev\
+ $(GLD)cidlib.dev $(GLD)psf0lib.dev $(GLD)psf1lib.dev\
  $(GLD)roplib.dev $(GLD)devcmap.dev
 
 COMPILE_INITS?=0
