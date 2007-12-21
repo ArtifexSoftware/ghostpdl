@@ -22,10 +22,16 @@
 #include "scommon.h"
 #include <jbig2.h>
 
+/* See zfjbig2.c for details. */
+typedef struct s_jbig2_global_data_s {
+	void *data;
+} s_jbig2_global_data_t;
+
 /* JBIG2Decode internal stream state */
 typedef struct stream_jbig2decode_state_s
 {
-    stream_state_common;	/* a define from scommon.h */
+    stream_state_common; /* a define from scommon.h */
+    s_jbig2_global_data_t *global_struct; /* to protect it from freeing by GC */
     Jbig2GlobalCtx *global_ctx;
     Jbig2Ctx *decode_ctx;
     Jbig2Image *image;
@@ -35,15 +41,16 @@ typedef struct stream_jbig2decode_state_s
 stream_jbig2decode_state;
 
 #define private_st_jbig2decode_state()	\
-  gs_private_st_simple(st_jbig2decode_state, stream_jbig2decode_state,\
-    "jbig2decode filter state")
+  gs_private_st_ptrs1(st_jbig2decode_state, stream_jbig2decode_state,\
+    "jbig2decode filter state", jbig2decode_state_enum_ptrs,\
+     jbig2decode_state_reloc_ptrs, global_struct)
 extern const stream_template s_jbig2decode_template;
 
 /* call ins to process the JBIG2Globals parameter */
 int
 s_jbig2decode_make_global_data(byte *data, uint length, void **result);
 int
-s_jbig2decode_set_global_data(stream_state *ss, void *data);
+s_jbig2decode_set_global_data(stream_state *ss, s_jbig2_global_data_t *gd);
 void
 s_jbig2decode_free_global_data(void *data);
 	

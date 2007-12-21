@@ -35,7 +35,8 @@
 #include "sjbig2.h"
 #endif
 
-/* We define a structure, allocated in the postscript
+/* We define a structure, s_jbig2_global_data_t, 
+   allocated in the postscript
    memory space, to hold a pointer to the global decoder
    context (which is allocated by libjbig2). This allows
    us to pass the reference through postscript code to
@@ -44,12 +45,8 @@
    a finalize method to deallocate it when the reference
    is no longer in use. */
    
-typedef struct jbig2_global_data_s {
-	void *data;
-} jbig2_global_data_t;
-
 static void jbig2_global_data_finalize(void *vptr);
-gs_private_st_simple_final(st_jbig2_global_data_t, jbig2_global_data_t,
+gs_private_st_simple_final(st_jbig2_global_data_t, s_jbig2_global_data_t,
 	"jbig2globaldata", jbig2_global_data_finalize);
 
 
@@ -60,7 +57,7 @@ z_jbig2decode(i_ctx_t * i_ctx_p)
 {
     os_ptr op = osp;
     ref *sop = NULL;
-    jbig2_global_data_t *gref;
+    s_jbig2_global_data_t *gref;
     stream_jbig2decode_state state;
 
     /* Extract the global context reference, if any, from the parameter
@@ -74,8 +71,8 @@ z_jbig2decode(i_ctx_t * i_ctx_p)
     if (r_has_type(op, t_dictionary)) {
         check_dict_read(*op);
         if ( dict_find_string(op, ".jbig2globalctx", &sop) > 0) {
-	    gref = r_ptr(sop, jbig2_global_data_t);
-	    s_jbig2decode_set_global_data((stream_state*)&state, gref->data);
+	    gref = r_ptr(sop, s_jbig2_global_data_t);
+	    s_jbig2decode_set_global_data((stream_state*)&state, gref);
         }
     }
     	
@@ -98,7 +95,7 @@ static int
 z_jbig2makeglobalctx(i_ctx_t * i_ctx_p)
 {
 	void *global = NULL;
-	jbig2_global_data_t *st;
+	s_jbig2_global_data_t *st;
 	os_ptr op = osp;
 	byte *data;
 	int size;
@@ -115,7 +112,7 @@ z_jbig2makeglobalctx(i_ctx_t * i_ctx_p)
 	    return_error(e_unknownerror);
 	}
 	
-	st = ialloc_struct(jbig2_global_data_t, 
+	st = ialloc_struct(s_jbig2_global_data_t, 
 		&st_jbig2_global_data_t,
 		"jbig2decode parsed global context");
 	if (st == NULL) return_error(e_VMerror);
@@ -129,7 +126,7 @@ z_jbig2makeglobalctx(i_ctx_t * i_ctx_p)
 /* free our referenced global context data */
 static void jbig2_global_data_finalize(void *vptr)
 {
-	jbig2_global_data_t *st = vptr;
+	s_jbig2_global_data_t *st = vptr;
 	
 	if (st->data) s_jbig2decode_free_global_data(st->data);
 	st->data = NULL;
