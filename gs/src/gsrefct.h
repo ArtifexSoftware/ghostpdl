@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -30,6 +30,19 @@
  * free the object itself first, before decrementing the reference counts
  * of referenced objects (which of course requires saving pointers to those
  * objects before freeing the containing object).
+ *
+ * To add a reference to an object, copy its pointer and call:
+ *      rc_increment(pobj);
+ *
+ * We provide two decrement macros for reference-counted objects:
+ *      rc_decrement(pobj);
+ *      rc_decrement_only(pobj);
+ * Both decrement the reference count, and free the object if that
+ * was the last reference. The difference is that rc_decrement() 
+ * also assigns zero to its argument, while rc_decrement_only() 
+ * does not. The first must be used if the argument could be traceable 
+ * by the allocator to prevent double frees when a garbage collector
+ * is running. The second must be used if the pointer is read-only.
  */
 typedef struct rc_header_s rc_header;
 struct rc_header_s {
