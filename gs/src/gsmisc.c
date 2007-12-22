@@ -52,7 +52,6 @@ orig_sqrt(double x)
 #include "gpcheck.h"		/* for gs_return_check_interrupt */
 #include "gserror.h"		/* for prototype */
 #include "gserrors.h"
-#include "gconfigv.h"		/* for USE_ASM */
 #include "gxfarith.h"
 #include "gxfixed.h"
 #include "stdint_.h"

@@ -14,7 +14,6 @@
 /* $Id$ */
 /* SuperVGA display drivers */
 #include "memory_.h"
-#include "gconfigv.h"		/* for USE_ASM */
 #include "gx.h"
 #include "gserrors.h"
 #include "gxarith.h"		/* for ...log2 */

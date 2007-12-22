@@ -48,7 +48,6 @@ LIB_MAK=$(GLSRC)lib.mak
 arch_h=$(GLGEN)arch.h
 stdpn_h=$(GLSRC)stdpn.h
 stdpre_h=$(GLSRC)stdpre.h $(stdpn_h)
-std_h=$(GLSRC)std.h $(arch_h) $(stdpre_h)
 stdint__h=$(GLSRC)stdint_.h $(std_h)
 
 $(GLGEN)arch.h : $(GENARCH_XE)
@@ -72,6 +71,8 @@ gconf_h=$(GLSRC)gconf.h $(gconfig_h)
 gconfig__h=$(GLGEN)gconfig_.h
 gconfigv_h=$(GLGEN)gconfigv.h
 gscdefs_h=$(GLSRC)gscdefs.h $(gconfigv_h)
+
+std_h=$(GLSRC)std.h $(arch_h) $(stdpre_h) $(gconfigv_h)
 
 # C library interfaces
 
@@ -150,7 +151,7 @@ gsuid_h=$(GLSRC)gsuid.h
 gsutil_h=$(GLSRC)gsutil.h
 gxarith_h=$(GLSRC)gxarith.h
 gxbitmap_h=$(GLSRC)gxbitmap.h $(gsbitmap_h) $(gstypes_h)
-gxfarith_h=$(GLSRC)gxfarith.h $(gconfigv_h) $(gxarith_h)
+gxfarith_h=$(GLSRC)gxfarith.h $(std_h) $(gxarith_h)
 gxfixed_h=$(GLSRC)gxfixed.h
 gxobj_h=$(GLSRC)gxobj.h $(gxbitmap_h)
 gxrplane_h=$(GLSRC)gxrplane.h
@@ -250,7 +251,7 @@ $(GLOBJ)gsfemu.$(OBJ) : $(GLSRC)gsfemu.c $(AK) $(std_h)
 	$(GLCC) $(GLO_)gsfemu.$(OBJ) $(C_) $(GLSRC)gsfemu.c
 
 $(GLOBJ)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(GXERR)\
- $(gconfigv_h) $(std_h) $(vmsmath_h)\
+ $(vmsmath_h)\
  $(ctype__h) $(malloc__h) $(math__h) $(memory__h) $(string__h)\
  $(gpcheck_h) $(gserror_h) $(gxfarith_h) $(gxfixed_h) $(stdint__h)
 	$(GLCC) $(GLO_)gsmisc.$(OBJ) $(C_) $(GLSRC)gsmisc.c
@@ -420,7 +421,7 @@ gxfont_h=$(GLSRC)gxfont.h\
  $(gxftype_h)
 gxiparam_h=$(GLSRC)gxiparam.h $(gsstype_h) $(gxdevcli_h)
 gximask_h=$(GLSRC)gximask.h $(gxibitmap_h) $(gsropt_h)
-gscie_h=$(GLSRC)gscie.h $(gconfigv_h) $(gsrefct_h) $(gsstype_h) $(gstypes_h) $(gxctable_h)
+gscie_h=$(GLSRC)gscie.h $(std_h) $(gsrefct_h) $(gsstype_h) $(gstypes_h) $(gxctable_h)
 gsicc_h=$(GLSRC)gsicc.h $(gscie_h)
 gscrd_h=$(GLSRC)gscrd.h $(gscie_h)
 gscrdp_h=$(GLSRC)gscrdp.h $(gscie_h) $(gsparam_h)
@@ -698,7 +699,7 @@ $(GLOBJ)gxpath2.$(OBJ) : $(GLSRC)gxpath2.c $(GXERR) $(math__h)\
  $(gspath_h) $(gsstruct_h) $(gxfixed_h) $(gxarith_h) $(gzpath_h)
 	$(GLCC) $(GLO_)gxpath2.$(OBJ) $(C_) $(GLSRC)gxpath2.c
 
-$(GLOBJ)gxpcopy.$(OBJ) : $(GLSRC)gxpcopy.c $(GXERR) $(math__h) $(gconfigv_h)\
+$(GLOBJ)gxpcopy.$(OBJ) : $(GLSRC)gxpcopy.c $(GXERR) $(math__h) \
  $(gxfarith_h) $(gxfixed_h) $(gxistate_h) $(gzpath_h) $(vdtrace_h)
 	$(GLCC) $(GLO_)gxpcopy.$(OBJ) $(C_) $(GLSRC)gxpcopy.c
 
@@ -1776,14 +1777,12 @@ $(GLOBJ)siinterp.$(OBJ) : $(GLSRC)siinterp.c $(AK)\
 	$(GLCC) $(GLO_)siinterp.$(OBJ) $(C_) $(GLSRC)siinterp.c
 
 $(GLOBJ)siscale.$(OBJ) : $(GLSRC)siscale.c $(AK)\
- $(math__h) $(memory__h) $(stdio__h)\
- $(gconfigv_h) $(gdebug_h)\
+ $(math__h) $(memory__h) $(stdio__h) $(gdebug_h)\
  $(siscale_h) $(strimpl_h)
 	$(GLCC) $(GLO_)siscale.$(OBJ) $(C_) $(GLSRC)siscale.c
 
 $(GLOBJ)sidscale.$(OBJ) : $(GLSRC)sidscale.c $(AK)\
- $(math__h) $(memory__h) $(stdio__h)\
- $(gconfigv_h) $(gdebug_h)\
+ $(math__h) $(memory__h) $(stdio__h) $(gdebug_h)\
  $(sidscale_h) $(strimpl_h)
 	$(GLCC) $(GLO_)sidscale.$(OBJ) $(C_) $(GLSRC)sidscale.c
 

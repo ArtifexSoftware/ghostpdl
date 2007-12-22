@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2006 Artifex Software, Inc.
+#  Copyright (C) 2001-2007 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -319,7 +319,7 @@ $(GLOBJ)gdevsco.$(OBJ) : $(GLSRC)gdevsco.c $(GDEV) $(memory__h) $(gdevpcfb_h)
 
 # Common code for MS-DOS and SCO.
 #**************** $(CCD) gdevpcfb.c
-$(GLOBJ)gdevpcfb.$(OBJ) : $(GLSRC)gdevpcfb.c $(GDEV) $(memory__h) $(gconfigv_h)\
+$(GLOBJ)gdevpcfb.$(OBJ) : $(GLSRC)gdevpcfb.c $(GDEV) $(memory__h)\
  $(gdevpccm_h) $(gdevpcfb_h) $(gsparam_h)
 	$(GLCC) $(GLO_)gdevpcfb.$(OBJ) $(C_) $(GLSRC)gdevpcfb.c
 
@@ -349,7 +349,7 @@ $(DD)svga16.dev : $(DEVS_MAK) $(EGAVGA)
 SVGA=$(GLOBJ)gdevsvga.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ) $(PCFBASM)
 
 #**************** $(CCD) gdevsvga.c
-$(GLOBJ)gdevsvga.$(OBJ) : $(GLSRC)gdevsvga.c $(GDEV) $(memory__h) $(gconfigv_h)\
+$(GLOBJ)gdevsvga.$(OBJ) : $(GLSRC)gdevsvga.c $(GDEV) $(memory__h)\
  $(gsparam_h) $(gxarith_h) $(gdevpccm_h) $(gdevpcfb_h) $(gdevsvga_h)
 	$(GLCC) $(GLO_)gdevsvga.$(OBJ) $(C_) $(GLSRC)gdevsvga.c
 

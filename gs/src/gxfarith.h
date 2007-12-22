@@ -17,7 +17,7 @@
 #ifndef gxfarith_INCLUDED
 #  define gxfarith_INCLUDED
 
-#include "gconfigv.h"		/* for USE_FPU */
+#include "std.h"		/* for USE_FPU */
 #include "gxarith.h"
 
 /*

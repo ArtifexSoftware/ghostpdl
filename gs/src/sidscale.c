@@ -16,7 +16,6 @@
 #include "math_.h"
 #include "memory_.h"
 #include "stdio_.h"
-#include "gconfigv.h"
 #include "gdebug.h"
 #include "gxfixed.h"		/* for gxdda.h */
 #include "gxdda.h"

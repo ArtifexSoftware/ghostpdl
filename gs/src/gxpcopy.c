@@ -16,7 +16,6 @@
 #include "math_.h"
 #include "gx.h"
 #include "gserrors.h"
-#include "gconfigv.h"		/* for USE_FPU */
 #include "gxfixed.h"
 #include "gxfarith.h"
 #include "gxistate.h"		/* for access to line params */

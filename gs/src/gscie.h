@@ -18,7 +18,7 @@
 #ifndef gscie_INCLUDED
 #  define gscie_INCLUDED
 
-#include "gconfigv.h"		/* for USE_FPU */
+#include "std.h"		/* for USE_FPU */
 #include "gsrefct.h"
 #include "gsstype.h"		/* for extern_st */
 #include "gstypes.h"		/* for gs_range_t */

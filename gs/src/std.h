@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -21,6 +21,9 @@
 
 /* Include the architecture definitions. */
 #include "arch.h"
+
+/* Include compile time constants from the makefile */
+#include "gconfigv.h"
 
 /*
  * Define lower-case versions of the architecture parameters for backward
