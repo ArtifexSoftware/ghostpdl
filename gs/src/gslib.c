@@ -44,7 +44,6 @@
 #include "gxdevice.h"
 #include "gxht.h"		/* for gs_halftone */
 #include "gdevbbox.h"
-#include "gdevcmap.h"
 #include "gshtx.h"
 
 /* Define whether we are processing captured data. */
@@ -744,21 +743,6 @@ render_abc(floatp v, const gs_cie_render * ignore_crd)
     return v / 2;
 }
 static int
-set_cmap_method(gx_device_cmap *cmdev, gx_device_color_mapping_method_t method,
-		gs_state *pgs, gs_memory_t *mem)
-{
-    gs_c_param_list list;
-    int cmm = method;
-
-    gs_c_param_list_write(&list, mem);
-    param_write_int((gs_param_list *)&list, "ColorMappingMethod", &cmm);
-    gs_c_param_list_read(&list);
-    gs_putdeviceparams((gx_device *)cmdev, (gs_param_list *)&list);
-    gs_c_param_list_release(&list);
-    gs_setdevice_no_init(pgs, (gx_device *)cmdev);
-    return 0;
-}
-static int
 test6(gs_state * pgs, gs_memory_t * mem)
 {
     gs_color_space *pcs;
@@ -770,7 +754,6 @@ test6(gs_state * pgs, gs_memory_t * mem)
     {
 	{render_abc, render_abc, render_abc}
     };
-    gx_device_cmap *cmdev;
     int code;
     gs_color_space *rgb_cs;
 
@@ -798,22 +781,6 @@ test6(gs_state * pgs, gs_memory_t * mem)
     gs_cie_abc_complete(pabc);
     /* End of initializing the color space. */
     gs_setcolorspace(pgs, pcs);
-    spectrum(pgs, 5);
-    /* Now test color snapping. */
-    cmdev =
-	gs_alloc_struct_immovable(mem, gx_device_cmap, &st_device_cmap,
-				  "cmap device");
-    gdev_cmap_init(cmdev, gs_currentdevice(pgs),
-		   device_cmap_snap_to_primaries);
-    gs_setdevice_no_init(pgs, (gx_device *) cmdev);
-    gs_setrgbcolor(pgs, 0.0, 0.0, 0.0);		/* back to DeviceRGB space */
-    gs_translate(pgs, -1.2, 1.2);
-    spectrum(pgs, 5);
-    gs_translate(pgs, 1.2, 0.0);
-    set_cmap_method(cmdev, device_cmap_monochrome, pgs, mem);
-    spectrum(pgs, 5);
-    gs_translate(pgs, -1.2, 1.2);
-    set_cmap_method(cmdev, device_cmap_color_to_black_over_white, pgs, mem);
     spectrum(pgs, 5);
     gs_free_object(mem, rgb_cs, "test6 rgb_cs");
     return 0;
