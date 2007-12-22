@@ -41,8 +41,9 @@
  * was the last reference. The difference is that rc_decrement() 
  * also assigns zero to its argument, while rc_decrement_only() 
  * does not. The first must be used if the argument could be traceable 
- * by the allocator to prevent double frees when a garbage collector
- * is running. The second must be used if the pointer is read-only.
+ * by the allocator to avoid examining stale memory when a garbage 
+ * collector runs. The second must be used if the pointer argument
+ * is read-only.
  */
 typedef struct rc_header_s rc_header;
 struct rc_header_s {
