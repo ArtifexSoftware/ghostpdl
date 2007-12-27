@@ -99,7 +99,7 @@ dnl --------------------------------------------------
 #AC_CANONICAL_HOST
 
 if test $ac_cv_prog_gcc = yes; then
-    cflags_to_try="-Wall -Wstrict-prototypes \
+    cflags_to_try="-Wall -Wstrict-prototypes -Wundef \
 -Wmissing-declarations -Wmissing-prototypes -Wwrite-strings \
 -Wno-strict-aliasing \
 -fno-builtin -fno-common"
