@@ -129,6 +129,8 @@ UFSTFONTDIR?=%rom%fontdata/
 endif
 endif # PL_SCALER = ufst
 
+FPU_TYPE?=1
+
 # flags for artifex scaler
 ifeq ($(PL_SCALER), afs)
 
@@ -165,7 +167,14 @@ HAVE_MKSTEMP_DEFINE?=-DHAVE_MKSTEMP
 # between 2.7.0 and 2.7.2 inclusive.  (2.7.2.1 is OK.)
 # disable assert() with -DNDEBUG
 
-GCFLAGS?=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -DNDEBUG  $(HAVE_STDINT_H_DEFINE) $(HAVE_MKSTEMP_DEFINE) $(GX_COLOR_INDEX_DEFINE)
+GCFLAGS?=-Wall -Wundef -Wstrict-prototypes -Wmissing-declarations \
+         -Wmissing-prototypes -Wpointer-arith -Wwrite-strings \
+         -Wcast-qual -Wwrite-strings \
+         -fno-builtin -fno-common \
+          -DNDEBUG \
+          $(HAVE_STDINT_H_DEFINE) $(HAVE_MKSTEMP_DEFINE) \
+          $(GX_COLOR_INDEX_DEFINE)
+
 # CFLAGS?=-g -O0 $(GCFLAGS) $(XCFLAGS)
 CFLAGS?= $(GCFLAGS) $(XCFLAGS)
 

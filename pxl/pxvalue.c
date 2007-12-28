@@ -40,9 +40,14 @@ sint32at(const byte *p, bool big_endian)
 }
 real
 real32at(const byte *p, bool big_endian)
-{	float f;
-	*(integer *)&f = uint32at(p, big_endian);
-	return (real)f;
+{	    
+    union {
+        float   f;
+        integer d;
+    } df;
+
+    df.d = uint32at(p, big_endian);
+    return (real)df.f;
 }
 
 /* Get an element from an array. */
