@@ -73,11 +73,6 @@
 #define chi_bits(ct,n) (ct)(~(ct)1 << (cbits(ct)-1 - (n)))
 #  define chunk_hi_bits(n) chi_bits(chunk,n)
 
-/* Define whether this is a machine where chunks are long, */
-/* but the machine can't shift a long by its full width. */
-#define arch_cant_shift_full_chunk\
-  (ARCH_IS_BIG_ENDIAN && !ARCH_INTS_ARE_SHORT && !ARCH_CAN_SHIFT_FULL_LONG)
-
 /* Pointer arithmetic macros. */
 #define inc_ptr(ptr,delta)\
 	(ptr = (void *)((byte *)ptr + (delta)))

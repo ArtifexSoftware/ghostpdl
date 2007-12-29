@@ -37,7 +37,6 @@
 #define arch_sizeof_double ARCH_SIZEOF_DOUBLE
 #define arch_is_big_endian ARCH_IS_BIG_ENDIAN
 #define arch_arith_rshift ARCH_ARITH_RSHIFT
-#define arch_can_shift_full_long ARCH_CAN_SHIFT_FULL_LONG
 /*
  * Define the alignment that the memory manager must preserve.
  * We assume all alignment moduli are powers of 2.

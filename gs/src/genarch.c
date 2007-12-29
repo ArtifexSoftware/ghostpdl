@@ -230,11 +230,6 @@ main(int argc, char *argv[])
 	   2);
     define_int(f, "ARCH_ARITH_RSHIFT", ars);
     /*
-     * Some machines can't handle a variable shift by
-     * the full width of a long.
-     */
-    define_int(f, "ARCH_CAN_SHIFT_FULL_LONG", um1 >> lwidth == 0);
-    /*
      * Determine whether dividing a negative integer by a positive one
      * takes the floor or truncates toward zero.
      */
