@@ -252,17 +252,33 @@ charstring_execchar_aux(i_ctx_t *i_ctx_p, gs_text_enum_t *penum, gs_font *pfont)
 	    code = (*exec_cont)(i_ctx_p);
 	return code;
     } else {
-	/*
-	 * The FontBBox is not valid.  In this case,
-	 * we create the path first, then do the setcachedevice.
+	/* The FontBBox is not valid */
+        const ref *opstr = op;
+	ref other_subr;
+        const gs_matrix * pctm = &ctm_only(igs);
+
+	/* First, check for singular CTM */
+        if (pctm->xx * pctm->yy == pctm->xy * pctm->yx) {
+           /* The code below won't be able to find the FontBBox but we
+            * don't need it anyway. Set an empty box and consider it valid.
+            */
+	    op_proc_t exec_cont = 0;
+
+	    cxs.char_bbox.p.x = 0;
+	    cxs.char_bbox.p.y = 0;
+	    cxs.char_bbox.q.x = 0;
+	    cxs.char_bbox.q.y = 0;
+	    code = type1exec_bbox(i_ctx_p, penum, &cxs, pfont, &exec_cont);
+	    if (code >= 0 && exec_cont != 0)
+	        code = (*exec_cont)(i_ctx_p);
+	    return code;
+        }
+	/* Now we create the path first, then do the setcachedevice.
 	 * If we are oversampling (in this case, only for anti-
 	 * aliasing, not just to improve quality), we have to
 	 * create the path twice, since we can't know the
 	 * oversampling factor until after setcachedevice.
 	 */
-	const ref *opstr = op;
-	ref other_subr;
-
 	if (cxs.present == metricsSideBearingAndWidth) {
 	    gs_point sbpt;
 
