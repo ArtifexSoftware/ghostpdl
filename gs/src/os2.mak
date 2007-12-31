@@ -180,13 +180,6 @@ PSD=$(PSGENDIR)\$(NUL)
 
 # ------ Platform-specific options ------ #
 
-# If you don't have an assembler, set USE_ASM=0.  Otherwise, set USE_ASM=1,
-# and set ASM to the name of the assembler you are using.  This can be
-# a full path name if you want.  Normally it will be masm or tasm.
-
-USE_ASM=0
-ASM= 
-
 # Define the drive, directory, and compiler name for the EMX files.
 # COMP is the compiler name (gcc)
 # COMPDIR contains the compiler and linker (normally \emx\bin).
@@ -345,35 +338,12 @@ CONFLDTR=-ol
 # Define the generic compilation flags.
 
 !if $(CPU_TYPE) >= 486
-ASMCPU=/DFOR80386 /DFOR80486
 PLATOPT=-DFOR80386 -DFOR80486
 !else
 !if $(CPU_TYPE) >= 386
-ASMCPU=/DFOR80386
 PLATOPT=-DFOR80386
 !endif
 !endif
-
-!if $(FPU_TYPE) > 0
-ASMFPU=/DFORFPU
-!else
-ASMFPU=
-!endif
-
-!if $(USE_ASM)
-INTASM=iutilasm.$(OBJ)
-PCFBASM=gdevegaa.$(OBJ)
-!else
-INTASM=
-PCFBASM=
-!endif
-
-# Define the generic compilation rules.
-
-ASMFLAGS=$(ASMCPU) $(ASMFPU) $(ASMDEBUG)
-
-.asm.o:
-	$(ASM) $(ASMFLAGS) $<;
 
 # ---------------------- MS-DOS I/O debugging option ---------------------- #
 
@@ -387,12 +357,6 @@ $(PSGEN)dosio.dev: $(dosio_)
 
 $(PSOBJ)zdosio.$(OBJ): $(PSSRC)zdosio.c $(OP) $(store_h)
 	$(PSCC) $(PSO_)zdosio.$(OBJ) $(C_) $(PSSRC)zdosio.c
-
-# ----------------------------- Assembly code ----------------------------- #
-
-$(PSOBJ)iutilasm.$(OBJ): $(PSSRC)iutilasm.asm
-
-#################  END
 
 # Define the compilation flags.
 
@@ -637,7 +601,6 @@ $(gconfig__h): $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(ECHOGS_XE) -w $(gconfig__h) /* This file deliberately left blank. */
 
 $(gconfigv_h): $(PSSRCDIR)\os2.mak $(TOP_MAKEFILES) $(ECHOGS_XE)
-	$(ECHOGS_XE) -w $(gconfigv_h) -x 23 define USE_ASM -x 2028 -q $(USE_ASM)-0 -x 29
 	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define USE_FPU -x 2028 -q $(FPU_TYPE)-0 -x 29
 	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define EXTEND_NAMES 0$(EXTEND_NAMES)
 	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define SYSTEM_CONSTANTS_ARE_WRITABLE 0$(SYSTEM_CONSTANTS_ARE_WRITABLE)
@@ -656,7 +619,7 @@ $(PSOBJ)dpmain.$(OBJ): $(PSSRC)dpmain.c $(AK)\
 
 !if $(MAKEDLL)
 #making a DLL
-GS_ALL=$(PSOBJ)gsdll.$(OBJ) $(INT_ALL) $(INTASM)\
+GS_ALL=$(PSOBJ)gsdll.$(OBJ) $(INT_ALL) \
   $(LIB_ALL) $(LIBCTR) $(ld_tr) $(PSOBJ)$(GS).res $(ICONS)
 
 $(GS_XE): $(BINDIR)\$(GSDLL).dll $(PSSRC)dpmain.c $(gsdll_h) $(gsdllos2_h) $(PSSRC)gsos2.rc $(GLOBJ)gscdefs.$(OBJ)
@@ -681,11 +644,11 @@ $(BINDIR)\$(GSDLL).dll: $(GS_ALL) $(ALL_DEVS) $(PSOBJ)gsdll.$(OBJ)
 
 !else
 #making an EXE
-GS_ALL=$(PSOBJ)gs.$(OBJ) $(INT_ALL) $(INTASM)\
+GS_ALL=$(PSOBJ)gs.$(OBJ) $(INT_ALL) \
   $(LIB_ALL) $(LIBCTR) $(ld_tr) $(PSOBJ)$(GS).res $(ICONS)
 
 $(GS_XE): $(GS_ALL) $(ALL_DEVS)
-	$(COMPDIR)\$(COMP) $(CGDB) I$(PSSRCDIR) -I$(GLSRCDIR) -o $(PSOBJ)$(GS) $(PSOBJ)gs.$(OBJ) @$(ld_tr) $(INTASM) -lm
+	$(COMPDIR)\$(COMP) $(CGDB) I$(PSSRCDIR) -I$(GLSRCDIR) -o $(PSOBJ)$(GS) $(PSOBJ)gs.$(OBJ) @$(ld_tr) -lm
 	$(COMPDIR)\emxbind -r$(PSOBJ)$(GS).res $(COMPDIR)\emxl.exe $(PSOBJ)$(GS) $(GS_XE) -ac
 	del $(PSOBJ)$(GS)
 !endif

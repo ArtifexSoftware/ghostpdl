@@ -71,9 +71,6 @@ RMN_=call $(GLSRCDIR)\rm.bat
 
 PLATOPT=
 
-INTASM=
-PCFBASM=
-
 # Define conditinal name for UFST bridge :
 !ifdef UFST_ROOT
 UFST_BRIDGE = 1
@@ -133,7 +130,6 @@ $(gconfig__h): $(TOP_MAKEFILES)
 	$(ECHOGS_XE) -w $(gconfig__h) -x 2f2a20 This file deliberately left blank. -x 2a2f
 
 $(gconfigv_h): $(TOP_MAKEFILES) $(ECHOGS_XE)
-	$(ECHOGS_XE) -w $(gconfigv_h) -x 23 define USE_ASM -x 2028 -q $(USE_ASM)-0 -x 29
 	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define USE_FPU -x 2028 -q $(FPU_TYPE)-0 -x 29
 	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define EXTEND_NAMES 0$(EXTEND_NAMES)
 	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define SYSTEM_CONSTANTS_ARE_WRITABLE 0$(SYSTEM_CONSTANTS_ARE_WRITABLE)

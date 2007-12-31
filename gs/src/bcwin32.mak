@@ -342,13 +342,6 @@ LINK=$(COMPDIR)\ilink32
 LINK=$(COMPDIR)\ilink32
 !endif
 
-# If you don't have an assembler, set USE_ASM=0.  Otherwise, set USE_ASM=1,
-# and set ASM to the name of the assembler you are using.  This can be
-# a full path name if you want.  Normally it will be masm or tasm.
-
-USE_ASM=0
-ASM=tasm
-
 # Define the processor architecture. (always i386)
 
 CPU_FAMILY=i386
@@ -477,9 +470,6 @@ CONFLDTR=-ol
 
 PLATOPT=
 
-INTASM=
-PCFBASM=
-
 # Make sure we get the right default target for make.
 
 dosdefault: default
@@ -493,25 +483,13 @@ RO_=-fo
 # Define the compilation flags.
 
 !if $(CPU_TYPE)>500
-ASMCPU=/DFOR80386 /DFOR80486
 CPFLAGS=-DFOR80486 -DFOR80386
 !else if $(CPU_TYPE)>400
-ASMCPU=/DFOR80386 /DFOR80486
 CPFLAGS=-DFOR80486 -DFOR80386
 !else
-ASMCPU=/DFOR80386
 CPFLAGS=-DFOR80386
 !endif
 
-!if $(CPU_TYPE) >= 486 || $(FPU_TYPE) > 0
-ASMFPU=/DFORFPU
-!else
-!if $(FPU_TYPE) < 0
-ASMFPU=/DNOFPU
-!else
-ASMFPU=
-!endif
-!endif
 FPFLAGS=
 FPLIB=
 
@@ -525,7 +503,6 @@ CD=
 CT=-v
 LCT=-v -m -s
 CO=    # no optimization when debugging
-ASMDEBUG=/DDEBUG
 !else
 CT=
 LCT=
@@ -682,7 +659,7 @@ $(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(PSOBJ)gsdll.$(OBJ)\
 	-del $(PSGEN)gswin32.tr
 	copy $(ld_tr) $(PSGEN)gswin32.tr
 	echo $(LIBDIR)\c0d32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
-	$(LINK) /L$(LIBDIR) $(LCT) /Tpd /aa @$(PSGEN)gswin32.tr $(INTASM) ,$(GSDLL_DLL),$(PSOBJ)$(GSDLL),@$(LIBCTR),$(PSSRCDIR)\gsdll32.def,$(GSDLL_OBJ).res
+	$(LINK) /L$(LIBDIR) $(LCT) /Tpd /aa @$(PSGEN)gswin32.tr ,$(GSDLL_DLL),$(PSOBJ)$(GSDLL),@$(LIBCTR),$(PSSRCDIR)\gsdll32.def,$(GSDLL_OBJ).res
 
 !else
 # The big graphical EXE
@@ -691,7 +668,7 @@ $(GS_XE):   $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL)\
 	-del $(PSGEN)gswin32.tr
 	copy $(ld_tr) $(PSGEN)gswin32.tr
 	echo $(LIBDIR)\c0w32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
-	echo $(DWOBJNO) $(INTASM) >> $(PSGEN)gswin32.tr
+	echo $(DWOBJNO) >> $(PSGEN)gswin32.tr
 	$(LINK) /L$(LIBDIR) $(LCT) /Tpe /aa @$(PSGEN)gswin32.tr ,$(GS_XE),$(PSOBJ)$(GS) @$(LIBCTR),$(PSSRCDIR)\dwmain32.def,$(GS_OBJ).res
 
 # The big console mode EXE
@@ -700,7 +677,7 @@ $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
 	-del $(PSGEN)gswin32.tr
 	copy $(ld_tr) $(PSGEN)gswin32.tr
 	echo $(LIBDIR)\c0w32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
-	echo $(OBJCNO) $(INTASM) >> $(PSGEN)gswin32.tr
+	echo $(OBJCNO) >> $(PSGEN)gswin32.tr
 	$(LINK) /L$(LIBDIR) $(LCT) /Tpe /ap @$(PSGEN)gswin32.tr ,$(GSCONSOLE_XE),$(PSOBJ)$(GSCONSOLE) @$(LIBCTR),$(PSSRCDIR)\dw32c.def,$(GS_OBJ).res
 !endif
 

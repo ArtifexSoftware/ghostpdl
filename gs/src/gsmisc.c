@@ -606,7 +606,7 @@ ilog2(int n)
 	 "\000\000\001\001\002\002\002\002\003\003\003\003\003\003\003\003"[m] + l);
 }
 
-#if defined(NEED_SET_FMUL2FIXED) && !USE_ASM
+#if defined(NEED_SET_FMUL2FIXED)
 
 /*
  * Floating multiply with fixed result, for avoiding floating point in

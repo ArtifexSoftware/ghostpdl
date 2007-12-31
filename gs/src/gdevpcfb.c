@@ -225,12 +225,8 @@ typedef rop_params _ss *rop_ptr;
 
 /* Assembly language routines */
 
-#if USE_ASM
-void memsetcol(rop_ptr);	/* dest, draster, height, data */
-#else
-#define memsetcol cmemsetcol
 static void
-cmemsetcol(rop_ptr rop)
+memsetcol(rop_ptr rop)		/* dest, draster, height, data */
 {
     byte *addr = rop->dest;
     int yc = rop->height;
@@ -243,14 +239,9 @@ cmemsetcol(rop_ptr rop)
 	addr += draster;
     }
 }
-#endif
 
-#if USE_ASM
-void memsetrect(rop_ptr);	/* dest, draster, width, height, data */
-#else
-#define memsetrect cmemsetrect
 static void
-cmemsetrect(rop_ptr rop)
+memsetrect(rop_ptr rop)       /* dest, draster, width, height, data */
 {
     int yc = rop->height;
     int width = rop->width;
@@ -284,16 +275,10 @@ cmemsetrect(rop_ptr rop)
 	}
     }
 }
-#endif
 
-#if USE_ASM
-void memrwcol(rop_ptr);	/* dest, draster, src, sraster, height, shift, invert */
-#  define memrwcol0(rop) memrwcol(rop)	/* same except shift = 0 */
-#else
-#  define memrwcol cmemrwcol
-#  define memrwcol0 cmemrwcol0
 static void
-cmemrwcol(rop_ptr rop)
+memrwcol(rop_ptr rop)	/* dest, draster, src, sraster, height, shift, invert */
+
 {
     byte *dp = rop->dest;
     const byte *sp = rop->src;
@@ -309,7 +294,7 @@ cmemrwcol(rop_ptr rop)
     }
 }
 static void
-cmemrwcol0(rop_ptr rop)
+memrwcol0(rop_ptr rop)  /* same except shift = 0 */
 {
     byte *dp = rop->dest;
     const byte *sp = rop->src;
@@ -325,14 +310,9 @@ cmemrwcol0(rop_ptr rop)
 	}
 	while (--yc);
 }
-#endif
 
-#if USE_ASM
-void memrwcol2(rop_ptr);	/* dest, draster, src, sraster, height, shift, invert */
-#else
-#define memrwcol2 cmemrwcol2
 static void
-cmemrwcol2(rop_ptr rop)
+memrwcol2(rop_ptr rop)	/* dest, draster, src, sraster, height, shift, invert */
 {
     byte *dp = rop->dest;
     const byte *sp = rop->src;
@@ -347,7 +327,6 @@ cmemrwcol2(rop_ptr rop)
 	dp += draster, sp += sraster;
     }
 }
-#endif
 
 /* Forward definitions */
 int ega_write_dot(gx_device *, int, int, gx_color_index);

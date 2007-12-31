@@ -70,11 +70,6 @@ CC_INT=$(CC_)
 
 BEGINFILES=
 
-# Patch a couple of PC-specific things that aren't relevant to Unix builds,
-# but that cause `make' to produce warnings.
-
-PCFBASM=
-
 # Define the default build rule, so the object directories get created
 # automatically.
 

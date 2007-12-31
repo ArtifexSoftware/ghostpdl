@@ -296,18 +296,10 @@ $(GLOBJ)gdevpsu.$(OBJ) : $(GLSRC)gdevpsu.c $(GX) $(GDEV) $(math__h) $(time__h)\
 
 ### ----------------------- EGA and VGA displays ----------------------- ###
 
-# The shared MS-DOS makefile defines PCFBASM as either gdevegaa.$(OBJ)
-# or an empty string.
-
-$(GLOBJ)gdevegaa.$(OBJ) : $(GLSRC)gdevegaa.asm
-	$(GLCC) $(GLO_)gdevegaa.$(OBJ) $(C_) $(GLSRC)gdevegaa.c
-
-EGAVGA_DOS=$(GLOBJ)gdevevga.$(OBJ) $(GLOBJ)gdevpcfb.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ) $(PCFBASM)
-EGAVGA_SCO=$(GLOBJ)gdevsco.$(OBJ) $(GLOBJ)gdevpcfb.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ) $(PCFBASM)
+EGAVGA_DOS=$(GLOBJ)gdevevga.$(OBJ) $(GLOBJ)gdevpcfb.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ)
+EGAVGA_SCO=$(GLOBJ)gdevsco.$(OBJ) $(GLOBJ)gdevpcfb.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ)
 # NOTE: for direct frame buffer addressing under SCO Unix or Xenix,
-# change DOS to SCO in the following line.  Also, since SCO's /bin/as
-# does not support the "out" instructions, you must build the GNU
-# assembler and have it on your path as "as".
+# change DOS to SCO in the following line.
 EGAVGA=$(EGAVGA_DOS)
 
 #**************** $(CCD) gdevevga.c
@@ -346,7 +338,7 @@ $(DD)svga16.dev : $(DEVS_MAK) $(EGAVGA)
 # More capable SuperVGAs have a wide variety of slightly differing
 # interfaces, so we need a separate driver for each one.
 
-SVGA=$(GLOBJ)gdevsvga.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ) $(PCFBASM)
+SVGA=$(GLOBJ)gdevsvga.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ)
 
 #**************** $(CCD) gdevsvga.c
 $(GLOBJ)gdevsvga.$(OBJ) : $(GLSRC)gdevsvga.c $(GDEV) $(memory__h)\

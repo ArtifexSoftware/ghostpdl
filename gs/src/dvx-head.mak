@@ -65,7 +65,3 @@ CONFLDTR=-ol
 CC_D=$(CC_)
 CC_INT=$(CC_)
 
-# Patch a couple of PC-specific things that aren't relevant to DV/X builds,
-# but that cause `make' to produce warnings.
-
-PCFBASM=

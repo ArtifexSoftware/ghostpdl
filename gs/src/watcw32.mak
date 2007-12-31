@@ -288,9 +288,6 @@ CONFLDTR=-o
 
 PLATOPT=
 
-INTASM=
-PCFBASM=
-
 # Make sure we get the right default target for make.
 
 dosdefault: default

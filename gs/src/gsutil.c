@@ -17,7 +17,6 @@
 #include "string_.h"
 #include "memory_.h"
 #include "gstypes.h"
-#include "gconfigv.h"		/* for USE_ASM */
 #include "gserror.h"
 #include "gserrors.h"
 #include "gsmemory.h"		/* for init procedure */
@@ -44,8 +43,6 @@ gs_next_ids(const gs_memory_t *mem, uint count)
 
 /* Transpose an 8 x 8 block of bits.  line_size is the raster of */
 /* the input data.  dist is the distance between output bytes. */
-/* This routine may be supplanted by assembly code. */
-#if !USE_ASM
 
 void
 memflip8x8(const byte * inp, int line_size, byte * outp, int dist)
@@ -115,8 +112,6 @@ memflip8x8(const byte * inp, int line_size, byte * outp, int dist)
     *outp = (byte)(aceg >> 8);
     outp[dist] = (byte)(bdfh >> 8);
 }
-
-#endif /* !USE_ASM */
 
 /* Get an unsigned, big-endian 32-bit value. */
 ulong

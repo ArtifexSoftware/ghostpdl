@@ -310,11 +310,6 @@ TOP_MAKEFILES=$(MAKEFILE)
 
 PLATOPT=
 
-# Patch a couple of PC-specific things that aren't relevant to OpenVMS builds,
-# but that cause `make' to produce warnings.
-
-PCFBASM=
-
 # It is very unlikely that anyone would want to edit the remaining
 #   symbols, but we describe them here for completeness:
 
@@ -556,7 +551,6 @@ $(gconfig__h) : $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(EXP)$(ECHOGS_XE) -w $(gconfig__h) -x 23 define "HAVE_SYS_TIME_H"
 
 $(gconfigv_h) : $(TOP_MAKEFILES) $(ECHOGS_XE)
-	$(EXP)$(ECHOGS_XE) -w $(gconfigv_h) -x 23 define "USE_ASM" 0
 	$(EXP)$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define "USE_FPU" 1
 	$(EXP)$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define "EXTEND_NAMES" 0$(EXTEND_NAMES)
 	$(EXP)$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define "SYSTEM_CONSTANTS_ARE_WRITABLE" 0$(SYSTEM_CONSTANTS_ARE_WRITABLE)

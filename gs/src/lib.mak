@@ -269,7 +269,7 @@ $(GLOBJ)gsserial.$(OBJ) : $(GLSRC)gsserial.c $(stdpre_h) $(gstypes_h)\
 	$(GLCC) $(GLO_)gsserial.$(OBJ) $(C_) $(GLSRC)gsserial.c
 
 $(GLOBJ)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h) $(string__h)\
- $(gstypes_h) $(gconfigv_h) $(gserror_h) $(gserrors_h) $(gsmemory_h)\
+ $(gstypes_h) $(gserror_h) $(gserrors_h) $(gsmemory_h)\
  $(gsrect_h) $(gsuid_h) $(gsutil_h) $(gzstate_h) $(gxdcolor_h)
 	$(GLCC) $(GLO_)gsutil.$(OBJ) $(C_) $(GLSRC)gsutil.c
 

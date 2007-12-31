@@ -513,6 +513,6 @@ $(GS_XE):  $(GS_ALL) $(DEVS_ALL) $(LIB_ONLY) $(LIBCTR)
 	echo $(GLOBJ)gscdefs.obj >> $(GLGENDIR)\gslib32.tr
 	echo  /SUBSYSTEM:CONSOLE > $(GLGENDIR)\gslib32.rsp
 	echo  /OUT:$(GS_XE) >> $(GLGENDIR)\gslib32.rsp
-	$(LINK) $(LCT) @$(GLGENDIR)\gslib32.rsp $(GLOBJ)gslib @$(GLGENDIR)\gslib32.tr @$(LIBCTR) $(INTASM)
+	$(LINK) $(LCT) @$(GLGENDIR)\gslib32.rsp $(GLOBJ)gslib @$(GLGENDIR)\gslib32.tr @$(LIBCTR)
 	-del $(GLGENDIR)\gslib32.rsp
 	-del $(GLGENDIR)\gslib32.tr

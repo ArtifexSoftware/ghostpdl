@@ -24,8 +24,7 @@
 #   Configuration, internal, generic:
 #	PLATFORM, MAKEFILE, AK, CC*, DEBUG, CP_, RM_, RMN_
 #   Configuration, internal, specific to DOS/Windows:
-#	TDEBUG, USE_ASM, ASM,
-#	COMPDIR, LIBPATHS,
+#	TDEBUG, COMPDIR, LIBPATHS,
 #	CPU_TYPE, FPU_TYPE
 
 # We want Unix-compatible behavior.  This is part of it.
@@ -175,14 +174,6 @@ FPFLAGS=-fpi
 !endif
 !endif
 !endif
-
-INTASM=
-PCFBASM=
-
-# Define the generic compilation rules.
-
-.asm.obj:
-	$(ASM) $(ASMFLAGS) $<;
 
 # Make sure we get the right default target for make.
 
