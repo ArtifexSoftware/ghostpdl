@@ -86,6 +86,8 @@
 #define TEXT_INTERVENE            0x10000
 	/* Define whether to return the width. */
 #define TEXT_RETURN_WIDTH         0x20000
+	/* PDF mode "3 Tr" */
+#define TEXT_RENDER_MODE_3        0x40000
 
 /*
  * Define the structure of parameters passed in for text display.
