@@ -27,25 +27,25 @@
 #  define GS_BUILDTIME\
 	0			/* should be set in the makefile */
 #endif
-CONFIG_CONST long gs_buildtime = GS_BUILDTIME;
+const long gs_buildtime = GS_BUILDTIME;
 
 #ifndef GS_COPYRIGHT
 #  define GS_COPYRIGHT\
 	"Copyright (C) 2007 Artifex Software, Inc.  All rights reserved."
 #endif
-const char *CONFIG_CONST gs_copyright = GS_COPYRIGHT;
+const char *const gs_copyright = GS_COPYRIGHT;
 
 #ifndef GS_PRODUCTFAMILY
 #  define GS_PRODUCTFAMILY\
 	"GPL Ghostscript"
 #endif
-const char *CONFIG_CONST gs_productfamily = GS_PRODUCTFAMILY;
+const char *const gs_productfamily = GS_PRODUCTFAMILY;
 
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
 	GS_PRODUCTFAMILY " SVN PRE-RELEASE"
 #endif
-const char *CONFIG_CONST gs_product = GS_PRODUCT;
+const char *const gs_product = GS_PRODUCT;
 
 const char *
 gs_program_name(void)
@@ -54,7 +54,7 @@ gs_program_name(void)
 }
 
 /* GS_REVISION must be defined in the makefile. */
-CONFIG_CONST long gs_revision = GS_REVISION;
+const long gs_revision = GS_REVISION;
 
 long
 gs_revision_number(void)
@@ -63,13 +63,13 @@ gs_revision_number(void)
 }
 
 /* GS_REVISIONDATE must be defined in the makefile. */
-CONFIG_CONST long gs_revisiondate = GS_REVISIONDATE;
+const long gs_revisiondate = GS_REVISIONDATE;
 
 #ifndef GS_SERIALNUMBER
 #  define GS_SERIALNUMBER\
 	42			/* a famous number */
 #endif
-CONFIG_CONST long gs_serialnumber = GS_SERIALNUMBER;
+const long gs_serialnumber = GS_SERIALNUMBER;
 
 /* ---------------- Installation directories and files ---------------- */
 

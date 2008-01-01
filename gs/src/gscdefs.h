@@ -27,22 +27,14 @@
  */
 
 /* Miscellaneous system constants (read-only systemparams). */
-/* They should all be const, but one application needs some of them */
-/* to be writable.... */
 
-#if SYSTEM_CONSTANTS_ARE_WRITABLE
-#  define CONFIG_CONST		/* */
-#else
-#  define CONFIG_CONST const
-#endif
-
-extern CONFIG_CONST long gs_buildtime;
-extern const char *CONFIG_CONST gs_copyright;
-extern const char *CONFIG_CONST gs_product;
-extern const char *CONFIG_CONST gs_productfamily;
-extern CONFIG_CONST long gs_revision;
-extern CONFIG_CONST long gs_revisiondate;
-extern CONFIG_CONST long gs_serialnumber;
+extern const long gs_buildtime;
+extern const char *const gs_copyright;
+extern const char *const gs_product;
+extern const char *const gs_productfamily;
+extern const long gs_revision;
+extern const long gs_revisiondate;
+extern const long gs_serialnumber;
 
 /* Installation directories and files */
 extern const char *const gs_doc_directory;

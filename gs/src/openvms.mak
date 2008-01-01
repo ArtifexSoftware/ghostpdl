@@ -293,10 +293,6 @@ STDIO_IMPLEMENTATION=c
 
 EXTEND_NAMES=0
 
-# Define whether the system constants are writable.
-
-SYSTEM_CONSTANTS_ARE_WRITABLE=0
-
 # Define the platform name.
 
 PLATFORM=openvms_
@@ -553,4 +549,3 @@ $(gconfig__h) : $(TOP_MAKEFILES) $(ECHOGS_XE)
 $(gconfigv_h) : $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(EXP)$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define "USE_FPU" 1
 	$(EXP)$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define "EXTEND_NAMES" 0$(EXTEND_NAMES)
-	$(EXP)$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define "SYSTEM_CONSTANTS_ARE_WRITABLE" 0$(SYSTEM_CONSTANTS_ARE_WRITABLE)

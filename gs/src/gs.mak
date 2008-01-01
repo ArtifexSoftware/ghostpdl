@@ -155,10 +155,6 @@
 #	    table should have a capacity of 2^(16+N) names.  This normally
 #	    should be set to 0 (or left undefined), since non-zero values
 #	    result in a larger fixed space overhead and slightly slower code.
-#	SYSTEM_CONSTANTS_ARE_WRITABLE - normally 0 (or undefined); if set to
-#	    1, makes the system configuration constants (buildtime, copyright,
-#	    product, revision, revisiondate, serialnumber) writable.  Only
-#	    one unusual application needs this.
 #
 # It is very unlikely that anyone would want to edit the remaining
 #   symbols, but we describe them here for completeness:
