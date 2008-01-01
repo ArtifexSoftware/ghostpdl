@@ -36,6 +36,11 @@
 /setxrefentry
 {
   5 1 roll
+  dup 65535 or 65535 ne {
+    (   **** Warning:  Generation number out of 0..65535 range, assuming 0.\n)
+    pdfformaterror
+    pop 0
+  } if
        	% We store generation numbers as value + 1
 	% We reserve 0 to indicate an free xref entry
   1 add			% increment generation number
