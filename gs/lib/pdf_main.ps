@@ -494,7 +494,14 @@ pdfdict begin
 		% non-compliant PDF files that we have to do this too.
    PDFfile pdfstring 0 4 getinterval readstring pop
    (xref) eq
-   { readorigxref } 	% 'xref' -> original xref table
+   {
+     readorigxref	% 'xref' -> original xref table
+     % if hybrid-reference PDF, also fetch the entries 
+     % found in the XRef stream pointed by /XRefStm
+     dup /XRefStm knownoget {
+       readpdf15xref pop
+     } if
+   }
    { readpdf15xref }	% otherwise assume PDF 1.5 xref stream
    ifelse
  } bind def
