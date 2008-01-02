@@ -429,11 +429,6 @@ int pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool 
 int pdf_close_text_document(gx_device_pdf *pdev); /* in gdevpdtw.c */
 
 /*
- * Choose a name for embedded font.
- */
-const gs_font_name *pdf_choose_font_name(gs_font *font, bool key_name);
-
-/*
  * Convert True Type fonts into CID fonts for PDF/A.
  */
 int pdf_convert_truetype_font(gx_device_pdf *pdev,  pdf_resource_t *pres);

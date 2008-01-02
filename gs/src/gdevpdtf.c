@@ -652,19 +652,11 @@ has_extension_glyphs(gs_font *pfont)
     return false;
 }
 
-/*
- * Choose a name for embedded font.
- */
-const gs_font_name *pdf_choose_font_name(gs_font *font, bool key_name)
-{
-    return key_name ? (font->key_name.size != 0 ? &font->key_name : &font->font_name)
-	             : (font->font_name.size != 0 ? &font->font_name : &font->key_name);
-}
 pdf_font_embed_t
 pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
 		      pdf_char_glyph_pair_t *pairs, int num_glyphs)
 {
-    const gs_font_name *fn = pdf_choose_font_name(font, false);
+    const gs_font_name *fn = &font->font_name;
     const byte *chars = fn->chars;
     uint size = fn->size;
     int index = pdf_find_standard_font_name(chars, size);
@@ -848,7 +840,7 @@ pdf_font_std_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     gs_matrix *orig_matrix = (is_original ? &pfont->FontMatrix : &psf->orig_matrix);
 
     if (code < 0 ||
-	(code = pdf_base_font_alloc(pdev, &pdfont->base_font, pfont, orig_matrix, true, true)) < 0
+	(code = pdf_base_font_alloc(pdev, &pdfont->base_font, pfont, orig_matrix, true)) < 0
 	)
 	return code;
     pdfont->BaseFont.data = (byte *)psfi->fname; /* break const */
