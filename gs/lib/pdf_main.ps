@@ -254,8 +254,8 @@ currentdict /runpdfstring .undef
   } forall
 } bind def
 
-{/runpdfbegin /runpdfpagerange /dopdfpages /runpdfend /pdf_collection_files}
-{ currentdict exch .undef } forall
+currentdict /runpdfpagerange .undef
+currentdict /pdf_collection_files .undef
 
 end			% systemdict
 % Redefine the procedure that the C code uses for running piped input.
