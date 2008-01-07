@@ -245,11 +245,6 @@ $(GLOBJ)gsargs.$(OBJ) : $(GLSRC)gsargs.c\
  $(gserrors_h)
 	$(GLCC) $(GLO_)gsargs.$(OBJ) $(C_) $(GLSRC)gsargs.c
 
-# FPU emulation
-# gsfemu is only used in FPU-less configurations, and currently only with gcc.
-$(GLOBJ)gsfemu.$(OBJ) : $(GLSRC)gsfemu.c $(AK) $(std_h)
-	$(GLCC) $(GLO_)gsfemu.$(OBJ) $(C_) $(GLSRC)gsfemu.c
-
 $(GLOBJ)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(GXERR)\
  $(vmsmath_h)\
  $(ctype__h) $(malloc__h) $(math__h) $(memory__h) $(string__h)\

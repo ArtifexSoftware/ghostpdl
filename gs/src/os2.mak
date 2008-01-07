@@ -219,17 +219,6 @@ LIBDIR=$(TOOLPATH)\lib;$(COMPBASE)\lib
 # EMX requires 386 or higher
 CPU_TYPE=386
 
-# Define the math coprocessor (FPU) type.
-# Options are -1 (optimize for no FPU), 0 (optimize for FPU present,
-# but do not require a FPU), 87, 287, or 387.
-# If CPU_TYPE is 486 or above, FPU_TYPE is implicitly set to 387,
-# since 486DX and later processors include the equivalent of an 80387 on-chip.
-# An xx87 option means that the executable will run only if a FPU
-# of that type (or higher) is available: this is NOT currently checked
-# at runtime.
-
-FPU_TYPE=387
-
 # Define the .dev module that implements thread and synchronization
 # primitives for this platform.  Don't change this unless you really know
 # what you're doing.
@@ -601,7 +590,6 @@ $(gconfig__h): $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(ECHOGS_XE) -w $(gconfig__h) /* This file deliberately left blank. */
 
 $(gconfigv_h): $(PSSRCDIR)\os2.mak $(TOP_MAKEFILES) $(ECHOGS_XE)
-	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define USE_FPU -x 2028 -q $(FPU_TYPE)-0 -x 29
 	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define EXTEND_NAMES 0$(EXTEND_NAMES)
 
 # ----------------------------- Main program ------------------------------ #

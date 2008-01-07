@@ -350,21 +350,6 @@ CPU_FAMILY=i386
 
 CPU_TYPE=586
 
-# Define the math coprocessor (FPU) type.
-# Options are -1 (optimize for no FPU), 0 (optimize for FPU present,
-# but do not require a FPU), 87, 287, or 387.
-# If you have a 486 or Pentium CPU, you should normally set FPU_TYPE to 387,
-# since most of these CPUs include the equivalent of an 80387 on-chip;
-# however, the 486SX and the Cyrix 486SLC do not have an on-chip FPU, so if
-# you have one of these CPUs and no external FPU, set FPU_TYPE to -1 or 0.
-# An xx87 option means that the executable will run only if a FPU
-# of that type (or higher) is available: this is NOT currently checked
-# at runtime.
-
-! ifndef FPU_TYPE
-FPU_TYPE=387
-!endif
-
 # Define the .dev module that implements thread and synchronization
 # primitives for this platform.  Don't change this unless you really know
 # what you're doing.

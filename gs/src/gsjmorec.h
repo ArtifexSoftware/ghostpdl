@@ -21,14 +21,11 @@
 
 /* Remove unwanted / unneeded features. */
 #undef DCT_IFAST_SUPPORTED
-#if FPU_TYPE <= 0
-#  undef DCT_FLOAT_SUPPORTED
-#endif
 #undef C_MULTISCAN_FILES_SUPPORTED
 #undef C_PROGRESSIVE_SUPPORTED
 #undef ENTROPY_OPT_SUPPORTED
 #undef INPUT_SMOOTHING_SUPPORTED
-
+#undef DCT_FLOAT_SUPPORTED
 
 /* Progressive JPEG is required for PDF 1.3.
  * Don't undefine D_MULTISCAN_FILES_SUPPORTED and D_PROGRESSIVE_SUPPORTED

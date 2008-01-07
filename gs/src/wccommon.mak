@@ -25,7 +25,7 @@
 #	PLATFORM, MAKEFILE, AK, CC*, DEBUG, CP_, RM_, RMN_
 #   Configuration, internal, specific to DOS/Windows:
 #	TDEBUG, COMPDIR, LIBPATHS,
-#	CPU_TYPE, FPU_TYPE
+#	CPU_TYPE,
 
 # We want Unix-compatible behavior.  This is part of it.
 

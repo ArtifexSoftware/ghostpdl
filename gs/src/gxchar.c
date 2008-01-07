@@ -1241,7 +1241,6 @@ show_proceed(gs_show_enum * penum)
 	/* Normally, char_tm is valid because of show_state_setup, */
 	/* but if we're in a cshow, it may not be. */
 	gs_currentcharmatrix(pgs, NULL, true);
-#if 1				/*USE_FPU <= 0 */
 	if (pgs->ctm.txy_fixed_valid && pgs->char_tm.txy_fixed_valid) {
 	    fixed tx = pgs->ctm.tx_fixed;
 	    fixed ty = pgs->ctm.ty_fixed;
@@ -1249,9 +1248,7 @@ show_proceed(gs_show_enum * penum)
 	    gs_settocharmatrix(pgs);
 	    cpt.x += pgs->ctm.tx_fixed - tx;
 	    cpt.y += pgs->ctm.ty_fixed - ty;
-	} else
-#endif
-	{
+	} else 	{
 	    double tx = pgs->ctm.tx;
 	    double ty = pgs->ctm.ty;
 	    double fpx, fpy;
@@ -1500,14 +1497,12 @@ show_state_setup(gs_show_enum * penum)
 	penum->obox.p.y = fixed2int_var(cbox.p.y);
 	penum->obox.q.x = fixed2int_var_ceiling(cbox.q.x);
 	penum->obox.q.y = fixed2int_var_ceiling(cbox.q.y);
-#if 1				/*USE_FPU <= 0 */
 	if (pgs->ctm.txy_fixed_valid && pgs->char_tm.txy_fixed_valid) {
 	    penum->ftx = (int)fixed2long(pgs->char_tm.tx_fixed -
 					 pgs->ctm.tx_fixed);
 	    penum->fty = (int)fixed2long(pgs->char_tm.ty_fixed -
 					 pgs->ctm.ty_fixed);
 	} else {
-#endif
 	    double fdx = pgs->char_tm.tx - pgs->ctm.tx;
 	    double fdy = pgs->char_tm.ty - pgs->ctm.ty;
 

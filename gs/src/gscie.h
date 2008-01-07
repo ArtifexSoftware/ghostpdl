@@ -18,7 +18,7 @@
 #ifndef gscie_INCLUDED
 #  define gscie_INCLUDED
 
-#include "std.h"		/* for USE_FPU */
+#include "std.h"
 #include "gsrefct.h"
 #include "gsstype.h"		/* for extern_st */
 #include "gstypes.h"		/* for gs_range_t */
@@ -34,9 +34,6 @@
 
 /* Define whether to use fixed- or floating-point values in the caches. */
 /*#define CIE_CACHE_USE_FIXED */
-#if USE_FPU < 0
-#  define CIE_CACHE_USE_FIXED
-#endif
 
 /* If we are using fixed-point values, define the number of fraction bits. */
 #define CIE_FIXED_FRACTION_BITS 12

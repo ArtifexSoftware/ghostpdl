@@ -555,5 +555,4 @@ $(gconfig__h) : $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(EXP)$(ECHOGS_XE) -w $(gconfig__h) -x 23 define "HAVE_SYS_TIME_H"
 
 $(gconfigv_h) : $(TOP_MAKEFILES) $(ECHOGS_XE)
-	$(EXP)$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define "USE_FPU" 1
 	$(EXP)$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define "EXTEND_NAMES" 0$(EXTEND_NAMES)

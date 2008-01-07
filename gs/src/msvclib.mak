@@ -352,27 +352,6 @@ CPU_TYPE=486
 #CPU_TYPE=601
 !endif
 
-!if "$(CPU_FAMILY)"=="i386"
-
-# Intel(-compatible) processors are the only ones for which the CPU type
-# doesn't indicate whether a math coprocessor is present.
-# For Intel processors only, define the math coprocessor (FPU) type.
-# Options are -1 (optimize for no FPU), 0 (optimize for FPU present,
-# but do not require a FPU), 87, 287, or 387.
-# If you have a 486 or Pentium CPU, you should normally set FPU_TYPE to 387,
-# since most of these CPUs include the equivalent of an 80387 on-chip;
-# however, the 486SX and the Cyrix 486SLC do not have an on-chip FPU, so if
-# you have one of these CPUs and no external FPU, set FPU_TYPE to -1 or 0.
-# An xx87 option means that the executable will run only if a FPU
-# of that type (or higher) is available: this is NOT currently checked
-# at runtime.
-
-! ifndef FPU_TYPE
-FPU_TYPE=387
-! endif
-
-!endif
-
 # Define the .dev module that implements thread and synchronization
 # primitives for this platform.  Don't change this unless you really know
 # what you're doing.
@@ -449,21 +428,6 @@ DEVICE_DEVS20=
 !endif
 
 # ---------------------------- End of options ---------------------------- #
-
-# Derive values for FPU_TYPE for non-Intel processors.
-
-!if "$(CPU_FAMILY)"=="ppc"
-! if $(CPU_TYPE)>601
-FPU_TYPE=2
-! else
-FPU_TYPE=1
-! endif
-!endif
-
-!if "$(CPU_FAMILY)"=="alpha"
-# *** alpha *** This needs fixing
-FPU_TYPE=1
-!endif
 
 # Define the name of the makefile -- used in dependencies.
 

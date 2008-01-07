@@ -27,38 +27,6 @@
 
 /* ---------------- ImageScaleEncode/Decode ---------------- */
 
-/* Define whether to accumulate pixels in fixed or floating point. */
-#if USE_FPU <= 0
-
-	/* Accumulate pixels in fixed point. */
-
-typedef int PixelWeight;
-
-#  if ARCH_INTS_ARE_SHORT
-typedef long AccumTmp;
-#  else
-typedef int AccumTmp;
-#  endif
-
-/*
- *    The optimal scaling for fixed point arithmetic is a function of the
- *    size of AccumTmp type, the size if the input pixel, the size of the
- *    intermediate pixel (PixelTmp) and the size of the output pixel.  This
- *    is set by these definitions and the fraction_bits variables in the
- *    functions.
- */
-#define num_weight_bits\
-  ((sizeof(AccumTmp) - maxSizeofPixel) * 8 - (LOG2_MAX_ISCALE_SUPPORT + 1))
-#define numScaleBits  ((maxSizeofPixel - sizeof(PixelTmp)) * 8 )
-#define fixedScaleFactor  ((int) (1 << numScaleBits))
-#define scale_PixelWeight(factor) ((int)((factor) * (1 << num_weight_bits)))
-#define unscale_AccumTmp(atemp, fraction_bits) arith_rshift(atemp, fraction_bits)
-#define NEED_FRACTION_BITS
-
-#else /* USE_FPU > 0 */
-
-	/* Accumulate pixels in floating point. */
-
 typedef float PixelWeight;
 typedef double AccumTmp;
 
@@ -67,8 +35,6 @@ typedef double AccumTmp;
 #define scale_PixelWeight(factor) (factor)
 #define unscale_AccumTmp(atemp, fraction_bits) ((int)(atemp + 0.5))
 /*#undef NEED_FRACTION_BITS*/
-
-#endif /* USE_FPU */
 
 /* Temporary intermediate values */
 typedef byte PixelTmp;

@@ -110,9 +110,6 @@ STUB=$(%WATCOM)\binb\wstub.exe
 !ifndef CPU_TYPE
 CPU_TYPE=386
 !endif
-!ifndef FPU_TYPE
-FPU_TYPE=0
-!endif
 
 !ifndef SYNC
 SYNC=winsync

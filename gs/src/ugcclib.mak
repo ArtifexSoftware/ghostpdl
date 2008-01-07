@@ -100,7 +100,6 @@ XLIBDIRS=-L/usr/X11R6/lib
 XLIBDIR=
 XLIBS=Xt Xext X11
 
-FPU_TYPE=1
 SYNC=posync
 
 FEATURE_DEVS=$(GLD)dps2lib.dev $(GLD)psl2cs.dev $(GLD)cielib.dev\

@@ -130,7 +130,6 @@ $(gconfig__h): $(TOP_MAKEFILES)
 	$(ECHOGS_XE) -w $(gconfig__h) -x 2f2a20 This file deliberately left blank. -x 2a2f
 
 $(gconfigv_h): $(TOP_MAKEFILES) $(ECHOGS_XE)
-	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define USE_FPU -x 2028 -q $(FPU_TYPE)-0 -x 29
 	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define EXTEND_NAMES 0$(EXTEND_NAMES)
 
 # -------------------------------- Library -------------------------------- #

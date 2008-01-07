@@ -300,17 +300,6 @@ XLIBDIRS=-L/usr/X11R6/lib
 XLIBDIR=
 XLIBS=Xt Xext X11
 
-# Define whether this platform has floating point hardware:
-#	FPU_TYPE=2 means floating point is faster than fixed point.
-# (This is the case on some RISCs with multiple instruction dispatch.)
-#	FPU_TYPE=1 means floating point is at worst only slightly slower
-# than fixed point.
-#	FPU_TYPE=0 means that floating point may be considerably slower.
-#	FPU_TYPE=-1 means that floating point is always much slower than
-# fixed point.
-
-FPU_TYPE=1
-
 # Define the .dev module that implements thread and synchronization
 # primitives for this platform.
 
