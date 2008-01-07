@@ -156,9 +156,6 @@ BAND_LIST_COMPRESSOR=zlib
 !ifndef CPU_TYPE
 CPU_TYPE=586
 !endif
-!ifndef FPU_TYPE
-FPU_TYPE=0
-!endif
 
 !ifndef BAND_LIST_STORAGE
 BAND_LIST_STORAGE=file

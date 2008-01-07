@@ -129,8 +129,6 @@ UFSTFONTDIR?=%rom%fontdata/
 endif
 endif # PL_SCALER = ufst
 
-FPU_TYPE?=1
-
 # flags for artifex scaler
 ifeq ($(PL_SCALER), afs)
 

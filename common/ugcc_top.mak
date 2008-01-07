@@ -34,19 +34,12 @@ include $(GLSRCDIR)/lib.mak
 debug:
 	$(MAKE) -f $(firstword $(MAKEFILE)) GENOPT='-DDEBUG' CFLAGS='-ggdb -g3 -O0 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)'
 
-pg-fp-with-cov:
+pg-with-cov:
 	$(MAKE) -f $(firstword $(MAKEFILE)) GENDIR=$(PGGENDIR) GENOPT='' CFLAGS='-g -pg -O2 -fprofile-arcs -ftest-coverage $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg -fprofile-arcs -ftest-coverage -static'
 
 # Configure for profiling
-pg-fp:
+pg:
 	$(MAKE) -f $(firstword $(MAKEFILE)) GENDIR=$(PGGENDIR) GENOPT='' CFLAGS='-g -pg -O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg -static'
-
-pg-nofp:
-	$(MAKE) -f $(firstword $(MAKEFILE)) GENDIR=$(PGGENDIR) GENOPT='' GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-g -pg -O2 -msoft-float $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg' FPU_TYPE=-1 XOBJS=
-
-# Configure for debugging and no FPU (crude timing configuration)
-nofp:
-	$(MAKE) -f $(firstword $(MAKEFILE)) GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-g -O0 -msoft-float $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)' FPU_TYPE=-1 XOBJS=
 
 # Configure for optimization.
 product:
@@ -67,7 +60,7 @@ $(GENDIR)/ldgs.tr: FORCE
 	-mkdir $(GLOBJDIR)
 	$(MAKE) \
 	  CCAUX='$(CCAUX)'\
-	  GCFLAGS='$(GCFLAGS)' FPU_TYPE='$(FPU_TYPE)'\
+	  GCFLAGS='$(GCFLAGS)' \
 	  CONFIG='$(CONFIG)' FEATURE_DEVS='$(FEATURE_DEVS)' \
 	  XINCLUDE='$(XINCLUDE)' XLIBDIRS='$(XLIBDIRS)' XLIBDIR='$(XLIBDIR)' XLIBS='$(XLIBS)' \
           DEVICE_DEVS='$(DEVICE_DEVS) $(DD)bbox.dev' \
@@ -121,7 +114,7 @@ $(GENDIR)/ldgs.tr: FORCE
 	touch $(GLOBJDIR)/gs_init.ps
 	$(MAKE) \
 	  CCAUX='$(CCAUX)'\
-	  GCFLAGS='$(GCFLAGS)' FPU_TYPE='$(FPU_TYPE)'\
+	  GCFLAGS='$(GCFLAGS)' \
 	  CONFIG='$(CONFIG)' FEATURE_DEVS='$(FEATURE_DEVS)' \
 	  XINCLUDE='$(XINCLUDE)' XLIBDIRS='$(XLIBDIRS)' XLIBDIR='$(XLIBDIR)' XLIBS='$(XLIBS)' \
           DEVICE_DEVS='$(DEVICE_DEVS) $(DD)bbox.dev' \
