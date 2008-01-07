@@ -65,7 +65,7 @@ GSLITE_LIB=libgslt.so
 all: $(GSLITE_LIB)
 
 # gs library config and miscellany.
-GSXLIBS=$(GLOBJDIR)/gsargs.$(OBJ) $(GLOBJDIR)/gsfemu.$(OBJ) $(GLOBJDIR)/gconfig.$(OBJ) $(GLOBJDIR)/gscdefs.$(OBJ)
+GSXLIBS=$(GLOBJDIR)/gsargs.$(OBJ) $(GLOBJDIR)/gconfig.$(OBJ) $(GLOBJDIR)/gscdefs.$(OBJ)
 
 # invoke the gs *library* makefile to build needed
 # devices, objects and configuration files.

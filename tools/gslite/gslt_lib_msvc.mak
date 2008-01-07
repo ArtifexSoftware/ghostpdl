@@ -90,7 +90,7 @@ $(GSLIB_PARTS): $(MAKEFILE)
 	  SHARE_ZLIB=$(SHARE_ZLIB) SHARE_LIBPNG=$(SHARE_LIBPNG) SHARE_JPEG=$(SHARE_JPEG)\
 	  /f $(GLSRCDIR)\msvclib.mak \
 	  $(GLOBJDIR)\ld.tr \
-	  $(GLOBJDIR)\gsargs.obj $(GLOBJDIR)\gsfemu.obj \
+	  $(GLOBJDIR)\gsargs.obj \
 	  $(GLOBJDIR)\gconfig.obj $(GLOBJDIR)\gscdefs.obj \
 	  $(GLOBJDIR)\jpeglib_.h
 
@@ -118,7 +118,7 @@ COMMONDIR=..\..\common
 # windows clutter.
 MSXLIBS=shell32.lib comdlg32.lib gdi32.lib user32.lib winspool.lib advapi32.lib
 # gs library config and miscellany.
-GSXLIBS=$(GLOBJDIR)\gsargs.obj $(GLOBJDIR)\gsfemu.obj $(GLOBJDIR)\gconfig.obj $(GLOBJDIR)\gscdefs.obj
+GSXLIBS=$(GLOBJDIR)\gsargs.obj $(GLOBJDIR)\gconfig.obj $(GLOBJDIR)\gscdefs.obj
 
 $(GSLITE_LIB): $(GSLIB_PARTS) $(GSLT_OBJS) $(GSXLIBS) $(MAKEFILE)
 	link -dll -out:$(GSLITE_LIB) -def:gslt.def \

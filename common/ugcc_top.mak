@@ -42,11 +42,11 @@ pg-fp:
 	$(MAKE) -f $(firstword $(MAKEFILE)) GENDIR=$(PGGENDIR) GENOPT='' CFLAGS='-g -pg -O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg -static'
 
 pg-nofp:
-	$(MAKE) -f $(firstword $(MAKEFILE)) GENDIR=$(PGGENDIR) GENOPT='' GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-g -pg -O2 -msoft-float $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg' FPU_TYPE=-1 XOBJS='$(GLOBJDIR)/gsfemu.o'
+	$(MAKE) -f $(firstword $(MAKEFILE)) GENDIR=$(PGGENDIR) GENOPT='' GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-g -pg -O2 -msoft-float $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg' FPU_TYPE=-1 XOBJS=
 
 # Configure for debugging and no FPU (crude timing configuration)
 nofp:
-	$(MAKE) -f $(firstword $(MAKEFILE)) GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-g -O0 -msoft-float $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)' FPU_TYPE=-1 XOBJS='$(GLOBJDIR)/gsfemu.o'
+	$(MAKE) -f $(firstword $(MAKEFILE)) GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-g -O0 -msoft-float $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)' FPU_TYPE=-1 XOBJS=
 
 # Configure for optimization.
 product:
@@ -94,7 +94,7 @@ $(GENDIR)/ldgs.tr: FORCE
 	  PSOBJDIR=$(GENDIR) IJSSRCDIR=../gs/ijs \
 	  -f $(GLSRCDIR)/unix-gcc.mak\
 	  $(GLOBJDIR)/ld.tr \
-	  $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gsfemu.o \
+	  $(GLOBJDIR)/gsargs.o \
 	  $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o $(GLOBJDIR)/iconfig.$(OBJ) \
 	  $(GLOBJDIR)/iccinit$(COMPILE_INITS).$(OBJ)
 	  cp $(GLOBJDIR)/ld.tr $(GENDIR)/ldgs.tr
@@ -144,7 +144,7 @@ $(GENDIR)/ldgs.tr: FORCE
 	  PSOBJDIR=$(GENDIR) IJSSRCDIR=../gs/ijs \
 	  -f $(GLSRCDIR)/ugcclib.mak \
 	  $(GLOBJDIR)/ld.tr \
-	  $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gsfemu.o \
+	  $(GLOBJDIR)/gsargs.o \
 	  $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o $(ROMFS)
 	  cp $(GLOBJDIR)/ld.tr $(GENDIR)/ldgs.tr
 
