@@ -61,11 +61,6 @@ debug: DEBUGDIRS
 debugclean: DEBUGDIRS
 	$(MAKE) $(DEBUGDEFS) clean
 
-# The rule for gconfigv.h is here because it is shared between Unix and
-# DV/X environments.
-$(gconfigv_h): $(GLSRC)unix-end.mak $(TOP_MAKEFILES) $(ECHOGS_XE)
-	$(ECHOGS_XE) -w $(gconfigv_h) -x 2f2a20 This file intentionally left blank. -x 202a2f
-
 # Emacs tags maintenance.
 
 TAGS:

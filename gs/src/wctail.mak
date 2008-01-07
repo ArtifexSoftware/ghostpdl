@@ -83,6 +83,3 @@ $(AUXGEN)geninit.$(OBJ): $(GLSRC)geninit.c $(stdpre_h)
 # Watcom `make' supports output redirection.
 $(gconfig__h): $(WCTAIL_MAK)
 	echo /* This file deliberately left blank. */ >$(gconfig__h)
-
-$(gconfigv_h): $(WCTAIL_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
-	$(ECHOGS_XE) -w $(gconfigv_h) -x 2f2a20 This space intentionally left blank. -x 202a2f

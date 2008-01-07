@@ -129,9 +129,6 @@ GSDLL_OBJ=$(GLOBJ)$(GSDLL)
 $(gconfig__h): $(TOP_MAKEFILES)
 	$(ECHOGS_XE) -w $(gconfig__h) -x 2f2a20 This file deliberately left blank. -x 2a2f
 
-$(gconfigv_h): $(TOP_MAKEFILES) $(ECHOGS_XE)
-	$(ECHOGS_XE) -w $(gconfigv_h) -x 2f2a20 This space intentionally left blank. -x 202a2f
-
 # -------------------------------- Library -------------------------------- #
 
 # The Windows Win32 platform

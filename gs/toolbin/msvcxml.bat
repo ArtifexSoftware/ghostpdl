@@ -86,7 +86,7 @@ echo    CharacterSet="0"
 echo  ^>
 echo  ^<Tool
 echo    Name="VCPreBuildEventTool"
-echo	CommandLine="$(OutDir)\echogs -wb $(IntDir)\gswin.ico -n -X -r $(SolutionDir)src\gswin.icx&#x0D;&#x0A;$(OutDir)\echogs -w $(IntDir)\gconfig_.h -x 2f2a20 This file deliberately left blank. -x 2a2f&#x0D;&#x0A;$(OutDir)\echogs -w $(IntDir)\gconfigv.h -x 2f2a20 This space intentionally left blank. -x 2a2f&#x0D;&#x0A;$(OutDir)\echogs -w $(IntDir)\jconfig.h -+R $(SolutionDir)src\stdpn.h -+R $(SolutionDir)src\stdpre.h -+R $(SolutionDir)src\gsjconf.h&#x0D;&#x0A;copy $(SolutionDir)src\gsjmorec.h $(IntDir)\jmorecfg.h&#x0D;&#x0A;copy $(SolutionDir)jpeg\jmorecfg.h $(IntDir)\jmcorig.h&#x0D;&#x0A;copy $(SolutionDir)jpeg\jpeglib.h $(IntDir)\jpeglib_.h&#x0D;&#x0A;copy $(SolutionDir)src\gscdef.c $(IntDir)\gscdefs.c&#x0D;&#x0A;"
+echo	CommandLine="$(OutDir)\echogs -wb $(IntDir)\gswin.ico -n -X -r $(SolutionDir)src\gswin.icx&#x0D;&#x0A;$(OutDir)\echogs -w $(IntDir)\gconfig_.h -x 2f2a20 This file deliberately left blank. -x 2a2f&#x0D;&#x0A;$(OutDir)\echogs -w $(IntDir)\jconfig.h -+R $(SolutionDir)src\stdpn.h -+R $(SolutionDir)src\stdpre.h -+R $(SolutionDir)src\gsjconf.h&#x0D;&#x0A;copy $(SolutionDir)src\gsjmorec.h $(IntDir)\jmorecfg.h&#x0D;&#x0A;copy $(SolutionDir)jpeg\jmorecfg.h $(IntDir)\jmcorig.h&#x0D;&#x0A;copy $(SolutionDir)jpeg\jpeglib.h $(IntDir)\jpeglib_.h&#x0D;&#x0A;copy $(SolutionDir)src\gscdef.c $(IntDir)\gscdefs.c&#x0D;&#x0A;"
 echo  /^>
 echo  ^<Tool Name="VCCLCompilerTool"
 echo    Optimization="0"

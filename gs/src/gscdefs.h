@@ -17,8 +17,6 @@
 #ifndef gscdefs_INCLUDED
 #  define gscdefs_INCLUDED
 
-#include "gconfigv.h"
-
 /*
  * This file may be #included in places that don't even have stdpre.h,
  * so it mustn't use any Ghostscript definitions in any code that is

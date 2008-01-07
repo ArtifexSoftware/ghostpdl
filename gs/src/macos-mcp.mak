@@ -325,7 +325,6 @@ $(GLOBJ)gdevmacxf.$(OBJ):  $(GLSRC)gdevmacxf.c
 
 gp_mac_h=$(GLSRC)gp_mac.h
 gconfig_h=$(GLOBJ)gconfig.h
-gconfigv_h=$(GLOBJ)gconfigv.h
 
 macsystypes_h=$(GLSRC)macsystypes.h
 systypes_h=$(GLOBJ)sys/types.h

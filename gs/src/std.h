@@ -22,9 +22,6 @@
 /* Include the architecture definitions. */
 #include "arch.h"
 
-/* Include compile time constants from the makefile */
-#include "gconfigv.h"
-
 /*
  * Define lower-case versions of the architecture parameters for backward
  * compatibility.

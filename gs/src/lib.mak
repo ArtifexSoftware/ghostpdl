@@ -69,10 +69,9 @@ gpsync_h=$(GLSRC)gpsync.h
 gconf_h=$(GLSRC)gconf.h $(gconfig_h)
 # gconfig*.h are generated dynamically.
 gconfig__h=$(GLGEN)gconfig_.h
-gconfigv_h=$(GLGEN)gconfigv.h
-gscdefs_h=$(GLSRC)gscdefs.h $(gconfigv_h)
+gscdefs_h=$(GLSRC)gscdefs.h
 
-std_h=$(GLSRC)std.h $(arch_h) $(stdpre_h) $(gconfigv_h)
+std_h=$(GLSRC)std.h $(arch_h) $(stdpre_h)
 
 # C library interfaces
 
