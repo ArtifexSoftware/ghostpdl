@@ -201,11 +201,6 @@ FILE_IMPLEMENTATION=stdio
 
 STDIO_IMPLEMENTATION=c
 
-# Define the name table capacity size of 2^(16+n).
-# Setting this to a non-zero value will slow down the interpreter.
-
-EXTEND_NAMES=0
-
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 

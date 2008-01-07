@@ -85,4 +85,4 @@ $(gconfig__h): $(WCTAIL_MAK)
 	echo /* This file deliberately left blank. */ >$(gconfig__h)
 
 $(gconfigv_h): $(WCTAIL_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
-	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define EXTEND_NAMES 0$(EXTEND_NAMES)
+	$(ECHOGS_XE) -w $(gconfigv_h) -x 2f2a20 This space intentionally left blank. -x 202a2f

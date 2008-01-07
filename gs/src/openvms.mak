@@ -289,10 +289,6 @@ FILE_IMPLEMENTATION=stdio
 
 STDIO_IMPLEMENTATION=c
 
-# Define the name table capacity size of 2^(16+n).
-
-EXTEND_NAMES=0
-
 # Define the platform name.
 
 PLATFORM=openvms_
@@ -547,4 +543,4 @@ $(gconfig__h) : $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(EXP)$(ECHOGS_XE) -w $(gconfig__h) -x 23 define "HAVE_SYS_TIME_H"
 
 $(gconfigv_h) : $(TOP_MAKEFILES) $(ECHOGS_XE)
-	$(EXP)$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define "EXTEND_NAMES" 0$(EXTEND_NAMES)
+	$(EXP)$(ECHOGS_XE) -w $(gconfigv_h) -x 2f2a20 This fine intentionally left blank -x 202a2f

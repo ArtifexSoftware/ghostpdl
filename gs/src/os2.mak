@@ -590,7 +590,7 @@ $(gconfig__h): $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(ECHOGS_XE) -w $(gconfig__h) /* This file deliberately left blank. */
 
 $(gconfigv_h): $(PSSRCDIR)\os2.mak $(TOP_MAKEFILES) $(ECHOGS_XE)
-	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define EXTEND_NAMES 0$(EXTEND_NAMES)
+	$(ECHOGS_XE) -w $(gconfigv_h) /* This file deliberatedly left blank. */
 
 # ----------------------------- Main program ------------------------------ #
 

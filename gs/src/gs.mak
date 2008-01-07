@@ -151,10 +151,6 @@
 #	    based stdio in ziodevs.c. 
 #           Callouts use procedure based streams and return back to
 #           to gs_main_interpret() in imain.c whenever stdio is needed.
-#	EXTEND_NAMES - a value N between 0 and 6, indicating that the name
-#	    table should have a capacity of 2^(16+N) names.  This normally
-#	    should be set to 0 (or left undefined), since non-zero values
-#	    result in a larger fixed space overhead and slightly slower code.
 #
 # It is very unlikely that anyone would want to edit the remaining
 #   symbols, but we describe them here for completeness:

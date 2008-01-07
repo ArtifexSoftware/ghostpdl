@@ -86,7 +86,7 @@ echo    CharacterSet="0"
 echo  ^>
 echo  ^<Tool
 echo    Name="VCPreBuildEventTool"
-echo	CommandLine="$(OutDir)\echogs -wb $(IntDir)\gswin.ico -n -X -r $(SolutionDir)src\gswin.icx&#x0D;&#x0A;$(OutDir)\echogs -w $(IntDir)\gconfig_.h -x 2f2a20 This file deliberately left blank. -x 2a2f&#x0D;&#x0A;$(OutDir)\echogs -a $(IntDir)\gconfigv.h -x 23 define USE_FPU -x 2028 -q $(FPU_TYPE)-0 -x 29&#x0D;&#x0A;$(OutDir)\echogs -a $(IntDir)\gconfigv.h -x 23 define EXTEND_NAMES 0$(EXTEND_NAMES)&#x0D;&#x0A;$(OutDir)\echogs -w $(IntDir)\jconfig.h -+R $(SolutionDir)src\stdpn.h -+R $(SolutionDir)src\stdpre.h -+R $(SolutionDir)src\gsjconf.h&#x0D;&#x0A;copy $(SolutionDir)src\gsjmorec.h $(IntDir)\jmorecfg.h&#x0D;&#x0A;copy $(SolutionDir)jpeg\jmorecfg.h $(IntDir)\jmcorig.h&#x0D;&#x0A;copy $(SolutionDir)jpeg\jpeglib.h $(IntDir)\jpeglib_.h&#x0D;&#x0A;copy $(SolutionDir)src\gscdef.c $(IntDir)\gscdefs.c&#x0D;&#x0A;"
+echo	CommandLine="$(OutDir)\echogs -wb $(IntDir)\gswin.ico -n -X -r $(SolutionDir)src\gswin.icx&#x0D;&#x0A;$(OutDir)\echogs -w $(IntDir)\gconfig_.h -x 2f2a20 This file deliberately left blank. -x 2a2f&#x0D;&#x0A;$(OutDir)\echogs -w $(IntDir)\gconfigv.h -x 2f2a20 This space intentionally left blank. -x 2a2f&#x0D;&#x0A;$(OutDir)\echogs -w $(IntDir)\jconfig.h -+R $(SolutionDir)src\stdpn.h -+R $(SolutionDir)src\stdpre.h -+R $(SolutionDir)src\gsjconf.h&#x0D;&#x0A;copy $(SolutionDir)src\gsjmorec.h $(IntDir)\jmorecfg.h&#x0D;&#x0A;copy $(SolutionDir)jpeg\jmorecfg.h $(IntDir)\jmcorig.h&#x0D;&#x0A;copy $(SolutionDir)jpeg\jpeglib.h $(IntDir)\jpeglib_.h&#x0D;&#x0A;copy $(SolutionDir)src\gscdef.c $(IntDir)\gscdefs.c&#x0D;&#x0A;"
 echo  /^>
 echo  ^<Tool Name="VCCLCompilerTool"
 echo    Optimization="0"
@@ -1140,8 +1140,6 @@ echo   ^<UserMacro Name="GS_INIT" Value="gs_init.ps" /^>
 echo   ^<UserMacro Name="GS_LIB_DEFAULT" Value="$(GSROOTDIR)/lib;$(GSROOTDIR)/Resource/Font;$(AROOTDIR)/fonts" /^>
 echo   ^<UserMacro Name="GS_REVISION" Value="$(GS_VERSION)" /^>
 echo   ^<UserMacro Name="SEARCH_HERE_FIRST" Value="1" /^>
-echo   ^<UserMacro Name="FPU_TYPE" Value="387" /^>
-REM echo   ^<UserMacro Name="EXTEND_NAMES" Value="0" /^>
 echo ^</VisualStudioPropertySheet^>
 goto end
 

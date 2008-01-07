@@ -17,8 +17,6 @@
 #ifndef inameidx_INCLUDED
 #  define inameidx_INCLUDED
 
-#include "gconfigv.h"		/* defines EXTEND_NAMES */
-
 /*
  * The name table machinery has two slightly different configurations:
  * a faster one that limits the total number of names to 64K and allows
