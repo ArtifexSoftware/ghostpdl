@@ -16,10 +16,10 @@ product: pcl
 # specific front-end targets
 
 pcl:
-	$(MAKE) -C main -f pcl6_gcc.mak	product # build PCL and PCLXL. 
+	$(MAKE) -C main -f pcl6_gcc.mak	pdl_product # build PCL and PCLXL. 
 
 pcl_debug: 
-	$(MAKE) -C main -f pcl6_gcc.mak debug
+	$(MAKE) -C main -f pcl6_gcc.mak pdl_debug
 
 fonts:
 	mkdir -p /windows/fonts/	# make a font directory. 2 
@@ -27,7 +27,7 @@ fonts:
 	touch fonts
 
 pcl_profile:
-	$(MAKE) -C main -f pcl6_gcc.mak pg
+	$(MAKE) -C main -f pcl6_gcc.mak pdl_pg
 
 pcl_install:
 	install main/obj/pcl6 /usr/local/bin
@@ -44,17 +44,17 @@ pcl_test:
 # names here so they could be removed individually.
 
 pcl_clean:
-	$(MAKE) -C main -f pcl6_gcc.mak clean
+	$(MAKE) -C main -f pcl6_gcc.mak pdl_clean
 	rm -f fonts
 
 xps_debug:
-	$(MAKE) -C xps -f xps_gcc.mak debug
+	$(MAKE) -C xps -f xps_gcc.mak pdl_debug
 
 xps: 
 	$(MAKE) -C xps -f xps_gcc.mak	# build XPS
 
 xps_clean:
-	$(MAKE) -C xps -f xps_gcc.mak clean
+	$(MAKE) -C xps -f xps_gcc.mak pdl_clean
 
 ####  UFST LIBRARY DEPENDENCY RULES ####
 
@@ -64,13 +64,13 @@ ufst:
 ####  LANGUAGE SWITCHING PRODUCT RULES ####
 
 ls_profile:
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak pg
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl_pg
 
 ls_product:
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak product # build PS/PCL/XL. 
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl_product # build PS/PCL/XL. 
 
 ls_debug: 
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak debug
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl_debug
 
 ls_fonts:
 	mkdir -p /windows/fonts/	# make a font directory. 2 
@@ -94,37 +94,37 @@ check:
 # names here so they could be removed individually.
 
 ls_clean:
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak clean
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl_clean
 	rm -f fonts /usr/local/bin/pspcl6
 
 # shortcuts for common build types.
 
 ls_uproduct: ufst
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" 
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl_product
 	cp *.icc ./language_switch/ufst-obj
 	cp wts_* ./language_switch/ufst-obj
 
 ls_udebug: ufst
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" debug
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl_debug
 	cp *.icc ./language_switch/ufst-obj
 	cp wts_* ./language_switch/ufst-obj
 
 ls_uclean:
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" clean
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl_clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
 
 uproduct: ufst
-	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" product
+	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl_product
 	cp *.icc ./main/ufst-obj
 	cp wts_* ./main/ufst-obj
 
 udebug: ufst
-	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" debug
+	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" pdl_debug
 	cp *.icc ./main/ufst-debugobj
 	cp wts_* ./main/ufst-debugobj
 
 uclean:
-	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" clean
+	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl_clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
 
 all_debug: pcl_debug udebug ls_debug ls_udebug xps_debug

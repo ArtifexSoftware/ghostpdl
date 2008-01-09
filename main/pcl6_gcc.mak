@@ -15,6 +15,9 @@ PL_SCALER?=afs
 # define if this is a cygwin system.
 CYGWIN?=
 
+# extra cflags
+XCFLAGS?=
+
 # The build process will put all of its output in this directory:
 GENDIR?=./obj
 PGGENDIR?=./pgobj
@@ -41,6 +44,9 @@ PNGCCFLAGS?=-DPNG_USER_MEM_SUPPORTED
 
 IMDISRCDIR?=../gs/imdi
 
+# PCL_INCLUDED means pcl + pcl xl
+PDL_INCLUDE_FLAGS?=-DPCL_INCLUDED
+
 # Choose COMPILE_INITS=1 for init files and fonts in ROM (otherwise =0)
 COMPILE_INITS?=0
 
@@ -52,6 +58,33 @@ PLPLATFORM?=
 JSRCDIR?=../gs/jpeg
 JGENDIR?=$(GENDIR)
 JOBJDIR?=$(GENDIR)
+SHARE_JPEG?=0
+
+# ridiculousness, not worth documenting.
+AK?=
+
+# specify if banding should be memory or file based, and choose a
+# compression method.
+
+BAND_LIST_STORAGE=memory
+BAND_LIST_COMPRESSOR=zlib
+
+# file implementation for high level devices.
+FILE_IMPLEMENTATION=stdio
+
+# stdio
+STDIO_IMPLEMENTATION=c
+
+# taken from ugcclib.mak... hmmph.
+gsdir?=/usr/local/share/ghostscript
+gsdatadir?=$(gsdir)/$(GS_DOT_VERSION)
+GS_DOCDIR?=$(gsdatadir)/doc
+GS_LIB_DEFAULT?=$(gsdatadir)/lib:$(gsdatadir)/Resource/Font:$(gsdir)/fonts
+SEARCH_HERE_FIRST?=1
+GS_INIT?=gs_init.ps
+GS?=
+# end hmmph
+
 
 # If you want to build the individual packages in their own directories,
 # you can define this here, although normally you won't need to do this:
@@ -66,25 +99,13 @@ PXLOBJDIR?=$(GENDIR)
 PCLOBJDIR?=$(GENDIR)
 XPSOBJDIR?=$(GENDIR)
 
-# Language and configuration.  These are actually platform-independent,
-# but we define them here just to keep all parameters in one place.
-ifeq ($(XPS_INCLUDED), TRUE)
-TARGET_DEVS?=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev $(XPSOBJDIR)/xps.dev
-else 
 TARGET_DEVS?=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev 
-endif
 TARGET_XE?=$(GENDIR)/pcl6
 TARGET_LIB?=$(GENDIR)/pcl6.a
 MAIN_OBJ?=$(PLOBJDIR)/plmain.$(OBJ) $(PLOBJDIR)/plimpl.$(OBJ)
 PCL_TOP_OBJ?=$(PCLOBJDIR)/pctop.$(OBJ)
 PXL_TOP_OBJ?=$(PXLOBJDIR)/pxtop.$(OBJ)
-ifeq ($(XPS_INCLUDED), TRUE)
-XPS_TOP_OBJ?=$(XPSOBJDIR)/xpstop.$(OBJ)
-TOP_OBJ+= $(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(XPS_TOP_OBJ)
-XCFLAGS?=-DXPS_INCLUDED
-else
-TOP_OBJ+= $(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
-endif
+TOP_OBJ?=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
 
 # note agfa gives its libraries incompatible names so they cannot be
 # properly found by the linker.  Change the library names to reflect the
@@ -131,7 +152,7 @@ endif # PL_SCALER = ufst
 
 # flags for artifex scaler
 ifeq ($(PL_SCALER), afs)
-
+UFST_BRIDGE?=
 # The mkromfs arguments for including the PCL fonts if COMPILE_INITS=1
 PCLXL_ROMFS_ARGS?= -P ../urwfonts -d ttfonts /
 
@@ -152,10 +173,6 @@ endif # PL_SCALER = afs
 
 GX_COLOR_INDEX_DEFINE?=-DGX_COLOR_INDEX_TYPE="unsigned long long"
 
-# and this definition if devicen support is not required
-
-# GX_COLOR_INDEX_DEFINE=
-
 HAVE_STDINT_H_DEFINE?=-DHAVE_STDINT_H
 HAVE_MKSTEMP_DEFINE?=-DHAVE_MKSTEMP
 
@@ -167,13 +184,12 @@ HAVE_MKSTEMP_DEFINE?=-DHAVE_MKSTEMP
 
 GCFLAGS?=-Wall -Wundef -Wstrict-prototypes -Wmissing-declarations \
          -Wmissing-prototypes -Wpointer-arith -Wwrite-strings \
-         -Wcast-qual -Wwrite-strings \
+         -Wcast-qual -Wwrite-strings -Wno-strict-aliasing \
          -fno-builtin -fno-common \
           -DNDEBUG \
           $(HAVE_STDINT_H_DEFINE) $(HAVE_MKSTEMP_DEFINE) \
-          $(GX_COLOR_INDEX_DEFINE)
+          $(GX_COLOR_INDEX_DEFINE) $(PSICFLAGS) $(PDL_INCLUDE_FLAGS)
 
-# CFLAGS?=-g -O0 $(GCFLAGS) $(XCFLAGS)
 CFLAGS?= $(GCFLAGS) $(XCFLAGS)
 
 XINCLUDE?=-I/usr/X11R6/include
@@ -183,7 +199,7 @@ XLIBS?=Xt SM ICE Xext X11
 
 CCLD?=gcc
 
-DD='$(GLGENDIR)$(D)'
+DD=$(GLGENDIR)/
 
 
 DEVICES_DEVS?=$(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev\
@@ -229,13 +245,10 @@ include $(COMMONDIR)/ugcc_top.mak
 include $(PLSRCDIR)/pl.mak
 include $(PXLSRCDIR)/pxl.mak
 include $(PCLSRCDIR)/pcl.mak
-ifeq ($(XPS_INCLUDED), TRUE)
-include $(XPSSRCDIR)/xps.mak
-endif
 
 # Main program.
 
-default: $(TARGET_XE)$(XE)
+pdl_default: $(TARGET_XE)$(XE)
 	echo Done.
 
 clean: config-clean clean-not-config-clean

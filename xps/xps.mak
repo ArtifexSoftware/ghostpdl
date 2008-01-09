@@ -3,6 +3,7 @@ XPSGEN      = $(XPSGENDIR)$(D)
 XPSOBJ      = $(XPSOBJDIR)$(D)
 XPSO_       = $(O_)$(XPSOBJ)
 EXPATINCDIR = $(EXPATSRCDIR)$(D)lib
+PLOBJ       = $(PLOBJDIR)$(D)
 
 XPSCCC  = $(CC_) $(I_)$(XPSSRCDIR)$(_I) $(I_)$(XPSGENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(EXPATINCDIR)$(_I) $(I_)$(ZSRCDIR)$(_I) $(C_)
 
@@ -125,6 +126,11 @@ XPS_OBJS=\
     $(XPSOBJ)xpsttf.$(OBJ) \
     $(XPSOBJ)xpscff.$(OBJ) \
 
-$(XPSOBJ)xps.dev: $(XPS_MAK) $(ECHOGS_XE) $(XPS_OBJS) $(XPSGEN)expat.dev
+# NB - note this is a bit squirrely.  Right now the pjl interpreter is
+  required and shouldn't be and PLOBJ==XPSGEN is required.
+
+$(XPSOBJ)xps.dev: $(XPS_MAK) $(ECHOGS_XE) $(XPS_OBJS) $(XPSGEN)expat.dev \
+		  $(XPSGEN)pl.dev $(XPSGEN)$(PL_SCALER).dev $(XPSGEN)pjl.dev
 	$(SETMOD) $(XPSOBJ)xps $(XPS_OBJS)
-	$(ADDMOD) $(XPSOBJ)xps -include $(XPSGEN)expat.dev
+	$(ADDMOD) $(XPSOBJ)xps -include $(XPSGEN)expat $(XPSGEN)pl $(XPSGEN)$(PL_SCALER) $(XPSGEN)pjl.dev
+

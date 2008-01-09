@@ -51,32 +51,19 @@ EXPATGENDIR?=$(GENDIR)
 EXPATOBJDIR?=$(GENDIR)
 
 # Executable path\name w/o the .EXE extension
+TARGET_DEVS=$(XPSOBJDIR)/xps.dev
 TARGET_XE?=$(GENDIR)/gxps
 
 # Main file's name
 # this is already in pcl6_gcc.mak
-#XPS_TOP_OBJ?=$(XPSOBJDIR)/xpstop.$(OBJ)
-#TOP_OBJ+= $(XPS_TOP_OBJ)
-#XCFLAGS?=-DXPS_INCLUDED
+XPS_TOP_OBJ?=$(XPSOBJDIR)/xpstop.$(OBJ)
+TOP_OBJ?=$(XPS_TOP_OBJ)
 
-# Choose COMPILE_INITS=1 for init files and fonts in ROM (otherwise =0)
-COMPILE_INITS?=0
+PDL_INCLUDE_FLAGS?=-DXPS_INCLUDED
 
-# configuration assumptions
-GX_COLOR_INDEX_DEFINE?=-DGX_COLOR_INDEX_TYPE="unsigned long long"
-HAVE_STDINT_H_DEFINE?=-DHAVE_STDINT_H
-HAVE_MKSTEMP_DEFINE?=-DHAVE_MKSTEMP
-
-GCFLAGS?=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -DNDEBUG $(HAVE_STDINT_H_DEFINE) $(HAVE_MKSTEMP_DEFINE) $(GX_COLOR_INDEX_DEFINE)
-CFLAGS?=-g -O0 $(GCFLAGS) $(XCFLAGS)
-
-#FEATURE_DEVS?=$(DD)gsnogc.dev\
-#	$(DD)ttflib.dev $(DD)psf1lib.dev $(DD)psf2lib.dev
-
-# "Subclassed" makefile
 include $(MAINSRCDIR)/pcl6_gcc.mak
 
 # Subsystems
 # this is already in pcl6_gcc.mak
-#include $(XPSSRCDIR)/xps.mak
+include $(XPSSRCDIR)/xps.mak
 include $(PSSRCDIR)/expat.mak

@@ -12,7 +12,7 @@
 #
 # ugcc_top.mak
 # Generic top-level makefile for Unix/gcc platforms.
-
+#
 # The product-specific top-level makefile defines the following:
 #	MAKEFILE, CCLD, COMMONDIR, CONFIG, DEVICE_DEVS,
 #	GCFLAGS, GENDIR, GLSRCDIR, GLGENDIR, GLOBJDIR, PSD
@@ -26,154 +26,88 @@ include $(COMMONDIR)/gccdefs.mak
 include $(COMMONDIR)/unixdefs.mak
 include $(COMMONDIR)/generic.mak
 
-# HACK - allow pcl and xl to see gs header definitions
+# these gems were plucked from the old ugcclib.mak.  The CC options
+# seem to be out of sync.
 
+BINDIR=./libobj
+PSRESDIR=./Resource
+GLD=$(GLGENDIR)/
+CCFLAGS=$(GENOPT) $(CFLAGS)
+CC_=$(CC) $(CCFLAGS)
+CCAUX=$(CC)
+CC_NO_WARN=$(CC_) -Wno-cast-qual -Wno-traditional
+CC_SHARED=$(CC_)
+
+include $(GLSRCDIR)/unixhead.mak
+include $(GLSRCDIR)/gs.mak
 include $(GLSRCDIR)/lib.mak
+include $(GLSRCDIR)/int.mak
+include $(GLSRCDIR)/jpeg.mak
+# zlib.mak must precede libpng.mak
+include $(GLSRCDIR)/zlib.mak
+include $(GLSRCDIR)/libpng.mak
+include $(GLSRCDIR)/jbig2.mak
+include $(GLSRCDIR)/icclib.mak
+include $(GLSRCDIR)/ijs.mak
+include $(GLSRCDIR)/devs.mak
+include $(GLSRCDIR)/contrib.mak
+include $(GLSRCDIR)/unix-aux.mak
+include $(GLSRCDIR)/unix-end.mak
+include $(GLSRCDIR)/version.mak
+
+
+UGCC_TOP_DIR:
+	@if test ! -d $(GLGENDIR); then mkdir $(GLGENDIR); fi
 
 # Configure for debugging
-debug:
-	$(MAKE) -f $(firstword $(MAKEFILE)) GENOPT='-DDEBUG' CFLAGS='-ggdb -g3 -O0 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)'
+pdl_debug: UGCC_TOP_DIR
+	$(MAKE) -f $(firstword $(MAKEFILE)) GENOPT='-DDEBUG' CFLAGS='-ggdb -g3 -O0 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)' pdl_default
 
-pg-with-cov:
-	$(MAKE) -f $(firstword $(MAKEFILE)) GENDIR=$(PGGENDIR) GENOPT='' CFLAGS='-g -pg -O2 -fprofile-arcs -ftest-coverage $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg -fprofile-arcs -ftest-coverage -static'
+pdl_pg-with-cov: UGCC_TOP_DIR
+	$(MAKE) -f $(firstword $(MAKEFILE)) GENDIR=$(PGGENDIR) GENOPT='' CFLAGS='-g -pg -O2 -fprofile-arcs -ftest-coverage $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg -fprofile-arcs -ftest-coverage' pdl_default
 
 # Configure for profiling
-pg:
-	$(MAKE) -f $(firstword $(MAKEFILE)) GENDIR=$(PGGENDIR) GENOPT='' CFLAGS='-g -pg -O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg -static'
+pdl_pg: UGCC_TOP_DIR
+	$(MAKE) -f $(firstword $(MAKEFILE)) GENDIR=$(PGGENDIR) GENOPT='' CFLAGS='-g -pg -O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg' pdl_default
 
 # Configure for optimization.
-product:
-	$(MAKE) -f $(firstword $(MAKEFILE)) GENOPT='' GCFLAGS='$(GCFLAGS)' CFLAGS='-O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)'
+pdl_product: UGCC_TOP_DIR
+	$(MAKE) -f $(firstword $(MAKEFILE)) GENOPT='' GCFLAGS='$(GCFLAGS)' CFLAGS='-O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)' pdl_default
 
 clean_gs:
 	$(MAKE) -f $(GLSRCDIR)/ugcclib.mak \
 	GLSRCDIR='$(GLSRCDIR)' GLGENDIR='$(GLGENDIR)' \
 	GLOBJDIR='$(GLOBJDIR)' clean
 
-ifeq ($(PSICFLAGS), -DPSI_INCLUDED)
-# Build the required GS library files.  It's simplest always to build
-# the floating point emulator, even though we don't always link it in.
-# HACK * HACK * HACK - we force this make to occur since we have no
-# way to determine if gs files are out of date.
-$(GENDIR)/ldgs.tr: FORCE
-	-mkdir $(GLGENDIR)
-	-mkdir $(GLOBJDIR)
-	$(MAKE) \
-	  CCAUX='$(CCAUX)'\
-	  GCFLAGS='$(GCFLAGS)' \
-	  CONFIG='$(CONFIG)' FEATURE_DEVS='$(FEATURE_DEVS)' \
-	  XINCLUDE='$(XINCLUDE)' XLIBDIRS='$(XLIBDIRS)' XLIBDIR='$(XLIBDIR)' XLIBS='$(XLIBS)' \
-          DEVICE_DEVS='$(DEVICE_DEVS) $(DD)bbox.dev' \
-          DEVICE_DEVS1= DEVICE_DEVS2= DEVICE_DEVS3= DEVICE_DEVS4= \
-          DEVICE_DEVS5= DEVICE_DEVS6= DEVICE_DEVS7= DEVICE_DEVS8= \
-          DEVICE_DEVS9= DEVICE_DEVS10= DEVICE_DEVS11= DEVICE_DEVS12= \
-          DEVICE_DEVS13= DEVICE_DEVS14= DEVICE_DEVS15= DEVICE_DEVS16= \
-          DEVICE_DEVS17= DEVICE_DEVS18= DEVICE_DEVS19= DEVICE_DEVS20= \
-	  DEVICE_DEVS21= STDLIBS=$(STDLIBS) \
-	  SYNC=$(SYNC) \
-	  BAND_LIST_STORAGE=memory BAND_LIST_COMPRESSOR=zlib \
-	  ZSRCDIR=$(ZSRCDIR) ZGENDIR=$(ZGENDIR) ZOBJDIR=$(ZOBJDIR) ZLIB_NAME=$(ZLIB_NAME) SHARE_ZLIB=$(SHARE_ZLIB) \
-	  JSRCDIR=$(JSRCDIR) JGENDIR=$(JGENDIR) JOBJDIR=$(JOBJDIR) \
-	  GLSRCDIR='$(GLSRCDIR)' PSSRCDIR=$(PSSRCDIR) PSGENDIR=$(GENDIR)  PSD='$(GENDIR)/' \
-	  GLGENDIR='$(GLGENDIR)' GLOBJDIR='$(GLOBJDIR)' PSLIBDIR=$(PSLIBDIR) \
-	  EXPATSRCDIR=$(EXPATSRCDIR) SHARE_EXPAT=$(SHARE_EXPAT) \
-	  EXPAT_CFLAGS=$(EXPAT_CFLAGS) \
-	  ICCSRCDIR=$(ICCSRCDIR) IMDISRCDIR=$(IMDISRCDIR) \
-          COMPILE_INITS=$(COMPILE_INITS) PCLXL_ROMFS_ARGS='$(PCLXL_ROMFS_ARGS)' PJL_ROMFS_ARGS='$(PJL_ROMFS_ARGS)' \
-	  UFST_ROOT=$(UFST_ROOT) UFST_BRIDGE=$(UFST_BRIDGE) UFST_LIB_EXT=$(UFST_LIB_EXT) \
-	  UFST_ROMFS_ARGS='$(UFST_ROMFS_ARGS)' \
-	  PNGSRCDIR=$(PNGSRCDIR) \
-	  SHARE_LIBPNG=$(SHARE_LIBPNG) PNGCCFLAGS=$(PNGCCFLAGS) \
-	  PSOBJDIR=$(GENDIR) IJSSRCDIR=../gs/ijs \
-	  -f $(GLSRCDIR)/unix-gcc.mak\
-	  $(GLOBJDIR)/ld.tr \
-	  $(GLOBJDIR)/gsargs.o \
-	  $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o $(GLOBJDIR)/iconfig.$(OBJ) \
-	  $(GLOBJDIR)/iccinit$(COMPILE_INITS).$(OBJ)
-	  cp $(GLOBJDIR)/ld.tr $(GENDIR)/ldgs.tr
-
-FORCE:
-
-else
-
-# COMPILE_INITS=1 means we need to make sure the gsromfs is built (PS includes
-# it in 'int.mak'
-ifeq ($(COMPILE_INITS), 1)
-ROMFS=$(GLOBJDIR)/gsromfs.o
-endif
-
-# Build the required GS library files.  It's simplest always to build
-# the floating point emulator, even though we don't always link it in.
-# HACK * HACK * HACK - we force this make to occur since we have no
-# way to determine if gs files are out of date.
-# We make a dummy gs_init.ps since this is hard coded as a dependency of gsromfs.c
-# to avoid having to define everything in the top level makefiles (also of a hack)
-$(GENDIR)/ldgs.tr: FORCE
-	-mkdir $(GLGENDIR)
-	-mkdir $(GLOBJDIR)
-	touch $(GLOBJDIR)/gs_init.ps
-	$(MAKE) \
-	  CCAUX='$(CCAUX)'\
-	  GCFLAGS='$(GCFLAGS)' \
-	  CONFIG='$(CONFIG)' FEATURE_DEVS='$(FEATURE_DEVS)' \
-	  XINCLUDE='$(XINCLUDE)' XLIBDIRS='$(XLIBDIRS)' XLIBDIR='$(XLIBDIR)' XLIBS='$(XLIBS)' \
-          DEVICE_DEVS='$(DEVICE_DEVS) $(DD)bbox.dev' \
-	  STDLIBS=$(STDLIBS) \
-	  SYNC=$(SYNC) \
-	  BAND_LIST_STORAGE=memory BAND_LIST_COMPRESSOR=zlib \
-	  ZSRCDIR=$(ZSRCDIR) ZGENDIR=$(ZGENDIR) ZOBJDIR=$(ZOBJDIR) ZLIB_NAME=$(ZLIB_NAME) SHARE_ZLIB=$(SHARE_ZLIB) \
-	  JSRCDIR=$(JSRCDIR) JGENDIR=$(JGENDIR) JOBJDIR=$(JOBJDIR) \
-	  GLSRCDIR='$(GLSRCDIR)' PSSRCDIR=$(PSSRCDIR) PSGENDIR=$(GENDIR) PSD='$(GENDIR)/' \
-	  GLGENDIR='$(GLGENDIR)' GLOBJDIR='$(GLOBJDIR)' PSLIBDIR=$(PSLIBDIR) \
-	  EXPATSRCDIR=$(EXPATSRCDIR) SHARE_EXPAT=$(SHARE_EXPAT) \
-	  EXPAT_CFLAGS=$(EXPAT_CFLAGS) \
-	  ICCSRCDIR=$(ICCSRCDIR) IMDISRCDIR=$(IMDISRCDIR) \
-          COMPILE_INITS=$(COMPILE_INITS) PCLXL_ROMFS_ARGS='$(PCLXL_ROMFS_ARGS)' PJL_ROMFS_ARGS='$(PJL_ROMFS_ARGS)' \
-	  UFST_ROOT=$(UFST_ROOT) UFST_BRIDGE=$(UFST_BRIDGE) UFST_LIB_EXT=$(UFST_LIB_EXT) \
-	  UFST_ROMFS_ARGS='$(UFST_ROMFS_ARGS)' \
-	  UFST_CFLAGS='$(UFST_CFLAGS)' \
-	  PNGSRCDIR=$(PNGSRCDIR) \
-	  SHARE_LIBPNG=$(SHARE_LIBPNG) PNGCCFLAGS=$(PNGCCFLAGS) \
-	  PSOBJDIR=$(GENDIR) IJSSRCDIR=../gs/ijs \
-	  -f $(GLSRCDIR)/ugcclib.mak \
-	  $(GLOBJDIR)/ld.tr \
-	  $(GLOBJDIR)/gsargs.o \
-	  $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o $(ROMFS)
-	  cp $(GLOBJDIR)/ld.tr $(GENDIR)/ldgs.tr
-
-FORCE:
-
-endif
-
 # Build the configuration file.
 $(GENDIR)/pconf.h $(GENDIR)/ldconf.tr: $(TARGET_DEVS) $(GLOBJDIR)/genconf$(XE)
 	$(GLOBJDIR)/genconf -n - $(TARGET_DEVS) -h $(GENDIR)/pconf.h -p "%s&s&&" -o $(GENDIR)/ldconf.tr
 
 # Create a library
-$(TARGET_LIB): $(GENDIR)/ldgs.tr $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ)
+$(TARGET_LIB): $(ld_tr) $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ)
 	$(ECHOGS_XE) -w $(GENDIR)/ldall.tr -n - $(AR) $(ARFLAGS)  $@
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(TOP_OBJ) $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o -s
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(XOBJS) -s
-	cat $(GENDIR)/ldgs.tr $(GENDIR)/ldconf.tr | grep ".o" >>$(GENDIR)/ldall.tr
+	cat $(GENDIR)/ldt.tr $(GENDIR)/ldconf.tr | grep ".o" >>$(GENDIR)/ldall.tr
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -s - $(MAIN_OBJ)
 	LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; sh <$(GENDIR)/ldall.tr
 
 ifeq ($(PSICFLAGS), -DPSI_INCLUDED)
 # Link a Unix executable.
-$(TARGET_XE): $(GENDIR)/ldgs.tr $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ)
+$(TARGET_XE): $(ld_tr) $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ)
 	$(ECHOGS_XE) -w $(GENDIR)/ldall.tr -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(TARGET_XE)
-	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(TOP_OBJ)  -s
+	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(TOP_OBJ) -s
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(XOBJS) -s
-	cat $(GENDIR)/ldgs.tr $(GENDIR)/ldconf.tr >>$(GENDIR)/ldall.tr
+	cat $(ld_tr) $(GENDIR)/ldconf.tr >>$(GENDIR)/ldall.tr
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -s - $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)
 	sh <$(GENDIR)/ldall.tr
 else
 # Link a Unix executable.
-$(TARGET_XE): $(GENDIR)/ldgs.tr $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ)
+$(TARGET_XE): $(ld_tr) $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ)  $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o
 	$(ECHOGS_XE) -w $(GENDIR)/ldall.tr -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(TARGET_XE)
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(TOP_OBJ) $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o -s
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(XOBJS) -s
-	cat $(GENDIR)/ldgs.tr $(GENDIR)/ldconf.tr >>$(GENDIR)/ldall.tr
+	cat $(ld_tr) $(GENDIR)/ldconf.tr >>$(GENDIR)/ldall.tr
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -s - $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)
 	sh <$(GENDIR)/ldall.tr
 endif
