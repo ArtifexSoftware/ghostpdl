@@ -1,41 +1,41 @@
-all: pcl xps ls_product
+all: pcl xps ls-product
 
-debug: pcl_debug ls_debug xps_debug
+debug: pcl-debug ls-debug xps-debug
 
-clean: pcl_clean ls_clean xps_clean
+clean: pcl-clean ls-clean xps-clean
 
-test: pcl_test ls_test
+test: pcl-test ls-test
 
 # only pcl has an install target at this point
-install: pcl_install
+install: pcl-install
 
-uninstall: pcl_uninstall
+uninstall: pcl-uninstall
 
 product: pcl
 
 # specific front-end targets
 
 pcl:
-	$(MAKE) -C main -f pcl6_gcc.mak	pdl_product # build PCL and PCLXL. 
+	$(MAKE) -C main -f pcl6_gcc.mak	pdl-product # build PCL and PCLXL. 
 
-pcl_debug: 
-	$(MAKE) -C main -f pcl6_gcc.mak pdl_debug
+pcl-debug: 
+	$(MAKE) -C main -f pcl6_gcc.mak pdl-debug
 
 fonts:
 	mkdir -p /windows/fonts/	# make a font directory. 2 
 	cp urwfonts/*.ttf /windows/fonts/	# copy the fonts. 
 	touch fonts
 
-pcl_profile:
-	$(MAKE) -C main -f pcl6_gcc.mak pdl_pg
+pcl-profile:
+	$(MAKE) -C main -f pcl6_gcc.mak pdl-pg
 
-pcl_install:
+pcl-install:
 	install main/obj/pcl6 /usr/local/bin
 
-pcl_uninstall:
+pcl-uninstall:
 	rm -f /usr/local/bin/pcl6
 
-pcl_test: 
+pcl-test: 
 	./main/obj/pcl6 -dTextAlphaBits=4 \
 		tools/owl.pcl tools/tiger.px3 # test with PCL and PXL test files 
 
@@ -43,18 +43,18 @@ pcl_test:
 # might be unexpected on some systems and we don't enumerate the font
 # names here so they could be removed individually.
 
-pcl_clean:
-	$(MAKE) -C main -f pcl6_gcc.mak pdl_clean
+pcl-clean:
+	$(MAKE) -C main -f pcl6_gcc.mak pdl-clean
 	rm -f fonts
 
-xps_debug:
-	$(MAKE) -C xps -f xps_gcc.mak pdl_debug
+xps-debug:
+	$(MAKE) -C xps -f xps_gcc.mak pdl-debug
 
 xps: 
 	$(MAKE) -C xps -f xps_gcc.mak	# build XPS
 
-xps_clean:
-	$(MAKE) -C xps -f xps_gcc.mak pdl_clean
+xps-clean:
+	$(MAKE) -C xps -f xps_gcc.mak pdl-clean
 
 ####  UFST LIBRARY DEPENDENCY RULES ####
 
@@ -63,27 +63,28 @@ ufst:
 
 ####  LANGUAGE SWITCHING PRODUCT RULES ####
 
-ls_profile:
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl_pg
+ls-profile:
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-pg
 
-ls_product:
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl_product # build PS/PCL/XL. 
+ls-product:
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-product # build PS/PCL/XL. 
 
-ls_debug: 
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl_debug
+ls-debug: 
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-debug
 
-ls_fonts:
+ls-fonts:
 	mkdir -p /windows/fonts/	# make a font directory. 2 
 	cp urwfonts/*.ttf /windows/fonts/	# copy the fonts. 
 	touch fonts
 
-ls_install:
+ls-install:
 	install language_switch/obj/pspcl6 /usr/local/bin
 
 # test with PCL, PXL and PS file 
-ls_test:
-	./language_switch/obj/pspcl6 -dTextAlphaBits=4 \
-		tools/owl.pcl tools/tiger.px3 gs/examples/tiger.eps
+ls-test:
+	(cd ./gs/lib/; \
+	../../language_switch/obj/pspcl6 -dTextAlphaBits=4 \
+	../../tools/owl.pcl ../../tools/tiger.px3 ../examples/tiger.eps)
 
 check:
 	tools/smoke_check.sh
@@ -93,43 +94,43 @@ check:
 # might be unexpected on some systems and we don't enumerate the font
 # names here so they could be removed individually.
 
-ls_clean:
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl_clean
+ls-clean:
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-clean
 	rm -f fonts /usr/local/bin/pspcl6
 
 # shortcuts for common build types.
 
-ls_uproduct: ufst
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl_product
+ls-uproduct: ufst
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-product
 	cp *.icc ./language_switch/ufst-obj
 	cp wts_* ./language_switch/ufst-obj
 
-ls_udebug: ufst
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl_debug
+ls-udebug: ufst
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-debug
 	cp *.icc ./language_switch/ufst-obj
 	cp wts_* ./language_switch/ufst-obj
 
-ls_uclean:
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl_clean
+ls-uclean:
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
 
 uproduct: ufst
-	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl_product
+	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-product
 	cp *.icc ./main/ufst-obj
 	cp wts_* ./main/ufst-obj
 
 udebug: ufst
-	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" pdl_debug
+	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" pdl-debug
 	cp *.icc ./main/ufst-debugobj
 	cp wts_* ./main/ufst-debugobj
 
 uclean:
-	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl_clean
+	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
 
-all_debug: pcl_debug udebug ls_debug ls_udebug xps_debug
+all-debug: pcl-debug udebug ls-debug ls-udebug xps-debug
 
-all_clean: clean uclean ls_uclean ls_clean
+all-clean: clean uclean ls-uclean ls-clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
 
-.PHONY: all clean test check install uninstall product profile pcl pcl_debug pcl_test pcl_install pcl_uninstall pcl_clean xps xps_debug ls_clean ls_test ls_install ls_product ls_profile ls_udebug udebug ufst
+.PHONY: all clean test check install uninstall product profile pcl pcl-debug pcl-test pcl-install pcl-uninstall pcl-clean xps xps-debug ls-clean ls-test ls-install ls-product ls-profile ls-udebug udebug ufst

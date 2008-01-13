@@ -19,8 +19,6 @@
 #	TOP_OBJ, MAIN_OBJ, TARGET_DEVS, TARGET_XE
 # It also must include the product-specific *.mak.
 
-default: $(TARGET_XE)
-
 # Platform specification
 include $(COMMONDIR)/gccdefs.mak
 include $(COMMONDIR)/unixdefs.mak
@@ -60,53 +58,57 @@ UGCC_TOP_DIR:
 	@if test ! -d $(GLGENDIR); then mkdir $(GLGENDIR); fi
 
 # Configure for debugging
-pdl_debug: UGCC_TOP_DIR
-	$(MAKE) -f $(firstword $(MAKEFILE)) GENOPT='-DDEBUG' CFLAGS='-ggdb -g3 -O0 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)' pdl_default
+pdl-debug: UGCC_TOP_DIR
+	$(MAKE) -f $(firstword $(MAKEFILE)) GENOPT='-DDEBUG' CFLAGS='-ggdb -g3 -O0 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)' pdl-default
 
-pdl_pg-with-cov: UGCC_TOP_DIR
-	$(MAKE) -f $(firstword $(MAKEFILE)) GENDIR=$(PGGENDIR) GENOPT='' CFLAGS='-g -pg -O2 -fprofile-arcs -ftest-coverage $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg -fprofile-arcs -ftest-coverage' pdl_default
+pdl-pg-with-cov: UGCC_TOP_DIR
+	$(MAKE) -f $(firstword $(MAKEFILE)) GENDIR=$(PGGENDIR) GENOPT='' CFLAGS='-g -pg -O2 -fprofile-arcs -ftest-coverage $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg -fprofile-arcs -ftest-coverage' pdl-default
 
 # Configure for profiling
-pdl_pg: UGCC_TOP_DIR
-	$(MAKE) -f $(firstword $(MAKEFILE)) GENDIR=$(PGGENDIR) GENOPT='' CFLAGS='-g -pg -O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg' pdl_default
+pdl-pg: UGCC_TOP_DIR
+	$(MAKE) -f $(firstword $(MAKEFILE)) GENDIR=$(PGGENDIR) GENOPT='' CFLAGS='-g -pg -O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg' pdl-default
 
 # Configure for optimization.
-pdl_product: UGCC_TOP_DIR
-	$(MAKE) -f $(firstword $(MAKEFILE)) GENOPT='' GCFLAGS='$(GCFLAGS)' CFLAGS='-O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)' pdl_default
+pdl-product: UGCC_TOP_DIR
+	$(MAKE) -f $(firstword $(MAKEFILE)) GENOPT='' GCFLAGS='$(GCFLAGS)' CFLAGS='-O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)' pdl-default
 
-clean_gs:
-	$(MAKE) -f $(GLSRCDIR)/ugcclib.mak \
-	GLSRCDIR='$(GLSRCDIR)' GLGENDIR='$(GLGENDIR)' \
-	GLOBJDIR='$(GLOBJDIR)' clean
+# NB not complete, remove genarch and other miscellany.
+pdl-clean:
+	$(RMN_) $(GENDIR)/*.dev $(GENDIR)/devs*.tr $(GENDIR)/gconfig*.h
+	$(RMN_) $(GENDIR)/gconfx*.h $(GENDIR)/j*.h
+	$(RMN_) $(GENDIR)/c*.tr $(GENDIR)/o*.tr $(GENDIR)/l*.tr
+	$(RMN_) $(GENDIR)/*.$(OBJ)
+	$(RMN_) $(GENDIR)/*.h
+	$(RMN_) $(GENDIR)/*.c
+	$(RMN_) $(TARGET_XE)$(XE)
 
 # Build the configuration file.
 $(GENDIR)/pconf.h $(GENDIR)/ldconf.tr: $(TARGET_DEVS) $(GLOBJDIR)/genconf$(XE)
 	$(GLOBJDIR)/genconf -n - $(TARGET_DEVS) -h $(GENDIR)/pconf.h -p "%s&s&&" -o $(GENDIR)/ldconf.tr
 
 # Create a library
-$(TARGET_LIB): $(ld_tr) $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ)
+$(TARGET_LIB): $(ld_tr) $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS)
 	$(ECHOGS_XE) -w $(GENDIR)/ldall.tr -n - $(AR) $(ARFLAGS)  $@
-	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(TOP_OBJ) $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o -s
-	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(XOBJS) -s
+	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(TOP_OBJ) $(XOBJS) -s
 	cat $(GENDIR)/ldt.tr $(GENDIR)/ldconf.tr | grep ".o" >>$(GENDIR)/ldall.tr
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -s - $(MAIN_OBJ)
 	LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; sh <$(GENDIR)/ldall.tr
 
 ifeq ($(PSICFLAGS), -DPSI_INCLUDED)
-# Link a Unix executable.
-$(TARGET_XE): $(ld_tr) $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ)
+# Link a Unix executable.  NB - XOBS is not concatenated to the link
+# list here.  It seems to have been done earlier on unlike the
+# standalone pcl build below.
+$(TARGET_XE): $(ld_tr) $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS)
 	$(ECHOGS_XE) -w $(GENDIR)/ldall.tr -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(TARGET_XE)
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(TOP_OBJ) -s
-	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(XOBJS) -s
 	cat $(ld_tr) $(GENDIR)/ldconf.tr >>$(GENDIR)/ldall.tr
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -s - $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)
 	sh <$(GENDIR)/ldall.tr
 else
 # Link a Unix executable.
-$(TARGET_XE): $(ld_tr) $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ)  $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o
+$(TARGET_XE): $(ld_tr) $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS)
 	$(ECHOGS_XE) -w $(GENDIR)/ldall.tr -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(TARGET_XE)
-	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(TOP_OBJ) $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o -s
-	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(XOBJS) -s
+	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(TOP_OBJ) $(XOBJS) -s
 	cat $(ld_tr) $(GENDIR)/ldconf.tr >>$(GENDIR)/ldall.tr
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -s - $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)
 	sh <$(GENDIR)/ldall.tr

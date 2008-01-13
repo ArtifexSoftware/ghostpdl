@@ -30,6 +30,7 @@ XPSSRCDIR?=../xps
 ICCSRCDIR?=../gs/icclib
 COMMONDIR?=../common
 MAINSRCDIR?=../main
+PSSRCDIR?=../gs/src
 
 # specify the location of zlib.  We use zlib for bandlist compression.
 ZSRCDIR?=../gs/zlib
@@ -127,14 +128,13 @@ PXL_FONT_SCALER=$(PL_SCALER)
 # to compile in the fonts uncomment the following (this option only
 # works with the artifex scaler on a unix platform)
 
-# ROMFONTS?=true
-
 # flags for UFST scaler.
 ifeq ($(PL_SCALER), ufst)
 UFST_ROOT?=../ufst
 UFST_BRIDGE?=1
+UFST_LIB_EXT?=.a
 UFST_LIB?=$(UFST_ROOT)/rts/lib/
-UFST_CFLAGS?= -DUFST_BRIDGE=$(UFST_BRIDGE) -DUFST_LIB_EXT=.a -DGCCx86 -DUFST_ROOT=$(UFST_ROOT)
+UFST_CFLAGS?=-DGCCx86 -DUFST_ROOT=$(UFST_ROOT)
 UFST_INCLUDES?=-I$(UFST_ROOT)/rts/inc/ -I$(UFST_ROOT)/sys/inc/ -I$(UFST_ROOT)/rts/fco/ -I$(UFST_ROOT)/rts/gray/ -I$(UFST_ROOT)/rts/tt/ -DAGFA_FONT_TABLE
 # fco's are binary (-b), the following is only used if COMPILE_INITS=1
 UFST_ROMFS_ARGS?=-b \
@@ -209,7 +209,8 @@ DEVICES_DEVS?=$(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev
    $(DD)bmpmono.dev $(DD)bmpsep8.dev \
    $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev \
    $(DD)png16m.dev $(DD)pngmono.dev $(DD)jpeg.dev \
-   $(DD)wtscmyk.dev $(DD)wtsimdi.dev $(DD)imdi.dev
+   $(DD)wtscmyk.dev $(DD)wtsimdi.dev $(DD)imdi.dev \
+   $(DD)romfs$(COMPILE_INITS).dev
 
 FEATURE_DEVS?=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 	     $(DD)patlib.dev $(DD)psl2cs.dev $(DD)rld.dev $(DD)roplib.dev\
@@ -237,6 +238,9 @@ STDLIBS=-lm -lpthread -ldl
 DEVICE_DEVS=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11mono.dev $(DD)x11cmyk.dev $(DEVICES_DEVS) $(DD)bmpamono.dev $(DD)bmpa16m.dev
 endif
 
+#miscellaneous
+XOBJS?=$(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o
+
 # Generic makefile
 include $(COMMONDIR)/ugcc_top.mak
 
@@ -248,17 +252,8 @@ include $(PCLSRCDIR)/pcl.mak
 
 # Main program.
 
-pdl_default: $(TARGET_XE)$(XE)
+pdl-default: $(TARGET_XE)$(XE)
 	echo Done.
-
-clean: config-clean clean-not-config-clean
-
-clean-not-config-clean: pl.clean-not-config-clean pxl.clean-not-config-clean
-	$(RMN_) $(TARGET_XE)$(XE)
-
-config-clean: pl.config-clean pxl.config-clean
-	$(RMN_) *.tr $(GD)devs.tr$(CONFIG) $(GD)ld.tr
-	$(RMN_) $(PXLGEN)pconf.h $(PXLGEN)pconfig.h
 
 lib: $(TARGET_LIB)
 	echo Done lib.

@@ -64,6 +64,11 @@ FEATURE_DEVS    ?= \
 	  $(DD)pipe.dev         \
 	  $(DD)fapi.dev
 
+# extra objects.
+XOBJS?=$(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o \
+       $(GLOBJDIR)/gscdefs.o $(GLOBJDIR)/iconfig.o \
+       $(GLOBJDIR)/iccinit$(COMPILE_INITS).o
+
 # "Subclassed" makefile
 include $(MAINSRCDIR)/pcl6_gcc.mak
 
