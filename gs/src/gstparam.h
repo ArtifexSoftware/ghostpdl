@@ -83,6 +83,7 @@ typedef struct gs_transparency_group_params_s {
     bool Isolated;
     bool Knockout;
     bool image_with_SMask;
+    bool idle;
 } gs_transparency_group_params_t;
 
 /* Define the parameter structure for a transparency mask. */
@@ -114,6 +115,7 @@ typedef struct gx_transparency_mask_params_s {
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
     float GrayBackground;
     bool function_is_identity;
+    bool idle;
     byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE];
 } gx_transparency_mask_params_t;
 

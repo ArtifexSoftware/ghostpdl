@@ -184,6 +184,7 @@ c_overprint_read(
     if_debug1('v', "[v]c_overprint_read(%d)\n", flags);
     params.retain_any_comps = (flags & OVERPRINT_ANY_COMPS) != 0;
     params.retain_spot_comps = (flags & OVERPRINT_SPOT_COMPS) != 0;
+    params.idle = 0;
 
     /* check if the drawn_comps array is present */
     if (params.retain_any_comps && !params.retain_spot_comps) {
@@ -198,11 +199,22 @@ c_overprint_read(
     return code < 0 ? code : nbytes;
 }
 
+/*
+ * Check for closing compositor. 
+ */
+static int
+c_overprint_is_closing(const gs_composite_t *this, const gs_composite_t **ppcte, gx_device *dev)
+{
+    if (*ppcte != NULL && (*ppcte)->type->comp_id != GX_COMPOSITOR_OVERPRINT)
+	return 0;
+    return 3;
+}
 
 static composite_create_default_compositor_proc(c_overprint_create_default_compositor);
 static composite_create_default_compositor_proc(c_overprint_create_default_compositor);
 static composite_equal_proc(c_overprint_equal);
 static composite_write_proc(c_overprint_write);
+static composite_is_closing_proc(c_overprint_is_closing);
 static composite_read_proc(c_overprint_read);
 static composite_adjust_ctm_proc(c_overprint_adjust_ctm);
 
@@ -215,6 +227,8 @@ const gs_composite_type_t   gs_composite_overprint_type = {
         c_overprint_write,                      /* procs.write */
         c_overprint_read,                       /* procs.read */
 	gx_default_composite_adjust_ctm,
+	c_overprint_is_closing,
+	gx_default_composite_is_friendly,
 	gx_default_composite_clist_write_update,/* procs.composite_clist_write_update */
 	gx_default_composite_clist_read_update	/* procs.composite_clist_reade_update */
     }                                           /* procs */
@@ -241,6 +255,7 @@ gs_create_overprint(
     pct->type = &gs_composite_overprint_type;
     pct->id = gs_next_ids(mem, 1);
     pct->params = *pparams;
+    pct->idle = false;
     *ppct = (gs_composite_t *)pct;
     return 0;
 }
@@ -656,7 +671,7 @@ update_overprint_params(
     int                             ncomps = opdev->color_info.num_components;
 
     /* check if overprint is to be turned off */
-    if (!pparams->retain_any_comps) {
+    if (!pparams->retain_any_comps || pparams->idle) {
         /* if fill_rectangle forwards, overprint is already off */
         if (dev_proc(opdev, fill_rectangle) != gx_forward_fill_rectangle)
             memcpy( &opdev->procs,
@@ -825,12 +840,14 @@ overprint_create_compositor(
     if (pct->type != &gs_composite_overprint_type)
         return gx_default_create_compositor(dev, pcdev, pct, pis, memory);
     else {
+	gs_overprint_params_t params = ((const gs_overprint_t *)pct)->params;
         int     code;
 
+	params.idle = pct->idle;
         /* device must already exist, so just update the parameters */
         code = update_overprint_params(
                        (overprint_device_t *)dev,
-                       &((const gs_overprint_t *)pct)->params );
+                       &params );
         if (code >= 0)
             *pcdev = dev;
         return code;
@@ -976,11 +993,16 @@ c_overprint_create_default_compositor(
 {
     const gs_overprint_t *  ovrpct = (const gs_overprint_t *)pct;
     overprint_device_t *    opdev = 0;
+    gs_overprint_params_t params;
 
     /* see if there is anything to do */
     if ( !ovrpct->params.retain_any_comps) {
         *popdev = tdev;
         return 0;
+    }
+    if (pct->idle) {
+        *popdev = tdev;
+	return 0;
     }
 
     /* check if the procedure arrays have been initialized */
@@ -1004,7 +1026,9 @@ c_overprint_create_default_compositor(
     gx_device_copy_params((gx_device *)opdev, tdev);
     gx_device_set_target((gx_device_forward *)opdev, tdev);
 
+    params = ovrpct->params;
+    params.idle = ovrpct->idle;
+
     /* set up the overprint parameters */
-    return update_overprint_params( opdev,
-                                    &((const gs_overprint_t *)pct)->params );
+    return update_overprint_params( opdev, &params);
 }

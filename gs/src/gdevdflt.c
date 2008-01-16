@@ -845,12 +845,29 @@ gx_default_composite_clist_write_update(const gs_composite_t *pcte, gx_device * 
     return 0;
 }
 
-/*
- * Default handler for adjusting a compositor's CTM. */
+/* Default handler for adjusting a compositor's CTM. */
 int
 gx_default_composite_adjust_ctm(gs_composite_t *pcte, int x0, int y0, gs_imager_state *pis)
 {
     return 0;
+}
+
+/*
+ * Default check for closing compositor. 
+ */
+int
+gx_default_composite_is_closing(const gs_composite_t *this, const gs_composite_t **pcte, gx_device *dev)
+{
+    return false;
+}
+
+/*
+ * Default check whether a next operation is friendly to the compositor.
+ */
+bool
+gx_default_composite_is_friendly(const gs_composite_t *this, byte cmd0, byte cmd1)
+{
+    return false;
 }
 
 /*

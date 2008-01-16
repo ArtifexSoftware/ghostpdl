@@ -260,6 +260,12 @@ struct gs_overprint_params_s {
      */
     bool            retain_spot_comps;
 
+    /* 
+     * Don't we print anything with overprint ? 
+     * This info may come from the clist reader.
+     */
+    bool idle;
+
     /*
      * The list of color model compoents to be retained (i.e.: that are
      * not affected by drawing operations). The field is bit-encoded;

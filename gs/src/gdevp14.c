@@ -41,6 +41,7 @@
 #include "gxcldev.h"
 #include "gxclpath.h"
 #include "gxdcconv.h"
+#include "vdtrace.h"
 
 /*
  * We chose the blending color space based upon the process color model of the
@@ -507,7 +508,7 @@ RELOC_PTRS_END
  * Return value: Newly allocated buffer, or NULL on failure.
  **/
 static	pdf14_buf *
-pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape,
+pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape, bool idle,
 	       int n_chan,
 	       gs_memory_t *memory)
 {
@@ -536,8 +537,9 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape,
     result->rowstride = rowstride;
     result->transfer_fn = NULL;
     result->maskbuf = NULL;
+    result->idle = idle;
 
-    if (height <= 0) {
+    if (height <= 0 && !idle) {
 	/* Empty clipping - will skip all drawings. */
 	result->planestride = 0;
 	result->data = 0;
@@ -582,7 +584,7 @@ pdf14_ctx_new(gs_int_rect *rect, int n_chan, bool additive, gs_memory_t	*memory)
     if (result == NULL)
 	return result;
 
-    buf = pdf14_buf_new(rect, false, false, n_chan, memory);
+    buf = pdf14_buf_new(rect, false, false, false, n_chan, memory);
     if (buf == NULL) {
 	gs_free_object(memory, result, "pdf14_ctx_new");
 	return NULL;
@@ -638,13 +640,14 @@ static	int
 pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect,
 			      bool isolated, bool knockout,
 			      byte alpha, byte shape,
-			      gs_blend_mode_t blend_mode)
+			      gs_blend_mode_t blend_mode, bool idle)
 {
     pdf14_buf *tos = ctx->stack;
     pdf14_buf *buf, *backdrop;
     bool has_shape;
 
     if_debug0('v', "[v]pdf14_push_transparency_group\n");
+
     /* todo: fix this hack, which makes all knockout groups isolated.
        For the vast majority of files, there won't be any visible
        effects, but it still isn't correct. The pixel compositing code
@@ -655,7 +658,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect,
 
     has_shape = tos->has_shape || tos->knockout;
 
-    buf = pdf14_buf_new(rect, !isolated, has_shape, ctx->n_chan, ctx->memory);
+    buf = pdf14_buf_new(rect, !isolated, has_shape, idle, ctx->n_chan, ctx->memory);
     if_debug3('v', "[v]push buf: %d x %d, %d channels\n", buf->rect.p.x, buf->rect.p.y, buf->n_chan);
     if (buf == NULL)
 	return_error(gs_error_VMerror);
@@ -674,6 +677,8 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect,
     ctx->stack = buf;
 
     if (buf->data == NULL)
+	return 0;
+    if (idle)
 	return 0;
 
     backdrop = pdf14_find_backdrop_buf(ctx);
@@ -729,6 +734,8 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
 
     ctx->maskbuf = maskbuf;  /* Restore the mask saved by pdf14_push_transparency_group. */
     tos->maskbuf = NULL;     /* Clean the pointer sinse the mask ownership is now passed to ctx. */
+    if (tos->idle)
+	goto exit;
     if (x0 < x1 && y0 < y1) {
 	int n_chan = ctx->n_chan;
 	int num_comp = n_chan - 1;
@@ -825,6 +832,7 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
 		    mask = mask_tr_fn[mask];
 		    tmp = pix_alpha * mask + 0x80;
 		    pix_alpha = (tmp + (tmp >> 8)) >> 8;
+		    vd_pixel(int2fixed(x), int2fixed(y), mask);
 		}
 
 		if (nos_knockout) {
@@ -865,6 +873,11 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
 			nos_ptr[x + i * nos_planestride] = 255 - nos_pixel[i];
 		    nos_ptr[x + num_comp * nos_planestride] = nos_pixel[num_comp];
 		}
+		if (maskbuf == NULL) {
+		    vd_pixel(int2fixed(x), int2fixed(y), n_chan == 1 ? 
+			(nos_pixel[0] << 16) + (nos_pixel[0] << 8) + nos_pixel[0] :
+			(nos_pixel[0] << 16) + (nos_pixel[1] << 8) + nos_pixel[2]);
+		}
 		if (nos_alpha_g_ptr != NULL)
 		    ++nos_alpha_g_ptr;
 	    }
@@ -877,8 +890,9 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
 	}
     }
 
+exit:
     ctx->stack = nos;
-    if_debug0('v', "[v]pop buf\n");
+    if_debug1('v', "[v]pop buf, idle=%d\n", tos->idle);
     pdf14_buf_free(tos, ctx->memory);
     if (maskbuf != NULL) {
 	pdf14_buf_free(maskbuf, ctx->memory);
@@ -895,12 +909,12 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
  */
 static	int
 pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
-			     byte *transfer_fn)
+			     byte *transfer_fn, bool idle)
 {
     pdf14_buf *buf;
 
     if_debug0('v', "[v]pdf14_push_transparency_mask\n");
-    buf = pdf14_buf_new(rect, false, false, ctx->n_chan, ctx->memory);
+    buf = pdf14_buf_new(rect, false, false, idle, ctx->n_chan, ctx->memory);
     if (buf == NULL)
 	return_error(gs_error_VMerror);
 
@@ -925,7 +939,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx)
 {
     pdf14_buf *tos = ctx->stack;
 
-    if_debug0('v', "[v]pdf14_pop_transparency_mask\n");
+    if_debug1('v', "[v]pdf14_pop_transparency_mask, idle=%d\n", tos->idle);
     ctx->stack = tos->saved;
     ctx->maskbuf = tos;
     return 0;
@@ -1963,9 +1977,11 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_imager_state * pis,
     const gs_pdf14trans_t * pdf14pct, gs_memory_t * mem )
 {
     pdf14_device *p14dev = (pdf14_device *)pdev;
+    gs_pdf14trans_params_t params = pdf14pct->params;
     int code = 0;
 
-    switch (pdf14pct->params.pdf14_op) {
+    params.idle = pdf14pct->idle;
+    switch (params.pdf14_op) {
 	default:			/* Should not occur. */
 	    break;
 	case PDF14_PUSH_DEVICE:
@@ -1990,19 +2006,19 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_imager_state * pis,
 	    pdf14_close(pdev);
 	    break;
 	case PDF14_BEGIN_TRANS_GROUP:
-	    code = gx_begin_transparency_group(pis, pdev, &pdf14pct->params);
+	    code = gx_begin_transparency_group(pis, pdev, &params);
 	    break;
 	case PDF14_END_TRANS_GROUP:
 	    code = gx_end_transparency_group(pis, pdev);
 	    break;
 	case PDF14_INIT_TRANS_MASK:
-	    code = gx_init_transparency_mask(pis, &pdf14pct->params);
+	    code = gx_init_transparency_mask(pis, &params);
 	    break;
 	case PDF14_BEGIN_TRANS_MASK:
-	    code = gx_begin_transparency_mask(pis, pdev, &pdf14pct->params);
+	    code = gx_begin_transparency_mask(pis, pdev, &params);
 	    break;
 	case PDF14_END_TRANS_MASK:
-	    code = gx_end_transparency_mask(pis, pdev, &pdf14pct->params);
+	    code = gx_end_transparency_mask(pis, pdev, &params);
 	    break;
 	case PDF14_SET_BLEND_PARAMS:
 	    pdf14_set_params(pis, pdev, &pdf14pct->params);
@@ -2210,7 +2226,7 @@ pdf14_begin_transparency_group(gx_device *dev,
 					 ptgp->Isolated, ptgp->Knockout,
 					 (byte)floor (255 * alpha + 0.5),
 					 (byte)floor (255 * pis->shape.alpha + 0.5),
-					 pis->blend_mode);
+					 pis->blend_mode, ptgp->idle);
     return code;
 }
 
@@ -2223,7 +2239,13 @@ pdf14_end_transparency_group(gx_device *dev,
     int code;
 
     if_debug0('v', "[v]pdf14_end_transparency_group\n");
+    vd_get_dc('c');
+    vd_set_shift(0, 0);
+    vd_set_scale(0.01);
+    vd_set_origin(0, 0);
+    vd_erase(RGB(192, 192, 192));
     code = pdf14_pop_transparency_group(pdev->ctx, pdev->blend_procs);
+    vd_release_dc;
     return code;
 }
 
@@ -2245,7 +2267,7 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     if_debug1('v', "pdf14_begin_transparency_mask, bg_alpha = %d\n", bg_alpha);
     memcpy(transfer_fn, ptmp->transfer_fn, size_of(ptmp->transfer_fn));
     return pdf14_push_transparency_mask(pdev->ctx, &pdev->ctx->rect, bg_alpha,
-					transfer_fn);
+					transfer_fn, ptmp->idle);
 }
 
 static	int
@@ -2857,11 +2879,11 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize)
 	    return gs_error_rangecheck;
     }
 
-	/* If we are writing more than the maximum ever expected,
-	 * return a rangecheck error.
-	 */
-	if ( need > MAX_CLIST_COMPOSITOR_SIZE )
-		return_error(gs_error_rangecheck);
+    /* If we are writing more than the maximum ever expected,
+     * return a rangecheck error.
+     */
+    if ( need > MAX_CLIST_COMPOSITOR_SIZE )
+	return_error(gs_error_rangecheck);
 
     /* Copy our serialzed data into the output buffer */
     memcpy(data, buf, need - mask_size);
@@ -2908,6 +2930,8 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
 	    read_value(data, params.num_spot_colors);	    
 	    break;
 	case PDF14_POP_DEVICE:
+	    code += 0; /* A good place for a breakpoint. */
+	    break;
 	case PDF14_END_TRANS_GROUP:
 	    break;			/* No data */
 	case PDF14_BEGIN_TRANS_GROUP:
@@ -3037,11 +3061,130 @@ c_pdf14trans_create_default_compositor(const gs_composite_t * pct,
     return code;
 }
 
+/*
+ * Find an opening compositor op.
+ */
+static int
+find_opening_op(int opening_op, const gs_composite_t **ppcte)
+{
+    /* Assuming a right *BEGIN* - *END* operation balance. */
+    const gs_composite_t *pcte = *ppcte;
+
+    for (;;) {
+	if (pcte->type->comp_id == GX_COMPOSITOR_PDF14_TRANS) {
+	    gs_pdf14trans_t *pct = (gs_pdf14trans_t *)pcte;
+	    int op = pct->params.pdf14_op;
+
+	    *ppcte = pcte;
+	    if (op == opening_op)
+		return 1;
+	    if (op != PDF14_INIT_TRANS_MASK && op != PDF14_SET_BLEND_PARAMS)
+		return 0;
+	} else
+	    return 0;
+	pcte = pcte->prev;
+	if (pcte == NULL)
+	    return 2; /* Not in queue. */
+    }
+}
+
+/*
+ * Find an opening compositor op.
+ */
+static int
+find_same_op(const gs_composite_t *this, int my_op, const gs_composite_t **ppcte)
+{
+    const gs_pdf14trans_t *pct0 = (gs_pdf14trans_t *)this;
+    const gs_composite_t *pct = *ppcte;
+
+    for (;;) {
+	if (pct->type->comp_id == GX_COMPOSITOR_PDF14_TRANS) {
+	    gs_pdf14trans_t *pct_pdf14 = (gs_pdf14trans_t *)pct;
+	    
+	    *ppcte = pct;
+	    if (pct_pdf14->params.pdf14_op != my_op)
+		return 0;
+	    if (pct_pdf14->params.csel == pct0->params.csel)
+		return 4;
+	} else
+	    return 0;
+	pct = pct->prev;
+	if (pct == NULL)
+	    return 0; /* Not in queue. */
+    }
+}
+
+/*
+ * Check for closing compositor.
+ */
+static int
+c_pdf14trans_is_closing(const gs_composite_t * this, const gs_composite_t ** ppcte, gx_device *dev)
+{
+    gs_pdf14trans_t *pct0 = (gs_pdf14trans_t *)this;
+    gs_pdf14trans_t *pct1 = (gs_pdf14trans_t *)*ppcte;
+    int op0 = pct0->params.pdf14_op;
+
+    switch (op0) {
+	default: return_error(gs_error_unregistered); /* Must not happen. */
+	case PDF14_PUSH_DEVICE: 
+	    return 0;
+	case PDF14_POP_DEVICE:
+	    if (*ppcte == NULL)
+		return 0;
+	    else {	
+		int code = find_opening_op(PDF14_PUSH_DEVICE, ppcte);
+
+		if (code == 1)
+		    return 5;
+		return code;
+	    }
+	case PDF14_BEGIN_TRANS_GROUP: 
+	    return 0;
+	case PDF14_END_TRANS_GROUP:
+	    if (*ppcte == NULL)
+		return 2;
+	    return find_opening_op(PDF14_BEGIN_TRANS_GROUP, ppcte);
+	case PDF14_INIT_TRANS_MASK: 
+	    if (*ppcte == NULL)
+		return 0;
+	    return find_same_op(this, PDF14_INIT_TRANS_MASK, ppcte);
+	case PDF14_BEGIN_TRANS_MASK: 
+	    return 0;
+	case PDF14_END_TRANS_MASK: 
+	    if (*ppcte == NULL)
+		return 2;
+	    return find_opening_op(PDF14_BEGIN_TRANS_MASK, ppcte);
+	case PDF14_SET_BLEND_PARAMS: 
+	    return 0;
+    }
+}
+
+/*
+ * Check whether a next operation is friendly to the compositor.
+ */
+static bool
+c_pdf14trans_is_friendly(const gs_composite_t * this, byte cmd0, byte cmd1)
+{
+    gs_pdf14trans_t *pct0 = (gs_pdf14trans_t *)this;
+    int op0 = pct0->params.pdf14_op;
+
+    if (op0 == PDF14_PUSH_DEVICE) {
+	if (cmd0 == cmd_opv_extend && (cmd1 == cmd_opv_ext_put_halftone || 
+				       cmd1 == cmd_opv_ext_put_ht_seg))
+	    return true;
+	if (cmd0 == cmd_opv_set_misc && (cmd1 >> 6) == (cmd_set_misc_map >> 6))
+	    return true;
+    }
+    return false;
+}
+
 static composite_create_default_compositor_proc(c_pdf14trans_create_default_compositor);
 static composite_equal_proc(c_pdf14trans_equal);
 static composite_write_proc(c_pdf14trans_write);
 static composite_read_proc(c_pdf14trans_read);
 static composite_adjust_ctm_proc(c_pdf14trans_adjust_ctm);
+static composite_is_closing_proc(c_pdf14trans_is_closing);
+static composite_is_акшутвдн_proc(c_pdf14trans_is_акшутвдн);
 static	composite_clist_write_update(c_pdf14trans_clist_write_update);
 static	composite_clist_read_update(c_pdf14trans_clist_read_update);
 
@@ -3062,6 +3205,8 @@ const gs_composite_type_t   gs_composite_pdf14trans_type = {
 	c_pdf14trans_write,                      /* procs.write */
 	c_pdf14trans_read,                       /* procs.read */
 	c_pdf14trans_adjust_ctm,		 /* procs.adjust_ctm */
+	c_pdf14trans_is_closing,                 /* procs.is_closing */
+	c_pdf14trans_is_friendly,                /* procs.is_friendly */
 		/* Create a PDF 1.4 clist write device */
 	c_pdf14trans_clist_write_update,   /* procs.composite_clist_write_update */
 	c_pdf14trans_clist_read_update	   /* procs.composite_clist_reade_update */
@@ -3076,6 +3221,8 @@ const gs_composite_type_t   gs_composite_pdf14trans_no_clist_writer_type = {
 	c_pdf14trans_write,                      /* procs.write */
 	c_pdf14trans_read,                       /* procs.read */
 	c_pdf14trans_adjust_ctm,		 /* procs.adjust_ctm */
+	c_pdf14trans_is_closing,                 /* procs.is_closing */
+	c_pdf14trans_is_friendly,                /* procs.is_friendly */
 		/* The PDF 1.4 clist writer already exists, Do not create it. */
 	gx_default_composite_clist_write_update, /* procs.composite_clist_write_update */
 	c_pdf14trans_clist_read_update	   /* procs.composite_clist_reade_update */
@@ -3110,6 +3257,7 @@ gs_create_pdf14trans(
     pct->type = &gs_composite_pdf14trans_type;
     pct->id = gs_next_ids(mem, 1);
     pct->params = *pparams;
+    pct->idle = false;
     *ppct = (gs_composite_t *)pct;
     return 0;
 }
@@ -4235,6 +4383,7 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
 	    gx_set_cmap_procs(pis, dev);
 	    return code;
 	case PDF14_POP_DEVICE:
+#	    if 0 /* Disabled because pdf14_clist_create_compositor does so. */
 	    /*
 	     * Ensure that the tranfer functions, etc.  are current before we
 	     * dump our transparency image to the output device.
@@ -4242,6 +4391,9 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
             if (pis->dev_ht)
                 code = cmd_put_halftone((gx_device_clist_writer *)
                               (((pdf14_clist_device *)dev)->target), pis->dev_ht);
+#	    else 
+	    code = 0;
+#	    endif
 	    break;
 	default:
 	    break;		/* do nothing for remaining ops */

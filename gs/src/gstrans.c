@@ -233,6 +233,7 @@ gx_begin_transparency_group(gs_imager_state * pis, gx_device * pdev,
 	return_error(gs_error_rangecheck);
     tgp.Isolated = pparams->Isolated;
     tgp.Knockout = pparams->Knockout;
+    tgp.idle = pparams->idle;
     pis->opacity.alpha = pparams->opacity.alpha;
     pis->shape.alpha = pparams->shape.alpha;
     pis->blend_mode = pparams->blend_mode;
@@ -349,6 +350,7 @@ gx_begin_transparency_mask(gs_imager_state * pis, gx_device * pdev,
     memcpy(tmp.Background, pparams->Background, l);
     tmp.GrayBackground = pparams->GrayBackground;
     tmp.function_is_identity = pparams->function_is_identity;
+    tmp.idle = pparams->idle;
     memcpy(tmp.transfer_fn, pparams->transfer_fn, size_of(tmp.transfer_fn));
     if_debug8('v', "[v](0x%lx)gx_begin_transparency_mask [%g %g %g %g]\n\
       subtype = %d  Background_components = %d  %s\n",
