@@ -832,7 +832,7 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
 		    mask = mask_tr_fn[mask];
 		    tmp = pix_alpha * mask + 0x80;
 		    pix_alpha = (tmp + (tmp >> 8)) >> 8;
-		    vd_pixel(int2fixed(x), int2fixed(y), mask);
+		    /*vd_pixel(int2fixed(x), int2fixed(y), mask);*/
 		}
 
 		if (nos_knockout) {
@@ -874,9 +874,9 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
 		    nos_ptr[x + num_comp * nos_planestride] = nos_pixel[num_comp];
 		}
 		if (maskbuf == NULL) {
-		    vd_pixel(int2fixed(x), int2fixed(y), n_chan == 1 ? 
+		    /*vd_pixel(int2fixed(x), int2fixed(y), n_chan == 1 ? 
 			(nos_pixel[0] << 16) + (nos_pixel[0] << 8) + nos_pixel[0] :
-			(nos_pixel[0] << 16) + (nos_pixel[1] << 8) + nos_pixel[2]);
+			(nos_pixel[0] << 16) + (nos_pixel[1] << 8) + nos_pixel[2]);*/
 		}
 		if (nos_alpha_g_ptr != NULL)
 		    ++nos_alpha_g_ptr;
@@ -3184,7 +3184,7 @@ static composite_write_proc(c_pdf14trans_write);
 static composite_read_proc(c_pdf14trans_read);
 static composite_adjust_ctm_proc(c_pdf14trans_adjust_ctm);
 static composite_is_closing_proc(c_pdf14trans_is_closing);
-static composite_is_акшутвдн_proc(c_pdf14trans_is_акшутвдн);
+static composite_is_friendly_proc(c_pdf14trans_is_friendly);
 static	composite_clist_write_update(c_pdf14trans_clist_write_update);
 static	composite_clist_read_update(c_pdf14trans_clist_read_update);
 
