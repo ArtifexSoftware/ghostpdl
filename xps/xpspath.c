@@ -177,9 +177,6 @@ xps_draw_arc_segment(xps_context_t *ctx, gs_matrix *mtx, float th0, float th1, i
     float x, y, t, a, d;
     gs_point p;
 
-    th0 = th0 * (M_PI / 180.0);
-    th1 = th1 * (M_PI / 180.0);
-
     while (th1 < th0)
 	th1 += M_PI * 2.0;
 
@@ -189,6 +186,7 @@ xps_draw_arc_segment(xps_context_t *ctx, gs_matrix *mtx, float th0, float th1, i
     {
 	gs_point_transform(cos(th0), sin(th0), mtx, &p);
 	gs_lineto(ctx->pgs, p.x, p.y);
+dprintf2("  point %g %g\n", p.x, p.y);
 	for (t = th0; t < th1; t += d)
 	{
 	    gs_point_transform(cos(t), sin(t), mtx, &p);
@@ -196,12 +194,14 @@ xps_draw_arc_segment(xps_context_t *ctx, gs_matrix *mtx, float th0, float th1, i
 	}
 	gs_point_transform(cos(th1), sin(th1), mtx, &p);
 	gs_lineto(ctx->pgs, p.x, p.y);
+dprintf2("  point %g %g\n", p.x, p.y);
     }
     else
     {
 	th0 += M_PI * 2;
 	gs_point_transform(cos(th0), sin(th0), mtx, &p);
 	gs_lineto(ctx->pgs, p.x, p.y);
+dprintf2("  point %g %g\n", p.x, p.y);
 	for (t = th0; t > th1; t -= d)
 	{
 	    gs_point_transform(cos(t), sin(t), mtx, &p);
@@ -209,6 +209,7 @@ xps_draw_arc_segment(xps_context_t *ctx, gs_matrix *mtx, float th0, float th1, i
 	}
 	gs_point_transform(cos(th1), sin(th1), mtx, &p);
 	gs_lineto(ctx->pgs, p.x, p.y);
+dprintf2("  point %g %g\n", p.x, p.y);
     }
 }
 
@@ -230,110 +231,97 @@ xps_draw_arc(xps_context_t *ctx,
 	int is_large_arc, int is_clockwise,
 	float point_x, float point_y)
 {
-    gs_point start, end, size, midpoint, halfdis, thalfdis, tcenter, center;
-    gs_matrix rotmat, mtx;
-    double correction;
-    double sign, start_angle, delta_angle;
-    double scale_num, scale_denom, scale;
-    int code;
+    gs_matrix rotmat, revmat;
+    gs_matrix mtx;
+    gs_point pt;
+    double rx, ry;
+    double x1, y1, x2, y2;
+    double x1t, y1t;
+    double cxt, cyt, cx, cy;
+    double t1, t2, t3;
+    double sign;
+    double th1, dth;
 
-    /* arcs are just too broken for now */
-    // gs_lineto(ctx->pgs, point_x, point_y);
-    // return 0;
+    gs_currentpoint(ctx->pgs, &pt);
+    x1 = pt.x;
+    y1 = pt.y;
+    x2 = point_x;
+    y2 = point_y;
+    rx = size_x;
+    ry = size_y;
 
-    sign = is_clockwise == is_large_arc ? -1.0 : 1.0;
+    if (is_clockwise != is_large_arc)
+	sign = 1;
+    else
+	sign = -1;
 
-    gs_currentpoint(ctx->pgs, &start);
-    end.x = point_x; end.y = point_y;
-    size.x = size_x; size.y = size_y;
+    gs_make_rotation(rotation_angle, &rotmat);
+    gs_make_rotation(-rotation_angle, &revmat);
 
-#define SQR(x) ((x)*(x))
-#define MULTOFSQUARES(x, y) (SQR((x)) * SQR((y)))
+    /* http://www.w3.org/TR/SVG11/implnote.html#ArcImplementationNotes */
+    /* Conversion from endpoint to center parameterization */
 
-    gs_make_rotation(-rotation_angle, &rotmat);
-
-    /* get the distance of the radical line */
-    halfdis.x = (start.x - end.x) / 2.0;
-    halfdis.y = (start.y - end.y) / 2.0;
-
-    /* rotate the halfdis vector so x axis parallel ellipse x axis */
-    gs_make_rotation(-rotation_angle, &rotmat);
-    if ((code = gs_distance_transform(halfdis.x, halfdis.y, &rotmat, &thalfdis)) < 0)
-	gs_rethrow(code, "transform failed");
-
-    /* correct radii if necessary */
-    correction = (SQR(thalfdis.x) / SQR(size.x)) + (SQR(thalfdis.y) / SQR(size.y));
-    if (correction > 1.0)
+    /* F.6.6.1 -- ensure radii are positive and non-zero */
+    rx = fabs(rx);
+    ry = fabs(ry);
+    if (rx < 0.001 || ry < 0.001)
     {
-	size.x *= sqrt(correction);
-	size.y *= sqrt(correction);
+	gs_lineto(ctx->pgs, x2, y2);
+	return 0;
     }
 
-    scale_num = (MULTOFSQUARES(size.x, size.y)) -
-	(MULTOFSQUARES(size.x, thalfdis.y)) -
-	(MULTOFSQUARES(size.y, thalfdis.x));
-    scale_denom = MULTOFSQUARES(size.x, thalfdis.y) + MULTOFSQUARES(size.y, thalfdis.x);
-    scale = sign * sqrt(((scale_num / scale_denom) < 0) ? 0 : (scale_num / scale_denom));
+    /* F.6.5.1 */
+    gs_distance_transform((x1 - x2) / 2.0, (y1 - y2) / 2.0, &revmat, &pt);
+    x1t = pt.x;
+    y1t = pt.y;
 
-    /* translated center */
-    tcenter.x = scale * ((size.x * thalfdis.y)/size.y);
-    tcenter.y = scale * ((-size.y * thalfdis.x)/size.x);
+    /* F.6.6.2 -- ensure radii are large enough */
+    t1 = (x1t * x1t) / (rx * rx) + (y1t * y1t) / (ry * ry);
+    if (t1 > 1.0)
+    {
+	rx = rx * sqrt(t1);
+	ry = ry * sqrt(t1);
+    }
 
-    /* of the original radical line */
-    midpoint.x = (end.x + start.x) / 2.0;
-    midpoint.y = (end.y + start.y) / 2.0;
+    /* F.6.5.2 */
+    t1 = (rx * rx * ry * ry) - (rx * rx * y1t * y1t) - (ry * ry * x1t * x1t);
+    t2 = (rx * rx * y1t * y1t) + (ry * ry * x1t * x1t);
+    t3 = sqrt(t1 / t2);
 
-    center.x = tcenter.x + midpoint.x;
-    center.y = tcenter.y + midpoint.y;
+    cxt = sign * t3 * (rx * y1t) / ry;
+    cyt = sign * t3 * -(ry * x1t) / rx;
+
+    /* F.6.5.3 */
+    gs_distance_transform(cxt, cyt, &rotmat, &pt);
+    cx = pt.x + (x1 + x2) / 2;
+    cy = pt.y + (y1 + y2) / 2;
+
+    /* F.6.5.4 */
     {
 	gs_point coord1, coord2, coord3, coord4;
 	coord1.x = 1;
 	coord1.y = 0;
-	coord2.x = (thalfdis.x - tcenter.x) / size.x; 
-	coord2.y = (thalfdis.y - tcenter.y) / size.y;
-	coord3.x = (thalfdis.x - tcenter.x) / size.x;
-	coord3.y = (thalfdis.y - tcenter.y) / size.y;
-	coord4.x = (-thalfdis.x - tcenter.x) / size.x;
-	coord4.y = (-thalfdis.y - tcenter.y) / size.y;
-	start_angle = angle_between(coord1, coord2);
-	delta_angle = angle_between(coord3, coord4);
-	if (delta_angle < 0 && !is_clockwise)
-	    delta_angle += (degrees_to_radians * 360);
-	if (delta_angle > 0 && is_clockwise)
-	    delta_angle -= (degrees_to_radians * 360);
+	coord2.x = (x1t - cxt) / rx;
+	coord2.y = (y1t - cyt) / ry;
+	coord3.x = (x1t - cxt) / rx;
+	coord3.y = (y1t - cyt) / ry;
+	coord4.x = (-x1t - cxt) / rx;
+	coord4.y = (-y1t - cyt) / ry;
+	th1 = angle_between(coord1, coord2);
+	dth = angle_between(coord3, coord4);
+	if (dth < 0 && !is_clockwise)
+	    dth += (degrees_to_radians * 360);
+	if (dth > 0 && is_clockwise)
+	    dth -= (degrees_to_radians * 360);
     }
 
-#if 0
-    /* save the ctm -- umm, this affects line widths */
-    gs_currentmatrix(ctx->pgs, &save_ctm);
-    gs_translate(ctx->pgs, center.x, center.y);
-    gs_scale(ctx->pgs, size.x, size.y);
-    gs_rotate(ctx->pgs, rotation_angle);
+    gs_make_identity(&mtx);
+    gs_matrix_translate(&mtx, cx, cy, &mtx);
+    gs_matrix_rotate(&mtx, rotation_angle, &mtx);
+    gs_matrix_scale(&mtx, rx, ry, &mtx);
+    xps_draw_arc_segment(ctx, &mtx, th1, th1 + dth, is_clockwise);
 
-    {
-	floatp th0 = radians_to_degrees * start_angle;
-	floatp th1 = radians_to_degrees * (start_angle + delta_angle);
-	if (is_clockwise)
-	    gs_arc(ctx->pgs, 0, 0, 1, th0, th1);
-	else
-	    gs_arcn(ctx->pgs, 0, 0, 1, th0, th1);
-    }
-
-    /* restore the ctm */
-    gs_setmatrix(ctx->pgs, &save_ctm);
-#endif
-
-    {
-	floatp th0 = radians_to_degrees * start_angle;
-	floatp th1 = radians_to_degrees * (start_angle + delta_angle);
-
-	gs_make_identity(&mtx);
-	gs_matrix_translate(&mtx, center.x, center.y, &mtx);
-	gs_matrix_rotate(&mtx, rotation_angle, &mtx);
-	gs_matrix_scale(&mtx, size.x, size.y, &mtx);
-
-	xps_draw_arc_segment(ctx, &mtx, th0, th1, is_clockwise);
-    }
+    gs_lineto(ctx->pgs, point_x, point_y);
 
     return 0;
 }
