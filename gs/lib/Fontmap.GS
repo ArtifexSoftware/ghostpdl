@@ -46,17 +46,15 @@
 %
 %	- At least one space or tab, and a terminating semicolon.
 
-% Because of limitations in the MS-DOS environment, Ghostscript font
-% file names must be no more than 8 characters long, must consist only
-% of LOWER CASE letters, digits, and underscores, and must start with a
-% letter.  Font names, on the other hand, need only obey the syntax of
-% names in the Ghostscript language, which is much more liberal.
-
-% The following table is actually a Ghostscript data structure.
+% The following table is executed as a PostScript file.
 % If you add new entries, be sure to copy the punctuation accurately;
 % in particular, you must leave at least one space or tab between each
 % field in the entry.  Also, please read fonts.doc for important information
 % about font names.
+
+% PDF interpreter evaluates hexadecimal escapes in PDF font names before
+% looking up the font. When the resulting name cannot be represented using
+% PostScript name syntax, the string can be used instead of the name.
 
 % Note that .pfa and .pfb fonts are compatible with Adobe Type Manager
 % and other programs that don't include full PostScript interpreters,
