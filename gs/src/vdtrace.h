@@ -61,6 +61,7 @@ struct  vd_trace_interface_s {
     void (*closepath)(vd_trace_interface *I);
     void (*circle)(vd_trace_interface *I, double x, double y, int r); /* Radius doesn't scale. */
     void (*round)(vd_trace_interface *I, double x, double y, int r); /* Radius doesn't scale. */
+    void (*pixel)(vd_trace_interface *I, double x, double y, unsigned long rgbcolor);
     void (*fill)(vd_trace_interface *I);
     void (*stroke)(vd_trace_interface *I);
     void (*setcolor)(vd_trace_interface *I, unsigned long rgbcolor);
@@ -87,6 +88,7 @@ void vd_impl_quad(double x0, double y0, double x1, double y1, double x2, double 
 void vd_impl_curve(double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3, int w, unsigned long c); /* unscaled width */
 void vd_impl_circle(double x, double y, int r, unsigned long c); /* unscaled radius */
 void vd_impl_round(double x, double y, int r, unsigned long c);  /* unscaled radius */
+void vd_impl_pixel(double x, double y, unsigned long c);
 void vd_impl_text(double x, double y, char *s, unsigned long c); /* unscaled font */
 void vd_setflag(char f, char v);
 
@@ -127,6 +129,7 @@ void vd_setflag(char f, char v);
 #    define vd_curve(x0,y0,x1,y1,x2,y2,x3,y3,w,c) BEGIN if (vd_trace1) vd_impl_curve(x0,y0,x1,y1,x2,y2,x3,y3,w,c); END
 #    define vd_circle(x,y,r,c)  BEGIN if (vd_trace1) vd_impl_circle(x,y,r,c); END
 #    define vd_round(x,y,r,c)   BEGIN if (vd_trace1) vd_impl_round(x,y,r,c); END
+#    define vd_pixel(x,y,c)   BEGIN if (vd_trace1) vd_impl_pixel(x,y,c); END
 #    define vd_fill             BEGIN if (vd_trace1) vd_trace1->fill(vd_trace1); END
 #    define vd_stroke           BEGIN if (vd_trace1) vd_trace1->stroke(vd_trace1); END
 #    define vd_setcolor(c)      BEGIN if (vd_trace1) vd_trace1->setcolor(vd_trace1,c); END
@@ -172,6 +175,7 @@ void vd_setflag(char f, char v);
 #    define vd_curve(x0,y0,x1,y1,x2,y2,x3,y3,w,c) DO_NOTHING
 #    define vd_circle(x,y,r,c)	    DO_NOTHING
 #    define vd_round(x,y,r,c)	    DO_NOTHING
+#    define vd_pixel(x,y,c)	    DO_NOTHING
 #    define vd_fill		    DO_NOTHING
 #    define vd_stroke		    DO_NOTHING
 #    define vd_setcolor(c)	    DO_NOTHING

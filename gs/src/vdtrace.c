@@ -183,6 +183,11 @@ void vd_impl_round(double x, double y, int r, unsigned long c)
     vd_trace1->round(vd_trace1, SX(x), SY(y), r);
 }
 
+void vd_impl_pixel(double x, double y, unsigned long c)
+{   NullRET;
+    vd_trace1->pixel(vd_trace1, SX(x), SY(y), c);
+}
+
 void vd_impl_text(double x, double y, char *s, unsigned long c)
 {   NullRET;
     vd_trace1->setcolor(vd_trace1, c);
