@@ -18,6 +18,7 @@
 #include "gx.h"
 #include "gserrors.h"
 #include "gsrect.h"		/* for rect_merge */
+#include "gscencs.h"
 #include "gdevpdfx.h"
 #include "gdevpdfo.h"		/* for object->written */
 #include "gdevpdtb.h"

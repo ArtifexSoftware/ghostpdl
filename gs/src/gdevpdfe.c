@@ -323,7 +323,8 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
 	write(s, data, data_length);
 	return 0;
     } else {
-	UTF16 *buf0, *buf0b;
+	UTF16 *buf0;
+	const UTF16 *buf0b;
 	UTF8 *buf1, *buf1b;
 	int i, j = 0;
 

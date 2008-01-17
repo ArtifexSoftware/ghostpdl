@@ -89,7 +89,6 @@ pcx2up_print_page(gx_device_printer * pdev, FILE * file)
 	gx_saved_page even_page;
 	gx_placed_page pages[2];
 	int x_offset = (int)(pdev->HWResolution[0] * 0.5);
-	int y_offset = (int)(pdev->HWResolution[1] * 0.5);
 	int code = gdev_prn_save_page(pdev, &even_page, 1);
 	int prdev_size = prdev_template->params_size;
 	gx_device_printer *prdev;

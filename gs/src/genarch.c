@@ -106,7 +106,6 @@ main(int argc, char *argv[])
     } sd;
     long lm1 = -1;
     long lr1 = lm1 >> 1, lr2 = lm1 >> 2;
-    unsigned long um1 = ~(unsigned long)0;
     int im1 = -1;
     int ir1 = im1 >> 1, ir2 = im1 >> 2;
     union {
@@ -114,7 +113,6 @@ main(int argc, char *argv[])
 	char *p;
     } pl0, pl1;
     int ars;
-    int lwidth = size_of(long) * 8;
     union {
 	float f;
 	int i;

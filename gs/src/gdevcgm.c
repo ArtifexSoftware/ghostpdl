@@ -18,6 +18,7 @@
 #include "gxdevice.h"
 #include "gp.h"
 #include "gsparam.h"
+#include "gsutil.h"
 #include "gdevcgml.h"
 #include "gdevpccm.h"
 

@@ -91,7 +91,6 @@ static int
 s_band_read_init_offset_map(gx_device_clist_reader *crdev, stream_state * st)
 {
     stream_band_read_state *const ss = (stream_band_read_state *) st;
-    const clist_io_procs_t *io_procs = ss->page_info.io_procs;
 
     if (gs_debug_c('L')) {
 	ss->offset_map_length = 0;
@@ -208,7 +207,7 @@ static const stream_template s_band_read_template = {
 };
 
 #ifdef DEBUG
-int
+static int
 buffer_segment_index(const stream_band_read_state *ss, uint buffer_offset, uint *poffset0)
 {
     uint i, offset0, offset = 0;

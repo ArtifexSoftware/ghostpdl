@@ -375,7 +375,6 @@ gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
 	code = cs_concretize_color(&cc, pacs, pconc, pis);
     }
     else {
-	float ftemp;
 	int i;
 
 	for (i = pcs->params.device_n.num_components; --i >= 0;)

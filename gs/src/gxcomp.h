@@ -119,7 +119,7 @@ typedef struct gs_composite_type_procs_s {
      * 3 - closing and replacing, 4 - replace one, 5 - drop queue.
      */
 #define composite_is_closing_proc(proc)\
-  int proc(const gs_composite_t *this, const gs_composite_t **pcte, gx_device *dev)
+  int proc(const gs_composite_t *this, gs_composite_t **pcte, gx_device *dev)
     composite_is_closing_proc((*is_closing));
 
     /*

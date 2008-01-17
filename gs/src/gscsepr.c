@@ -310,7 +310,6 @@ static int
 gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
 			 frac *pconc, const gs_imager_state *pis)
 {
-    float ftemp;
     int code;
     gs_client_color cc;
     const gs_color_space *pacs = pcs->base_space;

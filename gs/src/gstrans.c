@@ -443,7 +443,7 @@ gx_init_transparency_mask(gs_imager_state * pis,
  * the tint transform function for DeviceN and Separation color spaces
  * and convert spot colors into process colors.
  */
-int
+static int
 get_num_pdf14_spot_colors(gs_state * pgs)
 {
     gx_device * dev = pgs->device;

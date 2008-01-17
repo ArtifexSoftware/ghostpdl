@@ -1142,7 +1142,7 @@ gs_cie_cache_to_fracs(const cie_cache_floats *pfloats, cie_cache_fracs *pfracs)
 
 /* If the current color space is a CIE space, or has a CIE base space, */
 /* return a pointer to the common part of the space; otherwise return 0. */
-const gs_cie_common *
+static const gs_cie_common *
 cie_cs_common_abc(const gs_color_space *pcs_orig, const gs_cie_abc **ppabc)
 {
     const gs_color_space *pcs = pcs_orig;

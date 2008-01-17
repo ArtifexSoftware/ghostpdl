@@ -402,7 +402,7 @@ $(PSOBJ)zsysvm.$(OBJ) : $(PSSRC)zsysvm.c $(GH)\
 	$(PSCC) $(PSO_)zsysvm.$(OBJ) $(C_) $(PSSRC)zsysvm.c
 
 $(PSOBJ)ztoken.$(OBJ) : $(PSSRC)ztoken.c $(OP) $(string__h) $(stat__h)\
- $(gsstruct_h)\
+ $(gsstruct_h) $(gsutil_h)\
  $(dstack_h) $(estack_h) $(files_h)\
  $(idict_h) $(iname_h) $(iscan_h) $(itoken_h)\
  $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)

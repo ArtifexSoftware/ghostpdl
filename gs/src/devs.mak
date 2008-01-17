@@ -1036,7 +1036,7 @@ $(GLOBJ)gdevpdte.$(OBJ) : $(GLSRC)gdevpdte.c $(gx_h) $(math__h) $(memory__h) $(s
 	$(GLCC) $(GLO_)gdevpdte.$(OBJ) $(C_) $(GLSRC)gdevpdte.c
 
 $(GLOBJ)gdevpdtd.$(OBJ) : $(GLSRC)gdevpdtd.c $(math__h) $(memory__h) $(gx_h)\
- $(gserrors_h) $(gsrect_h)\
+ $(gserrors_h) $(gsrect_h) $(gscencs_h)\
  $(gdevpdfo_h) $(gdevpdfx_h)\
  $(gdevpdtb_h) $(gdevpdtd_h) $(gdevpdtf_h)
 	$(GLCC) $(GLO_)gdevpdtd.$(OBJ) $(C_) $(GLSRC)gdevpdtd.c
@@ -1210,7 +1210,7 @@ gdevcgml_h=$(GLSRC)gdevcgml.h
 gdevcgmx_h=$(GLSRC)gdevcgmx.h $(gdevcgml_h)
 
 $(GLOBJ)gdevcgm.$(OBJ) : $(GLSRC)gdevcgm.c $(GDEV) $(memory__h)\
- $(gp_h) $(gsparam_h) $(gdevpccm_h) $(gdevcgml_h)
+ $(gp_h) $(gsparam_h) $(gsutil_h) $(gdevpccm_h) $(gdevcgml_h)
 	$(GLCC) $(GLO_)gdevcgm.$(OBJ) $(C_) $(GLSRC)gdevcgm.c
 
 $(GLOBJ)gdevcgml.$(OBJ) : $(GLSRC)gdevcgml.c $(memory__h) $(stdio__h)\

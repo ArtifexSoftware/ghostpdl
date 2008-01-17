@@ -203,7 +203,7 @@ c_overprint_read(
  * Check for closing compositor. 
  */
 static int
-c_overprint_is_closing(const gs_composite_t *this, const gs_composite_t **ppcte, gx_device *dev)
+c_overprint_is_closing(const gs_composite_t *this, gs_composite_t **ppcte, gx_device *dev)
 {
     if (*ppcte != NULL && (*ppcte)->type->comp_id != GX_COMPOSITOR_OVERPRINT)
 	return 0;

@@ -30,6 +30,7 @@
 #include "gsdfilt.h"
 #include "gsimage.h"
 #include "gsrect.h"
+#include "gscoord.h"
 #include "gzstate.h"
 #include "gdevdevn.h"
 #include "gdevp14.h"
@@ -2781,7 +2782,7 @@ c_pdf14trans_equal(const gs_composite_t	* pct0,	const gs_composite_t * pct1)
 }
 
 #ifdef DEBUG
-static char * pdf14_opcode_names[] = PDF14_OPCODE_NAMES;
+static const char * pdf14_opcode_names[] = PDF14_OPCODE_NAMES;
 #endif
 
 #define	put_value(dp, value)\
@@ -3065,10 +3066,10 @@ c_pdf14trans_create_default_compositor(const gs_composite_t * pct,
  * Find an opening compositor op.
  */
 static int
-find_opening_op(int opening_op, const gs_composite_t **ppcte)
+find_opening_op(int opening_op, gs_composite_t **ppcte)
 {
     /* Assuming a right *BEGIN* - *END* operation balance. */
-    const gs_composite_t *pcte = *ppcte;
+    gs_composite_t *pcte = *ppcte;
 
     for (;;) {
 	if (pcte->type->comp_id == GX_COMPOSITOR_PDF14_TRANS) {
@@ -3092,10 +3093,10 @@ find_opening_op(int opening_op, const gs_composite_t **ppcte)
  * Find an opening compositor op.
  */
 static int
-find_same_op(const gs_composite_t *this, int my_op, const gs_composite_t **ppcte)
+find_same_op(const gs_composite_t *this, int my_op, gs_composite_t **ppcte)
 {
     const gs_pdf14trans_t *pct0 = (gs_pdf14trans_t *)this;
-    const gs_composite_t *pct = *ppcte;
+    gs_composite_t *pct = *ppcte;
 
     for (;;) {
 	if (pct->type->comp_id == GX_COMPOSITOR_PDF14_TRANS) {
@@ -3118,10 +3119,9 @@ find_same_op(const gs_composite_t *this, int my_op, const gs_composite_t **ppcte
  * Check for closing compositor.
  */
 static int
-c_pdf14trans_is_closing(const gs_composite_t * this, const gs_composite_t ** ppcte, gx_device *dev)
+c_pdf14trans_is_closing(const gs_composite_t * this, gs_composite_t ** ppcte, gx_device *dev)
 {
     gs_pdf14trans_t *pct0 = (gs_pdf14trans_t *)this;
-    gs_pdf14trans_t *pct1 = (gs_pdf14trans_t *)*ppcte;
     int op0 = pct0->params.pdf14_op;
 
     switch (op0) {

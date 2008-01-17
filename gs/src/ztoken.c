@@ -20,6 +20,7 @@
 #include "dstack.h"		/* for dict_find_name */
 #include "estack.h"
 #include "gsstruct.h"		/* for iscan.h */
+#include "gsutil.h"
 #include "stream.h"
 #include "files.h"
 #include "store.h"

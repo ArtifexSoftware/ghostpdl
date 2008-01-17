@@ -277,7 +277,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 	memset(ppdev->skip, 0, sizeof(ppdev->skip));
 	size_ok = ppdev->printer_procs.buf_procs.size_buf_device
 	    (&buf_space, pdev, NULL, pdev->height, false) >= 0;
-	if (ppdev->page_uses_transparency) 
+	if (ppdev->page_uses_transparency) {
 	    if (new_height < max_ulong/(ESTIMATED_PDF14_ROW_SPACE(max(1, new_width)) >> 3))
 		pdf14_trans_buffer_size = new_height
 		    * (ESTIMATED_PDF14_ROW_SPACE(new_width) >> 3);
@@ -285,6 +285,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 		size_ok = 0;
 		pdf14_trans_buffer_size = 0;
 	    }
+	}
 	mem_space = buf_space.bits + buf_space.line_ptrs
 		    + pdf14_trans_buffer_size;
 

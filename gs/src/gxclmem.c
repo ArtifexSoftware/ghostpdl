@@ -947,7 +947,7 @@ memfile_free_mem(MEMFILE * f)
     if (tot_cache_hits != 0) {
 	if_debug3(':', "[:]Cache hits=%ld, cache misses=%ld, swapouts=%ld\n",
 		 tot_cache_hits,
-		 tot_cache_miss - (f->log_length / MEMFILE_DATA_SIZE),
+		 (long)(tot_cache_miss - (f->log_length / MEMFILE_DATA_SIZE)),
 		 tot_swap_out);
     }
     tot_raw = 0;
