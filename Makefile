@@ -51,7 +51,7 @@ xps-debug:
 	$(MAKE) -C xps -f xps_gcc.mak pdl-debug
 
 xps: 
-	$(MAKE) -C xps -f xps_gcc.mak	# build XPS
+	$(MAKE) -C xps -f xps_gcc.mak pdl-product # build XPS
 
 xps-clean:
 	$(MAKE) -C xps -f xps_gcc.mak pdl-clean
