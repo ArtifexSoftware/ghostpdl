@@ -876,8 +876,6 @@ currentdict /eexec_pdf_param_dict .undef
 
 /buildTrueType {	% <TrueType-font-resource> buildTrueType <font>
   dup /BaseFont oget
-  /Repaired true store	% flag that we had warnings
-  TTFWarnList 1 index true put	% Add fontname to the list
   dup /Font resourcestatus dup { exch pop exch pop } if not
   TTfonts 2 index known and {
     dup TTfonts exch get
