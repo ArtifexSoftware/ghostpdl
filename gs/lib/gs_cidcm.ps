@@ -171,12 +171,15 @@ currentdict end def
           RESMPDEBUG { (cidcm GetCIDSystemInfo from file ) print dup = } if
           currentglobal exch true setglobal   % CSIs /InstName g (path)
           mark exch                           % CSIs /InstName g [ (path)
-          { (r) file                          % CSIs /InstName g [ file
-            //GetCIDSystemInfoFromFile exec   % CSIs /InstName g [ CSI
-          } stopped {
-            cleartomark //.prs_empty             
+          { (r) file } stopped {
+            cleartomark //.prs_empty
           } {
-            exch pop
+            exch 1 index                      % CSIs /InstName g file [ file
+            //GetCIDSystemInfoFromFile stopped {
+              cleartomark closefile //.prs_empty
+            } {
+              exch pop exch closefile
+            } ifelse
           } ifelse                            % CSIs /InstName g CSI
           exch setglobal                      % CSIs /InstName CSI
           dup 4 1 roll                        % CSI CSIs /InstName CSI
