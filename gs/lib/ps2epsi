@@ -81,7 +81,7 @@ rm -rf "$tmpdir"
 
 (
 cat << BEGINEPS
-save countdictstack mark newpath /showpage {} def /setpagedevice {pop} def
+save countdictstack mark newpath /showpage {} def /setpagedevice /pop load def
 %%EndProlog
 %%Page 1 1
 BEGINEPS
