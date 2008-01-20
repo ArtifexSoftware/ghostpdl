@@ -459,6 +459,7 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
 	      mem->space, (ulong) mem->streams);
     mem->streams = 0;
     mem->total_scanned = 0;
+    mem->total_scanned_after_compacting = 0;
     if (sid)
 	mem->save_level++;
     return save;
@@ -1299,15 +1300,69 @@ save_set_new(gs_ref_memory_t * mem, bool to_new, bool set_limit, ulong *pscanned
     return 0;
 }
 
+/* Drop redundant elements from the changes list and set l_new. */
+static void
+drop_redundant_changes(gs_ref_memory_t * mem)
+{
+    register alloc_change_t *chp = mem->changes, *chp_back = NULL, *chp_forth;
+
+    /* First reverse the list and set all. */
+    for (; chp; chp = chp_forth) {
+	chp_forth = chp->next;
+	if (chp->offset != AC_OFFSET_ALLOCATED) {
+	    ref_packed *prp = chp->where;
+
+	    if (!r_is_packed(prp)) {
+		ref *const rp = (ref *)prp;
+
+		rp->tas.type_attrs |= l_new;
+	    }
+	}
+	chp->next = chp_back;
+	chp_back = chp;
+    }
+    mem->changes = chp_back;
+    chp_back = NULL;
+    /* Then filter, reset and reverse again. */
+    for (chp = mem->changes; chp; chp = chp_forth) {
+	chp_forth = chp->next;
+	if (chp->offset != AC_OFFSET_ALLOCATED) {
+	    ref_packed *prp = chp->where;
+
+	    if (!r_is_packed(prp)) {
+		ref *const rp = (ref *)prp;
+
+		if ((rp->tas.type_attrs & l_new) == 0) {
+		    if (mem->scan_limit == chp)
+			mem->scan_limit = chp_back;
+		    if (mem->changes == chp)
+			mem->changes = chp_back;
+	    	    gs_free_object((gs_memory_t *)mem, chp, "alloc_save_remove");
+		    continue;
+		} else
+		    rp->tas.type_attrs &= ~l_new;
+	    }
+	}
+	chp->next = chp_back;
+	chp_back = chp;
+    }
+    mem->changes = chp_back;
+}
+
+
 /* Set or reset the l_new attribute on the changes chain. */
 static int
 save_set_new_changes(gs_ref_memory_t * mem, bool to_new, bool set_limit)
 {
-    register alloc_change_t *chp = mem->changes;
+    register alloc_change_t *chp;
     register uint new = (to_new ? l_new : 0);
-    ulong scanned = mem->total_scanned;
+    ulong scanned = 0;
 
-    for (; chp; chp = chp->next) {
+    if (!to_new && mem->total_scanned_after_compacting > max_repeated_scan * 16) {
+	mem->total_scanned_after_compacting = 0;
+	drop_redundant_changes(mem);
+    } 
+    for (chp = mem->changes; chp; chp = chp->next) {
 	if (chp->offset == AC_OFFSET_ALLOCATED) {
 	    if (chp->where != 0) {
 		uint size;
@@ -1333,11 +1388,12 @@ save_set_new_changes(gs_ref_memory_t * mem, bool to_new, bool set_limit)
 	    break;
     }
     if (set_limit) {
-	if (scanned >= max_repeated_scan) {
+        mem->total_scanned_after_compacting += scanned;
+	if (scanned  + mem->total_scanned >= max_repeated_scan) {
 	    mem->scan_limit = mem->changes;
 	    mem->total_scanned = 0;
 	} else
-	    mem->total_scanned = scanned;
+	    mem->total_scanned += scanned;
     }
     return 0;
 }

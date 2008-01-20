@@ -383,6 +383,7 @@ struct gs_ref_memory_s {
     struct alloc_change_s *scan_limit;
     struct alloc_save_s *saved;
     long total_scanned;
+    long total_scanned_after_compacting;
     struct alloc_save_s *reloc_saved;	/* for GC */
     gs_memory_status_t previous_status;		/* total allocated & used */
 				/* in outer save levels */
