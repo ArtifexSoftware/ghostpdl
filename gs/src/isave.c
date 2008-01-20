@@ -370,6 +370,7 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata, ulong *psid)
 
 	if (code < 0)
 	    return code;
+#if 0 /* Disable invisible save levels. */
 	if ((lsave->state.total_scanned += scanned) > max_repeated_scan) {
 	    /* Do a second, invisible save. */
 	    alloc_save_t *rsave;
@@ -397,6 +398,9 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata, ulong *psid)
 		print_save("save", lmem->space, lsave);
 	    }
 	}
+#else
+	lmem->inherited = lsave->state.allocated + lsave->state.inherited;
+#endif
     }
     alloc_set_in_save(dmem);
     *psid = sid;
