@@ -327,7 +327,9 @@ jas_image_t *jp2_decode(jas_stream_t *in, char *optstr)
 		  dec->colr->data.colr.iccplen);
 		assert(iccprof);
 		jas_iccprof_gethdr(iccprof, &icchdr);
-		jas_eprintf("ICC Profile CS %08x\n", icchdr.colorspc);
+		if (jas_getdbglevel() >= 1) {
+			jas_eprintf("ICC Profile CS %08x\n", icchdr.colorspc);
+		}
 		jas_image_setclrspc(dec->image, fromiccpcs(icchdr.colorspc));
 		dec->image->cmprof_ = jas_cmprof_createfromiccprof(iccprof);
 		assert(dec->image->cmprof_);
