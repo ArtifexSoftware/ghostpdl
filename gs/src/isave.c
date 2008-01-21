@@ -392,14 +392,9 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata, ulong *psid)
 #endif
 		/* Inherit the allocated space count -- */
 		/* we need this for triggering a GC. */
-		rsave->state.inherited =
-		    lsave->state.allocated + lsave->state.inherited;
-		lmem->inherited = rsave->state.inherited;
 		print_save("save", lmem->space, lsave);
 	    }
 	}
-#else
-	lmem->inherited = lsave->state.allocated + lsave->state.inherited;
 #endif
     }
     alloc_set_in_save(dmem);

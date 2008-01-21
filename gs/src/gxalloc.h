@@ -353,11 +353,6 @@ struct gs_ref_memory_s {
     chunk_locator_t cfreed;	/* chunk where last object freed */
     ulong allocated;		/* total size of all chunks */
 				/* allocated at this save level */
-    long inherited;		/* chunks allocated at outer save */
-				/* levels that should be counted */
-				/* towards the GC threshold */
-				/* (may be negative, but allocated + */
-				/* inherited >= 0 always) */
     ulong gc_allocated;		/* value of (allocated + */
 				/* previous_status.allocated) after last GC */
     struct lost_ {		/* space freed and 'lost' (not put on a */

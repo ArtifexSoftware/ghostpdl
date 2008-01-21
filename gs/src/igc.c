@@ -521,7 +521,6 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 		      (ulong) mem, total.allocated, total.used);
 	    gs_memory_status((gs_memory_t *) mem, &total);
 	    mem->gc_allocated = mem->allocated + total.allocated;
-	    mem->inherited = -(int)mem->allocated;
 	}
 	mem = space_memories[ispace];
 	mem->previous_status = total;
