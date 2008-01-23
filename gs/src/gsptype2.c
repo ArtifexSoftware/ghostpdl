@@ -25,6 +25,7 @@
 #include "gxpcolor.h"
 #include "gxstate.h"            /* for gs_state_memory */
 #include "gzpath.h"
+#include "gzcpath.h"
 #include "gzstate.h"
 
 /* GC descriptors */
@@ -331,16 +332,17 @@ gx_dc_pattern2_clip_with_bbox(const gx_device_color * pdevc, gx_device * pdev,
 	    (*dev_proc(pdev, pattern_manage))(pdev, gs_no_id, NULL, pattern_manage__shading_area) == 0) {
 	gs_pattern2_instance_t *pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
 	gx_path box_path;
+	gs_memory_t *mem = (*ppcpath1 != NULL ? (*ppcpath1)->path.memory : pdev->memory);
 	int code;
 
-	gx_path_init_local(&box_path, pdev->memory);
+	gx_path_init_local(&box_path, mem);
 	code = gx_dc_shading_path_add_box(&box_path, pdevc);
 	if (code == gs_error_limitcheck) {
 	    /* Ignore huge BBox - bug 689027. */
 	    code = 0;
 	} else {
 	    if (code >= 0) {
-		gx_cpath_init_local_shared(cpath_local, *ppcpath1, pdev->memory);
+		gx_cpath_init_local_shared(cpath_local, *ppcpath1, mem);
 		code = gx_cpath_intersect(cpath_local, &box_path, gx_rule_winding_number, (gs_imager_state *)pinst->saved);
 		*ppcpath1 = cpath_local;
 	    }
