@@ -113,7 +113,7 @@ gs_pattern1_init(gs_pattern1_template_t * ppat)
 
 /* Make an instance of a PatternType 1 pattern. */
 static int compute_inst_matrix(gs_pattern1_instance_t * pinst,
-	const gs_state * saved, gs_rect * pbbox, int width, int height);
+	gs_state * saved, gs_rect * pbbox, int width, int height);
 int
 gs_makepattern(gs_client_color * pcc, const gs_pattern1_template_t * pcp,
 	       const gs_matrix * pmat, gs_state * pgs, gs_memory_t * mem)
@@ -165,7 +165,8 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 
 #define mat inst.step_matrix
     if_debug6('t', "[t]step_matrix=[%g %g %g %g %g %g]\n",
-	      mat.xx, mat.xy, mat.yx, mat.yy, mat.tx, mat.ty);
+	      inst.step_matrix.xx, inst.step_matrix.xy, inst.step_matrix.yx, 
+	      inst.step_matrix.yy, inst.step_matrix.tx, inst.step_matrix.ty);
     if_debug4('t', "[t]bbox=(%g,%g),(%g,%g)\n",
 	      bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
     {
@@ -186,21 +187,21 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 	    /*
 	     * The pattern is empty: the stepping matrix doesn't matter.
 	     */
-	    gs_make_identity(&mat);
+	    gs_make_identity(&inst.step_matrix);
 	    bbox.p.x = bbox.p.y = bbox.q.x = bbox.q.y = 0;
 	} else {
 	    /* Check for singular stepping matrix. */
-	    if (fabs(mat.xx * mat.yy - mat.xy * mat.yx) < 1.0e-6) {
+	    if (fabs(inst.step_matrix.xx * inst.step_matrix.yy - inst.step_matrix.xy * inst.step_matrix.yx) < 1.0e-6) {
 		code = gs_note_error(gs_error_rangecheck);
 		goto fsaved;
 	    }
 	    if (ADJUST_SCALE_BY_GS_TRADITION &&
-	        mat.xy == 0 && mat.yx == 0 &&
-		fabs(fabs(mat.xx) - bbw) < 0.5 &&
-		fabs(fabs(mat.yy) - bbh) < 0.5
+	        inst.step_matrix.xy == 0 && inst.step_matrix.yx == 0 &&
+		fabs(fabs(inst.step_matrix.xx) - bbw) < 0.5 &&
+		fabs(fabs(inst.step_matrix.yy) - bbh) < 0.5
 		) {
-		gs_scale(saved, fabs(inst.size.x / mat.xx),
-			 fabs(inst.size.y / mat.yy));
+		gs_scale(saved, fabs(inst.size.x / inst.step_matrix.xx),
+			 fabs(inst.size.y / inst.step_matrix.yy));
 		code = compute_inst_matrix(&inst, saved, &bbox,
 						dev_width, dev_height);
 		if (code < 0)
@@ -219,13 +220,13 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 		if_debug4('t', "[t]bbox=(%g,%g),(%g,%g)\n",
 			  bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
 	    } else if (ADJUST_AS_ADOBE) {
-		if (mat.xy == 0 && mat.yx == 0 &&
-		    fabs(fabs(mat.xx) - bbw) < 0.5 &&
-		    fabs(fabs(mat.yy) - bbh) < 0.5
+		if (inst.step_matrix.xy == 0 && inst.step_matrix.yx == 0 &&
+		    fabs(fabs(inst.step_matrix.xx) - bbw) < 0.5 &&
+		    fabs(fabs(inst.step_matrix.yy) - bbh) < 0.5
 		    ) {
 		    if (inst.step_matrix.xx <= 2) { 
 			/* Prevent a degradation - see -r72 mspro.pdf */
-			gs_scale(saved, fabs(inst.size.x / mat.xx), 1);
+			gs_scale(saved, fabs(inst.size.x / inst.step_matrix.xx), 1);
 			inst.step_matrix.xx = (float)inst.size.x;
 		    } else {
 			inst.step_matrix.xx = (float)floor(inst.step_matrix.xx + 0.5);
@@ -237,7 +238,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 			    gs_scale(saved, (fabs(inst.size.x) - 1.0 / fixed_scale) / fabs(inst.size.x), 1);
 		    }
 		    if (inst.step_matrix.yy <= 2) {
-			gs_scale(saved, 1, fabs(inst.size.y / mat.yy));
+			gs_scale(saved, 1, fabs(inst.size.y / inst.step_matrix.yy));
 			inst.step_matrix.yy = (float)inst.size.y;
 		    } else {
 			inst.step_matrix.yy = (float)floor(inst.step_matrix.yy + 0.5);
@@ -251,12 +252,12 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 	    }
 	}
     }
-    if ((code = gs_bbox_transform_inverse(&bbox, &mat, &inst.bbox)) < 0)
+    if ((code = gs_bbox_transform_inverse(&bbox, &inst.step_matrix, &inst.bbox)) < 0)
 	goto fsaved;
     if_debug4('t', "[t]ibbox=(%g,%g),(%g,%g)\n",
 	      inst.bbox.p.x, inst.bbox.p.y, inst.bbox.q.x, inst.bbox.q.y);
-    inst.is_simple = (fabs(mat.xx) == inst.size.x && mat.xy == 0 &&
-		      mat.yx == 0 && fabs(mat.yy) == inst.size.y);
+    inst.is_simple = (fabs(inst.step_matrix.xx) == inst.size.x && inst.step_matrix.xy == 0 &&
+		      inst.step_matrix.yx == 0 && fabs(inst.step_matrix.yy) == inst.size.y);
     if_debug6('t',
 	      "[t]is_simple? xstep=(%g,%g) ystep=(%g,%g) size=(%d,%d)\n",
 	      inst.step_matrix.xx, inst.step_matrix.xy,
@@ -264,10 +265,10 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 	      inst.size.x, inst.size.y);
     /* Absent other information, instances always require a mask. */
     inst.uses_mask = true;
-    gx_translate_to_fixed(saved, float2fixed_rounded(mat.tx - bbox.p.x),
-			         float2fixed_rounded(mat.ty - bbox.p.y));
-    mat.tx = bbox.p.x;
-    mat.ty = bbox.p.y;
+    gx_translate_to_fixed(saved, float2fixed_rounded(inst.step_matrix.tx - bbox.p.x),
+			         float2fixed_rounded(inst.step_matrix.ty - bbox.p.y));
+    inst.step_matrix.tx = bbox.p.x;
+    inst.step_matrix.ty = bbox.p.y;
 #undef mat
     cbox.p.x = fixed_0;
     cbox.p.y = fixed_0;
@@ -276,10 +277,27 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     code = gx_clip_to_rectangle(saved, &cbox);
     if (code < 0)
 	goto fsaved;
+    if (!inst.is_simple) {
+	code = gs_newpath(saved);
+	if (code >= 0)
+	    code = gs_moveto(saved, inst.template.BBox.p.x, inst.template.BBox.p.y);
+	if (code >= 0)
+	    code = gs_lineto(saved, inst.template.BBox.q.x, inst.template.BBox.p.y);
+	if (code >= 0)
+	    code = gs_lineto(saved, inst.template.BBox.q.x, inst.template.BBox.q.y);
+	if (code >= 0)
+	    code = gs_lineto(saved, inst.template.BBox.p.x, inst.template.BBox.q.y);
+	if (code >= 0)
+	    code = gs_clip(saved);
+	if (code < 0)
+	    goto fsaved;
+    }
+    code = gs_newpath(saved);
+    if (code < 0)
+	goto fsaved;
     inst.id = gs_next_ids(mem, 1);
     *pinst = inst;
     return 0;
-#undef mat
   fsaved:gs_state_free(saved);
     gs_free_object(mem, pinst, "gs_makepattern");
     return code;
@@ -392,19 +410,37 @@ clamp_pattern_bbox(gs_pattern1_instance_t * pinst, gs_rect * pbbox,
 /* Compute the stepping matrix and device space instance bounding box */
 /* from the step values and the saved matrix. */
 static int
-compute_inst_matrix(gs_pattern1_instance_t * pinst, const gs_state * saved,
+compute_inst_matrix(gs_pattern1_instance_t * pinst, gs_state * saved,
 			    gs_rect * pbbox, int width, int height)
 {
-    double xx = pinst->template.XStep * saved->ctm.xx;
-    double xy = pinst->template.XStep * saved->ctm.xy;
-    double yx = pinst->template.YStep * saved->ctm.yx;
-    double yy = pinst->template.YStep * saved->ctm.yy;
+    float xx, xy, yx, yy, dx, dy, temp;
     int code;
+
+    code = gs_bbox_transform(&pinst->template.BBox, &ctm_only(saved), pbbox);
+    if (code < 0)
+	return code;
+    /*
+     * Adjust saved.ctm to map the bbox origin to pixels.
+     */
+    dx = pbbox->p.x - floor(pbbox->p.x + 0.5);
+    dy = pbbox->p.y - floor(pbbox->p.y + 0.5);
+    pbbox->p.x -= dx;
+    pbbox->p.y -= dy;
+    pbbox->q.x -= dx;
+    pbbox->q.y -= dy;
+    code = gx_translate_to_fixed(saved, float2fixed_rounded(saved->ctm.tx - dx), 
+					float2fixed_rounded(saved->ctm.ty - dy));
+    if (code < 0)
+	return code;
+
+    /* The stepping matrix : */
+    xx = pinst->template.XStep * saved->ctm.xx;
+    xy = pinst->template.XStep * saved->ctm.xy;
+    yx = pinst->template.YStep * saved->ctm.yx;
+    yy = pinst->template.YStep * saved->ctm.yy;
 
     /* Adjust the stepping matrix so all coefficients are >= 0. */
     if (xx == 0 || yy == 0) { /* We know that both xy and yx are non-zero. */
-	double temp;
-
 	temp = xx, xx = yx, yx = temp;
 	temp = xy, xy = yy, yy = temp;
     }
@@ -419,14 +455,12 @@ compute_inst_matrix(gs_pattern1_instance_t * pinst, const gs_state * saved,
     pinst->step_matrix.yy = yy;
     pinst->step_matrix.tx = saved->ctm.tx;
     pinst->step_matrix.ty = saved->ctm.ty;
-    code = gs_bbox_transform(&pinst->template.BBox, &ctm_only(saved), pbbox);
     /*
      * Some applications produce patterns that are larger than the page.
      * If the bounding box for the pattern is larger than the page. clamp
      * the pattern to the page size.
      */
-    if (code >= 0 &&
-	(pbbox->q.x - pbbox->p.x > width || pbbox->q.y - pbbox->p.y > height))
+    if ((pbbox->q.x - pbbox->p.x > width || pbbox->q.y - pbbox->p.y > height))
 	code = clamp_pattern_bbox(pinst, pbbox, width,
 					height, &ctm_only(saved));
 
