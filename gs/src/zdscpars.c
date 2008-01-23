@@ -343,7 +343,7 @@ dsc_viewing_orientation(gs_param_list *plist, const CDSC *pData)
  * This list is used to translate the commment code returned
  * from Russell's DSC parser, define a name, and a parameter procedure.
  */
-typedef struct cmd_list_s {
+typedef struct cmdlist_s {
     int code;			/* Russell's DSC parser code (see dsc.h) */
     const char *comment_name;	/* A name to be returned to postscript caller */
     int (*dsc_proc) (gs_param_list *, const CDSC *);
