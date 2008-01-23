@@ -279,14 +279,20 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
 	gs_setdevice_no_init(pgs, (gx_device *)pdev);
     else {
 	gs_matrix m;
+	gs_rect bbox;
 	gs_fixed_rect clip_box;
 
-	gs_make_identity(&m);
+	dev_proc(pgs->device, get_initial_matrix)(pgs->device, &m);
 	gs_setmatrix(igs, &m);
-	clip_box.p.x = float2fixed(pinst->template.BBox.p.x);
-	clip_box.p.y = float2fixed(pinst->template.BBox.p.y);
-	clip_box.q.x = float2fixed(pinst->template.BBox.q.x);
-	clip_box.q.y = float2fixed(pinst->template.BBox.q.y);
+	code = gs_bbox_transform(&pinst->template.BBox, &ctm_only(pgs), &bbox);
+	if (code < 0) {
+	    gs_grestore(pgs);
+	    return code;
+	}
+	clip_box.p.x = float2fixed(bbox.p.x);
+	clip_box.p.y = float2fixed(bbox.p.y);
+	clip_box.q.x = float2fixed(bbox.q.x);
+	clip_box.q.y = float2fixed(bbox.q.y);
 	code = gx_clip_to_rectangle(igs, &clip_box);
 	if (code < 0) {
 	    gs_grestore(pgs);
