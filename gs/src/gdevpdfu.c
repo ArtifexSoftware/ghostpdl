@@ -2069,7 +2069,7 @@ pdf_write_font_bbox_float(gx_device_pdf *pdev, const gs_rect *pbox)
     float x = pbox->q.x + ((pbox->p.x == pbox->q.x) ? 1000 : 0);
     float y = pbox->q.y + ((pbox->p.y == pbox->q.y) ? 1000 : 0);
 
-    pprintg4(s, "/FontBBox[%f %f %f %f]",
+    pprintg4(s, "/FontBBox[%g %g %g %g]",
 	     pbox->p.x, pbox->p.y, x, y);
     return 0;
 }
