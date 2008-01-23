@@ -4058,12 +4058,6 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
 		    return code;
 		}
 	    case PDF14_POP_DEVICE:
-		/*
-		 * For spot colors we use a 'compressed encoding' for
-		 * gx_color_index values.  Send the related data struct
-		 * to the clist.
-		 */
-	        pdf14_clist_get_param_compressed_color_list(pdev);
 		/* Restore the color_info for the clist device */
 		pdev->target->color_info = pdev->saved_target_color_info;
 		pdev->target->procs.encode_color = pdev->saved_target_encode_color;
@@ -4072,6 +4066,12 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
 		pdev->target->procs.get_color_comp_index = pdev->saved_target_get_color_comp_index;
 		pis->get_cmap_procs = pdev->save_get_cmap_procs;
 		gx_set_cmap_procs(pis, pdev->target);
+		/*
+		 * For spot colors we use a 'compressed encoding' for
+		 * gx_color_index values.  Send the related data struct
+		 * to the clist.
+		 */
+	        pdf14_clist_get_param_compressed_color_list(pdev);
 		/* Disable the PDF 1.4 compositor */
 		pdf14_disable_clist_device(mem, pis, dev);
 		/*
