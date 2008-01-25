@@ -23,6 +23,7 @@
 #include "gxfont.h"
 #include "gxfont1.h"
 #include "gxtype1.h"
+#include "gxfcid.h"
 #include "gxchar.h"
 #include "gzstate.h"		/* for path for gs_type1_init */
 				/* (should only be gsstate.h) */
@@ -183,7 +184,16 @@ charstring_execchar_aux(i_ctx_t *i_ctx_p, gs_text_enum_t *penum, gs_font *pfont)
     const gs_type1_data *pdata;
     gs_type1exec_state cxs;
     gs_type1_state *const pcis = &cxs.cis;
+    gs_rect FontBBox = pfont1->FontBBox;
     int code;
+
+    if (penum->current_font->FontType == ft_CID_encrypted) {
+	if (FontBBox.q.x <= FontBBox.p.x && FontBBox.q.y <= FontBBox.p.y) {
+	    gs_font_cid0 *pfcid0 = (gs_font_cid0 *)penum->current_font;
+
+	    FontBBox = pfcid0->FontBBox;
+	}
+    }
 
     pdata = &pfont1->data;
     /*
@@ -240,8 +250,8 @@ charstring_execchar_aux(i_ctx_t *i_ctx_p, gs_text_enum_t *penum, gs_font *pfont)
     if (code < 0)
 	return code;
     gs_type1_set_callback_data(pcis, &cxs);
-    if (pfont1->FontBBox.q.x > pfont1->FontBBox.p.x &&
-	pfont1->FontBBox.q.y > pfont1->FontBBox.p.y
+    if (FontBBox.q.x > FontBBox.p.x &&
+	FontBBox.q.y > FontBBox.p.y
 	) {
 	/* The FontBBox appears to be valid. */
 	op_proc_t exec_cont = 0;
@@ -350,6 +360,7 @@ type1exec_bbox(i_ctx_t *i_ctx_p, gs_text_enum_t *penum, gs_type1exec_state * pcx
     gs_font_base *const pbfont = (gs_font_base *) pfont;
     op_proc_t cont = (pbfont->PaintType == 0 && penum->orig_font->PaintType == 0
 			? bbox_finish_fill : bbox_finish_stroke);
+    ref *pcdevproc;
 
 
     /*
@@ -357,9 +368,18 @@ type1exec_bbox(i_ctx_t *i_ctx_p, gs_text_enum_t *penum, gs_type1exec_state * pcx
      * this character, start interpreting the CharString; do the
      * setcachedevice as soon as we know the (side bearing and) width.
      */
-    if (pcxs->present == metricsNone) {
-	/* Get the width from the CharString, */
-	/* then set the cache device. */
+    if ((pcxs->present == metricsNone && !pcxs->use_FontBBox_as_Metrics2) ||
+	 (penum->orig_font->WMode && zchar_get_CDevProc(pbfont, &pcdevproc))) {
+	/* Get the width from the CharString,
+	 * then set the cache device. */
+	/* We pass here when WMode==1 and the font has CDevProc,
+	 * because we do need sbw as CDevProc's argument. 
+	 * A more natural way would be not setting pcxs->use_FontBBox_as_Metrics2
+	 * when the font has CDevProc, except for missing sbw in the glyph. 
+	 * We prefer to pass here because we've got examples 
+	 * of Tyoe 1 fonts with empty glyphs, i.e. with no sbw,
+	 * so we don't want to assume that they'll never appear in a CID font.
+	 * In that case penum->FontBBox_as_Metrics2 will go here to zchar_set_cache. */
 	ref cnref;
 	ref other_subr;
 	int code;

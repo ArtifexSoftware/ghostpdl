@@ -735,7 +735,7 @@ $(PSD)psf1read.dev : $(INT_MAK) $(ECHOGS_XE) $(psf1read_) $(GLD)seexec.dev
 $(PSOBJ)zchar1.$(OBJ) : $(PSSRC)zchar1.c $(OP) $(memory__h)\
  $(gscencs_h) $(gspaint_h) $(gspath_h) $(gsrect_h) $(gsstruct_h)\
  $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h)\
- $(gxfont_h) $(gxfont1_h) $(gxtype1_h) $(gxchar_h) $(gzstate_h)\
+ $(gxfont_h) $(gxfont1_h) $(gxtype1_h) $(gxfcid_h) $(gxchar_h) $(gzstate_h)\
  $(estack_h) $(ialloc_h) $(ichar_h) $(ichar1_h) $(icharout_h)\
  $(idict_h) $(ifont_h) $(igstate_h) $(iname_h) $(iutil_h) $(store_h)
 	$(PSCC) $(PSO_)zchar1.$(OBJ) $(C_) $(PSSRC)zchar1.c
