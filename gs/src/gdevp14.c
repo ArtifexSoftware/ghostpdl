@@ -647,7 +647,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect,
     pdf14_buf *buf, *backdrop;
     bool has_shape;
 
-    if_debug0('v', "[v]pdf14_push_transparency_group\n");
+    if_debug1('v', "[v]pdf14_push_transparency_group, idle = %d\n", idle);
 
     /* todo: fix this hack, which makes all knockout groups isolated.
        For the vast majority of files, there won't be any visible
@@ -893,6 +893,14 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
 
 exit:
     ctx->stack = nos;
+    {	/* If this group is one for an image with soft mask,
+	   the containing group's mask was saved in maskbuf->maskbuf.
+	   Set up it now to the transparensy context as undiong 
+	   the save action done in pdf14_push_transparency_mask
+	   when replacing==false;
+	 */
+	ctx->maskbuf = (maskbuf != NULL ? maskbuf->maskbuf : NULL);
+    }
     if_debug1('v', "[v]pop buf, idle=%d\n", tos->idle);
     pdf14_buf_free(tos, ctx->memory);
     if (maskbuf != NULL) {
@@ -910,11 +918,27 @@ exit:
  */
 static	int
 pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
-			     byte *transfer_fn, bool idle)
+			     byte *transfer_fn, bool idle, bool replacing)
 {
     pdf14_buf *buf;
 
-    if_debug0('v', "[v]pdf14_push_transparency_mask\n");
+    if_debug2('v', "[v]pdf14_push_transparency_mask, idle=%d, replacing=%d\n", idle, replacing);
+    if (replacing && ctx->maskbuf != NULL) {
+	if (ctx->maskbuf->maskbuf != NULL) {
+	    /* fixme: We pass here when a mask of an image
+	       is being replaced with the containing group's mask.
+	       It looks as the image's mask covers some band,
+	       but the image itself does not.
+	       This situation looks strange, but it does happen
+	       with the test case of the bug 689492.
+	       Will need further investigation.
+	       For now just release the containing group's mask.
+	    */
+	    pdf14_buf_free(ctx->maskbuf->maskbuf, ctx->memory);
+	}
+	pdf14_buf_free(ctx->maskbuf, ctx->memory);
+	ctx->maskbuf = NULL;
+    }
     buf = pdf14_buf_new(rect, false, false, idle, ctx->n_chan, ctx->memory);
     if (buf == NULL)
 	return_error(gs_error_VMerror);
@@ -927,6 +951,12 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
     buf->shape = 0xff;
     buf->blend_mode = BLEND_MODE_Normal;
     buf->transfer_fn = transfer_fn;
+    {	/* If replacing=false, we start the mask for an image with SMask.
+	   In this case the image's SMask temporary replaces the 
+	   mask of the containing group. 
+	   Save the containing droup's mask in buf->maskbuf : */
+	buf->maskbuf = ctx->maskbuf;
+    }
 
     buf->saved = ctx->stack;
     ctx->stack = buf;
@@ -2268,7 +2298,7 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     if_debug1('v', "pdf14_begin_transparency_mask, bg_alpha = %d\n", bg_alpha);
     memcpy(transfer_fn, ptmp->transfer_fn, size_of(ptmp->transfer_fn));
     return pdf14_push_transparency_mask(pdev->ctx, &pdev->ctx->rect, bg_alpha,
-					transfer_fn, ptmp->idle);
+					transfer_fn, ptmp->idle, ptmp->replacing);
 }
 
 static	int
@@ -2843,6 +2873,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize)
 	    break;
 	case PDF14_BEGIN_TRANS_MASK:
 	    put_value(pbuf, pparams->subtype);
+	    *pbuf++ = pparams->replacing;
 	    *pbuf++ = pparams->function_is_identity;
 	    *pbuf++ = pparams->Background_components;
 	    if (pparams->Background_components) {
@@ -2964,6 +2995,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
 		 * same condition applies.
 		 */
 	    read_value(data, params.subtype);
+	    params.replacing = *data++;
 	    params.function_is_identity = *data++;
 	    params.Background_components = *data++;
 	    if (params.Background_components) {

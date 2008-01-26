@@ -300,6 +300,7 @@ gs_trans_mask_params_init(gs_transparency_mask_params_t *ptmp,
     ptmp->Background_components = 0;
     ptmp->TransferFunction = mask_transfer_identity;
     ptmp->TransferFunction_data = 0;
+    ptmp->replacing = false;
 }
 
 int
@@ -327,6 +328,7 @@ gs_begin_transparency_mask(gs_state * pgs,
     params.function_is_identity =
 	    (ptmp->TransferFunction == mask_transfer_identity);
     params.mask_is_image = mask_is_image;
+    params.replacing = ptmp->replacing;
     /* Sample the transfer function */
     for (i = 0; i < MASK_TRANSFER_FUNCTION_SIZE; i++) {
 	float in = (float)(i * (1.0 / (MASK_TRANSFER_FUNCTION_SIZE - 1)));
@@ -351,6 +353,7 @@ gx_begin_transparency_mask(gs_imager_state * pis, gx_device * pdev,
     tmp.GrayBackground = pparams->GrayBackground;
     tmp.function_is_identity = pparams->function_is_identity;
     tmp.idle = pparams->idle;
+    tmp.replacing = pparams->replacing;
     memcpy(tmp.transfer_fn, pparams->transfer_fn, size_of(tmp.transfer_fn));
     if_debug8('v', "[v](0x%lx)gx_begin_transparency_mask [%g %g %g %g]\n\
       subtype = %d  Background_components = %d  %s\n",

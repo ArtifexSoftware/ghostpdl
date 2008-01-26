@@ -266,6 +266,7 @@ zbegintransparencymaskgroup(i_ctx_t *i_ctx_p)
     if ((code = enum_param(imemory, pparam, subtype_names)) < 0)
 	return code;
     gs_trans_mask_params_init(&params, code);
+    params.replacing = true;
     if ((code = dict_floats_param(imemory, dop, "Background", 
 		    cs_num_components(gs_currentcolorspace(i_ctx_p->pgs)),
 				  params.Background, NULL)) < 0

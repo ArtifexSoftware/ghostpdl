@@ -92,6 +92,7 @@ struct gs_pdf14trans_params_s {
     bool mask_is_image;
     gs_matrix ctm;
     bool idle;
+    bool replacing;
 };
 
 #ifndef gs_pdf14trans_params_DEFINED

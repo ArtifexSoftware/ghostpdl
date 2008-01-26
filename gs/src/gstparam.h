@@ -104,6 +104,7 @@ typedef struct gs_transparency_mask_params_s {
     float GrayBackground;
     int (*TransferFunction)(floatp in, float *out, void *proc_data);
     gs_function_t *TransferFunction_data;
+    bool replacing;
 } gs_transparency_mask_params_t;
 
 #define MASK_TRANSFER_FUNCTION_SIZE 256
@@ -116,6 +117,7 @@ typedef struct gx_transparency_mask_params_s {
     float GrayBackground;
     bool function_is_identity;
     bool idle;
+    bool replacing;
     byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE];
 } gx_transparency_mask_params_t;
 
