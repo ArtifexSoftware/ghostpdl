@@ -44,6 +44,12 @@
 #include "gxdcconv.h"
 #include "vdtrace.h"
 
+/* Visual  trace options : set one to 1. */
+#define VD_PAINT_MASK 0
+#define VD_PAINT_COLORS 0
+#define VD_PAINT_ALPHA 1
+
+
 /*
  * We chose the blending color space based upon the process color model of the
  * output device.  For gray, RGB, CMYK, or CMYK+spot devices, the choice is
@@ -540,7 +546,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape, bool idle,
     result->maskbuf = NULL;
     result->idle = idle;
 
-    if (height <= 0 && !idle) {
+    if (height <= 0 || idle) {
 	/* Empty clipping - will skip all drawings. */
 	result->planestride = 0;
 	result->data = 0;
@@ -733,9 +739,19 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
     int x1 = min(tos->rect.q.x, nos->rect.q.x);
     pdf14_buf *maskbuf = tos->maskbuf;
 
+    if (ctx->maskbuf) {
+	/* Happens with the test case of bug 689492 with no banding
+	   while rendering the group of an image with a mask.
+	   Not sure why gs/lib processes a mask inside the image droup,
+	   anyway we need to release it safely. */
+	pdf14_buf_free(ctx->maskbuf, ctx->memory);
+	ctx->maskbuf = NULL;
+    }
     ctx->maskbuf = maskbuf;  /* Restore the mask saved by pdf14_push_transparency_group. */
     tos->maskbuf = NULL;     /* Clean the pointer sinse the mask ownership is now passed to ctx. */
     if (tos->idle)
+	goto exit;
+    if (maskbuf != NULL && maskbuf->data == NULL)
 	goto exit;
     if (x0 < x1 && y0 < y1) {
 	int n_chan = ctx->n_chan;
@@ -833,7 +849,9 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
 		    mask = mask_tr_fn[mask];
 		    tmp = pix_alpha * mask + 0x80;
 		    pix_alpha = (tmp + (tmp >> 8)) >> 8;
-		    vd_pixel(int2fixed(x), int2fixed(y), mask);
+#		    if VD_PAINT_MASK
+			vd_pixel(int2fixed(x), int2fixed(y), mask);
+#		    endif
 		}
 
 		if (nos_knockout) {
@@ -874,11 +892,16 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
 			nos_ptr[x + i * nos_planestride] = 255 - nos_pixel[i];
 		    nos_ptr[x + num_comp * nos_planestride] = nos_pixel[num_comp];
 		}
-		if (maskbuf == NULL) {
+#		if VD_PAINT_COLORS
 		    vd_pixel(int2fixed(x), int2fixed(y), n_chan == 1 ? 
 			(nos_pixel[0] << 16) + (nos_pixel[0] << 8) + nos_pixel[0] :
-			(nos_pixel[0] << 16) + (nos_pixel[1] << 8) + nos_pixel[2]);
-		}
+			(nos_pixel[0] << 16) + (nos_pixel[1] << 8) + nos_pixel[2]);*/
+#		endif
+#		if VD_PAINT_ALPHA
+		    vd_pixel(int2fixed(x), int2fixed(y),
+			(nos_pixel[n_chan - 1] << 16) + (nos_pixel[n_chan - 1] << 8) + 
+			 nos_pixel[n_chan - 1]);
+#		endif
 		if (nos_alpha_g_ptr != NULL)
 		    ++nos_alpha_g_ptr;
 	    }
@@ -925,14 +948,12 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
     if_debug2('v', "[v]pdf14_push_transparency_mask, idle=%d, replacing=%d\n", idle, replacing);
     if (replacing && ctx->maskbuf != NULL) {
 	if (ctx->maskbuf->maskbuf != NULL) {
-	    /* fixme: We pass here when a mask of an image
+	    /* Pass here when a mask of an image
 	       is being replaced with the containing group's mask.
 	       It looks as the image's mask covers some band,
 	       but the image itself does not.
-	       This situation looks strange, but it does happen
-	       with the test case of the bug 689492.
-	       Will need further investigation.
-	       For now just release the containing group's mask.
+	       We believe it must not happen,
+	       but provide a cleanup for safety.
 	    */
 	    pdf14_buf_free(ctx->maskbuf->maskbuf, ctx->memory);
 	}
@@ -2965,6 +2986,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
 	    code += 0; /* A good place for a breakpoint. */
 	    break;
 	case PDF14_END_TRANS_GROUP:
+	    code += 0; /* A good place for a breakpoint. */
 	    break;			/* No data */
 	case PDF14_BEGIN_TRANS_GROUP:
 	    /*
@@ -3018,6 +3040,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
 	    }
 	    break;
 	case PDF14_END_TRANS_MASK:
+	    code += 0; /* A good place for a breakpoint. */
 	    break;			/* No data */
 	case PDF14_SET_BLEND_PARAMS:
 	    params.changed = *data++;
@@ -3098,7 +3121,7 @@ c_pdf14trans_create_default_compositor(const gs_composite_t * pct,
  * Find an opening compositor op.
  */
 static int
-find_opening_op(int opening_op, gs_composite_t **ppcte)
+find_opening_op(int opening_op, gs_composite_t **ppcte, int return_code)
 {
     /* Assuming a right *BEGIN* - *END* operation balance. */
     gs_composite_t *pcte = *ppcte;
@@ -3110,9 +3133,20 @@ find_opening_op(int opening_op, gs_composite_t **ppcte)
 
 	    *ppcte = pcte;
 	    if (op == opening_op)
-		return 1;
-	    if (op != PDF14_INIT_TRANS_MASK && op != PDF14_SET_BLEND_PARAMS)
-		return 0;
+		return return_code;
+	    if (op != PDF14_INIT_TRANS_MASK && op != PDF14_SET_BLEND_PARAMS) {
+		if (opening_op == PDF14_BEGIN_TRANS_MASK)
+		    return 0;
+		if (opening_op == PDF14_BEGIN_TRANS_GROUP) {
+		    if (op != PDF14_BEGIN_TRANS_MASK && op != PDF14_END_TRANS_MASK)
+			return 0;
+		}
+		if (opening_op == PDF14_PUSH_DEVICE) {
+		    if (op != PDF14_BEGIN_TRANS_MASK && op != PDF14_END_TRANS_MASK &&
+			op != PDF14_BEGIN_TRANS_GROUP && op != PDF14_END_TRANS_GROUP)
+			return 0;
+		}
+	    }
 	} else
 	    return 0;
 	pcte = pcte->prev;
@@ -3164,7 +3198,7 @@ c_pdf14trans_is_closing(const gs_composite_t * this, gs_composite_t ** ppcte, gx
 	    if (*ppcte == NULL)
 		return 0;
 	    else {	
-		int code = find_opening_op(PDF14_PUSH_DEVICE, ppcte);
+		int code = find_opening_op(PDF14_PUSH_DEVICE, ppcte, 1);
 
 		if (code == 1)
 		    return 5;
@@ -3175,7 +3209,7 @@ c_pdf14trans_is_closing(const gs_composite_t * this, gs_composite_t ** ppcte, gx
 	case PDF14_END_TRANS_GROUP:
 	    if (*ppcte == NULL)
 		return 2;
-	    return find_opening_op(PDF14_BEGIN_TRANS_GROUP, ppcte);
+	    return find_opening_op(PDF14_BEGIN_TRANS_GROUP, ppcte, 6);
 	case PDF14_INIT_TRANS_MASK: 
 	    if (*ppcte == NULL)
 		return 0;
@@ -3185,9 +3219,12 @@ c_pdf14trans_is_closing(const gs_composite_t * this, gs_composite_t ** ppcte, gx
 	case PDF14_END_TRANS_MASK: 
 	    if (*ppcte == NULL)
 		return 2;
-	    return find_opening_op(PDF14_BEGIN_TRANS_MASK, ppcte);
+	    return find_opening_op(PDF14_BEGIN_TRANS_MASK, ppcte, 6);
 	case PDF14_SET_BLEND_PARAMS: 
-	    return 0;
+	    if (*ppcte == NULL)
+		return 0;
+	    /* hack : ignore csel - here it is always zero : */
+	    return find_same_op(this, PDF14_SET_BLEND_PARAMS, ppcte);
     }
 }
 
@@ -3200,7 +3237,10 @@ c_pdf14trans_is_friendly(const gs_composite_t * this, byte cmd0, byte cmd1)
     gs_pdf14trans_t *pct0 = (gs_pdf14trans_t *)this;
     int op0 = pct0->params.pdf14_op;
 
-    if (op0 == PDF14_PUSH_DEVICE) {
+    if (op0 == PDF14_PUSH_DEVICE || op0 == PDF14_END_TRANS_GROUP) {
+	/* Halftone commands are always passed to the target printer device, 
+	   because transparency buffers are always contone.
+	   So we're safe to execute them before queued transparency compositors. */
 	if (cmd0 == cmd_opv_extend && (cmd1 == cmd_opv_ext_put_halftone || 
 				       cmd1 == cmd_opv_ext_put_ht_seg))
 	    return true;
