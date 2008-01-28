@@ -110,9 +110,17 @@ int gx_dc_pattern2_get_bbox(const gx_device_color * pdevc, gs_fixed_rect *bbox);
 /* Checks whether a PatternType 2 has a shading BBox. */
 int gx_dc_pattern2_color_has_bbox(const gx_device_color * pdevc);
 
+#define SHADING_INTERSECT_CPATH_WITH_PATH_FIRST 0
+
 /* Intersect a clipping path a shading BBox. */
 int gx_dc_pattern2_clip_with_bbox(const gx_device_color * pdevc, gx_device * pdev, 
 				  gx_clip_path *cpath_local, const gx_clip_path **cpath1);
+#if !SHADING_INTERSECT_CPATH_WITH_PATH_FIRST
+int gx_dc_pattern2_clip_with_bbox_simple(const gx_device_color * pdevc, gx_device * pdev, 
+				  gx_clip_path *cpath);
+/* Check whether color is a shading with BBox. */
+int gx_dc_pattern2_is_rectangular_cell(const gx_device_color * pdevc, gx_device * pdev, gs_fixed_rect *rect);
+#endif
 
 /* Get a shading color space. */
 const gs_color_space *gx_dc_pattern2_get_color_space(const gx_device_color * pdevc);

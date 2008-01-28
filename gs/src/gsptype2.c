@@ -352,6 +352,67 @@ gx_dc_pattern2_clip_with_bbox(const gx_device_color * pdevc, gx_device * pdev,
     return 0;
 }
 
+#if !SHADING_INTERSECT_CPATH_WITH_PATH_FIRST
+int
+gx_dc_pattern2_clip_with_bbox_simple(const gx_device_color * pdevc, gx_device * pdev, 
+			      gx_clip_path *cpath_local)
+{
+    int code = 0;
+
+    if (gx_dc_is_pattern2_color(pdevc) && gx_dc_pattern2_color_has_bbox(pdevc) &&
+	    (*dev_proc(pdev, pattern_manage))(pdev, gs_no_id, NULL, pattern_manage__shading_area) == 0) {
+	gs_pattern2_instance_t *pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
+	gx_path box_path;
+	gs_memory_t *mem = cpath_local->path.memory;
+
+	gx_path_init_local(&box_path, mem);
+	code = gx_dc_shading_path_add_box(&box_path, pdevc);
+	if (code == gs_error_limitcheck) {
+	    /* Ignore huge BBox - bug 689027. */
+	    code = 0;
+	} else if (code >= 0) {
+	    code = gx_cpath_intersect(cpath_local, &box_path, gx_rule_winding_number, (gs_imager_state *)pinst->saved);
+	}
+	gx_path_free(&box_path, "gx_default_fill_path(path_bbox)");
+    }
+    return code;
+}
+/* Check whether color is a shading with BBox. */
+int
+gx_dc_pattern2_is_rectangular_cell(const gx_device_color * pdevc, gx_device * pdev, gs_fixed_rect *rect)
+{
+    if (gx_dc_is_pattern2_color(pdevc) && gx_dc_pattern2_color_has_bbox(pdevc) &&
+	    (*dev_proc(pdev, pattern_manage))(pdev, gs_no_id, NULL, pattern_manage__shading_area) == 0) {
+	gs_pattern2_instance_t *pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
+	const gs_shading_t *psh = pinst->template.Shading;
+	gs_fixed_point p, q; 
+
+	if (is_xxyy(&ctm_only(pinst->saved)))
+	    if (psh->params.have_BBox) {
+		int code = gs_point_transform2fixed(&pinst->saved->ctm, 
+			    psh->params.BBox.p.x, psh->params.BBox.p.y, &p);
+		if (code < 0)
+		    return code;
+		code = gs_point_transform2fixed(&pinst->saved->ctm, 
+			    psh->params.BBox.q.x, psh->params.BBox.q.y, &q);
+		if (code < 0)
+		    return code;
+		if (p.x > q.x) {
+		    p.x ^= q.x; q.x ^= p.x; p.x ^= q.x;
+		}
+		if (p.y > q.y) {
+		    p.y ^= q.y; q.y ^= p.y; p.y ^= q.y;
+		}
+		rect->p = p;
+		rect->q = q;
+		return 1;
+	    }
+    }
+    return 0;
+}
+
+#endif
+
 /* Get a shading color space. */
 const gs_color_space *
 gx_dc_pattern2_get_color_space(const gx_device_color * pdevc)

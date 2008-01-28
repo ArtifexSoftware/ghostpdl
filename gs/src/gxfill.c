@@ -598,9 +598,11 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	/*  We need a single clipping path here, because shadings and
 	    halftones don't take 2 paths. Compute the clipping path intersection.
 	*/
-	gx_clip_path cpath_intersection, cpath_with_shading_bbox;
-	const gx_clip_path *pcpath1, *pcpath2;
 	gs_imager_state *pis_noconst = (gs_imager_state *)pis; /* Break const. */
+
+#	if SHADING_INTERSECT_CPATH_WITH_PATH_FIRST
+	const gx_clip_path *pcpath1, *pcpath2;
+	gx_clip_path cpath_intersection, cpath_with_shading_bbox;
 
 	if (ppath != NULL) {
 	    code = gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
@@ -621,6 +623,40 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	pcpath2 = pcpath1;
 	if (code >= 0)
 	    code = gx_dc_pattern2_clip_with_bbox(pdevc, pdev, &cpath_with_shading_bbox, &pcpath1);
+#	else
+	gx_clip_path cpath_intersection;
+	gx_clip_path *pcpath1 = &cpath_intersection;
+	const gs_fixed_rect *pcbox = (pcpath == NULL ? NULL : cpath_is_rectangle(pcpath));
+	gs_fixed_rect shading_rect;
+	int shading_rect_code = gx_dc_pattern2_is_rectangular_cell(pdevc, pdev, &shading_rect);
+	    gs_fixed_rect clip_box;
+
+	if (shading_rect_code < 0)
+	    return shading_rect_code;
+	if (shading_rect_code != 0 && (pcpath == NULL || pcbox != NULL)) {
+	    if (pcbox != NULL) 
+		clip_box = *pcbox;
+	    else
+		(*dev_proc(pdev, get_clipping_box)) (pdev, &clip_box);
+	    rect_intersect(clip_box, shading_rect);
+	    code = gx_cpath_from_rectangle(&cpath_intersection, &clip_box);
+	} else if (pcpath != NULL) {
+	    /* either *pcpath is not a rectangle, or shading cell is not a rectangle.  */
+	    code = gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
+	    if (code < 0)
+		return code;
+	    if (gx_dc_is_pattern2_color(pdevc))
+		code = gx_dc_pattern2_clip_with_bbox_simple(pdevc, pdev, &cpath_intersection);
+	} else {
+	    /* Happens with a pattern1 color. */
+	    (*dev_proc(pdev, get_clipping_box)) (pdev, &clip_box);
+	    gx_cpath_init_local(&cpath_intersection, ppath->memory);
+	    code = gx_cpath_from_rectangle(&cpath_intersection, &clip_box);
+	}
+	if (ppath != NULL && code >= 0)
+	    code = gx_cpath_intersect_with_params(&cpath_intersection, ppath, params->rule, 
+		    pis_noconst, params);
+#	endif
 	/* Do fill : */
 	if (code >= 0) {
 	    gs_fixed_rect clip_box;
@@ -654,10 +690,14 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 			cb.p.x, cb.p.y, cb.q.x - cb.p.x, cb.q.y - cb.p.y,
 			dev, pis->log_op, rs);
 	}
+#	if SHADING_INTERSECT_CPATH_WITH_PATH_FIRST
 	if (ppath != NULL)
 	    gx_cpath_free(&cpath_intersection, "shading_fill_cpath_intersection");
 	if (pcpath1 != pcpath2)
 	    gx_cpath_free(&cpath_with_shading_bbox, "shading_fill_cpath_intersection");
+#	else
+	gx_cpath_free(&cpath_intersection, "shading_fill_cpath_intersection");
+#	endif
     } else {
 	bool got_dc = false;
         vd_save;
