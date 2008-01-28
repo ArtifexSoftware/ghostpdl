@@ -208,6 +208,20 @@ zregisterfont(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* <font> .isregisteredfont <bool> */
+static int
+zisregisteredfont(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    gs_font *pfont;
+    int code = font_param(op, &pfont);
+
+    if (code < 0)
+	return code;
+    make_bool(op, pfont->is_resource);
+    return 0;
+}
+
 
 /* <Decoding> .setupUnicodeDecoder - */
 static int
@@ -237,6 +251,7 @@ const op_def zfont_op_defs[] =
     {"1setcacheparams", zsetcacheparams},
     {"0currentcacheparams", zcurrentcacheparams},
     {"1.registerfont", zregisterfont},
+    {"1.isregisteredfont", zisregisteredfont},
     {"1.setupUnicodeDecoder", zsetupUnicodeDecoder},
     op_def_end(zfont_init)
 };
