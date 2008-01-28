@@ -366,13 +366,26 @@ execute_compositor_queue(gx_device_clist_reader *cdev, gx_device **target, gx_de
 	code = dequeue_compositor(ppcomp_first, ppcomp_last, pcomp);
 	if (code < 0)
 	    return code;
-	pcomp->idle = idle;
+	pcomp->idle |= idle;
 	code = apply_create_compositor(cdev, pis, mem, pcomp, x0, y0, target); /* Releases the compositor. */
 	if (code < 0)
 	    return code;
 	*tdev = *target;
     }
     return 0;
+}
+
+static void
+mark_as_idle(gs_composite_t *pcomp_start, gs_composite_t *pcomp_end)
+{
+    gs_composite_t *pcomp = pcomp_start;
+
+    while (pcomp != NULL) {
+	pcomp->idle = true;
+	if (pcomp == pcomp_end)
+	    break;
+	pcomp = pcomp->next;
+    }
 }
 
 static inline void
@@ -1412,6 +1425,10 @@ idata:			data_size = 0;
 					    -x0, -y0, gs_color_select_all);
 				cbp -= 2; /* Step back to simplify the cycle invariant below. */
 				for (;;) {
+				    /* This internal loop looks ahead for compositor commands and 
+				       copies them into a temporary queue. Compositors, which do not paint something,
+				       are marked as idle and later executed with a reduced functionality 
+				       for reducing time and memory expense. */
 				    int len;
 
 				    if (cbp >= cbuf.limit) {
@@ -1434,9 +1451,10 @@ idata:			data_size = 0;
 					if (code < 0)
 					    goto out;
 					else if (code == 0) {
+					    /* Enqueue. */
 					    enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
 					} else if (code == 1) {
-					    /* Annihilate the last compositors. */
+					    /* Execute idle. */
 					    enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
 					    code = execute_compositor_queue(cdev, &target, &tdev, 
 						&imager_state, &pcomp_first, &pcomp_last, pcomp_opening, x0, y0, mem, true);
@@ -1464,8 +1482,13 @@ idata:			data_size = 0;
 					    enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
 					    free_compositor(pcomp_opening, mem);
 					} else if (code == 5) {
+					    /* Annihilate the last compositors. */
 					    enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
 					    drop_compositor_queue(&pcomp_first, &pcomp_last, pcomp_opening, mem);
+					} else if (code == 6) {
+					    /* Mark as idle. */
+					    enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
+					    mark_as_idle(pcomp_opening, pcomp);
 					} else {
 					    code = gs_note_error(gs_error_unregistered); /* Must not happen. */
 					    goto out;
@@ -1537,7 +1560,7 @@ idata:			data_size = 0;
 						goto out;
 					}
 				    } else {
-					/* A drawing command, execute the queue. */
+					/* A drawing command, execute entire queue. */
 					code = execute_compositor_queue(cdev, &target, &tdev, 
 					    &imager_state, &pcomp_first, &pcomp_last, pcomp_first, x0, y0, mem, false);
   					if (code < 0)
