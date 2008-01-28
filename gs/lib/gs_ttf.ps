@@ -576,13 +576,8 @@ currentdict /tt_tag_dict .undef
         5 index 4 index 3 index                   % s o p lSi minl from s p minl
         getinterval                               % s o p lSi minl from to
         copy pop                                  % s o p lSi minl
-        3 1 roll                                  % s o minl p lSi
-        sub                                       % s o minl p'
-        3 1 roll add                              % s p' o'
-        dup 3 index length ge 2 index 0 le or {
-          exch exit                               % s o p'
-        } if
-        exch                                      % s o' p'
+        exch pop add exch pop 0 exch              % s 0 p'
+        dup 3 index length ge { exit } if
       } ifelse
     } forall
     pop pop                                       % s
