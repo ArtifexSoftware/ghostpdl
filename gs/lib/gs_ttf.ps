@@ -618,6 +618,10 @@ currentdict /tt_tag_dict .undef
         postglyphs postpos 1 add 2 index //getinterval_from_stringarray exec cvn
 	exch postpos add 1 add /postpos exch def
         2 index 3 1 roll
+        put
+      } for
+      /postnames exch def
+
         % Some TrueType fonts converted by "Windows Type 1 Installer" have
         % problematic post table including MacGlyphEncoding entries which
         % should be omitted. Such extra entries in the beginning of glyphName
@@ -626,14 +630,21 @@ currentdict /tt_tag_dict .undef
         % returned. Some TrueType fonts for Microsoft Windows redefines
         % MacGlyphEncoding glyph name out of predefined range). To permit
         % such fonts, ISOLatin1Encoding is used to find broken post. Bug 689495.
-        .latin1isodict 1 index known {
-          TTFDEBUG { (ignore post table that redefines ISOLatin1Encoding glyph name /) print dup == flush } if
-          pop pop pop pop [ ] /numglyphs 0 def exit
-        } {
-          put
-        } ifelse
-      } for
-      /postnames exch def
+      /.broken_post false def
+      .latin1isodict postnames {
+        dup null ne
+        % dup /.notdef ne and
+        {
+          2 copy known {
+            TTFDEBUG { (ignore post table that redefines ISOLatin1Encoding glyph name ) print dup == flush } if
+            /.broken_post true def
+            pop exit
+          } if
+        } if
+        pop
+      } forall
+      pop
+
       numglyphs array 0 1 numglyphs 1 sub {
 	dup 2 mul 34 add postglyphs exch 2 //getinterval_from_stringarray exec 
 	dup 0 get 8 bitshift exch 1 get add dup 258 lt {
@@ -661,6 +672,18 @@ currentdict /tt_tag_dict .undef
 	} ifelse
 	2 index 3 1 roll put
       } for
+
+      .broken_post {
+        pop
+        0 1 postnames length 1 sub {
+          postnames 1 index get null eq {
+            postnames 1 index /.notdef put
+          } if
+          pop
+        } for
+
+        [ postnames aload length 1 roll ]
+      } if
     }
     ifelse
   } bind
