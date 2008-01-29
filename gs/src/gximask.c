@@ -61,23 +61,14 @@ gx_image_fill_masked_end(gx_device *dev, gx_device *tdev, const gx_device_color 
 {
     gx_device_cpath_accum *pcdev = (gx_device_cpath_accum *)dev;
     gx_clip_path cpath;
-#   if SHADING_INTERSECT_CPATH_WITH_PATH_FIRST
-    gx_clip_path cpath_with_shading_bbox;
-    const gx_clip_path *pcpath1 = &cpath;
-#   endif
     gx_device_clip cdev;
     int code, code1;
 
     gx_cpath_init_local(&cpath, pcdev->memory);
     code = gx_cpath_accum_end(pcdev, &cpath);
     if (code >= 0)
-#	if SHADING_INTERSECT_CPATH_WITH_PATH_FIRST
-	code = gx_dc_pattern2_clip_with_bbox(pdevc, tdev, &cpath_with_shading_bbox, &pcpath1);
-	gx_make_clip_device_on_stack(&cdev, pcpath1, tdev);
-#	else
 	code = gx_dc_pattern2_clip_with_bbox_simple(pdevc, tdev, &cpath);
 	gx_make_clip_device_on_stack(&cdev, &cpath, tdev);
-#	endif
     if (code >= 0) {
 	code1 = gx_device_color_fill_rectangle(pdevc, 
 		    pcdev->bbox.p.x, pcdev->bbox.p.y, 
@@ -88,10 +79,6 @@ gx_image_fill_masked_end(gx_device *dev, gx_device *tdev, const gx_device_color 
 	    code = code1;
 	gx_device_retain((gx_device *)pcdev, false);
     }
-#   if SHADING_INTERSECT_CPATH_WITH_PATH_FIRST
-    if (pcpath1 == &cpath_with_shading_bbox)
-	gx_cpath_free(&cpath_with_shading_bbox, "s_image_cleanup");
-#   endif
     gx_cpath_free(&cpath, "s_image_cleanup");
     return code;
 }

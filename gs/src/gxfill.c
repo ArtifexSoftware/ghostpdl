@@ -600,32 +600,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	*/
 	gs_imager_state *pis_noconst = (gs_imager_state *)pis; /* Break const. */
 
-#	if SHADING_INTERSECT_CPATH_WITH_PATH_FIRST
-	const gx_clip_path *pcpath1, *pcpath2;
-	gx_clip_path cpath_intersection, cpath_with_shading_bbox;
-
-	if (ppath != NULL) {
-	    code = gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
-	    if (code < 0)
-		return code;
-	    if (pcpath == NULL) {
-		gs_fixed_rect clip_box1;
-
-		(*dev_proc(pdev, get_clipping_box)) (pdev, &clip_box1);
-		code = gx_cpath_from_rectangle(&cpath_intersection, &clip_box1);
-	    }
-	    if (code >= 0)
-		code = gx_cpath_intersect_with_params(&cpath_intersection, ppath, params->rule, 
-			pis_noconst, params);
-	    pcpath1 = &cpath_intersection;
-	} else
-	    pcpath1 = pcpath;
-	pcpath2 = pcpath1;
-	if (code >= 0)
-	    code = gx_dc_pattern2_clip_with_bbox(pdevc, pdev, &cpath_with_shading_bbox, &pcpath1);
-#	else
 	gx_clip_path cpath_intersection;
-	gx_clip_path *pcpath1 = &cpath_intersection;
 	const gs_fixed_rect *pcbox = (pcpath == NULL ? NULL : cpath_is_rectangle(pcpath));
 	gs_fixed_rect shading_rect;
 	int shading_rect_code = gx_dc_pattern2_is_rectangular_cell(pdevc, pdev, &shading_rect);
@@ -656,7 +631,6 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	if (ppath != NULL && code >= 0)
 	    code = gx_cpath_intersect_with_params(&cpath_intersection, ppath, params->rule, 
 		    pis_noconst, params);
-#	endif
 	/* Do fill : */
 	if (code >= 0) {
 	    gs_fixed_rect clip_box;
@@ -665,7 +639,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	    gx_device *dev;
 	    gx_device_clip cdev;
 
-	    gx_cpath_outer_box(pcpath1, &clip_box);
+	    gx_cpath_outer_box(&cpath_intersection, &clip_box);
 	    cb.p.x = fixed2int_pixround(clip_box.p.x);
 	    cb.p.y = fixed2int_pixround(clip_box.p.y);
 	    cb.q.x = fixed2int_pixround(clip_box.q.x);
@@ -675,10 +649,10 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 		/* A special interaction with clist writer device : 
 		   pass the intersected clipping path. It uses an unusual call to
 		   fill_path with NULL device color. */
-		code = (*dev_proc(pdev, fill_path))(pdev, pis, ppath, params, NULL, pcpath1);
+		code = (*dev_proc(pdev, fill_path))(pdev, pis, ppath, params, NULL, &cpath_intersection);
 		dev = pdev;
 	    } else {
-		gx_make_clip_device_on_stack(&cdev, pcpath1, pdev);
+		gx_make_clip_device_on_stack(&cdev, &cpath_intersection, pdev);
 		dev = (gx_device *)&cdev;
 		if ((*dev_proc(pdev, pattern_manage))(pdev, 
 			gs_no_id, NULL, pattern_manage__shading_area) > 0)
@@ -690,14 +664,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 			cb.p.x, cb.p.y, cb.q.x - cb.p.x, cb.q.y - cb.p.y,
 			dev, pis->log_op, rs);
 	}
-#	if SHADING_INTERSECT_CPATH_WITH_PATH_FIRST
-	if (ppath != NULL)
-	    gx_cpath_free(&cpath_intersection, "shading_fill_cpath_intersection");
-	if (pcpath1 != pcpath2)
-	    gx_cpath_free(&cpath_with_shading_bbox, "shading_fill_cpath_intersection");
-#	else
 	gx_cpath_free(&cpath_intersection, "shading_fill_cpath_intersection");
-#	endif
     } else {
 	bool got_dc = false;
         vd_save;
