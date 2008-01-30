@@ -955,7 +955,7 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	if (!strcmp(stroke_line_join_att, "Bevel")) linejoin = gs_join_bevel;
 	if (!strcmp(stroke_line_join_att, "Round")) linejoin = gs_join_round;
     }
-    gs_setlinejoin(ctx->pgs, linecap);
+    gs_setlinejoin(ctx->pgs, linejoin);
 
     miterlimit = 10.0;
     if (stroke_miter_limit_att)
