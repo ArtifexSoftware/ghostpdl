@@ -186,7 +186,6 @@ xps_draw_arc_segment(xps_context_t *ctx, gs_matrix *mtx, float th0, float th1, i
     {
 	gs_point_transform(cos(th0), sin(th0), mtx, &p);
 	gs_lineto(ctx->pgs, p.x, p.y);
-dprintf2("  point %g %g\n", p.x, p.y);
 	for (t = th0; t < th1; t += d)
 	{
 	    gs_point_transform(cos(t), sin(t), mtx, &p);
@@ -194,14 +193,12 @@ dprintf2("  point %g %g\n", p.x, p.y);
 	}
 	gs_point_transform(cos(th1), sin(th1), mtx, &p);
 	gs_lineto(ctx->pgs, p.x, p.y);
-dprintf2("  point %g %g\n", p.x, p.y);
     }
     else
     {
 	th0 += M_PI * 2;
 	gs_point_transform(cos(th0), sin(th0), mtx, &p);
 	gs_lineto(ctx->pgs, p.x, p.y);
-dprintf2("  point %g %g\n", p.x, p.y);
 	for (t = th0; t > th1; t -= d)
 	{
 	    gs_point_transform(cos(t), sin(t), mtx, &p);
@@ -209,7 +206,6 @@ dprintf2("  point %g %g\n", p.x, p.y);
 	}
 	gs_point_transform(cos(th1), sin(th1), mtx, &p);
 	gs_lineto(ctx->pgs, p.x, p.y);
-dprintf2("  point %g %g\n", p.x, p.y);
     }
 }
 
@@ -972,7 +968,7 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	int dash_count = 0;
 
 	if (stroke_dash_offset_att)
-	    dash_offset = atof(stroke_dash_offset_att);
+	    dash_offset = atof(stroke_dash_offset_att) * linewidth;
 
 	while (*s)
 	{
