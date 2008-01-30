@@ -218,7 +218,11 @@ angle_between(const gs_point u, const gs_point v)
     double magu = u.x * u.x + u.y * u.y;
     double magv = v.x * v.x + v.y * v.y;
     double udotv = u.x * v.x + u.y * v.y;
-    return sign * acos(udotv / (magu * magv));
+    double t = udotv / (magu * magv);
+    /* guard against rounding errors when near |1| (where acos will return NaN) */
+    if (t < -1.0) t = -1.0;
+    if (t > 1.0) t = 1.0;
+    return sign * acos(t);
 }
 
 int
@@ -282,7 +286,10 @@ xps_draw_arc(xps_context_t *ctx,
     /* F.6.5.2 */
     t1 = (rx * rx * ry * ry) - (rx * rx * y1t * y1t) - (ry * ry * x1t * x1t);
     t2 = (rx * rx * y1t * y1t) + (ry * ry * x1t * x1t);
-    t3 = sqrt(t1 / t2);
+    t3 = t1 / t2;
+    /* guard against rounding errors; sqrt of negative numbers is bad for your health */
+    if (t3 < 0.0) t3 = 0.0;
+    t3 = sqrt(t3);
 
     cxt = sign * t3 * (rx * y1t) / ry;
     cyt = sign * t3 * -(ry * x1t) / rx;
