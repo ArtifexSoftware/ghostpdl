@@ -195,6 +195,7 @@ calculate_contrib(
     npixels = (int)(WidthIn * 2 + 1);
 
     for (i = 0; i < size; ++i) {
+#if 0
 	double center = (input_index + i) / scale;
 	int left = (int)ceil(center - WidthIn);
 	int right = (int)floor(center + WidthIn);
@@ -219,6 +220,14 @@ calculate_contrib(
 	(right >= limit ? limit - 1 : right);
 	int first_pixel = min(lmin, rmin);
 	int last_pixel = max(lmax, rmax);
+#else
+	double center = (input_index + i) / scale - 0.5;
+	int left = (int)ceil(center - WidthIn);
+	int right = (int)floor(center + WidthIn);
+#define clamp_pixel(j) (j < 0 ? 0 : j >= limit ? limit - 1 : j)
+	int first_pixel = clamp_pixel(left);
+	int last_pixel = clamp_pixel(right);
+#endif
 	CONTRIB *p;
 
 	if (last_pixel > last_index)
