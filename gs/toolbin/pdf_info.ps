@@ -37,7 +37,7 @@ pop			% discard the dict from where
 
 () =
 File dup (r) file runpdfbegin
-/PDFPageCount exch def pop
+/PDFPageCount pdfpagecount def
 print ( has ) print PDFPageCount =print ( pages.) =
 flush
 
