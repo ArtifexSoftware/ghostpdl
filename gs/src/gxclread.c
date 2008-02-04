@@ -687,11 +687,14 @@ clist_playback_file_bands(clist_playback_action action,
 	s.foreign = 1;
 	s.state = (stream_state *)&rs;
 
-	vd_get_dc('s');
+	if (vd_allowed('s')) {
+	    vd_get_dc('s');
+	} else if (vd_allowed('i')) {
+	    vd_get_dc('i');
+	}
 	vd_set_shift(0, 0);
 	vd_set_scale(0.01);
 	vd_set_origin(0, 0);
-	vd_erase(RGB(192, 192, 192));
 	code = clist_playback_band(action, crdev, &s, target, x0, y0, mem);
 	vd_release_dc;
 #	ifdef DEBUG

@@ -218,6 +218,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	      mat.xx, mat.xy, mat.yx, mat.yy, mat.tx, mat.ty);
     /* following works for 1, 2, 4, 8, 12, 16 */
     index_bps = (bps < 8 ? bps >> 1 : (bps >> 2) + 1);
+#if 0 /* replaced due to inaccurate precision, bug 687345 , text -r300 455690-1.pdf . */
     mtx = float2fixed(mat.tx);
     mty = float2fixed(mat.ty);
     row_extent.x = float2fixed(width * mat.xx + mat.tx) - mtx;
@@ -248,6 +249,54 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	     float2fixed(rh * mat.yx + mat.tx) - mtx);
 	y_extent.y = float2fixed(rh * mat.yy + mat.ty) - mty;
     }
+#else
+    /* 
+     * Compute extents with distance transformation.
+     */
+    if (mat.tx > 0)
+	mtx = float2fixed(mat.tx);
+    else { /* Use positive values to ensure round down. */
+	int f = (int)-mat.tx + 1;
+
+	mtx = float2fixed(mat.tx + f) - int2fixed(f);
+    }
+    if (mat.ty > 0)
+	mty = float2fixed(mat.ty);
+    else {  /* Use positive values to ensure round down. */
+	int f = (int)-mat.ty + 1;
+
+	mty = float2fixed(mat.ty + f) - int2fixed(f);
+    }
+
+    row_extent.x = float2fixed_rounded(width * mat.xx);
+    row_extent.y =
+	(is_fzero(mat.xy) ? fixed_0 :
+	 float2fixed_rounded(width * mat.xy));
+    col_extent.x =
+	(is_fzero(mat.yx) ? fixed_0 :
+	 float2fixed_rounded(height * mat.yx));
+    col_extent.y = float2fixed_rounded(height * mat.yy);
+    gx_image_enum_common_init((gx_image_enum_common_t *)penum,
+			      (const gs_data_image_t *)pim,
+			      &image1_enum_procs, dev,
+			      (masked ? 1 : (penum->alpha ? cs_num_components(pcs)+1 : cs_num_components(pcs))),
+			      format);
+    if (penum->rect.w == width && penum->rect.h == height) {
+	x_extent = row_extent;
+	y_extent = col_extent;
+    } else {
+	int rw = penum->rect.w, rh = penum->rect.h;
+
+	x_extent.x = float2fixed_rounded(rw * mat.xx);
+	x_extent.y =
+	    (is_fzero(mat.xy) ? fixed_0 :
+	     float2fixed_rounded(rw * mat.xy));
+	y_extent.x =
+	    (is_fzero(mat.yx) ? fixed_0 :
+	     float2fixed_rounded(rh * mat.yx));
+	y_extent.y = float2fixed_rounded(rh * mat.yy);
+    }
+#endif
     if (masked) {	/* This is imagemask. */
 	if (bps != 1 || pcs != NULL || penum->alpha || decode[0] == decode[1]) {
 	    gs_free_object(mem, penum, "gx_default_begin_image");

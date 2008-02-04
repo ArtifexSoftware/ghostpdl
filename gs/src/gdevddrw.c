@@ -606,6 +606,8 @@ gx_default_fill_parallelogram(gx_device * dev,
 	gs_int_rect r;
 
 	INT_RECT_FROM_PARALLELOGRAM(&r, px, py, ax, ay, bx, by);
+	vd_rect(int2fixed(r.p.x), int2fixed(r.p.y), int2fixed(r.q.x), int2fixed(r.q.y),
+		    1, (int)pdevc->colors.pure);
 	return gx_fill_rectangle_device_rop(r.p.x, r.p.y, r.q.x - r.p.x,
 					    r.q.y - r.p.y, pdevc, dev, lop);
     }

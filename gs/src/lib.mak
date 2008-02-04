@@ -942,7 +942,7 @@ $(GLOBJ)gdevm16.$(OBJ) : $(GLSRC)gdevm16.c $(GX) $(memory__h)\
 	$(GLCC) $(GLO_)gdevm16.$(OBJ) $(C_) $(GLSRC)gdevm16.c
 
 $(GLOBJ)gdevm24.$(OBJ) : $(GLSRC)gdevm24.c $(GX) $(memory__h)\
- $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
+ $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h) $(vdtrace_h)
 	$(GLCC) $(GLO_)gdevm24.$(OBJ) $(C_) $(GLSRC)gdevm24.c
 
 $(GLOBJ)gdevm32.$(OBJ) : $(GLSRC)gdevm32.c $(GX) $(memory__h)\
@@ -2282,7 +2282,7 @@ $(GLOBJ)gxi12bit.$(OBJ) : $(GLSRC)gxi12bit.c $(GXERR)\
  $(gsccolor_h) $(gspaint_h)\
  $(gxarith_h) $(gxcmap_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h)\
  $(gxdevmem_h) $(gxfixed_h) $(gxfrac_h) $(gximage_h) $(gxistate_h)\
- $(gxmatrix_h)
+ $(gxmatrix_h)  $(vdtrace_h)
 	$(GLCC) $(GLO_)gxi12bit.$(OBJ) $(C_) $(GLSRC)gxi12bit.c
 
 no16bit_=$(GLOBJ)gxino16b.$(OBJ)

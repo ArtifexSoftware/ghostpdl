@@ -17,6 +17,7 @@
 #include "gxdevice.h"
 #include "gxdevmem.h"		/* semi-public definitions */
 #include "gdevmem.h"		/* private definitions */
+#include "vdtrace.h"
 
 #define mem_true24_strip_copy_rop mem_gray8_rgb24_strip_copy_rop
 
@@ -369,10 +370,14 @@ mem_true24_copy_mono(gx_device * dev,
 
 	    do {
 		if (sbyte & bit) {
-		    if (one != gx_no_color_index)
+		    if (one != gx_no_color_index) {
 			put3(pptr, r1, g1, b1);
-		} else
+			vd_pixel(int2fixed((pptr - mdev->line_ptrs[y]) / 3), int2fixed(y), RGB(r1, g1, b1));
+		    }
+		} else {
 		    put3(pptr, r0, g0, b0);
+		    vd_pixel(int2fixed((pptr - mdev->line_ptrs[y]) / 3), int2fixed(y), RGB(r0, g0, b0));
+		}
 		pptr += 3;
 		if ((bit >>= 1) == 0)
 		    bit = 0x80, sbyte = *sptr++;

@@ -30,6 +30,7 @@
 #include "gxdevmem.h"
 #include "gxcpath.h"
 #include "gximage.h"
+#include "vdtrace.h"
 
 /* ---------------- Unpacking procedures ---------------- */
 
@@ -353,6 +354,9 @@ fill:
 		    xi += wi, wi = -wi;
 		code = gx_fill_rectangle_device_rop(xi, yt,
 						  wi, iht, pdevc, dev, lop);
+		vd_set_scale(0.01);
+		vd_rect(int2fixed(xi), int2fixed(yt), int2fixed(xi + wi), int2fixed(yt + iht),
+		    1, (int)pdevc->colors.pure);
 	    }
 	    if (code < 0)
 		goto err;
@@ -371,8 +375,24 @@ inc:
 	ytf = dda_next(pnext.y);
     }
     /* Fill the final run. */
-    code = (*dev_proc(dev, fill_parallelogram))
-	(dev, xrun, yrun, xl - xrun, ytf - yrun, pdyx, pdyy, pdevc, lop);
+    if (posture != image_portrait) {
+	code = (*dev_proc(dev, fill_parallelogram))
+	    (dev, xrun, yrun, xl - xrun, ytf - yrun, pdyx, pdyy, pdevc, lop);
+	/*vd_quad(xrun, yrun, xl, ytf, xl + pdyx, ytf + pdyy, xrun + pdyx, yrun + pdyy, 
+		1, (int)pdevc->colors.pure); */
+    } else {
+	/* Same code as above near 'fill:' : */
+	int xi = irun;
+	int wi = (irun = fixed2int_var_rounded(xl)) - xi;
+
+	if (wi < 0)
+	    xi += wi, wi = -wi;
+	code = gx_fill_rectangle_device_rop(xi, yt,
+					  wi, iht, pdevc, dev, lop);
+	vd_set_scale(0.01);
+	vd_rect(int2fixed(xi), int2fixed(yt), int2fixed(xi + wi), int2fixed(yt + iht),
+	    1, (int)pdevc->colors.pure);
+    }
     return (code < 0 ? code : 1);
 
     /* Save position if error, in case we resume. */

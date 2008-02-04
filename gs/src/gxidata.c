@@ -278,9 +278,28 @@ gx_image1_flush(gx_image_enum_common_t * info)
 static void
 update_strip(gx_image_enum *penum)
 {
+
+#if 1 
+    /* Old code. */
     dda_translate(penum->dda.strip.x, penum->cur.x - penum->prev.x);
     dda_translate(penum->dda.strip.y, penum->cur.y - penum->prev.y);
     penum->dda.pixel0 = penum->dda.strip;
+#else
+    /* A better precision with stromng dda_advance -
+       doesn't work becauae gx_image1_plane_data
+       doesn't call it at each step. */
+    gx_dda_fixed_point temp;
+
+    temp.x.state = penum->dda.strip.x.state;
+    temp.y.state = penum->dda.strip.y.state;
+    temp.x.step = penum->dda.row.x.step;
+    temp.y.step = penum->dda.row.y.step;
+    dda_next(temp.x);
+    dda_next(temp.y);
+    penum->dda.strip.x.state = temp.x.state;
+    penum->dda.strip.y.state = temp.y.state;
+    penum->dda.pixel0 = penum->dda.strip;
+#endif
 }
 
 /*
