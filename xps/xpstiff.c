@@ -177,7 +177,7 @@ readlong(xps_tiff_t *tiff)
 static int
 xps_decode_tiff_uncompressed(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
-    memcpy(wp, tiff->rp, wl - wp);
+    memcpy(wp, rp, wl - wp);
     return gs_okay;
 }
 
@@ -987,7 +987,7 @@ xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image)
 static void
 xps_debug_tiff(gs_memory_t *mem, xps_tiff_t *tiff)
 {
-    int n;
+    int i, n;
 
     dputs("TIFF <<\n");
     dprintf1("\t/NewSubfileType %u\n", tiff->subfiletype);
@@ -1015,10 +1015,20 @@ xps_debug_tiff(gs_memory_t *mem, xps_tiff_t *tiff)
     dprintf1("\t/RowsPerStrip %u\n", tiff->rowsperstrip);
 
     if (tiff->stripoffsets)
-        dprintf1("\t/StripOffsets %u\n", n);
+    {
+        dputs("\t/StripOffsets ");
+	for (i = 0; i < n; i++)
+	    dprintf1("%u ", tiff->stripoffsets[i]);
+	dputs("\n");
+    }
 
     if (tiff->stripbytecounts)
-        dprintf1("\t/StripByteCounts %u\n", n);
+    {
+        dputs("\t/StripByteCounts ");
+	for (i = 0; i < n; i++)
+	    dprintf1("%u ", tiff->stripbytecounts[i]);
+	dputs("\n");
+    }
 
     dputs(">>\n");
 }
