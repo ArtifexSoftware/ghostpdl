@@ -662,6 +662,7 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 
     if (fill_tag)
     {
+	ctx->fill_rule = 1; /* always use non-zero winding rule for char paths */
 	xps_parse_glyphs_imp(ctx, font, font_size,
 		atof(origin_x_att), atof(origin_y_att),
 		is_sideways, bidi_level, indices_att, unicode_att, 1);
