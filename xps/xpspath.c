@@ -754,8 +754,8 @@ xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *ro
     xps_item_t *figures_tag = NULL; /* only used by resource */
 
     gs_matrix transform;
+    gs_matrix saved_transform;
     int even_odd = 0;
-    int saved = 0;
 
     ctx->fill_rule = 0;
 
@@ -782,19 +782,17 @@ xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *ro
 	    ctx->fill_rule = 0;
     }
 
+    gs_make_identity(&transform);
     if (transform_att || transform_tag)
     {
-	if (!saved)
-	{
-	    saved = 1;
-	    gs_gsave(ctx->pgs);
-	}
 	if (transform_att)
 	    xps_parse_render_transform(ctx, transform_att, &transform);
 	if (transform_tag)
 	    xps_parse_matrix_transform(ctx, transform_tag, &transform);
-	gs_concat(ctx->pgs, &transform);
     }
+
+    gs_currentmatrix(ctx->pgs, &saved_transform);
+    gs_concat(ctx->pgs, &transform);
 
     if (figures_att)
     {
@@ -812,10 +810,7 @@ xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *ro
 	    xps_parse_path_figure(ctx, node);
     }
 
-    if (saved)
-    {
-	gs_grestore(ctx->pgs);
-    }
+    gs_setmatrix(ctx->pgs, &saved_transform);
 
     return 0;
 }
