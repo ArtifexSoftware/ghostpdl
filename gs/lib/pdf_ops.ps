@@ -655,41 +655,70 @@ end readonly def
    { gsave tB grestore tW }
    { tW }
 ] readonly def
+
+/pdfwrite_textrenderingprocs [
+	{ setfillstate show } bind
+	{ setstrokestate show } bind
+	{ gsave 0 .settextrenderingmode 
+	  setfillstate dup show currentpoint 3 -1 roll 
+	  grestore gsave setstrokestate false charpath stroke 
+	  grestore moveto
+	} bind
+	{ setfillstate show } bind
+	{ gsave 0 .settextrenderingmode 
+	  setfillstate dup show grestore true charpath } bind
+	{ gsave 1 .settextrenderingmode 
+	  setstrokestate dup show grestore
+	  true charpath } bind
+	{ gsave 0 .settextrenderingmode 
+	  setfillstate dup show grestore gsave dup 
+	  setstrokestate false charpath stroke grestore 
+	  true charpath } bind
+	{ true charpath } bind
+] readonly def
+
 /setshowstate
  { WordSpacing 0 eq TextSpacing 0 eq and FontMatrixNonHV not and
-    { TextRenderingMode 0 eq currentdevice .devicename /pdfwrite eq or {
-        { setfillstate show }
-      } {
-        TextRenderingMode 3 eq {
-            	% Some PDF files execute 'tm' with a singular matrix,
-		% and then use the text rendering mode 3.
-		% The graphics library currently cannot handle text
-		% operations when the CTM is singular.
-		% Work around this here.
-	  {	
-            matrix currentmatrix dup dup
-            dup 0 get 0 eq 1 index 1 get 0 eq and {
-              dup dup 2 get 0 eq { 0 }{ 1 } ifelse 1 put
-            } if
-            dup 2 get 0 eq 1 index 3 get 0 eq and {
-              dup dup 1 get 0 eq { 3 }{ 2 } ifelse 1 put
-            } if
-            setmatrix
-            2 index setfillstate show % Tr was set to graphic state.
-            setmatrix 
-	    % now set the currentpoint using the original matrix
-            gsave nulldevice
-            setmatrix
-            false charpath currentpoint newpath 
-            grestore
-            moveto
-          }
-        } {
-          { false charpath textrenderingprocs TextRenderingMode get exec }
-        } ifelse
-      } ifelse
+    { 
+	currentdevice .devicename /pdfwrite eq 
+	{
+		pdfwrite_textrenderingprocs TextRenderingMode get
+	}
+	{
+		TextRenderingMode 0 eq {
+	        { setfillstate show }
+	      } {
+	        TextRenderingMode 3 eq {
+	            	% Some PDF files execute 'tm' with a singular matrix,
+			% and then use the text rendering mode 3.
+			% The graphics library currently cannot handle text
+			% operations when the CTM is singular.
+			% Work around this here.
+		  {	
+	            matrix currentmatrix dup dup
+	            dup 0 get 0 eq 1 index 1 get 0 eq and {
+	              dup dup 2 get 0 eq { 0 }{ 1 } ifelse 1 put
+	            } if
+	            dup 2 get 0 eq 1 index 3 get 0 eq and {
+	              dup dup 1 get 0 eq { 3 }{ 2 } ifelse 1 put
+	            } if
+	            setmatrix
+	            2 index setfillstate show % Tr was set to graphic state.
+	            setmatrix 
+		    % now set the currentpoint using the original matrix
+	            gsave nulldevice
+	            setmatrix
+	            false charpath currentpoint newpath 
+	            grestore
+	            moveto
+	          }
+	        } {
+	          { false charpath textrenderingprocs TextRenderingMode get exec }
+	        } ifelse
+	      } ifelse
+	} ifelse
     }
-    { TextRenderingMode 0 eq TextRenderingMode 3 eq or currentdevice .devicename /pdfwrite eq or
+    { TextRenderingMode 0 eq TextRenderingMode 3 eq or
        % Tr was set to graphic state.
        { FontMatrixNonHV {
            {

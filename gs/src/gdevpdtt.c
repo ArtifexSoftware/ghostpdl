@@ -2011,13 +2011,29 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     ppts->values.pdfont = pdfont;
     ppts->values.size = size;
     ppts->values.matrix = tmat;
-    ppts->values.render_mode = (penum->pis->text_rendering_mode == 3 ? 3 : 
-				font->PaintType == 0 ? 0 : penum->pis->text_rendering_mode);
+    ppts->values.render_mode = penum->pis->text_rendering_mode;
     ppts->values.word_spacing = w_s;
     ppts->font = font;
 
-    code = pdf_set_text_process_state(pdev, (const gs_text_enum_t *)penum,
+    if (font->PaintType == 2 && penum->pis->text_rendering_mode == 0)
+    {
+	gs_imager_state *pis = penum->pis;
+	double scaled_width = font->StrokeWidth != 0 ? font->StrokeWidth : 0.001;
+	double saved_width = pis->line_params.half_width;
+
+	if (font->FontMatrix.yy != 0)
+	    scaled_width *= fabs(font->FontMatrix.yy);
+	else
+	    scaled_width *= fabs(font->FontMatrix.xy);
+	ppts->values.render_mode = 1;
+	pis->line_params.half_width = scaled_width / 2;
+        code = pdf_set_text_process_state(pdev, (const gs_text_enum_t *)penum,
 				      ppts);
+	pis->line_params.half_width = saved_width;
+    } else {
+	code = pdf_set_text_process_state(pdev, (const gs_text_enum_t *)penum,
+				      ppts);
+    }
     return (code < 0 ? code : mask);
 }
 
@@ -2046,19 +2062,8 @@ pdf_set_text_process_state(gx_device_pdf *pdev,
 	/* Write all the parameters for stroking. */
 	gs_imager_state *pis = pte->pis;
 	float save_width = pis->line_params.half_width;
-	const gs_font *font = ppts->font;
-	double scaled_width = font->StrokeWidth;
 	int code;
 
-	/* Note that we compute pis->line_params.half_width in device space,
-	 * even though it logically represents a value in user space.  
-	 * The 'scale' value compensates for this.
-	 */
-	scaled_width *= font_matrix_scaling(font);
-	scaled_width *= min(hypot(pte->pis->ctm.xx, pte->pis->ctm.yx) / 
-                                pdev->HWResolution[0] * pdev->HWResolution[1],
-                            hypot(pte->pis->ctm.xy, pte->pis->ctm.yy));
-	pis->line_params.half_width = scaled_width / 2;
 	code = pdf_prepare_stroke(pdev, pis);
 	if (code >= 0) {
 	    /*
