@@ -151,5 +151,5 @@ dda_state_struct(_a, fixed, uint) gx_dda_state_fixed;
   ((dstate).Q += (delta))
 #define dda_translate(dda, delta)\
   dda_state_translate((dda).state, delta)
-
+  
 #endif /* gxdda_INCLUDED */

@@ -205,6 +205,8 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     bool device_color = true;
     gs_fixed_rect obox, cbox;
 
+    penum->Width = width;
+    penum->Height = height;
     if (pmat == 0)
 	pmat = &ctm_only(pis);
     if ((code = gs_matrix_invert(&pim->ImageMatrix, &mat)) < 0 ||
@@ -547,6 +549,8 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 		  penum->clip_image);
 	dda_init(penum->dda.row.x, mtx, col_extent.x, height);
 	dda_init(penum->dda.row.y, mty, col_extent.y, height);
+	penum->dst_width = row_extent.x;
+	penum->dst_height = col_extent.y;
 	if (penum->rect.y) {
 	    dda_advance(penum->dda.row.x, penum->rect.y);
 	    dda_advance(penum->dda.row.y, penum->rect.y);
