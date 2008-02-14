@@ -28,7 +28,7 @@
 #include "gxcldev.h"
 #include "gxclpath.h"
 #include "gxpageq.h"
-#include "gzht.h"		/* for gx_ht_cache_default_bits */
+#include "gzht.h"		/* for gx_ht_cache_default_bits_size */
 
 /* ----------------- Constants ----------------------- */
 /*
@@ -99,7 +99,7 @@ gdev_prn_async_write_open(gx_device_printer * pwdev, int max_raster,
 	    pwdev->memory->non_gc_memory, RendererAllocationOverheadBytes + max_raster
 				    /* the first * 2 is not a hack */
 		   + (max_raster + sizeof(void *) * 2) * min_band_height
-		   + max_src_image_row + gx_ht_cache_default_bits() * 2)) < 0)
+		   + max_src_image_row + gx_ht_cache_default_bits_size() * 2)) < 0)
 	     goto open_err;
 
     /* Alloc & init bandlist allocators */

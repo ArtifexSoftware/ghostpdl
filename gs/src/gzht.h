@@ -125,21 +125,18 @@ struct gx_ht_cache_s {
 };
 
 /* Define the sizes of the halftone cache. */
-#define max_cached_tiles_HUGE 5000	/* not used */
-#define max_ht_bits_HUGE 1000000	/* not used */
-#define max_cached_tiles_LARGE 577
-#define max_ht_bits_LARGE 100000
-#define max_cached_tiles_SMALL 25
-#define max_ht_bits_SMALL 1000
+#define max_ht_cached_tiles_LARGE 8192
+#define max_ht_cache_bits_size_LARGE (1024*1024) /* enough for 256 levels 167x167 */
+					   /* see ht_stocht.ps */
+#define max_ht_cached_tiles_SMALL 256
+#define max_ht_cache_bits_size_SMALL 8192	/* enough for 256 levels 8x8 */
 
-/* Define the size of the halftone tile cache. */
-#define max_tile_bytes_LARGE 65536
-#define max_tile_bytes_SMALL 512
 #if arch_small_memory
-#  define max_tile_cache_bytes max_tile_bytes_SMALL
+#  define max_ht_cached_tiles max_ht_cached_tiles_SMALL
+#  define max_ht_cache_bits_size max_ht_cache_bits_size_SMALL
 #else
-#  define max_tile_cache_bytes\
-     (gs_debug_c('.') ? max_tile_bytes_SMALL : max_tile_bytes_LARGE)
+#  define max_ht_cached_tiles max_ht_cached_tiles_LARGE
+#  define max_ht_cache_bits_size max_ht_cache_bits_size_LARGE
 #endif
 
 /* We don't mark from the tiles pointer, and we relocate the tiles en masse. */
@@ -164,7 +161,7 @@ extern const gx_color_value *const fc_color_quo[8];
 
 /* Allocate/free a halftone cache. */
 uint gx_ht_cache_default_tiles(void);
-uint gx_ht_cache_default_bits(void);
+uint gx_ht_cache_default_bits_size(void); /* returns size in bytes of 'bits' area */
 gx_ht_cache *gx_ht_alloc_cache(gs_memory_t *, uint, uint);
 void gx_ht_free_cache(gs_memory_t *, gx_ht_cache *);
 

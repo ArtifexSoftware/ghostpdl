@@ -1109,7 +1109,7 @@ gx_imager_dev_ht_install(
 
                 tile_bytes = porder->raster
                               * (porder->num_bits / porder->width);
-                num_tiles = 1 + max_tile_cache_bytes / tile_bytes;
+                num_tiles = 1 + gx_ht_cache_default_bits_size() / tile_bytes;
                 pcache = gx_ht_alloc_cache( pis->memory,
                                             num_tiles,
                                             tile_bytes * num_tiles );

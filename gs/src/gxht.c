@@ -26,14 +26,6 @@
 #include "gzht.h"
 #include "gsserial.h"
 
-/* Define the sizes of the halftone cache. */
-#define max_cached_tiles_HUGE 5000	/* not used */
-#define max_ht_bits_HUGE 1000000	/* not used */
-#define max_cached_tiles_LARGE 577
-#define max_ht_bits_LARGE 100000
-#define max_cached_tiles_SMALL 25
-#define max_ht_bits_SMALL 1000
-
 /* Define the binary halftone device color type. */
 /* The type descriptor must be public for Pattern types. */
 gs_public_st_composite(st_dc_ht_binary, gx_device_color, "dc_ht_binary",
@@ -119,33 +111,25 @@ private_st_ht_cache();
 uint
 gx_ht_cache_default_tiles(void)
 {
-#if arch_small_memory
-    return max_cached_tiles_SMALL;
-#else
-    return (gs_debug_c('.') ? max_cached_tiles_SMALL :
-	    max_cached_tiles_LARGE);
-#endif
+    return (gs_debug_c('.') ? max_ht_cached_tiles_SMALL :
+	    max_ht_cached_tiles);
 }
 uint
-gx_ht_cache_default_bits(void)
+gx_ht_cache_default_bits_size(void)
 {
-#if arch_small_memory
-    return max_ht_bits_SMALL;
-#else
-    return (gs_debug_c('.') ? max_ht_bits_SMALL :
-	    max_ht_bits_LARGE);
-#endif
+    return (gs_debug_c('.') ? max_ht_cache_bits_size_SMALL :
+	    max_ht_cache_bits_size);
 }
 
-/* Allocate a halftone cache. */
+/* Allocate a halftone cache. max_bits_size is number of bytes */
 gx_ht_cache *
-gx_ht_alloc_cache(gs_memory_t * mem, uint max_tiles, uint max_bits)
+gx_ht_alloc_cache(gs_memory_t * mem, uint max_tiles, uint max_bits_size)
 {
     gx_ht_cache *pcache =
     gs_alloc_struct(mem, gx_ht_cache, &st_ht_cache,
 		    "alloc_ht_cache(struct)");
     byte *tbits =
-	gs_alloc_bytes(mem, max_bits, "alloc_ht_cache(bits)");
+	gs_alloc_bytes(mem, max_bits_size, "alloc_ht_cache(bits)");
     gx_ht_tile *ht_tiles =
 	gs_alloc_struct_array(mem, max_tiles, gx_ht_tile, &st_ht_tiles,
 			      "alloc_ht_cache(ht_tiles)");
@@ -157,7 +141,7 @@ gx_ht_alloc_cache(gs_memory_t * mem, uint max_tiles, uint max_bits)
 	return 0;
     }
     pcache->bits = tbits;
-    pcache->bits_size = max_bits;
+    pcache->bits_size = max_bits_size;
     pcache->ht_tiles = ht_tiles;
     pcache->num_tiles = max_tiles;
     pcache->order.cache = pcache;
@@ -216,7 +200,12 @@ gx_render_ht_default(gx_ht_cache * pcache, int b_level)
 {
     const gx_ht_order *porder = &pcache->order;
     int level = porder->levels[b_level];
-    gx_ht_tile *bt = &pcache->ht_tiles[level / pcache->levels_per_tile];
+    gx_ht_tile *bt;
+
+    if (pcache->num_cached < porder->num_levels )
+	bt = &pcache->ht_tiles[level / pcache->levels_per_tile];
+    else
+	bt =  &pcache->ht_tiles[b_level];	/* one tile per b_level */
 
     if (bt->level != level) {
 	int code = render_ht(bt, level, porder, pcache->base_id + b_level);
@@ -317,7 +306,12 @@ gx_dc_ht_binary_load_cache(const gx_device_color * pdevc)
     gx_ht_cache *pcache = porder->cache;
     int b_level = pdevc->colors.binary.b_level;
     int level = porder->levels[b_level];
-    gx_ht_tile *bt = &pcache->ht_tiles[level / pcache->levels_per_tile];
+    gx_ht_tile *bt;
+
+    if (pcache->num_cached < porder->num_levels )
+	bt = &pcache->ht_tiles[level / pcache->levels_per_tile];
+    else
+	bt =  &pcache->ht_tiles[b_level];	/* one tile per b_level */
 
     if (bt->level != level) {
 	int code = render_ht(bt, level, porder, pcache->base_id + b_level);
