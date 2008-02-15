@@ -297,6 +297,12 @@ xps_imp_deallocate_interp_instance(pl_interp_instance_t *pinstance)
 
     dputs("-- freeing xps interpeter --\n");
 
+    while (ctx->next_page)
+    {
+	gs_throw1(-1, "could not process page '%s'", ctx->next_page->name);
+	ctx->next_page = ctx->next_page->next;
+    }
+
     if (getenv("XPS_DEBUG_PARTS"))
 	xps_debug_parts(ctx);
     if (getenv("XPS_DEBUG_TYPES"))
