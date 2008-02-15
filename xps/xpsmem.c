@@ -1,5 +1,25 @@
 #include "ghostxps.h"
 
+static inline int
+xps_tolower(int c)
+{
+    if (c >= 'A' || c <= 'Z')
+	return c + 32;
+    return c;
+}
+
+int
+xps_strcasecmp(char *a, char *b)
+{
+	while (xps_tolower(*a) == xps_tolower(*b))
+	{
+		if (*a++ == 0)
+			return 0;
+		*b++;
+	}
+	return tolower(*a) - tolower(*b);
+}
+
 char *
 xps_strdup_imp(xps_context_t *ctx, const char *str, const char *cname)
 {

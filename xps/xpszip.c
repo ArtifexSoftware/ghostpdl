@@ -162,7 +162,7 @@ xps_find_part(xps_context_t *ctx, char *name)
 {
     xps_part_t *part;
     for (part = ctx->first_part; part; part = part->next)
-	if (!strcmp(part->name, name))
+	if (!xps_strcasecmp(part->name, name))
 	    return part;
     return NULL;
 }
