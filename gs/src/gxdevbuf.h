@@ -71,7 +71,7 @@ typedef struct gx_device_buf_procs_s {
      */
 
 #define dev_proc_create_buf_device(proc)\
-  int proc(gx_device **pbdev, gx_device *target,\
+  int proc(gx_device **pbdev, gx_device *target, int y,\
 	   const gx_render_plane_t *render_plane, gs_memory_t *mem,\
 	   gx_band_complexity_t *band_complexity)
 

@@ -452,7 +452,7 @@ bmpa_reader_buffer_planes(gx_device_printer *pdev, FILE *file, int num_copies,
 
 	    /* Set up the buffer device. */
 	    code = gdev_create_buf_device(crdev->buf_procs.create_buf_device,
-					  &bdev, crdev->target, &render_plane,
+					  &bdev, crdev->target, 0, &render_plane,
 					  dev->memory, NULL);
 	    if (code < 0)
 		goto done;

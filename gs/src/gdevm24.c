@@ -468,6 +468,7 @@ mem_true24_copy_color(gx_device * dev,
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
 
+    if_debug1('w', "[w]device y=%d:\n", y + mdev->band_y); /* See siscale.c about 'w'. */
     fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
     mem_copy_byte_rect(mdev, base, sourcex, sraster, x, y, w, h);
     return 0;

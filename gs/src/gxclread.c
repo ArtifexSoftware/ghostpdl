@@ -425,7 +425,7 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
 
     clist_select_render_plane(dev, y, line_count, &render_plane, plane_index);
     code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
-				  &bdev, cdev->target, &render_plane,
+				  &bdev, cdev->target, y, &render_plane,
 				  dev->memory, clist_get_band_complexity(dev,y));
     if (code < 0)
 	return code;
@@ -463,7 +463,7 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
 	uint raster = gx_device_raster(bdev, true);
 
 	code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
-				      &bdev, cdev->target, &render_plane,
+				      &bdev, cdev->target, y, &render_plane,
 				      dev->memory, clist_get_band_complexity(dev, y));
 	if (code < 0)
 	    return code;

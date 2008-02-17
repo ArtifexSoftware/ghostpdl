@@ -141,6 +141,7 @@ struct gx_device_memory_s {
     gx_color_index save_color;	/* last (only) color displayed */
     /* Following are used only for planar devices. */
     int plane_depth;		/* if non-zero, depth of all planes */
+    int band_y; /* Debug purpose only. */
 };
 
 extern_st(st_device_memory);
