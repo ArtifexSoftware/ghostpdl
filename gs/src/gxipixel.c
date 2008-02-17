@@ -551,6 +551,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	dda_init(penum->dda.row.y, mty, col_extent.y, height);
 	penum->dst_width = row_extent.x;
 	penum->dst_height = col_extent.y;
+	penum->yi0 = fixed2int_pixround_perfect(dda_current(penum->dda.row.y)); /* For gs_image_class_0_interpolate. */
 	if (penum->rect.y) {
 	    dda_advance(penum->dda.row.x, penum->rect.y);
 	    dda_advance(penum->dda.row.y, penum->rect.y);

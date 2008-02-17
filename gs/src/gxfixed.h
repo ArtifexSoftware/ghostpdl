@@ -76,6 +76,8 @@ typedef ulong ufixed;		/* only used in a very few places */
 #define fixed2int_ceiling(x) ((int)_fixed_rshift((x)+_fixed_fraction_v))
 #define fixed_pre_pixround(x) ((x)+_fixed_pixround_v)
 #define fixed2int_pixround(x) fixed2int(fixed_pre_pixround(x))
+#define fixed2int_pixround_perfect(x) ((x) < 0 && ((x) & (fixed_1 - fixed_epsilon)) == fixed_half \
+	? (int)_fixed_rshift(x) + 1 : fixed2int_pixround(x))
 #define fixed_is_int(x) !((x)&_fixed_fraction_v)
 #if ARCH_INTS_ARE_SHORT & !ARCH_IS_BIG_ENDIAN
 /* Do some of the shifting and extraction ourselves. */

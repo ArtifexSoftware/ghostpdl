@@ -254,6 +254,7 @@ struct gx_image_enum_s {
 				/* (landscape only) */
     gs_int_point xyi;		/* integer origin of row */
 				/* (Interpolate only) */
+    int yi0;			/* integer y of entire image origin. */
     int yci, hci;		/* integer y & h of row (portrait) */
     int xci, wci;		/* integer x & w of row (landscape) */
     /* The maps are set at initialization.  We put them here */
