@@ -102,13 +102,9 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     iss.BitsPerComponentOut = sizeof(frac) * 8;
     iss.MaxValueOut = frac_1;
     iss.WidthOut = (int)ceil(fabs(dst_xy.x));
-#if 0
-    iss.HeightOut = (int)ceil(fabs(dst_xy.y));
-#else
     iss.HeightOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rect.y + penum->rect.h) * 
 						penum->dst_height / penum->Height))
 	- fixed2int_pixround_perfect((fixed)((int64_t)penum->rect.y * penum->dst_height / penum->Height));
-#endif
     iss.WidthIn = penum->rect.w;
     iss.HeightIn = penum->rect.h;
     iss.src_y_offset = penum->rect.y;
@@ -191,13 +187,9 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
 	    dda_advance(x0, penum->rect.w);
 	penum->xyi.x = fixed2int_pixround(dda_current(x0));
     }
-#if 0
-    penum->xyi.y = fixed2int_pixround(dda_current(penum->dda.pixel0.y));
-#else
     penum->xyi.y = penum->yi0 + fixed2int_pixround_perfect((fixed)((int64_t)penum->rect.y 
 				    * penum->dst_height / penum->Height))
 		* (penum->matrix.yy > 0 ? 1 : -1);
-#endif
     if_debug0('b', "[b]render=interpolate\n");
     return &image_render_interpolate;
 }

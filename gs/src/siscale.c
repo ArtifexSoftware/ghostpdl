@@ -203,44 +203,6 @@ calculate_contrib(
     npixels = (int)(WidthIn * 2 + 1);
 
     for (i = 0; i < size; ++i) {
-#if 0
-	double center = (starting_output_index + i) / scale;
-	int left = (int)ceil(center - WidthIn);
-	int right = (int)floor(center + WidthIn);
-
-	/*
-	 * In pathological cases, the limit may be much less
-	 * than the support.  We do need to deal with this.
-	 */
-#define clamp_pixel(j)\
-  (j < 0 ? (-j >= limit ? limit - 1 : -j) :\
-   j >= limit ? (j >> 1 >= limit ? 0 : (limit - j) + limit - 1) :\
-   j)
-	int lmin =
-	(left < 0 ? 0 : left);
-	int lmax =
-	(left < 0 ? (-left >= limit ? limit - 1 : -left) : left);
-	int rmin =
-	(right >= limit ?
-	 (right >> 1 >= limit ? 0 : (limit - right) + limit - 1) :
-	 right);
-	int rmax =
-	(right >= limit ? limit - 1 : right);
-	int first_pixel = min(lmin, rmin);
-	int last_pixel = max(lmax, rmax);
-#else
-#if 0
-#if 1 /* CET 148-14 */
-	float dst_offset_fraction = floor(dst_offset) - dst_offset; /* Compensate 
-				rounding for penum->xyi.y in gs_image_class_0_interpolate. */
-#else  /* CET 148-13 */
-	float dst_offset_fraction = ceil(dst_offset) - dst_offset; /* Compensate 
-				rounding for penum->xyi.y in gs_image_class_0_interpolate. */
-#endif
-	double center = (starting_output_index  + i + dst_offset_fraction) / scale - 0.5;
-	int left = (int)ceil(center - WidthIn);
-	int right = (int)floor(center + WidthIn);
-#else
 	/* Here we need :
 	   double scale = (double)dst_size / src_size;
 	   float dst_offset_fraction = floor(dst_offset) - dst_offset;
@@ -251,28 +213,18 @@ calculate_contrib(
 	   In older versions tt caused a 1 pixel bias of image bands due to 
 	   rounding direction appears to depend on src_y_offset. So compute in rartionals.
 	 */
-#if 0
-#if 0 /* CET 148-14 */
-	int dst_y_offset_fraction_num = -(int)((int64_t)src_y_offset * dst_size % src_size);
-#else /* CET 148-13 */
-	int dst_y_offset_fraction_num = (src_size - (int)((int64_t)src_y_offset * dst_size % src_size)) % src_size;
-#endif
-#else
 	int dst_y_offset_fraction_num = (int)((int64_t)src_y_offset * dst_size % src_size) * 2 <= src_size
 			? -(int)((int64_t)src_y_offset * dst_size % src_size)
 			: src_size - (int)((int64_t)src_y_offset * dst_size % src_size);
-#endif
 	int center_denom = dst_size; 
 	int64_t center_num = /* center * center_denom = */ 
 	    (starting_output_index  + i) * src_size + dst_y_offset_fraction_num - (center_denom / 2);
 	int left = (int)((center_num - WidthIn * center_denom + (center_denom - 1)) / center_denom);
 	int right = (int)((center_num + WidthIn * center_denom) / center_denom);
 	double center = (double)center_num / center_denom;
-#endif
 #define clamp_pixel(j) (j < 0 ? 0 : j >= limit ? limit - 1 : j)
 	int first_pixel = clamp_pixel(left);
 	int last_pixel = clamp_pixel(right);
-#endif
 	CONTRIB *p;
 
 	if_debug4('w', "[w]i=%d, i+offset=%lg scale=%lg center=%lg : ", starting_output_index + i, 
