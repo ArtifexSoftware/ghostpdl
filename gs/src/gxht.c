@@ -237,7 +237,12 @@ gx_render_ht_1_level(gx_ht_cache * pcache, int b_level)
 {
     const gx_ht_order *porder = &pcache->order;
     int level = porder->levels[b_level];
-    gx_ht_tile *bt = &pcache->ht_tiles[level];
+    gx_ht_tile *bt;
+
+    if (pcache->num_cached < porder->num_levels )
+	bt = &pcache->ht_tiles[level / pcache->levels_per_tile];
+    else
+	bt =  &pcache->ht_tiles[b_level];	/* one tile per b_level */
 
     if (bt->level != level) {
 	int code = render_ht(bt, level, porder, pcache->base_id + b_level);
