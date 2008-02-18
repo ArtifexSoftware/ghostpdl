@@ -951,11 +951,11 @@ wtsimdi_contone_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
  * create_buf_device routine and then we set our custom device procedures.
  */
 static int 
-wtsimdi_create_buf_device(gx_device **pbdev, gx_device *target,
+wtsimdi_create_buf_device(gx_device **pbdev, gx_device *target, int y,
    const gx_render_plane_t *render_plane, gs_memory_t *mem,
    gx_band_complexity_t *band_complexity)
 {
-    int code = gx_default_create_buf_device(pbdev, target, 
+    int code = gx_default_create_buf_device(pbdev, target, y,
 	render_plane, mem, band_complexity);
     /* Now set our custom device procedures. */
     if (band_complexity && band_complexity->nontrivial_rops) {
