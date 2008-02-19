@@ -129,6 +129,7 @@ gsstype_h=$(GLSRC)gsstype.h
 gx_h=$(GLSRC)gx.h $(stdio__h) $(gdebug_h)\
  $(gserror_h) $(gsio_h) $(gsmemory_h) $(gstypes_h)
 gxsync_h=$(GLSRC)gxsync.h $(gpsync_h) $(gsmemory_h)
+gxclthrd_h=$(GLSRC)gxclthrd.h $(GLSRC)gxsync.h $(gpsync_h) $(gsmemory_h)
 # Out of order
 gsmemlok_h=$(GLSRC)gsmemlok.h $(gsmemory_h) $(gxsync_h)
 gsnotify_h=$(GLSRC)gsnotify.h $(gsstype_h)
@@ -1642,7 +1643,7 @@ clist_=$(clbase1_) $(clbase2_) $(clbase3_) $(clbase4_) $(clpath_)
 # clfile works for page clist iff it is included.
 
 $(GLD)clist.dev : $(LIB_MAK) $(ECHOGS_XE) $(clist_)\
- $(GLD)cl$(BAND_LIST_STORAGE).dev\
+ $(GLD)cl$(BAND_LIST_STORAGE).dev $(GLD)clthread$(CLIST_THREADS).dev\
  $(GLD)clmemory.dev\
  $(GLD)cfe.dev $(GLD)cfd.dev $(GLD)rle.dev $(GLD)rld.dev $(GLD)psl2cs.dev
 	$(SETMOD) $(GLD)clist $(clbase1_)
@@ -1650,7 +1651,7 @@ $(GLD)clist.dev : $(LIB_MAK) $(ECHOGS_XE) $(clist_)\
 	$(ADDMOD) $(GLD)clist -obj $(clbase3_)
 	$(ADDMOD) $(GLD)clist -obj $(clbase4_)
 	$(ADDMOD) $(GLD)clist -obj $(clpath_)
-	$(ADDMOD) $(GLD)clist -include $(GLD)cl$(BAND_LIST_STORAGE)
+	$(ADDMOD) $(GLD)clist -include $(GLD)cl$(BAND_LIST_STORAGE) $(GLD)clthread$(CLIST_THREADS)
 	$(ADDMOD) $(GLD)clist -include $(GLD)clmemory
 	$(ADDMOD) $(GLD)clist -include $(GLD)cfe $(GLD)cfd $(GLD)rle $(GLD)rld $(GLD)psl2cs
 
@@ -1756,6 +1757,22 @@ $(GLOBJ)gxclzlib.$(OBJ) : $(GLSRC)gxclzlib.c $(std_h)\
  $(gsmemory_h) $(gstypes_h) $(gxclmem_h) $(szlibx_h)
 	$(GLCC) $(GLO_)gxclzlib.$(OBJ) $(C_) $(GLSRC)gxclzlib.c
 
+# Dummy module - clist rendering in same thread as graphics library
+$(GLD)clthread.dev: $(GLOBJ)gxclthrd.$(OBJ) 
+	$(SETMOD) $(GLD)clthread $(GLOBJ)gxclthrd.$(OBJ)
+
+$(GLOBJ)gxclthrd.$(OBJ) :  $(GLSRC)gxclthrd.c $(gxclist_h)
+	$(GLCC) $(GLO_)gxclthrd.$(OBJ) $(C_) $(GLSRC)gxclthrd.c
+
+# Support for multiple clist rendering threads.
+$(GLD)clthread1.dev: $(GLOBJ)gxclthrd1.$(OBJ) $(GLD)$(SYNC).dev
+	$(SETMOD) $(GLD)clthread1 $(GLOBJ)gxclthrd1.$(OBJ)
+	$(ADDMOD) $(GLD)clthread1 -include $(GLD)$(SYNC).dev
+
+$(GLOBJ)gxclthrd1.$(OBJ) :  $(GLSRC)gxclthrd1.c $(gxclist_h) $(gxsync_h) $(gxclthrd_h)
+	$(GLCC) $(GLO_)gxclthrd1.$(OBJ) $(C_) $(GLSRC)gxclthrd1.c
+
+
 # ---------------- Vector devices ---------------- #
 # We include this here for the same reasons as page.dev.
 
@@ -1787,7 +1804,7 @@ $(GLOBJ)siinterp.$(OBJ) : $(GLSRC)siinterp.c $(AK)\
 	$(GLCC) $(GLO_)siinterp.$(OBJ) $(C_) $(GLSRC)siinterp.c
 
 $(GLOBJ)siscale.$(OBJ) : $(GLSRC)siscale.c $(AK)\
- $(math__h) $(memory__h) $(stdio__h) $(gdebug_h)\
+ $(math__h) $(memory__h) $(stdio__h) $(stdint__h) $(gdebug_h)\
  $(siscale_h) $(strimpl_h)
 	$(GLCC) $(GLO_)siscale.$(OBJ) $(C_) $(GLSRC)siscale.c
 
@@ -2284,7 +2301,7 @@ $(GLD)psl2lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(psl2lib_)\
 	$(ADDMOD) $(GLD)psl2lib -include $(GLD)colimlib $(GLD)psl2cs
 
 $(GLOBJ)gxiscale.$(OBJ) : $(GLSRC)gxiscale.c $(GXERR)\
- $(math__h) $(memory__h) $(gpcheck_h)\
+ $(math__h) $(memory__h) $(stdint__h) $(gpcheck_h)\
  $(gsccolor_h) $(gspaint_h)\
  $(gxarith_h) $(gxcmap_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h)\
  $(gxdevmem_h) $(gxfixed_h) $(gxfrac_h) $(gximage_h) $(gxistate_h)\

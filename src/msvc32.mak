@@ -300,7 +300,7 @@ USE_LARGE_COLOR_INDEX=1
 LARGEST_UINTEGER_TYPE=unsigned __int64
 GX_COLOR_INDEX_TYPE=$(LARGEST_UINTEGER_TYPE)
 
-CFLAGS=$(CFLAGS) /DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)"
+CFLAGS=$(CFLAGS) /DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)" $(MEMWRAP)
 !endif
 
 # -W3 generates too much noise.
@@ -624,6 +624,11 @@ BAND_LIST_STORAGE=file
 BAND_LIST_COMPRESSOR=zlib
 !endif
 
+# Choose whether or not to support rendering bands in multiple threads
+# to improve performance on multi-core systems. CLIST_THREADS=1 to enable.
+# default to single thread clist rendering by leaving the macro as ""
+### CLIST_THREADS=1
+
 # Choose the implementation of file I/O: 'stdio', 'fd', or 'both'.
 # See gs.mak and sfxfd.c for more details.
 
@@ -670,6 +675,10 @@ DEVICE_DEVS21= $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.dev $(DD)bmpsep8.
 UFST_CFLAGS=-DMSVC
 
 # ---------------------------- End of options ---------------------------- #
+
+!if $(CLIST_THREADS) == 1
+CFLAGS=$(CFLAGS) /DUSE_LOCKING_MEMORY_WRAPPER
+!endif
 
 # Define the name of the makefile -- used in dependencies.
 

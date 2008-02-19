@@ -471,7 +471,7 @@ clist_reset(gx_device * dev)
  * Initialize the device state (for writing).  This routine requires only
  * data, data_size, and target to be set, and is idempotent.
  */
-static int
+int
 clist_init(gx_device * dev)
 {
     gx_device_clist_writer * const cdev =
@@ -625,8 +625,12 @@ clist_open(gx_device *dev)
     if (code < 0)
 	return code;
     code = clist_open_output_file(dev);
-    if ( code >= 0)
+    if ( code >= 0) {
 	code = clist_emit_page_header(dev);
+	dev->procs = gs_clist_device_procs;	/* Must be before enabling multi-threading */
+						/* which may change get_bits_rectangle */
+    }
+    clist_enable_multi_thread_render(dev);	/* if this fails, single thread will be used */
     return code;
 }
 
@@ -661,9 +665,12 @@ clist_finish_page(gx_device *dev, bool flush)
 
     /* If this is a reader clist, which is about to be reset to a writer,
      * free any band_complexity_array memory used by same.
+     * since we have been rendering, shut down threads
      */
-    if (!CLIST_IS_WRITER((gx_device_clist *)dev))
-       	gx_clist_reader_free_band_complexity_array( (gx_device_clist *)dev );
+    if (!CLIST_IS_WRITER((gx_device_clist *)dev)) {
+	gx_clist_reader_free_band_complexity_array( (gx_device_clist *)dev );
+	clist_teardown_render_threads(dev);
+    }
 
     if (flush) {
 	if (cdev->page_cfile != 0)
