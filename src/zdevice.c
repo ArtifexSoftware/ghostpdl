@@ -342,6 +342,11 @@ zoutputpage(i_ctx_t *i_ctx_p)
 
     check_type(op[-1], t_integer);
     check_type(*op, t_boolean);
+    if (gs_debug[':']) {
+	gs_main_instance *minst = get_minst_from_memory((gs_memory_t *)i_ctx_p->memory.current->non_gc_memory);
+
+	print_resource_usage(minst, &(i_ctx_p->memory), "Outputpage start");
+    }
 #ifdef PSI_INCLUDED
     code = ps_end_page_top(imemory,
 			   (int)op[-1].value.intval, op->value.boolval);
@@ -355,7 +360,7 @@ zoutputpage(i_ctx_t *i_ctx_p)
     if (gs_debug[':']) {
 	gs_main_instance *minst = get_minst_from_memory((gs_memory_t *)i_ctx_p->memory.current->non_gc_memory);
 
-	print_resource_usage(minst, &(i_ctx_p->memory), "Outputpage");
+	print_resource_usage(minst, &(i_ctx_p->memory), "Outputpage end");
     }
     return 0;
 }
