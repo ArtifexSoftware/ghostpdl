@@ -89,9 +89,9 @@ gs_memory_locked_init(
 {
     lmem->stable_memory = 0;
     lmem->procs = locked_procs;
-
     lmem->target = target;
     lmem->gs_lib_ctx = target->gs_lib_ctx;
+    lmem->non_gc_memory = (gs_memory_t *)lmem;
 
     /* Allocate a monitor to serialize access to structures within */
     lmem->monitor = gx_monitor_alloc(target);

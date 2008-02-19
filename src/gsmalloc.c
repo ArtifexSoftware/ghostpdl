@@ -427,12 +427,11 @@ gs_heap_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
 int
 gs_malloc_wrap(gs_memory_t **wrapped, gs_malloc_memory_t *contents)
 {
-#ifdef USE_RETRY_AND_LOCKING_MEMORY_WRAPPERS
+#ifdef USE_LOCKING_MEMORY_WRAPPER
     gs_memory_t *cmem = (gs_memory_t *)contents;
     gs_memory_locked_t *lmem = (gs_memory_locked_t *)
 	gs_alloc_bytes_immovable(cmem, sizeof(gs_memory_locked_t),
 				 "gs_malloc_wrap(locked)");
-    gs_memory_retrying_t *rmem;
     int code;
 
     if (lmem == 0)
@@ -442,26 +441,38 @@ gs_malloc_wrap(gs_memory_t **wrapped, gs_malloc_memory_t *contents)
 	gs_free_object(cmem, lmem, "gs_malloc_wrap(locked)");
 	return code;
     }
+    *wrapped = (gs_memory_t *)lmem;
 
-    rmem = (gs_memory_retrying_t *)
-	gs_alloc_bytes_immovable((gs_memory_t *)lmem,
-				 sizeof(gs_memory_retrying_t),
-				 "gs_malloc_wrap(retrying)");
-    if (rmem == 0) {
-	gs_memory_locked_release(lmem);
-	gs_free_object(cmem, lmem, "gs_malloc_wrap(locked)");
-	return_error(gs_error_VMerror);
-    }
-    code = gs_memory_retrying_init(rmem, (gs_memory_t *)lmem);
-    if (code < 0) {
-	gs_free_object((gs_memory_t *)lmem, rmem, "gs_malloc_wrap(retrying)");
-	gs_memory_locked_release(lmem);
-	gs_free_object(cmem, lmem, "gs_malloc_wrap(locked)");
-	return code;
-    }
+#  ifdef USE_RETRY_MEMORY_WRAPPER
+    /*
+     * This is deprecated since 'retry' for clist reversion/cycling
+     * will ONLY work for monochrome, simple PS or PCL, not for a
+     * color device and not for PDF or XPS with transparency
+     */
+    {
+	gs_memory_retrying_t *rmem;
+	rmem = (gs_memory_retrying_t *)
+	    gs_alloc_bytes_immovable((gs_memory_t *)lmem,
+				     sizeof(gs_memory_retrying_t),
+				     "gs_malloc_wrap(retrying)");
+	if (rmem == 0) {
+	    gs_memory_locked_release(lmem);
+	    gs_free_object(cmem, lmem, "gs_malloc_wrap(locked)");
+	    return_error(gs_error_VMerror);
+	}
+	code = gs_memory_retrying_init(rmem, (gs_memory_t *)lmem);
+	if (code < 0) {
+	    gs_free_object((gs_memory_t *)lmem, rmem, "gs_malloc_wrap(retrying)");
+	    gs_memory_locked_release(lmem);
+	    gs_free_object(cmem, lmem, "gs_malloc_wrap(locked)");
+	    return code;
+	}
 
-    *wrapped = (gs_memory_t *)rmem;
-#endif 
+	*wrapped = (gs_memory_t *)rmem;
+    }
+#  endif /* retrying */
+
+#endif /* locking */
     return 0;
 }
 
@@ -469,35 +480,46 @@ gs_malloc_wrap(gs_memory_t **wrapped, gs_malloc_memory_t *contents)
 gs_malloc_memory_t *
 gs_malloc_wrapped_contents(gs_memory_t *wrapped)
 {
-#ifdef USE_RETRY_AND_LOCKING_MEMORY_WRAPPERS
-    gs_memory_retrying_t *rmem = (gs_memory_retrying_t *)wrapped;
-    gs_memory_locked_t *lmem =
-	(gs_memory_locked_t *)gs_memory_retrying_target(rmem);
-    if (lmem) 
-	return (gs_malloc_memory_t *)gs_memory_locked_target(lmem);
-    return (gs_malloc_memory_t *) wrapped;
-#else
+#ifdef USE_LOCKING_MEMORY_WRAPPER
+#  ifdef USE_RETRY_MEMORY_WRAPPER
+	    gs_memory_retrying_t *rmem = (gs_memory_retrying_t *)wrapped;
+	    gs_memory_locked_t *lmem =
+		(gs_memory_locked_t *)gs_memory_retrying_target(rmem);
+#  else /* retrying */
+	    gs_memory_locked_t *lmem = (gs_memory_locked_t *)wrapped;
+#  endif /* retrying */
+
+	if (lmem) 
+	    return (gs_malloc_memory_t *)gs_memory_locked_target(lmem);
+	return (gs_malloc_memory_t *) wrapped;
+#else /*locking */
     return (gs_malloc_memory_t *)wrapped;
-#endif 
+#endif /* locking */
 }
 
 /* Free the wrapper, and return the wrapped contents. */
 gs_malloc_memory_t *
 gs_malloc_unwrap(gs_memory_t *wrapped)
 {
-#ifdef USE_RETRY_AND_LOCKING_MEMORY_WRAPPERS
-    gs_memory_retrying_t *rmem = (gs_memory_retrying_t *)wrapped;
-    gs_memory_locked_t *lmem =
-	(gs_memory_locked_t *)gs_memory_retrying_target(rmem);
-    gs_memory_t *contents = gs_memory_locked_target(lmem);
+#ifdef USE_LOCKING_MEMORY_WRAPPER
+#  ifdef USE_RETRY_MEMORY_WRAPPER
+	    gs_memory_retrying_t *rmem = (gs_memory_retrying_t *)wrapped;
+	    gs_memory_locked_t *lmem =
+		(gs_memory_locked_t *)gs_memory_retrying_target(rmem);
+#  else /* retrying */
+	    gs_memory_locked_t *lmem = (gs_memory_locked_t *)wrapped;
+#  endif /* retrying */
+	gs_memory_t *contents = gs_memory_locked_target(lmem);
 
-    gs_free_object((gs_memory_t *)lmem, rmem, "gs_malloc_unwrap(retrying)");
-    gs_memory_locked_release(lmem);
-    gs_free_object(contents, lmem, "gs_malloc_unwrap(locked)");
-    return (gs_malloc_memory_t *)contents;
-#else
+#  ifdef USE_RETRY_MEMORY_WRAPPER
+	    gs_free_object((gs_memory_t *)lmem, rmem, "gs_malloc_unwrap(retrying)");
+#  endif /* retrying */
+	gs_memory_locked_release(lmem);
+	gs_free_object(contents, lmem, "gs_malloc_unwrap(locked)");
+	return (gs_malloc_memory_t *)contents;
+#else /*locking */
     return (gs_malloc_memory_t *)wrapped;
-#endif 
+#endif /* locking */
 }
 
 
@@ -513,7 +535,7 @@ gs_malloc_init(const gs_memory_t *parent)
     else 
         gs_lib_ctx_init((gs_memory_t *)malloc_memory_default);
 
-#ifdef USE_RETRY_AND_LOCKING_MEMORY_WRAPPERS
+#if defined(USE_LOCKING_MEMORY_WRAPPER) || defined(USE_RETRY_MEMORY_WRAPPER)
     gs_malloc_wrap(&memory_t_default, malloc_memory_default);
 #else
     memory_t_default = (gs_memory_t *)malloc_memory_default;
@@ -526,7 +548,7 @@ gs_malloc_init(const gs_memory_t *parent)
 void
 gs_malloc_release(gs_memory_t *mem)
 {
-#ifdef USE_RETRY_AND_LOCKING_MEMORY_WRAPPERS
+#if defined(USE_LOCKING_MEMORY_WRAPPER) || defined(USE_RETRY_MEMORY_WRAPPER)
     gs_malloc_memory_t * malloc_memory_default = gs_malloc_unwrap(mem);
 #else
     gs_malloc_memory_t * malloc_memory_default = (gs_malloc_memory_t *)mem;
