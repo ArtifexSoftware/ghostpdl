@@ -31,7 +31,7 @@ typedef struct gs_pattern_instance_s gs_pattern_instance_t;
  * hexachrome DeviceN color spaces.  It is currently set to the same
  * value as Adobe CPSI can handle 
  */
-#define GS_CLIENT_COLOR_MAX_COMPONENTS (252)
+#define GS_CLIENT_COLOR_MAX_COMPONENTS (6)
 
 /* Paint (non-Pattern) colors */
 typedef struct gs_paint_color_s {
