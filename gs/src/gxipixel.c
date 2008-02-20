@@ -191,7 +191,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     const int bps = pim->BitsPerComponent;
     bool masked = penum->masked;
     const float *decode = pim->Decode;
-    gs_matrix mat;
+    gs_matrix_double mat;
     int index_bps;
     const gs_color_space *pcs = pim->ColorSpace;
     gs_logical_operation_t lop = (pis ? pis->log_op : lop_default);
@@ -209,13 +209,19 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     penum->Height = height;
     if (pmat == 0)
 	pmat = &ctm_only(pis);
-    if ((code = gs_matrix_invert(&pim->ImageMatrix, &mat)) < 0 ||
-	(code = gs_matrix_multiply(&mat, pmat, &mat)) < 0
+    if ((code = gs_matrix_invert_to_double(&pim->ImageMatrix, &mat)) < 0 ||
+	(code = gs_matrix_multiply_double(&mat, pmat, &mat)) < 0
 	) {
 	gs_free_object(mem, penum, "gx_default_begin_image");
 	return code;
     }
-    penum->matrix = mat;
+    /*penum->matrix = mat;*/
+    penum->matrix.xx = mat.xx;
+    penum->matrix.xy = mat.xy;
+    penum->matrix.yx = mat.yx;
+    penum->matrix.yy = mat.yy;
+    penum->matrix.tx = mat.tx;
+    penum->matrix.ty = mat.ty;
     if_debug6('b', " [%g %g %g %g %g %g]\n",
 	      mat.xx, mat.xy, mat.yx, mat.yy, mat.tx, mat.ty);
     /* following works for 1, 2, 4, 8, 12, 16 */
@@ -520,8 +526,12 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	penum->dst_height = col_extent.y;
 	penum->yi0 = fixed2int_pixround_perfect(dda_current(penum->dda.row.y)); /* For gs_image_class_0_interpolate. */
 	if (penum->rect.y) {
-	    dda_advance(penum->dda.row.x, penum->rect.y);
-	    dda_advance(penum->dda.row.y, penum->rect.y);
+	    int y = penum->rect.y;
+
+	    while (y--) {
+		dda_next(penum->dda.row.x);
+		dda_next(penum->dda.row.y);
+	    }
 	}
 	penum->cur.x = penum->prev.x = dda_current(penum->dda.row.x);
 	penum->cur.y = penum->prev.y = dda_current(penum->dda.row.y);

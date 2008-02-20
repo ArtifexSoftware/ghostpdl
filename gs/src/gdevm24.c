@@ -108,6 +108,7 @@ mem_true24_fill_rectangle(gx_device * dev,
     declare_unpack_color(r, g, b, color);
     declare_scan_ptr(dest);
 
+    if_debug2('b', "[b]device y=%d h=%d\n", y + mdev->band_y, h);
     /*
      * In order to avoid testing w > 0 and h > 0 twice, we defer
      * executing setup_rect, and use fit_fill_xywh instead of

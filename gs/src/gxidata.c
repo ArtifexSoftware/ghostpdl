@@ -156,8 +156,8 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
 			yn += adjust;
 			if (yn <= penum->clip_outer.p.y)
 			    goto mt;
-			penum->yci = fixed2int_pixround(yc);
-			penum->hci = fixed2int_pixround(yn) - penum->yci;
+			penum->yci = fixed2int_pixround_perfect(yc);
+			penum->hci = fixed2int_pixround_perfect(yn) - penum->yci;
 			if (penum->hci == 0)
 			    goto mt;
 			if_debug2('b', "[b]yci=%d, hci=%d\n",
@@ -181,8 +181,8 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
 			xn += adjust;
 			if (xn <= penum->clip_outer.p.x)
 			    goto mt;
-			penum->xci = fixed2int_pixround(xc);
-			penum->wci = fixed2int_pixround(xn) - penum->xci;
+			penum->xci = fixed2int_pixround_perfect(xc);
+			penum->wci = fixed2int_pixround_perfect(xn) - penum->xci;
 			if (penum->wci == 0)
 			    goto mt;
 			if_debug2('b', "[b]xci=%d, wci=%d\n",
