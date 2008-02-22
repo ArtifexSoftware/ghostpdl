@@ -219,8 +219,8 @@ calculate_contrib(
 	int center_denom = dst_size; 
 	int64_t center_num = /* center * center_denom = */ 
 	    (starting_output_index  + i) * src_size + dst_y_offset_fraction_num - (center_denom / 2);
-	int left = (int)((center_num - WidthIn * center_denom + (center_denom - 1)) / center_denom);
-	int right = (int)((center_num + WidthIn * center_denom) / center_denom);
+	int left = (int)ceil((center_num - WidthIn * center_denom) / center_denom);
+	int right = (int)floor((center_num + WidthIn * center_denom) / center_denom);
 	double center = (double)center_num / center_denom;
 #define clamp_pixel(j) (j < 0 ? 0 : j >= limit ? limit - 1 : j)
 	int first_pixel = clamp_pixel(left);
@@ -374,7 +374,21 @@ zoom_y(void /*PixelOut */ *dst, int sizeofPixelOut, uint MaxValueOut,
     if (sizeofPixelOut == 1) {
 	zoom_y_loop(byte)
     } else {			/* sizeofPixelOut == 2 */
-	zoom_y_loop(bits16)
+	//zoom_y_loop(bits16)
+	for ( kc = 0; kc < kn; ++kc ) {
+		AccumTmp weight = 0;
+		{ const PixelTmp *pp = &tmp[kc + first_pixel];
+		  int j = cn;
+		  const CONTRIB *cp = cbp;
+		  for ( ; j > 0; pp += kn, ++cp, --j )
+		    weight += *pp * cp->weight;
+		}
+		{ PixelTmp2 pixel = unscale_AccumTmp(weight, fraction_bits);
+		  if_debug1('W', " %lx", (long)pixel);
+		  ((bits16 *)dst)[kc] =
+		    (bits16)CLAMP(pixel, 0, max_weight);
+		}
+	}
     }
     if_debug0('W', "\n");
 }

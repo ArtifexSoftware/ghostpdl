@@ -842,7 +842,8 @@ $(GLOBJ)gshtscr.$(OBJ) : $(GLSRC)gshtscr.c $(GXERR) $(math__h)\
 
 $(GLOBJ)gsimage.$(OBJ) : $(GLSRC)gsimage.c $(GXERR) $(memory__h) $(math__h)\
  $(gscspace_h) $(gsimage_h) $(gsmatrix_h) $(gsstruct_h) $(gsptype2_h)\
- $(gxarith_h) $(gxdevice_h) $(gxiparam_h) $(gxpath_h) $(gximask_h) $(gzstate_h)
+ $(gxarith_h) $(gxdevice_h) $(gxiparam_h) $(gxpath_h) $(gximask_h) $(gzstate_h)\
+ $(vdtrace_h)
 	$(GLCC) $(GLO_)gsimage.$(OBJ) $(C_) $(GLSRC)gsimage.c
 
 $(GLOBJ)gsimpath.$(OBJ) : $(GLSRC)gsimpath.c $(GXERR)\

@@ -348,6 +348,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 			    case 3:
 				do {
 				    LINE_ACCUM(color, bpp);
+				    vd_pixel(int2fixed(x), int2fixed(ry), color);
 				    x++, psrc += 3;
 				} while (x < xe && psrc[-4] == psrc[0] &&
 				     psrc[-3] == psrc[1] && psrc[-2] == psrc[2] &&
