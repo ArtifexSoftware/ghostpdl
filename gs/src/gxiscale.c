@@ -105,6 +105,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     iss.HeightOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rect.y + penum->rect.h) * 
 						penum->dst_height / penum->Height))
 	- fixed2int_pixround_perfect((fixed)((int64_t)penum->rect.y * penum->dst_height / penum->Height));
+    iss.HeightOut = any_abs(iss.HeightOut);
     iss.WidthIn = penum->rect.w;
     iss.HeightIn = penum->rect.h;
     iss.src_y_offset = penum->rect.y;
