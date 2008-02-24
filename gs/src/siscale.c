@@ -206,19 +206,21 @@ calculate_contrib(
 	/* Here we need :
 	   double scale = (double)dst_size / src_size;
 	   float dst_offset_fraction = floor(dst_offset) - dst_offset;
-	   double center = (starting_output_index  + i + dst_offset_fraction) / scale - 0.5;
+	   double center = (starting_output_index  + i + dst_offset_fraction + 0.5) / scale - 0.5;
 	   int left = (int)ceil(center - WidthIn);
 	   int right = (int)floor(center + WidthIn);
 	   We can't compute 'right' in floats because float arithmetics is not associative.
 	   In older versions tt caused a 1 pixel bias of image bands due to 
-	   rounding direction appears to depend on src_y_offset. So compute in rartionals.
+	   rounding direction appears to depend on src_y_offset. So compute in rationals.
+	   Since pixel center fall to half integers, we subtract 0.5 
+	   in the image space and add 0.5 in the device space.
 	 */
 	int dst_y_offset_fraction_num = (int)((int64_t)src_y_offset * dst_size % src_size) * 2 <= src_size
 			? -(int)((int64_t)src_y_offset * dst_size % src_size)
 			: src_size - (int)((int64_t)src_y_offset * dst_size % src_size);
-	int center_denom = dst_size; 
-	int64_t center_num = /* center * center_denom = */ 
-	    (starting_output_index  + i) * src_size + dst_y_offset_fraction_num - (center_denom / 2);
+	int center_denom = dst_size * 2; 
+	int64_t center_num = /* center * center_denom * 2 = */ 
+	    (starting_output_index  + i) * src_size * 2 + src_size + dst_y_offset_fraction_num * 2 - dst_size;
 	int left = (int)ceil((center_num - WidthIn * center_denom) / center_denom);
 	int right = (int)floor((center_num + WidthIn * center_denom) / center_denom);
 	double center = (double)center_num / center_denom;
