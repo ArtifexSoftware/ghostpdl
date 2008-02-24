@@ -1194,9 +1194,15 @@ $(GLOBJ)gp_strdl.$(OBJ) : $(GLSRC)gp_strdl.c $(AK) $(std_h) $(gp_h)\
 # Currently only the high-level drivers use these, but more drivers will
 # probably use them eventually.
 
-sfile_=$(GLOBJ)sfx$(FILE_IMPLEMENTATION).$(OBJ) $(GLOBJ)stream.$(OBJ)
+sfile_=$(GLOBJ)sfx$(FILE_IMPLEMENTATION).$(OBJ) $(GLOBJ)sfxcommon.$(OBJ)\
+ $(GLOBJ)stream.$(OBJ)
+
 $(GLD)sfile.dev : $(LIB_MAK) $(ECHOGS_XE) $(sfile_)
 	$(SETMOD) $(GLD)sfile $(sfile_)
+
+$(GLOBJ)sfxcommon.$(OBJ) : $(GLSRC)sfxcommon.c $(AK) $(stdio__h) $(memory__h)\
+ $(unistd__h) $(gsmemory_h) $(gp_h) $(stream_h) $(gserror_h) $(gserrors_h)
+	$(GLCC) $(GLO_)sfxcommon.$(OBJ) $(C_) $(GLSRC)sfxcommon.c
 
 $(GLOBJ)sfxstdio.$(OBJ) : $(GLSRC)sfxstdio.c $(AK) $(stdio__h) $(memory__h)\
  $(unistd__h) $(gdebug_h) $(gpcheck_h) $(stream_h) $(strimpl_h)
