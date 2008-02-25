@@ -231,6 +231,7 @@ psf2lib.dev: igor
 psgray.dev: igor
 psi.dev: ray and henry
 psl2cs.dev: ralph
+psl2lib.dev: ralph and alex
 psmono.dev: igor
 psrgb.dev: igor
 pswrite.dev: igor
@@ -315,5 +316,20 @@ xps.dev: tor
 zfrsd.dev: alex
 zlibd.dev: third party
 zlibe.dev: third party
-windows makefiles:ray
+
+General (high level) Ownership
+--------------------
+
+color:ralph
+fonts:igor
+gslite:henry
+images:alex
+memory:igor
 non windows makefiles:ralph
+pcl, pxl, pl:henry
+pdf interpreter:alex
+ps, pdf, eps write:ken
+vectors:igor
+windows makefiles:ray
+xps:tor
+
