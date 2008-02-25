@@ -23,7 +23,7 @@ rem appears before other options.
 :run
 echo -sOutputFile#%2 >>_.at2
 copy /b /y _.at2+_.at >NUL
-echo -c .setpdfwrite -f %1 >>_.at2
+echo -c .setpdfwrite -f%1 >>_.at2
 %GSC% @_.at @_.at2
 goto end
 
