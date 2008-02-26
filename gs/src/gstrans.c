@@ -435,8 +435,6 @@ gx_init_transparency_mask(gs_imager_state * pis,
     case TRANSPARENCY_CHANNEL_Shape: ptm = &pis->shape; break;
     default: return_error(gs_error_rangecheck);
     }
-    rc_decrement_only(ptm->mask, "gs_init_transparency_mask");
-    ptm->mask = 0;
     return 0;
 }
 

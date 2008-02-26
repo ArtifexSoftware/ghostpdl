@@ -60,7 +60,6 @@ typedef struct gs_function_s gs_function_t;
 
 typedef struct gs_transparency_source_s {
     float alpha;		/* constant alpha */
-    gs_transparency_mask_t *mask;
 } gs_transparency_source_t;
 
 struct gs_pdf14trans_params_s {
