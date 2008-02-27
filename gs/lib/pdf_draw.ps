@@ -433,7 +433,6 @@ end
   gsave //nodict begin
   null SMask
   1 .setopacityalpha 1 .setshapealpha
-  0 .inittransparencymask 1 .inittransparencymask
   /Compatible .setblendmode
 	% Execute the body of the Form, similar to DoForm.
   pdfopdict .pdfruncontext
@@ -1080,7 +1079,6 @@ end
     gsave //nodict begin
     null /SoftMask gput
     1 .setopacityalpha 1 .setshapealpha
-    0 .inittransparencymask 1 .inittransparencymask
     /Compatible .setblendmode
     DoImage
     end grestore
