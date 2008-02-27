@@ -408,36 +408,6 @@ gs_discard_transparency_layer(gs_state *pgs)
     return 0;
 }
 
-int
-gs_init_transparency_mask(gs_state *pgs,
-			  gs_transparency_channel_selector_t csel)
-{
-    gs_pdf14trans_params_t params = { 0 };
-
-    if_debug2('v', "[v](0x%lx)gs_init_transparency_mask(%d)\n", (ulong)pgs,
-	      (int)csel);
-
-    params.pdf14_op = PDF14_INIT_TRANS_MASK;
-    params.csel = csel;
-    return gs_state_update_pdf14trans(pgs, &params);
-}
-
-int
-gx_init_transparency_mask(gs_imager_state * pis,
-				const gs_pdf14trans_params_t * pparams)
-{
-    gs_transparency_source_t *ptm;
-
-    if_debug2('v', "[v](0x%lx)gx_init_transparency_mask(%d)\n", (ulong)pis,
-	      (int)pparams->csel);
-    switch (pparams->csel) {
-    case TRANSPARENCY_CHANNEL_Opacity: ptm = &pis->opacity; break;
-    case TRANSPARENCY_CHANNEL_Shape: ptm = &pis->shape; break;
-    default: return_error(gs_error_rangecheck);
-    }
-    return 0;
-}
-
 /*
  * We really only care about the number of spot colors when we have
  * a device which supports spot colors.  With the other devices we use

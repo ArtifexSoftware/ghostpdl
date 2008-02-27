@@ -2063,9 +2063,6 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_imager_state * pis,
 	case PDF14_END_TRANS_GROUP:
 	    code = gx_end_transparency_group(pis, pdev);
 	    break;
-	case PDF14_INIT_TRANS_MASK:
-	    code = gx_init_transparency_mask(pis, &params);
-	    break;
 	case PDF14_BEGIN_TRANS_MASK:
 	    code = gx_begin_transparency_mask(pis, pdev, &params);
 	    break;
@@ -2889,9 +2886,6 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize)
 	    put_value(pbuf, pparams->shape.alpha);
 	    put_value(pbuf, pparams->bbox);	    
 	    break;
-	case PDF14_INIT_TRANS_MASK:
-	    *pbuf++ = pparams->csel;
-	    break;
 	case PDF14_BEGIN_TRANS_MASK:
 	    put_value(pbuf, pparams->subtype);
 	    *pbuf++ = pparams->replacing;
@@ -2999,9 +2993,6 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
 	    read_value(data, params.opacity.alpha);
 	    read_value(data, params.shape.alpha);
 	    read_value(data, params.bbox);
-	    break;
-	case PDF14_INIT_TRANS_MASK:
-	    params.csel = *data++;
 	    break;
 	case PDF14_BEGIN_TRANS_MASK:
 		/* This is the largest transparency parameter at this time (potentially
@@ -3134,7 +3125,7 @@ find_opening_op(int opening_op, gs_composite_t **ppcte, int return_code)
 	    *ppcte = pcte;
 	    if (op == opening_op)
 		return return_code;
-	    if (op != PDF14_INIT_TRANS_MASK && op != PDF14_SET_BLEND_PARAMS) {
+	    if (op != PDF14_SET_BLEND_PARAMS) {
 		if (opening_op == PDF14_BEGIN_TRANS_MASK)
 		    return 0;
 		if (opening_op == PDF14_BEGIN_TRANS_GROUP) {
@@ -3210,10 +3201,6 @@ c_pdf14trans_is_closing(const gs_composite_t * this, gs_composite_t ** ppcte, gx
 	    if (*ppcte == NULL)
 		return 2;
 	    return find_opening_op(PDF14_BEGIN_TRANS_GROUP, ppcte, 6);
-	case PDF14_INIT_TRANS_MASK: 
-	    if (*ppcte == NULL)
-		return 0;
-	    return find_same_op(this, PDF14_INIT_TRANS_MASK, ppcte);
 	case PDF14_BEGIN_TRANS_MASK: 
 	    return 0;
 	case PDF14_END_TRANS_MASK: 

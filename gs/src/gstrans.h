@@ -29,7 +29,6 @@ typedef enum {
     PDF14_POP_DEVICE,
     PDF14_BEGIN_TRANS_GROUP,
     PDF14_END_TRANS_GROUP,
-    PDF14_INIT_TRANS_MASK,
     PDF14_BEGIN_TRANS_MASK,
     PDF14_END_TRANS_MASK,
     PDF14_SET_BLEND_PARAMS
@@ -41,7 +40,6 @@ typedef enum {
     "PDF14_POP_DEVICE       ",\
     "PDF14_BEGIN_TRANS_GROUP",\
     "PDF14_END_TRANS_GROUP  ",\
-    "PDF14_INIT_TRANS_MASK  ",\
     "PDF14_BEGIN_TRANS_MASK ",\
     "PDF14_END_TRANS_MASK   ",\
     "PDF14_SET_BLEND_PARAMS "\
@@ -154,9 +152,6 @@ int gs_begin_transparency_mask(gs_state *pgs,
 int gs_end_transparency_mask(gs_state *pgs,
 			     gs_transparency_channel_selector_t csel);
 
-int gs_init_transparency_mask(gs_state *pgs,
-			      gs_transparency_channel_selector_t csel);
-
 int gs_discard_transparency_layer(gs_state *pgs);
 
 /*
@@ -166,9 +161,6 @@ int gx_begin_transparency_group(gs_imager_state * pis, gx_device * pdev,
 				const gs_pdf14trans_params_t * pparams);
 
 int gx_end_transparency_group(gs_imager_state * pis, gx_device * pdev);
-
-int gx_init_transparency_mask(gs_imager_state * pis,
-				const gs_pdf14trans_params_t * pparams);
 
 int gx_begin_transparency_mask(gs_imager_state * pis, gx_device * pdev,
 				const gs_pdf14trans_params_t * pparams);

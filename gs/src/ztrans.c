@@ -337,13 +337,6 @@ zendtransparencymask(i_ctx_t *i_ctx_p)
     return mask_op(i_ctx_p, gs_end_transparency_mask);
 }
 
-/* <mask#> .inittransparencymask - */
-static int
-zinittransparencymask(i_ctx_t *i_ctx_p)
-{
-    return mask_op(i_ctx_p, gs_init_transparency_mask);
-}
-
 /* ------ Soft-mask images ------ */
 
 /* <dict> .image3x - */
@@ -478,7 +471,6 @@ const op_def ztrans2_op_defs[] = {
     {"5.begintransparencymaskimage", zbegintransparencymaskimage},
     {"0.discardtransparencymask", zdiscardtransparencymask},
     {"1.endtransparencymask", zendtransparencymask},
-    {"1.inittransparencymask", zinittransparencymask},
     {"1.image3x", zimage3x},
     {"1.pushpdf14devicefilter", zpushpdf14devicefilter},
     {"0.poppdf14devicefilter", zpoppdf14devicefilter},
