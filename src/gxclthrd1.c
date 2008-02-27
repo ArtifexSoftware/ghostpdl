@@ -117,6 +117,7 @@ clist_setup_render_threads(gx_device *dev, int y)
 	((gx_device_printer *)ncdev)->buffer_memory = ncdev->memory =
 		ncdev->bandlist_memory = mem;
 	gs_c_param_list_read(&paramlist);
+	ndev->PageCount = dev->PageCount;	/* copy to prevent mismatch error */
 	if ((code = gs_putdeviceparams(ndev, (gs_param_list *)&paramlist)) < 0)
 	    break;
 	ncdev->page_uses_transparency = cdev->page_uses_transparency;
@@ -174,7 +175,18 @@ clist_setup_render_threads(gx_device *dev, int y)
 	gs_free_object(mem, crdev->render_threads, "clist_setup_render_threads");
 	crdev->render_threads = NULL;
 	pdev->num_render_threads_requested = 0;	/* shut down thread support */
-	return_error(gs_error_VMerror);
+	/* restore the file pointers */
+	if (cdev->page_cfile == NULL) {
+	    char fmode[4];
+
+	    strcpy(fmode, "w+");
+	    strcat(fmode, gp_fmode_binary_suffix);
+	    cdev->page_info.io_procs->fopen(cdev->page_cfname, fmode, &cdev->page_cfile,
+				mem, cdev->bandlist_memory, true);
+	    cdev->page_info.io_procs->fopen(cdev->page_bfname, fmode, &cdev->page_bfile,
+				mem, cdev->bandlist_memory, false);
+	}
+	return_error(code);
     }
     crdev->num_render_threads = i;
     crdev->curr_render_thread = 0;
