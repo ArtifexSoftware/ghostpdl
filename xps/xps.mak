@@ -127,7 +127,7 @@ XPS_OBJS=\
     $(XPSOBJ)xpscff.$(OBJ) \
 
 # NB - note this is a bit squirrely.  Right now the pjl interpreter is
-  required and shouldn't be and PLOBJ==XPSGEN is required.
+# required and shouldn't be and PLOBJ==XPSGEN is required.
 
 $(XPSOBJ)xps.dev: $(XPS_MAK) $(ECHOGS_XE) $(XPS_OBJS) $(XPSGEN)expat.dev \
 		  $(XPSGEN)pl.dev $(XPSGEN)$(PL_SCALER).dev $(XPSGEN)pjl.dev
