@@ -200,7 +200,9 @@ systemdict /.setsafe known { .setsafe } if
 
          % output the page label
          (\() .pagePrefix
-         PageToString .pageCounterType known { % format the page number
+         .pageCounterType //null ne dup {
+           PageToString .pageCounterType known and
+         } if { % format the page number
            .pageCounter dup 0 gt { % don't try to format nonpositive numbers
              PageToString .pageCounterType get exec
            } {

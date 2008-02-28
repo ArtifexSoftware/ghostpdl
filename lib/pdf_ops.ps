@@ -250,11 +250,11 @@ nodict readonly pop
 % Establish a given color (and color space) as current.
 /.settransparencyparams {	% <alpha> <smask> .settransparencyparams -
   PDFusingtransparency {
-    /.inittransparencymask where {
+    /.begintransparencygroup where {
       pop AlphaIsShape {
-        1 .setopacityalpha 0 .inittransparencymask exch .setshapealpha 1
+        1 .setopacityalpha  exch .setshapealpha 1
       } {
-        1 .setshapealpha 1 .inittransparencymask exch .setopacityalpha 0
+        1 .setshapealpha  exch .setopacityalpha 0
       } ifelse
 	% Set the soft mask by rendering the XObject.  Doing this every time
 	% is obviously very inefficient; we'll improve it later.
@@ -269,7 +269,7 @@ nodict readonly pop
 /.settransparencymask {		% <paramdict> <masknum> .settransparencymask -
   exch dup null eq {
     PDFusingtransparency {
-      pop .inittransparencymask
+      pop pop
     } {
       dup /Draw get exec
     } ifelse

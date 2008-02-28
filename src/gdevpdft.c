@@ -346,8 +346,6 @@ gdev_pdf_create_compositor(gx_device *dev,
 		return pdf_begin_transparency_group(pis, pdev, params);
 	    case PDF14_END_TRANS_GROUP:
 		return pdf_end_transparency_group(pis, pdev);
-	    case PDF14_INIT_TRANS_MASK:
-		return gx_init_transparency_mask(pis, params);
 	    case PDF14_BEGIN_TRANS_MASK:
 		return pdf_begin_transparency_mask(pis, pdev, params);
 	    case PDF14_END_TRANS_MASK:

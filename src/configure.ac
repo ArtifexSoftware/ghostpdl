@@ -232,7 +232,7 @@ if test "$enable_fontconfig" != "no"; then
 	if test -z "$HAVE_FONTCONFIG"; then
 		AC_CHECK_LIB([fontconfig], [FcInitLoadConfigAndFonts], [
 		  AC_CHECK_HEADER([fontconfig/fontconfig.h], [
-		    FONTCONFIG_LIBS="-lfontconfg"
+		    FONTCONFIG_LIBS="-lfontconfig"
 		    HAVE_FONTCONFIG="-DHAVE_FONTCONFIG"
 		  ])
 		])

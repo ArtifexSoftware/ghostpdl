@@ -16,6 +16,7 @@
 #include "gx.h"
 #include "math_.h"
 #include "memory_.h"
+#include "stdint_.h"
 #include "gpcheck.h"
 #include "gserrors.h"
 #include "gxfixed.h"
@@ -101,12 +102,17 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     iss.BitsPerComponentOut = sizeof(frac) * 8;
     iss.MaxValueOut = frac_1;
     iss.WidthOut = (int)ceil(fabs(dst_xy.x));
-    iss.HeightOut = (int)ceil(fabs(dst_xy.y));
+    iss.HeightOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rect.y + penum->rect.h) * 
+						penum->dst_height / penum->Height))
+	- fixed2int_pixround_perfect((fixed)((int64_t)penum->rect.y * penum->dst_height / penum->Height));
+    iss.HeightOut = any_abs(iss.HeightOut);
     iss.WidthIn = penum->rect.w;
     iss.HeightIn = penum->rect.h;
-    iss.xscale = any_abs((float)penum->dst_width / penum->Width / fixed_1);
-    iss.yscale = any_abs((float)penum->dst_height / penum->Height / fixed_1);
-    iss.dst_y_offset = penum->rect.y * iss.yscale;
+    iss.src_y_offset = penum->rect.y;
+    iss.EntireWidthIn = penum->Width;
+    iss.EntireHeightIn = penum->Height;
+    iss.EntireWidthOut = fixed2int_pixround(any_abs(penum->dst_width));
+    iss.EntireHeightOut = fixed2int_pixround(any_abs(penum->dst_height));
     pccs = cs_concrete_space(pcs, pis);
     iss.Colors = cs_num_components(pccs);
     if (penum->bps <= 8 && penum->device_color) {
@@ -182,7 +188,9 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
 	    dda_advance(x0, penum->rect.w);
 	penum->xyi.x = fixed2int_pixround(dda_current(x0));
     }
-    penum->xyi.y = fixed2int_pixround(dda_current(penum->dda.pixel0.y));
+    penum->xyi.y = penum->yi0 + fixed2int_pixround_perfect((fixed)((int64_t)penum->rect.y 
+				    * penum->dst_height / penum->Height))
+		* (penum->matrix.yy > 0 ? 1 : -1);
     if_debug0('b', "[b]render=interpolate\n");
     return &image_render_interpolate;
 }
@@ -341,6 +349,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 			    case 3:
 				do {
 				    LINE_ACCUM(color, bpp);
+				    vd_pixel(int2fixed(x), int2fixed(ry), color);
 				    x++, psrc += 3;
 				} while (x < xe && psrc[-4] == psrc[0] &&
 				     psrc[-3] == psrc[1] && psrc[-2] == psrc[2] &&
@@ -372,6 +381,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 		    }
 		}
 		LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
+		/*if_debug1('w', "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
 		penum->line_xy++;
 		if_debug0('B', "\n");
 	    }

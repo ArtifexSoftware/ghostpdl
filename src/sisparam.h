@@ -56,9 +56,11 @@ typedef struct stream_image_scale_params_s {
 				/* 0 < MaxValueOut < 1 << BitsPerComponentOut*/
     int WidthOut, HeightOut;	/* > 0 */
     bool ColorPolarityAdditive;	/* needed by SpecialDownScale filter */
-    double xscale;		/* X scaling factor when the image covers fractional pixels. */
-    double yscale;		/* Y scaling factor when the image covers fractional pixels. */
-    float dst_y_offset;		/* Offset of the subimage due to grid fitting. */
+    int src_y_offset;		/* Offset of the subimage in the source image. */
+    int EntireWidthIn;		/* Height of entire input image. */
+    int EntireHeightIn;		/* Height of entire input image. */
+    int EntireWidthOut;		/* Height of entire output image. */
+    int EntireHeightOut;	/* Height of entire output image. */
 } stream_image_scale_params_t;
 
 /* Define a generic image scaling stream state. */

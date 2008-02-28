@@ -310,7 +310,7 @@ zcvsd(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code = double_params_result(op, 0, NULL);
     double num;
-    char buf[MAX_CHARS + 2];
+    char dot, buf[MAX_CHARS + 2];
     char *str = buf;
     uint len;
     char end;
@@ -321,6 +321,8 @@ zcvsd(i_ctx_t *i_ctx_p)
     len = r_size(op - 1);
     if (len > MAX_CHARS)
 	return_error(e_limitcheck);
+    sprintf(buf, "%f", 1.5);
+    dot = buf[1]; /* locale-dependent */
     memcpy(str, op[-1].value.bytes, len);
     /*
      * We check syntax in the following way: we remove whitespace,
@@ -336,6 +338,11 @@ zcvsd(i_ctx_t *i_ctx_p)
     if (strspn(str, "0123456789+-.dDeE") != len)
 	return_error(e_syntaxerror);
     strcat(str, "$");
+    if (dot != '.') {
+        char *pdot = strchr(str, '.');
+        if (pdot)
+            *pdot = dot;
+    }
     if (sscanf(str, "%lf%c", &num, &end) != 2 || end != '$')
 	return_error(e_syntaxerror);
     return double_result(i_ctx_p, 1, num);
@@ -391,12 +398,14 @@ zdcvs(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     double num;
     int code = double_params(op - 1, 1, &num);
-    char str[MAX_CHARS + 1];
+    char dot, str[MAX_CHARS + 1];
     int len;
 
     if (code < 0)
 	return code;
     check_write_type(*op, t_string);
+    sprintf(str, "%f", 1.5);
+    dot = buf[1]; /* locale-dependent */
     /*
      * To get fully accurate output results for IEEE double-
      * precision floats (53 bits of mantissa), the ANSI
@@ -417,6 +426,12 @@ zdcvs(i_ctx_t *i_ctx_p)
     len = strlen(str);
     if (len > r_size(op))
 	return_error(e_rangecheck);
+    /* Juggling locales isn't thread-safe. Posix me harder. */
+    if (dot != '.') {
+        char *pdot = strchr(str, dot); 
+        if (pdot)
+            *pdot = '.';
+    }
     memcpy(op->value.bytes, str, len);
     op[-1] = *op;
     r_set_size(op - 1, len);

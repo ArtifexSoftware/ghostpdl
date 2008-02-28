@@ -142,8 +142,8 @@ clist_setup_render_threads(gx_device *dev, int y)
 
 	/* create the buf device for this thread, and allocate the semaphores */
 	if ((code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
-				&(thread->bdev),
-				cdev->target, NULL,
+				&(thread->bdev), cdev->target,
+				band*crdev->page_band_height, NULL,
 				mem, clist_get_band_complexity(dev,y)) < 0)) 
 	    break;
 	if ((thread->sema_this = gx_semaphore_alloc(mem)) == NULL ||
@@ -425,7 +425,7 @@ clist_get_bits_rect_mt(gx_device *dev, const gs_int_rect * prect,
 	goto free_thread_out;
     mdata = crdev->data + crdev->page_tile_cache_size;
     if ((code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
-				  &bdev, cdev->target, NULL,
+				  &bdev, cdev->target, y, NULL,
 				  mem, clist_get_band_complexity(dev,y))) < 0 ||
 	(code = crdev->buf_procs.setup_buf_device(bdev, mdata, raster, NULL,
 			    y - crdev->ymin, line_count, crdev->ymax - crdev->ymin)) < 0)
@@ -469,7 +469,7 @@ clist_get_bits_rect_mt(gx_device *dev, const gs_int_rect * prect,
 	uint raster = gx_device_raster(bdev, true);
 
 	code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
-				      &bdev, cdev->target, NULL,
+				      &bdev, cdev->target, y, NULL,
 				      mem, clist_get_band_complexity(dev, y));
 	if (code < 0)
 	    return code;

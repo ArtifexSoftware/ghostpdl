@@ -32,6 +32,7 @@
 #include "gxcpath.h"
 #include "gximage.h"
 #include "gzht.h"
+#include "vdtrace.h"
 
 /* ------ Strategy procedure ------ */
 
@@ -416,8 +417,10 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 	    dev_proc(dev, fill_rectangle);
 	int xmin = fixed2int_pixround(penum->clip_outer.p.x);
 	int xmax = fixed2int_pixround(penum->clip_outer.q.x);
-
 #define xl dda_current(next.x)
+
+	if_debug2('b', "[b]image y=%d  dda.y.Q=%lg\n", penum->y + penum->rect.y, 
+		    penum->dda.row.y.state.Q / 256.);
 	/* Fold the adjustment into xrun and xl, */
 	/* including the +0.5-epsilon for rounding. */
 	xrun = xrun - xa + (fixed_half - fixed_epsilon);
@@ -495,7 +498,8 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 			    }
                             code = gx_fill_rectangle_device_rop(xi, yt, wi, iht,
                                                                  pdevc, dev, lop);
-
+			    vd_rect(int2fixed(xi), int2fixed(yt), int2fixed(xi + wi), int2fixed(yt + iht),
+				0, pdevc->colors.pure /* wrong with halftones */);
 		    }
 		    if (code < 0)
 			goto err;

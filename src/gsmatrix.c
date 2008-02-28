@@ -110,6 +110,41 @@ gs_matrix_multiply(const gs_matrix * pm1, const gs_matrix * pm2, gs_matrix * pmr
     }
     return 0;
 }
+int
+gs_matrix_multiply_double(const gs_matrix_double * pm1, const gs_matrix * pm2, gs_matrix_double * pmr)
+{
+    double xx1 = pm1->xx, yy1 = pm1->yy;
+    double tx1 = pm1->tx, ty1 = pm1->ty;
+    double xx2 = pm2->xx, yy2 = pm2->yy;
+    double xy2 = pm2->xy, yx2 = pm2->yx;
+
+    if (is_xxyy(pm1)) {
+	pmr->tx = tx1 * xx2 + pm2->tx;
+	pmr->ty = ty1 * yy2 + pm2->ty;
+	if (is_fzero(xy2))
+	    pmr->xy = 0;
+	else
+	    pmr->xy = xx1 * xy2,
+		pmr->ty += tx1 * xy2;
+	pmr->xx = xx1 * xx2;
+	if (is_fzero(yx2))
+	    pmr->yx = 0;
+	else
+	    pmr->yx = yy1 * yx2,
+		pmr->tx += ty1 * yx2;
+	pmr->yy = yy1 * yy2;
+    } else {
+	double xy1 = pm1->xy, yx1 = pm1->yx;
+
+	pmr->xx = xx1 * xx2 + xy1 * yx2;
+	pmr->xy = xx1 * xy2 + xy1 * yy2;
+	pmr->yy = yx1 * xy2 + yy1 * yy2;
+	pmr->yx = yx1 * xx2 + yy1 * yx2;
+	pmr->tx = tx1 * xx2 + ty1 * yx2 + pm2->tx;
+	pmr->ty = tx1 * xy2 + ty1 * yy2 + pm2->ty;
+    }
+    return 0;
+}
 
 /* Invert a matrix.  Return gs_error_undefinedresult if not invertible. */
 int
@@ -140,6 +175,37 @@ gs_matrix_invert(const gs_matrix * pm, gs_matrix * pmr)
 	pmr->yy = mxx / det;
 	pmr->tx = (((float)(mty * myx) - (float)(mtx * myy))) / det;
 	pmr->ty = (((float)(mtx * mxy) - (float)(mty * mxx))) / det;
+    }
+    return 0;
+}
+int
+gs_matrix_invert_to_double(const gs_matrix * pm, gs_matrix_double * pmr)
+{				/* We have to be careful about fetch/store order, */
+    /* because pm might be the same as pmr. */
+    if (is_xxyy(pm)) {
+	if (is_fzero(pm->xx) || is_fzero(pm->yy))
+	    return_error(gs_error_undefinedresult);
+	pmr->tx = -(pmr->xx = 1.0 / pm->xx) * pm->tx;
+	pmr->xy = 0.0;
+	pmr->yx = 0.0;
+	pmr->ty = -(pmr->yy = 1.0 / pm->yy) * pm->ty;
+    } else {
+	double mxx = pm->xx, myy = pm->yy, mxy = pm->xy, myx = pm->yx;
+        double mtx = pm->tx, mty = pm->ty;
+	double det = (mxx * myy) - (mxy * myx);
+
+        /*
+         * We are doing the math as floats instead of doubles to reproduce
+	 * the results in page 1 of CET 10-09.ps
+         */
+	if (det == 0)
+	    return_error(gs_error_undefinedresult);
+	pmr->xx = myy / det;
+	pmr->xy = -mxy / det;
+	pmr->yx = -myx / det;
+	pmr->yy = mxx / det;
+	pmr->tx = (((mty * myx) - (mtx * myy))) / det;
+	pmr->ty = (((mtx * mxy) - (mty * mxx))) / det;
     }
     return 0;
 }

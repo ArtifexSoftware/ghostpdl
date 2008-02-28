@@ -16,6 +16,7 @@
 #include "math_.h"
 #include "memory_.h"
 #include "stdio_.h"
+#include "stdint_.h"
 #include "gdebug.h"
 #include "strimpl.h"
 #include "siscale.h"
@@ -68,7 +69,6 @@ typedef struct stream_IScale_state_s {
     /* The init procedure sets the following. */
     int sizeofPixelIn;		/* bytes per input value, 1 or 2 */
     int sizeofPixelOut;		/* bytes per output value, 1 or 2 */
-    double xscale, yscale;
     void /*PixelIn */ *src;
     void /*PixelOut */ *dst;
     PixelTmp *tmp;
@@ -78,7 +78,7 @@ typedef struct stream_IScale_state_s {
     int src_y;
     uint src_offset, src_size;
     int dst_y;
-    float dst_y_offset;
+    int src_y_offset;
     uint dst_offset, dst_size;
     CLIST dst_next_list;	/* for next output value */
     int dst_last_index;		/* highest index used in list */
@@ -161,8 +161,12 @@ calculate_contrib(
 		     double scale,
 	/* Start generating weights for input pixel 'starting_output_index'. */
 		     int starting_output_index,
-	/* Offset of output pixel from the output image start. */
-		     float dst_offset,
+	/* Offset of input subimage from the input image start. */
+		     int src_y_offset,
+	/* Entire output image size. */
+		     int dst_size,
+	/* Entire input image size. */
+		     int src_size,
 	/* Generate 'size' weight lists. */
 		     int size,
 	/* Limit pixel indices to 'limit', for clamping at the edges */
@@ -199,45 +203,34 @@ calculate_contrib(
     npixels = (int)(WidthIn * 2 + 1);
 
     for (i = 0; i < size; ++i) {
-#if 0
-	double center = (starting_output_index + i) / scale;
-	int left = (int)ceil(center - WidthIn);
-	int right = (int)floor(center + WidthIn);
-
-	/*
-	 * In pathological cases, the limit may be much less
-	 * than the support.  We do need to deal with this.
+	/* Here we need :
+	   double scale = (double)dst_size / src_size;
+	   float dst_offset_fraction = floor(dst_offset) - dst_offset;
+	   double center = (starting_output_index  + i + dst_offset_fraction + 0.5) / scale - 0.5;
+	   int left = (int)ceil(center - WidthIn);
+	   int right = (int)floor(center + WidthIn);
+	   We can't compute 'right' in floats because float arithmetics is not associative.
+	   In older versions tt caused a 1 pixel bias of image bands due to 
+	   rounding direction appears to depend on src_y_offset. So compute in rationals.
+	   Since pixel center fall to half integers, we subtract 0.5 
+	   in the image space and add 0.5 in the device space.
 	 */
-#define clamp_pixel(j)\
-  (j < 0 ? (-j >= limit ? limit - 1 : -j) :\
-   j >= limit ? (j >> 1 >= limit ? 0 : (limit - j) + limit - 1) :\
-   j)
-	int lmin =
-	(left < 0 ? 0 : left);
-	int lmax =
-	(left < 0 ? (-left >= limit ? limit - 1 : -left) : left);
-	int rmin =
-	(right >= limit ?
-	 (right >> 1 >= limit ? 0 : (limit - right) + limit - 1) :
-	 right);
-	int rmax =
-	(right >= limit ? limit - 1 : right);
-	int first_pixel = min(lmin, rmin);
-	int last_pixel = max(lmax, rmax);
-#else
-	float dst_offset_fraction = ceil(dst_offset) - dst_offset; /* Compensate 
-				rounding for penum->xyi.y in gs_image_class_0_interpolate. */
-	double center = (starting_output_index  + i + dst_offset_fraction) / scale - 0.5;
-	int left = (int)ceil(center - WidthIn);
-	int right = (int)floor(center + WidthIn);
+	int dst_y_offset_fraction_num = (int)((int64_t)src_y_offset * dst_size % src_size) * 2 <= src_size
+			? -(int)((int64_t)src_y_offset * dst_size % src_size)
+			: src_size - (int)((int64_t)src_y_offset * dst_size % src_size);
+	int center_denom = dst_size * 2; 
+	int64_t center_num = /* center * center_denom * 2 = */ 
+	    (starting_output_index  + i) * src_size * 2 + src_size + dst_y_offset_fraction_num * 2 - dst_size;
+	int left = (int)ceil((center_num - WidthIn * center_denom) / center_denom);
+	int right = (int)floor((center_num + WidthIn * center_denom) / center_denom);
+	double center = (double)center_num / center_denom;
 #define clamp_pixel(j) (j < 0 ? 0 : j >= limit ? limit - 1 : j)
 	int first_pixel = clamp_pixel(left);
 	int last_pixel = clamp_pixel(right);
-#endif
 	CONTRIB *p;
 
-	if_debug4('W', "[W]i=%d, i+offset=%g scale=%lg center=%lg : ", starting_output_index + i, 
-		starting_output_index + i + dst_offset, scale, center);
+	if_debug4('w', "[w]i=%d, i+offset=%lg scale=%lg center=%lg : ", starting_output_index + i, 
+		starting_output_index + i + (double)src_y_offset / src_size * dst_size, scale, center);
 	if (last_pixel > last_index)
 	    last_index = last_pixel;
 	contrib[i].first_pixel = (first_pixel % modulus) * stride;
@@ -257,7 +250,7 @@ calculate_contrib(
 
                 p[k].weight +=
 		    (PixelWeight) (weight * scaled_factor);
-		if_debug2('W', " %d %f", k, (float)p[k].weight);
+		if_debug2('w', " %d %f", k, (float)p[k].weight);
 	    }
 
 	} else {
@@ -271,10 +264,10 @@ calculate_contrib(
 
 		p[k].weight +=
 		    (PixelWeight) (weight * scaled_factor);
-		if_debug2('W', " %d %f", k, (float)p[k].weight);
+		if_debug2('w', " %d %f", k, (float)p[k].weight);
 	    }
 	}
-	if_debug0('W', "\n");
+	if_debug0('w', "\n");
     }
     return last_index;
 }
@@ -383,7 +376,21 @@ zoom_y(void /*PixelOut */ *dst, int sizeofPixelOut, uint MaxValueOut,
     if (sizeofPixelOut == 1) {
 	zoom_y_loop(byte)
     } else {			/* sizeofPixelOut == 2 */
-	zoom_y_loop(bits16)
+	//zoom_y_loop(bits16)
+	for ( kc = 0; kc < kn; ++kc ) {
+		AccumTmp weight = 0;
+		{ const PixelTmp *pp = &tmp[kc + first_pixel];
+		  int j = cn;
+		  const CONTRIB *cp = cbp;
+		  for ( ; j > 0; pp += kn, ++cp, --j )
+		    weight += *pp * cp->weight;
+		}
+		{ PixelTmp2 pixel = unscale_AccumTmp(weight, fraction_bits);
+		  if_debug1('W', " %lx", (long)pixel);
+		  ((bits16 *)dst)[kc] =
+		    (bits16)CLAMP(pixel, 0, max_weight);
+		}
+	}
     }
     if_debug0('W', "\n");
 }
@@ -402,12 +409,14 @@ calculate_dst_contrib(stream_IScale_state * ss, int y)
 {
     uint row_size = ss->params.WidthOut * ss->params.Colors;
     int last_index =
-    calculate_contrib(&ss->dst_next_list, ss->dst_items, ss->yscale,
-		      y, ss->dst_y_offset, 1, ss->params.HeightIn, MAX_ISCALE_SUPPORT, row_size,
+    calculate_contrib(&ss->dst_next_list, ss->dst_items, 
+		      (double)ss->params.EntireHeightOut / ss->params.EntireHeightIn,
+		      y, ss->src_y_offset, ss->params.EntireHeightOut, ss->params.EntireHeightIn, 
+		      1, ss->params.HeightIn, MAX_ISCALE_SUPPORT, row_size,
 		      (double)ss->params.MaxValueOut / (fixedScaleFactor * unitPixelTmp) );
     int first_index_mod = ss->dst_next_list.first_pixel / row_size;
 
-    if_debug2('w', "[w]calculate_dst_contrib for y = %d, y+offset=%d\n", y, y + ss->dst_y_offset);
+    if_debug2('w', "[W]calculate_dst_contrib for y = %d, y+offset=%d\n", y, y + ss->src_y_offset);
     ss->dst_last_index = last_index;
     last_index %= MAX_ISCALE_SUPPORT;
     if (last_index < first_index_mod) {		/* Shuffle the indices to account for wraparound. */
@@ -427,7 +436,7 @@ calculate_dst_contrib(stream_IScale_state * ss, int y)
 	ss->dst_next_list.n = MAX_ISCALE_SUPPORT;
 	ss->dst_next_list.first_pixel = 0;
     }
-    if_debug0('w', "\n");
+    if_debug0('W', "\n");
 }
 
 /* Set default parameter values (actually, just clear pointers). */
@@ -452,14 +461,12 @@ s_IScale_init(stream_state * st)
 
     ss->sizeofPixelIn = ss->params.BitsPerComponentIn / 8;
     ss->sizeofPixelOut = ss->params.BitsPerComponentOut / 8;
-    ss->xscale = ss->params.xscale;
-    ss->yscale = ss->params.yscale;
 
     ss->src_y = 0;
     ss->src_size = ss->params.WidthIn * ss->sizeofPixelIn * ss->params.Colors;
     ss->src_offset = 0;
     ss->dst_y = 0;
-    ss->dst_y_offset = ss->params.dst_y_offset;
+    ss->src_y_offset = ss->params.src_y_offset;
     ss->dst_size = ss->params.WidthOut * ss->sizeofPixelOut * ss->params.Colors;
     ss->dst_offset = 0;
 
@@ -472,7 +479,8 @@ s_IScale_init(stream_state * st)
 					   max(ss->params.WidthOut, ss->params.HeightOut),
 				      sizeof(CLIST), "image_scale contrib");
     ss->items = (CONTRIB *) gs_alloc_byte_array(mem,
-				  contrib_pixels(ss->xscale) * ss->params.WidthOut,
+				  contrib_pixels((double)ss->params.EntireWidthOut / 
+					ss->params.EntireWidthIn) * ss->params.WidthOut,
 				 sizeof(CONTRIB), "image_scale contrib[*]");
     /* Allocate buffers for 1 row of source and destination. */
     ss->dst = gs_alloc_byte_array(mem, ss->params.WidthOut * ss->params.Colors,
@@ -487,8 +495,10 @@ s_IScale_init(stream_state * st)
 /****** WRONG ******/
     }
     /* Pre-calculate filter contributions for a row. */
-    calculate_contrib(ss->contrib, ss->items, ss->xscale,
-		      0, 0, ss->params.WidthOut, ss->params.WidthIn, ss->params.WidthIn,
+    calculate_contrib(ss->contrib, ss->items,
+		      (double)ss->params.EntireWidthOut / ss->params.EntireWidthIn,
+		      0, 0, ss->params.WidthOut, ss->params.WidthIn, 
+		      ss->params.WidthOut, ss->params.WidthIn, ss->params.WidthIn,
 		      ss->params.Colors, (double)unitPixelTmp * fixedScaleFactor / ss->params.MaxValueIn);
 
     /* Prepare the weights for the first output row. */
@@ -532,7 +542,8 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
 	    /* inter-assigned freely, but not compared! */
 	    if ((void *)row != ss->dst)		/* no buffering */
 		goto adv;
-	} {			/* We're delivering a buffered output row. */
+	} 
+	{			/* We're delivering a buffered output row. */
 	    uint wcount = ss->dst_size - ss->dst_offset;
 	    uint ncopy = min(wleft, wcount);
 
@@ -544,7 +555,7 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
 	    ss->dst_offset = 0;
 	}
 	/* Advance to the next output row. */
-      adv:++(ss->dst_y);
+      adv:++ss->dst_y;
 	if (ss->dst_y != ss->params.HeightOut)
 	    calculate_dst_contrib(ss, ss->dst_y);
     }

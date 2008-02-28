@@ -60,6 +60,13 @@
 # elif defined(__VMS) /* OpenVMS provides these types in inttypes.h */
 #  include <inttypes.h>
 #  define STDINT_TYPES_DEFINED
+# elif defined(__CYGWIN__)
+#  include <sys/types.h>  /* Old Cygwin has some of C99 types here. */
+   typedef unsigned char uint8_t;
+   typedef unsigned short uint16_t;
+   typedef unsigned int uint32_t;
+   typedef unsigned long long uint64_t;
+#  define STDINT_TYPES_DEFINED
 # endif
    /* other archs may want to add defines here, 
       or use the fallbacks in std.h */

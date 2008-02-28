@@ -430,7 +430,7 @@ gxfmap_h=$(GLSRC)gxfmap.h $(gsrefct_h) $(gsstype_h) $(gxfrac_h) $(gxtmap_h)
 gxcmap_h=$(GLSRC)gxcmap.h $(gscsel_h) $(gxcindex_h) $(gxcvalue_h) $(gxfmap_h)
 gxistate_h=$(GLSRC)gxistate.h\
  $(gscsel_h) $(gsrefct_h) $(gsropt_h) $(gstparam_h) $(gxcvalue_h) $(gxcmap_h)\
- $(gxfixed_h) $(gxline_h) $(gxmatrix_h) $(gxtmap_h) $(gscspace_h) $(gsnamecl_h)
+ $(gxfixed_h) $(gxline_h) $(gxmatrix_h) $(gxtmap_h) $(gscspace_h) $(gstrans_h) $(gsnamecl_h)
 gxclist_h=$(GLSRC)gxclist.h $(gscspace_h)\
  $(gxband_h) $(gxbcache_h) $(gxclio_h) $(gxdevbuf_h) $(gxistate_h)\
  $(gxrplane_h)
@@ -660,7 +660,7 @@ $(GLOBJ)gximono.$(OBJ) : $(GLSRC)gximono.c $(GXERR) $(memory__h) $(gpcheck_h)\
  $(gdevmem_h) $(gsccolor_h) $(gspaint_h) $(gsutil_h)\
  $(gxarith_h) $(gxcmap_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h)\
  $(gxdevmem_h) $(gxfixed_h) $(gximage_h) $(gxistate_h) $(gxmatrix_h)\
- $(gzht_h)
+ $(gzht_h) $(vdtrace_h)
 	$(GLCC) $(GLO_)gximono.$(OBJ) $(C_) $(GLSRC)gximono.c
 
 $(GLOBJ)gximask.$(OBJ) : $(GLSRC)gximask.c $(GXERR) $(memory__h) $(gserrors_h)\
@@ -843,7 +843,8 @@ $(GLOBJ)gshtscr.$(OBJ) : $(GLSRC)gshtscr.c $(GXERR) $(math__h)\
 
 $(GLOBJ)gsimage.$(OBJ) : $(GLSRC)gsimage.c $(GXERR) $(memory__h) $(math__h)\
  $(gscspace_h) $(gsimage_h) $(gsmatrix_h) $(gsstruct_h) $(gsptype2_h)\
- $(gxarith_h) $(gxdevice_h) $(gxiparam_h) $(gxpath_h) $(gximask_h) $(gzstate_h)
+ $(gxarith_h) $(gxdevice_h) $(gxiparam_h) $(gxpath_h) $(gximask_h) $(gzstate_h)\
+ $(vdtrace_h)
 	$(GLCC) $(GLO_)gsimage.$(OBJ) $(C_) $(GLSRC)gsimage.c
 
 $(GLOBJ)gsimpath.$(OBJ) : $(GLSRC)gsimpath.c $(GXERR)\
@@ -1194,9 +1195,15 @@ $(GLOBJ)gp_strdl.$(OBJ) : $(GLSRC)gp_strdl.c $(AK) $(std_h) $(gp_h)\
 # Currently only the high-level drivers use these, but more drivers will
 # probably use them eventually.
 
-sfile_=$(GLOBJ)sfx$(FILE_IMPLEMENTATION).$(OBJ) $(GLOBJ)stream.$(OBJ)
+sfile_=$(GLOBJ)sfx$(FILE_IMPLEMENTATION).$(OBJ) $(GLOBJ)sfxcommon.$(OBJ)\
+ $(GLOBJ)stream.$(OBJ)
+
 $(GLD)sfile.dev : $(LIB_MAK) $(ECHOGS_XE) $(sfile_)
 	$(SETMOD) $(GLD)sfile $(sfile_)
+
+$(GLOBJ)sfxcommon.$(OBJ) : $(GLSRC)sfxcommon.c $(AK) $(stdio__h) $(memory__h)\
+ $(unistd__h) $(gsmemory_h) $(gp_h) $(stream_h) $(gserror_h) $(gserrors_h)
+	$(GLCC) $(GLO_)sfxcommon.$(OBJ) $(C_) $(GLSRC)sfxcommon.c
 
 $(GLOBJ)sfxstdio.$(OBJ) : $(GLSRC)sfxstdio.c $(AK) $(stdio__h) $(memory__h)\
  $(unistd__h) $(gdebug_h) $(gpcheck_h) $(stream_h) $(strimpl_h)

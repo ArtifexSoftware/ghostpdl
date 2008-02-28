@@ -482,12 +482,12 @@ static int gsijs_k_get_bits(gx_device_printer * pdev, int y, byte ** actual_data
    return 0;
 }
 
-static int gsijs_create_buf_device(gx_device **pbdev, gx_device *target,
+static int gsijs_create_buf_device(gx_device **pbdev, gx_device *target, int y,
             const gx_render_plane_t *render_plane, gs_memory_t *mem, gx_band_complexity_t *for_band)
 {
    gx_device_ijs *ijsdev = (gx_device_ijs *)target;
    int n_chan = ijsdev->color_info.num_components;
-   int code = gx_default_create_buf_device(pbdev, target, render_plane, mem, for_band);
+   int code = gx_default_create_buf_device(pbdev, target, y, render_plane, mem, for_band);
    if (code < 0 || n_chan != 3)
       return code;
 

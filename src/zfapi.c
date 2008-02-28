@@ -562,15 +562,17 @@ static int get_GlyphDirectory_data_ptr(const gs_memory_t *mem,
 					ref *pdr, int char_code, const byte **ptr)
 {
     ref *GlyphDirectory, glyph0, *glyph = &glyph0, glyph_index;
-    if ((dict_find_string(pdr, "GlyphDirectory", &GlyphDirectory) > 0 &&
-         (r_type(GlyphDirectory) == t_dictionary &&
-          ( make_int(&glyph_index, char_code),
-            dict_find(GlyphDirectory, &glyph_index, &glyph) > 0))) ||
-        ((r_type(GlyphDirectory) == t_array &&
-          array_get(mem, GlyphDirectory, char_code, &glyph0) >= 0) &&
-         r_type(glyph) == t_string)) {
+    if (dict_find_string(pdr, "GlyphDirectory", &GlyphDirectory) > 0) {
+	if (((r_type(GlyphDirectory) == t_dictionary &&
+		(make_int(&glyph_index, char_code),
+		    dict_find(GlyphDirectory, &glyph_index, &glyph) > 0)) ||
+	     (r_type(GlyphDirectory) == t_array &&
+		array_get(mem, GlyphDirectory, char_code, &glyph0) >= 0)
+            )
+	    && r_type(glyph) == t_string) {
         *ptr = glyph->value.const_bytes;
 	return r_size(glyph);
+    }
     }
     return -1;
 }
