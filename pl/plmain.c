@@ -252,7 +252,7 @@ pl_main(
     /* Create PJL instance */
     if ( pl_allocate_interp(&pjl_interp, &pjl_implementation, pjl_mem) < 0
 	 || pl_allocate_interp_instance(&pjl_instance, pjl_interp, pjl_mem) < 0 ) {
-	errprintf("Unable to create PJL interpreter");
+	errprintf("Unable to create PJL interpreter.");
 	return -1;
     }
 
@@ -441,7 +441,7 @@ pl_main(
     /* dnit pjl */
     if ( pl_deallocate_interp_instance(pjl_instance) < 0
 	 || pl_deallocate_interp(pjl_interp) < 0 ) {
-	dprintf("Unable to close out PJL instance\n");
+	dprintf("Unable to close out PJL instance.\n");
 	return -1;
     }
 
@@ -498,7 +498,7 @@ pl_main_universe_init(
 	  || pl_allocate_interp_instance(&universe->pdl_instance_array[index],
 	   universe->pdl_interp_array[index], mem) < 0 ) {
 	      if (err_str)
-	        sprintf(err_str, "Unable to create %s interpreter",
+	        sprintf(err_str, "Unable to create %s interpreter.\n",
 	         pl_characteristics(pdl_implementation[index])->language);
 	      goto pmui_err;
 	  }
@@ -511,7 +511,7 @@ pl_main_universe_init(
                pl_get_device_memory(instance, &inst->device_memory) < 0 
 	       ) {
               if (err_str)
-                  sprintf(err_str, "Unable to init %s interpreter",
+                  sprintf(err_str, "Unable to init %s interpreter.\n",
                           pl_characteristics(pdl_implementation[index])->language);
               goto pmui_err;
 	  }
@@ -543,7 +543,7 @@ pl_main_universe_dnit(
     if (universe->curr_instance
      && pl_remove_device(universe->curr_instance) < 0) {
       if (err_str)
-        sprintf(err_str, "Unable to close out PDL instance\n");
+        sprintf(err_str, "Unable to close out PDL instance.\n");
       return -1;
     }
 
@@ -556,7 +556,7 @@ pl_main_universe_dnit(
        || (universe->pdl_interp_array[index]
         && pl_deallocate_interp(universe->pdl_interp_array[index]) < 0 )) {
           if (err_str)
-            sprintf(err_str, "Unable to close out %s instance\n",
+            sprintf(err_str, "Unable to close out %s instance.\n",
              pl_characteristics(universe->pdl_implementation[index])->language);
           return -1;
       }
@@ -599,7 +599,7 @@ pl_main_universe_select(
 	if (universe->curr_instance
 	    && pl_remove_device(universe->curr_instance) < 0) {
 	    if (err_str)
-		strcpy(err_str, "Unable to deselect device from interp instance\n");
+		strcpy(err_str, "Unable to deselect device from interp instance.\n");
 	    return 0;
 	}
 	if (universe->curr_device && universe->curr_device != desired_device) {
@@ -612,7 +612,7 @@ pl_main_universe_select(
 	    /* avoid things like intevermingling of output streams. */
 	    if (gs_closedevice(universe->curr_device) < 0) {
 		if (err_str)
-		    strcpy(err_str, "Unable to close device\n");
+		    strcpy(err_str, "Unable to close device.\n");
 		return 0;
 	    } else {
 		/* Delete the device. */
@@ -654,14 +654,14 @@ pl_main_universe_select(
 	    /* Do this here because PCL5 will do some 1-time initializations based */
 	    /* on device geometry when pl_set_device, below, selects the device. */
 	    if ( gs_putdeviceparams(desired_device, params) < 0 ) {
-		strcpy(err_str, "Unable to set params into device\n");
+		strcpy(err_str, "Unable to set params into device.\n");
 		return 0;
 	    }
 	    params_are_set = 1;
 
 	    if (gs_opendevice(desired_device) < 0) {
 		if (err_str)
-		    strcpy(err_str, "Unable to open new device\n");
+		    strcpy(err_str, "Unable to open new device.\n");
 		return 0;
 	    } else
 		universe->curr_device = desired_device;
@@ -672,7 +672,7 @@ pl_main_universe_select(
 	/* Select curr/new device into PDL instance */
 	if ( pl_set_device(universe->curr_instance, universe->curr_device) < 0 ) {
 	    if (err_str)
-		strcpy(err_str, "Unable to install device into PDL interp");
+		strcpy(err_str, "Unable to install device into PDL interp.");
 	    return 0;
 	}
         /* potentially downgrade the resolution */
@@ -703,7 +703,7 @@ pl_main_universe_select(
     /* Set latest params into device. Write them all in case any changed */
     if ( !params_are_set
 	 && gs_putdeviceparams(universe->curr_device, params) < 0 ) {
-	strcpy(err_str, "Unable to set params into device\n");
+	strcpy(err_str, "Unable to set params into device.\n");
 	return 0;
     }
     return universe->curr_instance;
