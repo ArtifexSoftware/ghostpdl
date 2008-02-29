@@ -452,6 +452,7 @@ Framework, file and string streams:
 <a href="../src/sfxboth.c">src/sfxboth.c</a>,
 <a href="../src/sfxfd.c">src/sfxfd.c</a>,
 <a href="../src/sfxstdio.c">src/sfxstdio.c</a>,
+<a href="../src/sfxcommon.c">src/sfxcommon.c</a>,
 <a href="../src/stream.h">src/stream.h</a>,
 <a href="../src/stream.c">src/stream.c</a>,
 <a href="../src/strimpl.h">src/strimpl.h</a>.
@@ -609,7 +610,8 @@ Configuration-related:
 <a href="../src/gconf.c">src/gconf.c</a>,
 <a href="../src/gconf.h">src/gconf.h</a>,
 <a href="../src/gscdef.c">src/gscdef.c</a>,
-<a href="../src/gscdefs.h">src/gscdefs.h</a>.
+<a href="../src/gscdefs.h">src/gscdefs.h</a>,
+<a href="../src/gsromfs0.c">src/gsromfs0.c</a>.
 
 <dt>
 Arithmetic:
@@ -3262,7 +3264,8 @@ through the %rom% iodevice prefix. This is used to implement the
 <b><tt>COMPILE_INITS=1</tt></b> feature (a compressed init fileset is more
 efficient than the current 'gsinit.c' produced by 'geninit.c'). This IODevice
 is more versatile since other files can be encapsulated such as fonts, helper
-PostScript files and Resources.
+PostScript files and Resources. The list of files is defined in part in 
+<a href="../src/psromfs.mak">src/psromfs.mak</a>.
 
 </dl>
 
