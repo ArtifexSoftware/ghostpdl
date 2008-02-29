@@ -376,7 +376,7 @@ zoom_y(void /*PixelOut */ *dst, int sizeofPixelOut, uint MaxValueOut,
     if (sizeofPixelOut == 1) {
 	zoom_y_loop(byte)
     } else {			/* sizeofPixelOut == 2 */
-	//zoom_y_loop(bits16)
+	/* zoom_y_loop(bits16) */
 	for ( kc = 0; kc < kn; ++kc ) {
 		AccumTmp weight = 0;
 		{ const PixelTmp *pp = &tmp[kc + first_pixel];

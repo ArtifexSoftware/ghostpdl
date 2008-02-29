@@ -69,7 +69,9 @@
 #include "ijs.h"
 #include "ijs_client.h"
 
-//#define KRGB_DEBUG
+#if 0
+#define KRGB_DEBUG
+#endif
 
 /* This should go into gdevprn.h, or, better yet, gdevprn should
    acquire an API for changing resolution. */
@@ -316,7 +318,7 @@ static int gsijs_copy_mono(gx_device * dev, const byte * data,
    if (!ijsdev)
       return 0;  /* no forward device, bug?? */
 
-   //   if (ijsdev->krgb_mode && ijsdev->k_path && one==0x0) 
+   /*   if (ijsdev->krgb_mode && ijsdev->k_path && one==0x0) */
    if (ijsdev->krgb_mode && ijsdev->k_path) 
    {
       /* Store in k plane band instead of regular band. */
