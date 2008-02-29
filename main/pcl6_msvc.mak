@@ -188,6 +188,10 @@ PXL_TOP_OBJ=$(PXLOBJDIR)\pxtop.$(OBJ)
 PSI_TOP_OBJ=
 !endif
 
+!ifndef PDL_INCLUDE_FLAGS
+PDL_INCLUDE_FLAGS=/DPCL_INCLUDED
+!endif
+
 !ifdef XPS_INCLUDED
 !ifndef XPS_TOP_OBJ
 XPS_TOP_OBJ=$(XPSOBJDIR)/xpstop.$(OBJ)
@@ -257,11 +261,21 @@ UFSTFONTDIR=/usr/local/fontdata5.0/
 !endif
 
 !endif
+# end PL_SCALER == ufst
+
+# flags for artifex scaler
+!if "$(PL_SCALER)" == "afs"
+# The mkromfs arguments for including the PCL fonts if COMPILE_INITS=1
+!ifndef PCLXL_ROMFS_ARGS
+PCLXL_ROMFS_ARGS= -P ../urwfonts -d ttfonts /
+!endif
+
+!endif
+# end PL_SCALER == afs
 
 !ifdef XPS_INCLUDED
 EXTRALIBS=$(EXPATLIB)
 !endif
-
 
 # Language and configuration.  These are actually platform-independent,
 # but we define them here just to keep all parameters in one place.

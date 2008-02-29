@@ -28,7 +28,6 @@ include $(COMMONDIR)/generic.mak
 # seem to be out of sync.
 
 BINDIR=./libobj
-PSRESDIR=./Resource
 GLD=$(GLGENDIR)/
 CCFLAGS=$(GENOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
@@ -87,29 +86,29 @@ $(GENDIR)/pconf.h $(GENDIR)/ldconf.tr: $(TARGET_DEVS) $(GLOBJDIR)/genconf$(XE)
 	$(GLOBJDIR)/genconf -n - $(TARGET_DEVS) -h $(GENDIR)/pconf.h -p "%s&s&&" -o $(GENDIR)/ldconf.tr
 
 # Create a library
-$(TARGET_LIB): $(ld_tr) $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS)
+$(TARGET_LIB): $(ld_tr) $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ)
 	$(ECHOGS_XE) -w $(GENDIR)/ldall.tr -n - $(AR) $(ARFLAGS)  $@
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(TOP_OBJ) $(XOBJS) -s
 	cat $(GENDIR)/ldt.tr $(GENDIR)/ldconf.tr | grep ".o" >>$(GENDIR)/ldall.tr
-	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -s - $(MAIN_OBJ)
+	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -s - $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ) $(MAIN_OBJ)
 	LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; sh <$(GENDIR)/ldall.tr
 
 ifeq ($(PSICFLAGS), -DPSI_INCLUDED)
 # Link a Unix executable.  NB - XOBS is not concatenated to the link
 # list here.  It seems to have been done earlier on unlike the
 # standalone pcl build below.
-$(TARGET_XE): $(ld_tr) $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS)
+$(TARGET_XE): $(ld_tr) $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ)
 	$(ECHOGS_XE) -w $(GENDIR)/ldall.tr -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(TARGET_XE)
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(TOP_OBJ) -s
 	cat $(ld_tr) $(GENDIR)/ldconf.tr >>$(GENDIR)/ldall.tr
-	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -s - $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)
+	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -s - $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ) $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)
 	sh <$(GENDIR)/ldall.tr
 else
 # Link a Unix executable.
-$(TARGET_XE): $(ld_tr) $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS)
+$(TARGET_XE): $(ld_tr) $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ)
 	$(ECHOGS_XE) -w $(GENDIR)/ldall.tr -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(TARGET_XE)
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(TOP_OBJ) $(XOBJS) -s
 	cat $(ld_tr) $(GENDIR)/ldconf.tr >>$(GENDIR)/ldall.tr
-	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -s - $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)
+	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -s - $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ) $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)
 	sh <$(GENDIR)/ldall.tr
 endif

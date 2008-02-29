@@ -201,6 +201,10 @@ FEATURE_CORE    = \
 FEATURE_DEVS    = $(FEATURE_CORE) $(DD)\fapi.dev 
 !endif
 
+!if "$(COMPILE_INITS)" == "1"
+!include $(PSSRCDIR)\psromfs.mak
+!endif
+
 !include $(MAINSRCDIR)\pcl6_msvc.mak
 
 # Subsystems

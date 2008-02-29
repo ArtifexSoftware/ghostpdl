@@ -94,6 +94,7 @@ CFLAGS=$(CFLAGS) /DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)"
 # the floating point emulator, even though we don't always link it in.
 # HACK * HACK * HACK - we force this make to occur since we have no
 # way to determine if gs .c files are out of date.
+
 FORCE:
 
 $(GENDIR)/ldgs.tr: FORCE
@@ -123,18 +124,12 @@ $(GENDIR)/ldgs.tr: FORCE
 	$(GLOBJDIR)\gsargs.$(OBJ) $(GLOBJDIR)\echogs.exe \
 	$(GLOBJDIR)\ld.tr $(GLOBJDIR)\gconfig.$(OBJ) \
 	$(GLOBJDIR)\gscdefs.$(OBJ) $(GLOBJDIR)\iconfig.$(OBJ) \
-	$(GLOBJDIR)\iccinit$(COMPILE_INITS).$(OBJ)
+	$(GLOBJDIR)\iccinit$(COMPILE_INITS).$(OBJ) $(GLOBJDIR)\gsromfs$(COMPILE_INITS).$(OBJ)
 	$(CP_) $(GENDIR)\ld.tr $(GENDIR)\ldgs.tr
 
 !ELSE
 
 FORCE:
-
-# COMPILE_INITS=1 means we need to include gsromfs.obj is built
-!IF "$(COMPILE_INITS)" == "1"
-ROMFS=$(GLOBJDIR)/gsromfs.obj
-!ENDIF
-
 # Build the required GS library files.  It's simplest always to build
 # the floating point emulator, even though we don't always link it in.
 # HACK * HACK * HACK - we force this make to occur since we have no
@@ -159,6 +154,7 @@ $(GENDIR)/ldgs.tr: FORCE
 	PSSRCDIR=$(PSSRCDIR) PSGENDIR=$(GENDIR) \
 	PSLIBDIR=$(PSLIBDIR) PSRESDIR=$(PSRESDIR)\
 	DEVSTUDIO="$(DEVSTUDIO)" \
+	XCFLAGS="$(XCFLAGS)" \
 	COMPILE_INITS=$(COMPILE_INITS) PCLXL_ROMFS_ARGS="$(PCLXL_ROMFS_ARGS)" PJL_ROMFS_ARGS="$(PJL_ROMFS_ARGS)" \
 	UFST_ROOT=$(UFST_ROOT) UFST_BRIDGE=$(UFST_BRIDGE) UFST_LIB_EXT=$(UFST_LIB_EXT) \
 	UFST_ROMFS_ARGS="$(UFST_ROMFS_ARGS)" \
@@ -170,7 +166,7 @@ $(GENDIR)/ldgs.tr: FORCE
 	CPU_TYPE="$(CPU_TYPE)" CONFIG="$(CONFIG)" \
 	$(GLOBJDIR)\gsargs.$(OBJ) $(GLOBJDIR)\echogs.exe \
 	$(GLOBJDIR)\ld.tr $(GLOBJDIR)\gconfig.$(OBJ) \
-	$(GLOBJDIR)\gscdefs.$(OBJ) $(ROMFS)
+	$(GLOBJDIR)\gscdefs.$(OBJ) $(GLOBJDIR)\gsromfs$(COMPILE_INITS).$(OBJ)
 	$(CP_) $(GENDIR)\ld.tr $(GENDIR)\ldgs.tr
 
 !ENDIF
@@ -179,31 +175,42 @@ $(GENDIR)/ldgs.tr: FORCE
 $(GENDIR)\pconf.h $(GENDIR)\ldconf.tr: $(TARGET_DEVS) $(GLOBJDIR)\genconf$(XE)
 	$(GLOBJDIR)\genconf -n - $(TARGET_DEVS) -h $(GENDIR)\pconf.h -ol $(GENDIR)\ldconf.tr
 
+!if "$(TDEBUG)" == "1"
+$(GENDIR)\lib32.rsp: $(MAKEFILE)
+	echo /NODEFAULTLIB:LIBC.lib > $(GENDIR)\lib32.rsp
+	echo /NODEFAULTLIB:LIBCMT.lib >> $(GENDIR)\lib32.rsp
+	echo LIBCMTD.lib >> $(GENDIR)\lib32.rsp
+!else
+$(GENDIR)\lib32.rsp: $(MAKEFILE)
+	echo /NODEFAULTLIB:LIBC.lib > $(GENDIR)\lib32.rsp
+	echo /NODEFAULTLIB:LIBCMTD.lib >> $(GENDIR)\lib32.rsp
+	echo LIBCMT.lib >> $(GENDIR)\lib32.rsp
+!endif
+
 # Link an MS executable.
-$(GENDIR)\ldall.tr: $(MAKEFILE) $(GENDIR)\ldgs.tr $(GENDIR)\ldconf.tr
+$(GENDIR)\ldall.tr: $(MAKEFILE) $(GENDIR)\ldgs.tr $(GENDIR)\ldconf.tr $(GENDIR)\lib32.rsp
 	echo /SUBSYSTEM:CONSOLE >$(GENDIR)\ldall.tr
 	$(CP_) $(GENDIR)\ldall.tr+$(GENDIR)\ldgs.tr $(GENDIR)\ldall.tr
 	echo $(GLOBJDIR)\gsargs.$(OBJ) >>$(GENDIR)\ldall.tr
 	echo $(GLOBJDIR)\gconfig.$(OBJ) >>$(GENDIR)\ldall.tr
 	echo $(GLOBJDIR)\gscdefs.$(OBJ) >>$(GENDIR)\ldall.tr
+	echo $(GLOBJDIR)\gsromfs$(COMPILE_INITS).$(OBJ) >>$(GENDIR)\ldall.tr
 	$(CP_) $(GENDIR)\ldall.tr+$(GENDIR)\ldconf.tr $(GENDIR)\ldall.tr
 
 # AGFA Workaround to add needed ufst font libraries.
 !IF "$(PL_SCALER)" == "ufst"
 FONTLIB=$(GENDIR)\fontlib.tr
-# I have no idea what NODEFAULTLIB means.
 $(FONTLIB): $(MAKEFILE)
-	echo /NODEFAULTLIB:LIBC.lib > $(FONTLIB)
 	echo $(UFST_LIB)\fco_lib.lib >>$(FONTLIB)
 	echo $(UFST_LIB)\if_lib.lib >>$(FONTLIB)
 	echo $(UFST_LIB)\tt_lib.lib >>$(FONTLIB)
 
 $(TARGET_XE)$(XE): $(GENDIR)\ldall.tr $(MAIN_OBJ) $(TOP_OBJ) $(LIBCTR) $(FONTLIB)
 	$(LINK_SETUP)
-	$(LINK) $(LCT) /OUT:$(TARGET_XE)$(XE) $(MAIN_OBJ) $(TOP_OBJ) @$(GENDIR)\ldall.tr @$(LIBCTR) @$(FONTLIB)
+	$(LINK) $(LCT) /OUT:$(TARGET_XE)$(XE) $(MAIN_OBJ) $(TOP_OBJ) @$(GENDIR)\ldall.tr @$(GENDIR)\lib32.rsp @$(LIBCTR) $(FONTLIB)
 
 !ELSE
 $(TARGET_XE)$(XE): $(GENDIR)\ldall.tr $(MAIN_OBJ) $(TOP_OBJ) $(LIBCTR)
 	$(LINK_SETUP)
-	$(LINK) $(LCT) /OUT:$(TARGET_XE)$(XE) $(MAIN_OBJ) $(TOP_OBJ) @$(GENDIR)\ldall.tr @$(LIBCTR)
+	$(LINK) $(LCT) /OUT:$(TARGET_XE)$(XE) $(MAIN_OBJ) $(TOP_OBJ) @$(GENDIR)\ldall.tr @$(GENDIR)\lib32.rsp @$(LIBCTR)
 !ENDIF

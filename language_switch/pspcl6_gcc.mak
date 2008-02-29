@@ -69,6 +69,10 @@ XOBJS?=$(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o \
        $(GLOBJDIR)/gscdefs.o $(GLOBJDIR)/iconfig.o \
        $(GLOBJDIR)/iccinit$(COMPILE_INITS).o
 
+ifeq ($(COMPILE_INITS), 1)
+include $(PSSRCDIR)/psromfs.mak
+endif
+
 # "Subclassed" makefile
 include $(MAINSRCDIR)/pcl6_gcc.mak
 
