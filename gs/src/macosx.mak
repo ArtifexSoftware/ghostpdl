@@ -409,6 +409,8 @@ CC_NO_WARN=$(CC_) -Wno-cast-qual -Wno-traditional
 
 include $(GLSRCDIR)/unixhead.mak
 include $(GLSRCDIR)/gs.mak
+# psromfs.mak must precede lib.mak
+include $(GLSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak
 include $(PSSRCDIR)/int.mak
 include $(PSSRCDIR)/cfonts.mak

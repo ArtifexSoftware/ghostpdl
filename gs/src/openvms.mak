@@ -253,17 +253,6 @@ DEVICE_DEVS21=
 
 FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)fapi.dev
 
-# ***********************************************************************************
-#
-#    The following probably won't work without code changes to src/mkromfs.c to
-#    change the VMS style of directory references to PostScript style, but we
-#    have it here in case it works.
-#
-# ***********************************************************************************
-# The list of resources to be included in the %rom% file system.
-# This is in the top makefile since the file descriptors are platform specific
-RESOURCE_LIST=[Resource.CMap] [Resource.ColorSpace] [Resource.Decoding] [Resource.Fonts] [Resource.ProcSet] [Resource.IdiomSet] [Resource.CIDFont]
-
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
@@ -423,6 +412,24 @@ STDDIRS:
 #include $(COMMONDIR)/vmsdefs.mak
 #include $(COMMONDIR)/generic.mak
 include $(GLSRCDIR)gs.mak
+
+# ***********************************************************************************
+#
+#    The following should be kept up to date with src/psromfs.mak -- we can't
+#    use the shared one because of VMS directory syntax strangeness.
+#
+#    This enumeration of the Resource/* directories probably won't work without
+#    code changes to src/mkromfs.c to change the VMS style of directory references
+#    to PostScript style, but we will need this when (if) mkromfs is changed for VMS
+#
+# ***********************************************************************************
+# The list of resources to be included in the %rom% file system.
+# This is in the top makefile since the file descriptors are platform specific
+RESOURCE_LIST=[Resource.CMap] [Resource.ColorSpace] [Resource.Decoding] [Resource.Fonts] [Resource.ProcSet] [Resource.IdiomSet] [Resource.CIDFont]
+
+EXTRA_INIT_FILES= Fontmap cidfmap xlatmap FAPI FCOfontmap-PCLPS2 gs_cet.ps
+PS_ROMFS_ARGS=-c -d Resource/ $(RESOURCE_LIST) -d lib/ -P $(PSGENDIR) $(GS_INIT) -P $(PSLIBDIR) $(EXTRA_INIT_FILES)
+
 include $(GLSRCDIR)lib.mak
 include $(PSSRCDIR)int.mak
 include $(PSSRCDIR)cfonts.mak
@@ -509,7 +516,7 @@ $(MKROMFS_XE): $(GLSRC)mkromfs.c $(MKROMFS_OBJS)
 openvms : $(GLGENDIR)openvms.com $(GLGENDIR)openvms.opt
 	$$ @$(GLGENDIR)OPENVMS
 
-$(GLGENDIR)openvms.com : $(GLSRCDIR)append_l.com
+$(GLGENDIR)openvms.com : $(GLSRCDIR)append_l.com $(GLOBJDIR)gsromfs$(COMPILE_INITS).$(OBJ)
 	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB X11 $(X_INCLUDE)"
 	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB GS_LIB ''F$$ENVIRONMENT(""DEFAULT"")'"
 	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB GS_DOC ''F$$ENVIRONMENT(""DEFAULT"")'"

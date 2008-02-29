@@ -686,6 +686,8 @@ BEGINFILES2=$(GLGENDIR)\lib32.rsp\
  obj.idb $(GLOBJDIR)\gs.pch
 
 !include $(GLSRCDIR)\msvccmd.mak
+# psromfs.mak must precede lib.mak
+!include $(GLSRCDIR)\psromfs.mak
 !include $(GLSRCDIR)\winlib.mak
 !include $(GLSRCDIR)\msvctail.mak
 !include $(PSSRCDIR)\winint.mak
@@ -725,15 +727,16 @@ $(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw32c.def
 	del $(PSGEN)gswin32.rsp
 
 # The big DLL
-$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(GSDLL_OBJ).res $(PSGEN)lib32.rsp
+$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(GSDLL_OBJ).res $(PSGEN)lib32.rsp $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
 	echo /DLL /DEF:$(PSSRCDIR)\gsdll32.def /OUT:$(GSDLL_DLL) > $(PSGEN)gswin32.rsp
-	$(LINK) $(LCT) @$(PSGEN)gswin32.rsp $(GSDLL_OBJS) @$(ld_tr) @$(PSGEN)lib32.rsp $(LINKLIBPATH) @$(LIBCTR) $(GSDLL_OBJ).res
+	$(LINK) $(LCT) @$(PSGEN)gswin32.rsp $(GSDLL_OBJS) @$(ld_tr) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) @$(PSGEN)lib32.rsp $(LINKLIBPATH) @$(LIBCTR) $(GSDLL_OBJ).res
 	del $(PSGEN)gswin32.rsp
 
 !else
 # The big graphical EXE
-$(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(DWOBJNO) $(GSDLL_OBJ).res $(PSSRCDIR)\dwmain32.def $(PSGEN)lib32.rsp
+$(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(DWOBJNO) $(GSDLL_OBJ).res $(PSSRCDIR)\dwmain32.def $(PSGEN)lib32.rsp $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
 	copy $(ld_tr) $(PSGEN)gswin32.tr
+	echo $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) >> $(PSGEN)gswin32.tr
 	echo $(PSOBJ)dwnodll.obj >> $(PSGEN)gswin32.tr
 	echo $(GLOBJ)dwimg.obj >> $(PSGEN)gswin32.tr
 	echo $(PSOBJ)dwmain.obj >> $(PSGEN)gswin32.tr
@@ -745,8 +748,9 @@ $(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(DWOBJNO) $(GSDLL
 	del $(PSGEN)gswin32.rsp
 
 # The big console mode EXE
-$(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(OBJCNO) $(GS_OBJ).res $(PSSRCDIR)\dw32c.def $(PSGEN)lib32.rsp
+$(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(OBJCNO) $(GS_OBJ).res $(PSSRCDIR)\dw32c.def $(PSGEN)lib32.rsp $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
 	copy $(ld_tr) $(PSGEN)gswin32c.tr
+	echo $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) >> $(PSGEN)gswin32.tr
 	echo $(PSOBJ)dwnodllc.obj >> $(PSGEN)gswin32c.tr
 	echo $(GLOBJ)dwimg.obj >> $(PSGEN)gswin32c.tr
 	echo $(PSOBJ)dwmainc.obj >> $(PSGEN)gswin32c.tr

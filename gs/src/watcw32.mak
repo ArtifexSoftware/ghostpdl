@@ -394,6 +394,8 @@ RO_=$(O_)
 # Include the generic makefiles.
 
 !include $(GLSRCDIR)\version.mak
+# psromfs.mak must precede lib.mak
+!include $(GLSRCDIR)\psromfs.mak
 !include $(GLSRCDIR)\winlib.mak
 !include $(PSSRCDIR)\winint.mak
 
@@ -482,8 +484,8 @@ $(GSCONSOLE_XE): $(OBJC) $(PSOBJ)$(GS).res $(PSSRCDIR)\dw32c.def \
 	$(LINK) system nt option map $(LCT) Name $(GSCONSOLE_XE) File $(OBJCLINK) Library $(PSOBJ)$(GSDLL).lib
 
 # The big DLL
-$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(PSOBJ)gsdll.$(OBJ) $(GLOBJ)gp_mktmp.obj $(PSOBJ)$(GSDLL).res 
-	$(LINK) system nt_dll initinstance terminstance $(LCT) Name $(GSDLL_DLL) File $(GLOBJ)gsdll.obj, $(GLOBJ)gp_mktmp.obj @$(ld_tr) @$(PSSRC)gsdll32w.lnk
+$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(PSOBJ)gsdll.$(OBJ) $(GLOBJ)gp_mktmp.obj $(PSOBJ)$(GSDLL).res $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
+	$(LINK) system nt_dll initinstance terminstance $(LCT) Name $(GSDLL_DLL) File $(GLOBJ)gsdll.obj $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) $(GLOBJ)gp_mktmp.obj @$(ld_tr) @$(PSSRC)gsdll32w.lnk
 
 $(PSOBJ)$(GSDLL).lib: $(GSDLL_DLL)
 	erase $(PSOBJ)$(GSDLL).lib
@@ -491,12 +493,12 @@ $(PSOBJ)$(GSDLL).lib: $(GSDLL_DLL)
 
 !else
 # The big graphical EXE
-$(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(PSOBJ)gsdll.$(OBJ) $(GLOBJ)gp_mktmp.obj $(DWOBJNO) $(PSOBJ)$(GS).res $(PSOBJ)dwmain32.def
-	$(LINK) option map $(LCT) Name $(GS) File $(GLOBJ)gsdll,$(GLOBJ)gp_mktmp.obj, $(DWOBJNOLINK) @$(ld_tr) 
+$(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(PSOBJ)gsdll.$(OBJ) $(GLOBJ)gp_mktmp.obj $(DWOBJNO) $(PSOBJ)$(GS).res $(PSOBJ)dwmain32.def $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
+	$(LINK) option map $(LCT) Name $(GS) File $(GLOBJ)gsdll,$(OBJ) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) gp_mktmp.obj $(DWOBJNOLINK) @$(ld_tr) 
 
 # The big console mode EXE
-$(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL) $(PSOBJ)gsdll.$(OBJ) $(GLOBJ)gp_mktmp.obj $(OBJCNO) $(PSOBJ)$(GS).res $(PSSRCDIR)\dw32c.def
-	$(LINK) option map $(LCT) Name $(GSCONSOLE_XE) File $(GLOBJ)gsdll, $(GLOBJ)gp_mktmp.obj, $(OBJCNOLINK) @$(ld_tr) 
+$(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL) $(PSOBJ)gsdll.$(OBJ) $(GLOBJ)gp_mktmp.obj $(OBJCNO) $(PSOBJ)$(GS).res $(PSSRCDIR)\dw32c.def $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
+	$(LINK) option map $(LCT) Name $(GSCONSOLE_XE) File $(GLOBJ)gsdll,$(OBJ) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) $(GLOBJ)gp_mktmp.obj $(OBJCNOLINK) @$(ld_tr) 
 !endif
 
 # end of makefile

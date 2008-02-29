@@ -443,7 +443,7 @@ BEGINFILES2=$(GLOBJDIR)\$(GS).ilk $(GLOBJDIR)\$(GS).pdb $(GLOBJDIR)\genarch.ilk 
 # Define these right away because they modify the behavior of
 # msvccmd.mak, msvctail.mak & winlib.mak.
 
-LIB_ONLY=$(GLOBJDIR)\gslib.obj $(GLOBJDIR)\gsnogc.obj $(GLOBJDIR)\gconfig.obj $(GLOBJDIR)\gscdefs.obj
+LIB_ONLY=$(GLOBJDIR)\gslib.obj $(GLOBJDIR)\gsnogc.obj $(GLOBJDIR)\gconfig.obj $(GLOBJDIR)\gscdefs.obj $(GLOBJDIR)\gsromfs$(COMPILE_INITS).obj
 MAKEDLL=0
 PLATFORM=mslib32_
 
@@ -472,6 +472,7 @@ $(GLGEN)mslib32_.dev: $(mslib32__) $(ECHOGS_XE) $(GLGEN)mswin32_.dev
 # The library tester EXE
 $(GS_XE):  $(GS_ALL) $(DEVS_ALL) $(LIB_ONLY) $(LIBCTR)
 	copy $(ld_tr) $(GLGENDIR)\gslib32.tr
+	echo $(GLOBJDIR)\gsromfs$(COMPILE_INITS).$(OBJ) >> $(GLGENDIR)\gslib32.tr
 	echo $(GLOBJ)gsnogc.obj >> $(GLGENDIR)\gslib32.tr
 	echo $(GLOBJ)gconfig.obj >> $(GLGENDIR)\gslib32.tr
 	echo $(GLOBJ)gscdefs.obj >> $(GLGENDIR)\gslib32.tr

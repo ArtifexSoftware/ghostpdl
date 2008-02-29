@@ -172,7 +172,7 @@ $(GLOBJ)gp_iwatc.$(OBJ): $(GLSRC)gp_iwatc.c $(stat__h) $(string__h)\
 
 BEGINFILES=*.err
 
-LIB_ONLY=$(GLOBJ)gslib.obj $(GLOBJ)gsnogc.obj $(GLOBJ)gconfig.obj $(GLOBJ)gscdefs.obj
+LIB_ONLY=$(GLOBJ)gslib.obj $(GLOBJ)gsnogc.obj $(GLOBJ)gconfig.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
 ll_tr=ll.tr
 $(ll_tr): $(TOP_MAKEFILES)
 	echo OPTION STACK=64k >$(ll_tr)
@@ -180,6 +180,7 @@ $(ll_tr): $(TOP_MAKEFILES)
 	echo SYSTEM DOS4G >>$(ll_tr)
 	echo OPTION STUB=$(STUB) >>$(ll_tr)
 !endif
+	echo FILE $(GLOBJ)gsromfs$(COMPILE_INITS).$(OBJ) >>$(ll_tr)
 	echo FILE $(GLOBJ)gsnogc.obj >>$(ll_tr)
 	echo FILE $(GLOBJ)gconfig.obj >>$(ll_tr)
 	echo FILE $(GLOBJ)gscdefs.obj >>$(ll_tr)

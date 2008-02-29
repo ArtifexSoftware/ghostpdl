@@ -324,6 +324,8 @@ CC_SHARED=$(CC_)
 
 include $(GLSRCDIR)/dvx-head.mak
 include $(GLSRCDIR)/gs.mak
+# psromfs.mak must precede lib.mak
+include $(GLSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak
 include $(PSSRCDIR)/int.mak
 include $(PSSRCDIR)/cfonts.mak

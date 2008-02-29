@@ -2640,24 +2640,27 @@ romfs_=$(GLOBJ)gsiorom.$(OBJ)
 $(GLD)romfs1.dev : $(LIB_MAK) $(ECHO_XE) $(romfs_)
 	$(SETMOD) $(GLD)romfs1 $(romfs_)
 	$(ADDMOD) $(GLD)romfs1 -iodev rom
-	$(ADDMOD) $(GLD)romfs1 -obj $(GLOBJ)gsromfs.$(OBJ)
 
 # A dummy romfs when we aren't using COMPILE_INITS
 $(GLD)romfs0.dev :  $(LIB_MAK) $(ECHO_XE) 
 	$(SETMOD) $(GLD)romfs0 
 
-$(GLGEN)gsromfs.c : $(MKROMFS_XE) $(GLGEN)gs_init.ps
-	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs.c -X .svn $(UFST_ROMFS_ARGS) \
+$(GLGEN)gsromfs1.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS)
+	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs1.c -X .svn $(UFST_ROMFS_ARGS) \
 	$(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS) \
-	$(PS_ROMFS_ARGS) $(EXTRA_INIT_FILES) 
+	$(PS_ROMFS_ARGS)
 
 # the following module is only included if the romfs.dev FEATURE is enabled
 $(GLOBJ)gsiorom.$(OBJ) : $(GLSRC)gsiorom.c $(gsiorom_h) \
  $(std_h) $(gx_h) $(gserrors_h) $(gsstruct_h) $(gxiodev_h) $(stat__h)
 	$(GLCC) $(GLO_)gsiorom.$(OBJ) $(I_)$(ZI_)$(_I) $(C_) $(GLSRC)gsiorom.c
 
-$(GLOBJ)gsromfs.$(OBJ) : $(GLOBJ)gsromfs.c $(time__h)
-	$(GLCC) $(GLO_)gsromfs.$(OBJ) $(C_) $(GLOBJ)gsromfs.c
+$(GLOBJ)gsromfs1.$(OBJ) : $(GLOBJ)gsromfs1.c $(time__h)
+	$(GLCC) $(GLO_)gsromfs1.$(OBJ) $(C_) $(GLOBJ)gsromfs1.c
+
+# A dummy gsromfs module for COMPILE_INITS=0
+$(GLOBJ)gsromfs0.$(OBJ) : $(GLSRC)gsromfs0.c
+	$(GLCC) $(GLO_)gsromfs0.$(OBJ) $(C_) $(GLSRC)gsromfs0.c
 
 # Define the ZLIB modules needed by mnkromfs here to factor it out of top makefiles
 # Also put the .h dependencies here for the same reason
