@@ -23,10 +23,9 @@ guages.
 Quick Start For Unix environment with GCC.
 
 tar zxvf ghostpcl-xxx.tar.gz; cd ghostpcl-xxx # unpack the release and go to the release directory 1
-make fonts                                           # install the fonts. 2
-make product                                         # compile and link pcl6
-.make test                                           # test pcl6 (optional).
-make install                                         # install it
+make pcl                                      # compile and link pcl6
+make test                                     # test pcl6 (optional).
+make install                                  # install it
 
 
 
@@ -361,10 +360,7 @@ pattern from the "Quick Start" section we have:
 
 
 tar zxvf ghostpcl-xxx.tar.gz; cd ghostpcl-xxx # unpack the release and go to the release directory.
-make ls fonts                                # install the fonts.
-make ls product                              # compile and link pspcl6.
-make ls test                                 # test pspcl6 (optional).
-make ls install                              # install it.
+make ls-product                               # compile and link pspcl6.
 
 
 

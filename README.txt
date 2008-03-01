@@ -48,7 +48,7 @@ nmake -f pcl6_msvc.mak MSVC_VERSION=6
 
 ===
 
-To build the just xps interpreter with GNU make and gcc, type:
+To build just the xps interpreter with GNU make and gcc, type:
 
 make xps
 
@@ -56,7 +56,7 @@ The executable will be xps/obj/gxps.
 
 To build a shared language build with PCL/PXL and PostScript/PDF
 
-make ls_product
+make ls-product
 
 The executable with be in language_switch/obj/pspcl6
 
