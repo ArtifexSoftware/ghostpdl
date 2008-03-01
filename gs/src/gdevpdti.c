@@ -614,6 +614,9 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     pdev->context = PDF_IN_STREAM;
     pdev->accumulating_substream_resource = pres;
     pdev->last_charpath_op = 0;
+    /* Do not alter type3charpath, inherit the current value. We need to know if */
+    /* we are inside a charpath operation, and only reset this when the charpath */
+    /* is complete */
     pdf_reset_graphics(pdev);
     *ppres = pres;
     return 0;

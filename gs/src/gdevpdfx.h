@@ -652,6 +652,7 @@ struct gx_device_pdf_s {
     int OPDFRead_procset_length;      /* PS2WRITE only. */
     void *find_resource_param; /* WARNING : not visible for garbager. */
     int last_charpath_op; /* true or false state of last charpath */
+    bool type3charpath;
 };
 
 #define is_in_page(pdev)\
