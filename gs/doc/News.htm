@@ -55,46 +55,13 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h3><a name="Version8.62"></a>Version 8.62 (2008-02-29)</h3>
+<h3><a name="Version8.63"></a>Version 8.63 (unreleased)</h3>
 
 <p>
-This version is the next in our line of scheduled semi-annual releases.
-<p>
-There were approximately 55 bugs fixed since version 8.61. Some fixes
-and improvements of note were:
-<p>
-COMPILE_INITS=1 was broken in 8.61 and now works as expected.
-<p>
-Fonts are now distributed in the Resource/Font directory and will be
-included in the executable if COMPILE_INITS=1
-<p>
-The tiffsep device was fixed for using more than 8 colorants.
-<p>
-Shadings, overprinting and transparency were optimized and are substantially
-faster than in 8.61, particularly for large format or high resolution
-rendering when using the 'clist' banding mode.
-<p>
-Changes were made to prevent near unbounded growth in memory usage and
-corresponding performance problems on a few test cases.
-<p>
-The 'pdfwrite' device was improved to fix some compatibility issues with
-PDF/A and to improve some font embedding and other issues.
-<p>
-The 'ht_ccsto.ps' Stochastic Threshold array was completely changed to
-be more useful. The values in the threshold array were inverted, so
-the number of 'light' colors was limited and using it generally caused
-prints that were too dark.
-<p>
-The 'runpdfbegin', 'dopdfpages' and 'runpdfend' PostScript pseudo-operators
-that were inadvertently removed in 8.61 were restored. This also restored
-the functionality of toolbin/pdf_info.ps to display PDF creator stats,
-fonts used and page sizes.
-<p>
-The halftone tile cache sizes and cache effectiveness were improved to
-help the performance when tiling with large cells or threshold arrays.
+This is an unreleased development snapshot.
 
 <p> The following <a href="http://bugs.ghostscript.com/">bugs</a> were
-open at the time of release: <blockquote>
+open at the time of the last release: <blockquote>
 465936, 578865, 626295, 686747, 686853, 687011, 687146, 687257, 687271,
 687280, 687295, 687327, 687514, 687520, 687531, 687608, 687650, 687674,
 687677, 687695, 687697, 687702, 687721, 687728, 687729, 687796, 687805,
@@ -138,39 +105,12 @@ open at the time of release: <blockquote>
 689721, 689722, 689723, 689725, 689727.
 </blockquote>
 
-<h3><a name="8.62_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="8.63_Incompatible_changes"></a>Incompatible changes</h3>
 
 <p>
-Not strictly a compatibility issue, but the default URW (GPL) fonts are now
-distributed in the Resource/Font/ path which can increase the number of
-file handles open for PostScript that opens all of the resources. Also
-the size of the %rom% rom file system within the executable when using
-COMPILE_INITS=1 is larger by the amount needed for the fonts.
-<p>
-Also not strictly incompatible, but some alternate fixed-point code 
-was stripped out, so FPU_TYPE and other FPU related makefile macros
-are gone or don't cause any difference in the code generated. Also the 
-'USE_ASM' macro was removed, since we expect modern compilers to do 
-sufficient optimization.
-<p>
-Some old (deprecated) "helper" scripts were removed: gsindent, gssubst,
-many2pdf.tcl, and pre.
-<p>
-The unused 'cmap' (special color mapping) and 'ropc' devices were 
-removed from the distribution.
-<p>
-The 'ht_ccsto.ps' Stochastic Threshold array was completely changed to
-be more useful. The values in the threshold array were inverted, so
-the number of 'light' colors was limited and using it generally caused
-prints that were too dark. This is an improvement, but incompatible
-in that anyone using it previously would see much different grays/
-colors.
-<p>
-The SYSTEM_CONSTANTS_ARE_WRITABLE compile time define was removed
-as was the "EXTEND_NAMES" makefile macro (still accessible using
-a compiler flag define).
+No compatibility issues at this point.
 
-<h3><a name="8.62_changelog"></a>Changelog</h3>
+<h3><a name="8.63_changelog"></a>Changelog</h3>
 
 <p>See the <a href="History8.htm">history file</a> for complete log 
 of changes.
@@ -194,7 +134,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 8.62, 29 February 2008
+<small>Ghostscript version 8.63, 1 March 2008
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
