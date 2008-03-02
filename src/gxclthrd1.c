@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id: $ */
+/* $Id$ */
 /* Command list - Support for multiple rendering threads */
 #include "memory_.h"
 #include "gx.h"
