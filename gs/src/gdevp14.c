@@ -1797,6 +1797,7 @@ pdf14_forward_open_device(gx_device * dev)
 {
     gx_device_forward * pdev = (gx_device_forward *)dev;
     gx_device * tdev = pdev->target;
+    pdf14_device *ñdev = (pdf14_device *)dev;
     int code = 0;
 
     /* The PDF 1.4 compositing devices must have a target */
@@ -1851,6 +1852,7 @@ static	int
 pdf14_disable_device(gx_device * dev)
 {
     gx_device_forward * pdev = (gx_device_forward *)dev;
+    pdf14_device *cdev = (pdf14_device *)dev;
 
     if_debug0('v', "[v]pdf14_disable_device\n");
     dev->color_info = pdev->target->color_info;
@@ -2016,7 +2018,6 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_imager_state	* pis,
     pdev->procs = dev_proto->procs;
     gx_device_fill_in_procs(dev);
     check_device_separable((gx_device *)pdev);
-
     return code;
 }
 
@@ -2165,8 +2166,9 @@ pdf14_copy_mono(gx_device * dev,
     int code, sbyte, bit, count;
     int run_length, startx, current_bit, bit_value;
     gx_color_index current_color;
+    pdf14_device *pdev = (pdf14_device *)dev;
 
-    fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
+    fit_copy(pdev, base, sourcex, sraster, id, x, y, w, h);
     line = base + (sourcex >> 3);
     sbit = sourcex & 7;
     first_bit = 7 - sbit;

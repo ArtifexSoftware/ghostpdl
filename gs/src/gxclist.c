@@ -89,7 +89,7 @@ RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
 public_st_device_clist();
 
 /* Forward declarations of driver procedures */
-static dev_proc_open_device(clist_open);
+dev_proc_open_device(clist_open);
 static dev_proc_output_page(clist_output_page);
 static dev_proc_close_device(clist_close);
 static dev_proc_get_band(clist_get_band);
@@ -464,7 +464,8 @@ clist_reset(gx_device * dev)
     cdev->undercolor_removal_id = gs_no_id;
     cdev->device_halftone_id = gs_no_id;
     cdev->image_enum_id = gs_no_id;
-    cdev->cropping_by_path = false;
+    cdev->cropping_min = cdev->save_cropping_min = 0;
+    cdev->cropping_max = cdev->save_cropping_max = cdev->height;
     return 0;
 }
 /*
@@ -613,7 +614,7 @@ clist_close_output_file(gx_device *dev)
 
 /* Open the device by initializing the device state and opening the */
 /* scratch files. */
-static int
+int
 clist_open(gx_device *dev)
 {
     gx_device_clist_writer * const cdev =

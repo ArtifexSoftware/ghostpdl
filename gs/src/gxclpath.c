@@ -602,7 +602,8 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	   See comment below about pdcolor == NULL.
 	 */
 	code = gx_default_fill_path(dev, pis, ppath, params, pdcolor, pcpath);
-	cdev->cropping_by_path = false;
+	cdev->cropping_min = cdev->save_cropping_min;
+	cdev->cropping_max = cdev->save_cropping_max;
 	return code;
     }
     if ( (cdev->disable_mask & clist_disable_fill_path) ||
@@ -624,8 +625,7 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	}
 	ry = fixed2int(bbox.p.y) - 1;
 	rheight = fixed2int_ceiling(bbox.q.y) - ry + 1;
-	fit_fill_y(dev, ry, rheight);
-	fit_fill_h(dev, ry, rheight);
+	crop_fill_y(cdev, ry, rheight);
 	if (rheight <= 0)
 	    return 0;
     }
@@ -642,10 +642,9 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	   Put the clipping path only.
 	   The graphics library will call us again with subdividing 
 	   the shading into trapezoids and rectangles. 
-	   Note cropping_by_path is true during such calls. */
-	cdev->cropping_by_path = true;
-	cdev->cropping_min = ry;
-	cdev->cropping_max = ry + rheight;
+	   Narrow cropping_min, croping_max for such calls. */
+	cdev->cropping_min = max(ry, cdev->cropping_min);
+	cdev->cropping_max = min(ry + rheight, cdev->cropping_max);
 	RECT_ENUM_INIT(re, ry, rheight);
 	do {
 	    RECT_STEP_INIT(re);

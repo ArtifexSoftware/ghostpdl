@@ -244,7 +244,9 @@ clist_fill_rectangle(gx_device * dev, int rx, int ry, int rwidth, int rheight,
     int code;
     cmd_rects_enum_t re;
 
-    fit_fill(dev, rx, ry, rwidth, rheight);
+    crop_fill(cdev, rx, ry, rwidth, rheight);
+    if (rwidth < 0 || rheight < 0)
+	return 0;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
     RECT_ENUM_INIT(re, ry, rheight);
@@ -310,21 +312,7 @@ clist_write_fill_trapezoid(gx_device * dev,
 	    rheight = fixed2int_ceiling(ytop) - ry;
 	}
     }
-    if (cdev->cropping_by_path) {
-	/* Cropping by Y is necessary when the shading path is smaller than shading.
-	   In this case the clipping path is written into the path's bands only.
-	   Thus bands outside the shading path are not clipped,
-	   but the shading may paint into them, so crop them here.
-	 */
-	if (ry < cdev->cropping_min) {
-	    rheight = ry + rheight - cdev->cropping_min;
-	    ry = cdev->cropping_min;
-	}
-	if (ry + rheight > cdev->cropping_max)
-	    rheight = cdev->cropping_max - ry;
-    }
-    fit_fill_y(dev, ry, rheight);
-    fit_fill_h(dev, ry, rheight);
+    crop_fill_y(cdev, ry, rheight);
     if (rheight < 0)
 	return 0;
     if (cdev->permanent_error < 0)
@@ -464,7 +452,9 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
     int code;
     cmd_rects_enum_t re;
 
-    fit_fill(dev, rx, ry, rwidth, rheight);
+    crop_fill(cdev, rx, ry, rwidth, rheight);
+    if (rwidth < 0 || rheight < 0)
+	return 0;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
     RECT_ENUM_INIT(re, ry, rheight);
@@ -916,10 +906,12 @@ clist_strip_copy_rop(gx_device * dev,
     cmd_rects_enum_t re;
 
     if (scolors != 0 && scolors[0] != scolors[1]) {
-	fit_fill(dev, rx, ry, rwidth, rheight);
+	crop_fill(cdev, rx, ry, rwidth, rheight);
     } else {
-	fit_copy(dev, sdata, sourcex, sraster, id, rx, ry, rwidth, rheight);
+	crop_copy(cdev, sdata, sourcex, sraster, id, rx, ry, rwidth, rheight);
     }
+    if (rwidth < 0 || rheight < 0)
+	return 0;
     /*
      * On CMYK devices, RasterOps must be executed with complete pixels
      * if the operation involves the destination.

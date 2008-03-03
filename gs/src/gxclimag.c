@@ -81,7 +81,9 @@ clist_fill_mask(gx_device * dev,
     if (depth > 1 && (cdev->disable_mask & clist_disable_copy_alpha) != 0)
 	return_error(gs_error_unknownerror);
 
-    fit_copy(dev, data, data_x, raster, id, rx, ry, rwidth, rheight);
+    crop_copy(cdev, data, data_x, raster, id, rx, ry, rwidth, rheight);
+    if (rwidth < 0 || rheight < 0)
+	return 0;
     y0 = ry;			/* must do after fit_copy */
 
     /* If non-trivial clipping & complex clipping disabled, default */
