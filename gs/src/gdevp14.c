@@ -1797,7 +1797,6 @@ pdf14_forward_open_device(gx_device * dev)
 {
     gx_device_forward * pdev = (gx_device_forward *)dev;
     gx_device * tdev = pdev->target;
-    pdf14_device *ñdev = (pdf14_device *)dev;
     int code = 0;
 
     /* The PDF 1.4 compositing devices must have a target */
@@ -1852,7 +1851,6 @@ static	int
 pdf14_disable_device(gx_device * dev)
 {
     gx_device_forward * pdev = (gx_device_forward *)dev;
-    pdf14_device *cdev = (pdf14_device *)dev;
 
     if_debug0('v', "[v]pdf14_disable_device\n");
     dev->color_info = pdev->target->color_info;
