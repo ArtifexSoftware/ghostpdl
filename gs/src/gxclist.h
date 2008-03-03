@@ -249,8 +249,8 @@ typedef struct gx_device_clist_writer_s {
     proc_free_up_bandlist_memory((*free_up_bandlist_memory)); /* if nz, proc to free some bandlist memory */
     int disable_mask;		/* mask of routines to disable clist_disable_xxx */
     gs_pattern1_instance_t *pinst; /* Used when it is a pattern clist. */
-    bool cropping_by_path;
     int cropping_min, cropping_max;
+    int save_cropping_min, save_cropping_max;
     ulong ins_count;
 } gx_device_clist_writer;
 
@@ -395,5 +395,54 @@ void clist_debug_set_ctm_imp(const gs_matrix *m);
 #define clist_debug_image_rect (void)
 #define clist_debug_set_ctm (void)
 #endif
+
+/* Cropping by Y is necessary when the shading path is smaller than shading.
+   In this case the clipping path is written into the path's bands only.
+   Thus bands outside the shading path are not clipped,
+   but the shading may paint into them, so use this macro to crop them.
+
+   Besides that, cropping by Y is necessary when a transparency compositor
+   is installed over clist writer. Transparency compositors change the number
+   of device color components, so transparency group's elements
+   must not paint to bands that are not covered by the transparency bbox
+   to prevent a failure when clist reader recieves a wrong number of color components.
+ */
+#define crop_fill_y(cdev, ry, rheight)\
+    BEGIN\
+	if (ry < cdev->cropping_min) {\
+	    rheight = ry + rheight - cdev->cropping_min;\
+	    ry = cdev->cropping_min;\
+	}\
+	if (ry + rheight > cdev->cropping_max)\
+	    rheight = cdev->cropping_max - ry;\
+    END
+
+#define crop_fill(dev, x, y, w, h)\
+    BEGIN\
+	if ( x < 0 )\
+	    w += x, x = 0;\
+	fit_fill_w(dev, x, w);\
+	crop_fill_y(dev, y, h);\
+    END
+
+#define crop_copy_y(cdev, data, data_x, raster, id, ry, rheight)\
+    BEGIN\
+	if (ry < cdev->cropping_min) {\
+	    rheight = ry + rheight - cdev->cropping_min;\
+	    data += (cdev->cropping_min - ry) * raster;\
+	    id = gx_no_bitmap_id;\
+	    ry = cdev->cropping_min;\
+	}\
+	if (ry + rheight > cdev->cropping_max)\
+	    rheight = cdev->cropping_max - ry;\
+    END
+
+#define crop_copy(dev, data, data_x, raster, id, x, y, w, h)\
+    BEGIN\
+	if ( x < 0 )\
+	    w += x, data_x -= x, x = 0;\
+	fit_fill_w(dev, x, w);\
+	crop_copy_y(dev, data, data_x, raster, id, y, h);\
+    END
 
 #endif /* gxclist_INCLUDED */
