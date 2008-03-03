@@ -536,8 +536,9 @@ CCWINFLAGS=
 # ****** HACK ****** *.tr is still created in the current directory.
 BEGINFILES2=*.tr
 
-# Include the generic makefiles.
+# Include the generic makefiles. psromfs.mak must precede lib.mak
 
+!include $(GLSRCDIR)\psromfs.mak
 !include $(GLSRCDIR)\winlib.mak
 !include $(PSSRCDIR)\winint.mak
 
@@ -640,27 +641,30 @@ $(GS_OBJ).res
 
 # The big DLL
 $(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(PSOBJ)gsdll.$(OBJ)\
- $(GSDLL_OBJ).res $(PSSRCDIR)\gsdll32.def
+ $(GSDLL_OBJ).res $(PSSRCDIR)\gsdll32.def $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
 	-del $(PSGEN)gswin32.tr
 	copy $(ld_tr) $(PSGEN)gswin32.tr
+	echo  $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) + >> $(PSGEN)gswin32.tr
 	echo $(LIBDIR)\c0d32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
 	$(LINK) /L$(LIBDIR) $(LCT) /Tpd /aa @$(PSGEN)gswin32.tr ,$(GSDLL_DLL),$(PSOBJ)$(GSDLL),@$(LIBCTR),$(PSSRCDIR)\gsdll32.def,$(GSDLL_OBJ).res
 
 !else
 # The big graphical EXE
 $(GS_XE):   $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL)\
- $(PSOBJ)gsdll.$(OBJ) $(DWOBJNO) $(GS_OBJ).res $(PSSRCDIR)\dwmain32.def
+ $(PSOBJ)gsdll.$(OBJ) $(DWOBJNO) $(GS_OBJ).res $(PSSRCDIR)\dwmain32.def $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
 	-del $(PSGEN)gswin32.tr
 	copy $(ld_tr) $(PSGEN)gswin32.tr
+	echo  $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) + >> $(PSGEN)gswin32.tr
 	echo $(LIBDIR)\c0w32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
 	echo $(DWOBJNO) >> $(PSGEN)gswin32.tr
 	$(LINK) /L$(LIBDIR) $(LCT) /Tpe /aa @$(PSGEN)gswin32.tr ,$(GS_XE),$(PSOBJ)$(GS) @$(LIBCTR),$(PSSRCDIR)\dwmain32.def,$(GS_OBJ).res
 
 # The big console mode EXE
 $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
- $(PSOBJ)gsdll.$(OBJ) $(OBJCNO) $(GS_OBJ).res $(PSSRCDIR)\dw32c.def
+ $(PSOBJ)gsdll.$(OBJ) $(OBJCNO) $(GS_OBJ).res $(PSSRCDIR)\dw32c.def $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
 	-del $(PSGEN)gswin32.tr
 	copy $(ld_tr) $(PSGEN)gswin32.tr
+	echo  $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) + >> $(PSGEN)gswin32.tr
 	echo $(LIBDIR)\c0w32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
 	echo $(OBJCNO) >> $(PSGEN)gswin32.tr
 	$(LINK) /L$(LIBDIR) $(LCT) /Tpe /ap @$(PSGEN)gswin32.tr ,$(GSCONSOLE_XE),$(PSOBJ)$(GSCONSOLE) @$(LIBCTR),$(PSSRCDIR)\dw32c.def,$(GS_OBJ).res

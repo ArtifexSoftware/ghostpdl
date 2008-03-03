@@ -280,6 +280,8 @@ include $(GLSRCDIR)/unixhead.mak
 PLATFORM=macos_
 
 include $(GLSRCDIR)/gs.mak
+# psromfs.mak must precede lib.mak
+include $(GLSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak
 include $(PSSRCDIR)/int.mak
 include $(PSSRCDIR)/cfonts.mak
@@ -399,7 +401,7 @@ $(CWPROJ_XML): $(gconfigd_h)
 	$(CP_) $(GLSRC)gscdef.c $(GLOBJ)gscdefs.c
 	/Developer/Tools/SetFile -c CWIE -t TEXT $(CWPROJ_XML)
 
-$(GS_XE): $(ld_tr) $(ECHOGS_XE) $(XE_ALL) $(CWPROJ_XML)
+$(GS_XE): $(ld_tr) $(ECHOGS_XE) $(XE_ALL) $(CWPROJ_XML) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
 
 # ------------------------------------------------------------------- #
 

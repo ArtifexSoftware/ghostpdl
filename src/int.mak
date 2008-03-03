@@ -975,27 +975,13 @@ $(PSOBJ)iccfont.$(OBJ) : $(PSSRC)iccfont.c $(GH) $(string__h)\
 $(PSOBJ)iccinit0.$(OBJ) : $(PSSRC)iccinit0.c $(stdpre_h)
 	$(PSCC) $(PSO_)iccinit0.$(OBJ) $(C_) $(PSSRC)iccinit0.c
 
-$(PSOBJ)iccinit1.$(OBJ) :  $(PSSRC)iccinit1.c $(stdpre_h) $(GLOBJ)gsromfs.$(OBJ)
+$(PSOBJ)iccinit1.$(OBJ) :  $(PSSRC)iccinit1.c $(stdpre_h)
 	$(PSCC) $(PSO_)iccinit1.$(OBJ) $(C_) $(PSSRC)iccinit1.c
 
 # All the gs_*.ps files should be prerequisites of gs_init.c but we don't have
 # any convenient list of them so we just use lib/gs_init.ps == $(PSLIB)$(GS_INIT).
 $(PSGEN)$(GS_INIT) : $(PSLIB)$(GS_INIT) $(GENINIT_XE) $(gconfig_h)
 	$(EXP)$(GENINIT_XE) -I $(PSLIB) $(GS_INIT) $(gconfig_h) $(PSGEN)gs_init.ps
-
-# The following list of files needed by the interpreter is maintained here.
-# This changes infrequently, but is a potential point of bitrot, but since
-# unix-inst.mak uses this macro, problems should surface when testing installed
-# versions.
-#		Note: gs_cet.ps is only needed to match Adobe CPSI defaults
-EXTRA_INIT_FILES= Fontmap cidfmap xlatmap FAPI FCOfontmap-PCLPS2 gs_cet.ps
-
-#	The init files are put in the lib/ directory (gs_init.ps + EXTRA_INIT_FILES)
-#	Resource files go into Resource/...
-
-RESOURCE_LIST=ColorSpace/ Decoding/ Encoding/ Font/ ProcSet/ IdiomSet/ CIDFont/ CMap/
-
-PS_ROMFS_ARGS=-c -P $(PSRESDIR)$(D) -d Resource/ $(RESOURCE_LIST) -d lib/ -P $(PSGEN) $(GS_INIT) -P $(PSLIB)
 
 # ---------------- Stochastic halftone ---------------- #
 

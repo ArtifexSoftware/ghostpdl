@@ -462,6 +462,8 @@ DEVICE_DEVS21= $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.dev $(DD)bmpsep8.
 # Include the generic makefiles.
 !include "$(GLSRCDIR)\version.mak"
 !include "$(GLSRCDIR)\gs.mak"
+# psromfs.mak must precede lib.mak
+!include "$(GLSRCDIR)\psromfs.mak"
 !include "$(GLSRCDIR)\lib.mak"
 !include "$(GLSRCDIR)\jpeg.mak"
 # zlib.mak must precede libpng.mak
@@ -604,7 +606,7 @@ $(PSOBJ)dpmain.$(OBJ): $(PSSRC)dpmain.c $(AK)\
 !if $(MAKEDLL)
 #making a DLL
 GS_ALL=$(PSOBJ)gsdll.$(OBJ) $(INT_ALL) \
-  $(LIB_ALL) $(LIBCTR) $(ld_tr) $(PSOBJ)$(GS).res $(ICONS)
+  $(LIB_ALL) $(LIBCTR) $(ld_tr) $(PSOBJ)$(GS).res $(ICONS) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
 
 $(GS_XE): $(BINDIR)\$(GSDLL).dll $(PSSRC)dpmain.c $(gsdll_h) $(gsdllos2_h) $(PSSRC)gsos2.rc $(GLOBJ)gscdefs.$(OBJ)
 !if $(EMX)
@@ -620,19 +622,19 @@ $(PSOBJ)gsdll.$(OBJ): $(PSSRC)gsdll.c $(gsdll_h) $(ghost_h) $(gscdefs_h)
 
 $(BINDIR)\$(GSDLL).dll: $(GS_ALL) $(ALL_DEVS) $(PSOBJ)gsdll.$(OBJ)
 !if $(EMX)
-	LINK386 /DEBUG $(COMPBASE)\lib\dll0.obj $(COMPBASE)\lib\end.lib @$(ld_tr) $(PSOBJ)gsdll.obj, $(BINDIR)\$(GSDLL).dll, ,$(X11LIBS) $(COMPBASE)\lib\gcc.lib $(COMPBASE)\lib\st\c.lib $(COMPBASE)\lib\st\c_dllso.lib $(COMPBASE)\lib\st\sys.lib $(COMPBASE)\lib\c_alias.lib $(COMPBASE)\lib\os2.lib, $(PSSRC)gsdll2.def
+	LINK386 /DEBUG $(COMPBASE)\lib\dll0.obj $(COMPBASE)\lib\end.lib @$(ld_tr) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) $(PSOBJ)gsdll.obj, $(BINDIR)\$(GSDLL).dll, ,$(X11LIBS) $(COMPBASE)\lib\gcc.lib $(COMPBASE)\lib\st\c.lib $(COMPBASE)\lib\st\c_dllso.lib $(COMPBASE)\lib\st\sys.lib $(COMPBASE)\lib\c_alias.lib $(COMPBASE)\lib\os2.lib, $(PSSRC)gsdll2.def
 !endif
 !if $(IBMCPP)
-	LINK386 /NOE /DEBUG @$(ld_tr) $(PSOBJ)gsdll.obj, $(BINDIR)\$(GSDLL).dll, , , $(PSSRC)gsdll2.def
+	LINK386 /NOE /DEBUG @$(ld_tr) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) $(PSOBJ)gsdll.obj, $(BINDIR)\$(GSDLL).dll, , , $(PSSRC)gsdll2.def
 !endif
 
 !else
 #making an EXE
 GS_ALL=$(PSOBJ)gs.$(OBJ) $(INT_ALL) \
-  $(LIB_ALL) $(LIBCTR) $(ld_tr) $(PSOBJ)$(GS).res $(ICONS)
+  $(LIB_ALL) $(LIBCTR) $(ld_tr) $(PSOBJ)$(GS).res $(ICONS) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
 
 $(GS_XE): $(GS_ALL) $(ALL_DEVS)
-	$(COMPDIR)\$(COMP) $(CGDB) I$(PSSRCDIR) -I$(GLSRCDIR) -o $(PSOBJ)$(GS) $(PSOBJ)gs.$(OBJ) @$(ld_tr) -lm
+	$(COMPDIR)\$(COMP) $(CGDB) I$(PSSRCDIR) -I$(GLSRCDIR) -o $(PSOBJ)$(GS) $(PSOBJ)gs.$(OBJ) @$(ld_tr) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) -lm
 	$(COMPDIR)\emxbind -r$(PSOBJ)$(GS).res $(COMPDIR)\emxl.exe $(PSOBJ)$(GS) $(GS_XE) -ac
 	del $(PSOBJ)$(GS)
 !endif

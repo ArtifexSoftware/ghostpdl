@@ -630,20 +630,27 @@ currentdict /tt_tag_dict .undef
         % returned. Some TrueType fonts for Microsoft Windows redefines
         % MacGlyphEncoding glyph name out of predefined range). To permit
         % such fonts, ISOLatin1Encoding is used to find broken post. Bug 689495.
-      /.broken_post false def
-      .latin1isodict postnames {
-        dup null ne
-        % dup /.notdef ne and
-        {
-          2 copy known {
-            TTFDEBUG { (ignore post table that redefines ISOLatin1Encoding glyph name ) print dup == flush } if
-            /.broken_post true def
-            pop exit
-          } if
-        } if
-        pop
-      } forall
-      pop
+      /.broken_post //false def
+      tabdict /name .knownget {
+        (Windows Type 1 Installer V1.0) search {
+          pop pop pop
+          .latin1isodict postnames {
+            dup //null ne
+            % dup /.notdef ne and
+            {
+              2 copy known {
+                TTFDEBUG { (ignore post table that redefines ISOLatin1Encoding glyph name ) print dup == flush } if
+                /.broken_post //true def
+                pop exit
+              } if
+            } if
+            pop
+          } forall
+          pop
+        } {
+          pop
+        } ifelse
+      } if
 
       numglyphs array 0 1 numglyphs 1 sub {
 	dup 2 mul 34 add postglyphs exch 2 //getinterval_from_stringarray exec 
@@ -1901,6 +1908,36 @@ currentdict /postalias undef
   /is_symbolic gput
   //false 0 .loadttfonttables
   .makesfnts
+  tabdict /cmap known not {
+    (   **** Warning: Embedded TT font lacks required cmap table. Using identity cmap.\n)
+        pdfformaterror
+    % Unknown (i.e. not 0 ) language ID brings in post table.
+    % Fields: cmap_version, number_of_subtables,
+    %  plarform_id, encoding_id, offset,
+    %  format, subtable_length, language,
+    %  256 bytes of identity mapping.
+    tabdict /cmap
+    < 0000 0001
+      0001 D00D 0000000c
+      0000 0106 0000
+      00 01 02 03 04 05 06 07 08 09 0a 0d 0c 0d 0e 0f
+      10 11 12 13 14 15 16 17 18 19 1a 1d 1c 1d 1e 1f
+      20 21 22 23 24 25 26 27 28 29 2a 2d 2c 2d 2e 2f
+      30 31 32 33 34 35 36 37 38 39 3a 3d 3c 3d 3e 3f
+      40 41 42 43 44 45 46 47 48 49 4a 4d 4c 4d 4e 4f
+      50 51 52 53 54 55 56 57 58 59 5a 5d 5c 5d 5e 5f
+      60 61 62 63 64 65 66 67 68 69 6a 6d 6c 6d 6e 6f
+      70 71 72 73 74 75 76 77 78 79 7a 7d 7c 7d 7e 7f
+      80 81 82 83 84 85 86 87 88 89 8a 8d 8c 8d 8e 8f
+      90 91 92 93 94 95 96 97 98 99 9a 9d 9c 9d 9e 9f
+      a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 aa ad ac ad ae af
+      b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 ba bd bc bd be bf
+      c0 c1 c2 c3 c4 c5 c6 c7 c8 c9 ca cd cc cd ce cf
+      d0 d1 d2 d3 d4 d5 d6 d7 d8 d9 da dd dc dd de df
+      e0 e1 e2 e3 e4 e5 e6 e7 e8 e9 ea ed ec ed ee ef
+      f0 f1 f2 f3 f4 f5 f6 f7 f8 f9 fa fd fc fd fe ff
+    > readonly put
+  } if
   .getpost
   .pickcmap
   mark

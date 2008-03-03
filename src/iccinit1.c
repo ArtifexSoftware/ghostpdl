@@ -26,6 +26,9 @@ const byte gs_init_string[] =
 	"systemdict /GenericResourceDir known not { " 		/* if GenericResourceDir was */
 	"systemdict /GenericResourceDir (%rom%Resource/) put "	/* not set on command line,  */
 	"} if "							/* set to %rom%Resource/     */
+	"systemdict /FontResourceDir known not { " 		/* if GenericResourceDir was */
+	"systemdict /FontResourceDir (%rom%Resource/Font/) put "/* not set on command line,  */
+	"} if "							/* set to %rom%Resource/     */
 	"(gs_init.ps) .libfile not { "
 	"(Can't find initialization file gs_init.ps.\\n) print flush quit "	/* OOPS! */
 	"} if cvx exec "					/* now run the init file       */

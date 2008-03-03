@@ -148,6 +148,8 @@ CC_SHARED=$(CC_)
 
 include $(GLSRCDIR)/unixhead.mak
 include $(GLSRCDIR)/gs.mak
+# psromfs.mak must precede lib.mak
+include $(GLSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak
 include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak
@@ -162,7 +164,7 @@ include $(GLSRCDIR)/unix-aux.mak
 
 # The following replaces unixlink.mak
 
-LIB_ONLY=$(GLOBJ)gsnogc.$(OBJ) $(GLOBJ)gconfig.$(OBJ) $(GLOBJ)gscdefs.$(OBJ)
+LIB_ONLY=$(GLOBJ)gsnogc.$(OBJ) $(GLOBJ)gconfig.$(OBJ) $(GLOBJ)gscdefs.$(OBJ) $(GLOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
 ldt_tr=$(GLOBJ)ldt.tr
 $(GS_XE): $(ld_tr) $(ECHOGS_XE) $(LIB_ALL) $(DEVS_ALL) $(GLOBJ)gslib.$(OBJ) $(LIB_ONLY)
 	$(ECHOGS_XE) -w $(ldt_tr) -n - $(CCLD) $(LDFLAGS) -o $(GS_XE)
@@ -175,7 +177,7 @@ $(GS_XE): $(ld_tr) $(ECHOGS_XE) $(LIB_ALL) $(DEVS_ALL) $(GLOBJ)gslib.$(OBJ) $(LI
 
 GSLIB_A=libgsgraph.a
 lar_tr=$(GLOBJ)lar.tr
-$(GSLIB_A):  $(obj_tr) $(ECHOGS_XE) $(LIB_ALL) $(DEVS_ALL) $(LIB_ONLY)
+$(GSLIB_A):  $(obj_tr) $(ECHOGS_XE) $(LIB_ALL) $(DEVS_ALL) $(LIB_ONLY) $(GLOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
 	rm -f $(GSLIB_A)
 	$(ECHOGS_XE) -w $(lar_tr) -n - $(AR) $(ARFLAGS) $(GSLIB_A)
 	$(ECHOGS_XE) -a $(lar_tr) -n -s $(LIB_ONLY) -s
