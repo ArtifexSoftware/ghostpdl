@@ -84,6 +84,7 @@ typedef struct gs_transparency_group_params_s {
     bool Knockout;
     bool image_with_SMask;
     bool idle;
+    uint mask_id;
 } gs_transparency_group_params_t;
 
 /* Define the parameter structure for a transparency mask. */
@@ -118,6 +119,7 @@ typedef struct gx_transparency_mask_params_s {
     bool function_is_identity;
     bool idle;
     bool replacing;
+    uint mask_id;
     byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE];
 } gx_transparency_mask_params_t;
 

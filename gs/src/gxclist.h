@@ -219,7 +219,7 @@ typedef struct clist_color_space_s {
     gs_id id;			/* space->id for comparisons */
     const gs_color_space *space;
 } clist_color_space_t;
-typedef struct gx_device_clist_writer_s {
+struct gx_device_clist_writer_s {
     gx_device_clist_common_members;	/* (must be first) */
     int error_code;		/* error returned by cmd_put_op */
     gx_clist_state *states;	/* current state of each band */
@@ -266,9 +266,17 @@ typedef struct gx_device_clist_writer_s {
     gs_pattern1_instance_t *pinst; /* Used when it is a pattern clist. */
     int cropping_min, cropping_max;
     int save_cropping_min, save_cropping_max;
-    ulong ins_count;
+    int cropping_level;
     clist_writer_cropping_buffer_t *cropping_stack;
-} gx_device_clist_writer;
+    ulong ins_count;
+    uint mask_id_count;
+    uint mask_id;
+    uint temp_mask_id; /* Mask id of a mask of an image with SMask. */
+};
+#ifndef gx_device_clist_writer_DEFINED
+#define gx_device_clist_writer_DEFINED
+typedef struct gx_device_clist_writer_s gx_device_clist_writer;
+#endif
 
 /* Bits for gx_device_clist_writer.disable_mask. Bit set disables behavior */
 #define clist_disable_fill_path	(1 << 0)

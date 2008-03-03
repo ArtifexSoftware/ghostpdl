@@ -56,6 +56,7 @@ struct pdf14_buf_s {
     gs_int_rect bbox;
     pdf14_buf *maskbuf; /* Save pdf14_ctx_s::maksbuf. */
     bool idle;
+    uint mask_id;
 };
 
 struct pdf14_ctx_s {

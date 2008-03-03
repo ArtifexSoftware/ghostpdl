@@ -470,6 +470,8 @@ clist_reset(gx_device * dev)
     cdev->cropping_min = cdev->save_cropping_min = 0;
     cdev->cropping_max = cdev->save_cropping_max = cdev->height;
     cdev->cropping_stack = NULL;
+    cdev->cropping_level = 0;
+    cdev->mask_id_count = cdev->mask_id = cdev->temp_mask_id = 0;
     return 0;
 }
 /*
@@ -883,9 +885,6 @@ clist_get_band(gx_device * dev, int y, int *band_start)
     return min(dev->height - start, band_height);
 }
 
-
-
-
 /* copy constructor if from != NULL
  * default constructor if from == NULL
  */
@@ -916,10 +915,14 @@ clist_writer_push_no_cropping(gx_device_clist_writer *cdev)
 
     if (buf == NULL)
 	return_error(gs_error_VMerror);
+    if_debug1('v', "[v]push cropping[%d]\n", cdev->cropping_level);
     buf->next = cdev->cropping_stack;
     cdev->cropping_stack = buf;
     buf->cropping_min = cdev->cropping_min;
     buf->cropping_max = cdev->cropping_max;
+    buf->mask_id = cdev->mask_id;
+    buf->temp_mask_id = cdev->temp_mask_id;
+    cdev->cropping_level++;
     return 0;
 }
 
@@ -944,7 +947,11 @@ clist_writer_pop_cropping(gx_device_clist_writer *cdev)
 	return_error(gs_error_unregistered); /*Must not happen. */
     cdev->cropping_min = buf->cropping_min;
     cdev->cropping_max = buf->cropping_max;
+    cdev->mask_id = buf->mask_id;
+    cdev->temp_mask_id = buf->temp_mask_id;
     cdev->cropping_stack = buf->next;
+    cdev->cropping_level--;
+    if_debug1('v', "[v]pop cropping[%d]\n", cdev->cropping_level);
     gs_free_object(cdev->memory, buf, "clist_writer_transparency_pop");
     return 0;
 }
@@ -953,6 +960,7 @@ int
 clist_writer_check_empty_cropping_stack(gx_device_clist_writer *cdev)
 {
     if (cdev->cropping_stack != NULL) {
+	if_debug1('v', "[v]Error: left %d cropping(s)\n", cdev->cropping_level);
 	return_error(gs_error_unregistered); /* Must not happen */
     }
     return 0;

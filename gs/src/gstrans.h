@@ -88,8 +88,9 @@ struct gs_pdf14trans_params_s {
     gs_transparency_source_t shape;
     bool mask_is_image;
     gs_matrix ctm;
-    bool idle;
     bool replacing;
+    bool idle; /* For clist reader.*/
+    uint mask_id; /* For clist reader.*/
 };
 
 #ifndef gs_pdf14trans_params_DEFINED

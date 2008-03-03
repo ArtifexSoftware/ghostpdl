@@ -104,7 +104,8 @@ const gs_composite_type_t gs_composite_alpha_type =
 	gx_default_composite_is_closing,
 	gx_default_composite_is_friendly,
 	gx_default_composite_clist_write_update,
-	gx_default_composite_clist_read_update
+	gx_default_composite_clist_read_update,
+	gx_default_composite_get_cropping
     }
 };
 typedef struct gs_composite_alpha_s {
@@ -150,7 +151,7 @@ c_alpha_equal(const gs_composite_t * pcte, const gs_composite_t * pcte2)
 }
 
 static int
-c_alpha_write(const gs_composite_t * pcte, byte * data, uint * psize)
+c_alpha_write(const gs_composite_t * pcte, byte * data, uint * psize, gx_device_clist_writer *cdev)
 {
     uint size = *psize;
     uint used;

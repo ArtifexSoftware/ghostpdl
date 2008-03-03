@@ -856,8 +856,14 @@ clist_create_compositor(gx_device * dev,
 			gs_imager_state * pis, gs_memory_t * mem)
 {
     byte * dp;
-    uint size = 0;
-    int code = pcte->type->procs.write(pcte, 0, &size);
+    uint size = 0, size_dummy;
+    gx_device_clist_writer * const cdev =
+		    &((gx_device_clist *)dev)->writer;
+    int ry, rheight, cropping_op;
+    int band_height = cdev->page_info.band_params.BandHeight;
+    int last_band = (cdev->height + band_height - 1) / band_height;
+    int first_band = 0, no_of_bands = last_band + 1;
+    int code = pcte->type->procs.write(pcte, 0, &size, cdev);
 
     /* determine the amount of space required */
     if (code < 0 && code != gs_error_rangecheck)
@@ -870,41 +876,78 @@ clist_create_compositor(gx_device * dev,
     if (code < 0)
         return code;
 
-#if 0 /* Disabled sinse c_pdf14trans_write includes CTM into the pdf14 compositor parameters. */
-    if (pcte->type->comp_id == GX_COMPOSITOR_PDF14_TRANS) {
-	gx_device_clist_writer * const cdev =
-			&((gx_device_clist *)dev)->writer;
-	int len = cmd_write_ctm_return_length(cdev, &ctm_only(pis));
-
-	code = set_cmd_put_all_op(dp, (gx_device_clist_writer *)dev,
-                           cmd_opv_set_ctm, len + 1);
-	if (code < 0)
-	    return code;
-	/* fixme: would like to set pcls->known for covered bands. */
-	code = cmd_write_ctm(&ctm_only(pis), dp, len);
-	if (code < 0)
-	    return code;
-	state_update(ctm);
-    }
-#endif
-
-    /* overprint applies to all bands */
-    /* fixme: optimize: the pdf14 compositor could be applied 
-       only to bands covered by the pcte->params.bbox. */
-    code = set_cmd_put_all_op( dp,
-                               (gx_device_clist_writer *)dev,
-                               cmd_opv_extend,
-                               size );
+    code = pcte->type->procs.get_cropping(pcte, &ry, &rheight);
     if (code < 0)
-        return code;
+	return code;
+    cropping_op = code;
+    if (cropping_op == 1) {
+	first_band = ry / band_height;
+	last_band = (ry + rheight + band_height - 1) / band_height;
+    } else if (cropping_op > 1) {
+	first_band = cdev->cropping_min / band_height;
+	last_band = (cdev->cropping_max + band_height - 1) / band_height;
+    }
+    if (last_band - first_band > no_of_bands * 2 / 3) {
+	/* Covering many bands, so write "all bands" command for shorter clist. */
+	cropping_op = 0;
+    }
+    if (cropping_op == 0) {
+	/* overprint applies to all bands */
+	size_dummy = size;
+	code = set_cmd_put_all_op( dp,
+				   (gx_device_clist_writer *)dev,
+				   cmd_opv_extend,
+				   size );
+	if (code < 0)
+	    return code;
 
-    /* insert the command and compositor identifier */
-    dp[1] = cmd_opv_ext_create_compositor;
-    dp[2] = pcte->type->comp_id;
+	/* insert the command and compositor identifier */
+	dp[1] = cmd_opv_ext_create_compositor;
+	dp[2] = pcte->type->comp_id;
 
-    /* serialize the remainder of the compositor */
-    if ((code = pcte->type->procs.write(pcte, dp + 3, &size)) < 0)
-        ((gx_device_clist_writer *)dev)->cnext = dp;
+	/* serialize the remainder of the compositor */
+	if ((code = pcte->type->procs.write(pcte, dp + 3, &size_dummy, cdev)) < 0)
+	    ((gx_device_clist_writer *)dev)->cnext = dp;
+	return code;
+    } 
+    if (cropping_op == 1) {
+	code = clist_writer_push_cropping(cdev, ry, rheight);
+	if (code < 0)
+	    return code;
+    }
+    {
+	/* The pdf14 compositor could be applied 
+	   only to bands covered by the pcte->params.bbox. */
+	cmd_rects_enum_t re;
+
+	RECT_ENUM_INIT(re, cdev->cropping_min, cdev->cropping_max - cdev->cropping_min);
+	do {
+	    RECT_STEP_INIT(re);
+	    re.pcls->band_complexity.nontrivial_rops = true;
+	    do {
+		code = set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_extend, size);
+		if (code >= 0) {
+		    size_dummy = size;
+		    dp[1] = cmd_opv_ext_create_compositor;
+		    dp[2] = pcte->type->comp_id;
+		    code = pcte->type->procs.write(pcte, dp + 3, &size_dummy, cdev);
+		}
+	    } while (RECT_RECOVER(code));
+	    if (code < 0 && SET_BAND_CODE(code))
+		goto error_in_rect;
+	    re.y += re.height;
+	    continue;
+    error_in_rect:
+	    if (!(cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+		    SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0))
+		return re.band_code;
+	} while (re.y < re.yend);
+    }
+    if (cropping_op == 2) {
+	code = clist_writer_pop_cropping(cdev);
+	if (code < 0)
+	    return code;
+    }
     return code;
 }
 

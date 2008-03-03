@@ -604,6 +604,8 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	code = gx_default_fill_path(dev, pis, ppath, params, pdcolor, pcpath);
 	cdev->cropping_min = cdev->save_cropping_min;
 	cdev->cropping_max = cdev->save_cropping_max;
+	if_debug2('v', "[v] clist_fill_path: restore cropping_min=%d croping_max=%d\n",
+				cdev->save_cropping_min, cdev->save_cropping_max);
 	return code;
     }
     if ( (cdev->disable_mask & clist_disable_fill_path) ||
@@ -647,6 +649,8 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	cdev->save_cropping_max = cdev->cropping_max;
 	cdev->cropping_min = max(ry, cdev->cropping_min);
 	cdev->cropping_max = min(ry + rheight, cdev->cropping_max);
+	if_debug2('v', "[v] clist_fill_path: narrow cropping_min=%d croping_max=%d\n",
+				cdev->save_cropping_min, cdev->save_cropping_max);
 	RECT_ENUM_INIT(re, ry, rheight);
 	do {
 	    RECT_STEP_INIT(re);
