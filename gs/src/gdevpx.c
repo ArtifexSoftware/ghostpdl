@@ -514,14 +514,14 @@ pclxl_write_image_data(gx_device_pclxl * xdev, const byte * data, int data_bit,
 	    r.ptr = data + i * raster - 1;
 	    r.limit = r.ptr + width_bytes;
 	    if ((*s_RLE_template.process)
-		((stream_state *) & rlstate, &r, &w, false) != 0 ||
+		((stream_state *) & rlstate, &r, &w, true) != 0 ||
 		r.ptr != r.limit
 		)
 		goto ncfree;
 	    r.ptr = (const byte *)"\000\000\000\000\000";
 	    r.limit = r.ptr + (-(int)width_bytes & 3);
 	    if ((*s_RLE_template.process)
-		((stream_state *) & rlstate, &r, &w, false) != 0 ||
+		((stream_state *) & rlstate, &r, &w, true) != 0 ||
 		r.ptr != r.limit
 		)
 		goto ncfree;
