@@ -376,21 +376,7 @@ zoom_y(void /*PixelOut */ *dst, int sizeofPixelOut, uint MaxValueOut,
     if (sizeofPixelOut == 1) {
 	zoom_y_loop(byte)
     } else {			/* sizeofPixelOut == 2 */
-	/* zoom_y_loop(bits16) */
-	for ( kc = 0; kc < kn; ++kc ) {
-		AccumTmp weight = 0;
-		{ const PixelTmp *pp = &tmp[kc + first_pixel];
-		  int j = cn;
-		  const CONTRIB *cp = cbp;
-		  for ( ; j > 0; pp += kn, ++cp, --j )
-		    weight += *pp * cp->weight;
-		}
-		{ PixelTmp2 pixel = unscale_AccumTmp(weight, fraction_bits);
-		  if_debug1('W', " %lx", (long)pixel);
-		  ((bits16 *)dst)[kc] =
-		    (bits16)CLAMP(pixel, 0, max_weight);
-		}
-	}
+	zoom_y_loop(bits16)
     }
     if_debug0('W', "\n");
 }
