@@ -1,4 +1,4 @@
-DOCS=ghostpcl.dvi ghostpcl.pdf ghostpcl.txt
+DOCS=ghostpdl.dvi ghostpdl.pdf ghostpdl.txt
 
 # latex 2 dvi
 %.dvi : %.tex
