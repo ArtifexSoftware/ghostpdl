@@ -643,6 +643,8 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	   The graphics library will call us again with subdividing 
 	   the shading into trapezoids and rectangles. 
 	   Narrow cropping_min, croping_max for such calls. */
+	cdev->save_cropping_min = cdev->cropping_min;
+	cdev->save_cropping_max = cdev->cropping_max;
 	cdev->cropping_min = max(ry, cdev->cropping_min);
 	cdev->cropping_max = min(ry + rheight, cdev->cropping_max);
 	RECT_ENUM_INIT(re, ry, rheight);

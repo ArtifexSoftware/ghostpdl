@@ -198,6 +198,21 @@ typedef struct gx_device_clist_common_s {
 /* (Strokes with longer patterns are converted to fills.) */
 #define cmd_max_dash 11
 
+/* Define a clist cropping buffer, 
+   which represents a cropping stack element while clist writing. */
+typedef struct clist_writer_cropping_buffer_s clist_writer_cropping_buffer_t;
+
+struct clist_writer_cropping_buffer_s {
+    int cropping_min, cropping_max;
+    uint mask_id, temp_mask_id;
+    clist_writer_cropping_buffer_t *next;
+};
+
+#define private_st_clist_writer_cropping_buffer()\
+  gs_private_st_ptrs1(st_clist_writer_cropping_buffer,\
+		clist_writer_cropping_buffer_t, "clist_writer_transparency_buffer",\
+		clist_writer_cropping_buffer_enum_ptrs, clist_writer_cropping_buffer_reloc_ptrs, next)
+
 /* Define the state of a band list when writing. */
 typedef struct clist_color_space_s {
     byte byte1;			/* see cmd_opv_set_color_space in gxclpath.h */
@@ -252,6 +267,7 @@ typedef struct gx_device_clist_writer_s {
     int cropping_min, cropping_max;
     int save_cropping_min, save_cropping_max;
     ulong ins_count;
+    clist_writer_cropping_buffer_t *cropping_stack;
 } gx_device_clist_writer;
 
 /* Bits for gx_device_clist_writer.disable_mask. Bit set disables behavior */
@@ -292,7 +308,7 @@ extern_st(st_device_clist);
     "gx_device_clist", 0, device_clist_enum_ptrs, device_clist_reloc_ptrs,\
     gx_device_finalize)
 #define st_device_clist_max_ptrs\
-  (st_device_forward_max_ptrs + st_imager_state_num_ptrs + 3)
+  (st_device_forward_max_ptrs + st_imager_state_num_ptrs + 4)
 
 #define CLIST_IS_WRITER(cdev) ((cdev)->common.ymin < 0)
 

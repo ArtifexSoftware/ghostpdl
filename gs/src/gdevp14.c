@@ -2164,9 +2164,8 @@ pdf14_copy_mono(gx_device * dev,
     int code, sbyte, bit, count;
     int run_length, startx, current_bit, bit_value;
     gx_color_index current_color;
-    pdf14_device *pdev = (pdf14_device *)dev;
 
-    fit_copy(pdev, base, sourcex, sraster, id, x, y, w, h);
+    fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
     line = base + (sourcex >> 3);
     sbit = sourcex & 7;
     first_bit = 7 - sbit;
@@ -2242,6 +2241,22 @@ pdf14_fill_rectangle(gx_device * dev,
 	return pdf14_mark_fill_rectangle(dev, x, y, w, h, color);
 }
 
+static int 
+pdf14_compute_group_device_int_rect(const gs_matrix *ctm, const gs_rect *pbbox, gs_int_rect *rect)
+{
+    gs_rect dev_bbox;
+    int code;
+
+    code = gs_bbox_transform(pbbox, ctm, &dev_bbox);
+    if (code < 0)
+	return code;
+    rect->p.x = (int)floor(dev_bbox.p.x);
+    rect->p.y = (int)floor(dev_bbox.p.y);
+    rect->q.x = (int)ceil(dev_bbox.q.x);
+    rect->q.y = (int)ceil(dev_bbox.q.y);
+    return 0;
+}
+
 static	int
 pdf14_begin_transparency_group(gx_device *dev,
 			      const gs_transparency_group_params_t *ptgp,
@@ -2252,17 +2267,12 @@ pdf14_begin_transparency_group(gx_device *dev,
 {
     pdf14_device *pdev = (pdf14_device *)dev;
     double alpha = pis->opacity.alpha * pis->shape.alpha;
-    gs_rect dev_bbox;
     gs_int_rect rect;
     int code;
 
-    code = gs_bbox_transform(pbbox, &ctm_only(pis), &dev_bbox);
+    code = pdf14_compute_group_device_int_rect(&ctm_only(pis), pbbox, &rect);
     if (code < 0)
 	return code;
-    rect.p.x = (int)floor(dev_bbox.p.x);
-    rect.p.y = (int)floor(dev_bbox.p.y);
-    rect.q.x = (int)ceil(dev_bbox.q.x);
-    rect.q.y = (int)ceil(dev_bbox.q.y);
     rect_intersect(rect, pdev->ctx->rect);
     /* Make sure the rectangle is not anomalous (q < p) -- see gsrect.h */
     if (rect.q.x < rect.p.x)
@@ -3244,8 +3254,8 @@ static composite_read_proc(c_pdf14trans_read);
 static composite_adjust_ctm_proc(c_pdf14trans_adjust_ctm);
 static composite_is_closing_proc(c_pdf14trans_is_closing);
 static composite_is_friendly_proc(c_pdf14trans_is_friendly);
-static	composite_clist_write_update(c_pdf14trans_clist_write_update);
-static	composite_clist_read_update(c_pdf14trans_clist_read_update);
+static composite_clist_write_update(c_pdf14trans_clist_write_update);
+static composite_clist_read_update(c_pdf14trans_clist_read_update);
 
 
 /*
@@ -4403,15 +4413,12 @@ static	int
 c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
 		gx_device ** pcdev, gs_imager_state * pis, gs_memory_t * mem)
 {
+    gx_device_clist_writer * const cdev = &((gx_device_clist *)dev)->writer;
     const gs_pdf14trans_t * pdf14pct = (const gs_pdf14trans_t *) pcte;
     pdf14_clist_device * p14dev;
     int code = 0;
 
-    {	gx_device_clist_writer * const cdev =
-			&((gx_device_clist *)dev)->writer;
-
-	state_update(ctm); /* See c_pdf14trans_write. */
-    }
+    state_update(ctm); /* See c_pdf14trans_write. */
 
     /* We only handle the push/pop operations */
     switch (pdf14pct->params.pdf14_op) {
@@ -4453,6 +4460,21 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
 #	    else 
 	    code = 0;
 #	    endif
+	    code = clist_writer_check_empty_cropping_stack(cdev);
+	    break;
+	case PDF14_BEGIN_TRANS_GROUP:
+	    {	pdf14_device *pdev = (pdf14_device *)*pcdev;
+		gs_int_rect rect;
+
+		code = pdf14_compute_group_device_int_rect(&ctm_only(pis),
+			&pdf14pct->params.bbox, &rect);
+
+		if (code >= 0)
+		    code = clist_writer_push_cropping(cdev, rect.p.y, rect.q.y - rect.p.y);
+	    }
+	    break;
+	case PDF14_END_TRANS_GROUP:
+	    code = clist_writer_pop_cropping(cdev);
 	    break;
 	default:
 	    break;		/* do nothing for remaining ops */

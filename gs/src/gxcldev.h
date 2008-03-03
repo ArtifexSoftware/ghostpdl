@@ -722,4 +722,9 @@ int64_t clist_file_offset(const stream_state *st, uint buffer_offset);
 int top_up_offset_map(stream_state * st, const byte *buf, const byte *ptr, const byte *end);
 #endif
 
+int clist_writer_push_no_cropping(gx_device_clist_writer *cdev);
+int clist_writer_push_cropping(gx_device_clist_writer *cdev, int ry, int rheight);
+int clist_writer_pop_cropping(gx_device_clist_writer *cdev);
+int clist_writer_check_empty_cropping_stack(gx_device_clist_writer *cdev);
+
 #endif /* gxcldev_INCLUDED */
