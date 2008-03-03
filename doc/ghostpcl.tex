@@ -2,31 +2,32 @@
 \usepackage{fullpage, graphicx, url, textcomp, hyperref}
 \setlength{\parskip}{1ex}
 \setlength{\parindent}{0ex}
-\title{GhostPCL5e, GhostPCL5c, and GhostPXL}
 \begin{document}
-\section*{GhostPCL}
-This document discusses configuration, compilation and running of the 
-GhostPCL family of products:  \emph{PCL5E}~\cite{PCLTRM},
+\section*{GhostPDL}
+
+This document discusses configuration, compilation and running of the
+GhostPDL \footnote{PDL stands for Page Description Language} family of products:\emph {XPS}~\cite{XPSMAN}, \emph {PCL5E}~\cite{PCLTRM},
 \emph{PCL5C}~\cite{PCL5CTRM}, \emph{PCLXL}~\cite{PCLXLTRM}, and
 \emph{HPGL/2} with \emph{RTL}~\cite{RTLTRM}, additionally a scaled
-down \emph{PJL}~\cite{PJLTRM} interpreter is provided.  All of the PCL
+down \emph{PJL}~\cite{PJLTRM} interpreter is provided.  The PDL
 products use the Ghostscript Graphic Library for graphics, imaging and
-driver support.  A brief tour of the Ghostscript documentation
-\url{www.ghostscript.com/doc/} will be helpful to understand this
-document.  The relevant ghostscript version used by PCL can be found
-in gs/src/version.mak.
+driver support.  GhostPDL may be configured with PostScript and PDF support but these PDL's are not documented here, for these see the Ghostscript documentation at
+\url{www.ghostscript.com/doc/} for information about these languages.
+The relevant ghostscript version used by the PDL's  can be found
+in gs/src/version.mak.  The GhostPDL product may be configured with PostScript and PDF support but that is not documented here.
 
-GhostPCL is PCL technology; it is not intended to be a finished
+
+GhostPDL is not intended to be a finished
 software application but a collection of software components that will
 ultimately be included in a software application or a real time
-embedded system.  Generally the GhostPCL languages are compliant with
+embedded system. Generally the GhostPDL languages are compliant with
 the Genoa (now QualityLogic) Functional Test Suite and the Genoa
-Application Test suite.  Also each language should run the
+Application Test suite.  Also each language should run the
 corresponding Genoa Comprehensive Evaluation Test (CET) without
 egregious errors.
 
 For printer customers we have GhostSwitch.  GhostSwitch integrates
-Ghostscript's Postscript and PDF interpreter with GhostPCL in a
+Ghostscript's Postscript and PDF interpreter with GhostPCL and optionally GhostXPS in a
 language switching environment with auto language sensing and PJL job
 control as found on many modern printers.
 
@@ -34,18 +35,18 @@ In this document and the software, PCL6 refers to technology that
 supports both PCL5 and PCLXL languages.
 
 \subsection*{Quick Start For Unix environment with GCC.}
-\begin{tabbing}
-\= tar zxvf ghostpcl-xxx.tar.gz; cd ghostpcl-xxx   \= \# unpack the release and go to the release directory \footnotemark[1]\\
-\> make fonts                                      \> \# install the fonts. \footnotemark[2]\\
-\> make product                                    \> \# compile and link pcl6 \\.
-\> make test                                       \> \# test pcl6 (optional). \\
-\> make install                                    \> \# install it \\
-\end{tabbing}
-\footnotetext[1]{If tar ``z''' option is not supported: gunzip ghostpcl-xxx.tar.gz; tar xvf ghostpcl-xxx.tar.}
-\footnotetext[2]{See  Fonts  to configure this differently.}
+\begin{verbatim}
+# unpack the release and go to the release directory.
+tar zxvf ghostpcl-xxx.tar.gz; cd ghostpcl-xxx
+make pcl                                                            # build pcl
+make xps                                                           # build xps
+
+NB - needs more examples - install, urwfonts, debug builds...
+\end{verbatim}
+
 \subsection*{Supported development environments}
 \begin{itemize}
-\item Windows NT and '95 with Microsoft Visual C/C++
+\item Windows Vista, NT and '95 with Microsoft Visual C/C++
 \item Linux with gcc
 \item Unix environments without GCC
 \end{itemize}
@@ -53,10 +54,10 @@ supports both PCL5 and PCLXL languages.
 \subsection*{Unpacking the source}
 
 The source code will either be on CD-ROM (without any archiving or
-compression) or in a archived compressed format.  Zip is used for
-Windows environments and compressed tar format for Unix environments. 
+compression) or in a archived compressed format. Zip is used for
+Windows environments and compressed tar format for Unix environments.
 If you have a CD-ROM release you will want to replicate the directory
-structure from the CD-ROM to a development directory on a hard drive. 
+structure from the CD-ROM to a development directory on a hard drive.
 The compile process does not require a special directory name.  If you
 have obtained the archived compressed version use:
 
@@ -74,7 +75,9 @@ have obtained the archived compressed version use:
 
 \subsection*{Brief Overview of Directory Hierarchy}
 \begin{description}
-  
+
+\item[xps] Source code for the XPS interpreter.  
+
 \item[pcl] Source code for the PCL interpreter.  Files beginning with
   ``pc'' handle pcl state, text and rules.  ``rt'' files implement pcl's
   raster language RTL and the ``pg'' source code files are for HPGL/2.
@@ -124,10 +127,13 @@ This directory structure is the default, but the directories can be
 rearranged with minor modifications to the makefiles.
 
 \subsection*{Building with Microsoft Visual C/C++}
-The PCL tools are known to build with Visual C/C++ 4.0, 5.0 and 6.0. 
+The GhostPDL tools are known to build with Visual C/C++ 4.0, 5.0 and 6.0, Visual Studio 2005 and 2008. \footnote{A subset of the components have been known to build with these tools}
+
+NB "makefile wrapping" no longer works in Visual Studio.
+
 There are 2 ways of building the PCL components with Microsoft Visual
-C/C++:  Convert the current makefile environment to a Visual C/C++
-project; or compile the source directly using nmake.  The following
+C/C++: Convert the current makefile environment to a Visual C/C++
+project; or compile the source directly using nmake. The following
 steps take you through converting the supplied makefile environment to
 a Visual C++ project:
 
@@ -166,14 +172,14 @@ switching code.
 
 \subsection*{Building with Linux and GCC}
 
-The pcl tools have been compiled on Linux using GCC.  It is easiest to
+The pcl tools have been compiled on Linux using GCC. It is easiest to
 simply use the instructions provided in the section Quick Start For
 Unix environment with GCC.
 
 \subsection*{Building on a generic UNIX platform}
 
 The PCL tools have been compiled on Solaris with the Sun Development
-Tools and SGI with the native SGI C compiler.  We only provide
+Tools and SGI with the native SGI C compiler. We only provide
 makefiles for the gcc tools and assume users can customize the gcc
 makefiles such that they work with vendor's compilers.  For the Sun
 Development tools the following workaround is sufficient to build the
@@ -198,7 +204,7 @@ the ``main'' subdirectory
 \item  Directory location of source directories.
 \item  Directory location of objects, executables, and other compile time generated files.
 \item  Selection of devices.
-\item  Directory location of PJL  filesystem volume 0 and 1
+\item  Directory location of PJL filesystem volume 0 and 1
 \item  The font scaling technology.
 \begin{itemize}
 \item  Defaults to /tmp/pjl0 and /tmp/pjl1
@@ -221,10 +227,12 @@ The following make targets are available:
 \subsection*{Building only one Language}
 PCL or PCL-XL can be built together in a language switching
 environment or each can be built alone with the supporting PJL
-interpreter.  The simplest way to implement one language is simply to
+interpreter.  The simplest way to implement one language is simply to
 remove the unwanted implementation from the pdl implementation table
 located in pl/plimpl.c:
 
+
+NB - there are now makefile variables that can be used to select languages.
 
 For example, this is the default table with two implementations: PCL and XL. 
 
@@ -249,7 +257,7 @@ Few things are harder to put up with than a good example.
 
 
 Most ghostscript options, as described in the  Ghostscript
-documentation \url{www.ghostscript.com/doc/}, hav similar effect in
+documentation \url{www.ghostscript.com/doc/}, have similar effect in
 the GhostPCL system.  Of course, options specific to the PostScript or
 PDF language are not relevant and are ignored.
 
@@ -381,18 +389,18 @@ language switch build are exactly the same except each target is
 prefixed with ``ls\_''.  So using the pattern from the ``Quick Start''
 section we have:
 
-\begin{tabbing}
-\= tar zxvf ghostpcl-xxx.tar.gz; cd ghostpcl-xxx   \= \# unpack the release and go to the release directory.\\
-\> make ls\_fonts                                  \> \# install the fonts.\\
-\> make ls\_product                                \> \# compile and link pspcl6.\\
-\> make ls\_test                                   \> \# test pspcl6 (optional).\\
-\> make ls\_install                                \> \# install it.\\
-\end{tabbing}
+\begin{verbatim}
+tar zxvf ghostpcl-xxx.tar.gz; cd ghostpcl-xxx  # unpack the release and go to the release directory.
+make ls_fonts # install the fonts.
+make ls_product #compile and link pspcl6.
+make ls_test # test pspcl6 (optional).
+make ls_install # install it.
+\end{verbatim}
 
 \subsection*{Reporting bugs}
 
 If you find a bug or have comments about this documentation, please
-send  mail to bug-pcl@ghostscript.com.
+send mail to bug-pcl@ghostscript.com.
 
 \subsection*{Trademark Credits}
 
@@ -400,6 +408,8 @@ send  mail to bug-pcl@ghostscript.com.
 \emph{PCL} is a registered trademark of Hewlett-Packard Company.
 
 \begin{thebibliography}{99}
+  
+\bibitem{XPSMAN}\emph{XML Paper Specification v.1.0}
   
 \bibitem{PCLTRM} \emph{PCL 5 Printer Language Technical Reference
     Manual}, HP Part No. 5961-0509, First Edition - October 1992
@@ -413,8 +423,10 @@ send  mail to bug-pcl@ghostscript.com.
     Manual} Edition 10, HP Part No. 5021-0380, October 1997.
   
 \bibitem{RTLTRM} \emph{The HP-GL/2 and HP RTL Reference Guide A
-    Handbook for Program Developers}, Addison Wesley Publishing
+    Handbook for Program Developers}, Addison Wesley Publishing 
   Company, 1993.
+
+\url{http://www.microsoft.com/whdc/xps/xpsspec.mspx}
 
 \end{thebibliography}
 
