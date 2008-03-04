@@ -766,6 +766,12 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
 	goto exit;
     if (maskbuf != NULL && maskbuf->data == NULL)
 	goto exit;
+    if (maskbuf != NULL) {
+	y0 = max(y0, maskbuf->rect.p.y);
+	y1 = min(y1, maskbuf->rect.q.y);
+	x0 = max(x0, maskbuf->rect.p.x);
+	x1 = min(x1, maskbuf->rect.q.x);
+    }
     if (x0 < x1 && y0 < y1) {
 	int n_chan = ctx->n_chan;
 	int num_comp = n_chan - 1;
@@ -2275,6 +2281,22 @@ pdf14_compute_group_device_int_rect(const gs_matrix *ctm,
 }
 
 static	int
+compute_group_device_int_rect(pdf14_device *pdev, gs_int_rect *rect, const gs_rect *pbbox, gs_imager_state *pis)
+{
+    int code = pdf14_compute_group_device_int_rect(&ctm_only(pis), pbbox, rect);
+
+    if (code < 0)
+	return code;
+    rect_intersect(*rect, pdev->ctx->rect);
+    /* Make sure the rectangle is not anomalous (q < p) -- see gsrect.h */
+    if (rect->q.x < rect->p.x)
+	rect->q.x = rect->p.x;
+    if (rect->q.y < rect->p.y)
+	rect->q.y = rect->p.y;
+    return 0;
+}
+
+static	int
 pdf14_begin_transparency_group(gx_device *dev,
 			      const gs_transparency_group_params_t *ptgp,
 			      const gs_rect *pbbox,
@@ -2287,15 +2309,9 @@ pdf14_begin_transparency_group(gx_device *dev,
     gs_int_rect rect;
     int code;
 
-    code = pdf14_compute_group_device_int_rect(&ctm_only(pis), pbbox, &rect);
+    code = compute_group_device_int_rect(pdev, &rect, pbbox, pis);
     if (code < 0)
 	return code;
-    rect_intersect(rect, pdev->ctx->rect);
-    /* Make sure the rectangle is not anomalous (q < p) -- see gsrect.h */
-    if (rect.q.x < rect.p.x)
-	rect.q.x = rect.p.x;
-    if (rect.q.y < rect.p.y)
-	rect.q.y = rect.p.y;
     if_debug4('v', "[v]pdf14_begin_transparency_group, I = %d, K = %d, alpha = %g, bm = %d\n",
 	      ptgp->Isolated, ptgp->Knockout, alpha, pis->blend_mode);
     code = pdf14_push_transparency_group(pdev->ctx, &rect,
@@ -2338,12 +2354,19 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     byte bg_alpha = 0;
     byte *transfer_fn = (byte *)gs_alloc_bytes(pdev->ctx->memory, 256,
 					       "pdf14_begin_transparency_mask");
+    gs_int_rect rect;
+    int code;
 
+    if (transfer_fn == NULL)
+	return_error(gs_error_VMerror);
+    code = compute_group_device_int_rect(pdev, &rect, pbbox, pis);
+    if (code < 0)
+	return code;
     if (ptmp->Background_components)
 	bg_alpha = (int)(255 * ptmp->GrayBackground + 0.5);
     if_debug1('v', "pdf14_begin_transparency_mask, bg_alpha = %d\n", bg_alpha);
     memcpy(transfer_fn, ptmp->transfer_fn, size_of(ptmp->transfer_fn));
-    return pdf14_push_transparency_mask(pdev->ctx, &pdev->ctx->rect, bg_alpha,
+    return pdf14_push_transparency_mask(pdev->ctx, &rect, bg_alpha,
 					transfer_fn, ptmp->idle, ptmp->replacing,
 					ptmp->mask_id);
 }
@@ -2927,6 +2950,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
 	    *pbuf++ = pparams->replacing;
 	    *pbuf++ = pparams->function_is_identity;
 	    *pbuf++ = pparams->Background_components;
+	    put_value(pbuf, pparams->bbox);
 	    mask_id = pparams->mask_id;
 	    put_value(pbuf, pparams->mask_id);
 	    if (pparams->Background_components) {
@@ -3056,6 +3080,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
 	    params.replacing = *data++;
 	    params.function_is_identity = *data++;
 	    params.Background_components = *data++;
+	    read_value(data, params.bbox);
 	    read_value(data, params.mask_id);
 	    if (params.Background_components) {
 		const int l = sizeof(params.Background[0]) * params.Background_components;
