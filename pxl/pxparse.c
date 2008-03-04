@@ -423,16 +423,16 @@ top:	if ( st->data_left )
 		    if ( left < 5 )
 		      goto x;			/* can't look ahead */
 		    st->data_left = get_uint32(st, p + 2);
-		    if_debug3('i', "pos=%8ld  tag=  0x%2x  data, length %u\n",
-			      (long)(p - pr->ptr), p[1], st->data_left);
+		    if_debug2('i', "tag=  0x%2x  data, length %u\n",
+			      p[1], st->data_left);
 		    p += 5;
 		    goto top;
 		  case pxt_dataLengthByte:
 		    if ( left < 2 )
 		      goto x;			/* can't look ahead */
 		    st->data_left = p[2];
-		    if_debug3('i', "pos=%8ld  tag=  0x%2x  data, length %u\n",
-			      (long)(p - pr->ptr), p[1], st->data_left);
+		    if_debug2('i', "tag=  0x%2x  data, length %u\n",
+			      p[1], st->data_left);
 		    p += 2;
 		    goto top;
 		  default:
@@ -450,7 +450,7 @@ top:	if ( st->data_left )
 	  { int count;
 #ifdef DEBUG
 	    if ( gs_debug_c('i') )
-	      { dprintf2("pos=%8ld  tag=  0x%02x  ", (long)(p - pr->ptr), tag);
+	      { dprintf1("tag=  0x%02x  ", tag);
 		if ( tag == pxt_attr_ubyte || tag == pxt_attr_uint16 )
 		  { px_attribute_t attr =
 		      (tag == pxt_attr_ubyte ? p[2] : get_uint16(st, p + 2));
