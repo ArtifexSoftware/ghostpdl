@@ -2891,6 +2891,27 @@ static const char * pdf14_opcode_names[] = PDF14_OPCODE_NAMES;
 	dp += sizeof(value);\
     END
 
+static inline int
+c_pdf14trans_write_ctm(byte **ppbuf, const gs_pdf14trans_params_t *pparams)
+{
+    /* Note: We can't skip writing CTM if it is equal to pis->ctm,
+       because clist writer may skip this command for some bands.
+       For a better result we need individual CTM for each band.
+     */
+    byte *pbuf = *ppbuf;
+    int len, code;
+
+    len = cmd_write_ctm_return_length_nodevice(&pparams->ctm);
+    pbuf--; /* For cmd_write_ctm. */
+    code = cmd_write_ctm(&pparams->ctm, pbuf, len);
+    if (code < 0)
+	return code;
+    pbuf += len + 1;
+    *ppbuf = pbuf;
+    return 0;
+}
+
+
 /*
  * Convert a PDF 1.4 transparency compositor to string form for use by the command
  * list device.
@@ -2909,17 +2930,11 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
     int opcode = pparams->pdf14_op;
     int mask_size = 0;
     uint mask_id = 0;
-    int len, code;
+    int code;
 
     /* Write PDF 1.4 compositor data into the clist */
 
     *pbuf++ = opcode;			/* 1 byte */
-    len = cmd_write_ctm_return_length_nodevice(&pparams->ctm);
-    pbuf--; /* For cmd_write_ctm. */
-    code = cmd_write_ctm(&pparams->ctm, pbuf, len);
-    if (code < 0)
-	return code;
-    pbuf += len + 1;
     switch (opcode) {
 	default:			/* Should not occur. */
 	    break;
@@ -2932,11 +2947,9 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
 	case PDF14_END_TRANS_GROUP:
 	    break;			/* No data */
 	case PDF14_BEGIN_TRANS_GROUP:
-	    /*
-	     * The bbox data is floating point.  We are not currently using it.
-	     * So we are not currently putting it into the clist.  We are also
-	     * not using the color space.
-	     */
+	    code = c_pdf14trans_write_ctm(&pbuf, pparams);
+	    if (code < 0)
+		return code;
 	    *pbuf++ = (pparams->Isolated & 1) + ((pparams->Knockout & 1) << 1);
 	    *pbuf++ = pparams->blend_mode;
 	    put_value(pbuf, pparams->opacity.alpha);
@@ -2946,6 +2959,9 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
 	    put_value(pbuf, pparams->mask_id);
 	    break;
 	case PDF14_BEGIN_TRANS_MASK:
+	    code = c_pdf14trans_write_ctm(&pbuf, pparams);
+	    if (code < 0)
+		return code;
 	    put_value(pbuf, pparams->subtype);
 	    *pbuf++ = pparams->replacing;
 	    *pbuf++ = pparams->function_is_identity;
@@ -3037,7 +3053,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
     params.pdf14_op = *data++;
     if_debug2('v', "[v] c_pdf14trans_read: opcode = %s  avail = %d",
 				pdf14_opcode_names[params.pdf14_op], size);
-    data = cmd_read_matrix(&params.ctm, data);
+    memset(&params.ctm, 0, sizeof(params.ctm));
     switch (params.pdf14_op) {
 	default:			/* Should not occur. */
 	    break;
@@ -3055,6 +3071,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
 	     * We are currently not using the bbox or the colorspace so they were
 	     * not placed in the clist
 	     */
+	    data = cmd_read_matrix(&params.ctm, data);
 	    params.Isolated = (*data) & 1;
 	    params.Knockout = (*data++ >> 1) & 1;
 	    params.blend_mode = *data++;
@@ -3076,6 +3093,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
 		 * Also... if another compositor param should exceed this size, this
 		 * same condition applies.
 		 */
+	    data = cmd_read_matrix(&params.ctm, data);
 	    read_value(data, params.subtype);
 	    params.replacing = *data++;
 	    params.function_is_identity = *data++;
@@ -3135,8 +3153,8 @@ static int
 c_pdf14trans_adjust_ctm(gs_composite_t * pct0, int x0, int y0, gs_imager_state *pis)
 {
     gs_pdf14trans_t *pct = (gs_pdf14trans_t *)pct0;
-
     gs_matrix mat = pct->params.ctm;
+
     if_debug6('L', " [%g %g %g %g %g %g]\n",
 	      mat.xx, mat.xy, mat.yx, mat.yy,
 	      mat.tx, mat.ty);
@@ -4565,23 +4583,10 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
 	    break;		/* do nothing for remaining ops */
     }
     *pcdev = dev;
-#if 0
-    state_update(ctm); /* See c_pdf14trans_write, c_pdf14trans_adjust_ctm, apply_create_compositor. */
-#elif 0
     if (code < 0)
 	return code;
-    code = gs_setmatrix(&cdev->imager_state, &pdf14pct->params.ctm); /* See
+    code = gs_imager_setmatrix(&cdev->imager_state, &pdf14pct->params.ctm); /* See
 		c_pdf14trans_write, c_pdf14trans_adjust_ctm, apply_create_compositor. */
-#else
-    cdev->imager_state.ctm.xx = pdf14pct->params.ctm.xx;
-    cdev->imager_state.ctm.xy = pdf14pct->params.ctm.xy;
-    cdev->imager_state.ctm.yx = pdf14pct->params.ctm.yx;
-    cdev->imager_state.ctm.yy = pdf14pct->params.ctm.yy;
-    cdev->imager_state.ctm.tx = pdf14pct->params.ctm.tx;
-    cdev->imager_state.ctm.ty = pdf14pct->params.ctm.ty;
-    cdev->imager_state.ctm.tx_fixed = float2fixed(cdev->imager_state.ctm.tx);
-    cdev->imager_state.ctm.ty_fixed = float2fixed(cdev->imager_state.ctm.ty);
-#endif
     cmd_clear_known(cdev, ctm_known); /* Wrote another ctm than from imager state. */
     return code;
 }
