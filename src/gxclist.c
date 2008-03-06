@@ -625,12 +625,8 @@ clist_open(gx_device *dev)
     if (code < 0)
 	return code;
     code = clist_open_output_file(dev);
-    if ( code >= 0) {
+    if ( code >= 0)
 	code = clist_emit_page_header(dev);
-	dev->procs = gs_clist_device_procs;	/* Must be before enabling multi-threading */
-						/* which may change get_bits_rectangle */
-    }
-    clist_enable_multi_thread_render(dev);	/* if this fails, single thread will be used */
     return code;
 }
 

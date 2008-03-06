@@ -511,21 +511,16 @@ test_threads(void *dummy)
 int 
 clist_enable_multi_thread_render(gx_device *dev)
 {   
-    gx_device_printer *pdev = (gx_device_printer *)dev;
-    int code;
+    gx_device_clist_common *cdev = (gx_device_clist_common *)dev;
+    int code = -1;
 
     /* We need to test gp_create_thread since we may be on a platform */
     /* built without working threads, i.e., using gp_nsync.c dummy    */
     /* routines. The nosync gp_create_thread returns a -ve error code */
-    if ((code = gp_create_thread(test_threads, NULL)) < 0) {
-	if (gs_debug[':'] != 0)
-	    dprintf("Using single threaded rendering\n");
-	pdev->num_render_threads_requested = 0;
+    if ((code = gp_create_thread(test_threads, NULL)) < 0 ) {
+        /* TODO: Check for memory based clist files (or fix the memfile) */
 	return code;	/* Threads don't work */
     }
-
-    if (gs_debug[':'] != 0)
-	dprintf("Multi threaded rendering enabled.\n");
     set_dev_proc(dev, get_bits_rectangle, clist_get_bits_rect_mt);
 
     return 1;
