@@ -46,12 +46,6 @@ typedef enum {
   pxd_on_heap = 0x800
 } px_data_type_t;
 
-/* Define a type for a 32-bit integer. */
-#if arch_ints_are_short
-typedef long integer;
-#else
-typedef int integer;
-#endif
 typedef float real;
 
 /* Define a type for values on the stack. */
@@ -63,8 +57,8 @@ typedef struct {
   px_data_type_t type;
   px_attribute_t attribute;
   union v_ {
-    integer i;
-    integer ia[4];		/* ia[0] aliases i */
+    int32_t i;
+    int32_t ia[4];		/* ia[0] aliases i */
     real r;
     real ra[4];			/* ra[0] aliases r */
     px_array_t array;
@@ -96,13 +90,13 @@ typedef struct {
 /* Get numeric values from the input or an array. */
 uint uint16at(const byte *p, bool big_endian);
 int sint16at(const byte *p, bool big_endian);
-integer uint32at(const byte *p, bool big_endian);
-integer sint32at(const byte *p, bool big_endian);
+int32_t uint32at(const byte *p, bool big_endian);
+int32_t sint32at(const byte *p, bool big_endian);
 real real32at(const byte *p, bool big_endian);
 
 /* Get an element from an array. */
 /* The caller does all index and type checking. */
-integer integer_elt(const px_value_t *pav, uint index);
+int32_t integer_elt(const px_value_t *pav, uint index);
 real real_elt(const px_value_t *pav, uint index);
 
 #endif				/* pxvalue_INCLUDED */

@@ -27,14 +27,14 @@ int
 sint16at(const byte *p, bool big_endian)
 {	return ((int)uint16at(p, big_endian) ^ 0x8000) - 0x8000;
 }
-integer
+int32_t
 uint32at(const byte *p, bool big_endian)
 {	return
 	  (big_endian ?
-	   ((integer)((p[0] << 8) + p[1]) << 16) + (p[2] << 8) + p[3] :
-	   ((integer)((p[3] << 8) + p[2]) << 16) + (p[1] << 8) + p[0]);
+	   ((int32_t)((p[0] << 8) + p[1]) << 16) + (p[2] << 8) + p[3] :
+	   ((int32_t)((p[3] << 8) + p[2]) << 16) + (p[1] << 8) + p[0]);
 }
-integer
+int32_t
 sint32at(const byte *p, bool big_endian)
 {	return (uint32at(p, big_endian) ^ 0x80000000) - 0x80000000;
 }
@@ -43,7 +43,7 @@ real32at(const byte *p, bool big_endian)
 {	    
     union {
         float   f;
-        integer d;
+        int32_t d;
     } df;
 
     df.d = uint32at(p, big_endian);
@@ -52,7 +52,7 @@ real32at(const byte *p, bool big_endian)
 
 /* Get an element from an array. */
 /* The caller does all index and type checking. */
-integer
+int32_t
 integer_elt(const px_value_t *pav, uint index)
 {	px_data_type_t type = pav->type;
 	const byte *base = pav->value.array.data;

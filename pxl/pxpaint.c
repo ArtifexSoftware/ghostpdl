@@ -83,7 +83,7 @@ add_lines(px_args_t *par, px_state_t *pxs,
 	/* Multiple segments, specified in source data. */
 	if ( !(par->pv[1] && par->pv[2]) )
 	  return_error(errorMissingAttribute);
-	{ integer num_points = par->pv[1]->value.i;
+	{ int32_t num_points = par->pv[1]->value.i;
 	  pxeDataType_t type = (pxeDataType_t)par->pv[2]->value.i;
 	  int point_size = (type == eUByte || type == eSByte ? 2 : 4);
 
@@ -153,7 +153,7 @@ add_curves(px_args_t *par, px_state_t *pxs,
 	  }
 	else
 	  return_error(errorMissingAttribute);
-	{ integer num_points = par->pv[0]->value.i;
+	{ int32_t num_points = par->pv[0]->value.i;
 	  pxeDataType_t type = (pxeDataType_t)par->pv[1]->value.i;
 	  int point_size = (type == eUByte || type == eSByte ? 2 : 4);
 	  int segment_size = point_size * 3;

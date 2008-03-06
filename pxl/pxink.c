@@ -469,7 +469,7 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
 	    return_error(errorIllegalAttributeCombination);
 	key.type = pxd_array | pxd_ubyte;
 	key.value.array.data = (byte *)&par->pv[aPatternSelectID]->value.i;
-	key.value.array.size = sizeof(integer);
+	key.value.array.size = sizeof(int32_t);
 	if ( !(px_dict_find(&pxgs->temp_pattern_dict, &key, &value) ||
 	       px_dict_find(&pxs->page_pattern_dict, &key, &value) ||
 	       px_dict_find(&pxs->session_pattern_dict, &key, &value))
@@ -511,7 +511,7 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
 	    if ( prgb->type & pxd_any_real )
 		ppt->value.rgb[i] = real_elt(prgb, i);
 	    else {
-		integer v = integer_elt(prgb, i);
+		int32_t v = integer_elt(prgb, i);
 		ppt->value.rgb[i] = (v < 0 ? 0 : (real)v / int_type_max(prgb->type));
 	    }
     } else if ( par->pv[aGrayLevel] )	/* pxaGrayLevel */ { 

@@ -331,7 +331,7 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
             }
             if ( have_params == false ) {
                 if (par->pv[0]) { 
-                    integer orientation = par->pv[0]->value.i;
+                    int32_t orientation = par->pv[0]->value.i;
                     if ( orientation < 0 || orientation >= pxeOrientation_next )
                         { px_record_warning("IllegalOrientation", true, pxs);
                             orientation = ePortraitOrientation;
@@ -367,7 +367,7 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	/* Copy parameters to the PCL XL state. */
 	/* For some reason, invalid Orientations only produces a warning. */
 	if ( par->pv[0] ) {
-	    integer orientation = par->pv[0]->value.i;
+	    int32_t orientation = par->pv[0]->value.i;
 	    if ( orientation < 0 || orientation >= pxeOrientation_next ) { 
 		px_record_warning("IllegalOrientation", true, pxs);
 		orientation = ePortraitOrientation;

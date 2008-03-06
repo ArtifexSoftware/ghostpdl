@@ -677,7 +677,7 @@ typedef struct px_pattern_enum_s px_pattern_enum_t;
 #endif
 struct px_pattern_enum_s {
   px_bitmap_enum_t benum;
-  integer pattern_id;
+  int32_t pattern_id;
   pxePatternPersistence_t persistence;
   px_pattern_t *pattern;
 };
@@ -785,7 +785,7 @@ pxEndRastPattern(px_args_t *par, px_state_t *pxs)
 	/* We extract the key and value from the pattern_enum structure */
 	/* and then free the structure, to encourage LIFO allocation. */
 	px_pattern_t *pattern = pxenum->pattern;
-	integer id = pxenum->pattern_id;
+	int32_t id = pxenum->pattern_id;
 	px_value_t key;
 	px_dict_t *pdict;
 
