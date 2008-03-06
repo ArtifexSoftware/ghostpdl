@@ -20,10 +20,6 @@ PCL5c, and PXL. In language_switch/obj/pspcl6 a build of GhostPCL with
 additional support for PostScript and PDF. In xps/obj/gxps a build
 with support for XPS.
 
-NB We have seen some problems with the optimized PCL build on x86_64
-with gcc 4.x. If you have trouble getting correct output, try building 
-with -O instead of -O2.
-
 ===
 
 The same executables can be built with Microsoft Visual C by running
