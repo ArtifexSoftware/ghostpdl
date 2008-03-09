@@ -2034,11 +2034,13 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_imager_state	* pis,
 		   		 &temp_dev_proto, pis, pdf14pct);
     if (code < 0)
 	return code;
-    pdev->color_info = temp_dev_proto.color_info;
+    pdev->color_info = dev_proto->color_info;
     pdev->procs = dev_proto->procs;
+    dev->static_procs = dev_proto->static_procs;
+    gx_device_set_procs(dev);
     gx_device_fill_in_procs(dev);
-    check_device_separable((gx_device *)pdev);
-    return code;
+    check_device_separable(dev);
+    return dev_proc(pdev, open_device)(dev);
 }
 
 /*
