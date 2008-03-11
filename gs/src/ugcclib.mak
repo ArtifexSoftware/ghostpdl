@@ -177,7 +177,7 @@ $(GS_XE): $(ld_tr) $(ECHOGS_XE) $(LIB_ALL) $(DEVS_ALL) $(GLOBJ)gslib.$(OBJ) $(LI
 
 GSLIB_A=libgsgraph.a
 lar_tr=$(GLOBJ)lar.tr
-$(GSLIB_A):  $(obj_tr) $(ECHOGS_XE) $(LIB_ALL) $(DEVS_ALL) $(LIB_ONLY) $(GLOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
+$(GSLIB_A):  $(obj_tr) $(ECHOGS_XE) $(LIB_ALL) $(DEVS_ALL) $(LIB_ONLY)
 	rm -f $(GSLIB_A)
 	$(ECHOGS_XE) -w $(lar_tr) -n - $(AR) $(ARFLAGS) $(GSLIB_A)
 	$(ECHOGS_XE) -a $(lar_tr) -n -s $(LIB_ONLY) -s

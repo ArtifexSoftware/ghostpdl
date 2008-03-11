@@ -750,7 +750,7 @@ $(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(DWOBJNO) $(GSDLL
 # The big console mode EXE
 $(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(OBJCNO) $(GS_OBJ).res $(PSSRCDIR)\dw32c.def $(PSGEN)lib32.rsp $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
 	copy $(ld_tr) $(PSGEN)gswin32c.tr
-	echo $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) >> $(PSGEN)gswin32.tr
+	echo $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) >> $(PSGEN)gswin32c.tr
 	echo $(PSOBJ)dwnodllc.obj >> $(PSGEN)gswin32c.tr
 	echo $(GLOBJ)dwimg.obj >> $(PSGEN)gswin32c.tr
 	echo $(PSOBJ)dwmainc.obj >> $(PSGEN)gswin32c.tr
