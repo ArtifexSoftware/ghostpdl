@@ -614,6 +614,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	    else
 		(*dev_proc(pdev, get_clipping_box)) (pdev, &clip_box);
 	    rect_intersect(clip_box, shading_rect);
+	    gx_cpath_init_local(&cpath_intersection, pdev->memory);
 	    code = gx_cpath_from_rectangle(&cpath_intersection, &clip_box);
 	} else if (pcpath != NULL) {
 	    /* either *pcpath is not a rectangle, or shading cell is not a rectangle.  */
