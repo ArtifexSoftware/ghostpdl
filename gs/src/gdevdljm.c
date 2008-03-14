@@ -123,20 +123,36 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 	}
     }
     /* Put out per-page initialization. */
-    if (features & PCL_CAN_SET_PAPER_SIZE){ 
-        fprintf(prn_stream, "\033&l%dA", paper_size); 
-    } 
-    fputs("\033&l0o0l0E", prn_stream);
-    if ((features & PCL_HAS_DUPLEX) && dupset && dup)
-    {
+    /*
+       Modified by karsten@sengebusch.de
+       in duplex mode the sheet is alread in process, so there are some
+       commands which must not be sent to the printer for the 2nd page,
+       as this commands will cause the printer to eject the sheet with
+       only the 1st page printed. This commands are:
+       \033&l%dA (setting paper size)
+       \033&l%dH (setting paper tray)
+       in simplex mode we set this parameters for each page,
+       in duplex mode we set this parameters for each odd page
+    */
+    
+    if ((features & PCL_HAS_DUPLEX) && dupset && dup) {
        /* We are printing duplex, so change margins as needed */
-       if ((pdev->PageCount%2)==0)
+       if ((pdev->PageCount%2)==0) {
+          if (features & PCL_CAN_SET_PAPER_SIZE) { 
+              fprintf(prn_stream, "\033&l%dA", paper_size); 
+          } 
+          fputs("\033&l0o0l0E", prn_stream);
           fputs(odd_page_init, prn_stream);
-       else
+       } else
           fputs(even_page_init, prn_stream);
-    }
-    else
+    } else {
+        if (features & PCL_CAN_SET_PAPER_SIZE){  
+            fprintf(prn_stream, "\033&l%dA", paper_size); 
+        } 
+        fputs("\033&l0o0l0E", prn_stream);
         fputs(odd_page_init, prn_stream);
+    }
+    
     fprintf(prn_stream, "\033&l%dX", num_copies);	/* # of copies */
 
     /* End raster graphics, position cursor at top. */

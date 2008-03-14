@@ -425,7 +425,7 @@ ljet3d_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     bool tumble=dev->Tumble;
 
     hpjet_make_init(pdev, init, "\033&l-180u36Z\033*r0F");
-    hpjet_make_init(pdev, even_init, "\033&l180u36Z\033*r0F");
+    sprintf(even_init, "\033&l180u36Z\033*r0F");
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
 					300, PCL_LJ3D_FEATURES, init, even_init, tumble);
 }
@@ -460,10 +460,22 @@ ljet4d_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     gx_device_hpjet *dev = (gx_device_hpjet *)pdev;
     bool tumble=dev->Tumble;
 
+    /* Put out per-page initialization. */
+    /*
+       Modified by karsten@sengebusch.de
+       in duplex mode the sheet is alread in process, so there are some
+       commands which must not be sent to the printer for the 2nd page,
+       as this commands will cause the printer to eject the sheet with
+       only the 1st page printed. This commands are:
+       \033&l%dA (setting paper size)
+       \033&l%dH (setting paper tray)
+       in simplex mode we set this parameters for each page,
+       in duplex mode we set this parameters for each odd page
+       (paper tray is set by "hpjet_make_init")
+    */
     sprintf(base_init, "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
     hpjet_make_init(pdev, init, base_init);
-    sprintf(even_base_init, "\033&l180u36Z\033*r0F\033&u%dD", dots_per_inch);
-    hpjet_make_init(pdev, even_init, even_base_init);
+    sprintf(even_init, "\033&l180u36Z\033*r0F\033&u%dD", dots_per_inch);
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
 					dots_per_inch, PCL_LJ4D_FEATURES,
 					init,even_init,tumble);
@@ -565,7 +577,10 @@ hpjet_put_params(gx_device *pdev, gs_param_list *plist)
 	}
     }
     if (code>=0)
+    {
        code=param_read_bool(plist,"Tumble",&Tumble);
+       if (code != 0) Tumble = false; // default: no tumble
+    }
 
     if (code >= 0)
 	code = gdev_prn_put_params(pdev, plist);
