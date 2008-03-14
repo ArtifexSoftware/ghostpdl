@@ -960,7 +960,7 @@ xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image)
         offset += 12;
     }
 
-    // xps_debug_tiff(mem, tiff);
+    // (void) xps_debug_tiff(mem, tiff);
 
     /*
      * Decode the image strips
@@ -984,7 +984,7 @@ xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image)
     return gs_okay;
 }
 
-static void
+void
 xps_debug_tiff(gs_memory_t *mem, xps_tiff_t *tiff)
 {
     int i, n;

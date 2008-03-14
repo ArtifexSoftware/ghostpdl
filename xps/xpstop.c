@@ -80,7 +80,7 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     xps_context_t *ctx;
     gs_state *pgs;
 
-    dputs("-- initializing xps interpeter --\n");
+    dputs("-- xps_imp_allocate_interp_instance --\n");
 
     instance = (xps_interp_instance_t *) gs_alloc_bytes(pmem,
 	    sizeof(xps_interp_instance_t), "xps_imp_allocate_interp_instance");
@@ -108,16 +108,9 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     ctx->pgs = pgs;
     ctx->fontdir = NULL;
 
-    ctx->opacity_only = 0;
-    ctx->fill_rule = 0;
-
-    ctx->use_transparency = 1;
-    if (getenv("XPS_DISABLE_TRANSPARENCY"))
-	ctx->use_transparency = 0;
-
     /* TODO: load some builtin ICC profiles here */
     ctx->gray = gs_cspace_new_DeviceGray(ctx->memory); /* profile for gray images */
-    ctx->cmyk = gs_cspace_new_DeviceGray(ctx->memory); /* profile for cmyk images */
+    ctx->cmyk = gs_cspace_new_DeviceCMYK(ctx->memory); /* profile for cmyk images */
     ctx->srgb = gs_cspace_new_DeviceRGB(ctx->memory);
     ctx->scrgb = gs_cspace_new_DeviceRGB(ctx->memory);
 
@@ -171,6 +164,8 @@ xps_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     xps_context_t *ctx = instance->ctx;
     int code;
+
+    dputs("-- xps_imp_set_device --\n");
 
     gs_opendevice(pdevice);
 
@@ -255,6 +250,25 @@ xps_imp_report_errors(pl_interp_instance_t *pinstance,
 static int
 xps_imp_init_job(pl_interp_instance_t *pinstance)
 {
+    xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
+    xps_context_t *ctx = instance->ctx;
+
+    dputs("-- xps_imp_init_job --\n");
+
+    ctx->first_part = NULL;
+    ctx->last_part = NULL;
+
+    ctx->start_part = NULL;
+
+    ctx->zip_state = 0;
+
+    ctx->use_transparency = 1;
+    if (getenv("XPS_DISABLE_TRANSPARENCY"))
+	ctx->use_transparency = 0;
+
+    ctx->opacity_only = 0;
+    ctx->fill_rule = 0;
+
     return 0;
 }
 
@@ -262,6 +276,46 @@ xps_imp_init_job(pl_interp_instance_t *pinstance)
 static int
 xps_imp_dnit_job(pl_interp_instance_t *pinstance)
 {
+    xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
+    xps_context_t *ctx = instance->ctx;
+
+    dputs("-- xps_imp_dnit_job --\n");
+
+    while (ctx->next_page)
+    {
+        gs_throw1(-1, "could not process page '%s'", ctx->next_page->name);
+        ctx->next_page = ctx->next_page->next;
+    }
+
+    if (getenv("XPS_DEBUG_PARTS"))
+        xps_debug_parts(ctx);
+    if (getenv("XPS_DEBUG_TYPES"))
+    {
+        xps_debug_type_map(ctx, "Default", ctx->defaults);
+        xps_debug_type_map(ctx, "Override", ctx->overrides);
+    }
+    if (getenv("XPS_DEBUG_PAGES"))
+        xps_debug_fixdocseq(ctx);
+
+    /* Free XPS parsing stuff */
+    {
+        xps_part_t *part = ctx->first_part;
+        while (part)
+        {
+            xps_part_t *next = part->next;
+            xps_free_part(ctx, part);
+            part = next;
+        }
+
+        xps_free_fixed_pages(ctx);
+        xps_free_fixed_documents(ctx);
+
+        xps_free_type_map(ctx, ctx->overrides);
+	ctx->overrides = NULL;
+        xps_free_type_map(ctx, ctx->defaults);
+	ctx->defaults = NULL;
+    }
+
     return 0;
 }
 
@@ -274,6 +328,8 @@ xps_imp_remove_device(pl_interp_instance_t *pinstance)
 
     int code = 0;       /* first error status encountered */
     int error;
+
+    dputs("-- xps_imp_remove_device --\n");
 
     /* return to original gstate  */
     gs_grestore_only(ctx->pgs);        /* destroys gs_save stack */
@@ -295,39 +351,7 @@ xps_imp_deallocate_interp_instance(pl_interp_instance_t *pinstance)
     xps_context_t *ctx = instance->ctx;
     gs_memory_t *mem = ctx->memory;
 
-    dputs("-- freeing xps interpeter --\n");
-
-    while (ctx->next_page)
-    {
-	gs_throw1(-1, "could not process page '%s'", ctx->next_page->name);
-	ctx->next_page = ctx->next_page->next;
-    }
-
-    if (getenv("XPS_DEBUG_PARTS"))
-	xps_debug_parts(ctx);
-    if (getenv("XPS_DEBUG_TYPES"))
-    {
-	xps_debug_type_map(ctx, "Default", ctx->defaults);
-	xps_debug_type_map(ctx, "Override", ctx->overrides);
-    }
-    if (getenv("XPS_DEBUG_PAGES"))
-	xps_debug_fixdocseq(ctx);
-
-    /* Free XPS parsing stuff */
-    {
-	xps_part_t *part = ctx->first_part;
-	while (part)
-	{       
-	    xps_part_t *next = part->next;
-	    xps_free_part(ctx, part);
-	    part = next;
-	}
-
-	xps_free_fixed_pages(ctx);
-	xps_free_fixed_documents(ctx);
-	xps_free_type_map(ctx, ctx->overrides);
-	xps_free_type_map(ctx, ctx->defaults);
-    }
+    dputs("-- xps_imp_deallocate_interp_instance --\n");
 
     /* language clients don't free the font cache machinery */
 

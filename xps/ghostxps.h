@@ -158,6 +158,11 @@ struct xps_context_s
     gs_state *pgs;
     gs_font_dir *fontdir;
 
+    gs_color_space *gray;
+    gs_color_space *srgb;
+    gs_color_space *scrgb;
+    gs_color_space *cmyk;
+
     xps_part_t *first_part;
     xps_part_t *last_part;
 
@@ -187,13 +192,6 @@ struct xps_context_s
     char *state; /* temporary state for various processing */
 
     int use_transparency; /* global toggle for transparency */
-
-    /* The common colorspaces that are used often in most XPS files.
-     */
-    gs_color_space *gray;
-    gs_color_space *srgb;
-    gs_color_space *scrgb;
-    gs_color_space *cmyk;
 
     /* Hack to workaround ghostscript's lack of understanding
      * the pdf 1.4 specification of Alpha only transparency groups.

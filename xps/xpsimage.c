@@ -1,5 +1,22 @@
 #include "ghostxps.h"
 
+static void
+xps_convert_16_to_8(xps_context_t *ctx, xps_image_t *image)
+{
+	int n = image->comps;
+	int y, x, k;
+	unsigned short *sp = image->samples;
+	unsigned char  *dp = image->samples;
+
+	for (y = 0; y < image->height; y++)
+		for (x = 0; x < image->width; x++)
+			for (k = 0; k < n; k++)
+				*dp++ = (*sp++) >> 8;
+
+	image->bits = 8;
+	image->stride = image->width * image->comps;
+}
+
 /*
  * Un-interleave the alpha channel.
  */
@@ -15,6 +32,8 @@ xps_isolate_alpha_channel_8(xps_context_t *ctx, xps_image_t *image)
 	    (image->colorspace != XPS_RGB_A) &&
 	    (image->colorspace != XPS_CMYK_A))
 	return 0;
+
+dputs("  isolating alpha channel (8 bits)\n");
 
     image->alpha = xps_alloc(ctx, image->width * image->height);
     if (!image->alpha)
@@ -57,6 +76,8 @@ xps_isolate_alpha_channel_16(xps_context_t *ctx, xps_image_t *image)
 	    (image->colorspace != XPS_RGB_A) &&
 	    (image->colorspace != XPS_CMYK_A))
 	return 0;
+
+dputs("  isolating alpha channel (16 bits)\n");
 
     image->alpha = xps_alloc(ctx, image->width * image->height * 2);
     if (!image->alpha)
@@ -117,6 +138,9 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
 
     if (error)
 	return gs_rethrow(error, "could not decode image");
+
+    if (image->bits == 16)
+	xps_convert_16_to_8(ctx, image);
 
     if (image->bits == 8)
 	xps_isolate_alpha_channel_8(ctx, image);

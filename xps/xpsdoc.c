@@ -328,6 +328,8 @@ xps_free_fixed_documents(xps_context_t *ctx)
 	xps_free(ctx, node);
 	node = next;
     }
+    ctx->first_fixdoc = NULL;
+    ctx->last_fixdoc = NULL;
 }
 
 int
@@ -387,6 +389,9 @@ xps_free_fixed_pages(xps_context_t *ctx)
 	xps_free(ctx, node);
 	node = next;
     }
+    ctx->first_page = NULL;
+    ctx->last_page = NULL;
+    ctx->next_page = NULL;
 }
 
 /*
