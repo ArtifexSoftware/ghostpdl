@@ -706,7 +706,7 @@ end readonly def
 	            2 index setfillstate show % Tr was set to graphic state.
 	            setmatrix 
 		    % now set the currentpoint using the original matrix
-	            gsave nulldevice
+	            gsave
 	            setmatrix
 	            false charpath currentpoint newpath 
 	            grestore
