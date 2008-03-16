@@ -1502,7 +1502,13 @@ mark
   /Encoding [
       have_post {
         cmapa dup length 256 gt { 0 256 getinterval } if
-        { glyphencoding exch get } forall
+        { glyphencoding dup length
+          2 index le {
+            pop pop /.notdef
+          } {
+            exch get
+          } ifelse
+        } forall
       } {
         glyphencoding  dup length 256 gt { 0 256 getinterval } if
         aload pop
