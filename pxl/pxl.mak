@@ -39,11 +39,6 @@ pxl.config-clean:
 
 ################ PCL XL ################
 
-#### Functionality left to implement:
-#	Symbol set mapping
-#### Other stuff:
-#	Free subsidiary objects when freeing patterns
-
 pxattr_h=$(PXLSRC)pxattr.h $(gdevpxat_h)
 pxbfont_h=$(PXLSRC)pxbfont.h
 pxenum_h=$(PXLSRC)pxenum.h $(gdevpxen_h)
@@ -52,8 +47,7 @@ pxfont_h=$(PXLSRC)pxfont.h $(plfont_h)
 pxptable_h=$(PXLSRC)pxptable.h
 pxtag_h=$(PXLSRC)pxtag.h $(gdevpxop_h)
 pxsymbol_h=$(PXLGEN)pxsymbol.h
-pxvalue_h=$(PXLSRC)pxvalue.h $(gstypes_h) $(pxattr_h)
-# Nested headers
+pxvalue_h=$(PXLSRC)pxvalue.h $(gstypes_h) $(pxattr_h) $(stdint__h)
 pxdict_h=$(PXLSRC)pxdict.h $(pldict_h) $(pxvalue_h)
 pxgstate_h=$(PXLSRC)pxgstate.h $(gsccolor_h) $(gsiparam_h) $(gsmatrix_h) $(gsrefct_h) $(gxbitmap_h) $(gxfixed_h) $(plsymbol_h) $(pxdict_h) $(pxenum_h)
 pxoper_h=$(PXLSRC)pxoper.h $(gserror_h) $(pxattr_h) $(pxerrors_h) $(pxvalue_h)

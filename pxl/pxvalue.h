@@ -17,6 +17,7 @@
 #ifndef pxvalue_INCLUDED
 #  define pxvalue_INCLUDED
 
+#include "stdint_.h"
 #include "gstypes.h"
 #include "pxattr.h"
 
