@@ -300,7 +300,7 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
 	    gs_free_object(vdev->v_memory, vdev->strmbuf,
 			   "vector_open(strmbuf)");
 	vdev->strmbuf = 0;
-	fclose(vdev->file);
+	gx_device_close_output_file(vdev, vdev->fname, vdev->file);
 	vdev->file = 0;
 	return_error(gs_error_VMerror);
     }
