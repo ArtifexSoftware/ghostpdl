@@ -108,7 +108,8 @@ typedef struct gs_font_info_s {
     gs_const_string FamilyName;
 #define FONT_INFO_FULL_NAME 0x2000
     gs_const_string FullName;
-
+#define FONT_INFO_EMBEDDING_RIGHTS 0x4000
+    int EmbeddingRights;
 } gs_font_info_t;
 
 #define public_st_gs_font_info() /* in gsfont.c */\

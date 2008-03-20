@@ -2443,7 +2443,7 @@ pdf_text_process(gs_text_enum_t *pte)
 		len = min(gs_font_name_max, gnstr.size);
 		memcpy(glyph, gnstr.data, len);
 		glyph[len] = 0x00;
-		len = min(255, penum->current_font->font_name.size);
+		len = min(gs_font_name_max, penum->current_font->font_name.size);
 		memcpy(FontName, penum->current_font->font_name.chars, len);
 		FontName[len] = 0x00;
 		len = min(255, penum->current_font->key_name.size);
