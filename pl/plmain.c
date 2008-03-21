@@ -39,7 +39,10 @@
 #include "pltoputl.h"
 #include "plapi.h"
 #include "gslibctx.h"
-
+#if defined(DEBUG) && defined(ALLOW_VD_TRACE)
+#include "dwtrace.h"
+#include "vdtrace.h"
+#endif
 
 /*
  * Define bookeeping for interperters and devices 
@@ -79,6 +82,10 @@ Options: -dNOPAUSE -E[#] -h -C -L<PCL|PCLXL> -n -K<maxK> -P<PCL5C|PCL5E|RTL> -Z.
 
 #ifdef PSI_INCLUDED
 static gs_gc_root_t device_root;
+#endif
+
+#if defined(DEBUG) && defined(ALLOW_VD_TRACE)
+void *hwndtext; /* Hack: Should be of HWND type. */
 #endif
 
 /* ---------------- Forward decls ------------------ */
@@ -329,6 +336,10 @@ pl_main(
             errprintf("Unable to open %s for reading.\n", filename);
             return -1;
         }
+#if defined(DEBUG) && defined(ALLOW_VD_TRACE)
+	vd_trace0 = visual_tracer_init();
+#endif
+
 #ifdef DEBUG
         if (gs_debug_c(':'))
             dprintf1("%% Reading %s:\n", filename);
@@ -453,6 +464,9 @@ pl_main(
     gs_c_param_list_release(&params);
     arg_finit(&args);
 
+#if defined(DEBUG) && defined(ALLOW_VD_TRACE)
+    visual_tracer_close();
+#endif
     if ( gs_debug_c('A') )
 	dprintf("Final time" );
     pl_platform_dnit(0);
@@ -773,6 +787,15 @@ pl_main_arg_fopen(const char *fname, void *ignore_data)
 {	return fopen(fname, "r");
 }
 
+static void
+set_debug_flags(const char *arg, char *flags)
+{
+    byte value = (*arg == '-' ? (++arg, 0) : 0xff);
+
+    while (*arg)
+	flags[*arg++ & 127] = value;
+}
+
 #define arg_heap_copy(str) arg_copy(str, pmi->memory)
 int
 pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
@@ -989,12 +1012,13 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 		}
 	    }
 	    break;
+#if defined(DEBUG) && defined(ALLOW_VD_TRACE)
+	case 'T':
+            set_debug_flags(arg, vd_flags);
+	    break;
+#endif
 	case 'Z':
-	    { 
-		const char *p = arg;
-		for ( ; *p; ++p )
-		    gs_debug[(int)*p] = 1;
-	    }
+            set_debug_flags(arg, gs_debug);
 	    break;
 	case 'L': /* language */
 	    {

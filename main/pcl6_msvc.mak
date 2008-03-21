@@ -176,7 +176,12 @@ D=\\
 
 # Main file's name
 !ifndef MAIN_OBJ
+!ifndef ALLOW_VD_TRACE
 MAIN_OBJ=$(PLOBJDIR)\plmain.$(OBJ) $(PLOBJDIR)\plimpl.$(OBJ)
+!else
+MAIN_OBJ=$(PLOBJDIR)\plmain.$(OBJ) $(PLOBJDIR)\plimpl.$(OBJ) $(PLOBJDIR)\dwtrace.$(OBJ)\
+ $(PLOBJDIR)\dwimg.$(OBJ) $(PLOBJDIR)\dwreg.$(OBJ)
+!endif
 !endif
 !ifndef PCL_TOP_OBJ
 PCL_TOP_OBJ=$(PCLOBJDIR)\pctop.$(OBJ)
@@ -367,4 +372,24 @@ config-clean: pl.config-clean pxl.config-clean
 !ifdef XPS_INCLUDED
 !include $(XPSSRCDIR)\xps.mak
 !endif
+
+#### Rules for visual tracer window (copied from gs\winint.mak).
+#### Note PLCCC brings /Za, which can't compile Windows headers, so we define and use PLCCC_W instead. :
+
+CC_W=$(CC_WX) $(COMPILE_FULL_OPTIMIZED) $(ZM)
+PLCCC_W=$(CC_W) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
+
+$(GLOBJ)\dwtrace.$(OBJ): $(GLSRC)dwtrace.c $(AK)\
+ $(dwimg_h) $(dwtrace_h)\
+ $(gscdefs_h) $(stdpre_h) $(gsdll_h) $(vdtrace_h)
+	$(PLCCC_W) $(GLO_)dwtrace.$(OBJ) $(C_) $(GLSRC)dwtrace.c
+
+$(GLOBJ)dwimg.obj: $(GLSRC)dwimg.c $(AK)\
+ $(dwmain_h) $(dwdll_h) $(dwtext_h) $(dwimg_h) $(gdevdsp_h) $(stdio__h) \
+ $(gscdefs_h) $(iapi_h) $(dwreg_h)
+	$(PLCCC_W)  $(GLO_)dwimg.obj $(C_) $(GLSRC)dwimg.c
+
+$(GLOBJ)dwreg.obj: $(GLSRC)dwreg.c $(AK) $(dwreg_h)
+	$(PLCCC_W) $(GLO_)dwreg.obj $(C_) $(GLSRC)dwreg.c
+
 
