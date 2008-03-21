@@ -215,7 +215,7 @@ pgframe_do_registration(
 	  {0, 'A',
 	    PCL_COMMAND("Enter PCL Mode",
 			pcl_enter_pcl_mode,
-			pca_neg_ok|pca_big_ok|pca_in_macro|pca_in_rtl)},
+			pca_neg_ok|pca_big_ok|pca_in_rtl)},
 	END_CLASS
 	return 0;
 }
