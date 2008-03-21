@@ -559,6 +559,7 @@ pe_args(const gs_memory_t *mem, hpgl_args_t *pargs, int32 *pvalues, int count)
 syntax_error:
 	/* Just ignore everything we've parsed up to this point. */
 	pargs->source.ptr = p;
+	gs_note_error(e_Syntax);
 	return false;
 }
 
