@@ -518,7 +518,7 @@ static bool
 pe_args(const gs_memory_t *mem, hpgl_args_t *pargs, int32 *pvalues, int count)
 {	const byte *p = pargs->source.ptr;
 	const byte *rlimit = pargs->source.limit;
-	int i;
+	int i, code;
 
 	for ( i = 0; i < count; ++i )
 	  { int32 value = 0;
@@ -559,7 +559,7 @@ pe_args(const gs_memory_t *mem, hpgl_args_t *pargs, int32 *pvalues, int count)
 syntax_error:
 	/* Just ignore everything we've parsed up to this point. */
 	pargs->source.ptr = p;
-	gs_note_error(e_Syntax);
+	code = gs_note_error(e_Syntax);
 	return false;
 }
 
