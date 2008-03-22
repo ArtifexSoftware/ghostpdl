@@ -1871,7 +1871,7 @@ $(GLOBJ)gdevmr2n.$(OBJ) : $(GLSRC)gdevmr2n.c $(GXERR) $(memory__h)\
 $(GLOBJ)gdevmr8n.$(OBJ) : $(GLSRC)gdevmr8n.c $(GXERR) $(memory__h)\
  $(gsbittab_h) $(gsropt_h)\
  $(gxcindex_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxdevrop_h)\
- $(gdevmem_h) $(gdevmrop_h)
+ $(gdevmem_h) $(gdevmrop_h) $(vdtrace_h)
 	$(GLCC) $(GLO_)gdevmr8n.$(OBJ) $(C_) $(GLSRC)gdevmr8n.c
 
 $(GLOBJ)gdevrops.$(OBJ) : $(GLSRC)gdevrops.c $(GXERR)\

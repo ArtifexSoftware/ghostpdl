@@ -928,7 +928,16 @@ gx_default_image_data(gx_device *dev, gx_image_enum_common_t * info,
 		      const byte ** plane_data,
 		      int data_x, uint raster, int height)
 {
-    return gx_image_data(info, plane_data, data_x, raster, height);
+    int code;
+
+    vd_get_dc('i');
+    vd_set_shift(0, 0);
+    vd_set_scale(0.01);
+    vd_set_origin(0, 0);
+    /* vd_erase(RGB(192, 192, 192)); */
+    code = gx_image_data(info, plane_data, data_x, raster, height);
+    vd_release_dc;
+    return code;
 }
 
 int
