@@ -379,17 +379,17 @@ config-clean: pl.config-clean pxl.config-clean
 CC_W=$(CC_WX) $(COMPILE_FULL_OPTIMIZED) $(ZM)
 PLCCC_W=$(CC_W) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
 
-$(GLOBJ)\dwtrace.$(OBJ): $(GLSRC)dwtrace.c $(AK)\
+$(PLOBJDIR)\dwtrace.$(OBJ): $(GLSRC)dwtrace.c $(AK)\
  $(dwimg_h) $(dwtrace_h)\
  $(gscdefs_h) $(stdpre_h) $(gsdll_h) $(vdtrace_h)
 	$(PLCCC_W) $(GLO_)dwtrace.$(OBJ) $(C_) $(GLSRC)dwtrace.c
 
-$(GLOBJ)dwimg.obj: $(GLSRC)dwimg.c $(AK)\
+$(PLOBJDIR)\dwimg.obj: $(GLSRC)dwimg.c $(AK)\
  $(dwmain_h) $(dwdll_h) $(dwtext_h) $(dwimg_h) $(gdevdsp_h) $(stdio__h) \
  $(gscdefs_h) $(iapi_h) $(dwreg_h)
 	$(PLCCC_W)  $(GLO_)dwimg.obj $(C_) $(GLSRC)dwimg.c
 
-$(GLOBJ)dwreg.obj: $(GLSRC)dwreg.c $(AK) $(dwreg_h)
+$(PLOBJDIR)\dwreg.obj: $(GLSRC)dwreg.c $(AK) $(dwreg_h)
 	$(PLCCC_W) $(GLO_)dwreg.obj $(C_) $(GLSRC)dwreg.c
 
 
