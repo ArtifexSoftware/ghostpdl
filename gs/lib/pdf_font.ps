@@ -1453,12 +1453,12 @@ currentdict /eexec_pdf_param_dict .undef
   /no_stream 
     { pop pop 
       dup /Subtype get  % res res /subtype
-      fonttypeprocs exch dup / eq {
+      dup / eq {
         (   **** Warning: Font missing required Subtype, /Type1 assumed.\n)
 	pdfformaterror
         pop /Type1
       } if
-      get exec 
+      //fonttypeprocs exch get exec 
     } bdef
 
   /bad_stream 
@@ -1497,11 +1497,9 @@ currentdict end readonly def
 currentdict /bndef undef
 
 /resourcefont                   % <font-resource> resourcefont <font>
-{ dup /PSFont .knownget {
-    /FID knownoget { type /fonttype eq } { //false } ifelse 
-  } {
-    //false 
-  } ifelse {
+{ dup /PSFont .knownget dup {
+    pop /FID knownoget dup { pop type /fonttype eq } if
+  } if {
     /PSFont get 
   } {
     dup dup /FontDescriptor knownoget {
@@ -1556,15 +1554,16 @@ currentdict /bndef undef
         1 index /FontObject exch put      % Save pointer to the font
       } ifelse
     } {
-      dup /Subtype get fonttypeprocs exch dup / eq {
+      dup /Subtype get
+      dup / eq {
         (   **** Warning: Font missing required Subtype, /Type1 assumed.\n)
         pdfformaterror
         pop /Type1
       } if 
-      get exec
+      //fonttypeprocs exch get exec
     } ifelse
         % Stack: font-res font
-    1 index 3 1 roll
+    1 index exch
     1 index /Subtype get
     //adjustfonttypes exch .knownget { exec } { exch pop } ifelse
     dup 3 1 roll /PSFont exch put
@@ -1572,7 +1571,9 @@ currentdict /bndef undef
   dup checkGlyphNames2Unicode
 } bdef
 
-currentdict /font_tag_dict undef
+currentdict /font_tag_dict .undef
+currentdict /fonttypeprocs .undef
+currentdict /adjustfonttypes .undef
 
 drawopdict begin
   /d0 {
