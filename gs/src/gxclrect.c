@@ -245,7 +245,7 @@ clist_fill_rectangle(gx_device * dev, int rx, int ry, int rwidth, int rheight,
     cmd_rects_enum_t re;
 
     crop_fill(cdev, rx, ry, rwidth, rheight);
-    if (rwidth < 0 || rheight < 0)
+    if (rwidth <= 0 || rheight <= 0)
 	return 0;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
@@ -313,7 +313,7 @@ clist_write_fill_trapezoid(gx_device * dev,
 	}
     }
     crop_fill_y(cdev, ry, rheight);
-    if (rheight < 0)
+    if (rheight <= 0)
 	return 0;
     if (cdev->permanent_error < 0)
 	return (cdev->permanent_error);
@@ -453,7 +453,7 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
     cmd_rects_enum_t re;
 
     crop_fill(cdev, rx, ry, rwidth, rheight);
-    if (rwidth < 0 || rheight < 0)
+    if (rwidth <= 0 || rheight <= 0)
 	return 0;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
@@ -910,7 +910,7 @@ clist_strip_copy_rop(gx_device * dev,
     } else {
 	crop_copy(cdev, sdata, sourcex, sraster, id, rx, ry, rwidth, rheight);
     }
-    if (rwidth < 0 || rheight < 0)
+    if (rwidth <= 0 || rheight <= 0)
 	return 0;
     /*
      * On CMYK devices, RasterOps must be executed with complete pixels

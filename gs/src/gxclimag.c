@@ -82,7 +82,7 @@ clist_fill_mask(gx_device * dev,
 	return_error(gs_error_unknownerror);
 
     crop_copy(cdev, data, data_x, raster, id, rx, ry, rwidth, rheight);
-    if (rwidth < 0 || rheight < 0)
+    if (rwidth <= 0 || rheight <= 0)
 	return 0;
     y0 = ry;			/* must do after fit_copy */
 
