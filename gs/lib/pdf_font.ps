@@ -1504,19 +1504,17 @@ currentdict /bndef undef
   } {
     dup dup /FontDescriptor knownoget {
                                           % font-res font-res font-desc
+      % The same font descriptor can be reused in a CID and non-CID contexts.
+      % Store CID and non-CID fonts under different keys. Bug 689301
+      1 index /Subtype knownoget dup {
+        pop dup /CIDFontType0 eq exch /CIDFontType2 eq or
+      } if { /CIDFontObject } { /FontObject } ifelse
+                                          % font-res font-res font-desc /key
+      2 copy .knownget {
+        4 1 roll pop pop pop              % font-res obj
+      } {    
+        4 1 roll                          % /key font-res font-res font-desc
 
-      dup /FontObject .knownget dup {     % font-res font-res font-desc font? bool bool
-        % Check that the cached FontObject has the right resource type
-        % The same font descriptor can be reused in a CID and non-CID contexts. bug 689301
-        3 index /Subtype knownoget not { /Type1 } if
-        dup /CIDFontType0 eq exch /CIDFontType2 eq or  % font-res font-res font-desc font bool is_cid
-        2 index /CIDFontType known xor {
-          pop pop //false                 % font-res font-res font-desc false 
-        } if
-      } if {
-                                          % res res desc obj
-          3 1 roll pop pop                % res obj
-      } { 
         dup /FontFile knownoget not {
           dup /FontFile2 knownoget not {
             dup /FontFile3 knownoget not {
@@ -1524,7 +1522,7 @@ currentdict /bndef undef
             } if
           } if
         } if
-                                          % res res desc stream
+                                          % /key res res desc stream
         dup //null ne {
           PDFfile fileposition 
           1 index //true resolvestream dup
@@ -1535,23 +1533,24 @@ currentdict /bndef undef
         } {
           /no_stream
 	} ifelse
-                                          % res res desc stream tag	      
+                                          % /key res res desc stream tag	      
 
         //font_tag_dict 1 index known not {
           dup 0 2 getinterval <8001> eq {
-            0 2 getinterval               % res res desc stream pfb_tag
+            0 2 getinterval               % /key res res desc stream pfb_tag
 	  } { 
             (12345678>\n) dup /ASCIIHexEncode filter dup 4 -1 roll writestring closefile
             (   **** Warning: unrecognized font file starts with <) exch concatstrings
 	    pdfformaterror
-	    /no_stream                    % res res desc stream unknown_tag
+	    /no_stream                    % /key res res desc stream unknown_tag
           } ifelse    
 	} if		
 	      
 	//font_tag_dict exch get exec
    
-        1 index /FontDescriptor oget      % res font desc
-        1 index /FontObject exch put      % Save pointer to the font
+        1 index /FontDescriptor oget      % /key res font desc
+        4 -1 roll 2 index                 % res font desc /key font
+        put  % Save pointer to the font.
       } ifelse
     } {
       dup /Subtype get
