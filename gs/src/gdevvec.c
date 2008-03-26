@@ -1055,8 +1055,8 @@ gdev_vector_fill_path(gx_device * dev, const gs_imager_state * pis,
 {
     int code;
 
-    if ((code = gdev_vector_prepare_fill(vdev, pis, params, pdevc)) < 0 ||
-	(code = gdev_vector_update_clip_path(vdev, pcpath)) < 0 ||
+    if ((code = gdev_vector_update_clip_path(vdev, pcpath)) < 0 ||
+	(code = gdev_vector_prepare_fill(vdev, pis, params, pdevc)) < 0 ||
 	(vdev->bbox_device &&
 	 (code = (*dev_proc(vdev->bbox_device, fill_path))
 	  ((gx_device *) vdev->bbox_device, pis, ppath, params,
@@ -1082,9 +1082,9 @@ gdev_vector_stroke_path(gx_device * dev, const gs_imager_state * pis,
     int set_ctm;
     gs_matrix mat;
 
-    if ((set_ctm = gdev_vector_stroke_scaling(vdev, pis, &scale, &mat)) != 0 ||
+    if ((code = gdev_vector_update_clip_path(vdev, pcpath)) < 0 ||
+	(set_ctm = gdev_vector_stroke_scaling(vdev, pis, &scale, &mat)) != 0 ||
 	(code = gdev_vector_prepare_stroke(vdev, pis, params, pdcolor, scale)) < 0 ||
-	(code = gdev_vector_update_clip_path(vdev, pcpath)) < 0 ||
 	(vdev->bbox_device &&
 	 (code = (*dev_proc(vdev->bbox_device, stroke_path))
 	  ((gx_device *) vdev->bbox_device, pis, ppath, params,
