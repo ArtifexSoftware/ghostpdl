@@ -347,6 +347,8 @@ pdf_end_char_proc(gx_device_pdf * pdev, pdf_stream_position_t * ppos)
     sseek(s, start_pos - 15);
     pprintd1(s, "%d", length);
     sseek(s, end_pos);
+    if (pdev->PDFA)
+	stream_puts(s, "\n");
     stream_puts(s, "endstream\n");
     pdf_end_separate(pdev);
     return 0;

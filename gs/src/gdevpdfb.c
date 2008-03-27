@@ -569,7 +569,10 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 
 	    sprintf(buf, "/R%ld Do\n", image_id);
 	    pprintd1(s, "%d>>stream\n", strlen(buf));
-	    pprints1(s, "%sendstream\n", buf);
+	    if (pdev->PDFA)
+		pprints1(s, "%s\nendstream\n", buf);
+	    else
+		pprints1(s, "%sendstream\n", buf);
 	    pdf_end_resource(pdev);
 	} else {
 	    length_id = pdf_obj_ref(pdev);

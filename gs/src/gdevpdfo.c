@@ -524,6 +524,8 @@ cos_array_write(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
     }
     DISCARD(cos_array_reorder(pca, first));
     stream_puts(s, "]");
+    if (pdev->PDFA)
+        stream_puts(s, "\n");
     return 0;
 }
 
@@ -790,6 +792,8 @@ cos_dict_write(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
     stream_puts(s, "<<");
     cos_elements_write(s, ((const cos_dict_t *)pco)->elements, pdev, false, object_id);
     stream_puts(s, ">>");
+    if (pdev->PDFA)
+        stream_puts(s, "\n");
     return 0;
 }
 
