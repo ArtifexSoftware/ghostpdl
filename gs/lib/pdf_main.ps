@@ -1563,20 +1563,20 @@ currentdict /PDF2PS_matrix_key undef
 % of any other transparency features, they have no effect.
 /pageusestransparency {		% <pagedict> pageusestransparency <bool>
   PDFversion PDFtransparencyversion lt NOTRANSPARENCY or {
-    pop false
+    pop //false
   } {
-    dup false exch {
+    dup //false exch {
       4 dict 1 index resourceusestransparency { pop not exit } if
       /Parent knownoget not { exit } if
     } loop
     % Also check for transparency in the annotation (if not in resources).
-    { pop true } { annotsusetransparency } ifelse
+    { pop //true } { annotsusetransparency } ifelse
   } ifelse
 } bind def
 
 % Check if transparency is specified in an ExtGState dict
 /extgstateusestransparency {	% <gstate dict> extgstateusestransparency <bool>
-  false exch		% Assume no transparency
+  //false exch		% Assume no transparency
   {			% establish loop context
     exch pop oforce
     dup /BM knownoget { dup /Normal ne exch /Compatible ne and
@@ -1625,17 +1625,13 @@ currentdict /PDF2PS_matrix_key undef
 
 % Check if the annotations on a page use transparency
 /annotsusetransparency {	% <page dict> annotsusetransparency <bool>
-   false exch			% Assume no transparency
+   //false exch			% Assume no transparency
    /Annots knownoget {		% Get Annots array
      { oforce /AP knownoget {	% Get appearance dict for the annoation
-	/N knownoget { 	% Get the /N (i.e. normal) appearance stream
-	  /Resources knownoget {
-	    /ExtGState knownoget {
-	       extgstateusestransparency { pop true exit} if
-	     } if		% If ExtGState known
-	   } if			% If Resources known
-	 } if			% If annotation has a normal appearance
-       } if			% If AP dict known
+         /N knownoget { 	% Get the /N (i.e. normal) appearance stream
+           4 dict exch resourceusestransparency { pop //true exit } if
+         } if
+       } if  			% If AP dict known
      } forall			% For all annots on the page
    } if
 } bind def
