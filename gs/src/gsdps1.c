@@ -244,10 +244,10 @@ gs_rectfill(gs_state * pgs, const gs_rect * pr, uint count)
 	    } else {
 		int x, y, w, h;
 
-		draw_rect.p.x -= pgs->fill_adjust.x;
-		draw_rect.p.y -= pgs->fill_adjust.x;
+		draw_rect.p.x -= max(pgs->fill_adjust.x - fixed_epsilon, 0);
+		draw_rect.p.y -= max(pgs->fill_adjust.y - fixed_epsilon, 0);
 		draw_rect.q.x += pgs->fill_adjust.x;
-		draw_rect.q.y += pgs->fill_adjust.x;
+		draw_rect.q.y += pgs->fill_adjust.y;
 		rect_intersect(draw_rect, clip_rect);
 		x = fixed2int_pixround(draw_rect.p.x);
 		y = fixed2int_pixround(draw_rect.p.y);
