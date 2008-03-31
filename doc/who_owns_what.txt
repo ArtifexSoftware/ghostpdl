@@ -149,6 +149,7 @@ libcore.dev:
     gsimpath, gsline, gspaint, gspath, gxclip, gxcpath, gxfill,
     gxacpath, gxpaint, gxpath, gxpdash, gxpflat, gxstroke, gxpath2,
     gxpcopy: igor
+libd.dev: ray
 libpng.dev: third party
 lj5gray.dev: ray and henry
 lj5mono.dev: ray and henry
