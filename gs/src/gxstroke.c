@@ -846,9 +846,9 @@ width_is_thin(pl_ptr plp)
     fixed dx, dy, wx = plp->width.x, wy = plp->width.y;
 
     /* If the line is horizontal or vertical, things are easy. */
-    if ((dy = plp->e.p.y - plp->o.p.y) == 0)
+    if ((dy = plp->vector.y) == 0)
 	return any_abs(wy) < fixed_half;
-    if ((dx = plp->e.p.x - plp->o.p.x) == 0)
+    if ((dx = plp->vector.x) == 0)
 	return any_abs(wx) < fixed_half;
 
     /*
