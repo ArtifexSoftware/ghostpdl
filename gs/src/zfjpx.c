@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -48,7 +48,8 @@ z_jpx_decode(i_ctx_t * i_ctx_p)
     stream_jpxd_state state;
 
     /* it's our responsibility to call set_defaults() */
-    (*s_jpxd_template.set_defaults)((stream_state *)&state);
+    if (s_jpxd_template.set_defaults)
+      (*s_jpxd_template.set_defaults)((stream_state *)&state);
     state.jpx_memory = imemory->non_gc_memory;
     if (r_has_type(op, t_dictionary)) {
         check_dict_read(*op);
