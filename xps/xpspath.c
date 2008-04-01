@@ -778,7 +778,7 @@ xps_parse_path_figure(xps_context_t *ctx, xps_item_t *root)
     }
 
     if (is_closed)
-	gs_closepath(ctx->pgs);
+	gs_lineto(ctx->pgs, start_x, start_y);
 
     return 0;
 }
