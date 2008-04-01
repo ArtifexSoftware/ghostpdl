@@ -587,6 +587,7 @@ xps_parse_arc_segment(xps_context_t *ctx, xps_item_t *root)
     int is_large_arc, is_clockwise;
     float point_x, point_y;
     float size_x, size_y;
+    int is_stroked;
 
     char *point_att = xps_att(root, "Point");
     char *size_att = xps_att(root, "Size");
@@ -598,11 +599,21 @@ xps_parse_arc_segment(xps_context_t *ctx, xps_item_t *root)
     if (!point_att || !size_att || !rotation_angle_att || !is_large_arc_att || !sweep_direction_att)
 	return gs_throw(-1, "ArcSegment element is missing attributes");
 
+    is_stroked = 1;
+    if (is_stroked_att && !strcmp(is_stroked_att, "false"))
+	    is_stroked = 0;
+
     sscanf(point_att, "%g,%g", &point_x, &point_y);
     sscanf(size_att, "%g,%g", &size_x, &size_y);
     rotation_angle = atof(rotation_angle_att);
     is_large_arc = !strcmp(is_large_arc_att, "true");
     is_clockwise = !strcmp(sweep_direction_att, "Clockwise");
+
+    if (ctx->is_stroking && !is_stroked)
+    {
+	gs_moveto(ctx->pgs, point_x, point_y);
+	return 0;
+    }
 
     return xps_draw_arc(ctx, size_x, size_y, rotation_angle,
 	    is_large_arc, is_clockwise, point_x, point_y);
@@ -614,12 +625,17 @@ xps_parse_poly_quadratic_bezier_segment(xps_context_t *ctx, xps_item_t *root)
     char *points_att = xps_att(root, "Points");
     char *is_stroked_att = xps_att(root, "IsStroked");
     float x[2], y[2];
+    int is_stroked;
     gs_point pt;
     char *s;
     int n;
 
     if (!points_att)
 	return gs_throw(-1, "PolyQuadraticBezierSegment element has no points");
+
+    is_stroked = 1;
+    if (is_stroked_att && !strcmp(is_stroked_att, "false"))
+	    is_stroked = 0;
 
     s = points_att;
     n = 0;
@@ -631,11 +647,18 @@ xps_parse_poly_quadratic_bezier_segment(xps_context_t *ctx, xps_item_t *root)
 	n ++;
 	if (n == 2)
 	{
-	    gs_currentpoint(ctx->pgs, &pt);
-	    gs_curveto(ctx->pgs,
-		    (pt.x + 2 * x[0]) / 3, (pt.y + 2 * y[0]) / 3,
-		    (x[1] + 2 * x[0]) / 3, (y[1] + 2 * y[0]) / 3,
-		    x[1], y[1]);
+	    if (ctx->is_stroking && !is_stroked)
+	    {
+		gs_moveto(ctx->pgs, x[1], y[1]);
+	    }
+	    else
+	    {
+		gs_currentpoint(ctx->pgs, &pt);
+		gs_curveto(ctx->pgs,
+			(pt.x + 2 * x[0]) / 3, (pt.y + 2 * y[0]) / 3,
+			(x[1] + 2 * x[0]) / 3, (y[1] + 2 * y[0]) / 3,
+			x[1], y[1]);
+	    }
 	    n = 0;
 	}
     }
@@ -649,11 +672,16 @@ xps_parse_poly_bezier_segment(xps_context_t *ctx, xps_item_t *root)
     char *points_att = xps_att(root, "Points");
     char *is_stroked_att = xps_att(root, "IsStroked");
     float x[3], y[3];
+    int is_stroked;
     char *s;
     int n;
 
     if (!points_att)
 	return gs_throw(-1, "PolyBezierSegment element has no points");
+
+    is_stroked = 1;
+    if (is_stroked_att && !strcmp(is_stroked_att, "false"))
+	    is_stroked = 0;
 
     s = points_att;
     n = 0;
@@ -665,7 +693,10 @@ xps_parse_poly_bezier_segment(xps_context_t *ctx, xps_item_t *root)
 	n ++;
 	if (n == 3)
 	{
-	    gs_curveto(ctx->pgs, x[0], y[0], x[1], y[1], x[2], y[2]);
+	    if (ctx->is_stroking && !is_stroked)
+		gs_moveto(ctx->pgs, x[2], y[2]);
+	    else
+		gs_curveto(ctx->pgs, x[0], y[0], x[1], y[1], x[2], y[2]);
 	    n = 0;
 	}
     }
@@ -678,18 +709,26 @@ xps_parse_poly_line_segment(xps_context_t *ctx, xps_item_t *root)
 {
     char *points_att = xps_att(root, "Points");
     char *is_stroked_att = xps_att(root, "IsStroked");
+    int is_stroked;
     float x, y;
     char *s;
 
     if (!points_att)
 	return gs_throw(-1, "PolyLineSegment element has no points");
 
+    is_stroked = 1;
+    if (is_stroked_att && !strcmp(is_stroked_att, "false"))
+	    is_stroked = 0;
+
     s = points_att;
     while (*s != 0)
     {
 	while (*s == ' ') s++;
 	sscanf(s, "%g,%g", &x, &y);
-	gs_lineto(ctx->pgs, x, y);
+	if (ctx->is_stroking && !is_stroked)
+	    gs_moveto(ctx->pgs, x, y);
+	else
+	    gs_lineto(ctx->pgs, x, y);
 	while (*s != ' ' && *s != 0) s++;
     }
 
@@ -720,6 +759,9 @@ xps_parse_path_figure(xps_context_t *ctx, xps_item_t *root)
 	is_filled = !strcmp(is_filled_att, "true");
     if (start_point_att)
 	sscanf(start_point_att, "%g,%g", &start_x, &start_y);
+
+    if (!ctx->is_stroking && !is_filled) /* filling a non-fill */
+	return 0;
 
     gs_moveto(ctx->pgs, start_x, start_y);
 
@@ -1002,6 +1044,8 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 
     if (clip_att || clip_tag)
     {
+	ctx->is_stroking = 0;
+
 	if (clip_att)
 	    xps_parse_abbreviated_geometry(ctx, clip_att);
 	if (clip_tag)
@@ -1014,6 +1058,8 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 
     if (fill_att)
     {
+	ctx->is_stroking = 0;
+
 	xps_parse_color(ctx, fill_att, &colorspace, samples);
 	if (fill_opacity_att)
 	    samples[0] = atof(fill_opacity_att);
@@ -1029,6 +1075,8 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 
     if (fill_tag)
     {
+	ctx->is_stroking = 0;
+
 	if (data_att)
 	    xps_parse_abbreviated_geometry(ctx, data_att);
 	if (data_tag)
@@ -1039,6 +1087,8 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 
     if (stroke_att)
     {
+	ctx->is_stroking = 1;
+
 	xps_parse_color(ctx, stroke_att, &colorspace, samples);
 	if (stroke_opacity_att)
 	    samples[0] = atof(stroke_opacity_att);
@@ -1054,6 +1104,8 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 
     if (stroke_tag)
     {
+	ctx->is_stroking = 1;
+
 	if (data_att)
 	    xps_parse_abbreviated_geometry(ctx, data_att);
 	if (data_tag)

@@ -206,6 +206,12 @@ struct xps_context_s
      */
     int fill_rule;
 
+    /* We use this flag when parsing paths to
+     * determine if we should skip segments due
+     * to IsStroked or IsFilled being false.
+     */
+    int is_stroking;
+
     /* We often need the bounding box for the current
      * area of the page affected by drawing operations.
      * We keep these bounds updated every time we
