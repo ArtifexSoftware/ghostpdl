@@ -225,7 +225,7 @@ angle_between(const gs_point u, const gs_point v)
     return sign * acos(t);
 }
 
-int
+static int
 xps_draw_arc(xps_context_t *ctx,
 	float size_x, float size_y, float rotation_angle,
 	int is_large_arc, int is_clockwise,
@@ -574,8 +574,8 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
     return 0;
 }
 
-int
-xps_parse_arc_segment(xps_context_t *ctx, xps_item_t *root)
+static int
+xps_parse_arc_segment(xps_context_t *ctx, xps_item_t *root, int stroking, int *skipped_stroke)
 {
     /* ArcSegment pretty much follows the SVG algorithm for converting an
        arc in endpoint representation to an arc in centerpoint
@@ -602,6 +602,8 @@ xps_parse_arc_segment(xps_context_t *ctx, xps_item_t *root)
     is_stroked = 1;
     if (is_stroked_att && !strcmp(is_stroked_att, "false"))
 	    is_stroked = 0;
+    if (!is_stroked)
+	*skipped_stroke = 1;
 
     sscanf(point_att, "%g,%g", &point_x, &point_y);
     sscanf(size_att, "%g,%g", &size_x, &size_y);
@@ -609,7 +611,7 @@ xps_parse_arc_segment(xps_context_t *ctx, xps_item_t *root)
     is_large_arc = !strcmp(is_large_arc_att, "true");
     is_clockwise = !strcmp(sweep_direction_att, "Clockwise");
 
-    if (ctx->is_stroking && !is_stroked)
+    if (stroking && !is_stroked)
     {
 	gs_moveto(ctx->pgs, point_x, point_y);
 	return 0;
@@ -619,8 +621,8 @@ xps_parse_arc_segment(xps_context_t *ctx, xps_item_t *root)
 	    is_large_arc, is_clockwise, point_x, point_y);
 }
 
-int
-xps_parse_poly_quadratic_bezier_segment(xps_context_t *ctx, xps_item_t *root)
+static int
+xps_parse_poly_quadratic_bezier_segment(xps_context_t *ctx, xps_item_t *root, int stroking, int *skipped_stroke)
 {
     char *points_att = xps_att(root, "Points");
     char *is_stroked_att = xps_att(root, "IsStroked");
@@ -636,6 +638,8 @@ xps_parse_poly_quadratic_bezier_segment(xps_context_t *ctx, xps_item_t *root)
     is_stroked = 1;
     if (is_stroked_att && !strcmp(is_stroked_att, "false"))
 	    is_stroked = 0;
+    if (!is_stroked)
+	*skipped_stroke = 1;
 
     s = points_att;
     n = 0;
@@ -647,7 +651,7 @@ xps_parse_poly_quadratic_bezier_segment(xps_context_t *ctx, xps_item_t *root)
 	n ++;
 	if (n == 2)
 	{
-	    if (ctx->is_stroking && !is_stroked)
+	    if (stroking && !is_stroked)
 	    {
 		gs_moveto(ctx->pgs, x[1], y[1]);
 	    }
@@ -666,8 +670,8 @@ xps_parse_poly_quadratic_bezier_segment(xps_context_t *ctx, xps_item_t *root)
     return 0;
 }
 
-int
-xps_parse_poly_bezier_segment(xps_context_t *ctx, xps_item_t *root)
+static int
+xps_parse_poly_bezier_segment(xps_context_t *ctx, xps_item_t *root, int stroking, int *skipped_stroke)
 {
     char *points_att = xps_att(root, "Points");
     char *is_stroked_att = xps_att(root, "IsStroked");
@@ -682,6 +686,8 @@ xps_parse_poly_bezier_segment(xps_context_t *ctx, xps_item_t *root)
     is_stroked = 1;
     if (is_stroked_att && !strcmp(is_stroked_att, "false"))
 	    is_stroked = 0;
+    if (!is_stroked)
+	*skipped_stroke = 1;
 
     s = points_att;
     n = 0;
@@ -693,7 +699,7 @@ xps_parse_poly_bezier_segment(xps_context_t *ctx, xps_item_t *root)
 	n ++;
 	if (n == 3)
 	{
-	    if (ctx->is_stroking && !is_stroked)
+	    if (stroking && !is_stroked)
 		gs_moveto(ctx->pgs, x[2], y[2]);
 	    else
 		gs_curveto(ctx->pgs, x[0], y[0], x[1], y[1], x[2], y[2]);
@@ -704,8 +710,8 @@ xps_parse_poly_bezier_segment(xps_context_t *ctx, xps_item_t *root)
     return 0;
 }
 
-int
-xps_parse_poly_line_segment(xps_context_t *ctx, xps_item_t *root)
+static int
+xps_parse_poly_line_segment(xps_context_t *ctx, xps_item_t *root, int stroking, int *skipped_stroke)
 {
     char *points_att = xps_att(root, "Points");
     char *is_stroked_att = xps_att(root, "IsStroked");
@@ -719,13 +725,15 @@ xps_parse_poly_line_segment(xps_context_t *ctx, xps_item_t *root)
     is_stroked = 1;
     if (is_stroked_att && !strcmp(is_stroked_att, "false"))
 	    is_stroked = 0;
+    if (!is_stroked)
+	*skipped_stroke = 1;
 
     s = points_att;
     while (*s != 0)
     {
 	while (*s == ' ') s++;
 	sscanf(s, "%g,%g", &x, &y);
-	if (ctx->is_stroking && !is_stroked)
+	if (stroking && !is_stroked)
 	    gs_moveto(ctx->pgs, x, y);
 	else
 	    gs_lineto(ctx->pgs, x, y);
@@ -735,8 +743,8 @@ xps_parse_poly_line_segment(xps_context_t *ctx, xps_item_t *root)
     return 0;
 }
 
-int
-xps_parse_path_figure(xps_context_t *ctx, xps_item_t *root)
+static int
+xps_parse_path_figure(xps_context_t *ctx, xps_item_t *root, int stroking)
 {
     xps_item_t *node;
 
@@ -749,6 +757,8 @@ xps_parse_path_figure(xps_context_t *ctx, xps_item_t *root)
     float start_x = 0.0;
     float start_y = 0.0;
 
+    int skipped_stroke = 0;
+
     is_closed_att = xps_att(root, "IsClosed");
     start_point_att = xps_att(root, "StartPoint");
     is_filled_att = xps_att(root, "IsFilled");
@@ -760,7 +770,7 @@ xps_parse_path_figure(xps_context_t *ctx, xps_item_t *root)
     if (start_point_att)
 	sscanf(start_point_att, "%g,%g", &start_x, &start_y);
 
-    if (!ctx->is_stroking && !is_filled) /* filling a non-fill */
+    if (!stroking && !is_filled) /* not filled, when filling */
 	return 0;
 
     gs_moveto(ctx->pgs, start_x, start_y);
@@ -768,23 +778,28 @@ xps_parse_path_figure(xps_context_t *ctx, xps_item_t *root)
     for (node = xps_down(root); node; node = xps_next(node))
     {
 	if (!strcmp(xps_tag(node), "ArcSegment"))
-	    xps_parse_arc_segment(ctx, node);
+	    xps_parse_arc_segment(ctx, node, stroking, &skipped_stroke);
 	if (!strcmp(xps_tag(node), "PolyBezierSegment"))
-	    xps_parse_poly_bezier_segment(ctx, node);
+	    xps_parse_poly_bezier_segment(ctx, node, stroking, &skipped_stroke);
 	if (!strcmp(xps_tag(node), "PolyLineSegment"))
-	    xps_parse_poly_line_segment(ctx, node);
+	    xps_parse_poly_line_segment(ctx, node, stroking, &skipped_stroke);
 	if (!strcmp(xps_tag(node), "PolyQuadraticBezierSegment"))
-	    xps_parse_poly_quadratic_bezier_segment(ctx, node);
+	    xps_parse_poly_quadratic_bezier_segment(ctx, node, stroking, &skipped_stroke);
     }
 
     if (is_closed)
-	gs_lineto(ctx->pgs, start_x, start_y);
+    {
+	if (stroking && skipped_stroke)
+	    gs_lineto(ctx->pgs, start_x, start_y); /* we've skipped using gs_moveto... */
+	else
+	    gs_closepath(ctx->pgs); /* no skipped segments, safe to closepath properly */
+    }
 
     return 0;
 }
 
 int
-xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
+xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root, int stroking)
 {
     xps_item_t *node;
 
@@ -843,13 +858,13 @@ xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *ro
 
     if (figures_tag)
     {
-	xps_parse_path_figure(ctx, figures_tag);
+	xps_parse_path_figure(ctx, figures_tag, stroking);
     }
 
     for (node = xps_down(root); node; node = xps_next(node))
     {
 	if (!strcmp(xps_tag(node), "PathFigure"))
-	    xps_parse_path_figure(ctx, node);
+	    xps_parse_path_figure(ctx, node, stroking);
     }
 
     gs_setmatrix(ctx->pgs, &saved_transform);
@@ -1044,12 +1059,10 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 
     if (clip_att || clip_tag)
     {
-	ctx->is_stroking = 0;
-
 	if (clip_att)
 	    xps_parse_abbreviated_geometry(ctx, clip_att);
 	if (clip_tag)
-	    xps_parse_path_geometry(ctx, dict, clip_tag);
+	    xps_parse_path_geometry(ctx, dict, clip_tag, 0);
 
 	xps_clip(ctx, &saved_bounds);
     }
@@ -1058,8 +1071,6 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 
     if (fill_att)
     {
-	ctx->is_stroking = 0;
-
 	xps_parse_color(ctx, fill_att, &colorspace, samples);
 	if (fill_opacity_att)
 	    samples[0] = atof(fill_opacity_att);
@@ -1068,27 +1079,23 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	if (data_att)
 	    xps_parse_abbreviated_geometry(ctx, data_att);
 	if (data_tag)
-	    xps_parse_path_geometry(ctx, dict, data_tag);
+	    xps_parse_path_geometry(ctx, dict, data_tag, 0);
 
 	xps_fill(ctx);
     }
 
     if (fill_tag)
     {
-	ctx->is_stroking = 0;
-
 	if (data_att)
 	    xps_parse_abbreviated_geometry(ctx, data_att);
 	if (data_tag)
-	    xps_parse_path_geometry(ctx, dict, data_tag);
+	    xps_parse_path_geometry(ctx, dict, data_tag, 0);
 
 	xps_parse_brush(ctx, dict, fill_tag);
     }
 
     if (stroke_att)
     {
-	ctx->is_stroking = 1;
-
 	xps_parse_color(ctx, stroke_att, &colorspace, samples);
 	if (stroke_opacity_att)
 	    samples[0] = atof(stroke_opacity_att);
@@ -1097,21 +1104,19 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	if (data_att)
 	    xps_parse_abbreviated_geometry(ctx, data_att);
 	if (data_tag)
-	    xps_parse_path_geometry(ctx, dict, data_tag);
+	    xps_parse_path_geometry(ctx, dict, data_tag, 1);
 
 	gs_stroke(ctx->pgs);
     }
 
     if (stroke_tag)
     {
-	ctx->is_stroking = 1;
-
 	if (data_att)
 	    xps_parse_abbreviated_geometry(ctx, data_att);
 	if (data_tag)
-	    xps_parse_path_geometry(ctx, dict, data_tag);
+	    xps_parse_path_geometry(ctx, dict, data_tag, 1);
 
-	ctx->fill_rule = 1; /* over-ride for stroking */
+	ctx->fill_rule = 1; /* over-ride fill rule when converting outline to stroked */
 	gs_strokepath(ctx->pgs);
 
 	xps_parse_brush(ctx, dict, stroke_tag);

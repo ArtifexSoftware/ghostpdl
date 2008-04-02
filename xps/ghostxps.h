@@ -206,12 +206,6 @@ struct xps_context_s
      */
     int fill_rule;
 
-    /* We use this flag when parsing paths to
-     * determine if we should skip segments due
-     * to IsStroked or IsFilled being false.
-     */
-    int is_stroking;
-
     /* We often need the bounding box for the current
      * area of the page affected by drawing operations.
      * We keep these bounds updated every time we
@@ -360,7 +354,7 @@ void xps_parse_matrix_transform(xps_context_t *ctx, xps_item_t *root, gs_matrix 
 void xps_parse_render_transform(xps_context_t *ctx, char *text, gs_matrix *matrix);
 void xps_parse_rectangle(xps_context_t *ctx, char *text, gs_rect *rect);
 int xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom);
-int xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root);
+int xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root, int stroking);
 
 int xps_begin_opacity(xps_context_t *ctx, xps_resource_t *dict, char *opacity_att, xps_item_t *opacity_mask_tag);
 int xps_end_opacity(xps_context_t *ctx, xps_resource_t *dict, char *opacity_att, xps_item_t *opacity_mask_tag);

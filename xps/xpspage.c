@@ -58,11 +58,10 @@ int xps_parse_canvas(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 
     if (clip_att || clip_tag)
     {
-	ctx->is_stroking = 0;
 	if (clip_att)
 	    xps_parse_abbreviated_geometry(ctx, clip_att);
 	if (clip_tag)
-	    xps_parse_path_geometry(ctx, dict, clip_tag);
+	    xps_parse_path_geometry(ctx, dict, clip_tag, 0);
 	xps_clip(ctx, &saved_bounds);
     }
 
