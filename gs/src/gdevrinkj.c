@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -214,6 +214,7 @@ const rinkj_device gs_rinkj_device =
     /* DeviceN device specific parameters */
     RINKJ_DEVICE_CMYK,		/* Color model */
     8,				/* Bits per color - must match ncomp, depth, etc. above */
+    4,				/* Number of output color planes, overwritten below. */
     (&DeviceCMYKComponents),	/* Names of color model colorants */
     4,				/* Number colorants for CMYK */
     {0},			/* SeparationNames */
@@ -757,7 +758,8 @@ rinkj_put_params(gx_device * pdev, gs_param_list * plist)
  * number if the name is found.  It returns a negative value if not found.
  */
 static int
-rinkj_get_color_comp_index(const gx_device * dev, const char * pname, int name_size, int src_index)
+rinkj_get_color_comp_index(gx_device * dev, const char * pname, int name_size,
+				int src_index)
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     const fixed_colorant_names_list * list = ((const rinkj_device *)dev)->std_colorant_names;
