@@ -344,9 +344,6 @@ default: $(TARGET_XE).exe
 
 clean: config-clean clean-not-config-clean
 
-config-clean:
-	$(RMN_) $(PXLGEN)\pconf.h $(PXLGEN)\pconfig.h
-
 #### Implementation stub
 $(PLOBJDIR)\plimpl.$(OBJ): $(PLSRCDIR)\plimpl.c \
                             $(memory__h) \
