@@ -700,6 +700,7 @@ AC_ARG_WITH(drivers,
                           PS       = Output to PostScript/PDF
                           TIFF     = Output to TIFF
 			  WTS      = WTS Halftoning devices
+			  ETS      = ETS Halftoning devices
                           You can mix both variants, e.g.
                           --with-drivers=HP,stcolor would build HP drivers and
                           the Epson stcolor driver.
@@ -733,6 +734,7 @@ OKI_DEVS="oki182 okiibm oki4w"
 JAPAN_DEVS="lips4 lips4v ljet4pjl lj4dithp dj505j picty180 lips2p bjc880j pr201 pr150 pr1000 pr1000_4 jj100 bj10v bj10vh mj700v2c mj500c mj6000c mj8000c fmpr fmlbp ml600 lbp310 lbp320 md50Mono md50Eco md1xMono escpage lp2000 npdl rpdl"
 MISC_PDEVS="uniprint ap3250 atx23 atx24 atx38 coslw2p coslwxl cp50 declj250 fs600 imagen lj250 m8510 necp6 oce9050 r4081 sj48 tek4696 t4693d2 t4693d4 t4693d8 dl2100 la50 la70 la75 la75plus ln03 xes md2k md5k gdi samsunggdi"
 OPVP_DEVS="opvp oprp"
+ETS_HALFTONING_DEVS="rinkj"
 
 dnl Known file formats
 BMP_DEVS="bmpmono bmpgray bmpsep1 bmpsep8 bmp16 bmp256 bmp16m bmp32b"
@@ -764,7 +766,7 @@ while test -n "$drivers"; do
 		fi
 		;;
 	PRINTERS)
-		P_DEVS="$P_DEVS $CANON_DEVS $EPSON_DEVS $HP_DEVS $LEXMARK_DEVS $BROTHER_DEVS $APPLE_DEVS $IBM_DEVS $OKI_DEVS $JAPAN_DEVS $MISC_PDEVS $OPVP_DEVS"
+		P_DEVS="$P_DEVS $CANON_DEVS $EPSON_DEVS $HP_DEVS $LEXMARK_DEVS $BROTHER_DEVS $APPLE_DEVS $IBM_DEVS $OKI_DEVS $JAPAN_DEVS $MISC_PDEVS $ETS_HALFTONING_DEVS $OPVP_DEVS"
 		;;
 	FILES)
 		F_DEVS="$F_DEVS $BMP_DEVS $FAX_DEVS $JPEG_DEVS $PNG_DEVS $TIFF_DEVS $PCX_DEVS $PBM_DEVS $PS_DEVS $WTS_HALFTONING_DEVS $MISC_FDEVS"
@@ -844,6 +846,10 @@ while test -n "$drivers"; do
 	WTS)
 		# WTS Halftoning devices
 		F_DEVS="$F_DEVS $WTS_HALFTONING_DEVS"
+		;;
+	ETS)
+		# ETS Halftoning devices
+		F_DEVS="$F_DEVS $ETS_HALFTONING_DEVS"
 		;;
         opvp)
 		# Open Vector Printing driver...
