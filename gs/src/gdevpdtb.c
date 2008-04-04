@@ -43,6 +43,8 @@
 /* ---------------- Private ---------------- */
 
 private_st_pdf_base_font();
+gs_private_st_basic(st_pdf_base_font, pdf_base_font_t, "pdf_base_font_t",\
+		    pdf_base_font_ptrs, pdf_base_font_data);
 
 #define SUBSET_PREFIX_SIZE 7	/* XXXXXX+ */
 
