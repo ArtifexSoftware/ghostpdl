@@ -830,14 +830,14 @@ currentdict /eexec_pdf_param_dict .undef
       1 index begin 3 dict begin
       /Font 3 -1 roll def /CharCode 1 index def
       Encoding exch get CharProcs exch knownoget {
-        PDFfile fileposition exch
-        //false resolvestream
+        { //false resolvestream
 		% Stack: filepos stream
 		% Don't let setgcolor set the color inside the BuildGlyph
 		% procedure, because this causes an /undefined error.
-        q //null /FillColor gput //null /StrokeColor gput
-        Font /Resources get exch pdfopdict .pdfruncontext
-        Q
+          q //null /FillColor gput //null /StrokeColor gput
+          Font /Resources get exch pdfopdict .pdfruncontext
+          Q
+        } PDFfile fileposition 2 .execn % Keep pdfcount valid.
         PDFfile exch setfileposition
       } {
         % PDF Type 3 fonts don't use .notdef
