@@ -740,9 +740,13 @@ end
   q
   //null sc1 //null SC1
 
-  % save old value of pdfemptycount on opstack, set to new value
-  pdfemptycount /pdfemptycount count 3 sub def 3 1 roll
-  countdictstack 3 1 roll
+  % Save old values on opstack, set pdfemptycount to new value.
+  pdfemptycount countdictstack
+  /pdfemptycount count 3 sub def 4 2 roll
+  %
+  % Stack: ... <old emptycount> <dictcount> <patdict> <resdict> 
+  %                                            |
+  %           New empty count points here -----+
 
   exch //false resolvestream pdfopdict .pdfruncontext
 
