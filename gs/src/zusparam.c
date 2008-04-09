@@ -509,11 +509,23 @@ set_LockFilePermissions(i_ctx_t *i_ctx_p, bool val)
     i_ctx_p->LockFilePermissions = val;
     return 0;
 }
+static bool
+current_RenderTTNotdef(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->RenderTTNotdef;
+}
+static int
+set_RenderTTNotdef(i_ctx_t *i_ctx_p, bool val)
+{
+    i_ctx_p->RenderTTNotdef = val;
+    return 0;
+}
 static const bool_param_def_t user_bool_params[] =
 {
     {"AccurateScreens", current_AccurateScreens, set_AccurateScreens},
     {"UseWTS", current_UseWTS, set_UseWTS},
-    {"LockFilePermissions", current_LockFilePermissions, set_LockFilePermissions}
+    {"LockFilePermissions", current_LockFilePermissions, set_LockFilePermissions},
+    {"RenderTTNotdef", current_RenderTTNotdef, set_RenderTTNotdef}
 };
 
 /* The user parameter set */

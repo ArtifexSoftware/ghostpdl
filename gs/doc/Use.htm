@@ -647,6 +647,18 @@ or for processing files with large values of <b><tt>UserUnit</tt></b>
 that otherwise exceed implementation limits.
 </dl>
 
+<dl>
+<dt><b><tt>-dRENDERTTNOTDEF</tt></b>
+<dd>
+If a glyph is not present in a font the normal behaviour is to use the /.notdef
+glyph instead. On TrueType fonts, this is often a hollow sqaure. Under some
+conditions Acrobat does not do this, instead leaving a gap equivalent to the 
+width of the missing glyph, or the width of the /.notdef glyph if no /Widths
+array is present. Ghostscript now attempts to mimic this undocumented feature
+using a user parameter <b><tt>RenderTTNotdef</tt></b>. The PDF interpreter sets this
+user paramter to the value of <b><tt>RENDERTTNOTDEF</tt></b> in systemdict,
+when rendering PDF files. To restore rendering of /.notdef glyphs from TrueType fonts in PDF files, set this parameter to true.
+</dl>
 
 <h3><a name="PDF_problems"></a>Problems interpreting a PDF file</h3>
 

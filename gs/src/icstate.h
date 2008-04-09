@@ -56,6 +56,7 @@ struct gs_context_state_s {
     int scanner_options;	/* derived from userparams */
     bool LockFilePermissions;	/* accessed from userparams */
     bool starting_arg_file;	/* starting a file specified in command line. */
+    bool RenderTTNotdef;	/* accessed from userparams */
     gs_file_path_ptr lib_path;	/* library search list (GS_LIB) */
     ref stdio[3];		/* t_file */
     /* Put the stacks at the end to minimize other offsets. */

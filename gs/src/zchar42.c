@@ -31,6 +31,7 @@
 #include "icharout.h"
 #include "ifont.h"		/* for font_param */
 #include "igstate.h"
+#include "iname.h"
 #include "store.h"
 #include "zchar42.h"
 
@@ -225,6 +226,19 @@ type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
 		       pfont->FontType != ft_CID_TrueType)
 	)
 	return_error(e_undefined);
+
+    if (!i_ctx_p->RenderTTNotdef) {
+	if (r_has_type(op - 1, t_name)) {
+	    ref gref;
+
+	    name_string_ref(imemory, op - 1, &gref);
+
+	    if (gref.tas.rsize >= 7 && strncmp(gref.value.const_bytes, ".notdef", 7) == 0) {
+		pop((psbpt == 0 ? 4 : 6));
+		return (*cont)(igs);
+	    }
+	}
+    }
     /*
      * We have to disregard penum->pis and penum->path, and render to
      * the current gstate and path.  This is a design bug that we will
