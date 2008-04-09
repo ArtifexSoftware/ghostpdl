@@ -394,7 +394,7 @@ end
       dup /Background exch 4 2 roll
       gsave
         1 index /G oget /Group oget /CS knownoget {
-	  csresolve dup setgcolorspace csput
+	  resolvecolorspace dup setgcolorspace csput
 	} if
         aload pop setcolor [ currentgray ]
       grestore
@@ -417,7 +417,7 @@ end
   PDFfile fileposition 4 1 roll
 	% We have to select the group's color space so that the
 	% background color will be interpreted correctly.
-  dup /Group oget /CS knownoget { csresolve dup setgcolorspace csput } if
+  dup /Group oget /CS knownoget { resolvecolorspace dup setgcolorspace csput } if
   exch dup /BBox get aload pop .begintransparencymaskgroup {
     dup /Resources knownoget { oforce } { 0 dict } ifelse
     exch false resolvestream
@@ -441,7 +441,7 @@ end
 
 /.beginformgroup {	% groupdict bbox .beginformgroup -
   exch mark exch			% bbox mark groupdict
-  dup /CS knownoget { csresolve setgcolorspace } if
+  dup /CS knownoget { resolvecolorspace setgcolorspace } if
   dup /I knownoget { /Isolated exch 3 2 roll } if
   dup /K knownoget { /Knockout exch 3 2 roll } if
   pop .dicttomark
