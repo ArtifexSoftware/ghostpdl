@@ -417,6 +417,7 @@ gx_dc_wts_write(
     const gx_device_color *         pdevc,
     const gx_device_color_saved *   psdc,
     const gx_device *               dev,
+    uint			    offset,
     byte *                          pdata,
     uint *                          psize )
 {
@@ -430,6 +431,7 @@ gx_dc_wts_read(
     const gs_imager_state * pis,
     const gx_device_color * prior_devc,
     const gx_device *       dev,
+    uint		    offset,
     const byte *            pdata,
     uint                    size,
     gs_memory_t *           mem )

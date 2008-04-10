@@ -452,6 +452,7 @@ gx_dc_ht_binary_write(
     const gx_device_color *         pdevc,
     const gx_device_color_saved *   psdc0,
     const gx_device *               dev,
+    uint			    offset,
     byte *                          pdata,
     uint *                          psize )
 {
@@ -461,6 +462,9 @@ gx_dc_ht_binary_write(
     byte *                          pdata0 = pdata;
     const gx_device_color_saved *   psdc = psdc0;
     int                             code;
+
+    if (offset != 0)
+	return_error(gs_error_unregistered); /* Not implemented yet. */
 
     /* check if operand and saved colors are the same type */
     if (psdc != 0 && psdc->type != pdevc->type)
@@ -581,6 +585,7 @@ gx_dc_ht_binary_read(
     const gs_imager_state * pis,
     const gx_device_color * prior_devc,
     const gx_device *       dev,        /* ignored */
+    uint		    offset,
     const byte *            pdata,
     uint                    size,
     gs_memory_t *           mem )       /* ignored */
@@ -588,6 +593,9 @@ gx_dc_ht_binary_read(
     gx_device_color         devc;
     const byte *            pdata0 = pdata;
     int                     code, flag_bits;
+
+    if (offset != 0)
+	return_error(gs_error_unregistered); /* Not implemented yet. */
 
     /* if prior information is available, use it */
     if (prior_devc != 0 && prior_devc->type == gx_dc_type_ht_binary)

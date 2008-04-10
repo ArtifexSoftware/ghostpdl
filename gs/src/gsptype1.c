@@ -1228,6 +1228,7 @@ gx_dc_pattern_write(
     const gx_device_color *         pdevc,
     const gx_device_color_saved *   psdc,
     const gx_device *               dev,
+    uint			    offset,
     byte *                          data,
     uint *                          psize )
 {
@@ -1240,6 +1241,7 @@ gx_dc_pattern_read(
     const gs_imager_state * pis,
     const gx_device_color * prior_devc,
     const gx_device *       dev,
+    uint		    offset,
     const byte *            data,
     uint                    size,
     gs_memory_t *           mem )

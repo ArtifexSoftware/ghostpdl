@@ -127,6 +127,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     code = pdcolor->type->write( pdcolor,
                                  psdc,
                                  (gx_device *)cldev,
+				 0,
                                  0,
                                  &dc_size );
 
@@ -162,6 +163,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     code = pdcolor->type->write( pdcolor,
                                  &pcls->sdc,
                                  (gx_device *)cldev,
+				 0,
                                  dp,
                                  &dc_size );
     if (code < 0) {

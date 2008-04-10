@@ -1621,7 +1621,7 @@ idata:			data_size = 0;
 					    return code;
 				    }
 				    code = pdct->read(&dev_color, &imager_state,
-						      &dev_color, tdev, cbp,
+						      &dev_color, tdev, 0, cbp,
 						      color_size, mem);
 				    if (code < 0)
 					goto out;

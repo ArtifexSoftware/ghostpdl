@@ -149,19 +149,27 @@ struct gx_device_color_type_s {
     /*
      * Serialize and deserialize a device color.
      *
-     * The "write" routine converts a device color into a string for
+     * The "write" routine converts a device color into a stream for
      * writing to the command list. *psize is the amount of space
      * available. If the saved color and the current color are the same,
      * the routine sets *psize to 0 and returns 1. Otherwise, if *psize
      * is large enough, the procedure sets *psize to the amount actually
-     * used and returns 0. If *psize is too small and no other problem
+     * used and returns 0. If *psize is zero and no other problem
      * is detected, *psize is set to the amount required and 
-     * gs_error_rangecheck is returned. If some other error is detected,
-     * *psize is left unchanged and the error code is returned.
+     * gs_error_rangecheck is returned. If *psize is not zero, 
+     * a data block is written into the buffer, and the function returns 0.
+     * Note the function always fills entire buffer of *psize length,
+     * except for the last block of the stream, which is written until 
+     * the stream end. If some other error is detected, *psize is left unchanged 
+     * and the error code is returned. When *psize is not zero, 
+     * the offset operand specifies the position of the block in the stream.
      *
-     * The "read" routine converts the string representation back into
+     * The "read" routine converts the stream representation back into
      * the full device color structure. The value returned is the number
      * of bytes actually read, or < 0 in the event of an error.
+     * The offset operand specifies the position of the block in the stream.
+     * If the returned block length is smaller than *psize,
+     * then there is no more data in the stream.
      *
      * As with any instance of virtual serialization, the command list
      * code must include its own identifier of the color space type in
@@ -190,7 +198,7 @@ struct gx_device_color_type_s {
      * changed, so informaition from the prior device color will no
      * longer be available.
      *
-     * For the read and method, the imager state is passed as an operand,
+     * For the read method, the imager state is passed as an operand,
      * which allows the routine to access the current device halftone
      * (always required). Also passed in a pointer to the existing device
      * color, as this is not part of the imager state. If the writer was
@@ -207,12 +215,12 @@ struct gx_device_color_type_s {
      */
 #define dev_color_proc_write(proc)\
   int proc(const gx_device_color *pdevc, const gx_device_color_saved *psdc,\
-    const gx_device * dev, byte *data, uint *psize)
+    const gx_device * dev, uint offset, byte *data, uint *psize)
 			dev_color_proc_write((*write));
 
 #define dev_color_proc_read(proc)\
   int proc(gx_device_color *pdevc, const gs_imager_state * pis,\
-    const gx_device_color *prior_devc, const gx_device * dev,\
+    const gx_device_color *prior_devc, const gx_device * dev, uint offset,\
     const byte *data, uint size, gs_memory_t *mem)
 			dev_color_proc_read((*read));
 
