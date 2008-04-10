@@ -31,7 +31,7 @@
 JBIG2_MAK=$(GLSRC)jbig2.mak
 
 JBIG2SRC=$(JBIG2SRCDIR)$(D)
-JBIG2GEN=$(JBIG2OBJDIR)$(D)
+JBIG2GEN=$(JBIG2GENDIR)$(D)
 JBIG2OBJ=$(JBIG2OBJDIR)$(D)
 
 # This makefile is only known to work with jbig2dec v0.7 and later

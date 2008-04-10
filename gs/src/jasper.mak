@@ -167,11 +167,11 @@ $(JASGEN)jasper.dev : $(TOP_MAKEFILES) $(JASGEN)jasper_$(SHARE_JPX).dev
 	$(CP_) $(JASGEN)jasper_$(SHARE_JPX).dev $(JASGEN)jasper.dev
 
 # external link .dev
-$(GLOBJ)jasper_1.dev : $(TOP_MAKEFILES) $(JASPER_MAK) $(ECHOGS_XE)
-	$(SETMOD) $(GLOBJ)jasper_1 -lib jasper
+$(JASGEN)jasper_1.dev : $(TOP_MAKEFILES) $(JASPER_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(JASGEN)jasper_1 -lib jasper
 
 # compile in .dev
-$(GLOBJ)jasper_0.dev : $(TOP_MAKEFILES) $(JASPER_MAK) $(ECHOGS_XE) $(libjasper_OBJS)
+$(JASGEN)jasper_0.dev : $(TOP_MAKEFILES) $(JASPER_MAK) $(ECHOGS_XE) $(libjasper_OBJS)
 	$(SETMOD) $(JASGEN)jasper_0 $(libjasper_OBJS_base)
 	$(ADDMOD) $(JASGEN)jasper_0 $(libjasper_OBJS_jpc)
 	$(ADDMOD) $(JASGEN)jasper_0 $(libjasper_OBJS_jp2)
