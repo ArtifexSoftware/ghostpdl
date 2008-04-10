@@ -91,14 +91,14 @@ main(int argc, char *argv[])
     FILE *in = 0;
     const char *extn = "";
     char fmode[4];
-#define FNSIZE 100
+#define FNSIZE 1000
     char *fnparam;
     char fname[FNSIZE];
     int newline = 1;
     int interact = 0;
     int (*eputc)(int, FILE *) = fputc;
     int (*eputs)(const char *, FILE *) = fputs;
-#define LINESIZE 1000
+#define LINESIZE 1000+FNSIZE
     char line[LINESIZE];
     char sw = 0, sp = 0, hexx = 0;
     char **argp = argv + 1;
