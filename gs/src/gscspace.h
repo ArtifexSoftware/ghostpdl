@@ -118,8 +118,8 @@ typedef enum {
 /* We define the names only for debugging printout. */
 #define GS_COLOR_SPACE_TYPE_NAMES\
   "DeviceGray", "DeviceRGB", "DeviceCMYK", "DevicePixel", "DeviceN",\
-  "ICCBased", "CIEBasedDEFG", "CIEBasedDEF", "CIEBasedABC", "CIEBasedA",\
-  "Separation", "Indexed", "Pattern"
+  "CIEBasedDEFG", "CIEBasedDEF", "CIEBasedABC", "CIEBasedA",\
+  "Separation", "Indexed", "Pattern", "ICCBased"
 
 /* Define an abstract type for color space types (method structures). */
 typedef struct gs_color_space_type_s gs_color_space_type;
@@ -254,11 +254,12 @@ struct gs_color_space_s {
 	gs_cie_def *             def;
 	gs_cie_abc *             abc;
 	gs_cie_a *               a;
-	gs_icc_params            icc;
 	gs_separation_params     separation;
 	gs_device_n_params       device_n;
 	gs_indexed_params        indexed;
 	gs_pattern_params        pattern;
+	gs_icc_params            icc;
+
     } params;
 };
 
