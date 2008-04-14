@@ -105,6 +105,7 @@ gs_memory_locked_release(gs_memory_locked_t *lmem)
 {
     gs_memory_free_all((gs_memory_t *)lmem, FREE_ALL_STRUCTURES,
 		       "gs_memory_locked_release");
+    gx_monitor_free(lmem->monitor);
 }
 
 /* ---------- Accessors ------------- */
