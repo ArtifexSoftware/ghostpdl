@@ -755,7 +755,21 @@ bbox_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	 dev_proc(tdev, fill_path));
     int code;
 
-    if (!GX_DC_IS_TRANSPARENT(pdevc, bdev) && !gx_path_is_void(ppath)) {
+    if (ppath == NULL) {
+	/* A special handling of shfill with no path. */
+	gs_fixed_rect ibox;
+	gs_fixed_point adjust;
+
+	if (pcpath == NULL)
+	    return 0;
+	gx_cpath_inner_box(pcpath, &ibox);
+	adjust = params->adjust;
+	if (params->fill_zero_width)
+	    gx_adjust_if_empty(&ibox, &adjust);
+	adjust_box(&ibox, adjust);
+	BBOX_ADD_RECT(bdev, ibox.p.x, ibox.p.y, ibox.q.x, ibox.q.y);
+	return 0;
+    } else if (!GX_DC_IS_TRANSPARENT(pdevc, bdev) && !gx_path_is_void(ppath)) {
 	gs_fixed_rect ibox;
 	gs_fixed_point adjust;
 

@@ -198,13 +198,29 @@ typedef struct gx_device_clist_common_s {
 /* (Strokes with longer patterns are converted to fills.) */
 #define cmd_max_dash 11
 
+/* Define a clist cropping buffer, 
+   which represents a cropping stack element while clist writing. */
+typedef struct clist_writer_cropping_buffer_s clist_writer_cropping_buffer_t;
+
+struct clist_writer_cropping_buffer_s {
+    int cropping_min, cropping_max;
+    uint mask_id, temp_mask_id;
+    clist_writer_cropping_buffer_t *next;
+};
+
+#define private_st_clist_writer_cropping_buffer()\
+  gs_private_st_ptrs1(st_clist_writer_cropping_buffer,\
+		clist_writer_cropping_buffer_t, "clist_writer_transparency_buffer",\
+		clist_writer_cropping_buffer_enum_ptrs, clist_writer_cropping_buffer_reloc_ptrs, next)
+
+
 /* Define the state of a band list when writing. */
 typedef struct clist_color_space_s {
     byte byte1;			/* see cmd_opv_set_color_space in gxclpath.h */
     gs_id id;			/* space->id for comparisons */
     const gs_color_space *space;
 } clist_color_space_t;
-typedef struct gx_device_clist_writer_s {
+struct gx_device_clist_writer_s {
     gx_device_clist_common_members;	/* (must be first) */
     int error_code;		/* error returned by cmd_put_op */
     gx_clist_state *states;	/* current state of each band */
@@ -249,10 +265,19 @@ typedef struct gx_device_clist_writer_s {
     proc_free_up_bandlist_memory((*free_up_bandlist_memory)); /* if nz, proc to free some bandlist memory */
     int disable_mask;		/* mask of routines to disable clist_disable_xxx */
     gs_pattern1_instance_t *pinst; /* Used when it is a pattern clist. */
-    bool cropping_by_path;
     int cropping_min, cropping_max;
+    int save_cropping_min, save_cropping_max;
+    int cropping_level;
+    clist_writer_cropping_buffer_t *cropping_stack;
     ulong ins_count;
-} gx_device_clist_writer;
+    uint mask_id_count;
+    uint mask_id;
+    uint temp_mask_id; /* Mask id of a mask of an image with SMask. */
+};
+#ifndef gx_device_clist_writer_DEFINED
+#define gx_device_clist_writer_DEFINED
+typedef struct gx_device_clist_writer_s gx_device_clist_writer;
+#endif
 
 /* Bits for gx_device_clist_writer.disable_mask. Bit set disables behavior */
 #define clist_disable_fill_path	(1 << 0)
@@ -302,7 +327,7 @@ extern_st(st_device_clist);
     "gx_device_clist", 0, device_clist_enum_ptrs, device_clist_reloc_ptrs,\
     gx_device_finalize)
 #define st_device_clist_max_ptrs\
-  (st_device_forward_max_ptrs + st_imager_state_num_ptrs + 3)
+  (st_device_forward_max_ptrs + st_imager_state_num_ptrs + 4)
 
 #define CLIST_IS_WRITER(cdev) ((cdev)->common.ymin < 0)
 
@@ -428,5 +453,54 @@ void clist_debug_set_ctm_imp(const gs_matrix *m);
 #define clist_debug_image_rect (void)
 #define clist_debug_set_ctm (void)
 #endif
+
+/* Cropping by Y is necessary when the shading path is smaller than shading.
+   In this case the clipping path is written into the path's bands only.
+   Thus bands outside the shading path are not clipped,
+   but the shading may paint into them, so use this macro to crop them.
+
+   Besides that, cropping by Y is necessary when a transparency compositor
+   is installed over clist writer. Transparency compositors change the number
+   of device color components, so transparency group's elements
+   must not paint to bands that are not covered by the transparency bbox
+   to prevent a failure when clist reader recieves a wrong number of color components.
+ */
+#define crop_fill_y(cdev, ry, rheight)\
+    BEGIN\
+	if (ry < cdev->cropping_min) {\
+	    rheight = ry + rheight - cdev->cropping_min;\
+	    ry = cdev->cropping_min;\
+	}\
+	if (ry + rheight > cdev->cropping_max)\
+	    rheight = cdev->cropping_max - ry;\
+    END
+
+#define crop_fill(dev, x, y, w, h)\
+    BEGIN\
+	if ( x < 0 )\
+	    w += x, x = 0;\
+	fit_fill_w(dev, x, w);\
+	crop_fill_y(dev, y, h);\
+    END
+
+#define crop_copy_y(cdev, data, data_x, raster, id, ry, rheight)\
+    BEGIN\
+	if (ry < cdev->cropping_min) {\
+	    rheight = ry + rheight - cdev->cropping_min;\
+	    data += (cdev->cropping_min - ry) * raster;\
+	    id = gx_no_bitmap_id;\
+	    ry = cdev->cropping_min;\
+	}\
+	if (ry + rheight > cdev->cropping_max)\
+	    rheight = cdev->cropping_max - ry;\
+    END
+
+#define crop_copy(dev, data, data_x, raster, id, x, y, w, h)\
+    BEGIN\
+	if ( x < 0 )\
+	    w += x, data_x -= x, x = 0;\
+	fit_fill_w(dev, x, w);\
+	crop_copy_y(dev, data, data_x, raster, id, y, h);\
+    END
 
 #endif /* gxclist_INCLUDED */

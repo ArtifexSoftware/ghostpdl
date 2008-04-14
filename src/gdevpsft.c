@@ -494,6 +494,8 @@ static void
 write_OS_2(stream *s, gs_font *font, uint first_glyph, int num_glyphs)
 {
     ttf_OS_2_t os2;
+    gs_font_info_t info;
+    int code;
 
     /*
      * We don't bother to set most of the fields.  The really important
@@ -507,6 +509,17 @@ write_OS_2(stream *s, gs_font *font, uint first_glyph, int num_glyphs)
     put_u16(os2.usWeightClass, 400); /* Normal */
     put_u16(os2.usWidthClass, 5); /* Normal */
     update_OS_2(&os2, first_glyph, num_glyphs);
+
+    /*
+     * We should also preserve the licensed embedding rights, to prevent
+     * 'laundering' a TrueType font. These can be non-zero even when embedding is permitted.
+     */
+    memset(&info, 0x00, sizeof(gs_font_info_t));
+    code = font->procs.font_info(font, NULL, FONT_INFO_EMBEDDING_RIGHTS, &info);
+    if (code == 0 && (info.members & FONT_INFO_EMBEDDING_RIGHTS)) {
+	put_u16(os2.fsType, info.EmbeddingRights);
+    }
+
     stream_write(s, &os2, offset_of(ttf_OS_2_t, sxHeight[0]));
     put_pad(s, offset_of(ttf_OS_2_t, sxHeight[0]));
 }

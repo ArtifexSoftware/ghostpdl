@@ -662,7 +662,33 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
     int index = pdf_find_standard_font_name(chars, size);
     bool embed_as_standard_called = false;
     bool do_embed_as_standard = false; /* Quiet compiler. */
+    int code;
+    gs_font_info_t info;
 
+    memset(&info, 0x00, sizeof(gs_font_info_t));
+    code = font->procs.font_info(font, NULL, FONT_INFO_EMBEDDING_RIGHTS, &info);
+    if (code == 0 && (info.members & FONT_INFO_EMBEDDING_RIGHTS)) {
+	if ((info.EmbeddingRights == 0x0002) || (info.EmbeddingRights & 0x0200)) {
+	    /* See the OpenType specification, "The 'OS/2' and Windows Metrics Table" for details
+	       of the fstype parameter. This is a bitfield, currently we forbid embedding of fonts
+	       with these bits set:
+	       bit 1	0x0002	Fonts that have only this bit set must not be modified, embedded or
+				exchanged in any manner.
+	       bit 9	0x0200	Bitmap embedding only.
+
+	       Note for Restricted License embedding (bit 1), this must be the only level of embedding 
+	       selected (see the OpenType spec).
+             */
+	    char name[gs_font_name_max + 1];
+	    int len;
+
+	    len = min(gs_font_name_max, font->font_name.size);
+	    memcpy(name, font->font_name.chars, len);
+	    name[len] = 0;
+	    eprintf1("\nWarning: %s cannot be embedded because of licensing restrictions\n", name);
+	    return FONT_EMBED_NO;
+	}
+    }
     /*
      * The behavior of Acrobat Distiller changed between 3.0 (PDF 1.2),
      * which will never embed the base 14 fonts, and 4.0 (PDF 1.3), which

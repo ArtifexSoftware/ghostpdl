@@ -244,7 +244,9 @@ clist_fill_rectangle(gx_device * dev, int rx, int ry, int rwidth, int rheight,
     int code;
     cmd_rects_enum_t re;
 
-    fit_fill(dev, rx, ry, rwidth, rheight);
+    crop_fill(cdev, rx, ry, rwidth, rheight);
+    if (rwidth <= 0 || rheight <= 0)
+	return 0;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
     RECT_ENUM_INIT(re, ry, rheight);
@@ -310,22 +312,8 @@ clist_write_fill_trapezoid(gx_device * dev,
 	    rheight = fixed2int_ceiling(ytop) - ry;
 	}
     }
-    if (cdev->cropping_by_path) {
-	/* Cropping by Y is necessary when the shading path is smaller than shading.
-	   In this case the clipping path is written into the path's bands only.
-	   Thus bands outside the shading path are not clipped,
-	   but the shading may paint into them, so crop them here.
-	 */
-	if (ry < cdev->cropping_min) {
-	    rheight = ry + rheight - cdev->cropping_min;
-	    ry = cdev->cropping_min;
-	}
-	if (ry + rheight > cdev->cropping_max)
-	    rheight = cdev->cropping_max - ry;
-    }
-    fit_fill_y(dev, ry, rheight);
-    fit_fill_h(dev, ry, rheight);
-    if (rheight < 0)
+    crop_fill_y(cdev, ry, rheight);
+    if (rheight <= 0)
 	return 0;
     if (cdev->permanent_error < 0)
 	return (cdev->permanent_error);
@@ -464,7 +452,9 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
     int code;
     cmd_rects_enum_t re;
 
-    fit_fill(dev, rx, ry, rwidth, rheight);
+    crop_fill(cdev, rx, ry, rwidth, rheight);
+    if (rwidth <= 0 || rheight <= 0)
+	return 0;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
     RECT_ENUM_INIT(re, ry, rheight);
@@ -916,10 +906,12 @@ clist_strip_copy_rop(gx_device * dev,
     cmd_rects_enum_t re;
 
     if (scolors != 0 && scolors[0] != scolors[1]) {
-	fit_fill(dev, rx, ry, rwidth, rheight);
+	crop_fill(cdev, rx, ry, rwidth, rheight);
     } else {
-	fit_copy(dev, sdata, sourcex, sraster, id, rx, ry, rwidth, rheight);
+	crop_copy(cdev, sdata, sourcex, sraster, id, rx, ry, rwidth, rheight);
     }
+    if (rwidth <= 0 || rheight <= 0)
+	return 0;
     /*
      * On CMYK devices, RasterOps must be executed with complete pixels
      * if the operation involves the destination.
@@ -989,6 +981,9 @@ clist_strip_copy_rop(gx_device * dev,
 			uint rep_height = tiles->rep_height;
 			gs_id ids;
 			gx_strip_bitmap line_tile;
+			int data_shift = 0, phase_shift = 0, raster;
+			int new_phase = phase_x;
+			int tile_space_phase;
 			int iy;
 
 			if (rep_height == 1 ||
@@ -1004,16 +999,45 @@ clist_strip_copy_rop(gx_device * dev,
 			line_tile = *tiles;
 			line_tile.size.y = 1;
 			line_tile.rep_height = 1;
-			for (iy = 0; iy < re.height; ++iy) {
-			    line_tile.data = tiles->data + line_tile.raster *
-				((re.y + iy + phase_y) % rep_height);
-			    line_tile.id = ids + (iy % rep_height);
-			    /*
-			     * Note that since we're only transferring
-			     * a single scan line, phase_y is irrelevant;
-			     * we may as well use the current tile phase
-			     * so we don't have to write extra commands.
+			raster = line_tile.raster;
+			/* The rasterizer assumes tile phase relatively to the rectangle origin,
+			   (see x_offset in gdevmr8n.c), so compute "the tile phase in the tile space" 
+			   with same expression : */
+			tile_space_phase = (rx + phase_x) % tiles->rep_width;
+			if (tile_space_phase + rwidth <= tiles->rep_width) {
+			    /* Narrow the tile to prevent buffer overflow - bug 689588.
+			       Note currently we don't narrow "wrapped" tiles (because bug 689588 doesn't need) :
+			       when tile_space_phase < rep_width && tile_space_phase + rwidth > rep_width, 
+			       each line to be converted into 2 ones.
+			    */
+			    int depth = dev->color_info.depth;
+
+#			    if 0
+			    /* Align bitmap data : */
+   			    data_shift = ((tile_space_phase * depth) >> (log2_align_bitmap_mod + 3)) << log2_align_bitmap_mod;
+#			    else
+   			    data_shift = tile_space_phase * depth / 8; /* No bitmap data alignment because we'll only write it to clist.  */
+#			    endif
+			    phase_shift = data_shift * 8 / depth;
+			    line_tile.rep_width = rwidth + (tile_space_phase - phase_shift);
+			    /* Normally line_tile.raster must account trailing row alignment bytes and 
+			       to be computed as bitmap_raster(line_tile.rep_width * depth); 
+			       but we can't apply it here because the trailing alignment bytes may be absent
+			       due to data_shift. We believe it is not harmful because we just write the data to clist,
+			       and because the bitmap height is 1.
+			       The clist reader must provide the trailing bytes if the rasterizer needs them.
 			     */
+			    line_tile.raster = (line_tile.rep_width * depth + 7) / 8; 
+			    line_tile.size.x = line_tile.rep_width;
+			    line_tile.shift = 0;
+			    new_phase = (tile_space_phase - phase_shift - rx % line_tile.rep_width);
+			    /* Provide a positive phase for clist reader : */
+			    new_phase = (new_phase + line_tile.rep_width) % line_tile.rep_width;
+			}
+			for (iy = 0; iy < re.height; ++iy) {
+			    line_tile.data = tiles->data + raster *
+				((re.y + iy + phase_y) % rep_height) + data_shift;
+			    line_tile.id = ids + (iy % rep_height);
 			    ++cdev->driver_call_nesting;
 			    {
 				code = clist_strip_copy_rop(dev,
@@ -1022,7 +1046,7 @@ clist_strip_copy_rop(gx_device * dev,
 					gx_no_bitmap_id, scolors,
 					&line_tile, tcolors,
 					rx, re.y + iy, rwidth, 1,
-					phase_x, re.pcls->tile_phase.y, lop);
+					new_phase, 0, lop);
 			    } 
 			    --cdev->driver_call_nesting;
 			    if (code < 0 && SET_BAND_CODE(code))
@@ -1030,9 +1054,8 @@ clist_strip_copy_rop(gx_device * dev,
 			}
 			continue;
 		    }
-		    if (phase_x != re.pcls->tile_phase.x ||
-			phase_y != re.pcls->tile_phase.y
-			) {
+		    if (((phase_x != re.pcls->tile_phase.x) && (tiles->rep_width > 1)) ||
+			((phase_y != re.pcls->tile_phase.y) && (tiles->rep_height > 1))) {
 			do {
 			    code = cmd_set_tile_phase(cdev, re.pcls, phase_x,
 						      phase_y);

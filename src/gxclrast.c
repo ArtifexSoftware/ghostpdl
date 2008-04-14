@@ -388,17 +388,24 @@ mark_as_idle(gs_composite_t *pcomp_start, gs_composite_t *pcomp_end)
     }
 }
 
-static inline void
+static inline int
 drop_compositor_queue(gs_composite_t **ppcomp_first, gs_composite_t **ppcomp_last, 
-		      gs_composite_t *pcomp_from, gs_memory_t *mem)
+		      gs_composite_t *pcomp_from, gs_memory_t *mem, int x0, int y0,
+		      gs_imager_state *pis)
 {
     gs_composite_t *pcomp;
 
     do {
+	int code;
+
 	pcomp = *ppcomp_last;
 	dequeue_compositor(ppcomp_first, ppcomp_last, *ppcomp_last);
+	code = pcomp->type->procs.adjust_ctm(pcomp, x0, y0, pis);
+	if (code < 0)
+	    return code;
 	free_compositor(pcomp, mem);
     } while (pcomp != pcomp_from);
+    return 0;
 }
 
 static int
@@ -1416,6 +1423,7 @@ idata:			data_size = 0;
 				    goto out;
 				break;
 			    case cmd_opv_ext_create_compositor:
+				if_debug0('L', " ext_create_compositor\n");
 				cbuf.ptr = cbp;
 				/*
 				 * The screen phase may have been changed during
@@ -1484,7 +1492,9 @@ idata:			data_size = 0;
 					} else if (code == 5) {
 					    /* Annihilate the last compositors. */
 					    enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
-					    drop_compositor_queue(&pcomp_first, &pcomp_last, pcomp_opening, mem);
+					    code = drop_compositor_queue(&pcomp_first, &pcomp_last, pcomp_opening, mem, x0, y0, &imager_state);
+					    if (code < 0)
+						goto out;
 					} else if (code == 6) {
 					    /* Mark as idle. */
 					    enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
@@ -1577,6 +1587,7 @@ idata:			data_size = 0;
                                 {
                                     uint    ht_size;
 
+				    if_debug0('L', " ext_put_halftone\n");
                                     enc_u_getw(ht_size, cbp);
                                     code = read_alloc_ht_buff(&ht_buff, ht_size, mem);
                                     if (code < 0)
@@ -1584,6 +1595,7 @@ idata:			data_size = 0;
                                 }
 				break;
 			    case cmd_opv_ext_put_ht_seg:
+				if_debug0('L', " ext_put_ht_seg\n");
                                 cbuf.ptr = cbp;
                                 code = read_ht_segment(&ht_buff, &cbuf,
 						       &imager_state, tdev,
@@ -2001,8 +2013,12 @@ idata:			data_size = 0;
     ht_buff.ht_size = 0;
     ht_buff.read_size = 0;
 
-    if (pcomp_last != NULL)
-	drop_compositor_queue(&pcomp_first, &pcomp_last, NULL, mem);
+    if (pcomp_last != NULL) {
+	int code1 = drop_compositor_queue(&pcomp_first, &pcomp_last, NULL, mem, x0, y0, &imager_state);
+
+	if (code == 0)
+	    code = code1;
+    }
     rc_decrement(pcs, "clist_playback_band");
     gx_cpath_free(&clip_path, "clist_render_band exit");
     gx_path_free(&path, "clist_render_band exit");

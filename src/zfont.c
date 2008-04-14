@@ -589,7 +589,7 @@ zfont_info(gs_font *font, const gs_point *pscale, int members,
 		      FONT_INFO_FAMILY_NAME | FONT_INFO_FULL_NAME),
 				    info);
     const ref *pfdict;
-    ref *pfontinfo;
+    ref *pfontinfo, *pvalue;
 
     if (code < 0)
 	return code;
@@ -609,6 +609,11 @@ zfont_info(gs_font *font, const gs_point *pscale, int members,
     if ((members & FONT_INFO_FULL_NAME) &&
 	zfont_info_has(pfontinfo, "FullName", &info->FullName))
 	info->members |= FONT_INFO_FULL_NAME;
+    if ((members & FONT_INFO_EMBEDDING_RIGHTS) 
+	&& (dict_find_string(pfontinfo, "FSType", &pvalue) > 0)) {
+	info->EmbeddingRights = pvalue->value.intval;
+	info->members |= FONT_INFO_EMBEDDING_RIGHTS;
+    }
     return code;
 }
 

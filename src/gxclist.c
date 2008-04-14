@@ -45,6 +45,7 @@ ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
         case 1: return ENUM_OBJ((cdev->writer.image_enum_id != gs_no_id ?
                      cdev->writer.color_space.space : 0));
 	case 2: return ENUM_OBJ(cdev->writer.pinst);
+ 	case 3: return ENUM_OBJ(cdev->writer.cropping_stack);
         default:
         return ENUM_USING(st_imager_state, &cdev->writer.imager_state,
                   sizeof(gs_imager_state), index - 3);
@@ -75,6 +76,7 @@ RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
 	    RELOC_VAR(cdev->writer.color_space.space);
         }
 	RELOC_VAR(cdev->writer.pinst);
+ 	RELOC_VAR(cdev->writer.cropping_stack);
         RELOC_USING(st_imager_state, &cdev->writer.imager_state,
             sizeof(gs_imager_state));
     } else {
@@ -87,9 +89,10 @@ RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
     }
 } RELOC_PTRS_END
 public_st_device_clist();
+private_st_clist_writer_cropping_buffer();
 
 /* Forward declarations of driver procedures */
-static dev_proc_open_device(clist_open);
+dev_proc_open_device(clist_open);
 static dev_proc_output_page(clist_output_page);
 static dev_proc_close_device(clist_close);
 static dev_proc_get_band(clist_get_band);
@@ -464,7 +467,12 @@ clist_reset(gx_device * dev)
     cdev->undercolor_removal_id = gs_no_id;
     cdev->device_halftone_id = gs_no_id;
     cdev->image_enum_id = gs_no_id;
-    cdev->cropping_by_path = false;
+    cdev->cropping_min = cdev->save_cropping_min = 0;
+    cdev->cropping_max = cdev->save_cropping_max = cdev->height;
+    cdev->cropping_stack = NULL;
+    cdev->cropping_level = 0;
+    cdev->mask_id_count = cdev->mask_id = cdev->temp_mask_id = 0;
+
     return 0;
 }
 /*
@@ -613,7 +621,7 @@ clist_close_output_file(gx_device *dev)
 
 /* Open the device by initializing the device state and opening the */
 /* scratch files. */
-static int
+int
 clist_open(gx_device *dev)
 {
     gx_device_clist_writer * const cdev =
@@ -903,4 +911,64 @@ clist_copy_band_complexity(gx_band_complexity_t *this, const gx_band_complexity_
 	this->y0 = 0;
 #endif
     }
+}
+
+int 
+clist_writer_push_no_cropping(gx_device_clist_writer *cdev)
+{
+    clist_writer_cropping_buffer_t *buf = gs_alloc_struct(cdev->memory, 
+		clist_writer_cropping_buffer_t,
+		&st_clist_writer_cropping_buffer, "clist_writer_transparency_push");
+
+    if (buf == NULL)
+	return_error(gs_error_VMerror);
+    if_debug1('v', "[v]push cropping[%d]\n", cdev->cropping_level);
+    buf->next = cdev->cropping_stack;
+    cdev->cropping_stack = buf;
+    buf->cropping_min = cdev->cropping_min;
+    buf->cropping_max = cdev->cropping_max;
+    buf->mask_id = cdev->mask_id;
+    buf->temp_mask_id = cdev->temp_mask_id;
+    cdev->cropping_level++;
+    return 0;
+}
+
+int 
+clist_writer_push_cropping(gx_device_clist_writer *cdev, int ry, int rheight)
+{
+    int code = clist_writer_push_no_cropping(cdev);
+    
+    if (code < 0)
+	return 0;
+    cdev->cropping_min = max(cdev->cropping_min, ry);
+    cdev->cropping_max = min(cdev->cropping_max, ry + rheight);
+    return 0;
+}
+
+int 
+clist_writer_pop_cropping(gx_device_clist_writer *cdev)
+{
+    clist_writer_cropping_buffer_t *buf = cdev->cropping_stack;
+
+    if (buf == NULL)
+	return_error(gs_error_unregistered); /*Must not happen. */
+    cdev->cropping_min = buf->cropping_min;
+    cdev->cropping_max = buf->cropping_max;
+    cdev->mask_id = buf->mask_id;
+    cdev->temp_mask_id = buf->temp_mask_id;
+    cdev->cropping_stack = buf->next;
+    cdev->cropping_level--;
+    if_debug1('v', "[v]pop cropping[%d]\n", cdev->cropping_level);
+    gs_free_object(cdev->memory, buf, "clist_writer_transparency_pop");
+    return 0;
+}
+
+int 
+clist_writer_check_empty_cropping_stack(gx_device_clist_writer *cdev)
+{
+    if (cdev->cropping_stack != NULL) {
+	if_debug1('v', "[v]Error: left %d cropping(s)\n", cdev->cropping_level);
+	return_error(gs_error_unregistered); /* Must not happen */
+    }
+    return 0;
 }

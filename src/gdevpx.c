@@ -514,14 +514,14 @@ pclxl_write_image_data(gx_device_pclxl * xdev, const byte * data, int data_bit,
 	    r.ptr = data + i * raster - 1;
 	    r.limit = r.ptr + width_bytes;
 	    if ((*s_RLE_template.process)
-		((stream_state *) & rlstate, &r, &w, false) != 0 ||
+		((stream_state *) & rlstate, &r, &w, true) != 0 ||
 		r.ptr != r.limit
 		)
 		goto ncfree;
 	    r.ptr = (const byte *)"\000\000\000\000\000";
 	    r.limit = r.ptr + (-(int)width_bytes & 3);
 	    if ((*s_RLE_template.process)
-		((stream_state *) & rlstate, &r, &w, false) != 0 ||
+		((stream_state *) & rlstate, &r, &w, true) != 0 ||
 		r.ptr != r.limit
 		)
 		goto ncfree;
@@ -1218,6 +1218,11 @@ pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
     code = gdev_vector_update_clip_path(vdev, NULL);
     if (code < 0)
 	return code;
+
+    if (data_x !=0 )
+        return gx_default_copy_mono(dev, data, data_x, raster, id, 
+  				    x, y, w, h, zero, one);
+
     pclxl_set_cursor(xdev, x, y);
     if (id != gs_no_id && zero == gx_no_color_index &&
 	one != gx_no_color_index && data_x == 0
@@ -1296,6 +1301,8 @@ pclxl_copy_color(gx_device * dev,
     code = gdev_vector_update_clip_path(vdev, NULL);
     if (code < 0)
 	return code;
+
+
     source_bit = sourcex * dev->color_info.depth;
     if ((source_bit & 7) != 0)
 	return gx_default_copy_color(dev, base, sourcex, raster, id,

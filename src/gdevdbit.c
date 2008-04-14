@@ -347,6 +347,8 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     int shift = tiles->shift;
     gs_id tile_id = tiles->id;
 
+    if (rwidth == 0 || rheight == 0)
+	return_error(gs_error_unregistered); /* Must not happen. */
     fit_fill_xy(dev, x, y, w, h);
 
 #ifdef DEBUG

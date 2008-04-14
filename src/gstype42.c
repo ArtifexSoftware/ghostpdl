@@ -223,6 +223,8 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
 	} else if (!memcmp(tab, "vmtx", 4)) {
 	    pfont->data.metrics[1].offset = offset;
 	    pfont->data.metrics[1].length = (uint)u32(tab + 12);
+	} else if (!memcmp(tab, "OS/2", 4)) {
+	    pfont->data.os2_offset = offset;
 	}
     }
     loca_size >>= pfont->data.indexToLocFormat + 1;
@@ -1294,6 +1296,16 @@ gs_truetype_font_info(gs_font *font, const gs_point *pscale, int members,
     gs_font_type42 *pfont = (gs_font_type42 *)font;
     int code;
 
+    if (!(info->members & FONT_INFO_EMBEDDING_RIGHTS) && (members & FONT_INFO_EMBEDDING_RIGHTS)) {
+	if(pfont->data.os2_offset != 0) {
+	    int (*string_proc)(gs_font_type42 *, ulong, uint, const byte **) = pfont->data.string_proc;
+	    unsigned char fstype[2];
+
+	    READ_SFNTS(pfont, pfont->data.os2_offset + 8, 2, fstype);
+    	    info->EmbeddingRights = U16(fstype);
+    	    info->members |= FONT_INFO_EMBEDDING_RIGHTS;
+	}
+    }
     if (pfont->data.name_offset == 0)
 	return 0;
     if (!(info->members & FONT_INFO_COPYRIGHT) && (members & FONT_INFO_COPYRIGHT)) {
@@ -1311,6 +1323,7 @@ gs_truetype_font_info(gs_font *font, const gs_point *pscale, int members,
 	if (code < 0)
 	    return code;
     }
+
     return 0;
 }
 

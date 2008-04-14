@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -94,23 +94,22 @@ s_jbig2decode_free_global_data(void *data)
 
 /* store a global ctx pointer in our state structure */
 int
-s_jbig2decode_set_global_data(stream_state *ss, s_jbig2_global_data_t *gs)
+s_jbig2decode_set_global_data(stream_state *ss, s_jbig2_global_data_t *gd)
 {
     stream_jbig2decode_state *state = (stream_jbig2decode_state*)ss;
     if (state == NULL)
         return gs_error_VMerror;
     
-    state->global_struct = gs;
-    if (gs != NULL) {
-        s_jbig2decode_global_data *global = (s_jbig2decode_global_data*)(gs->data);
-
+    state->global_struct = gd;
+    if (gd != NULL) {
+        s_jbig2decode_global_data *global = (s_jbig2decode_global_data*)(gd->data);
         state->global_data = global->data;
         state->global_size = global->size;
     } else {
         state->global_data = NULL;
         state->global_size = 0;
     }
-    return gs_error_VMerror;
+    return 0;
 }
 
 /* invert the bits in a buffer */

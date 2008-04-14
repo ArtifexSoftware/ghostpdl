@@ -1380,7 +1380,7 @@ gdev_pdf_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
 	    if (code < 0)
 		return code;
 	    /* Scale the coordinate system, because object handlers assume so. See none_to_stream. */
-	    pprintg2(pdev->strm, "q %g 0 0 %g 0 0 cm\n",
+	    pprintg2(pdev->strm, "%g 0 0 %g 0 0 cm\n",
 		     72.0 / pdev->HWResolution[0], 72.0 / pdev->HWResolution[1]);
 	    return 1;
 	case pattern_manage__finish_accum:

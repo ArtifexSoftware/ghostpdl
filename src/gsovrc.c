@@ -129,7 +129,7 @@ c_overprint_equal(const gs_composite_t * pct0, const gs_composite_t * pct1)
  * list device.
  */
 static int
-c_overprint_write(const gs_composite_t * pct, byte * data, uint * psize)
+c_overprint_write(const gs_composite_t * pct, byte * data, uint * psize, gx_device_clist_writer *cdev)
 {
     const gs_overprint_params_t *   pparams = &((const gs_overprint_t *)pct)->params;
     byte                            flags = 0;
@@ -230,7 +230,8 @@ const gs_composite_type_t   gs_composite_overprint_type = {
 	c_overprint_is_closing,
 	gx_default_composite_is_friendly,
 	gx_default_composite_clist_write_update,/* procs.composite_clist_write_update */
-	gx_default_composite_clist_read_update	/* procs.composite_clist_reade_update */
+	gx_default_composite_clist_read_update,	/* procs.composite_clist_reade_update */
+	gx_default_composite_get_cropping	/* procs.composite_get_cropping */
     }                                           /* procs */
 };
 

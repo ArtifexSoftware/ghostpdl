@@ -881,6 +881,15 @@ gx_default_composite_clist_read_update(gs_composite_t *pxcte, gx_device * cdev,
     return 0;			/* Do nothing */
 }
 
+/*
+ * Default handler for get_cropping returns no cropping.
+ */
+int
+gx_default_composite_get_cropping(const gs_composite_t *pxcte, int *ry, int *rheight)
+{
+    return 0;			/* No cropping. */
+}
+
 int
 gx_default_finish_copydevice(gx_device *dev, const gx_device *from_dev)
 {
