@@ -1772,13 +1772,15 @@ $(GLOBJ)gxclthrd.$(OBJ) :  $(GLSRC)gxclthrd.c $(gxclist_h)
 	$(GLCC) $(GLO_)gxclthrd.$(OBJ) $(C_) $(GLSRC)gxclthrd.c
 
 # Support for multiple clist rendering threads.
-$(GLD)clthread1.dev: $(GLOBJ)gxclthrd1.$(OBJ) $(GLD)$(SYNC).dev
-	$(SETMOD) $(GLD)clthread1 $(GLOBJ)gxclthrd1.$(OBJ)
+$(GLD)clthread1.dev: $(GLOBJ)gxclthrd1.$(OBJ) $(GLOBJ)gsmchunk.$(OBJ) $(GLD)$(SYNC).dev
+	$(SETMOD) $(GLD)clthread1 $(GLOBJ)gxclthrd1.$(OBJ) $(GLOBJ)gsmchunk.$(OBJ)
 	$(ADDMOD) $(GLD)clthread1 -include $(GLD)$(SYNC).dev
 
 $(GLOBJ)gxclthrd1.$(OBJ) :  $(GLSRC)gxclthrd1.c $(gxclist_h) $(gxsync_h) $(gxclthrd_h)
 	$(GLCC) $(GLO_)gxclthrd1.$(OBJ) $(C_) $(GLSRC)gxclthrd1.c
 
+$(GLOBJ)gsmchunk.$(OBJ) :  $(GLSRC)gsmchunk.c $(gx_h) $(gsstype_h) $(gserrors_h)
+	$(GLCC) $(GLO_)gsmchunk.$(OBJ) $(C_) $(GLSRC)gsmchunk.c
 
 # ---------------- Vector devices ---------------- #
 # We include this here for the same reasons as page.dev.

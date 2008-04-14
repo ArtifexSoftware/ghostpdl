@@ -32,6 +32,7 @@ typedef struct clist_render_thread_control_s clist_render_thread_control_t;
 typedef struct clist_render_thread_control_s {
     int status;	/* 0: not started, 1: done, 2: busy, < 0: error */ 
 		/* values allow waiting until status < 2 */
+    gs_memory_t *memory;	/* thread's 'chunk' memory allocator */
     gx_semaphore_t *sema_this;
     gx_semaphore_t *sema_group;
     gx_device *cdev;	/* clist device copy */

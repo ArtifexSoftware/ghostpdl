@@ -27,12 +27,12 @@
 #include "gxgetbit.h"
 #include "gdevplnx.h"
 #include "gsmemory.h"
+#include "gsmchunk.h"
 #include "gxclthrd.h"
 
 /* Forward reference prototypes */
 static int clist_start_render_thread(gx_device *dev, int thread_index, int band);
 static void clist_render_thread(void *param);
-
 
 /* Set up and start the render threads */
 static int
@@ -105,9 +105,19 @@ clist_setup_render_threads(gx_device *dev, int y)
 	gx_device_clist *ncldev;
 	gx_device_clist_common *ncdev;
 	clist_render_thread_control_t *thread = &(crdev->render_threads[i]);
+	gs_memory_t *tmem;	/* per thread allocator (wrapper) */
+
+	/* Every thread will have a 'chunk allocator' to reduce the interaction
+	 * with the 'base' allocator which has 'mutex' (locking) protection. 
+	 * This improves performance of the threads.
+	 */
+	if ((code = gs_memory_chunk_wrap(&(thread->memory), mem )) < 0) {
+	    eprintf1("chunk_wrap returned error code: %d\n", code);
+	    break;
+	}
 
         thread->band = -1;		/* a value that won't match any valid band */
-	if ((code = gs_copydevice((gx_device **) &ndev, protodev, mem)) < 0) {
+	if ((code = gs_copydevice((gx_device **) &ndev, protodev, thread->memory)) < 0) {
 	    code = 0;		/* even though we failed, no cleanup needed */
 	    break;
 	}
@@ -115,7 +125,7 @@ clist_setup_render_threads(gx_device *dev, int y)
 	ncdev = (gx_device_clist_common *)ndev;
 	gx_device_fill_in_procs(ndev);
 	((gx_device_printer *)ncdev)->buffer_memory = ncdev->memory =
-		ncdev->bandlist_memory = mem;
+		ncdev->bandlist_memory = thread->memory;
 	gs_c_param_list_read(&paramlist);
 	ndev->PageCount = dev->PageCount;	/* copy to prevent mismatch error */
 	if ((code = gs_putdeviceparams(ndev, (gs_param_list *)&paramlist)) < 0)
@@ -133,9 +143,9 @@ clist_setup_render_threads(gx_device *dev, int y)
 	cdev->page_info.io_procs->fclose(ncdev->page_bfile, ncdev->page_bfname, true);
 	/* open the main thread's files for this thread */
 	if ((code=cdev->page_info.io_procs->fopen(cdev->page_cfname, fmode, &ncdev->page_cfile,
-			    mem, mem, true)) < 0 ||
+			    thread->memory, thread->memory, true)) < 0 ||
 	     (code=cdev->page_info.io_procs->fopen(cdev->page_bfname, fmode, &ncdev->page_bfile,
-			    mem, mem, false)) < 0)
+			    thread->memory, thread->memory, false)) < 0)
 	    break;
 	clist_render_init(ncldev);	/* Initialize clist device for reading */
 	ncdev->page_bfile_end_pos = cdev->page_bfile_end_pos;
@@ -144,10 +154,10 @@ clist_setup_render_threads(gx_device *dev, int y)
 	if ((code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
 				&(thread->bdev), cdev->target,
 				band*crdev->page_band_height, NULL,
-				mem, clist_get_band_complexity(dev,y)) < 0)) 
+				thread->memory, clist_get_band_complexity(dev,y)) < 0)) 
 	    break;
-	if ((thread->sema_this = gx_semaphore_alloc(mem)) == NULL ||
-	    (thread->sema_group = gx_semaphore_alloc(mem)) == NULL) {
+	if ((thread->sema_this = gx_semaphore_alloc(thread->memory)) == NULL ||
+	    (thread->sema_group = gx_semaphore_alloc(thread->memory)) == NULL) {
 	    code = gs_error_VMerror;
 	    break;
 	}
@@ -165,13 +175,18 @@ clist_setup_render_threads(gx_device *dev, int y)
 	    cdev->buf_procs.destroy_buf_device(crdev->render_threads[i].bdev);
 	if (crdev->render_threads[i].cdev != NULL) {
 	    gdev_prn_free_memory((gx_device *)(crdev->render_threads[i].cdev));
-	    gs_free_object(mem, crdev->render_threads[i].cdev, "clist_setup_render_threads");
+	    gs_free_object(crdev->render_threads[i].memory, crdev->render_threads[i].cdev,
+	    "clist_setup_render_threads");
 	}
+	if (crdev->render_threads[i].memory != NULL)
+	    gs_memory_chunk_release(crdev->render_threads[i].memory); 
     }
     /* If we weren't able to create at least one thread, punt	*/
     /* Although a single thread isn't any more efficient, the	*/
     /* machinery still works, so that's OK.			*/
     if (i == 0) {
+	if (crdev->render_threads[0].memory != NULL)
+	    gs_memory_chunk_release(crdev->render_threads[0].memory); 
 	gs_free_object(mem, crdev->render_threads, "clist_setup_render_threads");
 	crdev->render_threads = NULL;
 	pdev->num_render_threads_requested = 0;	/* shut down thread support */
@@ -227,7 +242,8 @@ clist_teardown_render_threads(gx_device *dev)
 	     */
 	    gdev_prn_free_memory(thread->cdev);
 	    /* Free the device copy this thread used */
-	    gs_free_object(mem, thread->cdev, "clist_teardown_render_threads");
+	    gs_free_object(thread->memory, thread->cdev, "clist_teardown_render_threads");
+	    gs_memory_chunk_release(thread->memory); 
 	}
 	cdev->data = crdev->main_thread_data;	/* restore the pointer for writing */
 	gs_free_object(mem, crdev->render_threads, "clist_teardown_render_threads");
@@ -252,11 +268,12 @@ clist_start_render_thread(gx_device *dev, int thread_index, int band)
 {
     gx_device_clist *cldev = (gx_device_clist *)dev;
     gx_device_clist_reader *crdev = &cldev->reader;
+    gx_device_clist_common *cdev = (gx_device_clist_common *)dev;
     int code;
 
     crdev->render_threads[thread_index].band = band;
     crdev->render_threads[thread_index].status = RENDER_THREAD_BUSY;
-    
+
     /* Finally, fire it up */
     code = gp_create_thread(clist_render_thread, &(crdev->render_threads[thread_index]));
 
