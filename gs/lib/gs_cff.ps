@@ -394,8 +394,8 @@ def
     /CIDCount 8720 def % Default value defined in CFF spec.
     3 dict begin
     /Supplement pxdef
-    idstring /Ordering pxdef
-    idstring /Registry pxdef
+    idstring dup type /nametype eq { .namestring } if /Ordering pxdef
+    idstring dup type /nametype eq { .namestring } if /Registry pxdef
     /CIDSystemInfo currentdict end def
   }
   63 { /CIDFontVersion pxdef }
@@ -563,9 +563,21 @@ dup							% Format 2
 
 /readPrivate {		% <font> <size> readPrivate -
   2 dict begin
-  /PrivateStart pos def
-  f 3 1 roll exch 1 index f exch subfilefilter /f exch store
-  dup /FontType get exch
+  f 3 1 roll exch       % f <size> <font> 
+  StringCache queued_offset known {
+    /PrivateStart queued_offset def
+  } {
+    /PrivateStart pos def
+    1 index 0 gt {
+      f 2 index string readstring pop
+    } {
+      ()
+    } ifelse
+    StringCache queued_offset 2 index put
+    0 () /SubFileDecode filter
+    /f exch store
+  } ifelse
+  dup /FontType .knownget not { 2 } if exch
   /Private get begin
 		% Default lenIV to -1 even for Type 1 CharStrings.
   2 ne { /lenIV -1 def } if
@@ -669,6 +681,7 @@ dup							% Format 2
   /pos 0 def
   /resname exch cvlit def
   /DEBUG CFFDEBUG def	% bring the binding closer
+  /StringCache 1 dict def % Private DICT may be reused.
 
 	% Read the header.
 
@@ -722,9 +735,14 @@ dup							% Format 2
     CFFDEBUG { (offsets: ) print [ offsets { pop } forall ] == } if
     [ offsets { pop } forall ] { lt } .sort	% process in order of appearance
     { 
-      /f cff def
       CFFDEBUG { (queued offset: ) print dup =print flush (, current pos=) print pos = } if
-      dup pos ne { dup pos sub nextstring pop } if	% negative advance will cause error
+      /queued_offset 1 index def
+      StringCache 1 index .knownget {
+        /f exch 0 () /SubFileDecode filter def
+      } {
+        /f cff def
+        dup pos ne { dup pos sub nextstring pop } if	% negative advance will cause error
+      } ifelse
       offsets exch 2 copy get 3 1 roll undef
       CFFDEBUG { (exec queued: ) print dup == } if
       exec
