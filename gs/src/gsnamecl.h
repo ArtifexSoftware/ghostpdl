@@ -25,8 +25,9 @@
  * Enable custom client callback color processing.  Note:  There is a sample
  * implementation in src/gsncdummy.c.
  */
+#ifndef ENABLE_CUSTOM_COLOR_CALLBACK
 #define ENABLE_CUSTOM_COLOR_CALLBACK 0	/* 0 --> disabled, 1 --> enabled */
-
+#endif
 
 #if ENABLE_CUSTOM_COLOR_CALLBACK
 /* Ptr to custom color callback struct */
