@@ -543,7 +543,7 @@ end readonly def
 
 % Read a CFF font.
 /FRD		% <resname> <file> FRD -
- { /FontSetInit /ProcSet findresource begin //true ReadData
+ { /FontSetInit /ProcSet findresource begin //true //false ReadData pop
  } bdef
 
 % Copy a font, removing its FID.  If changed is true, also remove

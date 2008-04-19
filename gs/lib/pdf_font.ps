@@ -1354,7 +1354,9 @@ currentdict /eexec_pdf_param_dict .undef
 % Adjust a CIDFontType2 DW[2] and CIDToGIDMap in the font resource.
 /adjustCIDType2 {		% <font-resource> <font> adjustfont <font'>
   addCIDmetrics
-  processCIDToGIDMap
+  dup /CIDFontType get 2 eq {   % OpenType CFF font converts to CIDFontType 0
+    processCIDToGIDMap          %  that ignores CIDMap.
+  } if
   dup /CIDFontName get exch /CIDFont defineresource
 } bind def
 
@@ -1398,17 +1400,60 @@ currentdict /eexec_pdf_param_dict .undef
 
 % Read an embedded OpenType font.
 /readOTTOfont {		% <font-resource> <stream-dict> readOTTOfont <font>
-  1 index exch
-  PDFfile fileposition 3 1 roll
-  dup true resolvestream dup readfontfilter
-		% Stack: pos resource streamdict stream filter
-  3 index /FontDescriptor oget /FontName oget
-  1 index
-  .init_otto_font_file //true ReadData
-  closefile closefile pop
-  PDFfile 3 -1 roll setfileposition
-  /FontDescriptor oget /FontName oget pdfaddcachedfont
-  exch pop
+  1 index exch                    % res res strdict
+  PDFfile fileposition 3 1 roll   % res pos res strdict
+  dup //true resolvestream        % res pos res strdict stream
+  dup readfontfilter              % res pos res strdict stream filter
+  3 index /FontDescriptor oget
+  /FontName oget                  % res pos res strdict stream filter /name
+  1 index .init_otto_font_file    % res pos res strdict stream filter /name filter'
+  //true
+  6 index /CIDSystemInfo known    % res pos res strdict stream filter /name filter' bool bool
+  ReadData                        % res pos res strdict stream filter fontset
+  { exch pop exit } forall        % res pos res strdict stream filter font
+  dup /FontType get 9 eq  {
+    % OpenType may contain simple CFF font, which is accesed as a CIDFont by PDF.
+    % The font is converted to Type 9 CIDFont resource, which ignores CIDMap attribute.
+    % The following code just shuffles GlyphDirectory to the same effect.
+    4 index /CIDToGIDMap knownoget {
+      dup type /dicttype eq {
+        1 index /GlyphDirectory get exch       % res pos res strdict stream filter font dir c2g
+        //true resolvestream                   % res pos res strdict stream filter font dir c2g_file
+        256 dict begin
+        0 2 index 0 get def  % copy .notdef
+        0 1 16#7fffffff {
+          1 index read not { pop exit } if     % res pos res strdict stream filter font dir c2g_file cid hi
+          256 mul                              % res pos res strdict stream filter font dir c2g_file cid hi
+          2 index read not { pop pop exit } if % res pos res strdict stream filter font dir c2g_file cid hi lo
+          add                                  % res pos res strdict stream filter font dir c2g_file cid gid
+          dup 0 ne {
+            dup 4 index length lt {
+              3 index exch get                 % res pos res strdict stream filter font dir c2g_file cid charstr
+              def                              % res pos res strdict stream filter font dir c2g_file
+            } {
+              pop pop
+            } ifelse
+          } {
+            pop pop
+          } ifelse
+        } for
+        closefile pop                          % res pos res strdict stream filter font
+        dup length dict copy                   % res pos res strdict stream filter font'
+        dup /GlyphDirectory currentdict put    % res pos res strdict stream filter font'
+        end
+        dup /GlyphDirectory get 0 exch {
+          pop .max
+        } forall
+        1 index exch /CIDCount exch 1 add put
+      } {
+      pop
+      } ifelse
+    } if
+  } if
+  7 1 roll                        % font res pos res strdict stream filter
+  closefile closefile pop pop     % font res pos
+  PDFfile exch setfileposition    % font res
+  pop                             % font
 } bdef
 
 % ---------------- Font lookup ---------------- %

@@ -41,8 +41,8 @@
 		% If this is a font at all, it's an OpenType CFF font set.
     .init_otto_font_file
 	% Use a random FontSet resource name.  ****** WRONG ******
-    realtime rand xor =string cvs exch false
-    ReadData
+    realtime rand xor =string cvs exch //false //false
+    ReadData pop
   } {
 		% Not a TrueType font.
     .loadnonottofontfile
@@ -663,19 +663,56 @@ dup							% Format 2
   currentdict /FDSelect undef
   cleanupFont
 } bind def
+
+% PDF may load OpenType font containing ordinary CFF data as a CIDFont.
+% Convert the ordinary font to a CIDFont.
+/makeCIDFont {        % (currentdict) finishCIDFont -
+  /CIDFontType 0 def
+  /FDBytes 0 def
+  /GDBytes 0 def
+  /CIDMapOffset 0 def
+
+  /CIDSystemInfo 3 dict begin  % bogus
+    /Registry   (Adobe) def
+    /Ordering   (Identity) def
+    /Supplement 0 def
+  currentdict end def
+
+  /FDArray 4 dict begin
+    /FontMatrix dup load { 1000 0 0 1000 0 0 } matrix concatmatrix def
+    /Private    dup load def
+    /FontType   dup load def
+    /PaintType  dup load def
+  currentdict end 1 array astore def
+
+  /FontType 9 def
+
+  /GlyphDirectory CharStringArray def
+  /CIDCount GlyphDirectory length def
+
+  Private /GlobalSubrs undef
+  currentdict /Encoding undef
+  currentdict /CharStrings undef
+  currentdict /UniqueID undef
+  currentdict /XUID undef
+  cleanupFont
+} bind def
+
 % We need to pass the file as a parameter for the sake of the PDF
 % interpreter. Also for the sake of PDF, a flag forces the font
 % to be defined as <resname> instead of the name embedded in the data.
 % This is needed for subsetted fonts; it is valid if the CFF
 % contains only a single font.
+% Finally, PDF interpreter may request creation of CIDFont out of an
+% ordinary CFF font.
 /StartData {          % <resname> <nbytes> StartData -
-  currentfile exch subfilefilter false ReadData
+  currentfile exch subfilefilter //false //false ReadData pop
 } bind def
-/ReadData {           % <resname> <file> <forceresname> ReadData -
-
+/ReadData {           % <resname> <file> <forceresname> <forcecid> ReadData <fontset>
 	% Initialize.
 
   30 dict begin
+  /forcecidfont exch def
   /forceresname exch def
   /cff exch def
   /pos 0 def
@@ -759,7 +796,11 @@ dup							% Format 2
 
   fonts {
     begin
-    currentdict /CIDFontType known { finishCIDFont } { finishFont } ifelse
+    currentdict /CIDFontType known {
+      finishCIDFont
+    } {
+      forcecidfont //makeCIDFont //finishFont ifelse
+    } ifelse
     end
   } forall
 
@@ -783,7 +824,7 @@ dup							% Format 2
   } for .dicttomark
   end		% temporary dict
   end		% FontSetInit ProcSet
-  /FontSet defineresource pop
+  /FontSet defineresource
 
 } bind def
 
