@@ -47,15 +47,21 @@
       /filterstoremove <<
 	  % list of filters to apply
 	  %   - kept as a dictionary, for faster searches
-	  %   - the corresponding value is currently unused
-	  /ASCIIHexDecode   null
-	  /ASCII85Decode    null
-	  /LZWDecode	    null
-	  /FlateDecode	    null
-	% /RunLengthDecode  null
-	% /CCITTFaxDecode   null
-	% /DCTDecode	    null
-	% /JBIG2Decode	    dup /Filter resourcestatus {pop pop (GS-specific)} {pop} ifelse
+	  /ASCIIHexDecode   {}
+          /AHx              { pop /ASCIIHexDecode } bind
+       	  /ASCII85Decode    {}
+	  /A85              { pop /ASCII85Decode } bind
+	  /LZWDecode	    {}
+          /LZW              { pop /LZWDecode } bind
+	  /FlateDecode	    {}
+          /Fl               { pop /FlateDecode } bind
+	% /RunLengthDecode  {}
+        % /RL               { pop /RunLengthDecode } bind
+        % /CCITTFaxDecode   {}
+        % /CCF              { pop /CCITTFaxDecode } bind
+	% /DCTDecode	    {}
+        % /DCT              { pop /DCTDecode } bind
+       	% /JBIG2Decode	    dup /Filter resourcestatus {pop pop (GS-specific)} {pop} ifelse
 	% /JPXDecode	    dup /Filter resourcestatus {pop pop (GS-specific)} {pop} ifelse
 	% /Crypt	    (no equivalent)
 	>> def
@@ -84,7 +90,8 @@
 		    dup null eq {
 		      pop pop exit
 		    } if
-		    filterstoremove 1 index known {
+		    filterstoremove 1 index .knownget {
+                        exec
 			% apply the filter
 			exch dup null eq { pop } { exch } ifelse
 			filter
