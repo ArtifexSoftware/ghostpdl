@@ -269,7 +269,7 @@ setglobal
 /InitialExtGState 20 dict begin
   /BG2 currentblackgeneration cp2g def
   /UCR2 currentundercolorremoval cp2g def
-  /TR2 [ currentcolortransfer ] cp2g def
+  /TR2 currentglobal false setglobal [ currentcolortransfer ] exch setglobal cp2g def
   /HT currenthalftone cp2g def
 currentdict end readonly def
 
