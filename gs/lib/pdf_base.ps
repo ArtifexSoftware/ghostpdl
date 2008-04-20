@@ -550,6 +550,10 @@ currentdict /token_nofail_dict .undef
 /resolveobjstreamopdict mark
   valueopdict { } forall
   (%%EOF) cvn { exit } bind
+  /endobj {  % bug 689795
+    (   **** Warning: Objects in an object stream should not have 'endobj'.\n)
+    pdfformaterror
+  } bind
 .dicttomark readonly def
 
 % Note: This version of this function is not currently being used.
