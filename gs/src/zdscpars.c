@@ -97,6 +97,7 @@
  */
 typedef struct dsc_data_s {
     CDSC *dsc_data_ptr;
+    int document_level;
 } dsc_data_t;
 
 /* Structure descriptors */
@@ -132,9 +133,11 @@ zinitialize_dsc_parser(i_ctx_t *i_ctx_p)
     dict * const pdict = op->value.pdict;
     gs_memory_t * const mem = (gs_memory_t *)dict_memory(pdict);
     dsc_data_t * const data =
-	gs_alloc_struct(mem, dsc_data_t, &st_dsc_data_t,
-			"DSC parser init");
+	gs_alloc_struct(mem, dsc_data_t, &st_dsc_data_t, "DSC parser init");
 
+    if (!data)
+        return_error(e_VMerror);
+    data->document_level = 0;
     data->dsc_data_ptr = dsc_init((void *) "Ghostscript DSC parsing");
     if (!data->dsc_data_ptr)
     	return_error(e_VMerror);
@@ -402,7 +405,7 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
     const cmdlist_t *pCmdList = DSCcmdlist;
     const char * const *pBadList = BadCmdlist;
     ref * pvalue;
-    CDSC * dsc_data = NULL;
+    dsc_data_t * dsc_state = NULL;
     dict_param_list list;
 
     /*
@@ -417,6 +420,13 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
     if (ssize > MAX_DSC_MSG_SIZE)   /* need room for EOL + \0 */
         ssize = MAX_DSC_MSG_SIZE;
     /*
+     * Retrieve our state.
+     */
+    code = dict_find_string(opDict, dsc_dict_name, &pvalue);
+    if (code < 0)
+        return code;
+    dsc_state = r_ptr(pvalue, dsc_data_t);
+    /*
      * Pick up the comment string to be parsed.
      */
     memcpy(dsc_buffer, opString->value.bytes, ssize);
@@ -428,19 +438,22 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
     while (*pBadList && strncmp(*pBadList, dsc_buffer, strlen(*pBadList)))
         pBadList++;
     if (*pBadList) {		    /* If found in list, then skip comment */	
-        comment_code = 0;	    /* Force NOP */
+        comment_code = 0;	    /* Ignore */
+        if (dsc_buffer[2] == 'B') {
+	    dsc_state->document_level++;
+	} else if (dsc_state->document_level > 0) {
+            dsc_state->document_level--;
+	}
     }
-    else {
+    else if (dsc_state->document_level > 0) {
+       comment_code = 0;	    /* Ignore */
+    } else {
         /*
          * Parse comments - use Russell Lang's DSC parser.  We need to get
          * data area for Russell Lang's parser.  Note: We have saved the
          * location of the data area for the parser in our DSC dict.
          */
-        code = dict_find_string(opDict, dsc_dict_name, &pvalue);
-	dsc_data = r_ptr(pvalue, dsc_data_t)->dsc_data_ptr;
-        if (code < 0)
-            return code;
-        comment_code = dsc_scan_data(dsc_data, dsc_buffer, ssize + 1);
+        comment_code = dsc_scan_data(dsc_state->dsc_data_ptr, dsc_buffer, ssize + 1);
         if_debug1('%', "[%%].parse_dsc_comments: code = %d\n", comment_code);
 	/*
 	 * We ignore any errors from Russell's parser.  The only value that
@@ -461,7 +474,7 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
 	code = dict_param_list_write(&list, opDict, NULL, iimemory);
 	if (code < 0)
 	    return code;
-	code = (pCmdList->dsc_proc)((gs_param_list *)&list, dsc_data);
+	code = (pCmdList->dsc_proc)((gs_param_list *)&list, dsc_state->dsc_data_ptr);
 	iparam_list_release(&list);
 	if (code < 0)
 	    return code;
