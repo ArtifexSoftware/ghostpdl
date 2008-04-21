@@ -241,6 +241,7 @@ ZIPTARGET=gs$(GS_VERSION)w32
 !endif
 zip: $(SETUP_XE) $(UNINSTALL_XE)
 	cd ..
+	copy gs$(GS_DOT_VERSION)\$(SETUP_XE) make_filelist.exe
 	copy gs$(GS_DOT_VERSION)\$(SETUP_XE) .
 	copy gs$(GS_DOT_VERSION)\$(UNINSTALL_XE) .
 	echo $(ZIPPROGFILE1) >  $(ZIPTEMPFILE)
@@ -251,8 +252,8 @@ zip: $(SETUP_XE) $(UNINSTALL_XE)
 	echo $(ZIPPROGFILE6) >> $(ZIPTEMPFILE)
 	echo $(ZIPPROGFILE7) >> $(ZIPTEMPFILE)
 	echo $(ZIPPROGFILE8) >> $(ZIPTEMPFILE)
-	$(SETUP_XE_NAME) -title "GPL Ghostscript $(GS_DOT_VERSION)" -dir "gs$(GS_DOT_VERSION)" -list "$(FILELIST_TXT)" @$(ZIPTEMPFILE)
-	$(SETUP_XE_NAME) -title "GPL Ghostscript Fonts" -dir "fonts" -list "$(FONTLIST_TXT)" $(ZIPFONTFILES)
+	make_filelist.exe -title "GPL Ghostscript $(GS_DOT_VERSION)" -dir "gs$(GS_DOT_VERSION)" -list "$(FILELIST_TXT)" @$(ZIPTEMPFILE)
+	make_filelist -title "GPL Ghostscript Fonts" -dir "fonts" -list "$(FONTLIST_TXT)" $(ZIPFONTFILES)
 	-del $(ZIPTARGET).zip
 	$(ZIP_XE) -9 $(ZIPTARGET).zip $(SETUP_XE_NAME) $(UNINSTALL_XE_NAME) $(FILELIST_TXT) $(FONTLIST_TXT)
 	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPFONTDIR)
@@ -265,6 +266,7 @@ zip: $(SETUP_XE) $(UNINSTALL_XE)
 	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE7)
 	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE8)
 	-del $(ZIPTEMPFILE)
+	-del make_filelist.exe
 	-del $(SETUP_XE_NAME)
 	-del $(UNINSTALL_XE_NAME)
 	-del $(FILELIST_TXT)
@@ -286,7 +288,7 @@ archive: zip $(PSOBJ)gswin16.ico $(ECHOGS_XE)
 	$(ECHOGS_XE) -a $(ZIP_RSP) -q -t -s $(PSOBJ)dialog.txt
 	$(ECHOGS_XE) -a $(ZIP_RSP) -q -c -s $(SETUP_XE_NAME)
 	$(ECHOGS_XE) -w $(PSOBJ)about.txt "GPL Ghostscript is Copyright " -x A9 " 2008 Artifex Software, Inc."
-	$(ECHOGS_XE) -a $(PSOBJ)about.txt See license in gs$(GS_DOT_VERSION)\doc\Public.htm.
+	$(ECHOGS_XE) -a $(PSOBJ)about.txt See license in gs$(GS_DOT_VERSION)\doc\COPYING.
 	$(ECHOGS_XE) -a $(PSOBJ)about.txt See gs$(GS_DOT_VERSION)\doc\Commprod.htm regarding commercial distribution.
 	$(ECHOGS_XE) -w $(PSOBJ)dialog.txt This installs GPL Ghostscript $(GS_DOT_VERSION).
 	$(ECHOGS_XE) -a $(PSOBJ)dialog.txt GPL Ghostscript displays, prints and converts PostScript and PDF files.
