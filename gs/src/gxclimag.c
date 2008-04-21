@@ -34,6 +34,7 @@
 #include "gxcomp.h"
 #include "gsserial.h"
 #include "gxdhtserial.h"
+#include "gsptype1.h"
 
 extern_gx_image_type_table();
 
@@ -391,8 +392,6 @@ clist_begin_typed_image(gx_device * dev,
 	cdev->image_enum_id != gs_no_id ||  /* Can't handle nested images */
 	/****** CAN'T HANDLE CIE COLOR YET ******/
 	base_index > gs_color_space_index_DeviceCMYK ||
-	/****** CAN'T HANDLE NON-PURE COLORS YET ******/
-	(uses_color && !gx_dc_is_pure(pdcolor)) ||
 	/****** CAN'T HANDLE IMAGES WITH ALPHA YET ******/
 	has_alpha ||
 	/****** CAN'T HANDLE IMAGES WITH IRREGULAR DEPTHS ******/
@@ -401,7 +400,9 @@ clist_begin_typed_image(gx_device * dev,
 	(code = gs_matrix_multiply(&mat, &ctm_only(pis), &mat)) < 0 ||
 	!(cdev->disable_mask & clist_disable_nonrect_hl_image ?
 	  (is_xxyy(&mat) || is_xyyx(&mat)) :
-	  image_matrix_ok_to_band(&mat))
+	  image_matrix_ok_to_band(&mat)) ||
+	/****** CAN'T HANDLE NON-PURE COLORS YET ******/
+	(uses_color && !gx_dc_is_pure(pdcolor) && !gx_dc_is_pattern1_color_clist_based(pdcolor))
 	)
 	goto use_default;
     {

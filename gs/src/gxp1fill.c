@@ -252,8 +252,11 @@ tile_pattern_clist(const tile_fill_state_t * ptfs,
     crdev->offset_map = NULL;
     crdev->page_info.io_procs->rewind(crdev->page_info.bfile, false, NULL);
     crdev->page_info.io_procs->rewind(crdev->page_info.cfile, false, NULL);
+
+    if_debug0('L', "Pattern clist playback begin\n");
     code = clist_playback_file_bands(playback_action_render,
 		crdev, &crdev->page_info, dev, 0, 0, ptfs->xoff - x, ptfs->yoff - y);
+    if_debug0('L', "Pattern clist playback end\n");
     return code;
 }
 

@@ -965,3 +965,60 @@ clist_writer_check_empty_cropping_stack(gx_device_clist_writer *cdev)
     }
     return 0;
 }
+
+/* Retrieve total size for cfile and bfile. */
+int clist_data_size(const gx_device_clist *cdev, int select)
+{
+    const gx_band_page_info_t *pinfo = &cdev->common.page_info;
+    clist_file_ptr pfile = (!select ? pinfo->bfile : pinfo->cfile);
+    const char *fname = (!select ? pinfo->bfname : pinfo->cfname);
+    int code, size;
+
+    code = pinfo->io_procs->fseek(pfile, 0, SEEK_END, fname);
+    if (code < 0)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    code = pinfo->io_procs->ftell(pfile);
+    if (code < 0)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    size = code;
+    return size;
+}
+
+/* Get command list data. */
+int
+clist_get_data(const gx_device_clist *cdev, int select, int offset, byte *buf, int length)
+{
+    const gx_band_page_info_t *pinfo = &cdev->common.page_info;
+    clist_file_ptr pfile = (!select ? pinfo->bfile : pinfo->cfile);
+    const char *fname = (!select ? pinfo->bfname : pinfo->cfname);
+    int code;
+
+    code = pinfo->io_procs->fseek(pfile, offset, SEEK_SET, fname);
+    if (code < 0)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    /* This assumes that fread_chars doesn't return prematurely
+       when the buffer is not fully filled and the end of stream is not reached. */
+    return pinfo->io_procs->fread_chars(buf, length, pfile);
+}
+
+/* Put command list data. */
+int
+clist_put_data(const gx_device_clist *cdev, int select, int offset, const byte *buf, int length)
+{
+    const gx_band_page_info_t *pinfo = &cdev->common.page_info;
+    clist_file_ptr pfile = (!select ? pinfo->bfile : pinfo->cfile);
+    const char *fname = (!select ? pinfo->bfname : pinfo->cfname);
+    int code;
+
+    code = pinfo->io_procs->ftell(pfile);
+    if (code < 0)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    if (code != offset) {
+	/* Assuming a consecutive writing only. */
+	return_error(gs_error_unregistered); /* Must not happen. */
+    }
+    /* This assumes that fwrite_chars doesn't return prematurely
+       when the buffer is not fully written, except with an error. */
+    return pinfo->io_procs->fwrite_chars(buf, length, pfile);
+}
+

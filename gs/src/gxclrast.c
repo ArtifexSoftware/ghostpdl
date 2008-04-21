@@ -1361,8 +1361,10 @@ idata:			data_size = 0;
 			    } else
 				rdata = cbuf.data;
 			    memmove(rdata, cbp, cleft);
-			    sgets(s, rdata + cleft, rleft,
-				  &rleft);
+			    if (sgets(s, rdata + cleft, rleft, &rleft) < 0) {
+				code = gs_note_error(gs_error_unregistered); /* Must not happen. */
+				goto out;
+			    }
 			    planes[0].data = rdata;
 			    cbp = cbuf.end;	/* force refill */
 			}
@@ -1607,6 +1609,7 @@ idata:			data_size = 0;
 			    case cmd_opv_ext_put_drawing_color:
 				{
 				    uint    color_size;
+				    int left, offset, l;
 				    const gx_device_color_type_t *  pdct;
 
 				    pdct = gx_get_dc_type_from_index(*cbp++);
@@ -1615,17 +1618,34 @@ idata:			data_size = 0;
 					goto out;
 				    }
 				    enc_u_getw(color_size, cbp);
-				    if (cbp + color_size > cbuf.limit) {
-					code = top_up_cbuf(&cbuf, &cbp);
+				    left = color_size;
+				    offset = 0;
+				    if (!left) {
+					/* We still need to call pdct->read because it may change dev_color.type -
+					   see gx_dc_null_read.*/
+					code = pdct->read(&dev_color, &imager_state,
+							  &dev_color, tdev, offset, cbp,
+							  0, mem);
 					if (code < 0)
-					    return code;
+					    goto out;
 				    }
-				    code = pdct->read(&dev_color, &imager_state,
-						      &dev_color, tdev, 0, cbp,
-						      color_size, mem);
-				    if (code < 0)
-					goto out;
-				    cbp += color_size;
+				    while (left) {
+					if (cbp + left > cbuf.limit) {
+					    code = top_up_cbuf(&cbuf, &cbp);
+					    if (code < 0)
+						return code;
+					}
+					l = min(left, cbuf.end - cbp);
+					code = pdct->read(&dev_color, &imager_state,
+							  &dev_color, tdev, offset, cbp,
+							  l, mem);
+					if (code < 0)
+					    goto out;
+					l = code;
+					cbp += l;
+					offset += l;
+					left -= l;
+				    }
 				    code = gx_color_load(&dev_color,
 							 &imager_state, tdev);
 				    if (code < 0)
@@ -2022,6 +2042,10 @@ idata:			data_size = 0;
     rc_decrement(pcs, "clist_playback_band");
     gx_cpath_free(&clip_path, "clist_render_band exit");
     gx_path_free(&path, "clist_render_band exit");
+    if (imager_state.pattern_cache != NULL) {
+	gx_pattern_cache_free(imager_state.pattern_cache);
+	imager_state.pattern_cache = NULL;
+    }
     gs_imager_state_release(&imager_state);
     gs_free_object(mem, data_bits, "clist_playback_band(data_bits)");
     if (target != orig_target) {

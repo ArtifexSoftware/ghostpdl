@@ -125,7 +125,9 @@ extern const gx_device_color_type_t
     gx_dc_pattern,
     gx_dc_pure_masked, gx_dc_binary_masked, gx_dc_colored_masked;
 
+#ifndef gx_dc_type_pattern
 #define gx_dc_type_pattern (&gx_dc_pattern)
+#endif
 
 /*
  * These device color methods are shared amongst pattern types.
@@ -194,6 +196,8 @@ struct gx_color_tile_s {
 uint gx_pat_cache_default_tiles(void);
 ulong gx_pat_cache_default_bits(void);
 gx_pattern_cache *gx_pattern_alloc_cache(gs_memory_t *, uint, ulong);
+/* Free pattern cache and its components. */
+void gx_pattern_cache_free(gx_pattern_cache *pcache);
 
 /* Get or set the Pattern cache in a gstate. */
 gx_pattern_cache *gstate_pattern_cache(gs_state *);
@@ -236,6 +240,10 @@ int gx_pattern_cache_add_entry(gs_imager_state *, gx_device_forward *,
    device handles high level patterns. */
 int gx_pattern_cache_add_dummy_entry(gs_imager_state *pis, gs_pattern1_instance_t *pinst,
 				int depth);
+
+/* Get entry for reading a pattern from clist. */
+int gx_pattern_cache_get_entry(gs_imager_state * pis, gs_id id, gx_color_tile ** pctile);
+
 
 /* Look up a pattern color in the cache. */
 bool gx_pattern_cache_lookup(gx_device_color *, const gs_imager_state *,

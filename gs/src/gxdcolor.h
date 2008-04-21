@@ -252,6 +252,9 @@ struct gx_device_color_type_s {
 /* Define the default implementation of fill_masked. */
 dev_color_proc_fill_masked(gx_dc_default_fill_masked);
 
+extern dev_color_proc_write(gx_dc_cannot_write);
+extern dev_color_proc_read(gx_dc_cannot_read);
+
 extern_st(st_device_color);
 /* public_st_device_color() is defined in gsdcolor.h */
 

@@ -197,7 +197,11 @@ gdev_fax_print_strip(gx_device_printer * pdev, FILE * prn_stream,
 		    uint left = r.limit - r.ptr;
 
 		    memcpy(in, r.ptr + 1, left);
-		    gdev_prn_copy_scan_lines(pdev, lnum++, in + left, in_size);
+		    code = gdev_prn_copy_scan_lines(pdev, lnum++, in + left, in_size);
+		    if (code < 0) {
+			gs_note_error(code);
+			goto done;
+		    }
 		    /* Note: we use col_size here, not in_size. */
 		    if (col_size > in_size) {
 			memset(in + left + in_size, 0, col_size - in_size);

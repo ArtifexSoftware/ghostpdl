@@ -14,6 +14,7 @@
 /* $Id$ */
 /* PatternType 1 pattern implementation */
 #include "math_.h"
+#include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsrop.h"
@@ -33,6 +34,7 @@
 #include "gxpath.h"
 #include "gxpcolor.h"
 #include "gxp1impl.h"		/* requires gxpcolor.h */
+#include "gxclist.h"
 #include "gzstate.h"
 #include "gsimage.h"
 #include "gsiparm4.h"
@@ -490,6 +492,15 @@ gx_dc_is_pattern1_color(const gx_device_color *pdevc)
     return pdevc->type == &gx_dc_pattern;
 }
 
+/* Check device color for Pattern Type 1. */
+bool
+gx_dc_is_pattern1_color_clist_based(const gx_device_color *pdevc)
+{
+    if (pdevc->type != &gx_dc_pattern)
+	return false;
+    return gx_pattern_tile_is_clist(pdevc->colors.pattern.p_tile);
+}
+
 /*
  * Perform actions required at setcolor time. This procedure resets the
  * overprint information (almost) as required by the pattern. The logic
@@ -919,7 +930,7 @@ const gx_device_color_type_t gx_dc_pure_masked = {
     gx_dc_no_get_phase,
     gx_dc_pure_masked_load, gx_dc_pure_masked_fill_rect,
     gx_dc_default_fill_masked, gx_dc_pure_masked_equal,
-    gx_dc_pattern_write, gx_dc_pattern_read, 
+    gx_dc_cannot_write, gx_dc_cannot_read, 
     gx_dc_pure_get_nonzero_comps
 };
 
@@ -932,7 +943,7 @@ const gx_device_color_type_t gx_dc_binary_masked = {
     gx_dc_ht_get_phase,
     gx_dc_binary_masked_load, gx_dc_binary_masked_fill_rect,
     gx_dc_default_fill_masked, gx_dc_binary_masked_equal,
-    gx_dc_pattern_write, gx_dc_pattern_read, 
+    gx_dc_cannot_write, gx_dc_cannot_read, 
     gx_dc_ht_binary_get_nonzero_comps
 };
 
@@ -945,7 +956,7 @@ const gx_device_color_type_t gx_dc_colored_masked = {
     gx_dc_ht_get_phase,
     gx_dc_colored_masked_load, gx_dc_colored_masked_fill_rect,
     gx_dc_default_fill_masked, gx_dc_colored_masked_equal,
-    gx_dc_pattern_write, gx_dc_pattern_read, 
+    gx_dc_cannot_write, gx_dc_cannot_read, 
     gx_dc_ht_colored_get_nonzero_comps
 };
 
@@ -1222,6 +1233,18 @@ gx_dc_colored_masked_equal(const gx_device_color * pdevc1,
 	pdevc1->mask.id == pdevc2->mask.id;
 }
 
+
+typedef struct gx_dc_serialized_tile_s { 
+    gs_id id;
+    int size_b, size_c;
+    gs_int_point size;
+    gs_matrix step_matrix;
+    gs_rect bbox;
+    byte depth;
+    byte tiling_type;
+    bool is_simple;
+} gx_dc_serialized_tile_t;
+
 /* currently, patterns cannot be passed through the command list */
 int
 gx_dc_pattern_write(
@@ -1232,7 +1255,70 @@ gx_dc_pattern_write(
     byte *                          data,
     uint *                          psize )
 {
-    return_error(gs_error_unknownerror);
+    gx_color_tile *ptile = pdevc->colors.pattern.p_tile;
+    int size_b, size_c;
+    byte *dp = data;
+    int left = *psize;
+    int offset1 = offset;
+    gx_dc_serialized_tile_t buf;
+    int code, l;
+
+    if (ptile->cdev == NULL) {
+	/* Currently we support clist-based patterns only. */
+	return_error(gs_error_unknownerror);
+    }
+    if (psdc->type == pdevc->type) {
+	if (psdc->colors.pattern.id == ptile->id) {
+	    /* fixme : Do we need to check phase ? How ? */
+	    return 1; /* Same as saved one, don't write. */
+	}
+    }
+    size_b = clist_data_size(ptile->cdev, 0);
+    if (size_b < 0)
+	return_error(gs_error_unregistered);
+    size_c = clist_data_size(ptile->cdev, 1);
+    if (size_c < 0)
+	return_error(gs_error_unregistered);
+    if (data == NULL) {
+	*psize = sizeof(buf) + size_b + size_c;
+	return 0;
+    }
+    if (offset1 == 0) {	/* Serialize tile parameters: */
+	buf.id = ptile->id;
+	buf.size.x = ptile->cdev->common.width;
+	buf.size.y = ptile->cdev->common.height;
+	buf.size_b = size_b;
+	buf.size_c = size_c;
+	buf.step_matrix = ptile->step_matrix;
+	buf.bbox = ptile->bbox;
+	buf.depth = ptile->depth;
+	buf.tiling_type = ptile->tiling_type;
+	buf.is_simple = ptile->is_simple;
+	if (sizeof(buf) > left) {
+	    /* For a while we require the client to provide enough buffer size. */
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	}
+	memcpy(dp, &buf, sizeof(buf));
+	left -= sizeof(buf);
+	dp += sizeof(buf);
+	offset1 += sizeof(buf);
+    }
+    if (offset1 <= sizeof(buf) + size_b) {
+	l = min(left, size_b - (offset1 - sizeof(buf)));
+	code = clist_get_data(ptile->cdev, 0, offset1 - sizeof(buf), dp, l);
+	if (code < 0)
+	    return code;
+	left -= l;
+	offset1 += l;
+	dp += l;
+    }
+    if (left > 0) {
+	l = min(left, size_c - (offset1 - sizeof(buf) - size_b));
+	code = clist_get_data(ptile->cdev, 1, offset1 - sizeof(buf) - size_b, dp, l);
+	if (code < 0)
+	    return code;
+    }
+    return 0;
 }
 
 int
@@ -1246,5 +1332,105 @@ gx_dc_pattern_read(
     uint                    size,
     gs_memory_t *           mem )
 {
-    return_error(gs_error_unknownerror);
+    gx_dc_serialized_tile_t buf;
+    int size_b, size_c = -1;
+    const byte *dp = data;
+    int left = size;
+    int offset1 = offset;
+    gx_color_tile *ptile;
+    int code, l;
+
+    if (offset == 0) {
+	if (sizeof(buf) > size) {
+	    /* For a while we require the client to provide enough buffer size. */
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	}
+	memcpy(&buf, dp, sizeof(buf));
+	dp += sizeof(buf);
+	left -= sizeof(buf);
+	offset1 += sizeof(buf);
+
+	code = gx_pattern_cache_get_entry((gs_imager_state *)pis, /* Break 'const'. */
+			buf.id, &ptile);
+	if (code < 0)
+	    return code;
+	pdevc->type = &gx_dc_pattern;
+	pdevc->colors.pattern.p_tile = ptile;
+	ptile->id = buf.id;
+	pdevc->mask.id = buf.id;
+	size_b = buf.size_b;
+	size_c = buf.size_c;
+	ptile->step_matrix = buf.step_matrix;
+	ptile->bbox = buf.bbox;
+	ptile->depth = buf.depth;
+	ptile->tiling_type = buf.tiling_type;
+	ptile->is_simple = buf.is_simple;
+	ptile->is_dummy = 0;
+	ptile->tbits.size.x = size_b; /* HACK: Use unrelated field for saving size_b between calls. */
+	ptile->tbits.size.y = size_c; /* HACK: Use unrelated field for saving size_c between calls. */
+	{   /* HACK: Artificial arguments for gx_pattern_accum_alloc 
+	       to force a clist-based accummulator. 
+	       A better way would be to split gx_pattern_accum_alloc.
+	     */
+	    /* fixme: state.device below specifies a wrong color_info for PaintType 1.
+	       It must be 1 bit per pixel. */
+	    gs_state state;
+	    gs_pattern1_instance_t inst;
+
+	    memset(&state, 0, sizeof(state));
+	    memset(&inst, 0, sizeof(inst));
+#	    if 0 /* wrong. Currently PaintType 2 can't pass here. */
+	    if (buf.paint_type == 2) {
+		gx_device_memory *mdev = gs_alloc_struct(mem, gx_device_memory,
+				       &st_device_memory,
+				       "gx_dc_pattern_read");
+
+		if (mdev == 0)
+		    return_error(gs_error_VMerror);
+		gs_make_mem_device(mdev, gdev_mem_device_for_bits(1), mem, -1, NULL);
+		state.device = (gx_device *)mdev;
+		inst.template.PaintType = 2;
+	    } else 
+#	    endif
+	    {
+		state.device = (gx_device *)dev; /* Break 'const'. */
+		inst.template.PaintType = 1;
+	    }
+	    inst.size.x = buf.size.x;
+	    inst.size.y = buf.size.y;
+	    inst.saved = &state;
+	    ptile->cdev = (gx_device_clist *)gx_pattern_accum_alloc(mem, mem, 
+			       &inst, "gx_dc_pattern_read");
+	    if (ptile->cdev == NULL)
+		return_error(gs_error_VMerror);
+	    code = dev_proc(&ptile->cdev->writer, open_device)((gx_device *)&ptile->cdev->writer);
+	    if (code < 0)
+		return code;
+	}
+    } else {
+	ptile = pdevc->colors.pattern.p_tile;
+	size_b = ptile->tbits.size.x;
+	size_c = ptile->tbits.size.y;
+    }
+    if (offset1 <= sizeof(buf) + size_b) {
+	l = min(left, size_b - (offset1 - sizeof(buf)));
+	code = clist_put_data(ptile->cdev, 0, offset1 - sizeof(buf), dp, l);
+	if (code < 0)
+	    return code;
+	l = code;
+	left -= l;
+	offset1 += l;
+	dp += l;
+	ptile->cdev->common.page_bfile_end_pos = offset1 - sizeof(buf);
+    }
+    if (left > 0) {
+	l = left;
+	code = clist_put_data(ptile->cdev, 1, offset1 - sizeof(buf) - size_b, dp, l);
+	if (code < 0)
+	    return code;
+	l = code;
+	left -= l;
+	offset1 += l;
+    }
+    return size - left;
 }

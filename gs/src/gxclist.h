@@ -407,6 +407,13 @@ void gx_clist_reader_free_band_complexity_array(gx_device_clist *cldev);
 void 
 clist_copy_band_complexity(gx_band_complexity_t *this, const gx_band_complexity_t *from);
 
+/* Retrieve total size for cfile and bfile. */
+int clist_data_size(const gx_device_clist *cdev, int select);
+/* Get command list data. */
+int clist_get_data(const gx_device_clist *cdev, int select, int offset, byte *buf, int length);
+/* Put command list data. */
+int clist_put_data(const gx_device_clist *cdev, int select, int offset, const byte *buf, int length);
+
 #ifdef DEBUG 
 #define clist_debug_rect clist_debug_rect_imp
 void clist_debug_rect_imp(int x, int y, int width, int height);

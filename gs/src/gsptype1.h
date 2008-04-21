@@ -86,6 +86,9 @@ const gs_client_pattern *gs_getpattern(const gs_client_color *);
 /* Check device color for Pattern Type 1. */
 bool gx_dc_is_pattern1_color(const gx_device_color *pdevc);
 
+/* Check device color for clist-based Pattern Type 1. */
+bool gx_dc_is_pattern1_color_clist_based(const gx_device_color *pdevc);
+
 /*
  * Make a pattern from a bitmap or pixmap. The pattern may be colored or
  * uncolored, as determined by the mask operand. This code is intended

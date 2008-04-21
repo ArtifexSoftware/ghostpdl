@@ -562,6 +562,16 @@ ensure_pattern_cache(gs_imager_state * pis)
     return 0;
 }
 
+/* Free pattern cache and its components. */
+void
+gx_pattern_cache_free(gx_pattern_cache *pcache)
+{
+    pattern_cache_free_all(pcache);
+    gs_free_object(pcache->memory, pcache->tiles, "gx_pattern_cache_free");
+    pcache->tiles = NULL;
+    gs_free_object(pcache->memory, pcache, "gx_pattern_cache_free");
+}
+
 /* Get and set the Pattern cache in a gstate. */
 gx_pattern_cache *
 gstate_pattern_cache(gs_state * pgs)
@@ -745,6 +755,24 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
 	cwdev->do_not_open_or_close_bandfiles = true;
     }
     pcache->tiles_used++;
+    *pctile = ctile;
+    return 0;
+}
+
+/* Get entry for reading a pattern from clist. */
+int
+gx_pattern_cache_get_entry(gs_imager_state * pis, gs_id id, gx_color_tile ** pctile)
+{
+    gx_pattern_cache *pcache;
+    gx_color_tile *ctile;
+    int code = ensure_pattern_cache(pis);
+
+    if (code < 0)
+	return code;
+    pcache = pis->pattern_cache;
+    ctile = &pcache->tiles[id % pcache->num_tiles];
+    gx_pattern_cache_free_entry(pis->pattern_cache, ctile);
+    ctile->id = id;
     *pctile = ctile;
     return 0;
 }

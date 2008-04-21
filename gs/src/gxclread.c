@@ -171,8 +171,13 @@ rb:
 	    int bmin = ss->b_this.band_min;
 	    int bmax = ss->b_this.band_max;
 	    int64_t pos = ss->b_this.pos;
+	    int nread;
 
-	    io_procs->fread_chars(&ss->b_this, sizeof(ss->b_this), bfile);
+	    nread = io_procs->fread_chars(&ss->b_this, sizeof(ss->b_this), bfile);
+	    if (nread < sizeof(ss->b_this)) {
+		gs_note_error(gs_error_unregistered); /* Must not happen. */
+		return ERRC;
+	    }
 	    if (!(ss->band_last >= bmin && ss->band_first <= bmax))
 		goto rb;
 	    io_procs->fseek(cfile, pos, SEEK_SET, ss->page_cfname);
