@@ -247,7 +247,15 @@ dnl Check for libraries
 dnl --------------------------------------------------
 
 AC_CHECK_LIB(m, cos)
-dnl AC_CHECK_LIB(pthread, pthread_create)
+
+SYNC="nosync"
+PTHREAD_LIBS=""
+AC_CHECK_LIB(pthread, pthread_create, [
+  SYNC=posync;
+  PTHREAD_LIBS="-lpthread"
+])
+AC_SUBST(SYNC)
+AC_SUBST(PTHREAD_LIBS)
 
 dnl Tests for iconv (Needed for OpenPrinting Vector, "opvp" output device)
 AC_ARG_WITH(libiconv,
