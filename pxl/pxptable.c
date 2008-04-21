@@ -272,7 +272,7 @@ const px_attr_value_type_t px_attr_value_types[] = {
 /* 144 */  none,
 /* 145 */  sc(ul),              /* VUExtension = 145 */
 /* 146 */  none,
-/* 147 */  sc(ub),              /* VUAttr1 = 147 */
+/* 147 */  scub(),              /* VUAttr1 = 147 */
 /* 148 */  none,
 /* 149 */  none,
 /* 150 */  none,
