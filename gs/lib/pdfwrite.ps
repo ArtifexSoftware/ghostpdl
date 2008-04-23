@@ -335,7 +335,20 @@ readonly def
   } for
 } bind def
 /pdfwritetrailer {	% <trailer> pdfwritetrailer -
-  (trailer\n) ows pdfwritevalue (\n) ows
+  (trailer\n) ows
+  % Since we always write a complete "classic" xref, the Trailer may need to be adjusted:
+  % - remove keys that pertain to xref-streams and hybrid-xref PDFs;
+  % - if it's a PDF stream, turn it into a PDF dict by removing keys used for 
+  %   PDF streams (both standard and GS-specific), and the executable attribute
+  dup /XRefStm known 1 index xcheck or {
+    dup length dict copy
+    dup {/Type/Index/W /XRefStm /Filter/DecodeParms/Length/File/FilePosition} {
+      undef dup
+    } forall pop
+    % note: the executable attribute is "removed" by not being copied
+  } if
+  pdfwritevalue
+  (\n) ows
 } bind def
 /pdfwritestartxref {	% <startpos> pdfwritestartxref -
   (startxref\n) ows OFile exch write=
@@ -374,7 +387,7 @@ readonly def
 
   /xref OFile fileposition def
   0 XRef ld_length 1 add pdfwritexref
-  trailer dup length 1 add dict copy
+  trailer dup length 1 add dict copy trailer xcheck { cvx } if
   dup /Size XRef ld_length 1 add put pdfwritetrailer
   xref pdfwritestartxref
 

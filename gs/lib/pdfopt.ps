@@ -684,7 +684,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 /writePart3 {		% <xrefstart> writePart3 -
   {
     FirstPageXN NObjects 1 add 1 index sub pdfwritexref
-    Trailer dup length 1 add dict copy
+    Trailer dup length 1 add dict copy Trailer xcheck { cvx } if
     dup /Size NObjects 1 add put
     dup /Prev 4 -1 roll put
     pdfwritetrailer
