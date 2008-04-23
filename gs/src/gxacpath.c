@@ -63,7 +63,7 @@ static const gx_device_cpath_accum gs_cpath_accum_device =
   NULL,
   accum_fill_rectangle,
   NULL,
-  NULL,
+  gx_default_copy_mono,
   NULL,
   NULL,
   NULL,

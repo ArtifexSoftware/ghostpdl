@@ -35,7 +35,7 @@ int
 gx_image_fill_masked_start(gx_device *dev, const gx_device_color *pdevc, const gx_clip_path *pcpath, 
 			   gs_memory_t *mem, gx_device **cdev)
 {
-    if (gx_dc_is_pattern2_color(pdevc)) {
+    if (gx_dc_is_pattern2_color(pdevc) || gx_dc_is_pattern1_color_clist_based(pdevc)) {
 	if (!dev_proc(dev, pattern_manage)(dev, gs_no_id, NULL, pattern_manage__can_accum)) {
 	    extern_st(st_device_cpath_accum);
 	    gx_device_cpath_accum *pcdev =  gs_alloc_struct(mem, 
@@ -48,6 +48,8 @@ gx_image_fill_masked_start(gx_device *dev, const gx_device_color *pdevc, const g
 	    gx_cpath_outer_box(pcpath, &cbox);
 	    gx_cpath_accum_set_cbox(pcdev, &cbox);
 	    pcdev->rc.memory = mem;
+	    pcdev->width = dev->width;   /* For gx_default_copy_mono. */
+	    pcdev->height = dev->height; /* For gx_default_copy_mono. */
 	    gx_device_retain((gx_device *)pcdev, true);
 	    *cdev = (gx_device *)pcdev;
 	}
@@ -69,7 +71,7 @@ gx_image_fill_masked_end(gx_device *dev, gx_device *tdev, const gx_device_color 
     if (code >= 0)
 	code = gx_dc_pattern2_clip_with_bbox_simple(pdevc, tdev, &cpath);
 	gx_make_clip_device_on_stack(&cdev, &cpath, tdev);
-    if (code >= 0) {
+    if (code >= 0 && pcdev->bbox.p.x < pcdev->bbox.q.x) {
 	code1 = gx_device_color_fill_rectangle(pdevc, 
 		    pcdev->bbox.p.x, pcdev->bbox.p.y, 
 		    pcdev->bbox.q.x - pcdev->bbox.p.x, 
@@ -77,8 +79,8 @@ gx_image_fill_masked_end(gx_device *dev, gx_device *tdev, const gx_device_color 
 		    (gx_device *)&cdev, lop_default, 0);
 	if (code == 0)
 	    code = code1;
-	gx_device_retain((gx_device *)pcdev, false);
     }
+    gx_device_retain((gx_device *)pcdev, false);
     gx_cpath_free(&cpath, "s_image_cleanup");
     return code;
 }

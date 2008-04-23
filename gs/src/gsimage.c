@@ -194,6 +194,7 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
     gx_clip_path *pcpath;
     int code = gx_effective_clip_path(pgs, &pcpath);
     gx_device *dev2 = dev;
+    gx_device_color dc_temp, *pdevc = pgs->dev_color;
 
     if (code < 0)
 	return code;
@@ -219,9 +220,13 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
 	    if (code < 0)
 		return code;
 	}
+	if (dev2 != dev) {
+	    set_nonclient_dev_color(&dc_temp, 1);
+	    pdevc = &dc_temp;
+	}
     }
     code = gx_device_begin_typed_image(dev2, (const gs_imager_state *)pgs,
-		NULL, pic, NULL, pgs->dev_color, pcpath, pgs->memory, ppie);
+		NULL, pic, NULL, pdevc, pcpath, pgs->memory, ppie);
     if (code < 0)
 	return code;
     code = is_image_visible(pic, pgs, pcpath);

@@ -24,6 +24,10 @@
 #  define gx_device_color_DEFINED
 typedef struct gx_device_color_s gx_device_color;
 #endif
+#ifndef gs_color_space_DEFINED
+#  define gs_color_space_DEFINED
+typedef struct gs_color_space_s gs_color_space;
+#endif
 
 /* ---------------- Types and structures ---------------- */
 
