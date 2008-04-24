@@ -114,10 +114,10 @@ gs_memory_chunk_wrap( gs_memory_t **wrapped,	/* chunk allocator init */
     *wrapped = NULL;		/* don't leave garbage in case we fail */
     if (cmem == 0)
         return_error(gs_error_VMerror);
-    cmem->stable_memory = 0;	/* ??? copied from locking wrapper */
+    cmem->stable_memory = (gs_memory_t *)cmem;	/* we are stable */
     cmem->procs = chunk_procs;
     cmem->gs_lib_ctx = target->gs_lib_ctx;
-    cmem->non_gc_memory = (gs_memory_t *)cmem;
+    cmem->non_gc_memory = (gs_memory_t *)cmem;	/* and are not subject to GC */
     cmem->target = target;
     cmem->head_chunk = NULL;
 
