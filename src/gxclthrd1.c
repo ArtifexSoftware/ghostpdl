@@ -174,8 +174,15 @@ clist_setup_render_threads(gx_device *dev, int y)
 	if (crdev->render_threads[i].bdev != NULL)
 	    cdev->buf_procs.destroy_buf_device(crdev->render_threads[i].bdev);
 	if (crdev->render_threads[i].cdev != NULL) {
-	    gdev_prn_free_memory((gx_device *)(crdev->render_threads[i].cdev));
-	    gs_free_object(crdev->render_threads[i].memory, crdev->render_threads[i].cdev,
+	    gx_device_clist_common *thread_cdev = (gx_device_clist_common *)crdev->render_threads[i].cdev;
+	    
+    	    /* Close the file handles, but don't delete (unlink) the files */
+	    thread_cdev->page_info.io_procs->fclose(thread_cdev->page_bfile, thread_cdev->page_bfname, false);
+	    thread_cdev->page_info.io_procs->fclose(thread_cdev->page_cfile, thread_cdev->page_cfname, false);
+	    thread_cdev->do_not_open_or_close_bandfiles = true;	/* we already closed the files */
+
+	    gdev_prn_free_memory((gx_device *)thread_cdev);
+	    gs_free_object(crdev->render_threads[i].memory, thread_cdev,
 	    "clist_setup_render_threads");
 	}
 	if (crdev->render_threads[i].memory != NULL)
@@ -234,15 +241,19 @@ clist_teardown_render_threads(gx_device *dev)
 	    gx_semaphore_free(thread->sema_group);
 	    gx_semaphore_free(thread->sema_this);
 	    /* destroy the thread's buffer device */
-	    cdev->buf_procs.destroy_buf_device(thread->bdev);
+	    thread_cdev->buf_procs.destroy_buf_device(thread->bdev);
 	    /*
 	     * Free the BufferSpace, close the band files 
 	     * Note that the BufferSpace is freed using 'ppdev->buf' so the 'data'
 	     * pointer doesn't need to be the one that the thread started with
 	     */
-	    gdev_prn_free_memory(thread->cdev);
+	    /* Close the file handles, but don't delete (unlink) the files */
+	    thread_cdev->page_info.io_procs->fclose(thread_cdev->page_bfile, thread_cdev->page_bfname, false);
+	    thread_cdev->page_info.io_procs->fclose(thread_cdev->page_cfile, thread_cdev->page_cfname, false);
+	    thread_cdev->do_not_open_or_close_bandfiles = true;	/* we already closed the files */
+	    gdev_prn_free_memory((gx_device *)thread_cdev);
 	    /* Free the device copy this thread used */
-	    gs_free_object(thread->memory, thread->cdev, "clist_teardown_render_threads");
+	    gs_free_object(thread->memory, thread_cdev, "clist_teardown_render_threads");
 	    gs_memory_chunk_release(thread->memory); 
 	}
 	cdev->data = crdev->main_thread_data;	/* restore the pointer for writing */
