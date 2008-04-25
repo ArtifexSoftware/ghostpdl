@@ -105,7 +105,6 @@ clist_setup_render_threads(gx_device *dev, int y)
 	gx_device_clist *ncldev;
 	gx_device_clist_common *ncdev;
 	clist_render_thread_control_t *thread = &(crdev->render_threads[i]);
-	gs_memory_t *tmem;	/* per thread allocator (wrapper) */
 
 	/* Every thread will have a 'chunk allocator' to reduce the interaction
 	 * with the 'base' allocator which has 'mutex' (locking) protection. 
@@ -279,7 +278,6 @@ clist_start_render_thread(gx_device *dev, int thread_index, int band)
 {
     gx_device_clist *cldev = (gx_device_clist *)dev;
     gx_device_clist_reader *crdev = &cldev->reader;
-    gx_device_clist_common *cdev = (gx_device_clist_common *)dev;
     int code;
 
     crdev->render_threads[thread_index].band = band;
@@ -539,7 +537,6 @@ test_threads(void *dummy)
 int 
 clist_enable_multi_thread_render(gx_device *dev)
 {   
-    gx_device_clist_common *cdev = (gx_device_clist_common *)dev;
     int code = -1;
 
     /* We need to test gp_create_thread since we may be on a platform */

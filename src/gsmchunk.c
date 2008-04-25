@@ -107,7 +107,6 @@ int				/* -ve error code or 0 */
 gs_memory_chunk_wrap( gs_memory_t **wrapped,	/* chunk allocator init */
 		      gs_memory_t * target )	/* base allocator */
 {
-    int code;
     gs_memory_chunk_t *cmem = (gs_memory_chunk_t *)
         gs_alloc_bytes_immovable(target, sizeof(gs_memory_chunk_t),
                                  "gs_malloc_wrap(chunk)");
@@ -212,7 +211,7 @@ round_up_to_align(uint size)
 
 
 /* return -1 on error, 0 on success */
-int 
+static int 
 chunk_mem_node_add(gs_memory_chunk_t *cmem, uint size_needed, chunk_mem_node_t **newchunk)
 {
     chunk_mem_node_t *node, *prev_node;
@@ -466,7 +465,7 @@ chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	void (*finalize)(void *ptr) = obj->type->finalize;
 	gs_memory_chunk_t * const cmem = (gs_memory_chunk_t *)mem;
 	chunk_mem_node_t *current;
-	chunk_obj_node_t *free_obj, *prev_free, *new_free;
+	chunk_obj_node_t *free_obj, *prev_free;
 	chunk_obj_node_t *scan_obj, *prev_obj;
 	/* space we will free */
 	uint freed_size = round_up_to_align(obj->size + sizeof(chunk_obj_node_t));
@@ -481,7 +480,7 @@ chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	}
 	if (current == NULL) {
 	    /* Object not found in any chunk */
-	    dprintf1("chunk_free_obj failed, object %0x not in any chunk\n", obj);
+	    dprintf1("chunk_free_obj failed, object %0x not in any chunk\n", ((unsigned int)obj));
 	    return;
 	}
 
@@ -494,7 +493,8 @@ chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	}
 	if (scan_obj == NULL) {
 	    /* Object not found in expected chunk */
-	    dprintf3("chunk_free_obj failed, object %0x not in chunk at %0x, size = %0x\n", obj, current, current->size);
+	    dprintf3("chunk_free_obj failed, object %0x not in chunk at %0x, size = %0x\n",
+			    ((unsigned int)obj), ((unsigned int)current), current->size);
 	    return;
 	}
 	/* link around the object being freed */

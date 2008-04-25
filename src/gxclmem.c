@@ -233,13 +233,15 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 
     /* fname[0] == 0 if this is not reopening */
     /* memfile file names begin with a flag byte == 0xff */
-    if (fname[0] == 0xff || fmode[0] == 'r') {
+    if (fname[0] == '\377' || fmode[0] == 'r') {
 	MEMFILE *base_f = NULL;
 
 	/* reopening an existing file. */
 	code = sscanf(fname+1, "0x%x", &base_f);
-	if (code != 1)
+	if (code != 1) {
 	    gs_note_error(gs_error_ioerror);
+	    goto finish;
+	}
 
 	/* We need to 'clone' this memfile so that each reader instance	*/
 	/* will be able to maintain it's own 'state'			*/
@@ -410,7 +412,7 @@ memfile_fclose(clist_file_ptr cf, const char *fname, bool delete)
 		if (prev_f->openlist == f)
 		    break;
 	    if (prev_f == NULL) {
-		eprintf1("Could not find 0x%x on memfile openlist\n", f);
+		eprintf1("Could not find 0x%x on memfile openlist\n", ((unsigned int)f));
 		return_error(gs_error_invalidfileaccess);
 	    }
 	    prev_f->openlist = f->openlist;	/* link around the one being fclosed */
@@ -431,7 +433,7 @@ memfile_fclose(clist_file_ptr cf, const char *fname, bool delete)
     /* future accesses will return errors rather than causing SEGV  */
     if (f->openlist) {
         /* TODO: do the cleanup rather than just giving an error */
-    	eprintf1("Attempt to delete a memfile still open for read: 0x%0x\n", f);
+    	eprintf1("Attempt to delete a memfile still open for read: 0x%0x\n", ((unsigned int)f));
         return_error(gs_error_invalidfileaccess);
     }
     memfile_free_mem(f);
@@ -469,7 +471,7 @@ memfile_unlink(const char *fname)
     MEMFILE *f;
 
     /* memfile file names begin with a flag byte == 0xff */
-    if (fname[0] == 0xff && (code = sscanf(fname+1, "0x%x", &f) == 1)) {
+    if (fname[0] == '\377' && (code = sscanf(fname+1, "0x%x", &f) == 1)) {
 	return memfile_fclose((clist_file_ptr)f, fname, true);
     } else
         return_error(gs_error_invalidfileaccess);
@@ -788,8 +790,10 @@ memfile_get_pdata(MEMFILE * f)
 	else
 	    f->pdata_end = f->pdata + MEMFILE_DATA_SIZE;
     } else {
+
 	/* data was compressed                                            */
 	if (f->raw_head == NULL) {
+	    code = 0;
 	    /* need to allocate the raw buffer pool                        */
 	    num_raw_buffers = GET_NUM_RAW_BUFFERS(f);
 	    if (f->reservePhysBlockCount) {
@@ -802,8 +806,6 @@ memfile_get_pdata(MEMFILE * f)
 		f->reservePhysBlockChain = f->reservePhysBlockChain->link;
 		--f->reservePhysBlockCount;
 	    } else {
-		int code;
-
 		f->raw_head =
 		    allocateWithReserve(f, sizeof(*f->raw_head), &code,
 					"memfile raw buffer",
