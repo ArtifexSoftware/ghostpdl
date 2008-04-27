@@ -143,6 +143,8 @@ zseticcspace(i_ctx_t * i_ctx_p)
     rc_increment(palt_cs);
 
     code = gx_load_icc_profile(picc_info);
+    if (code < 0)
+	return code;
 
 	/* If the input space to this profile is CIELAB, then we need to adjust the limits */
 	/* See ICC spec ICC.1:2004-10 Section 6.3.4.2 and 6.4 */
@@ -175,9 +177,6 @@ zseticcspace(i_ctx_t * i_ctx_p)
 		picc_info->Range.ranges[2].rmax = picc_info->common.points.WhitePoint.w;
 
 	}
-
-    if (code < 0)
-	return code;
 
     code = cie_cache_joint(i_ctx_p, &istate->colorrendering.procs,
 			   (gs_cie_common *)picc_info, igs);
