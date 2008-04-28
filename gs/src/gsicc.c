@@ -28,6 +28,7 @@
 #include "icc.h"		/* must precede icc.h */
 #include "gsicc.h"
 
+
 typedef struct _icmFileGs icmFileGs;
 
 struct _icmFileGs {
@@ -116,7 +117,6 @@ static cs_proc_concrete_space(gx_concrete_space_CIEICC);
 static cs_proc_concretize_color(gx_concretize_CIEICC);
 #if ENABLE_CUSTOM_COLOR_CALLBACK
 static cs_proc_remap_color(gx_remap_ICCBased);
-static cs_proc_has_clientcallback(gx_has_clientcallback_ICCBased);
 #endif
 static cs_proc_final(gx_final_CIEICC);
 static cs_proc_serialize(gx_serialize_CIEICC);
@@ -133,7 +133,7 @@ static const gs_color_space_type gs_color_space_type_CIEICC = {
     gx_concretize_CIEICC,           /* concreteize_color */
     NULL,                           /* remap_concrete_color */
 #if ENABLE_CUSTOM_COLOR_CALLBACK
-    gx_remap_ICCBased,				/* remap_color */
+    gx_remap_ICCBased,		    /* remap_color */
 #else
     gx_default_remap_color,         /* remap_color */
 #endif
@@ -143,10 +143,6 @@ static const gs_color_space_type gs_color_space_type_CIEICC = {
     gx_no_adjust_color_count,       /* adjust_color_count */
     gx_serialize_CIEICC,		    /* serialize */
     gx_cspace_is_linear_default
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-	,
-	gx_has_clientcallback_ICCBased
-#endif
 };
 
 
@@ -287,8 +283,8 @@ gx_concretize_CIEICC(
 
 
         f[1] = (outv[0] + 16.0) / 116.0;
-        f[0] = f[1] + (outv[1]) / 500.0;
-        f[2] = f[1] - (outv[2]) / 200;
+        f[0] = f[1] + outv[1] / 500.0;
+        f[2] = f[1] - outv[2] / 200;
 
         for (i = 0; i < 3; i++) {
             if (f[i] >= 6.0 / 29.0)
@@ -331,7 +327,7 @@ gx_remap_ICCBased(const gs_client_color * pc, const gs_color_space * pcs,
     client_custom_color_params_t * pcb =
 	    (client_custom_color_params_t *) (pis->custom_color_callback);
 
-    if (pcb != NULL && pcb->client_procs->remap_ICCBased != NULL ) {
+    if (pcb != NULL) {
 	if (pcb->client_procs->remap_ICCBased(pcb, pc, pcs,
 			   			pdc, pis, dev, select) == 0)
 	    return 0;
@@ -339,16 +335,6 @@ gx_remap_ICCBased(const gs_client_color * pc, const gs_color_space * pcs,
     /* Use default routine for non custom color processing. */
     return gx_default_remap_color(pc, pcs, pdc, pis, dev, select);
 }
-
-/* Determine if the user has installed a callback for this colorspace or not */
-static bool gx_has_clientcallback_ICCBased( const gs_imager_state * pis )
-{
-    client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->custom_color_callback);
-
-    return (pcb != NULL && pcb->client_procs->remap_ICCBased != NULL );
-}
-
 #endif
 
 /*
