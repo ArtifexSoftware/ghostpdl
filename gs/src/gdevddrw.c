@@ -126,7 +126,7 @@ compute_dx(trap_line *tl, fixed xd, fixed ys)
 	if ((tl->df = xd + h) >= 0 /* xd >= -h */)
 	    tl->di = -1, tl->x -= ys;
 	else {
-	    tl->di = di = (int)-((h - 1 - xd) / h);
+	    tl->di = di = (int)((xd + 1) / h - 1);
 	    tl->df = xd - di * h;
 	    tl->x += ys * di;
 	}
