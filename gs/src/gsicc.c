@@ -24,7 +24,6 @@
 #include "gxarith.h"
 #include "gxcie.h"
 #include "gzstate.h"
-#include "stream.h"
 #include "icc.h"		/* must precede icc.h */
 #include "gsicc.h"
 
