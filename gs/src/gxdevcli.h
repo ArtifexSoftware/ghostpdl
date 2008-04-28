@@ -442,10 +442,12 @@ typedef struct gx_device_color_info_s {
      *
      * If opmode has the value GX_CINFO_OPMODE, the process_comps will
      * be a bit mask, with the (1 << i) bit set if i'th component is the
-     * cyan, magenta, yellow, or black component.
+     * cyan, magenta, yellow, or black component and black_component will
+     * be set to the index of a black component.
      */
     gx_cm_opmode_t opmode;
     gx_color_index process_comps;
+    int black_component;
 } gx_device_color_info;
 
 /* NB encoding flag ignored */

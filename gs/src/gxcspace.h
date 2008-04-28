@@ -22,6 +22,7 @@
 #include "gsccolor.h"
 #include "gscsel.h"
 #include "gxfrac.h"		/* for concrete colors */
+#include "gxcindex.h"           /* for gx_color_index  */
 
 /* Define opaque types. */
 
@@ -256,5 +257,9 @@ extern_st(st_color_space);
 /* Allocate a new color space object. Used by color space implementations. */
 gs_color_space *
 gs_cspace_alloc(gs_memory_t *mem, const gs_color_space_type *pcstype);
+
+/* Determine if the current color model is a "DeviceCMYK" color model, and */
+/* if so what are its process color components. */
+gx_color_index check_cmyk_color_model_comps(gx_device * dev);
 
 #endif /* gxcspace_INCLUDED */

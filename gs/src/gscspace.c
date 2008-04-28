@@ -308,7 +308,9 @@ check_single_comp(int comp, frac targ_val, int ncomps, const frac * pval)
 /*
  * Determine if the current color model is a "DeviceCMYK" color model, and
  * if so what are its process color components. This information is required
- * only if overprint is true and overprint mode is set to 1.
+ * when PLRM defines special rules for CMYK devices. This includes:
+ * 1. DeviceGray to CMYK color conversion
+ * 2. when overprint is true and overprint mode is set to 1.
  *
  * A color model is considered a "DeviceCMYK" color model if it supports the
  * cyan, magenta, yellow, and black color components, and maps the DeviceCMYK
@@ -320,7 +322,7 @@ check_single_comp(int comp, frac targ_val, int ncomps, const frac * pval)
  * If the color model is a "DeviceCMYK" color model, return the set of
  * process color components; otherwise return 0.
  */
-static gx_color_index
+gx_color_index
 check_cmyk_color_model_comps(gx_device * dev)
 {
     gx_device_color_info *          pcinfo = &dev->color_info;
@@ -384,6 +386,7 @@ check_cmyk_color_model_comps(gx_device * dev)
                    | ((gx_color_index)1 << black_c);
     pcinfo->opmode = GX_CINFO_OPMODE;
     pcinfo->process_comps = process_comps;
+    pcinfo->black_component = black_c;
     return process_comps;
 }
 
