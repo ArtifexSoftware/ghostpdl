@@ -419,8 +419,37 @@
   (EndFontMetrics) =to.ofi
 } def
 
-% pf[ba]filename makeafm -
+/pfa_pfb_dict <<
+  /.pfb /pfbn
+  /.pfB /pfbn
+  /.pFb /pfbn
+  /.pFB /pfbn
+  /.Pfb /pfbn
+  /.PfB /pfbn
+  /.PFb /pfbn
+  /.PFB /pfbn
 
+  /.pfa /pfan
+  /.pfA /pfan
+  /.pFa /pfan
+  /.pFA /pfan
+  /.Pfa /pfan
+  /.PfA /pfan
+  /.PFa /pfan
+  /.PFA /pfan
+>> readonly def
+
+% Check whether the file name has pfa or pfb extension.
+/pfa_or_pfb? {      % s -> false   |    /name true
+  dup length 4 lt {
+    pop //false
+  } {
+    dup length 4 sub 4 getinterval //pfa_pfb_dict exch .knownget
+  } ifelse
+} bind def
+
+
+% pf[ba]filename makeafm -
 /makeafm {
   count 0 eq {(Missing font file name\n) printquit} if
   /ifn edef
@@ -429,18 +458,11 @@
 % i.e., it analyses the supplied names, appends extensions if needed,
 % and check files:
   /pfbn () def /pfan () def /pfmn () def % initialisation
-  ifn (.pfb) search {
-    3 -1 roll length 0 eq {% file name extension = ".pfb"
-      ifn dup length string copy /pfbn edef
-      /ifn edef
-    }{pop} ifelse
-  } if pop
-  ifn (.pfa) search {
-    3 -1 roll length 0 eq {% file name extension = ".pfa"
-      ifn dup length string copy /pfan edef
-      /ifn edef
-    }{pop} ifelse
-  } if pop
+
+  ifn pfa_or_pfb? {
+      ifn dup length string copy def
+      ifn dup length 4 sub 0 exch getinterval /ifn edef
+  } if
   pfbn () eq pfan () eq and dup {% no extension was supplied, try ".pfb"
     /pfbn ifn (.pfb) concatstrings def
   } if
@@ -469,7 +491,7 @@
     pop pop pop pop
   }{
     () pfmn {
-      (/) search {
+      (/) search dup not { pop (\\) search } if {
         4 -1 roll exch concatstrings exch concatstrings exch
       }{
         exit
