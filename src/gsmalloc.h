@@ -18,6 +18,8 @@
 #ifndef gsmalloc_INCLUDED
 #  define gsmalloc_INCLUDED
 
+#include "gxsync.h"
+
 /* Define a memory manager that allocates directly from the C heap. */
 typedef struct gs_malloc_block_s gs_malloc_block_t;
 typedef struct gs_malloc_memory_s {
@@ -26,6 +28,7 @@ typedef struct gs_malloc_memory_s {
     long limit;
     long used;
     long max_used;
+    gx_monitor_t *monitor;	/* monitor to serialize access to functions */
 } gs_malloc_memory_t;
 
 /* Allocate and initialize a malloc memory manager. */

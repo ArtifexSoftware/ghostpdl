@@ -624,11 +624,6 @@ BAND_LIST_STORAGE=file
 BAND_LIST_COMPRESSOR=zlib
 !endif
 
-# Choose whether or not to support rendering bands in multiple threads
-# to improve performance on multi-core systems. CLIST_THREADS=1 to enable.
-# default to single thread clist rendering by leaving the macro as ""
-### CLIST_THREADS=1
-
 # Choose the implementation of file I/O: 'stdio', 'fd', or 'both'.
 # See gs.mak and sfxfd.c for more details.
 
@@ -675,10 +670,6 @@ DEVICE_DEVS21= $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.dev $(DD)bmpsep8.
 UFST_CFLAGS=-DMSVC
 
 # ---------------------------- End of options ---------------------------- #
-
-!if $(CLIST_THREADS) == 1
-CFLAGS=$(CFLAGS) /DUSE_LOCKING_MEMORY_WRAPPER
-!endif
 
 # Define the name of the makefile -- used in dependencies.
 

@@ -175,7 +175,7 @@ $(GLOBJ)gsalloc.$(OBJ) : $(GLSRC)gsalloc.c $(GXERR) $(memory__h) $(string__h)\
 $(GLOBJ)gsmalloc.$(OBJ) : $(GLSRC)gsmalloc.c $(malloc__h)\
  $(gdebug_h)\
  $(gserror_h) $(gserrors_h)\
- $(gsmalloc_h) $(gsmdebug_h) $(gsmemlok_h) $(gsmemret_h)\
+ $(gsmalloc_h) $(gsmdebug_h) $(gsmemret_h)\
  $(gsmemory_h) $(gsstruct_h) $(gstypes_h)
 	$(GLCC) $(GLO_)gsmalloc.$(OBJ) $(C_) $(GLSRC)gsmalloc.c
 
@@ -222,9 +222,6 @@ $(GLOBJ)gsflip.$(OBJ) : $(GLSRC)gsflip.c $(GXERR)\
 
 # These are required in the standard configuration, because gsmalloc.c
 # needs them even if the underlying primitives are dummies.
-
-$(GLOBJ)gsmemlok.$(OBJ) : $(GLSRC)gsmemlok.c $(GXERR) $(gsmemlok_h)
-	$(GLCC) $(GLO_)gsmemlok.$(OBJ) $(C_) $(GLSRC)gsmemlok.c
 
 $(GLOBJ)gxsync.$(OBJ) : $(GLSRC)gxsync.c $(GXERR) $(memory__h)\
  $(gsmemory_h) $(gxsync_h)
@@ -1094,7 +1091,7 @@ LIB6s=$(GLOBJ)gsfname.$(OBJ) $(GLOBJ)gsfont.$(OBJ) $(GLOBJ)gsgdata.$(OBJ) $(GLOB
 LIB7s=$(GLOBJ)gsht.$(OBJ) $(GLOBJ)gshtscr.$(OBJ) $(GLOBJ)gswts.$(OBJ)
 LIB8s=$(GLOBJ)gsimage.$(OBJ) $(GLOBJ)gsimpath.$(OBJ) $(GLOBJ)gsinit.$(OBJ)
 LIB9s=$(GLOBJ)gsiodev.$(OBJ) $(GLOBJ)gsistate.$(OBJ) $(GLOBJ)gsline.$(OBJ)
-LIB10s=$(GLOBJ)gsmalloc.$(OBJ) $(GLOBJ)gsmatrix.$(OBJ) $(GLOBJ)gsmemlok.$(OBJ)
+LIB10s=$(GLOBJ)gsmalloc.$(OBJ) $(GLOBJ)gsmatrix.$(OBJ)
 LIB11s=$(GLOBJ)gsmemory.$(OBJ) $(GLOBJ)gsmemret.$(OBJ) $(GLOBJ)gsmisc.$(OBJ) $(GLOBJ)gsnotify.$(OBJ) $(GLOBJ)gslibctx.$(OBJ) 
 LIB12s=$(GLOBJ)gspaint.$(OBJ) $(GLOBJ)gsparam.$(OBJ) $(GLOBJ)gspath.$(OBJ)
 LIB13s=$(GLOBJ)gsserial.$(OBJ) $(GLOBJ)gsstate.$(OBJ) $(GLOBJ)gstext.$(OBJ)\
@@ -1642,7 +1639,8 @@ clbase3_=$(GLOBJ)gxclutil.$(OBJ) $(GLOBJ)gsparams.$(OBJ) $(GLOBJ)gxshade6.$(OBJ)
 # gxclrect.c requires rop_proc_table, so we need gsroptab here.
 clbase4_=$(GLOBJ)gsroptab.$(OBJ) $(GLOBJ)stream.$(OBJ)
 clpath_=$(GLOBJ)gxclimag.$(OBJ) $(GLOBJ)gxclpath.$(OBJ) $(GLOBJ)gxdhtserial.$(OBJ)
-clist_=$(clbase1_) $(clbase2_) $(clbase3_) $(clbase4_) $(clpath_)
+clthread_=$(GLOBJ)gxclthrd.$(OBJ) $(GLOBJ)gsmchunk.$(OBJ)
+clist_=$(clbase1_) $(clbase2_) $(clbase3_) $(clbase4_) $(clpath_) $(clthread_)
 
 # The old code selected one of clmemory, clfile depending on BAND_LIST_STORAGE.
 # Now we meed clmemory to be included permanently for large patterns,
@@ -1650,16 +1648,16 @@ clist_=$(clbase1_) $(clbase2_) $(clbase3_) $(clbase4_) $(clpath_)
 # clfile works for page clist iff it is included.
 
 $(GLD)clist.dev : $(LIB_MAK) $(ECHOGS_XE) $(clist_)\
- $(GLD)cl$(BAND_LIST_STORAGE).dev $(GLD)clthread$(CLIST_THREADS).dev\
- $(GLD)clmemory.dev\
+ $(GLD)cl$(BAND_LIST_STORAGE).dev $(GLD)clmemory.dev $(GLD)$(SYNC).dev\
  $(GLD)cfe.dev $(GLD)cfd.dev $(GLD)rle.dev $(GLD)rld.dev $(GLD)psl2cs.dev
 	$(SETMOD) $(GLD)clist $(clbase1_)
 	$(ADDMOD) $(GLD)clist -obj $(clbase2_)
 	$(ADDMOD) $(GLD)clist -obj $(clbase3_)
 	$(ADDMOD) $(GLD)clist -obj $(clbase4_)
 	$(ADDMOD) $(GLD)clist -obj $(clpath_)
-	$(ADDMOD) $(GLD)clist -include $(GLD)cl$(BAND_LIST_STORAGE) $(GLD)clthread$(CLIST_THREADS)
-	$(ADDMOD) $(GLD)clist -include $(GLD)clmemory
+	$(ADDMOD) $(GLD)clist -obj $(clthread_)
+	$(ADDMOD) $(GLD)clist -include $(GLD)cl$(BAND_LIST_STORAGE)
+	$(ADDMOD) $(GLD)clist -include $(GLD)clmemory $(GLD)$(SYNC).dev
 	$(ADDMOD) $(GLD)clist -include $(GLD)cfe $(GLD)cfd $(GLD)rle $(GLD)rld $(GLD)psl2cs
 
 $(GLOBJ)gxclist.$(OBJ) : $(GLSRC)gxclist.c $(GXERR) $(memory__h) $(string__h)\
@@ -1764,23 +1762,14 @@ $(GLOBJ)gxclzlib.$(OBJ) : $(GLSRC)gxclzlib.c $(std_h)\
  $(gsmemory_h) $(gstypes_h) $(gxclmem_h) $(szlibx_h)
 	$(GLCC) $(GLO_)gxclzlib.$(OBJ) $(C_) $(GLSRC)gxclzlib.c
 
-# Dummy module - clist rendering in same thread as graphics library
-$(GLD)clthread.dev: $(GLOBJ)gxclthrd.$(OBJ) 
-	$(SETMOD) $(GLD)clthread $(GLOBJ)gxclthrd.$(OBJ)
-
-$(GLOBJ)gxclthrd.$(OBJ) :  $(GLSRC)gxclthrd.c $(gxclist_h)
+# Support for multi-threaded rendering from the clist. The chunk memory wrapper
+# is used to prevent mutex (locking) contention among threads. The underlying
+# memory allocator must implement the mutex (non-gc memory is usually gsmalloc)
+$(GLOBJ)gxclthrd.$(OBJ) :  $(GLSRC)gxclthrd.c $(gxclist_h) $(gxsync_h) $(gxclthrd_h)
 	$(GLCC) $(GLO_)gxclthrd.$(OBJ) $(C_) $(GLSRC)gxclthrd.c
 
-# Support for multiple clist rendering threads.
-$(GLD)clthread1.dev: $(GLOBJ)gxclthrd1.$(OBJ) $(GLOBJ)gsmchunk.$(OBJ) $(GLD)$(SYNC).dev
-	$(SETMOD) $(GLD)clthread1 $(GLOBJ)gxclthrd1.$(OBJ) $(GLOBJ)gsmchunk.$(OBJ)
-	$(ADDMOD) $(GLD)clthread1 -include $(GLD)$(SYNC).dev
-
-$(GLOBJ)gxclthrd1.$(OBJ) :  $(GLSRC)gxclthrd1.c $(gxclist_h) $(gxsync_h) $(gxclthrd_h)
-	$(GLCC) $(GLO_)gxclthrd1.$(OBJ) $(C_) $(GLSRC)gxclthrd1.c
-
 $(GLOBJ)gsmchunk.$(OBJ) :  $(GLSRC)gsmchunk.c $(gx_h) $(gsstype_h) $(gserrors_h)
-	$(GLCC) $(GLO_)gsmchunk.$(OBJ) $(C_) $(GLSRC)gsmchunk.c
+        $(GLCC) $(GLO_)gsmchunk.$(OBJ) $(C_) $(GLSRC)gsmchunk.c
 
 # ---------------- Vector devices ---------------- #
 # We include this here for the same reasons as page.dev.
@@ -1924,6 +1913,9 @@ $(GLOBJ)gdevprna.$(OBJ) : $(GLSRC)gdevprna.c $(AK)\
 $(GLOBJ)gxpageq.$(OBJ) : $(GLSRC)gxpageq.c $(GXERR)\
  $(gsstruct_h) $(gxdevice_h) $(gxclist_h) $(gxpageq_h)
 	$(GLCC) $(GLO_)gxpageq.$(OBJ) $(C_) $(GLSRC)gxpageq.c
+
+$(GLOBJ)gsmemlok.$(OBJ) : $(GLSRC)gsmemlok.c $(GXERR) $(gsmemlok_h)
+	$(GLCC) $(GLO_)gsmemlok.$(OBJ) $(C_) $(GLSRC)gsmemlok.c
 
 # ---------------- TrueType and PostScript Type 42 fonts ---------------- #
 
