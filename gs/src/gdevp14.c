@@ -56,11 +56,11 @@
  * usually simple.  For other devices or if the user is doing custom color
  * processing then the user may want to control this choice.
  */
-#define AUTO_CUSTOM_BLENDING 0
+#define AUTO_USE_CUSTOM_BLENDING 0
 #define ALWAYS_USE_CUSTOM_BLENDING 1
 #define DO_NOT_USE_CUSTOM_BLENDING 2
 
-#define CUSTOM_BLENDING_MODE AUTO_CUSTOM_BLENDING
+#define CUSTOM_BLENDING_MODE AUTO_USE_CUSTOM_BLENDING
 
 /* #define DUMP_TO_PNG */
 
@@ -1872,7 +1872,6 @@ static	int
 pdf14_disable_device(gx_device * dev)
 {
     gx_device_forward * pdev = (gx_device_forward *)dev;
-    pdf14_device *cdev = (pdf14_device *)dev;
 
     if_debug0('v', "[v]pdf14_disable_device\n");
     dev->color_info = pdev->target->color_info;
