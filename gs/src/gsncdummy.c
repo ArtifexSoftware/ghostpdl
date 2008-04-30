@@ -664,6 +664,7 @@ client_remap_DeviceCMYK(client_custom_color_params_t * pparams,
 		: (frac) (frac_1 * \
 			(color - range.rmin) / (range.rmax - range.rmin))
 
+static bool
 client_install_CIEtoA(client_custom_color_params_t * pparams,
 	    gs_color_space * pcs, gs_state * pgs)
 {
@@ -709,6 +710,7 @@ client_install_CIEtoA(client_custom_color_params_t * pparams,
     return true;
 }
 
+static bool
 client_install_CIEtoXYZ(client_custom_color_params_t * pparams,
 	    gs_color_space * pcs, gs_state * pgs)
 {
@@ -770,7 +772,7 @@ client_install_CIEtoXYZ(client_custom_color_params_t * pparams,
 }
 
 
-
+static bool
 client_install_ICCtoXYZ(client_custom_color_params_t * pparams,
 	    gs_color_space * pcs, gs_state * pgs)
 {
@@ -1074,7 +1076,3 @@ client_custom_color_procs_t demo_procs = {
 #endif		/* PANTONE_ONLY_EXAMPLE */
 
 #endif		/* ENABLE_CUSTOM_COLOR_CALLBACK */
-
-
-
-
