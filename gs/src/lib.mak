@@ -577,7 +577,7 @@ $(GLOBJ)gxclip.$(OBJ) : $(GLSRC)gxclip.c $(GX)\
 $(GLOBJ)gxcmap.$(OBJ) : $(GLSRC)gxcmap.c $(GXERR)\
  $(gsccolor_h)\
  $(gxalpha_h) $(gxcspace_h) $(gxfarith_h) $(gxfrac_h)\
- $(gxdcconv_h) $(gxdevice_h) $(gxcmap_h) $(gxlum_h)\
+ $(gxdcconv_h) $(gxdevice_h) $(gxcmap_h) $(gsnamecl_h) $(gxlum_h)\
  $(gzstate_h) $(gxdither_h) $(gxcdevn_h) $(string__h)
 	$(GLCC) $(GLO_)gxcmap.$(OBJ) $(C_) $(GLSRC)gxcmap.c
 
@@ -772,7 +772,7 @@ $(GLOBJ)gscparam.$(OBJ) : $(GLSRC)gscparam.c $(GXERR) $(memory__h) $(string__h)\
 $(GLOBJ)gscspace.$(OBJ) : $(GLSRC)gscspace.c $(GXERR) $(memory__h)\
  $(gsstruct_h) $(gsccolor_h) $(gsutil_h)\
  $(gxcmap_h) $(gxcspace_h) $(gxistate_h) $(gsovrc_h) $(gsstate_h)\
- $(gsdevice_h) $(gxdevcli_h) $(gzstate_h) $(stream_h)
+ $(gsdevice_h) $(gxdevcli_h) $(gzstate_h) $(gsnamecl_h) $(stream_h)
 	$(GLCC) $(GLO_)gscspace.$(OBJ) $(C_) $(GLSRC)gscspace.c
 
 $(GLOBJ)gscicach.$(OBJ) : $(GLSRC)gscicach.c $(GXERR)\
@@ -2438,12 +2438,12 @@ $(GLOBJ)gscsepr.$(OBJ) : $(GLSRC)gscsepr.c $(GXERR) $(memory__h)\
 	$(GLCC) $(GLO_)gscsepr.$(OBJ) $(C_) $(GLSRC)gscsepr.c
 
 $(GLOBJ)gsnamecl.$(OBJ) : $(GLSRC)gsnamecl.c $(GXERR) $(memory__h) $(gxcspace_h)\
-	$(gscdefs_h) $(gxdevice_h) $(gzstate_h)
+	$(gscdefs_h) $(gxdevice_h) $(gsnamecl_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gsnamecl.$(OBJ) $(C_) $(GLSRC)gsnamecl.c
 
 $(GLOBJ)gsncdummy.$(OBJ) : $(GLSRC)gsncdummy.c $(GXERR) $(math__h)\
        	$(memory__h) $(malloc__h) $(gscdefs_h) $(gscspace_h) $(gscie_h)\
-        $(gsicc_h) $(gxdevice_h) $(gzstate_h) $(gsutil_h) $(gsncdummy_h)
+        $(gsicc_h) $(gxdevice_h) $(gzstate_h) $(gsutil_h) $(gxcie_h) $(gsncdummy_h)
 	$(GLCC) $(GLO_)gsncdummy.$(OBJ) $(C_) $(GLSRC)gsncdummy.c
 
 # ================ Display Postscript extensions ================ #
@@ -2492,7 +2492,7 @@ $(GLD)dpnxtlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(dpnxtlib_)
 
 $(GLOBJ)gscdevn.$(OBJ) : $(GLSRC)gscdevn.c $(GXERR) $(memory__h) $(string__h)\
  $(gscdevn_h) $(gsfunc_h) $(gsmatrix_h) $(gsrefct_h) $(gsstruct_h)\
- $(gxcspace_h) $(gxcdevn_h) $(gxfarith_h) $(gxfrac_h) $(gxcmap_h)\
+ $(gxcspace_h) $(gxcdevn_h) $(gxfarith_h) $(gxfrac_h) $(gsnamecl_h) $(gxcmap_h)\
  $(gxistate_h) $(gscoord_h) $(gzstate_h) $(gxdevcli_h) $(gsovrc_h) $(stream_h)
 	$(GLCC) $(GLO_)gscdevn.$(OBJ) $(C_) $(GLSRC)gscdevn.c
 

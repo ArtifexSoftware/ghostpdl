@@ -28,6 +28,7 @@
 #include "gxdither.h"
 #include "gxcdevn.h"
 #include "string_.h"
+#include "gsnamecl.h"  /* Custom color call back define */
 
 /* Structure descriptor */
 public_st_device_color();

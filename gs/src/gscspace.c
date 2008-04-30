@@ -28,6 +28,7 @@
 #include "gxdevcli.h"
 #include "gzstate.h"
 #include "stream.h"
+#include "gsnamecl.h"  /* Custom color call back define */
 
 static cs_proc_install_cspace(gx_install_DeviceGray);
 static cs_proc_install_cspace(gx_install_DeviceRGB);

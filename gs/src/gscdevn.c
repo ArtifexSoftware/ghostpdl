@@ -34,6 +34,7 @@
 #include "gxdevcli.h"
 #include "gsovrc.h"
 #include "stream.h"
+#include "gsnamecl.h"  /* Custom color call back define */
 
 /* ---------------- Color space ---------------- */
 

@@ -40,6 +40,7 @@
 #include "gxdevice.h"
 #include "gzstate.h"
 #include "gsutil.h"
+#include "gsnamecl.h"  /* Custom color call back define */
 
 #if ENABLE_CUSTOM_COLOR_CALLBACK	/* Defined in src/gsnamecl.h */
   
