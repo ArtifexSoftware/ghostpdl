@@ -15,6 +15,7 @@
 /* Command list - Support for multiple rendering threads */
 #include "memory_.h"
 #include "gx.h"
+#include "gp.h"
 #include "gpcheck.h"
 #include "gxsync.h"
 #include "gserrors.h"
@@ -52,7 +53,7 @@ clist_setup_render_threads(gx_device *dev, int y)
     crdev->num_render_threads = pdev->num_render_threads_requested;
 
     if(gs_debug[':'] != 0)
-	dprintf1("Attempting to set up %d rendering threads\n", pdev->num_render_threads_requested);
+	dprintf1("%% %d rendering threads requested.\n", pdev->num_render_threads_requested);
 
     if (crdev->num_render_threads > band_count)
 	crdev->num_render_threads = band_count;	/* don't bother starting more threads than bands */
@@ -62,8 +63,11 @@ clist_setup_render_threads(gx_device *dev, int y)
 	      gs_alloc_byte_array(mem, crdev->num_render_threads,
 	      sizeof(clist_render_thread_control_t), "clist_setup_render_threads" );
     /* fallback to non-threaded if allocation fails */
-    if (crdev->render_threads == NULL)
+    if (crdev->render_threads == NULL) {
+	eprintf(" VMerror prevented threads from starting.\n");
 	return_error(gs_error_VMerror);
+    }
+
 
     memset(crdev->render_threads, 0, crdev->num_render_threads *
 	    sizeof(clist_render_thread_control_t));
@@ -83,6 +87,7 @@ clist_setup_render_threads(gx_device *dev, int y)
         (code = cdev->page_info.io_procs->fclose(cdev->page_bfile, cdev->page_bfname, false)) < 0) {
 	gs_free_object(mem, crdev->render_threads, "clist_setup_render_threads");
 	crdev->render_threads = NULL;
+	eprintf("Closing clist files prevented threads from starting.\n");
         return_error(gs_error_unknownerror); /* shouldn't happen */
     }
     cdev->page_cfile = cdev->page_bfile = NULL;
@@ -92,12 +97,16 @@ clist_setup_render_threads(gx_device *dev, int y)
     for (i=0; (protodev = (gx_device *)gs_getdevice(i)) != NULL; i++)
 	if (strcmp(protodev->dname, dev->dname) == 0)
 	    break;
-    if (protodev == NULL)
+    if (protodev == NULL) {
+	eprintf("Could not find prototype device. Rendering threads not started.\n");
 	return gs_error_rangecheck;
+    }
 
     gs_c_param_list_write(&paramlist, mem);
-    if ((code = gs_getdeviceparams(dev, (gs_param_list *)&paramlist)) < 0)
+    if ((code = gs_getdeviceparams(dev, (gs_param_list *)&paramlist)) < 0) {
+	eprintf1("Error getting device params, code=%d. Rendering threads not started.\n", code);
 	return code;
+    }
 
     /* Loop creating the devices and semaphores for each thread, then start them */
     for (i=0; i < crdev->num_render_threads; i++, band += crdev->thread_lookahead_direction) {
@@ -207,13 +216,14 @@ clist_setup_render_threads(gx_device *dev, int y)
 	    cdev->page_info.io_procs->fopen(cdev->page_bfname, fmode, &cdev->page_bfile,
 				mem, cdev->bandlist_memory, false);
 	}
+	eprintf1("Rendering threads not started, code=%d.\n", code);
 	return_error(code);
     }
     crdev->num_render_threads = i;
     crdev->curr_render_thread = 0;
 
     if(gs_debug[':'] != 0)
-	dprintf1("Using %d rendering threads\n", i);
+	dprintf1("%% Using %d rendering threads\n", i);
 
     return 0;
 }
@@ -253,6 +263,14 @@ clist_teardown_render_threads(gx_device *dev)
 	    gdev_prn_free_memory((gx_device *)thread_cdev);
 	    /* Free the device copy this thread used */
 	    gs_free_object(thread->memory, thread_cdev, "clist_teardown_render_threads");
+#ifdef DEBUG
+	    if (gs_debug[':'])
+		dprintf2("%% Thread %d total usertime=%ld msec\n", i, thread->cputime);
+	    dprintf1("\nthread: %d ending memory state...\n", i);
+	    gs_memory_chunk_dump_memory(thread->memory); 
+	    dprintf("                                    memory dump done.\n");
+#endif
+
 	    gs_memory_chunk_release(thread->memory); 
 	}
 	cdev->data = crdev->main_thread_data;	/* restore the pointer for writing */
@@ -306,7 +324,11 @@ clist_render_thread(void *data)
     int band_begin_line = band * band_height;
     int band_end_line = band_begin_line + band_height;
     int band_num_lines;
+#ifdef DEBUG
+    long starttime[2], endtime[2];
 
+    gp_get_usertime(starttime);	/* thread start time */
+#endif
     if (band_end_line > dev->height)
 	band_end_line = dev->height;
     band_num_lines = band_end_line - band_begin_line;
@@ -328,6 +350,11 @@ clist_render_thread(void *data)
     else
 	thread->status = RENDER_THREAD_DONE;	/* OK */
 
+#ifdef DEBUG
+    gp_get_usertime(endtime);
+    thread->cputime += (endtime[0] - starttime[0]) * 1000 +
+	     (endtime[1] - starttime[1]) / 1000000;
+#endif
     /*
      * Signal the semaphores. We signal the 'group' first since even if
      * the waiter is released on the group, it still needs to check
