@@ -149,9 +149,9 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
     if_debug4('T', "[T]i=(%d,%d) j=(%d,%d)\n", i0, i1, j0, j1);
     for (i = i0; i < i1; i++)
 	for (j = j0; j < j1; j++) {
-	    int x = (int)(step_matrix.xx * i +
+	    int x = (int)floor(step_matrix.xx * i +
 			  step_matrix.yx * j + step_matrix.tx);
-	    int y = (int)(step_matrix.xy * i +
+	    int y = (int)floor(step_matrix.xy * i +
 			  step_matrix.yy * j + step_matrix.ty);
 	    int w = tbits_or_tmask->size.x;
 	    int h = tbits_or_tmask->size.y;
