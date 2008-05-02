@@ -20,7 +20,7 @@
 #    check_docrefs (+src | +lib | [+-]from <docfile>* | [+-]to (<directory> | <file>)*)*
 
 # +from or +to adds files; -from or -to removes them;
-# +src, +lib, or +tests execute SRC_LIST, LIB_LIST, or TEST_LIST below.
+# +src, or +lib execute SRC_LIST, LIB_LIST below.
 
 # Define the Ghostscript-specific parameter lists.
 SRC_LIST = [
@@ -35,12 +35,6 @@ SRC_LIST = [
 LIB_LIST = [
     '+from', 'doc/Psfiles.htm',
     '+to', 'examples/*.ps', 'lib/*.ps'
-]
-TEST_LIST = [
-    '+from', 'doc/Testing.htm',
-    '+to', 'toolbin/tests/*',
-    '-to', 'toolbin/tests/check_*.py', 'toolbin/tests/gscheck_*.py',
-    '-to', 'toolbin/tests/*.pyc', 'toolbin/tests/CVS/*'
 ]
 
 import glob, os.path, re, sys
@@ -101,8 +95,6 @@ def mainArgs(arglist, root, fromProc, toProc):
             mainArgs(SRC_LIST, root, fromProc, toProc)
         elif arg == '+lib':
             mainArgs(LIB_LIST, root, fromProc, toProc)
-        elif arg == '+tests':
-            mainArgs(TEST_LIST, root, fromProc, toProc)
         elif arg == '+from':
             do, adding = fromProc, 1
         elif arg == '-from':
@@ -175,7 +167,6 @@ class GSCheckDocRefs(GSTestCase):
 def addTests(suite, gsroot, **args):
     suite.addTest(GSCheckDocRefs(gsroot, ['+src']))
     suite.addTest(GSCheckDocRefs(gsroot, ['+lib']))
-    suite.addTest(GSCheckDocRefs(gsroot, ['+tests']))
 
 if __name__ == "__main__":
     gsRunTestsMain(addTests)
