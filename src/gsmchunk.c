@@ -79,6 +79,9 @@ typedef struct chunk_obj_node_s {
     uint size;			/* objlist: client size */
     	/* if freelist: size of block (obj header and client area must fit in block) */
     gs_memory_type_ptr_t type;
+#ifdef DEBUG
+    unsigned long sequence;
+#endif
 } chunk_obj_node_t;
 
 /*
@@ -98,6 +101,9 @@ typedef struct gs_memory_chunk_s {
     gs_memory_common;		/* interface outside world sees */
     gs_memory_t *target;	/* base allocator */
     chunk_mem_node_t *head_chunk;
+#ifdef DEBUG
+    unsigned long sequence_counter;
+#endif
 } gs_memory_chunk_t;
 
 /* ---------- Public constructors/destructors ---------- */
@@ -119,6 +125,9 @@ gs_memory_chunk_wrap( gs_memory_t **wrapped,	/* chunk allocator init */
     cmem->non_gc_memory = (gs_memory_t *)cmem;	/* and are not subject to GC */
     cmem->target = target;
     cmem->head_chunk = NULL;
+#ifdef DEBUG
+    cmem->sequence_counter = 0;
+#endif
 
     /* Init the chunk management values */
 
@@ -144,6 +153,30 @@ gs_memory_chunk_target(const gs_memory_t *mem)
     gs_memory_chunk_t *cmem = (gs_memory_chunk_t *)mem;
     return cmem->target;
 }
+
+#ifdef DEBUG
+void
+gs_memory_chunk_dump_memory(const gs_memory_t *mem)
+{
+    gs_memory_chunk_t *cmem = (gs_memory_chunk_t *)mem;
+    chunk_mem_node_t *head = cmem->head_chunk;
+    chunk_mem_node_t *current;
+    chunk_mem_node_t *next;
+
+    current = head;
+    while ( current != NULL ) { 
+	if (current->objlist != NULL) {
+	    chunk_obj_node_t *obj;
+
+	    for (obj= current->objlist; obj != NULL; obj=obj->next) 
+		dprintf4("chunk_mem leak, obj=0x%lx, size=%d, type=0x%lx, sequence#=%ld\n",
+			(ulong)obj, obj->size, (ulong)(obj->type), obj->sequence);
+	}
+	next = current->next; 
+	current = next;
+    }
+}
+#endif
 
 /* -------- Private members --------- */
 
@@ -296,7 +329,7 @@ chunk_mem_node_remove(gs_memory_chunk_t *cmem, chunk_mem_node_t *addr)
             }
         }
         if ( !found ) {
-            dprintf1("FAIL freeing wild pointer freed address %x not found\n", (uint)addr );
+            dprintf1("FAIL freeing wild pointer freed address 0x%lx not found\n", (ulong)addr );
 	    return -1;
 	}
     }
@@ -366,8 +399,9 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
     }
 
 #ifdef DEBUG
-memset((byte *)(newobj) + sizeof(chunk_obj_node_t), 0xa1, newsize - sizeof(chunk_obj_node_t));
-memset((byte *)(newobj) + sizeof(chunk_obj_node_t), 0xac, size);
+    memset((byte *)(newobj) + sizeof(chunk_obj_node_t), 0xa1, newsize - sizeof(chunk_obj_node_t));
+    memset((byte *)(newobj) + sizeof(chunk_obj_node_t), 0xac, size);
+    newobj->sequence = cmem->sequence_counter++;
 #endif
 
     newobj->next = current->objlist;	/* link to start of list */
@@ -480,7 +514,7 @@ chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	}
 	if (current == NULL) {
 	    /* Object not found in any chunk */
-	    dprintf1("chunk_free_obj failed, object %0x not in any chunk\n", ((unsigned int)obj));
+	    dprintf1("chunk_free_obj failed, object 0x%lx not in any chunk\n", ((ulong)obj));
 	    return;
 	}
 
@@ -493,8 +527,8 @@ chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	}
 	if (scan_obj == NULL) {
 	    /* Object not found in expected chunk */
-	    dprintf3("chunk_free_obj failed, object %0x not in chunk at %0x, size = %0x\n",
-			    ((unsigned int)obj), ((unsigned int)current), current->size);
+	    dprintf3("chunk_free_obj failed, object 0x%lx not in chunk at 0x%lx, size = %d\n",
+			    ((ulong)obj), ((ulong)current), current->size);
 	    return;
 	}
 	/* link around the object being freed */
