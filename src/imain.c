@@ -854,7 +854,7 @@ print_resource_usage(const gs_main_instance * minst, gs_dual_memory_t * dmem,
     ulong allocated = 0, used = 0;
     long utime[2];
 
-    gp_get_usertime(utime);
+    gp_get_realtime(utime);
     {
 	int i;
 
