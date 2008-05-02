@@ -251,7 +251,7 @@ $(GLOBJ)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(GXERR)\
 $(GLOBJ)gslibctx.$(OBJ) : $(GLSRC)gslibctx.c  $(GXERR)\
   $(gslibctx_h) $(stdio__h)
 	$(GLCC) $(GLO_)gslibctx.$(OBJ) $(C_) $(GLSRC)gslibctx.c
-  
+
 $(GLOBJ)gsnotify.$(OBJ) : $(GLSRC)gsnotify.c $(GXERR)\
  $(gsnotify_h) $(gsstruct_h)
 	$(GLCC) $(GLO_)gsnotify.$(OBJ) $(C_) $(GLSRC)gsnotify.c
@@ -1769,7 +1769,7 @@ $(GLOBJ)gxclthrd.$(OBJ) :  $(GLSRC)gxclthrd.c $(gxclist_h) $(gxsync_h) $(gxclthr
 	$(GLCC) $(GLO_)gxclthrd.$(OBJ) $(C_) $(GLSRC)gxclthrd.c
 
 $(GLOBJ)gsmchunk.$(OBJ) :  $(GLSRC)gsmchunk.c $(gx_h) $(gsstype_h) $(gserrors_h)
-        $(GLCC) $(GLO_)gsmchunk.$(OBJ) $(C_) $(GLSRC)gsmchunk.c
+	$(GLCC) $(GLO_)gsmchunk.$(OBJ) $(C_) $(GLSRC)gsmchunk.c
 
 # ---------------- Vector devices ---------------- #
 # We include this here for the same reasons as page.dev.
@@ -2452,8 +2452,8 @@ $(GLOBJ)gsnamecl.$(OBJ) : $(GLSRC)gsnamecl.c $(GXERR) $(memory__h) $(gxcspace_h)
 	$(GLCC) $(GLO_)gsnamecl.$(OBJ) $(C_) $(GLSRC)gsnamecl.c
 
 $(GLOBJ)gsncdummy.$(OBJ) : $(GLSRC)gsncdummy.c $(GXERR) $(math__h)\
-       	$(memory__h) $(malloc__h) $(gscdefs_h) $(gscspace_h) $(gscie_h)\
-        $(gsicc_h) $(gxdevice_h) $(gzstate_h) $(gsutil_h) $(gsncdummy_h)
+	$(memory__h) $(malloc__h) $(gscdefs_h) $(gscspace_h) $(gscie_h)\
+	$(gsicc_h) $(gxdevice_h) $(gzstate_h) $(gsutil_h) $(gsncdummy_h)
 	$(GLCC) $(GLO_)gsncdummy.$(OBJ) $(C_) $(GLSRC)gsncdummy.c
 
 # ================ Display Postscript extensions ================ #
@@ -2702,31 +2702,31 @@ $(GLOBJ)gsiomacres.$(OBJ) : $(GLSRC)gsiomacres.c \
 	$(GLCC) $(GLO_)gsiomacres.$(OBJ) $(C_) $(GLSRC)gsiomacres.c
 
 # ---------------- Font API ---------------- #   
-    
+
 # UFST bridge support :   
 # This stuff dispatches UFST callbacks for a multilianual (PS, PCL) architecture.
-    
+
 UFST_INC_1=$(I_)$(UFST_ROOT)$(D)sys$(D)inc$(_I) $(I_)$(UFST_ROOT)$(D)rts$(D)inc$(_I)  $(I_)$(UFST_ROOT)$(D)rts$(D)tt$(_I)   
 UFST_INC_=$(UFST_INC_1) $(I_)$(UFST_ROOT)$(D)rts$(D)fco$(_I) $(I_)$(UFST_ROOT)$(D)rts$(D)gray$(_I)   
-    
+
 gxfapiu_h=$(GLSRC)gxfapiu.h $(GLSRC)gp.h
-    
+
 $(GLD)gxfapiu1.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLOBJ)gxfapiu.$(OBJ)   
 	$(SETMOD) $(GLD)gxfapiu1 $(GLOBJ)gxfapiu.$(OBJ)   
-    
+
 $(GLOBJ)gxfapiu.$(OBJ) : $(GLSRC)gxfapiu.c\
  $(gx_h) $(gxfapiu_h)\
  $(UFST_ROOT)$(D)rts$(D)inc$(D)cgconfig.h\
  $(UFST_ROOT)$(D)rts$(D)inc$(D)shareinc.h\
  $(UFST_ROOT)$(D)sys$(D)inc$(D)ufstport.h
 	$(GLCC) $(UFST_CFLAGS) $(UFST_INC_) $(GLO_)gxfapiu.$(OBJ) $(C_) $(GLSRC)gxfapiu.c
-    
-    
+
+
 # stub for UFST bridge support  :   
-    
+
 $(GLD)gxfapiu.dev : $(LIB_MAK) $(ECHOGS_XE)   
 	$(SETMOD) $(GLD)gxfapiu   
-  
+
 # ================ Platform-specific modules ================ #
 # Platform-specific code doesn't really belong here: this is code that is
 # shared among multiple platforms.
