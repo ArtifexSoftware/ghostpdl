@@ -5,7 +5,7 @@
 # This script analyzes the output of Ghostscript run with -Z67.
 # Its primary purpose is detecting memory leaks.
 
-# $Id: $
+# $Id$
 
 USAGE = """\
 Usage: python memory.py z67trace > report

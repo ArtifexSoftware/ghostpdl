@@ -579,7 +579,7 @@ hpjet_put_params(gx_device *pdev, gs_param_list *plist)
     if (code>=0)
     {
        code=param_read_bool(plist,"Tumble",&Tumble);
-       if (code != 0) Tumble = false; // default: no tumble
+       if (code != 0) Tumble = false; /* default: no tumble */
     }
 
     if (code >= 0)

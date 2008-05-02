@@ -32,6 +32,7 @@
  This is an AES implementation that uses only 8-bit byte operations on the
  cipher state.
  */
+/* $Id$ */
 
 #ifndef AES_H
 #define AES_H

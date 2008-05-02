@@ -35,6 +35,7 @@
  The combination of mix columns and byte substitution used here is based on
  that developed by Karl Malbrain. His contribution is acknowledged.
  */
+/* $Id$ */
 
 /* define if you have a fast memcpy function on your system */
 #if 1

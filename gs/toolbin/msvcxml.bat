@@ -1,3 +1,5 @@
+# MS-DOS batch file to create an project file for MS Visual Studio
+# $Id$
 @echo off
 
 if "%1" == "DLL" goto DLL
