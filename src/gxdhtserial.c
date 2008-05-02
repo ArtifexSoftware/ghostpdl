@@ -622,6 +622,7 @@ gx_ht_read_and_install(
     gs_memory_t *           mem )
 {
     gx_ht_order_component   components[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_ht_order_component   components_save[GX_DEVICE_COLOR_MAX_COMPONENTS];
     const byte *            data0 = data;
     gx_device_halftone      dht;
     int                     num_dev_comps;
@@ -656,8 +657,14 @@ gx_ht_read_and_install(
     }
 
     /* if everything is OK, install the halftone */
-    if (code >= 0)
+    if (code >= 0) {
+	/* save since the 'install' copies the order, but then clears the source order	*/
+        for (i = 0; i < num_dev_comps; i++)
+	    components_save[i] = components[i];
         code = gx_imager_dev_ht_install(pis, &dht, dht.type, dev);
+        for (i = 0; i < num_dev_comps; i++)
+            gx_ht_order_release(&components_save[i].corder, mem, false);
+    }
 
     /*
      * If installation failed, discard the allocated elements. We can't
