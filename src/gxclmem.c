@@ -242,74 +242,85 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 	    gs_note_error(gs_error_ioerror);
 	    goto finish;
 	}
-
-	/* We need to 'clone' this memfile so that each reader instance	*/
-	/* will be able to maintain it's own 'state'			*/
-	f = gs_alloc_struct(mem, MEMFILE, &st_MEMFILE,
-			    "memfile_fopen_instance(MEMFILE)");
-	if (f == NULL) {
-	    eprintf1("memfile_open_scratch(%s): gs_alloc_struct failed\n", fname);
-	    code = gs_note_error(gs_error_VMerror);
-	    goto finish;
-	}
-	memcpy(f, base_f, sizeof(MEMFILE));
-        f->memory = mem;
-	f->data_memory = data_mem;
-	f->compress_state = 0;		/* Not used by reader instance */
-	f->decompress_state = 0;	/* make clean for GC, or alloc'n failure */
-	f->reservePhysBlockChain = NULL;
-	f->reservePhysBlockCount = 0;
-	f->reserveLogBlockChain = NULL;
-	f->reserveLogBlockCount = 0;
-	f->openlist = base_f->openlist;
-	base_f->openlist = f;		/* link this one in to the base memfile */
-	f->base_memfile = base_f;
-	f->log_curr_pos = 0;
-	f->raw_head = NULL;
-	f->error_code = 0;
-
-	if (f->log_head->phys_blk->data_limit != NULL) {
-	    /* The file is compressed, so we need to copy the logical block	*/
-	    /* list so that it is unique to this instance, and initialize	*/
-	    /* the decompressor.						*/
-	    LOG_MEMFILE_BLK *log_block, *new_log_block;
-	    int i;
-	    int num_log_blocks = (f->log_length + MEMFILE_DATA_SIZE - 1) / MEMFILE_DATA_SIZE;
-	    const stream_state *decompress_proto = clist_decompressor_state(NULL);
-	    const stream_template *decompress_template = decompress_proto->template;
-
-	    new_log_block = MALLOC(f, num_log_blocks * sizeof(LOG_MEMFILE_BLK), "memfile_fopen" );
-	    if (new_log_block == NULL)
-		code = gs_note_error(gs_error_VMerror);
-
-	    /* copy the logical blocks to the new list just allocated */
-	    for (log_block=f->log_head, i=0; log_block != NULL; log_block=log_block->link, i++) {
-		new_log_block[i].phys_blk = log_block->phys_blk;
-		new_log_block[i].phys_pdata = log_block->phys_pdata;
-		new_log_block[i].raw_block = NULL;
-		new_log_block[i].link = log_block->link == NULL ? NULL : new_log_block + i + 1;
+	if (fmode[0] == 'w') {
+	    /* Reopen an existing file for 'write' */
+	    /* Check first to make sure that we have exclusive access */
+	    if (base_f->openlist != NULL) {
+		code = gs_note_error(gs_error_ioerror);
+		goto finish;
 	    }
-	    f->log_head = new_log_block;
-
-	    /* NB: don't need compress_state for reading */
-	    f->decompress_state =
-		gs_alloc_struct(mem, stream_state, decompress_template->stype,
-				"memfile_open_scratch(decompress_state)");
-	    if (f->decompress_state == 0) {
+	    f = base_f;		/* use the file */
+	    goto finish;
+	} else {
+	    /* Reopen an existing file for 'read' */
+	    /* We need to 'clone' this memfile so that each reader instance	*/
+	    /* will be able to maintain it's own 'state'			*/
+	    f = gs_alloc_struct(mem, MEMFILE, &st_MEMFILE,
+				"memfile_fopen_instance(MEMFILE)");
+	    if (f == NULL) {
 		eprintf1("memfile_open_scratch(%s): gs_alloc_struct failed\n", fname);
 		code = gs_note_error(gs_error_VMerror);
 		goto finish;
 	    }
-	    memcpy(f->decompress_state, decompress_proto,
-		   gs_struct_type_size(decompress_template->stype));
-	    f->decompress_state->memory = mem;
-	    if (decompress_template->set_defaults)
-		(*decompress_template->set_defaults) (f->decompress_state);
-	}
-	f->log_curr_blk = f->log_head;
-	memfile_get_pdata(f);		/* set up the initial block */
+	    memcpy(f, base_f, sizeof(MEMFILE));
+	    f->memory = mem;
+	    f->data_memory = data_mem;
+	    f->compress_state = 0;		/* Not used by reader instance */
+	    f->decompress_state = 0;	/* make clean for GC, or alloc'n failure */
+	    f->reservePhysBlockChain = NULL;
+	    f->reservePhysBlockCount = 0;
+	    f->reserveLogBlockChain = NULL;
+	    f->reserveLogBlockCount = 0;
+	    f->openlist = base_f->openlist;
+	    base_f->openlist = f;		/* link this one in to the base memfile */
+	    f->base_memfile = base_f;
+	    f->log_curr_pos = 0;
+	    f->raw_head = NULL;
+	    f->error_code = 0;
 
-	goto finish;
+	    if (f->log_head->phys_blk->data_limit != NULL) {
+		/* The file is compressed, so we need to copy the logical block	*/
+		/* list so that it is unique to this instance, and initialize	*/
+		/* the decompressor.						*/
+		LOG_MEMFILE_BLK *log_block, *new_log_block;
+		int i;
+		int num_log_blocks = (f->log_length + MEMFILE_DATA_SIZE - 1) / MEMFILE_DATA_SIZE;
+		const stream_state *decompress_proto = clist_decompressor_state(NULL);
+		const stream_template *decompress_template = decompress_proto->template;
+
+		new_log_block = MALLOC(f, num_log_blocks * sizeof(LOG_MEMFILE_BLK), "memfile_fopen" );
+		if (new_log_block == NULL)
+		    code = gs_note_error(gs_error_VMerror);
+
+		/* copy the logical blocks to the new list just allocated */
+		for (log_block=f->log_head, i=0; log_block != NULL; log_block=log_block->link, i++) {
+		    new_log_block[i].phys_blk = log_block->phys_blk;
+		    new_log_block[i].phys_pdata = log_block->phys_pdata;
+		    new_log_block[i].raw_block = NULL;
+		    new_log_block[i].link = log_block->link == NULL ? NULL : new_log_block + i + 1;
+		}
+		f->log_head = new_log_block;
+
+		/* NB: don't need compress_state for reading */
+		f->decompress_state =
+		    gs_alloc_struct(mem, stream_state, decompress_template->stype,
+				    "memfile_open_scratch(decompress_state)");
+		if (f->decompress_state == 0) {
+		    eprintf1("memfile_open_scratch(%s): gs_alloc_struct failed\n", fname);
+		    code = gs_note_error(gs_error_VMerror);
+		    goto finish;
+		}
+		memcpy(f->decompress_state, decompress_proto,
+		       gs_struct_type_size(decompress_template->stype));
+		f->decompress_state->memory = mem;
+		if (decompress_template->set_defaults)
+		    (*decompress_template->set_defaults) (f->decompress_state);
+	    }
+	    f->log_curr_blk = f->log_head;
+	    memfile_get_pdata(f);		/* set up the initial block */
+
+	    goto finish;
+	}
     }
     fname[0] = 0;	/* no file name yet */
     f = gs_alloc_struct(mem, MEMFILE, &st_MEMFILE,
@@ -418,11 +429,34 @@ memfile_fclose(clist_file_ptr cf, const char *fname, bool delete)
 	    prev_f->openlist = f->openlist;	/* link around the one being fclosed */
 	    /* Now delete this MEMFILE reader instance */
 	    /* NB: we don't delete 'base' instances until we delete */
-	    /* deallocate de/compress state */
-	    gs_free_object(f->memory, f->decompress_state,
-			   "memfile_close_and_unlink(decompress_state)");
-	    gs_free_object(f->memory, f->compress_state,
-			   "memfile_close_and_unlink(compress_state)");
+	    /* If the file is compressed, free the logical blocks, but not */
+	    /* the phys_blk info (that is still used by the base memfile   */
+	    if (f->log_head->phys_blk->data_limit != NULL) {
+		LOG_MEMFILE_BLK *tmpbp, *bp = f->log_head;
+
+		while (bp != NULL) {
+		    tmpbp = bp->link;
+		    FREE(f, bp, "memfile_free_mem(log_blk)");
+		    bp = tmpbp;
+		}
+		f->log_head = NULL;
+
+		/* Free any internal compressor state. */
+		if (f->compressor_initialized) {
+		    if (f->decompress_state->template->release != 0)
+			(*f->decompress_state->template->release) (f->decompress_state);
+		    if (f->compress_state->template->release != 0)
+			(*f->compress_state->template->release) (f->compress_state);
+		    f->compressor_initialized = false;
+		}
+		/* free the raw buffers                                           */
+		while (f->raw_head != NULL) {
+		    RAW_BUFFER *tmpraw = f->raw_head->fwd;
+
+		    FREE(f, f->raw_head, "memfile_free_mem(raw)");
+		    f->raw_head = tmpraw;
+		}
+	    }
 	    /* deallocate the memfile object proper */
 	    gs_free_object(f->memory, f, "memfile_close_and_unlink(MEMFILE)");
 	}
