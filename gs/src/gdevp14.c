@@ -1014,6 +1014,11 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx)
 
     if_debug1('v', "[v]pdf14_pop_transparency_mask, idle=%d\n", tos->idle);
     ctx->stack = tos->saved;
+    if (tos->maskbuf) {
+	/* The maskbuf of the ctx->maskbuf entry is never used, free it now */
+	pdf14_buf_free(tos->maskbuf, ctx->memory);
+	tos->maskbuf = NULL;
+    }
     ctx->maskbuf = tos;
     return 0;
 }
