@@ -94,25 +94,26 @@ nodict readonly pop
    if def
  } bdef
 
-% Restore graphics state, but do not modify path. Paths are not part
-% of the PDF graphics state; see 4.4.1 of PDF reference 3rd ed.
-/grestore_nopath {
-  % Collect the upath with an identity CTM
-    matrix setmatrix .getpath
-    % Save the CTM, set identity during the uappend, then set the CTM
-    grestore matrix currentmatrix matrix setmatrix
-    exch newpath { exec } forall setmatrix
-} bdef
-
 /q {
   gsave //nodict begin
 } bdef
+
 % Some PDF files have excess Q operators!
 /Q {
   currentdict /self .knownget {
-    exec //nodict eq { end grestore_nopath false } { true } ifelse
+    exec //nodict eq {
+      end
+      % Restore graphics state, but do not modify path. Paths are not part
+      % of the PDF graphics state; see 4.4.1 of PDF reference 3rd ed.
+      % Collecting the path with one ctm and re-playing it with another ctm
+      % transforms the path exactly as PDF needs.
+      .getpath grestore newpath { exec } forall
+      //false
+    } {
+      //true
+    } ifelse
   } {
-    true	% formaterror -- not a gsave dict
+    //true	% formaterror -- not a gsave dict
   } ifelse
   { (\n   **** File has imbalanced q/Q operators \(too many Q's\) ****\n)
     pdfformaterror
