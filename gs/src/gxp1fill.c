@@ -80,9 +80,9 @@ tile_fill_init(tile_fill_state_t * ptfs, const gx_device_color * pdevc,
      * tile_by_steps loop, but for simple tiles, we must set it now.
      */
     if (set_mask_phase && m_tile->is_simple) {
-	px = imod(-(int)(m_tile->step_matrix.tx - ptfs->phase.x + 0.5),
+	px = imod(-(int)floor(m_tile->step_matrix.tx - ptfs->phase.x + 0.5),
 		  m_tile->tmask.rep_width);
-	py = imod(-(int)(m_tile->step_matrix.ty - ptfs->phase.y + 0.5),
+	py = imod(-(int)floor(m_tile->step_matrix.ty - ptfs->phase.y + 0.5),
 		  m_tile->tmask.rep_height);
     } else
 	px = py = 0;
@@ -283,10 +283,10 @@ gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 	return code;
     if (ptile->is_simple && ptile->cdev == NULL) {
 	int px =
-	    imod(-(int)(ptile->step_matrix.tx - state.phase.x + 0.5),
+	    imod(-(int)floor(ptile->step_matrix.tx - state.phase.x + 0.5),
 		 bits->rep_width);
 	int py =
-	    imod(-(int)(ptile->step_matrix.ty - state.phase.y + 0.5),
+	    imod(-(int)floor(ptile->step_matrix.ty - state.phase.y + 0.5),
 		 bits->rep_height);
 
 	if (state.pcdev != dev)
