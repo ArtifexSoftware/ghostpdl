@@ -502,21 +502,22 @@ end
 /01_4 [0 1 0 1 0 1 0 1] readonly def
 
 % The keys here are resolved (PostScript, not PDF) color space names.
-/csncompdict mark
-  /DeviceGray { pop 1 }
-  /DeviceRGB { pop 3 }
-  /DeviceCMYK { pop 4 }
-  /CIEBasedA { pop 1 }
-  /CIEBasedABC { pop 3 }
-  /ICCBased { 1 oget /N oget }
-  /Separation { pop 1 }
-  /DeviceN { 1 oget length }
-.dicttomark readonly def
+/csncompdict 8 dict begin
+  /DeviceGray { pop 1 } bdef
+  /DeviceRGB { pop 3 } bdef
+  /DeviceCMYK { pop 4 } bdef
+  /CIEBasedA { pop 1 } bdef
+  /CIEBasedABC { pop 3 } bdef
+  /ICCBased { 1 oget /N oget } bdef
+  /Separation { pop 1 } bdef
+  /DeviceN { 1 oget length } bdef
+currentdict end readonly def
 
-/csrdict mark
-  /DeviceGray { }
-  /DeviceRGB { }
-  /DeviceCMYK { }
+/csrdict 13 dict begin 
+  /DeviceGray { } bdef
+  /DeviceRGB { } bdef
+  /DeviceCMYK { } bdef
+
   /CalGray {
     1 oget 6 dict begin
     dup /Gamma knownoget {
@@ -529,7 +530,8 @@ end
       /RangeLMN [ 3 2 roll { 0 exch } forall ] def
     } if
     /PDFColorSpace exch def [ /CIEBasedA currentdict end ]
-  }
+  } bdef
+
   /CalRGB {
     1 oget 6 dict begin
     dup /Gamma knownoget {
@@ -540,10 +542,12 @@ end
     dup /BlackPoint knownoget { /BlackPoint exch def } if
     dup /WhitePoint knownoget { /WhitePoint exch def } if
     /PDFColorSpace exch def [ /CIEBasedABC currentdict end ]
-  }
+  } bdef
+
   /CalCMYK {
     pop /DeviceCMYK		% not defined by Adobe
-  }
+  } bdef
+
   /Lab {
     1 oget 6 dict begin
     dup /Range knownoget not { [-100 100 -100 100] } if
@@ -566,7 +570,8 @@ end
       [ 5 index aload pop WhitePoint 2 get /mul .systemvar ] cvx bind
     ] def pop
     /PDFColorSpace exch def [ /CIEBasedABC currentdict end ]
-  }
+  } bdef
+
   /ICCBased {
     dup 1 get type /dicttype ne {	% don't resolve more than once
     PDFfile fileposition exch
@@ -583,14 +588,16 @@ end
     { pop }			% remove colorspace dictionary
     ifelse
     } if
-  } bind
+  } bdef
+
   /Separation {
     aload pop exch oforce resolvecolorspace
                 % Contrary to PDF manuals up to v.1.5, Acrobat Distiller 3.01
                 % can use /Identity name here instead of a function.
     exch oforce resolveidfnproc
     4 array astore
-  }
+  } bdef
+
   /DeviceN {
     [ exch aload pop ]			% Copy into a new array
     dup dup 1 oget			% Resolve Names array
@@ -616,7 +623,8 @@ end
  	} if
       4 exch put			% Put resolved or new attributes dict
     } if
-  }
+  } bdef
+
   /Indexed {
     aload pop 3 -1 roll oforce resolvecolorspace
 		% Stack: /Indexed hival lookup basespace
@@ -666,7 +674,15 @@ end
 	} if
       } if
     } if pop
-  }
+  } bdef
+
+  /I { % Bug 689815
+    (   **** Warning: The name /Indexed cannot be abbreviated to /I in the color space\n)
+    pdfformaterror
+    dup 0 /Indexed put
+    //Indexed exec 
+  } bdef
+
   /Pattern {
     dup type /nametype ne {
       dup length 1 gt {
@@ -674,8 +690,9 @@ end
 	/Pattern exch 2 array astore
       } if
     } if
-  }
-.dicttomark readonly def
+  } bdef
+
+currentdict end readonly def
 
 /cssubst {		% <csname> cssubst <cspace'> true
 			% <csname> cssubst false
