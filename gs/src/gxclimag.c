@@ -139,6 +139,8 @@ clist_fill_mask(gx_device * dev,
 	    goto error_in_rect;
 	do {
 	    code = cmd_put_drawing_color(cdev, re.pcls, pdcolor);
+	    if (code == gs_error_unregistered)
+		return code;
 	    if (depth > 1 && code >= 0)
 			code = cmd_set_color1(cdev, re.pcls, pdcolor->colors.pure);
 	} while (RECT_RECOVER(code));

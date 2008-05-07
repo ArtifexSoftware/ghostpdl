@@ -678,6 +678,8 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 		)
 		return code;
 	    code = cmd_put_drawing_color(cdev, re.pcls, pdcolor);
+	    if (code == gs_error_unregistered)
+		return code;
 	    if (code < 0) {
 		/* Something went wrong, use the default implementation. */
 		return gx_default_fill_path(dev, pis, ppath, params, pdcolor,
@@ -815,6 +817,8 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	    )
 	    return code;
 	code = cmd_put_drawing_color(cdev, re.pcls, pdcolor);
+	    if (code == gs_error_unregistered)
+		return code;
 	if (code < 0) {
 	    /* Something went wrong, use the default implementation. */
 	    return gx_default_stroke_path(dev, pis, ppath, params, pdcolor,

@@ -323,6 +323,8 @@ clist_write_fill_trapezoid(gx_device * dev,
 	do {
 	    if (pdcolor != NULL) {
 		code = cmd_put_drawing_color(cdev, re.pcls, pdcolor);
+		if (code == gs_error_unregistered)
+		    return code;
 		if (code < 0) {
 		    /* Something went wrong, use the default implementation. */
 		    return gx_default_fill_trapezoid(dev, left, right, ybot, ytop, swap_axes, pdcolor, lop);

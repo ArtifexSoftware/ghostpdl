@@ -399,6 +399,8 @@ drop_compositor_queue(gs_composite_t **ppcomp_first, gs_composite_t **ppcomp_las
 	int code;
 
 	pcomp = *ppcomp_last;
+	if (pcomp == NULL)
+	    return 0;
 	dequeue_compositor(ppcomp_first, ppcomp_last, *ppcomp_last);
 	code = pcomp->type->procs.adjust_ctm(pcomp, x0, y0, pis);
 	if (code < 0)
