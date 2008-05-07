@@ -1167,9 +1167,16 @@ gx_pattern_cache_lookup(gx_device_color * pdevc, const gs_imager_state * pis,
 
 	    if (pdevc->type == &gx_dc_pattern) {	/* colored */
 		pdevc->colors.pattern.p_tile = ctile;
+#	    if 0 /* Debugged with Bug688308.ps and applying patterns after clist.
+		    Bug688308.ps has a step_matrix much bigger than pattern bbox;
+		    rep_width, rep_height can't be used as mod. 
+		    Would like to use step_matrix instead. */
 		color_set_phase_mod(pdevc, px, py,
 				    ctile->tbits.rep_width,
 				    ctile->tbits.rep_height);
+#		else
+		color_set_phase(pdevc, -px, -py);
+#		endif
 	    }
 	    pdevc->mask.m_tile =
 		(ctile->tmask.data == 0 ? (gx_color_tile *) 0 :
