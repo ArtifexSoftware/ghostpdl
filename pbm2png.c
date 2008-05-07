@@ -13,7 +13,7 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-    $Id: pbm2png.c,v 1.3 2002/07/08 14:54:02 giles Exp $
+    $Id$
 */
 
 #ifdef HAVE_CONFIG_H

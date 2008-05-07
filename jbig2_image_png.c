@@ -13,7 +13,7 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-    $Id: jbig2_image_png.c,v 1.9 2002/08/07 12:50:33 giles Exp $
+    $Id$
 */
 
 #ifdef HAVE_CONFIG_H
