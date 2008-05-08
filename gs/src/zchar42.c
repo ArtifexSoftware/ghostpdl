@@ -234,8 +234,8 @@ type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
 
 	    name_string_ref(imemory, op - 1, &gref);
 
-	    if ((gref.tas.rsize == 7 && strncmp(gref.value.const_bytes, ".notdef", 7) == 0) || 
-		(gref.tas.rsize > 9 && strncmp(gref.value.const_bytes, ".notdef~GS", 10) == 0)) {
+	    if ((gref.tas.rsize == 7 && strncmp((const char *)gref.value.const_bytes, ".notdef", 7) == 0) || 
+		(gref.tas.rsize > 9 && strncmp((const char *)gref.value.const_bytes, ".notdef~GS", 10) == 0)) {
 		pop((psbpt == 0 ? 4 : 6));
 		return (*cont)(igs);
 	    }
