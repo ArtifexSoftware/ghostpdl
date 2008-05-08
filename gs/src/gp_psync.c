@@ -127,20 +127,31 @@ gp_semaphore_signal(gp_semaphore * sema)
 
 /* Monitor supports enter/leave semantics */
 
+/*
+ * We need PTHREAD_MUTEX_RECURSIVE behavior, but this isn't totally portable
+ * so we implement it in a more portable fashion, keeping track of the
+ * owner thread using 'pthread_self()'
+ */
+typedef struct gp_pthread_recursive_s {
+    pthread_mutex_t mutex;	/* actual mutex */
+    pthread_t	self_id;	/* owner */
+} gp_pthread_recursive_t;
+
 uint
 gp_monitor_sizeof(void)
 {
-    return sizeof(pthread_mutex_t);
+    return sizeof(gp_pthread_recursive_t);
 }
 
 int
 gp_monitor_open(gp_monitor * mona)
 {
-    pthread_mutex_t * const mon = (pthread_mutex_t *)mona;
+    pthread_mutex_t * const mon = &((gp_pthread_recursive_t *)mona)->mutex;
     int scode;
 
     if (!mona)
 	return -1;		/* monitors are not movable */
+    ((gp_pthread_recursive_t *)mona)->self_id = 0;	/* Not valid unless mutex is locked */
     scode = pthread_mutex_init(mon, NULL);
     return SEM_ERROR_CODE(scode);
 }
@@ -148,7 +159,7 @@ gp_monitor_open(gp_monitor * mona)
 int
 gp_monitor_close(gp_monitor * mona)
 {
-    pthread_mutex_t * const mon = (pthread_mutex_t *)mona;
+    pthread_mutex_t * const mon = &((gp_pthread_recursive_t *)mona)->mutex;
     int scode;
 
     scode = pthread_mutex_destroy(mon);
@@ -161,8 +172,19 @@ gp_monitor_enter(gp_monitor * mona)
     pthread_mutex_t * const mon = (pthread_mutex_t *)mona;
     int scode;
 
-    scode = pthread_mutex_lock(mon);
-    return SEM_ERROR_CODE(scode);
+    if ((scode = pthread_mutex_trylock(mon)) == 0) {
+	((gp_pthread_recursive_t *)mona)->self_id = pthread_self();
+	return SEM_ERROR_CODE(scode);
+    } else {
+	if (pthread_equal(pthread_self(),((gp_pthread_recursive_t *)mona)->self_id))
+	    return 0;
+	else {
+	    /* we were not the owner, wait */
+	    scode = pthread_mutex_lock(mon);
+	    ((gp_pthread_recursive_t *)mona)->self_id = pthread_self();
+	    return SEM_ERROR_CODE(scode);
+	}
+    }
 }
 
 int
@@ -172,6 +194,7 @@ gp_monitor_leave(gp_monitor * mona)
     int scode;
 
     scode = pthread_mutex_unlock(mon);
+    ((gp_pthread_recursive_t *)mona)->self_id = 0;	/* Not valid unless mutex is locked */
     return SEM_ERROR_CODE(scode);
 }
 
