@@ -33,6 +33,7 @@
 #include "igstate.h"
 #include "iname.h"
 #include "store.h"
+#include "string_.h"
 #include "zchar42.h"
 
 /* Get a Type 42 character metrics and set the cache device. */
