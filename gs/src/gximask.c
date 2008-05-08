@@ -16,6 +16,7 @@
 #include "gx.h"
 #include "memory_.h"
 #include "gserrors.h"
+#include "gsptype1.h"
 #include "gsptype2.h"
 #include "gxdevice.h"
 #include "gxdcolor.h"

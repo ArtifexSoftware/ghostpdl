@@ -341,9 +341,8 @@ void *gp_enumerate_fonts_init(gs_memory_t *mem)
 int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
 {
 #ifdef HAVE_FONTCONFIG
-    char* psname = NULL;
-
     unix_fontenum_t* state = (unix_fontenum_t *)enum_state;
+
     if (state == NULL) {
 	return 0;   /* gp_enumerate_fonts_init failed for some reason */
     }
@@ -393,8 +392,8 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
     /* Gross hack to work around Fontconfig's inability to tell
      * us the font's PostScript name - generate it ourselves.
      * We must free the memory allocated here next time around. */
-    makePSFontName((char *)family_fc, weight_fc, slant_fc, &state->name, sizeof(state->name));
-    *fontname = &state->name;
+    makePSFontName((char *)family_fc, weight_fc, slant_fc, (char *)&state->name, sizeof(state->name));
+    *fontname = (char *)&state->name;
 
     /* return the font path straight out of fontconfig */
     *path = (char*)file_fc;
