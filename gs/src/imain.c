@@ -115,7 +115,7 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
 #   else
        /* plmain settings remain in effect */
 #   endif
-    gp_get_usertime(minst->base_time);
+    gp_get_realtime(minst->base_time);
 
     /* Initialize the file search paths. */
     paths = (ref *) gs_alloc_byte_array(minst->heap, max_lib_paths, sizeof(ref),
@@ -854,7 +854,7 @@ print_resource_usage(const gs_main_instance * minst, gs_dual_memory_t * dmem,
     ulong allocated = 0, used = 0;
     long utime[2];
 
-    gp_get_usertime(utime);
+    gp_get_realtime(utime);
     {
 	int i;
 
