@@ -36,6 +36,7 @@
 #include "gxdhtres.h"
 #include "gxgetbit.h"
 #include "gxpaint.h"		/* for gx_fill/stroke_params */
+#include "gxpcolor.h"
 #include "gxhttile.h"
 #include "gxiparam.h"
 #include "gximask.h"
@@ -525,7 +526,9 @@ clist_playback_band(clist_playback_action playback_action,
     gx_device_clip clipper_dev;
     bool clipper_dev_open;
     patch_fill_state_t pfs;
+#ifdef DEBUG
     stream_state *st = s->state; /* Save because s_close resets s->state. */
+#endif
     gs_composite_t *pcomp_first = NULL, *pcomp_last = NULL;
 
     cbuf.data = (byte *)cbuf_storage;
@@ -2171,7 +2174,9 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
 
 	if (cleft < bytes && !pcb->end_status) {
 	    uint nread = cbuf_size - cleft;
+#   ifdef DEBUG
 	    stream_state *st = pcb->s->state;
+#   endif
 
 #	    ifdef DEBUG
 	    {
