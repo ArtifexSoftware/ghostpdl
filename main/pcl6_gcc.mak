@@ -225,7 +225,7 @@ FEATURE_DEVS?=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 	     $(DD)lzwd.dev
 
 # cygwin does not have threads at this time, so we don't include the
-# thread library or asyncronous devices.
+# thread library
 ifeq ($(CYGWIN), TRUE)
 SYNC=
 CFLAGS+=-DHAVE_STDINT_H
@@ -238,7 +238,7 @@ else
 SYNC=posync
 # some systems may need -ldl as well as pthread
 STDLIBS=-lm -lpthread -ldl
-DEVICE_DEVS=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11mono.dev $(DD)x11cmyk.dev $(DEVICES_DEVS) $(DD)bmpamono.dev $(DD)bmpa16m.dev
+DEVICE_DEVS=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11mono.dev $(DD)x11cmyk.dev $(DEVICES_DEVS)
 endif
 
 #miscellaneous
