@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (C) 2002-2005 Artifex Software, Inc.
+    Copyright (C) 2002-2008 Artifex Software, Inc.
     
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
@@ -147,7 +147,11 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	      /* todo: memory cleanup */
 	      return -1;
 	    }
-	    len = symcodelengths[index-1].PREFLEN;
+	    if (code == 32) {
+	      len = symcodelengths[index-1].PREFLEN;
+	    } else {
+	      len = 0; /* code == 33 or 34 */
+	    }
 	    if (code == 32) range = jbig2_huffman_get_bits(hs, 2) + 3;
 	    else if (code == 33) range = jbig2_huffman_get_bits(hs, 3) + 3;
 	    else if (code == 34) range = jbig2_huffman_get_bits(hs, 7) + 11;
