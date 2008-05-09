@@ -91,7 +91,7 @@ jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
       jbig2_image_set_pixel(image, x, y, bit);
     }
   }
-#ifdef JBIG2_DEBUG_REFINEMENT
+#ifdef JBIG2_DEBUG
   {
     static count = 0;
     char name[32];
@@ -265,10 +265,6 @@ jbig2_decode_refinement_region(Jbig2Ctx *ctx,
 			    Jbig2ArithCx *GR_stats)
 {
   {
-    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-      "decoding generic refinement region with offset %d,%x,\n"
-      "  GRTEMPLATE=%d, TPGRON=%d\n",
-      params->DX, params->DY, params->GRTEMPLATE, params->TPGRON);
     jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
       "decoding generic refinement region with offset %d,%x,\n"
       "  GRTEMPLATE=%d, TPGRON=%d, RA1=(%d,%d) RA2=(%d,%d)\n",
