@@ -283,7 +283,6 @@ top_up_offset_map(stream_state * st, const byte *buf, const byte *ptr, const byt
 
 /* Forward references */
 
-static int clist_render_init(gx_device_clist *);
 static int clist_rasterize_lines(gx_device *dev, int y, int lineCount,
 				  gx_device *bdev,
 				  const gx_render_plane_t *render_plane,
@@ -299,7 +298,7 @@ clist_plane_raster(const gx_device *dev, const gx_render_plane_t *render_plane)
 }
 
 /* Select full-pixel rendering if required for RasterOp. */
-static void
+void
 clist_select_render_plane(gx_device *dev, int y, int height,
 			  gx_render_plane_t *render_plane, int index)
 {
@@ -342,7 +341,7 @@ clist_setup_params(gx_device *dev)
     return code;
 }
 
-static int 
+int 
 clist_close_writer_and_init_reader(gx_device_clist *cldev)
 {
     gx_device_clist_reader * const crdev = &cldev->reader;
@@ -360,7 +359,7 @@ clist_close_writer_and_init_reader(gx_device_clist *cldev)
 }
 
 /* Initialize for reading. */
-static int
+int
 clist_render_init(gx_device_clist *dev)
 {
     gx_device_clist_reader * const crdev = &dev->reader;

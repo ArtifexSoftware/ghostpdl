@@ -49,7 +49,7 @@ typedef struct RAW_BUFFER {
 typedef struct PHYS_MEMFILE_BLK {
     struct PHYS_MEMFILE_BLK *link;
     char *data_limit;		/* end of data when compressed  */
-    /* NULL if not compressed       */
+    			/* data_limit is NULL if not compressed */
     char data_spare[4];		/* used during de-compress      */
     char data[MEMFILE_DATA_SIZE];
 } PHYS_MEMFILE_BLK;
@@ -65,6 +65,21 @@ struct MEMFILE_s {
     gs_memory_t *memory;	/* storage allocator */
     gs_memory_t *data_memory;	/* storage allocator for data */
     bool ok_to_compress;	/* if true, OK to compress this file */
+ 	/*
+	 * We need to maintain a linked list of other structs that
+	 * have beed opened on this 'file'. This allows for a writer
+	 * to create a file, close it (but not unlink it), then other
+	 * 'opens' of the same file, using the pseudo file-name that
+	 * consists of a flag 0xff byte followed by the address as
+	 * a 0x____ string. 
+	 * 
+	 * When the file is 'unlinked' it must check for other open
+	 * 'readers' and set the 'READER INSTANCE' values of the
+	 * cloned structures so that calls into 'read' and 'seek'
+	 * etc., will be harmless.
+	 */
+    struct MEMFILE_s *openlist;	
+    struct MEMFILE_s *base_memfile;	/* reader instances set this to the file that was written */
 	/*
 	 * Reserve memory blocks: these are used to guarantee that a
 	 * given-sized write (or sequence of writes) will always succeed.
@@ -87,21 +102,21 @@ struct MEMFILE_s {
     int reserveLogBlockCount; 	/* count of entries on reserveLogBlockChain */
     /* logical file properties */
     LOG_MEMFILE_BLK *log_head;
-    LOG_MEMFILE_BLK *log_curr_blk;
+    LOG_MEMFILE_BLK *log_curr_blk;					/******* READER INSTANCE *******/
     int64_t log_length;		/* updated during write             */
-    int64_t log_curr_pos;	/* updated during seek, close, read */
-    char *pdata;		/* raw data */
-    char *pdata_end;
+    int64_t log_curr_pos;	/* updated during seek, close, read */	/******* READER INSTANCE *******/
+    char *pdata;		/* raw data */				/******* READER INSTANCE *******/
+    char *pdata_end;							/******* READER INSTANCE *******/
     /* physical file properties */
     int64_t total_space;	/* so we know when to start compress */
-    PHYS_MEMFILE_BLK *phys_curr;	/* NULL if not compressing      */
-    RAW_BUFFER *raw_head, *raw_tail;
-    int error_code;		/* used by CLIST_ferror         */
-    stream_cursor_read rd;	/* use .ptr, .limit */
-    stream_cursor_write wt;	/* use .ptr, .limit */
+    PHYS_MEMFILE_BLK *phys_curr;	/* NULL if not compressing */	/******* READER INSTANCE *******/
+    RAW_BUFFER *raw_head, *raw_tail				;	/******* READER INSTANCE *******/
+    int error_code;		/* used by CLIST_ferror         */	/******* READER INSTANCE *******/
+    stream_cursor_read rd;	/* use .ptr, .limit */			/******* READER INSTANCE *******/
+    stream_cursor_write wt;	/* use .ptr, .limit */			/******* READER INSTANCE *******/
     bool compressor_initialized;
     stream_state *compress_state;
-    stream_state *decompress_state;
+    stream_state *decompress_state;					/******* READER INSTANCE *******/
 };
 #ifndef MEMFILE_DEFINED
 #define MEMFILE_DEFINED

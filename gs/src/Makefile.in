@@ -304,10 +304,7 @@ EXTRALIBS=@LIBS@ @DYNAMIC_LIBS@ @FONTCONFIG_LIBS@
 # All reasonable platforms require -lm, but Rhapsody and perhaps one or
 # two others fold libm into libc and don't require any additional library.
 
-#STDLIBS=-lpthread -lm
-
-# Since the default build is for nosync, don't include pthread lib
-STDLIBS=-lm
+STDLIBS=@PTHREAD_LIBS@ -lm
 
 # Define the include switch(es) for the X11 header files.
 # This can be null if handled in some other way (e.g., the files are
@@ -339,11 +336,10 @@ XLIBS=@X_LIBS@
 # primitives for this platform.
 
 # If POSIX sync primitives are used, also change the STDLIBS to include
-# the pthread library.
+# the pthread library. Otherwise use SYNC=nosync
 #SYNC=posync
-
-# Default is No sync primitives since some platforms don't have it (HP-UX)
-SYNC=nosync
+#SYNC=nosync
+SYNC=@SYNC@
 
 # programs we use
 RM=rm -f

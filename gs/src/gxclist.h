@@ -213,6 +213,7 @@ struct clist_writer_cropping_buffer_s {
 		clist_writer_cropping_buffer_t, "clist_writer_transparency_buffer",\
 		clist_writer_cropping_buffer_enum_ptrs, clist_writer_cropping_buffer_reloc_ptrs, next)
 
+
 /* Define the state of a band list when writing. */
 typedef struct clist_color_space_s {
     byte byte1;			/* see cmd_opv_set_color_space in gxclpath.h */
@@ -287,6 +288,11 @@ typedef struct gx_device_clist_writer_s gx_device_clist_writer;
 #define clist_disable_pass_thru_params (1 << 5)	/* disable EXCEPT at top of page */
 #define clist_disable_copy_alpha (1 << 6) /* target does not support copy_alpha */
 
+#ifndef clist_render_thread_control_t_DEFINED
+#  define clist_render_thread_control_t_DEFINED
+typedef struct clist_render_thread_control_s clist_render_thread_control_t;
+#endif
+
 /* Define the state of a band list when reading. */
 /* For normal rasterizing, pages and num_pages are both 0. */
 typedef struct gx_device_clist_reader_s {
@@ -297,6 +303,11 @@ typedef struct gx_device_clist_reader_s {
     int num_pages;
     gx_band_complexity_t *band_complexity_array;  /* num_bands elements */
     void *offset_map; /* Just against collecting the map as garbage. */
+    int num_render_threads;		/* number of threads being used */
+    clist_render_thread_control_t *render_threads;	/* array of threads */
+    byte *main_thread_data;		/* saved data pointer of main thread */
+    int curr_render_thread;		/* index into array */
+    int thread_lookahead_direction;	/* +1 or -1 */
 } gx_device_clist_reader;
 
 union gx_device_clist_s {
@@ -413,6 +424,26 @@ int clist_data_size(const gx_device_clist *cdev, int select);
 int clist_get_data(const gx_device_clist *cdev, int select, int offset, byte *buf, int length);
 /* Put command list data. */
 int clist_put_data(const gx_device_clist *cdev, int select, int offset, const byte *buf, int length);
+
+/* Exports from gxclread used by the multi-threading logic */
+
+/* Initialize for reading. */
+int clist_render_init(gx_device_clist *dev);
+
+int 
+clist_close_writer_and_init_reader(gx_device_clist *cldev);
+
+void
+clist_select_render_plane(gx_device *dev, int y, int height,
+			  gx_render_plane_t *render_plane, int index);
+
+/* Enable multi threaded rendering. Returns > 0 if supported, < 0 if single threaded */
+int
+clist_enable_multi_thread_render(gx_device *dev);
+
+/* Shutdown render threads and free up the related memory */
+void
+clist_teardown_render_threads(gx_device *dev);
 
 #ifdef DEBUG 
 #define clist_debug_rect clist_debug_rect_imp

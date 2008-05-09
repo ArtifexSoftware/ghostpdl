@@ -358,6 +358,11 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 
 	    if ( code >= 0 || (reallocate && pass > 1) )
 		ppdev->procs = gs_clist_device_procs;
+	    /* 
+	     * Now the device is a clist device, we enable multi-threaded rendering.
+	     * It will remain enabled, but that doesn't really cause any problems.
+	     */
+	    clist_enable_multi_thread_render(pdev);
 	} else {
 	    /* Render entirely in memory. */
 	    gx_device *bdev = (gx_device *)pmemdev;
@@ -497,6 +502,7 @@ gdev_prn_get_params(gx_device * pdev, gs_param_list * plist)
 	(code = param_write_int(plist, "BandWidth", &ppdev->space_params.band.BandWidth)) < 0 ||
 	(code = param_write_int(plist, "BandHeight", &ppdev->space_params.band.BandHeight)) < 0 ||
 	(code = param_write_long(plist, "BandBufferSpace", &ppdev->space_params.band.BandBufferSpace)) < 0 ||
+	(code = param_write_int(plist, "NumRenderingThreads", &ppdev->num_render_threads_requested)) < 0 ||
 	(code = param_write_bool(plist, "OpenOutputFile", &ppdev->OpenOutputFile)) < 0 ||
 	(code = param_write_bool(plist, "ReopenPerPage", &ppdev->ReopenPerPage)) < 0 ||
 	(code = param_write_bool(plist, "PageUsesTransparency",
@@ -542,6 +548,7 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
     int duplex_set = -1;
     int width = pdev->width;
     int height = pdev->height;
+    int nthreads = ppdev->num_render_threads_requested;
     gdev_prn_space_params sp, save_sp;
     gs_param_string ofs;
     gs_param_dict mdict;
@@ -665,6 +672,16 @@ label:\
     read_media("InputAttributes");
     read_media("OutputAttributes");
 
+    switch (code = param_read_int(plist, (param_name = "NumRenderingThreads"), &nthreads)) {
+	case 0:
+	    break;
+	default:
+	    ecode = code;
+	    param_signal_error(plist, param_name, ecode);
+	case 1:
+	    ;
+    }
+
     if (ecode < 0)
 	return ecode;
     /* Prevent gx_default_put_params from closing the printer. */
@@ -682,6 +699,7 @@ label:\
 	ppdev->Duplex_set = duplex_set;
     }
     ppdev->space_params = sp;
+    ppdev->num_render_threads_requested = nthreads;
 
     /* If necessary, free and reallocate the printer memory. */
     /* Formerly, would not reallocate if device is not open: */

@@ -118,6 +118,7 @@ gserrors_h=$(GLSRC)gserrors.h
 gsexit_h=$(GLSRC)gsexit.h
 gsgc_h=$(GLSRC)gsgc.h
 gsmalloc_h=$(GLSRC)gsmalloc.h
+gsmchunk_h=$(GLSRC)gsmchunk.h
 gsmdebug_h=$(GLSRC)gsmdebug.h
 gsmemraw_h=$(GLSRC)gsmemraw.h
 gsmemory_h=$(GLSRC)gsmemory.h $(gsmemraw_h) $(gstypes_h) $(gslibctx_h)
@@ -129,6 +130,7 @@ gsstype_h=$(GLSRC)gsstype.h
 gx_h=$(GLSRC)gx.h $(stdio__h) $(gdebug_h)\
  $(gserror_h) $(gsio_h) $(gsmemory_h) $(gstypes_h)
 gxsync_h=$(GLSRC)gxsync.h $(gpsync_h) $(gsmemory_h)
+gxclthrd_h=$(GLSRC)gxclthrd.h $(GLSRC)gxsync.h $(gpsync_h) $(gsmemory_h)
 # Out of order
 gsmemlok_h=$(GLSRC)gsmemlok.h $(gsmemory_h) $(gxsync_h)
 gsnotify_h=$(GLSRC)gsnotify.h $(gsstype_h)
@@ -174,7 +176,7 @@ $(GLOBJ)gsalloc.$(OBJ) : $(GLSRC)gsalloc.c $(GXERR) $(memory__h) $(string__h)\
 $(GLOBJ)gsmalloc.$(OBJ) : $(GLSRC)gsmalloc.c $(malloc__h)\
  $(gdebug_h)\
  $(gserror_h) $(gserrors_h)\
- $(gsmalloc_h) $(gsmdebug_h) $(gsmemlok_h) $(gsmemret_h)\
+ $(gsmalloc_h) $(gsmdebug_h) $(gsmemret_h) $(gxsync_h)\
  $(gsmemory_h) $(gsstruct_h) $(gstypes_h)
 	$(GLCC) $(GLO_)gsmalloc.$(OBJ) $(C_) $(GLSRC)gsmalloc.c
 
@@ -222,9 +224,6 @@ $(GLOBJ)gsflip.$(OBJ) : $(GLSRC)gsflip.c $(GXERR)\
 # These are required in the standard configuration, because gsmalloc.c
 # needs them even if the underlying primitives are dummies.
 
-$(GLOBJ)gsmemlok.$(OBJ) : $(GLSRC)gsmemlok.c $(GXERR) $(gsmemlok_h)
-	$(GLCC) $(GLO_)gsmemlok.$(OBJ) $(C_) $(GLSRC)gsmemlok.c
-
 $(GLOBJ)gxsync.$(OBJ) : $(GLSRC)gxsync.c $(GXERR) $(memory__h)\
  $(gsmemory_h) $(gxsync_h)
 	$(GLCC) $(GLO_)gxsync.$(OBJ) $(C_) $(GLSRC)gxsync.c
@@ -253,7 +252,7 @@ $(GLOBJ)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(GXERR)\
 $(GLOBJ)gslibctx.$(OBJ) : $(GLSRC)gslibctx.c  $(GXERR)\
   $(gslibctx_h) $(stdio__h)
 	$(GLCC) $(GLO_)gslibctx.$(OBJ) $(C_) $(GLSRC)gslibctx.c
-  
+
 $(GLOBJ)gsnotify.$(OBJ) : $(GLSRC)gsnotify.c $(GXERR)\
  $(gsnotify_h) $(gsstruct_h)
 	$(GLCC) $(GLO_)gsnotify.$(OBJ) $(C_) $(GLSRC)gsnotify.c
@@ -664,8 +663,8 @@ $(GLOBJ)gximono.$(OBJ) : $(GLSRC)gximono.c $(GXERR) $(memory__h) $(gpcheck_h)\
 	$(GLCC) $(GLO_)gximono.$(OBJ) $(C_) $(GLSRC)gximono.c
 
 $(GLOBJ)gximask.$(OBJ) : $(GLSRC)gximask.c $(GXERR) $(memory__h) $(gserrors_h)\
- $(gsptype2_h) $(gxdevice_h) $(gxdcolor_h) $(gxcpath_h) $(gximask_h) $(gzacpath_h)\
- $(gzcpath_h)
+ $(gsptype1_h) $(gsptype2_h) $(gxdevice_h) $(gxdcolor_h) $(gxcpath_h) $(gximask_h)\
+  $(gzacpath_h) $(gzcpath_h)
 	$(GLCC) $(GLO_)gximask.$(OBJ) $(C_) $(GLSRC)gximask.c
 
 $(GLOBJ)gxipixel.$(OBJ) : $(GLSRC)gxipixel.c $(GXERR) $(math__h) $(memory__h)\
@@ -1094,7 +1093,7 @@ LIB6s=$(GLOBJ)gsfname.$(OBJ) $(GLOBJ)gsfont.$(OBJ) $(GLOBJ)gsgdata.$(OBJ) $(GLOB
 LIB7s=$(GLOBJ)gsht.$(OBJ) $(GLOBJ)gshtscr.$(OBJ) $(GLOBJ)gswts.$(OBJ)
 LIB8s=$(GLOBJ)gsimage.$(OBJ) $(GLOBJ)gsimpath.$(OBJ) $(GLOBJ)gsinit.$(OBJ)
 LIB9s=$(GLOBJ)gsiodev.$(OBJ) $(GLOBJ)gsistate.$(OBJ) $(GLOBJ)gsline.$(OBJ)
-LIB10s=$(GLOBJ)gsmalloc.$(OBJ) $(GLOBJ)gsmatrix.$(OBJ) $(GLOBJ)gsmemlok.$(OBJ)
+LIB10s=$(GLOBJ)gsmalloc.$(OBJ) $(GLOBJ)gsmatrix.$(OBJ)
 LIB11s=$(GLOBJ)gsmemory.$(OBJ) $(GLOBJ)gsmemret.$(OBJ) $(GLOBJ)gsmisc.$(OBJ) $(GLOBJ)gsnotify.$(OBJ) $(GLOBJ)gslibctx.$(OBJ) 
 LIB12s=$(GLOBJ)gspaint.$(OBJ) $(GLOBJ)gsparam.$(OBJ) $(GLOBJ)gspath.$(OBJ)
 LIB13s=$(GLOBJ)gsserial.$(OBJ) $(GLOBJ)gsstate.$(OBJ) $(GLOBJ)gstext.$(OBJ)\
@@ -1642,7 +1641,8 @@ clbase3_=$(GLOBJ)gxclutil.$(OBJ) $(GLOBJ)gsparams.$(OBJ) $(GLOBJ)gxshade6.$(OBJ)
 # gxclrect.c requires rop_proc_table, so we need gsroptab here.
 clbase4_=$(GLOBJ)gsroptab.$(OBJ) $(GLOBJ)stream.$(OBJ)
 clpath_=$(GLOBJ)gxclimag.$(OBJ) $(GLOBJ)gxclpath.$(OBJ) $(GLOBJ)gxdhtserial.$(OBJ)
-clist_=$(clbase1_) $(clbase2_) $(clbase3_) $(clbase4_) $(clpath_)
+clthread_=$(GLOBJ)gxclthrd.$(OBJ) $(GLOBJ)gsmchunk.$(OBJ)
+clist_=$(clbase1_) $(clbase2_) $(clbase3_) $(clbase4_) $(clpath_) $(clthread_)
 
 # The old code selected one of clmemory, clfile depending on BAND_LIST_STORAGE.
 # Now we meed clmemory to be included permanently for large patterns,
@@ -1650,16 +1650,16 @@ clist_=$(clbase1_) $(clbase2_) $(clbase3_) $(clbase4_) $(clpath_)
 # clfile works for page clist iff it is included.
 
 $(GLD)clist.dev : $(LIB_MAK) $(ECHOGS_XE) $(clist_)\
- $(GLD)cl$(BAND_LIST_STORAGE).dev\
- $(GLD)clmemory.dev\
+ $(GLD)cl$(BAND_LIST_STORAGE).dev $(GLD)clmemory.dev $(GLD)$(SYNC).dev\
  $(GLD)cfe.dev $(GLD)cfd.dev $(GLD)rle.dev $(GLD)rld.dev $(GLD)psl2cs.dev
 	$(SETMOD) $(GLD)clist $(clbase1_)
 	$(ADDMOD) $(GLD)clist -obj $(clbase2_)
 	$(ADDMOD) $(GLD)clist -obj $(clbase3_)
 	$(ADDMOD) $(GLD)clist -obj $(clbase4_)
 	$(ADDMOD) $(GLD)clist -obj $(clpath_)
+	$(ADDMOD) $(GLD)clist -obj $(clthread_)
 	$(ADDMOD) $(GLD)clist -include $(GLD)cl$(BAND_LIST_STORAGE)
-	$(ADDMOD) $(GLD)clist -include $(GLD)clmemory
+	$(ADDMOD) $(GLD)clist -include $(GLD)clmemory $(GLD)$(SYNC).dev
 	$(ADDMOD) $(GLD)clist -include $(GLD)cfe $(GLD)cfd $(GLD)rle $(GLD)rld $(GLD)psl2cs
 
 $(GLOBJ)gxclist.$(OBJ) : $(GLSRC)gxclist.c $(GXERR) $(memory__h) $(string__h)\
@@ -1678,7 +1678,7 @@ $(GLOBJ)gxclpage.$(OBJ) : $(GLSRC)gxclpage.c $(AK)\
 $(GLOBJ)gxclrast.$(OBJ) : $(GLSRC)gxclrast.c $(GXERR)\
  $(memory__h) $(gp_h) $(gpcheck_h)\
  $(gscdefs_h) $(gsbitops_h) $(gsparams_h) $(gsstate_h)\
- $(gxdcolor_h) $(gxdevice_h)\
+ $(gxdcolor_h) $(gxpcolor_h) $(gxdevice_h)\
  $(gsdevice_h) $(gsiparm4_h)\
  $(gxdevmem_h) $(gxcldev_h) $(gxclpath_h) $(gxcmap_h)\
  $(gxcolor2_h) $(gxcspace_h) $(gxdhtres_h) $(gxgetbit_h)\
@@ -1763,6 +1763,16 @@ $(GLOBJ)gxcllzw.$(OBJ) : $(GLSRC)gxcllzw.c $(std_h)\
 $(GLOBJ)gxclzlib.$(OBJ) : $(GLSRC)gxclzlib.c $(std_h)\
  $(gsmemory_h) $(gstypes_h) $(gxclmem_h) $(szlibx_h)
 	$(GLCC) $(GLO_)gxclzlib.$(OBJ) $(C_) $(GLSRC)gxclzlib.c
+
+# Support for multi-threaded rendering from the clist. The chunk memory wrapper
+# is used to prevent mutex (locking) contention among threads. The underlying
+# memory allocator must implement the mutex (non-gc memory is usually gsmalloc)
+$(GLOBJ)gxclthrd.$(OBJ) :  $(GLSRC)gxclthrd.c $(gxclist_h) $(gxsync_h) $(gxclthrd_h)
+	$(GLCC) $(GLO_)gxclthrd.$(OBJ) $(C_) $(GLSRC)gxclthrd.c
+
+$(GLOBJ)gsmchunk.$(OBJ) :  $(GLSRC)gsmchunk.c $(gx_h) $(gsstype_h) $(gserrors_h)\
+ $(gsmchunk_h) $(memory__h)
+	$(GLCC) $(GLO_)gsmchunk.$(OBJ) $(C_) $(GLSRC)gsmchunk.c
 
 # ---------------- Vector devices ---------------- #
 # We include this here for the same reasons as page.dev.
@@ -1906,6 +1916,9 @@ $(GLOBJ)gdevprna.$(OBJ) : $(GLSRC)gdevprna.c $(AK)\
 $(GLOBJ)gxpageq.$(OBJ) : $(GLSRC)gxpageq.c $(GXERR)\
  $(gsstruct_h) $(gxdevice_h) $(gxclist_h) $(gxpageq_h)
 	$(GLCC) $(GLO_)gxpageq.$(OBJ) $(C_) $(GLSRC)gxpageq.c
+
+$(GLOBJ)gsmemlok.$(OBJ) : $(GLSRC)gsmemlok.c $(GXERR) $(gsmemlok_h)
+	$(GLCC) $(GLO_)gsmemlok.$(OBJ) $(C_) $(GLSRC)gsmemlok.c
 
 # ---------------- TrueType and PostScript Type 42 fonts ---------------- #
 
@@ -2692,31 +2705,31 @@ $(GLOBJ)gsiomacres.$(OBJ) : $(GLSRC)gsiomacres.c \
 	$(GLCC) $(GLO_)gsiomacres.$(OBJ) $(C_) $(GLSRC)gsiomacres.c
 
 # ---------------- Font API ---------------- #   
-    
+
 # UFST bridge support :   
 # This stuff dispatches UFST callbacks for a multilianual (PS, PCL) architecture.
-    
+
 UFST_INC_1=$(I_)$(UFST_ROOT)$(D)sys$(D)inc$(_I) $(I_)$(UFST_ROOT)$(D)rts$(D)inc$(_I)  $(I_)$(UFST_ROOT)$(D)rts$(D)tt$(_I)   
 UFST_INC_=$(UFST_INC_1) $(I_)$(UFST_ROOT)$(D)rts$(D)fco$(_I) $(I_)$(UFST_ROOT)$(D)rts$(D)gray$(_I)   
-    
+
 gxfapiu_h=$(GLSRC)gxfapiu.h $(GLSRC)gp.h
-    
+
 $(GLD)gxfapiu1.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLOBJ)gxfapiu.$(OBJ)   
 	$(SETMOD) $(GLD)gxfapiu1 $(GLOBJ)gxfapiu.$(OBJ)   
-    
+
 $(GLOBJ)gxfapiu.$(OBJ) : $(GLSRC)gxfapiu.c\
  $(gx_h) $(gxfapiu_h)\
  $(UFST_ROOT)$(D)rts$(D)inc$(D)cgconfig.h\
  $(UFST_ROOT)$(D)rts$(D)inc$(D)shareinc.h\
  $(UFST_ROOT)$(D)sys$(D)inc$(D)ufstport.h
 	$(GLCC) $(UFST_CFLAGS) $(UFST_INC_) $(GLO_)gxfapiu.$(OBJ) $(C_) $(GLSRC)gxfapiu.c
-    
-    
+
+
 # stub for UFST bridge support  :   
-    
+
 $(GLD)gxfapiu.dev : $(LIB_MAK) $(ECHOGS_XE)   
 	$(SETMOD) $(GLD)gxfapiu   
-  
+
 # ================ Platform-specific modules ================ #
 # Platform-specific code doesn't really belong here: this is code that is
 # shared among multiple platforms.

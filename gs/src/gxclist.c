@@ -668,9 +668,12 @@ clist_finish_page(gx_device *dev, bool flush)
 
     /* If this is a reader clist, which is about to be reset to a writer,
      * free any band_complexity_array memory used by same.
+     * since we have been rendering, shut down threads
      */
-    if (!CLIST_IS_WRITER((gx_device_clist *)dev))
-       	gx_clist_reader_free_band_complexity_array( (gx_device_clist *)dev );
+    if (!CLIST_IS_WRITER((gx_device_clist *)dev)) {
+	gx_clist_reader_free_band_complexity_array( (gx_device_clist *)dev );
+	clist_teardown_render_threads(dev);
+    }
 
     if (flush) {
 	if (cdev->page_cfile != 0)
@@ -1007,7 +1010,6 @@ clist_put_data(const gx_device_clist *cdev, int select, int offset, const byte *
 {
     const gx_band_page_info_t *pinfo = &cdev->common.page_info;
     clist_file_ptr pfile = (!select ? pinfo->bfile : pinfo->cfile);
-    const char *fname = (!select ? pinfo->bfname : pinfo->cfname);
     int code;
 
     code = pinfo->io_procs->ftell(pfile);
