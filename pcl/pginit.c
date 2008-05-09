@@ -122,6 +122,7 @@ hpgl_do_reset(
              * be maintained locally in gl/2's state machinery
              */
 	    gs_setlimitclamp(pcs->pgs, true);
+	    gs_setcurvejoin(pcs->pgs, gs_join_bevel);
 	} else
             gx_path_new(&pcs->g.polygon.buffer.path);
 
