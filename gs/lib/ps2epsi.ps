@@ -160,7 +160,9 @@ ps2edict begin
 	  dup rm gt
           % If the new index is greater, we save index and element
           { /rm exch def } { pop } ifelse
-	} if
+	} {
+          pop
+        } ifelse
       } for
 
      % Calculate the bounding box values.
