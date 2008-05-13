@@ -603,7 +603,7 @@ svg_curveto(gx_device_vector *vdev, floatp x0, floatp y0,
     dprintf8("svg_curveto(%lf,%lf, %lf,%lf, %lf,%lf, %lf,%lf)\n",
 	x0,y0, x1,y1, x2,y2, x3,y3);
 
-    sprintf(line, " C%lf,%lf %lf,%lf %lf,%lf", x1,y2, x2,y2, x3,y3);
+    sprintf(line, " C%lf,%lf %lf,%lf %lf,%lf", x1,y1, x2,y2, x3,y3);
     svg_write(svg, line);
 
     return 0;
