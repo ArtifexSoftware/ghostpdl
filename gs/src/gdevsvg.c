@@ -44,6 +44,7 @@ typedef struct gx_device_svg_s {
     /* local state*/
     int header;
     int mark;
+    int page_count;
     char *strokecolor, *fillcolor;
 } gx_device_svg;
 
@@ -220,8 +221,9 @@ svg_open_device(gx_device *dev)
     if (code < 0) return code;
 
     /* svg-specific initialization goes here */
-    svg->header = 0; /* file header hasn't been written */
-    svg->mark = 0;
+    svg->header = 0;	/* file header hasn't been written */
+    svg->mark = 0;	/* have we drawn something? */
+    svg->page_count = 0;/* how many output_page calls we've seen */
     svg->strokecolor = NULL; 
     svg->fillcolor = NULL;
 
@@ -234,8 +236,9 @@ svg_output_page(gx_device *dev, int num_copies, int flush)
 {
     gx_device_svg *const svg = (gx_device_svg*)dev;
 
+    svg->page_count++;
+    
     svg_write(svg, "\n<!-- svg_output_page -->\n");
-
     if (ferror(svg->file)) return_error(gs_error_ioerror);
 
     return gx_finish_output_page(dev, num_copies, flush);
@@ -393,7 +396,7 @@ svg_beginpage(gx_device_vector *vdev)
 
     svg_write_header(svg);
 
-    dprintf("svg_beginpage\n");
+    dprintf1("svg_beginpage (page count %d)\n", svg->page_count);
     return 0;
 }
 
@@ -528,6 +531,8 @@ svg_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
     gx_device_svg *svg = (gx_device_svg *)vdev;
     char line[300];
 
+    if (svg->page_count) return 0; /* hack single-page output */
+    
     dprintf1("svg_dorect (type %d)\n", type);
 #if 0 /* dorect seems to be a duplicate? */
     sprintf(line, "<rect x='%lf' y='%lf' width='%lf' height='%lf'/>\n",
@@ -543,6 +548,8 @@ svg_beginpath(gx_device_vector *vdev, gx_path_type_t type)
 {
     gx_device_svg *svg = (gx_device_svg *)vdev;
 
+    if (svg->page_count) return 0; /* hack single-page output */
+    
     dprintf("svg_beginpath\n");
     svg_write(svg, "<path d='");
 
@@ -556,6 +563,8 @@ svg_moveto(gx_device_vector *vdev, floatp x0, floatp y0,
     gx_device_svg *svg = (gx_device_svg *)vdev;
     char line[100];
 
+    if (svg->page_count) return 0; /* hack single-page output */
+    
     dprintf4("svg_moveto(%lf,%lf,%lf,%lf)\n", x0, y0, x, y);
 
     sprintf(line, " M%lf,%lf", x, y);
@@ -571,6 +580,8 @@ svg_lineto(gx_device_vector *vdev, floatp x0, floatp y0,
     gx_device_svg *svg = (gx_device_svg *)vdev;
     char line[100];
 
+    if (svg->page_count) return 0; /* hack single-page output */
+    
     dprintf4("svg_lineto(%lf,%lf,%lf,%lf)\n", x0,y0, x,y);
 
     sprintf(line, " L%lf,%lf", x, y);
@@ -587,6 +598,8 @@ svg_curveto(gx_device_vector *vdev, floatp x0, floatp y0,
     gx_device_svg *svg = (gx_device_svg *)vdev;
     char line[100];
 
+    if (svg->page_count) return 0; /* hack single-page output */
+    
     dprintf8("svg_curveto(%lf,%lf, %lf,%lf, %lf,%lf, %lf,%lf)\n",
 	x0,y0, x1,y1, x2,y2, x3,y3);
 
@@ -602,6 +615,8 @@ svg_closepath(gx_device_vector *vdev, floatp x, floatp y,
 {
     gx_device_svg *svg = (gx_device_svg *)vdev;
 
+    if (svg->page_count) return 0; /* hack single-page output */
+    
     dprintf("svg_closepath\n");
 
     svg_write(svg, " z");
@@ -614,6 +629,8 @@ svg_endpath(gx_device_vector *vdev, gx_path_type_t type)
 {
     gx_device_svg *svg = (gx_device_svg *)vdev;
 
+    if (svg->page_count) return 0; /* hack single-page output */
+    
     dprintf("svg_endpath\n");
 
     svg_write(svg, "'/>\n");
