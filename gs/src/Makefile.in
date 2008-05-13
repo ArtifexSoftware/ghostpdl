@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2007 Artifex Software, Inc.
+#  Copyright (C) 2001-2006 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -435,7 +435,7 @@ DEVICE_DEVS4=@IJSDEVS@
 DEVICE_DEVS5=@OMNIDEVS@
 DEVICE_DEVS6=@PNGDEVS@
 DEVICE_DEVS7=@JBIG2DEVS@
-DEVICE_DEVS8=
+DEVICE_DEVS8=$(DD)svg.dev
 DEVICE_DEVS9=
 DEVICE_DEVS10=
 DEVICE_DEVS11=

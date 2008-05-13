@@ -1096,6 +1096,16 @@ $(GLOBJ)gdevpx.$(OBJ) : $(GLSRC)gdevpx.c\
  $(srlx_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gdevpx.$(OBJ) $(C_) $(GLSRC)gdevpx.c
 
+# Scalable Vector Graphics (SVG) output device
+
+svg_=$(GLOBJ)gdevsvg.$(OBJ)
+$(DD)svg.dev : $(DEVS_MAK) $(svg_) $(GDEV) $(GLD)vector.dev
+	$(SETDEV2) $(DD)svg $(svg_)
+	$(ADDMOD) $(DD)svg -include $(GLD)vector
+
+$(GLOBJ)gdevsvg.$(OBJ) : $(GLSRC)gdevsvg.c $(gx_h) $(gdevvec_h)
+	$(GLCC) $(GLO_)gdevsvg.$(OBJ) $(C_) $(GLSRC)gdevsvg.c
+
 ###### --------------------- Raster file formats --------------------- ######
 
 ### --------------------- The "plain bits" devices ---------------------- ###
