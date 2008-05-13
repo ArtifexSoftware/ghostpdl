@@ -298,18 +298,17 @@ hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
 	int count;
 	int i;
 
-	/* Make sure we always draw dots. */
-	hpgl_call(gs_setdotlength(pgls->pgs, 0.00098, true));
-
 	/* handle the simple case (no dash) and return */
 	if ( pgls->g.line.current.is_solid )
 	  {
 	    /* use a 0 count pattern to turn off dashing in case it is
-               set */
+               set, and allow drawing dots */
 	    hpgl_call(gs_setdash(pgls->pgs, pattern, 0, 0));
+	    hpgl_call(gs_setdotlength(pgls->pgs, 0.00098, true));
 	    return 0;
 	  }
-	
+
+	hpgl_call(gs_setdotlength(pgls->pgs, 0.0, false));
 	if ( entry == 0 )
 	  {
 	    /* dot length NOTE this is in absolute 1/72" units not
@@ -1372,6 +1371,8 @@ hpgl_add_bezier_to_path(hpgl_state_t *pgls, floatp x1, floatp y1,
     if ( ( !pgls->g.polygon_mode ) || 
 	 ( !ppath->current_subpath ) )
 	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1,
+					 draw ?
+					 hpgl_plot_draw_absolute :
 					 hpgl_plot_move_absolute, true));
     if ( draw )
 	hpgl_call(gs_curveto(pgls->pgs, x2, y2, x3, y3, x4, y4));
