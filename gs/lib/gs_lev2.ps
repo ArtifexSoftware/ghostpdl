@@ -883,9 +883,10 @@ def
   % this about the contents of Implementation:  "The type and value of this
   % entry are implementation-dependent."  The CET (page 2 of 18-02f) expects
   % that this entry be an array and that the second element of the array be a
-  % gstate.  We put our pattern instance struct into the first element of the
+  % gstate. We put our pattern instance struct into the first element of the
   % array.
-  1 index /Implementation 3 -1 roll gstate 2 array astore
+  1 index /Implementation 3 -1 roll
+  .getCPSImode { gstate } { //null } ifelse 2 array astore
   put				% put Implementation into the pattern dict.
 		% Stack: proto matrix global newdict
   readonly exch .setglobal exch pop exch pop

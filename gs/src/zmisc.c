@@ -383,6 +383,17 @@ zsetCPSImode(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* - .getCPSImode <bool> */
+static int
+zgetCPSImode(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    push(1);
+    make_bool(op, CPSI_mode);
+    return 0;
+}
+
 /* ------ gs persistent cache operators ------ */
 /* these are for testing only. they're disabled in the normal build
  * to prevent access to the cache by malicious postscript files
@@ -473,6 +484,7 @@ const op_def zmisc_op_defs[] =
     {"1.setoserrno", zsetoserrno},
     {"0usertime", zusertime},
     {"1.setCPSImode", zsetCPSImode},
+    {"0.getCPSImode", zgetCPSImode},
 #ifdef DEBUG_CACHE
 	/* pcache test */
     {"2.pcacheinsert", zpcacheinsert},
