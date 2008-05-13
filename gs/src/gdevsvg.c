@@ -43,6 +43,8 @@ typedef struct gx_device_svg_s {
     gx_device_vector_common;
     /* local state*/
     int header;
+    int mark;
+    char *strokecolor, *fillcolor;
 } gx_device_svg;
 
 #define svg_device_body(dname, depth)\
@@ -219,6 +221,9 @@ svg_open_device(gx_device *dev)
 
     /* svg-specific initialization goes here */
     svg->header = 0; /* file header hasn't been written */
+    svg->mark = 0;
+    svg->strokecolor = NULL; 
+    svg->fillcolor = NULL;
 
     return code;
 }
@@ -243,8 +248,19 @@ svg_close_device(gx_device *dev)
     gx_device_svg *const svg = (gx_device_svg*)dev;
 
     svg_write(svg, "\n<!-- svg_close_device -->\n");
+    if (svg->mark) {
+      svg_write(svg, "</g>\n");
+      svg->mark = 0;
+    }
+    if (svg->fillcolor) gs_free_string(svg->memory, svg->fillcolor, 8,
+	"svg_close_device");
+    if (svg->strokecolor) gs_free_string(svg->memory, svg->strokecolor, 8,
+	"svg_close_device");
     svg_write(svg, "</g>\n");
-    svg_write(svg, "</svg>\n");
+    if (svg->header) {
+      svg_write(svg, "</svg>\n");
+      svg->header = 0;
+    }
 
     if (ferror(svg->file)) return_error(gs_error_ioerror);
 
@@ -289,9 +305,11 @@ svg_put_params(gx_device *dev, gs_param_list *plist)
 static int
 svg_write_bytes(gx_device_svg *svg, const char *string, uint length)
 {
+    /* calling the accessor ensures beginpage is called */
+    stream *s = gdev_vector_stream((gx_device_vector*)svg);
     uint used;
 
-    sputs(svg->strm, (const byte *)string, length, &used);
+    sputs(s, (const byte *)string, length, &used);
 
     return !(length == used);
 }
@@ -306,6 +324,11 @@ svg_write(gx_device_svg *svg, const char *string)
 static int
 svg_write_header(gx_device_svg *svg)
 {
+    /* we're called from beginpage, so we can't use 
+       svg_write() which calls gdev_vector_stream()
+       which calls beginpage! */
+    stream *s = svg->strm;
+    uint used;
     char line[300];
 
     dprintf("svg_write_header\n");
@@ -315,19 +338,49 @@ svg_write_header(gx_device_svg *svg)
 
     /* write the initial boilerplate */
     sprintf(line, "%s\n", XML_DECL);
-    svg_write(svg, line);
+    /* svg_write(svg, line); */
+    sputs(s, line, strlen(line), &used);
     sprintf(line, "%s\n", SVG_DOCTYPE);
-    svg_write(svg, line);
+    /* svg_write(svg, line); */
+    sputs(s, line, strlen(line), &used);
     sprintf(line, "<svg xmlns='%s' version='%s'>\n",
 	SVG_XMLNS, SVG_VERSION);
-    svg_write(svg, line);
+    /* svg_write(svg, line); */
+    sputs(s, line, strlen(line), &used);
 
-    svg_write(svg, "<g transform=scale(0.1,0.1)>\n");
+    /* svg_write(svg, "<g transform='scale(0.3,0.3)'>\n"); */
+    /* svg_write(svg, line); */
+    sprintf(line, "<g transform='scale(0.3,0.3)'>\n");
+    sputs(s, line, strlen(line), &used);
 
     /* mark that we've been called */
     svg->header = 1;
 
     return 0;
+}
+
+static const char *
+svg_make_color(gx_device_svg *svg, gx_drawing_color *pdc)
+{
+    char *paint = gs_alloc_string(svg->memory, 8, "svg_make_color");
+
+    if (!paint) {
+      gs_note_error(gs_error_VMerror);
+      return NULL;
+    }
+
+    if (gx_dc_is_pure(pdc)) {
+      gx_color_index color = gx_dc_pure_color(pdc);
+      sprintf(paint, "#%06x", color & 0xffffff);
+    } else if (gx_dc_is_null(pdc)) {
+      sprintf(paint, "None");
+    } else {
+      gs_free_string(svg->memory, paint, 8, "svg_make_color");
+      gs_note_error(gs_error_rangecheck);
+      return NULL;
+    }
+
+    return paint;
 }
 
 /* vector device implementation */
@@ -398,7 +451,34 @@ static int
 svg_setfillcolor(gx_device_vector *vdev, const gs_imager_state *pis,
 		 const gx_drawing_color *pdc)
 {
+    gx_device_svg *svg = (gx_device_svg*)vdev;
+    char *fill;
+
     dprintf("svg_setfillcolor\n");
+
+    fill = svg_make_color(svg, pdc);
+    if (!fill) return 1;
+    if (svg->fillcolor && !strcmp(fill, svg->fillcolor)) 
+      return 0; /* not a new color */
+
+    /* update and write a new group */
+    if (svg->fillcolor) gs_free_string(svg->memory, svg->fillcolor, 8, 
+	"svg_setfillcolor");
+    svg->fillcolor = fill;
+    if (svg->mark) {
+      svg_write(svg, "</g>\n");
+    }
+    svg_write(svg, "<g fill='");
+    svg_write(svg, fill);
+    svg_write(svg, "'");
+    if (svg->strokecolor) {
+      svg_write(svg, " stroke='");
+      svg_write(svg, svg->strokecolor);
+      svg_write(svg, "'");
+    }
+    svg_write(svg, ">\n");
+    svg->mark = 1;
+
     return 0;
 }
 
@@ -406,7 +486,35 @@ static int
 svg_setstrokecolor(gx_device_vector *vdev, const gs_imager_state *pis,
 		   const gx_drawing_color *pdc)
 {
+    gx_device_svg *svg = (gx_device_svg*)vdev;
+    char *stroke;
+
     dprintf("svg_setstrokecolor\n");
+
+    stroke = svg_make_color(svg, pdc);
+    if (!stroke) return 1;
+    if (svg->strokecolor && !strcmp(stroke, svg->strokecolor)) 
+      return 0; /* not a new color */
+
+    /* update and write a new group */
+    if (svg->strokecolor) gs_free_string(svg->memory, svg->strokecolor, 8,
+	"svg_setstrokecolor");
+    svg->strokecolor = stroke;
+    if (svg->mark) {
+      svg_write(svg, "</g>\n");
+    }
+    svg_write(svg, "<g ");
+    if (svg->fillcolor) {
+      svg_write(svg, " fill='");
+      svg_write(svg, svg->fillcolor);
+      svg_write(svg, "'");
+    }
+    svg_write(svg, " stroke='");
+    svg_write(svg, stroke);
+    svg_write(svg, "'");
+    svg_write(svg, ">\n");
+    svg->mark = 1;
+
     return 0;
 }
 
@@ -420,12 +528,13 @@ svg_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
     gx_device_svg *svg = (gx_device_svg *)vdev;
     char line[300];
 
-    dprintf("svg_dorect\n");
-        
-    sprintf(line, "<rect x='%ld' y='%ld' width='%ld' height='%ld'/>\n",
-	x0, y0, x1 - x0, y1 - y0);
+    dprintf1("svg_dorect (type %d)\n", type);
+#if 0 /* dorect seems to be a duplicate? */
+    sprintf(line, "<rect x='%lf' y='%lf' width='%lf' height='%lf'/>\n",
+	fixed2float(x0), fixed2float(y0),
+	fixed2float(x1 - x0), fixed2float(y1 - y0));
     svg_write(svg, line);
-    
+#endif    
     return 0;
 }
 
