@@ -30,6 +30,8 @@
 #include "gdevpxen.h"
 #include "gdevpxop.h"
 #include "gdevpxut.h"
+#include "gxlum.h"
+
 
 /* ---------------- Device definition ---------------- */
 
@@ -785,9 +787,11 @@ pclxl_beginpage(gx_device_vector * vdev)
 
     xdev->page ++;
 
+/*
     errprintf("PAGE: %d %d\n", xdev->page, xdev->NumCopies);
     errprintf("INFO: Printing page %d...\n", xdev->page);
     errflush();
+*/
 
     px_write_page_header(s, (const gx_device *)vdev);
 
@@ -1395,7 +1399,7 @@ pclxl_strip_copy_rop(gx_device * dev, const byte * sdata, int sourcex,
 
 /* ------ High-level images ------ */
 
-#define MAX_ROW_DATA 4000	/* arbitrary */
+#define MAX_ROW_DATA 500000	/* arbitrary */
 typedef struct pclxl_image_enum_s {
     gdev_vector_image_enum_common;
     gs_matrix mat;
@@ -1449,7 +1453,7 @@ pclxl_begin_image(gx_device * dev,
 	 (!gx_dc_is_pure(pdcolor) || pim->CombineWithColor) :
 	 (!pclxl_can_handle_color_space(pim->ColorSpace) ||
 	  (bits_per_pixel != 1 && bits_per_pixel != 4 &&
-	   bits_per_pixel != 8))) ||
+	   bits_per_pixel != 8 && bits_per_pixel !=24))) ||
 	format != gs_image_format_chunky ||
 	prect
 	)
@@ -1498,6 +1502,22 @@ pclxl_begin_image(gx_device * dev,
 		goto fail;
 	    pclxl_set_color_palette(xdev, eGray, palette, 2);
 	} else {
+            if (bits_per_pixel == 24 ) {
+                stream *s = pclxl_stream(xdev);
+                if (dev->color_info.num_components == 1) {
+                    pclxl_set_color_space(xdev, eGray);
+                    px_put_uba(s, (byte) 0x00, pxaGrayLevel);
+                } else {
+                    pclxl_set_color_space(xdev, eRGB);
+                    spputc(s, pxt_ubyte_array);
+                    px_put_ub(s, 3);
+                    spputc(s, (byte) 0x00);
+                    spputc(s, (byte) 0x00);
+                    spputc(s, (byte) 0x00);
+                    px_put_a(s, pxaRGBColor);
+                }
+                spputc(s, (byte) pxtSetBrushSource);
+            } else {
 	    int bpc = pim->BitsPerComponent;
 	    int num_components = pie->plane_depths[0] * pie->num_planes / bpc;
 	    int sample_max = (1 << bpc) - 1;
@@ -1540,6 +1560,7 @@ pclxl_begin_image(gx_device * dev,
 	    else
 		pclxl_set_color_palette(xdev, eRGB, palette,
 					3 << bits_per_pixel);
+            }
 	}
     }
     return 0;
@@ -1568,6 +1589,7 @@ image_transform_y(const pclxl_image_enum_t *pie, int sy)
     return (int)((pie->mat.ty + sy * pie->mat.yy + 0.5) /
 		 ((const gx_device_pclxl *)pie->dev)->scale.y);
 }
+
 static int
 pclxl_image_write_rows(pclxl_image_enum_t *pie)
 {
@@ -1579,19 +1601,47 @@ pclxl_image_write_rows(pclxl_image_enum_t *pie)
     int yo = image_transform_y(pie, y);
     int dw = image_transform_x(pie, pie->width) - xo;
     int dh = image_transform_y(pie, y + h) - yo;
-    static const byte ii_[] = {
-	DA(pxaColorDepth),
-	DUB(eIndexedPixel), DA(pxaColorMapping)
-    };
+    int rows_raster=pie->rows.raster;
 
     if (dw <= 0 || dh <= 0)
 	return 0;
     pclxl_set_cursor(xdev, xo, yo);
-    px_put_ub(s, eBit_values[pie->bits_per_pixel]);
-    PX_PUT_LIT(s, ii_);
+    if (pie->bits_per_pixel==24) {
+	static const byte ci_[] = {
+	    DA(pxaColorDepth),
+	    DUB(eDirectPixel), DA(pxaColorMapping)
+	};
+
+	px_put_ub(s, eBit_values[8]);
+	PX_PUT_LIT(s, ci_);
+        if (xdev->color_info.depth==8) {
+          byte *in=pie->rows.data;
+          byte *out=pie->rows.data;
+          int i;
+          int j;
+          rows_raster/=3;
+          for (j=0;  j<h;  j++) {
+            for (i=0;  i<rows_raster;  i++) {
+              *out = (byte)( ((*(in+0) * (ulong) lum_red_weight) + 
+                              (*(in+1) * (ulong) lum_green_weight) + 
+                              (*(in+3) * (ulong) lum_blue_weight) + 
+                              (lum_all_weights / 2)) / lum_all_weights);
+              in+=3;
+              out++;
+            }
+          }
+        }
+    } else {
+        static const byte ii_[] = {
+	    DA(pxaColorDepth),
+	    DUB(eIndexedPixel), DA(pxaColorMapping)
+        };
+        px_put_ub(s, eBit_values[pie->bits_per_pixel]);
+        PX_PUT_LIT(s, ii_);
+    }
     pclxl_write_begin_image(xdev, pie->width, h, dw, dh);
-    pclxl_write_image_data(xdev, pie->rows.data, 0, pie->rows.raster,
-			   pie->rows.raster << 3, 0, h);
+    pclxl_write_image_data(xdev, pie->rows.data, 0, rows_raster,
+			   rows_raster << 3, 0, h);
     pclxl_write_end_image(xdev);
     return 0;
 }
