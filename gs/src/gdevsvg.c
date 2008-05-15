@@ -346,14 +346,19 @@ svg_write_header(gx_device_svg *svg)
     sprintf(line, "%s\n", SVG_DOCTYPE);
     /* svg_write(svg, line); */
     sputs(s, line, strlen(line), &used);
-    sprintf(line, "<svg xmlns='%s' version='%s'>\n",
+    sprintf(line, "<svg xmlns='%s' version='%s'",
 	SVG_XMLNS, SVG_VERSION);
     /* svg_write(svg, line); */
     sputs(s, line, strlen(line), &used);
-
-    /* svg_write(svg, "<g transform='scale(0.3,0.3)'>\n"); */
+    sprintf(line, " width='%dpt' height='%dpt'>\n",
+	(int)svg->MediaSize[0], (int)svg->MediaSize[1]);
+    sputs(s, line, strlen(line), &used);
+    
+    /* Scale drawing so our coordinates are in pixels */
+    sprintf(line, "<g transform='scale(%lf,%lf)'>\n",
+    	72.0 / svg->HWResolution[0],
+    	72.0 / svg->HWResolution[1]);
     /* svg_write(svg, line); */
-    sprintf(line, "<g transform='scale(0.3,0.3)'>\n");
     sputs(s, line, strlen(line), &used);
 
     /* mark that we've been called */
