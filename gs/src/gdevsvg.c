@@ -41,7 +41,7 @@
 typedef struct gx_device_svg_s {
     /* superclass state */
     gx_device_vector_common;
-    /* local state*/
+    /* local state */
     int header;
     int mark;
     int page_count;
@@ -436,7 +436,7 @@ static int
 svg_setlogop(gx_device_vector *vdev, gs_logical_operation_t lop,
 	     gs_logical_operation_t diff)
 {
-    dprintf("svg_setlogop\n");
+    dprintf("svg_setlogop (set logical operation)\n");
     return 0;
 }
 
@@ -460,7 +460,7 @@ svg_setfillcolor(gx_device_vector *vdev, const gs_imager_state *pis,
     dprintf("svg_setfillcolor\n");
 
     fill = svg_make_color(svg, pdc);
-    if (!fill) return 1;
+    if (!fill) return gs_error_VMerror;
     if (svg->fillcolor && !strcmp(fill, svg->fillcolor)) 
       return 0; /* not a new color */
 
@@ -497,7 +497,7 @@ svg_setstrokecolor(gx_device_vector *vdev, const gs_imager_state *pis,
     dprintf("svg_setstrokecolor\n");
 
     stroke = svg_make_color(svg, pdc);
-    if (!stroke) return 1;
+    if (!stroke) return gs_error_VMerror;
     if (svg->strokecolor && !strcmp(stroke, svg->strokecolor)) 
       return 0; /* not a new color */
 
