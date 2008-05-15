@@ -478,6 +478,8 @@ svg_setfillcolor(gx_device_vector *vdev, const gs_imager_state *pis,
       svg_write(svg, " stroke='");
       svg_write(svg, svg->strokecolor);
       svg_write(svg, "'");
+    } else {
+      svg_write(svg, " stroke='none'");
     }
     svg_write(svg, ">\n");
     svg->mark = 1;
@@ -511,6 +513,8 @@ svg_setstrokecolor(gx_device_vector *vdev, const gs_imager_state *pis,
       svg_write(svg, " fill='");
       svg_write(svg, svg->fillcolor);
       svg_write(svg, "'");
+    } else {
+      svg_write(svg, " fill='none'");
     }
     svg_write(svg, " stroke='");
     svg_write(svg, stroke);
