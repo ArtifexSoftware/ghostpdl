@@ -35,7 +35,7 @@
   /* no uint64_t */
 
 #if defined(_MSC_VER)
-	#if _MSC_VER < 9  /* Visual Studio 2008 has definition for vsnprintf */
+	#if _MSC_VER < 1500  /* Visual Studio 2008 has definition for vsnprintf */
 		#define vsnprintf _vsnprintf
 	#endif
 #endif
