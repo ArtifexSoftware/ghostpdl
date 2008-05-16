@@ -543,12 +543,20 @@ svg_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
     if (svg->page_count) return 0; /* hack single-page output */
     
     dprintf1("svg_dorect (type %d)\n", type);
-#if 0 /* dorect seems to be a duplicate? */
+
+    if (type & gx_path_type_clip) {
+	svg_write(svg, "<clipPath>\n");
+    }
+
     sprintf(line, "<rect x='%lf' y='%lf' width='%lf' height='%lf'/>\n",
 	fixed2float(x0), fixed2float(y0),
 	fixed2float(x1 - x0), fixed2float(y1 - y0));
     svg_write(svg, line);
-#endif    
+
+    if (type & gx_path_type_clip) {
+	svg_write(svg, "</clipPath>\n");
+    }
+
     return 0;
 }
 
@@ -558,6 +566,8 @@ svg_beginpath(gx_device_vector *vdev, gx_path_type_t type)
     gx_device_svg *svg = (gx_device_svg *)vdev;
 
     if (svg->page_count) return 0; /* hack single-page output */
+    if (!(type & gx_path_type_fill) && !(type & gx_path_type_stroke))
+	return 0; /* skip non-drawing paths for now */
     
     dprintf("svg_beginpath\n");
     svg_write(svg, "<path d='");
@@ -573,6 +583,8 @@ svg_moveto(gx_device_vector *vdev, floatp x0, floatp y0,
     char line[100];
 
     if (svg->page_count) return 0; /* hack single-page output */
+    if (!(type & gx_path_type_fill) && !(type & gx_path_type_stroke))
+	return 0; /* skip non-drawing paths for now */
     
     dprintf4("svg_moveto(%lf,%lf,%lf,%lf)\n", x0, y0, x, y);
 
@@ -590,6 +602,8 @@ svg_lineto(gx_device_vector *vdev, floatp x0, floatp y0,
     char line[100];
 
     if (svg->page_count) return 0; /* hack single-page output */
+    if (!(type & gx_path_type_fill) && !(type & gx_path_type_stroke))
+	return 0; /* skip non-drawing paths for now */
     
     dprintf4("svg_lineto(%lf,%lf,%lf,%lf)\n", x0,y0, x,y);
 
@@ -608,6 +622,8 @@ svg_curveto(gx_device_vector *vdev, floatp x0, floatp y0,
     char line[100];
 
     if (svg->page_count) return 0; /* hack single-page output */
+    if (!(type & gx_path_type_fill) && !(type & gx_path_type_stroke))
+	return 0; /* skip non-drawing paths for now */
     
     dprintf8("svg_curveto(%lf,%lf, %lf,%lf, %lf,%lf, %lf,%lf)\n",
 	x0,y0, x1,y1, x2,y2, x3,y3);
@@ -625,6 +641,8 @@ svg_closepath(gx_device_vector *vdev, floatp x, floatp y,
     gx_device_svg *svg = (gx_device_svg *)vdev;
 
     if (svg->page_count) return 0; /* hack single-page output */
+    if (!(type & gx_path_type_fill) && !(type & gx_path_type_stroke))
+	return 0; /* skip non-drawing paths for now */
     
     dprintf("svg_closepath\n");
 
@@ -639,6 +657,8 @@ svg_endpath(gx_device_vector *vdev, gx_path_type_t type)
     gx_device_svg *svg = (gx_device_svg *)vdev;
 
     if (svg->page_count) return 0; /* hack single-page output */
+    if (!(type & gx_path_type_fill) && !(type & gx_path_type_stroke))
+	return 0; /* skip non-drawing paths for now */
     
     dprintf("svg_endpath\n");
 
