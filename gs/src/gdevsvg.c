@@ -1,4 +1,4 @@
-/* Copyright (C) 2007 Artifex Software, Inc.
+/* Copyright (C) 2007-2008 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -35,6 +35,9 @@
 #ifndef Y_DPI
 #  define Y_DPI 300
 #endif
+
+/* internal line buffer */
+#define SVG_LINESIZE 100
 
 /* ---------------- Device definition ---------------- */
 
@@ -135,7 +138,7 @@ static int
 svg_setlogop(gx_device_vector *vdev, gs_logical_operation_t lop,
 	     gs_logical_operation_t diff);
 
-static int 
+static int
 svg_can_handle_hl_color(gx_device_vector *vdev, const gs_imager_state *pis,
 			const gx_drawing_color * pdc);
 static int
@@ -237,7 +240,7 @@ svg_output_page(gx_device *dev, int num_copies, int flush)
     gx_device_svg *const svg = (gx_device_svg*)dev;
 
     svg->page_count++;
-    
+
     svg_write(svg, "\n<!-- svg_output_page -->\n");
     if (ferror(svg->file)) return_error(gs_error_ioerror);
 
@@ -327,7 +330,7 @@ svg_write(gx_device_svg *svg, const char *string)
 static int
 svg_write_header(gx_device_svg *svg)
 {
-    /* we're called from beginpage, so we can't use 
+    /* we're called from beginpage, so we can't use
        svg_write() which calls gdev_vector_stream()
        which calls beginpage! */
     stream *s = svg->strm;
@@ -350,10 +353,10 @@ svg_write_header(gx_device_svg *svg)
 	SVG_XMLNS, SVG_VERSION);
     /* svg_write(svg, line); */
     sputs(s, line, strlen(line), &used);
-    sprintf(line, " width='%dpt' height='%dpt'>\n",
+    sprintf(line, "\n\twidth='%dpt' height='%dpt'>\n",
 	(int)svg->MediaSize[0], (int)svg->MediaSize[1]);
     sputs(s, line, strlen(line), &used);
-    
+
     /* Scale drawing so our coordinates are in pixels */
     sprintf(line, "<g transform='scale(%lf,%lf)'>\n",
     	72.0 / svg->HWResolution[0],
@@ -441,13 +444,14 @@ static int
 svg_setlogop(gx_device_vector *vdev, gs_logical_operation_t lop,
 	     gs_logical_operation_t diff)
 {
-    dprintf("svg_setlogop (set logical operation)\n");
+    dprintf2("svg_setlogop(%u,%u) set logical operation\n",
+	lop, diff);
     return 0;
 }
 
         /* Other state */
 
-static int 
+static int
 svg_can_handle_hl_color(gx_device_vector *vdev, const gs_imager_state *pis,
 			  const gx_drawing_color * pdc)
 {
@@ -466,11 +470,11 @@ svg_setfillcolor(gx_device_vector *vdev, const gs_imager_state *pis,
 
     fill = svg_make_color(svg, pdc);
     if (!fill) return gs_error_VMerror;
-    if (svg->fillcolor && !strcmp(fill, svg->fillcolor)) 
+    if (svg->fillcolor && !strcmp(fill, svg->fillcolor))
       return 0; /* not a new color */
 
     /* update and write a new group */
-    if (svg->fillcolor) gs_free_string(svg->memory, svg->fillcolor, 8, 
+    if (svg->fillcolor) gs_free_string(svg->memory, svg->fillcolor, 8,
 	"svg_setfillcolor");
     svg->fillcolor = fill;
     if (svg->mark) {
@@ -533,6 +537,19 @@ svg_setstrokecolor(gx_device_vector *vdev, const gs_imager_state *pis,
 	/* Paths */
 /*    gdev_vector_dopath */
 
+static int svg_print_path_type(gx_device_svg *svg, gx_path_type_t type)
+{
+    const char *path_type_names[] = {"winding number", "fill", "stroke",
+    	"fill and stroke", "clip"};
+
+    if (type <= 4)
+	dprintf2("type %d (%s)", type, path_type_names[type]);
+    else
+	dprintf1("type %d", type);
+
+    return 0;
+}
+
 static int
 svg_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
 	   fixed x1, fixed y1, gx_path_type_t type)
@@ -541,17 +558,26 @@ svg_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
     char line[300];
 
     if (svg->page_count) return 0; /* hack single-page output */
-    
-    dprintf1("svg_dorect (type %d)\n", type);
+
+    dprintf("svg_dorect ");
+    svg_print_path_type(svg, type);
+    dprintf("\n");
 
     if (type & gx_path_type_clip) {
 	svg_write(svg, "<clipPath>\n");
     }
 
-    sprintf(line, "<rect x='%lf' y='%lf' width='%lf' height='%lf'/>\n",
+    sprintf(line, "<rect x='%lf' y='%lf' width='%lf' height='%lf'",
 	fixed2float(x0), fixed2float(y0),
 	fixed2float(x1 - x0), fixed2float(y1 - y0));
     svg_write(svg, line);
+    /* override the inherited stroke attribute if we're not stroking */
+    if (!(type & gx_path_type_stroke) && svg->strokecolor)
+	svg_write(svg, " stroke='none'");
+    /* override the inherited fill attribute if we're not filling */
+    if (!(type & gx_path_type_fill) && svg->fillcolor)
+	svg_write(svg, " fill='none'");
+    svg_write(svg, "/>\n");
 
     if (type & gx_path_type_clip) {
 	svg_write(svg, "</clipPath>\n");
@@ -561,15 +587,18 @@ svg_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
 }
 
 static int
-svg_beginpath(gx_device_vector *vdev, gx_path_type_t type)    
+svg_beginpath(gx_device_vector *vdev, gx_path_type_t type)
 {
     gx_device_svg *svg = (gx_device_svg *)vdev;
 
     if (svg->page_count) return 0; /* hack single-page output */
     if (!(type & gx_path_type_fill) && !(type & gx_path_type_stroke))
 	return 0; /* skip non-drawing paths for now */
-    
-    dprintf("svg_beginpath\n");
+
+    dprintf("svg_beginpath ");
+    svg_print_path_type(svg, type);
+    dprintf("\n");
+
     svg_write(svg, "<path d='");
 
     return 0;
@@ -580,13 +609,15 @@ svg_moveto(gx_device_vector *vdev, floatp x0, floatp y0,
 	   floatp x, floatp y, gx_path_type_t type)
 {
     gx_device_svg *svg = (gx_device_svg *)vdev;
-    char line[100];
+    char line[SVG_LINESIZE];
 
     if (svg->page_count) return 0; /* hack single-page output */
     if (!(type & gx_path_type_fill) && !(type & gx_path_type_stroke))
 	return 0; /* skip non-drawing paths for now */
-    
-    dprintf4("svg_moveto(%lf,%lf,%lf,%lf)\n", x0, y0, x, y);
+
+    dprintf4("svg_moveto(%lf,%lf,%lf,%lf) ", x0, y0, x, y);
+    svg_print_path_type(svg, type);
+    dprintf("\n");
 
     sprintf(line, " M%lf,%lf", x, y);
     svg_write(svg, line);
@@ -599,13 +630,15 @@ svg_lineto(gx_device_vector *vdev, floatp x0, floatp y0,
 	   floatp x, floatp y, gx_path_type_t type)
 {
     gx_device_svg *svg = (gx_device_svg *)vdev;
-    char line[100];
+    char line[SVG_LINESIZE];
 
     if (svg->page_count) return 0; /* hack single-page output */
     if (!(type & gx_path_type_fill) && !(type & gx_path_type_stroke))
 	return 0; /* skip non-drawing paths for now */
-    
-    dprintf4("svg_lineto(%lf,%lf,%lf,%lf)\n", x0,y0, x,y);
+
+    dprintf4("svg_lineto(%lf,%lf,%lf,%lf) ", x0,y0, x,y);
+    svg_print_path_type(svg, type);
+    dprintf("\n");
 
     sprintf(line, " L%lf,%lf", x, y);
     svg_write(svg, line);
@@ -619,14 +652,16 @@ svg_curveto(gx_device_vector *vdev, floatp x0, floatp y0,
 	    floatp x3, floatp y3, gx_path_type_t type)
 {
     gx_device_svg *svg = (gx_device_svg *)vdev;
-    char line[100];
+    char line[SVG_LINESIZE];
 
     if (svg->page_count) return 0; /* hack single-page output */
     if (!(type & gx_path_type_fill) && !(type & gx_path_type_stroke))
 	return 0; /* skip non-drawing paths for now */
-    
-    dprintf8("svg_curveto(%lf,%lf, %lf,%lf, %lf,%lf, %lf,%lf)\n",
+
+    dprintf8("svg_curveto(%lf,%lf, %lf,%lf, %lf,%lf, %lf,%lf) ",
 	x0,y0, x1,y1, x2,y2, x3,y3);
+    svg_print_path_type(svg, type);
+    dprintf("\n");
 
     sprintf(line, " C%lf,%lf %lf,%lf %lf,%lf", x1,y1, x2,y2, x3,y3);
     svg_write(svg, line);
@@ -643,8 +678,10 @@ svg_closepath(gx_device_vector *vdev, floatp x, floatp y,
     if (svg->page_count) return 0; /* hack single-page output */
     if (!(type & gx_path_type_fill) && !(type & gx_path_type_stroke))
 	return 0; /* skip non-drawing paths for now */
-    
-    dprintf("svg_closepath\n");
+
+    dprintf("svg_closepath ");
+    svg_print_path_type(svg, type);
+    dprintf("\n");
 
     svg_write(svg, " z");
 
@@ -655,14 +692,29 @@ static int
 svg_endpath(gx_device_vector *vdev, gx_path_type_t type)
 {
     gx_device_svg *svg = (gx_device_svg *)vdev;
+    char line[SVG_LINESIZE];
 
     if (svg->page_count) return 0; /* hack single-page output */
     if (!(type & gx_path_type_fill) && !(type & gx_path_type_stroke))
 	return 0; /* skip non-drawing paths for now */
-    
-    dprintf("svg_endpath\n");
 
-    svg_write(svg, "'/>\n");
+    dprintf("svg_endpath ");
+    svg_print_path_type(svg, type);
+    dprintf("\n");
+
+    /* close the path data attribute */
+    svg_write(svg, "'");
+
+    /* override the inherited stroke attribute if we're not stroking */
+    if (!(type & gx_path_type_stroke) && svg->strokecolor) {
+	svg_write(svg, " stroke='none'");
+    }
+    /* override the inherited fill attribute if we're not filling */
+    if (!(type & gx_path_type_fill) && svg->fillcolor) {
+	svg_write(svg, " fill='none'");
+    }
+
+    svg_write(svg, "/>\n");
 
     return 0;
 }
