@@ -471,9 +471,16 @@ currentdict end readonly def
         (   **** Warning: Ignoring bad ToUnicode CMap.\n)  pdfformaterror
         pop
       } {
-        PDFfile fileposition exch
-        false resolvestream
 
+        /PDFScanRules .getuserparam dup //null eq {
+          pop //PDFScanRules_null
+        } {
+          1 dict dup /PDFScanRules 4 -1 roll put
+        } ifelse
+        //PDFScanRules_true setuserparams
+        PDFfile fileposition 3 -1 roll
+
+        //false resolvestream
         //ToUnicodeCMapReader begin
            % Following Acrobat we ignore everything outside begincmap..endcmap.
            dup 0 (begincmap) /SubFileDecode filter flushfile
@@ -484,6 +491,8 @@ currentdict end readonly def
         end end end
 
         PDFfile exch setfileposition
+        setuserparams
+
         1 index /FontInfo .knownget not {
           1 index /FontInfo 5 dict dup 4 1 roll put
         } if
@@ -495,7 +504,7 @@ currentdict end readonly def
         exch pop exch                        % font-res font-dict g2u encoding|null
         userdict /.lastToUnicode get         % font-res font-dict g2u Encoding|null CMap
         .convert_ToUnicode-into-g2u          % font-res font-dict
-        null                                 % font-res font-dict null
+        //null                               % font-res font-dict null
       } ifelse
     } if
     PDFDEBUG {

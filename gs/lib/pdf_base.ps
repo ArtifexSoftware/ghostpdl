@@ -228,8 +228,6 @@ pdfdict begin
   { store { stop } if } aload pop .packtomark cvx
   /PDFsource 3 -1 roll store exec
 } bind def
-currentdict /PDFScanRules_true undef
-currentdict /PDFScanRules_null undef
 
 % Execute a file, like .pdfrun, for a marking context.
 % This temporarily rebinds LocalResources and DefaultQstate.
