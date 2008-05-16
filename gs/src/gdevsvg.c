@@ -39,6 +39,12 @@
 /* internal line buffer */
 #define SVG_LINESIZE 100
 
+/* default constants */
+#define SVG_DEFAULT_LINEWIDTH	1.0
+#define SVG_DEFAULT_LINECAP	gs_cap_butt
+#define SVG_DEFAULT_LINEJOIN	gs_join_miter
+#define SVG_DEFAULT_MITERLIMIT	4.0
+
 /* ---------------- Device definition ---------------- */
 
 typedef struct gx_device_svg_s {
@@ -51,6 +57,9 @@ typedef struct gx_device_svg_s {
     int page_count;	/* how many output_page calls we've seen */
     char *strokecolor, *fillcolor;
     double linewidth;
+    gs_line_cap linecap;
+    gs_line_join linejoin;
+    double miterlimit;
 } gx_device_svg;
 
 #define svg_device_body(dname, depth)\
@@ -202,7 +211,7 @@ static const gx_device_vector_procs svg_vector_procs = {
 
 /* local utility prototypes */
 
-static int svg_write_bytes(gx_device_svg *svg, 
+static int svg_write_bytes(gx_device_svg *svg,
 		const char *string, uint length);
 static int svg_write(gx_device_svg *svg, const char *string);
 
@@ -232,7 +241,11 @@ svg_open_device(gx_device *dev)
     svg->page_count = 0;
     svg->strokecolor = NULL;
     svg->fillcolor = NULL;
-    svg->linewidth = 1.0;
+    /* these should be the graphics library defaults instead? */
+    svg->linewidth = SVG_DEFAULT_LINEWIDTH;
+    svg->linecap = SVG_DEFAULT_LINECAP;
+    svg->linejoin = SVG_DEFAULT_LINEJOIN;
+    svg->miterlimit = SVG_DEFAULT_MITERLIMIT;
     return code;
 }
 
@@ -430,6 +443,40 @@ svg_write_state(gx_device_svg *svg)
       sprintf(line, " stroke-width='%lf'", svg->linewidth);
       svg_write(svg, line);
     }
+    if (svg->linecap != SVG_DEFAULT_LINECAP) {
+	switch (svg->linecap) {
+	  case gs_cap_round:
+	    svg_write(svg, " stroke-linecap='round'");
+	    break;
+	  case gs_cap_square:
+	    svg_write(svg, " stroke-linecap='square'");
+	    break;
+	  case gs_cap_butt:
+	  default:
+	    /* treat all the other options as the default */
+	    svg_write(svg, " stroke-linecap='butt'");
+	    break;
+	}
+    }
+    if (svg->linejoin != SVG_DEFAULT_LINEJOIN) {
+	switch (svg->linejoin) {
+	  case gs_join_round:
+	    svg_write(svg, " stroke-linejoin='round'");
+	    break;
+	  case gs_join_bevel:
+	    svg_write(svg, " stroke-linejoin='bevel'");
+	    break;
+	  case gs_join_miter:
+	  default:
+	    /* SVG doesn't support any other variants */
+	    svg_write(svg, " stroke-linejoin='miter'");
+	    break;
+	}
+    }
+    if (svg->miterlimit != SVG_DEFAULT_MITERLIMIT) {
+	sprintf(line, " stroke-miterlimit='%lf'", svg->miterlimit);
+	svg_write(svg, line);
+    }
     svg_write(svg, ">\n");
     svg->mark++;
 
@@ -467,13 +514,33 @@ svg_setlinewidth(gx_device_vector *vdev, floatp width)
 static int
 svg_setlinecap(gx_device_vector *vdev, gs_line_cap cap)
 {
-    dprintf("svg_setlinecap\n");
+    gx_device_svg *svg = (gx_device_svg *)vdev;
+    const char *linecap_names[] = {"butt", "round", "square",
+	"triangle", "unknown"};
+
+    if (cap < 0 || cap > gs_cap_unknown)
+	return_error(gs_error_rangecheck);
+    dprintf1("svg_setlinecap(%s)\n", linecap_names[cap]);
+
+    svg->linecap = cap;
+    svg->dirty++;
+
     return 0;
 }
 static int
 svg_setlinejoin(gx_device_vector *vdev, gs_line_join join)
 {
-    dprintf("svg_setlinejoin\n");
+    gx_device_svg *svg = (gx_device_svg *)vdev;
+    const char *linejoin_names[] = {"miter", "round", "bevel",
+	"none", "triangle", "unknown"};
+
+    if (join < 0 || join > gs_join_unknown)
+	return_error(gs_error_rangecheck);
+    dprintf1("svg_setlinejoin(%s)\n", linejoin_names[join]);
+
+    svg->linejoin = join;
+    svg->dirty++;
+
     return 0;
 }
 static int
@@ -495,6 +562,7 @@ svg_setlogop(gx_device_vector *vdev, gs_logical_operation_t lop,
 {
     dprintf2("svg_setlogop(%u,%u) set logical operation\n",
 	lop, diff);
+    /* SVG can fake some simpler modes, but we ignore this for now. */
     return 0;
 }
 
