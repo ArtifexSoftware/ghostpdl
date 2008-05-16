@@ -45,10 +45,12 @@ typedef struct gx_device_svg_s {
     /* superclass state */
     gx_device_vector_common;
     /* local state */
-    int header;
-    int mark;
-    int page_count;
+    int header;		/* whether we've written the file header */
+    int dirty;		/* whether we need to rewrite the <g> element */
+    int mark;		/* <g> nesting level */
+    int page_count;	/* how many output_page calls we've seen */
     char *strokecolor, *fillcolor;
+    double linewidth;
 } gx_device_svg;
 
 #define svg_device_body(dname, depth)\
@@ -224,12 +226,13 @@ svg_open_device(gx_device *dev)
     if (code < 0) return code;
 
     /* svg-specific initialization goes here */
-    svg->header = 0;	/* file header hasn't been written */
-    svg->mark = 0;	/* have we drawn something? */
-    svg->page_count = 0;/* how many output_page calls we've seen */
-    svg->strokecolor = NULL; 
+    svg->header = 0;
+    svg->dirty = 0;
+    svg->mark = 0;
+    svg->page_count = 0;
+    svg->strokecolor = NULL;
     svg->fillcolor = NULL;
-
+    svg->linewidth = 1.0;
     return code;
 }
 
@@ -254,19 +257,20 @@ svg_close_device(gx_device *dev)
     gx_device_svg *const svg = (gx_device_svg*)dev;
 
     svg_write(svg, "\n<!-- svg_close_device -->\n");
-    if (svg->mark) {
+    /* close any open group elements */
+    while (svg->mark > 0) {
       svg_write(svg, "</g>\n");
-      svg->mark = 0;
+      svg->mark--;
     }
-    if (svg->fillcolor) gs_free_string(svg->memory, svg->fillcolor, 8,
-	"svg_close_device");
-    if (svg->strokecolor) gs_free_string(svg->memory, svg->strokecolor, 8,
-	"svg_close_device");
-    svg_write(svg, "</g>\n");
     if (svg->header) {
       svg_write(svg, "</svg>\n");
       svg->header = 0;
     }
+
+    if (svg->fillcolor) gs_free_string(svg->memory, svg->fillcolor, 8,
+	"svg_close_device");
+    if (svg->strokecolor) gs_free_string(svg->memory, svg->strokecolor, 8,
+	"svg_close_device");
 
     if (ferror(svg->file)) return_error(gs_error_ioerror);
 
@@ -363,6 +367,7 @@ svg_write_header(gx_device_svg *svg)
     	72.0 / svg->HWResolution[1]);
     /* svg_write(svg, line); */
     sputs(s, line, strlen(line), &used);
+    svg->mark++;
 
     /* mark that we've been called */
     svg->header = 1;
@@ -394,6 +399,44 @@ svg_make_color(gx_device_svg *svg, gx_drawing_color *pdc)
     return paint;
 }
 
+static int
+svg_write_state(gx_device_svg *svg)
+{
+    char line[SVG_LINESIZE];
+
+    /* has anything changed? */
+    if (!svg->dirty) return 0;
+
+    /* close the current graphics state element, if any */
+    if (svg->mark > 1) {
+      svg_write(svg, "</g>\n");
+      svg->mark--;
+    }
+    /* write out the new current state */
+    svg_write(svg, "<g ");
+    if (svg->strokecolor) {
+        sprintf(line, " stroke='%s'", svg->strokecolor);
+	svg_write(svg, line);
+    } else {
+	svg_write(svg, " stroke='none'");
+    }
+    if (svg->fillcolor) {
+	sprintf(line, " fill='%s'", svg->fillcolor);
+	svg_write(svg, line);
+    } else {
+      svg_write(svg, " fill='none'");
+    }
+    if (svg->linewidth != 1.0) {
+      sprintf(line, " stroke-width='%lf'", svg->linewidth);
+      svg_write(svg, line);
+    }
+    svg_write(svg, ">\n");
+    svg->mark++;
+
+    svg->dirty = 0;
+    return 0;
+}
+
 /* vector device implementation */
 
         /* Page management */
@@ -412,7 +455,13 @@ svg_beginpage(gx_device_vector *vdev)
 static int
 svg_setlinewidth(gx_device_vector *vdev, floatp width)
 {
+    gx_device_svg *svg = (gx_device_svg *)vdev;
+
     dprintf1("svg_setlinewidth(%lf)\n", width);
+
+    svg->linewidth = width;
+    svg->dirty++;
+
     return 0;
 }
 static int
@@ -473,25 +522,12 @@ svg_setfillcolor(gx_device_vector *vdev, const gs_imager_state *pis,
     if (svg->fillcolor && !strcmp(fill, svg->fillcolor))
       return 0; /* not a new color */
 
-    /* update and write a new group */
+    /* update our state with the new color */
     if (svg->fillcolor) gs_free_string(svg->memory, svg->fillcolor, 8,
 	"svg_setfillcolor");
     svg->fillcolor = fill;
-    if (svg->mark) {
-      svg_write(svg, "</g>\n");
-    }
-    svg_write(svg, "<g fill='");
-    svg_write(svg, fill);
-    svg_write(svg, "'");
-    if (svg->strokecolor) {
-      svg_write(svg, " stroke='");
-      svg_write(svg, svg->strokecolor);
-      svg_write(svg, "'");
-    } else {
-      svg_write(svg, " stroke='none'");
-    }
-    svg_write(svg, ">\n");
-    svg->mark = 1;
+    /* request a new group element */
+    svg->dirty++;
 
     return 0;
 }
@@ -510,26 +546,12 @@ svg_setstrokecolor(gx_device_vector *vdev, const gs_imager_state *pis,
     if (svg->strokecolor && !strcmp(stroke, svg->strokecolor)) 
       return 0; /* not a new color */
 
-    /* update and write a new group */
+    /* update our state with the new color */
     if (svg->strokecolor) gs_free_string(svg->memory, svg->strokecolor, 8,
 	"svg_setstrokecolor");
     svg->strokecolor = stroke;
-    if (svg->mark) {
-      svg_write(svg, "</g>\n");
-    }
-    svg_write(svg, "<g ");
-    if (svg->fillcolor) {
-      svg_write(svg, " fill='");
-      svg_write(svg, svg->fillcolor);
-      svg_write(svg, "'");
-    } else {
-      svg_write(svg, " fill='none'");
-    }
-    svg_write(svg, " stroke='");
-    svg_write(svg, stroke);
-    svg_write(svg, "'");
-    svg_write(svg, ">\n");
-    svg->mark = 1;
+    /* request a new group element */
+    svg->dirty++;
 
     return 0;
 }
@@ -562,6 +584,8 @@ svg_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
     dprintf("svg_dorect ");
     svg_print_path_type(svg, type);
     dprintf("\n");
+
+    svg_write_state(svg);
 
     if (type & gx_path_type_clip) {
 	svg_write(svg, "<clipPath>\n");
@@ -599,6 +623,7 @@ svg_beginpath(gx_device_vector *vdev, gx_path_type_t type)
     svg_print_path_type(svg, type);
     dprintf("\n");
 
+    svg_write_state(svg);
     svg_write(svg, "<path d='");
 
     return 0;
