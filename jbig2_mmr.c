@@ -18,7 +18,7 @@ in Fitz, which in turn is based on the one in Ghostscript.
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif 
+#endif
 #include "os_types.h"
 
 #include <stddef.h>

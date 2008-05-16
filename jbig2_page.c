@@ -1,13 +1,13 @@
 /*
     jbig2dec
-    
+
     Copyright (C) 2001-2005 Artifex Software, Inc.
-    
+
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
     authorized under the terms of the license contained in
     the file LICENSE in this distribution.
-                                                                                
+
     For information on commercial licensing, go to
     http://www.artifex.com/licensing/ or contact
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
@@ -18,7 +18,7 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif 
+#endif
 #include "os_types.h"
 
 #include <stdlib.h>
@@ -76,7 +76,7 @@ jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segm
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
             "unexpected page info segment, marking previous page finished");
     }
-        
+
     /* find a free page */
     {
         int index, j;
@@ -101,17 +101,17 @@ jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segm
         page->state = JBIG2_PAGE_NEW;
         page->number = segment->page_association;
     }
-    
+
     /* FIXME: would be nice if we tried to work around this */
     if (segment->data_length < 19) {
         return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
             "segment too short");
     }
-    
+
     /* 7.4.8.x */
     page->width = jbig2_get_int32(segment_data);
     page->height = jbig2_get_int32(segment_data + 4);
-    
+
     page->x_resolution = jbig2_get_int32(segment_data + 8);
     page->y_resolution = jbig2_get_int32(segment_data + 12);
     page->flags = segment_data[16];
@@ -133,12 +133,12 @@ jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segm
         page->striped = TRUE;
     }
     page->end_row = 0;
-    
+
     if (segment->data_length > 19) {
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
             "extra data in segment");
     }
-    
+
     dump_page_info(ctx, segment, page);
 
     /* allocate an approprate page image buffer */
@@ -160,7 +160,7 @@ jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segm
             page->image->width, page->image->height,
             page->image->stride*page->image->height);
     }
-    
+
     return 0;
 }
 
@@ -177,13 +177,13 @@ jbig2_parse_end_of_stripe(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *s
     if (end_row < page.end_row) {
 	jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
 	    "end of stripe segment with non-positive end row advance"
-	    "(new end row %d vs current end row %d)", 
+	    "(new end row %d vs current end row %d)",
 	    end_row, page.end_row);
     } else {
 	jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
 	    "end of stripe: advancing end row to %d", end_row);
     }
-    
+
     page.end_row = end_row;
 
     return 0;
@@ -194,7 +194,7 @@ jbig2_parse_end_of_stripe(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *s
  *
  * called upon seeing an 'end of page' segment, this routine
  * marks a page as completed so it can be returned.
- * compositing will have already happened in the previous 
+ * compositing will have already happened in the previous
  * segment handlers.
  **/
 int
@@ -218,12 +218,12 @@ jbig2_parse_end_of_page(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *seg
             "end of page marker for page %d doesn't match current page number %d",
             segment->page_association, page_number);
     }
-    
+
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
         "end of page %d", page_number);
 
     jbig2_complete_page(ctx);
-    
+
 #ifdef OUTPUT_PBM
     jbig2_image_write_pbm(ctx->pages[ctx->current_page].image, stdout);
 #endif
@@ -251,7 +251,7 @@ jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *image,
 	    jbig2_image_resize(ctx, page->image,
 		page->image->width, new_height);
 	}
-    }    
+    }
 
     jbig2_image_compose(ctx, page->image, image,
                         x, y + page->end_row, JBIG2_COMPOSE_OR);
@@ -284,7 +284,7 @@ Jbig2Image *jbig2_page_out(Jbig2Ctx *ctx)
             return ctx->pages[index].image;
         }
     }
-    
+
     /* no pages available */
     return NULL;
 }
@@ -295,7 +295,7 @@ Jbig2Image *jbig2_page_out(Jbig2Ctx *ctx)
 int jbig2_release_page(Jbig2Ctx *ctx, Jbig2Image *image)
 {
     int index;
-    
+
     /* find the matching page struct and mark it released */
     for (index = 0; index < ctx->max_page_index; index++) {
         if (ctx->pages[index].image == image) {
@@ -306,7 +306,7 @@ int jbig2_release_page(Jbig2Ctx *ctx, Jbig2Image *image)
             return 0;
         }
     }
-    
+
     /* no matching pages */
     jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1,
         "jbig2_release_page called on unknown page");

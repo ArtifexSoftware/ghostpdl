@@ -1,27 +1,27 @@
 /*
     jbig2dec
-    
+
     Copyright (C) 2002-2005 Artifex Software, Inc.
-    
+
     This software is provided AS-IS with no warranty,
     either express or implied.
-   
-    This software is distributed under license and may not 
+
+    This software is distributed under license and may not
     be copied, modified or distributed except as expressly
     authorized under the terms of the license contained in
     the file LICENSE in this distribution.
-   
-    For information on commercial licensing, go to 
-    http://www.artifex.com/licensing/ or contact 
-    Artifex Software, Inc.,  101 Lucas Valley Road #110, 
+
+    For information on commercial licensing, go to
+    http://www.artifex.com/licensing/ or contact
+    Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
-        
+
     $Id$
 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif 
+#endif
 #include "os_types.h"
 
 #include <stdio.h>
@@ -79,7 +79,7 @@ jbig2_realloc (Jbig2Allocator *allocator, void *p, size_t size)
 }
 
 static int
-jbig2_default_error(void *data, const char *msg, 
+jbig2_default_error(void *data, const char *msg,
                     Jbig2Severity severity, int32_t seg_idx)
 {
     /* report only fatal errors by default */
@@ -89,7 +89,7 @@ jbig2_default_error(void *data, const char *msg,
         fprintf(stderr, "\n");
         fflush(stderr);
     }
-    
+
     return 0;
 }
 
@@ -133,7 +133,7 @@ jbig2_ctx_new (Jbig2Allocator *allocator,
                     JBIG2_SEVERITY_FATAL, -1);
     return result;
   }
-  
+
   result->allocator = allocator;
   result->options = options;
   result->global_ctx = (const Jbig2Ctx *)global_ctx;
@@ -145,7 +145,7 @@ jbig2_ctx_new (Jbig2Allocator *allocator,
     JBIG2_FILE_HEADER;
 
   result->buf = NULL;
-  
+
   result->n_segments = 0;
   result->n_segments_max = 16;
   result->segments = (Jbig2Segment **)jbig2_alloc(allocator, result->n_segments_max * sizeof(Jbig2Segment *));
@@ -219,7 +219,7 @@ jbig2_data_in (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 	{
 	  byte *buf;
 	  size_t buf_size = initial_buf_size;
-	  
+
 	  do
 	    buf_size <<= 1;
 	  while (buf_size < ctx->buf_wr_ix - ctx->buf_rd_ix + size);
@@ -285,7 +285,7 @@ jbig2_data_in (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 	    }
 	  else
 	    {
-	      ctx->state = JBIG2_FILE_RANDOM_HEADERS; 
+	      ctx->state = JBIG2_FILE_RANDOM_HEADERS;
               jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "file header indicates random-access organization");
 
             }

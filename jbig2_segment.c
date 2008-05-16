@@ -1,13 +1,13 @@
 /*
     jbig2dec
-    
+
     Copyright (C) 2002-2005 Artifex Software, Inc.
-    
+
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
     authorized under the terms of the license contained in
     the file LICENSE in this distribution.
-                                                                                
+
     For information on commercial licensing, go to
     http://www.artifex.com/licensing/ or contact
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
@@ -18,7 +18,7 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif 
+#endif
 #include "os_types.h"
 
 #include <stddef.h> /* size_t */
@@ -75,21 +75,21 @@ jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
   pa_size = result->flags & 0x40 ? 4 : 1; /* 7.2.6 */
   if (offset + referred_to_segment_count*referred_to_segment_size + pa_size + 4 > buf_size)
     {
-      jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, result->number, 
+      jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, result->number,
         "jbig2_parse_segment_header() called with insufficient data", -1);
       jbig2_free (ctx->allocator, result);
       return NULL;
     }
-    
+
   /* 7.2.5 */
   if (referred_to_segment_count)
     {
       int i;
 
       referred_to_segments = jbig2_alloc(ctx->allocator, referred_to_segment_count * referred_to_segment_size * sizeof(uint32_t));
-    
+
       for (i = 0; i < referred_to_segment_count; i++) {
-        referred_to_segments[i] = 
+        referred_to_segments[i] =
           (referred_to_segment_size == 1) ? buf[offset] :
           (referred_to_segment_size == 2) ? jbig2_get_int16(buf+offset) :
             jbig2_get_int32(buf + offset);
@@ -104,7 +104,7 @@ jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
     {
       result->referred_to_segments = NULL;
     }
-  
+
   /* 7.2.6 */
   if (result->flags & 0x40) {
 	result->page_association = jbig2_get_int32(buf + offset);
@@ -115,7 +115,7 @@ jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
   jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, result->number,
   	"segment %d is associated with page %d",
   	result->number, result->page_association);
-  	
+
   /* 7.2.7 */
   result->data_length = jbig2_get_int32(buf + offset);
   *p_header_size = offset + 4;
@@ -165,12 +165,12 @@ jbig2_find_segment(Jbig2Ctx *ctx, uint32_t number)
     for (index = index_max; index >= 0; index--)
         if (ctx->segments[index]->number == number)
             return (ctx->segments[index]);
-        
+
     if (global_ctx)
 	for (index = global_ctx->segment_index - 1; index >= 0; index--)
 	    if (global_ctx->segments[index]->number == number)
 		return (global_ctx->segments[index]);
-    
+
     /* didn't find a match */
     return NULL;
 }
@@ -197,7 +197,7 @@ int jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment,
     bool reserved, dependent, necessary;
 
     type = jbig2_get_int32(segment_data);
-    
+
     reserved = type & 0x20000000;
     dependent = type & 0x40000000;
     necessary = type & 0x80000000;
@@ -206,7 +206,7 @@ int jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment,
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
             "extension segment is marked 'necessary' but not 'reservered' contrary to spec");
     }
-    
+
     switch (type) {
         case 0x20000000: return jbig2_parse_comment_ascii(ctx, segment, segment_data);
         case 0x20000002: return jbig2_parse_comment_unicode(ctx, segment, segment_data);
@@ -219,7 +219,7 @@ int jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment,
                     "unhandled extension segment");
             }
     }
-    
+
     return 0;
 }
 
