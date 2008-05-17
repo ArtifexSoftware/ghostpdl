@@ -101,7 +101,7 @@ systemdict begin
 	    } ifelse
 	    dup (%stdin) (r) file eq {
 	      % Copy PDF from stdin to temporary file then run it.
-	      null (w+) //systemdict /.tempfile get exec exch 3 1 roll
+	      null (w+) /.tempfile systemvar exec exch 3 1 roll
 	      % stack: tempname stdin tempfile
 	      64000 string
 	      {
@@ -208,7 +208,8 @@ currentdict /runpdfstring .undef
             /EF knownoget {
               /F knownoget {
                 //true resolvestream    % {} true strm
-                //null (w) .tempfile    % {} true strm (name) file
+                //null (w) /.tempfile   % {} true strm (name) null (w) /.tempfile
+                .systemvar exec         % {} true strm (name) file
                 3 -1 roll               % {} true (name) file strm
                 32768 string            % {} true (name) file strm (buf)
                 { 3 copy readstring     % {} true (name) file strm (buf) file (data) bool
