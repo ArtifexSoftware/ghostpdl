@@ -470,6 +470,14 @@ currentdict /token_nofail_dict .undef
   } ifelse
 } bind def
 
+/knownogetdict { % <dict> <key> knownogetdict <dict> true
+		 % <dict> <key> knownogetdict false
+  //knownoget exec dup {
+    1 index type /dicttype ne { pop pop //false } if
+  } if
+} bind def
+
+
 % PDF 1.1 defines a 'foreign file reference', but not its meaning.
 % Per the specification, we convert these to nulls.
 /F {		% <file#> <object#> <generation#> F <object>

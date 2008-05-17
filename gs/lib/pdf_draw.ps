@@ -1405,7 +1405,7 @@ end
     //false
     [/N /R /D] {
 	% stack: scale annot appearance false key
-      2 index exch knownoget {
+      2 index exch knownogetdict {
 	exch not exit 
       } if
     } forall
@@ -1497,7 +1497,7 @@ end
   dup /Rect known {
     dup annotrect 4 -2 roll pop pop	 % get width height size in user space
     3 -1 roll /AP knownoget {
-      /N knownoget {
+      /N knownogetdict {
 	dup /Matrix knownoget {
 	  % transform /Annot /Rect xwidth to Form space
 	  4 -2 roll 3 -1 roll dtransform 3 -1 roll

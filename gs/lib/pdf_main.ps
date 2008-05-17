@@ -1630,7 +1630,7 @@ currentdict /PDF2PS_matrix_key undef
    //false exch			% Assume no transparency
    /Annots knownoget {		% Get Annots array
      { oforce /AP knownoget {	% Get appearance dict for the annoation
-         /N knownoget { 	% Get the /N (i.e. normal) appearance stream
+         /N knownogetdict { 	% Get the /N (i.e. normal) appearance stream
            4 dict exch resourceusestransparency { pop //true exit } if
          } if
        } if  			% If AP dict known
@@ -1711,7 +1711,7 @@ currentdict /PDF2PS_matrix_key undef
 % 		 annotsspotcolors <spotcolordict> <loopdict>
 /annotsspotcolors {
   { oforce /AP knownoget {	% Get appearance dict for the annoation
-      /N knownoget {		% Get the /N (i.e. normal) appearance stream
+      /N knownogetdict {		% Get the /N (i.e. normal) appearance stream
         resourcespotcolors
       } if			% If normal appearance streamknown
     } if			% If AP dict known
