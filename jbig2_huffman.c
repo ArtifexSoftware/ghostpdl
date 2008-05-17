@@ -1,27 +1,27 @@
 /*
     jbig2dec
-    
+
     Copyright (C) 2001-2005 Artifex Software, Inc.
-    
+
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
     authorized under the terms of the license contained in
     the file LICENSE in this distribution.
-                                                                                
+
     For information on commercial licensing, go to
     http://www.artifex.com/licensing/ or contact
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
-    
+
     $Id$
 */
 
-/* Huffman table decoding procedures 
+/* Huffman table decoding procedures
     -- See Annex B of the JBIG2 specification */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif 
+#endif
 #include "os_types.h"
 
 #include <stdlib.h>
@@ -63,7 +63,7 @@ jbig2_huffman_new (Jbig2Ctx *ctx, Jbig2WordStream *ws)
 {
   Jbig2HuffmanState *result;
 
-  result = (Jbig2HuffmanState *)jbig2_alloc(ctx->allocator,  
+  result = (Jbig2HuffmanState *)jbig2_alloc(ctx->allocator,
 	sizeof(Jbig2HuffmanState));
 
   if (result != NULL) {
@@ -94,7 +94,7 @@ jbig2_huffman_free (Jbig2Ctx *ctx, Jbig2HuffmanState *hs)
 /** print current huffman state */
 void jbig2_dump_huffman_state(Jbig2HuffmanState *hs) {
   fprintf(stderr, "huffman state %08x %08x offset %d.%d\n",
-	hs->this_word, hs->next_word, hs->offset, hs->offset_bits); 
+	hs->this_word, hs->next_word, hs->offset, hs->offset_bits);
 }
 
 /** print the binary string we're reading from */
@@ -121,7 +121,7 @@ jbig2_huffman_skip(Jbig2HuffmanState *hs)
   if (bits) {
     bits = 8 - bits;
     hs->offset_bits += bits;
-    hs->this_word = (hs->this_word << bits) | 
+    hs->this_word = (hs->this_word << bits) |
 	(hs->next_word >> (32 - hs->offset_bits));
   }
 
@@ -160,7 +160,7 @@ void jbig2_huffman_advance(Jbig2HuffmanState *hs, int offset)
 /* return the offset of the huffman decode pointer (in bytes)
  * from the beginning of the WordStream
  */
-int 
+int
 jbig2_huffman_offset(Jbig2HuffmanState *hs)
 {
   return hs->offset + (hs->offset_bits >> 3);
@@ -209,7 +209,7 @@ jbig2_huffman_get (Jbig2HuffmanState *hs,
   int32_t result;
 
   for (;;)
-    { 
+    {
       int log_table_size = table->log_table_size;
       int PREFLEN;
 
@@ -276,14 +276,14 @@ if (RANGELEN)
   return result;
 }
 
-/* TODO: more than 8 bits here is wasteful of memory. We have support 
+/* TODO: more than 8 bits here is wasteful of memory. We have support
    for sub-trees in jbig2_huffman_get() above, but don't use it here.
    We should, and then revert to 8 bits */
 #define LOG_TABLE_SIZE_MAX 16
 
 /** Build an in-memory representation of a Huffman table from the
  *  set of template params provided by the spec or a table segment
- */ 
+ */
 Jbig2HuffmanTable *
 jbig2_build_huffman_table (Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
 {
@@ -436,7 +436,7 @@ main (int argc, char **argv)
   Jbig2WordStream ws;
   bool oob;
   int32_t code;
-  
+
   ctx = jbig2_ctx_new(NULL, 0, NULL, NULL, NULL);
 
   tables[0] = NULL;
@@ -449,22 +449,22 @@ main (int argc, char **argv)
 
   printf("testing jbig2 huffmann decoding...");
   printf("\t(should be 8 5 (oob) 8)\n");
-  
+
   {
 	int i;
 	int sequence_length = sizeof(test_tabindex);
-	
+
 	for (i = 0; i < sequence_length; i++) {
 		code = jbig2_huffman_get (hs, tables[test_tabindex[i]], &oob);
 		if (oob) printf("(oob) ");
 		else printf("%d ", code);
 	}
   }
-  
+
   printf("\n");
 
   jbig2_ctx_free(ctx);
-  
+
   return 0;
 }
 #endif

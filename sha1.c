@@ -4,7 +4,7 @@ By Steve Reid <sreid@sea-to-sky.net>
 100% Public Domain
 
 -----------------
-Modified 7/98 
+Modified 7/98
 By James H. Brown <jbrown@burgoyne.com>
 Still 100% Public Domain
 
@@ -26,7 +26,7 @@ Since the file IO in main() reads 16K at a time, any file 8K or larger would
 be guaranteed to generate the wrong hash (e.g. Test Vector #3, a million
 "a"s).
 
-I also changed the declaration of variables i & j in SHA1Update to 
+I also changed the declaration of variables i & j in SHA1Update to
 unsigned long from unsigned int for the same reason.
 
 These changes should make no difference to any 32 bit implementations since
@@ -53,7 +53,7 @@ Still 100% public domain
 Modified 4/01
 By Saul Kravitz <Saul.Kravitz@celera.com>
 Still 100% PD
-Modified to run on Compaq Alpha hardware.  
+Modified to run on Compaq Alpha hardware.
 
 -----------------
 Modified 07/2002
@@ -116,7 +116,7 @@ void SHA1_Transform(uint32_t state[5], const uint8_t buffer[64]);
 void SHAPrintContext(SHA1_CTX *context, char *msg){
   printf("%s (%d,%d) %x %x %x %x %x\n",
 	 msg,
-	 context->count[0], context->count[1], 
+	 context->count[0], context->count[1],
 	 context->state[0],
 	 context->state[1],
 	 context->state[2],
@@ -245,7 +245,7 @@ void SHA1_Final(SHA1_CTX* context, uint8_t digest[SHA1_DIGEST_SIZE])
         digest[i] = (uint8_t)
          ((context->state[i>>2] >> ((3-(i & 3)) * 8) ) & 255);
     }
-    
+
     /* Wipe variables */
     i = 0;
     memset(context->buffer, 0, 64);
@@ -257,7 +257,7 @@ void SHA1_Final(SHA1_CTX* context, uint8_t digest[SHA1_DIGEST_SIZE])
     SHA1_Transform(context->state, context->buffer);
 #endif
 }
-  
+
 /*************************************************************/
 
 #if 0
@@ -282,7 +282,7 @@ FILE* file;
             fputs("Unable to open file.", stderr);
             return(-1);
         }
-    } 
+    }
     SHA1_Init(&context);
     while (!feof(file)) {  /* note: what if ferror(file) */
         i = fread(buffer, 1, 16384, file);
@@ -313,13 +313,13 @@ static char *test_results[] = {
     "A9993E36 4706816A BA3E2571 7850C26C 9CD0D89D",
     "84983E44 1C3BD26E BAAE4AA1 F95129E5 E54670F1",
     "34AA973C D4C4DAA4 F61EEB2B DBAD2731 6534016F"};
-    
+
 
 void digest_to_hex(const uint8_t digest[SHA1_DIGEST_SIZE], char *output)
 {
     int i,j;
     char *c = output;
-    
+
     for (i = 0; i < SHA1_DIGEST_SIZE/4; i++) {
         for (j = 0; j < 4; j++) {
             sprintf(c,"%02X", digest[i*4+j]);
@@ -330,7 +330,7 @@ void digest_to_hex(const uint8_t digest[SHA1_DIGEST_SIZE], char *output)
     }
     *(c - 1) = '\0';
 }
-    
+
 int main(int argc, char** argv)
 {
     int k;
@@ -339,8 +339,8 @@ int main(int argc, char** argv)
     char output[80];
 
     fprintf(stdout, "verifying SHA-1 implementation... ");
-    
-    for (k = 0; k < 2; k++){ 
+
+    for (k = 0; k < 2; k++){
         SHA1_Init(&context);
         SHA1_Update(&context, (uint8_t*)test_data[k], strlen(test_data[k]));
         SHA1_Final(&context, digest);
@@ -352,7 +352,7 @@ int main(int argc, char** argv)
             fprintf(stderr,"\t%s returned\n", output);
             fprintf(stderr,"\t%s is correct\n", test_results[k]);
             return (1);
-        }    
+        }
     }
     /* million 'a' vector we feed separately */
     SHA1_Init(&context);

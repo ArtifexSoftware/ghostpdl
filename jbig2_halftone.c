@@ -1,13 +1,13 @@
 /*
     jbig2dec
-    
+
     Copyright (C) 2005 Artifex Software, Inc.
-    
+
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
     authorized under the terms of the license contained in
     the file LICENSE in this distribution.
-                                                                                
+
     For information on commercial licensing, go to
     http://www.artifex.com/licensing/ or contact
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
@@ -20,7 +20,7 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif 
+#endif
 #include "os_types.h"
 
 #include <string.h> /* memset() */
@@ -170,7 +170,7 @@ jbig2_decode_pattern_dict(Jbig2Ctx *ctx, Jbig2Segment *segment,
   rparams.gbat[5] = -2;
   rparams.gbat[6] = -2;
   rparams.gbat[7] = -2;
-  
+
   if (params->HDMMR) {
     code = jbig2_decode_generic_mmr(ctx, segment, &rparams,
 		data, size, image);
@@ -258,7 +258,7 @@ jbig2_pattern_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
  * jbig2_decode_halftone_region: decode a halftone region
  **/
 int
-jbig2_decode_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment, 
+jbig2_decode_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 			     Jbig2HalftoneRegionParams *params,
 			     const byte *data, const size_t size,
 			     Jbig2Image *image,
