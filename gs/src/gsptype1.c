@@ -1342,6 +1342,8 @@ gx_dc_pattern_write(
     int offset1 = offset;
     int code, l;
 
+    if (ptile == NULL)
+	return 0;
     if (psdc->type == pdevc->type) {
 	if (psdc->colors.pattern.id == ptile->id) {
 	    /* fixme : Do we need to check phase ? How ? */
@@ -1496,6 +1498,12 @@ gx_dc_pattern_read(
     int code, l;
 
     if (offset == 0) {
+	if (size == 0) {
+	    /* Null pattern. */
+	    pdevc->type = &gx_dc_pattern;
+	    pdevc->colors.pattern.p_tile = NULL;
+	    return 0;
+	}
 	if (sizeof(buf) > size) {
 	    /* For a while we require the client to provide enough buffer size. */
 	    return_error(gs_error_unregistered); /* Must not happen. */
