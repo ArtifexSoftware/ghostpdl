@@ -16,7 +16,7 @@
 /* Requires gxsync.h */
 
 #ifndef gxclthrd_INCLUDED
-#  define gxcthrd_INCLUDED
+#  define gxclthrd_INCLUDED
 
 #include "gxsync.h"
 
