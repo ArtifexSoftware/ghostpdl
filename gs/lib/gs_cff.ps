@@ -232,10 +232,16 @@ def
 def
 /Index {	% <name> Index <name> <array>
   CFFDEBUG { (% reading Index: ) print dup = } if
-  mark card16 dup 0 ne {
-    1 exch next offsetproc dup exec pop exch {
-      dup exec dup 4 -1 roll sub 3 1 roll exch
-    } repeat pop
+  mark card16
+  dup 0 ne {
+    1 exch next
+    dup 0 eq { 
+      pop       % skip incorrect index, bug 689854
+    } {
+      offsetproc dup exec pop exch {
+        dup exec dup 4 -1 roll sub 3 1 roll exch
+      } repeat
+    } ifelse pop
   } if pop .packtomark
   CFFDEBUG { (% Index lengths = ) print dup === } if
   [ exch { nextstring } forall ] readonly
