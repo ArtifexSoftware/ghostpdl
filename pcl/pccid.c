@@ -238,6 +238,12 @@ check_cid_hdr(
     if ((pcid->cspace >= pcl_cspace_num) || (pcid->encoding >= pcl_penc_num))
         return -1;
 
+    /* apparently direct by pixel encoding mode defaults bits per
+       index to 8 */
+    if (pcid->encoding == pcl_penc_direct_by_pixel)
+      pcid->bits_per_index = 8;
+
+
     /*
      * Map zero values. Zero bits per index is equivalent to one bit per index;
      * zero bits per primary is equivalent to 8 bits per primary.
