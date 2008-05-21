@@ -1016,7 +1016,7 @@ bbox_begin_typed_image(gx_device * dev,
 	gx_device_bbox *const bdev = (gx_device_bbox *) dev;
 	gx_device *tdev = bdev->target;
 	dev_proc_begin_typed_image((*begin_typed_image));
-	byte wanted[GS_IMAGE_MAX_PLANES];
+	byte wanted[GS_IMAGE_MAX_COMPONENTS];
 
 	if (tdev == 0) {
 	    tdev = dev;

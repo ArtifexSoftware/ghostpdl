@@ -102,9 +102,9 @@ struct gs_image_enum_s {
 				/* only needed for gs_image_next */
     int y;
     bool error;
-    byte wanted[GS_IMAGE_MAX_PLANES]; /* cache gx_image_planes_wanted */
-    byte client_wanted[GS_IMAGE_MAX_PLANES]; /* see gsimage.h */
-    image_enum_plane_t planes[GS_IMAGE_MAX_PLANES]; /* see above */
+    byte wanted[GS_IMAGE_MAX_COMPONENTS]; /* cache gx_image_planes_wanted */
+    byte client_wanted[GS_IMAGE_MAX_COMPONENTS]; /* see gsimage.h */
+    image_enum_plane_t planes[GS_IMAGE_MAX_COMPONENTS]; /* see above */
     /*
      * To reduce setup for transferring complete rows, we maintain a
      * partially initialized parameter array for gx_image_plane_data_rows.
@@ -112,7 +112,7 @@ struct gs_image_enum_s {
      * gx_image_plane_data_rows; the data_x and raster members are reset
      * when needed.
      */
-    gx_image_plane_t image_planes[GS_IMAGE_MAX_PLANES];
+    gx_image_plane_t image_planes[GS_IMAGE_MAX_COMPONENTS];
 };
 
 gs_private_st_composite(st_gs_image_enum, gs_image_enum, "gs_image_enum",
@@ -456,8 +456,8 @@ gs_image_next(gs_image_enum * penum, const byte * dbytes, uint dsize,
     int px = penum->plane_index;
     int num_planes = penum->num_planes;
     int i, code;
-    uint used[GS_IMAGE_MAX_PLANES];
-    gs_const_string plane_data[GS_IMAGE_MAX_PLANES];
+    uint used[GS_IMAGE_MAX_COMPONENTS];
+    gs_const_string plane_data[GS_IMAGE_MAX_COMPONENTS];
 
     if (penum->planes[px].source.size != 0)
 	return_error(gs_error_rangecheck);

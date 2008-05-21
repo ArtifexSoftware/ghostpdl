@@ -378,8 +378,8 @@ image_proc_continue(i_ctx_t *i_ctx_p)
     gs_image_enum *penum = r_ptr(esp, gs_image_enum);
     int px = ETOP_PLANE_INDEX(esp)->value.intval;
     int num_sources = ETOP_NUM_SOURCES(esp)->value.intval;
-    uint size, used[GS_IMAGE_MAX_PLANES];
-    gs_const_string plane_data[GS_IMAGE_MAX_PLANES];
+    uint size, used[GS_IMAGE_MAX_COMPONENTS];
+    gs_const_string plane_data[GS_IMAGE_MAX_COMPONENTS];
     const byte *wanted;
     int i, code;
 
@@ -451,7 +451,7 @@ image_file_continue(i_ctx_t *i_ctx_p)
 
     for (;;) {
 	uint min_avail = max_int;
-	gs_const_string plane_data[GS_IMAGE_MAX_PLANES];
+	gs_const_string plane_data[GS_IMAGE_MAX_COMPONENTS];
 	int code;
 	int px;
 	const ref *pp;
@@ -515,7 +515,7 @@ image_file_continue(i_ctx_t *i_ctx_p)
 
 	{
 	    int pi;
-	    uint used[GS_IMAGE_MAX_PLANES];
+	    uint used[GS_IMAGE_MAX_COMPONENTS];
 
 	    code = gs_image_next_planes(penum, plane_data, used);
 	    /* Now that used has been set, update the streams. */
@@ -545,8 +545,8 @@ image_string_continue(i_ctx_t *i_ctx_p)
 {
     gs_image_enum *penum = r_ptr(esp, gs_image_enum);
     int num_sources = ETOP_NUM_SOURCES(esp)->value.intval;
-    gs_const_string sources[GS_IMAGE_MAX_PLANES];
-    uint used[GS_IMAGE_MAX_PLANES];
+    gs_const_string sources[GS_IMAGE_MAX_COMPONENTS];
+    uint used[GS_IMAGE_MAX_COMPONENTS];
 
     /* Pass no data initially, to find out how much is retained. */
     memset(sources, 0, sizeof(sources[0]) * num_sources);
