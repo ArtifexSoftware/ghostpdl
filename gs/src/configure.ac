@@ -773,7 +773,7 @@ TIFF_DEVS="tiffs tiff12nc tiff24nc tiff32nc tiffcrle tifflzw tiffpack tiffgray t
 PCX_DEVS="pcxmono pcxgray pcx16 pcx256 pcx24b pcxcmyk pcx2up"
 PBM_DEVS="pbm pbmraw pgm pgmraw pgnm pgnmraw pnm pnmraw ppm ppmraw pkm pkmraw pksm pksmraw pam"
 PS_DEVS="psdf psdcmyk psdrgb pdfwrite pswrite ps2write epswrite psgray psmono psrgb bbox"
-CAIRO_DEVS="cairo"
+# CAIRO_DEVS is defined conditionally above
 WTS_HALFTONING_DEVS="imdi simdi wtsimdi wtscmyk"
 MISC_FDEVS="ccr cgm24 cgm8 cgmmono cif inferno mag16 mag256 mgr4 mgr8 mgrgray2 mgrgray4 mgrgray8 mgrmono miff24 plan9bm sgirgb sunhmono bit bitrgb bitrgbtags bitcmyk devicen spotcmyk xcf"
 
