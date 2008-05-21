@@ -224,7 +224,8 @@ cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
 
     if (size + cmd_headroom > cldev->cend - dp) {
 	if ((cldev->error_code =
-	       cmd_write_buffer(cldev, cmd_opv_end_run)) != 0) {
+             cmd_write_buffer(cldev, cmd_opv_end_run)) != 0 ||
+            (size + cmd_headroom > cldev->cend - cldev->cnext)) {
 	    if (cldev->error_code < 0)
 		cldev->error_is_retryable = 0;	/* hard error */
 	    else {
