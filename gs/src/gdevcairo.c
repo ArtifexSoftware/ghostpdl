@@ -35,7 +35,7 @@
 
 /* ---------------- Device definition ---------------- */
 
-#define SURFACE_PARAM_NAME "CairoSurface"
+#define OUTPUT_PARAM_NAME  "CairoOptions"
 #define CONTEXT_PARAM_NAME "CairoContext"
 
 typedef struct gx_device_cairo_s {
@@ -46,7 +46,7 @@ typedef struct gx_device_cairo_s {
     cairo_pattern_t *stroke_pattern;
     cairo_pattern_t *fill_pattern;
 
-    char *surface_param;
+    char *output_param;
     char *context_param;
 
     cairo_bool_t should_close_file;
@@ -240,8 +240,7 @@ devcairo_open_device(gx_device *dev)
     gx_device_cairo *const devcairo = (gx_device_cairo*)dev;
     int code = 0;
 
-    cairo_surface_t *surface;
-    cairo_t *cr;
+    cairo_t *cr = NULL;
 
     cairo_bool_t scale_to_points = false;
 
@@ -249,8 +248,8 @@ devcairo_open_device(gx_device *dev)
     vdev->vec_procs = &devcairo_vector_procs;
     gdev_vector_init(vdev);
 
-    if ((devcairo->surface_param || vdev->fname[0]) && devcairo->context_param) {
-        return gs_throw(gs_error_unknownerror, "When "CONTEXT_PARAM_NAME" is set, none of "SURFACE_PARAM_NAME" or OutputFile should be set.");
+    if (!!vdev->fname[0] == !!devcairo->context_param) {
+        return gs_throw(gs_error_undefinedfilename, "Either "CONTEXT_PARAM_NAME" or OutputFile should be set, and not both.\nTo render to a file, set OutputFile, and if needed "OUTPUT_PARAM_NAME".\nTo render to a cairo_t, set "CONTEXT_PARAM_NAME" to a hex printout of the pointer, prefixed by '0x'.");
     }
 
     devcairo->should_close_file = false;
@@ -258,14 +257,15 @@ devcairo_open_device(gx_device *dev)
 
     if (vdev->fname[0]) {
 	const char *extension;
+	cairo_surface_t *surface;
 
 	code = gdev_vector_open_file_options(vdev, 512, VECTOR_OPEN_FILE_SEQUENTIAL);
 	if (code < 0) return code;
 
 	devcairo->should_close_file = true;
 
-	if (devcairo->surface_param)
-	    extension = devcairo->surface_param;
+	if (devcairo->output_param)
+	    extension = devcairo->output_param;
 	else {
 	    extension = strrchr (vdev->fname, '.');
 	    if (extension)
@@ -307,9 +307,9 @@ devcairo_open_device(gx_device *dev)
 	#endif
 	else {
 	    const char *s1, *s2;
-	    s1 = devcairo->surface_param ?
-		 SURFACE_PARAM_NAME " value '%s' is not a recognized output format.\n%s" :
-		 "OutputFile has %s extension.\nThat is not a recognized output format.\nSet "SURFACE_PARAM_NAME" to select output format.\n%s";
+	    s1 = devcairo->output_param ?
+		 OUTPUT_PARAM_NAME " value '%s' is not a recognized output format.\n%s" :
+		 "OutputFile has %s extension.\nThat is not a recognized output format.\nSet "OUTPUT_PARAM_NAME" to select output format.\n%s";
 	    s2 = "It should be one of"
 	    #ifdef CAIRO_HAS_PNG_FUNCTIONS
 	        " png"
@@ -331,19 +331,24 @@ devcairo_open_device(gx_device *dev)
 	    return gs_throw2(gs_error_invalidfileaccess, s1, extension ? extension : "no", s2);
 	}
 
+	cairo_surface_set_fallback_resolution (surface, dev->HWResolution[0], dev->HWResolution[1]);
+
+	cr = cairo_create (surface);
+	cairo_surface_destroy (surface);
 
     } else {
+	int len = -1;
 
-        /* XXX try to parse a pointer out of surface_param or context_param */
-	return -1;
+        if (sscanf (devcairo->context_param, "0x%p%n", &cr, &len) < 1 || len != strlen (devcairo->context_param) || !cr)
+	 {
+	    return gs_throw1(gs_error_undefined, "Failed to understand "CONTEXT_PARAM_NAME" value '%s'.\nSet "CONTEXT_PARAM_NAME" to a hex printout of the cairo_t pointer, prefixed by '0x'.", devcairo->context_param);
+	 }
 
+	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
+	    return gs_throw1(gs_error_unknownerror, "The cairo_t at '%s' passed as "CONTEXT_PARAM_NAME" is already in error status.", devcairo->context_param);
+
+	cairo_reference (cr);
     }
-
-    /* XXX when cairo_surface_get_fallback_resolution() is added, use it here
-     * to decide whether to set the fallback resolution or not */
-    cairo_surface_set_fallback_resolution (surface, dev->HWResolution[0], dev->HWResolution[1]);
-    cr = cairo_create (surface);
-    cairo_surface_destroy (surface);
 
     devcairo->cr = cr;
 
@@ -360,23 +365,37 @@ devcairo_open_device(gx_device *dev)
     return code;
 }
 
+int
+devcairo_check_status (gx_device_cairo *devcairo)
+{
+    /* little trick to check both surface and context status */
+    switch (cairo_surface_status (cairo_get_target (devcairo->cr))) {
+    case CAIRO_STATUS_SUCCESS:		return 0;
+    case CAIRO_STATUS_WRITE_ERROR:	return gs_error_ioerror;
+    case CAIRO_STATUS_NO_MEMORY:	return gs_error_VMerror;
+    case CAIRO_STATUS_NO_CURRENT_POINT:	return gs_error_nocurrentpoint;
+    default:				return gs_error_unknownerror;
+    }
+}
+
 /* Complete a page */
 static int
 devcairo_output_page(gx_device *dev, int num_copies, int flush)
 {
     gx_device_cairo *const devcairo = (gx_device_cairo*)dev;
-
-    if (dev->NumCopies_set) {
-	int i;
+    int code = 0;
+    int i;
 	
-	for (i = dev->NumCopies - 1; i > 0; i++)
-	    cairo_copy_page (devcairo->cr);
-    }
+    for (i = num_copies - 1; i > 0; i++)
+	cairo_copy_page (devcairo->cr);
 
     cairo_show_page (devcairo->cr);
 
-    // XXX show cairo status
-    // XXX if (ferror(devcairo->file)) return_error(gs_error_ioerror);
+    if (flush)
+	cairo_surface_flush (cairo_get_target (devcairo->cr));
+
+    code = devcairo_check_status (devcairo);
+    if (code < 0) return_error (code);
 
     return gx_finish_output_page(dev, num_copies, flush);
 }
@@ -386,28 +405,28 @@ static int
 devcairo_close_device(gx_device *dev)
 {
     gx_device_cairo *const devcairo = (gx_device_cairo*)dev;
-    int code = 0;
-
-    /* XXX check context status */
+    int code = 0, ecode;
 
     if (devcairo->should_close_file) {
 	cairo_surface_t *surface = cairo_get_target (devcairo->cr);
 
+#ifdef CAIRO_HAS_PNG_FUNCTIONS
 	if (devcairo->should_write_png) {
 	    cairo_surface_write_to_png_stream (surface, devcairo_write_func, devcairo);
 	    devcairo->should_write_png = false;
 	}
+#endif
 
 	cairo_surface_finish (surface);
 
-	/* XXX check surface status */
-
-	if (ferror(devcairo->file)) code = gs_error_ioerror;
-	/* XXX code handling */
-
 	code = gdev_vector_close_file((gx_device_vector*)dev);
-
 	devcairo->should_close_file = false;
+    }
+
+    ecode = devcairo_check_status (devcairo);
+    if (ecode < 0) {
+	gs_note_error (ecode);
+	if (code >= 0) code = ecode;
     }
 
     cairo_restore (devcairo->cr);
@@ -435,7 +454,7 @@ devcairo_get_params(gx_device *dev, gs_param_list *plist)
 	    return code;	\
     } while (0)
 
-    write_string_param (devcairo->surface_param, SURFACE_PARAM_NAME);
+    write_string_param (devcairo->output_param, OUTPUT_PARAM_NAME);
     write_string_param (devcairo->context_param, CONTEXT_PARAM_NAME);
 
     return code;
@@ -486,7 +505,7 @@ devcairo_put_params(gx_device *dev, gs_param_list *plist)
 	} \
     } while (0)
 
-    read_string_param (devcairo->surface_param, SURFACE_PARAM_NAME);
+    read_string_param (devcairo->output_param, OUTPUT_PARAM_NAME);
     read_string_param (devcairo->context_param, CONTEXT_PARAM_NAME);
 
     code = gdev_vector_put_params(dev, plist);
