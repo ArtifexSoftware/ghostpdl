@@ -437,6 +437,11 @@ void
 clist_select_render_plane(gx_device *dev, int y, int height,
 			  gx_render_plane_t *render_plane, int index);
 
+int clist_rasterize_lines(gx_device *dev, int y, int lineCount,
+				  gx_device *bdev,
+				  const gx_render_plane_t *render_plane,
+				  int *pmy);
+
 /* Enable multi threaded rendering. Returns > 0 if supported, < 0 if single threaded */
 int
 clist_enable_multi_thread_render(gx_device *dev);

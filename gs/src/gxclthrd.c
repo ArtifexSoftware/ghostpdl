@@ -532,7 +532,7 @@ clist_get_bits_rect_mt(gx_device *dev, const gs_int_rect * prect,
 	    if (band_params.data)
 		band_params.data[0] += raster * lines_rasterized;
 	    line_count = end_y - y;
-	    // code = clist_rasterize_lines(dev, y, line_count, bdev, NULL, &my);
+	    code = clist_rasterize_lines(dev, y, line_count, bdev, NULL, &my);
 	    if (code < 0)
 		break;
 	    lines_rasterized = min(code, line_count);

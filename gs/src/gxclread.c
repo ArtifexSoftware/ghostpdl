@@ -281,13 +281,6 @@ top_up_offset_map(stream_state * st, const byte *buf, const byte *ptr, const byt
 
 /* ------ Reading/rendering ------ */
 
-/* Forward references */
-
-static int clist_rasterize_lines(gx_device *dev, int y, int lineCount,
-				  gx_device *bdev,
-				  const gx_render_plane_t *render_plane,
-				  int *pmy);
-
 /* Calculate the raster for a chunky or planar device. */
 static int
 clist_plane_raster(const gx_device *dev, const gx_render_plane_t *render_plane)
@@ -502,7 +495,7 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
 
 /* Copy scan lines to the client.  This is where rendering gets done. */
 /* Processes min(requested # lines, # lines available thru end of band) */
-static int	/* returns -ve error code, or # scan lines copied */
+int	/* returns -ve error code, or # scan lines copied */
 clist_rasterize_lines(gx_device *dev, int y, int line_count,
 		      gx_device *bdev, const gx_render_plane_t *render_plane,
 		      int *pmy)
