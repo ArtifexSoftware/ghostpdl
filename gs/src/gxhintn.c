@@ -1173,11 +1173,11 @@ static void t1_hinter__fix_missed_flex(t1_hinter * this)
 	    if (gcj < gc0 || gcj > gc1)
 		break;
 	}
-	i++;
 	if (i == contour_end) {
 	    i = contour_beg;
 	    wrapped = true;
-	}
+	} else
+	    i++;
 	/* Forward search for all platues. */
 	for (;;i++) {
 	    prev_dir = 0;
