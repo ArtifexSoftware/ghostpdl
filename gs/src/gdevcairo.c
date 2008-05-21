@@ -12,7 +12,7 @@
 */
 
 /* $Id$ */
-/* cairo output device */
+/* cairo output device - contributed by Behdad Esfahbod */
 
 #include <cairo.h>
 
