@@ -1106,6 +1106,17 @@ $(DD)svg.dev : $(DEVS_MAK) $(svg_) $(GDEV) $(GLD)vector.dev
 $(GLOBJ)gdevsvg.$(OBJ) : $(GLSRC)gdevsvg.c $(gx_h) $(gdevvec_h)
 	$(GLCC) $(GLO_)gdevsvg.$(OBJ) $(C_) $(GLSRC)gdevsvg.c
 
+# cairo output device
+
+cairo_=$(GLOBJ)gdevcairo.$(OBJ)
+$(DD)cairo.dev : $(DEVS_MAK) $(cairo_) $(GDEV) $(GLD)vector.dev
+	$(SETDEV2) $(DD)cairo $(cairo_)
+	$(ADDMOD) $(DD)cairo -include $(GLD)vector
+	$(ADDMOD) $(DD)cairo -lib cairo
+
+$(GLOBJ)gdevcairo.$(OBJ) : $(GLSRC)gdevcairo.c $(gx_h) $(gdevvec_h)
+	$(GLCC) $(GLO_)gdevcairo.$(OBJ) $(C_) $(GLSRC)gdevcairo.c $(CAIRO_CFLAGS) $(CAIRO_LIBS)
+
 ###### --------------------- Raster file formats --------------------- ######
 
 ### --------------------- The "plain bits" devices ---------------------- ###

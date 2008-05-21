@@ -349,6 +349,10 @@ SOC_CFLAGS	=	@SOC_CFLAGS@
 SOC_LIBS	=	@SOC_LIBS@
 SOC_LOADER	=	@SOC_LOADER@
 
+
+CAIRO_CFLAGS	=	@CAIRO_CFLAGS@
+CAIRO_LIBS	=	@CAIRO_LIBS@
+
 # ------ Devices and features ------ #
 
 # Choose the language feature(s) to include.  See gs.mak for details.
