@@ -15,8 +15,8 @@
 # requires svn export --ignore-externals, which is svn 1.2 or later I think
 
 # cut off revision numbers for the changelogs
-ghostpcl_NEWSREV=2226
-ghostscript_NEWSREV=7955
+ghostpcl_NEWSREV=3034
+ghostscript_NEWSREV=8567
 
 # svn urls
 ghostpcl_SVNROOT=svn+ssh://svn.ghostscript.com/var/lib/svn-private/ghostpcl/trunk/ghostpcl
