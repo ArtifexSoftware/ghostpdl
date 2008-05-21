@@ -63,15 +63,11 @@ typedef struct gs_image_common_s {
  */
 #define GS_IMAGE_MAX_COLOR_COMPONENTS GS_CLIENT_COLOR_MAX_COMPONENTS
 #define GS_IMAGE_MAX_COMPONENTS (GS_IMAGE_MAX_COLOR_COMPONENTS + 1)
-/* Backward compatibility */
-#define gs_image_max_components GS_IMAGE_MAX_COMPONENTS
 
 /*
  * Define the maximum number of planes in image data.
  */
 #define GS_IMAGE_MAX_PLANES GS_IMAGE_MAX_COMPONENTS
-/* Backward compatibility */
-#define gs_image_max_planes GS_IMAGE_MAX_PLANES
 
 /*
  * Define the structure for defining data common to ImageType 1 images,

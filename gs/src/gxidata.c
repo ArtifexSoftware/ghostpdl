@@ -47,7 +47,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
     + 7) >> 3)
 
     fixed adjust = penum->adjust;
-    ulong offsets[gs_image_max_planes];
+    ulong offsets[GS_IMAGE_MAX_PLANES];
     int ignore_data_x;
     bool bit_planar = penum->num_planes > penum->spp;
     int code;

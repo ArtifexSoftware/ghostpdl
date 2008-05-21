@@ -26,7 +26,7 @@
  */
 typedef struct image_params_s {
     bool MultipleDataSources;
-    ref DataSource[gs_image_max_components];
+    ref DataSource[GS_IMAGE_MAX_COMPONENTS];
     const float *pDecode;
 } image_params;
 

@@ -748,7 +748,7 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 	    int by0 = ibox.p.y, by1 = ibox.q.y;
 	    int bpp = pie->bits_per_plane;
 	    int num_planes = pie->num_planes;
-	    uint offsets[gs_image_max_planes];
+	    uint offsets[GS_IMAGE_MAX_PLANES];
 	    int i, iy, ih, xskip, xoff, nrows;
 	    uint bytes_per_plane, bytes_per_row, rows_per_cmd;
 
