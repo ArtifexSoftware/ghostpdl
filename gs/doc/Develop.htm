@@ -100,7 +100,8 @@
 <ul>
 <li><a href="#malloc">malloc</a>,
     <a href="#Locking">Locking</a>,
-    <a href="#Retrying">Retrying</a>
+    <a href="#Retrying">Retrying</a>,
+    <a href="#Chunk">Chunk</a>
 </ul>
 <li><a href="#Standard_implementation">Standard implementation</a>
 <li><a href="#PostScript_interpreter_extensions">PostScript interpreter extensions</a>
@@ -563,6 +564,8 @@ Non-standard filters:
 <a href="../src/sbwbs.h">src/sbwbs.h</a>,
 <a href="../src/smd5.c">src/smd5.c</a>,
 <a href="../src/smd5.h">src/smd5.h</a>,
+<a href="../src/saes.c">src/saes.c</a>,
+<a href="../src/saes.h">src/saes.h</a>,
 <a href="../src/sarc4.c">src/sarc4.c</a>,
 <a href="../src/sarc4.h">src/sarc4.h</a>,
 <a href="../src/smtf.c">src/smtf.c</a>,
@@ -1522,6 +1525,8 @@ Banding:
 <a href="../src/gxclrast.c">src/gxclrast.c</a>,
 <a href="../src/gxclread.c">src/gxclread.c</a>,
 <a href="../src/gxclrect.c">src/gxclrect.c</a>,
+<a href="../src/gxclthrd.c">src/gxclthrd.c</a>,
+<a href="../src/gxclthrd.h">src/gxclthrd.h</a>,
 <a href="../src/gxclutil.c">src/gxclutil.c</a>,
 <a href="../src/gxclzlib.c">src/gxclzlib.c</a>,
 <a href="../src/gxdhtserial.c">src/gxdhtserial.c</a>,
@@ -3804,6 +3809,10 @@ As mentioned <a href="#Parent_hierarchy">above</a>, the ultimate ancestor of
 all allocators with an expandable pool is one that calls
 <b><tt>malloc</tt></b>.
 
+<p>Note that the default gsmalloc.c allocator for malloc/free now uses
+a mutex so that allocators that use this can be assured of thread safe
+behavior.
+
 <dl>
 <dt>
 Files:
@@ -3847,6 +3856,27 @@ Files:
 <dd>
 <a href="../src/gsmemret.h">src/gsmemret.h</a>,
 <a href="../src/gsmemret.c">src/gsmemret.c</a>.
+</dl>
+
+<h4><a name="Chunk"></a>Chunk</h4>
+
+<p>When multiple threads are used and there may be frequent memory allocator
+requests, mutex contention is a problem and can cause severe performance
+degradation. The chunk memory wrapper can provide each thread with its own
+instance of an allocator that only makes requests on the underlying (non-GC)
+alloctor when large blocks are needed. Small object allocations are managed
+within chunks.
+
+<p>This allocator is intended to be used on top of the basic 'gsmalloc'
+allocator (malloc/free) which is NOT garbage collected or relocated and
+which MUST be mutex protected.
+
+<dl>
+<dt>
+Files:
+<dd>
+<a href="../src/gsmchunk.h">src/gsmchunk.h</a>,
+<a href="../src/gsmchunk.c">src/gsmchunk.c</a>.
 </dl>
 
 <h3><a name="Standard_implementation"></a>Standard implementation</h3>
