@@ -595,8 +595,22 @@ AC_SUBST(SOC_CFLAGS)
 AC_SUBST(SOC_LIBS)
 AC_SUBST(SOC_LOADER)
 
-CAIRO_CFLAGS=`pkg-config cairo --cflags`
-CAIRO_LIBS=`pkg-config cairo --libs`
+dnl enable the cairo device if the library is available
+CAIRO_DEVS=""
+CAIRO_CFLAGS=""
+CAIRO_LIBS=""
+AC_PATH_PROG(PKGCONFIG, pkg-config)
+if test "x$PKGCONFIG" != x; then
+  AC_MSG_CHECKING([for cairo])
+  CAIRO_CFLAGS=`pkg-config cairo --cflags`
+  CAIRO_LIBS=`pkg-config cairo --libs`
+  if test -z "$CAIRO_LIBS"; then
+    AC_MSG_RESULT([no])
+  else
+    CAIRO_DEVS="cairo"
+    AC_MSG_RESULT([yes])
+  fi
+fi
 AC_SUBST(CAIRO_CFLAGS)
 AC_SUBST(CAIRO_LIBS)
 
@@ -712,6 +726,7 @@ AC_ARG_WITH(drivers,
 			  PNG      = Output to PNG
                           PS       = Output to PostScript/PDF
                           TIFF     = Output to TIFF
+                          CAIRO    = Output using libcairo
 			  WTS      = WTS Halftoning devices
 			  ETS      = ETS Halftoning devices
                           You can mix both variants, e.g.
@@ -856,6 +871,10 @@ while test -n "$drivers"; do
 	PS)
 		# PostScript/PDF writing
 		F_DEVS="$F_DEVS $PS_DEVS"
+		;;
+	CAIRO)
+		$ cairo output device
+		F_DEVS="$F_DEVS $CAIRO_DEVS"
 		;;
 	WTS)
 		# WTS Halftoning devices
