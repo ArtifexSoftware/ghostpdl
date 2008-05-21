@@ -143,7 +143,7 @@ clist_setup_render_threads(gx_device *dev, int y)
 	 * We need  to unlink those files and open the main thread's files, then
 	 * reset the clist state for reading/rendering
 	 */
-	if ((code = gdev_prn_allocate_memory(ndev, NULL, 0, 0)) < 0)
+	if ((code = gdev_prn_allocate_memory(ndev, NULL, ndev->width, ndev->height)) < 0)
 	    break;
 	thread->cdev = ndev;
 	/* close and unlink the temp files just created */
