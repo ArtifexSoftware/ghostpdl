@@ -275,30 +275,30 @@ devcairo_open_device(gx_device *dev)
 	if (0)
 	  ;
 	#ifdef CAIRO_HAS_PNG_FUNCTIONS
-	    else if (0 == strcasecmp (extension, "png")) {
+	    else if (extension && 0 == strcasecmp (extension, "png")) {
 	        surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, dev->width, dev->height);
 		devcairo->should_write_png = true;
 	    }
 	#endif
 	#ifdef CAIRO_HAS_SVG_SURFACE
-	    else if (0 == strcasecmp (extension, "svg")) {
+	    else if (extension && 0 == strcasecmp (extension, "svg")) {
 		surface = cairo_svg_surface_create_for_stream (devcairo_write_func, dev, dev->MediaSize[0], dev->MediaSize[1]);
 		scale_to_points = true;
 	    }
 	#endif
 	#ifdef CAIRO_HAS_PDF_SURFACE
-	    else if (0 == strcasecmp (extension, "pdf")) {
+	    else if (extension && 0 == strcasecmp (extension, "pdf")) {
 		surface = cairo_pdf_surface_create_for_stream (devcairo_write_func, dev, dev->MediaSize[0], dev->MediaSize[1]);
 		scale_to_points = true;
 	    }
 	#endif
 	#ifdef CAIRO_HAS_PS_SURFACE
-	    else if (0 == strcasecmp (extension, "ps")) {
+	    else if (extension && 0 == strcasecmp (extension, "ps")) {
 		surface = cairo_ps_surface_create_for_stream (devcairo_write_func, dev, dev->MediaSize[0], dev->MediaSize[1]);
 		scale_to_points = true;
 	    }
 	  #ifdef HAS_EPS
-	    else if (0 == strcasecmp (extension, "eps")) {
+	    else if (extension && 0 == strcasecmp (extension, "eps")) {
 		surface = cairo_ps_surface_create_for_stream (devcairo_write_func, dev, dev->MediaSize[0], dev->MediaSize[1]);
 		cairo_ps_surface_set_eps (surface, true);
 		scale_to_points = true;
