@@ -399,7 +399,7 @@ gx_remap_concrete_DeviceN(const frac * pconc, const gs_color_space * pcs,
 #endif
 
 #if ENABLE_CUSTOM_COLOR_CALLBACK
-    if (pis->custom_color_callback) {
+    if (pis->memory->gs_lib_ctx->custom_color_callback) {
 	int code = gx_remap_concrete_custom_color_DeviceN(pconc, pcs, pdc,
 						       	pis, dev, select);
 	if (code >= 0)

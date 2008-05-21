@@ -193,7 +193,7 @@ gx_install_DeviceGray(gs_color_space * pcs, gs_state * pgs)
      * color space.
      */
     client_custom_color_params_t * pcb =
-	(client_custom_color_params_t *) pgs->custom_color_callback;
+	(client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
 
     if (pcb != NULL) 
 	pcb->client_procs->install_DeviceGray(pcb, pcs, pgs);
@@ -246,7 +246,7 @@ gx_install_DeviceRGB(gs_color_space * pcs, gs_state * pgs)
      * color space.
      */
     client_custom_color_params_t * pcb =
-	(client_custom_color_params_t *) pgs->custom_color_callback;
+	(client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
 
     if (pcb != NULL) 
 	pcb->client_procs->install_DeviceRGB(pcb, pcs, pgs);
@@ -264,7 +264,7 @@ gx_install_DeviceCMYK(gs_color_space * pcs, gs_state * pgs)
      * color space.
      */
     client_custom_color_params_t * pcb =
-	(client_custom_color_params_t *) pgs->custom_color_callback;
+	(client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
 
     if (pcb != NULL) 
 	pcb->client_procs->install_DeviceCMYK(pcb, pcs, pgs);

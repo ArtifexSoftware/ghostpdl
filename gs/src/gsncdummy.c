@@ -23,7 +23,7 @@
 
 /* Added these two defines so that I could compare to ghost script rendering color */
 
-#define OBJECT_TYPE_EXAMPLE 0		/* 0 --> disabled, 1 --> enabled */
+#define OBJECT_TYPE_EXAMPLE 1		/* 0 --> disabled, 1 --> enabled */
 #define PANTONE_ONLY 0
 /*
  * This module has been created to demonstrate how to support the use of

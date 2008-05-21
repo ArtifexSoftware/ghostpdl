@@ -147,12 +147,16 @@ int gx_remap_concrete_custom_color_DeviceN(const frac * pconc,
  * consists of a pointer to a list of client color space handling procedures
  * and a pointer to a client data structure.
  */
+
+#ifndef client_custom_color_params_DEFINED
+#define client_custom_color_params_DEFINED
 typedef struct client_custom_color_params_s {
     /* Client callback handlers */
     struct client_custom_color_procs_s * client_procs;
     /* For global client data */
     void * data;
 } client_custom_color_params_t;
+#endif
 
 
 /*

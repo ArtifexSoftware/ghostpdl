@@ -622,7 +622,7 @@ gx_remap_concrete_DGray(const frac * pconc, const gs_color_space * pcs,
 #if ENABLE_CUSTOM_COLOR_CALLBACK
     {
         client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->custom_color_callback);
+	    (client_custom_color_params_t *) (pis->memory->gs_lib_ctx->custom_color_callback);
 
         if (pcb != NULL) {
 	    int code = pcb->client_procs->remap_DeviceGray(pcb, pconc,
@@ -657,7 +657,7 @@ gx_remap_DeviceGray(const gs_client_color * pc, const gs_color_space * pcs,
 #if ENABLE_CUSTOM_COLOR_CALLBACK
     {
         client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->custom_color_callback);
+	    (client_custom_color_params_t *) (pis->memory->gs_lib_ctx->custom_color_callback);
 
         if (pcb != NULL) {
 	    int code = pcb->client_procs->remap_DeviceGray(pcb, &fgray,
@@ -696,7 +696,7 @@ gx_remap_concrete_DRGB(const frac * pconc, const gs_color_space * pcs,
 #if ENABLE_CUSTOM_COLOR_CALLBACK
     {
         client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->custom_color_callback);
+	    (client_custom_color_params_t *) (pis->memory->gs_lib_ctx->custom_color_callback);
 
         if (pcb != NULL) {
 	    int code = pcb->client_procs->remap_DeviceRGB(pcb, pconc,
@@ -733,7 +733,7 @@ gx_remap_DeviceRGB(const gs_client_color * pc, const gs_color_space * pcs,
 #if ENABLE_CUSTOM_COLOR_CALLBACK
     {
         client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->custom_color_callback);
+	    (client_custom_color_params_t *) (pis->memory->gs_lib_ctx->custom_color_callback);
 
         if (pcb != NULL) {
 	    frac conc[3];
@@ -778,7 +778,7 @@ gx_remap_concrete_DCMYK(const frac * pconc, const gs_color_space * pcs,
 #if ENABLE_CUSTOM_COLOR_CALLBACK
     {
         client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->custom_color_callback);
+	    (client_custom_color_params_t *) (pis->memory->gs_lib_ctx->custom_color_callback);
 
         if (pcb != NULL) {
 	    int code = pcb->client_procs->remap_DeviceCMYK(pcb, pconc,
@@ -809,7 +809,7 @@ gx_remap_DeviceCMYK(const gs_client_color * pc, const gs_color_space * pcs,
 #if ENABLE_CUSTOM_COLOR_CALLBACK
     {
         client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->custom_color_callback);
+	    (client_custom_color_params_t *) (pis->memory->gs_lib_ctx->custom_color_callback);
 
         if (pcb != NULL) {
 	    frac conc[4];

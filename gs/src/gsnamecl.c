@@ -52,7 +52,7 @@ bool
 custom_color_callback_install_Separation(gs_color_space * pcs, gs_state * pgs)
 {
 	client_custom_color_params_t * pcb =
-	(client_custom_color_params_t *) pgs->custom_color_callback;
+	(client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
 
     return (pcb == NULL) ? false
 	    		 : pcb->client_procs->install_Separation(pcb, pcs, pgs);
@@ -66,7 +66,7 @@ bool
 custom_color_callback_install_DeviceN(gs_color_space * pcs, gs_state * pgs)
 {
     client_custom_color_params_t * pcb =
-	(client_custom_color_params_t *) pgs->custom_color_callback;
+	(client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
   
     return (pcb == NULL) ? false
   	    		 : pcb->client_procs->install_DeviceN(pcb, pcs, pgs);
@@ -82,7 +82,7 @@ gx_remap_concrete_custom_color_Separation(const frac * pconc,
          	const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
 {
     client_custom_color_params_t * pcb =
-	(client_custom_color_params_t *) pis->custom_color_callback;
+	(client_custom_color_params_t *) pis->memory->gs_lib_ctx->custom_color_callback;
   
       if (pcb == NULL) {
   	return_error(gs_error_rangecheck);
@@ -102,7 +102,7 @@ gx_remap_concrete_custom_color_DeviceN(const frac * pconc,
        	const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
 {
     client_custom_color_params_t * pcb =
-	(client_custom_color_params_t *) pis->custom_color_callback;
+	(client_custom_color_params_t *) pis->memory->gs_lib_ctx->custom_color_callback;
   
 	if (pcb == NULL) {
   		return_error(gs_error_rangecheck);
@@ -131,7 +131,7 @@ custom_color_callback_get_params(gs_state * pgs, gs_param_list * plist)
     size_t iptr;
  
     idx = ((int)sizeof(size_t)) * 8 - 4;
-    iptr = (size_t)(pgs->custom_color_callback);
+    iptr = (size_t)(pgs->memory->gs_lib_ctx->custom_color_callback);
     while (idx >= 0) {
 	val = (int)(iptr >> idx) & 0xf;
     if (val <= 9)
@@ -157,7 +157,7 @@ int
 custom_color_callback_put_params(gs_state * pgs, gs_param_list * plist)
 {
     int code;
-    size_t iptr = (size_t)(pgs->custom_color_callback);
+    size_t iptr = (size_t)(pgs->memory->gs_lib_ctx->custom_color_callback);
     gs_param_string dh = { 0 };
 
     switch (code = param_read_string(plist, CustomColorCallbackParamName, &dh)) {
@@ -201,8 +201,8 @@ custom_color_callback_put_params(gs_state * pgs, gs_param_list * plist)
     if (code < 0) {
 	param_signal_error(plist, "CustomColorCallback", code);
     }
-    else if (pgs->custom_color_callback != (void *)iptr) {
-        pgs->custom_color_callback = (void *)iptr;
+    else if (pgs->memory->gs_lib_ctx->custom_color_callback != (void *)iptr) {
+        pgs->memory->gs_lib_ctx->custom_color_callback = (void *)iptr;
 	/*
 	 * Custom color processing can depend upon the type of object
 	 * being imaged so we enable object type tagging.

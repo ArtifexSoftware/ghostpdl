@@ -324,7 +324,7 @@ gx_remap_ICCBased(const gs_client_color * pc, const gs_color_space * pcs,
 		gs_color_select_t select)
 {
     client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->custom_color_callback);
+	    (client_custom_color_params_t *) (pis->memory->gs_lib_ctx->custom_color_callback);
 
     if (pcb != NULL) {
 	if (pcb->client_procs->remap_ICCBased(pcb, pc, pcs,
@@ -599,7 +599,7 @@ gx_install_CIEICC(gs_color_space * pcs, gs_state * pgs)
          * color space.
          */
         client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) pgs->custom_color_callback;
+	    (client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
 
         if (pcb != NULL) {
 	    if (pcb->client_procs->install_ICCBased(pcb, pcs, pgs))

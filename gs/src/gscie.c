@@ -402,7 +402,7 @@ gx_install_CIEDEFG(gs_color_space * pcs, gs_state * pgs)
          * color space.
          */
         client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) pgs->custom_color_callback;
+	    (client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
 
         if (pcb != NULL) {
 	    if (pcb->client_procs->install_CIEBasedDEFG(pcb, pcs, pgs))
@@ -429,7 +429,7 @@ gx_install_CIEDEF(gs_color_space * pcs, gs_state * pgs)
          * color space.
          */
         client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) pgs->custom_color_callback;
+            (client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
 
         if (pcb != NULL) {
 	    if (pcb->client_procs->install_CIEBasedDEF(pcb, pcs, pgs))
@@ -454,7 +454,7 @@ gx_install_CIEABC(gs_color_space * pcs, gs_state * pgs)
          * color space.
          */
         client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) pgs->custom_color_callback;
+            (client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
 
         if (pcb != NULL) {
 	    if (pcb->client_procs->install_CIEBasedABC(pcb, pcs, pgs))
@@ -480,7 +480,7 @@ gx_install_CIEA(gs_color_space * pcs, gs_state * pgs)
          * color space.
          */
         client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) pgs->custom_color_callback;
+            (client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
 
         if (pcb != NULL) {
 	    if (pcb->client_procs->install_CIEBasedA(pcb, pcs, pgs))

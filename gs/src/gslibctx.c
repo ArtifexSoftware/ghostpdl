@@ -72,11 +72,13 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     pio->stdout_fn = 0;
     pio->stderr_fn = 0;
     pio->poll_fn = 0;
+    pio->custom_color_callback = NULL;
 
     /* id's 1 through 4 are reserved for Device color spaces; see gscspace.h */
     pio->gs_next_id = 5;  /* this implies that each thread has its own complete state */
 
     pio->dict_auto_expand = false;
+
     return 0;
 }
 
