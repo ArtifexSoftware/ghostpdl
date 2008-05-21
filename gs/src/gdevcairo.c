@@ -113,7 +113,7 @@ gs_public_st_suffix_add0_final(st_device_cairo, gx_device_cairo,
                                "gx_device_cairo",
                                device_cairo_enum_ptrs, 
 			       device_cairo_reloc_ptrs,
-                               gx_device_finalize, 
+                               gx_device_finalize,
 			       st_device_vector);
 
 const gx_device_cairo gs_cairo_device = {
@@ -140,7 +140,7 @@ static int
 devcairo_setlogop(gx_device_vector *vdev, gs_logical_operation_t lop,
 	     gs_logical_operation_t diff);
 
-static int 
+static int
 devcairo_can_handle_hl_color(gx_device_vector *vdev, const gs_imager_state *pis,
 			const gx_drawing_color * pdc);
 static int
@@ -385,7 +385,7 @@ devcairo_output_page(gx_device *dev, int num_copies, int flush)
     gx_device_cairo *const devcairo = (gx_device_cairo*)dev;
     int code = 0;
     int i;
-	
+
     for (i = num_copies - 1; i > 0; i++)
 	cairo_copy_page (devcairo->cr);
 
@@ -550,7 +550,7 @@ static int
 devcairo_setlinewidth(gx_device_vector *vdev, floatp width)
 {
     gx_device_cairo *devcairo = (gx_device_cairo *)vdev;
-    
+
     cairo_set_line_width (devcairo->cr, width);
 
     return 0;
@@ -560,7 +560,7 @@ devcairo_setlinecap(gx_device_vector *vdev, gs_line_cap cap)
 {
     gx_device_cairo *devcairo = (gx_device_cairo *)vdev;
     cairo_line_cap_t cairo_cap;
-    
+
     switch (cap) {
     case gs_cap_butt:   cairo_cap = CAIRO_LINE_CAP_BUTT;   break;
     case gs_cap_square: cairo_cap = CAIRO_LINE_CAP_SQUARE; break;
@@ -579,7 +579,7 @@ devcairo_setlinejoin(gx_device_vector *vdev, gs_line_join join)
 {
     gx_device_cairo *devcairo = (gx_device_cairo *)vdev;
     cairo_line_join_t cairo_join;
-    
+
     switch (join) {
     case gs_join_miter: cairo_join = CAIRO_LINE_JOIN_MITER; break;
     case gs_join_round: cairo_join = CAIRO_LINE_JOIN_ROUND; break;
@@ -597,7 +597,7 @@ static int
 devcairo_setmiterlimit(gx_device_vector *vdev, floatp limit)
 {
     gx_device_cairo *devcairo = (gx_device_cairo *)vdev;
-    
+
     cairo_set_miter_limit (devcairo->cr, limit);
 
     return 0;
@@ -613,13 +613,13 @@ static int
 devcairo_setlogop(gx_device_vector *vdev, gs_logical_operation_t lop,
 	     gs_logical_operation_t diff)
 {
-    dprintf("XXX devcairo_setlogop\n");
+/*    dprintf("XXX devcairo_setlogop\n"); */
     return 0;
 }
 
         /* Other state */
 
-static int 
+static int
 devcairo_can_handle_hl_color(gx_device_vector *vdev, const gs_imager_state *pis,
 			  const gx_drawing_color * pdc)
 {
@@ -655,7 +655,7 @@ devcairo_setstrokecolor(gx_device_vector *vdev, const gs_imager_state *pis,
 /*    gdev_vector_dopath */
 
 static int
-devcairo_beginpath(gx_device_vector *vdev, gx_path_type_t type)    
+devcairo_beginpath(gx_device_vector *vdev, gx_path_type_t type)
 {
     gx_device_cairo *devcairo = (gx_device_cairo *)vdev;
 
