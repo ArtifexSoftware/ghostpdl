@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id:$ */
+/* $Id$ */
 /* chunk consolidating wrapper on a base memory allocator */
 
 #include "memory_.h"
@@ -114,17 +114,21 @@ int				/* -ve error code or 0 */
 gs_memory_chunk_wrap( gs_memory_t **wrapped,	/* chunk allocator init */
 		      gs_memory_t * target )	/* base allocator */
 {
-    gs_memory_chunk_t *cmem = (gs_memory_chunk_t *)
-        gs_alloc_bytes_immovable(target, sizeof(gs_memory_chunk_t),
-                                 "gs_malloc_wrap(chunk)");
+    /* Use the non-GC allocator of the target. The chunk allocator is NOT GC safe */
+    gs_memory_t *non_gc_target = target->non_gc_memory;
+    gs_memory_chunk_t *cmem = NULL;
+
     *wrapped = NULL;		/* don't leave garbage in case we fail */
+    if (non_gc_target) 
+	    cmem = (gs_memory_chunk_t *) gs_alloc_bytes_immovable(non_gc_target,
+			sizeof(gs_memory_chunk_t), "gs_malloc_wrap(chunk)");
     if (cmem == 0)
         return_error(gs_error_VMerror);
     cmem->stable_memory = (gs_memory_t *)cmem;	/* we are stable */
     cmem->procs = chunk_procs;
-    cmem->gs_lib_ctx = target->gs_lib_ctx;
+    cmem->gs_lib_ctx = non_gc_target->gs_lib_ctx;
     cmem->non_gc_memory = (gs_memory_t *)cmem;	/* and are not subject to GC */
-    cmem->target = target;
+    cmem->target = non_gc_target;
     cmem->head_chunk = NULL;
 #ifdef DEBUG
     cmem->sequence_counter = 0;
