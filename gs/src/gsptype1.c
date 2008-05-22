@@ -1269,6 +1269,7 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, uint offset, byte *data, uint *
     }
     if (offset1 == 0) {	/* Serialize tile parameters: */
 	gx_dc_serialized_tile_t buf;
+	gx_strip_bitmap buf1;
 
     	buf.id = ptile->id;
 	buf.size.x = 0; /* fixme: don't write with raster patterns. */
@@ -1289,20 +1290,28 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, uint offset, byte *data, uint *
 	left -= sizeof(buf);
 	dp += sizeof(buf);
 	offset1 += sizeof(buf);
-    }
-    if (left < size_b)
-	return_error(gs_error_unregistered); /* Not implemented yet because cmd_put_drawing_color provides a big buffer. */
-    if (offset1 <= sizeof(gx_dc_serialized_tile_t) + size_b) {
-	gx_strip_bitmap buf;
 
-	buf = ptile->tbits;
-	buf.data = NULL; /* fixme: we don't need to write it actually. */
-	memcpy(dp, &buf, sizeof(buf));
-	memcpy(dp + sizeof(buf), ptile->tbits.data, size_b - sizeof(buf));
-	left -= size_b;
-	dp += size_b;
-	offset1 += size_b;
+	buf1 = ptile->tbits;
+	buf1.data = NULL; /* fixme: we don't need to write it actually. */
+	if (sizeof(buf1) > left) {
+	    /* For a while we require the client to provide enough buffer size. */
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	}
+	memcpy(dp, &buf1, sizeof(buf1));
+	left -= sizeof(buf1);
+	dp += sizeof(buf1);
+	offset1 += sizeof(buf1);
     }
+    if (offset1 <= sizeof(gx_dc_serialized_tile_t) + size_b) {
+	int l = min((size_b - sizeof(gx_strip_bitmap)) - (offset1 - sizeof(gx_dc_serialized_tile_t) -  sizeof(gx_strip_bitmap)), left);
+
+	memcpy(dp, ptile->tbits.data + (offset1 - sizeof(gx_dc_serialized_tile_t) -  sizeof(gx_strip_bitmap)), l);
+	left -= l;
+	dp += l;
+	offset1 += l;
+    }
+    if (left == 0)
+	return 0;
     if (size_c == 0)
 	return 0;
     if (offset1 <= sizeof(gx_dc_serialized_tile_t) + size_b + sizeof(gx_strip_bitmap)) {
@@ -1325,7 +1334,7 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, uint offset, byte *data, uint *
     return 0;
 }
 
-/* currently, patterns cannot be passed through the command list */
+/* Write a pattern into command list, possibly dividing intoi portions. */
 int
 gx_dc_pattern_write(
     const gx_device_color *         pdevc,

@@ -1616,15 +1616,19 @@ idata:			data_size = 0;
 				    uint    color_size;
 				    int left, offset, l;
 				    const gx_device_color_type_t *  pdct;
+				    byte type_and_flag = *cbp++;
+				    byte is_continuation = type_and_flag & 0x80;				    
 
-				    pdct = gx_get_dc_type_from_index(*cbp++);
+				    pdct = gx_get_dc_type_from_index(type_and_flag & 0x7F);
 				    if (pdct == 0) {
 					code = gs_note_error(gs_error_rangecheck);
 					goto out;
 				    }
+				    offset = 0;
+				    if (is_continuation)
+					enc_u_getw(offset, cbp);
 				    enc_u_getw(color_size, cbp);
 				    left = color_size;
-				    offset = 0;
 				    if (!left) {
 					/* We still need to call pdct->read because it may change dev_color.type -
 					   see gx_dc_null_read.*/

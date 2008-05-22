@@ -105,6 +105,11 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     byte *                     dp;
     byte *                     dp0;
     gs_int_point               color_phase;
+    int			       buffer_space;
+    int			       offset = 0;
+    int			       left;
+    uint		       portion_size, prefix_size;
+    int			       req_size_final;
 
     /* see if the halftone must be inserted in the command list */
     if ( pdht != NULL                          &&
@@ -136,7 +141,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         return 0;
     else if (code < 0 && code != gs_error_rangecheck)
         return code;
-    req_size = dc_size + 2 + 1 + enc_u_sizew(dc_size);
+    left = dc_size;
 
     /* see if phase informaiton must be inserted in the command list */
     if ( pdcolor->type->get_phase(pdcolor, &color_phase) &&
@@ -148,27 +153,39 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                                      color_phase.y )) < 0  )
         return code;
 
-    /*
-     * Encoded device colors are small in comparison to the command
-     * buffer size (< 64 bytes), so we can just clear space in the
-     * command buffer for them.
-     */
-    if ((code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_extend, req_size)) < 0)
-        return code;
-    dp0 = dp;
-    dp[1] = cmd_opv_ext_put_drawing_color;
-    dp += 2;
-    *dp++ = di;
-    enc_u_putw(dc_size, dp);
-    code = pdcolor->type->write( pdcolor,
-                                 &pcls->sdc,
-                                 (gx_device *)cldev,
-				 0,
-                                 dp,
-                                 &dc_size );
-    if (code < 0) {
-        cldev->cnext = dp0;
-        return code;
+    while (left) {
+	prefix_size = 2 + 1 + (offset > 0 ? enc_u_sizew(offset) : 0);
+	req_size = left + prefix_size + enc_u_sizew(left);
+	code = cmd_get_buffer_space(cldev, pcls, req_size);
+	if (code < 0)
+	    return code;
+	buffer_space = min(code, req_size);
+	portion_size = buffer_space - prefix_size - enc_u_sizew(left);
+	req_size_final = portion_size + prefix_size + enc_u_sizew(portion_size);
+	if (req_size_final > buffer_space)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	if ((code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_extend, req_size_final)) < 0)
+	    return code;
+	dp0 = dp;
+	dp[1] = cmd_opv_ext_put_drawing_color;
+	dp += 2;
+	*dp++ = di | (offset > 0 ? 0x80 : 0);
+	if (offset > 0)
+	    enc_u_putw(offset, dp);
+	enc_u_putw(portion_size, dp);
+	code = pdcolor->type->write( pdcolor,
+				     &pcls->sdc,
+				     (gx_device *)cldev,
+				     offset,
+				     dp,
+				     &portion_size);
+	if (code < 0) {
+	    if (offset == 0)
+		cldev->cnext = dp0;
+	    return code;
+	}
+	offset += portion_size;
+	left -= portion_size;
     }
 
     /* should properly calculate colors_used, but for now just punt */

@@ -279,6 +279,25 @@ cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
     cldev->cnext = dp + size;
     return dp;
 }
+
+/* Request a space in the buffer. 
+   Writes out the buffer if necessary.
+   Returns the size of available space. */
+int
+cmd_get_buffer_space(gx_device_clist_writer * cldev, gx_clist_state * pcls, uint size)
+{
+    cmd_list * pcl = &pcls->list;
+
+    if (size + cmd_headroom > cldev->cend - cldev->cnext) {
+	cldev->error_code = cmd_write_buffer(cldev, cmd_opv_end_run);
+	if (cldev->error_code < 0) {
+	    cldev->error_is_retryable = 0;	/* hard error */
+	    return cldev->error_code;
+	}
+    }
+    return cldev->cend - cldev->cnext - cmd_headroom;
+}
+
 #ifdef DEBUG
 byte *
 cmd_put_op(gx_device_clist_writer * cldev, gx_clist_state * pcls, uint size)

@@ -378,6 +378,11 @@ void cmd_print_stats(void);
 /* and allocate space for its data. */
 byte *cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size);
 
+/* Request a space in the buffer. 
+   Writes out the buffer if necessary.
+   Returns the size of available space. */
+int cmd_get_buffer_space(gx_device_clist_writer * cldev, gx_clist_state * pcls, uint size);
+
 #ifdef DEBUG
 byte *cmd_put_op(gx_device_clist_writer * cldev, gx_clist_state * pcls, uint size);
 #else
