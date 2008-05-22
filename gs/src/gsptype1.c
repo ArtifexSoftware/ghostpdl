@@ -1498,6 +1498,8 @@ gx_dc_pattern_read(
     int code, l;
 
     if (offset == 0) {
+	pdevc->mask.id = gx_no_bitmap_id;
+	pdevc->mask.m_tile = NULL;
 	if (size == 0) {
 	    /* Null pattern. */
 	    pdevc->type = &gx_dc_pattern;
