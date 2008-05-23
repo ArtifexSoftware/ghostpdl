@@ -63,6 +63,7 @@ typedef struct gx_device_cairo_s {
 			   (depth > 1 ? 256 : 2), (depth > 8 ? 256 : 1))
 
 static dev_proc_open_device(devcairo_open_device);
+static dev_proc_sync_output(devcairo_sync_output);
 static dev_proc_output_page(devcairo_output_page);
 static dev_proc_close_device(devcairo_close_device);
 
@@ -73,7 +74,7 @@ static dev_proc_put_params(devcairo_put_params);
 { \
 	devcairo_open_device, \
         NULL,                   /* get_initial_matrix */\
-        NULL,                   /* sync_output */\
+        devcairo_sync_output,\
         devcairo_output_page,\
         devcairo_close_device,\
         gx_default_rgb_map_rgb_color,\
@@ -378,6 +379,20 @@ devcairo_check_status (gx_device_cairo *devcairo)
     }
 }
 
+int
+devcairo_sync_output(gx_device * dev)
+{
+    gx_device_cairo *const devcairo = (gx_device_cairo*)dev;
+    int code = 0;
+
+    cairo_surface_flush (cairo_get_target (devcairo->cr));
+
+    code = devcairo_check_status (devcairo);
+    if (code < 0) return_error (code);
+
+    return 0;
+}
+
 /* Complete a page */
 static int
 devcairo_output_page(gx_device *dev, int num_copies, int flush)
@@ -389,10 +404,10 @@ devcairo_output_page(gx_device *dev, int num_copies, int flush)
     for (i = num_copies - 1; i > 0; i++)
 	cairo_copy_page (devcairo->cr);
 
-    cairo_show_page (devcairo->cr);
-
     if (flush)
-	cairo_surface_flush (cairo_get_target (devcairo->cr));
+	cairo_show_page (devcairo->cr);
+    else
+	cairo_copy_page (devcairo->cr);
 
     code = devcairo_check_status (devcairo);
     if (code < 0) return_error (code);
