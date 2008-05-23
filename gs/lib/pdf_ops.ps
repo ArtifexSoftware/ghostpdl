@@ -542,11 +542,6 @@ end readonly def
   /TextFont gput settextstate
 } bdef
 
-% Read a CFF font.
-/FRD		% <resname> <file> FRD -
- { /FontSetInit /ProcSet findresource begin //true //false ReadData pop
- } bdef
-
 % Copy a font, removing its FID.  If changed is true, also remove
 % the UniqueID and XUID, if any.  If the original dictionary doesn't have
 % the keys being removed, don't copy it.
