@@ -243,11 +243,23 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
 	   Continue using trueNumGlyphs since the document of
 	   the bug 688467 fails otherwise.
 	 */
-#	ifdef DEBUG
-	    /* pfont->key_name.chars is ASCIIZ due to copy_font_name. */
+	/* pfont->key_name.chars is ASCIIZ due to copy_font_name. */
 	eprintf3("Warning: 'loca' length %d is greater than numGlyphs %d in the font %s.\n", 
 		pfont->data.numGlyphs + 1, pfont->data.trueNumGlyphs, pfont->key_name.chars);
-#	endif
+	if (loca_size > pfont->data.trueNumGlyphs + 1) {
+	    /* Bug 689516 demonstrates a font, in which numGlyps is smaller than loca size,
+	       and there are useful glyphs behind maxp.numGlyphs. */
+	    for (i = loca_size - 1;  i > pfont->data.trueNumGlyphs; i--) {
+		glyph_offset = get_glyph_offset(pfont, i);
+		if (glyph_offset < glyph_size)
+		    break;
+	    }
+	    if (i > pfont->data.trueNumGlyphs) {
+		/* loca contains more good offsets, fix maxp.numGlyphs. 
+		   Note a code below will fix bad offsets if any. */
+		 pfont->data.numGlyphs = pfont->data.trueNumGlyphs = loca_size - 1;
+	    }
+	}
 	pfont->data.numGlyphs = pfont->data.trueNumGlyphs;
 	loca_size = pfont->data.numGlyphs + 1;
     }
@@ -279,7 +291,10 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
 	glyph_offset = get_glyph_offset(pfont, i);
 	glyph_length = glyph_offset - glyph_start;
 	if (glyph_length > 0x80000000)
-	    break;				/* out of order loca */
+	    break;
+	if (glyph_offset > glyph_size)
+	    break;
+	/* out of order loca */
 	pfont->data.len_glyphs[i - 1] = glyph_length;
 	glyph_start = glyph_offset;
     }
