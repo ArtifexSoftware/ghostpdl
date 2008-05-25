@@ -1270,7 +1270,6 @@ pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
     if (dev->color_info.num_components == 1 ||
 	(RGB_IS_GRAY(color0) && RGB_IS_GRAY(color1))
 	) {
-	if_debug2('b', "color palette %02X %02X\n", palette[0], palette[1]);
 	palette[0] = (byte) color0;
 	palette[1] = (byte) color1;
 	palette_size = 2;
