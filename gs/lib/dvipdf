@@ -18,7 +18,7 @@ while true
 do
 	case "$1" in
 	-R*) DVIPSOPTIONS="$DVIPSOPTIONS $1";;
-	-*) OPTIONS="$OPTIONS $1" ;;
+	-?*) OPTIONS="$OPTIONS $1" ;;
 	*)  break ;;
 	esac
 	shift
