@@ -1520,17 +1520,6 @@ mark
 
 currentdict /postalias undef
 
-% -mark- <key> <value> ... .definettfont <font>
-/.definettfont {
-  /FontType 42
-  /PaintType 0
-  TTFDEBUG {
-    (numloca=) print numloca =
-  } if
-  .dicttomark
-  end end dup /FontName get exch definefont
-} bind def
-
 % <file> .loadttfont <type42font>
 /.loadttfont {
   TTFDEBUG { (.loadttfont) = } if
@@ -1541,7 +1530,13 @@ currentdict /postalias undef
   mark
   .charkeys
   .ttkeys
-  .definettfont
+  /FontType 42
+  /PaintType 0
+  TTFDEBUG {
+    (numloca=) print numloca =
+  } if
+  .dicttomark
+  end end dup /FontName get exch definefont
 } bind def
 
 % ---------------- CIDFontType 2 font loading ---------------- %
@@ -1949,5 +1944,12 @@ currentdict /postalias undef
   mark
   .pdfcharkeys
   .ttkeys
-  .definettfont
+  /FontType 42
+  /PaintType 0
+  TTFDEBUG {
+    (numloca=) print numloca =
+  } if
+  .dicttomark
+  end end
+  .completefont
 } bind def
