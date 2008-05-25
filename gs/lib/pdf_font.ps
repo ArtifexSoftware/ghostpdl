@@ -601,17 +601,8 @@ setglobal
 		% If the font isn't available, synthesize one based on
 		% its descriptor.
   dup /Font resourcestatus {
-    pop pop dup pdffindcachedfont
-    dup .isregisteredfont
-    % <font-resource> <fontname> <font> true	% font preloaded from disk
-    % <font-resource> <fontname> <font> false	% font preloaded from document
-    { exch pop false } { pop true } ifelse
+    pop pop pdffindcachedfont
   } {
-    true
-  } ifelse
-  % <font-resource> <font> false	% font preloaded from disk
-  % <font-resource> <fontname> true	% font not loaded yet or embedded
-  {
     1 index /FontDescriptor knownoget {
 		% Stack: font-res fontname fontdesc
       dup /Flags oget
@@ -683,7 +674,7 @@ setglobal
 		% No descriptor available, use the default algorithm.
       pdffindcachedfont
     } ifelse
-  } if
+  } ifelse
   exch pop
 } bdef
 
