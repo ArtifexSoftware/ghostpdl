@@ -27,6 +27,7 @@
 #include "icc.h"		/* must precede icc.h */
 #include "gsicc.h"
 
+#define SAVEICCPROFILE 0
 
 typedef struct _icmFileGs icmFileGs;
 
@@ -432,6 +433,14 @@ gx_load_icc_profile(gs_cie_icc *picc_info)
     icc *           picc;
     icmLuBase * plu = NULL;
     icmFile *pfile = NULL;
+
+#if   SAVEICCPROFILE
+
+    unsigned int num_bytes;
+    unsigned char *iccbuffer;
+    FILE *fid;
+
+#endif
 	
     /* verify that the file is legitimate */
     if (picc_info->file_id != (instrp->read_id | instrp->write_id))
@@ -461,6 +470,20 @@ gx_load_icc_profile(gs_cie_icc *picc_info)
       
 	if ((picc->read(picc, pfile, 0)) != 0)
 	    goto return_rangecheck;
+
+#if SAVEICCPROFILE
+
+        num_bytes = picc->header->size;
+        iccbuffer = (unsigned char *) malloc(num_bytes);
+        pfile->seek(pfile,0);
+        pfile->read(pfile,iccbuffer,1,num_bytes);
+        fid = fopen("DumpedICC.icm","wb");
+        fwrite(iccbuffer,sizeof(unsigned char),num_bytes,fid);
+        fclose(fid);
+        free(iccbuffer);
+
+#endif
+        
             
 	/* verify the profile type */
 	profile_class = picc->header->deviceClass;
