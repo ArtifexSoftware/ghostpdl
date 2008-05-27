@@ -19,7 +19,7 @@
 %     on the command line.
 
 % Altered my master@iaas.msu.ru to work with fonts of more than 256 glyphs
-% and avoid FSType output
+% and avoid FSType output. Also print a comment with UniqueID of the font.
 
 /onechar 1 string def
 
@@ -127,6 +127,15 @@
 /printafm {
 	findfont gsave setfont
 	(StartFontMetrics 2.0) =
+
+		% Print the UniqueID
+
+	currentfont /UniqueID known {
+		(Comment UniqueID ) print
+		currentfont /UniqueID get =only
+		(\n) print
+	} if
+
 	(FontName ) print currentfont /FontName get =
 
 		% Print the FontInfo
