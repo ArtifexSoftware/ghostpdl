@@ -153,6 +153,9 @@ xps_free_part(xps_context_t *ctx, xps_part_t *part)
     if (part->name) xps_free(ctx, part->name);
     if (part->data) xps_free(ctx, part->data);
 
+    part->name = NULL;
+    part->data = NULL;
+
     xps_free_relations(ctx, part->relations);
     xps_free(ctx, part);
 }

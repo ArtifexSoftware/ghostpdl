@@ -104,6 +104,7 @@ typedef struct xps_glyph_metrics_s xps_glyph_metrics_t;
 size_t xps_strlcpy(char *destination, const char *source, size_t size);
 size_t xps_strlcat(char *destination, const char *source, size_t size);
 
+int xps_strcasecmp(char *a, char *b);
 char *xps_strdup_imp(xps_context_t *ctx, const char *str, const char *function);
 char *xps_clean_path(char *name);
 void xps_absolute_path(char *output, char *pwd, char *path);

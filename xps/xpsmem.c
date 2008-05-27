@@ -17,7 +17,7 @@ xps_strcasecmp(char *a, char *b)
 			return 0;
 		*b++;
 	}
-	return tolower(*a) - tolower(*b);
+	return xps_tolower(*a) - xps_tolower(*b);
 }
 
 char *
