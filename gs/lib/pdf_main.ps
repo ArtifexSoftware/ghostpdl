@@ -101,7 +101,7 @@ systemdict begin
 	    } ifelse
 	    dup (%stdin) (r) file eq {
 	      % Copy PDF from stdin to temporary file then run it.
-	      null (w+) /.tempfile systemvar exec exch 3 1 roll
+	      null (w+) /.tempfile .systemvar exec exch 3 1 roll
 	      % stack: tempname stdin tempfile
 	      64000 string
 	      {
