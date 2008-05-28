@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id: sidscale.c 6651 2006-03-13 16:18:19Z stefan $ */
+/* $Id$ */
 /* Special Image downsample scaling filters for dithered devices */
 #include "math_.h"
 #include "memory_.h"
