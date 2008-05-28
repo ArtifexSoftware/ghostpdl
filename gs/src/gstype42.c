@@ -108,6 +108,7 @@ get_glyph_offset(gs_font_type42 *pfont, uint glyph_index)
 typedef struct gs_type42_font_init_sort_s {
     ulong glyph_offset;
     int glyph_num;
+    int glyph_length;
 } gs_type42_font_init_sort_t;
 static int
 gs_type42_font_init_compare (const void *a, const void *b)
@@ -307,6 +308,7 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
 	 */
 	ulong last_glyph_offset = glyph_size;
 	ulong num_valid_loca_elm = loca_size;
+	long last_offset = 0;
 	gs_type42_font_init_sort_t *psort;
 	gs_type42_font_init_sort_t *psortary = 
 	    (gs_type42_font_init_sort_t *)gs_alloc_byte_array(pfont->memory, 
@@ -314,18 +316,31 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
 
 	if (psortary == 0)
 	    return_error(gs_error_VMerror);
-	for (i = 0, psort = psortary; i < loca_size; i++, psort++) {
+	/* loca_size > 0 due to condition above, so we always have the 0th element. */
+	psortary->glyph_num = 0;
+	psortary->glyph_offset = get_glyph_offset(pfont, 0);
+	for (i = 1, psort = psortary + 1; i < loca_size; i++, psort++) {
 	    psort->glyph_num = i;
 	    psort->glyph_offset = get_glyph_offset(pfont, i);
-	    }
+	    psort[-1].glyph_length = psort->glyph_offset - last_offset;
+	    last_offset = psort->glyph_offset;
+	}
+	psort[-1].glyph_length = 0; /* Dummy element. */
 	qsort(psortary, loca_size, sizeof(gs_type42_font_init_sort_t), gs_type42_font_init_compare);
 	while (num_valid_loca_elm > 0 && psortary[num_valid_loca_elm - 1].glyph_offset > glyph_size)
 	    num_valid_loca_elm --;
 	if (0 == num_valid_loca_elm)
 	    return_error(gs_error_invalidfont);
 	for (i = num_valid_loca_elm; i--;) {
+	    long old_length;
+
 	    psort = psortary + i;
-	    pfont->data.len_glyphs[psort->glyph_num] = last_glyph_offset - psort->glyph_offset;
+	    old_length = psort->glyph_length;
+	    if (old_length < 0 || old_length > 2000 /*  arbitrary */) {
+		pfont->data.len_glyphs[psort->glyph_num] = last_glyph_offset - psort->glyph_offset;
+		/* Note the new length may be so big as old_length. */
+	    } else
+		pfont->data.len_glyphs[psort->glyph_num] = old_length;
 	    last_glyph_offset = psort->glyph_offset;
 	}
 	for (i = num_valid_loca_elm; i < loca_size; i++) {
