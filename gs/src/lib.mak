@@ -2294,7 +2294,7 @@ $(GLD)psl2cs.dev : $(LIB_MAK) $(ECHOGS_XE) $(psl2cs_)
 
 $(GLOBJ)gscolor2.$(OBJ) : $(GLSRC)gscolor2.c $(GXERR) $(memory__h)\
  $(gxarith_h) $(gxfixed_h) $(gxmatrix_h) $(gxcspace_h)\
- $(gxcolor2_h) $(gzstate_h) $(gxpcolor_h) $(stream_h)
+ $(gxcolor2_h) $(gzstate_h) $(gxpcolor_h) $(stream_h) $(gxcie_h)
 	$(GLCC) $(GLO_)gscolor2.$(OBJ) $(C_) $(GLSRC)gscolor2.c
 
 psl2lib_=$(GLOBJ)gxiscale.$(OBJ)
@@ -2397,7 +2397,8 @@ $(GLOBJ)gscie.$(OBJ) : $(GLSRC)gscie.c $(GXERR) $(math__h) $(memory__h)\
 	$(GLCC) $(GLO_)gscie.$(OBJ) $(C_) $(GLSRC)gscie.c
 
 $(GLOBJ)gsciemap.$(OBJ) : $(GLSRC)gsciemap.c $(GXERR) $(math__h)\
- $(gxarith_h) $(gxcie_h) $(gxcmap_h) $(gxcspace_h) $(gxdevice_h) $(gxistate_h)
+ $(gxarith_h) $(gxcie_h) $(gxcmap_h) $(gxcspace_h) $(gxdevice_h) \
+ $(gxistate_h) $(gscolor2_h)
 	$(GLCC) $(GLO_)gsciemap.$(OBJ) $(C_) $(GLSRC)gsciemap.c
 
 $(GLOBJ)gscrd.$(OBJ) : $(GLSRC)gscrd.c $(GXERR)\

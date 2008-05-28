@@ -24,6 +24,7 @@
 #include "gzstate.h"
 #include "gxpcolor.h"
 #include "stream.h"
+#include "gxcie.h"  
 
 /* ---------------- General colors and color spaces ---------------- */
 
@@ -166,7 +167,12 @@ const gs_color_space_type gs_color_space_type_Indexed = {
     gx_init_paint_1, gx_restrict_Indexed,
     gx_concrete_space_Indexed,
     gx_concretize_Indexed, NULL,
-    gx_default_remap_color, gx_install_Indexed,
+#if ENABLE_CUSTOM_COLOR_CALLBACK
+    gx_remap_IndexedSpace,
+#else
+    gx_default_remap_color,
+#endif
+    gx_install_Indexed,
     gx_set_overprint_Indexed,
     gx_final_Indexed, gx_no_adjust_color_count,
     gx_serialize_Indexed,
@@ -425,15 +431,11 @@ static int
 gx_concretize_Indexed(const gs_client_color * pc, const gs_color_space * pcs,
 		      frac * pconc, const gs_imager_state * pis)
 {
-    float value = pc->paint.values[0];
-    int index =
-	(is_fneg(value) ? 0 :
-	 value >= pcs->params.indexed.hival ? pcs->params.indexed.hival :
-	 (int)value);
+
+    gs_client_color cc;
     const gs_color_space *pbcs =
 	(const gs_color_space *)pcs->base_space;
-    gs_client_color cc;
-    int code = gs_cspace_indexed_lookup(pcs, index, &cc);
+   int code = gs_indexed_limit_and_lookup(pc, pcs, &cc);
 
     if (code < 0)
 	return code;
@@ -474,6 +476,23 @@ gs_cspace_indexed_lookup(const gs_color_space *pcs, int index,
 	return 0;
     }
 }
+
+/* Look up with restriction */
+
+int
+gs_indexed_limit_and_lookup(const gs_client_color * pc,const gs_color_space *pcs,
+			 gs_client_color *pcc)
+{     
+  
+    float value = pc->paint.values[0];
+        int index =
+	    (is_fneg(value) ? 0 :
+	     value >= pcs->params.indexed.hival ? pcs->params.indexed.hival :
+	     (int)value);
+         return(gs_cspace_indexed_lookup(pcs, index, pcc));
+
+}
+
 
 /* ---------------- Serialization. -------------------------------- */
 
