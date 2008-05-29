@@ -894,6 +894,18 @@ xps_read_tiff_tag(gs_memory_t *mem, xps_tiff_t *tiff, unsigned offset)
     return gs_okay;
 }
 
+static void
+xps_swap_byte_order(byte *buf, int n)
+{
+    int i, t;
+    for (i = 0; i < n; i++)
+    {
+	t = buf[i * 2 + 0];
+	buf[i * 2 + 0] = buf[i * 2 + 1];
+	buf[i * 2 + 1] = t;
+    }
+}
+
 int 
 xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image)
 {
@@ -980,6 +992,24 @@ xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image)
     if (tiff->colormap) gs_free_object(mem, tiff->colormap, "ColorMap");
     if (tiff->stripoffsets) gs_free_object(mem, tiff->stripoffsets, "StripOffsets");
     if (tiff->stripbytecounts) gs_free_object(mem, tiff->stripbytecounts, "StripByteCounts");
+
+    /*
+     * Byte swap 16-bit images to native if necessary.
+     */
+    if (image->bits == 16)
+    {
+	int native_order;
+	unsigned int a = 0x1234;
+	if (*(unsigned char *)&a == 1)
+	    native_order = TMM;
+	else
+	    native_order = TII;
+
+	if (tiff->order != native_order)
+	{
+	    xps_swap_byte_order(image->samples, image->width * image->height * image->comps);
+	}
+    }
 
     return gs_okay;
 }

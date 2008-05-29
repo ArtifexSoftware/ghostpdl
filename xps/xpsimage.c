@@ -8,6 +8,8 @@ xps_convert_16_to_8(xps_context_t *ctx, xps_image_t *image)
 	unsigned short *sp = image->samples;
 	unsigned char  *dp = image->samples;
 
+dputs("  converting 16 bit image to 8 bits\n");
+
 	for (y = 0; y < image->height; y++)
 		for (x = 0; x < image->width; x++)
 			for (k = 0; k < n; k++)
