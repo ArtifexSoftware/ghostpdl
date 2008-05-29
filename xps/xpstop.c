@@ -294,7 +294,26 @@ xps_imp_dnit_job(pl_interp_instance_t *pinstance)
 
     while (ctx->next_page)
     {
-        gs_throw1(-1, "could not process page '%s'", ctx->next_page->name);
+        dprintf1("did not reach page '%s'\n", ctx->next_page->name);
+	xps_part_t *pagepart = xps_find_part(ctx, ctx->next_page->name);
+	if (!pagepart)
+	    dputs("  page part missing\n");
+	else if (!pagepart->complete)
+	    dputs("  page part incomplete\n");
+	else
+	{
+	    xps_relation_t *rel;
+	    for (rel = pagepart->relations; rel; rel = rel->next)
+	    {
+		xps_part_t *subpart = xps_find_part(ctx, rel->target);
+		if (!subpart)
+		    dprintf1("  resource '%s' missing\n", rel->target);
+		else if (!subpart->complete)
+		    dprintf1("  resource '%s' incomplete\n", rel->target);
+		// TODO: recursive resource check...
+	    }
+	}
+
         ctx->next_page = ctx->next_page->next;
     }
 

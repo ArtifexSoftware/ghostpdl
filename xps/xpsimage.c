@@ -260,12 +260,50 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 {
     xps_part_t *part;
     char *image_source_att;
+    char buf[1024];
     char partname[1024];
+    char *image_name;
+    char *profile_name;
+    char *p;
     int code;
 
     image_source_att = xps_att(root, "ImageSource");
 
-    xps_absolute_path(partname, ctx->pwd, image_source_att);
+    /* "{ColorConvertedBitmap /Resources/Image.tiff /Resources/Profile.icc}" */
+    if (strstr(image_source_att, "{ColorConvertedBitmap") == image_source_att)
+    {
+	image_name = NULL;
+	profile_name = NULL;
+
+	strcpy(buf, image_source_att);
+	p = strchr(buf, ' ');
+	if (p)
+	{
+	    image_name = p + 1;
+	    p = strchr(p + 1, ' ');
+	    if (p)
+	    {
+		*p = 0;
+		profile_name = p + 1;
+		p = strchr(p + 1, '}');
+		if (p)
+		    *p = 0;
+	    }
+	}
+    }
+    else
+    {
+	image_name = image_source_att;
+	profile_name = NULL;
+    }
+
+    if (!image_name)
+	return gs_throw1(-1, "cannot parse image resource name '%s'", image_source_att);
+    if (profile_name)
+	dprintf2("warning: ignoring color profile '%s' associated with image '%s'\n",
+		profile_name, image_name);
+
+    xps_absolute_path(partname, ctx->pwd, image_name);
     part = xps_find_part(ctx, partname);
     if (!part)
 	return gs_throw1(-1, "cannot find image resource part '%s'", partname);
@@ -276,7 +314,7 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 	if (!part->image)
 	    return gs_throw(-1, "out of memory: image struct");
 
-	dprintf1("decoding image brush '%s'\n", image_source_att);
+	dprintf1("decoding image brush '%s'\n", image_name);
 
 	code = xps_decode_image(ctx, part, part->image);
 	if (code < 0)

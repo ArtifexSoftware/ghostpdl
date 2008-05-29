@@ -631,6 +631,50 @@ xps_parse_color_relation(xps_context_t *ctx, char *string)
 }
 
 static void
+xps_parse_image_relation(xps_context_t *ctx, char *string)
+{
+    char path[1024];
+    char buf[1024];
+    char *sp, *ep;
+
+    /* "{ColorConvertedBitmap /Resources/Image.tiff /Resources/Profile.icc}" */
+
+    if (strstr(string, "{ColorConvertedBitmap") == string)
+    {
+	strcpy(buf, string);
+	sp = strchr(buf, ' ');
+	if (sp)
+	{
+	    sp ++;
+	    ep = strchr(sp, ' ');
+	    if (ep)
+	    {
+		*ep = 0;
+		xps_absolute_path(path, ctx->pwd, sp);
+		xps_trim_url(path);
+		xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
+
+		sp = ep + 1;
+		ep = strchr(sp, '}');
+		if (ep)
+		{
+		    *ep = 0;
+		    xps_absolute_path(path, ctx->pwd, sp);
+		    xps_trim_url(path);
+		    xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
+		}
+	    }
+	}
+    }
+    else
+    {
+	xps_absolute_path(path, ctx->pwd, string);
+	xps_trim_url(path);
+	xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
+    }
+}
+
+static void
 xps_parse_content_relations_imp(void *zp, char *name, char **atts)
 {
     xps_context_t *ctx = zp;
@@ -653,14 +697,8 @@ xps_parse_content_relations_imp(void *zp, char *name, char **atts)
     if (!strcmp(name, "ImageBrush"))
     {
 	for (i = 0; atts[i]; i += 2)
-	{
 	    if (!strcmp(atts[i], "ImageSource"))
-	    {
-		xps_absolute_path(path, ctx->pwd, atts[i+1]);
-		xps_trim_url(path);
-		xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
-	    }
-	}
+		xps_parse_image_relation(ctx, atts[i + 1]);
     }
 
     if (!strcmp(name, "ResourceDictionary"))
