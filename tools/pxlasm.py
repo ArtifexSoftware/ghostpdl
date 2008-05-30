@@ -342,16 +342,14 @@ class pxl_asm:
         # the n'th operator in the stream
         self.operator_position = 0
         self.__verbose = DEBUG
+
+        # the file must be ascii encode to assemble.
+        if (self.binding != '`'):
+            raise(SyntaxError)
+
+        # output is always little endian.
+        self.assembled_binding = '<'
         
-    def big_endian_stream(self):
-        return (self.binding == ')')
-
-    def little_endian_stream(self):
-        return (self.binding == '(')
-
-    def ascii_stream(self):
-        return (self.binding == '`')
-
     def nullAttributeList(self):
         return 0
 
@@ -370,20 +368,11 @@ class pxl_asm:
         while self.data[self.index] not in string.whitespace:
             self.index = self.index + 1
 
-    # redefine pack to handle endiannes
+    # redefine pack to handle endianness
     def pack(self, format, *data):
-        # prepend endian specifiers to stream if necessary.  NB we
-        # don't handle ascii streams and the endian formatting does
-        # not work properly right now:
-
-        # if ( self.big_endian_stream() ):
-        #
-        # format = '>' + format
-        # else:
-        # format = '<' + format
         for args in data:
             try:
-                sys.stdout.write(pack(format, args))
+                sys.stdout.write(pack(self.assembled_binding + format, args))
             except:
                 sys.stderr.write("assemble failed at: ")
                 # dump surrounding context.
