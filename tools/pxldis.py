@@ -323,9 +323,18 @@ class pxl_dis:
 
         # check binding NB - should check other stuff too:
         # example: )<SP>HP-PCL XL;2;0<CR><LF>
-        if self.binding not in ['(', ')', '`']:
+        if self.binding not in ['(', ')']:
+            if (self.binding == '`'):
+                print >> sys.stderr, "The PXL code is already ascii encoded\n"
             raise(SyntaxError)
 
+        # replace with python's struct endian flag.
+        if (self.binding == ')'):
+            # little endian
+            self.binding = '<'
+        else:
+            self.binding = '>'
+        
         # save the what we skipped over so we can record file offsets
         self.skipped_over = index
         # pointer to data
@@ -354,34 +363,16 @@ class pxl_dis:
         # true if we get UEL
         self.endjob = 0
         
-    def big_endian_stream(self):
-        return (self.binding == ')')
-
-    def little_endian_stream(self):
-        return (self.binding == '(')
-
-    def ascii_stream(self):
-        return (self.binding == '`')
-
     def nullAttributeList(self):
         return 0
     
     # redefine unpack to handle endiannes
     def unpack(self, format, data):
 
-        # prepend endian specifiers to stream if necessary.  NB we
-        # don't handle ascii streams and the endian formatting does
-        # not work properly right now:
+        # prepend the binding to specify the endianness of the XL
+        # stream and standard format, not native. (see struct.py docs)
+        return unpack(self.binding + format, data)
 
-        # if ( self.big_endian_stream() ):
-        #
-        # format = '>' + format
-        # else:
-        # format = '<' + format
-
-        num = unpack(format, data)
-        return num
-    
     # implicitly read when parsing the tag
     def attributeIDValue(self):
         return 1
