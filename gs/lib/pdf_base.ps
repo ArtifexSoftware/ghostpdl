@@ -705,6 +705,10 @@ currentdict /token_nofail_dict .undef
   valueopdict { } forall
   /endstream { endobj exit } bind
   /endobj { endobj exit } bind
+  /endjobj { % Bug 689876.
+     (   **** Operator 'endobj' is misspelled as 'endjobj'.\n) pdfformaterror
+     endobj exit
+  } bind
                 % OmniForm generates PDF file with endobj missing in some
                 % objects. AR ignores this. So we have to do it too.
   /obj { pop pop endobj exit } bind
