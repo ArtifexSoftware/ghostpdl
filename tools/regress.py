@@ -19,13 +19,11 @@ class Conf:
     self.batch = False
     self.update = False
     self.verbose = False
-    self.testpath = os.path.join(os.environ['HOME'], 'tests')
+    self.testpath = os.environ['HOME']
     #self.exe = './language_switch/obj/pspcl6'
-    #self.exe = './bin/gs -q -I$HOME/fonts'
-    self.exe = './main/obj/pcl6'
-    self.test = 'comparefiles'
+    self.exe = './bin/gs -q -I$HOME/fonts'
     self.device = 'ppmraw'
-    self.dpi = 300
+    self.dpi = 600
 
   def parse(self, args):
     '''Parse the command line for configuration switches
@@ -74,15 +72,27 @@ class Conf:
       # guess appropriate defaults based on the executable
       basename = os.path.basename(self.exe.split()[0])
       if basename.find('pcl') >= 0:
-        self.tests += ['pcl/pcl5cfts/fts.*',
-	'pcl/pcl5efts/fts.*', 
-	'pcl/pcl5ccet/*.BIN']
-      if basename.find('ps') >= 0 or basename.find('gs') >= 0:
-	self.tests += ['ps/ps3cet/*.PS']
-        # run the normal comparefiles suite for now
-        self.tests = ['comparefiles/*.ps', 
-		 'comparefiles/*.pdf', 
-		 'comparfiles/*.ai']
+	# public test suite
+	self.tests += ['tests_public/pcl/*']
+	# Quality Logic suites
+        self.tests += ['tests_private/pcl/pcl5cfts/fts.*',
+	'tests_private/pcl/pcl5efts/fts.*', 
+	'tests_private/pcl/pcl5ccet/*.BIN',
+        'test_private/xl/pcl6cet/*.bin',
+        'test_private/xl/pxlfts3.0/*.BIN']
+      if basename.find('pspcl') >= 0 or basename.find('gs') >= 0:
+	# public test suite
+	self.tests += ['tests_public/ps/*', 'tests_public/pdf/*']
+	# the normal comparefiles suite
+        self.tests += ['tests_private/comparefiles/*.ps', 
+		'tests_private/comparefiles/*.pdf', 
+		'tests_private/comparfiles/*.ai']
+	# Quality Logic CED suite
+	self.tests += ['tests_private/ps/ps3cet/*.PS']
+      if basename.find('xps') >= 0:
+	# Quality Logic suites
+	self.tests += ['tests_private/xps/xpsfts-a4/*.xps',
+		'tests_private/xps/atx/*.xps']
 
 # global configuration instance
 conf = Conf()
@@ -238,11 +248,11 @@ class md5Test(SelfTest):
     self.md5sum = md5sum
     self.dpi = dpi
     self.exe = conf.exe
-    self.opts = "-dQUIET -dNOPAUSE -dBATCH -K1000000"
+    self.opts = "-dQUIET -dSAFER -dNOPAUSE -dBATCH -K1000000"
+    self.opts += " -dSAFER -dBATCH -dMaxBitmap=30000000"
+    self.opts += " -Z:@"
     self.opts += " -sDEVICE=%s -r%d" % (device, dpi)
-    self.opts += " -Z@"
-    #self.psopts = '-dSAFER -dMaxBitmap=40000000 -dJOBSERVER ./lib/gs_cet.ps'
-    self.psopts = '-dSAFER -dMaxBitmap=30000000 -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f'
+    self.psopts = '-dJOBSERVER'
 
   def description(self):
     return 'Checking ' + self.file
@@ -251,17 +261,17 @@ class md5Test(SelfTest):
     scratch = os.path.join('/tmp', os.path.basename(self.file) + '.md5')
     # add psopts if it's a postscript file
     if self.file[-3:].lower() == '.ps' or \
-	self.file[-4:].lower() == '.eps' or \
-        self.file[-4:].lower() == '.pdf' or \
-        self.file[-3:].lower() == '.ai':
+	self.file[-4:].lower() == '.eps' :
       cmd = '%s %s -sOutputFile="|md5sum>%s" %s - < %s ' % \
 	(self.exe, self.opts, scratch, self.psopts, self.file)
     else:
       cmd = '%s %s -sOutputFile="|md5sum>%s" %s' % \
 	(self.exe, self.opts, scratch, self.file)
+    sys.stderr.write("Running: %s\n" % cmd)
     run = os.popen(cmd)
     msg = run.readlines()
     code = run.close()
+    sys.stderr.write("Finished: %s\n" % cmd)
     if code:
       self.result = ErrorResult(''.join(msg))
       return
@@ -340,7 +350,7 @@ def run_regression():
     for test in conf.tests:
       for file in glob(os.path.join(conf.testpath,test)):
         suite.addTest(md5Test(file, db[file], conf.dpi, conf.device))
-    if not conf.batch and MPI.size > 1:
+    if MPI.size > 1 and not conf.batch:
       print 'running tests on %d nodes...' % MPI.size
   suite.run()
   if MPI.rank == 0:
