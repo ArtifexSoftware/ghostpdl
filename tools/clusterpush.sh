@@ -29,10 +29,15 @@ rsync -avz \
   ./* $HOST:$DEST/$TARGET
 
 echo -n "Copying regression baseline"
-LATEST=`ssh $HOST ls regression | \
- egrep 'ghostpcl-r[0-9]+\+[0-9]+' | sort -r | head -1`
+LATEST=`ssh $HOST ls regression \| \
+ egrep 'ghostpcl-r[0-9]+\+[0-9]+' \| sort -r \| head -1`
 echo " from $LATEST..."
 ssh $HOST "cp regression/$LATEST/reg_baseline.txt $DEST/$TARGET/"
 
 echo "Queuing regression test..."
 echo "cd $DEST/$TARGET && run_regression" | ssh $HOST
+
+REPORT=`ssh $HOST ls $DEST/$TARGET \| egrep '^regression-[0-9]+.log$' \| sort -r \| head -1`
+echo "Pulling $REPORT..."
+scp -q $HOST:$DEST/$TARGET/$REPORT .
+cat $REPORT
