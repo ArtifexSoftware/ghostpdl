@@ -65,15 +65,23 @@ dup 0 {
 % or for .buildfont9 (FDArray.Private.Subrs).
 /.completefont9 {	% <cidfont0> .completefont9 <cidfont0>
   currentglobal 3 1 roll dup gcheck setglobal
-  dup /FontMatrix known not {
+  dup /FontMatrix known {
+    dup /FDArray get {
+      dup /FontMatrix get 0 get 1000000 ge {
+        /FontMatrix matrix put  % Bug 688517
+      } {
+        pop
+      } ifelse
+    } forall
+  } {
     dup /FontMatrix [0.001 0 0 0.001 0 0] put
     dup /FDArray get {
        currentglobal exch dup gcheck setglobal
-       dup /FontMatrix get [1000 0 0 1000 0 0] matrix concatmatrix
+       dup /FontMatrix get {1000 0 0 1000 0 0} matrix concatmatrix
        /FontMatrix exch put
        setglobal
     } forall
-  } if
+  } ifelse
   dup /FDArray get {
 		% Read the Subrs if necessary.
     dup /Private get dup /Subrs known not {
