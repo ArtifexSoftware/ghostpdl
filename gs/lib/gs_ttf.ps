@@ -356,7 +356,10 @@ currentdict /tt_tag_dict .undef
 %       <encodingtable> proc <glypharray>
 /cmapformats mark
   0 {		% Apple standard 1-to-1 mapping.
-    6 256 getinterval_from_stringarray { } forall 256 packedarray
+    6 256 getinterval_from_stringarray
+    mark 0 3 -1 roll
+    { 1 index 1 add } forall pop
+    .dicttomark
   } bind
   2 {		% Apple 16bit CJK (ShiftJIS etc)
 
@@ -389,7 +392,7 @@ currentdict /tt_tag_dict .undef
     cmapf2_tblen 1 index sub getinterval_from_stringarray
     /sH_gIA exch def
 
-    /cmapf2_glyph_array 65535 array def
+    /cmapf2_glyph_array 0 dict def
 
     /.cmapf2_putGID {
         /cmapf2_ch cmapf2_ch_hi 8 bitshift cmapf2_ch_lo add def
@@ -434,10 +437,6 @@ currentdict /tt_tag_dict .undef
         } ifelse
      } for
      pop
-     0 1 cmapf2_glyph_array length 1 sub { % rewrite null -> 0.
-        dup cmapf2_glyph_array exch get
-        null eq { cmapf2_glyph_array exch 0 put } {pop} ifelse
-     } for
      cmapf2_glyph_array
   } bind
   4 {		% Microsoft/Adobe segmented mapping.
@@ -458,7 +457,9 @@ currentdict /tt_tag_dict .undef
       glyphs code 3 -1 roll put /code code 1 add def
     } bind def
 		% Do a first pass to compute the size of the glyphs array.
-    /numcodes 0 def /glyphs 0 0 2 nseg2 3 sub {
+    /numcodes 0 def
+    /glyphs 0 dict def
+    0 0 2 nseg2 3 sub {
 		% Stack: /glyphs numglyphs i2
       /i2 exch def
       /scode startc i2 getu16 def
@@ -470,15 +471,8 @@ currentdict /tt_tag_dict .undef
       exch sub 0 .max ecode scode sub 1 add add
       exch 1 index add exch
       numcodes add /numcodes exch def
-    } for array def
-    % prefill the array with 0's faster than a { 0 putglyph } repeat
-    glyphs length 1024 ge {
-      .array1024z 0 1024 glyphs length 1023 sub { glyphs exch 2 index putinterval } for
-      glyphs dup length 1024 sub 3 -1 roll
-      putinterval
-    } {
-      0 1 glyphs length 1 sub { glyphs exch 0 put } for
-    } ifelse
+    } for pop
+
 		% Now fill in the array.
     /numcodes 0 def /code 0 def
     0 2 nseg2 3 sub {
@@ -513,15 +507,16 @@ currentdict /tt_tag_dict .undef
   6 {		% Single interval lookup.
     dup 6 getu16a /firstcode exch def
     dup 8 getu16a /ng exch def
-    firstcode ng add array
+    firstcode ng add dict
 		% Stack: tab array
 		% Fill elements 0 .. firstcode-1 with 0
     0 1 firstcode 1 sub { 2 copy 0 put pop } for
-    dup firstcode ng getinterval
-		% Stack: tab array subarray
+    dup 
+		% Stack: tab dict dict
 		% Fill elements firstcode .. firstcode+nvalue-1 with glyph values
     0 1 ng 1 sub {
-      dup 2 mul 10 add 4 index exch getu16a 3 copy put pop pop
+      dup firstcode add exch
+      2 mul 10 add 4 index exch getu16a 3 copy put pop pop
     } for pop exch pop
   } bind
 .dicttomark readonly def                % cmapformats
@@ -534,10 +529,10 @@ currentdict /tt_tag_dict .undef
     } if exec
   } {
     (Can't handle format ) print 0 getu16a = flush
-    0 1 255 { } for 256 packedarray
+    mark 0 1 255 { dup } for .dicttomark
   } ifelse
   TTFDEBUG {
-    (cmap: length=) print dup length = dup ==
+    (cmap: length=) print dup length = dup ===
   } if
 } bind def
 
@@ -1463,11 +1458,10 @@ mark
 		% Stack: glyphencoding dict index
       2 index 1 index get 
       have_post not { 
-        exch dup cmapa length lt {
-          cmapa exch get 
-        } { 
-          pop 0 % a stub for a while. Must skip the entry.
-        } ifelse
+        exch
+        cmapa exch .knownget not {
+          0   % a stub for a while. Must skip the entry.
+        } if
         exch
       } if
       2 index 1 index known
@@ -1501,19 +1495,20 @@ mark
   readonly
   /Encoding [
       have_post {
-        cmapa dup length 256 gt { 0 256 getinterval } if
-        { glyphencoding dup length
+        0 1 255 {
+          cmapa exch .knownget not { 0 } if
+          glyphencoding dup length
           2 index le {
             pop pop /.notdef
           } {
             exch get
           } ifelse
-        } forall
+        } for
       } {
         glyphencoding  dup length 256 gt { 0 256 getinterval } if
         aload pop
+        counttomark 256 exch sub { /.notdef } repeat
       } ifelse
-      counttomark 256 exch sub { /.notdef } repeat 
     ]
   TTFDEBUG { (Encoding: ) print dup === flush } if
 } bind def
@@ -1705,9 +1700,10 @@ currentdict /postalias undef
       dup 5 1 getinterval .hexdigits exch search pop length exch pop exch pop  4 bitshift exch
       dup 6 1 getinterval .hexdigits exch search pop length exch pop exch pop exch pop
       add add add 
-      dup cmapencoding length ge //.popfex if
-      cmapencoding exch get 
+
+      cmapencoding exch .knownget not { 0 } if
       dup 0 eq //.popfex if
+
       TTFDEBUG { ( index=) print dup =string cvs print } if
       exch pop
       put //true exit
@@ -1717,8 +1713,9 @@ currentdict /postalias undef
     pop //false
   } ifelse
   not {                   % d n g
-    { dup cmapencoding length ge //.pop3ex if
-      cmapencoding exch get dup 0 eq //.pop3ex if
+    {
+      cmapencoding exch .knownget not { 0 } if
+      dup 0 eq //.pop3ex if
       3 copy pop known //.pop3ex if
       put exit
     } loop

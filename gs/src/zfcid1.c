@@ -418,7 +418,7 @@ zfillCIDMap(i_ctx_t *i_ctx_p)
     int code;
 
     check_type(*Decoding, t_dictionary);
-    check_type(*TT_cmap, t_array);
+    check_type(*TT_cmap, t_dictionary);
     check_type(*SubstNWP, t_array);
     check_type(*GDBytes, t_integer);
     check_type(*CIDMap, t_array);
