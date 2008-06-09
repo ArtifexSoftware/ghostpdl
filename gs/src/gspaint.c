@@ -342,12 +342,14 @@ fill_with_rule(gs_state * pgs, int rule)
 int
 gs_fill(gs_state * pgs)
 {
+    pgs->device->sgr.stroke_stored = false;
     return fill_with_rule(pgs, gx_rule_winding_number);
 }
 /* Fill using the even/odd rule */
 int
 gs_eofill(gs_state * pgs)
 {
+    pgs->device->sgr.stroke_stored = false;
     return fill_with_rule(pgs, gx_rule_even_odd);
 }
 
@@ -494,6 +496,7 @@ gs_strokepath(gs_state * pgs)
 	gx_path_free(&spath, "gs_strokepath");
 	return code;
     }
+    pgs->device->sgr.stroke_stored = false;
     code = gx_path_assign_free(pgs->path, &spath);
     if (code < 0)
 	return code;

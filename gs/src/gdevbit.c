@@ -267,6 +267,7 @@ const gx_device_printer gs_bitrgbtags_device =
         0 ,
 	0,
 	0,
+	{false},
         { 
             gx_default_install,
             gx_default_begin_page,

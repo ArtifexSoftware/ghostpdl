@@ -397,6 +397,7 @@ int
 gs_image_enum_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
 		   const gs_data_image_t * pim, gs_state *pgs)
 {
+    pgs->device->sgr.stroke_stored = false;
     return gs_image_common_init(penum, pie, pim,
 				(pgs->in_charpath ? NULL :
 				 gs_currentdevice_inline(pgs)));

@@ -263,6 +263,7 @@ gs_text_begin(gs_state * pgs, const gs_text_params_t * text,
     code = gs_state_color_load(pgs);
     if (code < 0)
 	return code;
+    pgs->device->sgr.stroke_stored = false;
     return gx_device_text_begin(pgs->device, (gs_imager_state *) pgs,
 				text, pgs->font, pgs->path, pgs->dev_color,
 				pcpath, mem, ppte);

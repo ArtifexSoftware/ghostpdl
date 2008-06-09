@@ -638,6 +638,21 @@ dev_page_proc_install(gx_default_install);
 dev_page_proc_begin_page(gx_default_begin_page);
 dev_page_proc_end_page(gx_default_end_page);
 
+/* ----------- A stroked gradient recognizer data ----------*/
+
+/* This structure is associated with a device for 
+   internal needs of the graphics library.
+   The main purpose is to suppress stroke adjustment 
+   when painting a gradient as a set of parallel strokes.
+   Such gradients still come from some obsolete 3d party software.
+   See bug 687974,
+ */
+
+typedef struct gx_stroked_gradient_recognizer_s {
+    bool stroke_stored;
+    gs_fixed_point orig[4], adjusted[4]; /* from, to, width, vector. */
+} gx_stroked_gradient_recognizer_t;
+
 /* ---------------- Device structure ---------------- */
 
 /*
@@ -712,6 +727,7 @@ typedef struct gx_device_cached_colors_s {
 	bool LockSafetyParams;		/* If true, prevent unsafe changes */\
 	long band_offset_x;		/* offsets of clist band base to (mem device) buffer */\
 	long band_offset_y;		/* for rendering that is phase sensitive (wtsimdi) */\
+	gx_stroked_gradient_recognizer_t sgr;\
 	gx_page_device_procs page_procs;	/* must be last */\
 		/* end of std_device_body */\
 	gx_device_procs procs	/* object procedures */
