@@ -8346,6 +8346,8 @@ s_imscale_process(stream_state *st, stream_cursor_read *pr,
 	    }
 	    if (rleft == 0 && !last)
 		return 0; /* need more input */
+            if (rleft == 0)
+                return EOFC;  /* end of file.  pass along in stream */
 	    if (ss->src_offset == 0) {
 		/* could maintain window as ring (y mod 4 addressing),
 		   but this is simpler */
