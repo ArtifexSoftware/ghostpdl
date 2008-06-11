@@ -840,6 +840,16 @@ const byte apxTextPath[] = {
 };
 int
 pxTextPath(px_args_t *par, px_state_t *pxs)
-{	return px_text(par, pxs, true);
+{	
+    int code = px_set_paint(&pxs->pxgs->pen, pxs);
+    if ( code < 0 )
+        return code;
+    /* NB this should be refactored with pxText (immediately above)
+       and it is not a good heuristic for detecting a marked page. */
+    if ( par->pv[0]->value.array.size != 0 &&
+	 pxs->pxgs->pen.type != pxpNull
+       )
+        pxs->have_page = true;
+    return px_text(par, pxs, true);
 }
 
