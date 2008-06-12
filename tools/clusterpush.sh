@@ -8,7 +8,11 @@ DEST=$USER
 # try to use the same directory name on the cluster
 TARGET=`basename $PWD`
 if test -z "$TARGET"; then
-  TARGET='ghostpcl'
+  if test -d gs; then
+    TARGET='ghostpcl'
+  else
+    TARGET='gs'
+  fi
 fi
 
 # try get the current revision
@@ -19,7 +23,7 @@ fi
 
 echo "Pushing to $DEST/$TARGET on the cluster..."
 rsync -avz \
-  --exclude .svn \
+  --exclude .svn --exclude .git \
   --exclude bin --exclude obj --exclude debugobj \
   --exclude main/obj --exclude main/debugobj \
   --exclude language_switch/obj --exclude language_switch/obj \
@@ -28,10 +32,18 @@ rsync -avz \
   --exclude ufst --exclude ufst-obj \
   ./* $HOST:$DEST/$TARGET
 
-echo -n "Copying regression baseline"
-LATEST=`ssh $HOST ls regression \| \
- egrep 'ghostpcl-r[0-9]+\+[0-9]+' \| sort -r \| head -1`
-echo " from $LATEST..."
+echo -n "Copying regression baseline..."
+if test -d src; then
+  LATEST='gs'
+else
+  LATEST=`ssh tticluster.com 'for file in \`ls regression |\
+    egrep ghostpcl-r[0-9]+\+[0-9]+ | sort -r | head\`; do\
+      if test -r regression/$file/reg_baseline.txt; then\
+        echo $file; break;\
+      fi;\
+    done'`
+fi
+echo "from $LATEST..."
 ssh $HOST "cp regression/$LATEST/reg_baseline.txt $DEST/$TARGET/"
 
 echo "Queuing regression test..."
