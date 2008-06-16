@@ -6,7 +6,8 @@
 
 #define XMLBUFLEN 4096
 
-#define XPS_NAMESPACE "http://schemas.microsoft.com/xps/2005/06"
+#define NS_XPS "http://schemas.microsoft.com/xps/2005/06"
+#define NS_MC "http://schemas.openxmlformats.org/markup-compatibility/2006"
 
 typedef struct xps_parser_s xps_parser_t;
 
@@ -16,6 +17,7 @@ struct xps_parser_s
     xps_item_t *root;
     xps_item_t *head;
     const char *error;
+    int compat;
 };
 
 struct xps_item_s
@@ -43,16 +45,28 @@ static void on_open_tag(void *zp, const char *ns_name, const char **atts)
 	return;
 	
     /* check namespace */
-    p = strstr(ns_name, XPS_NAMESPACE);
-    if (p != ns_name)
-	dprintf1("unknown namespace: %s\n", ns_name);
- 
-    name = strchr(ns_name, ' ');
-    if (name)
-	name ++;
-    else
-	name = ns_name;
     
+    name = NULL;
+    
+    p = strstr(ns_name, NS_XPS);
+    if (p == ns_name)
+    {
+	name = strchr(ns_name, ' ') + 1;
+    }
+    
+    p = strstr(ns_name, NS_MC);
+    if (p == ns_name)
+    {
+	name = strchr(ns_name, ' ') + 1;
+	parser->compat = 1;
+    }
+    
+    if (!name)
+    {
+	dprintf1("unknown namespace: %s\n", ns_name);
+	name = ns_name;
+    }
+      
     /* count size to alloc */
 
     namelen = strlen(name) + 1; /* zero terminated */
@@ -165,6 +179,13 @@ static void on_text(void *zp, const char *buf, int len)
 }
 
 xps_item_t *
+xps_process_compatibility(xps_context_t *ctx, xps_item_t *root)
+{
+    dprintf("warning: XPS document uses markup compatibility tags\n");
+    return root;
+}
+
+xps_item_t *
 xps_parse_xml(xps_context_t *ctx, char *buf, int len)
 {
     xps_parser_t parser;
@@ -175,6 +196,7 @@ xps_parse_xml(xps_context_t *ctx, char *buf, int len)
     parser.root = NULL;
     parser.head = NULL;
     parser.error = NULL;
+    parser.compat = 0;
 
     xp = XML_ParserCreateNS(NULL, ' ');
     if (!xp)
@@ -200,6 +222,9 @@ xps_parse_xml(xps_context_t *ctx, char *buf, int len)
     }
 
     XML_ParserFree(xp);
+    
+    if (parser.compat)
+	xps_process_compatibility(ctx, parser.root);
 
     return parser.root;
 }
