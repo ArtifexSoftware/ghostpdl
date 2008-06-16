@@ -6,6 +6,8 @@
 
 #define XMLBUFLEN 4096
 
+#define XPS_NAMESPACE "http://schemas.microsoft.com/xps/2005/06"
+
 typedef struct xps_parser_s xps_parser_t;
 
 struct xps_parser_s
@@ -25,7 +27,7 @@ struct xps_item_s
     xps_item_t *next;
 };
 
-static void on_open_tag(void *zp, const char *name, const char **atts)
+static void on_open_tag(void *zp, const char *ns_name, const char **atts)
 {
     xps_parser_t *parser = zp;
     xps_context_t *ctx = parser->ctx;
@@ -34,12 +36,23 @@ static void on_open_tag(void *zp, const char *name, const char **atts)
     int namelen;
     int attslen;
     int textlen;
-    char *p;
+    char *name, *p;
     int i;
 
     if (parser->error)
 	return;
-
+	
+    /* check namespace */
+    p = strstr(ns_name, XPS_NAMESPACE);
+    if (p != ns_name)
+	dprintf1("unknown namespace: %s\n", ns_name);
+ 
+    name = strchr(ns_name, ' ');
+    if (name)
+	name ++;
+    else
+	name = ns_name;
+    
     /* count size to alloc */
 
     namelen = strlen(name) + 1; /* zero terminated */
@@ -163,8 +176,7 @@ xps_parse_xml(xps_context_t *ctx, char *buf, int len)
     parser.head = NULL;
     parser.error = NULL;
 
-    /* xp = XML_ParserCreateNS(NULL, ns); */
-    xp = XML_ParserCreate(NULL);
+    xp = XML_ParserCreateNS(NULL, ' ');
     if (!xp)
     {
 	gs_throw(-1, "xml error: could not create expat parser");

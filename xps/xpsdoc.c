@@ -675,11 +675,18 @@ xps_parse_image_relation(xps_context_t *ctx, char *string)
 }
 
 static void
-xps_parse_content_relations_imp(void *zp, char *name, char **atts)
+xps_parse_content_relations_imp(void *zp, char *ns_name, char **atts)
 {
     xps_context_t *ctx = zp;
     char path[1024];
+    char *name;
     int i;
+    
+    name = strchr(ns_name, ' ');
+    if (name)
+	name ++;
+    else
+	name = ns_name;
 
     if (!strcmp(name, "Glyphs"))
     {
@@ -739,7 +746,7 @@ xps_parse_content_relations(xps_context_t *ctx, xps_part_t *part)
     if (xps_doc_trace)
 	dprintf1("doc: parsing relations from content (%s)\n", part->name);
 
-    xp = XML_ParserCreate(NULL);
+    xp = XML_ParserCreateNS(NULL, ' ');
     if (!xp)
 	return -1;
 
