@@ -3,9 +3,9 @@
 %%IncludeResource: ProcSet (CIDInit)
 %%BeginResource: CMap (UniJIS-UTF8-H)
 %%Title: (UniJIS-UTF8-H Adobe Japan1 6)
-%%Version: 13.006
+%%Version: 13.009
 %%Copyright: -----------------------------------------------------------
-%%Copyright: Copyright 1990-2006 Adobe Systems Incorporated.
+%%Copyright: Copyright 1990-2007 Adobe Systems Incorporated.
 %%Copyright: All Rights Reserved.
 %%Copyright:
 %%Copyright: Patents Pending
@@ -37,7 +37,7 @@ begincmap
 end def
 
 /CMapName /UniJIS-UTF8-H def
-/CMapVersion 13.006 def
+/CMapVersion 13.009 def
 /CMapType 1 def
 
 /XUID [1 10 25359] def
@@ -11863,6 +11863,7 @@ endcidchar
 <e997a4> 19950
 <e997a5> 7085
 <e997a6> 19951
+<e997a8> 14061
 <e9989c> 3550
 <e9989d> 15262
 <e9989e> 22826
@@ -11897,10 +11898,10 @@ endcidchar
 <e9999d> 7098
 <e9999e> 7097
 <e9999f> 7099
-<e999a1> 18892
 endcidchar
 
 100 begincidchar
+<e999a1> 18892
 <e999a2> 1219
 <e999a3> 2590
 <e999a4> 2438
@@ -12000,10 +12001,10 @@ endcidchar
 <e99bab> 2274
 <e99baf> 17186
 <e99bb0> 3591
-<e99bb1> 15272
 endcidchar
 
 100 begincidchar
+<e99bb1> 15272
 <e99bb2> 1250
 <e99bb6> 4021
 <e99bb7> 3925
@@ -12103,10 +12104,10 @@ endcidchar
 <e99e95> 17188
 <e99e96> 18919
 <e99e97> 22857
-<e99e98> 2508
 endcidchar
 
 100 begincidchar
+<e99e98> 2508
 <e99e99> 19975
 <e99e9a> 15279
 <e99e9c> 7162
@@ -12206,10 +12207,10 @@ endcidchar
 <e9a0b7> 7184
 <e9a0b8> 7181
 <e9a0b9> 14259
-<e9a0bb> 3523
 endcidchar
 
 100 begincidchar
+<e9a0bb> 3523
 <e9a0bc> 3924
 <e9a0bd> 7185
 <e9a0be> 15291
@@ -12309,10 +12310,10 @@ endcidchar
 <e9a4a8> 1559
 <e9a4ab> 22890
 <e9a4ac> 7214
-<e9a4ae> 7215
 endcidchar
 
 100 begincidchar
+<e9a4ae> 7215
 <e9a4b1> 18967
 <e9a4b4> 22891
 <e9a4b5> 19992
@@ -12412,10 +12413,10 @@ endcidchar
 <e9a8a0> 18990
 <e9a8a2> 22916
 <e9a8a3> 19999
-<e9a8a4> 15313
 endcidchar
 
 100 begincidchar
+<e9a8a4> 15313
 <e9a8a7> 15314
 <e9a8a8> 2861
 <e9a8ab> 7249
@@ -12515,10 +12516,10 @@ endcidchar
 <e9ac82> 17202
 <e9ac83> 15324
 <e9ac86> 7287
-<e9ac88> 17203
 endcidchar
 
 100 begincidchar
+<e9ac88> 17203
 <e9ac89> 20005
 <e9ac8b> 20006
 <e9ac8c> 19009
@@ -12618,10 +12619,10 @@ endcidchar
 <e9af80> 7318
 <e9af81> 15331
 <e9af86> 7321
-<e9af87> 15332
 endcidchar
 
 100 begincidchar
+<e9af87> 15332
 <e9af88> 20020
 <e9af89> 1957
 <e9af8a> 7319
@@ -12721,10 +12722,10 @@ endcidchar
 <e9b19b> 19057
 <e9b19c> 19050
 <e9b19d> 19058
-<e9b19e> 22982
 endcidchar
 
 100 begincidchar
+<e9b19e> 22982
 <e9b19f> 19059
 <e9b1a0> 7355
 <e9b1a1> 20027
@@ -12824,10 +12825,10 @@ endcidchar
 <e9b68d> 15355
 <e9b68e> 22998
 <e9b68f> 1842
-<e9b695> 23001
 endcidchar
 
 100 begincidchar
+<e9b695> 23001
 <e9b696> 17223
 <e9b699> 19089
 <e9b69a> 7392
@@ -12927,10 +12928,10 @@ endcidchar
 <e9baa8> 15366
 <e9baa9> 7426
 <e9baaa> 7428
-<e9baac> 15367
 endcidchar
 
 100 begincidchar
+<e9baac> 15367
 <e9baad> 7429
 <e9baae> 23024
 <e9baaf> 17231
@@ -13030,10 +13031,10 @@ endcidchar
 <e9bd9d> 19124
 <e9bd9e> 23047
 <e9bda2> 4024
-<e9bda3> 7460
 endcidchar
 
 100 begincidchar
+<e9bda3> 7460
 <e9bda8> 15380
 <e9bda9> 19126
 <e9bdaa> 7467
@@ -13066,6 +13067,10 @@ endcidchar
 <e9bea3> 23057
 <e9bea5> 20056
 <e9beb4> 14048
+<e9bebc> 15431
+<e9bebd> 15429
+<e9bebe> 15434
+<e9bebf> 20068
 <efa1ba> 15447
 <efa1bf> 15448
 <efa489> 13739
@@ -13129,14 +13134,14 @@ endcidchar
 <efa980> 13369
 <efa981> 13381
 <efa982> 13334
+endcidchar
+
+100 begincidchar
 <efa983> 13352
 <efa984> 13375
 <efa985> 13327
 <efa986> 7700
 <efa987> 13332
-endcidchar
-
-100 begincidchar
 <efa988> 13347
 <efa989> 15398
 <efa98a> 7732
@@ -13226,20 +13231,23 @@ endcidchar
 <f0a08fb9> 17295
 <f0a0918a> 17297
 <f0a09489> 17299
+<f0a094bf> 14188
 <f0a096b1> 20080
 <f0a09796> 17308
 <f0a09891> 14294
 <f0a098a8> 14105
 <f0a09bac> 20083
+endcidchar
+
+100 begincidchar
 <f0a09d8f> 17312
+<f0a09f88> 20128
 <f0a0a087> 17319
 <f0a0a0ba> 17321
 <f0a0a2b9> 17327
 <f0a0a48e> 13523
 <f0a0a5bc> 17331
-endcidchar
-
-100 begincidchar
+<f0a0a684> 14109
 <f0a0a69d> 17332
 <f0a0a9a4> 13755
 <f0a0ab93> 17337
@@ -13332,6 +13340,9 @@ endcidchar
 <f0a398b9> 17841
 <f0a398ba> 15393
 <f0a39987> 17842
+endcidchar
+
+100 begincidchar
 <f0a39c8c> 17863
 <f0a39c9c> 17854
 <f0a39cbf> 16914
@@ -13340,9 +13351,6 @@ endcidchar
 <f0a39fa7> 17875
 <f0a39fbf> 17874
 <f0a3a0a4> 17880
-endcidchar
-
-100 begincidchar
 <f0a3a0bd> 17885
 <f0a3aa98> 17897
 <f0a3b1bf> 17910
@@ -13399,6 +13407,7 @@ endcidchar
 <f0a5a784> 17024
 <f0a5a78c> 20112
 <f0a5a794> 18268
+<f0a5ab97> 13922
 <f0a5aba3> 18277
 <f0a5aba4> 18276
 <f0a5abb1> 18278
@@ -13422,6 +13431,8 @@ endcidchar
 <f0a68097> 18352
 <f0a681a0> 18355
 <f0a683ad> 18365
+<f0a688a2> 13691
+<f0a689aa> 14189
 <f0a689b0> 18385
 <f0a68a86> 18386
 <f0a68d8c> 20311
@@ -13432,6 +13443,9 @@ endcidchar
 <f0a6a39d> 18444
 <f0a6a3aa> 18446
 <f0a6a591> 13646
+endcidchar
+
+100 begincidchar
 <f0a6a5af> 18450
 <f0a6a699> 14134
 <f0a6a79d> 18452
@@ -13443,9 +13457,6 @@ endcidchar
 <f0a6b0a9> 17478
 <f0a6b1b3> 18506
 <f0a6b29e> 20206
-endcidchar
-
-100 begincidchar
 <f0a6b39d> 18515
 <f0a6b980> 17089
 <f0a6b9a5> 18528
@@ -13535,6 +13546,9 @@ endcidchar
 <f0a9ba8a> 19037
 <f0a9bb84> 19046
 <f0a9bb9b> 19054
+endcidchar
+
+60 begincidchar
 <f0a9bba9> 19051
 <f0a9bf8e> 19071
 <f0a9bf97> 19071
@@ -13546,9 +13560,6 @@ endcidchar
 <f0aa8ab2> 20072
 <f0aa8e8c> 19109
 <f0aa90b7> 19111
-endcidchar
-
-49 begincidchar
 <f0aa97b1> 19123
 <f0aa9882> 19125
 <f0aa989a> 20316
@@ -14321,7 +14332,7 @@ endcidrange
 <e9b1ad> <e9b1ae> 19063
 endcidrange
 
-56 begincidrange
+57 begincidrange
 <e9b497> <e9b498> 19073
 <e9b49d> <e9b49e> 17218
 <e9b4b3> <e9b4b4> 22988
@@ -14347,6 +14358,7 @@ endcidrange
 <e9bd9f> <e9bda1> 7461
 <e9bda6> <e9bda7> 7464
 <e9be91> <e9be92> 23053
+<e9bf80> <e9bf82> 20069
 <efa1a0> <efa1a2> 15444
 <efa692> <efa693> 7809
 <efa898> <efa89a> 8579
