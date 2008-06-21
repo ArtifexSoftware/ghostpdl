@@ -306,6 +306,8 @@ static int free_aux(ttfMemory *mem, void *ptr)
 
    n_points        = face->maxPoints + 2;
    n_twilight      = maxp->maxTwilightPoints;
+   if (n_points < 100)
+       n_points = 100; /* Bug 689907 */
 
    if ( ALLOC_ARRAY( exec->callStack, exec->callSize, callSize, TCallRecord ) ||
         /* reserve interpreter call stack */
