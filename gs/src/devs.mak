@@ -1098,10 +1098,10 @@ $(GLOBJ)gdevpx.$(OBJ) : $(GLSRC)gdevpx.c\
 
 # Scalable Vector Graphics (SVG) output device
 
-svg_=$(GLOBJ)gdevsvg.$(OBJ)
-$(DD)svg.dev : $(DEVS_MAK) $(svg_) $(GDEV) $(GLD)vector.dev
-	$(SETDEV2) $(DD)svg $(svg_)
-	$(ADDMOD) $(DD)svg -include $(GLD)vector
+svgwrite_=$(GLOBJ)gdevsvg.$(OBJ)
+$(DD)svgwrite.dev : $(DEVS_MAK) $(svgwrite_) $(GDEV) $(GLD)vector.dev
+	$(SETDEV2) $(DD)svgwrite $(svgwrite_)
+	$(ADDMOD) $(DD)svgwrite -include $(GLD)vector
 
 $(GLOBJ)gdevsvg.$(OBJ) : $(GLSRC)gdevsvg.c $(gx_h) $(gdevvec_h)
 	$(GLCC) $(GLO_)gdevsvg.$(OBJ) $(C_) $(GLSRC)gdevsvg.c

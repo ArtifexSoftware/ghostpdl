@@ -125,7 +125,10 @@ gs_public_st_suffix_add0_final(st_device_svg, gx_device_svg,
                                gx_device_finalize, 
 			       st_device_vector);
 
-const gx_device_svg gs_svg_device = {
+/* The output device is named 'svg' but we're referred to as the
+   'svgwrite' device by the build system to avoid conflicts with
+   the svg interpreter */
+const gx_device_svg gs_svgwrite_device = {
     svg_device_body("svg", 24),
     svg_device_procs
 };
