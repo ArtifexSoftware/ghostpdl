@@ -68,7 +68,6 @@ static const gx_image_enum_procs_t pdf_image_cvd_enum_procs = {
 /* Define the structure for keeping track of progress through an image. */
 typedef struct pdf_image_enum_s {
     gx_image_enum_common;
-    gs_memory_t *memory;
     int width;
     int bits_per_pixel;		/* bits per pixel (per plane) */
     int rows_left;
@@ -1106,7 +1105,7 @@ pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
 	    code = pdf_end_and_do_image(pdev, &pie->writer, &pie->mat, info->id, do_image);
 	pie->writer.alt_writer_count--; /* For GC. */
     }
-    gs_free_object(pie->memory, pie, "pdf_end_image");
+    gx_image_free_enum(&info);
     return code;
 }
 

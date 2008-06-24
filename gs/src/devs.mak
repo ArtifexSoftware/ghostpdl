@@ -1090,7 +1090,7 @@ $(DD)pxlcolor.dev : $(DEVS_MAK) $(pxl_) $(GDEV) $(GLD)vector.dev
 
 $(GLOBJ)gdevpx.$(OBJ) : $(GLSRC)gdevpx.c\
  $(math__h) $(memory__h) $(string__h)\
- $(gx_h) $(gsccolor_h) $(gsdcolor_h) $(gserrors_h)\
+ $(gx_h) $(gsccolor_h) $(gsdcolor_h) $(gxiparam_h) $(gserrors_h)\
  $(gxcspace_h) $(gxdevice_h) $(gxpath_h)\
  $(gdevpxat_h) $(gdevpxen_h) $(gdevpxop_h) $(gdevpxut_h) $(gdevvec_h)\
  $(srlx_h) $(strimpl_h)

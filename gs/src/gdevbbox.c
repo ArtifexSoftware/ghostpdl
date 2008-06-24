@@ -917,7 +917,6 @@ bbox_fill_mask(gx_device * dev,
 
 typedef struct bbox_image_enum_s {
     gx_image_enum_common;
-    gs_memory_t *memory;
     gs_matrix matrix;		/* map from image space to device space */
     const gx_clip_path *pcpath;
     gx_image_enum_common_t *target_info;
@@ -1115,7 +1114,7 @@ bbox_image_end_image(gx_image_enum_common_t * info, bool draw_last)
     bbox_image_enum *pbe = (bbox_image_enum *) info;
     int code = gx_image_end(pbe->target_info, draw_last);
 
-    gs_free_object(pbe->memory, pbe, "bbox_end_image");
+    gx_image_free_enum(&info);
     return code;
 }
 

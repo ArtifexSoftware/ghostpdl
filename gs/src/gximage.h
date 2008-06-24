@@ -202,7 +202,6 @@ struct gx_image_enum_s {
     irender_proc((*render));
     const gs_imager_state *pis;
     const gs_color_space *pcs;	/* color space of image */
-    gs_memory_t *memory;
     byte *buffer;		/* for expanding samples to a */
 				/* byte or frac */
     uint buffer_size;

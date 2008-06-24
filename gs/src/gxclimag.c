@@ -222,7 +222,6 @@ error_in_rect:
 typedef struct clist_image_enum_s {
     gx_image_enum_common;
     /* Arguments of begin_image */
-    gs_memory_t *memory;
     gs_pixel_image_t image;	/* only uses Width, Height, Interpolate */
     gx_drawing_color dcolor;	/* only pure right now */
     gs_int_rect rect;
@@ -848,7 +847,7 @@ clist_image_end_image(gx_image_enum_common_t * info, bool draw_last)
     } 
     --cdev->driver_call_nesting;
     cdev->image_enum_id = gs_no_id;
-    gs_free_object(pie->memory, pie, "clist_image_end_image");
+    gx_image_free_enum(&info);
     return code;
 }
 

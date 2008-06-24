@@ -201,3 +201,30 @@ gx_image1_release(gs_image_common_t *pic, gs_memory_t *mem)
 {
     gx_pixel_image_release((gs_pixel_image_t *)pic, mem);
 }
+
+/* Free the image enumerator. */
+void
+gx_image_free_enum(gx_image_enum_common_t **ppenum)
+{
+    gx_image_enum_common_t  * penum = *ppenum;
+    gs_memory_t *mem = penum->memory;
+
+     /* Bug 688845 comment #38 :
+        Adobe Illustrator creates a Postscript document, 
+	in which an image data procedure executes 'save',
+	and the corresponding 'restore' appears after the image end.
+	It causes this procedure is called at a higher save level than
+	at which the enumerator was allocated, so that gs_free_object below
+	works idle. Nevertheless we can't leave pointers in the structure,
+	because they may point to blocks already released
+	by the client's subclass method for end_image.
+	Leaving them uncleaned caused a real crash in the garbager - see bug 688845.
+	So we clean the entire subclassed enumerator here,
+	rather this is a generic function for base class.
+	Note the cleaning is neccessaryfor Postscript only,
+	because other languaged don't implement save-restore.
+     */
+    memset(penum, 0, gs_object_size(mem, penum));
+    gs_free_object(mem, penum, "gx_image_free_enum");
+    *ppenum = NULL;
+}

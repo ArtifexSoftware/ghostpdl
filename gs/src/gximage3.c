@@ -74,7 +74,6 @@ typedef struct gx_image3_enum_s {
     gs_image3_interleave_type_t InterleaveType;
     int num_components;		/* (not counting mask) */
     int bpc;			/* BitsPerComponent */
-    gs_memory_t *memory;
     int mask_width, mask_height, mask_full_height;
     int pixel_width, pixel_height, pixel_full_height;
     byte *mask_data;		/* (if chunky) */
@@ -739,6 +738,6 @@ gx_image3_end_image(gx_image_enum_common_t * info, bool draw_last)
 		   "gx_image3_end_image(pixel_data)");
     gs_free_object(mem, pcdev, "gx_image3_end_image(pcdev)");
     gs_free_object(mem, mdev, "gx_image3_end_image(mdev)");
-    gs_free_object(mem, penum, "gx_image3_end_image");
+    gx_image_free_enum(&info);
     return (pcode < 0 ? pcode : mcode < 0 ? mcode : code1 < 0 ? code1 : code2);
 }

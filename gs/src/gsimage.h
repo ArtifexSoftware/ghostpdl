@@ -116,10 +116,10 @@
 typedef struct gx_image_enum_common_s gx_image_enum_common_t;
 #endif
 
+typedef struct gs_image_enum_s gs_image_enum;
 int gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
 			 bool uses_color, gx_image_enum_common_t ** ppie);
 
-typedef struct gs_image_enum_s gs_image_enum;
 gs_image_enum *gs_image_enum_alloc(gs_memory_t *, client_name_t);
 
 /*

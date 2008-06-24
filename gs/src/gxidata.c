@@ -464,6 +464,6 @@ gx_image1_end_image(gx_image_enum_common_t * info, bool draw_last)
     }
     gs_free_object(mem, penum->line, "image line");
     gs_free_object(mem, penum->buffer, "image buffer");
-    gs_free_object(mem, penum, "gx_default_end_image");
+    gx_image_free_enum(&info);
     return 0;
 }

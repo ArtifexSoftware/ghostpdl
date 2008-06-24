@@ -338,7 +338,6 @@ int gdev_vector_close_file(gx_device_vector * vdev);
 #define gdev_vector_image_enum_common\
 	gx_image_enum_common;\
 		/* Set by begin_image */\
-	gs_memory_t *memory;	/* from begin_image */\
 	gx_image_enum_common_t *default_info;	/* non-0 iff using default implementation */\
 	gx_image_enum_common_t *bbox_info;	/* non-0 iff passing image data to bbox dev */\
 	int width, height;\

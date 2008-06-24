@@ -1788,7 +1788,7 @@ $(GLD)vector.dev : $(LIB_MAK) $(ECHOGS_XE) $(vector_)\
 
 $(GLOBJ)gdevvec.$(OBJ) : $(GLSRC)gdevvec.c $(GXERR)\
  $(math__h) $(memory__h) $(string__h)\
- $(gdevvec_h) $(gp_h) $(gscspace_h) $(gsparam_h) $(gsutil_h)\
+ $(gdevvec_h) $(gp_h) $(gscspace_h) $(gxiparam_h) $(gsparam_h) $(gsutil_h)\
  $(gxdcolor_h) $(gxfixed_h) $(gxpaint_h)\
  $(gzcpath_h) $(gzpath_h)
 	$(GLCC) $(GLO_)gdevvec.$(OBJ) $(C_) $(GLSRC)gdevvec.c

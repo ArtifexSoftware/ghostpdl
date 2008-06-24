@@ -213,6 +213,7 @@ typedef struct gx_image_enum_procs_s {
 	const gx_image_type_t *image_type;\
 	const gx_image_enum_procs_t *procs;\
 	gx_device *dev;\
+	gs_memory_t *memory;	/* from begin_image */\
 	gs_id id;\
 	bool skipping; /* don't render, just consume image streams. */\
 	int num_planes;\
@@ -251,5 +252,8 @@ dev_proc_begin_typed_image(gx_begin_image1);
 image_enum_proc_plane_data(gx_image1_plane_data);
 image_enum_proc_end_image(gx_image1_end_image);
 image_enum_proc_flush(gx_image1_flush);
+
+/* Free the image enumerator. */
+void gx_image_free_enum(gx_image_enum_common_t **ppenum);
 
 #endif /* gxiparam_INCLUDED */

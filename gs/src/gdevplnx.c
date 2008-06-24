@@ -811,7 +811,6 @@ plane_strip_copy_rop(gx_device *dev,
 /* Define the state for image rendering. */
 typedef struct plane_image_enum_s {
     gx_image_enum_common;
-    gs_memory_t *memory;
     gx_image_enum_common_t *info; /* plane device enumerator */
     const gs_imager_state *pis;	/* original imager state */
     gs_imager_state *pis_image;	/* modified imager state */
@@ -1013,7 +1012,7 @@ plane_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 
     gs_free_object(ppie->memory, ppie->pis_image,
 		   "plane_image_end_image(pis_image)");
-    gs_free_object(ppie->memory, info, "plane_image_end_image(info)");
+    gx_image_free_enum(&info);
     return code;
 }
 

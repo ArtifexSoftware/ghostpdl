@@ -24,6 +24,7 @@
 #include "gxfixed.h"
 #include "gdevvec.h"
 #include "gscspace.h"
+#include "gxiparam.h"
 #include "gxdcolor.h"
 #include "gxpaint.h"		/* requires gx_path, ... */
 #include "gzpath.h"
@@ -912,7 +913,7 @@ gdev_vector_end_image(gx_device_vector * vdev,
 	if (bcode < 0)
 	    code = bcode;
     }
-    gs_free_object(pie->memory, pie, "gdev_vector_end_image");
+    gx_image_free_enum((gx_image_enum_common_t **)&pie);
     return code;
 }
 

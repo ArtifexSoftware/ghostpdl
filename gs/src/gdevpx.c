@@ -20,6 +20,7 @@
 #include "gserrors.h"
 #include "gsccolor.h"
 #include "gsdcolor.h"
+#include "gxiparam.h"
 #include "gxcspace.h"		/* for color mapping for images */
 #include "gxdevice.h"
 #include "gxpath.h"
@@ -1705,7 +1706,7 @@ pclxl_image_end_image(gx_image_enum_common_t * info, bool draw_last)
     if (pie->y > pie->rows.first_y && draw_last)
 	code = pclxl_image_write_rows(pie);
     gs_free_object(pie->memory, pie->rows.data, "pclxl_end_image(rows)");
-    gs_free_object(pie->memory, pie, "pclxl_end_image");
+    gx_image_free_enum(&info);
     return code;
 }
 
