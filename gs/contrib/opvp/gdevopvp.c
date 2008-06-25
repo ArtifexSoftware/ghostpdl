@@ -1178,7 +1178,7 @@ static bool reverse_image = false;
 /* added for image gamma correction */
 typedef struct bbox_image_enum_s {
     gx_image_enum_common;
-    gs_memory_t	*memory;
+/*  gs_memory_t	*memory; */
     gs_matrix matrix; /* map from image space to device dpace */
     const gx_clip_path *pcpath;
     gx_image_enum_common_t *target_info;
