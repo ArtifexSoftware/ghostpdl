@@ -40,6 +40,23 @@ pl_top_cursor_init(
 	return status < 0 ? status : 0;	/* report errors, not EOF */ 
 }
 
+/* End of data condition. */
+static bool
+pl_cursor_EOD(pl_top_cursor_t *cursor)
+{
+
+    /* NB review history of the second predicate. */
+    return (cursor->status <= 0 && cursor->cursor.ptr <= cursor->buffer);
+}
+
+void
+pl_renew_cursor_status(pl_top_cursor_t *cursor)
+{
+    if (pl_cursor_EOD(cursor)) {
+        cursor->status = 1;
+    }
+}   
+
 /* Refill from input */
 int    /* rets 1 ok, else 0 EOF, -ve error */
 pl_top_cursor_next(
@@ -49,8 +66,8 @@ pl_top_cursor_next(
 	int len;
 
 	/* Declare EOF even if chars left in buffer if no chars were consumed */
-	if (cursor->status <= 0 && cursor->cursor.ptr <= cursor->buffer)
-	  return cursor->status;
+	if (pl_cursor_EOD(cursor))
+            return cursor->status;
 
 	/* Copy any remaining bytes to head of buffer */
 	len = cursor->cursor.limit - cursor->cursor.ptr;

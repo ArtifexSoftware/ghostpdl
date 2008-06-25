@@ -412,6 +412,7 @@ pl_main(
 		        dprintf("Unable to init PJL job.\n");
 			return -1;
 		    }
+                    pl_renew_cursor_status(&r);
 		} else if ( code < 0 ) { /* error and not exit language */
 		    dprintf1("Warning interpreter exited with error code %d\n", code );
 		    dprintf("Flushing to end of job\n" );

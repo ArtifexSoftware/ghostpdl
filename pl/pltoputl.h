@@ -42,4 +42,8 @@ int pl_top_cursor_close(pl_top_cursor_t *cursor);
 /* Deinit a read cursor */
 void pl_top_cursor_dnit(pl_top_cursor_t *cursor);
 
+/* renew a cursor if EOD condition has been set.  This can happen if a
+   PDL does not consume any data even though data is avaiable */
+void pl_renew_cursor_status(pl_top_cursor_t *cursor);
+
 #endif				/* pltoputl_INCLUDED */
