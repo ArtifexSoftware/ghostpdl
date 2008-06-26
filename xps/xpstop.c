@@ -294,8 +294,8 @@ xps_imp_dnit_job(pl_interp_instance_t *pinstance)
 
     while (ctx->next_page)
     {
-        dprintf1("did not reach page '%s'\n", ctx->next_page->name);
-	xps_part_t *pagepart = xps_find_part(ctx, ctx->next_page->name);
+        xps_part_t *pagepart;
+	pagepart = xps_find_part(ctx, ctx->next_page->name);
 	if (!pagepart)
 	    dputs("  page part missing\n");
 	else if (!pagepart->complete)
