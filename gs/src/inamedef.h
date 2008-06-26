@@ -28,6 +28,8 @@
  * names up to 16K in size, and a slightly slower one that limits
  * the total to 4M and restricts names to 256 characters.
  * The maximum number of names is 2^(16+EXTEND_NAMES)-1.
+ * By default, EXTEND_NAMES == 4, which coresponds to a slower algorithm,
+ * the total of 1M names up to 1K characters long.
  */
 #define max_name_extension_bits 6
 #if EXTEND_NAMES > max_name_extension_bits
@@ -79,7 +81,7 @@ struct name_s {
 # define nt_sub_index_mask (nt_sub_size - 1)
 typedef struct name_sub_table_s {
     name names[NT_SUB_SIZE];	/* must be first */
-#ifdef EXTEND_NAMES
+#if EXTEND_NAMES
     uint high_index;		/* sub-table base index & (-1 << 16) */
 #endif
 } name_sub_table;

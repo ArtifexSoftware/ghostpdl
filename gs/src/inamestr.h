@@ -64,11 +64,7 @@
  * free names.
  */
 typedef struct name_string_s {
-#if EXTEND_NAMES
-#  define name_extension_bits 6
-#else
-#  define name_extension_bits 0
-#endif
+#  define name_extension_bits EXTEND_NAMES
     unsigned next_index:16 + name_extension_bits; /* next name in chain or 0 */
     unsigned foreign_string:1;	/* string is allocated statically */
     unsigned mark:1;		/* GC mark bit of index for this name */
