@@ -41,10 +41,8 @@ SVG_OBJS=\
 # NB - note this is a bit squirrely.  Right now the pjl interpreter is
 # required and shouldn't be and PLOBJ==SVGGEN is required.
 
-$(SVGOBJ)svg.dev: $(SVG_MAK) $(ECHOGS_XE) $(SVG_OBJS) \
-		  $(SVGGEN)gxi16bit.$(OBJ) $(SVGGEN)expat.dev \
+$(SVGOBJ)svg.dev: $(SVG_MAK) $(ECHOGS_XE) $(SVG_OBJS)  $(SVGGEN)expat.dev \
 		  $(SVGGEN)pl.dev $(SVGGEN)$(PL_SCALER).dev $(SVGGEN)pjl.dev
-	$(SETMOD) $(SVGOBJ)svg $(SVG_OBJS) $(SVGGEN)gxi16bit.$(OBJ)
-	$(ADDMOD) $(SVGOBJ)svg -replace $(GLD)no16bit
+	$(SETMOD) $(SVGOBJ)svg $(SVG_OBJS)
 	$(ADDMOD) $(SVGOBJ)svg -include $(SVGGEN)expat $(SVGGEN)pl $(SVGGEN)$(PL_SCALER) $(SVGGEN)pjl.dev
 
