@@ -19,11 +19,19 @@
 % The standard representation for PostScript compatible fonts is described
 % in the book "Adobe Type 1 Font Format", published by Adobe Systems Inc.
 
+/t1_glyph_equivalence mark
+  /Odblacute /Ohungarumlaut
+  /Udblacute /Uhungarumlaut
+  /odblacute /ohungarumlaut
+  /udblacute /uhungarumlaut
+.dicttomark readonly def
+
 % Define an augmented version of .buildfont1 that inserts UnderlinePosition
 % and UnderlineThickness entries in FontInfo if they aren't there already,
 % and FontBBox isn't degenerate.
 % (This works around the incorrect assumption, made by many word processors,
 % that these entries are present in the built-in fonts.)
+% Also add alternative names to some glyphs.
 /.buildfont1
  {
    .currentglobal 3 1 roll
@@ -53,9 +61,30 @@
       }
      ifelse
    } if
+   dup /CharStrings get dup dup
+   //t1_glyph_equivalence {     % <<>> <<>> <<>> /gl1 /gl2
+     2 index 2 index known {
+       2 index 1 index known {
+         pop pop
+       } {
+         3 1 roll get //.growput superexec dup dup
+       } ifelse
+     } {
+       2 index 1 index known {
+         exch 3 1 roll get //.growput superexec dup dup
+       } {
+         pop pop
+       } ifelse
+     } ifelse  
+   } forall
+   pop pop pop
+
    //.buildfont1
    3 2 roll .setglobal
  } bind def
+
+currentdict /t1_glyph_equivalence .undef
+
 % If the diskfont feature isn't included, define a dummy .loadfontdict.
 /.loadfontdict where
  { pop }
