@@ -288,9 +288,7 @@ svg_imp_process_eof(pl_interp_instance_t *pinstance)
     if (!root)
 	return gs_rethrow(-1, "cannot parse xml document");
 
-    svg_parse_document(ctx, root);
-
-    return 0;
+    return svg_parse_document(ctx, root);
 }
 
 /* Wrap up interp instance after a "job" */

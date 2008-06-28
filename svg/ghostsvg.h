@@ -109,12 +109,14 @@ int svg_utf8_to_ucs(int *p, const char *s, int n);
 int svg_open_xml_parser(svg_context_t *ctx);
 int svg_feed_xml_parser(svg_context_t *ctx, char *buf, int len);
 svg_item_t * svg_close_xml_parser(svg_context_t *ctx);
+int svg_parse_document(svg_context_t *ctx, svg_item_t *root);
 
 svg_item_t * svg_next(svg_item_t *item);
 svg_item_t * svg_down(svg_item_t *item);
 void svg_free_item(svg_context_t *ctx, svg_item_t *item);
 char * svg_tag(svg_item_t *item);
 char * svg_att(svg_item_t *item, const char *att);
+void svg_debug_item(svg_item_t *item, int level);
 
 struct svg_item_s
 {
