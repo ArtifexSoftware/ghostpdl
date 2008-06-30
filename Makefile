@@ -1,8 +1,8 @@
-all: pcl xps ls-product
+all: pcl xps svg ls-product
 
-debug: pcl-debug ls-debug xps-debug
+debug: pcl-debug xps-debug svg-debug ls-debug
 
-clean: pcl-clean ls-clean xps-clean
+clean: pcl-clean xps-clean svg-clean ls-clean
 
 test: pcl-test ls-test
 
