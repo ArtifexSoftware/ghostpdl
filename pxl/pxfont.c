@@ -267,7 +267,7 @@ px_concat_font_name(char *message, uint max_message, const px_value_t *pfnv)
  * caller must allocate the correct size array pchar and free it later
  */
 static void
-px_str_to_gschars( px_args_t *par, px_state_t *pxs, gs_char *pchr)
+px_str_to_gschars( px_args_t *par, px_state_t *pxs, gs_char *pchr, bool is_MSL)
 {
     const px_value_t *pstr = par->pv[0];
     const unsigned char *str = (const unsigned char *)pstr->value.array.data;
@@ -284,7 +284,7 @@ px_str_to_gschars( px_args_t *par, px_state_t *pxs, gs_char *pchr)
         }
         pchr[i] = pl_map_symbol(psm, chr,
                                 pxs->pxgs->base_font->storage == pxfsInternal,
-                                false,
+                                is_MSL,
                                 symbol_set == 590);
     }
 }
@@ -392,7 +392,8 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
                                           "px_text gs_char[]");
     if (pchr == 0) 
 	return_error(errorInsufficientMemory);
-    px_str_to_gschars(par, pxs, pchr);
+    px_str_to_gschars(par, pxs, pchr, 
+                      pl_complement_to_vocab(plfont->character_complement) == plgv_MSL);
 
     {
         uint i;
