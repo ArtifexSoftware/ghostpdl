@@ -2674,7 +2674,7 @@ $(GLOBJ)gsromfs1.$(OBJ) : $(GLOBJ)gsromfs1.c $(time__h)
 	$(GLCC) $(GLO_)gsromfs1.$(OBJ) $(C_) $(GLOBJ)gsromfs1.c
 
 # A dummy gsromfs module for COMPILE_INITS=0
-$(GLOBJ)gsromfs0.$(OBJ) : $(GLSRC)gsromfs0.c
+$(GLOBJ)gsromfs0.$(OBJ) : $(GLSRC)gsromfs0.c $(stdint__h)
 	$(GLCC) $(GLO_)gsromfs0.$(OBJ) $(C_) $(GLSRC)gsromfs0.c
 
 # Define the ZLIB modules needed by mnkromfs here to factor it out of top makefiles
