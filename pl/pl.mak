@@ -200,7 +200,7 @@ $(PLOBJ)pltoputl.$(OBJ): $(PLSRC)pltoputl.c $(AK) $(string__h)\
 	$(PLCCC) $(PLSRC)pltoputl.c $(PLO_)pltoputl.$(OBJ)
 
 $(PLOBJ)plsymbol.$(OBJ): $(PLSRC)plsymbol.c $(AK) $(stdpre_h)\
- $(plsymbol_h)
+ $(std_h) $(gdebug_h) $(plsymbol_h) $(plvocab_h) $(plvalue_h)
 	$(PLCCC) $(PLSRC)plsymbol.c $(PLO_)plsymbol.$(OBJ)
 
 $(PLOBJ)plvalue.$(OBJ): $(PLSRC)plvalue.c $(AK) $(std_h)\

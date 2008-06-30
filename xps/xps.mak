@@ -96,7 +96,7 @@ $(XPSOBJ)xpscff.$(OBJ): $(XPSSRC)xpscff.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpscff.c $(XPSO_)xpscff.$(OBJ)
 
 
-$(XPS_TOP_OBJ): $(XPSSRC)xpstop.c $(pltop_h) $(XPSINCLUDES)
+$(XPS_TOP_OBJ): $(XPSSRC)xpstop.c $(XPSGEN)pconf.h $(pltop_h) $(XPSINCLUDES)
 	$(CP_) $(XPSGEN)pconf.h $(XPSGEN)pconfig.h
 	$(XPSCCC) $(XPSSRC)xpstop.c $(XPSO_)xpstop.$(OBJ)
 

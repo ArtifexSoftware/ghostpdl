@@ -20,8 +20,17 @@ svg.config-clean: clean_gs
 	$(RM_) $(SVGOBJ)devs.tr5
 
 
-SVGINCLUDES=$(SVGSRC)*.h
+ghostsvg_h=$(SVGSRC)ghostsvg.h $(memory__h) $(math__h) \
+	$(gsgc_h) $(gstypes_h) $(gsstate_h) $(gsmatrix_h) $(gscoord_h) \
+	$(gsmemory_h) $(gsparam_h) $(gsdevice_h) $(scommon_h) \
+	$(gserror_h) $(gserrors_h) $(gspaint_h) $(gspath_h) $(gsimage_h) \
+	$(gscspace_h) $(gsptype1_h) $(gscolor2_h) $(gscolor3_h) \
+	$(gsutil_h) $(gsicc_h) $(gstrans_h) $(gxpath_h) $(gxfixed_h) \
+	$(gxmatrix_h) $(gsshade_h) $(gsfunc_h) $(gsfunc3_h) \
+	$(gxfont_h) $(gxchar_h) $(gxtype1_h) $(gxfont1_h) $(gxfont42_h) \
+	$(gxfcache_h) $(gxistate_h) $(gzstate_h) $(gzpath_h) $(zlib_h)
 
+SVGINCLUDES=$(ghostsvg_h)
 
 $(SVGOBJ)svgxml.$(OBJ): $(SVGSRC)svgxml.c $(SVGINCLUDES)
 	$(SVGCCC) $(SVGSRC)svgxml.c $(SVGO_)svgxml.$(OBJ)
@@ -30,7 +39,7 @@ $(SVGOBJ)svgdoc.$(OBJ): $(SVGSRC)svgdoc.c $(SVGINCLUDES)
 	$(SVGCCC) $(SVGSRC)svgdoc.c $(SVGO_)svgdoc.$(OBJ)
 
 
-$(SVG_TOP_OBJ): $(SVGSRC)svgtop.c $(pltop_h) $(SVGINCLUDES)
+$(SVG_TOP_OBJ): $(SVGSRC)svgtop.c $(pltop_h) $(SVGGEN)pconf.h $(SVGINCLUDES)
 	$(CP_) $(SVGGEN)pconf.h $(SVGGEN)pconfig.h
 	$(SVGCCC) $(SVGSRC)svgtop.c $(SVGO_)svgtop.$(OBJ)
 
@@ -41,8 +50,9 @@ SVG_OBJS=\
 # NB - note this is a bit squirrely.  Right now the pjl interpreter is
 # required and shouldn't be and PLOBJ==SVGGEN is required.
 
-$(SVGOBJ)svg.dev: $(SVG_MAK) $(ECHOGS_XE) $(SVG_OBJS)  $(SVGGEN)expat.dev \
-		  $(SVGGEN)pl.dev $(SVGGEN)$(PL_SCALER).dev $(SVGGEN)pjl.dev
+$(SVGOBJ)svg.dev: $(SVG_MAK) $(ECHOGS_XE) $(SVG_OBJS) \
+		$(SVGGEN)expat.dev \
+		$(SVGGEN)pl.dev $(SVGGEN)$(PL_SCALER).dev $(SVGGEN)pjl.dev
 	$(SETMOD) $(SVGOBJ)svg $(SVG_OBJS)
 	$(ADDMOD) $(SVGOBJ)svg -include $(SVGGEN)expat $(SVGGEN)pl $(SVGGEN)$(PL_SCALER) $(SVGGEN)pjl.dev
 
