@@ -1060,7 +1060,7 @@ $(PSD)zfrsd.dev : $(INT_MAK) $(ECHOGS_XE) $(zfrsd_)
 $(PSOBJ)zfrsd.$(OBJ) : $(PSSRC)zfrsd.c $(OP) $(memory__h)\
  $(gsfname_h) $(gxiodev_h)\
  $(sfilter_h) $(stream_h) $(strimpl_h)\
- $(files_h) $(idict_h) $(idparam_h) $(iname_h) $(store_h)
+ $(files_h) $(idict_h) $(idparam_h) $(iname_h) $(istruct_h) $(store_h)
 	$(PSCC) $(PSO_)zfrsd.$(OBJ) $(C_) $(PSSRC)zfrsd.c
 
 # ======================== PostScript Level 2 ======================== #

@@ -25,6 +25,7 @@
 #include "idict.h"
 #include "idparam.h"
 #include "iname.h"
+#include "istruct.h"
 #include "store.h"
 
 /* ---------------- Reusable streams ---------------- */
@@ -108,6 +109,7 @@ zrsdparams(i_ctx_t *i_ctx_p)
 /*
  * The file|string operand must be a "reusable source", either:
  *      - A string or bytestring;
+ *      - An array of strings;
  *      - A readable, positionable file stream;
  *      - A readable string stream;
  *      - A SubFileDecode filter with an empty EODString and a reusable
@@ -120,6 +122,10 @@ static int make_rss(i_ctx_t *i_ctx_p, os_ptr op, const byte * data,
 		     bool is_bytestring);
 static int make_rfs(i_ctx_t *i_ctx_p, os_ptr op, stream *fs,
 		     long offset, long length);
+
+static int make_aos(i_ctx_t *i_ctx_p, os_ptr op,
+                    int blk_sz, int blk_sz_last, unsigned int file_sz);
+
 static int
 zreusablestream(i_ctx_t *i_ctx_p)
 {
@@ -146,6 +152,32 @@ zreusablestream(i_ctx_t *i_ctx_p)
 	code = make_rss(i_ctx_p, source_op,
 			(const byte *)source_op->value.pstruct, size,
 			r_space(source_op), 0L, size, true);
+    } else if (r_has_type(source_op, t_array)) {  /* no packedarrays */
+	int i, blk_cnt, blk_sz;
+        ref *blk_ref;
+        ulong filelen = 0;
+
+        check_read(*source_op);
+        blk_cnt = r_size(source_op);
+	blk_ref = source_op->value.refs;
+        if (blk_cnt > 0) {
+            blk_sz = r_size(blk_ref);
+            for (i = 0; i < blk_cnt; i++) {
+                int len;
+
+                check_read_type(blk_ref[i], t_string);
+                len = r_size(&blk_ref[i]);
+                if (len > blk_sz || len < blk_sz && i < blk_cnt - 1)
+                   return_error(e_rangecheck); /* last block can be smaller */
+                filelen += len;
+            }
+        }
+        if (filelen == 0) {
+           code = make_rss(i_ctx_p, source_op, (unsigned char *)"", 0,
+	       r_space(source_op), 0, 0, false);
+        } else {
+           code = make_aos(i_ctx_p, source_op, blk_sz, r_size(&blk_ref[blk_cnt - 1]), filelen);
+        }
     } else {
 	long offset = 0;
 	stream *source;
@@ -254,6 +286,180 @@ make_rfs(i_ctx_t *i_ctx_p, os_ptr op, stream *fs, long offset, long length)
     s->close_at_eod = false;
     make_stream_file(op, s, "r");
     return 0;
+}
+/* ----------- Reusable array-of-strings stream ------------- */
+
+static int  s_aos_available(stream *, long *);
+static int  s_aos_seek(stream *, long);
+static void s_aos_reset(stream *s);
+static int  s_aos_flush(stream *s);
+static int  s_aos_close(stream *);
+static int  s_aos_process(stream_state *, stream_cursor_read *,
+	                stream_cursor_write *, bool);
+
+/* Stream state */
+typedef struct aos_state_s {
+    stream_state_common;
+    ref   blocks;
+    stream *s;	
+    int   blk_sz;
+    int   blk_sz_last;
+    uint  file_sz; 
+} aos_state_t;
+
+/* GC procedures */
+static 
+CLEAR_MARKS_PROC(aos_clear_marks)
+{   aos_state_t *const pptr = vptr;
+
+    r_clear_attrs(&pptr->blocks, l_mark);
+}
+static 
+ENUM_PTRS_WITH(aos_enum_ptrs, aos_state_t *pptr) return 0;
+ENUM_PTR(0, gs_context_state_t, pgs);
+case 1:
+ENUM_RETURN_REF(&pptr->blocks);
+ENUM_PTRS_END
+static RELOC_PTRS_WITH(aos_reloc_ptrs, aos_state_t *pptr);
+RELOC_PTR(aos_state_t, s);
+RELOC_REF_VAR(pptr->blocks);
+r_clear_attrs(&pptr->blocks, l_mark);
+RELOC_PTRS_END
+
+gs_private_st_complex_only(st_aos_state, aos_state_t,
+    "aos_state", aos_clear_marks, aos_enum_ptrs, aos_reloc_ptrs, 0);
+
+/* Stream template */
+static const stream_template s_aos_template = {	
+     &st_aos_state, 0, s_aos_process, 1, 1, 0, 0 };
+
+/* Stream procs */
+static const stream_procs s_aos_procs = { 
+     s_aos_available, s_aos_seek, s_aos_reset,
+     s_aos_flush, s_aos_close, s_aos_process,
+     NULL		/* no s_aos_switch */
+};
+
+static int
+make_aos(i_ctx_t *i_ctx_p, os_ptr op, int blk_sz, int blk_sz_last, uint file_sz)
+{
+    stream *s;
+    aos_state_t *ss;
+    byte *buf;
+    const int aos_buf_size = 1024; /* arbitrary */
+    uint save_space = icurrent_space;
+    ialloc_set_space(idmemory, r_space(op));
+    
+    s = s_alloc(imemory, "aos_stream");
+    ss = (aos_state_t *)s_alloc_state(imemory, &st_aos_state, "st_aos_state");
+    buf = gs_alloc_bytes(imemory, aos_buf_size, "aos_stream_buf");
+    if (s == 0 || ss == 0 || buf == 0) {
+        gs_free_object(imemory, buf, "aos_stream_buf");
+        gs_free_object(imemory, ss, "st_aos_state");
+        gs_free_object(imemory, s, "aos_stream");
+        ialloc_set_space(idmemory, save_space);
+        return_error(e_VMerror);
+    }
+    ialloc_set_space(idmemory, save_space);
+    ss->template = &s_aos_template;
+    ss->blocks = *op;
+    ss->s = s;
+    ss->blk_sz = blk_sz;
+    ss->blk_sz_last = blk_sz_last;
+    ss->file_sz = file_sz;
+    s_std_init(s, buf, aos_buf_size, &s_aos_procs, s_mode_read + s_mode_seek);
+    s->state = (stream_state *)ss;
+    s->file_offset = 0;
+    s->file_limit = max_long;
+    s->close_at_eod = false;
+    make_stream_file(op, s, "r");
+    return 0;
+}
+
+/* Return the number of available bytes */
+static int
+s_aos_available(stream *s, long *pl)
+{
+    *pl = ((aos_state_t *)s->state)->file_sz - stell(s);
+    return 0;
+}
+
+/* Seek in a string being read.  Return 0 if OK, ERRC if not. */
+static int
+s_aos_seek(register stream * s, long pos)
+{
+    uint end = s->srlimit - s->cbuf + 1;
+    long offset = pos - s->position;
+
+    if (offset >= 0 && offset <= end) {  /* Staying within the same buffer */
+	s->srptr = s->cbuf + offset - 1;
+	return 0;
+    }
+    if (pos < 0 || pos > s->file_limit)
+	return ERRC;
+    s->srptr = s->srlimit = s->cbuf - 1;
+    s->end_status = 0;
+    s->position = pos;
+    return 0;
+}
+
+static void
+s_aos_reset(stream *s)
+{
+    /* PLRM definition of reset operator is strange. */
+    /* Rewind the file and discard the buffer. */
+    s->position = 0; 
+    s->srptr = s->srlimit = s->cbuf - 1;
+    s->end_status = 0;
+}
+
+static int
+s_aos_flush(stream *s)
+{
+    s->position = ((aos_state_t *)s->state)->file_sz;
+    s->srptr = s->srlimit = s->cbuf - 1;
+    return 0;
+}
+
+static int
+s_aos_close(stream * s)
+{
+    gs_free_object(s->memory, s->cbuf, "s_aos_close(buffer)");
+    s->cbuf = 0;
+    /* Increment the IDs to prevent further access. */
+    s->read_id = s->write_id = (s->read_id | s->write_id) + 1;
+    return 0;
+}
+
+static int
+s_aos_process(stream_state * st, stream_cursor_read * ignore_pr,
+		      stream_cursor_write * pw, bool last)
+{
+    int blk_i, blk_off, blk_cnt, status = 1;
+    uint count;
+    aos_state_t *ss = (aos_state_t *)st;
+    uint max_count = pw->limit - pw->ptr;
+    uint pos = stell(ss->s);
+    unsigned const char *data;
+    ref *blk_ref;
+
+    if (pos >= ss->file_sz)
+	return EOFC;
+    blk_i   = pos / ss->blk_sz;
+    blk_off = pos % ss->blk_sz;
+    blk_cnt = r_size(&ss->blocks);
+    count = blk_i < blk_cnt - 1 ? ss->blk_sz : ss->blk_sz_last;
+    blk_ref = ss->blocks.value.refs;
+    data = blk_ref[blk_i].value.bytes;
+
+    if (max_count > count - blk_off) {
+        max_count = count - blk_off;
+        if (blk_i == blk_cnt - 1)
+	     status = EOFC;	
+    }
+    memcpy(pw->ptr+1, data + blk_off, max_count);
+    pw->ptr += max_count;
+    return status;
 }
 
 /* ---------------- Initialization procedure ---------------- */

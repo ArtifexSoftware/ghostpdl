@@ -31,25 +31,25 @@ level2dict begin
 		% from the RSD dictionary; all the others should have
 		% CloseSource = true.
 		% Stack: source dict filters parms
-  2 index /CloseSource .knownget not { false } if 5 -1 roll
+  2 index /CloseSource .knownget not { //false } if 5 -1 roll
 		% Stack: dict filters parms CloseSource source
   0 1 5 index length 1 sub {
     4 index 1 index get
 		% Stack: dict filters parms CloseSource source index filtname
-    4 index null eq {
+    4 index //null eq {
       0 dict
     } {
-      4 index 2 index get dup null eq { pop } if
+      4 index 2 index get dup //null eq { pop } if
     } ifelse
     3 -1 roll pop exch filter
-    exch pop true exch		% set CloseSource for further filters
+    exch pop //true exch		% set CloseSource for further filters
   } for
 		% If AsyncRead is true, try to create the filter directly.
 		% Stack: dict filters parms CloseSource source
-  4 index /AsyncRead .knownget not { false } if {
+  4 index /AsyncRead .knownget not { //false } if {
     1 index { .reusablestream } .internalstopped
   } {
-    null true
+    //null //true
   } ifelse {
     pop
 		% No luck.  Read the entire contents of the stream now.
@@ -59,22 +59,16 @@ level2dict begin
     } if
 		% We must allocate the string in the same VM space as its
 		% source, since the reusable stream must be allocated there.
+
     .currentglobal 1 index gcheck .setglobal exch
-		% Stack: dict filters parms CloseSource oldglobal file
-    10 dict exch {
-		% Stack: dict filters parms CloseSource oldglobal contdict file
-      dup 64000 string readstring
-      3 index dup length 4 -1 roll put not { exit } if
-    } loop pop
-		% Concatenate the contents into one big string.
-		% Stack: dict filters parms CloseSource oldglobal contdict
-    0 1 index { length exch pop add } forall
-    dup 65400 gt { .bytestring } { string } ifelse
-    3 -1 roll .setglobal exch {
-		% Stack: dict filters parms CloseSource string index substring
-      exch 64000 mul exch 2 index 3 1 roll putinterval
-    } forall
-		% Now create the stream on the string.
+    currentpacking //false setpacking exch
+       		% Stack: dict filters parms CloseSource oldglobal oldpacking file
+    [ exch { dup 40000 string readstring not { exit } if exch } loop
+      exch pop
+    ]
+              		% Stack: dict filters parms CloseSource oldglobal oldpacking [()...]
+    3 1 roll setpacking setglobal
+              		% Stack: dict filters parms CloseSource [()...]
     1 index .reusablestream
   } if
 		% We created the stream successfully: clean up.
