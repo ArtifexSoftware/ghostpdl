@@ -139,6 +139,10 @@ pxExecStream(px_args_t *par, px_state_t *pxs)
 
         if ( code < 0 )
           return code;
+
+        if ( pxs->stream_level > 32 )
+            return_error(errorStreamNestingFull);
+
         { bool found = pl_dict_find(&pxs->stream_dict, str.data, str.size,
                                     &def);
 
@@ -175,7 +179,9 @@ pxExecStream(px_args_t *par, px_state_t *pxs)
         st.last_operator = pst->last_operator;
         r.ptr = start;
         r.limit = def_data + def_size - 1;
+        pxs->stream_level++;
         code = px_process(&st, pxs, &r);
+        pxs->stream_level--;
         pst->macro_state = st.macro_state & ~ptsExecStream;
         if ( code < 0 )
           { /* Set the operator counts for error reporting. */

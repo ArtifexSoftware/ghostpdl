@@ -113,6 +113,7 @@ struct px_state_s {
   px_dict_t stream_dict;
 	/* Stream reading state */
   gs_string stream_name;
+  int stream_level; /* recursion depth */
   struct sd2_ {
     byte *data;
     uint size;

@@ -112,6 +112,7 @@ typedef enum {
   _e_(errorIllegalOrientation, "IllegalOrientation")
 
   _e_(errorStreamUndefined, "StreamUndefined")
+  _e_(errorStreamNestingFull, "StreamNestingFull")
 
   _e_(errorDataSourceNotClosed, "DataSourceNotClosed")
 

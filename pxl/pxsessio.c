@@ -239,6 +239,8 @@ pxBeginSession(px_args_t *par, px_state_t *pxs)
 	pxs->units_per_measure.x = real_value(par->pv[1], 0);
 	pxs->units_per_measure.y = real_value(par->pv[1], 1);
 
+        pxs->stream_level = 0;
+
 	if ( par->pv[2] )
 	     pxs->error_report = par->pv[2]->value.i;
 	else 
