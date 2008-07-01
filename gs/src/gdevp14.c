@@ -2927,18 +2927,15 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
 {
     const gs_pdf14trans_params_t * pparams = &((const gs_pdf14trans_t *)pct)->params;
     int need, avail = *psize;
-	/* Must be large enough for largest data struct */
-    byte buf[25 /* See sput_matrix. */ +
-	     21 + sizeof(pparams->Background)
-		+ sizeof(pparams->GrayBackground) + sizeof(pparams->bbox)
-		+ sizeof(cdev->mask_id)];
+    byte buf[MAX_CLIST_TRANSPARENCY_BUFFER_SIZE]; /* Must be large enough 
+    	to fit the data written below. We don't implement a dynamic check for the buffer owerflow,
+	assuming that the consistency is verified in the coding phase. 
+	See the definition of MAX_CLIST_TRANSPARENCY_BUFFER_SIZE. */
     byte * pbuf = buf;
     int opcode = pparams->pdf14_op;
     int mask_size = 0;
     uint mask_id = 0;
     int code;
-
-    /* Write PDF 1.4 compositor data into the clist */
 
     *pbuf++ = opcode;			/* 1 byte */
     switch (opcode) {
