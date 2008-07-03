@@ -289,7 +289,7 @@ s_jpxd_buffer_input(stream_jpxd_state *const state, stream_cursor_read *pr,
 static int
 s_jpxd_decode_image(stream_jpxd_state * state)
 {
-    jas_stream_t *stream = state->stream;
+    jas_stream_t *stream = NULL;
     jas_image_t *image = NULL;
     char *optstr = NULL;
 
@@ -299,13 +299,18 @@ s_jpxd_decode_image(stream_jpxd_state * state)
 	if_debug0('w', "[w] got indexed colorspace in s_jpxd_decode_image\n");
 	optstr = (char *)"raw";
     }
-    /* see if an image is available */
-    if (stream != NULL) {
-	image = jas_image_decode(stream, -1, optstr);
-	if (image == NULL) {
-	    dprintf("unable to decode JPX image data.\n");
-	    return ERRC;
-	}
+    /* wrap our buffer in a jas_stream */
+    stream = jas_stream_memopen((char*)state->buffer, state->buffill);
+    if (stream == NULL) {
+	dprintf("unable to create stream for JPX image data.\n");
+	return ERRC;
+    }
+    /* decode an image */
+    image = jas_image_decode(stream, -1, optstr);
+    if (image == NULL) {
+	dprintf("unable to decode JPX image data.\n");
+	return ERRC;
+    }
 #ifdef JPX_USE_JASPER_CM
 	/* convert non-rgb multicomponent colorspaces to sRGB */
 	if (jas_image_numcmpts(image) > 1 &&
@@ -321,16 +326,13 @@ s_jpxd_decode_image(stream_jpxd_state * state)
 	    }
 	}
 #endif
-	state->image = image;
-        state->offset = 0;
-        jas_stream_close(stream);
-        state->stream = NULL;
+    state->image = image;
+    state->offset = 0;
+    jas_stream_close(stream);
 
 #ifdef DEBUG
 	dump_jas_image(image);
 #endif
-
-    }
 
     return 0;
 }
@@ -343,7 +345,6 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
                  stream_cursor_write * pw, bool last)
 {
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
-    jas_stream_t *stream = state->stream;
     long in_size = pr->limit - pr->ptr;
     long out_size = pw->limit - pw->ptr;
     int status = 0;
@@ -361,39 +362,35 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
     if (in_size > 0) {
 	s_jpxd_buffer_input(state, pr, in_size);
     }
-    if ((last == 1) && (stream == NULL) && (state->image == NULL)) {
-	/* turn our buffer into a stream */
-	stream = jas_stream_memopen((char*)state->buffer, state->bufsize);
-	state->stream = stream;
-    }
-    if (out_size > 0) {
-        if (state->image == NULL) {
-	    status = s_jpxd_decode_image(state);
-        }
-        if (state->image != NULL) {
-            jas_image_t *image = state->image;
-	    int numcmpts = jas_image_numcmpts(image);
-	    int stride = numcmpts*jas_image_width(image);
-            long image_size = stride*jas_image_height(image);
-	    int clrspc = jas_image_clrspc(image);
-	    int x, y;
-	    long usable, done;
-	    y = state->offset / stride;
-	    x = state->offset - y*stride; /* bytes, not samples */
-	    usable = min(out_size, stride - x);
-	    /* Make sure we can return a full pixel.
-	       This can fail if we get the colorspace wrong. */
-	    if (usable < numcmpts) return ERRC;
-	    x = x/numcmpts;               /* now samples */
-	    /* copy data out of the decoded image data */
-	    /* be lazy and only write the rest of the current row */
-	    if (state->colorspace == gs_jpx_cs_indexed) {
-		/* we've passed 'raw' but the palette is the same pixel
-		   format as a grayscale image. The PDF interpreter will
-		   know to handle it differently. */
-		done = copy_row_gray(pw->ptr, image, x, y, usable);
-	    } else /* use the stream's colorspace */
-	    switch (jas_clrspc_fam(clrspc)) {
+    if (last) {
+      if (state->image == NULL) {
+	status = s_jpxd_decode_image(state);
+      }
+      if (state->image != NULL) {
+	jas_image_t *image = state->image;
+	int numcmpts = jas_image_numcmpts(image);
+	int stride = numcmpts*jas_image_width(image);
+	long image_size = stride*jas_image_height(image);
+	int clrspc = jas_image_clrspc(image);
+	int x, y;
+	long usable, done;
+
+	y = state->offset / stride;
+	x = state->offset - y*stride; /* bytes, not samples */
+	usable = min(out_size, stride - x);
+	/* Make sure we can return a full pixel.
+	   This can fail if we get the colorspace wrong. */
+	if (usable < numcmpts) return ERRC;
+	x = x/numcmpts;               /* now samples */
+	/* copy data out of the decoded image data */
+	/* be lazy and only write the rest of the current row */
+	if (state->colorspace == gs_jpx_cs_indexed) {
+	  /* we've passed 'raw' but the palette is the same pixel
+	     format as a grayscale image. The PDF interpreter will
+	     know to handle it differently. */
+	  done = copy_row_gray(pw->ptr, image, x, y, usable);
+	} else /* use the stream's colorspace */
+	  switch (jas_clrspc_fam(clrspc)) {
 		case JAS_CLRSPC_FAM_GRAY:
 		    done = copy_row_gray(pw->ptr, image, x, y, usable);
 		    break;
@@ -409,11 +406,11 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 		default:
 		    done = copy_row_default(pw->ptr, image, x, y, usable);
 		    break;
-	    }
-	    pw->ptr += done;
-            state->offset += done;
-            status = (state->offset < image_size) ? 1 : 0;
-        }
+	 }
+	pw->ptr += done;
+        state->offset += done;
+        status = (state->offset < image_size) ? 1 : EOFC;
+      }
     }
 
     return status;
@@ -429,7 +426,6 @@ s_jpxd_release(stream_state *ss)
 
     if (state) {
         if (state->image) jas_image_destroy(state->image);
-    	if (state->stream) jas_stream_close(state->stream);
 	if (state->buffer) gs_free(state->jpx_memory, state->buffer, state->bufsize, 1,
 				"JPXDecode temp buffer");
     }
@@ -445,7 +441,6 @@ s_jpxd_set_defaults(stream_state *ss)
 {
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
 
-    state->stream = NULL;
     state->image = NULL;
     state->offset = 0;
     state->buffer = NULL;

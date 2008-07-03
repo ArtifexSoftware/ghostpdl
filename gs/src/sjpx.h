@@ -44,7 +44,6 @@ typedef struct stream_jpxd_state_s
 {
     stream_state_common;	/* a define from scommon.h */
     jas_image_t *image;
-    jas_stream_t *stream;
     long offset; /* offset into the image bitmap of the next
                     byte to be returned */
     const gs_memory_t *jpx_memory;
