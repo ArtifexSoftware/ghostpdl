@@ -381,6 +381,9 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 	    y = state->offset / stride;
 	    x = state->offset - y*stride; /* bytes, not samples */
 	    usable = min(out_size, stride - x);
+	    /* Make sure we can return a full pixel.
+	       This can fail if we get the colorspace wrong. */
+	    if (usable < numcmpts) return ERRC;
 	    x = x/numcmpts;               /* now samples */
 	    /* copy data out of the decoded image data */
 	    /* be lazy and only write the rest of the current row */
