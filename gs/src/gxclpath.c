@@ -1195,6 +1195,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 
     /* Information about the last emitted operation: */
     int open = 0;		/* -1 if last was moveto, 1 if line/curveto, */
+    struct { fixed vs[6]; } prev;
 
     /* 0 if newpath/closepath */
 
@@ -1211,7 +1212,6 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     set_first_point();
     for (;;) {
 	fixed vs[6];
-	struct { fixed vs[6]; } prev;
 
 #define A vs[0]
 #define B vs[1]
