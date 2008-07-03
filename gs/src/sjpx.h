@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -26,7 +26,7 @@
 /* define colorspace enumeration for the input image data */
 typedef enum {
   gs_jpx_cs_unset,  /* colorspace hasn't been set */
-  gs_jpx_cs_gray,   /* single component grayscale image */ 
+  gs_jpx_cs_gray,   /* single component grayscale image */
   gs_jpx_cs_rgb,    /* three component (s)RGB image */
   gs_jpx_cs_cmyk,   /* four component CMYK image */
   gs_jpx_cs_indexed /* PDF image wants raw index values */
