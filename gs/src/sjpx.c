@@ -140,6 +140,31 @@ dump_jas_image(jas_image_t *image)
 
     return 0;
 }
+
+/* dump the external colorspace from the interpreter for debugging */
+static int
+dump_jpxd_colorspace(const stream_jpxd_state * state)
+{
+  char *cspace;
+
+  if (state->colorspace == gs_jpx_cs_unset) {
+    if_debug0('w', "[w]JPX image has no external color space set\n");
+    return 0;
+  }
+
+  switch (state->colorspace) {
+    case gs_jpx_cs_gray: cspace = "Grayscale based"; break;
+    case gs_jpx_cs_rgb: cspace = "RGB based"; break;
+    case gs_jpx_cs_cmyk: cspace = "CMYK based"; break;
+    case gs_jpx_cs_indexed: cspace = "indexed"; break;
+    default: cspace = "unknown"; break;
+  }
+
+  if_debug1('w', "[w]Interpreter has set an external %s color space\n",
+	cspace);
+
+  return 0;
+}
 #endif /* DEBUG */
 
 static int
@@ -332,6 +357,7 @@ s_jpxd_decode_image(stream_jpxd_state * state)
 
 #ifdef DEBUG
 	dump_jas_image(image);
+	dump_jpxd_colorspace(state);
 #endif
 
     return 0;
@@ -375,21 +401,36 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 	int x, y;
 	long usable, done;
 
+	/* copy data out of the decoded image data */
+	/* be lazy and only write the rest of the current row */
 	y = state->offset / stride;
 	x = state->offset - y*stride; /* bytes, not samples */
 	usable = min(out_size, stride - x);
+	x = x/numcmpts;               /* now samples */
+
 	/* Make sure we can return a full pixel.
 	   This can fail if we get the colorspace wrong. */
 	if (usable < numcmpts) return ERRC;
-	x = x/numcmpts;               /* now samples */
-	/* copy data out of the decoded image data */
-	/* be lazy and only write the rest of the current row */
-	if (state->colorspace == gs_jpx_cs_indexed) {
-	  /* we've passed 'raw' but the palette is the same pixel
-	     format as a grayscale image. The PDF interpreter will
-	     know to handle it differently. */
-	  done = copy_row_gray(pw->ptr, image, x, y, usable);
-	} else /* use the stream's colorspace */
+
+	if (state->colorspace != gs_jpx_cs_unset)
+	  /* An external colorspace from the interpreter overrides */
+	  switch (state->colorspace) {
+	    case gs_jpx_cs_gray:
+	    case gs_jpx_cs_indexed:
+	    /* we've passed 'raw' but the palette is the same pixel
+	       format as a grayscale image. The PDF interpreter will
+	       know to handle it differently. */
+	      done = copy_row_gray(pw->ptr, image, x, y, usable);
+	      break;
+	    case gs_jpx_cs_rgb:
+	      done = copy_row_rgb(pw->ptr, image, x, y, usable);
+	      break;
+	    case gs_jpx_cs_cmyk:
+	    default:
+	      done = copy_row_default(pw->ptr, image, x, y, usable);
+	      break;
+	  }
+	else /* use the stream's colorspace */
 	  switch (jas_clrspc_fam(clrspc)) {
 		case JAS_CLRSPC_FAM_GRAY:
 		    done = copy_row_gray(pw->ptr, image, x, y, usable);
