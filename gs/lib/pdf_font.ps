@@ -1573,7 +1573,7 @@ currentdict /bndef undef
         dup //null ne {
           PDFfile fileposition 
           1 index //true resolvestream dup
-          4 string readstring not { /bad_stream } if
+          4 string readstring pop
 	  exch closefile
           PDFfile 3 -1 roll setfileposition
           dup length 4 lt { pop /bad_stream } if
