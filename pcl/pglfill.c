@@ -682,6 +682,10 @@ hpgl_SP(
 	while ( pen > max_pen )
 	    pen = pen - max_pen;
     }
+
+    if (pen == pgls->g.pen.selected)
+        return 0;
+
     if ( !pgls->g.polygon_mode )
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
     pgls->g.pen.selected = pen;
