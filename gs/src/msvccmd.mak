@@ -73,7 +73,7 @@ dosdefault: default
 # Define the compilation flags.
 
 # MSVC 8 (2005) warns about deprecated unsafe common functions like strcpy.
-!if ($(MSVC_VERSION) == 8) || defined(WIN64)
+!if ($(MSVC_VERSION) > 7) || defined(WIN64)
 VC8WARN=/wd4996 /wd4224
 !else
 VC8WARN=
