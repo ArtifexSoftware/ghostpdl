@@ -88,13 +88,13 @@ systemdict begin
       dup 1023 string .peekstring pop dup length 400 ge {
 	% "1024 string" exceeds current %stdin buffer
 	% Valid PDF file cannot be smaller than 400 bytes.
-	(%PDF-1.) search {
+	(%PDF-) search {
 	  3 1 roll pop pop
 	  dup (%!PS) search not {
 	    length 0 ne { 
 	      1 index exch readstring pop pop
 	      (%stderr) (w) file dup 
-	      (   **** Warning: File has some garbage before %PDF-1. .\n)
+	      (   **** Warning: File has some garbage before %PDF- .\n)
 	      writestring flushfile
 	    } { 
 	      pop
@@ -123,7 +123,7 @@ systemdict begin
 	    pop pop pop pop cvx .runps % (%!PS) found first
 	  } ifelse
 	} { 
-	  pop cvx .runps % (%PDF-1.) not found
+	  pop cvx .runps % (%PDF-) not found
 	} ifelse
       } { 
 	pop cvx .runps   % too short for PDF
