@@ -1105,7 +1105,7 @@ LIB4x=$(GLOBJ)gxdcconv.$(OBJ) $(GLOBJ)gxdcolor.$(OBJ) $(GLOBJ)gxhldevc.$(OBJ)
 LIB5x=$(GLOBJ)gxfill.$(OBJ) $(GLOBJ)gxfdrop.$(OBJ) $(GLOBJ)gxht.$(OBJ) $(GLOBJ)gxhtbit.$(OBJ)
 LIB6x=$(GLOBJ)gxwts.$(OBJ) $(GLOBJ)gxidata.$(OBJ) $(GLOBJ)gxifast.$(OBJ) $(GLOBJ)gximage.$(OBJ)
 LIB7x=$(GLOBJ)gximage1.$(OBJ) $(GLOBJ)gximono.$(OBJ) $(GLOBJ)gxipixel.$(OBJ) $(GLOBJ)gximask.$(OBJ)
-LIB8x=$(GLOBJ)gxi12bit.$(OBJ) $(GLOBJ)gxi16bit.$(OBJ) $(GLOBJ)gxpaint.$(OBJ) $(GLOBJ)gxpath.$(OBJ) $(GLOBJ)gxpath2.$(OBJ)
+LIB8x=$(GLOBJ)gxi12bit.$(OBJ) $(GLOBJ)gxi16bit.$(OBJ) $(GLOBJ)gxiscale.$(OBJ) $(GLOBJ)gxpaint.$(OBJ) $(GLOBJ)gxpath.$(OBJ) $(GLOBJ)gxpath2.$(OBJ)
 LIB9x=$(GLOBJ)gxpcopy.$(OBJ) $(GLOBJ)gxpdash.$(OBJ) $(GLOBJ)gxpflat.$(OBJ)
 LIB10x=$(GLOBJ)gxsample.$(OBJ) $(GLOBJ)gxstroke.$(OBJ) $(GLOBJ)gxsync.$(OBJ) $(GLOBJ)vdtrace.$(OBJ)
 LIB1d=$(GLOBJ)gdevabuf.$(OBJ) $(GLOBJ)gdevdbit.$(OBJ) $(GLOBJ)gdevddrw.$(OBJ) $(GLOBJ)gdevdflt.$(OBJ)
@@ -1153,6 +1153,7 @@ $(GLD)libx.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBx)
 	$(ADDMOD) $(GLD)libx $(LIB8x)
 	$(ADDMOD) $(GLD)libx $(LIB9x)
 	$(ADDMOD) $(GLD)libx $(LIB10x)
+	$(ADDMOD) $(GLD)libx -imageclass 0_interpolate
 	$(ADDMOD) $(GLD)libx -imageclass 1_simple 3_mono
 	$(ADDMOD) $(GLD)libx -imagetype 1 mask1
 
@@ -2297,12 +2298,9 @@ $(GLOBJ)gscolor2.$(OBJ) : $(GLSRC)gscolor2.c $(GXERR) $(memory__h)\
  $(gxcolor2_h) $(gzstate_h) $(gxpcolor_h) $(stream_h) $(gxcie_h)
 	$(GLCC) $(GLO_)gscolor2.$(OBJ) $(C_) $(GLSRC)gscolor2.c
 
-psl2lib_=$(GLOBJ)gxiscale.$(OBJ)
-$(GLD)psl2lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(psl2lib_)\
+$(GLD)psl2lib.dev : $(LIB_MAK) $(ECHOGS_XE) \
  $(GLD)colimlib.dev $(GLD)psl2cs.dev
-	$(SETMOD) $(GLD)psl2lib $(psl2lib_)
-	$(ADDMOD) $(GLD)psl2lib -imageclass 0_interpolate 2_fracs
-	$(ADDMOD) $(GLD)psl2lib -include $(GLD)colimlib $(GLD)psl2cs
+	$(SETMOD) $(GLD)psl2lib -include $(GLD)colimlib $(GLD)psl2cs
 
 $(GLOBJ)gxiscale.$(OBJ) : $(GLSRC)gxiscale.c $(GXERR)\
  $(math__h) $(memory__h) $(stdint__h) $(gpcheck_h)\
