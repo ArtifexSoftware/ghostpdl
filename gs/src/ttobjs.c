@@ -571,7 +571,7 @@ static int free_aux(ttfMemory *mem, void *ptr)
     ins->numIDefs = maxp->maxInstructionDefs;
     ins->countIDefs = 0;
     if (maxp->maxInstructionDefs > 255)
-	goto Fail_Memory;
+	maxp->maxInstructionDefs = 255;  /* Bug 689960 */
     memset(ins->IDefPtr, (Byte)ins->numIDefs, sizeof(ins->IDefPtr));
     if (ins->numFDefs < 50)
 	ins->numFDefs = 50; /* Bug 687858 */
