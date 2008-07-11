@@ -2301,6 +2301,7 @@ $(GLOBJ)gscolor2.$(OBJ) : $(GLSRC)gscolor2.c $(GXERR) $(memory__h)\
 $(GLD)psl2lib.dev : $(LIB_MAK) $(ECHOGS_XE) \
  $(GLD)colimlib.dev $(GLD)psl2cs.dev
 	$(SETMOD) $(GLD)psl2lib -include $(GLD)colimlib $(GLD)psl2cs
+	$(ADDMOD) $(GLD)psl2lib -imageclass 2_fracs
 
 $(GLOBJ)gxiscale.$(OBJ) : $(GLSRC)gxiscale.c $(GXERR)\
  $(math__h) $(memory__h) $(stdint__h) $(gpcheck_h)\
