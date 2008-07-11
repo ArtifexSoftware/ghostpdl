@@ -32,6 +32,10 @@ rsync -avz \
   --exclude svg/obj --exclude xps/debugobj \
   --exclude ufst --exclude ufst-obj \
   ./* $HOST:$DEST/$TARGET
+if test $? != 0; then
+  echo "$0 aborted."
+  exit 1
+fi
 
 echo -n "Copying regression baseline"
 if test -d src; then
@@ -39,14 +43,32 @@ if test -d src; then
 else
   LATEST=`ssh $HOST ls regression \| \
    egrep 'ghostpcl-r[0-9]+\+[0-9]+' \| sort -r \| head -1`
+  if test -z "$LATEST"; then echo "$0 aborted."; exit 1; fi
 fi
 echo " from $LATEST..."
 ssh $HOST "cp regression/$LATEST/reg_baseline.txt $DEST/$TARGET/"
+if test $? != 0; then
+  echo "$0 aborted."
+  exit 1
+fi
+
 
 echo "Queuing regression test..."
 echo "cd $DEST/$TARGET && run_regression" | ssh $HOST
+if test $? != 0; then
+  echo "$0 aborted."
+  exit 1
+fi
 
 REPORT=`ssh $HOST ls $DEST/$TARGET \| egrep '^regression-[0-9]+.log$' \| sort -r \| head -1`
 echo "Pulling $REPORT..."
 scp -q $HOST:$DEST/$TARGET/$REPORT .
+if test $? != 0; then
+  echo "$0 aborted."
+  exit 1
+fi
 cat $REPORT
+if test $? != 0; then
+  echo "$0 aborted."
+  exit 1
+fi
