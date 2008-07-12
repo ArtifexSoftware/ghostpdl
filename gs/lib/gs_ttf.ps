@@ -606,7 +606,11 @@ currentdict /tt_tag_dict .undef
       /postpos glyphnames def
       /total_length postglyphs //string_array_size exec def
       numglyphs array 0 1 numglyphs 1 sub {
-	postpos total_length ge { pop exit } if
+	postpos total_length ge {
+          % Fill the rest with .notdef
+          1 numglyphs 1 sub { 1 index exch /.notdef put } for
+          exit
+        } if
 	% No name available, /postnames will be defined as an empty
 	% array and the glyph won't get a name attached.
 	postglyphs postpos //get_from_stringarray exec
@@ -630,9 +634,7 @@ currentdict /tt_tag_dict .undef
         (Windows Type 1 Installer V1.0) search {
           pop pop pop
           .latin1isodict postnames {
-            dup //null ne
-            % dup /.notdef ne and
-            {
+            dup /.notdef ne {
               2 copy known {
                 TTFDEBUG { (ignore post table that redefines ISOLatin1Encoding glyph name ) print dup == flush } if
                 /.broken_post //true def
@@ -677,13 +679,6 @@ currentdict /tt_tag_dict .undef
 
       .broken_post {
         pop
-        0 1 postnames length 1 sub {
-          postnames 1 index get null eq {
-            postnames 1 index /.notdef put
-          } if
-          pop
-        } for
-
         [ postnames aload length 1 roll ]
       } if
     }
