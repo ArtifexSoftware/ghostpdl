@@ -130,7 +130,7 @@ gx_make_rop_texture_device(gx_device_rop_texture * dev, gx_device * target,
 {
     gx_device_init((gx_device *) dev,
 		   (const gx_device *)&gs_rop_texture_device,
-		   NULL, true);
+		   (target ? target->memory : NULL), true);
     gx_device_set_target((gx_device_forward *)dev, target);
     /* Drawing operations are defaulted, non-drawing are forwarded. */
     check_device_separable((gx_device *) dev);
