@@ -1736,7 +1736,8 @@ escv_open(gx_device * dev)
   /****** VERY WRONG ******/
   vdev->vec_procs = &escv_vector_procs;
 
-  code = gdev_vector_open_file_bbox(vdev, 512, true);
+  code = gdev_vector_open_file_options(vdev, 512, VECTOR_OPEN_FILE_BBOX
+				       | VECTOR_OPEN_FILE_SEQUENTIAL_OK);
   if (code < 0) return code;
 
   gdev_vector_init(vdev);
