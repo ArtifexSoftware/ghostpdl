@@ -1,0 +1,937 @@
+Overview:
+
+Though designed to emulate the HP Color LaserJet 5/5M, there are several areas
+where the behavior of the Artifex interpreter differs from that device. The 
+first part of this document provides an overview of these differences, and 
+the second part notes specific examples in the PCL 5c FTS where the differences
+between the Artifex interpreter and the HP implementation are apparent.
+
+Overview:
+
+  Fonts
+    Since the release of the LaserJet III in 1989, successive printer products
+    from HP have shifted away from using bitmap fonts toward scalable fonts,
+    originally using Intellifont fonts and more recently TrueType fonts (using
+    the InfiniFont packaging technique). The Color LaserJet 5/5M represents an
+    intermediate stage in this development. It has a single bitmap font (line-
+    printer), a primary set of scalable fonts in Intellifont format, and an
+    additional set of fonts in TrueType format.
+
+    Artifex is not a font vendor, and the default set of fonts offered with the
+    interpreter is not meant to exactly emulate the offerings of an HP product.
+    In addition, the default font set corresponds to a later stage in the
+    evolution of HP products; more similar to the monochrome LaserJet 5/5M and
+    the LaserJet 6P than the Color LaserJet 5/5M (which more closely resembles
+    the font offering of the monochrome LaserJet 4 series). Though the set of
+    typeface "names" that are supported is similar, the format in which these
+    fonts are stored and some aspects of the supported character set vary.
+
+    This discrepancy in font offerings has many visible manifestations, most of
+    them quite minor. Some of the more obvious differences are:
+
+    1.  Spacing.
+
+        Not all of the proportionally spaced fonts in the default set match 
+        the spacing (advance width) of the corresponding fonts provided
+        by HP. This is most often visible when lines of text are set up to be
+        clipped at the right margin (rare in applications but more common in
+        the FTS), or when the automatic line wrap feature is used.
+
+    2.  Adherence to requested height and/or (fixed-width) space.
+
+        In normal operation, a PCL document does not directly specify which
+        fonts are to be used for a given block of text. Rather, the document
+        will specify a set of font properties which the interpreter attempts
+        to match as best possible given the set of available fonts (the rules
+        which define a "best" match are quite specific). Among the properties
+        specified are the height of the font and, in the case of a fixed-pitch
+        font, the character pitch.
+
+        All of the fonts provided in the default set for the Artifex 
+        interpreter are scalable, hence all will exactly adhere to the
+        requested font size and/or pitch. In situations where a bitmap font
+        would, instead, be used by an HP printer, only an approximate match 
+        may be available for font size/pitch. Hence, the size of text 
+        rendered by the Artifex interpreter may differ from that of an HP 
+        printer.
+
+    3.  Interaction with downloaded symbol sets.
+
+        All of the fonts in the Artifex default set are TrueType fonts, which
+        make use of the Unicode font encoding scheme. Intellifont fonts, such
+        as the base set provided with the Color LaserJet 5/5M, make use of a
+        different font encoding scheme known as MSL. (In principle there is no
+        connection between a font's scaling technology and its encoding scheme,
+        but in practice all Intellifont fonts use the MSL scheme and all
+        (unbound) TrueType fonts use the Unicode scheme.)
+
+        In PCL, a user defined (downloaded) symbol set may apply to either the
+        Unicode or the MSL encoding scheme, but not to both. Hence, a downloaded
+        symbol set that uses the MSL encoding can be used with the base font
+        set of the Color LaserJet 5/5M, but not with fonts provided with the
+        Artifex interpreter. Conversely, any downloaded symbol set that uses
+        the Unicode encoding can be used with the base font set of the Artifex
+        interpreter, but not the Color LaserJet 5/5M.
+
+        Because support for the currently selected symbol set is the highest
+        priority selection parameter in the PCL font selection mechanism, this
+        difference in font format can have dramatic effects, as is evident in
+        some of the 5c FTS tests.
+
+    4.  Font scaler anomalies
+
+        The set of Intellifont fonts distributed by Agfa includes fonts with
+        some "malformed" character outlines (outlines that do not adhere to the
+        documented format). These outlines are handled differently by the
+        HP Intellifont scaler and the scaler provided with the Artifex
+        interpreter. For example, in the 5c FTS, the lower case 't' in the 
+        Park Avenue font has a malformed outline, and its rendering with the 
+        Artifex interpreter is quite different (i.e., distorted) from that 
+        produced by an HP interpreter.
+
+  Rendering Methods/Halftones
+
+    HP's documentation identifies 20 different "rendering algorithms" that can
+    be selected on an object-by-object basis. For the most part these rendering
+    algorithms represent different halftones, though certain rendering
+    algorithms also specify color mapping (in particular, color to monochrome
+    conversion).
+
+    No actual devices support all 20 algorithms. For any given device, many
+    algorithms are mapped to others, so that no more than 6 to 12 unique
+    algorithms are supported. This remapping respects color transformations:
+    a monochrome algorithm may be remapped to another monochrome algorithm but
+    not to a color algorithm, and vice-versa. Hence, the remapping of render
+    algorithms is essentially a mechanism for selecting amongst different
+    halftones.
+
+    Halftones for PCL 5c devices fall into two categories: "predictable" and not
+    "predictable". Prior to the release of the Color LaserJet 5/5M, all PCL 5c
+    halftones were predictable: all halftones were based on threshold arrays
+    (HP's documentation terms such halftones "ordered dithers", because they
+    have a monotonicity or "order" property), and the same halftone was used on
+    all devices. (Strictly speaking, there is "upward compatibility": some
+    devices offer more halftones than others, but when a halftone is offered on
+    multiple devices it is the same.)
+
+    The Color LaserJet 5/5M completely broke with this tradition, and offered
+    only "unpredictable", or device specific, halftones. This was accomplished
+    by adding five new halftone algorithms to the previously existing set of 15,
+    and on the Color LaserJet 5/5M, remapping all of the existing algorithms 
+    that require halftoning (algorithms 1 and 2 do not) to these five.
+
+    The "predictability" of a halftone is potentially of great significance in
+    PCL 5c, because of the manner in which HP chose to implement raster
+    operations. These are defined on a pixel-by-pixel basis after halftoning
+    (at least, where such a definition is possible; see the contone discussion
+    below for further information). Hence, when using raster operations to
+    combine objects rendered with two different halftones, the order in which
+    a halftone darkens pixels is of great significance: given two objects of
+    approximately 50% intensity and an exclusive-or raster operation, the
+    resulting region may be solidly colored, fully white, or anything in
+    between.
+
+    The Artifex interpreter provides the full set of rendering algorithms that
+    use "predictable" halftones, and except for the case of the noise ordered
+    dither, the halftone used is identical to that used by HP devices prior 
+    to the Color LaserJet 5/5M. The halftone provided for noise-ordered 
+    dither is only roughly similar to that provided by HP, but this should 
+    not cause a problem in practice. Though in principle "predictable", the 
+    noise ordered dither used on HP devices is so large (128 x 128 pixels) 
+    that no application could reasonably take advantage of its ordered
+    property.
+
+    The Artifex interpreter provides no device-specific halftones because it
+    is impossible to know a priori what output device it will be used with.
+    Mechanisms are provided to allow device-specific halftones to be assigned
+    to specific rendering methods--see the accompanying interface description
+    for more information. All of the rendering algorithms that would normally
+    use a device specific halftone have been remapped to a method that uses
+    a predictable halftone. A mechanism is available for modifying this 
+    mapping; again, see the interface document for details.
+
+    The Artifex interpreter supports user-downloaded threshold (dither) arrays,
+    which are supported by all recent HP color devices except the Color
+    LaserJet 5/5M. If desired, this support can be disabled by remapping the
+    corresponding render algorithms (9 and 10) via the mechanism noted above;
+    by default, however, these are not remapped.
+
+    In practice, this implies that halftoned output produced by the unmodified
+    Artifex PCL 5c interpreter will have a very different appearance from that
+    produced by the Color LaserJet 5/5M, even when the former is output on the
+    5/5M. (There are also other complications, which are described further
+    below.) In general, the output from the Artifex interpreter will be similar
+    to that of the original Color LaserJet and the HP DeskJet 1200 and 1600
+    C/CM printers. This is a reflection of a different configuration rather
+    than a fundamental difference in the interpreter.
+
+  Raster Operations, device pixel depth
+
+    In any industry that undergoes rapid technological evolution, any technical
+    term that becomes significant for purposes of marketing tends to lose its
+    technical meaning, as manufacturers shift the definition to show their
+    products in the best light. Such has been the case for the term "resolution"
+    when used with respect to inkjet and laser printers.
+
+    HP does not provided a resolution specification for the Color LaserJet 5/5M.
+    It does, however, claim "1200 dpi" equivalent performance, via the use of
+    "resolution enhancement technology" (RET).
+
+    Based on the traditional metric, namely, the thinnest horizontal and 
+    vertical pure color line that can be drawn, the Color LaserJet 5/5M is 
+    a 300 dpi device.  The resolution enhancement technology used by HP 
+    provides for more rapid modulation of the laser in the fast-scan 
+    direction (the long edge of a letter or A4 page). This is used as part of
+    a halftoning technique that produces thinner lines in the slow-scan 
+    direction than would be indicated by the 300 dpi resolution. This makes 
+    the printer somewhat of a contone device, with between 8 and 16 levels 
+    per pixel in each color plane.
+
+    Based on empirical evidence, HP does not make use of this contone capability
+    in a direct manner. Rather, the level used for a specific pixel is based
+    both on the color of that pixel and on the colors for a small number of
+    nearest neighbor pixels. A likely reason for this is that PCL rasters are
+    traditionally bi-level in each color plane (this is true for all of the
+    default or "fixed" color palettes), and the printer will only support
+    input resolutions to 300 dpi.
+
+    A side-effect of this arrangement is to make the effect of general raster
+    operations completely unpredictable; indeed, much less predictable than
+    would be indicated by usage of "unpredictable" halftones. For actual
+    applications this is almost never visible, but in several of the tests
+    in the PCL 5c FTS, the results on the Color LaserJet 5/5M bear only
+    slight resemblance to what is documented and what is produced by other
+    PCL 5c printers. In these cases, the Artifex PCL 5c interpreter 
+    follows the documentation, as the results produced by the CLJ 5/5M seem to
+    be extremely specific to that device.
+
+  Color Correction
+
+    The Color LaserJet 5/5M provides sets of two device dependent and three
+    device independent color spaces. One of the latter is not, however, a fully
+    device independent color space: the "Colorimetric RGB" space is documented
+    as a device independent color space but is implemented as a set of lookup
+    tables based on the device-dependent RGB space (all above board: this
+    arrangement is noted in the documentation).
+
+    The implementation of the device dependent color spaces is simple enough,
+    with the exception of some peculiar color correction applied to the fixed
+    color spaces. The latter is discussed below. The implementation in the
+    Artifex code matches that of the Color LaserJet 5/5M quite closely in this
+    area, with the exception of the color correction anomaly.
+
+    The device independent color spaces are another matter entirely. Nothing can
+    be said directly about the "Colorimetric RGB" space since this is not
+    actually supported. The documentation for this format does, however, include
+    several parameters whose significance is, at best, obscure. The definition
+    of the chromaticities of the primaries is straightforward enough, and the
+    specification of gamma parameters for the components is reasonably 
+    standard (though why the language provides for both a per component gamma
+    specification and a per-component, per-color-space lookup table is less
+    clear). The gain parameter, on the other hand, is not standard, and we
+    could find no description in the literature as to what it might mean. Based
+    on empirical work using the luminance-chrominance color space (which uses
+    the same parameter for its base color space), we have implemented the
+    gamma and gain parameters as:
+
+            out = 1.0 - (1.0 - pow(in, 1/gamma)) / gain
+
+    The CIE L*a*b* color space provided by the Color LaserJet 5/5M is also
+    somewhat peculiar. Its most unusual property is that an L* value 0 does not
+    yield black but rather a fairly solid red. This leaves one at somewhat of a
+    loss as to what the L* parameter is intended to correspond to. In any event,
+    after prior discussions with the OEM customer, the Artifex interpreter
+    was built to use the CIE specified conversion from L*a*b* to XYZ (the
+    color rendering dictionary converts the latter to device colors). The 
+    difference between the two is visible in several of the tests of the PCL
+    5c FTS.
+
+    The default color correction information provided with the Artifex 
+    interpreter assumes the output device has uncorrected SMPTE primaries. This
+    is, of course, not likely to be correct for any actual output device. The
+    output observed using device independent color spaces will be incorrect
+    unless a suitable color rendering dictionary has been installed. How this
+    may be accomplished is described in the accompanying interface document.
+
+  Device dependent color correction
+
+    The fixed or "simple" color space palettes provided with the Color LaserJet
+    5/5M are ostensibly variations of the device-dependent RGB color space.
+    However, unlike the latter, the "simple" color spaces produce different
+    results when used for raster as opposed to geometric objects: red becomes
+    orange, green becomes notably lighter in shade, cyan becomes nearly blue, 
+    and blue becomes deep purple. This effect is quite noticeable and is only 
+    present on the Color LaserJet 5/5M; other HP printers do not show this 
+    effect.
+
+    Because rasters rendered with the simple color spaces generate output much
+    more "quickly" than rasters generated with the equivalent writeable color
+    palette by a factor of about 3, it is our belief that the simple color
+    space raster palettes represent the true colors of the device primaries,
+    and that color correction is applied to colors used with geometric objects
+    to make them more nearly match what is expected of these colors.
+
+    The Artifex PCL 5c interpreter does and, and indeed cannot, provide the
+    same form of correction. In the 5c interpreter, geometric and raster 
+    objects that use the same color will have identical appearance. Hence,
+    rasters produced with simple color space in the Artifex interpreter will not
+    have the same appearance as those produced by the Color LaserJet 5/5m.
+
+  View Illuminant
+
+    For reasons that are likely specific to the implementation, the view
+    illuminant setting on the Color LaserJet 5/5m only affects rasters, not
+    geometric objects. The Artifex interpreter does not replicate this
+    behavior: the view illuminant setting affects all output. This leads to
+    different output on one of the tests of the PCL 5c FTS.
+
+  Default Colors
+
+    HP specifies that up to the first eight entries of each palette be given
+    a set of default, device dependent primary colors. Furthermore, these colors
+    are not affected by color lookup tables for the device independent color
+    spaces, but are affected by lookup tables for the appropriate device
+    dependent color space.
+
+    This effect is difficult to achieve given the design of the Artifex
+    interpreter and its underlying graphic library. The effect is also of
+    questionable merit: why use a device-dependent default color with a
+    device independent color space? Hence, in the Artifex interpreter, the
+    default colors used with device independent color spaces are themselves
+    device independent, and are affected by all applicable color lookup
+    tables.
+
+  Transparency
+
+    The implementation of transparency in the Artifex PCL 5c interpreter
+    closely follows that of HP interpreters, with one major exception. In HP
+    interpreters, the determination of which colors are white is made at the
+    device level, immediately before dithering. In the Artifex interpreter,
+    the same determination is made at the source color level, after consider-
+    ation of the black and white reference points but before any other color
+    transformation. This is arguably a bug but one that is difficult to remedy
+    given the design of the underlying graphic library.
+
+    In practice, this difference is not visible in application files, and is
+    visible in test files in only two cases: when using an inverting color
+    lookup table, and when using rendering algorithm 2 (map black to white and
+    all other colors to black). Both of these situations arise in a small
+    number of tests in the PCL 5c FTS.
+
+  Pixel Placement
+
+    Though the definition of pixel placement is consistent across all PCL 5c
+    implementations from HP, the set of objects affected is not. In all cases
+    pixel placement affects rectangles in PCL and polygon fills in GL, and do
+    not affect PCL rasters. For all devices except the Color LaserJet 5/5M,
+    pixel placement does not affect text; this is also the documented behavior.
+    For the CLJ 5/5M, pixel placement affects the rendering of scalable fonts,
+    but does so in a manner not consistent with its effects on other objects
+    (an extra pixel is added on each side of the character, as opposed to just
+    the right and bottom sides).
+
+    The Artifex PCL 5c interpreter adheres to the documented behavior: only
+    PCL rectangles and polygon fills in GL/2 are affected by pixel placement
+    (currently there is a bug that causes the pixel placement command in
+    GL/2 to have incorrect behavior, but the design intent is as stated).
+
+  Driver configuration parameters
+
+    The Artifex PCL 5c interpreter does not implement the driver configuration
+    command. This causes several tests near the end of the PCL 5c FTS to
+    produce different results than is the case for the Color LaserJet 5/5M.
+    
+    
+
+Difference in specific tests of the PCL 5c FTS
+
+54:
+
+    The line "12345..." is printed in an 8 pt. version of the default
+    proportionally spaced font. In the Artifex interpreter, this is a Times
+    font, as it is for the Color LaserJet 5/5M, but not with the same spacing.
+
+65, 75, 85, 95, 103:
+
+    The raster in each of these tests is printed in a "simple" color space
+    (fixed palette). As described above, the colors in these color spaces
+    vary between geometric objects and rasters for the Color LaserJet 5/5M,
+    but not for the Artifex interpreter. Hence, the colors for the raster
+    will appear different in the two interpreters.
+
+140, 143:
+
+    The vertical bar character is from the bitmap lineprinter font on
+    the HP and from the Courier font on the Artifex interpreter, hence
+    the differences in the length of the bars.
+
+273, 274, 275, 276, 284, 285, 286:
+
+    Symbol set differences.
+
+310, 320:
+
+    These two panels are printed with the printer's "line printer" font.
+    On the HP DJ 1600C/CM and the CLJ 5/5M, this is a bitmap font that is
+    not scalable and is offered in only one size, hence its size does not
+    change with pitch. On the Artifex system, the scalable Courier font is
+    substituted for the line printer font. This font does change pitch as
+    requested in the tests.
+
+403, 412:
+
+    The Univers Condensed font provided with the Artifex PCL interpreter 
+    has all characters condensed. In the version of the same font provided
+    by HP, certain "universal" characters (characters that are independent
+    of font style), are not condensed.
+
+411 (et. al.):
+
+    The lower case 't' in the downloaded Park Avenue font contains a malformed
+    outline. This is handled differently by the Intellifont font scaler 
+    provided with the Artifex PCL interpreter than by the scaler provided with
+    HP PCL implementations.
+
+422:
+
+   The default vertical offset applied to floating underlines by the Artifex
+   PCL interpreter is not the same as that provided by HP PCL interpreters.
+
+441 - 443, 450 - 512:
+
+    The fonts provided with the Artifex PCL 5 interpreter are TrueType fonts,
+    which use the Unicode encoding scheme. The corresponding fonts in the
+    Color LaserJet 5/5M are Intellifont fonts, which use the MSL encoding
+    scheme. Thus, downloaded symbol sets that use the MSL coding scheme
+    can be used with the resident fonts of the Color LaserJet 5/5M, but not
+    with the resident fonts provided with the Artifex interpreter. Similarly,
+    downloaded symbol sets that use the Unicode encoding scheme can be used
+    with fonts provided with the Artifex interpreter, but not with those 
+    provided with the CLJ 5/5M.
+
+520, 521:
+
+    Symbol set discrepancies.
+
+680 - 682:
+
+    These rasters are generated in a simple color space, and thus have the color
+    anomalies described in the first section of this document.
+
+701:
+    The length of the bitarray for the third and fourth pair of raster
+    (magenta and yellow) differ from those on the HP CLJ 5/5M.
+
+    The output of the Artifex interpreter matches that of the HP DJ 1600C/CM.
+    The output of the CLJ 5/5M is contrary to the documentation, and likely
+    a limitation of the particular implementation due to the interaction
+    between rasters and the hardware dither method.
+
+714:
+
+    On the Color LaserJet 5/5M, two of the white gaps between the cyan lines
+    appear to be wider than the others (after the 48th line and 98th cyan 
+    lines). These larger gaps are not present in the input data, and are 
+    probably due to a resonance phenomenon between the raster and the 
+    resolution enhancement technology used by the CLJ 5/5M. This behavior 
+    is not reproduced in the Artifex PCL 5c interpreter.
+
+721:
+
+    This raster are generated in a simple color space, and thus has the color
+    anomalies described in the first section of this document.
+
+722:
+
+    On the Color LaserJet 5/5M, the first of the shorter, magenta raster lines
+    appears to be thinner than the others. In the input data all of the lines
+    are the same width, and there is no apparent reason for the thinness of
+    the first line. The Artifex PCL 5c interpreter does not replicate this
+    anomaly.
+
+750:
+
+    In the third row, the row with the greatest reduction in scale, the first
+    (thinnest) bar of the raster completely disappears on the Color LaserJet
+    5/5M, but not with the Artifex PCL 5c interpreter.
+
+    Whether a given artifact of a raster appears or disappears when scaled down
+    is a property of the specific raster scale implementation used. There is
+    no reason to expect the results to be the same across two implementations,
+    and little reason to try to make them the same.
+
+765:
+
+  The output produced by the Artifex interpreter appears to be correct and
+  agrees with the output of the DJ 1600C/CM. The output on the CLJ 5/5M
+  differs, quite probably due to a physical limitation of the printer.
+
+  This example involves scaled PCL rasters. Such rasters are clipped to the
+  the page's printable region. In PCL, a page is always assumed to have a 1/6"
+  unprintable margin. For this test all three of the rasters present are
+  scaled by a factor of 14.5. The middle (green) raster in the example has a
+  width of 25 samples, and is placed 205 pixels to the left of the right
+  printable margin. Hence, all of the first 14 samples should be visible
+  (14 * 14.5 = 203), as well as two pixels of the 15th sample.
+
+  In this test, all raster sample lines are the same, and consist of the
+  following pattern (0 == white, 1 == color, either dark blue or green):
+
+      0000 0001 0000 0011 0000 0111 0
+
+  Hence, the 15th sample value is colored, and a two-pixel-wide sliver of this
+  sample should be visible.
+
+800 - 804:
+
+    Each of the "bars" in these test are rendered in a different color space,
+    in the sequence RGB, CMY, Colorimetric RGB, CIE L*a*b*, Luminance-
+    Chrominance. The final three bars are in device independent color spaces,
+    hence their appearance will vary based on the color rendering
+    dictionary provided.
+
+    Note also that fourth bar in tests 800 and 803 reflect the implementation
+    of the CIE L*a*b* color space in the Color LaserJet 5/5M, which renders
+    colors with the value of L* = 0 as red rather than black.
+
+811
+
+    Each raster in this example is rendered in a different color space, in the
+    sequence RGB, CMY, Colorimetric RGB, CIE L*a*b*, and Luminance-Chrominance.
+    Hence, the appearance of the last three rows will depend on the color
+    rendering dictionary provided. For the fourth raster, the different
+    implementations of the CIE L*a*b* color spaces is also evident.
+
+813:
+    The first two rasters are printed in RGB and CMY color spaces, with the
+    white and black points reversed. Due to an error in the implementation
+    of transparency in the CLJ 5/5M, this causes BOTH white and black to be
+    considered transparent, which in turn causes the center region to be
+    fully transparent.
+
+    The Artifex implementation does not have this bug, hence either the
+    black triangles or the black background of this region is visible.
+
+    The additional three rasters are printed in device-independent color spaces,
+    hence their appearance is dependent on the color rendering dictionary
+    provided.
+
+830, 831:
+
+    A number of differences between the Artifex PCL 5c interpreter and the
+    CLJ 5/5M are visible in these tests:
+
+    1.  The Artifex PCL 5c interpreter, in its default form, supports the
+        rendering methods with predictable halftones, and does not support
+        the rendering methods with unpredictable or device-specific halftones.
+        The CLJ 5/5M has the reverse arrangement. In particular, the Artifex
+        interpreter supports user downloaded dithers, which the CLJ 5/5M
+        does not.
+
+    2.  The Artifex PCL 5c interpreter determines which pixels are "white"
+        for purposes of transparency prior to the effects of the color mapping
+        implied by the rendering algorithm; the CLJ 5/5M makes this same
+        determination after such color mapping. This is most visible in the
+        case of render algorithm 2 (prominent horizontal black lines in both
+        tests), where the output from the Artifex interpreter is transparent
+        while that of the CLJ 5/5M is opaque.
+
+    3.  The Artifex PCL 5c interpreter, in common with most HP implementations
+        of PCL 5c, implements render algorithm 1 (snap to primaries) after
+        applying gamma correction. The CLJ 5/5M is exceptional in this area in
+        snapping the colors to primaries before applying gamma correction.
+        Hence, when using render algorithm 1, the output of the Artifex
+        interpreter (and most HP PCL 5c interpreters) is always a solid
+        primary color, while for the CLJ 5/5M it may be a halftoned color.
+        This difference is visible in the latter part of test 831.
+
+    4.  The final two columns of tests 830 and 831 represent a non-solid
+        raster object combined with a non-solid foreground, using logical
+        operation 252. Especially for the larger gamma values, the appearance
+        of the result is critically dependent on the nature of the halftones
+        used for the raster and the foreground. In the Artifex PCL 5c
+        interpreter, the halftones used cause these regions to become white
+        more rapidly than is the case for the CLJ 5/5M.
+
+833:
+
+    Each pair of lines in this example constitutes a pair of rasters. The 
+    data for each raster pair is the same, only resolution is changed.
+    A bug in the CLJ 5/5M interpreter, also evident in test 701, results in
+    the improper rendering of raster output at 100 and 150 dpi in some 
+    situations. The Artifex PCL 5c interpreter does not mimic this bug,
+    hence the different appearance of the output.
+
+853:
+
+    The modified render algorithm referred to in the fourth line of this test
+    is render algorithm 10, monochrome user defined dither. This render method
+    is supported by the Artifex PCL 5c interpreter (in its default form), 
+    but not by the CLJ 5/5M. Hence the different appearance. Note also that 
+    the final foreground for the fourth line is used to draw the text for 
+    the final, fifth line of the test, so its appearance is modified as well.
+
+860 - 865:
+
+    See discussion for test 830 and 831.
+
+866:
+
+    The different appearance of this test between the Artifex PCL 5c
+    interpreter and the Color LaserJet 5/5M is due to the different halftones
+    used.
+
+871:
+
+    The final three rows of rectangles in this example are rendered in a device
+    independent color space, hence their appearance will depend on the nature
+    of the color rendering dictionary provided. In the default configuration,
+    these rectangles have a yellow hue where white would be expected.
+
+883:
+
+    The output from the Artifex PCL 5c interpreter matches the documented
+    behavior, and the behavior of HP implementations other than the CLJ 5/5M.
+    For reasons that are not clear, the CLJ 5/5M will print a faint outline
+    of "Text" for the rightmost instance of this string in the first line
+    of the test. Examination under magnification reveals that this outline
+    is smaller than the design resolution of the device, so this may be a
+    print engine artifact.
+
+956:
+
+    The rectangle on the right is printed with a transparent pattern. This
+    produces the expected output on the HP 1600C/CM and with the Artifex PCL
+    interpreter. It does not produce the expected output for the HP CLJ 5/5M,
+    apparently due to a bug.
+
+
+974:
+
+    See the discussion for test 830. This particular example also demonstrates
+    a situation in which different color mapping methods are being used for the
+    foreground and the raster being printed. For reasons that are not yet
+    clear, this (highly unusual) combination is not properly supported by the
+    graphic library underlying the Artifex PCL 5c interpreter.
+
+980, 981:
+
+    1.  The raster operation mechanism of the CLJ 5/5M is broken, and thus
+        cannot be used as a reliable comparison (see notes at the start of
+        this document).
+
+    2.  The implementation of opaque text for scalable fonts in the
+        Artifex PCL 5c interpreter is somewhat imperfect. The implementation
+        requires both inside and "outside" of a path to be filled, in
+        independent operations. The two filled regions do not join exactly,
+        hence a faint outline of the original character is usually visible.
+
+    3.  When compared to the documented behavior, the behavior of the Artifex
+        interpreter varies in some of the opaque source, transparent pattern
+        cases. We have not yet analyzed why this is the case, but do not
+        expect it to cause difficulty in practice.
+
+983:
+
+    The behavior of the Artifex PCL 5c interpreter matches the documented
+    behavior, and the behavior of HP devices other than the CLJ 5/5M. Raster
+    operations on the CLJ 5/5M are broken.
+
+1053:
+
+    The behavior of the Artifex PCL 5c interpreter matches the documented
+    behavior, and the behavior of HP devices other than the CLJ 5/5M. The
+    behavior of the CLJ 5/5M is apparently a bug.
+        
+1074 and 1084:
+
+     The artifex interpreter's implementation of fill type 3 and 4
+     (FT) differs slightly from HP.  Artifex gl/2 vector fills always
+     radiate away from the origin in plotter units space.  This can
+     cause slight discrepancies as evidenced in these two frames.
+
+1070:
+    The artifex interpreter always fills along +x and +y for hpgl/2
+    vector fills.  HP apparently fills in a direction related to the
+    direction of the graphical objects.  We believe our interpretation
+    is follows the HP spec.
+
+1272:
+
+   The gl/2 interpreter places scalable characters slightly to the
+   left, the discrepancy for a font scaled to 2" is about 1/16".
+   Attachment 1 below illustrates the problem.  The GL/2 Label is
+   drawn then we return to pcl maintaining the current "y" coordinate,
+   select the same font and print the same string.  The Artifex
+   interpreter produces the same output for each string, the expected
+   result.  HP does not.
+
+begin 664 gl2chbug.pcl
+M&T4;)3!"24X[4%<P.T94-"PV,RXU+#`[4$$P+#`[4E(U,#`P,"PU,#`P,#M0
+M5S`N,C4[1E0T+#4P."PP.U!!,"PP.U)2-3`P,#`L-3`P,#`[4%<P+C4[1E0T
+M+#$P,38L,#M003`L,#M24C4P,#`P+#4P,#`P.QLE,4))3CM34#$[25`[4%<P
+M+C`T.U-$-"PQ-#0L,BPQ+#<L-#$P,3M003`L-3`P,#M,0E!#3`-003`L,#L;
+5)3%!&RAS,30T5ALH<S%04$-,&T4*
+`
+end
+
+1402 (et. al.):
+
+    The filling of GL/2 polygon regions with lines in the Artifex PCL 5c
+    interpreter is not completely accurate. Line space and phasing are both
+    incorrect. These bugs are present in many other GL/2 tests as well.
+
+1422, 1423, 1424, 1445, 1446, 1462, 1463, 1801, 1803, 1811, 1817, 1894, 1895, 1941, 1946,
+1950, 1951, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 2210 (page 1), 2220 (page 2)
+
+    Artifex GL/2 contains minor discrepancies with anchoring line
+    fills.  The problem is more evident in cases where scaling is
+    specified.  Low priority.
+
+1463, 1463:
+
+    The patterned line fills used in these two tests vary in appearance
+    between the CLJ 5/5M and the Artifex PCL 5c interpreter because
+    the latter does not properly set the phase of GL/2 line fills.
+
+1601, 1602:
+
+    The GL/2 label printing command ("LB") in the Artifex PCL 5c interpreter
+    does not set the initial position of text correctly when printing in the
+    vertical direction.
+
+1641:
+
+    The handling of horizontal tab in GL/2 differs between the Artifex PCL 5c
+    interpreter and the CLJ 5/5M.
+
+1642, 1650:
+
+    The position of the label origin in GL/2 varies between the Artifex PCL 5c
+    interpreter and the CLJ 5/5M.
+
+1680:
+
+    The character sets supported by the fonts used in Artifex PCL 5c
+    interpreter, in its default form, are not the same as those supported by
+    the fonts in the CLJ 5/5M.
+
+1752, 1753 (et. al.):
+
+    The lower-case 'a' in the GL/2 stick font provided with the Artifex PCL 5c
+    interpreter is a different style than that of the stick font in the
+    CLJ 5/5M. This difference is also evident in other tests.
+
+1860, 1862, 1863:
+
+    The position of the GL/2 label origin in the Artifex PCL 5c interpreter is
+    not accurate. This is particularly noticeable for arbitrary transformations
+    of text, as in the first two tests cited.
+
+2080:
+
+    The scaling of the rightmost imported image in this test is
+    different than the HP printer.  The artifex interpreter complies
+    with the HP PCLTRM.  The following test shows that simply entering
+    and leaving HPGL/2 <ESC>%OB<ESC>%0A has the side effect of
+    resetting HPGL/2 scaling.  This should not happen according to
+    PCLTRM 18-17.
+
+    <ESC>E
+    <ESC>*c720X
+    <ESC>*c0T
+    <ESC>*c8.3K
+(1) <ESC>%0B   /* enter hpgl2/2 */
+(2) <ESC>%0A   /* enter pcl */
+    <ESC>*c420Y
+    <ESC>*c0T
+    <ESC>%1BSP2;PW0;IN;SP6;SC0,100,0,100;PA50,50;SC;SP7;CI450;
+    <ESC>%1A
+    <ESC>E
+
+    the two commands (1) and (2) change the behavior the HP scaling
+    but not Artifex Scaling.  If (1) and (2) are removed both HP and
+    Artifex produce the same results.
+
+2101, 2102:
+
+    See comments for test 830 and 831.
+
+2106:
+
+    Logical operations are broken on the CLJ 5/5M. The behavior of the Artifex
+    PCL 5c interpreter follows the documentation.
+
+2120, 2122:
+
+    HPGL/2 pixel placement is implemented using the postscript
+    operator setfilladjust.  The HP command definition is not consistant with
+    the behavior of the implementation and different devices (Color
+    Laserjet & 6MP) produce different results for each of these test files.
+
+2210 and 2220 (fourth page):
+
+    SI, SR discrenpancy.
+
+
+2322, 2323:
+
+    Because the Artifex PCL 5c interpreter determines which regions are "white"
+    for purposes of transparency before taking into account any color lookup
+    table modifications, the white arrows in the center of these images are 
+    considered transparent even in the center case (the inverting color 
+    lookup table). Hence, for the inverting color lookup table case, the 
+    central rectangle of the raster will be completely white.
+
+2330:
+
+    The CLJ 5/5M does not support the viewing illuminant command; the Artifex
+    PCL interpreter does.
+
+2331:
+
+    These rasters are rendered in a device independent color space, hence
+    their appearance will be dependent on the color rendering dictionary
+    provided.
+
+2351, 2352:
+
+    The driver configuration command linearly maps saturation and
+    lightness arguments to pcl's gamma function.  It is expected that
+    vendors will provide product specific code for this function.
+
+2412:
+
+    After downloading a color lookup table, the monochrome palettes at the
+    bottom of the first and second pages of this test have one additional
+    black entry when rendered with the Artifex PCL 5c interpreter, as compared
+    to the output of the CLJ 5/5M. This problem has not been analyzed.
+
+PCL5c ATS Anomalies
+===================
+
+
+ak506k21.bin:
+     
+     A PCL raster does not overlap an HPGL/2 line segment because the
+     line is not positioned exactly like HP due to a rounding
+     difference.  The HP 1600C/CM also images this differently than
+     the HP Color Laserjet breaking only half of the line.  After
+     rounding to the nearest pixel the ASI interpreter places the
+     raster rectangle one 300 dpi pixel below the gl/2 line.  The HP
+     overlaps for at least one pixel on the 1600C/CM and the width of
+     the line on the Color Laserjet.
+
+fp309k22.bin:
+
+     The right edge of the clipboard is missing.  This is a font
+     rasterizer anomaly.  The clipboard is a winding bitmap font and
+     images correctly at 600 dpi but is slightly clipped at 300 dpi.
+
+Qp606w21.bin:
+
+      It is possible for the artifex interpreter to miss closing a
+      path in polygon mode under certain unusual conditions, due to
+      rounding problems.  Here is a very simple example that
+      demonstrates the problem.  This problem has only manifested in
+      problems of low visibility so we have not fixed it.
+
+begin 664 Qp606w21.bin.small
+M&R4M,3(S-#580%!*3"!3150@4$%'15!23U1%0U0]05543PI`4$I,(%-%5"!2
+M15-/3%5424]./38P,`I`4$I,($5.5$52($Q!3D=504=%/5!#3`H;11LE,$))
+M3E-0,5!!4%<N-3M053(Q,C`L,SDT-CM033`[4$0[4%(M."PM,BPM-#8L+3$Q
+?+#(R,2PM.#8W+"TQ-C<L.#@P.U!-,CM%4!LE,$$;10``
+`
+end
+
+
+---
+
+HP Color Laserjet 5C FTS printed on the Color Laserjet 4600
+
+panel 411 - The HP interpreter falls back to Times Bold Italic on line
+6.  On the previous line the brush font was properly selected, text
+printed with the font then typeface family 4128 is selected.
+Extracting out the non vendor bits results in typeface 32 which is the
+typeface number of the brush font.  There are no intervening relevant
+commands before the next sentence is printed so, we don't see how any
+other font than brush font could be selected and assume this is a bug
+in the HP printer.  Similarly we believe the Dom Casual downloaded
+font should be selected on lines 7 & 8.
+
+
+----
+
+HP Color Laserjet 4600 CET
+
+18-01.BIN page 25 - The vertical bar and checkerboard character are
+missing on this page.  The glyphs are not actually present in the
+downloaded font.  It will work properly with Monotype if the plugins
+are configured correctly.
+
+20-07.BIN page 18 (repeats throughout test) - The HP prints the text
+in the wrong color.  The logical operation 17 (DSon) is used to paint
+green text on a white background.  The result should be black, the
+text is green.  The following example prints the wrong colored text
+from the example and a rectangle with the same raster operation and
+colors, the rectangle is the predicted black and the text is green.
+
+(quoted printable)
+
+=1BE=1B*r3U=1B*v2S=1B*l17O=1B*p300x400Y=1B*c90A=1B*c150B=1B*c0PDownloa=
+ding symbol set 62F and making it permanent=1BE
+
+
+24-04 page 3, 4 and 6 - The HP 4600 is incorrect.  The reference point is
+explicitly set to the current position before drawing the rectangles.
+The pattern's origin should coincide with the rectangle's origin as it
+does in the Artifex output.
+
+
+28-10 page 11 - This test checks fractional bit support for the
+polyline encoding command.  The last box on the page uses 26 fractional
+bits, Artifex supports this and prints the box, the HP 4600 does not
+support 26 bits and does not print the box.  The PCL Technical
+Reference Manual calls states the -26 <= fractional bits <= 26.  The
+HPGL/2 RTL tecnical reference manual states the value is device
+dependent.
+
+
+
+----
+
+HP Color Laserjet 4600 CET printed on the Color Laserjet 4550
+
+
+21-09.BIN :
+
+	  4550 printer infinite loop raster width range test.
+
+
+21-10.BIN :
+
+	  4550 printer infinite loop raster height range test.
+
+
+21-10.BIN page 24, 25 and
+21-12.BIN page 17 :
+	  
+	  Raster height > raster sent and the palette
+0 entry is not white.  We zero fill with white, HP with Black or 
+the palette color at entry 0.  
+
+
+21-12.BIN page 19 :
+
+	   HP incorrectly renders the first image stretching it 
+in the X dimension.
+
+
+21-13.BIN page 2 :
+
+	   HP incorrectly renders 4 of the rasters on the page 
+Black triangles appear in a regular pattern across the raster  
+
+
+
+           

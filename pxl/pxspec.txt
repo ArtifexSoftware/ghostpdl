@@ -1,0 +1,563 @@
+
+    Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+    Unauthorized use, copying, and/or distribution prohibited.
+
+This document presents the results of Aladdin's investigation of the PCL XL
+Feature Reference Protocol Class 1.1 specification and of its relationship
+to the implementation in the H-P LaserJet 6MP printer.
+
+		Report on PCL XL and LaserJet 6MP
+
+Introduction
+============
+
+In order to implement a fully test-suite-compliant PCL XL interpreter, we
+had to compare the output of our own code with the output printed by an H-P
+printer for the same input data.  These comparisons uncovered a number of
+disagreements between the specification and the implementation in the
+printer we used (the LJ 6MP), as well as omission of many details necessary
+to create compatible implementations.  In some cases, it seemed likely to us
+that the published specification did not properly describe the intended
+behavior; in other cases, it seemed likely that the observed behavior was
+the result of a printer firmware bug.  Of course, only H-P can answer
+authoritatively the question of which alternative is correct.
+
+In presenting test cases below, we have used an imagined source syntax for
+PCL XL.  This code is meant to be executed in an environment where one user
+space unit is 1/300" and where all elements of the graphics state have their
+default values.
+
+This document only addresses a very few of the many typographical and
+grammatical errors and internal inconsistencies in the published PCL XL
+specification.  In most cases, we found the intention clear.
+
+Changes in a given revision of this document are marked with the revision
+number in [brackets].  Revision history:
+		first issued December 6, 1996
+		rev. [1] December 12, 1996
+		rev. [2] December 13, 1996
+		rev. [3] December 19, 1996
+		rev. [4] December 31, 1996
+		rev. [5] January 7, 1997
+		rev. [6] January 17, 1997
+		rev. [7] February 6, 1997
+
+Miscellaneous
+=============
+
+[7] Embedded data streams
+-------------------------
+
+H-P printers require that if a command reads data from the data source, then
+all the data required by the command must follow the command in a *single*
+data block; it cannot be divided up into multiple blocks whose total length
+is the amount of data required.
+
+Clipping
+--------
+
+The overall discussion of clipping mode and clipping region is inconsistent
+in many places both with itself and with the implementation.  Based on
+experiments with the printer, we believe the following is the intended
+behavior:
+
+	- The ClipMode in the graphics state only controls which rule is
+used to determine the inside of the region defined by the *newly presented
+path*.  The inside of that region is then intersected with the existing
+clipping region (which is simply an abstract region of the plane,
+independent of being defined by a particular path) to define the new
+clipping region, again as an abstract region of the plane.
+
+	- The ClipRegion parameter of the SetClip operators only controls
+whether the interior or exterior of the region defined by the *newly
+presented path* should be used to intersect with the existing clipping
+region.  The result of the operator is an abstract region of the plane.
+
+This interpretation is consistent with the PostScript clipping model and is
+much simpler to understand (and implement) than what the specification
+attempts to describe.  Unfortunately, the sample code to illustrate these
+conclusions is too large to present here.
+
+On top of all this, there appears to be a firmware bug in the implementation
+of SetClipIntersect.  See below.
+
+[5] Line joins
+--------------
+
+Unlike PostScript, which applies a line join at the ends of every line
+segment (including the segments produced by flattening curves), PCL XL [7]
+does not apply the line join within an individual arc or Bezier (including
+curves that are part of TrueType characters).  This produces a "smooth"
+rather than a "bristly" effect when a null line join is selected.
+
+Session operators
+=================
+
+[3] BeginPage
+-------------
+
+Apparently illegal values for Orientation, like MediaSize and MediaSource,
+only produce warnings, not errors.
+
+Font control operators
+======================
+
+[7] RemoveFont
+--------------
+
+[2] If RemoveFont provokes multiple warnings within a single page,
+apparently only the last occurrence of each warning is remembered.  Test
+case:
+
+	(Bogus1) ba @FontName RemoveFont
+	(Bogus2) ba @FontName RemoveFont
+	(Arial           ) ba @FontName RemoveFont
+	(Bogus3) ba @FontName RemoveFont
+	(CG Times        ) ba @FontName RemoveFont
+
+Only Bogus3 (UndefinedFontNotRemoved) and CG Times (InternalFontNotRemoved)
+will appear on the error page.
+
+Graphics state operators
+========================
+
+Miscellaneous
+-------------
+
+The specification fails to state (section 5.0) that CharBoldValue and
+CharSubMode are elements of the graphics state, and that their default
+values are 0 and eNoSubstitution respectively.
+
+SetColorSpace
+-------------
+
+The specification says that this operator sets both the pen and brush to
+paint black.  In fact, [3] the operator does no such thing.  Test case:
+
+	20 us @PenWidth SetPenWidth
+	4 4 usp @PageScale SetPageScale
+
+	1 b @ColorSpace SetColorSpace		% eGray
+	0.5 r @GrayLevel SetPenSource
+	0.8 r @GrayLevel SetBrushSource
+	100 100 200 200 usq @BoundingBox Rectangle
+
+	2 b @ColorSpace SetColorSpace		% eRGB
+	300 100 400 200 usq @BoundingBox Rectangle
+
+The two rectangles are identical.  We think this is probably an error in the
+specification, since the observed behavior seems reasonable.
+
+SetBrushSource, SetPenSource
+----------------------------
+
+The statement "The paint source identified in the attribute list is
+compatible with the current color space" is misleading, since it is
+acceptable to set the brush source to a raster pattern defined in a color
+space different from the current one.
+
+[6] SetCharAngle, SetCharScale, SetCharShear
+--------------------------------------------
+
+The statement that these are "not cumulative" is somewhat misleading.  What
+the H-P printers apparently do is remember only the most recent invocation
+of these commands, including the order in which they were received.  Thus,
+for example, the sequences <Angle1, Scale, Angle2> and <Scale, Angle1,
+Angle2> are both equivalent to <Scale, Angle2>, but <Angle1, Angle2, Scale>
+is equivalent to <Angle2, Scale>, which is different.
+
+SetCharSubMode
+--------------
+
+Character substitution is not defined or discussed anywhere else in this
+document.  However, from other reading, we are quite certain that this
+operator requires an array with exactly 1 element, and that it turns on or
+off vertical substitution using the VT segment of TrueType fonts, as for
+PCL5.
+
+SetMiterLimit
+-------------
+
+Setting a miter limit of 0 is [4] apparently equivalent to setting the miter
+limit to its default value of 10.  We believe this behavior is deliberate
+and that the specification omitted this point accidentally.
+
+SetLineDash
+-----------
+
+The last sentence, stating that "the dash style of a line is not scaled when
+a line is scaled", is simply wrong.  Test case:
+
+	[40 20] @LineDashStyle SetLineDash
+	[100 100] @Point SetCursor
+	[300 0] @EndPoint LineRelPath
+	PaintPath NewPath
+	[100 200] @Point SetCursor
+	[2 2] @Scale SetPageScale
+	[300 0] @EndPoint LineRelPath
+	PaintPath
+
+In the second line, the dashes and gaps are twice as long.  We think the
+text in the specification may be a holdover from an earlier version of the
+design, and that the scaling behavior is the one that is actually intended,
+since, for example, it matches the behavior of PostScript's setdash
+operator.
+
+SetClip*
+--------
+
+The discussion of ClipMode and ClipRegion is wrong almost everywhere.  See
+the "Graphics State" section above.
+
+SetClipIntersect
+----------------
+
+It appears that SetClipIntersect disregards the ClipRegion attribute if any
+intersection actually occurs.  Test cases ("region1" and "region2" are
+parameters, eInterior or eExterior):
+
+	eEvenOdd @ClipMode SetClipMode
+	[120 120] @Point SetCursor
+	[100 0] @EndPoint LineRelPath
+	[-100 100] @EndPoint LineRelPath
+	CloseSubPath
+	region1 @ClipRegion SetClipIntersect
+	[120 120] @Point SetCursor
+	[100 0] @EndPoint LineRelPath
+	[0 100] @EndPoint LineRelPath
+	CloseSubPath
+	region2 @ClipRegion SetClipIntersect
+	[100 100 440 440] @BoundingBox Rectangle
+
+The outputs with region2 = eInterior are what one would expect (triangles
+pointing "south" and "west"), but the outputs with region2 = eExterior are
+the same (a square with a triangle cut-out pointing "northeast") whether
+region1 = eInterior or region1 = eExterior.  We were unable to come up with
+an interpretation of the specification that would make this the correct
+behavior, so we think this is a firmware bug.
+
+SetROP
+------
+
+The specification, read literally, would require keeping an internal
+representation of the page in which every pixel was represented as a 24-bit
+RGB value.  The implementation in the printer does no such thing: it applies
+the given RasterOp/transparency algorithm to the physical device pixels
+*after halftoning*, with white pixels resulting from halftoning being
+treated as transparent if the corresponding transparency mode is set.  This
+is tremendously simpler and cheaper to implement than what is in the
+specification, but it is also produces very different results.  Test case:
+
+	1 @ColorSpace SetColorSpace
+	15 @GrayLevel SetBrushSource
+	[100 100 200 200] @BoundingBox Rectangle
+	86 @ROP3 SetROP			% D ^ (T | S)
+	240 @GrayLevel SetBrushSource
+	[100 100 200 200] @BoundingBox Rectangle
+
+The specification requires painting the interior of the rectangle with the
+XOR of the 15 and the 240, i.e., 255, i.e., white.  In fact, this produces a
+dark gray shade resulting from XORing the two halftone masks together.
+
+The equations for transparency processing (section 5.7.5) are badly
+presented: Src and Paint in the first equation of each case (the computation
+of Temporary_ROP3) refer to the actual pixels, while Src and Paint in the
+other equations refer to masks that have 1s where the corresponding pixel is
+not white.  For black-and-white printers with black = 1, the two are
+equivalent, but for color printers, they are quite different.
+
+In order to make ORing different gray shades together produce a result
+approximating the sum of the shade values rather than the maximum, H-P has
+apparently used very carefully designed default halftone screens, and
+*different* screens for the source and paint operands of RasterOp.  There is
+no way to achieve this effect with user-defined dither matrices, because the
+same matrix is used for all cases.  Test case:
+
+	<< optionally download a dither matrix >>
+	eRGB @ColorSpace SetColorSpace
+	For values of x from 0 by 5 to 255
+	    For values of y from 0 to 5 by 255
+		Let X = x * 10 + 100, Y = y * 10 + 100
+		252 @ROP3 SetROP
+		x @GrayValue SetBrushSource
+		[X Y X+10 Y+10] @BoundingBox Rectangle
+		238 @ROP3 SetROP
+		0 @GrayValue SetBrushSource
+		[X Y] @Point SetCursor
+			0 @ColorMapping 2 @ColorDepth
+			1 @SourceWidth 1 @SourceHeight
+			[10 10] @DestinationSize
+		BeginImage
+			0 @StartLine 1 @BlockHeight 0 @CompressMode
+		ReadImage
+		<fb 04>		% stream preamble
+		<y 00 00 00>	% stream data
+		EndImage
+
+The output for the downloaded matrix is very different from the output for
+the default screen; a careful examination of the output with the default
+screen will reveal that the square at (x,y) is different from the square at
+(y,x), confirming that different screens are used for source and paint.
+
+[3] SetHalftoneMethod
+---------------------
+
+[4] Setting a new halftone method does not affect the current brush or pen:
+apparently SetBrushSource and SetPenSource immediately render the color
+using the current halftone method, and PaintPath uses that rendering.  To
+verify this:
+
+		<< SetBrushSource with a gray level >>
+		... SetHalftoneMethod ...
+		<< construct a path >>
+		PaintPath
+
+The path will be painted with a brush that uses the old halftone method, not
+the new one.
+
+[7] The DitherOrigin is apparently relative not to the current user
+coordinate system (as documented), but to the default user coordinate system
+in the current orientation.  Here is a test file:
+
+	150 600 usp @PageOrigin SetPageOrigin
+	0 b @DitherMatrixDataType
+	32 32 usp @DitherMatrixSize
+	2 b @DitherMatrixDepth
+	SetHalftoneMethod
+	<< 1024 bytes of distinctive-pattern matrix omitted >>
+	2 b @ColorSpace SetColorSpace
+	[100 100 100] ba @RGBColor SetBrushSource
+	0 0 32 32 usq @BoundingBox Rectangle
+
+If the DitherOrigin were taken correctly, the output would consist of a
+single, unshifted copy of the halftone tile.  However, the tile is shifted.
+
+[7] When using the default dither matrix, the X component of the
+DitherOrigin is ignored.  For example:
+
+	eGray @ColorSpace SetColorSpace
+	0 b @NullPen SetPenSource
+	90 b @ROP3 SetROP		% D ^ T
+	175 b @GrayLevel SetBrushSource
+	0 0 100 100 usq Rectangle
+	1 0 usp @DitherOrigin
+	eDeviceBest @DeviceMatrix
+	SetHalftoneMethod
+	175 b @GrayLevel SetBrushSource
+	0 0 100 100 usq Rectangle
+
+The result is white: the dither matrix was not translated, and the gray
+pattern cancelled itself out.  If one replaces the 6th line with
+
+	0 1 usp @DitherOrigin
+
+the result is a gray square, showing that the matrix was translated.
+
+Painting operators
+==================
+
+[3] ArcPath
+-----------
+
+If the corners of the BoundingBox are specified with x1 > x2 or y1 > y2, the
+following peculiar changes occur in the output:
+
+	- x1 < x2, y1 < y2: the arc is drawn counter-clockwise from
+	StartPoint to EndPoint, per the specification.
+
+	- x1 < x2, y1 > y2: the arc is drawn clockwise from EndPoint to
+	StartPoint.
+
+	- x1 > x2, y1 < y2: the arc is drawn clockwise from the point
+	opposite EndPoint to the point opposite StartPoint.
+
+	- x1 > x2, y1 > y2: the arc is drawn counter-clockwise from
+	point opposite StartPoint to the point opposite EndPoint.
+
+There is probably some simple way of characterizing these changes
+mathematically, but we haven't found it.  We think this is probably a
+firmware bug, but it could also be a specification error.
+
+[3] Chord
+---------
+
+The arc of the chord is drawn before the line.  This is not documented; it
+matters when a dash pattern is being used.
+
+Chord behaves like ArcPath for BoundingBox values with x1 < x2 or y1 < y2.
+
+Chord probably clears the path, rather than leaving it set to the shape.
+(We didn't verify this, but it seems likely given that Ellipse and Pie do
+it.)  See Rectangle below.
+
+[3] ChordPath
+-------------
+
+The arc of the chord is drawn before the line.  This is not documented; it
+matters when a dash pattern is being used.
+
+ChordPath behaves like ArcPath for BoundingBox values with x1 < x2 or y1 <
+y2.
+
+[1] Ellipse
+-----------
+
+[1] The specification does not say what the starting point of an ellipse is,
+or in which direction the ellipse is drawn; this matters when a dash pattern
+is being used.  [7] The starting point and drawing direction for ellipses
+are as follows:
+
+	- x1 < x2, y1 < y2: starts at 180 degree point (on the ellipse's X
+	axis at minimum X), draws counter-clockwise.
+
+	- x1 < x2, y1 > y2: starts at 180 degree point, draws clockwise.
+
+	- x1 > x2, y1 < y2: starts at 0 degree point, draws clockwise.
+
+	- x1 > x2, y1 > y2: starts at 0 degree point, draws
+	counter-clockwise.
+
+Ellipse clears the path, rather than leaving it set to the shape.  See
+Rectangle below.
+
+[3] Pie
+-------
+
+The line from the center to the starting point of the arc is drawn first,
+then the arc, then the line back to the center.  This is not documented; it
+matters when a dash pattern is being used.
+
+Pie behaves like ArcPath for BoundingBox values with x1 < x2 or y1 < y2.
+
+Pie clears the path, rather than leaving it set to the shape.  See Rectangle
+below.
+
+[3] PiePath
+-----------
+
+PiePath draws in the same order as Pie.
+
+PiePath behaves like ArcPath for BoundingBox values with x1 < x2 or y1 < y2.
+
+Rectangle
+---------
+
+The specification says that Rectangle is equivalent to
+	NewPath RectanglePath PaintPath
+
+Since PaintPath does not reset the path, Rectangle should leave the path set
+to the rectangle; the postcondition in the specification says this
+explicitly.  However, the implementation resets the path after Rectangle.
+Test case:
+
+	25 @PenWidth SetPenWidth
+	0 @NullBrush SetBrushSource
+	eGray @ColorSpace SetColorSpace
+	60 @GrayLevel SetPenSource
+	100 100 @Point SetCursor
+	200 0 @EndPoint LineRelPath
+	PaintPath		% should not reset path
+	120 @GrayLevel SetPenSource
+	100 150 @Point SetCursor
+	200 0 @EndPoint LineRelPath
+	PaintPath		% should repaint first line
+	180 @GrayLevel SetPenSource
+	100 200 200 300 @BoundingBox Rectangle	% should leave path set to rectangle
+	230 @GrayLevel SetPenSource
+	100 400 @Point SetCursor
+	200 0 @EndPoint LineRelPath
+	PaintPath		% should repaint rectangle
+
+The last line is painted a lighter gray than the rectangle, demonstrating
+that Rectangle left the path empty.  We are not sure whether this is a
+firmware bug or a change in the intended specification.
+
+We verified that Ellipse and Pie behave the same way, but we did not test
+whether this behavior extends to the other operators (Chord, RoundRectangle)
+that one might expect to behave similarly.
+
+Rectangle, RectanglePath
+------------------------
+
+[1] Even though the specification says rectangles are drawn
+counter-clockwise, they are actually drawn clockwise, starting in the upper
+left corner.  Test case:
+
+	10 us @PenWidth SetPenWidth
+	[130 10 40 10 30 10 20 10] ssa @LineDashStyle
+	  0 ss @DashOffset SetLineDash
+	0 b @NullBrush SetBrushSource
+	200 200 700 400 ssq @BoundingBox Rectangle
+
+The dash pattern clearly starts in the upper left corner and runs clockwise.
+
+[7] Rectangles allow specifying the bounding box points in any order; the
+rectangle is always drawn clockwise, starting with the point that has the
+lesser user space coordinates.
+
+RoundRectangle, RoundRectanglePath
+----------------------------------
+
+The BoundingBox attribute gives the bounding box for the rectangle, not the
+ellipse.  This is just a typo, but a substantial one.
+
+[1] Round rectangles, unlike rectangles, *are* drawn counter-clockwise.
+starting at the top of the straight part of the left edge.  Test case:
+
+	10 us @PenWidth SetPenWidth
+	[130 10 40 10 30 10 20 10] ssa @LineDashStyle
+	  0 ss @DashOffset SetLineDash
+	0 b @NullBrush SetBrushSource
+	200 200 700 400 ssq @BoundingBox
+	  120 120 usp @EllipseDimension RoundRectangle
+
+[7] Round rectangles give an IllegalAttributeValue error if the bounding box
+points are not specified with x1 < x2, y1 < y2.
+
+ScanLineRel
+-----------
+
+The description of x-pairs in section 6.12 is either misleading or wrong.
+If the current X position is X and the values in the x-pair are U and V, the
+x-pair causes a line to be drawn from X+U to X+U+V, not X+U to X+V.  (The
+test case is too messy to present here.)
+
+[3] Text, TextPath
+------------------
+
+[3] It appears that text transforms *objects*, whereas images and paths
+transform *coordinates*.  Mathematically, this requires applying
+transformations to text in the opposite order from graphics.  Test case:
+
+	(TimesNewRmn     ) ba @FontName
+	  200 us @CharSize 277 us @SymbolSet SetFont
+	2500 2500 usp @PageOrigin SetPageOrigin
+	4 1 usp @PageScale SetPageScale
+	NewPath 0 0 usp @Point SetCursor
+
+	<< repeat 2-4 times: >>
+
+	PushGS
+	(1) ba @TextData Text
+	200 0 usp @Point SetCursor
+	1 1.5 rp @PageScale SetPageScale
+	(2) ba @TextData TextPath PaintPath NewPath
+	400 0 usp @PageOrigin SetPageOrigin
+	1 1.5 rp @PageScale SetPageScale
+	90 us @PageAngle SetPageRotation
+	0 0 usp @Point SetCursor
+	(3) ba @TextData Text
+	200 0 usp @Point SetCursor
+	1 1.5 rp @PageScale SetPageScale
+	(4) ba @TextData TextPath PaintPath NewPath
+	PopGS
+	90 us @PageAngle SetPageRotation
+
+	<< end repeat >>
+
+For example, the '1' characters are all the same shape, indicating that they
+were scaled (as objects) before being rotated; if this transformation had
+been applied to the coordinates, both the portrait and the landscape
+characters would have been stretched in the page X direction.  This
+interpretation of the specification is far from obvious, but it is not
+unreasonable, so we think it is what is intended rather than a bug.

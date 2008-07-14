@@ -1,0 +1,36 @@
+#!/bin/sh
+# $RCSfile$ $Revision: 2063 $
+# Convert PCL or PCL to PDF without specifying CompatibilityLevel.
+
+OPTIONS=
+while true
+do
+	case "$1" in
+	-?*) OPTIONS="$OPTIONS $1" ;;
+	*)  break ;;
+	esac
+	shift
+done
+
+if [ $# -lt 1 -o $# -gt 2 ]; then
+	echo "Usage: `basename $0` [options...] (input.pcl|-) [output.pdf|-]" 1>&2
+	exit 1
+fi
+
+infile=$1;
+
+if [ $# -eq 1 ]
+then
+	case "${infile}" in
+	  -)		outfile=- ;;
+	  *.pcl)	base=`basename ${infile} .pcl`; outfile=${base}.pdf ;;
+	  *.pxl)	base=`basename ${infile} .pxl`; outfile=${base}.pdf ;;
+	  *)		base=`basename ${infile}`; outfile=${base}.pdf ;;
+	esac
+else
+	outfile=$2
+fi
+
+# We have to include the options twice because -I only takes effect if it
+# appears before other options.
+exec pcl6 $OPTIONS  -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=$outfile $OPTIONS $infile

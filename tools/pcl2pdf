@@ -1,0 +1,7 @@
+#!/bin/sh
+# $RCSfile$ $Revision: 1412 $
+# Convert PCL or PXL to PDF.
+
+# Currently, we produce PDF 1.2 by default, but this is not guaranteed
+# not to change in the future.
+exec pcl2pdfwr "$@"

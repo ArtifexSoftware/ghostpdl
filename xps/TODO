@@ -1,0 +1,19 @@
+High Priority Problems
+======================
+
+Font style simulation.
+ICC profile colorspaces.
+Gradient colorspace conversion.
+
+Low Priority Problems
+=====================
+
+Cap styles for different parts of a line
+can be different in XPS, no support exists
+in ghostscript.
+
+WMPhoto images need a decoder and colorspace
+support.
+
+PrintTickets need to be looked into.
+

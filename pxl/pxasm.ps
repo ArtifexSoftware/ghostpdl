@@ -1,0 +1,192 @@
+%!
+%    Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+%    Unauthorized use, copying, and/or distribution prohibited.
+
+% Assemble a PCL XL "program".  The syntax is designed to minimize the size
+% of the assembler, not for the convenience of users.
+
+/big_endian false def
+big_endian { 1 } { 2 } ifelse setobjectformat
+
+/pxdict 1000 dict def
+pxdict begin
+
+/libfile		% <filename> libfile <file>
+ { findlibfile
+    { exch pop }
+    { print ( not found!\n) print flush stop }
+   ifelse
+ } bind def
+
+% Define output utility procedures.
+/.out /OutputFile where { pop OutputFile } { (%stdout) } ifelse (w) file def
+/.w { //.out exch write } bind def
+/.w1 { 255 and //.out exch write } bind def
+/.w2 { dup -8 bitshift big_endian not { exch } if .w1 .w1 } bind def
+/.w4 { dup -16 bitshift big_endian not { exch } if .w2 .w2 } bind def
+/.wr		% <real> .wr -
+ { cvr =string /NullEncode filter dup 3 -1 roll 0 writeobject
+   dup flushfile closefile
+   .out =string 8 4 getinterval writestring
+ }
+bind def
+/.ws { .out exch writestring } bind def
+
+% Define the attributes.
+/.asmattr { 16#f8 .w .w } bind def
+/.defattr { /.asmattr cvx 2 packedarray cvx def } bind def
+(gdevpxat.h) libfile
+ { dup =string readline pop (typedef) anchorsearch { pop pop exit } if pop
+ } loop
+0
+ { 1 index =string readline not { pop exit } if
+   (    pxa) anchorsearch
+    { pop ( = ) search
+       { exch pop exch (,) search pop exch pop exch pop cvi
+	 3 -1 roll pop exch
+       }
+       { (,) search pop exch pop exch pop
+       }
+      ifelse
+      (@) exch concatstrings 1 index .defattr
+      1 add
+    }
+    { pop
+    }
+   ifelse
+ }
+loop pop closefile
+
+% Define the enumerated values.
+/.defenum { /b cvx 2 packedarray cvx def } bind def
+(gdevpxen.h) libfile
+0
+ { 1 index =string readline not { pop exit } if
+   (,) search { exch pop exch pop } if
+   dup (    e) anchorsearch
+    { pop pop token pop exch
+		% Stack: file value name rest
+      token
+       {	% The token must be an '='.
+	 pop token pop exch pop 3 -1 roll pop exch
+       }
+      if
+		% Stack: file value name
+      1 index .defenum 1 add
+    }
+    { pop pop
+    }
+   ifelse
+ }
+loop pop closefile
+
+% Define the operators.
+/.asmop /.w load def
+/.defop { /.asmop cvx 2 packedarray cvx def } bind def
+(gdevpxop.h) libfile
+ { dup =string readline pop (typedef) anchorsearch { pop pop exit } if pop
+ } loop
+0
+ { 1 index =string readline not { pop exit } if
+   (    pxt) anchorsearch
+    { pop
+      (, pxt) search pop exch pop 2 index .defop
+      (, pxt) search pop exch pop 2 index 1 add .defop
+      (, pxt) search pop exch pop 2 index 2 add .defop
+      (,) search { exch pop exch pop } if 1 index 3 add .defop
+      4 add
+    }
+    { pop
+    }
+   ifelse
+ }
+loop pop closefile
+
+% Define syntactic elements for numbers, points, and boxes.
+/b { 16#c0 .w .w1 } def
+/us { 16#c1 .w .w2 } def
+/ul { 16#c2 .w .w4 } def
+/ss { 16#c3 .w .w2 } def
+/sl { 16#c4 .w .w4 } def
+/r { 16#c5 .w .wr } def
+/.xy { .w 3 -1 roll 1 index exec exec } bind def
+/bp { {.w1} 16#d0 .xy } def
+/usp { {.w2} 16#d1 .xy } def
+/ulp { {.w4} 16#d2 .xy } def
+/ssp { {.w2} 16#d3 .xy } def
+/slp { {.w4} 16#d4 .xy } def
+/rp { {.wr} 16#d5 .xy } def
+/.box { .w 5 1 roll 4 packedarray exch forall } bind def
+/bq { {.w1} 16#e0 .box } def
+/usq { {.w2} 16#e1 .box } def
+/ulq { {.w4} 16#e2 .box } def
+/ssq { {.w2} 16#e3 .box } def
+/slq { {.w4} 16#e4 .box } def
+/rq { {.wr} 16#e5 .box } def
+
+% Define syntactic elements for arrays.
+/.array { .w 1 index length dup 255 gt { us } { b } ifelse forall } bind def
+/ba { {.w1} 16#c8 .array } def
+/usa { {.w2} 16#c9 .array } def
+/ula { {.w4} 16#ca .array } def
+/ssa { {.w2} 16#cb .array } def
+/sla { {.w4} 16#cc .array } def
+/ra { {.wr} 16#cd .array } def
+
+% Define other syntactic elements.
+/c { .w } def		% single character
+/s { .ws } def		% string
+
+% Define tokens that allow us to assemble the output from tracing.
+/next { currentfile token pop } bind def
+/next2 { next next } def
+/next4 { next next next next } def
+/skip { next pop } bind def
+/pos= { skip } def
+/tag= { skip } def
+/ESC { (\033%-12345X) s } def
+% Scalars
+/_ubyte { next b } def
+/_uint16 { next us } def
+/_uint32 { next ul } def
+/_sint16 { next ss } def
+/_sint32 { next sl } def
+/_real32 { next r } def
+% Points
+/_ubyte_xy { next2 bp } def
+/_uint16_xy { next2 usp } def
+/_uint32_xy { next2 ulp } def
+/_sint16_xy { next2 ssp } def
+/_sint32_xy { next2 slp } def
+/_real32_xy { next2 rp } def
+% Boxes
+/_ubyte_box { next4 bq } def
+/_uint16_box { next4 usq } def
+/_uint32_box { next4 ulq } def
+/_sint16_box { next4 ssq } def
+/_sint32_box { next4 slq } def
+/_real32_box { next4 rq } def
+% Data and arrays
+/data,
+ { next pop next dup 255 le { 16#fb .w .w } { 16#fa .w .w4 } ifelse
+ } def
+/data: { next s } def
+/nextarray { skip skip skip skip next } def
+/_ubyte_array { nextarray ba } def
+/_uint16_array { nextarray usa } def
+/_uint32_array { nextarray ula } def
+/_sint16_array { nextarray ssa } def
+/_sint32_array { nextarray sla } def
+/_real32_array { nextarray ra } def
+/_ubyte_array... { } def
+/_uint16_array... { } def
+/_uint32_array... { } def
+/_sint16_array... { } def
+/_sint32_array... { } def
+/_real32_array... { } def
+
+% Write a header that pacifies H-P printers.
+(\033%-12345X@PJL ENTER LANGUAGE = PCLXL\n\) HP-PCL XL;1;1\n) .ws
+
+% Now just execute the source as a PostScript program.
+% The assembled code will be written to stdout.

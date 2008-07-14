@@ -1,0 +1,336 @@
+afs.dev: henry
+async.dev: ray and henry
+bbox.dev: igor
+bboxutil.dev: igor
+bcp.dev: alex
+bit.dev: ray and henry
+bitcmyk.dev: ray and henry
+bitrgb.dev: ray and henry
+bitrgbtags.dev: ray and henry
+bj10e.dev: ray and henry
+bj200.dev: ray and henry
+bjc600.dev: ray and henry
+bjc800.dev: ray and henry
+bmp16.dev: ray and henry
+bmp16m.dev: ray and henry
+bmp256.dev: ray and henry
+bmp32b.dev: ray and henry
+bmpa16m.dev: ray and henry
+bmpamono.dev: ray and henry
+bmpgray.dev: ray and henry
+bmpmono.dev: ray and henry
+bmpsep1.dev: ray and henry
+bmpsep8.dev: ray and henry
+btoken.dev: alex
+cdeskjet.dev: ray and henry
+cdj550.dev: ray and henry
+cdjcolor.dev: ray and henry
+cdjmono.dev: ray and henry
+cfax.dev: ray and henry
+cfd.dev: alex
+cfe.dev alex
+cfe.dev: alex
+cff.dev: igor
+cidfont.dev: igor
+cidlib.dev: igor
+cie.dev: ralph
+cielib.dev: ralph
+clfile.dev: igor
+clist.dev: igor
+cljet5.dev: ray and henry
+cljet5c.dev: ray and henry
+cljet5pr.dev: ray and stefan
+clmemory.dev: igor
+cmaplib.dev: igor
+cmapread.dev: igor
+cmyklib.dev: ralph
+cmykread.dev ralph
+colimlib.dev: ralph
+color.dev: ralph
+compfont.dev: igor
+crc32.dev: ken
+cspixel.dev: ralph
+cspixlib.dev: ralph
+dct.dev: alex
+dctd.dev: alex
+dcte.dev: alex
+deskjet.dev: ray and henry
+devcmap.dev: obsolete
+devicen.dev: ralph
+djet500.dev: ray and henry
+dpnxtlib.dev: ralph
+dps.dev: ?
+dps2int.dev: ?
+dps2lib.dev: ?
+dps2read.dev: ?
+dpsand2.dev: ?
+dpslib.dev: ?
+dpsnext.dev ?
+dscparse.dev: alex
+eps9high.dev: ?
+eps9mid.dev: ?
+epsf.dev: alex
+epson.dev: ralph
+epsonc.dev: ralph
+epswrite.dev: ken
+fapi.dev: igor
+fapif.dev: igor
+fapiu.dev: igor
+farc4.dev: ken
+fax.dev: ray and henry
+faxg3.dev: ray and henry
+faxg32d.dev: ray and henry
+faxg4.dev: ray and henry
+fcopy.dev: ken
+fdecode.dev: alex
+filter.dev: alex
+fimscale.dev: alex
+fmd5.dev: ken
+frsd.dev: alex
+func.dev: igor
+func4.dev: igor
+func4lib.dev: igor
+funclib.dev: igor
+fzlib.dev: alex
+gsiodevs.dev: ray and henry
+gsnogc.dev: obsolete
+gxfapiu.dev: igor
+gxfapiu1.dev: igor
+hpgl2.dev: henry
+hpgl2c.dev: henry
+htxlib.dev: ralph
+ibmpro.dev: ray and henry
+icc.dev: ralph
+icclib.dev: ralph
+ijs.dev: ray and henry
+ijslib.dev: ray and henry
+imasklib.dev: alex
+imdi.dev: ray
+iodevice.dev: ray and henry
+iscale.dev: alex
+isupport.dev: igor
+jasper.dev: ray and henry
+jasper_0.dev: ray and henry
+jbig2.dev: ken
+jbig2dec.dev: ken
+jbig2dec_0.dev: ken
+jpeg.dev: ray and henry
+jpege6.dev: third party
+jpeggray.dev: ray and henry
+jpx.dev: ken
+jpx_jasper.dev: ken
+laserjet.dev: ray and henry
+ldf_jb2.dev: ken
+libcore.dev:
+
+    gsalloc, gsmalloc, gsmemlok, gsmemory, gsmemret: igor
+
+    stream strmio: alex
+
+    gsistate: alex
+
+    gsalpha, gscolor, gshtscr, gscspace, gsovrc, gsht, gscicach,
+    gxoprect, gxdcconv, gxcmap, gxdcolor, gxht, gxhldev, gxhtbit: ralph
+
+    gsbitcom, gsbitops, gsbittab: ?
+
+    gschar, gsfont, gstext, gscedata, gscencs, gsgdata, gsgcache,
+    gxccache, gxccman, gxchar, gxfdrop: igor
+
+    gswts, gxwts: ray (probably don't belong in libcore)
+
+    gsimage, gxidata, gxifast, gximage, gximage1, gximono, gxipixel,
+    gximask, gxsample: alex
+
+    gscparam, gsdparam, gsdfilt, gpmisc, gscoord, gsdevice, gsfname,
+    gsdevmem, gsinit, gsmatrix, gsparam, gslibctx, gsnotify, gsutil,
+    gsserial, gsmisc, gsstate, gxbcache: ?
+
+    gsimpath, gsline, gspaint, gspath, gxclip, gxcpath, gxfill,
+    gxacpath, gxpaint, gxpath, gxpdash, gxpflat, gxstroke, gxpath2,
+    gxpcopy: igor
+libd.dev: ray
+libpng.dev: third party
+lj5gray.dev: ray and henry
+lj5mono.dev: ray and henry
+ljet2p.dev: ray and henry
+ljet3.dev: ray and henry
+ljet3d.dev: ray and henry
+ljet4.dev: ray and henry
+ljet4d.dev: ray and henry
+ljetplus.dev: ray and henry
+lpg.dev: third party
+luratech_jp2.dev: ken
+lzwd.dev: alex
+lzwe.dev: alex
+macglyph.dev: ralph
+macres.dev: ralph
+macroman.dev: ralph
+page.dev: ray and henry
+pagedev.dev: ray and henry
+path1.dev: igor
+path1lib.dev: igor
+patlib.dev: ralph
+patread.dev: ralph
+pattern.dev: ralph
+pbm.dev: ray and henry
+pbmraw.dev: ray and henry
+pcl5.dev: henry
+pcl5base.dev: henry
+pcl5c.dev: henry
+pcx16.dev: ray and henry
+pcx24b.dev: ray and henry
+pcx256.dev: ray and henry
+pcxcmyk.dev: ray and henry
+pcxgray.dev: ray and henry
+pcxmono.dev: ray and henry
+pdf.dev: alex
+pdffonts.dev: alex
+pdfread.dev: alex
+pdfwrite.dev: ken
+pdiff.dev: alex
+pdtext.dev: ken
+pdxtext.dev: ken
+pgm.dev: ray and henry
+pgmraw.dev: ray and henry
+pgnm.dev: ray and henry
+pgnmraw.dev: ray and henry
+pipe.dev: ray and henry
+pj.dev: ?
+pjl.dev: henry
+pjxl.dev: ?
+pjxl300.dev: ?
+pkm.dev: ray and henry
+pkmraw.dev: ray and henry
+pksm.dev: ray and henry
+pksmraw.dev: ray and henry
+pl.dev: henry
+png16.dev: ray and henry
+png16m.dev: ray and henry
+png256.dev: ray and henry
+png48.dev: ray and henry
+pngalpha.dev: ralph
+pnggray.dev: henry
+pnggray.dev henry
+pngmono.dev: henry
+pngp.dev: alex
+pnm.dev: ray and henry
+pnmraw.dev: ray and henry
+posync.dev: ?
+ppm.dev: ray and henry
+ppmraw.dev: ray and henry
+ps2write.dev: ken
+psbase.dev: alex
+psdcmyk.dev: ralph
+psdf.dev: igor
+psdrgb.dev: ray and henry
+psf.dev: igor
+psf0lib.dev: igor
+psf0read.dev: igor
+psf1lib.dev: igor
+psf2lib.dev: igor
+psgray.dev: igor
+psi.dev: ray and henry
+psl2cs.dev: ralph
+psl2lib.dev: ralph and alex
+psmono.dev: igor
+psrgb.dev: igor
+pswrite.dev: igor
+pxl.dev: henry
+pxlcolor.dev: ray and henry
+pxlmono.dev: ray and henry
+rld.dev: alex
+rle.dev: alex
+romfs0.dev: ray and henry
+romfs1.dev: ray and henry
+roplib.dev: ralph and henry
+rtlbase.dev: henry
+rtlbasec.dev: henry
+sarc4.dev: ralph
+sdctd.dev: alex
+sdcte.dev: alex
+sddparam.dev: alex
+seexec.dev: alex and ralph (ralph for gscrypt)
+sepr.dev: ralph
+seprlib.dev: ralph
+sfile.dev: ray and henry
+shadelib.dev: igor
+sicclib.dev: ralph
+simscale.dev: alex
+sjbig2.dev: ralph
+sjbig2_.dev: ralph
+sjbig2_jbig2dec.dev
+sjbig2_jbig2dec.dev: ralph
+sjbig2_luratech.dev: ralph
+sjpx.dev: ralph
+sjpx_jasper.dev
+sjpx_jasper.dev: ralph
+sjpx_luratech.dev: ralph
+slzwd.dev: alex
+slzwe.dev: alex
+smd5.dev: ralph
+spotcmyk.dev: ralph
+stcolor.dev: ?
+strdline.dev: alex
+szlibd.dev: alex
+szlibe.dev: alex
+tfax.dev: ray and henry
+tiff12nc.dev: ray and henry
+tiff24nc.dev: ray and henry
+tiff32nc.dev: ray and henry
+tiffcrle.dev: ray and henry
+tiffg3.dev: ray and henry
+tiffg32d.dev: ray and henry
+tiffg4.dev: ray and henry
+tiffgray.dev: ray and henry
+tifflzw.dev: ray and henry
+tiffpack.dev: ray and henry
+tiffs.dev: ray and henry
+tiffsep.dev: ray and henry
+tracedev.dev: igor
+translib.dev: ralph
+transpar.dev: ralph
+traplib.dev: ralph
+ttflib.dev: igor
+ttfont.dev: igor
+type1.dev: igor
+type2.dev: igor
+type32.dev: igor
+type42.dev: igor
+ufst.dev: henry
+uniprint.dev: ray and henry
+unix_.dev: ?
+upath.dev: igor
+usparam.dev: ray and henry
+vector.dev: igor
+wtscmyk.dev: ray
+wtsimdi.dev: ray
+x11.dev: ralph
+x11alpha.dev: ralph
+x11alt_.dev: ralph
+x11cmyk.dev: ralph
+x11gray2.dev: ralph
+x11gray4.dev: ralph
+x11mono.dev: ralph
+xcf.dev: ralph
+xps.dev: tor
+zfrsd.dev: alex
+zlibd.dev: third party
+zlibe.dev: third party
+
+General (high level) Ownership
+--------------------
+
+color:ralph
+fonts:igor
+gslite:henry
+images:alex
+memory:igor
+non windows makefiles:ralph
+pcl, pxl, pl:henry
+pdf interpreter:alex
+ps, pdf, eps write:ken
+vectors:igor
+windows makefiles:ray
+xps:tor
+

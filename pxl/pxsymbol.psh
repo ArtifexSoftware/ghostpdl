@@ -1,0 +1,15 @@
+/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+   Unauthorized use, copying, and/or distribution prohibited.
+ */
+
+/* pxsymbol.h */
+/* PCL XL symbol set table declarations */
+
+extern const unsigned short pxPDFDocEncoding[];
+extern const unsigned short pxMacExpertEncoding[];
+extern const unsigned short pxSymbolEncoding[];
+extern const unsigned short pxISOLatin1Encoding[];
+extern const unsigned short pxStandardEncoding[];
+extern const unsigned short pxDingbatsEncoding[];
+extern const unsigned short pxMacRomanEncoding[];
+extern const unsigned short pxWinAnsiEncoding[];

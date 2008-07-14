@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<!-- $Id: cmpi.bkl,v 1.4 2005/05/22 15:37:40 JS Exp $ -->
+
+<makefile>
+
+    <include file="../../build/bakefiles/common_samples.bkl"/>
+
+    <exe id="cmpi" template="wx_sample" template_append="wx_append">
+        <sources>cmpi.cpp</sources>
+        <wx-lib>core</wx-lib>
+        <wx-lib>base</wx-lib>
+        <win32-res>cmpi.rc</win32-res>
+    </exe>
+
+    <wx-data id="data">
+        <files>
+            horse.pnm
+        </files>
+    </wx-data>
+
+</makefile>

@@ -1,0 +1,124 @@
+%!
+%    Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+%    Unauthorized use, copying, and/or distribution prohibited.
+
+% Construct the bitmap font used for printing the error page.
+
+% /usr/bin/gs -I/usr/lib/ghostscript -q -dNODISPLAY pxbfont.ps >pxbfont.c
+
+
+% Put space last so we can fake the width.
+
+/Chars
+  ("\(\)-/0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz )
+def
+/Res 150 def
+/Face /Courier def
+/Points 24 def
+
+% Write the copyright notice.
+(/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+   Unauthorized use, copying, and/or distribution prohibited.
+ */
+
+#include "stdpre.h"
+#include "pxbfont.h"
+) print
+
+% Create the character bitmaps.
+(
+const byte px_bitmap_font_char_data[] = {
+) print
+/Asc 0 def
+/Desc 0 def
+/Base Res 1 add 2 idiv def
+/Sc Res 72 div def
+% Round up the device width so there won't be trailing garbage bits
+% when we read out the character bitmaps.
+/ID [Sc 0 0 Sc neg 0 Res]
+  Res dup neg 7 and add Res <ff 00> makeimagedevice def
+nulldevice ID setdevice
+/Row Res 7 add 8 idiv string def
+/ZRow Row length string def
+Face Points selectfont
+/print16
+ { dup 8 bitshift 255 and =only (, ) print 255 and =only
+ } def
+Chars
+ { 1 string dup 0 4 -1 roll put /Ch exch def
+   erasepage 0 36 moveto Ch show
+   0 Res
+	% Remove blank lines at bottom.
+    { 2 copy eq { exit } if
+      dup 1 sub ID exch Row copyscanlines ZRow ne { exit } if
+      1 sub
+    }
+   loop
+	% Remove blank lines at top.
+    { 2 copy eq { exit } if
+      1 index ID exch Row copyscanlines ZRow ne { exit } if
+      exch 1 add exch
+    }
+   loop
+	% Determine the character width.
+   /B 0 def
+   /W 0 def
+   2 copy 1 sub 1 exch
+    { ID exch Row copyscanlines pop
+      Row length 1 sub -1 W
+       { Row 1 index get dup 0 ne
+	  { 1 index W eq { B or } if /B exch def /W exch def exit
+	  }
+	 if pop pop
+       }
+      for
+    }
+   for
+   /WB W 8 mul 8 add B 16#100 or	% might be an empty character
+    { dup 1 and 0 ne { pop exit } if
+      exch 1 sub exch -1 bitshift
+    }
+   loop
+   dup 0 eq { pop Asc 2 idiv } if def	% fake width of empty characters
+   2 copy eq { pop pop Base dup } if	% empty character
+   /Asc Asc Base 4 index sub max def
+   /Desc Desc 2 index Base sub max def
+	% Write the character code.
+   (\t) print Ch 0 get =only ( /* ) print Ch =only ( */, ) print
+	% Write the character header.
+	% We use the PCL5 format, rather than the PCL XL format,
+	% so that we can represent the inter-character spacing.
+   (4, 0, 14, 1, 0, 0, 0, 0, ) =only
+   Base 2 index sub print16 (, ) print
+   WB print16 (, ) print
+   2 copy exch sub print16 (, ) print
+   WB 4 mul print16 (,) =
+	% Write the bits.
+   1 sub 1 exch
+    { ID exch Row copyscanlines 0 W 1 add getinterval
+       { =only (,) print
+       } forall () =
+    }
+   for
+ }
+forall
+(\t0
+};
+) print
+
+% Create the font header.
+(
+const int px_bitmap_font_point_size = ) print Points =only (;
+const int px_bitmap_font_resolution = ) print Res =only (;
+) print
+(const byte px_bitmap_font_header[] = {
+  0, 0, 0, 14, 254, 0, 0, ) print Chars length =only (,
+  'B', 'R', 0, 0, 0, 4,
+	0, ) print Res =only (, 0, ) print Res =only (,
+  0xff, 0xff, 0, 0, 0, 0
+};
+const uint px_bitmap_font_header_size = sizeof(px_bitmap_font_header);
+) print
+
+% All done.
+flush quit

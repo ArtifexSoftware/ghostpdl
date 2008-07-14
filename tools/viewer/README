@@ -1,0 +1,13 @@
+
+Simple java based viewer - page with page up and page down.
+
+Example:
+
+Unix
+
+java Gview ../frs96.pxl
+
+Dos
+
+java Gview ..\frs96.pxl
+

@@ -1,0 +1,177 @@
+
+    Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+    Unauthorized use, copying, and/or distribution prohibited.
+
+		Report on Genoa PCL6 FTS and LaserJet 6MP
+
+This document presents the results of Aladdin's investigation of
+discrepancies between the Genoa PCL6 Functional Test Suite, the published
+PCL XL Feature Reference Protocol Class 1.1 specification, and the behavior
+of the H-P LaserJet 6MP printer.
+
+		Report on Genoa PCL6 FTS and LaserJet 6MP
+
+Introduction
+============
+
+In the course of validating our PCL XL interpreter using the Genoa PCL6
+Functional Test Suite (FTS), we observed a number of discrepancies that,
+after careful investigation, we concluded were due to problems in the FTS
+and/or the printer firmware.  In this document, we present these in detail.
+
+This document should be read in conjunction with our separate report on
+discrepancies between the specification and the firmware independent of the
+Genoa FTS.
+
+Changes in a given revision of this document are marked with the revision
+number in [brackets].  Revision history:
+		first issued December 6, 1996
+		rev. [1] December 22, 1996
+		rev. [2] February 6, 1997
+
+General
+=======
+
+We noticed that in many places, the input data contain an extra PopGS that
+doesn't have a matching PushGS.  The published specification says that this
+is invalid (i.e., the existence of a PushGS is part of the precondition for
+PopGS).  Apparently the printer ignores the extra PopGS.
+
+Individual tests
+================
+
+[2] t101 - BeginSession
+-----------------------
+
+On pages 2 and 3, in the LJ5 printouts, the characters are not distorted
+(stretched vertically on page 2, compressed vertically on page 3) to match
+the non-uniform UnitsPerMeasure.  This is a bug in the LJ5 firmware that has
+been corrected in the LJ 6MP.
+
+t305 - SetColorSpace
+--------------------
+
+The two lower rectangles in image 03 are stroked with gray, and are not
+painted.  The comment on this image says "The 2nd and 3rd rectangles should
+be stroked and painted with black color."  [1] See the entry for
+SetColorSpace in the discrepancies report.
+
+t310 - SetCharShear
+
+On page 1 panel 1 the character shear setting results in font scaling
+factors thar are zero.  The Artifex interpreter produces no result,
+the HP 4600 produces a thin one pixel line for the character.  We do
+not attempt to emulate this.
+
+
+t314 - SetFillMode
+------------------
+
+The lower figure in all 3 images, ostensibly drawn with the non-zero winding
+number rule, is clearly not drawn with this rule.  [1] See the discussion of
+clipping and of SetClipIntersect in the discrepancies report.
+
+
+t321 - SetClipIntersect
+-----------------------
+
+In the lower figure of image 01, the dark lines stop at the edges of an
+invisible rectangle rather than extending all the way to the ellipse.  This
+is consistent with the interpretation of SetClipIntersect documented in the
+discrepancies report, but not with the published specification.
+
+t322 - SetClipRectangle
+-----------------------
+
+In image 03, the rectangle border is a medium gray.  However, the input data
+are as follows:
+
+	NewPath
+	200 @GrayLevel SetBrushSource
+	120 @GrayLevel SetPenSource
+	40 @PenWidth SetPenWidth
+	0 @ClipRegion [1200 400 2000 2200] @BoundingBox SetClipRectangle
+	[1200 400 2000 2200] @BoundingBox Rectangle
+	20 @GrayLevel SetPenSource
+	0 2925 @Point SetCursor
+	2400 0 @EndPoint LinePath
+	PaintPath
+
+The Rectangle operator is supposed to leave the path set to a rectangle, so
+the final PaintPath should paint both the rectangle and the line a very dark
+gray; however, as noted in the discrepancies report, Rectangle actually
+clears the path.
+
+t325 - SetClipMode
+------------------
+
+The middle figure of image 03 is a solid disk.  However, the input data are
+as follows:
+
+	0 @GrayLevel SetBrushSource
+	[300 300 4500 2625] @BoundingBox Rectangle
+	PushGS
+	0 @ClipMode SetClipMode
+	[1800 2325 3000 3525] @BoundingBox EllipsePath
+	[2100 2625 2700 3225] @BoundingBox EllipsePath
+	0 @ClipRegion SetClipReplace
+	0 @GrayLevel SetBrushSource
+	[300 2250 4500 3600] @BoundingBox Rectangle
+
+Again, if Rectangle left the path set as documented, this would draw (part
+of) the rectangle as well as the disk.
+
+[2] t329 - SetHalftoneMethod
+----------------------------
+
+The DitherOrigin of the halftone is incorrectly set relative to the origin
+of the default (rotated) user coordinate system rather than to the current
+user coordinate system.  This causes the patterns to be shifted slightly
+relative to the Genoa printout.  For a test example, see our separate report
+on firmware discrepancies.
+
+t409 - Ellipse
+--------------
+
+Image 04 is light gray.  However, it should actually be painted with an
+outer stripe of light gray and an inner strip of dark gray:
+
+	1 @ColorSpace SetColorSpace
+	255 @GrayLevel SetBrushSource
+	180 @GrayLevel SetPenSource
+	160 @PenWidth SetPenWidth
+	[300 300 2100 800] @BoundingBox RectanglePath	% no-op
+	[300 1100 2100 1600] @BoundingBox Ellipse
+	60 @GrayLevel SetPenSource
+	60 @PenWidth SetPenWidth
+	PaintPath
+
+The Ellipse command should leave the path set, and the final PaintPath
+should erase the interior of the ellipse (including the inner half of the
+lighter stripe) and then repaint the annulus with the darker color with the
+narrower pen.  This is the same problem as in t322 and t325.
+
+t413 - Pie
+----------
+
+Image 05 shows the same problem as noted under t409.
+
+t415 - Rectangle
+----------------
+
+Image 02 shows the same problem as noted under t322 and t325.
+
+t202.bin (Protocol 2.0 fts)
+---------------------------
+
+Panel 01 and others show incorrect spacing when rendering downloaded
+TrueType fonts.  This only happens with the AGFA scaler and resolutions
+lower than printer resolutions.
+
+t422.bin (Protocol 2.0 fts)
+---------------------------
+
+A raster pattern of height 1 results in a 0 area pattern which
+produces an error.  The error only happens if the device resolution is
+less than 300 dpi.
+

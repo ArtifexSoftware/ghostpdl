@@ -1,0 +1,111 @@
+%!
+%    Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+%    Unauthorized use, copying, and/or distribution prohibited.
+
+% Construct the PCL XL symbol set mappings.
+% This generates both a .c and a .h file.
+
+% Load all known encodings.
+(../gs_???_e.ps)
+ { (r) file
+   dup token pop dup /currentglobal eq
+    {		% The next 4 tokens are standard.
+      5 { pop dup token pop } repeat
+    }
+   if
+		% stack: file token
+   /Encoding resourcestatus
+    { pop 2 ne
+       { closefile }
+       { dup 0 setfileposition run }
+      ifelse
+    }
+    { dup 0 setfileposition run
+    }
+   ifelse
+ }
+100 string filenameforall
+
+% Construct a list of all the glyphs.
+/glyphs 1000 dict def
+(*)
+ { /Encoding findresource { glyphs exch dup put } forall
+ }
+100 string /Encoding resourceforall
+glyphs /.notdef undef
+
+% Write the copyright notice and initial boilerplate.
+(/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+   Unauthorized use, copying, and/or distribution prohibited.
+ */
+) print
+
+/HEADER where { pop HEADER } { false } ifelse
+ { (
+/* pxsymbol.h */
+/* PCL XL symbol set table declarations */
+
+) print
+   (*)
+    { (extern const unsigned short px) print =only ([];
+) print
+    }
+   100 string /Encoding resourceforall
+   flush quit
+ }
+if
+
+(
+/* pxsymbol.c */
+/* PCL XL symbol set mapping definitions */
+
+#include "pxsymbol.h"
+) print
+
+% Write the enumeration of the glyphs.
+% It would be too much work to really sort them, so we only sort by
+% the first character.
+(
+typedef enum {
+  pxg__notdef = 0) print
+
+65 1 122
+ { /first exch def
+   glyphs
+    { =string cvs 0 get first eq
+       { (,
+  pxg_) print =only }
+       { pop }
+      ifelse
+    }
+   forall
+ }
+for
+(
+} px_glyph_t;
+) print
+
+% Write the actual encodings.
+(*)
+ { (
+const unsigned short px) print dup =only ([257] = {) print
+   /Encoding findresource
+   0 4 255
+    { (
+ ) print
+      dup 1 exch 3 add
+       { ( pxg_) print 2 copy get dup /.notdef eq { pop (_notdef) } if
+	 =only (,) print pop
+       }
+      for
+    }
+   for
+   (
+  pxg__notdef
+};
+) print pop
+ }
+100 string /Encoding resourceforall
+
+% All done.
+flush quit

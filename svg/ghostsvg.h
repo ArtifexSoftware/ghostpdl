@@ -1,0 +1,143 @@
+#include "memory_.h"
+#include "math_.h"
+
+#include <stdlib.h>
+#include <ctype.h> /* for toupper() */
+
+#include "gsgc.h"
+#include "gstypes.h"
+#include "gsstate.h"
+#include "gsmatrix.h"
+#include "gscoord.h"
+#include "gsmemory.h"
+#include "gsparam.h"
+#include "gsdevice.h"
+#include "scommon.h"
+#include "gserror.h"
+#include "gserrors.h"
+#include "gspaint.h"
+#include "gspath.h"
+#include "gsimage.h"
+#include "gscspace.h"
+#include "gsptype1.h"
+#include "gscolor2.h"
+#include "gscolor3.h"
+#include "gsutil.h"
+#include "gsicc.h"
+
+#include "gstrans.h"
+
+#include "gxpath.h"     /* gsshade.h depends on it */
+#include "gxfixed.h"    /* gsshade.h depends on it */
+#include "gxmatrix.h"	/* gxtype1.h depends on it */
+#include "gsshade.h"
+#include "gsfunc.h"
+#include "gsfunc3.h"    /* we use stitching and exponential interp */
+
+#include "gxfont.h"
+#include "gxchar.h"
+#include "gxtype1.h"
+#include "gxfont1.h"
+#include "gxfont42.h"
+#include "gxfcache.h"
+#include "gxistate.h"
+
+#include "gzstate.h"
+#include "gzpath.h"
+
+#include "zlib.h"
+
+/* override the debug printfs */
+#ifndef DEBUG
+#undef _dpl
+#define _dpl
+#undef dpf
+#define dpf
+#endif
+
+#ifndef MIN
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#endif
+#ifndef MAX
+#define MAX(a,b) ((a) < (b) ? (b) : (a))
+#endif
+#ifndef ABS
+#define ABS(a) ((a) < 0 ? -(a) : (a))
+#endif
+
+/*
+ * Forward declarations.
+ */
+
+typedef struct svg_context_s svg_context_t;
+typedef struct svg_item_s svg_item_t;
+
+/*
+ * Context and memory.
+ */
+
+#if (defined(_MSC_VER) && _MSC_VER < 1310) || !defined(__GNUC__)
+/* Provide a fallback if this symbol is unsupported */
+#define __FUNCTION__ "ghostsvg"
+#endif
+
+#define svg_alloc(ctx, size) \
+    ((void*)gs_alloc_bytes(ctx->memory, size, __FUNCTION__));
+#define svg_realloc(ctx, ptr, size) \
+    gs_resize_object(ctx->memory, ptr, size, __FUNCTION__);
+#define svg_strdup(ctx, str) \
+    svg_strdup_imp(ctx, str, __FUNCTION__);
+#define svg_free(ctx, ptr) \
+    gs_free_object(ctx->memory, ptr, __FUNCTION__);
+
+size_t svg_strlcpy(char *destination, const char *source, size_t size);
+size_t svg_strlcat(char *destination, const char *source, size_t size);
+
+char *svg_strdup_imp(svg_context_t *ctx, const char *str, const char *function);
+char *svg_clean_path(char *name);
+void svg_absolute_path(char *output, char *pwd, char *path);
+
+/* end of page device callback foo */
+int svg_show_page(svg_context_t *ctx, int num_copies, int flush);
+
+int svg_utf8_to_ucs(int *p, const char *s, int n);
+
+/*
+ * Global context and XML parsing.
+ */
+
+int svg_open_xml_parser(svg_context_t *ctx);
+int svg_feed_xml_parser(svg_context_t *ctx, char *buf, int len);
+svg_item_t * svg_close_xml_parser(svg_context_t *ctx);
+int svg_parse_document(svg_context_t *ctx, svg_item_t *root);
+
+svg_item_t * svg_next(svg_item_t *item);
+svg_item_t * svg_down(svg_item_t *item);
+void svg_free_item(svg_context_t *ctx, svg_item_t *item);
+char * svg_tag(svg_item_t *item);
+char * svg_att(svg_item_t *item, const char *att);
+void svg_debug_item(svg_item_t *item, int level);
+
+struct svg_item_s
+{
+    char *name;
+    char **atts;
+    svg_item_t *up;
+    svg_item_t *down;
+    svg_item_t *next;
+};
+
+struct svg_context_s
+{
+    void *instance;
+    gs_memory_t *memory;
+    gs_state *pgs;
+    gs_font_dir *fontdir;
+    gs_color_space *srgb;
+
+    svg_item_t *root;
+    svg_item_t *head;
+    const char *error;
+    void *parser; /* Expat XML_Parser */
+};
+
