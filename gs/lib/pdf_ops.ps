@@ -327,8 +327,17 @@ nodict readonly pop
        } ifelse
      } if
 
-     dup /Matrix knownoget not { matrix } if
-     gsave DefaultQstate setqstate makepattern grestore setcolor
+     % Associate pattern instance with the default qstate for the context. 
+     % A single pattren object can be reused in several contexts.
+     dup DefaultQstate .knownget {
+       exch pop
+     } {
+       dup dup /Matrix knownoget not { { 1 0 0 1 0 0 } } if
+       gsave DefaultQstate setqstate makepattern grestore
+       dup 3 1 roll
+       DefaultQstate exch put
+     } ifelse
+     setcolor
    } bdef
 end def
 /setgcolor	% (null | <color...>) <colorspace> setgcolor -
