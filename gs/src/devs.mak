@@ -1531,18 +1531,6 @@ $(DD)pngalpha.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pngalpha $(png_)
 	$(ADDMOD) $(DD)pngalpha $(png_i_)
 
-### -------------------- PNG with transparency -------------------- ###
-
-pnga_=$(GLOBJ)gdevpnga.$(OBJ)
-$(DD)pnga.dev :	$(pnga_)
-	$(SETDEV) $(DD)pnga $(pnga_)
-
-$(GLOBJ)gdevpnga.$(OBJ) : $(GLSRC)gdevpnga.c $(png__h)\
- $(gscdefs_h) $(gsdevice_h) $(gxblend_h) $(gxtext_h)\
- $(gdevmem_h) $(gdevpccm_h) $(gdevprn_h)
-	$(CC_) $(I_)$(GLI_) $(II)$(PI_)$(_I) $(PCF_) $(GLF_) $(GLO_)gdevpnga.$(OBJ) $(C_) $(GLSRC)gdevpnga.c
-
-
 ### --------------------- WTS Halftoning drivers ----------------------  ###
 
 ### IMDI from Argyll
