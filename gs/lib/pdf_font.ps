@@ -704,6 +704,15 @@ setglobal
 /readtype1dict 5 dict dup begin
   /definefont {
     exch pop
+    dup /UniqueID .knownget {
+      dup dup 0 lt exch 16#ffffff gt or {
+        (   **** Warning: Ignoring invalid /UniqueID = ) exch =string cvs
+        concatstrings (\n) concatstrings pdfformaterror
+        dup /UniqueID undef
+      } {
+        pop
+      } ifelse
+    } if
     .completefont
   } bdef
 
