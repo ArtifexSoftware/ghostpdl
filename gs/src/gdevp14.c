@@ -616,6 +616,11 @@ pdf14_ctx_free(pdf14_ctx *ctx)
 {
     pdf14_buf *buf, *next;
 
+    if (ctx->maskbuf) {
+	/* A mask was created but was not used in this band. */ 
+	pdf14_buf_free(ctx->maskbuf, ctx->memory);
+	ctx->maskbuf = NULL;
+    }
     for (buf = ctx->stack; buf != NULL; buf = next) {
 	next = buf->saved;
 	pdf14_buf_free(buf, ctx->memory);
