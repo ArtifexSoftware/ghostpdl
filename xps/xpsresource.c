@@ -97,7 +97,8 @@ xps_parse_resource_dictionary(xps_context_t *ctx, xps_item_t *root)
 
     for (node = xps_down(root); node; node = xps_next(node))
     {
-	key = xps_att(node, "x:Key");
+	/* Usually "x:Key"; we have already processed and stripped namespace */
+	key = xps_att(node, "Key");
 	if (key)
 	{
 	    entry = xps_alloc(ctx, sizeof(xps_resource_t));

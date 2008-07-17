@@ -29,6 +29,14 @@ struct xps_item_s
     xps_item_t *next;
 };
 
+static char *skip_namespace(char *s)
+{
+    char *p = strchr(s, ' ');
+    if (p)
+	return p + 1;
+    return s;
+}
+
 static void on_open_tag(void *zp, const char *ns_name, const char **atts)
 {
     xps_parser_t *parser = zp;
@@ -75,7 +83,10 @@ static void on_open_tag(void *zp, const char *ns_name, const char **atts)
     for (i = 0; atts[i]; i++)
     {
 	attslen += sizeof(char*);
-	textlen += strlen(atts[i]) + 1;
+	if ((i & 1) == 0)
+	    textlen += strlen(skip_namespace(atts[i])) + 1;
+	else
+	    textlen += strlen(atts[i]) + 1;
     }
 
     item = xps_alloc(ctx, sizeof(xps_item_t) + attslen + namelen + textlen);
@@ -94,7 +105,10 @@ static void on_open_tag(void *zp, const char *ns_name, const char **atts)
     for (i = 0; atts[i]; i++)
     {
 	item->atts[i] = p;
-	strcpy(item->atts[i], atts[i]);
+	if ((i & 1) == 0)
+	    strcpy(item->atts[i], skip_namespace(atts[i]));
+	else
+	    strcpy(item->atts[i], atts[i]);
 	p += strlen(p) + 1;
     }
 
