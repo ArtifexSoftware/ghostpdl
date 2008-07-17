@@ -543,7 +543,7 @@ pngalpha_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     if ((color == 0xffffff00) && (x==0) && (y==0) 
 	&& (w==dev->width) && (h==dev->height)) {
 	/* If filling whole page with white, make it transparent */
-        return pdev->orig_fill_rectangle(dev, x, y, w, h, 0xfefefeff);
+        return pdev->orig_fill_rectangle(dev, x, y, w, h, 0xffffffff);
     }
     return pdev->orig_fill_rectangle(dev, x, y, w, h, color);
 }
