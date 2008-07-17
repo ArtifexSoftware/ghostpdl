@@ -221,70 +221,67 @@ static int (*const build_cid_longform[])( pcl_cid_data_t *, const byte * ) = {
 /*
  * Check the configure image data short form structure.
  *
- * Because of the #%&&!!! confounded idiocy of causing e_Range to be ignored in
- * the parser by seeting it to be a non-error (0), we must use literal -1 here
- * to indicate that a palette is not acceptable.
- *
  * Returns 0 on success, < 0 in case of an error.
  */
   static int
 check_cid_hdr(
       pcl_state_t *pcs,
-      pcl_cid_hdr_t * pcid
+      pcl_cid_data_t *pcid
 )
 {
-    int             i;
+    pcl_cid_hdr_t *pcidh = &(pcid->u.hdr);
+    int           i;
 
-    if ((pcid->cspace >= pcl_cspace_num) || (pcid->encoding >= pcl_penc_num))
+    if ((pcidh->cspace >= pcl_cspace_num) || (pcidh->encoding >= pcl_penc_num))
         return -1;
 
     /* apparently direct by pixel encoding mode defaults bits per
        index to 8 */
-    if (pcid->encoding == pcl_penc_direct_by_pixel)
-      pcid->bits_per_index = 8;
+    if (pcidh->encoding == pcl_penc_direct_by_pixel)
+      pcidh->bits_per_index = 8;
 
 
     /*
      * Map zero values. Zero bits per index is equivalent to one bit per index;
      * zero bits per primary is equivalent to 8 bits per primary.
      */
-    if (pcid->bits_per_index == 0)
-        pcid->bits_per_index = 1;
-    for (i = 0; i < countof(pcid->bits_per_primary); i++) {
-        if (pcid->bits_per_primary[i] == 0)
-            pcid->bits_per_primary[i] = 8;
-	if ( pcs->personality == pcl5e && pcid->bits_per_primary[i] != 1 )
+    if (pcidh->bits_per_index == 0)
+        pcidh->bits_per_index = 1;
+    for (i = 0; i < countof(pcidh->bits_per_primary); i++) {
+        if (pcidh->bits_per_primary[i] == 0)
+            pcidh->bits_per_primary[i] = 8;
+	if ( pcs->personality == pcl5e && pcidh->bits_per_primary[i] != 1 )
 	    dprintf("pcl5e personality with color primaries\n" );
     }
 
 
 
-    switch (pcid->encoding) {
+    switch (pcidh->encoding) {
 
       case pcl_penc_indexed_by_pixel:
-        if ((pcid->bits_per_index & (pcid->bits_per_index - 1)) != 0)
+        if ((pcidh->bits_per_index & (pcidh->bits_per_index - 1)) != 0)
             return -1;
         /* fall through */
 
       case pcl_penc_indexed_by_plane:
-        if (pcid->bits_per_index > 8)
+        if (pcidh->bits_per_index > 8)
             return -1;
         break;
 
       case pcl_penc_direct_by_plane:
         /* must be device-specific color space */
-        if ((pcid->cspace != pcl_cspace_RGB) && (pcid->cspace != pcl_cspace_CMY))
+        if ((pcidh->cspace != pcl_cspace_RGB) && (pcidh->cspace != pcl_cspace_CMY))
             return -1;
-        if ( (pcid->bits_per_primary[0] != 1) ||
-             (pcid->bits_per_primary[1] != 1) ||
-             (pcid->bits_per_primary[2] != 1)   )
+        if ( (pcidh->bits_per_primary[0] != 1) ||
+             (pcidh->bits_per_primary[1] != 1) ||
+             (pcidh->bits_per_primary[2] != 1)   )
             return -1;
         break;
 
       case pcl_penc_direct_by_pixel:
-        if ( (pcid->bits_per_primary[0] != 8) ||
-             (pcid->bits_per_primary[1] != 8) ||
-             (pcid->bits_per_primary[2] != 8)   )
+        if ( (pcidh->bits_per_primary[0] != 8) ||
+             (pcidh->bits_per_primary[1] != 8) ||
+             (pcidh->bits_per_primary[2] != 8)   )
             return -1;
         break;
     }
@@ -294,16 +291,18 @@ check_cid_hdr(
      * is always 8. For the direct by plane/pixel cases, this will already be
      * the case, but the indexed by pixel/plane cases may require modification.
      */
-    if ( (pcid->encoding < pcl_penc_direct_by_plane) &&
-         (pcid->cspace > pcl_cspace_CMY)               ) {
-        pcid->bits_per_primary[0] = 8;
-        pcid->bits_per_primary[1] = 8;
-        pcid->bits_per_primary[2] = 8;
+    if ( (pcidh->encoding < pcl_penc_direct_by_plane) &&
+         (pcidh->cspace > pcl_cspace_CMY)               ) {
+        pcidh->bits_per_primary[0] = 8;
+        pcidh->bits_per_primary[1] = 8;
+        pcidh->bits_per_primary[2] = 8;
     }
 
     /* if the device handles color conversion remap the colorimetric color space to rgb */
-    if (pl_device_does_color_conversion() && pcid->cspace == pcl_cspace_Colorimetric)
-        pcid->cspace = pcl_cspace_RGB;
+    if (pl_device_does_color_conversion() && pcidh->cspace == pcl_cspace_Colorimetric) {
+        pcidh->cspace = pcl_cspace_RGB;
+        pcid->len = 6;
+    }
 
     return 0;
 }
@@ -375,7 +374,7 @@ install_cid_data(
     cid.len = len;
     memcpy(&(cid.u.hdr), pbuff, sizeof(pcl_cid_hdr_t));
     /* check the header this will also make corrections if possible */
-    code = check_cid_hdr(pcs, &(cid.u.hdr));
+    code = check_cid_hdr(pcs, &cid);
     if (code >= 0) {
         /* check if we should substitute colometric for a device color space */
         if ( (pcl_cid_get_cspace(&cid) >= pcl_cspace_RGB) &&
@@ -384,7 +383,7 @@ install_cid_data(
             code = substitute_colorimetric_cs(pcs, &cid);
         else {
             cid.original_cspace = pcl_cspace_num;
-            if (len > 6)
+            if (cid.len > 6)
                 code = build_cid_longform[pbuff[0]](&cid, pbuff);
         }
     }
