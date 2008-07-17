@@ -63,6 +63,7 @@
 <li><a href="#Unstable_filters">Unstable filters</a>
 </ul>
 <li><a href="#Device_parameters">Device parameters</a>
+<li><a href="#Banding_parameters">Banding parameters</a>
 <li><a href="#User_parameters">User parameters</a>
 <li><a href="#Miscellaneous_additions">Miscellaneous additions</a>
 <ul>
@@ -1907,17 +1908,46 @@ and <b><tt>PageSize</tt></b>.  The null device ignores attempts to set
 <p>
 It should be noted that calling <tt>setpagedevice</tt> with one of the above keys may reset the effects of any <b><tt>pdfmark</tt></b> commands up to that point. In particular this is true of HWResolution, a behavior that differs from Adobe Distiller.
 
-<p>
-For printers these are also defined:
-
+<a name="Banding_parameters"></a>
+<p><b>
+For raster printers and image format (jpeg*, tiff*, png* ...) devices these
+page device parameters are also defined:</b>
 <dl>
-<dt><b><tt>BufferSpace &lt;integer&gt;</tt></b>
-<dd>Buffer space for band lists, if the bitmap is too big to fit in memory.
+<dt><b><tt>MaxBitmap &lt;integer&gt;</tt></b>
+<dd>Maximum space for a full page raster image (bitmap) in memory.
+<p>This value includes the space for padding raster lines and for an array of
+pointers for each raster line, thus the <b><tt>MaxBitmap</tt></b> value to allow
+a given PageSize of a specific number of bits per pixel to be rendered in a
+full page buffer may be somewhat larger than the bitmap size alone. 
 </dl>
 
 <dl>
-<dt><b><tt>MaxBitmap &lt;integer&gt;</tt></b>
-<dd>Maximum space for a full bitmap in memory.
+<dt><b><tt>BufferSpace &lt;integer&gt;</tt></b>
+<dd>Size of the buffer space for band lists, if the full page raster image 
+(bitmap) is larger than <b><tt>MaxBitmap</tt></b> (see above.)
+
+<p>The buffer space is used to collect display list (clist) commands for the
+bands and then to consolidate those commands when writing the clist to the
+selected BAND_LIST_STORAGE device (memory or file) set when Ghostscript is compiled.
+<p>If <b><tt>MaxBitmap</tt></b> (above) forces banding mode, and if <b><tt>BufferSpace</tt></b>
+is large enough, the display list (clist) will consist of a single band.
+<p>The  <b><tt>BufferSpace</tt></b> will determine the size of the 'consolidation'
+buffer (above) even if the <b><tt>MaxBitmap</tt></b> value is low enough to force
+banding/clist mode.
+</dl>
+
+<dl>
+<dt><b><tt>NumRenderingThreads &lt;integer&gt;</tt></b>
+<dd>When the display list (clist) banding mode is being used, bands can be rendered
+in separate threads. The default value, 0, causes the rendering of bands to be
+done in the same thread as the parser and device driver. <b><tt>NumRenderingThreads</tt></b>
+of 1 or higher results in bands rendering in the specified number of 'background'
+threads.
+<p>The number of threads should generally be set to the number of available
+processor cores for best throughput.
+<p>Note that each thread will allocate a band buffer (size determined by the
+<b><tt>BufferSpace</tt></b> or <b><tt>BandBufferSpace</tt></b> values) in addition to
+the band buffer in the 'main' thread.
 </dl>
 
 <dl>
@@ -1928,7 +1958,7 @@ the file name for output; <b><tt>%d</tt></b> is replaced by the page number
 for page-oriented output devices;
 on Unix systems <b><tt>%pipe%</tt></b><em>command</em> writes to a pipe.
 (<b><tt>|</tt></b><em>command</em> also writes to a pipe, but is now
-deprecated.)
+deprecated).  Also see the <b><tt>-o</tt></b> parameter.
 <p>
 Attempts to set this parameter if <tt><b>.LockSafetyParams</b></tt> is true
 will signal an <tt><b>invalidaccess</b></tt> error.
@@ -1947,23 +1977,24 @@ rather than waiting until the first page is ready to print.
 
 <p>
 The following parameters are for use only by very specialized applications
-that separate band construction from band rasterization.  Improper use may
-cause unpredictable errors.  In particular, if you only want to allocate
+that separate band construction from band rasterization. <b>Improper use may
+cause unpredictable errors.</b>  In particular, if you only want to allocate
 more memory for banding, to increase band size and improve performance, use
-the <b><tt>BufferSpace</tt></b> parameter, not
-<b><tt>BandBufferSpace</tt></b>.
+the <b><tt>BufferSpace</tt></b> parameter, not <b><tt>BandBufferSpace</tt></b>.
 
 <dl>
 <dt><b><tt>BandHeight &lt;integer&gt;</tt></b>
 <dd>The height of bands when banding.  0 means use the largest band height
-that will fit within the BandBufferSpace (or BufferSpace, if
-BandBufferSpace is not specified).
+that will fit within the <b><tt>BandBufferSpace</tt></b> (or <b><tt>BufferSpace</tt></b>,
+if <b><tt>BandBufferSpace</tt></b> is not specified). If <b><tt>BandHeight</tt></b>
+is larger than the number of lines that will fit in the buffer, opening the device will fail.
 </dl>
 
 <dl>
 <dt><b><tt>BandWidth &lt;integer&gt;</tt></b>
 <dd>The width of bands in the rasterizing pass, in pixels.  0 means use the
-actual page width.
+actual page width. A BandWidth value smaller than the width of the page
+will be ignored, and the actual page width will be used instead.
 </dl>
 
 <dl>

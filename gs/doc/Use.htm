@@ -2743,6 +2743,21 @@ consumption, but there are some cases in which you may get a very large
 speedup by telling Ghostscript to use more memory.
 
 <ul>
+<li>
+For raster printers and image format (jpeg*, tiff*, png* ...) devices, 
+performance can be 'tuned' by adjusting some of the parameters related
+to banding (clist) options (refer to: <a href="Language.htm#Banding_parameters">
+Banding Parameters</a>).
+<p>In general, page buffer mode is faster than banded/clist mode (a full page
+buffer is used when <b><tt>-dMaxBitmap=#</tt></b> is large enough for the entire
+raster image) since there is no need to write, then interpret the clist data.
+<p>On a multi-core system where multiple threads can be dispatched to
+individual processors/cores, banding mode may provide higher performance
+since <b><tt>-dNumRenderingThreads=#</tt></b> can be used to take advantage of
+more than one CPU core when rendering the clist. The number of threads should
+generally be set to the number of available processor cores for best throughput.
+<p>In general, larger <b><tt>-dBufferSpace=#</tt></b> values provide 
+slightly higher performance since the per-band overhead is reduced.
 
 <li>
 If you are using X Windows, setting the <b><tt>-dMaxBitmap=</tt></b>
@@ -2750,13 +2765,16 @@ parameter described <a href="#X_device_parameters">above</a> may
 dramatically improve performance on files that have a lot of bitmap images.
 
 <li>
-If you are using Chinese, Japanese, or other fonts with very large character
-sets, adding the following sequence of switches before the first file name
-may dramatically improve performance at the cost of an additional 2-3 Mb of
-memory: <b><tt>-c&nbsp;3000000&nbsp;setvmthreshold&nbsp;-f</tt></b>. This 
-can also be useful in processing large documents when using a high-level
-output device (like pdfwrite) that maintains significant internal state.
-In fact, the <a href="Language.htm#.setpdfwrite"><tt>.setpdfwrite</tt></a>
+<p>
+With some PDF files, or if you are using Chinese, Japanese, or other fonts with
+very large character sets, adding the following sequence of switches before the
+first file name may dramatically improve performance at the cost of an additional 
+memory. For example, to allow use of 30Mb of extra RAM use:
+<p>
+    <b><tt>-c&nbsp;30000000&nbsp;setvmthreshold&nbsp;-f</tt></b>.
+<p>This can also be useful in processing large documents when using a
+high-level output device (like pdfwrite) that maintains significant internal
+state.  In fact, the <a href="Language.htm#.setpdfwrite"><tt>.setpdfwrite</tt></a>
 operator used by the ps2pdf script and others sets a vmthreshold value of
 3&nbsp;MB to account for this.
 
