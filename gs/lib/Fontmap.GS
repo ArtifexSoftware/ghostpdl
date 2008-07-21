@@ -272,22 +272,12 @@
 
 % 
 %
-% Shareware Kana fonts.  These are subject to the following notice:
+% Calligraphic Kana fonts.  These are distributed under the OFL 1.1:
 %
-% These copyrighted fonts were developed by Kevin Hartig. Permission is
-% granted to freely distribute them in entirety along with this statement.
-% This is shareware. If you decide to use these fonts please contribute
-% $10 US to help support further freeware and shareware software development.
-% Questions and comments may be sent to:
-%
-% hartig@fsl.noaa.gov
-% khartig@nyx.cs.du.edu
-%
-% Kevin Hartig
-% 1126 Collyer Street
-% Longmont, CO 80501 USA
-% 
-% copyright 1993.
+% Copyright (c) 1993, Kevin Hartig (kevin.hartig@gmail.com),
+% with Reserved Font Name Calligraphic-Hiragana and Calligraphic-Katakana.
+% This Font Software is licensed under the SIL Open Font License, Version 1.1.
+% This license is available with an FAQ at:  http://scripts.sil.org/OFL
 
 % Hiragana and Katakana fonts.  The character names are inappropriate,
 % and the encoding is probably not related to any known standard.
