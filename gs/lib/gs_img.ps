@@ -707,15 +707,19 @@ if
 	    2 index /Interpolate .knownget not { false } if and
 	    //filterdict /ImscaleDecode known and {
 	      % Apply interpolated imagemask scaling filter
-	      exch dup length dict .copydict
+	      exch .currentglobal exch dup .gcheck .setglobal
+              dup length dict .copydict
 	      dup dup /DataSource get
-	      mark /Width 3 index /Width get /Height 5 index /Height get .dicttomark
+              dup type /stringtype eq {
+                1 array astore cvx        % image.* operators read strings repeatesly
+              } if
+       	      mark /Width 3 index /Width get /Height 5 index /Height get .dicttomark
 	      /ImscaleDecode filter /DataSource exch put
 	      dup dup /Width get 4 mul /Width exch put
 	      dup dup /Height get 4 mul /Height exch put
 	      dup dup /ImageMatrix get
-	        4 4 matrix scale matrix concatmatrix /ImageMatrix exch put
-	      exch
+              { 4 0 0 4 0 0 } matrix concatmatrix /ImageMatrix exch put
+	      3 1 roll .setglobal
 	    } if
 	    exec
           }
