@@ -32,7 +32,7 @@ typedef struct gs_pattern_instance_s gs_pattern_instance_t;
  * value as Adobe CPSI can handle 
  */
 #ifndef GS_CLIENT_COLOR_MAX_COMPONENTS		/* Allow override with XCFLAGS */
-#  define GS_CLIENT_COLOR_MAX_COMPONENTS (252)
+#  define GS_CLIENT_COLOR_MAX_COMPONENTS (8)
 #endif
 
 /* Paint (non-Pattern) colors */
