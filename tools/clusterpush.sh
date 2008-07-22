@@ -42,7 +42,7 @@ if test -d src; then
   LATEST='gs'
 else
   LATEST=`ssh $HOST 'for file in \`ls regression |\
-    egrep ghostpcl-r[0-9]+\+[0-9]+ | sort -r | head\`; do\
+    egrep ghostpcl-r[0-9]+[+][0-9]+$ | sort -r | head\`; do\
       if test -r regression/$file/reg_baseline.txt; then\
         echo $file; break;\
       fi;\
