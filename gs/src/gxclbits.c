@@ -237,9 +237,10 @@ out:
 
 /* Add a command to set the tile size and depth. */
 static uint
-cmd_size_tile_params(const gx_strip_bitmap * tile)
+cmd_size_tile_params(const gx_strip_bitmap * tile, bool for_pattern)
 {
-    return 2 + cmd_size_w(tile->rep_width) + cmd_size_w(tile->rep_height) +
+    return 2 + (for_pattern ? cmd_size_w(tile->id) : 0) +
+	cmd_size_w(tile->rep_width) + cmd_size_w(tile->rep_height) +
 	(tile->rep_width == tile->size.x ? 0 :
 	 cmd_size_w(tile->size.x / tile->rep_width)) +
 	(tile->rep_height == tile->size.y ? 0 :
@@ -248,12 +249,14 @@ cmd_size_tile_params(const gx_strip_bitmap * tile)
 }
 static void
 cmd_store_tile_params(byte * dp, const gx_strip_bitmap * tile, int depth,
-		      uint csize)
+		      uint csize, bool for_pattern)
 {
     byte *p = dp + 2;
     byte bd = cmd_depth_to_code(depth);
 
     *dp = cmd_count_op(cmd_opv_set_tile_size, csize);
+    if (for_pattern)
+	p = cmd_put_w(tile->id, p);
     p = cmd_put_w(tile->rep_width, p);
     p = cmd_put_w(tile->rep_height, p);
     if (tile->rep_width != tile->size.x) {
@@ -550,6 +553,8 @@ clist_new_tile_params(gx_strip_bitmap * new_tile, const gx_strip_bitmap * tiles,
 #undef max_tile_bytes
 }
 
+extern dev_proc_open_device(pattern_clist_open_device);
+
 /* Change tile for clist_tile_rectangle. */
 int
 clist_change_tile(gx_device_clist_writer * cldev, gx_clist_state * pcls,
@@ -569,6 +574,7 @@ clist_change_tile(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	int band_index = pcls - cldev->states;
 	byte *bptr = ts_mask(loc.tile) + (band_index >> 3);
 	byte bmask = 1 << (band_index & 7);
+	bool for_pattern = IS_CLIST_FOR_PATTERN(cldev);
 
 	if (*bptr & bmask) {	/* Already known.  Just set the index. */
 	    if (pcls->tile_index == loc.index)
@@ -578,8 +584,8 @@ clist_change_tile(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	} else {
 	    uint extra = 0;
 
-	    if tile_params_differ
-		(cldev, tiles, depth) {		/*
+	    if (tile_params_differ(cldev, tiles, depth) ||
+		for_pattern) {			/*
 						 * We have a cached tile whose parameters differ from
 						 * the current ones.  Because of the way tile IDs are
 						 * managed, this is currently only possible when mixing
@@ -603,7 +609,7 @@ clist_change_tile(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		cldev->tile_known_max = -1;
 		}
 	    if (!(pcls->known & tile_params_known)) {	/* We're going to have to write the tile parameters. */
-		extra = cmd_size_tile_params(&cldev->tile_params);
+		extra = cmd_size_tile_params(&cldev->tile_params, for_pattern);
 	    } {			/*
 				 * This band doesn't know this tile yet, so output the
 				 * bits.  Note that the offset we write is the one used by
@@ -632,7 +638,7 @@ clist_change_tile(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		    return code;
 		if (extra) {	/* Write the tile parameters before writing the bits. */
 		    cmd_store_tile_params(dp, &cldev->tile_params, depth,
-					  extra);
+					  extra, for_pattern);
 		    dp += extra;
 		    /* This band now knows the parameters. */
 		    pcls->known |= tile_params_known;

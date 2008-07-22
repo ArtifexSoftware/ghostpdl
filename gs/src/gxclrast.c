@@ -226,7 +226,7 @@ typedef struct ht_buff_s {
  * Render one band to a specified target device.  Note that if
  * action == setup, target may be 0.
  */
-static int read_set_tile_size(command_buf_t *pcb, tile_slot *bits);
+static int read_set_tile_size(command_buf_t *pcb, tile_slot *bits, bool for_pattern);
 static int read_set_bits(command_buf_t *pcb, tile_slot *bits,
                           int compress, gx_clist_state *pcls,
                           gx_strip_bitmap *tile, tile_slot **pslot,
@@ -640,7 +640,8 @@ in:				/* Initialize for a new page. */
 			continue;
 		    case cmd_opv_set_tile_size:
 			cbuf.ptr = cbp;
-			code = read_set_tile_size(&cbuf, &tile_bits);
+			code = read_set_tile_size(&cbuf, &tile_bits, 
+				    IS_CLIST_FOR_PATTERN(cdev));
 			cbp = cbuf.ptr;
 			if (code < 0)
 			    goto out;
@@ -2088,13 +2089,15 @@ idata:			data_size = 0;
  */
 
 static int
-read_set_tile_size(command_buf_t *pcb, tile_slot *bits)
+read_set_tile_size(command_buf_t *pcb, tile_slot *bits, bool for_pattern)
 {
     const byte *cbp = pcb->ptr;
     uint rep_width, rep_height;
     byte bd = *cbp++;
 
     bits->cb_depth = cmd_code_to_depth(bd);
+    if (for_pattern)
+	cmd_getw(bits->id, cbp);
     cmd_getw(rep_width, cbp);
     cmd_getw(rep_height, cbp);
     if (bd & 0x20) {

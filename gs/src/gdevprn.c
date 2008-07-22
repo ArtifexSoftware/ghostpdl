@@ -57,6 +57,8 @@ int gdev_prn_maybe_realloc_memory(gx_device_printer *pdev,
 			          int old_width, int old_height,
 			          bool old_page_uses_transparency);
 
+extern dev_proc_open_device(pattern_clist_open_device);
+
 /* ------ Open/close ------ */
 
 /* Open a generic printer device. */

@@ -184,6 +184,12 @@ typedef struct gx_clist_state_s gx_clist_state;
 	gx_band_page_info_t page_info;	/* page information */\
 	int nbands			/* # of bands */
 
+/*
+ * Chech whether a clist is used for storing a pattern command stream.
+ * Useful for both reader and writer.
+ */
+#define IS_CLIST_FOR_PATTERN(cdev) (cdev->procs.open_device == pattern_clist_open_device)
+
 typedef struct gx_device_clist_common_s {
     gx_device_clist_common_members;
 } gx_device_clist_common;
