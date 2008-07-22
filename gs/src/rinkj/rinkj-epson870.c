@@ -14,8 +14,6 @@
 /*$Id$ */
 /* A Rinkj driver for a number of variable-dot Epson devices. */
 
-#define VERBOSE
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
