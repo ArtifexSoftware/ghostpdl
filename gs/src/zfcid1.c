@@ -214,6 +214,9 @@ z11_enumerate_glyph(gs_font *font, int *pindex,
     int code0 = z11_CIDMap_proc(pfont, GS_MIN_CID_GLYPH);
     int code;
 
+    if(*pindex > pfont->cidata.common.CIDCount)
+	return_error(e_rangecheck);
+
     for (;;) {
 	code = z11_CIDMap_proc(pfont, GS_MIN_CID_GLYPH + *pindex);
 
