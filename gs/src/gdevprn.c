@@ -279,17 +279,16 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 	memset(ppdev->skip, 0, sizeof(ppdev->skip));
 	size_ok = ppdev->printer_procs.buf_procs.size_buf_device
 	    (&buf_space, pdev, NULL, pdev->height, false) >= 0;
+	mem_space = buf_space.bits + buf_space.line_ptrs;
 	if (ppdev->page_uses_transparency) {
 	    pdf14_trans_buffer_size = (ESTIMATED_PDF14_ROW_SPACE(max(1, new_width)) >> 3);
-	    if (new_height < max_ulong/(mem_space + (new_height * pdf14_trans_buffer_size)))
+	    if (new_height < max_ulong/(mem_space + (new_height * pdf14_trans_buffer_size))) {
 		pdf14_trans_buffer_size *= new_height;
-	    else {
+		mem_space += pdf14_trans_buffer_size;
+	    } else {
 		size_ok = 0;
-		pdf14_trans_buffer_size = 0;
 	    }
 	}
-	mem_space = buf_space.bits + buf_space.line_ptrs
-		    + pdf14_trans_buffer_size;
 
 	/* Compute desired space params: never use the space_params as-is. */
 	/* Rather, give the dev-specific driver a chance to adjust them. */
