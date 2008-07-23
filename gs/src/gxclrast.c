@@ -1047,6 +1047,7 @@ in:				/* Initialize for a new page. */
 		    state_slot->y_reps;
 		state_tile.rep_shift = state_slot->rep_shift;
 		state_tile.shift = state_slot->shift;
+		state_tile.id = state_slot->id;
 set_phase:	/*
 		 * state.tile_phase is overloaded according to the command
 		 * to which it will apply:
