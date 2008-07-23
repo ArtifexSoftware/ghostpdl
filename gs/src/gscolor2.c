@@ -25,6 +25,7 @@
 #include "gxpcolor.h"
 #include "stream.h"
 #include "gxcie.h"  
+#include "gxfrac.h"
 
 /* ---------------- General colors and color spaces ---------------- */
 
@@ -476,6 +477,156 @@ gs_cspace_indexed_lookup(const gs_color_space *pcs, int index,
 	return 0;
     }
 }
+
+/* Look up an index in an Indexed color space, return value as byte value(s). */
+int
+gs_cspace_indexed_lookup_bytes(const gs_color_space *pcs, float index_float,
+			unsigned char *output)
+{
+    const gs_indexed_params *pip = &pcs->params.indexed;
+    const gs_color_space *pbcs = pcs->base_space;
+    int m = cs_num_components(pbcs);
+    int index;
+ 
+    index = (is_fneg(index_float) ? 0 :
+    index_float >= pcs->params.indexed.hival ? pcs->params.indexed.hival :
+    (int) index_float);
+
+    if (pip->use_proc) {
+
+        float values[GS_CLIENT_COLOR_MAX_COMPONENTS];
+        int ok;
+
+        ok = pip->lookup.map->proc.lookup_index(pcs, index, values); 
+
+        /* Get out of float and to uchar. 
+           Note the fall through in the switch statement to 
+           handle the number of channels */
+
+        switch (m) {
+            default: {		/* DeviceN */
+	        int i;
+
+	        for (i = 0; i < m; ++i)
+	            output[i] = float_color_to_byte_color(values[i]);
+            }
+	        break;
+            case 4:
+	        output[3] = float_color_to_byte_color(values[3]);
+            case 3:
+	        output[2] = float_color_to_byte_color(values[2]);
+            case 2:
+	        output[1] = float_color_to_byte_color(values[1]);
+            case 1:
+	        output[0] = float_color_to_byte_color(values[0]);
+        }
+
+        return ok; 
+
+    } else {
+
+        /* Here it uses a 1-D LUT. Again the fall through
+            in the switch statement */
+
+        const byte *pcomp = pip->lookup.table.data + m * index;
+
+        switch (m) {
+            default: {		/* DeviceN */
+	        int i;
+
+	        for (i = 0; i < m; ++i)
+	            output[i] = pcomp[i];
+            }
+	        break;
+            case 4:
+	        output[3] = pcomp[3];
+            case 3:
+	        output[2] = pcomp[2];
+            case 2:
+	        output[1] = pcomp[1];
+            case 1:
+	        output[0] = pcomp[0];
+        }
+        return 0;
+    }
+}
+
+
+/* Look up an index in an Indexed color space, return value as frac value(s). */
+int
+gs_cspace_indexed_lookup_frac(const gs_color_space *pcs, float index_float,
+			frac *output)
+{
+    const gs_indexed_params *pip = &pcs->params.indexed;
+    const gs_color_space *pbcs = pcs->base_space;
+    int m = cs_num_components(pbcs);
+    int index;
+ 
+    index = (is_fneg(index_float) ? 0 :
+    index_float >= pcs->params.indexed.hival ? pcs->params.indexed.hival :
+    (int) index_float);
+
+    if (pip->use_proc) {
+
+        float values[GS_CLIENT_COLOR_MAX_COMPONENTS];
+        int ok;
+
+        ok = pip->lookup.map->proc.lookup_index(pcs, index, values); 
+
+        /* Get out of float and to frac. 
+           Note the fall through in the switch statement to 
+           handle the number of channels */
+
+        switch (m) {
+            default: {		/* DeviceN */
+	        int i;
+
+	        for (i = 0; i < m; ++i)
+	            output[i] = float2frac(values[i]);
+            }
+	        break;
+            case 4:
+	        output[3] = float2frac(values[3]);
+            case 3:
+	        output[2] = float2frac(values[2]);
+            case 2:
+	        output[1] = float2frac(values[1]);
+            case 1:
+	        output[0] = float2frac(values[0]);
+        }
+
+        return ok; 
+
+    } else {
+
+        /* Here it uses a 1-D LUT 
+           Again the fall through */
+
+        const byte *pcomp = pip->lookup.table.data + m * index;
+
+        switch (m) {
+            default: {		/* DeviceN */
+	        int i;
+
+	        for (i = 0; i < m; ++i)
+	            output[i] = byte2frac(pcomp[i]);
+            }
+	        break;
+            case 4:
+	        output[3] = byte2frac(pcomp[3]);
+            case 3:
+	        output[2] = byte2frac(pcomp[2]);
+            case 2:
+	        output[1] = byte2frac(pcomp[1]);
+            case 1:
+	        output[0] = byte2frac(pcomp[0]);
+        }
+        return 0;
+    }
+}
+
+
+
 
 /* Look up with restriction */
 

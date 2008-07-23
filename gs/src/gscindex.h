@@ -18,6 +18,7 @@
 #  define gscindex_INCLUDED
 
 #include "gscspace.h"
+#include "gxfrac.h"
 
 /*
  * Indexed color spaces.
@@ -70,5 +71,13 @@ extern int gs_cspace_indexed_set_proc(
 /* Look up an index in an Indexed color space. */
 int gs_cspace_indexed_lookup(const gs_color_space *, int,
 			     gs_client_color *);
+
+/* Look up an index in an Indexed color space. Return as a byte */
+int gs_cspace_indexed_lookup_bytes(const gs_color_space *pcs, float index_float,
+			unsigned char *output);
+
+/* Look up an index in an Indexed color space. Return as a frac */
+int gs_cspace_indexed_lookup_frac(const gs_color_space *pcs, float index_float,
+			frac *output);
 
 #endif /* gscindex_INCLUDED */

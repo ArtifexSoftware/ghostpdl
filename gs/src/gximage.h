@@ -115,6 +115,12 @@ typedef struct sample_map_s sample_map;
   cc.paint.values[i] =\
     penum->map[i].decode_base + (frac_value) * penum->map[i].decode_factor
 
+
+/* Decode a frac value, to our 16 bit frac form. */
+#define DECODE_FRAC_FRAC(frac_value, frac_value_out, i)\
+  frac_value_out =\
+    gx_unit_frac(penum->map[i].decode_base + (frac_value) * penum->map[i].decode_factor)
+
 /*
  * Declare the pointer that holds the 12-bit unpacking procedure
  * if 12-bit samples are supported, 0 otherwise.
