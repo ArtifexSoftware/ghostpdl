@@ -36,9 +36,11 @@
  *  http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf
  */
 
-#include "aes.h"
+/* $Id:$ */
+/* AES block cipher implementation from XYSSL */
 
-#include <string.h>
+#include "string_.h"	/* memcmp() */
+#include "aes.h"
 
 /*
  * 32-bit integer manipulation macros (little endian)
@@ -334,10 +336,10 @@ static const unsigned long RCON[10] =
  * Forward S-box & tables
  */
 static unsigned char FSb[256];
-static unsigned long FT0[256]; 
-static unsigned long FT1[256]; 
-static unsigned long FT2[256]; 
-static unsigned long FT3[256]; 
+static unsigned long FT0[256];
+static unsigned long FT1[256];
+static unsigned long FT2[256];
+static unsigned long FT3[256];
 
 /*
  * Reverse S-box & tables
@@ -443,7 +445,7 @@ static void aes_gen_tables( void )
 /*
  * AES key schedule (encryption)
  */
-void aes_setkey_enc( aes_context *ctx, unsigned char *key, int keysize )
+void aes_setkey_enc( aes_context *ctx, const unsigned char *key, int keysize )
 {
     int i;
     unsigned long *RK;
@@ -546,7 +548,7 @@ void aes_setkey_enc( aes_context *ctx, unsigned char *key, int keysize )
 /*
  * AES key schedule (decryption)
  */
-void aes_setkey_dec( aes_context *ctx, unsigned char *key, int keysize )
+void aes_setkey_dec( aes_context *ctx, const unsigned char *key, int keysize )
 {
     int i, j;
     aes_context cty;
@@ -645,7 +647,7 @@ void aes_setkey_dec( aes_context *ctx, unsigned char *key, int keysize )
  */
 void aes_crypt_ecb( aes_context *ctx,
                     int mode,
-                    unsigned char input[16],
+                    const unsigned char input[16],
                     unsigned char output[16] )
 {
     int i;
@@ -740,7 +742,7 @@ void aes_crypt_cbc( aes_context *ctx,
                     int mode,
                     int length,
                     unsigned char iv[16],
-                    unsigned char *input,
+                    const unsigned char *input,
                     unsigned char *output )
 {
     int i;
@@ -796,7 +798,7 @@ void aes_crypt_cfb( aes_context *ctx,
                     int length,
                     int *iv_off,
                     unsigned char iv[16],
-                    unsigned char *input,
+                    const unsigned char *input,
                     unsigned char *output )
 {
     int c, n = *iv_off;
