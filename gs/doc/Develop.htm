@@ -651,7 +651,9 @@ Other:
 <a href="../src/gx.h">src/gx.h</a>,
 <a href="../src/md5.c">src/md5.c</a>,
 <a href="../src/md5.h">src/md5.h</a>,
-<a href="../src/md5main.c">src/md5main.c</a>.
+<a href="../src/md5main.c">src/md5main.c</a>,
+<a href="../src/aes.c">src/aes.c</a>,
+<a href="../src/aes.h">src/aes.h</a>.
 
 </dl>
 
@@ -1811,6 +1813,17 @@ PCL XL output device (pxlmono, pxlcolor):
 <a href="../src/gdevpxop.h">src/gdevpxop.h</a>,
 <a href="../src/gdevpxut.c">src/gdevpxut.c</a>,
 <a href="../src/gdevpxut.h">src/gdevpxut.h</a>.
+
+<dt>
+Cairo and SVG output devices (cairo, svgwrite):
+<dd>
+<a href="../src/gdevcairo.c">src/gdevcairo.c</a>,
+<a href="../src/gdevsvg.c">src/gdevsvg.c</a>.
+
+<p>
+The svgwrite device produces SVG only. The cairo device uses the cairo 
+graphics library to produce PDF, EPS, SVG or PNG output, based on the
+requested filename extension.
 
 <dt>
 Text extraction:

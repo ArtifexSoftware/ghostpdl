@@ -1,6 +1,7 @@
 #!/bin/sh
 
 # helper script to syncronize a working tree with the regression cluster
+# $Id$
 
 HOST=atfxsw01@tticluster.com
 DEST=$USER
