@@ -50,16 +50,16 @@
 #if 1
 #  define AES_DEC_PREKEYED  /* AES decryption with a precomputed key schedule  */
 #endif
-#if 1
+#if 0
 #  define AES_ENC_128_OTFK  /* AES encryption with 'on the fly' 128 bit keying */
 #endif
-#if 1
+#if 0
 #  define AES_DEC_128_OTFK  /* AES decryption with 'on the fly' 128 bit keying */
 #endif
-#if 1
+#if 0
 #  define AES_ENC_256_OTFK  /* AES encryption with 'on the fly' 256 bit keying */
 #endif
-#if 1
+#if 0
 #  define AES_DEC_256_OTFK  /* AES decryption with 'on the fly' 256 bit keying */
 #endif
 
@@ -73,8 +73,6 @@ typedef unsigned char uint_8t;
 typedef uint_8t return_type;
 typedef uint_8t length_type;
 typedef uint_8t uint_type;
-
-typedef unsigned char uint_8t;
 
 typedef struct
 {   uint_8t ksch[(N_MAX_ROUNDS + 1) * N_BLOCK];

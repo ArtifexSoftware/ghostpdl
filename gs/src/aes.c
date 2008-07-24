@@ -228,10 +228,10 @@ static void copy_block16( void *d, const void *s )
 #endif
 }
 
-static void copy_block( void * d, void *s, uint_8t nn )
+static void copy_block( uint_8t * d, uint_8t *s, uint_8t nn )
 {
     while( nn-- )
-        *((uint_8t*)d)++ = *((uint_8t*)s)++;
+        *d++ = *s++;
 }
 
 static void xor_block( void *d, const void *s )
