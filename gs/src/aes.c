@@ -6,7 +6,7 @@
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
  *  are met:
- *  
+ *
  *    * Redistributions of source code _must_ retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *    * Redistributions in binary form may or may not reproduce the above
@@ -16,7 +16,7 @@
  *    * Neither the name of XySSL nor the names of its contributors may be
  *      used to endorse or promote products derived from this software
  *      without specific prior written permission.
- *  
+ *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -36,12 +36,7 @@
  *  http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf
  */
 
-#include "xyssl/config.h"
-
-#if defined(XYSSL_AES_C)
-
-#include "xyssl/aes.h"
-#include "xyssl/padlock.h"
+#include "aes.h"
 
 #include <string.h>
 
@@ -1094,6 +1089,9 @@ int aes_self_test( int verbose )
     return( 0 );
 }
 
-#endif
+int main(int argc, char *argv[])
+{
+    return aes_self_test(1);
+}
 
-#endif
+#endif /* defined(XYSSL_SELF_TEST) */
