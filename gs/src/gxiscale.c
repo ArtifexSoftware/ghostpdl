@@ -71,9 +71,6 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     const gs_color_space *pcs = penum->pcs;
     gs_point dst_xy;
     uint in_size;
-#ifdef INTERPDEBUG
-    FILE *fid;
-#endif
 
     if (!penum->interpolate) 
 	return 0;
@@ -391,8 +388,6 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 
  	         out += round_up(pss->params.WidthIn*c, align_bitmap_mod);  
               }
-
-	  //  r.limit = r.ptr + row_size;
 
 	} else {
 
