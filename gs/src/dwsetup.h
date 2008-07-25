@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -36,7 +36,6 @@
 #define IDS_TARGET_DIR                  502
 #define IDS_TARGET_GROUP                503
 #define IDC_PRODUCT_NAME                1000
-#define IDC_INSTALL_FONTS               1001
 #define IDC_TEXTWIN_MLE                 1002
 #define IDC_TEXTWIN_COPY                1003
 #define IDC_INSTALL                     1004
@@ -49,3 +48,4 @@
 
 
 #endif /* dwsetup_INCLUDED */
+

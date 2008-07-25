@@ -216,7 +216,7 @@ $(PSOBJ)dwuninst.obj: $(PSSRC)dwuninst.cpp $(PSSRC)dwuninst.h
 # Create a self-extracting archive with setup program.
 # This assumes that the current directory is named gs#.## relative to its
 # parent, where #.## is the Ghostscript version, and that the files and
-# directories listed in ZIPTEMPFILE and ZIPFONTFILES are the complete list
+# directories listed in ZIPTEMPFILE are the complete list
 # of needed files and directories relative to the current directory's parent.
 
 ZIPTEMPFILE=gs$(GS_DOT_VERSION)\obj\dwfiles.rsp
@@ -228,12 +228,9 @@ ZIPPROGFILE5=gs$(GS_DOT_VERSION)\doc
 ZIPPROGFILE6=gs$(GS_DOT_VERSION)\examples
 ZIPPROGFILE7=gs$(GS_DOT_VERSION)\lib
 ZIPPROGFILE8=gs$(GS_DOT_VERSION)\Resource
-ZIPFONTDIR=fonts
-ZIPFONTFILES=$(ZIPFONTDIR)\*.*
 
 # Make the zip archive.
 FILELIST_TXT=filelist.txt
-FONTLIST_TXT=fontlist.txt
 !ifdef WIN64
 ZIPTARGET=gs$(GS_VERSION)w64
 !else
@@ -253,10 +250,8 @@ zip: $(SETUP_XE) $(UNINSTALL_XE)
 	echo $(ZIPPROGFILE7) >> $(ZIPTEMPFILE)
 	echo $(ZIPPROGFILE8) >> $(ZIPTEMPFILE)
 	make_filelist.exe -title "GPL Ghostscript $(GS_DOT_VERSION)" -dir "gs$(GS_DOT_VERSION)" -list "$(FILELIST_TXT)" @$(ZIPTEMPFILE)
-	make_filelist -title "GPL Ghostscript Fonts" -dir "fonts" -list "$(FONTLIST_TXT)" $(ZIPFONTFILES)
 	-del $(ZIPTARGET).zip
-	$(ZIP_XE) -9 $(ZIPTARGET).zip $(SETUP_XE_NAME) $(UNINSTALL_XE_NAME) $(FILELIST_TXT) $(FONTLIST_TXT)
-	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPFONTDIR)
+	$(ZIP_XE) -9 $(ZIPTARGET).zip $(SETUP_XE_NAME) $(UNINSTALL_XE_NAME) $(FILELIST_TXT)
 	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE1)
 	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE2)
 	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE3)
@@ -270,7 +265,6 @@ zip: $(SETUP_XE) $(UNINSTALL_XE)
 	-del $(SETUP_XE_NAME)
 	-del $(UNINSTALL_XE_NAME)
 	-del $(FILELIST_TXT)
-	-del $(FONTLIST_TXT)
 	cd gs$(GS_DOT_VERSION)
 
 # Now convert to a self extracting archive.
@@ -301,3 +295,4 @@ archive: zip $(PSOBJ)gswin16.ico $(ECHOGS_XE)
 
 
 # end of winint.mak
+

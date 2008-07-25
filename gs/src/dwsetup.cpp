@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -21,14 +21,11 @@
 //   setupgs.exe
 //   uninstgs.exe
 //   filelist.txt      (contains list of program files)
-//   fontlist.txt      (contains list of font files)
 //   gs#.##\*          (files listed in filelist.txt)
-//   fonts\*           (fonts listed in fontlist.txt)
 // This is the same as the zip file created by Aladdin Enterprises,
-// with the addition of setupgs.exe, uninstgs.exe, filelist.txt and 
-// fontlist.txt.
+// with the addition of setupgs.exe, uninstgs.exe, and filelist.txt
 //
-// The first line of the files filelist.txt and fontlist.txt
+// The first line of the file filelist.txt
 // contains the uninstall name to be used.  
 // The second line contains name of the main directory where 
 // uninstall log files are to be placed.  
@@ -38,18 +35,12 @@
 //   gs8.55
 //   gs8.55\bin\gsdll32.dll
 //   gs8.55\lib\gs_init.ps
-// The file fontlist.txt might contain:
-//   GPL Ghostscript Fonts
-//   fonts
-//   fonts\n019003l.pfb
-//   fonts\n019023l.pfb
 //
 // The default install directory is c:\gs.
 // The default Start Menu Folder is Ghostscript.
 // These are set in the resources.
 // The setup program will create the following uninstall log files
 //   c:\gs\gs#.##\uninstal.txt
-//   c:\gs\fonts\uninstal.txt
 // The uninstall program (accessed through control panel) will not 
 // remove directories nor will it remove itself.
 //
@@ -57,7 +48,7 @@
 // location, no files will be copied, but the existence of each file 
 // will be checked.  This allows the archive to be unzipped, then
 // configured in its current location.  Running the uninstall will not 
-// remove uninstgs.exe, setupgs.exe, filelist.txt or fontlist.txt.
+// remove uninstgs.exe, setupgs.exe, or filelist.txt.
 
 
 #define STRICT
@@ -113,7 +104,7 @@ BOOL g_bNoCopy;
 // unzip self extractor.
 CHAR g_szSourceDir[MAXSTR];
 
-// Target directory for program and fonts.
+// Target directory for program.
 // Default loaded from resources
 CHAR g_szTargetDir[MAXSTR];
 
@@ -124,7 +115,6 @@ CHAR g_szTargetGroup[MAXSTR];
 // Setup application name, loaded from resources
 CHAR g_szAppName[MAXSTR];
 
-BOOL g_bInstallFonts = TRUE;
 BOOL g_bCJKFonts = FALSE;
 BOOL g_bAllUsers = FALSE;
 
@@ -155,7 +145,6 @@ void gs_addmess_update(void);
 BOOL init();
 BOOL install_all();
 BOOL install_prog();
-BOOL install_fonts();
 BOOL make_filelist(int argc, char *argv[]);
 int get_font_path(char *path, unsigned int pathlen);
 BOOL write_cidfmap(const char *gspath, const char *cidpath);
@@ -534,7 +523,6 @@ init()
 	SetDlgItemText(g_hMain, IDC_TARGET_DIR, g_szTargetDir);
 	SetDlgItemText(g_hMain, IDC_TARGET_GROUP, g_szTargetGroup);
 	SetDlgItemText(g_hMain, IDC_PRODUCT_NAME, cinst.GetUninstallName());
-	SendDlgItemMessage(g_hMain, IDC_INSTALL_FONTS, BM_SETCHECK, BST_CHECKED, 0);
 	ShowWindow(g_hMain, SW_SHOWNORMAL);
 	
 	return (g_hMain != (HWND)NULL); /* success */
@@ -623,9 +611,6 @@ MainDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				g_szTargetDir, sizeof(g_szTargetDir));
 			GetDlgItemText(hwnd, IDC_TARGET_GROUP, 
 				g_szTargetGroup, sizeof(g_szTargetGroup));
-			g_bInstallFonts = (SendDlgItemMessage(g_hMain, 
-				IDC_INSTALL_FONTS, BM_GETCHECK, 0, 0) 
-				== BST_CHECKED);
 			g_bCJKFonts = (SendDlgItemMessage(g_hMain, 
 				IDC_CJK_FONTS, BM_GETCHECK, 0, 0) 
 				== BST_CHECKED);
@@ -681,11 +666,6 @@ install_all()
 		return FALSE;
 	
 	if (!install_prog()) {
-		cinst.CleanUp();
-		g_bError = TRUE;
-		return FALSE;
-	}
-	if (g_bInstallFonts && !install_fonts()) {
 		cinst.CleanUp();
 		g_bError = TRUE;
 		return FALSE;
@@ -909,54 +889,6 @@ install_prog()
 }
 
 
-BOOL
-install_fonts()
-{
-	cinst.SetMessageFunction(gs_addmess);
-	cinst.SetTargetDir(g_szTargetDir);
-	cinst.SetTargetGroup(g_szTargetGroup);
-	cinst.SetAllUsers(g_bAllUsers);
-	if (!cinst.Init(g_szSourceDir, "fontlist.txt"))
-		return FALSE;
-	
-	// copy files
-	if (!cinst.InstallFiles(g_bNoCopy, &g_bQuit)) {
-		gs_addmess("Font install failed\n");
-		return FALSE;
-	}
-	
-	if (g_bQuit)
-		return FALSE;
-	
-	if (g_bNoCopy) {
-		// Don't write uninstall log or entry
-		// since we didn't copy any files.
-		cinst.CleanUp();
-	}
-	else {
-		// consolidate logs into one uninstall file
-		if (cinst.MakeLog()) {
-			// add uninstall entry for "Add/Remove Programs"
-			gs_addmess("Adding uninstall program\n");
-			if (!cinst.WriteUninstall(UNINSTALLPROG, g_bNoCopy)) {
-				gs_addmess("Failed to write uninstall entry\n");
-				return FALSE;
-			}
-		}
-		else {
-			gs_addmess("Failed to write uninstall log\n");
-			// If batch install, files might be on a server
-			// in a write protected directory.
-			// Don't return an error for batch install.
-			if (g_bBatch)
-				return TRUE;
-			return FALSE;
-		}
-	}
-	
-	gs_addmess("Font install successful\n");
-	return TRUE;
-}
 
 //////////////////////////////////////////////////////////////////////
 // Create lib/cidfmap based on installed fonts
@@ -1303,3 +1235,4 @@ GetProgramFiles(LPTSTR path)
 
 
 //////////////////////////////////////////////////////////////////////
+
