@@ -54,13 +54,18 @@ pdfdict begin
   
 		% Don't lose our place in PDFfile.
   PDFfile fileposition exch
-  dup true resolvestream
+  dup //true resolvestream
 		% The stream isn't positionable, so read all the data now.
 		% Stack: filepos fndict stream
   1 index /Range get length 2 idiv 2 index /BitsPerSample get mul
   2 index /Size get { mul } forall
-  7 add 8 idiv string
-  1 index exch readstring pop exch closefile
+  7 add 8 idiv
+  dup 65535 le {
+    string 1 index exch readstring pop
+  } {
+    1 index exch () /SubFileDecode filter /ReusableStreamDecode filter
+  } ifelse
+  exch closefile
 		% Stack: filepos fndict data
   exch dup /DataSource 4 -1 roll put
   exch PDFfile exch setfileposition
