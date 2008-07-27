@@ -338,7 +338,8 @@ zbuildfont11(i_ctx_t *i_ctx_p)
 				  (const char *)0, "%Type11BuildGlyph",
 				  bf_Encoding_optional |
 				  bf_UniqueID_ignored |
-				  bf_CharStrings_optional);
+				  bf_CharStrings_optional |
+				  (pfile != NULL ? bf_has_font_file : 0));
     if (code < 0)
 	return code;
     pfcid = (gs_font_cid2 *)pfont;

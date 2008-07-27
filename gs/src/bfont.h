@@ -42,7 +42,8 @@ typedef enum {
     bf_Encoding_optional = 1,	/* build_gs_font */
     bf_UniqueID_ignored = 4,	/* build_gs_simple_font */
     bf_CharStrings_optional = 8,	/* build_gs_primitive_font */
-    bf_notdef_required = 16	/* build_gs_primitive_font */
+    bf_notdef_required = 16,	/* build_gs_primitive_font */
+    bf_has_font_file = 32   /* build_gs_TrueType_font ( only for gs_type42_font_init) */
 } build_font_options_t;
 
 /* In zbfont.c */
