@@ -614,6 +614,8 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	    else
 		(*dev_proc(pdev, get_clipping_box)) (pdev, &clip_box);
 	    rect_intersect(clip_box, shading_rect);
+	    if (clip_box.p.x > clip_box.q.x || clip_box.p.y > clip_box.q.y)
+		return 0; /* Empty clipping, must not pass to gx_cpath_from_rectangle. */
 	    gx_cpath_init_local(&cpath_intersection, pdev->memory);
 	    code = gx_cpath_from_rectangle(&cpath_intersection, &clip_box);
 	} else if (pcpath != NULL) {
