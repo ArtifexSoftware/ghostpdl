@@ -27,6 +27,7 @@
 #include "iname.h"
 #include "istruct.h"
 #include "store.h"
+#include "zfile.h"
 
 /* ---------------- Reusable streams ---------------- */
 
@@ -273,9 +274,7 @@ make_rfs(i_ctx_t *i_ctx_p, os_ptr op, stream *fs, long offset, long length)
 	pname.iodev = iodev_default;
     /* Open the file again, to be independent of the source. */
     ialloc_set_space(idmemory, stream_space);
-    code = file_open_stream((const char *)pname.fname, pname.len, "r",
-			    fs->cbsize, &s, pname.iodev,
-			    pname.iodev->procs.fopen, imemory);
+    code = zopen_file(i_ctx_p, &pname, "r", &s, imemory);
     ialloc_set_space(idmemory, save_space);
     if (code < 0)
 	return code;

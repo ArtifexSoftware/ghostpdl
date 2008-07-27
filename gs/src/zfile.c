@@ -42,6 +42,7 @@
 #include "files.h"
 #include "main.h"		/* for gs_lib_paths */
 #include "store.h"
+#include "zfile.h"
 
 /* Import the IODevice table. */
 extern_gx_io_device_table();
@@ -59,9 +60,6 @@ static int parse_file_access_string(const ref *op, char file_access[4]);
 /* Forward references: other. */
 static int execfile_finish(i_ctx_t *);
 static int execfile_cleanup(i_ctx_t *);
-static int zopen_file(i_ctx_t *, const gs_parsed_file_name_t *pfn,
-		       const char *file_access, stream **ps,
-		       gs_memory_t *mem);
 static iodev_proc_open_file(iodev_os_open_file);
 stream_proc_report_error(filter_report_error);
 
@@ -831,7 +829,7 @@ parse_file_access_string(const ref *op, char file_access[4])
  * Open a file specified by a parsed file name (which may be only a
  * device).
  */
-static int
+int
 zopen_file(i_ctx_t *i_ctx_p, const gs_parsed_file_name_t *pfn,
 	   const char *file_access, stream **ps, gs_memory_t *mem)
 {

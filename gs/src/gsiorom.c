@@ -144,7 +144,7 @@ s_block_read_seek(register stream * s, long pos)
 	stream_cursor_write pw;
 
 	/* buffer stays aligned to blocks */
-	offset = pos % ROMFS_BLOCKSIZE;
+	offset = (s->file_offset + pos) % ROMFS_BLOCKSIZE;
 	s->position = pos - offset;
 	pw.ptr = s->cbuf - 1;
 	pw.limit = pw.ptr + s->cbsize;
@@ -182,7 +182,7 @@ s_block_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     int compression = ((get_u32_big_endian(node) & 0x80000000) != 0) ? 1 : 0;
     uint32_t filelen = get_u32_big_endian(node) & 0x7fffffff;	/* ignore compression bit */
     uint32_t blocks = (filelen+ROMFS_BLOCKSIZE-1)/ ROMFS_BLOCKSIZE;
-    int iblock = (s->position + pw->ptr + 1 - s->cbuf) / ROMFS_BLOCKSIZE;
+    int iblock = (s->position + s->file_offset + pw->ptr + 1 - s->cbuf) / ROMFS_BLOCKSIZE;
     unsigned long block_length = get_u32_big_endian(node+1+(2*iblock));
     unsigned const long block_offset = get_u32_big_endian(node+2+(2*iblock));
     unsigned const char *block_data = ((unsigned char *)node) + block_offset;

@@ -255,6 +255,7 @@ ifilter_h=$(PSSRC)ifilter.h $(istream_h) $(ivmspace_h)
 igstate_h=$(PSSRC)igstate.h $(gsstate_h) $(gxstate_h) $(imemory_h) $(istruct_h) $(gxcindex_h)
 iscan_h=$(PSSRC)iscan.h $(sa85x_h) $(sstring_h)
 sbhc_h=$(PSSRC)sbhc.h $(shc_h)
+zfile_h=$(PSSRC)zfile.h
 # Include files for optional features
 ibnum_h=$(PSSRC)ibnum.h
 
@@ -321,7 +322,8 @@ $(PSOBJ)zfile.$(OBJ) : $(PSSRC)zfile.c $(OP)\
  $(gscdefs_h) $(gsfname_h) $(gsstruct_h) $(gsutil_h) $(gxalloc_h) $(gxiodev_h)\
  $(dstack_h) $(estack_h) $(files_h)\
  $(ialloc_h) $(idict_h) $(ilevel_h) $(iname_h) $(iutil_h)\
- $(isave_h) $(main_h) $(sfilter_h) $(stream_h) $(strimpl_h) $(store_h)
+ $(isave_h) $(main_h) $(sfilter_h) $(stream_h) $(strimpl_h) $(store_h)\
+ $(zfile_h)
 	$(PSCC) $(PSO_)zfile.$(OBJ) $(C_) $(PSSRC)zfile.c
 
 $(PSOBJ)zfile1.$(OBJ) : $(PSSRC)zfile1.c $(OP) $(memory__h) $(string__h)\
@@ -1060,7 +1062,8 @@ $(PSD)zfrsd.dev : $(INT_MAK) $(ECHOGS_XE) $(zfrsd_)
 $(PSOBJ)zfrsd.$(OBJ) : $(PSSRC)zfrsd.c $(OP) $(memory__h)\
  $(gsfname_h) $(gxiodev_h)\
  $(sfilter_h) $(stream_h) $(strimpl_h)\
- $(files_h) $(idict_h) $(idparam_h) $(iname_h) $(istruct_h) $(store_h)
+ $(files_h) $(idict_h) $(idparam_h) $(iname_h) $(istruct_h) $(store_h)\
+ $(zfile_h)
 	$(PSCC) $(PSO_)zfrsd.$(OBJ) $(C_) $(PSSRC)zfrsd.c
 
 # ======================== PostScript Level 2 ======================== #
