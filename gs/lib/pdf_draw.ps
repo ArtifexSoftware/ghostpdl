@@ -1119,10 +1119,37 @@ end
     doimage
   } ifelse
 } bdef
+
+/is_big_mask {  % <mask> is_big_mask <bool>
+  1 0 dtransform dup mul exch dup mul sqrt add
+  0 1 dtransform dup mul exch dup mul sqrt add mul
+  currentdevice getdeviceprops .dicttomark /BufferSpace .knownget not {
+    4000000 % hack: Can't get the real default value from C source.
+  } if
+  2 % arbitrary
+  div gt
+} bind def
+
 /doimage {	% <imagemask> doimage -
 		% imagedict is currentdict, gets popped from dstack
   DataSource exch
-  PDFusingtransparency {
+
+  PDFusingtransparency
+  currentdevice .devicename /pdfwrite ne { 
+    % This is a temporary workaround for the bug 689080,
+    % which is done under a rush of 8.63 release.
+    % The purpose is to disable a conversion of an image with soft mask
+    % into a Type 103 image, which currently allocates a full mask buffer
+    % before writing clist. Note that imagemask installs
+    % the transparency mask anyway (likely another bug), 
+    % so the image is still masked.
+    % With this workaround the Matte color is not working (ignored).
+    is_big_mask not 
+  } {
+    true % pdfwrite doesn't need the workaround explained above,
+         % and cannot work with it. 
+  } ifelse 
+  and {
     currentdict /SMask knownoget
   } {
     false
