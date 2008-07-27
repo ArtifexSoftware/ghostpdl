@@ -173,8 +173,10 @@ cmd_write_trapezoid_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	       + cmd_sizew(left->end.x) + cmd_sizew(left->end.y)
 	       + cmd_sizew(right->start.x) + cmd_sizew(right->start.y)
 	       + cmd_sizew(right->end.x) + cmd_sizew(right->end.y)
-	       + cmd_sizew(ybot) + cmd_sizew(ytop) + cmd_sizew(options);
+	       + cmd_sizew(options);
 
+    if (!(options & 4))
+	rcsize += cmd_sizew(ybot) + cmd_sizew(ytop);
     if (options & 2) {
 	rcsize += cmd_sizew(fa->clip->p.x) + cmd_sizew(fa->clip->p.y) 
 		+ cmd_sizew(fa->clip->q.x) + cmd_sizew(fa->clip->q.y);
@@ -208,9 +210,11 @@ cmd_write_trapezoid_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     cmd_putw(right->start.y, dp);
     cmd_putw(right->end.x, dp);
     cmd_putw(right->end.y, dp);
-    cmd_putw(ybot, dp);
-    cmd_putw(ytop, dp);
     cmd_putw(options, dp);
+    if (!(options & 4)) {
+	cmd_putw(ybot, dp);
+	cmd_putw(ytop, dp);
+    }
     if_debug6('L', "    t%d:%ld,%ld,%ld,%ld   %ld\n",
 	      rcsize - 1, left->start.x, left->start.y, left->end.x, left->end.y, ybot);
     if_debug6('L', "    t%ld,%ld,%ld,%ld   %ld   o=%d\n",
@@ -405,7 +409,7 @@ clist_fill_linear_color_triangle(gx_device * dev, const gs_fill_attributes *fa,
     right.end.x = right.end.y = 0; /* unused. */
 
     code = clist_write_fill_trapezoid(dev, &left, &right,
-	fa->ystart, fa->yend, fa->swap_axes | 2 | 4, NULL, fa->lop, fa, c0, c1, c2, NULL);
+	0, 0, fa->swap_axes | 2 | 4, NULL, fa->lop, fa, c0, c1, c2, NULL);
     if (code < 0)
 	return code;
     /* NOTE : The return value 0 for the fill_linear_color_triangle method means

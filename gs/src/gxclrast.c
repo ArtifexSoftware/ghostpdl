@@ -1809,9 +1809,11 @@ idata:			data_size = 0;
 				cmd_getw(right.start.y, cbp);
 				cmd_getw(right.end.x, cbp);
 				cmd_getw(right.end.y, cbp);
-				cmd_getw(ybot, cbp);
-				cmd_getw(ytop, cbp);
 				cmd_getw(options, cbp);
+				if (!(options & 4)) {
+				    cmd_getw(ybot, cbp);
+				    cmd_getw(ytop, cbp);
+				}
 				swap_axes = options & 1;
 				wh = swap_axes ? tdev->width : tdev->height;
 				x0f = int2fixed(swap_axes ? y0 : x0);
