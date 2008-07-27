@@ -226,8 +226,12 @@ ZIPPROGFILE3=gs$(GS_DOT_VERSION)\bin\gswin32.exe
 ZIPPROGFILE4=gs$(GS_DOT_VERSION)\bin\gswin32c.exe
 ZIPPROGFILE5=gs$(GS_DOT_VERSION)\doc
 ZIPPROGFILE6=gs$(GS_DOT_VERSION)\examples
+!if $(COMPILE_INITS)
+ZIPPROGFILE7=gs$(GS_DOT_VERSION)\lib -x gs$(GS_DOT_VERSION)\lib\gs_*.ps -x $(GS_DOT_VERSION)\lib\pdf_*.ps 
+!else
 ZIPPROGFILE7=gs$(GS_DOT_VERSION)\lib
 ZIPPROGFILE8=gs$(GS_DOT_VERSION)\Resource
+!endif
 
 # Make the zip archive.
 FILELIST_TXT=filelist.txt
@@ -248,7 +252,10 @@ zip: $(SETUP_XE) $(UNINSTALL_XE)
 	echo $(ZIPPROGFILE5) >> $(ZIPTEMPFILE)
 	echo $(ZIPPROGFILE6) >> $(ZIPTEMPFILE)
 	echo $(ZIPPROGFILE7) >> $(ZIPTEMPFILE)
+!if $(COMPILE_INITS)
+!else
 	echo $(ZIPPROGFILE8) >> $(ZIPTEMPFILE)
+!endif
 	make_filelist.exe -title "GPL Ghostscript $(GS_DOT_VERSION)" -dir "gs$(GS_DOT_VERSION)" -list "$(FILELIST_TXT)" @$(ZIPTEMPFILE)
 	-del $(ZIPTARGET).zip
 	$(ZIP_XE) -9 $(ZIPTARGET).zip $(SETUP_XE_NAME) $(UNINSTALL_XE_NAME) $(FILELIST_TXT)
@@ -259,7 +266,10 @@ zip: $(SETUP_XE) $(UNINSTALL_XE)
 	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE5)
 	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE6)
 	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE7)
+!if $(COMPILE_INITS)
+!else
 	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE8)
+!endif
 	-del $(ZIPTEMPFILE)
 	-del make_filelist.exe
 	-del $(SETUP_XE_NAME)
