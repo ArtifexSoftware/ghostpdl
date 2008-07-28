@@ -479,14 +479,14 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
 	if (code < 0 && SET_BAND_CODE(code))
 	    goto error_in_rect;
 	if (!cls_has_tile_id(cdev, re.pcls, tile->id, offset_temp)) {
-	    code = 0;
 	    if (tile->id != gx_no_bitmap_id) {
 		do {
 		    code = clist_change_tile(cdev, re.pcls, tile, depth);
 		} while (RECT_RECOVER(code));
 		if (code < 0 && !(code != gs_error_VMerror || !cdev->error_is_retryable) && SET_BAND_CODE(code))
 		    goto error_in_rect;
-	    }
+	    } else
+		code = -1; /* Force the default implementation. Should never happen. */
 	    if (code < 0) {
 		/* ok if gx_default... does retries internally: */
 		/* it's self-sufficient */
