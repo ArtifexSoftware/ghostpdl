@@ -405,7 +405,7 @@ zdcvs(i_ctx_t *i_ctx_p)
 	return code;
     check_write_type(*op, t_string);
     sprintf(str, "%f", 1.5);
-    dot = buf[1]; /* locale-dependent */
+    dot = str[1]; /* locale-dependent */
     /*
      * To get fully accurate output results for IEEE double-
      * precision floats (53 bits of mantissa), the ANSI
