@@ -282,7 +282,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 	mem_space = buf_space.bits + buf_space.line_ptrs;
 	if (ppdev->page_uses_transparency) {
 	    pdf14_trans_buffer_size = (ESTIMATED_PDF14_ROW_SPACE(max(1, new_width)) >> 3);
-	    if (new_height < max_ulong/(mem_space + (new_height * pdf14_trans_buffer_size))) {
+	    if (new_height < (max_ulong - mem_space) / pdf14_trans_buffer_size) {
 		pdf14_trans_buffer_size *= new_height;
 		mem_space += pdf14_trans_buffer_size;
 	    } else {
