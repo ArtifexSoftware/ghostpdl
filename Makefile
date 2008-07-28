@@ -27,7 +27,7 @@ fonts:
 	touch fonts
 
 pcl-profile:
-	$(MAKE) -C main -f pcl6_gcc.mak pdl-pg
+	$(MAKE) -C main -f pcl6_gcc.mak GENDIR="./pgobj" pdl-pg
 
 pcl-install:
 	install main/obj/pcl6 /usr/local/bin
@@ -73,7 +73,7 @@ ufst:
 ####  LANGUAGE SWITCHING PRODUCT RULES ####
 
 ls-profile:
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-pg
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak GENDIR="./pgobj" pdl-pg
 
 ls-product:
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-product # build PS/PCL/XL. 
