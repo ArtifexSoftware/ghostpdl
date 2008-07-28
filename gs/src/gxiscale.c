@@ -378,7 +378,8 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                   }
 
                   gs_cspace_indexed_lookup_bytes(pcs, decode_value,psrc);	
-	          pdata ++;  
+	          pdata += dpd;    /* Can't have just ++ 
+                                   since we could be going backwards */
 
                  }
 
