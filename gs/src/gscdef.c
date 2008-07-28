@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -43,7 +43,7 @@ const char *const gs_productfamily = GS_PRODUCTFAMILY;
 
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
-	GS_PRODUCTFAMILY " SVN PRE-RELEASE"
+	GS_PRODUCTFAMILY " RELEASE CANDIDATE"
 #endif
 const char *const gs_product = GS_PRODUCT;
 
