@@ -197,9 +197,14 @@ currentdict /runpdfstring .undef
    2 vmreclaim		% couldn't hurt
 } bind def
 
-% - pdf_collection_files [temp_files] show_container
+
+% Copy default subfile to a temporary file and return the file name
+% as a PostScript name to protect it from restore. Return null if
+% there's no default subfile.
+%
+% - pdf_collection_files /temp_file_name | null
 /pdf_collection_files {
-  {} //true
+  //null
   Trailer /Root oget /Collection knownoget {
     /D knownoget { % We have default document in the collection
       Trailer /Root oget /Names knownoget {
@@ -207,22 +212,19 @@ currentdict /runpdfstring .undef
           exch nameoget dup //null ne {
             /EF knownoget {
               /F knownoget {
-                //true resolvestream    % {} true strm
-                //null (w) /.tempfile   % {} true strm (name) null (w) /.tempfile
-                .systemvar exec         % {} true strm (name) file
-                3 -1 roll               % {} true (name) file strm
-                32768 string            % {} true (name) file strm (buf)
-                { 3 copy readstring     % {} true (name) file strm (buf) file (data) bool
-                  3 1 roll              % {} true (name) file strm (buf) bool file (data)
-                  writestring           % {} true (name) file strm (buf) bool
+                //true resolvestream    % null strm
+                //null (w) /.tempfile   % null strm (name) null (w) /.tempfile
+                .systemvar exec         % null strm (name) file
+                3 -1 roll               % null (name) file strm
+                32768 string            % null (name) file strm (buf)
+                { 3 copy readstring     % null (name) file strm (buf) file (data) bool
+                  3 1 roll              % null (name) file strm (buf) bool file (data)
+                  writestring           % null (name) file strm (buf) bool
                   not { exit } if
                 } loop                  
-                pop closefile           % {} true (name) file
-                closefile               % {} true (name)
-                3 1 roll pop pop        % (name)
-                .currentglobal //true .setglobal
-                exch dup length string copy 1 array astore
-                exch .setglobal //false
+                pop closefile           % null (name) file
+                closefile               % null (name)
+                exch pop cvn            % /name
               } if
             } if
           } {
@@ -240,21 +242,24 @@ currentdict /runpdfstring .undef
 
 /runpdf {		% <file> runpdf -
   //runpdfbegin exec
-  //pdf_collection_files exec {
+  //pdf_collection_files exec
+  dup type /nametype ne {
     copy_trailer_attrs
     //runpdfpagerange exec
     //dopdfpages exec
   } if
   //runpdfend exec
-  {
-    dup (r) file
+  dup type /nametype eq {
+    .namestring dup (r) file
     //runpdfbegin exec
     copy_trailer_attrs
     //runpdfpagerange exec
     //dopdfpages exec
     //runpdfend exec
     deletefile
-  } forall
+  } {
+    pop
+  } ifelse
 } bind def
 
 currentdict /runpdfpagerange .undef
