@@ -8,1591 +8,2671 @@
 </head>
 <body>
 
-<p><strong><a name="2008-02-29T235931.476236Z"></a>
-2008-02-29T23:59:31.476236Z Ray Johnston</strong></p>
+<p><strong><a name="2008-07-28T194125.163173Z"></a>
+2008-07-28T19:41:25.163173Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Fix typo that caused unbalanced 'q' 'Q' operators in PDF's (caused by
-rev 8501). Bug 689728.
+Fix a syntax error from r8548.
 
+This wasn't noticed because double.dev isn't part of the default build.
 </pre>
-<p>[src/gdevpdfi.c]</p>
+<p>[src/zdouble.c]</p>
 </blockquote>
 
-<p><strong><a name="2008-02-29T222759.143965Z"></a>
-2008-02-29T22:27:59.143965Z Ralph Giles</strong></p>
+<p><strong><a name="2008-07-28T185841.634974Z"></a>
+2008-07-28T18:58:41.634974Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Release notes for the 8.62 release. Thanks to Ray Johnston for compiling these.
+Update release date and product name for 8.63rc1.
+</pre>
+<p>[doc/History7.htm doc/Projects.htm doc/History8.htm man/dvipdf.1 man/ps2ascii.1 doc/Use.htm doc/Readme.htm doc/Source.htm doc/Deprecated.htm man/ps2epsi.1 doc/Install.htm src/gscdef.c doc/API.htm doc/Issues.htm doc/DLL.htm doc/Drivers.htm man/pfbtopfa.1 doc/Release.htm doc/Commprod.htm doc/Xfonts.htm doc/Devices.htm doc/Language.htm man/gs.1 src/version.mak man/pf2afm.1 doc/Ps2ps2.htm doc/Fonts.htm man/printafm.1 doc/Ps2pdf.htm doc/Develop.htm doc/Helpers.htm man/pdf2dsc.1 doc/Psfiles.htm doc/Lib.htm doc/gs-vms.hlp doc/Htmstyle.htm man/font2c.1 man/gsnd.1 man/pdfopt.1 man/pdf2ps.1 man/ps2pdf.1 doc/Make.htm doc/Details8.htm doc/Unix-lpr.htm doc/C-style.htm doc/Ps-style.htm doc/History1.htm doc/History2.htm man/gslp.1 man/wftopfa.1 doc/History3.htm man/ps2ps.1 doc/Ps2epsi.htm doc/History4.htm man/ps2pdfwr.1 doc/History5.htm doc/History6.htm]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-28T185501.811159Z"></a>
+2008-07-28T18:55:01.811159Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update news for 8.63rc1.
 </pre>
 <p>[doc/News.htm]</p>
 </blockquote>
 
-<p><strong><a name="2008-02-29T204904.253927Z"></a>
-2008-02-29T20:49:04.253927Z Ralph Giles</strong></p>
+<p><strong><a name="2008-07-28T120151.595271Z"></a>
+2008-07-28T12:01:51.595271Z Alex Cherepanov</strong> (<a href="Details.htm#2008-07-28T120151.595271Z">details</a>)</p>
 <blockquote>
 <pre>
-Remove some C++ style comments.
-</pre>
-<p>[src/siscale.c src/gdevijs.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-29T204902.503198Z"></a>
-2008-02-29T20:49:02.503198Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Add some new files to the documentation tree.
-</pre>
-<p>[doc/Develop.htm]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-29T204752.884152Z"></a>
-2008-02-29T20:47:52.884152Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Update product name, copyright and release dates.
-</pre>
-<p>[doc/History7.htm doc/Projects.htm doc/History8.htm man/dvipdf.1 man/ps2ascii.1 doc/Use.htm doc/Readme.htm doc/Deprecated.htm doc/Source.htm man/ps2epsi.1 doc/Install.htm src/gscdef.c doc/API.htm doc/Issues.htm doc/DLL.htm doc/Drivers.htm man/pfbtopfa.1 doc/Release.htm doc/Commprod.htm doc/Xfonts.htm doc/Devices.htm doc/Language.htm src/version.mak man/gs.1 src/dwsetup.rc man/pf2afm.1 doc/Fonts.htm doc/Ps2ps2.htm man/printafm.1 doc/Develop.htm doc/Ps2pdf.htm doc/Helpers.htm man/pdf2dsc.1 doc/Psfiles.htm doc/Lib.htm doc/gs-vms.hlp doc/Htmstyle.htm man/font2c.1 man/gsnd.1 man/pdfopt.1 src/winint.mak doc/News.htm man/pdf2ps.1 man/ps2pdf.1 doc/Make.htm doc/Details8.htm doc/Testing.htm doc/Unix-lpr.htm doc/Ps-style.htm doc/C-style.htm doc/History1.htm doc/History2.htm man/gslp.1 doc/History3.htm man/wftopfa.1 doc/Ps2epsi.htm doc/History4.htm man/ps2pdfwr.1 man/ps2ps.1 doc/History5.htm doc/History6.htm]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-29T185314.162723Z"></a>
-2008-02-29T18:53:14.162723Z Ray Johnston</strong></p>
-<blockquote>
-<pre>
-Add default FontResourceDir needed when COMPILE_INITS=1 is used so
-that the fonts from Resource/Font in the distribution directory that
-are built into %rom%Resource/Font/ will be found.
-</pre>
-<p>[src/iccinit1.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-29T081308.227205Z"></a>
-2008-02-29T08:13:08.227205Z Ray Johnston</strong> (<a href="Details.htm#2008-02-29T081308.227205Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix COMPILE_INITS=1. Note the next commit to the PCL tree will combine
-with this one, but we can't commit to both trees atomically.
+Fix extraction of the default subfile from PDF file collection on save
+level 0. Export the file name as a PS name from PDF interpreter instance
+to protect the name from restore. Bug 689981.
 
 </pre>
-<p>[src/openvms.mak src/psromfs.mak src/macosx.mak src/int.mak src/watcw32.mak src/dvx-gcc.mak src/unixansi.mak src/msvclib.mak src/unixlink.mak src/os2.mak src/lib.mak src/bcwin32.mak src/ugcclib.mak src/gsromfs0.c src/Makefile.in src/msvc32.mak src/unix-gcc.mak src/unix-aux.mak src/macos-mcp.mak src/watclib.mak]</p>
+<p>[lib/pdf_main.ps]</p>
 </blockquote>
 
-<p><strong><a name="2008-02-28T145632.629339Z"></a>
-2008-02-28T14:56:32.629339Z Alex Cherepanov</strong> (<a href="Details.htm#2008-02-28T145632.629339Z">details</a>)</p>
+<p><strong><a name="2008-07-28T101053.373341Z"></a>
+2008-07-28T10:10:53.373341Z Igor Melichev</strong> (<a href="Details.htm#2008-07-28T101053.373341Z">details</a>)</p>
 <blockquote>
 <pre>
-Attempt to repair invalid embedded TT fonts without cmap table.
-Bug 689707, customer 531.
+Fix (clist writer) : Improve the logic about zero tile id.
 
 </pre>
-<p>[lib/gs_ttf.ps]</p>
+<p>[src/gxclrect.c]</p>
 </blockquote>
 
-<p><strong><a name="2008-02-27T193618.181168Z"></a>
-2008-02-27T19:36:18.181168Z Igor Melichev</strong> (<a href="Details.htm#2008-02-27T193618.181168Z">details</a>)</p>
+<p><strong><a name="2008-07-28T075242.264750Z"></a>
+2008-07-28T07:52:42.264750Z Igor Melichev</strong> (<a href="Details.htm#2008-07-28T075242.264750Z">details</a>)</p>
 <blockquote>
 <pre>
-Fix (clist interpreter) : Improve transparency performance, step 4a.
+Fix (printer) : A check for buffer space overflow was dramatically overestimated.
 
 </pre>
-<p>[lib/pdf_draw.ps lib/pdf_ops.ps]</p>
+<p>[src/gdevprn.c]</p>
 </blockquote>
 
-<p><strong><a name="2008-02-27T192257.279403Z"></a>
-2008-02-27T19:22:57.279403Z Igor Melichev</strong> (<a href="Details.htm#2008-02-27T192257.279403Z">details</a>)</p>
+<p><strong><a name="2008-07-27T210638.633515Z"></a>
+2008-07-27T21:06:38.633515Z Igor Melichev</strong> (<a href="Details.htm#2008-07-27T210638.633515Z">details</a>)</p>
 <blockquote>
 <pre>
-Fix (clist interpreter) : Improve transparency performance, step 4.
+Fix (shading) : Empty clipping was entirely lost.
 
 </pre>
-<p>[src/gstrans.c src/ztrans.c src/gdevpdft.c src/gstrans.h src/gdevp14.c]</p>
+<p>[src/gxfill.c]</p>
 </blockquote>
 
-<p><strong><a name="2008-02-27T183931.036262Z"></a>
-2008-02-27T18:39:31.036262Z Igor Melichev</strong> (<a href="Details.htm#2008-02-27T183931.036262Z">details</a>)</p>
+<p><strong><a name="2008-07-27T191002.737363Z"></a>
+2008-07-27T19:10:02.737363Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Fix (clist interpreter) : Improve transparency performance, step 3.
+Metadata updates for the new zfile header.
+</pre>
+<p>[src/zfile.h doc/Develop.htm]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-27T160730.174721Z"></a>
+2008-07-27T16:07:30.174721Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Remove (complete) duplication of the contents. Cosmetic change only.
+</pre>
+<p>[src/zfile.h]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-27T160128.177923Z"></a>
+2008-07-27T16:01:28.177923Z Igor Melichev</strong> (<a href="Details.htm#2008-07-27T160128.177923Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (clist) : Skip writing unuseful data with linear color triangle.
 
 </pre>
-<p>[src/gxistate.h]</p>
+<p>[src/gxclrast.c src/gxclrect.c]</p>
 </blockquote>
 
-<p><strong><a name="2008-02-27T004737.036819Z"></a>
-2008-02-27T00:47:37.036819Z Marcos Woehrmann</strong> (<a href="Details.htm#2008-02-27T004737.036819Z">details</a>)</p>
+<p><strong><a name="2008-07-27T093842.451745Z"></a>
+2008-07-27T09:38:42.451745Z Igor Melichev</strong> (<a href="Details.htm#2008-07-27T093842.451745Z">details</a>)</p>
 <blockquote>
 <pre>
-Added setting of fill_rule in pclxl_endpath().
+Fix (True Type font loader) : Can't work around unsorted 'loca' when 'loca' is not loaded.
 
 </pre>
-<p>[src/gdevpx.c]</p>
+<p>[src/bfont.h src/zfcid1.c src/gstype42.c src/zfont42.c]</p>
 </blockquote>
 
-<p><strong><a name="2008-02-27T000822.308407Z"></a>
-2008-02-27T00:08:22.308407Z Igor Melichev</strong> (<a href="Details.htm#2008-02-27T000822.308407Z">details</a>)</p>
+<p><strong><a name="2008-07-27T092937.311275Z"></a>
+2008-07-27T09:29:37.311275Z Igor Melichev</strong> (<a href="Details.htm#2008-07-27T092937.311275Z">details</a>)</p>
 <blockquote>
 <pre>
-Fix (clist interpreter) : Improve transparency performance, step 2.
-
-</pre>
-<p>[src/lib.mak src/gxistate.h src/gsistate.c src/gdevpdfg.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-26T231440.608304Z"></a>
-2008-02-26T23:14:40.608304Z Igor Melichev</strong> (<a href="Details.htm#2008-02-26T231440.608304Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (clist interpreter) : Improve transparency performance, step 1.
-
-</pre>
-<p>[src/gstrans.c src/gstrans.h]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-26T071249.848447Z"></a>
-2008-02-26T07:12:49.848447Z Alex Cherepanov</strong> (<a href="Details.htm#2008-02-26T071249.848447Z">details</a>)</p>
-<blockquote>
-<pre>
-Change the decimal separator in generated strings to '.' effectively selecting
-a C numeric locale without calling any locale functions. Bug 689624.
-
-</pre>
-<p>[src/spprint.c src/zdouble.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-25T161043.614503Z"></a>
-2008-02-25T16:10:43.614503Z Alex Cherepanov</strong></p>
-<blockquote>
-<pre>
-Remove a space betveen -f and a file name to prevent parsing of the file name
-that starts with '-' as an options. Bug 689682.
-
-</pre>
-<p>[lib/ps2pdfxx.bat]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-25T054845.219666Z"></a>
-2008-02-25T05:48:45.219666Z Alex Cherepanov</strong></p>
-<blockquote>
-<pre>
-Add a check for null value. Since rev. 6956 following Adobe implementation
-Ghostscript doesn't accept null as a key in dictionary look-up. Bug 689696.
-
-</pre>
-<p>[lib/pdf2dsc.ps]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-25T042047.177440Z"></a>
-2008-02-25T04:20:47.177440Z Alex Cherepanov</strong></p>
-<blockquote>
-<pre>
-When the values of the color key mask exceed the valid range clip them to the
-nearest valid values and continue. Don't discard the mask as we did before.
-Bug 689717, customer 580.
+Fix (PDF interpreter) : A temporary work around huge images with a soft mask.
 
 </pre>
 <p>[lib/pdf_draw.ps]</p>
 </blockquote>
 
-<p><strong><a name="2008-02-24T092154.361457Z"></a>
-2008-02-24T09:21:54.361457Z Igor Melichev</strong> (<a href="Details.htm#2008-02-24T092154.361457Z">details</a>)</p>
+<p><strong><a name="2008-07-27T070342.852634Z"></a>
+2008-07-27T07:03:42.852634Z Russell Lang</strong></p>
 <blockquote>
 <pre>
-Fix (images) : Improve coordinate precision when scaling an image (continued 8).
-
+When building the Windows installer with COMPILE_INITS=1, 
+do not include the Resource and lib initialization files as
+separate files in the installer zip archive.
 </pre>
-<p>[src/siscale.c]</p>
+<p>[src/winint.mak]</p>
 </blockquote>
 
-<p><strong><a name="2008-02-24T033703.979896Z"></a>
-2008-02-24T03:37:03.979896Z Igor Melichev</strong> (<a href="Details.htm#2008-02-24T033703.979896Z">details</a>)</p>
+<p><strong><a name="2008-07-27T025211.521293Z"></a>
+2008-07-27T02:52:11.521293Z Alex Cherepanov</strong> (<a href="Details.htm#2008-07-27T025211.521293Z">details</a>)</p>
 <blockquote>
 <pre>
-Fix (images) : Improve coordinate precision when scaling an image (continued 7).
+Fix direct access to a subfile in the %rom% file system by reusable
+stream. Bug 689976, customers 661, 580.
 
 </pre>
+<p>[src/zfile.h src/gsiorom.c src/int.mak src/zfrsd.c src/zfile.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-25T225114.900519Z"></a>
+2008-07-25T22:51:14.900519Z Russell Lang</strong></p>
+<blockquote>
+<pre>
+Change Windows installer to remove "GPL Ghostscript Fonts" target.
+Ghostscript now includes fonts in the Resource directory, 
+and no longer needs the fonts previously installed in 
+"C:\Program Files\gs\fonts".
+</pre>
+<p>[src/dwsetup.rc src/winint.mak src/dwsetup.h src/dwsetup.cpp]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-25T011039.451286Z"></a>
+2008-07-25T01:10:39.451286Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Use reusable stream when the data stream of type 0 function doesn't fit into
+a string. Bug 689978, customer 770.
+
+</pre>
+<p>[lib/pdf_draw.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-24T172851.809318Z"></a>
+2008-07-24T17:28:51.809318Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Fix source style warnings from the nightly regression.
+</pre>
+<p>[src/aes.h doc/Develop.htm toolbin/clusterpush.sh]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-24T020607.385871Z"></a>
+2008-07-24T02:06:07.385871Z Michael Vrhel</strong></p>
+<blockquote>
+<pre>
+Clean up of // comment in code and debug ifdef that should have been removed for r8868</pre>
 <p>[src/gxiscale.c]</p>
 </blockquote>
 
-<p><strong><a name="2008-02-24T025834.824461Z"></a>
-2008-02-24T02:58:34.824461Z Alex Cherepanov</strong> (<a href="Details.htm#2008-02-24T025834.824461Z">details</a>)</p>
+<p><strong><a name="2008-07-24T004206.095459Z"></a>
+2008-07-24T00:42:06.095459Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Fix link errors in the file descriptor-based implementation of file streams.
-Move function used by both fd and stdio implementations to a separate file
-and compile it in both versions. Bug 688918.
-
+Change the XYSSL AES implementation to better match our conventions.
 </pre>
-<p>[src/lib.mak src/sfxstdio.c src/sfxcommon.c]</p>
+<p>[src/aes.h src/aes.c]</p>
 </blockquote>
 
-<p><strong><a name="2008-02-24T011218.214936Z"></a>
-2008-02-24T01:12:18.214936Z Alex Cherepanov</strong></p>
+<p><strong><a name="2008-07-24T004204.729720Z"></a>
+2008-07-24T00:42:04.729720Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Add definitions of some C99 types missing from old versions of Cygwin.
+Change the XYSSL AES implementation to build in isolation.
 </pre>
-<p>[src/stdint_.h]</p>
+<p>[src/aes.c]</p>
 </blockquote>
 
-<p><strong><a name="2008-02-23T222601.799844Z"></a>
-2008-02-23T22:26:01.799844Z Ray Johnston</strong></p>
+<p><strong><a name="2008-07-24T004202.863201Z"></a>
+2008-07-24T00:42:02.863201Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Fix typo that caused Cygwin build to fail if 'fontconfig' package was present.
+Replace Brian Gladman's AES implementation with a no-advertising BSD
+version from XYSSL 0.9. Used with permission of Christophe Devine.
 </pre>
-<p>[src/configure.ac]</p>
+<p>[src/aes.h src/aes.c]</p>
 </blockquote>
 
-<p><strong><a name="2008-02-22T201808.422807Z"></a>
-2008-02-22T20:18:08.422807Z Igor Melichev</strong> (<a href="Details.htm#2008-02-22T201808.422807Z">details</a>)</p>
+<p><strong><a name="2008-07-24T004201.337493Z"></a>
+2008-07-24T00:42:01.337493Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Fix (images) : Improve coordinate precision when scaling an image (continued 6).
-
+Fix some compile problems in Brian Gladman's AES implementation
+and disable 'on the fly keying' routines we don't need.
 </pre>
-<p>[src/gsimage.c src/lib.mak src/gxiscale.c src/siscale.c src/gdevm24.c]</p>
+<p>[src/aes.h src/aes.c]</p>
 </blockquote>
 
-<p><strong><a name="2008-02-22T102949.290734Z"></a>
-2008-02-22T10:29:49.290734Z Igor Melichev</strong> (<a href="Details.htm#2008-02-22T102949.290734Z">details</a>)</p>
+<p><strong><a name="2008-07-23T232939.935990Z"></a>
+2008-07-23T23:29:39.935990Z Michael Vrhel</strong> (<a href="Details.htm#2008-07-23T232939.935990Z">details</a>)</p>
 <blockquote>
 <pre>
-Fix (FAPI) : Embedded fonts didn't work (continued).
+Fix for Bug 689246.  When performing interpolation, the interpolation is now performed in the source colorspace as opposed to the device space.  Custom color callback is no longer bypassed by direct concretization as it was previously.
 
 </pre>
-<p>[src/zfapi.c]</p>
+<p>[src/lib.mak src/gxiscale.c src/gxcolor2.h src/gximage.h src/gscindex.h src/gscolor2.c]</p>
 </blockquote>
 
-<p><strong><a name="2008-02-22T100930.542153Z"></a>
-2008-02-22T10:09:30.542153Z Igor Melichev</strong> (<a href="Details.htm#2008-02-22T100930.542153Z">details</a>)</p>
+<p><strong><a name="2008-07-23T225250.086155Z"></a>
+2008-07-23T22:52:50.086155Z Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Fix (FAPI) : Embedded fonts didn't work.
-
+Fix possible use of uninitialized variable 'mem_space'. Compute the value
+when no-transparency is in effect prior to adding in the space needed for
+transparency. Thanks to Michael Vrhel for spotting this.
 </pre>
-<p>[lib/gs_typ42.ps]</p>
+<p>[src/gdevprn.c]</p>
 </blockquote>
 
-<p><strong><a name="2008-02-20T210248.212097Z"></a>
-2008-02-20T21:02:48.212097Z Igor Melichev</strong> (<a href="Details.htm#2008-02-20T210248.212097Z">details</a>)</p>
+<p><strong><a name="2008-07-23T215521.014656Z"></a>
+2008-07-23T21:55:21.014656Z Igor Melichev</strong> (<a href="Details.htm#2008-07-23T215521.014656Z">details</a>)</p>
 <blockquote>
 <pre>
-Fix (images) : Improve coordinate precision when scaling an image (continued 5).
-
-</pre>
-<p>[src/lib.mak src/gsmatrix.c src/gximono.c src/gxidata.c src/gsmatrix.h src/gdevm24.c src/gxipixel.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-18T202859.836803Z"></a>
-2008-02-18T20:28:59.836803Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Propagate the new method argument change introduced in r8528 to the wts
-device so that it compiles again.
-</pre>
-<p>[src/gdevwts.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-17T233650.588580Z"></a>
-2008-02-17T23:36:50.588580Z Igor Melichev</strong> (<a href="Details.htm#2008-02-17T233650.588580Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (images) : Improve coordinate precision when scaling an image (continued 4).
-
-</pre>
-<p>[src/gxiscale.c src/siscale.c src/gxipixel.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-17T232547.528293Z"></a>
-2008-02-17T23:25:47.528293Z Igor Melichev</strong> (<a href="Details.htm#2008-02-17T232547.528293Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (images) : Improve coordinate precision when scaling an image (continued 3).
-
-</pre>
-<p>[src/lib.mak src/gxiscale.c src/gxfixed.h src/siscale.c src/sisparam.h src/gximage.h src/gxipixel.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-17T223215.427994Z"></a>
-2008-02-17T22:32:15.427994Z Igor Melichev</strong> (<a href="Details.htm#2008-02-17T223215.427994Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (images) : Improve coordinate precision when scaling an image (continued 2).
-
-</pre>
-<p>[src/gxclist.c src/gxdevbuf.h src/gxdevmem.h src/gdevppla.c src/gdevmem.c src/gdevbmpa.c src/gdevprn.c src/gdevppla.h src/gdevm24.c src/gxclread.c src/gdevpng.c src/gdevprn.h src/gdevijs.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-17T035945.216145Z"></a>
-2008-02-17T03:59:45.216145Z Ray Johnston</strong> (<a href="Details.htm#2008-02-17T035945.216145Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix for regressions introduced with rev 8526. Some resolutions of CMYK, 1-bit
-per component devices that had CMYK colors and Gray colors had strange dithers.
-Bug 689706.
-
-</pre>
-<p>[src/gxht.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-14T083456.225081Z"></a>
-2008-02-14T08:34:56.225081Z Ray Johnston</strong> (<a href="Details.htm#2008-02-14T083456.225081Z">details</a>)</p>
-<blockquote>
-<pre>
-Improve Halftone tile cache efficiency. Make default cache large enough
-on default 32-bit (LARGE) configuration to allow for > 256 cache tiles
-when using the 'ht_ccsto.ps' 167x167 Threshold array. Change cache
-lookup logic to eliminate collisions when the number of cache slots
-exceeds the number of levels (the normal case). Remove duplicated
-ht cache default size #defines and normalize the names to end in
-_size (to imply size in bytes) and be consistent with other similar
-function/macro names.
-
-</pre>
-<p>[src/gshtscr.c src/gzht.h src/gsht.c src/gdevprna.c src/gxht.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-12T203017.540929Z"></a>
-2008-02-12T20:30:17.540929Z Igor Melichev</strong> (<a href="Details.htm#2008-02-12T203017.540929Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (images) : Improve coordinate precision when scaling an image (continued).
-
-</pre>
-<p>[src/gxdda.h src/lib.mak src/gxiscale.c src/siscale.c src/sisparam.h src/gximage.h src/gxipixel.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-12T190319.125442Z"></a>
-2008-02-12T19:03:19.125442Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Document the need to update the current documentation snapshot.
-</pre>
-<p>[doc/Release.htm]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-09T023031.322331Z"></a>
-2008-02-09T02:30:31.322331Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Clamp the number components read from the ICC DataSource array to the 
-number actually allocated to avoid buffer overflow. CESA-2008-001.
-</pre>
-<p>[src/zicc.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-09T005538.575949Z"></a>
-2008-02-09T00:55:38.575949Z Ralph Giles</strong> (<a href="Details.htm#2008-02-09T005538.575949Z">details</a>)</p>
-<blockquote>
-<pre>
-Include 12 and 16 bit image support as part of the core graphics 
-library. Bug 689688.
-
-</pre>
-<p>[src/lib.mak src/int.mak]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-07T093322.506379Z"></a>
-2008-02-07T09:33:22.506379Z Ken Sharp</strong> (<a href="Details.htm#2008-02-07T093322.506379Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (pdfwrite): problems with unusual PDF text rendering modes.
-
-</pre>
-<p>[src/gdevpdts.c src/gdevpdtt.c lib/pdf_ops.ps]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-04T221808.283584Z"></a>
-2008-02-04T22:18:08.283584Z Igor Melichev</strong> (<a href="Details.htm#2008-02-04T221808.283584Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (images) : Improve coordinate precision when scaling an image.
-
-</pre>
-<p>[src/lib.mak src/gxidata.c src/gdevddrw.c src/gdevm24.c src/gxclread.c src/gxi12bit.c src/gxipixel.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-03T175423.256452Z"></a>
-2008-02-03T17:54:23.256452Z Alex Cherepanov</strong></p>
-<blockquote>
-<pre>
-Modify pdf_info utility to match the changes in PDF interpreter interface.
-Bug 689680.
-</pre>
-<p>[toolbin/pdf_info.ps]</p>
-</blockquote>
-
-<p><strong><a name="2008-02-01T220551.322620Z"></a>
-2008-02-01T22:05:51.322620Z Igor Melichev</strong> (<a href="Details.htm#2008-02-01T220551.322620Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (graphics) : Interpolated images were shifed in a half of source pixel.
-
-</pre>
-<p>[src/siscale.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-31T222032.934182Z"></a>
-2008-01-31T22:20:32.934182Z Ray Johnston</strong> (<a href="Details.htm#2008-01-31T222032.934182Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix ColorValues parameter problem when device has total number of bits (depth)
-of more than 31 bits, resulting in a "rangecheck" (-15) error.
-
-</pre>
-<p>[src/gsdparam.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-29T170250.720617Z"></a>
-2008-01-29T17:02:50.720617Z Igor Melichev</strong> (<a href="Details.htm#2008-01-29T170250.720617Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (graphics) : Optimize filling a path with a shading color (continued 2).
-
-</pre>
-<p>[src/gsptype2.c src/gsptype2.h src/gximask.c src/gxfill.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-29T124142.337727Z"></a>
-2008-01-29T12:41:42.337727Z mpsuzuki</strong> (<a href="Details.htm#2008-01-29T124142.337727Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (TT): Ignore broken post 2.0 table generated by "Windows Type 1 Installer".
-
-</pre>
-<p>[lib/gs_ttf.ps]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-29T115450.007576Z"></a>
-2008-01-29T11:54:50.007576Z Igor Melichev</strong> (<a href="Details.htm#2008-01-29T115450.007576Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (graphics) : Optimize filling a path with a shading color (continued).
-
-</pre>
-<p>[src/gximask.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-28T230259.180158Z"></a>
-2008-01-28T23:02:59.180158Z Igor Melichev</strong> (<a href="Details.htm#2008-01-28T230259.180158Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (graphics) : Optimize filling a path with a shading color.
-
-</pre>
-<p>[src/gsptype2.c src/gsptype2.h src/gxfill.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-28T103145.187261Z"></a>
-2008-01-28T10:31:45.187261Z mpsuzuki</strong> (<a href="Details.htm#2008-01-28T103145.187261Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix: ignore the embedded font resource when PDF interpreter resolves
-     the unembedded font resource.
-
-</pre>
-<p>[lib/pdf_font.ps src/zfont.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-28T095854.861949Z"></a>
-2008-01-28T09:58:54.861949Z mpsuzuki</strong> (<a href="Details.htm#2008-01-28T095854.861949Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (TT): Fix a bug in /getinterval_from_stringarray
-
-</pre>
-<p>[lib/gs_ttf.ps]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-28T085010.139318Z"></a>
-2008-01-28T08:50:10.139318Z Igor Melichev</strong> (<a href="Details.htm#2008-01-28T085010.139318Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (clist & transparency) : Improve the compositor queue logic (continued).
-
-</pre>
-<p>[src/gdevp14.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-28T084521.850870Z"></a>
-2008-01-28T08:45:21.850870Z Igor Melichev</strong> (<a href="Details.htm#2008-01-28T084521.850870Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (clist & transparency) : Improve the compositor queue logic.
+Fix (graphics) : Write tile id into a pattern clist (continued).
 
 </pre>
 <p>[src/gxclrast.c]</p>
 </blockquote>
 
-<p><strong><a name="2008-01-26T132127.618379Z"></a>
-2008-01-26T13:21:27.618379Z Igor Melichev</strong> (<a href="Details.htm#2008-01-26T132127.618379Z">details</a>)</p>
+<p><strong><a name="2008-07-22T210307.709088Z"></a>
+2008-07-22T21:03:07.709088Z Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Fix (transparency) : Memory leak after an image with soft mask.
-
+Turn off the NOISY 'VERBOSE' setting by default.
 </pre>
-<p>[src/gstrans.c src/ztrans.c src/gstparam.h src/gstrans.h src/gdevp14.c]</p>
+<p>[src/rinkj/rinkj-epson870.c]</p>
 </blockquote>
 
-<p><strong><a name="2008-01-25T081716.431601Z"></a>
-2008-01-25T08:17:16.431601Z Igor Melichev</strong> (<a href="Details.htm#2008-01-25T081716.431601Z">details</a>)</p>
+<p><strong><a name="2008-07-22T183234.998275Z"></a>
+2008-07-22T18:32:34.998275Z Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Fix (Font renderer) : Horizontal metrics sometimes applied with WMode 1 fonts.
+Change the default GS_CLIENT_COLOR_MAX_COMPONENTS to 8 (down from 252).
+This improves the performance for files with many images. This limits
+the number of DeviceN components and the number of separations that
+can be generated in the default build and causes 'limitcheck' errors
+on CET tests that attempt to set a 250 component DeviceN space.
+
+THIS IS NOT BACKWARDS COMPATIBLE, but the change in ths single file
+so this can readily be rebuilt by customers that need more components
+or anyone that demands conformance to this implementation dependent
+result on the CET. Note that not all Adobe implementations support
+250 components as CPSI does.
+
+Currently only the tiffsep and psdcmyk devices can generate more than
+8 separations, and then only when USE_COMPRESSED_ENCODING is used to
+fit more than 8 components in a 64-bit color value.
+
+This partly reverts rev 7159.
 
 </pre>
-<p>[src/int.mak src/zchar1.c]</p>
+<p>[src/gsccolor.h]</p>
 </blockquote>
 
-<p><strong><a name="2008-01-23T211316.354024Z"></a>
-2008-01-23T21:13:16.354024Z Igor Melichev</strong> (<a href="Details.htm#2008-01-23T211316.354024Z">details</a>)</p>
+<p><strong><a name="2008-07-22T142325.922113Z"></a>
+2008-07-22T14:23:25.922113Z Ken Sharp</strong> (<a href="Details.htm#2008-07-22T142325.922113Z">details</a>)</p>
 <blockquote>
 <pre>
-Fix (clist & transparency) : Inconsisting compressed color index info.
+Fix (pdfwrite): limit checking of CIDfonts for 'fixed width' property.
 
 </pre>
-<p>[src/gdevp14.c]</p>
+<p>[src/zfcid1.c]</p>
 </blockquote>
 
-<p><strong><a name="2008-01-23T183335.648405Z"></a>
-2008-01-23T18:33:35.648405Z Igor Melichev</strong> (<a href="Details.htm#2008-01-23T183335.648405Z">details</a>)</p>
+<p><strong><a name="2008-07-22T062414.072316Z"></a>
+2008-07-22T06:24:14.072316Z Igor Melichev</strong> (<a href="Details.htm#2008-07-22T062414.072316Z">details</a>)</p>
 <blockquote>
 <pre>
-Fix (DSC parser) : Avoid a structure type name duplicate.
+Fix (graphics) : Write tile id into a pattern clist.
 
 </pre>
-<p>[src/zdscpars.c]</p>
+<p>[src/gxclbits.c src/gxclist.h src/gdevprn.c src/gxclrast.c]</p>
 </blockquote>
 
-<p><strong><a name="2008-01-23T181227.956590Z"></a>
-2008-01-23T18:12:27.956590Z Igor Melichev</strong> (<a href="Details.htm#2008-01-23T181227.956590Z">details</a>)</p>
+<p><strong><a name="2008-07-21T232313.534369Z"></a>
+2008-07-21T23:23:13.534369Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Fix (patterns) : The clipping was wrong with antrivial pattern matrix (continued).
+Update the license statement for Kevin Hartig's hana fonts.
 
-</pre>
-<p>[src/gdevpdfi.c src/zpcolor.c]</p>
-</blockquote>
+They are now under the SIL Open Font License 1.1 with reserved font
+names Calligraphic-Hiragana and Calligraphic-Katakana.
 
-<p><strong><a name="2008-01-23T180949.970130Z"></a>
-2008-01-23T18:09:49.970130Z Igor Melichev</strong> (<a href="Details.htm#2008-01-23T180949.970130Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (patterns) : The clipping was wrong with antrivial pattern matrix.
-
-</pre>
-<p>[src/gsptype1.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-23T164951.344351Z"></a>
-2008-01-23T16:49:51.344351Z Ken Sharp</strong> (<a href="Details.htm#2008-01-23T164951.344351Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (pdfwrite): Wrong format string for pprintg.
-
-</pre>
-<p>[src/gdevpdfu.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-23T133039.283039Z"></a>
-2008-01-23T13:30:39.283039Z Igor Melichev</strong> (<a href="Details.htm#2008-01-23T133039.283039Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (shadings) : A memory deallocation problem.
-
-</pre>
-<p>[src/lib.mak src/gsptype2.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-23T132309.676697Z"></a>
-2008-01-23T13:23:09.676697Z Till Kamppeter</strong></p>
-<blockquote>
-<pre>
-Added HP's KRGB patch for improved control of true black text printing on color printers with HPIJS. Bug #689065 (Ubuntu LP: #69905) is fixed in this updated version of the patch.
-</pre>
-<p>[src/gdevijs.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-21T205955.657274Z"></a>
-2008-01-21T20:59:55.657274Z Igor Melichev</strong> (<a href="Details.htm#2008-01-21T205955.657274Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (save/restore) : Remove gs_ref_memory_s::inherited.
-
-</pre>
-<p>[src/gxalloc.h src/igc.c src/gsalloc.c src/isave.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-20T222307.686290Z"></a>
-2008-01-20T22:23:07.686290Z Igor Melichev</strong> (<a href="Details.htm#2008-01-20T222307.686290Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (save/restore) : Do not create invisible save levels.
-
-</pre>
-<p>[src/isave.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-20T095615.017727Z"></a>
-2008-01-20T09:56:15.017727Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Only report the ICC Profile colorspace when the jasper library's debug 
-level is above zero. Bug 689662.
-</pre>
-<p>[jasper/src/libjasper/jp2/jp2_dec.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-20T092115.660626Z"></a>
-2008-01-20T09:21:15.660626Z Igor Melichev</strong> (<a href="Details.htm#2008-01-20T092115.660626Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (save/restore) : Compact the changes list against big memory leak.
-
-</pre>
-<p>[src/gxalloc.h src/gsalloc.c src/isave.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-18T215038.830947Z"></a>
-2008-01-18T21:50:38.830947Z Alex Cherepanov</strong></p>
-<blockquote>
-<pre>
-Explicitly close CMap files opened during CMap-CIDFont font enumeration.
-On certain systems file handles were used up before GC freed inaccessible
-handles causing PostScript errors. Bug 689594.
-
-</pre>
-<p>[lib/gs_cidcm.ps]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-18T061702.734368Z"></a>
-2008-01-18T06:17:02.734368Z Alex Cherepanov</strong></p>
-<blockquote>
-<pre>
-Add redefinition of setpagedevice to ps2epsi utility to support PS files
-that call setpagedevice. Bug 689650.
-</pre>
-<p>[lib/ps2epsi lib/ps2epsi.ps lib/ps2epsi.cmd lib/ps2epsi.bat]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-17T135043.754302Z"></a>
-2008-01-17T13:50:43.754302Z Igor Melichev</strong> (<a href="Details.htm#2008-01-17T135043.754302Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (clist interpreter) : Skip idle compositors, step 6.
-
-</pre>
-<p>[src/gdevp14.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-17T134711.707889Z"></a>
-2008-01-17T13:47:11.707889Z Igor Melichev</strong> (<a href="Details.htm#2008-01-17T134711.707889Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (visual trace) : Add a single pixels painting operation.
-
-</pre>
-<p>[src/vdtrace.h src/vdtrace.c src/dwtrace.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-17T133719.476394Z"></a>
-2008-01-17T13:37:19.476394Z Igor Melichev</strong></p>
-<blockquote>
-<pre>
-Fix : Cygwin/gcc warnings.
-</pre>
-<p>[src/gdevcgm.c src/int.mak src/gstrans.c src/gdevpdfe.c src/gdevbit.c src/devs.mak src/gxclread.c src/gscdevn.c src/gscie.c src/gxclutil.c src/lib.mak src/gdevp2up.c src/gxclmem.c src/gdevdflt.c src/gdevpdtd.c src/gxcomp.h src/gsovrc.c src/gdevprn.c src/gscsepr.c src/genarch.c src/ztoken.c src/gdevp14.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-17T031602.921192Z"></a>
-2008-01-17T03:16:02.921192Z Alex Cherepanov</strong></p>
-<blockquote>
-<pre>
-Comment-only change: remove obsolete reference to MS-DOS limitations and 
-mention that PDF interpreter passes un-escaped font names to PS level.
-Bug 689651.
+See Bug 688674 for the relicensing declaration.
 </pre>
 <p>[lib/Fontmap.GS]</p>
 </blockquote>
 
-<p><strong><a name="2008-01-17T031245.266699Z"></a>
-2008-01-17T03:12:45.266699Z Alex Cherepanov</strong></p>
+<p><strong><a name="2008-07-21T202221.005889Z"></a>
+2008-07-21T20:22:21.005889Z Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Remove the warning about non-embedded TrueType fonts in PDF files because it
-confuses users but seems to have little effect on the main producer of
-non-conforming files.
-
+Remove obsolete and probably non-working support for ancient DesqView (DOS
+multi-taksing). This probably should have been dropped when we dropped 16-bit
+support.
 </pre>
-<p>[lib/pdf_main.ps lib/pdf_font.ps]</p>
+<p>[src/dvx-tail.mak src/dvx-gcc.mak src/dvx-head.mak]</p>
 </blockquote>
 
-<p><strong><a name="2008-01-16T233548.055065Z"></a>
-2008-01-16T23:35:48.055065Z Ralph Giles</strong></p>
+<p><strong><a name="2008-07-21T185531.311238Z"></a>
+2008-07-21T18:55:31.311238Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Unbreak the build.
+Wrap string data source into a procedure when /ImscaleDecode filter is
+installed, to ensure repeated reading of the string when the imagemask
+needs more data than has the string. Allocate new composite objects
+with the same global status as old ones. Bug 689889, customer 330.
+
+</pre>
+<p>[lib/gs_img.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-18T205354.538069Z"></a>
+2008-07-18T20:53:54.538069Z Ray Johnston</strong> (<a href="Details.htm#2008-07-18T205354.538069Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix for Seg fault caused by wrap around of an unsigned long. Seen at 600 dpi
+to pkmraw with Bug689369.pdf and -dBufferSpace=32000000.
+
+</pre>
+<p>[src/gdevprn.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-17T201152.225244Z"></a>
+2008-07-17T20:11:52.225244Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Increase the default threshold for using the (much slower) pattern clist accumulator.
+The 32Mb threshold is tolerable for most host systems and this can be modified during
+the build with -DMAX_PATTERN_BITMAP_SIZE=___ (possibly using the makefile XCFLAGS).
+
+Only embedded systems may want to set this to a smaller value.
+
+This is a temnporary workaround for bug 689966. Improving the performance of the
+pattern clist accumulator will be considered a future enhancement.
+</pre>
+<p>[src/gxpcmap.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-17T055119.136291Z"></a>
+2008-07-17T05:51:19.136291Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Update documentation to describe multi-threaded rendering (NumRenderingThreads)
+and improve the documentation about the clist/banding parameters and the effect
+on performance. Addresses issues raised in bug 689668.
+</pre>
+<p>[doc/Use.htm doc/Language.htm]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-17T023401.869133Z"></a>
+2008-07-17T02:34:01.869133Z Ralph Giles</strong> (<a href="Details.htm#2008-07-17T023401.869133Z">details</a>)</p>
+<blockquote>
+<pre>
+Write pure white as a background in the pngalpha device. Bug 689934.
+
+</pre>
+<p>[src/gdevpng.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-16T171929.238633Z"></a>
+2008-07-16T17:19:29.238633Z Igor Melichev</strong> (<a href="Details.htm#2008-07-16T171929.238633Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (transparency) : A mask buffer could left unreleased due to banding.
+
 </pre>
 <p>[src/gdevp14.c]</p>
 </blockquote>
 
-<p><strong><a name="2008-01-16T225542.290132Z"></a>
-2008-01-16T22:55:42.290132Z Igor Melichev</strong> (<a href="Details.htm#2008-01-16T225542.290132Z">details</a>)</p>
+<p><strong><a name="2008-07-16T150017.682927Z"></a>
+2008-07-16T15:00:17.682927Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Fix (clist interpreter) : Skip idle compositors, step 5.
-
-</pre>
-<p>[src/lib.mak src/zdict.c src/gdevdflt.c src/gdevp14.h src/gstrans.c src/gsalphac.c src/gxcomp.h src/gsovrc.c src/gstparam.h src/gstrans.h src/gxclrast.c src/gsovrc.h src/gdevp14.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-09T003630.938192Z"></a>
-2008-01-09T00:36:30.938192Z Marcos Woehrmann</strong></p>
-<blockquote>
-<pre>
-Fixed umlauts (maybe, am having trouble testing the results).
-</pre>
-<p>[man/de/pdf2dsc.1]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-09T002450.313955Z"></a>
-2008-01-09T00:24:50.313955Z Marcos Woehrmann</strong></p>
-<blockquote>
-<pre>
-Corrected man page (thanks to Peter Dyballa).
-</pre>
-<p>[man/de/pdf2dsc.1]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-09T000059.719986Z"></a>
-2008-01-09T00:00:59.719986Z Alex Cherepanov</strong></p>
-<blockquote>
-<pre>
-Add unmodified byte-oriented AES encryption code by Brian Gladman. These
-files serve as a reference point. They are not yet included into any
-project nor can be compiled by some of the compilers we support.
-
-</pre>
-<p>[src/aes.h src/aes.c]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-07T205840.018332Z"></a>
-2008-01-07T20:58:40.018332Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Remove the obsolete gconfigv.h.
-</pre>
-<p>[src/lib.mak toolbin/msvcxml.bat src/openvms.mak src/unix-end.mak src/gs.mak src/std.h src/gscdefs.h src/macos-mcp.mak src/openvms.mmk src/os2.mak src/wctail.mak src/winlib.mak]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-07T205836.882379Z"></a>
-2008-01-07T20:58:36.882379Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Remove EXTEND_NAMES from the top level makefiles.
-
-There is a fallback to the default value of 0 in inameidx.h so there
-is no change in the default behaviour. The extended name table can
-still be activated by defining EXTEND_NAMES on the compiler command
-line or changing the source directly.
-</pre>
-<p>[toolbin/msvcxml.bat src/openvms.mak src/unix-end.mak src/gs.mak doc/Use.htm src/int.mak src/macosx.mak src/Makefile.in src/inameidx.h src/unix-gcc.mak src/macos-mcp.mak src/openvms.mmk src/os2.mak src/wctail.mak src/winlib.mak]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-07T184302.811990Z"></a>
-2008-01-07T18:43:02.811990Z Henry Stiles</strong></p>
-<blockquote>
-<pre>
-Deprecate USE_FPU, no changes expected.
-</pre>
-<p>[src/gxchar.c src/openvms.mak src/unix-end.mak src/gsjmorec.h src/macosx.mak src/dvx-gcc.mak src/gxfarith.h src/msvccmd.mak src/siscale.c src/unixansi.mak src/gsmisc.c src/msvclib.mak src/gsfemu.c src/os2.mak src/openvms.mmk src/lib.mak src/bcwin32.mak src/ugcclib.mak src/gscie.h src/Makefile.in src/unix-gcc.mak src/gxfixed.h src/msvc32.mak src/macos-mcp.mak src/wccommon.mak src/wctail.mak src/winlib.mak src/watclib.mak]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-02T235844.056429Z"></a>
-2008-01-02T23:58:44.056429Z Alex Cherepanov</strong></p>
-<blockquote>
-<pre>
-Re-export runpdfbegin, dopdfpages, and runpdfend procedures, which turned out
-to be used by 3rd party programs. Partly revert the rev. 8325.
-
-</pre>
-<p>[lib/pdf_main.ps]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-02T131059.547816Z"></a>
-2008-01-02T13:10:59.547816Z Ken Sharp</strong> (<a href="Details.htm#2008-01-02T131059.547816Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (pdfwrite): Tidy up after the prior patch, 
-algorithmically this is the same as before.
-
-</pre>
-<p>[src/gdevpdtb.c src/gdevpdtd.c src/gdevpdtf.c src/gdevpdtb.h src/gdevpdtf.h]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-01T204452.186969Z"></a>
-2008-01-01T20:44:52.186969Z Alex Cherepanov</strong></p>
-<blockquote>
-<pre>
-Don't ignore xref stream in a hybrid  "classic xref" + "stream xref" file
-as PDF 1.5-compatible should do. Thanks to SaGS for the patch. Bug 688282.
-
-</pre>
-<p>[lib/pdf_main.ps]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-01T142830.927323Z"></a>
-2008-01-01T14:28:30.927323Z Alex Cherepanov</strong></p>
-<blockquote>
-<pre>
-Replace clearly invalid generation numbers out of 0..65535 range with 0 during
-rebuilding of xref table. Bug 689634.
-
-</pre>
-<p>[lib/pdf_rbld.ps]</p>
-</blockquote>
-
-<p><strong><a name="2008-01-01T013052.687921Z"></a>
-2008-01-01T01:30:52.687921Z Ralph Giles</strong> (<a href="Details.htm#2008-01-01T013052.687921Z">details</a>)</p>
-<blockquote>
-<pre>
-Remove the SYSTEM_CONSTANTS_ARE_WRITABLE compile-time define.
-
-</pre>
-<p>[toolbin/msvcxml.bat src/openvms.mak src/unix-end.mak src/gs.mak src/gscdefs.h src/openvms.mmk src/os2.mak src/wctail.mak src/winlib.mak src/gscdef.c]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-31T224650.849681Z"></a>
-2007-12-31T22:46:50.849681Z Alex Cherepanov</strong></p>
-<blockquote>
-<pre>
-Add a flag that marks PDF text rendering mode 3 to avoid confusion with other
-non-rendering text operations such as stringwidth. This avoids unnecessary 
-calculation of the current point, which fails when the CTM is singular. This
-patch continues conservative approach to the text rendering modes started in
-rev. 4006. Bug 689614, customer 384.
-
-</pre>
-<p>[src/gxchar.c src/gstext.c src/gstext.h]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-31T190652.216061Z"></a>
-2007-12-31T19:06:52.216061Z Ray Johnston</strong> (<a href="Details.htm#2007-12-31T190652.216061Z">details</a>)</p>
-<blockquote>
-<pre>
-Correct polarity of the stochastic threshold array so that the images are
-not too dark.
-
-</pre>
-<p>[lib/ht_ccsto.ps]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-31T180759.109475Z"></a>
-2007-12-31T18:07:59.109475Z Ralph Giles</strong> (<a href="Details.htm#2007-12-31T180759.109475Z">details</a>)</p>
-<blockquote>
-<pre>
-Remove the USE_ASM build flag.
-    
-</pre>
-<p>[src/unix-end.mak src/openvms.mak src/watcw32.mak src/gdevpcfb.c doc/Develop.htm src/msvccmd.mak src/iutilasm.asm src/gsmisc.c src/msvclib.mak src/dvx-head.mak src/devs.mak src/os2.mak src/openvms.mmk src/unixhead.mak src/lib.mak src/bcwin32.mak src/winint.mak src/gdevegaa.asm src/msvc32.mak src/gdevsvga.c src/gsutil.c src/wccommon.mak src/wctail.mak src/winlib.mak]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-31T061033.027699Z"></a>
-2007-12-31T06:10:33.027699Z Alex Cherepanov</strong></p>
-<blockquote>
-<pre>
-Don't try to obtain the bounding box of a glyph when FontBBox is invalid and
-CTM is singular. Set an empty box and consider it valid. The bounding box is
-not used when the CTM is singular. Bug 689614, customer 384.
-
-</pre>
-<p>[src/zchar1.c]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-29T025321.940078Z"></a>
-2007-12-29T02:53:21.940078Z Ralph Giles</strong> (<a href="Details.htm#2007-12-29T025321.940078Z">details</a>)</p>
-<blockquote>
-<pre>
-Remove the ARCH_CAN_SHIFT_FULL_LONG define and its derivatives. Bug 689611.
-
-</pre>
-<p>[src/std.h src/gxshade.c src/gxbitops.h src/genarch.c]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-27T222836.610626Z"></a>
-2007-12-27T22:28:36.610626Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Add -Wundef to the autoconf build.
-
-There have been a number of problems related to missing defines lately.
-</pre>
-<p>[src/configure.ac]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-22T191320.335131Z"></a>
-2007-12-22T19:13:20.335131Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Correction to the refcount documentation.
-
-Our allocator can't double free, but attempting to trace a freed pointer
-can confuse things, possibly resulting in a segfault or other
-misbehaviour.
-</pre>
-<p>[src/gsrefct.h]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-22T020540.922995Z"></a>
-2007-12-22T02:05:40.922995Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Also remove gdevcmap from the documentation.
-</pre>
-<p>[doc/Develop.htm]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-22T020536.008019Z"></a>
-2007-12-22T02:05:36.008019Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Include gconfigv.h in std.h so defines like USE_FPU are more
-consistently defined.
-</pre>
-<p>[src/lib.mak src/gscie.h src/std.h src/gdevpcfb.c src/gxfarith.h src/siscale.c src/gsmisc.c src/gdevsvga.c src/devs.mak src/sidscale.c src/gxpcopy.c]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-22T001936.075695Z"></a>
-2007-12-22T00:19:36.075695Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Document the behaviour of the reference count macros.
-</pre>
-<p>[src/gsrefct.h]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-22T001005.865239Z"></a>
-2007-12-22T00:10:05.865239Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Remove the unused cmap device.
-</pre>
-<p>[src/lib.mak src/ugcclib.mak src/gslib.c src/gdevcmap.c src/gdevcmap.h]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-21T195819.459173Z"></a>
-2007-12-21T19:58:19.459173Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Further update the graphics library unit test and build. The gslib test 
-executable builds and works now.
-
-</pre>
-<p>[src/ugcclib.mak src/gslib.c]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-21T195607.995361Z"></a>
-2007-12-21T19:56:07.995361Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Construct romfs.dev in the graphics library's gen directory instead of 
-the ps interpreter's so building just the library is possible.
-</pre>
-<p>[src/gs.mak]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-21T103100.226023Z"></a>
-2007-12-21T10:31:00.226023Z Ken Sharp</strong></p>
-<blockquote>
-<pre>
-Fix (jbig2dec): The global data stream for a JBIG2 image in a PDF
-file was being released, and the data freed by the garbage collector,
-before the data was used.
-
-Details: Bug #689568 and #689569. Uses the patch supplied by Alex
-in thread for #689569, implements Ralph's comments about the structure 
-naming. Does not attempt to change the memory allocator. This slightly
-modified patch also works with the Luratech decoder.
-
-sjbig2.h, sjbig2_luratech.h; make the global data structure 
-s_jbig2_global_data_t public. Store the structure in the 
-stream decoder state.
-
-sjbig2.c, sjbig2_luratech.c; store a pointer to the global
-data structure. 
-
-sjbig2_luratech.c; don't reset the pointer during initialisation!
-
-zfjbig2.c; Pass the global pointer to the stream decoder for
-release in the finalize routine.
-
-</pre>
-<p>[src/sjbig2_luratech.h src/zfjbig2.c src/sjbig2.c src/sjbig2.h src/sjbig2_luratech.c]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-21T001553.911110Z"></a>
-2007-12-21T00:15:53.911110Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Remove some old helper scripts.
-
-They aren't used much and we no longer wish to maintain them.
-</pre>
-<p>[toolbin/many2pdf.tcl toolbin/pre toolbin/gssubst toolbin/gsindent]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-21T001154.376327Z"></a>
-2007-12-21T00:11:54.376327Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Make pre.tcl more robust in creating temporary files.
-
-Also update the copyright header and fix a bug in an error handler.
-</pre>
-<p>[toolbin/pre.tcl]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-19T062541.308572Z"></a>
-2007-12-19T06:25:41.308572Z Alex Cherepanov</strong></p>
-<blockquote>
-<pre>
-Ignore operator readonly when it is applied to a wrong type inside an
-embedded Type 1 font. Bug 689617, customer 580.
+Ignore out-of-range UniqueID in embedded Type 1 PDF fonts. Bug 689973.
 
 </pre>
 <p>[lib/pdf_font.ps]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-19T062222.816836Z"></a>
-2007-12-19T06:22:22.816836Z Alex Cherepanov</strong></p>
+<p><strong><a name="2008-07-15T202913.383262Z"></a>
+2008-07-15T20:29:13.383262Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Treat the text after empty ASCII block in PFB stream as ASCII sub-stream
-terminated by 0x80 character, a presumed header of the next block.
-Bug 689617, customer 580.
+Remove the obsolete pnga device. Bug 689971.
 
+This was a test framework used in the development of the PDF 1.4
+compositor. It's no longer used.
 </pre>
-<p>[src/sfilter1.c]</p>
+<p>[src/devs.mak src/gdevpnga.c]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-19T002508.107768Z"></a>
-2007-12-19T00:25:08.107768Z Ralph Giles</strong></p>
+<p><strong><a name="2008-07-15T132729.996709Z"></a>
+2008-07-15T13:27:29.996709Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Update the graphics library unit tests for recent code changes.
-</pre>
-<p>[src/gslib.c]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-18T100307.564012Z"></a>
-2007-12-18T10:03:07.564012Z Ken Sharp</strong> (<a href="Details.htm#2007-12-18T100307.564012Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (pdfwrite): Font Descriptors for fonts not embedded, due to
-EmbedAllFonts=false, did not preserve the original font name.
+Cache the pattern instance in the PDF pattern object to prevent reprated
+pattern instantiation and improve performance. Bug 689896, customer 531.
 
 </pre>
-<p>[src/gdevpdtd.c]</p>
+<p>[lib/pdf_ops.ps]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-18T100209.815887Z"></a>
-2007-12-18T10:02:09.815887Z Ken Sharp</strong> (<a href="Details.htm#2007-12-18T100209.815887Z">details</a>)</p>
+<p><strong><a name="2008-07-14T185340.636598Z"></a>
+2008-07-14T18:53:40.636598Z Marcos Woehrmann</strong></p>
 <blockquote>
 <pre>
-Fix (pdfwrite): PDFXTrimBoxToMediaBoxOffset used the supplied data
-incorrectly.
+
+Allows the Epson AcuLaser device output to be sent to a pipe (closes bug 689953).
+
+Thanks to j@uriah.heep.sax.de (Joerg Wunsch) for the patch.
+</pre>
+<p>[contrib/eplaser/gdevescv.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-13T220619.770532Z"></a>
+2008-07-13T22:06:19.770532Z Henry Stiles</strong></p>
+<blockquote>
+<pre>
+Rop devices now require access to an allocator instance.  Fixes crash
+in running pxl fts file T326.BIN with a halftoning device.  The bug
+was reported by a potential customer and a bugzilla report was never
+filed.
+</pre>
+<p>[src/gdevrops.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-12T014313.151852Z"></a>
+2008-07-12T01:43:13.151852Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Use /.notdef instead of null in the array of PostScript names of TTF glyphs.
+This saves the trouble of checking for null values and fixes a case where
+a null entry slipped through. Bug 689962, customer 384.
 
 </pre>
-<p>[src/gdevpdf.c]</p>
+<p>[lib/gs_ttf.ps]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-18T034036.305448Z"></a>
-2007-12-18T03:40:36.305448Z Ralph Giles</strong> (<a href="Details.htm#2007-12-18T034036.305448Z">details</a>)</p>
+<p><strong><a name="2008-07-11T231056.624279Z"></a>
+2008-07-11T23:10:56.624279Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Remove the unused composite_rop device.
+Restore the 2_fracs image class to the psl2lib device.
+
+It was inadvertently removed in r8828.
+</pre>
+<p>[src/lib.mak]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-11T231055.549110Z"></a>
+2008-07-11T23:10:55.549110Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Make the search for the most recent ghostpcl revision more robust.
+Thanks to Henry Stiles for the extra quoting idea.
+</pre>
+<p>[toolbin/clusterpush.sh]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-11T211049.148153Z"></a>
+2008-07-11T21:10:49.148153Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Merge clusterpush changes from the ghostpcl tree.
+</pre>
+<p>[toolbin/clusterpush.sh]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-11T180013.808434Z"></a>
+2008-07-11T18:00:13.808434Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Check return codes of remote commands and abort if there's a problem.
+
+Previously we continued which could confusingly return the wrong
+regression report at the end if the connection drops while waiting
+for the run to complete.
+</pre>
+<p>[toolbin/clusterpush.sh]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-11T050607.316809Z"></a>
+2008-07-11T05:06:07.316809Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+TrueType instruction definitions (IDEF) are addressed by a single byte index. 
+So there cannot be mode than 256 different instructions. Nevertheless, a
+request a for larger array for instruction definitions should not be a fatal
+error. Bug 689960, customer 330.
 
 </pre>
-<p>[src/lib.mak src/gsropc.c src/gsropc.h doc/Develop.htm src/gxropc.h]</p>
+<p>[src/ttobjs.c]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-17T213335.320044Z"></a>
-2007-12-17T21:33:35.320044Z Igor Melichev</strong> (<a href="Details.htm#2007-12-17T213335.320044Z">details</a>)</p>
+<p><strong><a name="2008-07-10T233600.202299Z"></a>
+2008-07-10T23:36:00.202299Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Fix (transparency) : Providing a right nested masks logic (continued).
-
+Add the so build directories to the clusterpush exclude list.
 </pre>
-<p>[src/gdevp14.c]</p>
+<p>[toolbin/clusterpush.sh]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-17T072822.397599Z"></a>
-2007-12-17T07:28:22.397599Z Alex Cherepanov</strong></p>
+<p><strong><a name="2008-07-10T233556.971501Z"></a>
+2008-07-10T23:35:56.971501Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Improve outline pdfmarks produced by the pdf interpreter. Add page number and view
-values. Thanks to Leon Bottou for the patch. Bug 689599.
+Move the interpolation image class from the ps2 dev to the core graphics
+library so it is available to all languages.
+</pre>
+<p>[src/lib.mak]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-10T170039.840394Z"></a>
+2008-07-10T17:00:39.840394Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Documentation update: we support Separation, DeviceN and a number of PDF 1.7 features.
+</pre>
+<p>[doc/Language.htm]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-09T225900.503580Z"></a>
+2008-07-09T22:59:00.503580Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Use '%PDF-' instead of '%PDF-1.' to recognize PDF files because PDFsharp 0.8.2
+generates '%PDF-0.0' and Acrobat accepts this. Bug 689949, customer 384.
 
 </pre>
 <p>[lib/pdf_main.ps]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-16T153809.417159Z"></a>
-2007-12-16T15:38:09.417159Z Igor Melichev</strong> (<a href="Details.htm#2007-12-16T153809.417159Z">details</a>)</p>
+<p><strong><a name="2008-07-07T141754.881290Z"></a>
+2008-07-07T14:17:54.881290Z Ken Sharp</strong></p>
 <blockquote>
 <pre>
-Fix (clist interpreter) : Improving debug trace about compositors.
+Update the documentation for the NOCIE switch, noting that this also affects the CIEBasedDEF
+and CIEBasedDEFG spaces, substituting DeviceRGB and DeviceCMYK for the CIE spaces.
+</pre>
+<p>[doc/Use.htm]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-07T134338.233194Z"></a>
+2008-07-07T13:43:38.233194Z Ken Sharp</strong> (<a href="Details.htm#2008-07-07T134338.233194Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix warnings from the JPX decoder when using Visual Studio 9.
 
 </pre>
-<p>[src/gdevp14.c]</p>
+<p>[src/msvccmd.mak]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-16T013756.744199Z"></a>
-2007-12-16T01:37:56.744199Z Alex Cherepanov</strong></p>
+<p><strong><a name="2008-07-07T085659.749169Z"></a>
+2008-07-07T08:56:59.749169Z Ken Sharp</strong> (<a href="Details.htm#2008-07-07T085659.749169Z">details</a>)</p>
 <blockquote>
 <pre>
-Don't skip space characters after eexec in embedded PDF fonts but
-continue to do so in other cases. Bug 689615.
+Fix (pdfwrite): Images ina DeviceN space with more than 60 inks caused a crash.
 
 </pre>
-<p>[src/seexec.c src/sfilter.h lib/pdf_font.ps src/zmisc1.c doc/Language.htm]</p>
+<p>[src/spngpx.h src/spngp.c]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-14T195101.706015Z"></a>
-2007-12-14T19:51:01.706015Z Alex Cherepanov</strong></p>
+<p><strong><a name="2008-07-06T004519.690811Z"></a>
+2008-07-06T00:45:19.690811Z Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Work around a GCC 4.2.1 bug on PowerPC that generates incorrect code in the
-release build affecting scanning of binary tokens containing floating point
-numbers. Bug 689586.
+Fix address/value problem. How this ever seemed to work, who knows.
+Thanks to Matthias Kilian for this patch.
+</pre>
+<p>[src/gdevwts.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-04T203541.686667Z"></a>
+2008-07-04T20:35:41.686667Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix a bug in the error recovery code that handles invalid font streams.
+Bug 689936, customer 661.
 
 </pre>
-<p>[src/ibnum.c]</p>
+<p>[lib/pdf_font.ps]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-14T184031.738291Z"></a>
-2007-12-14T18:40:31.738291Z Marcos Woehrmann</strong></p>
+<p><strong><a name="2008-07-04T182044.681886Z"></a>
+2008-07-04T18:20:44.681886Z Ralph Giles</strong> (<a href="Details.htm#2008-07-04T182044.681886Z">details</a>)</p>
 <blockquote>
 <pre>
-Added casts to sprintf debugging statements (thanks for Michael Rutter for finding these).
-</pre>
-<p>[contrib/eplaser/gdevescv.c]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-14T183139.938693Z"></a>
-2007-12-14T18:31:39.938693Z Alex Cherepanov</strong></p>
-<blockquote>
-<pre>
-Align the pointer to gx_clist_state array in gx_device_clist_writer device to
-the natural boundary to avoid misaligned memory access and bus errors on ARM
-processors. Bug 689600.
+Parse common color space keys in JPXDecode filtered images and pass them
+to the filter, allowing JPX-encoded CMYK images to display properly.
+Fixes bug 688807.
 
 </pre>
-<p>[src/gxclist.c]</p>
+<p>[src/zfjpx.c src/sjpx.c]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-12T202944.002303Z"></a>
-2007-12-12T20:29:44.002303Z Igor Melichev</strong> (<a href="Details.htm#2007-12-12T202944.002303Z">details</a>)</p>
+<p><strong><a name="2008-07-03T182555.494578Z"></a>
+2008-07-03T18:25:55.494578Z Ralph Giles</strong> (<a href="Details.htm#2008-07-03T182555.494578Z">details</a>)</p>
 <blockquote>
 <pre>
-Fix (transparency) : Providing a right nested masks logic.
+Clean up the state machine in s_jpxd_process.
 
 </pre>
-<p>[src/gdevp14.h src/gdevp14.c]</p>
+<p>[src/sjpx.c src/sjpx.h]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-12T195831.269810Z"></a>
-2007-12-12T19:58:31.269810Z Igor Melichev</strong> (<a href="Details.htm#2007-12-12T195831.269810Z">details</a>)</p>
+<p><strong><a name="2008-07-03T182554.527696Z"></a>
+2008-07-03T18:25:54.527696Z Ralph Giles</strong> (<a href="Details.htm#2008-07-03T182554.527696Z">details</a>)</p>
 <blockquote>
 <pre>
-Fix (transparency) : Unwinding the nested masks logic.
+Fix a hang in s_jpxd_process. Bug 688807.
 
 </pre>
-<p>[src/gdevp14.h src/gdevp14.c]</p>
+<p>[src/sjpx.c]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-12T190044.753250Z"></a>
-2007-12-12T19:00:44.753250Z Igor Melichev</strong> (<a href="Details.htm#2007-12-12T190044.753250Z">details</a>)</p>
+<p><strong><a name="2008-07-03T182552.592596Z"></a>
+2008-07-03T18:25:52.592596Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Fix (clist interpreter) : Skip idle compositors, step 4.
+Remove trailing whitespace from the jpx stream implementation.
+</pre>
+<p>[src/sjpx_luratech.h src/sjpx.c src/sjpx.h src/sjpx_luratech.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-03T130311.896225Z"></a>
+2008-07-03T13:03:11.896225Z Igor Melichev</strong> (<a href="Details.htm#2008-07-03T130311.896225Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (clist writer) : Indeterminizm writing a degenerate curve.
 
 </pre>
-<p>[src/gsropc.c src/gsalphac.c src/gxcomp.h src/gsovrc.c src/gdevp14.c]</p>
+<p>[src/gxclpath.c]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-11T234718.340705Z"></a>
-2007-12-11T23:47:18.340705Z Ray Johnston</strong> (<a href="Details.htm#2007-12-11T234718.340705Z">details</a>)</p>
+<p><strong><a name="2008-07-01T102225.835951Z"></a>
+2008-07-01T10:22:25.835951Z Igor Melichev</strong> (<a href="Details.htm#2008-07-01T102225.835951Z">details</a>)</p>
 <blockquote>
 <pre>
-Fix for SEGV when more than 4 colorants used with psdcmyk device.
-Bug 689457 for customer #460.
+Fix (clist writer) : The maximal compositor command size was wrong.
 
 </pre>
-<p>[src/gdevpsd.c]</p>
+<p>[src/gstparam.h src/gdevp14.c]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-11T212702.763129Z"></a>
-2007-12-11T21:27:02.763129Z Ralph Giles</strong> (<a href="Details.htm#2007-12-11T212702.763129Z">details</a>)</p>
+<p><strong><a name="2008-06-30T235604.281753Z"></a>
+2008-06-30T23:56:04.281753Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Store the posix persistent cache's last modified line as an unsigned 
-long to avoid portability problems when reading and writing. Bug 689604.
+Document the output filename behavior of ps2pdf in the manpage.
+Bug 689920.
+</pre>
+<p>[man/ps2pdf.1]</p>
+</blockquote>
+
+<p><strong><a name="2008-06-30T181551.663545Z"></a>
+2008-06-30T18:15:51.663545Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add a missing header dependency.
+</pre>
+<p>[src/lib.mak]</p>
+</blockquote>
+
+<p><strong><a name="2008-06-30T000540.080596Z"></a>
+2008-06-30T00:05:40.080596Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Add one more way to store data of the reusable stream: an array of strings.
+Read the input stream into an array of strings during reusable stream
+construction and use the array directly as a data storage.
+Bug 689476, customer 190.
 
 </pre>
-<p>[src/gp_unix_cache.c]</p>
+<p>[src/int.mak src/gxshade.c lib/gs_frsd.ps src/zfrsd.c]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-11T165405.187153Z"></a>
-2007-12-11T16:54:05.187153Z Marcos Woehrmann</strong></p>
+<p><strong><a name="2008-06-28T145332.570212Z"></a>
+2008-06-28T14:53:32.570212Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Replaced C++ comments with C comments (// -> /* */).
-</pre>
-<p>[imdi/imdi.c imdi/imdi_tab.c imdi/imdi_gen.c imdi/cctiff.c]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-11T082958.454613Z"></a>
-2007-12-11T08:29:58.454613Z Ken Sharp</strong> (<a href="Details.htm#2007-12-11T082958.454613Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (jbig2dec): Missing support for decoding multiple symbols
-from a symbol dictionary, when using refinement/aggregation.
+Make /?dblacute and /?hungarumlaut glyph names equivalent in Type 1 fonts.
+Add a missing glyph when the font is loaded if another glyph is defined.
+Bug 689014, customer 580.
 
 </pre>
-<p>[jbig2dec/jbig2_symbol_dict.c]</p>
+<p>[lib/gs_type1.ps]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-10T221105.461373Z"></a>
-2007-12-10T22:11:05.461373Z Tor Andersson</strong></p>
+<p><strong><a name="2008-06-26T191737.366443Z"></a>
+2008-06-26T19:17:37.366443Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Update to previous commit. Add pdf14_buffer maskbuf pointer to GC structures.</pre>
-<p>[src/gdevp14.c]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-10T202711.787298Z"></a>
-2007-12-10T20:27:11.787298Z Alex Cherepanov</strong></p>
-<blockquote>
-<pre>
-Fix a compilation error on Tru64's native cc, which doesn't tolerate spaces
-between -I and the directory. Thanks to M. Rutter for the patch. Bug 689602
-</pre>
-<p>[contrib/contrib.mak]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-10T161326.551663Z"></a>
-2007-12-10T16:13:26.551663Z Tor Andersson</strong></p>
-<blockquote>
-<pre>
-Pick up the transparency mask buffer when a new transparency group is pushed rather than when it is popped. Solves memory leaks and incorrect rendering when transparency groups are nested.</pre>
-<p>[src/gdevp14.h src/gdevp14.c]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-10T094503.624134Z"></a>
-2007-12-10T09:45:03.624134Z Ken Sharp</strong> (<a href="Details.htm#2007-12-10T094503.624134Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (jbig2dec): Missing support for decoding multiple symbols
-from a symbol dictionary, when using refinement/aggregation.
+Use extended name table by default and adjust the settings to have
+up to 1M names of up to 1K characters long. Bug 689913.
 
 </pre>
-<p>[jbig2dec/jbig2_text.c src/jbig2.mak jbig2dec/jbig2_symbol_dict.c jbig2dec/jbig2_text.h]</p>
+<p>[src/inamedef.h src/inameidx.h src/inamestr.h]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-09T063300.168945Z"></a>
-2007-12-09T06:33:00.168945Z Alex Cherepanov</strong> (<a href="Details.htm#2007-12-09T063300.168945Z">details</a>)</p>
+<p><strong><a name="2008-06-25T161857.687888Z"></a>
+2008-06-25T16:18:57.687888Z Marcos Woehrmann</strong></p>
 <blockquote>
 <pre>
-Use a smaller buffer for eexecDecode filter to avoid consumption of the data
-that follow a short (and incorrect) run of 0's in PS files generated by
-Adobe Acrobat from PDF files with usage restrictions. Bug 689577
+Fixed compile for Linux.
+</pre>
+<p>[contrib/opvp/gdevopvp.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-06-24T141629.258940Z"></a>
+2008-06-24T14:16:29.258940Z Igor Melichev</strong> (<a href="Details.htm#2008-06-24T141629.258940Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (graphics) : Clean image enumerator before releasing it.
 
 </pre>
-<p>[src/seexec.c]</p>
+<p>[src/gxiparam.h src/gxidata.c src/gsimage.h src/gdevvec.c src/gximage.h src/gximag3x.c src/gdevplnx.c src/devs.mak src/gdevvec.h src/gdevpdfi.c src/gxclimag.c src/lib.mak src/gdevpx.c src/gdevtrac.c src/gdevbbox.c src/gximage1.c src/gximage3.c]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-08T135753.015953Z"></a>
-2007-12-08T13:57:53.015953Z Ken Sharp</strong></p>
+<p><strong><a name="2008-06-22T064328.997699Z"></a>
+2008-06-22T06:43:28.997699Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Update the MSVC makefile to work with Visual Studio 2005 (nmake version 8). 
-Should still be OK with MSVC 6.
+Rename the svg device to svgwrite to avoid conflict with the SVG interpreter.
+
+The device is still selected as -sDEVICE=svg, just the name used internally
+has been changed.
 </pre>
-<p>[jbig2dec/msvc.mak]</p>
+<p>[src/Makefile.in src/gdevsvg.c src/devs.mak]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-07T233906.271814Z"></a>
-2007-12-07T23:39:06.271814Z Igor Melichev</strong> (<a href="Details.htm#2007-12-07T233906.271814Z">details</a>)</p>
+<p><strong><a name="2008-06-21T140600.424638Z"></a>
+2008-06-21T14:06:00.424638Z Igor Melichev</strong> (<a href="Details.htm#2008-06-21T140600.424638Z">details</a>)</p>
 <blockquote>
 <pre>
-Fix (clist interpreter) : Skip idle compositors, step 3.
-
-</pre>
-<p>[src/lib.mak src/gsropc.c src/gdevdflt.c src/gxclpath.h src/gxcldev.h src/gsalphac.c src/gxcomp.h src/gsovrc.c src/gstrans.h src/gxclrast.c src/gdevp14.c src/gxclpath.c src/gxclimag.c src/gxclutil.c]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-05T233942.529355Z"></a>
-2007-12-05T23:39:42.529355Z Igor Melichev</strong> (<a href="Details.htm#2007-12-05T233942.529355Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (clist interpreter) : Skip idle compositors, step 2.
+Fix (TT interpreter) : A work around a wrong maxPoints.
 
 </pre>
-<p>[src/gxcomp.h src/gxclrast.c]</p>
+<p>[src/ttobjs.c]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-05T164041.424504Z"></a>
-2007-12-05T16:40:41.424504Z Igor Melichev</strong> (<a href="Details.htm#2007-12-05T164041.424504Z">details</a>)</p>
+<p><strong><a name="2008-06-16T161237.522247Z"></a>
+2008-06-16T16:12:37.522247Z Marcos Woehrmann</strong></p>
 <blockquote>
 <pre>
-Fix (clist interpreter) : Skip idle compositors, step 1.
+Updated to latest versions of files from ftp://ftp.oreilly.com/pub/examples/nutshell/cjkv/adobe/aj16.tar.Z
 
+Closes bug 689735.
+</pre>
+<p>[Resource/CMap/UniJIS2004-UTF32-H Resource/CMap/UniJIS2004-UTF16-H Resource/CMap/UniJIS2004-UTF8-H Resource/CMap/UniJISX0213-UTF32-H Resource/CMap/UniJIS-UTF32-H Resource/CMap/UniJIS-UTF16-H Resource/CMap/UniJIS-UTF8-H Resource/CMap/UniJISX02132004-UTF32-H]</p>
+</blockquote>
+
+<p><strong><a name="2008-06-11T162424.671679Z"></a>
+2008-06-11T16:24:24.671679Z Michael Vrhel</strong></p>
+<blockquote>
+<pre>
+Undoing change introduced in rev 8794.  This change will need to occur after Bug 689889 is handled.   rev 8749 introduced 37 differences in the regression.  </pre>
+<p>[src/simscale.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-06-10T203705.090668Z"></a>
+2008-06-10T20:37:05.090668Z Michael Vrhel</strong></p>
+<blockquote>
+<pre>
+For bug 689888.  This fixes the hang in the while loop.  If end of file occurs during the reading of the stream it is passed along by the filter.  However, proper output does not occur due to a different issue.  Another bug was opened related to this postscript noncompliance of string reading reuse in imaging operators.  See 689889.  </pre>
+<p>[src/simscale.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-06-09T230250.347013Z"></a>
+2008-06-09T23:02:50.347013Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add a modified version of the clusterpush script from the ghostpcl tree.
+</pre>
+<p>[toolbin/clusterpush.sh]</p>
+</blockquote>
+
+<p><strong><a name="2008-06-09T134608.406410Z"></a>
+2008-06-09T13:46:08.406410Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Use a dictionary (instead of an array) to represent cmap table in
+a TrueType font because the array cannot accept fonts that have both
+0x0 and 0xFFFF codes. Bug 689136, customer 870.
+
+</pre>
+<p>[src/icid.h src/zfcid1.c lib/gs_ttf.ps src/zcid.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-06-09T073357.606022Z"></a>
+2008-06-09T07:33:57.606022Z Igor Melichev</strong> (<a href="Details.htm#2008-06-09T073357.606022Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (stroking) : Prevent unpainted gaps between neighbour strokes that could appear due to stroke adjustment.
+
+</pre>
+<p>[src/gsimage.c src/gstext.c src/gxdevice.h src/gdevbit.c src/gspaint.c src/gxclip.c src/gxstroke.c src/gxdevcli.h]</p>
+</blockquote>
+
+<p><strong><a name="2008-06-05T215258.268146Z"></a>
+2008-06-05T21:52:58.268146Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Remove the executable property from the included fonts.
+</pre>
+<p>[Resource/Font/URWPalladioL-BoldItal Resource/Font/NimbusRomNo9L-Medi Resource/Font/NimbusSanL-Bold Resource/Font/Dingbats Resource/Font/URWChanceryL-MediItal Resource/Font/CenturySchL-Roma Resource/Font/NimbusMonL-Bold Resource/Font/URWGothicL-Demi Resource/Font/NimbusSanL-BoldItal Resource/Font/NimbusRomNo9L-MediItal Resource/Font/StandardSymL Resource/Font/URWBookmanL-DemiBold Resource/Font/NimbusRomNo9L-Regu Resource/Font/URWGothicL-Book Resource/Font/NimbusSanL-ReguCond Resource/Font/CenturySchL-Bold Resource/Font/URWBookmanL-Ligh Resource/Font/NimbusRomNo9L-ReguItal Resource/Font/URWBookmanL-DemiBoldItal Resource/Font/NimbusMonL-ReguObli Resource/Font/NimbusSanL-ReguCondItal Resource/Font/CenturySchL-Ital Resource/Font/URWPalladioL-Roma Resource/Font/CenturySchL-BoldItal Resource/Font/URWBookmanL-LighItal Resource/Font/NimbusSanL-BoldCond Resource/Font/NimbusSanL-BoldCondItal Resource/Font/NimbusMonL-BoldObli Resource/Font/URWGothicL-DemiObli Resource/Font/NimbusSanL-Regu Resource/Font/URWPalladioL-Bold Resource/Font/NimbusMonL-Regu Resource/Font/URWGothicL-BookObli Resource/Font/NimbusSanL-ReguItal Resource/Font/URWPalladioL-Ital]</p>
+</blockquote>
+
+<p><strong><a name="2008-06-05T002620.566472Z"></a>
+2008-06-05T00:26:20.566472Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Replace incorrect FontMatrix in CFF CIDFont with a most common value to
+recover a PDF file that Acrobat 8 manages to shows correctly. Bug 688517.
+
+</pre>
+<p>[lib/gs_cidfn.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-31T005734.917939Z"></a>
+2008-05-31T00:57:34.917939Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Add work-around for PDF files that misspell 'endobj' as 'endjobj'. Bug 689876.
+
+</pre>
+<p>[lib/pdf_base.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-30T202517.430208Z"></a>
+2008-05-30T20:25:17.430208Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Dom't interpret ^D (0x04) as a self-delimeted character in PDF mode because
+PDF doesn't need this hack. Bug 689875.
+
+</pre>
+<p>[src/iscan.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-28T215203.844656Z"></a>
+2008-05-28T21:52:03.844656Z Igor Melichev</strong> (<a href="Details.htm#2008-05-28T215203.844656Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (True Type font loader) : Work around incorrect numGlyphs (continued).
+
+</pre>
+<p>[src/gstype42.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-28T181626.144495Z"></a>
+2008-05-28T18:16:26.144495Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct properties.
+</pre>
+<p>[src/sidscale.h src/sjbig2_luratech.h src/sjpx_luratech.h src/sidscale.c src/sjbig2_luratech.c src/sjpx_luratech.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-28T160401.772433Z"></a>
+2008-05-28T16:04:01.772433Z Marcos Woehrmann</strong></p>
+<blockquote>
+<pre>
+Changed crlf to lf.
+</pre>
+<p>[src/sidscale.h src/sidscale.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-28T023835.559910Z"></a>
+2008-05-28T02:38:35.559910Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix a typo introduced in the rev. 8146 that prevented running PDF files from
+stdin. Bug 689847.
+</pre>
+<p>[lib/pdf_main.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-28T002723.734030Z"></a>
+2008-05-28T00:27:23.734030Z Michael Vrhel</strong></p>
+<blockquote>
+<pre>
+Fix to enable proper custom color callback when indexed images with ICC profiles are used.  Bug 689863.</pre>
+<p>[src/lib.mak src/gscolor2.h src/gxcie.h src/gsciemap.c src/gscolor2.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-27T201208.164024Z"></a>
+2008-05-27T20:12:08.164024Z Michael Vrhel</strong></p>
+<blockquote>
+<pre>
+Addition of debug code to dump embedded ICC profiles for external analysis.  </pre>
+<p>[src/gsicc.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-27T170740.221072Z"></a>
+2008-05-27T17:07:40.221072Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Enable printafm to emit a comment with UniqueID, that may be of some use when
+investigating versions of fonts used. Thanks to Michail Vidiassov for the
+patch. Bug 688610.
+</pre>
+<p>[lib/printafm.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-26T190405.563476Z"></a>
+2008-05-26T19:04:05.563476Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Work around broken JBIG2Decode streams created by several versions of
+Xerox WorkCentre. Bugs 689841 and 689852.
+
+In these streams, a segment data length field is written as -1
+expecting the decoder to infer it from the length of the remaining
+data.
+</pre>
+<p>[jbig2dec/jbig2_page.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-25T072853.119264Z"></a>
+2008-05-25T07:28:53.119264Z Igor Melichev</strong> (<a href="Details.htm#2008-05-25T072853.119264Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix : MSVC warnings.
+
+</pre>
+<p>[src/gdevpx.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-25T072338.027951Z"></a>
+2008-05-25T07:23:38.027951Z Igor Melichev</strong> (<a href="Details.htm#2008-05-25T072338.027951Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (True Type font loader) : Work around incorrect numGlyphs.
+
+</pre>
+<p>[src/gstype42.c src/ttfmain.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-25T054515.665594Z"></a>
+2008-05-25T05:45:15.665594Z Alex Cherepanov</strong> (<a href="Details.htm#2008-05-25T054515.665594Z">details</a>)</p>
+<blockquote>
+<pre>
+Revert the rev. 8509 because it is not needed after rev. 8774 but interferes
+with FONTPATH search and memory font resources. Bug 689637.
+
+</pre>
+<p>[lib/pdf_font.ps src/zfont.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-25T042823.450067Z"></a>
+2008-05-25T04:28:23.450067Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Continue the changes started by the rev. 8772. Remove one more definefont from
+embedded TrueType font loader. Bug 689644, customer 243.
+
+</pre>
+<p>[lib/gs_ttf.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-25T021714.504731Z"></a>
+2008-05-25T02:17:14.504731Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Change all shell scripts to treat a single dash '-' as a positional
+parameter rather than an option. Bug 689846.
+</pre>
+<p>[lib/eps2eps lib/ps2ps lib/dumphint lib/ps2ps2 lib/dvipdf lib/pdfopt]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-23T050520.013100Z"></a>
+2008-05-23T05:05:20.013100Z Alex Cherepanov</strong> (<a href="Details.htm#2008-05-23T050520.013100Z">details</a>)</p>
+<blockquote>
+<pre>
+Use embedded PDF fonts directly. Don't define them as resources and look them
+up later by the name. Leave findfont operator for fetching non-embedded fonts
+only, which are now unaffected by embedded fonts. Bugs 689510, 689514 from
+customer 700.
+
+</pre>
+<p>[lib/pdf_font.ps lib/pdf_ops.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-23T001350.314402Z"></a>
+2008-05-23T00:13:50.314402Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Implement sync_output as cairo_flush. Patch from Behdad Esfahbod.
+</pre>
+<p>[src/gdevcairo.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-22T180622.983939Z"></a>
+2008-05-22T18:06:22.983939Z Igor Melichev</strong> (<a href="Details.htm#2008-05-22T180622.983939Z">details</a>)</p>
+<blockquote>
+<pre>
+Enhancement (graphics) : Delay applying type 1 raster patterns until clist interpretation (continued 4).
+
+</pre>
+<p>[src/gsptype1.c src/gxcldev.h src/gxclrast.c src/gxclpath.c src/gxclutil.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-22T095218.876353Z"></a>
+2008-05-22T09:52:18.876353Z Igor Melichev</strong> (<a href="Details.htm#2008-05-22T095218.876353Z">details</a>)</p>
+<blockquote>
+<pre>
+Enhancement (graphics) : Delay applying type 1 raster patterns until clist interpretation (continued 3).
+
+</pre>
+<p>[src/gsptype1.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-21T194653.581581Z"></a>
+2008-05-21T19:46:53.581581Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Change parameters to gdev_prn_allocata_mesmory to explicit width and height to work
+around a (suspected) bug in gdev_prn_allocate when new_width and new_height are 0
+and the page has transparency. That issue will be adddressed separately.
+Crash with multi-threaded rendering reported by customer #850.
+</pre>
+<p>[src/gxclthrd.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-21T194647.112573Z"></a>
+2008-05-21T19:46:47.112573Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+In r8765 we concluded GS_IMAGE_MAX_PLANES was the same as
+MAX_COMPONENTS. Make this change permanent by removing the
+MAX_PLANES define entirely.
+</pre>
+<p>[src/gsimage.c src/zimage.c src/gxiparam.h src/gdevbbox.c src/gxidata.c src/gximage.c src/gsiparam.h src/gxclimag.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-21T194643.711424Z"></a>
+2008-05-21T19:46:43.711424Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Remove the lowercase "compatibility" versions of the GS_IMAGE_MAX_*
+macros.
+</pre>
+<p>[src/zimage.c src/gdevtxtw.c src/gsimage.c src/gxiparam.h src/gxidata.c src/gximage.c src/dxmainc.c src/gdevpdtv.c src/gdevpdfb.h src/gdevpdtv.h src/macsystypes.h src/gdevmacttf.h src/gp_mac.h src/gxclimag.c src/iimage.h src/gxsamplp.h src/gdevmacxf.c src/gdevmac.c src/gsiparam.h src/gdevmac.h]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-21T190531.529144Z"></a>
+2008-05-21T19:05:31.529144Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Reduce the GS_IMAGE_MAX_PLANES to a sane number. The image cannot have more
+planes than the number of CLIENT_COLORS we support (plus 1 for alpha).
+This cures a stack overflow seen with the multi-threaded rendering on
+Windows.
+</pre>
+<p>[src/gsiparam.h]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-21T182742.905572Z"></a>
+2008-05-21T18:27:42.905572Z Michael Vrhel</strong> (<a href="Details.htm#2008-05-21T182742.905572Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 689811.  Enables custom color callback when banding of images is occurs.
+
+</pre>
+<p>[src/gsnamecl.h src/gslibctx.c src/gxcmap.c src/iapi.c src/gslibctx.h src/gsncdummy.c src/gsciemap.c src/gscspace.c src/gsicc.c src/gscdevn.c src/gsnamecl.c src/gscie.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-21T181313.037917Z"></a>
+2008-05-21T18:13:13.037917Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Credit Behdad in the source.
+</pre>
+<p>[src/gdevcairo.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-21T134208.542151Z"></a>
+2008-05-21T13:42:08.542151Z Igor Melichev</strong> (<a href="Details.htm#2008-05-21T134208.542151Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (Type 1 hinter) : The missed flex hewristic malfunctioned.
+
+</pre>
+<p>[src/gxhintn.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-21T101214.199391Z"></a>
+2008-05-21T10:12:14.199391Z Igor Melichev</strong> (<a href="Details.htm#2008-05-21T101214.199391Z">details</a>)</p>
+<blockquote>
+<pre>
+Enhancement (graphics) : Delay applying type 1 raster patterns until clist interpretation (continued 2).
+
+</pre>
+<p>[src/gxclutil.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-21T064641.280250Z"></a>
+2008-05-21T06:46:41.280250Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Ensure that the chunk wrapper is used on the non_gc allocator since doing GC
+on chunks will be disastrous. This is protection only and causes no difference
+since the only current client of the chunk wrapper is the multi-threaded clist
+rendering which wraps non_gc_memory.
+</pre>
+<p>[src/gsmchunk.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-21T064014.466289Z"></a>
+2008-05-21T06:40:14.466289Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Upon one of our engineer's request, clean up the MSVC warning about use of an
+uninitialized variable.
+</pre>
+<p>[src/gxclthrd.c src/gxclist.h src/gxclread.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-21T063534.826889Z"></a>
+2008-05-21T06:35:34.826889Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add some missing information for the clist multi-threaded rendering files and
+the chunk memory wrapper. This cleans up (som of) the nightly regression nags.
+</pre>
+<p>[doc/Develop.htm]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-21T013708.729158Z"></a>
+2008-05-21T01:37:08.729158Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Fix the autoconf build when libcairo isn't available.
+
+The device properly disabled in r8752.
+</pre>
+<p>[src/configure.ac]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-21T012649.215021Z"></a>
+2008-05-21T01:26:49.215021Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Set properties on the new cairo device source file.
+</pre>
+<p>[src/gdevcairo.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-21T012445.439819Z"></a>
+2008-05-21T01:24:45.439819Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Whitespace cleanup. Also comment out the warning about setlogop; this
+isn't important for most documents.
+</pre>
+<p>[src/gdevcairo.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-21T012444.147836Z"></a>
+2008-05-21T01:24:44.147836Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Don't compare a NULL extension string.
+</pre>
+<p>[src/gdevcairo.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-21T012442.046903Z"></a>
+2008-05-21T01:24:42.046903Z Ralph Giles</strong> (<a href="Details.htm#2008-05-21T012442.046903Z">details</a>)</p>
+<blockquote>
+<pre>
+Rename the cairo device parameter CairoSurface to CairoOption.
+
+Better handling of libcairo errors.
+
+Add (untested) support for passing a libcairo context pointer
+through the CairoContext device parameter for rendering to a
+client drawable.
+
+</pre>
+<p>[src/gdevcairo.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-21T012440.923940Z"></a>
+2008-05-21T01:24:40.923940Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Protect the use of pkg-config for libcairo.
+</pre>
+<p>[src/configure.ac]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-21T012438.762206Z"></a>
+2008-05-21T01:24:38.762206Z Ralph Giles</strong> (<a href="Details.htm#2008-05-21T012438.762206Z">details</a>)</p>
+<blockquote>
+<pre>
+New 'cairo' output device using the libcairo graphics library.
+Patch by Behdad Esfahbod.
+
+</pre>
+<p>[src/Makefile.in src/configure.ac src/gdevcairo.c src/devs.mak]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-20T203452.772461Z"></a>
+2008-05-20T20:34:52.772461Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add double inclusion protection to cure nag from nightly regression.
+</pre>
+<p>[src/gsmchunk.h src/gxclthrd.h]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-20T161840.306550Z"></a>
+2008-05-20T16:18:40.306550Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Clean up properties to get rid of nightly regression warnings.
+</pre>
+<p>[src/gsmchunk.c src/gxclthrd.c src/gsmchunk.h src/gxclthrd.h src/gdevsvg.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-20T005225.121469Z"></a>
+2008-05-20T00:52:25.121469Z Alex Cherepanov</strong> (<a href="Details.htm#2008-05-20T005225.121469Z">details</a>)</p>
+<blockquote>
+<pre>
+Consider Index object in CFF font as empty if the offset element size is
+incorrect. Bug 689854, customer 580.
+
+</pre>
+<p>[lib/gs_cff.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-19T144752.443966Z"></a>
+2008-05-19T14:47:52.443966Z Igor Melichev</strong> (<a href="Details.htm#2008-05-19T144752.443966Z">details</a>)</p>
+<blockquote>
+<pre>
+Enhancement (graphics) : Delay applying type 1 raster patterns until clist interpretation (continued).
+
+</pre>
+<p>[src/gsptype1.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-17T213347.003946Z"></a>
+2008-05-17T21:33:47.003946Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Permit opening of temporary files in the safe mode. Fix /invalidaccess
+error during interpretation of PDF 1.7 file collections in the safe mode.
+Bug 689847.
+
+</pre>
+<p>[lib/pdf_main.ps src/zfile.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-17T125801.814886Z"></a>
+2008-05-17T12:58:01.814886Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Ignore annotation appearance stream when it has a wrong type i.e. not a
+dictionary. Bug 689839.
+
+</pre>
+<p>[lib/pdf_main.ps lib/pdf_base.ps lib/pdf_draw.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-17T010202.764582Z"></a>
+2008-05-17T01:02:02.764582Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Replace various access techniques to PDF annotations with 'knownoget'
+in preparation to fix the bug 689839.
+
+</pre>
+<p>[lib/pdf_draw.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-16T233414.372367Z"></a>
+2008-05-16T23:34:14.372367Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add support for linecap/join and miterlimit.
+</pre>
+<p>[src/gdevsvg.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-16T124824.645580Z"></a>
+2008-05-16T12:48:24.645580Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Use PDFScanRules to scan ToUnicode CMap. Fix a case where CMap stream has
+a name starting with 2 slashes that should not be parsed as an immediately
+evaluated name. Bug 689642, customer 870.
+
+</pre>
+<p>[lib/pdf_font.ps lib/pdf_base.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-16T000542.149140Z"></a>
+2008-05-16T00:05:42.149140Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Accumulate imaging state changes and write a new group only when
+drawing. Add support for the linewidth parameter. We're pretty
+close to properly handling tiger and other vector-only files.
+</pre>
+<p>[src/gdevsvg.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-16T000541.073469Z"></a>
+2008-05-16T00:05:41.073469Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct stroke and fill attribute overrides based on the path type.
+
+Also includes some whitespace cleanup.
+</pre>
+<p>[src/gdevsvg.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-16T000540.066267Z"></a>
+2008-05-16T00:05:40.066267Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Store clipping rectangles as a clip path and ignore other non-drawing
+paths.
+</pre>
+<p>[src/gdevsvg.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-15T212413.840635Z"></a>
+2008-05-15T21:24:13.840635Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Set the document size and scale based on the page size and resolution
+from the device parameters.
+</pre>
+<p>[src/gdevsvg.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-15T212412.705572Z"></a>
+2008-05-15T21:24:12.705572Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Return proper negative error codes on allocation failure.
+
+Also some minor formatting.
+</pre>
+<p>[src/gdevsvg.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-15T212411.342484Z"></a>
+2008-05-15T21:24:11.342484Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Be explicit about clearing the current fill or stroke color when
+none is set.
+</pre>
+<p>[src/gdevsvg.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-15T161748.102316Z"></a>
+2008-05-15T16:17:48.102316Z Michael Vrhel</strong></p>
+<blockquote>
+<pre>
+Fix for previous commit.  I had the wrong version number test in the define.</pre>
+<p>[jbig2dec/config_win32.h]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-15T161217.999197Z"></a>
+2008-05-15T16:12:17.999197Z Michael Vrhel</strong></p>
+<blockquote>
+<pre>
+Minor change in JBIG configuration file related to using Visual Studio Version 9 (2008).  stdio.h has a definition for vsnprintf which conflicts with the define in config_win32.h</pre>
+<p>[jbig2dec/config_win32.h]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-15T000024.616940Z"></a>
+2008-05-15T00:00:24.616940Z Marcos Woehrmann</strong> (<a href="Details.htm#2008-05-15T000024.616940Z">details</a>)</p>
+<blockquote>
+<pre>
+Improve white-on-mask drawing mode.
+
+</pre>
+<p>[src/gdevpx.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-14T234909.954483Z"></a>
+2008-05-14T23:49:09.954483Z Marcos Woehrmann</strong> (<a href="Details.htm#2008-05-14T234909.954483Z">details</a>)</p>
+<blockquote>
+<pre>
+
+Add support to pxlcolor and pxlmono for 24 bpp images.
+
+</pre>
+<p>[src/gdevpx.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-13T195208.912983Z"></a>
+2008-05-13T19:52:08.912983Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Fix an incorrect curveto coordinate.
+</pre>
+<p>[src/gdevsvg.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-13T184723.939753Z"></a>
+2008-05-13T18:47:23.939753Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Disable drawing in the SVG output device after the first output_page call.
+
+Even for single-page output we receive an erasepage fill after the showpage
+from gdevvec, which overwrites whatever we've drawn. This should be avoided
+in a more sophisticated way (ideally in the superclass) but this method is
+helpful for current development.
+</pre>
+<p>[src/gdevsvg.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-13T184723.279847Z"></a>
+2008-05-13T18:47:23.279847Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Support setting stroke and fill colors.
+</pre>
+<p>[src/gdevsvg.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-13T184721.967012Z"></a>
+2008-05-13T18:47:21.967012Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Import the current state of the svg driver. Doesn't work.
+</pre>
+<p>[src/Makefile.in src/gdevsvg.c src/devs.mak]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-13T035810.005759Z"></a>
+2008-05-13T03:58:10.005759Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Reduce generation of garbage and the time spent on garbage collection by
+placing gstate into the 2nd element of the patterm implementation array
+in Adobe compatibility mode only. Ghostscript doesn't use this gstate
+at all. Bug 689488.
+
+</pre>
+<p>[lib/gs_lev2.ps src/zmisc.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-11T170017.181464Z"></a>
+2008-05-11T17:00:17.181464Z Alex Cherepanov</strong> (<a href="Details.htm#2008-05-11T170017.181464Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix a bug that leaves a junk value on the stack for every empty row on the
+page during execution of a redefined showpage. Bug 689832.
+
+</pre>
+<p>[lib/ps2epsi.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-10T220203.546959Z"></a>
+2008-05-10T22:02:03.546959Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Ignore OutputIntent attribute if it is not an array; recover a broken PDF file.
+Bug 689831.
+
+</pre>
+<p>[lib/pdf_main.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-09T164454.615805Z"></a>
+2008-05-09T16:44:54.615805Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix missing dependency that caused builds that included the 'bmpa' devices
+to fail because the locking memory code wasn't included. Currently PCL
+builds still had the bmpa devices included, so they failed.
+</pre>
+<p>[src/lib.mak]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-09T140044.027651Z"></a>
+2008-05-09T14:00:44.027651Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+uncodes 33 and 34 repeat a zero code length symbol id, not the previous
+symbol like runcode 32. Bug 689824.
+
+Thanks to Justin Greer for the fix.
+</pre>
+<p>[jbig2dec/config.h jbig2dec/configure jbig2dec/jbig2_text.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-09T041201.814716Z"></a>
+2008-05-09T04:12:01.814716Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Reject incorrect ICC profile that has 0 offset in one of the tags
+and use alternate color space. Bug 689830.
+
+</pre>
+<p>[icclib/icc.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-09T021814.475665Z"></a>
+2008-05-09T02:18:14.475665Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+This is the "final" merge of the mtrender (multi-threaded clist rendering)
+branch into the trunk. The default behavior is still the same, i.e., the
+clist rendering is done in the same thread as the parsing (main thread).
+
+The 'gsmalloc' memory allocator now ALWAYS uses a mutex to lock accesses
+in case it is used by a multi-threaded client. This was determined to
+result is less than 1% performance hit on a single threaded client.
+
+Refer to the log messages on the mtrender branch for details on the
+design of the multi-threaded clist rendering, but the summary is that
+-dNumRenderingThreads=# (default 0) determines the number of background
+threads REQUESTED for rendering bands. If the platform doesn't support
+threads, or if there is an error starting the threads from the clist_
+get_bits_rectangle_mt hook, single threaded rendering will be used.
+
+The number of threads may be less than the requested number if the
+number of bands is less than the request, or if there is an error
+setting up threads (as many as can be created, up to the request will
+be used). The -Z: debug switch emits status messages indicating how
+many threads are requested (-dNumRenderingThreads) and the number that
+is actually used.
+
+Many files show little if any improvement with multi-threaded clist
+rendering since they are dominated by the clist writing time, or by
+the time required to write the output. No files seen to date show a
+performance hit greater than aobut 3%. Setting NumRenderingThreads
+to a count higher than the number of CPU cores available does not
+seem to help or hurt much, but there is overhead (per page) with
+starting threads and allocating band buffers, so a very large count
+is not productive.
+
+The best performance seen on an Intel Core 2 Duo system, on a
+particular file is about a 75% performance improvement (completing
+the page in 57% of the single threaded time). This time did not
+include writing a file (output to /dev/null).
+
+In order to prevent memory mutex (locking) contention from slowing
+down multi-threaded clist rendering, each thread uses a 'chunk'
+wrapper on NON-GC the non-gc memory allocator. Each chunk allocator
+is thread-safe/instantiated, so the locking only occurs on chunk
+allocations to the wrapped (target) memory allocator.
+
+The 'BAND_LIST_STORAGE=mmeory' option has been supplemented to allow
+multiple concurrent threads to read the clist 'memfile'.
+
+The "autoconf" files (configure.ac and Makefile.in) have been improved
+to hook the 'posix' pthreads if available, so linux and Mac OS/X will
+be able to support the multi-threaded clist rendering.
+</pre>
+<p>[src/gxclist.c src/gsmemlok.c src/gsmchunk.c src/gxclthrd.c src/gxclist.h src/configure.ac src/gsmchunk.h src/gxclthrd.h src/gxclread.c src/lib.mak src/gxclmem.c src/gxclmem.h src/gsmalloc.c src/Makefile.in src/gdevprn.c src/gsmalloc.h src/gdevprn.h]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-08T214707.355557Z"></a>
+2008-05-08T21:47:07.355557Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Use 'realtime' instead of 'usertime' for -Z: timing information. On some
+systems (Windows) these are equivalent, but on linux, 'usertime' is the
+time for the current thread which interferes with timing collection on
+different threads (multi-threaded rendering did not include any time for
+the threads). INCOMPATIBLE CHANGE, but this is only debug info.
+</pre>
+<p>[src/imain.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-08T212830.163536Z"></a>
+2008-05-08T21:28:30.163536Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Allow some compile time constants that affect performance to be set as
+/D compiler flags (via XCFLAGS makefile macro).
+
+MAX_BITMAP_PATTERN_SIZE controls when the clist pattern accumulator is used,
+and on machines with a decent amount of RAM, the default of 1 Mb is too
+small and causes the slower clist method to be used too often. Setting this
+to 32 Mb is probably better on hosts.
+
+The GS_CLIENT_COLOR_MAX_COMPONENTS default of 252 is needed for Adobe CPSI
+compatibility and for RIPS that want to use a large number of DeviceN
+colorants, but this increases the size of some allocations and slows down
+performance and is much too large for printers. Setting this to 6 or 8 is
+probably plenty.
+</pre>
+<p>[src/gxpcmap.c src/gsccolor.h]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-08T200932.433652Z"></a>
+2008-05-08T20:09:32.433652Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix MSVC warning -- mismatched type.
+</pre>
+<p>[src/zchar42.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-08T195633.932490Z"></a>
+2008-05-08T19:56:33.932490Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix gcc warnings, unused variables and type mismatch, implicit declaration.
+</pre>
+<p>[src/gximask.c src/gp_unix.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-08T193526.683268Z"></a>
+2008-05-08T19:35:26.683268Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Clean up gcc compiler warnings for unused 'st' and no prototype for
+gx_pattern_cache_free (from gxpcolor.h).
 </pre>
 <p>[src/gxclrast.c]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-05T000850.583846Z"></a>
-2007-12-05T00:08:50.583846Z Till Kamppeter</strong></p>
+<p><strong><a name="2008-05-08T191040.329127Z"></a>
+2008-05-08T19:10:40.329127Z Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Let CUPS filters use buffered input to Ghostscript via '-_', to work around bug #689577. 
+Add support for recursive mutex on posix. Multiple threads that perform
+'locking' before calling an object's finalize need this to prevent
+deadlock if the finalize calls 'free'. This protection is standard on
+Windows, but PTHREAD_MUTEX_RECURSIVE attribute is not available on
+many systems.
+
+The method, using pthread_self and pthread_equal, was extracted from
+a web information page and tested on linux.
+
+NB: The multi-threaded clist rendering no longer needs this since
+the 'chunk' memory wrapper calls the 'finalize' function without
+locking, so the deadlock no longer occurs.
 </pre>
-<p>[cups/pstoraster.in cups/pstopxl.in]</p>
+<p>[src/gp_psync.c]</p>
 </blockquote>
 
-<p><strong><a name="2007-12-03T213116.528843Z"></a>
-2007-12-03T21:31:16.528843Z Henry Stiles</strong></p>
+<p><strong><a name="2008-05-08T185610.922303Z"></a>
+2008-05-08T18:56:10.922303Z Ray Johnston</strong> (<a href="Details.htm#2008-05-08T185610.922303Z">details</a>)</p>
 <blockquote>
 <pre>
-Replace the "tricky" unit_frac macro with a normal function call.  The
-macro produced a false positive in valgrind and seems to cause
-incorrect code generation on gcc 4.1.2 with optimization but we did
-not study it in detail.  The change should be equivalent to the
-previous code, reviewed by Ralph Giles.
-</pre>
-<p>[src/gxcmap.c src/gxcmap.h src/gscsepr.c src/gscdevn.c]</p>
-</blockquote>
-
-<p><strong><a name="2007-12-03T200705.165284Z"></a>
-2007-12-03T20:07:05.165284Z Igor Melichev</strong> (<a href="Details.htm#2007-12-03T200705.165284Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (shadings) : Optimize fill_linear_color_scanline with analitic computation of the color change position.
+Fix memory leak observed with DEBUG=1 build on mtrender branch. The
+'levels' and 'bit_data' of halftones were being leaked when halftones
+were set by the clist reader.
 
 </pre>
-<p>[src/gdevdsha.c]</p>
+<p>[src/gxdhtserial.c]</p>
 </blockquote>
 
-<p><strong><a name="2007-11-30T221349.581001Z"></a>
-2007-11-30T22:13:49.581001Z L. Peter Deutsch</strong></p>
+<p><strong><a name="2008-05-08T184031.637800Z"></a>
+2008-05-08T18:40:31.637800Z Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Add a tool that analyzes logs produced by gs -Z67, producing a report of
-memory leaks.
+Fix compiler warning due to missing prototype for strncmp.
 </pre>
-<p>[toolbin/memory.py]</p>
+<p>[src/zchar42.c src/int.mak]</p>
 </blockquote>
 
-<p><strong><a name="2007-11-30T064347.688763Z"></a>
-2007-11-30T06:43:47.688763Z L. Peter Deutsch</strong></p>
+<p><strong><a name="2008-05-07T210753.236295Z"></a>
+2008-05-07T21:07:53.236295Z Igor Melichev</strong> (<a href="Details.htm#2008-05-07T210753.236295Z">details</a>)</p>
 <blockquote>
 <pre>
-Adds the base font address to the -Zm tracing output.
-</pre>
-<p>[src/gsfont.c]</p>
-</blockquote>
-
-<p><strong><a name="2007-11-30T064312.449891Z"></a>
-2007-11-30T06:43:12.449891Z L. Peter Deutsch</strong></p>
-<blockquote>
-<pre>
-Fixes bug: -Z89 produced slightly mangled output (-Z9 output inserted in the
-middle of a line of -Z8 output).
-</pre>
-<p>[src/igcref.c]</p>
-</blockquote>
-
-<p><strong><a name="2007-11-30T004553.632689Z"></a>
-2007-11-30T00:45:53.632689Z Ray Johnston</strong></p>
-<blockquote>
-<pre>
-Add URW fonts to the Resource/Font directory. These will be included when
-COMPILE_INITS=1. Fontmap.GS still references the disk file name so that
-the disk file based fonts can still be used if they are available.
-</pre>
-<p>[Resource/Font/URWPalladioL-BoldItal Resource/Font/NimbusRomNo9L-Medi Resource/Font/NimbusSanL-Bold Resource/Font/Dingbats Resource/Font/URWChanceryL-MediItal Resource/Font/CenturySchL-Roma Resource/Font Resource/Font/NimbusMonL-Bold Resource/Font/URWGothicL-Demi Resource/Font/NimbusSanL-BoldItal Resource/Font/NimbusRomNo9L-MediItal Resource/Font/StandardSymL Resource/Font/URWBookmanL-DemiBold Resource/Font/NimbusRomNo9L-Regu Resource/Font/URWGothicL-Book Resource/Font/NimbusSanL-ReguCond Resource/Font/CenturySchL-Bold Resource/Font/URWBookmanL-Ligh Resource/Font/NimbusRomNo9L-ReguItal Resource/Font/URWBookmanL-DemiBoldItal Resource/Font/NimbusMonL-ReguObli Resource/Font/NimbusSanL-ReguCondItal Resource/Font/CenturySchL-Ital Resource/Font/URWPalladioL-Roma Resource/Font/CenturySchL-BoldItal Resource/Font/URWBookmanL-LighItal Resource/Font/NimbusSanL-BoldCond Resource/Font/NimbusMonL-BoldObli Resource/Font/NimbusSanL-BoldCondItal Resource/Font/URWGothicL-DemiObli Resource/Font/NimbusSanL-Regu Resource/Font/URWPalladioL-Bold Resource/Font/NimbusMonL-Regu Resource/Font/URWGothicL-BookObli Resource/Font/NimbusSanL-ReguItal Resource/Font/URWPalladioL-Ital]</p>
-</blockquote>
-
-<p><strong><a name="2007-11-29T213953.584646Z"></a>
-2007-11-29T21:39:53.584646Z Igor Melichev</strong> (<a href="Details.htm#2007-11-29T213953.584646Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (shadings) : Optimize path manipulations for shading fill (continued).
+Enhancement (graphics) : Delay applying type 1 raster patterns until clist interpretation.
 
 </pre>
-<p>[src/gdevp14.c src/gxclpath.c src/gxclrect.c]</p>
+<p>[src/gsptype1.c src/gxclrast.c src/gxclpath.c src/gxclimag.c src/gxclrect.c]</p>
 </blockquote>
 
-<p><strong><a name="2007-11-29T014216.432740Z"></a>
-2007-11-29T01:42:16.432740Z L. Peter Deutsch</strong></p>
+<p><strong><a name="2008-05-07T210216.625138Z"></a>
+2008-05-07T21:02:16.625138Z Igor Melichev</strong> (<a href="Details.htm#2008-05-07T210216.625138Z">details</a>)</p>
 <blockquote>
 <pre>
-Remove obsolete variables dstderr and estderr; repair tracing code in
-igcstr.c that would cause a crash if -Z5 was used.
+Fix (graphics) : Wrong pattern phase when pattern applies to a band with non-zero origin.
 
 </pre>
-<p>[src/interp.c src/gdebug.h src/igcstr.c]</p>
+<p>[src/gsptype1.c]</p>
 </blockquote>
 
-<p><strong><a name="2007-11-28T200434.791598Z"></a>
-2007-11-28T20:04:34.791598Z Ray Johnston</strong> (<a href="Details.htm#2007-11-28T200434.791598Z">details</a>)</p>
+<p><strong><a name="2008-05-07T091527.593615Z"></a>
+2008-05-07T09:15:27.593615Z Igor Melichev</strong> (<a href="Details.htm#2008-05-07T091527.593615Z">details</a>)</p>
 <blockquote>
 <pre>
-Add the 'pamcmyk32' (previously the 'pam' device) to all default builds.
-This will be used for regression testing of 32-bit CMYK.
+Fix (graphics) : Imprecise pattern phase with negative cell origins (continued).
 
 </pre>
-<p>[src/bcwin32.mak src/openvms.mak src/ugcclib.mak src/macosx.mak src/watcw32.mak src/dvx-gcc.mak src/msvc32.mak src/unix-gcc.mak src/gdevpbm.c src/unixansi.mak src/macos-mcp.mak src/devs.mak src/os2.mak]</p>
+<p>[src/gxp1fill.c]</p>
 </blockquote>
 
-<p><strong><a name="2007-11-28T194748.435055Z"></a>
-2007-11-28T19:47:48.435055Z Ralph Giles</strong></p>
+<p><strong><a name="2008-05-07T062534.508384Z"></a>
+2008-05-07T06:25:34.508384Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Document the jasper build file version skew menioned in Bug 689570.
-</pre>
-<p>[doc/Release.htm]</p>
-</blockquote>
-
-<p><strong><a name="2007-11-28T184655.924792Z"></a>
-2007-11-28T18:46:55.924792Z Ray Johnston</strong></p>
-<blockquote>
-<pre>
-Fix #defines when USE_COMPRESSED_ENCODING == 0 so that the number of
-components, separable/linear and encode/decode values are correct.
-Also add checking for TIFF file larger than max_long.
-</pre>
-<p>[src/gdevtsep.c]</p>
-</blockquote>
-
-<p><strong><a name="2007-11-28T183959.435918Z"></a>
-2007-11-28T18:39:59.435918Z Ray Johnston</strong> (<a href="Details.htm#2007-11-28T183959.435918Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix CIEBasedA problem, add DeviceGray and DeviceRGB support to this utility.
+Repait yet another broken PDF file that abbreviates /Indexed to /I
+in the color space array. Bug 689815.
 
 </pre>
-<p>[lib/docie.ps]</p>
+<p>[lib/pdf_draw.ps]</p>
 </blockquote>
 
-<p><strong><a name="2007-11-27T225840.032075Z"></a>
-2007-11-27T22:58:40.032075Z Ralph Giles</strong></p>
+<p><strong><a name="2008-05-06T205954.208603Z"></a>
+2008-05-06T20:59:54.208603Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Also install gdevdsp.h in the unix so build. This header contains the
-callback definitions for the "display" device. Bug 689576.
-</pre>
-<p>[src/unix-dll.mak]</p>
-</blockquote>
-
-<p><strong><a name="2007-11-27T204309.836338Z"></a>
-2007-11-27T20:43:09.836338Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Update the regression code license headers with the current contact
-address.
-</pre>
-<p>[toolbin/tests/dump_checksum.py toolbin/tests/cmpi.py toolbin/tests/gscheck_testfiles.py toolbin/tests/dump_checksum_plus.py toolbin/tests/check_source.py toolbin/tests/gssum.py toolbin/tests/gscheck_all.py toolbin/tests/dump_checksum_raw.py toolbin/tests/make_two_pdfversions toolbin/tests/check_all.py toolbin/tests/rasterdb.py toolbin/tests/gsutil.py toolbin/tests/gscheck_fuzzypdf.py toolbin/tests/revert_pdfbaseline toolbin/tests/build_revision.py toolbin/tests/compare_checksumdb.py toolbin/tests/gsconf.py toolbin/tests/revert_baseline toolbin/tests/update_baseline.py toolbin/tests/make_baselinedb.py toolbin/tests/gscheck_raster.py toolbin/tests/gsparamsets.py toolbin/tests/gstestutils.py toolbin/tests/compare_checksums.py toolbin/tests/check_dirs.py toolbin/tests/update_specific toolbin/tests/run_nightly.py toolbin/tests/gstestgs.py toolbin/tests/myoptparse.py toolbin/tests/run_regression.py toolbin/tests/get_baselines.py toolbin/tests/make_two_versions toolbin/tests/testdiff.py toolbin/tests/gscheck_pdfwrite.py toolbin/tests/make_testdb.py toolbin/tests/check_comments.py toolbin/tests/check_docrefs.py toolbin/tests/get_baseline_log.py]</p>
-</blockquote>
-
-<p><strong><a name="2007-11-27T204307.921159Z"></a>
-2007-11-27T20:43:07.921159Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Change the regression scripts to rewrite the product as
-"GPL Ghostscript".
-</pre>
-<p>[toolbin/tests/build_revision.py toolbin/tests/update_specific]</p>
-</blockquote>
-
-<p><strong><a name="2007-11-27T181110.542532Z"></a>
-2007-11-27T18:11:10.542532Z Igor Melichev</strong> (<a href="Details.htm#2007-11-27T181110.542532Z">details</a>)</p>
-<blockquote>
-<pre>
-Fix (graphics) : Improving the setoverprint logic.
+Fix and simplify implementation of operator Q. Collecting the path with
+the current ctm and re-playing it with the restored ctm transforms the
+path exactly as PDF needs. Bug 689812.
 
 </pre>
-<p>[src/gsstate.c]</p>
+<p>[lib/pdf_ops.ps]</p>
 </blockquote>
 
-<p><strong><a name="2007-11-23T092306.243419Z"></a>
-2007-11-23T09:23:06.243419Z Ken Sharp</strong> (<a href="Details.htm#2007-11-23T092306.243419Z">details</a>)</p>
+<p><strong><a name="2008-05-05T195117.293996Z"></a>
+2008-05-05T19:51:17.293996Z Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Fix (pdfwrite): Fonts containing glyphs with no sbw or hsbw
-instruction caused pdfwrite to crash.
-
-</pre>
-<p>[src/gxtype1.c src/gdevpsfu.c]</p>
-</blockquote>
-
-<p><strong><a name="2007-11-22T024659.719550Z"></a>
-2007-11-22T02:46:59.719550Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Correct Id line and double-include protection warnings.
-</pre>
-<p>[src/ConvertUTF.h toolbin/tests/check_source.py src/expat.mak]</p>
-</blockquote>
-
-<p><strong><a name="2007-11-22T010346.485805Z"></a>
-2007-11-22T01:03:46.485805Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Update the run_nightly regression script to rewrite the product
-name to GPL Ghostscript instead of AFPL Ghostscript. Also, include
-quotation marks in the optional part of the regex so we work when
-GS_PRODUCT is set to another macro and does not include a literal
-string, as it does at release time.
-</pre>
-<p>[toolbin/tests/run_nightly.py]</p>
-</blockquote>
-
-<p><strong><a name="2007-11-22T005403.544607Z"></a>
-2007-11-22T00:54:03.544607Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Correct a format string error in the PDF 1.4 spot color name generation.
+Eliminate leaks caused by lost 'maskbuf' elements. Only the uppermost
+maskbuf is (currently) used by the pop_transparency_group that applies
+the mask, but the chain of maskbuf->maskbuf elements was never freed.
+This also improves performance (at least for the test case of bug
+689534). Customer #870.
 </pre>
 <p>[src/gdevp14.c]</p>
 </blockquote>
 
-<p><strong><a name="2007-11-22T005401.468513Z"></a>
-2007-11-22T00:54:01.468513Z Ralph Giles</strong></p>
+<p><strong><a name="2008-05-02T201350.255816Z"></a>
+2008-05-02T20:13:50.255816Z Igor Melichev</strong> (<a href="Details.htm#2008-05-02T201350.255816Z">details</a>)</p>
 <blockquote>
 <pre>
-Update release procedure documentation.
+Fix (graphics) : Imprecise pattern phase with negative cell origins.
+
 </pre>
-<p>[doc/Release.htm]</p>
+<p>[src/gxp1fill.c]</p>
 </blockquote>
 
-<p><strong><a name="2007-11-21T224203.178745Z"></a>
-2007-11-21T22:42:03.178745Z Ralph Giles</strong></p>
+<p><strong><a name="2008-05-02T080750.475340Z"></a>
+2008-05-02T08:07:50.475340Z Ken Sharp</strong></p>
 <blockquote>
 <pre>
-Bump the version number and date after the 8.61 release.
+The revision 8621 which reinstated the comments, and updated encs2c.ps to generate them,
+placed the Id line in the wrong position relative to the licence and summary comments.
+</pre>
+<p>[toolbin/encs2c.ps src/gscedata.h src/gdevpdtv.c src/gdevpdtv.h src/gscedata.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-02T021957.012115Z"></a>
+2008-05-02T02:19:57.012115Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Remove the testing instructions and file index.
+
+This was mostly obsolete, and the automated tests are fairly complete now.
+</pre>
+<p>[doc/Testing.htm doc/Readme.htm toolbin/tests/check_docrefs.py]</p>
+</blockquote>
+
+<p><strong><a name="2008-05-02T014214.506521Z"></a>
+2008-05-02T01:42:14.506521Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Fix various code policy warnings.
+</pre>
+<p>[toolbin/msvcxml.bat src/gdevdjet.c src/aes.h toolbin/memory.py src/aes.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-30T190659.803995Z"></a>
+2008-04-30T19:06:59.803995Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Fix some warnings.
+</pre>
+<p>[src/gsncdummy.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-30T045102.115275Z"></a>
+2008-04-30T04:51:02.115275Z Michael Vrhel</strong></p>
+<blockquote>
+<pre>
+Fixed issue with NULL pointer in gsncdummy.c when ICC color space was used in custom color callback.  Also, made the object based coloring an option define and fixed minor header issues.</pre>
+<p>[src/lib.mak src/gxcmap.c src/gsncdummy.c src/gscspace.c src/gscdevn.c src/gsnamecl.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-30T013518.247997Z"></a>
+2008-04-30T01:35:18.247997Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Fix some warnings.
+</pre>
+<p>[src/gdevp14.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-29T063417.581619Z"></a>
+2008-04-29T06:34:17.581619Z Michael Vrhel</strong></p>
+<blockquote>
+<pre>
+Fix for bug 689806 which was introduced when fixing bug 689803.  The current bug was related to a CIELAB image with a colorspace ICC profile (LAB to LAB).  The image data was incorrectly being normalized between 0 and 1 (float). It is now properly normalized to the range of the CIELAB ICC space.  There still exists an issue with this file as absolute colorimetry should be used.  This is the source of the current difference between AR and GS.  However, the image is no longer black now but should match the GS result prior to rev 8664.</pre>
+<p>[src/lib.mak src/gxicolor.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-29T003125.778368Z"></a>
+2008-04-29T00:31:25.778368Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Make pf2afm utility friendlier to Windows users: check for .pfa or .pfb
+extensions case-insensitively and accept backslash as a path separator.
+Bug 689804.
+</pre>
+<p>[lib/pf2afm.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-28T174826.844493Z"></a>
+2008-04-28T17:48:26.844493Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Refine calculation of di member of a trap_line structure to avoid integer
+overflow when the source operands are big. Bug 689448.
+
+</pre>
+<p>[src/gdevddrw.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-28T162635.071571Z"></a>
+2008-04-28T16:26:35.071571Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Fix a minor header dependency skew.
+</pre>
+<p>[src/int.mak src/gsicc.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-28T064728.650051Z"></a>
+2008-04-28T06:47:28.650051Z Michael Vrhel</strong></p>
+<blockquote>
+<pre>
+Undo accidental commitment of ENABLE_CUSTOM_COLOR_CALLBACK (has callback) code.</pre>
+<p>[src/gsicc.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-28T052054.026239Z"></a>
+2008-04-28T05:20:54.026239Z Alex Cherepanov</strong> (<a href="Details.htm#2008-04-28T052054.026239Z">details</a>)</p>
+<blockquote>
+<pre>
+Implement spacial handling of transfer functions during Gray to CMYK
+conversion: ignore transfer functions for non-black components. Bug 688360.
+
+</pre>
+<p>[src/lib.mak src/gxcmap.c src/gxcspace.h src/gscspace.c src/gxdevcli.h]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-27T152110.051210Z"></a>
+2008-04-27T15:21:10.051210Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Check the error code early. Fix a SEGV in PDF file with invalid ICC profile
+that was introduced by the rev. 8664.
+
+</pre>
+<p>[src/zicc.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-26T043556.962801Z"></a>
+2008-04-26T04:35:56.962801Z Michael Vrhel</strong></p>
+<blockquote>
+<pre>
+Fix for bug#689803.  Set bounds correctly when input data is LAB and color also includes a colorspace source profile (e.g. LAB to LAB).  </pre>
+<p>[src/int.mak src/gsicc.c src/zicc.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-23T140611.166309Z"></a>
+2008-04-23T14:06:11.166309Z Igor Melichev</strong> (<a href="Details.htm#2008-04-23T140611.166309Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (graphics) : Convert imagemask into a clipping path when painting a big pattern.
+
+</pre>
+<p>[src/gsimage.c src/gxacpath.c src/gsptype1.h src/gximask.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-23T003010.271302Z"></a>
+2008-04-23T00:30:10.271302Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Since we always write a complete "classic" xref, the Trailer may need to be
+adjusted: (1) remove keys that pertain to xref-streams and hybrid-xref PDFs;
+(2) if it's a PDF stream, turn it into a PDF dict by removing keys used for
+PDF streams (both standard and GS-specific), and the executable attribute.
+Thanks to SaGS for the patch. Bug 688152.
+</pre>
+<p>[lib/pdfwrite.ps lib/pdfopt.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-22T171803.467843Z"></a>
+2008-04-22T17:18:03.467843Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Set native line endings on gsnamecl. This should remedy patch-portability problems.
+</pre>
+<p>[src/gsnamecl.h src/gsnamecl.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-21T145338.640663Z"></a>
+2008-04-21T14:53:38.640663Z Igor Melichev</strong> (<a href="Details.htm#2008-04-21T145338.640663Z">details</a>)</p>
+<blockquote>
+<pre>
+Enhancement (graphics) : Delay applying big patterns until page clist interpretation.
+
+</pre>
+<p>[src/gsptype1.c src/lib.mak src/gsptype2.c src/gxclist.c src/gxpcmap.c src/gsptype1.h src/gxdcolor.c src/gxclist.h src/gxpcolor.h src/gdevfax.c src/gxdcolor.h src/gxp1fill.c src/gxclrast.c src/gxclread.c src/gxclimag.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-21T115827.801424Z"></a>
+2008-04-21T11:58:27.801424Z Russell Lang</strong></p>
+<blockquote>
+<pre>
+Change the name of a utility used to build Windows distribution so it doesn't 
+get treated as a setup program by Windows Vista.
+Change reference to obsolete doc/Public.htm to doc/COPYING.
+Allow makefile to recognise a later patch of the Microsoft Visual Studio 2005 
+make utility.
+</pre>
+<p>[src/winint.mak src/msvc32.mak]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-20T234049.333141Z"></a>
+2008-04-20T23:40:49.333141Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Ignore DSC comments in nested EPS files and data blocks. Thanks to
+William Bader for the patch. Bug 689791.
+
+RIFFERENCES:
+None
+</pre>
+<p>[src/zdscpars.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-20T045121.386273Z"></a>
+2008-04-20T04:51:21.386273Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Skip bogus endobj operators inside the object stream.
+Bug 689795, customer 870.
+
+RIFFERENCES:
+None
+</pre>
+<p>[lib/pdf_base.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-19T182631.622080Z"></a>
+2008-04-19T18:26:31.622080Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix a problem when the default transfer function of the target printer
+is not in global space. Seen with Konica Minolta (QMS PostScript).
+Fixes 'invalidaccess' error caused by attempting to store a 'local'
+currentcolortransfer into a 'global' array. NB: The 'cp2g' will then
+convert the array to global which is needed to store into InitialExtGState.
+</pre>
+<p>[lib/opdfread.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-19T181834.484562Z"></a>
+2008-04-19T18:18:34.484562Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add diagnostic information for start of rendering (Outputpage start) so that
+parsing as well as rendering time can be observed with -Z: (gs_debug[':'])
+</pre>
+<p>[src/zdevice.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-19T124815.825215Z"></a>
+2008-04-19T12:48:15.825215Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix PDF transmuting utilities. Remove '#' from the list of characters that
+may occur in PDF names unescaped. Bug 689770.
+</pre>
+<p>[lib/pdfwrite.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-19T044920.031557Z"></a>
+2008-04-19T04:49:20.031557Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Add recognition of abbreviated filter names to the PDF inflation utility.
+</pre>
+<p>[toolbin/pdfinflt.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-19T034321.791168Z"></a>
+2008-04-19T03:43:21.791168Z Alex Cherepanov</strong> (<a href="Details.htm#2008-04-19T034321.791168Z">details</a>)</p>
+<blockquote>
+<pre>
+Implement loading of OpenType CFF font as a CIDFont resource in PDF reader.
+Bug 689763, customers 531, 850.
+
+</pre>
+<p>[lib/pdf_font.ps lib/gs_cff.ps lib/pdf_ops.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-17T174005.253185Z"></a>
+2008-04-17T17:40:05.253185Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Use -O0 with the autoconf debug build instead of -O which seems to
+hide some symbols.
+</pre>
+<p>[src/Makefile.in]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-17T173157.458743Z"></a>
+2008-04-17T17:31:57.458743Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Allow the ENABLE_CUSTOM_COLOR_CALLBACK preprocessor macro to be set
+from the compiler command line.
+</pre>
+<p>[src/gsnamecl.h]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-15T044724.255743Z"></a>
+2008-04-15T04:47:24.255743Z Alex Cherepanov</strong> (<a href="Details.htm#2008-04-15T044724.255743Z">details</a>)</p>
+<blockquote>
+<pre>
+Repair broken CFF CIDFont stream generated by "Exstream Dialogue Version
+6.2.004m (DBCS)". Bug 689753, customer 353.
+
+</pre>
+<p>[lib/gs_cff.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-14T225722.422088Z"></a>
+2008-04-14T22:57:22.422088Z Michael Vrhel</strong></p>
+<blockquote>
+<pre>
+Fixed Colorspace enumeration order for debug printing.</pre>
+<p>[src/gscspace.h]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-10T234336.714953Z"></a>
+2008-04-10T23:43:36.714953Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Increase the static command and path buffers in echogs to deal with
+longer build paths. Bug 689788.
+</pre>
+<p>[src/echogs.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-10T220820.215716Z"></a>
+2008-04-10T22:08:20.215716Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Use the correct GEN directory references. Bug 689788.
+</pre>
+<p>[src/jbig2.mak src/jasper.mak]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-10T073846.911876Z"></a>
+2008-04-10T07:38:46.911876Z Ken Sharp</strong> (<a href="Details.htm#2008-04-10T073846.911876Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (PDF interpreter): Improve omission of .notdef glyphs.
+
+</pre>
+<p>[src/zchar42.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-10T054343.466565Z"></a>
+2008-04-10T05:43:43.466565Z Igor Melichev</strong> (<a href="Details.htm#2008-04-10T054343.466565Z">details</a>)</p>
+<blockquote>
+<pre>
+Enhancement (graphics) : Generalize prototypes of color serialization methods for big color data.
+
+</pre>
+<p>[src/gsptype1.c src/gxwts.c src/gxcht.c src/gxdcolor.c src/gxdcolor.h src/gxclrast.c src/gxclpath.c src/gxht.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-09T152845.087056Z"></a>
+2008-04-09T15:28:45.087056Z Ken Sharp</strong> (<a href="Details.htm#2008-04-09T152845.087056Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (PDF interpreter): Optionally omit rendering of /.notdef glyphs
+from TrueType fonts.
+
+</pre>
+<p>[lib/pdf_main.ps src/icontext.c src/zchar42.c doc/Use.htm src/icstate.h src/zusparam.c lib/gs_init.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-09T061650.593621Z"></a>
+2008-04-09T06:16:50.593621Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Avoid a spurious warning "CS/cs (setcolorspace) operand not a name".
+Acept array values for /CS attribute. Bug 689738.
+
+</pre>
+<p>[lib/pdf_draw.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-08T215508.170308Z"></a>
+2008-04-08T21:55:08.170308Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+We no longer have any outstanding port requests. Bug 689745.
+</pre>
+<p>[doc/Projects.htm]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-06T214234.379385Z"></a>
+2008-04-06T21:42:34.379385Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Use operator .execn to keep the operand stack size and .pdfcount value
+consistent during /BuildChar execution. Operator scn depends on the correct
+value of .pdfcount. Bug 688796.
+
+</pre>
+<p>[lib/pdf_font.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-06T075333.800999Z"></a>
+2008-04-06T07:53:33.800999Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix PDF empty stack count (pdfemptycount) in the tiling pattern. Operator
+scn depends on the correct value of pdfemptycount. This bug was introduced
+in the rev. 8308. Bug 689776.
+
+</pre>
+<p>[lib/pdf_draw.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-04T113017.034942Z"></a>
+2008-04-04T11:30:17.034942Z Till Kamppeter</strong></p>
+<blockquote>
+<pre>
+Added the new files of OpenPrinting Vector 1.0.
+</pre>
+<p>[contrib/opvp/opvp_0_2_0.h contrib/opvp/opvp.h]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-04T112822.909246Z"></a>
+2008-04-04T11:28:22.909246Z Till Kamppeter</strong></p>
+<blockquote>
+<pre>
+Updated the OpenPrinting Vector driver interface ("opvp", "oprp") to version 1.0.
+</pre>
+<p>[contrib/opvp/opvp_media.def contrib/opvp/opvp_common.h contrib/opvp/gdevopvp.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-04T085357.893326Z"></a>
+2008-04-04T08:53:57.893326Z Ken Sharp</strong> (<a href="Details.htm#2008-04-04T085357.893326Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite): Incorrect cmap aubtables written for 'non-symbolic' TrueType
+ fonts, when PDF/A output is enabled.
+
+</pre>
+<p>[src/gdevpdtb.c src/gdevpsft.c src/gdevpsf.h]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-04T083933.625568Z"></a>
+2008-04-04T08:39:33.625568Z Ken Sharp</strong> (<a href="Details.htm#2008-04-04T083933.625568Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite): code tidy up.
+
+</pre>
+<p>[toolbin/encs2c.ps src/gdevpdtb.c src/gscedata.h src/gdevpdtv.c src/gdevpdtf.h src/gdevpdtv.h src/gscedata.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-04T010217.399302Z"></a>
+2008-04-04T01:02:17.399302Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add the rinkj driver to the default autoconf build under "ETS" devices.
+
+It's not intended for production use, but this will help prevent
+bit rot. Related to bug 689780.
+</pre>
+<p>[src/configure.ac]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-04T010216.708266Z"></a>
+2008-04-04T01:02:16.708266Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Minimal changes to gdevrinkj.c so that it compiles. As far as I can tell,
+the version in source control has never worked.
+</pre>
+<p>[src/gdevrinkj.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-04T010216.013247Z"></a>
+2008-04-04T01:02:16.013247Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Include stdlib.h for malloc and free in the rinkj device. Bug 689780.
+</pre>
+<p>[src/rinkj/rinkj-byte-stream.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-04-01T002817.665464Z"></a>
+2008-04-01T00:28:17.665464Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix incorrect scanline length calculation in 1 bit/component images on pswrite
+and epswrite devices. The bug was introduced in rev. 8233.
+Bug 689771, customer 73.
+
+</pre>
+<p>[src/gdevps.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-31T235328.505732Z"></a>
+2008-03-31T23:53:28.505732Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Don't override the memory pointer set by the client when initializing 
+the luratech jpx decoder.
+</pre>
+<p>[src/sjpx_luratech.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-31T230841.231868Z"></a>
+2008-03-31T23:08:41.231868Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Do not invoke the s_jpxd_template set_defaults method if it is null.
+Fixes bug 689743, whose attachment segfaults with the luratech decoder
+for which this method is not implemented.
+</pre>
+<p>[src/zfjpx.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-31T230055.454967Z"></a>
+2008-03-31T23:00:55.454967Z Igor Melichev</strong> (<a href="Details.htm#2008-03-31T230055.454967Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (graphics) : Stroke width was wrong for short segments.
+
+</pre>
+<p>[src/gxstroke.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-28T163025.778081Z"></a>
+2008-03-28T16:30:25.778081Z Igor Melichev</strong> (<a href="Details.htm#2008-03-28T163025.778081Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (graphics) : rectfill applied a wrong path adjustment.
+
+</pre>
+<p>[src/gsdps1.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-28T063649.751300Z"></a>
+2008-03-28T06:36:49.751300Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Improve detection of transparency usage. Search for transparency featires in
+the resource chain of annotattion appearance streams.
+Bug 689764, customer 531.
+
+</pre>
+<p>[lib/pdf_main.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-27T083758.577822Z"></a>
+2008-03-27T08:37:58.577822Z Ken Sharp</strong> (<a href="Details.htm#2008-03-27T083758.577822Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite): endstream/endobj not always emitted PDF/A compliant.
+
+</pre>
+<p>[src/gdevpdfo.c src/gdevpdfb.c src/gdevpdfu.c src/gdevpdti.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-26T140202.746186Z"></a>
+2008-03-26T14:02:02.746186Z Ken Sharp</strong> (<a href="Details.htm#2008-03-26T140202.746186Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (vector device): Operation order could result in failure to
+apply clipping.
+
+</pre>
+<p>[src/gdevvec.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-25T052624.097873Z"></a>
+2008-03-25T05:26:24.097873Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+PDF font descriptor may be shared between CID and simple fonts. We cache the
+font object in the font descriptor dictionary. To prevent collision, use
+different keys to store font and CIDFont objects. Improve the fix for the
+bug 689301.
+
+</pre>
+<p>[lib/pdf_font.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-24T200207.895385Z"></a>
+2008-03-24T20:02:07.895385Z Igor Melichev</strong> (<a href="Details.htm#2008-03-24T200207.895385Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (clist writer) : Smaller tiles for strip_copy_rop (continued).
+
+</pre>
+<p>[src/gxclimag.c src/gxclrect.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-24T041747.859439Z"></a>
+2008-03-24T04:17:47.859439Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Equivalent transformation of the PDF font handler to improve readability
+in preparation for the PDF font overhaul.
+
+</pre>
+<p>[lib/pdf_font.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-23T075043.652322Z"></a>
+2008-03-23T07:50:43.652322Z Igor Melichev</strong> (<a href="Details.htm#2008-03-23T075043.652322Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (vector device): %pipe% IO device being opened as seekable (continued).
+
+</pre>
+<p>[src/gdevvec.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-22T215500.988313Z"></a>
+2008-03-22T21:55:00.988313Z Igor Melichev</strong> (<a href="Details.htm#2008-03-22T215500.988313Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (clist writer) : Smaller tiles for strip_copy_rop.
+
+</pre>
+<p>[src/lib.mak src/gdevddrw.c src/gdevmr8n.c src/gxclrect.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-21T050753.304009Z"></a>
+2008-03-21T05:07:53.304009Z Igor Melichev</strong> (<a href="Details.htm#2008-03-21T050753.304009Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (Windows application) : Provide a better visual trace support interface for use with other interpreters.
+
+</pre>
+<p>[src/dwtrace.h src/dwtrace.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-20T102017.499008Z"></a>
+2008-03-20T10:20:17.499008Z Ken Sharp</strong> (<a href="Details.htm#2008-03-20T102017.499008Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite): pdfwrite embedded TrueType/Type 42 fonts which
+specifically forbid embedding.
+
+</pre>
+<p>[src/gxfont42.h src/zfont.c src/gdevpdtt.c src/gstype42.c src/gdevpsft.c src/gdevpdtf.c src/gxfont.h]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-19T100921.671968Z"></a>
+2008-03-19T10:09:21.671968Z Ken Sharp</strong> (<a href="Details.htm#2008-03-19T100921.671968Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (vector device): %pipe% IO device being opened as seekable.
+
+</pre>
+<p>[src/gdevvec.c src/gsdevice.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-16T222513.694561Z"></a>
+2008-03-16T22:25:13.694561Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Handle TT fonts that have short post table with less than 256 glyphs.
+Pad the generated Encoding vector with /.notdef glyphs.
+Bug 689515, customer 700.
+
+</pre>
+<p>[lib/gs_ttf.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-15T235948.788786Z"></a>
+2008-03-15T23:59:48.788786Z Alex Cherepanov</strong> (<a href="Details.htm#2008-03-15T235948.788786Z">details</a>)</p>
+<blockquote>
+<pre>
+Work around a bug in the PS interpeter by not using nulldevice in the PDF
+interpreter where it isn't really needed. Bug 689751.
+
+</pre>
+<p>[lib/pdf_ops.ps]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-14T054011.023910Z"></a>
+2008-03-14T05:40:11.023910Z Marcos Woehrmann</strong></p>
+<blockquote>
+<pre>
+Fixed duplexing for ljet3d and ljet4d devices; thanks to karsten@sengebusch.de for the changes.
+
+Fixes bug 687531.
+
+No regressions expected, since neither device is tested by the regression suite.
+
+</pre>
+<p>[src/gdevdjet.c src/gdevdljm.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-13T071846.618081Z"></a>
+2008-03-13T07:18:46.618081Z Igor Melichev</strong> (<a href="Details.htm#2008-03-13T071846.618081Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (graphics) : A bug in the pattern color serialization.
+
+</pre>
+<p>[src/gsptype1.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-12T223203.336468Z"></a>
+2008-03-12T22:32:03.336468Z Igor Melichev</strong> (<a href="Details.htm#2008-03-12T223203.336468Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (graphics) : Optimize filling a path with a shading color (continuewd 3).
+
+</pre>
+<p>[src/gxfill.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-11T183233.104151Z"></a>
+2008-03-11T18:32:33.104151Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix MSVC makefile for the 'Big console mode EXE' case when COMPILE_INITS=1. Also
+minor cleanup to gs.mak 'clean' target and redundant dependency in ugcclib.mak.
+MSVC build problem noted by customer #531.
+</pre>
+<p>[src/ugcclib.mak src/gs.mak src/msvc32.mak]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-10T021838.654568Z"></a>
+2008-03-10T02:18:38.654568Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+When the font has no /FontBBox but provides character width through /Metrics
+dictionary, use them instead of the calculated width. The old code did so only
+when both the width and side bearings were defined. Bug 689740, customer 353.
+
+</pre>
+<p>[src/zchar1.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-09T133451.534239Z"></a>
+2008-03-09T13:34:51.534239Z Igor Melichev</strong> (<a href="Details.htm#2008-03-09T133451.534239Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (transparency) : Transparency compositor device recreation was incorrect.
+
+</pre>
+<p>[src/gdevp14.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-07T133935.783627Z"></a>
+2008-03-07T13:39:35.783627Z Igor Melichev</strong> (<a href="Details.htm#2008-03-07T133935.783627Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (bbox device) : box_fill_path needs as path for shfill.
+
+</pre>
+<p>[src/gdevbbox.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-07T094238.021120Z"></a>
+2008-03-07T09:42:38.021120Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct a default return value. Follow on to Bug 689569.
+
+Also rename a variable to match the jbig2dec version of the same call.
+</pre>
+<p>[src/sjbig2_luratech.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-05T233550.165171Z"></a>
+2008-03-05T23:35:50.165171Z Igor Melichev</strong> (<a href="Details.htm#2008-03-05T233550.165171Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (clist) : Some transparency compositor commands don't need CTM.
+
+</pre>
+<p>[src/gdevdbit.c src/gdevp14.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-04T205648.308882Z"></a>
+2008-03-04T20:56:48.308882Z Igor Melichev</strong> (<a href="Details.htm#2008-03-04T205648.308882Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (clist) : Crop transparency commands while clist writing, step 4.
+
+</pre>
+<p>[src/gdevp14.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-03T201606.744980Z"></a>
+2008-03-03T20:16:06.744980Z Igor Melichev</strong> (<a href="Details.htm#2008-03-03T201606.744980Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (images) : Revert an unintentional change to siscale.c .
+
+</pre>
+<p>[src/siscale.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-03T160112.306842Z"></a>
+2008-03-03T16:01:12.306842Z Igor Melichev</strong> (<a href="Details.htm#2008-03-03T160112.306842Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (clist) : Crop transparencsy commands while clist writing, step 3.
+
+</pre>
+<p>[src/gxclist.c src/gdevdflt.c src/gdevp14.h src/gstrans.c src/gsalphac.c src/gxclist.h src/gxcomp.h src/gsovrc.c src/gstparam.h src/gstrans.h src/gxclrast.c src/gdevp14.c src/gxclpath.c src/gxclimag.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-03T115742.307384Z"></a>
+2008-03-03T11:57:42.307384Z Igor Melichev</strong> (<a href="Details.htm#2008-03-03T115742.307384Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (clist) : Crop transparencsy commands while clist writing, step 2.
+
+</pre>
+<p>[src/gxclist.c src/gxcldev.h src/gxclist.h src/gdevp14.c src/gxclpath.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-03T114233.253339Z"></a>
+2008-03-03T11:42:33.253339Z Igor Melichev</strong> (<a href="Details.htm#2008-03-03T114233.253339Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (clist) : Crop transparencsy commands while clist writing, step 1b.
+
+</pre>
+<p>[src/gdevp14.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-03T101301.196997Z"></a>
+2008-03-03T10:13:01.196997Z Igor Melichev</strong> (<a href="Details.htm#2008-03-03T101301.196997Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (clist) : Crop transparencsy commands while clist writing, step 1a.
+
+</pre>
+<p>[src/gxclist.h]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-03T101127.428498Z"></a>
+2008-03-03T10:11:27.428498Z Igor Melichev</strong> (<a href="Details.htm#2008-03-03T101127.428498Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (clist) : Crop transparencsy commands while clist writing, step 1.
+
+</pre>
+<p>[src/gxclist.c src/gdevp14.c src/gxclpath.c src/gxclimag.c src/gxclrect.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-03T040351.374416Z"></a>
+2008-03-03T04:03:51.374416Z Marcos Woehrmann</strong> (<a href="Details.htm#2008-03-03T040351.374416Z">details</a>)</p>
+<blockquote>
+<pre>
+
+Fix for compression always falling back to no compression in
+pclxl_write_image_data(), bug 689732.
+
+</pre>
+<p>[src/gdevpx.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-03T025705.472235Z"></a>
+2008-03-03T02:57:05.472235Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix properties
+</pre>
+<p>[src/psromfs.mak src/gsromfs0.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-03T011709.063617Z"></a>
+2008-03-03T01:17:09.063617Z Marcos Woehrmann</strong> (<a href="Details.htm#2008-03-03T011709.063617Z">details</a>)</p>
+<blockquote>
+<pre>
+Fall back to using gx_default_copy_mono() in pclxl_copy_mono() if data_x!=0.
+
+</pre>
+<p>[src/gdevpx.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-01T101820.389016Z"></a>
+2008-03-01T10:18:20.389016Z Ken Sharp</strong> (<a href="Details.htm#2008-03-01T101820.389016Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite): problems with type 3 fonts executing 'show'.
+
+</pre>
+<p>[src/gdevpdfx.h src/gdevpdtt.c src/gdevpdfb.h src/gdevpdti.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-01T101502.847745Z"></a>
+2008-03-01T10:15:02.847745Z Ken Sharp</strong> (<a href="Details.htm#2008-03-01T101502.847745Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite): problems with type 3 fonts executing 'show'.
+
+</pre>
+<p>[src/gdevpdfd.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-03-01T014204.749356Z"></a>
+2008-03-01T01:42:04.749356Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Bump the revision after the 8.62 release.
 </pre>
 <p>[doc/News.htm lib/gs_init.ps src/gscdef.c src/version.mak]</p>
-</blockquote>
-
-<p><strong><a name="2007-11-21T200708.596302Z"></a>
-2007-11-21T20:07:08.596302Z Ralph Giles</strong></p>
-<blockquote>
-<pre>
-Update changelogs and release date for the second 8.61 candidate.
-</pre>
-<p>[doc/History7.htm doc/Projects.htm doc/History8.htm man/dvipdf.1 man/ps2ascii.1 doc/Use.htm doc/Readme.htm doc/Source.htm doc/Deprecated.htm man/ps2epsi.1 doc/Install.htm doc/Changes.htm doc/API.htm doc/Issues.htm doc/DLL.htm doc/Drivers.htm man/pfbtopfa.1 doc/Release.htm doc/Commprod.htm doc/Xfonts.htm doc/Devices.htm doc/Language.htm man/gs.1 src/version.mak man/pf2afm.1 doc/Ps2ps2.htm doc/Fonts.htm man/printafm.1 doc/Ps2pdf.htm doc/Develop.htm doc/Helpers.htm man/pdf2dsc.1 doc/Psfiles.htm doc/Lib.htm doc/gs-vms.hlp doc/Htmstyle.htm man/font2c.1 man/gsnd.1 man/pdfopt.1 doc/News.htm man/pdf2ps.1 man/ps2pdf.1 doc/Testing.htm doc/Make.htm doc/Details8.htm doc/Unix-lpr.htm doc/C-style.htm doc/Ps-style.htm doc/History1.htm doc/History2.htm man/gslp.1 man/wftopfa.1 doc/History3.htm doc/Details.htm doc/Ps2epsi.htm doc/History4.htm man/ps2pdfwr.1 man/ps2ps.1 doc/History5.htm doc/History6.htm]</p>
 </blockquote>
 </body>
 </html>
