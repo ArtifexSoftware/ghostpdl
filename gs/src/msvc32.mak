@@ -358,6 +358,9 @@ MSVC_VERSION=8
 !if "$(_NMAKE_VER)" == "8.00.50727.762"
 MSVC_VERSION=8
 !endif
+!if "$(_NMAKE_VER)" == "9.00.21022.08"
+MSVC_VERSION=9
+!endif
 !endif
 
 !ifndef MSVC_VERSION
@@ -451,6 +454,28 @@ DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 8
 COMPBASE=
 SHAREDBASE=
 !else
+COMPBASE=$(DEVSTUDIO)\VC
+SHAREDBASE=$(DEVSTUDIO)\VC
+!ifdef WIN64
+COMPDIR64=$(COMPBASE)\bin\x86_amd64
+LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\AMD64"
+!endif
+!endif
+!endif
+
+!if $(MSVC_VERSION) == 9
+! ifndef DEVSTUDIO
+!ifdef WIN64
+DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio 9.0
+!else
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 9.0
+!endif
+! endif
+!if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+!else
+RCDIR=C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin
 COMPBASE=$(DEVSTUDIO)\VC
 SHAREDBASE=$(DEVSTUDIO)\VC
 !ifdef WIN64
