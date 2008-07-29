@@ -161,7 +161,7 @@ s_CFD_release(stream_state * st)
 /* makeup codes efficiently, since these are always a multiple of 64. */
 #define invert_data(rlen, black_byte, makeup_action, d)\
 	if ( rlen > qbit )\
-	{	*q++ ^= (1 << qbit) - 1;\
+	{	if (q >= ss->lbuf) *q++ ^= (1 << qbit) - 1; else q++;\
 		rlen -= qbit;\
 		switch ( rlen >> 3 )\
 		{\
