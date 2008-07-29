@@ -33,8 +33,8 @@ cfe.dev: alex
 cff.dev: igor
 cidfont.dev: igor
 cidlib.dev: igor
-cie.dev: ralph
-cielib.dev: ralph
+cie.dev: micheal
+cielib.dev: michael
 clfile.dev: igor
 clist.dev: igor
 cljet5.dev: ray and henry
@@ -43,10 +43,10 @@ cljet5pr.dev: ray and stefan
 clmemory.dev: igor
 cmaplib.dev: igor
 cmapread.dev: igor
-cmyklib.dev: ralph
-cmykread.dev ralph
-colimlib.dev: ralph
-color.dev: ralph
+cmyklib.dev: michael
+cmykread.dev michael
+colimlib.dev: michael
+color.dev: michael
 compfont.dev: igor
 crc32.dev: ken
 cspixel.dev: ralph
@@ -100,8 +100,8 @@ hpgl2.dev: henry
 hpgl2c.dev: henry
 htxlib.dev: ralph
 ibmpro.dev: ray and henry
-icc.dev: ralph
-icclib.dev: ralph
+icc.dev: michael
+icclib.dev: michael
 ijs.dev: ray and henry
 ijslib.dev: ray and henry
 imasklib.dev: alex
@@ -109,18 +109,18 @@ imdi.dev: ray
 iodevice.dev: ray and henry
 iscale.dev: alex
 isupport.dev: igor
-jasper.dev: ray and henry
-jasper_0.dev: ray and henry
-jbig2.dev: ken
-jbig2dec.dev: ken
-jbig2dec_0.dev: ken
+jasper.dev: ralph
+jasper_0.dev: ralph
+jbig2.dev: ralph
+jbig2dec.dev: ralph
+jbig2dec_0.dev: ralph
 jpeg.dev: ray and henry
 jpege6.dev: third party
 jpeggray.dev: ray and henry
-jpx.dev: ken
-jpx_jasper.dev: ken
+jpx.dev: ralph
+jpx_jasper.dev: ralph
 laserjet.dev: ray and henry
-ldf_jb2.dev: ken
+ldf_jb2.dev: ralph
 libcore.dev:
 
     gsalloc, gsmalloc, gsmemlok, gsmemory, gsmemret: igor
@@ -259,7 +259,6 @@ sicclib.dev: ralph
 simscale.dev: alex
 sjbig2.dev: ralph
 sjbig2_.dev: ralph
-sjbig2_jbig2dec.dev
 sjbig2_jbig2dec.dev: ralph
 sjbig2_luratech.dev: ralph
 sjpx.dev: ralph
@@ -272,6 +271,7 @@ smd5.dev: ralph
 spotcmyk.dev: ralph
 stcolor.dev: ?
 strdline.dev: alex
+svgwrite.dev: ralph
 szlibd.dev: alex
 szlibe.dev: alex
 tfax.dev: ray and henry
@@ -321,7 +321,7 @@ zlibe.dev: third party
 General (high level) Ownership
 --------------------
 
-color:ralph
+color:michael
 fonts:igor
 gslite:henry
 images:alex
