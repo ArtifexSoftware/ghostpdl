@@ -8,6 +8,35 @@
 </head>
 <body>
 
+<p><strong><a name="2008-07-29T110111.006826Z"></a>
+2008-07-29T11:01:11.006826Z Russell Lang</strong></p>
+<blockquote>
+<pre>
+Allow compilation with Microsoft Visual Studio 2008 (VC 9.0).
+Include lib files in the Windows installer when using COMPILE_INITS=1.
+</pre>
+<p>[src/winint.mak src/msvc32.mak]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-28T222304.128314Z"></a>
+2008-07-28T22:23:04.128314Z Michael Vrhel</strong></p>
+<blockquote>
+<pre>
+Fix for Bug 689983.  This was introduced with the source space interpolation code.  Fixes indexing direction in source data when we have indexed data, interpolation and a negative xx value in the geometric transformation.
+
+</pre>
+<p>[src/gxiscale.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-28T204443.542926Z"></a>
+2008-07-28T20:44:43.542926Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update change logs for 8.63rc1.
+</pre>
+<p>[doc/Changes.htm doc/History8.htm doc/News.htm doc/Details8.htm doc/Details.htm]</p>
+</blockquote>
+
 <p><strong><a name="2008-07-28T194125.163173Z"></a>
 2008-07-28T19:41:25.163173Z Ralph Giles</strong></p>
 <blockquote>
@@ -608,7 +637,7 @@ pattern instantiation and improve performance. Bug 689896, customer 531.
 </blockquote>
 
 <p><strong><a name="2008-07-14T185340.636598Z"></a>
-2008-07-14T18:53:40.636598Z Marcos Woehrmann</strong></p>
+2008-07-14T18:53:40.636598Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 
@@ -995,7 +1024,7 @@ up to 1M names of up to 1K characters long. Bug 689913.
 </blockquote>
 
 <p><strong><a name="2008-06-25T161857.687888Z"></a>
-2008-06-25T16:18:57.687888Z Marcos Woehrmann</strong></p>
+2008-06-25T16:18:57.687888Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 Fixed compile for Linux.
@@ -1078,7 +1107,7 @@ This is a simple work around that.
 </blockquote>
 
 <p><strong><a name="2008-06-16T161237.522247Z"></a>
-2008-06-16T16:12:37.522247Z Marcos Woehrmann</strong></p>
+2008-06-16T16:12:37.522247Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 Updated to latest versions of files from ftp://ftp.oreilly.com/pub/examples/nutshell/cjkv/adobe/aj16.tar.Z
@@ -1243,7 +1272,7 @@ Correct properties.
 </blockquote>
 
 <p><strong><a name="2008-05-28T160401.772433Z"></a>
-2008-05-28T16:04:01.772433Z Marcos Woehrmann</strong></p>
+2008-05-28T16:04:01.772433Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 Changed crlf to lf.
@@ -1882,7 +1911,7 @@ Minor change in JBIG configuration file related to using Visual Studio Version 9
 </blockquote>
 
 <p><strong><a name="2008-05-15T000024.616940Z"></a>
-2008-05-15T00:00:24.616940Z Marcos Woehrmann</strong></p>
+2008-05-15T00:00:24.616940Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 Improve white-on-mask drawing mode.
@@ -1906,7 +1935,7 @@ having its background draw solid white rather than transparent
 </blockquote>
 
 <p><strong><a name="2008-05-14T234909.954483Z"></a>
-2008-05-14T23:49:09.954483Z Marcos Woehrmann</strong></p>
+2008-05-14T23:49:09.954483Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 
@@ -3465,7 +3494,7 @@ the font is composite and the curent device is nulldevice.
 </blockquote>
 
 <p><strong><a name="2008-03-14T054011.023910Z"></a>
-2008-03-14T05:40:11.023910Z Marcos Woehrmann</strong></p>
+2008-03-14T05:40:11.023910Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 Fixed duplexing for ljet3d and ljet4d devices; thanks to karsten@sengebusch.de for the changes.
@@ -3809,7 +3838,7 @@ We'll use this feature in the next patch.
 </blockquote>
 
 <p><strong><a name="2008-03-03T040351.374416Z"></a>
-2008-03-03T04:03:51.374416Z Marcos Woehrmann</strong></p>
+2008-03-03T04:03:51.374416Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 
@@ -3844,7 +3873,7 @@ Fix properties
 </blockquote>
 
 <p><strong><a name="2008-03-03T011709.063617Z"></a>
-2008-03-03T01:17:09.063617Z Marcos Woehrmann</strong></p>
+2008-03-03T01:17:09.063617Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 Fall back to using gx_default_copy_mono() in pclxl_copy_mono() if data_x!=0.

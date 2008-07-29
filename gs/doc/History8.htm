@@ -615,6 +615,45 @@ Obsolete makefiles for the DesqView environment have been removed.
 
 <h3><a name="8.63_changelog"></a>Changelog</h3>
 
+<p><strong><a name="2008-07-29T110111.006826Z"></a>
+2008-07-29T11:01:11.006826Z Russell Lang</strong></p>
+<blockquote>
+<pre>
+Allow compilation with Microsoft Visual Studio 2008 (VC 9.0).
+Include lib files in the Windows installer when using COMPILE_INITS=1.
+</pre>
+<p>[src/winint.mak src/msvc32.mak]</p>
+</blockquote>
+
+
+<p><strong><a name="2008-07-29T044405.830173Z"></a>
+2008-07-29T04:44:05.830173Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Avoid a segfault with invalid ccitt fax data streams. Bug 689917.
+Patch from Tim Waugh.
+</pre>
+<p>[src/scfd.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-28T222304.128314Z"></a>
+2008-07-28T22:23:04.128314Z Michael Vrhel</strong></p>
+<blockquote>
+<pre>
+Fix for Bug 689983.  This was introduced with the source space interpolation code.  Fixes indexing direction in source data when we have indexed data, interpolation and a negative xx value in the geometric transformation.
+</pre>
+<p>[src/gxiscale.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-28T204443.542926Z"></a>
+2008-07-28T20:44:43.542926Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update change logs for 8.63rc1.
+</pre>
+<p>[doc/Changes.htm doc/History8.htm doc/News.htm doc/Details8.htm doc/Details.htm]</p>
+</blockquote>
+
 <p><strong><a name="2008-07-28T194125.163173Z"></a>
 2008-07-28T19:41:25.163173Z Ralph Giles</strong></p>
 <blockquote>
@@ -1050,7 +1089,7 @@ pattern instantiation and improve performance. Bug 689896, customer 531.
 </blockquote>
 
 <p><strong><a name="2008-07-14T185340.636598Z"></a>
-2008-07-14T18:53:40.636598Z Marcos Woehrmann</strong></p>
+2008-07-14T18:53:40.636598Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 
@@ -1348,7 +1387,7 @@ up to 1M names of up to 1K characters long. Bug 689913.
 </blockquote>
 
 <p><strong><a name="2008-06-25T161857.687888Z"></a>
-2008-06-25T16:18:57.687888Z Marcos Woehrmann</strong></p>
+2008-06-25T16:18:57.687888Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 Fixed compile for Linux.
@@ -1389,7 +1428,7 @@ Fix (TT interpreter) : A work around a wrong maxPoints.
 </blockquote>
 
 <p><strong><a name="2008-06-16T161237.522247Z"></a>
-2008-06-16T16:12:37.522247Z Marcos Woehrmann</strong></p>
+2008-06-16T16:12:37.522247Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 Updated to latest versions of files from ftp://ftp.oreilly.com/pub/examples/nutshell/cjkv/adobe/aj16.tar.Z
@@ -1507,7 +1546,7 @@ Correct properties.
 </blockquote>
 
 <p><strong><a name="2008-05-28T160401.772433Z"></a>
-2008-05-28T16:04:01.772433Z Marcos Woehrmann</strong></p>
+2008-05-28T16:04:01.772433Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 Changed crlf to lf.
@@ -2025,7 +2064,7 @@ Minor change in JBIG configuration file related to using Visual Studio Version 9
 </blockquote>
 
 <p><strong><a name="2008-05-15T000024.616940Z"></a>
-2008-05-15T00:00:24.616940Z Marcos Woehrmann</strong> (<a href="Details8.htm#2008-05-15T000024.616940Z">details</a>)</p>
+2008-05-15T00:00:24.616940Z Marcos H. Woehrmann</strong> (<a href="Details8.htm#2008-05-15T000024.616940Z">details</a>)</p>
 <blockquote>
 <pre>
 Improve white-on-mask drawing mode.
@@ -2035,7 +2074,7 @@ Improve white-on-mask drawing mode.
 </blockquote>
 
 <p><strong><a name="2008-05-14T234909.954483Z"></a>
-2008-05-14T23:49:09.954483Z Marcos Woehrmann</strong> (<a href="Details8.htm#2008-05-14T234909.954483Z">details</a>)</p>
+2008-05-14T23:49:09.954483Z Marcos H. Woehrmann</strong> (<a href="Details8.htm#2008-05-14T234909.954483Z">details</a>)</p>
 <blockquote>
 <pre>
 
@@ -3055,7 +3094,7 @@ interpreter where it isn't really needed. Bug 689751.
 </blockquote>
 
 <p><strong><a name="2008-03-14T054011.023910Z"></a>
-2008-03-14T05:40:11.023910Z Marcos Woehrmann</strong></p>
+2008-03-14T05:40:11.023910Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 Fixed duplexing for ljet3d and ljet4d devices; thanks to karsten@sengebusch.de for the changes.
@@ -3223,7 +3262,7 @@ Fix (clist) : Crop transparencsy commands while clist writing, step 1.
 </blockquote>
 
 <p><strong><a name="2008-03-03T040351.374416Z"></a>
-2008-03-03T04:03:51.374416Z Marcos Woehrmann</strong> (<a href="Details8.htm#2008-03-03T040351.374416Z">details</a>)</p>
+2008-03-03T04:03:51.374416Z Marcos H. Woehrmann</strong> (<a href="Details8.htm#2008-03-03T040351.374416Z">details</a>)</p>
 <blockquote>
 <pre>
 
@@ -3244,7 +3283,7 @@ Fix properties
 </blockquote>
 
 <p><strong><a name="2008-03-03T011709.063617Z"></a>
-2008-03-03T01:17:09.063617Z Marcos Woehrmann</strong> (<a href="Details8.htm#2008-03-03T011709.063617Z">details</a>)</p>
+2008-03-03T01:17:09.063617Z Marcos H. Woehrmann</strong> (<a href="Details8.htm#2008-03-03T011709.063617Z">details</a>)</p>
 <blockquote>
 <pre>
 Fall back to using gx_default_copy_mono() in pclxl_copy_mono() if data_x!=0.
@@ -3509,7 +3548,7 @@ Fix (clist interpreter) : Improve transparency performance, step 3.
 </blockquote>
 
 <p><strong><a name="2008-02-27T004737.036819Z"></a>
-2008-02-27T00:47:37.036819Z Marcos Woehrmann</strong> (<a href="Details8.htm#2008-02-27T004737.036819Z">details</a>)</p>
+2008-02-27T00:47:37.036819Z Marcos H. Woehrmann</strong> (<a href="Details8.htm#2008-02-27T004737.036819Z">details</a>)</p>
 <blockquote>
 <pre>
 Added setting of fill_rule in pclxl_endpath().
@@ -4137,7 +4176,7 @@ Fix (clist interpreter) : Skip idle compositors, step 5.
 </blockquote>
 
 <p><strong><a name="2008-01-09T003630.938192Z"></a>
-2008-01-09T00:36:30.938192Z Marcos Woehrmann</strong></p>
+2008-01-09T00:36:30.938192Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 Fixed umlauts (maybe, am having trouble testing the results).
@@ -4146,7 +4185,7 @@ Fixed umlauts (maybe, am having trouble testing the results).
 </blockquote>
 
 <p><strong><a name="2008-01-09T002450.313955Z"></a>
-2008-01-09T00:24:50.313955Z Marcos Woehrmann</strong></p>
+2008-01-09T00:24:50.313955Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 Corrected man page (thanks to Peter Dyballa).
@@ -4561,7 +4600,7 @@ numbers. Bug 689586.
 </blockquote>
 
 <p><strong><a name="2007-12-14T184031.738291Z"></a>
-2007-12-14T18:40:31.738291Z Marcos Woehrmann</strong></p>
+2007-12-14T18:40:31.738291Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 Added casts to sprintf debugging statements (thanks for Michael Rutter for finding these).
@@ -4634,7 +4673,7 @@ long to avoid portability problems when reading and writing. Bug 689604.
 </blockquote>
 
 <p><strong><a name="2007-12-11T165405.187153Z"></a>
-2007-12-11T16:54:05.187153Z Marcos Woehrmann</strong></p>
+2007-12-11T16:54:05.187153Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 Replaced C++ comments with C comments (// -> /* */).
@@ -5861,7 +5900,7 @@ It doesn't do anything useful yet, only prints "Hello world" once per page.
 </blockquote>
 
 <p><strong><a name="2007-11-02T190903.093400Z"></a>
-2007-11-02T19:09:03.093400Z Marcos Woehrmann</strong></p>
+2007-11-02T19:09:03.093400Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 Fix for Bug 689316.
@@ -6391,7 +6430,7 @@ properly write the system local time instead of UTC.
 </blockquote>
 
 <p><strong><a name="2007-10-15T064304.430544Z"></a>
-2007-10-15T06:43:04.430544Z Marcos Woehrmann</strong> (<a href="Details8.htm#2007-10-15T064304.430544Z">details</a>)</p>
+2007-10-15T06:43:04.430544Z Marcos H. Woehrmann</strong> (<a href="Details8.htm#2007-10-15T064304.430544Z">details</a>)</p>
 <blockquote>
 <pre>
 Added code to the pxlcolor device (gdevpx.c) to set the color space even
@@ -6468,7 +6507,7 @@ remove some spurious executable properties.
 </blockquote>
 
 <p><strong><a name="2007-10-10T161923.023493Z"></a>
-2007-10-10T16:19:23.023493Z Marcos Woehrmann</strong></p>
+2007-10-10T16:19:23.023493Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 Fixed Id line to make nightly regression run happy.
@@ -10519,7 +10558,7 @@ Protect expression "$Id$" against being replaced by SubVersion (bug #689093).
 </blockquote>
 
 <p><strong><a name="2007-05-09T063744.288003Z"></a>
-2007-05-09T06:37:44.288003Z Marcos Woehrmann</strong></p>
+2007-05-09T06:37:44.288003Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
 Added entries to alias Arial to ArialMT and TimesNewRoman to TimesNewRomanPSMT.  This is useful when running on 
@@ -49506,7 +49545,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 8.63, 28 July 2008
+<small>Ghostscript version 8.63, 29 July 2008
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
