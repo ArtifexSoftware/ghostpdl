@@ -78,7 +78,7 @@ clist_setup_render_threads(gx_device *dev, int y)
 	band = 0;
     } else {
 	crdev->thread_lookahead_direction = -1;
-	band = band_count;
+	band = band_count - 1;
     }
 
     /* Close the files so we can open them in multiple threads */
@@ -415,7 +415,7 @@ clist_get_band_from_thread(gx_device *dev, int band)
 
     /* If we are not at the final band, start up this thread with the next one to do */
     next_band = band + (crdev->num_render_threads * crdev->thread_lookahead_direction);
-    if (next_band > 0 && next_band < band_count)
+    if (next_band >= 0 && next_band < band_count)
 	code = clist_start_render_thread(dev, thread_index, next_band);
     /* bump the 'curr' to the next thread */
     crdev->curr_render_thread = crdev->curr_render_thread == crdev->num_render_threads - 1 ?
