@@ -8,6 +8,99 @@
 </head>
 <body>
 
+<p><strong><a name="2008-07-29T203541.916113Z"></a>
+2008-07-29T20:35:41.916113Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix problem with NumRenderingThreads>0 with devices that request data from
+the bottom up such as the 'bmp*' devices. Bug 689985.
+</pre>
+<p>[src/gxclthrd.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-29T191131.677116Z"></a>
+2008-07-29T19:11:31.677116Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Add support to NULL pointers in t_structs or t_astructs objects to execstack
+operator. Thanks to Ken for the analysis. Bug 689535.
+
+DETAILS:
+The issue is to do with devices handling patterns as high-level objects, which
+is why it affects pdfwrite (which can handle patterns itself) but not regular
+rendering. In zpcolor.c, pattern_paint_prepare(), there are two control paths,
+one for devices which handle patterns as high-level objects, and one for
+devices which don't. If the device can't handle high level objects, we install
+a pattern accumulation device.
+
+In this case, the flag internal_accum is set, we create the pattern accumulator
+device and open it:
+
+    if (internal_accum) {
+	gs_memory_t *storage_memory = gstate_pattern_cache(pgs)->memory;
+
+	pdev = gx_pattern_accum_alloc(imemory, storage_memory, pinst,
+"pattern_paint_prepare");
+	if (pdev == 0)
+	    return_error(e_VMerror);
+	code = (*dev_proc(pdev, open_device)) ((gx_device *) pdev);
+...
+...
+}
+
+Later the two control paths rejoin and we put some objects on the execution
+stack:
+
+    push_mark_estack(es_other, pattern_paint_cleanup);
+    ++esp;
+    make_istruct(esp, 0, pdev);
+
+Now notice that we construct the structure on esp using pdev, but we *don't*
+create pdev if we can handle patterns, so its left as NULL and we end up
+pushing an empty t_struct.
+
+Leo's question in comment 10 is whether this is legal, the answer appears to be
+yes, but its debatable. 
+
+In pattern_paint_finish we do this:
+
+    gx_device_forward *pdev = r_ptr(esp - 1, gx_device_forward);
+
+    if (pdev != NULL) {
+	gx_color_tile *ctile;
+	int code = gx_pattern_cache_add_entry((gs_imager_state *)igs,
+					  pdev, &ctile);
+
+That is, if the structure *isn't* NULL we do something with it, we ignore it if
+it is NULL. Either way we then do this:
+
+    esp -= 3;
+
+Removing all the objects from the execution stack that we added. Notice that
+the structure we pushed onto the execution stack isn't actually 'executed', its
+just data used by the pattern handler.
+
+Now, all this works just fine in normal practice, however the job here uses a
+CIEBased colour space, and being from an Adobe application it tries to set the
+ColorRendering. Since we don't implement a ColorRendering resource category,
+this causes an error (handled in a stopped context).
+
+The default error handler uses execstack, and this is where the actual error
+finally occurs, because execstack can't handle the empty structure.
+
+</pre>
+<p>[src/zcontrol.c]</p>
+</blockquote>
+
+<p><strong><a name="2008-07-29T180637.196198Z"></a>
+2008-07-29T18:06:37.196198Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update change logs for 8.63rc2.
+</pre>
+<p>[doc/History7.htm doc/Projects.htm doc/History8.htm man/dvipdf.1 man/ps2ascii.1 doc/Use.htm doc/Readme.htm doc/Source.htm doc/Deprecated.htm man/ps2epsi.1 doc/Install.htm doc/Changes.htm doc/API.htm doc/Issues.htm doc/DLL.htm doc/Drivers.htm man/pfbtopfa.1 doc/Release.htm doc/Commprod.htm doc/Xfonts.htm doc/Devices.htm doc/Language.htm man/gs.1 src/version.mak man/pf2afm.1 doc/Ps2ps2.htm doc/Fonts.htm man/printafm.1 doc/Ps2pdf.htm doc/Develop.htm doc/Helpers.htm man/pdf2dsc.1 doc/Psfiles.htm doc/Lib.htm doc/gs-vms.hlp doc/Htmstyle.htm man/font2c.1 man/gsnd.1 man/pdfopt.1 doc/News.htm man/pdf2ps.1 man/ps2pdf.1 doc/Make.htm doc/Details8.htm doc/Unix-lpr.htm doc/C-style.htm doc/Ps-style.htm doc/History1.htm doc/History2.htm man/gslp.1 man/wftopfa.1 doc/History3.htm man/ps2ps.1 doc/Details.htm doc/Ps2epsi.htm doc/History4.htm man/ps2pdfwr.1 doc/History5.htm doc/History6.htm]</p>
+</blockquote>
+
 <p><strong><a name="2008-07-29T110111.006826Z"></a>
 2008-07-29T11:01:11.006826Z Russell Lang</strong></p>
 <blockquote>
