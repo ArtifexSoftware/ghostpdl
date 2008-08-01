@@ -55,49 +55,13 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h3><a name="Version8.63"></a>Version 8.63 (2008-08-01)</h3>
+<h3><a name="Version8.64"></a>Version 8.64 (SVN PRE-RELEASE)</h3>
 
 <p>
-This is the fourth scheduled release in the stable Ghostscipt 8.6x 
-series. It corresponds to the 1.53 release of GhostPDL.
-
-<p>
-Approximately 238 bugs have been fixed since version 8.62. Of particular 
-note are robustness and performance improvements with large files, 
-invalid PDF, and font handling.
-
-<p>
-The major new feature of this release is multithreaded rendering. This 
-can be requested by passing <tt>-dNumRenderingThreads=</tt><i>n</i> on
-the command line. The input document is first parsed, and then each page 
-is split into <i>n</i> bands which are rendered concurrently. This 
-can provide a significant reduction in processing time on multi-core 
-systems.
-
-<p>
-Images are now always interpolated in their source colorspace. This 
-improves correctness for XPS documents and avoids bypassing the custom 
-color management callbacks for interpolated images. Interpolation and 
-color management are both expensive operations, so this affects 
-performance with large images. The effect can be positive or negative 
-depending on the file and the target resolution. If performance is a 
-problem, we suggest running with <tt>-dNOINTERPOLATION</tt>.
-
-<p>
-Support for OpenPrinting Vector devices has been upgraded to version 
-1.0.
-
-<p>
-There are two new devices in this release, both experimental. Behdad 
-Esfahbod has contributed a <tt>cairo</tt> output device which uses 
-the <a href="http://cairographics.org/">cairo graphics library</a> to 
-generate PDF, SVG, EPS, or PNG files, based on the requested filename
-extension. The <tt>svgwrite</tt> device directly outputs Scalable Vector 
-Graphics, the W3C XML vector graphics format. Both support only vector 
-art at this point; text and images will not be represented efficiently.
+This is an unreleased development snapshot.
 
 <p> The following <a href="http://bugs.ghostscript.com/">bugs</a> were
-open at the time of release: <blockquote>
+open at the time of the last release: <blockquote>
 226943,
 430175,
 465936,
@@ -566,25 +530,12 @@ open at the time of release: <blockquote>
 689980.
 </blockquote>
 
-<h3><a name="8.63_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="8.64_Incompatible_changes"></a>Incompatible changes</h3>
 
 <p>
-The maximum number of color components has been reduced to 8 (from 252) 
-as a performance improvement. Eight is the largest number commonly used 
-and the largest number for which we support continuous tone images. 
-Users with special needs can restore the previous behavior by setting 
-the GS_CLIENT_COLOR_MAX_COMPONENTS preprocessor symbol to the required 
-number of components at compile time.
+No incompatible changes have been recorded.
 
-<p>
-The -Z: debugging option now uses 'realtime' instead of 'usertime' 
-when reporting timing information on unix-like systems. This has
-always been the case on windows-like systems.
-
-<p>
-Obsolete makefiles for the DesqView environment have been removed.
-
-<h3><a name="8.63_changelog"></a>Changelog</h3>
+<h3><a name="8.64_changelog"></a>Changelog</h3>
 
 <p>See the <a href="History8.htm">history file</a> for complete log 
 of changes.
@@ -608,7 +559,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 8.63, 1 August 2008
+<small>Ghostscript version 8.64, 2 August 2008
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

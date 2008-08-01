@@ -22,7 +22,7 @@
 
 import string, re
 import xml.parsers.expat
-import sys, codecs
+import sys, codecs, os
 
 class Entry:
 	'''a class representing a single changelog entry'''
@@ -61,6 +61,8 @@ class Entry:
 		file.write('\n<p><strong>')
 		file.write('<a name="' + label + '">')
 		file.write('</a>\n')
+		if self.data['author'] in authors:
+		  self.data['author'] = authors[self.data['author']]
 		file.write(stamp + ' ' + self.data['author'])
 		file.write('</strong>')
 		if not details and self.has_details:
@@ -159,6 +161,17 @@ details_fn = sys.argv[3]
 
 changes = file(changes_fn, "wb")
 details = file(details_fn, "wb")
+
+# Try to parse out authors map
+authors = {}
+if os.path.exists('AUTHORS'):
+  try:
+  	a = open('AUTHORS', 'r')
+  	for line in a.readlines():
+  	  b = line.split(':')
+  	  authors[b[0].strip()] = b[1].strip()
+  except:
+  	print "Error loading AUTHORS dictionary."
 
 # read the input xml and write the output html
 write_header(changes, False)
