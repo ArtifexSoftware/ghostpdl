@@ -506,11 +506,12 @@ This should create links to <tt>configure.ac</tt> and
 invoke autoconf to create the <tt>configure</tt> script.
 
 <p>
-Also run <tt>make distclean</tt> in the jasper subdir to
+Also run <tt>make distclean</tt> in the <tt>jasper</tt> subdir to
 clean up any incidental config there. If you get a warning,
 for example if the build files think they need updating
 and not all the tools are available, be sure to run <tt>autoreconf && 
 make distclean</tt> to avoid version skew issues.
+You may also need to manually remove the <tt>autom4te.cache</tt> directory. 
 
 <p>
 Move back to directory containing the distribution code and make the
