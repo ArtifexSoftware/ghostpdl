@@ -89,7 +89,10 @@ gp_open_scratch_file_generic(const char *prefix, char fname[gp_file_name_sizeof]
 	/* save the old filename template in case mkstemp fails */
 	memcpy(ofname, fname, gp_file_name_sizeof);
 #ifdef HAVE_MKSTEMP64
-	file = (b64 ? mkstemp64 : mkstemp)(fname);
+	if (b64)
+            file = mkstemp64(fname);
+        else
+	    file = mkstemp(fname);
 #else
         file = mkstemp(fname);
 #endif
