@@ -245,11 +245,10 @@ pcl_impl_allocate_interp_instance(
 						   );
     gs_state *pgs = gs_state_alloc(mem);
     /* If allocation error, deallocate & return */
-    /* HS freeing null, perhaps if one of these is null the others should be freed.  Was that the intent? */
     if (!pcli || !pgs) {
-	if (!pcli)
+	if (pcli)
 	    gs_free_object(mem, pcli, "pcl_allocate_interp_instance(pcl_interp_instance_t)");
-	if (!pgs)
+	if (pgs)
 	    gs_state_free(pgs);
 	return gs_error_VMerror;
     }

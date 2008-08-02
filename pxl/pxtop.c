@@ -223,13 +223,13 @@ pxl_impl_allocate_interp_instance(
 	px_state_t *pxs = px_state_alloc(mem);	/* inits interp state, potentially expensive */
 	/* If allocation error, deallocate & return */
 	if (!pxli || !pgs || !st || !pxs) {
-	  if (!pxli)
+	  if (pxli)
 	    gs_free_object(mem, pxli, "pxl_impl_allocate_interp_instance(pxl_interp_instance_t)");
-	  if (!pgs)
+	  if (pgs)
 	    gs_state_free(pgs);
-	  if (!st)
+	  if (st)
 	    px_process_release(st);
-	  if (!pxs)
+	  if (pxs)
 	    px_state_release(pxs);
 	  return gs_error_VMerror;
 	}
