@@ -602,8 +602,8 @@ CAIRO_LIBS=""
 AC_PATH_PROG(PKGCONFIG, pkg-config)
 if test "x$PKGCONFIG" != x; then
   AC_MSG_CHECKING([for cairo])
-  CAIRO_CFLAGS=`pkg-config cairo --cflags`
-  CAIRO_LIBS=`pkg-config cairo --libs`
+  CAIRO_CFLAGS=`pkg-config cairo --atleast-version=1.2.0 && pkg-config cairo --cflags`
+  CAIRO_LIBS=`pkg-config cairo --atleast-version=1.2.0 && pkg-config cairo --libs`
   if test -z "$CAIRO_LIBS"; then
     AC_MSG_RESULT([no])
   else
