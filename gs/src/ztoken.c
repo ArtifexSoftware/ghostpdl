@@ -376,6 +376,7 @@ const op_def ztoken_op_defs[] =
     {"1token", ztoken},
     {"1.tokenexec", ztokenexec},
 		/* Internal operators */
+    {"2%ztoken_continue", ztoken_continue},
     {"2%ztokenexec_continue", ztokenexec_continue},
     op_def_end(0)
 };
