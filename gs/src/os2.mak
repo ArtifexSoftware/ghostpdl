@@ -223,7 +223,7 @@ CPU_TYPE=386
 # primitives for this platform.  Don't change this unless you really know
 # what you're doing.
 
-SYNC=winsync
+SYNC=nosync
 
 # ---------------------------- End of options ---------------------------- #
 
