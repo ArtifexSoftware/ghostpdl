@@ -694,6 +694,9 @@ pdfdict begin
      } loop			% Loop to previous trailer
    } ifelse			% Ifelse readxref stopped
 
+   % Check for recursion in the page tree. Bug 689954, MOAB-06-01-2007
+   verify_page_tree
+
    % Scan numbers in the range 2147483648..4294967295 in Encrypt dictionary
    % as unsigned integers for compatibility with Acrobat Reader. Bug 689010.
    << /PDFScanUnsigned //true >> setuserparams
@@ -974,6 +977,28 @@ pdfdict begin
      } ifelse
    } ifelse
  } bind def
+
+% Check for loops in the 'page tree' but accept an acyclic graph.
+% - verify_page_tree -
+/verify_page_tree { 
+  Trailer /Root oget /Pages oget
+  10 dict begin
+  /verify_page_tree_recursive {
+    dup 1 def
+    dup /Kids knownoget {
+      { oforce
+        currentdict 1 index known {
+          (   **** Error: there's a loop in the page tree. Giving up.\n) pdfformaterror
+          /verify_page_tree cvx /syntaxerror signalerror
+        } if
+        verify_page_tree_recursive
+      } forall
+    } if
+    currentdict exch undef
+  } def
+  verify_page_tree_recursive
+  end
+} bind def
 
 /pdffindpage? {		% <int> pdffindpage? 1 null 	(page not found)
 			%  <int> pdffindpage? 1 noderef (page found)
