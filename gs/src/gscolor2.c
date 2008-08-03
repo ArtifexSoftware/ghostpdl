@@ -238,6 +238,11 @@ gx_final_Indexed(const gs_color_space * pcs)
     if (pcs->params.indexed.use_proc) {
 	rc_adjust_const(pcs->params.indexed.lookup.map, -1,
 			"gx_adjust_Indexed");
+    } else {
+	byte *data = (byte *)pcs->params.indexed.lookup.table.data; /* Break 'const'. */
+
+	gs_free_string(pcs->rc.memory, data, 
+		pcs->params.indexed.lookup.table.size, "gx_final_Indexed");
     }
 }
 

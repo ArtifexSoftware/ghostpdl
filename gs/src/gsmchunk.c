@@ -174,8 +174,8 @@ gs_memory_chunk_dump_memory(const gs_memory_t *mem)
 	    chunk_obj_node_t *obj;
 
 	    for (obj= current->objlist; obj != NULL; obj=obj->next) 
-		dprintf4("chunk_mem leak, obj=0x%lx, size=%d, type=0x%lx, sequence#=%ld\n",
-			(ulong)obj, obj->size, (ulong)(obj->type), obj->sequence);
+		dprintf4("chunk_mem leak, obj=0x%lx, size=%d, type=%s, sequence#=%ld\n",
+			(ulong)obj, obj->size, obj->type->sname, obj->sequence);
 	}
 	next = current->next; 
 	current = next;
