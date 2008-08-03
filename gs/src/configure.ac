@@ -602,13 +602,13 @@ CAIRO_LIBS=""
 AC_PATH_PROG(PKGCONFIG, pkg-config)
 if test "x$PKGCONFIG" != x; then
   AC_MSG_CHECKING([for cairo])
-  CAIRO_CFLAGS=`pkg-config cairo --atleast-version=1.2.0 && pkg-config cairo --cflags`
-  CAIRO_LIBS=`pkg-config cairo --atleast-version=1.2.0 && pkg-config cairo --libs`
-  if test -z "$CAIRO_LIBS"; then
-    AC_MSG_RESULT([no])
-  else
+  if $PKGCONFIG --exists 'cairo >= 1.2.0'; then
+    CAIRO_CFLAGS=`$PKGCONFIG --cflags cairo`
+    CAIRO_LIBS=`$PKGCONFIG --libs cairo`
     CAIRO_DEVS="cairo"
     AC_MSG_RESULT([yes])
+  else
+    AC_MSG_RESULT([no])
   fi
 fi
 AC_SUBST(CAIRO_CFLAGS)
