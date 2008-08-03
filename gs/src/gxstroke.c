@@ -18,6 +18,7 @@
 #include "gpcheck.h"
 #include "gserrors.h"
 #include "gsdcolor.h"
+#include "gsptype1.h"
 #include "gxfixed.h"
 #include "gxfarith.h"
 #include "gxmatrix.h"
@@ -289,7 +290,8 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 {
     extern bool CPSI_mode;
     stroke_line_proc_t line_proc =
-	(to_path == 0 ? stroke_fill : CPSI_mode ? stroke_add_compat : stroke_add);
+	(to_path == 0 && !gx_dc_is_pattern1_color_clist_based(pdevc) 
+		? stroke_fill : CPSI_mode ? stroke_add_compat : stroke_add);
     gs_fixed_rect ibox, cbox;
     gx_device_clip cdev;
     gx_device *dev = pdev;

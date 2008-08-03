@@ -174,7 +174,7 @@ static dev_proc_destroy_buf_device(dummy_destroy_buf_device)
 }
 
 #ifndef MAX_BITMAP_PATTERN_SIZE		/* Allow override with XCFLAGS */
-#  define MAX_BITMAP_PATTERN_SIZE (32*1024*1024)	/* default 32Mb tolerable for most hosts */
+#  define MAX_BITMAP_PATTERN_SIZE (1024*1024)
 #endif
 
 /* Allocate a pattern accumulator, with an initial refct of 0. */
