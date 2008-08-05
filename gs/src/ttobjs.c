@@ -714,14 +714,17 @@ static int free_aux(ttfMemory *mem, void *ptr)
   {
     TT_Error  error;
     Int       i;
-    PFace     face = ins->face;
-    PExecution_Context exec = ins->face->font->exec;
+    PFace     face;
+    PExecution_Context exec;
 
     if ( !ins )
       return TT_Err_Invalid_Instance_Handle;
 
     if ( ins->valid )
       return TT_Err_Ok;
+
+    face = ins->face;
+    exec = face->font->exec;
 
     if ( ins->metrics.x_ppem < 1 ||
          ins->metrics.y_ppem < 1 )
