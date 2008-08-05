@@ -170,9 +170,9 @@ page.dev: ray and henry
 pagedev.dev: ray and henry
 path1.dev: igor
 path1lib.dev: igor
-patlib.dev: ralph
-patread.dev: ralph
-pattern.dev: ralph
+patlib.dev: igor
+patread.dev: igor
+pattern.dev: igor
 pbm.dev: ray and henry
 pbmraw.dev: ray and henry
 pcl5.dev: henry
