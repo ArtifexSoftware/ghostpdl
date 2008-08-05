@@ -37,18 +37,13 @@ if test $? != 0; then
   exit 1
 fi
 
-echo -n "Copying regression baseline..."
+echo -n "Copying regression baseline"
 if test -d src; then
   LATEST='gs'
 else
-  LATEST=`ssh $HOST 'for file in \`ls regression |\
-    egrep ghostpcl-r[0-9]+[+][0-9]+$ | sort -r | head\`; do\
-      if test -r regression/$file/reg_baseline.txt; then\
-        echo $file; break;\
-      fi;\
-    done'`
+  LATEST='ghostpdl'
 fi
-if test -z "$LATEST"; then echo "$0 aborted."; exit 1; fi
+if test -z "$LATEST"; then echo " $0 aborted."; exit 1; fi
 echo " from $LATEST..."
 ssh $HOST "cp regression/$LATEST/reg_baseline.txt $DEST/$TARGET/"
 if test $? != 0; then
