@@ -70,7 +70,6 @@
 #include "gsicc.h"
 #include "gxdevice.h"
 #include "gzstate.h"
-#include "malloc_.h"
 #include "gsutil.h"
 #include "gxcie.h"
 #include "gsncdummy.h"
@@ -155,9 +154,8 @@ client_install_no_op(client_custom_color_params_t * pparams,
 }
 
 /*
- * Since this is an example for a client, we are using the system
- * malloc and free routines instead of the normal GS memory management
- * routines.
+ * Adjust the reference count on our client data,
+ * freeing it if necessary.
  */
 static void
 client_adjust_cspace_count(const gs_color_space * pcs, int delta)

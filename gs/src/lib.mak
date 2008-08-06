@@ -2456,8 +2456,8 @@ $(GLOBJ)gsnamecl.$(OBJ) : $(GLSRC)gsnamecl.c $(GXERR) $(memory__h) $(gxcspace_h)
 	$(GLCC) $(GLO_)gsnamecl.$(OBJ) $(C_) $(GLSRC)gsnamecl.c
 
 $(GLOBJ)gsncdummy.$(OBJ) : $(GLSRC)gsncdummy.c $(GXERR) $(math__h)\
-       	$(memory__h) $(malloc__h) $(gscdefs_h) $(gscspace_h) $(gscie_h)\
-        $(gsicc_h) $(gxdevice_h) $(gzstate_h) $(gsutil_h) $(gxcie_h) $(gsncdummy_h)
+	$(memory__h) $(gscdefs_h) $(gscspace_h) $(gscie_h) $(gsicc_h)\
+	$(gxdevice_h) $(gzstate_h) $(gsutil_h) $(gxcie_h) $(gsncdummy_h)
 	$(GLCC) $(GLO_)gsncdummy.$(OBJ) $(C_) $(GLSRC)gsncdummy.c
 
 # ================ Display Postscript extensions ================ #
