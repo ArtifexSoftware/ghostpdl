@@ -61,7 +61,6 @@
 #include "stdpre.h"
 #include "math_.h"
 #include "memory_.h"
-#include "ierrors.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gscdefs.h"
@@ -996,7 +995,7 @@ client_remap_ICCBased(client_custom_color_params_t * pparams,
     switch (num_values) {
 	case 0:
 	case 2:
-	    return_error(e_rangecheck);
+	    return_error(gs_error_rangecheck);
 	case 1:
 	    return client_remap_DeviceGray(pparams, frac_color, pcs,
 			   		 pdc, pis, dev, select);
