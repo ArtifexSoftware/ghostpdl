@@ -84,6 +84,12 @@ free_indexed_cspace(
 
     pcl_cs_base_release(pindexed->pbase);
     rc_decrement(pindexed->pcspace, "free_indexed_cspace");
+    if (pindexed->palette.data != 0)
+        gs_free_string( pmem,
+                        pindexed->palette.data,
+                        pindexed->palette.size,
+                        cname
+                        );
     gs_free_object(pmem, pvindexed, cname);
 }
 
