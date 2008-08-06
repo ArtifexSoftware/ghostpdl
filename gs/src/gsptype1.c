@@ -501,6 +501,16 @@ gx_dc_is_pattern1_color_clist_based(const gx_device_color *pdevc)
     return gx_pattern_tile_is_clist(pdevc->colors.pattern.p_tile);
 }
 
+/* Get pattern id (type 1 pattern only) */
+gs_id
+gs_dc_get_pattern_id(const gx_device_color *pdevc)
+{
+    if (pdevc->type != &gx_dc_pattern)
+	return gs_no_id;
+    return pdevc->colors.pattern.p_tile->id;
+}
+
+
 /*
  * Perform actions required at setcolor time. This procedure resets the
  * overprint information (almost) as required by the pattern. The logic
@@ -1359,6 +1369,15 @@ gx_dc_pattern_write(
 	    return 1; /* Same as saved one, don't write. */
 	}
     }
+    if (offset1 == 0 && left == sizeof(gs_id)) {
+	/* A special case for writing a known pattern : 
+	   Just write the tile id. */
+	gs_id id = ptile->id; /* Ensure sizeof(gs_id). */
+
+	memcpy(dp, &ptile->id, sizeof(id));
+	*psize = sizeof(gs_id);
+	return 0;
+    }
     if (ptile->cdev == NULL)
 	return gx_dc_pattern_write_raster(ptile, offset, data, psize);
     size_b = clist_data_size(ptile->cdev, 0);
@@ -1513,7 +1532,18 @@ gx_dc_pattern_read(
 	    /* Null pattern. */
 	    pdevc->type = &gx_dc_pattern;
 	    pdevc->colors.pattern.p_tile = NULL;
+	    pdevc->mask.id = gs_no_id;
 	    return 0;
+	}
+	if (size == sizeof(gs_id)) {
+	    /* A special case for restoring a known (cached) pattern :
+	       read the tile id only. */
+	    gs_id id; /* Ensure data size == sizeof(gs_id). */
+
+	    memcpy(&id, dp, sizeof(id));
+	    pdevc->type = &gx_dc_pattern;
+	    pdevc->mask.id = id; /* See gx_dc_pattern_load, gx_pattern_cache_lookup. */
+	    return size;
 	}
 	if (sizeof(buf) > size) {
 	    /* For a while we require the client to provide enough buffer size. */

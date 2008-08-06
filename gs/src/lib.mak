@@ -1711,8 +1711,8 @@ $(GLOBJ)gxclimag.$(OBJ) : $(GLSRC)gxclimag.c $(GXERR) $(math__h) $(memory__h)\
 	$(GLCC) $(GLO_)gxclimag.$(OBJ) $(C_) $(GLSRC)gxclimag.c
 
 $(GLOBJ)gxclpath.$(OBJ) : $(GLSRC)gxclpath.c $(GXERR)\
- $(math__h) $(memory__h) $(gpcheck_h) $(gptype2_h)\
- $(gxcldev_h) $(gxclpath_h) $(gxcolor2_h)\
+ $(math__h) $(memory__h) $(gpcheck_h) $(gsptype2_h) $(gsptype1_h)\
+ $(gxdevice_h) $(gxdevmem_h) $(gxcldev_h) $(gxclpath_h) $(gxcolor2_h)\
  $(gxdcolor_h) $(gxpaint_h)\
  $(gzpath_h) $(gzcpath_h) $(stream_h) $(gsserial_h)
 	$(GLCC) $(GLO_)gxclpath.$(OBJ) $(C_) $(GLSRC)gxclpath.c

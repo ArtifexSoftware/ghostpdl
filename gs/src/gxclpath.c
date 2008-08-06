@@ -19,6 +19,7 @@
 #include "gpcheck.h"
 #include "gserrors.h"
 #include "gsptype2.h"
+#include "gsptype1.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"		/* must precede gxcldev.h */
 #include "gxcldev.h"
@@ -110,6 +111,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     int			       left;
     uint		       portion_size, prefix_size;
     int			       req_size_final;
+    bool is_pattern;
 
     /* see if the halftone must be inserted in the command list */
     if ( pdht != NULL                          &&
@@ -153,6 +155,17 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                                      color_phase.y )) < 0  )
         return code;
 
+    is_pattern = gx_dc_is_pattern1_color(pdcolor);
+    if (is_pattern) {
+	gs_id id = gs_dc_get_pattern_id(pdcolor);
+
+	if (pcls->pattern_id == id) {
+	    /* The pattern is known, write its id only. 
+	       Note gx_dc_pattern_write must process this case especially. */
+	    left = sizeof(id);
+	}
+    }
+
     while (left) {
 	prefix_size = 2 + 1 + (offset > 0 ? enc_u_sizew(offset) : 0);
 	req_size = left + prefix_size + enc_u_sizew(left);
@@ -195,6 +208,8 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 
     /* record the color we have just serialized color */
     pdcolor->type->save_dc(pdcolor, &pcls->sdc);
+    if (is_pattern)
+	pcls->pattern_id = gs_dc_get_pattern_id(pdcolor);
 
     return code;
 }

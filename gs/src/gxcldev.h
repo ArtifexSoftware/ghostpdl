@@ -235,6 +235,7 @@ struct gx_clist_state_s {
   ((pcls)->tile_id == (tid) &&\
    (offset_temp = cldev->tile_table[(pcls)->tile_index].offset) != 0 &&\
    ((tile_slot *)(cldev->data + offset_temp))->id == (tid))
+    gs_id pattern_id;		/* the last stored pattern id. */
     gs_int_point tile_phase;	/* most recent tile phase */
     gx_color_index tile_colors[2];	/* most recent tile colors */
     gx_cmd_rect rect;		/* most recent rectangle */
@@ -263,7 +264,7 @@ struct gx_clist_state_s {
 #define cls_initial_values\
 	 { gx_no_color_index, gx_no_color_index },\
 	{ gx_dc_type_none },\
-	0, gx_no_bitmap_id,\
+	0, gx_no_bitmap_id, gs_no_id,\
 	 { 0, 0 }, { gx_no_color_index, gx_no_color_index },\
 	 { 0, 0, 0, 0 }, lop_default, 0, 0, 0, initial_known,\
 	{ 0, 0 }, { 0, 0 }, { 0, 0 }
