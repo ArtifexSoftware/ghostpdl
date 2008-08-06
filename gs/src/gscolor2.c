@@ -239,10 +239,20 @@ gx_final_Indexed(const gs_color_space * pcs)
 	rc_adjust_const(pcs->params.indexed.lookup.map, -1,
 			"gx_adjust_Indexed");
     } else {
+	/* Bug 689822 "Memory leaks during rendering clist." 
+	*/
+#if 0   /* Disabled due to bug 689990 "pcl6.exe crash with gs revision 8928".
+           Rather this automatic freeing of pcs->params.indexed.lookup.table.data
+	   complies to a fundamental change of Revision 7765 "Non-backwards compatible change: 
+	   use consistent reference count allocation discipline for color spaces.",
+	   some interpreters still don't fully comply to the discipline. 
+	   It caused a crash in memory management due to dual attempt to free the string.
+         */
 	byte *data = (byte *)pcs->params.indexed.lookup.table.data; /* Break 'const'. */
 
 	gs_free_string(pcs->rc.memory, data, 
 		pcs->params.indexed.lookup.table.size, "gx_final_Indexed");
+#endif
     }
 }
 
