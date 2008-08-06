@@ -113,11 +113,17 @@ static dev_proc_print_page(bit_print_page);
  */
 #define REAL_NUM_COMPONENTS(dev) (dev->dname[3] == 'c' ? 4 : \
 				  dev->dname[3] == 'r' ? 3 : 1)
+struct gx_device_bit_s {
+    gx_device_common;
+    gx_prn_device_common;
+    int  FirstLine, LastLine;	/* to allow multi-threaded rendering testing */
+};
+typedef struct gx_device_bit_s gx_device_bit;
 
 static const gx_device_procs bitmono_procs =
 bit_procs(bit_mono_map_color);
-const gx_device_printer gs_bit_device =
-{prn_device_body(gx_device_printer, bitmono_procs, "bit",
+const gx_device_bit gs_bit_device =
+{prn_device_body(gx_device_bit, bitmono_procs, "bit",
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
 		 0, 0, 0, 0,    /* margins */
@@ -126,8 +132,8 @@ const gx_device_printer gs_bit_device =
 
 static const gx_device_procs bitrgb_procs =
 bit_procs(gx_default_rgb_map_rgb_color);
-const gx_device_printer gs_bitrgb_device =
-{prn_device_body(gx_device_printer, bitrgb_procs, "bitrgb",
+const gx_device_bit gs_bitrgb_device =
+{prn_device_body(gx_device_bit, bitrgb_procs, "bitrgb",
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
 		 0, 0, 0, 0,	/* margins */
@@ -136,8 +142,8 @@ const gx_device_printer gs_bitrgb_device =
 
 static const gx_device_procs bitcmyk_procs =
 bit_procs(bit_map_cmyk_color);
-const gx_device_printer gs_bitcmyk_device =
-{prn_device_body(gx_device_printer, bitcmyk_procs, "bitcmyk",
+const gx_device_bit gs_bitcmyk_device =
+{prn_device_body(gx_device_bit, bitcmyk_procs, "bitcmyk",
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
 		 0, 0, 0, 0,	/* margins */
@@ -201,9 +207,9 @@ static const gx_device_procs bitrgbtags_procs =
         bittag_map_color_rgb                 /* decode_color */
     };
 
-const gx_device_printer gs_bitrgbtags_device =
+const gx_device_bit gs_bitrgbtags_device =
     {
-        sizeof(gx_device_printer),
+        sizeof(gx_device_bit),
         &bitrgbtags_procs,
         "bitrgbtags",
         0 ,                             /* memory */
@@ -507,6 +513,12 @@ bit_get_params(gx_device * pdev, gs_param_list * plist)
     if ((code = param_write_int(plist, "ForceMono", &forcemono)) < 0) {
 	ecode = code;
     }
+    if ((code = param_write_int(plist, "FirstLine", &((gx_device_bit *)pdev)->FirstLine)) < 0) {
+	ecode = code;
+    }
+    if ((code = param_write_int(plist, "LastLine", &((gx_device_bit *)pdev)->LastLine)) < 0) {
+	ecode = code;
+    }
 
     /* Restore the working num_components */
     pdev->color_info.num_components = ncomps;
@@ -533,6 +545,8 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
 	{4, 8, 0, 16, 32, 0, 0, 32, 0, 0, 0, 48, 0, 0, 0, 64}
     };
     const char *vname;
+    int FirstLine = ((gx_device_bit *)pdev)->FirstLine;
+    int LastLine = ((gx_device_bit *)pdev)->LastLine;
 
     /*
      * Temporarily set num_components back to the "real" value to avoid
@@ -581,6 +595,31 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
     }
     if (ecode < 0)
 	return ecode;
+    switch (code = param_read_int(plist, (vname = "FirstLine"), &v)) {
+    case 0:
+        FirstLine = v;
+	break;
+    default:
+	ecode = code;
+	param_signal_error(plist, vname, ecode);
+    case 1:
+	break;
+    }
+    if (ecode < 0)
+	return ecode;
+
+    switch (code = param_read_int(plist, (vname = "LastLine"), &v)) {
+    case 0:
+        LastLine = v;
+	break;
+    default:
+	ecode = code;
+	param_signal_error(plist, vname, ecode);
+    case 1:
+	break;
+    }
+    if (ecode < 0)
+	return ecode;
 
     /*
      * Save the color_info in case gdev_prn_put_params fails, and for
@@ -617,6 +656,9 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
     /* Reset the sparable and linear shift, masks, bits. */
     set_linear_color_bits_mask_shift(pdev);
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
+    ((gx_device_bit *)pdev)->FirstLine = FirstLine;
+    ((gx_device_bit *)pdev)->LastLine = LastLine;
+
     return 0;
 }
 
@@ -629,11 +671,16 @@ bit_print_page(gx_device_printer * pdev, FILE * prn_stream)
     byte *in = gs_alloc_bytes(pdev->memory, line_size, "bit_print_page(in)");
     byte *data;
     int nul = !strcmp(pdev->fname, "nul") || !strcmp(pdev->fname, "/dev/null");
-    int lnum = 0, bottom = pdev->height;
+    int lnum = ((gx_device_bit *)pdev)->FirstLine;
+    int bottom = ((gx_device_bit *)pdev)->LastLine;
+    int line_count = abs(bottom - lnum);
+    int i, step = lnum > bottom ? -1 : 1;
 
     if (in == 0)
 	return_error(gs_error_VMerror);
-    for (; lnum < bottom; ++lnum) {
+    if ((lnum == 0) && (bottom == 0))
+	bottom = pdev->height - 1;
+    for (i = 0; i < line_count; i++, lnum += step) {
 	gdev_prn_get_bits(pdev, lnum, in, &data);
 	if (!nul)
 	    fwrite(data, 1, line_size, prn_stream);
