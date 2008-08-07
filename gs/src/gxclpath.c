@@ -111,7 +111,8 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     int			       left;
     uint		       portion_size, prefix_size;
     int			       req_size_final;
-    bool is_pattern;
+    bool		       is_pattern;
+    gs_id		       pattern_id = gs_no_id;
 
     /* see if the halftone must be inserted in the command list */
     if ( pdht != NULL                          &&
@@ -157,12 +158,15 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 
     is_pattern = gx_dc_is_pattern1_color(pdcolor);
     if (is_pattern) {
-	gs_id id = gs_dc_get_pattern_id(pdcolor);
+	pattern_id = gs_dc_get_pattern_id(pdcolor);
 
-	if (pcls->pattern_id == id) {
+	if (pattern_id != gs_no_id && pcls->pattern_id == pattern_id) {
 	    /* The pattern is known, write its id only. 
-	       Note gx_dc_pattern_write must process this case especially. */
-	    left = sizeof(id);
+	       Note that gx_dc_pattern_write must process this case especially. */
+	    /* Note that id is gs_no_id when the pattern supplies an empty tile.
+	       In this case the full serialized pattern is shorter (left == 0), 
+	       so go with it. */
+	    left = sizeof(pattern_id);
 	}
     }
 
@@ -204,12 +208,18 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     /* should properly calculate colors_used, but for now just punt */
     pcls->colors_used.or = ((gx_color_index)1 << cldev->color_info.depth) - 1;
 
-    pcls->band_complexity.uses_color |= (pdcolor->colors.pure != 0 && pdcolor->colors.pure != 0xffffff);
+    /* Here we can't know whether a pattern paints colors besides 
+       black and white, so assume that it does.
+       todo: provide this info with a pattern tile. */
+    pcls->band_complexity.uses_color |= is_pattern || 
+		(pdcolor->colors.pure != 0 && pdcolor->colors.pure != 0xffffff);
 
     /* record the color we have just serialized color */
     pdcolor->type->save_dc(pdcolor, &pcls->sdc);
-    if (is_pattern)
-	pcls->pattern_id = gs_dc_get_pattern_id(pdcolor);
+    if (pattern_id) {
+	/* Don't record empty tiles because they're not cached. */
+	pcls->pattern_id = pattern_id;
+    }
 
     return code;
 }
