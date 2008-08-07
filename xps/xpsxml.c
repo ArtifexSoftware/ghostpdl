@@ -292,7 +292,7 @@ static void indent(int n)
 }
 
 void
-xps_debug_item(xps_item_t *item, int level)
+xps_debug_item_imp(xps_item_t *item, int level, int loop)
 {
     int i;
 
@@ -312,7 +312,7 @@ xps_debug_item(xps_item_t *item, int level)
 	    if (item->down)
 	    {
 		printf(">\n");
-		xps_debug_item(item->down, level + 1);
+		xps_debug_item_imp(item->down, level + 1, 1);
 		indent(level);
 		printf("</%s>\n", item->name);
 	    }
@@ -321,6 +321,14 @@ xps_debug_item(xps_item_t *item, int level)
 	}
 
 	item = item->next;
+	
+	if (!loop)
+	    return;
     }
 }
 
+void
+xps_debug_item(xps_item_t *item, int level)
+{
+    xps_debug_item_imp(item, level, 0);
+}
