@@ -524,7 +524,7 @@ $(DD)lxm3200.dev: $(lxm3200_) $(DD)page.dev
 ###                                                                      ###
 LIPS_DIR=$(CONTRIBSRC)lips4
 LIPS_SRC=$(LIPS_DIR)$(D)
-LIPS_OPT=-DGS_VERSION_MAJOR=$(GS_VERSION_MAJOR) $(I_)$(LIPS_SRC)
+LIPS_OPT=-DGS_VERSION_MAJOR=$(GS_VERSION_MAJOR) $(I_)$(LIPS_SRC) $(II)$(PSSRC)$(_I)
 
 $(GLOBJ)gdevlprn.$(OBJ): $(LIPS_SRC)gdevlprn.c $(LIPS_SRC)gdevlprn.h\
  $(gdevprn_h) $(PDEVH)
@@ -603,7 +603,7 @@ $(GLOBJ)gdevop4w.$(OBJ) : $(CONTRIBSRC)gdevop4w.c $(PDEVH)
 ###                                                                      ###
 OPVP_DIR=$(CONTRIBSRC)opvp
 OPVP_SRC=$(OPVP_DIR)$(D)
-OPVP_OPT=-DGS_VERSION_MAJOR=$(GS_VERSION_MAJOR)
+OPVP_OPT=-DGS_VERSION_MAJOR=$(GS_VERSION_MAJOR) $(I_)$(PSSRC)$(_I)
 
 opvp_=$(GLOBJ)gdevopvp.$(OBJ)
 
@@ -686,7 +686,7 @@ eprn_fs_options=
 # This is the part you need if you are developing another eprn-based driver.
 
 # Complete set of compilation options
-eprn_opts=-DGS_REVISION=$(GS_REVISION) $(pcl3_options)
+eprn_opts=-DGS_REVISION=$(GS_REVISION) $(pcl3_options) $(I_)$(PSSRCDIR)$(_I)
 
 # Directory with eprn's source code as seen from the gs directory. The name
 # does not include a trailing path separator.
