@@ -117,7 +117,7 @@ int dlsym_wrapper(void *lib, char const *name, void **symbol)
 #include "gdevprn.h"
 #include "gsparam.h"
 #include "gdevbmp.h"
-#include "errors.h"
+#include "gserrors.h"
 #include "stdio_.h"
 #include "gserrors.h"
 #include "gpsync.h"
@@ -388,7 +388,7 @@ OpenDevice (gx_device *pdev  /* Driver instance to open */)
       eprintf ("Error: No pDev in OpenDevice.\n");
       if (fDebugOutput) lprintf ("error was here.\n");
 
-      return e_Fatal;
+      return gs_error_Fatal;
    }
 
    if (!pDev->hmodOmni)
@@ -397,7 +397,7 @@ OpenDevice (gx_device *pdev  /* Driver instance to open */)
       eprintf ("Error: Could not load libomni.so\n");
       if (fDebugOutput) lprintf ("error was here.\n");
 
-      return e_Fatal;
+      return gs_error_Fatal;
    }
 
    if (!pDev->pcoreOmni->cDeviceName[0])
@@ -406,7 +406,7 @@ OpenDevice (gx_device *pdev  /* Driver instance to open */)
       eprintf ("Error: -sDeviceName=XXX was not defined\n");
       if (fDebugOutput) lprintf ("error was here.\n");
 
-      return e_Fatal;
+      return gs_error_Fatal;
    }
 
    pDev->iUseServer  = 0;
