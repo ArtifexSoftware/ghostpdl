@@ -514,6 +514,7 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 	    break;
 
 	case 'Q':
+	    gs_currentpoint(ctx->pgs, &pt);
 	    x1 = atof(args[i+0]);
 	    y1 = atof(args[i+1]);
 	    x2 = atof(args[i+2]);
