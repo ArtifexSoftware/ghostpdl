@@ -46,10 +46,10 @@ s_CFD_init(stream_state * st)
     /* Because skip_white_pixels can look as many as 4 bytes ahead, */
     /* we need to allow 4 extra bytes at the end of the row buffers. */
     ss->lbuf = gs_alloc_bytes(st->memory, raster + 4, "CFD lbuf");
-    memset(ss->lbuf, white, raster + 4);  /* + 4 for Valgrind */
     ss->lprev = 0;
     if (ss->lbuf == 0)
 	return ERRC;		/****** WRONG ******/
+    memset(ss->lbuf, white, raster + 4);  /* + 4 for Valgrind */
     if (ss->K != 0) {
 	ss->lprev = gs_alloc_bytes(st->memory, raster + 4, "CFD lprev");
 	if (ss->lprev == 0)
