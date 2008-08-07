@@ -51,7 +51,7 @@ struct svg_interp_instance_s
 #define SVG_VERSION NULL
 #define SVG_BUILD_DATE NULL
 
-const pl_interp_characteristics_t *
+static const pl_interp_characteristics_t *
 svg_imp_characteristics(const pl_interp_implementation_t *pimpl)
 {
     static pl_interp_characteristics_t svg_characteristics =
@@ -116,6 +116,18 @@ svg_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
 
     /* TODO: load some builtin ICC profiles here */
     ctx->srgb = gs_cspace_new_DeviceRGB(ctx->memory);
+
+    ctx->fill_rule = 1; /* 0=evenodd, 1=nonzero */
+
+    ctx->fill_is_set = 0;
+    ctx->fill_color[0] = 0.0;
+    ctx->fill_color[1] = 0.0;
+    ctx->fill_color[2] = 0.0;
+
+    ctx->stroke_is_set = 0;
+    ctx->stroke_color[0] = 0.0;
+    ctx->stroke_color[1] = 0.0;
+    ctx->stroke_color[2] = 0.0;
 
     instance->pre_page_action = 0;
     instance->pre_page_closure = 0;
@@ -218,11 +230,17 @@ svg_imp_get_device_memory(pl_interp_instance_t *pinstance, gs_memory_t **ppmem)
 
 /* Parse a cursor-full of data */
 static int
-svg_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *pcursor)
+svg_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *buf)
 {
     svg_interp_instance_t *instance = (svg_interp_instance_t *)pinstance;    
     svg_context_t *ctx = instance->ctx;
-    return svg_process_data(ctx, pcursor);
+    int code;
+
+    code = svg_feed_xml_parser(ctx, (const char*)buf->ptr + 1, buf->limit - buf->ptr);
+    
+    buf->ptr = buf->limit;
+
+    return code;
 }
 
 /* Skip to end of job.
@@ -259,21 +277,6 @@ svg_imp_init_job(pl_interp_instance_t *pinstance)
     return svg_open_xml_parser(ctx);
 }
 
-/* Process data for job */
-int
-svg_process_data(svg_context_t *ctx, stream_cursor_read *buf)
-{
-    int code;
-
-    dputs("svg_process_data\n");
-
-    code = svg_feed_xml_parser(ctx, buf->ptr + 1, buf->limit - buf->ptr);
-    
-    buf->ptr = buf->limit;
-
-    return code;
-}
-
 /* Parser action for end-of-file */
 static int
 svg_imp_process_eof(pl_interp_instance_t *pinstance)
@@ -281,23 +284,25 @@ svg_imp_process_eof(pl_interp_instance_t *pinstance)
     svg_interp_instance_t *instance = (svg_interp_instance_t *)pinstance;
     svg_context_t *ctx = instance->ctx;
     svg_item_t *root;
+    int code;
 
-    dputs("svg_process_eof\n");
+    dputs("-- svg_imp_process_eof --\n");
 
     root = svg_close_xml_parser(ctx);
     if (!root)
 	return gs_rethrow(-1, "cannot parse xml document");
 
-    return svg_parse_document(ctx, root);
+    code = svg_parse_document(ctx, root);
+
+    svg_free_item(ctx, root);
+
+    return code;
 }
 
 /* Wrap up interp instance after a "job" */
 static int
 svg_imp_dnit_job(pl_interp_instance_t *pinstance)
 {
-    svg_interp_instance_t *instance = (svg_interp_instance_t *)pinstance;
-    svg_context_t *ctx = instance->ctx;
-
     dputs("-- svg_imp_dnit_job --\n");
 
     return 0;
@@ -426,7 +431,7 @@ identity_transfer(floatp tint, const gx_transfer_map *ignore_map)
 
 /* The following is a 45 degree spot screen with the spots enumerated
  * in a defined order. */
-static const byte order16x16[256] = {
+static byte order16x16[256] = {
     38, 11, 14, 32, 165, 105, 90, 171, 38, 12, 14, 33, 161, 101, 88, 167,
     30, 6, 0, 16, 61, 225, 231, 125, 30, 6, 1, 17, 63, 222, 227, 122,
     27, 3, 8, 19, 71, 242, 205, 110, 28, 4, 9, 20, 74, 246, 208, 106,

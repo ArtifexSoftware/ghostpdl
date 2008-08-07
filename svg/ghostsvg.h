@@ -103,11 +103,52 @@ int svg_show_page(svg_context_t *ctx, int num_copies, int flush);
 int svg_utf8_to_ucs(int *p, const char *s, int n);
 
 /*
+ * Parse basic data type units.
+ */
+
+float svg_parse_length(char *str, float percent, float font_size);
+float svg_parse_angle(char *str);
+
+int svg_parse_color(char *str, float *rgb);
+
+int svg_is_whitespace_or_comma(int c);
+int svg_is_whitespace(int c);
+int svg_is_alpha(int c);
+int svg_is_digit(int c);
+
+/*
+ * Graphics content parsing.
+ */
+
+int svg_parse_common(svg_context_t *ctx, svg_item_t *node);
+
+int svg_parse_transform(svg_context_t *ctx, char *str);
+
+void svg_set_color(svg_context_t *ctx, float *rgb);
+void svg_set_fill_color(svg_context_t *ctx);
+void svg_set_stroke_color(svg_context_t *ctx);
+
+int svg_parse_image(svg_context_t *ctx, svg_item_t *node);
+
+int svg_parse_path(svg_context_t *ctx, svg_item_t *node);
+
+int svg_parse_rect(svg_context_t *ctx, svg_item_t *node);
+int svg_parse_circle(svg_context_t *ctx, svg_item_t *node);
+int svg_parse_ellipse(svg_context_t *ctx, svg_item_t *node);
+int svg_parse_line(svg_context_t *ctx, svg_item_t *node);
+int svg_parse_polyline(svg_context_t *ctx, svg_item_t *node);
+int svg_parse_polygon(svg_context_t *ctx, svg_item_t *node);
+
+int svg_parse_text(svg_context_t *ctx, svg_item_t *node);
+
+/*
  * Global context and XML parsing.
  */
 
+int svg_parse_element(svg_context_t *ctx, svg_item_t *root);
+
 int svg_open_xml_parser(svg_context_t *ctx);
-int svg_feed_xml_parser(svg_context_t *ctx, char *buf, int len);
+int svg_feed_xml_parser(svg_context_t *ctx, const char *buf, int len);
 svg_item_t * svg_close_xml_parser(svg_context_t *ctx);
 int svg_parse_document(svg_context_t *ctx, svg_item_t *root);
 
@@ -134,6 +175,18 @@ struct svg_context_s
     gs_state *pgs;
     gs_font_dir *fontdir;
     gs_color_space *srgb;
+
+    int fill_rule;
+
+    int fill_is_set;
+    float fill_color[3];
+
+    int stroke_is_set;
+    float stroke_color[3];
+
+    float viewbox_width;
+    float viewbox_height;
+    float viewbox_size;
 
     svg_item_t *root;
     svg_item_t *head;

@@ -99,7 +99,7 @@ static inline int is_svg_space(int c)
 static void on_text(void *zp, const char *buf, int len)
 {
     svg_context_t *ctx = zp;
-    char *atts[3];
+    const char *atts[3];
     int i;
 
     if (ctx->error)
@@ -155,7 +155,7 @@ svg_open_xml_parser(svg_context_t *ctx)
 }
 
 int
-svg_feed_xml_parser(svg_context_t *ctx, char *buf, int len)
+svg_feed_xml_parser(svg_context_t *ctx, const char *buf, int len)
 {
     XML_Parser xp = ctx->parser;
     int code = XML_Parse(xp, buf, len, 0);
@@ -249,8 +249,8 @@ static void indent(int n)
 	printf("  ");
 }
 
-void
-svg_debug_item(svg_item_t *item, int level)
+static void
+svg_debug_item_imp(svg_item_t *item, int level, int loop)
 {
     int i;
 
@@ -270,7 +270,7 @@ svg_debug_item(svg_item_t *item, int level)
 	    if (item->down)
 	    {
 		printf(">\n");
-		svg_debug_item(item->down, level + 1);
+		svg_debug_item_imp(item->down, level + 1, 1);
 		indent(level);
 		printf("</%s>\n", item->name);
 	    }
@@ -279,6 +279,15 @@ svg_debug_item(svg_item_t *item, int level)
 	}
 
 	item = item->next;
+
+	if (!loop)
+	    return;
     }
+}
+
+void
+svg_debug_item(svg_item_t *item, int level)
+{
+    svg_debug_item_imp(item, level, 0);
 }
 

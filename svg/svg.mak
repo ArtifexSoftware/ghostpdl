@@ -32,11 +32,23 @@ ghostsvg_h=$(SVGSRC)ghostsvg.h $(memory__h) $(math__h) \
 
 SVGINCLUDES=$(ghostsvg_h)
 
-$(SVGOBJ)svgxml.$(OBJ): $(SVGSRC)svgxml.c $(SVGINCLUDES)
-	$(SVGCCC) $(SVGSRC)svgxml.c $(SVGO_)svgxml.$(OBJ)
+$(SVGOBJ)svgtypes.$(OBJ): $(SVGSRC)svgtypes.c $(SVGINCLUDES)
+	$(SVGCCC) $(SVGSRC)svgtypes.c $(SVGO_)svgtypes.$(OBJ)
+
+$(SVGOBJ)svgcolor.$(OBJ): $(SVGSRC)svgcolor.c $(SVGINCLUDES)
+	$(SVGCCC) $(SVGSRC)svgcolor.c $(SVGO_)svgcolor.$(OBJ)
+
+$(SVGOBJ)svgtransform.$(OBJ): $(SVGSRC)svgtransform.c $(SVGINCLUDES)
+	$(SVGCCC) $(SVGSRC)svgtransform.c $(SVGO_)svgtransform.$(OBJ)
+
+$(SVGOBJ)svgshapes.$(OBJ): $(SVGSRC)svgshapes.c $(SVGINCLUDES)
+	$(SVGCCC) $(SVGSRC)svgshapes.c $(SVGO_)svgshapes.$(OBJ)
 
 $(SVGOBJ)svgdoc.$(OBJ): $(SVGSRC)svgdoc.c $(SVGINCLUDES)
 	$(SVGCCC) $(SVGSRC)svgdoc.c $(SVGO_)svgdoc.$(OBJ)
+
+$(SVGOBJ)svgxml.$(OBJ): $(SVGSRC)svgxml.c $(SVGINCLUDES)
+	$(SVGCCC) $(SVGSRC)svgxml.c $(SVGO_)svgxml.$(OBJ)
 
 
 $(SVG_TOP_OBJ): $(SVGSRC)svgtop.c $(pltop_h) $(SVGGEN)pconf.h $(SVGINCLUDES)
@@ -44,8 +56,12 @@ $(SVG_TOP_OBJ): $(SVGSRC)svgtop.c $(pltop_h) $(SVGGEN)pconf.h $(SVGINCLUDES)
 	$(SVGCCC) $(SVGSRC)svgtop.c $(SVGO_)svgtop.$(OBJ)
 
 SVG_OBJS=\
-    $(SVGOBJ)svgxml.$(OBJ) \
+    $(SVGOBJ)svgtypes.$(OBJ) \
+    $(SVGOBJ)svgcolor.$(OBJ) \
+    $(SVGOBJ)svgtransform.$(OBJ) \
+    $(SVGOBJ)svgshapes.$(OBJ) \
     $(SVGOBJ)svgdoc.$(OBJ) \
+    $(SVGOBJ)svgxml.$(OBJ) \
 
 # NB - note this is a bit squirrely.  Right now the pjl interpreter is
 # required and shouldn't be and PLOBJ==SVGGEN is required.
