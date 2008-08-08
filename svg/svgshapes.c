@@ -2,10 +2,17 @@
 
 static void svg_fill(svg_context_t *ctx)
 {
+    svg_set_fill_color(ctx);
     if (ctx->fill_rule == 0)
 	gs_eofill(ctx->pgs);
     else
 	gs_fill(ctx->pgs);
+}
+
+static void svg_stroke(svg_context_t *ctx)
+{
+    svg_set_stroke_color(ctx);
+    gs_stroke(ctx);
 }
 
 int
@@ -51,28 +58,22 @@ svg_parse_rect(svg_context_t *ctx, svg_item_t *node)
 
     if (ctx->fill_is_set)
     {
-	svg_set_fill_color(ctx);
-
 	gs_moveto(ctx->pgs, x, y);
 	gs_lineto(ctx->pgs, x + w, y);
 	gs_lineto(ctx->pgs, x + w, y + h);
 	gs_lineto(ctx->pgs, x, y + h);
 	gs_closepath(ctx->pgs);
-
 	svg_fill(ctx);
     }
     
     if (ctx->stroke_is_set)
     {
-	svg_set_stroke_color(ctx);
-
 	gs_moveto(ctx->pgs, x, y);
 	gs_lineto(ctx->pgs, x + w, y);
 	gs_lineto(ctx->pgs, x + w, y + h);
 	gs_lineto(ctx->pgs, x, y + h);
 	gs_closepath(ctx->pgs);
-
-	gs_stroke(ctx->pgs);
+	svg_stroke(ctx);
     }
     
     return 0;
@@ -100,30 +101,24 @@ svg_parse_circle(svg_context_t *ctx, svg_item_t *node)
 
     if (ctx->fill_is_set)
     {
-	svg_set_fill_color(ctx);
-
 	gs_moveto(ctx->pgs, cx + r, cy);
 	gs_arcn(ctx->pgs, cx, cy, r, 0, 90);
 	gs_arcn(ctx->pgs, cx, cy, r, 90, 180);
 	gs_arcn(ctx->pgs, cx, cy, r, 180, 270);
 	gs_arcn(ctx->pgs, cx, cy, r, 270, 360);
 	gs_closepath(ctx->pgs);
-
 	svg_fill(ctx);
     }
     
     if (ctx->stroke_is_set)
     {
-	svg_set_stroke_color(ctx);
-
 	gs_moveto(ctx->pgs, cx + r, cy);
 	gs_arcn(ctx->pgs, cx, cy, r, 0, 90);
 	gs_arcn(ctx->pgs, cx, cy, r, 90, 180);
 	gs_arcn(ctx->pgs, cx, cy, r, 180, 270);
 	gs_arcn(ctx->pgs, cx, cy, r, 270, 360);
 	gs_closepath(ctx->pgs);
-
-	gs_stroke(ctx->pgs);
+	svg_stroke(ctx);
     }
 
     return 0;
@@ -157,14 +152,12 @@ svg_parse_ellipse(svg_context_t *ctx, svg_item_t *node)
 #if 0
     if (ctx->fill_is_set)
     {
-	svg_set_fill_color(ctx);
 	svg_fill(ctx);
     }
 
     if (ctx->stroke_is_set)
     {
-	svg_set_stroke_color(ctx);
-	gs_stroke(ctx->pgs);
+	svg_stroke(ctx);
     }
 #endif
 
@@ -193,12 +186,10 @@ svg_parse_line(svg_context_t *ctx, svg_item_t *node)
 
     if (ctx->stroke_is_set)
     {
-	svg_set_stroke_color(ctx);
-
 	gs_moveto(ctx->pgs, x1, y1);
 	gs_lineto(ctx->pgs, x2, y2);
 
-	gs_stroke(ctx->pgs);
+	svg_stroke(ctx);
     }
 
     return 0;
@@ -259,9 +250,8 @@ svg_parse_polyline(svg_context_t *ctx, svg_item_t *node)
 
     if (ctx->stroke_is_set)
     {
-	svg_set_stroke_color(ctx);
 	svg_parse_polygon_imp(ctx, node, 0);
-	gs_stroke(ctx->pgs);
+	svg_stroke(ctx);
     }
 
     return 0;
@@ -274,16 +264,14 @@ svg_parse_polygon(svg_context_t *ctx, svg_item_t *node)
 
     if (ctx->fill_is_set)
     {
-	svg_set_fill_color(ctx);
 	svg_parse_polygon_imp(ctx, node, 1);
 	svg_fill(ctx);
     }
 
     if (ctx->stroke_is_set)
     {
-	svg_set_stroke_color(ctx);
 	svg_parse_polygon_imp(ctx, node, 1);
-	gs_stroke(ctx->pgs);
+	svg_stroke(ctx);
     }
 
     return 0;
@@ -588,16 +576,14 @@ svg_parse_path(svg_context_t *ctx, svg_item_t *node)
     {
 	if (ctx->fill_is_set)
 	{
-	    svg_set_fill_color(ctx);
 	    svg_parse_path_data(ctx, d_att);
 	    svg_fill(ctx);
 	}
 
 	if (ctx->stroke_is_set)
 	{
-	    svg_set_stroke_color(ctx);
 	    svg_parse_path_data(ctx, d_att);
-	    gs_stroke(ctx->pgs);
+	    svg_stroke(ctx);
 	}
     }
 
