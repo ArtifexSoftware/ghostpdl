@@ -1,6 +1,6 @@
 #include "ghostsvg.h"
 
-static int svg_fill(svg_context_t *ctx)
+static void svg_fill(svg_context_t *ctx)
 {
     if (ctx->fill_rule == 0)
 	gs_eofill(ctx->pgs);
@@ -207,16 +207,47 @@ svg_parse_line(svg_context_t *ctx, svg_item_t *node)
 static int
 svg_parse_polygon_imp(svg_context_t *ctx, svg_item_t *node, int doclose)
 {
-    char *points_att = svg_att(node, "points");
-    float x, y;
-    char *s;
+    char *str = svg_att(node, "points");
+    char number[20];
+    int numberlen;
+    float args[2];
+    int nargs;
+    int isfirst;
 
-    if (!points_att)
+    if (!str)
 	return 0;
 
-    svg_parse_common(ctx, node);
+    isfirst = 1;
+    nargs = 0;
 
-    dprintf1("drawing polygon '%s'\n", points_att);
+    while (*str)
+    {
+	while (svg_is_whitespace_or_comma(*str))
+	    str ++;
+
+	if (svg_is_digit(*str))
+	{
+	    numberlen = 0;
+	    while (svg_is_digit(*str) && numberlen < sizeof(number) - 1)
+		number[numberlen++] = *str++;
+	    number[numberlen] = 0;
+	    args[nargs++] = atof(number);
+	}
+
+	if (nargs == 2)
+	{
+	    if (isfirst)
+	    {
+		gs_moveto(ctx->pgs, args[0], args[1]);
+		isfirst = 0;
+	    }
+	    else
+	    {
+		gs_lineto(ctx->pgs, args[0], args[1]);
+	    }
+	    nargs = 0;
+	}
+    }
 
     return 0;
 }
