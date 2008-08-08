@@ -181,11 +181,11 @@ const byte *decomp_rd_ptr1, *decomp_rd_limit1;
 /* ----------------------------- Memory Allocation --------------------- */
 static void *	/* allocated memory's address, 0 if failure */
 allocateWithReserve(
-         MEMFILE  *f,			/* file to allocate mem to */
-         int      sizeofBlock,		/* size of block to allocate */
-         int      *return_code,         /* RET 0 ok, -ve GS-style error, or +1 if OK but low memory */
-	 const   char     *allocName,		/* name to allocate by */
-	 const   char     *errorMessage         /* error message to print */
+		MEMFILE  *f,			/* file to allocate mem to */
+		int      sizeofBlock,		/* size of block to allocate */
+		int      *return_code,		/* RET 0 ok, -ve GS-style error, or +1 if OK but low memory */
+		const   char     *allocName,	/* name to allocate by */
+		const   char     *errorMessage	/* error message to print */
 )
 {
     int code = 0;	/* assume success */
@@ -233,7 +233,7 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 
     /* fname[0] == 0 if this is not reopening */
     /* memfile file names begin with a flag byte == 0xff */
-    if (fname[0] == '\377' || fmode[0] == 'r') {
+    if (fname[0] == '\377' && (fmode[0] == 'r' || fmode[0] == 'a')) {
 	MEMFILE *base_f = NULL;
 
 	/* reopening an existing file. */
@@ -242,17 +242,13 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 	    gs_note_error(gs_error_ioerror);
 	    goto finish;
 	}
-	if (fmode[0] == 'w') {
-	    /* Reopen an existing file for 'write' */
-	    /* Check first to make sure that we have exclusive access */
-	    if (base_f->openlist != NULL) {
-		code = gs_note_error(gs_error_ioerror);
-		goto finish;
-	    }
-	    f = base_f;		/* use the file */
+	/* Reopen an existing file for 'read' */
+	if (base_f->is_open == false) {
+	    /* File is not is use, just re-use it. */
+	    f = base_f;
+	    code = 0;
 	    goto finish;
 	} else {
-	    /* Reopen an existing file for 'read' */
 	    /* We need to 'clone' this memfile so that each reader instance	*/
 	    /* will be able to maintain it's own 'state'			*/
 	    f = gs_alloc_struct(mem, MEMFILE, &st_MEMFILE,
@@ -395,14 +391,16 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 	tot_cache_hits = 0;
 	tot_swap_out = 0;
 #endif
+
 finish:
     if (code < 0) {
 	/* return failure, clean up memory before leaving */
 	if (f != NULL)
 	    memfile_fclose((clist_file_ptr)f, fname, true);
     } else {
-      /* return success */
-      *pf = f;
+	/* return success */
+	f->is_open = true;
+	*pf = f;
     }
     return code;
 }
@@ -412,6 +410,7 @@ memfile_fclose(clist_file_ptr cf, const char *fname, bool delete)
 {
     MEMFILE *const f = (MEMFILE *)cf;
 
+    f->is_open = false;
     if (!delete) {
 	if (f->base_memfile) {
 	    MEMFILE *prev_f;
@@ -463,39 +462,42 @@ memfile_fclose(clist_file_ptr cf, const char *fname, bool delete)
 	return 0;
     }
 
-    /* If there are open read memfile structures, set them so that  */
-    /* future accesses will return errors rather than causing SEGV  */
-    if (f->openlist) {
-        /* TODO: do the cleanup rather than just giving an error */
+    /* TODO: If there are open read memfile structures, set them so that  */
+    /* future accesses will use the current contents. This may result in  */
+    /* leaks if other users of the memfile don't 'fclose with delete=true */
+    if (f->openlist != NULL || ((f->base_memfile != NULL) && f->base_memfile->is_open)) {
+	/* TODO: do the cleanup rather than just giving an error */
     	eprintf1("Attempt to delete a memfile still open for read: 0x%0x\n", ((unsigned int)f));
-        return_error(gs_error_invalidfileaccess);
+	return_error(gs_error_invalidfileaccess);
+    } else {
+	/* Free the memory used by this memfile */
+	memfile_free_mem(f);
+
+	/* Free reserve blocks; don't do it in memfile_free_mem because */
+	/* that routine gets called to reinit file */
+	while (f->reserveLogBlockChain != NULL) {
+	    LOG_MEMFILE_BLK *block = f->reserveLogBlockChain;
+
+	    f->reserveLogBlockChain = block->link;
+	    FREE(f, block, "memfile_set_block_size");
+	}
+	while (f->reservePhysBlockChain != NULL) {
+	    PHYS_MEMFILE_BLK *block = f->reservePhysBlockChain;
+
+	    f->reservePhysBlockChain = block->link;
+	    FREE(f, block, "memfile_set_block_size");
+	}
+
+	/* deallocate de/compress state */
+	gs_free_object(f->memory, f->decompress_state,
+		       "memfile_close_and_unlink(decompress_state)");
+	gs_free_object(f->memory, f->compress_state,
+		       "memfile_close_and_unlink(compress_state)");
+
+	/* deallocate the memfile object proper */
+	gs_free_object(f->memory, f, "memfile_close_and_unlink(MEMFILE)");
+	return 0;
     }
-    memfile_free_mem(f);
-
-    /* Free reserve blocks; don't do it in memfile_free_mem because */
-    /* that routine gets called to reinit file */
-    while (f->reserveLogBlockChain != NULL) {
-	LOG_MEMFILE_BLK *block = f->reserveLogBlockChain;
-
-	f->reserveLogBlockChain = block->link;
-	FREE(f, block, "memfile_set_block_size");
-    }
-    while (f->reservePhysBlockChain != NULL) {
-	PHYS_MEMFILE_BLK *block = f->reservePhysBlockChain;
-
-	f->reservePhysBlockChain = block->link;
-	FREE(f, block, "memfile_set_block_size");
-    }
-
-    /* deallocate de/compress state */
-    gs_free_object(f->memory, f->decompress_state,
-		   "memfile_close_and_unlink(decompress_state)");
-    gs_free_object(f->memory, f->compress_state,
-		   "memfile_close_and_unlink(compress_state)");
-
-    /* deallocate the memfile object proper */
-    gs_free_object(f->memory, f, "memfile_close_and_unlink(MEMFILE)");
-    return 0;
 }
 
 static int
@@ -508,7 +510,7 @@ memfile_unlink(const char *fname)
     if (fname[0] == '\377' && (code = sscanf(fname+1, "0x%x", &f) == 1)) {
 	return memfile_fclose((clist_file_ptr)f, fname, true);
     } else
-        return_error(gs_error_invalidfileaccess);
+	return_error(gs_error_invalidfileaccess);
 }
 
 /* ---------------- Writing ---------------- */
@@ -831,11 +833,11 @@ memfile_get_pdata(MEMFILE * f)
 	    /* need to allocate the raw buffer pool                        */
 	    num_raw_buffers = GET_NUM_RAW_BUFFERS(f);
 	    if (f->reservePhysBlockCount) {
-            /* HACK: allocate reserve block that's been reserved for
-	     * decompression.  This buffer's block was pre-allocated to make
-	     * sure we won't come up short here. Take from chain instead of
-	     * allocateWithReserve() since this buf would just be wasted if
-	     * allowed to remain preallocated. */
+		/* HACK: allocate reserve block that's been reserved for
+		 * decompression.  This buffer's block was pre-allocated to make
+		 * sure we won't come up short here. Take from chain instead of
+		 * allocateWithReserve() since this buf would just be wasted if
+		 * allowed to remain preallocated. */
 		f->raw_head = (RAW_BUFFER *)f->reservePhysBlockChain;
 		f->reservePhysBlockChain = f->reservePhysBlockChain->link;
 		--f->reservePhysBlockCount;
@@ -1022,6 +1024,15 @@ memfile_rewind(clist_file_ptr cf, bool discard_data, const char *ignore_fname)
     MEMFILE *f = (MEMFILE *) cf;
 
     if (discard_data) {
+	/* This affects the memfile data, not just the MEMFILE * access struct */
+	/* Check first to make sure that we have exclusive access */
+	if (f->openlist != NULL || f->base_memfile != NULL) {
+	    /* TODO: Move the data so it is still connected to other open files */
+	    eprintf1("memfile_rewind(0x%0x) with discard_data=true failed: ", f);
+	    f->error_code = gs_error_ioerror;
+	    gs_note_error(gs_error_ioerror);
+	    return;
+	}
 	memfile_free_mem(f);
 	/* We have to call memfile_init_empty to preserve invariants. */
 	memfile_init_empty(f);

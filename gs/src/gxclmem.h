@@ -65,6 +65,7 @@ struct MEMFILE_s {
     gs_memory_t *memory;	/* storage allocator */
     gs_memory_t *data_memory;	/* storage allocator for data */
     bool ok_to_compress;	/* if true, OK to compress this file */
+    bool is_open;		/* track open/closed for each access struct */
  	/*
 	 * We need to maintain a linked list of other structs that
 	 * have beed opened on this 'file'. This allows for a writer

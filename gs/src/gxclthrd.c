@@ -73,16 +73,11 @@ clist_setup_render_threads(gx_device *dev, int y)
 	    sizeof(clist_render_thread_control_t));
     crdev->main_thread_data = cdev->data;		/* save data area */
     /* Based on the line number requested, decide the order of band rendering */
-    if (y == 0) {
-	crdev->thread_lookahead_direction = 1;
-	band = 0;
-    } else {
-	crdev->thread_lookahead_direction = -1;
-	band = band_count - 1;
-    }
+    /* Almost all devices go in increasing line order (except the bmp* devices ) */
+    crdev->thread_lookahead_direction = (y < (cdev->height - 1)) ? 1 : -1;
+    band = y / crdev->page_info.band_params.BandHeight;
 
     /* Close the files so we can open them in multiple threads */
-    /* TODO: This doesn't work for memfile clist yet, so will fail */
     if ((code = cdev->page_info.io_procs->fclose(cdev->page_cfile, cdev->page_cfname, false)) < 0 ||
         (code = cdev->page_info.io_procs->fclose(cdev->page_bfile, cdev->page_bfname, false)) < 0) {
 	gs_free_object(mem, crdev->render_threads, "clist_setup_render_threads");
@@ -109,7 +104,8 @@ clist_setup_render_threads(gx_device *dev, int y)
     }
 
     /* Loop creating the devices and semaphores for each thread, then start them */
-    for (i=0; i < crdev->num_render_threads; i++, band += crdev->thread_lookahead_direction) {
+    for (i=0; (i < crdev->num_render_threads) && (band >= 0) && (band < band_count);
+	    i++, band += crdev->thread_lookahead_direction) {
 	gx_device *ndev;
 	gx_device_clist *ncldev;
 	gx_device_clist_common *ncdev;
@@ -204,17 +200,18 @@ clist_setup_render_threads(gx_device *dev, int y)
 	    gs_memory_chunk_release(crdev->render_threads[0].memory); 
 	gs_free_object(mem, crdev->render_threads, "clist_setup_render_threads");
 	crdev->render_threads = NULL;
-	pdev->num_render_threads_requested = 0;	/* shut down thread support */
 	/* restore the file pointers */
 	if (cdev->page_cfile == NULL) {
 	    char fmode[4];
 
-	    strcpy(fmode, "w+");
+	    strcpy(fmode, "a+");	/* file already exists and we want to re-use it */
 	    strcat(fmode, gp_fmode_binary_suffix);
 	    cdev->page_info.io_procs->fopen(cdev->page_cfname, fmode, &cdev->page_cfile,
 				mem, cdev->bandlist_memory, true);
+	    cdev->page_info.io_procs->fseek(cdev->page_cfile, 0, SEEK_SET, cdev->page_cfname);
 	    cdev->page_info.io_procs->fopen(cdev->page_bfname, fmode, &cdev->page_bfile,
 				mem, cdev->bandlist_memory, false);
+	    cdev->page_info.io_procs->fseek(cdev->page_bfile, 0, SEEK_SET, cdev->page_bfname);
 	}
 	eprintf1("Rendering threads not started, code=%d.\n", code);
 	return_error(code);
@@ -240,7 +237,7 @@ clist_teardown_render_threads(gx_device *dev)
     if (crdev->render_threads != NULL) {
 
 	/* Wait for each thread to finish then free its memory */
-	for (i=0; i < crdev->num_render_threads; i++) {
+	for (i = (crdev->num_render_threads - 1); i >= 0; i--) {
 	    clist_render_thread_control_t *thread = &(crdev->render_threads[i]);
 	    gx_device_clist_common *thread_cdev = (gx_device_clist_common *)thread->cdev;
 
@@ -281,12 +278,14 @@ clist_teardown_render_threads(gx_device *dev)
 	if (cdev->page_cfile == NULL) {
 	    char fmode[4];
 
-	    strcpy(fmode, "w+");
+	    strcpy(fmode, "a+");	/* file already exists and we want to re-use it */
 	    strcat(fmode, gp_fmode_binary_suffix);
 	    cdev->page_info.io_procs->fopen(cdev->page_cfname, fmode, &cdev->page_cfile,
 				mem, cdev->bandlist_memory, true);
+	    cdev->page_info.io_procs->fseek(cdev->page_cfile, 0, SEEK_SET, cdev->page_cfname);
 	    cdev->page_info.io_procs->fopen(cdev->page_bfname, fmode, &cdev->page_bfile,
 				mem, cdev->bandlist_memory, false);
+	    cdev->page_info.io_procs->fseek(cdev->page_bfile, 0, SEEK_SET, cdev->page_bfname);
 	}
     }
 }
@@ -373,12 +372,12 @@ clist_render_thread(void *data)
  * next band remaining to do (if any)
  */
 static int
-clist_get_band_from_thread(gx_device *dev, int band)
+clist_get_band_from_thread(gx_device *dev, int band_needed)
 {
     gx_device_clist *cldev = (gx_device_clist *)dev;
     gx_device_clist_common *cdev = (gx_device_clist_common *)dev;
     gx_device_clist_reader *crdev = &cldev->reader;
-    int next_band, code = 0;
+    int i, next_band, code = 0;
     int thread_index = crdev->curr_render_thread;
     clist_render_thread_control_t *thread = &(crdev->render_threads[thread_index]);
     gx_device_clist_common *thread_cdev = (gx_device_clist_common *)thread->cdev;
@@ -387,14 +386,32 @@ clist_get_band_from_thread(gx_device *dev, int band)
     byte *tmp;			/* for swapping data areas */
 
     /* We expect that the thread needed will be the 'current' thread */
-    if (thread->band != band) {
-	/*
-	 *TODO: maybe we should search for it, and if not found wait for
-	 * and idle thread and start that one
-	 */
-	eprintf2("clist_get_band_from_thread: at band %d, needed band %d\n",
-		thread->band, band);
-        return_error(gs_error_rangecheck);
+    if (thread->band != band_needed) {
+	int band = band_needed;
+
+	/* Probably we went in the wrong direction, so let the threads */
+	/* all complete, then restart them in the opposite direction   */
+	/* If the caller is 'bouncing around' we may end up back here, */
+	/* but that is a VERY rare case (we haven't seen it yet).      */
+	for (i=0; i < crdev->num_render_threads; i++) {
+	    clist_render_thread_control_t *thread = &(crdev->render_threads[i]);
+
+	    if (thread->status == RENDER_THREAD_BUSY)
+		gx_semaphore_wait(thread->sema_this);
+	}
+	crdev->thread_lookahead_direction *= -1;
+	/* Loop creating the devices and semaphores for each thread, then start them */
+	for (i=0; (i < crdev->num_render_threads) && (band >= 0) && (band < band_count);
+		i++, band += crdev->thread_lookahead_direction) {
+	    thread = &(crdev->render_threads[i]);
+
+	    thread->band = -1;		/* a value that won't match any valid band */
+	    /* Start thread 'i' to do band */
+	    if ((code = clist_start_render_thread(dev, i, band)) < 0)
+		break;
+	}
+	crdev->curr_render_thread = thread_index = 0;
+	thread = &(crdev->render_threads[0]);
     }
     /* Wait for this thread */
     gx_semaphore_wait(thread->sema_this);
@@ -408,13 +425,13 @@ clist_get_band_from_thread(gx_device *dev, int band)
     thread->status = RENDER_THREAD_IDLE;	/* the data is no longer valid */
     thread->band = -1;
     /* Update the bounds for this band */
-    cdev->ymin =  band * band_height;
+    cdev->ymin =  band_needed * band_height;
     cdev->ymax =  cdev->ymin + band_height;
     if (cdev->ymax > dev->height)
 	cdev->ymax = dev->height;
 
     /* If we are not at the final band, start up this thread with the next one to do */
-    next_band = band + (crdev->num_render_threads * crdev->thread_lookahead_direction);
+    next_band = band_needed + (crdev->num_render_threads * crdev->thread_lookahead_direction);
     if (next_band >= 0 && next_band < band_count)
 	code = clist_start_render_thread(dev, thread_index, next_band);
     /* bump the 'curr' to the next thread */
@@ -462,11 +479,15 @@ clist_get_bits_rect_mt(gx_device *dev, const gs_int_rect * prect,
     if (line_count <= 0 || prect->p.x >= prect->q.x)
 	return 0;
 
-    if((code = clist_close_writer_and_init_reader(cldev)) < 0)
-	return code;
     
     if (crdev->render_threads == NULL) {
-        if ((code = clist_setup_render_threads(dev, y)) < 0) {
+        /* If we get here with with ymin >=0, it's because we closed the threads */
+	/* while doing a page due to an error. Use single threaded mode.         */
+	if (crdev->ymin >= 0)
+	    return clist_get_bits_rectangle(dev, prect, params, unread);
+	if((code = clist_close_writer_and_init_reader(cldev)) < 0)
+	    return code;
+	if ((code = clist_setup_render_threads(dev, y)) < 0) {
 	    /* revert to the default single threaded rendering */
 	    return clist_get_bits_rectangle(dev, prect, params, unread);
 	}
@@ -570,7 +591,6 @@ clist_enable_multi_thread_render(gx_device *dev)
     /* built without working threads, i.e., using gp_nsync.c dummy    */
     /* routines. The nosync gp_create_thread returns a -ve error code */
     if ((code = gp_create_thread(test_threads, NULL)) < 0 ) {
-        /* TODO: Check for memory based clist files (or fix the memfile) */
 	return code;	/* Threads don't work */
     }
     set_dev_proc(dev, get_bits_rectangle, clist_get_bits_rect_mt);
