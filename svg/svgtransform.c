@@ -58,13 +58,7 @@ int svg_parse_transform(svg_context_t *ctx, char *str)
 
 	    args[nargs++] = atof(number);
 
-	    while (svg_is_whitespace(*str))
-		str ++;
-
-	    if (*str == ',')
-		str ++;
-
-	    while (svg_is_whitespace(*str))
+	    while (svg_is_whitespace_or_comma(*str))
 		str ++;
 
 	    if (*str == ')')
@@ -77,13 +71,7 @@ int svg_parse_transform(svg_context_t *ctx, char *str)
 		return gs_throw(-1, "syntax error in transform attribute - no close paren");
 	}
 
-	while (svg_is_whitespace(*str))
-	    str ++;
-
-	if (*str == ',')
-	    str ++;
-
-	while (svg_is_whitespace(*str))
+	while (svg_is_whitespace_or_comma(*str))
 	    str ++;
 
 	/*
