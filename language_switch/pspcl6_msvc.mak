@@ -101,7 +101,7 @@ BAND_LIST_STORAGE=file
 !endif
 
 !ifndef COMPILE_INITS
-COMPILE_INITS=0
+COMPILE_INITS=1
 !endif
 
 !ifndef APP_CCC

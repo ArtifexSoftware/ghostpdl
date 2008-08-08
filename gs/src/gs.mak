@@ -88,10 +88,6 @@
 #	    psl3 includes everything in psl2, and psl2 includes everything
 #	      in psl1.  For backward compatibility, level1 is a synonym for
 #	      psl1, and level2 is a synonym for psl2.  
-#	    The following feature may be added to any of the standard
-#	      configurations:
-#		    ccfonts - precompile fonts into C, and link them
-#			with the executable.  See Fonts.htm for details.
 #	    The remaining features are of interest primarily to developers
 #	      who want to "mix and match" features to create custom
 #	      configurations:

@@ -50,7 +50,7 @@ GS_DOCDIR=$(GSROOTDIR)/doc
 # initialization, resource and font files.  Separate multiple directories with ;.
 # Use / to indicate directories, not a single \.
 
-GS_LIB_DEFAULT=$(GSROOTDIR)/lib;$(GSROOTDIR)/Resource/Font;$(AROOTDIR)/fonts
+GS_LIB_DEFAULT=$(GSROOTDIR)/Resource/Init;$(GSROOTDIR)/lib;$(GSROOTDIR)/Resource/Font;$(AROOTDIR)/fonts
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -99,16 +99,6 @@ MT_OPT=-Zmtd
 
 GS=gsos2
 GSDLL=gsdll2
-
-# Define the name of a pre-built executable that can be invoked at build
-# time.  Currently, this is only needed for compiled fonts.  The usual
-# alternatives are:
-#   - the standard name of Ghostscript on your system (typically `gs'):
-BUILD_TIME_GS=gsos2
-#   - the name of the executable you are building now.  If you choose this
-# option, then you must build the executable first without compiled fonts,
-# and then again with compiled fonts.
-#BUILD_TIME_GS=$(BINDIR)\$(GS) -I$(PSLIBDIR)
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
@@ -402,7 +392,7 @@ FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(P
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
-COMPILE_INITS=0
+COMPILE_INITS=1
 
 # Choose whether to store band lists on files or in memory.
 # The choices are 'file' or 'memory'.
@@ -475,7 +465,6 @@ DEVICE_DEVS21= $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.dev $(DD)bmpsep8.
 !include "$(GLSRCDIR)\pcwin.mak"
 !include "$(GLSRCDIR)\contrib.mak"
 !include "$(PSSRCDIR)\int.mak"
-!include "$(PSSRCDIR)\cfonts.mak"
 
 # -------------------------------- Library -------------------------------- #
 

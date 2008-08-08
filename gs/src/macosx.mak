@@ -74,7 +74,7 @@ GS_DOCDIR=$(docdir)
 # Define the default directory/ies for the runtime
 # initialization, resource and font files.  Separate multiple directories with a :.
 
-GS_LIB_DEFAULT=$(gsdatadir)/lib:$(gsdatadir)/Resource/Font:$(datadir)/fonts:/Library/Fonts:/System/Library/Fonts
+GS_LIB_DEFAULT=$(gsdatadir)/Resource/Init:$(gsdatadir)/lib:$(gsdatadir)/Resource/Font:$(datadir)/fonts:/Library/Fonts:/System/Library/Fonts
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -113,16 +113,6 @@ CAPOPT= -DHAVE_MKSTEMP
 # Define the name of the executable file.
 
 GS=gs
-
-# Define the name of a pre-built executable that can be invoked at build
-# time.  Currently, this is only needed for compiled fonts.  The usual
-# alternatives are:
-#   - the standard name of Ghostscript on your system (typically `gs'):
-BUILD_TIME_GS=gs
-#   - the name of the executable you are building now.  If you choose this
-# option, then you must build the executable first without compiled fonts,
-# and then again with compiled fonts.
-#BUILD_TIME_GS=$(BINDIR)/$(GS) -I$(PSLIBDIR)
 
 # Define the directories for debugging and profiling binaries, relative to
 # the standard binaries.
@@ -327,7 +317,7 @@ FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
-COMPILE_INITS=0
+COMPILE_INITS=1
 
 # Choose whether to store band lists on files or in memory.
 # The choices are 'file' or 'memory'.
@@ -413,7 +403,6 @@ include $(GLSRCDIR)/gs.mak
 include $(GLSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak
 include $(PSSRCDIR)/int.mak
-include $(PSSRCDIR)/cfonts.mak
 include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)/zlib.mak

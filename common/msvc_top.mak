@@ -124,7 +124,7 @@ $(GENDIR)/ldgs.tr: FORCE
 	$(GLOBJDIR)\gsargs.$(OBJ) $(GLOBJDIR)\echogs.exe \
 	$(GLOBJDIR)\ld.tr $(GLOBJDIR)\gconfig.$(OBJ) \
 	$(GLOBJDIR)\gscdefs.$(OBJ) $(GLOBJDIR)\iconfig.$(OBJ) \
-	$(GLOBJDIR)\iccinit$(COMPILE_INITS).$(OBJ) $(GLOBJDIR)\gsromfs$(COMPILE_INITS).$(OBJ)
+	$(GLOBJDIR)\gsromfs$(COMPILE_INITS).$(OBJ)
 	$(CP_) $(GENDIR)\ld.tr $(GENDIR)\ldgs.tr
 
 !ELSE

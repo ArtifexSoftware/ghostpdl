@@ -47,7 +47,7 @@ PXL_TOP_OBJ?=$(PXLOBJDIR)/pxtop.$(OBJ)
 TOP_OBJ=$(PSI_TOP_OBJ) $(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
 
 # Choose COMPILE_INITS=1 for init files and fonts in ROM (otherwise =0)
-COMPILE_INITS?=0
+COMPILE_INITS?=1
 
 PSICFLAGS?=-DPSI_INCLUDED
 PDL_INCLUDE_FLAGS?=-DPCL_INCLUDED $(PSICFLAGS)
@@ -66,8 +66,7 @@ FEATURE_DEVS    ?= \
 
 # extra objects.
 XOBJS?=$(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o \
-       $(GLOBJDIR)/gscdefs.o $(GLOBJDIR)/iconfig.o \
-       $(GLOBJDIR)/iccinit$(COMPILE_INITS).o
+       $(GLOBJDIR)/gscdefs.o $(GLOBJDIR)/iconfig.o 
 
 ifeq ($(COMPILE_INITS), 1)
 include $(PSSRCDIR)/psromfs.mak

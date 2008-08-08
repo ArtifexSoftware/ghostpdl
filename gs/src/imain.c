@@ -333,8 +333,8 @@ gs_main_add_lib_path(gs_main_instance * minst, const char *lpath)
 extern_gx_io_device_table();
 
 /* Complete the list of library search paths. */
-/* This may involve adding the %rom%lib/ device path (for COMPILE_INITS) as well */
-/* as adding or removing the current directory as the first element. */
+/* This may involve adding the %rom%Resource/Init and %rom%lib/ paths (for COMPILE_INITS) */
+/* and adding or removing the current directory as the first element (for -P and -P-). */
 int
 gs_main_set_lib_paths(gs_main_instance * minst)
 {
@@ -377,8 +377,10 @@ gs_main_set_lib_paths(gs_main_instance * minst)
 	    break;
 	}
     }
-    if (have_rom_device && code >= 0)
+    if (have_rom_device && code >= 0) {
+	code = file_path_add(&minst->lib_path, "%rom%Resource/Init/");
 	code = file_path_add(&minst->lib_path, "%rom%lib/");
+    }
     if (minst->lib_path.final != 0 && code >= 0)
 	code = file_path_add(&minst->lib_path, minst->lib_path.final);
     return code;
@@ -436,12 +438,7 @@ gs_run_init_file(gs_main_instance * minst, int *pexit_code, ref * perror_object)
     scanner_state state;
 
     gs_main_set_lib_paths(minst);
-    if (gs_init_string_sizeof == 0) {	/* Read from gs_init_file. */
-	code = gs_main_run_file_open(minst, gs_init_file, &ifile);
-    } else {			/* Read from gs_init_string. */
-	code = file_read_string(gs_init_string, gs_init_string_sizeof, &ifile,
-				iimemory);
-    }
+    code = gs_main_run_file_open(minst, gs_init_file, &ifile);
     if (code < 0) {
 	*pexit_code = 255;
 	return code;

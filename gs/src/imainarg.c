@@ -885,16 +885,30 @@ static const char help_default_device[] = "Default output device:";
 static const char help_emulators[] = "Input formats:";
 static const char help_paths[] = "Search path:";
 
+extern_gx_io_device_table();
+
 /* Print the standard help message. */
 static void
 print_help(gs_main_instance * minst)
 {
+    int i, have_rom_device = 0;
+
     print_revision(minst);
     print_usage(minst);
     print_emulators(minst);
     print_devices(minst);
     print_paths(minst);
-    if (gs_init_string_sizeof > 0) {
+    /* Check if we have the %rom device */
+    for (i = 0; i < gx_io_device_table_count; i++) {
+	const gx_io_device *iodev = gx_io_device_table[i];
+	const char *dname = iodev->dname;
+
+	if (dname && strlen(dname) == 5 && !memcmp("%rom%", dname, 5)) {
+	    have_rom_device = 1;
+	    break;
+	}
+    }
+    if (have_rom_device) {
         outprintf(minst->heap, "Initialization files are compiled into the executable.\n");
     }
     print_help_trailer(minst);

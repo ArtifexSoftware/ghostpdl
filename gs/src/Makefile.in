@@ -28,6 +28,7 @@ GLGENDIR=./obj
 GLOBJDIR=./obj
 PSSRCDIR=./src
 PSLIBDIR=./lib
+PSRESDIR=./Resource
 PSGENDIR=./obj
 PSOBJDIR=./obj
 CONTRIBDIR=./contrib
@@ -85,7 +86,7 @@ CUPSDATA=@CUPSDATA@
 # Define the default directory/ies for the runtime
 # initialization and font files.  Separate multiple directories with a :.
 
-GS_LIB_DEFAULT=$(gsdatadir)/lib:$(gsdatadir)/Resource:$(gsdir)/fonts:@fontpath@
+GS_LIB_DEFAULT=$(gsdatadir)/Resource/Init:$(gsdatadir)/lib:$(gsdatadir)/Resource/Font:$(gsdir)/fonts:@fontpath@
 
 # Define the default directory for cached data files
 # this must be a single path.
@@ -135,16 +136,6 @@ CAPOPT= @HAVE_MKSTEMP@ @HAVE_HYPOT@ @HAVE_FILE64@ @HAVE_MKSTEMP64@ @HAVE_FONTCON
 # Define the name of the executable file.
 
 GS=@GS@@EXEEXT@
-
-# Define the name of a pre-built executable that can be invoked at build
-# time.  Currently, this is only needed for compiled fonts.  The usual
-# alternatives are:
-#   - the standard name of Ghostscript on your system (typically `gs'):
-BUILD_TIME_GS=gs
-#   - the name of the executable you are building now.  If you choose this
-# option, then you must build the executable first without compiled fonts,
-# and then again with compiled fonts.
-#BUILD_TIME_GS=$(BINDIR)/$(GS) -I$(PSLIBDIR)
 
 # Define the directories for debugging and profiling binaries, relative to
 # the standard binaries.
@@ -483,18 +474,6 @@ CC_LEAF_PG=$(CC_)
 CC_NO_WARN=$(CC_)
 CC_SHARED=$(CC_) @DYNAMIC_LDFLAGS@
 
-# The following list of files needed by the interpreter is maintained here.
-# This changes infrequently, but is a potential point of bitrot, but since
-#		Note: gs_cet.ps is only needed to match Adobe CPSI defaults
-EXTRA_INIT_FILES= Fontmap cidfmap xlatmap FAPI FCOfontmap-PCLPS2 gs_cet.ps
-
-#	The init files are put in the lib/ directory (gs_init.ps + EXTRA_INIT_FILES)
-#	Resource files go into Resource/...
-
-RESOURCE_LIST=ColorSpace/ Decoding/ Encoding/ Font/ ProcSet/ IdiomSet/ CIDFont/ CMap/
-
-PS_ROMFS_ARGS=-c -P $(PSRESDIR)$(D) -d Resource/ $(RESOURCE_LIST) -d lib/ -P $(PSGENDIR)/ $(GS_INIT) -P $(PSLIBDIR)/
-
 # ---------------- End of platform-specific section ---------------- #
 
 INSTALL_CONTRIB=@INSTALL_CONTRIB@
@@ -504,7 +483,6 @@ include $(GLSRCDIR)/gs.mak
 include $(GLSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak
 include $(PSSRCDIR)/int.mak
-include $(PSSRCDIR)/cfonts.mak
 include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)/zlib.mak

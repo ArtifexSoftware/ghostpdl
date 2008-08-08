@@ -49,7 +49,7 @@ GS_DOCDIR=$(GSROOTDIR)/doc
 # initialization, resource and font files.  Separate multiple directories with \;.
 # Use / to indicate directories, not a single \.
 
-GS_LIB_DEFAULT=$(GSROOTDIR)/lib\;$(GSROOTDIR)/Resource/Font\;$(AROOTDIR)/fonts
+GS_LIB_DEFAULT=$(GSROOTDIR)/Resource/Init\;$(GSROOTDIR)/lib\;$(GSROOTDIR)/Resource/Font\;$(AROOTDIR)/fonts
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -83,16 +83,6 @@ TDEBUG=0
 GS=gswin32
 GSCONSOLE=gswin32c
 GSDLL=gsdll32
-
-# Define the name of a pre-built executable that can be invoked at build
-# time.  Currently, this is only needed for compiled fonts.  The usual
-# alternatives are:
-#   - the standard name of Ghostscript on your system (typically `gs'):
-BUILD_TIME_GS=gswin32c
-#   - the name of the executable you are building now.  If you choose this
-# option, then you must build the executable first without compiled fonts,
-# and then again with compiled fonts.
-#BUILD_TIME_GS=$(BINDIR)\$(GS) -I$(PSLIBDIR)
 
 # To build two small executables and a large DLL use MAKEDLL=1
 # To build two large executables use MAKEDLL=0

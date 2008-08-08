@@ -105,16 +105,6 @@ CDEBUG=
 
 GS=GS
 
-# Define the name of a pre-built executable that can be invoked at build
-# time.  Currently, this is only needed for compiled fonts.  The usual
-# alternatives are:
-#   - the standard name of Ghostscript on your system (typically `gs'):
-BUILD_TIME_GS=GS
-#   - the name of the executable you are building now.  If you choose this
-# option, then you must build the executable first without compiled fonts,
-# and then again with compiled fonts.
-#BUILD_TIME_GS=$(BINDIR)$(GS) -I$(PSLIBDIR)
-
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
 # You may need to change this if the IJG library version changes.
@@ -440,7 +430,6 @@ all : macro [.lib]Fontmap. $(GS_XE)
 .include $(GLSRCDIR)gs.mak
 .include $(GLSRCDIR)lib.mak
 .include $(PSSRCDIR)int.mak
-.include $(PSSRCDIR)cfonts.mak
 .include $(GLSRCDIR)jpeg.mak
 # zlib.mak must precede libpng.mak
 .include $(GLSRCDIR)zlib.mak

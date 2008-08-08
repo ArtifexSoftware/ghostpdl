@@ -17,8 +17,7 @@
 # Define the name of this makefile.
 WCTAIL_MAK=$(GLSRCDIR)\wctail.mak
 
-# Include the generic makefiles, except for devs.mak, contrib.mak,
-# int.mak, and cfonts.mak.
+# Include the generic makefiles, except for devs.mak, contrib.mak, int.mak
 #!include $(COMMONDIR)/watcdefs.mak
 #!include $(COMMONDIR)/pcdefs.mak
 #!include $(COMMONDIR)/generic.mak

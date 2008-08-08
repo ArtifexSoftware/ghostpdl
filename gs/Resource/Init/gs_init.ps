@@ -732,7 +732,7 @@ userdict /.currentresourcefile //null put
   { stop } if
 } bind def
 /.runresource {		% <file> .runresource -
-  { /run .systemvar exec } .execasresource
+  { //run } .execasresource % immediately bind run to ignore redefinitions
 } bind def
 
 % Define procedures for getting and setting the current device resolution.

@@ -165,7 +165,7 @@ SRCDIR			= /usr/local/src
 
 # Define local modifications of search paths:
 TF			= /usr/local/lib/tex/fonts
-GS_LIB_DEFAULT		= $$(gsdatadir)/lib:$$(gsdatadir)/fonts:$$(gsdatadir)/examples:$$(gsdir)/fonts:/usr/local/share/sys/fonts/postscript:$(TF)/lucida:$(TF)/mathtime:$(TF)/postscript/bakoma/pfb:$(TF)/vf
+GS_LIB_DEFAULT		= $$(gsdatadir)/Resource/Init:$$(gsdatadir)/lib:$$(gsdatadir)/Resource/Font:$$(gsdatadir)/examples:$$(gsdir)/fonts:/usr/local/share/sys/fonts/postscript:$(TF)/lucida:$(TF)/mathtime:$(TF)/postscript/bakoma/pfb:$(TF)/vf
 
 # Define local paths for install targets:
 GS_SHARE_DIR		= /usr/local/share/ghostscript

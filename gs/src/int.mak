@@ -22,6 +22,7 @@
 
 PSSRC=$(PSSRCDIR)$(D)
 PSLIB=$(PSLIBDIR)$(D)
+PSINIT=$(PSRESDIR)$(D)Init$(D)
 PSGEN=$(PSGENDIR)$(D)
 PSOBJ=$(PSOBJDIR)$(D)
 PSO_=$(O_)$(PSOBJ)
@@ -540,7 +541,7 @@ INT_OBJS=$(INT_MAIN)\
  $(INT1) $(INT2) $(INT3) $(INT4) $(INT5) $(INT6) $(INT7)\
  $(Z1) $(Z2) $(Z3) $(Z4) $(Z5) $(Z6) $(Z7) $(Z8) $(Z9) $(Z10) $(Z11) $(Z12)
 INT_CONFIG=$(GLOBJ)gconfig.$(OBJ) $(GLOBJ)gscdefs.$(OBJ)\
- $(PSOBJ)iconfig.$(OBJ) $(PSOBJ)iccinit$(COMPILE_INITS).$(OBJ)
+ $(PSOBJ)iconfig.$(OBJ)
 INT_ALL=$(INT_OBJS) $(INT_CONFIG)
 # We omit libcore.dev, which should be included here, because problems
 # with the Unix linker require libcore to appear last in the link list
@@ -799,10 +800,10 @@ $(PSD)type32.dev : $(INT_MAK) $(ECHOGS_XE) $(type32_)
 # ---------------- TrueType and PostScript Type 42 fonts ---------------- #
 
 # Mac glyph support (has an internal dependency)
-$(PSD)macroman.dev : $(INT_MAK) $(ECHOGS_XE) $(PSLIB)gs_mro_e.ps
+$(PSD)macroman.dev : $(INT_MAK) $(ECHOGS_XE) $(PSINIT)gs_mro_e.ps
 	$(SETMOD) $(PSD)macroman -ps gs_mro_e
 
-$(PSD)macglyph.dev : $(INT_MAK) $(ECHOGS_XE) $(PSLIB)gs_mgl_e.ps\
+$(PSD)macglyph.dev : $(INT_MAK) $(ECHOGS_XE) $(PSINIT)gs_mgl_e.ps\
  $(PSD)macroman.dev 
 	$(SETMOD) $(PSD)macglyph -include $(PSD)macroman -ps gs_mgl_e
 
@@ -834,156 +835,6 @@ $(PSOBJ)zfont42.$(OBJ) : $(PSSRC)zfont42.c $(OP) $(memory__h)\
 	$(PSCC) $(PSO_)zfont42.$(OBJ) $(C_) $(PSSRC)zfont42.c
 
 # ======================== Precompilation options ======================== #
-
-# ---------------- Precompiled fonts ---------------- #
-# See Fonts.htm for more information.
-
-ccfont_h=$(PSSRC)ccfont.h $(stdpre_h) $(gsmemory_h)\
- $(iref_h) $(ivmspace_h) $(store_h)
-
-CCFONT=$(OP) $(ccfont_h)
-
-# List the fonts we are going to compile.
-# Because of intrinsic limitations in `make', we have to list
-# the object file names and the font names separately.
-# Because of limitations in the DOS shell, we have to break the fonts up
-# into lists that will fit on a single line (120 characters).
-# The rules for constructing the .c files from the fonts themselves,
-# and for compiling the .c files, are in cfonts.mak, not here.
-# For example, to compile the Courier fonts, you should invoke
-#	make Courier_o
-# By convention, the names of the 35 standard compiled fonts use '0' for
-# the foundry name.  This allows users to substitute different foundries
-# without having to change this makefile.
-ccfonts_ps=gs_ccfnt
-ccfonts1_=$(PSOBJ)0agk.$(OBJ) $(PSOBJ)0agko.$(OBJ) $(PSOBJ)0agd.$(OBJ) $(PSOBJ)0agdo.$(OBJ)
-ccfonts1=agk agko agd agdo
-ccfonts2_=$(PSOBJ)0bkl.$(OBJ) $(PSOBJ)0bkli.$(OBJ) $(PSOBJ)0bkd.$(OBJ) $(PSOBJ)0bkdi.$(OBJ)
-ccfonts2=bkl bkli bkd bkdi
-ccfonts3_=$(PSOBJ)0crr.$(OBJ) $(PSOBJ)0cri.$(OBJ) $(PSOBJ)0crb.$(OBJ) $(PSOBJ)0crbi.$(OBJ)
-ccfonts3=crr cri crb crbi
-ccfonts4_=$(PSOBJ)0hvr.$(OBJ) $(PSOBJ)0hvro.$(OBJ) $(PSOBJ)0hvb.$(OBJ) $(PSOBJ)0hvbo.$(OBJ)
-ccfonts4=hvr hvro hvb hvbo
-ccfonts5_=$(PSOBJ)0hvrrn.$(OBJ) $(PSOBJ)0hvrorn.$(OBJ) $(PSOBJ)0hvbrn.$(OBJ) $(PSOBJ)0hvborn.$(OBJ)
-ccfonts5=hvrrn hvrorn hvbrn hvborn
-ccfonts6_=$(PSOBJ)0ncr.$(OBJ) $(PSOBJ)0ncri.$(OBJ) $(PSOBJ)0ncb.$(OBJ) $(PSOBJ)0ncbi.$(OBJ)
-ccfonts6=ncr ncri ncb ncbi
-ccfonts7_=$(PSOBJ)0plr.$(OBJ) $(PSOBJ)0plri.$(OBJ) $(PSOBJ)0plb.$(OBJ) $(PSOBJ)0plbi.$(OBJ)
-ccfonts7=plr plri plb plbi
-ccfonts8_=$(PSOBJ)0tmr.$(OBJ) $(PSOBJ)0tmri.$(OBJ) $(PSOBJ)0tmb.$(OBJ) $(PSOBJ)0tmbi.$(OBJ)
-ccfonts8=tmr tmri tmb tmbi
-ccfonts9_=$(PSOBJ)0syr.$(OBJ) $(PSOBJ)0zcmi.$(OBJ) $(PSOBJ)0zdr.$(OBJ)
-ccfonts9=syr zcmi zdr
-# The free distribution includes Bitstream Charter, Utopia, and
-# freeware Cyrillic and Kana fonts.  We only provide for compiling
-# Charter and Utopia.
-ccfonts10free_=$(PSOBJ)bchr.$(OBJ) $(PSOBJ)bchri.$(OBJ) $(PSOBJ)bchb.$(OBJ) $(PSOBJ)bchbi.$(OBJ)
-ccfonts10free=chr chri chb chbi
-ccfonts11free_=$(PSOBJ)putr.$(OBJ) $(PSOBJ)putri.$(OBJ) $(PSOBJ)putb.$(OBJ) $(PSOBJ)putbi.$(OBJ)
-ccfonts11free=utr utri utb utbi
-# Uncomment the alternatives in the next 4 lines if you want
-# Charter and Utopia compiled in.
-#ccfonts10_=$(ccfonts10free_)
-ccfonts10_=
-#ccfonts10=$(ccfonts10free)
-ccfonts10=
-#ccfonts11_=$(ccfonts11free_)
-ccfonts11_=
-#ccfonts11=$(ccfonts11free)
-ccfonts11=
-# Add your own fonts here if desired.
-ccfonts12_=
-ccfonts12=
-ccfonts13_=
-ccfonts13=
-ccfonts14_=
-ccfonts14=
-ccfonts15_=
-ccfonts15=
-
-# font2c has the prefix "gs" built into it, so we need to instruct
-# genconf to use the same one.
-$(gconfigf_h) : $(TOP_MAKEFILES) $(INT_MAK) $(ECHOGS_XE) $(GENCONF_XE)
-	$(SETMOD) $(PSD)ccfonts_ -font $(ccfonts1)
-	$(ADDMOD) $(PSD)ccfonts_ -font $(ccfonts2)
-	$(ADDMOD) $(PSD)ccfonts_ -font $(ccfonts3)
-	$(ADDMOD) $(PSD)ccfonts_ -font $(ccfonts4)
-	$(ADDMOD) $(PSD)ccfonts_ -font $(ccfonts5)
-	$(ADDMOD) $(PSD)ccfonts_ -font $(ccfonts6)
-	$(ADDMOD) $(PSD)ccfonts_ -font $(ccfonts7)
-	$(ADDMOD) $(PSD)ccfonts_ -font $(ccfonts8)
-	$(ADDMOD) $(PSD)ccfonts_ -font $(ccfonts9)
-	$(ADDMOD) $(PSD)ccfonts_ -font $(ccfonts10)
-	$(ADDMOD) $(PSD)ccfonts_ -font $(ccfonts11)
-	$(ADDMOD) $(PSD)ccfonts_ -font $(ccfonts12)
-	$(ADDMOD) $(PSD)ccfonts_ -font $(ccfonts13)
-	$(ADDMOD) $(PSD)ccfonts_ -font $(ccfonts14)
-	$(ADDMOD) $(PSD)ccfonts_ -font $(ccfonts15)
-	$(EXP)$(GENCONF_XE) $(PSGEN)ccfonts_.dev -n gs -f $(gconfigf_h)
-
-# We separate icfontab.dev from ccfonts.dev so that a customer can put
-# compiled fonts into a separate shared library.
-
-# Define ccfont_table separately, so it can be set from the command line
-# to select an alternate compiled font table.
-ccfont_table=icfontab
-
-$(PSD)icfontab.dev : $(TOP_MAKEFILES) $(INT_MAK) $(ECHOGS_XE)\
- $(PSOBJ)icfontab.$(OBJ)\
- $(ccfonts1_) $(ccfonts2_) $(ccfonts3_) $(ccfonts4_) $(ccfonts5_)\
- $(ccfonts6_) $(ccfonts7_) $(ccfonts8_) $(ccfonts9_) $(ccfonts10_)\
- $(ccfonts11_) $(ccfonts12_) $(ccfonts13_) $(ccfonts14_) $(ccfonts15_)
-	$(SETMOD) $(PSD)icfontab -obj $(PSOBJ)icfontab.$(OBJ)
-	$(ADDMOD) $(PSD)icfontab -obj $(ccfonts1_)
-	$(ADDMOD) $(PSD)icfontab -obj $(ccfonts2_)
-	$(ADDMOD) $(PSD)icfontab -obj $(ccfonts3_)
-	$(ADDMOD) $(PSD)icfontab -obj $(ccfonts4_)
-	$(ADDMOD) $(PSD)icfontab -obj $(ccfonts5_)
-	$(ADDMOD) $(PSD)icfontab -obj $(ccfonts6_)
-	$(ADDMOD) $(PSD)icfontab -obj $(ccfonts7_)
-	$(ADDMOD) $(PSD)icfontab -obj $(ccfonts8_)
-	$(ADDMOD) $(PSD)icfontab -obj $(ccfonts9_)
-	$(ADDMOD) $(PSD)icfontab -obj $(ccfonts10_)
-	$(ADDMOD) $(PSD)icfontab -obj $(ccfonts11_)
-	$(ADDMOD) $(PSD)icfontab -obj $(ccfonts12_)
-	$(ADDMOD) $(PSD)icfontab -obj $(ccfonts13_)
-	$(ADDMOD) $(PSD)icfontab -obj $(ccfonts14_)
-	$(ADDMOD) $(PSD)icfontab -obj $(ccfonts15_)
-
-$(PSOBJ)icfontab.$(OBJ) : $(PSSRC)icfontab.c $(AK) $(ccfont_h) $(gconfigf_h)
-	$(CP_) $(gconfigf_h) $(PSGEN)gconfigf.h
-	$(PSCC) $(PSO_)icfontab.$(OBJ) $(C_) $(PSSRC)icfontab.c
-
-# Strictly speaking, ccfonts shouldn't need to include type1,
-# since one could choose to precompile only Type 0 fonts,
-# but getting this exactly right would be too much work.
-$(PSD)ccfonts.dev : $(TOP_MAKEFILES) $(INT_MAK)\
- $(PSD)type1.dev $(PSOBJ)iccfont.$(OBJ) $(PSD)$(ccfont_table).dev
-	$(SETMOD) $(PSD)ccfonts -include $(PSD)type1
-	$(ADDMOD) $(PSD)ccfonts -include $(PSD)$(ccfont_table)
-	$(ADDMOD) $(PSD)ccfonts -obj $(PSOBJ)iccfont.$(OBJ)
-	$(ADDMOD) $(PSD)ccfonts -oper ccfonts
-	$(ADDMOD) $(PSD)ccfonts -ps $(ccfonts_ps)
-
-$(PSOBJ)iccfont.$(OBJ) : $(PSSRC)iccfont.c $(GH) $(string__h)\
- $(gscencs_h) $(gsmatrix_h) $(gsstruct_h) $(gxfont_h)\
- $(ccfont_h) $(ierrors_h)\
- $(ialloc_h) $(idict_h) $(ifont_h) $(iname_h) $(isave_h) $(iutil_h)\
- $(oper_h) $(ostack_h) $(store_h) $(stream_h) $(strimpl_h) $(sfilter_h) $(iscan_h)
-	$(PSCC) $(PSO_)iccfont.$(OBJ) $(C_) $(PSSRC)iccfont.c
-
-# ---------------- Compiled initialization code ---------------- #
-
-$(PSOBJ)iccinit0.$(OBJ) : $(PSSRC)iccinit0.c $(stdpre_h)
-	$(PSCC) $(PSO_)iccinit0.$(OBJ) $(C_) $(PSSRC)iccinit0.c
-
-$(PSOBJ)iccinit1.$(OBJ) :  $(PSSRC)iccinit1.c $(stdpre_h)
-	$(PSCC) $(PSO_)iccinit1.$(OBJ) $(C_) $(PSSRC)iccinit1.c
-
-# All the gs_*.ps files should be prerequisites of gs_init.c but we don't have
-# any convenient list of them so we just use lib/gs_init.ps == $(PSLIB)$(GS_INIT).
-$(PSGEN)$(GS_INIT) : $(PSLIB)$(GS_INIT) $(GENINIT_XE) $(gconfig_h)
-	$(EXP)$(GENINIT_XE) -I $(PSLIB) $(GS_INIT) $(gconfig_h) $(PSGEN)gs_init.ps
 
 # ---------------- Stochastic halftone ---------------- #
 

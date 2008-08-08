@@ -47,7 +47,7 @@ PSD=$(PSGENDIR)/
 # Define the default directory/ies for the runtime
 # initialization, resource and font files.  Separate multiple directories with a :.
 
-GS_LIB_DEFAULT=:,:lib,:Resource/Font,:files,:fonts,:examples
+GS_LIB_DEFAULT=:Resource/Init:lib,:Resource/Font,:fonts,:examples
 
 GS_DOCDIR=:doc
 
@@ -72,16 +72,6 @@ GENOPT=
 # Define the name of the executable file. Not used for the CW project, don't change it
 
 GS=macgs
-
-# Define the name of a pre-built executable that can be invoked at build
-# time.  Currently, this is only needed for compiled fonts.  The usual
-# alternatives are:
-#   - the standard name of Ghostscript on your system (typically `gs'):
-BUILD_TIME_GS=gs
-#   - the name of the executable you are building now.  If you choose this
-# option, then you must build the executable first without compiled fonts,
-# and then again with compiled fonts.
-#BUILD_TIME_GS=$(BINDIR)/$(GS) -I$(PSLIBDIR)
 
 # Define the platform name.
 
@@ -284,7 +274,6 @@ include $(GLSRCDIR)/gs.mak
 include $(GLSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak
 include $(PSSRCDIR)/int.mak
-include $(PSSRCDIR)/cfonts.mak
 include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)/zlib.mak

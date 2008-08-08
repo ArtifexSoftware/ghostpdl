@@ -50,7 +50,7 @@ IMDISRCDIR?=../gs/imdi
 PDL_INCLUDE_FLAGS?=-DPCL_INCLUDED
 
 # Choose COMPILE_INITS=1 for init files and fonts in ROM (otherwise =0)
-COMPILE_INITS?=0
+COMPILE_INITS?=1
 
 # PLPLATFORM indicates should be set to 'ps' for language switch
 # builds and null otherwise.

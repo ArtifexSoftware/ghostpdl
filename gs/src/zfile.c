@@ -962,8 +962,6 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
 
 		/* We concatenate directly since gp_file_name_combine_*
 		 * rules are not correct for other devices such as %rom% */
-		if (i_ctx_p == NULL)
-		    continue;		/* devices not yet initialized */
 		gs_parse_file_name(&pname, pstr, plen);
 		memcpy(buffer, pname.fname, pname.len);
 		memcpy(buffer+pname.len, fname, flen);

@@ -29,7 +29,7 @@ include $(GLSRCDIR)/version.mak
 gsdir = /usr/local/share/ghostscript
 gsdatadir = $(gsdir)/$(GS_DOT_VERSION)
 GS_DOCDIR=$(gsdatadir)/doc
-GS_LIB_DEFAULT=$(gsdatadir)/lib:$(gsdatadir)/Resource/Font:$(gsdir)/fonts
+GS_LIB_DEFAULT=$(gsdatadir)/Resource/Init:$(gsdatadir)/lib:$(gsdatadir)/Resource/Font
 SEARCH_HERE_FIRST=1
 GS_INIT=gs_init.ps
 

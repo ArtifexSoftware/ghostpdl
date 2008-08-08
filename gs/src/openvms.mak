@@ -64,7 +64,7 @@ GS_DOCDIR=GS_DOC
 # Define the default directory/ies for the runtime
 # initialization and font files.  Separate multiple directories with ,.
 
-GS_LIB_DEFAULT=GS_ROOT:[LIB],GS_ROOT:[RESOURCE],GS_ROOT:[FONT]
+GS_LIB_DEFAULT=GS_ROOT:[RESOURCE.INIT],GS_ROOT:[LIB],GS_ROOT:[RESOURCE.FONT],GS_ROOT:[FONT]
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -99,16 +99,6 @@ CDEBUG=
 # Define the name of the executable file.
 
 GS=GS
-
-# Define the name of a pre-built executable that can be invoked at build
-# time.  Currently, this is only needed for compiled fonts.  The usual
-# alternatives are:
-#   - the standard name of Ghostscript on your system (typically `gs'):
-BUILD_TIME_GS=GS
-#   - the name of the executable you are building now.  If you choose this
-# option, then you must build the executable first without compiled fonts,
-# and then again with compiled fonts.
-#BUILD_TIME_GS=$(BINDIR)$(GS) -I$(PSLIBDIR)
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
@@ -427,12 +417,10 @@ include $(GLSRCDIR)gs.mak
 # This is in the top makefile since the file descriptors are platform specific
 RESOURCE_LIST=[Resource.CMap] [Resource.ColorSpace] [Resource.Decoding] [Resource.Fonts] [Resource.ProcSet] [Resource.IdiomSet] [Resource.CIDFont]
 
-EXTRA_INIT_FILES= Fontmap cidfmap xlatmap FAPI FCOfontmap-PCLPS2 gs_cet.ps
-PS_ROMFS_ARGS=-c -d Resource/ $(RESOURCE_LIST) -d lib/ -P $(PSGENDIR) $(GS_INIT) -P $(PSLIBDIR) $(EXTRA_INIT_FILES)
+PS_ROMFS_ARGS=-c -d Resource/ $(RESOURCE_LIST) -d lib/ -P $(PSLIBDIR) $(EXTRA_INIT_FILES)
 
 include $(GLSRCDIR)lib.mak
 include $(PSSRCDIR)int.mak
-include $(PSSRCDIR)cfonts.mak
 include $(GLSRCDIR)jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)zlib.mak

@@ -10,7 +10,7 @@
 #  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 #  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 #
-# $Id:$
+# $Id$
 # mkromfs macros for PostScript %rom% when COMPILE_INITS=1
 
 # The following list of files needed by the interpreter is maintained here.
@@ -18,14 +18,17 @@
 # unix-inst.mak uses this macro, problems should surface when testing installed
 # versions.
 
-#	The init files are put in the lib/ directory (gs_init.ps + EXTRA_INIT_FILES)
 #	Resource files go into Resource/...
+#	The init files are in the %rom%Resource/Init/ directory
+#       Any EXTRA_INIT_FILES go into %rom%lib/
 
-RESOURCE_LIST=ColorSpace$(D) Decoding$(D) Encoding$(D) Font$(D) ProcSet$(D) IdiomSet$(D) CIDFont$(D) CMap$(D)
+RESOURCE_LIST=CIDFont$(D) CMap$(D) ColorSpace$(D) Decoding$(D) Encoding$(D) Font$(D) IdiomSet$(D) Init$(D) ProcSet$(D)
 
 #	Note: gs_cet.ps is only needed to match Adobe CPSI defaults
 PS_ROMFS_ARGS=-c -P $(PSRESDIR)$(D) -d Resource/ $(RESOURCE_LIST) \
-   -d lib/ -P $(PSGENDIR)$(D) $(GS_INIT) \
-   -P $(PSLIBDIR)$(D) Fontmap cidfmap xlatmap FAPI FCOfontmap-PCLPS2 gs_cet.ps
+   -d lib/ -P $(PSLIBDIR)$(D) $(EXTRA_INIT_FILES)
 
-PS_ROMFS_DEPS=$(PSGENDIR)$(D)$(GS_INIT)
+# We'd really like to have all of the files in Resourc/Init/ be dependencies
+# for COMPILE_INITS=1, but we settle for just the main one. "touch" it if
+# you change any Resource/Init files to force re-build of the %rom% data.
+PS_ROMFS_DEPS=$(PSRESDIR)$(D)Init$(D)$(GS_INIT)

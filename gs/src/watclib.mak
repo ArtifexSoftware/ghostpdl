@@ -19,7 +19,7 @@ libdefault: $(GLOBJ)gslib.exe
 AROOTDIR=c:/gs
 GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
 GS_DOCDIR=$(GSROOTDIR)/doc
-GS_LIB_DEFAULT=$(GSROOTDIR)/lib\;$(GSROOTDIR)/Resource/Font\;$(AROOTDIR)/fonts
+GS_LIB_DEFAULT=$(GSROOTDIR)/Resource/Init\;$(GSROOTDIR)/lib\;$(GSROOTDIR)/Resource/Font\;$(AROOTDIR)/fonts
 SEARCH_HERE_FIRST=1
 GS_INIT=gs_init.ps
 

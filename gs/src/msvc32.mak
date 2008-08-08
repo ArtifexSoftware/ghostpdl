@@ -86,7 +86,7 @@ GS_DOCDIR=$(GSROOTDIR)/doc
 # illegal escape.
 
 !ifndef GS_LIB_DEFAULT
-GS_LIB_DEFAULT=$(GSROOTDIR)/lib;$(GSROOTDIR)/Resource/Font;$(AROOTDIR)/fonts
+GS_LIB_DEFAULT=$(GSROOTDIR)/Resource/Init;$(GSROOTDIR)/lib;$(GSROOTDIR)/Resource/Font;$(AROOTDIR)/fonts
 !endif
 
 # Define whether or not searching for initialization files should always
@@ -160,18 +160,6 @@ GSCONSOLE=gswin32c
 !endif
 !ifndef GSDLL
 GSDLL=gsdll32
-!endif
-
-!ifndef BUILD_TIME_GS
-# Define the name of a pre-built executable that can be invoked at build
-# time.  Currently, this is only needed for compiled fonts.  The usual
-# alternatives are:
-#   - the standard name of Ghostscript on your system (typically `gs'):
-BUILD_TIME_GS=gswin32c
-#   - the name of the executable you are building now.  If you choose this
-# option, then you must build the executable first without compiled fonts,
-# and then again with compiled fonts.
-#BUILD_TIME_GS=$(BINDIR)\$(GS) -I$(PSLIBDIR)
 !endif
 
 # To build two small executables and a large DLL use MAKEDLL=1
@@ -635,7 +623,7 @@ FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(P
 # See gs.mak for details.
 
 !ifndef COMPILE_INITS
-COMPILE_INITS=0
+COMPILE_INITS=1
 !endif
 
 # Choose whether to store band lists on files or in memory.

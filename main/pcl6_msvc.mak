@@ -54,7 +54,7 @@ IMDISRCDIR=..\gs\imdi
 !endif
 
 !ifndef COMPILE_INITS
-COMPILE_INITS=0
+COMPILE_INITS=1
 !endif
 
 # PLPLATFORM indicates should be set to 'ps' for language switch

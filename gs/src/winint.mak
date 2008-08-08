@@ -20,7 +20,6 @@
 
 # Include the generic makefile.
 !include $(PSSRCDIR)\int.mak
-!include $(PSSRCDIR)\cfonts.mak
 
 # Define the C++ compiler invocation for library modules.
 GLCPP=$(CPP) $(CO) $(I_)$(GLI_)$(_I)

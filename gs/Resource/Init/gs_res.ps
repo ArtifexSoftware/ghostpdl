@@ -281,16 +281,15 @@ systemdict begin
 
 %     - .default_resource_dir <string>
 /.default_resource_dir {
-  .file_name_parent .file_name_directory_separator concatstrings
-  (Resource) concatstrings
   /LIBPATH .systemvar {
     dup .file_name_current eq {
       pop
     } {
-      1 index false .file_name_combine {
-        exch pop exit
+      (Resource) search {
+        exch concatstrings
+        exch 0 1 getinterval concatstrings exit
       } {
-        pop pop
+        pop
       } ifelse
     } ifelse
   } forall
