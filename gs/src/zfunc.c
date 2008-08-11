@@ -50,7 +50,7 @@ make_function_proc(i_ctx_t *i_ctx_p, ref *op, gs_function_t *pfn)
 }
 
 /* <dict> .buildfunction <function_proc> */
-static int
+int
 zbuildfunction(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -63,6 +63,30 @@ zbuildfunction(i_ctx_t *i_ctx_p)
     if (code < 0)
 	gs_function_free(pfn, true, imemory);
     return 0;
+}
+
+int buildfunction(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, int type)
+{
+    os_ptr op = osp;
+    ref cref;			/* closure */
+    gs_function_t *pfn;
+    int code, code1;
+
+    switch(type) {
+	case 0:
+	    code = make_sampled_function(i_ctx_p, arr, pproc, &pfn);
+	    break;
+	case 4:
+	    code = make_type4_function(i_ctx_p, arr, pproc, &pfn);
+	    if (code == 0) {
+		code = make_function_proc(i_ctx_p, op, pfn);
+		if (code < 0) {
+		    gs_function_free(pfn, true, imemory);
+		}
+	    }
+	    break;
+    }
+    return code;
 }
 
 #ifdef TEST

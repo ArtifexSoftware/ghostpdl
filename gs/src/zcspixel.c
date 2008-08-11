@@ -22,35 +22,3 @@
 #include "gscpixel.h"
 #include "ialloc.h"
 
-/* <array> .setdevicepixelspace - */
-static int
-zsetdevicepixelspace(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    ref depth;
-    gs_color_space *pcs;
-    int code;
-
-    check_read_type(*op, t_array);
-    if (r_size(op) != 2)
-	return_error(e_rangecheck);
-    array_get(imemory, op, 1L, &depth);
-    check_type_only(depth, t_integer);
-    code = gs_cspace_new_DevicePixel(imemory, &pcs, (int)depth.value.intval);
-    if (code < 0)
-	return code;
-    code = gs_setcolorspace(igs, pcs);
-    /* release reference from construction */
-    rc_decrement_only(pcs, "zsetseparationspace");
-    if (code >= 0)
-	pop(1);
-    return code;
-}
-
-/* ------ Initialization procedure ------ */
-
-const op_def zcspixel_op_defs[] =
-{
-    {"1.setdevicepixelspace", zsetdevicepixelspace},
-    op_def_end(0)
-};

@@ -451,8 +451,9 @@ $(PSOBJ)zcolor.$(OBJ) : $(PSSRC)zcolor.c $(OP)\
  $(igstate_h) $(iutil_h) $(store_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gzstate_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxcmap_h)\
  $(gxcspace_h) $(gxcolor2_h) $(gxpcolor_h)\
- $(idict_h) $(icolor_h) $(idparam_h) $(iname_h)
-	$(PSCC) $(PSO_)zcolor.$(OBJ) $(C_) $(PSSRC)zcolor.c
+ $(idict_h) $(icolor_h) $(idparam_h) $(iname_h) $(iutil_h) $(icsmap_h)\
+ $(zht2_h) $(dstack_h)  
+	$(PSCC) $(PSO_)zcolor.$(OBJ) $(C_) $(PSSRC)zcolor.c 
 
 $(PSOBJ)zdevice.$(OBJ) : $(PSSRC)zdevice.c $(OP) $(string__h)\
  $(ialloc_h) $(idict_h) $(igstate_h) $(iname_h) $(interp_h) $(iparam_h) $(ivmspace_h)\
@@ -530,7 +531,7 @@ Z1OPS=zarith zarray zcontrol1 zcontrol2 zcontrol3
 Z2OPS=zdict1 zdict2 zfile zfile1 zfileio1 zfileio2
 Z3_4OPS=zfilter zfproc zgeneric ziodev zmath zalg
 Z5_6OPS=zmisc zpacked zrelbit zstack zstring zsysvm
-Z7_8OPS=ztoken ztype zvmem zbfont zchar_a zchar_b zcolor
+Z7_8OPS=ztoken ztype zvmem zbfont zchar_a zchar_b zcolor zcolor_ext
 Z9OPS=zdevice zfont zfontenum zgstate1 zgstate2 zgstate3
 Z10OPS=zdfilter zht zimage zmatrix
 Z11OPS=zpaint zpath pantone
@@ -998,7 +999,6 @@ $(PSD)psl2read.dev : $(INT_MAK) $(ECHOGS_XE) $(psl2read_)\
  $(PSD)psl2int.dev $(PSD)dps2read.dev
 	$(SETMOD) $(PSD)psl2read $(psl2read_)
 	$(ADDMOD) $(PSD)psl2read -include $(PSD)psl2int $(PSD)dps2read
-	$(ADDMOD) $(PSD)psl2read -oper zcolor2_l2 zcsindex_l2
 	$(ADDMOD) $(PSD)psl2read -oper zht2_l2
 
 $(PSOBJ)zcolor2.$(OBJ) : $(PSSRC)zcolor2.c $(OP) $(string__h)\
@@ -1400,7 +1400,7 @@ $(PSOBJ)zcidtest.$(OBJ) : $(PSSRC)zcidtest.c $(string__h) $(OP)\
 cieread_=$(PSOBJ)zcie.$(OBJ) $(PSOBJ)zcrd.$(OBJ)
 $(PSD)cie.dev : $(INT_MAK) $(ECHOGS_XE) $(cieread_) $(GLD)cielib.dev
 	$(SETMOD) $(PSD)cie $(cieread_)
-	$(ADDMOD) $(PSD)cie -oper zcie_l2 zcrd_l2
+	$(ADDMOD) $(PSD)cie -oper zcrd_l2
 	$(ADDMOD) $(PSD)cie -include $(GLD)cielib
 
 icie_h=$(PSSRC)icie.h
@@ -1540,7 +1540,6 @@ $(PSOBJ)zdpnext.$(OBJ) : $(PSSRC)zdpnext.c $(math__h) $(OP)\
 cspixint_=$(PSOBJ)zcspixel.$(OBJ)
 $(PSD)cspixel.dev : $(INT_MAK) $(ECHOGS_XE) $(cspixint_) $(GLD)cspixlib.dev
 	$(SETMOD) $(PSD)cspixel $(cspixint_)
-	$(ADDMOD) $(PSD)cspixel -oper zcspixel
 	$(ADDMOD) $(PSD)cspixel -include $(GLD)cspixlib
 
 $(PSOBJ)zcspixel.$(OBJ) : $(PSSRC)zcspixel.c $(OP)\
@@ -1556,11 +1555,6 @@ $(PSD)psl3.dev : $(INT_MAK) $(ECHOGS_XE)\
 	$(SETMOD) $(PSD)psl3 -include $(PSD)psl2 $(PSD)cspixel $(PSD)frsd $(PSD)func
 	$(ADDMOD) $(PSD)psl3 -include $(GLD)psl3lib $(PSD)psl3read
 	$(ADDMOD) $(PSD)psl3 -emulator PostScript PostScriptLevel2 PostScriptLevel3
-
-$(PSOBJ)zcsdevn.$(OBJ) : $(PSSRC)zcsdevn.c $(OP) $(memory__h)\
- $(gscolor2_h) $(gscdevn_h) $(gxcdevn_h) $(gxcspace_h) $(zht2_h)\
- $(estack_h) $(ialloc_h) $(icremap_h) $(ifunc_h) $(igstate_h) $(iname_h)
-	$(PSCC) $(PSO_)zcsdevn.$(OBJ) $(C_) $(PSSRC)zcsdevn.c
 
 $(PSOBJ)zfunc3.$(OBJ) : $(PSSRC)zfunc3.c $(memory__h) $(OP)\
  $(gsfunc3_h) $(gsstruct_h)\
@@ -1609,7 +1603,7 @@ $(PSOBJ)zshade.$(OBJ) : $(PSSRC)zshade.c $(memory__h) $(OP)\
  $(store_h)
 	$(PSCC) $(PSO_)zshade.$(OBJ) $(C_) $(PSSRC)zshade.c
 
-psl3read_1=$(PSOBJ)zcsdevn.$(OBJ) $(PSOBJ)zfunc3.$(OBJ) $(PSOBJ)zfsample.$(OBJ)
+psl3read_1=$(PSOBJ)zfunc3.$(OBJ) $(PSOBJ)zfsample.$(OBJ)
 psl3read_2=$(PSOBJ)zimage3.$(OBJ) $(PSOBJ)zmisc3.$(OBJ) $(PSOBJ)zcolor3.$(OBJ)\
  $(PSOBJ)zshade.$(OBJ)
 psl3read_=$(psl3read_1) $(psl3read_2)
@@ -1619,7 +1613,6 @@ $(PSD)psl3read.dev : $(INT_MAK) $(ECHOGS_XE) $(psl3read_)\
  $(PSD)frsd.dev $(PSD)fzlib.dev
 	$(SETMOD) $(PSD)psl3read $(psl3read_1)
 	$(ADDMOD) $(PSD)psl3read $(psl3read_2)
-	$(ADDMOD) $(PSD)psl3read -oper zcsdevn
 	$(ADDMOD) $(PSD)psl3read -oper zfsample
 	$(ADDMOD) $(PSD)psl3read -oper zimage3 zmisc3 zcolor3_l3 zshade
 	$(ADDMOD) $(PSD)psl3read -functiontype 2 3

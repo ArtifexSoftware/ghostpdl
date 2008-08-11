@@ -159,56 +159,12 @@ zbuildpattern1(i_ctx_t *i_ctx_p)
     return code;
 }
 
-/* <array> .setpatternspace - */
-/* In the case of uncolored patterns, the current color space is */
-/* the base space for the pattern space. */
-static int
-zsetpatternspace(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    gs_color_space *pcs;
-    gs_color_space *pcs_base;
-    uint edepth = ref_stack_count(&e_stack);
-    int code = 0;
-
-    if (!r_is_array(op))
-        return_error(e_typecheck);
-    check_read(*op);
-    switch (r_size(op)) {
-	case 1:		/* no base space */
-	    pcs_base = NULL;
-	    break;
-	default:
-	    return_error(e_rangecheck);
-	case 2:
-	    pcs_base = gs_currentcolorspace(igs);
-	    if (cs_num_components(pcs_base) < 0)       /* i.e., Pattern space */
-		return_error(e_rangecheck);
-    }
-    pcs = gs_cspace_alloc(imemory, &gs_color_space_type_Pattern);
-    pcs->base_space = pcs_base;
-    pcs->params.pattern.has_base_space = (pcs_base != NULL);
-    rc_increment(pcs_base);
-    code = gs_setcolorspace(igs, pcs);
-    /* release reference from construction */
-    rc_decrement_only(pcs, "zsetpatternspace");
-    if (code < 0) {
-	ref_stack_pop_to(&e_stack, edepth);
-	return code;
-    }
-    make_null(&istate->pattern); /* PLRM: initial color value is a null object */
-    pop(1);
-    return (ref_stack_count(&e_stack) == edepth ? 0 : o_push_estack);	/* installation will load the caches */
-}
-
 /* ------ Initialization procedure ------ */
 
 const op_def zpcolor_l2_op_defs[] =
 {
     op_def_begin_level2(),
     {"2.buildpattern1", zbuildpattern1},
-    {"1.setpatternspace", zsetpatternspace},
-		/* Internal operators */
     {"0%pattern_paint_prepare", pattern_paint_prepare},
     {"0%pattern_paint_finish", pattern_paint_finish},
     op_def_end(zpcolor_init)

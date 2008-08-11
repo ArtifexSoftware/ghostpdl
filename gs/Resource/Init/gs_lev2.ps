@@ -680,29 +680,18 @@ currentdict end
 } odef
 
 % ------ Color spaces ------ %
-
-% Move setcolorspace, setcolor, and colorspacedict to level2dict
-level2dict /setcolorspace .cspace_util 1 index get put
-level2dict /setcolor .cspace_util 1 index get put
-level2dict /colorspacedict .cspace_util 1 index get put
-
-% Add the level 2 color spaces
-% DevicePixel is actually a LanguageLevel 3 feature; it is here for
-% historical reasons.
-%% Replace 1 (gs_devpxl.ps) 
-(gs_devpxl.ps) runlibfile
-
-%% Replace 1 (gs_ciecs2.ps)
-(gs_ciecs2.ps) runlibfile
-
-%% Replace 1 (gs_indxd.ps)
-(gs_indxd.ps) runlibfile
-
-%% Replace 1 (gs_sepr.ps)
-(gs_sepr.ps) runlibfile
-
-%% Replace 1 (gs_patrn.ps)
-(gs_patrn.ps) runlibfile
+% gs_res.ps uses these entries in colorspacedict
+% to populate the ColorSpaceFamily resource, so we need
+% to add the supported spaces.
+%
+systemdict /colorspacedict get begin
+/CIEBasedA [] def
+/CIEBasedABC [] def
+/DevicePixel [] def
+/Indexed [] def
+/Pattern [] def
+/Separation [] def
+end
 
 
 

@@ -28,6 +28,9 @@
 #include "gzstate.h"	    /* these are needed to check if device is pdfwrite */
 #include "gxdevcli.h"	    /* these are needed to check if device is pdfwrite */
 #include "string_.h"	    /* these are needed to check if device is pdfwrite */
+
+#include "zcolor.h"
+
 /*
  * FunctionType 4 functions are not defined in the PostScript language.  We
  * provide support for them because they are needed for PDF 1.3.  In
@@ -334,4 +337,79 @@ gs_build_function_4(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
 fail:
     gs_function_PtCr_free_params(&params, mem);
     return (code < 0 ? code : gs_note_error(e_rangecheck));
+}
+
+int make_type4_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t **func)
+{
+    int i, code, size, num_components;
+    byte *ops;
+    gs_function_PtCr_params_t params;
+    float *ptr;
+    ref alternatespace, *palternatespace = &alternatespace;
+    PS_colour_space_t *space, *altspace;
+
+    code = get_space_object(i_ctx_p, arr, &space);
+    if (code < 0)
+	return code;
+    if (!space->alternateproc)
+	return e_typecheck;
+    code = space->alternateproc(i_ctx_p, arr, &palternatespace);
+    if (code < 0)
+	return code;
+    code = get_space_object(i_ctx_p, palternatespace, &altspace);
+    if (code < 0)
+	return code;
+
+    code = space->numcomponents(i_ctx_p, arr, &num_components);    
+    if (code < 0)
+	return code;
+    ptr = (float *)gs_alloc_byte_array(imemory, num_components * 2, sizeof(float), "make_type4_function(Domain)");
+    if (!ptr)
+	return e_VMerror;
+    code = space->domain(i_ctx_p, arr, ptr);    
+    if (code < 0) {
+	gs_free_const_object(imemory, ptr, "make_type4_function(Domain)");
+	return code;
+    }
+    params.Domain = ptr;
+    params.m = num_components;
+
+    code = altspace->numcomponents(i_ctx_p, &alternatespace, &num_components);    
+    if (code < 0) {
+	gs_free_const_object(imemory, params.Domain, "make_type4_function(Domain)");
+	return code;
+    }
+    ptr = (float *)gs_alloc_byte_array(imemory, num_components * 2, sizeof(float), "make_type4_function(Range)");
+    if (!ptr) {
+	gs_free_const_object(imemory, params.Domain, "make_type4_function(Domain)");
+	return e_VMerror;
+    }
+    code = altspace->range(i_ctx_p, &alternatespace, ptr);    
+    if (code < 0) {
+	gs_free_const_object(imemory, ptr, "make_type4_function(Domain)");
+	gs_free_const_object(imemory, params.Domain, "make_type4_function(Range)");
+	return code;
+    }
+    params.Range = ptr;
+    params.n = num_components;
+    
+    params.ops.data = 0;	/* in case of failure, see gs_function_PtCr_free_params */
+    params.ops.size = 0;	/* ditto */
+    size = 0;
+    code = check_psc_function(i_ctx_p, (const ref *)pproc, 0, NULL, &size);
+    if (code < 0) {
+	gs_function_PtCr_free_params(&params, imemory);
+	return code;
+    }
+    ops = gs_alloc_string(imemory, size + 1, "make_type4_function(ops)");
+    size = 0;
+    check_psc_function(i_ctx_p, (const ref *)pproc, 0, ops, &size); /* can't fail */
+    ops[size] = PtCr_return;
+    params.ops.data = ops;
+    params.ops.size = size + 1;
+    code = gs_function_PtCr_init(func, &params, imemory);
+    if (code < 0) 
+	gs_function_PtCr_free_params(&params, imemory);
+
+    return code;
 }

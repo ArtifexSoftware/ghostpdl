@@ -31,7 +31,87 @@
 #include "igstate.h"
 #include "icie.h"
 #include "ialloc.h"
+#include "zicc.h"
 
+int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
+{
+    os_ptr                  op = osp;
+    int edepth = ref_stack_count(&e_stack);
+    int                     code;
+    gs_color_space *        pcs;
+    gs_color_space *  palt_cs;
+    int                     i;
+    gs_cie_icc *            picc_info;
+    ref *                   pstrmval;
+    stream *                s = 0L;
+
+    palt_cs = gs_currentcolorspace(igs);
+    /* verify the DataSource entry */
+    if (dict_find_string(ICCdict, "DataSource", &pstrmval) <= 0)
+        return_error(e_undefined);
+    check_read_file(s, pstrmval);
+
+    /* build the color space object */
+    code = gs_cspace_build_CIEICC(&pcs, NULL, gs_state_memory(igs));
+    if (code < 0)
+        return code;
+    picc_info = pcs->params.icc.picc_info;
+    picc_info->num_components = ncomps;
+    picc_info->instrp = s;
+    picc_info->file_id = (s->read_id | s->write_id);
+    for (i = 0; i < ncomps; i++) {
+        picc_info->Range.ranges[i].rmin = range_buff[2 * i];
+        picc_info->Range.ranges[i].rmax = range_buff[2 * i + 1];
+
+    }
+
+    /* record the current space as the alternative color space */
+    pcs->base_space = palt_cs;
+    rc_increment(palt_cs);
+
+    code = gx_load_icc_profile(picc_info);
+    if (code < 0)
+	return code;
+
+    /* If the input space to this profile is CIELAB, then we need to adjust the limits */
+    /* See ICC spec ICC.1:2004-10 Section 6.3.4.2 and 6.4 */
+    if(picc_info->plu->e_inSpace == icSigLabData)
+    {
+        picc_info->Range.ranges[0].rmin = 0.0;
+        picc_info->Range.ranges[0].rmax = 100.0;
+
+        picc_info->Range.ranges[1].rmin = -128.0;
+        picc_info->Range.ranges[1].rmax = 127.0;
+
+        picc_info->Range.ranges[2].rmin = -128.0;
+        picc_info->Range.ranges[2].rmax = 127.0;
+
+    } 
+    /* If the input space is icSigXYZData, then we should do the limits based upon the white point of the profile.  */
+    if(picc_info->plu->e_inSpace == icSigXYZData)
+    {
+	for (i = 0; i < 3; i++) 
+	{
+	    picc_info->Range.ranges[i].rmin = 0;
+	}
+
+	picc_info->Range.ranges[0].rmax = picc_info->common.points.WhitePoint.u;
+	picc_info->Range.ranges[1].rmax = picc_info->common.points.WhitePoint.v;
+    	picc_info->Range.ranges[2].rmax = picc_info->common.points.WhitePoint.w;
+    }
+
+    code = cie_cache_joint(i_ctx_p, &istate->colorrendering.procs,
+			   (gs_cie_common *)picc_info, igs);
+    if (code < 0)
+	return code;
+
+    push(1);
+    return cie_set_finish( i_ctx_p,
+                           pcs,
+                           &istate->colorspace.procs.cie,
+                           edepth,
+                           code );
+}
 
 /*
  *   <dict>  .seticcspace  -
@@ -64,15 +144,12 @@ static int
 zseticcspace(i_ctx_t * i_ctx_p)
 {
     os_ptr                  op = osp;
-    int edepth = ref_stack_count(&e_stack);
     int                     code;
-    gs_color_space *        pcs;
     gs_color_space *  palt_cs;
     ref *                   pnval;
     ref *                   pstrmval;
     stream *                s;
     int                     i, ncomps;
-    gs_cie_icc *            picc_info;
     float                   range_buff[8];
     static const float      dflt_range[8] = { 0, 1,   0, 1,   0, 1,   0, 1 };
 
@@ -124,70 +201,7 @@ zseticcspace(i_ctx_t * i_ctx_p)
     if (i != 2 * ncomps)
         return_error(e_rangecheck);
 
-    /* build the color space object */
-    code = gs_cspace_build_CIEICC(&pcs, NULL, gs_state_memory(igs));
-    if (code < 0)
-        return code;
-    picc_info = pcs->params.icc.picc_info;
-    picc_info->num_components = ncomps;
-    picc_info->instrp = s;
-    picc_info->file_id = (s->read_id | s->write_id);
-    for (i = 0; i < ncomps; i++) {
-        picc_info->Range.ranges[i].rmin = range_buff[2 * i];
-        picc_info->Range.ranges[i].rmax = range_buff[2 * i + 1];
-
-    }
-
-    /* record the current space as the alternative color space */
-    pcs->base_space = palt_cs;
-    rc_increment(palt_cs);
-
-    code = gx_load_icc_profile(picc_info);
-    if (code < 0)
-	return code;
-
-	/* If the input space to this profile is CIELAB, then we need to adjust the limits */
-	/* See ICC spec ICC.1:2004-10 Section 6.3.4.2 and 6.4 */
-	if(picc_info->plu->e_inSpace == icSigLabData)
-	{
-        picc_info->Range.ranges[0].rmin = 0.0;
-        picc_info->Range.ranges[0].rmax = 100.0;
-
-        picc_info->Range.ranges[1].rmin = -128.0;
-        picc_info->Range.ranges[1].rmax = 127.0;
-
-        picc_info->Range.ranges[2].rmin = -128.0;
-        picc_info->Range.ranges[2].rmax = 127.0;
-
-	} 
-
-	/* If the input space is icSigXYZData, then we should do the limits based upon the white point of the profile.  */
-
-	if(picc_info->plu->e_inSpace == icSigXYZData)
-	{
-		for (i = 0; i < 3; i++) 
-		{
-
-			picc_info->Range.ranges[i].rmin = 0;
-
-		}
-
-		picc_info->Range.ranges[0].rmax = picc_info->common.points.WhitePoint.u;
-		picc_info->Range.ranges[1].rmax = picc_info->common.points.WhitePoint.v;
-		picc_info->Range.ranges[2].rmax = picc_info->common.points.WhitePoint.w;
-
-	}
-
-    code = cie_cache_joint(i_ctx_p, &istate->colorrendering.procs,
-			   (gs_cie_common *)picc_info, igs);
-    if (code < 0)
-	return code;
-
-    return cie_set_finish( i_ctx_p,
-                           pcs,
-                           &istate->colorspace.procs.cie,
-                           edepth,
-                           code );
+    return seticc(i_ctx_p, ncomps, op, range_buff);
 }
 
 

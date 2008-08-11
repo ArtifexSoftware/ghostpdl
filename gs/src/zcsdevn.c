@@ -31,6 +31,7 @@
 /* Imported from gscdevn.c */
 extern const gs_color_space_type gs_color_space_type_DeviceN;
 
+#if 0
 /* <array> .setdevicenspace - */
 /* The current color space is the alternate space for the DeviceN space. */
 static int
@@ -167,14 +168,16 @@ zattachdevicenattributespace(i_ctx_t *i_ctx_p)
     pop(1);
     return code;
 }
-
+#endif
 
 /* ------ Initialization procedure ------ */
 
 const op_def zcsdevn_op_defs[] =
 {
     op_def_begin_ll3(),
+#if 0
     {"1.setdevicenspace", zsetdevicenspace},
     {"1.attachdevicenattributespace", zattachdevicenattributespace},
+#endif
     op_def_end(0)
 };

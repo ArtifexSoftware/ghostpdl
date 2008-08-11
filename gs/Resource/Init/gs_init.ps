@@ -666,7 +666,7 @@ systemdict /internaldict dup .makeinternaldict .makeoperator
 	{ 0 1 count 3 sub { index === } for } bind def
 /runlibfile
 	{		% We don't want to bind 'run' into this procedure,
-			% since run may get redefined.
+ 			% since run may get redefined.
 	  findlibfile
 	   { exch pop /run .systemvar exec }
 	   { /undefinedfilename signalerror }
@@ -732,7 +732,7 @@ userdict /.currentresourcefile //null put
   { stop } if
 } bind def
 /.runresource {		% <file> .runresource -
-  { //run } .execasresource % immediately bind run to ignore redefinitions
+  { /run .systemvar exec } .execasresource
 } bind def
 
 % Define procedures for getting and setting the current device resolution.
@@ -1534,10 +1534,6 @@ setpacking
 
 (END BASIC COLOR) VMDEBUG
 
-%% Replace 1 (gs_devcs.ps)
-(gs_devcs.ps) runlibfile
-
-(END LEVEL 1 COLOR) VMDEBUG
 
 % Load image support
 %% Replace 1 (gs_img.ps)

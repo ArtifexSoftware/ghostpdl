@@ -27,6 +27,8 @@
 #include "gsfunc0.h"
 #include "gscdevn.h"
 
+#include "zcolor.h"
+
 /*
  * We store the data in a string.  Since the max size for a string is 64k,
  * we use that as our max data size.
@@ -128,7 +130,7 @@ zbuildsampledfunction(i_ctx_t *i_ctx_p)
      */
     return sampled_data_setup(i_ctx_p, pfn, pfunc, sampled_data_finish, imemory);
 }
-    
+
 /* ------- Internal procedures ------- */
 
 
@@ -480,18 +482,16 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
     int code = 0;
     byte * data_ptr;
     double sampled_data_value_max = (double)((1 << params->BitsPerSample) - 1);
-    int bps = bits2bytes(params->BitsPerSample);
+    int bps = bits2bytes(params->BitsPerSample), stack_depth_adjust = 0;
 
     /*
      * Check to make sure that the procedure produced the correct number of
      * values.  If not, move the stack back to where it belongs and abort
      */
     if (num_out + O_STACK_PAD + penum->o_stack_depth != ref_stack_count(&o_stack)) {
-	int stack_depth_adjust = ref_stack_count(&o_stack) - penum->o_stack_depth;
+	stack_depth_adjust = ref_stack_count(&o_stack) - penum->o_stack_depth;
 	
-	if (stack_depth_adjust >= 0)
-	    pop(stack_depth_adjust);
-	else {
+	if (stack_depth_adjust < 0) {
 	    /*
 	     * If we get to here then there were major problems.  The function
 	     * removed too many items off of the stack.  We had placed extra
@@ -502,10 +502,10 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
 	     * problem.)
 	     */
 	    push(-stack_depth_adjust);
+	    ifree_object(penum->pfn, "sampled_data_continue(pfn)");
+	    ifree_object(penum, "sampled_data_continue((enum)");
+	    return_error(e_undefinedresult);
 	}
-	ifree_object(penum->pfn, "sampled_data_continue(pfn)");
-	ifree_object(penum, "sampled_data_continue((enum)");
-	return_error(e_undefinedresult);
     }
     
     /* Save data from the given function */
@@ -533,13 +533,23 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
     /* Check if we are done collecting data. */
 
     if (increment_cube_indexes(params, penum->indexes)) {
-	pop(O_STACK_PAD);	    /* Remove spare stack space */
+	if (stack_depth_adjust == 0)
+	    pop(O_STACK_PAD);	    /* Remove spare stack space */
+	else
+	    pop(stack_depth_adjust - num_out);
 	/* Execute the closing procedure, if given */
 	code = 0;
 	if (esp_finish_proc != 0)
 	    code = esp_finish_proc(i_ctx_p);
 
 	return code;
+    } else {
+	if (stack_depth_adjust) {
+	    stack_depth_adjust -= num_out;
+	    push(O_STACK_PAD - stack_depth_adjust);
+	    for (i=0;i<O_STACK_PAD - stack_depth_adjust;i++)
+		make_null(op - i);
+	}
     }
 
     /* Now get the data for the next location */
@@ -580,6 +590,121 @@ sampled_data_finish(i_ctx_t *i_ctx_p)
     return o_pop_estack;
 }
 
+int make_sampled_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t **func)
+{
+    int code = 0, *ptr, i, total_size, num_components;
+    byte * bytes = 0;
+    float *fptr;
+    gs_function_t *pfn = *func;
+    gs_function_Sd_params_t params = {0};
+    ref alternatespace, *palternatespace = &alternatespace;
+    PS_colour_space_t *space, *altspace;
+
+    code = get_space_object(i_ctx_p, arr, &space);
+    if (code < 0)
+	return code;
+    if (!space->alternateproc)
+	return e_typecheck;
+    code = space->alternateproc(i_ctx_p, arr, &palternatespace);
+    if (code < 0)
+	return code;
+    code = get_space_object(i_ctx_p, palternatespace, &altspace);
+    if (code < 0)
+	return code;
+    /*
+     * Set up the hyper cube function data structure.
+     */
+    params.Order = 3;
+    params.BitsPerSample = 16;
+
+    code = space->numcomponents(i_ctx_p, arr, &num_components);    
+    if (code < 0)
+	return code;
+    fptr = (float *)gs_alloc_byte_array(imemory, num_components * 2, sizeof(float), "make_sampled_function(Domain)");
+    if (!fptr)
+	return e_VMerror;
+    code = space->domain(i_ctx_p, arr, fptr);    
+    if (code < 0) {
+	gs_free_const_object(imemory, fptr, "make_sampled_function(Domain)");
+	return code;
+    }
+    params.Domain = fptr;
+    params.m = num_components;
+
+    code = altspace->numcomponents(i_ctx_p, palternatespace, &num_components);    
+    if (code < 0) {
+	gs_free_const_object(imemory, params.Domain, "make_type4_function(Domain)");
+	return code;
+    }
+    fptr = (float *)gs_alloc_byte_array(imemory, num_components * 2, sizeof(float), "make_sampled_function(Range)");
+    if (!fptr) {
+	gs_free_const_object(imemory, params.Domain, "make_sampled_function(Domain)");
+	return e_VMerror;
+    }
+    code = altspace->range(i_ctx_p, palternatespace, fptr);    
+    if (code < 0) {
+	gs_free_const_object(imemory, params.Domain, "make_sampled_function(Domain)");
+	gs_free_const_object(imemory, fptr, "make_sampled_function(Range)");
+	return code;
+    }
+    params.Range = fptr;
+    params.n = num_components;
+
+    /*
+     * The Size array may or not be specified.  If it is not specified then
+     * we need to determine a set of default values for the Size array.
+     */
+    ptr = (int *)gs_alloc_byte_array(imemory, params.m, sizeof(int), "Size");
+    if (ptr == NULL) {
+	code = gs_note_error(e_VMerror);
+	goto fail;
+    }
+    params.Size = ptr;
+    /*
+     * Determine a default
+     * set of values.
+     */
+    code = determine_sampled_data_size(params.m, params.n,
+     			params.BitsPerSample, (int *)params.Size);
+    if (code < 0)
+	goto fail;
+    /*
+     * Determine space required for the sample data storage.
+     */
+    total_size = params.n * bits2bytes(params.BitsPerSample);
+    for (i = 0; i < params.m; i++)
+	total_size *= params.Size[i];
+    /*
+     * Allocate space for the data cube itself.
+     */
+    bytes = gs_alloc_byte_array(imemory, total_size, 1, "cube_build_func0(bytes)");
+    if (!bytes) {
+	code = gs_note_error(e_VMerror);
+	goto fail;
+    }
+    data_source_init_bytes(&params.DataSource,
+    				(const unsigned char *)bytes, total_size);
+
+    /*
+     * This is temporary.  We will call gs_function_Sd_init again after
+     * we have collected the cube data.  We are doing it now because we need
+     * a function structure created (along with its GC enumeration stuff)
+     * that we can use while collecting the cube data.  We will call
+     * the routine again after the cube data is collected to correctly
+     * initialize the function.
+     */
+    code = gs_function_Sd_init(&pfn, &params, imemory);
+    if (code < 0)
+	return code;
+    /*
+     * Now setup to collect the sample data.
+     */
+    return sampled_data_setup(i_ctx_p, pfn, pproc, sampled_data_finish, imemory);
+
+fail:
+    gs_function_Sd_free_params(&params, imemory);
+    return (code < 0 ? code : gs_note_error(e_rangecheck));
+}
 
 /* ------ Initialization procedure ------ */
 

@@ -39,6 +39,12 @@ int fn_build_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
 int fn_build_sub_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
   int depth, gs_memory_t *mem, const float *shading_domain, const int num_inputs);
 
+/* Called only from the routines in zcolor.c, in order to convert a tint-transform
+ * procedure to a function. Little more than a place-holder to avoid making a number
+ * of functions non-static
+ */
+int buildfunction(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, int type);
+
 /*
  * Collect a heap-allocated array of floats.  If the key is missing, set
  * *pparray = 0 and return 0; otherwise set *pparray and return the number

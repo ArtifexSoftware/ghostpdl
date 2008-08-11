@@ -329,12 +329,15 @@ systemdict /.reuseparamdict undef
 0.02 setsmoothness
 
 % ------ DeviceN color space ------ %
-
-%% Replace 1 (gs_ciecs3.ps)
-(gs_ciecs3.ps) runlibfile
-
-%% Replace 1 (gs_devn.ps)
-(gs_devn.ps) runlibfile
+% gs_res.ps uses these entries in colorspacedict
+% to populate the ColorSpaceFamily resource, so we need
+% to add the supported spaces.
+%
+systemdict /colorspacedict get begin
+/CIEBasedDEF [] def
+/CIEBasedDEFG [] def
+/DeviceN [] def
+end
 
 % ------ Miscellaneous ------ %
 

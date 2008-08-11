@@ -30,6 +30,7 @@
 #include "isave.h"
 #include "ivmspace.h"
 #include "store.h"		/* for make_null */
+#include "zcie.h"
 
 /* Empty procedures */
 static const ref empty_procs[4] =
@@ -295,10 +296,9 @@ static int cache_common(i_ctx_t *, gs_cie_common *, const ref_cie_procs *,
 static int cache_abc_common(i_ctx_t *, gs_cie_abc *, const ref_cie_procs *,
 			     void *, gs_ref_memory_t *);
 
-/* <dict> .setciedefgspace - */
 static int cie_defg_finish(i_ctx_t *);
-static int
-zsetciedefgspace(i_ctx_t *i_ctx_p)
+int
+ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict)
 {
     os_ptr op = osp;
     int edepth = ref_stack_count(&e_stack);
@@ -310,9 +310,8 @@ zsetciedefgspace(i_ctx_t *i_ctx_p)
     int code;
     ref *ptref;
 
-    check_type(*op, t_dictionary);
-    check_dict_read(*op);
-    if ((code = dict_find_string(op, "Table", &ptref)) <= 0)
+    push(1);
+    if ((code = dict_find_string(CIEDict, "Table", &ptref)) <= 0)
 	return (code < 0 ? code : gs_note_error(e_rangecheck));
     check_read_type(*ptref, t_array);
     if (r_size(ptref) != 5)
@@ -324,11 +323,11 @@ zsetciedefgspace(i_ctx_t *i_ctx_p)
     pcie = pcs->params.defg;
     pcie->Table.n = 4;
     pcie->Table.m = 3;
-    if ((code = dict_ranges_param(mem, op, "RangeDEFG", 4, pcie->RangeDEFG.ranges)) < 0 ||
-	(code = dict_proc_array_param(mem, op, "DecodeDEFG", 4, &procs.PreDecode.DEFG)) < 0 ||
-	(code = dict_ranges_param(mem, op, "RangeHIJK", 4, pcie->RangeHIJK.ranges)) < 0 ||
+    if ((code = dict_ranges_param(mem, CIEDict, "RangeDEFG", 4, pcie->RangeDEFG.ranges)) < 0 ||
+	(code = dict_proc_array_param(mem, CIEDict, "DecodeDEFG", 4, &procs.PreDecode.DEFG)) < 0 ||
+	(code = dict_ranges_param(mem, CIEDict, "RangeHIJK", 4, pcie->RangeHIJK.ranges)) < 0 ||
 	(code = cie_table_param(ptref, &pcie->Table, mem)) < 0 ||
-	(code = cie_abc_param(imemory, op, (gs_cie_abc *) pcie, &procs)) < 0 ||
+	(code = cie_abc_param(imemory, CIEDict, (gs_cie_abc *) pcie, &procs)) < 0 ||
 	(code = cie_cache_joint(i_ctx_p, &istate->colorrendering.procs, (gs_cie_common *)pcie, igs)) < 0 ||	/* do this last */
 	(code = cie_cache_push_finish(i_ctx_p, cie_defg_finish, imem, pcie)) < 0 ||
 	(code = cie_prepare_cache4(i_ctx_p, &pcie->RangeDEFG,
@@ -354,10 +353,9 @@ cie_defg_finish(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-/* <dict> .setciedefspace - */
 static int cie_def_finish(i_ctx_t *);
-static int
-zsetciedefspace(i_ctx_t *i_ctx_p)
+int
+ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict)
 {
     os_ptr op = osp;
     int edepth = ref_stack_count(&e_stack);
@@ -369,9 +367,8 @@ zsetciedefspace(i_ctx_t *i_ctx_p)
     int code;
     ref *ptref;
 
-    check_type(*op, t_dictionary);
-    check_dict_read(*op);
-    if ((code = dict_find_string(op, "Table", &ptref)) <= 0)
+    push(1);
+    if ((code = dict_find_string(CIEDict, "Table", &ptref)) <= 0)
 	return (code < 0 ? code : gs_note_error(e_rangecheck));
     check_read_type(*ptref, t_array);
     if (r_size(ptref) != 4)
@@ -383,11 +380,11 @@ zsetciedefspace(i_ctx_t *i_ctx_p)
     pcie = pcs->params.def;
     pcie->Table.n = 3;
     pcie->Table.m = 3;
-    if ((code = dict_range3_param(mem, op, "RangeDEF", &pcie->RangeDEF)) < 0 ||
-	(code = dict_proc3_param(mem, op, "DecodeDEF", &procs.PreDecode.DEF)) < 0 ||
-	(code = dict_range3_param(mem, op, "RangeHIJ", &pcie->RangeHIJ)) < 0 ||
+    if ((code = dict_range3_param(mem, CIEDict, "RangeDEF", &pcie->RangeDEF)) < 0 ||
+	(code = dict_proc3_param(mem, CIEDict, "DecodeDEF", &procs.PreDecode.DEF)) < 0 ||
+	(code = dict_range3_param(mem, CIEDict, "RangeHIJ", &pcie->RangeHIJ)) < 0 ||
 	(code = cie_table_param(ptref, &pcie->Table, mem)) < 0 ||
-	(code = cie_abc_param(imemory, op, (gs_cie_abc *) pcie, &procs)) < 0 ||
+	(code = cie_abc_param(imemory, CIEDict, (gs_cie_abc *) pcie, &procs)) < 0 ||
 	(code = cie_cache_joint(i_ctx_p, &istate->colorrendering.procs, (gs_cie_common *)pcie, igs)) < 0 ||	/* do this last */
 	(code = cie_cache_push_finish(i_ctx_p, cie_def_finish, imem, pcie)) < 0 ||
 	(code = cie_prepare_cache3(i_ctx_p, &pcie->RangeDEF,
@@ -413,10 +410,10 @@ cie_def_finish(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-/* <dict> .setcieabcspace - */
 static int cie_abc_finish(i_ctx_t *);
-static int
-zsetcieabcspace(i_ctx_t *i_ctx_p)
+
+int
+cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict)
 {
     os_ptr op = osp;
     int edepth = ref_stack_count(&e_stack);
@@ -427,14 +424,13 @@ zsetcieabcspace(i_ctx_t *i_ctx_p)
     gs_cie_abc *pcie;
     int code;
 
-    check_type(*op, t_dictionary);
-    check_dict_read(*op);
+    push(1); /* Sacrificial */
     procs = istate->colorspace.procs.cie;
     code = gs_cspace_build_CIEABC(&pcs, NULL, mem);
     if (code < 0)
 	return code;
     pcie = pcs->params.abc;
-    code = cie_abc_param(imemory, op, pcie, &procs);
+    code = cie_abc_param(imemory, CIEDict, pcie, &procs);
     if (code < 0 ||
 	(code = cie_cache_joint(i_ctx_p, &istate->colorrendering.procs, (gs_cie_common *)pcie, igs)) < 0 ||	/* do this last */
 	(code = cie_cache_push_finish(i_ctx_p, cie_abc_finish, imem, pcie)) < 0 ||
@@ -456,10 +452,10 @@ cie_abc_finish(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-/* <dict> .setcieaspace - */
 static int cie_a_finish(i_ctx_t *);
-static int
-zsetcieaspace(i_ctx_t *i_ctx_p)
+
+int
+cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict)
 {
     os_ptr op = osp;
     int edepth = ref_stack_count(&e_stack);
@@ -470,18 +466,17 @@ zsetcieaspace(i_ctx_t *i_ctx_p)
     gs_cie_a *pcie;
     int code;
 
-    check_type(*op, t_dictionary);
-    check_dict_read(*op);
+    push(1); /* Sacrificial. cie_a_finish does a pop... */
     procs = istate->colorspace.procs.cie;
-    if ((code = dict_proc_param(op, "DecodeA", &procs.Decode.A, true)) < 0)
+    if ((code = dict_proc_param(CIEdict, "DecodeA", &procs.Decode.A, true)) < 0)
 	return code;
     code = gs_cspace_build_CIEA(&pcs, NULL, mem);
     if (code < 0)
 	return code;
     pcie = pcs->params.a;
-    if ((code = dict_floats_param(imemory, op, "RangeA", 2, (float *)&pcie->RangeA, (const float *)&RangeA_default)) < 0 ||
-	(code = dict_floats_param(imemory, op, "MatrixA", 3, (float *)&pcie->MatrixA, (const float *)&MatrixA_default)) < 0 ||
-	(code = cie_lmnp_param(imemory, op, &pcie->common, &procs)) < 0 ||
+    if ((code = dict_floats_param(imemory, CIEdict, "RangeA", 2, (float *)&pcie->RangeA, (const float *)&RangeA_default)) < 0 ||
+	(code = dict_floats_param(imemory, CIEdict, "MatrixA", 3, (float *)&pcie->MatrixA, (const float *)&MatrixA_default)) < 0 ||
+	(code = cie_lmnp_param(imemory, CIEdict, &pcie->common, &procs)) < 0 ||
 	(code = cie_cache_joint(i_ctx_p, &istate->colorrendering.procs, (gs_cie_common *)pcie, igs)) < 0 ||	/* do this last */
 	(code = cie_cache_push_finish(i_ctx_p, cie_a_finish, imem, pcie)) < 0 ||
 	(code = cie_prepare_cache(i_ctx_p, &pcie->RangeA, &procs.Decode.A, &pcie->caches.DecodeA.floats, pcie, imem, "Decode.A")) < 0 ||
@@ -660,21 +655,3 @@ cie_cache_push_finish(i_ctx_t *i_ctx_p, op_proc_t finish_proc,
     return o_push_estack;
 }
 
-/* ------ Initialization procedure ------ */
-
-const op_def zcie_l2_op_defs[] =
-{
-    op_def_begin_level2(),
-    {"1.setcieaspace", zsetcieaspace},
-    {"1.setcieabcspace", zsetcieabcspace},
-    {"1.setciedefspace", zsetciedefspace},
-    {"1.setciedefgspace", zsetciedefgspace},
-		/* Internal operators */
-    {"1%cie_defg_finish", cie_defg_finish},
-    {"1%cie_def_finish", cie_def_finish},
-    {"1%cie_abc_finish", cie_abc_finish},
-    {"1%cie_a_finish", cie_a_finish},
-    {"0%cie_cache_finish", cie_cache_finish},
-    {"1%cie_cache_finish1", cie_cache_finish1},
-    op_def_end(0)
-};
