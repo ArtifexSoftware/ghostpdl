@@ -81,7 +81,8 @@ dnl --------------------------------------------------
 dnl Allow excluding the contributed drivers
 dnl --------------------------------------------------  
 
-AC_ARG_ENABLE(contrib, [  --disable-contrib       do not include contributed drivers [default=include]])
+AC_ARG_ENABLE([contrib], AC_HELP_STRING([--disable-contrib],
+    [Do not include contributed drivers]))
 CONTRIBINCLUDE="include contrib/contrib.mak"
 INSTALL_CONTRIB="install-contrib-extras"
 if test x$enable_contrib = xno; then
@@ -109,7 +110,8 @@ else
     optflags_to_try="-O"
 fi
 
-AC_ARG_ENABLE(debug, [  --enable-debug          turn on debugging [default=no]])
+AC_ARG_ENABLE([debug], AC_HELP_STRING([--enable-debug],
+    [turn on debugging]))
 if test x$enable_debug = xyes; then
     optflags_to_try="-g"
     CFLAGS="-DDEBUG $CFLAGS"
@@ -213,7 +215,8 @@ dnl Fontconfig support
 HAVE_FONTCONFIG=""
 FONTCONFIG_CFLAGS=""
 FONTCONFIG_LIBS=""
-AC_ARG_ENABLE(fontconfig, [  --disable-fontconfig    Don't use fontconfig to list system fonts])
+AC_ARG_ENABLE([fontconfig], AC_HELP_STRING([--disable-fontconfig],
+    [Don't use fontconfig to list system fonts]))
 if test "$enable_fontconfig" != "no"; then
 	# We MUST NOT use PKG_CHECK_MODULES since it is a) not a standard
 	# autoconf macro and b) requires pkg-config on the system, which is
@@ -396,7 +399,8 @@ AC_SUBST(LIBPNGDIR)
 AC_SUBST(PNGDEVS)
 
 dnl look for CUPS...
-AC_ARG_ENABLE(cups, [  --enable-cups           turn on CUPS support, default=yes])
+AC_ARG_ENABLE([cups], AC_HELP_STRING([--disable-cups],
+    [Don't include CUPS support]))
 
 CUPSDEV=""
 CUPSINCLUDE=""
@@ -439,7 +443,8 @@ AC_SUBST(CUPSDATA)
 
 
 dnl look for IJS implementation
-AC_ARG_WITH(ijs, AC_HELP_STRING([--with-ijs],[include IJS driver support]))
+AC_ARG_WITH([ijs], AC_HELP_STRING([--without-ijs],
+    [disable IJS driver support]))
 dnl set safe defaults
     IJSDIR=src
     IJSDEVS=''
@@ -457,7 +462,8 @@ AC_SUBST(IJSDIR)
 AC_SUBST(IJSDEVS)
 
 dnl look for jbig2dec
-AC_ARG_WITH(jbig2dec, AC_HELP_STRING([--with-jbig2dec],[include JBIG2 decode support]))
+AC_ARG_WITH([jbig2dec], AC_HELP_STRING([--without-jbig2dec],
+    [disable JBIG2 decode support]))
 JBIG2DIR=src
 SHARE_JBIG2=0
 JBIG2DEVS=''
@@ -491,7 +497,8 @@ AC_SUBST(SHARE_JBIG2)
 AC_SUBST(JBIG2DEVS)
 
 dnl look for the jasper JPEG 2000 library
-AC_ARG_WITH(jasper, AC_HELP_STRING([--with-jasper],[link to the JasPer library for JPEG 2000]))
+AC_ARG_WITH([jasper], AC_HELP_STRING([--without-jasper],
+  [don't use the JasPer library for JPEG 2000]))
 JASPERDIR=src
 SHARE_JASPER=0
 JPXDEVS=''
@@ -563,7 +570,8 @@ AC_SUBST(SHARE_JASPER)
 AC_SUBST(JPXDEVS)
 
 dnl check if we can/should build the gtk loader
-AC_ARG_ENABLE([gtk], AC_HELP_STRING([--disable-gtk], [Don't build the gtk loader]))
+AC_ARG_ENABLE([gtk], AC_HELP_STRING([--disable-gtk],
+    [Don't build the gtk loader]))
 SOC_CFLAGS=""
 SOC_LIBS=""
 SOC_LOADER="dxmainc.c"
@@ -620,8 +628,8 @@ AC_SUBST(CAIRO_CFLAGS)
 AC_SUBST(CAIRO_LIBS)
 
 dnl look for omni implementation
-AC_ARG_WITH([omni], AC_HELP_STRING([--with-omni],
-	[build the omni driver]))
+AC_ARG_WITH([omni], AC_HELP_STRING([--without-omni],
+	[disable the omni driver]))
 dnl set safe defaults
 OMNIDEVS=''
 INCLUDEOMNI=yes
@@ -690,15 +698,15 @@ AC_SUBST(X11DEVS)
 AC_SUBST(XLIBS)
 
 dnl executible name
-AC_ARG_WITH(gs, AC_HELP_STRING([--with-gs=NAME],
-	[name of the ghostscript executible [[gs]]]),
+AC_ARG_WITH([gs], AC_HELP_STRING([--with-gs=NAME],
+	[name of the Ghostscript executible [[gs]]]),
 	[GS="$with_gs"],[GS='gs'])
 AC_SUBST(GS)
 
 dnl do we compile the postscript initialization files into Ghostscript?
 COMPILE_INITS="1"
-AC_ARG_ENABLE(compile-inits, AC_HELP_STRING([--disable-compile-inits],
-       [don't compile in initialization files]),[
+AC_ARG_ENABLE([compile-inits], AC_HELP_STRING([--disable-compile-inits],
+       [Don't compile in initialization files]),[
                if test "x$enable_compile_inits" = xno; then
                        COMPILE_INITS="0"
                fi])
@@ -929,7 +937,8 @@ DYNAMIC_LDFLAGS=""
 DYNAMIC_LIBS=""
 INSTALL_SHARED=""
 
-AC_ARG_ENABLE(dynamic, [  --enable-dynamic        enable dynamically loaded drivers (default=no)],
+AC_ARG_ENABLE([dynamic], AC_HELP_STRING([--enable-dynamic],
+    [Enable dynamically loaded drivers]),
 [	case `uname` in
 		Linux*)
 		INSTALL_SHARED="install-shared"
@@ -981,7 +990,8 @@ AC_SUBST(DYNAMIC_LIBS)
 AC_SUBST(INSTALL_SHARED)
 
 dnl look for default font path...
-AC_ARG_WITH(fontpath, [  --with-fontpath         set font path for gs],fontpath="$withval",fontpath="")
+AC_ARG_WITH([fontpath],  AC_HELP_STRING([--with-fontpath],
+    [set font search path for gs]), fontpath="$withval", fontpath="")
 
 dnl Fix "prefix" variable...
 if test "x$prefix" = xNONE; then
