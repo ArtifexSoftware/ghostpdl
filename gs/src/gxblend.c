@@ -612,6 +612,7 @@ art_blend_pixel(ArtPixMaxDepth* dst, const ArtPixMaxDepth *backdrop,
 		else
 		    dst[i] = 0xffff - (0x1fffe * b + s) / (s << 1);
 	    }
+            break;
 	case BLEND_MODE_Darken:
 	    for (i = 0; i < n_chan; i++) {
 		b = backdrop[i];
