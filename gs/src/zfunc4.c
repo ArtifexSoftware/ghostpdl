@@ -341,7 +341,7 @@ fail:
 
 int make_type4_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t **func)
 {
-    int i, code, size, num_components;
+    int code, size, num_components;
     byte *ops;
     gs_function_PtCr_params_t params;
     float *ptr;

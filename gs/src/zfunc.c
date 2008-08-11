@@ -27,6 +27,11 @@
 
 /*#define TEST*/
 
+/* imported from zfsample.c */
+extern int make_sampled_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t **func);
+/* imported from zfunc4.c */
+extern int make_type4_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t **func);
+
 /* Define the maximum depth of nesting of subsidiary functions. */
 #define MAX_SUB_FUNCTION_DEPTH 3
 
@@ -68,9 +73,8 @@ zbuildfunction(i_ctx_t *i_ctx_p)
 int buildfunction(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, int type)
 {
     os_ptr op = osp;
-    ref cref;			/* closure */
     gs_function_t *pfn;
-    int code, code1;
+    int code=0;
 
     switch(type) {
 	case 0:
