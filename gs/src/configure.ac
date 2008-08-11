@@ -596,21 +596,26 @@ AC_SUBST(SOC_LIBS)
 AC_SUBST(SOC_LOADER)
 
 dnl enable the cairo device if the library is available
+AC_ARG_ENABLE([cairo], AC_HELP_STRING([--disable-cairo],
+    [Don't include the cairo output device]))
 CAIRO_DEVS=""
 CAIRO_CFLAGS=""
 CAIRO_LIBS=""
-AC_PATH_PROG(PKGCONFIG, pkg-config)
-if test "x$PKGCONFIG" != x; then
-  AC_MSG_CHECKING([for cairo])
-  if $PKGCONFIG --exists 'cairo >= 1.2.0'; then
-    CAIRO_CFLAGS=`$PKGCONFIG --cflags cairo`
-    CAIRO_LIBS=`$PKGCONFIG --libs cairo`
-    CAIRO_DEVS="cairo"
-    AC_MSG_RESULT([yes])
-  else
-    AC_MSG_RESULT([no])
+if test "x$enable_cairo" != xno; then
+  AC_PATH_PROG(PKGCONFIG, pkg-config)
+  if test "x$PKGCONFIG" != x; then
+    AC_MSG_CHECKING([for cairo])
+    if $PKGCONFIG --exists 'cairo >= 1.2.0'; then
+      CAIRO_CFLAGS=`$PKGCONFIG --cflags cairo`
+      CAIRO_LIBS=`$PKGCONFIG --libs cairo`
+      CAIRO_DEVS="cairo"
+      AC_MSG_RESULT([yes])
+    else
+      AC_MSG_RESULT([no])
+    fi
   fi
 fi
+
 AC_SUBST(CAIRO_CFLAGS)
 AC_SUBST(CAIRO_LIBS)
 
