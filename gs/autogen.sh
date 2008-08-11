@@ -26,13 +26,13 @@ ln -s src/configure.ac .
 ln -s src/Makefile.in .
 
 #echo "  aclocal $ACLOCAL_FLAGS"
-#aclocal $ACLOCAL_FLAGS
+#aclocal $ACLOCAL_FLAGS || exit 1
 #echo "  autoheader"
-#autoheader
+#autoheader || exit 1
 #echo "  automake --add-missing $AUTOMAKE_FLAGS"
-#automake --add-missing $AUTOMAKE_FLAGS 
+#automake --add-missing $AUTOMAKE_FLAGS || exit 1
 echo "  running autoconf"
-autoconf
+autoconf || exit 1
 
 if test -z "$*"; then
         echo "I am going to run ./configure with no arguments - if you wish "
