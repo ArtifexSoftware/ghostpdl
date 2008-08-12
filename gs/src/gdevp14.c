@@ -3927,7 +3927,7 @@ get_param_compressed_color_list_elem(pdf14_clist_device * pdev,
     j = count - 1;\
     value = pdata[j--];\
     for(; j >= 0; j--)\
-	value = (value <<= 8) | pdata[j];\
+	value = (value << 8) | pdata[j];\
     pdata += count
 
 /*
