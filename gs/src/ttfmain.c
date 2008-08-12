@@ -527,10 +527,10 @@ static FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyphI
     subglyph.bbox.xMax = ttfReader__Short(r);
     subglyph.bbox.yMax = ttfReader__Short(r);
 
-    gOutline->xMinB = subglyph.bbox.xMin;
-    gOutline->yMinB = subglyph.bbox.yMin;
-    gOutline->xMaxB = subglyph.bbox.xMax;
-    gOutline->yMaxB = subglyph.bbox.yMax;
+    gOutline->xMinB = Scale_X(&exec->metrics, subglyph.bbox.xMin);
+    gOutline->yMinB = Scale_Y(&exec->metrics, subglyph.bbox.yMin);
+    gOutline->xMaxB = Scale_X(&exec->metrics, subglyph.bbox.xMax);
+    gOutline->yMaxB = Scale_Y(&exec->metrics, subglyph.bbox.yMax);
 
     /* FreeType stuff beg */
     Init_Glyph_Component(&subglyph, NULL, pFont->exec);
@@ -861,21 +861,11 @@ void ttfOutliner__DrawGlyphOutline(ttfOutliner *this)
     F26Dot6 px, py;
     short sp, ctr;
     FloatPoint p0, p1, p2, p3;
-
 #   if AVECTOR_BUG
-	short xMinB = out->xMinB >> 6, xMaxB=out->xMaxB >> 6;
-	short yMinB = out->yMinB >> 6, yMaxB=out->yMaxB >> 6;
-	short expand=pFont->nUnitsPerEm*2;
-	F26Dot6 xMin, xMax, yMin, yMax;
-
-	xMinB -= expand;
-	yMinB -= expand;
-	xMaxB += expand;
-	yMaxB += expand;
-	xMin = Scale_X(&exec->metrics, xMinB);
-	xMax = Scale_X(&exec->metrics, xMaxB);
-	yMin = Scale_X(&exec->metrics, yMinB);
-	yMax = Scale_X(&exec->metrics, yMaxB);
+    F26Dot6 expand_x = Scale_X(&exec->metrics, pFont->nUnitsPerEm * 2);
+    F26Dot6 expand_y = Scale_Y(&exec->metrics, pFont->nUnitsPerEm * 2);
+    F26Dot6 xMin = out->xMinB - expand_x, xMax = out->xMaxB + expand_x;
+    F26Dot6 yMin = out->yMinB - expand_y, yMax = out->yMaxB + expand_y;
 #   endif
 
     TransformF26Dot6PointFloat(&p1, out->advance.x, out->advance.y, m);
