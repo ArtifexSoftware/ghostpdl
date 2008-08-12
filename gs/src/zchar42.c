@@ -62,28 +62,22 @@ zchar42_set_cache(i_ctx_t *i_ctx_p, gs_font_base *pbfont, ref *cnref,
 		    gs_type42_metrics_options_WMODE0_AND_BBOX, sbw_bbox);
 	    if (code < 0)
 		return code;
-	    if (present == metricsNone) {
-		if (pbfont->FontType == ft_CID_TrueType) {
-		    sbw[0] = sbw_bbox[2] / 2;
-		    sbw[1] = pbfont->FontBBox.q.y;
-		    sbw[2] = 0;
-		    sbw[3] = pbfont->FontBBox.p.y - pbfont->FontBBox.q.y;
-		} else {
-		    sbw[0] = sbw_bbox[0];
-		    sbw[1] = sbw_bbox[1];
-		    sbw[2] = sbw_bbox[2];
-		    sbw[3] = sbw_bbox[3];
-		}
-		present = metricsSideBearingAndWidth;
-	    }
-	} else {
-	    if (present == metricsNone) {
-		sbw[0] = sbw_bbox[2] / 2;
-		sbw[1] = (pbfont->FontBBox.q.y + pbfont->FontBBox.p.y - sbw_bbox[3]) / 2;
-		sbw[2] = sbw_bbox[2];
-		sbw[3] = sbw_bbox[3];
-		present = metricsSideBearingAndWidth;
-	    }
+	}
+	if (present == metricsNone) {
+	    /* Note that Postscript wants the 'V' vector in sbw[0:1],
+	       and True Type supplies Top Side Bearing in sbw_bbox[0:1].
+	       So we need to compute V from FontBBox as we do for FontType 9
+	       (see FontBBox_as_Metrics2) and add TSB to it. */
+#	    if 0 /* Disabled the old code due to Bug 689559 : glyphs 
+		(especially relatively narrow Romans) to be aligned to the center line. */
+		sbw[0] = pbfont->FontBBox.q.x / 2;
+#	    else
+		sbw[0] = (sbw_bbox[6] + sbw_bbox[4]) / 2; 
+#	    endif
+	    sbw[1] = (pbfont->FontBBox.q.y + pbfont->FontBBox.p.y - sbw_bbox[3]) / 2;
+	    sbw[2] = sbw_bbox[2];
+	    sbw[3] = sbw_bbox[3];
+	    present = metricsSideBearingAndWidth;
 	}
     } else {
 	code = pfont42->data.get_metrics(pfont42, glyph_index, 
