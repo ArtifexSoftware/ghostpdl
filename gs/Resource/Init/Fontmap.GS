@@ -80,54 +80,6 @@
 %	Copyright URW Software, Copyright 1994 by URW.
 %
 
-% Actual fonts
-
-/URWBookmanL-DemiBold	(b018015l.pfb)	;
-/URWBookmanL-DemiBoldItal	(b018035l.pfb)	;
-/URWBookmanL-Ligh	(b018012l.pfb)	;
-/URWBookmanL-LighItal	(b018032l.pfb)	;
-
-/NimbusMonL-Regu	(n022003l.pfb)	;
-/NimbusMonL-ReguObli	(n022023l.pfb)	;
-/NimbusMonL-Bold	(n022004l.pfb)	;
-/NimbusMonL-BoldObli	(n022024l.pfb)	;
-
-/URWGothicL-Book	(a010013l.pfb)	;
-/URWGothicL-BookObli	(a010033l.pfb)	;
-/URWGothicL-Demi	(a010015l.pfb)	;
-/URWGothicL-DemiObli	(a010035l.pfb)	;
-
-/NimbusSanL-Regu	(n019003l.pfb)	;
-/NimbusSanL-ReguItal	(n019023l.pfb)	;
-/NimbusSanL-Bold	(n019004l.pfb)	;
-/NimbusSanL-BoldItal	(n019024l.pfb)	;
-
-/NimbusSanL-ReguCond	(n019043l.pfb)	;
-/NimbusSanL-ReguCondItal	(n019063l.pfb)	;
-/NimbusSanL-BoldCond	(n019044l.pfb)	;
-/NimbusSanL-BoldCondItal	(n019064l.pfb)	;
-
-/URWPalladioL-Roma	(p052003l.pfb)	;
-/URWPalladioL-Ital	(p052023l.pfb)	;
-/URWPalladioL-Bold	(p052004l.pfb)	;
-/URWPalladioL-BoldItal	(p052024l.pfb)	;
-
-/CenturySchL-Roma	(c059013l.pfb)	;
-/CenturySchL-Ital	(c059033l.pfb)	;
-/CenturySchL-Bold	(c059016l.pfb)	;
-/CenturySchL-BoldItal	(c059036l.pfb)	;
-
-/NimbusRomNo9L-Regu	(n021003l.pfb)	;
-/NimbusRomNo9L-ReguItal	(n021023l.pfb)	;
-/NimbusRomNo9L-Medi	(n021004l.pfb)	;
-/NimbusRomNo9L-MediItal	(n021024l.pfb)	;
-
-/StandardSymL	(s050000l.pfb)	;
-
-/URWChanceryL-MediItal	(z003034l.pfb)	;
-
-/Dingbats	(d050000l.pfb)	;
-
 % Aliases
 
 /Bookman-Demi			/URWBookmanL-DemiBold	;
