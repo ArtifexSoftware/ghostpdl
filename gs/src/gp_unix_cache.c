@@ -73,7 +73,7 @@ static char *gp_cache_prefix(void)
     }
     
     /* substitute $HOME for '~' */
-    if (plen > 1 && prefix[0] == '~') {
+    if (plen >= 1 && prefix[0] == '~') {
         char *home, *path;
         int hlen = 0;
 	unsigned int pathlen = 0;
