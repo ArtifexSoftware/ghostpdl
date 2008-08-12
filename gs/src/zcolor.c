@@ -1194,7 +1194,7 @@ static int grayrange(i_ctx_t * i_ctx_p, ref *space, float *ptr)
 static int graybasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, int *cont, int *stack_depth)
 {
     os_ptr op = osp;
-    double Gray, RGB[3];
+    float Gray, RGB[3];
 
     *cont = 0;
     *stage = 0;
@@ -1205,7 +1205,7 @@ static int graybasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, in
 	} else
 	    return_error(e_typecheck);
     } else
-	Gray = (double)op->value.intval;
+	Gray = (float)op->value.intval;
 
     if (Gray < 0 || Gray > 1)
 	return_error(e_rangecheck);
