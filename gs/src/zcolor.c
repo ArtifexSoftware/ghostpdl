@@ -3793,8 +3793,8 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
 		*stage = 0;
 		return 0;
 	    }
-	    if (r_size(&sref) == 0)
-		return 0;
+	    if (dict_length(&sref) == 0)
+		return(0);
 
 	    code = dict_index_entry(&sref, 0, (ref *)&tempref);
 	    if (code < 0)
