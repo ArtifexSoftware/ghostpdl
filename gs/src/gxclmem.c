@@ -285,8 +285,10 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 		const stream_template *decompress_template = decompress_proto->template;
 
 		new_log_block = MALLOC(f, num_log_blocks * sizeof(LOG_MEMFILE_BLK), "memfile_fopen" );
-		if (new_log_block == NULL)
+		if (new_log_block == NULL) {
 		    code = gs_note_error(gs_error_VMerror);
+		    goto finish;
+                }
 
 		/* copy the logical blocks to the new list just allocated */
 		for (log_block=f->log_head, i=0; log_block != NULL; log_block=log_block->link, i++) {
