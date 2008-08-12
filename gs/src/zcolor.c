@@ -3704,17 +3704,14 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
 	    if (code < 0)
 		return code;
 
-	    /* If we get a continuation from a sub-procedure, we will want to come back
-	     * here afterward, to do any remaining stages. We need to set up for that now.
-	     * so that our continuation is ahead of the sub-proc's continuation.
-	     */
-	    check_estack(1);
-	    /* The push_op_estack macro increments esp before use, so we don't need to */
-	    push_op_estack(devicencolorants_cont);
-
 	    code = dict_index_entry(pdict, index, (ref *)&space);
-	    if (code < 0)
-		return code;
+	    if (code < 0) {
+		make_int(pindex, ++index);
+		code = gs_grestore(igs);
+		if (code < 0)
+		    return code;
+		continue;
+	    }
 
 	    code = validate_spaces(i_ctx_p, &space[1], &depth);
 	    if (code < 0) {
@@ -3724,6 +3721,14 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
 		    return code;
 		return o_push_estack;
 	    }
+
+	    /* If we get a continuation from a sub-procedure, we will want to come back
+	     * here afterward, to do any remaining stages. We need to set up for that now.
+	     * so that our continuation is ahead of the sub-proc's continuation.
+	     */
+	    check_estack(1);
+	    /* The push_op_estack macro increments esp before use, so we don't need to */
+	    push_op_estack(devicencolorants_cont);
 
 	    make_int(pstage, 1);
 	    push(1);
