@@ -281,6 +281,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
 	cwdev->disable_mask = 0;
 	cwdev->page_uses_transparency = false;
 	cwdev->pinst = pinst;
+	set_dev_proc(cwdev, get_clipping_box, gx_default_get_clipping_box);
 	fdev = (gx_device_forward *)cdev;
     }
     check_device_separable((gx_device *)fdev);

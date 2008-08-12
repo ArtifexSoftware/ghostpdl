@@ -71,7 +71,7 @@ gx_image_fill_masked_end(gx_device *dev, gx_device *tdev, const gx_device_color 
     code = gx_cpath_accum_end(pcdev, &cpath);
     if (code >= 0)
 	code = gx_dc_pattern2_clip_with_bbox_simple(pdevc, tdev, &cpath);
-	gx_make_clip_device_on_stack(&cdev, &cpath, tdev);
+    gx_make_clip_device_on_stack(&cdev, &cpath, tdev);
     if (code >= 0 && pcdev->bbox.p.x < pcdev->bbox.q.x) {
 	code1 = gx_device_color_fill_rectangle(pdevc, 
 		    pcdev->bbox.p.x, pcdev->bbox.p.y, 
