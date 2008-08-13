@@ -144,9 +144,7 @@ hpgl_do_reset(
         /* we select the default pen 1 here, oddly, IN does not select
            the default pen even though it sets pen widths and units of
            measure */
-        hpgl_args_set_int(&hpgl_args,1);
-        hpgl_SP(&hpgl_args, pcs);
-
+        pcs->g.pen.selected = 1;
     }
     /* NB check all of these */
     if ((type & pcl_reset_page_params) != 0) {
