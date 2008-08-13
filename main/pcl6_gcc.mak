@@ -178,6 +178,7 @@ GX_COLOR_INDEX_DEFINE?=-DGX_COLOR_INDEX_TYPE="unsigned long long"
 
 HAVE_STDINT_H_DEFINE?=-DHAVE_STDINT_H
 HAVE_MKSTEMP_DEFINE?=-DHAVE_MKSTEMP
+HAVE_HYPOT_DEFINE?=-DHAVE_HYPOT
 
 # Assorted definitions.  Some of these should probably be factored out....
 # We use -O0 for debugging, because optimization confuses gdb.
@@ -190,7 +191,7 @@ GCFLAGS?=-Wall -Wundef -Wstrict-prototypes -Wmissing-declarations \
          -Wcast-qual -Wwrite-strings -Wno-strict-aliasing \
          -fno-builtin -fno-common \
           -DNDEBUG \
-          $(HAVE_STDINT_H_DEFINE) $(HAVE_MKSTEMP_DEFINE) \
+          $(HAVE_STDINT_H_DEFINE) $(HAVE_MKSTEMP_DEFINE) $(HAVE_HYPOT_DEFINE) \
           $(GX_COLOR_INDEX_DEFINE) $(PSICFLAGS) $(PDL_INCLUDE_FLAGS)
 
 CFLAGS?= $(GCFLAGS) $(XCFLAGS)
