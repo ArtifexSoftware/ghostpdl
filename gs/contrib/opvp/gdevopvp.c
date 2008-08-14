@@ -25,12 +25,17 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include <iconv.h>
 #include <langinfo.h>
 #include <dlfcn.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+/* Set compatibility flag just in case we have GNU iconv.h */
+#ifndef USE_LIBICONV_GNU
+#  define LIBCONV_PLUG
+#endif
+#include <iconv.h>
 
 #include "string_.h"
 #include "math_.h"

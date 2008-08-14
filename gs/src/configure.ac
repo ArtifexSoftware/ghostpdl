@@ -296,6 +296,7 @@ fi
 case $with_libiconv in
   gnu)
     AC_DEFINE(USE_LIBICONV_GNU, 1, [Using GNU libiconv])
+    CFLAGS="$CFLAGS -DUSE_LIBICONV_GNU"
     ;;
   native)
     AC_DEFINE(USE_LIBICONV_NATIVE, 1, [Using a native implementation of iconv in a separate library])
