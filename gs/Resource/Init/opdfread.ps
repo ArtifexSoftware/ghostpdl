@@ -291,6 +291,13 @@ currentdict end readonly def
 
 /ReadFontProcs 10 dict def % Will be filled below.
 
+% Old Ghostcript fails when TT font structures cross sfnts strings.
+/SfntsStringSize product (Ghostscript) search {
+    pop pop pop revision 863 le
+ } {
+    pop false
+ } ifelse { 65534 } { 16384 } ifelse def
+
 % ===================== Reading PDF objects ===============================
 
 /Register % <DefaultDaemon> <id> <obj> Register -
@@ -1126,7 +1133,10 @@ end
     } ifelse 
     /PDFEncoding exch def                        % fo fd
     /CharStrings 2 index //PDFReader /MakeTTCharStrings get exec def
-    /sfnts [ 3 index //MakeStreamReader exec 65535 string readstring pop ] def
+    /sfnts [ 3 index //MakeStreamReader exec
+      { dup //SfntsStringSize string readstring pop
+        dup () ne { exch } { pop pop exit } ifelse
+      } loop ] def
     /Encoding StandardEncoding def % A stub - will be replaced by font resource.
     /PaintType 0 def
   currentdict end
@@ -1806,10 +1816,16 @@ end
   dup 0 eq {
     pop pop
   } {
-    //BlockBuffer exch 0 exch getinterval readstring not {
+    dup 3 1 roll                                        % P-p f P-p
+    () /SubFileDecode filter                            % P-p f'
+    exch                                                % f' P-p
+    { 1 index //BlockBuffer readstring pop length
+      dup 0 eq { pop exch pop exit } if
+      sub
+    } loop
+    0 ne {
       mark (Insufficient data in the stream for SkipToPosition.) //error exec
-    } if                                                % s
-    pop                                                 %
+    } if
   } ifelse
 } bind def
 

@@ -79,19 +79,28 @@ static void gx_ttfReader__Read(ttfReader *this, void *p, int n)
 	    q = r->glyph_data.bits.data + r->pos;
 	    r->error = (r->glyph_data.bits.size - r->pos < n ? 
 			    gs_note_error(gs_error_invalidfont) : 0);
+            if (r->error == 0)
+                memcpy(p, q, n);
 	} else {
-	    r->error = r->pfont->data.string_proc(r->pfont, (ulong)r->pos, (ulong)n, &q);
-	    if (r->error > 0) {
-		/* Need a loop with pfont->data.string_proc . Not implemented yet. */
-		r->error = gs_note_error(gs_error_unregistered);
-	    }
+            unsigned int cnt;
+
+            for (cnt = 0; cnt < (uint)n; cnt += r->error) {
+	        r->error = r->pfont->data.string_proc(r->pfont, (ulong)r->pos + cnt, (ulong)n - cnt, &q);
+	        if (r->error < 0)
+                    break;
+                else if ( r->error == 0) {
+                    memcpy((char *)p + cnt, q, n - cnt);
+                    break;
+                } else {
+                    memcpy((char *)p + cnt, q, r->error);
+                }
+            }
 	}
     }
     if (r->error) {
 	memset(p, 0, n);
 	return;
     }
-    memcpy(p, q, n);
     r->pos += n;
 }
 
