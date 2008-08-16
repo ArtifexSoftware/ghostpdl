@@ -53,6 +53,10 @@ pdfdict begin
   /EMC { }
   /MP { pop } bind
   /DP { pop pop } bind
+  /- { 0  % Bug 690016
+       (   **** Warning: Invalid operator '-' is assumed to be a number 0.\n)
+       pdfformaterror
+     } bind
 .dicttomark readonly def
 
 % ======================== Main program ======================== %
