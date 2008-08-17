@@ -714,6 +714,7 @@ pbm_print_row(gx_device_printer * pdev, byte * data, int depth,
 
     if (bdev->is_raw) {
         uint n = (pdev->width + 7) >> 3;
+
 	if (fwrite(data, 1, n, pstream) != n)
             return_error(gs_error_ioerror);
     } else {
@@ -959,7 +960,7 @@ pam_print_row(gx_device_printer * pdev, byte * data, int depth,
     if (depth == 32) {
         uint n = pdev->width * (depth / 8);
 
-        if (fwrite(data, 1, n, pstream) == n)
+        if (fwrite(data, 1, n, pstream) != n)
             return_error(gs_error_ioerror);
     }
     return 0;
