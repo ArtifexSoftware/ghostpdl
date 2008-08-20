@@ -1,6 +1,6 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -25,7 +25,9 @@ int gs_log_error(int, const char *, int);
 #define return_error(err) return gs_note_error(err)
 
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901L
-#  if defined(__FUNCTION__)
+#  if defined(__GNUC__) && __GNUC__ >= 2
+#    define __func__ __FUNCTION__
+#  elif defined(__FUNCTION__)
 #    define __func__ __FUNCTION__
 #  elif defined(__FUNC__)
 #    define __func__ __FUNC__
