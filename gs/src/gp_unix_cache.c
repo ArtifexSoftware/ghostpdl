@@ -211,7 +211,7 @@ static int gp_cache_saveitem(FILE *file, gp_cache_entry* item)
 static int gp_cache_loaditem(FILE *file, gp_cache_entry *item, gp_cache_alloc alloc, void *userdata)
 {
     unsigned char version;
-    unsigned char *filekey = NULL;
+    unsigned char *filekey;
     int len, keylen;
 
     fread(&version, 1, 1, file);
@@ -230,8 +230,11 @@ static int gp_cache_loaditem(FILE *file, gp_cache_entry *item, gp_cache_alloc al
         return -1;
     }
     filekey = malloc(keylen);
-    if (filekey != NULL)
-        fread(filekey, 1, keylen, file);
+    if (filekey == NULL) {
+        dprintf("pcache: couldn't allocate file key!\n");
+        return -1;
+    }
+    fread(filekey, 1, keylen, file);
     if (memcmp(filekey, item->key, keylen)) {
 #ifdef DEBUG_CACHE
         dlprintf("pcache file has correct hash but doesn't match the full key\n");
@@ -249,7 +252,9 @@ static int gp_cache_loaditem(FILE *file, gp_cache_entry *item, gp_cache_alloc al
 #endif
     item->buffer = alloc(userdata, len);
     if (item->buffer == NULL) {
-        dlprintf("pcache: unable to allocate buffer for file data!\n");
+        dlprintf("pcache: couldn't allocate buffer for file data!\n");
+        free(filekey);
+        item->len = 0;
         return -1;
     }
 
@@ -291,7 +296,8 @@ gp_cache_read_entry(FILE *file, gp_cache_entry *item)
     if (line[0] == '#') return 1;
 
     /* otherwise, parse the line */
-    sscanf(line, "%s %lu\n", fn, &item->last_used);
+    if (sscanf(line, "%s %lu\n", fn, &item->last_used) != 2)
+        return -1; /* parse error */
     /* unpack the type from the filename */
     item->type = readhexbyte(fn);
     /* unpack the md5 hash from the filename */
