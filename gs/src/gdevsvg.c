@@ -403,7 +403,7 @@ svg_make_color(gx_device_svg *svg, gx_drawing_color *pdc)
 
     if (gx_dc_is_pure(pdc)) {
       gx_color_index color = gx_dc_pure_color(pdc);
-      sprintf(paint, "#%06x", color & 0xffffff);
+      sprintf(paint, "#%06x", (int)(color & 0xffffffL));
     } else if (gx_dc_is_null(pdc)) {
       sprintf(paint, "None");
     } else {
