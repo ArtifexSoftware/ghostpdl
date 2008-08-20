@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -57,7 +57,7 @@ static char *gp_cache_prefix(void)
 {
     char *prefix = NULL;
     int plen = 0;
-    
+
     /* get the cache directory path */
     if (gp_getenv("GS_CACHE_DIR", (char *)NULL, &plen) < 0) {
         prefix = malloc(plen);
@@ -71,14 +71,14 @@ static char *gp_cache_prefix(void)
 #endif
         plen = strlen(prefix);
     }
-    
+
     /* substitute $HOME for '~' */
     if (plen >= 1 && prefix[0] == '~') {
         char *home, *path;
         int hlen = 0;
 	unsigned int pathlen = 0;
         gp_file_name_combine_result result;
-        
+
         if (gp_getenv("HOME", (char *)NULL, &hlen) < 0) {
             home = malloc(hlen);
             if (home == NULL) return prefix;
@@ -103,7 +103,7 @@ static char *gp_cache_prefix(void)
             free(home);
         }
     }
-#ifdef DEBUG_CACHE    
+#ifdef DEBUG_CACHE
     dlprintf1("cache dir read as '%s'\n", prefix);
 #endif
     return prefix;
@@ -117,10 +117,10 @@ gp_cache_indexfilename(const char *prefix)
     char *path;
     unsigned int len;
     gp_file_name_combine_result result;
-    
+
     len = strlen(prefix) + strlen(fn) + 2;
     path = malloc(len);
-    
+
     result = gp_file_name_combine(prefix, strlen(prefix), fn, strlen(fn), true, path, &len);
     if (result == gp_combine_small_buffer) {
         /* handle the case when the combination requires more than one extra character */
@@ -140,7 +140,7 @@ gp_cache_indexfilename(const char *prefix)
 static void gp_cache_hash(gp_cache_entry *entry)
 {
     gs_md5_state_t md5;
-    
+
     /* we use md5 hashes of the key */
     gs_md5_init(&md5);
     gs_md5_append(&md5, entry->key, entry->keylen);
@@ -153,7 +153,7 @@ static void gp_cache_filename(const char *prefix, gp_cache_entry *item)
     const char hexmap[16] = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
     char *fn = malloc(gp_file_name_sizeof), *fni;
     int i;
-       
+
     fni = fn;
     *fni++ = hexmap[item->type>>4 & 0x0F];
     *fni++ = hexmap[item->type & 0x0F];
@@ -163,7 +163,7 @@ static void gp_cache_filename(const char *prefix, gp_cache_entry *item)
         *fni++ = hexmap[(item->hash[i] & 0x0F)];
     }
     *fni = '\0';
-    
+
     if (item->filename) free(item->filename);
     item->filename = fn;
 }
@@ -175,16 +175,16 @@ static char *gp_cache_itempath(const char *prefix, gp_cache_entry *item)
     gp_file_name_combine_result result;
     char *path;
     unsigned int len;
-    
+
     len = strlen(prefix) + strlen(fn) + 2;
     path = malloc(len);
-    result = gp_file_name_combine(prefix, strlen(prefix), 
+    result = gp_file_name_combine(prefix, strlen(prefix),
         fn, strlen(fn), false, path, &len);
 
     if (result != gp_combine_success) {
         dlprintf1("pcache: file_name_combine failed on cache item filename with code %d\n", result);
     }
-    
+
     return path;
 }
 
@@ -210,7 +210,7 @@ static int gp_cache_loaditem(FILE *file, gp_cache_entry *item, gp_cache_alloc al
     unsigned char version;
     unsigned char *filekey = NULL;
     int len, keylen;
-    
+
     fread(&version, 1, 1, file);
     if (version != GP_CACHE_VERSION) {
 #ifdef DEBUG_CACHE
@@ -239,7 +239,7 @@ static int gp_cache_loaditem(FILE *file, gp_cache_entry *item, gp_cache_alloc al
         return -1;
     }
     free(filekey);
-    
+
     fread(&len, 1, sizeof(len), file);
 #ifdef DEBUG_CACHE
     dlprintf2("key matches file with version %d, data length %d\n", version, len);
@@ -249,11 +249,11 @@ static int gp_cache_loaditem(FILE *file, gp_cache_entry *item, gp_cache_alloc al
         dlprintf("pcache: unable to allocate buffer for file data!\n");
         return -1;
     }
-    
+
     item->len = fread(item->buffer, 1, len, file);
     item->dirty = 1;
     item->last_used = time(NULL);
-    
+
     return 0;
 }
 
@@ -262,7 +262,7 @@ static int readhexbyte(const char *s)
 {
     const char hexmap[16] = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
     int i,r;
-    
+
     for (i = 0; i < 16; i++)
         if (hexmap[i] == *s) break;
     if (i == 16) return -1;
@@ -281,12 +281,12 @@ gp_cache_read_entry(FILE *file, gp_cache_entry *item)
     char line[256];
     char fn[36];
     int i;
-    
+
     if (!fgets(line, 256, file)) return -1;
-    
+
     /* skip comments */
     if (line[0] == '#') return 1;
-    
+
     /* otherwise, parse the line */
     sscanf(line, "%s %lu\n", fn, &item->last_used);
     /* unpack the type from the filename */
@@ -294,7 +294,7 @@ gp_cache_read_entry(FILE *file, gp_cache_entry *item)
     /* unpack the md5 hash from the filename */
     for (i = 0; i < 16; i++)
         item->hash[i] = readhexbyte(fn + 3 + 2*i);
-    /* remember the filename */    
+    /* remember the filename */
     if (item->filename) free(item->filename);
     item->filename = malloc(strlen(fn) + 1);
     strcpy(item->filename, fn);
@@ -303,7 +303,7 @@ gp_cache_read_entry(FILE *file, gp_cache_entry *item)
     item->keylen = 0;
     item->len = 0;
     item->buffer = NULL;
-        
+
     return 0;
 }
 
@@ -323,7 +323,7 @@ int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen)
     FILE *file, *in, *out;
     gp_cache_entry item, item2;
     int code, hit = 0;
-    
+
     prefix = gp_cache_prefix();
     infn = gp_cache_indexfilename(prefix);
     {
@@ -333,7 +333,7 @@ int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen)
         outfn[len-2] = '+';
         outfn[len-1] = '\0';
     }
-    
+
     in = fopen(infn, "r");
     if (in == NULL) {
         dlprintf1("pcache: unable to open '%s'\n", infn);
@@ -344,7 +344,7 @@ int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen)
         dlprintf1("pcache: unable to open '%s'\n", outfn);
         return -1;
     }
-        
+
     fprintf(out, "# Ghostscript persistent cache index table\n");
 
     /* construct our cache item */
@@ -358,7 +358,7 @@ int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen)
     item.last_used = time(NULL);
     gp_cache_hash(&item);
     gp_cache_filename(prefix, &item);
-    
+
     /* save it to disk */
     path = gp_cache_itempath(prefix, &item);
     file = fopen(path, "wb");
@@ -366,7 +366,7 @@ int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen)
         gp_cache_saveitem(file, &item);
         fclose(file);
     }
-    
+
     /* now loop through the index to update or insert the entry */
     gp_cache_clear_entry(&item2);
     while ((code = gp_cache_read_entry(in, &item2)) >= 0) {
@@ -387,15 +387,15 @@ int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen)
     free(item.filename);
     fclose(out);
     fclose(in);
-    
+
     /* replace the cache index with our new version */
     unlink(infn);
     rename(outfn,infn);
-    
+
     free(prefix);
     free(infn);
     free(outfn);
-    
+
     return 0;
 }
 
@@ -417,7 +417,7 @@ int gp_cache_query(int type, byte* key, int keylen, void **buffer,
         outfn[len-2] = '+';
         outfn[len-1] = '\0';
     }
-    
+
     in = fopen(infn, "r");
     if (in == NULL) {
         dlprintf1("pcache: unable to open '%s'\n", infn);
@@ -428,7 +428,7 @@ int gp_cache_query(int type, byte* key, int keylen, void **buffer,
         dlprintf1("pcache: unable to open '%s'\n", outfn);
         return -1;
     }
-        
+
     fprintf(out, "# Ghostscript persistent cache index table\n");
 
     /* construct our query */
@@ -439,7 +439,7 @@ int gp_cache_query(int type, byte* key, int keylen, void **buffer,
     item.last_used = time(NULL);
     gp_cache_hash(&item);
     gp_cache_filename(prefix, &item);
-    
+
     /* look for it on the disk */
     path = gp_cache_itempath(prefix, &item);
     file = fopen(path, "rb");
@@ -449,7 +449,7 @@ int gp_cache_query(int type, byte* key, int keylen, void **buffer,
     } else {
         hit = -1;
     }
-    
+
     gp_cache_clear_entry(&item2);
     while ((code = gp_cache_read_entry(in, &item2)) >= 0) {
         if (code == 1) continue;
@@ -469,15 +469,15 @@ int gp_cache_query(int type, byte* key, int keylen, void **buffer,
     free(item.filename);
     fclose(out);
     fclose(in);
-    
+
     /* replace the cache index with our new version */
     unlink(infn);
     rename(outfn,infn);
-    
+
     free(prefix);
     free(infn);
     free(outfn);
-    
+
     if (!hit) {
         *buffer = item.buffer;
         return item.len;
