@@ -1142,7 +1142,7 @@ $(DD)bitrgbtags.dev : $(DEVS_MAK) $(bit_) $(GLD)page.dev $(GLD)cielib.dev
 	$(SETPDEV2) $(DD)bitrgbtags $(bit_)
 	$(ADDMOD) $(DD)bitrgbtags -include $(GLD)cielib
 
-$(GLOBJ)gdevbit.$(OBJ) : $(GLSRC)gdevbit.c $(PDEVH) $(math__h)\
+$(GLOBJ)gdevbit.$(OBJ) : $(GLSRC)gdevbit.c $(PDEVH)\
  $(gsparam_h) $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gxlum_h) $(gxdcconv_h)\
  $(gsutil_h)
 	$(GLCC) $(GLO_)gdevbit.$(OBJ) $(C_) $(GLSRC)gdevbit.c

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -14,7 +14,6 @@
 /* $Id$ */
 /* "Plain bits" devices to measure rendering time. */
 
-#include "math_.h"
 #include "gdevprn.h"
 #include "gsparam.h"
 #include "gscrd.h"
@@ -23,6 +22,7 @@
 #include "gxdcconv.h"
 #include "gdevdcrd.h"
 #include "gsutil.h" /* for bittags hack */
+
 
 /* Define the device parameters. */
 #ifndef X_DPI
@@ -673,7 +673,7 @@ bit_print_page(gx_device_printer * pdev, FILE * prn_stream)
     int nul = !strcmp(pdev->fname, "nul") || !strcmp(pdev->fname, "/dev/null");
     int lnum = ((gx_device_bit *)pdev)->FirstLine;
     int bottom = ((gx_device_bit *)pdev)->LastLine;
-    int line_count = abs(bottom - lnum);
+    int line_count = any_abs(bottom - lnum);
     int i, step = lnum > bottom ? -1 : 1;
 
     if (in == 0)
