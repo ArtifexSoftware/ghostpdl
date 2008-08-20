@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2007 Artifex Software, Inc.
+/* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -25,6 +25,9 @@
 /* ------ Persistent data cache types ------*/
 
 #define GP_CACHE_VERSION 0
+
+/* NOTE: This implementation is not thread safe. Currently you need to
+   lock around gp_cache_insert() and gp_cache_query() calls. */
 
 /* cache entry type */
 typedef struct gp_cache_entry_s {
@@ -324,6 +327,7 @@ int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen)
     gp_cache_entry item, item2;
     int code, hit = 0;
 
+    /* FIXME: not re-entrant! */
     prefix = gp_cache_prefix();
     infn = gp_cache_indexfilename(prefix);
     {
@@ -337,11 +341,18 @@ int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen)
     in = fopen(infn, "r");
     if (in == NULL) {
         dlprintf1("pcache: unable to open '%s'\n", infn);
+        free(prefix);
+        free(infn);
+        free(outfn);
         return -1;
     }
     out = fopen(outfn, "w");
     if (out == NULL) {
         dlprintf1("pcache: unable to open '%s'\n", outfn);
+        fclose(in);
+        free(prefix);
+        free(infn);
+        free(outfn);
         return -1;
     }
 
@@ -408,6 +419,7 @@ int gp_cache_query(int type, byte* key, int keylen, void **buffer,
     gp_cache_entry item, item2;
     int code, hit = 0;
 
+    /* FIXME: not re-entrant! */
     prefix = gp_cache_prefix();
     infn = gp_cache_indexfilename(prefix);
     {
@@ -421,11 +433,18 @@ int gp_cache_query(int type, byte* key, int keylen, void **buffer,
     in = fopen(infn, "r");
     if (in == NULL) {
         dlprintf1("pcache: unable to open '%s'\n", infn);
+        free(prefix);
+        free(infn);
+        free(outfn);
         return -1;
     }
     out = fopen(outfn, "w");
     if (out == NULL) {
         dlprintf1("pcache: unable to open '%s'\n", outfn);
+        fclose(in);
+        free(prefix);
+        free(infn);
+        free(outfn);
         return -1;
     }
 
