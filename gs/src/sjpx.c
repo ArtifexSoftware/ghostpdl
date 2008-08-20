@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -145,7 +145,7 @@ dump_jas_image(jas_image_t *image)
 static int
 dump_jpxd_colorspace(const stream_jpxd_state * state)
 {
-  char *cspace;
+  const char *cspace;
 
   if (state->colorspace == gs_jpx_cs_unset) {
     if_debug0('w', "[w]JPX image has no external color space set\n");
@@ -172,8 +172,12 @@ copy_row_gray(unsigned char *dest, jas_image_t *image,
 	int x, int y, int bytes)
 {
     int i, p;
-    int v = jas_image_getcmptbytype(image, JAS_IMAGE_CT_GRAY_Y);
-    int shift = max(jas_image_cmptprec(image, v) - 8, 0);
+    int v;
+    int shift;
+
+    v = jas_image_getcmptbytype(image, JAS_IMAGE_CT_GRAY_Y);
+    if (v < 0) return 0; /* no matching component */
+    shift = max(jas_image_cmptprec(image, v) - 8, 0);
 
     for (i = 1; i <= bytes; i++) {
 	p = jas_image_readcmptsample(image, v, x++, y);
@@ -193,6 +197,9 @@ copy_row_rgb(unsigned char *dest, jas_image_t *image,
     int b = jas_image_getcmptbytype(image, JAS_IMAGE_CT_RGB_B);
     int shift = max(jas_image_cmptprec(image, 0) - 8, 0);
     int count = (bytes/3) * 3;
+
+    /* check if we found indexes for all three components */
+    if (r < 0 || g < 0 || b < 0) return 0;
 
     for (i = 1; i <= count; i+=3) {
 	p = jas_image_readcmptsample(image, r, x, y);
@@ -222,6 +229,9 @@ copy_row_yuv(unsigned char *dest, jas_image_t *image,
     clut[0] = jas_image_getcmptbytype(image, JAS_IMAGE_CT_YCBCR_Y);
     clut[1] = jas_image_getcmptbytype(image, JAS_IMAGE_CT_YCBCR_CB);
     clut[2] = jas_image_getcmptbytype(image, JAS_IMAGE_CT_YCBCR_CR);
+
+    /* check if we found indexes for all components */
+    if (clut[0] < 0 || clut[1] < 0 || clut[2] < 0) return 0;
 
     for (i = 0; i < 3; i++) {
 	/* shift each component up to 16 bits */
@@ -448,11 +458,14 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 		    done = copy_row_default(pw->ptr, image, x, y, usable);
 		    break;
 	 }
+	/* advance pointers for returned data */
 	pw->ptr += done;
         state->offset += done;
         status = (state->offset < image_size) ? 1 : EOFC;
-      }
-    }
+        /* return an error if we failed to advance decoding */
+        if (done <= 0) status = ERRC;
+      } /* image != NULL */
+    } /* last */
 
     return status;
 }
