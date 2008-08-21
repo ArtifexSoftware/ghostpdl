@@ -253,7 +253,6 @@ static int gp_cache_loaditem(FILE *file, gp_cache_entry *item, gp_cache_alloc al
     item->buffer = alloc(userdata, len);
     if (item->buffer == NULL) {
         dlprintf("pcache: couldn't allocate buffer for file data!\n");
-        free(filekey);
         item->len = 0;
         return -1;
     }
