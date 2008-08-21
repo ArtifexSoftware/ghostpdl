@@ -3907,7 +3907,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
 	    pcs->params.separation.sep_type = sep_type;
 	    pcs->params.separation.sep_name = name_index(imemory, &sname);
 	    pcs->params.separation.get_colorname_string = gs_get_colorname_string;
-	    array_get(imemory, &namesarray, (long)0, &sname);
+	    code = array_get(imemory, &namesarray, (long)0, &sname);
 	    if (code < 0)
 		return code;
 	    istate->colorspace.procs.special.separation.layer_name = sname;
