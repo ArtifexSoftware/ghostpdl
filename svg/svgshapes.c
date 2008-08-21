@@ -1,3 +1,18 @@
+/* Copyright (C) 2008 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen  Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+
+/* SVG interpreter - vector art support */
+
 #include "ghostsvg.h"
 
 static void svg_fill(svg_context_t *ctx)
@@ -65,7 +80,7 @@ svg_parse_rect(svg_context_t *ctx, svg_item_t *node)
 	gs_closepath(ctx->pgs);
 	svg_fill(ctx);
     }
-    
+
     if (ctx->stroke_is_set)
     {
 	gs_moveto(ctx->pgs, x, y);
@@ -75,7 +90,7 @@ svg_parse_rect(svg_context_t *ctx, svg_item_t *node)
 	gs_closepath(ctx->pgs);
 	svg_stroke(ctx);
     }
-    
+
     return 0;
 }
 
@@ -109,7 +124,7 @@ svg_parse_circle(svg_context_t *ctx, svg_item_t *node)
 	gs_closepath(ctx->pgs);
 	svg_fill(ctx);
     }
-    
+
     if (ctx->stroke_is_set)
     {
 	gs_moveto(ctx->pgs, cx + r, cy);

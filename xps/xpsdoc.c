@@ -1,3 +1,18 @@
+/* Copyright (C) 2006-2008 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen  Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+
+/* XPS interpreter - document parsing */
+
 #include "ghostxps.h"
 
 #include <expat.h>
@@ -408,7 +423,7 @@ xps_free_used_parts(xps_context_t *ctx)
 
     xps_part_t *part = ctx->first_part;
     while (part)
-    {       
+    {
 	xps_part_t *next = part->next;
 	xps_free_part_caches(ctx, part);
 	part = next;
@@ -681,7 +696,7 @@ xps_parse_content_relations_imp(void *zp, char *ns_name, char **atts)
     char path[1024];
     char *name;
     int i;
-    
+
     name = strchr(ns_name, ' ');
     if (name)
 	name ++;
@@ -949,5 +964,4 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
 
     return 0;
 }
-
 

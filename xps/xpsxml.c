@@ -1,3 +1,16 @@
+/* Copyright (C) 2006-2008 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen  Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+
 /* Recursive descent XML parsing API on top of Expat. */
 
 #include "ghostxps.h"
@@ -51,30 +64,30 @@ static void on_open_tag(void *zp, const char *ns_name, const char **atts)
 
     if (parser->error)
 	return;
-	
+
     /* check namespace */
-    
+
     name = NULL;
-    
+
     p = strstr(ns_name, NS_XPS);
     if (p == ns_name)
     {
 	name = strchr(ns_name, ' ') + 1;
     }
-    
+
     p = strstr(ns_name, NS_MC);
     if (p == ns_name)
     {
 	name = strchr(ns_name, ' ') + 1;
 	parser->compat = 1;
     }
-    
+
     if (!name)
     {
 	dprintf1("unknown namespace: %s\n", ns_name);
 	name = ns_name;
     }
-      
+
     /* count size to alloc */
 
     namelen = strlen(name) + 1; /* zero terminated */
@@ -236,7 +249,7 @@ xps_parse_xml(xps_context_t *ctx, char *buf, int len)
     }
 
     XML_ParserFree(xp);
-    
+
     if (parser.compat)
 	xps_process_compatibility(ctx, parser.root);
 
@@ -321,7 +334,7 @@ xps_debug_item_imp(xps_item_t *item, int level, int loop)
 	}
 
 	item = item->next;
-	
+
 	if (!loop)
 	    return;
     }
@@ -332,3 +345,4 @@ xps_debug_item(xps_item_t *item, int level)
 {
     xps_debug_item_imp(item, level, 0);
 }
+

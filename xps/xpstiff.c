@@ -1,3 +1,18 @@
+/* Copyright (C) 2006-2008 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen  Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+
+/* XPS interpreter - TIFF image support */
+
 #include "ghostxps.h"
 
 #include "stream.h"
@@ -774,7 +789,7 @@ xps_read_tiff_tag_value(unsigned *p, xps_tiff_t *tiff, unsigned type, unsigned o
     }
 }
 
-static int 
+static int
 xps_read_tiff_tag(gs_memory_t *mem, xps_tiff_t *tiff, unsigned offset)
 {
     unsigned tag;
@@ -906,7 +921,7 @@ xps_swap_byte_order(byte *buf, int n)
     }
 }
 
-int 
+int
 xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image)
 {
     int error;

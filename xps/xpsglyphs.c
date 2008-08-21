@@ -1,3 +1,18 @@
+/* Copyright (C) 2006-2008 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen  Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+
+/* XPS interpreter -  */
+
 #include "ghostxps.h"
 
 #include <ctype.h>
@@ -32,12 +47,12 @@ void xps_debug_path(xps_context_t *ctx)
         switch (seg->type)
         {
         case s_start:
-	    dprintf2("%g %g moveto\n", 
+	    dprintf2("%g %g moveto\n",
                     fixed2float(seg->pt.x) * 0.001,
                     fixed2float(seg->pt.y) * 0.001);
             break;
         case s_line:
-	    dprintf2("%g %g lineto\n", 
+	    dprintf2("%g %g lineto\n",
                     fixed2float(seg->pt.x) * 0.001,
                     fixed2float(seg->pt.y) * 0.001);
             break;
@@ -46,7 +61,7 @@ void xps_debug_path(xps_context_t *ctx)
             break;
         case s_curve:
             cseg = (curve_segment*)seg;
-	    dprintf6("%g %g %g %g %g %g curveto\n", 
+	    dprintf6("%g %g %g %g %g %g curveto\n",
                     fixed2float(cseg->p1.x) * 0.001,
                     fixed2float(cseg->p1.y) * 0.001,
                     fixed2float(cseg->p2.x) * 0.001,
@@ -234,18 +249,18 @@ int xps_flush_text_buffer(xps_context_t *ctx, xps_font_t *font,
  *
  * Indices syntax:
 
- GlyphIndices   = GlyphMapping ( ";" GlyphMapping ) 
- GlyphMapping   = ( [ClusterMapping] GlyphIndex ) [GlyphMetrics] 
- ClusterMapping = "(" ClusterCodeUnitCount [":" ClusterGlyphCount] ")" 
- ClusterCodeUnitCount = * DIGIT 
- ClusterGlyphCount    = * DIGIT 
- GlyphIndex     = * DIGIT 
- GlyphMetrics   = "," AdvanceWidth ["," uOffset ["," vOffset]] 
- AdvanceWidth   = ["+"] RealNum 
- uOffset        = ["+" | "-"] RealNum 
- vOffset        = ["+" | "-"] RealNum 
- RealNum        = ((DIGIT ["." DIGIT]) | ("." DIGIT)) [Exponent] 
- Exponent       = ( ("E"|"e") ("+"|"-") DIGIT ) 
+ GlyphIndices   = GlyphMapping ( ";" GlyphMapping )
+ GlyphMapping   = ( [ClusterMapping] GlyphIndex ) [GlyphMetrics]
+ ClusterMapping = "(" ClusterCodeUnitCount [":" ClusterGlyphCount] ")"
+ ClusterCodeUnitCount = * DIGIT
+ ClusterGlyphCount    = * DIGIT
+ GlyphIndex     = * DIGIT
+ GlyphMetrics   = "," AdvanceWidth ["," uOffset ["," vOffset]]
+ AdvanceWidth   = ["+"] RealNum
+ uOffset        = ["+" | "-"] RealNum
+ vOffset        = ["+" | "-"] RealNum
+ RealNum        = ((DIGIT ["." DIGIT]) | ("." DIGIT)) [Exponent]
+ Exponent       = ( ("E"|"e") ("+"|"-") DIGIT )
 
  */
 

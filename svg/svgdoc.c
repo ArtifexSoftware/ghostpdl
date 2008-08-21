@@ -1,3 +1,18 @@
+/* Copyright (C) 2008 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen  Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+
+/* SVG interpreter - document parsing */
+
 #include "ghostsvg.h"
 
 int
@@ -251,7 +266,7 @@ svg_parse_document(svg_context_t *ctx, svg_item_t *root)
 	height = svg_parse_length(height_att, vb_height, 12);
 
     if (version > 12)
-	gs_warn("svg document version is newer than we support");    
+	gs_warn("svg document version is newer than we support");
 
     /* Setup new page */
     {
@@ -297,7 +312,7 @@ svg_parse_document(svg_context_t *ctx, svg_item_t *root)
 	code = gs_erasepage(pgs);
 	if (code < 0)
 	    return gs_rethrow(code, "cannot clear page");
-	    
+
 	gs_setcolorspace(ctx->pgs, ctx->srgb);
     }
 

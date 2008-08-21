@@ -1,16 +1,15 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2008 Artifex Software, Inc.
    All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$Id$*/
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen  Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* Top-level API implementation of Scalable Vector Graphics (SVG) */
 
@@ -56,7 +55,7 @@ svg_imp_characteristics(const pl_interp_implementation_t *pimpl)
 {
     static pl_interp_characteristics_t svg_characteristics =
     {
-	"SVG",    
+	"SVG",
 	"<?xml", /* string to recognize SVG files */
 	"Artifex",
 	SVG_VERSION,
@@ -66,7 +65,7 @@ svg_imp_characteristics(const pl_interp_implementation_t *pimpl)
     return &svg_characteristics;
 }
 
-static int  
+static int
 svg_imp_allocate_interp(pl_interp_t **ppinterp,
 	const pl_interp_implementation_t *pimpl,
 	gs_memory_t *pmem)
@@ -221,7 +220,7 @@ cleanup_setdevice:
     return code;
 }
 
-static int   
+static int
 svg_imp_get_device_memory(pl_interp_instance_t *pinstance, gs_memory_t **ppmem)
 {
     /* huh? we do nothing here */
@@ -232,12 +231,12 @@ svg_imp_get_device_memory(pl_interp_instance_t *pinstance, gs_memory_t **ppmem)
 static int
 svg_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *buf)
 {
-    svg_interp_instance_t *instance = (svg_interp_instance_t *)pinstance;    
+    svg_interp_instance_t *instance = (svg_interp_instance_t *)pinstance;
     svg_context_t *ctx = instance->ctx;
     int code;
 
     code = svg_feed_xml_parser(ctx, (const char*)buf->ptr + 1, buf->limit - buf->ptr);
-    
+
     buf->ptr = buf->limit;
 
     return code;
@@ -381,7 +380,7 @@ const pl_interp_implementation_t svg_implementation =
     svg_imp_get_device_memory,
 };
 
-/* 
+/*
  * End-of-page function called by SVG parser.
  */
 int
@@ -407,7 +406,7 @@ svg_show_page(svg_context_t *ctx, int num_copies, int flush)
     if (code < 0)
         return code;
 
-    /* do post-page action */ 
+    /* do post-page action */
     if (instance->post_page_action)
     {
 	code = instance->post_page_action(pinstance, instance->post_page_closure);

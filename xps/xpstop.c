@@ -1,16 +1,15 @@
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
+/* Copyright (C) 2006-2008 Artifex Software, Inc.
    All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-
-/*$Id$*/
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen  Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
 
 /* Top-level API implementation of XML Paper Specification */
 
@@ -56,7 +55,7 @@ xps_imp_characteristics(const pl_interp_implementation_t *pimpl)
 {
     static pl_interp_characteristics_t xps_characteristics =
     {
-	"XPS",    
+	"XPS",
 	"PK", /* string to recognize XPS files */
 	"Artifex",
 	XPS_VERSION,
@@ -66,7 +65,7 @@ xps_imp_characteristics(const pl_interp_implementation_t *pimpl)
     return &xps_characteristics;
 }
 
-static int  
+static int
 xps_imp_allocate_interp(pl_interp_t **ppinterp,
 	const pl_interp_implementation_t *pimpl,
 	gs_memory_t *pmem)
@@ -212,7 +211,7 @@ cleanup_setdevice:
     return code;
 }
 
-static int   
+static int
 xps_imp_get_device_memory(pl_interp_instance_t *pinstance, gs_memory_t **ppmem)
 {
     /* huh? we do nothing here */
@@ -223,7 +222,7 @@ xps_imp_get_device_memory(pl_interp_instance_t *pinstance, gs_memory_t **ppmem)
 static int
 xps_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *pcursor)
 {
-    xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;    
+    xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     xps_context_t *ctx = instance->ctx;
     return xps_process_data(ctx, pcursor);
 }
@@ -422,7 +421,7 @@ const pl_interp_implementation_t xps_implementation =
     xps_imp_get_device_memory,
 };
 
-/* 
+/*
  * End-of-page function called by XPS parser.
  */
 int
@@ -448,7 +447,7 @@ xps_show_page(xps_context_t *ctx, int num_copies, int flush)
     if (code < 0)
         return code;
 
-    /* do post-page action */ 
+    /* do post-page action */
     if (instance->post_page_action)
     {
 	code = instance->post_page_action(pinstance, instance->post_page_closure);
@@ -529,6 +528,4 @@ xps_install_halftone(xps_context_t *ctx, gx_device *pdevice)
 
     return 0;
 }
-
-
 
