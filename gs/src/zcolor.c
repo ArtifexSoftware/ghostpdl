@@ -3184,7 +3184,7 @@ static int ciebasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, int
 {
     os_ptr op;
     ref *spacename, nref;
-    int i, components=1;
+    int i, components=1, code;
 
     /* If the spaece is an array, the first element is always the name */
     if (r_is_array(space))
@@ -3197,7 +3197,9 @@ static int ciebasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, int
 
     /* Find the relevant color space object */
     for (i=0;i<4;i++) {
-	names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)CIESpaces[i], strlen(CIESpaces[i]), &nref, 0);
+	code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)CIESpaces[i], strlen(CIESpaces[i]), &nref, 0);
+	if (code < 0)
+	    return code;
 	if (name_eq(spacename, &nref)) {
 	    break;
 	}
@@ -4897,7 +4899,7 @@ static int iccrange(i_ctx_t * i_ctx_p, ref *space, float *ptr);
 static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
 {
     os_ptr op = osp;
-    ref     ICCdict, *tempref, *altref, *icc, *nocie;
+    ref     ICCdict, *tempref, *altref=NULL, *icc, *nocie;
     int components, code;
     float range[8];
 
@@ -5032,6 +5034,9 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 
 		code = seticc(i_ctx_p, components, &ICCdict, (float *)&range);
 		if (code < 0) {
+    		    code = dict_find_string(&ICCdict, "Alternate", &altref);
+		    if (code < 0)
+			return code;
 		    push(1);
 		    ref_assign(op, altref);
 		    /* If CIESubst, we are already substituting for CIE, so use nosubst 
@@ -5347,7 +5352,9 @@ int get_space_object(i_ctx_t *i_ctx_p, ref *arr, PS_colour_space_t **obj)
 
     /* Find the relevant color space object */
     for (i=0;i<nprocs;i++) {
-	names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)colorProcs[i].name, strlen(colorProcs[i].name), &nref, 0);
+	code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)colorProcs[i].name, strlen(colorProcs[i].name), &nref, 0);
+	if (code < 0)
+	    return code;
 	if (name_eq(&spacename, &nref)) {
 	    *obj = &colorProcs[i];
 	    return 0;
