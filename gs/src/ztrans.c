@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -64,7 +64,7 @@ current_float_value(i_ctx_t *i_ctx_p,
 }
 
 static int
-enum_param(const gs_memory_t *mem, const ref *pnref, 
+enum_param(const gs_memory_t *mem, const ref *pnref,
 	   const char *const names[])
 {
     const char *const *p;
@@ -267,14 +267,14 @@ zbegintransparencymaskgroup(i_ctx_t *i_ctx_p)
 	return code;
     gs_trans_mask_params_init(&params, code);
     params.replacing = true;
-    if ((code = dict_floats_param(imemory, dop, "Background", 
+    if ((code = dict_floats_param(imemory, dop, "Background",
 		    cs_num_components(gs_currentcolorspace(i_ctx_p->pgs)),
 				  params.Background, NULL)) < 0
 	)
 	return code;
     else if (code > 0)
 	params.Background_components = code;
-    if ((code = dict_floats_param(imemory, dop, "GrayBackground", 
+    if ((code = dict_floats_param(imemory, dop, "GrayBackground",
 		    1, &params.GrayBackground, NULL)) < 0
 	)
 	return code;
@@ -340,7 +340,7 @@ zendtransparencymask(i_ctx_t *i_ctx_p)
 /* ------ Soft-mask images ------ */
 
 /* <dict> .image3x - */
-static int mask_dict_param(const gs_memory_t *mem, os_ptr, 
+static int mask_dict_param(const gs_memory_t *mem, os_ptr,
 			    image_params *, const char *, int,
 			    gs_image3x_mask_t *);
 static int
@@ -370,10 +370,10 @@ zimage3x(i_ctx_t *i_ctx_p)
      * We have to process the masks in the reverse order, because they
      * insert their DataSource before the one(s) for the DataDict.
      */
-    if ((code = mask_dict_param(imemory, op, &ip_data, 
+    if ((code = mask_dict_param(imemory, op, &ip_data,
 				"ShapeMaskDict", num_components,
 				&image.Shape)) < 0 ||
-	(code = mask_dict_param(imemory, op, &ip_data, 
+	(code = mask_dict_param(imemory, op, &ip_data,
 				"OpacityMaskDict", num_components,
 				&image.Opacity)) < 0
 	)
@@ -381,11 +381,11 @@ zimage3x(i_ctx_t *i_ctx_p)
     return zimage_setup(i_ctx_p, (gs_pixel_image_t *)&image,
 			&ip_data.DataSource[0],
 			image.CombineWithColor, 1);
-}    
+}
 
 /* Get one soft-mask dictionary parameter. */
 static int
-mask_dict_param(const gs_memory_t *mem, os_ptr op, 
+mask_dict_param(const gs_memory_t *mem, os_ptr op,
 image_params *pip_data, const char *dict_name,
 		int num_components, gs_image3x_mask_t *pixm)
 {
@@ -434,7 +434,7 @@ zpushpdf14devicefilter(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
 
     check_type(*op, t_integer);
-    code = gs_push_pdf14trans_device(igs); 
+    code = gs_push_pdf14trans_device(igs);
     if (code < 0)
         return code;
     pop(1);
@@ -446,7 +446,7 @@ zpushpdf14devicefilter(i_ctx_t *i_ctx_p)
 static int
 zpoppdf14devicefilter(i_ctx_t *i_ctx_p)
 {
-    return gs_pop_pdf14trans_device(igs); 
+    return gs_pop_pdf14trans_device(igs);
 }
 
 /* ------ Initialization procedure ------ */
