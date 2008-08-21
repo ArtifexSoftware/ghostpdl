@@ -59,7 +59,7 @@ int
 zbuildfunction(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    gs_function_t *pfn = NULL;
+    gs_function_t *pfn;
     int code = fn_build_function(i_ctx_p, op, &pfn, imemory, 0, 0);
 
     if (code < 0)
@@ -73,7 +73,7 @@ zbuildfunction(i_ctx_t *i_ctx_p)
 int buildfunction(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, int type)
 {
     os_ptr op = osp;
-    gs_function_t *pfn;
+    gs_function_t *pfn=NULL;
     int code=0;
 
     switch(type) {
