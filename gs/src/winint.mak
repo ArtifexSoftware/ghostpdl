@@ -77,11 +77,11 @@ GS_ALL=$(INT_ALL)\
   $(LIB_ALL) $(LIBCTR) $(ld_tr) $(GSDLL_OBJ).res $(PSSRC)$(GSDLL).def $(ICONS)
 
 dwdll_h=$(PSSRC)dwdll.h
-dwimg_h=$(GLSRC)dwimg.h
-dwtrace_h=$(GLSRC)dwtrace.h
+dwimg_h=$(PSSRC)dwimg.h
+dwtrace_h=$(PSSRC)dwtrace.h
 dwmain_h=$(PSSRC)dwmain.h
-dwtext_h=$(GLSRC)dwtext.h
-dwreg_h=$(GLSRC)dwreg.h
+dwtext_h=$(PSSRC)dwtext.h
+dwreg_h=$(PSSRC)dwreg.h
 
 # Make the icons from their text form.
 
@@ -153,32 +153,32 @@ $(PSOBJ)dwnodllc.obj: $(PSSRC)dwnodll.c $(AK) $(dwdll_h) $(iapi_h)
 # Modules for small EXE loader.
 
 DWOBJ=$(PSOBJ)dwdll.obj $(GLOBJ)dwimg.obj $(DWTRACE) $(PSOBJ)dwmain.obj \
-$(GLOBJ)dwtext.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj $(GLOBJ)dwreg.obj
+$(PSOBJ)dwtext.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj $(PSOBJ)dwreg.obj
 
 $(PSOBJ)dwdll.obj: $(PSSRC)dwdll.c $(AK)\
  $(dwdll_h) $(iapi_h)
 	$(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwdll.obj $(C_) $(PSSRC)dwdll.c
 
-$(GLOBJ)dwimg.obj: $(GLSRC)dwimg.c $(AK)\
+$(PSOBJ)dwimg.obj: $(PSSRC)dwimg.c $(AK)\
  $(dwmain_h) $(dwdll_h) $(dwtext_h) $(dwimg_h) $(gdevdsp_h) $(stdio__h) \
  $(gscdefs_h) $(dwreg_h)
-	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwimg.obj $(C_) $(GLSRC)dwimg.c
+        $(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwimg.obj $(C_) $(PSSRC)dwimg.c
 
-$(GLOBJ)dwtrace.obj: $(GLSRC)dwtrace.c $(AK)\
+$(PSOBJ)dwtrace.obj: $(PSSRC)dwtrace.c $(AK)\
  $(dwimg_h) $(dwtrace_h)\
  $(gscdefs_h) $(stdpre_h) $(gsdll_h) $(vdtrace_h)
-	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwtrace.obj $(C_) $(GLSRC)dwtrace.c
+        $(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwtrace.obj $(C_) $(PSSRC)dwtrace.c
 
 $(PSOBJ)dwmain.obj: $(PSSRC)dwmain.c $(AK)  $(windows__h) \
  $(iapi_h) $(vdtrace_h) $(dwmain_h) $(dwdll_h) $(dwtext_h) $(dwimg_h) $(dwtrace_h) \
  $(dwreg_h) $(gdevdsp_h)
 	$(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwmain.obj $(C_) $(PSSRC)dwmain.c
 
-$(GLOBJ)dwtext.obj: $(GLSRC)dwtext.c $(AK) $(dwtext_h)
-	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwtext.obj $(C_) $(GLSRC)dwtext.c
+$(PSOBJ)dwtext.obj: $(PSSRC)dwtext.c $(AK) $(dwtext_h)
+        $(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwtext.obj $(C_) $(PSSRC)dwtext.c
 
-$(GLOBJ)dwreg.obj: $(PSSRC)dwreg.c $(AK) $(dwreg_h)
-	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwreg.obj $(C_) $(GLSRC)dwreg.c
+$(PSOBJ)dwreg.obj: $(PSSRC)dwreg.c $(AK) $(dwreg_h)
+        $(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwreg.obj $(C_) $(PSSRC)dwreg.c
 
 
 # ---------------------- Setup and uninstall program ---------------------- #
