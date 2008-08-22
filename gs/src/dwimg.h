@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -76,7 +76,7 @@ extern IMAGE *first_image;
 IMAGE *image_find(void *handle, void *device);
 IMAGE *image_new(void *handle, void *device);
 void image_delete(IMAGE *img);
-int image_size(IMAGE *img, int new_width, int new_height, int new_raster, 
+int image_size(IMAGE *img, int new_width, int new_height, int new_raster,
    unsigned int new_format, void *pimage);
 int image_separation(IMAGE *img, int comp_num, const char *name,
    unsigned short c, unsigned short m, unsigned short y, unsigned short k);
@@ -86,7 +86,7 @@ void image_open(IMAGE *img);
 void image_close(IMAGE *img);
 void image_sync(IMAGE *img);
 void image_page(IMAGE *img);
-void image_presize(IMAGE *img, int new_width, int new_height, int new_raster, 
+void image_presize(IMAGE *img, int new_width, int new_height, int new_raster,
    unsigned int new_format);
 void image_poll(IMAGE *img);
 void image_updatesize(IMAGE *img);
