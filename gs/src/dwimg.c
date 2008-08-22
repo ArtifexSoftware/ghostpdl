@@ -35,7 +35,6 @@
 #define STRICT
 #include <windows.h>
 #include "stdio_.h"
-#include "iapi.h"
 
 #include "dwmain.h"
 #include "dwimg.h"

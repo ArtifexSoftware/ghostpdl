@@ -161,7 +161,7 @@ $(PSOBJ)dwdll.obj: $(PSSRC)dwdll.c $(AK)\
 
 $(GLOBJ)dwimg.obj: $(GLSRC)dwimg.c $(AK)\
  $(dwmain_h) $(dwdll_h) $(dwtext_h) $(dwimg_h) $(gdevdsp_h) $(stdio__h) \
- $(gscdefs_h) $(iapi_h) $(dwreg_h)
+ $(gscdefs_h) $(dwreg_h)
 	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwimg.obj $(C_) $(GLSRC)dwimg.c
 
 $(GLOBJ)dwtrace.obj: $(GLSRC)dwtrace.c $(AK)\
