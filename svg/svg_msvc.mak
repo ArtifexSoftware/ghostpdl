@@ -143,4 +143,4 @@ GX_COLOR_INDEX_DEFINE=-DGX_COLOR_INDEX_TYPE="unsigned long long"
 # Subsystems
 # this is already in pcl6_gcc.mak
 #include $(SVGSRCDIR)\svg.mak
-!include $(PSSRCDIR)\expat.mak
+!include $(GLSRCDIR)\expat.mak

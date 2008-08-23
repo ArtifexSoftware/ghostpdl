@@ -80,4 +80,4 @@ include $(MAINSRCDIR)/pcl6_gcc.mak
 # Subsystems
 # this is already in pcl6_gcc.mak
 include $(XPSSRCDIR)/xps.mak
-include $(PSSRCDIR)/expat.mak
+include $(GLSRCDIR)/expat.mak
