@@ -25,6 +25,9 @@ GENDIR=.\obj
 !ifndef APPSRCDIR
 APPSRCDIR=.
 !endif
+!ifndef GLSRCDIR
+GLSRCDIR=..\gs\src
+!endif
 !ifndef PSSRCDIR
 PSSRCDIR=..\gs\src
 !endif
@@ -202,7 +205,7 @@ FEATURE_DEVS    = $(FEATURE_CORE) $(DD)\fapi.dev
 !endif
 
 !if "$(COMPILE_INITS)" == "1"
-!include $(PSSRCDIR)\psromfs.mak
+!include $(GLSRCDIR)\psromfs.mak
 !endif
 
 !include $(MAINSRCDIR)\pcl6_msvc.mak

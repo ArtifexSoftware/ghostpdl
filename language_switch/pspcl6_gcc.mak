@@ -13,6 +13,7 @@ MAKEFILE+= ../language_switch/pspcl6_gcc.mak
 
 # The sources are taken from these directories:
 MAINSRCDIR?=../main
+GLSRCDIR?=../gs/src
 PSSRCDIR?=../gs/src
 PSISRCDIR?=../psi
 PSLIBDIR?=../gs/lib
@@ -69,7 +70,7 @@ XOBJS?=$(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o \
        $(GLOBJDIR)/gscdefs.o $(GLOBJDIR)/iconfig.o 
 
 ifeq ($(COMPILE_INITS), 1)
-include $(PSSRCDIR)/psromfs.mak
+include $(GLSRCDIR)/psromfs.mak
 endif
 
 # "Subclassed" makefile

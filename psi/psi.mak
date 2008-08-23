@@ -1,8 +1,9 @@
-#    Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1996-2008 Artifex Software Inc. All rights reserved.
 #    Unauthorized use, copying, and/or distribution prohibited.
 
 # makefile for PS Inteface (PSI) to Ghostscript PostScript.
 # Users of this makefile must define the following:
+#	PSSRCDIR - the PS interpreter source directory
 #	GLSRCDIR - the GS library source directory
 #	GLGENDIR - the GS library generated file directory
 #	PLSRCDIR - the PCL* support library source directory
@@ -19,7 +20,7 @@ PSIGEN=$(PSIGENDIR)$(D)
 PSIOBJ=$(PSIOBJDIR)$(D)
 PSIO_=$(O_)$(PSIOBJ)
 
-PSICCC=$(CC_) $(I_)$(PSISRCDIR)$(_I) $(I_)$(PSIGENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
+PSICCC=$(CC_) $(I_)$(PSISRCDIR)$(_I) $(I_)$(PSIGENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(PSSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
 
 # Define the name of this makefile.
 PSI_MAK=$(PSISRC)psi.mak
