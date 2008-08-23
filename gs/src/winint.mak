@@ -79,7 +79,7 @@ GS_ALL=$(INT_ALL)\
 dwdll_h=$(PSSRC)dwdll.h
 dwimg_h=$(PSSRC)dwimg.h
 dwtrace_h=$(PSSRC)dwtrace.h
-dwmain_h=$(PSSRC)dwmain.h
+dwres_h=$(PSSRC)dwres.h
 dwtext_h=$(PSSRC)dwtext.h
 dwreg_h=$(PSSRC)dwreg.h
 
@@ -92,7 +92,7 @@ $(GLGEN)gswin16.ico: $(GLSRC)gswin16.icx $(ECHOGS_XE) $(WININT_MAK)
 	$(ECHOGS_XE) -wb $(GLGEN)gswin16.ico -n -X -r $(GLSRC)gswin16.icx
 
 # resources for short EXE loader (no dialogs)
-$(GS_OBJ).res: $(PSSRC)dwmain.rc $(dwmain_h) $(ICONS) $(WININT_MAK)
+$(GS_OBJ).res: $(PSSRC)dwmain.rc $(dwres_h) $(ICONS) $(WININT_MAK)
 	$(ECHOGS_XE) -w $(PSGEN)_exe.rc -x 23 define -s gstext_ico $(GLGENDIR)\gswin.ico
 	$(ECHOGS_XE) -a $(PSGEN)_exe.rc -x 23 define -s gsgraph_ico $(GLGENDIR)\gswin.ico
 	$(ECHOGS_XE) -a $(PSGEN)_exe.rc -R $(PSSRC)dwmain.rc
@@ -160,7 +160,7 @@ $(PSOBJ)dwdll.obj: $(PSSRC)dwdll.c $(AK)\
 	$(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwdll.obj $(C_) $(PSSRC)dwdll.c
 
 $(PSOBJ)dwimg.obj: $(PSSRC)dwimg.c $(AK)\
- $(dwmain_h) $(dwdll_h) $(dwtext_h) $(dwimg_h) $(gdevdsp_h) $(stdio__h) \
+ $(dwres_h) $(dwdll_h) $(dwtext_h) $(dwimg_h) $(gdevdsp_h) $(stdio__h) \
  $(gscdefs_h) $(dwreg_h)
         $(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwimg.obj $(C_) $(PSSRC)dwimg.c
 
@@ -170,7 +170,7 @@ $(PSOBJ)dwtrace.obj: $(PSSRC)dwtrace.c $(AK)\
         $(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwtrace.obj $(C_) $(PSSRC)dwtrace.c
 
 $(PSOBJ)dwmain.obj: $(PSSRC)dwmain.c $(AK)  $(windows__h) \
- $(iapi_h) $(vdtrace_h) $(dwmain_h) $(dwdll_h) $(dwtext_h) $(dwimg_h) $(dwtrace_h) \
+ $(iapi_h) $(vdtrace_h) $(dwres_h) $(dwdll_h) $(dwtext_h) $(dwimg_h) $(dwtrace_h) \
  $(dwreg_h) $(gdevdsp_h)
 	$(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwmain.obj $(C_) $(PSSRC)dwmain.c
 

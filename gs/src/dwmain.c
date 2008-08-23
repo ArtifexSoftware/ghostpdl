@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -24,7 +24,7 @@
 #include "iapi.h"
 #include "vdtrace.h"
 
-#include "dwmain.h"
+#include "dwres.h"
 #include "dwdll.h"
 #include "dwtext.h"
 #include "dwimg.h"
@@ -495,6 +495,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
 	exit(1);
 
     hwndtext = text_get_handle(tw);
+    image_textwindow(hwndtext);
 
     dll_exit_status = new_main(argc, argv);
     

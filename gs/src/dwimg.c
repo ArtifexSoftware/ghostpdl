@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -36,7 +36,7 @@
 #include <windows.h>
 #include "stdio_.h"
 
-#include "dwmain.h"
+#include "dwres.h"
 #include "dwimg.h"
 #include "dwreg.h"
 #include "gdevdsp.h"
@@ -95,6 +95,18 @@ void image_devicen_to_24BGR(int width, unsigned char *dest,
 /* These functions are only accessed by the main thread */
 
 IMAGE *first_image = NULL;
+static HWND img_hwndtext = (HWND)0;
+
+void 
+image_textwindow(HWND hwnd)
+{
+    /* Save the handle to the text window in a global variable
+     * (if running as a GUI) so we can redirect keyboard input
+     * to the text window.
+     * If set to 0, then assume we are using console mode.
+     */
+    img_hwndtext = hwnd;
+}
 
 /* image_find must only be accessed by main thread */
 /* valid for main thread */
@@ -120,6 +132,7 @@ image_new(void *handle, void *device)
 	/* remember device and handle */
 	img->handle = handle;
 	img->device = device;
+	img->hwndtext = img_hwndtext;
 
 	img->update_tick = 100;		/* milliseconds */
 	img->update_interval = 1;	/* 1 tick */
@@ -1323,15 +1336,15 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		    SendMessage(hwnd,WM_HSCROLL,SB_PAGEDOWN,0L);
 		    break;
 		case VK_RETURN:
-		    if (hwndtext)
-			BringWindowToTop(hwndtext);
+		    if (img->hwndtext)
+			BringWindowToTop(img->hwndtext);
 		    break;
 	    }
 	    return(0);
 	case WM_CHAR:
 	    /* send on all characters to text window */
-	    if (hwndtext)
-		SendMessage(hwndtext, message, wParam, lParam);
+	    if (img->hwndtext)
+		SendMessage(img->hwndtext, message, wParam, lParam);
 	    else {
 		/* assume we have a console */
 		INPUT_RECORD ir;
@@ -1421,8 +1434,8 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	    return 0;
 	    }
 	case WM_DROPFILES:
-	    if (hwndtext)
-		SendMessage(hwndtext, message, wParam, lParam);
+	    if (img->hwndtext)
+		SendMessage(img->hwndtext, message, wParam, lParam);
 	    else {
 		char szFile[256];
 		int i, cFiles;

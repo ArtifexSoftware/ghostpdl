@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -90,6 +90,9 @@ void image_presize(IMAGE *img, int new_width, int new_height, int new_raster,
    unsigned int new_format);
 void image_poll(IMAGE *img);
 void image_updatesize(IMAGE *img);
+
+/* To be called during initialization after the text window has been created */
+void image_textwindow(HWND hwnd);
 
 
 #endif /* dwimg_INCLUDED */

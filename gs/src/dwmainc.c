@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -41,7 +41,6 @@ void *instance;
 BOOL quitnow = FALSE;
 HANDLE hthread;
 DWORD thread_id;
-HWND hwndtext = NULL;	/* for dwimg.c, but not used */
 HWND hwndforeground;	/* our best guess for our console window handle */
 
 char start_string[] = "systemdict /start get exec\n";

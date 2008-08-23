@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -15,7 +15,7 @@
 /* $Id$*/
 
 #include <windows.h>
-#include "dwmain.h"
+#include "dwres.h"
 
 #ifndef gstext_ico
 #define gstext_ico gswin.ico
