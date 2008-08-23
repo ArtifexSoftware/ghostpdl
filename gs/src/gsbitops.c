@@ -487,15 +487,15 @@ bits_extract_plane(const bits_plane_t *dest /*write*/,
 
 	switch (loop_case) {
 	case EXTRACT_4_TO_1: {
-	    const byte *source = source_row;
-	    byte *dest = dest_row;
+	    const byte *src = source_row;
+	    byte *dst = dest_row;
 
 	    /* Do groups of 8 pixels. */
-	    for (x = width; x >= 8; source += 4, x -= 8) {
+	    for (x = width; x >= 8; src += 4, x -= 8) {
 		bits32 sword =
-		    (*(const bits32 *)source >> shift) & 0x11111111;
+		    (*(const bits32 *)src >> shift) & 0x11111111;
 
-		*dest++ =
+		*dst++ =
 		    byte_acegbdfh_to_abcdefgh[(
 #if arch_is_big_endian
 		    (sword >> 21) | (sword >> 14) | (sword >> 7) | sword
@@ -509,22 +509,22 @@ bits_extract_plane(const bits_plane_t *dest /*write*/,
 		uint test = 0x10 << shift, store = 0x80;
 
 		do {
-		    *dest = (*source & test ? *dest | store : *dest & ~store);
+		    *dst = (*src & test ? *dst | store : *dst & ~store);
 		    if (test >= 0x10)
 			test >>= 4;
 		    else
-			test <<= 4, ++source;
+			test <<= 4, ++src;
 		    store >>= 1;
 		} while (--x > 0);
 	    }
 	    break;
 	}
 	case EXTRACT_32_TO_8: {
-	    const byte *source = source_row;
-	    byte *dest = dest_row;
+	    const byte *src = source_row;
+	    byte *dst = dest_row;
 
-	    for (x = width; x > 0; source += 4, --x)
-		*dest++ = *source;
+	    for (x = width; x > 0; src += 4, --x)
+		*dst++ = *src;
 	    break;
 	}
 	default: {
@@ -597,11 +597,11 @@ bits_expand_plane(const bits_plane_t *dest /*write*/,
 	     ++y, source_row += source->raster, dest_row += dest->raster
 	     ) {
 	    int x;
-	    const byte *source = source_row;
-	    bits32 *dest = (bits32 *)dest_row;
+	    const byte *src = source_row;
+	    bits32 *dst = (bits32 *)dest_row;
 
 	    for (x = width; x > 0; --x)
-		*dest++ = (bits32)(*source++) << word_shift;
+		*dst++ = (bits32)(*src++) << word_shift;
 	}
 #undef word_shift
     }
