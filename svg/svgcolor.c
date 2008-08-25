@@ -67,7 +67,7 @@ void svg_set_stroke_color(svg_context_t *ctx)
 int
 svg_parse_color(char *str, float *rgb)
 {
-    int l, m, r, cmp;
+    int i, l, m, r, cmp;
 
     rgb[0] = 0.0;
     rgb[1] = 0.0;
@@ -98,7 +98,42 @@ svg_parse_color(char *str, float *rgb)
 	return gs_throw(-1, "syntax error in color - wrong length of string after #");
     }
 
-    /* TODO: parse rgb(X,Y,Z) syntax */
+    /* rgb(X,Y,Z) -- whitespace allowed around numbers */
+
+    else if (strstr(str, "rgb("))
+    {
+	int numberlen = 0;
+	char numberbuf[50];
+
+	str = str + 4;
+
+	for (i = 0; i < 3; i++)
+	{
+	    while (svg_is_whitespace_or_comma(*str))
+		str ++;
+
+	    if (svg_is_digit(*str))
+	    {
+		numberlen = 0;
+		while (svg_is_digit(*str) && numberlen < sizeof(numberbuf) - 1)
+		    numberbuf[numberlen++] = *str++;
+		numberbuf[numberlen] = 0;
+
+		if (*str == '%')
+		{
+		    str ++;
+		    rgb[i] = atof(numberbuf) / 100.0;
+		}
+		else
+		{
+		    rgb[i] = atof(numberbuf) / 255.0;
+		}
+	    }
+	}
+
+	return 0;
+    }
+
     /* TODO: parse icc-profile(X,Y,Z,W) syntax */
 
     /* Search for a pre-defined color */
