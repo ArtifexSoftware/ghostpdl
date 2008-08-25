@@ -91,19 +91,14 @@ typedef struct svg_item_s svg_item_t;
  * Context and memory.
  */
 
-#if (defined(_MSC_VER) && _MSC_VER < 1310) || !defined(__GNUC__)
-/* Provide a fallback if this symbol is unsupported */
-#define __FUNCTION__ "ghostsvg"
-#endif
-
 #define svg_alloc(ctx, size) \
-    ((void*)gs_alloc_bytes(ctx->memory, size, __FUNCTION__));
+    ((void*)gs_alloc_bytes(ctx->memory, size, __func__));
 #define svg_realloc(ctx, ptr, size) \
-    gs_resize_object(ctx->memory, ptr, size, __FUNCTION__);
+    gs_resize_object(ctx->memory, ptr, size, __func__);
 #define svg_strdup(ctx, str) \
-    svg_strdup_imp(ctx, str, __FUNCTION__);
+    svg_strdup_imp(ctx, str, __func__);
 #define svg_free(ctx, ptr) \
-    gs_free_object(ctx->memory, ptr, __FUNCTION__);
+    gs_free_object(ctx->memory, ptr, __func__);
 
 size_t svg_strlcpy(char *destination, const char *source, size_t size);
 size_t svg_strlcat(char *destination, const char *source, size_t size);
