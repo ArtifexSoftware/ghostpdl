@@ -91,7 +91,7 @@ TEMPLATE_spot_into_scanlines (line_list *ll, fixed band_mask)
 	    active_line *ynext = yll->next;	/* insert smashes next/prev links */
 
 	    if (yll->direction == DIR_HORIZONTAL) {
-		/* Ignore for now. */
+		insert_h_new(yll, ll);
 	    } else
 		insert_x_new(yll, ll);
 	    yll = ynext;
@@ -216,8 +216,22 @@ TEMPLATE_spot_into_scanlines (line_list *ll, fixed band_mask)
 		y_min = min_fixed;
 	    } else
 		y_min = y;
+
+	    /* Process horisontal segments */
+
+	    for (alp = ll->h_list0; alp != NULL; alp = alp->next) {
+		fixed x0 = min(alp->start.x, alp->end.x);
+		fixed x1 = max(alp->start.x, alp->end.x);
+
+		code = range_list_add(&rlist, fixed2int_rounded(x0 - fo.adjust_left),
+					      fixed2int_rounded(x1 + fo.adjust_right));
+		if (code < 0)
+		    goto done;
+	    }
+
 	    code = merge_ranges(&rlist, ll, y_min, y_top);
 	} /* else y < y_bot + 1, do nothing */
+	ll->h_list0 = NULL;
     } while (code >= 0);
  done:
     range_list_free(&rlist);
