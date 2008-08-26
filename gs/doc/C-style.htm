@@ -300,8 +300,8 @@ explicitly.  ANSI compilers in their default mode do all floating point
 computations in double precision, and handle such casts automatically.
 
 <li>Don't use <b><tt>long long</tt></b>: even though it is in the ANSI
-standard, not all compilers support it.  Use <b><tt>bits64</tt></b> instead
-(see below under "<a href="#Language_extensions">Language extensions</a>").
+standard, not all compilers support it.  Use the 
+<b><tt>(u)int64_t</tt></b> types from <b><tt>stdint_.h</tt></b> instead.
 
 <li>Don't assume anything about whether <b><tt>sizeof(long)</tt></b> is less
 than, equal to, or greater than <b><tt>sizeof(ptr)</tt></b>.  (However, you
@@ -629,14 +629,8 @@ declared as <b><tt>float</tt></b>.)
 
 <dd>These are unsigned integer types of the given width.  Use them wherever
 the actual width matters: do <em>not</em>, for example, use
-<b><tt>short</tt></b> assuming that it is 16 bits wide.
-
-<dt><b><tt>bits64</tt></b>
-
-<dd><strong>****** NOT IMPLEMENTED YET ******</strong>
-This is an unsigned 64-bit integer type, but it may not be available on all
-platforms.  Any code that uses this type should be surrounded by
-<b><tt>#if&nbsp;ARCH_HAS_BITS64</tt></b>.
+<b><tt>short</tt></b> assuming that it is 16 bits wide. New code can use 
+the C99 fixed-width types from <b><tt>stdint_.h</tt></b>.
 
 </dl>
 
