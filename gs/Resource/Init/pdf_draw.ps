@@ -1120,6 +1120,14 @@ end
   } ifelse
 } bdef
 
+% For development needs we define a special option for running with a new handler
+% for images with a soft mask.
+//systemdict /NEW_IMAGE3X .knownget not { //false } if {
+  /doimagesmask { % <imagemask> doimagesmask -
+    doimage
+  } bdef
+} if
+
 /is_big_mask {  % - is_big_mask <bool>
   1 0 dtransform dup mul exch dup mul sqrt add
   0 1 dtransform dup mul exch dup mul sqrt add mul
@@ -1130,10 +1138,17 @@ end
   div gt
 } bind def
 
+% For development needs we define a special option for running with a new handler
+% for images with a soft mask.
+//systemdict /NEW_IMAGE3X .knownget not { //false } if {
+  /is_big_mask {  % - is_big_mask <bool>
+    //false
+  } bdef
+} if
+
 /doimage {	% <imagemask> doimage -
 		% imagedict is currentdict, gets popped from dstack
   DataSource exch
-
   PDFusingtransparency
   currentdevice .devicename /pdfwrite ne { 
     % This is a temporary workaround for the bug 689080,
@@ -1148,7 +1163,7 @@ end
   } {
     true % pdfwrite doesn't need the workaround explained above,
          % and cannot work with it. 
-  } ifelse 
+  } ifelse
   and {
     currentdict /SMask knownoget
   } {
