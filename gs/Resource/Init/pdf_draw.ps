@@ -1120,7 +1120,7 @@ end
   } ifelse
 } bdef
 
-/is_big_mask {  % <mask> is_big_mask <bool>
+/is_big_mask {  % - is_big_mask <bool>
   1 0 dtransform dup mul exch dup mul sqrt add
   0 1 dtransform dup mul exch dup mul sqrt add mul
   currentdevice getdeviceprops .dicttomark /BufferSpace .knownget not {
