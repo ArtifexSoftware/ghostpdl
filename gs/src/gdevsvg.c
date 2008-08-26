@@ -120,9 +120,9 @@ static dev_proc_put_params(svg_put_params);
 
 gs_public_st_suffix_add0_final(st_device_svg, gx_device_svg,
                                "gx_device_svg",
-                               device_svg_enum_ptrs, 
+                               device_svg_enum_ptrs,
 			       device_svg_reloc_ptrs,
-                               gx_device_finalize, 
+                               gx_device_finalize,
 			       st_device_vector);
 
 /* The output device is named 'svg' but we're referred to as the
@@ -283,10 +283,10 @@ svg_close_device(gx_device *dev)
       svg->header = 0;
     }
 
-    if (svg->fillcolor) gs_free_string(svg->memory, svg->fillcolor, 8,
-	"svg_close_device");
-    if (svg->strokecolor) gs_free_string(svg->memory, svg->strokecolor, 8,
-	"svg_close_device");
+    if (svg->fillcolor) gs_free_string(svg->memory,
+	(byte *)svg->fillcolor, 8, "svg_close_device");
+    if (svg->strokecolor) gs_free_string(svg->memory,
+	(byte *)svg->strokecolor, 8, "svg_close_device");
 
     if (ferror(svg->file)) return_error(gs_error_ioerror);
 
@@ -365,24 +365,24 @@ svg_write_header(gx_device_svg *svg)
     /* write the initial boilerplate */
     sprintf(line, "%s\n", XML_DECL);
     /* svg_write(svg, line); */
-    sputs(s, line, strlen(line), &used);
+    sputs(s, (byte *)line, strlen(line), &used);
     sprintf(line, "%s\n", SVG_DOCTYPE);
     /* svg_write(svg, line); */
-    sputs(s, line, strlen(line), &used);
+    sputs(s, (byte *)line, strlen(line), &used);
     sprintf(line, "<svg xmlns='%s' version='%s'",
 	SVG_XMLNS, SVG_VERSION);
     /* svg_write(svg, line); */
-    sputs(s, line, strlen(line), &used);
+    sputs(s, (byte *)line, strlen(line), &used);
     sprintf(line, "\n\twidth='%dpt' height='%dpt'>\n",
 	(int)svg->MediaSize[0], (int)svg->MediaSize[1]);
-    sputs(s, line, strlen(line), &used);
+    sputs(s, (byte *)line, strlen(line), &used);
 
     /* Scale drawing so our coordinates are in pixels */
     sprintf(line, "<g transform='scale(%lf,%lf)'>\n",
     	72.0 / svg->HWResolution[0],
     	72.0 / svg->HWResolution[1]);
     /* svg_write(svg, line); */
-    sputs(s, line, strlen(line), &used);
+    sputs(s, (byte *)line, strlen(line), &used);
     svg->mark++;
 
     /* mark that we've been called */
@@ -391,10 +391,10 @@ svg_write_header(gx_device_svg *svg)
     return 0;
 }
 
-static const char *
-svg_make_color(gx_device_svg *svg, gx_drawing_color *pdc)
+static char *
+svg_make_color(gx_device_svg *svg, const gx_drawing_color *pdc)
 {
-    char *paint = gs_alloc_string(svg->memory, 8, "svg_make_color");
+    char *paint = (char *)gs_alloc_string(svg->memory, 8, "svg_make_color");
 
     if (!paint) {
       gs_note_error(gs_error_VMerror);
@@ -407,7 +407,7 @@ svg_make_color(gx_device_svg *svg, gx_drawing_color *pdc)
     } else if (gx_dc_is_null(pdc)) {
       sprintf(paint, "None");
     } else {
-      gs_free_string(svg->memory, paint, 8, "svg_make_color");
+      gs_free_string(svg->memory, (byte *)paint, 8, "svg_make_color");
       gs_note_error(gs_error_rangecheck);
       return NULL;
     }
@@ -594,8 +594,9 @@ svg_setfillcolor(gx_device_vector *vdev, const gs_imager_state *pis,
       return 0; /* not a new color */
 
     /* update our state with the new color */
-    if (svg->fillcolor) gs_free_string(svg->memory, svg->fillcolor, 8,
-	"svg_setfillcolor");
+    if (svg->fillcolor)
+	gs_free_string(svg->memory, (byte *)svg->fillcolor, 8,
+		"svg_setfillcolor");
     svg->fillcolor = fill;
     /* request a new group element */
     svg->dirty++;
@@ -614,12 +615,13 @@ svg_setstrokecolor(gx_device_vector *vdev, const gs_imager_state *pis,
 
     stroke = svg_make_color(svg, pdc);
     if (!stroke) return gs_error_VMerror;
-    if (svg->strokecolor && !strcmp(stroke, svg->strokecolor)) 
+    if (svg->strokecolor && !strcmp(stroke, svg->strokecolor))
       return 0; /* not a new color */
 
     /* update our state with the new color */
-    if (svg->strokecolor) gs_free_string(svg->memory, svg->strokecolor, 8,
-	"svg_setstrokecolor");
+    if (svg->strokecolor)
+	gs_free_string(svg->memory, (byte *)svg->strokecolor, 8,
+		"svg_setstrokecolor");
     svg->strokecolor = stroke;
     /* request a new group element */
     svg->dirty++;
