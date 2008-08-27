@@ -48,6 +48,12 @@ tt
   color: rgb(40%,24%,24%);
 }
 
+code
+{
+  color: rgb(40%,24%,24%);
+  text-weight: bold;
+}
+
 a > tt, a > b > tt
 {
   color: blue;

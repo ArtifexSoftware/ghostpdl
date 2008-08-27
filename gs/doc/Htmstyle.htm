@@ -27,32 +27,32 @@
 <li><a href="#Page_structure">Page structure</a>
 <li><a href="#Links_outside">Links to outside the Ghostscript documentation</a>
 <li><a href="#Images">Images and graphics</a>
-<li><a href="#index.html"><b><tt>index.html</tt></b></a>
+<li><a href="#index.html"><code>index.html</code></a>
 </ul>
 <li><a href="#Large_structure">HTML large structure</a>
 <ul>
-<li><a href="#HTML_head">HTML <b><tt>&lt;head&gt;</tt></b></a>
-<li><a href="#HTML_body">HTML <b><tt>&lt;body&gt;</tt></b></a>
+<li><a href="#HTML_head">HTML <code>&lt;head&gt;</code></a>
+<li><a href="#HTML_body">HTML <code>&lt;body&gt;</code></a>
 </ul>
 <li><a href="#Inner_structure">HTML inner structure</a>
 <ul>
 <li><a href="#Structuring_comments">Structuring comments</a>
-<li><a href="#Headers">Headers: <b><tt>&lt;Hn&gt;</tt></b></a>
-<li><a href="#Anchors">Anchors: <b><tt>&lt;a name="..."&gt;</tt></b></a>
+<li><a href="#Headers">Headers: <code>&lt;Hn&gt;</code></a>
+<li><a href="#Anchors">Anchors: <code>&lt;a name="..."&gt;</code></a>
 </ul>
 <li><a href="#Text">The presentation of text</a>
 <ul>
 <li><a href="#Text_sections">Sections of text</a>
 <ul>
-<li><a href="#Paragraphs">Paragraphs: <b><tt>&lt;p&gt;</tt></b></a>
-<li><a href="#Blockquote">Indented paragraphs: <b><tt>&lt;blockquote&gt;</tt></b></a>
-<li><a href="#Line_breaks">Explicit line breaks: <b><tt>&lt;br&gt;</tt></b></a>
-<li><a href="#Preformatted_text">Preformatted text: <b><tt>&lt;pre&gt;</tt></b></a>
+<li><a href="#Paragraphs">Paragraphs: <code>&lt;p&gt;</code></a>
+<li><a href="#Blockquote">Indented paragraphs: <code>&lt;blockquote&gt;</code></a>
+<li><a href="#Line_breaks">Explicit line breaks: <code>&lt;br&gt;</code></a>
+<li><a href="#Preformatted_text">Preformatted text: <code>&lt;pre&gt;</code></a>
 </ul>
 <li><a href="#Use_of_fonts">The use of different font faces</a>
 </ul>
-<li><a href="#Lists">Lists: <b><tt>&lt;ul&gt;, &lt;ol&gt;, &lt;dl&gt;</tt></b></a>
-<li><a href="#Tables">Tables: <b><tt>&lt;table&gt;</tt></b></a>
+<li><a href="#Lists">Lists: <code>&lt;ul&gt;, &lt;ol&gt;, &lt;dl&gt;</code></a>
+<li><a href="#Tables">Tables: <code>&lt;table&gt;</code></a>
 <ul>
 <li><a href="#Readability">Readability for the user and the HTML writer</a>
 <li><a href="#Table_guidelines">Specific guidelines for coding tables</a>
@@ -63,7 +63,7 @@
 <ul>
 <li><a href="#File_name">Name the new document in 8+3 format</a>
 <li><a href="#Plagiarize">Use an existing document as a model</a>
-<li><a href="#Readme_material">Write new references to go in <b><tt>Readme.htm</tt></b></a>
+<li><a href="#Readme_material">Write new references to go in <code>Readme.htm</code></a>
 <li><a href="#New_doc_other">Other considerations</a>
 </ul>
 <li><a href="#Miscellany">Miscellany</a>
@@ -156,7 +156,7 @@ HTML source code.
 <p>
 Where it makes sense to modify the standard structure to make the document
 more usable, do that.  See
-<a href="Readme.htm"><b><tt>Readme.htm</tt></b></a> for an example: the
+<a href="Readme.htm"><code>Readme.htm</code></a> for an example: the
 introductory material at the beginning of the visible header, before the
 table of contents.
 
@@ -170,7 +170,7 @@ formatting to the stylesheet to assist users reading offline.
 <p>
 Avoid gratuitous commercial links; for instance, link the title of a book
 to its publisher, not to one particular on-line bookseller. See
-<a href="Language.htm#Capabilities"><b><tt>Language.htm</tt></b></a> for an
+<a href="Language.htm#Capabilities"><code>Language.htm</code></a> for an
 example, the reference to the <em>PostScript Language Reference
 Manual</em>.
 
@@ -179,7 +179,7 @@ Similarly, where you have a choice, refer to free software rather than
 commercial products.  See
 <a href="Make.htm#Third-party_libraries">Make.htm</a> for an example, the
 reference to <a href="Make.htm#Third-party_libraries">InfoZip
-<b><tt>unzip</tt></b></a> (where many commercial products provide similar
+<code>unzip</code></a> (where many commercial products provide similar
 functions).
 
 <h3><a name="Images"></a>Images and graphics</h3>
@@ -189,30 +189,30 @@ Use no graphics or images.  The documents are text-only, so nothing is lost
 when a document is converted into ASCII text.  This is an explicit initial
 design goal of the HTML documentation.
 
-<h3><a name="index.html"></a><b><tt>index.html</tt></b></h3>
+<h3><a name="index.html"></a><code>index.html</code></h3>
 
 <p>
-<b><tt>index.html</tt></b> is not a part of the visible Ghostscript
+<code>index.html</code> is not a part of the visible Ghostscript
 documentation itself, but when it is placed with all the
-<b><tt>*.htm</tt></b> files in a directory and a browser refers to the
+<code>*.htm</code> files in a directory and a browser refers to the
 directory name alone, most servers are configured to deliver a file named
-<b><tt>index.html</tt></b> by default.  This one does nothing except
+<code>index.html</code> by default.  This one does nothing except
 immediately to open the introductory Ghostscript document
-<a href="index.html"><b><tt>Readme.htm</tt></b></a>.  This is intended to
+<a href="index.html"><code>Readme.htm</code></a>.  This is intended to
 make life easier for both webmasters and users.
 
 <hr>
 
 <h2><a name="Large_structure"></a>HTML large structure</h2>
 
-<h3><a name="HTML_head"></a>HTML <b><tt>&lt;head&gt;</tt></b></h3>
+<h3><a name="HTML_head"></a>HTML <code>&lt;head&gt;</code></h3>
 
 <p>
 Besides the essential HTML structure elements, Ghostscript HTML document's
-<b><tt>&lt;head&gt;</tt></b> consists of three elements in this order:
+<code>&lt;head&gt;</code> consists of three elements in this order:
 
 <ol>
-<li>A <b><tt>&lt;title&gt;</tt></b>, usually the same text as the
+<li>A <code>&lt;title&gt;</code>, usually the same text as the
 <a href="#Headline">headline</a>
 
 <li>An RCS identification line giving the name of the file in an HTML
@@ -220,48 +220,48 @@ comment:
 
 <blockquote>
 <!-- The next line must not contain the literal string $,I,d,:! -->
-<b><tt>&lt;!-- $Id</tt><tt>: </tt></b><b><em>{file name}</em></b><b><tt>.htm $ --&gt;</tt></b>
+<code>&lt;!-- $Id</tt><tt>: </code><b><em>{file name}</em></b><b><tt>.htm $ --&gt;</tt></b>
 </blockquote>
 
 <li>For documents converted from another form, an HTML comment line giving
 the name of the original file before it was edited and converted to HTML:
 
 <blockquote>
-<b><tt>&lt;!-- Originally: </tt></b><b><em>{file name}</em></b><b><tt> --&gt;</tt></b>
+<code>&lt;!-- Originally: </code><b><em>{file name}</em></b><b><tt> --&gt;</tt></b>
 </blockquote>
 </ol>
 
-<h3><a name="HTML_body"></a>HTML <b><tt>&lt;body&gt;</tt></b></h3>
+<h3><a name="HTML_body"></a>HTML <code>&lt;body&gt;</code></h3>
 
 <p>
-A Ghostscript HTML document's <b><tt>&lt;body&gt;</tt></b> consists of five
+A Ghostscript HTML document's <code>&lt;body&gt;</code> consists of five
 elements in this order:
 
 <ol>
 <li><a name="Headline"></a>The <b><em>headline</em></b> is conspicuous text
 at the top of the page, usually the same as the
-<a href="#Structure_head"><b><tt>&lt;title&gt;</tt></b></a> text. It is
+<a href="#Structure_head"><code>&lt;title&gt;</code></a> text. It is
 always in a table whose purpose is to provide a colored background using
-<b><tt>bgcolor</tt></b>, going the full width of the page:
+<code>bgcolor</code>, going the full width of the page:
 
 <blockquote>
-<b><tt>&lt;p&gt;&lt;table width="100%" border="0"&gt;<br>
-&lt;tr&gt;&lt;th align="center" bgcolor="#CCCC00"&gt;&lt;font size=6&gt;</tt></b><br>
+<code>&lt;p&gt;&lt;table width="100%" border="0"&gt;<br>
+&lt;tr&gt;&lt;th align="center" bgcolor="#CCCC00"&gt;&lt;font size=6&gt;</code><br>
 <b><em>{Text}</em></b><br>
-<b><tt>&lt;/font&gt;<br>
-&lt;/table&gt;</tt></b>
+<code>&lt;/font&gt;<br>
+&lt;/table&gt;</code>
 </blockquote>
 
 <li><a name="Table_of_contents"></a>
 The <b><em>table of contents</em></b> consists of nested unordered
-lists <b><tt>&lt;ul&gt;</tt></b>, in most documents assembled strictly from
-the <b><tt>&lt;Hn&gt;</tt></b> headers.  The levels of nesting in the table
+lists <code>&lt;ul&gt;</code>, in most documents assembled strictly from
+the <code>&lt;Hn&gt;</code> headers.  The levels of nesting in the table
 of contents correspond to the level numbers of the headers.
 
 <li>The <b><em>hint</em></b> is a short section suggesting where to look
 for other related information.  With very few exceptions this always
 includes a reference and link to
-<a href="Readme.htm"><b><tt>Readme.htm</tt></b></a>, but may include other
+<a href="Readme.htm"><code>Readme.htm</code></a>, but may include other
 suggestions and references.
 
 <li>The substance of the document.
@@ -303,14 +303,14 @@ for an example of these structuring comments.  The sections they mark are:
 <li>the <b><em>trailer</em></b>
 </ol>
 
-<h3><a name="Headers"></a>Headers: <b><tt>&lt;Hn&gt;</tt></b></h3>
+<h3><a name="Headers"></a>Headers: <code>&lt;Hn&gt;</code></h3>
 
 <p>
-Give a header <b><tt>&lt;Hn&gt;</tt></b> this structure:
+Give a header <code>&lt;Hn&gt;</code> this structure:
 
-<blockquote><b><tt>
+<blockquote><code>
 &lt;h2&gt;&lt;a name="Head_anchor"&gt;&lt;/a&gt;Header text&lt;/h2&gt;
-</tt></b></blockquote>
+</code></blockquote>
 
 <p>
 That is, the opening header tag, an anchor, the header text, and the
@@ -318,16 +318,16 @@ closing tag.
 
 <p>
 Represent every header in the table of contents, linked
-<b><tt>&lt;a&nbsp;href="#..."&gt;</tt></b>...<b><tt>&lt;/a&gt;</tt></b> to
+<code>&lt;a&nbsp;href="#..."&gt;</code>...<b><tt>&lt;/a&gt;</tt></b> to
 the header.  Of course, the headers are also convenient linkage points for
 references from other documents.
 
-<h3><a name="Anchors"></a>Anchors: <b><tt>&lt;a name="..."&gt;</tt></b></h3>
+<h3><a name="Anchors"></a>Anchors: <code>&lt;a name="..."&gt;</code></h3>
 
 <p>
 Give an anchor a name consisting only of letters, digits, dots
-("<b><tt>.</tt></b>"), hyphens ("<b><tt>-</tt></b>"), and underscores
-("<b><tt>_</tt></b>"), but not white space or other punctuation marks.
+("<code>.</code>"), hyphens ("<b><tt>-</tt></b>"), and underscores
+("<code>_</code>"), but not white space or other punctuation marks.
 This ensures that the name is readable and that an entire name always
 appears on a single line of HTML source both where it's defined and
 everywhere it's used, making it simple to find anchors by text search in
@@ -343,9 +343,9 @@ For instance:
 	<td>&nbsp;&nbsp;&nbsp;&nbsp;
 	<th align=left>... <b><em>NOT</em></b> this form
 <tr>	<td colspan=3><hr>
-<tr valign=top>	<td><b><tt>&lt;a&nbsp;name="Image_formats"&gt;&lt;/a&gt;</tt></b>
+<tr valign=top>	<td><code>&lt;a&nbsp;name="Image_formats"&gt;&lt;/a&gt;</code>
 	<td>&nbsp;
-	<td><b><tt>&lt;a&nbsp;name="Imgfts"&gt;&lt;/a&gt;</tt></b>
+	<td><code>&lt;a&nbsp;name="Imgfts"&gt;&lt;/a&gt;</code>
 </table></blockquote>
 
 <p>
@@ -357,9 +357,9 @@ Anchors should be empty, that is
 	<td>&nbsp;&nbsp;&nbsp;&nbsp;
 	<th align=left>... <b><em>NOT</em></b> this form
 <tr>	<td colspan=3><hr>
-<tr valign=top>	<td><b><tt>&lt;a&nbsp;name="..."&gt;&lt;/a&gt;</tt></b>
+<tr valign=top>	<td><code>&lt;a&nbsp;name="..."&gt;&lt;/a&gt;</code>
 	<td>&nbsp;
-	<td><b><tt>&lt;a&nbsp;name="..."&gt;</tt></b><b><em>anything</em></b><b><tt>&lt;/a&gt;</tt></b>
+	<td><code>&lt;a&nbsp;name="..."&gt;</code><b><em>anything</em></b><b><tt>&lt;/a&gt;</tt></b>
 </table></blockquote>
 
 <p>
@@ -372,15 +372,15 @@ paragraph, list item, head, etc.) and at its beginning.
 	<td>&nbsp;&nbsp;&nbsp;&nbsp;
 	<th align=left>... <b><em>NOT</em></b> this form
 <tr>	<td colspan=3><hr>
-<tr valign=top>	<td><b><tt>&lt;p&gt;&lt;a&nbsp;name="..."&gt;&lt;/a&gt;</tt></b>
+<tr valign=top>	<td><code>&lt;p&gt;&lt;a&nbsp;name="..."&gt;&lt;/a&gt;</code>
 	<td>&nbsp;
-	<td><b><tt>&lt;p&gt;</tt></b><b><em>&nbsp;...text...&nbsp;</em></b><b><tt>&lt;a&nbsp;name="..."&gt;&lt;/a&gt;</tt></b>
-<tr valign=top>	<td><b><tt>&lt;p&gt;&lt;a&nbsp;name="..."&gt;&lt;/a&gt;</tt></b>
+	<td><code>&lt;p&gt;</code><b><em>&nbsp;...text...&nbsp;</em></b><b><tt>&lt;a&nbsp;name="..."&gt;&lt;/a&gt;</tt></b>
+<tr valign=top>	<td><code>&lt;p&gt;&lt;a&nbsp;name="..."&gt;&lt;/a&gt;</code>
 	<td>&nbsp;
-	<td><b><tt>&lt;a&nbsp;name="..."&gt;&lt;/a&gt;&lt;p&gt;</tt></b>
-<tr valign=top>	<td><b><tt>&lt;li&gt;&lt;a&nbsp;name="..."&gt;&lt;/a&gt;</tt></b>
+	<td><code>&lt;a&nbsp;name="..."&gt;&lt;/a&gt;&lt;p&gt;</code>
+<tr valign=top>	<td><code>&lt;li&gt;&lt;a&nbsp;name="..."&gt;&lt;/a&gt;</code>
 	<td>&nbsp;
-	<td><b><tt>&lt;a&nbsp;name="..."&gt;&lt;/a&gt;&lt;li&gt;</tt></b>
+	<td><code>&lt;a&nbsp;name="..."&gt;&lt;/a&gt;&lt;li&gt;</code>
 </table></blockquote>
 
 <hr>
@@ -389,29 +389,29 @@ paragraph, list item, head, etc.) and at its beginning.
 
 <h3><a name="Text_sections"></a>Sections of text</h3>
 
-<h4><a name="Paragraphs"></a>Paragraphs: <b><tt>&lt;p&gt;</tt></b></h4>
+<h4><a name="Paragraphs"></a>Paragraphs: <code>&lt;p&gt;</code></h4>
 
 <p>
-Define unindented paragraphs with <b><tt>&lt;p&gt;</tt></b>, never with
-explicit line breaks <b><tt>&lt;br&gt;</tt></b>, and make them
+Define unindented paragraphs with <code>&lt;p&gt;</code>, never with
+explicit line breaks <code>&lt;br&gt;</code>, and make them
 ragged-right, not right-filled or centered.  Put the paragraph tag
-<b><tt>&lt;p&gt;</tt></b> on a line alone, except when it is
+<code>&lt;p&gt;</code> on a line alone, except when it is
 <a href="#Anchor_placement">followed immediately by an anchor</a>.
 Don't place the anchor before the paragraph tag.
 
-<h4><a name="Blockquote"></a>Indented paragraphs: <b><tt>&lt;blockquote&gt;</tt></b></h4>
+<h4><a name="Blockquote"></a>Indented paragraphs: <code>&lt;blockquote&gt;</code></h4>
 
 <p>
-Define indented paragraphs with <b><tt>&lt;blockquote&gt;</tt></b>.  Avoid
+Define indented paragraphs with <code>&lt;blockquote&gt;</code>.  Avoid
 elaborate nested indentation -- that is, more than two levels.  It is
 generally a poor idea to try to make indentation carry too much weight of
 meaning for text, so use indentation simply to separate visual elements for
 easier reading.
 
-<h4><a name="Line_breaks"></a>Explicit line breaks: <b><tt>&lt;br&gt;</tt></b></h4>
+<h4><a name="Line_breaks"></a>Explicit line breaks: <code>&lt;br&gt;</code></h4>
 
 <p>
-Use explicit line breaks <b><tt>&lt;br&gt;</tt></b> sparingly, and never as
+Use explicit line breaks <code>&lt;br&gt;</code> sparingly, and never as
 a substitute for paragraph tags.  Do use them in
 
 <ul>
@@ -420,18 +420,18 @@ a substitute for paragraph tags.  Do use them in
 <li>table entries, sparingly
 </ul>
 
-<h4><a name="Preformatted_text"></a>Preformatted text: <b><tt>&lt;pre&gt;</tt></b></h4>
+<h4><a name="Preformatted_text"></a>Preformatted text: <code>&lt;pre&gt;</code></h4>
 
 <p>
-Use preformatted text <b><tt>&lt;pre&gt;</tt></b> exclusively for material
+Use preformatted text <code>&lt;pre&gt;</code> exclusively for material
 that must be presented with exact spacing in a monospaced font, such as
 extended coding examples.  Where extended preformatted text seems likely to
 be wider than a typical browser window, reduce the font size:
 
 <blockquote>
-<b><tt>&lt;font size="-1"&gt;&lt;pre&gt;</tt></b><br>
+<code>&lt;font size="-1"&gt;&lt;pre&gt;</code><br>
 <b><em>...&nbsp;Wide preformatted text&nbsp;...</em></b><br>
-<b><tt>&lt;/pre&gt;&lt;/font&gt;</tt></b>
+<code>&lt;/pre&gt;&lt;/font&gt;</code>
 </blockquote>
 
 <h3><a name="Use_of_fonts"></a>The use of different font faces</h3>
@@ -447,36 +447,36 @@ shown in this table.
 	<td>&nbsp;&nbsp;&nbsp;
 	<th align=left>Used for
 <tr>	<td colspan=3><hr>
-<tr valign=top>	<td><b><tt>&lt;address&gt;</tt></b>
+<tr valign=top>	<td><code>&lt;address&gt;</code>
 	<td>&nbsp;
 	<td>Addresses in running text
-<tr valign=top>	<td><b><tt>&lt;b&gt;</tt></b>
+<tr valign=top>	<td><code>&lt;b&gt;</code>
 	<td>&nbsp;
 	<td>Emphasis everywhere
-<tr valign=top>	<td><b><tt>&lt;em&gt;</tt></b>
+<tr valign=top>	<td><code>&lt;em&gt;</code>
 	<td>&nbsp;
-	<td>Emphasis, usually in running text; with <b><tt>&lt;b&gt;</tt></b>, strong emphasis
-<tr valign=top>	<td><b><tt>&lt;font size=</tt></b><b><em>N</em></b><b><tt>&gt;</tt></b>
+	<td>Emphasis, usually in running text; with <code>&lt;b&gt;</code>, strong emphasis
+<tr valign=top>	<td><code>&lt;font size=</code><b><em>N</em></b><b><tt>&gt;</tt></b>
 	<td>&nbsp;
-	<td>Table headings, extended <b><tt>&lt;pre&gt;</tt></b> examples
-<tr valign=top>	<td><b><tt>&lt;pre&gt;</tt></b>
+	<td>Table headings, extended <code>&lt;pre&gt;</code> examples
+<tr valign=top>	<td><code>&lt;pre&gt;</code>
 	<td>&nbsp;
 	<td>Preformatted text (to control spacing)
-<tr valign=top>	<td><b><tt>&lt;small&gt;</tt></b>
+<tr valign=top>	<td><code>&lt;small&gt;</code>
 	<td>&nbsp;
-	<td>Superscripts (smaller than <b><tt>&lt;font size="-1"&gt;</tt></b>)
-<tr valign=top>	<td><b><tt>&lt;sup&gt;</tt></b>
+	<td>Superscripts (smaller than <code>&lt;font size="-1"&gt;</code>)
+<tr valign=top>	<td><code>&lt;sup&gt;</code>
 	<td>&nbsp;
 	<td>Superscripts
-<tr valign=top>	<td><b><tt>&lt;tt&gt;</tt></b>
+<tr valign=top>	<td><code>&lt;tt&gt;</code>
 	<td>&nbsp;
-	<td>With <b><tt>&lt;b&gt;</tt></b>, used for specific names of
+	<td>With <code>&lt;b&gt;</code>, used for specific names of
 	code, programs, and data in running text, and in short examples
 </table></blockquote>
 
 <hr>
 
-<h2><a name="Lists"></a>Lists: <b><tt>&lt;ul&gt;, &lt;ol&gt;, &lt;dl&gt;</tt></b></h2>
+<h2><a name="Lists"></a>Lists: <code>&lt;ul&gt;, &lt;ol&gt;, &lt;dl&gt;</code></h2>
 
 <p>
 Don't over-use lists: instead simply use clear wording in running text
@@ -485,17 +485,17 @@ material's clarity and readability.
 
 <p>
 Most simple lists should be unordered (bulleted) lists
-<b><tt>&lt;ul&gt;</tt></b>.  Use an ordered (numbered or alphabetized) list
-<b><tt>&lt;ol&gt;</tt></b> only where the exact ordering or an exact count
+<code>&lt;ul&gt;</code>.  Use an ordered (numbered or alphabetized) list
+<code>&lt;ol&gt;</code> only where the exact ordering or an exact count
 is important.
 
 <p>
-Where entries in a descriptive list <b><tt>&lt;dl&gt;</tt></b> contain
-extended descriptions <b><tt>&lt;dd&gt;</tt></b> -- especially if the
+Where entries in a descriptive list <code>&lt;dl&gt;</code> contain
+extended descriptions <code>&lt;dd&gt;</code> -- especially if the
 descriptions contain paragraph breaks or tables -- improve the spacing
 between entries by making each entry a separate list.  That is, enclose
 each entry in a separate list to give it more readable spacing, rather than
-putting many <b><tt>&lt;dt&gt;...&lt;dd&gt;...</tt></b> entries in a single
+putting many <code>&lt;dt&gt;...&lt;dd&gt;...</code> entries in a single
 list:
 
 <blockquote><table cellpadding=0 cellspacing=0>
@@ -505,27 +505,27 @@ list:
 	<th align=left>... <b><em>NOT</em></b> this form
 <tr>	<td colspan=3><hr>
 <tr>	<td valign=top>
-	    <b><tt>&lt;dl&gt;</tt></b><br>
-	    <b><tt>&lt;dt&gt;</tt></b>Term<br>
-	    <b><tt>&lt;dd&gt;</tt></b>Description<br>
-	    <b><tt>&lt;p&gt;</tt></b>Another paragraph of description<br>
-	    <b><tt>&lt;/dl&gt;</tt></b><br>
+	    <code>&lt;dl&gt;</code><br>
+	    <code>&lt;dt&gt;</code>Term<br>
+	    <code>&lt;dd&gt;</code>Description<br>
+	    <code>&lt;p&gt;</code>Another paragraph of description<br>
+	    <code>&lt;/dl&gt;</code><br>
 	    &nbsp;<br>
-	    <b><tt>&lt;dl&gt;</tt></b><br>
-	    <b><tt>&lt;dt&gt;</tt></b>Another term<br>
-	    <b><tt>&lt;dd&gt;</tt></b>Another description<br>
-	    <b><tt>&lt;/dl&gt;</tt></b><br>
+	    <code>&lt;dl&gt;</code><br>
+	    <code>&lt;dt&gt;</code>Another term<br>
+	    <code>&lt;dd&gt;</code>Another description<br>
+	    <code>&lt;/dl&gt;</code><br>
 	    ...<br>
 	<td>&nbsp;
 	<td valign=top>
-	    <b><tt>&lt;dl&gt;</tt></b><br>
-	    <b><tt>&lt;dt&gt;</tt></b>Term<br>
-	    <b><tt>&lt;dd&gt;</tt></b>Description<br>
-	    <b><tt>&lt;p&gt;</tt></b>Another paragraph of description<br>
-	    <b><tt>&lt;dt&gt;</tt></b>Another term<br>
-	    <b><tt>&lt;dd&gt;</tt></b>Another description<br>
+	    <code>&lt;dl&gt;</code><br>
+	    <code>&lt;dt&gt;</code>Term<br>
+	    <code>&lt;dd&gt;</code>Description<br>
+	    <code>&lt;p&gt;</code>Another paragraph of description<br>
+	    <code>&lt;dt&gt;</code>Another term<br>
+	    <code>&lt;dd&gt;</code>Another description<br>
 	    ...<br>
-	    <b><tt>&lt;/dl&gt;</tt></b>
+	    <code>&lt;/dl&gt;</code>
 </table></blockquote>
 
 <p>
@@ -534,7 +534,7 @@ are often much better.
 
 <hr>
 
-<h2><a name="Tables"></a>Tables: <b><tt>&lt;table&gt;</tt></b></h2>
+<h2><a name="Tables"></a>Tables: <code>&lt;table&gt;</code></h2>
 
 <h3><a name="Readability"></a>Readability for the user and the HTML writer</h3>
 
@@ -544,7 +544,7 @@ converted to plain text.  Browsers and converters of all kinds handle
 tables idiosyncratically, so there seems to be more art than science to
 reaching this end, which accounts for all the detail in the guidelines for
 tables: it is the reason for all the uses of background color
-<b><tt>bgcolor</tt></b>, horizontal rules <b><tt>&lt;hr&gt;</tt></b>, and
+<code>bgcolor</code>, horizontal rules <b><tt>&lt;hr&gt;</tt></b>, and
 explicit spacing.
 
 <p>
@@ -567,13 +567,13 @@ text.  For visual spacing prefer white space.
 <li>Set cell padding and spacing to 0.  Use explicit white space for
 readability, not implicit white space.
 
-<li>Begin the code for a new row <b><tt>&lt;tr&gt;</tt></b> on a new line.
-Generally use <b><tt>valign=top</tt></b> to control the placement of text
+<li>Begin the code for a new row <code>&lt;tr&gt;</code> on a new line.
+Generally use <code>valign=top</code> to control the placement of text
 in a row for readability with a browser or as plain text.
 
 <li>Code the first column of a row beginning on the same line as the
 beginning of the row, and then begin every other column on a separate line.
-Always precede <b><tt>&lt;td&gt;</tt></b> by a tab character.
+Always precede <code>&lt;td&gt;</code> by a tab character.
 
 <li>Separate two columns of substantive material by a visually empty column
 of nonbreaking spaces for readability.  Specify the width of this empty
@@ -630,10 +630,10 @@ The HTML source code for a typical small table should look like this:
 
 <p>
 Don't use optional tags (ones not required by the HTML standard).  These
-include <b><tt>&lt;/dd&gt;</tt></b>, <b><tt>&lt;/dt&gt;</tt></b>,
-<b><tt>&lt;/li&gt;</tt></b>, <b><tt>&lt;/p&gt;</tt></b>,
-<b><tt>&lt;/tr&gt;</tt></b>, <b><tt>&lt;/th&gt;</tt></b>, and
-<b><tt>&lt;/td&gt;</tt></b>.
+include <code>&lt;/dd&gt;</code>, <b><tt>&lt;/dt&gt;</tt></b>,
+<code>&lt;/li&gt;</code>, <b><tt>&lt;/p&gt;</tt></b>,
+<code>&lt;/tr&gt;</code>, <b><tt>&lt;/th&gt;</tt></b>, and
+<code>&lt;/td&gt;</code>.
 
 <hr>
 
@@ -646,7 +646,7 @@ If you create a new Ghostscript HTML document, choose for it a name in 8+3
 format for cross-platform compabitility:
 
 <blockquote>
-<b><em>Name</em></b><b><tt>.htm</tt></b>
+<b><em>Name</em></b><code>.htm</code>
 </blockquote>
 
 <p>
@@ -666,13 +666,13 @@ To create an entirely new Ghostscript document, plagiarize this one for the
 <a href="#Structuring_comments">structuring comments</a> and other useful
 parts.  Then, using the <a href="#Structuring_comments">structuring
 comments</a> as a guide to the sections of the document (in a text editor,
-search for "<b><tt>&lt;!--&nbsp;[</tt></b>"):
+search for "<code>&lt;!--&nbsp;[</code>"):
 
 <ul>
 <li>insert your own HTML title and <a href="#Headline">headline</a> (they
 should ordinarily be the same text) in place of the old ones;
 
-<li>insert your own RCS <b><tt>$Id</tt></b> in place of the old one in the
+<li>insert your own RCS <code>$Id</code> in place of the old one in the
 <a href="#Structure_head">HTML header</a>;
 
 <li>delete the old entries in the <a href="#Table_of_contents">table of
@@ -689,10 +689,10 @@ and
 <p>
 You now have a template document ready for new contents.
 
-<h3><a name="Readme_material"></a>Write new references to go in <b><tt>Readme.htm</tt></b></h3>
+<h3><a name="Readme_material"></a>Write new references to go in <code>Readme.htm</code></h3>
 
 <p>
-Write material to go in <a href="Readme.htm"><b><tt>Readme.htm</tt></b></a>
+Write material to go in <a href="Readme.htm"><code>Readme.htm</code></a>
 that describes the new document, and links to it from two sections:
 
 <ul>
@@ -707,7 +707,7 @@ that describes the new document, and links to it from two sections:
 <p>
 Follow the other guidelines here, including which elements of the
 document should go in which section according to the structuring comments,
-and <a href="#Headers">anchoring every <b><tt>&lt;Hn&gt;</tt></b>
+and <a href="#Headers">anchoring every <code>&lt;Hn&gt;</code>
 header</a>.  As you create text and headers, you will want to rebuild the
 <a href="#Table_of_contents">table of contents</a> from the headers
 occasionally.
@@ -724,8 +724,8 @@ other structures built along the guidelines in this document.
 <h2><a name="Miscellany"></a>Miscellany</h2>
 
 <p>
-Use <b><tt>&lt;&gt;</tt></b> to bracket links to visible email addresses
-(<b><tt>mailto</tt></b>) in running text.  This makes it easy for a user to
+Use <code>&lt;&gt;</code> to bracket links to visible email addresses
+(<code>mailto</code>) in running text.  This makes it easy for a user to
 cut and paste the entire name and address into another document or mailer,
 for instance
 
@@ -734,19 +734,19 @@ Free Software Foundation &lt;<a href="mailto:gnu@gnu.org">gnu@gnu.org</a>&gt;
 </blockquote>
 
 <p>
-For exponentiation use "<b><tt>^</tt></b>" (not "**" or "exp()") plus
-writing the exponent as a superscript in <b><tt>&lt;small&gt;</tt></b>
+For exponentiation use "<code>^</code>" (not "**" or "exp()") plus
+writing the exponent as a superscript in <code>&lt;small&gt;</code>
 size:
 
 <blockquote>
-Something<b><tt>^&lt;sup&gt;</tt></b><b><tt>&lt;small&gt;</tt></b>exponent<b><tt>&lt;/small&gt;&lt;/sup&gt;</tt></b>.
+Something<code>^&lt;sup&gt;</code><b><tt>&lt;small&gt;</tt></b>exponent<b><tt>&lt;/small&gt;&lt;/sup&gt;</tt></b>.
 </blockquote>
 
 <p>
 to look like this:
 
 <blockquote>
-Something<b><tt>^</tt></b><sup><small>exponent</small></sup>
+Something<code>^</code><sup><small>exponent</small></sup>
 </blockquote>
 
 <p>

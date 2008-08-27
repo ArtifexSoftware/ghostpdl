@@ -616,7 +616,7 @@ To test WTS, set the UseWTS user parameter:
 
 <p>
 Also make sure you're not in a banding mode (setting
-<b><tt>-dMaxBitmap=500000000</tt></b> should work), and that your halftone
+<code>-dMaxBitmap=500000000</code> should work), and that your halftone
 dictionaries set /AccurateScreens.
 
 <p>
@@ -1391,7 +1391,7 @@ rendering of PDF's from GSView and Ghostview family viewers.
 <h3><a name="7.31_Incompatible_changes"></a>Incompatible changes</h3>
 
 <p>
-The <b><tt>-dDOPS</tt></b> flag (to enable DoPS processing) is now
+The <code>-dDOPS</code> flag (to enable DoPS processing) is now
 disabled by default, as it is a more reasonable default. Thus, any
 files which depend on DoPS will now break unless this flag is set.
 
@@ -10980,10 +10980,10 @@ robust, largely thanks to automated regression testing.
 <li>An optional "diskn" feature that emulates the "%disk" devices
 found on some Adobe printers.
 
-<li>The <tt><b>-dSAFER</b></tt> flag now tightens read access to
+<li>The <code>-dSAFER</code> flag now tightens read access to
 arbitrary files, as well as write access. Thus,
-<tt><b>-dSAFER</b></tt> in this release is equivalent to
-<tt><b>-dSAFER -dPARANOIDSAFER</b></tt> in 7.04. This will break some
+<code>-dSAFER</code> in this release is equivalent to
+<code>-dSAFER -dPARANOIDSAFER</code> in 7.04. This will break some
 viewers, notably gv.
 
 </ul>

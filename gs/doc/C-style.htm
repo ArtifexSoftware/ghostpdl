@@ -61,14 +61,14 @@
 <li><a href="#All_files">All files</a>
 <li><a href="#Makefiles">Makefiles</a>
 <li><a href="#General_C_code">General C Code</a>
-<li><a href="#Headers">Headers (<b><tt>.h</tt></b> files)</a>
-<li><a href="#Source">Source (<b><tt>.c</tt></b> files)</a>
+<li><a href="#Headers">Headers (<code>.h</code> files)</a>
+<li><a href="#Source">Source (<code>.c</code> files)</a>
 </ul>
 <li><a href="#Conventions">Ghostscript conventions</a>
 <ul>
 <li><a href="#Specific_names">Specific names</a>:
-    <a href="#code"><b><tt>code</tt></b></a>,
-    <a href="#status"><b><tt>status</tt></b></a>
+    <a href="#code"><code>code</code></a>,
+    <a href="#status"><code>status</code></a>
 <li><a href="#Structure_type_descriptors">Structure type descriptors</a>
 <li><a href="#Objects">"Objects"</a>
 <li><a href="#Error_handling">Error handling</a>
@@ -129,12 +129,12 @@ Restrictions:
 
 <ul>
 
-<li>Don't assume that <b><tt>#if</tt></b> will treat undefined names as 0.
+<li>Don't assume that <code>#if</code> will treat undefined names as 0.
 While the ANSI standard requires this, it may produce a warning.
 
-<li>In <b><tt>.c</tt></b> files, don't use preprocessor conditionals that
+<li>In <code>.c</code> files, don't use preprocessor conditionals that
 test for individual platforms or compilers.  Use them only in header files
-named xxx<b><tt>_.h</tt></b>.
+named xxx<code>_.h</code>.
 
 </ul>
 
@@ -146,9 +146,9 @@ Restrictions:
 <ul>
 
 <li>Don't redefine a macro, even with the same definition, without using
-<b><tt>#undef</tt></b>.
+<code>#undef</code>.
 
-<li><b><tt>CAPITALIZE</tt></b> macro names unless there is a good reason not
+<li><code>CAPITALIZE</code> macro names unless there is a good reason not
 to.
 
 <li>Even though the legacy code contains some macros which contain
@@ -172,28 +172,28 @@ compilers erroneously try to expand them.
 <li>Don't use macros to define shorthands for casted pointers.  For
 instance, avoid
 
-<blockquote><b><tt>
+<blockquote><code>
 #define fdev ((gx_device_fubar *)dev)
-</tt></b></blockquote>
+</code></blockquote>
 
 <p>
 and instead use
 
-<blockquote><b><tt>
+<blockquote><code>
 gx_device_fubar * const fdev = (gx_device_fubar *)dev;
-</tt></b></blockquote>
+</code></blockquote>
 
 <p>
-The use of <b><tt>const</tt></b> alerts the reader that this is effectively
+The use of <code>const</code> alerts the reader that this is effectively
 a synonym.
 
 <li>If a macro generates anything larger than a single expression (that is,
-one or more statements), surround it with <b><tt>BEGIN</tt></b> and
-<b><tt>END</tt></b>.  These work around the fact that simple statements and
+one or more statements), surround it with <code>BEGIN</code> and
+<code>END</code>.  These work around the fact that simple statements and
 compound statements in C can't be substituted for each other syntactically.
 
 <li>If a macro introduces local variables, only use names that end with an
-underscore (<b><tt>_</tt></b>), such as <b><tt>code_</tt></b>.  This avoids
+underscore (<code>_</code>), such as <code>code_</code>.  This avoids
 clashes both with ordinary variable names (which should never end with an
 underscore) and with system-defined names (which may begin with an
 underscore).
@@ -207,7 +207,7 @@ Restrictions:
 
 <ul>
 
-<li>Only use <b><tt>#pragma</tt></b> in files that are explicitly identified
+<li>Only use <code>#pragma</code> in files that are explicitly identified
 as being platform-dependent.  Many compilers complain if this is used at
 all, and some complain if they don't recognize the specific pragma being
 requested (both incorrect according to the ANSI standard).
@@ -247,7 +247,7 @@ Do not use:
 
 <ul>
 
-<li><b><tt>register</tt></b>
+<li><code>register</code>
 
 </ul>
 
@@ -257,30 +257,30 @@ Restrictions:
 <ul>
 
 <li>Do not allow a global variable (constant) to have more than one
-non-<b><tt>extern</tt></b> definition, even though some ANSI C compilers
+non-<code>extern</code> definition, even though some ANSI C compilers
 allow this.  Every global constant should have exactly one definition, in a
-<b><tt>.c</tt></b> file, and preferably just one <b><tt>extern</tt></b>
+<code>.c</code> file, and preferably just one <code>extern</code>
 declaration, in a header file.
 
-<li><b><tt>static</tt></b> or variables must be
-<b><tt>const</tt></b> and initialized: non-<b><tt>const</tt></b> statically
+<li><code>static</code> or variables must be
+<code>const</code> and initialized: non-<code>const</code> statically
 allocated variables are incompatible with reentrancy, and we're in the
 process of eliminating all of them.
 
-<li>Do not use <b><tt>extern</tt></b> in <b><tt>.c</tt></b> files, only in
-<b><tt>.h</tt></b> files, unless you have a very good reason for it (e.g.,
+<li>Do not use <code>extern</code> in <code>.c</code> files, only in
+<code>.h</code> files, unless you have a very good reason for it (e.g.,
 as in <a href="../src/iconf.c">iconf.c</a>).  There are too many such
-<b><tt>extern</tt></b>s in the code now: we are eliminating them over time.
+<code>extern</code>s in the code now: we are eliminating them over time.
 
-<li>Do not declare the same name as both <b><tt>static</tt></b>
-and non-<b><tt>static</tt></b> within the same
+<li>Do not declare the same name as both <code>static</code>
+and non-<code>static</code> within the same
 compilation.  (Some compilers complain, some do not.)  This is especially a
 problem for procedures: it is easy to declare a procedure as
-<b><tt>static</tt></b> near the beginning of a file and accidentally not
-declare it <b><tt>static</tt></b> where it is defined later in the file.
+<code>static</code> near the beginning of a file and accidentally not
+declare it <code>static</code> where it is defined later in the file.
 
 <li>Even though the ANSI standard allows initialized external declarations
-(<b><tt>extern&nbsp;int&nbsp;x&nbsp;=&nbsp;0</tt></b>), don't use them.
+(<code>extern&nbsp;int&nbsp;x&nbsp;=&nbsp;0</code>), don't use them.
 
 </ul>
 
@@ -291,22 +291,22 @@ Restrictions:
 
 <ul>
 
-<li>Avoid using <b><tt>char</tt></b>, except for <b><tt>char&nbsp;*</tt></b>
-for a pointer to a string.  Don't assume that <b><tt>char</tt></b> is
+<li>Avoid using <code>char</code>, except for <code>char&nbsp;*</code>
+for a pointer to a string.  Don't assume that <code>char</code> is
 signed; also don't assume it is unsigned.
 
-<li>Never cast a <b><tt>float</tt></b> to a <b><tt>double</tt></b>
+<li>Never cast a <code>float</code> to a <code>double</code>
 explicitly.  ANSI compilers in their default mode do all floating point
 computations in double precision, and handle such casts automatically.
 
-<li>Don't use <b><tt>long long</tt></b>: even though it is in the ANSI
+<li>Don't use <code>long long</code>: even though it is in the ANSI
 standard, not all compilers support it.  Use the 
-<b><tt>(u)int64_t</tt></b> types from <b><tt>stdint_.h</tt></b> instead.
+<code>(u)int64_t</code> types from <code>stdint_.h</code> instead.
 
-<li>Don't assume anything about whether <b><tt>sizeof(long)</tt></b> is less
-than, equal to, or greater than <b><tt>sizeof(ptr)</tt></b>.  (However, you
+<li>Don't assume anything about whether <code>sizeof(long)</code> is less
+than, equal to, or greater than <code>sizeof(ptr)</code>.  (However, you
 can make such comparisons in preprocessor conditionals using
-<b><tt>ARCH_SIZEOF_LONG</tt></b> and <b><tt>ARCH_SIZEOF_PTR</tt></b>.)
+<code>ARCH_SIZEOF_LONG</code> and <code>ARCH_SIZEOF_PTR</code>.)
 
 </ul>
 
@@ -323,7 +323,7 @@ but the older one doesn't.)
 <li>Don't declare an array of size 1 at the end of a structure to indicate
 that a variable-size array follows.
 
-<li>Don't declare initialized <b><tt>auto</tt></b> arrays.
+<li>Don't declare initialized <code>auto</code> arrays.
 
 </ul>
 
@@ -334,26 +334,26 @@ Restrictions:
 
 <ul>
 
-<li>Don't use <b><tt>typedef</tt></b> for function types, such as
+<li>Don't use <code>typedef</code> for function types, such as
 
 <blockquote>
-<b><tt>typedef int proc_xyz_t(double, int *);</tt></b>
+<code>typedef int proc_xyz_t(double, int *);</code>
 </blockquote>
 
 <p>Many compilers don't handle this correctly -- they will give errors, or
 do the wrong thing, when declaring variables of type
-<b><tt>proc_xyz_t</tt></b> and/or <b><tt>proc_xyz_t *</tt></b>.  Instead, do
+<code>proc_xyz_t</code> and/or <code>proc_xyz_t *</code>.  Instead, do
 this:
 
 <blockquote>
-<b><tt>#define PROC_XYZ(proc) int proc(double, int *)<br>
+<code>#define PROC_XYZ(proc) int proc(double, int *)<br>
 PROC_XYZ(some_proc);  /* declare a procedure of this type */<br>
 typedef PROC_XYZ((*proc_xyz_ptr_t));  /* define a type for procedure ptrs */<br>
 <br>
-proc_xyz_ptr_t pp;  /* pointer to procedure */</tt></b>
+proc_xyz_ptr_t pp;  /* pointer to procedure */</code>
 </blockquote>
 
-<li>Don't redefine <b><tt>typedef</tt></b>'ed names, even with the same
+<li>Don't redefine <code>typedef</code>'ed names, even with the same
 definition.  Some compilers complain about this, and the standard doesn't
 allow it.
 
@@ -368,27 +368,27 @@ Restrictions:
 
 <li>Don't use anonymous structures if you can possibly avoid it, except
 occasionally as components of other structures. Ideally, use the
-<b><tt>struct</tt></b> keyword only for declaring named structure types,
+<code>struct</code> keyword only for declaring named structure types,
 like this:
 
 <blockquote>
-<b><tt>typedef struct xxx_s {</tt></b><br>
+<code>typedef struct xxx_s {</code><br>
 &nbsp;&nbsp;&nbsp;... members ...<br>
-<b><tt>} xxx_t;</tt></b>
+<code>} xxx_t;</code>
 </blockquote>
 
-<li>Use <b><tt>struct</tt></b> only when declaring structure types, never
+<li>Use <code>struct</code> only when declaring structure types, never
 for referring to them (e.g., never declare a variable as type
-<b><tt>struct&nbsp;xxx_s&nbsp;*</tt></b>).
+<code>struct&nbsp;xxx_s&nbsp;*</code>).
 
 <li>Don't assume that the compiler will (or won't) insert padding in
 structures to align members for best performance.  To preserve alignment,
-only declare structure members that are narrower than an <b><tt>int</tt></b>
+only declare structure members that are narrower than an <code>int</code>
 if there will be a lot of instances of that structure in memory.  For such
-structures, insert <b><tt>byte</tt></b> and/or <b><tt>short</tt></b> padding
-members as necessary to re-establish <b><tt>int</tt></b> alignment.
+structures, insert <code>byte</code> and/or <code>short</code> padding
+members as necessary to re-establish <code>int</code> alignment.
 
-<li>Don't declare initialized <b><tt>auto</tt></b> structures.
+<li>Don't declare initialized <code>auto</code> structures.
 
 </ul>
 
@@ -415,10 +415,10 @@ Restrictions:
 <ul>
 
 <li>Don't assign a larger integer data type to a smaller one without a cast
-(<b><tt>int_x&nbsp;=&nbsp;long_y</tt></b>).
+(<code>int_x&nbsp;=&nbsp;long_y</code>).
 
 <li>It's OK to use the address of a structure or array element
-(<b><tt>&p->e</tt></b>, <b><tt>&a[i]</tt></b>) locally, or pass it to a
+(<code>&p->e</code>, <code>&a[i]</code>) locally, or pass it to a
 procedure that won't store it, but don't store such an address in allocated
 storage unless you're very sure of what you're doing.
 
@@ -426,12 +426,12 @@ storage unless you're very sure of what you're doing.
 (Pointers to structures or unions are OK.)
 
 <li>For calling a variable or parameter procedure, use
-<b><tt>ptr-&gt;func(...)</tt></b>.  Some old code uses explicit indirection,
-<b><tt>(*ptr-&gt;func)(...)</tt></b>: don't use this in new code.
+<code>ptr-&gt;func(...)</code>.  Some old code uses explicit indirection,
+<code>(*ptr-&gt;func)(...)</code>: don't use this in new code.
 
 <li>Don't write expressions that depend on order of evaluation, unless the
-order is created explicitly by use of <b><tt>||</tt></b>,
-<b><tt>&amp;&amp;</tt></b>, <b><tt>?:</tt></b>, <b><tt>,</tt></b>, or
+order is created explicitly by use of <code>||</code>,
+<code>&amp;&amp;</code>, <code>?:</code>, <code>,</code>, or
 function nesting (the arguments of a function must be evaluated before the
 function is called).  In particular, don't assume that the arguments of a
 function will be evaluated left-to-right, or that the left side of an
@@ -451,25 +451,25 @@ Restrictions:
 <ul>
 
 <li>If you use an expression as a statement, other than an assignment or a
-function call with <b><tt>void</tt></b> return value, enclose it explicitly
-in <b><tt>DISCARD()</tt></b>.
+function call with <code>void</code> return value, enclose it explicitly
+in <code>DISCARD()</code>.
 
-<li>The type of the operand of a <b><tt>switch</tt></b> must match the type
-of the case labels, whether the labels are <b><tt>int</tt></b>s or the
-members of an <b><tt>enum</tt></b> type.  (Use a cast if necessary.)
+<li>The type of the operand of a <code>switch</code> must match the type
+of the case labels, whether the labels are <code>int</code>s or the
+members of an <code>enum</code> type.  (Use a cast if necessary.)
 
 <li>It is OK for one case of a switch to "fall through" into another (i.e.,
 for the statement just before a case label not to be a control transfer),
-but a comment <b><tt>/*&nbsp;falls&nbsp;through&nbsp;*/</tt></b> is
+but a comment <code>/*&nbsp;falls&nbsp;through&nbsp;*/</code> is
 required.
 
 <li>If you are returning an error code specified explicitly (e.g.,
-<b><tt>return&nbsp;gs_error_rangecheck</tt></b> or
-<b><tt>return&nbsp;e_rangecheck</tt></b>), use
-<b><tt>return_error()</tt></b> rather than plain <b><tt>return</tt></b>.
+<code>return&nbsp;gs_error_rangecheck</code> or
+<code>return&nbsp;e_rangecheck</code>), use
+<code>return_error()</code> rather than plain <code>return</code>.
 However, if the program is simply propagating an error code generated
-elsewhere, as opposed to generating the error, use <b><tt>return</tt></b>
-(e.g., <b><tt>if&nbsp;(code&nbsp;<&nbsp;0)&nbsp;return&nbsp;code</tt></b>).
+elsewhere, as opposed to generating the error, use <code>return</code>
+(e.g., <code>if&nbsp;(code&nbsp;<&nbsp;0)&nbsp;return&nbsp;code</code>).
 
 </ul>
 
@@ -482,44 +482,44 @@ Restrictions:
 
 <li>Provide a prototype for every procedure, and make sure the prototype is
 available at every call site.  If the procedure is local to a file
-(<b><tt>static</tt></b>), the prototype should precede the procedure, in
+(<code>static</code>), the prototype should precede the procedure, in
 the same file; if the procedure is global, the prototype should be in a
 header file.
 
 <li>If a procedure parameter is itself a procedure, do list its parameter
-types rather than just using <b><tt>()</tt></b>.  For example,
+types rather than just using <code>()</code>.  For example,
 
-<blockquote><b><tt>
+<blockquote><code>
 int foo(int (*callback)(int, int));
-</tt></b></blockquote>
+</code></blockquote>
 
 <p>
 rather than just
 
-<blockquote><b><tt>
+<blockquote><code>
 int foo(int (*callback)());
-</tt></b></blockquote>
+</code></blockquote>
 
-<li>Don't use the <b><tt>P</tt></b>* macros in new code.  (See the
+<li>Don't use the <code>P</code>* macros in new code.  (See the
 Procedures section of <a href="#Language_extensions">Language extensions</a>
 below for more information.)
 
 <li>Always provide an explicit return type for procedures, in both the
 prototype and the definition: don't rely on the implicit declaration as
-<b><tt>int</tt></b>.
+<code>int</code>.
 
-<li>Don't use <b><tt>float</tt></b> as the return type of a procedure,
+<li>Don't use <code>float</code> as the return type of a procedure,
 unless there's a special reason.  Floating point hardware typically does
 everything in double precision internally and has to do extra work to
 convert between double and single precision.
 
-<li>Don't declare parameters as being of type <b><tt>float</tt></b>,
-<b><tt>short</tt></b>, or <b><tt>char</tt></b>.  If you do this and forget
+<li>Don't declare parameters as being of type <code>float</code>,
+<code>short</code>, or <code>char</code>.  If you do this and forget
 to include the prototype at a call site, ANSI compilers will generate
-incompatible calling sequences.  Use <b><tt>floatp</tt></b> (a synonym for
-<b><tt>double</tt></b>, mnemonic for "float parameter") instead of
-<b><tt>float</tt></b>, and use <b><tt>int</tt></b> or <b><tt>uint</tt></b>
-instead of <b><tt>short</tt></b> or <b><tt>char</tt></b>.
+incompatible calling sequences.  Use <code>floatp</code> (a synonym for
+<code>double</code>, mnemonic for "float parameter") instead of
+<code>float</code>, and use <code>int</code> or <code>uint</code>
+instead of <code>short</code> or <code>char</code>.
 
 </ul>
 
@@ -532,14 +532,14 @@ Restrictions:
 
 <li>Only use library features that are documented in the established ANSI
 standard (e.g., Harbison & Steele's book).  Do not use procedures that are
-"standards" promulgated by Microsoft (e.g., <b><tt>stricmp</tt></b>), or
-originate in BSD Unix (e.g., <b><tt>strcasecmp</tt></b>), or were added in
+"standards" promulgated by Microsoft (e.g., <code>stricmp</code>), or
+originate in BSD Unix (e.g., <code>strcasecmp</code>), or were added in
 later versions of the standard such as C 9X.
 
-<li>Do not use any features from <b><tt>stdio.h</tt></b> that assume the
-existence of <b><tt>stdin</tt></b>, <b><tt>stdout</tt></b>, or
-<b><tt>stderr</tt></b>.  See <a href="../src/gsio.h">gsio.h</a> for the full
-list.  Instead, use <b><tt>gs_stdin</tt></b> et al.
+<li>Do not use any features from <code>stdio.h</code> that assume the
+existence of <code>stdin</code>, <code>stdout</code>, or
+<code>stderr</code>.  See <a href="../src/gsio.h">gsio.h</a> for the full
+list.  Instead, use <code>gs_stdin</code> et al.
 
 </ul>
 
@@ -551,27 +551,27 @@ list.  Instead, use <b><tt>gs_stdin</tt></b> et al.
 
 <dl>
 
-<dt><b><tt>static</tt></b>
+<dt><code>static</code>
 
-<dd>Ghostscript assumes the compiler supports the <b><tt>static</tt></b> 
+<dd>Ghostscript assumes the compiler supports the <code>static</code> 
 keyword for declaring variables and procedures as local to a particular
 source file.
 
-<dt><b><tt>inline</tt></b>
+<dt><code>inline</code>
 
-<dd><b><tt>inline</tt></b> is available even if the compiler does not
+<dd><code>inline</code> is available even if the compiler does not
 support it.  Be aware, however, that it may have no effect.  In particular,
-do not use <b><tt>inline</tt></b> in header files.  Instead, use the
-<b><tt>extern_inline</tt></b> facility described just below.
+do not use <code>inline</code> in header files.  Instead, use the
+<code>extern_inline</code> facility described just below.
 
-<dt><b><tt>extern_inline</tt></b>
+<dt><code>extern_inline</code>
 
-<dd>Compilers that do support <b><tt>inline</tt></b> vary in how they decide
+<dd>Compilers that do support <code>inline</code> vary in how they decide
 whether to (also) compile a closed-code copy of the procedure.  Because of
-this, putting an <b><tt>inline</tt></b> procedure in a header file may
+this, putting an <code>inline</code> procedure in a header file may
 produce multiple closed copies, causing duplicate name errors at link time.
-<b><tt>extern_inline</tt></b> provides a safe way to put
-<b><tt>inline</tt></b> procedures in header files, regardless of compiler.
+<code>extern_inline</code> provides a safe way to put
+<code>inline</code> procedures in header files, regardless of compiler.
 Unfortunately, the only way we've found to make this fully portable involves
 a fair amount of boilerplate.  For details, please see <a
 href="../src/stdpre.h">stdpre.h</a>.
@@ -582,55 +582,55 @@ href="../src/stdpre.h">stdpre.h</a>.
 
 <dl>
 
-<dt><b><tt>bool, true, false</tt></b>
+<dt><code>bool, true, false</code>
 
-<dd><b><tt>bool</tt></b> is intended as a Boolean type, with canonical
-values <b><tt>true</tt></b> and <b><tt>false</tt></b>.  In a more reasonable
-language, such as Java, <b><tt>bool</tt></b> is an enumerated type requiring
-an explicit cast to or from <b><tt>int</tt></b>; however, because C's
-conditionals are defined as producing <b><tt>int</tt></b> values, we can't
-even define <b><tt>bool</tt></b> as a C <b><tt>enum</tt></b> without
+<dd><code>bool</code> is intended as a Boolean type, with canonical
+values <code>true</code> and <code>false</code>.  In a more reasonable
+language, such as Java, <code>bool</code> is an enumerated type requiring
+an explicit cast to or from <code>int</code>; however, because C's
+conditionals are defined as producing <code>int</code> values, we can't
+even define <code>bool</code> as a C <code>enum</code> without
 provoking compiler warnings.
 
 <p>
-Even though <b><tt>bool</tt></b> is a synonym for <b><tt>int</tt></b>, treat
+Even though <code>bool</code> is a synonym for <code>int</code>, treat
 them as conceptually different types:
 
 <ul>
-<li>Initialize or set <b><tt>bool</tt></b> variables to <b><tt>true</tt></b>
-or <b><tt>false</tt></b>, not 0 or 1.
-<li>Use the Boolean operators <b><tt>!</tt></b>, <b><tt>&&</tt></b>,
-and <b><tt>||</tt></b> only with Booleans.  Don't use the idiom
-<b><tt>!!x</tt></b> to create a Boolean that is true iff <b><tt>x</tt></b>
-!= 0: use <b><tt>x != 0</tt></b>.
-<li>Use an explicit <b><tt>(int)</tt></b> cast to convert a Boolean to an
+<li>Initialize or set <code>bool</code> variables to <code>true</code>
+or <code>false</code>, not 0 or 1.
+<li>Use the Boolean operators <code>!</code>, <code>&&</code>,
+and <code>||</code> only with Booleans.  Don't use the idiom
+<code>!!x</code> to create a Boolean that is true iff <code>x</code>
+!= 0: use <code>x != 0</code>.
+<li>Use an explicit <code>(int)</code> cast to convert a Boolean to an
 integer.
 </ul>
 
-<dt><b><tt>byte, ushort, uint, ulong</tt></b>
+<dt><code>byte, ushort, uint, ulong</code>
 
-<dd>These types are simply shorthands for <b><tt>unsigned char, short, int,
-long</tt></b>.
+<dd>These types are simply shorthands for <code>unsigned char, short, int,
+long</code>.
 
 <p>
-In addition, the use of <b><tt>byte *</tt></b> indicates a
+In addition, the use of <code>byte *</code> indicates a
 Ghostscript-style string, with explicit length given separately, as
-opposed to a null terminated C-style string, which is <b><tt>char
-*</tt></b>.
+opposed to a null terminated C-style string, which is <code>char
+*</code>.
 
-<dt><b><tt>floatp</tt></b>
+<dt><code>floatp</code>
 
-<dd>This is a synonym for <b><tt>double</tt></b>.  It should be used for,
+<dd>This is a synonym for <code>double</code>.  It should be used for,
 and only for, procedure parameters that would otherwise be
-<b><tt>float</tt></b>.  (As noted above, procedure parameters should not be
-declared as <b><tt>float</tt></b>.)
+<code>float</code>.  (As noted above, procedure parameters should not be
+declared as <code>float</code>.)
 
-<dt><b><tt>bits8, bits16, bits32</tt></b>
+<dt><code>bits8, bits16, bits32</code>
 
 <dd>These are unsigned integer types of the given width.  Use them wherever
 the actual width matters: do <em>not</em>, for example, use
-<b><tt>short</tt></b> assuming that it is 16 bits wide. New code can use 
-the C99 fixed-width types from <b><tt>stdint_.h</tt></b>.
+<code>short</code> assuming that it is 16 bits wide. New code can use 
+the C99 fixed-width types from <code>stdint_.h</code>.
 
 </dl>
 
@@ -651,67 +651,67 @@ producing ugly-looking results once in a while, it's OK to break it.
 <h4><a name="Indentation"></a>Indentation</h4>
 
 <p>
-We've formatted all of our code using the GNU <b><tt>indent</tt></b> program.
+We've formatted all of our code using the GNU <code>indent</code> program.
 
-<blockquote><b><tt>
+<blockquote><code>
 indent&nbsp;-bad&nbsp;-nbap&nbsp;-nsob&nbsp;-br&nbsp;-ce&nbsp;-cli4&nbsp;-npcs&nbsp;-ncs&nbsp;\<br>
 &nbsp;&nbsp;&nbsp;-i4&nbsp;-di0&nbsp;-psl&nbsp;-lp&nbsp;-lps&nbsp;somefile.c
-</tt></b></blockquote>
+</code></blockquote>
 
 <p>
 does a 98% accurate job of producing our preferred style.  Unfortunately,
-there are bugs in all versions of GNU <b><tt>indent</tt></b>, requiring
-both pre- and post-processing of the code.  The <b><tt>gsindent</tt></b>
+there are bugs in all versions of GNU <code>indent</code>, requiring
+both pre- and post-processing of the code.  The <code>gsindent</code>
 script in the Ghostscript fileset contains the necessary workarounds.
 
 <p>
 Put indentation points every 4 spaces, with 8 spaces = 1 tab stop.
   
 <p>
-Don't indent the initial <b><tt>#</tt></b> of preprocessor commands.
+Don't indent the initial <code>#</code> of preprocessor commands.
 However, for nested preprocessor commands, do use indentation between the
-<b><tt>#</tt></b> and the command itself.  Use 2 spaces per level of
+<code>#</code> and the command itself.  Use 2 spaces per level of
 nesting, e.g.:
 
 <blockquote>
-<b><tt>#ifndef&nbsp;xyz</tt></b><br>
-<b><tt>#&nbsp;&nbsp;define&nbsp;xyz&nbsp;0</tt></b><br>
-<b><tt>#endif</tt></b>
+<code>#ifndef&nbsp;xyz</code><br>
+<code>#&nbsp;&nbsp;define&nbsp;xyz&nbsp;0</code><br>
+<code>#endif</code>
 </blockquote>
 
 <p>
 For assignments (including chain assignments), put the entire statement on
-one line if it will fit; if not, break it after a <b><tt>=</tt></b> and
+one line if it will fit; if not, break it after a <code>=</code> and
 indent all the following lines.  I.e., format like this:
 
 <blockquote>
-var1&nbsp;<b><tt>=</tt></b>&nbsp;value<b><tt>;</tt></b><br>
-var1&nbsp;<b><tt>=</tt></b>&nbsp;var2&nbsp;<b><tt>=</tt></b>&nbsp;value<b><tt>;</tt></b><br>
-var1&nbsp;<b><tt>=</tt></b><br>
-&nbsp;&nbsp;&nbsp;&nbsp;value<b><tt>;</tt></b><br>
-var1&nbsp;<b><tt>=</tt></b><br>
-&nbsp;&nbsp;&nbsp;&nbsp;var2&nbsp;<b><tt>=</tt></b>&nbsp;value<b><tt>;</tt></b><br>
-var1&nbsp;<b><tt>=</tt></b>&nbsp;var2&nbsp;<b><tt>=</tt></b><br>
-&nbsp;&nbsp;&nbsp;&nbsp;value<b><tt>;</tt></b>
+var1&nbsp;<code>=</code>&nbsp;value<code>;</code><br>
+var1&nbsp;<code>=</code>&nbsp;var2&nbsp;<code>=</code>&nbsp;value<code>;</code><br>
+var1&nbsp;<code>=</code><br>
+&nbsp;&nbsp;&nbsp;&nbsp;value<code>;</code><br>
+var1&nbsp;<code>=</code><br>
+&nbsp;&nbsp;&nbsp;&nbsp;var2&nbsp;<code>=</code>&nbsp;value<code>;</code><br>
+var1&nbsp;<code>=</code>&nbsp;var2&nbsp;<code>=</code><br>
+&nbsp;&nbsp;&nbsp;&nbsp;value<code>;</code>
 </blockquote>
 
 <p>
 But not like this:
 
 <blockquote>
-var1&nbsp;<b><tt>=</tt></b><br>
-var2&nbsp;<b><tt>=</tt></b> value<b><tt>;</tt></b>
+var1&nbsp;<code>=</code><br>
+var2&nbsp;<code>=</code> value<code>;</code>
 </blockquote>
 
 <p>
 Indent in-line blocks thus:
 
 <blockquote>
-<b><tt>{</tt></b><br>
+<code>{</code><br>
 &nbsp;&nbsp;&nbsp;... declarations ...<br>
 &nbsp;&nbsp;&nbsp;{{ blank line if any declarations above }}<br>
 &nbsp;&nbsp;&nbsp;... statements ...<br>
-<b><tt>}</tt></b>
+<code>}</code>
 </blockquote>
 
 <p>
@@ -720,16 +720,16 @@ Similarly, indent procedures thus:
 <blockquote>
 return_type<br>
 proc_name(... arguments ...)<br>
-<b><tt>{</tt></b><br>
+<code>{</code><br>
 &nbsp;&nbsp;&nbsp;... declarations ...<br>
 &nbsp;&nbsp;&nbsp;{{ blank line if any declarations above }}<br>
 &nbsp;&nbsp;&nbsp;... statements ...<br>
-<b><tt>}</tt></b>
+<code>}</code>
 </blockquote>
 
 <p>
-If a control construct (<b><tt>if</tt></b>, <b><tt>do</tt></b>,
-<b><tt>while</tt></b>, or <b><tt>for</tt></b>) has a one-line body, use
+If a control construct (<code>if</code>, <code>do</code>,
+<code>while</code>, or <code>for</code>) has a one-line body, use
 this:
 
 <blockquote>
@@ -741,9 +741,9 @@ this:
 If it has a multi-line body, use this:
 
 <blockquote>
-... control construct ... <b><tt>{</tt></b><br>
+... control construct ... <code>{</code><br>
 &nbsp;&nbsp;&nbsp;... subordinate code ...<br>
-<b><tt>}</tt></b>
+<code>}</code>
 </blockquote>
 
 <p>
@@ -753,13 +753,13 @@ If the subordinate code has declarations, see blocks above.
 For if-else statements, do this:
 
 <blockquote>
-<b><tt>if (</tt></b> ...<b><tt> ) {</tt></b><br>
+<code>if (</code> ...<code> ) {</code><br>
 &nbsp;&nbsp;&nbsp;... subordinate code ...<br>
-<b><tt>} else if (</tt></b> ...<b><tt> ) {</tt></b><br>
+<code>} else if (</code> ...<code> ) {</code><br>
 &nbsp;&nbsp;&nbsp;... subordinate code ...<br>
-<b><tt>} else {</tt></b><br>
+<code>} else {</code><br>
 &nbsp;&nbsp;&nbsp;... subordinate code ...<br>
-<b><tt>}</tt></b>
+<code>}</code>
 </blockquote>
 
 <p>
@@ -767,24 +767,24 @@ When there are more than two alternatives, as in the example above, use the
 above ("parallel") syntax rather than the following ("nested") syntax:
 
 <blockquote>
-<b><tt>if (</tt></b> ...<b><tt> ) {</tt></b><br>
+<code>if (</code> ...<code> ) {</code><br>
 &nbsp;&nbsp;&nbsp;... subordinate code ...<br>
-<b><tt>} else {</tt></b><br>
-<b><tt>&nbsp;&nbsp;&nbsp;if (</tt></b> ...<b><tt> ) {</tt></b><br>
+<code>} else {</code><br>
+<code>&nbsp;&nbsp;&nbsp;if (</code> ...<code> ) {</code><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;... subordinate code ...<br>
-<b><tt>&nbsp;&nbsp;&nbsp;} else {</tt></b><br>
+<code>&nbsp;&nbsp;&nbsp;} else {</code><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;... subordinate code ...<br>
-<b><tt>&nbsp;&nbsp;&nbsp;}</tt></b><br>
-<b><tt>}</tt></b>
+<code>&nbsp;&nbsp;&nbsp;}</code><br>
+<code>}</code>
 </blockquote>
 
 <p>
 Similarly, for do-while statements, do this:
 
 <blockquote>
-<b><tt>do {</tt></b><br>
+<code>do {</code><br>
 &nbsp;&nbsp;&nbsp;... body ...<br>
-<b><tt>} while (</tt></b> ... condition ... <b><tt>);</tt></b>
+<code>} while (</code> ... condition ... <code>);</code>
 </blockquote>
 
 <h4><a name="Spaces"></a>Spaces</h4>
@@ -793,10 +793,10 @@ Similarly, for do-while statements, do this:
 Do put a space:
 <ul>
 <li>after every comma and semicolon, unless it ends a line;
-<li>around every binary operator other than "<b><tt>-&gt;</tt></b>" and
-"<b><tt>.</tt></b>", although you can omit the spaces around the innermost
+<li>around every binary operator other than "<code>-&gt;</code>" and
+"<code>.</code>", although you can omit the spaces around the innermost
 operator in a nested expression if you like;
-<li>on both sides of the parentheses of an <b><tt>if</tt></b>, <b><tt>for</tt></b>, or <b><tt>while</tt></b>.
+<li>on both sides of the parentheses of an <code>if</code>, <code>for</code>, or <code>while</code>.
 </ul>
 
 <p>
@@ -815,27 +815,27 @@ Parentheses are important in only a few places:
 
 <ul>
 <li>Around the inner subexpressions in expressions that mix
-<b><tt>&amp;&amp;</tt></b> and <b><tt>||</tt></b>, even if they are not
+<code>&amp;&amp;</code> and <code>||</code>, even if they are not
 required by precedence, for example
 
-<blockquote><b><tt>
+<blockquote><code>
 (xx &amp;&amp; yy) || zz
-</tt></b></blockquote>
+</code></blockquote>
 
 <li>Similarly around inner subexpressions in expressions that mix
-<b><tt>&amp;</tt></b>, <b><tt>|</tt></b>, or shifts, especially if mixing
+<code>&amp;</code>, <code>|</code>, or shifts, especially if mixing
 these with other operators, for instance
 
-<blockquote><b><tt>
+<blockquote><code>
 (x &lt;&lt; 3) | (y &gt;&gt; 5)
-</tt></b></blockquote>
+</code></blockquote>
 
 <li>In macro definitions around every use of an argument that logically
 could be an expression, for example
 
-<blockquote><b><tt>
+<blockquote><code>
 ((x) * (x) + (y) * (y))
-</tt></b></blockquote>
+</code></blockquote>
 
 </ul>
 
@@ -849,18 +849,18 @@ syntactically required, unless you really dislike doing this.  Note that
 the parentheses should go around the entire expression, not the condition.
 For instance, instead of
 
-<blockquote><b><tt>
+<blockquote><code>
 hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y,<br>
 &nbsp;&nbsp;&nbsp;(pgls-&gt;g.pen_down) ? gs_lineto : gs_moveto);
-</tt></b></blockquote>
+</code></blockquote>
 
 <p>
 use
 
-<blockquote><b><tt>
+<blockquote><code>
 hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y,<br>
 &nbsp;&nbsp;&nbsp;(pgls-&gt;g.pen_down ? gs_lineto : gs_moveto));
-</tt></b></blockquote>
+</code></blockquote>
 
 <h3><a name="Preprocessor_style"></a>Preprocessor</h3>
 
@@ -890,7 +890,7 @@ rules that follow consistently in new code.
 
 <p>
 Define macros in the smallest scope you can manage (procedure, file, or
-<b><tt>.h</tt></b> file), and <b><tt>#undef</tt></b> them at the end of
+<code>.h</code> file), and <code>#undef</code> them at the end of
 that scope: that way, someone reading the code can see the definitions
 easily when reading the uses.  If that isn't appropriate, define them in as
 large a scope as possible, so that they effectively become part of the
@@ -898,12 +898,12 @@ language.  This places an additional burden on the reader, but it can be
 amortized over reading larger amounts of code.
 
 <p>
-Try hard to use procedures instead of macros.  Use "<b><tt>inline</tt></b>"
+Try hard to use procedures instead of macros.  Use "<code>inline</code>"
 if you really think the extra speed is needed, but only within a
-<b><tt>.c</tt></b> file: don't put inline procedures in <b><tt>.h</tt></b>
-files, because most compilers don't honor "<b><tt>inline</tt></b>" and
-you'll wind up with a copy of the procedure in every <b><tt>.c</tt></b>
-file that includes the <b><tt>.h</tt></b> file.
+<code>.c</code> file: don't put inline procedures in <code>.h</code>
+files, because most compilers don't honor "<code>inline</code>" and
+you'll wind up with a copy of the procedure in every <code>.c</code>
+file that includes the <code>.h</code> file.
 
 <p>
 If you define a macro that looks like a procedure, make sure it will work
@@ -919,9 +919,9 @@ If you define macros for special loop control structures, make their uses
 look somewhat like ordinary loops, for instance:
 
 <blockquote>
-<b><tt>BEGIN_RECT(xx, yy) {</tt></b><br>
+<code>BEGIN_RECT(xx, yy) {</code><br>
 &nbsp;&nbsp;... body indented one position ...<br>
-<b><tt>} END_RECT(xx, yy);</tt></b>
+<code>} END_RECT(xx, yy);</code>
 </blockquote>
 
 <p>
@@ -950,32 +950,32 @@ subtle is going on.
 <p>
 Use fully spelled-out English words in names, rather than contractions.
 This is most important for procedure and macro names, global variables and
-constants, values of <b><tt>#define</tt></b> and <b><tt>enum</tt></b>,
-<b><tt>struct</tt></b> and other <b><tt>typedef</tt></b> names, and
+constants, values of <code>#define</code> and <code>enum</code>,
+<code>struct</code> and other <code>typedef</code> names, and
 structure member names, and for argument and variable names which have
-uninformative types like <b><tt>int</tt></b>.  It's not very important for
+uninformative types like <code>int</code>.  It's not very important for
 arguments or local variables of distinctive types, or for local index or
 count variables.
 
 <p>
 Avoid names that run English words together:
-"<b><tt>hpgl_compute_arc_center</tt></b>" is better than
-"<b><tt>hpgl_compute_arccenter</tt></b>".  However, for terms drawn from
+"<code>hpgl_compute_arc_center</code>" is better than
+"<code>hpgl_compute_arccenter</code>".  However, for terms drawn from
 some predefined source, like the names of PostScript operators, use a term
-in its well-known form (for instance, <b><tt>gs_setlinewidth</tt></b>
-rather than <b><tt>gs_set_line_width</tt></b>).
+in its well-known form (for instance, <code>gs_setlinewidth</code>
+rather than <code>gs_set_line_width</code>).
 
 <p>
 Procedures, variables, and structures visible outside a single
-<b><tt>.c</tt></b> file should generally have prefixes that indicate what
-subsystem they belong to (in the case of Ghostscript, <b><tt>gs_</tt></b>
-or <b><tt>gx_</tt></b>).  This rule isn't followed very consistently.
+<code>.c</code> file should generally have prefixes that indicate what
+subsystem they belong to (in the case of Ghostscript, <code>gs_</code>
+or <code>gx_</code>).  This rule isn't followed very consistently.
 
 <h3><a name="Types"></a>Types</h3>
 
 <p>
-Many older structure names don't have <b><tt>_t</tt></b> on the end, but
-this suffix should be used in all new code.  (The <b><tt>_s</tt></b>
+Many older structure names don't have <code>_t</code> on the end, but
+this suffix should be used in all new code.  (The <code>_s</code>
 structure name is needed only to satisfy some debuggers.  No code other than
 the structure declaration should refer to it.)
 
@@ -984,28 +984,28 @@ Declare structure types that contain pointers to other instances of
 themselves like this:
 
 <blockquote>
-<b><tt>typedef struct xxx_s xxx_t;</tt></b><br>
-<b><tt>struct xxx_s {</tt></b><br>
+<code>typedef struct xxx_s xxx_t;</code><br>
+<code>struct xxx_s {</code><br>
 &nbsp;&nbsp;&nbsp;... members ...<br>
-&nbsp;&nbsp;&nbsp;<b><tt>xxx_t *</tt></b>ptr_member_name;<br>
+&nbsp;&nbsp;&nbsp;<code>xxx_t *</code>ptr_member_name;<br>
 &nbsp;&nbsp;&nbsp;... members ...<br>
-<b><tt>};</tt></b>
+<code>};</code>
 </blockquote>
 
 <p>
 If, to maintain data abstraction and avoid including otherwise unnecessary
-header files, you find that you want the type <b><tt>xxx_t</tt></b> to be
+header files, you find that you want the type <code>xxx_t</code> to be
 available in a header file that doesn't include the definition of the
-structure <b><tt>xxx_s</tt></b>, use this approach:
+structure <code>xxx_s</code>, use this approach:
 
 <blockquote>
-<b><tt>#ifndef xxx_DEFINED</tt></b><br>
-<b><tt>#&nbsp;&nbsp;define xxx_DEFINED</tt></b><br>
-<b><tt>typedef struct xxx_s xxx_t;</tt></b><br>
-<b><tt>#endif</tt></b><br>
-<b><tt>struct xxx_s {</tt></b><br>
+<code>#ifndef xxx_DEFINED</code><br>
+<code>#&nbsp;&nbsp;define xxx_DEFINED</code><br>
+<code>typedef struct xxx_s xxx_t;</code><br>
+<code>#endif</code><br>
+<code>struct xxx_s {</code><br>
 &nbsp;&nbsp;&nbsp;... members ...<br>
-<b><tt>};</tt></b>
+<code>};</code>
 </blockquote>
 
 <p>
@@ -1013,20 +1013,20 @@ You can then copy the first 4 lines in other header files.  (Don't ever
 include them in an executable code file.)
 
 <p>
-Don't bother using <b><tt>const</tt></b> for anything other than with
+Don't bother using <code>const</code> for anything other than with
 pointers as described below.  However, in those places where it is necessary
-to cast a pointer of type <b><tt>const&nbsp;T&nbsp;*</tt></b> to type
-<b><tt>T&nbsp;*</tt></b>, always include a comment that explains why you are
+to cast a pointer of type <code>const&nbsp;T&nbsp;*</code> to type
+<code>T&nbsp;*</code>, always include a comment that explains why you are
 "breaking const".
 
 <h4>Pointers</h4>
 
 <p>
-Use <b><tt>const</tt></b> for pointer referents (that is,
-<b><tt>const&nbsp;T&nbsp;*</tt></b>) wherever possible and appropriate.
+Use <code>const</code> for pointer referents (that is,
+<code>const&nbsp;T&nbsp;*</code>) wherever possible and appropriate.
 
 <p>
-If you find yourself wanting to use <b><tt>void&nbsp;*</tt></b>, try to
+If you find yourself wanting to use <code>void&nbsp;*</code>, try to
 find an alternative using unions or (in the case of super- and subclasses)
 casts, unless you're writing something like a memory manager that really
 treats memory as opaque.
@@ -1036,7 +1036,7 @@ treats memory as opaque.
 <p> In general, don't create procedures that are private and only called 
 from one place. However, if a compound statement (especially an arm of 
 a conditional) is too long for the eye easily to match its enclosing 
-braces "<b><tt>{...}</tt></b>" -- that is, longer than 10 or 15 lines -- 
+braces "<code>{...}</code>" -- that is, longer than 10 or 15 lines -- 
 and it doesn't use or set a lot of state held in outer local variables, 
 it may be more readable if you put it in a procedure.
 
@@ -1055,28 +1055,28 @@ If a local variable is only assigned a value once, assign it that value at
 its declaration, if possible.  For example,
 
 <blockquote>
-<b><tt>int x = </tt></b>some expression <b><tt>;</tt></b>
+<code>int x = </code>some expression <code>;</code>
 </blockquote>
 
 <p>
 rather than
 
 <blockquote>
-<b><tt>int x;</tt></b><br>
+<code>int x;</code><br>
 ...<br>
-<b><tt>x = </tt></b> some expression <b><tt>;</tt></b>
+<code>x = </code> some expression <code>;</code>
 </blockquote>
 
 <p>
 Use a local pointer variable like this to "narrow" pointer types:
 
 <blockquote>
-<b><tt>int</tt></b><br>
-someproc(... <b><tt>gx_device *dev</tt></b> ...)<br>
-<b><tt>{<br>
-&nbsp;&nbsp;&nbsp;gx_device_printer *const pdev = (gx_device_printer *)dev;</tt></b><br>
+<code>int</code><br>
+someproc(... <code>gx_device *dev</code> ...)<br>
+<code>{<br>
+&nbsp;&nbsp;&nbsp;gx_device_printer *const pdev = (gx_device_printer *)dev;</code><br>
 &nbsp;&nbsp;&nbsp;...<br>
-<b><tt>}</tt></b>
+<code>}</code>
 </blockquote>
 
 <p>
@@ -1084,27 +1084,27 @@ Don't "shadow" a local variable or procedure parameter with an inner local
 variable of the same name.  I.e., don't do this:
 
 <blockquote>
-<b><tt>int</tt></b><br>
-someproc(... <b><tt>int x</tt></b> ...)<br>
-<b><tt>{</tt></b><br>
+<code>int</code><br>
+someproc(... <code>int x</code> ...)<br>
+<code>{</code><br>
 &nbsp;&nbsp;&nbsp;...<br>
-<b><tt>&nbsp;&nbsp;&nbsp;int x;</tt></b><br>
+<code>&nbsp;&nbsp;&nbsp;int x;</code><br>
 &nbsp;&nbsp;&nbsp;...<br>
-<b><tt>}</tt></b>
+<code>}</code>
 </blockquote>
 
 <h4><a name="Compiler_warnings"></a>Compiler warnings</h4>
 
 <p>
-The following section refers to the warnings produced by <b><tt>gcc</tt></b>:
+The following section refers to the warnings produced by <code>gcc</code>:
 your compiler may produce different ones.
 
 <p>
 It's OK if compilation produces the following warnings:
 
 <ul>
-<li><b><tt>&lt;name&gt; might be used uninitialized in this function</tt></b>
-<li><b><tt>cast discards `const' from pointer target type</tt></b>
+<li><code>&lt;name&gt; might be used uninitialized in this function</code>
+<li><code>cast discards `const' from pointer target type</code>
 </ul>
 
 <p>
@@ -1112,14 +1112,14 @@ The first of these often occurs because the compiler isn't aware of control
 flow restrictions that guarantee the variable will be initialized before
 use: if it occurs in new code, check the code carefully, but don't worry
 about the message.  The second is often unavoidable in code that initializes
-or frees a structure that is otherwise <b><tt>const</tt></b> during its
+or frees a structure that is otherwise <code>const</code> during its
 lifetime.
 <p>
 
 Do work hard to eliminate all warnings other than these,
 since they often indicate the possible presence of coding errors.
 In particular, get rid of warnings about parameter passing or
-initialization that discards <b><tt>const</tt></b>,
+initialization that discards <code>const</code>,
 by using explicit casts.
 
 <hr>
@@ -1148,9 +1148,9 @@ Every code file should start with comments containing
 <li>a copyright notice,
 <li>the name of the file in the form of an RCS Id:
 
-<blockquote><b><tt>
+<blockquote><code>
 /* $<!-- -->Id: filename.ext $*/
-</tt></b></blockquote>
+</code></blockquote>
 
 <p>
 (using the comment convention appropriate to the language of the file), and
@@ -1165,32 +1165,32 @@ update the copyright year and change the file name.
 <h3><a name="Makefiles"></a>Makefiles</h3>
 
 <p>
-Use the extension <b><tt>.mak</tt></b> for makefiles.
+Use the extension <code>.mak</code> for makefiles.
 
 <p>
 For each
 
-<blockquote><b><tt>
+<blockquote><code>
 #include "xxx.h"
-</tt></b></blockquote>
+</code></blockquote>
 
 <p>
-make sure there is a dependency on <b><tt>$(xxx_h)</tt></b> in the
-makefile.  If xxx ends with a "<b><tt>_</tt></b>", this rule still holds,
+make sure there is a dependency on <code>$(xxx_h)</code> in the
+makefile.  If xxx ends with a "<code>_</code>", this rule still holds,
 so that if you code
 
-<blockquote><b><tt>
+<blockquote><code>
 #include "math_.h"
-</tt></b></blockquote>
+</code></blockquote>
 
 <p>
-the makefile must contain a dependency on "<b><tt>$(math__h)</tt></b>"
-(note the two underscores "<b><tt>__</tt></b>").
+the makefile must contain a dependency on "<code>$(math__h)</code>"
+(note the two underscores "<code>__</code>").
 
 <p>
-List the dependencies bottom-to-top, like the <b><tt>#include</tt></b>
+List the dependencies bottom-to-top, like the <code>#include</code>
 statements themselves; within each level, list them alphabetically.  Do
-this also with <b><tt>#include</tt></b> statements themselves whenever
+this also with <code>#include</code> statements themselves whenever
 possible (but sometimes there are inter-header dependencies that require
 bending this rule).
 
@@ -1201,20 +1201,20 @@ before the colon that separates the target(s) of a rule from the dependents.
 <h3><a name="General_C_code"></a>General C code</h3>
 
 <p>
-List <b><tt>#include</tt></b> statements from "bottom" to "top", that is,
+List <code>#include</code> statements from "bottom" to "top", that is,
 in the following order:
 
 <blockquote><ol>
-<li>System includes (<b><tt>"xxx_.h"</tt></b>)
-<li><b><tt>gs*.h</tt></b>
-<li><b><tt>gx*.h</tt></b> (yes, <b><tt>gs</tt></b> and <b><tt>gx</tt></b>
+<li>System includes (<code>"xxx_.h"</code>)
+<li><code>gs*.h</code>
+<li><code>gx*.h</code> (yes, <code>gs</code> and <code>gx</code>
 are in the wrong order.)
-<li><b><tt>s*.h</tt></b>
-<li><b><tt>i*.h</tt></b> (or other interpreter headers that don't start
-with "<b><tt>i</tt></b>")
+<li><code>s*.h</code>
+<li><code>i*.h</code> (or other interpreter headers that don't start
+with "<code>i</code>")
 </ol></blockquote>
 
-<h3><a name="Headers"></a>Headers (<b><tt>.h</tt></b> files)</h3>
+<h3><a name="Headers"></a>Headers (<code>.h</code> files)</h3>
 
 <p>
 In header files, always use the following at the beginning of a header file
@@ -1223,12 +1223,12 @@ to prevent double inclusion:
 <blockquote>
 {{ Copyright notice etc. }}<br><br>
 
-<b><tt>#ifndef </tt></b>&lt;filename&gt;<b><tt>_INCLUDED</tt></b><br>
-<b><tt>#define </tt></b>&lt;filename&gt;<b><tt>_INCLUDED</tt></b><br><br>
+<code>#ifndef </code>&lt;filename&gt;<code>_INCLUDED</code><br>
+<code>#define </code>&lt;filename&gt;<code>_INCLUDED</code><br><br>
 
 {{ The contents of the file }}<br><br>
 
-<b><tt>#endif /* </tt></b>&lt;filename&gt;<b><tt>_INCLUDED */</tt></b>
+<code>#endif /* </code>&lt;filename&gt;<code>_INCLUDED */</code>
 </blockquote>
 
 <p>
@@ -1238,13 +1238,13 @@ every procedure and structure has a comment that says what it does.  Divide
 procedures into meaningful groups set off by some distinguished form of
 comment.
 
-<h3><a name="Source"></a>Source (<b><tt>.c</tt></b> files)</h3>
+<h3><a name="Source"></a>Source (<code>.c</code> files)</h3>
 
 <p>
 After the initial comments, arrange C files in the following order:
 
 <blockquote><ol>
-<li><b><tt>#include</tt></b> statements
+<li><code>#include</code> statements
 <li>Exported data declarations
 <li>Explicit externs (if necessary)
 <li>Forward declarations of procedures
@@ -1268,7 +1268,7 @@ reason.
 The Ghostscript code uses certain names consistently for certain kinds of
 values.  Some of the commonest and least obvious are these two:
 
-<h4><a name="code"></a><b><tt>code</tt></b></h4>
+<h4><a name="code"></a><code>code</code></h4>
 
 <blockquote>
 A value to be returned from a procedure:
@@ -1289,7 +1289,7 @@ A value to be returned from a procedure:
 
 </blockquote>
 
-<h4><a name="status"></a><b><tt>status</tt></b></h4>
+<h4><a name="status"></a><code>status</code></h4>
 
 <blockquote>
 A value returned from a stream procedure:
@@ -1301,10 +1301,10 @@ A value returned from a stream procedure:
 <a href="../src/scommon.h">scommon.h</a>
 <tr valign=top>	<td align=right>0
 	<td>&nbsp;
-	<td>Normal return (or, from the "<b><tt>process</tt></b>" procedure, means that more input is needed)
+	<td>Normal return (or, from the "<code>process</code>" procedure, means that more input is needed)
 <tr valign=top>	<td align=right>1
 	<td>&nbsp;
-	<td>More output space is needed (from the "<b><tt>process</tt></b>" procedure)
+	<td>More output space is needed (from the "<code>process</code>" procedure)
 </table>
 </blockquote>
 
@@ -1317,36 +1317,36 @@ href="Develop.htm#Structure_descriptors">Structure descriptors</a> section
 of the developer documentation for details.)  Putting the descriptor for a
 structure next to the structure definition will help keep the two
 consistent, so immediately after the definition of a structure
-<b><tt>xxx_s</tt></b>, define its structure descriptor:
+<code>xxx_s</code>, define its structure descriptor:
 
 <blockquote>
-<b><tt>struct xxx_s {</tt></b><br>
+<code>struct xxx_s {</code><br>
 &nbsp;&nbsp;&nbsp;... members ...<br>
-<b><tt>};</tt></b><br>
-<b><tt>#define private_st_xxx()&nbsp;&nbsp;/* in </tt></b>&lt;filename&gt;<tt><b>.c */\</tt></b><br>
-<b><tt>&nbsp;&nbsp;gs_private_st_</tt></b>&lt;whatever&gt;<b><tt>(st_xxx, xxx_t,\</tt></b><br>
-<b><tt>&nbsp;&nbsp;&nbsp;&nbsp;"xxx_t", xxx_enum_ptrs, xxx_reloc_ptrs,\</tt></b><br>
-<b><tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt></b>... additional parameters as needed ...<b><tt>)</tt></b>
+<code>};</code><br>
+<code>#define private_st_xxx()&nbsp;&nbsp;/* in </code>&lt;filename&gt;<code>.c */\</code><br>
+<code>&nbsp;&nbsp;gs_private_st_</code>&lt;whatever&gt;<code>(st_xxx, xxx_t,\</code><br>
+<code>&nbsp;&nbsp;&nbsp;&nbsp;"xxx_t", xxx_enum_ptrs, xxx_reloc_ptrs,\</code><br>
+<code>&nbsp;&nbsp;&nbsp;&nbsp;</code>... additional parameters as needed ...<code>)</code>
 </blockquote>
 
 <p>
 The file that implements operations on this structure
-(&lt;filename&gt;<b><tt>.c</tt></b>) should then include, near the
+(&lt;filename&gt;<code>.c</code>) should then include, near the
 beginning, the line:
 
 <blockquote>
-<b><tt>private_st_xxx();</tt></b>
+<code>private_st_xxx();</code>
 </blockquote>
 
 <p>
 In much existing code, structure descriptors are declared as
-<b><tt>public</tt></b>, which allows clients to allocate instances of the
+<code>public</code>, which allows clients to allocate instances of the
 structure directly.  We now consider this bad design.  Instead, structure
-descriptors should always be <b><tt>static</tt></b>; the implementation
+descriptors should always be <code>static</code>; the implementation
 file should provide one or more procedures for allocating instances, e.g.,
 
 <blockquote>
-<b><tt>xxx_t *gs_xxx_alloc(P1(gs_memory_t *mem));</tt></b>
+<code>xxx_t *gs_xxx_alloc(P1(gs_memory_t *mem));</code>
 </blockquote>
 
 <p>
@@ -1354,7 +1354,7 @@ If it is necessary to make a structure descriptor public, it should be
 declared in its clients as
 
 <blockquote>
-<b><tt>extern_st(st_xxx);</tt></b>
+<code>extern_st(st_xxx);</code>
 </blockquote>
 
 <h3><a name="Objects"></a>"Objects"</h3>
@@ -1383,15 +1383,15 @@ dynamically.
 
 <p>
 The source code representation of a class is simply a
-<b><tt>typedef</tt></b> for a C <b><tt>struct</tt></b>.  See <a
+<code>typedef</code> for a C <code>struct</code>.  See <a
 href="C-style.htm#Structures">Structures</a>, above, for details.
 
 <h4>Procedures</h4>
 
 <p>
 Ghostscript has no special construct for non-virtual procedures associated
-with a class.  In some cases, the <b><tt>typedef</tt></b> for the class is
-in a header file but the <b><tt>struct</tt></b> declaration is in the
+with a class.  In some cases, the <code>typedef</code> for the class is
+in a header file but the <code>struct</code> declaration is in the
 implementation code file: this provides an extra level of opaqueness, since
 clients then can't see the representation and must make all accesses through
 procedures.  You should use this approach in new code, if it doesn't
@@ -1402,36 +1402,36 @@ heavily used accesses.
 Ghostscript uses three different approaches for storing and accessing
 virtual procedures, plus a fourth one that is recommended but not currently
 used.  For exposition, we assume the class (type) is named
-<b><tt>xxx_t</tt></b>, it has a virtual procedure
-<b><tt>void&nbsp;(*virtu)(P1(xxx_t&nbsp;*))</tt></b>, and we have a variable
-declared as <b><tt>xxx_t&nbsp;*pxx</tt></b>.
+<code>xxx_t</code>, it has a virtual procedure
+<code>void&nbsp;(*virtu)(P1(xxx_t&nbsp;*))</code>, and we have a variable
+declared as <code>xxx_t&nbsp;*pxx</code>.
 
 <ol>
 
 <li>The procedures are stored in a separate, constant structure of type
-<b><tt>xxx_procs</tt></b>, of which <b><tt>virtu</tt></b> is a member.  The
-structure definition of <b><tt>xxx_t</tt></b> includes a member defined as
-<b><tt>const&nbsp;xxx_procs&nbsp;*procs</tt></b> (always named
-<b><tt>procs</tt></b>).  The construct for calling the virtual procedure is
-<b><tt>pxx->procs->virtu(pxx)</tt></b>.
+<code>xxx_procs</code>, of which <code>virtu</code> is a member.  The
+structure definition of <code>xxx_t</code> includes a member defined as
+<code>const&nbsp;xxx_procs&nbsp;*procs</code> (always named
+<code>procs</code>).  The construct for calling the virtual procedure is
+<code>pxx->procs->virtu(pxx)</code>.
 
 <li>The procedures are defined in a structure of type
-<b><tt>xxx_procs</tt></b> as above.  The structure definition of
-<b><tt>xxx_t</tt></b> includes a member defined as
-<b><tt>xxx_procs&nbsp;procs</tt></b> (always named <b><tt>procs</tt></b>).
+<code>xxx_procs</code> as above.  The structure definition of
+<code>xxx_t</code> includes a member defined as
+<code>xxx_procs&nbsp;procs</code> (always named <code>procs</code>).
 The construct for calling the virtual procedure is
-<b><tt>pxx->procs.virtu(pxx)</tt></b>.
+<code>pxx->procs.virtu(pxx)</code>.
 
 <li>The procedures are not defined in a separate structure: each procedure
-is a separate member of <b><tt>xxx_t</tt></b>.  The construct for calling
-the virtual procedure is <b><tt>pxx->virtu(pxx)</tt></b>.
+is a separate member of <code>xxx_t</code>.  The construct for calling
+the virtual procedure is <code>pxx->virtu(pxx)</code>.
 
 <li>The procedures are defined in a structure of type
-<b><tt>xxx_procs</tt></b> as above.  The structure definition of
-<b><tt>xxx_t</tt></b> includes a member defined as
-<b><tt>xxx_procs&nbsp;procs[1]</tt></b> (always named
-<b><tt>procs</tt></b>).  The construct for calling the virtual procedure is
-again <b><tt>pxx->procs->virtu(pxx)</tt></b>.
+<code>xxx_procs</code> as above.  The structure definition of
+<code>xxx_t</code> includes a member defined as
+<code>xxx_procs&nbsp;procs[1]</code> (always named
+<code>procs</code>).  The construct for calling the virtual procedure is
+again <code>pxx->procs->virtu(pxx)</code>.
 
 </ol>
 
@@ -1452,18 +1452,18 @@ procedures are shared and constant or per-instance and mutable.
 Ghostscript's class mechanism allows for subclasses that can add data
 members, or can add procedure members if approach 1 or 3 (above) is used.
 Since C doesn't support subclassing, we use a convention to accomplish it.
-In the example below, <b><tt>gx_device</tt></b> is the root class; it has a
-subclass <b><tt>gx_device_forward</tt></b>, which in turn has a subclass
-<b><tt>gx_device_null</tt></b>.  First we define a macro for all the members
+In the example below, <code>gx_device</code> is the root class; it has a
+subclass <code>gx_device_forward</code>, which in turn has a subclass
+<code>gx_device_null</code>.  First we define a macro for all the members
 of the root class, and the root class type.  (As for structures in general,
 classes need a structure descriptor, as discussed in <a
 href="#Structures">Structures</a> above: we include these in the examples
 below.)
 
-<blockquote><b><tt>
+<blockquote><code>
 #define gx_device_common\<br>
 &nbsp;&nbsp;&nbsp;&nbsp;type1 member1;\<br>
-&nbsp;&nbsp;&nbsp;&nbsp;</tt></b>...<b><tt><br>
+&nbsp;&nbsp;&nbsp;&nbsp;</code>...<code><br>
 &nbsp;&nbsp;&nbsp;&nbsp;typeN memberN<br>
 <br>
 typedef struct gx_device_s {<br>
@@ -1471,15 +1471,15 @@ typedef struct gx_device_s {<br>
 } gx_device;<br>
 <br>
 #define private_st_gx_device()&nbsp;&nbsp;/* in gsdevice.c */\<br>
-&nbsp;&nbsp;gs_private_st_</tt></b>&lt;whatever&gt;<b><tt>(st_gx_device, gx_device,\<br>
+&nbsp;&nbsp;gs_private_st_</code>&lt;whatever&gt;<code>(st_gx_device, gx_device,\<br>
 &nbsp;&nbsp;&nbsp;&nbsp;"gx_device", device_enum_ptrs, device_reloc_ptrs,\<br>
-&nbsp;&nbsp;&nbsp;&nbsp;</tt></b>... additional parameters as needed ...<b><tt>)</tt></b>
-</tt></b></blockquote>
+&nbsp;&nbsp;&nbsp;&nbsp;</code>... additional parameters as needed ...<code>)
+</code></blockquote>
 
 <p>
 We then define a similar macro and type for the subclass.
 
-<blockquote><b><tt>
+<blockquote><code>
 #define gx_device_forward_common\<br>
 &nbsp;&nbsp;&nbsp;&nbsp;gx_device_common;\<br>
 &nbsp;&nbsp;&nbsp;&nbsp;gx_device *target<br>
@@ -1492,7 +1492,7 @@ typedef struct gx_device_forward_s {<br>
 &nbsp;&nbsp;gs_private_st_suffix_add1(st_device_forward, gx_device_forward,\<br>
 &nbsp;&nbsp;&nbsp;&nbsp;"gx_device_forward", device_forward_enum_ptrs, device_forward_reloc_ptrs,\<br>
 &nbsp;&nbsp;&nbsp;&nbsp;gx_device, target)
-</tt></b></blockquote>
+</code></blockquote>
 
 <p>
 Finally, we define a leaf class, which doesn't need a macro because we don't
@@ -1500,7 +1500,7 @@ currently subclass it.  (We can create the macro later if needed, with no
 changes anywhere else.)  In this particular case, the leaf class has no
 additional data members, but it could have some.
 
-<blockquote><b><tt>
+<blockquote><code>
 typedef struct gx_device_null_s {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;gx_device_forward_common;<br>
 };<br>
@@ -1509,31 +1509,31 @@ typedef struct gx_device_null_s {<br>
 &nbsp;&nbsp;gs_private_st_suffix_add0_local(st_device_null, gx_device_null,\<br>
 &nbsp;&nbsp;&nbsp;&nbsp;"gx_device_null", device_null_enum_ptrs, device_null_reloc_ptrs,\<br>
 &nbsp;&nbsp;&nbsp;&nbsp;gx_device_forward)
-</tt></b></blockquote>
+</code></blockquote>
 
 <p>
 Note that the above example is <strong>not</strong> the actual definition of
-the <b><tt>gx_device</tt></b> structure type: the actual type has some
+the <code>gx_device</code> structure type: the actual type has some
 additional complications because it has a finalization procedure.  See <a
 href="../src/gxdevcli.h">src/gxdevcli.h</a> for the details.
 
 <p>
-If you add members to a root class (such as <b><tt>gx_device</tt></b> in
+If you add members to a root class (such as <code>gx_device</code> in
 this example), or change existing members, do this in the
-<b><tt>gx_device_common</tt></b> macro, not the <b><tt>gx_device</tt></b>
+<code>gx_device_common</code> macro, not the <code>gx_device</code>
 structure definition.  Similarly, to change the
-<b><tt>gx_device_forward</tt></b> class, modify the
-<b><tt>gx_device_forward_common</tt></b> macro, not the structure
+<code>gx_device_forward</code> class, modify the
+<code>gx_device_forward_common</code> macro, not the structure
 definition.  Only change the structure definition if the class is a leaf
-class (one with no <b><tt>_common</tt></b> macro and no possibility of
-subclassing), like <b><tt>gx_device_null</tt></b>.
+class (one with no <code>_common</code> macro and no possibility of
+subclassing), like <code>gx_device_null</code>.
 
 <h3><a name="Error_handling"></a>Error handling</h3>
 
 <p>
 Every caller should check for error returns and, in general, propagate them
 to <b>its</b> callers.  By convention, nearly every procedure returns an
-<b><tt>int</tt></b> to indicate the outcome of the call:
+<code>int</code> to indicate the outcome of the call:
 
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr valign=top>	<td align=right>&lt; 0
@@ -1552,7 +1552,7 @@ To make a procedure generate an error and return it, as opposed to
 propagating an error generated by a lower procedure, you should use
 
 <blockquote>
-<b><tt>return_error(</tt></b><em>error_number</em><b><tt>);</tt></b>
+<code>return_error(</code><em>error_number</em><code>);</code>
 </blockquote>
 
 <p>
@@ -1560,15 +1560,15 @@ Sometimes it is more convenient to generate the error in one place and
 return it in another.  In this case, you should use
 
 <blockquote>
-<b><tt>code = gs_note_error(</tt></b><em>error_number</em><b><tt>);</tt></b><br>
+<code>code = gs_note_error(</code><em>error_number</em><code>);</code><br>
 ...<br>
-<b><tt>return code;</tt></b>
+<code>return code;</code>
 </blockquote>
 
 <p>
-In executables built for debugging, the <b><tt>-E</tt></b> (or
-<b><tt>-Z#</tt></b>) command line switch causes <b><tt>return_error</tt></b>
-and <b><tt>gs_note_error</tt></b> to print the error number and the source
+In executables built for debugging, the <code>-E</code> (or
+<code>-Z#</code>) command line switch causes <code>return_error</code>
+and <code>gs_note_error</code> to print the error number and the source
 file and line: this is often helpful for identifying the original cause of
 an error.
 

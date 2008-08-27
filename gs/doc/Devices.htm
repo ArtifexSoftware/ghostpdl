@@ -202,7 +202,7 @@ The other png devices have no special options.</p>
 
 <blockquote>
 <dl>
-<dt><b><tt>-dBackgroundColor=</tt></b><b><em>16#RRGGBB</em></b> (RGB color, default white = 16#ffffff)
+<dt><code>-dBackgroundColor=</code><b><em>16#RRGGBB</em></b> (RGB color, default white = 16#ffffff)
 <dd>For the <tt>pngalpha</tt> device only, 
 set the suggested background color in the PNG bKGD chunk.  
 When a program reading a PNG file does not support alpha
@@ -210,8 +210,8 @@ transparency, the PNG library converts the image using
 either a background color if supplied by the program
 or the bKGD chunk.
 One common web browser has this problem, so when using
-<b><tt>&lt;body bgcolor="CCCC00"&gt;</tt></b> on a web page
-you would need to use <b><tt>-dBackgroundColor=16#CCCC00</tt></b>
+<code>&lt;body bgcolor="CCCC00"&gt;</code> on a web page
+you would need to use <code>-dBackgroundColor=16#CCCC00</code>
 when creating alpha transparent PNG images for use on the
 page.
 </dl>
@@ -258,8 +258,8 @@ such as the JPEG FAQ
 <h4>Examples</h4>
 
 <p>
-You can use the JPEG output drivers -- <b><tt>jpeg</tt></b> to produce
-color JPEG files and <b><tt>jpeggray</tt></b> for grayscale JPEGs -- the
+You can use the JPEG output drivers -- <code>jpeg</code> to produce
+color JPEG files and <code>jpeggray</code> for grayscale JPEGs -- the
 same as other file-format drivers: by specifying the device name and an
 output file name, for example
 
@@ -275,23 +275,23 @@ The JPEG devices support several special parameters to control the JPEG
 
 <blockquote>
 <dl>
-<dt><b><tt>-dJPEGQ=</tt></b><b><em>N</em></b> (integer from 0 to 100, default 75)
+<dt><code>-dJPEGQ=</code><b><em>N</em></b> (integer from 0 to 100, default 75)
 <dd>Set the quality level <b><em>N</em></b> according to the widely used
 IJG quality scale, which balances the extent of compression against the
 fidelity of the image when reconstituted.  Lower values drop more
 information from the image to achieve higher compression, and therefore
 have lower quality when reconstituted.
 
-<dt><b><tt>-dQFactor=</tt></b><b><em>M</em></b> (float from 0.0 to 1.0)
+<dt><code>-dQFactor=</code><b><em>M</em></b> (float from 0.0 to 1.0)
 <dd>Adobe's QFactor quality scale, which you may use in place of
-<b><tt>JPEGQ</tt></b> above.  The QFactor scale is used by PostScript's
+<code>JPEGQ</code> above.  The QFactor scale is used by PostScript's
 DCTEncode filter but is nearly unheard-of elsewhere.
 </dl>
 </blockquote>
 
 <p>
 At this writing the default JPEG quality level of 75 is equivalent to
-<b><tt>-dQFactor=0.5</tt></b>, but the JPEG default might change in the
+<code>-dQFactor=0.5</code>, but the JPEG default might change in the
 future.  There is currently no support for any additional JPEG
 compression options, such as the other DCTEncode filter parameters.
 </p>
@@ -325,15 +325,15 @@ drivers that produce uncompressed output:
 
 <blockquote>
 <dl>
-<dt><b><tt>tiffgray</tt></b>
+<dt><code>tiffgray</code>
 <dd>Produces 8-bit gray output.
-<dt><b><tt>tiff12nc</tt></b>
+<dt><code>tiff12nc</code>
 <dd>Produces 12-bit RGB output (4 bits per component).
-<dt><b><tt>tiff24nc</tt></b>
+<dt><code>tiff24nc</code>
 <dd>Produces 24-bit RGB output (8 bits per component).
-<dt><b><tt>tiff32nc</tt></b>
+<dt><code>tiff32nc</code>
 <dd>Produces 32-bit CMYK output (8 bits per component).
-<a name="tiffsep"></a><dt><b><tt>tiffsep</tt></b>
+<a name="tiffsep"></a><dt><code>tiffsep</code>
 <dd>
 The tiffsep device creates multiple output files.  The device creates a single
 32 bit composite CMYK file (tiff32nc format) and multiple tiffgray files.
@@ -398,8 +398,8 @@ more than 4 colorants by doing multiple passes. For each pass after the
 first one, the names of all of the separations need to be specified via 
 the SeparationColorNames parameter and the names of the desired separations 
 need to be specified via the SeparationOrder parameter. For instance, 
-add the following to the command line: <b><tt>-c "<< /SeparationColorNames 
-[ /Name1 /Name2 ] /SeparationOrder [ /Name1 ] >> setpagedevice" -f</tt></b>. 
+add the following to the command line: <code>-c "<< /SeparationColorNames 
+[ /Name1 /Name2 ] /SeparationOrder [ /Name1 ] >> setpagedevice" -f</code>. 
 This will produce a single separation file for the spot color called 'Name1'. 
 It is possible to create an overall CMYK composite for more than 4 colorants 
 by then adding together (via an external application like imagemagick) 
@@ -414,17 +414,17 @@ compression modes:
 
 <blockquote>
 <dl>
-<dt><b><tt>tiffcrle</tt></b>
+<dt><code>tiffcrle</code>
 <dd>G3 fax encoding with no EOLs
-<dt><b><tt>tiffg3</tt></b>
+<dt><code>tiffg3</code>
 <dd>G3 fax encoding with EOLs
-<dt><b><tt>tiffg32d</tt></b>
+<dt><code>tiffg32d</code>
 <dd>2-D G3 fax encoding
-<dt><b><tt>tiffg4</tt></b>
+<dt><code>tiffg4</code>
 <dd>G4 fax encoding
-<dt><b><tt>tifflzw</tt></b>
+<dt><code>tifflzw</code>
 <dd>LZW-compatible (tag = 5) compression
-<dt><b><tt>tiffpack</tt></b>
+<dt><code>tiffpack</code>
 <dd>PackBits (tag = 32773) compression
 </dl>
 </blockquote>
@@ -441,10 +441,10 @@ set:
 
 <blockquote>
 <dl>
-<dt><b><tt>-dMaxStripSize=</tt><em>N</em></b> (non-negative integer; default = 0)
+<dt><code>-dMaxStripSize=<em>N</em></code> (non-negative integer; default = 0)
 <dd>Set the maximum (uncompressed) size of a strip.
 
-<dt><b><tt>-dAdjustWidth=</tt><em>state</em></b> (0 or 1; default = 1)
+<dt><code>-dAdjustWidth=<em>state</em></code> (0 or 1; default = 1)
 <dd>If this option set then if the requested page width is in the range of either
 1680..1736 or 2000..2056 columns, set the page width to A4 (1728 columns)
 or B4 (2048 columns) respectively.
@@ -478,7 +478,7 @@ controlled by a parameter:
 
 <blockquote>
 <dl>
-<dt><b><tt>-dFillOrder=</tt><em>1 | 2 </em></b> (default = 1)
+<dt><code>-dFillOrder=<em>1 | 2 </em></code> (default = 1)
 <dd>If this option set to 2 then pixels are arranged within a byte such that pixels
 with lower column values are stored in the lower-order bits of the byte; otherwise
 pixels are arranged in reverse order.
@@ -549,7 +549,7 @@ device options.</p>
 
 <blockquote>
 <dl>
-<dt><b><tt>-dLanguageLevel=</tt><em>1 | 1.5 | 2 | 3</em></b> (default is 2)
+<dt><code>-dLanguageLevel=<em>1 | 1.5 | 2 | 3</em></code> (default is 2)
 <dd>Set the language level of the generated file.
 Language level 1.5 is language level 1 with color extensions. 
 Currently language level 3 generates the same PostScript as 2.
@@ -563,7 +563,7 @@ Currently language level 3 generates the same PostScript as 2.
 
 <blockquote>
 <dl>
-<dt><b><tt>-dLanguageLevel=</tt><em>1 | 1.5 | 2 | 3</em></b> (default is 2)
+<dt><code>-dLanguageLevel=<em>1 | 1.5 | 2 | 3</em></code> (default is 2)
 <dd>Set the language level of the generated file.
 Language level 1.5 is language level 1 with color extensions. 
 Currently language level 3 generates the same PostScript as 2.
@@ -626,7 +626,7 @@ it to RGB for display. It's intended for testing only.
 
 <h3><a name="display_device"></a>display device (MS Windows, OS/2, gtk+)</h3>
 <p>
-The <b><tt>display</tt></b> device is used by the MS Windows, 
+The <code>display</code> device is used by the MS Windows, 
 OS/2 and the gtk+ versions of ghostscript.
 </p>
 
@@ -636,7 +636,7 @@ OS/2 and the gtk+ versions of ghostscript.
 
 <blockquote>
 <dl>
-<dt><b><tt>-dDisplayFormat=</tt></b><b><em>N</em></b> (integer bit-field)
+<dt><code>-dDisplayFormat=</code><b><em>N</em></b> (integer bit-field)
 <dd>Some common values are 16#30804 for Windows RGB, 16#804 for gtk+ RGB,
 16#20101 for Windows monochrome, 16#102 for gtk+ monochrome, 
 16#20802 grayscale, 16#20808 for CMYK, 16#a0800 for separations.
@@ -652,12 +652,12 @@ The bit fields are
 </ul>
 For more details, see the <a href="API.htm#display">Ghostscript 
 Interpreter API.</a>
-<dt><b><tt>-dDisplayResolution=</tt></b><b><em>DPI</em></b>
+<dt><code>-dDisplayResolution=</code><b><em>DPI</em></b>
 <dd>Set the initial resolution resolution for the display device.
 This is used by the Windows clients to set the display device
 resolution to the Windows display logical resolution.
 This can be overriden by the command line option 
-<b><tt>-r</tt><em>DPI</em></b>.
+<code>-r<em>DPI</em></code>.
 </dl>
 
 </blockquote>
@@ -667,10 +667,10 @@ using setpagedevice, as described in the PostScript Language Reference:
 
 <blockquote>
 <dl>
-<dt><b><tt>SeparationColorNames</tt></b>
+<dt><code>SeparationColorNames</code>
 <dd>An array giving the names of the spot colors
 
-<dt><b><tt>SeparationOrder</tt></b>
+<dt><code>SeparationOrder</code>
 <dd>An array giving the names and order of the colorants 
 to be output.
 </dl>
@@ -700,12 +700,12 @@ A typical command line for IJS is:
 </p>
 
 <blockquote>
-<b><tt>
+<code>
 gs -dSAFER -sDEVICE=ijs -sIjsServer=hpijs 
  -sDeviceManufacturer=HEWLETT-PACKARD -sDeviceModel='DESKJET 990'
  -dIjsUseOutputFD -sOutputFile=/dev/usb/lp1 -dNOPAUSE --
  examples/tiger.eps
-</tt></b>
+</code>
 </blockquote>
 
 
@@ -714,7 +714,7 @@ Individual IJS command line parameters are as follows:
 </p>
 
 <dl>
-<dt><b><tt>-sIjsServer=</tt></b><em>{path}</em>
+<dt><code>-sIjsServer=</code><em>{path}</em>
 <dd>Sets the pathname for the IJS server (ie printer driver).
 Ghostscript will spawn a new process for this driver, and communicate
 with it using the IJS protocol. The pathname need not be absolute,
@@ -726,8 +726,8 @@ href="Use.htm#Security">Security</a> for more information.
 </dl>
 
 <dl>
-<dt><b><tt>-sDeviceManufacturer=</tt></b><em>{name}</em>
-<dt><b><tt>-sDeviceModel=</tt></b><em>{name}</em>
+<dt><code>-sDeviceManufacturer=</code><em>{name}</em>
+<dt><code>-sDeviceModel=</code><em>{name}</em>
 <dd>These parameters select the device according to IEEE-1284 standard
 device ID strings. In general, consult the documentation for the
 driver to find the appropriate settings. Note that, if the value
@@ -736,17 +736,17 @@ in the example above.
 </dl>
 
 <dl>
-<dt><b><tt>-sIjsParams=</tt></b><em>{params}</em>
+<dt><code>-sIjsParams=</code><em>{params}</em>
 <dd>This parameter allows you to set arbitrary IJS parameters on
 the IJS driver. The format is a comma-separated list of
-<b><tt>key=value</tt></b> pairs. If it is necessary to send a
+<code>key=value</code> pairs. If it is necessary to send a
 value containing a comma or backslash, it can be escaped with
-a backslash. Thus, <b><tt>'-sIjsParams=Foo=bar,Baz=a\,b'</tt></b> sets
+a backslash. Thus, <code>'-sIjsParams=Foo=bar,Baz=a\,b'</code> sets
 the parameter Foo to "bar", and Baz to "a,b".
 </dl>
 
 <dl>
-<dt><b><tt>-dIjsUseOutputFD</tt></b>
+<dt><code>-dIjsUseOutputFD</code>
 <dd>This flag indicates that Ghostscript should open the output file
 and pass a file descriptor to the server. If not set, Ghostscript
 simply passes the filename set in OutputFile to the server. In most
@@ -756,7 +756,7 @@ only with OutputFD (such as hpijs 1.0.2), or if you're using the
 </dl>
 
 <dl>
-<dt><b><tt>-dBitsPerSample=</tt></b><em>N</em>
+<dt><code>-dBitsPerSample=</code><em>N</em>
 <dd>This parameter controls the number of bits per sample. The
 default value of 8 should be appropriate for most work. For monochrome
 images, use -dBitsPerSample=1.
@@ -767,8 +767,8 @@ are summarized below:
 </p>
 
 <dl>
-<dt><b><tt>-r</tt></b><em>number</em>
-<br><b><tt>-r</tt></b><em>number1</em><b><tt>x</tt></b><em>number2</em>
+<dt><code>-r</code><em>number</em>
+<br><code>-r</code><em>number1</em><b><tt>x</tt></b><em>number2</em>
 <dd>Sets the resolution, in dpi. If the resolution is not specified,
 Ghostscript queries the IJS server to determine the preferred resolution.
 When the resolution is specified, it overrides the value (if any)
@@ -776,8 +776,8 @@ preferred by the IJS server.
 </dl>
 
 <dl>
-<dt><b><tt>-dDuplex</tt></b>
-<dt><b><tt>-dTumble</tt></b>
+<dt><code>-dDuplex</code>
+<dt><code>-dTumble</code>
 <dd>These flags enable duplex (two-sided) printing. Tumble controls
 the orientation. When Tumble is false, the pages
 are oriented suitably at the left or right. When Tumble is true,
@@ -786,7 +786,7 @@ bottom.
 </dl>
 
 <dl>
-<dt><b><tt>-sProcessColorModel=</tt></b><em>{name}</em>
+<dt><code>-sProcessColorModel=</code><em>{name}</em>
 <dd>Use this flag to select the process color model. Suitable values
 include DeviceGray, DeviceRGB, and DeviceCMYK.
 </dl>
@@ -851,10 +851,10 @@ Individual Rinkj command line parameters are as follows:
 </p>
 
 <dl>
-<dt><b><tt>-sSetupFile=</tt></b><em>{path}</em>
+<dt><code>-sSetupFile=</code><em>{path}</em>
 <dd>Specifies the path for the setup file.
 
-<dt><b><tt>-sProfileOut=</tt></b><em>{path}</em>
+<dt><code>-sProfileOut=</code><em>{path}</em>
 <dd>Specifies the path for the output ICC profile. This profile should
 be a <i>link</i> profile, mapping the ProcessColorModel (DeviceCMYK by
 default) to the device color space.
@@ -869,40 +869,40 @@ tables in the setup file.</p>
 are:</p>
 
 <dl>
-<dt><b><tt>Manufacturer:</tt></b><em>{name}</em>
-<dt><b><tt>Model:</tt></b><em>{name}</em>
+<dt><code>Manufacturer:</code><em>{name}</em>
+<dt><code>Model:</code><em>{name}</em>
 <dd>The manufacturer and model of the individual device, using the
 same syntax as IEEE printer identification strings. Currently, the
 only supported manufacturer string is "EPSON", and the only supported
 model strings are "Stylus Photo 2200" and "Stylus Photo 7600".
 
-<dt><b><tt>Resolution:</tt></b><em>{x-dpi}</em>x<em>{y-dpi}</em>
+<dt><code>Resolution:</code><em>{x-dpi}</em>x<em>{y-dpi}</em>
 <dd>The resolution in dpi. Usually, this should match the
 Ghostscript resolution set with the <tt>-r</tt> switch. Otherwise,
 the page image will be scaled.
 
-<dt><b><tt>Dither:</tt></b><em>{int}</em>
+<dt><code>Dither:</code><em>{int}</em>
 <dd>Selects among variant dither options. Currently, the choices are
 <tt>1</tt> for one-bit dither, and <tt>2</tt>, for a 2-bit variable
 dot dither.
 
-<dt><b><tt>Aspect:</tt></b><em>{int}</em>
+<dt><code>Aspect:</code><em>{int}</em>
 <dd>Controls the aspect ratio for highlight dot placement. Valid
 values are <tt>1</tt>, <tt>2</tt>, and <tt>4</tt>. For best results,
 choose a value near the x resolution divided by the y resolution. For
 example, if resolution is 1440x720, aspect should be 2.
 
-<dt><b><tt>Microdot:</tt></b><em>{int}</em>
+<dt><code>Microdot:</code><em>{int}</em>
 <dd>Chooses a microdot size. On EPSON devices, this value is passed
 directly through to the "ESC ( e" command. See EPSON documentation
 for further details (see, I <em>told</em> you this wasn't for the
 faint of heart).
 
-<dt><b><tt>Unidirectional:</tt></b><em>{int}</em>
+<dt><code>Unidirectional:</code><em>{int}</em>
 <dd>Enables (1) or disables (0) unidirectional printing, which is
 slower but possibly higher quality.
 
-<dt><b><tt>AddLut:</tt></b><em>{plane}</em>
+<dt><code>AddLut:</code><em>{plane}</em>
 <dd>Adds a linearization look-up table. The plane is one of
 "CcMmYKk". The lookup table data follows. The line immediately
 following AddLut is the number of data points. Then, for each data
@@ -997,7 +997,7 @@ the current maintainer.
 </p>
 
 <p>
-The <b><tt>mswinpr2</tt></b> device uses MS&nbsp;Windows printer drivers, and
+The <code>mswinpr2</code> device uses MS&nbsp;Windows printer drivers, and
 thus should work with any printer with device-independent bitmap (DIB)
 raster capabilities. The printer resolution cannot be selected directly
 using PostScript commands from Ghostscript: use the printer setup in the
@@ -1006,7 +1006,7 @@ for the printed document (see below).
 </p>
 
 <p>
-If no Windows printer name is specified in <b><tt>-sOutputFile</tt></b>,
+If no Windows printer name is specified in <code>-sOutputFile</code>,
 Ghostscript prompts for a Windows printer using the standard Print Setup
 dialog box.  You must set the orientation to Portrait and the page size to
 that expected by Ghostscript; otherwise the image will be clipped.
@@ -1015,17 +1015,17 @@ driver, but it does not update the PostScript clipping path.
 </p>
 
 <p>
-If a Windows printer name is specified in <b><tt>-sOutputFile</tt></b> using
+If a Windows printer name is specified in <code>-sOutputFile</code> using
 the format <tt>"%printer%printer_name"</tt>, for instance
 </p>
 
-<blockquote><b><tt>
+<blockquote><code>
 gs ... -sOutputFile="%printer%Apple LaserWriter II NT"
-</tt></b></blockquote>
+</code></blockquote>
 
 <p>
 then Ghostscript attempts to open the Windows printer without prompting
-(except, of course, if the printer is connected to <b><tt>FILE:</tt></b>).
+(except, of course, if the printer is connected to <code>FILE:</code>).
 Ghostscript attempts to set the Windows printer page size and orientation
 to match that expected by Ghostscript, but doesn't always succeed.  It uses
 this algorithm:
@@ -1056,25 +1056,25 @@ printer physical device.
 <h3><a name="Win_properties"></a>Supported command-line parameters</h3>
 
 <p>
-The <b><tt>mswinpr2</tt></b> device supports a limited number of command-line
+The <code>mswinpr2</code> device supports a limited number of command-line
 parameters (e.g. it does not support setting the printer resolution). The
 recognized parameters are the following:
 </p>
 
 <blockquote>
 <dl>
-<dt><b><tt>-sDEVICE=mswinpr2</tt></b></dt>
+<dt><code>-sDEVICE=mswinpr2</code></dt>
 <dd>Selects the MS&nbsp;Windows printer device. If Ghostscript was not
 compiled with this device as the default output device, you have to specify
 it on the command line.</dd>
 
-<dt><b><tt>-dNoCancel</tt></b></dt>
+<dt><code>-dNoCancel</code></dt>
 <dd>Hides the progress dialog, which shows the percent of the document page
 already processed and also provides a <em>cancel</em> button. This option
 is useful if GS is intended to print pages in the background, without any
 user intervention.</dd>
 
-<dt><b><tt>-sOutputFile=</tt></b><b>"%printer%<em>printer_name</em>"</b></dt>
+<dt><code>-sOutputFile=</code><b>"%printer%<em>printer_name</em>"</b></dt>
 <dd>Specifies which printer should be used. The <em>printer_name</em> should be
 typed exactly as it appears in the Printers control panel, including spaces.</dd>
 
@@ -1089,13 +1089,13 @@ but only by executing the appropriate PostScript setup code. These options
 can be set through the inclusion of a setup file on the command-line:
 </p>
 
-<blockquote><b><tt>
+<blockquote><code>
 gs ... setup.ps ...
-</tt></b></blockquote>
+</code></blockquote>
 
 <p>
 The <tt>setup.ps</tt> file is responsible for the device selection, therefore
-you should not specify the <b><tt>-sDEVICE=mswinpr2</tt></b> option on the
+you should not specify the <code>-sDEVICE=mswinpr2</code> option on the
 command-line if you are using such a setup file. Here is an example of such
 a setup file:
 </p>
@@ -1115,13 +1115,13 @@ setdevice
 </pre></blockquote>
 
 <p>
-This example disables the progress dialog (same as the <tt><b>-dNoCancel</b></tt>
+This example disables the progress dialog (same as the <code>-dNoCancel</code>
 option), forces a 4 bits/pixel output resolution and specifies additional user
 settings, such as the document name (which will be displayed by the Windows
 spooler for the queued document) and the maximum resolution (here 360&nbsp;dpi).
 It then finds and selects an instance of the MS&nbsp;Windows device printer
 and activates it. This will show the standard printer dialog, since no
-<tt><b>/OutputFile</b></tt> property was specified.
+<code>/OutputFile</code> property was specified.
 </p>
 
 <p>
@@ -1130,49 +1130,49 @@ The following options are available:
 
 <blockquote>
 <dl>
-<dt><b><tt>/NoCancel <em>boolean</em></tt></b></dt>
+<dt><code>/NoCancel <em>boolean</em></code></dt>
 <dd>Disables (hides) the progress dialog when set to <em><tt>true</tt></em> or
 show the progress dialog if not set or set to <em><tt>false</tt></em>.</dd>
 
-<dt><b><tt>/OutputFile <em>string</em></tt></b></dt>
+<dt><code>/OutputFile <em>string</em></code></dt>
 <dd>Specifies which printer should be used. The string should be of the form
-<tt><b>%printer%<em>printer_name</em></b></tt>, where the <em>printer_name</em> should be
+<code>%printer%<em>printer_name</em></code>, where the <em>printer_name</em> should be
 typed exactly as it appears in the Printers control panel, including spaces.</dd>
 
-<dt><b><tt>/QueryUser <em>integer</em></tt></b></dt>
-<dd>Shows the standard printer dialog (<tt><b>1</b></tt> or any other value),
-shows the <em>printer setup dialog</em> (<tt><b>2</b></tt>) or selects the
-<em>default Windows printer</em> without any user interaction (<tt><b>3</b></tt>).</dd>
+<dt><code>/QueryUser <em>integer</em></code></dt>
+<dd>Shows the standard printer dialog (<code>1</code> or any other value),
+shows the <em>printer setup dialog</em> (<code>2</code>) or selects the
+<em>default Windows printer</em> without any user interaction (<code>3</code>).</dd>
 
-<dt><b><tt>/BitsPerPixel <em>integer</em></tt></b></dt>
+<dt><code>/BitsPerPixel <em>integer</em></code></dt>
 <dd>Sets the device depth to the specified bits per pixel. Currently supported
-values are <tt><b>1</b></tt> (monochrome), <tt><b>4</b></tt> (CMYK with screening
-handled by Ghostscript) and <tt><b>24</b></tt> (True Color, dithering handled by
+values are <code>1</code> (monochrome), <tt><b>4</b></tt> (CMYK with screening
+handled by Ghostscript) and <code>24</code> (True Color, dithering handled by
 the Windows printer driver; this option can produce huge print jobs).</dd>
 
-<dt><b><tt>/UserSettings <em>dict</em></tt></b></dt>
+<dt><code>/UserSettings <em>dict</em></code></dt>
 <dd>Sets additional options, defined in a dictionary. The following properties can
 be set:
 
 <dl>
-<dt><b><tt>/DocumentName <em>string</em></tt></b></dt>
+<dt><code>/DocumentName <em>string</em></code></dt>
 <dd>Defines the user friendly document name which will be displayed by the
 Windows spooler.</dd>
 
-<dt><b><tt>/DocumentRange <em>[n1 n2]</em></tt></b></dt>
+<dt><code>/DocumentRange <em>[n1 n2]</em></code></dt>
 <dd>Defines the range of pages contained in the document. This information can
 be used by the printer dialog, in conjunction with the following property.</dd>
 
-<dt><b><tt>/SelectedRange <em>[n1 n2]</em></tt></b></dt>
+<dt><code>/SelectedRange <em>[n1 n2]</em></code></dt>
 <dd>Defines the selected range of pages. This information will be displayed in
 the printer dialog and will be updated after the user interaction. A PostScript
 program could check these values and print only the selected page range.</dd>
 
-<dt><b><tt>/MaxResolution <em>dpi</em></tt></b></dt>
+<dt><code>/MaxResolution <em>dpi</em></code></dt>
 <dd>Specifies the maximum tolerated output resolution. If the selected printer has
-a higher resolution than <tt><b>dpi</b></tt>, then Ghostscript will render the
+a higher resolution than <code>dpi</code>, then Ghostscript will render the
 document with a submultiple of the printer resolution. For example, if 
-<tt><b>MaxResolution</b></tt> is set to 360 and the output printer supports
+<code>MaxResolution</code> is set to 360 and the output printer supports
 up to 1200 dpi, then Ghostscript renders the document with an internal
 resolution of 1200/4=300 dpi. This can be very useful to reduce the memory
 requirements when printing in True Color on some high resolution ink-jet color
@@ -1184,7 +1184,7 @@ printers.</dd>
 </blockquote>
 
 <p>
-These properties can be queried through the <tt><b>currentpagedevice</b></tt>
+These properties can be queried through the <code>currentpagedevice</code>
 operator. The following PostScript code snippet shows how to do it for some
 of the properties:
 </p>
@@ -1205,7 +1205,7 @@ us /PrintCopies get ==      % displays the number of copies requested
 </pre></blockquote>
 
 <p>
-There are a few undocumented parameters stored in the <tt><b>UserSettings</b></tt>
+There are a few undocumented parameters stored in the <code>UserSettings</code>
 dictionary. You should not rely on them. Their use is still experimental and
 they could be removed in a future version.
 </p>
@@ -1214,12 +1214,12 @@ they could be removed in a future version.
 
 <p>
 If the Windows printer supports the duplex printing feature, then it will
-also be available through the <b><tt>mswinpr2</tt></b> device. You can query
-for this support through the <b><tt>/Duplex</tt></b> property of the
-<b><tt>currentpagedevice</tt></b>. If it returns <b><tt>null</tt></b>, then
-the feature is not supported by the selected printer. Otherwise, <b><tt>true</tt></b>
+also be available through the <code>mswinpr2</code> device. You can query
+for this support through the <code>/Duplex</code> property of the
+<code>currentpagedevice</code>. If it returns <b><tt>null</tt></b>, then
+the feature is not supported by the selected printer. Otherwise, <code>true</code>
 means that the printer is currently set up to print on both faces of the paper
-and <b><tt>false</tt></b> that it is not, but that it can.
+and <code>false</code> that it is not, but that it can.
 </p>
 
 <p>
@@ -1261,7 +1261,7 @@ shown here.
 <h3><a name="SPARC_install"></a>Installation</h3>
 
 <p>
-Add <b><tt>sparc.dev</tt></b> to <b><tt>DEVICE_DEVS</tt></b> and compile
+Add <code>sparc.dev</code> to <b><tt>DEVICE_DEVS</tt></b> and compile
 Ghostscript as described in the documentation on <a href="Make.htm">how to
 build Ghostscript</a>.  Afterwards you can use the following script as an
 example for printing after modifying it with the right pathnames --
@@ -1283,7 +1283,7 @@ fi
 <h3><a name="SPARC_problems"></a>Problems</h3>
 
 <p>
-Since <b><tt>/dev/lpi</tt></b> can be opened only for exclusive use, if
+Since <code>/dev/lpi</code> can be opened only for exclusive use, if
 another job has it open (engine_ctl_sparc or another Ghostscript are the
 most likely candidates), Ghostscript stops with "Error: /invalidfileaccess
 in --.outputpage--"
@@ -1335,12 +1335,12 @@ assumes that carriage return-newline is needed, and not just carriage
 return.  These are all switch settings on the DMP, and I have configured
 them for 8-bit data and carriage return exclusively.  Ensure that the Unix
 printer daemon handles 8-bit (binary) data properly; in my SunOS 4.1.1
-<b><tt>printcap</tt></b> file the string "<b><tt>ms=pass8,-opost</tt></b>"
+<code>printcap</code> file the string "<b><tt>ms=pass8,-opost</tt></b>"
 works fine for this.
 
 <p>
-Finally, you can search <b><tt>devdemp.c</tt></b> for
-"<b><tt>Init</tt></b>" and "<b><tt>Reset</tt></b>" to find the strings that
+Finally, you can search <code>devdemp.c</code> for
+"<code>Init</code>" and "<b><tt>Reset</tt></b>" to find the strings that
 initialize the printer and reset things when finished, and change them to
 meet your needs.
 
@@ -1365,34 +1365,34 @@ The raw devices are <tt>bit bitrgb bitcmyk</tt>.
 <h3><a name="Bounding_box_output"></a>Bounding box output</h3>
 
 <p>
-There is a special <b><tt>bbox</tt></b> "device" that just prints the
+There is a special <code>bbox</code> "device" that just prints the
 bounding box of each page.  You select it in the usual way:
 
-<blockquote><b><tt>
+<blockquote><code>
 gs -dSAFER -dNOPAUSE -dBATCH -sDEVICE=bbox
-</tt></b></blockquote>
+</code></blockquote>
 
 <p>
 It prints the output in a format like this:
 
 <blockquote>
-<pre><b><tt>%%BoundingBox: 14 37 570 719
+<pre><code>%%BoundingBox: 14 37 570 719
 %%HiResBoundingBox: 14.308066 37.547999 569.495061 718.319158
-</tt></b></pre></blockquote>
+</code></pre></blockquote>
 <p></p>
 
 <p>
-Currently, it always prints the bounding box on <b><tt>stderr</tt></b>;
-eventually, it should also recognize <b><tt>-sOutputFile=</tt></b>.
+Currently, it always prints the bounding box on <code>stderr</code>;
+eventually, it should also recognize <code>-sOutputFile=</code>.
 
 <p>
 By default, white objects don't contribute to the bounding box because
 many files fill the whole page with white before drawing other objects.
 This can be changed by:
 
-<blockquote><tt><b>
+<blockquote><code>
 << /WhiteIsOpaque true >> setpagedevice
-</b></tt></blockquote>
+</code></blockquote>
 
 <p>
 Note that this device, like other devices, has a resolution and a (maximum)
@@ -1403,9 +1403,9 @@ default (1/72") user coordinate units.  If you need to measure larger pages
 than this, you must reset <em>both</em> the resolution and the page size in
 pixels, e.g.,
 
-<blockquote><b><tt>
+<blockquote><code>
 gs -dNOPAUSE -dBATCH -sDEVICE=bbox -r100 -g500000x500000
-</tt></b></blockquote>
+</code></blockquote>
 
 
 <h3><a name="Permute"></a>Permutation (DeviceN color model)</h3>
@@ -1417,7 +1417,7 @@ PPM file, using a simple CMYK-&gt;RGB transform. This should be the
 baseline for regression testing.
 
 <p>
-With the addition of <tt><b>-dPermute=1</b></tt>, the internal behavior changes
+With the addition of <code>-dPermute=1</code>, the internal behavior changes
 somewhat, but in most cases the resulting rendered file should be the
 same. In this mode, the color model becomes "DeviceN" rather than
 "DeviceCMYK", the number of components goes to six, and the color
@@ -1452,8 +1452,8 @@ device which supports spot colors.
 Spot colors need to be specified prior to opening the
 first page.
 This can be done via adding the
-following to the command line: <b><tt>-c "<< /SeparationColorNames [ /Name1 /Name2 ]
->> setpagedevice" -f</tt></b>.
+following to the command line: <code>-c "<< /SeparationColorNames [ /Name1 /Name2 ]
+>> setpagedevice" -f</code>.
 
 <p>
 The <tt>spotcmyk</tt> device produces a binary data file (similar to the bitcmyk
@@ -1527,8 +1527,8 @@ DeviceCMYK process color model allows the <tt>xcfcmyk</tt> device to also
 support spot colors. Spot colors need to be specified prior to opening the
 first page.
 This can be done via adding the
-following to the command line: <b><tt>-c "<< /SeparationColorNames [ /Name1 /Name2 ]
->> setpagedevice" -f</tt></b>.
+following to the command line: <code>-c "<< /SeparationColorNames [ /Name1 /Name2 ]
+>> setpagedevice" -f</code>.
 
 <p>
 After a page is complete, the <tt>xcfcmyk</tt> converts the CMYK image data into

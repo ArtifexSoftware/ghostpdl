@@ -83,7 +83,7 @@ detail.
 
 <p>
 File names below that don't include an explicit subdirectory name are in the
-<b><tt>src</tt></b> subdirectory.
+<code>src</code> subdirectory.
 
 <p>
 If you do plan to make your own distribution, please be aware of some items
@@ -92,16 +92,16 @@ you will want to change.
 <ul>
 
 <li>If you make any significant changes, please edit
-<b><tt>gscdef.c</tt></b> to change <b><tt>GS_PRODUCTFAMILY</tt></b> and
-<b><tt>GS_PRODUCT</tt></b> from "GPL Ghostscript" to something else,
+<code>gscdef.c</code> to change <b><tt>GS_PRODUCTFAMILY</tt></b> and
+<code>GS_PRODUCT</code> from "GPL Ghostscript" to something else,
 in order to avoid confusion with Artifex releases.
 
-<li>In the same file, you may also want to edit <b><tt>GS_COPYRIGHT</tt></b>
+<li>In the same file, you may also want to edit <code>GS_COPYRIGHT</code>
 to add your own copyright notice (although you must not remove any
 notice that is there).
 
-<li>You will almost certainly want to edit <b><tt>version.mak</tt></b> to
-change the revision date, <b><tt>GS_REVISIONDATE</tt></b>.
+<li>You will almost certainly want to edit <code>version.mak</code> to
+change the revision date, <code>GS_REVISIONDATE</code>.
 
 <li>If you want to change the release number, you must change it in all the
 places listed under <a href="#Release_numbering">"Release numbering"</a>
@@ -176,16 +176,16 @@ Release numbers appear in the following places in the Ghostscript files:
 
 <ul>
 
-<li>In <b><tt>lib/gs_init.ps</tt></b>, as an integer (release number x100) at the beginning of the
+<li>In <code>lib/gs_init.ps</code>, as an integer (release number x100) at the beginning of the
 file just after the initial comment blocks.
 
-<li>In <b><tt>src/version.mak</tt></b>, split into 3 lines.
+<li>In <code>src/version.mak</code>, split into 3 lines.
 
-<li>In <b><tt>doc/News.htm</tt></b>, in the two headers and their labels and at the very end in
+<li>In <code>doc/News.htm</code>, in the two headers and their labels and at the very end in
 the copyright footer.
 
 <li>At the foot of most documenation files. However, these are updated mechanically from the value
-in <b><tt>News.htm</tt></b> as part of the release process and do not need to be maintained
+in <code>News.htm</code> as part of the release process and do not need to be maintained
 directly.
 </ul>
 
@@ -228,7 +228,7 @@ document does not discuss them.
 
 <p>
 To make a source distribution, you will need the scripts and data files in
-the <b><tt>toolbin/</tt></b> directory. The instructions below generally
+the <code>toolbin/</code> directory. The instructions below generally
 assume that you're invoking the relative to the top level of the source 
 tree.
 
@@ -245,7 +245,7 @@ redistributable. You will need to provide similar files for your
 environment.
 
 <blockquote><pre>
-<b><tt>data/*/*.ps</tt></b> (PostScript files) - needed for smoke testing
+<code>data/*/*.ps</code> (PostScript files) - needed for smoke testing
 </pre></blockquote>
 
 <h3><a name="Preparing_source"></a>Preparing the source code</h3>
@@ -259,13 +259,13 @@ Update references to the date for release:
 
 <ul>
 
-<li>In <b><tt>version.mak</tt></b>, the numeric date.
+<li>In <code>version.mak</code>, the numeric date.
 
-<li>In <b><tt>doc/News.htm</tt></b>, in two places, skipping the Id:
+<li>In <code>doc/News.htm</code>, in two places, skipping the Id:
 line. That is, in parentheses after the <tt>VERSION X.YY</tt> heading,
 and in the copyright footer both the year and the release date.
 
-<li>In <b><tt>src/dwsetup.rc</tt></b> and <b><tt>src/winint.mak</tt></b>,
+<li>In <code>src/dwsetup.rc</code> and <b><tt>src/winint.mak</tt></b>,
 update the year in the embedded copyright notice.
 
 </ul>
@@ -274,12 +274,12 @@ update the year in the embedded copyright notice.
 We recommend using a UTC release date to avoid timezone skew.
 
 <p>
-Also in <b><tt>doc/News.htm</tt></b>, update the number of the highest
+Also in <code>doc/News.htm</code>, update the number of the highest
 closed bug and the list of open bugs.
 
 <p>
-Check in <b><tt>gscdef.c</tt></b> that the definition of
-<b><tt>GS_PRODUCT</tt></b> includes the appropriate one of "DEVELOPMENT
+Check in <code>gscdef.c</code> that the definition of
+<code>GS_PRODUCT</code> includes the appropriate one of "DEVELOPMENT
 RELEASE", "BETA RELEASE", or neither, and does not include "SVN PRE-RELEASE".
 
 <p>Run the source-consistency checks from the test suite:
@@ -291,7 +291,7 @@ Where the argument of --gsroot is the path to the top level of the
 source tree. Fix any problems it indicates, and commit them to svn.
 
 <p>
-Check for patched configuration parameters, <b><tt>#define TEST</tt></b>s,
+Check for patched configuration parameters, <code>#define TEST</code>s,
 version/date inconsistencies, and mismatches between the working directory
 and the SVN repository by running:
 
@@ -304,17 +304,17 @@ This program compares the result of various greps against a check file,
 writing the results of grep on one output file and the differences from the
 check file on another.  See the source code for the default file names.  The
 important one is the check file,
-<b><tt>toolbin/pre.chk</tt></b>.  <b><tt>pre.tcl</tt></b> also verifies
+<code>toolbin/pre.chk</code>.  <b><tt>pre.tcl</tt></b> also verifies
 that the
 right information is in the following places:
 <ul>
-<li>release number in <b><tt>man/*.1</tt></b>, <b><tt>doc/*.htm</tt></b>,
-<b><tt>version.mak</tt></b>, <b><tt>doc/gs-vms.hlp</tt></b>,
-<b><tt>lib/gs_init.ps</tt></b>
-<li>revision date in <b><tt>man/*.1</tt></b>, <b><tt>doc/*.htm</tt></b>,
-<b><tt>version.mak</tt></b>, <b><tt>doc/gs-vms.hlp</tt></b>
-<li>copyright year (if necessary) in <b><tt>gscdef.c</tt></b>
-<li>third-party library version number in <b><tt>*.mak</tt></b>
+<li>release number in <code>man/*.1</code>, <b><tt>doc/*.htm</tt></b>,
+<code>version.mak</code>, <b><tt>doc/gs-vms.hlp</tt></b>,
+<code>lib/gs_init.ps</code>
+<li>revision date in <code>man/*.1</code>, <b><tt>doc/*.htm</tt></b>,
+<code>version.mak</code>, <b><tt>doc/gs-vms.hlp</tt></b>
+<li>copyright year (if necessary) in <code>gscdef.c</code>
+<li>third-party library version number in <code>*.mak</code>
 </ul>
 
 <p>
@@ -386,19 +386,19 @@ unset GS_DEVICE GS_FONTPATH GS_LIB GS_OPTIONS
 This reads files named
 
 <blockquote><pre>
-<b><tt>data/misc/*.ps</tt></b>
-<b><tt>data/ps/*.ps</tt></b>
-<b><tt>data/psl2/*.ps</tt></b>
-<b><tt>data/psl3/*.ps</tt></b>
+<code>data/misc/*.ps</code>
+<code>data/ps/*.ps</code>
+<code>data/psl2/*.ps</code>
+<code>data/psl3/*.ps</code>
 </pre></blockquote>
 
 <p>
-(Edit <b><tt>toolbin/smoke.ps</tt></b> to use other test sets.)
+(Edit <code>toolbin/smoke.ps</code> to use other test sets.)
 Watch for crashes, unusual error messages, or anomalous displayed output.
 If there are any problems, start over from the beginning of the process.
 
 <p>
-Undo the <b><tt>FEATURE_DEVS</tt></b> and <b><tt>COMPILE_INITS</tt></b>
+Undo the <code>FEATURE_DEVS</code> and <b><tt>COMPILE_INITS</tt></b>
 edits.
 
 <p>
@@ -476,7 +476,7 @@ tag names, or a '.<i>n</i>' tiny release number to post-release fixes.
 Pull a fresh copy for distribution from the repository:
 
 <blockquote><pre>
-<tt>svn export http://svn.ghostscript.com/ghostscript/tags/ghostscript-#.##</tt>
+<code>svn export http://svn.ghostscript.com/ghostscript/tags/ghostscript-#.##</code>
 </pre></blockquote>
 
 
@@ -484,8 +484,8 @@ Pull a fresh copy for distribution from the repository:
 Generate the text versions of the README and PUBLIC documents:
 
 <blockquote>
-<pre><tt>cd ghostscript-#.##</tt>
-<tt>lynx -dump -nolist doc/Readme.htm &gt; doc/README</tt>
+<pre><code>cd ghostscript-#.##</code>
+<code>lynx -dump -nolist doc/Readme.htm &gt; doc/README</code>
 </blockquote>
 
 <p>
@@ -526,8 +526,8 @@ source archives with:
 This creates the files
 
 <blockquote><pre>
-<b><tt>ghostscript-#.##.tar.gz</tt></b> (main archive)
-<b><tt>ghostscript-#.##.tar.bz2</tt></b> (main archive)
+<code>ghostscript-#.##.tar.gz</code> (main archive)
+<code>ghostscript-#.##.tar.bz2</code> (main archive)
 </pre></blockquote>
 
 <p>
@@ -545,7 +545,7 @@ convenience of windows developers. See below.
 For Windows testing, you will need, in addition to the files listed
 under "<a href="#Preparing_source">Preparing the source</a>" above:
 <blockquote><pre>
-<b><tt>toolbin/makewin.tcl</tt></b>
+<code>toolbin/makewin.tcl</code>
 </pre></blockquote>
 
 <p>
@@ -553,8 +553,8 @@ The following procedures rely on a large number of MS-DOS batch scripts that
 are not discussed here: they are unlikely to be generally useful.
 
 <p>
-Mount the Windows partition on <b><tt>/c</tt></b>, and create the
-<b><tt>/c/work</tt></b> directory if needed.
+Mount the Windows partition on <code>/c</code>, and create the
+<code>/c/work</code> directory if needed.
 
 <p>
 Make the zip archive of all files needed for a Windows build, and copy it to
@@ -575,9 +575,9 @@ gs###
 </pre></blockquote>
 
 <p>
-The <b><tt>gs###.bat</tt></b> script creates some necessary directories,
-sets up <b><tt>PATH</tt></b> and <b><tt>GS_LIB</tt></b> for testing, and
-makes the <b><tt>gs#.##</tt></b> directory current.
+The <code>gs###.bat</code> script creates some necessary directories,
+sets up <code>PATH</code> and <b><tt>GS_LIB</tt></b> for testing, and
+makes the <code>gs#.##</code> directory current.
 
 <p>
 Build with the Borland compiler:
@@ -590,8 +590,8 @@ make > bc.log
 </pre></blockquote>
 
 <p>
-Smoke test the executables (both <b><tt>gswin32</tt></b> and
-<b><tt>gswin32c</tt></b>), as described above for source distributions.
+Smoke test the executables (both <code>gswin32</code> and
+<code>gswin32c</code>), as described above for source distributions.
 Then build with the Microsoft compiler:
 
 <blockquote><pre>
@@ -606,7 +606,7 @@ Smoke test these executables too.
 
 <p>
 Building with the Watcom compiler doesn't work, because the
-<b><tt>wmake</tt></b> or <b><tt>wmakel</tt></b> program runs out of memory.
+<code>wmake</code> or <b><tt>wmakel</tt></b> program runs out of memory.
 However, if it did work, this is how to do it:
 
 <blockquote><pre>
@@ -623,32 +623,32 @@ href="#Preparing_source">"Preparing the source code."</a>
 
 <h3><a name="Windows_distribution"></a>Building the Windows distribution</h3>
 <p>
-Extract the sources from <b><tt>ghostscript-N.NN.tar.gz</tt></b>
+Extract the sources from <code>ghostscript-N.NN.tar.gz</code>
 then repackage in a zip file as follows:
 <blockquote>
-<b><tt>zip -r temp.zip gsN.NN/LICENSE gsN.NN/doc gsN.NN/examples 
+<code>zip -r temp.zip gsN.NN/LICENSE gsN.NN/doc gsN.NN/examples 
   gsN.NN/icclib gsN.NN/ijs gsN.NN/jasper gsN.NN/jbig2dec gsN.NN/jpeg
-  gsN.NN/lib gsN.NN/libpng gsN.NN/src gsN.NN/Resource gsN.NN/zlib</tt></b>
+  gsN.NN/lib gsN.NN/libpng gsN.NN/src gsN.NN/Resource gsN.NN/zlib</code>
 </blockquote>
 Unzip converting the line endings to CRLF:
 <blockquote>
-<b><tt>unzip -a temp.zip<br>
-del temp.zip</tt></b>
+<code>unzip -a temp.zip<br>
+del temp.zip</code>
 </blockquote>
 Then finally zip up the sources to the distribution file:
 <blockquote>
-<b><tt>zip -9 -r -X gsNNNsrc.zip gsN.NN</tt></b>
+<code>zip -9 -r -X gsNNNsrc.zip gsN.NN</code>
 </blockquote>
 This method is reasonably portable, and does not convert binary
 files such as
-<b><tt><a href="../examples/annots.pdf">examples/annots.pdf</a></tt></b>.
+<code><a href="../examples/annots.pdf">examples/annots.pdf</a></code>.
 <p>
-Unzip <b><tt>gsNNNsrc.zip</tt></b>.  
-The directory must be named <b><tt>gsN.NN</tt></b>.
+Unzip <code>gsNNNsrc.zip</code>.  
+The directory must be named <code>gsN.NN</code>.
 <p>
-Extract the fonts <b><tt>ghostscript-fonts-std-#.##.tar.gz</tt></b>
-into a directory <b><tt>fonts</tt></b> adjacent to the 
-<b><tt>gsN.NN</tt></b> directory.  
+Extract the fonts <code>ghostscript-fonts-std-#.##.tar.gz</code>
+into a directory <code>fonts</code> adjacent to the 
+<code>gsN.NN</code> directory.  
 The fonts are needed in this location for building 
 the distribution archive later.
 <p>
@@ -656,31 +656,31 @@ You will need the command line Info-Zip zip program available from
 <a href="http://www.info-zip.org/pub/infozip/">
 http://www.info-zip.org/pub/infozip/</a> 
 Alternatively, the command line version of WinZip 
-(<b><tt>wzzip.exe</tt></b>) can be used by replacing the 
-Info-Zip command line options <b><tt>-9 -r</tt></b>
-with <b><tt>-ex -P</tt></b> in
-<b><tt><a href="../src/winint.mak">winint.mak</a></tt></b>.
+(<code>wzzip.exe</code>) can be used by replacing the 
+Info-Zip command line options <code>-9 -r</code>
+with <code>-ex -P</code> in
+<code><a href="../src/winint.mak">winint.mak</a></code>.
 <p>
 You will need WinZip Self-Extractor for building the
 self extracting archive.  This is commercial software.
-You may need to update the path <b><tt>WINZIPSE_XE</tt></b> in 
-<b><tt><a href="../src/winint.mak">winint.mak</a></tt></b>.
+You may need to update the path <code>WINZIPSE_XE</code> in 
+<code><a href="../src/winint.mak">winint.mak</a></code>.
 <p>
 Unzip the jpeg, libpng and zlib libraries, then make ghostscript
 as documented in <a href="Make.htm">Make.htm</a>.
 <p>
-Run the command <b><tt>nmake archive</tt></b>.  This builds the distribution
-archive <b><tt>gsNNNw32.exe</tt></b> and an ordinary zip file
-<b><tt>gsNNNw32.zip</tt></b> in the parent directory.
+Run the command <code>nmake archive</code>.  This builds the distribution
+archive <code>gsNNNw32.exe</code> and an ordinary zip file
+<code>gsNNNw32.zip</code> in the parent directory.
 If you do not have WinZip Self-Extractor, you can use
-<b><tt>nmake zip</tt></b> to make <b><tt>gsNNNw32.zip</tt></b> only. 
+<code>nmake zip</code> to make <b><tt>gsNNNw32.zip</tt></b> only. 
 
 <h3><a name="Finishing_up"></a>Finishing up</h3>
 
 <p>
-Upload <b><tt>ghostscript-#.##.tar.*</tt></b> to SourceForge (by anonymous
-FTP to <b><tt>upload.sourceforge.net</tt></b>, directory
-<b><tt>/incoming</tt></b>), and then post it using the "File Release"
+Upload <code>ghostscript-#.##.tar.*</code> to SourceForge (by anonymous
+FTP to <code>upload.sourceforge.net</code>, directory
+<code>/incoming</code>), and then post it using the "File Release"
 facility in the Ghostscript project. Put the release in the appropriate 
 package, usually "GPL Ghostscript".
 If you are adding executable builds or source archives for other
@@ -693,8 +693,8 @@ date as the source release, not the current date.
 Do the steps for distributions in general.
 
 <p>
-Upload <b><tt>ghostscript-#.##.tar.*</tt></b> to
-<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/GPL/test</tt></b>.
+Upload <code>ghostscript-#.##.tar.*</code> to
+<code>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/GPL/test</code>.
 
 <h3><a name="Public_releases"></a>Public releases</h3>
 
@@ -703,7 +703,7 @@ Do the steps for distributions in general.
 
 <p>
 Create a directory at
-<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/GPL/gs###/</tt></b>.  
+<code>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/GPL/gs###/</code>.  
 In that directory, store the following files:
 
 <ul>
@@ -711,42 +711,42 @@ In that directory, store the following files:
 <li>Standard distribution files:
 
 <blockquote><pre>
-<b><tt>ghostscript-#.##.tar.gz</tt></b>
-<b><tt>ghostscript-#.##.tar.bz2</tt></b>
+<code>ghostscript-#.##.tar.gz</code>
+<code>ghostscript-#.##.tar.bz2</code>
 </pre></blockquote>
 
 <li>MS Windows source and executables:
 
 <blockquote><pre>
-<b><tt>gs###src.zip</tt></b>
-<b><tt>gs###w32.exe</tt></b>
-<b><tt>gs###w32.zip</tt></b>
+<code>gs###src.zip</code>
+<code>gs###w32.exe</code>
+<code>gs###w32.zip</code>
 </pre></blockquote>
 
 <li>Third-party libraries, as links (upload these if not installed), where
-<b><tt>$$$</tt></b> et al. refer to the version number of the library, which
+<code>$$$</code> et al. refer to the version number of the library, which
 should be the latest compatible release of the library and should be 
 consistent with the values of and version numbers specifically listed in
 the makefiles.
 
 <blockquote><pre>
-<b><tt>jpegsrc.v$$.tar.gz</tt></b> -> <b><tt>../../3rdparty/jpegsrc.v$$.tar.gz</tt></b>
-<b><tt>libpng-$.$.$.tar.gz</tt></b> -> <b><tt>../../3rdparty/libpng-$.$.$.tar.gz</tt></b>
-<b><tt>zlib-$.$.$.tar.gz</tt></b> -> <b><tt>../../3rdparty/zlib-$.$.$.tar.gz</tt></b>
-<b><tt>jpegsr$$.zip</tt></b> -> <b><tt>../../3rdparty/jpegsr$$.zip</tt></b>
-<b><tt>lpng$$$.zip</tt></b> -> <b><tt>../../3rdparty/lpng$$$.zip</tt></b>
-<b><tt>zlib$$$.zip</tt></b> -> <b><tt>../../3rdparty/zlib$$$.zip</tt></b>
+<code>jpegsrc.v$$.tar.gz</code> -> <b><tt>../../3rdparty/jpegsrc.v$$.tar.gz</tt></b>
+<code>libpng-$.$.$.tar.gz</code> -> <b><tt>../../3rdparty/libpng-$.$.$.tar.gz</tt></b>
+<code>zlib-$.$.$.tar.gz</code> -> <b><tt>../../3rdparty/zlib-$.$.$.tar.gz</tt></b>
+<code>jpegsr$$.zip</code> -> <b><tt>../../3rdparty/jpegsr$$.zip</tt></b>
+<code>lpng$$$.zip</code> -> <b><tt>../../3rdparty/lpng$$$.zip</tt></b>
+<code>zlib$$$.zip</code> -> <b><tt>../../3rdparty/zlib$$$.zip</tt></b>
 </pre></blockquote>
 
 In any case, the names of the links in the distribution directory should reflect
 the original name of the upstream file.
 
-<li>Fonts, where <b><tt>$.$$</tt></b> refers to the most recent version
+<li>Fonts, where <code>$.$$</code> refers to the most recent version
 number of the fonts:
 
 <blockquote><pre>
-<b><tt>ghostscript-fonts-other-$.$.tar.gz</tt></b> -> <b><tt>../fonts/ghostscript-fonts-other-$.$.tar.gz</tt></b>
-<b><tt>ghostscript-fonts-std-$.$.tar.gz</tt></b> -> <b><tt>../fonts/ghostscript-fonts-std-$.$.tar.gz</tt></b>
+<code>ghostscript-fonts-other-$.$.tar.gz</code> -> <b><tt>../fonts/ghostscript-fonts-other-$.$.tar.gz</tt></b>
+<code>ghostscript-fonts-std-$.$.tar.gz</code> -> <b><tt>../fonts/ghostscript-fonts-std-$.$.tar.gz</tt></b>
 </pre></blockquote>
 
 </ul>
@@ -777,11 +777,11 @@ Update the release number by incrementing it as described in <a
 href="#Release_numbering">Release numbering</a> above.
 
 <p>
-In <b><tt>gscdef.c</tt></b>, edit the definition of
-<b><tt>GS_PRODUCT</tt></b> to include "SVN PRE-RELEASE".
+In <code>gscdef.c</code>, edit the definition of
+<code>GS_PRODUCT</code> to include "SVN PRE-RELEASE".
 
 <p>
-Edit <b><tt>doc/News.htm</tt></b> to remove all the content.
+Edit <code>doc/News.htm</code> to remove all the content.
 
 
 <h2><a name="Fonts"></a>Fonts</h2>
@@ -807,7 +807,7 @@ ghostscript-fonts-other-#.##.tar.gz
 
 <p>
 The first two of these use the GPL, and should be uploaded to
-<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/fonts/</tt></b>.  
+<code>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/fonts/</code>.  
 
 <!-- [2.0 end contents] ==================================================== -->
 

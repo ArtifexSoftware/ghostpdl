@@ -253,14 +253,14 @@ interaction.  In particular:
 <ul>
 
 <li>For callers that want to pass input to Ghostscript piece by piece,
-Ghostscript returns with an <b><tt>e_NeedInput</tt></b> code rather than
+Ghostscript returns with an <code>e_NeedInput</code> code rather than
 using a callback.  This allows the caller complete flexibility in its
 control structure for managing the source of input.  (It might, for example,
 be generating the input dynamically.)
 
 <li>In the future, the same arrangement should be used for input from
-<b><tt>stdin</tt></b> and output to <b><tt>stdout</tt></b> and
-<b><tt>stderr</tt></b>.
+<code>stdin</code> and output to <code>stdout</code> and
+<code>stderr</code>.
 
 <li>Likewise, scheduling of Ghostscript's own threads (contexts), currently
 done with a callback, should be done with suspension.  The Display
@@ -946,17 +946,17 @@ the order in which they occur in the rendering pipeline.
 <ol>
 
 <li>Clients of the graphics library normally specify colors using the
-<em>client color</em> structure (<b><tt>gs_client_color</tt></b>, defined in
+<em>client color</em> structure (<code>gs_client_color</code>, defined in
 <a href="../src/gsccolor.h">src/gsccolor.h</a>), consisting of one or more
 numeric values and/or a pointer to a Pattern instance.  This corresponds
 directly to the values that would be passed to the PostScript
-<b><tt>setcolor</tt></b> operator: one or more (floating-point) numeric
+<code>setcolor</code> operator: one or more (floating-point) numeric
 components and/or a Pattern.  Client colors are interpreted relative to a
-color space (<b><tt>gs_color_space</tt></b>, defined in <a
+color space (<code>gs_color_space</code>, defined in <a
 href="../src/gscspace.h">src/gscspace.h</a> and <a
 href="../src/gxcspace.h">src/gxcspace.h</a>, with specific color spaces
 defined in other files).  Client colors do not explicitly reference the
-color space in which they are are interpreted: <b><tt>setcolor</tt></b> uses
+color space in which they are are interpreted: <code>setcolor</code> uses
 the color space in the graphics state, while images and shadings explicitly
 specify the color space to be used.
 
@@ -968,10 +968,10 @@ together with an identification of the associated color space.  (The
 confusion here between color spaces and color models will have to be cleaned
 up when we implement native Separation/DeviceN colors.)  Concrete colors are
 like the numeric values in a client color, except that they are represented
-by arrays of <b><tt>frac</tt></b> values (defined in <a
+by arrays of <code>frac</code> values (defined in <a
 href="../src/gxfrac.h">src/gxfrac.h</a>) rather than floats.  The procedure
-for this step is the virtual <b><tt>concretize_color</tt></b> and
-<b><tt>concrete_space</tt></b> procedures in the (original) color space.
+for this step is the virtual <code>concretize_color</code> and
+<code>concrete_space</code> procedures in the (original) color space.
 This step reduces Indexed colors, CIEBased colors, and Separation and
 DeviceN colors that use the alternate space.
 
@@ -992,21 +992,21 @@ generation and undercolor removal.  The non-trivial cases are implemented in
 </ul>
 
 The result is called (inappropriately) a <em>device color</em>
-(<b><tt>gx_device_color</tt></b>, defined in <a
+(<code>gx_device_color</code>, defined in <a
 href="../src/gsdcolor.h">src/gsdcolor.h</a> and <a
 href="../src/gxdcolor.h">src/gxdcolor.h</a>).  For ordinary non-Pattern
 colors, a device color is either a pure color, or a halftone.  The device
 and color model associated with a device color are implicit.  The procedure
-for this step is the virtual <b><tt>remap_concrete_color</tt></b> procedure
+for this step is the virtual <code>remap_concrete_color</code> procedure
 in the color space.
 
 <li>The pure colors that underlie a device color are opaque <em>pixel
-values</em> defined by the device (misnamed <b><tt>gx_color_index</tt></b>,
+values</em> defined by the device (misnamed <code>gx_color_index</code>,
 defined in <a href="../src/gscindex.h">src/gscindex.h</a>).  The device with
 which they are associated is implicit.  Although the format and
 interpretation of a pixel value are known only to the device, the device's
 color model and color representation capabilities are public, defined by a
-<b><tt>gx_color_info</tt></b> structure stored in the device (defined in <a
+<code>gx_color_info</code> structure stored in the device (defined in <a
 href="../src/gxdevcli.h">src/gxdevcli.h</a>).  Virtual procedures of the
 device driver map between pixel values and RGB or CMYK.  (This area is
 untidy and will need to be cleaned up when we implement native
@@ -1016,11 +1016,11 @@ Separation/DeviceN colors.)
 
 <p>
 Steps 2 and 3 are normally combined into a single step for efficiency, as
-the <b><tt>remap_color</tt></b> virtual procedure in a color space.
+the <code>remap_color</code> virtual procedure in a color space.
 
 <p>
 Using a device color to actually paint pixels requires a further step called
-<em>color loading</em>, implemented by the <b><tt>load</tt></b> virtual
+<em>color loading</em>, implemented by the <code>load</code> virtual
 procedure in the device color.  This does nothing for pure colors, but loads
 the caches for halftones and Patterns.
 
@@ -1031,11 +1031,11 @@ actually needed for painting.
 
 <p>
 All painting operations (fill, stroke, imagemask/show) eventually call a
-virtual procedure in the device color, either <b><tt>fill_rectangle</tt></b>
-or <b><tt>fill_mask</tt></b> to actually paint pixels.  For rectangle fills,
-pure colors call the device's <b><tt>fill_rectangle</tt></b> procedure;
+virtual procedure in the device color, either <code>fill_rectangle</code>
+or <code>fill_mask</code> to actually paint pixels.  For rectangle fills,
+pure colors call the device's <code>fill_rectangle</code> procedure;
 halftones and tiled Patterns call the device's
-<b><tt>tile_rectangle</tt></b>; shaded Patterns, and painting operations
+<code>tile_rectangle</code>; shaded Patterns, and painting operations
 that involve a RasterOp, do something more complicated.
 
 <dl>
@@ -1216,7 +1216,7 @@ The device color for a tiled (PatternType 1) pattern contains a pointer to a
 pattern instance, plus (for uncolored patterns) the device color to be
 masked.  The pattern instance includes a procedure that actually paints the
 pattern if the pattern is not in the cache.  For the PostScript interpreter,
-this procedure returns an <b><tt>e_RemapColor</tt></b> exception code: this
+this procedure returns an <code>e_RemapColor</code> exception code: this
 eventually causes the interpreter to run the pattern's PaintProc, loading
 the rendering into the cache, and then re-execute the original drawing
 operator.
@@ -2959,7 +2959,7 @@ transparency features, which we (but not Adobe) have made available to
 PostScript code.
 
 <p>
-In addition to patching the <b><tt>run</tt></b> operator to detect PDF
+In addition to patching the <code>run</code> operator to detect PDF
 files, the interpreter provides some procedures in <a
 href="../lib/pdf_main.ps">lib/pdf_main.ps</a> that are meant to be called
 from applications such as previewers.
@@ -2982,7 +2982,7 @@ Files:
 Extraction of layer information from Illustratir CS2/CS3 PDF files is
 implemented for a specific commercial customer; it is not used by any of the
 included drivers. To activate this feature add
-<b><tt>cslayer.dev</tt></b> to the list of feature devices.
+<code>cslayer.dev</code> to the list of feature devices.
 <dl>
 Files:
 <dt>
@@ -3023,7 +3023,7 @@ used in the build process are defined in the top-level makefiles for the
 various platforms: there are no "hard wired" directory names in any makefile
 rule.  Subdirectory names in the makefiles are relative to the directory
 that is current at build time: normally this directory is the parent of the
-various subdirectories, and holds only a <b><tt>makefile</tt></b>, which in
+various subdirectories, and holds only a <code>makefile</code>, which in
 turn simply references the real top-level makefile in the source
 subdirectory.
 
@@ -3033,24 +3033,24 @@ preferably in the top-level platform makefile.
 <li>There is an absolute distinction between "source-like" subdirectories,
 which are read-only during the build process, and "object-like"
 subdirectories, all of whose contents are generated by the build process and
-which can be emptied (<b><tt>rm&nbsp;*</tt></b>) at any time with no bad
+which can be emptied (<code>rm&nbsp;*</code>) at any time with no bad
 effects.  The source subdirectories are defined by macros named
-<b><tt>xxxSRCDIR</tt></b>.
+<code>xxxSRCDIR</code>.
 
 <li>Object subdirectories may distinguish further between those that hold
 the results of the build process that are needed at run time (i.e., that
 should be included in a run-time distribution), defined by
-<b><tt>BINDIR</tt></b>, and those that are not needed at run time, defined
-by <b><tt>xxxGENDIR</tt></b> and <b><tt>xxxOBJDIR</tt></b>.  (The
+<code>BINDIR</code>, and those that are not needed at run time, defined
+by <code>xxxGENDIR</code> and <code>xxxOBJDIR</code>.  (The
 distinction between these is historical and probably no longer relevant.)
 
 <li>There may be multiple object subdirectories for different build
-configurations.  On Unix, the <b><tt>obj</tt></b> and <b><tt>bin</tt></b>
+configurations.  On Unix, the <code>obj</code> and <code>bin</code>
 directories are used for normal production builds, the
-<b><tt>debugobj</tt></b> directory for debugging builds, and the
-<b><tt>pgobj</tt></b> directory for profiling builds; other platforms may
+<code>debugobj</code> directory for debugging builds, and the
+<code>pgobj</code> directory for profiling builds; other platforms may
 use different conventions.  The Unix makefiles support targets named
-<b><tt>debug</tt></b> and <b><tt>pg</tt></b> for debugging and profiling
+<code>debug</code> and <code>pg</code> for debugging and profiling
 builds respectively; other platforms generally do not.
 
 <li>Makefiles will be maintained by hand.  This requires editing the
@@ -3059,34 +3059,34 @@ following makefile elements whenever the relevant source files changes:
 <ul>
 
 <li>Every header (.h) file must have a corresponding macro definition in a
-makefile.  If <b><tt>abc.h</tt></b> #includes <b><tt>def.h</tt></b> and
-<b><tt>xyz.h</tt></b>, the definition must have the form
+makefile.  If <code>abc.h</code> #includes <code>def.h</code> and
+<code>xyz.h</code>, the definition must have the form
 
 <blockquote><pre>
 xyz_h=$(xxxSRCD)xyz.h $(def_h) $(xyz_h)
 </pre></blockquote>
 
-where <b><tt>xxxSRCD</tt></b> is the macro defining the relevant source
+where <code>xxxSRCD</code> is the macro defining the relevant source
 directory (including a trailing '/').  Note that the '.' in the file name
 has been replaced by an underscore.  Note also that the definition must
-follow all definitions it references, since some <b><tt>make</tt></b>
+follow all definitions it references, since some <code>make</code>
 programs expand macros in definitions at the time of definition rather than
 at the time of use.
 
 <li>Every .c file must have a corresponding rule in a makefile.  If
-<b><tt>abc.c</tt></b> #includes <b><tt>def.h</tt></b> and
-<b><tt>lmn.h</tt></b>, the rule must have approximately the form
+<code>abc.c</code> #includes <code>def.h</code> and
+<code>lmn.h</code>, the rule must have approximately the form
 
 <blockquote><pre>
 $(xxxOBJD)abc.$(OBJ) : $(xxxSRCD)abc.c $(def_h) $(lmn_h)
     $(xxCC) $(xxO_)abc.$(OBJ) $(C_) $(xxxSRCD)abc.c
 </pre></blockquote>
 
-where <b><tt>xxxSRCD</tt></b> is as before; <b><tt>xxxOBJD</tt></b> is the
-relevant object directory; <b><tt>xxCC</tt></b> defines the name of the C
-compiler plus the relevant compilation switches; and <b><tt>xxO_</tt></b>
-and <b><tt>C_</tt></b> are macros used to bridge syntactic differences
-between different <b><tt>make</tt></b> programs.
+where <code>xxxSRCD</code> is as before; <code>xxxOBJD</code> is the
+relevant object directory; <code>xxCC</code> defines the name of the C
+compiler plus the relevant compilation switches; and <code>xxO_</code>
+and <code>C_</code> are macros used to bridge syntactic differences
+between different <code>make</code> programs.
 
 </ul>
 
@@ -3098,7 +3098,7 @@ Two alternatives are generally proposed.
 
 <ul>
 
-<li>Programs like <b><tt>makedeps</tt></b>, which generate build rules
+<li>Programs like <code>makedeps</code>, which generate build rules
 automatically from the #include lists in C files.  We have found such
 programs useless: they "wire in" specific, concrete directory names, not
 only for our own code but even for the system header files; they have to be
@@ -3174,17 +3174,17 @@ color spaces, etc.
 build.  For example, the core (Level 1) PostScript build has a "stub" for
 binary tokens, which are a Level 2 feature but are referenced by the core
 scanner: a Level 2 build must remove the stub.  For more information about
-this, look for the string <b><tt>-replace</tt></b> in the makefiles and in
+this, look for the string <code>-replace</code> in the makefiles and in
 <a href="../src/genconf.c">src/genconf.c</a>.
 
 </ul>
 
 <p>
 Each module is defined in the makefiles by rules that create a file named
-<b><em>xxx</em><tt>.dev</tt></b>.  The dependencies of the rule include all
+<code><em>xxx</em>.dev</code>.  The dependencies of the rule include all
 the files that make up the module (compiled code files, PostScript files,
 etc.); the body of the rule creates the .dev file by writing the description
-of the module into it.  A program called <b><tt>genconf</tt></b>, described
+of the module into it.  A program called <code>genconf</code>, described
 in the next section, merges all the relevant .dev files together.  For
 examples of .dev rules, see any of the Ghostscript makefiles.
 
@@ -3192,9 +3192,9 @@ examples of .dev rules, see any of the Ghostscript makefiles.
 Ultimately, a person must specify the root set of modules to include in a
 build (which of course may require other modules, recursively).
 Ghostscript's makefiles do this with a set of macros called
-<b><tt>FEATURE_DEVS</tt></b> and <b><tt>DEVICE_DEVS</tt>n</b>, defined in
-each top-level makefile, but nothing in the module machinery depends on
-this.
+<code>FEATURE_DEVS</code> and <code>DEVICE_DEVS</code><em>n</em>, 
+defined in each top-level makefile, but nothing in the module machinery 
+depends on this.
 
 <h4><a name="Generators"></a>Generators</h4>
 
@@ -3206,17 +3206,17 @@ build.
 
 <p>
 The most important and complex of the generator programs is
-<b><tt>genconf</tt></b>.  <b><tt>genconf</tt></b> merges all the .dev files
+<code>genconf</code>.  <code>genconf</code> merges all the .dev files
 that make up the build, and creates three or more output files used in later
 stages:
 
 <ul>
 
-<li><b><tt>gconfig.h</tt></b>, consisting mainly of macro calls, one call
+<li><code>gconfig.h</code>, consisting mainly of macro calls, one call
 per "resource" making up the build, other than "resources" listed in the
 other output files.
 
-<li><b><tt>gconfigf.h</tt></b>, produced only for PostScript builds with
+<li><code>gconfigf.h</code>, produced only for PostScript builds with
 compiled-in fonts, consisting of one macro call per font.
 
 <li>A linker control file whose name varies from one platform to another,
@@ -3263,7 +3263,7 @@ such halftones are included in the build.
 Converts PostScript initialization files to a single PostScript file that
 has comments removed and optionally, a C data structure that can be
 compiled into an executable.  Only used when building a PostScript
-interpreter, and only if <b><tt>COMPILE_INITS</tt></b> was set to 1 in the
+interpreter, and only if <code>COMPILE_INITS</code> was set to 1 in the
 makefile.
 
 <dt>
@@ -3272,7 +3272,7 @@ makefile.
 Takes a set of directories, and creates a compressed filesystem
 image that can be compiled into the executable as static data and accessed
 through the %rom% iodevice prefix. This is used to implement the
-<b><tt>COMPILE_INITS=1</tt></b> feature (a compressed init fileset is more
+<code>COMPILE_INITS=1</code> feature (a compressed init fileset is more
 efficient than the current 'gsinit.c' produced by 'geninit.c'). This IODevice
 is more versatile since other files can be encapsulated such as fonts, helper
 PostScript files and Resources. The list of files is defined in part in 
@@ -3300,7 +3300,7 @@ See above.
 <dt>
 <a href="../src/gendev.c">src/gendev.c</a> (not used)
 <dd>
-Was intended as a replacement for <b><tt>genconf</tt></b>, but was never
+Was intended as a replacement for <code>genconf</code>, but was never
 completed.
 
 </dl>
@@ -3387,8 +3387,8 @@ These are all documented in <a href="Psfiles.htm">doc/Psfiles.htm</a>, q.v.
 <h4><a name="Utility_scripts"></a>Utility scripts</h4>
 
 <p>
-Many of these scripts come in both Unix and MS-DOS (<b><tt>.bat</tt></b>
-versions; some also have an OS/2 (<b><tt>.cmd</tt></b>) version.  The choice
+Many of these scripts come in both Unix and MS-DOS (<code>.bat</code>
+versions; some also have an OS/2 (<code>.cmd</code>) version.  The choice
 of which versions are provided is historical and irregular.  These scripts
 should all be documented somewhere, but currently, many of them have man
 pages, a few have their own documentation in the doc directory, and some
@@ -3584,8 +3584,8 @@ object is freed (either explicitly or automatically).
 
 <p>
 Structure descriptors are read-only, and are normally defined statically
-using one of the large set of <b><tt>gs_private_st_</tt></b> or
-<b><tt>gs_public_st_</tt></b> macros in <a
+using one of the large set of <code>gs_private_st_</code> or
+<code>gs_public_st_</code> macros in <a
 href="../src/gsstruct.h">src/gsstruct.h</a>.
 
 <p>
@@ -3606,20 +3606,20 @@ bugs.
 
 <p>
 By convention, the structure descriptor for structure type
-<b><tt>xxx_t</tt></b> is named <b><tt>st_xxx</tt></b> (this is preferred),
-or occasionally <b><tt>st_xxx_t</tt></b>.
+<code>xxx_t</code> is named <code>st_xxx</code> (this is preferred),
+or occasionally <code>st_xxx_t</code>.
 
 <p>
 Note that a structure descriptor is only required for objects allocated by
-the Ghostscript allocator.  A structure type <b><tt>xxx_t</tt></b> does not
+the Ghostscript allocator.  A structure type <code>xxx_t</code> does not
 require a structure descriptor if instances of that type are used
 <em>only</em> in the following ways:
 
 <ul>
 
 <li>Instances are allocated only on the C stack, e.g., as
-<b><tt>xxx_t&nbsp;xxx1,&nbsp;xxx2;</tt></b>, or on the C heap, with
-<b><tt>malloc</tt></b> or through the Ghostscript "wrapper" defined in <a
+<code>xxx_t&nbsp;xxx1,&nbsp;xxx2;</code>, or on the C heap, with
+<code>malloc</code> or through the Ghostscript "wrapper" defined in <a
 href="../src/gsmalloc.h">src/gsmalloc.h</a>.
 
 <li>Pointers to instances are not stored in places where the garbage
@@ -3698,7 +3698,7 @@ When an allocator needs to add memory to the pool that it manages, it
 requests the memory from its <em>parent</em> allocator.  Every allocator has
 a pointer to its parent; multiple allocators may share a single parent.  The
 ultimate ancestor of all allocators that can expand their pool dynamically
-is an allocator that calls <b><tt>malloc</tt></b>, described <a
+is an allocator that calls <code>malloc</code>, described <a
 href="#malloc">below</a>.  However, especially in embedded environments, an
 allocator may be limited to a fixed-size pool assigned to it when it is
 created.
@@ -3724,8 +3724,8 @@ For details, see <a href="../src/gsmemory.h">src/gsmemory.h</a>.
 <p>
 The allocator API also includes one special hook for the PostScript
 interpreter: the concept of stable allocators.  See the section on <a
-href="#save_forgetsave_restore"><b><tt>save</tt></b> and
-<b><tt>restore</tt></b></a> below for details.
+href="#save_forgetsave_restore"><code>save</code> and
+<code>restore</code></a> below for details.
 
 <dl>
 <dt>
@@ -3761,7 +3761,7 @@ object.
 
 <p>
 Objects and strings may be freed explicitly, using the
-<b><tt>gs_free_</tt></b> virtual procedures in the allocator API.  It is up
+<code>gs_free_</code> virtual procedures in the allocator API.  It is up
 to the client to ensure that all allocated objects are freed at most once,
 and that there are no dangling pointers.
 
@@ -3813,7 +3813,7 @@ Objects and strings may be freed automatically by a garbage collector.  See
 <p>
 As mentioned <a href="#Parent_hierarchy">above</a>, the ultimate ancestor of
 all allocators with an expandable pool is one that calls
-<b><tt>malloc</tt></b>.
+<code>malloc</code>.
 
 <p>Note that the default gsmalloc.c allocator for malloc/free now uses
 a mutex so that allocators that use this can be assured of thread safe
@@ -3889,7 +3889,7 @@ Files:
 
 <p>
 The standard Ghostscript allocator gets storage from its parent (normally
-the <b><tt>malloc</tt></b> allocator) in large blocks called
+the <code>malloc</code> allocator) in large blocks called
 <em>chunks</em>, and then allocates objects up from the low end and strings
 down from the high end.  Large objects or strings are allocated in their own
 chunk.
@@ -3923,14 +3923,14 @@ Files:
 <p>
 The PostScript interpreter uses an allocator that extends the graphic
 library's standard allocator to handle PostScript objects,
-<b><tt>save</tt></b> and <b><tt>restore</tt></b>, and real garbage
+<code>save</code> and <code>restore</code>, and real garbage
 collection.
 
 <h4><a name="Refs"></a>Refs (PostScript "objects")</h4>
 
 <p>
 Ghostscript represents what the PLRM calls PostScript "objects" using a
-structure called a <b><tt>ref</tt></b>, defined in <a
+structure called a <code>ref</code>, defined in <a
 href="../src/iref.h">src/iref.h</a>; packed refs, used for the elements of
 packed arrays, are defined in <a href="../src/ipacked.h">src/ipacked.h</a>.
 See those files for detailed information.
@@ -3959,7 +3959,7 @@ pointers to stored data, include a 2-bit VM space tag to indicate in which
 VM the object data are stored.  In addition to system, global, and local VM,
 there is a tag for "foreign" VM, which means that the memory is not managed
 by a Ghostscript allocator at all.  Every store into a composite object must
-check for <b><tt>invalidaccess</tt></b>: the VM space tag values are chosen
+check for <code>invalidaccess</code>: the VM space tag values are chosen
 to help make this check efficient.  See <a
 href="../src/ivmspace.h">src/ivmspace.h</a>, <a
 href="../src/iref.h">src/iref.h</a>, and <a
@@ -3984,8 +3984,8 @@ href="../src/gxalloc.h">src/gxalloc.h</a> for details.  This memory manager
 object has a structure descriptor, like all other memory manager objects.
 
 <p>
-Note that the <b><tt>value.pdict</tt></b>, <b><tt>value.refs</tt></b>, or
-<b><tt>value.packed</tt></b> member of a ref must point to a PostScript
+Note that the <code>value.pdict</code>, <code>value.refs</code>, or
+<code>value.packed</code> member of a ref must point to a PostScript
 composite object, and therefore can point into the middle of a memory
 manager object.  This requires special handling by the garbage collector (<a
 href="#Interpreter_GC">q.v.</a>).
@@ -4006,12 +4006,12 @@ Files:
 <h4><a name="save_forgetsave_restore"></a>save/.forgetsave/restore</h4>
 
 <p>
-In addition to <b><tt>save</tt></b> and <b><tt>restore</tt></b>, Ghostscript
-provides a <b><tt>.forgetsave</tt></b> operator that makes things as though
-a given <b><tt>save</tt></b> had never happened.  (In data base terminology,
-<b><tt>save</tt></b> is "begin transaction", <b><tt>restore</tt></b> is
-"abort transaction", and <b><tt>.forgetsave</tt></b> is "end/commit
-transaction").  <b><tt>.forgetsave</tt></b> was implemented for a specific
+In addition to <code>save</code> and <code>restore</code>, Ghostscript
+provides a <code>.forgetsave</code> operator that makes things as though
+a given <code>save</code> had never happened.  (In data base terminology,
+<code>save</code> is "begin transaction", <code>restore</code> is
+"abort transaction", and <code>.forgetsave</code> is "end/commit
+transaction").  <code>.forgetsave</code> was implemented for a specific
 commercial customer (who may no longer even be using it): it was a pain to
 make work, but it's in the code now, and should be maintained.  See the
 extensive comments in <a href="../src/isave.c">src/isave.c</a> for more
@@ -4031,12 +4031,12 @@ Files:
 <h4><a name="Stable_allocators"></a>Stable allocators</h4>
 
 <p>
-Even though <b><tt>save</tt></b> and <b><tt>restore</tt></b> are concepts
+Even though <code>save</code> and <code>restore</code> are concepts
 from the PostScript interpreter, the generic allocator architecture and API
 include a feature to support them, called <em>stable</em> allocators.  Every
 allocator has an associated stable allocator, which tags pointers with the
-same VM space number but which is not subject to <b><tt>save</tt></b> and
-<b><tt>restore</tt></b>.  System VM is intrinsically stable (its associated
+same VM space number but which is not subject to <code>save</code> and
+<code>restore</code>.  System VM is intrinsically stable (its associated
 stable allocator is the same allocator), so there are only 5 allocators in
 ordinary single-context usage: system VM, stable global VM, ordinary global
 VM, stable local VM, ordinary local VM.
@@ -4054,25 +4054,25 @@ them can easily create dangling pointers: if storage allocated with a stable
 allocator contains any references to PostScript objects, the client is
 responsible for ensuring that the references don't outlive the referenced
 objects, normally by ensuring that any such referenced objects are allocated
-at the outermost <b><tt>save</tt></b> level.
+at the outermost <code>save</code> level.
 
 <p>
 The original reason for wanting stable allocators was the PostScript stacks,
 which are essentially PostScript arrays but are not subject to
-<b><tt>save</tt></b> and <b><tt>restore</tt></b>.  Some other uses of stable
+<code>save</code> and <code>restore</code>.  Some other uses of stable
 allocators are:
 
 <ul>
 
 <li>Several per-context structures for DPS.
 
-<li>Paths (see <b><tt>gstate_path_memory</tt></b> in
+<li>Paths (see <code>gstate_path_memory</code> in
 <a href="../src/gsstate.c">src/gsstate.c</a>.
 
-<li>Row buffers for images (see <b><tt>gs_image_row_memory</tt></b> in <a
+<li>Row buffers for images (see <code>gs_image_row_memory</code> in <a
 href="../src/gsimage.c">src/gsimage.c</a>), because the data-reading
-procedure for an image can invoke <b><tt>save</tt></b> and
-<b><tt>restore</tt></b>.
+procedure for an image can invoke <code>save</code> and
+<code>restore</code>.
 
 <li>Notification lists for fonts, to handle the sequence allocate .. save
 .. register .. restore.
@@ -4089,7 +4089,7 @@ structures must not be restorable.
 
 <p>
 For more specific examples, search the sources for references to
-<b><tt>gs_memory_stable</tt></b>.
+<code>gs_memory_stable</code>.
 
 <h4><a name="Interpreter_GC"></a>Garbage collection</h4>
 
@@ -4111,8 +4111,8 @@ Because the garbage collector is non-conservative, it cannot be run if there
 are any pointers to movable storage from the C stack.  Thus it cannot be run
 automatically when the allocator is unable to allocate requested space.
 Instead, when the allocator has allocated a given amount of storage (the
-<b><tt>vm_threshold</tt></b> amount, corresponding to the PostScript
-<b><tt>VMThreshold</tt></b> parameter), it sets a flag that the interpreter
+<code>vm_threshold</code> amount, corresponding to the PostScript
+<code>VMThreshold</code> parameter), it sets a flag that the interpreter
 checks in the main loop.  When the interpreter sees that this flag is set,
 it calls the garbage collector: at that point, there are no problematic
 pointers from the stack.
@@ -4140,7 +4140,7 @@ compacted.
 
 <p>
 As noted above, PostScript arrays and strings can have refs that point
-within them (because of <b><tt>getinterval</tt></b>).  Thus the garbage
+within them (because of <code>getinterval</code>).  Thus the garbage
 collector must mark each element of an array, and even each byte of a
 string, individually.  Specifically, it marks objects, refs, and strings
 using 3 different mechanisms:
@@ -4168,7 +4168,7 @@ strings differently:
 <li>Objects record relocation in the object header.
 
 <li>Refs record relocation in unused fields of refs such as nulls that
-don't use their <b><tt>value</tt></b> field.  Every memory manager object
+don't use their <code>value</code> field.  Every memory manager object
 that stores ref-containing objects as described above has an extra, unused
 ref at the end for this purpose.
 
@@ -4214,8 +4214,8 @@ order, scalar size, and platform-specific compiler or library features.
 <p>
 Ghostscript attempts to discover characteristics of the CPU and compiler
 automatically during the build process, by compiling and then executing a
-program called <b><tt>genarch</tt></b>.  <b><tt>genarch</tt></b> generates a
-file <b><tt>obj/arch.h</tt></b>, which almost all Ghostscript files then
+program called <code>genarch</code>.  <code>genarch</code> generates a
+file <code>obj/arch.h</code>, which almost all Ghostscript files then
 include.  This works well for things like word size, byte order, and
 floating point representation, but it can't determine whether or not a
 compiler supports a particular feature, because if a feature is absent, the
@@ -4236,9 +4236,9 @@ Despite the supposed standardization of ANSI C, platforms vary considerably
 in where (and whether) they provide various standard library facilities.
 Currently, Ghostscript's build process doesn't attempt to sort this out
 automatically.  Instead, for each library header file
-<b><tt>&lt;</tt></b><em>xxx</em><b><tt>.h&gt;</tt></b> there is a
+<code>&lt;</code><em>xxx</em><code>.h&gt;</code> there is a
 corresponding Ghostscript source file
-<b><tt>src/</tt></b><em>xxx</em><b><tt>_.h</tt></b>, containing a set of
+<code>src/</code><em>xxx</em><code>_.h</code>, containing a set of
 compile-time conditionals that attempt to select the correct platform header
 file, or in some cases substitute Ghostscript's own code for a missing
 facility.  You may need to edit these files when moving to platforms with
@@ -4272,11 +4272,11 @@ Files:
 </dl>
 
 <p>
-It has been suggested that the GNU <b><tt>configure</tt></b> scripts do the
+It has been suggested that the GNU <code>configure</code> scripts do the
 above better, for Unix systems, than Ghostscript's current methods.  While
-this may be true, we have found <b><tt>configure</tt></b> scripts difficult
-to write, understand, and maintain; and the <b><tt>autoconf</tt></b> tool
-for generating <b><tt>configure</tt></b> scripts, which we found easy to
+this may be true, we have found <code>configure</code> scripts difficult
+to write, understand, and maintain; and the <code>autoconf</code> tool
+for generating <code>configure</code> scripts, which we found easy to
 use, doesn't cover much of the ground that Ghostscript requires.
 
 <h4><a name="Cross_platform_APIs"></a>Cross-platform APIs</h4>
@@ -4352,28 +4352,28 @@ the <a href="#Makefile_structure">Makefile structure</a> section above.
 <p>
 Ghostscript's makefiles are structured very similarly to the cross-platform
 library files.  The great majority of the makefiles are portable across all
-platforms and all versions of <b><tt>make</tt></b>.  To achieve this, the
+platforms and all versions of <code>make</code>.  To achieve this, the
 platform-independent makefiles must obey two constraints beyond those of the
-POSIX <b><tt>make</tt></b> program:
+POSIX <code>make</code> program:
 
 <ul>
 
-<li>No conditionals or <b><tt>include</tt></b>s are allowed.  While most
-<b><tt>make</tt></b> programs now provide some form of conditional execution
+<li>No conditionals or <code>include</code>s are allowed.  While most
+<code>make</code> programs now provide some form of conditional execution
 and some form of inclusion, there is no agreement on the syntax.
 (Conditionals and includes are allowed in platform-dependent makefiles; in
 fact, an inclusion facility is required.)
 
 <li>There must be a space on both sides of the : that separates the target
 of a rule from its dependencies.  This is required for compatibility with
-the OpenVMS <b><tt>MMS</tt></b> and <b><tt>MMK</tt></b> programs.
+the OpenVMS <code>MMS</code> and <code>MMK</code> programs.
 
 </ul>
 
 <p>
 The top-level makefile for each platform (where "platform" includes the OS,
-the compiler, and the flavor of <b><tt>make</tt></b>) contains all the build
-options, plus <b><tt>include</tt></b>s for the generic makefiles and any
+the compiler, and the flavor of <code>make</code>) contains all the build
+options, plus <code>include</code>s for the generic makefiles and any
 platform-dependent makefiles that are shared among multiple platforms.
 
 <p>
@@ -4548,21 +4548,21 @@ for building as a MacOS X Framework.
 
 <p>
 Coding for portability requires avoiding both <em>explicit</em>
-dependencies, such as platform-dependent <b><tt>#ifdef</tt></b>s, and
+dependencies, such as platform-dependent <code>#ifdef</code>s, and
 <em>implicit</em> dependencies, such as dependencies on byte order or the
 size of the integral types.
 
 <h4><a name="Explicit_dependencies"></a>Explicit dependencies</h4>
 
 <p>
-The platform-independent .c files never, ever, use <b><tt>#ifdef</tt></b> or
-<b><tt>#if</tt></b> to select code for specific platforms.  Instead, we
+The platform-independent .c files never, ever, use <code>#ifdef</code> or
+<code>#if</code> to select code for specific platforms.  Instead, we
 always try to characterize some abstract property that is being tested.  For
 example, rather than checking for macros that are defined on those specific
-platforms that have 64-bit <b><tt>long</tt></b> values, we define a macro
-<b><tt>ARCH_SIZEOF_LONG</tt></b> that can then be tested.  Such macros are
-always defined in a .h file, either automatically in <b><tt>arch.h</tt></b>,
-or explicitly in a <em>xxx</em><b><tt>_.h</tt></b> file, as described in
+platforms that have 64-bit <code>long</code> values, we define a macro
+<code>ARCH_SIZEOF_LONG</code> that can then be tested.  Such macros are
+always defined in a .h file, either automatically in <code>arch.h</code>,
+or explicitly in a <em>xxx</em><code>_.h</code> file, as described in
 earlier sections.
 
 <dl>
@@ -4596,17 +4596,17 @@ Ghostscript's code assumes the following about the sizes of various types:
 </dl>
 
 <p>
-The code does not assume that the <b><tt>char</tt></b> type is signed (or
+The code does not assume that the <code>char</code> type is signed (or
 unsigned); except for places where the value is always a literal string, or
-for interfacing to library procedures, the code uses <b><tt>byte</tt></b> (a
-Ghostscript synonym for <b><tt>unsigned char</tt></b>) almost everywhere.
+for interfacing to library procedures, the code uses <code>byte</code> (a
+Ghostscript synonym for <code>unsigned char</code>) almost everywhere.
 
 <p>
 Pointers are signed on some platforms and unsigned on others.  In the few
 places in the memory manager where it's necessary to reliably order-compare
 (as opposed to equality-compare) pointers that aren't known to point to the
 same allocated block of memory, the code uses the
-<b><tt>PTR_</tt></b><em>relation</em> macros rather than direct comparisons.
+<code>PTR_</code><em>relation</em> macros rather than direct comparisons.
 
 <p>
 See the files listed above for other situations where a macro provides
@@ -4740,13 +4740,13 @@ Lang.
 
 <p>
 The Ghostscript code has many tracing and debugging features that can be
-enabled at run time using the <b><tt>-Z</tt></b> command line switch, if the
-executable was compiled with <b><tt>DEBUG</tt></b> defined.  One
-particularly useful combination is <b><tt>-Z@\?</tt></b>, which fills free
+enabled at run time using the <code>-Z</code> command line switch, if the
+executable was compiled with <code>DEBUG</code> defined.  One
+particularly useful combination is <code>-Z@\?</code>, which fills free
 memory blocks with a pattern and also turns on run-time memory consistency
 checking.  For more information, see <a
 href="Use.htm#Debugging">doc/Use.htm#Debugging</a>; you can also search for
-occurrences of <b><tt>if_debug</tt></b> or <b><tt>gs_debug_c</tt></b> in the
+occurrences of <code>if_debug</code> or <code>gs_debug_c</code> in the
 source code.  Note that many of these features are in the graphics library
 and do not require a PostScript interpreter.
 
@@ -4754,7 +4754,7 @@ and do not require a PostScript interpreter.
 The code also contains many run-time procedures whose only purpose is to be
 called from the debugger to print out various data structures, including all
 the procedures in <a href="../src/idebug.c">src/idebug.c</a> (for the
-PostScript interpreter) and the <b><tt>debug_dump_</tt></b> procedures in <a
+PostScript interpreter) and the <code>debug_dump_</code> procedures in <a
 href="../src/gsmisc.c">src/gsmisc.c</a>.
 
 <dl>
@@ -4780,7 +4780,7 @@ Enterprise Edition only. Standard Edition and Professional Edition do not includ
 <p>
 Microsoft profiler tool requires the application to be linked with
 a special linker option. To provide it you need the following change to 
-<tt><b>gs/src/msvccmd.mak</tt></b> :
+<code>gs/src/msvccmd.mak</code> :
 
 <blockquote><pre><tt> 
  
@@ -4831,7 +4831,7 @@ Note that any of debug and release build may be profiled.
 <p>
 Mictosoft Profiler tool can't profile a dynamically loaded DLLs. 
 When building Ghostscript with makefiles you need to specify 
-<tt><b>MAKEDLL=0</tt></b> to <tt><b>nmake</tt></b> command line.
+<code>MAKEDLL=0</code> to <code>nmake</code> command line.
 
 <p>
 The Integrated Development Environment of Microsoft Developer Studio 6

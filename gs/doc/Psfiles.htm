@@ -50,14 +50,14 @@ overview</a>.
 <h2><a name="General"></a>Generally used system files</h2>
 
 <p>
-These files are found in the <b><tt>lib</tt></b> subdirectory of
+These files are found in the <code>lib</code> subdirectory of
 the Ghostscript source distribution.
 
 <dl>
 <dt><tt>gs_*_e.ps</tt>
 <dd><p>
 These files define the Encodings known to Ghostscript.  All of
-them except <b><tt>gs_std_e.ps</tt></b> and <b><tt>gs_il1_e.ps</tt></b>
+them except <code>gs_std_e.ps</code> and <b><tt>gs_il1_e.ps</tt></b>
 are loaded only if referred to.
 
 <dl>
@@ -101,14 +101,14 @@ Pseudo-encodings:
 
 <dl>
 <dt><a href="../lib/gs_btokn.ps"><tt>gs_btokn.ps</tt></a>
-<dd><b><tt>gs_init.ps</tt></b> reads this in if the <b><tt>btoken</tt></b>
+<dd><code>gs_init.ps</code> reads this in if the <b><tt>btoken</tt></b>
 feature is included in the configuration.  It provides support for binary
 tokens.
 </dl>
 
 <dl>
 <dt><a href="../lib/gs_ccfnt.ps"><tt>gs_ccfnt.ps</tt></a>
-<dd><b><tt>gs_init.ps</tt></b> reads this in if the <b><tt>ccfonts</tt></b>
+<dd><code>gs_init.ps</code> reads this in if the <b><tt>ccfonts</tt></b>
 feature is included in the configuration.  It provides support for compiled
 fonts.
 </dl>
@@ -147,13 +147,13 @@ Used for for emulating PostScript fonts with non-PostScript font technologies.
 
 <dl>
 <dt><a href="../lib/gs_cidfn.ps"><tt>gs_cidfn.ps</tt></a>
-<dd><b><tt>ProcSet</tt></b> for implementing <b><tt>CIDFont</tt></b> and
-<b><tt>CIDMap</tt></b> resources.
+<dd><code>ProcSet</code> for implementing <b><tt>CIDFont</tt></b> and
+<code>CIDMap</code> resources.
 </dl>
 
 <dl>
 <dt><a href="../lib/gs_cmap.ps"><tt>gs_cmap.ps</tt></a>
-<dd><b><tt>ProcSet</tt></b> for implementing <b><tt>CMap</tt></b> resources.
+<dd><code>ProcSet</code> for implementing <b><tt>CMap</tt></b> resources.
 </dl>
 
 <dl>
@@ -182,14 +182,14 @@ PostScript section of the file.
 
 <dl>
 <dt><a href="../lib/gs_fonts.ps"><tt>gs_fonts.ps</tt></a>
-<dd><b><tt>gs_init.ps</tt></b> reads this in.  It initializes Ghostscript's
+<dd><code>gs_init.ps</code> reads this in.  It initializes Ghostscript's
 font machinery and provides some utility procedures that work with fonts.
 </dl>
 
 <dl>
 <dt><a href="../lib/gs_frsd.ps"><tt>gs_frsd.ps</tt></a>
 <dd>Support for the PostScript LanguageLevel 3
-<b><tt>ReusableStreamDecode</tt></b> filter.
+<code>ReusableStreamDecode</code> filter.
 </dl>
 
 <dl>
@@ -209,7 +209,7 @@ variety of things.
 
 <dl>
 <dt><a href="../lib/gs_lev2.ps"><tt>gs_lev2.ps</tt></a>
-<dd><b><tt>gs_init.ps</tt></b> reads this in if the Ghostscript interpreter
+<dd><code>gs_init.ps</code> reads this in if the Ghostscript interpreter
 includes Level 2 PostScript functions.  It contains definitions of
 procedures and miscellaneous initialization for the Level 2 functions.
 </dl>
@@ -238,20 +238,20 @@ resource files, and for retrieving resources from there.
 
 <dl>
 <dt><a href="../lib/gs_res.ps"><tt>gs_res.ps</tt></a>
-<dd><b><tt>gs_init.ps</tt></b> reads this in if the Level 2 resource
+<dd><code>gs_init.ps</code> reads this in if the Level 2 resource
 machinery is included.  Currently, this is the case for all Level 2
 configurations.
 </dl>
 
 <dl>
 <dt><a href="../lib/gs_setpd.ps"><tt>gs_setpd.ps</tt></a>
-<dd>Implementation of the <b><tt>setpagedevice</tt></b> operator.
+<dd>Implementation of the <code>setpagedevice</code> operator.
 </dl>
 
 <dl>
 <dt><a href="../lib/gs_statd.ps"><tt>gs_statd.ps</tt></a>
-<dd><b><tt>gs_init.ps</tt></b> reads this in.  It creates a dummy
-<b><tt>statusdict</tt></b> and some other environmental odds and ends for
+<dd><code>gs_init.ps</code> reads this in.  It creates a dummy
+<code>statusdict</code> and some other environmental odds and ends for
 the benefit of PostScript files that really want to be printed on a
 LaserWriter.
 </dl>
@@ -279,7 +279,7 @@ feature.
 
 <dl>
 <dt><a href="../lib/gs_type1.ps"><tt>gs_type1.ps</tt></a>
-<dd><b><tt>gs_init.ps</tt></b> reads this in if the Ghostscript interpreter
+<dd><code>gs_init.ps</code> reads this in if the Ghostscript interpreter
 includes Type 1 font capability (which it normally does).
 </dl>
 
@@ -288,7 +288,7 @@ includes Type 1 font capability (which it normally does).
 <h2><a name="Config"></a>Configuration files</h2>
 
 <p>
-These files are found in the <b><tt>lib</tt></b> subdirectory of
+These files are found in the <code>lib</code> subdirectory of
 the Ghostscript source distribution. Users are allowed to modify them
 to configure Ghostscript.
 
@@ -323,7 +323,7 @@ a TrueType font for a CID font.
 <h2><a name="Obscure"></a>More obscure system files</h2>
 
 <p>
-These files are found in the <b><tt>lib</tt></b> subdirectory of
+These files are found in the <code>lib</code> subdirectory of
 the Ghostscript source distribution.
 
 <dl>
@@ -354,20 +354,20 @@ parses the Ghostscript command line.
 
 <dl>
 <dt><a href="../lib/gs_diskf.ps"><tt>gs_diskf.ps</tt></a>
-<dd>This file implements the <b><tt>-dDISKFONTS</tt></b> feature
-(<b><tt>diskfont.dev</tt></b>).  See the the usage documentation for <a
+<dd>This file implements the <code>-dDISKFONTS</code> feature
+(<code>diskfont.dev</code>).  See the the usage documentation for <a
 href="Use.htm#DISKFONTS">a description of this feature</a>.
 </dl>
 
 <dl>
 <dt><a href="../lib/gs_diskn.ps"><tt>gs_diskn.ps</tt></a>
-<dd>This file implements the <b><tt>%disk</tt></b> IODevice
-(<b><tt>diskn.dev</tt></b> feature).  See the the language documentation
+<dd>This file implements the <code>%disk</code> IODevice
+(<code>diskn.dev</code> feature).  See the the language documentation
 for information on the use of the %disk# devices. These PostScript
 modifications primarily perform the searching of all Searchable file
 systems in a defined SearchOrder when a file reference does not contain
-an explicit %device% specifier (such as <b><tt>%os%</tt></b> or
-<b><tt>%disk0</tt></b>%). This is required to emulate undocumented
+an explicit %device% specifier (such as <code>%os%</code> or
+<code>%disk0</code>%). This is required to emulate undocumented
 behaviour of Adobe PostScript printers that have a disk and was
 experimentally determined.
 </dl>
@@ -386,8 +386,8 @@ included automatically in any configuration.
 <dl>
 <dt><a href="../lib/gs_pdfwr.ps"><tt>gs_pdfwr.ps</tt></a>
 <dd>This file contains some patches for providing information to the
-<b><tt>pdfwrite</tt></b> driver.  It is included only if the
-<b><tt>pdfwrite</tt></b> driver is included.
+<code>pdfwrite</code> driver.  It is included only if the
+<code>pdfwrite</code> driver is included.
 </dl>
 
 <dl>
@@ -408,7 +408,7 @@ included automatically in any configuration.
 
 <dl>
 <dt><a href="../lib/stcolor.ps"><tt>stcolor.ps</tt></a>
-<dd>Configure the (Epson) <b><tt>stcolor</tt></b> driver
+<dd>Configure the (Epson) <code>stcolor</code> driver
 </dl>
 
 <hr>
@@ -416,13 +416,13 @@ included automatically in any configuration.
 <h2><a name="PDF_specific"></a>PDF-specific system files</h2>
 
 <p>
-These files are found in the <b><tt>lib</tt></b> subdirectory of
+These files are found in the <code>lib</code> subdirectory of
 the Ghostscript source distribution.
 
 <dl>
 <dt><a href="../lib/gs_l2img.ps"><tt>gs_l2img.ps</tt></a>
-<dd>The <b><tt>ProcSet</tt></b> that emulates the PostScript Level 2
-"<b><tt>image</tt></b>" operator on Level 1 systems.
+<dd>The <code>ProcSet</code> that emulates the PostScript Level 2
+"<code>image</code>" operator on Level 1 systems.
 </dl>
 
 <dl>
@@ -486,24 +486,24 @@ PDF files.
 <dl>
 <dt><a href="../lib/opdfread.ps"><tt>opdfread.ps</tt></a>
 <dd>Postscript procset for reading an ordered PDF file. This
-is used by the <tt><b>ps2ps</tt></b>, <tt><b>ps2ps2</tt></b> scripts.
+is used by the <code>ps2ps</code>, <code>ps2ps2</code> scripts.
 </dl>
 
 <dl>
 <dt><a href="../lib/EndOfTask.ps"><tt>EndOfTask.ps</tt></a>
-<dd>An auxiliary file used by the <tt><b>ps2write</tt></b> script.
+<dd>An auxiliary file used by the <code>ps2write</code> script.
 </dl>
 
 <dl>
 <dt><a href="../lib/PDFX_def.ps"><tt>PDFX_def.ps</tt></a>
 <dd>This is a sample prefix file for creating a PDF/X-3 document 
-with the <tt><b>pdfwrite</tt></b> device.
+with the <code>pdfwrite</code> device.
 </dl>
 
 <dl>
 <dt><a href="../lib/PDFA_def.ps"><tt>PDFA_def.ps</tt></a>
 <dd>This is a sample prefix file for creating a PDF/A document 
-with the <tt><b>pdfwrite</tt></b> device.
+with the <code>pdfwrite</code> device.
 </dl>
 
 <hr>
@@ -511,7 +511,7 @@ with the <tt><b>pdfwrite</tt></b> device.
 <h2><a name="DPS_specific"></a>Display PostScript-specific system files</h2>
 
 <p>
-These files are found in the <b><tt>lib</tt></b> subdirectory of
+These files are found in the <code>lib</code> subdirectory of
 the Ghostscript source distribution.
 
 <dl>
@@ -523,7 +523,7 @@ the Ghostscript source distribution.
 <dt><a href="../lib/gs_dps.ps"><tt>gs_dps.ps</tt></a>,
 <a href="../lib/gs_dps1.ps"><tt>gs_dps1.ps</tt></a>,
 <a href="../lib/gs_dps2.ps"><tt>gs_dps2.ps</tt></a>
-<dd><b><tt>gs_init.ps</tt></b> reads these in if the <b><tt>dps</tt></b>
+<dd><code>gs_init.ps</code> reads these in if the <b><tt>dps</tt></b>
 feature is included in the configuration.  They provide support for various
 Display PostScript and Level 2 features.
 </dl>
@@ -533,7 +533,7 @@ Display PostScript and Level 2 features.
 <h2><a name="Art"></a>Art and examples</h2>
 
 <p>
-These files are found in the <b><tt>examples</tt></b> subdirectory of
+These files are found in the <code>examples</code> subdirectory of
 the Ghostscript source distribution.
 
 <dl>
@@ -587,7 +587,7 @@ somewhat less dramatic results.
 <dl>
 <dt><a href="../examples/ridt91.eps"><tt>ridt91.eps</tt></a>
 <dd>The RIDT '91 logo.  Note that since this is an EPS file, you will have
-to add "<b><tt>-c&nbsp;showpage</tt></b>" at the end of the command line to
+to add "<code>-c&nbsp;showpage</code>" at the end of the command line to
 print it or convert it to a raster file.
 </dl>
 
@@ -621,11 +621,11 @@ quality of text rendering.
 <p>
 For more information on these utility programs, see the comments at the
 beginnings of the files.  The ones marked (*) have batch files or shell
-scripts of the same name (like <b><tt>bdftops</tt></b> and
-<b><tt>bdftops.bat</tt></b>) to invoke them conveniently.
+scripts of the same name (like <code>bdftops</code> and
+<code>bdftops.bat</code>) to invoke them conveniently.
 
 <p>
-These files are found in the <b><tt>lib</tt></b> subdirectory of
+These files are found in the <code>lib</code> subdirectory of
 the Ghostscript source distribution.
 
 <dl>
@@ -689,13 +689,13 @@ goes wrong during the processing of your file(s).
 <dt><a href="../lib/gsnup.ps"><tt>gsnup.ps</tt></a>
 <dd>A file that you can concatenate in front of (very well-behaved)
 PostScript files to do N-up printing.  It is deliberately simple and naive:
-for more generality, use <b><tt>psnup</tt></b> (which, however, requires DSC
+for more generality, use <code>psnup</code> (which, however, requires DSC
 comments).
 </dl>
 
 <dl>
 <dt><a href="../lib/jispaper.ps"><tt>jispaper.ps</tt></a>
-<dd>A file that makes the <b><tt>b0</tt></b> through <b><tt>b6</tt></b>
+<dd>A file that makes the <code>b0</code> through <b><tt>b6</tt></b>
 procedures refer to JIS B paper sizes rather than ISO B.
 </dl>
 
@@ -703,7 +703,7 @@ procedures refer to JIS B paper sizes rather than ISO B.
 <dl>
 <dt><a href="../lib/impath.ps"><tt>impath.ps</tt></a>
 <dd>A utility for reconstructing outlines from bitmap images, used by
-<b><tt>bdftops</tt></b>.
+<code>bdftops</code>.
 </dl>
 
 <dl>
@@ -719,7 +719,7 @@ in landscape mode.
 
 <dl>
 <dt><a href="../lib/mkcidfm.ps"><tt>mkcidfm.ps</tt></a>
-<dd>A utility for creating a CID font mapping table <b><tt>cidfmap</tt></b>
+<dd>A utility for creating a CID font mapping table <code>cidfmap</code>
 from fonts found in a specified directory.
 </dl>
 
@@ -757,9 +757,9 @@ files.
 <dl>
 <dt><a href="../lib/ps2ai.ps"><tt>ps2ai.ps</tt></a>
 <dd>A utility for converting an arbitrary PostScript file into a form
-compatible with Adobe Illustrator.  NOTE: <b><tt>ps2ai</tt></b> doesn't
+compatible with Adobe Illustrator.  NOTE: <code>ps2ai</code> doesn't
 work properly with Adobe's Helvetica-Oblique font, and other fonts whose
-original <b><tt>FontMatrix</tt></b> involves skewing or rotation.
+original <code>FontMatrix</code> involves skewing or rotation.
 </dl>
 
 <dl>
@@ -776,22 +776,22 @@ file.
 
 <dl>
 <dt><a href="../lib/quit.ps"><tt>quit.ps</tt></a>
-<dd>A file containing just the word "<b><tt>quit</tt></b>".  (The
-<b><tt>-c</tt></b> switch now makes this unnecessary; this file exists for
+<dd>A file containing just the word "<code>quit</code>".  (The
+<code>-c</code> switch now makes this unnecessary; this file exists for
 backward compatibility.)
 </dl>
 
 <dl>
 <dt><a href="../lib/rollconv.ps"><tt>rollconv.ps</tt></a>
 <dd>A utility for converting files produced by Macromedia's
-<b><tt>Rollup</tt></b> program to a Type 0 form directly usable by
+<code>Rollup</code> program to a Type 0 form directly usable by
 Ghostscript.
 </dl>
 
 <dl>
 <dt><a href="../lib/showpage.ps"><tt>showpage.ps</tt></a>
-<dd>A file containing just the word "<b><tt>showpage</tt></b>".  (The
-<b><tt>-c</tt></b> switch now makes this unnecessary; this file exists for
+<dd>A file containing just the word "<code>showpage</code>".  (The
+<code>-c</code> switch now makes this unnecessary; this file exists for
 backward compatibility.)
 </dl>
 
@@ -842,7 +842,7 @@ information.
 <h2><a name="Development_tools"></a>Development tools</h2>
 
 <p>
-These files are found in the <b><tt>lib</tt></b> subdirectory of
+These files are found in the <code>lib</code> subdirectory of
 the Ghostscript source distribution.
 
 <dl>
@@ -853,7 +853,7 @@ restrictions.
 
 <dl>
 <dt><a href="../lib/decrypt.ps"><tt>decrypt.ps</tt></a>
-<dd>A utility for decrypting the <b><tt>eexec</tt></b> section of a font.
+<dd>A utility for decrypting the <code>eexec</code> section of a font.
 </dl>
 
 <dl>
@@ -877,8 +877,8 @@ are provided for the user's convenience.
 
 <dl>
 <dt><a href="../lib/pcharstr.ps"><tt>pcharstr.ps</tt></a>
-<dd>A utility for printing out the <b><tt>CharStrings</tt></b> and
-<b><tt>Subrs</tt></b> in a Type 1 font.
+<dd>A utility for printing out the <code>CharStrings</code> and
+<code>Subrs</code> in a Type 1 font.
 </dl>
 
 <dl>
@@ -893,7 +893,7 @@ are provided for the user's convenience.
 
 <dl>
 <dt><a href="../lib/traceimg.ps"><tt>traceimg.ps</tt></a>
-<dd>Trace the data supplied to the <b><tt>image</tt></b> operator.
+<dd>Trace the data supplied to the <code>image</code> operator.
 </dl>
 
 <dl>
@@ -919,13 +919,13 @@ PostScript.
 
 <dl>
 <dt><a href="../lib/viewps2a.ps"><tt>viewps2a.ps</tt></a>
-<dd>A utility for displaying the output of <b><tt>ps2ascii.ps</tt></b>.
+<dd>A utility for displaying the output of <code>ps2ascii.ps</code>.
 </dl>
 
 <dl>
 <dt><a href="../lib/wftopfa.ps"><tt>wftopfa.ps</tt></a>
-<dd>Convert a Wadalab (Japanese) base font to <b><tt>.PFA</tt></b> (or
-<b><tt>.PFB</tt></b>) format.
+<dd>Convert a Wadalab (Japanese) base font to <code>.PFA</code> (or
+<code>.PFB</code>) format.
 </dl>
 
 <dl>
@@ -950,7 +950,7 @@ standard Ghostscript fonts.
 <h2><a name="Miscellany"></a>Odds and ends</h2>
 
 <p>
-These files are found in the <b><tt>lib</tt></b> subdirectory of
+These files are found in the <code>lib</code> subdirectory of
 the Ghostscript source distribution.
 
 <dl>
@@ -976,7 +976,7 @@ when passing files with -dJOBSERVER.
 
 <dl>
 <dt><a href="../lib/stcinfo.ps"><tt>stcinfo.ps</tt></a>
-<dd>Print and show parameters of the (Epson) <b><tt>stcolor</tt></b> driver.
+<dd>Print and show parameters of the (Epson) <code>stcolor</code> driver.
 </dl>
 
 <dl>

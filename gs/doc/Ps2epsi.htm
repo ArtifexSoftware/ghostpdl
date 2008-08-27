@@ -42,7 +42,7 @@ The information in this document was contributed by George Cameron
 &lt;<a href="mailto:george@bio-medical-physics.aberdeen.ac.uk">george@bio-medical-physics.aberdeen.ac.uk</a>&gt;;
 please direct to him any questions about it.  Because the software
 described here is no longer being maintained, this document may be
-obsolete, or inconsistent with <b><tt>ps2epsi.1</tt></b>.
+obsolete, or inconsistent with <code>ps2epsi.1</code>.
 
 <p>
 For other information, see the <a href="Readme.htm">Ghostscript
@@ -59,7 +59,7 @@ overview</a>.
 <h2><a name="Overview"></a>Overview</h2>
 
 <p>
-<b><tt>ps2epsi</tt></b> is a utility based on Ghostscript, which takes as
+<code>ps2epsi</code> is a utility based on Ghostscript, which takes as
 input a PostScript file and generates as output a new file which conforms
 to Adobe's Encapsulated PostScript Interchange (EPSI) format, a special
 form of
@@ -77,10 +77,10 @@ normal full PostScript quality.
 <p>
 The <a href="http://www.adobe.com/products/framemaker/main.html"
 class="offsite">Adobe Framemaker</a> DTP system is one application which 
-understands EPSI files, and <b><tt>ps2epsi</tt></b> has been tested using 
+understands EPSI files, and <code>ps2epsi</code> has been tested using 
 Framemaker 3.0 on a Sun workstation with a number of PostScript diagrams 
 from a variety of sources. Framemaker on other platforms may also be able 
-to use files made with <b><tt>ps2epsi</tt></b>, although this has not been 
+to use files made with <code>ps2epsi</code>, although this has not been 
 tested.
 
 <hr>
@@ -90,10 +90,10 @@ tested.
 <h3><a name="MSDOS_usage"></a>MS-DOS</h3>
 
 <p>
-Using the supplied batch file <b><tt>ps2epsi.bat</tt></b>, the command is
+Using the supplied batch file <code>ps2epsi.bat</code>, the command is
 
 <blockquote>
-<b><tt>ps2epsi</tt></b> <b><em>infile.ps</em></b> <b><em>outfile.epi</em></b>
+<code>ps2epsi</code> <b><em>infile.ps</em></b> <b><em>outfile.epi</em></b>
 </blockquote>
 
 <p>
@@ -103,20 +103,20 @@ where <b><em>infile.ps</em></b> is the original PostScript file, and
 <h3><a name="Unix_usage"></a>Unix</h3>
 
 <p>
-Using the supplied shell script <b><tt>ps2epsi</tt></b>, the command is
+Using the supplied shell script <code>ps2epsi</code>, the command is
 
 <blockquote>
-<b><tt>ps2epsi</tt></b> <b><em>infile.ps</em></b> <b><em>[outfile.epsi]</em></b>
+<code>ps2epsi</code> <b><em>infile.ps</em></b> <b><em>[outfile.epsi]</em></b>
 </blockquote>
 
 <p>
 where <b><em>infile.ps</em></b> is the input file and
 <b><em>outfile.epsi</em></b> is the output EPSI file to be created. If the
-output filename is omitted, <b><tt>ps2epsi</tt></b> generates one from the
-input filename; and any standard extension (<b><tt>.ps</tt></b>,
-<b><tt>.cps</tt></b>, <b><tt>.eps</tt></b> or <b><tt>.epsf</tt></b>) of the
+output filename is omitted, <code>ps2epsi</code> generates one from the
+input filename; and any standard extension (<code>.ps</code>,
+<code>.cps</code>, <b><tt>.eps</tt></b> or <b><tt>.epsf</tt></b>) of the
 input file is replaced in the output file with the extension
-<b><tt>.epsi</tt></b>.
+<code>.epsi</code>.
 
 <hr>
 
@@ -125,7 +125,7 @@ input file is replaced in the output file with the extension
 <p>
 Not all PostScript files can be encapsulated, because there are
 restrictions in what is permitted in a PostScript file for it to be
-properly encapsulated.  <b><tt>ps2epsi</tt></b> does a little extra work to
+properly encapsulated.  <code>ps2epsi</code> does a little extra work to
 try to help encapsulation, and it automatically calculates the bounding box
 required for all encapsulated PostScript files, so most of the time it does
 a pretty good job.  There are certain to be cases, however, when
@@ -136,22 +136,22 @@ encapsulation fails because of the nature of the original PostScript file.
 <h2><a name="Files"></a>Files</h2>
 
 <blockquote><table cellpadding=0 cellspacing=0>
-<tr><th colspan=3 bgcolor="#CCCC00"><hr><font size="+1"><b><tt>ps2epsi</tt></b> files</font><hr>
+<tr><th colspan=3 bgcolor="#CCCC00"><hr><font size="+1"><code>ps2epsi</code> files</font><hr>
 <tr valign=bottom>
 	<th align=left>File
 	<td>&nbsp;&nbsp;&nbsp;
 	<th align=left>Contents
 <tr>	<td colspan=3><hr>
-<tr valign=top>	<td><b><tt>ps2epsi.htm</tt></b>
+<tr valign=top>	<td><code>ps2epsi.htm</code>
 	<td>&nbsp;
 	<td>This document
-<tr valign=top>	<td><b><tt>ps2epsi.bat</tt></b>
+<tr valign=top>	<td><code>ps2epsi.bat</code>
 	<td>&nbsp;
 	<td>MS-DOS batch file
-<tr valign=top>	<td><b><tt>ps2epsi</tt></b>
+<tr valign=top>	<td><code>ps2epsi</code>
 	<td>&nbsp;
 	<td>Unix shell script
-<tr valign=top>	<td><b><tt>ps2epsi.ps</tt></b>
+<tr valign=top>	<td><code>ps2epsi.ps</code>
 	<td>&nbsp;
 	<td>Ghostscript program which does the work
 </table></blockquote>

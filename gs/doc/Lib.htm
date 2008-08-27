@@ -71,24 +71,24 @@ for less generality.
 <p>
 The highest level of the library, which is the one that most clients will
 use, directly implements the PostScript graphics operators with procedures
-named <b><tt>gs_XXX</tt></b>, for instance <b><tt>gs_moveto</tt></b> and
-<b><tt>gs_fill</tt></b>.  Nearly all of these procedures take graphics
+named <code>gs_XXX</code>, for instance <b><tt>gs_moveto</tt></b> and
+<code>gs_fill</code>.  Nearly all of these procedures take graphics
 state objects as their first arguments, such as
 
-<blockquote><b><tt>
+<blockquote><code>
 int gs_moveto(gs_state *, double, double);
-</tt></b></blockquote>
+</code></blockquote>
 
 <p>
 Nearly every procedure returns an integer code which is &gt;= 0 for a
 successful return or &lt;0 for a failure.  The failure codes correspond
 directly to PostScript errors, and are defined in
-<b><tt>gserrors.h</tt></b>.
+<code>gserrors.h</code>.
 
 <p>
 The library implements all the operators in the following sections of the
 <cite>PostScript Language Reference Manual</cite>, with the indicated
-omissions and with the APIs defined in the indicated <b><tt>.h</tt></b>
+omissions and with the APIs defined in the indicated <code>.h</code>
 files.  A header of the form <b><em>A.h(B.h)</em></b> indicates that
 <b><em>A.h</em></b> is included in <b><em>B.h</em></b>, so
 <b><em>A.h</em></b> need not be included explicitly if <b><em>B.h</em></b>
@@ -99,12 +99,12 @@ be used to implement the operator.
 <p>
 There are slight differences in the operators that return multiple values,
 since C's provisions for this are awkward.  Also, the control structure for
-the operators involving callback procedures (<b><tt>pathforall</tt></b>,
-<b><tt>image</tt></b>, <b><tt>colorimage</tt></b>,
-<b><tt>imagemask</tt></b>) is partly inverted: the client calls a procedure
+the operators involving callback procedures (<code>pathforall</code>,
+<code>image</code>, <b><tt>colorimage</tt></b>,
+<code>imagemask</code>) is partly inverted: the client calls a procedure
 to set up an enumerator object, and then calls another procedure for each
-iteration.  The <b><tt>...show</tt></b> operators,
-<b><tt>charpath</tt></b>, and <b><tt>stringwidth</tt></b> also use an
+iteration.  The <code>...show</code> operators,
+<code>charpath</code>, and <b><tt>stringwidth</tt></b> also use an
 inverted control structure.
 
 <blockquote><table cellpadding=0 cellspacing=0>
@@ -117,51 +117,51 @@ inverted control structure.
 <tr>	<td colspan=5><hr>
 <tr valign=top>	<td>Graphics state -- device-independent
 	<td>&nbsp;
-	<td><b><tt>gscolor.h</tt></b>(<b><tt>gsstate.h</tt></b>)<br><b><tt>gscolor1.h</tt></b><br><b><tt>gscolor2.h</tt></b><br><b><tt>gscspace.h</tt></b><br><b><tt>gshsb.h</tt></b><br><b><tt>gsline.h</tt></b>(<b><tt>gsstate.h</tt></b>)<br><b><tt>gsstate.h</tt></b>
+	<td><code>gscolor.h</code>(<b><tt>gsstate.h</tt></b>)<br><b><tt>gscolor1.h</tt></b><br><b><tt>gscolor2.h</tt></b><br><b><tt>gscspace.h</tt></b><br><b><tt>gshsb.h</tt></b><br><b><tt>gsline.h</tt></b>(<b><tt>gsstate.h</tt></b>)<br><b><tt>gsstate.h</tt></b>
 	<td>&nbsp;
 	<td>&nbsp;
 <tr>	<td>&nbsp;
 <tr valign=top>	<td>Graphics state -- device-dependent
 	<td>&nbsp;
-	<td><b><tt>gscolor.h</tt></b>(<b><tt>gsstate.h</tt></b>)<br><b><tt>gscolor1.h</tt></b><br><b><tt>gscolor2.h</tt></b><br><b><tt>gsht.h</tt></b>(<b><tt>gsht1.h</tt></b>,<b><tt>gsstate.h</tt></b>)<br><b><tt>gsht1.h</tt></b><br><b><tt>gsline.h</tt></b>(<b><tt>gsstate.h</tt></b>)
+	<td><code>gscolor.h</code>(<b><tt>gsstate.h</tt></b>)<br><b><tt>gscolor1.h</tt></b><br><b><tt>gscolor2.h</tt></b><br><b><tt>gsht.h</tt></b>(<b><tt>gsht1.h</tt></b>,<b><tt>gsstate.h</tt></b>)<br><b><tt>gsht1.h</tt></b><br><b><tt>gsline.h</tt></b>(<b><tt>gsstate.h</tt></b>)
 	<td>&nbsp;
 	<td>&nbsp;
 <tr>	<td>&nbsp;
 <tr valign=top>	<td>Coordinate system and matrix
 	<td>&nbsp;
-	<td><b><tt>gscoord.h</tt></b><br><b><tt>gsmatrix.h</tt></b>
+	<td><code>gscoord.h</code><br><b><tt>gsmatrix.h</tt></b>
 	<td>&nbsp;
-	<td><b><tt>*matrix</tt></b>, <b><tt>*identmatrix</tt></b>, <b><tt>*concatmatrix</tt></b>, <b><tt>*invertmatrix</tt></b>
+	<td><code>*matrix</code>, <b><tt>*identmatrix</tt></b>, <b><tt>*concatmatrix</tt></b>, <b><tt>*invertmatrix</tt></b>
 <tr>	<td>&nbsp;
 <tr valign=top>	<td>Path construction
 	<td>&nbsp;
-	<td><b><tt>gspath.h</tt></b><br><b><tt>gspath2.h</tt></b>
+	<td><code>gspath.h</code><br><b><tt>gspath2.h</tt></b>
 	<td>&nbsp;
-	<td><b><tt>*arct</tt></b>, <b><tt>*pathforall</tt></b>, <b><tt>ustrokepath</tt></b>, <b><tt>uappend</tt></b>, <b><tt>upath</tt></b>, <b><tt>ucache</tt></b>
+	<td><code>*arct</code>, <b><tt>*pathforall</tt></b>, <b><tt>ustrokepath</tt></b>, <b><tt>uappend</tt></b>, <b><tt>upath</tt></b>, <b><tt>ucache</tt></b>
 <tr>	<td>&nbsp;
 <tr valign=top>	<td>Painting
 	<td>&nbsp;
-	<td><b><tt>gsimage.h</tt></b><br><b><tt>gspaint.h</tt></b><br><b><tt>gspath2.h</tt></b>
+	<td><code>gsimage.h</code><br><b><tt>gspaint.h</tt></b><br><b><tt>gspath2.h</tt></b>
 	<td>&nbsp;
-	<td><b><tt>*image</tt></b>, <b><tt>*colorimage</tt></b>, <b><tt>*imagemask</tt></b>, <b><tt>ufill</tt></b>, <b><tt>ueofill</tt></b>, <b><tt>ustroke</tt></b>
+	<td><code>*image</code>, <b><tt>*colorimage</tt></b>, <b><tt>*imagemask</tt></b>, <b><tt>ufill</tt></b>, <b><tt>ueofill</tt></b>, <b><tt>ustroke</tt></b>
 <tr>	<td>&nbsp;
 <tr valign=top>	<td>Form and pattern
 	<td>&nbsp;
-	<td><b><tt>gscolor2.h</tt></b>
+	<td><code>gscolor2.h</code>
 	<td>&nbsp;
-	<td><b><tt>execform</tt></b>
+	<td><code>execform</code>
 <tr>	<td>&nbsp;
 <tr valign=top>	<td>Device setup and output
 	<td>&nbsp;
-	<td><b><tt>gsdevice.h</tt></b>
+	<td><code>gsdevice.h</code>
 	<td>&nbsp;
-	<td><b><tt>*showpage</tt></b>, <b><tt>*set</tt></b>/<b><tt>currentpagedevice</tt></b>
+	<td><code>*showpage</code>, <b><tt>*set</tt></b>/<b><tt>currentpagedevice</tt></b>
 <tr>	<td>&nbsp;
 <tr valign=top>	<td>Character and font
 	<td>&nbsp;
-	<td><b><tt>gschar.h</tt></b><br><b><tt>gsfont.h</tt></b>
+	<td><code>gschar.h</code><br><b><tt>gsfont.h</tt></b>
 	<td>&nbsp;
-	<td>*(all the <b><tt>show</tt></b> operators), <b><tt>definefont</tt></b>, <b><tt>undefinefont</tt></b>, <b><tt>findfont</tt></b>, <b><tt>*scalefont</tt></b>, <b><tt>*makefont</tt></b>, <b><tt>selectfont</tt></b>, <b><tt>[Global]FontDirectory</tt></b>, <b><tt>Standard</tt></b>/<b><tt>ISOLatin1Encoding</tt></b>, <b><tt>findencoding</tt></b>
+	<td>*(all the <code>show</code> operators), <b><tt>definefont</tt></b>, <b><tt>undefinefont</tt></b>, <b><tt>findfont</tt></b>, <b><tt>*scalefont</tt></b>, <b><tt>*makefont</tt></b>, <b><tt>selectfont</tt></b>, <b><tt>[Global]FontDirectory</tt></b>, <b><tt>Standard</tt></b>/<b><tt>ISOLatin1Encoding</tt></b>, <b><tt>findencoding</tt></b>
 </table></blockquote>
 
 <p>
@@ -169,69 +169,69 @@ The following procedures from the list above operate differently from their
 PostScript operator counterparts, as explained here:
 
 <dl>
-<dt><b><tt>gs_makepattern(gscolor2.h)</tt></b>
+<dt><code>gs_makepattern(gscolor2.h)</code>
 <dd>Takes an explicit current color, rather than using the current color in
 the graphics state.  Takes an explicit allocator for allocating the pattern
 implementation.  See below for more details on
-<b><tt>gs_makepattern</tt></b>.
+<code>gs_makepattern</code>.
 </dl>
 
 <dl>
-<dt><b><tt>gs_setpattern(gscolor2.h)</tt></b>
-<dt><b><tt>gs_setcolor(gscolor2.h)</tt></b>
-<dt><b><tt>gs_currentcolor(gscolor2.h)</tt></b>
-<dd>Use <b><tt>gs_client_color</tt></b> rather than a set of color
+<dt><code>gs_setpattern(gscolor2.h)</code>
+<dt><code>gs_setcolor(gscolor2.h)</code>
+<dt><code>gs_currentcolor(gscolor2.h)</code>
+<dd>Use <code>gs_client_color</code> rather than a set of color
 parameter values.  See below for more details on
-<b><tt>gs_setpattern</tt></b>.
+<code>gs_setpattern</code>.
 </dl>
 
 <dl>
-<dt><b><tt>gs_currentdash_length/pattern/offset(gsline.h)</tt></b>
-<dd>Splits up <b><tt>currentdash</tt></b> into three separate procedures.
+<dt><code>gs_currentdash_length/pattern/offset(gsline.h)</code>
+<dd>Splits up <code>currentdash</code> into three separate procedures.
 </dl>
 
 <dl>
-<dt><b><tt>gs_screen_init/currentpoint/next/install(gsht.h)</tt></b>
-<dd>Provide an "enumeration style" interface to <b><tt>setscreen</tt></b>.
-(<b><tt>gs_setscreen</tt></b> is also implemented.)
+<dt><code>gs_screen_init/currentpoint/next/install(gsht.h)</code>
+<dd>Provide an "enumeration style" interface to <code>setscreen</code>.
+(<code>gs_setscreen</code> is also implemented.)
 </dl>
 
 <dl>
-<dt><b><tt>gs_rotate/scale/translate(gscoord.h)</tt></b>
-<dt><b><tt>gs_[i][d]transform(gscoord.h)</tt></b>
+<dt><code>gs_rotate/scale/translate(gscoord.h)</code>
+<dt><code>gs_[i][d]transform(gscoord.h)</code>
 <dd>These always operate on the graphics state CTM.  The corresponding
-operations on free-standing matrices are in <b><tt>gsmatrix.h</tt></b> and
+operations on free-standing matrices are in <code>gsmatrix.h</code> and
 have different names.
 </dl>
 
 <dl>
-<dt><b><tt>gs_path_enum_alloc/init/next/cleanup(gspath.h)</tt></b>
+<dt><code>gs_path_enum_alloc/init/next/cleanup(gspath.h)</code>
 <dd>Provide an "enumeration style" implementation of
-<b><tt>pathforall</tt></b>.
+<code>pathforall</code>.
 </dl>
 
 <dl>
-<dt><b><tt>gs_image_enum_alloc(gsimage.h)</tt></b>
-<dt><b><tt>gs_image_init/next/cleanup(gsimage.h)</tt></b>
+<dt><code>gs_image_enum_alloc(gsimage.h)</code>
+<dt><code>gs_image_init/next/cleanup(gsimage.h)</code>
 <dd>Provide an "enumeration style" interface to the equivalent of
-<b><tt>image</tt></b>, <b><tt>imagemask</tt></b>, and
-<b><tt>colorimage</tt></b>.  In the <b><tt>gs_image_t</tt></b>,
-<b><tt>ColorSpace</tt></b> provides an explicit color space, rather than
+<code>image</code>, <b><tt>imagemask</tt></b>, and
+<code>colorimage</code>.  In the <b><tt>gs_image_t</tt></b>,
+<code>ColorSpace</code> provides an explicit color space, rather than
 using the current color space in the graphics state;
-<b><tt>ImageMask</tt></b> distinguishes <b><tt>imagemask</tt></b> from
-<b><tt>[color]image</tt></b>.
+<code>ImageMask</code> distinguishes <b><tt>imagemask</tt></b> from
+<code>[color]image</code>.
 </dl>
 
 <dl>
-<dt><b><tt>gs_get/putdeviceparams(gsdevice.h)</tt></b>
-<dd>Take a <b><tt>gs_param_list</tt></b> for specifying or receiving the
-parameter values.  See <b><tt>gsparam.h</tt></b> for more details.
+<dt><code>gs_get/putdeviceparams(gsdevice.h)</code>
+<dd>Take a <code>gs_param_list</code> for specifying or receiving the
+parameter values.  See <code>gsparam.h</code> for more details.
 </dl>
 
 <dl>
-<dt><b><tt>gs_show_enum_alloc/release(gschar.h)</tt></b>
-<dt><b><tt>gs_xxxshow_[n_]init(gschar.h)</tt></b>
-<dt><b><tt>gs_show_next(gschar.h)</tt></b>
+<dt><code>gs_show_enum_alloc/release(gschar.h)</code>
+<dt><code>gs_xxxshow_[n_]init(gschar.h)</code>
+<dt><code>gs_show_next(gschar.h)</code>
 <dd>Provide an "enumeration style" interface to writing text.  Note that
 control returns to the caller if the character must be rasterized.
 </dl>
@@ -250,34 +250,34 @@ sections of the Manual:
 <tr>	<td colspan=5><hr>
 <tr valign=top>	<td>Interpreter parameter
 	<td>&nbsp;
-	<td><b><tt>gsfont.h</tt></b>
+	<td><code>gsfont.h</code>
 	<td>&nbsp;
-	<td><b><tt>cachestatus</tt></b>, <b><tt>setcachelimit</tt></b>, <b><tt>*set/currentcacheparams</tt></b>
+	<td><code>cachestatus</code>, <b><tt>setcachelimit</tt></b>, <b><tt>*set/currentcacheparams</tt></b>
 <tr valign=top>	<td>Display PostScript
 	<td>&nbsp;
-	<td><b><tt>gsstate.h</tt></b>
+	<td><code>gsstate.h</code>
 	<td>&nbsp;
-	<td><b><tt>set/currenthalftonephase</tt></b>
+	<td><code>set/currenthalftonephase</code>
 </table></blockquote>
 
 <p>
 In order to obtain the full PostScript Level 2 functionality listed above,
-<b><tt>FEATURE_DEVS</tt></b> must be set in the makefile to include at least the following:
+<code>FEATURE_DEVS</code> must be set in the makefile to include at least the following:
 
-<blockquote><b><tt>
+<blockquote><code>
 FEATURE_DEVS=patcore.dev cmykcore.dev psl2core.dev dps2core.dev ciecore.dev path1core.dev hsbcore.dev
-</tt></b></blockquote>
+</code></blockquote>
 
 <p>
-The <b><tt>*lib.mak</tt></b> makefiles mentioned below do not always
+The <code>*lib.mak</code> makefiles mentioned below do not always
 include all of these features.
 
 <p>
-Files named <b><tt>gs*.c</tt></b> implement the higher level of the
+Files named <code>gs*.c</code> implement the higher level of the
 graphics library.  As might be expected, all procedures, variables, and
-structures available at this level begin with "<b><tt>gs_</tt></b>".
+structures available at this level begin with "<code>gs_</code>".
 Structures that appear in these interfaces, but whose definitions may be
-hidden from clients, also have names beginning with "<b><tt>gs_</tt></b>",
+hidden from clients, also have names beginning with "<code>gs_</code>",
 that is, the prefix, not the implementation, reflects at what level the
 abstraction is made available.
 
@@ -289,87 +289,87 @@ library API deals with.  As in PostScript, defining a pattern color and
 using the color are two separate operations.
 
 <p>
-<b><tt>gs_makepattern</tt></b> defines a pattern color.  Its arguments are as follows:
+<code>gs_makepattern</code> defines a pattern color.  Its arguments are as follows:
 
 <blockquote><table cellpadding=0 cellspacing=0>
-<tr valign=top>	<td><b><tt>gs_client_color *</tt></b>
+<tr valign=top>	<td><code>gs_client_color *</code>
 	<td>&nbsp;&nbsp;&nbsp;
-	<td>The resulting <b><tt>Pattern</tt></b> color is stored here.  This is different from PostScript, which has no color objects <em>per se</em>, and hence returns a modified copy of the dictionary.
-<tr valign=top>	<td><b><tt>const gs_client_pattern *</tt></b>
+	<td>The resulting <code>Pattern</code> color is stored here.  This is different from PostScript, which has no color objects <em>per se</em>, and hence returns a modified copy of the dictionary.
+<tr valign=top>	<td><code>const gs_client_pattern *</code>
 	<td>&nbsp;
-	<td>The analogue of the original <b><tt>Pattern</tt></b> dictionary, described in detail just below.
-<tr valign=top>	<td><b><tt>const gs_matrix *</tt></b>
+	<td>The analogue of the original <code>Pattern</code> dictionary, described in detail just below.
+<tr valign=top>	<td><code>const gs_matrix *</code>
 	<td>&nbsp;
-	<td>Corresponds to the matrix argument of the <b><tt>makepattern</tt></b> operator.
-<tr valign=top>	<td><b><tt>gs_state *</tt></b>
+	<td>Corresponds to the matrix argument of the <code>makepattern</code> operator.
+<tr valign=top>	<td><code>gs_state *</code>
 	<td>&nbsp;
 	<td>The current graphics state.
-<tr valign=top>	<td><b><tt>gs_memory_t *</tt></b>
+<tr valign=top>	<td><code>gs_memory_t *</code>
 	<td>&nbsp;
 	<td>The allocator to use for allocating the saved data for the
-	    <b><tt>Pattern</tt></b> color.  If this is
-	    <b><tt>NULL</tt></b>, <b><tt>gs_makepattern</tt></b> uses the
+	    <code>Pattern</code> color.  If this is
+	    <code>NULL</code>, <b><tt>gs_makepattern</tt></b> uses the
 	    same allocator that allocated the graphics state.  Library
-	    clients should probably always use <b><tt>NULL</tt></b>.
+	    clients should probably always use <code>NULL</code>.
 
 </table></blockquote>
 
 <p>
-The <b><tt>gs_client_pattern</tt></b> structure defined in
-<b><tt>gscolor2.h</tt></b> corresponds to the <b><tt>Pattern</tt></b>
+The <code>gs_client_pattern</code> structure defined in
+<code>gscolor2.h</code> corresponds to the <b><tt>Pattern</tt></b>
 dictionary that is the argument to the PostScript language
-<b><tt>makepattern</tt></b> operator.  This structure has one extra member,
-<b><tt>void&nbsp;*client_data</tt></b>, which is a place for clients to
-store a pointer to additional data for the <b><tt>PaintProc</tt></b>; this
+<code>makepattern</code> operator.  This structure has one extra member,
+<code>void&nbsp;*client_data</code>, which is a place for clients to
+store a pointer to additional data for the <code>PaintProc</code>; this
 provides the same functionality as putting additional keys in the
-<b><tt>Pattern</tt></b> dictionary at the PostScript language level.  The
-<b><tt>PaintProc</tt></b> is an ordinary C procedure that takes as
-parameters a <b><tt>gs_client_color&nbsp;*</tt></b>, which is the
-<b><tt>Pattern</tt></b> color that is being used for painting, and a
-<b><tt>gs_state&nbsp;*</tt></b>, which is the same graphics state that
-would be presented to the <b><tt>PaintProc</tt></b> in PostScript.
-Currently the <b><tt>gs_client_color&nbsp;*</tt></b> is always the current
-color in the graphics state, but the <b><tt>PaintProc</tt></b> should not
-rely on this.  The <b><tt>PaintProc</tt></b> can retrieve the
-<b><tt>gs_client_pattern&nbsp;*</tt></b> from the
-<b><tt>gs_client_color&nbsp;*</tt></b> with the
-<b><tt>gs_getpattern</tt></b> procedure, also defined in
-<b><tt>gscolor2.h</tt></b>, and from there, it can retrieve the
-<b><tt>client_data</tt></b> pointer.
+<code>Pattern</code> dictionary at the PostScript language level.  The
+<code>PaintProc</code> is an ordinary C procedure that takes as
+parameters a <code>gs_client_color&nbsp;*</code>, which is the
+<code>Pattern</code> color that is being used for painting, and a
+<code>gs_state&nbsp;*</code>, which is the same graphics state that
+would be presented to the <code>PaintProc</code> in PostScript.
+Currently the <code>gs_client_color&nbsp;*</code> is always the current
+color in the graphics state, but the <code>PaintProc</code> should not
+rely on this.  The <code>PaintProc</code> can retrieve the
+<code>gs_client_pattern&nbsp;*</code> from the
+<code>gs_client_color&nbsp;*</code> with the
+<code>gs_getpattern</code> procedure, also defined in
+<code>gscolor2.h</code>, and from there, it can retrieve the
+<code>client_data</code> pointer.
 
 <p>
-The normal way to set a <b><tt>Pattern</tt></b> color is to call
-<b><tt>gs_setpattern</tt></b> with the graphics state and with the
-<b><tt>gs_client_color</tt></b> returned by <b><tt>gs_makepattern</tt></b>.
-After that, one can use <b><tt>gs_setcolor</tt></b> to set further
-<b><tt>Pattern</tt></b> colors (colored, or uncolored with the same
+The normal way to set a <code>Pattern</code> color is to call
+<code>gs_setpattern</code> with the graphics state and with the
+<code>gs_client_color</code> returned by <b><tt>gs_makepattern</tt></b>.
+After that, one can use <code>gs_setcolor</code> to set further
+<code>Pattern</code> colors (colored, or uncolored with the same
 underlying color space); the rules are the same as those in PostScript.
-Note that for <b><tt>gs_setpattern</tt></b>, the
-<b><tt>paint.values</tt></b> in the <b><tt>gs_client_color</tt></b> must be
+Note that for <code>gs_setpattern</code>, the
+<code>paint.values</code> in the <b><tt>gs_client_color</tt></b> must be
 filled in for uncolored patterns; this corresponds to the additional
-arguments for the PostScript <b><tt>setpattern</tt></b> operator in the
+arguments for the PostScript <code>setpattern</code> operator in the
 uncolored case.
 
 <p>
-There is a special procedure <b><tt>gs_makebitmappattern</tt></b> for creating bitmap-based
-patterns.  Its API is documented in <b><tt>gscolor2.h</tt></b>; its implementation, in
-<b><tt>gspcolor.c</tt></b>, may be useful as an example of a pattern using a particularly
-simple <b><tt>PaintProc.</tt></b>
+There is a special procedure <code>gs_makebitmappattern</code> for creating bitmap-based
+patterns.  Its API is documented in <code>gscolor2.h</code>; its implementation, in
+<code>gspcolor.c</code>, may be useful as an example of a pattern using a particularly
+simple <code>PaintProc.</code>
 
 <h3><a name="Lower_level_API"></a>Lower-level API</h3>
 
 <p>
-Files named <b><tt>gx*.c</tt></b> implement the lower level of the graphics
-library.  The interfaces at the <b><tt>gx</tt></b> level are less stable,
+Files named <code>gx*.c</code> implement the lower level of the graphics
+library.  The interfaces at the <code>gx</code> level are less stable,
 and expose more of the implementation detail, than those at the
-<b><tt>gs</tt></b> level: in particular, the <b><tt>gx</tt></b> interfaces
+<code>gs</code> level: in particular, the <b><tt>gx</tt></b> interfaces
 generally use device coordinates in an internal fixed-point representation,
-as opposed to the <b><tt>gs</tt></b> interfaces that use floating point
+as opposed to the <code>gs</code> interfaces that use floating point
 user coordinates.  Named entities at this level begin with
-<b><tt>gx_</tt></b>.
+<code>gx_</code>.
 
 <p>
-Files named <b><tt>gz*.c</tt></b> and <b><tt>gz*.h</tt></b> are internal to
+Files named <code>gz*.c</code> and <b><tt>gz*.h</tt></b> are internal to
 the Ghostscript implementation, and are not designed to be called by
 clients.
 
@@ -381,28 +381,28 @@ clients.
 Visual Trace instructions may be inserted in code to provide debug output in
 a graphical form. Graphics Library doesn't provide a rasterisation of the
 output, because it is platform dependent. Instead this, client application
-shpuld set <b><tt>vd_trace0</tt></b> external variable to Graphics Library,
+shpuld set <code>vd_trace0</code> external variable to Graphics Library,
 passing a set of callbacks which provide the rasterization.
 
 <p>
-Visual Trace instructions are defined in <b><tt>vdtrace.h</tt></b>.
-Debug output must be opened with <b><tt>vd_get_dc</tt></b> instruction,
+Visual Trace instructions are defined in <code>vdtrace.h</code>.
+Debug output must be opened with <code>vd_get_dc</code> instruction,
 which obtains a drawing context for the debug output, and must be closed
-with <b><tt>vd_release_dc</tt></b> instruction. After opening the output,
+with <code>vd_release_dc</code> instruction. After opening the output,
 scale, origin and shift to be set for mapping the debugee coordinate space
 to window coordinate space. Than painting instructions to be used.
 Painting may be either immediate or indirect.
 
 <p>
-Indirect painting uses <b><tt>vd_beg_path</b></tt> before
-line output and <b><tt>vd_end_path</b></tt> after line output,
+Indirect painting uses <code>vd_beg_path</code> before
+line output and <code>vd_end_path</code> after line output,
 to store a path into a temporary storage. After this 
-<b><tt>vd_stroke</b></tt> may be used for stroking the path,
-or <b><tt>vd_fill</b></tt> may be used for filling the region inside the path.
+<code>vd_stroke</code> may be used for stroking the path,
+or <code>vd_fill</code> may be used for filling the region inside the path.
 
 <p>
 Immediate painting happens when path construction instructions are
-involved without <b><tt>vd_beg_path</b></tt> and <b><tt>vd_end_path</b></tt>.
+involved without <code>vd_beg_path</code> and <code>vd_end_path</code>.
 In this case lines and curves are being drawed immediately, when a path construction
 instruction is executed.
 
@@ -418,189 +418,189 @@ The following table explains the semantics of Visual Trace instructions.
         <td>&nbsp;&nbsp;
 	<th align=left>Parameters
 <tr>	<td colspan=5><hr>
-<tr>	<td><b><tt>vd_get_dc</tt></b>
+<tr>	<td><code>vd_get_dc</code>
         <td>&nbsp;&nbsp;
 	<td>Obtain drawing context
         <td>&nbsp;&nbsp;
-	<td><b><tt>-T</tt></b> option flag value, for which the subsequent output is enabled.
-<tr>	<td><b><tt>vd_release_dc</tt></b>
+	<td><code>-T</code> option flag value, for which the subsequent output is enabled.
+<tr>	<td><code>vd_release_dc</code>
         <td>&nbsp;&nbsp;
 	<td>Release drawing context
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>vd_enabled</tt></b>
+<tr>	<td><code>vd_enabled</code>
         <td>&nbsp;&nbsp;
 	<td>Is trace currently enabled ?
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>vd_get_size_unscaled_x</tt></b>
+<tr>	<td><code>vd_get_size_unscaled_x</code>
         <td>&nbsp;&nbsp;
 	<td>Get the horizontal size of the output window in pixels.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>vd_get_size_unscaled_y</tt></b>
+<tr>	<td><code>vd_get_size_unscaled_y</code>
         <td>&nbsp;&nbsp;
 	<td>Get the vertical size of the output window in pixels.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>vd_get_size_caled_x</tt></b>
+<tr>	<td><code>vd_get_size_caled_x</code>
         <td>&nbsp;&nbsp;
 	<td>Get the horizontal size of the output window in debuggee coordinate units.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>vd_get_size_caled_y</tt></b>
+<tr>	<td><code>vd_get_size_caled_y</code>
         <td>&nbsp;&nbsp;
 	<td>Get the vertical size of the output window in debuggee coordinate units.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>vd_get_scale_x</tt></b>
+<tr>	<td><code>vd_get_scale_x</code>
         <td>&nbsp;&nbsp;
 	<td>Get the horizontal scale.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>vd_get_scale_y</tt></b>
+<tr>	<td><code>vd_get_scale_y</code>
         <td>&nbsp;&nbsp;
 	<td>Get the vertical scale.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>vd_get_origin_x</tt></b>
+<tr>	<td><code>vd_get_origin_x</code>
         <td>&nbsp;&nbsp;
 	<td>Get the horizontal position of the draft origin in debuggee coordinate space.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>vd_get_origin_y</tt></b>
+<tr>	<td><code>vd_get_origin_y</code>
         <td>&nbsp;&nbsp;
 	<td>Get the vertical position of the draft origin in debuggee coordinate space.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>vd_set_scale(s)</tt></b>
+<tr>	<td><code>vd_set_scale(s)</code>
         <td>&nbsp;&nbsp;
 	<td>Set isotripic scale.
         <td>&nbsp;&nbsp;
 	<td>Debugee space to window space mapping scale, same for both dimentions.
-<tr>	<td><b><tt>vd_set_scaleXY(sx,sy)</tt></b>
+<tr>	<td><code>vd_set_scaleXY(sx,sy)</code>
         <td>&nbsp;&nbsp;
 	<td>Set anisotripic scale.
         <td>&nbsp;&nbsp;
 	<td>Debugee space to window space mapping scale, one for each dimention.
-<tr>	<td><b><tt>vd_set_origin(x,y)</tt></b>
+<tr>	<td><code>vd_set_origin(x,y)</code>
         <td>&nbsp;&nbsp;
 	<td>Set the draft origin.
         <td>&nbsp;&nbsp;
 	<td>Origin of the draft in debugee space.
-<tr>	<td><b><tt>vd_set_shift(x,y)</tt></b>
+<tr>	<td><code>vd_set_shift(x,y)</code>
         <td>&nbsp;&nbsp;
 	<td>Set the draft position.
         <td>&nbsp;&nbsp;
 	<td>Position of the draft origin in window space (in pixels).
-<tr>	<td><b><tt>vd_set_central_shift</tt></b>
+<tr>	<td><code>vd_set_central_shift</code>
         <td>&nbsp;&nbsp;
 	<td>Set the draft position to window center.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>vd_erase(c)</tt></b>
+<tr>	<td><code>vd_erase(c)</code>
         <td>&nbsp;&nbsp;
 	<td>Fill entire window.
         <td>&nbsp;&nbsp;
 	<td>Color to fill.
-<tr>	<td><b><tt>vd_beg_path</tt></b>
+<tr>	<td><code>vd_beg_path</code>
         <td>&nbsp;&nbsp;
 	<td>Begin path construction.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>vd_end_path</tt></b>
+<tr>	<td><code>vd_end_path</code>
         <td>&nbsp;&nbsp;
 	<td>End path construction.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>vd_moveto(x,y)</tt></b>
+<tr>	<td><code>vd_moveto(x,y)</code>
         <td>&nbsp;&nbsp;
 	<td>Path construction : Set the draft current point.
         <td>&nbsp;&nbsp;
 	<td>Debugee coordinates.
-<tr>	<td><b><tt>vd_lineto(x,y)</tt></b>
+<tr>	<td><code>vd_lineto(x,y)</code>
         <td>&nbsp;&nbsp;
 	<td>Path construction : Line from current point to specified point.
         <td>&nbsp;&nbsp;
 	<td>Debugee coordinates.
-<tr>	<td><b><tt>vd_lineto_mupti(p,n)</tt></b>
+<tr>	<td><code>vd_lineto_mupti(p,n)</code>
         <td>&nbsp;&nbsp;
 	<td>Path construction : Poliline from current point to specified points.
         <td>&nbsp;&nbsp;
 	<td>Array of points and its size, debugee coordinates.
-<tr>	<td><b><tt>vd_curveto(x0,y0,x1,y1,x2,y2)</tt></b>
+<tr>	<td><code>vd_curveto(x0,y0,x1,y1,x2,y2)</code>
         <td>&nbsp;&nbsp;
 	<td>Path construction : Curve (3d order Bezier) from current point to specified point, with specified poles.
         <td>&nbsp;&nbsp;
 	<td>2 poles and the curve ending point, debuggee coordinates.
-<tr>	<td><b><tt>vd_closepath</tt></b>
+<tr>	<td><code>vd_closepath</code>
         <td>&nbsp;&nbsp;
 	<td>Path construction : Close the path (is necessary for filling an area).
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>vd_bar(x0,y0,x1,y1,w,c)</tt></b>
+<tr>	<td><code>vd_bar(x0,y0,x1,y1,w,c)</code>
         <td>&nbsp;&nbsp;
 	<td>Bar from point to point.
         <td>&nbsp;&nbsp;
 	<td>2 points (debugee coordinates), width (in pixels) and color.
-<tr>	<td><b><tt>vd_square(x0,y0,w,c)</tt></b>
+<tr>	<td><code>vd_square(x0,y0,w,c)</code>
         <td>&nbsp;&nbsp;
 	<td>Square with specified center and size.
         <td>&nbsp;&nbsp;
 	<td>The center (debugee coordinates), size (in pixels) and color.
-<tr>	<td><b><tt>vd_rect(x0,y0,x1,y1,w,c)</tt></b>
+<tr>	<td><code>vd_rect(x0,y0,x1,y1,w,c)</code>
         <td>&nbsp;&nbsp;
 	<td>Canonic rectangle with specified coordinites.
         <td>&nbsp;&nbsp;
 	<td>Coordinates of boundaries (debugee coordinates), line width (in pixels) and color.
-<tr>	<td><b><tt>vd_quad(x0,y0,x1,y1,x2,y2,x3,y3,w,c)</tt></b>
+<tr>	<td><code>vd_quad(x0,y0,x1,y1,x2,y2,x3,y3,w,c)</code>
         <td>&nbsp;&nbsp;
 	<td>Quadrangle with specified coordinites.
         <td>&nbsp;&nbsp;
 	<td>Coordinates of vertices (debugee coordinates), line width (in pixels) and color.
-<tr>	<td><b><tt>vd_curve(x0,y0,x1,y1,x2,y2,x3,y3,c,w)</tt></b>
+<tr>	<td><code>vd_curve(x0,y0,x1,y1,x2,y2,x3,y3,c,w)</code>
         <td>&nbsp;&nbsp;
 	<td>Curve with width.
         <td>&nbsp;&nbsp;
 	<td>4 curve poles (debugee coordinates), color, and width (in pixels).
-<tr>	<td><b><tt>vd_circle(x,y,r,c)</tt></b>
+<tr>	<td><code>vd_circle(x,y,r,c)</code>
         <td>&nbsp;&nbsp;
 	<td>Circle.
         <td>&nbsp;&nbsp;
 	<td>Center (debugee coordinates), radius (in pixels) and color.
-<tr>	<td><b><tt>vd_round(x,y,r,c)</tt></b>
+<tr>	<td><code>vd_round(x,y,r,c)</code>
         <td>&nbsp;&nbsp;
 	<td>Filled circle.
         <td>&nbsp;&nbsp;
 	<td>Center (debugee coordinates), radius (in pixels) and color.
-<tr>	<td><b><tt>vd_stroke</tt></b>
+<tr>	<td><code>vd_stroke</code>
         <td>&nbsp;&nbsp;
 	<td>Stroke a path constructed with vd_beg_path, vd_moveto, vd_lineto,
 	    vd_curveto, vd_closepath, vd_end_path.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>vd_fill</tt></b>
+<tr>	<td><code>vd_fill</code>
         <td>&nbsp;&nbsp;
 	<td>Fill a path constructed with vd_beg_path, vd_moveto, vd_lineto,
 	    vd_curveto, vd_closepath, vd_end_path.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>vd_setcolor(c)</tt></b>
+<tr>	<td><code>vd_setcolor(c)</code>
         <td>&nbsp;&nbsp;
 	<td>Set a color.
         <td>&nbsp;&nbsp;
 	<td>Color (an integer consisting of red, green, blue bytes).
-<tr>	<td><b><tt>vd_setlinewidth(w)</tt></b>
+<tr>	<td><code>vd_setlinewidth(w)</code>
         <td>&nbsp;&nbsp;
 	<td>Set line width.
         <td>&nbsp;&nbsp;
 	<td>Width (in pixels).
-<tr>	<td><b><tt>vd_text(x,y,s,c)</tt></b>
+<tr>	<td><code>vd_text(x,y,s,c)</code>
         <td>&nbsp;&nbsp;
 	<td>Paint a text.
         <td>&nbsp;&nbsp;
 	<td>Origin point (debugee coordinates), a string, and a color.
-<tr>	<td><b><tt>vd_wait</tt></b>
+<tr>	<td><code>vd_wait</code>
         <td>&nbsp;&nbsp;
 	<td>Delay execution until a resuming command is entered through user interface.
         <td>&nbsp;&nbsp;
@@ -614,7 +614,7 @@ Instead it calls callbacks, which are specified by a client, and which may
 have a platform dependent implementation. The implementation must not
 use Graphics Library to exclude recursive calls to it from Visual Trace
 instructions. The callbacks and auxiliary data are collected in
-the structure <b><tt>vd_trace_interface</b></tt>, explained in the table below.
+the structure <code>vd_trace_interface</code>, explained in the table below.
 <p>
 
 <table cellpadding=0 cellspacing=0>
@@ -625,120 +625,120 @@ the structure <b><tt>vd_trace_interface</b></tt>, explained in the table below.
         <td>&nbsp;&nbsp;
 	<th align=left>Parameters
 <tr>	<td colspan=5><hr>
-<tr>	<td><b><tt>host</tt></b>
+<tr>	<td><code>host</code>
         <td>&nbsp;&nbsp;
 	<td>A pointer to the rasterizer control block - to be provided by client application.
 	    The type of the fild is client dependent.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>scale_x, scale_y</tt></b>
+<tr>	<td><code>scale_x, scale_y</code>
         <td>&nbsp;&nbsp;
 	<td>Scale of debugee coordinate to window coordinate mapping - internal work data, don't change.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>orig_x, orig_y</tt></b>
+<tr>	<td><code>orig_x, orig_y</code>
         <td>&nbsp;&nbsp;
 	<td>Draft origin in debugee coordinates - internal work data, don't change.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>shift_x, shift_y</tt></b>
+<tr>	<td><code>shift_x, shift_y</code>
         <td>&nbsp;&nbsp;
 	<td>Draft shift in window coordinates - internal work data, don't change.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>get_size_x(I)</tt></b>
+<tr>	<td><code>get_size_x(I)</code>
         <td>&nbsp;&nbsp;
 	<td>Get window width in pixels.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>get_size_y(I)</tt></b>
+<tr>	<td><code>get_size_y(I)</code>
         <td>&nbsp;&nbsp;
 	<td>Get window height in pixels.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>get_dc(I,I1)</tt></b>
+<tr>	<td><code>get_dc(I,I1)</code>
         <td>&nbsp;&nbsp;
 	<td>Obtain drawing context.
         <td>&nbsp;&nbsp;
 	<td>Pointer to interface block, and pointer to copy of the pointer.
 	    Implementation must set *I1 if it succeeds to get a drawing context.
-<tr>	<td><b><tt>release_dc(I,I1)</tt></b>
+<tr>	<td><code>release_dc(I,I1)</code>
         <td>&nbsp;&nbsp;
 	<td>Release drawing context.
         <td>&nbsp;&nbsp;
 	<td>Pointer to interface block, and pointer to copy of the pointer.
 	    Implementation must reset *I1 if it succeeds to release the drawing context.
-<tr>	<td><b><tt>erase(I,c)</tt></b>
+<tr>	<td><code>erase(I,c)</code>
         <td>&nbsp;&nbsp;
 	<td>Erase entire window.
         <td>&nbsp;&nbsp;
 	<td>Background color.
-<tr>	<td><b><tt>beg_path(I)</tt></b>
+<tr>	<td><code>beg_path(I)</code>
         <td>&nbsp;&nbsp;
 	<td>Begin path construction.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>end_path(I)</tt></b>
+<tr>	<td><code>end_path(I)</code>
         <td>&nbsp;&nbsp;
 	<td>End path construction.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>moveto(I,x,y)</tt></b>
+<tr>	<td><code>moveto(I,x,y)</code>
         <td>&nbsp;&nbsp;
 	<td>Set current point.
         <td>&nbsp;&nbsp;
 	<td>A point in window coordinates.
-<tr>	<td><b><tt>lineto(I,x,y)</tt></b>
+<tr>	<td><code>lineto(I,x,y)</code>
         <td>&nbsp;&nbsp;
 	<td>Line from current point to specified point.
         <td>&nbsp;&nbsp;
 	<td>A point in window coordinates.
-<tr>	<td><b><tt>curveto(I,x0,y0,x1,y1,x2,y2)</tt></b>
+<tr>	<td><code>curveto(I,x0,y0,x1,y1,x2,y2)</code>
         <td>&nbsp;&nbsp;
 	<td>Curve from current point with specified poles to specified point.
         <td>&nbsp;&nbsp;
 	<td>3 points in window coordinates.
-<tr>	<td><b><tt>closepath(I)</tt></b>
+<tr>	<td><code>closepath(I)</code>
         <td>&nbsp;&nbsp;
 	<td>Close the path.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>circle(I,x,y,r)</tt></b>
+<tr>	<td><code>circle(I,x,y,r)</code>
         <td>&nbsp;&nbsp;
 	<td>Circle.
         <td>&nbsp;&nbsp;
 	<td>Center and radius, window coordinates.
-<tr>	<td><b><tt>round(I,x,y,r)</tt></b>
+<tr>	<td><code>round(I,x,y,r)</code>
         <td>&nbsp;&nbsp;
 	<td>Filled circle.
         <td>&nbsp;&nbsp;
 	<td>Center and radius, window coordinates.
-<tr>	<td><b><tt>fill(I)</tt></b>
+<tr>	<td><code>fill(I)</code>
         <td>&nbsp;&nbsp;
 	<td>Fill the path.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>stroke(I)</tt></b>
+<tr>	<td><code>stroke(I)</code>
         <td>&nbsp;&nbsp;
 	<td>Stroke the path.
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>setcolor(I,c)</tt></b>
+<tr>	<td><code>setcolor(I,c)</code>
         <td>&nbsp;&nbsp;
 	<td>Set color.
         <td>&nbsp;&nbsp;
 	<td>An integer, consisting of red, green, blue bytes.
-<tr>	<td><b><tt>setlinewidth(I,w)</tt></b>
+<tr>	<td><code>setlinewidth(I,w)</code>
         <td>&nbsp;&nbsp;
 	<td>Set line width.
         <td>&nbsp;&nbsp;
 	<td>Line width in pixels.
-<tr>	<td><b><tt>text(I,x,y,s)</tt></b>
+<tr>	<td><code>text(I,x,y,s)</code>
         <td>&nbsp;&nbsp;
 	<td>Draw a text.
         <td>&nbsp;&nbsp;
 	<td>Coodrinates in pixels, and a string.
-<tr>	<td><b><tt>wait(I)</tt></b>
+<tr>	<td><code>wait(I)</code>
         <td>&nbsp;&nbsp;
 	<td>Delay execution untill resume command is inputted from user.
         <td>&nbsp;&nbsp;
@@ -753,10 +753,10 @@ the structure <b><tt>vd_trace_interface</b></tt>, explained in the table below.
 <h2><a name="Full_example"></a>A full example</h2>
 
 <p>
-The file <b><tt>gslib.c</tt></b> in the Ghostscript fileset is a complete
+The file <code>gslib.c</code> in the Ghostscript fileset is a complete
 example program that initializes the library and produces output using it;
-files named <b><tt>*lib.mak</tt></b> (such as <b><tt>ugcclib.mak</tt></b>
-and <b><tt>bclib.mak</tt></b>) are makefiles using <b><tt>gslib.c</tt></b>
+files named <code>*lib.mak</code> (such as <b><tt>ugcclib.mak</tt></b>
+and <code>bclib.mak</code>) are makefiles using <b><tt>gslib.c</tt></b>
 as the main program.  The following annotated excerpts from this file are
 intended to provide a roadmap for applications that call the library.
 
@@ -775,10 +775,10 @@ very beginning of the main program.
 <blockquote><pre>#include "gx.h"</pre></blockquote>
 
 <p>
-The <b><tt>gx.h</tt></b> header includes a wealth of declarations related
+The <code>gx.h</code> header includes a wealth of declarations related
 to the Ghostscript memory manager, portability machinery, debugging
 framework, and other substrate facilities.  Any application file that calls
-any Ghostscript API functions should probably include <b><tt>gx.h</tt></b>.
+any Ghostscript API functions should probably include <code>gx.h</code>.
 
 <blockquote><pre>/* Configuration information imported from gconfig.c. */
 extern gx_device *gx_device_list[];
@@ -811,7 +811,7 @@ The externs above are needed for initializing the library.
         pgs = gs_state_alloc(mem);</pre></blockquote>
 
 <p>
-The code above initializes the library and its memory manager.  <b><tt>pgs</tt></b> now
+The code above initializes the library and its memory manager.  <code>pgs</code> now
 points to the graphics state that will be passed to the drawing routines in
 the library.
 

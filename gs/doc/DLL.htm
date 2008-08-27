@@ -24,26 +24,26 @@
 <li><a href="#DLL">What is the Ghostscript DLL?</a>
 <li><a href="#Common_functions">Platform-independent DLL functions</a>
 <ul>
-<li><a href="#revision"><b><tt>gsdll_revision()</tt></b></a>
-<li><a href="#init"><b><tt>gsdll_init()</tt></b></a>
-<li><a href="#execute_begin"><b><tt>gsdll_execute_begin()</tt></b></a>
-<li><a href="#execute_cont"><b><tt>gsdll_execute_cont()</tt></b></a>
-<li><a href="#execute_end"><b><tt>gsdll_execute_end()</tt></b></a>
-<li><a href="#exit"><b><tt>gsdll_exit()</tt></b></a>
-<li><a href="#lock_device"><b><tt>gsdll_lock_device()</tt></b></a>
+<li><a href="#revision"><code>gsdll_revision()</code></a>
+<li><a href="#init"><code>gsdll_init()</code></a>
+<li><a href="#execute_begin"><code>gsdll_execute_begin()</code></a>
+<li><a href="#execute_cont"><code>gsdll_execute_cont()</code></a>
+<li><a href="#execute_end"><code>gsdll_execute_end()</code></a>
+<li><a href="#exit"><code>gsdll_exit()</code></a>
+<li><a href="#lock_device"><code>gsdll_lock_device()</code></a>
 </ul>
 <li><a href="#Callback">Callback function</a>
 <li><a href="#OS2_device">Ghostscript DLL device for OS/2</a>
 <ul>
-<li><a href="#OS2_bmp"><b><tt>gsdll_get_bitmap()</tt></b></a>
+<li><a href="#OS2_bmp"><code>gsdll_get_bitmap()</code></a>
 <li><a href="#OS2_example">Example DLL usage for OS/2</a>
 </ul>
 <li><a href="#Win_device">Ghostscript DLL device for MS Windows</a>
 <ul>
-<li><a href="#Win_copydib"><b><tt>gsdll_copy_dib()</tt></b></a>
-<li><a href="#Win_copypalette"><b><tt>gsdll_copy_palette()</tt></b></a>
-<li><a href="#Win_draw"><b><tt>gsdll_draw()</tt></b></a>
-<li><a href="#Win_get_row"><b><tt>gsdll_get_bitmap_row()</tt></b></a>
+<li><a href="#Win_copydib"><code>gsdll_copy_dib()</code></a>
+<li><a href="#Win_copypalette"><code>gsdll_copy_palette()</code></a>
+<li><a href="#Win_draw"><code>gsdll_draw()</code></a>
+<li><a href="#Win_get_row"><code>gsdll_get_bitmap_row()</code></a>
 </ul>
 <li><a href="#Win16">Ghostscript DLL Device for 16-bit MS Windows</a>
 </ul>
@@ -75,7 +75,7 @@ is described in <a href="API.htm">API.htm</a>.
 For the OS/2, Win16 and Win32 platforms, Ghostscript is built as a dynamic
 link library (DLL), and to provide the interface described in the <a
 href="Use.htm">usage documentation</a>, a smaller independent executable
-(<b><tt>.EXE</tt></b>) loads this DLL, which provides all the interaction
+(<code>.EXE</code>) loads this DLL, which provides all the interaction
 with the windowing system, including image windows and, if necessary, a
 text window.  This document describes the DLL interface, which consists of
 eight main functions, <a href="#functions">seven platform-independent
@@ -87,24 +87,24 @@ platform-specific functions for display devices.
 The DLL's name and characteristics differ among the three platforms:
 
 <ul>
-<li>The <a href="#OS2_device">OS/2 DLL <b><tt>GSDLL2.DLL</tt></b></a> has
+<li>The <a href="#OS2_device">OS/2 DLL <code>GSDLL2.DLL</code></a> has
 MULTIPLE NONSHARED data segments and can be called by multiple programs
 simultaneously.
 
-<li>The <a href="#Win_device">Win32 DLL <b><tt>GSDLL32.DLL</tt></b></a> has
+<li>The <a href="#Win_device">Win32 DLL <code>GSDLL32.DLL</code></a> has
 MULTIPLE NONSHARED data segments.  Under Win32s it can be used by only one
 program at a time, but under Windows 95/98 or Windows NT it can be called by
 multiple programs simultaneously.
 
-<li>The <a href="#Win16">Win16 DLL <b><tt>GSDLL16.DLL</tt></b></a> is a
+<li>The <a href="#Win16">Win16 DLL <code>GSDLL16.DLL</code></a> is a
 large-memory model DLL with far static data.  Due to the limitations of
 16-bit MS Windows -- Windows 3.n -- the DLL can be used by only one program
 at a time.
 </ul>
 
 <p>
-The source for the executable is in <b><tt>dp</tt></b>*.* (OS/2) and
-<b><tt>dw</tt></b>*.* (Windows).  See these source files for examples of
+The source for the executable is in <code>dp</code>*.* (OS/2) and
+<code>dw</code>*.* (Windows).  See these source files for examples of
 how to use the DLL.
 
 <hr>
@@ -114,34 +114,34 @@ how to use the DLL.
 <p>
 The seven functions provided by the DLL are
 <ul>
-<li><b><tt>int GSDLLAPI <a href="#revision">gsdll_revision</a>(char **product, char **copyright, long *gs_revision, long *gs_revisiondate)</tt></b>
-<li><b><tt>int GSDLLAPI <a href="#init">gsdll_init</a>(GSDLL_CALLBACK callback, HWND hwnd, int argc, char *argv[]);</tt></b>
-<li><b><tt>int GSDLLAPI <a href="#execute_begin">gsdll_execute_begin</a>(void);</tt></b>
-<li><b><tt>int GSDLLAPI <a href="#execute_cont">gsdll_execute_cont</a>(const char *str, int len);</tt></b>
-<li><b><tt>int GSDLLAPI <a href="#execute_end">gsdll_execute_end</a>(void);</tt></b>
-<li><b><tt>int GSDLLAPI <a href="#exit">gsdll_exit</a>(void);</tt></b>
-<li><b><tt>int GSDLLAPI <a href="#lock_device">gsdll_lock_device</a>(unsigned char *device, int flag);</tt></b>
+<li><code>int GSDLLAPI <a href="#revision">gsdll_revision</a>(char **product, char **copyright, long *gs_revision, long *gs_revisiondate)</code>
+<li><code>int GSDLLAPI <a href="#init">gsdll_init</a>(GSDLL_CALLBACK callback, HWND hwnd, int argc, char *argv[]);</code>
+<li><code>int GSDLLAPI <a href="#execute_begin">gsdll_execute_begin</a>(void);</code>
+<li><code>int GSDLLAPI <a href="#execute_cont">gsdll_execute_cont</a>(const char *str, int len);</code>
+<li><code>int GSDLLAPI <a href="#execute_end">gsdll_execute_end</a>(void);</code>
+<li><code>int GSDLLAPI <a href="#exit">gsdll_exit</a>(void);</code>
+<li><code>int GSDLLAPI <a href="#lock_device">gsdll_lock_device</a>(unsigned char *device, int flag);</code>
 
 <p>
-where <b><tt>GSDLLAPI</tt></b> is defined under OS/2 as
+where <code>GSDLLAPI</code> is defined under OS/2 as
 
-<blockquote><b><tt>
+<blockquote><code>
 #define GSDLLAPI
-</tt></b></blockquote>
+</code></blockquote>
 
 <p>
 and under MS Windows as
 
-<blockquote><b><tt>
+<blockquote><code>
 #define GSDLLAPI CALLBACK _export
-</tt></b></blockquote>
+</code></blockquote>
 </ul>
 
-<h3><a name="revision"></a><b><tt>gsdll_revision()</tt></b></h3>
+<h3><a name="revision"></a><code>gsdll_revision()</code></h3>
 
 <blockquote>
 This function returns the revision numbers and strings of the Ghostscript
-DLL; you should call it before <b><tt>gsdll_init()</tt></b> to make sure
+DLL; you should call it before <code>gsdll_init()</code> to make sure
 that the correct version of the Ghostscript DLL has been loaded.  For
 example
 
@@ -154,14 +154,14 @@ gsdll_revision(&amp;product, &amp;copyright, &amp;revision, &amp;revisiondate);
 </pre></blockquote>
 
 <p>
-You may use <b><tt>NULL</tt></b> pointers if you do not want a particular
+You may use <code>NULL</code> pointers if you do not want a particular
 value.
 </blockquote>
 
-<h3><a name="init"></a><b><tt>gsdll_init()</tt></b></h3>
+<h3><a name="init"></a><code>gsdll_init()</code></h3>
 
 <blockquote>
-<b><tt>gsdll_init()</tt></b> must be called after loading the DLL and
+<code>gsdll_init()</code> must be called after loading the DLL and
 before executing any Ghostscript commands.  The arguments are the address
 of the callback function, a parent window handle, the count of arguments
 and an array of pointers to the arguments.  For example
@@ -179,43 +179,43 @@ code = gsdll_init(gsdll_callback, hwnd, argc, argv);
 </pre></blockquote>
 
 <p>
-<b><tt>hwnd</tt></b> is used as the parent window handle for any windows
-created by Ghostscript.  <b><tt>hwnd</tt></b> may be <b><tt>NULL</tt></b>
-if the caller has no windows, but if it is <b><tt>NULL</tt></b>, you should
+<code>hwnd</code> is used as the parent window handle for any windows
+created by Ghostscript.  <code>hwnd</code> may be <b><tt>NULL</tt></b>
+if the caller has no windows, but if it is <code>NULL</code>, you should
 avoid using devices which may open windows.
 
 <p>
 A return code of 0 (zero) indicates no errors, and the code may now call
-<b><tt>gsdll_execute_begin()</tt></b> or <b><tt>gsdll_exit()</tt></b>.  If
-the return value is non-zero then <b><tt>gsdll_exit()</tt></b> must not be
+<code>gsdll_execute_begin()</code> or <b><tt>gsdll_exit()</tt></b>.  If
+the return value is non-zero then <code>gsdll_exit()</code> must not be
 called.
 
 <p>
-A return value of <b><tt>GSDLL_INIT_QUIT</tt></b> indicates that one of the
-command line files or arguments called "<b><tt>quit</tt></b>", or that
+A return value of <code>GSDLL_INIT_QUIT</code> indicates that one of the
+command line files or arguments called "<code>quit</code>", or that
 Ghostscript was reading stdin and reached end-of-file.  This is not an
-error.  <b><tt>gsdll_exit()</tt></b> must not be called.
+error.  <code>gsdll_exit()</code> must not be called.
 
 <p>
-A return value of <b><tt>GSDLL_INIT_IN_USE</tt></b> indicates that the DLL
+A return value of <code>GSDLL_INIT_IN_USE</code> indicates that the DLL
 is in use by another application (Windows 3.1 only).  The DLL should be
 immediately unloaded (or the caller terminated).
-<b><tt>gsdll_exit()</tt></b> must not be called.
+<code>gsdll_exit()</code> must not be called.
 </blockquote>
 
-<h3><a name="execute_begin"></a><b><tt>gsdll_execute_begin()</tt></b></h3>
+<h3><a name="execute_begin"></a><code>gsdll_execute_begin()</code></h3>
 
 <blockquote>
-This must be called after <b><tt>gsdll_init()</tt></b> and before
-<b><tt>gsdll_execute_cont()</tt></b>.
+This must be called after <code>gsdll_init()</code> and before
+<code>gsdll_execute_cont()</code>.
 </blockquote>
 
-<h3><a name="execute_cont"></a><b><tt>gsdll_execute_cont()</tt></b></h3>
+<h3><a name="execute_cont"></a><code>gsdll_execute_cont()</code></h3>
 
 <blockquote>
-After successfully calling <b><tt>gsdll_init()</tt></b> and
-<b><tt>gsdll_execute_begin()</tt></b>, commands may be given to Ghostscript
-with <b><tt>gsdll_execute_cont()</tt></b>.  Examples are:
+After successfully calling <code>gsdll_init()</code> and
+<code>gsdll_execute_begin()</code>, commands may be given to Ghostscript
+with <code>gsdll_execute_cont()</code>.  Examples are:
 
 <blockquote>
 <pre>char *command = "1 2 add == flush\n";
@@ -228,7 +228,7 @@ code = gsdll_execute_cont(command, strlen(command));
 
 <a name="cont_returns"></a>
 <table cellpadding=0 cellspacing=0>
-<tr><th colspan=3 bgcolor="#CCCC00"><hr><font size="+1">Return codes from <b><tt>gsdll_execute_cont()</tt></b></font><hr>
+<tr><th colspan=3 bgcolor="#CCCC00"><hr><font size="+1">Return codes from <code>gsdll_execute_cont()</code></font><hr>
 <tr valign=bottom>
 	<th align=left>Code
 	<td>&nbsp;&nbsp;&nbsp;&nbsp;
@@ -242,20 +242,20 @@ code = gsdll_execute_cont(command, strlen(command));
 	<td>Error
 <tr valign=top>	<td align=left>&lt;= -100
 	<td>&nbsp;
-	<td>"<b><tt>quit</tt></b>" has been executed, or fatal error.
-<b><tt>gsdll_exit()</tt></b> must then be called: do not call
-<b><tt>gsdll_execute_end()</tt></b>.
+	<td>"<code>quit</code>" has been executed, or fatal error.
+<code>gsdll_exit()</code> must then be called: do not call
+<code>gsdll_execute_end()</code>.
 </table>
 </blockquote>
 
-<b><tt>gsdll_execute_cont()</tt></b>
+<code>gsdll_execute_cont()</code>
 does not flush stdio, so if you want to see output from Ghostscript you
 must do this explicitly as shown in the example above.
 
 <p>
-When executing a string with <b><tt>gsdll_execute_cont()</tt></b>,
-<b><tt>currentfile</tt></b> is the input from
-<b><tt>gsdll_execute_cont()</tt></b>.  Reading from <b><tt>%stdin</tt></b>
+When executing a string with <code>gsdll_execute_cont()</code>,
+<code>currentfile</code> is the input from
+<code>gsdll_execute_cont()</code>.  Reading from <b><tt>%stdin</tt></b>
 uses the callback.
 
 <p>
@@ -266,36 +266,36 @@ separate call.
 
 </blockquote>
 
-<h3><a name="execute_end"></a><b><tt>gsdll_execute_end()</tt></b></h3>
+<h3><a name="execute_end"></a><code>gsdll_execute_end()</code></h3>
 
 <blockquote>
-If <b><tt>gsdll_execute_cont()</tt></b> did not return an error, then
-<b><tt>gsdll_execute_end()</tt></b> must be called after
-<b><tt>gsdll_execute_cont()</tt></b> and before
-<b><tt>gsdll_exit()</tt></b>.
+If <code>gsdll_execute_cont()</code> did not return an error, then
+<code>gsdll_execute_end()</code> must be called after
+<code>gsdll_execute_cont()</code> and before
+<code>gsdll_exit()</code>.
 </blockquote>
 
-<h3><a name="exit"></a><b><tt>gsdll_exit()</tt></b></h3>
+<h3><a name="exit"></a><code>gsdll_exit()</code></h3>
 
 <blockquote>
 Call gsdll_exit() to terminate the Ghostscript DLL.  It must be called if a
 fatal error has occurred; see the <a href="#cont_returns">return value
-of <b><tt>gsdll_execute_cont()</tt></b></a>.  After calling
-<b><tt>gsdll_exit()</tt></b>, there are two options:
+of <code>gsdll_execute_cont()</code></a>.  After calling
+<code>gsdll_exit()</code>, there are two options:
 
 <ul>
 <li>Unload the DLL, either by terminating the application or by
-calling <b><tt>DosFreeModule</tt></b> (OS/2) or <b><tt>FreeLibrary</tt></b> (MS Windows).
+calling <code>DosFreeModule</code> (OS/2) or <b><tt>FreeLibrary</tt></b> (MS Windows).
 
-<li>Call <b><tt>gsdll_init()</tt></b> again to restart Ghostscript.
+<li>Call <code>gsdll_init()</code> again to restart Ghostscript.
 </ul>
 </blockquote>
 
-<h3><a name="lock_device"></a><b><tt>gsdll_lock_device()</tt></b></h3>
+<h3><a name="lock_device"></a><code>gsdll_lock_device()</code></h3>
 
 <blockquote>
 Since the caller may be multithreaded, a lock is needed to control access
-to the display device, and <b><tt>gsdll_lock_device()</tt></b> provides that
+to the display device, and <code>gsdll_lock_device()</code> provides that
 locking.
 
 <blockquote>
@@ -311,10 +311,10 @@ locking.
 <tr><th colspan=3 bgcolor="#CCCC00"><hr><font size="+1">Locking and unlocking devices</font><hr>
 <tr valign=top>	<td>To lock a device
 	<td>&nbsp;&nbsp;&nbsp;&nbsp;
-	<td><b><tt>gsdll_lock_device(device, 1)</tt></b>;
+	<td><code>gsdll_lock_device(device, 1)</code>;
 <tr valign=top>	<td>To unlock a device
 	<td>&nbsp;
-	<td><b><tt>gsdll_lock_device(device, 0)</tt></b>;
+	<td><code>gsdll_lock_device(device, 0)</code>;
 </table>
 </blockquote>
 
@@ -332,7 +332,7 @@ which is either 0 ("unlocked") or 1 ("locked").  The function blocks until
 the device is locked by the caller.
 
 <p>
-Under Win16 or Win32s, <b><tt>gsdll_lock_device()</tt></b> always returns
+Under Win16 or Win32s, <code>gsdll_lock_device()</code> always returns
 immediately with a lock count as its return value.  A lock count of 2 or
 more is definite indication of an error, probably calling the function
 twice.  Access to the device should be controlled by checking the Windows
@@ -344,14 +344,14 @@ message queue only when the bitmap is not being accessed.
 <h2><a name="Callback"></a>Callback function</h2>
 
 <blockquote>
-As an argument to <a href="#init"><b><tt>gsdll_init()</tt></b></a> the
+As an argument to <a href="#init"><code>gsdll_init()</code></a> the
 caller must provide a callback function which the DLL invokes for stdio and
 to notify the caller about device events.  The function provided by the
 caller has this prototype:
 
-<blockquote><b><tt>
+<blockquote><code>
 int gsdll_callback(int&nbsp;message, char&nbsp;*str, unsigned&nbsp;long&nbsp;count);
-</tt></b></blockquote>
+</code></blockquote>
 
 <p>
 The Pascal calling convention is not used.  An example callback function
@@ -406,50 +406,50 @@ char *p;
 	<td>&nbsp;&nbsp;
 	<th align=left>Use
 <tr>	<td colspan=5><hr>
-<tr valign=top>	<td><b><tt>GSDLL_STDIN</tt></b>
+<tr valign=top>	<td><code>GSDLL_STDIN</code>
 	<td>&nbsp;
 	<td>1
 	<td>&nbsp;
-	<td>get <b><tt>count</tt></b> characters to <b><tt>str</tt></b> from stdin, return number of characters read
-<tr valign=top>	<td><b><tt>GSDLL_STDOUT</tt></b>
+	<td>get <code>count</code> characters to <b><tt>str</tt></b> from stdin, return number of characters read
+<tr valign=top>	<td><code>GSDLL_STDOUT</code>
 	<td>&nbsp;
 	<td>2
 	<td>&nbsp;
-	<td>put <b><tt>count</tt></b> characters from <b><tt>str</tt></b>
+	<td>put <code>count</code> characters from <b><tt>str</tt></b>
 		to stdout, return number of characters written
-<tr valign=top>	<td><b><tt>GSDLL_DEVICE</tt></b>
+<tr valign=top>	<td><code>GSDLL_DEVICE</code>
 	<td>&nbsp;
 	<td>3
 	<td>&nbsp;
-	<td>device <b><tt>str</tt></b> has been opened if
-		<b><tt>count</tt></b>&nbsp;=&nbsp;1, closed if
-		<b><tt>count</tt></b>&nbsp;=&nbsp;0
-<tr valign=top>	<td><b><tt>GSDLL_SYNC</tt></b>
+	<td>device <code>str</code> has been opened if
+		<code>count</code>&nbsp;=&nbsp;1, closed if
+		<code>count</code>&nbsp;=&nbsp;0
+<tr valign=top>	<td><code>GSDLL_SYNC</code>
 	<td>&nbsp;
 	<td>4
 	<td>&nbsp;
-	<td>sync_output for device <b><tt>str</tt></b>
-<tr valign=top>	<td><b><tt>GSDLL_PAGE</tt></b>
+	<td>sync_output for device <code>str</code>
+<tr valign=top>	<td><code>GSDLL_PAGE</code>
 	<td>&nbsp;
 	<td>5
 	<td>&nbsp;
-	<td>output_page for device <b><tt>str</tt></b>
-<tr valign=top>	<td><b><tt>GSDLL_SIZE</tt></b>
+	<td>output_page for device <code>str</code>
+<tr valign=top>	<td><code>GSDLL_SIZE</code>
 	<td>&nbsp;
 	<td>6
 	<td>&nbsp;
-	<td>resize for device <b><tt>str</tt></b>:
-		LOWORD(<b><tt>count</tt></b>) is new <b><tt>xsize</tt></b>,
-		HIWORD(<b><tt>count</tt></b>) is new <b><tt>ysize</tt></b>
-<tr valign=top>	<td><b><tt>GSDLL_POLL</tt></b>
+	<td>resize for device <code>str</code>:
+		LOWORD(<code>count</code>) is new <b><tt>xsize</tt></b>,
+		HIWORD(<code>count</code>) is new <b><tt>ysize</tt></b>
+<tr valign=top>	<td><code>GSDLL_POLL</code>
 	<td>&nbsp;
 	<td>7
 	<td>&nbsp;
-	<td>Called from <b><tt>gp_check_interrupt()</tt></b><br>
+	<td>Called from <code>gp_check_interrupt()</code><br>
 		Can be used by the caller to poll the message queue.
 		Normally returns 0.  To abort
-		<b><tt>gsdll_execute_cont()</tt></b>, return a non-zero
-		error code until <b><tt>gsdll_execute_cont()</tt></b>
+		<code>gsdll_execute_cont()</code>, return a non-zero
+		error code until <code>gsdll_execute_cont()</code>
 		returns.
 </table>
 </blockquote>
@@ -460,21 +460,21 @@ char *p;
 <h2><a name="OS2_device"></a>Ghostscript DLL device for OS/2</h2>
 
 <p>
-The <b><tt>os2dll</tt></b> device is provided in the Ghostscript DLL for
+The <code>os2dll</code> device is provided in the Ghostscript DLL for
 use by the caller.  No drawing facilities are provided by the DLL because
 the DLL may be loaded by a text-only (non-PM) application.  The caller is
-notified via the <b><tt>gsdll_callback()</tt></b> when a new
-<b><tt>os2dll</tt></b> device is opened or closed
-(<b><tt>GSDLL_DEVICE</tt></b>), when the window should be redrawn
-(<b><tt>GSDLL_SYNC</tt></b> or <b><tt>GSDLL_PAGE</tt></b>) or when the
-bitmap size changes (<b><tt>GSDLL_SIZE</tt></b>).
-Note that more than one <b><tt>os2dll</tt></b> device may be opened.
+notified via the <code>gsdll_callback()</code> when a new
+<code>os2dll</code> device is opened or closed
+(<code>GSDLL_DEVICE</code>), when the window should be redrawn
+(<code>GSDLL_SYNC</code> or <b><tt>GSDLL_PAGE</tt></b>) or when the
+bitmap size changes (<code>GSDLL_SIZE</code>).
+Note that more than one <code>os2dll</code> device may be opened.
 
-<h3><a name="OS2_bmp"></a><b><tt>gsdll_get_bitmap()</tt></b></h3>
+<h3><a name="OS2_bmp"></a><code>gsdll_get_bitmap()</code></h3>
 
 <blockquote>
-<b><tt>gsdll_get_bitmap()</tt></b> returns a pointer to a bitmap in BMP
-format.  The <b><tt>os2dll</tt></b> device draws into this bitmap.
+<code>gsdll_get_bitmap()</code> returns a pointer to a bitmap in BMP
+format.  The <code>os2dll</code> device draws into this bitmap.
 
 <blockquote>
 <pre>unsigned long gsdll_get_bitmap(unsigned char *device, unsigned char **pbitmap);
@@ -484,9 +484,9 @@ format.  The <b><tt>os2dll</tt></b> device draws into this bitmap.
 
 <p>
 The caller can then display the bitmap however it likes, but should lock
-the bitmap with <b><tt>gsdll_lock_device()</tt></b> before painting from
+the bitmap with <code>gsdll_lock_device()</code> before painting from
 it, and unlock it afterwards.  The bitmap address does not change until the
-<b><tt>os2dll</tt></b> device is closed; however the bitmap size and
+<code>os2dll</code> device is closed; however the bitmap size and
 palette may change whenever the bitmap is not locked.
 </blockquote>
 
@@ -554,22 +554,22 @@ APIRET rc;
 <h2><a name="Win_device"></a>Ghostscript DLL device for MS Windows</h2>
 
 <p>
-The <b><tt>mswindll</tt></b> device is provided in the Ghostscript DLL for
+The <code>mswindll</code> device is provided in the Ghostscript DLL for
 use by the caller.  The caller is notified via the
-<b><tt>gsdll_callback()</tt></b> when a new <b><tt>mswindll</tt></b> device
-is opened or closed (<b><tt>GSDLL_DEVICE</tt></b>), when the window should
-be redrawn (<b><tt>GSDLL_SYNC</tt></b> or <b><tt>GSDLL_PAGE</tt></b>) or
-when the bitmap size changes (<b><tt>GSDLL_SIZE</tt></b>).  Note that more
-than one <b><tt>mswindll</tt></b> device may be opened.
+<code>gsdll_callback()</code> when a new <b><tt>mswindll</tt></b> device
+is opened or closed (<code>GSDLL_DEVICE</code>), when the window should
+be redrawn (<code>GSDLL_SYNC</code> or <b><tt>GSDLL_PAGE</tt></b>) or
+when the bitmap size changes (<code>GSDLL_SIZE</code>).  Note that more
+than one <code>mswindll</code> device may be opened.
 
 <p>
-Four DLL functions are available to use the <b><tt>mswindll</tt></b>
+Four DLL functions are available to use the <code>mswindll</code>
 device.
 
-<h3><a name="Win_copydib"></a><b><tt>gsdll_copy_dib()</tt></b></h3>
+<h3><a name="Win_copydib"></a><code>gsdll_copy_dib()</code></h3>
 
 <blockquote>
-Copy the <b><tt>mswindll</tt></b> bitmap to the clipboard.
+Copy the <code>mswindll</code> bitmap to the clipboard.
 
 <blockquote>
 <pre>HGLOBAL GSDLLAPI gsdll_copy_dib(unsigned char *device);
@@ -578,10 +578,10 @@ Copy the <b><tt>mswindll</tt></b> bitmap to the clipboard.
 </pre></blockquote>
 </blockquote>
 
-<h3><a name="Win_copypalette"></a><b><tt>gsdll_copy_palette()</tt></b></h3>
+<h3><a name="Win_copypalette"></a><code>gsdll_copy_palette()</code></h3>
 
 <blockquote>
-Copy the <b><tt>mswindll</tt></b> palette to the clipboard.
+Copy the <code>mswindll</code> palette to the clipboard.
 
 <blockquote>
 <pre>HPALETTE GSDLLAPI gsdll_copy_palette(unsigned char *device);
@@ -590,13 +590,13 @@ Copy the <b><tt>mswindll</tt></b> palette to the clipboard.
 </pre></blockquote>
 </blockquote>
 
-<h3><a name="Win_draw"></a><b><tt>gsdll_draw()</tt></b></h3>
+<h3><a name="Win_draw"></a><code>gsdll_draw()</code></h3>
 
 <blockquote>
-Display output from the <b><tt>mswindll</tt></b> device.  The caller should
-create a window and call <b><tt>gsdll_draw()</tt></b> in response to the
-<b><tt>WM_PAINT</tt></b> message.  The device context <b><tt>hdc</tt></b>
-must be for a device because <b><tt>SetDIBitsToDevice()</tt></b> is used.
+Display output from the <code>mswindll</code> device.  The caller should
+create a window and call <code>gsdll_draw()</code> in response to the
+<code>WM_PAINT</code> message.  The device context <b><tt>hdc</tt></b>
+must be for a device because <code>SetDIBitsToDevice()</code> is used.
 
 <blockquote>
 <pre>void GSDLLAPI gsdll_draw(unsigned char *device, HDC hdc,
@@ -608,7 +608,7 @@ must be for a device because <b><tt>SetDIBitsToDevice()</tt></b> is used.
 </pre></blockquote>
 </blockquote>
 
-<h3><a name="Win_get_row"></a><b><tt>gsdll_get_bitmap_row()</tt></b></h3>
+<h3><a name="Win_get_row"></a><code>gsdll_get_bitmap_row()</code></h3>
 
 <blockquote>
 Get a BMP header, a palette, and a pointer to a row in the bitmap.  This
@@ -641,36 +641,36 @@ This platform has the most problems of the three.  Support for it may be
 dropped in future.
 
 <p>
-The Win16 DLL <b><tt>GSDLL16.DLL</tt></b> is a large-memory model DLL with
+The Win16 DLL <code>GSDLL16.DLL</code> is a large-memory model DLL with
 far static data.  Due to the limitations of 16-bit MS Windows, the DLL can
 be used by only one program at a time.
 
 <p>
-However, <b><tt>GSDLL16</tt></b> is marked as having SINGLE SHARED data
+However, <code>GSDLL16</code> is marked as having SINGLE SHARED data
 segments, allowing multiple applications to load it with no error
 indication.  (The DLL wouldn't load at all if MULTIPLE NONSHARED was used).
 Nonetheless, <b>it cannot be used by more than one application at a
-time</b>, so applications loading <b><tt>GSDLL16</tt></b> should check the
-return value of <b><tt>gsdll_init()</tt></b>: if this value is non-zero,
-then <b><tt>GSDLL16</tt></b> is already in use by another application and
-should <b><em>not</em></b> be used: <b><tt>GSDLL16</tt></b> should be
-unloaded immediately using <b><tt>FreeLibrary()</tt></b>, or the calling
+time</b>, so applications loading <code>GSDLL16</code> should check the
+return value of <code>gsdll_init()</code>: if this value is non-zero,
+then <code>GSDLL16</code> is already in use by another application and
+should <b><em>not</em></b> be used: <code>GSDLL16</code> should be
+unloaded immediately using <code>FreeLibrary()</code>, or the calling
 program should quit without attempting to use the library..
 
 <p>
 The segmented architecture of the Intel 80286 causes the usual amount of
-grief when using <b><tt>GSDLL16</tt></b>.  Because the callback is called
+grief when using <code>GSDLL16</code>.  Because the callback is called
 from the DLL, which is using a different data segment, the callback must be
-declared as <b><tt>_far&nbsp;_export</tt></b>:
+declared as <code>_far&nbsp;_export</code>:
 
 <blockquote>
 <pre>int _far _export gsdll_callback(int message, char *str, unsigned long count);
 </pre></blockquote>
 
 <p>
-Instead of giving <b><tt>gsdll_init()</tt></b> the address of
-<b><tt>gsdll_callback()</tt></b>, it should instead be given the address of
-a thunk created by <b><tt>MakeProcInstance</tt></b>.  This thunk changes
+Instead of giving <code>gsdll_init()</code> the address of
+<code>gsdll_callback()</code>, it should instead be given the address of
+a thunk created by <code>MakeProcInstance</code>.  This thunk changes
 the data segment back to that used by the caller:
 
 <blockquote>
