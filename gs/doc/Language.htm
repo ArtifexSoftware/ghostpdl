@@ -527,7 +527,6 @@ are the bounding box of the mask in the current user coordinate system.
 <dt><code>- .begintransparencymaskimage -</code>
 <dd>Begins a new transparency mask, which is represented as a single image.
 </dl>
-</dl>
 
 <dl>
 <dt><code>- .discardtransparencymask -</code>
@@ -728,12 +727,14 @@ selected when Ghostscript was built.
 <dd>Export the current path to an array of executable arrays. This
 operator is similar to <code>upath</code>, except
 
+<ul>
 <li>array of arrays is used to overcome 64K-1 limit on the
 array lemgth.
 <li>no <code>ucache</code> or <b><tt>setbbox</tt></b> entries are generated.
 <li>operators are used instead of executable names.
 <li>there's no special handling of an empty path or trailing <code>moveto</code>.
 The saved path can be restored by <code>newpath { exec } forall</code>.
+</ul>
 </dl>
 
 <h4><a name="Painting"></a>Painting operators</h4>
@@ -1053,7 +1054,6 @@ like the <code>file</code> operator, also returning the file name.  There
 are three cases for the <code>&lt;prefix_string|null&gt;</code> operand:
 
 <ul>
-<p>
 <li><code>null</code>: create the file in the same directory and with the
 same name conventions as other temporary files created by the Ghostscript
 implementation on this platform.  E.g., the temporary file might be named
@@ -1334,8 +1334,9 @@ See also <a href="#LockSafetyParams">.LockSafetyParams</a> and
 <p>
 </dl>
 
-<dl><a name=".setpdfwrite"></a>
-<dt><code>.setpdfwrite</code></dt>
+<dl>
+<dt><a name=".setpdfwrite"></a>
+<code>.setpdfwrite</code></dt>
 <dd>This operator conditions the environment for the <tt>pdfwrite</tt> output device.
 It is a shorthand for setting parameters that have been deemed benificial. While not strictly necessary, it is usually helpful to set call this when using the pdfwrite device.
 For example, this is how the ps2pdf script calls Ghostscript:
@@ -1494,10 +1495,11 @@ is true for the current device.
 Some device properties may need to be set with <tt>putdeviceprops</tt> before 
 <code>setdevice</code> is called. For example, the pdfwrite device will try
 to open its output file, causing an <tt>undefinedfilename</tt> error if 
-<tt>OutputFile</tt> hasn't been set to a valid filename. Another method in such
-cases is to use the level 2 operator instead: 
+<code>OutputFile</code> hasn't been set to a valid filename. Another 
+method in such cases is to use the level 2 operator instead: 
 
-  <tt>&lt;&lt;&nbsp;/OutputDevice /pdfwrite /OutputFile (MyPDF.pdf)&nbsp;&gt;&gt;    <b>setpagedevice</code>.
+  <code>&lt;&lt;&nbsp;/OutputDevice /pdfwrite /OutputFile 
+(MyPDF.pdf)&nbsp;&gt;&gt;    setpagedevice</code>.
 
 </dl>
 
@@ -1793,8 +1795,8 @@ indicated above.)  Here are the currently defined parameters for all
 devices:
 
 <dl>
-<a name="LockSafetyParams"></a>
-<dt><code>.LockSafetyParams &lt;boolean&gt;</code>
+<dt><a name="LockSafetyParams"></a>
+<code>.LockSafetyParams &lt;boolean&gt;</code>
 <dd>This parameter allows for improved system security by preventing
 PostScript programs from being able to change potentially dangerous
 device paramters such as OutputFile. This parameter cannot be set false
@@ -2079,13 +2081,13 @@ character to separate directories and filenames or use '\\\\' to
 have the string contain '\\' which will match a single '\' in the
 target filename (use of '/' is strongly recommended).
 <p>
-The <a href=Use.htm#Safer><b>SAFER</b></a> mode and the
+The <a href="Use.htm#Safer"><b>SAFER</b></a> mode and the
 <code>.setsafe</code> operator set all three lists to empty arrays,
 thus the only files that can be read are the <code>%stdin</code> device and
 on LIBPATH or FONTPATH or the Resource paths specified by the /FontResourceDir
 or /GenericResourceDir system params. Files cannot be opened for writing
 anywhere and cannot be deleted or renamed except for files created with the
-<a href=#Tempfile><b>.tempfile</b></a> operator).
+<a href="#Tempfile"><b>.tempfile</b></a> operator).
 <p>
 <b>Note: </b>Limiting file reading as above is <b>NOT</b> compatible with
 SAFER mode in release versions before 7.11 and corresponds to the use of
@@ -2107,8 +2109,8 @@ may be overridden by the command line argument
 
 
 <dl>
-<a name="GridFitTT"></a>
-<dt><code>GridFitTT &lt;integer&gt;</code>
+<dt><a name="GridFitTT"></a>
+<code>GridFitTT &lt;integer&gt;</code>
 <dd>Control the use of True Type grid fitting.
 Ghostscript implements a reduced True Type bytecode interpreter,
 which can interpret the subset of True Type glyph instructions  
@@ -2201,6 +2203,7 @@ names to character codes used with TrueType, Intellifont, Microtype and other fo
 
 <p>
 Currently Ghostscript is capable of PostScript font emulation in 2 ways :
+<ul>
 <li>
 1. Through <a href="./Use.htm#FAPI_run">FAPI</a> plugins, and
 </li>
@@ -2208,6 +2211,7 @@ Currently Ghostscript is capable of PostScript font emulation in 2 ways :
 2. With TrueType font files, using the native font renderer, by
 specifying TrueType font names or files in <a href="../lib/Fontmap">lib/Fontmap</a>.
 </li>
+</ul>
 <p>
 <code>Decoding</code> resources are not currently used by the native font renderer.
 

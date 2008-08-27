@@ -1680,6 +1680,7 @@ Shared support:
 <dd>
 
 <dl>
+<dt>
 Writing fonts:
 <dd>
 <a href="../src/gdevpsf.h">src/gdevpsf.h</a>,
@@ -2983,7 +2984,9 @@ Extraction of layer information from Illustratir CS2/CS3 PDF files is
 implemented for a specific commercial customer; it is not used by any of the
 included drivers. To activate this feature add
 <code>cslayer.dev</code> to the list of feature devices.
+
 <dl>
+<dt>
 Files:
 <dt>
 <dd>
@@ -4824,7 +4827,7 @@ a special linker option. To provide it you need the following change to
   CMT=/MTd
   !endif
 
-</blockquote></pre></tt>
+</tt></pre></blockquote>
 
 Note that any of debug and release build may be profiled.
  
@@ -4850,15 +4853,15 @@ set GS_COMMAND_LINE=%GS_HOME%\bin\gswin32c.exe -I%GS_HOME%\lib;f:\afpl\fonts -r1
 set START_FUNCTION=_main
 set Path=%DEVSTUDIO%\Common\MSDev98\Bin;%DEVSTUDIO%\VC98\Bin
 PREP.EXE /OM /SF %START_FUNCTION% /FT   %GS_HOME%\bin\gswin32c.exe  
-If ERRORLEVEL 1 echo step 1 fails&exit
+If ERRORLEVEL 1 echo step 1 fails&amp;exit
 PROFILE  /I %GS_HOME%\bin\gswin32c.pbi  %GS_COMMAND_LINE%
-If ERRORLEVEL 1 echo step 2 fails&exit
+If ERRORLEVEL 1 echo step 2 fails&amp;exit
 PREP /M %GS_HOME%\bin\gswin32c /OT xxx.pbt 
-If ERRORLEVEL 1 echo step 3 fails&exit
+If ERRORLEVEL 1 echo step 3 fails&amp;exit
 PLIST /ST xxx.pbt >profile.txt
-If ERRORLEVEL 1 echo step 4 fails&exit
+If ERRORLEVEL 1 echo step 4 fails&amp;exit
 
-</blockquote></pre></tt>
+</tt></pre></blockquote>
 
 <p>
 This batch file to be adopted to your configuration :

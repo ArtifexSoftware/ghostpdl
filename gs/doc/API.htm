@@ -421,7 +421,6 @@ The <code>gsapi_init_with_args</code>, <b><tt>gsapi_run_*</tt></b> and
 	<td>Fatal error.
 <code>gsapi_exit()</code> must be called next.
 </table>
-</blockquote>
 
 <p>
 The <code>gsapi_run_*()</code> functions do not flush stdio.
@@ -432,7 +431,6 @@ must do this explicitly as shown in the example below.
 When executing a string with <code>gsapi_run_string_*()</code>,
 <code>currentfile</code> is the input from the string.
 Reading from <code>%stdin</code> uses the stdin callback.
-</blockquote>
 
 
 
@@ -488,7 +486,7 @@ int main(int argc, char *argv[])
     gsargv[9] = "input.ps";
     gsargc=10;
 
-    code = gsapi_new_instance(&minst, NULL);
+    code = gsapi_new_instance(&amp;minst, NULL);
     if (code &lt; 0)
 	return 1;
     code = gsapi_init_with_args(minst, gsargc, gsargv);
@@ -564,13 +562,13 @@ int main(int argc, char *argv[])
     int code, code1;
     int exit_code;
 
-    code = gsapi_new_instance(&minst, NULL);
+    code = gsapi_new_instance(&amp;minst, NULL);
     if (code < 0)
 	return 1;
     gsapi_set_stdio(minst, gsdll_stdin, gsdll_stdout, gsdll_stderr);
     code = gsapi_init_with_args(minst, argc, argv);
     if (code == 0)
-	code = gsapi_run_string(minst, start_string, 0, &exit_code);
+	code = gsapi_run_string(minst, start_string, 0, &amp;exit_code);
     code1 = gsapi_exit(minst);
     if ((code == 0) || (code == e_Quit))
 	code = code1;
@@ -595,17 +593,17 @@ int main(int argc, char *argv[])
     int code, code1;
     int exit_code;
 
-    code = gsapi_new_instance(&minst, NULL);
+    code = gsapi_new_instance(&amp;minst, NULL);
     if (code < 0)
 	return 1;
     code = gsapi_init_with_args(minst, argc, argv);
 
     if (code == 0) {
-	gsapi_run_string_begin(minst, 0, &exit_code);
-	gsapi_run_string_continue(minst, command, strlen(command), 0, &exit_code);
-	gsapi_run_string_continue(minst, "qu", 2, 0, &exit_code);
-	gsapi_run_string_continue(minst, "it", 2, 0, &exit_code);
-	gsapi_run_string_end(minst, 0, &exit_code);
+	gsapi_run_string_begin(minst, 0, &amp;exit_code);
+	gsapi_run_string_continue(minst, command, strlen(command), 0, &amp;exit_code);
+	gsapi_run_string_continue(minst, "qu", 2, 0, &amp;exit_code);
+	gsapi_run_string_continue(minst, "it", 2, 0, &amp;exit_code);
+	gsapi_run_string_end(minst, 0, &amp;exit_code);
     }
 
     code1 = gsapi_exit(minst);
@@ -627,7 +625,7 @@ operators to configure things and invoke library routines. For example,
 to parse a PDF file one could say:
 
 <pre>
-    code = gsapi_run_string(minst, "(example.pdf) .runlibfile", 0, &exit_code);
+    code = gsapi_run_string(minst, "(example.pdf) .runlibfile", 0, &amp;exit_code);
 </pre>
 
 and Ghostscript would open and process the file named "example.pdf" as 
@@ -706,9 +704,9 @@ Windows 24-bit RGB raster:
     char arg1[64];
     char arg2[64];
     char arg3[64];
-    code = gsapi_new_instance(&minst, NULL);
+    code = gsapi_new_instance(&amp;minst, NULL);
     gsapi_set_stdio(minst, gsdll_stdin, gsdll_stdout, gsdll_stderr);
-    code = gsapi_set_display_callback(minst, &display_callback);
+    code = gsapi_set_display_callback(minst, &amp;display_callback);
     sprintf(arg1, "-sDEVICE=display");
     sprintf(arg2, "-dDisplayHandle=%d", 0);
     sprintf(arg3, "-dDisplayFormat=%d", 
@@ -767,5 +765,5 @@ San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
-</body>
+</small></body>
 </html>

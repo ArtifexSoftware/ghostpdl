@@ -64,15 +64,13 @@ In such case, Ghostscipt returns zero instead of proper negative number.
 Bug <a href="http://bugs.ghostscript.com/show_bug.cgi?id=202735"
 class="offsite">#202735</a>, March 09, 2000.
 <p>
-<I>
-This might be able to be fixed by applying a large positive translation to
+<i>This might be able to be fixed by applying a large positive translation to
 the bbox CTM which would be subtracted from coordinates passed to the target
-device as well as from the results the bbox device reports.
+device as well as from the results the bbox device reports.</i>
 <p>
-If coordinates for the ImagingBBox[0] and [1] values, then negative
+<i>If coordinates for the ImagingBBox[0] and [1] values, then negative
 values are handled, but this is not reliable since there are places in
-the graphics library that depend on first quadrant coordinates.
-</I>
+the graphics library that depend on first quadrant coordinates.</i>
 
 <h3>Error messages are too low level and confusing.</h3>
 
@@ -416,13 +414,13 @@ if
 </pre></blockquote>
 Bug <a href="http://bugs.ghostscript.com/show_bug.cgi?id=220967"
 class="offsite">#220967</a>, October 31, 2000.
-<p><I>
-The handling of Orientation is a mess. The PLRM says quite explicitly
+<p>
+<i>The handling of Orientation is a mess. The PLRM says quite explicitly
 that it is only supported for roll devices, where the page size
 alone doesn't give enough information to decide whether to rotate
-the page.
+the page.</i>
 <p>
-The reason that Ghostscript accepts it for other devices at all
+<i>The reason that Ghostscript accepts it for other devices at all
 is twofold: displays are like roll media in that they don't have
 an inherent orientation, and almost none of the other Ghostscript
 devices actually specify their page sizes. Both of these reasons
@@ -433,12 +431,12 @@ the height, and now that setpagedevice and the Resource machinery
 are fully implemented, all printer drivers should be updated
 to provide the paper size information. Once these fixes are made
 (which will probably have some repercussions other places in
-the code), Ghostscript will handle Orientation properly.
+the code), Ghostscript will handle Orientation properly.</i>
 <p>
-This should be addressed when the "setpagedevice in C" project is
+<i>This should be addressed when the "setpagedevice in C" project is
 completed since part of this will require printer drivers to make
 page size information available to the setpagedevice logic.
-</I>
+</i>
 
 <h3>Filesystem implementation differences.</h3>
 Adobe implementations often treat the filesystem as flat. This means that the
@@ -448,9 +446,8 @@ and Ghostscript currently implements filenames that conform with the underlying
 operating system as is stated in this section about the %os% device. This
 can result from behaviour that is different from Adobe printer implementations.
 <br><br>
-<I>
-Current implementation is incompatible with most font installers. Installers
-expect that:
+<em>Current implementation is incompatible with most font installers. Installers
+expect that:</em>
 <ul>
 <li>"filenameforall" enumerates all files in all directories using the relative path name.
 Directory names, including . and .. are not enumerated
@@ -461,7 +458,6 @@ Directory names, including . and .. are not enumerated
 <ul>
 <li>"(w) file" operator creates directories if necessary.
 </ul>
-</I>
 
 <h3>Cannot load Adobe's fonts. </h3>
 The following program fails with Adobe fonts: 
@@ -474,12 +470,12 @@ The following program fails with Adobe fonts:
 Bug <a href="http://bugs.ghostscript.com/show_bug.cgi?id=226462"
 class="offsite">#226462</a>, December 20, 2000.
 <p>
-<I>
+<i>
 The 'findfont' operator and '/Font resourceforall' are very difficult to
 keep consistent, because the same logic algorithms must be implemented
 in two different ways. The problem is likely to be in lib/gs_fonts.ps,
 lib/gs_res.ps, and lib/gs_cidcm.ps.
-</I>
+</i>
 <h3> There's no %ram% device.</h3>
 GS doesn't have %ram% device reguired on all Level 3 products. 
 It is documented in PS Supplement 3010 and 3011 dated August 30, 1999 
@@ -596,5 +592,5 @@ San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
-</body>
+</small></body>
 </html>

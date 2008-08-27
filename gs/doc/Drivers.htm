@@ -1949,7 +1949,8 @@ that the filling algorithm can subdivide edges and still guarantee
 that the exact same pixels will be filled. If
 <code>swap_axes</code> is set, the meanings of X and Y are
 interchanged. 
-</dl>
+</dd>
+
 <dt><code>int (*fill_parallelogram)(gx_device&nbsp;*dev,
 fixed&nbsp;px, fixed&nbsp;py, fixed&nbsp;ax, fixed&nbsp;ay, fixed&nbsp;bx,
 fixed&nbsp;by, const&nbsp;gx_drawing_color&nbsp;*pdcolor,
@@ -1960,26 +1961,20 @@ gs_logical_operation_t&nbsp;lop)</code> <b><em>[OPTIONAL]</em></b>
 any of the parameters, so the parallelogram may have any orientation
 relative to the coordinate axes.
 
-
-<dl>
 <dt><code>int (*fill_triangle)(gx_device&nbsp;*dev, fixed&nbsp;px,
 fixed&nbsp;py, fixed&nbsp;ax, fixed&nbsp;ay, fixed&nbsp;bx, fixed&nbsp;by,
 const&nbsp;gx_drawing_color&nbsp;*pdcolor,
 gs_logical_operation_t&nbsp;lop)</code> <b><em>[OPTIONAL]</em></b>
 <dd>Fill a triangle whose corners are <em>(px,py)</em>,
 <em>(px+ax,py+ay)</em>, and <em>(px+bx,py+by)</em>.
-</dl>
 
-<dl>
 <dt><code>int (*draw_thin_line)(gx_device&nbsp;*dev,
 fixed&nbsp;fx0, fixed&nbsp;fy0, fixed&nbsp;fx1, fixed&nbsp;fy1,
 const&nbsp;gx_drawing_color&nbsp;*pdcolor,
 gs_logical_operation_t&nbsp;lop)</code> <b><em>[OPTIONAL]</em></b>
 <dd>Draw a one-pixel-wide line from <em>(fx0,fy0)</em> to
 <em>(fx1,fy1)</em>.
-</dl>
 
-<dl>
 <dt><code>int (*draw_line)(gx_device&nbsp;*dev, int&nbsp;x0, int&nbsp;y0,
 int&nbsp;x1, int&nbsp;y1, gx_color_index&nbsp;color)</code>
 <b><em>[OPTIONAL] [OBSOLETE]</em></b>
@@ -2753,7 +2748,7 @@ virtual function <code>text_begin</code>. It should create a new instance of
 and assign a special function to <code>gs_text_enum_t::procs.process</code>.
 The function will receive <code>pte</code>. It should take the top level font from
 <code>pte->orig_font</code>,
-and iterate with <code>font->procs.next_char_glyph(pte, ..., &glyph)</code>.
+and iterate with <code>font->procs.next_char_glyph(pte, ..., &amp;glyph)</code>.
 The last argument receives a <code>gs_glyph</code> value, which encodes a
 <code>Postscript</code> character name or CID (and also stores it into
 <code>pte->returned.current_glyph</code>).
@@ -3187,7 +3182,7 @@ my_put_params(gx_device *pdev, gs_param_list *plist) {<br />
 &nbsp;&nbsp;&nbsp;&nbsp;my_device *dev = (my_device *)pdev;<br />
 &nbsp;&nbsp;&nbsp;&nbsp;int MediaSource = dev->myMediaSource;<br />
 <br />
-&nbsp;&nbsp;&nbsp;&nbsp;code = param_read_int(plist, "%MediaSource", &MediaSource);<br />
+&nbsp;&nbsp;&nbsp;&nbsp;code = param_read_int(plist, "%MediaSource", &amp;MediaSource);<br />
 <br />
 &nbsp;&nbsp;&nbsp;&nbsp;switch (MediaSource) {<br />
 &nbsp;&nbsp;&nbsp;&nbsp;case 0:<br />

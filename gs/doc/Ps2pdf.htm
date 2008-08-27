@@ -160,7 +160,6 @@ and <code>1</code> (seascape). The orientation can be set from the
 command line as <code>-c "&lt;&lt;/Orientation 3&gt;&gt; setpagedevice"</code>
 using Ghostscript directly but cannot be set in <code>ps2pdf</code>.
 See <a href="#Limitations">Limitations</a> below.
-</pre>
 
 <p>
 Ghostscript passes the orientation values from DSC comments to
@@ -294,18 +293,19 @@ The following options control a conversion into PDF 1.2:
 <dl>
 
 <dt><code>-dPatternImagemask=<em>boolean</em></code>
-<dd>With <code>CompatibilityLevel &LT 1.3 </code> it specifies whether the target viewer
-handles <code>ImageMask</code> with a pattern color. Some old viewers,
-such as Ghostscript 3.30 fail with such constructs.
+<dd>With <code>CompatibilityLevel &lt; 1.3 </code> it specifies whether 
+the target viewer handles <code>ImageMask</code> with a pattern color. 
+Some old viewers, such as Ghostscript 3.30 fail with such constructs.
 Seting this option to false, one can get more compatibility,
 but the mask interpolation is lost.
-With <code>CompatibilityLevel &GT= 1.3 </code> this option is being ignored.
+With <code>CompatibilityLevel &ge; 1.3 </code> this option is being 
+ignored.
 Default value is <code>false</code>.
 
 <dt><code>-dMaxClipPathSize=<em>integer</em></code>
 <dd>Specifies the maximum number of elements in the clipping path
 that the target viewer can handle. This option is used only with 
-<code>CompatibilityLevel &LT 1.3</code> and 
+<code>CompatibilityLevel &lt; 1.3</code> and 
 <code>PatternImagemask=false</code>,
 and only when converting a mask into a clipping path.
 If the clipping path exceeds the specified size,
@@ -315,7 +315,7 @@ The value of the option counts straight path segments
 Default value is <code>12000</code>.
 
 <dt><code>-dMaxShadingBitmapSize=<em>integer</em></code>
-<dd>With <code>CompatibilityLevel &LT 1.3</code> it specifies 
+<dd>With <code>CompatibilityLevel &lt; 1.3</code> it specifies 
 the maximum number of bytes allowed for representing a shading as a bitmap.
 If a shading exceeds this value, the resolution of the output bitmap
 is being reduces to fit into the specified frame.
@@ -324,19 +324,19 @@ in <code>ProcessColorModel</code>, assumes 8 bits per sample,
 and doesn't account an image compression or filtering.
 Also note that reducing the resolution results unsmooth shading boundaries.
 
-With <code>CompatibilityLevel &GT= 1.3</code> this option is being ignored.
-Default value is <code>256000</code>.
+With <code>CompatibilityLevel &ge; 1.3</code> this option is being 
+ignored. Default value is <code>256000</code>.
 For the best quality one can set the maximal integer value,
 but the output file size may dramatically increase.
 Therefore the user should choose a compromise value.
 
 <dt><code>-dHaveTrueTypes=<em>boolean</em></code>
-<dd>With <code>CompatibilityLevel &LT 1.3</code> it specifies 
+<dd>With <code>CompatibilityLevel &lt; 1.3</code> it specifies 
 whether the target viewer can handle TrueType fonts.
 If not, TrueType fonts are being converted into raster fonts
 with resolution specified in <code>HWResolution</code>.
-With <code>CompatibilityLevel &GT= 1.3</code> this option is being ignored.
-Default value is <code>true</code>.
+With <code>CompatibilityLevel &ge; 1.3</code> this option is being 
+ignored. Default value is <code>true</code>.
 
 </dl>
 
@@ -347,7 +347,7 @@ The following option controls a conversion into PDF 1.3:
 <dl>
 
 <dt><code>-dHaveTransparency=<em>boolean</em></code>
-<dd>With <code>CompatibilityLevel &GT= 1.4</code> it specifies 
+<dd>With <code>CompatibilityLevel &ge; 1.4</code> it specifies 
 whether the target viewer can handle PDF 1.4 transparency objects.
 If not, transparency objects are being converted into plain images.
 Default value is <code>true</code>.
@@ -367,7 +367,7 @@ owner password.
 <dt><code>-sUserPassword=</code><em>string</em>
 <dd>Defines the user password for opening the document.
 If empty, the document can be opened with no password,
-but the owner password is required to edit it.
+but the owner password is required to eÂdit it.
 </dl>
 
 <dl>

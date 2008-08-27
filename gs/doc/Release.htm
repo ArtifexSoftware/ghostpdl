@@ -153,7 +153,9 @@ Releases are also distributed from
 <blockquote>
 <a
 href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/GPL/" 
-class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/GPL/</a> or
+class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/GPL/</a> and
+<br><a href="http://ghostscript.com/releases/" 
+class="offsite">http://ghostscript.com/releases/</a>
 </blockquote>
 
 <h2><a name="Release_numbering"></a>Release numbering</h2>
@@ -417,7 +419,7 @@ to ensure the repository is up to date.
 Create a new changelog by running
 
 <blockquote><pre>
-svn log -rHEAD:<i>rev</i> --xml --verbose > doc/changelog.xml
+svn log -rHEAD:<i>rev</i> --xml --verbose &gt; doc/changelog.xml
 </pre></blockquote>
 
 where <i>rev</i> is the revision number of the branch point for the 
@@ -426,7 +428,7 @@ previous release.
 <p>
 This consolidates all the commit logs since the previous release in a 
 readable format. You may also wish to remap user names in the 
-<author/> tags of the output to the real names of the developers.
+&lt;author/&gt; tags of the output to the real names of the developers.
 
 <p>
 Create the html-format changes and details documents as follows:
@@ -483,10 +485,10 @@ Pull a fresh copy for distribution from the repository:
 <p>
 Generate the text versions of the README and PUBLIC documents:
 
-<blockquote>
-<pre><code>cd ghostscript-#.##</code>
-<code>lynx -dump -nolist doc/Readme.htm &gt; doc/README</code>
-</blockquote>
+<blockquote><pre>
+cd ghostscript-#.##
+lynx -dump -nolist doc/Readme.htm &gt; doc/README
+</pre></blockquote>
 
 <p>
 Add copies of needed third-party libraries for the release. Versions
@@ -497,8 +499,9 @@ is only needed when doing special feature releases.
 For the unix source distributions only, generate the configure
 scripts. From the top level directory, run 
 
-<blockquote><pre><tt>./autogen.sh</tt>
-<tt>make distclean</tt>
+<blockquote><pre>
+./autogen.sh
+make distclean
 </pre></blockquote>
 
 This should create links to <tt>configure.ac</tt> and
@@ -518,8 +521,8 @@ Move back to directory containing the distribution code and make the
 source archives with:
 
 <blockquote><pre>
-<tt>tar cvzf ghostscript-#.##.tar.gz ghostscript-#.##/*</tt>
-<tt>zcat ghostscript-#.##.tar.gz | bzip2 -c > ghostscript-#.##.tar.bz2</tt>
+tar cvzf ghostscript-#.##.tar.gz ghostscript-#.##/*
+zcat ghostscript-#.##.tar.gz | bzip2 -c &gt; ghostscript-#.##.tar.bz2
 </pre></blockquote>
 
 <p>
@@ -832,5 +835,5 @@ San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
-</body>
+</small></body>
 </html>
