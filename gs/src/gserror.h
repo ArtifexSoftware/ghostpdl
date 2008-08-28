@@ -38,7 +38,7 @@ int gs_log_error(int, const char *, int);
 
 /*
  * Error reporting macros.
- * 
+ *
  */
 
 #ifndef __printflike
@@ -57,8 +57,11 @@ int gs_throw_imp(const char *func, const char *file, int line,
 
 
 
-/* Use throw at origin of error 
+/* Use throw at origin of error
 */
+#define gs_throw_code(code) \
+    gs_throw((code), gs_errstr((code)));
+
 #define gs_throw(code, fmt) \
     gs_throw_imp(__func__, __FILE__, __LINE__, 0, code, fmt)
 #define gs_throw1(code, fmt, arg1) \
@@ -81,8 +84,11 @@ int gs_throw_imp(const char *func, const char *file, int line,
     gs_throw_imp(__func__, __FILE__, __LINE__, 0, code, fmt, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
 
 
-/* Bubble the code up the stack 
+/* Bubble the code up the stack
 */
+#define gs_rethrow_code(code) \
+    gs_rethrow((code), gs_errstr((code)))
+
 #define gs_rethrow(code, fmt) \
     gs_throw_imp(__func__, __FILE__, __LINE__, 1, code, fmt)
 #define gs_rethrow1(code, fmt, arg1) \
@@ -107,7 +113,7 @@ int gs_throw_imp(const char *func, const char *file, int line,
 
 
 /* This will cause trouble, as it implies you are fixing an error
- * the system will spew messages 
+ * the system will spew messages
  */
 #define gs_catch(code, fmt) \
     gs_throw_imp(__func__, __FILE__, __LINE__, 2, code, fmt)
