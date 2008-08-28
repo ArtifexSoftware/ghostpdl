@@ -236,7 +236,7 @@ svg_open_device(gx_device *dev)
     code = gdev_vector_open_file_options(vdev, 512,
 	VECTOR_OPEN_FILE_SEQUENTIAL);
     if (code < 0)
-      return code;
+      return gs_rethrow_code(code);
 
     /* svg-specific initialization goes here */
     svg->header = 0;
@@ -264,7 +264,7 @@ svg_output_page(gx_device *dev, int num_copies, int flush)
 
     svg_write(svg, "\n<!-- svg_output_page -->\n");
     if (ferror(svg->file))
-      return_error(gs_error_ioerror);
+      return gs_throw_code(gs_error_ioerror);
 
     return gx_finish_output_page(dev, num_copies, flush);
 }
@@ -292,7 +292,7 @@ svg_close_device(gx_device *dev)
 	(byte *)svg->strokecolor, 8, "svg_close_device");
 
     if (ferror(svg->file))
-      return_error(gs_error_ioerror);
+      return gs_throw_code(gs_error_ioerror);
 
     return gdev_vector_close_file((gx_device_vector*)dev);
 }
@@ -308,7 +308,7 @@ svg_get_params(gx_device *dev, gs_param_list *plist)
     /* call our superclass to add its standard set */
     code = gdev_vector_get_params(dev, plist);
     if (code < 0)
-      return code;
+      return gs_rethrow_code(code);
 
     /* svg specific parameters are added to plist here */
 
@@ -328,7 +328,7 @@ svg_put_params(gx_device *dev, gs_param_list *plist)
     /* call our superclass to get its parameters, like OutputFile */
     code = gdev_vector_put_params(dev, plist);
     if (code < 0)
-      return code;
+      return gs_rethrow_code(code);
 
     return code;
 }
@@ -530,7 +530,7 @@ svg_setlinecap(gx_device_vector *vdev, gs_line_cap cap)
 	"triangle", "unknown"};
 
     if (cap < 0 || cap > gs_cap_unknown)
-	return_error(gs_error_rangecheck);
+	return gs_throw_code(gs_error_rangecheck);
     dprintf1("svg_setlinecap(%s)\n", linecap_names[cap]);
 
     svg->linecap = cap;
@@ -546,7 +546,7 @@ svg_setlinejoin(gx_device_vector *vdev, gs_line_join join)
 	"none", "triangle", "unknown"};
 
     if (join < 0 || join > gs_join_unknown)
-	return_error(gs_error_rangecheck);
+	return gs_throw_code(gs_error_rangecheck);
     dprintf1("svg_setlinejoin(%s)\n", linejoin_names[join]);
 
     svg->linejoin = join;
@@ -598,7 +598,7 @@ svg_setfillcolor(gx_device_vector *vdev, const gs_imager_state *pis,
 
     fill = svg_make_color(svg, pdc);
     if (!fill)
-      return gs_rethrow(gs_error_VMerror, "could not serialize fill color");
+      return gs_rethrow_code(gs_error_VMerror);
     if (svg->fillcolor && !strcmp(fill, svg->fillcolor))
       return 0; /* not a new color */
 
@@ -624,7 +624,7 @@ svg_setstrokecolor(gx_device_vector *vdev, const gs_imager_state *pis,
 
     stroke = svg_make_color(svg, pdc);
     if (!stroke)
-      return gs_rethrow(gs_error_VMerror, "could not serialize stroke color");
+      return gs_rethrow_code(gs_error_VMerror);
     if (svg->strokecolor && !strcmp(stroke, svg->strokecolor))
       return 0; /* not a new color */
 
