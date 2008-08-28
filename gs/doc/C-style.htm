@@ -1099,31 +1099,11 @@ someproc(... <code>int x</code> ...)<br>
 <h4><a name="Compiler_warnings"></a>Compiler warnings</h4>
 
 <p>
-The following section refers to the warnings produced by <code>gcc</code>:
-your compiler may produce different ones.
-
-<p>
-It's OK if compilation produces the following warnings:
-
-<ul>
-<li><code>&lt;name&gt; might be used uninitialized in this function</code>
-<li><code>cast discards `const' from pointer target type</code>
-</ul>
-
-<p>
-The first of these often occurs because the compiler isn't aware of control
-flow restrictions that guarantee the variable will be initialized before
-use: if it occurs in new code, check the code carefully, but don't worry
-about the message.  The second is often unavoidable in code that initializes
-or frees a structure that is otherwise <code>const</code> during its
-lifetime.
-<p>
-
-Do work hard to eliminate all warnings other than these,
-since they often indicate the possible presence of coding errors.
-In particular, get rid of warnings about parameter passing or
-initialization that discards <code>const</code>,
-by using explicit casts.
+We want Ghostscript to compile with no warnings. This is a constant 
+battle as compilers change and new code is added. Work hard to eliminate 
+warnings by improving the code structure instead of patching over them. 
+If the compiler can't figure out that a variable is always initialized, 
+a future reader will probably have trouble as well.
 
 <hr>
 
