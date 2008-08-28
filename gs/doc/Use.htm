@@ -115,7 +115,8 @@
 </ul>
 <li><a href="#OpenWindows_fonts">Sun OpenWindows</a>
 </ul>
-<li><a href="#FAPI_run">Appendix: Running Ghostscript with 3d party font renderers</a>
+<li><a href="#FAPI_run">Appendix: Running Ghostscript with third-party 
+font renderers</a>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -1373,7 +1374,7 @@ possibly a specific one for each document.
 <h3><a name="UnicodeTT"></a>Using Unicode True Type fonts</h3>
 
 Ghostscript can handle True Type fonts with the full Unicode character set.
-For doing that, a 3d party software should generate a Postscript
+For doing that, a third-party software should generate a Postscript
 or PDF document with a text, which is encoded with the 
 UTF-16 encoding. Ghostscript may be used for converting
 such Postscript documents to PDF and for 
@@ -3373,12 +3374,13 @@ Ghostscript.symbolFonts: \
 </pre>
 
 
-<h2><a name="FAPI_run"></a>Running Ghostscript with 3d party font renderers</h2>
+<h2><a name="FAPI_run"></a>Running Ghostscript with third-party font renderers</h2>
 
 <p>
-Font API (FAPI) is a new feature which allows to attach 3d party font renderers to Ghostscript.
-This section explains how to run Ghostscript with 3d party font renderers,
-such as UFST or Free Type.
+Font API (FAPI) is a new feature which allows to attach third-party font 
+renderers to Ghostscript.
+This section explains how to run Ghostscript with third-party font 
+renderers, such as UFST or Free Type.
 
 <p>
 <em>Note: To run Ghostscript with UFST you need a license from Monotype Imaging.
@@ -3405,7 +3407,8 @@ with the UFST bridge. Refer <a href="Make.htm#UFST_build">How to build Ghostscri
 Both bridges may run together.
 
 <p>
-There are 2 ways to handle fonts with a 3d party font renderer (FAPI). First, you can substitute
+There are 2 ways to handle fonts with a third-party font renderer (FAPI). 
+First, you can substitute
 any FAPI-handled font to a resident PostScript font, using special map files 
 <code>FAPIfontmap</code> and <b><tt>FAPIcidfmap</tt></b>.
 Second, you can redirect PostScript fonts to FAPI, setting
