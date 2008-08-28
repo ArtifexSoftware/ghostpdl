@@ -87,6 +87,12 @@ LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\L
 !endif
 !endif
 
+!if $(MSVC_VERSION) == 9
+! ifndef DEVSTUDIO
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 9
+! endif
+!endif
+
 # Some environments don't want to specify the path names for the tools at all.
 # Typical definitions for such an environment would be:
 #   MSINCDIR= LIBDIR= COMP=cl COMPAUX=cl RCOMP=rc LINK=link
