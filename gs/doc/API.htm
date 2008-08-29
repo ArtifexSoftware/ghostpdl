@@ -136,7 +136,7 @@ of the interpreter within a single process.
 
 <p>
 The functions exported by the DLL/shared object are described 
-in the header file <a href="../src/iapi.h"><code>iapi.h</code></a>
+in the header file <a href="../psi/iapi.h"><code>iapi.h</code></a>
 and are summarised below.  Omitted from the summary are
 the calling convention (e.g. __stdcall), details of return 
 values and error handling.
@@ -305,7 +305,7 @@ Set the callback function for polling.
 This is used for handling window events or cooperative
 multitasking.  This function will only be called if
 the Ghostscript interpreter was compiled with <code>CHECK_INTERRUPTS</code>
-as described in <code><a href="../src/gpcheck.h">gpcheck.h</a></code>.
+as described in <code><a href="../base/gpcheck.h">gpcheck.h</a></code>.
 The polling function should return zero if all is well,
 and return negative if it wants ghostscript to abort.
 The polling function must be fast.
@@ -318,7 +318,7 @@ device.  If the <a href="#display">display</a> device is used,
 this must be called after 
 <code>gsapi_new_instance()</code>
 and before <code>gsapi_init_with_args()</code>.
-See <code><a href="../src/gdevdsp.h">gdevdsp.h</a></code>
+See <code><a href="../base/gdevdsp.h">gdevdsp.h</a></code>
 for more details.
 </blockquote>
 
@@ -326,7 +326,7 @@ for more details.
 <blockquote>
 Initialise the interpreter.
 This calls <code>gs_main_init_with_args()</code> in 
-<code><a href="../src/imainarg.c">imainarg.c</a></code>.
+<code><a href="../psi/imainarg.c">imainarg.c</a></code>.
 See below for <a href="#return_codes">return codes</a>.
 The arguments are the same as the "C" main function:
 argv[0] is ignored and the user supplied arguments 
@@ -653,14 +653,14 @@ choice of two standard input/output methods.
 </ul>
 <p>
 The callback functions are described in 
-<a href="../src/iapi.h"><code>iapi.h</code></a>.
+<a href="../psi/iapi.h"><code>iapi.h</code></a>.
 
 
 <h2><a name="display"></a>Display device</h2>
 <p>
 The <code>display</code> device is available for use with
 the Ghostscript interpreter library.  This is described in the file 
-<code><a href="../src/gdevdsp.h">gdevdsp.h</a></code>.
+<code><a href="../base/gdevdsp.h">gdevdsp.h</a></code>.
 This device provides you with access to the raster output of
 Ghostscript.  It is your responsibility to copy this raster
 to a display window or printer.
@@ -695,7 +695,7 @@ Options include
 <li> 16 bits/pixel with 555 or 565 bitfields.
 </ul>
 The format values are described in 
-<code><a href="../src/gdevdsp.h">gdevdsp.h</a></code>.
+<code><a href="../base/gdevdsp.h">gdevdsp.h</a></code>.
 The format is flexible enough to support common Windows, OS/2, Linux
 and Mac raster formats.  To select the display device with a 
 Windows 24-bit RGB raster:
@@ -727,16 +727,16 @@ The display device provides you with the address and size of the
 raster using the <code>display_size()</code> callback.
 You are then responsible for displaying this raster.
 Some examples are in 
-<code><a href="../src/dwmain.c">dwmain.c</a></code> (Windows),
-<code><a href="../src/dpmain.c">dpmain.c</a></code> (OS/2) and  
-<code><a href="../src/dxmain.c">dxmain.c</a></code> (X11/Linux), and  
-<code><a href="../src/dmmain.c">dmmain.c</a></code> (MacOS Classic or Carbon).  
+<code><a href="../psi/dwmain.c">dwmain.c</a></code> (Windows),
+<code><a href="../psi/dpmain.c">dpmain.c</a></code> (OS/2) and  
+<code><a href="../psi/dxmain.c">dxmain.c</a></code> (X11/Linux), and  
+<code><a href="../psi/dmmain.c">dmmain.c</a></code> (MacOS Classic or Carbon).  
 <p>
 On some platforms, the calling convention for the display device callbacks in 
-<code><a href="../src/gdevdsp.h">gdevdsp.h</a></code>
+<code><a href="../base/gdevdsp.h">gdevdsp.h</a></code>
 is not the same as the exported 
 <a href="#Exported_functions "><code>gsapi_*()</code></a>
-functions in <a href="../src/iapi.h"><code>iapi.h</code></a>.
+functions in <a href="../psi/iapi.h"><code>iapi.h</code></a>.
 
 <p>
 

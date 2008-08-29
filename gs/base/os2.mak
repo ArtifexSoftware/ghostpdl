@@ -28,10 +28,10 @@
 # This makefile has never been tested with any other values than these,
 # and almost certainly won't work with other values.
 BINDIR=bin
-GLSRCDIR=src
+GLSRCDIR=base
 GLGENDIR=obj
 GLOBJDIR=obj
-PSSRCDIR=src
+PSSRCDIR=psi
 PSLIBDIR=lib
 PSRESDIR=Resource
 PSGENDIR=obj

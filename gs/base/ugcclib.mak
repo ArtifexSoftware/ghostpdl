@@ -14,7 +14,7 @@
 # makefile for Unix / gcc library testing.
 
 BINDIR=./libobj
-GLSRCDIR=./src
+GLSRCDIR=./base
 GLGENDIR=./libobj
 GLOBJDIR=./libobj
 PSRESDIR=./Resource

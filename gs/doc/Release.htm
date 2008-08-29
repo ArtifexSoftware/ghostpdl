@@ -82,18 +82,14 @@ be sure to specify all command lines, file names, etc. in explicit
 detail.
 
 <p>
-File names below that don't include an explicit subdirectory name are in the
-<code>src</code> subdirectory.
-
-<p>
 If you do plan to make your own distribution, please be aware of some items
 you will want to change.
 
 <ul>
 
 <li>If you make any significant changes, please edit
-<code>gscdef.c</code> to change <b><tt>GS_PRODUCTFAMILY</tt></b> and
-<code>GS_PRODUCT</code> from "GPL Ghostscript" to something else,
+<code>base/gscdef.c</code> to change <b><tt>GS_PRODUCTFAMILY</tt></b> 
+and <code>GS_PRODUCT</code> from "GPL Ghostscript" to something else,
 in order to avoid confusion with Artifex releases.
 
 <li>In the same file, you may also want to edit <code>GS_COPYRIGHT</code>
@@ -181,7 +177,7 @@ Release numbers appear in the following places in the Ghostscript files:
 <li>In <code>lib/gs_init.ps</code>, as an integer (release number x100) at the beginning of the
 file just after the initial comment blocks.
 
-<li>In <code>src/version.mak</code>, split into 3 lines.
+<li>In <code>base/version.mak</code>, split into 3 lines.
 
 <li>In <code>doc/News.htm</code>, in the two headers and their labels and at the very end in
 the copyright footer.
@@ -267,7 +263,7 @@ Update references to the date for release:
 line. That is, in parentheses after the <tt>VERSION X.YY</tt> heading,
 and in the copyright footer both the year and the release date.
 
-<li>In <code>src/dwsetup.rc</code> and <b><tt>src/winint.mak</tt></b>,
+<li>In <code>psi/dwsetup.rc</code> and <b><tt>psi/winint.mak</tt></b>,
 update the year in the embedded copyright notice.
 
 </ul>
@@ -631,7 +627,8 @@ then repackage in a zip file as follows:
 <blockquote>
 <code>zip -r temp.zip gsN.NN/LICENSE gsN.NN/doc gsN.NN/examples 
   gsN.NN/icclib gsN.NN/ijs gsN.NN/jasper gsN.NN/jbig2dec gsN.NN/jpeg
-  gsN.NN/lib gsN.NN/libpng gsN.NN/src gsN.NN/Resource gsN.NN/zlib</code>
+  gsN.NN/lib gsN.NN/libpng gsN.NN/base gsN.NN/psi gsN.NN/Resource 
+  gsN.NN/zlib</code>
 </blockquote>
 Unzip converting the line endings to CRLF:
 <blockquote>
@@ -662,12 +659,12 @@ Alternatively, the command line version of WinZip
 (<code>wzzip.exe</code>) can be used by replacing the 
 Info-Zip command line options <code>-9 -r</code>
 with <code>-ex -P</code> in
-<code><a href="../src/winint.mak">winint.mak</a></code>.
+<code><a href="../psi/winint.mak">winint.mak</a></code>.
 <p>
 You will need WinZip Self-Extractor for building the
 self extracting archive.  This is commercial software.
 You may need to update the path <code>WINZIPSE_XE</code> in 
-<code><a href="../src/winint.mak">winint.mak</a></code>.
+<code><a href="../psi/winint.mak">winint.mak</a></code>.
 <p>
 Unzip the jpeg, libpng and zlib libraries, then make ghostscript
 as documented in <a href="Make.htm">Make.htm</a>.

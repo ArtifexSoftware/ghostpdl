@@ -37,7 +37,7 @@ GENDIR?=./obj
 
 # The sources are taken from these directories:
 MAINSRCDIR?=../main
-PSSRCDIR?=../gs/src
+PSSRCDIR?=../gs/psi
 SVGSRCDIR?=../svg
 PSLIBDIR?=../gs/lib
 ICCSRCDIR?=../gs/icclib

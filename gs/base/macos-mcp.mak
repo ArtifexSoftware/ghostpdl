@@ -26,10 +26,10 @@
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
 BINDIR=./bin
-GLSRCDIR=./src
+GLSRCDIR=./base
 GLGENDIR=./obj
 GLOBJDIR=./obj
-PSSRCDIR=./src
+PSSRCDIR=./psi
 PSLIBDIR=./lib
 PSRESDIR=./Resource
 PSGENDIR=./obj

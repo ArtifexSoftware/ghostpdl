@@ -5,7 +5,7 @@ import os, string
 # not used may use later
 def get_line_directives_table(file):
     # not intended to be portable or useful outside of gs universe.
-    CPP_FLAGS="-I../gs/src/ -I../pl/ -I../pcl -I../pxl -I../main/obj -DDEBUG"
+    CPP_FLAGS="-I../gs/base/ -I../gs/psi -I../pl/ -I../pcl -I../pxl -I../main/obj -DDEBUG"
     CPP="gcc -E"
     CPP_COMMAND=CPP + " " + CPP_FLAGS + " " + file
     CPP_IN=os.popen(CPP_COMMAND, 'r')

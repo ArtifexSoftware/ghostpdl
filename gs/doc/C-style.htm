@@ -269,7 +269,7 @@ process of eliminating all of them.
 
 <li>Do not use <code>extern</code> in <code>.c</code> files, only in
 <code>.h</code> files, unless you have a very good reason for it (e.g.,
-as in <a href="../src/iconf.c">iconf.c</a>).  There are too many such
+as in <a href="../psi/iconf.c">iconf.c</a>).  There are too many such
 <code>extern</code>s in the code now: we are eliminating them over time.
 
 <li>Do not declare the same name as both <code>static</code>
@@ -538,7 +538,7 @@ later versions of the standard such as C 9X.
 
 <li>Do not use any features from <code>stdio.h</code> that assume the
 existence of <code>stdin</code>, <code>stdout</code>, or
-<code>stderr</code>.  See <a href="../src/gsio.h">gsio.h</a> for the full
+<code>stderr</code>.  See <a href="../base/gsio.h">gsio.h</a> for the full
 list.  Instead, use <code>gs_stdin</code> et al.
 
 </ul>
@@ -574,7 +574,7 @@ produce multiple closed copies, causing duplicate name errors at link time.
 <code>inline</code> procedures in header files, regardless of compiler.
 Unfortunately, the only way we've found to make this fully portable involves
 a fair amount of boilerplate.  For details, please see <a
-href="../src/stdpre.h">stdpre.h</a>.
+href="../base/stdpre.h">stdpre.h</a>.
 
 </dl>
 
@@ -1260,8 +1260,8 @@ A value to be returned from a procedure:
 <tr valign=top>	<td align=right>&lt; 0
 	<td>&nbsp;&nbsp;&nbsp;&nbsp;
 	<td>An error code defined in
-<a href="../src/gserrors.h">gserrors.h</a>
-(or <a href="../src/ierrors.h">ierrors.h</a>)
+<a href="../base/gserrors.h">gserrors.h</a>
+(or <a href="../psi/ierrors.h">ierrors.h</a>)
 <tr valign=top>	<td align=right>0
 	<td>&nbsp;
 	<td>Normal return
@@ -1281,7 +1281,7 @@ A value returned from a stream procedure:
 <tr valign=top>	<td align=right>&lt; 0
 	<td>&nbsp;&nbsp;&nbsp;&nbsp;
 	<td>An exceptional condition as defined in
-<a href="../src/scommon.h">scommon.h</a>
+<a href="../base/scommon.h">scommon.h</a>
 <tr valign=top>	<td align=right>0
 	<td>&nbsp;
 	<td>Normal return (or, from the "<code>process</code>" procedure, means that more input is needed)
@@ -1498,7 +1498,7 @@ typedef struct gx_device_null_s {<br>
 Note that the above example is <strong>not</strong> the actual definition of
 the <code>gx_device</code> structure type: the actual type has some
 additional complications because it has a finalization procedure.  See <a
-href="../src/gxdevcli.h">src/gxdevcli.h</a> for the details.
+href="../base/gxdevcli.h">base/gxdevcli.h</a> for the details.
 
 <p>
 If you add members to a root class (such as <code>gx_device</code> in
@@ -1556,7 +1556,7 @@ file and line: this is often helpful for identifying the original cause of
 an error.
 
 <p>
-See the file <a href="../src/gserrors.h">src/gserrors.h</a> for the error
+See the file <a href="../base/gserrors.h">base/gserrors.h</a> for the error
 return codes used by the graphics library, most of which correspond directly
 to PostScript error conditions.
 

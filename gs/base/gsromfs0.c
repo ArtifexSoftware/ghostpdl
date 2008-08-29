@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id:$ */
+/* $Id$ */
 /* dummy gsromfs source module used when COMPILE_INITS=0 */
 
 #include "stdint_.h"

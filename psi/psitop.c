@@ -23,7 +23,7 @@
 #include "gdebug.h"
 #include "gp.h"
 #include "gserrors.h"
-#include "../gs/src/errors.h"	/* FIXME: Microsoft seems to pull in <errors.h> */
+#include "../gs/base/errors.h"	/* FIXME: MSVC seems to pull in <errors.h> */
 #include "gstypes.h"
 #include "gsmemory.h"
 #include "gsmalloc.h"

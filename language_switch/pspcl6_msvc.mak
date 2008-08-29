@@ -26,10 +26,10 @@ GENDIR=.\obj
 APPSRCDIR=.
 !endif
 !ifndef GLSRCDIR
-GLSRCDIR=..\gs\src
+GLSRCDIR=..\gs\base
 !endif
 !ifndef PSSRCDIR
-PSSRCDIR=..\gs\src
+PSSRCDIR=..\gs\psi
 !endif
 !ifndef PSISRCDIR
 PSISRCDIR=..\psi

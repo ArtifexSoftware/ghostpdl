@@ -36,7 +36,7 @@
  *  http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf
  */
 
-/* $Id:$ */
+/* $Id$ */
 /* AES block cipher implementation from XYSSL */
 
 #include "string_.h"	/* memcmp() */

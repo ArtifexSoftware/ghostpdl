@@ -36,7 +36,7 @@ GS=gslib
 BINDIR=.\debugobj
 !endif
 !ifndef GLSRCDIR
-GLSRCDIR=.\src
+GLSRCDIR=.\base
 !endif
 !ifndef PSRESDIR
 PSRESDIR=.\Resource

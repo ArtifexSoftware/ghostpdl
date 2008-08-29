@@ -37,7 +37,7 @@ MAINSRCDIR=..\main
 !endif
 
 !ifndef PSSRCDIR
-PSSRCDIR=..\gs\src
+PSSRCDIR=..\gs\psi
 !endif
 
 !ifndef XPSSRCDIR

@@ -20,7 +20,7 @@ dnl ------------------------------------------------
 
 AC_INIT
 AC_PREREQ(2.52)
-AC_CONFIG_SRCDIR(src/gs.c)
+AC_CONFIG_SRCDIR(psi/gs.c)
 
 dnl Inherit compiler flags from the environment...
 CFLAGS="${CFLAGS:=}"

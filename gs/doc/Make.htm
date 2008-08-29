@@ -370,9 +370,12 @@ directory.
 	<td>&nbsp;&nbsp;&nbsp;&nbsp;
 	<th valign=bottom align=left>Contents
 <tr>	<td colspan=5><hr>
-<tr>	<td><code>src/</code>
+<tr>	<td><code>base/</code>
 	<td>&nbsp;
-	<td>C source code and makefiles
+	<td>Graphics library C source code and makefiles
+<tr>	<td><code>psi/</code>
+	<td>&nbsp;
+	<td>PS interpreter C source code and makefiles
 <tr>	<td><code>lib/</code>
 	<td>&nbsp;
 	<td>PostScript files and scripts used when running Ghostscript
@@ -985,7 +988,7 @@ Microsoft assembler (version 4.0 or later).
 To create "<code>makefile</code>", give the command
 
 <blockquote><code>
-echo !include "src\bcwin32.mak" &gt;makefile
+echo !include "base\bcwin32.mak" &gt;makefile
 </code></blockquote>
 
 <p>
@@ -1096,7 +1099,7 @@ the top level directory using the following command:</li>
   names.) Also specify the location of the master directory for your Ghostscript 
   files. Then select OK. 
 <p> In the next dialog window, specify the build command line as <code>nmake 
-  /f src/msvc32.mak DEVSTUDIO= </code> Note the value for 
+  /f psi/msvc32.mak DEVSTUDIO= </code> Note the value for 
   <code>DEVSTUDIO</code> 
   is empty. Then select <code>Finish</code>. 
 <p>At this point, it is now possible to build Ghostscript using Developer Studio. 
@@ -1124,7 +1127,7 @@ the top level directory using the following command:</li>
   it is simpler to use a build batch command file rather than retyping the build 
   command line for each new project. Here is an example used by one of Artifex's 
   staff members. This file is one line:
-<blockquote><code> nmake -f src/msvc32.mak DEVSTUDIO= DEBUG=1 TDEBUG=1 GS_LIB_DEFAULT="./lib/;./font;$(GSROOTDIR)/lib;$(AROOTDIR)/fonts" 
+<blockquote><code> nmake -f psi/msvc32.mak DEVSTUDIO= DEBUG=1 TDEBUG=1 GS_LIB_DEFAULT="./lib/;./font;$(GSROOTDIR)/lib;$(AROOTDIR)/fonts" 
   </code></blockquote>
 <p>Please note the double quotes around the value for <code>GS_LIB_DEFAULT</code>
   and the addition of <code>./lib;./fonts;</code> to its definition. This uses
@@ -1161,13 +1164,13 @@ significantly misleading. For general MSVC users we recommend TDEBUG=1.
   An attempt is made to select the correct version of Microsoft Visual C++
   based on the version of nmake.  If this doesn't work it will default
   to version 6.x.  
-  If you are not using version 6.x then before building, in <code>src\msvc32.mak</code> 
+  If you are not using version 6.x then before building, in <code>psi\msvc32.mak</code> 
   find the line "<code>#MSVC_VERSION=6</code>" and change it to "<b><tt>MSVC_VERSION=4</tt></b>", 
   "<code>MSVC_VERSION=5</code>", "<b><tt>MSVC_VERSION=7</tt></b>"
   or "<code>MSVC_VERSION=8</code>". . 
 <p>In some cases the location of the Microsoft Developer Studio, needs to be changed. 
   The location of Microsoft Developer Studio is defined by the value of <code>DEVSTUDIO</code>. 
-  There are several different definitions of <code>DEVSTUDIO</code> in src\msvc32.mak. 
+  There are several different definitions of <code>DEVSTUDIO</code> in psi\msvc32.mak. 
   There is one for each of the currently supported versions of Microsoft Visual 
   C++ (4, 5, 6, 7, 7.1 and 8). 
 <p>The normal installation process for Microsoft Visual C++ includes setting the 
@@ -1185,15 +1188,15 @@ significantly misleading. For general MSVC users we recommend TDEBUG=1.
   the correct definition.) 
 <p>To run the <code>make</code> program, give the command 
 <blockquote><code>
-nmake -f src\msvc32.mak
+nmake -f psi\msvc32.mak
 </code></blockquote>
 
 <p>
-Rather than changing src/msvc32.mak, these values can be specified on the make
-command line,  I.e.
+Rather than changing psi/msvc32.mak, these values can be specified on 
+the make command line,  I.e.
 
-<blockquote><code> nmake -f src\msvc32.mak MSVC_VERSION=6 DEVSTUDIO="C:\Program Files\Microsoft Visual Studio" <br>
-nmake -f src\msvc32.mak MSVC_VERSION=7 DEVSTUDIO="C:\Program Files\Microsoft Visual Studio .NET"
+<blockquote><code> nmake -f psi\msvc32.mak MSVC_VERSION=6 DEVSTUDIO="C:\Program Files\Microsoft Visual Studio" <br>
+nmake -f psi\msvc32.mak MSVC_VERSION=7 DEVSTUDIO="C:\Program Files\Microsoft Visual Studio .NET"
  </code></blockquote>
 
 <p> Note that double quotes have been added around the path for <code>DEVSTUDIO</code> 
@@ -1255,7 +1258,7 @@ directory from a nearby directory.
 <p>
 To make ghostscript use
 <blockquote><code>
-  nmake -f src/msvc32.mak WIN64=
+  nmake -f psi/msvc32.mak WIN64=
 </code></blockquote>
 This will fail when it tries to run genconf.exe.
 Move <code>./obj/genconf.exe</code> to 64-bit Windows, then run it
@@ -1269,7 +1272,7 @@ ARCH_ALIGN_STRUCT_MOD to 16,
 and ARCH_SIZEOF_PTR to 8).
 Then restart the build
 <blockquote><code>
-  nmake -f src/msvc32.mak WIN64=
+  nmake -f psi/msvc32.mak WIN64=
 </code></blockquote>
 
 <p>
@@ -1280,7 +1283,7 @@ change the DEVSTUDIO path.
 <h4><a name="Microsoft_64on64"></a>Compile on 64-bit Windows XP</h4>
 To make ghostscript use
 <blockquote><code>
-  nmake -f src/msvc32.mak WIN64=
+  nmake -f psi/msvc32.mak WIN64=
 </code></blockquote>
 <p>
 The makefile currently uses the cross compiler (x86_amd64) 
@@ -1310,7 +1313,7 @@ http://www.info-zip.org/pub/infozip/Zip.html</a>.  This is free.
 </ul>
 
 <p>
-You will have to edit <code>src/winint.mak</code> to define
+You will have to edit <code>psi/winint.mak</code> to define
 <code>WINZIPSE_XE</code> and <b><tt>ZIP_XE</tt></b> respectively as the
 path names of these programs.  See <a href="Release.htm">Release.htm</a> for
 the detailed procedure.
@@ -1335,7 +1338,7 @@ the directory where you installed the Watcom tools, and that the setting of
 <tr>	<td colspan=3><hr>
 <tr>	<td>MS Windows
 	<td>&nbsp;
-	<td nowrap><code>echo&nbsp;!include&nbsp;src\watcw32.mak&nbsp;&gt;makefile</code>
+	<td nowrap><code>echo&nbsp;!include&nbsp;base\watcw32.mak&nbsp;&gt;makefile</code>
 </table></blockquote>
 
 <p>
@@ -1484,7 +1487,7 @@ in the section on <a href="#MacOS">Classic MacOS</a> above.
 To set up the shlib build, download and uncompress the Ghostscript source.
 
 <p>
-Copy <tt>src/macos-mcp.mak</tt> to the top-level directory and rename
+Copy <tt>base/macos-mcp.mak</tt> to the top-level directory and rename
 it <tt>makefile</tt>. Then run 'make' in that directory, either from
 within Terminal.app or through Project Builder. This will set up the
 generated code required for the build and run a shell script to generate
@@ -1602,9 +1605,9 @@ version.
 <h3><a name="UNIX_makefile"></a>Setting up "makefile"</h3>
 
 <p>
-The files <code>src/unix</code>*<b><tt>.mak</tt></b> are the makefiles for
-Unix platforms, and you choose one based on what compiler you use.  To
-build Ghostscript, however, you must use the simple command
+The files <code>base/unix</code>*<b><tt>.mak</tt></b> are the makefiles 
+for Unix platforms, and you choose one based on what compiler you use.  
+To build Ghostscript, however, you must use the simple command
 "<code>make</code>", which must find the file "<b><tt>makefile</tt></b>"
 (or "<code>Makefile</code>").  If your system supports symbolic links,
 set up "<code>makefile</code>" like this.
@@ -1612,10 +1615,10 @@ set up "<code>makefile</code>" like this.
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr>	<td>GNU gcc:
 	<td>&nbsp;&nbsp;&nbsp;&nbsp;
-	<td nowrap><code>ln -s src/unix-gcc.mak makefile</code>
+	<td nowrap><code>ln -s base/unix-gcc.mak makefile</code>
 <tr>	<td>Non-gcc ANSI C compiler:
 	<td>&nbsp;
-	<td nowrap><code>ln -s src/unixansi.mak makefile</code>
+	<td nowrap><code>ln -s base/unixansi.mak makefile</code>
 </table></blockquote>
 
 <p>
@@ -1692,7 +1695,7 @@ system, and hardware.
 To build Ghostscript as a shared object with gcc 
 (instead of as a single large executable) use:
 <pre>
-	ln -s src/unix-gcc.mak makefile
+	ln -s base/unix-gcc.mak makefile
 	make so
 </pre>
 <p>
@@ -1701,7 +1704,7 @@ shared object, <code>gsx</code> which uses Gtk+ and <b><tt>gsc</tt></b>
 which does not.
 
 <p>
-Do not use <tt>make -f src/unix-gcc.mak</tt> because this will
+Do not use <tt>make -f base/unix-gcc.mak</tt> because this will
 break the recursive make used in building the shared object.
 <p>
 To install the shared object and these two programs:
@@ -1713,7 +1716,7 @@ To delete files created by the build process:
 	make soclean
 </pre>
 <p>
-For more details see <a href="../src/unix-dll.mak">unix-dll.mak</a>.
+For more details see <a href="../base/unix-dll.mak">unix-dll.mak</a>.
 
 <h3><a name="Tool_specific_issues"></a>Tool-specific issues</h3>
 
@@ -2408,10 +2411,10 @@ for the binaries.
 First, build the standard configuration:
 
 <ul>
-<li>Edit gs/src/os2.mak: find line with 'CO=-O' (Optimizer flag) and edit
-this line to 'CO=-O2' (-O or -O1 do not work!).
+<li>Edit gs/base/os2.mak: find line with 'CO=-O' (Optimizer flag) and 
+edit this line to 'CO=-O2' (-O or -O1 do not work!).
 
-<li>To start the make process, type <code>nmake -f .\src\os2.mak</code>,
+<li>To start the make process, type <code>nmake -f .\base\os2.mak</code>,
 from the gs-directory.
 
 <li>One DLL and two EXEs will be produced in <code>gs/bin</code>:
@@ -2423,8 +2426,8 @@ be produced in <code>gs/obj</code>.
 
 <p>
 Now, if you wish, you can edit OS2.MAK to suit your needs, and then perform
-<code>nmake -f .\src\os2.mak clean</code> and then <code>nmake -f
-.\src\os2.mak</code>.
+<code>nmake -f .\base\os2.mak clean</code> and then <code>nmake -f
+.\base\os2.mak</code>.
 
 <hr>
 

@@ -11,9 +11,10 @@
 #  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 #
 # $Id$
-# makefile for OpenVMS VAX and Alpha
+# makefile for OpenVMS VAX and Alpha using MMK
 #
 # Please contact Jim Dunham (dunham@omtool.com) if you have questions.
+# Addapted for MMK by Jouk Jansen (joukj@hrem.stm.tudelft.nl)
 # Support for VAX C on OpenVMS was removed in release 6.01 by Aladdin:
 # DEC C is now used on both VAX and Alpha platforms.
 #
@@ -22,34 +23,37 @@
 ###### This section is the only part of the file you should need to edit.
 
 # on the make command line specify:
-#	make -fopenvms.mak "OPENVMS={VAX,ALPHA}" "DECWINDOWS={1.2,<blank>}"
+#	mmk/descrip=[.base]openvms.mmk/macro=("DECWINDOWS1_2={0,1}")
 
 # Define the directory for the final executable, and the
 # source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
-# NOTE: If you use GNU make, GLGENDIR and PSGENDIR must not be the
-# current directory ([]).
 
 BINDIR=[.bin]
-GLSRCDIR=[.src]
+GLSRCDIR=[.base]
 GLGENDIR=[.obj]
 GLOBJDIR=[.obj]
-PSSRCDIR=[.src]
-PSLIBDIR=[.lib]
+PSSRCDIR=[.psi]
 PSGENDIR=[.obj]
 PSOBJDIR=[.obj]
+PSLIBDIR=[.lib]
 # Because of OpenVMS syntactic problems, the following redundant definitions
 # are necessary.  If you are using more than one GENDIR and/or OBJDIR,
 # you will have to edit the code below that creates these directories.
 BIN_DIR=BIN.DIR
 OBJ_DIR=OBJ.DIR
 
+# create directories
+.first
+	if f$search("$(BIN_DIR)") .eqs. "" then create/directory/log $(BINDIR)
+	if f$search("$(OBJ_DIR)") .eqs. "" then create/directory/log $(GLOBJDIR)
+
 # Do not edit the next group of lines.
 
-#include $(COMMONDIR)/vmscdefs.mak
-#include $(COMMONDIR)/vmsdefs.mak
-#include $(COMMONDIR)/generic.mak
-include $(GLSRCDIR)version.mak
+#.include $(COMMONDIR)vmscdefs.mak
+#.include $(COMMONDIR)vmsdefs.mak
+#.include $(COMMONDIR)generic.mak
+.include $(GLSRCDIR)version.mak
 DD=$(GLGENDIR)
 GLD=$(GLGENDIR)
 PSD=$(PSGENDIR)
@@ -64,7 +68,8 @@ GS_DOCDIR=GS_DOC
 # Define the default directory/ies for the runtime
 # initialization and font files.  Separate multiple directories with ,.
 
-GS_LIB_DEFAULT=GS_ROOT:[RESOURCE.INIT],GS_ROOT:[LIB],GS_ROOT:[RESOURCE.FONT],GS_ROOT:[FONT]
+GS_LIB_DEFAULT=GS_LIB
+#GS_LIB_DEFAULT=SYS$COMMON:[GS],SYS$COMMON:[GS.FONT]
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -84,7 +89,7 @@ GS_INIT=GS_INIT.PS
 
 # Setting DEBUG=1 includes debugging features in the code
 
-DEBUG=
+DEBUG=0
 
 # Setting TDEBUG=1 includes symbol table information for the debugger,
 # and also enables stack tracing on failure.
@@ -105,30 +110,50 @@ GS=GS
 # You may need to change this if the IJG library version changes.
 # See jpeg.mak for more information.
 
-JSRCDIR=[.jpeg]
+.ifdef SYSLIB
+JSRCDIR=sys$library:
+.else
+JSRCDIR=[--.jpeg]
+.endif
 
 # Define the directory where the PNG library sources are stored,
 # and the version of the library that is stored there.
 # You may need to change this if the libpng version changes.
 # See libpng.mak for more information.
 
-PNGSRCDIR=[.libpng]
+.ifdef SYSLIB
+PNGSRCDIR=sys$library:
+.else
+PNGSRCDIR=[--.libpng]
+.endif
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
-ZSRCDIR=[.zlib]
+.ifdef SYSLIB
+ZSRCDIR=sys$library:
+.else
+ZSRCDIR=[--.zlib]
+.endif
 
-# Define the jbig2 library and source location.
-# See jbig2.mak for more information.
+# Define the directory where the jbig2dec library sources are stored.
+# See jbig2.mak for more information
 
 JBIG2_LIB=jbig2dec
-JBIG2SRCDIR=[.jbig2dec]
+.ifdef SYSLIB
+JBIG2SRCDIR=sys$library:
+.else
+JBIG2SRCDIR=[--.jbig2dec]
+.endif
 
-# Define the jpeg2k library and source location.
+# Define the jpeg2k library and source directory
 
 JPX_LIB=jasper
-JPXSRCDIR=jasper
+.ifdef SYSLIB
+JPXSRCDIR=sys$library:
+.else
+JPXSRCDIR=[--.jasper]
+.endif
 
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
@@ -146,57 +171,59 @@ ICCSRCDIR=[.icclib]
 #IJSSRCDIR=[.ijs]
 #IJSEXECTYPE=unix
 
-# Define the directory where the imdi source are stored.
-# See imdi.mak for more information
-
-IMDISRCDIR=[.imdi]
-
 # Note that built-in third-party libraries aren't available.
 
 SHARE_JPEG=0
 SHARE_LIBPNG=0
 SHARE_ZLIB=0
 SHARE_JBIG2=0
-SHARE_JPX=0
 
 # Define the path to X11 include files
 
-X_INCLUDE=DECW$$INCLUDE
+X_INCLUDE=DECW$INCLUDE
 
 # ------ Platform-specific options ------ #
 
 # Define the drive, directory, and compiler name for the 'C' compiler.
 # COMP is the full compiler path name.
 
-COMP=CC
-
-ifdef DEBUG
-COMP:=$(COMP)/DEBUG/NOOPTIMIZE
-else
+.ifdef DEBUG
+SW_DEBUG=/DEBUG/NOOPTIMIZE
+.else
 # This should include /OPTIMIZE, but some OpenVMS compilers have an
 # optimizer bug that causes them to generate incorrect code for gdevpsfx.c,
 # so we must disable optimization.  (Eventually we will check for the bug
 # in genarch and enable optimization if it is safe.)
-#COMP:=$(COMP)/NODEBUG/OPTIMIZE
-COMP:=$(COMP)/NODEBUG/NOOPTIMIZE
-endif
+#SW_DEBUG=/NODEBUG/OPTIMIZE
+SW_DEBUG=/NODEBUG/NOOPTIMIZE
+.endif
 
-COMP:=$(COMP)/DECC/PREFIX=ALL/NESTED_INCLUDE=PRIMARY/NAMES=SHORTENED
+SW_PLATFORM=/DECC/PREFIX=ALL/NESTED_INCLUDE=PRIMARY/name=(as_is,short)/nowarn
 
 # Define any other compilation flags. 
 # Including defines for A4 paper size
 
-ifdef A4_PAPER
-COMP:=$(COMP)/DEFINE=("A4")
-endif
+.ifdef A4_PAPER
+SW_PAPER=/DEFINE=("A4","HAVE_MKSTEMP")
+.else
+SW_PAPER=/DEFINE=("HAVE_MKSTEMP")
+.endif
+
+.ifdef IEEE
+SW_IEEE=/float=ieee
+.else
+SW_IEEE=
+.endif
+
+COMP=CC$(SW_DEBUG)$(SW_PLATFORM)$(SW_PAPER)$(SW_IEEE)
 
 # LINK is the full linker path name
 
-ifdef TDEBUG
+.ifdef TDEBUG
 LINKER=LINK/DEBUG/TRACEBACK
-else
+.else
 LINKER=LINK/NODEBUG/NOTRACEBACK
-endif
+.endif
 
 # INCDIR contains the include files
 INCDIR=
@@ -226,22 +253,23 @@ DEVICE_DEVS7=$(DD)faxg3.dev $(DD)faxg32d.dev $(DD)faxg4.dev
 DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev $(DD)pcxcmyk.dev
 DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev
 DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
-DEVICE_DEVS11=$(DD)tiff12nc.dev $(DD)tiff24nc.dev $(DD)tiffgray.dev $(DD)tiff32nc.dev $(DD)tiffsep.dev
+DEVICE_DEVS11=$(DD)tiff12nc.dev $(DD)tiff24nc.dev
 DEVICE_DEVS12=$(DD)psmono.dev $(DD)psgray.dev $(DD)psrgb.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
 DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev $(DD)pngalpha.dev
-DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev $(DD)jpegcmyk.dev
-DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)ps2write.dev $(DD)epswrite.dev $(DD)txtwrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
+DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
 DEVICE_DEVS16=$(DD)bbox.dev
 # Overflow from DEVS9
-DEVICE_DEVS17=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev $(DD)pamcmyk32.dev
+DEVICE_DEVS17=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev
 DEVICE_DEVS18=
 DEVICE_DEVS19=
 DEVICE_DEVS20=
 DEVICE_DEVS21=
+DEVICE_DEVS21=
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)fapi.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)fapi.dev $(PSD)jbig2.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -274,7 +302,7 @@ PLATFORM=openvms_
 
 # Define the name of the makefile -- used in dependencies.
 
-MAKEFILE=$(GLSRCDIR)openvms.mak
+MAKEFILE=$(GLSRCDIR)openvms.mmk
 TOP_MAKEFILES=$(MAKEFILE)
 
 # Define the platform options
@@ -294,7 +322,6 @@ CMD=
 D=
 
 # Define the brackets for passing preprocessor definitions to the C compiler.
-
 NULL=
 
 D_=/DEFINE="
@@ -329,11 +356,12 @@ XEAUX=.exe
 
 # Define the list of files that `make clean' removes.
 
-BEGINFILES=$(GLGENDIR)OPENVMS.OPT $(GLGENDIR)OPENVMS.COM
+BEGINFILES=$(GLSRCDIR)OPENVMS.OPT $(GLSRCDIR)OPENVMS.COM
 
 # Define the C invocation for auxiliary programs (echogs, genarch).
+# We don't need to define this separately.
 
-CCAUX=CC/DECC
+CCAUX=
 
 # Define the C invocation for normal compilation.
 
@@ -341,7 +369,7 @@ CC=$(COMP)
 
 # Define the Link invocation.
 
-LINK=$(LINKER)/EXE=$@ $^,$(GLGENDIR)OPENVMS.OPT/OPTION
+LINK=$(LINKER)/EXE=$@ $+,$(GLSRCDIR)OPENVMS.OPT/OPTION
 
 # Define the auxiliary program dependency. We don't need this.
 
@@ -361,15 +389,15 @@ SH=
 
 # Define generic commands.
 
-CP_=$$ @$(GLSRCDIR)COPY_ONE
+CP_=@$(GLSRCDIR)COPY_ONE
 
 # Define the command for deleting (a) file(s) (including wild cards)
 
-RM_=$$ @$(GLSRCDIR)RM_ONE
+RM_=@$(GLSRCDIR)RM_ONE
 
 # Define the command for deleting multiple files / patterns.
 
-RMN_=$$ @$(GLSRCDIR)RM_ALL
+RMN_=@$(GLSRCDIR)RM_ALL
 
 # Define the arguments for genconf.
 
@@ -378,57 +406,12 @@ CONFLDTR=-o
 
 # Define the generic compilation rules.
 
-..suffixes: .c .obj .exe
+.suffixes : .c .obj .exe
 
-..obj.exe:
+.obj.exe :
 	$(LINK)
 
 # ---------------------------- End of options ---------------------------- #
-
-# Define the default build rule, so the object directories get created
-# automatically.
-
-# I wasn't able to find a "do nothing" command in the DCL manual!
-std: STDDIRS default
-	WRITE SYS$$OUTPUT "Done."
-
-STDDIRS:
-	$$ If F$$Search("$(BIN_DIR)") .EQS. "" Then Create/Directory/Log $(BINDIR)
-	$$ If F$$Search("$(OBJ_DIR)") .EQS. "" Then Create/Directory/Log $(GLOBJDIR)
-
-# ------------------- Include the generic makefiles ---------------------- #
-
-#include $(COMMONDIR)/ansidefs.mak
-#include $(COMMONDIR)/vmsdefs.mak
-#include $(COMMONDIR)/generic.mak
-include $(GLSRCDIR)gs.mak
-
-# ***********************************************************************************
-#
-#    The following should be kept up to date with src/psromfs.mak -- we can't
-#    use the shared one because of VMS directory syntax strangeness.
-#
-#    This enumeration of the Resource/* directories probably won't work without
-#    code changes to src/mkromfs.c to change the VMS style of directory references
-#    to PostScript style, but we will need this when (if) mkromfs is changed for VMS
-#
-# ***********************************************************************************
-# The list of resources to be included in the %rom% file system.
-# This is in the top makefile since the file descriptors are platform specific
-RESOURCE_LIST=[Resource.CMap] [Resource.ColorSpace] [Resource.Decoding] [Resource.Fonts] [Resource.ProcSet] [Resource.IdiomSet] [Resource.CIDFont]
-
-PS_ROMFS_ARGS=-c -d Resource/ $(RESOURCE_LIST) -d lib/ -P $(PSLIBDIR) $(EXTRA_INIT_FILES)
-
-include $(GLSRCDIR)lib.mak
-include $(PSSRCDIR)int.mak
-include $(GLSRCDIR)jpeg.mak
-# zlib.mak must precede libpng.mak
-include $(GLSRCDIR)zlib.mak
-include $(GLSRCDIR)libpng.mak
-include $(GLSRCDIR)jbig2.mak
-include $(GLSRCDIR)icclib.mak
-include $(GLSRCDIR)devs.mak
-include $(GLSRCDIR)contrib.mak
 
 # Define various incantations of the 'c' compiler.
 
@@ -437,10 +420,59 @@ CC_INT=$(CC_)
 CC_NO_WARN=$(CC_)
 CC_SHARED=$(CC_)
 
-# ----------------------------- Main program ------------------------------ #
+# ------------------- Include the generic makefiles ---------------------- #
 
-$(GS_XE) : openvms $(GLOBJDIR)gs.$(OBJ) $(INT_ALL) $(LIB_ALL)
-	$(LINKER)/EXE=$@ $(GLOBJ)gs.$(OBJ),$(ld_tr)/OPTIONS,$(GLGENDIR)OPENVMS.OPT/OPTION
+all : macro [.lib]Fontmap. $(GS_XE)
+
+#.include $(COMMONDIR)/ansidefs.mak
+#.include $(COMMONDIR)/vmsdefs.mak
+#.include $(COMMONDIR)/generic.mak
+.include $(GLSRCDIR)gs.mak
+.include $(GLSRCDIR)lib.mak
+.include $(PSSRCDIR)int.mak
+.include $(GLSRCDIR)jpeg.mak
+# zlib.mak must precede libpng.mak
+.include $(GLSRCDIR)zlib.mak
+.include $(GLSRCDIR)libpng.mak
+JBIG2_EXTRA_OBJS=$(JBIG2OBJDIR)$(D)snprintf.$(OBJ)
+.include $(GLSRCDIR)jbig2.mak
+.include $(GLSRCDIR)icclib.mak
+.include $(GLSRCDIR)devs.mak
+.include $(GLSRCDIR)contrib.mak
+
+
+# ----------------------------- Main program ------------------------------ 
+
+macro :
+.ifdef A4_PAPER
+	@ a4p = 1
+.else
+	@ a4p = 0
+.endif
+.ifdef IEEE
+	@ i3e = 1
+.else
+	@ i3e = 0
+.endif
+.ifdef SYSLIB
+	@ dsl = 1
+.else
+	@ dsl = 0
+.endif
+	@ decc = f$search("SYS$SYSTEM:DECC$COMPILER.EXE").nes.""
+	@ decw12 = f$search("SYS$SHARE:DECW$XTLIBSHRR5.EXE").nes.""
+	@ macro = ""
+	@ if dsl.or.a4p.or.decc.or.decw12 then macro = "/MACRO=("
+	@ if decw12 then macro = macro + "DECWINDOWS1_2=1,"
+	@ if a4p then macro = macro + "A4_PAPER=1,"
+	@ if dsl then macro = macro + "SYSLIB=1,"
+	@ if i3e then macro = macro + "IEEE=1,"
+	@ if macro.nes."" then macro = f$extract(0,f$length(macro)-1,macro)+ ")"
+	$(MMS)$(MMSQUALIFIERS)'macro' $(GS_XE)
+
+$(GS_XE) : openvms $(GLGEN)arch.h $(GLOBJDIR)gs.$(OBJ) $(INT_ALL) $(LIB_ALL)
+	$(LINKER)/EXE=$@ $(GLOBJDIR)gs.$(OBJ),$(ld_tr)/OPTIONS,$(GLSRCDIR)OPENVMS.OPT/OPTION
+	@ Write Sys$Output "Build of GhostScript is complete!"
 
 # OpenVMS.dev
 
@@ -448,81 +480,51 @@ openvms__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_vms.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)
 $(GLGEN)openvms_.dev : $(openvms__) $(GLGEN)nosync.dev
 	$(SETMOD) $(GLGEN)openvms_ $(openvms__) -include $(GLGEN)nosync
 
+$(ECHOGS_XE) :  $(GLOBJDIR)echogs.$(OBJ) 
+$(GENARCH_XE) : $(GLOBJDIR)genarch.$(OBJ)
+$(GENCONF_XE) : $(GLOBJDIR)genconf.$(OBJ)
+$(GENDEV_XE) : $(GLOBJDIR)gendev.$(OBJ)
+$(GENHT_XE) : $(GLOBJDIR)genht.$(OBJ)
+$(GENINIT_XE) : $(GLOBJDIR)geninit.$(OBJ)
+
+$(GLOBJDIR)echogs.$(OBJ) : $(GLSRCDIR)echogs.c
+$(GLOBJDIR)genarch.$(OBJ) : $(GLSRCDIR)genarch.c $(GENARCH_DEPS)
+$(GLOBJDIR)genconf.$(OBJ) : $(GLSRCDIR)genconf.c $(GENCONF_DEPS)
+$(GLOBJDIR)gendev.$(OBJ) : $(GLSRCDIR)gendev.c $(GENDEV_DEPS)
+# ****** NEED TO ADD $(GENHT_CFLAGS) HERE ******
+$(GLOBJDIR)genht.$(OBJ) : $(GLSRCDIR)genht.c $(GENHT_DEPS)
+$(GLOBJDIR)geninit.$(OBJ) : $(GLSRCDIR)geninit.c $(GENINIT_DEPS)
+
 $(GLOBJ)gp_vms.$(OBJ) : $(GLSRC)gp_vms.c $(string__h) $(memory__h) $(gx_h) $(gp_h) $(gpmisc_h) $(gsstruct_h)
 	$(CC_)/include=($(GLGENDIR),$(GLSRCDIR))/obj=$(GLOBJ)gp_vms.$(OBJ) $(GLSRC)gp_vms.c
 
-$(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK) $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h)
-	$(CC_)/obj=$(GLOBJ)gp_stdia.$(OBJ) $(GLSRC)gp_stdia.c
-
-# Interpreter AUX programs
-
-$(ECHOGS_XE) :  $(GLOBJ)echogs.$(OBJ) 
-	LINK/EXE=$@ $(GLOBJ)echogs.$(OBJ)
-
-$(GLOBJ)echogs.$(OBJ) :  $(GLSRC)echogs.c
-	$(CCAUX)/obj=$(GLOBJ)echogs.$(OBJ)  $(GLSRC)echogs.c
-
-$(GENARCH_XE) : $(GLOBJ)genarch.$(OBJ)
-	LINK/EXE=$@ $(GLOBJ)genarch.$(OBJ)
-
-$(GLOBJ)genarch.$(OBJ) :  $(GLSRC)genarch.c $(GENARCH_DEPS)
-	$(CCAUX)/obj=$(GLOBJ)genarch.$(OBJ)  $(GLSRC)genarch.c
-
-$(GENCONF_XE) : $(GLOBJDIR)genconf.$(OBJ)
-	LINK/EXE=$@ $(GLOBJ)genconf.$(OBJ)
-
-$(GLOBJ)genconf.$(OBJ) :  $(GLSRC)genconf.c $(GENCONF_DEPS)
-	$(CCAUX)/obj=$(GLOBJ)genconf.$(OBJ)  $(GLSRC)genconf.c
-
-$(GENDEV_XE) : $(GLOBJDIR)gendev.$(OBJ)
-	LINK/EXE=$@ $(GLOBJ)gendev.$(OBJ)
-
-$(GLOBJ)gendev.$(OBJ) :  $(GLSRC)gendev.c $(GENDEV_DEPS)
-	$(CCAUX)/obj=$(GLOBJ)gendev.$(OBJ)  $(GLSRC)gendev.c
-
-$(GENHT_XE) : $(GLOBJDIR)genht.$(OBJ)
-	LINK/EXE=$@ $(GLOBJ)genht.$(OBJ)
-
-$(GLOBJ)genht.$(OBJ) :  $(GLSRC)genht.c $(GENHT_DEPS)
-	$(CCAUX)/obj=$(GLOBJ)genht.$(OBJ) $(GENHT_CFLAGS) $(GLSRC)genht.c
-
-$(GENINIT_XE) : $(GLOBJDIR)geninit.$(OBJ)
-	LINK/EXE=$@ $(GLOBJ)geninit.$(OBJ)
-
-$(GLOBJ)geninit.$(OBJ) :  $(GLSRC)geninit.c $(GENINIT_DEPS)
-	$(CCAUX)/obj=$(GLOBJ)geninit.$(OBJ)  $(GLSRC)geninit.c
-
-$(GLOBJ)mkromfs.$(OBJ) :  $(GLSRC)mkromfs.c $(MKROMFS_COMMON_DEPS)
-	$(CCAUX)/obj=$(GLOBJ)mkromfs.$(OBJ) $(I_)$(GLI_) $(II)$(ZI_)$(_I) $(GLSRC)mkromfs.c
-
-MKROMFS_OBJS=$(MKROMFS_ZLIB_OBJS) $(GLOBJ)gp_vms.$(OBJ)
-$(MKROMFS_XE): $(GLSRC)mkromfs.c $(MKROMFS_OBJS)
-	LINK/EXE=$@ $(GLOBJ)mkromfs.$(OBJ) $(MKROMFS_OBJS)
+$(GLOBJ)gp_stdia.$(OBJ) : $(GLSRC)gp_stdia.c $(AK) $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h)
+	$(CC_)/incl=$(GLOBJ)/obj=$(GLOBJ)gp_stdia.$(OBJ) $(GLSRC)gp_stdia.c
 
 # Preliminary definitions
 
-openvms : $(GLGENDIR)openvms.com $(GLGENDIR)openvms.opt
-	$$ @$(GLGENDIR)OPENVMS
+openvms : $(GLSRCDIR)openvms.com $(GLSRCDIR)openvms.opt
+	@$(GLSRCDIR)OPENVMS
 
-$(GLGENDIR)openvms.com : $(GLSRCDIR)append_l.com $(GLOBJDIR)gsromfs$(COMPILE_INITS).$(OBJ)
-	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB X11 $(X_INCLUDE)"
-	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB GS_LIB ''F$$ENVIRONMENT(""DEFAULT"")'"
-	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB GS_DOC ''F$$ENVIRONMENT(""DEFAULT"")'"
-	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB DECC$$USER_INCLUDE ''F$$ENVIRONMENT(""DEFAULT"")', DECW$$INCLUDE, DECC$$LIBRARY_INCLUDE, SYS$$LIBRARY"
-	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB DECC$$SYSTEM_INCLUDE ''F$$ENVIRONMENT(""DEFAULT"")', DECW$$INCLUDE, DECC$$LIBRARY_INCLUDE, SYS$$LIBRARY"
-	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB SYS "DECC$$LIBRARY_INCLUDE,SYS$$LIBRARY"
+$(GLSRCDIR)openvms.com : $(GLSRCDIR)append_l.com
+	@$(GLSRCDIR)APPEND_L $@ "$ DEFINE/JOB X11 $(X_INCLUDE)"
+	@$(GLSRCDIR)APPEND_L $@ "$ DEFINE/JOB GS_LIB ''F$ENVIRONMENT(""DEFAULT"")'"
+	@$(GLSRCDIR)APPEND_L $@ "$ DEFINE/JOB GS_DOC ''F$ENVIRONMENT(""DEFAULT"")'"
+	@$(GLSRCDIR)APPEND_L $@ "$ DEFINE/JOB DECC$USER_INCLUDE ''F$ENVIRONMENT(""DEFAULT"")', DECW$INCLUDE, DECC$LIBRARY_INCLUDE, SYS$LIBRARY"
+	@$(GLSRCDIR)APPEND_L $@ "$ DEFINE/JOB DECC$SYSTEM_INCLUDE ''F$ENVIRONMENT(""DEFAULT"")', DECW$INCLUDE, DECC$LIBRARY_INCLUDE, SYS$LIBRARY"
+	@$(GLSRCDIR)APPEND_L $@ "$ DEFINE/JOB SYS "DECC$LIBRARY_INCLUDE,SYS$LIBRARY"
 
-$(GLGENDIR)openvms.opt:
-ifeq "$(DECWINDOWS)" "1.2"
-	$$ @$(GLSRCDIR)APPEND_L $@ "SYS$$SHARE:DECW$$XMLIBSHR12.EXE/SHARE"
-	$$ @$(GLSRCDIR)APPEND_L $@ "SYS$$SHARE:DECW$$XTLIBSHRR5.EXE/SHARE"
-	$$ @$(GLSRCDIR)APPEND_L $@ "SYS$$SHARE:DECW$$XLIBSHR.EXE/SHARE"
-else
-	$$ @$(GLSRCDIR)APPEND_L $@ "SYS$$SHARE:DECW$$XMLIBSHR.EXE/SHARE"
-	$$ @$(GLSRCDIR)APPEND_L $@ "SYS$$SHARE:DECW$$XTSHR.EXE/SHARE"
-	$$ @$(GLSRCDIR)APPEND_L $@ "SYS$$SHARE:DECW$$XLIBSHR.EXE/SHARE"
-endif
-	$$ @$(GLSRCDIR)APPEND_L $@ ""Ident="""""GS $(GS_DOT_VERSION)"""""
+$(GLSRCDIR)openvms.opt :
+.ifdef DECWINDOWS1_2
+	@$(GLSRCDIR)APPEND_L $@ "SYS$SHARE:DECW$XMLIBSHR12.EXE/SHARE"
+	@$(GLSRCDIR)APPEND_L $@ "SYS$SHARE:DECW$XTLIBSHRR5.EXE/SHARE"
+	@$(GLSRCDIR)APPEND_L $@ "SYS$SHARE:DECW$XLIBSHR.EXE/SHARE"
+.else
+	@$(GLSRCDIR)APPEND_L $@ "SYS$SHARE:DECW$XMLIBSHR.EXE/SHARE"
+	@$(GLSRCDIR)APPEND_L $@ "SYS$SHARE:DECW$XTSHR.EXE/SHARE"
+	@$(GLSRCDIR)APPEND_L $@ "SYS$SHARE:DECW$XLIBSHR.EXE/SHARE"
+.endif
+	@$(GLSRCDIR)APPEND_L $@ ""Ident="""""GS $(GS_DOT_VERSION)"""""
 
 # The platform-specific makefiles must also include rules for creating
 # certain dynamically generated files:
@@ -533,3 +535,4 @@ endif
 
 $(gconfig__h) : $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(EXP)$(ECHOGS_XE) -w $(gconfig__h) -x 23 define "HAVE_SYS_TIME_H"
+

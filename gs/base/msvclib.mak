@@ -97,7 +97,7 @@ GS=gslib
 BINDIR=.\bin
 !endif
 !ifndef GLSRCDIR
-GLSRCDIR=.\src
+GLSRCDIR=.\base
 !ifndef PSRESDIR
 PSRESDIR=.\Resource
 !endif

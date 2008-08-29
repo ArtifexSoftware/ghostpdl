@@ -11,7 +11,7 @@ GENDIR=.\obj
 
 # The sources are taken from these directories:
 !ifndef GLSRCDIR
-GLSRCDIR=..\gs\src
+GLSRCDIR=..\gs\base
 !endif
 !ifndef PLSRCDIR
 PLSRCDIR=..\pl

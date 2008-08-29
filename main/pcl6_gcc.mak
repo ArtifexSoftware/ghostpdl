@@ -22,7 +22,7 @@ XCFLAGS?=
 GENDIR?=./obj
 PGGENDIR?=./pgobj
 # The sources are taken from these directories:
-GLSRCDIR?=../gs/src
+GLSRCDIR?=../gs/base
 PCLSRCDIR?=../pcl
 PLSRCDIR?=../pl
 PXLSRCDIR?=../pxl
@@ -31,7 +31,7 @@ SVGSRCDIR?=../svg
 ICCSRCDIR?=../gs/icclib
 COMMONDIR?=../common
 MAINSRCDIR?=../main
-PSSRCDIR?=../gs/src
+PSSRCDIR?=../gs/psi
 
 # specify the location of zlib.  We use zlib for bandlist compression.
 ZSRCDIR?=../gs/zlib

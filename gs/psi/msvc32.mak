@@ -40,7 +40,7 @@
 BINDIR=.\bin
 !endif
 !ifndef GLSRCDIR
-GLSRCDIR=.\src
+GLSRCDIR=.\base
 !endif
 !ifndef GLGENDIR
 GLGENDIR=.\obj
@@ -49,7 +49,7 @@ GLGENDIR=.\obj
 GLOBJDIR=.\obj
 !endif
 !ifndef PSSRCDIR
-PSSRCDIR=.\src
+PSSRCDIR=.\psi
 !endif
 !ifndef PSLIBDIR
 PSLIBDIR=.\lib

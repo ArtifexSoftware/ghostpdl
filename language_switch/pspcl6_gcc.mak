@@ -13,8 +13,8 @@ MAKEFILE+= ../language_switch/pspcl6_gcc.mak
 
 # The sources are taken from these directories:
 MAINSRCDIR?=../main
-GLSRCDIR?=../gs/src
-PSSRCDIR?=../gs/src
+GLSRCDIR?=../gs/base
+PSSRCDIR?=../gs/psi
 PSISRCDIR?=../psi
 PSLIBDIR?=../gs/lib
 ICCSRCDIR?=../gs/icclib
