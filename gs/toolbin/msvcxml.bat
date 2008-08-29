@@ -88,12 +88,12 @@ echo    CharacterSet="0"
 echo  ^>
 echo  ^<Tool
 echo    Name="VCPreBuildEventTool"
-echo	CommandLine="$(OutDir)\echogs -wb $(IntDir)\gswin.ico -n -X -r $(SolutionDir)src\gswin.icx&#x0D;&#x0A;$(OutDir)\echogs -w $(IntDir)\gconfig_.h -x 2f2a20 This file deliberately left blank. -x 2a2f&#x0D;&#x0A;$(OutDir)\echogs -w $(IntDir)\jconfig.h -+R $(SolutionDir)src\stdpn.h -+R $(SolutionDir)src\stdpre.h -+R $(SolutionDir)src\gsjconf.h&#x0D;&#x0A;copy $(SolutionDir)src\gsjmorec.h $(IntDir)\jmorecfg.h&#x0D;&#x0A;copy $(SolutionDir)jpeg\jmorecfg.h $(IntDir)\jmcorig.h&#x0D;&#x0A;copy $(SolutionDir)jpeg\jpeglib.h $(IntDir)\jpeglib_.h&#x0D;&#x0A;copy $(SolutionDir)src\gscdef.c $(IntDir)\gscdefs.c&#x0D;&#x0A;"
+echo    CommandLine="$(OutDir)\echogs -wb $(IntDir)\gswin.ico -n -X -r $(SolutionDir)base\gswin.icx&#x0D;&#x0A;$(OutDir)\echogs -w $(IntDir)\gconfig_.h -x 2f2a20 This file deliberately left blank. -x 2a2f&#x0D;&#x0A;$(OutDir)\echogs -w $(IntDir)\jconfig.h -+R $(SolutionDir)base\stdpn.h -+R $(SolutionDir)base\stdpre.h -+R $(SolutionDir)base\gsjconf.h&#x0D;&#x0A;copy $(SolutionDir)base\gsjmorec.h $(IntDir)\jmorecfg.h&#x0D;&#x0A;copy $(SolutionDir)jpeg\jmorecfg.h $(IntDir)\jmcorig.h&#x0D;&#x0A;copy $(SolutionDir)jpeg\jpeglib.h $(IntDir)\jpeglib_.h&#x0D;&#x0A;copy $(SolutionDir)base\gscdef.c $(IntDir)\gscdefs.c&#x0D;&#x0A;"
 echo  /^>
 echo  ^<Tool Name="VCCLCompilerTool"
 echo    Optimization="0"
 echo    PreprocessorDefinitions="__WIN32__;_DEBUG;_CRT_SECURE_NO_DEPRECATE;EXCLUDE_BMP_SUPPORT;EXCLUDE_JPG_SUPPORT;EXCLUDE_MIF_SUPPORT;EXCLUDE_PGX_SUPPORT;EXCLUDE_PNM_SUPPORT;EXCLUDE_RAS_SUPPORT;EXCLUDE_PNG_SUPPORTS;CHECK_INTERRUPTS;_Windows;_USRDLL;GX_COLOR_INDEX_TYPE=unsigned __int64"
-echo    AdditionalIncludeDirectories="$(SolutionDir)src;$(SolutionDir)debugobj;$(SolutionDir)jpeg;$(SolutionDir)zlib;$(SolutionDir)icclib;$(SolutionDir)imdi;$(SolutionDir)jbig2dec;$(SolutionDir)ijs;$(SolutionDir)libpng;$(SolutionDir)jasper\src\libjasper\include"
+echo    AdditionalIncludeDirectories="$(SolutionDir)base;$(SolutionDir)psi;$(SolutionDir)debugobj;$(SolutionDir)jpeg;$(SolutionDir)zlib;$(SolutionDir)icclib;$(SolutionDir)imdi;$(SolutionDir)jbig2dec;$(SolutionDir)ijs;$(SolutionDir)libpng;$(SolutionDir)jasper\src\libjasper\include"
 echo    MinimalRebuild="true"
 echo    DisableLanguageExtensions="true"
 echo    BasicRuntimeChecks="3"
@@ -111,7 +111,7 @@ echo    Culture="1033"
 echo  /^>
 echo  ^<Tool Name="VCLinkerTool"
 echo    LinkIncremental="2"
-echo    ModuleDefinitionFile="$(SolutionDir)src\gsdll32.def"
+echo    ModuleDefinitionFile="$(SolutionDir)psi\gsdll32.def"
 echo    GenerateDebugInformation="true"
 echo    SubSystem="1"
 echo    TargetMachine="1"
@@ -126,74 +126,74 @@ echo         Filter="c"^>
 setlocal
 
 for /F %%o in (%2) do (
-  if exist .\src\%%~no.c (
+  if exist .\base\%%~no.c (
     if /i "%%~no" EQU "gdevmswn" (
-      echo ^<File RelativePath=".\src\%%~no.c"^>
+      echo ^<File RelativePath=".\base\%%~no.c"^>
       echo   ^<FileConfiguration Name="Debug|Win32"^>
       echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
       echo   ^</FileConfiguration^>
       echo ^</File^>
     ) else if /i "%%~no" EQU "gdevmswn" (
-      echo ^<File RelativePath=".\src\%%~no.c"^>
+      echo ^<File RelativePath=".\base\%%~no.c"^>
       echo   ^<FileConfiguration Name="Debug|Win32"^>
       echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
       echo   ^</FileConfiguration^>
       echo ^</File^>
     ) else if /i "%%~no" EQU "gdevmsxf" (
-      echo ^<File RelativePath=".\src\%%~no.c"^>
+      echo ^<File RelativePath=".\base\%%~no.c"^>
       echo   ^<FileConfiguration Name="Debug|Win32"^>
       echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
       echo   ^</FileConfiguration^>
       echo ^</File^>
     ) else if /i "%%~no" EQU "gdevwdib" (
-      echo ^<File RelativePath=".\src\%%~no.c"^>
+      echo ^<File RelativePath=".\base\%%~no.c"^>
       echo   ^<FileConfiguration Name="Debug|Win32"^>
       echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
       echo   ^</FileConfiguration^>
       echo ^</File^>
     ) else if /i "%%~no" EQU "gdevwpr2" (
-      echo ^<File RelativePath=".\src\%%~no.c"^>
+      echo ^<File RelativePath=".\base\%%~no.c"^>
       echo   ^<FileConfiguration Name="Debug|Win32"^>
       echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
       echo   ^</FileConfiguration^>
       echo ^</File^>
     ) else if /i "%%~no" EQU "gp_msprn" (
-      echo ^<File RelativePath=".\src\%%~no.c"^>
+      echo ^<File RelativePath=".\base\%%~no.c"^>
       echo   ^<FileConfiguration Name="Debug|Win32"^>
       echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
       echo   ^</FileConfiguration^>
       echo ^</File^>
     ) else if /i "%%~no" EQU "gp_mswin" (
-      echo ^<File RelativePath=".\src\%%~no.c"^>
+      echo ^<File RelativePath=".\base\%%~no.c"^>
       echo   ^<FileConfiguration Name="Debug|Win32"^>
       echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
       echo   ^</FileConfiguration^>
       echo ^</File^>
     ) else if /i "%%~no" EQU "gp_ntfs" (
-      echo ^<File RelativePath=".\src\%%~no.c"^>
+      echo ^<File RelativePath=".\base\%%~no.c"^>
       echo   ^<FileConfiguration Name="Debug|Win32"^>
       echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
       echo   ^</FileConfiguration^>
       echo ^</File^>
     ) else if /i "%%~no" EQU "gp_wgetv" (
-      echo ^<File RelativePath=".\src\%%~no.c"^>
+      echo ^<File RelativePath=".\base\%%~no.c"^>
       echo   ^<FileConfiguration Name="Debug|Win32"^>
       echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
       echo   ^</FileConfiguration^>
       echo ^</File^>
     ) else if /i "%%~no" EQU "ijs_exec_win" (
-      echo ^<File RelativePath=".\src\%%~no.c"^>
+      echo ^<File RelativePath=".\ijs\%%~no.c"^>
       echo   ^<FileConfiguration Name="Debug|Win32"^>
       echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
       echo   ^</FileConfiguration^>
       echo ^</File^>
     ) else if /i "%%~no" EQU "gp_win32" (
-      echo ^<File RelativePath=".\src\%%~no.c"^>
+      echo ^<File RelativePath=".\base\%%~no.c"^>
       echo   ^<FileConfiguration Name="Debug|Win32"^>
       echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
       echo   ^</FileConfiguration^>
       echo ^</File^>
-    ) else echo ^<File RelativePath=".\src\%%~no.c"/^>
+    ) else echo ^<File RelativePath=".\base\%%~no.c"/^>
   ) else if exist .\zlib\%%~no.c (
     if /i "%%~no" EQU "gdevmswn" (
       echo ^<File RelativePath=".\zlib\%%~no.c"^>
@@ -811,7 +811,7 @@ for /F %%o in (%2) do (
 endlocal
 
 rem HACK
-echo ^<File RelativePath=".\src\zfjbig2.c"/^>
+echo ^<File RelativePath=".\psi\zfjbig2.c"/^>
 echo ^<File RelativePath="$(SolutionDir)$(ConfigurationName)obj\gscdefs.c"/^>
 echo ^<File RelativePath="$(SolutionDir)$(ConfigurationName)obj\iconfig.c"/^>
 echo ^<File RelativePath="$(SolutionDir)$(ConfigurationName)obj\gconfig.c"/^>
@@ -826,18 +826,18 @@ echo ^<File RelativePath=".\jpeg\jquant1.c"/^>
 echo ^<File RelativePath=".\jpeg\jquant2.c"/^>
 
 REM Add the DLL source files
-echo ^<File RelativePath=".\src\gsdll.c"^>
+echo ^<File RelativePath=".\psi\gsdll.c"^>
 echo   ^<FileConfiguration Name="Debug|Win32"^>
 echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
 echo   ^</FileConfiguration^>
 echo ^</File^>
-echo ^<File RelativePath=".\src\gp_msdll.c"^>
+echo ^<File RelativePath=".\base\gp_msdll.c"^>
 echo   ^<FileConfiguration Name="Debug|Win32"^>
 echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
 echo   ^</FileConfiguration^>
 echo ^</File^>
 echo ^<File 
-echo   RelativePath=".\src\gsdll32.rc"
+echo   RelativePath=".\psi\gsdll32.rc"
 echo   ^>
 echo ^<FileConfiguration
 echo Name="Debug|Win32"
@@ -882,7 +882,7 @@ echo  ^>
 echo  ^<Tool Name="VCCLCompilerTool"
 echo    Optimization="0"
 echo    PreprocessorDefinitions="__WIN32__;_DEBUG;_CRT_SECURE_NO_DEPRECATE;_CONSOLE"
-echo    AdditionalIncludeDirectories="$(SolutionDir)src;$(SolutionDir)debugobj"
+echo    AdditionalIncludeDirectories="$(SolutionDir)base;$(SolutionDir)psi;$(SolutionDir)debugobj"
 echo    MinimalRebuild="true"
 echo    BasicRuntimeChecks="3"
 echo    UsePrecompiledHeader="0"
@@ -893,7 +893,7 @@ echo    CompileAs="1"
 echo  /^>
 echo  ^<Tool
 echo    Name="VCPreBuildEventTool"
-echo	CommandLine="copy $(SolutionDir)src\iconf.c $(IntDir)\iconfig.c&#x0D;&#x0A;copy $(SolutionDir)src\gconf.c $(IntDir)\gconfig.c&#x0D;&#x0A;copy $(SolutionDir)gconfig.h $(IntDir)\gconfig.h&#x0D;&#x0A;"
+echo    CommandLine="copy $(SolutionDir)psi\iconf.c $(IntDir)\iconfig.c&#x0D;&#x0A;copy $(SolutionDir)base\gconf.c $(IntDir)\gconfig.c&#x0D;&#x0A;copy $(SolutionDir)gconfig.h $(IntDir)\gconfig.h&#x0D;&#x0A;"
 echo  /^>
 echo  ^<Tool
 echo    Name="VCResourceCompilerTool"
@@ -917,7 +917,7 @@ echo ^</References^>
 echo ^<Files^>
 echo ^<Filter Name="echogs utility Source Files"
 echo         Filter="c"^>
-echo ^<File RelativePath=".\src\echogs.c"/^>
+echo ^<File RelativePath=".\base\echogs.c"/^>
 echo  ^</Filter^>
 echo ^</Files^>
 echo ^</VisualStudioProject^>
@@ -950,7 +950,7 @@ echo  ^>
 echo  ^<Tool Name="VCCLCompilerTool"
 echo    Optimization="0"
 echo    PreprocessorDefinitions="__WIN32__;_DEBUG;_CRT_SECURE_NO_DEPRECATE;_CONSOLE;GX_COLOR_INDEX_TYPE=unsigned __int64"
-echo    AdditionalIncludeDirectories="$(SolutionDir)src;$(SolutionDir)debugobj"
+echo    AdditionalIncludeDirectories="$(SolutionDir)base;$(SolutionDir)psi;$(SolutionDir)debugobj"
 echo    MinimalRebuild="true"
 echo    BasicRuntimeChecks="3"
 echo    UsePrecompiledHeader="0"
@@ -981,7 +981,7 @@ echo ^</References^>
 echo ^<Files^>
 echo ^<Filter Name="genarch utility Source Files"
 echo         Filter="c"^>
-echo ^<File RelativePath=".\src\genarch.c"/^>
+echo ^<File RelativePath=".\base\genarch.c"/^>
 echo  ^</Filter^>
 echo ^</Files^>
 echo ^</VisualStudioProject^>
@@ -1014,7 +1014,7 @@ echo  ^>
 echo  ^<Tool Name="VCCLCompilerTool"
 echo    Optimization="0"
 echo    PreprocessorDefinitions="__WIN32__;_DEBUG;_CRT_SECURE_NO_DEPRECATE;_WINDOWS;WIN32"
-echo    AdditionalIncludeDirectories="$(SolutionDir)src;$(SolutionDir)debugobj"
+echo    AdditionalIncludeDirectories="$(SolutionDir)base;$(SolutionDir)psi;$(SolutionDir)debugobj"
 echo    MinimalRebuild="true"
 echo    BasicRuntimeChecks="3"
 echo    UsePrecompiledHeader="0"
@@ -1041,13 +1041,13 @@ echo ^</References^>
 echo ^<Files^>
 echo ^<Filter Name="GUI executable Source Files"
 echo         Filter="c"^>
-echo ^<File RelativePath=".\src\dwmain.c"/^>
-echo ^<File RelativePath=".\src\dwimg.c"/^>
-echo ^<File RelativePath=".\src\dwdll.c"/^>
-echo ^<File RelativePath=".\src\dwreg.c"/^>
-echo ^<File RelativePath=".\src\dwtext.c"/^>
-echo ^<File RelativePath=".\src\gp_getnv.c"/^>
-echo ^<File RelativePath=".\src\gscdef.c"/^>
+echo ^<File RelativePath=".\psi\dwmain.c"/^>
+echo ^<File RelativePath=".\psi\dwimg.c"/^>
+echo ^<File RelativePath=".\psi\dwdll.c"/^>
+echo ^<File RelativePath=".\psi\dwreg.c"/^>
+echo ^<File RelativePath=".\psi\dwtext.c"/^>
+echo ^<File RelativePath=".\base\gp_getnv.c"/^>
+echo ^<File RelativePath=".\base\gscdef.c"/^>
 echo ^<File RelativePath=".\debugbin\gsdll32.lib"/^>
 echo  ^</Filter^>
 echo ^</Files^>
@@ -1080,7 +1080,7 @@ echo  ^>
 echo  ^<Tool Name="VCCLCompilerTool"
 echo    Optimization="0"
 echo    PreprocessorDefinitions="__WIN32__;_DEBUG;_CRT_SECURE_NO_DEPRECATE;_CONSOLE"
-echo    AdditionalIncludeDirectories="$(SolutionDir)src;$(SolutionDir)debugobj"
+echo    AdditionalIncludeDirectories="$(SolutionDir)base;$(SolutionDir)psi;$(SolutionDir)debugobj"
 echo    MinimalRebuild="true"
 echo    BasicRuntimeChecks="3"
 echo    UsePrecompiledHeader="0"
@@ -1107,13 +1107,13 @@ echo ^</References^>
 echo ^<Files^>
 echo ^<Filter Name="command line executable Source Files"
 echo         Filter="c"^>
-echo ^<File RelativePath=".\src\dwmainc.c"/^>
-echo ^<File RelativePath=".\src\dwimg.c"/^>
-echo ^<File RelativePath=".\src\dwdll.c"/^>
-echo ^<File RelativePath=".\src\dwreg.c"/^>
-echo ^<File RelativePath=".\src\dwtext.c"/^>
-echo ^<File RelativePath=".\src\gp_getnv.c"/^>
-echo ^<File RelativePath=".\src\gscdef.c"/^>
+echo ^<File RelativePath=".\psi\dwmainc.c"/^>
+echo ^<File RelativePath=".\psi\dwimg.c"/^>
+echo ^<File RelativePath=".\psi\dwdll.c"/^>
+echo ^<File RelativePath=".\psi\dwreg.c"/^>
+echo ^<File RelativePath=".\psi\dwtext.c"/^>
+echo ^<File RelativePath=".\base\gp_getnv.c"/^>
+echo ^<File RelativePath=".\base\gscdef.c"/^>
 echo ^<File RelativePath=".\debugbin\gsdll32.lib"/^>
 echo  ^</Filter^>
 echo ^</Files^>
