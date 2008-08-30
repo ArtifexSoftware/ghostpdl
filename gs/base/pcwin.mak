@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2006 Artifex Software, Inc.
+#  Copyright (C) 2001-2008 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -71,23 +71,6 @@ $(DD)mswinpr2.dev: $(mswinpr2_) $(GLD)page.dev
 $(GLOBJ)gdevwpr2.$(OBJ): $(GLSRC)gdevwpr2.c $(PDEVH) $(windows__h)\
  $(gdevpccm_h) $(gp_h) $(gp_mswin_h)
 	$(GLCCWIN) $(GLO_)gdevwpr2.$(OBJ) $(C_) $(GLSRC)gdevwpr2.c
-
-### ------------------ OS/2 Presentation Manager device ----------------- ###
-
-os2pm_=$(GLOBJ)gdevpm.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ)
-$(DD)os2pm.dev: $(os2pm_)
-	$(SETDEV) $(DD)os2pm $(os2pm_)
-
-os2dll_=$(GLOBJ)gdevpm.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ)
-$(GLGEN)os2dll.dev: $(os2dll_)
-	$(SETDEV) $(GLGEN)os2dll $(os2dll_)
-
-$(GLOBJ)gdevpm.$(OBJ): $(GLSRC)gdevpm.c $(string__h)\
- $(gp_h) $(gpcheck_h)\
- $(gsdll_h) $(gsdllwin_h) $(gserrors_h) $(gsexit_h) $(gsparam_h)\
- $(gx_h) $(gxdevice_h) $(gxdevmem_h)\
- $(gdevpccm_h) $(GLSRC)gdevpm.h
-	$(GLCC) $(GLO_)gdevpm.$(OBJ) $(C_) $(GLSRC)gdevpm.c
 
 ### --------------------------- The OS/2 printer ------------------------ ###
 

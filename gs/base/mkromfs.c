@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -320,7 +320,7 @@ void process_path(char *path, const char *prefix, const char *add_prefix, Xlist_
     strcat(prefixed_path, path);
     strcat(prefixed_path, "*");
     strcpy(rom_filename, add_prefix);
-#ifdef __WIN32__
+#if defined(__WIN32__) || defined(__OS2__)
     {
 	int i;
 

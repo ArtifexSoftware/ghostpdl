@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2007 Artifex Software, Inc.
+#  Copyright (C) 2001-2008 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -369,6 +369,7 @@ CDLL=
 
 !if $(EMX)
 CEXE=-Zomf
+CEXESYS=-Zomf -Zsys
 !endif
 
 GENOPT=$(CD) $(CGDB) $(CDLL) $(CO) $(CPNG)
@@ -418,9 +419,7 @@ STDIO_IMPLEMENTATION=c
 # devs.mak, pcwin.mak, and contrib.mak for the list of available devices.
 
 !if $(MAKEDLL)
-DEVICE_DEVS=$(DD)display.dev $(DD)os2pm.dev $(DD)os2dll.dev $(DD)os2prn.dev
-!else
-DEVICE_DEVS=$(DD)os2pm.dev
+DEVICE_DEVS=$(DD)display.dev $(DD)os2prn.dev
 !endif
 !if $(BUILD_X11)
 DEVICE_DEVS1=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11gray2.dev $(DD)x11gray4.dev $(DD)x11mono.dev
@@ -470,14 +469,19 @@ DEVICE_DEVS21= $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.dev $(DD)bmpsep8.
 
 # The GCC/EMX platform
 
-os2__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_os2.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)
+os2__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_os2.$(OBJ) $(GLOBJ)gp_os2fs.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)
 $(GLGEN)os2_.dev: $(os2__) $(GLD)nosync.dev
 	$(SETMOD) $(GLGEN)os2_ $(os2__) -include $(GLD)nosync
 
 $(GLOBJ)gp_os2.$(OBJ): $(GLSRC)gp_os2.c $(GLSRC)gp_os2.h\
  $(dos__h) $(pipe__h) $(string__h) $(time__h)\
- $(gsdll_h) $(gx_h) $(gsexit_h) $(gsutil_h) $(gp_h) $(gpmisc_h)
+ $(gx_h) $(gsexit_h) $(gsutil_h) $(gp_h) $(gpmisc_h)
 	$(GLCC) $(GLO_)gp_os2.$(OBJ) $(C_) $(GLSRC)gp_os2.c
+
+$(GLOBJ)gp_os2fs.$(OBJ): $(GLSRC)gp_os2fs.c $(GLSRC)gp_os2.h\
+ $(dos__h) $(pipe__h) $(string__h) $(time__h)\
+ $(gx_h) $(gsexit_h) $(gsutil_h) $(gp_h) $(gpmisc_h)
+	$(GLCC) $(GLO_)gp_os2fs.$(OBJ) $(C_) $(GLSRC)gp_os2fs.c
 
 $(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
   $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h)
@@ -564,25 +568,20 @@ $(GENINIT_XE): $(PSSRC)geninit.c $(GENINIT_DEPS)
 	$(CCAUX) /Fe$(GENINIT_XE) geninit.c
 !endif
 
-MKROMFS_OBJS=$(MKROMFS_ZLIB_OBJS) $(GLOBJ)gscdefs.$(OBJ) $(os2__)
+MKROMFS_OBJS=$(MKROMFS_ZLIB_OBJS) $(GLOBJ)gscdefs.$(OBJ) $(GLOBJ)gpmisc.$(OBJ) $(GLOBJ)gp_getnv.obj $(GLOBJ)gp_os2fs.obj
 $(MKROMFS_XE): $(GLSRC)mkromfs.c $(MKROMFS_COMMON_DEPS) $(MKROMFS_OBJS)
 !if $(EMX)
-	$(CCAUX) -o $(AUXGEN)genht $(GENOPT) $(CFLAGS_DEBUG) $(GLSRC)mkromfs.c
-	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe $(AUXGEN)mkromfs $(MKROMFS_OBJS) $(MKROMFS_XE)
-	del $(AUXGEN)mkromfs
+	$(CCAUX) -o $(AUXGEN)mkromfs.exe -D__OS2__ $(CD) $(CEXESYS) $(CO) $(CPNG) -I$(GLOBJ) -I$(GLSRCDIR) -I$(ZSRCDIR) $(GLSRC)mkromfs.c $(MKROMFS_OBJS)
 !endif
 !if $(IBMCPP)
 	$(CCAUX) /Fe$(MKROMFS_XE) mkromfs.c
 !endif
-	$(CCAUX) $(GENOPT) $(CFLAGS_DEBUG) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLOBJ)$(_I) $(I_)$(ZSRCDIR)$(_I) $(GLSRC)mkromfs.c $(O_)$(MKROMFS_XE) $(MKROMFS_DEPS) -lm
 
 # No special gconfig_.h is needed.
 $(gconfig__h): $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(ECHOGS_XE) -w $(gconfig__h) /* This file deliberately left blank. */
 
 # ----------------------------- Main program ------------------------------ #
-
-gsdllos2_h=$(GLSRC)gsdllos2.h
 
 # Interpreter main program
 
@@ -594,10 +593,10 @@ $(PSOBJ)dpmain.$(OBJ): $(PSSRC)dpmain.c $(AK)\
 
 !if $(MAKEDLL)
 #making a DLL
-GS_ALL=$(PSOBJ)gsdll.$(OBJ) $(INT_ALL) \
+GS_ALL=$(INT_ALL) \
   $(LIB_ALL) $(LIBCTR) $(ld_tr) $(PSOBJ)$(GS).res $(ICONS) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
 
-$(GS_XE): $(BINDIR)\$(GSDLL).dll $(PSSRC)dpmain.c $(gsdll_h) $(gsdllos2_h) $(PSSRC)gsos2.rc $(GLOBJ)gscdefs.$(OBJ)
+$(GS_XE): $(BINDIR)\$(GSDLL).dll $(PSSRC)dpmain.c $(PSSRC)gsos2.rc $(GLOBJ)gscdefs.$(OBJ)
 !if $(EMX)
 	$(COMPDIR)\$(COMP) $(CGDB) $(CO) -Zomf $(MT_OPT) -I$(PSSRCDIR) -I$(GLSRCDIR) -I$(PSOBJDIR) -I$(GLOBJDIR) -o$(GS_XE) $(PSSRC)dpmain.c $(GLOBJ)gscdefs.$(OBJ) $(PSSRC)gsos2.def
 !endif
@@ -606,15 +605,12 @@ $(GS_XE): $(BINDIR)\$(GSDLL).dll $(PSSRC)dpmain.c $(gsdll_h) $(gsdllos2_h) $(PSS
 !endif
 	rc $(PSOBJ)$(GS).res $(GS_XE)
 
-$(PSOBJ)gsdll.$(OBJ): $(PSSRC)gsdll.c $(gsdll_h) $(ghost_h) $(gscdefs_h)
-	$(PSCC) $(PSO_)gsdll.$(OBJ) $(C_) $(PSSRC)gsdll.c
-
-$(BINDIR)\$(GSDLL).dll: $(GS_ALL) $(ALL_DEVS) $(PSOBJ)gsdll.$(OBJ)
+$(BINDIR)\$(GSDLL).dll: $(GS_ALL) $(ALL_DEVS) 
 !if $(EMX)
-	LINK386 /DEBUG $(COMPBASE)\lib\dll0.obj $(COMPBASE)\lib\end.lib @$(ld_tr) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) $(PSOBJ)gsdll.obj, $(BINDIR)\$(GSDLL).dll, ,$(X11LIBS) $(COMPBASE)\lib\gcc.lib $(COMPBASE)\lib\st\c.lib $(COMPBASE)\lib\st\c_dllso.lib $(COMPBASE)\lib\st\sys.lib $(COMPBASE)\lib\c_alias.lib $(COMPBASE)\lib\os2.lib, $(PSSRC)gsdll2.def
+	LINK386 /DEBUG $(COMPBASE)\lib\dll0.obj $(COMPBASE)\lib\end.lib @$(ld_tr) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ), $(BINDIR)\$(GSDLL).dll, ,$(X11LIBS) $(COMPBASE)\lib\gcc.lib $(COMPBASE)\lib\st\c.lib $(COMPBASE)\lib\st\c_dllso.lib $(COMPBASE)\lib\st\sys.lib $(COMPBASE)\lib\c_alias.lib $(COMPBASE)\lib\os2.lib, $(PSSRC)gsdll2.def
 !endif
 !if $(IBMCPP)
-	LINK386 /NOE /DEBUG @$(ld_tr) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) $(PSOBJ)gsdll.obj, $(BINDIR)\$(GSDLL).dll, , , $(PSSRC)gsdll2.def
+	LINK386 /NOE /DEBUG @$(ld_tr) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ), $(BINDIR)\$(GSDLL).dll, , , $(PSSRC)gsdll2.def
 !endif
 
 !else

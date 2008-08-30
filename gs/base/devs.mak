@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2007 Artifex Software, Inc.
+#  Copyright (C) 2001-2008 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -64,8 +64,6 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	mswinprn  Microsoft Windows 3.0, 3.1 DDB printer  [MS Windows only]
 #	mswinpr2  Microsoft Windows 3.0, 3.1 DIB printer  [MS Windows only]
 #   OS/2:
-# *	os2pm	OS/2 Presentation Manager   [OS/2 only]
-# *	os2dll	OS/2 DLL bitmap             [OS/2 only]
 # *	os2prn	OS/2 printer                [OS/2 only]
 #   Unix and VMS:
 #   ****** NOTE: For direct frame buffer addressing under SCO Unix or Xenix,
