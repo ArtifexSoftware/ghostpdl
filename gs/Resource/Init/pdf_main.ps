@@ -1361,8 +1361,8 @@ end readonly def
 currentdict /PDF2PS_matrix_key undef
 
 /.pdfshowpage_Install {	% <pagedict> [<prevproc>] .pdfshowpage_Install -
-  exch pdf_cached_PDF2PS_matrix concat
   0 get exec
+  pdf_cached_PDF2PS_matrix concat
 } bind def
 
 /pdfshowpage_setpage {	% <pagedict> pdfshowpage_setpage <pagedict>
