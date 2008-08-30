@@ -1646,9 +1646,9 @@ $(PSD)transpar.dev : $(INT_MAK) $(ECHOGS_XE)\
 
 $(PSOBJ)ztrans.$(OBJ) : $(PSSRC)ztrans.c $(OP) $(memory__h) $(string__h)\
  $(ghost_h) $(oper_h) $(gscspace_h) $(gscolor2_h) $(gsipar3x_h) $(gstrans_h)\
- $(gsdfilt_h) $(gdevp14_h) $(gxiparam_h) $(gxcspace_h)\
- $(idict_h) $(idparam_h) $(ifunc_h) $(igstate_h) $(iimage_h) $(iimage2_h) $(iname_h)\
- $(store_h)
+ $(gxiparam_h) $(gxcspace_h)\
+ $(idict_h) $(idparam_h) $(ifunc_h) $(igstate_h) $(iimage_h) $(iname_h)\
+ $(store_h) $(gsdflt_h)  $(gdevdevn_h)  $(gxblend_h) $(gdevp14_h)
 	$(PSCC) $(PSO_)ztrans.$(OBJ) $(C_) $(PSSRC)ztrans.c
 
 # ---------------- ICCBased color spaces ---------------- #
