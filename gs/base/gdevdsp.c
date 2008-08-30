@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -211,7 +211,7 @@ const gx_device_display gs_display_device =
       0,                        /* MaxSeparations has not been specified */
       -1,			/* PageSpotColors has not been specified */
       {0},                      /* SeparationNames */
-      {0},                      /* SeparationOrder names */
+      0,                        /* Number of SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 } /* Initial component SeparationOrder */
     },
     { true }                   /* equivalent CMYK colors for spot colors */
