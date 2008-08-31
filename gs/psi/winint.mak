@@ -302,5 +302,31 @@ archive: zip $(PSOBJ)gswin16.ico $(ECHOGS_XE)
 #	-del $(PSOBJ)dialog.txt
 
 
+# -------------------- Distribution source archive ------------------- #
+# This creates a zip file containing the files needed to build 
+# ghostscript on MS-Windows.  We don't distribute this zip file, 
+# but use it to build the executable distribution.
+#
+# The MS-Windows build process for a release is
+#  gzip -d ghostscript-N.NN.tar.gz
+#  tar -xvf ghostscript-N.NN.tar
+#  cd ghostscript-N.NN
+#  nmake -f psi/msvc32.mak srczip
+#  cd gsN.NN
+#  nmake -f psi/msvc32.mak
+#  nmake -f psi/msvc32.mak archive
+
+gs$(GS_VERSION)src.zip:
+	-rmdir /s /q gs$(GS_DOT_VERSION)
+	-del temp.zip
+	zip -r -X temp.zip LICENSE doc examples icclib ijs jasper jbig2dec jpeg lib libpng base psi Resource zlib -x ".svn/*" -x "*/.svn/*" -x "*/*/.svn/*" -x "*/*/*/.svn/*" -x "*/*/*/*/.svn/*" -x "*/*/*/*/*/.svn/*"
+	mkdir gs$(GS_DOT_VERSION)
+	cd gs$(GS_DOT_VERSION)
+	unzip -a ../temp.zip
+	cd ..
+	zip -9 -r -X gs$(GS_VERSION)src.zip gs$(GS_DOT_VERSION)
+
+srczip: gs$(GS_VERSION)src.zip
+
 # end of winint.mak
 
