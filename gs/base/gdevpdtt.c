@@ -322,7 +322,6 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
     gx_device_pdf *const pdev = (gx_device_pdf *)dev;
     gx_path *path = path0;
     pdf_text_enum_t *penum;
-    gs_fixed_point cpt;
     int code;
 
     /* Track the dominant text rotation. */
@@ -358,8 +357,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	    if (code < 0)
 		return code;
 	} else if ((!(text->operation & TEXT_DO_DRAW) && pis->text_rendering_mode != 3) 
-/*		    || path == 0 || gx_path_current_point(path, &cpt) < 0 */
-		    || path == 0 || path_position_valid(path) < 0
+		    || path == 0 || !path_position_valid(path)
 		    || pdev->type3charpath) 
 	    return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
 					 pcpath, mem, ppte);
@@ -2048,12 +2046,6 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
  * General graphics state commands are written now; text state commands
  * are written later.
  */
-static double
-font_matrix_scaling(const gs_font *font)
-{
-    return fabs((font->FontMatrix.yy != 0 ? font->FontMatrix.yy :
-		 font->FontMatrix.yx));
-}
 int
 pdf_set_text_process_state(gx_device_pdf *pdev,
 			   const gs_text_enum_t *pte,	/* for pdcolor, pis */
