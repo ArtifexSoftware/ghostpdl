@@ -265,7 +265,7 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 		}
 	    } else if (!r_is_proc(&elt2))
 		return_error(e_rangecheck);
-    	    else if ((code == array_get(imemory, pref, ++i, &elt3)) < 0)
+    	    else if ((code = array_get(imemory, pref, ++i, &elt3)) < 0)
 		return code;
 	    else if (resolves_to_oper(i_ctx_p, &elt3, zifelse)) {
 		if (ops) {
