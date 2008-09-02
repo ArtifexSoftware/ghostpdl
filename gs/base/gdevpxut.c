@@ -33,6 +33,13 @@ px_write_file_header(stream *s, const gx_device *dev)
         "\033%-12345X@PJL SET RENDERMODE=";
     static const char *const rendermode_gray = "GRAYSCALE";
     static const char *const rendermode_color = "COLOR";
+    static const char *const pjl_resolution =
+        "\n@PJL SET RESOLUTION=";
+    static const char *const resolution_150 = "150";
+    static const char *const resolution_300 = "300";
+    static const char *const resolution_600 = "600";
+    static const char *const resolution_1200 = "1200";
+    static const char *const resolution_2400 = "2400";
     static const char *const file_header =
 	"\n@PJL ENTER LANGUAGE = PCLXL\n\
 ) HP-PCL XL;1;1;Comment Copyright Artifex Sofware, Inc. 2005\000\n";
@@ -55,6 +62,44 @@ px_write_file_header(stream *s, const gx_device *dev)
     else
 	px_put_bytes(s, (const byte *)rendermode_color,
 		     strlen(rendermode_color));
+
+    px_put_bytes(s, (const byte *)pjl_resolution,
+		 strlen(pjl_resolution));
+
+    if ((uint) (dev->HWResolution[0] + 0.5) == 150)
+	px_put_bytes(s, (const byte *)resolution_150,
+		     strlen(resolution_150));
+    else if ((uint) (dev->HWResolution[0] + 0.5) == 300)
+	px_put_bytes(s, (const byte *)resolution_300,
+		     strlen(resolution_300));
+    else if ((uint) (dev->HWResolution[0] + 0.5) == 1200)
+	px_put_bytes(s, (const byte *)resolution_1200,
+		     strlen(resolution_1200));
+    else if ((uint) (dev->HWResolution[0] + 0.5) == 2400)
+	px_put_bytes(s, (const byte *)resolution_2400,
+		     strlen(resolution_2400));
+    else 
+        px_put_bytes(s, (const byte *)resolution_600,
+		     strlen(resolution_600));
+    if ((uint) (dev->HWResolution[0] + 0.5) !=
+	(uint) (dev->HWResolution[0] + 0.5)) {
+        px_put_bytes(s, (const byte *)"x", strlen("x"));
+	if ((uint) (dev->HWResolution[1] + 0.5) == 150)
+	    px_put_bytes(s, (const byte *)resolution_150,
+		         strlen(resolution_150));
+	else if ((uint) (dev->HWResolution[1] + 0.5) == 300)
+	    px_put_bytes(s, (const byte *)resolution_300,
+		         strlen(resolution_300));
+	else if ((uint) (dev->HWResolution[1] + 0.5) == 1200)
+	    px_put_bytes(s, (const byte *)resolution_1200,
+		         strlen(resolution_1200));
+	else if ((uint) (dev->HWResolution[1] + 0.5) == 2400)
+	    px_put_bytes(s, (const byte *)resolution_2400,
+		         strlen(resolution_2400));
+	else 
+	    px_put_bytes(s, (const byte *)resolution_600,
+		         strlen(resolution_600));
+    }
 
     /* We have to add 2 to the strlen because the next-to-last */
     /* character is a null. */
