@@ -81,7 +81,7 @@ px_write_file_header(stream *s, const gx_device *dev)
     else 
         px_put_bytes(s, (const byte *)resolution_600,
 		     strlen(resolution_600));
-    if ((uint) (dev->HWResolution[0] + 0.5) !=
+    if ((uint) (dev->HWResolution[1] + 0.5) !=
 	(uint) (dev->HWResolution[0] + 0.5)) {
         px_put_bytes(s, (const byte *)"x", strlen("x"));
 	if ((uint) (dev->HWResolution[1] + 0.5) == 150)
