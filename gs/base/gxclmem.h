@@ -137,5 +137,6 @@ typedef struct MEMFILE_s MEMFILE;
 /* for compressing and decompressing the band list. */
 const stream_state *clist_compressor_state(void *);
 const stream_state *clist_decompressor_state(void *);
+int gs_cl_zlib_init(gs_memory_t * mem);
 
 #endif /* gxclmem_INCLUDED */

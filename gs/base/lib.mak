@@ -648,7 +648,7 @@ $(GLOBJ)gxifast.$(OBJ) : $(GLSRC)gxifast.c $(GXERR) $(memory__h) $(gpcheck_h)\
 $(GLOBJ)gximage.$(OBJ) : $(GLSRC)gximage.c $(GXERR) $(memory__h)\
  $(gscspace_h) $(gsmatrix_h) $(gsutil_h)\
  $(gxcolor2_h) $(gxiparam_h)\
- $(stream_h)
+ $(stream_h) $(memory__h)
 	$(GLCC) $(GLO_)gximage.$(OBJ) $(C_) $(GLSRC)gximage.c
 
 $(GLOBJ)gximage1.$(OBJ) : $(GLSRC)gximage1.c $(GXERR)\

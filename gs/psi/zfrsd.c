@@ -168,7 +168,7 @@ zreusablestream(i_ctx_t *i_ctx_p)
 
                 check_read_type(blk_ref[i], t_string);
                 len = r_size(&blk_ref[i]);
-                if (len > blk_sz || len < blk_sz && i < blk_cnt - 1)
+                if (len > blk_sz || (len < blk_sz && i < blk_cnt - 1))
                    return_error(e_rangecheck); /* last block can be smaller */
                 filelen += len;
             }

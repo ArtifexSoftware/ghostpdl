@@ -110,6 +110,7 @@ gc_mark_string(const byte * ptr, uint size, bool set, const chunk_t * cp)
     return marks != 0;
 }
 
+#ifdef DEBUG
 /* Print a string for debugging.  We need this because there is no d---
  * equivalent of fwrite.
  */
@@ -120,6 +121,7 @@ dfwrite(const byte *ptr, uint count)
     for (i = 0; i < count; ++i)
 	dputc(ptr[i]);
 }
+#endif
 
 /* Mark a string.  Return true if any new marks. */
 bool

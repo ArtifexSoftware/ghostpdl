@@ -24,13 +24,9 @@
 #include "idparam.h"
 #include "ifunc.h"
 #include "store.h"
+#include "zfunc.h"
 
 /*#define TEST*/
-
-/* imported from zfsample.c */
-extern int make_sampled_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t **func);
-/* imported from zfunc4.c */
-extern int make_type4_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t **func);
 
 /* Define the maximum depth of nesting of subsidiary functions. */
 #define MAX_SUB_FUNCTION_DEPTH 3
@@ -55,7 +51,7 @@ make_function_proc(i_ctx_t *i_ctx_p, ref *op, gs_function_t *pfn)
 }
 
 /* <dict> .buildfunction <function_proc> */
-int
+static int
 zbuildfunction(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

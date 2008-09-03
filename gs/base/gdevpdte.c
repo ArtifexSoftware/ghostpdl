@@ -422,7 +422,6 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
     const gs_text_params_t *text = &penum->text;
     int code = 0, mask;
     gs_point width_pt;
-    gs_rect text_bbox;
     int accepted;
 
     code = pdf_obtain_font_resource(penum, pstr, &pdfont);
@@ -443,6 +442,8 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 	 * so skip the text if it is outside the clip bbox
 	 * (Note : it ever fails with type 3 fonts).
 	 */
+	gs_rect text_bbox;
+
 	code = process_text_estimate_bbox(penum, font, (gs_const_string *)pstr, pfmat, 
 					  &text_bbox, &width_pt);
 	if (code == 0) {

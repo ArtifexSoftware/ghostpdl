@@ -2479,8 +2479,9 @@ triangle_by_4(patch_fill_state_t *pfs,
     gs_fixed_rect r, r1;
     int code = 0;
     byte *color_stack_ptr;
+    const bool inside = pfs->inside; /* 'const' should help compiler to analyze initializations. */
 
-    if (!pfs->inside) {
+    if (!inside) {
 	bbox_of_points(&r, &p0->p, &p1->p, &p2->p, NULL);
 	r1 = r;
 	rect_intersect(r, pfs->rect);
@@ -2530,7 +2531,7 @@ triangle_by_4(patch_fill_state_t *pfs,
 	default: /* Error. */
 	    goto out;
     }
-    if (!pfs->inside) {
+    if (!inside) {
 	if (r.p.x == r1.p.x && r.p.y == r1.p.y && 
 	    r.q.x == r1.q.x && r.q.y == r1.q.y)
 	    pfs->inside = true;
@@ -3026,10 +3027,11 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
     bool monotonic_color_save = pfs->monotonic_color;
     bool linear_color_save = pfs->linear_color;
     bool inside_save = pfs->inside;
+    const bool inside = pfs->inside; /* 'const' should help compiler to analyze initializations. */
     gs_fixed_rect r, r1;
     /* Warning : pfs->monotonic_color is not restored on error. */
 
-    if (!pfs->inside) {
+    if (!inside) {
 	bbox_of_points(&r, &p->p[0][0]->p, &p->p[0][1]->p, &p->p[1][0]->p, &p->p[1][1]->p);
 	r1 = r;
 	rect_intersect(r, pfs->rect);
@@ -3164,7 +3166,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 		; /* goto divide. */
 	}
     }
-    if (!pfs->inside) {
+    if (!inside) {
 	if (r.p.x == r1.p.x && r.p.y == r1.p.y && 
 	    r.q.x == r1.q.x && r.q.y == r1.q.y)
 	    pfs->inside = true;

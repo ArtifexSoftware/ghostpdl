@@ -82,6 +82,8 @@ iplugin_h=$(PSSRC)iplugin.h
 ifapi_h=$(PSSRC)ifapi.h $(iplugin_h) $(gstypes_h) $(gsmatrix_h)
 zht2_h=$(PSSRC)zht2.h $(gscspace_h)
 zchar42_h=$(PSSRC)zchar42.h
+zfunc_h=$(PSSRC)zfunc.h
+
 
 GH=$(AK) $(ghost_h)
 
@@ -876,7 +878,7 @@ $(PSD)func.dev : $(INT_MAK) $(ECHOGS_XE) $(funcread_) $(GLD)funclib.dev
 
 $(PSOBJ)zfunc.$(OBJ) : $(PSSRC)zfunc.c $(OP) $(memory__h)\
  $(gscdefs_h) $(gsfunc_h) $(gsstruct_h)\
- $(ialloc_h) $(idict_h) $(idparam_h) $(ifunc_h) $(store_h)
+ $(ialloc_h) $(idict_h) $(idparam_h) $(ifunc_h) $(store_h) $(zfunc_h)
 	$(PSCC) $(PSO_)zfunc.$(OBJ) $(C_) $(PSSRC)zfunc.c
 
 $(PSOBJ)zfunc0.$(OBJ) : $(PSSRC)zfunc0.c $(OP) $(memory__h)\
@@ -1458,7 +1460,7 @@ $(PSOBJ)zcssepr.$(OBJ) : $(PSSRC)zcssepr.c $(OP) $(memory__h)\
 $(PSOBJ)zfsample.$(OBJ) : $(PSSRC)zfsample.c $(OP) $(memory__h)\
  $(gxcspace_h)\
  $(estack_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifunc_h) $(ostack_h)\
- $(store_h) $(gsfunc0_h) $(gscdevn_h) 
+ $(store_h) $(gsfunc0_h) $(gscdevn_h) $(zfunc_h) 
 	$(PSCC) $(PSO_)zfsample.$(OBJ) $(C_) $(PSSRC)zfsample.c
 
 # ---------------- DCT filters ---------------- #
@@ -1577,7 +1579,7 @@ $(PSOBJ)zfunc4.$(OBJ) : $(PSSRC)zfunc4.c $(memory__h) $(string__h)\
  $(OP) $(opextern_h)\
  $(gsfunc_h) $(gsfunc4_h) $(gsutil_h)\
  $(idict_h) $(ifunc_h) $(iname_h) $(ialloc_h)\
- $(dstack_h) $(gzstate_h) $(gxdevcli_h) $(string__h)
+ $(dstack_h) $(gzstate_h) $(gxdevcli_h) $(string__h) $(zfunc_h)
 	$(PSCC) $(PSO_)zfunc4.$(OBJ) $(C_) $(PSSRC)zfunc4.c
 
 $(PSOBJ)zimage3.$(OBJ) : $(PSSRC)zimage3.c $(OP) $(memory__h)\

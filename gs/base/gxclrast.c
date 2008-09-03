@@ -511,7 +511,7 @@ clist_playback_band(clist_playback_action playback_action,
 	gs_image4_t i4;
     } image;
     gs_int_rect image_rect;
-    gs_color_space *pcs;
+    gs_color_space *pcs = NULL;
     gx_image_enum_common_t *image_info;
     gx_image_plane_t planes[32];
     uint data_height;
@@ -530,6 +530,7 @@ clist_playback_band(clist_playback_action playback_action,
     stream_state *st = s->state; /* Save because s_close resets s->state. */
 #endif
     gs_composite_t *pcomp_first = NULL, *pcomp_last = NULL;
+    tile_slot bits;		/* parameters for reading bits */
 
     cbuf.data = (byte *)cbuf_storage;
     cbuf.size = cbuf_size;
@@ -540,6 +541,13 @@ clist_playback_band(clist_playback_action playback_action,
 
     pfs.dev = NULL; /* Indicate "not initialized". */
     memset(&ht_buff, 0, sizeof(ht_buff));
+
+    /* The following initializations are to quiet gcc warnings. */
+    memset(&bits, 0, sizeof(bits));
+    memset(&tile_bits, 0, sizeof(tile_bits));
+    memset(&clip_save, 0, sizeof(clip_save));
+    memset(&state_slot, 0, sizeof(state_slot));
+    ppos.x = ppos.y = 0;
 
 in:				/* Initialize for a new page. */
     tdev = target;
@@ -587,6 +595,10 @@ in:				/* Initialize for a new page. */
     halftone_type = ht_type_none;
     fill_params.fill_zero_width = false;
     pcs = gs_cspace_new_DeviceGray(mem);
+    if (pcs == NULL) {
+	code = gs_note_error(gs_error_VMerror);
+	goto out;
+    }
     color_unset(&dev_color);
     data_bits = gs_alloc_bytes(mem, data_bits_size,
 			       "clist_playback_band(data_bits)");
@@ -603,7 +615,6 @@ in:				/* Initialize for a new page. */
 	gx_color_index colors[2];
 	gx_color_index *pcolor;
 	gs_logical_operation_t log_op;
-	tile_slot bits;		/* parameters for reading bits */
 
 	/* Make sure the buffer contains a full command. */
 	if (cbp >= cbuf.limit) {
@@ -1813,7 +1824,8 @@ idata:			data_size = 0;
 				if (!(options & 4)) {
 				    cmd_getw(ybot, cbp);
 				    cmd_getw(ytop, cbp);
-				}
+				} else 
+				    ytop = ybot = 0; /* Unused, but quiet gcc warning. */
 				swap_axes = options & 1;
 				wh = swap_axes ? tdev->width : tdev->height;
 				x0f = int2fixed(swap_axes ? y0 : x0);

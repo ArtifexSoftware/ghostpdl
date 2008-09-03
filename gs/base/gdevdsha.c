@@ -32,7 +32,7 @@ gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *
      */
     frac31 c[GX_DEVICE_COLOR_MAX_COMPONENTS];
     ulong f[GX_DEVICE_COLOR_MAX_COMPONENTS];
-    int i, i1 = i0 + w, i1a = i1 - 1, bi = i0, k;
+    int i, i1 = i0 + w, bi = i0, k;
     gx_color_index ci0 = 0, ci1;
     const gx_device_color_info *cinfo = &dev->color_info;
     int n = cinfo->num_components;

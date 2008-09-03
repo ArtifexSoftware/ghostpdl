@@ -950,6 +950,8 @@ scan_contour(line_list *ll, contour_cursor *q)
     const fill_options * const fo = ll->fo;
     contour_cursor save_q;
 
+    memset(&save_q, 0, sizeof(save_q)); /* Quiet gcc warning. */
+    p.monotonic_x = false; /* Quiet gcc warning. */
     p.fi = &fi;
     save_q.dir = 2;
     ll->main_dir = DIR_HORIZONTAL;
@@ -1086,6 +1088,7 @@ add_y_list(gx_path * ppath, line_list *ll)
     contour_cursor q;
     gx_flattened_iterator fi;
 
+    q.monotonic_x = false; /* Quiet gcc warning. */
     ll->y_break = max_fixed;
 
     for (;psub; psub = (subpath *)psub->last->next) {

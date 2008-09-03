@@ -26,7 +26,7 @@
 #include "store.h"
 #include "gsfunc0.h"
 #include "gscdevn.h"
-
+#include "zfunc.h"
 #include "zcolor.h"
 
 /*

@@ -18,6 +18,7 @@
 #include "gxiparam.h"
 #include "gximage.h"
 #include "stream.h"
+#include "memory_.h"
 
 /* Structure descriptor */
 public_st_gs_image1();

@@ -149,7 +149,7 @@ next_arc_quadrant(arc_curve_params_t * arc, double anext)
 	 * from the arc points to the control points.
 	 */
 	const gs_imager_state *pis = arc->pis;
-	double scale;
+	double scale = 0; /* Quiet gcc warning. */
 
 	if (is_fzero2(pis->ctm.xy, pis->ctm.yx) ?
 	    (scale = fabs(pis->ctm.xx)) == fabs(pis->ctm.yy) :

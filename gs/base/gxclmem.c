@@ -239,7 +239,7 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 	/* reopening an existing file. */
 	code = sscanf(fname+1, "0x%x", &base_f);
 	if (code != 1) {
-	    gs_note_error(gs_error_ioerror);
+	    code = gs_note_error(gs_error_ioerror);
 	    goto finish;
 	}
 	/* Reopen an existing file for 'read' */
@@ -424,7 +424,7 @@ memfile_fclose(clist_file_ptr cf, const char *fname, bool delete)
 		if (prev_f->openlist == f)
 		    break;
 	    if (prev_f == NULL) {
-		eprintf1("Could not find 0x%x on memfile openlist\n", ((unsigned int)f));
+		eprintf1("Could not find %P on memfile openlist\n", f);
 		return_error(gs_error_invalidfileaccess);
 	    }
 	    prev_f->openlist = f->openlist;	/* link around the one being fclosed */
@@ -469,7 +469,7 @@ memfile_fclose(clist_file_ptr cf, const char *fname, bool delete)
     /* leaks if other users of the memfile don't 'fclose with delete=true */
     if (f->openlist != NULL || ((f->base_memfile != NULL) && f->base_memfile->is_open)) {
 	/* TODO: do the cleanup rather than just giving an error */
-    	eprintf1("Attempt to delete a memfile still open for read: 0x%0x\n", ((unsigned int)f));
+    	eprintf1("Attempt to delete a memfile still open for read: %P\n", f);
 	return_error(gs_error_invalidfileaccess);
     } else {
 	/* Free the memory used by this memfile */
@@ -1030,9 +1030,8 @@ memfile_rewind(clist_file_ptr cf, bool discard_data, const char *ignore_fname)
 	/* Check first to make sure that we have exclusive access */
 	if (f->openlist != NULL || f->base_memfile != NULL) {
 	    /* TODO: Move the data so it is still connected to other open files */
-	    eprintf1("memfile_rewind(0x%0x) with discard_data=true failed: ", f);
-	    f->error_code = gs_error_ioerror;
-	    gs_note_error(gs_error_ioerror);
+	    eprintf1("memfile_rewind(%P) with discard_data=true failed: ", f);
+	    f->error_code = gs_note_error(gs_error_ioerror);
 	    return;
 	}
 	memfile_free_mem(f);

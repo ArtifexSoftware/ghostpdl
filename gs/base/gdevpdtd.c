@@ -343,6 +343,9 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     bool have_colon = false, have_period = false, have_I = false;
     int code;
 
+    memset(&bbox_colon, 0, sizeof(bbox_colon)); /* quiet gcc warnings. */
+    memset(&bbox_period, 0, sizeof(bbox_period)); /* quiet gcc warnings. */
+    memset(&bbox_I, 0, sizeof(bbox_I)); /* quiet gcc warnings. */
     memset(&desc, 0, sizeof(desc));
     if (is_cid && bfont->FontBBox.p.x != bfont->FontBBox.q.x &&
 		  bfont->FontBBox.p.y != bfont->FontBBox.q.y) {

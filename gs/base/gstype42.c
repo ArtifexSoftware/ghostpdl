@@ -1343,7 +1343,6 @@ gs_truetype_font_info(gs_font *font, const gs_point *pscale, int members,
 
     if (!(info->members & FONT_INFO_EMBEDDING_RIGHTS) && (members & FONT_INFO_EMBEDDING_RIGHTS)) {
 	if(pfont->data.os2_offset != 0) {
-	    int (*string_proc)(gs_font_type42 *, ulong, uint, const byte **) = pfont->data.string_proc;
 	    unsigned char fstype[2];
 
 	    READ_SFNTS(pfont, pfont->data.os2_offset + 8, 2, fstype);

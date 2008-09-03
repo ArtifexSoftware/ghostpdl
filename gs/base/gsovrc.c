@@ -216,7 +216,6 @@ static composite_equal_proc(c_overprint_equal);
 static composite_write_proc(c_overprint_write);
 static composite_is_closing_proc(c_overprint_is_closing);
 static composite_read_proc(c_overprint_read);
-static composite_adjust_ctm_proc(c_overprint_adjust_ctm);
 
 /* methods for the overprint compositor */
 const gs_composite_type_t   gs_composite_overprint_type = {

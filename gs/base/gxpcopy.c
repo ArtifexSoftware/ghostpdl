@@ -84,7 +84,8 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 	    float2fixed((fabs(pis->ctm.xx) + fabs(pis->ctm.yx)) * width) * 2;
 	expansion.y =
 	    float2fixed((fabs(pis->ctm.xy) + fabs(pis->ctm.yy)) * width) * 2;
-    }
+    } else 
+	expansion.x = expansion.y = 0; /* Quiet gcc warning. */
     vd_setcolor(RGB(255,255,0));
     pseg = (const segment *)(ppath_old->first_subpath);
     while (pseg) {
@@ -326,6 +327,7 @@ gx_path__check_curves(const gx_path * ppath, gx_path_copy_options options, fixed
     const segment *pseg = (const segment *)(ppath->first_subpath);
     gs_fixed_point pt0;
 
+    pt0.x = pt0.y = 0; /* Quiet gcc warning. */
     while (pseg) {
 	switch (pseg->type) {
 	    case s_start:
@@ -394,6 +396,7 @@ gx_path_has_long_segments(const gx_path * ppath)
     const segment *pseg = (const segment *)(ppath->first_subpath);
     gs_fixed_point pt0;
 
+    pt0.x = pt0.y = 0; /* Quiet gcc warning. */
     while (pseg) {
 	switch (pseg->type) {
 	    case s_start:

@@ -278,7 +278,7 @@ inode_write(FILE *out, romfs_inode *node, int compression, int inode_count, int 
     }
     /* write file name (path) padded to 4 byte multiple */
     fprintf(out, "\t/* file name '%s' */\n\t", node->name);
-    put_bytes_padded(out, node->name, namelen);
+    put_bytes_padded(out, (unsigned char *)node->name, namelen);
     
     /* write out data */
     for (i = 0; i < blocks; i++) {

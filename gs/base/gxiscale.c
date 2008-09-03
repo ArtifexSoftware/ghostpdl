@@ -62,7 +62,6 @@ static irender_proc(image_render_interpolate);
 irender_proc_t
 gs_image_class_0_interpolate(gx_image_enum * penum)
 {
-    const gs_imager_state *pis = penum->pis;
     gs_memory_t *mem = penum->memory;
     stream_image_scale_params_t iss;
     stream_image_scale_state *pss;
@@ -375,6 +374,10 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                     case sd_compute:
                         decode_value =   
                           penum->map[0].decode_base + ((float) pdata[0]) * penum->map[0].decode_factor;
+			break;
+
+		    default:
+			decode_value = 0; /* Quiet gcc warning. */
                   }
 
                   gs_cspace_indexed_lookup_bytes(pcs, decode_value,psrc);	
@@ -483,8 +486,10 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 	}  /* end of else on more than 8 bps */
 
 	r.limit = r.ptr + row_size;
-    } else			/* h == 0 */
+    } else {			/* h == 0 */
 	r.ptr = 0, r.limit = 0;
+	index_space = 0; /* Quiet gcc warning. We didn't figure out whether it was a real bug. */
+    }
 
     /*
      * Process input and/or collect output.  By construction, the pixels are
@@ -496,8 +501,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 	int yo = penum->xyi.y;
 	int width = pss->params.WidthOut;
 	int sizeofPixelOut = pss->params.BitsPerComponentOut / 8;
-        int sizeofPixelIn = pss->params.BitsPerComponentIn / 8;
-	int dy;
+        int dy;
 	const gs_color_space *pconcs;
         const gs_color_space *pactual_cs;
 	int bpp = dev->color_info.depth;

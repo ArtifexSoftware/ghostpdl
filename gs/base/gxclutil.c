@@ -286,8 +286,6 @@ cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
 int
 cmd_get_buffer_space(gx_device_clist_writer * cldev, gx_clist_state * pcls, uint size)
 {
-    cmd_list * pcl = &pcls->list;
-
     if (size + cmd_headroom > cldev->cend - cldev->cnext) {
 	cldev->error_code = cmd_write_buffer(cldev, cmd_opv_end_run);
 	if (cldev->error_code < 0) {

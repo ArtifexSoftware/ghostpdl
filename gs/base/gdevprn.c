@@ -229,7 +229,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     gx_device_memory * const pmemdev = (gx_device_memory *)pdev;
     byte *the_memory = 0;
-    gdev_prn_space_params save_params;
+    gdev_prn_space_params save_params = ppdev->space_params;
     int save_width = 0x0badf00d; /* Quiet compiler */
     int save_height = 0x0badf00d; /* Quiet compiler */
     bool is_command_list = false; /* Quiet compiler */
@@ -260,7 +260,6 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 	        {
 		case 1:
 		    /* Setup device to get reallocated */
-		    save_params = ppdev->space_params;
 		    ppdev->space_params = *new_space_params;
 		    save_width = ppdev->width;
 		    ppdev->width = new_width;

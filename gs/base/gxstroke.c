@@ -104,6 +104,7 @@ gx_stroke_path_expansion(const gs_imager_state * pis, const gx_path * ppath,
 	      pis->line_params.cap == gs_cap_round);
 	gs_fixed_point prev;
 
+	prev.x = prev.y = 0; /* Quiet gcc warning. */
 	for (pseg = (const segment *)psub; pseg;
 	     prev = pseg->pt, pseg = pseg->next
 	     )

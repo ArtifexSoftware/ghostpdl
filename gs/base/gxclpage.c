@@ -63,8 +63,7 @@ gdev_prn_render_pages(gx_device_printer * pdev,
     /* Check to make sure the pages are compatible with the device. */
     {
 	int i;
-	gx_band_params_t params;
-
+	
 	for (i = 0; i < count; ++i) {
 	    const gx_saved_page *page = ppages[i].page;
 
@@ -86,11 +85,8 @@ gdev_prn_render_pages(gx_device_printer * pdev,
 		)
 		return_error(gs_error_rangecheck);
 	    /* Currently we require all band heights to be the same. */
-	    if (i == 0)
-		params = page->info.band_params;
-	    else if (page->info.band_params.BandHeight !=
-		     params.BandHeight
-		)
+	    if (i > 0 && page->info.band_params.BandHeight != 
+			 ppages[0].page->info.band_params.BandHeight)
 		return_error(gs_error_rangecheck);
 	}
     }

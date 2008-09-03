@@ -175,7 +175,7 @@ rb:
 
 	    nread = io_procs->fread_chars(&ss->b_this, sizeof(ss->b_this), bfile);
 	    if (nread < sizeof(ss->b_this)) {
-		gs_note_error(gs_error_unregistered); /* Must not happen. */
+		DISCARD(gs_note_error(gs_error_unregistered)); /* Must not happen. */
 		return ERRC;
 	    }
 	    if (!(ss->band_last >= bmin && ss->band_first <= bmax))
@@ -185,7 +185,7 @@ rb:
 #	    ifdef DEBUG
 	    if (left > 0  && gs_debug_c('L')) {
 		if (ss->offset_map_length >= ss->offset_map_max_length) {
-		    gs_note_error(gs_error_unregistered); /* Must not happen. */
+		    DISCARD(gs_note_error(gs_error_unregistered)); /* Must not happen. */
 		    return ERRC;
 		}
 		ss->offset_map[ss->offset_map_length].file_offset = pos;
