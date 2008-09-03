@@ -395,10 +395,13 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 #endif
 
 finish:
-    if (code < 0) {
+    /* 'f' shouldn't be NULL unless code < 0, but be careful */
+    if (code < 0 || f == NULL) {
 	/* return failure, clean up memory before leaving */
 	if (f != NULL)
 	    memfile_fclose((clist_file_ptr)f, fname, true);
+	if (code >= 0)
+	    code = gs_error_ioerror;
     } else {
 	/* return success */
 	f->is_open = true;
