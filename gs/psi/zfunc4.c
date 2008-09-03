@@ -28,7 +28,7 @@
 #include "gzstate.h"	    /* these are needed to check if device is pdfwrite */
 #include "gxdevcli.h"	    /* these are needed to check if device is pdfwrite */
 #include "string_.h"	    /* these are needed to check if device is pdfwrite */
-#i2nclude "zfunc.h"
+#include "zfunc.h"
 #include "zcolor.h"
 
 /*
