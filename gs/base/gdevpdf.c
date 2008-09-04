@@ -829,7 +829,9 @@ pdf_close_page(gx_device_pdf * pdev)
 
     /* Write the Functions. */
 
-    pdf_write_resource_objects(pdev, resourceFunction);
+    code = pdf_write_resource_objects(pdev, resourceFunction);
+    if (code < 0)
+	return code;
 
     /* Save viewer's memory with cleaning resources. */
 
