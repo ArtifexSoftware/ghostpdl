@@ -506,6 +506,8 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 	    pdfmark_put_pair(pcd, pair);
 	    /* Break const so we can update the (copied) string. */
 	    pcv = (cos_value_t *)cos_dict_find_c_key(pcd, "/Contents");
+	    if (pcv == NULL)
+	        return_error(gs_error_ioerror); /* shouldn't be possible */
 	    cstr = pcv->contents.chars.data;
 	    /* Loop invariant: j <= i < csize. */
 	    for (i = j = 0; i < csize;)
@@ -1579,8 +1581,6 @@ pdfmark_EP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     if (code < 0)
 	return 0;
     gs_free_const_string(pdev->memory, objname.data, objname.size, "pdfmark_EP");
-    if (code < 0)
-	return code;
     return 0;
 }
 
