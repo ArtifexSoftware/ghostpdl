@@ -401,10 +401,6 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
     		    }
 		    type1_glyphs[num_type1_glyphs] = glyph;
 		    num_type1_glyphs++;
-		    if (font_change) {
-			subfont = subfont0;
-			subfont0 = 0;
-		    }
 		    break;
 		}
 		case ft_CID_encrypted:
