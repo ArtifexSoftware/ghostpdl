@@ -26,7 +26,11 @@ typedef enum {
     PDF14_DeviceCustom = 4
 } pdf14_default_colorspace_t;
 
+#ifndef pdf14_buf_DEFINED
+#  define pdf14_buf_DEFINED
 typedef struct pdf14_buf_s pdf14_buf;
+#endif
+
 typedef struct pdf14_ctx_s pdf14_ctx;
 
 struct pdf14_buf_s {
@@ -88,7 +92,10 @@ typedef struct gx_device_s gx_device;
 typedef struct gs_pdf14trans_params_s gs_pdf14trans_params_t;
 #endif
 
+#ifndef pdf14_device_DEFINED
+#  define pdf14_device_DEFINED
 typedef struct pdf14_device_s pdf14_device;
+#endif
 
 /*
  * This structure contains procedures for processing routine which differ

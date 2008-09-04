@@ -16,9 +16,37 @@
 #ifndef gxblend_INCLUDED
 #  define gxblend_INCLUDED
 
+#include "gxcindex.h"
+#include "gxcvalue.h"
+#include "gxfrac.h"
+
+/* #define DUMP_TO_PNG */
+
+#define	PDF14_MAX_PLANES GX_DEVICE_COLOR_MAX_COMPONENTS
+
 typedef bits16 ArtPixMaxDepth;
 
 #define ART_MAX_CHAN GX_DEVICE_COLOR_MAX_COMPONENTS
+
+#ifndef pdf14_device_DEFINED
+#  define pdf14_device_DEFINED
+typedef struct pdf14_device_s pdf14_device;
+#endif
+
+#ifndef pdf14_buf_DEFINED
+#  define pdf14_buf_DEFINED
+typedef struct pdf14_buf_s pdf14_buf;
+#endif
+
+#ifndef gx_device_DEFINED
+#  define gx_device_DEFINED
+typedef struct gx_device_s gx_device;
+#endif
+
+#ifndef gs_separations_DEFINED
+#   define gs_separations_DEFINED
+    typedef struct gs_separations_s gs_separations;
+#endif
 
 /*
  * This structure contains procedures for processing which differ
@@ -292,5 +320,44 @@ void art_blend_luminosity_custom_8(int n_chan, byte *dst, const byte *backdrop,
 			   const byte *src);
 void art_blend_saturation_custom_8(int n_chan, byte *dst, const byte *backdrop,
 			   const byte *src);
+
+void pdf14_unpack_additive(int num_comp, gx_color_index color,
+			       	pdf14_device * p14dev, byte * out);
+void pdf14_unpack_subtractive(int num_comp, gx_color_index color,
+			       	pdf14_device * p14dev, byte * out);
+
+void pdf14_unpack_compressed(int num_comp, gx_color_index color,
+			       	pdf14_device * p14dev, byte * out);
+
+void pdf14_unpack_custom(int num_comp, gx_color_index color,
+			       	pdf14_device * p14dev, byte * out);
+
+void pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool has_shape);
+
+void pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf, 
+	      int x0, int x1, int y0, int y1, int n_chan, bool additive,
+	      const pdf14_nonseparable_blending_procs_t * pblend_procs);
+
+
+gx_color_index pdf14_encode_color(gx_device *dev, const gx_color_value colors[]);
+
+int pdf14_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out);
+gx_color_index pdf14_compressed_encode_color(gx_device *dev, const gx_color_value colors[]);
+int pdf14_compressed_decode_color(gx_device * dev, gx_color_index color,
+	       						gx_color_value * out);
+void pdf14_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[]);
+void pdf14_rgb_cs_to_cmyk_cm(gx_device * dev, const gs_imager_state *pis,
+  			   frac r, frac g, frac b, frac out[]);
+void pdf14_cmyk_cs_to_cmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[]);
+
+void gx_build_blended_image_row(byte *buf_ptr, int y, int planestride, 
+			   int width, int num_comp, byte bg, byte *linebuf);
+int gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, 
+		      int planestride, int rowstride,
+		      int x0, int y0, int width, int height, int num_comp, byte bg,
+		      gs_separations *pseparations);
+int gx_put_blended_image_custom(gx_device *target, byte *buf_ptr, 
+		      int planestride, int rowstride,
+		      int x0, int y0, int width, int height, int num_comp, byte bg);
 
 #endif /* gxblend_INCLUDED */

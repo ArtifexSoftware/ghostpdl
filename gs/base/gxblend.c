@@ -16,7 +16,6 @@
 #include "memory_.h"
 #include "gx.h"
 #include "gstparam.h"
-#include "gxcindex.h"
 #include "gxblend.h"
 
 typedef int art_s32;
@@ -1216,3 +1215,5 @@ art_pdf_composite_knockout_8(byte *dst,
     dst[n_chan] = alpha_i;
     *dst_alpha_g = alpha_g_i;
 }
+
+

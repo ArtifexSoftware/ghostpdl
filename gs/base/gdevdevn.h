@@ -64,10 +64,15 @@ typedef struct devn_separation_name_s {
 /*
  * Structure for holding SeparationNames elements.
  */
-typedef struct gs_separations_s {
+struct gs_separations_s {
     int num_separations;
     devn_separation_name names[GX_DEVICE_MAX_SEPARATIONS];
-} gs_separations;
+};
+
+#ifndef gs_separations_DEFINED
+#   define gs_separations_DEFINED
+    typedef struct gs_separations_s gs_separations;
+#endif
 
 /*
  * Type for holding a separation order map
