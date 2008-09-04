@@ -741,12 +741,15 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
 {
     pdf14_buf *tos = ctx->stack;
     pdf14_buf *nos = tos->saved;
-    int y0 = max(tos->rect.p.y, nos->rect.p.y);
-    int y1 = min(tos->rect.q.y, nos->rect.q.y);
-    int x0 = max(tos->rect.p.x, nos->rect.p.x);
-    int x1 = min(tos->rect.q.x, nos->rect.q.x);
     pdf14_buf *maskbuf = tos->maskbuf;
+    int x0, x1, y0, y1;
 
+    if (nos == NULL)
+	return_error(gs_error_rangecheck);
+    y0 = max(tos->rect.p.y, nos->rect.p.y);
+    y1 = min(tos->rect.q.y, nos->rect.q.y);
+    x0 = max(tos->rect.p.x, nos->rect.p.x);
+    x1 = min(tos->rect.q.x, nos->rect.q.x);
     if (maskbuf != NULL && maskbuf->mask_id != tos->mask_id) {
 	/* We're under clist reader, and it skipped a group,
 	   which is resetting maskbuf. Force freeing the mask.
@@ -807,9 +810,6 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
 	bool nos_has_shape = nos->has_shape;
 	byte *mask_tr_fn = NULL; /* Quiet compiler. */
 	bool additive = ctx->additive;
-
-	if (nos == NULL)
-	    return_error(gs_error_rangecheck);
 
 	rect_merge(nos->bbox, tos->bbox);
 
