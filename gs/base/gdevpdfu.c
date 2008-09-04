@@ -181,6 +181,7 @@ copy_ps_file_stripping(stream *s, const char *fname, bool HaveTrueTypes)
 		l = strlen(buf);
 		m = sizeof(buf) - 1 - l;
 		if (!m) {
+		    fclose(f);
 		    eprintf1("The procset %s contains a too long line.", fname);
 		    return_error(gs_error_ioerror);
 		}
@@ -662,6 +663,7 @@ stream_to_none(gx_device_pdf * pdev)
 {
     stream *s = pdev->strm;
     long length;
+    int code;
 
     if (pdev->ResourcesBeforeUsage) {
 	int code = pdf_exit_substream(pdev);
@@ -669,8 +671,11 @@ stream_to_none(gx_device_pdf * pdev)
 	if (code < 0)
 	    return code;
     } else {
-	if (pdev->vgstack_depth)
-	    pdf_restore_viewer_state(pdev, s);
+	if (pdev->vgstack_depth) {
+	    code = pdf_restore_viewer_state(pdev, s);
+	    if (code < 0)
+		return code;
+	}
 	if (pdev->compression_at_page_start == pdf_compress_Flate) {	/* Terminate the filters. */
 	    stream *fs = s->strm;
 
