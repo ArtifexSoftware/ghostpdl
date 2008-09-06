@@ -841,12 +841,9 @@ pdf_font_metadata(gx_device_pdf *pdev, const pdf_base_font_t *pbfont,
     */
     if (pdev->PDFA) {
 	pdf_resource_t *pres;
-	byte digest[6];
 	int code;
 	int options = DATA_STREAM_NOT_BINARY;
 
-	sflush(pdev->strm);
-	s_MD5C_get_digest(pdev->strm, digest, sizeof(digest));
 	if (pdev->EncryptMetadata)
 	    options |= DATA_STREAM_ENCRYPT;
 	code = pdf_open_aside(pdev, resourceOther, gs_no_id, &pres, true, options);

@@ -120,6 +120,9 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
     default:
 	return_error(gs_error_rangecheck);
     }
+    if (penum->pte_default == NULL)
+	return_error(gs_error_unregistered); /* Must not happen. */
+
     if (penum->current_font->FontType == ft_user_defined && 
 	    penum->outer_CID == GS_NO_GLYPH &&
 	    !(penum->pte_default->text.operation & TEXT_DO_CHARWIDTH)) {
@@ -135,8 +138,6 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	    int narg = (control == TEXT_SET_CHAR_WIDTH ? 2 : 
 			control == TEXT_SET_CACHE_DEVICE ? 6 : 10), i;
 
-	    if (penum->pte_default == NULL)
-		return_error(gs_error_unregistered); /* Must not happen. */
 	    /* Check to verify the structure type is really gs_show_enum */
 	    if (gs_object_type(penum->pte_default->memory, penum->pte_default) != &st_gs_show_enum) {
 		/* Must not happen with PS interpreter. 
@@ -1541,9 +1542,12 @@ do_unknown:
 	    pdfont->u.simple.last_reserved_char = last_reserved_char;
 	/* Change glyphs to char codes in the text : */
 	for (i = 0; i < pstr->size; i++) {
-	    /* A trick : pdf_reserve_char_code_in_pdfont here simply encodes with cgp. */
-	    ch = pdf_reserve_char_code_in_pdfont(pdfont, cgp, gdata[i], &pdfont->u.simple.last_reserved_char);
-	    pstr->data[i] = ch;
+	    /* Picked up by Coverity, if pdfont is NULL then the call would dereference it */
+	    if (pdfont != NULL) {
+		/* A trick : pdf_reserve_char_code_in_pdfont here simply encodes with cgp. */
+		ch = pdf_reserve_char_code_in_pdfont(pdfont, cgp, gdata[i], &pdfont->u.simple.last_reserved_char);
+		pstr->data[i] = ch;
+	    }
 	}
 	return 0;
     }
@@ -1677,6 +1681,9 @@ pdf_mark_text_glyphs(const gs_text_enum_t *penum, const gs_string *pstr,
     gs_char char_code, cid;
     gs_glyph glyph;
 
+    if (glyph_usage == NULL)
+	return 0;
+
     if (pstr != NULL) {
 	scan.text.data.bytes = pstr->data;
 	scan.text.size = pstr->size;
@@ -1696,7 +1703,7 @@ pdf_mark_text_glyphs(const gs_text_enum_t *penum, const gs_string *pstr,
 	    continue;
 	if (code < 0)
 	    return code;
-	if (glyph_usage != 0 && cid >= char_cache_size)
+	if (cid >= char_cache_size)
 	    continue;
 	glyph_usage[cid / 8] |= 0x80 >> (cid & 7);
     }
@@ -2438,7 +2445,7 @@ pdf_text_process(gs_text_enum_t *pte)
 		len = min(gs_font_name_max, penum->current_font->font_name.size);
 		memcpy(FontName, penum->current_font->font_name.chars, len);
 		FontName[len] = 0x00;
-		len = min(255, penum->current_font->key_name.size);
+		len = min(gs_font_name_max, penum->current_font->key_name.size);
 		memcpy(KeyName, penum->current_font->key_name.chars, len);
 		KeyName[len] = 0x00;
 

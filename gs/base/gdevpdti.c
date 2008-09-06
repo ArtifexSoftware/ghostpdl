@@ -315,8 +315,6 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
     code = pdf_begin_encrypt(pdev, &pdev->strm, pres->object->id);
     if (code < 0)
 	return code;
-    if (code < 0)
-	return code;
     pcp->y_offset = y_offset;
     font->u.simple.s.type3.FontBBox.p.y =
 	min(font->u.simple.s.type3.FontBBox.p.y, y_offset);

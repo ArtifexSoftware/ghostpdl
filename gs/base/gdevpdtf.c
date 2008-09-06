@@ -472,9 +472,6 @@ font_resource_encoded_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 	               "font_resource_encoded_alloc");
 	return_error(gs_error_VMerror);
     }
-    if (code < 0) {
-	return code;
-    }
     memset(v, 0, 256 * sizeof(*v));
     memset(Encoding, 0, 256 * sizeof(*Encoding));
     for (i = 0; i < 256; ++i)
@@ -635,7 +632,7 @@ has_extension_glyphs(gs_font *pfont)
     psf_glyph_enum_t genum;
     gs_glyph glyph;
     gs_const_string str;
-    int code, j, l;
+    int code, j = 0, l;
     const int sl = strlen(gx_extendeg_glyph_name_separator);
 
     psf_enumerate_glyphs_begin(&genum, (gs_font *)pfont, NULL, 0, GLYPH_SPACE_NAME);

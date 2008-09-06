@@ -194,10 +194,16 @@ write_FontDescriptor_common(gx_device_pdf *pdev,
 	int Flags = pfd->values.Flags;
 	pdf_font_descriptor_t defaults;
 
-	param_write_int(plist, "Flags", &Flags);
-	gs_param_write_items(plist, pfd, NULL, required_items);
+	code = param_write_int(plist, "Flags", &Flags);
+	if (code < 0) 
+	    return code;
+	code = gs_param_write_items(plist, pfd, NULL, required_items);
+	if (code < 0) 
+	    return code;
 	memset(&defaults, 0, sizeof(defaults));
-	gs_param_write_items(plist, pfd, &defaults, optional_items);
+	code = gs_param_write_items(plist, pfd, &defaults, optional_items);
+	if (code < 0) 
+	    return code;
 	s_release_param_printer(&rlist);
     }
     return 0;

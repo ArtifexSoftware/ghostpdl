@@ -812,9 +812,14 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	 pte->text.space.s_char : -1);
     gs_point start, total;
     pdf_font_resource_t *pdfont3 = NULL;
+    int code;
 
-    if (font->FontType == ft_user_defined)
-	pdf_attached_font_resource(pdev, font, &pdfont3, NULL, NULL, NULL, NULL);
+    if (font->FontType == ft_user_defined) {
+	code = pdf_attached_font_resource(pdev, font, &pdfont3, NULL, NULL, NULL, NULL);
+        if (code < 0)
+	    return code;
+
+    }
     pte->text.data.bytes = pstr->data;
     pte->text.size = pstr->size;
     pte->index = 0;
@@ -834,7 +839,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	gs_point v = {0, 0}; /* design space */
 	gs_char chr;
 	gs_glyph glyph;
-	int code, index = pte->index;
+	int index = pte->index;
 	gs_text_enum_t pte1 = *(gs_text_enum_t *)pte;
 	int FontType;
 #if RIGHT_SBW
