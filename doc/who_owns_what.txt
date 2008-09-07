@@ -49,14 +49,14 @@ colimlib.dev: michael
 color.dev: michael
 compfont.dev: igor
 crc32.dev: ken
-cspixel.dev: ralph
-cspixlib.dev: ralph
+cspixel.dev: michael
+cspixlib.dev: michael
 dct.dev: alex
 dctd.dev: alex
 dcte.dev: alex
 deskjet.dev: ray and henry
 devcmap.dev: obsolete
-devicen.dev: ralph
+devicen.dev: michael
 djet500.dev: ray and henry
 dpnxtlib.dev: ralph
 dps.dev: ?
@@ -130,7 +130,7 @@ libcore.dev:
     gsistate: alex
 
     gsalpha, gscolor, gshtscr, gscspace, gsovrc, gsht, gscicach,
-    gxoprect, gxdcconv, gxcmap, gxdcolor, gxht, gxhldev, gxhtbit: ralph
+    gxoprect, gxdcconv, gxcmap, gxdcolor, gxht, gxhldev, gxhtbit: michael
 
     gsbitcom, gsbitops, gsbittab: ?
 
@@ -231,8 +231,8 @@ psf1lib.dev: igor
 psf2lib.dev: igor
 psgray.dev: igor
 psi.dev: ray and henry
-psl2cs.dev: ralph
-psl2lib.dev: ralph and alex
+psl2cs.dev: michael
+psl2lib.dev: michael, ralph and alex
 psmono.dev: igor
 psrgb.dev: igor
 pswrite.dev: igor
@@ -251,11 +251,11 @@ sdctd.dev: alex
 sdcte.dev: alex
 sddparam.dev: alex
 seexec.dev: alex and ralph (ralph for gscrypt)
-sepr.dev: ralph
-seprlib.dev: ralph
+sepr.dev: michael
+seprlib.dev: michael
 sfile.dev: ray and henry
 shadelib.dev: igor
-sicclib.dev: ralph
+sicclib.dev: michael
 simscale.dev: alex
 sjbig2.dev: ralph
 sjbig2_.dev: ralph
@@ -268,7 +268,7 @@ sjpx_luratech.dev: ralph
 slzwd.dev: alex
 slzwe.dev: alex
 smd5.dev: ralph
-spotcmyk.dev: ralph
+spotcmyk.dev: michael
 stcolor.dev: ?
 strdline.dev: alex
 svgwrite.dev: ralph
