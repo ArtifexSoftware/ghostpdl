@@ -914,22 +914,19 @@ static int rgb2hsb(float *RGB)
 	HSB[1] = diff / HSB[2];
 	switch (j) {
 	    case 0 : /* R == Brightness */
+		/* diff cna only be zero if r == br, so we need to make sure here we
+		 * don't divide by zeri
+		 */
 		if (diff)
-		    HSB[0] = ((RGB[1] - RGB[2]) / (6.0 * (HSB[2] - v))) + (RGB[2] > RGB[1] ? 1.0 : 0.0);
+		    HSB[0] = ((RGB[1] - RGB[2]) / (6.0 * diff)) + (RGB[2] > RGB[1] ? 1.0 : 0.0);
 		else
 		    HSB[0] = (RGB[1] - RGB[2]) + (RGB[2] > RGB[1] ? 1.0 : 0.0);
 		break;
 	    case 1 : /* G == Brightness */
-		if (diff)
-		    HSB[0] = (1.0 / 3.0) + (RGB[2] - RGB[0]) / (6.0 * (HSB[2] - v));
-		else
-		    HSB[0] = (1.0 / 3.0) + (RGB[2] - RGB[0]);
+		HSB[0] = (1.0 / 3.0) + (RGB[2] - RGB[0]) / (6.0 * diff);
 		break;
 	    case 2 : /* B == Brightness */
-		if (diff)
-		    HSB[0] = (2.0 / 3.0) + (RGB[0] - RGB[1]) / (6.0 * (HSB[2] - v));
-		else
-		    HSB[0] = (2.0 / 3.0) + (RGB[0] - RGB[1]);
+		HSB[0] = (2.0 / 3.0) + (RGB[0] - RGB[1]) / (6.0 * diff);
 		break;
 	}
     }
