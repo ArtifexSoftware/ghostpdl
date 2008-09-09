@@ -288,7 +288,8 @@ static void makePSFontName(char* family, int weight, int slant, char *buf, int b
 }
 #endif
 
-/* State struct for font iteration - passed as an opaque 'void*' through the rest of gs */
+/* State struct for font iteration
+ * - passed as an opaque 'void*' through the rest of gs */
 #ifdef HAVE_FONTCONFIG
 typedef struct {
     int index;              /* current index of iteration over font_list */
@@ -301,7 +302,11 @@ typedef struct {
 void *gp_enumerate_fonts_init(gs_memory_t *mem)
 {
 #ifdef HAVE_FONTCONFIG
-    unix_fontenum_t *state = (unix_fontenum_t *)malloc(sizeof(unix_fontenum_t));
+    unix_fontenum_t *state;
+    FcPattern *pat;
+    FcObjectSet *os;
+
+    state = (unix_fontenum_t *)malloc(sizeof(unix_fontenum_t));
     if (state == NULL)
 	return NULL;    /* Failed to allocate state */
 
@@ -319,11 +324,13 @@ void *gp_enumerate_fonts_init(gs_memory_t *mem)
     }
 
     /* load the font set that we'll iterate over */
-    FcPattern *pat = FcPatternBuild(NULL,
+    pat = FcPatternBuild(NULL,
 	    FC_OUTLINE, FcTypeBool, 1,
 	    FC_SCALABLE, FcTypeBool, 1,
 	    NULL);
-    FcObjectSet* os = FcObjectSetBuild(FC_FILE, FC_OUTLINE, FC_FAMILY, FC_WEIGHT, FC_SLANT, 0);
+    os = FcObjectSetBuild(FC_FILE, FC_OUTLINE,
+	    FC_FAMILY, FC_WEIGHT, FC_SLANT,
+	    NULL);
     state->font_list = FcFontList(0, pat, os);
     FcPatternDestroy(pat);
     FcObjectSetDestroy(os);
@@ -342,22 +349,23 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
 {
 #ifdef HAVE_FONTCONFIG
     unix_fontenum_t* state = (unix_fontenum_t *)enum_state;
+    FcChar8 *file_fc = NULL;
+    FcChar8 *family_fc = NULL;
+    int outline_fc, slant_fc, weight_fc;
+    FcPattern *font;
+    FcResult result;
 
     if (state == NULL) {
 	return 0;   /* gp_enumerate_fonts_init failed for some reason */
     }
 
-    /* Bits of the following were borrowed from Red Hat's GS 7 FontConfig patch */
-    FcChar8* file_fc = NULL;
-    FcChar8* family_fc = NULL;
-    int outline_fc, slant_fc, weight_fc;
-    FcResult result;
-
     if (state->index == state->font_list->nfont) {
 	return 0; /* we've run out of fonts */
     }
 
-    FcPattern* font = state->font_list->fonts[state->index];
+    /* Bits of the following were borrowed from Red Hat's
+     * fontconfig patch for Ghostscript 7 */
+    font = state->font_list->fonts[state->index];
 
     result = FcPatternGetString (font, FC_FAMILY, 0, &family_fc);
     if (result != FcResultMatch || family_fc == NULL) {
@@ -392,7 +400,8 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
     /* Gross hack to work around Fontconfig's inability to tell
      * us the font's PostScript name - generate it ourselves.
      * We must free the memory allocated here next time around. */
-    makePSFontName((char *)family_fc, weight_fc, slant_fc, (char *)&state->name, sizeof(state->name));
+    makePSFontName((char *)family_fc, weight_fc, slant_fc,
+	(char *)&state->name, sizeof(state->name));
     *fontname = (char *)&state->name;
 
     /* return the font path straight out of fontconfig */
