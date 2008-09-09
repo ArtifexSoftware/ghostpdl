@@ -84,7 +84,6 @@ zht2_h=$(PSSRC)zht2.h $(gscspace_h)
 zchar42_h=$(PSSRC)zchar42.h
 zfunc_h=$(PSSRC)zfunc.h
 
-
 GH=$(AK) $(ghost_h)
 
 isupport1_=$(PSOBJ)ialloc.$(OBJ) $(PSOBJ)igc.$(OBJ) $(PSOBJ)igcref.$(OBJ) $(PSOBJ)igcstr.$(OBJ)
@@ -261,6 +260,10 @@ sbhc_h=$(PSSRC)sbhc.h $(shc_h)
 zfile_h=$(PSSRC)zfile.h
 # Include files for optional features
 ibnum_h=$(PSSRC)ibnum.h
+zcolor_h=$(PSSRC)zcolor.h
+zcie_h=$(PSSRC)zcie.h
+zicc_h=$(PSSRC)zicc.h
+
 
 ### Initialization and scanning
 
@@ -449,12 +452,13 @@ $(PSOBJ)zcharout.$(OBJ) : $(PSSRC)zcharout.c $(OP) $(memory__h)\
 	$(PSCC) $(PSO_)zcharout.$(OBJ) $(C_) $(PSSRC)zcharout.c
 
 $(PSOBJ)zcolor.$(OBJ) : $(PSSRC)zcolor.c $(OP)\
- $(memory__h) $(estack_h) $(ialloc_h)\
- $(igstate_h) $(iutil_h) $(store_h) $(gxfixed_h) $(gxmatrix_h)\
+ $(memory__h) $(dstack_h) $(estack_h) $(ialloc_h)\
+ $(igstate_h) $(iutil_h) $(store_h) $(gscolor_h) $(gscolor1_h)\
+ $(gscsepr_h) $(gscdevn_h) $(gscpixel_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gzstate_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxcmap_h)\
  $(gxcspace_h) $(gxcolor2_h) $(gxpcolor_h)\
  $(idict_h) $(icolor_h) $(idparam_h) $(iname_h) $(iutil_h) $(icsmap_h)\
- $(zht2_h) $(dstack_h)  
+ $(ifunc_h) $(zht2_h) $(zcolor_h) $(zcie_h) $(zicc_h)
 	$(PSCC) $(PSO_)zcolor.$(OBJ) $(C_) $(PSSRC)zcolor.c 
 
 $(PSOBJ)zdevice.$(OBJ) : $(PSSRC)zdevice.c $(OP) $(string__h)\
@@ -1665,8 +1669,8 @@ $(PSD)icc.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)cie.dev $(iccread_) \
 
 $(PSOBJ)zicc.$(OBJ) : $(PSSRC)zicc.c  $(OP) $(math__h) $(memory__h)\
  $(gsstruct_h) $(gxcspace_h) $(stream_h) $(files_h) $(gscolor2_h)\
- $(gsicc_h) $(estack_h) $(idict_h) $(idparam_h) $(igstate_h) $(icie_h) \
- $(ialloc_h)
+ $(icc_h) $(gsicc_h) $(estack_h) $(idict_h) $(idparam_h) $(igstate_h)\
+ $(icie_h) $(ialloc_h) $(zicc_h)
 	$(GLICCCC) $(PSO_)zicc.$(OBJ) $(C_) $(PSSRC)zicc.c
 
 # ---------------- Support for %disk IODevices ---------------- #
