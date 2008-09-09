@@ -102,7 +102,7 @@ dnl --------------------------------------------------
 if test $ac_cv_prog_gcc = yes; then
     cflags_to_try="-Wall -Wstrict-prototypes -Wundef \
 -Wmissing-declarations -Wmissing-prototypes -Wwrite-strings \
--Wno-strict-aliasing \
+-Wno-strict-aliasing -Wdeclaration-after-statement \
 -fno-builtin -fno-common"
     optflags_to_try="-O2"
 else
