@@ -1,6 +1,6 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -237,7 +237,7 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 	MEMFILE *base_f = NULL;
 
 	/* reopening an existing file. */
-	code = sscanf(fname+1, "0x%x", &base_f);
+	code = sscanf(fname+1, "%p", &base_f);
 	if (code != 1) {
 	    code = gs_note_error(gs_error_ioerror);
 	    goto finish;
@@ -384,7 +384,7 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 
     /* Return the address of this memfile as a string for use in future clist_fopen calls */
     fname[0] = 0xff;	    /* a flag that this is a memfile name */
-    sprintf(fname+1, "0x%0x", f);
+    sprintf(fname+1, "%p", f);
 
 #ifdef DEBUG
 	tot_compressed = 0;
