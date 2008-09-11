@@ -171,21 +171,20 @@ endif # ROMFONTS
 endif # PL_SCALER = afs
 
 # a 64 bit type is needed for devicen color space/model support but
-# carries a performance burden.  Use this definition (uncomment) for
-# devicen support.
-
-GX_COLOR_INDEX_DEFINE?=-DGX_COLOR_INDEX_TYPE="unsigned long long"
+# carries a performance burden.  Change unsigned long to unsigned long
+# long to enable large color indices.
+GX_COLOR_INDEX_DEFINE?=-DGX_COLOR_INDEX_TYPE="unsigned long"
 
 HAVE_STDINT_H_DEFINE?=-DHAVE_STDINT_H
 HAVE_MKSTEMP_DEFINE?=-DHAVE_MKSTEMP
 HAVE_HYPOT_DEFINE?=-DHAVE_HYPOT
 
 GCFLAGS?=-Wall -Wundef -Wstrict-prototypes -Wmissing-declarations \
-         -Wmissing-prototypes -Wpointer-arith -Wwrite-strings \
+         -Wmissing-prototypes -Wpointer-arith \
          -Wwrite-strings -Wno-strict-aliasing \
          -fno-builtin -fno-common \
           $(HAVE_STDINT_H_DEFINE) $(HAVE_MKSTEMP_DEFINE) $(HAVE_HYPOT_DEFINE) \
-          $(PSICFLAGS) $(PDL_INCLUDE_FLAGS)
+          $(GX_COLOR_INDEX_DEFINE) $(PSICFLAGS) $(PDL_INCLUDE_FLAGS)
 
 CFLAGS?= $(GCFLAGS) $(XCFLAGS)
 
