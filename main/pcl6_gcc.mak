@@ -180,19 +180,12 @@ HAVE_STDINT_H_DEFINE?=-DHAVE_STDINT_H
 HAVE_MKSTEMP_DEFINE?=-DHAVE_MKSTEMP
 HAVE_HYPOT_DEFINE?=-DHAVE_HYPOT
 
-# Assorted definitions.  Some of these should probably be factored out....
-# We use -O0 for debugging, because optimization confuses gdb.
-# Note that the omission of -Dconst= rules out the use of gcc versions
-# between 2.7.0 and 2.7.2 inclusive.  (2.7.2.1 is OK.)
-# disable assert() with -DNDEBUG
-
 GCFLAGS?=-Wall -Wundef -Wstrict-prototypes -Wmissing-declarations \
          -Wmissing-prototypes -Wpointer-arith -Wwrite-strings \
-         -Wcast-qual -Wwrite-strings -Wno-strict-aliasing \
+         -Wwrite-strings -Wno-strict-aliasing \
          -fno-builtin -fno-common \
-          -DNDEBUG \
           $(HAVE_STDINT_H_DEFINE) $(HAVE_MKSTEMP_DEFINE) $(HAVE_HYPOT_DEFINE) \
-          $(GX_COLOR_INDEX_DEFINE) $(PSICFLAGS) $(PDL_INCLUDE_FLAGS)
+          $(PSICFLAGS) $(PDL_INCLUDE_FLAGS)
 
 CFLAGS?= $(GCFLAGS) $(XCFLAGS)
 
