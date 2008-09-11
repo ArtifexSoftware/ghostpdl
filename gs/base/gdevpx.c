@@ -1163,7 +1163,7 @@ pclxl_open_device(gx_device * dev)
 }
 
 /* Wrap up ("output") a page. */
-/* We only support flush = true, and we don't support num_copies != 1. */
+/* We only support flush = true */
 static int
 pclxl_output_page(gx_device * dev, int num_copies, int flush)
 {
@@ -1174,6 +1174,7 @@ pclxl_output_page(gx_device * dev, int num_copies, int flush)
     if (!xdev->in_page)
 	pclxl_beginpage((gx_device_vector *)dev);
     s = xdev->strm;
+    px_put_usa(s, (uint)num_copies, pxaPageCopies);	/* num_copies */
     spputc(s, pxtEndPage);
     sflush(s);
     pclxl_page_init(xdev);
