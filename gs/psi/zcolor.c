@@ -914,8 +914,8 @@ static int rgb2hsb(float *RGB)
 	HSB[1] = diff / HSB[2];
 	switch (j) {
 	    case 0 : /* R == Brightness */
-		/* diff cna only be zero if r == br, so we need to make sure here we
-		 * don't divide by zeri
+		/* diff can only be zero if r == br, so we need to make sure here we
+		 * don't divide by zero
 		 */
 		if (diff)
 		    HSB[0] = ((RGB[1] - RGB[2]) / (6.0 * diff)) + (RGB[2] > RGB[1] ? 1.0 : 0.0);
@@ -2665,8 +2665,6 @@ static int validateciedefspace(i_ctx_t * i_ctx_p, ref **r)
 		return code;
 	    if (r_has_type(&valref, t_integer))
 		value[i] = (float)valref.value.intval;
-	    else if (r_has_type(&valref, t_real))
-		value[i] = (float)valref.value.realval;
 	    else
 	        return_error(e_typecheck);
 	}
@@ -2691,6 +2689,8 @@ static int validateciedefspace(i_ctx_t * i_ctx_p, ref **r)
 	    if (r_size(&tempref) != (3 * value[1] * value[2]))
 		return_error(e_rangecheck);
 	}
+    } else {
+	return_error(e_rangecheck);
     }
 
     /* Remaining parameters are optional, but we must validate
@@ -2948,8 +2948,6 @@ static int validateciedefgspace(i_ctx_t * i_ctx_p, ref **r)
 		return code;
 	    if (r_has_type(&valref, t_integer))
 		value[i] = (float)valref.value.intval;
-	    else if (r_has_type(&valref, t_real))
-		value[i] = (float)valref.value.realval;
 	    else
 	        return_error(e_typecheck);
 	}
@@ -2979,6 +2977,8 @@ static int validateciedefgspace(i_ctx_t * i_ctx_p, ref **r)
 		    return_error(e_rangecheck);
 	    }
 	}
+    } else {
+	return_error(e_rangecheck);
     }
 
     /* Remaining parameters are optional, but we must validate
