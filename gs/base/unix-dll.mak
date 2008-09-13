@@ -78,11 +78,11 @@ $(GS_SO_MAJOR): $(GS_SO_MAJOR_MINOR)
 
 # Build the small Ghostscript loaders, with Gtk+ and without
 
-$(GSSOC_XE): $(GS_SO) $(GLSRC)$(SOC_LOADER)
-	$(GLCC) -g -o $(GSSOC_XE) $(GLSRC)dxmainc.c -L$(BINDIR) -l$(GS)
+$(GSSOC_XE): $(GS_SO) $(PSSRC)$(SOC_LOADER)
+	$(GLCC) -g -o $(GSSOC_XE) $(PSSRC)dxmainc.c -L$(BINDIR) -l$(GS)
 
-$(GSSOX_XE): $(GS_SO) $(GLSRC)$(SOC_LOADER)
-	$(GLCC) -g $(SOC_CFLAGS) -o $(GSSOX_XE) $(GLSRC)$(SOC_LOADER) \
+$(GSSOX_XE): $(GS_SO) $(PSSRC)$(SOC_LOADER)
+	$(GLCC) -g $(SOC_CFLAGS) -o $(GSSOX_XE) $(PSSRC)$(SOC_LOADER) \
 	-L$(BINDIR) -l$(GS) $(SOC_LIBS)
 
 # ------------------------- Recursive make targets ------------------------- #
@@ -123,9 +123,9 @@ install-so: so
 	ln -s $(GS_SONAME_MAJOR_MINOR) $(DESTDIR)$(libdir)/$(GS_SONAME)
 	$(RM_) $(DESTDIR)$(libdir)/$(GS_SONAME_MAJOR)
 	ln -s $(GS_SONAME_MAJOR_MINOR) $(DESTDIR)$(libdir)/$(GS_SONAME_MAJOR)
-	$(INSTALL_DATA) $(PSSRC)iapi.h $(DESTDIR)$(gsincludedir)/iapi.h
-	$(INSTALL_DATA) $(PSSRC)ierrors.h $(DESTDIR)$(gsincludedir)/ierrors.h
-	$(INSTALL_DATA) $(PSSRC)gdevdsp.h $(DESTDIR)$(gsincludedir)/gdevdsp.h
+	$(INSTALL_DATA) $(PSSRC)iapi.h $(DESTDIR)$(gsincludedir)iapi.h
+	$(INSTALL_DATA) $(PSSRC)ierrors.h $(DESTDIR)$(gsincludedir)ierrors.h
+	$(INSTALL_DATA) $(GLSRC)gdevdsp.h $(DESTDIR)$(gsincludedir)gdevdsp.h
 
 soinstall: install-so install-scripts install-data $(INSTALL_SHARED) $(INSTALL_CONTRIB)
 
