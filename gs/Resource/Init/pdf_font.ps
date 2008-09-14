@@ -500,7 +500,9 @@ currentdict end readonly def
         setuserparams
 
         1 index /FontInfo .knownget not {
-          1 index /FontInfo 5 dict dup 4 1 roll put
+          currentglobal 2 index dup gcheck setglobal
+          /FontInfo 5 dict dup 5 1 roll .forceput
+          setglobal
         } if
         dup /GlyphNames2Unicode .knownget not {
           currentglobal exch dup gcheck setglobal
