@@ -27,7 +27,7 @@ static void svg_fill(svg_context_t *ctx)
 static void svg_stroke(svg_context_t *ctx)
 {
     svg_set_stroke_color(ctx);
-    gs_stroke(ctx);
+    gs_stroke(ctx->pgs);
 }
 
 int
