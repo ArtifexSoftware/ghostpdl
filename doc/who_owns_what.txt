@@ -1,7 +1,7 @@
 afs.dev: henry
 async.dev: ray and henry
-bbox.dev: igor
-bboxutil.dev: igor
+bbox.dev: ray
+bboxutil.dev: ray
 bcp.dev: alex
 bit.dev: ray and henry
 bitcmyk.dev: ray and henry
@@ -222,20 +222,20 @@ ppmraw.dev: ray and henry
 ps2write.dev: ken
 psbase.dev: alex
 psdcmyk.dev: ralph
-psdf.dev: igor
+psdf.dev: ken
 psdrgb.dev: ray and henry
 psf.dev: igor
 psf0lib.dev: igor
 psf0read.dev: igor
 psf1lib.dev: igor
 psf2lib.dev: igor
-psgray.dev: igor
+psgray.dev: ken
 psi.dev: ray and henry
 psl2cs.dev: michael
 psl2lib.dev: michael, ralph and alex
-psmono.dev: igor
-psrgb.dev: igor
-pswrite.dev: igor
+psmono.dev: ken
+psrgb.dev: ken
+pswrite.dev: ken
 pxl.dev: henry
 pxlcolor.dev: ray and henry
 pxlmono.dev: ray and henry
@@ -287,7 +287,7 @@ tifflzw.dev: ray and henry
 tiffpack.dev: ray and henry
 tiffs.dev: ray and henry
 tiffsep.dev: ray and henry
-tracedev.dev: igor
+tracedev.dev: ken
 translib.dev: ralph
 transpar.dev: ralph
 traplib.dev: ralph
@@ -302,7 +302,7 @@ uniprint.dev: ray and henry
 unix_.dev: ?
 upath.dev: igor
 usparam.dev: ray and henry
-vector.dev: igor
+vector.dev: ken
 wtscmyk.dev: ray
 wtsimdi.dev: ray
 x11.dev: ralph
@@ -330,7 +330,7 @@ non windows makefiles:ralph
 pcl, pxl, pl:henry
 pdf interpreter:alex
 ps, pdf, eps write:ken
-vectors:igor
+paths:igor
 windows makefiles:ray
 xps:tor
 
