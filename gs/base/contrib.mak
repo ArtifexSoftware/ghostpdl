@@ -845,16 +845,16 @@ $(GLOBJ)gdevsunr.$(OBJ) : $(GLSRC)gdevsunr.c $(PDEVH)
 ### These drivers are based on patches on existing device drivers in the
 ### src/ directory, therefore they are not in addons/
 
-$(DD)ljet4pjl.dev: $(HPMONO) $(DD)page.dev
+$(DD)ljet4pjl.dev : $(HPMONO) $(DD)page.dev
 	$(SETPDEV) $(DD)ljet4pjl $(HPMONO)
 
-$(DD)lj4dithp.dev: $(cdeskjet_) $(DD)page.dev
+$(DD)lj4dithp.dev : $(cdeskjet_) $(DD)page.dev
 	$(SETPDEV) $(DD)lj4dithp $(cdeskjet_)
 
-$(DD)dj505j.dev: $(cdeskjet_)
+$(DD)dj505j.dev : $(cdeskjet_)
 	$(SETPDEV) $(DD)dj505j $(cdeskjet_)
 
-$(DD)picty180.dev: $(cdeskjet_)
+$(DD)picty180.dev : $(cdeskjet_)
 	$(SETPDEV) $(DD)picty180 $(cdeskjet_)
 
 #########################################################################

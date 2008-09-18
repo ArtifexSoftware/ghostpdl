@@ -246,13 +246,13 @@ $(DD)chp2200.dev : $(cdeskjet8_) $(DD)page.dev
 
 GDIMONO=$(GLOBJ)gdevgdi.$(OBJ) $(HPPCL)
 
-$(DD)gdi.dev: $(GDIMONO) $(DD)page.dev
+$(DD)gdi.dev : $(GDIMONO) $(DD)page.dev
 	$(SETPDEV) $(DD)gdi $(GDIMONO)
 
-$(DD)samsunggdi.dev: $(GDIMONO) $(DD)page.dev
+$(DD)samsunggdi.dev : $(GDIMONO) $(DD)page.dev
 	$(SETPDEV) $(DD)samsunggdi $(GDIMONO)
 
-$(GLOBJ)gdevgdi.$(OBJ): $(CONTRIBSRC)gdevgdi.c $(PDEVH) $(gdevpcl_h)
+$(GLOBJ)gdevgdi.$(OBJ) : $(CONTRIBSRC)gdevgdi.c $(PDEVH) $(gdevpcl_h)
 	$(GLCC) $(GLO_)gdevgdi.$(OBJ) $(C_) $(CONTRIBSRC)gdevgdi.c
 
 
@@ -324,173 +324,173 @@ escv_=$(GLOBJ)gdevescv.$(OBJ)
 $(GLOBJ)gdevescv.$(OBJ): $(ESCV_SRC)gdevescv.c $(ESCV_SRC)gdevescv.h $(PDEVH)
 	$(GLCC) -DA4 $(GLO_)gdevescv.$(OBJ) $(C_) $(escv_opts) $(ESCV_SRC)gdevescv.c
 
-$(DD)alc1900.dev: $(escv_) $(DD)page.dev
+$(DD)alc1900.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)alc1900 $(escv_)
 
-$(DD)alc2000.dev: $(escv_) $(DD)page.dev
+$(DD)alc2000.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)alc2000 $(escv_)
 
-$(DD)alc4000.dev: $(escv_) $(DD)page.dev
+$(DD)alc4000.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)alc4000 $(escv_)
 
-$(DD)alc4100.dev: $(escv_) $(DD)page.dev
+$(DD)alc4100.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)alc4100 $(escv_)
 
-$(DD)alc8500.dev: $(escv_) $(DD)page.dev
+$(DD)alc8500.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)alc8500 $(escv_)
 
-$(DD)alc8600.dev: $(escv_) $(DD)page.dev
+$(DD)alc8600.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)alc8600 $(escv_)
 
-$(DD)alc9100.dev: $(escv_) $(DD)page.dev
+$(DD)alc9100.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)alc9100 $(escv_)
 
-$(DD)lp3000c.dev: $(escv_) $(DD)page.dev
+$(DD)lp3000c.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp3000c $(escv_)
 
-$(DD)lp8000c.dev: $(escv_) $(DD)page.dev
+$(DD)lp8000c.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp8000c $(escv_)
 
-$(DD)lp8200c.dev: $(escv_) $(DD)page.dev
+$(DD)lp8200c.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp8200c $(escv_)
 
-$(DD)lp8300c.dev: $(escv_) $(DD)page.dev
+$(DD)lp8300c.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp8300c $(escv_)
 
-$(DD)lp8500c.dev: $(escv_) $(DD)page.dev
+$(DD)lp8500c.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp8500c $(escv_)
 
-$(DD)lp8800c.dev: $(escv_) $(DD)page.dev
+$(DD)lp8800c.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp8800c $(escv_)
 
-$(DD)lp9000c.dev: $(escv_) $(DD)page.dev
+$(DD)lp9000c.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp9000c $(escv_)
 
-$(DD)lp9200c.dev: $(escv_) $(DD)page.dev
+$(DD)lp9200c.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp9200c $(escv_)
 
-$(DD)lp9500c.dev: $(escv_) $(DD)page.dev
+$(DD)lp9500c.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp9500c $(escv_)
 
-$(DD)lp9800c.dev: $(escv_) $(DD)page.dev
+$(DD)lp9800c.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp9800c $(escv_)
 
-$(DD)lps6500.dev: $(escv_) $(DD)page.dev
+$(DD)lps6500.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lps6500 $(escv_)
 
-$(DD)epl2050.dev: $(escv_) $(DD)page.dev
+$(DD)epl2050.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)epl2050 $(escv_)
 
-$(DD)epl2050p.dev: $(escv_) $(DD)page.dev
+$(DD)epl2050p.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)epl2050p $(escv_)
 
-$(DD)epl2120.dev: $(escv_) $(DD)page.dev
+$(DD)epl2120.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)epl2120 $(escv_)
 
-$(DD)epl2500.dev: $(escv_) $(DD)page.dev
+$(DD)epl2500.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)epl2500 $(escv_)
 
-$(DD)epl2750.dev: $(escv_) $(DD)page.dev
+$(DD)epl2750.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)epl2750 $(escv_)
 
-$(DD)epl5800.dev: $(escv_) $(DD)page.dev
+$(DD)epl5800.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)epl5800 $(escv_)
 
-$(DD)epl5900.dev: $(escv_) $(DD)page.dev
+$(DD)epl5900.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)epl5900 $(escv_)
 
-$(DD)epl6100.dev: $(escv_) $(DD)page.dev
+$(DD)epl6100.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)epl6100 $(escv_)
 
-$(DD)epl6200.dev: $(escv_) $(DD)page.dev
+$(DD)epl6200.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)epl6200 $(escv_)
 
-$(DD)lp1800.dev: $(escv_) $(DD)page.dev
+$(DD)lp1800.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp1800 $(escv_)
 
-$(DD)lp1900.dev: $(escv_) $(DD)page.dev
+$(DD)lp1900.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp1900 $(escv_)
 
-$(DD)lp2200.dev: $(escv_) $(DD)page.dev
+$(DD)lp2200.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp2200 $(escv_)
 
-$(DD)lp2400.dev: $(escv_) $(DD)page.dev
+$(DD)lp2400.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp2400 $(escv_)
 
-$(DD)lp2500.dev: $(escv_) $(DD)page.dev
+$(DD)lp2500.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp2500 $(escv_)
 
-$(DD)lp7500.dev: $(escv_) $(DD)page.dev
+$(DD)lp7500.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp7500 $(escv_)
 
-$(DD)lp7700.dev: $(escv_) $(DD)page.dev
+$(DD)lp7700.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp7700 $(escv_)
 
-$(DD)lp7900.dev: $(escv_) $(DD)page.dev
+$(DD)lp7900.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp7900 $(escv_)
 
-$(DD)lp8100.dev: $(escv_) $(DD)page.dev
+$(DD)lp8100.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp8100 $(escv_)
 
-$(DD)lp8300f.dev: $(escv_) $(DD)page.dev
+$(DD)lp8300f.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp8300f $(escv_)
 
-$(DD)lp8400f.dev: $(escv_) $(DD)page.dev
+$(DD)lp8400f.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp8400f $(escv_)
 
-$(DD)lp8600.dev: $(escv_) $(DD)page.dev
+$(DD)lp8600.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp8600 $(escv_)
 
-$(DD)lp8600f.dev: $(escv_) $(DD)page.dev
+$(DD)lp8600f.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp8600f $(escv_)
 
-$(DD)lp8700.dev: $(escv_) $(DD)page.dev
+$(DD)lp8700.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp8700 $(escv_)
 
-$(DD)lp8900.dev: $(escv_) $(DD)page.dev
+$(DD)lp8900.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp8900 $(escv_)
 
-$(DD)lp9000b.dev: $(escv_) $(DD)page.dev
+$(DD)lp9000b.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp9000b $(escv_)
 
-$(DD)lp9100.dev: $(escv_) $(DD)page.dev
+$(DD)lp9100.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp9100 $(escv_)
 
-$(DD)lp9200b.dev: $(escv_) $(DD)page.dev
+$(DD)lp9200b.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp9200b $(escv_)
 
-$(DD)lp9300.dev: $(escv_) $(DD)page.dev
+$(DD)lp9300.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp9300 $(escv_)
 
-$(DD)lp9400.dev: $(escv_) $(DD)page.dev
+$(DD)lp9400.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp9400 $(escv_)
 
-$(DD)lp9600.dev: $(escv_) $(DD)page.dev
+$(DD)lp9600.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp9600 $(escv_)
 
-$(DD)lp9600s.dev: $(escv_) $(DD)page.dev
+$(DD)lp9600s.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp9600s $(escv_)
 
-$(DD)lps4500.dev: $(escv_) $(DD)page.dev
+$(DD)lps4500.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lps4500 $(escv_)
 
 
 # ------ The Lexmark 5700 and 7000 devices ------ #
 
 lex7000_=$(GLOBJ)gdevlx7.$(OBJ)
-$(DD)lex7000.dev: $(lex7000_) $(DD)page.dev
+$(DD)lex7000.dev : $(lex7000_) $(DD)page.dev
 	$(SETPDEV) $(DD)lex7000 $(lex7000_)
 
 lex5700_=$(GLOBJ)gdevlx7.$(OBJ)
-$(DD)lex5700.dev: $(lex5700_) $(DD)page.dev
+$(DD)lex5700.dev : $(lex5700_) $(DD)page.dev
 	$(SETPDEV) $(DD)lex5700 $(lex5700_)
 
 lex3200_=$(GLOBJ)gdevlx7.$(OBJ)
-$(DD)lex3200.dev: $(lex3200_) $(DD)page.dev
+$(DD)lex3200.dev : $(lex3200_) $(DD)page.dev
 	$(SETPDEV) $(DD)lex3200 $(lex3200_)
 
 lex2050_=$(GLOBJ)gdevlx7.$(OBJ)
-$(DD)lex2050.dev: $(lex2050_) $(DD)page.dev
+$(DD)lex2050.dev : $(lex2050_) $(DD)page.dev
 	$(SETPDEV) $(DD)lex2050 $(lex2050_)
 
 $(GLOBJ)gdevlx7.$(OBJ): $(CONTRIBSRC)gdevlx7.c $(PDEVH)
@@ -502,7 +502,7 @@ $(GLOBJ)gdevlx7.$(OBJ): $(CONTRIBSRC)gdevlx7.c $(PDEVH)
 ###   Peter B. West <p.west@uq.net.au>                                   ###
 
 lx5000_=$(GLOBJ)gdevlx50.$(OBJ)
-$(DD)lx5000.dev:    $(lx5000_)
+$(DD)lx5000.dev :    $(lx5000_)
 	$(SETPDEV) $(DD)lx5000 $(lx5000_)
 
 $(GLOBJ)gdevlx50.$(OBJ): $(CONTRIBSRC)gdevlx50.c $(PDEVH)
@@ -516,7 +516,7 @@ lxm3200_=$(GLOBJ)gdevlx32.$(OBJ)
 $(GLOBJ)gdevlx32.$(OBJ): $(CONTRIBSRC)gdevlx32.c $(PDEVH) $(gsparam_h)
 	$(GLCC) $(GLO_)gdevlx32.$(OBJ) $(C_) $(CONTRIBSRC)gdevlx32.c
 
-$(DD)lxm3200.dev: $(lxm3200_) $(DD)page.dev
+$(DD)lxm3200.dev : $(lxm3200_) $(DD)page.dev
 	$(SETPDEV) $(DD)lxm3200 $(lxm3200_)
 
 
@@ -539,12 +539,12 @@ $(GLOBJ)gdevl4r.$(OBJ): $(LIPS_SRC)gdevl4r.c $(LIPS_SRC)gdevlips.h $(PDEVH)
 $(GLOBJ)gdevlips.$(OBJ): $(GX) $(LIPS_SRC)gdevlips.c
 	$(GLCC) $(GLO_)gdevlips.$(OBJ) $(LIPS_OPT) $(C_) $(LIPS_SRC)gdevlips.c
 
-$(DD)lips4.dev: $(lipsr_) $(DD)page.dev
+$(DD)lips4.dev : $(lipsr_) $(DD)page.dev
 	$(SETPDEV) $(DD)lips4 $(lipsr_)
 
 lipsv_=$(GLOBJ)gdevl4v.$(OBJ) $(GLOBJ)gdevlips.$(OBJ)
 
-$(DD)lips4v.dev: $(ECHOGS_XE) $(lipsv_) $(DD)vector.dev
+$(DD)lips4v.dev : $(ECHOGS_XE) $(lipsv_) $(DD)vector.dev
 	$(SETDEV) $(DD)lips4v $(lipsv_)
 	$(ADDMOD) $(DD)lips4v -include $(GLD)vector
 
@@ -556,10 +556,10 @@ $(GLOBJ)gdevl4v.$(OBJ): $(LIPS_SRC)gdevl4v.c $(LIPS_SRC)gdevlips.h $(GDEV)\
 
 ### --------------- Some extra devices: lips2p, bjc880j ---------------- ###
 
-$(DD)lips2p.dev: $(lipsr_) $(DD)page.dev
+$(DD)lips2p.dev : $(lipsr_) $(DD)page.dev
 	$(SETPDEV) $(DD)lips2p $(lipsr_)
 
-$(DD)bjc880j.dev: $(lipsr_) $(DD)page.dev
+$(DD)bjc880j.dev : $(lipsr_) $(DD)page.dev
 	$(SETPDEV) $(DD)bjc880j $(lipsr_)
 
 
@@ -567,10 +567,10 @@ $(DD)bjc880j.dev: $(lipsr_) $(DD)page.dev
 
 md2k_=$(GLOBJ)gdevmd2k.$(OBJ)
 
-$(DD)md2k.dev: $(md2k_) $(DD)page.dev
+$(DD)md2k.dev : $(md2k_) $(DD)page.dev
 	$(SETPDEV) $(DD)md2k $(md2k_)
 
-$(DD)md5k.dev: $(md2k_) $(DD)page.dev
+$(DD)md5k.dev : $(md2k_) $(DD)page.dev
 	$(SETPDEV) $(DD)md5k $(md2k_)
 
 $(GLOBJ)gdevmd2k.$(OBJ): $(CONTRIBSRC)gdevmd2k.c $(PDEVH) $(gsparam_h)
@@ -777,55 +777,55 @@ $(GLOBJ)pclcomp.$(OBJ): $(pcl3_src)pclcomp.c $(pcl3_src)pclgen.h
 # can add to the DEVICE_DEVS* variables in the platform-specific make file.
 
 # The generic pcl3 device with selectable subdevices
-$(DD)pcl3.dev: $(pcl3_) $(DD)page.dev
+$(DD)pcl3.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)pcl3 $(pcl3_)
 
 # Fixed devices for specific printers
-$(DD)hpdjplus.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdjplus.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdjplus $(pcl3_)
-$(DD)hpdjportable.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdjportable.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdjportable $(pcl3_)
-$(DD)hpdj310.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj310.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj310 $(pcl3_)
-$(DD)hpdj320.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj320.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj320 $(pcl3_)
-$(DD)hpdj340.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj340.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj340 $(pcl3_)
-$(DD)hpdj400.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj400.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj400 $(pcl3_)
-$(DD)hpdj500.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj500.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj500 $(pcl3_)
-$(DD)hpdj500c.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj500c.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj500c $(pcl3_)
-$(DD)hpdj510.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj510.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj510 $(pcl3_)
-$(DD)hpdj520.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj520.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj520 $(pcl3_)
-$(DD)hpdj540.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj540.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj540 $(pcl3_)
-$(DD)hpdj550c.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj550c.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj550c $(pcl3_)
-$(DD)hpdj560c.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj560c.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj560c $(pcl3_)
-$(DD)hpdj600.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj600.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj600 $(pcl3_)
-$(DD)hpdj660c.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj660c.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj660c $(pcl3_)
-$(DD)hpdj670c.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj670c.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj670c $(pcl3_)
-$(DD)hpdj680c.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj680c.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj680c $(pcl3_)
-$(DD)hpdj690c.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj690c.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj690c $(pcl3_)
-$(DD)hpdj850c.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj850c.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj850c $(pcl3_)
-$(DD)hpdj855c.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj855c.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj855c $(pcl3_)
-$(DD)hpdj870c.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj870c.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj870c $(pcl3_)
-$(DD)hpdj890c.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj890c.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj890c $(pcl3_)
-$(DD)hpdj1120c.dev: $(pcl3_) $(DD)page.dev
+$(DD)hpdj1120c.dev : $(pcl3_) $(DD)page.dev
 	$(SETPDEV) $(DD)hpdj1120c $(pcl3_)
 
 #------------------------------------------------------------------------------
@@ -878,16 +878,16 @@ JAPSRC=$(JAPDIR)$(D)
 
 pr201_=$(GLOBJ)gdevp201.$(OBJ) $(GLOBJ)gdevprn.$(OBJ)
 
-$(DD)pr201.dev: $(pr201_)
+$(DD)pr201.dev : $(pr201_)
 	$(SETPDEV) $(DD)pr201 $(pr201_)
 
-$(DD)pr150.dev: $(pr201_)
+$(DD)pr150.dev : $(pr201_)
 	$(SETPDEV) $(DD)pr150 $(pr201_)
 
-$(DD)pr1000.dev: $(pr201_)
+$(DD)pr1000.dev : $(pr201_)
 	$(SETPDEV) $(DD)pr1000 $(pr201_)
 
-$(DD)pr1000_4.dev: $(pr201_)
+$(DD)pr1000_4.dev : $(pr201_)
 	$(SETPDEV) $(DD)pr1000_4 $(pr201_)
 
 $(GLO_)gdevp201.$(OBJ): $(JAPSRC)gdevp201.c $(PDEVH)
@@ -897,7 +897,7 @@ $(GLO_)gdevp201.$(OBJ): $(JAPSRC)gdevp201.c $(PDEVH)
 
 jj100_=$(GLOBJ)gdevj100.$(OBJ) $(GLOBJ)gdevprn.$(OBJ)
 
-$(DD)jj100.dev: $(jj100_)
+$(DD)jj100.dev : $(jj100_)
 	$(SETPDEV) $(DD)jj100 $(jj100_)
 
 $(GLOBJ)gdevj100.$(OBJ): $(JAPSRC)gdevj100.c $(PDEVH)
@@ -907,10 +907,10 @@ $(GLOBJ)gdevj100.$(OBJ): $(JAPSRC)gdevj100.c $(PDEVH)
 
 bj10v_=$(GLOBJ)gdev10v.$(OBJ) $(GLOBJ)gdevprn.$(OBJ)
 
-$(DD)bj10v.dev: $(bj10v_)
+$(DD)bj10v.dev : $(bj10v_)
 	$(SETPDEV) $(DD)bj10v $(bj10v_)
 
-$(DD)bj10vh.dev: $(bj10v_)
+$(DD)bj10vh.dev : $(bj10v_)
 	$(SETPDEV) $(DD)bj10vh $(bj10v_)
 
 # Uncomment the following line if you are using MS-DOS on PC9801 series.
@@ -926,16 +926,16 @@ maguro_=$(GLOBJ)gdevmag.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ) $(GLOBJ)gdevprn.$(OBJ)
 $(GLOBJ)gdevmag.$(OBJ): $(JAPSRC)gdevmag.c $(PDEVH)
 	$(GLCC) $(O_)$@ $(C_) $(JAPSRC)gdevmag.c
 
-$(DD)mag16.dev: $(maguro_)
+$(DD)mag16.dev : $(maguro_)
 	$(SETDEV) $(DD)mag16 $(maguro_)
 
-$(DD)mag256.dev: $(maguro_)
+$(DD)mag256.dev : $(maguro_)
 	$(SETDEV) $(DD)mag256 $(maguro_)
 
 ### ---------------- Dot matrix printer device ---------------- ###
 dmprt_=$(GLOBJ)gdevdmpr.$(OBJ) $(GLOBJ)dviprlib.$(OBJ) $(GLOBJ)gdevprn.$(OBJ)
 
-$(DD)dmprt.dev: $(dmprt_) $(DD)page.dev
+$(DD)dmprt.dev : $(dmprt_) $(DD)page.dev
 	$(SETDEV) $(DD)dmprt $(dmprt_)
 	$(ADDMOD) $(DD)dmprt -ps dmp_init
 
@@ -961,23 +961,23 @@ mj700v2c_=$(GLOBJ)gdevmjc.$(OBJ) $(HPPCL)
 $(GLOBJ)gdevmjc.$(OBJ): $(JAPSRC)gdevmjc.c $(JAPSRC)gdevmjc.h $(PDEVH) $(gdevpcl_h)
 	$(GLCC) -DA4 $(GLO_)gdevmjc.$(OBJ) $(C_) $(JAPSRC)gdevmjc.c
 
-$(DD)mj700v2c.dev: $(mj700v2c_) $(DD)page.dev
+$(DD)mj700v2c.dev : $(mj700v2c_) $(DD)page.dev
 	$(SETPDEV) $(DD)mj700v2c $(mj700v2c_)
 
-$(DD)mj500c.dev: $(mj700v2c_) $(DD)page.dev
+$(DD)mj500c.dev : $(mj700v2c_) $(DD)page.dev
 	$(SETPDEV) $(DD)mj500c $(mj700v2c_)
 
-$(DD)mj6000c.dev: $(mj700v2c_) $(DD)page.dev
+$(DD)mj6000c.dev : $(mj700v2c_) $(DD)page.dev
 	$(SETPDEV) $(DD)mj6000c $(mj700v2c_)
 
-$(DD)mj8000c.dev: $(mj700v2c_) $(DD)page.dev
+$(DD)mj8000c.dev : $(mj700v2c_) $(DD)page.dev
 	$(SETPDEV) $(DD)mj8000c $(mj700v2c_)
 
 ### ----------------- The Fujitsu FMPR printer device ----------------- ###
 
 fmpr_=$(GLOBJ)gdevfmpr.$(OBJ) $(GLOBJ)gdevprn.$(OBJ)
 
-$(DD)fmpr.dev: $(fmpr_) $(DD)page.dev
+$(DD)fmpr.dev : $(fmpr_) $(DD)page.dev
 	$(SETPDEV) $(DD)fmpr $(fmpr_)
 
 $(GLOBJ)gdevfmpr.$(OBJ): $(JAPSRC)gdevfmpr.c $(PDEVH)
@@ -987,7 +987,7 @@ $(GLOBJ)gdevfmpr.$(OBJ): $(JAPSRC)gdevfmpr.c $(PDEVH)
 
 fmlbp_=$(GLOBJ)gdevfmlbp.$(OBJ) $(GLOBJ)gdevprn.$(OBJ)
 
-$(DD)fmlbp.dev: $(fmlbp_) $(DD)page.dev
+$(DD)fmlbp.dev : $(fmlbp_) $(DD)page.dev
 	$(SETPDEV) $(DD)fmlbp $(fmlbp_)
 
 $(GLOBJ)gdevfmlbp.$(OBJ): $(JAPSRC)gdevfmlbp.c $(PDEVH)
@@ -1002,7 +1002,7 @@ $(GLOBJ)gdevfmlbp.$(OBJ): $(JAPSRC)gdevfmlbp.c $(PDEVH)
 
 ml6_=$(GLOBJ)gdevml6.$(OBJ) $(GLOBJ)gdevprn.$(OBJ)
 
-$(DD)ml600.dev: $(ml6_) $(DD)page.dev
+$(DD)ml600.dev : $(ml6_) $(DD)page.dev
 	$(SETPDEV) $(DD)ml600 $(ml6_)
 
 $(GLOBJ)gdevml6.$(OBJ): $(JAPSRC)gdevml6.c $(PDEVH)
@@ -1013,10 +1013,10 @@ $(GLOBJ)gdevml6.$(OBJ): $(JAPSRC)gdevml6.c $(PDEVH)
 
 lbp3x0_=$(GLOBJ)gdevlbp3.$(OBJ)
 
-$(DD)lbp310.dev:$(lbp3x0_) $(DD)page.dev
+$(DD)lbp310.dev :$(lbp3x0_) $(DD)page.dev
 	$(SETPDEV) $(DD)lbp310 $(lbp3x0_)
 
-$(DD)lbp320.dev:$(lbp3x0_) $(DD)page.dev
+$(DD)lbp320.dev :$(lbp3x0_) $(DD)page.dev
 	$(SETPDEV) $(DD)lbp320 $(lbp3x0_)
 
 $(GLOBJ)gdevlbp3.$(OBJ): $(JAPSRC)gdevlbp3.c $(PDEVH)
@@ -1029,7 +1029,7 @@ npdl_=$(GLOBJ)gdevnpdl.$(OBJ) $(GLOBJ)gdevlprn.$(OBJ)
 $(GLOBJ)gdevnpdl.$(OBJ): $(JAPSRC)gdevnpdl.c $(LIPS_SRC)gdevlprn.h $(PDEVH)
 	$(GLCC) -DA4 $(GLO_)gdevnpdl.$(OBJ) $(LIPS_OPT) $(C_) $(JAPSRC)gdevnpdl.c
 
-$(DD)npdl.dev: $(npdl_) $(DD)page.dev
+$(DD)npdl.dev : $(npdl_) $(DD)page.dev
 	$(SETPDEV) $(DD)npdl $(npdl_)
 
 ### ------- EPSON ESC/Page printer device ----------------- ###
@@ -1039,10 +1039,10 @@ escpage_=$(GLOBJ)gdevespg.$(OBJ) $(GLOBJ)gdevlprn.$(OBJ) $(GLOBJ)gdevlips.$(OBJ)
 $(GLOBJ)gdevespg.$(OBJ): $(JAPSRC)gdevespg.c $(LIPS_SRC)gdevlprn.h $(PDEVH)
 	$(GLCC) -DA4 $(GLO_)gdevespg.$(OBJ) $(LIPS_OPT) $(C_) $(JAPSRC)gdevespg.c
 
-$(DD)escpage.dev: $(escpage_) $(DD)page.dev
+$(DD)escpage.dev : $(escpage_) $(DD)page.dev
 	$(SETPDEV) $(DD)escpage $(escpage_)
 
-$(DD)lp2000.dev: $(escpage_) $(DD)page.dev
+$(DD)lp2000.dev : $(escpage_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp2000 $(escpage_)
 
 ### --- The RICOH RPDL language printer device ------ ###
@@ -1051,7 +1051,7 @@ rpdl_=$(GLOBJ)gdevrpdl.$(OBJ) $(GLOBJ)gdevlprn.$(OBJ)
 $(GLOBJ)gdevrpdl.$(OBJ): $(JAPSRC)gdevrpdl.c $(LIPS_SRC)gdevlprn.h $(PDEVH)
 	$(GLCC) $(GLO_)gdevrpdl.$(OBJ) $(LIPS_OPT) $(C_) $(JAPSRC)gdevrpdl.c
 
-$(DD)rpdl.dev: $(rpdl_) $(DD)page.dev
+$(DD)rpdl.dev : $(rpdl_) $(DD)page.dev
 	$(SETPDEV) $(DD)rpdl $(rpdl_)
 
 ### ---------- RICOH RPDL IV(600dpi) printer devices ---------- ###
@@ -1059,23 +1059,23 @@ $(DD)rpdl.dev: $(rpdl_) $(DD)page.dev
 #$(GLOBJ)gdevrpdl.$(OBJ) : $(JAPSRC)gdevrpdl.c
 #	$(GLCC) $(GLO_)gdevrpdl.$(OBJ) $(C_) $(JAPSRC)gdevrpdl.c
 #
-#$(DD)nx100f.dev: $(rpdl_) $(DD)page.dev
+#$(DD)nx100f.dev : $(rpdl_) $(DD)page.dev
 #	$(SETPDEV2) $(DD)nx100f $(rpdl_)
 #
-#$(DD)nx100v.dev: $(rpdl_) $(DD)page.dev
+#$(DD)nx100v.dev : $(rpdl_) $(DD)page.dev
 #	$(SETPDEV2) $(DD)nx100v $(rpdl_)
 
 ### ------------ The ALPS Micro Dry printer devices ------------ ###
 
 alps_=$(GLOBJ)gdevalps.$(OBJ)
 
-$(DD)md50Mono.dev: $(alps_) $(DD)page.dev
+$(DD)md50Mono.dev : $(alps_) $(DD)page.dev
 	$(SETPDEV) $(DD)md50Mono $(alps_)
 
-$(DD)md50Eco.dev: $(alps_) $(DD)page.dev
+$(DD)md50Eco.dev : $(alps_) $(DD)page.dev
 	$(SETPDEV) $(DD)md50Eco $(alps_)
 
-$(DD)md1xMono.dev: $(alps_) $(DD)page.dev
+$(DD)md1xMono.dev : $(alps_) $(DD)page.dev
 	$(SETPDEV) $(DD)md1xMono $(alps_)
 
 $(GLOBJ)gdevalps.$(OBJ): $(JAPSRC)gdevalps.c $(PDEVH)

@@ -417,11 +417,11 @@ $(GLOBJ)gdevvglb.$(OBJ) : $(GLSRC)gdevvglb.c $(GDEV) $(gdevpccm_h) $(gsparam_h)
 ### Shared library object supporting vgalib.
 ### NON PORTABLE, ONLY UNIX WITH GCC SUPPORT
 
-$(GLOBJ)lvga256.so: $(lvga256_)
+$(GLOBJ)lvga256.so : $(lvga256_)
 	$(CCLD) -shared -Wl,'-solvga256.so' $(lvga256_) -lvga -lvgagl
 	mv lvga256.so $(GLOBJ)lvga256.so
 
-$(GLOBJ)vgalib.so: $(vgalib_)
+$(GLOBJ)vgalib.so : $(vgalib_)
 	$(CCLD) -shared -Wl,'-sovgalib.so' $(vgalib_) -lvga -lvgagl
 	mv vgalib.so $(GLOBJ)vgalib.so
 
@@ -525,7 +525,7 @@ $(GLOBJ)gdevxalt.$(OBJ) : $(GLSRC)gdevxalt.c $(GDEVX) $(math__h) $(memory__h)\
 ### Shared library object supporting X11.
 ### NON PORTABLE, ONLY UNIX WITH GCC SUPPORT
 
-$(GLOBJ)X11.so: $(x11alt_) $(x11_)
+$(GLOBJ)X11.so : $(x11alt_) $(x11_)
 	$(CCLD) -shared -Wl,'-soX11.so' $(x11alt_) $(x11_) -L/usr/X11R6/lib -lXt -lSM -lICE -lXext -lX11 $(XLIBDIRS)
 	mv X11.so $(GLOBJ)X11.so
 
@@ -680,25 +680,25 @@ rinkj_core=$(RINKJ_OBJ)evenbetter-rll.$(OBJ) \
  $(RINKJ_OBJ)rinkj-config.$(OBJ) $(RINKJ_OBJ)rinkj-dither.$(OBJ) \
  $(RINKJ_OBJ)rinkj-epson870.$(OBJ) $(RINKJ_OBJ)rinkj-screen-eb.$(OBJ)
 
-$(RINKJ_OBJ)evenbetter-rll.$(OBJ): $(RINKJ_SRC)evenbetter-rll.c
+$(RINKJ_OBJ)evenbetter-rll.$(OBJ) : $(RINKJ_SRC)evenbetter-rll.c
 	$(RINKJ_CC) $(RINKJ_O_)evenbetter-rll.$(OBJ) $(C_) $(RINKJ_SRC)evenbetter-rll.c
 
-$(RINKJ_OBJ)rinkj-byte-stream.$(OBJ): $(RINKJ_SRC)rinkj-byte-stream.c
+$(RINKJ_OBJ)rinkj-byte-stream.$(OBJ) : $(RINKJ_SRC)rinkj-byte-stream.c
 	$(RINKJ_CC) $(RINKJ_O_)rinkj-byte-stream.$(OBJ) $(C_) $(RINKJ_SRC)rinkj-byte-stream.c
 
-$(RINKJ_OBJ)rinkj-device.$(OBJ): $(RINKJ_SRC)rinkj-device.c
+$(RINKJ_OBJ)rinkj-device.$(OBJ) : $(RINKJ_SRC)rinkj-device.c
 	$(RINKJ_CC) $(RINKJ_O_)rinkj-device.$(OBJ) $(C_) $(RINKJ_SRC)rinkj-device.c
 
-$(RINKJ_OBJ)rinkj-config.$(OBJ): $(RINKJ_SRC)rinkj-config.c
+$(RINKJ_OBJ)rinkj-config.$(OBJ) : $(RINKJ_SRC)rinkj-config.c
 	$(RINKJ_CC) $(RINKJ_O_)rinkj-config.$(OBJ) $(C_) $(RINKJ_SRC)rinkj-config.c
 
-$(RINKJ_OBJ)rinkj-dither.$(OBJ): $(RINKJ_SRC)rinkj-dither.c
+$(RINKJ_OBJ)rinkj-dither.$(OBJ) : $(RINKJ_SRC)rinkj-dither.c
 	$(RINKJ_CC) $(RINKJ_O_)rinkj-dither.$(OBJ) $(C_) $(RINKJ_SRC)rinkj-dither.c
 
-$(RINKJ_OBJ)rinkj-epson870.$(OBJ): $(RINKJ_SRC)rinkj-epson870.c
+$(RINKJ_OBJ)rinkj-epson870.$(OBJ) : $(RINKJ_SRC)rinkj-epson870.c
 	$(RINKJ_CC) $(RINKJ_O_)rinkj-epson870.$(OBJ) $(C_) $(RINKJ_SRC)rinkj-epson870.c
 
-$(RINKJ_OBJ)rinkj-screen-eb.$(OBJ): $(RINKJ_SRC)rinkj-screen-eb.c
+$(RINKJ_OBJ)rinkj-screen-eb.$(OBJ) : $(RINKJ_SRC)rinkj-screen-eb.c
 	$(RINKJ_CC) $(RINKJ_O_)rinkj-screen-eb.$(OBJ) $(C_) $(RINKJ_SRC)rinkj-screen-eb.c
 
 rinkj_=$(GLOBJ)gdevrinkj.$(OBJ) $(rinkj_core)
