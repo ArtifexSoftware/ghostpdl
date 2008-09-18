@@ -1219,7 +1219,7 @@ $(GLOBJ)sfxboth.$(OBJ) : $(GLSRC)sfxboth.c $(GLSRC)sfxstdio.c $(GLSRC)sfxfd.c
 
 strmio_h=$(GLSRC)strmio.h
 
-$(GLOBJ)strmio.$(OBJ): $(GLSRC)strmio.c $(AK) \
+$(GLOBJ)strmio.$(OBJ) : $(GLSRC)strmio.c $(AK) \
   $(memory__h) $(gdebug_h) $(gsfname_h)\
   $(gsmalloc_h) $(gsmemret_h) $(strmio_h) $(stream_h)
 	$(GLCC) $(GLO_)strmio.$(OBJ) $(C_) $(GLSRC)strmio.c 
