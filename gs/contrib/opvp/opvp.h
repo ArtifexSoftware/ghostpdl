@@ -155,6 +155,8 @@ typedef struct _opvp_brushdata {
 	opvp_int_t width, height, pitch;
 #if defined(__GNUC__) && __GNUC__ <= 2
 	opvp_byte_t data[1];
+#elif defined(__SUNPRO_C)
+	opvp_byte_t data[1];
 #else
 	opvp_byte_t data[];
 #endif
