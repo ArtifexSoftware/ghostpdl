@@ -113,7 +113,7 @@ GS=GS
 .ifdef SYSLIB
 JSRCDIR=sys$library:
 .else
-JSRCDIR=[--.jpeg]
+JSRCDIR=[.jpeg]
 .endif
 
 # Define the directory where the PNG library sources are stored,
@@ -124,7 +124,7 @@ JSRCDIR=[--.jpeg]
 .ifdef SYSLIB
 PNGSRCDIR=sys$library:
 .else
-PNGSRCDIR=[--.libpng]
+PNGSRCDIR=[.libpng]
 .endif
 
 # Define the directory where the zlib sources are stored.
@@ -133,7 +133,7 @@ PNGSRCDIR=[--.libpng]
 .ifdef SYSLIB
 ZSRCDIR=sys$library:
 .else
-ZSRCDIR=[--.zlib]
+ZSRCDIR=[.zlib]
 .endif
 
 # Define the directory where the jbig2dec library sources are stored.
@@ -143,7 +143,7 @@ JBIG2_LIB=jbig2dec
 .ifdef SYSLIB
 JBIG2SRCDIR=sys$library:
 .else
-JBIG2SRCDIR=[--.jbig2dec]
+JBIG2SRCDIR=[.jbig2dec]
 .endif
 
 # Define the jpeg2k library and source directory
@@ -152,7 +152,7 @@ JPX_LIB=jasper
 .ifdef SYSLIB
 JPXSRCDIR=sys$library:
 .else
-JPXSRCDIR=[--.jasper]
+JPXSRCDIR=[.jasper]
 .endif
 
 # Define the directory where the icclib source are stored.
