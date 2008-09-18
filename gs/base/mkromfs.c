@@ -39,6 +39,7 @@
 
 #include "stdpre.h"
 #include "stdint_.h"
+#include "time_.h"
 #include "gsiorom.h"
 #include "gsmemret.h" /* for gs_memory_type_ptr_t */
 #include "gsmalloc.h"
@@ -47,7 +48,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "time_.h"
 
 #include <zlib.h>
 
