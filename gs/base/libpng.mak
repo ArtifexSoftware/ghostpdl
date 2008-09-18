@@ -56,7 +56,7 @@ PNGO_=$(O_)$(PNGOBJ)
 PZGEN=$(ZGENDIR)$(D)
 
 # PI_ and PF_ are defined in gs.mak.
-PNGCC=$(CC_) $(I_)$(PI_)$(_I) $(PF_) -DPNG_NO_ASSEMBLER_CODE
+PNGCC=$(CC_) $(I_)$(PI_)$(_I) $(PF_) $(D_)PNG_NO_ASSEMBLER_CODE$(_D)
 
 # Define the name of this makefile.
 LIBPNG_MAK=$(GLSRC)libpng.mak

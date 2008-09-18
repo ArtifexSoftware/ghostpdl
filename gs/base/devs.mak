@@ -253,7 +253,7 @@ ConvertUTF_h=$(GLSRC)ConvertUTF.h
 
 GDEVLDFJB2CC=$(CC_) $(I_)$(GLI_) $(II)$(LDF_JB2I_)$(_I) $(JB2CF_) $(GLF_)
 GDEVLWFJPXCC=$(CC_) $(I_)$(GLI_) $(II)$(LWF_JPXI_)$(_I) $(JPXCF_) $(GLF_)
-GDEVLWFJB2JPXCC=$(CC_) $(I_)$(GLI_)  $(II)$(LDF_JB2I_)$(_I) $(II)$(LWF_JPXI_)$(_I) $(JB2CF_) $(JPXCF_) $(GLF_)
+GDEVLWFJB2JPXCC=$(CC_) $(I_)$(GLI_)  $(II)$(LDF_JB2I_) $(II)$(LWF_JPXI_)$(_I) $(JB2CF_) $(JPXCF_) $(GLF_)
 
 ###### ----------------------- Device support ----------------------- ######
 
