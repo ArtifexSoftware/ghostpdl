@@ -2782,7 +2782,7 @@ opvp_copy_mono(
     int byte_length = raster;
     int bit_shift = 0;
     int adj_raster = raster;
-    char bit_mask = 0xff;
+    unsigned char bit_mask = 0xff;
     bool reverse = false;
 
     /* check page-in */
