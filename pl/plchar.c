@@ -470,7 +470,7 @@ out:      gs_free_object(pgs->memory, bold_lines,
 /* Look up a character in the TrueType character-to-TT-glyph map. */
 /* Return a pointer to the glyph's slot (chr != gs_no_char) or where */
 /* it should be added (chr == gs_no_char). */
-static pl_tt_char_glyph_t *
+pl_tt_char_glyph_t *
 pl_tt_lookup_char(const pl_font_t *plfont, gs_glyph glyph)
 {       uint size = plfont->char_glyphs.size;
         uint skip = plfont->char_glyphs.skip;

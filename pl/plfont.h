@@ -287,10 +287,14 @@ int pl_font_char_width(const pl_font_t *plfont, const void *pgs, uint char_code,
    lsb and metrics 2 = width.   The same rules for character width apply */
 int pl_font_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4]);
 
+
 /* Look up a glyph in a font.  Return a pointer to the glyph's slot */
 /* (data != 0) or where it should be added (data == 0). */
 pl_font_glyph_t *pl_font_lookup_glyph(const pl_font_t *plfont,
                                       gs_glyph glyph);
+
+/* Look up a truetype character */
+pl_tt_char_glyph_t *pl_tt_lookup_char(const pl_font_t *plfont, gs_glyph glyph);
 
 /* Determine whether a font, with a given symbol set, includes a given */
 /* character.  If the font is bound, the symbol set is ignored. */
