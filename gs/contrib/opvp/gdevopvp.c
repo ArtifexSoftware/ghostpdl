@@ -4500,7 +4500,7 @@ opvp_setlinejoin(gx_device_vector *vdev, gs_line_join join)
     case gs_join_none:
     case gs_join_triangle:
     default:
-	linejoin = OPVP_LINECAP_BUTT;
+	linejoin = OPVP_LINEJOIN_MITER;
 	break;
     }
 
