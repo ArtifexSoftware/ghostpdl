@@ -56,7 +56,7 @@ typedef int opvp_int_t;			/* integer */
 typedef int opvp_fix_t;			/* fixed integer */
 typedef float opvp_float_t;		/* float */
 typedef unsigned int opvp_flag_t;	/* flags */
-typedef unsigned int opvp_rop_t;		/* raster operation */
+typedef unsigned int opvp_rop_t;	/* raster operation */
 
 /* for opvp_fix_t */
 #define OPVP_FIX_FRACT_WIDTH    8
@@ -87,8 +87,8 @@ typedef struct _opvp_roundrectangle {
 
 /* Image Formats */
 typedef enum _opvp_imageformat {
-	OPVP_IFORMAT_RAW		= 0, 
-	OPVP_IFORMAT_MASK		= 1, 
+	OPVP_IFORMAT_RAW		= 0,
+	OPVP_IFORMAT_MASK		= 1,
 	OPVP_IFORMAT_RLE		= 2,
 	OPVP_IFORMAT_JPEG		= 3,
 	OPVP_IFORMAT_PNG		= 4
@@ -158,7 +158,7 @@ typedef struct _opvp_brushdata {
 #else
 	opvp_byte_t data[];
 #endif
-    
+
 } opvp_brushdata_t;
 
 typedef struct _opvp_brush {

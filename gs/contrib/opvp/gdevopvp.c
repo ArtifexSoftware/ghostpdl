@@ -196,7 +196,7 @@ static	int _put_params(gs_param_list *);
 static	int opvp_put_params(gx_device *, gs_param_list *);
 static	int oprp_put_params(gx_device *, gs_param_list *);
 static	int opvp_fill_path(gx_device *, const gs_imager_state *, gx_path *,
-	                   const gx_fill_params *, const gx_device_color *, 
+	                   const gx_fill_params *, const gx_device_color *,
 	                   const gx_clip_path *);
 static	int opvp_stroke_path(gx_device *, const gs_imager_state *, gx_path *,
 	                     const gx_stroke_params *, const gx_drawing_color *,
@@ -534,22 +534,22 @@ GetLastError_0_2(void)
 {
     switch(*ErrorNo) {
     case OPVP_FATALERROR_0_2:
-	return OPVP_FATALERROR; 
+	return OPVP_FATALERROR;
 	break;
     case OPVP_BADREQUEST_0_2:
-	return OPVP_BADREQUEST; 
+	return OPVP_BADREQUEST;
 	break;
     case OPVP_BADCONTEXT_0_2:
-	return OPVP_BADCONTEXT; 
+	return OPVP_BADCONTEXT;
 	break;
     case OPVP_NOTSUPPORTED_0_2:
-	return OPVP_NOTSUPPORTED; 
+	return OPVP_NOTSUPPORTED;
 	break;
     case OPVP_JOBCANCELED_0_2:
-	return OPVP_JOBCANCELED; 
+	return OPVP_JOBCANCELED;
 	break;
     case OPVP_PARAMERROR_0_2:
-	return OPVP_PARAMERROR; 
+	return OPVP_PARAMERROR;
 	break;
     default:
 	break;
@@ -608,7 +608,7 @@ QueryColorSpaceWrapper( opvp_dc_t printerContext, opvp_int_t *pnum,
     }
     /* translate cspaces */
     for (i = 0;i < *pnum;i++) {
-	if (pcspace[i] 
+	if (pcspace[i]
 	     > sizeof(cspace_0_2_to_1_0)/sizeof(opvp_cspace_t)) {
 	    /* unknown color space */
 	    /* set DEVICERGB instead */
@@ -1118,7 +1118,7 @@ OpenPrinterWrapper(
 	    } else {
 		tEntry.opvpStartDrawImage = NULL;
 	    }
-	    tEntry.opvpTransferDrawImage = 
+	    tEntry.opvpTransferDrawImage =
 	       (opvp_result_t (*)(opvp_dc_t,opvp_int_t,const void*))
 	       apiEntry_0_2->TransferDrawImage;
 	    if (apiEntry_0_2->EndDrawImage != NULL) {
@@ -3099,7 +3099,7 @@ _get_params(gs_param_list *plist)
     fips.persistent = false;
     code = param_write_string(plist, pname, &fips);
     if (code) ecode = code;
-    
+
     /* margins */
     memset((void*)buff, 0, OPVP_BUFF_SIZE);
     pname = "MarginLeft";
@@ -3587,7 +3587,7 @@ opvp_begin_image(
 		if (color_index == gs_color_space_index_Indexed) {
 		    base_color_index
 		      = gs_color_space_indexed_base_space(pcs)->type->index;
-		    if (((pcs->params.indexed.hival + 1) > 256) 
+		    if (((pcs->params.indexed.hival + 1) > 256)
 		        || (bits_per_pixel != 8 && bits_per_pixel != 1)) {
 			return gx_default_begin_image(
 				dev, pis, pim, format,
@@ -3600,7 +3600,7 @@ opvp_begin_image(
 			const unsigned char *p
 			     = pcs->params.indexed.lookup.table.data;
 			frac rgb[3];
- 
+
 			for(count = 0;count <
 			     (pcs->params.indexed.hival + 1); count++) {
 			    memset(rgb, 0, sizeof(rgb));
@@ -3857,7 +3857,7 @@ opvp_begin_image(
 		    }
 		}
 	    }
-	    
+
 	    /* bugfix for 32bit CMYK image print error */
 fallthrough:
 	    if(r != OPVP_OK) {
@@ -3932,7 +3932,7 @@ opvp_image_plane_data(
     for (bits_per_pixel=0, p=0; p < vinfo->num_planes; p++) {
 	bits_per_pixel += vinfo->plane_depths[p];
     }
-    
+
     data_bytes = (bits_per_pixel * vinfo->width + 7) >> 3;
     raster_length = ((data_bytes + 3) >> 2) << 2;
     buf = calloc(raster_length, height);
@@ -3949,7 +3949,7 @@ opvp_image_plane_data(
 	pbe = (bbox_image_enum *)vinfo->bbox_info;
 	tinfo = (gx_image_enum *)pbe->target_info;
 	pis = tinfo->pis;
-	
+
 	if (vinfo->num_planes == 1) {
 	    for (h = 0; h < height; h++) {
 		d = raster_length * h;
@@ -3995,7 +3995,7 @@ opvp_image_plane_data(
 		}
 	    }
 	}
-	
+
 	if (tinfo->masked) {
 	    bool reverse = false;
 
@@ -4020,7 +4020,7 @@ opvp_image_plane_data(
 			if (bits_per_pixel == 8) { /* 8bit image */
 			    dst_bytes = data_bytes;
 			    dst_length = ((dst_bytes + 3) >> 2) << 2;
-			    
+
 			    tmp_buf = calloc(dst_length, height);
 			    if (tmp_buf) {
 				for (i = 0; i < height; i++) {
@@ -4031,7 +4031,7 @@ opvp_image_plane_data(
 					dst_ptr[j] = ppalette[0];
 				    }
 				}
-				
+
 				free (buf);
 				buf = tmp_buf;
 				data_bytes = dst_bytes;
@@ -4041,7 +4041,7 @@ opvp_image_plane_data(
 			} else { /* 1bit image */
 			    dst_bytes = vinfo->width;
 			    dst_length = ((dst_bytes + 3) >> 2) << 2;
-			    
+
 			    tmp_buf = calloc(dst_length, height);
 			    if (tmp_buf) {
 				for (i = 0; i < height; i++) {
@@ -4067,7 +4067,7 @@ opvp_image_plane_data(
 			if (bits_per_pixel == 8) { /* 8bit image */
 			    dst_bytes = data_bytes * 3;
 			    dst_length = ((dst_bytes + 3) >> 2) << 2;
-			    
+
 			    tmp_buf = calloc(dst_length, height);
 			    if (tmp_buf) {
 				for (i = 0; i < height; i++) {
@@ -4080,7 +4080,7 @@ opvp_image_plane_data(
 					dst_ptr[j*3 + 2] = ppalette[0]; /* B */
 				    }
 				}
-				
+
 				free (buf);
 				buf = tmp_buf;
 				data_bytes = dst_bytes;
@@ -4090,7 +4090,7 @@ opvp_image_plane_data(
 			} else { /* 1bit image */
 			    dst_bytes = vinfo->width * 3;
 			    dst_length = ((dst_bytes + 3) >> 2) << 2;
-			    
+
 			    tmp_buf = calloc(dst_length, height);
 			    if (tmp_buf) {
 				for (i = 0; i < height; i++) {
@@ -4119,7 +4119,7 @@ opvp_image_plane_data(
 		    if (bits_per_pixel == 8) { /* 8bit image */
 			dst_bytes = data_bytes * 3;
 			dst_length = ((dst_bytes + 3) >> 2) << 2;
-			
+
 			tmp_buf = calloc(dst_length, height);
 			if (tmp_buf) {
 			    for (i = 0; i < height; i++) {
@@ -4132,7 +4132,7 @@ opvp_image_plane_data(
 				    dst_ptr[j*3 + 2] = ppalette[2]; /* B */
 				}
 			    }
-			    
+
 			    free (buf);
 			    buf = tmp_buf;
 			    data_bytes = dst_bytes;
@@ -4142,7 +4142,7 @@ opvp_image_plane_data(
 		    } else { /* 1bit image */
 			dst_bytes = vinfo->width * 3;
 			dst_length = ((dst_bytes + 3) >> 2) << 2;
-			
+
 			tmp_buf = calloc(dst_length, height);
 			if (tmp_buf) {
 			    for (i = 0; i < height; i++) {
@@ -4177,7 +4177,7 @@ opvp_image_plane_data(
 		    if (bits_per_pixel == 8) { /* 8bit image */
 			dst_bytes = data_bytes * 3;
 			dst_length = ((dst_bytes + 3) >> 2) << 2;
-			
+
 			tmp_buf = calloc(dst_length, height);
 			if (tmp_buf) {
 			    for (i = 0; i < height; i++) {
@@ -4193,7 +4193,7 @@ opvp_image_plane_data(
 				    dst_ptr[j*3 + 2] = d; /* B */
 				}
 			    }
-			    
+
 			    free (buf);
 			    buf = tmp_buf;
 			    data_bytes = dst_bytes;
@@ -4203,7 +4203,7 @@ opvp_image_plane_data(
 		    } else { /* 1bit image */
 			dst_bytes = vinfo->width * 3;
 			dst_length = ((dst_bytes + 3) >> 2) << 2;
-			
+
 			tmp_buf = calloc(dst_length, height);
 			if (tmp_buf) {
 			    for (i = 0; i < height; i++) {
@@ -4232,7 +4232,7 @@ opvp_image_plane_data(
 		    if (bits_per_pixel == 1) { /* 1bit image */
 			dst_bytes = vinfo->width;
 			dst_length = ((dst_bytes + 3) >> 2) << 2;
-			
+
 			tmp_buf = calloc(dst_length, height);
 			if (tmp_buf) {
 			    for (i = 0; i < height; i++) {
@@ -4645,8 +4645,8 @@ opvp_setlogop(
 #if GS_VERSION_MAJOR >= 8
 /*--- added for Ghostscritp 8.15 ---*/
 static int
-opvp_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis1, 
-              const gx_drawing_color * pdc)
+opvp_can_handle_hl_color(gx_device_vector * vdev,
+	      const gs_imager_state * pis1, const gx_drawing_color * pdc)
 {
     return false; /* High level color is not implemented yet. */
 }
@@ -5146,7 +5146,7 @@ opvp_lineto(
     /* point */
     OPVP_F2FIX(x1, points[0].x);
     OPVP_F2FIX(y1, points[0].y);
-    
+
     /* call LinePath */
     if (apiEntry->opvpLinePath) {
 	r = apiEntry->opvpLinePath(printerContext, OPVP_PATHOPEN, 1, points);
@@ -5194,7 +5194,7 @@ opvp_curveto(
     OPVP_F2FIX(y2, points[2].y);
     OPVP_F2FIX(x3, points[3].x);
     OPVP_F2FIX(y3, points[3].y);
-    
+
     /* call BezierPath */
     if (apiEntry->opvpBezierPath) {
 	r = apiEntry->opvpBezierPath(printerContext,
@@ -5232,7 +5232,7 @@ opvp_closepath(
     /* point */
     OPVP_F2FIX(x_start, points[0].x);
     OPVP_F2FIX(y_start, points[0].y);
-    
+
     /* call LinePath */
     if (apiEntry->opvpLinePath) {
 	r = apiEntry->opvpLinePath(printerContext, OPVP_PATHCLOSE, 1, points);
