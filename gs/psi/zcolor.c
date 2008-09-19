@@ -1,6 +1,6 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -13,8 +13,8 @@
 
 /* $Id$ */
 /* Color operators */
-#include "math.h"
 #include "memory_.h"
+#include "math_.h"
 #include "ghost.h"
 #include "oper.h"
 #include "dstack.h"	/* for systemdict */
