@@ -514,10 +514,6 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
   }
 
   /* Do compare : */
-  freport->n_diff = 0;
-  freport->n_outof_tolerance = 0;
-  freport->n_outof_window = 0;
-
   for (y = 0; y < height; y++)
     {
       int x;
@@ -760,6 +756,10 @@ main (int argc, char **argv)
            (image1, out_fn);
     } else
       image_out = NULL;
+
+    freport.n_diff = 0;
+    freport.n_outof_tolerance = 0;
+    freport.n_outof_window = 0;
     if (fuzzy_diff_images (image1, image2, &fparams, &freport, image_out))
 	return 1;
     if (image_out)
