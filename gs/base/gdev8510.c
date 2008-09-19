@@ -51,8 +51,7 @@ m8510_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	int i;
 
 	if (in1 == 0 || in2 == 0 || out == 0) {
-		code = gs_error_VMerror;
-		gs_note_error(code);
+		code = gs_note_error(gs_error_VMerror);
 		goto out;
 	}
 
