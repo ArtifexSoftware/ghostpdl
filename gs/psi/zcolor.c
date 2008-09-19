@@ -24,7 +24,6 @@
 #include "iutil.h"
 #include "store.h"
 #include "gscolor.h"	/* for gs_setgray and gs_setrgbcolor */
-#include "gscolor1.h"	/* for gs_setcmykcolor */
 #include "gscsepr.h"	/* For declarartion of Separation functions */
 #include "gscdevn.h"	/* For declarartion of DeviceN functions */
 #include "gscpixel.h"	/* For declarartion of DevicePixel functions */
