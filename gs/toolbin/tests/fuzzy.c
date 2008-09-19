@@ -211,7 +211,7 @@ write_int32(int v, FILE *f)
   val[3] = (uchar)((v >> 24) & 0xff);
   fwrite(val, 4, 1, f);
 }
-    
+
 static int
 seek_bmp_image(Image *self, int y)
 {
@@ -266,14 +266,14 @@ create_bmp_image(Image *templ, const char *path)
 	int k;
 
         memset(linebuf, 0, raster);
-        
+
 	for (k = 0; k < pnm->super.height; k++)
 	    fwrite(linebuf, 1, raster, pnm->f);
-        
+
         free(linebuf);
     }
   }
-  
+
   return pnm;
 }
 
@@ -355,7 +355,7 @@ open_pnm_image (ImagePnm *image)
       if (fgets (linebuf, sizeof(linebuf), image->f) == NULL)
 	  return 1;
       if (linebuf[0] == '#')
-          continue; 
+          continue;
       if (sscanf(linebuf, "%d", &maxval) != 1 || maxval <= 0 || maxval > 255)
 	  return 1;
     }
@@ -487,12 +487,12 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
   if (image_out != NULL)
     {
       out_buf = malloc(out_buffer_size);
-      if (out_buf == NULL) 
+      if (out_buf == NULL)
         printf ("Can't allocate output buffer.\n");
     }
 
   /* Read rows ahead for half window : */
-  for (y = 0; y < MIN(half_win, height); y++) 
+  for (y = 0; y < MIN(half_win, height); y++)
     {
        if (image_get_rgb_scan_line_with_error (image1, buf1[half_win - y], 1, y, &rcode))
 	    goto ex;
@@ -501,7 +501,7 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
     }
   /* Initialie remaining scanlines if height < half_win */
   for (; y < half_win; y++) {
-    memcpy(buf1[half_win - y], buf1[half_win], width * 3); 
+    memcpy(buf1[half_win - y], buf1[half_win], width * 3);
     memcpy(buf2[half_win - y], buf2[half_win], width * 3);
   }
 
@@ -536,7 +536,7 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
       if (out_buf)
 	memset(out_buf, 0, out_buffer_size);
 
-      if (memcmp(rowmid1, rowmid2, width * 3)) 
+      if (memcmp(rowmid1, rowmid2, width * 3))
         {
           for (x = 0; x < width; x++)
 	    {
@@ -557,7 +557,7 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
 		          out_buf[x * 3 + 1] = abs(rowmid1[x * 3 + 1]- rowmid2[x * 3 + 1]);
 		          out_buf[x * 3 + 2] = abs(rowmid1[x * 3 + 2]- rowmid2[x * 3 + 2]);
 		        }
-		        if (fparams->report_coordinates && 
+		        if (fparams->report_coordinates &&
 			    (abs(x - x0) > 1 && y == y0 || y - y0 > 1))
 		          {
 		            /* fixme : a contiguity test wanted. */
@@ -706,14 +706,14 @@ main (int argc, char **argv)
       }
   }
 
-  while (!image1->feof_(image1) || !image2->feof_(image2)) 
-  { 
-    if (image1->feof_(image1)) 
+  while (!image1->feof_(image1) || !image2->feof_(image2))
+  {
+    if (image1->feof_(image1))
     {
       printf ("Extra data (maybe pages) in the image file 2.\n");
       return 1;
     }
-    if (image2->feof_(image2)) 
+    if (image2->feof_(image2))
     {
       printf ("Extra data (maybe pages) in the image file 1.\n");
       return 1;
@@ -754,7 +754,7 @@ main (int argc, char **argv)
 	  out_fn[i + 4] = c;
       } else
 	  sprintf(out_fn + l, "-%03d", page);
-      image_out = 
+      image_out =
        (!strcmp(fn[2]+ strlen(fn[2]) - 4, ".bmp") ? create_bmp_image
                                                   : create_pnm_image)
            (image1, out_fn);
