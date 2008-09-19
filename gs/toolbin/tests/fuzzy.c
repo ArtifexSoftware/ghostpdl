@@ -1,5 +1,5 @@
 /**
- * Fuzzy comparison utility. Copyright 2001-2003 Artifex Software, Inc.
+ * Fuzzy comparison utility. Copyright 2001-2008 Artifex Software, Inc.
  **/
 
 #include <stdio.h>
@@ -726,11 +726,11 @@ main (int argc, char **argv)
       return 1;
     }
     if (image1->width != image2->width) {
-	printf("Diffenert image width for page %d\n", page);
+	printf("Different image width for page %d\n", page);
 	rcode = MAX(rcode, 1);
     }
     if (image1->height != image2->height) {
-	printf("Diffenert image height for page %d\n", page);
+	printf("Different image height for page %d\n", page);
 	rcode = MAX(rcode, 1);
     }
     if (out_fn != NULL) {
