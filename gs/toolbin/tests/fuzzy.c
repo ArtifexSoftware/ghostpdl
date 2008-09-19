@@ -605,8 +605,6 @@ ex:
   free_window (buf2, window_size);
   if (out_buf)
     free(out_buf);
-  if (image_out)
-    fclose(image_out->f);
   return rcode;
 }
 
