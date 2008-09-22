@@ -36,6 +36,10 @@
 #include "gxfont.h"
 #include "gxfont42.h"
 
+/* comment out to return an error instead of continuing when
+   processing a corrupt download font. */
+#define IGNORE_CORRUPT_FONT
+
 /* Define the downloaded character data formats. */
 typedef enum {
   pccd_bitmap = 4,
@@ -250,7 +254,12 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
             has_checksum = true;
             break;
           default:
-            return_error(gs_error_invalidfont);
+#ifdef IGNORE_CORRUPT_FONT
+              return 0;
+#else
+              return_error(gs_error_invalidfont);
+#endif
+
           }
 
         /* Fonts should include a final byte that makes the sum of the
