@@ -21,7 +21,6 @@
 #include "gsutil.h"		/* for bytes_compare */
 #include "gdevpdfx.h"
 #include "gdevpdfo.h"
-#include "scanchar.h"
 #include "szlibx.h"
 #include "slzwx.h"
 

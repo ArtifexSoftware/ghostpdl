@@ -243,6 +243,11 @@ pdf_is_same_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
     code = gx_cpath_enum_init(&cenum, (gx_clip_path *)pcpath);
     if (code < 0)
 	return code;
+    /* This flags a warning in Coverity, uninitialised variable cenum.first_visit */
+    /* This is because gx_cpath_enum_init doesn't initialise first_visit, but the */
+    /* variable can be used in enum_next. However, this is not truly used this    */
+    /* way. The enum_init sets the 'state' to 'scan', and the first thing that happens */
+    /* in enum_next when state is 'scan' is to set first_visit. */
     while ((code = gx_cpath_enum_next(&cenum, vs0)) > 0) {
 	pe_op = gx_path_enum_next(&penum, vs1);
 	if (pe_op < 0)
@@ -1431,8 +1436,12 @@ gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
         params.flatness = pis->flatness;
 	params.fill_zero_width = false;
 	gx_path_init_local(&path, pis->memory);
-	gx_path_add_rectangle(&path, rect->p.x, rect->p.y, rect->q.x, rect->q.y);
+	code = gx_path_add_rectangle(&path, rect->p.x, rect->p.y, rect->q.x, rect->q.y);
+	if (code < 0)
+	    return code;
 	code = gdev_pdf_fill_path(dev, pis, &path, &params, pdcolor, pcpath);
+	if (code < 0)
+	    return code;
 	gx_path_free(&path, "gdev_pdf_fill_rectangle_hl_color");
 	return code;
 

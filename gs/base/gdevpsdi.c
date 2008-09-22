@@ -26,11 +26,8 @@
 #include "gsparamx.h"
 #include "strimpl.h"
 #include "scfx.h"
-#include "sdct.h"
-#include "sjpeg.h"
 #include "slzwx.h"
 #include "spngpx.h"
-#include "srlx.h"
 #include "szlibx.h"
 #ifdef USE_LDF_JB2
 #include "sjbig2_luratech.h"

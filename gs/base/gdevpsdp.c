@@ -25,7 +25,6 @@
 #include "scfx.h"
 #include "sdct.h"
 #include "slzwx.h"
-#include "spprint.h"
 #include "srlx.h"
 #include "szlibx.h"
 #ifdef USE_LDF_JB2

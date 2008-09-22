@@ -29,7 +29,6 @@
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"
-#include "szlibx.h"
 
 /* Import the PatternType 2 Pattern device color type. */
 extern const gx_device_color_type_t gx_dc_pattern2;

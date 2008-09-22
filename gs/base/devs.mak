@@ -741,7 +741,7 @@ $(DD)psdf.dev : $(DEVS_MAK) $(ECHOGS_XE) $(psdf_) $(psdf_inc)
 $(GLOBJ)gdevpsdi.$(OBJ) : $(GLSRC)gdevpsdi.c $(GXERR)\
  $(jpeglib__h) $(math__h) $(stdio__h)\
  $(gscspace_h)\
- $(scfx_h) $(sdct_h) $(sjpeg_h) $(slzwx_h) $(srlx_h) $(spngpx_h)\
+ $(scfx_h) $(slzwx_h) $(spngpx_h)\
  $(strimpl_h) $(szlibx_h)\
  $(gdevpsdf_h) $(gdevpsds_h) $(gxdevmem_h) $(gxcspace_h) $(gxparamx_h)\
  $(sjbig2_luratech_h) $(sjpx_luratech_h)
@@ -750,7 +750,7 @@ $(GLOBJ)gdevpsdi.$(OBJ) : $(GLSRC)gdevpsdi.c $(GXERR)\
 $(GLOBJ)gdevpsdp.$(OBJ) : $(GLSRC)gdevpsdp.c $(GDEVH)\
  $(string__h) $(jpeglib__h)\
  $(scfx_h) $(sdct_h) $(slzwx_h) $(srlx_h) $(strimpl_h) $(szlibx_h)\
- $(gsparamx_h) $(gsutil_h) $(gdevpsdf_h) $(spprint_h)\
+ $(gsparamx_h) $(gsutil_h) $(gdevpsdf_h)\
  $(sjbig2_luratech_h) $(sjpx_luratech_h)
 	$(GDEVLWFJB2JPXCC) $(GLO_)gdevpsdp.$(OBJ) $(C_) $(GLSRC)gdevpsdp.c
 
@@ -761,7 +761,7 @@ $(GLOBJ)gdevpsds.$(OBJ) : $(GLSRC)gdevpsds.c $(GX) $(memory__h)\
 
 $(GLOBJ)gdevpsdu.$(OBJ) : $(GLSRC)gdevpsdu.c $(GXERR)\
  $(jpeglib__h) $(memory__h) $(stdio__h)\
- $(sa85x_h) $(scfx_h) $(sdct_h) $(sjpeg_h) $(sstring_h) $(strimpl_h)\
+ $(sa85x_h) $(scfx_h) $(sdct_h) $(sjpeg_h) $(strimpl_h)\
  $(gdevpsdf_h) $(spprint_h) $(gsovrc_h)
 	$(GLJCC) $(GLO_)gdevpsdu.$(OBJ) $(C_) $(GLSRC)gdevpsdu.c
 
@@ -859,7 +859,7 @@ gdevpdfx_h=$(GLSRC)gdevpdfx.h\
 
 $(GLOBJ)gdevpdf.$(OBJ) : $(GLSRC)gdevpdf.c $(GDEVH)\
  $(fcntl__h) $(memory__h) $(string__h) $(time__h) $(unistd__h) $(gp_h)\
- $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h) $(gdevpdt_h) $(smd5_h) $(sarc4_h)\
+ $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h) $(smd5_h) $(sarc4_h)\
  $(gdevpdfb_h)
 	$(GLCC) $(GLO_)gdevpdf.$(OBJ) $(C_) $(GLSRC)gdevpdf.c
 
@@ -891,8 +891,7 @@ $(GLOBJ)gdevpdfg.$(OBJ) : $(GLSRC)gdevpdfg.c $(GXERR) $(math__h) $(string__h)\
  $(memory__h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
  $(gsfunc0_h) $(gsstate_h) $(gxdcolor_h) $(gxpcolor_h) $(gxcolor2_h) $(gsptype2_h)\
  $(gxbitmap_h) $(gxdht_h) $(gxfarith_h) $(gxfmap_h) $(gxht_h) $(gxistate_h)\
- $(gzht_h)\
- $(szlibx_h)
+ $(gzht_h)
 	$(GLCC) $(GLO_)gdevpdfg.$(OBJ) $(C_) $(GLSRC)gdevpdfg.c
 
 $(GLOBJ)gdevpdfi.$(OBJ) : $(GLSRC)gdevpdfi.c $(memory__h) $(math__h)\
@@ -917,14 +916,14 @@ $(GLOBJ)gdevpdfk.$(OBJ) : $(GLSRC)gdevpdfk.c $(GXERR) $(math__h) $(memory__h)\
 
 $(GLOBJ)gdevpdfm.$(OBJ) : $(GLSRC)gdevpdfm.c\
  $(math__h) $(memory__h) $(string__h) $(gx_h)\
- $(gdevpdfo_h) $(gdevpdfx_h) $(gserrors_h) $(gsutil_h) $(scanchar_h)\
+ $(gdevpdfo_h) $(gdevpdfx_h) $(gserrors_h) $(gsutil_h)\
  $(szlibx_h) $(slzwx_h)
 	$(GLCC) $(GLO_)gdevpdfm.$(OBJ) $(C_) $(GLSRC)gdevpdfm.c
 
 $(GLOBJ)gdevpdfo.$(OBJ) : $(GLSRC)gdevpdfo.c $(memory__h) $(string__h)\
  $(gx_h)\
  $(gdevpdfo_h) $(gdevpdfx_h) $(gserrors_h) $(gsparam_h) $(gsutil_h)\
- $(sa85x_h) $(slzwx_h) $(sarc4_h) $(sstring_h) $(strimpl_h) $(szlibx_h)
+ $(sa85x_h) $(sarc4_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gdevpdfo.$(OBJ) $(C_) $(GLSRC)gdevpdfo.c
 
 $(GLOBJ)gdevpdfp.$(OBJ) : $(GLSRC)gdevpdfp.c $(memory__h) $(string__h) $(gx_h)\
@@ -946,7 +945,7 @@ $(GLOBJ)gdevpdfu.$(OBJ) : $(GLSRC)gdevpdfu.c $(GXERR)\
  $(jpeglib__h) $(memory__h) $(string__h)\
  $(gdevpdfo_h) $(gdevpdfx_h) $(gdevpdfg_h) $(gdevpdtd_h) $(gscdefs_h)\
  $(gsdsrc_h) $(gsfunc_h) $(gsfunc3_h)\
- $(sa85x_h) $(scanchar_h) $(scfx_h) $(sdct_h) $(slzwx_h) $(spngpx_h)\
+ $(sa85x_h) $(scfx_h) $(sdct_h) $(slzwx_h) $(spngpx_h)\
  $(srlx_h) $(sarc4_h) $(smd5_h) $(sstring_h) $(strimpl_h) $(szlibx_h)\
  $(sjbig2_luratech_h) $(sjpx_luratech_h)
 	$(GDEVLWFJB2JPXCC) $(GLO_)gdevpdfu.$(OBJ) $(C_) $(GLSRC)gdevpdfu.c
@@ -954,8 +953,7 @@ $(GLOBJ)gdevpdfu.$(OBJ) : $(GLSRC)gdevpdfu.c $(GXERR)\
 $(GLOBJ)gdevpdfv.$(OBJ) : $(GLSRC)gdevpdfv.c $(GXERR) $(math__h) $(string__h)\
  $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
  $(gscindex_h) $(gscoord_h) $(gsiparm3_h) $(gsmatrix_h) $(gsptype2_h)\
- $(gxcolor2_h) $(gxdcolor_h) $(gxpcolor_h) $(gxshade_h)\
- $(szlibx_h)
+ $(gxcolor2_h) $(gxdcolor_h) $(gxpcolor_h) $(gxshade_h)
 	$(GLCC) $(GLO_)gdevpdfv.$(OBJ) $(C_) $(GLSRC)gdevpdfv.c
 
 $(GLOBJ)ConvertUTF.$(OBJ) : $(GLSRC)ConvertUTF.c $(ConvertUTF_h)
@@ -1011,7 +1009,7 @@ $(DD)pdxtext.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdxtext_)\
 	$(ADDMOD) $(DD)pdxtext -include $(GLD)fcopy $(GLD)psf
 
 $(GLOBJ)gdevpdt.$(OBJ) : $(GLSRC)gdevpdt.c $(gx_h) $(gxpath_h) $(memory__h)\
- $(gdevpdfx_h) $(gdevpdfg_h) $(gdevpdtf_h) $(gdevpdti_h) $(gdevpdts_h) $(gdevpdtx_h) $(gdevpdt_h)
+ $(gdevpdfx_h) $(gdevpdfg_h) $(gdevpdtf_h) $(gdevpdti_h) $(gdevpdtx_h) $(gdevpdt_h)
 	$(GLCC) $(GLO_)gdevpdt.$(OBJ) $(C_) $(GLSRC)gdevpdt.c
 
 $(GLOBJ)gdevpdtb.$(OBJ) : $(GLSRC)gdevpdtb.c $(memory__h) $(ctype__h) $(string__h)\

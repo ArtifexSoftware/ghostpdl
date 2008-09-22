@@ -23,10 +23,7 @@
 #include "gdevpdfo.h"
 #include "strimpl.h"
 #include "sa85x.h"
-#include "slzwx.h"
 #include "sarc4.h"
-#include "sstring.h"
-#include "szlibx.h"
 
 #define CHECK(expr)\
   BEGIN if ((code = (expr)) < 0) return code; END

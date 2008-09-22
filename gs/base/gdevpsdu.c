@@ -25,7 +25,6 @@
 #include "sdct.h"
 #include "sjpeg.h"
 #include "spprint.h"
-#include "sstring.h"
 #include "gsovrc.h"
 
 /* Structure descriptors */

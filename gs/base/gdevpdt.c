@@ -19,7 +19,6 @@
 #include "gdevpdtx.h"
 #include "gdevpdtf.h"
 #include "gdevpdti.h"
-#include "gdevpdts.h"
 
 /* GC descriptors */
 private_st_pdf_text_data();

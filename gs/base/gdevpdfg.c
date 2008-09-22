@@ -33,7 +33,6 @@
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"
-#include "szlibx.h"
 
 /* ---------------- Miscellaneous ---------------- */
 
@@ -853,7 +852,10 @@ pdf_write_spot_function(gx_device_pdf *pdev, const gx_ht_order *porder,
     data_source_init_bytes(&params.DataSource, (const byte *)values,
 			   sizeof(*values) * num_bits);
     if (code >= 0 &&
-	(code = gs_function_Sd_init(&pfn, &params, mem)) >= 0
+    /* Warning from COverity that params.array_size is uninitialised. Correct */
+    /* but immeidiately after copying the data Sd_init sets the copied value  */
+    /* to zero, so it is not actually used uninitialised. */
+        (code = gs_function_Sd_init(&pfn, &params, mem)) >= 0
 	) {
 	code = pdf_write_function(pdev, pfn, pid);
 	gs_function_free(pfn, false, mem);

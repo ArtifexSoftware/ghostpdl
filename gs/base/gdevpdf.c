@@ -25,7 +25,6 @@
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"		/* only for pdf_reset_graphics */
 #include "gdevpdfo.h"
-#include "gdevpdt.h"
 #include "smd5.h"
 #include "sarc4.h"
 

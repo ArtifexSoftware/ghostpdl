@@ -26,7 +26,6 @@
 #include "gdevpdfo.h"
 #include "gdevpdfg.h"
 #include "gdevpdtd.h"
-#include "scanchar.h"
 #include "strimpl.h"
 #include "sa85x.h"
 #include "scfx.h"
