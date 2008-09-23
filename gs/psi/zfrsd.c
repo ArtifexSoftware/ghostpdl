@@ -315,7 +315,7 @@ CLEAR_MARKS_PROC(aos_clear_marks)
 }
 static 
 ENUM_PTRS_WITH(aos_enum_ptrs, aos_state_t *pptr) return 0;
-ENUM_PTR(0, gs_context_state_t, pgs);
+ENUM_PTR(0, aos_state_t, s);
 case 1:
 ENUM_RETURN_REF(&pptr->blocks);
 ENUM_PTRS_END
