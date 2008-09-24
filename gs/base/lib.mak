@@ -278,6 +278,12 @@ $(GLOBJ)md5.$(OBJ) : $(GLSRC)md5.c $(AK) $(memory__h) $(md5_h)
 	$(GLCC) $(GLO_)md5.$(OBJ) $(C_) $(GLGEN)md5.c
 	$(RM_) $(GLGEN)md5.c $(GLGEN)md5.h
 
+# AES cipher
+aes_h=$(GLSRC)aes.h
+aes_=$(GLOBJ)aes.$(OBJ)
+$(GLOBJ)aes.$(OBJ) : $(GLSRC)aes.c $(AK) $(aes_h)
+	$(GLCC) $(GLO_)aes.$(OBJ) $(C_) $(GLSRC)aes.c
+
 # Visual Debugging
 $(GLOBJ)vdtrace.$(OBJ) : $(GLSRC)vdtrace.c $(math__h)\
  $(gxfixed_h) $(vdtrace_h)
@@ -473,6 +479,7 @@ sjpeg_h=$(GLSRC)sjpeg.h
 slzwx_h=$(GLSRC)slzwx.h
 smd5_h=$(GLSRC)smd5.h $(md5_h)
 sarc4_h=$(GLSRC)sarc4.h $(scommon_h)
+saes_h=$(GLSRC)saes.h $(scommon_h) $(aes_h)
 sjbig2_h=$(GLSRC)sjbig2.h $(stdint__h) $(scommon_h)
 sjbig2_luratech_h=$(GLSRC)sjbig2_luratech.h $(scommon_h)
 sjpx_h=$(GLSRC)sjpx.h $(scommon_h)
@@ -1401,6 +1408,16 @@ $(GLD)sarc4.dev : $(LIB_MAK) $(ECHOGS_XE) $(sarc4_)
 $(GLOBJ)sarc4.$(OBJ) : $(GLSRC)sarc4.c $(AK) $(memory__h)\
  $(gserror_h) $(gserrors_h) $(sarc4_h) $(strimpl_h)
 	$(GLCC) $(GLO_)sarc4.$(OBJ) $(C_) $(GLSRC)sarc4.c
+
+# -------------- AES cipher filter --------------- #
+
+saes_=$(GLOBJ)saes.$(OBJ)
+$(GLD)saes.dev : $(LIB_MAK) $(ECHOGS_XE) $(saes_) $(aes_)
+	$(SETMOD) $(GLD)saes $(saes_) $(aes_)
+
+$(GLOBJ)saes.$(OBJ) : $(GLSRC)saes.c $(AK) $(memory__h)\
+ $(gserror_h) $(gserrors_h) $(strimpl_h) $(saes_h)
+	$(GLCC) $(GLO_)saes.$(OBJ) $(C_) $(GLSRC)saes.c
 
 # ---------------- JBIG2 compression filter ---------------- #
 
