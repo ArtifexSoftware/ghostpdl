@@ -1155,6 +1155,18 @@ $(PSOBJ)zfarc4.$(OBJ) : $(PSSRC)zfarc4.c $(OP) $(memory__h)\
  $(sarc4_h) $(stream_h) $(strimpl_h)
 	$(PSCC) $(PSO_)zfarc4.$(OBJ) $(C_) $(PSSRC)zfarc4.c
 
+# AES cipher filter
+faes_=$(PSOBJ)zfaes.$(OBJ)
+$(PSD)faes.dev : $(INT_MAK) $(ECHOGS_XE) $(faes_) $(GLD)saes.dev
+	$(SETMOD) $(PSD)faes $(faes_)
+	$(ADDMOD) $(PSD)faes -include $(GLD)saes
+	$(ADDMOD) $(PSD)faes -oper zfaes
+
+$(PSOBJ)zfaes.$(OBJ) : $(PSSRC)zfaes.c $(OP) $(memory__h)\
+ $(gsstruct_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
+ $(saes_h) $(stream_h) $(strimpl_h)
+	$(PSCC) $(PSO_)zfaes.$(OBJ) $(C_) $(PSSRC)zfaes.c
+
 # JBIG2 compression filter
 # this can be turned on and off with a FEATURE_DEV
 
@@ -1701,11 +1713,13 @@ $(GLD)diskn.dev : $(LIB_MAK) $(ECHOGS_XE) $(diskn_)
 $(PSD)pdf.dev : $(INT_MAK) $(ECHOGS_XE)\
  $(PSD)psbase.dev $(GLD)dps2lib.dev $(PSD)dps2read.dev\
  $(PSD)pdffonts.dev $(PSD)psl3.dev $(PSD)pdfread.dev $(PSD)cff.dev\
- $(PSD)fmd5.dev $(PSD)farc4.dev $(PSD)ttfont.dev $(PSD)type2.dev $(PSD)icc.dev
+ $(PSD)fmd5.dev $(PSD)farc4.dev $(PSD)faes.dev\
+ $(PSD)ttfont.dev $(PSD)type2.dev $(PSD)icc.dev
 	$(SETMOD) $(PSD)pdf -include $(PSD)psbase $(GLD)dps2lib
 	$(ADDMOD) $(PSD)pdf -include $(PSD)dps2read $(PSD)pdffonts $(PSD)psl3
 	$(ADDMOD) $(PSD)pdf -include $(GLD)psl2lib $(PSD)pdfread $(PSD)cff
-	$(ADDMOD) $(PSD)pdf -include $(PSD)fmd5 $(PSD)farc4 $(PSD)ttfont $(PSD)type2
+	$(ADDMOD) $(PSD)pdf -include $(PSD)fmd5 $(PSD)farc4 $(PSD)faes.dev
+	$(ADDMOD) $(PSD)pdf -include $(PSD)ttfont $(PSD)type2
 	$(ADDMOD) $(PSD)pdf -include $(PSD)icc
 	$(ADDMOD) $(PSD)pdf -functiontype 4
 	$(ADDMOD) $(PSD)pdf -emulator PDF
