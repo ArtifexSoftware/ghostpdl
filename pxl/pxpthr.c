@@ -133,7 +133,9 @@ pxPassthrough_init(px_state_t *pxs)
 
     /* default to pcl5c */
     global_pcs->personality = 0;
-
+    /* for now we do not support intepolation in XL passthrough mode. */
+    global_pcs->interpolate = false;
+    
     /* do an initial reset to set up a permanent reset.  The
        motivation here is to avoid tracking down a slew of memory
        leaks */
