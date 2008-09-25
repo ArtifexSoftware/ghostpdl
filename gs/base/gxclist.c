@@ -625,16 +625,20 @@ clist_open(gx_device *dev)
 {
     gx_device_clist_writer * const cdev =
 	&((gx_device_clist *)dev)->writer;
+    bool save_is_open = dev->is_open;
     int code;
 
     cdev->permanent_error = 0;
+    cdev->is_open = false;
     code = clist_init(dev);
     if (code < 0)
 	return code;
     code = clist_open_output_file(dev);
     if ( code >= 0)
 	code = clist_emit_page_header(dev);
-    return code;
+    if (code >= 0)
+       dev->is_open = save_is_open;
+     return code;
 }
 
 static int

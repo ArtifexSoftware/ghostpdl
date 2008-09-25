@@ -152,7 +152,7 @@ open_c:
     if (code < 0) {
 	/* If there wasn't enough room, and we haven't */
 	/* already shrunk the buffer, try enlarging it. */
-	if ( code == gs_error_limitcheck &&
+	if ( code == gs_error_rangecheck &&
 	     space >= space_params->BufferSpace &&
 	     !bufferSpace_is_exact
 	     ) {
