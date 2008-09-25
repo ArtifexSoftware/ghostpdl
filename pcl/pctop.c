@@ -325,7 +325,7 @@ pcl_impl_set_post_page_action(
 /* if the device option string PCL is not given, the default
    arrangement is 1 bit devices use pcl5e other devices use pcl5c. */
 static pcl_personality_t
-pcl_set_personality(pl_interp_instance_t *instance, gx_device *device)
+pcl_get_personality(pl_interp_instance_t *instance, gx_device *device)
 {
     if ( !strcmp(instance->pcl_personality, "PCL5C" ) )
 	return pcl5c;
@@ -337,6 +337,12 @@ pcl_set_personality(pl_interp_instance_t *instance, gx_device *device)
 	return pcl5e;
     else
 	return pcl5c;
+}
+
+static bool
+pcl_get_interpolation(pl_interp_instance_t *instance)
+{
+    return instance->interpolate;
 }
 
 #include "plmain.h"
@@ -354,9 +360,12 @@ pcl_impl_set_device(
     enum {Sbegin, Ssetdevice, Sinitg, Sgsave1, Spclgsave, Sreset, Serase, Sdone} stage;
 
     stage = Sbegin;
-    /* set personality - pcl5c, pcl5e, or rtl */
-    pcli->pcs.personality = pcl_set_personality(instance, device);
+    /* get ad hoc paramaters personality and interpolation */
+    pcli->pcs.personality = pcl_get_personality(instance, device);
+    pcli->pcs.interpolate = pcl_get_interpolation(instance);
+
     /* Set the device into the pcl_state & gstate */
+
     stage = Ssetdevice;
     if ((code = gs_setdevice_no_erase(pcli->pcs.pgs, device)) < 0)	/* can't erase yet */
         goto pisdEnd;

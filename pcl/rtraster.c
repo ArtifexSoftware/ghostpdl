@@ -60,7 +60,7 @@ typedef struct pcl_raster_s {
      uint                indexed:1;          /* != 0 ==> indexed color space */
      uint                zero_is_white:1;    /* all planes 0 ==> white */
      uint                zero_is_black:1;    /* all planes 0 ==> solid color */
- 
+     uint                interpolate:1;      /* enable interpolation */
      int                 wht_indx;           /* white index, for indexed color
                                                 space only */
      const void *        remap_ary;          /* remap array, if needed */
@@ -491,6 +491,11 @@ create_image_enumerator(
     if ((prast->indexed) && (prast->wht_indx >= 1 << (nplanes * b_per_p)))
         use_image4 = 0;
 
+    /* we also don't use an image type 4 if the user has requested
+       interpolation */
+    if (prast->interpolate)
+        use_image4 = 0;
+
     if (use_image4)
         gs_image4_t_init( (gs_image4_t *) &image, pcspace);
     else
@@ -505,6 +510,8 @@ create_image_enumerator(
         image.i1.BitsPerComponent = 8; /* always 8 bits per pixel if consolidated */
     else
         image.i1.BitsPerComponent = (nplanes * b_per_p) / num_comps;
+
+    image.i1.Interpolate = prast->interpolate;
 
     if (prast->indexed) {
 	if (use_image4)
@@ -1089,6 +1096,8 @@ pcl_start_raster(
         prast->transparent = true;
     else
         prast->transparent = false;
+
+    prast->interpolate = pcs->interpolate;
     prast->src_height_set = pcs->raster_state.src_height_set;
     prast->pcs = pcs;
     pcl_cs_indexed_init_from(prast->pindexed, pindexed);

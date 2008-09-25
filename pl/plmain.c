@@ -682,8 +682,10 @@ pl_main_universe_select(
 		universe->curr_device = desired_device;
 	}
 
-	/* NB fix me this parameter should not be passed this way */
+	/* NB fix me, these parameters should not be passed this way */
 	universe->curr_instance->pcl_personality = pti->pcl_personality;
+	universe->curr_instance->interpolate = pti->interpolate;
+
 	/* Select curr/new device into PDL instance */
 	if ( pl_set_device(universe->curr_instance, universe->curr_device) < 0 ) {
 	    if (err_str)
@@ -742,6 +744,7 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
     pti->page_count = 0;
     pti->saved_hwres = false;
     pti->mem_cleanup = true;
+    pti->interpolate = false;
     strncpy(&pti->pcl_personality[0], "PCL", sizeof(pti->pcl_personality)-1);
 }
 
@@ -835,6 +838,11 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 		pmi->pause = false;
 		continue;
 	    }
+            if ( !strcmp(arg, "DOINTERPOLATE") ) {
+                pmi->interpolate = true;
+                continue;
+            }
+
 	    { 
 		/* We're setting a device parameter to a non-string value. */
 		char *eqp = strchr(arg, '=');

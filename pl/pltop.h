@@ -37,9 +37,10 @@ typedef struct pl_interp_s {
 } pl_interp_t;
 
 typedef struct pl_interp_instance_s {
-	pl_interp_t     *interp;            /* interpreter instance refers to */
-	vm_spaces       spaces;             /* spaces for GC */
-        char *          pcl_personality;
+    pl_interp_t     *interp;            /* interpreter instance refers to */
+    vm_spaces       spaces;             /* spaces for GC */
+    char *          pcl_personality;
+    bool            interpolate;
 } pl_interp_instance_t;
 
 /* Param data types */
