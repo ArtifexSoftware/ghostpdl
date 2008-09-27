@@ -666,7 +666,7 @@ currentdict /token_nofail_dict .undef
   setfileposition		% Move to the start of the data
   		% We disable PDFDEBUG while reading the data stream.  We will
 		% print the data later
-  PDFDEBUG /PDFDEBUG false def	% Save PDFDEBUG and disable it while reading
+  PDFDEBUG /PDFDEBUG false gput % Save PDFDEBUG and disable it while reading
   		% Read the data for all objects.  We check to see if we get
 		% the number of objects that we expect.
 		% Stack: objstreamdict N objectstream [obj#] PDFDEBUG
