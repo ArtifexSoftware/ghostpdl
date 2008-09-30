@@ -21,7 +21,6 @@
 #include "gserrors.h"
 #include "gxdevice.h"
 #include "gsdevice.h"
-#include "gscoord.h"		/* requires gsmatrix.h */
 #include "gxdevmem.h"		/* must precede gxcldev.h */
 #include "gdevprn.h"		/* must precede gxcldev.h */
 #include "gxcldev.h"
@@ -87,7 +86,7 @@ clist_setup_render_threads(gx_device *dev, int y)
     }
     cdev->page_cfile = cdev->page_bfile = NULL;
     strcpy(fmode, "r");			/* read access for threads */
-    strcat(fmode, gp_fmode_binary_suffix);
+    strncat(fmode, gp_fmode_binary_suffix, 1);
     /* Find the prototype for this device (needed so we can copy from it) */
     for (i=0; (protodev = (gx_device *)gs_getdevice(i)) != NULL; i++)
 	if (strcmp(protodev->dname, dev->dname) == 0)
@@ -205,7 +204,7 @@ clist_setup_render_threads(gx_device *dev, int y)
 	    char fmode[4];
 
 	    strcpy(fmode, "a+");	/* file already exists and we want to re-use it */
-	    strcat(fmode, gp_fmode_binary_suffix);
+	    strncat(fmode, gp_fmode_binary_suffix, 1);
 	    cdev->page_info.io_procs->fopen(cdev->page_cfname, fmode, &cdev->page_cfile,
 				mem, cdev->bandlist_memory, true);
 	    cdev->page_info.io_procs->fseek(cdev->page_cfile, 0, SEEK_SET, cdev->page_cfname);
@@ -279,7 +278,7 @@ clist_teardown_render_threads(gx_device *dev)
 	    char fmode[4];
 
 	    strcpy(fmode, "a+");	/* file already exists and we want to re-use it */
-	    strcat(fmode, gp_fmode_binary_suffix);
+	    strncat(fmode, gp_fmode_binary_suffix, 1);
 	    cdev->page_info.io_procs->fopen(cdev->page_cfname, fmode, &cdev->page_cfile,
 				mem, cdev->bandlist_memory, true);
 	    cdev->page_info.io_procs->fseek(cdev->page_cfile, 0, SEEK_SET, cdev->page_cfname);
