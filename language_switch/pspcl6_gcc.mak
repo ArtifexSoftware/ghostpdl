@@ -70,7 +70,7 @@ XOBJS?=$(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o \
        $(GLOBJDIR)/gscdefs.o $(GLOBJDIR)/iconfig.o 
 
 ifeq ($(COMPILE_INITS), 1)
-include $(GLSRCDIR)/psromfs.mak
+include $(PSSRCDIR)/psromfs.mak
 endif
 
 # "Subclassed" makefile
