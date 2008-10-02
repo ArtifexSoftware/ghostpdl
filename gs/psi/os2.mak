@@ -452,7 +452,7 @@ DEVICE_DEVS21= $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.dev $(DD)bmpsep8.
 !include "$(GLSRCDIR)\version.mak"
 !include "$(GLSRCDIR)\gs.mak"
 # psromfs.mak must precede lib.mak
-!include "$(GLSRCDIR)\psromfs.mak"
+!include "$(PSSRCDIR)\psromfs.mak"
 !include "$(GLSRCDIR)\lib.mak"
 !include "$(GLSRCDIR)\jpeg.mak"
 # zlib.mak must precede libpng.mak

@@ -149,7 +149,7 @@ CC_SHARED=$(CC_)
 include $(GLSRCDIR)/unixhead.mak
 include $(GLSRCDIR)/gs.mak
 # psromfs.mak must precede lib.mak
-include $(GLSRCDIR)/psromfs.mak
+include $(PSSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak
 include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak

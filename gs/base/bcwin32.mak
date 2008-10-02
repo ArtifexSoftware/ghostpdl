@@ -526,7 +526,7 @@ BEGINFILES2=*.tr
 
 # Include the generic makefiles. psromfs.mak must precede lib.mak
 
-!include $(GLSRCDIR)\psromfs.mak
+!include $(PSSRCDIR)\psromfs.mak
 !include $(GLSRCDIR)\winlib.mak
 !include $(PSSRCDIR)\winint.mak
 

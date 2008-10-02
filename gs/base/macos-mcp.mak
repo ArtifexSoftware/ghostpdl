@@ -271,7 +271,7 @@ PLATFORM=macos_
 
 include $(GLSRCDIR)/gs.mak
 # psromfs.mak must precede lib.mak
-include $(GLSRCDIR)/psromfs.mak
+include $(PSSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak
 include $(PSSRCDIR)/int.mak
 include $(GLSRCDIR)/jpeg.mak

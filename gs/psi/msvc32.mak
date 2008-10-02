@@ -706,7 +706,7 @@ BEGINFILES2=$(GLGENDIR)\lib32.rsp\
 
 !include $(GLSRCDIR)\msvccmd.mak
 # psromfs.mak must precede lib.mak
-!include $(GLSRCDIR)\psromfs.mak
+!include $(PSSRCDIR)\psromfs.mak
 !include $(GLSRCDIR)\winlib.mak
 !include $(GLSRCDIR)\msvctail.mak
 !include $(PSSRCDIR)\winint.mak
