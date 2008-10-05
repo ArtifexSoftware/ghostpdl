@@ -478,14 +478,14 @@ clist_get_bits_rect_mt(gx_device *dev, const gs_int_rect * prect,
     if (line_count <= 0 || prect->p.x >= prect->q.x)
 	return 0;
 
-    
+    if (crdev->ymin < 0)
+	if((code = clist_close_writer_and_init_reader(cldev)) < 0)
+	    return clist_get_bits_rectangle(dev, prect, params, unread);
     if (crdev->render_threads == NULL) {
         /* If we get here with with ymin >=0, it's because we closed the threads */
 	/* while doing a page due to an error. Use single threaded mode.         */
 	if (crdev->ymin >= 0)
 	    return clist_get_bits_rectangle(dev, prect, params, unread);
-	if((code = clist_close_writer_and_init_reader(cldev)) < 0)
-	    return code;
 	if ((code = clist_setup_render_threads(dev, y)) < 0) {
 	    /* revert to the default single threaded rendering */
 	    return clist_get_bits_rectangle(dev, prect, params, unread);

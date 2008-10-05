@@ -364,6 +364,7 @@ clist_render_init(gx_device_clist *dev)
     crdev->num_pages = 0;
     crdev->band_complexity_array = NULL;
     crdev->offset_map = NULL;
+    crdev->render_threads = NULL;
     return gx_clist_reader_read_band_complexity(dev);
 }
 
