@@ -478,19 +478,20 @@ clist_get_bits_rect_mt(gx_device *dev, const gs_int_rect * prect,
     if (line_count <= 0 || prect->p.x >= prect->q.x)
 	return 0;
 
-    if (crdev->ymin < 0)
-	if((code = clist_close_writer_and_init_reader(cldev)) < 0)
+    if (crdev->ymin < 0) {
+	if ((code = clist_close_writer_and_init_reader(cldev)) < 0)
+	    return code;
+	if (clist_setup_render_threads(dev, y) < 0) 
+	    /* problem setting up the threads, revert to single threaded */
 	    return clist_get_bits_rectangle(dev, prect, params, unread);
-    if (crdev->render_threads == NULL) {
-        /* If we get here with with ymin >=0, it's because we closed the threads */
-	/* while doing a page due to an error. Use single threaded mode.         */
-	if (crdev->ymin >= 0)
-	    return clist_get_bits_rectangle(dev, prect, params, unread);
-	if ((code = clist_setup_render_threads(dev, y)) < 0) {
-	    /* revert to the default single threaded rendering */
+    }
+    else {
+	if (crdev->render_threads == NULL) {
+            /* If we get here with with ymin >=0, it's because we closed the threads */
+	    /* while doing a page due to an error. Use single threaded mode.         */
 	    return clist_get_bits_rectangle(dev, prect, params, unread);
 	}
-    } 
+    }
     /* If we already have the band's data, just return it */
     if (y < crdev->ymin || end_y > crdev->ymax)
 	code = clist_get_band_from_thread(dev, band);
