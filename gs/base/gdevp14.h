@@ -31,25 +31,6 @@ typedef enum {
 typedef struct pdf14_buf_s pdf14_buf;
 #endif
 
-/* A structure to hold information
- * about the parent color related
- * procs and other information.
- * These may change depending upon
- * if the blending space is different
- * than the base space */
-
-typedef struct pdf14_parent_color_s {
-
-    int num_components;
-    gx_color_polarity_t polarity;
-    const void * parent_color_mapping_procs; 
-    void * parent_color_comp_index; 
-    const void * unpack_procs;
-    const pdf14_nonseparable_blending_procs_t * parent_blending_procs;
-    bool isadditive;
- 
-} pdf14_parent_color_t;
-
 typedef struct pdf14_ctx_s pdf14_ctx;
 
 struct pdf14_buf_s {
@@ -79,13 +60,7 @@ struct pdf14_buf_s {
     gs_int_rect bbox;
     pdf14_buf *maskbuf; /* Save pdf14_ctx_s::maksbuf. */
     bool idle;
-
-    bool SMask_is_CIE;
-    gs_transparency_mask_subtype_t SMask_SubType;
-
     uint mask_id;
-
-    pdf14_parent_color_t parent_color_info_procs;
 };
 
 struct pdf14_ctx_s {
@@ -206,8 +181,5 @@ int send_pdf14trans(gs_imager_state * pis, gx_device * dev,
 int
 pdf14_put_devn_params(gx_device * pdev, gs_devn_params * pdevn_params,
 	       				gs_param_list * plist);
-
-
-
 
 #endif /* gdevp14_INCLUDED */

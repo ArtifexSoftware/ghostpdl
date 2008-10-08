@@ -371,16 +371,10 @@ end def
 } bdef
 /fsexec		% <fillop|strokeop> fsexec -
  {		% Preserve the current point, if any.
-   SoftMask //null ne {
-     mark /Subtype /Group /Isolated true .dicttomark pathbbox .begintransparencygroup
-   } if
     { currentpoint } stopped
     { $error /newerror false put   cvx exec }
     { 3 -1 roll cvx exec moveto }
    ifelse
-   SoftMask //null ne {
-     .endtransparencygroup
-   } if
  } bdef
 
 % ---------------- Path painting and clipping ---------------- %

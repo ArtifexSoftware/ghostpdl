@@ -20,7 +20,6 @@
 #include "gstparam.h"
 #include "gxcomp.h"
 #include "gsmatrix.h"
-#include "gxblend.h"
 
 /*
  * Define the operations for the PDF 1.4 transparency compositor.
@@ -92,9 +91,6 @@ struct gs_pdf14trans_params_s {
     bool replacing;
     bool idle; /* For clist reader.*/
     uint mask_id; /* For clist reader.*/
-    bool SMask_is_CIE;
-    int smask_numcomps;
-    gs_transparency_color_t child_color;
 };
 
 #ifndef gs_pdf14trans_params_DEFINED

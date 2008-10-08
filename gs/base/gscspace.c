@@ -169,31 +169,6 @@ gs_color_space_get_index(const gs_color_space * pcs)
     return pcs->type->index;
 }
 
-/* See if the space is CIE based */
-bool gs_color_space_is_CIE(const gs_color_space * pcs)
-{
-
-    switch(gs_color_space_get_index(pcs)){
-
-        case gs_color_space_index_CIEDEFG:
-        case gs_color_space_index_CIEDEF:
-        case gs_color_space_index_CIEABC:
-        case gs_color_space_index_CIEA:
-        case gs_color_space_index_CIEICC:
-
-            return true;
-
-        break;
-
-        default:
-            
-            return false;
-
-    }
-
-}
-
-
 /* Get the number of components in a color space. */
 int
 gs_color_space_num_components(const gs_color_space * pcs)
