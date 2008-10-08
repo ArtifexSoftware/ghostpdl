@@ -1420,6 +1420,96 @@ cie_joint_caches_complete(gx_cie_joint_caches * pjc,
 
 }
 
+/* If the source was CIE based when doing SMask Luminosity 
+   compositing then we need to make sure we concretize to CIEXYZ during
+   the SMask drawing.  We don't want to create a new imager state here */
+
+bool gx_cie_to_xyz_alloc2(gs_color_space * pcs, gs_state * pgs)
+{
+ 
+
+	int code;
+	const gs_cie_abc *pcie_abc;
+        gx_cie_joint_caches *pjc;
+        const gs_cie_abc *pabc;
+        const gs_cie_common *pcie = cie_cs_common_abc(pcs, &pabc);
+        int j;
+        gs_memory_t *mem;
+
+    switch (pcs->type->index) {
+
+	  case gs_color_space_index_CIEDEF: {
+
+	    gs_cie_def *pcie_def = pcs->params.def;
+	    pcie_abc = (gs_cie_abc *)pcie_def;
+	    CIE_LOAD_CACHE_BODY(pcie_def->caches_def.DecodeDEF, pcie_def->RangeDEF.ranges,
+			    &pcie_def->DecodeDEF, DecodeDEF_default, pcie_def,
+			    "DecodeDEF");
+	    break;
+
+	  }
+	  case gs_color_space_index_CIEDEFG: {
+
+	    gs_cie_defg *pcie_defg = pcs->params.defg;
+	    pcie_abc = (gs_cie_abc *)pcie_defg;
+	    CIE_LOAD_CACHE_BODY(pcie_defg->caches_defg.DecodeDEFG, pcie_defg->RangeDEFG.ranges,
+			    &pcie_defg->DecodeDEFG, DecodeDEFG_default, pcie_defg,
+			    "DecodeDEFG");
+	    break;
+	  }
+	  case gs_color_space_index_CIEABC: {
+
+	    pcie_abc = pcs->params.abc;
+
+	    break;
+	  }
+	  default:
+	    /* can't happen since we only come here for certain color spaces */
+	    return false;
+	}
+
+	/* Fill the caches we need in the CIE color space */
+
+        gx_install_cie_abc((gs_cie_abc *)pcie_abc, pgs);
+
+ 
+            mem = pcs->rc.memory->stable_memory;
+
+    pjc = gs_alloc_struct(mem, gx_cie_joint_caches, &st_joint_caches,
+			  "gx_cie_to_xyz_free(joint caches)");
+    if (pjc == 0) {
+	return_error(gs_error_VMerror);
+    }
+
+    /*
+     * Perform an abbreviated version of cie_joint_caches_complete.
+     * Don't bother with any optimizations.  This combines
+     * the nonlinear 1-D LUT in floats with the matrix into 
+     */
+    for (j = 0; j < 3; j++) {
+	cie_cache_mult(&pjc->DecodeLMN.caches[j], &pcie->MatrixLMN.cu + j,
+		       &pcie->caches.DecodeLMN[j].floats,
+		       CACHE_THRESHOLD);
+    }
+
+    cie_cache3_set_interpolation(&pjc->DecodeLMN);
+    pjc->skipDecodeLMN = false;
+    pjc->skipDecodeABC = pabc != 0 && pabc->caches.skipABC;
+    /* Mark the joint caches as completed. */
+    pjc->remap_finish = gx_cie_xyz_remap_finish;
+    pjc->cspace_id = pcs->id;
+    pjc->status = CIE_JC_STATUS_COMPLETED;
+
+    pgs->cie_joint_caches = pjc;
+    pgs->cie_to_xyz = true;
+
+    return true;
+}
+
+
+
+
+
 /*
  * Initialize (just enough of) an imager state so that "concretizing" colors
  * using this imager state will do only the CIE->XYZ mapping.  This is a

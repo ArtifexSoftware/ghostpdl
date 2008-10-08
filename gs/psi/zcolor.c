@@ -424,6 +424,7 @@ zsetcolorspace(i_ctx_t * i_ctx_p)
     if (code < 0)
 	return code;
 
+#if 0
     /* See if its the same as the current space */
     if (is_same_colorspace(i_ctx_p, op, &istate->colorspace.array)) {
 	PS_colour_space_t *cspace;
@@ -441,6 +442,8 @@ zsetcolorspace(i_ctx_t * i_ctx_p)
 	pop(1);
 	return 0;
     }
+
+#endif
     /* Set up for the continuation procedure which will do the work */
     /* Make sure the exec stack has enough space */
     check_estack(5);

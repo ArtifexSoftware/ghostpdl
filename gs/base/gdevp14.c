@@ -49,7 +49,9 @@
 #define VD_PAINT_COLORS 0
 #define VD_PAINT_ALPHA 1
 
-
+#if RAW_DUMP
+unsigned char global_index = 0;
+#endif
 /*
  * We chose the blending color space based upon the process color model of the
  * output device.  For gray, RGB, CMYK, or CMYK+spot devices, the choice is
@@ -418,6 +420,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape, bool idle,
     if (result == NULL)
 	return result;
 
+    result->saved = NULL;
     result->isolated = false;
     result->knockout = false;
     result->has_alpha_g = has_alpha_g;
@@ -430,6 +433,8 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape, bool idle,
     result->maskbuf = NULL;
     result->idle = idle;
     result->mask_id = 0;
+    result->parent_color_info_procs.parent_color_mapping_procs = NULL;
+    result->parent_color_info_procs.parent_color_comp_index = NULL;
 
     if (height <= 0 || idle) {
 	/* Empty clipping - will skip all drawings. */
@@ -638,6 +643,10 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
 	pdf14_compose_group(tos, nos, maskbuf, x0, x1, y0, y1, 
 		ctx->n_chan, ctx->additive, pblend_procs);
 
+    /* windoze memory checking */
+       /* _CrtCheckMemory(); */
+
+
 exit:
     ctx->stack = nos;
     {	/* If this group is one for an image with soft mask,
@@ -666,9 +675,14 @@ exit:
 static	int
 pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 			     byte *transfer_fn, bool idle, bool replacing,
-			     uint mask_id)
+			     uint mask_id, gs_transparency_mask_subtype_t subtype, 
+                             bool SMask_is_CIE, int numcomps)
 {
     pdf14_buf *buf;
+    FILE *fid;
+    char file_name[50];
+    const byte *Buf_ptr;
+    int z,num_rows,y;
 
     if_debug2('v', "[v]pdf14_push_transparency_mask, idle=%d, replacing=%d\n", idle, replacing);
     if (replacing && ctx->maskbuf != NULL) {
@@ -685,7 +699,15 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 	pdf14_buf_free(ctx->maskbuf, ctx->memory);
 	ctx->maskbuf = NULL;
     }
-    buf = pdf14_buf_new(rect, false, false, idle, ctx->n_chan, ctx->memory);
+
+    /* An optimization to consider is that if the SubType is Alpha
+       then we really should only be allocating the alpha band and
+       only draw with that channel.  Current architecture makes that 
+       a bit tricky.  We need to create this based upon the size of
+       the color space + an alpha channel. NOT the device size
+       or the previous ctx size */
+
+    buf = pdf14_buf_new(rect, false, false, idle, numcomps+1, ctx->memory);
     if (buf == NULL)
 	return_error(gs_error_VMerror);
 
@@ -705,8 +727,45 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 	buf->maskbuf = ctx->maskbuf;
     }
 
+
+#if RAW_DUMP
+
+    /* Dump the current buffer to see what we have */
+
+    num_rows = ctx->stack->rect.q.y-ctx->stack->rect.p.y;
+    sprintf(file_name,"%d)Raw_Buf_PreSmask_%dx%dx%d.raw",global_index,ctx->stack->rowstride,num_rows,ctx->stack->n_chan);
+    fid = fopen(file_name,"wb");
+
+    for (z = 0; z < ctx->stack->n_chan; ++z) {
+
+        Buf_ptr = &(ctx->stack->data[z*ctx->stack->planestride]);
+    
+        for ( y = 0; y < num_rows; y++ ) {
+
+            fwrite(Buf_ptr,sizeof(unsigned char),ctx->stack->rowstride,fid);
+
+            Buf_ptr += ctx->stack->rowstride;
+
+        }
+
+    }
+
+    fclose(fid);
+    global_index++;
+
+#endif
+
     buf->saved = ctx->stack;
     ctx->stack = buf;
+     /* windoze memory checking */
+   /* _CrtCheckMemory(); */
+
+    /* Soft Mask related information so we know how to 
+       compute luminosity when we pop the soft mask */
+
+    buf->SMask_is_CIE = SMask_is_CIE;
+    buf->SMask_SubType = subtype;
+
     if (buf->data != NULL)
 	memset(buf->data, 0, buf->planestride * buf->n_chan);
     return 0;
@@ -716,15 +775,65 @@ static	int
 pdf14_pop_transparency_mask(pdf14_ctx *ctx)
 {
     pdf14_buf *tos = ctx->stack;
+    byte *new_data_buf;
 
     if_debug1('v', "[v]pdf14_pop_transparency_mask, idle=%d\n", tos->idle);
     ctx->stack = tos->saved;
     if (tos->maskbuf) {
 	/* The maskbuf of the ctx->maskbuf entry is never used, free it now */
+        /* In other words, the Smask will not have an Smask */
 	pdf14_buf_free(tos->maskbuf, ctx->memory);
 	tos->maskbuf = NULL;
     }
-    ctx->maskbuf = tos;
+
+    if(tos->data != NULL)
+    {
+
+        /* Lets get this to a monochrome buffer and map it to a luminance only value */
+        /* This will reduce our memory.  We won't reuse the existing one, due */
+        /* Due to the fact that on certain systems we may have issues recovering */
+        /* the data after a resize */
+ 
+	new_data_buf = gs_alloc_bytes(ctx->memory, tos->planestride,
+					"pdf14_buf_new");
+        if (new_data_buf == NULL)	    
+            return_error(gs_error_VMerror);
+
+        /* Initialize with 0.  Need to do this since in Smask_Luminosity_Mapping 
+           we won't be filling everything during the remap if it had not been 
+           written into by the PDF14 fill rect */
+
+        memset(new_data_buf, 0, tos->planestride);
+
+        Smask_Luminosity_Mapping(tos->rect.q.y - tos->rect.p.y ,tos->rect.q.x - tos->rect.p.x,tos->n_chan, 
+            tos->rowstride, tos->planestride, new_data_buf, tos->data, ctx->additive,
+            tos->SMask_is_CIE, tos->SMask_SubType); 
+
+         /* Free the old object, NULL test was above */
+
+          gs_free_object(ctx->memory, tos->data, "pdf14_buf_free");
+             tos->data = new_data_buf;
+
+         /* Data is single channel now */
+
+         tos->n_chan = 1;
+         tos->n_planes = 1;
+
+        /* If we were CIE based, clean up the joint cache we created */
+
+        if ( tos->SMask_is_CIE ){
+
+            /*  gs_free_object(mem, pis->cie_joint_caches,
+		   "gx_cie_to_xyz_free(joint caches)");*/
+
+        }
+
+        /* Assign as mask buffer */
+
+        ctx->maskbuf = tos;
+
+     }
+
     return 0;
 }
 
@@ -1695,12 +1804,19 @@ pdf14_begin_transparency_mask(gx_device	*dev,
 			      gs_transparency_state_t **ppts,
 			      gs_memory_t *mem)
 {
+    pdf14_device *pdevproto;
     pdf14_device *pdev = (pdf14_device *)dev;
     byte bg_alpha = 0;
     byte *transfer_fn = (byte *)gs_alloc_bytes(pdev->ctx->memory, 256,
 					       "pdf14_begin_transparency_mask");
     gs_int_rect rect;
     int code;
+    const pdf14_procs_t *new_14procs;
+    pdf14_parent_color_t *parent_color_info = &(pdev->ctx->stack->parent_color_info_procs);
+    bool update_color_info;
+    gx_color_polarity_t new_polarity;
+    int new_num_comps;
+    bool new_additive;
 
     if (transfer_fn == NULL)
 	return_error(gs_error_VMerror);
@@ -1711,9 +1827,108 @@ pdf14_begin_transparency_mask(gx_device	*dev,
 	bg_alpha = (int)(255 * ptmp->GrayBackground + 0.5);
     if_debug1('v', "pdf14_begin_transparency_mask, bg_alpha = %d\n", bg_alpha);
     memcpy(transfer_fn, ptmp->transfer_fn, size_of(ptmp->transfer_fn));
+
+    /* Check if we need to alter the device procs at this
+       stage.  Many of the procs are based upon the color
+       space of the device.  We want to remain in 
+       the color space defined by the color space of
+       the SMask not go to the device color space.  
+       When we pop the Smask we will collapse
+       to a single band and then compose with it
+       to the device color space (or the parent layer
+       space) */
+
+        parent_color_info->parent_color_mapping_procs = NULL;
+        parent_color_info->parent_color_comp_index = NULL;
+        update_color_info = false;
+
+        switch (ptmp->child_color) {
+
+            case GRAY_SCALE:
+
+                if (pdf14_determine_default_blend_cs((gx_device *) pdev) != PDF14_DeviceGray){
+
+                    update_color_info = true;
+                    new_polarity = GX_CINFO_POLARITY_ADDITIVE;
+                    new_num_comps = 1;
+                    pdevproto = (pdf14_device *)&gs_pdf14_Gray_device;
+                    new_additive = true;
+                    new_14procs = &gray_pdf14_procs;
+
+                }
+
+                break;
+
+            case DEVICE_RGB:			 	
+            case CIE_XYZ:				
+
+                if (pdf14_determine_default_blend_cs((gx_device *) pdev) != PDF14_DeviceRGB){
+
+                    update_color_info = true;
+                    new_polarity = GX_CINFO_POLARITY_ADDITIVE;
+                    new_num_comps = 3;
+                    pdevproto = (pdf14_device *)&gs_pdf14_RGB_device;
+                    new_additive = true;
+                    new_14procs = &rgb_pdf14_procs;
+                }
+
+                break; 
+
+            case DEVICE_CMYK:				
+
+                if (pdf14_determine_default_blend_cs((gx_device *) pdev) != PDF14_DeviceCMYK){
+
+                    update_color_info = true;
+                    new_polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
+                    new_num_comps = 4;
+                    pdevproto = (pdf14_device *)&gs_pdf14_CMYK_device;
+                    new_additive = false;
+                    new_14procs = &cmyk_pdf14_procs;
+
+                }
+
+                break;
+
+            default:			
+	        return_error(gs_error_rangecheck);
+	        break;
+
+         }    
+
+         if (update_color_info){
+
+           /* Save the old information */
+
+            parent_color_info->polarity = pdev->color_info.polarity;
+            parent_color_info->num_components = pdev->color_info.num_components;
+            parent_color_info->parent_blending_procs = pdev->blend_procs;
+            parent_color_info->parent_color_mapping_procs = 
+                pdev->procs.get_color_mapping_procs;
+            parent_color_info->parent_color_comp_index = 
+                pdev->procs.get_color_comp_index;
+            parent_color_info->isadditive = pdev->ctx->additive;
+            parent_color_info->unpack_procs = pdev->pdf14_procs;
+
+
+            /* Set new information */
+
+            pdev->procs.get_color_mapping_procs = 
+                    pdevproto->static_procs->get_color_mapping_procs;
+            pdev->procs.get_color_comp_index = 
+                pdevproto->static_procs->get_color_comp_index;
+            pdev->blend_procs = pdevproto->blend_procs;
+            pdev->color_info.polarity = new_polarity;
+            pdev->color_info.num_components = new_num_comps;
+            pdev->ctx->additive = new_additive; 
+            pdev->pdf14_procs = new_14procs;
+
+         }
+
+
     return pdf14_push_transparency_mask(pdev->ctx, &rect, bg_alpha,
 					transfer_fn, ptmp->idle, ptmp->replacing,
-					ptmp->mask_id);
+					ptmp->mask_id, ptmp->subtype, 
+                                        ptmp->SMask_is_CIE, ptmp->smask_numcomps);
 }
 
 static	int
@@ -1721,9 +1936,35 @@ pdf14_end_transparency_mask(gx_device *dev,
 			  gs_transparency_mask_t **pptm)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
+    pdf14_parent_color_t *parent_color;
+    int ok;
 
     if_debug0('v', "pdf14_end_transparency_mask\n");
-    return pdf14_pop_transparency_mask(pdev->ctx);
+
+    ok = pdf14_pop_transparency_mask(pdev->ctx);
+
+    /* May need to reset some color stuff related
+     * to a mismatch between the Smask color space
+     * and the Smask blending space */
+
+    parent_color = &(pdev->ctx->stack->parent_color_info_procs);
+
+    if (!(parent_color->parent_color_mapping_procs == NULL && 
+        parent_color->parent_color_comp_index == NULL)) {
+
+            pdev->procs.get_color_mapping_procs = parent_color->parent_color_mapping_procs;
+            pdev->procs.get_color_comp_index = parent_color->parent_color_comp_index;
+            pdev->color_info.polarity = parent_color->polarity;
+            pdev->color_info.num_components = parent_color->num_components;
+            pdev->blend_procs = parent_color->parent_blending_procs;
+            pdev->ctx->additive = parent_color->isadditive;
+            pdev->pdf14_procs = parent_color->unpack_procs;
+
+            parent_color->parent_color_comp_index = NULL;
+            parent_color->parent_color_mapping_procs = NULL;
+    }
+
+    return ok;
 }
 
 static	int
@@ -1797,7 +2038,7 @@ pdf14_mark_fill_rectangle(gx_device * dev,
 		    dst[k] = 255 - dst_ptr[k * planestride];
 		dst[num_comp] = dst_ptr[num_comp * planestride];
 	    }
-	    art_pdf_composite_pixel_alpha_8(dst, src, num_comp,
+            art_pdf_composite_pixel_alpha_8(dst, src, num_comp,
 			   		 blend_mode, pdev->blend_procs);
 	    /* Complement the results for subtractive color spaces */
 	    if (additive) {
@@ -1964,18 +2205,37 @@ pdf14_cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_imager_state *
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
 
-    /* map to the color model */
-    dev_proc(dev, get_color_mapping_procs)(dev)->map_gray(dev, gray, cm_comps);
+   /* If we are doing concretization of colors in an SMask 
+       then just return the color as is */
 
-    for (i = 0; i < ncomps; i++)
-	cv[i] = frac2cv(cm_comps[i]);
+   if ( pis->smask_color && dev->color_info.num_components == 1 ){
 
-    /* encode as a color index */
-    color = dev_proc(dev, encode_color)(dev, cv);
+	cv[0] = frac2cv(gray);
 
-    /* check if the encoding was successful; we presume failure is rare */
-    if (color != gx_no_color_index)
-	color_set_pure(pdc, color);
+        /* encode as a color index */
+        color = pdf14_encode_smask_color(dev,cv,1);
+
+        /* check if the encoding was successful; we presume failure is rare */
+         if (color != gx_no_color_index)
+	    color_set_pure(pdc, color);
+
+    } else {
+
+        /* map to the color model */
+        dev_proc(dev, get_color_mapping_procs)(dev)->map_gray(dev, gray, cm_comps);
+
+        for (i = 0; i < ncomps; i++)
+	    cv[i] = frac2cv(cm_comps[i]);
+
+        /* encode as a color index */
+        color = dev_proc(dev, encode_color)(dev, cv);
+
+        /* check if the encoding was successful; we presume failure is rare */
+        if (color != gx_no_color_index)
+	    color_set_pure(pdc, color);
+
+    }
+
 }
 
 
@@ -1988,18 +2248,46 @@ pdf14_cmap_rgb_direct(frac r, frac g, frac b, gx_device_color *	pdc,
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
 
-    /* map to the color model */
-    dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, pis, r, g, b, cm_comps);
 
-    for (i = 0; i < ncomps; i++)
-	cv[i] = frac2cv(cm_comps[i]);
+     /* If we are doing remap concretization of colors in an SMask 
+       then just return the color as is, IF the number of components is correct.
+       It may not be correct if the original concretization was from gray to RGB
+       which could occur if the device is truely RGB.  For example, if we had
+       -dUseCIEColor and an RGB device with an RGB CRD.  If the Smask were gray
+       then during the mono image handling code, it will concretize the gray to 
+       RGB.  This will occur even if the current color space is CMYK.  The mapping
+       to device CMYK would occur here.  Generally we don't want to map Smask colors
+       to the "device model"  but here it is OK.
+       */
 
-    /* encode as a color index */
-    color = dev_proc(dev, encode_color)(dev, cv);
+    if ( pis->smask_color && dev->color_info.num_components == 3 ){
+	cv[0] = frac2cv(r);
+	cv[1] = frac2cv(g);
+	cv[2] = frac2cv(b);
 
-    /* check if the encoding was successful; we presume failure is rare */
-    if (color != gx_no_color_index)
-	color_set_pure(pdc, color);
+        /* encode as a color index */
+        color = pdf14_encode_smask_color(dev,cv,3);
+
+        /* check if the encoding was successful; we presume failure is rare */
+         if (color != gx_no_color_index)
+	    color_set_pure(pdc, color);    
+
+    } else {
+
+        /* map to the color model */
+        dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, pis, r, g, b, cm_comps);
+
+        for (i = 0; i < ncomps; i++)
+	    cv[i] = frac2cv(cm_comps[i]);
+
+        /* encode as a color index */
+        color = dev_proc(dev, encode_color)(dev, cv);
+
+        /* check if the encoding was successful; we presume failure is rare */
+        if (color != gx_no_color_index)
+	    color_set_pure(pdc, color);
+
+    }
 }
 
 static	void
@@ -2011,15 +2299,36 @@ pdf14_cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
 
-    /* map to the color model */
-    dev_proc(dev, get_color_mapping_procs)(dev)->map_cmyk(dev, c, m, y, k, cm_comps);
+   /* If we are doing concretization of colors in an SMask 
+       then just return the color as is */
 
-    for (i = 0; i < ncomps; i++)
-	cv[i] = frac2cv(cm_comps[i]);
+    if ( pis->smask_color && dev->color_info.num_components == 4 ){
 
-    color = dev_proc(dev, encode_color)(dev, cv);
-    if (color != gx_no_color_index) 
-	color_set_pure(pdc, color);
+	cv[0] = frac2cv(c);
+	cv[1] = frac2cv(m);
+	cv[2] = frac2cv(y);
+	cv[3] = frac2cv(k);
+
+         /* encode as a color index */
+        color = pdf14_encode_smask_color(dev,cv,4);
+
+        /* check if the encoding was successful; we presume failure is rare */
+        if (color != gx_no_color_index)
+	    color_set_pure(pdc, color); 
+
+    } else {
+
+        /* map to the color model */
+        dev_proc(dev, get_color_mapping_procs)(dev)->map_cmyk(dev, c, m, y, k, cm_comps);
+
+        for (i = 0; i < ncomps; i++)
+	    cv[i] = frac2cv(cm_comps[i]);
+
+        color = dev_proc(dev, encode_color)(dev, cv);
+        if (color != gx_no_color_index) 
+	    color_set_pure(pdc, color);
+
+    }
 }
 
 static	void

@@ -2559,15 +2559,15 @@ $(GLD)traplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(traplib_)
 
 # ---------------- Transparency ---------------- #
 
-gstrans_h=$(GLSRC)gstrans.h $(gstparam_h) $(gxcomp_h) $(gsmatrix_h)
+gstrans_h=$(GLSRC)gstrans.h $(gstparam_h) $(gxcomp_h) $(gsmatrix_h) $(gxblend_h)
 gsipar3x_h=$(GLSRC)gsipar3x.h $(gsiparam_h) $(gsiparm3_h)
 gximag3x_h=$(GLSRC)gximag3x.h $(gsipar3x_h) $(gxiparam_h)
-gxblend_h=$(GLSRC)gxblend.h $(gxcindex_h) $(gxcvalue_h) $(gxxfrac_h)
+gxblend_h=$(GLSRC)gxblend.h $(gxcindex_h) $(gxcvalue_h) $(gxxfrac_h) $(gxdevcli_h)
 gdevp14_h=$(GLSRC)gdevp14.h $(GLSRC)gxcmap.h
 
 $(GLOBJ)gstrans.$(OBJ) : $(GLSRC)gstrans.c $(GXERR)\
- $(math__h) $(memory__h) $(gdevp14_h)\
- $(gstrans_h) $(gsutil_h) $(gxdevcli_h) $(gzstate_h)
+ $(math__h) $(memory__h) $(gdevp14_h) $(gstrans_h)\
+ $(gsutil_h) $(gxdevcli_h) $(gzstate_h) $(gscspace_h)
 	$(GLCC) $(GLO_)gstrans.$(OBJ) $(C_) $(GLSRC)gstrans.c
 
 $(GLOBJ)gximag3x.$(OBJ) : $(GLSRC)gximag3x.c $(GXERR) $(math__h) $(memory__h)\
@@ -2577,12 +2577,12 @@ $(GLOBJ)gximag3x.$(OBJ) : $(GLSRC)gximag3x.c $(GXERR) $(math__h) $(memory__h)\
 	$(GLCC) $(GLO_)gximag3x.$(OBJ) $(C_) $(GLSRC)gximag3x.c
 
 $(GLOBJ)gxblend.$(OBJ) : $(GLSRC)gxblend.c $(GX) $(memory__h)\
- $(gstparam_h) $(gxblend_h)
+ $(gstparam_h) $(gxblend_h) $(gxcolor2_h)
 	$(GLCC) $(GLO_)gxblend.$(OBJ) $(C_) $(GLSRC)gxblend.c
 
 $(GLOBJ)gxblend1.$(OBJ) : $(GLSRC)gxblend1.c $(GX) $(memory__h)\
  $(gstparam_h) $(gxrect_h) $(gxblend_h) $(gxdevcli_h) $(gxistate_h)\
- $(gdevdevn_h) $(gdevp14_h) $(vdtrace_h)
+ $(gdevdevn_h) $(gdevp14_h) $(vdtrace_h) $(gxdcconv_h)
 	$(GLCC) $(GLO_)gxblend1.$(OBJ) $(C_) $(GLSRC)gxblend1.c
 
 $(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(GXERR) $(math__h) $(memory__h)\

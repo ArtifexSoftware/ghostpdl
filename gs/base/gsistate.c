@@ -104,6 +104,7 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
     pis->dev_ht = 0;
     pis->cie_render = 0;
     pis->cie_to_xyz = false;
+    pis->smask_color = false;
     pis->black_generation = 0;
     pis->undercolor_removal = 0;
     /* Allocate an initial transfer map. */
