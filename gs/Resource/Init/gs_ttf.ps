@@ -711,7 +711,8 @@ currentdict /tt_tag_dict .undef
   (vhea) //call.readtable
 	% Big tables
   (cmap) //call.readbigtable
-  (glyf) 1 index
+  (GSUB) //call.readbigtable
+  (glyf) //call.readbigtable
   (loca) 1 index
   (hmtx) 1 index
   (vmtx) 1 index

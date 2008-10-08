@@ -124,6 +124,7 @@ ztype42execchar(i_ctx_t *i_ctx_p)
     gs_font *pfont;
     int code = font_param(op - 3, &pfont);
     gs_font_base *const pbfont = (gs_font_base *) pfont;
+    gs_font_type42 *const pfont42 = (gs_font_type42 *) pfont;
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
     op_proc_t cont = (pbfont->PaintType == 0 ? type42_fill : type42_stroke), exec_cont = 0;
     ref *cnref;
@@ -163,6 +164,8 @@ ztype42execchar(i_ctx_t *i_ctx_p)
 	return code;
     cnref = op - 1;
     glyph_index = (uint)op->value.intval;
+    if (gs_rootfont(igs)->WMode && pfont42->data.gsub_size)
+	glyph_index = gs_type42_substitute_glyph_index_vertical(pfont42, glyph_index);
     code = zchar42_set_cache(i_ctx_p, pbfont, cnref, glyph_index, cont, &exec_cont, true);
     if (code >= 0 && exec_cont != 0)
 	code = (*exec_cont)(i_ctx_p);
@@ -196,12 +199,14 @@ type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
 {
     os_ptr op = osp;
     gs_font *pfont;
+    gs_font_type42 *pfont42;
     int code;
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
     double sbxy[2];
     gs_point sbpt;
     gs_point *psbpt = 0;
     os_ptr opc = op;
+    uint glyph_index;
 
     if (!r_has_type(op - 3, t_dictionary)) {
 	check_op(6);
@@ -221,6 +226,7 @@ type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
 		       pfont->FontType != ft_CID_TrueType)
 	)
 	return_error(e_undefined);
+    pfont42 = (gs_font_type42 *)pfont;
 
     if (!i_ctx_p->RenderTTNotdef) {
 	if (r_has_type(op - 1, t_name)) {
@@ -235,12 +241,15 @@ type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
 	    }
 	}
     }
+    glyph_index = (uint)opc->value.intval;
+    if (gs_rootfont(igs)->WMode && pfont42->data.gsub_size)
+	glyph_index = gs_type42_substitute_glyph_index_vertical(pfont42, glyph_index);
     /*
      * We have to disregard penum->pis and penum->path, and render to
      * the current gstate and path.  This is a design bug that we will
      * have to address someday!
      */
-    code = gs_type42_append((uint)opc->value.intval, igs,
+    code = gs_type42_append(glyph_index, igs,
 			    igs->path, penum, pfont,
 			    (penum->text.operation & TEXT_DO_ANY_CHARPATH) != 0);
     if (code < 0)

@@ -14,6 +14,7 @@
 /* $Id$ */
 /* Type 42 (TrueType) font library routines */
 #include "memory_.h"
+#include "stdint_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
@@ -191,6 +192,15 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
 	else if (!memcmp(tab, "glyf", 4)) {
 	    pfont->data.glyf = offset;
 	    glyph_size = (uint)u32(tab + 12);
+	} else if (!memcmp(tab, "GSUB", 4)) {
+	    pfont->data.gsub_size = u32(tab + 12);
+	    pfont->data.gsub = gs_alloc_byte_array(pfont->memory, pfont->data.gsub_size, 1,
+							"gs_type42_font_init(GSUB)");
+	    if (pfont->data.gsub == 0)
+		return_error(gs_error_VMerror);
+	    code = gs_type42_read_data(pfont, offset, pfont->data.gsub_size, pfont->data.gsub);
+	    if ( code < 0 )
+		return code;
 	} else if (!memcmp(tab, "head", 4)) {
 	    byte head[54];
 
@@ -293,7 +303,7 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
     } else {
 	/* Now build the len_glyphs array since 'loca' may not be properly sorted */
 	pfont->data.len_glyphs = (uint *)gs_alloc_byte_array(pfont->memory, loca_size, sizeof(uint),
-							"gs_type42_font");
+							"gs_type42_font_init");
 	if (pfont->data.len_glyphs == 0)
 	    return_error(gs_error_VMerror);
 	gs_font_notify_register((gs_font *)pfont, gs_len_glyphs_release, (void *)pfont);
@@ -640,6 +650,178 @@ gs_type42_get_outline_from_TT_file(gs_font_type42 * pfont, stream *s, uint glyph
     return 0;
 }
 
+uint
+gs_type42_substitute_glyph_index_vertical(gs_font_type42 *pfont, uint glyph_index)
+{   /* A rough trial implementation, possibly needs improvements or optimization. */
+    /* Fixme: optimize : Initialize subtable_ptr when the font is defined. */
+    byte *gsub_ptr = pfont->data.gsub;
+    ulong gsub_size = pfont->data.gsub_size;
+    typedef struct GSUB_s {
+	uint32_t Version;
+	uint16_t ScriptList;
+	uint16_t FeatureList;
+	uint16_t LookupList;
+    } GSUB;
+#if 0 /* Currently unused, but maybe useful for future. */
+    typedef struct ScriptRecord_s {
+	byte Tag[4];
+	uint16_t Offset; /* Offset to Script table from beginning of ScriptList */
+    } ScriptRecord;
+    typedef struct ScriptList_s {
+	uint16_t ScriptCount;
+	ScriptRecord records[1 /* ScriptCount */];
+    } ScriptList;
+    typedef struct LangSysRecord_s {
+	byte Tag[4];
+	uint16_t Offset;  /* Offset to LangSys table from beginning of Script table */
+    } LangSysRecord;
+    typedef struct ScriptTable_s {
+	uint16_t DefaultLangSys;
+	uint16_t LangSysCount;
+	LangSysRecord records[1/* LangSysCount */];
+    } ScriptTable;
+    typedef struct LangSysTable_s {
+	uint16_t LookupOrder;
+	uint16_t ReqFeatureIndex;
+	uint16_t FeatureCount;
+	uint16_t FeatureIndex[1/* FeatureCount */];
+    } LangSysTable;
+    typedef struct FeatureRecord_s {
+	byte Tag[4];
+	uint16_t Feature; /* Offset to Feature table from beginning of FeatureList */
+    } FeatureRecord;
+    typedef struct FeatureListTable_s {
+	uint16_t FeatureCount;
+	FeatureRecord records[1/* FeatureCount */];
+    } FeatureListTable;
+#endif
+    typedef struct LookupListTable_s {
+	uint16_t LookupCount;
+	uint16_t Lookup[1/* LookupCount */]; /* offsets to Lookup tables-from beginning of LookupList */
+    } LookupListTable;
+    typedef struct LookupTable_s {
+	uint16_t LookupType;
+	uint16_t LookupFlag;
+	uint16_t SubTableCount;
+	uint16_t SubTable[1/* SubTableCount */]; /* offsets to Lookup tables-from beginning of LookupList */
+    } LookupTable;
+    typedef struct SingleSubstFormat1_s {
+	uint16_t SubstFormat; /* ==1 */
+	uint16_t Coverage; /* Offset to Coverage table-from beginning of Substitution table */
+	uint16_t DeltaGlyphId;
+    } SingleSubstFormat1;
+    typedef uint16_t GlyphID;
+    typedef struct SingleSubstFormat2_s {
+	uint16_t SubstFormat; /* ==2 */
+	uint16_t Coverage; /* Offset to Coverage table-from beginning of Substitution table */
+	uint16_t GlyphCount;
+	GlyphID Substitute[1/* GlyphCount */]; 
+    } SingleSubstFormat2;
+    typedef struct CoverageFormat1_s {
+	uint16_t CoverageFormat; /* ==1 */
+	uint16_t GlyphCount;
+	GlyphID GlyphArray[1/*GlyphCount*/]; /* Array of GlyphIDs-in numerical order */
+    } CoverageFormat1;
+    typedef struct RangeRecord_s {
+	GlyphID Start; /* First GlyphID in the range */
+	GlyphID End; /* Last GlyphID in the range */
+	uint16_t StartCoverageIndex; /* Coverage Index of first GlyphID in range */
+    } RangeRecord;
+    typedef struct CoverageFormat2_s {
+	uint16_t CoverageFormat; /* ==2 */
+	uint16_t RangeCount;
+	GlyphID RangeRecord[1/*RangeCount*/]; /* Array of GlyphIDs-in numerical order */
+    } CoverageFormat2;
+    int i, j;
+    GSUB gsub;
+    LookupListTable lookup_list_table;
+    byte *lookup_list_ptr;
+
+    /* GSUB header */
+    gsub.Version = u32(gsub_ptr + offset_of(GSUB, Version));
+    gsub.ScriptList = U16(gsub_ptr + offset_of(GSUB, ScriptList));
+    gsub.FeatureList = U16(gsub_ptr + offset_of(GSUB, FeatureList));
+    gsub.LookupList = U16(gsub_ptr + offset_of(GSUB, LookupList));
+    /* LookupList table */
+    lookup_list_ptr = gsub_ptr + gsub.LookupList;
+    lookup_list_table.LookupCount = U16(lookup_list_ptr + offset_of(LookupListTable, LookupCount));
+    for (i = 0; i < lookup_list_table.LookupCount; i++) {
+	byte *lookup_table_offset_ptr = lookup_list_ptr + offset_of(LookupListTable, Lookup) 
+			       + i * sizeof(uint16_t);
+	byte *lookup_table_ptr = lookup_list_ptr + U16(lookup_table_offset_ptr);
+	LookupTable lookup_table;
+
+	lookup_table.LookupType = U16(lookup_table_ptr + offset_of(LookupTable, LookupType));
+	lookup_table.LookupFlag = U16(lookup_table_ptr + offset_of(LookupTable, LookupFlag));
+	lookup_table.SubTableCount = U16(lookup_table_ptr + offset_of(LookupTable, SubTableCount));
+
+	if (lookup_table.LookupType == 1) {
+	    /* Currently we're interesting in Format 1 only, which is only useful 
+	       for single glyph substitution for vertical fonts. 
+	       We copied the logic of this choice from the CJK patch attached to bug 689304,
+	       and we think that it may need a further improvement. */
+	    byte *subtable_offset_ptr = lookup_table_ptr + offset_of(LookupTable, SubTable);
+	    for (j = 0; j < lookup_table.SubTableCount; j++) {
+		byte *subtable_ptr = lookup_table_ptr + U16(subtable_offset_ptr + j * sizeof(uint16_t));
+		uint16_t format = U16(subtable_ptr);
+
+		if (format == 1) {
+		    SingleSubstFormat1 subst;
+
+		    subst.SubstFormat = format; /* Debug purpose. */
+		    subst.Coverage = U16(subtable_ptr + offset_of(SingleSubstFormat1, Coverage));
+		    subst.DeltaGlyphId = U16(subtable_ptr + offset_of(SingleSubstFormat1, DeltaGlyphId));
+		} else {
+		    SingleSubstFormat2 subst;
+		    byte *coverage_ptr;
+		    uint16_t coverage_format;
+
+		    subst.SubstFormat = format; /* Debug purpose. */
+		    subst.Coverage = U16(subtable_ptr + offset_of(SingleSubstFormat2, Coverage));
+		    subst.GlyphCount = U16(subtable_ptr + offset_of(SingleSubstFormat2, GlyphCount));
+		    coverage_ptr = subtable_ptr + subst.Coverage;
+		    coverage_format = U16(coverage_ptr);
+		    if (coverage_format == 1) {
+			CoverageFormat1 cov;
+
+			cov.CoverageFormat = coverage_format; /* Debug purpose only. */
+			cov.GlyphCount = U16(coverage_ptr + offset_of(CoverageFormat1, GlyphCount));
+			{   /* Binary search. */
+			    int k0 = 0, k1 = subst.GlyphCount;
+
+			    for (;;) {
+				int k = (k0 + k1) / 2;
+				GlyphID glyph = U16(coverage_ptr + offset_of(CoverageFormat1, GlyphArray)
+							 + sizeof(GlyphID) * k);
+				if (glyph_index == glyph) {
+				    /* Found. */
+				    if (k >= subst.GlyphCount)
+					break; /* Wrong data ? (not sure). */
+				    else {
+					GlyphID new_glyph = U16(subtable_ptr + offset_of(SingleSubstFormat2, Substitute)
+							    + sizeof(GlyphID) * k);
+
+					return new_glyph;
+				    }
+				} else if (k0 >= k1 - 1) {
+				    k += 0; /* A place for breakpoint. */
+				    break; /* Not found. */
+				} else if (glyph_index < glyph)
+				    k1 = k;
+				else
+				    k0 = k + 1;
+			    }			
+			}
+		    } else {
+			/* Not implemented yet. */
+		    }
+		}
+	    }
+	}
+    }
+    return glyph_index;
+}
+
 /* Parse a glyph into pieces, if any. */
 static int
 parse_pieces(gs_font_type42 *pfont, gs_glyph glyph, gs_glyph *pieces,
@@ -681,9 +863,7 @@ gs_type42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matri
 			gx_path *ppath, double sbw[4])
 {
     gs_font_type42 *const pfont = (gs_font_type42 *)font;
-    uint glyph_index = (glyph >= GS_MIN_GLYPH_INDEX 
-		? glyph - GS_MIN_GLYPH_INDEX 
-		: pfont->data.get_glyph_index(pfont, glyph));
+    uint glyph_index;
     gs_fixed_point origin;
     int code;
     gs_glyph_info_t info;
@@ -697,8 +877,15 @@ gs_type42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matri
        We apply design grid here.
      */
     cached_fm_pair *pair;
+ 
+    if (glyph >= GS_MIN_GLYPH_INDEX) 
+	glyph_index = glyph - GS_MIN_GLYPH_INDEX;
+    else {
+	glyph_index = pfont->data.get_glyph_index(pfont, glyph);
+	if (WMode && pfont->data.gsub_size)
+	    glyph_index = gs_type42_substitute_glyph_index_vertical(pfont, glyph_index);
+    }
     code = gx_lookup_fm_pair(font, pmat, &log2_scale, design_grid, &pair);
-
     if (code < 0)
 	return code;
     if (pmat == 0)
@@ -791,6 +978,8 @@ gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	glyph_index = pfont->data.get_glyph_index(pfont, glyph);
 	if (glyph_index == GS_NO_GLYPH)
 	    return_error(gs_error_undefined);
+	if ((members & (GLYPH_INFO_WIDTH1 | GLYPH_INFO_VVECTOR1)) && pfont->data.gsub_size)
+	    glyph_index = gs_type42_substitute_glyph_index_vertical(pfont, glyph_index);
     }
     return gs_type42_glyph_info_by_gid(font, glyph, pmat, members, info, glyph_index);
 

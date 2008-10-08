@@ -104,6 +104,8 @@ struct gs_type42_data_s {
     gs_glyph_cache *gdcache;
     bool warning_patented;
     bool warning_bad_instruction;
+    byte *gsub;			/* GSUB */
+    ulong gsub_size;
 };
 #define gs_font_type42_common\
     gs_font_base_common;\
@@ -114,10 +116,10 @@ struct gs_font_type42_s {
 
 extern_st(st_gs_font_type42);
 #define public_st_gs_font_type42()	/* in gstype42.c */\
-  gs_public_st_suffix_add3_final(st_gs_font_type42, gs_font_type42,\
+  gs_public_st_suffix_add4_final(st_gs_font_type42, gs_font_type42,\
     "gs_font_type42", font_type42_enum_ptrs, font_type42_reloc_ptrs,\
     gs_font_finalize, st_gs_font_base, data.proc_data, data.len_glyphs, \
-    data.gdcache)
+    data.gdcache, data.gsub)
 
 /*
  * Because a Type 42 font contains so many cached values,
@@ -169,5 +171,7 @@ int gs_type42_font_info(gs_font *font, const gs_point *pscale, int members,
 	   gs_font_info_t *info);
 int gs_truetype_font_info(gs_font *font, const gs_point *pscale, int members,
 	   gs_font_info_t *info);
+
+uint gs_type42_substitute_glyph_index_vertical(gs_font_type42 *pfont, uint glyph_index);
 
 #endif /* gxfont42_INCLUDED */
