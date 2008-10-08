@@ -196,7 +196,7 @@ gp_create_thread(
      * BEGIN_THREAD is a macro (defined in windows_.h) because _beginthread
      * takes different arguments in Watcom C.
      */
-    if (~BEGIN_THREAD(gp_thread_begin_wrapper, 0, closure) != 0)
+    if (~BEGIN_THREAD(gp_thread_begin_wrapper, 128*1024, closure) != 0)
 	return 0;
     return_error(gs_error_unknownerror);
 }
