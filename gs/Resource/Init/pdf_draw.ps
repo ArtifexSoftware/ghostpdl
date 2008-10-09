@@ -421,8 +421,8 @@ end
   currentcolorspace 4 1 roll
   PDFfile fileposition 4 1 roll
 	% We have to select the group's color space so that the
-	% background color will be interpreted correctly.
-  dup /Group oget /CS knownoget { resolvecolorspace dup setgcolorspace csput } if
+	% background color will be interpreted correctly.  
+	dup /Group oget /CS knownoget { resolvecolorspace dup setgcolorspace csput } if
   exch dup /BBox get aload pop .begintransparencymaskgroup {
     dup /Resources knownoget { oforce } { 0 dict } ifelse
     exch false resolvestream
@@ -436,7 +436,7 @@ end
 % Paint a Form+Group XObject, either for a transparency mask or for a Do.
 /.execgroup {		% <resdict> <stream> .execgroup -
   gsave //nodict begin
-  null SMask
+  newpath null SMask
   1 .setopacityalpha 1 .setshapealpha
   /Compatible .setblendmode
 	% Execute the body of the Form, similar to DoForm.
@@ -1116,7 +1116,13 @@ end
     doimage
     .endtransparencygroup
   } {
-    doimage
+    SoftMask //null ne {
+      << /Subtype /Group /Isolated true >> 0 0 1 1 .begintransparencygroup
+      doimage
+      .endtransparencygroup
+    }
+    { doimage }
+    ifelse
   } ifelse
 } bdef
 
