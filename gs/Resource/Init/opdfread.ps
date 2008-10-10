@@ -1151,8 +1151,13 @@ end
 } bind def
 
 %
-% Utility rourtines to insert a TreuType data type
+% Utility rourtines to insert a TrueType data type
 %
+% <string> <index> <integer> putu16 -
+/putu16 {
+  3 copy -8 bitshift put
+  exch 1 add exch 16#ff and put
+} bind def
 % <string> <index> <integer> putu32 -
 /putu32 {
   3 copy -16 bitshift putu16
