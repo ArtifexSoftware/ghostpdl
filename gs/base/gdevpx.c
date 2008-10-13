@@ -1149,11 +1149,6 @@ pclxl_open_device(gx_device * dev)
     if (code < 0)
 	return code;
 
-    xdev->page = 0;
-    xdev->Duplex = false;
-    xdev->MediaPosition = 0;
-    xdev->Tumble = false;
-
     pclxl_page_init(xdev);
     px_write_file_header(vdev->strm, dev);
     xdev->media_size = pxeMediaSize_next;	/* no size selected */
