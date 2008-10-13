@@ -397,12 +397,12 @@ end
 			% Stack: mark ... smaskdict
     dup /BC knownoget {
       dup /Background exch 4 2 roll
-      gsave
+      gsave //nodict begin
         1 index /G oget /Group oget /CS knownoget {
 	  resolvecolorspace dup setgcolorspace csput
 	} if
         aload pop setcolor [ currentgray ]
-      grestore
+      end grestore
       /GrayBackground exch 3 2 roll
     } if
     dup /TR knownoget {
@@ -414,16 +414,20 @@ end
   } ifelse SMask
 } bdef
 
+
 % This procedure is called to actually render the soft mask.
 /.execmaskgroup {	% <masknum> <paramdict> <formdict> .execmaskgroup -
-	% Save our place in PDFfile, and do a gsave to avoid resetting
-	% the color space.
-  currentcolorspace 4 1 roll
+    % Save our place in PDFfile. Do not use gsave-grestore when creating
+    % a soft mask with .begintransparencygroup because high level devices
+    % need to modify the graphic state by storing the soft mask ID.
+    % Save the ExtGState (//nodict begin) BEFORE changing the colorspace
+  mark currentcolor counttomark dup 4 add exch roll pop
+  currentcolorspace 4 1 roll //nodict begin
   PDFfile fileposition 4 1 roll
 	% We have to select the group's color space so that the
 	% background color will be interpreted correctly.  
 	dup /Group oget /CS knownoget { resolvecolorspace dup setgcolorspace csput } if
-  exch dup /BBox get aload pop .begintransparencymaskgroup {
+	exch dup /BBox get aload pop .begintransparencymaskgroup {
     dup /Resources knownoget { oforce } { 0 dict } ifelse
     exch false resolvestream
     .execgroup .endtransparencymask
@@ -431,7 +435,7 @@ end
     .discardtransparencymask stop
   } if
   PDFfile exch setfileposition 
-  setcolorspace
+  setcolorspace setcolor end	% restore colorspace, color and ExtGState (end)
 } bdef
 % Paint a Form+Group XObject, either for a transparency mask or for a Do.
 /.execgroup {		% <resdict> <stream> .execgroup -
