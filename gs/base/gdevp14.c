@@ -49,6 +49,9 @@
 #define VD_PAINT_COLORS 0
 #define VD_PAINT_ALPHA 1
 
+#if RAW_DUMP
+unsigned char global_index = 0;
+#endif
 
 /*
  * We chose the blending color space based upon the process color model of the
@@ -420,6 +423,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape, bool idle,
     if (result == NULL)
 	return result;
 
+    result->saved = NULL;
     result->isolated = false;
     result->knockout = false;
     result->has_alpha_g = has_alpha_g;
@@ -432,6 +436,8 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape, bool idle,
     result->maskbuf = NULL;
     result->idle = idle;
     result->mask_id = 0;
+    result->parent_color_info_procs.parent_color_mapping_procs = NULL;
+    result->parent_color_info_procs.parent_color_comp_index = NULL;
 
     if (height <= 0 || idle) {
 	/* Empty clipping - will skip all drawings. */
@@ -668,9 +674,14 @@ exit:
 static	int
 pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 			     byte *transfer_fn, bool idle, bool replacing,
-			     uint mask_id)
+			     uint mask_id, gs_transparency_mask_subtype_t subtype, 
+                             bool SMask_is_CIE, int numcomps)
 {
     pdf14_buf *buf;
+    FILE *fid;
+    char file_name[50];
+    const byte *Buf_ptr;
+    int z,num_rows,y;
 
     if_debug2('v', "[v]pdf14_push_transparency_mask, idle=%d, replacing=%d\n", idle, replacing);
     if (replacing && ctx->maskbuf != NULL) {
@@ -687,7 +698,15 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 	pdf14_buf_free(ctx->maskbuf, ctx->memory);
 	ctx->maskbuf = NULL;
     }
-    buf = pdf14_buf_new(rect, false, false, idle, ctx->n_chan, ctx->memory);
+
+    /* An optimization to consider is that if the SubType is Alpha
+       then we really should only be allocating the alpha band and
+       only draw with that channel.  Current architecture makes that 
+       a bit tricky.  We need to create this based upon the size of
+       the color space + an alpha channel. NOT the device size
+       or the previous ctx size */
+
+    buf = pdf14_buf_new(rect, false, false, idle, numcomps+1, ctx->memory);
     if (buf == NULL)
 	return_error(gs_error_VMerror);
 
@@ -707,8 +726,45 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 	buf->maskbuf = ctx->maskbuf;
     }
 
+
+#if RAW_DUMP
+
+    /* Dump the current buffer to see what we have */
+
+    num_rows = ctx->stack->rect.q.y-ctx->stack->rect.p.y;
+    sprintf(file_name,"%d)Raw_Buf_PreSmask_%dx%dx%d.raw",global_index,ctx->stack->rowstride,num_rows,ctx->stack->n_chan);
+    fid = fopen(file_name,"wb");
+
+    for (z = 0; z < ctx->stack->n_chan; ++z) {
+
+        Buf_ptr = &(ctx->stack->data[z*ctx->stack->planestride]);
+    
+        for ( y = 0; y < num_rows; y++ ) {
+
+            fwrite(Buf_ptr,sizeof(unsigned char),ctx->stack->rowstride,fid);
+
+            Buf_ptr += ctx->stack->rowstride;
+
+        }
+
+    }
+
+    fclose(fid);
+    global_index++;
+
+#endif
+
     buf->saved = ctx->stack;
     ctx->stack = buf;
+     /* windoze memory checking */
+   /* _CrtCheckMemory(); */
+
+    /* Soft Mask related information so we know how to 
+       compute luminosity when we pop the soft mask */
+
+    buf->SMask_is_CIE = SMask_is_CIE;
+    buf->SMask_SubType = subtype;
+
     if (buf->data != NULL)
 	memset(buf->data, 0, buf->planestride * buf->n_chan);
     return 0;
@@ -718,15 +774,65 @@ static	int
 pdf14_pop_transparency_mask(pdf14_ctx *ctx)
 {
     pdf14_buf *tos = ctx->stack;
+    byte *new_data_buf;
 
     if_debug1('v', "[v]pdf14_pop_transparency_mask, idle=%d\n", tos->idle);
     ctx->stack = tos->saved;
     if (tos->maskbuf) {
 	/* The maskbuf of the ctx->maskbuf entry is never used, free it now */
+        /* In other words, the Smask will not have an Smask */
 	pdf14_buf_free(tos->maskbuf, ctx->memory);
 	tos->maskbuf = NULL;
     }
-    ctx->maskbuf = tos;
+
+    if(tos->data != NULL)
+    {
+
+        /* Lets get this to a monochrome buffer and map it to a luminance only value */
+        /* This will reduce our memory.  We won't reuse the existing one, due */
+        /* Due to the fact that on certain systems we may have issues recovering */
+        /* the data after a resize */
+ 
+	new_data_buf = gs_alloc_bytes(ctx->memory, tos->planestride,
+					"pdf14_buf_new");
+        if (new_data_buf == NULL)	    
+            return_error(gs_error_VMerror);
+
+        /* Initialize with 0.  Need to do this since in Smask_Luminosity_Mapping 
+           we won't be filling everything during the remap if it had not been 
+           written into by the PDF14 fill rect */
+
+        memset(new_data_buf, 0, tos->planestride);
+
+        Smask_Luminosity_Mapping(tos->rect.q.y - tos->rect.p.y ,tos->rect.q.x - tos->rect.p.x,tos->n_chan, 
+            tos->rowstride, tos->planestride, new_data_buf, tos->data, ctx->additive,
+            tos->SMask_is_CIE, tos->SMask_SubType); 
+
+         /* Free the old object, NULL test was above */
+
+          gs_free_object(ctx->memory, tos->data, "pdf14_buf_free");
+             tos->data = new_data_buf;
+
+         /* Data is single channel now */
+
+         tos->n_chan = 1;
+         tos->n_planes = 1;
+
+        /* If we were CIE based, clean up the joint cache we created */
+
+        if ( tos->SMask_is_CIE ){
+
+            /*  gs_free_object(mem, pis->cie_joint_caches,
+		   "gx_cie_to_xyz_free(joint caches)");*/
+
+        }
+
+        /* Assign as mask buffer */
+
+        ctx->maskbuf = tos;
+
+     }
+
     return 0;
 }
 
