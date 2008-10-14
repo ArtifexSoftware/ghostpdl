@@ -20,6 +20,8 @@
 #include "gxcvalue.h"
 #include "gxfrac.h"
 
+#define RAW_DUMP 0
+
 /* #define DUMP_TO_PNG */
 
 #define	PDF14_MAX_PLANES GX_DEVICE_COLOR_MAX_COMPONENTS
@@ -72,6 +74,13 @@ typedef struct {
 
 typedef pdf14_nonseparable_blending_procs_s
 		pdf14_nonseparable_blending_procs_t;
+
+/* This function is used for mapping Smask CMYK or RGB data to a monochrome alpha buffer */
+
+void Smask_Luminosity_Mapping(int num_rows, int num_cols, int n_chan, int row_stride, 
+                         int plane_stride, byte *dst, const byte *src, bool isadditive,
+                            bool SMask_is_CIE, gs_transparency_mask_subtype_t SMask_SubType);
+
 
 /**
  * art_blend_pixel: Compute PDF 1.4 blending function.
