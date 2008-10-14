@@ -23,6 +23,7 @@
 #include "gdevdevn.h"
 #include "gdevp14.h"
 #include "vdtrace.h"
+#include "gxdcconv.h"
 
 #ifdef DUMP_TO_PNG
 #include "png_.h"

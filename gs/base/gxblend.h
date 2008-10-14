@@ -19,6 +19,7 @@
 #include "gxcindex.h"
 #include "gxcvalue.h"
 #include "gxfrac.h"
+#include "gxdevcli.h"
 
 #define RAW_DUMP 0
 
@@ -74,6 +75,20 @@ typedef struct {
 
 typedef pdf14_nonseparable_blending_procs_s
 		pdf14_nonseparable_blending_procs_t;
+
+
+/* This is used to so that we can change procedures based
+ * upon the Smask color space. previously we always
+ *  went to the device space */
+
+typedef struct {
+
+    pdf14_nonseparable_blending_procs_t device_procs;
+    gx_device_procs color_mapping_procs;
+
+} pdf14_parent_cs_params_s;
+
+typedef pdf14_parent_cs_params_s pdf14_parent_cs_params_t;
 
 /* This function is used for mapping Smask CMYK or RGB data to a monochrome alpha buffer */
 
@@ -346,6 +361,12 @@ void pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool has_shape);
 void pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf, 
 	      int x0, int x1, int y0, int y1, int n_chan, bool additive,
 	      const pdf14_nonseparable_blending_procs_t * pblend_procs);
+
+gx_color_index pdf14_encode_smask_color(gx_device *dev, 
+             const gx_color_value colors[], int ncomp);
+
+int pdf14_decode_smask_color(gx_device * dev, gx_color_index color, 
+                             gx_color_value * out, int ncomp);
 
 
 gx_color_index pdf14_encode_color(gx_device *dev, const gx_color_value colors[]);
