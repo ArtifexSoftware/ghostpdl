@@ -117,6 +117,8 @@ static int pdf14_clist_get_param_compressed_color_list(pdf14_device * p14dev);
 
 static	const gx_color_map_procs *
     pdf14_get_cmap_procs(const gs_imager_state *, const gx_device *);
+static	const gx_color_map_procs *
+    pdf14_get_cmap_procs_smask(const gs_imager_state *, const gx_device *);
 
 #define	XSIZE (int)(8.5	* X_DPI)	/* 8.5 x 11 inch page, by default */
 #define	YSIZE (int)(11 * Y_DPI)
@@ -1917,6 +1919,9 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
 static	cmap_proc_gray(pdf14_cmap_gray_direct);
 static	cmap_proc_rgb(pdf14_cmap_rgb_direct);
 static	cmap_proc_cmyk(pdf14_cmap_cmyk_direct);
+static	cmap_proc_gray(pdf14_cmap_gray_direct_smask);
+static	cmap_proc_rgb(pdf14_cmap_rgb_direct_smask);
+static	cmap_proc_cmyk(pdf14_cmap_cmyk_direct_smask);
 static	cmap_proc_rgb_alpha(pdf14_cmap_rgb_alpha_direct);
 static	cmap_proc_separation(pdf14_cmap_separation_direct);
 static	cmap_proc_devicen(pdf14_cmap_devicen_direct);
@@ -1926,6 +1931,16 @@ static	const gx_color_map_procs pdf14_cmap_many = {
      pdf14_cmap_gray_direct,
      pdf14_cmap_rgb_direct,
      pdf14_cmap_cmyk_direct,
+     pdf14_cmap_rgb_alpha_direct,
+     pdf14_cmap_separation_direct,
+     pdf14_cmap_devicen_direct,
+     pdf14_cmap_is_halftoned
+    };
+
+static	const gx_color_map_procs pdf14_cmap_many_smask = {
+     pdf14_cmap_gray_direct_smask,
+     pdf14_cmap_rgb_direct_smask,
+     pdf14_cmap_cmyk_direct_smask,
      pdf14_cmap_rgb_alpha_direct,
      pdf14_cmap_separation_direct,
      pdf14_cmap_devicen_direct,
@@ -2020,6 +2035,141 @@ pdf14_cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     color = dev_proc(dev, encode_color)(dev, cv);
     if (color != gx_no_color_index) 
 	color_set_pure(pdc, color);
+}
+
+static	void
+pdf14_cmap_gray_direct_smask(frac gray, gx_device_color * pdc, const gs_imager_state * pis,
+		 gx_device * dev, gs_color_select_t select)
+{
+    int i, ncomps = dev->color_info.num_components;
+    frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_index color;
+
+   /* If we are doing concretization of colors in an SMask 
+       then just return the color as is */
+
+   if (dev->color_info.num_components == 1 ){
+
+	cv[0] = frac2cv(gray);
+
+        /* encode as a color index */
+        color = pdf14_encode_smask_color(dev,cv,1);
+
+        /* check if the encoding was successful; we presume failure is rare */
+         if (color != gx_no_color_index)
+	    color_set_pure(pdc, color);
+
+    } else {
+
+        /* map to the color model */
+        dev_proc(dev, get_color_mapping_procs)(dev)->map_gray(dev, gray, cm_comps);
+
+        for (i = 0; i < ncomps; i++)
+	    cv[i] = frac2cv(cm_comps[i]);
+
+        /* encode as a color index */
+        color = dev_proc(dev, encode_color)(dev, cv);
+
+        /* check if the encoding was successful; we presume failure is rare */
+        if (color != gx_no_color_index)
+	    color_set_pure(pdc, color);
+
+    }
+
+}
+
+
+static	void
+pdf14_cmap_rgb_direct_smask(frac r, frac g, frac b, gx_device_color *	pdc,
+     const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
+{
+    int i, ncomps = dev->color_info.num_components;
+    frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_index color;
+
+
+     /* If we are doing remap concretization of colors in an SMask 
+       then just return the color as is, IF the number of components is correct.
+       It may not be correct if the original concretization was from gray to RGB
+       which could occur if the device is truely RGB.  For example, if we had
+       -dUseCIEColor and an RGB device with an RGB CRD.  If the Smask were gray
+       then during the mono image handling code, it will concretize the gray to 
+       RGB.  This will occur even if the current color space is CMYK.  The mapping
+       to device CMYK would occur here.  Generally we don't want to map Smask colors
+       to the "device model"  but here it is OK.
+       */
+
+    if (dev->color_info.num_components == 3 ){
+	cv[0] = frac2cv(r);
+	cv[1] = frac2cv(g);
+	cv[2] = frac2cv(b);
+
+        /* encode as a color index */
+        color = pdf14_encode_smask_color(dev,cv,3);
+
+        /* check if the encoding was successful; we presume failure is rare */
+         if (color != gx_no_color_index)
+	    color_set_pure(pdc, color);    
+
+    } else {
+
+        /* map to the color model */
+        dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, pis, r, g, b, cm_comps);
+
+        for (i = 0; i < ncomps; i++)
+	    cv[i] = frac2cv(cm_comps[i]);
+
+        /* encode as a color index */
+        color = dev_proc(dev, encode_color)(dev, cv);
+
+        /* check if the encoding was successful; we presume failure is rare */
+        if (color != gx_no_color_index)
+	    color_set_pure(pdc, color);
+
+    }
+}
+
+static	void
+pdf14_cmap_cmyk_direct_smask(frac c, frac m, frac y, frac k, gx_device_color * pdc,
+     const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
+{
+    int i, ncomps = dev->color_info.num_components;
+    frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_index color;
+
+   /* If we are doing concretization of colors in an SMask 
+       then just return the color as is */
+
+    if (dev->color_info.num_components == 4 ){
+
+	cv[0] = frac2cv(c);
+	cv[1] = frac2cv(m);
+	cv[2] = frac2cv(y);
+	cv[3] = frac2cv(k);
+
+         /* encode as a color index */
+        color = pdf14_encode_smask_color(dev,cv,4);
+
+        /* check if the encoding was successful; we presume failure is rare */
+        if (color != gx_no_color_index)
+	    color_set_pure(pdc, color); 
+
+    } else {
+
+        /* map to the color model */
+        dev_proc(dev, get_color_mapping_procs)(dev)->map_cmyk(dev, c, m, y, k, cm_comps);
+
+        for (i = 0; i < ncomps; i++)
+	    cv[i] = frac2cv(cm_comps[i]);
+
+        color = dev_proc(dev, encode_color)(dev, cv);
+        if (color != gx_no_color_index) 
+	    color_set_pure(pdc, color);
+
+    }
 }
 
 static	void
@@ -2153,6 +2303,14 @@ pdf14_get_cmap_procs(const gs_imager_state *pis, const gx_device * dev)
     /* The pdf14 marking device itself is always continuous tone. */
     return &pdf14_cmap_many;
 }
+
+static	const gx_color_map_procs *
+pdf14_get_cmap_procs_smask(const gs_imager_state *pis, const gx_device * dev)
+{
+    /* The pdf14 marking device itself is always continuous tone. */
+    return &pdf14_cmap_many_smask;
+}
+
 
 static int 
 pdf14_pattern_manage(gx_device *pdev, gx_bitmap_id id,

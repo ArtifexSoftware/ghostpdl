@@ -334,6 +334,41 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
 }
 
 /*
+ * Encode a list of smask colorant values into a gx_color_index_value.
+ * This has its own encoder as it may have a different number of colorants
+ * compared to the actual device.
+ */
+gx_color_index
+pdf14_encode_smask_color(gx_device *dev, const gx_color_value	colors[],int ncomp)
+{
+    int drop = sizeof(gx_color_value) * 8 - 8;
+    gx_color_index color = 0;
+    int i;
+
+    for (i = 0; i < ncomp; i++) {
+	color <<= 8;
+	color |= (colors[i] >> drop);
+    }
+    return (color == gx_no_color_index ? color ^ 1 : color);
+}
+
+/*
+ * Decode a gx_color_index value back to a list of colorant values.
+  * This has its own decoder as it may have a different number of colorants
+ * compared to the actual device.*/
+int
+pdf14_decode_smask_color(gx_device * dev, gx_color_index color, gx_color_value * out, int ncomp)
+{
+    int i;
+
+    for (i = 0; i < ncomp; i++) {
+	out[ncomp - i - 1] = (gx_color_value) ((color & 0xff) * 0x101);
+	color >>= 8;
+    }
+    return 0;
+}
+
+/*
  * Encode a list of colorant values into a gx_color_index_value.
  */
 gx_color_index
