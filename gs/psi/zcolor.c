@@ -4991,9 +4991,14 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 			ref_assign(esp, &stref);
 			return o_push_estack;
 		    }
-		    code = seticc(i_ctx_p, components, &ICCdict, (float *)&range);
+		    /* Make space on operand stack to pass the ICC dictionary */
+		    push(1);
+		    ref_assign(op, &ICCdict);
+		    code = seticc(i_ctx_p, components, op, (float *)&range);
 		    if (code < 0) {
-			push(1);
+			/* Our dictionary still on operand stack, we can reuse the
+			 * slot on the stack to hold hte alternate space.
+			 */
 			ref_assign(op, altref);
 			/* If CIESubst, we are already substituting for CIE, so use nosubst 
 			 * to prevent further substitution!
@@ -5028,12 +5033,17 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 		    return code;
 		components = tempref->value.intval;
 
-		code = seticc(i_ctx_p, components, &ICCdict, (float *)&range);
+		/* Make space on operand stack to pass the ICC dictionary */
+		push (1);
+		ref_assign(op, &ICCdict);
+		code = seticc(i_ctx_p, components, op, (float *)&range);
 		if (code < 0) {
     		    code = dict_find_string(&ICCdict, "Alternate", &altref);
 		    if (code < 0)
 			return code;
-		    push(1);
+		    /* Our dictionary still on operand stack, we can reuse the
+		     * slot on the stack to hold the alternate space.
+		     */
 		    ref_assign(op, altref);
 		    /* If CIESubst, we are already substituting for CIE, so use nosubst 
 		     * to prevent further substitution!

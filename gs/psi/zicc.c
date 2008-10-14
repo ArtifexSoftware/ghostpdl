@@ -37,7 +37,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 {
     os_ptr                  op = osp;
     int edepth = ref_stack_count(&e_stack);
-    int                     code;
+    int                     code, reuse_op = 0;
     gs_color_space *        pcs;
     gs_color_space *  palt_cs;
     int                     i;
@@ -105,7 +105,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     if (code < 0)
 	return code;
 
-    push(1);
+//    push(1);
     return cie_set_finish( i_ctx_p,
                            pcs,
                            &istate->colorspace.procs.cie,
