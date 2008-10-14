@@ -1198,6 +1198,7 @@ typedef struct gs_param_list_s gs_param_list;
 */
 #define dev_t_proc_end_transparency_mask(proc, dev_t)\
   int proc(gx_device *dev,\
+    gs_imager_state *pis,\
     gs_transparency_mask_t **pptm)
 #define dev_proc_end_transparency_mask(proc)\
   dev_t_proc_end_transparency_mask(proc, gx_device)

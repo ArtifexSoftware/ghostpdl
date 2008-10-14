@@ -1697,12 +1697,19 @@ pdf14_begin_transparency_mask(gx_device	*dev,
 			      gs_transparency_state_t **ppts,
 			      gs_memory_t *mem)
 {
+    pdf14_device *pdevproto;
     pdf14_device *pdev = (pdf14_device *)dev;
     byte bg_alpha = 0;
     byte *transfer_fn = (byte *)gs_alloc_bytes(pdev->ctx->memory, 256,
 					       "pdf14_begin_transparency_mask");
     gs_int_rect rect;
     int code;
+    const pdf14_procs_t *new_14procs;
+    pdf14_parent_color_t *parent_color_info = &(pdev->ctx->stack->parent_color_info_procs);
+    bool update_color_info;
+    gx_color_polarity_t new_polarity;
+    int new_num_comps;
+    bool new_additive;
 
     if (transfer_fn == NULL)
 	return_error(gs_error_VMerror);
@@ -1713,19 +1720,148 @@ pdf14_begin_transparency_mask(gx_device	*dev,
 	bg_alpha = (int)(255 * ptmp->GrayBackground + 0.5);
     if_debug1('v', "pdf14_begin_transparency_mask, bg_alpha = %d\n", bg_alpha);
     memcpy(transfer_fn, ptmp->transfer_fn, size_of(ptmp->transfer_fn));
+
+    /* Check if we need to alter the device procs at this
+       stage.  Many of the procs are based upon the color
+       space of the device.  We want to remain in 
+       the color space defined by the color space of
+       the SMask not go to the device color space.  
+       When we pop the Smask we will collapse
+       to a single band and then compose with it
+       to the device color space (or the parent layer
+       space) */
+
+        parent_color_info->parent_color_mapping_procs = NULL;
+        parent_color_info->parent_color_comp_index = NULL;
+        update_color_info = false;
+
+        switch (ptmp->child_color) {
+
+            case GRAY_SCALE:
+
+                if (pdf14_determine_default_blend_cs((gx_device *) pdev) != PDF14_DeviceGray){
+
+                    update_color_info = true;
+                    new_polarity = GX_CINFO_POLARITY_ADDITIVE;
+                    new_num_comps = 1;
+                    pdevproto = (pdf14_device *)&gs_pdf14_Gray_device;
+                    new_additive = true;
+                    new_14procs = &gray_pdf14_procs;
+
+                }
+
+                break;
+
+            case DEVICE_RGB:			 	
+            case CIE_XYZ:				
+
+                if (pdf14_determine_default_blend_cs((gx_device *) pdev) != PDF14_DeviceRGB){
+
+                    update_color_info = true;
+                    new_polarity = GX_CINFO_POLARITY_ADDITIVE;
+                    new_num_comps = 3;
+                    pdevproto = (pdf14_device *)&gs_pdf14_RGB_device;
+                    new_additive = true;
+                    new_14procs = &rgb_pdf14_procs;
+                }
+
+                break; 
+
+            case DEVICE_CMYK:				
+
+                if (pdf14_determine_default_blend_cs((gx_device *) pdev) != PDF14_DeviceCMYK){
+
+
+                    update_color_info = true;
+                    new_polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
+                    new_num_comps = 4;
+                    pdevproto = (pdf14_device *)&gs_pdf14_CMYK_device;
+                    new_additive = false;
+                    new_14procs = &cmyk_pdf14_procs;
+
+                }
+
+                break;
+
+            default:			
+	        return_error(gs_error_rangecheck);
+	        break;
+
+         }    
+
+         if (update_color_info){
+
+           /* Save the old information */
+
+            parent_color_info->parent_color_mapping_procs = pis->get_cmap_procs;
+           /* parent_color_info->parent_color_mapping_procs = 
+                pdev->procs.get_color_mapping_procs;*/
+            parent_color_info->parent_color_comp_index = 
+                pdev->procs.get_color_comp_index;
+            parent_color_info->parent_blending_procs = pdev->blend_procs;
+            parent_color_info->polarity = pdev->color_info.polarity;
+            parent_color_info->num_components = pdev->color_info.num_components;
+            parent_color_info->isadditive = pdev->ctx->additive;
+            parent_color_info->unpack_procs = pdev->pdf14_procs;
+
+
+            /* Set new information */
+
+            pis->get_cmap_procs = pdf14_get_cmap_procs_smask;
+            gx_set_cmap_procs(pis, dev);
+            pdev->procs.get_color_comp_index = 
+                pdevproto->static_procs->get_color_comp_index;
+            pdev->blend_procs = pdevproto->blend_procs;
+            pdev->color_info.polarity = new_polarity;
+            pdev->color_info.num_components = new_num_comps;
+            pdev->ctx->additive = new_additive; 
+            pdev->pdf14_procs = new_14procs;
+
+         }
+
+
     return pdf14_push_transparency_mask(pdev->ctx, &rect, bg_alpha,
 					transfer_fn, ptmp->idle, ptmp->replacing,
-					ptmp->mask_id);
+					ptmp->mask_id, ptmp->subtype, 
+                                        ptmp->SMask_is_CIE, ptmp->smask_numcomps);
 }
 
 static	int
-pdf14_end_transparency_mask(gx_device *dev,
+pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
 			  gs_transparency_mask_t **pptm)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
+    pdf14_parent_color_t *parent_color;
+    int ok;
 
     if_debug0('v', "pdf14_end_transparency_mask\n");
-    return pdf14_pop_transparency_mask(pdev->ctx);
+
+    ok = pdf14_pop_transparency_mask(pdev->ctx);
+
+    /* May need to reset some color stuff related
+     * to a mismatch between the Smask color space
+     * and the Smask blending space */
+
+    parent_color = &(pdev->ctx->stack->parent_color_info_procs);
+
+    if (!(parent_color->parent_color_mapping_procs == NULL && 
+        parent_color->parent_color_comp_index == NULL)) {
+
+            pis->get_cmap_procs = parent_color->parent_color_mapping_procs;;
+            gx_set_cmap_procs(pis, dev);
+
+            pdev->procs.get_color_comp_index = parent_color->parent_color_comp_index;
+            pdev->color_info.polarity = parent_color->polarity;
+            pdev->color_info.num_components = parent_color->num_components;
+            pdev->blend_procs = parent_color->parent_blending_procs;
+            pdev->ctx->additive = parent_color->isadditive;
+            pdev->pdf14_procs = parent_color->unpack_procs;
+
+            parent_color->parent_color_comp_index = NULL;
+            parent_color->parent_color_mapping_procs = NULL;
+    }
+
+    return ok;
 }
 
 static	int

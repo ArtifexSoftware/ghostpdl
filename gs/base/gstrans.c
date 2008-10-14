@@ -24,6 +24,7 @@
 #include "gdevdevn.h"
 #include "gxblend.h"
 #include "gdevp14.h"
+#include "gscspace.h"
 
 #define PUSH_TS 0
 
@@ -323,6 +324,7 @@ gs_begin_transparency_mask(gs_state * pgs,
     params.pdf14_op = PDF14_BEGIN_TRANS_MASK;
     params.bbox = *pbbox;
     params.subtype = ptmp->subtype;
+    params.SMask_is_CIE = gs_color_space_is_CIE(pgs->color_space);
     params.Background_components = ptmp->Background_components;
     memcpy(params.Background, ptmp->Background, l);
     params.GrayBackground = ptmp->GrayBackground;
@@ -331,6 +333,10 @@ gs_begin_transparency_mask(gs_state * pgs,
 	    (ptmp->TransferFunction == mask_transfer_identity);
     params.mask_is_image = mask_is_image;
     params.replacing = ptmp->replacing;
+    /* Note that the SMask buffer may have a different 
+       numcomps than the device buffer */
+    params.smask_numcomps = cs_num_components(pgs->color_space);
+
     /* Sample the transfer function */
     for (i = 0; i < MASK_TRANSFER_FUNCTION_SIZE; i++) {
 	float in = (float)(i * (1.0 / (MASK_TRANSFER_FUNCTION_SIZE - 1)));
@@ -339,6 +345,57 @@ gs_begin_transparency_mask(gs_state * pgs,
 	ptmp->TransferFunction(in, &out, ptmp->TransferFunction_data);
 	params.transfer_fn[i] = (byte)floor((double)(out * 255 + 0.5));
     }
+
+
+    /* If we have a CIE space & a luminosity subtype
+       we will need to do our concretization
+       to CIEXYZ so that we can obtain the proper 
+       luminance value.  This is what SHOULD happen
+       according to the spec.  */
+
+    /* The blending procs are currently based upon the device type.
+       We need to have them based upon the current color space */
+
+    if ( params.SMask_is_CIE && params.subtype == TRANSPARENCY_MASK_Luminosity ){
+
+        /* Install Color Space to go to CIEXYZ */
+        
+        int ok;
+        ok = gx_cie_to_xyz_alloc2(pgs->color_space,pgs);
+        params.smask_numcomps = 3;  /* CIEXYZ */
+
+        /* Mark the proper spaces so that we make
+         * the appropriate changes in the device */
+
+        params.child_color = CIE_XYZ;
+
+    } else {
+
+        /* Set the chile type, which may be 
+         *  different than the device type.
+         * this is the conflict we are fixing */
+
+        switch (cs_num_components(pgs->color_space)) {
+            case 1:				
+                params.child_color = GRAY_SCALE;       
+                params.smask_numcomps = 1;  /* Need to check */
+                break;
+            case 3:				
+                params.child_color = DEVICE_RGB;       
+                params.smask_numcomps = 3; 
+                break;
+            case 4:				
+                params.child_color = DEVICE_CMYK;       
+                params.smask_numcomps = 4; 
+	        break;
+            default:			
+	        return_error(gs_error_rangecheck);
+	        break;
+
+         }    
+
+    }
+
     return gs_state_update_pdf14trans(pgs, &params);
 }
 
@@ -349,7 +406,10 @@ gx_begin_transparency_mask(gs_imager_state * pis, gx_device * pdev,
     gx_transparency_mask_params_t tmp;
     const int l = sizeof(pparams->Background[0]) * pparams->Background_components;
 
+    tmp.child_color = pparams->child_color;
     tmp.subtype = pparams->subtype;
+    tmp.SMask_is_CIE = pparams->SMask_is_CIE;
+    tmp.smask_numcomps = pparams->smask_numcomps;
     tmp.Background_components = pparams->Background_components;
     memcpy(tmp.Background, pparams->Background, l);
     tmp.GrayBackground = pparams->GrayBackground;
@@ -392,8 +452,9 @@ gx_end_transparency_mask(gs_imager_state * pis, gx_device * pdev,
 {
     if_debug2('v', "[v](0x%lx)gx_end_transparency_mask(%d)\n", (ulong)pis,
 	      (int)pparams->csel);
+
     if (dev_proc(pdev, end_transparency_mask) != 0)
-	return (*dev_proc(pdev, end_transparency_mask)) (pdev, NULL);
+	return (*dev_proc(pdev, end_transparency_mask)) (pdev, pis, NULL);
     else
 	return 0;
 }

@@ -2566,9 +2566,9 @@ gxblend_h=$(GLSRC)gxblend.h $(gxcindex_h) $(gxcvalue_h) $(gxxfrac_h) $(gxdevcli_
 gdevp14_h=$(GLSRC)gdevp14.h $(GLSRC)gxcmap.h
 
 $(GLOBJ)gstrans.$(OBJ) : $(GLSRC)gstrans.c $(GXERR)\
- $(math__h) $(memory__h) $(gdevp14_h)\
- $(gstrans_h) $(gsutil_h) $(gxdevcli_h) $(gzstate_h)
-	$(GLCC) $(GLO_)gstrans.$(OBJ) $(C_) $(GLSRC)gstrans.c
+ $(math__h) $(memory__h) $(gdevp14_h) $(gstrans_h)\
+ $(gsutil_h) $(gxdevcli_h) $(gzstate_h) $(gscspace_h)
+ 	$(GLCC) $(GLO_)gstrans.$(OBJ) $(C_) $(GLSRC)gstrans.c
 
 $(GLOBJ)gximag3x.$(OBJ) : $(GLSRC)gximag3x.c $(GXERR) $(math__h) $(memory__h)\
  $(gdevbbox_h)\
