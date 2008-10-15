@@ -105,7 +105,6 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     if (code < 0)
 	return code;
 
-//    push(1);
     return cie_set_finish( i_ctx_p,
                            pcs,
                            &istate->colorspace.procs.cie,
