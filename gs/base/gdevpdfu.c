@@ -36,6 +36,7 @@
 #include "sarc4.h"
 #include "smd5.h"
 #include "sstring.h"
+#include "strmio.h"
 #include "szlibx.h"
 #ifdef USE_LDF_JB2
 #include "sjbig2_luratech.h"
@@ -154,15 +155,15 @@ doit(char *line, bool intact)
 static int
 copy_ps_file_stripping(stream *s, const char *fname, bool HaveTrueTypes)
 {
-    FILE *f;
+    stream *f;
     char buf[1024], *p, *q  = buf;
     int n, l = 0, m = sizeof(buf) - 1, outl = 0;
     bool skipping = false;
 
-    f = gp_fopen(fname, "rb");
+    f = sfopen(fname, "rb", s->memory);
     if (f == NULL)
 	return_error(gs_error_undefinedfilename);
-    n = fread(buf, 1, m, f);
+    n = sfread(buf, 1, m, f);
     buf[n] = 0;
     do {
 	if (*q == '\r' || *q == '\n') {
@@ -180,11 +181,11 @@ copy_ps_file_stripping(stream *s, const char *fname, bool HaveTrueTypes)
 		l = strlen(buf);
 		m = sizeof(buf) - 1 - l;
 		if (!m) {
-		    fclose(f);
+		    sfclose(f);
 		    eprintf1("The procset %s contains a too long line.", fname);
 		    return_error(gs_error_ioerror);
 		}
-		n = fread(buf + l, 1, m, f);
+		n = sfread(buf + l, 1, m, f);
 		n += l;
 		m += l;
 		buf[n] = 0;
@@ -221,7 +222,7 @@ copy_ps_file_stripping(stream *s, const char *fname, bool HaveTrueTypes)
     } while (n == m || q < buf + n);
     if (outl)
 	stream_write(s, "\r", 1);
-    fclose(f);
+    sfclose(f);
     return 0;
 }
 
