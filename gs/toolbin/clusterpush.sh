@@ -35,6 +35,7 @@ fi
 echo "Pushing to $DEST/$TARGET on the cluster..."
 rsync -avz \
   --exclude .svn --exclude .git \
+  --exclude _darcs --exclude .bzr --exclude .hg \
   --exclude bin --exclude obj --exclude debugobj \
   --exclude sobin --exclude soobj \
   --exclude main/obj --exclude main/debugobj \
