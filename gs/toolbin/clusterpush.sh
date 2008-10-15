@@ -20,8 +20,14 @@ if test -z "$TARGET"; then
   TARGET="$BUILD_TYPE"
 fi
 
+
 # try get the current revision
-REV=`svn info | grep Revision | cut -d ' ' -f 2`
+REV=''
+if test -d .svn; then
+  REV=`svn info | grep Revision | cut -d ' ' -f 2`
+elif test -d .git; then
+  REV=`git rev-parse HEAD`
+fi
 if test -z "$REV"; then
   REV='unknown'
 fi
