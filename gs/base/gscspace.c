@@ -511,6 +511,7 @@ gx_cspace_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pi
     gs_client_color c01a, c01b;
     gx_device_color d[2], d01a, d01b;
     int n = cs->type->num_components(cs);
+    int ndev = dev->color_info.num_components;
     int code;
 
     code = cc2dc(cs, pis, dev, &d[0], c0);
@@ -523,13 +524,13 @@ gx_cspace_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pi
     code = cc2dc(cs, pis, dev, &d01a, &c01a);
     if (code < 0)
 	return code;
-    if (!is_dc_nearly_linear(dev, &d01a, &d[0], &d[1], 0.3, n, smoothness))
+    if (!is_dc_nearly_linear(dev, &d01a, &d[0], &d[1], 0.3, ndev, smoothness))
 	return 0;
     interpolate_cc(&c01b, c0, c1, 0.7, n);
     code = cc2dc(cs, pis, dev, &d01b, &c01b);
     if (code < 0)
 	return code;
-    if (!is_dc_nearly_linear(dev, &d01b, &d[0], &d[1], 0.7, n, smoothness))
+    if (!is_dc_nearly_linear(dev, &d01b, &d[0], &d[1], 0.7, ndev, smoothness))
 	return 0;
     return 1;
 }
@@ -546,7 +547,13 @@ gx_cspace_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state 
        Note it gives 7 points for a quadrangle. */
     gs_client_color c01, c12, c20, c012;
     gx_device_color d[3], d01, d12, d20, d012;
+
+    /* Note that the device and the client color space
+       can have a different number of components */
+
     int n = cs->type->num_components(cs);
+    int ndev = dev->color_info.num_components;
+
     int code;
 
     code = cc2dc(cs, pis, dev, &d[0], c0);
@@ -563,28 +570,28 @@ gx_cspace_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state 
     code = cc2dc(cs, pis, dev, &d01, &c01);
     if (code < 0)
 	return code;
-    if (!is_dc_nearly_linear(dev, &d01, &d[0], &d[1], 0.5, n, smoothness))
+    if (!is_dc_nearly_linear(dev, &d01, &d[0], &d[1], 0.5, ndev, smoothness))
 	return 0;
 
     interpolate_cc(&c012, c2, &c01, 2.0 / 3, n);
     code = cc2dc(cs, pis, dev, &d012, &c012);
     if (code < 0)
 	return code;
-    if (!is_dc_nearly_linear(dev, &d012, &d[2], &d01, 2.0 / 3, n, smoothness))
+    if (!is_dc_nearly_linear(dev, &d012, &d[2], &d01, 2.0 / 3, ndev, smoothness))
 	return 0;
 
     interpolate_cc(&c12, c1, c2, 0.5, n);
     code = cc2dc(cs, pis, dev, &d12, &c12);
     if (code < 0)
 	return code;
-    if (!is_dc_nearly_linear(dev, &d12, &d[1], &d[2], 0.5, n, smoothness))
+    if (!is_dc_nearly_linear(dev, &d12, &d[1], &d[2], 0.5, ndev, smoothness))
 	return 0;
 
     interpolate_cc(&c20, c2, c0, 0.5, n);
     code = cc2dc(cs, pis, dev, &d20, &c20);
     if (code < 0)
 	return code;
-    if (!is_dc_nearly_linear(dev, &d20, &d[2], &d[0], 0.5, n, smoothness))
+    if (!is_dc_nearly_linear(dev, &d20, &d[2], &d[0], 0.5, ndev, smoothness))
 	return 0;
     return 1;
 }
