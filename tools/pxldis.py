@@ -443,7 +443,7 @@ class pxl_dis:
         if ( new_tag == pxl_tags_dict['sint32'] ):
             self.index = self.index + 1
             print "sint32",
-            self.unpack_string = 'l'
+            self.unpack_string = 'i'
             self.size_of_element = 4
             return 1
         return 0
@@ -455,7 +455,7 @@ class pxl_dis:
             self.index = self.index + 1
 
             print "uint32",
-            self.unpack_string = 'L'
+            self.unpack_string = 'I'
             self.size_of_element = 4
             return 1
         return 0
@@ -509,7 +509,7 @@ class pxl_dis:
 
         if ( new_tag == pxl_tags_dict['uint32_array'] ):
             self.index = self.index + 1
-            self.unpack_string = 'L'
+            self.unpack_string = 'I'
             self.size_of_element = 4
             print "uint32_array [",
             return 1
@@ -520,7 +520,7 @@ class pxl_dis:
 
         if ( new_tag == pxl_tags_dict['sint32_array'] ):
             self.index = self.index + 1
-            self.unpack_string = 'l'
+            self.unpack_string = 'i'
             self.size_of_element = 4
             print "sint32_array [",
             return 1
@@ -580,7 +580,7 @@ class pxl_dis:
             self.index = self.index + 1
 
             print "uint32_xy" % \
-                  self.unpack('LL', self.data[self.index:self.index+8]),
+                  self.unpack('II', self.data[self.index:self.index+8]),
             self.index = self.index + 8
             return 1
         return 0
@@ -592,7 +592,7 @@ class pxl_dis:
             self.index = self.index + 1
 
             print "sint32_xy %d %d" % \
-                  self.unpack('ll', self.data[self.index:self.index+8]),
+                  self.unpack('ii', self.data[self.index:self.index+8]),
             self.index = self.index + 8
             return 1
         return 0
@@ -647,7 +647,7 @@ class pxl_dis:
         if ( new_tag == pxl_tags_dict['uint32_box'] ):
             self.index = self.index + 1
             print "uint32_box %d %d %d %d" % \
-                  self.unpack('LLLL', self.data[self.index:self.index+16])
+                  self.unpack('IIII', self.data[self.index:self.index+16])
             self.index = self.index + 32
             return 1
         return 0
@@ -659,7 +659,7 @@ class pxl_dis:
             self.index = self.index + 1
 
             print "sint32_box %d %d %d %d" % \
-                  self.unpack('llll', self.data[self.index:self.index+16])
+                  self.unpack('iiii', self.data[self.index:self.index+16])
             self.index = self.index + 16
             return 1
         return 0
