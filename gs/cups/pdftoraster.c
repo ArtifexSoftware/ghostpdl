@@ -25,7 +25,7 @@ MIT Open Source License  -  http://www.opensource.org/
 
 */
 
-/* $Id: pdftoraster.c 8803 2008-06-24 14:16:29Z till $ */
+/* $Id$ */
 
 /* PDF to CUPS Raster filter based on Ghostscript */
 
