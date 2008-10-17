@@ -1476,7 +1476,7 @@ $(PSOBJ)zcssepr.$(OBJ) : $(PSSRC)zcssepr.c $(OP) $(memory__h)\
 $(PSOBJ)zfsample.$(OBJ) : $(PSSRC)zfsample.c $(OP) $(memory__h)\
  $(gxcspace_h)\
  $(estack_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifunc_h) $(ostack_h)\
- $(store_h) $(gsfunc0_h) $(gscdevn_h) $(zfunc_h) 
+ $(store_h) $(gsfunc0_h) $(gscdevn_h) $(zfunc_h) $(zcolor_h) 
 	$(PSCC) $(PSO_)zfsample.$(OBJ) $(C_) $(PSSRC)zfsample.c
 
 # ---------------- DCT filters ---------------- #
@@ -1595,7 +1595,8 @@ $(PSOBJ)zfunc4.$(OBJ) : $(PSSRC)zfunc4.c $(memory__h) $(string__h)\
  $(OP) $(opextern_h)\
  $(gsfunc_h) $(gsfunc4_h) $(gsutil_h)\
  $(idict_h) $(ifunc_h) $(iname_h) $(ialloc_h)\
- $(dstack_h) $(gzstate_h) $(gxdevcli_h) $(string__h) $(zfunc_h)
+ $(dstack_h) $(gzstate_h) $(gxdevcli_h) $(string__h) $(zfunc_h)\
+ $(zcolor_h)
 	$(PSCC) $(PSO_)zfunc4.$(OBJ) $(C_) $(PSSRC)zfunc4.c
 
 $(PSOBJ)zimage3.$(OBJ) : $(PSSRC)zimage3.c $(OP) $(memory__h)\

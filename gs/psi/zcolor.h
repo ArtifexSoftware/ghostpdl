@@ -62,7 +62,7 @@ struct PS_colour_space_s {
     int (*validateproc)(i_ctx_t * i_ctx_p,	/* Validates the color space operands */
 	ref **r);	
     int (*alternateproc)(i_ctx_t * i_ctx_p,	/* Retrieve the alternate color space (if any) */ 
-	ref *space, ref **r);
+	ref *space, ref **r, int *CIESubst);	/* If CIESubst comes back true, then don't do further CIE substitution */
     int (*numcomponents)(i_ctx_t * i_ctx_p,	/* Returns the number of components in the space */
 	ref *space, int *n);
     int (*range)(i_ctx_t * i_ctx_p, ref *space, /* Returns 'components' pairs of values which represent */

@@ -346,7 +346,7 @@ static int is_same_colorspace(i_ctx_t * i_ctx_p, ref *space1, ref *space2)
 {
     PS_colour_space_t *oldcspace = 0, *newcspace = 0;
     ref oldspace, *poldspace = &oldspace, newspace, *pnewspace = &newspace;
-    int code;
+    int code, CIESubst;
 
     /* Silence compiler warnings */
     oldspace.tas.type_attrs = 0;
@@ -385,11 +385,11 @@ static int is_same_colorspace(i_ctx_t * i_ctx_p, ref *space1, ref *space2)
 	/* Otherwise, retrieve the alternate space for each, and continue
 	 * round the loop, checking those.
 	 */
-	code = oldcspace->alternateproc(i_ctx_p, poldspace, &poldspace);
+	code = oldcspace->alternateproc(i_ctx_p, poldspace, &poldspace, &CIESubst);
 	if (code < 0)
 	    return 0;
 
-	code = newcspace->alternateproc(i_ctx_p, pnewspace, &pnewspace);
+	code = newcspace->alternateproc(i_ctx_p, pnewspace, &pnewspace, &CIESubst);
 	if (code < 0)
 	    return 0;
     }
@@ -3450,7 +3450,7 @@ static int validateseparationspace(i_ctx_t * i_ctx_p, ref **space)
     ref_assign(*space, &altspace);
     return 0;
 }
-static int separationalternatespace(i_ctx_t * i_ctx_p, ref *sepspace, ref **r)
+static int separationalternatespace(i_ctx_t * i_ctx_p, ref *sepspace, ref **r, int *CIESubst)
 {
     ref tref;
     int code;
@@ -4057,7 +4057,7 @@ static int validatedevicenspace(i_ctx_t * i_ctx_p, ref **space)
     ref_assign(*space, &altspace);
     return 0;
 }
-static int devicenalternatespace(i_ctx_t * i_ctx_p, ref *space, ref **r)
+static int devicenalternatespace(i_ctx_t * i_ctx_p, ref *space, ref **r, int *CIESubst)
 {
     ref altspace;
     int code;
@@ -4530,7 +4530,7 @@ static int validateindexedspace(i_ctx_t * i_ctx_p, ref **space)
     ref_assign(*space, &altspace);
     return 0;
 }
-static int indexedalternatespace(i_ctx_t * i_ctx_p, ref *space, ref **r)
+static int indexedalternatespace(i_ctx_t * i_ctx_p, ref *space, ref **r, int *CIESubst)
 {
     ref alt;
     int code;
@@ -4680,7 +4680,7 @@ static int validatepatternspace(i_ctx_t * i_ctx_p, ref **r)
 	*r = 0;
     return 0;
 }
-static int patternalternatespace(i_ctx_t * i_ctx_p, ref *space, ref **r)
+static int patternalternatespace(i_ctx_t * i_ctx_p, ref *space, ref **r, int *CIESubst)
 {
     ref tref;
     int code;
@@ -5150,7 +5150,7 @@ static int validateiccspace(i_ctx_t * i_ctx_p, ref **r)
     }
     return code;
 }
-static int iccalternatespace(i_ctx_t * i_ctx_p, ref *space, ref **r)
+static int iccalternatespace(i_ctx_t * i_ctx_p, ref *space, ref **r, int *CIESubst)
 {
     int components, code = 0;
     ref *tempref, ICCdict;
@@ -5189,6 +5189,7 @@ static int iccalternatespace(i_ctx_t * i_ctx_p, ref *space, ref **r)
 		return_error(e_rangecheck);
 	}
     }
+    *CIESubst = 1;
     return code;
 }
 static int icccomponents(i_ctx_t * i_ctx_p, ref *space, int *n)
@@ -5415,7 +5416,7 @@ setcolor_cont(i_ctx_t *i_ctx_p)
 {
     ref arr, *parr = &arr;
     es_ptr ep = esp;
-    int i=0, code = 0,depth, usealternate, stage, stack_depth;
+    int i=0, code = 0,depth, usealternate, stage, stack_depth, CIESubst = 0;
     PS_colour_space_t *obj;
     
     stack_depth = (int)ep[-3].value.intval;
@@ -5442,7 +5443,7 @@ setcolor_cont(i_ctx_t *i_ctx_p)
 		if (!obj->alternateproc) {
 		    return_error(e_typecheck);
 		}
-		code = obj->alternateproc(i_ctx_p, parr, &parr);
+		code = obj->alternateproc(i_ctx_p, parr, &parr, &CIESubst);
 	        if (code < 0) 
 		    return code;
 	    }
@@ -5517,7 +5518,7 @@ setcolorspace_cont(i_ctx_t *i_ctx_p)
 		if (!obj->alternateproc) {
 		    return_error(e_typecheck);
 		}
-		code = obj->alternateproc(i_ctx_p, parr, &parr);
+		code = obj->alternateproc(i_ctx_p, parr, &parr, &CIESubst);
 	        if (code < 0) 
 		    return code;
 	    }
@@ -5786,7 +5787,7 @@ currentbasecolor_cont(i_ctx_t *i_ctx_p)
 {
     ref arr, *parr = &arr;
     es_ptr ep = esp;
-    int i, code = 0,depth, stage, base, cont=1, stack_depth = 0;
+    int i, code = 0,depth, stage, base, cont=1, stack_depth = 0, CIESubst=0;
     PS_colour_space_t *obj;
     
     stack_depth = (int)ep[-4].value.intval;
@@ -5815,7 +5816,7 @@ currentbasecolor_cont(i_ctx_t *i_ctx_p)
 		if (!obj->alternateproc) {
 		    return_error(e_typecheck);
 		}
-		code = obj->alternateproc(i_ctx_p, parr, &parr);
+		code = obj->alternateproc(i_ctx_p, parr, &parr, &CIESubst);
 	        if (code < 0) 
 		    return code;
 	    }
