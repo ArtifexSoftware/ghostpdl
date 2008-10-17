@@ -42,11 +42,13 @@ $(DD)cups.dev : $(CUPS_MAK) $(cups_) $(GLD)page.dev
 $(GLOBJ)gdevcups.$(OBJ) : cups/gdevcups.c $(PDEVH)
 	$(GLCC) $(CUPSCFLAGS) $(GLO_)gdevcups.$(OBJ) $(C_) cups/gdevcups.c
 
+PDFTORASTER_XE=$(BINDIR)$(D)pdftoraster$(XE)
+
 cups: pdftoraster
-pdftoraster: $(BINDIR)$(D)pdftoraster$(XE)
+pdftoraster: $(PDFTORASTER_XE)
 pdftoraster_=cups/pdftoraster.c
 
-$(BINDIR)$(D)pdftoraster$(XE): $(pdftoraster_)
+$(PDFTORASTER_XE): $(pdftoraster_)
 	$(GLCC) `cups-config --image --libs` -DBINDIR='"$(bindir)"' -DGS='"$(GS)"' -o $@ $(pdftoraster_)
 
 install:	install-cups
@@ -54,7 +56,7 @@ install:	install-cups
 install-cups: cups
 	-mkdir -p $(DESTDIR)$(CUPSSERVERBIN)/filter
 	$(INSTALL_PROGRAM) cups/pstoraster $(DESTDIR)$(CUPSSERVERBIN)/filter
-	$(INSTALL_PROGRAM) bin/pdftoraster $(DESTDIR)$(CUPSSERVERBIN)/filter
+	$(INSTALL_PROGRAM) $(PDFTORASTER_XE) $(DESTDIR)$(CUPSSERVERBIN)/filter
 	$(INSTALL_PROGRAM) cups/pstopxl $(DESTDIR)$(CUPSSERVERBIN)/filter
 	-mkdir -p $(DESTDIR)$(CUPSSERVERROOT)
 	$(INSTALL_DATA) cups/pstoraster.convs $(DESTDIR)$(CUPSSERVERROOT)
