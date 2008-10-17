@@ -273,6 +273,7 @@ struct gx_device_clist_writer_s {
     gs_pattern1_instance_t *pinst; /* Used when it is a pattern clist. */
     int cropping_min, cropping_max;
     int save_cropping_min, save_cropping_max;
+    bool cropping_saved; /* for clist_fill_path only. */
     int cropping_level;
     clist_writer_cropping_buffer_t *cropping_stack;
     ulong ins_count;
