@@ -42,14 +42,23 @@ $(DD)cups.dev : $(CUPS_MAK) $(cups_) $(GLD)page.dev
 $(GLOBJ)gdevcups.$(OBJ) : cups/gdevcups.c $(PDEVH)
 	$(GLCC) $(CUPSCFLAGS) $(GLO_)gdevcups.$(OBJ) $(C_) cups/gdevcups.c
 
+cups: pdftoraster
+pdftoraster: $(BINDIR)$(D)pdftoraster$(XE)
+pdftoraster_=cups/pdftoraster.c
+
+$(BINDIR)$(D)pdftoraster$(XE): $(pdftoraster_)
+	$(GLCC) `cups-config --image --libs` -DBINDIR='"$(bindir)"' -DGS='"$(GS)"' -o $@ $(pdftoraster_)
+
 install:	install-cups
 
-install-cups:
+install-cups: cups
 	-mkdir -p $(DESTDIR)$(CUPSSERVERBIN)/filter
 	$(INSTALL_PROGRAM) cups/pstoraster $(DESTDIR)$(CUPSSERVERBIN)/filter
+	$(INSTALL_PROGRAM) bin/pdftoraster $(DESTDIR)$(CUPSSERVERBIN)/filter
 	$(INSTALL_PROGRAM) cups/pstopxl $(DESTDIR)$(CUPSSERVERBIN)/filter
 	-mkdir -p $(DESTDIR)$(CUPSSERVERROOT)
 	$(INSTALL_DATA) cups/pstoraster.convs $(DESTDIR)$(CUPSSERVERROOT)
+	$(INSTALL_DATA) cups/pdftoraster.convs $(DESTDIR)$(CUPSSERVERROOT)
 	-mkdir -p $(DESTDIR)$(CUPSDATA)/model
 	$(INSTALL_DATA) cups/pxlcolor.ppd $(DESTDIR)$(CUPSDATA)/model
 	$(INSTALL_DATA) cups/pxlmono.ppd $(DESTDIR)$(CUPSDATA)/model
