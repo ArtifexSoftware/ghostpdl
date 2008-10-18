@@ -1107,6 +1107,7 @@ bjc_put_params(gx_device *pdev, gs_param_list *plist)
     gs_param_string pprocesscolors;
     gs_param_string pmedia;
     gs_param_string pquality;
+    gs_param_string dithering;
 
     gs_param_float_array hwra;
 
@@ -1142,6 +1143,9 @@ bjc_put_params(gx_device *pdev, gs_param_list *plist)
     code = put_param_string(plist, (unsigned char *)BJC_OPTION_PRINTQUALITY, &pquality,
 	(bjc->ptype == BJC800 ? bjc800_printQualityStrings :
 	bjc600_printQualityStrings), &params->printQuality, code);
+
+    code = put_param_string(plist, (unsigned char *)BJC_OPTION_DITHERINGTYPE, &dithering,
+        bjc_ditheringTypeStrings, &params->ditheringType, code);
 
     switch (ncode = param_read_int(plist,
 	oname = BJC_OPTION_MEDIAWEIGHT, &params->mediaWeight)) {
@@ -3576,7 +3580,7 @@ cdj_param_check_float(gs_param_list *plist, gs_param_name pname, floatp fval,
         switch ( code = param_read_float(plist, pname, &new_value) )
           {
           case 0:
-                if ( is_defined && new_value == fval)
+                if ( is_defined && new_value == (float)fval)
                   break;
                 code = gs_note_error(gs_error_rangecheck);
                 goto e;
