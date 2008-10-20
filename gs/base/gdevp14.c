@@ -677,11 +677,16 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 			     uint mask_id, gs_transparency_mask_subtype_t subtype, 
                              bool SMask_is_CIE, int numcomps)
 {
+
+ 
     pdf14_buf *buf;
+    
+#if RAW_DUMP
     FILE *fid;
     char file_name[50];
     const byte *Buf_ptr;
     int z,num_rows,y;
+#endif
 
     if_debug2('v', "[v]pdf14_push_transparency_mask, idle=%d, replacing=%d\n", idle, replacing);
     if (replacing && ctx->maskbuf != NULL) {
