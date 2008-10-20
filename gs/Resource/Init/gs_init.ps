@@ -289,7 +289,7 @@ QUIET not { printgreeting flush } if
 % If we're delaying binding, remember everything that needs to be bound later.
 DELAYBIND NOBIND not and
  { .currentglobal false .setglobal
-   systemdict /.delaybind 1500 array .forceput
+   systemdict /.delaybind 2000 array .forceput
    .setglobal
    userdict /.delaycount 0 put
 	% When we've done the delayed bind, we want to stop saving.

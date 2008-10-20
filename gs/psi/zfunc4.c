@@ -341,7 +341,7 @@ fail:
 
 int make_type4_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t **func)
 {
-    int code, size, num_components;
+    int code, size, num_components, CIESubst;
     byte *ops;
     gs_function_PtCr_params_t params;
     float *ptr;
@@ -353,7 +353,7 @@ int make_type4_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t *
 	return code;
     if (!space->alternateproc)
 	return e_typecheck;
-    code = space->alternateproc(i_ctx_p, arr, &palternatespace);
+    code = space->alternateproc(i_ctx_p, arr, &palternatespace, &CIESubst);
     if (code < 0)
 	return code;
     code = get_space_object(i_ctx_p, palternatespace, &altspace);

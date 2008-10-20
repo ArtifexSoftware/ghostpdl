@@ -668,11 +668,14 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	   and then will decompose the shading into trapezoids.
 	   See comment below about pdcolor == NULL.
 	 */
+	cdev->cropping_saved = false;
 	code = gx_default_fill_path(dev, pis, ppath, params, pdcolor, pcpath);
-	cdev->cropping_min = cdev->save_cropping_min;
-	cdev->cropping_max = cdev->save_cropping_max;
-	if_debug2('v', "[v] clist_fill_path: restore cropping_min=%d croping_max=%d\n",
-				cdev->save_cropping_min, cdev->save_cropping_max);
+	if (cdev->cropping_saved) {
+	    cdev->cropping_min = cdev->save_cropping_min;
+	    cdev->cropping_max = cdev->save_cropping_max;
+	    if_debug2('v', "[v] clist_fill_path: restore cropping_min=%d croping_max=%d\n",
+				    cdev->save_cropping_min, cdev->save_cropping_max);
+	}
 	return code;
     }
     y0 = ry;
@@ -689,6 +692,7 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	   The graphics library will call us again with subdividing 
 	   the shading into trapezoids and rectangles. 
 	   Narrow cropping_min, croping_max for such calls. */
+	cdev->cropping_saved = true;
 	cdev->save_cropping_min = cdev->cropping_min;
 	cdev->save_cropping_max = cdev->cropping_max;
 	cdev->cropping_min = max(ry, cdev->cropping_min);

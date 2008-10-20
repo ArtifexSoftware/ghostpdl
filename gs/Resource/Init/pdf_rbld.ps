@@ -226,16 +226,28 @@
 /determine_post_eof_count		% - determine_post_eof_count <count>
 { % Position to read block of data from the end of the file. 
   PDFfilelen			% size of file
-  dup 4096 .min			% block size to read
-  % stack: <file size> <file size> <block size>
-  % move file position to the start of the block
-  2 copy sub PDFfile exch setfileposition
-  % read block of data
-  dup string 0 1 4 -1 roll 1 sub { 2 copy PDFfile read pop put pop } for
-  % search for last occurance of '%%EOF'
-  (%%EOF) { search not { exit } if pop } loop
+  dup 4096 .min	                % file_size block_size
+  dup 3 1 roll sub              % block_size file_size-block_size 
+  PDFfile exch setfileposition  % block_size
+  string PDFfile exch readstring pop % ()
+
+  % search for last occurance of 'startxref', '%%EOF' is often damaged
+  (startxref) {
+    search not { exit } if pop
+  } loop
   % how much is left = remaining string length
-  length exch pop		% pop /%%EOF
+
+  % Now search for %%EO or try to read a number after 'startxref'.
+  (%%EO) search {
+    pop pop 
+  } {
+    % Look for a number after startxref
+    { dup token { pop exch pop } if
+    } stopped {
+      pop
+    } if
+  } ifelse
+  length
 } bind def
 
 % This routine will scan a file searaching for object locations to build

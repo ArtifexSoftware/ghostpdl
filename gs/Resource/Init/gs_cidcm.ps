@@ -207,22 +207,28 @@ currentdict end def
   % If it is an array, it must be of 1 element, which is a dict.
   % In this case the dict is used for testing the compatibility.
   % Two dicts are compatible iff they contain same /Ordering and /Registry.
+  % Identity CMap is compatible with any CIDFont.
 
   exch                                  % CSI-F CSI-M
   { dup type /arraytype eq {
       dup length 1 ne {
-        pop pop false exit
+        pop pop //false exit
       } if
       0 get
     } if                                % CSI-F CSI-M
     dup type /dicttype ne {
-      pop pop false exit
+      pop pop //false exit
     } if                                % CSI-F <<CSI-M>>
     exch                                % <<CSI-M>> CSI-F
     dup type /dicttype ne {
-      pop pop false exit
+      pop pop //false exit
     } if                                % <<CSI-M>> <<CSI-F>>
-    true                                % <<CSI-M>> <<CSI-F>> bEQ
+    dup /Ordering .knownget {
+      /Identity eq {
+        pop pop //true exit
+      } if
+    } if
+    //true                              % <<CSI-M>> <<CSI-F>> bEQ
     [/Registry /Ordering] {                    
       2 index 1 index .knownget not {
         1234567

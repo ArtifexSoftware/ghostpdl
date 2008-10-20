@@ -1,5 +1,5 @@
 /*
- * "$Id: gdevcups.c,v 1.43.2.23 2004/06/29 13:15:10 mike Exp $"
+ * "$Id$"
  *
  *   GNU Ghostscript raster output driver for the Common UNIX Printing
  *   System (CUPS).
@@ -352,6 +352,21 @@ gx_device_cups	gs_cups_device =
     0,					/* cupsRowCount */
     0,					/* cupsRowFeed */
     0					/* cupsRowStep */
+#ifdef CUPS_RASTER_SYNCv1
+    ,
+    1,                                  /* cupsNumColors */
+    1.0,                                /* cupsBorderlessScalingFactor */
+    { 612.0, 792.0 },                   /* cupsPageSize */
+    { 0.0, 0.0, 612.0, 792.0 },         /* cupsImagingBBox */
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, /* cupsInteger */
+    { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, /* cupsReal */
+    { "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" },
+                                        /* cupsString */
+    "",                                 /* cupsMarkerType */
+    "",                                 /* cupsRenderingIntent */
+    "Letter"                            /* cupsPageSizeName */
+#endif /* CUPS_RASTER_SYNCv1 */
   }
 };
 
@@ -738,6 +753,10 @@ cups_get_params(gx_device     *pdev,	/* I - Device info */
                               (int *)&(cups->header.CutMedia))) < 0)
     return (code);
 
+  b = cups->header.Duplex;
+  if ((code = param_write_bool(plist, "Duplex", &b)) < 0)
+    return (code);
+
   b = cups->header.InsertSheet;
   if ((code = param_write_bool(plist, "InsertSheet", &b)) < 0)
     return (code);
@@ -756,6 +775,10 @@ cups_get_params(gx_device     *pdev,	/* I - Device info */
 
   if ((code = param_write_int(plist, "MediaPosition",
                               (int *)&(cups->header.MediaPosition))) < 0)
+    return (code);
+
+  if ((code = param_write_int(plist, "MediaWeight",
+                              (int *)&(cups->header.MediaWeight))) < 0)
     return (code);
 
   b = cups->header.MirrorPrint;
@@ -833,9 +856,11 @@ cups_get_params(gx_device     *pdev,	/* I - Device info */
     return (code);
 
 #ifdef CUPS_RASTER_SYNCv1
+#if 0 /* Don't include read-only parameters... */
   if ((code = param_write_int(plist, "cupsNumColors",
                               (int *)&(cups->header.cupsNumColors))) < 0)
     return (code);
+#endif /* 0 */
 
   if ((code = param_write_float(plist, "cupsBorderlessScalingFactor",
                         	&(cups->header.cupsBorderlessScalingFactor))) < 0)
@@ -844,7 +869,7 @@ cups_get_params(gx_device     *pdev,	/* I - Device info */
   for (i = 0; i < 16; i ++)
   {
     sprintf(name, "cupsInteger%d", i);
-    if ((code = param_write_int(plist, name,
+    if ((code = param_write_int(plist, strdup(name),
                         	(int *)(cups->header.cupsInteger + i))) < 0)
       return (code);
   }
@@ -852,16 +877,16 @@ cups_get_params(gx_device     *pdev,	/* I - Device info */
   for (i = 0; i < 16; i ++)
   {
     sprintf(name, "cupsReal%d", i);
-    if ((code = param_write_float(plist, name,
+    if ((code = param_write_float(plist, strdup(name),
                         	  cups->header.cupsReal + i)) < 0)
       return (code);
   }
 
   for (i = 0; i < 16; i ++)
   {
-    sprintf(name, "cupsReal%d", i);
+    sprintf(name, "cupsString%d", i);
     param_string_from_string(s, cups->header.cupsString[i]);
-    if ((code = param_write_string(plist, name, &s)) < 0)
+    if ((code = param_write_string(plist, strdup(name), &s)) < 0)
       return (code);
   }
 
@@ -2695,11 +2720,15 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 #define stringoption(name, sname) \
   if ((code = param_read_string(plist, sname, &stringval)) < 0) \
   { \
+    dprintf2("ERROR: Error setting %s to \"%s\"...\n", sname, \
+             (char *)stringval.data); \
     param_signal_error(plist, sname, code); \
     return (code); \
   } \
   else if (code == 0) \
   { \
+    dprintf2("DEBUG: Setting %s to \"%s\"...\n", sname, \
+             (char *)stringval.data); \
     strncpy(cups->header.name, (const char *)stringval.data, \
             stringval.size); \
     cups->header.name[stringval.size] = '\0'; \
@@ -2708,29 +2737,35 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 #define intoption(name, sname, type) \
   if ((code = param_read_int(plist, sname, &intval)) < 0) \
   { \
+    dprintf2("ERROR: Error setting %s to %d...\n", sname, (int)intval); \
     param_signal_error(plist, sname, code); \
     return (code); \
   } \
   else if (code == 0) \
   { \
-    dprintf2("DEBUG: Setting %s to %d...\n", sname, intval); \
+    dprintf2("DEBUG: Setting %s to %d...\n", sname, (int)intval); \
     cups->header.name = (type)intval; \
   }
 
 #define floatoption(name, sname) \
   if ((code = param_read_float(plist, sname, &floatval)) < 0) \
   { \
+    dprintf2("ERROR: Error setting %s to %.4f...\n", sname, (float)floatval); \
     param_signal_error(plist, sname, code); \
     return (code); \
   } \
   else if (code == 0) \
-    cups->header.name = (unsigned)floatval;
+  { \
+    dprintf2("DEBUG: Setting %s to %.4f...\n", sname, (float)floatval);	\
+    cups->header.name = (float)floatval; \
+  }
 
 #define booloption(name, sname) \
   if ((code = param_read_bool(plist, sname, &boolval)) < 0) \
   { \
     if ((code = param_read_null(plist, sname)) < 0) \
     { \
+      dprintf2("ERROR: Error setting %s to %d...\n", sname, (int)boolval); \
       param_signal_error(plist, sname, code); \
       return (code); \
     } \
@@ -2738,24 +2773,34 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
       cups->header.name = CUPS_FALSE; \
   } \
   else if (code == 0) \
-    cups->header.name = (cups_bool_t)boolval;
+  { \
+    dprintf2("DEBUG: Setting %s to %d...\n", sname, (int)boolval); \
+    cups->header.name = (cups_bool_t)boolval; \
+  }
 
 #define arrayoption(name, sname, count) \
   if ((code = param_read_float_array(plist, sname, &arrayval)) < 0) \
   { \
     if ((code = param_read_null(plist, sname)) < 0) \
     { \
+      dprintf1("ERROR: Error setting %s...\n", sname); \
       param_signal_error(plist, sname, code); \
       return (code); \
     } \
     if (code == 0) \
+    { \
+      dprintf1("DEBUG: Setting %s to zero\n", sname); \
       for (i = 0; i < count; i ++) \
 	cups->header.name[i] = 0; \
+    } \
   } \
   else if (code == 0) \
   { \
+    dprintf1("DEBUG: Setting %s to", sname); \
     for (i = 0; i < count; i ++) \
+      dprintf1(" %d", (unsigned)(arrayval.data[i]));	 \
       cups->header.name[i] = (unsigned)arrayval.data[i]; \
+    dprintf("...\n"); \
   }
 
   size_set    = param_read_float_array(plist, ".MediaSize", &arrayval) == 0 ||
@@ -2768,7 +2813,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   stringoption(MediaColor, "MediaColor")
   stringoption(MediaType, "MediaType")
   stringoption(OutputType, "OutputType")
-  floatoption(AdvanceDistance, "AdvanceDistance")
+  intoption(AdvanceDistance, "AdvanceDistance", unsigned)
   intoption(AdvanceMedia, "AdvanceMedia", cups_adv_t)
   booloption(Collate, "Collate")
   intoption(CutMedia, "CutMedia", cups_cut_t)
@@ -2781,7 +2826,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   booloption(ManualFeed, "ManualFeed")
   intoption(MediaPosition, "cupsMediaPosition", unsigned) /* Compatibility */
   intoption(MediaPosition, "MediaPosition", unsigned)
-  floatoption(MediaWeight, "MediaWeight")
+  intoption(MediaWeight, "MediaWeight", unsigned)
   booloption(MirrorPrint, "MirrorPrint")
   booloption(NegativePrint, "NegativePrint")
   intoption(Orientation, "Orientation", cups_orient_t)
@@ -2815,19 +2860,19 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   for (i = 0; i < 16; i ++)
   {
     sprintf(name, "cupsInteger%d", i);
-    intoption(cupsInteger[i], name, unsigned)
+    intoption(cupsInteger[i],strdup(name), unsigned)
   }
 
   for (i = 0; i < 16; i ++)
   {
     sprintf(name, "cupsReal%d", i);
-    floatoption(cupsReal[i], name)
+    floatoption(cupsReal[i], strdup(name))
   }
 
   for (i = 0; i < 16; i ++)
   {
     sprintf(name, "cupsString%d", i);
-    stringoption(cupsString[i], name)
+    stringoption(cupsString[i], strdup(name))
   }
 
   stringoption(cupsMarkerType, "cupsMarkerType");
@@ -4722,5 +4767,5 @@ cups_print_planar(gx_device_printer *pdev,
 
 
 /*
- * End of "$Id: gdevcups.c,v 1.43.2.23 2004/06/29 13:15:10 mike Exp $".
+ * End of "$Id$".
  */

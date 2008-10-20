@@ -1422,7 +1422,7 @@ end
 
 % Get and normalize an annotation's rectangle.
 /annotrect {		% <annot> annotrect <x> <y> <w> <h>
-  /Rect get aload pop
+  /Rect oget aload pop
   exch 3 index sub dup 0 lt { dup 5 -1 roll add 4 1 roll neg } if
   exch 2 index sub dup 0 lt { dup 4 -1 roll add 3 1 roll neg } if
 } bdef
@@ -1510,7 +1510,7 @@ end
   and 					% Combine with 'hidden' flag test
 } bdef
 
-/drawwidget {			% <scalefactor> <annot> drawwidget -
+/drawwidget {			% <scalefactor_x> <scalefactor_y> <annot> drawwidget -
   dup /AP knownoget {
     dup /N known not {
       (   **** Appearance dictionary (AP) lacks the mandatory normal (N) appearance.\n)
@@ -1518,13 +1518,13 @@ end
     } if
     //false
     [/N /R /D] {
-	% stack: scale annot appearance false key
+	% stack: scalex scaley annot appearance false key
       2 index exch knownogetdict {
 	exch not exit 
       } if
     } forall
-	% stack: scale annot appearance value true
-	% stack: scale annot appearance false
+	% stack: scalex scaley annot appearance value true
+	% stack: scalex scaley annot appearance false
     dup {
       pop exch pop
 		% Acrobat Distiller produces files in which this Form
@@ -1551,25 +1551,25 @@ end
       exch pop	% discard useless AP dictionary
     } ifelse
 
-		% Stack: scale annot appearance true
-		% Stack: scale annot false
+		% Stack: scalex scaley annot appearance true
+		% Stack: scalex scaley annot false
     {
       		% Draw appearance
                 % Initialize graphic following "7.4.4 Appearance Streams"
       q graphicsbeginpage textbeginpage
       1 index annotrect pop pop translate
-      2 index dup scale		% Apply scale factor
+      3 index 3 index scale		% Apply scale factors
       DoForm Q
     } if
   } {
     dup /FT knownoget {
       /Tx eq {
-	  % Stack: scale annot
+	  % Stack: scalex scaley annot
 	dup /DA known 1 index /V known and {
 	  dup /DA oget
 	  q graphicsbeginpage textbeginpage
 	  1 index annotrect pop pop translate
-	  2 index dup scale		% Apply scale factor
+	  3 index 3 index scale		% Apply scale factors
 	  cvx exec
 	  dup /V oget
 	  0 0 moveto dup false charpath pathbbox newpath 3 -1 roll
@@ -1580,7 +1580,7 @@ end
 	  % Calculate horizontal justification first
 	  % horizontal can be left (Q=0), center (Q=1), or right (Q=2) justification
 	  3 -1 roll 
-	    % stack: scale annot V vsize vrect hrect hsize 
+	    % stack: scalex scaley annot V vsize vrect hrect hsize 
 	  5 index /Q knownoget not { 0 } if	% default 0 == left
 	  dup 0 eq {
 	      pop pop pop 0		% left justified
@@ -1591,59 +1591,61 @@ end
 	      sub			% right justified (hrect - hsize)
 	    } ifelse
 	  } ifelse
-	    % stack: scale annot V vsize vrect hoffset
+	    % stack: scalex scaley annot V vsize vrect hoffset
 	  % Center the text vertically in the rect (Acrobat Reader seems to do this)
 	  3 1 roll 2 div exch 2 div sub abs
-	    % stack: scale annot V hoffset voffset
+	    % stack: scalex scaley annot V hoffset voffset
 	  moveto show
 	  Q
 	} if
       } if
     } if
   } ifelse
-  pop pop
+  pop pop pop
 } bdef
 
-%  For stamp object we have to determine the size of the output rectangle
-%  and the size of the BBox for the stamp image.  From these we calculate
-%  a scale factor for drawing the stamp.
-/calcstampscale {		% <annot> calcstampscale scale
-  dup /Rect known {
-    dup annotrect 4 -2 roll pop pop	 % get width height size in user space
+%  For annotation object we have to determine the size of the output rectangle
+%  and the size of the BBox for the form XObject. From these we calculate
+%  a scale factors for drawing it.
+/calc_annot_scale {		% <annot> calc_annot_scale <x_scale> <y_scale>
+  dup /Rect knownoget {
+    pop dup annotrect 4 2 roll pop pop	 % get width height size in user space
     3 -1 roll /AP knownoget {
       /N knownogetdict {
 	dup /Matrix knownoget {
-	  % transform /Annot /Rect xwidth to Form space
-	  4 -2 roll 3 -1 roll dtransform 3 -1 roll
+          % transform /Annot /Rect xwidth to Form space
+	  4 2 roll 3 -1 roll dtransform 3 -1 roll
 	} if
-	/BBox knownoget {
-	  exch pop	% discard y height
-	  aload pop pop exch pop sub	% BBox width
-	  dup 0 eq {
-            (   **** Warning: /BBox has zero width which is not allowed.\n)
+	/BBox knownoget {       % x y  [box]
+          aload pop             % x y  x0 y0 x1 y1
+          3 -1 roll sub         % x y  x0 x1 y1-y0
+          3 1 roll sub          % x y  y1-y0 x0-x1 
+          2 copy mul 0 eq {
+            (   **** Warning: /BBox has zero width or height, which is not allowed.\n)
             pdfformaterror
-            pop pop 1 1		% 0 width -- revert to unity scaling
+            pop pop pop pop 1 1	% zero size -- revert to unity scaling
           } if
-	  div		% scale x widths
-	  dup 0 lt { neg } if		% get magnitude
+	  3 1 roll div abs      % x x0-x1 |y/(y1-y0)|
+          3 1 roll div abs      % |y/(y1-y0)| |x/(x0-x1)|
+          exch                  % |x/(x0-x1)| |y/(y1-y0)| 
 	} {
-	  pop pop 1		% default to unity scaling
-	} ifelse			% if we have /BBox
+	  pop pop 1 1		% default to unity scaling
+	} ifelse		% if we have /BBox
       } {
-	pop pop 1
+	pop pop 1 1
       } ifelse			% if we have /N
     } {
-      pop pop 1
+      pop pop 1 1
     } ifelse			% if we have /AP
   } {
     (   **** Warning: /Annot dict is missing required /Rect entry.\n)
     pdfformaterror
-    pop 1
+    pop 1 1
   } ifelse
 } bdef
 
 /drawlink {			% <annot> drawlink -
-  dup drawborder dup calcstampscale exch drawwidget
+  dup drawborder dup calc_annot_scale 3 -1 roll drawwidget
 } bdef
 
 % Draw an annotation.
@@ -1657,7 +1659,7 @@ end
       //drawannottypes exch .knownget {
         exec
       } {
-        dup calcstampscale exch drawwidget	% Use drawwidget for everything else
+        dup calc_annot_scale 3 -1 roll drawwidget	% Use drawwidget for everything else
       } ifelse			% type known
     } {
       pop
@@ -1689,7 +1691,7 @@ currentdict /drawannottypes undef
   dup 16#20000 and 0 ne {
     pop % Push button
     dup /AP known {
-       dup 1 exch drawwidget
+      1 1 2 index drawwidget
     } {
       (Push button without appearance stream is not yet implemented) =
     } ifelse
@@ -1698,7 +1700,7 @@ currentdict /drawannottypes undef
         % Radio button
         dup /AP known {
           1 index /Kids oget {
-            1 exch drawwidget
+            1 1 3 -1 roll drawwidget
           } forall
         } {
           (Radio button without appearance stream is not yet implemented) =
@@ -1706,7 +1708,7 @@ currentdict /drawannottypes undef
     } {
         % Checkbox
         dup /AP known {
-          dup 1 exch drawwidget
+          dup 1 1 3 -1 roll drawwidget
         } {
           (CkeckBox without appearance stream is not yet implemented) =
         } ifelse
@@ -1716,7 +1718,7 @@ currentdict /drawannottypes undef
 
 /Tx {
   dup /AP known {
-    dup 1 exch drawwidget
+    dup 1 1 3 -1 roll drawwidget
   } {
     2 index /NeedAppearances knownoget not { //false } if {
       dup /AP << /N 10 dict dup cvx begin >> put
@@ -1753,7 +1755,7 @@ currentdict /drawannottypes undef
       dup (Tform ET) write=
       end
       closefile             %  <acroform> <field> <annot>
-      dup 1 exch drawwidget
+      dup 1 1 3 -1 roll drawwidget
     } if
   } ifelse
 } bdef

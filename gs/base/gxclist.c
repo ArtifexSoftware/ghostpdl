@@ -469,6 +469,7 @@ clist_reset(gx_device * dev)
     cdev->image_enum_id = gs_no_id;
     cdev->cropping_min = cdev->save_cropping_min = 0;
     cdev->cropping_max = cdev->save_cropping_max = cdev->height;
+    cdev->cropping_saved = false;
     cdev->cropping_stack = NULL;
     cdev->cropping_level = 0;
     cdev->mask_id_count = cdev->mask_id = cdev->temp_mask_id = 0;
