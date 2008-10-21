@@ -281,7 +281,7 @@ $(GLOBJ)md5.$(OBJ) : $(GLSRC)md5.c $(AK) $(memory__h) $(md5_h)
 # AES cipher
 aes_h=$(GLSRC)aes.h
 aes_=$(GLOBJ)aes.$(OBJ)
-$(GLOBJ)aes.$(OBJ) : $(GLSRC)aes.c $(AK) $(aes_h)
+$(GLOBJ)aes.$(OBJ) : $(GLSRC)aes.c $(AK) $(string__h) $(aes_h)
 	$(GLCC) $(GLO_)aes.$(OBJ) $(C_) $(GLSRC)aes.c
 
 # Visual Debugging
