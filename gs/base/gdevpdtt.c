@@ -2029,17 +2029,25 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     if (font->PaintType == 2 && penum->pis->text_rendering_mode == 0)
     {
 	gs_imager_state *pis = penum->pis;
+	gs_font *font = penum->current_font;
+	pdf_text_state_t *pts = pdev->text->text_state;
 	double scaled_width = font->StrokeWidth != 0 ? font->StrokeWidth : 0.001;
 	double saved_width = pis->line_params.half_width;
-
+	
 	if (font->FontMatrix.yy != 0)
-	    scaled_width *= fabs(font->FontMatrix.yy);
+	    scaled_width *= fabs(font->orig_FontMatrix.yy) * size * tmat.yy;
 	else
-	    scaled_width *= fabs(font->FontMatrix.xy);
-	ppts->values.render_mode = 1;
+	    scaled_width *= fabs(font->orig_FontMatrix.xy) * size * tmat.xy;
+
+	ppts->values.render_mode = 1;	
+
+	/* Sort out any pending glyphs */
+	code = pdf_set_PaintType0_params(pdev, pis, size, scaled_width, &ppts->values);
+
 	pis->line_params.half_width = scaled_width / 2;
-        code = pdf_set_text_process_state(pdev, (const gs_text_enum_t *)penum,
+	code = pdf_set_text_process_state(pdev, (const gs_text_enum_t *)penum,
 				      ppts);
+
 	pis->line_params.half_width = saved_width;
     } else {
 	code = pdf_set_text_process_state(pdev, (const gs_text_enum_t *)penum,
