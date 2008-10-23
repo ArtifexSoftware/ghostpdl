@@ -448,6 +448,12 @@ compare_samples(const void *p1, const void *p2)
     ht_sample_t m1 = ((const gx_ht_bit *)p1)->mask;
     ht_sample_t m2 = ((const gx_ht_bit *)p2)->mask;
 
+    /* force qsort() to be determinstic even if two masks are the same */
+    if (m1==m2) {
+      m1=((const gx_ht_bit *)p1)->offset;
+      m2=((const gx_ht_bit *)p2)->offset;
+    }
+
     return (m1 < m2 ? -1 : m1 > m2 ? 1 : 0);
 }
 /* Sort the halftone order by sample value. */
