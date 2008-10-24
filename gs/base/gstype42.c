@@ -145,7 +145,7 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
     byte head_box[8];
     ulong loca_size = 0;
     ulong glyph_start, glyph_offset, glyph_length, glyph_size = 0;
-    uint numFonts;
+    uint numFonts, version;
     uint OffsetTableOffset;
 
     static const byte version1_0[4] = {0, 1, 0, 0};
@@ -153,17 +153,20 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
     static const byte version_ttcf[4] = {'t', 't', 'c', 'f'};
 
     READ_SFNTS(pfont, 0, 12, OffsetTable);
-    if (!memcmp(OffsetTable, version_ttcf, 4))
-    {
+    if (!memcmp(OffsetTable, version_ttcf, 4)) {
+    	version = u32(OffsetTable + 4);
+    	if (version != 0x00010000 && version !=0x00020000) {
+	    eprintf2("Unknown TTC header version %08X in the font %s.\n", 
+		version, pfont->key_name.chars);
+    	    return_error(gs_error_invalidfont);
+    	}
 	numFonts = u32(OffsetTable + 8);
 	if (subfontID < 0 || subfontID >= numFonts)
 	    return_error(gs_error_rangecheck);
 	READ_SFNTS(pfont, 12 + subfontID * 4, 4, OffsetTable);
 	OffsetTableOffset = u32(OffsetTable);
 	READ_SFNTS(pfont, OffsetTableOffset, 12, OffsetTable);
-    }
-    else
-    {
+    } else {
 	OffsetTableOffset = 0;
     }
 
