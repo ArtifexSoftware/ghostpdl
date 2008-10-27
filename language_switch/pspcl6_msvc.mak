@@ -108,7 +108,7 @@ COMPILE_INITS=1
 !endif
 
 !ifndef APP_CCC
-APP_CCC=$(CC_) -I..\pl -I..\gs\src -I.\obj $(C_)
+APP_CCC=$(CC_) -I..\pl -I..\gs\base -I.\obj $(C_)
 !endif
 
 # Define which major version of MSVC is being used (currently 6, 7 and 
