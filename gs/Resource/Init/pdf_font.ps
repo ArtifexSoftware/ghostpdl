@@ -71,9 +71,17 @@ pdfdict begin
   } forall pop
 } bdef
 
+/good_encoding_names <<
+  /MacRomanEncoding 0 /MacExpertEncoding 0 /WinAnsiEncoding 0
+>> readonly def
+
+/known_symbolic_fonts <<
+  /Wingdings2 0
+>> readonly def
+
 % Get the Encoding for a font.
 /getencoding		% <base-encoding> <font-resource> getencoding <enc>
- { /Encoding knownoget
+ { dup /Encoding knownoget
     { dup type /nametype eq
        {
          % The published PDF specification says the Encoding name
@@ -82,14 +90,20 @@ pdfdict begin
          % Reader simply ignores unknown names, and since there are
          % some buggy applications that rely on this, we do the same.
 
-         dup dup dup /MacRomanEncoding eq
-         exch /MacExpertEncoding eq or 
-         exch /WinAnsiEncoding eq or
-           { exch pop findencoding }
-           { pop }
-         ifelse
+         //good_encoding_names 1 index known {
+           exch /BaseFont knownoget not { 0 } if 
+           % Ignore named encodings for known symbolic fonts. See bug 690135.
+           //known_symbolic_fonts exch known {
+             pop
+           } {
+             exch pop findencoding
+           } ifelse
+         } {
+           pop pop
+         } ifelse
        }
-       { dup type /arraytype eq
+       { exch pop
+         dup type /arraytype eq
 	 { exch pop
 	   (   **** Warning: Encoding is an array, not name or dictionary.\n)  pdfformaterror
 	 }
@@ -109,10 +123,14 @@ pdfdict begin
        }
        ifelse
      } {
-      (   **** Warning: Encoding not present.\n)  pdfformaterror
+       pop
+       (   **** Warning: Encoding not present.\n)  pdfformaterror
      }
      ifelse
  } bdef
+
+currentdict /good_encoding_names undef
+currentdict /known_symbolic_fonts undef
 
 /checkGlyphNames2Unicode % <dict> checkGlyphNames2Unicode -
 {
