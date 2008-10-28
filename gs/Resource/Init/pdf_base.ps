@@ -641,6 +641,10 @@ currentdict /token_nofail_dict .undef
   pop pop pop pop		% Clear stack
 } bind def
 
+/no_debug_dict <<
+  /PDFDEBUG false
+>> readonly def
+
 % Resolve all objects in an object stream
 /resolveobjectstream {		% <object stream #> resolveobjectstream -
   PDFDEBUG { (%Resolving object stream: ) print } if
@@ -666,22 +670,22 @@ currentdict /token_nofail_dict .undef
   setfileposition		% Move to the start of the data
   		% We disable PDFDEBUG while reading the data stream.  We will
 		% print the data later
-  PDFDEBUG /PDFDEBUG false gput % Save PDFDEBUG and disable it while reading
+  PDFDEBUG { //no_debug_dict begin } if
   		% Read the data for all objects.  We check to see if we get
 		% the number of objects that we expect.
 		% Stack: objstreamdict N objectstream [obj#] PDFDEBUG
-  mark 4 -1 roll 		% Get objectstream
-  count 5 index add		% Determine stack depth with objects
-  /PDFObjectStkCount exch def
+  mark 3 -1 roll 		% Get objectstream
+  count 4 index add		% Determine stack depth with objects
+  3 1 roll
   resolveobjstreamopdict .pdfrun % Get PDF objects
-  PDFObjectStkCount count ne {	% Check stack depth
+  count counttomark 1 add index ne { % Check stack depth
     (   **** Incorrect object count in object stream.\n) pdfformaterror
     /resolveobjectstream cvx /rangecheck signalerror
   } if
   		% We have the object data
   counttomark array astore	% Put objects into an array
-  exch pop			% Remove mark
-  exch /PDFDEBUG exch def	% Restore PDFDEBUG flag
+  exch pop exch pop		% Remove mark and count
+  currentdict //no_debug_dict eq { end } if % Restore debug context
 		% Save the objects into Objects
   0 1 2 index length 1 sub {	% Loop through all objects
 		% Stack: objstreamdict N [obj#] [objects] loopindex
@@ -699,6 +703,8 @@ currentdict /token_nofail_dict .undef
   } for
   pop pop pop pop		% Remove objstream, N, (obj#], and [objects]
 } bind def
+
+currentdict /no_debug_dict undef
 
 % When resolving an object reference, we stop at the endobj or endstream.
 /resolveopdict mark
