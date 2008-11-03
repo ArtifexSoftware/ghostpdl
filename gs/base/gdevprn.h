@@ -356,7 +356,7 @@ extern const gx_device_procs prn_std_procs;
  *
  * Note that print_page and print_page_copies must not both be defaulted.
  */
-#define prn_device_body_rest2_(print_page, print_page_copies)\
+#define prn_device_body_rest2_(print_page, print_page_copies, duplex_set)\
 	 { 0 },		/* std_procs */\
 	 { 0 },		/* skip */\
 	 { print_page,\
@@ -381,15 +381,15 @@ extern const gx_device_procs prn_std_procs;
 	0/*false*/,	/* OpenOutputFile */\
 	0/*false*/,	/* ReopenPerPage */\
 	0/*false*/,	/* page_uses_transparency */\
-	0/*false*/, -1,	/* Duplex[_set] */\
+	0/*false*/, duplex_set,	/* Duplex[_set] */\
 	0/*false*/, 0, 0, 0, /* file_is_new ... buf */\
 	0, 0, 0, 0, 0/*false*/, 0, 0, /* buffer_memory ... clist_dis'_mask */\
 	0, 		/* num_render_threads_requested */\
 	{ 0 }	/* ... orig_procs */
 #define prn_device_body_rest_(print_page)\
-  prn_device_body_rest2_(print_page, gx_default_print_page_copies)
+  prn_device_body_rest2_(print_page, gx_default_print_page_copies, -1)
 #define prn_device_body_copies_rest_(print_page_copies)\
-  prn_device_body_rest2_(gx_print_page_single_copy, print_page_copies)
+  prn_device_body_rest2_(gx_print_page_single_copy, print_page_copies, -1)
 
 /* The Sun cc compiler won't allow \ within a macro argument list. */
 /* This accounts for the short parameter names here and below. */
