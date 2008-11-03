@@ -648,7 +648,7 @@ currentdict /token_nofail_dict .undef
 % Resolve all objects in an object stream
 /resolveobjectstream {		% <object stream #> resolveobjectstream -
   PDFDEBUG { (%Resolving object stream: ) print } if
-  0 resolveR	% Get the objectstream dict, all objstrms use 0 as the gen #
+  dup 0 resolveR % Get the objectstream dict, all objstrms use 0 as the gen #
   dup /Type get /ObjStm ne {	% Verify type is object stream
     (   **** Incorrect Type in object stream dictionary.\n) pdfformaterror
     /resolveobjectstream cvx /typecheck signalerror
@@ -660,7 +660,7 @@ currentdict /token_nofail_dict .undef
   1 index array			% Create array for holding object number
 		% Get the object numbers
   0 1 4 index 1 sub {		% Loop and collect obj numbers
-		% Stack: objstreamdict N PDFDEBUG objectstream [obj#] loopindex
+		% Stack: strm# objstreamdict N PDFDEBUG objectstream [obj#] loopindex
     1 index 1 index 		% Setup to put obj# into object number array
     4 index token pop put	% Get stream, then get obj# and put into array
     2 index token pop pop pop	% Get stream, get obj loc and clear stack
@@ -673,7 +673,7 @@ currentdict /token_nofail_dict .undef
   PDFDEBUG { //no_debug_dict begin } if
   		% Read the data for all objects.  We check to see if we get
 		% the number of objects that we expect.
-		% Stack: objstreamdict N objectstream [obj#] PDFDEBUG
+		% Stack: strm# objstreamdict N objectstream [obj#] PDFDEBUG
   mark 3 -1 roll 		% Get objectstream
   count 4 index add		% Determine stack depth with objects
   3 1 roll
@@ -688,20 +688,25 @@ currentdict /token_nofail_dict .undef
   currentdict //no_debug_dict eq { end } if % Restore debug context
 		% Save the objects into Objects
   0 1 2 index length 1 sub {	% Loop through all objects
-		% Stack: objstreamdict N [obj#] [objects] loopindex
+		% Stack: strm# objstreamdict N [obj#] [objects] loopindex
     dup 3 index exch get 	% Get our current object number
-    dup resolved? {		% If we already have this object
-      pop pop			% Remove object and object number
-    } {				% Else if we do not have this object
-      PDFDEBUG { (%Resolving compressed object: [) print dup =only ( 0]) = } if
-      Objects exch 3 index	% Put the object into Objects
-      3 index get
-      PDFDEBUG { dup === flush } if
-      lput
+                % Stack: strm# objstreamdict N [obj#] [objects] loopindex obj#
+    dup ObjectStream exch lget 7 index eq {
+      dup resolved? {		% If we already have this object
+        pop pop			% Remove object and object number
+      } {			% Else if we do not have this object
+        PDFDEBUG { (%Resolving compressed object: [) print dup =only ( 0]) = } if
+        Objects exch 3 index	% Put the object into Objects
+        3 index get
+        PDFDEBUG { dup === flush } if
+        lput
+      } ifelse
+    } {
+      pop	% Ignore old object; remove object number.
     } ifelse
     pop 			% Remove loop index
   } for
-  pop pop pop pop		% Remove objstream, N, (obj#], and [objects]
+  pop pop pop pop pop		% Remove strm# objstream, N, (obj#], and [objects]
 } bind def
 
 currentdict /no_debug_dict undef
