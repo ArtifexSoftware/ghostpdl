@@ -1058,6 +1058,9 @@ currentdict /eexec_pdf_param_dict .undef
   } ifelse
 
   1 index /W knownoget {
+    //false 1 index { xcheck or } forall {
+      oforce_array
+    } if
     dup 2 index /W 3 -1 roll put
     .pdfMakeInternalW 1 index /.internalW 3 -1 roll put
   } if
@@ -1069,6 +1072,9 @@ currentdict /eexec_pdf_param_dict .undef
   } ifelse
 
   1 index /W2 knownoget {
+    //false 1 index { xcheck or } forall {
+      oforce_array
+    } if
     dup 2 index /W2 3 -1 roll put
     .pdfMakeInternalW2 1 index /.internalW2 3 -1 roll put
   } if
