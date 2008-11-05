@@ -2033,11 +2033,16 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
 	pdf_text_state_t *pts = pdev->text->text_state;
 	double scaled_width = font->StrokeWidth != 0 ? font->StrokeWidth : 0.001;
 	double saved_width = pis->line_params.half_width;
+	/*
+	 * See stream_to_text in gdevpdfu.c re the computation of
+	 * the scaling value.
+	 */
+	double scale = 72.0 / pdev->HWResolution[1];
 	
 	if (font->FontMatrix.yy != 0)
-	    scaled_width *= fabs(font->orig_FontMatrix.yy) * size * tmat.yy;
+	    scaled_width *= fabs(font->orig_FontMatrix.yy) * size * tmat.yy * scale;
 	else
-	    scaled_width *= fabs(font->orig_FontMatrix.xy) * size * tmat.xy;
+	    scaled_width *= fabs(font->orig_FontMatrix.xy) * size * tmat.xy * scale;
 
 	ppts->values.render_mode = 1;	
 
@@ -2077,17 +2082,11 @@ pdf_set_text_process_state(gx_device_pdf *pdev,
 	float save_width = pis->line_params.half_width;
 	int code;
 
+	code = pdf_open_contents(pdev, PDF_IN_STRING);
 	code = pdf_prepare_stroke(pdev, pis);
-	if (code >= 0) {
-	    /*
-	     * See stream_to_text in gdevpdfu.c re the computation of
-	     * the scaling value.
-	     */
-	    double scale = 72.0 / pdev->HWResolution[1];
-
+	if (code >= 0) 
 	    code = gdev_vector_prepare_stroke((gx_device_vector *)pdev,
-					      pis, NULL, NULL, scale);
-	}
+					      pis, NULL, NULL, 1);
 	pis->line_params.half_width = save_width;
 	if (code < 0)
 	    return code;

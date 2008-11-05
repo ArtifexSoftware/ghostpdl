@@ -520,8 +520,7 @@ bool
 pdf_render_mode_uses_stroke(const gx_device_pdf *pdev,
 			    const pdf_text_state_values_t *ptsv)
 {
-    return (pdev->text->text_state->in.render_mode != ptsv->render_mode &&
-	    (ptsv->render_mode == 1 || ptsv->render_mode == 2 ||
+    return ((ptsv->render_mode == 1 || ptsv->render_mode == 2 ||
 	    ptsv->render_mode == 5 || ptsv->render_mode == 6));
 }
 
@@ -694,8 +693,8 @@ bool pdf_compare_text_state_for_charpath(pdf_text_state_t *pts, gx_device_pdf *p
      * NB! only check 2 decimal places, allow some slack in the match. This
      * still may prove to be too tight a requirement.
      */
-    if((int)(pts->start.x * 100) != (int)(pis->current_point.x * 100) || 
-	(int)(pts->start.y * 100) != (int)(pis->current_point.y * 100))
+    if(fabs(pts->start.x - pis->current_point.x) > 0.01 || 
+       fabs(pts->start.y - pis->current_point.y) > 0.01) 
 	return(false);
 
     size = pdf_calculate_text_size(pis, pdfont, &font->FontMatrix, &smat, &tmat, font, pdev);
@@ -795,16 +794,9 @@ int pdf_set_PaintType0_params (gx_device_pdf *pdev, gs_imager_state *pis, float 
 		return code;
 	    if (pdev->text->text_state->in.render_mode == ptsv->render_mode){
 		code = pdf_prepare_stroke(pdev, pis);
-		if (code >= 0) {
-		    /*
-		     * See stream_to_text in gdevpdfu.c re the computation of
-		     * the scaling value.
-		     */
-		    double scale = 72.0 / pdev->HWResolution[1];
-
+		if (code >= 0) 
 		    code = gdev_vector_prepare_stroke((gx_device_vector *)pdev,
-					      pis, NULL, NULL, scale);
-		}
+					      pis, NULL, NULL, 1);
 	    }
 	    if (code < 0)
 		return code;
