@@ -2030,7 +2030,6 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     {
 	gs_imager_state *pis = penum->pis;
 	gs_font *font = penum->current_font;
-	pdf_text_state_t *pts = pdev->text->text_state;
 	double scaled_width = font->StrokeWidth != 0 ? font->StrokeWidth : 0.001;
 	double saved_width = pis->line_params.half_width;
 	/*
