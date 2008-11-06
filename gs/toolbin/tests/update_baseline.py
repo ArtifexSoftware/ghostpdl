@@ -21,7 +21,7 @@
 # this script updates the testdata database with a new baseline sum
 # for all versions of file <file>.  use this when the comparing gs is
 # producing better output than the normal baseline (ie, when a regression
-# is really a progression
+# is really a progression)
 
 import gstestgs
 import gsconf
