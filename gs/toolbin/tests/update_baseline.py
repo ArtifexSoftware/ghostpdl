@@ -13,7 +13,7 @@
 # or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 # San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
-# $Id: update_baseline,v 1.14 2004/09/19 17:05:21 jack Exp $
+# $Id$
 
 #
 # update_baseline <file>

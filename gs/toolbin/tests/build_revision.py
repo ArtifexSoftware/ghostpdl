@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- Mode: python -*-
 
-#    Copyright (C) 2001-2007 Artifex Software Inc.
+#    Copyright (C) 2001-2006 Artifex Software Inc.
 #    All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -12,6 +12,8 @@
 # license.  Refer to licensing information at http://www.artifex.com/
 # or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 # San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+
+# $Id$
 
 # This script builds a revision of gs, including svn update, configure, make, install
 # 
@@ -158,7 +160,7 @@ def update_ghostscript(revision,release,
 
     if options and options.__dict__.has_key("svn") and options.svn:
 
-        product_file = "%ssrc/gscdef.c" % (gsroot)
+        product_file = "%sbase/gscdef.c" % (gsroot)
         if os.path.exists(product_file):
             os.unlink(product_file)
 
@@ -168,7 +170,7 @@ def update_ghostscript(revision,release,
         logMessage(message,update_stdout_file,revision,printMessage=False)
         logMessage(message,cumulative_file,revision)
 
-        host="http://svn.ghostscript.com:8080/ghostscript/trunk/gs "
+        host="http://svn.ghostscript.com/ghostscript/trunk/gs "
 
         if os.path.exists(gsroot):
             revisionarg="-r"+revision+" "
@@ -216,6 +218,9 @@ def update_ghostscript(revision,release,
         if revision == "HEAD":
             installpath=gsconf.installtree
             command="./autogen.sh --prefix=" + installpath
+            # HACK: configuring with cups support makes the build script
+            # try to install outside of prefix. Disable for now.
+            command+=" --disable-cups"
         else:
             command="./autogen.sh"
             

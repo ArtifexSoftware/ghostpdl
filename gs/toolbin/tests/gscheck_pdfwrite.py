@@ -2,7 +2,7 @@
 
 #    Copyright (C) 2001-2004 Artifex Software Inc.
 #    All Rights Reserved.
-#  
+#
 # This software is provided AS-IS with no warranty, either express or
 # implied.
 #
@@ -26,6 +26,7 @@ import os, stat
 import calendar, string, time
 import gstestutils
 import gsconf, gstestgs, gsparamsets, gssum, gsutil
+import shutil
 
 class GSPDFWriteCompareTestCase(gstestgs.GhostscriptTestCase):
     def shortDescription(self):
@@ -88,7 +89,8 @@ class GSPDFWriteCompareTestCase(gstestgs.GhostscriptTestCase):
 	    self.fail("non-zero exit code trying to rasterize " + file1)
 
         if os.path.exists(file1):
-            os.unlink(file1)
+            shutil.move(file1, gsconf.datadir+"/raster.daily")
+#           os.unlink(file1)
         else:
 	    self.fail("output file "+file1+" was not created for input file: " + file1)
             
@@ -96,14 +98,15 @@ class GSPDFWriteCompareTestCase(gstestgs.GhostscriptTestCase):
             sum = gssum.make_sum(file2)
             if not sum:
                 self.fail("no checksum for output file "+file2+" was not created for input file: " + self.file)
-            os.unlink(file2)
+            shutil.move(file2, gsconf.datadir+"/raster.daily")
+#           os.unlink(file2)
         else:
 	    self.fail("output file "+file2+" was not created for input file: " + file2)
 	
 	# add test result to daily database
 	if self.track_daily:
             if gsconf.__dict__.has_key("checksumdb") and gsconf.checksumdb:
-                dbname=gsconf.dailydir+gsconf.checksumdb+".db"
+                dbname=gsconf.dailydir+gsconf.checksumdb # mhw+".db"
             else:
                 dbname=gsconf.get_dailydb_name()
             gssum.add_file(file2, dbname=dbname, sum=sum)

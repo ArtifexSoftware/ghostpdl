@@ -49,6 +49,6 @@ def parse_config(file=configdir+"testing.cfg"):
 
 
 def get_dailydb_name():
-    return dailydir + time.strftime("%Y%m%d", time.localtime()) + ".db"
+    return dailydir + time.strftime("%Y%m%d", time.localtime()) # mhw + ".db"
 
 parse_config()
