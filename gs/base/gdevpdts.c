@@ -18,6 +18,7 @@
 #include "gx.h"
 #include "gserrors.h"
 #include "gdevpdfx.h"
+#include "gdevpdfg.h"
 #include "gdevpdtx.h"
 #include "gdevpdtf.h"		/* for pdfont->FontType */
 #include "gdevpdts.h"
