@@ -161,6 +161,7 @@ gsrect_h=$(GLSRC)gsrect.h $(gxfixed_h)
 gxalloc_h=$(GLSRC)gxalloc.h $(gsalloc_h) $(gxobj_h)
 gxbitops_h=$(GLSRC)gxbitops.h $(gsbitops_h)
 gxcindex_h=$(GLSRC)gxcindex.h $(gsbitops_h)
+gxfont42_h=$(GLSRC)gxfont42.h
 
 # Streams
 scommon_h=$(GLSRC)scommon.h $(gsmemory_h) $(gstypes_h) $(gsstype_h)
