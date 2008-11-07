@@ -189,7 +189,7 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool has_shape)
 	int width = x1 - x0;
 	byte *buf_plane = buf->data + x0 - buf->rect.p.x + (y0 - buf->rect.p.y) * buf->rowstride;
 	int i;
-	int n_chan_copy = buf->n_chan + (tos->has_shape ? 1 : 0);
+	int n_chan_copy = buf->n_planes;
 
         sprintf(file_name,"%d)BackDropInit_%dx%dx%d.raw",global_index,width,y1-y0,n_chan_copy);
         fid = fopen(file_name,"wb");
