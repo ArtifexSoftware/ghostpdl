@@ -214,11 +214,35 @@ gs_begin_transparency_group(gs_state *pgs,
     params.opacity = pgs->opacity;
     params.shape = pgs->shape;
     params.blend_mode = pgs->blend_mode;
-    /*
-     * We are currently doing nothing with the colorspace.  Currently
-     * the blending colorspace is based upon the processs color model
-     * of the output device.
-     */
+
+    /* The blending procs must be based upon the current color space */
+    /* Note:  This function is called during the c-list writer side. 
+       Store some information so that we know what the color space is
+       so that we can adjust according later during the clist reader */ 
+
+    /* ToDo:  CIE and ICC cases */
+
+    switch (cs_num_components(pgs->color_space)) {
+        case 1:				
+            params.group_color = GRAY_SCALE;       
+            params.group_color_numcomps = 1;  /* Need to check */
+            break;
+        case 3:				
+            params.group_color = DEVICE_RGB;       
+            params.group_color_numcomps = 3; 
+            break;
+        case 4:				
+            params.group_color = DEVICE_CMYK;       
+            params.group_color_numcomps = 4; 
+        break;
+        default:
+            /* ToDo:  Need to see about sep color spaces
+               and transparency */
+        return_error(gs_error_rangecheck);
+        break;
+
+     }    
+
     params.bbox = *pbbox;
     return gs_state_update_pdf14trans(pgs, &params);
 }
@@ -237,6 +261,11 @@ gx_begin_transparency_group(gs_imager_state * pis, gx_device * pdev,
     tgp.Knockout = pparams->Knockout;
     tgp.idle = pparams->idle;
     tgp.mask_id = pparams->mask_id;
+
+    /* Needed so that we do proper blending */
+    tgp.group_color = pparams->group_color;
+    tgp.group_color_numcomps = pparams->group_color_numcomps;
+
     pis->opacity.alpha = pparams->opacity.alpha;
     pis->shape.alpha = pparams->shape.alpha;
     pis->blend_mode = pparams->blend_mode;
@@ -335,7 +364,7 @@ gs_begin_transparency_mask(gs_state * pgs,
     params.replacing = ptmp->replacing;
     /* Note that the SMask buffer may have a different 
        numcomps than the device buffer */
-    params.smask_numcomps = cs_num_components(pgs->color_space);
+    params.group_color_numcomps = cs_num_components(pgs->color_space);
 
     /* Sample the transfer function */
     for (i = 0; i < MASK_TRANSFER_FUNCTION_SIZE; i++) {
@@ -346,7 +375,6 @@ gs_begin_transparency_mask(gs_state * pgs,
 	params.transfer_fn[i] = (byte)floor((double)(out * 255 + 0.5));
     }
 
-
     /* If we have a CIE space & a luminosity subtype
        we will need to do our concretization
        to CIEXYZ so that we can obtain the proper 
@@ -356,39 +384,44 @@ gs_begin_transparency_mask(gs_state * pgs,
     /* The blending procs are currently based upon the device type.
        We need to have them based upon the current color space */
 
+    /* Note:  This function is called during the c-list writer side. */ 
+
     if ( params.SMask_is_CIE && params.subtype == TRANSPARENCY_MASK_Luminosity ){
 
         /* Install Color Space to go to CIEXYZ */
         
         int ok;
         ok = gx_cie_to_xyz_alloc2(pgs->color_space,pgs);
-        params.smask_numcomps = 3;  /* CIEXYZ */
+        params.group_color_numcomps = 3;  /* CIEXYZ */
 
         /* Mark the proper spaces so that we make
          * the appropriate changes in the device */
 
-        params.child_color = CIE_XYZ;
+        params.group_color = CIE_XYZ;
 
     } else {
 
-        /* Set the chile type, which may be 
-         *  different than the device type.
-         * this is the conflict we are fixing */
+        /* Set the group color type, which may be 
+         *  different than the device type */
 
         switch (cs_num_components(pgs->color_space)) {
             case 1:				
-                params.child_color = GRAY_SCALE;       
-                params.smask_numcomps = 1;  /* Need to check */
+                params.group_color = GRAY_SCALE;       
+                params.group_color_numcomps = 1;  /* Need to check */
                 break;
             case 3:				
-                params.child_color = DEVICE_RGB;       
-                params.smask_numcomps = 3; 
+                params.group_color = DEVICE_RGB;       
+                params.group_color_numcomps = 3; 
                 break;
             case 4:				
-                params.child_color = DEVICE_CMYK;       
-                params.smask_numcomps = 4; 
+                params.group_color = DEVICE_CMYK;       
+                params.group_color_numcomps = 4; 
 	        break;
-            default:			
+            default:
+                /* Transparency soft mask spot
+                   colors are NEVER available. 
+                   We must use the alternate tint
+                   transform */
 	        return_error(gs_error_rangecheck);
 	        break;
 
@@ -399,6 +432,8 @@ gs_begin_transparency_mask(gs_state * pgs,
     return gs_state_update_pdf14trans(pgs, &params);
 }
 
+/* This occurs on the c-list reader side */
+
 int
 gx_begin_transparency_mask(gs_imager_state * pis, gx_device * pdev,
 				const gs_pdf14trans_params_t * pparams)
@@ -406,10 +441,10 @@ gx_begin_transparency_mask(gs_imager_state * pis, gx_device * pdev,
     gx_transparency_mask_params_t tmp;
     const int l = sizeof(pparams->Background[0]) * pparams->Background_components;
 
-    tmp.child_color = pparams->child_color;
+    tmp.group_color = pparams->group_color;
     tmp.subtype = pparams->subtype;
     tmp.SMask_is_CIE = pparams->SMask_is_CIE;
-    tmp.smask_numcomps = pparams->smask_numcomps;
+    tmp.group_color_numcomps = pparams->group_color_numcomps;
     tmp.Background_components = pparams->Background_components;
     memcpy(tmp.Background, pparams->Background, l);
     tmp.GrayBackground = pparams->GrayBackground;

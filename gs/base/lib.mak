@@ -449,6 +449,7 @@ gxpcolor_h=$(GLSRC)gxpcolor.h\
 gscolor_h=$(GLSRC)gscolor.h $(gxtmap_h)
 gsstate_h=$(GLSRC)gsstate.h\
  $(gscolor_h) $(gscpm_h) $(gscsel_h) $(gsdevice_h) $(gsht_h) $(gsline_h)
+gscolorbuffer_h=$(GLSRC)gscolorbuffer.h
 
 gzacpath_h=$(GLSRC)gzacpath.h $(GLSRC)gxcpath.h
 gzcpath_h=$(GLSRC)gzcpath.h $(gxcpath_h) $(gzpath_h)
@@ -2476,6 +2477,12 @@ $(GLOBJ)gsncdummy.$(OBJ) : $(GLSRC)gsncdummy.c $(GXERR) $(math__h)\
 	$(memory__h) $(gscdefs_h) $(gscspace_h) $(gscie_h) $(gsicc_h)\
 	$(gxdevice_h) $(gzstate_h) $(gsutil_h) $(gxcie_h) $(gsncdummy_h)
 	$(GLCC) $(GLO_)gsncdummy.$(OBJ) $(C_) $(GLSRC)gsncdummy.c
+	
+# ---------------- Color Buffer Processing Support ---------------- #
+
+$(GLOBJ)gscolorbuffer.$(OBJ) : $(GLSRC)gscolorbuffer.c $(GXERR)\
+	$(stdpre_h) $(gstypes_h)
+	$(GLCC) $(GLO_)gscolorbuffer.$(OBJ) $(C_) $(GLSRC)gscolorbuffer.c
 
 # ================ Display Postscript extensions ================ #
 
@@ -2589,7 +2596,7 @@ $(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(GXERR) $(math__h) $(memory__h)\
  $(gscdefs_h) $(gxdevice_h) $(gsdevice_h) $(gsstruct_h) $(gscoord_h) $(gxistate_h) $(gxdcolor_h)\
  $(gxiparam_h) $(gstparam_h) $(gxblend_h) $(gxtext_h) $(gsdfilt_h) $(gsimage_h)\
  $(gsrect_h) $(gzstate_h) $(gdevdevn_h) $(gdevp14_h) $(gsovrc_h) $(gxcmap_h) $(gscolor1_h)\
- $(gstrans_h) $(gsutil_h) $(gxcldev_h) $(gxclpath_h) $(gxdcconv_h) $(vdtrace_h)
+ $(gstrans_h) $(gsutil_h) $(gxcldev_h) $(gxclpath_h) $(gxdcconv_h) $(vdtrace_h) $(gscolorbuffer_h)
 	$(GLCC) $(GLO_)gdevp14.$(OBJ) $(C_) $(GLSRC)gdevp14.c
 
 translib_=$(GLOBJ)gstrans.$(OBJ) $(GLOBJ)gximag3x.$(OBJ)\

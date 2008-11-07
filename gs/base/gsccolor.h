@@ -64,4 +64,17 @@ extern_st(st_client_color);
     client_color_enum_ptrs, client_color_reloc_ptrs, pattern)
 #define st_client_color_max_ptrs 1
 
+/* Define the color space for a transparency */
+/* Used to keep track of parent versus child */
+/* color space changes with Smask and for */
+/* blending */
+typedef enum {
+    GRAY_SCALE,
+    DEVICE_RGB,
+    DEVICE_CMYK,
+    CIE_XYZ,
+    OTHER
+} gs_transparency_color_t;
+
+
 #endif /* gsccolor_INCLUDED */

@@ -86,6 +86,8 @@ struct pdf14_buf_s {
     uint mask_id;
 
     pdf14_parent_color_t parent_color_info_procs;
+
+    gs_transparency_color_t color_space;  /* Different groups can have different spaces for blending */
 };
 
 struct pdf14_ctx_s {

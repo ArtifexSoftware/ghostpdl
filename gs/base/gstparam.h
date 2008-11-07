@@ -79,12 +79,14 @@ typedef struct gs_function_s gs_function_t;
 
 /* (Update gs_trans_group_params_init if these change.) */
 typedef struct gs_transparency_group_params_s {
-    const gs_color_space *ColorSpace;
+    const gs_color_space *ColorSpace;  /* I can't see where this is ever used */  
     bool Isolated;
     bool Knockout;
     bool image_with_SMask;
     bool idle;
     uint mask_id;
+    int group_color_numcomps;
+    gs_transparency_color_t group_color;
 } gs_transparency_group_params_t;
 
 /* Define the parameter structure for a transparency mask. */
@@ -92,18 +94,6 @@ typedef enum {
     TRANSPARENCY_MASK_Alpha,
     TRANSPARENCY_MASK_Luminosity
 } gs_transparency_mask_subtype_t;
-
-/* Define the color space for a transparency */
-/* Used to keep track of parent versus child */
-/* color space changes with Smask and for */
-/* blending */
-typedef enum {
-    GRAY_SCALE,
-    DEVICE_RGB,
-    DEVICE_CMYK,
-    CIE_XYZ,
-    OTHER
-} gs_transparency_color_t;
 
 #define GS_TRANSPARENCY_MASK_SUBTYPE_NAMES\
   "Alpha", "Luminosity"
@@ -126,8 +116,8 @@ typedef struct gs_transparency_mask_params_s {
 typedef struct gx_transparency_mask_params_s {
     gs_transparency_mask_subtype_t subtype;
     bool SMask_is_CIE;
-    int smask_numcomps;
-    gs_transparency_color_t child_color;
+    int group_color_numcomps;
+    gs_transparency_color_t group_color;
     int Background_components;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
     float GrayBackground;

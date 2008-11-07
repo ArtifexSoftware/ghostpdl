@@ -93,8 +93,8 @@ struct gs_pdf14trans_params_s {
     bool idle; /* For clist reader.*/
     uint mask_id; /* For clist reader.*/
     bool SMask_is_CIE;
-    int smask_numcomps;
-    gs_transparency_color_t child_color;
+    int group_color_numcomps;
+    gs_transparency_color_t group_color;
 };
 
 #ifndef gs_pdf14trans_params_DEFINED
