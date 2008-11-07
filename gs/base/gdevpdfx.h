@@ -26,13 +26,10 @@
 #include "spprint.h"
 #include "gdevpsdf.h"
 #include "gxdevmem.h"
+#include "sarc4.h"
 
 #define FINE_GLYPH_USAGE 1 /* Old code = 0, new code = 1 */
 
-#ifndef stream_arcfour_state_DEFINED
-#define stream_arcfour_state_DEFINED
-typedef struct stream_arcfour_state_s stream_arcfour_state;
-#endif
 
 /* ---------------- Acrobat limitations ---------------- */
 
