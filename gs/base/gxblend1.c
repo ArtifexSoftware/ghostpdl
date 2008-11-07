@@ -145,11 +145,6 @@ void
 pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool has_shape)
 {
 
-#if RAW_DUMP
-    char file_name[50];
-    FILE *fid;
-#endif
-
     /* make copy of backdrop for compositing */
     int x0 = max(buf->rect.p.x, tos->rect.p.x);
     int x1 = min(buf->rect.q.x, tos->rect.q.x);
@@ -183,31 +178,18 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool has_shape)
 
 #if RAW_DUMP
 
-
-
     if (x0 < x1 && y0 < y1) {
-	int width = x1 - x0;
-	byte *buf_plane = buf->data + x0 - buf->rect.p.x + (y0 - buf->rect.p.y) * buf->rowstride;
-	int i;
-	int n_chan_copy = buf->n_planes;
+        
+        byte *buf_plane = buf->data + x0 - buf->rect.p.x + 
+            (y0 - buf->rect.p.y) * buf->rowstride;
 
-        sprintf(file_name,"%d)BackDropInit_%dx%dx%d.raw",global_index,width,y1-y0,n_chan_copy);
-        fid = fopen(file_name,"wb");
+        dump_raw_buffer(y1-y0, x1 - x0, buf->n_planes,
+                    buf->planestride, buf->rowstride, 
+                    "BackDropInit",buf_plane);
 
-	for (i = 0; i < n_chan_copy; i++) {
-		byte *buf_ptr = buf_plane;
-		int y;
+        global_index++;
 
-		for (y = y0; y < y1; ++y) {
-                        fwrite(buf_ptr,sizeof(unsigned char),width,fid);
-			buf_ptr += buf->rowstride;
-		}
-		buf_plane += buf->planestride;
-	    }
     }
-    global_index++;
-    fclose(fid);
-
 
 #endif
 
@@ -247,17 +229,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     int nos_shape_offset = n_chan * nos_planestride;
     bool nos_has_shape = nos->has_shape;
     byte *mask_tr_fn = NULL; /* Quiet compiler. */
-
-#if RAW_DUMP
-    char file_nameTOS[50];
-    char file_nameNOS[50];
-    char file_nameMask[50];
-    byte *MYtos_ptr;
-    byte *MYnos_ptr;
-    byte  *Mymask_ptr;
-    byte   *Composed_ptr;
-    FILE *fidTOS,*fidNOS,*fidMask;
-#endif
+    byte *composed_ptr = NULL;
 
     rect_merge(nos->bbox, tos->bbox);
 
@@ -277,58 +249,23 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     }
 
 #if RAW_DUMP
-        MYtos_ptr = tos_ptr;
-        MYnos_ptr = nos_ptr;
-        Mymask_ptr = mask_ptr;
-        Composed_ptr = nos_ptr;
 
-        sprintf(file_nameTOS,"%d)ImageTOS_%dx%dx%d.raw",global_index,width,y1-y0,n_chan);
-        sprintf(file_nameNOS,"%d)ImageNOS_%dx%dx%d.raw",global_index,width,y1-y0,n_chan);
-        sprintf(file_nameMask,"%d)Mask_%dx%dx1.raw",global_index,width,y1-y0);
+    composed_ptr = nos_ptr;
 
-        fidTOS = fopen(file_nameTOS,"wb");
-        fidNOS = fopen(file_nameNOS,"wb");
- 	 if (Mymask_ptr != NULL)
-              fidMask = fopen(file_nameMask,"wb");
+    dump_raw_buffer(y1-y0, width, tos->n_planes,
+            tos_planestride, tos->rowstride, 
+            "ImageTOS",tos_ptr);
 
-        for (y = y0; y < y1; ++y) {
-	    for (x = 0; x < width; ++x) {
+    dump_raw_buffer(y1-y0, width, nos->n_planes,
+                nos_planestride, nos->rowstride, 
+                "ImageNOS",nos_ptr);
 
-	        /* Complement the components for subtractive color spaces */
-	        if (additive) {
-		    for (i = 0; i < n_chan; ++i) {
-		        tos_pixel[i] = MYtos_ptr[x + i * tos_planestride];
-		        nos_pixel[i] = MYnos_ptr[x + i * nos_planestride];
-		    }
-	        } else {
-		    for (i = 0; i < num_comp; ++i) {
-		        tos_pixel[i] = 255 - MYtos_ptr[x + i * tos_planestride];
-		        nos_pixel[i] = 255 - MYnos_ptr[x + i * nos_planestride];
-		    }
-		    tos_pixel[num_comp] = MYtos_ptr[x + num_comp * tos_planestride];
-		    nos_pixel[num_comp] = MYnos_ptr[x + num_comp * nos_planestride];
-	        }
+    if(maskbuf != NULL){
 
- 	    if (Mymask_ptr != NULL)
-                fwrite(&(Mymask_ptr[x]),sizeof(unsigned char),1,fidMask);
-
-              fwrite(&(tos_pixel),sizeof(unsigned char),n_chan,fidTOS);
-              fwrite(&(nos_pixel),sizeof(unsigned char),n_chan,fidNOS);
-
-            }
-
-            MYtos_ptr += tos->rowstride;
-	    MYnos_ptr += nos->rowstride;
-	    if (Mymask_ptr != NULL)
-	        Mymask_ptr += maskbuf->rowstride;
-
-        }
-
-        fclose(fidTOS);
-        fclose(fidNOS);
-        if (Mymask_ptr != NULL)
-            fclose(fidMask);
-
+        dump_raw_buffer(y1-y0, width, maskbuf->n_planes,
+                        maskbuf->planestride, maskbuf->rowstride, 
+                        "Mask",mask_ptr);
+    }
 
 #endif
 
@@ -428,37 +365,13 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
 
 
 #if RAW_DUMP
-        sprintf(file_nameNOS,"%d)Composed_%dx%dx%d.raw",global_index,width,y1-y0,n_chan);
 
-        fidNOS = fopen(file_nameNOS,"wb");
- 
-        for (y = y0; y < y1; ++y) {
-	    for (x = 0; x < width; ++x) {
+    dump_raw_buffer(y1-y0, width, n_chan,
+                nos_planestride, nos->rowstride, 
+                "Composed",composed_ptr);
 
-	        /* Complement the components for subtractive color spaces */
-	        if (additive) {
-		    for (i = 0; i < n_chan; ++i) {
-		        nos_pixel[i] = Composed_ptr[x + i * nos_planestride];
-		    }
-	        } else {
-		    for (i = 0; i < num_comp; ++i) {
-		        nos_pixel[i] = 255 - Composed_ptr[x + i * nos_planestride];
-		    }
-		    nos_pixel[num_comp] = Composed_ptr[x + num_comp * nos_planestride];
-	        }
+    global_index++;
 
-              fwrite(&(nos_pixel),sizeof(unsigned char),n_chan,fidNOS);
-
-            }
-
-            Composed_ptr += nos->rowstride;
-
-        }
-
-        fclose(fidNOS);
-
-        global_index++;
- 
 
 #endif
 

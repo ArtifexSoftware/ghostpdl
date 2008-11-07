@@ -757,13 +757,6 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
  
     pdf14_buf *buf;
     
-#if RAW_DUMP
-    FILE *fid;
-    char file_name[50];
-    const byte *Buf_ptr;
-    int z,num_rows,y;
-#endif
-
     if_debug2('v', "[v]pdf14_push_transparency_mask, idle=%d, replacing=%d\n", idle, replacing);
     if (replacing && ctx->maskbuf != NULL) {
 	if (ctx->maskbuf->maskbuf != NULL) {
@@ -809,29 +802,16 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 
 
 #if RAW_DUMP
+  
+    /* Dump the current buffer to see what we have. */
 
-    /* Dump the current buffer to see what we have */
+    dump_raw_buffer(ctx->stack->rect.q.y-ctx->stack->rect.p.y, 
+                ctx->stack->rowstride, ctx->stack->n_planes,
+                ctx->stack->planestride, ctx->stack->rowstride, 
+                "Raw_Buf_PreSmask",ctx->stack->data);
 
-    num_rows = ctx->stack->rect.q.y-ctx->stack->rect.p.y;
-    sprintf(file_name,"%d)Raw_Buf_PreSmask_%dx%dx%d.raw",global_index,ctx->stack->rowstride,num_rows,ctx->stack->n_planes);
-    fid = fopen(file_name,"wb");
-
-    for (z = 0; z < ctx->stack->n_planes; ++z) {
-
-        Buf_ptr = &(ctx->stack->data[z*ctx->stack->planestride]);
-    
-        for ( y = 0; y < num_rows; y++ ) {
-
-            fwrite(Buf_ptr,sizeof(unsigned char),ctx->stack->rowstride,fid);
-
-            Buf_ptr += ctx->stack->rowstride;
-
-        }
-
-    }
-
-    fclose(fid);
     global_index++;
+
 
 #endif
 
@@ -2015,7 +1995,6 @@ pdf14_begin_transparency_mask(gx_device	*dev,
 			      gs_transparency_state_t **ppts,
 			      gs_memory_t *mem)
 {
-    pdf14_device *pdevproto;
     pdf14_device *pdev = (pdf14_device *)dev;
     byte bg_alpha = 0;
     byte *transfer_fn = (byte *)gs_alloc_bytes(pdev->ctx->memory, 256,

@@ -44,30 +44,13 @@ Smask_Luminosity_Mapping(int num_rows, int num_cols, int n_chan, int row_stride,
     byte *dstptr;
 
 #if RAW_DUMP
-    FILE *fid;
-    char file_name[50];
-    const byte *Mymask_ptr;
-    int z;
 
-    sprintf(file_name,"%d)Raw_Mask_%dx%dx%d.raw",global_index,row_stride,num_rows,n_chan);
-    fid = fopen(file_name,"wb");
-
-    for (z = 0; z < n_chan; ++z) {
-
-        Mymask_ptr = &(src[z*plane_stride]);
-    
-        for ( y = 0; y < num_rows; y++ ) {
-
-            fwrite(Mymask_ptr,sizeof(unsigned char),row_stride,fid);
-
-            Mymask_ptr += row_stride;
-
-        }
-
-    }
+    dump_raw_buffer(num_rows, row_stride, n_chan,
+                plane_stride, row_stride, 
+                "Raw_Mask", src);
 
     global_index++;
-    fclose(fid);
+
 #endif
 
     dstptr = dst;
@@ -1427,3 +1410,47 @@ art_pdf_composite_knockout_8(byte *dst,
 }
 
 
+
+#if RAW_DUMP
+
+/* Debug dump of buffer data from pdf14 device.  Saved in
+   planar form with global indexing and tag information in
+   file name */
+
+void
+dump_raw_buffer(int num_rows, int width, int n_chan,
+                int plane_stride, int rowstride, 
+                char filename[],byte *Buffer)
+
+{
+    char full_file_name[50];
+    FILE *fid;
+    int z,y;
+    byte *buff_ptr;
+
+    buff_ptr = Buffer;
+
+    sprintf(full_file_name,"%d)%s_%dx%dx%d.raw",global_index,filename,width,num_rows,n_chan);
+    fid = fopen(full_file_name,"wb");
+
+    for (z = 0; z < n_chan; ++z) {
+
+        /* grab pointer to the next plane */
+
+        buff_ptr = &(Buffer[z*plane_stride]);
+    
+        for ( y = 0; y < num_rows; y++ ) {
+
+            /* write out each row */
+            fwrite(buff_ptr,sizeof(unsigned char),width,fid);
+
+            buff_ptr += rowstride;
+
+        }
+
+    }
+
+}
+
+
+#endif
