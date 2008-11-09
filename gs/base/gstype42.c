@@ -309,7 +309,9 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
 							"gs_type42_font_init");
 	if (pfont->data.len_glyphs == 0)
 	    return_error(gs_error_VMerror);
-	gs_font_notify_register((gs_font *)pfont, gs_len_glyphs_release, (void *)pfont);
+	code = gs_font_notify_register((gs_font *)pfont, gs_len_glyphs_release, (void *)pfont);
+	if (code < 0)
+	    return code;
      
 	/* The 'loca' may not be in order, so we construct a glyph length array */
 	/* Since 'loca' is usually sorted, first try the simple linear scan to  */
@@ -654,7 +656,8 @@ gs_type42_get_outline_from_TT_file(gs_font_type42 * pfont, stream *s, uint glyph
 }
 
 uint
-gs_type42_substitute_glyph_index_vertical(gs_font_type42 *pfont, uint glyph_index)
+gs_type42_substitute_glyph_index_vertical(gs_font_type42 *pfont, uint glyph_index,
+					  int WMode, gs_glyph cid)
 {   /* A rough trial implementation, possibly needs improvements or optimization. */
     /* Fixme: optimize : Initialize subtable_ptr when the font is defined. */
     byte *gsub_ptr = pfont->data.gsub;
@@ -739,6 +742,9 @@ gs_type42_substitute_glyph_index_vertical(gs_font_type42 *pfont, uint glyph_inde
     GSUB gsub;
     LookupListTable lookup_list_table;
     byte *lookup_list_ptr;
+
+    if (WMode == 0)
+	return glyph_index;
 
     /* GSUB header */
     gsub.Version = u32(gsub_ptr + offset_of(GSUB, Version));
@@ -885,8 +891,12 @@ gs_type42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matri
 	glyph_index = glyph - GS_MIN_GLYPH_INDEX;
     else {
 	glyph_index = pfont->data.get_glyph_index(pfont, glyph);
-	if (WMode && pfont->data.gsub_size)
-	    glyph_index = gs_type42_substitute_glyph_index_vertical(pfont, glyph_index);
+	if (pfont->data.gsub_size) {
+	    if (pfont->data.substitute_glyph_index_vertical != NULL)
+		glyph_index = pfont->data.substitute_glyph_index_vertical(pfont, glyph_index, WMode, glyph);
+	    else
+		glyph_index = gs_type42_substitute_glyph_index_vertical(pfont, glyph_index, WMode, glyph);
+	}
     }
     code = gx_lookup_fm_pair(font, pmat, &log2_scale, design_grid, &pair);
     if (code < 0)
@@ -981,8 +991,14 @@ gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	glyph_index = pfont->data.get_glyph_index(pfont, glyph);
 	if (glyph_index == GS_NO_GLYPH)
 	    return_error(gs_error_undefined);
-	if ((members & (GLYPH_INFO_WIDTH1 | GLYPH_INFO_VVECTOR1)) && pfont->data.gsub_size)
-	    glyph_index = gs_type42_substitute_glyph_index_vertical(pfont, glyph_index);
+	if (pfont->data.gsub_size) {
+	    int WMode = ((members & (GLYPH_INFO_WIDTH1 | GLYPH_INFO_VVECTOR1)) ? 1 : 0);
+
+	    if (pfont->data.substitute_glyph_index_vertical != NULL)
+		glyph_index = pfont->data.substitute_glyph_index_vertical(pfont, glyph_index, WMode, glyph);
+	    else
+		glyph_index = gs_type42_substitute_glyph_index_vertical(pfont, glyph_index, WMode, glyph);
+	}
     }
     return gs_type42_glyph_info_by_gid(font, glyph, pmat, members, info, glyph_index);
 

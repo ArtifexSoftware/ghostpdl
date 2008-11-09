@@ -67,10 +67,12 @@ public_st_gs_font_cid2();
 static
 ENUM_PTRS_WITH(font_cid2_enum_ptrs, gs_font_cid2 *pfcid2)
 {
-    if (index < st_gs_font_cid_data_num_ptrs)
+    if (index < st_gs_font_cid2_own_ptrs)
+	ENUM_PTR(0, gs_font_cid2, subst_CID_on_WMode);
+    if (index < st_gs_font_cid_data_num_ptrs + st_gs_font_cid2_own_ptrs)
 	return ENUM_USING(st_gs_font_cid_data, &pfcid2->cidata.common,
-			  sizeof(gs_font_cid_data), index);
-    ENUM_PREFIX(st_gs_font_type42, st_gs_font_cid_data_num_ptrs);
+			  sizeof(gs_font_cid_data), index - st_gs_font_cid2_own_ptrs);
+    ENUM_PREFIX(st_gs_font_type42, st_gs_font_cid_data_num_ptrs + st_gs_font_cid2_own_ptrs);
 }
 ENUM_PTRS_END
 static
@@ -78,6 +80,7 @@ RELOC_PTRS_WITH(font_cid2_reloc_ptrs, gs_font_cid2 *pfcid2);
     RELOC_PREFIX(st_gs_font_type42);
     RELOC_USING(st_gs_font_cid_data, &pfcid2->cidata.common,
 		sizeof(st_gs_font_cid_data));
+    RELOC_VAR(pfcid2->subst_CID_on_WMode);
 RELOC_PTRS_END
 
 /* GC descriptor for allocating FDArray for CIDFontType 0 fonts. */
@@ -86,6 +89,34 @@ gs_private_st_ptr(st_gs_font_type1_ptr, gs_font_type1 *, "gs_font_type1 *",
 gs_public_st_element(st_gs_font_type1_ptr_element, gs_font_type1 *,
   "gs_font_type1 *[]", font1_ptr_element_enum_ptrs,
   font1_ptr_element_reloc_ptrs, st_gs_font_type1_ptr);
+
+/* GC descriptor for allocating FDArray for subst_CID_on_WMode. */
+
+ENUM_PTRS_WITH(subst_CID_on_WMode_enum_ptrs, gs_subst_CID_on_WMode_t *subst) return 0;
+    case 0: return ENUM_OBJ(subst->rc.memory);
+    case 1: return ENUM_OBJ(subst->data[0]);
+    case 2: return ENUM_OBJ(subst->data[1]);
+ENUM_PTRS_END
+static RELOC_PTRS_WITH(subst_CID_on_WMode_reloc_ptrs, gs_subst_CID_on_WMode_t *subst)
+{
+    RELOC_VAR(subst->data[0]);
+    RELOC_VAR(subst->data[1]);
+    RELOC_VAR(subst->rc.memory);
+} RELOC_PTRS_END
+
+static int
+subst_CID_on_WMode_finalize(void *data)
+{
+    gs_subst_CID_on_WMode_t *subst = (gs_subst_CID_on_WMode_t *)data;
+
+    gs_free_object(subst->rc.memory, subst->data + 0, "subst_CID_on_WMode_finalize");
+    subst->data[0] = NULL;
+    gs_free_object(subst->rc.memory, subst->data + 1, "subst_CID_on_WMode_finalize");
+    subst->data[1] = NULL;
+    return 0;
+}
+
+public_st_subst_CID_on_WMode();
 
 /*
  * The CIDSystemInfo of a CMap may be null.  We represent this by setting

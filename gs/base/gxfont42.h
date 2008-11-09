@@ -75,6 +75,8 @@ struct gs_type42_data_s {
     int (*get_metrics)(gs_font_type42 *pfont, uint glyph_index, 
 			gs_type42_metrics_options_t options,
 			float *sbw_bbox/* See comment for gs_type42_default_get_metrics */);
+     uint (*substitute_glyph_index_vertical)(gs_font_type42 *pfont, uint glyph_index,
+					  int WMode, gs_glyph glyph);
 
     /* The following are cached values. */
     ulong cmap;			/* offset to cmap table (not used by */
@@ -172,6 +174,6 @@ int gs_type42_font_info(gs_font *font, const gs_point *pscale, int members,
 int gs_truetype_font_info(gs_font *font, const gs_point *pscale, int members,
 	   gs_font_info_t *info);
 
-uint gs_type42_substitute_glyph_index_vertical(gs_font_type42 *pfont, uint glyph_index);
-
+uint gs_type42_substitute_glyph_index_vertical(gs_font_type42 *pfont, uint glyph_index,
+					  int WMode, gs_glyph glyph);
 #endif /* gxfont42_INCLUDED */

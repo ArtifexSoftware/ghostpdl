@@ -2019,7 +2019,7 @@ $(GLOBJ)gzspotan.$(OBJ) : $(GLSRC)gzspotan.c $(GXERR)\
 # -------- Composite (PostScript Type 0) font support -------- #
 
 gxcid_h=$(GLSRC)gxcid.h $(gsstype_h)
-gxfcid_h=$(GLSRC)gxfcid.h $(gxcid_h) $(gxfont_h) $(gxfont42_h)
+gxfcid_h=$(GLSRC)gxfcid.h $(gxcid_h) $(gxfont_h) $(gxfont42_h) $(gsrefct_h)
 gxfcmap_h=$(GLSRC)gxfcmap.h $(gsfcmap_h) $(gsuid_h) $(gxcid_h)
 gxfcmap1_h=$(GLSRC)gxfcmap1.h $(gxfcmap_h)
 gxfont0c_h=$(GLSRC)gxfont0c.h $(gxfcid_h) $(gxfont0_h)
