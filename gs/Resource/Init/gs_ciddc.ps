@@ -14,7 +14,7 @@
 % San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 % $Id$
-% Define Decoding and CIDDecoding resource categories and related procsets.
+% Define SubstCID, Decoding and CIDDecoding resource categories and related procsets.
 
 languagelevel 2 .setlanguagelevel
 currentglobal true setglobal
@@ -209,6 +209,15 @@ begin
 
 currentdict end
 /CIDDecoding exch /Category defineresource pop
+
+%----------------SubstCID category----------------------------
+
+/Generic /Category findresource dup length dict copy
+begin
+  /Category /SubstCID def
+  /InstanceType /dicttype def
+currentdict end
+/SubstCID exch /Category defineresource pop
 
 setglobal
 .setlanguagelevel

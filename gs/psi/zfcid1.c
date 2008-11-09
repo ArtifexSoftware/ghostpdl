@@ -21,6 +21,7 @@
 #include "gsstruct.h"
 #include "gsgcache.h"
 #include "gxfcid.h"
+#include "gxfcache.h"
 #include "bfont.h"
 #include "icid.h"
 #include "idict.h"
@@ -254,7 +255,84 @@ z11_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pma
 				   pmat, ppath, sbw);
 }
 
+static int 
+get_subst_CID_on_WMode(gs_subst_CID_on_WMode_t *subst, ref *t, int WMode)
+{
+    ref r, *a, e;;
+
+    make_int(&r, WMode);
+    if (dict_find(t, &r, &a) > 0 && r_type(a) == t_array) {
+	int n = r_size(a), i; 
+	uint *s;
+
+	s = (uint *)gs_alloc_byte_array(subst->rc.memory, n, sizeof(int), "zbuildfont11");
+	if (subst == NULL)
+	    return_error(e_VMerror);
+	for (i = 0; i < n; i++) {
+	    array_get(subst->rc.memory, a, (long)i, &e);
+	    if (r_type(&e) != t_integer)
+		return_error(e_invalidfont);
+	    s[i] = e.value.intval;
+	}
+	subst->data[WMode] = s;
+	subst->size[WMode] = n;
+    }
+    return 0;
+}
+
+static GS_NOTIFY_PROC(release_subst_CID_on_WMode);
+
+static int
+release_subst_CID_on_WMode(void *data, void *event)
+{
+    gs_font_cid2 *pfcid = (gs_font_cid2 *)data;
+    gs_subst_CID_on_WMode_t *subst = pfcid->subst_CID_on_WMode;
+
+    gs_font_notify_unregister((gs_font *)pfcid, release_subst_CID_on_WMode, data);
+    pfcid->subst_CID_on_WMode = NULL;
+    rc_adjust(subst, -2, "release_subst_CID_on_WMode");
+    return 0;
+}
+
+static uint 
+font11_substitute_glyph_index_vertical(gs_font_type42 *pfont, uint glyph_index,
+					  int WMode, gs_glyph glyph)
+{
+    gs_font_cid2 *pfcid = (gs_font_cid2 *)pfont;
+    uint cid = (glyph >= GS_MIN_CID_GLYPH ? glyph - GS_MIN_CID_GLYPH : glyph);
+    int WMode1 = !WMode;\
+    gs_subst_CID_on_WMode_t *s = pfcid->subst_CID_on_WMode;
+    
+    if (s != NULL) {
+	uint *subst = s->data[WMode1];
+	int bi, ei, i;
+
+	/* Binary search for cid in subst (2-int elements) : */
+	bi = 0;
+	ei = pfcid->subst_CID_on_WMode->size[WMode1];
+
+	if (ei > 0) {
+	    for (;;) {
+		i = ((bi + ei) / 2) & ~1;
+		if (subst[i] == cid) {
+		    WMode = WMode1;
+		    break;
+		}
+		if (bi + 2 >= ei)
+		    break;
+		if (subst[i] > cid)
+		    ei = i;
+		else
+		    bi = i;
+	    }
+	}
+    }
+    return gs_type42_substitute_glyph_index_vertical(pfont, glyph_index, WMode, glyph);
+}
+
 /* ------ Defining ------ */
+
+extern_st(st_subst_CID_on_WMode);
 
 /* <string|name> <font_dict> .buildfont11 <string|name> <font> */
 static int
@@ -265,7 +343,7 @@ zbuildfont11(i_ctx_t *i_ctx_p)
     gs_font_type42 *pfont;
     gs_font_cid2 *pfcid;
     int MetricsCount;
-    ref rcidmap, ignore_gdir, file, *pfile, cfnstr, *pCIDFontName, CIDFontName;
+    ref rcidmap, ignore_gdir, file, *pfile, cfnstr, *pCIDFontName, CIDFontName, *t;
     ulong loca_glyph_pos[2][2];
     int code = cid_font_data_param(op, &common, &ignore_gdir);
 
@@ -343,10 +421,50 @@ zbuildfont11(i_ctx_t *i_ctx_p)
     if (code < 0)
 	return code;
     pfcid = (gs_font_cid2 *)pfont;
+    if (dict_find_string(op, "subst_CID_on_WMode", &t) > 0 && r_type(t) == t_dictionary) {
+	gs_subst_CID_on_WMode_t *subst = NULL;
+	ref *o;
+	gs_font *font;
+
+	if (dict_find_string(t, "Ordering", &o) <= 0 || r_type(o) != t_string)
+	    return_error(e_invalidfont);
+	for (font = ifont_dir->orig_fonts; font != NULL; font = font->next) {
+	    if (font->FontType == ft_CID_TrueType) {
+		gs_font_cid2 *pfcid1 = (gs_font_cid2 *)font;
+		if (pfcid1->subst_CID_on_WMode != NULL &&
+		    bytes_compare(o->value.const_bytes, r_size(o),
+			    pfcid1->cidata.common.CIDSystemInfo.Ordering.data, 
+			    pfcid1->cidata.common.CIDSystemInfo.Ordering.size)) {
+		    subst = pfcid1->subst_CID_on_WMode;
+		    break;
+		}
+	    }
+	}
+	if (subst == NULL) {
+	    rc_alloc_struct_1(subst, gs_subst_CID_on_WMode_t, &st_subst_CID_on_WMode, 
+			    pfcid->memory, return_error(e_VMerror), "zbuildfont11");
+	    subst->data[0] = subst->data[1] = 0;
+	    pfcid->subst_CID_on_WMode = subst;
+	    code = get_subst_CID_on_WMode(subst, t, 0);
+	    if (code < 0)
+		return code;
+	    code = get_subst_CID_on_WMode(subst, t, 1);
+	    if (code < 0)
+		return code;
+	} else {
+	    pfcid->subst_CID_on_WMode = subst;
+	    rc_increment(subst);
+	}
+	code = gs_font_notify_register((gs_font *)pfcid, release_subst_CID_on_WMode, (void *)pfcid);
+	if (code < 0)
+	    return code;
+	rc_increment(subst);
+   }
     pfcid->cidata.common = common;
     pfcid->cidata.MetricsCount = MetricsCount;
     ref_assign(&pfont_data(pfont)->u.type42.CIDMap, &rcidmap);
     pfcid->cidata.CIDMap_proc = z11_CIDMap_proc;
+    pfcid->data.substitute_glyph_index_vertical = font11_substitute_glyph_index_vertical;
     pfont->procs.enumerate_glyph = z11_enumerate_glyph;
     pfont->procs.glyph_info = z11_glyph_info;
     pfont->procs.glyph_outline = z11_glyph_outline;

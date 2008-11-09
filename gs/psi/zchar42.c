@@ -164,8 +164,9 @@ ztype42execchar(i_ctx_t *i_ctx_p)
 	return code;
     cnref = op - 1;
     glyph_index = (uint)op->value.intval;
-    if (gs_rootfont(igs)->WMode && pfont42->data.gsub_size)
-	glyph_index = gs_type42_substitute_glyph_index_vertical(pfont42, glyph_index);
+    if (pfont42->data.gsub_size)
+	glyph_index = pfont42->data.substitute_glyph_index_vertical(pfont42, glyph_index,
+		gs_rootfont(igs)->WMode, penum->returned.current_glyph);
     code = zchar42_set_cache(i_ctx_p, pbfont, cnref, glyph_index, cont, &exec_cont, true);
     if (code >= 0 && exec_cont != 0)
 	code = (*exec_cont)(i_ctx_p);
@@ -242,8 +243,9 @@ type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
 	}
     }
     glyph_index = (uint)opc->value.intval;
-    if (gs_rootfont(igs)->WMode && pfont42->data.gsub_size)
-	glyph_index = gs_type42_substitute_glyph_index_vertical(pfont42, glyph_index);
+    if (pfont42->data.gsub_size)
+	glyph_index = pfont42->data.substitute_glyph_index_vertical(pfont42, glyph_index, 
+		    gs_rootfont(igs)->WMode, penum->returned.current_glyph);
     /*
      * We have to disregard penum->pis and penum->path, and render to
      * the current gstate and path.  This is a design bug that we will
