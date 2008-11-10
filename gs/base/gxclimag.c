@@ -917,7 +917,7 @@ clist_create_compositor(gx_device * dev,
 	if (code < 0)
 	    return code;
     }
-    {
+    if (cdev->cropping_min < cdev->cropping_max) {
 	/* The pdf14 compositor could be applied 
 	   only to bands covered by the pcte->params.bbox. */
 	cmd_rects_enum_t re;
