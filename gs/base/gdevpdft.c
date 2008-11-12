@@ -395,6 +395,7 @@ gdev_pdf_begin_transparency_mask(gx_device *dev,
 
 int
 gdev_pdf_end_transparency_mask(gx_device *dev,
+    gs_imager_state *pis,
     gs_transparency_mask_t **pptm)
 {
     return 0;
