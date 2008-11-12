@@ -2478,7 +2478,7 @@ $(GLOBJ)gsncdummy.$(OBJ) : $(GLSRC)gsncdummy.c $(GXERR) $(math__h)\
 	$(gxdevice_h) $(gzstate_h) $(gsutil_h) $(gxcie_h) $(gsncdummy_h)
 	$(GLCC) $(GLO_)gsncdummy.$(OBJ) $(C_) $(GLSRC)gsncdummy.c
 	
-# ---------------- Color Buffer Processing Support ---------------- #
+# ---------------- Color Buffer Proc. Support Used In Trans. ---------------- #
 
 $(GLOBJ)gscolorbuffer.$(OBJ) : $(GLSRC)gscolorbuffer.c $(GXERR)\
 	$(stdpre_h) $(gstypes_h)
@@ -2601,7 +2601,7 @@ $(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(GXERR) $(math__h) $(memory__h)\
 
 translib_=$(GLOBJ)gstrans.$(OBJ) $(GLOBJ)gximag3x.$(OBJ)\
  $(GLOBJ)gxblend.$(OBJ) $(GLOBJ)gxblend1.$(OBJ) $(GLOBJ)gdevp14.$(OBJ) $(GLOBJ)gdevdevn.$(OBJ)\
- $(GLOBJ)gdevdcrd.$(OBJ)
+ $(GLOBJ)gdevdcrd.$(OBJ) $(GLOBJ)gscolorbuffer.$(OBJ)
 $(GLD)translib.dev : $(LIB_MAK) $(ECHOGS_XE) $(translib_)\
  $(GLD)cspixlib.dev $(GLD)bboxutil.dev $(GLD)cielib.dev
 	$(SETMOD) $(GLD)translib $(translib_)
