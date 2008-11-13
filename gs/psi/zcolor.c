@@ -4918,9 +4918,6 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 		if (code < 0)
 		    return code;
 
-		code = dict_find_string(&ICCdict, "Alternate", &altref);
-		if (code < 0)
-		    return code;
 		code = dict_find_string(&ICCdict, "N", &tempref);
 		if (code < 0)
 		    return code;
@@ -4928,7 +4925,8 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 
 		/* Don't allow ICCBased spaces if NOCIE is true */
 		if (nocie->value.boolval) {
-		    if (r_type(altref) != t_null) {
+		    dict_find_string(&ICCdict, "Alternate", &altref); /* Alternate is optional */
+		    if ((altref != NULL) && (r_type(altref) != t_null)) {
 			/* The PDF interpreter sets a null Alternate. If we have an
 			 * Alternate, and its not null, and NOCIE is true, then use the 
 			 * Alternate instead of the ICC
@@ -4997,8 +4995,10 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 		    code = seticc(i_ctx_p, components, op, (float *)&range);
 		    if (code < 0) {
 			/* Our dictionary still on operand stack, we can reuse the
-			 * slot on the stack to hold hte alternate space.
+			 * slot on the stack to hold the alternate space.
 			 */
+			if (altref == NULL)
+			    make_null(altref);		/* no Alternate -- just use null */
 			ref_assign(op, altref);
 			/* If CIESubst, we are already substituting for CIE, so use nosubst 
 			 * to prevent further substitution!
@@ -5040,7 +5040,7 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 		if (code < 0) {
     		    code = dict_find_string(&ICCdict, "Alternate", &altref);
 		    if (code < 0)
-			return code;
+			make_null(altref);	/* no Alternate -- just use null */
 		    /* Our dictionary still on operand stack, we can reuse the
 		     * slot on the stack to hold the alternate space.
 		     */
