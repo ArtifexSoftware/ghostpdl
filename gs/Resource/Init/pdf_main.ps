@@ -1567,7 +1567,15 @@ currentdict /PDF2PS_matrix_key undef
   grestore
   % Draw the annotations
   //systemdict /ShowAnnots .knownget not { //true } if {
-    /Annots knownoget { { oforce drawannot } forall } if
+    /Annots knownoget {
+      { oforce
+        dup //null ne {
+          drawannot
+        } {
+          pop
+        } ifelse
+      } forall
+    } if
   } if
   //systemdict /ShowAcroForm .knownget { //true eq } { //false } ifelse {
     Trailer /Root oget /AcroForm knownoget { draw_acro_form } if
@@ -1663,11 +1671,17 @@ currentdict /PDF2PS_matrix_key undef
 /annotsusetransparency {	% <page dict> annotsusetransparency <bool>
    //false exch			% Assume no transparency
    /Annots knownoget {		% Get Annots array
-     { oforce /AP knownoget {	% Get appearance dict for the annoation
-         /N knownogetdict { 	% Get the /N (i.e. normal) appearance stream
-           4 dict exch resourceusestransparency { pop //true exit } if
-         } if
-       } if  			% If AP dict known
+     {
+       oforce
+       dup //null ne {
+         /AP knownoget {	% Get appearance dict for the annoation
+           /N knownogetdict { 	% Get the /N (i.e. normal) appearance stream
+             4 dict exch resourceusestransparency { pop //true exit } if
+           } if
+         } if  			% If AP dict known
+       } {
+         pop
+       } ifelse
      } forall			% For all annots on the page
    } if
 } bind def
@@ -1744,12 +1758,17 @@ currentdict /PDF2PS_matrix_key undef
 %	<spotcolordict> <loopdict> <annotsarray>
 % 		 annotsspotcolors <spotcolordict> <loopdict>
 /annotsspotcolors {
-  { oforce /AP knownoget {	% Get appearance dict for the annoation
-      /N knownogetdict {		% Get the /N (i.e. normal) appearance stream
-        resourcespotcolors
-      } if			% If normal appearance streamknown
-    } if			% If AP dict known
-  } forall
+  { oforce
+    dup //null ne {
+      /AP knownoget {	% Get appearance dict for the annoation
+        /N knownogetdict {		% Get the /N (i.e. normal) appearance stream
+          resourcespotcolors
+        } if			% If normal appearance streamknown
+      } if			% If AP dict known
+    } { 
+      pop
+    } ifelse
+ } forall
 } bind def
 
 % Determine spot colors are used within a page.  We are creating a dict to
