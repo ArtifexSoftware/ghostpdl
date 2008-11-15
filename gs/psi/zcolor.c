@@ -4994,19 +4994,49 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 		    ref_assign(op, &ICCdict);
 		    code = seticc(i_ctx_p, components, op, (float *)&range);
 		    if (code < 0) {
-			/* Our dictionary still on operand stack, we can reuse the
-			 * slot on the stack to hold the alternate space.
-			 */
-			if (altref == NULL)
-			    make_null(altref);		/* no Alternate -- just use null */
-			ref_assign(op, altref);
-			/* If CIESubst, we are already substituting for CIE, so use nosubst 
-			 * to prevent further substitution!
-			 */
-			if (CIESubst) 
-			    return setcolorspace_nosubst(i_ctx_p);
-			else
-			    return zsetcolorspace(i_ctx_p);
+			if (altref) {
+			    /* We have a /Alternate in the ICC space */
+			    /* Our ICC dictionary still on operand stack, we can reuse the
+			     * slot on the stack to hold the alternate space.
+			     */
+			    ref_assign(op, (ref *)&altref);
+			    /* If CIESubst, we are already substituting for CIE, so use nosubst 
+			     * to prevent further substitution!
+			     */
+			    if (CIESubst) 
+				return setcolorspace_nosubst(i_ctx_p);
+			    else
+				return zsetcolorspace(i_ctx_p);
+			} else {
+			    /* We have no /Alternate in the ICC space, use hte /N key to
+			     * determine an 'appropriate' default space.
+			     */
+			    int stage1 = 1, cont1 = 0;
+			    switch(components) {
+				case 1:
+				    code = setgrayspace(i_ctx_p, (ref *)0x00, &stage1, &cont1, 1);
+				    if (code != 0)
+					return code;
+				    *stage = 0;
+				    break;
+				case 3:
+				    code = setrgbspace(i_ctx_p, (ref *)0x00, &stage1, &cont1, 1);
+				    if (code != 0)
+					return code;
+				    *stage = 0;
+				    break;
+				case 4:
+				    code = setcmykspace(i_ctx_p, (ref *)0x00, &stage1, &cont1, 1);
+				    if (code != 0)
+					return code;
+				    *stage = 0;
+				    break;
+				default:
+				    return_error(e_rangecheck);
+				    break;
+			    }
+			}
+			pop(1);
 		    }
 		    if (code != 0)
 			return code;
