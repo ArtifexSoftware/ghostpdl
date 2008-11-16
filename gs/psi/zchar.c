@@ -665,7 +665,7 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
 		    uint glyph_index = pfont42->data.get_glyph_index(pfont42, glyph);
 
 		    code = zchar42_set_cache(i_ctx_p, (gs_font_base *)pfont42, 
-				    &cnref, glyph_index, cont, &exec_cont, false);
+				    &cnref, glyph_index, cont, &exec_cont);
 		} else if (pfont->FontType == ft_CID_encrypted)
 		    code = z1_set_cache(i_ctx_p, (gs_font_base *)pfont, 
 				    &cnref, glyph, cont, &exec_cont);

@@ -39,7 +39,7 @@
 /* Get a Type 42 character metrics and set the cache device. */
 int
 zchar42_set_cache(i_ctx_t *i_ctx_p, gs_font_base *pbfont, ref *cnref, 
-	    uint glyph_index, op_proc_t cont, op_proc_t *exec_cont, bool put_lsb)
+	    uint glyph_index, op_proc_t cont, op_proc_t *exec_cont)
 {   double sbw[4];
     double w[2];
     int present;
@@ -93,7 +93,6 @@ zchar42_set_cache(i_ctx_t *i_ctx_p, gs_font_base *pbfont, ref *cnref,
 	    sbw[2] = 0;
 	    sbw[3] = sbw_bbox[3];
 	}
-	present = metricsSideBearingAndWidth;
     } else {
 	/* Always call get_metrics because we'll need glyph bbox below in any case 
 	   as a workaround for Dynalab fonts. We can't recognize Dynalab here. */
@@ -112,7 +111,6 @@ zchar42_set_cache(i_ctx_t *i_ctx_p, gs_font_base *pbfont, ref *cnref,
 	    sbw[2] = sbw_bbox[2];
 	    sbw[3] = sbw_bbox[3];
 	}
-	present = metricsSideBearingAndWidth;
     }
     w[0] = sbw[2];
     w[1] = sbw[3];
@@ -129,8 +127,7 @@ zchar42_set_cache(i_ctx_t *i_ctx_p, gs_font_base *pbfont, ref *cnref,
     bbox.q.x = max(sbw_bbox[6], pbfont->FontBBox.q.x);
     bbox.q.y = max(sbw_bbox[7], pbfont->FontBBox.q.y);
     return zchar_set_cache(i_ctx_p, pbfont, cnref,
-			   (put_lsb && present == metricsSideBearingAndWidth ?
-			    sbw : NULL),
+			   NULL,
 			   w, &bbox,
 			   cont, exec_cont,
 			   gs_rootfont(igs)->WMode ? sbw : NULL);
@@ -192,7 +189,7 @@ ztype42execchar(i_ctx_t *i_ctx_p)
 	make_int(&substituted_cid, glyph_index);
 	cnref = &substituted_cid;
     }
-    code = zchar42_set_cache(i_ctx_p, pbfont, cnref, glyph_index, cont, &exec_cont, true);
+    code = zchar42_set_cache(i_ctx_p, pbfont, cnref, glyph_index, cont, &exec_cont);
     if (code >= 0 && exec_cont != 0)
 	code = (*exec_cont)(i_ctx_p);
     return code;
@@ -218,7 +215,6 @@ type42_stroke(i_ctx_t *i_ctx_p)
 {
     return type42_finish(i_ctx_p, gs_stroke);
 }
-/* <font> <code|name> <name> <glyph_index> <sbx> <sby> %type42_{fill|stroke} - */
 /* <font> <code|name> <name> <glyph_index> %type42_{fill|stroke} - */
 static int
 type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
@@ -228,22 +224,9 @@ type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
     gs_font_type42 *pfont42;
     int code;
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
-    double sbxy[2];
-    gs_point sbpt;
-    gs_point *psbpt = 0;
     os_ptr opc = op;
     uint glyph_index;
 
-    if (!r_has_type(op - 3, t_dictionary)) {
-	check_op(6);
-	code = num_params(op, 2, sbxy);
-	if (code < 0)
-	    return code;
-	sbpt.x = sbxy[0];
-	sbpt.y = sbxy[1];
-	psbpt = &sbpt;
-	opc -= 2;
-    }
     check_type(*opc, t_integer);
     code = font_param(opc - 3, &pfont);
     if (code < 0)
@@ -261,7 +244,7 @@ type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
 	    name_string_ref(imemory, opc - 1, &gref);
 	    if ((gref.tas.rsize == 7 && strncmp((const char *)gref.value.const_bytes, ".notdef", 7) == 0) || 
 		(gref.tas.rsize > 9 && strncmp((const char *)gref.value.const_bytes, ".notdef~GS", 10) == 0)) {
-		pop((psbpt == 0 ? 4 : 6));
+		pop(4);
 		return (*cont)(igs);
 	    }
 	}
@@ -280,7 +263,7 @@ type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
 			    (penum->text.operation & TEXT_DO_ANY_CHARPATH) != 0);
     if (code < 0)
 	return code;
-    pop((psbpt == 0 ? 4 : 6));
+    pop(4);
     return (*cont)(igs);
 }
 
