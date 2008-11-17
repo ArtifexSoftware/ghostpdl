@@ -656,7 +656,7 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
 		subfont->FontType == ft_encrypted2)) {
 		gs_font *f = pte->orig_font;
 
-		adjust_first_last_char(pdfont, (byte *)str.data, 1);
+		adjust_first_last_char(pdfont, (byte *)str.data, str.size);
 
 		/* Make sure we use the descendant font, not the original type 0 ! */
 		pte->orig_font = subfont;
