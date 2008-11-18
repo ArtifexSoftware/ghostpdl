@@ -20,7 +20,7 @@ GLGENDIR=.\obj
 GLOBJDIR=.\obj
 
 # location of ghostscript source code.
-GLSRCDIR=..\..\gs\src
+GLSRCDIR=..\..\gs\base
 
 # sigh.  will we ever fix this?  Definitions to force gx_color_index
 # to 64 bits and define GSLITE.

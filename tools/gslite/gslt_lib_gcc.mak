@@ -11,7 +11,7 @@ GLGENDIR=./obj
 GLOBJDIR=./obj
 
 # location of ghostscript source code.
-GLSRCDIR=../../gs/src
+GLSRCDIR=../../gs/base
 
 # sigh.  will we ever fix this?
 GX_COLOR_INDEX_DEFINE=-DGX_COLOR_INDEX_TYPE="unsigned long long"
