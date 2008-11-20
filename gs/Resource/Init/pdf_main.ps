@@ -697,9 +697,6 @@ pdfdict begin
      } loop			% Loop to previous trailer
    } ifelse			% Ifelse readxref stopped
 
-   % Check for recursion in the page tree. Bug 689954, MOAB-06-01-2007
-   verify_page_tree
-
    % Scan numbers in the range 2147483648..4294967295 in Encrypt dictionary
    % as unsigned integers for compatibility with Acrobat Reader. Bug 689010.
    << /PDFScanUnsigned //true >> setuserparams
@@ -710,6 +707,9 @@ pdfdict begin
    } stopped
    << /PDFScanUnsigned //false >> setuserparams
    { stop } if
+
+   % Check for recursion in the page tree. Bug 689954, MOAB-06-01-2007
+   verify_page_tree
 
    currentdict end
  } bind def
