@@ -847,7 +847,7 @@ currentdict /no_debug_dict undef
     } if
     1 index exch /File exch put
   } ifelse
-  PDFsource token_nofail not { null } if
+  PDFsource token_nofail not { //null } if
   dup /endobj eq {
     % Another case that Acrobat Reader handles -- 'endobj' without 'endstream'.
     (   **** Warning: stream missing 'endstream'.\n) pdfformaterror
@@ -857,7 +857,12 @@ currentdict /no_debug_dict undef
     (   **** Warning: stream Length incorrect.\n) pdfformaterror
     dup /Length undef % prevent the use of the incorrect length.
     cvx endobj exit   % exit from .pdfrun now.
-  } if
+  } {
+    PDFsource (??) .peekstring pop (>>) eq { % Bug 690161, sample #1
+      (   **** Warning: Spurious '>>' after 'emdstream' ignored.\n) pdfformaterror
+      PDFsource (12) readstring pop pop
+    } if
+  } ifelse
   cvx
 } bind def
 /endstream {
