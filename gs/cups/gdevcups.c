@@ -592,7 +592,7 @@ private void
 cups_get_matrix(gx_device *pdev,	/* I - Device info */
                 gs_matrix *pmat)	/* O - Physical transform matrix */
 {
-  eprintf2("DEBUG2: cups_get_matrix(%p, %p)\n", pdev, pmat);
+  dprintf2("DEBUG2: cups_get_matrix(%p, %p)\n", pdev, pmat);
 
  /*
   * Set the raster width and height...
@@ -605,13 +605,13 @@ cups_get_matrix(gx_device *pdev,	/* I - Device info */
   * Set the transform matrix...
   */
 
-  dprintf1("DEBUG: cups->header.Duplex = %d\n", cups->header.Duplex);
-  dprintf1("DEBUG: cups->page = %d\n", cups->page);
+  dprintf1("DEBUG2: cups->header.Duplex = %d\n", cups->header.Duplex);
+  dprintf1("DEBUG2: cups->page = %d\n", cups->page);
 
   if (cupsPPD)
   {
-    dprintf1("DEBUG: cupsPPD = %p\n", cupsPPD);
-    dprintf1("DEBUG: cupsPPD->flip_duplex = %d\n", cupsPPD->flip_duplex);
+    dprintf1("DEBUG2: cupsPPD = %p\n", cupsPPD);
+    dprintf1("DEBUG2: cupsPPD->flip_duplex = %d\n", cupsPPD->flip_duplex);
   }
 
   if (cups->landscape)
@@ -674,15 +674,15 @@ cups_get_matrix(gx_device *pdev,	/* I - Device info */
   }
 #endif /* CUPS_RASTER_SYNCv1 */
 
-  dprintf2("DEBUG: width = %d, height = %d\n", cups->width,
+  dprintf2("DEBUG2: width = %d, height = %d\n", cups->width,
 	   cups->height);
-  dprintf4("DEBUG: PageSize = [ %d %d ], HWResolution = [ %d %d ]\n",
+  dprintf4("DEBUG2: PageSize = [ %d %d ], HWResolution = [ %d %d ]\n",
 	   cups->header.PageSize[0], cups->header.PageSize[1],
 	   cups->header.HWResolution[0], cups->header.HWResolution[1]);
-  dprintf4("DEBUG: HWMargins = [ %.3f %.3f %.3f %.3f ]\n",
+  dprintf4("DEBUG2: HWMargins = [ %.3f %.3f %.3f %.3f ]\n",
 	   pdev->HWMargins[0], pdev->HWMargins[1], pdev->HWMargins[2],
 	   pdev->HWMargins[3]);
-  dprintf6("DEBUG: matrix = [ %.3f %.3f %.3f %.3f %.3f %.3f ]\n",
+  dprintf6("DEBUG2: matrix = [ %.3f %.3f %.3f %.3f %.3f %.3f ]\n",
 	   pmat->xx, pmat->xy, pmat->yx, pmat->yy, pmat->tx, pmat->ty);
 }
 
@@ -951,7 +951,7 @@ cups_get_space_params(const gx_device_printer *pdev,
   else
     cache_size = 8 * 1024 * 1024;
 
-  dprintf1("DEBUG: cache_size = %.0f\n", cache_size);
+  dprintf1("DEBUG2: cache_size = %.0f\n", cache_size);
 
   space_params->MaxBitmap   = (int)cache_size;
   space_params->BufferSpace = (int)cache_size / 10;
@@ -1952,7 +1952,7 @@ cups_map_color_rgb(gx_device      *pdev,/* I - Device info */
 #  endif /* CUPS_RASTER_HAVE_COLORIMETRIC */
   }
 
-  dprintf3("%d,%d,%d\n", prgb[0], prgb[1], prgb[2]);
+  dprintf3("DEBUG2: RGB values: %d,%d,%d\n", prgb[0], prgb[1], prgb[2]);
 
   return (0);
 }
@@ -2525,7 +2525,7 @@ cups_open(gx_device *pdev)		/* I - Device info */
 
   if (cups->page == 0)
   {
-    eprintf("INFO: Processing page 1...\n");
+    dprintf("INFO: Processing page 1...\n");
     cups->page = 1;
   }
 
@@ -2676,7 +2676,7 @@ cups_print_pages(gx_device_printer *pdev,
   gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)dst, cups->header.cupsBytesPerLine, 1, "cups_print_pages");
 
   cups->page ++;
-  eprintf1("INFO: Processing page %d...\n", cups->page);
+  dprintf1("INFO: Processing page %d...\n", cups->page);
 
   return (0);
 }
@@ -3096,7 +3096,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
       * Device is open, so reallocate...
       */
 
-      dprintf4("DEBUG: Reallocating memory, [%.0f %.0f] = %dx%d pixels...\n",
+      dprintf4("DEBUG2: Reallocating memory, [%.0f %.0f] = %dx%d pixels...\n",
 	       pdev->MediaSize[0], pdev->MediaSize[1], width, height);
 
       sp = ((gx_device_printer *)pdev)->space_params;
@@ -3408,8 +3408,8 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
 #endif /* DEBUG */
   }
 
-  dprintf1("DEBUG: cupsEncodeLUT[0] = %d\n", (int)cupsEncodeLUT[0]);
-  dprintf2("DEBUG: cupsEncodeLUT[%d] = %d\n", gx_max_color_value,
+  dprintf1("DEBUG2: cupsEncodeLUT[0] = %d\n", (int)cupsEncodeLUT[0]);
+  dprintf2("DEBUG2: cupsEncodeLUT[%d] = %d\n", gx_max_color_value,
 	   (int)cupsEncodeLUT[gx_max_color_value]);
 
   for (i = 0; i < cups->color_info.dither_grays; i ++)
@@ -3444,7 +3444,7 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
                m[0] + 0, m[0] + 1, m[0] + 2,
                m[1] + 0, m[1] + 1, m[1] + 2,
                m[2] + 0, m[2] + 1, m[2] + 2) != 11)
-      dprintf("DEBUG: User-defined profile does not contain 11 integers!\n");
+      dprintf("ERROR: User-defined profile does not contain 11 integers!\n");
     else
     {
       cupsHaveProfile = 1;
@@ -3543,7 +3543,7 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
 private int				/* O - Error status */
 cups_sync_output(gx_device *pdev)	/* I - Device info */
 {
-  eprintf1("INFO: Processing page %d...\n", cups->page);
+  dprintf1("INFO: Processing page %d...\n", cups->page);
 
   return (0);
 }
@@ -3592,7 +3592,7 @@ cups_print_chunked(gx_device_printer *pdev,
 
     if (gdev_prn_get_bits((gx_device_printer *)pdev, y, src, &srcptr) < 0)
     {
-      eprintf1("ERROR: Unable to get scanline %d!\n", y);
+      dprintf1("ERROR: Unable to get scanline %d!\n", y);
       gs_exit(gs_lib_ctx_get_non_gc_memory_t(), 1);
     }
 
@@ -3785,7 +3785,7 @@ cups_print_banded(gx_device_printer *pdev,
 
     if (gdev_prn_get_bits((gx_device_printer *)pdev, y, src, &srcptr) < 0)
     {
-      eprintf1("ERROR: Unable to get scanline %d!\n", y);
+      dprintf1("ERROR: Unable to get scanline %d!\n", y);
       gs_exit(gs_lib_ctx_get_non_gc_memory_t(), 1);
     }
 
@@ -4435,7 +4435,7 @@ cups_print_planar(gx_device_printer *pdev,
 
       if (gdev_prn_get_bits((gx_device_printer *)pdev, y, src, &srcptr) < 0)
       {
-	eprintf1("ERROR: Unable to get scanline %d!\n", y);
+	dprintf1("ERROR: Unable to get scanline %d!\n", y);
 	gs_exit(gs_lib_ctx_get_non_gc_memory_t(), 1);
       }
 
