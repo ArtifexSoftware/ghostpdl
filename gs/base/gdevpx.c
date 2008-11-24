@@ -1792,6 +1792,7 @@ pclxl_put_params(gx_device     *dev,	/* I - Device info */
 
   booloption(Duplex, "Duplex")
   intoption(MediaPosition, "MediaPosition", int)
+  if (code == 0) xdev->MediaPosition_set = true;
   booloption(Tumble, "Tumble")
 
  /*

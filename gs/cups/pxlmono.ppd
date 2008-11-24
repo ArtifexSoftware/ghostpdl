@@ -147,6 +147,7 @@
 *OpenUI *Resolution/Output Resolution: PickOne
 *OrderDependency: 20 AnySetup *Resolution
 *DefaultResolution: 600dpi
+*Resolution 150dpi/150 DPI: "<</HWResolution[150 150]>>setpagedevice"
 *Resolution 300dpi/300 DPI: "<</HWResolution[300 300]>>setpagedevice"
 *Resolution 600dpi/600 DPI: "<</HWResolution[600 600]>>setpagedevice"
 *Resolution 1200dpi/1200 DPI: "<</HWResolution[1200 1200]>>setpagedevice"
