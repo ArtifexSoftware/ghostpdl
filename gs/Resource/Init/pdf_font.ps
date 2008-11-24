@@ -506,9 +506,12 @@ currentdict end readonly def
 
         //false resolvestream
         //ToUnicodeCMapReader begin
-           % Following Acrobat we ignore everything outside begincmap..endcmap.
-           dup 0 (begincmap) /SubFileDecode filter flushfile
+           % Following Acrobat we ignore everything outside
+           %   begincodespacerange .. endcmap.
+           dup 0 (begincodespacerange) /SubFileDecode filter flushfile
            /CIDInit /ProcSet findresource begin 12 dict begin
+           /CMapType 2 def
+           mark exch % emulate 'begincodespacerange'
            0 (endcmap) /SubFileDecode filter cvx /begincmap cvx exch 2 .execn
            endcmap 
            userdict /.lastToUnicode currentdict put
