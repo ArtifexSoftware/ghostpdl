@@ -382,6 +382,10 @@ int xps_parse_color(xps_context_t *ctx, char *hexstring, gs_color_space **csp, f
 int xps_set_color(xps_context_t *ctx, gs_color_space *colorspace, float *samples);
 int xps_parse_icc_profile(xps_context_t *ctx, gs_color_space **csp, byte *data, int length, int ncomp);
 
+int xps_element_has_transparency(xps_context_t *ctx, xps_item_t *node);
+int xps_resource_dictionary_has_transparency(xps_context_t *ctx, xps_item_t *node);
+
+
 /*
  * Static XML resources.
  */
