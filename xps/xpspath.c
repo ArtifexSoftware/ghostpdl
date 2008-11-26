@@ -897,6 +897,7 @@ int
 xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 {
     xps_item_t *node;
+    int code;
 
     char *transform_att;
     char *clip_att;
@@ -1107,7 +1108,9 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	if (data_tag)
 	    xps_parse_path_geometry(ctx, dict, data_tag, 0);
 
-	xps_parse_brush(ctx, dict, fill_tag);
+	code = xps_parse_brush(ctx, dict, fill_tag);
+	if (code < 0)
+	    gs_catch(code, "cannot parse fill brush. ignoring error.");
     }
 
     if (stroke_att)
@@ -1135,7 +1138,9 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	ctx->fill_rule = 1; /* over-ride fill rule when converting outline to stroked */
 	gs_strokepath(ctx->pgs);
 
-	xps_parse_brush(ctx, dict, stroke_tag);
+	code = xps_parse_brush(ctx, dict, stroke_tag);
+	if (code < 0)
+	    gs_catch(code, "cannot parse stroke brush. ignoring error.");
     }
 
     if (clip_att || clip_tag)

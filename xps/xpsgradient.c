@@ -192,7 +192,7 @@ xps_create_gradient_stop_function(xps_context_t *ctx,
 	code = gs_function_ElIn_init(&lfunc, &lparams, ctx->memory);
 	if (code < 0)
 	{
-	    gs_throw(-1, "gs_function_ElIn_init failed");
+	    gs_rethrow(code, "gs_function_ElIn_init failed");
 	    return NULL;
 	}
 
@@ -208,7 +208,7 @@ xps_create_gradient_stop_function(xps_context_t *ctx,
     code = gs_function_1ItSg_init(&sfunc, &sparams, ctx->memory);
     if (code < 0)
     {
-	gs_throw(-1, "gs_function_1ItSg_init failed");
+	gs_rethrow(code, "gs_function_1ItSg_init failed");
 	return NULL;
     }
 
@@ -297,7 +297,7 @@ xps_reverse_function(xps_context_t *ctx, gs_function_t *func, float *fary, void 
     code = gs_function_1ItSg_init(&sfunc, &sparams, ctx->memory);
     if (code < 0)
     {
-	gs_throw(-1, "gs_function_1ItSg_init failed");
+	gs_rethrow(code, "gs_function_1ItSg_init failed");
 	return NULL;
     }
 
@@ -341,7 +341,7 @@ xps_draw_one_radial_gradient(xps_context_t *ctx,
 
     code = gs_shading_R_init(&shading, &params, mem);
     if (code < 0)
-	return gs_throw(-1, "gs_shading_R_init failed");
+	return gs_rethrow(code, "gs_shading_R_init failed");
 
     gs_setsmoothness(ctx->pgs, 0.02);
 
@@ -349,7 +349,7 @@ xps_draw_one_radial_gradient(xps_context_t *ctx,
     if (code < 0)
     {
 	gs_free_object(mem, shading, "gs_shading_R");
-	return gs_throw(-1, "gs_shfill failed");
+	return gs_rethrow(code, "gs_shfill failed");
     }
 
     gs_free_object(mem, shading, "gs_shading_R");
@@ -388,7 +388,7 @@ xps_draw_one_linear_gradient(xps_context_t *ctx,
 
     code = gs_shading_A_init(&shading, &params, mem);
     if (code < 0)
-	return gs_throw(-1, "gs_shading_A_init failed");
+	return gs_rethrow(code, "gs_shading_A_init failed");
 
     gs_setsmoothness(ctx->pgs, 0.02);
 
@@ -396,7 +396,7 @@ xps_draw_one_linear_gradient(xps_context_t *ctx,
     if (code < 0)
     {
 	gs_free_object(mem, shading, "gs_shading_A");
-	return gs_throw(-1, "gs_shfill failed");
+	return gs_rethrow(code, "gs_shfill failed");
     }
 
     gs_free_object(mem, shading, "gs_shading_A");
@@ -782,12 +782,20 @@ xps_parse_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *r
 int
 xps_parse_linear_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 {
-    return xps_parse_gradient_brush(ctx, dict, root, xps_draw_linear_gradient);
+    int code;
+    code = xps_parse_gradient_brush(ctx, dict, root, xps_draw_linear_gradient);
+    if (code < 0)
+	return gs_rethrow(code, "cannot parse linear gradient brush");
+    return gs_okay;
 }
 
 int
 xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 {
-    return xps_parse_gradient_brush(ctx, dict, root, xps_draw_radial_gradient);
+    int code;
+    code = xps_parse_gradient_brush(ctx, dict, root, xps_draw_radial_gradient);
+    if (code < 0)
+	return gs_rethrow(code, "cannot parse radial gradient brush");
+    return gs_okay;
 }
 
