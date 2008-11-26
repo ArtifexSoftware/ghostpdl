@@ -115,6 +115,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     gs_matrix ctm;
     gs_point pt0, pt1;
     gs_rect rc;
+    int has_transparency;
 
     dprintf1("-- drawing page %s --\n", part->name);
 
@@ -188,10 +189,26 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	ctx->bounds = rc;
     }
 
+    /* Pre-parse looking for transparency */
+
+    has_transparency = 0;
+
+    for (node = xps_down(root); node; node = xps_next(node))
+    {
+	if (!strcmp(xps_tag(node), "FixedPage.Resources"))
+	    if (xps_resource_dictionary_has_transparency(ctx, xps_down(node)))
+		has_transparency = 1;
+	if (xps_element_has_transparency(ctx, node))
+	    has_transparency = 1;
+    }
+
+    if (has_transparency)
+	dputs("the page has transparency\n");
+
     /* save the state with the original device before we push */
     gs_gsave(ctx->pgs);
 
-    if (ctx->use_transparency)
+    if (ctx->use_transparency && has_transparency)
     {
 	code = gs_push_pdf14trans_device(ctx->pgs);
 	if (code < 0)
@@ -211,7 +228,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	xps_parse_element(ctx, dict, node);
     }
 
-    if (ctx->use_transparency)
+    if (ctx->use_transparency && has_transparency)
     {
 	code = gs_pop_pdf14trans_device(ctx->pgs);
 	if (code < 0)
