@@ -232,7 +232,7 @@ struct xps_part_s
     int interleave; /* start of last interleave (for crc32 reasons) */
     int capacity;
     int complete;
-    char *data;
+    byte *data;
     xps_relation_t *relations;
     int relations_complete; /* is corresponding .rels part finished? */
     xps_part_t *next;

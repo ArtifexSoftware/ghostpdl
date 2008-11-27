@@ -86,8 +86,6 @@ xps_deobfuscate_font_resource(xps_context_t *ctx, xps_part_t *part)
     char *p;
     int i;
 
-    dprintf1("deobfuscating font '%s'\n", part->name);
-
     p = strrchr(part->name, '/');
     if (!p)
 	p = part->name;

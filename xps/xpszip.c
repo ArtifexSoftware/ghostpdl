@@ -19,6 +19,8 @@
 #define ZIP_DATA_DESC_SIG 0x08074b50
 #define ZIP_CENTRAL_DIRECTORY_SIG 0x02014b50
 
+int xps_zip_trace = 0;
+
 static inline unsigned int
 scan4(byte *buf)
 {
@@ -66,8 +68,8 @@ static inline int
 read8(xps_context_t *ctx, stream_cursor_read *buf)
 {
     int a = read4(ctx, buf);
-    int b = read4(ctx, buf);
-    return a; /* skip high bytes */
+    (void) read4(ctx, buf); /* skip high bytes */
+    return a;
 }
 
 static inline void
@@ -398,6 +400,9 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 
     /* dprintf1("xps_process_data state=%d\n", ctx->zip_state); */
 
+    if (getenv("XPS_ZIP_TRACE"))
+	xps_zip_trace = 1;
+
     while (1)
     {
 	switch (ctx->zip_state)
@@ -416,11 +421,13 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		signature = read4(ctx, buf);
 		if (signature == ZIP_LOCAL_FILE_SIG)
 		{
-		    /* dputs("zip: local file signature\n"); */
+		    if (xps_zip_trace)
+			dputs("zip: local file signature\n");
 		}
 		else if (signature == ZIP_DATA_DESC_SIG)
 		{
-		    /* dputs("zip: data desc signature\n"); */
+		    if (xps_zip_trace)
+			dputs("zip: data desc signature\n");
 		    if (ctx->zip_version >= 45)
 		    {
 			(void) read4(ctx, buf); /* crc32 */
@@ -436,13 +443,15 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		}
 		else if (signature == ZIP_CENTRAL_DIRECTORY_SIG)
 		{
-		    /* dputs("zip: central directory signature\n"); */
+		    if (xps_zip_trace)
+			dputs("zip: central directory signature\n");
 		    ctx->zip_state = -1;
 		    return 0;
 		}
 		else
 		{
-		    /* dprintf1("zip: unknown signature 0x%x\n", signature); */
+		    if (xps_zip_trace)
+			dprintf1("zip: unknown signature 0x%x\n", signature);
 		    ctx->zip_state = -1;
 		    return 0;
 		}
@@ -479,7 +488,8 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		readall(ctx, buf, (byte*)ctx->zip_file_name + 1, ctx->zip_name_length);
 		ctx->zip_file_name[ctx->zip_name_length + 1] = 0;
 
-		/* dprintf1("zip: entry %s\n", ctx->zip_file_name); */
+		if (xps_zip_trace)
+		    dprintf1("zip: entry %s\n", ctx->zip_file_name);
 	    }
 	    ctx->zip_state ++;
 

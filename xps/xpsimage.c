@@ -23,8 +23,6 @@ xps_convert_16_to_8(xps_context_t *ctx, xps_image_t *image)
 	unsigned short *sp = image->samples;
 	unsigned char  *dp = image->samples;
 
-dputs("  converting 16 bit image to 8 bits\n");
-
 	for (y = 0; y < image->height; y++)
 		for (x = 0; x < image->width; x++)
 			for (k = 0; k < n; k++)
@@ -49,8 +47,6 @@ xps_isolate_alpha_channel_8(xps_context_t *ctx, xps_image_t *image)
 	    (image->colorspace != XPS_RGB_A) &&
 	    (image->colorspace != XPS_CMYK_A))
 	return 0;
-
-dputs("  isolating alpha channel (8 bits)\n");
 
     image->alpha = xps_alloc(ctx, image->width * image->height);
     if (!image->alpha)
@@ -93,8 +89,6 @@ xps_isolate_alpha_channel_16(xps_context_t *ctx, xps_image_t *image)
 	    (image->colorspace != XPS_RGB_A) &&
 	    (image->colorspace != XPS_CMYK_A))
 	return 0;
-
-dputs("  isolating alpha channel (16 bits)\n");
 
     image->alpha = xps_alloc(ctx, image->width * image->height * 2);
     if (!image->alpha)
@@ -333,8 +327,6 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 	part->image = xps_alloc(ctx, sizeof(xps_image_t));
 	if (!part->image)
 	    return gs_throw(-1, "out of memory: image struct");
-
-	dprintf1("decoding image brush '%s'\n", image_name);
 
 	code = xps_decode_image(ctx, part, part->image);
 	if (code < 0)

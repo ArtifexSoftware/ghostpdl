@@ -121,7 +121,6 @@ xps_new_font(xps_context_t *ctx, char *buf, int buflen, int index)
 void
 xps_free_font(xps_context_t *ctx, xps_font_t *font)
 {
-    dputs("calling xps_free_font!\n");
     if (font->font)
     {
 	gs_font_finalize(font->font);

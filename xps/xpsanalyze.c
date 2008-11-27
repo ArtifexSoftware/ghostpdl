@@ -21,7 +21,7 @@
 int
 xps_remote_resource_dictionary_has_transparency(xps_context_t *ctx, char *source_att)
 {
-    dputs("page has transparency: uses a remote resource; not parsed; being conservative\n");
+    //dputs("page has transparency: uses a remote resource; not parsed; being conservative\n");
     return 1;
 }
 
@@ -60,7 +60,7 @@ xps_brush_has_transparency(xps_context_t *ctx, xps_item_t *root)
 	{
 	    if (atof(opacity_att) < 1.0)
 	    {
-		dputs("page has transparency: SolidColorBrush Opacity\n");
+		//dputs("page has transparency: SolidColorBrush Opacity\n");
 		return 1;
 	    }
 	}
@@ -71,7 +71,7 @@ xps_brush_has_transparency(xps_context_t *ctx, xps_item_t *root)
 	    xps_parse_color(ctx, color_att, &colorspace, samples);
 	    if (samples[0] < 1.0)
 	    {
-		dputs("page has transparency: SolidColorBrush Color has alpha\n");
+		//dputs("page has transparency: SolidColorBrush Color has alpha\n");
 		return 1;
 	    }
 	}
@@ -84,7 +84,7 @@ xps_brush_has_transparency(xps_context_t *ctx, xps_item_t *root)
 	{
 	    if (atof(opacity_att) < 1.0)
 	    {
-		dputs("page has transparency: VisualBrush Opacity\n");
+		//dputs("page has transparency: VisualBrush Opacity\n");
 		return 1;
 	    }
 	}
@@ -115,7 +115,7 @@ xps_path_has_transparency(xps_context_t *ctx, xps_item_t *root)
     {
 	if (!strcmp(xps_tag(node), "Path.OpacityMask"))
 	{
-	    dputs("page has transparency: Path.OpacityMask\n");
+	    //dputs("page has transparency: Path.OpacityMask\n");
 	    return 1;
 	}
 
@@ -144,7 +144,7 @@ xps_glyphs_has_transparency(xps_context_t *ctx, xps_item_t *root)
     {
 	if (!strcmp(xps_tag(node), "Glyphs.OpacityMask"))
 	{
-	    dputs("page has transparency: Glyphs.OpacityMask\n");
+	    //dputs("page has transparency: Glyphs.OpacityMask\n");
 	    return 1;
 	}
 
@@ -173,7 +173,7 @@ xps_canvas_has_transparency(xps_context_t *ctx, xps_item_t *root)
 
 	if (!strcmp(xps_tag(node), "Canvas.OpacityMask"))
 	{
-	    dputs("page has transparency: Canvas.OpacityMask\n");
+	    //dputs("page has transparency: Canvas.OpacityMask\n");
 	    return 1;
 	}
 
@@ -200,7 +200,7 @@ xps_element_has_transparency(xps_context_t *ctx, xps_item_t *node)
 	xps_parse_color(ctx, stroke_att, &colorspace, samples);
 	if (samples[0] < 1.0)
 	{
-	    dprintf1("page has transparency: Stroke alpha=%g\n", samples[0]);
+	    //dprintf1("page has transparency: Stroke alpha=%g\n", samples[0]);
 	    return 1;
 	}
     }
@@ -211,7 +211,7 @@ xps_element_has_transparency(xps_context_t *ctx, xps_item_t *node)
 	xps_parse_color(ctx, fill_att, &colorspace, samples);
 	if (samples[0] < 1.0)
 	{
-	    dprintf1("page has transparency: Fill alpha=%g\n", samples[0]);
+	    //dprintf1("page has transparency: Fill alpha=%g\n", samples[0]);
 	    return 1;
 	}
     }
@@ -221,14 +221,14 @@ xps_element_has_transparency(xps_context_t *ctx, xps_item_t *node)
     {
 	if (atof(opacity_att) < 1.0)
 	{
-	    dprintf1("page has transparency: Opacity=%g\n", atof(opacity_att));
+	    //dprintf1("page has transparency: Opacity=%g\n", atof(opacity_att));
 	    return 1;
 	}
     }
 
     if (xps_att(node, "OpacityMask"))
     {
-	dputs("page has transparency: OpacityMask\n");
+	//dputs("page has transparency: OpacityMask\n");
 	return 1;
     }
 

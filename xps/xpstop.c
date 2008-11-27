@@ -85,8 +85,6 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     xps_context_t *ctx;
     gs_state *pgs;
 
-    dputs("-- xps_imp_allocate_interp_instance --\n");
-
     instance = (xps_interp_instance_t *) gs_alloc_bytes(pmem,
 	    sizeof(xps_interp_instance_t), "xps_imp_allocate_interp_instance");
 
@@ -169,8 +167,6 @@ xps_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     xps_context_t *ctx = instance->ctx;
     int code;
-
-    dputs("-- xps_imp_set_device --\n");
 
     gs_opendevice(pdevice);
 
@@ -263,8 +259,6 @@ xps_imp_init_job(pl_interp_instance_t *pinstance)
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     xps_context_t *ctx = instance->ctx;
 
-    dputs("-- xps_imp_init_job --\n");
-
     ctx->first_part = NULL;
     ctx->last_part = NULL;
 
@@ -288,8 +282,6 @@ xps_imp_dnit_job(pl_interp_instance_t *pinstance)
 {
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     xps_context_t *ctx = instance->ctx;
-
-    dputs("-- xps_imp_dnit_job --\n");
 
     while (ctx->next_page)
     {
@@ -358,8 +350,6 @@ xps_imp_remove_device(pl_interp_instance_t *pinstance)
     int code = 0;       /* first error status encountered */
     int error;
 
-    dputs("-- xps_imp_remove_device --\n");
-
     /* return to original gstate  */
     gs_grestore_only(ctx->pgs);        /* destroys gs_save stack */
 
@@ -379,8 +369,6 @@ xps_imp_deallocate_interp_instance(pl_interp_instance_t *pinstance)
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     xps_context_t *ctx = instance->ctx;
     gs_memory_t *mem = ctx->memory;
-
-    dputs("-- xps_imp_deallocate_interp_instance --\n");
 
     /* language clients don't free the font cache machinery */
 
