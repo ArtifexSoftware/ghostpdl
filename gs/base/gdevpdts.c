@@ -709,6 +709,16 @@ bool pdf_compare_text_state_for_charpath(pdf_text_state_t *pts, gx_device_pdf *p
     return(true);
 }
 
+int pdf_get_text_render_mode(pdf_text_state_t *pts)
+{
+    return(pts->in.render_mode);
+}
+
+void pdf_set_text_render_mode(pdf_text_state_t *pts, int mode)
+{
+    pts->in.render_mode = mode;
+}
+
 /* Add a render mode to the rendering mode of the current text.
  * mode 0 = fill
  * mode 1 = stroke

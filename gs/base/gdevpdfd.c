@@ -1224,6 +1224,7 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
 	(ppath->last_charpath_segment == ppath->current_subpath->last)) {
 	bool hl_color = pdf_can_handle_hl_color((gx_device_vector *)pdev, pis, pdcolor);
 	const gs_imager_state *pis_for_hl_color = (hl_color ? pis : NULL);
+	int save_render_mode = pdf_get_text_render_mode(pdev->text->text_state);
 	
 	if (pdf_modify_text_render_mode(pdev->text->text_state, 1)) {
 	    /* Set the colour for the stroke */
@@ -1236,29 +1237,43 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
 		 * width scaled by the CTM before the text, either of which would be wrong.
 		 */
 		if (pdev->font3 != 0) {
-		    double det, scale;
+		    if (pdev->stroke_overprint == pis->overprint) {
+			double det, scale;
 
-		    /* Since font matrix may have different scaling effect by
-		       different directions, we need to average them into
-		       a single scaling factor. A right way is to use
-		       the geometric average of the 2 eigenvalues of the 2x2 matrix,
-		       which appears equal to sqrt(abs(det(M)) where M
-		       is the font matrix with no translation.  */
-		    det = ((double)fixed2float(pdev->charproc_ctm.xx) * fixed2float(pdev->charproc_ctm.yy)) - 
-			((double)fixed2float(pdev->charproc_ctm.xy) * fixed2float(pdev->charproc_ctm.yx));
-		    scale = fabs(sqrt(det));
-		    scale *= 72 / pdev->HWResolution[0];
-		    pprintg1(s, "%g w\n", (pis->line_params.half_width * 2) * (float)scale);
+			/* Since font matrix may have different scaling effect by
+			 different directions, we need to average them into
+			 a single scaling factor. A right way is to use
+			 the geometric average of the 2 eigenvalues of the 2x2 matrix,
+			 which appears equal to sqrt(abs(det(M)) where M
+			 is the font matrix with no translation.  */
+			det = ((double)fixed2float(pdev->charproc_ctm.xx) * fixed2float(pdev->charproc_ctm.yy)) - 
+			    ((double)fixed2float(pdev->charproc_ctm.xy) * fixed2float(pdev->charproc_ctm.yx));
+			scale = fabs(sqrt(det));
+			scale *= 72 / pdev->HWResolution[0];
+			pprintg1(s, "%g w\n", (pis->line_params.half_width * 2) * (float)scale);
+			/* Some trickery here. We have altered the colour, text render mode and linewidth,
+			 * we don't want those to persist. By switching to a stream context we will flush the 
+			 * pending text. This has the beneficial side effect of executing a grestore. So
+			 * everything works out neatly.
+			 */
+			code = pdf_open_page(pdev, PDF_IN_STREAM);
+			return(code);
+		    }
+		    else {
+			pdf_set_text_render_mode(pdev->text->text_state, save_render_mode);
+		    }
 		} else {
-		    pprintg1(s, "%g w\n", (pis->line_params.half_width * 2));
+		    scale = 72 / pdev->HWResolution[0];
+		    scale *= pis->ctm.xx;
+		    pprintg1(s, "%g w\n", (pis->line_params.half_width * 2) * scale);
+		    /* Some trickery here. We have altered the colour, text render mode and linewidth,
+		     * we don't want those to persist. By switching to a stream context we will flush the 
+		     * pending text. This has the beneficial side effect of executing a grestore. So
+		     * everything works out neatly.
+		     */
+		    code = pdf_open_page(pdev, PDF_IN_STREAM);
+		    return(code);
 		}
-		/* Some trickery here. We have altered the colour, text render mode and linewidth,
-		 * we don't want those to persist. By switching to a stream context we will flush the 
-		 * pending text. This has the beneficial side effect of executing a grestore. So
-		 * everything works out neatly.
-		 */
-		code = pdf_open_page(pdev, PDF_IN_STREAM);
-		return(code);
 	    }
 	}
 	/* Can only get here if any of the above steps fail, in which case we proceed to

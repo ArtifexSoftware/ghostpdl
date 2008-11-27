@@ -1564,8 +1564,8 @@ pdf_try_prepare_fill(gx_device_pdf *pdev, const gs_imager_state *pis)
 	return code;
     /* Update overprint. */
     if (pdev->params.PreserveOverprintSettings &&
-	pdev->fill_overprint != pis->overprint &&
-	!pdev->skip_colors
+	(pdev->fill_overprint != pis->overprint ||
+	pdev->font3) &&	!pdev->skip_colors
 	) {
 	code = pdf_open_gstate(pdev, &pres);
 	if (code < 0)

@@ -129,6 +129,8 @@ bool pdf_compare_text_state_for_charpath(pdf_text_state_t *pts, gx_device_pdf *p
 			     gs_imager_state *pis, gs_font *font, 
 			     const gs_text_params_t *text);
 
+int pdf_get_text_render_mode(pdf_text_state_t *pts);
+void pdf_set_text_render_mode(pdf_text_state_t *pts, int mode);
 int pdf_modify_text_render_mode(pdf_text_state_t *pts, int render_mode);
 int pdf_set_PaintType0_params (gx_device_pdf *pdev, gs_imager_state *pis, 
 			       float size, double scaled_width, 
