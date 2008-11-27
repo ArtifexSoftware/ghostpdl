@@ -26,7 +26,7 @@
 %   XRef (dict): output_obj# => output_file_pos
 %   ToWrite: 0..N-1 => [obj# gen#]
 
-/.setlanguagelevel where { pop 2 .setlanguagelevel } if
+.languagelevel 2 .setlanguagelevel
 .currentglobal true .setglobal
 
 /PDFWRDEBUG where { pop } { /PDFWRDEBUG false def } ifelse
@@ -394,4 +394,4 @@ readonly def
   end
 } bind def
 
-.setglobal
+.setglobal .setlanguagelevel
