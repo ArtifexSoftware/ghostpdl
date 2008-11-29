@@ -490,7 +490,8 @@ currentdict end readonly def
       (.processToUnicode beg) =
     } if
     2 index /ToUnicode knownoget {
-      dup type /nametype eq {
+      dup type /dicttype eq { dup /File known not } { //true } ifelse {
+        % We undefine wrong /Length and define /File in stream dictionaries.
         % Bug687351.pdf defines /ToUnicode /Identity-H, what is incorrect.
         (   **** Warning: Ignoring bad ToUnicode CMap.\n)  pdfformaterror
         pop
