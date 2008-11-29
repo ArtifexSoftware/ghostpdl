@@ -181,7 +181,7 @@ echo INFO: Starting GPL Ghostscript `$bindir/@GS@ --version`... 1>&2
 echo DEBUG: Running $bindir/@GS@ $gsopts $ppd_opts -sOUTPUTFILE="%stdout" -c "$ps_code" -f "$ifile" 1>&2
 
 # Now run Ghostscript...
-exec $bindir/@GS@ $gsopts $ppd_opts -sOUTPUTFILE="%stdout" -c "$ps_code" -f "$ifile"
+$bindir/@GS@ $gsopts $ppd_opts -sOUTPUTFILE="%stdout" -c "$ps_code" -f "$ifile"
 
 #
 # End of "$Id$".
