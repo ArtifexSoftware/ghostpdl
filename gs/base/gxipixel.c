@@ -209,11 +209,20 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     penum->Height = height;
     if (pmat == 0)
 	pmat = &ctm_only(pis);
-    if ((code = gs_matrix_invert_to_double(&pim->ImageMatrix, &mat)) < 0 ||
-	(code = gs_matrix_multiply_double(&mat, pmat, &mat)) < 0
-	) {
-	gs_free_object(mem, penum, "gx_default_begin_image");
-	return code;
+    if (pim->ImageMatrix.xx == pmat->xx && pim->ImageMatrix.xy == pmat->xy &&
+        pim->ImageMatrix.yx == pmat->yx && pim->ImageMatrix.yy == pmat->yy) {
+        /* Process common special case separately to accept singular matrix. */
+        mat.xx = mat.yy = 1.;
+        mat.xy = mat.yx = 0.;
+        mat.tx = pmat->tx - pim->ImageMatrix.tx;
+        mat.ty = pmat->ty - pim->ImageMatrix.ty;
+    } else {
+        if ((code = gs_matrix_invert_to_double(&pim->ImageMatrix, &mat)) < 0 ||
+	    (code = gs_matrix_multiply_double(&mat, pmat, &mat)) < 0
+	    ) {
+	    gs_free_object(mem, penum, "gx_default_begin_image");
+	    return code;
+        }
     }
     /*penum->matrix = mat;*/
     penum->matrix.xx = mat.xx;

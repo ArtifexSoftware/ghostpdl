@@ -166,12 +166,23 @@ is_image_visible(const gs_image_common_t * pic, gs_state * pgs, gx_clip_path *pc
 
 	image_rect.q.x = pim->Width;
 	image_rect.q.y = pim->Height;
-	code = gs_matrix_invert(&pic->ImageMatrix, &mat);
-	if (code < 0)
-	    return code;
-	code = gs_matrix_multiply(&mat, &ctm_only(pgs), &mat);
-	if (code < 0)
-	    return code;
+	if (pic->ImageMatrix.xx == ctm_only(pgs).xx &&
+            pic->ImageMatrix.xy == ctm_only(pgs).xy &&
+            pic->ImageMatrix.yx == ctm_only(pgs).yx &&
+            pic->ImageMatrix.yy == ctm_only(pgs).yy) {
+            /* Handle common special case separately to accept singular matrix */
+            mat.xx = mat.yy = 1.;
+            mat.yx = mat.xy = 0.;
+            mat.tx = ctm_only(pgs).tx - pic->ImageMatrix.tx;
+            mat.ty = ctm_only(pgs).ty - pic->ImageMatrix.ty;
+        } else {
+            code = gs_matrix_invert(&pic->ImageMatrix, &mat);
+	    if (code < 0)
+	        return code;
+	    code = gs_matrix_multiply(&mat, &ctm_only(pgs), &mat);
+	    if (code < 0)
+	        return code;
+        }
 	code = gs_bbox_transform(&image_rect, &mat, &device_rect);
 	if (code < 0)
 	    return code;

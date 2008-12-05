@@ -436,10 +436,8 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 	/* Make a matrix that will place the image */
 	/* at (x,y) with no transformation. */
 	gs_image_t_init_mask(&image, true);
-#define mat image.ImageMatrix
-	gs_make_translation((floatp) - x, (floatp) - y, &mat);
-	gs_matrix_multiply(&ctm_only(pgs), &mat, &mat);
-#undef mat
+	gs_make_translation((floatp) - x, (floatp) - y, &image.ImageMatrix);
+	gs_matrix_multiply(&ctm_only(pgs), &image.ImageMatrix, &image.ImageMatrix);
 	image.Width = w;
 	image.Height = h;
 	image.adjust = false;
