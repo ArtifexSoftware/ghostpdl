@@ -592,6 +592,8 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
  		subfont = subfont0;
 	    if (subfont && (subfont->FontType == ft_encrypted || subfont->FontType == ft_encrypted2)) {
 		int save_op = pte->text.operation;
+		gs_font *save_font = pte->current_font;
+		gs_glyph *save_data = pte->text.data.glyphs;
 
 		pte->current_font = subfont;
 		pte->text.operation |= TEXT_FROM_GLYPHS;
@@ -600,8 +602,15 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
 		str.size = num_type1_glyphs;
 		code = pdf_obtain_font_resource_unencoded(pte, (const gs_string *)&str, &pdsubf0, 
 		    type1_glyphs);
-		if (code < 0) 
+		if (code < 0) {
+		    /* Replace the modified values, fall back to default implementation
+		     * (type 3 bitmap image font)
+		     */
+		    pte->current_font = save_font;
+		    pte->text.operation |= save_op;
+		    pte->text.data.glyphs = save_data;
 		    return(code);
+		}
 		memcpy((void *)scan.text.data.bytes, (void *)str.data, str.size);
 		str.data = scan.text.data.bytes;
 		pdsubf = pdsubf0;
