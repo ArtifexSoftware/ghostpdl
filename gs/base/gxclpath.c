@@ -220,6 +220,11 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	/* Don't record empty tiles because they're not cached. */
 	pcls->pattern_id = pattern_id;
     }
+    if (is_pattern) {
+	/* HACK: since gx_dc_pattern_write identifies pattern by tile id, 
+	   replace the client's pattern id with tile id in the saved color.  */
+	pcls->sdc.colors.pattern.id = pattern_id;
+    }
 
     return code;
 }
