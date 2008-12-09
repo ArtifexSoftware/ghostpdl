@@ -451,13 +451,20 @@ write_mtx(stream *s, gs_font_type42 *pfont, const gs_type42_mtx_t *pmtx,
 
     sbw[0] = sbw[1] = sbw[2] = sbw[3] = 0; /* in case of failures */
     for (i = 0; i < pmtx->numMetrics; ++i) {
+	float f;
 	DISCARD(pfont->data.get_metrics(pfont, i, wmode, sbw));
-	put_ushort(s, (ushort)(sbw[wmode + 2] * factor)); /* width */
-	put_ushort(s, (ushort)(sbw[wmode] * factor)); /* lsb, may be <0 */
+	/* the temporary assignment to a float is necessary for AIX else the result is always 0 if sbw[] < 0
+	   this happens even with gcc and I'm not sure why it happens at all nor why only on AIX */
+	f = (float) (sbw[wmode + 2] * factor); /* width */
+	put_ushort(s, (ushort) f);
+	f = (float) (sbw[wmode] * factor); /* lsb, may be <0 */
+	put_ushort(s, (ushort) f);
     }
     for (; len < pmtx->length; ++i, len += 2) {
+	float f;
 	DISCARD(pfont->data.get_metrics(pfont, i, wmode, sbw));
-	put_ushort(s, (ushort)(sbw[wmode] * factor)); /* lsb, may be <0 */
+	f = (float) (sbw[wmode] * factor); /* lsb, may be <0 */
+	put_ushort(s, (ushort) f);
     }
 }
 
