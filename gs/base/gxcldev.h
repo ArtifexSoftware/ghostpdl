@@ -482,6 +482,9 @@ int cmd_set_tile_colors(gx_device_clist_writer *cldev, gx_clist_state * pcls,
 			gx_color_index color0, gx_color_index color1);
 
 /* Put out a command to set the tile phase. */
+int
+cmd_set_tile_phase_generic(gx_device_clist_writer * cldev, gx_clist_state * pcls,
+		   int px, int py, bool all_bands);
 int cmd_set_tile_phase(gx_device_clist_writer *cldev, gx_clist_state * pcls,
 		       int px, int py);
 

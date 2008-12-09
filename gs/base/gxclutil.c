@@ -583,16 +583,18 @@ cmd_set_tile_colors(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 
 /* Put out a command to set the tile phase. */
 int
-cmd_set_tile_phase(gx_device_clist_writer * cldev, gx_clist_state * pcls,
-		   int px, int py)
+cmd_set_tile_phase_generic(gx_device_clist_writer * cldev, gx_clist_state * pcls,
+		   int px, int py, bool all_bands)
 {
     int pcsize;
     byte *dp;
     int code;
 
     pcsize = 1 + cmd_size2w(px, py);
-    code =
-	set_cmd_put_op(dp, cldev, pcls, (byte)cmd_opv_set_tile_phase, pcsize);
+    if (all_bands)
+	code = set_cmd_put_all_op(dp, cldev, (byte)cmd_opv_set_tile_phase, pcsize);
+    else
+	code = set_cmd_put_op(dp, cldev, pcls, (byte)cmd_opv_set_tile_phase, pcsize);
     if (code < 0)
 	return code;
     ++dp;
@@ -601,6 +603,14 @@ cmd_set_tile_phase(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     cmd_putxy(pcls->tile_phase, dp);
     return 0;
 }
+
+int
+cmd_set_tile_phase(gx_device_clist_writer * cldev, gx_clist_state * pcls,
+		   int px, int py)
+{
+    return cmd_set_tile_phase_generic(cldev, pcls, px, py, false);
+}
+
 
 /* Write a command to enable or disable the logical operation. */
 int

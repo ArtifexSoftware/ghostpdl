@@ -95,6 +95,7 @@ cmd_slow_rop(gx_device *dev, gs_logical_operation_t lop,
 /* Write out the color for filling, stroking, or masking. */
 /* We should be able to share this with clist_tile_rectangle, */
 /* but I don't see how to do it without adding a level of procedure. */
+/* If the pattern color is big, it can write to "all" bands. */
 int
 cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		      const gx_drawing_color * pdcolor)
@@ -113,6 +114,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     int			       req_size_final;
     bool		       is_pattern;
     gs_id		       pattern_id = gs_no_id;
+    bool		       all_bands = false;
 
     /* see if the halftone must be inserted in the command list */
     if ( pdht != NULL                          &&
@@ -144,16 +146,18 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         return 0;
     else if (code < 0 && code != gs_error_rangecheck)
         return code;
+    if (dc_size > 1024*1024 /* arbitrary */)
+	all_bands = true;
     left = dc_size;
 
     /* see if phase informaiton must be inserted in the command list */
     if ( pdcolor->type->get_phase(pdcolor, &color_phase) &&
          (color_phase.x != pcls->tile_phase.x ||
-          color_phase.y != pcls->tile_phase.y   )        &&
-	 (code = cmd_set_tile_phase( cldev,
+          color_phase.y != pcls->tile_phase.y || all_bands)        &&
+	 (code = cmd_set_tile_phase_generic( cldev,
                                      pcls,
                                      color_phase.x,
-                                     color_phase.y )) < 0  )
+                                     color_phase.y, all_bands)) < 0  )
         return code;
 
     is_pattern = gx_dc_is_pattern1_color(pdcolor);
@@ -181,7 +185,11 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	req_size_final = portion_size + prefix_size + enc_u_sizew(portion_size);
 	if (req_size_final > buffer_space)
 	    return_error(gs_error_unregistered); /* Must not happen. */
-	if ((code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_extend, req_size_final)) < 0)
+	if (all_bands)
+	    code = set_cmd_put_all_op(dp, cldev, cmd_opv_extend, req_size_final);
+	else
+	    code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_extend, req_size_final);
+	if (code < 0)
 	    return code;
 	dp0 = dp;
 	dp[1] = cmd_opv_ext_put_drawing_color;
@@ -225,7 +233,19 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	   replace the client's pattern id with tile id in the saved color.  */
 	pcls->sdc.colors.pattern.id = pattern_id;
     }
+    if (is_pattern && all_bands) {
+	/* Distribute the written pattern params to all bands.
+	   We know it is big, so it is not empty, so it has pattern_id and tile_phase.
+	 */
+	gx_clist_state * pcls1;
 
+	for (pcls1 = cldev->states; pcls1 < cldev->states + cldev->nbands; pcls1++) {
+	    pcls1->sdc = pcls->sdc;
+	    pcls1->pattern_id = pcls->pattern_id;
+	    pcls1->tile_phase.x = pcls->tile_phase.x;
+	    pcls1->tile_phase.y = pcls->tile_phase.y;
+	}
+    }
     return code;
 }
 
