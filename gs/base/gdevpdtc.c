@@ -593,7 +593,7 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
 	    if (subfont && (subfont->FontType == ft_encrypted || subfont->FontType == ft_encrypted2)) {
 		int save_op = pte->text.operation;
 		gs_font *save_font = pte->current_font;
-		gs_glyph *save_data = pte->text.data.glyphs;
+		const gs_glyph *save_data = pte->text.data.glyphs;
 
 		pte->current_font = subfont;
 		pte->text.operation |= TEXT_FROM_GLYPHS;
