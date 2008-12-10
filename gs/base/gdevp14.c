@@ -606,7 +606,24 @@ buf = pdf14_buf_new(rect, !isolated, has_shape, idle, numcomps+1, ctx->memory);
 						 (buf->has_shape ? 1 : 0)));
     else 
 	pdf14_preserve_backdrop(buf, tos, has_shape);
+
+
+#if RAW_DUMP
+  
+    /* Dump the current buffer to see what we have. */
+
+    dump_raw_buffer(ctx->stack->rect.q.y-ctx->stack->rect.p.y, 
+                ctx->stack->rowstride, ctx->stack->n_planes,
+                ctx->stack->planestride, ctx->stack->rowstride, 
+                "TransGroupPush",ctx->stack->data);
+
+    global_index++;
+
+
+#endif
+
     return 0;
+
 }
 
 static	int
@@ -657,7 +674,8 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
 	x1 = min(x1, maskbuf->rect.q.x);
     }
 
-    if(nos->parent_color_info_procs.num_components != curr_num_color_comp){
+	/* If the color spaces are different and we actually did do a swap of the procs for color */
+    if(nos->parent_color_info_procs.num_components != curr_num_color_comp && nos->parent_color_info_procs.parent_color_mapping_procs != NULL){
 
         if (x0 < x1 && y0 < y1) {
 
@@ -1824,6 +1842,7 @@ pdf14_begin_transparency_group(gx_device *dev,
     double alpha = pis->opacity.alpha * pis->shape.alpha;
     gs_int_rect rect;
     int code;
+	bool isolated;
 
     code = compute_group_device_int_rect(pdev, &rect, pbbox, pis);
     if (code < 0)
@@ -1833,11 +1852,29 @@ pdf14_begin_transparency_group(gx_device *dev,
 
      /* If needed, update the color mapping procs */
     code = pdf14_update_device_color_procs(dev,ptgp->group_color,pis);
+
+	/* Note that our initial device buffer may have had a different color space
+	   than the first transparency group.  In such a case, we really should force
+	   this first group to be isolated, anytime that the parent color space is 
+	   different than its child group, it should be isolated, per the PDF spec */
+
+	if (code == 1)
+	{
+	
+		isolated = true;
+
+	} else {
+
+		isolated = ptgp->Isolated;
+
+	}
+
+
     if (code < 0)
 	return code;
 
     code = pdf14_push_transparency_group(pdev->ctx, &rect,
-					 ptgp->Isolated, ptgp->Knockout,
+					 isolated, ptgp->Knockout,
 					 (byte)floor (255 * alpha + 0.5),
 					 (byte)floor (255 * pis->shape.alpha + 0.5),
 					 pis->blend_mode, ptgp->idle,
@@ -1980,6 +2017,8 @@ pdf14_update_device_color_procs(gx_device *dev,
             pdev->color_info.num_components = new_num_comps;
             pdev->ctx->additive = new_additive; 
             pdev->pdf14_procs = new_14procs;
+
+			return(1);  /* Lets us detect that we did do an update */
 
          }
 
@@ -2689,6 +2728,20 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
     code = dev_proc((gx_device *) p14dev, open_device) ((gx_device *) p14dev);
     *pdev = (gx_device *) p14dev;
     pdf14_set_marking_params((gx_device *)p14dev, pis);
+
+	#if RAW_DUMP
+  
+    /* Dump the current buffer to see what we have. */
+
+    dump_raw_buffer(p14dev->ctx->stack->rect.q.y-p14dev->ctx->stack->rect.p.y, 
+                p14dev->ctx->stack->rect.q.x-p14dev->ctx->stack->rect.p.x, p14dev->ctx->stack->n_planes,
+                p14dev->ctx->stack->planestride, p14dev->ctx->stack->rowstride, 
+                "Device_Push",p14dev->ctx->stack->data);
+
+    global_index++;
+
+
+#endif
     return code;
 }
 

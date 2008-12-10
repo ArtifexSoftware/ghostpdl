@@ -79,7 +79,7 @@ Smask_Luminosity_Mapping(int num_rows, int num_cols, int n_chan, int row_stride,
     /* To avoid the if statement inside this loop, 
     decide on additive or subractive now */
 
-    if (isadditive)
+    if (isadditive || n_chan == 2)
     {
 
         /* Now we need to split Gray from RGB */

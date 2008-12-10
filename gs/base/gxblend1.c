@@ -156,7 +156,8 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool has_shape)
 	byte *buf_plane = buf->data + x0 - buf->rect.p.x + (y0 - buf->rect.p.y) * buf->rowstride;
 	byte *tos_plane = tos->data + x0 - tos->rect.p.x + (y0 - tos->rect.p.y) * tos->rowstride;
 	int i;
-	int n_chan_copy = buf->n_chan + (tos->has_shape ? 1 : 0);
+	/*int n_chan_copy = buf->n_chan + (tos->has_shape ? 1 : 0);*/
+	int n_chan_copy = tos->n_chan + (tos->has_shape ? 1 : 0);
 
 	for (i = 0; i < n_chan_copy; i++) {
 		byte *buf_ptr = buf_plane;
