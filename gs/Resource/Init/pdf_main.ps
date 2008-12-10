@@ -1365,7 +1365,7 @@ currentdict /PDF2PS_matrix_key undef
 } bind def
 
 /pdfshowpage_setpage {	% <pagedict> pdfshowpage_setpage <pagedict>
-  5 dict begin		% for setpagedevice
+  6 dict begin		% for setpagedevice
 	% Stack: pdfpagedict
   % UseCIEColor is always true for PDF; see the comment in runpdf above
   /UseCIEColor true def
@@ -1404,7 +1404,7 @@ currentdict /PDF2PS_matrix_key undef
   % Determine the number of spot colors used on the page.  Note: This searches
   % the pages resources.  It may be high if a spot color is in a resource but
   % is not actually used on the page.
-  << /PageSpotColors 3 index countspotcolors >> setpagedevice
+  /PageSpotColors 2 index countspotcolors def
 
   % Let the device know if we will be using PDF 1.4 transparency.
   % The clist logic may need to adjust the size of bands.
@@ -1531,7 +1531,7 @@ currentdict /PDF2PS_matrix_key undef
   end			% scratch dict
   % Indicate that the number of spot colors is unknown in case the next page
   % imaged is a PS file.
-  << /PageSpotColors -1 >> setpagedevice
+  << /PageSpotColors -1 >> .setpagedevice
   % Some PDF files don't have matching q/Q (gsave/grestore) so we need
   % to clean up any left over dicts from the dictstack
   countdictstack PDFdictstackcount sub dup 0 ne { 
