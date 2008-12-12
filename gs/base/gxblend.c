@@ -1450,6 +1450,8 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
 
     }
 
+	fclose(fid);
+
 }
 
 

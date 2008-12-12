@@ -414,6 +414,12 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape, bool idle,
 	       int n_chan,
 	       gs_memory_t *memory)
 {
+
+	/* Note that alpha_g is the alpha for the GROUP */
+	/* This is distinct from the alpha that may also exist */
+	/* for the objects within the group.  Hence it can introduce 
+	/* yet another plane */
+
     pdf14_buf *result;
     int rowstride = (rect->q.x - rect->p.x + 3) & -4;
     int height = (rect->q.y - rect->p.y);
@@ -490,7 +496,8 @@ pdf14_ctx_new(gs_int_rect *rect, int n_chan, bool additive, gs_memory_t	*memory)
     if (result == NULL)
 	return result;
 
-    buf = pdf14_buf_new(rect, false, false, false, n_chan, memory);
+	/* Note:  buffer creation expects alpha to be in number of channels */
+    buf = pdf14_buf_new(rect, false, false, false, n_chan+1, memory);
     if (buf == NULL) {
 	gs_free_object(memory, result, "pdf14_ctx_new");
 	return NULL;
@@ -572,10 +579,16 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect,
 
     /* We need to create this based upon the size of
     the color space + an alpha channel. NOT the device size
-    or the previous ctx size */
+    or the previous ctx size. */
 
-buf = pdf14_buf_new(rect, !isolated, has_shape, idle, numcomps+1, ctx->memory);
-    if_debug3('v', "[v]push buf: %d x %d, %d channels\n", buf->rect.p.x, buf->rect.p.y, buf->n_chan);
+	/* The second parameter in pdf14_buf_new decides if we should
+	   add a GROUP alpha channel to the buffer.  If it is NOT isolated, then this
+	   buffer will be added.  If it is isolated, then the buffer will not be added.
+	   I question the redundancy here of the alpha and the group alpha channel, but
+	   that will need to be looked at later. */
+
+	buf = pdf14_buf_new(rect, !isolated, has_shape, idle, numcomps+1, ctx->memory);
+    if_debug3('v', "[v]push buf: %d x %d, %d channels\n", buf->rect.q.x - buf->rect.p.x, buf->rect.q.y - buf->rect.p.y, buf->n_chan);
     if (buf == NULL)
 	return_error(gs_error_VMerror);
     buf->isolated = isolated;
@@ -636,6 +649,7 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
     int x0, x1, y0, y1;
     byte *new_data_buf;
     int num_noncolor_planes, new_num_planes;
+    pdf14_parent_color_t *parent_color = &(ctx->stack->parent_color_info_procs);
 
     if (nos == NULL)
 	return_error(gs_error_rangecheck);
@@ -674,6 +688,22 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
 	x1 = min(x1, maskbuf->rect.q.x);
     }
 
+
+#if RAW_DUMP
+  
+    /* Dump the current buffer to see what we have. */
+
+    dump_raw_buffer(ctx->stack->rect.q.y-ctx->stack->rect.p.y, 
+                ctx->stack->rowstride, ctx->stack->n_planes,
+                ctx->stack->planestride, ctx->stack->rowstride, 
+                "Trans_Group_Pop",ctx->stack->data);
+
+    global_index++;
+
+
+#endif
+
+
 	/* If the color spaces are different and we actually did do a swap of the procs for color */
     if(nos->parent_color_info_procs.num_components != curr_num_color_comp && nos->parent_color_info_procs.parent_color_mapping_procs != NULL){
 
@@ -701,7 +731,7 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
             /* i.e. copy over those planes that exist beyond the count
                of the number of color components */
 
-            memset(new_data_buf, 0, tos->planestride*nos->n_planes);
+			memset(new_data_buf, 0, tos->planestride*nos->n_planes);
 
             /* Go ahead and do the conversion on the buffer */
 
@@ -716,10 +746,21 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
               gs_free_object(ctx->memory, tos->data, "pdf14_buf_free");
                  tos->data = new_data_buf;
 
-             /* Reset all the device settings now. */
+             /* Adjust the plane and channel size now */
 
              tos->n_chan = nos->n_chan;
              tos->n_planes = nos->n_planes;
+
+#if RAW_DUMP
+  
+			/* Dump the current buffer to see what we have. */
+
+			dump_raw_buffer(ctx->stack->rect.q.y-ctx->stack->rect.p.y, 
+						ctx->stack->rowstride, ctx->stack->n_planes,
+						ctx->stack->planestride, ctx->stack->rowstride, 
+						"Trans_Group_ColorConv",ctx->stack->data);
+
+#endif
 
              /* compose */
 	     
@@ -733,7 +774,7 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
     } else {
 
         if (x0 < x1 && y0 < y1)
-	    pdf14_compose_group(tos, nos, maskbuf, x0, x1, y0, y1,ctx->n_chan, ctx->additive, pblend_procs);
+	    pdf14_compose_group(tos, nos, maskbuf, x0, x1, y0, y1,nos->n_chan, ctx->additive, pblend_procs);
 
     }
 
@@ -930,7 +971,7 @@ pdf14_open(gx_device *dev)
     rect.p.y = 0;
     rect.q.x = dev->width;
     rect.q.y = dev->height;
-    pdev->ctx = pdf14_ctx_new(&rect, dev->color_info.num_components + 1,
+    pdev->ctx = pdf14_ctx_new(&rect, dev->color_info.num_components,
 	pdev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, dev->memory);
     if (pdev->ctx == NULL)
 	return_error(gs_error_VMerror);
@@ -1862,6 +1903,7 @@ pdf14_begin_transparency_group(gx_device *dev,
 	{
 	
 		isolated = true;
+		if_debug0('v', "[v]Transparency group color space change\n",);
 
 	} else {
 
@@ -1889,6 +1931,7 @@ pdf14_end_transparency_group(gx_device *dev,
 {
     pdf14_device *pdev = (pdf14_device *)dev;
     int code;
+    pdf14_parent_color_t *parent_color;
 
     if_debug0('v', "[v]pdf14_end_transparency_group\n");
     vd_get_dc('c');
@@ -1897,6 +1940,39 @@ pdf14_end_transparency_group(gx_device *dev,
     vd_set_origin(0, 0);
     vd_erase(RGB(192, 192, 192));
     code = pdf14_pop_transparency_group(pdev->ctx, pdev->blend_procs,pdev->color_info.num_components);
+
+
+   /* May need to reset some color stuff related
+     * to a mismatch between the parents color space
+     * and the group blending space */
+	
+	parent_color = &(pdev->ctx->stack->parent_color_info_procs);
+
+	if (!(parent_color->parent_color_mapping_procs == NULL && 
+		parent_color->parent_color_comp_index == NULL)) {
+
+			pis->get_cmap_procs = parent_color->parent_color_mapping_procs;;
+			/* gx_set_cmap_procs(pis, dev); */
+
+			pdev->procs.get_color_comp_index = parent_color->parent_color_comp_index;
+			pdev->color_info.polarity = parent_color->polarity;
+			pdev->color_info.num_components = parent_color->num_components;
+			pdev->blend_procs = parent_color->parent_blending_procs;
+			pdev->ctx->additive = parent_color->isadditive;
+			pdev->pdf14_procs = parent_color->unpack_procs;
+
+			parent_color->parent_color_comp_index = NULL;
+			parent_color->parent_color_mapping_procs = NULL;
+	}
+
+
+
+
+
+
+
+
+
     vd_release_dc;
     return code;
 }
@@ -2734,7 +2810,8 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
     /* Dump the current buffer to see what we have. */
 
     dump_raw_buffer(p14dev->ctx->stack->rect.q.y-p14dev->ctx->stack->rect.p.y, 
-                p14dev->ctx->stack->rect.q.x-p14dev->ctx->stack->rect.p.x, p14dev->ctx->stack->n_planes,
+                p14dev->ctx->stack->rect.q.x-p14dev->ctx->stack->rect.p.x, 
+				p14dev->ctx->stack->n_planes,
                 p14dev->ctx->stack->planestride, p14dev->ctx->stack->rowstride, 
                 "Device_Push",p14dev->ctx->stack->data);
 
