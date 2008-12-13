@@ -376,7 +376,20 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     case ft_CID_TrueType:
 	gs_make_scaling(1000.0, 1000.0, &smat);
 	pmat = &smat;
-    default:
+	/* Type 3 fonts may use a FontMatrix in PDF, so we don't 
+	 * need to deal with non-standard matrices
+	 */
+    case ft_user_defined:
+	break;
+	/* Other font types may use a non-standard (not 1000x1000) design grid
+	 * The FontMatrix is used to map to the unit square. However PDF files
+	 * don't allow FontMatrix entries, all fonts are nominally 1000x1000.
+	 * If we have a font with a non-standard matrix we must account for that
+	 * here by scaling the font outline.
+	 */
+    default:	
+	gs_matrix_scale(&bfont->FontMatrix, 1000.0, 1000.0, &smat);
+	pmat = &smat;
 	break;
     }
 
