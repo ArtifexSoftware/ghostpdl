@@ -249,6 +249,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	    for (pcls1 = cldev->states; pcls1 < cldev->states + cldev->nbands; pcls1++)
 		pcls1->sdc = pcls->sdc;
 	}
+    }
     return code;
 }
 
