@@ -275,6 +275,7 @@ dev_proc_fill_linear_color_trapezoid(gx_default_fill_linear_color_trapezoid);
 dev_proc_fill_linear_color_triangle(gx_default_fill_linear_color_triangle);
 dev_proc_update_spot_equivalent_colors(gx_default_update_spot_equivalent_colors);
 dev_proc_ret_devn_params(gx_default_ret_devn_params);
+dev_proc_fillpage(gx_default_fillpage);
 /* BACKWARD COMPATIBILITY */
 #define gx_non_imaging_create_compositor gx_null_create_compositor
 
@@ -355,6 +356,7 @@ dev_proc_fill_linear_color_trapezoid(gx_forward_fill_linear_color_trapezoid);
 dev_proc_fill_linear_color_triangle(gx_forward_fill_linear_color_triangle);
 dev_proc_update_spot_equivalent_colors(gx_forward_update_spot_equivalent_colors);
 dev_proc_ret_devn_params(gx_forward_ret_devn_params);
+dev_proc_fillpage(gx_forward_fillpage);
 
 /* ---------------- Implementation utilities ---------------- */
 

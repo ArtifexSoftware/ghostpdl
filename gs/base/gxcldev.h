@@ -277,6 +277,7 @@ struct gx_clist_state_s {
 /* ---------------- Driver procedures ---------------- */
 
 /* In gxclrect.c */
+dev_proc_fillpage(clist_fillpage);
 dev_proc_fill_rectangle(clist_fill_rectangle);
 dev_proc_copy_mono(clist_copy_mono);
 dev_proc_copy_color(clist_copy_color);
@@ -604,7 +605,7 @@ typedef struct cmd_rects_enum_s {
 	re.height = heightvar;\
 	re.yend = re.y + re.height;\
 	re.band_height = cdev->page_band_height;\
-	re.nbands = (re.yend <= re.y ? 0 : (re.yend - re.y + re.band_height - 1) / re.band_height);
+	re.nbands = (re.yend - re.y + re.band_height - 1) / re.band_height;
 
 #define RECT_STEP_INIT(re)\
 	    re.band = re.y / re.band_height;\
@@ -625,6 +626,9 @@ const byte *cmd_read_matrix(gs_matrix * pmat, const byte * cbp);
 /* Put out a fill or tile rectangle command. */
 int cmd_write_rect_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		       int op, int x, int y, int width, int height);
+
+/* Put out a fill or tile rectangle command for fillpage. */
+int cmd_write_page_rect_cmd(gx_device_clist_writer * cldev, int op);
 
 /* ------ Exported by gxclbits.c ------ */
 

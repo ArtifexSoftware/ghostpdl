@@ -2857,7 +2857,9 @@ send_pdf14trans(gs_imager_state	* pis, gx_device * dev,
 	NULL,				/* fill_linear_color_scanline */\
 	NULL,				/* fill_linear_color_trapezoid */\
 	NULL,				/* fill_linear_color_triangle */\
-	gx_forward_update_spot_equivalent_colors	/* update spot */\
+	gx_forward_update_spot_equivalent_colors,	/* update spot */\
+	NULL,				/* gx_forward_ret_devn_params */\
+	gx_forward_fillpage\
 }
 
 static	dev_proc_create_compositor(pdf14_clist_create_compositor);

@@ -106,7 +106,8 @@ static const gx_device_rop_texture gs_rop_texture_device = {
      gx_forward_fill_linear_color_trapezoid,
      gx_forward_fill_linear_color_triangle,
      gx_forward_update_spot_equivalent_colors,
-     gx_forward_ret_devn_params
+     gx_forward_ret_devn_params,
+     gx_forward_fillpage
     },
     0,				/* target */
     lop_default			/* log_op */

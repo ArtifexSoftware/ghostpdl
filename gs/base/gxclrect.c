@@ -134,6 +134,35 @@ cmd_write_rect_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     return 0;
 }
 
+/* Put out a fill or tile rectangle command for fillpage. */
+int
+cmd_write_page_rect_cmd(gx_device_clist_writer * cldev, int op)
+{
+    /* Since cmd_write_rect_cmd always writes 0x0 rectangle as a tiny one,
+       here we write a "big" rectangle with the size 0x0.
+       The clist reader must handle this case especially.
+     */
+    int rcsize = 1 + 4 * cmd_sizew(0);
+    byte *dp;
+    int x = 0, y = 0, width = 0, height = 0; /* For cmd_set_rect */
+    gx_clist_state *pcls1;
+    int code;
+
+    if_debug0('L', "[L]fillpage beg\n");
+    code = set_cmd_put_all_op(dp, cldev, op, rcsize);
+    if (code < 0)
+	return code;
+    for (pcls1 = cldev->states; pcls1 < cldev->states + cldev->nbands; pcls1++)
+	cmd_set_rect(pcls1->rect);
+    ++dp;
+    cmd_putw(0, dp);
+    cmd_putw(0, dp);
+    cmd_putw(0, dp);
+    cmd_putw(0, dp);
+    if_debug0('L', "[L]fillpage end\n");
+    return 0;
+}
+
 static inline byte * 
 cmd_put_frac31_color(gx_device_clist_writer * cldev, const frac31 *c, byte *dp)
 {
@@ -240,6 +269,21 @@ cmd_write_trapezoid_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 /* ---------------- Driver procedures ---------------- */
 
 int
+clist_fillpage(gx_device * dev, gs_imager_state *pis, gx_drawing_color *pdcolor)
+{
+    gx_device_clist_writer * const cdev = &((gx_device_clist *)dev)->writer;
+    gx_clist_state * pcls = cdev->states; /* Use any. */
+    int code;
+
+    do {
+	code = cmd_put_drawing_color(cdev, pcls, pdcolor, NULL);
+	if (code >= 0)
+	    code = cmd_write_page_rect_cmd(cdev, cmd_op_fill_rect);
+    } while (RECT_RECOVER(code));
+    return code;
+}
+
+int
 clist_fill_rectangle(gx_device * dev, int rx, int ry, int rwidth, int rheight,
 		     gx_color_index color)
 {
@@ -260,12 +304,14 @@ clist_fill_rectangle(gx_device * dev, int rx, int ry, int rwidth, int rheight,
 	re.pcls->band_complexity.uses_color |= ((color != 0xffffff) && (color != 0)); 
 	do {
 	    code = cmd_disable_lop(cdev, re.pcls);
-	    if (code >= 0 && color != re.pcls->colors[1])
+	    if (code >= 0 && color != re.pcls->colors[1]) {
 		code = cmd_put_color(cdev, re.pcls, &clist_select_color1,
 				     color, &re.pcls->colors[1]);
-	    if (code >= 0)
+	    }
+	    if (code >= 0) {
 		code = cmd_write_rect_cmd(cdev, re.pcls, cmd_op_fill_rect, rx, re.y,
 					  rwidth, re.height);
+	    }
 	} while (RECT_RECOVER(code));
 	if (code < 0 && SET_BAND_CODE(code))
 	    goto error_in_rect;

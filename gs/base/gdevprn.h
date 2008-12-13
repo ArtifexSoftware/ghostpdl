@@ -247,6 +247,7 @@ struct gdev_prn_space_params_s {
 	uint clist_disable_mask;	/* mask of clist options to disable */\
 		/* ---- End async rendering support --- */\
 	int num_render_threads_requested;	/* for multiple band rendering threads */\
+	gx_device_procs save_procs_while_delaying_erasepage;	/* save device procs while delaying erasepage. */\
 	gx_device_procs orig_procs	/* original (std_)procs */
 
 /* The device descriptor */
@@ -385,6 +386,7 @@ extern const gx_device_procs prn_std_procs;
 	0/*false*/, 0, 0, 0, /* file_is_new ... buf */\
 	0, 0, 0, 0, 0/*false*/, 0, 0, /* buffer_memory ... clist_dis'_mask */\
 	0, 		/* num_render_threads_requested */\
+	{ 0 },	/* save_procs_while_delaying_erasepage */\
 	{ 0 }	/* ... orig_procs */
 #define prn_device_body_rest_(print_page)\
   prn_device_body_rest2_(print_page, gx_default_print_page_copies, -1)

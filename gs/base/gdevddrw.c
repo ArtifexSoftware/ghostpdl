@@ -946,3 +946,25 @@ gx_default_end_image(gx_device *dev, gx_image_enum_common_t * info,
 {
     return gx_image_end(info, draw_last);
 }
+
+int
+gx_default_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
+{
+    bool hl_color_available = gx_hld_is_hl_color_available(pis, pdevc);
+    int code = 0;
+
+    /* Fill the page directly, ignoring clipping. */
+    /* Use the default RasterOp. */
+    if (hl_color_available) {
+	gs_fixed_rect rect;
+
+	rect.p.x = rect.p.y = 0;
+	rect.q.x = int2fixed(dev->width);
+	rect.q.y = int2fixed(dev->height);
+	code = dev_proc(dev, fill_rectangle_hl_color)(dev, 
+		&rect, (const gs_imager_state *)pis, pdevc, NULL);
+    }
+    if (!hl_color_available || code == gs_error_rangecheck)
+	code = gx_fill_rectangle_device_rop(0, 0, dev->width, dev->height, pdevc, dev, lop_default);
+    return code;
+}
