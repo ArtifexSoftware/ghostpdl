@@ -233,19 +233,22 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	   replace the client's pattern id with tile id in the saved color.  */
 	pcls->sdc.colors.pattern.id = pattern_id;
     }
-    if (is_pattern && all_bands) {
-	/* Distribute the written pattern params to all bands.
-	   We know it is big, so it is not empty, so it has pattern_id and tile_phase.
-	 */
+    if (all_bands) {
+	/* Distribute the written params to all bands. */
 	gx_clist_state * pcls1;
 
-	for (pcls1 = cldev->states; pcls1 < cldev->states + cldev->nbands; pcls1++) {
-	    pcls1->sdc = pcls->sdc;
-	    pcls1->pattern_id = pcls->pattern_id;
-	    pcls1->tile_phase.x = pcls->tile_phase.x;
-	    pcls1->tile_phase.y = pcls->tile_phase.y;
+	if (is_pattern) {
+	    /* We know it is big, so it is not empty, so it has pattern_id and tile_phase. */
+	    for (pcls1 = cldev->states; pcls1 < cldev->states + cldev->nbands; pcls1++) {
+		pcls1->sdc = pcls->sdc;
+		pcls1->pattern_id = pcls->pattern_id;
+		pcls1->tile_phase.x = pcls->tile_phase.x;
+		pcls1->tile_phase.y = pcls->tile_phase.y;
+	    }
+	} else {
+	    for (pcls1 = cldev->states; pcls1 < cldev->states + cldev->nbands; pcls1++)
+		pcls1->sdc = pcls->sdc;
 	}
-    }
     return code;
 }
 
