@@ -596,13 +596,15 @@ typedef struct cmd_rects_enum_s {
 	int band;
 	gx_clist_state *pcls;
 	int band_end;
+	int nbands;
 } cmd_rects_enum_t;
 
 #define RECT_ENUM_INIT(re, yvar, heightvar)\
 	re.y = yvar;\
 	re.height = heightvar;\
 	re.yend = re.y + re.height;\
-	re.band_height = cdev->page_band_height;
+	re.band_height = cdev->page_band_height;\
+	re.nbands = (re.yend <= re.y ? 0 : (re.yend - re.y + re.band_height - 1) / re.band_height);
 
 #define RECT_STEP_INIT(re)\
 	    re.band = re.y / re.band_height;\

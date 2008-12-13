@@ -326,7 +326,7 @@ clist_write_fill_trapezoid(gx_device * dev,
 	RECT_STEP_INIT(re);
 	do {
 	    if (pdcolor != NULL) {
-		code = cmd_put_drawing_color(cdev, re.pcls, pdcolor);
+		code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re);
 		if (code == gs_error_unregistered)
 		    return code;
 		if (code < 0) {

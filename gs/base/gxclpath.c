@@ -98,7 +98,7 @@ cmd_slow_rop(gx_device *dev, gs_logical_operation_t lop,
 /* If the pattern color is big, it can write to "all" bands. */
 int
 cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
-		      const gx_drawing_color * pdcolor)
+		      const gx_drawing_color * pdcolor, cmd_rects_enum_t *pre)
 {
     const gx_device_halftone * pdht = pdcolor->type->get_dev_halftone(pdcolor);
     int                        code, di;
@@ -114,7 +114,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     int			       req_size_final;
     bool		       is_pattern;
     gs_id		       pattern_id = gs_no_id;
-    bool		       all_bands = false;
+    bool		       all_bands = (pre == NULL);
 
     /* see if the halftone must be inserted in the command list */
     if ( pdht != NULL                          &&
@@ -146,7 +146,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         return 0;
     else if (code < 0 && code != gs_error_rangecheck)
         return code;
-    if (dc_size > 1024*1024 /* arbitrary */)
+    if (!all_bands && dc_size * pre->nbands > 1024*1024 /* arbitrary */)
 	all_bands = true;
     left = dc_size;
 
@@ -748,7 +748,7 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 		(code = cmd_update_lop(cdev, re.pcls, lop)) < 0
 		)
 		return code;
-	    code = cmd_put_drawing_color(cdev, re.pcls, pdcolor);
+	    code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re);
 	    if (code == gs_error_unregistered)
 		return code;
 	    if (code < 0) {
@@ -887,7 +887,7 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	    (code = cmd_update_lop(cdev, re.pcls, lop)) < 0
 	    )
 	    return code;
-	code = cmd_put_drawing_color(cdev, re.pcls, pdcolor);
+	code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re);
 	    if (code == gs_error_unregistered)
 		return code;
 	if (code < 0) {
@@ -968,7 +968,7 @@ clist_put_polyfill(gx_device *dev, fixed px, fixed py,
     do {
 	RECT_STEP_INIT(re);
 	if ((code = cmd_update_lop(cdev, re.pcls, lop)) < 0 ||
-	    (code = cmd_put_drawing_color(cdev, re.pcls, pdcolor)) < 0)
+	    (code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re)) < 0)
 	    goto out;
 	re.pcls->colors_used.slow_rop |= slow_rop;
 	code = cmd_put_path(cdev, re.pcls, &path,

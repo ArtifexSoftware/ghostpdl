@@ -138,7 +138,7 @@ clist_fill_mask(gx_device * dev,
 	if (code < 0 && SET_BAND_CODE(code))
 	    goto error_in_rect;
 	do {
-	    code = cmd_put_drawing_color(cdev, re.pcls, pdcolor);
+	    code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re);
 	    if (code == gs_error_unregistered)
 		return code;
 	    if (depth > 1 && code >= 0)
@@ -705,7 +705,7 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 		goto error_in_rect;
 	    if (pie->uses_color) {
  	        do {
-		    code = cmd_put_drawing_color(cdev, re.pcls, &pie->dcolor);
+		    code = cmd_put_drawing_color(cdev, re.pcls, &pie->dcolor, &re);
 		} while (RECT_RECOVER(code));
 		if (code < 0 && SET_BAND_CODE(code))
 		    goto error_in_rect;
