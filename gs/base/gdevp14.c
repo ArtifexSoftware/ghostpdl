@@ -448,6 +448,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape, bool idle,
     result->maskbuf = NULL;
     result->idle = idle;
     result->mask_id = 0;
+	result->parent_color_info_procs.get_cmap_procs = NULL;
     result->parent_color_info_procs.parent_color_mapping_procs = NULL;
     result->parent_color_info_procs.parent_color_comp_index = NULL;
 
@@ -605,8 +606,6 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect,
 
     buf->saved = tos;
     ctx->stack = buf;
-
-    /* _CrtCheckMemory(); */
 
     if (buf->data == NULL)
 	return 0;
@@ -790,8 +789,6 @@ exit:
 	ctx->maskbuf = (maskbuf != NULL ? maskbuf->maskbuf : NULL);
     }
 
-    /* _CrtCheckMemory(); */
-
     if_debug1('v', "[v]pop buf, idle=%d\n", tos->idle);
     pdf14_buf_free(tos, ctx->memory);
     if (maskbuf != NULL) {
@@ -878,7 +875,9 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
     buf->saved = ctx->stack;
     ctx->stack = buf;
      /* windoze memory checking */
-    /* _CrtCheckMemory(); */
+  /*  z = _CrtCheckMemory();
+	   if (z != 1)
+        z = 0;  */
 
     /* Soft Mask related information so we know how to 
        compute luminosity when we pop the soft mask */
@@ -947,8 +946,6 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx)
 		   "gx_cie_to_xyz_free(joint caches)");*/
 
         }
-
-         /* _CrtCheckMemory(); */ 
 
         /* Assign as mask buffer */
 
@@ -1904,7 +1901,7 @@ pdf14_begin_transparency_group(gx_device *dev,
 	{
 	
 		isolated = true;
-		if_debug0('v', "[v]Transparency group color space change\n",);
+		if_debug0('v', "[v]Transparency group color space change\n");
 
 	} else {
 
@@ -1952,16 +1949,18 @@ pdf14_end_transparency_group(gx_device *dev,
 	if (!(parent_color->parent_color_mapping_procs == NULL && 
 		parent_color->parent_color_comp_index == NULL)) {
 
-			pis->get_cmap_procs = parent_color->parent_color_mapping_procs;;
-			/* gx_set_cmap_procs(pis, dev); */
+			pis->get_cmap_procs = parent_color->get_cmap_procs;
+			gx_set_cmap_procs(pis, dev);
 
+			pdev->procs.get_color_mapping_procs = parent_color->parent_color_mapping_procs;
 			pdev->procs.get_color_comp_index = parent_color->parent_color_comp_index;
 			pdev->color_info.polarity = parent_color->polarity;
 			pdev->color_info.num_components = parent_color->num_components;
 			pdev->blend_procs = parent_color->parent_blending_procs;
 			pdev->ctx->additive = parent_color->isadditive;
 			pdev->pdf14_procs = parent_color->unpack_procs;
-
+			
+			parent_color->get_cmap_procs = NULL;
 			parent_color->parent_color_comp_index = NULL;
 			parent_color->parent_color_mapping_procs = NULL;
 	}
@@ -2010,6 +2009,7 @@ pdf14_update_device_color_procs(gx_device *dev,
        Remember that only isolated groups can have color spaces
        that are different than their parent. */
 
+		parent_color_info->get_cmap_procs = NULL;
         parent_color_info->parent_color_mapping_procs = NULL;
         parent_color_info->parent_color_comp_index = NULL;
         update_color_info = false;
@@ -2071,9 +2071,9 @@ pdf14_update_device_color_procs(gx_device *dev,
 
            /* Save the old information */
 
-            parent_color_info->parent_color_mapping_procs = pis->get_cmap_procs;
-           /* parent_color_info->parent_color_mapping_procs = 
-                pdev->procs.get_color_mapping_procs;*/
+           parent_color_info->get_cmap_procs = pis->get_cmap_procs;
+			parent_color_info->parent_color_mapping_procs = 
+                pdev->procs.get_color_mapping_procs;
             parent_color_info->parent_color_comp_index = 
                 pdev->procs.get_color_comp_index;
             parent_color_info->parent_blending_procs = pdev->blend_procs;
@@ -2087,6 +2087,8 @@ pdf14_update_device_color_procs(gx_device *dev,
 
             pis->get_cmap_procs = pdf14_get_cmap_procs_group;
             gx_set_cmap_procs(pis, dev);
+			pdev->procs.get_color_mapping_procs = 
+				pdevproto->static_procs->get_color_mapping_procs;
             pdev->procs.get_color_comp_index = 
                 pdevproto->static_procs->get_color_comp_index;
             pdev->blend_procs = pdevproto->blend_procs;
@@ -2160,9 +2162,10 @@ pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
     if (!(parent_color->parent_color_mapping_procs == NULL && 
         parent_color->parent_color_comp_index == NULL)) {
 
-            pis->get_cmap_procs = parent_color->parent_color_mapping_procs;;
+            pis->get_cmap_procs = parent_color->get_cmap_procs;;
             gx_set_cmap_procs(pis, dev);
 
+			pdev->procs.get_color_mapping_procs = parent_color->parent_color_mapping_procs;
             pdev->procs.get_color_comp_index = parent_color->parent_color_comp_index;
             pdev->color_info.polarity = parent_color->polarity;
             pdev->color_info.num_components = parent_color->num_components;
@@ -2170,6 +2173,7 @@ pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
             pdev->ctx->additive = parent_color->isadditive;
             pdev->pdf14_procs = parent_color->unpack_procs;
 
+			parent_color->get_cmap_procs = NULL;
             parent_color->parent_color_comp_index = NULL;
             parent_color->parent_color_mapping_procs = NULL;
     }
@@ -2597,10 +2601,10 @@ pdf14_cmap_cmyk_direct_group(frac c, frac m, frac y, frac k, gx_device_color * p
 
     if (dev->color_info.num_components == 4 ){
 
-	cv[0] = frac2cv(c);
-	cv[1] = frac2cv(m);
-	cv[2] = frac2cv(y);
-	cv[3] = frac2cv(k);
+		cv[0] = frac2cv(c);
+		cv[1] = frac2cv(m);
+		cv[2] = frac2cv(y);
+		cv[3] = frac2cv(k);
 
          /* encode as a color index */
         color = pdf14_encode_smask_color(dev,cv,4);
