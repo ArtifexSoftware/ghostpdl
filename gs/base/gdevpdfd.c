@@ -48,11 +48,6 @@ gdev_pdf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
     int code;
 
-    /* Make a special check for the initial fill with white, */
-    /* which shouldn't cause the page to be opened. */
-    if (color == pdev->white && !is_in_page(pdev) && pdev->sbstack_depth <= bottom)
-	if (x == 0 && y == 0 && w == pdev->width && h == pdev->height)
-	    return 0;
     code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
@@ -464,20 +459,6 @@ prepare_fill_with_clip(gx_device_pdf *pdev, const gs_imager_state * pis,
     bool new_clip;
     int code;
 
-    if (gx_dc_is_pure(pdcolor)) {
-        int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
- 	/*
-	 * Make a special check for the initial fill with white,
-	 * which shouldn't cause the page to be opened.
-	 */
-	if (gx_dc_pure_color(pdcolor) == pdev->white && 
-		!is_in_page(pdev) && pdev->sbstack_depth <= bottom) {
-	    if (box->p.x == 0 && box->p.y == 0 && 
-		    box->q.x == int2fixed(pdev->width) && 
-		    box->q.y == int2fixed(pdev->height)) /* See gs_fillpage */
-		return 1;
-        }
-    }
     /*
      * Check for an empty clipping path.
      */
@@ -1435,3 +1416,16 @@ gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     }
 }
 
+int
+gdev_pdf_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
+{
+    gx_device_pdf *pdev = (gx_device_pdf *) dev;
+    int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
+
+    if (gx_dc_pure_color(pdevc) == pdev->white && !is_in_page(pdev) && pdev->sbstack_depth <= bottom) {
+	/* PDF doesn't need to erase the page if its plain white */
+	return 0;
+    }
+    else
+	return gx_default_fillpage(dev, pis, pdevc);
+}
