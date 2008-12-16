@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2006 Artifex Software, Inc.
+#  Copyright (C) 2001-2008 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -2684,7 +2684,8 @@ $(GLD)romfs0.dev :  $(LIB_MAK) $(ECHO_XE)
 	$(SETMOD) $(GLD)romfs0 
 
 $(GLGEN)gsromfs1.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS)
-	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs1.c -X .svn $(UFST_ROMFS_ARGS) \
+	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs1.c \
+	-X .svn -X CVS $(UFST_ROMFS_ARGS) \
 	$(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS) \
 	$(PS_ROMFS_ARGS)
 
