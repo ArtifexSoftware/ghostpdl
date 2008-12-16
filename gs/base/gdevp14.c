@@ -697,8 +697,6 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
                 ctx->stack->planestride, ctx->stack->rowstride, 
                 "Trans_Group_Pop",ctx->stack->data);
 
-    global_index++;
-
 
 #endif
 
@@ -730,8 +728,7 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
             /* i.e. copy over those planes that exist beyond the count
                of the number of color components */
 
-			/* memset(new_data_buf, 0, tos->planestride*nos->n_planes);  */
-			memset(new_data_buf, 0, new_num_planes); 
+			memset(new_data_buf, 0, tos->planestride*new_num_planes); 
 
             /* Go ahead and do the conversion on the buffer */
 
