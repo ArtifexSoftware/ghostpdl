@@ -227,10 +227,14 @@ px_define_font(px_font_t *pxfont, byte *header, ulong size, gs_id id, px_state_t
 					   "px_define_font(char_glyphs)");
 	    if ( code < 0 )
 	      return code;
+
 	    code = px_fill_in_font((gs_font *)pfont, pxfont, pxs);
 	    if ( code < 0 )
 	      return code;
-	    pl_fill_in_tt_font(pfont, NULL, id);
+
+	    code = pl_fill_in_tt_font(pfont, NULL, id);
+            if ( code < 0 )
+                return code;
 	  }
 	pxfont->params.symbol_set = pl_get_uint16(header + 2);
 

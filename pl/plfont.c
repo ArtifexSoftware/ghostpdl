@@ -713,7 +713,7 @@ pl_fill_in_bitmap_font(gs_font_base *pfont, long unique_id)
 }
 
 /* Fill in TrueType font boilerplate. */
-void
+int
 pl_fill_in_tt_font(gs_font_type42 *pfont, void *data, long unique_id)
 {	pfont->FontType = ft_TrueType;
 	pfont->BitmapWidths = true;
@@ -734,12 +734,16 @@ pl_fill_in_tt_font(gs_font_type42 *pfont, void *data, long unique_id)
 	/* Initialize Type 42 specific data. */
 	pfont->data.proc_data = data;
 	pl_tt_init_procs(pfont);
-	gs_type42_font_init(pfont, 0);
+        {
+            int code = gs_type42_font_init(pfont, 0);
+            if (code < 0)
+                return code;
+        }
 	/* disable unused FAPI */
 	pfont->FAPI = 0;
 	pfont->FAPI_font_data = 0;
-
 	pl_tt_finish_init(pfont, !data);
+        return 0;
 }
 
 /* Fill in Intellifont boilerplate. */

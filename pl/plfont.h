@@ -229,8 +229,8 @@ void pl_intelli_init_procs(gs_font_base *pfont);
 #  define gs_font_type42_DEFINED
 typedef struct gs_font_type42_s gs_font_type42;
 #endif
-void pl_fill_in_tt_font(gs_font_type42 *pfont, void *data,
-                        long unique_id);
+int pl_fill_in_tt_font(gs_font_type42 *pfont, void *data,
+                       long unique_id);
 
 /* Initialize the callback procedures for a TrueType font. */
 void pl_tt_init_procs(gs_font_type42 *pfont);
