@@ -381,7 +381,7 @@ currentdict /tt_tag_dict .undef
     0		% initialization value for /sH_len
     0 1 255 {
        sHKs exch
-       2 mul getu16
+       2 mul getu16a
        1 index	% get current max
        1 index	% get current subHeaderKey
        lt {exch} if pop
@@ -402,7 +402,7 @@ currentdict /tt_tag_dict .undef
             sH_offset idRangeOffset add		% offset to gI
             cmapf2_ch_lo firstCode sub 2 mul	% rel. pos. in range
             add 6 add				% offset in sH_gIA
-            sH_gIA exch getu16
+            sH_gIA exch getu16a
             dup 0 gt { %
                 idDelta add
                 cmapf2_glyph_array exch cmapf2_ch exch put
@@ -417,13 +417,13 @@ currentdict /tt_tag_dict .undef
 
     16#00 1 16#ff { % hi_byte scan
         /cmapf2_ch_hi exch def
-        sHKs cmapf2_ch_hi sHK_sz mul getu16
+        sHKs cmapf2_ch_hi sHK_sz mul getu16a
         /sH_offset exch def
         sH_gIA sH_offset sH_sz getinterval
-            dup 0 getu16 /firstCode exch def
-            dup 2 getu16 /entryCount exch def
-            dup 4 gets16 /idDelta exch def
-            dup 6 getu16 /idRangeOffset exch def
+            dup 0 getu16a /firstCode exch def
+            dup 2 getu16a /entryCount exch def
+            dup 4 gets16a /idDelta exch def
+            dup 6 getu16a /idRangeOffset exch def
         pop
         sH_offset 0 eq {
            /cmapf2_ch_lo cmapf2_ch_hi def
@@ -441,7 +441,7 @@ currentdict /tt_tag_dict .undef
   } bind
   4 {		% Microsoft/Adobe segmented mapping.
     /etab exch def
-    /nseg2 etab 6 getu16 def
+    /nseg2 etab 6 getu16a def
     14 /endc etab 2 index nseg2 getinterval_from_stringarray def
 		% The Apple TrueType documentation omits the 2-byte
 		% 'reserved pad' that follows the endCount vector!
@@ -452,7 +452,7 @@ currentdict /tt_tag_dict .undef
 		% The following hack allows us to properly handle
 		% idiosyncratic fonts that start at 0xf000:
     pop
-    /firstcode startc 0 getu16 16#ff00 and dup 16#f000 ne { pop 0 } if def
+    /firstcode startc 0 getu16a 16#ff00 and dup 16#f000 ne { pop 0 } if def
     /putglyph {
       glyphs code 3 -1 roll put /code code 1 add def
     } bind def
@@ -462,8 +462,8 @@ currentdict /tt_tag_dict .undef
     0 0 2 nseg2 3 sub {
 		% Stack: /glyphs numglyphs i2
       /i2 exch def
-      /scode startc i2 getu16 def
-      /ecode endc i2 getu16 def
+      /scode startc i2 getu16a def
+      /ecode endc i2 getu16a def
       numcodes scode firstcode sub
 		% Hack for fonts that have only 0x0000 and 0xf000 ranges
       %dup 16#e000 ge { 255 and } if
@@ -477,22 +477,22 @@ currentdict /tt_tag_dict .undef
     /numcodes 0 def /code 0 def
     0 2 nseg2 3 sub {
       /i2 exch def
-      /scode startc i2 getu16 def
-      /ecode endc i2 getu16 def
+      /scode startc i2 getu16a def
+      /ecode endc i2 getu16a def
       numcodes scode firstcode sub
 		% Hack for fonts that have only 0x0000 and 0xf000 ranges
       %dup 16#e000 ge { 255 and } if
       % the previous line is obstructive to CJK fonts, so it was removed
       exch sub 0 .max dup /code exch code exch add def
       ecode scode sub 1 add add numcodes add /numcodes exch def
-      /delta iddelta i2 gets16 def
+      /delta iddelta i2 gets16a def
       TTFDEBUG {
 	(scode=) print scode =only
 	( ecode=) print ecode =only
 	( delta=) print delta =only
 	( droff=) print idroff i2 getu16 =
       } if
-      idroff i2 getu16 dup 0 eq {
+      idroff i2 getu16a dup 0 eq {
 	pop scode delta add 65535 and 1 ecode delta add 65535 and
 	{ putglyph } for
       } {	% The +2 is for the 'reserved pad'.
@@ -555,27 +555,46 @@ currentdict /tt_tag_dict .undef
   2 index type /stringtype eq {
     getinterval
   } {
-    string exch 0                                 % [] s o p
-    4 3 roll {                                    % s o p Si
-      dup length                                  % s o p Si lSi
-      dup 4 index lt {
-        3 index exch sub                          % s o p Si o'
-        exch pop 3 1 roll exch pop                % s o' p
-      } {                                         % s o p Si lSi
-        dup 3 1 roll                              % s o p lSi Si lSi
-        4 index sub                               % s o p lSi Si lSi-o
-        5 index length 4 index sub                % s o p lSi Si lSi-o ls-p
-        2 copy gt { exch } if pop                 % s o p lSi Si minl
-        dup 3 1 roll                              % s o p lSi minl Si minl
-        5 index exch getinterval                  % s o p lSi minl from
-        5 index 4 index 3 index                   % s o p lSi minl from s p minl
-        getinterval                               % s o p lSi minl from to
-        copy pop                                  % s o p lSi minl
-        exch pop add exch pop 0 exch              % s 0 p'
-        dup 3 index length ge { exit } if
-      } ifelse
-    } forall
-    pop pop                                       % s
+    dup 65535 le { 
+      string exch 0                                 % [] s o p
+      4 3 roll {                                    % s o p Si
+        dup length                                  % s o p Si lSi
+        dup 4 index lt {
+          3 index exch sub                          % s o p Si o'
+          exch pop 3 1 roll exch pop                % s o' p
+        } {                                         % s o p Si lSi
+          dup 3 1 roll                              % s o p lSi Si lSi
+          4 index sub                               % s o p lSi Si lSi-o
+          5 index length 4 index sub                % s o p lSi Si lSi-o ls-p
+          2 copy gt { exch } if pop                 % s o p lSi Si minl
+          dup 3 1 roll                              % s o p lSi minl Si minl
+          5 index exch getinterval                  % s o p lSi minl from
+          5 index 4 index 3 index                   % s o p lSi minl from s p minl
+          getinterval                               % s o p lSi minl from to
+          copy pop                                  % s o p lSi minl
+          exch pop add exch pop 0 exch              % s 0 p'
+          dup 3 index length ge { exit } if
+        } ifelse
+      } forall
+      pop pop                                       % s
+    } {
+      [ 4 1 roll
+        {
+          dup 0 eq {
+            pop pop pop exit
+          } if 
+          3 copy 
+          dup 65535 ge {
+            pop 65535
+          } if
+          getinterval_from_stringarray 4 1 roll
+          3 index length sub
+          exch
+          3 index length add
+          exch
+        } loop
+      ]
+    } ifelse
   } ifelse
 } bind def
 
