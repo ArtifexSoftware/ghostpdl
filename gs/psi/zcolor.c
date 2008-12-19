@@ -3767,7 +3767,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
 {
     os_ptr  op = osp;   /* required by "push" macro */
     int code = 0, num_components, i;
-    ref namesarray, proc, sname, sref, tempref[2];
+    ref namesarray, proc, sname, tname, sref, tempref[2];
     ref_colorspace cspace_old;
     gs_color_space *pcs;
     gs_color_space * pacs;
@@ -3876,15 +3876,16 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
 	array_get(imemory, &namesarray, (long)0, &sname);
 	switch (r_type(&sname)) {
 	    case t_string:
+		tname = sname;
 		break;
 	    case t_name:
-		name_string_ref(imemory, &sname, &sname);
+		name_string_ref(imemory, &sname, &tname);
 		break;
 	    default:
 		return_error(e_typecheck);
 		break;
 	}
-	if (strncmp((const char *)sname.value.const_bytes, "All", 3) == 0 && r_size(&sname) == 3) {
+	if (strncmp((const char *)tname.value.const_bytes, "All", 3) == 0 && r_size(&tname) == 3) {
 	    separation_type sep_type;
 
 	    /* Sigh, Acrobat allows this, even though its contra the spec. Convert to
