@@ -1033,7 +1033,10 @@ end
     % keys, in which case the interpreter must retrieve this information
     % from inside the compressed stream. Here we substitute the most
     % likely values as a work-around.
-    not { [/DeviceRGB] /BitsPerComponent 8 def } if 
+    not {
+      (   **** Warning: assuming JPX image is 8-bit RGB.\n) stderrprint
+      [/DeviceRGB] /BitsPerComponent 8 def
+    } if 
     resolvecolorspace /ColorSpace exch def
 		% Decode is required for the PostScript image operators.
     /Decode 2 copy knownoget not {
