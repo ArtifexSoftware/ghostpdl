@@ -135,9 +135,13 @@ zgstate(i_ctx_t *i_ctx_p)
      * automatically; we have to make sure this ref is on the changes chain.
      */
     make_iastruct(op, a_all, pigo);
+#if 0 /* Bug 689849 "gstate leaks memory" */ 
     make_null(&pigo->gstate);
     ref_save(op, &pigo->gstate, "gstate");
     make_istruct_new(&pigo->gstate, 0, pnew);
+#else
+    make_istruct(&pigo->gstate, 0, pnew);
+#endif
     return 0;
 }
 
