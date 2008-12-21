@@ -335,6 +335,60 @@ zinvertmatrix(i_ctx_t *i_ctx_p)
     return code;
 }
 
+/* <bbox> <matrix> .bbox_transform <x0> <y0> <x1> <y1> */
+/* Calculate bonding box of a box transformed by a matrix. */
+static int
+zbbox_transform(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    gs_matrix m;
+    float bbox[4];
+    gs_point aa, az, za, zz;
+    floatp temp;
+    int code;
+
+    if ((code = read_matrix(imemory, op, &m)) < 0)
+        return code;
+    
+    if (!r_is_array(op - 1))
+	return_op_typecheck(op - 1);
+    check_read(op[-1]);
+    if (r_size(op - 1) != 4)
+        return_error(e_rangecheck);
+    if ((code = process_float_array(imemory, op - 1, 4, bbox) < 0))
+        return code;
+
+    gs_point_transform(bbox[0], bbox[1], &m, &aa);
+    gs_point_transform(bbox[0], bbox[3], &m, &az);
+    gs_point_transform(bbox[2], bbox[1], &m, &za);
+    gs_point_transform(bbox[2], bbox[3], &m, &zz);
+
+    if ( aa.x > az.x)
+        temp = aa.x, aa.x = az.x, az.x = temp;
+    if ( za.x > zz.x)
+        temp = za.x, za.x = zz.x, zz.x = temp;
+    if ( za.x < aa.x)
+        aa.x = za.x;  /* min */
+    if ( az.x > zz.x)
+        zz.x = az.x;  /* max */
+
+    if ( aa.y > az.y)
+        temp = aa.y, aa.y = az.y, az.y = temp;
+    if ( za.y > zz.y)
+        temp = za.y, za.y = zz.y, zz.y = temp;
+    if ( za.y < aa.y)
+        aa.y = za.y;  /* min */
+    if ( az.y > zz.y)
+        zz.y = az.y;  /* max */
+
+    push(2);
+    make_real(op - 3, (float)aa.x);
+    make_real(op - 2, (float)aa.y);
+    make_real(op - 1, (float)zz.x);
+    make_real(op    , (float)zz.y);
+    return 0;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zmatrix_op_defs[] =
@@ -354,5 +408,11 @@ const op_def zmatrix_op_defs[] =
     {"1.setdefaultmatrix", zsetdefaultmatrix},
     {"2transform", ztransform},
     {"2translate", ztranslate},
+    op_def_end(0)
+};
+
+const op_def zmatrix2_op_defs[] =
+{
+    {"2.bbox_transform", zbbox_transform},
     op_def_end(0)
 };

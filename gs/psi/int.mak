@@ -539,7 +539,7 @@ Z3_4OPS=zfilter zfproc zgeneric ziodev zmath zalg
 Z5_6OPS=zmisc zpacked zrelbit zstack zstring zsysvm
 Z7_8OPS=ztoken ztype zvmem zbfont zchar_a zchar_b zcolor zcolor_ext
 Z9OPS=zdevice zfont zfontenum zgstate1 zgstate2 zgstate3
-Z10OPS=zdfilter zht zimage zmatrix
+Z10OPS=zdfilter zht zimage zmatrix zmatrix2
 Z11OPS=zpaint zpath pantone
 # We have to be a little underhanded with *config.$(OBJ) so as to avoid
 # circular definitions.
