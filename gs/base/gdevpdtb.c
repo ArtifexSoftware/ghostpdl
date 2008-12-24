@@ -133,7 +133,7 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
 			&st_pdf_base_font, "pdf_base_font_alloc");
     const gs_font_name *pfname = &font->font_name;
     gs_const_string font_name;
-    char fnbuf[3 + sizeof(long) / 3 + 1]; /* .F#######\0 */
+    char fnbuf[2*sizeof(long) + 3]; /* .F########\0 */
     int code, reserve_glyphs = -1;
 
     if (pbfont == 0)
