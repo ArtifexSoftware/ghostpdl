@@ -1062,7 +1062,7 @@ $(GLOBJ)gdevddrw.$(OBJ) : $(GLSRC)gdevddrw.c $(GXERR) $(math__h) $(memory__h) $(
  $(gpcheck_h)\
  $(gsrect_h)\
  $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h) $(gxiparam_h) $(gxistate_h) $(gxmatrix_h)\
- $(gdevddrw_h) $(gxdtfill_h) $(vtrace_h)
+ $(gxhldevc_h) $(gdevddrw_h) $(gxdtfill_h) $(vtrace_h)
 	$(GLCC) $(GLO_)gdevddrw.$(OBJ) $(C_) $(GLSRC)gdevddrw.c
 
 $(GLOBJ)gdevdsha.$(OBJ) : $(GLSRC)gdevdsha.c $(GXERR) $(gserrors_h)\
@@ -2582,7 +2582,7 @@ $(GLOBJ)gxblend.$(OBJ) : $(GLSRC)gxblend.c $(GX) $(memory__h)\
 	$(GLCC) $(GLO_)gxblend.$(OBJ) $(C_) $(GLSRC)gxblend.c
 
 $(GLOBJ)gxblend1.$(OBJ) : $(GLSRC)gxblend1.c $(GX) $(memory__h)\
- $(gstparam_h) $(gxrect_h) $(gxblend_h) $(gxdevcli_h) $(gxistate_h)\
+ $(gstparam_h) $(gxrect_h) $(gxdcconv_h) $(gxblend_h) $(gxdevcli_h) $(gxistate_h)\
  $(gdevdevn_h) $(gdevp14_h) $(vdtrace_h)
 	$(GLCC) $(GLO_)gxblend1.$(OBJ) $(C_) $(GLSRC)gxblend1.c
 

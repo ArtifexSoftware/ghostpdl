@@ -1392,7 +1392,8 @@ $(PSOBJ)zfcid0.$(OBJ) : $(PSSRC)zfcid0.c $(OP) $(memory__h)\
 	$(PSCC) $(PSO_)zfcid0.$(OBJ) $(C_) $(PSSRC)zfcid0.c
 
 $(PSOBJ)zfcid1.$(OBJ) : $(PSSRC)zfcid1.c $(OP) $(memory__h)\
- $(gsccode_h) $(gsmatrix_h) $(gsstruct_h) $(gsgcache_h) $(gxfcid_h) $(gxfcache_h)\
+ $(gsccode_h) $(gsmatrix_h) $(gsstruct_h) $(gsgcache_h) $(gsutil_h)\
+ $(gxfcid_h) $(gxfcache_h)\
  $(bfont_h) $(icid_h) $(ichar1_h) $(idict_h) $(idparam_h)\
  $(ifcid_h) $(ifont42_h) $(store_h) $(stream_h) $(files_h)
 	$(PSCC) $(PSO_)zfcid1.$(OBJ) $(C_) $(PSSRC)zfcid1.c

@@ -25,6 +25,7 @@
 #include "gxdevice.h"
 #include "gxiparam.h"
 #include "gxistate.h"
+#include "gxhldevc.h"
 #include "gdevddrw.h"
 #include "vdtrace.h"
 /*

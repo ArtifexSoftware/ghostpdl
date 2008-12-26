@@ -20,6 +20,7 @@
 #include "gsccode.h"
 #include "gsstruct.h"
 #include "gsgcache.h"
+#include "gsutil.h"
 #include "gxfcid.h"
 #include "gxfcache.h"
 #include "bfont.h"

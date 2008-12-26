@@ -18,6 +18,7 @@
 #include "gstparam.h"
 #include "gsrect.h"
 #include "gxblend.h"
+#include "gxdcconv.h"
 #include "gxdevcli.h"
 #include "gxistate.h"
 #include "gdevdevn.h"
