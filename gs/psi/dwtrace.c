@@ -246,8 +246,7 @@ static void dw_gt_round(vd_trace_interface *I, double x, double y, int r)
 }
 
 static void dw_gt_pixel(vd_trace_interface *I, double x, double y, unsigned long rgbcolor)
-{   HPEN h;
-    get_window(); 
+{   get_window(); 
     if (host.tw == NULL) 
         return;
     SetPixel(I->host->hdc, SX(x), SY(y), rgbcolor);

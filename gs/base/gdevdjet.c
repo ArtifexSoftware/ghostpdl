@@ -452,7 +452,6 @@ ljet4d_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     int dots_per_inch = (int)pdev->y_pixels_per_inch;
     char base_init[60];
     char init[80];
-    char even_base_init[80];
     char even_init[80];
 
     gx_device_hpjet *dev = (gx_device_hpjet *)pdev;
