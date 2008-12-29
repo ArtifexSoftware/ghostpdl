@@ -654,7 +654,7 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr,
 	    a = buf_ptr[x + planestride * num_comp];
 
 	    if ((a + 1) & 0xfe) {
-		a ^= 0xff;
+		/* a ^= 0xff; */  /* No inversion here! Bug 689895 */
 		for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
 		    comp  = buf_ptr[x + planestride * input_map[comp_num]];
 		    tmp = ((comp - bg) * a) + 0x80;
