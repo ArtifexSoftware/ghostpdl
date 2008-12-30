@@ -838,6 +838,7 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	    if ((byte *)pp >= imem->cc.int_freed_top)
 		imem->cc.int_freed_top = (byte *)ptr + rounded_size;
 	    pp->o_type = &st_free;	/* don't confuse GC */
+	    o_set_unmarked(pp);
 	    gs_alloc_fill(ptr, gs_alloc_fill_free, size);
 	    *(obj_header_t **) ptr = *pfl;
 	    *pfl = (obj_header_t *) ptr;

@@ -73,7 +73,7 @@ static int gc_rescan_chunk(chunk_t *, gc_state_t *, gc_mark_stack *);
 static int gc_trace_chunk(const gs_memory_t *mem, chunk_t *, gc_state_t *, gc_mark_stack *);
 static bool gc_trace_finish(gc_state_t *);
 static void gc_clear_reloc(chunk_t *);
-static void gc_objects_set_reloc(chunk_t *);
+static void gc_objects_set_reloc(gc_state_t * gcst, chunk_t *);
 static void gc_do_reloc(chunk_t *, gs_ref_memory_t *, gc_state_t *);
 static void gc_objects_compact(chunk_t *, gc_state_t *);
 static void gc_free_empty_chunks(gs_ref_memory_t *);
@@ -415,7 +415,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
     /* we are going to compact.  Also finalize freed objects. */
 
     for_collected_chunks(mem, cp) {
-	gc_objects_set_reloc(cp);
+	gc_objects_set_reloc(&state, cp);
 	gc_strings_set_reloc(cp);
     }
 
@@ -1145,7 +1145,7 @@ gc_clear_reloc(chunk_t * cp)
 /* Set the relocation for the objects in a chunk. */
 /* This will never be called for a chunk with any o_untraced objects. */
 static void
-gc_objects_set_reloc(chunk_t * cp)
+gc_objects_set_reloc(gc_state_t * gcst, chunk_t * cp)
 {
     uint reloc = 0;
     chunk_head_t *chead = cp->chead;
@@ -1175,7 +1175,7 @@ gc_objects_set_reloc(chunk_t * cp)
 	if_debug3('7', " [7]at 0x%lx, unmarked %lu, new reloc = %u\n",
 		  (ulong) pre, (ulong) size, reloc);
     } else {			/* Useful object */
-	debug_check_object(pre, cp, NULL);
+	debug_check_object(pre, cp, gcst);
 	pre->o_back = ((byte *) pre - pfree) >> obj_back_shift;
     }
     END_OBJECTS_SCAN
