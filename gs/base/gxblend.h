@@ -20,6 +20,8 @@
 #include "gxcvalue.h"
 #include "gxfrac.h"
 
+#define RAW_DUMP 0
+
 /* #define DUMP_TO_PNG */
 
 #define	PDF14_MAX_PLANES GX_DEVICE_COLOR_MAX_COMPONENTS
@@ -359,5 +361,12 @@ int gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr,
 int gx_put_blended_image_custom(gx_device *target, byte *buf_ptr, 
 		      int planestride, int rowstride,
 		      int x0, int y0, int width, int height, int num_comp, byte bg);
+
+#if RAW_DUMP
+
+void dump_raw_buffer(int num_rows, int width, int n_chan,
+                    int plane_stride, int rowstride, 
+                    char filename[],byte *Buffer);
+#endif
 
 #endif /* gxblend_INCLUDED */

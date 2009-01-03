@@ -20,6 +20,10 @@
 
 typedef int art_s32;
 
+#if RAW_DUMP
+extern unsigned char global_index;
+#endif
+
 void
 art_blend_luminosity_rgb_8(int n_chan, byte *dst, const byte *backdrop,
 			   const byte *src)
@@ -1216,4 +1220,48 @@ art_pdf_composite_knockout_8(byte *dst,
     *dst_alpha_g = alpha_g_i;
 }
 
+#if RAW_DUMP
 
+/* Debug dump of buffer data from pdf14 device.  Saved in
+   planar form with global indexing and tag information in
+   file name */
+
+void
+dump_raw_buffer(int num_rows, int width, int n_chan,
+                int plane_stride, int rowstride, 
+                char filename[],byte *Buffer)
+
+{
+    char full_file_name[50];
+    FILE *fid;
+    int z,y;
+    byte *buff_ptr;
+
+    buff_ptr = Buffer;
+
+    sprintf(full_file_name,"%d)%s_%dx%dx%d.raw",global_index,filename,width,num_rows,n_chan);
+    fid = fopen(full_file_name,"wb");
+
+    for (z = 0; z < n_chan; ++z) {
+
+        /* grab pointer to the next plane */
+
+        buff_ptr = &(Buffer[z*plane_stride]);
+    
+        for ( y = 0; y < num_rows; y++ ) {
+
+            /* write out each row */
+            fwrite(buff_ptr,sizeof(unsigned char),width,fid);
+
+            buff_ptr += rowstride;
+
+        }
+
+    }
+
+	fclose(fid);
+
+}
+
+
+#endif
