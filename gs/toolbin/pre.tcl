@@ -151,6 +151,18 @@ foreach d "[glob doc/*.htm] doc/gs-vms.hlp" {
     }
 }
 
+switch $tcl_platform(platform) {
+     unix {
+         set tmpdir /tmp   # or even $::env(TMPDIR), at times.
+     } macintosh {
+         set tmpdir $::env(TRASH_FOLDER)  ;# a better place?
+     } default {
+         set tmpdir [pwd]
+         catch {set tmpdir $::env(TMP)}
+         catch {set tmpdir $::env(TEMP)}
+     }
+}
+
 if {$argv == {update}} {
     # Update dates in .htm and .1 files.
     proc updoc {doc before after} {
