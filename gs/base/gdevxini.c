@@ -903,7 +903,10 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
 	dev->is_open = false;
     xdev->IsPageDevice = values.IsPageDevice;
     code = gx_default_put_params(dev, plist);
-    dev->is_open = values.is_open; /* saved value */
+    /* Prevent us from preventing the device closure if the size changed;
+     * that may require us to rebuild the buffer (see x_set_buffer). */
+    if (xdev->width == values.width && xdev->height == values.height)
+      dev->is_open = values.is_open; /* saved value */
     if (code < 0) {		/* Undo setting of .IsPageDevice */
 	xdev->IsPageDevice = save_is_page;
 	return code;
