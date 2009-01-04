@@ -102,7 +102,7 @@ const gx_device_printer far_data gs_epson_device =
   prn_device(prn_std_procs, "epson",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,
-	0.2, 0.0, 0.0, 0.0,			/* margins */
+	0.25, 0.02, 0.25, 0.4,			/* margins */
 	1, epson_print_page);
 
 /* Mid-res (interleaved, 1 pass per line) 9-pin device */
