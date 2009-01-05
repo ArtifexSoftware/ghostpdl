@@ -32,7 +32,6 @@ sub daysFromNow($) {
     ($day2, $month2, $year2) = (localtime)[3,4,5];
     $year2+=1900;
     $month2+=1;
-    $diff=Delta_Days($year1,$month1,$day1,(localtime)[5,4,3]);
     $diff=Delta_Days($year1,$month1,$day1,$year2,$month2,$day2);
   }
 
