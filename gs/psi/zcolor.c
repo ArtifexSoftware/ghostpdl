@@ -3767,7 +3767,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
 {
     os_ptr  op = osp;   /* required by "push" macro */
     int code = 0, num_components, i;
-    ref namesarray, proc, sname, sref, tempref[2];
+    ref namesarray, proc, sname, tname, sref, tempref[2];
     ref_colorspace cspace_old;
     gs_color_space *pcs;
     gs_color_space * pacs;
@@ -3876,15 +3876,16 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
 	array_get(imemory, &namesarray, (long)0, &sname);
 	switch (r_type(&sname)) {
 	    case t_string:
+		tname = sname;
 		break;
 	    case t_name:
-		name_string_ref(imemory, &sname, &sname);
+		name_string_ref(imemory, &sname, &tname);
 		break;
 	    default:
 		return_error(e_typecheck);
 		break;
 	}
-	if (strncmp((const char *)sname.value.const_bytes, "All", 3) == 0 && r_size(&sname) == 3) {
+	if (strncmp((const char *)tname.value.const_bytes, "All", 3) == 0 && r_size(&tname) == 3) {
 	    separation_type sep_type;
 
 	    /* Sigh, Acrobat allows this, even though its contra the spec. Convert to
@@ -4918,9 +4919,6 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 		if (code < 0)
 		    return code;
 
-		code = dict_find_string(&ICCdict, "Alternate", &altref);
-		if (code < 0)
-		    return code;
 		code = dict_find_string(&ICCdict, "N", &tempref);
 		if (code < 0)
 		    return code;
@@ -4928,7 +4926,8 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 
 		/* Don't allow ICCBased spaces if NOCIE is true */
 		if (nocie->value.boolval) {
-		    if (r_type(altref) != t_null) {
+		    dict_find_string(&ICCdict, "Alternate", &altref); /* Alternate is optional */
+		    if ((altref != NULL) && (r_type(altref) != t_null)) {
 			/* The PDF interpreter sets a null Alternate. If we have an
 			 * Alternate, and its not null, and NOCIE is true, then use the 
 			 * Alternate instead of the ICC
@@ -4996,17 +4995,49 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 		    ref_assign(op, &ICCdict);
 		    code = seticc(i_ctx_p, components, op, (float *)&range);
 		    if (code < 0) {
-			/* Our dictionary still on operand stack, we can reuse the
-			 * slot on the stack to hold hte alternate space.
-			 */
-			ref_assign(op, altref);
-			/* If CIESubst, we are already substituting for CIE, so use nosubst 
-			 * to prevent further substitution!
-			 */
-			if (CIESubst) 
-			    return setcolorspace_nosubst(i_ctx_p);
-			else
-			    return zsetcolorspace(i_ctx_p);
+			if (altref) {
+			    /* We have a /Alternate in the ICC space */
+			    /* Our ICC dictionary still on operand stack, we can reuse the
+			     * slot on the stack to hold the alternate space.
+			     */
+			    ref_assign(op, (ref *)&altref);
+			    /* If CIESubst, we are already substituting for CIE, so use nosubst 
+			     * to prevent further substitution!
+			     */
+			    if (CIESubst) 
+				return setcolorspace_nosubst(i_ctx_p);
+			    else
+				return zsetcolorspace(i_ctx_p);
+			} else {
+			    /* We have no /Alternate in the ICC space, use hte /N key to
+			     * determine an 'appropriate' default space.
+			     */
+			    int stage1 = 1, cont1 = 0;
+			    switch(components) {
+				case 1:
+				    code = setgrayspace(i_ctx_p, (ref *)0x00, &stage1, &cont1, 1);
+				    if (code != 0)
+					return code;
+				    *stage = 0;
+				    break;
+				case 3:
+				    code = setrgbspace(i_ctx_p, (ref *)0x00, &stage1, &cont1, 1);
+				    if (code != 0)
+					return code;
+				    *stage = 0;
+				    break;
+				case 4:
+				    code = setcmykspace(i_ctx_p, (ref *)0x00, &stage1, &cont1, 1);
+				    if (code != 0)
+					return code;
+				    *stage = 0;
+				    break;
+				default:
+				    return_error(e_rangecheck);
+				    break;
+			    }
+			}
+			pop(1);
 		    }
 		    if (code != 0)
 			return code;
@@ -5040,7 +5071,7 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 		if (code < 0) {
     		    code = dict_find_string(&ICCdict, "Alternate", &altref);
 		    if (code < 0)
-			return code;
+			make_null(altref);	/* no Alternate -- just use null */
 		    /* Our dictionary still on operand stack, we can reuse the
 		     * slot on the stack to hold the alternate space.
 		     */

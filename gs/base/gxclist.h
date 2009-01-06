@@ -280,6 +280,7 @@ struct gx_device_clist_writer_s {
     uint mask_id_count;
     uint mask_id;
     uint temp_mask_id; /* Mask id of a mask of an image with SMask. */
+    bool is_fillpage;
 };
 #ifndef gx_device_clist_writer_DEFINED
 #define gx_device_clist_writer_DEFINED

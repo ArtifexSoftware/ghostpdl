@@ -52,6 +52,7 @@ static dev_proc_strip_copy_rop(bbox_strip_copy_rop);
 static dev_proc_begin_typed_image(bbox_begin_typed_image);
 static dev_proc_create_compositor(bbox_create_compositor);
 static dev_proc_text_begin(bbox_text_begin);
+static dev_proc_fillpage(bbox_fillpage);
 
 /* The device prototype */
 /*
@@ -134,7 +135,16 @@ gx_device_bbox gs_bbox_device =
      NULL,			/* get_color_mapping_procs */
      NULL,			/* get_color_comp_index */
      NULL,			/* encode_color */
-     NULL			/* decode_color */
+     NULL,			/* decode_color */
+     NULL,			/*pattern_manage; */
+     NULL,			/* fill_rectangle_hl_color */
+     NULL,			/* include_color_space */
+     NULL,			/* fill_linear_color_scanline */
+     NULL,			/* fill_linear_color_trapezoid */
+     NULL,			/* fill_linear_color_triangle */
+     NULL,			/* update_spot_equivalent_colors */
+     NULL,			/* ret_devn_params */
+     bbox_fillpage			/* fillpage */
     },
     0,				/* target */
     1,				/*true *//* free_standing */
@@ -205,10 +215,7 @@ static const gx_device_bbox_procs_t box_procs_default = {
     bbox_default_in_rect
 };
 
-#define RECT_IS_PAGE(dev, x, y, w, h)\
-  (x <= 0 && y <= 0 && x + w >= dev->width && y + h >= dev->height)
-
-     /* ---------------- Open/close/page ---------------- */
+/* ---------------- Open/close/page ---------------- */
 
 /* Copy device parameters back from the target. */
 static void
@@ -218,7 +225,7 @@ bbox_copy_params(gx_device_bbox * bdev, bool remap_colors)
 
     if (tdev != 0)
 	gx_device_copy_params((gx_device *)bdev, tdev);
-    if (remap_colors) {
+    if (remap_colors && bdev->is_open) {
 	bdev->black = gx_device_black((gx_device *)bdev);
 	bdev->white = gx_device_white((gx_device *)bdev);
 	bdev->transparent =
@@ -389,10 +396,8 @@ bbox_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 	 dev_proc(tdev, fill_rectangle)(tdev, x, y, w, h, color));
 
     /* Check for erasing the entire page. */
-    if (RECT_IS_PAGE(dev, x, y, w, h)) {
-	if (!BBOX_INIT_BOX(bdev))
-	    return code;
-    }
+    if (!BBOX_INIT_BOX(bdev))
+	return code;
     if (color != bdev->transparent)
 	BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
     return code;
@@ -464,10 +469,8 @@ bbox_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	 dev_proc(tdev, strip_tile_rectangle)
 	 (tdev, tiles, x, y, w, h, color0, color1, px, py));
 
-    if (RECT_IS_PAGE(dev, x, y, w, h)) {
-	if (!BBOX_INIT_BOX(bdev))
-	    return code;
-    }
+    if (!BBOX_INIT_BOX(bdev))
+	return code;
     BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
     return code;
 }
@@ -1240,3 +1243,16 @@ bbox_text_begin(gx_device * dev, gs_imager_state * pis,
     return code;
 }
 
+/* --------------- fillpage ------------------- */
+
+int bbox_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
+{
+    /* Call the target's proc, but don't account the size. */
+    gx_device_bbox *const bdev = (gx_device_bbox *) dev;
+    gx_device *tdev = bdev->target;
+
+    BBOX_INIT_BOX(bdev);
+    if (tdev == NULL)
+	return 0;
+    return dev_proc(tdev, fillpage)(tdev, pis, pdevc);
+}

@@ -48,11 +48,6 @@ gdev_pdf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
     int code;
 
-    /* Make a special check for the initial fill with white, */
-    /* which shouldn't cause the page to be opened. */
-    if (color == pdev->white && !is_in_page(pdev) && pdev->sbstack_depth <= bottom)
-	if (x == 0 && y == 0 && w == pdev->width && h == pdev->height)
-	    return 0;
     code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
@@ -464,20 +459,6 @@ prepare_fill_with_clip(gx_device_pdf *pdev, const gs_imager_state * pis,
     bool new_clip;
     int code;
 
-    if (gx_dc_is_pure(pdcolor)) {
-        int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
- 	/*
-	 * Make a special check for the initial fill with white,
-	 * which shouldn't cause the page to be opened.
-	 */
-	if (gx_dc_pure_color(pdcolor) == pdev->white && 
-		!is_in_page(pdev) && pdev->sbstack_depth <= bottom) {
-	    if (box->p.x == 0 && box->p.y == 0 && 
-		    box->q.x == int2fixed(pdev->width) && 
-		    box->q.y == int2fixed(pdev->height)) /* See gs_fillpage */
-		return 1;
-        }
-    }
     /*
      * Check for an empty clipping path.
      */
@@ -1224,6 +1205,7 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
 	(ppath->last_charpath_segment == ppath->current_subpath->last)) {
 	bool hl_color = pdf_can_handle_hl_color((gx_device_vector *)pdev, pis, pdcolor);
 	const gs_imager_state *pis_for_hl_color = (hl_color ? pis : NULL);
+	int save_render_mode = pdf_get_text_render_mode(pdev->text->text_state);
 	
 	if (pdf_modify_text_render_mode(pdev->text->text_state, 1)) {
 	    /* Set the colour for the stroke */
@@ -1235,23 +1217,9 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
 		 * needs to be scaled to match otherwise we will get the default, or the current
 		 * width scaled by the CTM before the text, either of which would be wrong.
 		 */
-		if (pdev->font3 != 0) {
-		    double det, scale;
-
-		    /* Since font matrix may have different scaling effect by
-		       different directions, we need to average them into
-		       a single scaling factor. A right way is to use
-		       the geometric average of the 2 eigenvalues of the 2x2 matrix,
-		       which appears equal to sqrt(abs(det(M)) where M
-		       is the font matrix with no translation.  */
-		    det = ((double)fixed2float(pdev->charproc_ctm.xx) * fixed2float(pdev->charproc_ctm.yy)) - 
-			((double)fixed2float(pdev->charproc_ctm.xy) * fixed2float(pdev->charproc_ctm.yx));
-		    scale = fabs(sqrt(det));
-		    scale *= 72 / pdev->HWResolution[0];
-		    pprintg1(s, "%g w\n", (pis->line_params.half_width * 2) * (float)scale);
-		} else {
-		    pprintg1(s, "%g w\n", (pis->line_params.half_width * 2));
-		}
+		scale = 72 / pdev->HWResolution[0];
+		scale *= pis->ctm.xx;
+		pprintg1(s, "%g w\n", (pis->line_params.half_width * 2) * (float)scale);
 		/* Some trickery here. We have altered the colour, text render mode and linewidth,
 		 * we don't want those to persist. By switching to a stream context we will flush the 
 		 * pending text. This has the beneficial side effect of executing a grestore. So
@@ -1448,3 +1416,16 @@ gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     }
 }
 
+int
+gdev_pdf_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
+{
+    gx_device_pdf *pdev = (gx_device_pdf *) dev;
+    int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
+
+    if (gx_dc_pure_color(pdevc) == pdev->white && !is_in_page(pdev) && pdev->sbstack_depth <= bottom) {
+	/* PDF doesn't need to erase the page if its plain white */
+	return 0;
+    }
+    else
+	return gx_default_fillpage(dev, pis, pdevc);
+}

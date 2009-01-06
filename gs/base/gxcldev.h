@@ -277,6 +277,7 @@ struct gx_clist_state_s {
 /* ---------------- Driver procedures ---------------- */
 
 /* In gxclrect.c */
+dev_proc_fillpage(clist_fillpage);
 dev_proc_fill_rectangle(clist_fill_rectangle);
 dev_proc_copy_mono(clist_copy_mono);
 dev_proc_copy_color(clist_copy_color);
@@ -482,6 +483,9 @@ int cmd_set_tile_colors(gx_device_clist_writer *cldev, gx_clist_state * pcls,
 			gx_color_index color0, gx_color_index color1);
 
 /* Put out a command to set the tile phase. */
+int
+cmd_set_tile_phase_generic(gx_device_clist_writer * cldev, gx_clist_state * pcls,
+		   int px, int py, bool all_bands);
 int cmd_set_tile_phase(gx_device_clist_writer *cldev, gx_clist_state * pcls,
 		       int px, int py);
 
@@ -593,13 +597,15 @@ typedef struct cmd_rects_enum_s {
 	int band;
 	gx_clist_state *pcls;
 	int band_end;
+	int nbands;
 } cmd_rects_enum_t;
 
 #define RECT_ENUM_INIT(re, yvar, heightvar)\
 	re.y = yvar;\
 	re.height = heightvar;\
 	re.yend = re.y + re.height;\
-	re.band_height = cdev->page_band_height;
+	re.band_height = cdev->page_band_height;\
+	re.nbands = (re.yend - re.y + re.band_height - 1) / re.band_height;
 
 #define RECT_STEP_INIT(re)\
 	    re.band = re.y / re.band_height;\
@@ -620,6 +626,9 @@ const byte *cmd_read_matrix(gs_matrix * pmat, const byte * cbp);
 /* Put out a fill or tile rectangle command. */
 int cmd_write_rect_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		       int op, int x, int y, int width, int height);
+
+/* Put out a fill or tile rectangle command for fillpage. */
+int cmd_write_page_rect_cmd(gx_device_clist_writer * cldev, int op);
 
 /* ------ Exported by gxclbits.c ------ */
 

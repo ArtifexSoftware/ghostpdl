@@ -163,7 +163,8 @@ const gx_device_procs gs_clist_device_procs = {
     clist_fill_linear_color_trapezoid,
     clist_fill_linear_color_triangle,
     gx_forward_update_spot_equivalent_colors,
-    gx_forward_ret_devn_params
+    gx_forward_ret_devn_params,
+    clist_fillpage
 };
 
 /*------------------- Choose the implementation -----------------------

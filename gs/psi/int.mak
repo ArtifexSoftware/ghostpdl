@@ -539,7 +539,7 @@ Z3_4OPS=zfilter zfproc zgeneric ziodev zmath zalg
 Z5_6OPS=zmisc zpacked zrelbit zstack zstring zsysvm
 Z7_8OPS=ztoken ztype zvmem zbfont zchar_a zchar_b zcolor zcolor_ext
 Z9OPS=zdevice zfont zfontenum zgstate1 zgstate2 zgstate3
-Z10OPS=zdfilter zht zimage zmatrix
+Z10OPS=zdfilter zht zimage zmatrix zmatrix2
 Z11OPS=zpaint zpath pantone
 # We have to be a little underhanded with *config.$(OBJ) so as to avoid
 # circular definitions.
@@ -1392,7 +1392,8 @@ $(PSOBJ)zfcid0.$(OBJ) : $(PSSRC)zfcid0.c $(OP) $(memory__h)\
 	$(PSCC) $(PSO_)zfcid0.$(OBJ) $(C_) $(PSSRC)zfcid0.c
 
 $(PSOBJ)zfcid1.$(OBJ) : $(PSSRC)zfcid1.c $(OP) $(memory__h)\
- $(gsccode_h) $(gsmatrix_h) $(gsstruct_h) $(gsgcache_h) $(gxfcid_h)\
+ $(gsccode_h) $(gsmatrix_h) $(gsstruct_h) $(gsgcache_h) $(gsutil_h)\
+ $(gxfcid_h) $(gxfcache_h)\
  $(bfont_h) $(icid_h) $(ichar1_h) $(idict_h) $(idparam_h)\
  $(ifcid_h) $(ifont42_h) $(store_h) $(stream_h) $(files_h)
 	$(PSCC) $(PSO_)zfcid1.$(OBJ) $(C_) $(PSSRC)zfcid1.c

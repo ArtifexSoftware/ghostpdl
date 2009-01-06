@@ -93,7 +93,7 @@ CFLAGS_DEBUG=-g -O
 CFLAGS_PROFILE=-pg -O2
 CFLAGS=$(CFLAGS_DEBUG) $(GCFLAGS) $(XCFLAGS)
 LDFLAGS=$(XLDFLAGS)
-STDLIBS=-lm
+STDLIBS=-lpthread -lm
 EXTRALIBS=
 XINCLUDE=-I/usr/X11R6/include
 XLIBDIRS=-L/usr/X11R6/lib
@@ -148,8 +148,6 @@ CC_SHARED=$(CC_)
 
 include $(GLSRCDIR)/unixhead.mak
 include $(GLSRCDIR)/gs.mak
-# psromfs.mak must precede lib.mak
-include $(PSSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak
 include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak

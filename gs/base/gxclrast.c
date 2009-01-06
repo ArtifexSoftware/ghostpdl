@@ -1963,6 +1963,11 @@ idata:			data_size = 0;
 		  state.rect.height);
 	switch (op >> 4) {
 	    case cmd_op_fill_rect >> 4:
+		if (state.rect.width == 0 && state.rect.height == 0 &&
+		    state.rect.x == 0 && state.rect.y == 0) {
+		    code = (*dev_proc(tdev, fillpage))(tdev, &imager_state, &dev_color);
+		    break;
+		}
 	    case cmd_op_fill_rect_short >> 4:
 	    case cmd_op_fill_rect_tiny >> 4:
 		if (!state.lop_enabled) {
@@ -1990,6 +1995,11 @@ idata:			data_size = 0;
 		data_x = 0;
 		break;
 	    case cmd_op_tile_rect >> 4:
+		if (state.rect.width == 0 && state.rect.height == 0 &&
+		    state.rect.x == 0 && state.rect.y == 0) {
+		    code = (*dev_proc(tdev, fillpage))(tdev, &imager_state, &dev_color);
+		    break;
+		}
 	    case cmd_op_tile_rect_short >> 4:
 	    case cmd_op_tile_rect_tiny >> 4:
 		/* Currently we don't use lop with tile_rectangle. */

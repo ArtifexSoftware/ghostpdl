@@ -641,10 +641,14 @@ currentdict /token_nofail_dict .undef
   pop pop pop pop		% Clear stack
 } bind def
 
+/no_debug_dict <<
+  /PDFDEBUG false
+>> readonly def
+
 % Resolve all objects in an object stream
 /resolveobjectstream {		% <object stream #> resolveobjectstream -
   PDFDEBUG { (%Resolving object stream: ) print } if
-  0 resolveR	% Get the objectstream dict, all objstrms use 0 as the gen #
+  dup 0 resolveR % Get the objectstream dict, all objstrms use 0 as the gen #
   dup /Type get /ObjStm ne {	% Verify type is object stream
     (   **** Incorrect Type in object stream dictionary.\n) pdfformaterror
     /resolveobjectstream cvx /typecheck signalerror
@@ -656,7 +660,7 @@ currentdict /token_nofail_dict .undef
   1 index array			% Create array for holding object number
 		% Get the object numbers
   0 1 4 index 1 sub {		% Loop and collect obj numbers
-		% Stack: objstreamdict N PDFDEBUG objectstream [obj#] loopindex
+		% Stack: strm# objstreamdict N PDFDEBUG objectstream [obj#] loopindex
     1 index 1 index 		% Setup to put obj# into object number array
     4 index token pop put	% Get stream, then get obj# and put into array
     2 index token pop pop pop	% Get stream, get obj loc and clear stack
@@ -666,39 +670,46 @@ currentdict /token_nofail_dict .undef
   setfileposition		% Move to the start of the data
   		% We disable PDFDEBUG while reading the data stream.  We will
 		% print the data later
-  PDFDEBUG /PDFDEBUG false gput % Save PDFDEBUG and disable it while reading
+  PDFDEBUG { //no_debug_dict begin } if
   		% Read the data for all objects.  We check to see if we get
 		% the number of objects that we expect.
-		% Stack: objstreamdict N objectstream [obj#] PDFDEBUG
-  mark 4 -1 roll 		% Get objectstream
-  count 5 index add		% Determine stack depth with objects
-  /PDFObjectStkCount exch def
+		% Stack: strm# objstreamdict N objectstream [obj#] PDFDEBUG
+  mark 3 -1 roll 		% Get objectstream
+  count 4 index add		% Determine stack depth with objects
+  3 1 roll
   resolveobjstreamopdict .pdfrun % Get PDF objects
-  PDFObjectStkCount count ne {	% Check stack depth
+  count counttomark 1 add index ne { % Check stack depth
     (   **** Incorrect object count in object stream.\n) pdfformaterror
     /resolveobjectstream cvx /rangecheck signalerror
   } if
   		% We have the object data
   counttomark array astore	% Put objects into an array
-  exch pop			% Remove mark
-  exch /PDFDEBUG exch def	% Restore PDFDEBUG flag
+  exch pop exch pop		% Remove mark and count
+  currentdict //no_debug_dict eq { end } if % Restore debug context
 		% Save the objects into Objects
   0 1 2 index length 1 sub {	% Loop through all objects
-		% Stack: objstreamdict N [obj#] [objects] loopindex
+		% Stack: strm# objstreamdict N [obj#] [objects] loopindex
     dup 3 index exch get 	% Get our current object number
-    dup resolved? {		% If we already have this object
-      pop pop			% Remove object and object number
-    } {				% Else if we do not have this object
-      PDFDEBUG { (%Resolving compressed object: [) print dup =only ( 0]) = } if
-      Objects exch 3 index	% Put the object into Objects
-      3 index get
-      PDFDEBUG { dup === flush } if
-      lput
+                % Stack: strm# objstreamdict N [obj#] [objects] loopindex obj#
+    dup ObjectStream exch lget 7 index eq {
+      dup resolved? {		% If we already have this object
+        pop pop			% Remove object and object number
+      } {			% Else if we do not have this object
+        PDFDEBUG { (%Resolving compressed object: [) print dup =only ( 0]) = } if
+        Objects exch 3 index	% Put the object into Objects
+        3 index get
+        PDFDEBUG { dup === flush } if
+        lput
+      } ifelse
+    } {
+      pop	% Ignore old object; remove object number.
     } ifelse
     pop 			% Remove loop index
   } for
-  pop pop pop pop		% Remove objstream, N, (obj#], and [objects]
+  pop pop pop pop pop		% Remove strm# objstream, N, (obj#], and [objects]
 } bind def
+
+currentdict /no_debug_dict undef
 
 % When resolving an object reference, we stop at the endobj or endstream.
 /resolveopdict mark
@@ -836,7 +847,7 @@ currentdict /token_nofail_dict .undef
     } if
     1 index exch /File exch put
   } ifelse
-  PDFsource token_nofail not { null } if
+  PDFsource token_nofail not { //null } if
   dup /endobj eq {
     % Another case that Acrobat Reader handles -- 'endobj' without 'endstream'.
     (   **** Warning: stream missing 'endstream'.\n) pdfformaterror
@@ -846,7 +857,12 @@ currentdict /token_nofail_dict .undef
     (   **** Warning: stream Length incorrect.\n) pdfformaterror
     dup /Length undef % prevent the use of the incorrect length.
     cvx endobj exit   % exit from .pdfrun now.
-  } if
+  } {
+    PDFsource (??) .peekstring pop (>>) eq { % Bug 690161, sample #1
+      (   **** Warning: Spurious '>>' after 'emdstream' ignored.\n) pdfformaterror
+      PDFsource (12) readstring pop pop
+    } if
+  } ifelse
   cvx
 } bind def
 /endstream {

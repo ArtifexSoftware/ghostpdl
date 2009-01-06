@@ -939,7 +939,7 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
 		make_stream_file(pfile, s, "r");
 		return 0;
 	    }
-	    iodev_os_fclose(iodev, s->file);
+	    sclose(s);
 	    return_error(e_invalidfileaccess);
 	}
 	skip:;
@@ -988,7 +988,7 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
 			make_stream_file(pfile, s, "r");
 			return 0;
 		    }
-		    iodev_os_fclose(iodev, s->file);
+		    sclose(s);
 		    return_error(e_invalidfileaccess);
 		}
 	    }

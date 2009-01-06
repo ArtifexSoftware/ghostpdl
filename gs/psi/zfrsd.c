@@ -371,6 +371,7 @@ make_aos(i_ctx_t *i_ctx_p, os_ptr op, int blk_sz, int blk_sz_last, uint file_sz)
     s->file_offset = 0;
     s->file_limit = max_long;
     s->close_at_eod = false;
+    s->read_id = 1;
     make_stream_file(op, s, "r");
     return 0;
 }

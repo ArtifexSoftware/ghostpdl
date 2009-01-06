@@ -65,10 +65,14 @@
  * Assigning the components individually is fastest on Turbo C,
  * and on Watcom C when one or both of the addresses are
  * already known or in a register.
+ *
+ * Though, it sends wrong signals to the compiler that believes it's okay-ish
+ * to update the structure in two calls, and risks very wrong reordering. This
+ * _MUST_ be done in one call, and trust the compiler to do the proper thing,
+ * if not too bad. And we're using GCC anyways on Debian.
  */
 #define ref_assign_inline(pto,pfrom)\
-	((pto)->value = (pfrom)->value,\
-	 (pto)->tas = (pfrom)->tas)
+	(*(pto) = *(pfrom))
 #ifdef __TURBOC__
 	/*
 	 * Move the data in two 32-bit chunks, because

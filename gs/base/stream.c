@@ -535,7 +535,7 @@ sgets(stream * s, byte * buf, uint nmax, uint * pn)
 		 */
 		s->srptr = s->srlimit = s->cbuf - 1;
 		s->position += cw.ptr - wptr;
-		if (status != 1 || cw.ptr == cw.limit)
+		if (status <= 0 || cw.ptr == cw.limit)
 		    break;
 	    }
 	    c = spgetc(s);

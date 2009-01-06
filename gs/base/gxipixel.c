@@ -209,11 +209,20 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     penum->Height = height;
     if (pmat == 0)
 	pmat = &ctm_only(pis);
-    if ((code = gs_matrix_invert_to_double(&pim->ImageMatrix, &mat)) < 0 ||
-	(code = gs_matrix_multiply_double(&mat, pmat, &mat)) < 0
-	) {
-	gs_free_object(mem, penum, "gx_default_begin_image");
-	return code;
+    if (pim->ImageMatrix.xx == pmat->xx && pim->ImageMatrix.xy == pmat->xy &&
+        pim->ImageMatrix.yx == pmat->yx && pim->ImageMatrix.yy == pmat->yy) {
+        /* Process common special case separately to accept singular matrix. */
+        mat.xx = mat.yy = 1.;
+        mat.xy = mat.yx = 0.;
+        mat.tx = pmat->tx - pim->ImageMatrix.tx;
+        mat.ty = pmat->ty - pim->ImageMatrix.ty;
+    } else {
+        if ((code = gs_matrix_invert_to_double(&pim->ImageMatrix, &mat)) < 0 ||
+	    (code = gs_matrix_multiply_double(&mat, pmat, &mat)) < 0
+	    ) {
+	    gs_free_object(mem, penum, "gx_default_begin_image");
+	    return code;
+        }
     }
     /*penum->matrix = mat;*/
     penum->matrix.xx = mat.xx;
@@ -708,12 +717,18 @@ image_init_colors(gx_image_enum * penum, int bps, int spp,
 		  const gs_imager_state * pis, gx_device * dev,
 		  const gs_color_space * pcs, bool * pdcb)
 {
-    int ci;
+    int ci, decode_type;
     static const float default_decode[] = {
 	0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0
     };
 
     image_init_clues(penum, bps, spp);
+
+    decode_type = 3; /* 0=custom, 1=identity, 2=inverted, 3=impossible */
+    for (ci = 0; ci < spp; ci +=2 ) {
+        decode_type &= (decode[ci] == 0. && decode[ci + 1] == 1.) |
+                       (decode[ci] == 1. && decode[ci + 1] == 0.) << 1; 
+    }
 
     /* Initialize the maps from samples to intensities. */
     for (ci = 0; ci < spp; ci++) {
@@ -728,19 +743,15 @@ image_init_colors(gx_image_enum * penum, int bps, int spp,
 					/* construct the expansion map */
 	const float *real_decode;	/* decoding for expanded samples */
 
-	bool no_decode;
-
 	map_decode = real_decode = this_decode;
-	if (map_decode[0] == 0.0 && map_decode[1] == 1.0)
-	    no_decode = true;
-	else if (map_decode[0] == 1.0 && map_decode[1] == 0.0 && bps <= 8) {
-	    no_decode = true;
-	    real_decode = default_decode;
-	} else {
-	    no_decode = false;
-	    *pdcb = false;
-	    map_decode = default_decode;
-	}
+	if (!(decode_type & 1)) {
+	    if ((decode_type & 2) && bps <= 8) {
+	        real_decode = default_decode;
+	    } else {
+	        *pdcb = false;
+	        map_decode = default_decode;
+	    }
+        }
 	if (bps > 2 || format != gs_image_format_chunky) {
 	    if (bps <= 8)
 		image_init_map(&pmap->table.lookup8[0], 1 << bps,
@@ -783,7 +794,7 @@ image_init_colors(gx_image_enum * penum, int bps, int spp,
 	    (real_decode[1] - real_decode[0]) /
 	    (bps <= 8 ? 255.0 : (float)frac_1);
 	pmap->decode_max /* = decode_lookup[15] */  = real_decode[1];
-	if (no_decode) {
+	if (decode_type) {
 	    pmap->decoding = sd_none;
 	    pmap->inverted = map_decode[0] != 0;
 	} else if (bps <= 4) {

@@ -404,7 +404,16 @@ static gx_device_procs no_overprint_procs = {
     0,                                  /* get_color_mapping_procs */
     overprint_get_color_comp_index,	/* get_color_comp_index */
     0,                                  /* encode_color */
-    0                                   /* decode_color */
+    0,                                  /* decode_color */
+    0,					/* pattern_manage */
+    0,					/* fill_rectangle_hl_color */
+    0,					/* include_color_space */
+    0,					/* fill_linear_color_scanline */
+    0,					/* fill_linear_color_trapezoid */
+    0,					/* fill_linear_color_triangle */
+    0,					/* update_spot_equivalent_colors */
+    0,					/* ret_devn_params */
+    gx_forward_fillpage
 };
 
 /*

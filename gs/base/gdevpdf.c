@@ -1138,8 +1138,15 @@ pdf_close(gx_device * dev)
 	    pprintld1(s, "%ld 0 R\n", pdev->pages[i].Page->id);
     }
     pprintd1(s, "] /Count %d\n", pdev->next_page);
+
+    /* If the last file was PostScript, its possible that DSC comments might be lying around
+     * and pdf_print_orientation will use that if its present. So make sure we get rid of those
+     * before considering the dominant page direction for the Pages tree.
+     */
+    pdev->doc_dsc_info.viewing_orientation = pdev->doc_dsc_info.orientation = -1;
     pdev->text_rotation.Rotate = pdf_dominant_rotation(&pdev->text_rotation);
     pdf_print_orientation(pdev, NULL);
+
     cos_dict_elements_write(pdev->Pages, pdev);
     stream_puts(s, ">>\n");
     pdf_end_obj(pdev);

@@ -71,9 +71,17 @@ pdfdict begin
   } forall pop
 } bdef
 
+/good_encoding_names <<
+  /MacRomanEncoding 0 /MacExpertEncoding 0 /WinAnsiEncoding 0
+>> readonly def
+
+/known_symbolic_fonts <<
+  /Wingdings2 0
+>> readonly def
+
 % Get the Encoding for a font.
 /getencoding		% <base-encoding> <font-resource> getencoding <enc>
- { /Encoding knownoget
+ { dup /Encoding knownoget
     { dup type /nametype eq
        {
          % The published PDF specification says the Encoding name
@@ -82,14 +90,20 @@ pdfdict begin
          % Reader simply ignores unknown names, and since there are
          % some buggy applications that rely on this, we do the same.
 
-         dup dup dup /MacRomanEncoding eq
-         exch /MacExpertEncoding eq or 
-         exch /WinAnsiEncoding eq or
-           { exch pop findencoding }
-           { pop }
-         ifelse
+         //good_encoding_names 1 index known {
+           exch /BaseFont knownoget not { 0 } if 
+           % Ignore named encodings for known symbolic fonts. See bug 690135.
+           //known_symbolic_fonts exch known {
+             pop
+           } {
+             exch pop findencoding
+           } ifelse
+         } {
+           pop pop
+         } ifelse
        }
-       { dup type /arraytype eq
+       { exch pop
+         dup type /arraytype eq
 	 { exch pop
 	   (   **** Warning: Encoding is an array, not name or dictionary.\n)  pdfformaterror
 	 }
@@ -109,10 +123,14 @@ pdfdict begin
        }
        ifelse
      } {
-      (   **** Warning: Encoding not present.\n)  pdfformaterror
+       pop
+       (   **** Warning: Encoding not present.\n)  pdfformaterror
      }
      ifelse
  } bdef
+
+currentdict /good_encoding_names undef
+currentdict /known_symbolic_fonts undef
 
 /checkGlyphNames2Unicode % <dict> checkGlyphNames2Unicode -
 {
@@ -472,7 +490,8 @@ currentdict end readonly def
       (.processToUnicode beg) =
     } if
     2 index /ToUnicode knownoget {
-      dup type /nametype eq {
+      dup type /dicttype eq { dup /File known not } { //true } ifelse {
+        % We undefine wrong /Length and define /File in stream dictionaries.
         % Bug687351.pdf defines /ToUnicode /Identity-H, what is incorrect.
         (   **** Warning: Ignoring bad ToUnicode CMap.\n)  pdfformaterror
         pop
@@ -488,9 +507,12 @@ currentdict end readonly def
 
         //false resolvestream
         //ToUnicodeCMapReader begin
-           % Following Acrobat we ignore everything outside begincmap..endcmap.
-           dup 0 (begincmap) /SubFileDecode filter flushfile
+           % Following Acrobat we ignore everything outside
+           %   begincodespacerange .. endcmap.
+           dup 0 (begincodespacerange) /SubFileDecode filter flushfile
            /CIDInit /ProcSet findresource begin 12 dict begin
+           /CMapType 2 def
+           mark exch % emulate 'begincodespacerange'
            0 (endcmap) /SubFileDecode filter cvx /begincmap cvx exch 2 .execn
            endcmap 
            userdict /.lastToUnicode currentdict put
@@ -826,10 +848,7 @@ currentdict /eexec_pdf_param_dict .undef
       /FirstChar 1 index /FirstChar oget def
       /LastChar 1 index /LastChar oget def
     } if
-    /FontName 1 index /Name .knownget not { 
-       PDFfile fileposition 16 32 string cvrs cvn
-    } if def
-
+    /FontName 1 index /Name knownoget not { /PDFType3Untitled } if def
     /Encoding .notdefEncoding 2 index getencoding def
 		% We have to define BuildChar rather than BuildGlyph:
 		% there is no PDF equivalent of glyphshow, and we need
@@ -1040,6 +1059,9 @@ currentdict /eexec_pdf_param_dict .undef
   } ifelse
 
   1 index /W knownoget {
+    //false 1 index { xcheck or } forall {
+      oforce_array
+    } if
     dup 2 index /W 3 -1 roll put
     .pdfMakeInternalW 1 index /.internalW 3 -1 roll put
   } if
@@ -1051,6 +1073,9 @@ currentdict /eexec_pdf_param_dict .undef
   } ifelse
 
   1 index /W2 knownoget {
+    //false 1 index { xcheck or } forall {
+      oforce_array
+    } if
     dup 2 index /W2 3 -1 roll put
     .pdfMakeInternalW2 1 index /.internalW2 3 -1 roll put
   } if

@@ -663,6 +663,7 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, fill_linear_color_triangle, gx_default_fill_linear_color_triangle);
     fill_dev_proc(dev, update_spot_equivalent_colors, gx_default_update_spot_equivalent_colors);
     fill_dev_proc(dev, ret_devn_params, gx_default_ret_devn_params);
+    fill_dev_proc(dev, fillpage, gx_default_fillpage);
 }
 
 int

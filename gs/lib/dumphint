@@ -27,4 +27,4 @@ if [ $# -ne 1 ]; then
 	exit 1
 fi
 
-exec "$GS_EXECUTABLE" -q -dNODISPLAY $OPTIONS -- dumphint.ps "$1"
+exec "$GS_EXECUTABLE" -q -dNODISPLAY $OPTIONS -- "`dirname $0`/dumphint.ps" "$1"

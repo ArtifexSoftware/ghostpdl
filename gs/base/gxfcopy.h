@@ -61,9 +61,15 @@ typedef struct gs_matrix_s gs_matrix;
  *
  * The resulting font supports querying (font_info, glyph_info, etc.) and
  * rendering (glyph_outline, etc.), but it does not support make_font.
+ *
+ * max_reserved_glyphs limits the maount of space allocated for the glyph names
+ * and glyph outlines of type 1 or 2 fonts. -1 reserves as many as required for 
+ * a full copy of the original font. This is used by pdfwrite to limit the size 
+ * of a copy when creating a subset font.
  */
 int gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, 
-		    gs_memory_t *mem, gs_font **pfont_new);
+		    gs_memory_t *mem, gs_font **pfont_new, 
+		    int max_reserved_glyphs);
 
 /*
  * Copy a glyph, including any sub-glyphs.  The destination font ("copied"
@@ -174,7 +180,7 @@ int copied_drop_extension_glyphs(gs_font *cfont);
 */
 int copied_order_font(gs_font *font);
 
-/* Get .nmotdef glyph. */
+/* Get .notdef glyph. */
 gs_glyph copied_get_notdef(const gs_font *font);
 
 #endif /* gxfcopy_INCLUDED */

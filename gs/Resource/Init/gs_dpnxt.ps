@@ -109,7 +109,7 @@ img_utils_dict begin
 /.alphaimage  where
   {
     pop
-    currentglobal true setglobal
+    .currentglobal true .setglobal
     /alphaimage
       {
         //true
@@ -119,7 +119,7 @@ img_utils_dict begin
         if
       }
     .bind systemdict begin odef end
-    setglobal
+    .setglobal
   }
 if
 end

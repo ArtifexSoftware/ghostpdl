@@ -30,32 +30,32 @@ testparamsets_maximum = [
     _GSParamSet('pbmraw', 72, 1),
     _GSParamSet('pbmraw', 300, 0),
     _GSParamSet('pbmraw', 300, 1),
-    _GSParamSet('pbmraw', 600, 0),
-    _GSParamSet('pbmraw', 600, 1),
+#   _GSParamSet('pbmraw', 600, 0),
+#   _GSParamSet('pbmraw', 600, 1),
 
     # grayscale
     _GSParamSet('pgmraw', 72, 0),
     _GSParamSet('pgmraw', 72, 1),
     _GSParamSet('pgmraw', 300, 0),
     _GSParamSet('pgmraw', 300, 1),
-    _GSParamSet('pgmraw', 600, 0),
-    _GSParamSet('pgmraw', 600, 1),
+#   _GSParamSet('pgmraw', 600, 0),
+#   _GSParamSet('pgmraw', 600, 1),
 
     # color
     _GSParamSet('ppmraw', 72, 0),
     _GSParamSet('ppmraw', 72, 1),
     _GSParamSet('ppmraw', 300, 0),
     _GSParamSet('ppmraw', 300, 1),
-    _GSParamSet('ppmraw', 600, 0),
-    _GSParamSet('ppmraw', 600, 1),
+#   _GSParamSet('ppmraw', 600, 0),
+#   _GSParamSet('ppmraw', 600, 1),
 
     # 1-bit CMYK
     _GSParamSet('pkmraw', 72, 0),
     _GSParamSet('pkmraw', 72, 1),
     _GSParamSet('pkmraw', 300, 0),
     _GSParamSet('pkmraw', 300, 1),
-    _GSParamSet('pkmraw', 600, 0),
-    _GSParamSet('pkmraw', 600, 1)
+#   _GSParamSet('pkmraw', 600, 0),
+#   _GSParamSet('pkmraw', 600, 1)
 ]
 
 testparamsets_full = [

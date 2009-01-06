@@ -59,34 +59,7 @@
 	bool ShowBubble
 
 #define lp_device_body_rest_(print_page_copies, image_out)\
-	 { 0 },		/* std_procs */\
-	 { 0 },		/* skip */\
-	 { NULL,\
-	   print_page_copies,\
-	   { gx_default_create_buf_device,\
-	     gx_default_size_buf_device,\
-	     gx_default_setup_buf_device,\
-	     gx_default_destroy_buf_device\
-	   },\
-	   gdev_prn_default_get_space_params,\
-	   gx_default_start_render_thread,\
-	   gx_default_open_render_device,\
-	   gx_default_close_render_device,\
-	   gx_default_buffer_page\
-	 },\
-	 { PRN_MAX_BITMAP, PRN_BUFFER_SPACE,\
-	     { BAND_PARAMS_INITIAL_VALUES },\
-	   0/*false*/,	/* params_are_read_only */\
-	   BandingAuto	/* banding_type */\
-	 },\
-	 { 0 },		/* fname */\
-	0/*false*/,	/* OpenOutputFile */\
-	0/*false*/,	/* ReopenPerPage */\
-        0/*false*/,     /* page_uses_transparency */\
-	0/*false*/, -1,	/* Duplex[_set] */\
-	0/*false*/, 0, 0, 0, /* file_is_new ... buf */\
-	0, 0, 0, 0, 0/*false*/, 0, 0, /* buffer_memory ... clist_dis'_mask */\
-	{ 0 },	/* ... orig_procs */\
+       prn_device_body_rest2_(NULL, print_page_copies, -1),\
        image_out,\
        0/*false*/,    /* initialized */\
        0/*false*/,    /* ManualFeed */\
@@ -102,34 +75,7 @@
        0			/*false */
 
 #define lp_duplex_device_body_rest_(print_page_copies, image_out)\
-	 { 0 },		/* std_procs */\
-	 { 0 },		/* skip */\
-	 { NULL,\
-	   print_page_copies,\
-	   { gx_default_create_buf_device,\
-	     gx_default_size_buf_device,\
-	     gx_default_setup_buf_device,\
-	     gx_default_destroy_buf_device\
-	   },\
-	   gdev_prn_default_get_space_params,\
-	   gx_default_start_render_thread,\
-	   gx_default_open_render_device,\
-	   gx_default_close_render_device,\
-	   gx_default_buffer_page\
-	 },\
-	 { PRN_MAX_BITMAP, PRN_BUFFER_SPACE,\
-	     { BAND_PARAMS_INITIAL_VALUES },\
-	   0/*false*/,	/* params_are_read_only */\
-	   BandingAuto	/* banding_type */\
-	 },\
-	 { 0 },		/* fname */\
-	0/*false*/,	/* OpenOutputFile */\
-	0/*false*/,	/* ReopenPerPage */\
-        0/*false*/,     /* page_uses_transparency */\
-	0/*false*/, 0,	/* Duplex[_set] */\
-	0/*false*/, 0, 0, 0, /* file_is_new ... buf */\
-	0, 0, 0, 0, 0/*false*/, 0, 0, /* buffer_memory ... clist_dis'_mask */\
-	{ 0 },	/* ... orig_procs */\
+       prn_device_body_rest2_(NULL, print_page_copies, 0),\
        image_out,\
        0/*false*/,    /* initialized */\
        0/*false*/,    /* ManualFeed */\

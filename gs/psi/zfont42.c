@@ -99,6 +99,7 @@ build_gs_TrueType_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_type42 **ppfont,
      * glyph names or glyph indexes.
      */
     pfont->data.get_glyph_index = z42_get_glyph_index;
+    pfont->data.substitute_glyph_index_vertical = gs_type42_substitute_glyph_index_vertical;
     pfont->procs.encode_char = z42_encode_char;
     pfont->procs.glyph_info = z42_glyph_info;
     pfont->procs.glyph_outline = z42_glyph_outline;

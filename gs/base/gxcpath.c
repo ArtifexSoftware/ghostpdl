@@ -722,8 +722,13 @@ gx_cpath_scale_exp2_shared(gx_clip_path * pcpath, int log2_scale_x,
 		SCALE_V(ymax, log2_scale_y);
 #undef SCALE_V
 	    }
-	list->xmin = arith_rshift(list->xmin, -log2_scale_x);
-	list->xmax = arith_rshift(list->xmax, -log2_scale_x);
+	if (log2_scale_x > 0) {
+	    list->xmin <<= log2_scale_x;
+	    list->xmax <<= log2_scale_x;
+	} else {
+	    list->xmin = arith_rshift(list->xmin, -log2_scale_x);
+	    list->xmax = arith_rshift(list->xmax, -log2_scale_x);
+	}
     }
     pcpath->id = gs_next_ids(pcpath->path.memory, 1);	/* path changed => change id */
     return 0;

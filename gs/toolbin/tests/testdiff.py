@@ -13,7 +13,7 @@
 # or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 # San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
-# $Id: testdiff,v 1.5 2004/05/02 19:23:01 ray Exp $
+# $Id$
 
 #
 # testdiff <start date> [<end date>]
@@ -86,6 +86,7 @@ if not baseline_db:
     print myself,"empty checksum database",baseline_dbname
 
 if not new_db or not old_db or not baseline_db:
+    print myself,"sys.exit(1) called"
     sys.exit(1)
 
 # find any checksum in new that is a new mis-match from baseline, then compare with old
@@ -146,7 +147,7 @@ for d in new_diffs:
 length = len(list)
 if length>0:
     print
-    print myself,new_name,"new differences from",old_name,"(",str(length)," differences)"
+    print myself,new_name,"new differences from",old_name,"("+str(length)+" differences)"
     list.sort()
     for l in list:
         print "%s %s (%s/%d/%s)" % (l[0], l[1], l[2], l[3], l[4])
@@ -191,7 +192,7 @@ for d in all_diffs:
 length = len(list)
 if length > 0:
     print
-    print myself,new_name,"differences from baseline""(",str(length)," differences)"
+    print myself,new_name,"differences from baseline ("+str(length)+" differences)"
     list.sort()
     for l in list:
         print "%s %s (%s/%d/%s)" % (l[0], l[1], l[2], l[3], l[4])

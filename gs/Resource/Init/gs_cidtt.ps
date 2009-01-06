@@ -75,6 +75,14 @@ currentdict /super.complete_instance currentdict /complete_instance get put
   dup dup /CIDSystemInfo get /Ordering get (.)             % <font> () ()
   2 index /Decoding get =string cvs                        % <font> () () ()
   concatstrings concatstrings cvn /Decoding exch put       % <font>
+  dup dup /CIDSystemInfo get /Ordering get (-WMode)        % <font> <font> () ()
+  concatstrings cvn /SubstCID 
+  2 copy resourcestatus {
+    pop pop
+    findresource /subst_CID_on_WMode exch put              % <font>
+  } {
+    pop pop pop
+  } ifelse
   //ChooseDecoding exec                                    % <font>
   //GenerateCIDMap exec                                    % <font>
 } bind def

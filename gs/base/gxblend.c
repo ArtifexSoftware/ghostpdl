@@ -1409,8 +1409,6 @@ art_pdf_composite_knockout_8(byte *dst,
     *dst_alpha_g = alpha_g_i;
 }
 
-
-
 #if RAW_DUMP
 
 /* Debug dump of buffer data from pdf14 device.  Saved in

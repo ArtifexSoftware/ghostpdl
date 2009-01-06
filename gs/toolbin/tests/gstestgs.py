@@ -73,7 +73,7 @@ class Ghostscript:
 		if self.dpi:
 			arguments += '-r%d ' % (self.dpi,)
 
-		arguments += ' -dNOPAUSE -dBATCH -K1000000'
+		arguments += ' -q -Z: -dNOPAUSE -dBATCH -K1000000'
 		arguments += ' -dMaxBitmap=%d' % (bandsize,)
 		arguments += ' -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f'
 
@@ -89,7 +89,8 @@ class Ghostscript:
 		else:
 			capture=''
 
-		fullcommand=execpath+arguments+" "+infile+" "+capture
+		fullcommand='/usr/local/bin/time -f "%U %S %E %P" '+execpath+arguments+" "+infile+" "+capture
+		# mhw fullcommand=execpath+arguments+" "+infile+" "+capture
 		
 		# before we execute the command which appends to the log
 		# we output a message to record the commandline that generates the log entry.
@@ -119,7 +120,14 @@ class Ghostscript:
 		if self.__dict__.has_key("verbose") and self.verbose:
 			print fullcommand
 
+		if self.log_stdout and self.log_stderr:
+			datecommand='/bin/date +%%s.%%N >> %s 2>> %s' % (self.log_stdout, self.log_stderr)
+		else:
+			datecommand=''
+
+		# os.system(datecommand)
 		gs_return=os.system(fullcommand)
+		# os.system(datecommand)
 
 		if gs_return == 0:
 			return 1

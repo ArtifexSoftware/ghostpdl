@@ -20,6 +20,7 @@
 #include "gxcid.h"		/* for CIDSystemInfo */
 #include "gxfont.h"
 #include "gxfont42.h"
+#include "gsrefct.h"
 
 /* ---------------- Structures ---------------- */
 
@@ -111,6 +112,19 @@ extern_st(st_gs_font_cid1);
 #define st_gs_font_cid1_max_ptrs\
   (st_gs_font_max_ptrs + st_cid_system_info_num_ptrs)
 
+/* Auxiliary data for CIDFontType 2 emulated with Open Type. */
+
+typedef struct gs_subst_CID_on_WMode_s {
+    rc_header rc;
+    uint *data[2];
+    uint size[2];
+} gs_subst_CID_on_WMode_t;
+
+#define public_st_subst_CID_on_WMode()\
+  gs_public_st_complex_only(st_subst_CID_on_WMode, gs_subst_CID_on_WMode_t, "gs_subst_CID_on_WMode",\
+    0, subst_CID_on_WMode_enum_ptrs, subst_CID_on_WMode_reloc_ptrs, subst_CID_on_WMode_finalize)
+#define st_subst_CID_on_WMode_num_ptrs 3 /* rc.memory, data[0], data[1] */
+
 /* CIDFontType 2 is a subclass of FontType 42. */
 
 #ifndef gs_font_cid2_DEFINED
@@ -134,6 +148,7 @@ typedef struct gs_font_cid2_data_s {
 struct gs_font_cid2_s {
     gs_font_type42_common;
     gs_font_cid2_data cidata;
+    gs_subst_CID_on_WMode_t *subst_CID_on_WMode;
 };
 
 extern_st(st_gs_font_cid2);
@@ -141,8 +156,9 @@ extern_st(st_gs_font_cid2);
   gs_public_st_composite_use_final(st_gs_font_cid2,\
     gs_font_cid2, "gs_font_cid2",\
     font_cid2_enum_ptrs, font_cid2_reloc_ptrs, gs_font_finalize)
+#define st_gs_font_cid2_own_ptrs 1
 #define st_gs_font_cid2_max_ptrs\
-  (st_gs_font_type42_max_ptrs + st_gs_font_cid_data_num_ptrs)
+  (st_gs_font_type42_max_ptrs + st_gs_font_cid_data_num_ptrs + st_gs_font_cid2_own_ptrs)
 
 /* ---------------- Procedures ---------------- */
 

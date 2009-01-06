@@ -316,12 +316,10 @@ hpjet_make_init(gx_device_printer *pdev, char *buf, const char *str)
 {
     gx_device_hpjet *dev = (gx_device_hpjet *)pdev;
     int paper_source = -1;
-    int paper_source_tab[] = { 5, 1 };
 
     if (dev->ManualFeed_set && dev->ManualFeed) paper_source = 2;
-    else if (dev->MediaPosition_set && dev->MediaPosition >= 0 &&
-	     dev->MediaPosition < countof(paper_source_tab))
-	paper_source = paper_source_tab[dev->MediaPosition];
+    else if (dev->MediaPosition_set && dev->MediaPosition >= 0)
+	paper_source = dev->MediaPosition;
     if (paper_source >= 0)
 	sprintf(buf, "%s\033&l%dH", str, paper_source);
     else
@@ -454,7 +452,6 @@ ljet4d_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     int dots_per_inch = (int)pdev->y_pixels_per_inch;
     char base_init[60];
     char init[80];
-    char even_base_init[80];
     char even_init[80];
 
     gx_device_hpjet *dev = (gx_device_hpjet *)pdev;
@@ -549,6 +546,10 @@ hpjet_get_params(gx_device *pdev, gs_param_list *plist)
     {
 	code = param_write_bool(plist, "ManualFeed", &dev->ManualFeed);
     }
+    if (code >= 0)
+    {
+	code = param_write_int(plist, "MediaPosition", &dev->MediaPosition);
+    }
     if (code >=0)
     	code = param_write_bool(plist, "Tumble", &dev->Tumble);
     return code;
@@ -568,10 +569,10 @@ hpjet_put_params(gx_device *pdev, gs_param_list *plist)
     code = param_read_bool(plist, "ManualFeed", &ManualFeed);
     if (code == 0) ManualFeed_set = true;
     if (code >= 0) {
-	code = param_read_int(plist, "%MediaSource", &MediaPosition);
+	code = param_read_int(plist, "MediaPosition", &MediaPosition);
 	if (code == 0) MediaPosition_set = true;
 	else if (code < 0) {
-	    if (param_read_null(plist, "%MediaSource") == 0) {
+	    if (param_read_null(plist, "MediaPosition") == 0) {
 		code = 0;
 	    }
 	}

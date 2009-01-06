@@ -15,6 +15,7 @@
 /* Write an embedded TrueType font */
 #include "memory_.h"
 #include <stdlib.h>		/* for qsort */
+#include <math.h>		/* for floor */
 #include "gx.h"
 #include "gscencs.h"
 #include "gserrors.h"
@@ -73,6 +74,12 @@ put_pad(stream *s, uint length)
 /* Put short and long values on a stream. */
 static void
 put_ushort(stream *s, uint v)
+{
+    stream_putc(s, (byte)(v >> 8));
+    stream_putc(s, (byte)v);
+}
+static void
+put_short(stream *s, short v)
 {
     stream_putc(s, (byte)(v >> 8));
     stream_putc(s, (byte)v);
@@ -451,13 +458,20 @@ write_mtx(stream *s, gs_font_type42 *pfont, const gs_type42_mtx_t *pmtx,
 
     sbw[0] = sbw[1] = sbw[2] = sbw[3] = 0; /* in case of failures */
     for (i = 0; i < pmtx->numMetrics; ++i) {
+	float f;
 	DISCARD(pfont->data.get_metrics(pfont, i, wmode, sbw));
-	put_ushort(s, (ushort)(sbw[wmode + 2] * factor)); /* width */
-	put_ushort(s, (ushort)(sbw[wmode] * factor)); /* lsb, may be <0 */
+	/* the temporary assignment to a float is necessary for AIX else the result is always 0 if sbw[] < 0
+	   this happens even with gcc and I'm not sure why it happens at all nor why only on AIX */
+	f = (float) (sbw[wmode + 2] * factor); /* width */
+	put_short(s, (short) floor(f + 0.5));
+	f = (float) (sbw[wmode] * factor); /* lsb, may be <0 */
+	put_short(s, (short) floor(f + 0.5));
     }
     for (; len < pmtx->length; ++i, len += 2) {
+	float f;
 	DISCARD(pfont->data.get_metrics(pfont, i, wmode, sbw));
-	put_ushort(s, (ushort)(sbw[wmode] * factor)); /* lsb, may be <0 */
+	f = (float) (sbw[wmode] * factor); /* lsb, may be <0 */
+	put_short(s, (short) floor(f + 0.5));
     }
 }
 

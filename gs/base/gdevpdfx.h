@@ -26,13 +26,10 @@
 #include "spprint.h"
 #include "gdevpsdf.h"
 #include "gxdevmem.h"
+#include "sarc4.h"
 
 #define FINE_GLYPH_USAGE 1 /* Old code = 0, new code = 1 */
 
-#ifndef stream_arcfour_state_DEFINED
-#define stream_arcfour_state_DEFINED
-typedef struct stream_arcfour_state_s stream_arcfour_state;
-#endif
 
 /* ---------------- Acrobat limitations ---------------- */
 
@@ -709,6 +706,7 @@ extern const gx_device_vector_procs pdf_vector_procs;
 dev_proc_fill_rectangle(gdev_pdf_fill_rectangle);
 dev_proc_fill_path(gdev_pdf_fill_path);
 dev_proc_stroke_path(gdev_pdf_stroke_path);
+dev_proc_fillpage(gdev_pdf_fillpage);
     /* In gdevpdfi.c */
 dev_proc_begin_typed_image(gdev_pdf_begin_typed_image);
     /* In gdevpdfp.c */

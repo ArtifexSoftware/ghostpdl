@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2006 Artifex Software, Inc.
+#  Copyright (C) 2001-2008 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -161,6 +161,7 @@ gsrect_h=$(GLSRC)gsrect.h $(gxfixed_h)
 gxalloc_h=$(GLSRC)gxalloc.h $(gsalloc_h) $(gxobj_h)
 gxbitops_h=$(GLSRC)gxbitops.h $(gsbitops_h)
 gxcindex_h=$(GLSRC)gxcindex.h $(gsbitops_h)
+gxfont42_h=$(GLSRC)gxfont42.h
 
 # Streams
 scommon_h=$(GLSRC)scommon.h $(gsmemory_h) $(gstypes_h) $(gsstype_h)
@@ -281,7 +282,7 @@ $(GLOBJ)md5.$(OBJ) : $(GLSRC)md5.c $(AK) $(memory__h) $(md5_h)
 # AES cipher
 aes_h=$(GLSRC)aes.h
 aes_=$(GLOBJ)aes.$(OBJ)
-$(GLOBJ)aes.$(OBJ) : $(GLSRC)aes.c $(AK) $(aes_h)
+$(GLOBJ)aes.$(OBJ) : $(GLSRC)aes.c $(AK) $(string__h) $(aes_h)
 	$(GLCC) $(GLO_)aes.$(OBJ) $(C_) $(GLSRC)aes.c
 
 # Visual Debugging
@@ -1062,7 +1063,7 @@ $(GLOBJ)gdevddrw.$(OBJ) : $(GLSRC)gdevddrw.c $(GXERR) $(math__h) $(memory__h) $(
  $(gpcheck_h)\
  $(gsrect_h)\
  $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h) $(gxiparam_h) $(gxistate_h) $(gxmatrix_h)\
- $(gdevddrw_h) $(gxdtfill_h) $(vtrace_h)
+ $(gxhldevc_h) $(gdevddrw_h) $(gxdtfill_h) $(vtrace_h)
 	$(GLCC) $(GLO_)gdevddrw.$(OBJ) $(C_) $(GLSRC)gdevddrw.c
 
 $(GLOBJ)gdevdsha.$(OBJ) : $(GLSRC)gdevdsha.c $(GXERR) $(gserrors_h)\
@@ -2019,7 +2020,7 @@ $(GLOBJ)gzspotan.$(OBJ) : $(GLSRC)gzspotan.c $(GXERR)\
 # -------- Composite (PostScript Type 0) font support -------- #
 
 gxcid_h=$(GLSRC)gxcid.h $(gsstype_h)
-gxfcid_h=$(GLSRC)gxfcid.h $(gxcid_h) $(gxfont_h) $(gxfont42_h)
+gxfcid_h=$(GLSRC)gxfcid.h $(gxcid_h) $(gxfont_h) $(gxfont42_h) $(gsrefct_h)
 gxfcmap_h=$(GLSRC)gxfcmap.h $(gsfcmap_h) $(gsuid_h) $(gxcid_h)
 gxfcmap1_h=$(GLSRC)gxfcmap1.h $(gxfcmap_h)
 gxfont0c_h=$(GLSRC)gxfont0c.h $(gxfcid_h) $(gxfont0_h)
@@ -2328,7 +2329,7 @@ $(GLOBJ)gxiscale.$(OBJ) : $(GLSRC)gxiscale.c $(GXERR)\
  $(gxarith_h) $(gxcmap_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h)\
  $(gxdevmem_h) $(gxfixed_h) $(gxfrac_h) $(gximage_h) $(gxistate_h)\
  $(gxmatrix_h) $(siinterp_h) $(siscale_h) $(stream_h) $(vdtrace_h)\
- $(gxcindex_h)
+ $(gxcindex_h) $(gxcolor2_h) $(gscspace_h)
 	$(GLCC) $(GLO_)gxiscale.$(OBJ) $(C_) $(GLSRC)gxiscale.c
 
 # ---------------- Display Postscript / Level 2 support ---------------- #
@@ -2588,7 +2589,7 @@ $(GLOBJ)gxblend.$(OBJ) : $(GLSRC)gxblend.c $(GX) $(memory__h)\
 	$(GLCC) $(GLO_)gxblend.$(OBJ) $(C_) $(GLSRC)gxblend.c
 
 $(GLOBJ)gxblend1.$(OBJ) : $(GLSRC)gxblend1.c $(GX) $(memory__h)\
- $(gstparam_h) $(gxrect_h) $(gxblend_h) $(gxdevcli_h) $(gxistate_h)\
+ $(gstparam_h) $(gxrect_h) $(gxdcconv_h) $(gxblend_h) $(gxdevcli_h) $(gxistate_h)\
  $(gdevdevn_h) $(gdevp14_h) $(vdtrace_h) $(gxdcconv_h)
 	$(GLCC) $(GLO_)gxblend1.$(OBJ) $(C_) $(GLSRC)gxblend1.c
 
@@ -2690,7 +2691,8 @@ $(GLD)romfs0.dev :  $(LIB_MAK) $(ECHO_XE)
 	$(SETMOD) $(GLD)romfs0 
 
 $(GLGEN)gsromfs1.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS)
-	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs1.c -X .svn $(UFST_ROMFS_ARGS) \
+	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs1.c \
+	-X .svn -X CVS $(UFST_ROMFS_ARGS) \
 	$(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS) \
 	$(PS_ROMFS_ARGS)
 

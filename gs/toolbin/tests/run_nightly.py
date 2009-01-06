@@ -13,6 +13,8 @@
 # or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 # San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
+# $Id$
+
 # overview
 # 	update revision (default is HEAD)
 # 	run all testfiles with all parameter sets using the gs executable - calculate each checksum
@@ -55,8 +57,6 @@
 #
 #
 
-
-# $Id: run_nightly 7013 2006-08-30 18:38:50Z giles $
 
 
 import os
@@ -134,7 +134,7 @@ def change_gsproduct(file):
     tmpfile = "%s.tmp" % (file,)
 
     startre = re.compile("^#ifndef\ GS_PRODUCT$")
-    changere = re.compile("^.*?["A-Za-z -]+.*?$")
+    changere = re.compile("^.*?\"[A-Za-z -]+\".*?$")
     endre = re.compile("^$")
 
     old = open(file, "r")
@@ -142,6 +142,7 @@ def change_gsproduct(file):
 
     state = 0
     for line in old.readlines():
+        print "checking:", line
         if state == 0:
             m = startre.search(line)
             if m:
@@ -153,6 +154,7 @@ def change_gsproduct(file):
             if m:
                 state = 2
                 new.write("\t\"GPL Ghostscript\"\n")
+		print "rewriting '%s' to GPL Ghostscript" % line.strip()
             else:
                 new.write(line)
         elif state == 2:
@@ -177,9 +179,13 @@ def sendmail(frm, to, subject, text):
     else:
         msg = 'From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s' % (frm, to, subject, text)
 
-    server = smtplib.SMTP(gsconf.mail_server)
-    server.sendmail(frm, to, msg)
-    server.quit()
+#   server = smtplib.SMTP(gsconf.mail_server)
+#   server.sendmail(frm, to, msg)
+#   server.quit()
+    SENDMAIL = "/usr/sbin/sendmail" # sendmail location
+    p = os.popen("%s -t" % SENDMAIL, "w")
+    p.write(msg)
+    p.close()
 
 def run_nightly(options,arguments):
     global myself
@@ -208,14 +214,14 @@ def run_nightly(options,arguments):
     # where do stdout and stderr go?
     options.capture  = not options.nocapture
     
-    p = os.popen('hostname -f')
+    p = os.popen('hostname -s')
     if p:
         hostname = string.strip(p.readline())
         p.close()
     else:
         hostname = 'unknown host'
         
-    p = os.popen('uname -m -o')
+    p = os.popen('uname -m -s')
     if p:
         hostuname=string.strip(p.readline())
         p.close()
@@ -296,6 +302,29 @@ def run_nightly(options,arguments):
 
     mail_message+=message+"\n"
 
+    if not os.path.exists(gsconf.comparefiledir + "/.svn") or \
+	    os.system("svn update " + gsconf.comparefiledir) != 0:
+	message = "run_nightly.py: cannot svn update " + gsconf.comparefiledir
+	logMessage(message,None,"n/a")
+
+    if not os.path.exists(gsconf.comparefiledir + "/../tests/eps" + "/.svn") or \
+	    os.system("svn update " + gsconf.comparefiledir + "/../tests/eps") != 0:
+	message = "run_nightly.py: cannot svn update " + gsconf.comparefiledir + "/../tests/eps"
+	logMessage(message,None,"n/a")
+    if os.path.exists(gsconf.comparefiledir + "/../tests/eps"):
+        os.system("ln -f -s " + gsconf.comparefiledir + "/../tests/eps/* " + gsconf.comparefiledir)
+    if not os.path.exists(gsconf.comparefiledir + "/../tests/ps" + "/.svn") or \
+	    os.system("svn update " + gsconf.comparefiledir + "/../tests/ps") != 0:
+	message = "run_nightly.py: cannot svn update " + gsconf.comparefiledir + "/../tests/ps"
+	logMessage(message,None,"n/a")
+    if os.path.exists(gsconf.comparefiledir + "/../tests/ps"):
+        os.system("ln -f -s " + gsconf.comparefiledir + "/../tests/ps/* " + gsconf.comparefiledir)
+    if not os.path.exists(gsconf.comparefiledir + "/../tests/pdf" + "/.svn") or \
+	    os.system("svn update " + gsconf.comparefiledir + "/../tests/pdf") != 0:
+	message = "run_nightly.py: cannot svn update " + gsconf.comparefiledir + "/../tests/pdf"
+	logMessage(message,None,"n/a")
+    if os.path.exists(gsconf.comparefiledir + "/../tests/pdf"):
+        os.system("ln -f -s " + gsconf.comparefiledir + "/../tests/pdf/* " + gsconf.comparefiledir)
     comparefiles = os.listdir(gsconf.comparefiledir)
     count=len(comparefiles)
 
@@ -323,6 +352,11 @@ def run_nightly(options,arguments):
         gsparamsets.testparamsets_name = "full"
     else:
         pass # use default in gsparamsets
+
+    gsparamsets.testparamsets = gsparamsets.testparamsets_one
+    gsparamsets.pdftestparamsets = gsparamsets.pdftestparamsets_full
+    gsparamsets.testparamsets_name = "one+pdf"
+
 
     message="test parameter set name: "+gsparamsets.testparamsets_name
     logMessage(message,cumulative_file,revision_full)
@@ -355,6 +389,11 @@ def run_nightly(options,arguments):
     else:
         message="skipping update of ghostscript tree and executable"
         logMessage(message,cumulative_file,revision_full)
+
+    message = "running makemissing"
+    logMessage(message,cumulative_file,revision_full)
+    os.system("./makemissing 2>logs/makemissing.stderr >logs/makemissing.stdout")
+
 
     prefix=logdir+revision_value+"."
 
@@ -500,7 +539,7 @@ def run_nightly(options,arguments):
                 logMessage(message,cumulative_file,revision_full)
                 die(message)
 
-        oldchecksumpath = gsconf.dailydir + oldchecksum + '.db'
+        oldchecksumpath = gsconf.dailydir + oldchecksum + ".db"
         if not os.path.exists(oldchecksumpath):
             message=myself+" FATAL "+"the old checksum database does not exist "+oldchecksumpath
             logMessage(message,cumulative_file,revision_full)
@@ -536,6 +575,10 @@ def run_nightly(options,arguments):
         logMessage(message,regression_file,revision_full,printMessage=False)
         logMessage(message,cumulative_file,revision_full)
 
+
+        message="marcos: about to call get_baseline_log_script"
+        logMessage(message,cumulative_file,revision_full)
+
         # Get updated baseline_changes
         baseline_changes = 'The following files had their baselines updated:\n'
 
@@ -552,12 +595,18 @@ def run_nightly(options,arguments):
             baseline_changes = baseline_changes + 'no results from baseline script\n'
             baseline_changes += "\n"
 
+        message="marcos: done with get_baseline_log_script"
+        logMessage(message,cumulative_file,revision_full)
+
         logMessage(baseline_changes,regression_file,revision_full)
         logMessage(difference_results,regression_file,revision_full)
     else:
         difference_results="difference testing was skipped"
     difference_results += '\n'
     # end if testRegression
+    
+    message="marcos: writing to differences file"
+    logMessage(message,cumulative_file,revision_full)
 
     differences_file = open(differences_name, "w")
     message="differences"
@@ -576,6 +625,9 @@ def run_nightly(options,arguments):
     else:
         baseline_changes = "difference testing was skipped"
         
+    message="marcos: done writing to differences file"
+    logMessage(message,cumulative_file,revision_full)
+
     # end if baselineChanges
 
     mail_message+=difference_results+"\n"
@@ -605,10 +657,13 @@ def run_nightly(options,arguments):
 
     while True:
         try:
+            print "sendmail"
             sendmail(gsconf.report_from, gsconf.report_to, subject, mail_message)
-            time.sleep(5)
             break
+            time.sleep(5)
         except:
+            print "sendmail fail"
+            time.sleep(15)
             pass
 
     message="done"
@@ -645,6 +700,7 @@ if __name__ == "__main__":
     optionsParser.add_option('--nomake',action='store_true',help="do not make")
 
     optionsParser.add_option('--nocapture',action='store_true',help="do not capture stdout and stderr from commands")
+
 
     optionsParser.add_option('--noregression',action='store_true',help="do not run regression")
     optionsParser.add_option('--notestregression',action='store_true',help="do not test regression")

@@ -95,9 +95,10 @@ cmd_slow_rop(gx_device *dev, gs_logical_operation_t lop,
 /* Write out the color for filling, stroking, or masking. */
 /* We should be able to share this with clist_tile_rectangle, */
 /* but I don't see how to do it without adding a level of procedure. */
+/* If the pattern color is big, it can write to "all" bands. */
 int
 cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
-		      const gx_drawing_color * pdcolor)
+		      const gx_drawing_color * pdcolor, cmd_rects_enum_t *pre)
 {
     const gx_device_halftone * pdht = pdcolor->type->get_dev_halftone(pdcolor);
     int                        code, di;
@@ -113,6 +114,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     int			       req_size_final;
     bool		       is_pattern;
     gs_id		       pattern_id = gs_no_id;
+    bool		       all_bands = (pre == NULL);
 
     /* see if the halftone must be inserted in the command list */
     if ( pdht != NULL                          &&
@@ -144,16 +146,18 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         return 0;
     else if (code < 0 && code != gs_error_rangecheck)
         return code;
+    if (!all_bands && dc_size * pre->nbands > 1024*1024 /* arbitrary */)
+	all_bands = true;
     left = dc_size;
 
     /* see if phase informaiton must be inserted in the command list */
     if ( pdcolor->type->get_phase(pdcolor, &color_phase) &&
          (color_phase.x != pcls->tile_phase.x ||
-          color_phase.y != pcls->tile_phase.y   )        &&
-	 (code = cmd_set_tile_phase( cldev,
+          color_phase.y != pcls->tile_phase.y || all_bands)        &&
+	 (code = cmd_set_tile_phase_generic( cldev,
                                      pcls,
                                      color_phase.x,
-                                     color_phase.y )) < 0  )
+                                     color_phase.y, all_bands)) < 0  )
         return code;
 
     is_pattern = gx_dc_is_pattern1_color(pdcolor);
@@ -181,7 +185,11 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	req_size_final = portion_size + prefix_size + enc_u_sizew(portion_size);
 	if (req_size_final > buffer_space)
 	    return_error(gs_error_unregistered); /* Must not happen. */
-	if ((code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_extend, req_size_final)) < 0)
+	if (all_bands)
+	    code = set_cmd_put_all_op(dp, cldev, cmd_opv_extend, req_size_final);
+	else
+	    code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_extend, req_size_final);
+	if (code < 0)
 	    return code;
 	dp0 = dp;
 	dp[1] = cmd_opv_ext_put_drawing_color;
@@ -220,7 +228,28 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	/* Don't record empty tiles because they're not cached. */
 	pcls->pattern_id = pattern_id;
     }
+    if (is_pattern) {
+	/* HACK: since gx_dc_pattern_write identifies pattern by tile id, 
+	   replace the client's pattern id with tile id in the saved color.  */
+	pcls->sdc.colors.pattern.id = pattern_id;
+    }
+    if (all_bands) {
+	/* Distribute the written params to all bands. */
+	gx_clist_state * pcls1;
 
+	if (is_pattern) {
+	    /* We know it is big, so it is not empty, so it has pattern_id and tile_phase. */
+	    for (pcls1 = cldev->states; pcls1 < cldev->states + cldev->nbands; pcls1++) {
+		pcls1->sdc = pcls->sdc;
+		pcls1->pattern_id = pcls->pattern_id;
+		pcls1->tile_phase.x = pcls->tile_phase.x;
+		pcls1->tile_phase.y = pcls->tile_phase.y;
+	    }
+	} else {
+	    for (pcls1 = cldev->states; pcls1 < cldev->states + cldev->nbands; pcls1++)
+		pcls1->sdc = pcls->sdc;
+	}
+    }
     return code;
 }
 
@@ -723,7 +752,7 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 		(code = cmd_update_lop(cdev, re.pcls, lop)) < 0
 		)
 		return code;
-	    code = cmd_put_drawing_color(cdev, re.pcls, pdcolor);
+	    code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re);
 	    if (code == gs_error_unregistered)
 		return code;
 	    if (code < 0) {
@@ -862,7 +891,7 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	    (code = cmd_update_lop(cdev, re.pcls, lop)) < 0
 	    )
 	    return code;
-	code = cmd_put_drawing_color(cdev, re.pcls, pdcolor);
+	code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re);
 	    if (code == gs_error_unregistered)
 		return code;
 	if (code < 0) {
@@ -943,7 +972,7 @@ clist_put_polyfill(gx_device *dev, fixed px, fixed py,
     do {
 	RECT_STEP_INIT(re);
 	if ((code = cmd_update_lop(cdev, re.pcls, lop)) < 0 ||
-	    (code = cmd_put_drawing_color(cdev, re.pcls, pdcolor)) < 0)
+	    (code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re)) < 0)
 	    goto out;
 	re.pcls->colors_used.slow_rop |= slow_rop;
 	code = cmd_put_path(cdev, re.pcls, &path,

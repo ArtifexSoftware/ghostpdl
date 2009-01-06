@@ -161,7 +161,15 @@ gs_matrix_invert(const gs_matrix * pm, gs_matrix * pmr)
     } else {
 	float mxx = pm->xx, myy = pm->yy, mxy = pm->xy, myx = pm->yx;
         float mtx = pm->tx, mty = pm->ty;
-	float det = (float)(mxx * myy) - (float)(mxy * myx);
+        /* we declare det as double since on at least some computer (i.e. peeves)
+           declaring it as a float results in different values for pmr depending
+           on whether or not optimization is turned on.  I believe this is caused
+           by the compiler keeping the det value in an internal register when 
+           optimization is enable.  As evidence of this if you add a debugging 
+           statement to print out det the optimized code acts the same as the 
+           unoptimized code.  declearing det as double does not change the CET 10-09.ps 
+           output. */
+	double det = (float)(mxx * myy) - (float)(mxy * myx);
 
         /*
          * We are doing the math as floats instead of doubles to reproduce

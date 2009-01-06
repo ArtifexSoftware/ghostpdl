@@ -372,7 +372,7 @@ void
 names_trace_finish(name_table * nt, gc_state_t * gcst)
 {
     uint *phash = &nt->hash[0];
-    uint i;
+    int i;
 
     for (i = 0; i < NT_HASH_SIZE; phash++, i++) {
 	name_index_t prev = 0;
@@ -406,20 +406,24 @@ names_trace_finish(name_table * nt, gc_state_t * gcst)
     }
     /* Reconstruct the free list. */
     nt->free = 0;
-    for (i = nt->sub_count; i--;) {
+    for (i = nt->sub_count; --i >= 0;) {
 	name_sub_table *sub = nt->sub[i].names;
 	name_string_sub_table_t *ssub = nt->sub[i].strings;
 
 	if (sub != 0) {
+	    int save_count = nt->sub_count;
+
 	    name_scan_sub(nt, i, true);
+	    if (save_count != nt->sub_count) {
+		/* name_scan_sub has released the i-th entry. */
+		continue;
+	    }
 	    if (nt->sub[i].names == 0 && gcst != 0) {
 		/* Mark the just-freed sub-table as unmarked. */
 		o_set_unmarked((obj_header_t *)sub - 1);
 		o_set_unmarked((obj_header_t *)ssub - 1);
 	    }
 	}
-	if (i == 0)
-	    break;
     }
     nt->sub_next = 0;
 }

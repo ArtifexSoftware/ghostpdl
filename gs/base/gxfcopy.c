@@ -1630,7 +1630,7 @@ copy_font_cid0(gs_font *font, gs_font *copied)
 	    if (code < 0)
 		goto fail;
 	}
-	code = gs_copy_font(subfont, &subfont->FontMatrix, copied->memory, &subcopy);
+	code = gs_copy_font(subfont, &subfont->FontMatrix, copied->memory, &subcopy, -1);
 	if (code < 0)
 	    goto fail;
 	subcopy1 = (gs_font_type1 *)subcopy;
@@ -1879,14 +1879,14 @@ static const int some_primes[] = {
     */
     257, 359, 521, 769, 1031, 2053, 
     3079, 4099, 5101, 6101, 7109, 8209, 10007, 12007, 14009, 
-    16411, 20107, 26501, 32771, 48857, 65537};
+    16411, 20107, 26501, 32771, 48857, 65537, 85229, 127837};
 #endif
 
 /*
  * Copy a font, aside from its glyphs.
  */
 int
-gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_font **pfont_new)
+gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_font **pfont_new, int max_reserved_glyphs)
 {
     gs_memory_type_ptr_t fstype = gs_object_type(font->memory, font);
     uint fssize = gs_struct_type_size(fstype);
@@ -1923,7 +1923,12 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
 					       &glyph), index != 0)
 		++glyphs_size;
 	}
+	if(glyphs_size > max_reserved_glyphs && max_reserved_glyphs != -1)
+	    glyphs_size = max_reserved_glyphs;
+
 #if GLYPHS_SIZE_IS_PRIME
+	if (glyphs_size < 257)
+	    glyphs_size = 257;
 	/*
 	 * Make glyphs_size a prime number to ensure termination of the loop in
 	 * named_glyphs_slot_hashed, q.v.
@@ -1931,8 +1936,7 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
 	 * for possible font increments.
 	 */
 	glyphs_size = glyphs_size * 3 / 2;
-	if (glyphs_size < 257)
-	    glyphs_size = 257;
+
 	{ int i;
 	    for (i = 0; i < count_of(some_primes); i++)
 		if (glyphs_size <= some_primes[i])
@@ -2422,3 +2426,4 @@ copied_get_notdef(const gs_font *font)
 
     return cfdata->notdef;
 }
+

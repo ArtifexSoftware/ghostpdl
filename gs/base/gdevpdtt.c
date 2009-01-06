@@ -2029,17 +2029,29 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     if (font->PaintType == 2 && penum->pis->text_rendering_mode == 0)
     {
 	gs_imager_state *pis = penum->pis;
+	gs_font *font = penum->current_font;
 	double scaled_width = font->StrokeWidth != 0 ? font->StrokeWidth : 0.001;
 	double saved_width = pis->line_params.half_width;
-
+	/*
+	 * See stream_to_text in gdevpdfu.c re the computation of
+	 * the scaling value.
+	 */
+	double scale = 72.0 / pdev->HWResolution[1];
+	
 	if (font->FontMatrix.yy != 0)
-	    scaled_width *= fabs(font->FontMatrix.yy);
+	    scaled_width *= fabs(font->orig_FontMatrix.yy) * size * tmat.yy * scale;
 	else
-	    scaled_width *= fabs(font->FontMatrix.xy);
-	ppts->values.render_mode = 1;
+	    scaled_width *= fabs(font->orig_FontMatrix.xy) * size * tmat.xy * scale;
+
+	ppts->values.render_mode = 1;	
+
+	/* Sort out any pending glyphs */
+	code = pdf_set_PaintType0_params(pdev, pis, size, scaled_width, &ppts->values);
+
 	pis->line_params.half_width = scaled_width / 2;
-        code = pdf_set_text_process_state(pdev, (const gs_text_enum_t *)penum,
+	code = pdf_set_text_process_state(pdev, (const gs_text_enum_t *)penum,
 				      ppts);
+
 	pis->line_params.half_width = saved_width;
     } else {
 	code = pdf_set_text_process_state(pdev, (const gs_text_enum_t *)penum,
@@ -2069,17 +2081,11 @@ pdf_set_text_process_state(gx_device_pdf *pdev,
 	float save_width = pis->line_params.half_width;
 	int code;
 
+	code = pdf_open_contents(pdev, PDF_IN_STRING);
 	code = pdf_prepare_stroke(pdev, pis);
-	if (code >= 0) {
-	    /*
-	     * See stream_to_text in gdevpdfu.c re the computation of
-	     * the scaling value.
-	     */
-	    double scale = 72.0 / pdev->HWResolution[1];
-
+	if (code >= 0) 
 	    code = gdev_vector_prepare_stroke((gx_device_vector *)pdev,
-					      pis, NULL, NULL, scale);
-	}
+					      pis, NULL, NULL, 1);
 	pis->line_params.half_width = save_width;
 	if (code < 0)
 	    return code;

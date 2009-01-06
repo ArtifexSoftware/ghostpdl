@@ -669,10 +669,30 @@ end readonly def
 
 /pdfwrite_textrenderingprocs [
 	{ setfillstate show } bind
-	{ setstrokestate show } bind
+	{ setstrokestate 
+        % Need to set the stroke width to a value which gives the correct
+        % width under pdfwrite. Pdfwrite uses (in text mode) an identity
+        % CTM, so we need to calculate the stroke width which would result
+        % if the CTM had been unity. 
+	  currentlinewidth dup
+	  matrix defaultmatrix idtransform TextSaveMatrix dtransform
+	  2 copy eq {
+          pop
+        }{
+          % non-square scaling reduces to Text matrix in pdfwrite , so 
+          % we can ignore it. (wrong answer, but consistent)
+          pop pop currentlinewidth
+        }ifelse setlinewidth
+        show } bind
 	{ gsave 0 .settextrenderingmode 
 	  setfillstate dup show currentpoint 3 -1 roll 
-	  grestore gsave setstrokestate false charpath stroke 
+	  grestore gsave setstrokestate 
+        false charpath 
+        % We need to make sure the matrix used for the stroke
+        % and therefore stroke width does not include the 
+        % Text Matrix Tm.
+        TextSaveMatrix setmatrix
+        stroke 
 	  grestore moveto
 	} bind
 	{ setfillstate show } bind
@@ -683,7 +703,12 @@ end readonly def
 	  true charpath } bind
 	{ gsave 0 .settextrenderingmode 
 	  setfillstate dup show grestore gsave dup 
-	  setstrokestate false charpath stroke grestore 
+	  setstrokestate false charpath 
+        % We need to make sure the matrix used for the stroke
+        % and therefore stroke width does not include the 
+        % Text Matrix Tm.
+        TextSaveMatrix setmatrix
+        stroke grestore 
 	  true charpath } bind
 	{ true charpath } bind
 ] readonly def

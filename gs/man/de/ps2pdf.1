@@ -1,6 +1,7 @@
 .\" $Id$
 .\" Using encoding of the German (de_DE) translation: ISO-8859-1
 .\" Translation by Tobias Burnus <burnus@gmx.de> and Thomas Hoffmann
+.\" revised for version 7.06 by Wolfram Quester <wolfi@mittelerde.physik.uni-kostanz.de> 
 .TH PS2PDF 1 "8.Juli 2002" 7.21 Ghostscript \" -*- nroff -*-
 .SH NAME
 ps2pdf \- konvertiert PostScript nach PDF mittels ghostscript
@@ -15,10 +16,11 @@ ps2pdf13 \- konvertiert PostScript nach PDF\ 1.3 (kompatibel zu Acrobat\ 4 und s
 .br
 \fBps2pdf13\fR  [Optionen...] {Eingabe.[e]ps|-} [Ausgabe.pdf|-]
 .SH BESCHREIBUNG
-Die
+Außer in der Benutzerschnittstelle sind die
 .B ps2pdf\-Skripte
-sind nahezu in allen Funktionen (aber nicht in der Benutzerschnittstelle) Äquivalent zu Adobe Acrobat(TM) 
-Distiller(TM): Sie konvertieren PostScript-Dateien in das Portable Document Format (PDF).
+nahezu in allen Funktionen äquivalent zu Adobe Acrobat Distiller: Sie konvertieren 
+PostScript-Dateien in das Portable Document Format (PDF).
+
 .PP
 Die drei Skripte unterscheiden sich wie folgt:
 .IP -
@@ -29,8 +31,7 @@ produziert immer PDF-1.2-Dateien (kompatibel zu Acrobat 3 und später).
 produziert immer PDF-1.3-Dateien (kompatibel zu Acrobat 4 und später).
 .IP -
 .B ps2pdf
-selbst produziert standardgemäß PDF-1.2-Dateien (kompatibel zu Acrobat 3 und später); das kann sich jedoch in Zukunft ändern. 
-Falls Sie eine bestimmte PDF-Version benötigen, sollten Sie
+selbst produziert standardgemäß PDF-1.2-Dateien (kompatibel zu Acrobat 3 und später); In späteren Versionen kann sich das jedoch ändern. Falls Sie eine bestimmte PDF-Version benötigen, sollten Sie
 .B ps2pdf12,
 .BR ps2pdf13 
 oder den
@@ -39,7 +40,9 @@ Schalter in der Kommandozeile benutzen.
 .PP
 Die Konvertierung mittels
 .BR ps2pdf
-unterliegt einigen Beschränkungen. Siehe HTML-Documentation für weitere Informationen.
+unterliegt einigen Beschränkungen. Ausführlichere Informationen dazu stehen in der HTML-Dokumentation.
+.SH OPTIONEN
+Für ps2pdf gelten die gleichen Optionen wie für gs(1).
 .SH SIEHE AUCH
 gs(1), ps2pdfwr(1),
 .br

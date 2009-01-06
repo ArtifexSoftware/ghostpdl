@@ -39,6 +39,8 @@
 #include "vdtrace.h"
 #include "gscindex.h"           /* included for proper handling of index color spaces 
                                 and keeping data in source color space */
+#include "gxcolor2.h"           /* define of float_color_to_byte_color */
+#include "gscspace.h"           /* Needed for checking is space is CIE */
 
 
 static void 
@@ -161,12 +163,26 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
 
            /* Non indexed case, we either use the data as 
            is, or allocate space if it is reversed in X */
+
 	    in_size =
 	        (penum->matrix.xx < 0 ?
 	         /* We need a buffer for reversing each scan line. */
 	         iss.WidthIn * iss.Colors : 0);  
+
             /* If it is not reversed, and we have 8 bit/color channel data then            
             no need to allocate extra as we will use the source directly */
+
+            /* However, if we have a nonstandard encoding and are in 
+                a device color space we will need to allocate
+               in that case also. We will maintain 8 bits but
+               do the decode and then interpolate.  This is OK
+               for the linear decode */
+
+            if (!penum->device_color && !gs_color_space_is_CIE(pcs)){
+
+                in_size = iss.WidthIn * iss.Colors;
+
+            }
 
        }
 
@@ -297,22 +313,69 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 
             if (pcs->type->index != gs_color_space_index_Indexed) {
 
-                /* 8-bit color values, possibly device 
-                indep. or device depend., not indexed. */
-                if (penum->matrix.xx >= 0) {
-	            /* Use the input data directly. */
-	            r.ptr = bdata - 1;   /* sets up data in the stream buffere structure */
-                } else {
-	            /* Mirror the data in X. */
-	            const byte *p = bdata + row_size - c;
-	            byte *q = out;
-	            int i;
 
-	            for (i = 0; i < pss->params.WidthIn; p -= c, q += c, ++i)
-	                memcpy(q, p, c);
-	            r.ptr = out - 1;
-	            out = q;
+                /* An issue here is that we may not be "device color" due to 
+                   how the data is encoded.  Need to check for that case here */
+
+                if (penum->device_color || gs_color_space_is_CIE(pcs)){
+
+                    /* 8-bit color values, possibly device 
+                    indep. or device depend., not indexed. 
+                    Decode range was [0 1] */
+                    if (penum->matrix.xx >= 0) {
+	                /* Use the input data directly. */
+	                r.ptr = bdata - 1;   /* sets up data in the stream buffere structure */
+                    } else {
+	                /* Mirror the data in X. */
+	                const byte *p = bdata + row_size - c;
+	                byte *q = out;
+	                int i;
+
+	                for (i = 0; i < pss->params.WidthIn; p -= c, q += c, ++i)
+	                    memcpy(q, p, c);
+	                r.ptr = out - 1;
+	                out = q;
+                    }
+
+                } else {
+
+                    /* We need to do some decoding.
+                       Data will remain in 8 bits 
+                       This does not occur if color
+                       space was CIE encoded.  Then we
+                       do the decode during concretization 
+                       which occurs after interpolation */
+
+	            int bps = 1;
+	            int dc = penum->spp;
+	            const byte *pdata = bdata;
+	            byte *psrc = (byte *) penum->line;
+	            int i, j;
+                    int dpd = dc;
+	            gs_client_color cc;
+
+                    /* Go backwards through the data */
+                    if (penum->matrix.xx < 0) {
+                      pdata += (pss->params.WidthIn - 1) * dpd;
+                      dpd = - dpd;
+                    }
+
+	            r.ptr = (byte *) psrc - 1;
+	            for (i = 0; i < pss->params.WidthIn; i++, psrc += c) {
+
+                        /* Do the decode but remain in 8 bits */
+
+                        for (j = 0; j < dc;  ++j) {
+                            decode_sample(pdata[j], cc, j);
+                            psrc[j] = float_color_to_byte_color(cc.paint.values[j]);
+                         }
+
+	                pdata += dpd;
+                    }
+
+	            out += round_up(pss->params.WidthIn * c,align_bitmap_mod);
                 }
+
 
             } else {
 
@@ -355,36 +418,36 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 
                     switch ( penum->map[0].decoding )
                     {
-                    case sd_none:
+                        case sd_none:
 
-                     /* while our indexin is going to be 0 to 255.0 due to what is getting handed to us,
-                        the range of our original data may not have been as such and we may need to rescale, 
-                        to properly lookup at the correct location (or do the proc correctly) during the 
-                        index look-up.  This occurs even if decoding was set to sd_none.  */
+                         /* while our indexin is going to be 0 to 255.0 due to what is getting handed to us,
+                            the range of our original data may not have been as such and we may need to rescale, 
+                            to properly lookup at the correct location (or do the proc correctly) during the 
+                            index look-up.  This occurs even if decoding was set to sd_none.  */
 
-                        decode_value = (float) pdata[0] * (float)max_range / 255.0; 
+                            decode_value = (float) pdata[0] * (float)max_range / 255.0; 
 
-                    break;
+                        break;
 
-                    case sd_lookup:	
-                        decode_value = 
-                          (float) penum->map[0].decode_lookup[pdata[0] >> 4];
-                    break;
+                        case sd_lookup:	
+                            decode_value = 
+                              (float) penum->map[0].decode_lookup[pdata[0] >> 4];
+                        break;
 
-                    case sd_compute:
-                        decode_value =   
-                          penum->map[0].decode_base + ((float) pdata[0]) * penum->map[0].decode_factor;
-			break;
+                        case sd_compute:
+                            decode_value =   
+                              penum->map[0].decode_base + 
+                              ((float) pdata[0]) * penum->map[0].decode_factor;
+			    break;
 
-		    default:
-			decode_value = 0; /* Quiet gcc warning. */
+		        default:
+			    decode_value = 0; /* Quiet gcc warning. */
                   }
 
                   gs_cspace_indexed_lookup_bytes(pcs, decode_value,psrc);	
 	          pdata += dpd;    /* Can't have just ++ 
                                    since we could be going backwards */
-
-                 }
+                }
 
                  /* We need to set the output to the end of the input buffer 
                     moving it to the next desired word boundary.  This must

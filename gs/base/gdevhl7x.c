@@ -79,6 +79,7 @@
 
  */
 
+#define USE_POSSIBLY_FLAWED_COMPRESSION 1
 
 /* Type definitions */
 typedef struct {

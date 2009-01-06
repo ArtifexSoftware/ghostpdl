@@ -584,9 +584,11 @@ clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
     else
 	crdev->yplane.index = -1;
     if_debug2('l', "[l]rendering bands (%d,%d)\n", band_first, band_last);
+#if 0 /* Disabled because it is slow and appears to have no useful effect. */
     if (clear)
 	dev_proc(bdev, fill_rectangle)
 	    (bdev, 0, 0, bdev->width, bdev->height, gx_device_white(bdev));
+#endif
 
     /*
      * If we aren't rendering saved pages, do the current one.

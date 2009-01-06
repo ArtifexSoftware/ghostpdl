@@ -1083,7 +1083,16 @@ end
     true
   } {
 		% Opaque image
-    dup /ColorSpace oget resolvecolorspace /ColorSpace exch def
+    dup /ColorSpace knownoget 
+    % JPXDecode filters can omit the /ColorSpace and /BitsPerComponent
+    % keys, in which case the interpreter must retrieve this information
+    % from inside the compressed stream. Here we substitute the most
+    % likely values as a work-around.
+    not {
+      (   **** Warning: assuming JPX image is 8-bit RGB.\n) stderrprint
+      [/DeviceRGB] /BitsPerComponent 8 def
+    } if 
+    resolvecolorspace /ColorSpace exch def
 		% Decode is required for the PostScript image operators.
     /Decode 2 copy knownoget not {
       ColorSpace //defaultdecodedict
@@ -1558,7 +1567,13 @@ end
                 % Initialize graphic following "7.4.4 Appearance Streams"
       q graphicsbeginpage textbeginpage
       1 index annotrect pop pop translate
-      3 index 3 index scale		% Apply scale factors
+      3 index 3 index scale	% Apply scale factors
+      dup /BBox knownoget {
+        1 index /Matrix knownoget not { {1 0 0 1 0 0} } if
+        .bbox_transform pop pop
+        % Compensate for non-zero origin of BBox
+        neg exch neg exch translate
+      } if
       DoForm Q
     } if
   } {
@@ -1612,24 +1627,22 @@ end
     pop dup annotrect 4 2 roll pop pop	 % get width height size in user space
     3 -1 roll /AP knownoget {
       /N knownogetdict {
-	dup /Matrix knownoget {
-          % transform /Annot /Rect xwidth to Form space
-	  4 2 roll 3 -1 roll dtransform 3 -1 roll
-	} if
-	/BBox knownoget {       % x y  [box]
-          aload pop             % x y  x0 y0 x1 y1
+	dup /Matrix knownoget not { {1 0 0 1 0 0} } if
+	exch /BBox knownoget {  % x y  {matrix} [box]
+          exch .bbox_transform  % x y  x0 y0 x1 y1
           3 -1 roll sub         % x y  x0 x1 y1-y0
-          3 1 roll sub          % x y  y1-y0 x0-x1 
+          3 1 roll exch sub     % x y  y1-y0 x1-x0 
           2 copy mul 0 eq {
             (   **** Warning: /BBox has zero width or height, which is not allowed.\n)
             pdfformaterror
             pop pop pop pop 1 1	% zero size -- revert to unity scaling
-          } if
-	  3 1 roll div abs      % x x0-x1 |y/(y1-y0)|
-          3 1 roll div abs      % |y/(y1-y0)| |x/(x0-x1)|
-          exch                  % |x/(x0-x1)| |y/(y1-y0)| 
+          } { 
+	    3 1 roll div        % x x1-x0 y/(y1-y0)
+            3 1 roll div        % y/(y1-y0) x/(x1-x0)
+            exch                % x/(x1-x0) y/(y1-y0)
+          } ifelse
 	} {
-	  pop pop 1 1		% default to unity scaling
+	  pop pop pop 1 1	% default to unity scaling
 	} ifelse		% if we have /BBox
       } {
 	pop pop 1 1

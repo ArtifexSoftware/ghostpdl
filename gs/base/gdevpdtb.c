@@ -133,36 +133,46 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
 			&st_pdf_base_font, "pdf_base_font_alloc");
     const gs_font_name *pfname = &font->font_name;
     gs_const_string font_name;
-    char fnbuf[3 + sizeof(long) / 3 + 1]; /* .F#######\0 */
-    int code;
+    char fnbuf[2*sizeof(long) + 3]; /* .F########\0 */
+    int code, reserve_glyphs = -1;
 
     if (pbfont == 0)
 	return_error(gs_error_VMerror);
-    code = gs_copy_font((gs_font *)font, orig_matrix, mem, &copied);
-    if (code < 0)
-	goto fail;
     memset(pbfont, 0, sizeof(*pbfont));
-    {
-	/* 
-	 * Adobe Technical Note # 5012 "The Type 42 Font Format Specification" says :
-	 *
-	 * There is a known bug in the TrueType rasterizer included in versions of the
-	 * PostScript interpreter previous to version 2013. The problem is that the
-	 * translation components of the FontMatrix, as used as an argument to the
-	 * definefont or makefont operators, are ignored. Translation of user space is
-	 * not affected by this bug.
-	 *
-	 * Besides that, we found that Adobe Acrobat Reader 4 and 5 ignore 
-	 * FontMatrix.ty .
-	 */
-	copied->FontMatrix.tx = copied->FontMatrix.ty = 0;
-    }
     switch (font->FontType) {
     case ft_encrypted:
     case ft_encrypted2:
-	pbfont->do_subset = (is_standard ? DO_SUBSET_NO : DO_SUBSET_UNKNOWN);
-	/* We will count the number of glyphs below. */
-	pbfont->num_glyphs = -1;
+	{
+	    int index, count;
+	    gs_glyph glyph;
+
+	    for (index = 0, count = 0;
+		(font->procs.enumerate_glyph((gs_font *)font, &index,
+					      GLYPH_SPACE_NAME, &glyph),
+		  index != 0);
+		 )
+		    ++count;
+	    pbfont->num_glyphs = count;
+	    pbfont->do_subset = (is_standard ? DO_SUBSET_NO : DO_SUBSET_UNKNOWN);
+	}
+	/* If we find an excessively large type 1 font we won't be able to emit 
+	 * a complete copy. Instead we will emit multiple subsets. Detect that here
+	 * and only reserve enough space in the font copy for the maximum subset 
+	 * glyphs, 257.
+	 * This also prevents us making a 'complete' copy of the font below. NB the 
+	 * value 2048 is merely a guess, intended to prevent copying very large fonts.
+	 */
+	if(pbfont->num_glyphs > 2048 && !is_standard) {
+	    reserve_glyphs = 257;
+	    if(pbfont->do_subset != DO_SUBSET_NO){
+	        char buf[gs_font_name_max + 1];
+		int l = min(font->font_name.size, sizeof(buf) - 1);
+
+		memcpy(buf, font->font_name.chars, l);
+		buf[l] = 0;
+    		eprintf1("Can't embed the complete font %s as it is too large, embedding a subset.\n", buf);
+	    }
+	}
 	break;
     case ft_TrueType:
 	pbfont->num_glyphs = ((gs_font_type42 *)font)->data.trueNumGlyphs;
@@ -190,16 +200,36 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
 	code = gs_note_error(gs_error_rangecheck);
 	goto fail;
     }
-    if (pbfont->do_subset != DO_SUBSET_YES) {
+
+    code = gs_copy_font((gs_font *)font, orig_matrix, mem, &copied, reserve_glyphs);
+    if (code < 0)
+	goto fail;
+    {
+	/* 
+	 * Adobe Technical Note # 5012 "The Type 42 Font Format Specification" says :
+	 *
+	 * There is a known bug in the TrueType rasterizer included in versions of the
+	 * PostScript interpreter previous to version 2013. The problem is that the
+	 * translation components of the FontMatrix, as used as an argument to the
+	 * definefont or makefont operators, are ignored. Translation of user space is
+	 * not affected by this bug.
+	 *
+	 * Besides that, we found that Adobe Acrobat Reader 4 and 5 ignore 
+	 * FontMatrix.ty .
+	 */
+	copied->FontMatrix.tx = copied->FontMatrix.ty = 0;
+    }
+
+    if (pbfont->do_subset != DO_SUBSET_YES && reserve_glyphs == -1) {
 	/* The only possibly non-subsetted fonts are Type 1/2 and Type 42. */
 	if (is_standard)
 	    complete = copied, code = 0;
 	else {
-	    code = gs_copy_font((gs_font *)font, &font->FontMatrix, mem, &complete);
+	    code = gs_copy_font((gs_font *)font, &font->FontMatrix, mem, &complete, -1);
 	    if (code < 0)
 		goto fail;
 	}
-        code = gs_copy_font_complete((gs_font *)font, complete);
+	code = gs_copy_font_complete((gs_font *)font, complete);
 	if (code < 0 && pbfont->do_subset == DO_SUBSET_NO) {
 	    char buf[gs_font_name_max + 1];
 	    int l = min(copied->font_name.size, sizeof(buf) - 1);
@@ -216,18 +246,7 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
 	       another error will hgappen when the glyph is used.
 	     */
 	    complete = copied;
-	} else if (pbfont->num_glyphs < 0) { /* Type 1 */
-	    int index, count;
-	    gs_glyph glyph;
-
-	    for (index = 0, count = 0;
-		 (font->procs.enumerate_glyph((gs_font *)font, &index,
-					      GLYPH_SPACE_NAME, &glyph),
-		  index != 0);
-		 )
-		++count;
-	    pbfont->num_glyphs = count;
-	}
+	} 
     } else
 	complete = copied;
     pbfont->copied = (gs_font_base *)copied;

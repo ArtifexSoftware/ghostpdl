@@ -390,7 +390,6 @@ int gx_put_blended_image_custom(gx_device *target, byte *buf_ptr,
 		      int planestride, int rowstride,
 		      int x0, int y0, int width, int height, int num_comp, byte bg);
 
-
 #if RAW_DUMP
 
 void dump_raw_buffer(int num_rows, int width, int n_chan,

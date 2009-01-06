@@ -22,7 +22,7 @@
 #	The init files are in the %rom%Resource/Init/ directory
 #       Any EXTRA_INIT_FILES go into %rom%lib/
 
-RESOURCE_LIST=CIDFont$(D) CMap$(D) ColorSpace$(D) Decoding$(D) Encoding$(D) Font$(D) IdiomSet$(D) Init$(D) ProcSet$(D)
+RESOURCE_LIST=CIDFont$(D) CMap$(D) ColorSpace$(D) Decoding$(D) Encoding$(D) Font$(D) IdiomSet$(D) Init$(D) ProcSet$(D) SubstCID$(D)
 
 #	Note: gs_cet.ps is only needed to match Adobe CPSI defaults
 PS_ROMFS_ARGS=-c -P $(PSRESDIR)$(D) -d Resource/ $(RESOURCE_LIST) \

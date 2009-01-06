@@ -855,7 +855,7 @@ gdevpdfg_h=$(GLSRC)gdevpdfg.h $(gscspace_h)
 gdevpdfo_h=$(GLSRC)gdevpdfo.h $(gsparam_h)
 gdevpdfx_h=$(GLSRC)gdevpdfx.h\
  $(gsparam_h) $(gsuid_h) $(gxdevice_h) $(gxfont_h) $(gxline_h)\
- $(spprint_h) $(stream_h) $(gdevpsdf_h)
+ $(spprint_h) $(stream_h) $(gdevpsdf_h) $(gxdevmem_h) $(sarc4_h) 
 
 $(GLOBJ)gdevpdf.$(OBJ) : $(GLSRC)gdevpdf.c $(GDEVH)\
  $(fcntl__h) $(memory__h) $(string__h) $(time__h) $(unistd__h) $(gp_h)\
@@ -1051,7 +1051,8 @@ $(GLOBJ)gdevpdti.$(OBJ) : $(GLSRC)gdevpdti.c $(memory__h) $(string__h) $(gx_h)\
 	$(GLCC) $(GLO_)gdevpdti.$(OBJ) $(C_) $(GLSRC)gdevpdti.c
 
 $(GLOBJ)gdevpdts.$(OBJ) : $(GLSRC)gdevpdts.c $(gx_h) $(math__h) $(memory__h)\
- $(gserrors_h) $(gdevpdfx_h) $(gdevpdtf_h) $(gdevpdts_h) $(gdevpdtx_h)
+ $(gserrors_h) $(gdevpdfx_h) $(gdevpdfg_h) $(gdevpdtx_h) $(gdevpdtf_h)\
+ $(gdevpdts_h) $(gdevpdtt_h)
 	$(GLCC) $(GLO_)gdevpdts.$(OBJ) $(C_) $(GLSRC)gdevpdts.c
 
 $(GLOBJ)gdevpdtt.$(OBJ) : $(GLSRC)gdevpdtt.c $(gx_h) $(math__h) $(string__h)\

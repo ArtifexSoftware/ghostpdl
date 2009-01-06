@@ -32,7 +32,8 @@
 *Product:	"(GPL Ghostscript)"
 *cupsVersion:	1.1
 *cupsManualCopies: False
-*cupsFilter:	"application/vnd.cups-postscript 0 pstopxl"
+*cupsFilter:	"application/vnd.cups-postscript 100 pstopxl"
+*cupsFilter:	"application/vnd.cups-pdf 0 pstopxl"
 *ModelName:     "HP LaserJet Series PCL 6"
 *ShortNickName: "HP LaserJet Series PCL 6"
 *NickName:      "HP LaserJet Series PCL 6 CUPS"
@@ -54,6 +55,15 @@
 *UIConstraints: *PageSize A5 *InputSlot Envelope
 *UIConstraints: *PageSize B5 *InputSlot Envelope
 *UIConstraints:	*Duplex *OptionDuplex False
+*UIConstraints: *InputSlot Envelope *PageSize Executive
+*UIConstraints: *InputSlot Envelope *PageSize Letter
+*UIConstraints: *InputSlot Envelope *PageSize Legal
+*UIConstraints: *InputSlot Envelope *PageSize Tabloid
+*UIConstraints: *InputSlot Envelope *PageSize A3
+*UIConstraints: *InputSlot Envelope *PageSize A4
+*UIConstraints: *InputSlot Envelope *PageSize A5
+*UIConstraints: *InputSlot Envelope *PageSize B5
+*UIConstraints:	*OptionDuplex False *Duplex
 
 *OpenUI *PageSize/Media Size: PickOne
 *OrderDependency: 10 AnySetup *PageSize

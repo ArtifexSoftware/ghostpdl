@@ -238,7 +238,8 @@ bool cmd_slow_rop(gx_device *dev, gs_logical_operation_t lop,
 /* Return a cmd_dc_type. */
 int cmd_put_drawing_color(gx_device_clist_writer * cldev,
 			  gx_clist_state * pcls,
-			  const gx_drawing_color * pdcolor);
+			  const gx_drawing_color * pdcolor,
+			  cmd_rects_enum_t *pre);
 
 /* Clear (a) specific 'known' flag(s) for all bands. */
 /* We must do this whenever the value of a 'known' parameter changes. */
