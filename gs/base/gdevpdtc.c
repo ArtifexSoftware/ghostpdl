@@ -482,6 +482,7 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
 		    code += 0; /* A good place for a breakpoint. */
 		} else {
 		    pdf_font_resource_t *pdfont;
+		    bool notdef_subst = false;
 
 		    code = pdf_obtain_cidfont_widths_arrays(pdev, pdsubf, wmode, &w, &w0, &v);
 		    if (code < 0)
@@ -520,14 +521,22 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
     
 			    memcpy(buf, subfont->font_name.chars, l);
 			    buf[l] = 0;
-			    eprintf2("Missing glyph CID=%d in the font %s . The output PDF may fail with some viewers.\n", 
-				    (int)cid, buf);
+			    eprintf3("Missing glyph CID=%d, glyph=%04x in the font %s . The output PDF may fail with some viewers.\n", 
+				    (int)cid, glyph - GS_MIN_CID_GLYPH, buf);
 			    pdsubf->used[cid >> 3] |= 0x80 >> (cid & 7);
 			}
 			cid = 0, code = 1;  /* undefined glyph. */
+			notdef_subst = true;
+			/* If this is the first use of CID=0, get its width */
+			if (pdsubf->Widths[cid] == 0) {
+			    pdf_glyph_widths_t widths;
+
+			    code = pdf_glyph_widths(pdsubf, wmode, glyph, (gs_font *)subfont, &widths,
+				pte->cdevproc_callout ? pte->cdevproc_result : NULL);
+			}
 		    } else if (code < 0)
 			return code;
-		    if (code == 0 /* just copied */ || pdsubf->Widths[cid] == 0) {
+		    if ((code == 0 /* just copied */ || pdsubf->Widths[cid] == 0) && !notdef_subst) {
 			pdf_glyph_widths_t widths;
 
 		    code = pdf_glyph_widths(pdsubf, wmode, glyph, (gs_font *)subfont, &widths,
