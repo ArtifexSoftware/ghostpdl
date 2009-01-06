@@ -1329,18 +1329,27 @@ currentdict /eexec_pdf_param_dict .undef
       [ 1 0 0.3 1 0 0 ] makefont
       exit
     } if
+    QUIET not {
+      (Can't find CID font ") print dup =string cvs print (".) =  
+    } if
     pop
 
     1 index /CIDSystemInfo oget begin Registry (-) Ordering end
     concatstrings concatstrings
     cvn
     QUIET not {
-      (Substituting CID font resource) print dup ==only
+      (Substituting CID font resource ) print dup ==only
       ( for ) print 1 index ==only (.\n) print
     } if
     exch pop
-    /CIDFont findresource
-    exit
+    dup /CIDFont resourcestatus {
+      pop pop /CIDFont findresource exit 
+    } if
+    QUIET not {
+      (The substitute CID font ") print dup =string cvs print 
+      (" is not provided either. Will exit with error.) =  
+    } if
+    /findresource cvx /undefined signalerror
   } loop
 } bdef
 
