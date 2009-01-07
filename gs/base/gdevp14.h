@@ -168,6 +168,9 @@ typedef struct pdf14_device_s {
     float alpha; /* alpha = opacity * shape */
     gs_blend_mode_t blend_mode;
     bool text_knockout;
+	bool overprint;
+	bool overprint_mode;
+	gx_color_index drawn_comps;		/* Used for overprinting.  Passed from overprint compositor */
     gx_device * pclist_device;
     const gx_color_map_procs *(*save_get_cmap_procs)(const gs_imager_state *,
 						     const gx_device *);

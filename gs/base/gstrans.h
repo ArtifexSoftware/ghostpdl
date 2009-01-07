@@ -51,6 +51,8 @@ typedef enum {
 #define PDF14_SET_TEXT_KNOCKOUT (1 << 1)
 #define PDF14_SET_SHAPE_ALPHA   (1 << 2)
 #define PDF14_SET_OPACITY_ALPHA (1 << 3)
+#define PDF14_SET_OVERPRINT		(1 << 4)
+#define PDF14_SET_OVERPRINT_MODE (1 << 5)
 
 #ifndef gs_function_DEFINED
 typedef struct gs_function_s gs_function_t;
@@ -90,6 +92,8 @@ struct gs_pdf14trans_params_s {
     bool mask_is_image;
     gs_matrix ctm;
     bool replacing;
+	bool overprint;
+	bool overprint_mode;
     bool idle; /* For clist reader.*/
     uint mask_id; /* For clist reader.*/
     bool SMask_is_CIE;

@@ -1138,10 +1138,26 @@ pdf14_cmykspot_put_image(gx_device * dev, gs_imager_state * pis, gx_device * tar
     height = y1 - rect.p.y;
     if (width <= 0 || height <= 0 || buf->data == NULL)
 	return 0;
-    buf_ptr = buf->data + y0 * buf->rowstride + x0;
+    buf_ptr = buf->data + rect.p.y * buf->rowstride + rect.p.x;
+
+
+	#if RAW_DUMP
+  
+    /* Dump the current buffer to see what we have. */
+
+    dump_raw_buffer(pdev->ctx->stack->rect.q.y-pdev->ctx->stack->rect.p.y, 
+                pdev->ctx->stack->rect.q.x-pdev->ctx->stack->rect.p.x, 
+				pdev->ctx->stack->n_planes,
+                pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride, 
+                "CMYK_SPOT_PUTIMAGE",pdev->ctx->stack->data);
+
+    global_index++;
+
+
+#endif
 
     return gx_put_blended_image_cmykspot(target, buf_ptr, planestride, rowstride,
-		      x0, y0, width, height, num_comp, bg, pseparations);
+		      rect.p.x, rect.p.y, width, height, num_comp, bg, pseparations);
 }
 
 /**
@@ -1304,6 +1320,9 @@ pdf14_set_marking_params(gx_device *dev, const gs_imager_state *pis)
     pdev->shape = pis->shape.alpha;
     pdev->alpha = pis->opacity.alpha * pis->shape.alpha;
     pdev->blend_mode = pis->blend_mode;
+	pdev->overprint = pis->overprint;
+	pdev->overprint_mode = pis->overprint_mode;
+
     if_debug3('v', "[v]set_marking_params, opacity = %g, shape = %g, bm = %d\n",
 	      pdev->opacity, pdev->shape, pis->blend_mode);
 }
@@ -1369,6 +1388,10 @@ pdf14_set_params(gs_imager_state * pis,	gx_device * dev,
 	pis->shape.alpha = pparams->shape.alpha;
     if (pparams->changed & PDF14_SET_OPACITY_ALPHA)
 	pis->opacity.alpha = pparams->opacity.alpha;
+    if (pparams->changed & PDF14_SET_OVERPRINT)
+	pis->overprint = pparams->overprint;
+    if (pparams->changed & PDF14_SET_OVERPRINT_MODE)
+	pis->overprint_mode = pparams->overprint_mode;
     pdf14_set_marking_params(dev, pis);
 }
 
@@ -1710,14 +1733,33 @@ pdf14_create_compositor(gx_device * dev, gx_device * * pcdev,
 	const gs_composite_t * pct, gs_imager_state * pis,
 	gs_memory_t * mem)
 {
-    if (gs_is_pdf14trans_compositor(pct)) {
+	pdf14_device *p14dev = (pdf14_device *)dev;
+
+	if (gs_is_pdf14trans_compositor(pct)) {
 	const gs_pdf14trans_t * pdf14pct = (const gs_pdf14trans_t *) pct;
 
 	*pcdev = dev;
 	return gx_update_pdf14_compositor(dev, pis, pdf14pct, mem);
     } else if (gs_is_overprint_compositor(pct)) {
-	*pcdev = dev;
-	return 0;
+		/* If we had an overprint compositer action, then the 
+		   color components that were drawn should be updated.
+		   The overprint compositor logic and its interactions
+		   with the clist is a little odd as it passes uninitialized
+		   values around a fair amount.  Hence the forced assignement here.
+		   See gx_spot_colors_set_overprint in gscspace for issues... */
+		const gs_overprint_t * op_pct = (const gs_overprint_t *) pct;
+		if (op_pct->params.retain_any_comps && !op_pct->params.retain_spot_comps)
+		{
+
+			p14dev->drawn_comps = op_pct->params.drawn_comps;
+
+		} else {
+
+			p14dev->drawn_comps = (1 << p14dev->color_info.num_components) - 1; 
+		}
+
+		*pcdev = dev;
+		return 0;
     } else
 	return gx_no_create_compositor(dev, pcdev, pct, pis, mem);
 }
@@ -2198,6 +2240,10 @@ pdf14_mark_fill_rectangle(gx_device * dev,
     int num_comp = num_chan - 1;
     int shape_off = num_chan * planestride;
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
+	bool overprint = pdev->overprint;
+	gx_color_index drawn_comps = pdev->drawn_comps;
+	bool overprint_mode = pdev->overprint_mode;
+	int comps;
     byte shape = 0; /* Quiet compiler. */
     byte src_alpha;
 
@@ -2206,14 +2252,13 @@ pdf14_mark_fill_rectangle(gx_device * dev,
 
     /* NB: gx_color_index is 4 or 8 bytes */
     if (sizeof(color) <= sizeof(ulong))
-	if_debug7('v', "[v]pdf14_mark_fill_rectangle, (%d, %d), %d x %d color = %lx  bm %d, nc %d,\n", 
-		    x, y, w, h, (ulong)color, blend_mode, num_chan);
+	if_debug8('v', "[v]pdf14_mark_fill_rectangle, (%d, %d), %d x %d color = %lx  bm %d, nc %d, overprint %d\n", 
+		    x, y, w, h, (ulong)color, blend_mode, num_chan, overprint);
     else
-	if_debug8('v', "[v]pdf14_mark_fill_rectangle, (%d, %d), %d x %d color = %08lx%08lx  bm %d, nc %d,\n", 
+	if_debug9('v', "[v]pdf14_mark_fill_rectangle, (%d, %d), %d x %d color = %08lx%08lx  bm %d, nc %d, overprint %d\n", 
 		    x, y, w, h, 
 		    (ulong)(color >> 8*(sizeof(color) - sizeof(ulong))), (ulong)color, 
-		    blend_mode, num_chan);
-
+		    blend_mode, num_chan, overprint);
     /*
      * Unpack the gx_color_index values.  Complement the components for subtractive
      * color spaces.
@@ -2253,13 +2298,23 @@ pdf14_mark_fill_rectangle(gx_device * dev,
 			   		 blend_mode, pdev->blend_procs);
 	    /* Complement the results for subtractive color spaces */
 	    if (additive) {
-		for (k = 0; k < num_chan; ++k)
-		    dst_ptr[k * planestride] = dst[k];
-	    }
-	    else {
-		for (k = 0; k < num_comp; ++k)
-		    dst_ptr[k * planestride] = 255 - dst[k];
-		dst_ptr[num_comp * planestride] = dst[num_comp];
+			for (k = 0; k < num_chan; ++k)
+				dst_ptr[k * planestride] = dst[k];
+		} else {
+		
+			if (overprint) {
+				for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
+					if ((comps & 0x1) != 0) {
+						dst_ptr[k * planestride] = 255 - dst[k];
+					}
+				}
+				/* The alpha channel */
+				dst_ptr[num_comp * planestride] = dst[num_comp];
+			} else {
+				for (k = 0; k < num_comp; ++k)
+					dst_ptr[k * planestride] = 255 - dst[k];
+				dst_ptr[num_comp * planestride] = dst[num_comp];
+			}
 	    }
 	    if (has_alpha_g) {
 		int tmp = (255 - dst_ptr[alpha_g_off]) * (255 - src_alpha) + 0x80;
@@ -2273,6 +2328,24 @@ pdf14_mark_fill_rectangle(gx_device * dev,
 	}
 	line += rowstride;
     }
+
+#if RAW_DUMP
+ 
+    /* Dump the current buffer to see what we have. */
+	
+	if(global_index/10.0 == (int) (global_index/10.0) )
+		dump_raw_buffer(pdev->ctx->stack->rect.q.y-pdev->ctx->stack->rect.p.y, 
+					pdev->ctx->stack->rect.q.x-pdev->ctx->stack->rect.p.x, 
+					pdev->ctx->stack->n_planes,
+					pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride, 
+					"Draw_Rect",pdev->ctx->stack->data);
+
+    global_index++;
+
+
+#endif
+
+
     return 0;
 }
 
@@ -2960,6 +3033,11 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
 		put_value(pbuf, pparams->opacity.alpha);
 	    if (pparams->changed & PDF14_SET_SHAPE_ALPHA)
 		put_value(pbuf, pparams->shape.alpha);
+		if (pparams->changed & PDF14_SET_OVERPRINT)
+		put_value(pbuf, pparams->overprint);
+	    if (pparams->changed & PDF14_SET_OVERPRINT_MODE)
+		put_value(pbuf, pparams->overprint_mode);
+
 	    break;
     }
 
@@ -3099,6 +3177,10 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
 		read_value(data, params.opacity.alpha);
 	    if (params.changed & PDF14_SET_SHAPE_ALPHA)
 		read_value(data, params.shape.alpha);
+		if (params.changed & PDF14_SET_OVERPRINT)
+		read_value(data, params.overprint);
+	    if (params.changed & PDF14_SET_OVERPRINT_MODE)
+		read_value(data, params.overprint_mode);
 	    break;
     }
     code = gs_create_pdf14trans(ppct, &params, mem);
@@ -4288,6 +4370,16 @@ pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_imager_state * pis
 	changed |= PDF14_SET_OPACITY_ALPHA;
 	params.opacity.alpha = pdev->opacity = pis->opacity.alpha;
     }
+    if (pis->overprint != pdev->overprint) {
+	changed |= PDF14_SET_OVERPRINT;
+	params.overprint = pdev->overprint = pis->overprint;
+    }
+    if (pis->overprint_mode != pdev->overprint_mode) {
+	changed |= PDF14_SET_OVERPRINT_MODE;
+	params.overprint_mode = pdev->overprint_mode = pis->overprint_mode;
+    }
+
+
     /*
      * Put parameters into a compositor parameter and then call the
      * create_compositor.  This will pass the data through the clist
