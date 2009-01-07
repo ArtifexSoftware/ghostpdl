@@ -527,6 +527,16 @@ currentdict end readonly def
           setglobal
         } if
         dup /GlyphNames2Unicode .knownget not {
+          true				    % No existing G2U, make one
+        } {
+          dup wcheck {
+            false			    % Existing, writeable G2U, don't make new one
+          } {
+            pop true			    % Existing read only G2U, make new one
+          } ifelse
+        } ifelse
+
+        {
           currentglobal exch dup gcheck setglobal
           dup /GlyphNames2Unicode 100 dict dup 4 1 roll .forceput
           3 2 roll setglobal
