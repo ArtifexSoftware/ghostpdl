@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2009 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -245,6 +245,36 @@ zgetenv(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* - .defaultpapersize <string> true */
+/* - .defaultpapersize false */
+static int
+zdefaultpapersize(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    byte *value;
+    int len = 0;
+
+    if (gp_defaultpapersize((char *)0, &len) > 0) {
+	/* no default paper size */
+        push(1);
+	make_false(op);
+	return 0;
+    }
+
+    value = ialloc_string(len, "defaultpapersize value");
+    if (value == 0) {
+	return_error(e_VMerror);
+    }
+    DISCARD(gp_defaultpapersize((char *)value, &len));	/* can't fail */
+    /* Delete the stupid C string terminator. */
+    value = iresize_string(value, len, len - 1,
+			   "defaultpapersize value");	/* can't fail */
+    push(2);
+    make_string(op - 1, a_all | icurrent_space, len - 1, value);
+    make_true(op);
+    return 0;
+}
+
 /* <name> <proc> .makeoperator <oper> */
 static int
 zmakeoperator(i_ctx_t *i_ctx_p)
@@ -475,6 +505,7 @@ const op_def zmisc_op_defs[] =
 {
     {"1bind", zbind},
     {"1getenv", zgetenv},
+    {"0.defaultpapersize", zdefaultpapersize},
     {"2.makeoperator", zmakeoperator},
     {"0.oserrno", zoserrno},
     {"1.oserrorstring", zoserrorstring},

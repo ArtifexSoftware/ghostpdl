@@ -1,4 +1,4 @@
-% Copyright (C) 1989-2004 Artifex Software, Inc. All rights reserved.
+% Copyright (C) 1989-2009 Artifex Software, Inc. All rights reserved.
 % 
 % This software is provided AS-IS with no warranty, either express or
 % implied.
@@ -1752,6 +1752,27 @@ defaultdevice
 
 % If the paper size is not specifed and the device defaults to 
 % letter or A4 paper, select the DEFAULTPAPERSIZE.
+systemdict /DEFAULTPAPERSIZE known not 
+ {
+   % Use .defaultpapersize if it returns a known paper size
+   .defaultpapersize 
+    { 
+      false statusdict /.pagetypenames get 
+       {
+	2 index eq { pop true exit } if
+       }
+      forall
+       {systemdict exch /DEFAULTPAPERSIZE exch put}
+       {QUIET
+	 { pop } 
+	 { (Unknown .defaultpapersize: ) print ==only (.) = }
+	ifelse
+       } 
+      ifelse
+    } 
+   if
+ } 
+if
 systemdict /DEFAULTPAPERSIZE known
 systemdict /PAPERSIZE known not and
 systemdict /DEVICEWIDTH known not and

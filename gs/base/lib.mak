@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2008 Artifex Software, Inc.
+#  Copyright (C) 2001-2009 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -2763,6 +2763,14 @@ $(GLD)gxfapiu.dev : $(LIB_MAK) $(ECHOGS_XE)
 $(GLOBJ)gp_getnv.$(OBJ) : $(GLSRC)gp_getnv.c $(AK) $(stdio__h) $(string__h)\
  $(gp_h) $(gsmemory_h) $(gstypes_h)
 	$(GLCC) $(GLO_)gp_getnv.$(OBJ) $(C_) $(GLSRC)gp_getnv.c
+
+# Standard implementation of gp_defaultpapersize.
+$(GLOBJ)gp_paper.$(OBJ) : $(GLSRC)gp_paper.c $(AK) $(gp_h)
+	$(GLCC) $(GLO_)gp_paper.$(OBJ) $(C_) $(GLSRC)gp_paper.c
+
+# Unix implementation of gp_defaultpapersize.
+$(GLOBJ)gp_upapr.$(OBJ) : $(GLSRC)gp_upapr.c $(AK) $(gp_h)
+	$(GLCC) $(GLO_)gp_upapr.$(OBJ) $(C_) $(GLSRC)gp_upapr.c
 
 # File system implementation.
 
