@@ -308,7 +308,7 @@ AC_ARG_WITH([libpaper],
             AC_HELP_STRING([--without-libpaper],
                            [disable libpaper support]))
 if test x$with_libpaper != xno; then
-    AC_CHECK_LIB(paper, systempapername, [with_libiconv=yes],
+    AC_CHECK_LIB(paper, systempapername, [with_libpaper=yes],
     [
 	AC_MSG_WARN([disabling support for libpaper])
         with_libpaper=no
