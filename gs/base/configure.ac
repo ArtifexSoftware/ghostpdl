@@ -303,6 +303,23 @@ case $with_libiconv in
     ;;
 esac
 
+dnl Tests for libpaper (to determine system default paper size)
+AC_ARG_WITH([libpaper],
+            AC_HELP_STRING([--without-libpaper],
+                           [disable libpaper support]))
+if test x$with_libpaper != xno; then
+    AC_CHECK_LIB(paper, systempapername, [with_libiconv=yes],
+    [
+	AC_MSG_WARN([disabling support for libpaper])
+        with_libpaper=no
+    ])
+fi
+if test x$with_libpaper != xno; then
+    LIBS="$LIBS -lpaper"
+    AC_DEFINE(USE_LIBPAPER, 1, [Using libpaper])
+    CFLAGS="$CFLAGS -DUSE_LIBPAPER"
+fi
+
 AC_CHECK_LIB(dl, dlopen)
 
 AC_MSG_CHECKING([for local jpeg library source])
