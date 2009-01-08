@@ -1833,7 +1833,7 @@ if
    if
    or { /PageSize PageSize } if
 	% Check whether any parameters were set.
-   dup mark eq { pop } { defaultdevice putdeviceprops } ifelse
+   dup mark eq { pop defaultdevice } { defaultdevice putdeviceprops } ifelse
    end
 %END DEVICE
 % Set any device properties defined on the command line.
