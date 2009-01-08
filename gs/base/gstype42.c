@@ -736,7 +736,7 @@ gs_type42_substitute_glyph_index_vertical(gs_font_type42 *pfont, uint glyph_inde
     typedef struct CoverageFormat2_s {
 	uint16_t CoverageFormat; /* ==2 */
 	uint16_t RangeCount;
-	GlyphID RangeRecord[1/*RangeCount*/]; /* Array of GlyphIDs-in numerical order */
+	RangeRecord RangeArray[1/*RangeCount*/]; /* Array of GlyphIDs-in numerical order */
     } CoverageFormat2;
     int i, j;
     GSUB gsub;
@@ -796,7 +796,7 @@ gs_type42_substitute_glyph_index_vertical(gs_font_type42 *pfont, uint glyph_inde
 			cov.CoverageFormat = coverage_format; /* Debug purpose only. */
 			cov.GlyphCount = U16(coverage_ptr + offset_of(CoverageFormat1, GlyphCount));
 			{   /* Binary search. */
-			    int k0 = 0, k1 = subst.GlyphCount;
+			    int k0 = 0, k1 = cov.GlyphCount;
 
 			    for (;;) {
 				int k = (k0 + k1) / 2;
@@ -804,7 +804,7 @@ gs_type42_substitute_glyph_index_vertical(gs_font_type42 *pfont, uint glyph_inde
 							 + sizeof(GlyphID) * k);
 				if (glyph_index == glyph) {
 				    /* Found. */
-				    if (k >= subst.GlyphCount)
+				    if (k >= cov.GlyphCount)
 					break; /* Wrong data ? (not sure). */
 				    else {
 					GlyphID new_glyph = U16(subtable_ptr + offset_of(SingleSubstFormat2, Substitute)
@@ -816,6 +816,45 @@ gs_type42_substitute_glyph_index_vertical(gs_font_type42 *pfont, uint glyph_inde
 				    k += 0; /* A place for breakpoint. */
 				    break; /* Not found. */
 				} else if (glyph_index < glyph)
+				    k1 = k;
+				else
+				    k0 = k + 1;
+			    }			
+			}
+		    } else if (coverage_format == 2) {
+			CoverageFormat2 cov;
+
+			cov.CoverageFormat = coverage_format; /* Debug purpose only. */
+			cov.RangeCount = U16(coverage_ptr + offset_of(CoverageFormat2, RangeCount));
+			{   /* Binary search. */
+			    int k0 = 0, k1 = cov.RangeCount;
+
+			    for (;;) {
+				int k = (k0 + k1) / 2;
+				RangeRecord rr;
+
+				rr.Start = U16(coverage_ptr + offset_of(CoverageFormat2, RangeArray)
+					+ sizeof(RangeRecord) * k  + offset_of(RangeRecord, Start));
+				rr.End = U16(coverage_ptr + offset_of(CoverageFormat2, RangeArray)
+					+ sizeof(RangeRecord) * k  + offset_of(RangeRecord, End));
+				rr.StartCoverageIndex = U16(coverage_ptr + offset_of(CoverageFormat2, RangeArray)
+					+ sizeof(RangeRecord) * k  + offset_of(RangeRecord, StartCoverageIndex));
+
+				if (rr.Start <= glyph_index && glyph_index <= rr.End) {
+				    /* Found. */
+				    if (k >= cov.RangeCount)
+					break; /* Wrong data ? (not sure). */
+				    else {
+					uint16_t subst_index = rr.StartCoverageIndex + (glyph_index - rr.Start);
+					GlyphID new_glyph = U16(subtable_ptr + offset_of(SingleSubstFormat2, Substitute)
+							    + sizeof(GlyphID) * subst_index);
+
+					return new_glyph;
+				    }
+				} else if (k0 >= k1 - 1) {
+				    k += 0; /* A place for breakpoint. */
+				    break; /* Not found. */
+				} else if (glyph_index < rr.Start)
 				    k1 = k;
 				else
 				    k0 = k + 1;
