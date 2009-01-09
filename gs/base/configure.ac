@@ -958,7 +958,7 @@ INSTALL_SHARED=""
 AC_ARG_ENABLE([dynamic], AC_HELP_STRING([--enable-dynamic],
     [Enable dynamically loaded drivers]),
 [	case `uname` in
-		Linux*)
+		Linux*|GNU*)
 		INSTALL_SHARED="install-shared"
 		DYNAMIC_CFLAGS="-fPIC"
 		if test "x$X_DEVS" != x; then
