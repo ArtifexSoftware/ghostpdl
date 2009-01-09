@@ -448,7 +448,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape, bool idle,
     result->maskbuf = NULL;
     result->idle = idle;
     result->mask_id = 0;
-	result->parent_color_info_procs.get_cmap_procs = NULL;
+    result->parent_color_info_procs.get_cmap_procs = NULL;
     result->parent_color_info_procs.parent_color_mapping_procs = NULL;
     result->parent_color_info_procs.parent_color_comp_index = NULL;
 
@@ -728,7 +728,7 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
             /* i.e. copy over those planes that exist beyond the count
                of the number of color components */
 
-			memset(new_data_buf, 0, tos->planestride*new_num_planes); 
+	    memset(new_data_buf, 0, tos->planestride*new_num_planes); 
 
             /* Go ahead and do the conversion on the buffer */
 
@@ -1141,7 +1141,7 @@ pdf14_cmykspot_put_image(gx_device * dev, gs_imager_state * pis, gx_device * tar
     buf_ptr = buf->data + rect.p.y * buf->rowstride + rect.p.x;
 
 
-	#if RAW_DUMP
+#if RAW_DUMP
   
     /* Dump the current buffer to see what we have. */
 
@@ -1931,23 +1931,21 @@ pdf14_begin_transparency_group(gx_device *dev,
      /* If needed, update the color mapping procs */
     code = pdf14_update_device_color_procs(dev,ptgp->group_color,pis);
 
-	/* Note that our initial device buffer may have had a different color space
-	   than the first transparency group.  In such a case, we really should force
-	   this first group to be isolated, anytime that the parent color space is 
-	   different than its child group, it should be isolated, per the PDF spec */
+    /* Note that our initial device buffer may have had a different color space
+       than the first transparency group.  In such a case, we really should force
+       this first group to be isolated, anytime that the parent color space is 
+       different than its child group, it should be isolated, per the PDF spec */
 
-	if (code == 1)
-	{
-	
-		isolated = true;
-		if_debug0('v', "[v]Transparency group color space change\n");
+    if (code == 1){
 
-	} else {
+        isolated = true;
+        if_debug0('v', "[v]Transparency group color space change\n");
 
-		isolated = ptgp->Isolated;
+    } else {
 
-	}
+        isolated = ptgp->Isolated;
 
+    }
 
     if (code < 0)
 	return code;
@@ -2048,7 +2046,7 @@ pdf14_update_device_color_procs(gx_device *dev,
        Remember that only isolated groups can have color spaces
        that are different than their parent. */
 
-		parent_color_info->get_cmap_procs = NULL;
+	parent_color_info->get_cmap_procs = NULL;
         parent_color_info->parent_color_mapping_procs = NULL;
         parent_color_info->parent_color_comp_index = NULL;
         update_color_info = false;
@@ -2110,24 +2108,23 @@ pdf14_update_device_color_procs(gx_device *dev,
 
            /* Save the old information */
 
-           parent_color_info->get_cmap_procs = pis->get_cmap_procs;
-			parent_color_info->parent_color_mapping_procs = 
-                pdev->procs.get_color_mapping_procs;
+            parent_color_info->get_cmap_procs = pis->get_cmap_procs;
+            parent_color_info->parent_color_mapping_procs = 
+            pdev->procs.get_color_mapping_procs;
             parent_color_info->parent_color_comp_index = 
-                pdev->procs.get_color_comp_index;
+            pdev->procs.get_color_comp_index;
             parent_color_info->parent_blending_procs = pdev->blend_procs;
             parent_color_info->polarity = pdev->color_info.polarity;
             parent_color_info->num_components = pdev->color_info.num_components;
             parent_color_info->isadditive = pdev->ctx->additive;
             parent_color_info->unpack_procs = pdev->pdf14_procs;
 
-
             /* Set new information */
 
             pis->get_cmap_procs = pdf14_get_cmap_procs_group;
             gx_set_cmap_procs(pis, dev);
-			pdev->procs.get_color_mapping_procs = 
-				pdevproto->static_procs->get_color_mapping_procs;
+            pdev->procs.get_color_mapping_procs = 
+                pdevproto->static_procs->get_color_mapping_procs;
             pdev->procs.get_color_comp_index = 
                 pdevproto->static_procs->get_color_comp_index;
             pdev->blend_procs = pdevproto->blend_procs;
@@ -2136,7 +2133,7 @@ pdf14_update_device_color_procs(gx_device *dev,
             pdev->ctx->additive = new_additive; 
             pdev->pdf14_procs = new_14procs;
 
-			return(1);  /* Lets us detect that we did do an update */
+            return(1);  /* Lets us detect that we did do an update */
 
          }
 
@@ -2203,16 +2200,14 @@ pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
 
             pis->get_cmap_procs = parent_color->get_cmap_procs;;
             gx_set_cmap_procs(pis, dev);
-
-			pdev->procs.get_color_mapping_procs = parent_color->parent_color_mapping_procs;
+            pdev->procs.get_color_mapping_procs = parent_color->parent_color_mapping_procs;
             pdev->procs.get_color_comp_index = parent_color->parent_color_comp_index;
             pdev->color_info.polarity = parent_color->polarity;
             pdev->color_info.num_components = parent_color->num_components;
             pdev->blend_procs = parent_color->parent_blending_procs;
             pdev->ctx->additive = parent_color->isadditive;
             pdev->pdf14_procs = parent_color->unpack_procs;
-
-			parent_color->get_cmap_procs = NULL;
+            parent_color->get_cmap_procs = NULL;
             parent_color->parent_color_comp_index = NULL;
             parent_color->parent_color_mapping_procs = NULL;
     }
@@ -2328,8 +2323,8 @@ pdf14_mark_fill_rectangle(gx_device * dev,
 	}
 	line += rowstride;
     }
-
-#if RAW_DUMP
+#if 0
+/* #if RAW_DUMP */
  
     /* Dump the current buffer to see what we have. */
 	
@@ -2671,10 +2666,10 @@ pdf14_cmap_cmyk_direct_group(frac c, frac m, frac y, frac k, gx_device_color * p
 
     if (dev->color_info.num_components == 4 ){
 
-		cv[0] = frac2cv(c);
-		cv[1] = frac2cv(m);
-		cv[2] = frac2cv(y);
-		cv[3] = frac2cv(k);
+        cv[0] = frac2cv(c);
+        cv[1] = frac2cv(m);
+        cv[2] = frac2cv(y);
+        cv[3] = frac2cv(k);
 
          /* encode as a color index */
         color = pdf14_encode_smask_color(dev,cv,4);
@@ -2880,7 +2875,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
     *pdev = (gx_device *) p14dev;
     pdf14_set_marking_params((gx_device *)p14dev, pis);
 
-	#if RAW_DUMP
+#if RAW_DUMP
   
     /* Dump the current buffer to see what we have. */
 
@@ -2993,6 +2988,8 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
 		return code;
 	    *pbuf++ = (pparams->Isolated & 1) + ((pparams->Knockout & 1) << 1);
 	    *pbuf++ = pparams->blend_mode;
+	    *pbuf++ = pparams->group_color;
+	    put_value(pbuf, pparams->group_color_numcomps);
 	    put_value(pbuf, pparams->opacity.alpha);
 	    put_value(pbuf, pparams->shape.alpha);
 	    put_value(pbuf, pparams->bbox);
@@ -3004,6 +3001,8 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
 	    if (code < 0)
 		return code;
 	    put_value(pbuf, pparams->subtype);
+	    *pbuf++ = pparams->group_color;
+	    put_value(pbuf, pparams->group_color_numcomps);
 	    *pbuf++ = pparams->replacing;
 	    *pbuf++ = pparams->function_is_identity;
 	    *pbuf++ = pparams->Background_components;
@@ -3121,6 +3120,8 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
 	    params.Isolated = (*data) & 1;
 	    params.Knockout = (*data++ >> 1) & 1;
 	    params.blend_mode = *data++;
+	    params.group_color = *data++;  /* Trans group color */
+            read_value(data,params.group_color_numcomps);  /* color group size */
 	    read_value(data, params.opacity.alpha);
 	    read_value(data, params.shape.alpha);
 	    read_value(data, params.bbox);
@@ -3141,6 +3142,8 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
 		 */
 	    data = cmd_read_matrix(&params.ctm, data);
 	    read_value(data, params.subtype);
+            params.group_color = *data++;
+	    read_value(data, params.group_color_numcomps);
 	    params.replacing = *data++;
 	    params.function_is_identity = *data++;
 	    params.Background_components = *data++;
@@ -4295,7 +4298,32 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
 		if (pdf14pct->params.Background_components != 0 && 
 		    pdf14pct->params.Background_components != pdev->color_info.num_components)
 		    return_error(gs_error_rangecheck);
+
+                /* If needed, change the color mapping for the clist pdf14 clist device
+                   if the group color space has changed.  All the rect fills will then
+                   draw the proper data.  It will be then be restored
+                   when the transparency group is popped. */
+
+               /* code = pdf14_update_device_color_procs(dev,pdf14pct->params.group_color,pis); */
+
+               /* Note that our initial device buffer may have had a different color space
+                   than the first transparency group.  In such a case, we really should force
+                   this first group to be isolated, anytime that the parent color space is 
+                   different than its child group, it should be isolated, per the PDF spec */
+                /* MJV */
+             /*   if (code == 1){
+
+                    isolated = true;
+                    if_debug0('v', "[v]Transparency group color space change\n");
+
+                } else {
+
+                    isolated = ptgp->Isolated;
+
+                } */
+
 		break;
+
 	    default:
 		break;		/* Pass remaining ops to target */
 	}
