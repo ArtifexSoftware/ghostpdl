@@ -859,7 +859,7 @@ currentdict /no_debug_dict undef
     cvx endobj exit   % exit from .pdfrun now.
   } {
     PDFsource (??) .peekstring pop (>>) eq { % Bug 690161, sample #1
-      (   **** Warning: Spurious '>>' after 'emdstream' ignored.\n) pdfformaterror
+      (   **** Warning: Spurious '>>' after 'endstream' ignored.\n) pdfformaterror
       PDFsource (12) readstring pop pop
     } if
   } ifelse
