@@ -36,7 +36,11 @@ typedef struct pdf14_buf_s pdf14_buf;
  * procs and other information.
  * These may change depending upon
  * if the blending space is different
- * than the base space */
+ * than the base space.  The structure
+ * is a list that is updated upon
+ * every transparency group push and pop */
+
+typedef struct pdf14_parent_color_s pdf14_parent_color_t;
 
 typedef struct pdf14_parent_color_s {
 
@@ -48,8 +52,14 @@ typedef struct pdf14_parent_color_s {
     const void * unpack_procs;
     const pdf14_nonseparable_blending_procs_t * parent_blending_procs;
     bool isadditive;
+    pdf14_parent_color_t *previous;
+
+    /* for clist writer */
+   /* int foward_dev_num_comps;
+    int foward_dev_depth; */
+    
  
-} pdf14_parent_color_t;
+};
 
 typedef struct pdf14_ctx_s pdf14_ctx;
 
@@ -85,7 +95,6 @@ struct pdf14_buf_s {
     gs_transparency_mask_subtype_t SMask_SubType;
 
     uint mask_id;
-
     pdf14_parent_color_t parent_color_info_procs;
 
     gs_transparency_color_t color_space;  /* Different groups can have different spaces for blending */
@@ -183,6 +192,9 @@ typedef struct pdf14_device_s {
     dev_proc_decode_color(*my_decode_color);
     dev_proc_get_color_mapping_procs(*my_get_color_mapping_procs);
     dev_proc_get_color_comp_index(*my_get_color_comp_index);
+    
+    pdf14_parent_color_t *trans_group_parent_cmap_procs;
+
 } pdf14_device_t;
 
 /*
