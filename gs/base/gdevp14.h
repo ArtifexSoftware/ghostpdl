@@ -53,12 +53,7 @@ typedef struct pdf14_parent_color_s {
     const pdf14_nonseparable_blending_procs_t * parent_blending_procs;
     bool isadditive;
     pdf14_parent_color_t *previous;
-
-    /* for clist writer */
-   /* int foward_dev_num_comps;
-    int foward_dev_depth; */
     
- 
 };
 
 typedef struct pdf14_ctx_s pdf14_ctx;

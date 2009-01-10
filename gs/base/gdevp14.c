@@ -252,8 +252,8 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev,
 			      gs_imager_state *pis);
 
 
-static int pdf14_push_parent_color(gx_device *dev, const gs_imager_state *pis);
-static int pdf14_pop_parent_color(gx_device *dev, const gs_imager_state *pis);
+static void pdf14_push_parent_color(gx_device *dev, const gs_imager_state *pis);
+static void pdf14_pop_parent_color(gx_device *dev, const gs_imager_state *pis);
 
 static const pdf14_procs_t gray_pdf14_procs = {
     pdf14_unpack_additive,
@@ -2129,9 +2129,9 @@ pdf14_update_device_color_procs(gx_device *dev,
 
             parent_color_info->get_cmap_procs = pis->get_cmap_procs;
             parent_color_info->parent_color_mapping_procs = 
-            pdev->procs.get_color_mapping_procs;
+                pdev->procs.get_color_mapping_procs;
             parent_color_info->parent_color_comp_index = 
-            pdev->procs.get_color_comp_index;
+                pdev->procs.get_color_comp_index;
             parent_color_info->parent_blending_procs = pdev->blend_procs;
             parent_color_info->polarity = pdev->color_info.polarity;
             parent_color_info->num_components = pdev->color_info.num_components;
@@ -2160,12 +2160,6 @@ pdf14_update_device_color_procs(gx_device *dev,
 }
 
 
-
-
-
-
-
-
 /* A new version that works with the color_procs stack 
    for transparency groups */
 
@@ -2177,10 +2171,6 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
 
     pdf14_device *pdevproto;
     pdf14_device *pdev = (pdf14_device *)dev;
-
-    gx_device_forward * const fdev = (gx_device_forward *)dev;
-    gx_device *tdev = fdev->target;
-
     const pdf14_procs_t *new_14procs;
     bool update_color_info;
     gx_color_polarity_t new_polarity;
@@ -2275,10 +2265,6 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
             pdev->color_info.num_components = new_num_comps;
             pdev->pdf14_procs = new_14procs;
 
-       /*     tdev->color_info.num_components = new_num_comps;
-            tdev->color_info.depth = new_depth; */
-
-
             if (pdev->ctx)
             {
                pdev->ctx->additive = new_additive; 
@@ -2291,126 +2277,6 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
          return 0;
 }
 
-
-
-
-#if 0
-
-/* A new version that works with the color_procs stack 
-   for transparency groups */
-
-static int
-pdf14_update_device_color_procs_push_c(gx_device *dev,
-			      gs_transparency_color_t group_color,
-			      gs_imager_state *pis)
-{
-
-    pdf14_device *pdevproto;
-    pdf14_device *pdev = (pdf14_device *)dev;
-    const pdf14_procs_t *new_14procs;
-    bool update_color_info;
-    gx_color_polarity_t new_polarity;
-    int new_num_comps;
-    bool new_additive;
-
-   /* Check if we need to alter the device procs at this
-       stage.  Many of the procs are based upon the color
-       space of the device.  We want to remain in 
-       the color space defined by the color space of
-       the soft mask or transparency group as opposed to the 
-       device color space.  
-       Later, when we pop the softmask we will collapse it
-       to a single band and then compose with it
-       to the device color space (or the parent layer
-       space).  In the case where we pop an isolated transparency 
-       group, we will do the blending in the proper color
-       space and then transform the data when we pop the group. 
-       Remember that only isolated groups can have color spaces
-       that are different than their parent. */
-
-        update_color_info = false;
-
-        switch (group_color) {
-
-            case GRAY_SCALE:
-
-                  if (pdev->color_info.num_components != 1){ 
-
-                    update_color_info = true;
-                    new_polarity = GX_CINFO_POLARITY_ADDITIVE;
-                    new_num_comps = 1;
-                    pdevproto = (pdf14_device *)&gs_pdf14_Gray_device;
-                    new_additive = true;
-                    new_14procs = &gray_pdf14_procs;
-
-                }
-
-                break;
-
-            case DEVICE_RGB:			 	
-            case CIE_XYZ:				
-
-                if (pdev->color_info.num_components != 3){ 
-
-                    update_color_info = true;
-                    new_polarity = GX_CINFO_POLARITY_ADDITIVE;
-                    new_num_comps = 3;
-                    pdevproto = (pdf14_device *)&gs_pdf14_RGB_device;
-                    new_additive = true;
-                    new_14procs = &rgb_pdf14_procs;
-                }
-
-                break; 
-
-            case DEVICE_CMYK:				
-
-                if (pdev->color_info.num_components != 4){ 
-
-                    update_color_info = true;
-                    new_polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
-                    new_num_comps = 4;
-                    pdevproto = (pdf14_device *)&gs_pdf14_CMYK_device;
-                    new_additive = false;
-                    new_14procs = &cmyk_pdf14_procs;
-
-                }
-
-                break;
-
-            default:			
-	        return_error(gs_error_rangecheck);
-	        break;
-
-         }    
-
-         if (update_color_info){
-
-            /* Set new information in the device */
-
-            pis->get_cmap_procs = pdf14_get_cmap_procs_group;
-            gx_set_cmap_procs(pis, dev);
-            pdev->procs.get_color_mapping_procs = 
-                pdevproto->static_procs->get_color_mapping_procs;
-            pdev->procs.get_color_comp_index = 
-                pdevproto->static_procs->get_color_comp_index;
-            pdev->blend_procs = pdevproto->blend_procs;
-            pdev->color_info.polarity = new_polarity;
-            pdev->color_info.num_components = new_num_comps;
-            pdev->pdf14_procs = new_14procs;
-
-            if (pdev->ctx)
-            {
-               pdev->ctx->additive = new_additive; 
-            }
-
-            return(1);  /* Lets us detect that we did do an update */
-
-         }
-
-         return 0;
-}
-
-#endif
 
 static int
 pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_imager_state *pis)
@@ -2418,8 +2284,6 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_imager_state *pis)
 
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_parent_color_t *parent_color = pdev->trans_group_parent_cmap_procs;
-    gx_device_forward * const fdev = (gx_device_forward *)dev;
-    gx_device *tdev = fdev->target;
 
    /* The color procs are always pushed.  Simply restore them. */
 
@@ -2440,11 +2304,6 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_imager_state *pis)
             pdev->ctx->additive = parent_color->isadditive;
         }
 
-    /*    tdev->color_info.num_components = parent_color->foward_dev_num_comps;
-        tdev->color_info.depth = parent_color->foward_dev_depth; */
-
-
-
     }
 
     return 0;
@@ -2464,15 +2323,11 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_imager_state *pis)
       nesting must be outside the nested ctx structures 
       to allow the nesting for the clist writer */
 
-static int
+static void
 pdf14_push_parent_color(gx_device *dev, const gs_imager_state *pis)
 {
 
     pdf14_device *pdev = (pdf14_device *)dev;
-
-    gx_device_forward * const fdev = (gx_device_forward *)dev;
-    gx_device *tdev = fdev->target;
-
     pdf14_parent_color_t *parent_color_info = pdev->trans_group_parent_cmap_procs;
     pdf14_parent_color_t *new_parent_color;
  
@@ -2499,9 +2354,6 @@ pdf14_push_parent_color(gx_device *dev, const gs_imager_state *pis)
     new_parent_color->num_components = pdev->color_info.num_components;
     new_parent_color->unpack_procs = pdev->pdf14_procs;
 
-  /*  new_parent_color->foward_dev_depth = tdev->color_info.depth;
-    new_parent_color->foward_dev_num_comps = tdev->color_info.num_components; */
-
     /* isadditive is only used in ctx */
     if (pdev->ctx)
     {
@@ -2517,7 +2369,7 @@ pdf14_push_parent_color(gx_device *dev, const gs_imager_state *pis)
       nesting must be outside the nested ctx structures 
       to allow the nesting for the clist writer */
 
-static int
+static void
 pdf14_pop_parent_color(gx_device *dev, const gs_imager_state *pis)
 {
 
