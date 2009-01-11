@@ -45,15 +45,16 @@ typedef struct pdf14_parent_color_s pdf14_parent_color_t;
 typedef struct pdf14_parent_color_s {
 
     int num_components;
+    bool isadditive;
     gx_color_polarity_t polarity;
     const void * get_cmap_procs;
     void * parent_color_mapping_procs;
     void * parent_color_comp_index; 
     const void * unpack_procs;
     const pdf14_nonseparable_blending_procs_t * parent_blending_procs;
-    bool isadditive;
     pdf14_parent_color_t *previous;
     
+ 
 };
 
 typedef struct pdf14_ctx_s pdf14_ctx;

@@ -83,9 +83,11 @@ gs_private_st_ptrs2(st_pdf14_ctx, pdf14_ctx, "pdf14_ctx",
 		    pdf14_ctx_enum_ptrs, pdf14_ctx_reloc_ptrs,
 		    stack, maskbuf);
 
-gs_private_st_ptrs1(st_pdf14_clr, pdf14_parent_color_t, "pdf14_clr",
+gs_private_st_ptrs6(st_pdf14_clr, pdf14_parent_color_t, "pdf14_clr",
 		    pdf14_clr_enum_ptrs, pdf14_clr_reloc_ptrs,
-		    previous);
+		    get_cmap_procs, parent_color_mapping_procs, 
+                    parent_color_comp_index,
+                    unpack_procs, parent_blending_procs, previous);
 
 /* ------ The device descriptors ------	*/
 
@@ -2333,17 +2335,19 @@ pdf14_push_parent_color(gx_device *dev, const gs_imager_state *pis)
  
     /* Allocate a new one */
 
-    pdev->trans_group_parent_cmap_procs = gs_alloc_bytes(pis->memory, sizeof(pdf14_parent_color_t),
-					        "parent color procs");
+    new_parent_color = gs_alloc_struct(dev->memory, pdf14_parent_color_t,&st_pdf14_clr,
+					        "pdf14_clr_new");
 
     /* Link to old one */
 
-    pdev->trans_group_parent_cmap_procs->previous = parent_color_info;
+    new_parent_color->previous = pdev->trans_group_parent_cmap_procs;
 
-    /* Initialize new one (i.e. store the current state) */
+    /* Reassign new one to dev */
 
-    new_parent_color = pdev->trans_group_parent_cmap_procs;
-      
+    pdev->trans_group_parent_cmap_procs = new_parent_color;
+
+    /* Initialize with values */
+
     new_parent_color->get_cmap_procs = pis->get_cmap_procs;
     new_parent_color->parent_color_mapping_procs = 
         pdev->procs.get_color_mapping_procs;
@@ -2382,7 +2386,7 @@ pdf14_pop_parent_color(gx_device *dev, const gs_imager_state *pis)
 
     /* Free the old one */
 
-   gs_free_object(pis->memory, old_parent_color_info, "parent color procs");
+    gs_free_object(dev->memory, old_parent_color_info, "pdf14_clr_free");
 
  
 }
@@ -4579,6 +4583,24 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
 
 		break;
 
+	    case PDF14_BEGIN_TRANS_MASK:
+
+                /* We need to update the clist writer device procs based upon the
+                   the group color space.  For simplicity, the list item is created even if the
+                   color space did not change */
+
+                /* First store the current ones */
+
+                pdf14_push_parent_color(dev, pis);
+
+                /* Now update the device procs */
+
+               code = pdf14_update_device_color_procs_push_c(dev,
+			      pdf14pct->params.group_color,pis);
+
+		break;
+
+
             /* When we get a trans group pop, we need to update the color mapping procs */
 	    case PDF14_END_TRANS_GROUP:
 
@@ -4595,8 +4617,22 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
 
                 break;
 
+	    case PDF14_END_TRANS_MASK:
 
-	    default:
+                /* We need to update the clist writer device procs based upon the
+                   the group color space. */
+
+                /* First restore our procs */
+                
+               code = pdf14_update_device_color_procs_pop_c(dev,pis);
+
+                /* Now pop the old one */
+
+                pdf14_pop_parent_color(dev, pis);
+
+                break;
+
+            default:
 		break;		/* Pass remaining ops to target */
 	}
     }
@@ -4856,6 +4892,9 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
     const gs_pdf14trans_t * pdf14pct = (const gs_pdf14trans_t *) pcte;
     pdf14_clist_device * p14dev;
     int code = 0;
+
+    p14dev = (pdf14_clist_device *)(*pcdev);
+
 
     /* We only handle the push/pop operations */
     switch (pdf14pct->params.pdf14_op) {
