@@ -83,11 +83,9 @@ gs_private_st_ptrs2(st_pdf14_ctx, pdf14_ctx, "pdf14_ctx",
 		    pdf14_ctx_enum_ptrs, pdf14_ctx_reloc_ptrs,
 		    stack, maskbuf);
 
-gs_private_st_ptrs6(st_pdf14_clr, pdf14_parent_color_t, "pdf14_clr",
+gs_private_st_ptrs1(st_pdf14_clr, pdf14_parent_color_t, "pdf14_clr",
 		    pdf14_clr_enum_ptrs, pdf14_clr_reloc_ptrs,
-		    get_cmap_procs, parent_color_mapping_procs, 
-                    parent_color_comp_index,
-                    unpack_procs, parent_blending_procs, previous);
+		    previous);
 
 /* ------ The device descriptors ------	*/
 
@@ -403,9 +401,12 @@ ENUM_PTRS_WITH(pdf14_device_enum_ptrs, pdf14_device *pdev)
     return 0;
 }
 case 0:	return ENUM_OBJ(pdev->ctx);
-case 1:	ENUM_RETURN(gx_device_enum_ptr(pdev->target));
-case 2: ENUM_RETURN(pdev->devn_params.compressed_color_list);
+case 1: return ENUM_OBJ(pdev->trans_group_parent_cmap_procs);
+case 2:	ENUM_RETURN(gx_device_enum_ptr(pdev->target));
+case 3: ENUM_RETURN(pdev->devn_params.compressed_color_list);
 ENUM_PTRS_END
+
+
 
 static	RELOC_PTRS_WITH(pdf14_device_reloc_ptrs, pdf14_device *pdev)
 {
@@ -418,6 +419,7 @@ static	RELOC_PTRS_WITH(pdf14_device_reloc_ptrs, pdf14_device *pdev)
     }
     RELOC_PTR(pdf14_device, devn_params.compressed_color_list);
     RELOC_VAR(pdev->ctx);
+    RELOC_VAR(pdev->trans_group_parent_cmap_procs);
     pdev->target = gx_device_reloc_ptr(pdev->target, gcst);
 }
 RELOC_PTRS_END
