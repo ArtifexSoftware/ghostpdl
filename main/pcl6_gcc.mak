@@ -10,7 +10,8 @@ MAKEFILE+= ../main/pcl6_gcc.mak
 
 # Pick (uncomment) one font system technology ufst or afs (gs native)
 #PL_SCALER?=ufst
-PL_SCALER?=afs
+#PL_SCALER?=afs
+PL_SCALER?=ft
 
 # define if this is a cygwin system.
 CYGWIN?=
@@ -153,6 +154,10 @@ UFSTFONTDIR?=%rom%fontdata/
 endif
 endif # PL_SCALER = ufst
 
+ifeq ($(PL_SCALER), ft)
+FT_INCLUDES=-I../gs/freetype/include/
+endif
+
 # flags for artifex scaler
 ifeq ($(PL_SCALER), afs)
 UFST_BRIDGE?=
@@ -220,11 +225,10 @@ FEATURE_DEVS?=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 # cygwin does not have threads at this time, so we don't include the
 # thread library
 ifeq ($(CYGWIN), TRUE)
-SYNC=
+SYNC=nosync
 CFLAGS+=-DHAVE_STDINT_H
 STDLIBS=-lm
 DEVICE_DEVS=$(DEVICES_DEVS)
-DEVICE_DEVS=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11mono.dev $(DD)x11cmyk.dev $(DEVICES_DEVS)
 
 else
 
