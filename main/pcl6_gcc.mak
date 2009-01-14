@@ -10,8 +10,7 @@ MAKEFILE+= ../main/pcl6_gcc.mak
 
 # Pick (uncomment) one font system technology ufst or afs (gs native)
 #PL_SCALER?=ufst
-#PL_SCALER?=afs
-PL_SCALER?=ft
+PL_SCALER?=afs
 
 # define if this is a cygwin system.
 CYGWIN?=
@@ -153,10 +152,6 @@ else
 UFSTFONTDIR?=%rom%fontdata/
 endif
 endif # PL_SCALER = ufst
-
-ifeq ($(PL_SCALER), ft)
-FT_INCLUDES=-I../gs/freetype/include/
-endif
 
 # flags for artifex scaler
 ifeq ($(PL_SCALER), afs)
