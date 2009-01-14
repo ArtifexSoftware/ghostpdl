@@ -184,7 +184,7 @@ gs_begin_transparency_group(gs_state *pgs,
 			    const gs_rect *pbbox)
 {
     gs_pdf14trans_params_t params = { 0 };
-
+    gs_color_space *blend_color_space;
 #ifdef DEBUG
     if (gs_debug_c('v')) {
 	static const char *const cs_names[] = {
@@ -220,9 +220,28 @@ gs_begin_transparency_group(gs_state *pgs,
        Store some information so that we know what the color space is
        so that we can adjust according later during the clist reader */ 
 
-    /* ToDo:  CIE and ICC cases */
+    if(!gs_color_space_is_ICC(pgs->color_space)){
 
-    switch (cs_num_components(pgs->color_space)) {
+        blend_color_space = pgs->color_space;
+
+    } else {
+
+       /* ICC based color space.  Problem right now is that the 
+       current code does a concretization to the color space
+       defined by the CRD.  This is not the space that we want
+       to blend in.  Instead we want all colors to be mapped TO
+       the ICC color space.  Then when the group is popped they
+       should be converted to the parent space. 
+       That I will need to fix another day with the color changes.  
+       For now we will punt and set our blending space as the 
+       concrete space for the ICC space, which is defined by
+       the output (or default) CRD. */
+
+        blend_color_space = cs_concrete_space(pgs->color_space, pgs);
+
+    }
+
+    switch (cs_num_components(blend_color_space)) {
         case 1:				
             params.group_color = GRAY_SCALE;       
             params.group_color_numcomps = 1;  /* Need to check */

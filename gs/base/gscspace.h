@@ -289,8 +289,9 @@ gs_color_space *gs_cspace_new_DeviceCMYK(gs_memory_t *mem);
 /* Get the index of a color space. */
 gs_color_space_index gs_color_space_get_index(const gs_color_space *);
 
-/* Tell if the space is CIE based */
+/* Tell if the space is CIE or ICC based */
 bool gs_color_space_is_CIE(const gs_color_space * pcs);
+bool gs_color_space_is_ICC(const gs_color_space * pcs);
 
 /* Get the number of components in a color space. */
 int gs_color_space_num_components(const gs_color_space *);
