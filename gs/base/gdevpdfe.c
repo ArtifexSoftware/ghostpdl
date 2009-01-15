@@ -488,7 +488,9 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
     if (code < 0)
 	return code;
 
-    instance_uuid[0] = 0x00;
+    /* PDF/A XMP reference recommends setting UUID to empty. If not empty must be a URI */
+    if (pdev->PDFA) 
+	instance_uuid[0] = 0x00;
 
     cre_date_time_len = pdf_get_docinfo_item(pdev, "/CreationDate", cre_date_time, sizeof(cre_date_time));
     if (!cre_date_time_len)
