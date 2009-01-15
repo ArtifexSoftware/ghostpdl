@@ -133,7 +133,7 @@ $(gconfig__h): $(TOP_MAKEFILES)
 
 # The Windows Win32 platform
 
-mswin32__=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)
+mswin32__=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ) $(GLOBJ)gp_wpapr.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)
 mswin32_inc=$(GLD)nosync.dev $(GLD)winplat.dev
 
 $(GLGEN)mswin32_.dev:  $(mswin32__) $(ECHOGS_XE) $(mswin32_inc)
@@ -148,6 +148,9 @@ $(GLOBJ)gp_mswin.$(OBJ): $(GLSRC)gp_mswin.c $(AK) $(gp_mswin_h) \
 
 $(GLOBJ)gp_wgetv.$(OBJ): $(GLSRC)gp_wgetv.c $(AK) $(gscdefs_h)
 	$(GLCCWIN) $(GLO_)gp_wgetv.$(OBJ) $(C_) $(GLSRC)gp_wgetv.c
+
+$(GLOBJ)gp_wpapr.$(OBJ): $(GLSRC)gp_wpapr.c $(AK) $(gp_h)
+	$(GLCCWIN) $(GLO_)gp_wpapr.$(OBJ) $(C_) $(GLSRC)gp_wpapr.c
 
 $(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
   $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h)

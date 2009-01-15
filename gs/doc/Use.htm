@@ -474,7 +474,7 @@ page size matches one of the default page sizes.
 
 <p>
 You can change the installed default paper size on an installed version of Ghostscript, by editing the initialization file <code>gs_init.ps</code>.
-This file is usually in the <tt>lib</tt> directory somewhere in the search path. See the section on <a href="#Finding_files">finding files</a> for details.
+This file is usually in the <tt>Resource/Init</tt> directory somewhere in the search path. See the section on <a href="#Finding_files">finding files</a> for details.
 
 <p>
 Find the line
@@ -501,6 +501,11 @@ This supecedes the previous method of uncommenting the line
 
 <p>
 Sometimes the initialization files are compiled into Ghostscript and cannot be changed.
+
+<p>
+On Windows and some Linux builds, the default paper size will be 
+selected to be a4 or letter depending
+on the locale.
 
 <h2><a name="Pipes"></a>Interacting with pipes</h2>
 

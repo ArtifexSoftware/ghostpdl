@@ -327,7 +327,7 @@ $(GLOBJ)gp_stdin.$(OBJ): $(GLSRC)gp_stdin.c $(AK) $(stdio__h) $(gx_h) $(gp_h)
 # ------------------------------------------------------------------- #
 
 MAC1=$(GLOBJ)gp_macio.$(OBJ) $(GLOBJ)gp_mac.$(OBJ) $(GLOBJ)gdevmacxf.$(OBJ) $(GLOBJ)gp_stdin.$(OBJ)
-MAC2=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nsync.$(OBJ) $(GLOBJ)gdevemap.$(OBJ) $(GLOBJ)gsdll.$(OBJ)
+MAC2=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_paper.$(OBJ) $(GLOBJ)gp_nsync.$(OBJ) $(GLOBJ)gdevemap.$(OBJ) $(GLOBJ)gsdll.$(OBJ)
 
 $(GLD)macos_.dev: $(MAC1)
 	$(SETMOD) $(DD)macos_ $(MAC1) $(MAC)

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2009 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -71,6 +71,29 @@ void gp_do_exit(int exit_status);
  * the string is allocated statically and permanently.
  */
 const char *gp_strerror(int);
+
+/*
+ * Get the system default paper size, which is usually letter for
+ * countries using the imperial system, and a4 for countries
+ * using the metric system.
+ *
+ * If there is no default paper size, set *ptr = 0 (if *plen > 0), 
+ * set *plen = 1, and return 1.
+ *
+ * If there is a default paper size and the length len of the value 
+ * (not counting the terminating \0) is less than *plen, 
+ * copy the value to ptr, set *plen = len + 1, and return 0.
+ *
+ * If there is a default paper size and len >= *plen, set *plen = len + 1,
+ * don't store anything at ptr, and return -1.
+ *
+ * Note that *plen is the size of the buffer, not the length of the string:
+ * because of the terminating \0, the maximum string length is 1 less than
+ * the size of the buffer.
+ *
+ * The use of ptr and plen as described above are the same as gp_getenv.
+ */
+int gp_defaultpapersize(char *ptr, int *plen);
 
 /* ------ Date and time ------ */
 

@@ -185,7 +185,15 @@ mark
   f read {
     1 advance
     CFFDEBUG { (  ) print dup = } if
-  } if
+  } {
+    0
+    CFFDEBUG { (  Out of range access, assuming 0) = } if
+    /pdfformaterror where {
+      pop 
+      (   **** Warning: Out of range access to a CFF table, assuming 0.\n)
+      pdfformaterror
+    } if
+  } ifelse
 } bind def
 /next2 {	% - next2 <byte1> <byte2>
   f read {

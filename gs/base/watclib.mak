@@ -152,7 +152,7 @@ STDIO_IMPLEMENTATION=
 GLCCWIN=$(GLCC)
 !include $(GLSRCDIR)\winplat.mak
 
-watclib_1=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_iwatc.$(OBJ)
+watclib_1=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_paper.$(OBJ) $(GLOBJ)gp_iwatc.$(OBJ)
 !ifeq WAT32 0
 watclib_2=$(GLOBJ)gp_dosfs.$(OBJ) $(GLOBJ)gp_dosfe.$(OBJ) $(GLOBJ)gp_msdos.$(OBJ)
 watclib_inc=

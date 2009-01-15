@@ -243,6 +243,8 @@ pdf_xmp_convert_time(char *dt, int dtl, char *buf, int bufl)
     }
 
     dt[19] = buf[14]; /* designator */
+    if (dt[19] == 'Z')
+	return 20;
     if (l <= 15)
 	return 20;
     memcpy(dt + 20, buf + 15, 2); /* Time zone hour difference. */
@@ -486,7 +488,10 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
     if (code < 0)
 	return code;
 
-    
+    /* PDF/A XMP reference recommends setting UUID to empty. If not empty must be a URI */
+    if (pdev->PDFA) 
+	instance_uuid[0] = 0x00;
+
     cre_date_time_len = pdf_get_docinfo_item(pdev, "/CreationDate", cre_date_time, sizeof(cre_date_time));
     if (!cre_date_time_len)
 	cre_date_time_len = pdf_xmp_time(cre_date_time, sizeof(cre_date_time));
@@ -497,6 +502,7 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
 	mod_date_time_len = pdf_xmp_time(mod_date_time, sizeof(mod_date_time));
     else
 	mod_date_time_len = pdf_xmp_convert_time(mod_date_time, mod_date_time_len, date_time_buf, sizeof(date_time_buf));
+
     pdf_xml_ins_beg(s, "xpacket");
     pdf_xml_attribute_name(s, "begin");
     pdf_xml_copy(s, dd);
@@ -518,32 +524,69 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
 	    pdf_xml_attribute_value(s, instance_uuid);
 	    pdf_xml_attribute_name(s, "xmlns:pdf");
 	    pdf_xml_attribute_value(s, "http://ns.adobe.com/pdf/1.3/");
-	    pdf_xml_attribute_name(s, "pdf:Producer");
-	    code = pdf_xmp_write_docinfo_item(pdev, s,  "/Producer", "UnknownProduicer",
+
+	    if (cos_dict_find(pdev->Info, (const byte *)"/Keywords", 9)) {
+		pdf_xml_tag_end(s);
+		pdf_xml_tag_open_beg(s, "pdf:Producer");
+		pdf_xml_tag_end(s);
+		code = pdf_xmp_write_docinfo_item(pdev, s,  "/Producer", "UnknownProducer",
+			pdf_xml_data_write);
+		if (code < 0)
+		    return code;
+		pdf_xml_tag_close(s, "pdf:Producer");
+		pdf_xml_newline(s);
+
+		pdf_xml_tag_open_beg(s, "pdf:Keywords");
+		pdf_xml_tag_end(s);
+		code = pdf_xmp_write_docinfo_item(pdev, s,  "/Keywords", "Unknown", 
+			pdf_xml_data_write);
+		if (code < 0)
+		    return code;
+		pdf_xml_tag_close(s, "pdf:Keywords");
+		pdf_xml_newline(s);
+
+		pdf_xml_tag_close(s, "rdf:Description");
+		pdf_xml_newline(s);
+	    } else {
+		pdf_xml_attribute_name(s, "pdf:Producer");
+		code = pdf_xmp_write_docinfo_item(pdev, s,  "/Producer", "UnknownProducer",
 			pdf_xml_attribute_value_data);
-	    if (code < 0)
-		return code;
-	    pdf_xml_tag_end_empty(s);
-	    pdf_xml_newline(s);
+		if (code < 0)
+		    return code;
+		pdf_xml_tag_end_empty(s);
+		pdf_xml_newline(s);
+	    }
 
 	    pdf_xml_tag_open_beg(s, "rdf:Description");
 	    pdf_xml_attribute_name(s, "rdf:about");
 	    pdf_xml_attribute_value(s, instance_uuid);
-	    pdf_xml_attribute_name(s, "xmlns:xap");
+	    pdf_xml_attribute_name(s, "xmlns:xmp");
 	    pdf_xml_attribute_value(s, "http://ns.adobe.com/xap/1.0/");
-	    pdf_xml_attribute_name(s, "xap:ModifyDate");
-	    pdf_xml_attribute_value_data(s, (const byte *)mod_date_time, mod_date_time_len);
-	    pdf_xml_attribute_name(s, "xap:CreateDate");
-	    pdf_xml_attribute_value_data(s, (const byte *)cre_date_time, cre_date_time_len);
 	    pdf_xml_tag_end(s);
 	    {
-		pdf_xml_tag_open_beg(s, "xap:CreatorTool");
+		pdf_xml_tag_open_beg(s, "xmp:ModifyDate");
+		pdf_xml_tag_end(s);
+		mod_date_time[mod_date_time_len] = 0x00;
+		pdf_xml_copy(s, mod_date_time);
+		pdf_xml_tag_close(s, "xmp:ModifyDate");
+		pdf_xml_newline(s);
+	    }
+	    {
+		pdf_xml_tag_open_beg(s, "xmp:CreateDate");
+		pdf_xml_tag_end(s);
+		cre_date_time[cre_date_time_len] = 0x00;
+		pdf_xml_copy(s, cre_date_time);
+		pdf_xml_tag_close(s, "xmp:CreateDate");
+		pdf_xml_newline(s);
+	    }
+	    {
+		pdf_xml_tag_open_beg(s, "xmp:CreatorTool");
 		pdf_xml_tag_end(s);
 		code = pdf_xmp_write_docinfo_item(pdev, s,  "/Creator", "UnknownApplication",
 			pdf_xml_data_write);
 		if (code < 0)
 		    return code;
-		pdf_xml_tag_close(s, "xap:CreatorTool");
+		pdf_xml_tag_close(s, "xmp:CreatorTool");
 	    }
 	    pdf_xml_tag_close(s, "rdf:Description");
 	    pdf_xml_newline(s);
@@ -607,6 +650,24 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
 			pdf_xml_tag_close(s, "rdf:Seq");
 		    }
 		    pdf_xml_tag_close(s, "dc:creator");
+		}
+		if (cos_dict_find(pdev->Info, (const byte *)"/Subject", 8)) {
+		    pdf_xml_tag_open(s, "dc:description");
+		    {   
+			pdf_xml_tag_open(s, "rdf:Seq");
+			{
+			    pdf_xml_tag_open(s, "rdf:li");
+			    {
+    				code = pdf_xmp_write_docinfo_item(pdev, s,  "/Subject", "No Subject", 
+					    pdf_xml_data_write);
+				if (code < 0)
+				    return code;
+			    }
+			    pdf_xml_tag_close(s, "rdf:li");
+			}
+			pdf_xml_tag_close(s, "rdf:Seq");
+		    }
+		    pdf_xml_tag_close(s, "dc:description");
 		}
 	    }
 	    pdf_xml_tag_close(s, "rdf:Description");

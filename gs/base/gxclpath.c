@@ -148,6 +148,19 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         return code;
     if (!all_bands && dc_size * pre->nbands > 1024*1024 /* arbitrary */)
 	all_bands = true;
+    is_pattern = gx_dc_is_pattern1_color(pdcolor);
+    if (is_pattern)
+	pattern_id = gs_dc_get_pattern_id(pdcolor);
+    if (all_bands) {
+	gx_clist_state * pcls1;
+
+	for (pcls1 = cldev->states; pcls1 < cldev->states + cldev->nbands; pcls1++) {
+	    if (pcls1->pattern_id == pattern_id) {
+		pcls->pattern_id = gs_no_id; /* Force writing entire pattern. */
+		break;
+	    }
+	}
+    }
     left = dc_size;
 
     /* see if phase informaiton must be inserted in the command list */
@@ -160,7 +173,6 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                                      color_phase.y, all_bands)) < 0  )
         return code;
 
-    is_pattern = gx_dc_is_pattern1_color(pdcolor);
     if (is_pattern) {
 	pattern_id = gs_dc_get_pattern_id(pdcolor);
 
@@ -233,21 +245,17 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	   replace the client's pattern id with tile id in the saved color.  */
 	pcls->sdc.colors.pattern.id = pattern_id;
     }
-    if (all_bands) {
-	/* Distribute the written params to all bands. */
+    if (is_pattern && all_bands) {
+	/* Distribute the written pattern params to all bands.
+	   We know it is big, so it is not empty, so it has pattern_id and tile_phase.
+	 */
 	gx_clist_state * pcls1;
 
-	if (is_pattern) {
-	    /* We know it is big, so it is not empty, so it has pattern_id and tile_phase. */
-	    for (pcls1 = cldev->states; pcls1 < cldev->states + cldev->nbands; pcls1++) {
-		pcls1->sdc = pcls->sdc;
-		pcls1->pattern_id = pcls->pattern_id;
-		pcls1->tile_phase.x = pcls->tile_phase.x;
-		pcls1->tile_phase.y = pcls->tile_phase.y;
-	    }
-	} else {
-	    for (pcls1 = cldev->states; pcls1 < cldev->states + cldev->nbands; pcls1++)
-		pcls1->sdc = pcls->sdc;
+	for (pcls1 = cldev->states; pcls1 < cldev->states + cldev->nbands; pcls1++) {
+	    pcls1->sdc = pcls->sdc;
+	    pcls1->pattern_id = pcls->pattern_id;
+	    pcls1->tile_phase.x = pcls->tile_phase.x;
+	    pcls1->tile_phase.y = pcls->tile_phase.y;
 	}
     }
     return code;

@@ -183,8 +183,8 @@ void vd_setflag(char f, char v);
 #    define vd_text(x,y,s,c)	    DO_NOTHING
 #    define vd_wait		    DO_NOTHING
 #    define vd_save		    DO_NOTHING
-#    define vd_restore
-#    define vd_disable
+#    define vd_restore		    DO_NOTHING
+#    define vd_disable		    DO_NOTHING
 #endif
 
 #endif /* vdtrace_INCLUDED */

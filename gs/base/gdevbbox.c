@@ -1115,7 +1115,10 @@ static int
 bbox_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 {
     bbox_image_enum *pbe = (bbox_image_enum *) info;
-    int code = gx_image_end(pbe->target_info, draw_last);
+    int code = 0;
+
+    if (pbe->target_info)
+      code = gx_image_end(pbe->target_info, draw_last);
 
     gx_image_free_enum(&info);
     return code;
