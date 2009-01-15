@@ -1215,7 +1215,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   dup XrefBeginLength sub XrefLength add	% fileend
 	% Because of a bug, Acrobat Reader doesn't recognize any file
 	% shorter than 1K as linearized.  Patch this here.
-  1024 .max
+  4096 .max
   /FileLength 1 index def
   createLPDict
 
