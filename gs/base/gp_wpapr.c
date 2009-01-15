@@ -19,6 +19,11 @@
 #include "gx.h"
 #include "gp.h"
 
+/* For compilation on Windows NT  */
+#ifndef LOCALE_IPAPERSIZE
+#  define LOCALE_IPAPERSIZE 0x100A
+#endif
+
 /* ------ Default paper size ------ */
 
 /* Get the default paper size.  See gp_paper.h for details. */
