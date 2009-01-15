@@ -2256,6 +2256,9 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
 
          if (update_color_info){
 
+            if_debug2('v', "[v]pdf14_update_device_color_procs_push_c,num_components_old = %d num_components_new = %d\n", 
+            pdev->color_info.num_components,new_num_comps);
+
             /* Set new information in the device */
 
             pis->get_cmap_procs = pdf14_get_cmap_procs_group;
@@ -2293,6 +2296,9 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_imager_state *pis)
 
     if (!(parent_color->parent_color_mapping_procs == NULL && 
         parent_color->parent_color_comp_index == NULL)) {
+
+        if_debug2('v', "[v]pdf14_update_device_color_procs_pop_c,num_components_old = %d num_components_new = %d\n", 
+            pdev->color_info.num_components,parent_color->num_components);
 
         pis->get_cmap_procs = parent_color->get_cmap_procs;
         gx_set_cmap_procs(pis, dev);
@@ -2334,7 +2340,7 @@ pdf14_push_parent_color(gx_device *dev, const gs_imager_state *pis)
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_parent_color_t *parent_color_info = pdev->trans_group_parent_cmap_procs;
     pdf14_parent_color_t *new_parent_color;
- 
+
     /* Allocate a new one */
 
     new_parent_color = gs_alloc_struct(dev->memory, pdf14_parent_color_t,&st_pdf14_clr,

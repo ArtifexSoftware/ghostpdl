@@ -185,23 +185,7 @@ gs_begin_transparency_group(gs_state *pgs,
 {
     gs_pdf14trans_params_t params = { 0 };
     gs_color_space *blend_color_space;
-#ifdef DEBUG
-    if (gs_debug_c('v')) {
-	static const char *const cs_names[] = {
-	    GS_COLOR_SPACE_TYPE_NAMES
-	};
 
-	dlprintf5("[v](0x%lx)begin_transparency_group [%g %g %g %g]\n",
-		  (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y);
-	if (ptgp->ColorSpace)
-	    dprintf1("     CS = %s",
-		cs_names[(int)gs_color_space_get_index(ptgp->ColorSpace)]);
-	else
-	    dputs("     (no CS)");
-	dprintf2("  Isolated = %d  Knockout = %d\n",
-		 ptgp->Isolated, ptgp->Knockout);
-    }
-#endif
     /*
      * Put parameters into a compositor parameter and then call the
      * create_compositor.  This will pass the data to the PDF 1.4
@@ -260,7 +244,25 @@ gs_begin_transparency_group(gs_state *pgs,
         return_error(gs_error_rangecheck);
         break;
 
-     }    
+     }  
+
+#ifdef DEBUG
+    if (gs_debug_c('v')) {
+	static const char *const cs_names[] = {
+	    GS_COLOR_SPACE_TYPE_NAMES
+	};
+
+	dlprintf6("[v](0x%lx)begin_transparency_group [%g %g %g %g] Num_grp_clr_comp = %d\n",
+		  (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y,params.group_color_numcomps);
+	if (ptgp->ColorSpace)
+	    dprintf1("     CS = %s",
+		cs_names[(int)gs_color_space_get_index(ptgp->ColorSpace)]);
+	else
+	    dputs("     (no CS)");
+	dprintf2("  Isolated = %d  Knockout = %d\n",
+		 ptgp->Isolated, ptgp->Knockout);
+    }
+#endif
 
     params.bbox = *pbbox;
     return gs_state_update_pdf14trans(pgs, &params);
@@ -295,8 +297,8 @@ gx_begin_transparency_group(gs_imager_state * pis, gx_device * pdev,
 	    GS_COLOR_SPACE_TYPE_NAMES
 	};
 
-	dlprintf5("[v](0x%lx)gx_begin_transparency_group [%g %g %g %g]\n",
-		  (ulong)pis, bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
+	dlprintf6("[v](0x%lx)gx_begin_transparency_group [%g %g %g %g] Num_grp_clr_comp = %d\n",
+		  (ulong)pis, bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y,pparams->group_color_numcomps);
 	if (tgp.ColorSpace)
 	    dprintf1("     CS = %s",
 		cs_names[(int)gs_color_space_get_index(tgp.ColorSpace)]);
@@ -363,12 +365,6 @@ gs_begin_transparency_mask(gs_state * pgs,
     const int l = sizeof(params.Background[0]) * ptmp->Background_components;
     int i;
 
-    if_debug8('v', "[v](0x%lx)gs_begin_transparency_mask [%g %g %g %g]\n\
-      subtype = %d  Background_components = %d  %s\n",
-	      (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y,
-	      (int)ptmp->subtype, ptmp->Background_components,
-	      (ptmp->TransferFunction == mask_transfer_identity ? "no TR" :
-	       "has TR"));
     params.pdf14_op = PDF14_BEGIN_TRANS_MASK;
     params.bbox = *pbbox;
     params.subtype = ptmp->subtype;
@@ -384,6 +380,14 @@ gs_begin_transparency_mask(gs_state * pgs,
     /* Note that the SMask buffer may have a different 
        numcomps than the device buffer */
     params.group_color_numcomps = cs_num_components(pgs->color_space);
+
+    if_debug9('v', "[v](0x%lx)gs_begin_transparency_mask [%g %g %g %g]\n\
+      subtype = %d  Background_components = %d Num_grp_clr_comp = %d  %s\n",
+	      (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y,
+	      (int)ptmp->subtype, ptmp->Background_components,
+              params.group_color_numcomps,
+	      (ptmp->TransferFunction == mask_transfer_identity ? "no TR" :
+	       "has TR"));
 
     /* Sample the transfer function */
     for (i = 0; i < MASK_TRANSFER_FUNCTION_SIZE; i++) {
@@ -472,11 +476,12 @@ gx_begin_transparency_mask(gs_imager_state * pis, gx_device * pdev,
     tmp.replacing = pparams->replacing;
     tmp.mask_id = pparams->mask_id;
     memcpy(tmp.transfer_fn, pparams->transfer_fn, size_of(tmp.transfer_fn));
-    if_debug8('v', "[v](0x%lx)gx_begin_transparency_mask [%g %g %g %g]\n\
-      subtype = %d  Background_components = %d  %s\n",
+    if_debug9('v', "[v](0x%lx)gx_begin_transparency_mask [%g %g %g %g]\n\
+      subtype = %d  Background_components = %d  Num_grp_clr_comp = %d %s\n",
 	      (ulong)pis, pparams->bbox.p.x, pparams->bbox.p.y,
 	      pparams->bbox.q.x, pparams->bbox.q.y,
 	      (int)tmp.subtype, tmp.Background_components,
+              tmp.group_color_numcomps,
 	      (tmp.function_is_identity ? "no TR" :
 	       "has TR"));
     if (dev_proc(pdev, begin_transparency_mask) != 0)
