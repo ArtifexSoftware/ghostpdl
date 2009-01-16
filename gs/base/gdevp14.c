@@ -1098,6 +1098,21 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
 	return code;
     }
 
+#if RAW_DUMP
+  
+    /* Dump the current buffer to see what we have. */
+
+    dump_raw_buffer(pdev->ctx->stack->rect.q.y-pdev->ctx->stack->rect.p.y, 
+                pdev->ctx->stack->rect.q.x-pdev->ctx->stack->rect.p.x, 
+				pdev->ctx->stack->n_planes,
+                pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride, 
+                "PDF14_PUTIMAGE",pdev->ctx->stack->data);
+
+    global_index++;
+
+
+#endif
+
     linebuf = gs_alloc_bytes(pdev->memory, width * num_comp, "pdf14_put_image");
     for (y = 0; y < height; y++) {
 	gx_image_plane_t planes;
