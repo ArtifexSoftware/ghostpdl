@@ -918,6 +918,8 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx)
 
     if_debug1('v', "[v]pdf14_pop_transparency_mask, idle=%d\n", tos->idle);
     ctx->stack = tos->saved;
+    tos->saved = NULL;  /* To avoid issues with GC */
+
     if (tos->maskbuf) {
 	/* The maskbuf of the ctx->maskbuf entry is never used, free it now */
         /* In other words, the Smask will not have an Smask */
@@ -925,8 +927,18 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx)
 	tos->maskbuf = NULL;
     }
 
-    if(tos->data != NULL)
-    {
+    if (tos->data == NULL) {
+
+        /* This can occur in clist rendering if the soft mask does
+           not intersect the current band.  It would be nice to
+           catch this earlier and just avoid creating the structure
+           to begin with.  For now we need to delete the structure
+           that was created.  */
+
+	pdf14_buf_free(tos, ctx->memory);
+	ctx->maskbuf = NULL;
+
+    } else {
 
         /* Lets get this to a monochrome buffer and map it to a luminance only value */
         /* This will reduce our memory.  We won't reuse the existing one, due */
