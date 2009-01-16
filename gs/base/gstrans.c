@@ -204,13 +204,13 @@ gs_begin_transparency_group(gs_state *pgs,
        Store some information so that we know what the color space is
        so that we can adjust according later during the clist reader */ 
 
-    if(!gs_color_space_is_ICC(pgs->color_space)){
+    if(!gs_color_space_is_CIE(pgs->color_space)){
 
         blend_color_space = pgs->color_space;
 
     } else {
 
-       /* ICC based color space.  Problem right now is that the 
+       /* ICC and CIE based color space.  Problem right now is that the 
        current code does a concretization to the color space
        defined by the CRD.  This is not the space that we want
        to blend in.  Instead we want all colors to be mapped TO
@@ -364,11 +364,13 @@ gs_begin_transparency_mask(gs_state * pgs,
     gs_pdf14trans_params_t params = { 0 };
     const int l = sizeof(params.Background[0]) * ptmp->Background_components;
     int i;
+    gs_color_space *blend_color_space;
 
     params.pdf14_op = PDF14_BEGIN_TRANS_MASK;
     params.bbox = *pbbox;
     params.subtype = ptmp->subtype;
-    params.SMask_is_CIE = gs_color_space_is_CIE(pgs->color_space);
+   /* params.SMask_is_CIE = gs_color_space_is_CIE(pgs->color_space); */  /* See comments in gs_begin_transparency_mask */
+    params.SMask_is_CIE = false; 
     params.Background_components = ptmp->Background_components;
     memcpy(params.Background, ptmp->Background, l);
     params.GrayBackground = ptmp->GrayBackground;
@@ -402,12 +404,16 @@ gs_begin_transparency_mask(gs_state * pgs,
        we will need to do our concretization
        to CIEXYZ so that we can obtain the proper 
        luminance value.  This is what SHOULD happen
-       according to the spec.  */
+       according to the spec.  However AR does not 
+       follow this.  It always seems to do the soft mask
+       creation in the device space.  For this reason
+       we will do that too. SMask_is_CIE is always false for now */
 
     /* The blending procs are currently based upon the device type.
        We need to have them based upon the current color space */
 
     /* Note:  This function is called during the c-list writer side. */ 
+
 
     if ( params.SMask_is_CIE && params.subtype == TRANSPARENCY_MASK_Luminosity ){
 
@@ -424,10 +430,36 @@ gs_begin_transparency_mask(gs_state * pgs,
 
     } else {
 
-        /* Set the group color type, which may be 
-         *  different than the device type */
+    /* Set the group color type, which may be 
+     *  different than the device type.  Note
+        we want to check the concrete space due
+        to the fact that things are done
+        in device space always. */
 
-        switch (cs_num_components(pgs->color_space)) {
+
+        if(!gs_color_space_is_CIE(pgs->color_space)){
+
+            blend_color_space = pgs->color_space;
+
+        } else {
+
+           /* ICC or CIE based color space.  Problem right now is that the 
+           current code does a concretization to the color space
+           defined by the CRD.  This is not the space that we want
+           to blend in.  Instead we want all colors to be mapped TO
+           the ICC color space.  Then when the group is popped they
+           should be converted to the parent space. 
+           That I will need to fix another day with the color changes.  
+           For now we will punt and set our blending space as the 
+           concrete space for the ICC space, which is defined by
+           the output (or default) CRD. */
+
+            blend_color_space = cs_concrete_space(pgs->color_space, pgs);
+
+        }
+
+        switch (cs_num_components(blend_color_space)) {
+
             case 1:				
                 params.group_color = GRAY_SCALE;       
                 params.group_color_numcomps = 1;  /* Need to check */

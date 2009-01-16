@@ -958,14 +958,15 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx)
          tos->n_chan = 1;
          tos->n_planes = 1;
 
-        /* If we were CIE based, clean up the joint cache we created */
+        /* If we were CIE based, clean up the joint cache we created.
+           see comments in gs_begin_transparency_mask */
 
-        if ( tos->SMask_is_CIE ){
+      /*  if ( tos->SMask_is_CIE ){
 
-            /*  gs_free_object(mem, pis->cie_joint_caches,
-		   "gx_cie_to_xyz_free(joint caches)");*/
+            gs_free_object(mem, pis->cie_joint_caches,
+		   "gx_cie_to_xyz_free(joint caches)");
 
-        }
+        } */
 
         /* Assign as mask buffer */
 
