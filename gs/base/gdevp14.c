@@ -2081,6 +2081,8 @@ pdf14_update_device_color_procs(gx_device *dev,
     int new_num_comps;
     bool new_additive;
 
+    if_debug0('v', "[v]pdf14_update_device_color_procs\n");
+
 
    /* Check if we need to alter the device procs at this
        stage.  Many of the procs are based upon the color
@@ -2157,7 +2159,10 @@ pdf14_update_device_color_procs(gx_device *dev,
 
          if (update_color_info){
 
-           /* Save the old information */
+            if_debug2('v', "[v]pdf14_update_device_color_procs,num_components_old = %d num_components_new = %d\n", 
+                pdev->color_info.num_components,new_num_comps);
+
+            /* Save the old information */
 
             parent_color_info->get_cmap_procs = pis->get_cmap_procs;
             parent_color_info->parent_color_mapping_procs = 
@@ -2188,6 +2193,8 @@ pdf14_update_device_color_procs(gx_device *dev,
 
          }
 
+         if_debug0('v', "[v]procs not updated\n");
+
          return 0;
 }
 
@@ -2208,6 +2215,8 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
     gx_color_polarity_t new_polarity;
     int new_num_comps,new_depth;
     bool new_additive;
+
+    if_debug0('v', "[v]pdf14_update_device_color_procs_push_c\n");
 
    /* Check if we need to alter the device procs at this
        stage.  Many of the procs are based upon the color
@@ -2285,7 +2294,7 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
          if (update_color_info){
 
             if_debug2('v', "[v]pdf14_update_device_color_procs_push_c,num_components_old = %d num_components_new = %d\n", 
-            pdev->color_info.num_components,new_num_comps);
+                pdev->color_info.num_components,new_num_comps);
 
             /* Set new information in the device */
 
@@ -2309,6 +2318,8 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
 
          }
 
+         if_debug0('v', "[v]procs not updated\n");
+
          return 0;
 }
 
@@ -2320,7 +2331,9 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_imager_state *pis)
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_parent_color_t *parent_color = pdev->trans_group_parent_cmap_procs;
 
-   /* The color procs are always pushed.  Simply restore them. */
+    if_debug0('v', "[v]pdf14_update_device_color_procs_pop_c\n");
+  
+    /* The color procs are always pushed.  Simply restore them. */
 
     if (!(parent_color->parent_color_mapping_procs == NULL && 
         parent_color->parent_color_comp_index == NULL)) {
@@ -2341,6 +2354,12 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_imager_state *pis)
         if (pdev->ctx){
             pdev->ctx->additive = parent_color->isadditive;
         }
+
+         if_debug0('v', "[v]procs updated\n");
+
+    } else {
+
+        if_debug0('v', "[v]pdf14_update_device_color_procs_pop_c ERROR \n");
 
     }
 
@@ -2368,6 +2387,8 @@ pdf14_push_parent_color(gx_device *dev, const gs_imager_state *pis)
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_parent_color_t *parent_color_info = pdev->trans_group_parent_cmap_procs;
     pdf14_parent_color_t *new_parent_color;
+
+    if_debug0('v', "[v]pdf14_push_parent_color\n");
 
     /* Allocate a new one */
 
@@ -2416,7 +2437,9 @@ pdf14_pop_parent_color(gx_device *dev, const gs_imager_state *pis)
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_parent_color_t *old_parent_color_info = pdev->trans_group_parent_cmap_procs;
 
-    /* Update the link */
+     if_debug0('v', "[v]pdf14_pop_parent_color\n");
+
+   /* Update the link */
 
     pdev->trans_group_parent_cmap_procs = old_parent_color_info->previous;
 
