@@ -28,139 +28,25 @@
 int xps_doc_trace = 0;
 
 /*
- * Content types are stored in two separate binary trees.
- * One lists Override entries, which map a part name to a type.
- * The other lists Default entries, which map a file extension to a type.
+ * Content types are stored in two separate hash tables.
+ * One contains Override entries, which map a part name to a type.
+ * The other contains Default entries, which map a file extension to a type.
  */
-
-void xps_debug_type_map(xps_context_t *ctx, char *label, xps_type_map_t *node)
-{
-    if (node)
-    {
-	if (node->left)
-	    xps_debug_type_map(ctx, label, node->left);
-	dprintf3("%s name=%s type=%s\n", label, node->name, node->type);
-	if (node->right)
-	    xps_debug_type_map(ctx, label, node->right);
-    }
-}
-
-static xps_type_map_t *
-xps_new_type_map(xps_context_t *ctx, char *name, char *type)
-{
-    xps_type_map_t *node;
-
-    node = xps_alloc(ctx, sizeof(xps_type_map_t));
-    if (!node)
-	goto cleanup;
-
-    node->name = xps_strdup(ctx, name);
-    node->type = xps_strdup(ctx, type);
-    node->left = NULL;
-    node->right = NULL;
-
-    if (!node->name)
-	goto cleanup;
-    if (!node->type)
-	goto cleanup;
-
-    return node;
-
-cleanup:
-    if (node)
-    {
-	if (node->name) xps_free(ctx, node->name);
-	if (node->type) xps_free(ctx, node->type);
-	xps_free(ctx, node);
-    }
-    return NULL;
-}
-
-static void
-xps_add_type_map(xps_context_t *ctx, xps_type_map_t *node, char *name, char *type)
-{
-    int cmp = strcmp(node->name, name);
-    if (cmp < 0)
-    {
-	if (node->left)
-	    xps_add_type_map(ctx, node->left, name, type);
-	else
-	    node->left = xps_new_type_map(ctx, name, type);
-    }
-    else if (cmp > 0)
-    {
-	if (node->right)
-	    xps_add_type_map(ctx, node->right, name, type);
-	else
-	    node->right = xps_new_type_map(ctx, name, type);
-    }
-    else
-    {
-	/* it's a duplicate so we don't do anything */
-    }
-}
-
-void
-xps_free_type_map(xps_context_t *ctx, xps_type_map_t *node)
-{
-    if (node)
-    {
-	xps_free_type_map(ctx, node->left);
-	xps_free_type_map(ctx, node->right);
-	xps_free(ctx, node->name);
-	xps_free(ctx, node->type);
-	xps_free(ctx, node);
-    }
-}
 
 static void
 xps_add_override(xps_context_t *ctx, char *part_name, char *content_type)
 {
     if (ctx->overrides == NULL)
-	ctx->overrides = xps_new_type_map(ctx, part_name, content_type);
-    else
-	xps_add_type_map(ctx, ctx->overrides, part_name, content_type);
+	ctx->overrides = xps_hash_new(ctx);
+    xps_hash_insert(ctx, ctx->overrides, part_name, content_type);
 }
 
 static void
 xps_add_default(xps_context_t *ctx, char *extension, char *content_type)
 {
     if (ctx->defaults == NULL)
-	ctx->defaults = xps_new_type_map(ctx, extension, content_type);
-    else
-	xps_add_type_map(ctx, ctx->defaults, extension, content_type);
-}
-
-static char *
-xps_find_override(xps_type_map_t *node, char *partname)
-{
-    if (node)
-    {
-	int cmp = strcmp(node->name, partname);
-	if (cmp < 0)
-	    return xps_find_override(node->left, partname);
-	if (cmp == 0)
-	    return node->type;
-	if (cmp > 0)
-	    return xps_find_override(node->right, partname);
-    }
-    return NULL;
-}
-
-static char *
-xps_find_default(xps_type_map_t *node, char *extension)
-{
-    if (node)
-    {
-	int cmp = strcmp(node->name, extension);
-	if (cmp < 0)
-	    return xps_find_default(node->left, extension);
-	if (cmp == 0)
-	    return node->type;
-	if (cmp > 0)
-	    return xps_find_default(node->right, extension);
-    }
-    return NULL;
+	ctx->defaults = xps_hash_new(ctx);
+    xps_hash_insert(ctx, ctx->defaults, extension, content_type);
 }
 
 char *
@@ -169,7 +55,7 @@ xps_get_content_type(xps_context_t *ctx, char *partname)
     char *extension;
     char *type;
 
-    type = xps_find_override(ctx->overrides, partname);
+    type = xps_hash_lookup(ctx->overrides, partname);
     if (type)
     {
 	return type;
@@ -179,7 +65,7 @@ xps_get_content_type(xps_context_t *ctx, char *partname)
     if (extension)
 	extension ++;
 
-    type = xps_find_default(ctx->defaults, extension);
+    type = xps_hash_lookup(ctx->defaults, extension);
     if (type)
     {
 	return type;
@@ -195,6 +81,7 @@ xps_get_content_type(xps_context_t *ctx, char *partname)
 
 void xps_debug_parts(xps_context_t *ctx)
 {
+#if 0
     xps_part_t *part = ctx->first_part;
     xps_relation_t *rel;
     while (part)
@@ -204,6 +91,7 @@ void xps_debug_parts(xps_context_t *ctx)
 	    dprintf2("     target=%s type=%s\n", rel->target, rel->type);
 	part = part->next;
     }
+#endif
 }
 
 int
@@ -420,7 +308,7 @@ void
 xps_free_used_parts(xps_context_t *ctx)
 {
     /* TODO: actually do what we should. for now we just free cached resources. */
-
+#if 0
     xps_part_t *part = ctx->first_part;
     while (part)
     {
@@ -428,6 +316,7 @@ xps_free_used_parts(xps_context_t *ctx)
 	xps_free_part_caches(ctx, part);
 	part = next;
     }
+#endif
 }
 
 /*
@@ -482,7 +371,7 @@ xps_handle_metadata(void *zp, char *name, char **atts)
 	}
 
 	if (extension && type)
-	    xps_add_default(ctx, extension, type);
+	    xps_add_default(ctx, extension, xps_strdup(ctx, type));
     }
 
     if (!strcmp(name, "Override"))
@@ -499,7 +388,7 @@ xps_handle_metadata(void *zp, char *name, char **atts)
 	}
 
 	if (partname && type)
-	    xps_add_override(ctx, partname, type);
+	    xps_add_override(ctx, partname, xps_strdup(ctx, type));
     }
 
     if (!strcmp(name, "Relationship"))

@@ -108,7 +108,6 @@ xps_new_part(xps_context_t *ctx, char *name, int capacity)
     part->data = NULL;
     part->relations = NULL;
     part->relations_complete = 0;
-    part->next = NULL;
 
     part->font = NULL;
     part->image = NULL;
@@ -137,15 +136,7 @@ xps_new_part(xps_context_t *ctx, char *name, int capacity)
     }
 
     /* add it to the list of parts */
-    if (!ctx->first_part)
-    {
-	ctx->first_part = part;
-    }
-    else
-    {
-	part->next = ctx->first_part;
-	ctx->first_part = part;
-    }
+    xps_hash_insert(ctx, ctx->parts, name, part);
 
     return part;
 }
@@ -180,11 +171,7 @@ xps_free_part(xps_context_t *ctx, xps_part_t *part)
 xps_part_t *
 xps_find_part(xps_context_t *ctx, char *name)
 {
-    xps_part_t *part;
-    for (part = ctx->first_part; part; part = part->next)
-	if (!xps_strcasecmp(part->name, name))
-	    return part;
-    return NULL;
+    return xps_hash_lookup(ctx->parts, name);
 }
 
 static int

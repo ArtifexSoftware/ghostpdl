@@ -46,6 +46,9 @@ $(XPSOBJ)xpsutf.$(OBJ): $(XPSSRC)xpsutf.c $(XPSINCLUDES)
 $(XPSOBJ)xpscrc.$(OBJ): $(XPSSRC)xpscrc.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpscrc.c $(XPSO_)xpscrc.$(OBJ)
 
+$(XPSOBJ)xpshash.$(OBJ): $(XPSSRC)xpshash.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xpshash.c $(XPSO_)xpshash.$(OBJ)
+
 $(XPSOBJ)xpsjpeg.$(OBJ): $(XPSSRC)xpsjpeg.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpsjpeg.c $(XPSO_)xpsjpeg.$(OBJ)
 
@@ -121,6 +124,7 @@ XPS_OBJS=\
     $(XPSOBJ)xpsmem.$(OBJ) \
     $(XPSOBJ)xpsutf.$(OBJ) \
     $(XPSOBJ)xpscrc.$(OBJ) \
+    $(XPSOBJ)xpshash.$(OBJ) \
     $(XPSOBJ)xpsjpeg.$(OBJ) \
     $(XPSOBJ)xpspng.$(OBJ) \
     $(XPSOBJ)xpstiff.$(OBJ) \

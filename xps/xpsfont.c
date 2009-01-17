@@ -53,7 +53,7 @@ int xps_init_font_cache(xps_context_t *ctx)
 	return gs_throw(-1, "cannot gs_font_dir_alloc2_limits()");
 
     gs_setaligntopixels(ctx->fontdir, 1); /* no subpixels */
-    gs_setgridfittt(ctx->fontdir, 2); /* see gx_ttf_outline in gxttfn.c for values */
+    gs_setgridfittt(ctx->fontdir, 1); /* see gx_ttf_outline in gxttfn.c for values */
 
     return gs_okay;
 }

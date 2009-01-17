@@ -87,7 +87,6 @@
 typedef struct xps_context_s xps_context_t;
 
 typedef struct xps_part_s xps_part_t;
-typedef struct xps_type_map_s xps_type_map_t;
 typedef struct xps_relation_s xps_relation_t;
 typedef struct xps_document_s xps_document_t;
 typedef struct xps_page_s xps_page_t;
@@ -103,13 +102,13 @@ typedef struct xps_glyph_metrics_s xps_glyph_metrics_t;
  */
 
 #define xps_alloc(ctx, size) \
-    ((void*)gs_alloc_bytes(ctx->memory, size, __func__));
+    ((void*)gs_alloc_bytes(ctx->memory, size, __func__))
 #define xps_realloc(ctx, ptr, size) \
-    gs_resize_object(ctx->memory, ptr, size, __func__);
+    gs_resize_object(ctx->memory, ptr, size, __func__)
 #define xps_strdup(ctx, str) \
-    xps_strdup_imp(ctx, str, __func__);
+    xps_strdup_imp(ctx, str, __func__)
 #define xps_free(ctx, ptr) \
-    gs_free_object(ctx->memory, ptr, __func__);
+    gs_free_object(ctx->memory, ptr, __func__)
 
 size_t xps_strlcpy(char *destination, const char *source, size_t size);
 size_t xps_strlcat(char *destination, const char *source, size_t size);
@@ -126,20 +125,19 @@ int xps_utf8_to_ucs(int *p, const char *s, int n);
 
 unsigned int xps_crc32(unsigned int crc, unsigned char *buf, int n);
 
+typedef struct xps_hash_table_s xps_hash_table_t;
+xps_hash_table_t *xps_hash_new(xps_context_t *ctx);
+void xps_hash_free(xps_context_t *ctx, xps_hash_table_t *table, void (*)(xps_context_t*,void*));
+void *xps_hash_lookup(xps_hash_table_t *table, char *key);
+int xps_hash_insert(xps_context_t *ctx, xps_hash_table_t *table, char *key, void *value);
+void xps_hash_debug(xps_hash_table_t *table);
+
 /*
  * Packages, parts and relations.
  */
 
 int xps_process_data(xps_context_t *ctx, stream_cursor_read *buf);
 int xps_process_part(xps_context_t *ctx, xps_part_t *part);
-
-struct xps_type_map_s
-{
-    char *name;
-    char *type;
-    xps_type_map_t *left;
-    xps_type_map_t *right;
-};
 
 struct xps_relation_s
 {
@@ -174,11 +172,11 @@ struct xps_context_s
     gs_color_space *scrgb;
     gs_color_space *cmyk;
 
-    xps_part_t *first_part;
-    xps_part_t *last_part;
+    xps_hash_table_t *parts;
+    xps_hash_table_t *defaults;
+    xps_hash_table_t *overrides;
 
-    xps_type_map_t *defaults;
-    xps_type_map_t *overrides;
+    xps_part_t *last_part;
 
     char *start_part; /* fixed document sequence */
     xps_document_t *first_fixdoc; /* first fixed document */
@@ -235,7 +233,6 @@ struct xps_part_s
     byte *data;
     xps_relation_t *relations;
     int relations_complete; /* is corresponding .rels part finished? */
-    xps_part_t *next;
 
     xps_font_t *font; /* parsed font resource */
     xps_image_t *image; /* parsed and decoded image resource */
@@ -253,7 +250,6 @@ int xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type)
 
 char *xps_get_content_type(xps_context_t *ctx, char *partname);
 
-void xps_free_type_map(xps_context_t *ctx, xps_type_map_t *node);
 void xps_free_relations(xps_context_t *ctx, xps_relation_t *node);
 void xps_free_fixed_pages(xps_context_t *ctx);
 void xps_free_fixed_documents(xps_context_t *ctx);

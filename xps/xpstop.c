@@ -25,6 +25,11 @@
 
 static int xps_install_halftone(xps_context_t *ctx, gx_device *pdevice);
 
+static inline void xps_free_imp(xps_context_t *ctx, void *ptr)
+{
+    xps_free(ctx, ptr);
+}
+
 #define XPS_PARSER_MIN_INPUT_SIZE 8192
 
 /*
@@ -50,7 +55,7 @@ struct xps_interp_instance_s
 #define XPS_VERSION NULL
 #define XPS_BUILD_DATE NULL
 
-const pl_interp_characteristics_t *
+static const pl_interp_characteristics_t *
 xps_imp_characteristics(const pl_interp_implementation_t *pimpl)
 {
     static pl_interp_characteristics_t xps_characteristics =
@@ -116,6 +121,8 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     ctx->cmyk = gs_cspace_new_DeviceCMYK(ctx->memory); /* profile for cmyk images */
     ctx->srgb = gs_cspace_new_DeviceRGB(ctx->memory);
     ctx->scrgb = gs_cspace_new_DeviceRGB(ctx->memory);
+
+    ctx->parts = xps_hash_new(ctx);
 
     instance->pre_page_action = 0;
     instance->pre_page_closure = 0;
@@ -259,7 +266,6 @@ xps_imp_init_job(pl_interp_instance_t *pinstance)
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     xps_context_t *ctx = instance->ctx;
 
-    ctx->first_part = NULL;
     ctx->last_part = NULL;
 
     ctx->start_part = NULL;
@@ -312,28 +318,25 @@ xps_imp_dnit_job(pl_interp_instance_t *pinstance)
         xps_debug_parts(ctx);
     if (getenv("XPS_DEBUG_TYPES"))
     {
-        xps_debug_type_map(ctx, "Default", ctx->defaults);
-        xps_debug_type_map(ctx, "Override", ctx->overrides);
+	dputs("Defaults\n");
+        xps_hash_debug(ctx->defaults);
+	dputs("Overrides\n");
+        xps_hash_debug(ctx->overrides);
     }
     if (getenv("XPS_DEBUG_PAGES"))
         xps_debug_fixdocseq(ctx);
 
     /* Free XPS parsing stuff */
     {
-        xps_part_t *part = ctx->first_part;
-        while (part)
-        {
-            xps_part_t *next = part->next;
-            xps_free_part(ctx, part);
-            part = next;
-        }
+	xps_hash_free(ctx, ctx->parts, xps_free_part);
+	ctx->parts = NULL;
 
         xps_free_fixed_pages(ctx);
         xps_free_fixed_documents(ctx);
 
-        xps_free_type_map(ctx, ctx->overrides);
+        xps_hash_free(ctx, ctx->overrides, xps_free_imp);
 	ctx->overrides = NULL;
-        xps_free_type_map(ctx, ctx->defaults);
+        xps_hash_free(ctx, ctx->defaults, xps_free_imp);
 	ctx->defaults = NULL;
     }
 
