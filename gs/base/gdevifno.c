@@ -81,7 +81,7 @@ static const gx_device_procs inferno_procs =
 
 
 inferno_device far_data gs_inferno_device =
-{ prn_device_body(gx_device_printer, inferno_procs, "inferno",
+{ prn_device_body(inferno_device, inferno_procs, "inferno",
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,
 	0,0,0,0,	/* margins */
