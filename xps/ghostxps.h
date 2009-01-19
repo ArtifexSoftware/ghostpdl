@@ -81,12 +81,18 @@
 #endif
 
 /*
+ * Conditional compile time options.
+ */
+#define noXPS_LOAD_TYPE_MAPS
+
+/*
  * Forward declarations.
  */
 
 typedef struct xps_context_s xps_context_t;
 
 typedef struct xps_part_s xps_part_t;
+typedef struct xps_type_map_s xps_type_map_t;
 typedef struct xps_relation_s xps_relation_t;
 typedef struct xps_document_s xps_document_t;
 typedef struct xps_page_s xps_page_t;
@@ -127,7 +133,7 @@ unsigned int xps_crc32(unsigned int crc, unsigned char *buf, int n);
 
 typedef struct xps_hash_table_s xps_hash_table_t;
 xps_hash_table_t *xps_hash_new(xps_context_t *ctx);
-void xps_hash_free(xps_context_t *ctx, xps_hash_table_t *table, void (*)(xps_context_t*,void*));
+void xps_hash_free(xps_context_t *ctx, xps_hash_table_t *table);
 void *xps_hash_lookup(xps_hash_table_t *table, char *key);
 int xps_hash_insert(xps_context_t *ctx, xps_hash_table_t *table, char *key, void *value);
 void xps_hash_debug(xps_hash_table_t *table);
@@ -138,6 +144,13 @@ void xps_hash_debug(xps_hash_table_t *table);
 
 int xps_process_data(xps_context_t *ctx, stream_cursor_read *buf);
 int xps_process_part(xps_context_t *ctx, xps_part_t *part);
+
+struct xps_type_map_s
+{
+    char *name;
+    char *type;
+    xps_type_map_t *next;
+};
 
 struct xps_relation_s
 {
@@ -172,11 +185,12 @@ struct xps_context_s
     gs_color_space *scrgb;
     gs_color_space *cmyk;
 
-    xps_hash_table_t *parts;
-    xps_hash_table_t *defaults;
-    xps_hash_table_t *overrides;
-
+    xps_hash_table_t *part_table;
+    xps_part_t *first_part;
     xps_part_t *last_part;
+
+    xps_type_map_t *defaults;
+    xps_type_map_t *overrides;
 
     char *start_part; /* fixed document sequence */
     xps_document_t *first_fixdoc; /* first fixed document */
@@ -239,6 +253,8 @@ struct xps_part_s
     gs_color_space *icc; /* parsed icc profile resource */
 
     int deobfuscated; /* have we deobfuscated the font data? */
+
+    xps_part_t *next;
 };
 
 xps_part_t *xps_new_part(xps_context_t *ctx, char *name, int capacity);
@@ -250,6 +266,7 @@ int xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type)
 
 char *xps_get_content_type(xps_context_t *ctx, char *partname);
 
+void xps_free_type_map(xps_context_t *ctx, xps_type_map_t *node);
 void xps_free_relations(xps_context_t *ctx, xps_relation_t *node);
 void xps_free_fixed_pages(xps_context_t *ctx);
 void xps_free_fixed_documents(xps_context_t *ctx);

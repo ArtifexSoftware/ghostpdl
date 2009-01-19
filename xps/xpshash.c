@@ -1,7 +1,7 @@
 /* Linear probe hash table.
  *
  * Simple hashtable with open adressing linear probe.
- * Makes an internal copy of the key string.
+ * Does not manage memory of key/value pointers.
  * Does not support deleting entries.
  */ 
 
@@ -73,8 +73,13 @@ static int xps_hash_double(xps_context_t *ctx, xps_hash_table_t *table)
     int i;
 
     for (i = 0; primes[i] != 0; i++)
+    {
 	if (primes[i] > old_size)
+	{
 	    new_size = primes[i];
+	    break;
+	}
+    }
 
     old_entries = table->entries;
     new_entries = xps_alloc(ctx, sizeof(xps_hash_entry_t) * new_size);
@@ -83,34 +88,23 @@ static int xps_hash_double(xps_context_t *ctx, xps_hash_table_t *table)
 
     table->size = new_size;
     table->entries = new_entries;
+    table->load = 0;
+
+    memset(table->entries, 0, sizeof(xps_hash_entry_t) * table->size);
 
     for (i = 0; i < old_size; i++)
-    {
 	if (old_entries[i].value)
 	    xps_hash_insert(ctx, table, old_entries[i].key, old_entries[i].value);
-    }
 
     xps_free(ctx, old_entries);
 
     return 0;
 }
 
-void xps_hash_free(xps_context_t *ctx, xps_hash_table_t *table, void (*value_free_func)(xps_context_t*,void*))
+void xps_hash_free(xps_context_t *ctx, xps_hash_table_t *table)
 {
-    int i;
-
-    for (i = 0; i < table->size; i++)
-    {
-	if (table->entries[i].key)
-	    xps_free(ctx, table->entries[i].key);
-	if (table->entries[i].value)
-	    value_free_func(ctx, table->entries[i].value);
-    }
-
     xps_free(ctx, table->entries);
     xps_free(ctx, table);
-
-    return 0;
 }
 
 void *xps_hash_lookup(xps_hash_table_t *table, char *key)
@@ -133,9 +127,8 @@ void *xps_hash_lookup(xps_hash_table_t *table, char *key)
 
 int xps_hash_insert(xps_context_t *ctx, xps_hash_table_t *table, char *key, void *value)
 {
-    xps_hash_entry_t *entries = table->entries;
-    unsigned size = table->size;
-    unsigned pos = hash(key) % size;
+    xps_hash_entry_t *entries;
+    unsigned int size, pos;
 
     /* Grow the table at 80% load */
     if (table->load > table->size * 8 / 10)
@@ -144,20 +137,24 @@ int xps_hash_insert(xps_context_t *ctx, xps_hash_table_t *table, char *key, void
 	    return gs_rethrow(-1, "cannot grow hash table");
     }
 
+    entries = table->entries;
+    size = table->size;
+    pos = hash(key) % size;
+
     while (1)
     {
 	if (!entries[pos].value)
 	{
-	    entries[pos].key = xps_strdup(ctx, key);
-	    if (!entries[pos].key)
-		return gs_rethrow(-1, "outofmem: cannot copy key string");
+	    entries[pos].key = key;
 	    entries[pos].value = value;
 	    table->load ++;
 	    return 0;
 	}
 
 	if (strcmp(key, entries[pos].key) == 0)
+	{
 	    return 0;
+	}
 
 	pos = (pos + 1) % size;
     }
@@ -167,15 +164,15 @@ void xps_hash_debug(xps_hash_table_t *table)
 {
     int i;
 
-    printf("cache load %d / %d", table->load, table->size);
+    printf("hash table load %d / %d\n", table->load, table->size);
 
     for (i = 0; i < table->size; i++)
     {
 	if (!table->entries[i].value)
 	    printf("table % 4d: empty\n", i);
 	else
-	    printf("table % 4d: key=%s value=%s\n", i,
-		    table->entries[i].key, (char*)table->entries[i].value);
+	    printf("table % 4d: key=%s value=%p\n", i,
+		    table->entries[i].key, table->entries[i].value);
     }
 }
 
