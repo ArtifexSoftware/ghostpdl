@@ -169,6 +169,12 @@ xps_parse_tiling_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
     if (viewport_att)
 	xps_parse_rectangle(ctx, viewport_att, &viewport);
 
+    /* some sanity checks on the viewport/viewbox size */
+    if (fabs(viewport.q.x - viewport.p.x) < 0.01) return 0;
+    if (fabs(viewport.q.y - viewport.p.y) < 0.01) return 0;
+    if (fabs(viewbox.q.x - viewbox.p.x) < 0.01) return 0;
+    if (fabs(viewbox.q.y - viewbox.p.y) < 0.01) return 0;
+
     scalex = (viewport.q.x - viewport.p.x) / (viewbox.q.x - viewbox.p.x);
     scaley = (viewport.q.y - viewport.p.y) / (viewbox.q.y - viewbox.p.y);
 
