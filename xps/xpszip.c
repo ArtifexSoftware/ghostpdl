@@ -135,8 +135,14 @@ xps_new_part(xps_context_t *ctx, char *name, int capacity)
 	return NULL;
     }
 
+    part->next = NULL;
+
     /* add it to the list of parts */
-    xps_hash_insert(ctx, ctx->parts, name, part);
+    part->next = ctx->first_part;
+    ctx->first_part = part;
+
+    /* add it to the hash table of parts */
+    xps_hash_insert(ctx, ctx->part_table, part->name, part);
 
     return part;
 }
@@ -171,7 +177,7 @@ xps_free_part(xps_context_t *ctx, xps_part_t *part)
 xps_part_t *
 xps_find_part(xps_context_t *ctx, char *name)
 {
-    return xps_hash_lookup(ctx->parts, name);
+    return xps_hash_lookup(ctx->part_table, name);
 }
 
 static int
@@ -209,6 +215,7 @@ xps_prepare_part(xps_context_t *ctx)
 	part = xps_new_part(ctx, ctx->zip_file_name, ctx->zip_uncompressed_size);
 	if (!part)
 	    return gs_rethrow(-1, "cannot create part buffer");
+
 	ctx->last_part = part; /* make it the current part */
     }
     else

@@ -28,25 +28,106 @@
 int xps_doc_trace = 0;
 
 /*
- * Content types are stored in two separate hash tables.
+ * Content types are stored in two lookup tables.
  * One contains Override entries, which map a part name to a type.
  * The other contains Default entries, which map a file extension to a type.
  */
 
+void xps_debug_type_map(xps_context_t *ctx, char *label, xps_type_map_t *node)
+{
+    while (node)
+    {
+	dprintf3("%s name=%s type=%s\n", label, node->name, node->type);
+	node = node->next;
+    }
+}
+
+static xps_type_map_t *
+xps_new_type_map(xps_context_t *ctx, char *name, char *type)
+{
+    xps_type_map_t *node;
+
+    node = xps_alloc(ctx, sizeof(xps_type_map_t));
+    if (!node)
+       goto cleanup;
+
+    node->name = xps_strdup(ctx, name);
+    node->type = xps_strdup(ctx, type);
+    node->next = NULL;
+
+    if (!node->name)
+	goto cleanup;
+    if (!node->type)
+	goto cleanup;
+
+    return node;
+
+cleanup:
+    if (node)
+    {
+	if (node->name)
+	    xps_free(ctx, node->name);
+	if (node->type)
+	    xps_free(ctx, node->type);
+	xps_free(ctx, node);
+    }
+    return NULL;
+}
+
+void
+xps_free_type_map(xps_context_t *ctx, xps_type_map_t *node)
+{
+    xps_type_map_t *next;
+    while (node)
+    {
+	next = node->next;
+	xps_free(ctx, node->name);
+	xps_free(ctx, node->type);
+	xps_free(ctx, node);
+	node = next;
+    }
+}
+
+static char *
+xps_lookup_type_map(xps_type_map_t *node, char *name)
+{
+    while (node)
+    {
+	if (strcmp(node->name, name) == 0)
+	    return node->type;
+	node = node->next;
+    }
+    return NULL;
+}
+
 static void
 xps_add_override(xps_context_t *ctx, char *part_name, char *content_type)
 {
-    if (ctx->overrides == NULL)
-	ctx->overrides = xps_hash_new(ctx);
-    xps_hash_insert(ctx, ctx->overrides, part_name, content_type);
+    xps_type_map_t *node;
+    if (!xps_lookup_type_map(ctx->overrides, part_name))
+    {
+	node = xps_new_type_map(ctx, part_name, content_type);
+	if (node)
+	{
+	    node->next = ctx->overrides;
+	    ctx->overrides = node;
+	}
+    }
 }
 
 static void
 xps_add_default(xps_context_t *ctx, char *extension, char *content_type)
 {
-    if (ctx->defaults == NULL)
-	ctx->defaults = xps_hash_new(ctx);
-    xps_hash_insert(ctx, ctx->defaults, extension, content_type);
+    xps_type_map_t *node;
+    if (!xps_lookup_type_map(ctx->defaults, extension))
+    {
+	node = xps_new_type_map(ctx, extension, content_type);
+	if (node)
+	{
+	    node->next = ctx->defaults;
+	    ctx->defaults = node;
+	}
+    }
 }
 
 char *
@@ -55,7 +136,7 @@ xps_get_content_type(xps_context_t *ctx, char *partname)
     char *extension;
     char *type;
 
-    type = xps_hash_lookup(ctx->overrides, partname);
+    type = xps_lookup_type_map(ctx->overrides, partname);
     if (type)
     {
 	return type;
@@ -65,7 +146,7 @@ xps_get_content_type(xps_context_t *ctx, char *partname)
     if (extension)
 	extension ++;
 
-    type = xps_hash_lookup(ctx->defaults, extension);
+    type = xps_lookup_type_map(ctx->defaults, extension);
     if (type)
     {
 	return type;
@@ -81,7 +162,6 @@ xps_get_content_type(xps_context_t *ctx, char *partname)
 
 void xps_debug_parts(xps_context_t *ctx)
 {
-#if 0
     xps_part_t *part = ctx->first_part;
     xps_relation_t *rel;
     while (part)
@@ -91,7 +171,6 @@ void xps_debug_parts(xps_context_t *ctx)
 	    dprintf2("     target=%s type=%s\n", rel->target, rel->type);
 	part = part->next;
     }
-#endif
 }
 
 int
@@ -308,7 +387,6 @@ void
 xps_free_used_parts(xps_context_t *ctx)
 {
     /* TODO: actually do what we should. for now we just free cached resources. */
-#if 0
     xps_part_t *part = ctx->first_part;
     while (part)
     {
@@ -316,7 +394,6 @@ xps_free_used_parts(xps_context_t *ctx)
 	xps_free_part_caches(ctx, part);
 	part = next;
     }
-#endif
 }
 
 /*
@@ -357,6 +434,8 @@ xps_handle_metadata(void *zp, char *name, char **atts)
     xps_context_t *ctx = zp;
     int i;
 
+#ifdef XPS_LOAD_TYPE_MAPS
+
     if (!strcmp(name, "Default"))
     {
 	char *extension = NULL;
@@ -371,7 +450,7 @@ xps_handle_metadata(void *zp, char *name, char **atts)
 	}
 
 	if (extension && type)
-	    xps_add_default(ctx, extension, xps_strdup(ctx, type));
+	    xps_add_default(ctx, extension, type);
     }
 
     if (!strcmp(name, "Override"))
@@ -388,8 +467,10 @@ xps_handle_metadata(void *zp, char *name, char **atts)
 	}
 
 	if (partname && type)
-	    xps_add_override(ctx, partname, xps_strdup(ctx, type));
+	    xps_add_override(ctx, partname, type);
     }
+
+#endif
 
     if (!strcmp(name, "Relationship"))
     {
@@ -715,7 +796,7 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
     if (getenv("XPS_DOC_TRACE"))
 	xps_doc_trace = 1;
 
-    if (xps_doc_trace)
+    if (xps_doc_trace && part->complete)
 	dprintf2("doc: found part %s %s\n", part->name, part->complete ? "" : "(piece)");
 
     /*

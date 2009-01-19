@@ -575,12 +575,14 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     if (!part)
 	return gs_throw1(-1, "cannot find font resource part '%s'", partname);
 
+    /* deobfuscate if necessary */
     if (!part->deobfuscated)
     {
-	/* deobfuscate if necessary */
+#ifdef  XPS_LOAD_TYPE_MAPS
 	parttype = xps_get_content_type(ctx, part->name);
 	if (parttype && !strcmp(parttype, "application/vnd.ms-package.obfuscated-opentype"))
 	    xps_deobfuscate_font_resource(ctx, part);
+#endif
 
 	/* stupid XPS files with content-types after the parts */
 	if (!parttype && strstr(part->name, ".odttf"))
