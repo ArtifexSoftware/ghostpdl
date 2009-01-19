@@ -281,8 +281,13 @@ psw_write_page_header(stream *s, const gx_device *dev,
                       bool do_scale, long page_ord, int dictsize)
 {
     long page = dev->PageCount + 1;
+    int width = (int)(dev->width * 72.0 / dev->HWResolution[0] + 0.5);
+    int height = (int)(dev->height * 72.0 / dev->HWResolution[1] + 0.5);
 
     pprintld2(s, "%%%%Page: %ld %ld\n%%%%BeginPageSetup\n", page, page_ord);
+    if (!pdpc->ProduceEPS)
+	pprintld2(s, "%%%%PageBoundingBox: 0 0 %ld %ld\n", width, height);
+
     /*
      * Adobe's documentation says that page setup must be placed outside the
      * save/restore that encapsulates the page contents, and that the
@@ -295,8 +300,6 @@ psw_write_page_header(stream *s, const gx_device *dev,
     psw_put_procset_name(s, dev, pdpc);
     stream_puts(s, " begin\n");
     if (!pdpc->ProduceEPS) {
-	int width = (int)(dev->width * 72.0 / dev->HWResolution[0] + 0.5);
-	int height = (int)(dev->height * 72.0 / dev->HWResolution[1] + 0.5);
 	typedef struct ps_ {
 	    const char *size_name;
 	    int width, height;
