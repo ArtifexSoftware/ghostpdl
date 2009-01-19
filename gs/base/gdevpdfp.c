@@ -104,6 +104,11 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("PDFXTrimBoxToMediaBoxOffset", gs_param_type_float_array, PDFXTrimBoxToMediaBoxOffset),
     pi("PDFXSetBleedBoxToMediaBox", gs_param_type_bool, PDFXSetBleedBoxToMediaBox),
     pi("PDFXBleedBoxToTrimBoxOffset", gs_param_type_float_array, PDFXBleedBoxToTrimBoxOffset),
+
+    /* media selection parameters */
+    pi("SetPageSize", gs_param_type_bool, SetPageSize),
+    pi("RotatePages", gs_param_type_bool, RotatePages),
+    pi("FitPages", gs_param_type_bool, FitPages),
 #undef pi
     gs_param_item_end
 };

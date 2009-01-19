@@ -239,7 +239,23 @@ psw_end_file(FILE *f, const gx_device *dev,
 	    long save_pos = ftell(f);
 
 	    fseek(f, pdpc->bbox_position, SEEK_SET);
-	    psw_print_bbox(f, pbbox);
+	    /* Theoretically the bbox device should fill in the bounding box
+	     * but this does nothing because we don't write on the page.
+	     * So if bbox = 0 0 0 0, replace with the device page size.
+	     */
+	    if(pbbox->p.x == 0 && pbbox->p.y == 0 
+		&& pbbox->q.x == 0 && pbbox->q.y == 0) {
+		gs_rect bbox;
+		int width = (int)(dev->width * 72.0 / dev->HWResolution[0] + 0.5);
+		int height = (int)(dev->height * 72.0 / dev->HWResolution[1] + 0.5);
+
+		bbox.p.x = 0;
+		bbox.p.y = 0;
+		bbox.q.x = width;
+		bbox.q.y = height;
+		psw_print_bbox(f, &bbox);
+	    } else 
+		psw_print_bbox(f, pbbox);
             fputc('%', f);
             if (ferror(f))
                 return_error(gs_error_ioerror);
