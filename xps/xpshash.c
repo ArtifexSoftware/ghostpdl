@@ -29,11 +29,18 @@ struct xps_hash_table_s
     xps_hash_entry_t *entries;
 };
 
-static unsigned int hash(char *s)
+static inline int xps_tolower(int c)
+{
+    if (c >= 'A' && c <= 'Z')
+	return c + 32;
+    return c;
+}
+
+static unsigned int xps_hash(char *s)
 {
     unsigned int h = 0;
     while (*s)
-	h = *s++ + (h << 6) + (h << 16) - h;
+	h = xps_tolower(*s++) + (h << 6) + (h << 16) - h;
     return h;
 }
 
@@ -111,14 +118,14 @@ void *xps_hash_lookup(xps_hash_table_t *table, char *key)
 {
     xps_hash_entry_t *entries = table->entries;
     unsigned int size = table->size;
-    unsigned int pos = hash(key) % size;
+    unsigned int pos = xps_hash(key) % size;
 
     while (1)
     {
 	if (!entries[pos].value)
 	    return NULL;
 
-	if (strcmp(key, entries[pos].key) == 0)
+	if (xps_strcasecmp(key, entries[pos].key) == 0)
 	    return entries[pos].value;
 
 	pos = (pos + 1) % size;
@@ -139,7 +146,7 @@ int xps_hash_insert(xps_context_t *ctx, xps_hash_table_t *table, char *key, void
 
     entries = table->entries;
     size = table->size;
-    pos = hash(key) % size;
+    pos = xps_hash(key) % size;
 
     while (1)
     {
@@ -151,7 +158,7 @@ int xps_hash_insert(xps_context_t *ctx, xps_hash_table_t *table, char *key, void
 	    return 0;
 	}
 
-	if (strcmp(key, entries[pos].key) == 0)
+	if (xps_strcasecmp(key, entries[pos].key) == 0)
 	{
 	    return 0;
 	}
