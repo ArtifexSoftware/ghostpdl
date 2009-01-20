@@ -2216,6 +2216,12 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
     int new_num_comps,new_depth;
     bool new_additive;
 
+    /* Get the target device also.  The shading code
+       during clist writing uses the num of components. */
+
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+
     if_debug0('v', "[v]pdf14_update_device_color_procs_push_c\n");
 
    /* Check if we need to alter the device procs at this
@@ -2308,6 +2314,7 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
             pdev->color_info.polarity = new_polarity;
             pdev->color_info.num_components = new_num_comps;
             pdev->pdf14_procs = new_14procs;
+            tdev->color_info.num_components = new_num_comps;
 
             if (pdev->ctx)
             {
@@ -2331,6 +2338,12 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_imager_state *pis)
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_parent_color_t *parent_color = pdev->trans_group_parent_cmap_procs;
 
+    /* Get the target device also.  The shading code
+       during clist writing uses the num of components. */
+
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+
     if_debug0('v', "[v]pdf14_update_device_color_procs_pop_c\n");
   
     /* The color procs are always pushed.  Simply restore them. */
@@ -2350,6 +2363,7 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_imager_state *pis)
         pdev->color_info.num_components = parent_color->num_components;
         pdev->blend_procs = parent_color->parent_blending_procs;
         pdev->pdf14_procs = parent_color->unpack_procs;
+        tdev->color_info.num_components = parent_color->target_num_components;
 
         if (pdev->ctx){
             pdev->ctx->additive = parent_color->isadditive;
@@ -2388,6 +2402,12 @@ pdf14_push_parent_color(gx_device *dev, const gs_imager_state *pis)
     pdf14_parent_color_t *parent_color_info = pdev->trans_group_parent_cmap_procs;
     pdf14_parent_color_t *new_parent_color;
 
+    /* Get the target device also.  The shading code
+       during clist writing uses the num of components. */
+
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+
     if_debug0('v', "[v]pdf14_push_parent_color\n");
 
     /* Allocate a new one */
@@ -2414,6 +2434,7 @@ pdf14_push_parent_color(gx_device *dev, const gs_imager_state *pis)
     new_parent_color->polarity = pdev->color_info.polarity;
     new_parent_color->num_components = pdev->color_info.num_components;
     new_parent_color->unpack_procs = pdev->pdf14_procs;
+    new_parent_color->target_num_components = tdev->color_info.num_components;
 
     /* isadditive is only used in ctx */
     if (pdev->ctx)

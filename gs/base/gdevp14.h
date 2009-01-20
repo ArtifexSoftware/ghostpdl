@@ -53,6 +53,9 @@ typedef struct pdf14_parent_color_s {
     const void * unpack_procs;
     const pdf14_nonseparable_blending_procs_t * parent_blending_procs;
     pdf14_parent_color_t *previous;
+    int target_num_components;  /* The shading code during clist writing uses
+                                   this.  We want it to handle it in the
+                                   group color space not the device color space */
     
  
 };
