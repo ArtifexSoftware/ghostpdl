@@ -111,7 +111,7 @@ gs_transform_color_buffer_generic(byte *inputbuffer, int row_stride, int plane_s
     int num_rows, num_cols, x, y, z;
     void (* color_remap)(byte input[],byte output[]);
     byte input_vector[4],output_vector[4];
-    int plane_offset[16],alpha_offset_in,max_num_channels;
+    int plane_offset[PDF14_MAX_PLANES],alpha_offset_in,max_num_channels;
 
     num_rows = rect.q.y - rect.p.y;
     num_cols = rect.q.x - rect.p.x;
