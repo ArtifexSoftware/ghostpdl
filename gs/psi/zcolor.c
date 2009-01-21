@@ -4926,7 +4926,9 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 
 		/* Don't allow ICCBased spaces if NOCIE is true */
 		if (nocie->value.boolval) {
-		    dict_find_string(&ICCdict, "Alternate", &altref); /* Alternate is optional */
+		    code = dict_find_string(&ICCdict, "Alternate", &altref); /* Alternate is optional */
+		    if (code < 0)
+			return code;
 		    if ((altref != NULL) && (r_type(altref) != t_null)) {
 			/* The PDF interpreter sets a null Alternate. If we have an
 			 * Alternate, and its not null, and NOCIE is true, then use the 
