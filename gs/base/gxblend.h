@@ -24,7 +24,7 @@
 
 /* #define DUMP_TO_PNG */
 
-#define	PDF14_MAX_PLANES GX_DEVICE_COLOR_MAX_COMPONENTS
+#define	PDF14_MAX_PLANES (GX_DEVICE_COLOR_MAX_COMPONENTS + 1)	/* one extra for alpha channel */
 
 typedef bits16 ArtPixMaxDepth;
 
