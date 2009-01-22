@@ -2482,7 +2482,7 @@ $(GLOBJ)gsncdummy.$(OBJ) : $(GLSRC)gsncdummy.c $(GXERR) $(math__h)\
 # ---------------- Color Buffer Proc. Support Used In Trans. ---------------- #
 
 $(GLOBJ)gscolorbuffer.$(OBJ) : $(GLSRC)gscolorbuffer.c $(GXERR)\
-	$(stdpre_h) $(gstypes_h)
+	$(stdpre_h) $(gstypes_h) $(gsmemory_h) $(gxblend_h)
 	$(GLCC) $(GLO_)gscolorbuffer.$(OBJ) $(C_) $(GLSRC)gscolorbuffer.c
 
 # ================ Display Postscript extensions ================ #
