@@ -435,7 +435,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 		% We don't try to defer the drawing information.
     dup /Annots .knownget { omvisitnopage } if
 		% Visit beads.
-    dup /B .knownget { omvisit } if
+    dup /B .knownget { omvisitnopage } if
 		% Visit resources dictionaries.
     dup /Resources .knownget {
       omforce dup {
