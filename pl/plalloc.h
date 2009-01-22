@@ -15,7 +15,7 @@
 gs_memory_t *pl_alloc_init(void);
 
 
-
+#ifdef DEBUG
 /* If true PL_KEEP_GLOBAL_FREE_LIST will force all memory allocations to be stored
  * in a linked list, calling mem_node_free_all_remaining() will free any remaining
  * blocks.  This can be used to force a return to zero memory usage prior to 
@@ -23,9 +23,13 @@ gs_memory_t *pl_alloc_init(void);
  * of searching for the block to be freed on every deallocation. 
  * 
  * To disable the feature define PL_KEEP_GLOBAL_FREE_LIST to false 
+ * We only set this in a DEBUG build to prevent poor performance in a release build.
  */
 
-#define PL_KEEP_GLOBAL_FREE_LIST true
+#   define PL_KEEP_GLOBAL_FREE_LIST true
+#else
+#   define PL_KEEP_GLOBAL_FREE_LIST false
+#endif
 
 /* free all remaining memory blocks */
 void pl_mem_node_free_all_remaining(gs_memory_t *mem);
