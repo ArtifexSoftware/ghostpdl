@@ -464,6 +464,9 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
   END
     fixed mx0 = 0, my0 = 0; /* See ce1_setcurrentpoint. */
 
+    /* Quiet a Coverity uninitialsed variable warning */
+    cis.lsb.y = 0;
+
     /*
      * Do a first pass to collect hints.  Note that we must also process
      * [h]sbw, because the hint coordinates are relative to the lsb.
