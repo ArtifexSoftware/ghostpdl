@@ -387,7 +387,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
     dup /OpenAction .knownget { omvisitnopage } if
     Trailer /Encrypt .knownget { omvisit } if
     dup /Threads .knownget {
-        omforce dup //null ne { { omvisit } forall } { pop } ifelse
+        omforce dup //null ne { { omvisitnopage } forall } { pop } ifelse
     } if
     dup /AcroForm .knownget { omvisitnopage } if
     pop
@@ -430,7 +430,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
     omforce
 		% Stack: pageobj# extra page
 		% Visit any extra objects if applicable.
-    exch omvisit
+    exch omvisitnopage
 		% Visit Annots, if any.
 		% We don't try to defer the drawing information.
     dup /Annots .knownget { omvisitnopage } if
