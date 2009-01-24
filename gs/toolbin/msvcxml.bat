@@ -1,10 +1,12 @@
-# MS-DOS batch file to create an project file for MS Visual Studio
-# $Id$
+@ECHO OFF
+REM # MS-DOS batch file to create an project file for MS Visual Studio
+REM # $Id$
 @echo off
 
 if "%1" == "DLL" goto DLL
 if "%1" == "echogs" goto echogs
 if "%1" == "genarch" goto genarch
+if "%1" == "mkromfs" goto mkromfs
 if "%1" == "GUI" goto GUI
 if "%1" == "Command" goto Command
 if "%1" == "props" goto props
@@ -16,10 +18,17 @@ echo Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "genarch", "%1-genarch.
 echo EndProject
 echo Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "echogs", "%1-echogs.vcproj", "{A1C8B0BC-2B54-4FDF-8EFF-BA84F5214B91}"
 echo EndProject
+echo Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mkromfs", "%1-mkromfs.vcproj", "{45156C0D-CC16-4155-9D1F-063300029610}"
+echo 	ProjectSection(ProjectDependencies) = postProject
+echo 		{A1C8B0BC-2B54-4FDF-8EFF-BA84F5214B91} = {A1C8B0BC-2B54-4FDF-8EFF-BA84F5214B91}
+echo 		{A1C8B0BC-2B54-4FDF-8EFF-BA84F5214B92} = {A1C8B0BC-2B54-4FDF-8EFF-BA84F5214B92}
+echo 	EndProjectSection
+echo EndProject
 echo Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gsdll32", "%1-dll.vcproj", "{C40391B4-5B95-45C1-8364-F7EC3B323C3D}"
 echo 	ProjectSection(ProjectDependencies) = postProject
 echo 		{A1C8B0BC-2B54-4FDF-8EFF-BA84F5214B91} = {A1C8B0BC-2B54-4FDF-8EFF-BA84F5214B91}
 echo 		{A1C8B0BC-2B54-4FDF-8EFF-BA84F5214B92} = {A1C8B0BC-2B54-4FDF-8EFF-BA84F5214B92}
+echo 		{45156C0D-CC16-4155-9D1F-063300029610} = {45156C0D-CC16-4155-9D1F-063300029610}
 echo 	EndProjectSection
 echo EndProject
 echo Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gswin32", "%1-exe.vcproj", "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"
@@ -58,6 +67,7 @@ call msvcxml.bat GUI > %1-exe.vcproj
 call msvcxml.bat Command > %1-exe-c.vcproj
 call msvcxml.bat echogs > %1-echogs.vcproj
 call msvcxml.bat genarch > %1-genarch.vcproj
+call msvcxml.bat mkromfs > %1-mkromfs.vcproj
 call msvcxml.bat props > macros.vsprops
 call msvcxml.bat gconfig > gconfig.h
 goto end
@@ -95,7 +105,7 @@ echo    Optimization="0"
 echo    PreprocessorDefinitions="__WIN32__;_DEBUG;_CRT_SECURE_NO_DEPRECATE;EXCLUDE_BMP_SUPPORT;EXCLUDE_JPG_SUPPORT;EXCLUDE_MIF_SUPPORT;EXCLUDE_PGX_SUPPORT;EXCLUDE_PNM_SUPPORT;EXCLUDE_RAS_SUPPORT;EXCLUDE_PNG_SUPPORTS;CHECK_INTERRUPTS;_Windows;_USRDLL;GX_COLOR_INDEX_TYPE=unsigned __int64"
 echo    AdditionalIncludeDirectories="$(SolutionDir)base;$(SolutionDir)psi;$(SolutionDir)debugobj;$(SolutionDir)jpeg;$(SolutionDir)zlib;$(SolutionDir)icclib;$(SolutionDir)imdi;$(SolutionDir)jbig2dec;$(SolutionDir)ijs;$(SolutionDir)libpng;$(SolutionDir)jasper\src\libjasper\include"
 echo    MinimalRebuild="true"
-echo    DisableLanguageExtensions="true"
+echo    DisableLanguageExtensions="false"
 echo    BasicRuntimeChecks="3"
 echo    UsePrecompiledHeader="0"
 echo    WarningLevel="2"
@@ -194,6 +204,74 @@ for /F %%o in (%2) do (
       echo   ^</FileConfiguration^>
       echo ^</File^>
     ) else echo ^<File RelativePath=".\base\%%~no.c"/^>
+  ) else if exist .\psi\%%~no.c (
+    if /i "%%~no" EQU "gdevmswn" (
+      echo ^<File RelativePath=".\psi\%%~no.c"^>
+      echo   ^<FileConfiguration Name="Debug|Win32"^>
+      echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
+      echo   ^</FileConfiguration^>
+      echo ^</File^>
+    ) else if /i "%%~no" EQU "gdevmswn" (
+      echo ^<File RelativePath=".\psi\%%~no.c"^>
+      echo   ^<FileConfiguration Name="Debug|Win32"^>
+      echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
+      echo   ^</FileConfiguration^>
+      echo ^</File^>
+    ) else if /i "%%~no" EQU "gdevmsxf" (
+      echo ^<File RelativePath=".\psi\%%~no.c"^>
+      echo   ^<FileConfiguration Name="Debug|Win32"^>
+      echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
+      echo   ^</FileConfiguration^>
+      echo ^</File^>
+    ) else if /i "%%~no" EQU "gdevwdib" (
+      echo ^<File RelativePath=".\psi\%%~no.c"^>
+      echo   ^<FileConfiguration Name="Debug|Win32"^>
+      echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
+      echo   ^</FileConfiguration^>
+      echo ^</File^>
+    ) else if /i "%%~no" EQU "gdevwpr2" (
+      echo ^<File RelativePath=".\psi\%%~no.c"^>
+      echo   ^<FileConfiguration Name="Debug|Win32"^>
+      echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
+      echo   ^</FileConfiguration^>
+      echo ^</File^>
+    ) else if /i "%%~no" EQU "gp_msprn" (
+      echo ^<File RelativePath=".\psi\%%~no.c"^>
+      echo   ^<FileConfiguration Name="Debug|Win32"^>
+      echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
+      echo   ^</FileConfiguration^>
+      echo ^</File^>
+    ) else if /i "%%~no" EQU "gp_mswin" (
+      echo ^<File RelativePath=".\psi\%%~no.c"^>
+      echo   ^<FileConfiguration Name="Debug|Win32"^>
+      echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
+      echo   ^</FileConfiguration^>
+      echo ^</File^>
+    ) else if /i "%%~no" EQU "gp_ntfs" (
+      echo ^<File RelativePath=".\psi\%%~no.c"^>
+      echo   ^<FileConfiguration Name="Debug|Win32"^>
+      echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
+      echo   ^</FileConfiguration^>
+      echo ^</File^>
+    ) else if /i "%%~no" EQU "gp_wgetv" (
+      echo ^<File RelativePath=".\psi\%%~no.c"^>
+      echo   ^<FileConfiguration Name="Debug|Win32"^>
+      echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
+      echo   ^</FileConfiguration^>
+      echo ^</File^>
+    ) else if /i "%%~no" EQU "ijs_exec_win" (
+      echo ^<File RelativePath=".\ijs\%%~no.c"^>
+      echo   ^<FileConfiguration Name="Debug|Win32"^>
+      echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
+      echo   ^</FileConfiguration^>
+      echo ^</File^>
+    ) else if /i "%%~no" EQU "gp_win32" (
+      echo ^<File RelativePath=".\psi\%%~no.c"^>
+      echo   ^<FileConfiguration Name="Debug|Win32"^>
+      echo     ^<Tool Name="VCCLCompilerTool" DisableLanguageExtensions="false" /^>
+      echo   ^</FileConfiguration^>
+      echo ^</File^>
+    ) else echo ^<File RelativePath=".\psi\%%~no.c"/^>
   ) else if exist .\zlib\%%~no.c (
     if /i "%%~no" EQU "gdevmswn" (
       echo ^<File RelativePath=".\zlib\%%~no.c"^>
@@ -812,9 +890,9 @@ endlocal
 
 rem HACK
 echo ^<File RelativePath=".\psi\zfjbig2.c"/^>
-echo ^<File RelativePath="$(SolutionDir)$(ConfigurationName)obj\gscdefs.c"/^>
-echo ^<File RelativePath="$(SolutionDir)$(ConfigurationName)obj\iconfig.c"/^>
-echo ^<File RelativePath="$(SolutionDir)$(ConfigurationName)obj\gconfig.c"/^>
+echo ^<File RelativePath=".\debugobj\gscdefs.c"/^>
+echo ^<File RelativePath=".\debugobj\iconfig.c"/^>
+echo ^<File RelativePath=".\debugobj\gconfig.c"/^>
 echo ^<File RelativePath=".\jpeg\jfdctfst.c"/^>
 echo ^<File RelativePath=".\jpeg\jidctflt.c"/^>
 echo ^<File RelativePath=".\jpeg\jfdctflt.c"/^>
@@ -824,6 +902,7 @@ echo ^<File RelativePath=".\jpeg\jidctred.c"/^>
 echo ^<File RelativePath=".\jpeg\jdmerge.c"/^>
 echo ^<File RelativePath=".\jpeg\jquant1.c"/^>
 echo ^<File RelativePath=".\jpeg\jquant2.c"/^>
+echo ^<File RelativePath=".\debugobj\gsromfs1.c"/^>
 
 REM Add the DLL source files
 echo ^<File RelativePath=".\psi\gsdll.c"^>
@@ -844,7 +923,7 @@ echo Name="Debug|Win32"
 echo ^>
 echo ^<Tool
 echo Name="VCResourceCompilerTool"
-echo AdditionalIncludeDirectories=".\debugobj"
+echo AdditionalIncludeDirectories=".\debugobj;&quot;$(SolutionDir)base&quot;"
 echo /^>
 echo ^</FileConfiguration^>
 echo ^</File^>
@@ -941,7 +1020,7 @@ echo ^</ToolFiles^>
 echo ^<Configurations^>
 echo  ^<Configuration 
 echo    Name="Debug|Win32"
-echo    OutputDirectory="$(SolutionDir)debugbin"
+echo    OutputDirectory="$(SolutionDir)debugobj"
 echo    IntermediateDirectory="$(SolutionDir)debugobj"
 echo    InheritedPropertySheets="$(SolutionDir)macros.vsprops"
 echo    ConfigurationType="1"
@@ -982,6 +1061,80 @@ echo ^<Files^>
 echo ^<Filter Name="genarch utility Source Files"
 echo         Filter="c"^>
 echo ^<File RelativePath=".\base\genarch.c"/^>
+echo  ^</Filter^>
+echo ^</Files^>
+echo ^</VisualStudioProject^>
+goto end
+
+:mkromfs
+echo ^<?xml version="1.0" encoding="utf-8" standalone="no"?^>
+echo ^<VisualStudioProject
+echo  ProjectType="Visual C++"
+echo  Version="8.00"
+echo  Name="mkromfs"
+echo  ProjectGUID="{45156C0D-CC16-4155-9D1F-063300029610}"
+echo  RootNamespace="mkromfs"
+echo  Keyword="Win32Proj"
+echo ^>
+echo ^<Platforms^>
+echo  ^<Platform Name="Win32"/^>
+echo ^</Platforms^>
+echo ^<ToolFiles^>
+echo ^</ToolFiles^>
+echo ^<Configurations^>
+echo  ^<Configuration 
+echo    Name="Debug|Win32"
+echo    OutputDirectory="$(SolutionDir)debugobj"
+echo    IntermediateDirectory="$(SolutionDir)debugobj"
+echo    InheritedPropertySheets="$(SolutionDir)macros.vsprops"
+echo    ConfigurationType="1"
+echo    CharacterSet="0"
+echo  ^>
+echo  ^<Tool Name="VCCLCompilerTool"
+echo    Optimization="0"
+echo    PreprocessorDefinitions="__WIN32__;_DEBUG;_CRT_SECURE_NO_DEPRECATE;_CONSOLE;_Windows"
+echo   AdditionalIncludeDirectories="$(SolutionDir)zlib;$(SolutionDir)base;$(SolutionDir)psi;$(SolutionDir)debugobj"
+echo    MinimalRebuild="true"
+echo    BasicRuntimeChecks="3"
+echo    UsePrecompiledHeader="0"
+echo    WarningLevel="2"
+echo    Detect64BitPortabilityProblems="true"
+echo    DebugInformationFormat="4"
+echo    CompileAs="1"
+echo  /^>
+echo  ^<Tool
+echo    Name="VCResourceCompilerTool"
+echo    PreprocessorDefinitions="_DEBUG"
+echo    Culture="1033"
+echo  /^>
+echo  ^<Tool Name="VCLinkerTool"
+echo    LinkIncremental="2"
+echo    GenerateDebugInformation="true"
+echo    SubSystem="1"
+echo    TargetMachine="1"
+echo   /^>
+echo   ^<Tool
+echo     Name="VCPostBuildEventTool"
+echo     CommandLine="$(OutDir)\mkromfs.exe -o $(OutDir)\gsromfs1.c -X .svn -X CVS -c -P .\Resource\ -d Resource/ CIDFont\ CMap\ ColorSpace\ Decoding\ Encoding\ Font\ IdiomSet\ Init\ ProcSet\ SubstCID\ -d lib/ -P .\lib\"
+echo   /^>
+echo  ^</Configuration^>
+echo ^</Configurations^>
+echo ^<References^>
+echo ^</References^>
+echo ^<Files^>
+echo ^<Filter Name="mkromfs utility Source Files"
+echo         Filter="c"^>
+echo ^<File RelativePath=".\base\mkromfs.c"/^>
+echo ^<File RelativePath=".\zlib\adler32.c"/^>
+echo ^<File RelativePath=".\zlib\compress.c"/^>
+echo ^<File RelativePath=".\zlib\crc32.c"/^>
+echo ^<File RelativePath=".\zlib\deflate.c"/^>
+echo ^<File RelativePath=".\zlib\trees.c"/^>
+echo ^<File RelativePath=".\zlib\zutil.c"/^>
+echo ^<File RelativePath=".\base\gp_getnv.c"/^>
+echo ^<File RelativePath=".\base\gp_ntfs.c"/^>
+echo ^<File RelativePath=".\base\gp_win32.c"/^>
+echo ^<File RelativePath=".\base\gpmisc.c"/^>
 echo  ^</Filter^>
 echo ^</Files^>
 echo ^</VisualStudioProject^>
