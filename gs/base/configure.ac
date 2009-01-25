@@ -41,7 +41,7 @@ dnl
 AC_DEFUN([GS_SPLIT_LIBS], [
 # the makefile wants a list of just the library names 
 for gs_item in $2; do
-  gs_stripped_item=`echo "$gs_item" | sed -e 's/-l//'`
+  gs_stripped_item=`echo "$gs_item" | sed -e 's/^-l//'`
   if test "x$gs_stripped_item" != "x$gs_item"; then
     $1="$[$1] $gs_stripped_item"
   fi
