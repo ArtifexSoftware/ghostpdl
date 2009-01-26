@@ -203,7 +203,7 @@ exec touch $DIFFFILE
 
 ################ Check dates and version #s in makefiles
 
-check_version src/version.mak
+check_version base/version.mak
 
 ################ Check dates and version #s in documentation files
 
@@ -298,9 +298,9 @@ proc grept1 {pattern files {force_filename 1}} {
     }
     catch {eval exec grep $pattern $files $t >> $GREPFILE}
 }
-set unix_maks {src/unixansi.mak src/unixtrad.mak src/unix-gcc.mak src/dvx-gcc.mak}
-set pc_maks {src/bcwin32.mak src/msvc32.mak src/watc.mak src/watcwin.mak}
-set lib_maks {src/msvclib.mak src/watclib.mak src/ugcclib.mak}
+set unix_maks {base/unixansi.mak base/unixtrad.mak base/unix-gcc.mak base/dvx-gcc.mak}
+set pc_maks {base/bcwin32.mak base/msvc32.mak base/watc.mak base/watcwin.mak}
+set lib_maks {base/msvclib.mak base/watclib.mak base/ugcclib.mak}
 set all_maks [concat $unix_maks $pc_maks $lib_maks]
 grept1 ^GENOPT= $unix_maks
 grept1 ^CFLAGS= $unix_maks
@@ -311,23 +311,23 @@ grept1 ^ZLIB_NAME= $unix_maks
 grept1 ^DEBUG= $pc_maks
 grept1 ^TDEBUG= $pc_maks
 grept1 ^NOPRIVATE= $pc_maks
-grept1 bgi_= src/devs.mak
-grept1 mswin_= src/devs.mak
+grept1 bgi_= base/devs.mak
+grept1 mswin_= base/devs.mak
 grept1 ^BAND_LIST_ $all_maks
 grept1 ^COMPILE_INITS= $unix_maks
 grept1 DEVICE_DEVS $all_maks
 grept1 FEATURE_DEVS $all_maks
 grept1 ^SHARE_ $unix_maks
 grept1 ^..._TYPE= $pc_maks
-grept1 define._fixed_shift src/gxfixed.h
-grept1 define.TRIM src/gdevbit.c
-grept1 define.EXPAND src/gdevbit.c
-grept1 if...1...return.0 src/gdevxalt.c
-grept1 define.TEST [glob src/gdev*.c]
-grept1 define.PDFX src/gdevpdfx.h
-grept1 define.FORCE src/gshtscr.c
-grept1 define.CAPTURE src/gslib.c
-grept1 interval.= src/zcontext.c
+grept1 define._fixed_shift base/gxfixed.h
+grept1 define.TRIM base/gdevbit.c
+grept1 define.EXPAND base/gdevbit.c
+grept1 if...1...return.0 base/gdevxalt.c
+grept1 define.TEST [glob base/gdev*.c]
+grept1 define.PDFX base/gdevpdfx.h
+grept1 define.FORCE base/gshtscr.c
+grept1 define.CAPTURE base/gslib.c
+grept1 interval.= base/zcontext.c
 # Apparently diff exits with a non-zero status if there are any differences!
 catch {exec diff $GREPFILE $CHECKFILE >> $DIFFFILE}
 exec wc $DIFFFILE >@ stdout
