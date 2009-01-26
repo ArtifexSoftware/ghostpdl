@@ -153,7 +153,8 @@ foreach d "[glob doc/*.htm] doc/gs-vms.hlp" {
 
 switch $tcl_platform(platform) {
      unix {
-         set tmpdir /tmp   # or even $::env(TMPDIR), at times.
+         # or even $::env(TMPDIR), at times.
+         set tmpdir /tmp
      } macintosh {
          set tmpdir $::env(TRASH_FOLDER)  ;# a better place?
      } default {
