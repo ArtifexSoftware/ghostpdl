@@ -60,6 +60,28 @@ overview</a>.
 <p>
 This is a release candidate for testing.
 
+<p>
+This is the fifth scheduled release in the stable Ghostscript 8.6x 
+series. 
+
+<p>
+Approximately 100 bugs have been fixed since the 8.63 release.
+
+<p>
+Of particular note in this release are improvements to overprint and 
+spot color support in documents with transparency, improvements to PDF 
+and PS output, proper handling of PDF-specific text rendering modes and 
+support for reading AES-encrypted PDF documents.
+
+<p>
+Also improved is handling of CJK text, especially in vertical writing 
+modes, memory footprint processing some files at high resolution and 
+support for using the system's default paper size on unix.
+
+<p>
+The interpreter's handling of color spaces has been moved from 
+PostScript code to C.
+
 <p> The following <a href="http://bugs.ghostscript.com/">bugs</a> were
 open at the time of the last release: <blockquote>
 226943,
@@ -527,7 +549,19 @@ open at the time of the last release: <blockquote>
 <h3><a name="8.64_Incompatible_changes"></a>Incompatible changes</h3>
 
 <p>
-No incompatible changes have been recorded.
+There are known issues with the x11alpha device in this release. 
+Multipage documents may do properly clear the page area between pages, 
+and some images render as white rectangles or fail completely with an 
+error. This is an outstanding bug, rather than a permanent change.
+Pass -sDEVICE=x11 as a work around for these issues.
+
+<p>
+In this release the C source files have been split into two new 
+directories. Interpreter source files are now in <tt>psi</tt> and the 
+graphics library and output devices are now in <tt>base</tt>. Previously 
+everything was in <tt>src</tt>. This may cause problems with existing 
+references in external build files or when applying patches generated 
+against an older version.
 
 <h3><a name="8.64_changelog"></a>Changelog</h3>
 
