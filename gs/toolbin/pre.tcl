@@ -21,7 +21,7 @@
 set DIFFFILE t
 set GREPFILE t1
 set CHECKFILE /gs/toolbin/pre.chk
-set GSINIT lib/gs_init.ps
+set GSINIT Resource/Init/gs_init.ps
 set NEWS doc/News.htm
 
 # ---------------- Utilities ---------------- #
