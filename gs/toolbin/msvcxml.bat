@@ -1,8 +1,23 @@
 @ECHO OFF
 REM # MS-DOS batch file to create an project file for MS Visual Studio
+REM Usage: msvcxml prefix source > solution
+REM   prefix is used to prefix the names of the individual project files
+REM   source is the source of the file list (eg ld.tr)
+REM   solution is hte name of the solution file.
+REM
+REM Before using this batch file, you must :
+REM 1) Build Ghostscript from the makefiles at least once
+REM 2) Copy the batch file to the GS directory (one level above toolbin)
+REM
+REM The makefile build of GS will create a file called ld.tr, which is required
+REM to give us the list of source files we need.
+REM
+REM Example usage
+REM msvcxml.bat gs obj\ld.tr > ghostscript.sln
+REM
 REM # $Id$
-@echo off
 
+if "%1" == "" goto usage
 if "%1" == "DLL" goto DLL
 if "%1" == "echogs" goto echogs
 if "%1" == "genarch" goto genarch
@@ -72,6 +87,27 @@ call msvcxml.bat props > macros.vsprops
 call msvcxml.bat gconfig > gconfig.h
 goto end
 
+:usage
+@ECHO OFF
+echo # MS-DOS batch file to create an project file for MS Visual Studio 
+echo.
+echo   Usage: msvcxml prefix source ^> solution
+echo     prefix is used to prefix the names of the individual project files
+echo     source is the source of the file list (eg ld.tr)
+echo     solution is the name of the solution file.
+echo.
+echo Before using this batch file, you must :
+echo   1) Build Ghostscript from the makefiles at least once
+echo   2) Copy the batch file to the GS directory (one level above toolbin)
+echo.
+echo The makefile build of GS will create a file called ld.tr, which is required
+echo to give us the list of source files we need.
+echo.
+echo Example usage
+echo   msvcxml.bat gs obj\ld.tr ^> ghostscript.sln
+echo.
+goto end
+
 :DLL
 echo ^<?xml version="1.0" encoding="utf-8" standalone="no"?^>
 echo ^<VisualStudioProject
@@ -90,16 +126,12 @@ echo ^</ToolFiles^>
 echo ^<Configurations^>
 echo  ^<Configuration 
 echo    Name="Debug|Win32"
-echo    IntermediateDirectory="$(SolutionDir)\$(ConfigurationName)obj"
-echo    OutputDirectory="$(SolutionDir)\$(ConfigurationName)bin"
+echo    IntermediateDirectory="$(SolutionDir)\$(ConfigurationName)debugobj"
+echo    OutputDirectory="$(SolutionDir)\$(ConfigurationName)debugbin"
 echo    InheritedPropertySheets="$(SolutionDir)macros.vsprops"
 echo    ConfigurationType="2"
 echo    CharacterSet="0"
 echo  ^>
-echo  ^<Tool
-echo    Name="VCPreBuildEventTool"
-echo    CommandLine="$(OutDir)\echogs -wb $(IntDir)\gswin.ico -n -X -r $(SolutionDir)base\gswin.icx&#x0D;&#x0A;$(OutDir)\echogs -w $(IntDir)\gconfig_.h -x 2f2a20 This file deliberately left blank. -x 2a2f&#x0D;&#x0A;$(OutDir)\echogs -w $(IntDir)\jconfig.h -+R $(SolutionDir)base\stdpn.h -+R $(SolutionDir)base\stdpre.h -+R $(SolutionDir)base\gsjconf.h&#x0D;&#x0A;copy $(SolutionDir)base\gsjmorec.h $(IntDir)\jmorecfg.h&#x0D;&#x0A;copy $(SolutionDir)jpeg\jmorecfg.h $(IntDir)\jmcorig.h&#x0D;&#x0A;copy $(SolutionDir)jpeg\jpeglib.h $(IntDir)\jpeglib_.h&#x0D;&#x0A;copy $(SolutionDir)base\gscdef.c $(IntDir)\gscdefs.c&#x0D;&#x0A;"
-echo  /^>
 echo  ^<Tool Name="VCCLCompilerTool"
 echo    Optimization="0"
 echo    PreprocessorDefinitions="__WIN32__;_DEBUG;_CRT_SECURE_NO_DEPRECATE;EXCLUDE_BMP_SUPPORT;EXCLUDE_JPG_SUPPORT;EXCLUDE_MIF_SUPPORT;EXCLUDE_PGX_SUPPORT;EXCLUDE_PNM_SUPPORT;EXCLUDE_RAS_SUPPORT;EXCLUDE_PNG_SUPPORTS;CHECK_INTERRUPTS;_Windows;_USRDLL;GX_COLOR_INDEX_TYPE=unsigned __int64"
@@ -117,6 +149,41 @@ echo  /^>
 echo  ^<Tool
 echo    Name="VCResourceCompilerTool"
 echo    PreprocessorDefinitions="_DEBUG"
+echo    Culture="1033"
+echo  /^>
+echo  ^<Tool Name="VCLinkerTool"
+echo    LinkIncremental="2"
+echo    ModuleDefinitionFile="$(SolutionDir)psi\gsdll32.def"
+echo    GenerateDebugInformation="true"
+echo    SubSystem="1"
+echo    TargetMachine="1"
+echo   /^>
+echo  ^</Configuration^>
+echo  ^<Configuration 
+echo    Name="Release|Win32"
+echo    IntermediateDirectory="$(SolutionDir)\$(ConfigurationName)obj"
+echo    OutputDirectory="$(SolutionDir)\$(ConfigurationName)bin"
+echo    InheritedPropertySheets="$(SolutionDir)macros.vsprops"
+echo    ConfigurationType="2"
+echo    CharacterSet="0"
+echo  ^>
+echo  ^<Tool Name="VCCLCompilerTool"
+echo    Optimization="2"
+echo    PreprocessorDefinitions="__WIN32__;_CRT_SECURE_NO_DEPRECATE;EXCLUDE_BMP_SUPPORT;EXCLUDE_JPG_SUPPORT;EXCLUDE_MIF_SUPPORT;EXCLUDE_PGX_SUPPORT;EXCLUDE_PNM_SUPPORT;EXCLUDE_RAS_SUPPORT;EXCLUDE_PNG_SUPPORTS;CHECK_INTERRUPTS;_Windows;_USRDLL;GX_COLOR_INDEX_TYPE=unsigned __int64"
+echo    AdditionalIncludeDirectories="$(SolutionDir)base;$(SolutionDir)psi;$(SolutionDir)debugobj;$(SolutionDir)jpeg;$(SolutionDir)zlib;$(SolutionDir)icclib;$(SolutionDir)imdi;$(SolutionDir)jbig2dec;$(SolutionDir)ijs;$(SolutionDir)libpng;$(SolutionDir)jasper\src\libjasper\include"
+echo    MinimalRebuild="true"
+echo    DisableLanguageExtensions="false"
+echo    BasicRuntimeChecks="3"
+echo    UsePrecompiledHeader="0"
+echo    WarningLevel="2"
+echo    Detect64BitPortabilityProblems="true"
+echo    DebugInformationFormat="0"
+echo    CompileAs="1"
+echo    DisableSpecificWarnings="4996;4224"
+echo  /^>
+echo  ^<Tool
+echo    Name="VCResourceCompilerTool"
+echo    PreprocessorDefinitions=""
 echo    Culture="1033"
 echo  /^>
 echo  ^<Tool Name="VCLinkerTool"
@@ -1084,7 +1151,7 @@ echo ^</ToolFiles^>
 echo ^<Configurations^>
 echo  ^<Configuration 
 echo    Name="Debug|Win32"
-echo    OutputDirectory="$(SolutionDir)debugobj"
+echo    OutputDirectory="$(SolutionDir)debugbin"
 echo    IntermediateDirectory="$(SolutionDir)debugobj"
 echo    InheritedPropertySheets="$(SolutionDir)macros.vsprops"
 echo    ConfigurationType="1"
@@ -1113,9 +1180,13 @@ echo    GenerateDebugInformation="true"
 echo    SubSystem="1"
 echo    TargetMachine="1"
 echo   /^>
+echo  ^<Tool
+echo    Name="VCPreBuildEventTool"
+echo    CommandLine="$(OutDir)\echogs -wb $(IntDir)\gswin.ico -n -X -r $(SolutionDir)base\gswin.icx&#x0D;&#x0A;$(OutDir)\echogs -w $(IntDir)\gconfig_.h -x 2f2a20 This file deliberately left blank. -x 2a2f&#x0D;&#x0A;$(OutDir)\echogs -w $(IntDir)\jconfig.h -+R $(SolutionDir)base\stdpn.h -+R $(SolutionDir)base\stdpre.h -+R $(SolutionDir)base\gsjconf.h&#x0D;&#x0A;copy $(SolutionDir)base\gsjmorec.h $(IntDir)\jmorecfg.h&#x0D;&#x0A;copy $(SolutionDir)jpeg\jmorecfg.h $(IntDir)\jmcorig.h&#x0D;&#x0A;copy $(SolutionDir)jpeg\jpeglib.h $(IntDir)\jpeglib_.h&#x0D;&#x0A;copy $(SolutionDir)base\gscdef.c $(IntDir)\gscdefs.c&#x0D;&#x0A;"
+echo  /^>
 echo   ^<Tool
 echo     Name="VCPostBuildEventTool"
-echo     CommandLine="$(OutDir)\mkromfs.exe -o $(OutDir)\gsromfs1.c -X .svn -X CVS -c -P .\Resource\ -d Resource/ CIDFont\ CMap\ ColorSpace\ Decoding\ Encoding\ Font\ IdiomSet\ Init\ ProcSet\ SubstCID\ -d lib/ -P .\lib\"
+echo     CommandLine="$(OutDir)\mkromfs.exe -o $(SolutionDir)debugobj\gsromfs1.c -X .svn -X CVS -c -P .\Resource\ -d Resource/ CIDFont\ CMap\ ColorSpace\ Decoding\ Encoding\ Font\ IdiomSet\ Init\ ProcSet\ SubstCID\ -d lib/ -P .\lib\"
 echo   /^>
 echo  ^</Configuration^>
 echo ^</Configurations^>
@@ -1158,8 +1229,8 @@ echo ^</ToolFiles^>
 echo ^<Configurations^>
 echo  ^<Configuration 
 echo    Name="Debug|Win32"
-echo    IntermediateDirectory="$(SolutionDir)\$(ConfigurationName)obj"
-echo    OutputDirectory="$(SolutionDir)\$(ConfigurationName)bin"
+echo    IntermediateDirectory="$(SolutionDir)\$(ConfigurationName)debugobj"
+echo    OutputDirectory="$(SolutionDir)\$(ConfigurationName)debugbin"
 echo    InheritedPropertySheets="$(SolutionDir)macros.vsprops"
 echo    ConfigurationType="1"
 echo    CharacterSet="0"
@@ -1174,6 +1245,38 @@ echo    UsePrecompiledHeader="0"
 echo    WarningLevel="2"
 echo    Detect64BitPortabilityProblems="true"
 echo    DebugInformationFormat="4"
+echo    CompileAs="1"
+echo  /^>
+echo  ^<Tool
+echo    Name="VCResourceCompilerTool"
+echo    PreprocessorDefinitions="_DEBUG"
+echo    Culture="1033"
+echo  /^>
+echo  ^<Tool Name="VCLinkerTool"
+echo    LinkIncremental="2"
+echo    GenerateDebugInformation="true"
+echo    SubSystem="2"
+echo    TargetMachine="1"
+echo   /^>
+echo  ^</Configuration^>
+echo  ^<Configuration 
+echo    Name="Release|Win32"
+echo    IntermediateDirectory="$(SolutionDir)\$(ConfigurationName)obj"
+echo    OutputDirectory="$(SolutionDir)\$(ConfigurationName)bin"
+echo    InheritedPropertySheets="$(SolutionDir)macros.vsprops"
+echo    ConfigurationType="1"
+echo    CharacterSet="0"
+echo  ^>
+echo  ^<Tool Name="VCCLCompilerTool"
+echo    Optimization="2"
+echo    PreprocessorDefinitions="__WIN32__;_CRT_SECURE_NO_DEPRECATE;_WINDOWS;WIN32"
+echo    AdditionalIncludeDirectories="$(SolutionDir)base;$(SolutionDir)psi;$(SolutionDir)debugobj"
+echo    MinimalRebuild="true"
+echo    BasicRuntimeChecks="3"
+echo    UsePrecompiledHeader="0"
+echo    WarningLevel="2"
+echo    Detect64BitPortabilityProblems="true"
+echo    DebugInformationFormat="0"
 echo    CompileAs="1"
 echo  /^>
 echo  ^<Tool
@@ -1226,8 +1329,8 @@ echo ^<Configurations^>
 echo  ^<Configuration
 echo    Name="Debug|Win32"
 echo    InheritedPropertySheets="$(SolutionDir)macros.vsprops"
-echo    IntermediateDirectory="$(SolutionDir)\$(ConfigurationName)obj"
-echo    OutputDirectory="$(SolutionDir)\$(ConfigurationName)bin"
+echo    IntermediateDirectory="$(SolutionDir)\$(ConfigurationName)debugobj"
+echo    OutputDirectory="$(SolutionDir)\$(ConfigurationName)debugbin"
 echo    CharacterSet="0"
 echo  ^>
 echo  ^<Tool Name="VCCLCompilerTool"
@@ -1240,6 +1343,37 @@ echo    UsePrecompiledHeader="0"
 echo    WarningLevel="2"
 echo    Detect64BitPortabilityProblems="true"
 echo    DebugInformationFormat="4"
+echo    CompileAs="1"
+echo  /^>
+echo  ^<Tool
+echo    Name="VCResourceCompilerTool"
+echo    PreprocessorDefinitions="_DEBUG"
+echo    Culture="1033"
+echo  /^>
+echo  ^<Tool Name="VCLinkerTool"
+echo    LinkIncremental="2"
+echo    GenerateDebugInformation="true"
+echo    SubSystem="1"
+echo    TargetMachine="1"
+echo   /^>
+echo  ^</Configuration^>
+echo  ^<Configuration
+echo    Name="Release|Win32"
+echo    InheritedPropertySheets="$(SolutionDir)macros.vsprops"
+echo    IntermediateDirectory="$(SolutionDir)\$(ConfigurationName)obj"
+echo    OutputDirectory="$(SolutionDir)\$(ConfigurationName)bin"
+echo    CharacterSet="0"
+echo  ^>
+echo  ^<Tool Name="VCCLCompilerTool"
+echo    Optimization="2"
+echo    PreprocessorDefinitions="__WIN32__;_CRT_SECURE_NO_DEPRECATE;_CONSOLE"
+echo    AdditionalIncludeDirectories="$(SolutionDir)base;$(SolutionDir)psi;$(SolutionDir)debugobj"
+echo    MinimalRebuild="true"
+echo    BasicRuntimeChecks="3"
+echo    UsePrecompiledHeader="0"
+echo    WarningLevel="2"
+echo    Detect64BitPortabilityProblems="true"
+echo    DebugInformationFormat="0"
 echo    CompileAs="1"
 echo  /^>
 echo  ^<Tool
@@ -1281,13 +1415,13 @@ echo	Version="8.00"
 echo	Name="macros"
 echo	^>
 echo   ^<UserMacro Name="GS_VERSION_MAJOR" Value="8" /^>
-echo   ^<UserMacro Name="GS_VERSION_MINOR" Value="61" /^>
-echo   ^<UserMacro Name="GS_VERSION_MINOR0" Value="61" /^>
+echo   ^<UserMacro Name="GS_VERSION_MINOR" Value="64" /^>
+echo   ^<UserMacro Name="GS_VERSION_MINOR0" Value="64" /^>
 echo   ^<UserMacro Name="GS_VERSION" Value="$(GS_VERSION_MAJOR)$(GS_VERSION_MINOR0)" /^>
 echo   ^<UserMacro Name="GS_DOT_VERSION" Value="$(GS_VERSION_MAJOR).$(GS_VERSION_MINOR0)" /^>
 echo   ^<UserMacro Name="AROOTDIR" Value="c:/gs" /^>
 echo   ^<UserMacro Name="GSROOTDIR" Value="$(AROOTDIR)/gs$(GS_DOT_VERSION)" /^>
-echo   ^<UserMacro Name="GS_REVISIONDATE" Value="20070802" /^>
+echo   ^<UserMacro Name="GS_REVISIONDATE" Value="20090202" /^>
 echo   ^<UserMacro Name="GS_DEV_DEFAULT" Value="" /^>
 echo   ^<UserMacro Name="GS_CACHE_DIR" Value="" /^>
 echo   ^<UserMacro Name="GS_DOCDIR" Value="$(GSROOTDIR)/doc" /^>
@@ -1391,6 +1525,7 @@ echo device2_(gs_epswrite_device)
 echo device2_(gs_txtwrite_device)
 echo device2_(gs_pxlmono_device)
 echo device2_(gs_pxlcolor_device)
+echo device2_(gs_svgwrite_device)
 echo device2_(gs_bbox_device)
 echo device2_(gs_ljet3_device)
 echo device2_(gs_ljet3d_device)
@@ -1414,6 +1549,7 @@ echo device2_(gs_pnm_device)
 echo device2_(gs_pnmraw_device)
 echo device2_(gs_ppm_device)
 echo device2_(gs_ppmraw_device)
+echo device2_(gs_pamcmyk32_device)
 echo #endif
 echo #ifdef device_
 echo device_(gs_spotcmyk_device)
@@ -1492,7 +1628,6 @@ echo psfile_("gs_cidtt.ps",11)
 echo psfile_("gs_cidfm.ps",11)
 echo #endif
 echo #ifdef oper_
-echo oper_(zcie_l2_op_defs)
 echo oper_(zcrd_l2_op_defs)
 echo oper_(zfcmap_op_defs)
 echo #endif
@@ -1555,6 +1690,7 @@ echo oper_(zbfont_op_defs)
 echo oper_(zchar_a_op_defs)
 echo oper_(zchar_b_op_defs)
 echo oper_(zcolor_op_defs)
+echo oper_(zcolor_ext_op_defs)
 echo oper_(zdevice_op_defs)
 echo oper_(zfont_op_defs)
 echo oper_(zfontenum_op_defs)
@@ -1565,6 +1701,7 @@ echo oper_(zdfilter_op_defs)
 echo oper_(zht_op_defs)
 echo oper_(zimage_op_defs)
 echo oper_(zmatrix_op_defs)
+echo oper_(zmatrix2_op_defs)
 echo oper_(zpaint_op_defs)
 echo oper_(zpath_op_defs)
 echo oper_(pantone_op_defs)
@@ -1586,8 +1723,6 @@ echo emulator_("PostScript",10)
 echo emulator_("PostScriptLevel1",16)
 echo #endif
 echo #ifdef oper_
-echo oper_(zcolor2_l2_op_defs)
-echo oper_(zcsindex_l2_op_defs)
 echo oper_(zht2_l2_op_defs)
 echo oper_(zcssepr_l2_op_defs)
 echo oper_(zfsample_op_defs)
@@ -1614,14 +1749,10 @@ echo #endif
 echo #ifdef emulator_
 echo emulator_("PostScriptLevel2",16)
 echo #endif
-echo #ifdef oper_
-echo oper_(zcspixel_op_defs)
-echo #endif
 echo #ifdef psfile_
 echo psfile_("gs_frsd.ps",10)
 echo #endif
 echo #ifdef oper_
-echo oper_(zcsdevn_op_defs)
 echo oper_(zimage3_op_defs)
 echo oper_(zmisc3_op_defs)
 echo oper_(zcolor3_l3_op_defs)
@@ -1668,6 +1799,7 @@ echo #endif
 echo #ifdef oper_
 echo oper_(zfmd5_op_defs)
 echo oper_(zfarc4_op_defs)
+echo oper_(zfaes_op_defs)
 echo #endif
 echo #ifdef psfile_
 echo psfile_("gs_mgl_e.ps",11)
@@ -1723,6 +1855,9 @@ echo init_(gs_cl_zlib_init)
 echo #endif
 echo #ifdef psfile_
 echo psfile_("gs_pdfwr.ps",11)
+echo #endif
+echo #ifdef io_device_
+echo io_device_(gs_iodev_rom)
 echo #endif
 echo #ifdef init_
 echo init_(gs_gshtscr_init)
