@@ -82,6 +82,12 @@ support for using the system's default paper size on unix.
 The interpreter's handling of color spaces has been moved from 
 PostScript code to C.
 
+<p>
+A number of the included printer drivers and cups wrappers have been 
+updated to support a PDF-based workflow. Also fixed are several 
+long-standing bugs in the pcl drivers with respect to duplex, resolution 
+and paper tray selection.
+
 <p> The following <a href="http://bugs.ghostscript.com/">bugs</a> were
 open at the time of the last release: <blockquote>
 226943,
@@ -547,13 +553,6 @@ open at the time of the last release: <blockquote>
 </blockquote>
 
 <h3><a name="8.64_Incompatible_changes"></a>Incompatible changes</h3>
-
-<p>
-There are known issues with the x11alpha device in this release. 
-Multipage documents may do properly clear the page area between pages, 
-and some images render as white rectangles or fail completely with an 
-error. This is an outstanding bug, rather than a permanent change.
-Pass -sDEVICE=x11 as a work around for these issues.
 
 <p>
 In this release the C source files have been split into two new 
