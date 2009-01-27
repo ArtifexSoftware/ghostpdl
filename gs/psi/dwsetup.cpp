@@ -760,11 +760,7 @@ install_prog()
 	strcat(szLIB, cinst.GetMainDir());
 	strcat(szLIB, "\\lib;");
 	strcat(szLIB, g_szTargetDir);
-	strcat(szLIB, "\\fonts;");
-	strcat(szLIB, g_szTargetDir);
-	strcat(szLIB, "\\");
-	strcat(szLIB, cinst.GetMainDir());
-	strcat(szLIB, "\\Resource");
+	strcat(szLIB, "\\fonts");
 	if (g_bCJKFonts) {
 	    strcat(szLIB, ";");
 	    get_font_path(szLIB+strlen(szLIB), sizeof(szLIB)-strlen(szLIB)-1);
