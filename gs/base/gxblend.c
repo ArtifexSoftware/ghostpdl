@@ -1425,13 +1425,15 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
     FILE *fid;
     int z,y;
     byte *buff_ptr;
+    int max_bands;
 
     buff_ptr = Buffer;
 
-    sprintf(full_file_name,"%d)%s_%dx%dx%d.raw",global_index,filename,width,num_rows,n_chan);
+    max_bands = ( n_chan < 57 ? n_chan : 56);   /* Photoshop handles at most 56 bands */
+    sprintf(full_file_name,"%d)%s_%dx%dx%d.raw",global_index,filename,width,num_rows,max_bands);
     fid = fopen(full_file_name,"wb");
 
-    for (z = 0; z < n_chan; ++z) {
+    for (z = 0; z < max_bands; ++z) {
 
         /* grab pointer to the next plane */
 
