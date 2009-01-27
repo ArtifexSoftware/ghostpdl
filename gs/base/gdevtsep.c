@@ -770,11 +770,18 @@ number_output_separations(int num_dev_comp, int num_std_colorants,
 static void
 build_comp_to_sep_map(tiffsep_device * pdev, short * map_comp_to_sep)
 {
-    int num_sep = pdev->devn_params.separations.num_separations;
+    int num_sep = pdev->devn_params.page_spot_colors;
     int num_std_colorants = pdev->devn_params.num_std_colorant_names;
     int sep_num;
+    int num_channels;
 
-    for (sep_num = 0; sep_num < num_std_colorants + num_sep; sep_num++) {
+    /* since both proc colors and spot colors are packed in same encoded value we
+       need to have this limit */
+
+    num_channels = 
+        ( (num_std_colorants + num_sep) < (GX_DEVICE_COLOR_MAX_COMPONENTS) ? (num_std_colorants + num_sep) : (GX_DEVICE_COLOR_MAX_COMPONENTS) );
+
+    for (sep_num = 0; sep_num < num_channels; sep_num++) {
 	int comp_num = pdev->devn_params.separation_order_map[sep_num];
     
 	if (comp_num >= 0 && comp_num < GX_DEVICE_COLOR_MAX_COMPONENTS)

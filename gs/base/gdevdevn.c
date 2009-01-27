@@ -216,7 +216,7 @@ devn_get_color_comp_index(gx_device * dev, gs_devn_params * pdevn_params,
 {
     int num_order = pdevn_params->num_separation_order_names;
     int color_component_number = 0;
-    int max_spot_colors = GX_DEVICE_MAX_SEPARATIONS;
+    int max_spot_colors = GX_DEVICE_MAX_SEPARATIONS - MAX_DEVICE_PROCESS_COLORS;
 
     /*
      * Check if the component is in either the process color model list
@@ -470,9 +470,9 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
             case 0:
 	        if (page_spot_colors < -1)
 		    return_error(gs_error_rangecheck);
-	        if (page_spot_colors > GX_DEVICE_COLOR_MAX_COMPONENTS)
-		    page_spot_colors = GX_DEVICE_COLOR_MAX_COMPONENTS-4;  
-                    /* Need to leave room for the 4 process colors */
+	        if (page_spot_colors > GX_DEVICE_COLOR_MAX_COMPONENTS - MAX_DEVICE_PROCESS_COLORS)
+		    page_spot_colors = GX_DEVICE_COLOR_MAX_COMPONENTS - MAX_DEVICE_PROCESS_COLORS;  
+                    /* Need to leave room for the process colors in GX_DEVICE_COLOR_MAX_COMPONENTS  */
         }
         /* 
          * The DeviceN device can have zero components if nothing has been
