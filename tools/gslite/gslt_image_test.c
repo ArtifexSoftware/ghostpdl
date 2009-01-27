@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id: gslt_image_test.c 2716 2007-01-05 05:27:37Z henrys $ */
+/* $Id$ */
 /* example client for the gslt image loading library */
 
 #include <stdlib.h>

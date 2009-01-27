@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id: gslt_image_tiff.c 2991 2007-12-18 23:05:58Z giles $ */
+/* $Id$ */
 /* gslt image loading implementation for TIFF images */
 
 #include "std.h"
