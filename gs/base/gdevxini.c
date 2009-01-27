@@ -604,7 +604,6 @@ x_set_buffer(gx_device_X * xdev)
 	COPY_PROC(begin_typed_image);
 	COPY_PROC(create_compositor);
 	COPY_PROC(text_begin);
-	COPY_PROC(fillpage);
 #undef COPY_PROC
 	if (xdev->is_buffered) {
     	    check_device_separable((gx_device *)xdev);
