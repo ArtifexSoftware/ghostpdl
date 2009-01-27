@@ -2579,10 +2579,10 @@ pdf14_mark_fill_rectangle(gx_device * dev,
     int num_comp = num_chan - 1;
     int shape_off = num_chan * planestride;
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
-	bool overprint = pdev->overprint;
-	gx_color_index drawn_comps = pdev->drawn_comps;
-	bool overprint_mode = pdev->overprint_mode;
-	int comps;
+    bool overprint = pdev->overprint;
+    gx_color_index drawn_comps = pdev->drawn_comps;
+    bool overprint_mode = pdev->overprint_mode;
+    int comps;
     byte shape = 0; /* Quiet compiler. */
     byte src_alpha;
 
