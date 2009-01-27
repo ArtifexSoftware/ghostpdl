@@ -29,7 +29,7 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
-<li><a href="#Version8.64">Version 8.64 (2009-01-26)</a>
+<li><a href="#Version8.64">Version 8.64 (2009-01-27)</a>
 <li><a href="#Version8.63">Version 8.63 (2008-08-01)</a>
 <li><a href="#Version8.62">Version 8.62 (2008-02-29)</a>
 <li><a href="#Version8.61">Version 8.61 (2007-11-21)</a>
@@ -91,7 +91,7 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h2><a name="Version8.64"></a>Version 8.64 (2009-01-26)</h2>
+<h2><a name="Version8.64"></a>Version 8.64 (2009-01-27)</h2>
 
 <p>
 This is a release candidate for testing.
@@ -117,6 +117,12 @@ support for using the system's default paper size on unix.
 <p>
 The interpreter's handling of color spaces has been moved from 
 PostScript code to C.
+
+<p>
+A number of the included printer drivers and cups wrappers have been 
+updated to support a PDF-based workflow. Also fixed are several 
+long-standing bugs in the pcl drivers with respect to duplex, resolution 
+and paper tray selection.
 
 <p> The following <a href="http://bugs.ghostscript.com/">bugs</a> were
 open at the time of the last release: <blockquote>
@@ -585,13 +591,6 @@ open at the time of the last release: <blockquote>
 <h3><a name="8.64_Incompatible_changes"></a>Incompatible changes</h3>
 
 <p>
-There are known issues with the x11alpha device in this release. 
-Multipage documents may do properly clear the page area between pages, 
-and some images render as white rectangles or fail completely with an 
-error. This is an outstanding bug, rather than a permanent change.
-Pass -sDEVICE=x11 as a work around for these issues.
-
-<p>
 In this release the C source files have been split into two new 
 directories. Interpreter source files are now in <tt>psi</tt> and the 
 graphics library and output devices are now in <tt>base</tt>. Previously 
@@ -605,6 +604,95 @@ version from the 8.11 release. This is the same set which was
 recommended prior to the 8.63.
 
 <h3><a name="8.64_changelog"></a>Changelog</h3>
+
+<p><strong><a name="2009-01-27T205054.789641Z"></a>
+2009-01-27T20:50:54.789641Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update the release notes for 8.64rc2.
+
+The x11alpha issue has been worked around.
+
+Add some comments from Till Kamppeter.
+</pre>
+<p>[doc/News.htm]</p>
+</blockquote>
+
+<p><strong><a name="2009-01-27T204339.460217Z"></a>
+2009-01-27T20:43:39.460217Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Fix fillpage in the x11alpha device.
+
+This reverts an incorrect code change which prevented the fillpage
+method of the x11alpha device from clearing the buffer. Bug 690255.
+
+Details:
+
+In r9288, a new fillpage method was added. This is a stub in printer
+devices, but is overridden to detect page flushes in some high
+level devices. That commit included incomplete changes to gdevxini.c
+which didn't compile. Alex suggested a fix in 690202, which was
+committed as r9294 after approval from the author of 9288. This was
+what broke page clearing in the x11alpha device.
+
+This commit removes the changes both commits made to the x11 devices and
+restores gdevxini.c to its state prior as of r9287.
+</pre>
+<p>[base/gdevxini.c]</p>
+</blockquote>
+
+<p><strong><a name="2009-01-27T204337.567128Z"></a>
+2009-01-27T20:43:37.567128Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update documentation on the COMPILE_INITS makefile variable.
+In particular, it's normally no longer 0.
+
+Thanks to Ken Sharp for pointing this out.
+</pre>
+<p>[base/gs.mak]</p>
+</blockquote>
+
+<p><strong><a name="2009-01-27T204333.967975Z"></a>
+2009-01-27T20:43:33.967975Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Escape significant characters when generating html changelog entries.
+</pre>
+<p>[toolbin/split_changelog.py]</p>
+</blockquote>
+
+<p><strong><a name="2009-01-27T001829.136711Z"></a>
+2009-01-27T00:18:29.136711Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Remove $(GS_LIB)\Resource directory from the search path in the msvc 
+build to shadowing the compiled in version.
+
+GS_LIB is set in the Windows registery by the installer, but it does not 
+currently install a duplicate copy of the Resource tree in the 
+filesystem. Having this directory in the search path caused Ghostscript 
+to use it for Resource lookup to the exclusion of the %rom% version, and 
+since the files weren't installed there, Ghostscript would error out in 
+the initialization phase.
+
+Files like cidfmap and available fonts can still be overridden by 
+putting them in $(GS_LIB)\lib and $(GS_LIB)\fonts.
+
+Patch from Russell Lang.
+</pre>
+<p>[psi/dwsetup.cpp]</p>
+</blockquote>
+
+<p><strong><a name="2009-01-26T192528.295228Z"></a>
+2009-01-26T19:25:28.295228Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update changelogs for 8.64rc1.
+</pre>
+<p>[doc/Changes.htm doc/History8.htm doc/News.htm doc/Details8.htm doc/Details.htm]</p>
+</blockquote>
 
 <p><strong><a name="2009-01-26T185939.072673Z"></a>
 2009-01-26T18:59:39.072673Z Ralph Giles</strong></p>
@@ -93646,7 +93734,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 8.64, 26 January 2009
+<small>Ghostscript version 8.64, 27 January 2009
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
