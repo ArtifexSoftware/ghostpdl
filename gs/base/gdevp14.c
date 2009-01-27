@@ -894,10 +894,6 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 
     buf->saved = ctx->stack;
     ctx->stack = buf;
-     /* windoze memory checking */
-  /*  z = _CrtCheckMemory();
-	   if (z != 1)
-        z = 0;  */
 
     /* Soft Mask related information so we know how to 
        compute luminosity when we pop the soft mask */
@@ -1971,16 +1967,30 @@ pdf14_begin_transparency_group(gx_device *dev,
     double alpha = pis->opacity.alpha * pis->shape.alpha;
     gs_int_rect rect;
     int code;
-	bool isolated;
+    bool isolated;
+    bool sep_target = (strcmp(pdev->dname, "PDF14cmykspot") == 0);
+    int group_color_numcomps;
+
+    /* If the target device supports separations, then 
+       we should should NOT create the group.  The exception to this 
+       rule would be if we just popped a transparency mask */
 
     code = compute_group_device_int_rect(pdev, &rect, pbbox, pis);
+
     if (code < 0)
 	return code;
     if_debug4('v', "[v]pdf14_begin_transparency_group, I = %d, K = %d, alpha = %g, bm = %d\n",
 	      ptgp->Isolated, ptgp->Knockout, alpha, pis->blend_mode);
 
-     /* If needed, update the color mapping procs */
-    code = pdf14_update_device_color_procs(dev,ptgp->group_color,pis);
+     /* If needed, update the color mapping procs. But only if we dont have a sep device.
+        The exception would be if we are in doing the group for a soft mask */
+
+    if (!sep_target) {
+        code = pdf14_update_device_color_procs(dev,ptgp->group_color,pis);
+        group_color_numcomps = ptgp->group_color_numcomps;
+    } else {
+        group_color_numcomps = pdev->color_info.num_components;
+    }
 
     /* Note that our initial device buffer may have had a different color space
        than the first transparency group.  In such a case, we really should force
@@ -2006,7 +2016,7 @@ pdf14_begin_transparency_group(gx_device *dev,
 					 (byte)floor (255 * alpha + 0.5),
 					 (byte)floor (255 * pis->shape.alpha + 0.5),
 					 pis->blend_mode, ptgp->idle,
-					 ptgp->mask_id,ptgp->group_color_numcomps);
+					 ptgp->mask_id,group_color_numcomps);
     return code;
 }
 
@@ -2501,6 +2511,9 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     code = pdf14_update_device_color_procs(dev,ptmp->group_color,pis);
     if (code < 0)
 	return code;
+
+    /* Note that the soft mask always follows the group color requirements even
+       when we have a separable device */
 
     return pdf14_push_transparency_mask(pdev->ctx, &rect, bg_alpha,
 					transfer_fn, ptmp->idle, ptmp->replacing,
@@ -4555,6 +4568,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
 {
     pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
     int code;
+    bool sep_target;
 
     /* We only handle a few PDF 1.4 transparency operations 4 */
     if (gs_is_pdf14trans_compositor(pct)) {
@@ -4640,10 +4654,14 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
 
                 pdf14_push_parent_color(dev, pis);
 
-                /* Now update the device procs */
+                /* Now update the device procs. Not 
+                   if we have a sep target though */
 
-               code = pdf14_update_device_color_procs_push_c(dev,
-			      pdf14pct->params.group_color,pis);
+                sep_target = (strcmp(pdev->dname, "PDF14clistcustom") == 0) || (strcmp(pdev->dname, "PDF14clistcmykspot") == 0);
+
+                if (!sep_target)
+                   code = pdf14_update_device_color_procs_push_c(dev,
+			          pdf14pct->params.group_color,pis);
 
                /* Note that our initial device buffer may have had a different color space
                    than the first transparency group.  In such a case, we really should force

@@ -117,98 +117,154 @@ gs_transform_color_buffer_generic(byte *inputbuffer, int row_stride, int plane_s
     num_rows = rect.q.y - rect.p.y;
     num_cols = rect.q.x - rect.p.x;
 
-    /* Pick the mapping to use */
+    /* Check for spot + cmyk case */
 
-    switch (input_num_color){
+    if (output_num_color > 4)
+    {
 
-        case 1:
-            if (output_num_color == 3){
-                color_remap = gray_to_rgb;
-            } else {
+        /* To CMYK always */
+        switch (input_num_color){
+
+            case 1:
                 color_remap = gray_to_cmyk;
-            }
-            break;
-        case 3:
-            if (output_num_color == 1){
-                color_remap = rgb_to_gray;
-            } else {
+                break;
+            case 3:
                 color_remap = rgb_to_cmyk;
-            }
-            break;
+                break;
 
-        case 4:
-            if (output_num_color == 1){
-                 color_remap = cmyk_to_gray;              
-            } else {
-                color_remap = cmyk_to_rgb;
-            }
-            break;
+            case 4:
+                color_remap = NULL;        /* Copy data */      
+                break;
 
-        default:
-        
-            /* Need to consider the spot color case */
+            default:
+            
+                /* Should never be here.  Groups must
+                   be gray, rgb or CMYK.   Exception
+                   may be ICC with XPS */
 
-            break;
+                break;
+
+        }
+
+
+
+
+    } else {
+
+        /* Pick the mapping to use */
+
+        switch (input_num_color){
+
+            case 1:
+                if (output_num_color == 3){
+                    color_remap = gray_to_rgb;
+                } else {
+                    color_remap = gray_to_cmyk;
+                }
+                break;
+            case 3:
+                if (output_num_color == 1){
+                    color_remap = rgb_to_gray;
+                } else {
+                    color_remap = rgb_to_cmyk;
+                }
+                break;
+
+            case 4:
+                if (output_num_color == 1){
+                     color_remap = cmyk_to_gray;              
+                } else {
+                    color_remap = cmyk_to_rgb;
+                }
+                break;
+
+            default:
+            
+                /* Should never be here.  Groups must
+                   be gray, rgb or CMYK.   Until we
+                   have ICC working here with XPS */
+
+                break;
+
+        }
 
     }
 
     /* data is planar */
-   max_num_channels = max(input_num_color ,output_num_color) + num_noncolor_planes;
-   for(z = 0; z<max_num_channels; z++){ 
+    max_num_channels = max(input_num_color ,output_num_color) + num_noncolor_planes;
+    for(z = 0; z<max_num_channels; z++){ 
 
        plane_offset[z] = z * plane_stride;
 
-   }
+    }
 
-   alpha_offset_in = input_num_color*plane_stride;
+    if (color_remap == NULL){
 
-    for ( y = 0; y < num_rows; y++ ){
+        /* Blending group was CMYK, output is CMYK + spot */
 
-       for ( x = 0; x < num_cols; x++ ){
+       memcpy(outputbuffer, inputbuffer, 4*plane_stride);
 
-            /* If the source alpha is transparent, then move on */
-                       
-            if (inputbuffer[x + alpha_offset_in] != 0x00) {
+       /* Add any data that are beyond the standard color data (e.g. alpha) */
 
-                /* grab the input */
-                for (z = 0; z<input_num_color; z++){
+       if (num_noncolor_planes>0)
+           memcpy(&(outputbuffer[plane_offset[output_num_color]]), 
+           &(inputbuffer[plane_offset[input_num_color]]), num_noncolor_planes*plane_stride);
 
-                    input_vector[z] = inputbuffer[x+plane_offset[z]];
+    } else {
+
+        /* Have to remap */
+
+       alpha_offset_in = input_num_color*plane_stride;
+
+        for ( y = 0; y < num_rows; y++ ){
+
+           for ( x = 0; x < num_cols; x++ ){
+
+                /* If the source alpha is transparent, then move on */
+                           
+                if (inputbuffer[x + alpha_offset_in] != 0x00) {
+
+                    /* grab the input */
+                    for (z = 0; z<input_num_color; z++){
+
+                        input_vector[z] = inputbuffer[x+plane_offset[z]];
+
+                    }
+
+                    /* convert */
+     
+                   color_remap(input_vector,output_vector);
+
+                   /* store the output */
+                   for (z = 0; z<output_num_color; z++){
+
+                        outputbuffer[x+plane_offset[z]] = output_vector[z];
+
+                   }
+
+                   /* Add any that are beyond the standard color data */
+
+                    for(z = 0; z< num_noncolor_planes; z++){
+
+                        outputbuffer[x + plane_offset[output_num_color+z]] = inputbuffer[x + plane_offset[input_num_color+z]];
+
+                    }
 
                 }
 
-                /* convert */
- 
-               color_remap(input_vector,output_vector);
+           }
 
-               /* store the output */
-               for (z = 0; z<output_num_color; z++){
+           /* update our positions */
 
-                    outputbuffer[x+plane_offset[z]] = output_vector[z];
+            for(z = 0; z<max_num_channels; z++){ 
 
-               }
-
-               /* Add any that are beyond the standard color data */
-
-                for(z = 0; z< num_noncolor_planes; z++){
-
-                    outputbuffer[x + plane_offset[output_num_color+z]] = inputbuffer[x + plane_offset[input_num_color+z]];
-
-                }
+               plane_offset[z] += row_stride;
 
             }
+            alpha_offset_in += row_stride;
 
-       }
-
-       /* update our positions */
-
-        for(z = 0; z<max_num_channels; z++){ 
-
-           plane_offset[z] += row_stride;
 
         }
-        alpha_offset_in += row_stride;
-
 
     }
 

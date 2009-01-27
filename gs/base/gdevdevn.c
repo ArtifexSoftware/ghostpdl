@@ -471,7 +471,8 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
 	        if (page_spot_colors < -1)
 		    return_error(gs_error_rangecheck);
 	        if (page_spot_colors > GX_DEVICE_COLOR_MAX_COMPONENTS)
-		    page_spot_colors = GX_DEVICE_COLOR_MAX_COMPONENTS;
+		    page_spot_colors = GX_DEVICE_COLOR_MAX_COMPONENTS-4;  
+                    /* Need to leave room for the 4 process colors */
         }
         /* 
          * The DeviceN device can have zero components if nothing has been
