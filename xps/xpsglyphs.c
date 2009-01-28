@@ -582,6 +582,8 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	parttype = xps_get_content_type(ctx, part->name);
 	if (parttype && !strcmp(parttype, "application/vnd.ms-package.obfuscated-opentype"))
 	    xps_deobfuscate_font_resource(ctx, part);
+#else
+	parttype = NULL;
 #endif
 
 	/* stupid XPS files with content-types after the parts */
