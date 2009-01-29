@@ -1,5 +1,5 @@
-#    Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
-#    Unauthorized use, copying, and/or distribution prohibited.
+#    Copyright (C) 1996-2008 Artifex Software. Inc. All rights reserved.
+#    See the file LICENSE for use and distribution terms.
 
 # makefile for PCL* interpreter libraries and for PJL.
 # Users of this makefile must define the following:
