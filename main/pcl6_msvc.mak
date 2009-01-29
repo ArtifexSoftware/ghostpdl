@@ -157,10 +157,10 @@ BAND_LIST_COMPRESSOR=zlib
 CPU_TYPE=586
 !endif
 
-# Define which major version of MSVC is being used (currently, 4, 5, & 6 supported)
-#       default to the latest version
+# Default major version of MSVC to use;
+# this should generally be the latest version.
 !ifndef MSVC_VERSION
-MSVC_VERSION=8
+MSVC_VERSION=9
 !endif
 
 !ifndef D

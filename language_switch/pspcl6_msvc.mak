@@ -111,10 +111,10 @@ COMPILE_INITS=1
 APP_CCC=$(CC_) -I..\pl -I..\gs\base -I.\obj $(C_)
 !endif
 
-# Define which major version of MSVC is being used (currently 6, 7 and 
-# 8 are supported). Default should be the latest version.
+# Default major version of MSVC to use;
+# this should generally be the latest version.
 !ifndef MSVC_VERSION
-MSVC_VERSION=8
+MSVC_VERSION=9
 !endif
 
 D=\\
