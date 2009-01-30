@@ -469,7 +469,7 @@ DEVICE_DEVS21= $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.dev $(DD)bmpsep8.
 
 # The GCC/EMX platform
 
-os2__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_os2.$(OBJ) $(GLOBJ)gp_os2fs.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)
+os2__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_os2.$(OBJ) $(GLOBJ)gp_os2fs.$(OBJ) $(GLOBJ)gp_paper.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)
 $(GLGEN)os2_.dev: $(os2__) $(GLD)nosync.dev
 	$(SETMOD) $(GLGEN)os2_ $(os2__) -include $(GLD)nosync
 
@@ -482,6 +482,9 @@ $(GLOBJ)gp_os2fs.$(OBJ): $(GLSRC)gp_os2fs.c $(GLSRC)gp_os2.h\
  $(dos__h) $(pipe__h) $(string__h) $(time__h)\
  $(gx_h) $(gsexit_h) $(gsutil_h) $(gp_h) $(gpmisc_h)
 	$(GLCC) $(GLO_)gp_os2fs.$(OBJ) $(C_) $(GLSRC)gp_os2fs.c
+
+$(GLOBJ)gp_paper.$(OBJ): $(GLSRC)gp_paper.c $(AK) $(gp_h)
+	$(GLCCWIN) $(GLO_)gp_paper.$(OBJ) $(C_) $(GLSRC)gp_paper.c
 
 $(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
   $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h)
