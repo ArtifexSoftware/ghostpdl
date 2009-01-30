@@ -36,8 +36,9 @@ nmake -f pcl6_msvc.mak
 There is also an experimental solution file which builds GhostXPS
 as xps\obj\gxps.exe.
 
-The makefiles default to supporting MSVC 8 (2005) To use another 
-version, append it to the nmake command line, for example:
+The makefiles default to supporting MSVC 9 (2008 edition)
+To use another  version, append it to the nmake command line,
+for example:
 
 cd main
 nmake -f pcl6_msvc.mak MSVC_VERSION=6
