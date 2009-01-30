@@ -78,3 +78,17 @@ The default location for the fonts is /windows/fonts, but the current
 working directory is also searched. If the fonts are placed in another 
 location the environment variable PCLFONTSOURCE must be set accordingly.  
 See the documentation for more details.
+
+=== REQUIRED FONTS ===
+
+The PCL interpreter requires access to the base 80 font set for proper 
+operation. Unfortunately this set isn't available under a free software 
+license, and may only be used and distributed under the AFPL license, 
+which forbids commercial use, or under a commercial agreement with 
+Artifex.
+
+If your copy of GhostPDL includes these fonts, they should be available 
+in the 'urwfonts' directory. If not, they can be downloaded separately 
+from http://artifex.com/downloads/ just look for the newest set of 80 
+TrueType fonts.
+
