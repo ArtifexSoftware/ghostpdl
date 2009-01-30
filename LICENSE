@@ -2,18 +2,18 @@
   The files in the common, doc, main, pcl, pl, psi, pxl, tools, svg
   and xps directories (folders) and any subdirectories (sub-folders)
   thereof are part of GhostPCL, GhostXPS and GhostSVG, collectively
-  known as ghostpdl.
+  known as GhostPDL.
 
   The files in the gs directory (folder) and the subdirectories 
   (sub-folders) thereof are part of GPL Ghostscript, along with
   copies of its dependent third-party libraries. See the file
   gs/LICENSE for information about this directory,
 
-  Ghostpdl and GPL Ghostscript are free software; you can redistribute 
+  GhostPDL and GPL Ghostscript are free software; you can redistribute 
   and/or modify them under the terms of version 2 of the GNU General 
   Public License as published by the Free Software Foundation.
 
-  Ghostpdl and GPL Ghostscript are distributed in the hope that they 
+  GhostPDL and GPL Ghostscript are distributed in the hope that they 
   will be useful, but WITHOUT ANY WARRANTY; without even the implied 
   warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
   See the GNU General Public License for more details.
@@ -32,7 +32,8 @@
   be redistributed under the AFPL licence which bars commercial use.
 
  ---
-  This software (GhostPCL, GhostXPS and GPL Ghostscript) contains 
+
+  This software (GhostPDL and GPL Ghostscript) contains 
   an implementation of techniques covered by US Patents 5,055,942
   and 5,917,614, and corresponding international patents. These 
   patents are licensed for use with this software under the following 
