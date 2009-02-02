@@ -136,7 +136,7 @@ gx_device_bbox gs_bbox_device =
      NULL,			/* get_color_comp_index */
      NULL,			/* encode_color */
      NULL,			/* decode_color */
-     NULL,			/*pattern_manage; */
+     NULL,			/* pattern_manage */
      NULL,			/* fill_rectangle_hl_color */
      NULL,			/* include_color_space */
      NULL,			/* fill_linear_color_scanline */
@@ -394,10 +394,6 @@ bbox_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     int code =
 	(tdev == 0 ? 0 :
 	 dev_proc(tdev, fill_rectangle)(tdev, x, y, w, h, color));
-
-    /* Check for erasing the entire page. */
-    if (!BBOX_INIT_BOX(bdev))
-	return code;
     if (color != bdev->transparent)
 	BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
     return code;
@@ -468,9 +464,6 @@ bbox_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	(tdev == 0 ? 0 :
 	 dev_proc(tdev, strip_tile_rectangle)
 	 (tdev, tiles, x, y, w, h, color0, color1, px, py));
-
-    if (!BBOX_INIT_BOX(bdev))
-	return code;
     BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
     return code;
 }
