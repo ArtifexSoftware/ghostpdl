@@ -8,6 +8,69 @@
 </head>
 <body>
 
+<p><strong><a name="2009-02-02T085811.805173Z"></a>
+2009-02-02T08:58:11.805173Z Ray Johnston</strong> (<a href="Details.htm#2009-02-02T085811.805173Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix broken bbox device caused by the 'fillpage' commit of rev 9288. This
+resolves bug 690260 and other cases where the bbox was all 0's.
+
+</pre>
+<p>[base/gdevbbox.c]</p>
+</blockquote>
+
+<p><strong><a name="2009-02-02T085201.582216Z"></a>
+2009-02-02T08:52:01.582216Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Revert the patch of 9314 that caused a problem with the Ubuntu bug 160203
+(https://bugs.launchpad.net/ubuntu/+source/ghostscript/+bug/160203). This
+patch appears to be a fix for a much older (~2004) version of gs and should
+not be needed as of rev 8161 that resolved segfaults when there is a NULL
+get_color_mapping_procs pointer. The mapping of 'black' and 'white' is
+needed to properly allow for non-white painting in the bbox device to
+avoid 0 0 0 0 BoundingBox.
+</pre>
+<p>[base/gdevbbox.c]</p>
+</blockquote>
+
+<p><strong><a name="2009-01-30T211055.690493Z"></a>
+2009-01-30T21:10:55.690493Z Russell Lang</strong></p>
+<blockquote>
+<pre>
+Add the default papersize module to the OS/2 build.
+</pre>
+<p>[psi/os2.mak]</p>
+</blockquote>
+
+<p><strong><a name="2009-01-27T230437.869301Z"></a>
+2009-01-27T23:04:37.869301Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update the directory listing the license for the source code
+reorganization.
+</pre>
+<p>[LICENSE]</p>
+</blockquote>
+
+<p><strong><a name="2009-01-27T224023.384111Z"></a>
+2009-01-27T22:40:23.384111Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update internal copyright string.
+</pre>
+<p>[base/gscdef.c]</p>
+</blockquote>
+
+<p><strong><a name="2009-01-27T210023.120021Z"></a>
+2009-01-27T21:00:23.120021Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update changelogs and release dates for 8.64rc2.
+</pre>
+<p>[doc/History7.htm doc/Projects.htm doc/History8.htm man/dvipdf.1 man/ps2ascii.1 doc/Use.htm doc/Readme.htm doc/Source.htm doc/Deprecated.htm man/ps2epsi.1 doc/Install.htm doc/Changes.htm doc/API.htm doc/Issues.htm doc/DLL.htm doc/Drivers.htm man/pfbtopfa.1 doc/Release.htm doc/Commprod.htm doc/Xfonts.htm doc/Devices.htm doc/Language.htm man/gs.1 man/pf2afm.1 doc/Ps2ps2.htm doc/Fonts.htm man/printafm.1 doc/Ps2pdf.htm doc/Develop.htm doc/Helpers.htm man/pdf2dsc.1 doc/Psfiles.htm doc/Lib.htm doc/gs-vms.hlp man/font2c.1 man/gsnd.1 base/version.mak man/pdfopt.1 doc/News.htm man/pdf2ps.1 man/ps2pdf.1 doc/Make.htm doc/Details8.htm doc/Unix-lpr.htm doc/C-style.htm doc/Ps-style.htm doc/History1.htm doc/History2.htm man/gslp.1 man/wftopfa.1 doc/History3.htm man/ps2ps.1 doc/Details.htm doc/Ps2epsi.htm doc/History4.htm man/ps2pdfwr.1 doc/History5.htm doc/History6.htm]</p>
+</blockquote>
+
 <p><strong><a name="2009-01-27T205054.789641Z"></a>
 2009-01-27T20:50:54.789641Z Ralph Giles</strong></p>
 <blockquote>
@@ -690,6 +753,10 @@ Fix a problem with Brother 7x0 GDI, contributed to Debian by B. Janssen.
 <blockquote>
 <pre>
 Fix segmentation fault on -sDEVICE=bbox, contributed to Debian by Yaroslav Halchenko.
+
+Original issue reported in
+http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=250290 and
+http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=254877
 </pre>
 <p>[base/gdevbbox.c]</p>
 </blockquote>
