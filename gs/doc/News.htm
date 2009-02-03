@@ -55,35 +55,10 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h3><a name="Version8.64"></a>Version 8.64 (2009-02-03)</h3>
+<h3><a name="Version8.64"></a>Version 8.65 (SVN PRE-RELEASE)</h3>
 
 <p>
-This is the fifth scheduled release in the stable Ghostscript 8.6x 
-series. 
-
-<p>
-Approximately 100 bugs have been fixed since the 8.63 release.
-
-<p>
-Of particular note in this release are improvements to overprint and 
-spot color support in documents with transparency, improvements to PDF 
-and PS output, proper handling of PDF-specific text rendering modes and 
-support for reading AES-encrypted PDF documents.
-
-<p>
-Also improved is handling of CJK text, especially in vertical writing 
-modes, memory footprint processing some files at high resolution and 
-support for using the system's default paper size on unix.
-
-<p>
-The interpreter's handling of color spaces has been moved from 
-PostScript code to C.
-
-<p>
-A number of the included printer drivers and cups wrappers have been 
-updated to support a PDF-based workflow. Also fixed are several 
-long-standing bugs in the pcl drivers with respect to duplex, resolution 
-and paper tray selection.
+This is an unreleased development snapshot.
 
 <p> The following <a href="http://bugs.ghostscript.com/">bugs</a> were
 open at the time of the last release: <blockquote>
@@ -556,17 +531,7 @@ open at the time of the last release: <blockquote>
 <h3><a name="8.64_Incompatible_changes"></a>Incompatible changes</h3>
 
 <p>
-In this release the C source files have been split into two new 
-directories. Interpreter source files are now in <tt>psi</tt> and the 
-graphics library and output devices are now in <tt>base</tt>. Previously 
-everything was in <tt>src</tt>. This may cause problems with existing 
-references in external build files or when applying patches generated 
-against an older version.
-
-<p>
-The compiled in font set in Resource/Fonts has been updated to the 
-version from the 8.11 release. This is the same set which was 
-recommended prior to the 8.63.
+No incompatible changes have been recorded.
 
 <h3><a name="8.64_changelog"></a>Changelog</h3>
 
@@ -593,7 +558,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 8.64, 3 February 2009
+<small>Ghostscript version 8.64, 4 February 2009
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
