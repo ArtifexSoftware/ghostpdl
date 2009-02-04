@@ -536,13 +536,15 @@ clist_begin_typed_image(gx_device * dev,
     return 0;
 
     /*
-     * We couldn't handle the image.  Use the default algorithms, which
+     * We couldn't handle the image.  It is up to the caller to
+     /* use the default algorithms, which
      * break the image up into rectangles or small pixmaps.
+     * It is done this way to provide the option of NOT using
+     * the target device if the caller was doing a bx_forward_begin_typed_image
      */
 use_default:
     gs_free_object(mem, pie, "clist_begin_typed_image");
-    return gx_default_begin_typed_image(dev, pis, pmat, pic, prect,
-					pdcolor, pcpath, mem, pinfo);
+    return -1;
 }
 
 /* Error cleanup for clist_image_plane_data. */

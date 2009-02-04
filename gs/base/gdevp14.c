@@ -2059,6 +2059,7 @@ pdf14_end_transparency_group(gx_device *dev,
 			pdev->blend_procs = parent_color->parent_blending_procs;
 			pdev->ctx->additive = parent_color->isadditive;
 			pdev->pdf14_procs = parent_color->unpack_procs;
+                        pdev->color_info.depth = parent_color->depth;
 			
 			parent_color->get_cmap_procs = NULL;
 			parent_color->parent_color_comp_index = NULL;
@@ -2092,6 +2093,7 @@ pdf14_update_device_color_procs(gx_device *dev,
     gx_color_polarity_t new_polarity;
     int new_num_comps;
     bool new_additive;
+    byte new_depth;
 
     if_debug0('v', "[v]pdf14_update_device_color_procs\n");
 
@@ -2128,6 +2130,7 @@ pdf14_update_device_color_procs(gx_device *dev,
                     pdevproto = (pdf14_device *)&gs_pdf14_Gray_device;
                     new_additive = true;
                     new_14procs = &gray_pdf14_procs;
+                    new_depth = 8;
 
                 }
 
@@ -2144,6 +2147,7 @@ pdf14_update_device_color_procs(gx_device *dev,
                     pdevproto = (pdf14_device *)&gs_pdf14_RGB_device;
                     new_additive = true;
                     new_14procs = &rgb_pdf14_procs;
+                    new_depth = 24;
                 }
 
                 break; 
@@ -2158,6 +2162,7 @@ pdf14_update_device_color_procs(gx_device *dev,
                     pdevproto = (pdf14_device *)&gs_pdf14_CMYK_device;
                     new_additive = false;
                     new_14procs = &cmyk_pdf14_procs;
+                    new_depth = 32;
 
                 }
 
@@ -2186,6 +2191,7 @@ pdf14_update_device_color_procs(gx_device *dev,
             parent_color_info->num_components = pdev->color_info.num_components;
             parent_color_info->isadditive = pdev->ctx->additive;
             parent_color_info->unpack_procs = pdev->pdf14_procs;
+            parent_color_info->depth = pdev->color_info.depth;
 
             /* Set new information */
 
@@ -2200,6 +2206,7 @@ pdf14_update_device_color_procs(gx_device *dev,
             pdev->color_info.num_components = new_num_comps;
             pdev->ctx->additive = new_additive; 
             pdev->pdf14_procs = new_14procs;
+            pdev->color_info.depth = new_depth;
 
             return(1);  /* Lets us detect that we did do an update */
 
@@ -2222,11 +2229,13 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
 
     pdf14_device *pdevproto;
     pdf14_device *pdev = (pdf14_device *)dev;
+    gx_device_clist_writer * cldev = (gx_device_clist_writer *)pdev->pclist_device;
     const pdf14_procs_t *new_14procs;
     bool update_color_info;
     gx_color_polarity_t new_polarity;
-    int new_num_comps,new_depth;
+    int new_num_comps;
     bool new_additive;
+    byte new_depth;
 
     if_debug0('v', "[v]pdf14_update_device_color_procs_push_c\n");
 
@@ -2320,6 +2329,13 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
             pdev->color_info.polarity = new_polarity;
             pdev->color_info.num_components = new_num_comps;
             pdev->pdf14_procs = new_14procs;
+            pdev->color_info.depth = new_depth;
+
+            cldev->clist_color_info.depth = pdev->color_info.depth;
+            cldev->clist_color_info.polarity = pdev->color_info.polarity;
+            cldev->clist_color_info.num_components = pdev->color_info.num_components;
+
+
 
             if (pdev->ctx)
             {
@@ -2342,6 +2358,8 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_imager_state *pis)
 
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_parent_color_t *parent_color = pdev->trans_group_parent_cmap_procs;
+    gx_device_clist_writer * cldev = (gx_device_clist_writer *)pdev->pclist_device;
+
 
     if_debug0('v', "[v]pdf14_update_device_color_procs_pop_c\n");
   
@@ -2359,9 +2377,18 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_imager_state *pis)
         pdev->procs.get_color_mapping_procs = parent_color->parent_color_mapping_procs;
         pdev->procs.get_color_comp_index = parent_color->parent_color_comp_index;
         pdev->color_info.polarity = parent_color->polarity;
+        pdev->color_info.depth = parent_color->depth;
         pdev->color_info.num_components = parent_color->num_components;
         pdev->blend_procs = parent_color->parent_blending_procs;
         pdev->pdf14_procs = parent_color->unpack_procs;
+
+        /* clist writer fill rect has no access to imager state */
+        /* and it forwards the target device.  this information */
+        /* is passed along to use in this case */
+
+        cldev->clist_color_info.depth = pdev->color_info.depth;
+        cldev->clist_color_info.polarity = pdev->color_info.polarity;
+        cldev->clist_color_info.num_components = pdev->color_info.num_components;
 
         if (pdev->ctx){
             pdev->ctx->additive = parent_color->isadditive;
@@ -2426,6 +2453,7 @@ pdf14_push_parent_color(gx_device *dev, const gs_imager_state *pis)
     new_parent_color->polarity = pdev->color_info.polarity;
     new_parent_color->num_components = pdev->color_info.num_components;
     new_parent_color->unpack_procs = pdev->pdf14_procs;
+    new_parent_color->depth = pdev->color_info.depth;
 
     /* isadditive is only used in ctx */
     if (pdev->ctx)
@@ -2529,6 +2557,7 @@ pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
             pdev->procs.get_color_comp_index = parent_color->parent_color_comp_index;
             pdev->color_info.polarity = parent_color->polarity;
             pdev->color_info.num_components = parent_color->num_components;
+            pdev->color_info.depth = parent_color->depth;
             pdev->blend_procs = parent_color->parent_blending_procs;
             pdev->ctx->additive = parent_color->isadditive;
             pdev->pdf14_procs = parent_color->unpack_procs;
@@ -3104,7 +3133,6 @@ pdf14_cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_st
     if (color != gx_no_color_index)
 	color_set_pure(pdc, color);
 }
-
 
 static	void
 pdf14_cmap_devicen_direct(const	frac * pcc, 
@@ -3917,13 +3945,13 @@ static	const gx_device_procs pdf14_clist_Gray_procs =
 static	const gx_device_procs pdf14_clist_RGB_procs =
 	pdf14_clist_procs(gx_default_DevRGB_get_color_mapping_procs,
 			gx_default_DevRGB_get_color_comp_index,
-			gx_default_rgb_map_rgb_color,
-			gx_default_rgb_map_color_rgb);
+			pdf14_encode_color,
+			pdf14_decode_color);
 
 static	const gx_device_procs pdf14_clist_CMYK_procs =
 	pdf14_clist_procs(gx_default_DevCMYK_get_color_mapping_procs,
 			gx_default_DevCMYK_get_color_comp_index,
-			cmyk_8bit_map_cmyk_color, cmyk_8bit_map_color_cmyk);
+			pdf14_encode_color, pdf14_decode_color);
 
 static	const gx_device_procs pdf14_clist_CMYKspot_procs =
 	pdf14_clist_procs(pdf14_cmykspot_get_color_mapping_procs,
@@ -4942,9 +4970,19 @@ pdf14_clist_begin_image(gx_device * dev,
     code = pdf14_clist_update_params(pdev, pis);
     if (code < 0)
 	return code;
+
     /* Pass image to the target */
-    return gx_forward_begin_image(dev, pis, pim, format, prect,
+    code = gx_forward_begin_image(dev, pis, pim, format, prect,
 					pdcolor, pcpath, memory, pinfo);
+
+    if (code < 0)
+        return gx_default_begin_image(dev, pis, pim, format, prect,
+					pdcolor, pcpath, memory, pinfo);
+    else return code;
+
+
+
+
 }
 
 static	int
@@ -4964,12 +5002,22 @@ pdf14_clist_begin_typed_image(gx_device	* dev, const gs_imager_state * pis,
      * do not have access to the imager state.  Thus we have to pass any
      * changes explictly.
      */
+
     code = pdf14_clist_update_params(pdev, pis);
     if (code < 0)
 	return code;
+
     /* Pass image to the target */
-    return gx_forward_begin_typed_image(dev, pis, pmat,
-			    pic, prect, pdcolor, pcpath, mem, pinfo);
+    code = gx_forward_begin_typed_image(dev, pis, pmat,
+			    pic, prect, pdcolor, pcpath, mem, pinfo); 
+
+    if (code < 0)
+        return gx_default_begin_typed_image(dev, pis, pmat, pic, prect,
+					pdcolor, pcpath, mem, pinfo); 
+    else return code;
+
+
+
 }
 
 /*

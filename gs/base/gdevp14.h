@@ -47,6 +47,7 @@ typedef struct pdf14_parent_color_s {
     int num_components;
     bool isadditive;
     gx_color_polarity_t polarity;
+    byte depth;  /* used in clist writer cmd_put_color */
     const void * get_cmap_procs;
     void * parent_color_mapping_procs;
     void * parent_color_comp_index; 

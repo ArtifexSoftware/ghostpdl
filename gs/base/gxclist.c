@@ -358,6 +358,16 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
     gx_device *pbdev = (gx_device *)&bdev;
     int code;
 
+    /* the clist writer has its own color info that depends upon the 
+       transparency group color space (if transparency exists).  The data that is
+       used in the clist writing. Here it is initialized with 
+       the target device color info.  The values will be pushed and popped
+       in a stack if we have changing color spaces in the transparency groups. */
+
+    cdev->clist_color_info.depth = dev->color_info.depth;
+    cdev->clist_color_info.polarity = dev->color_info.polarity;
+    cdev->clist_color_info.num_components = dev->color_info.num_components;
+    
     /* Call create_buf_device to get the memory planarity set up. */
     cdev->buf_procs.create_buf_device(&pbdev, target, 0, NULL, NULL, clist_get_band_complexity(0, 0));
     /* HACK - if the buffer device can't do copy_alpha, disallow */
