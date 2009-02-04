@@ -1534,15 +1534,15 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
      */
     uint
 	Top_size = 0x7fffff,
-	GSubrs_offset = 0x7fffff,
-	charset_offset = 0x7fffff,
-	FDSelect_offset = 0x7fffff,
-	CharStrings_offset = 0x7fffff,
-	Font_offset = 0x7fffff,
+	GSubrs_offset = 0x1ffffff,
+	charset_offset = 0x1ffffff,
+	FDSelect_offset = 0x1ffffff,
+	CharStrings_offset = 0x1ffffff,
+	Font_offset = 0x1ffffff,
 	FDArray_offsets[257],
 	Private_offsets[257],
 	Subrs_offsets[257],
-	End_offset = 0x7fffff;
+	End_offset = 0x1ffffff;
     int j;
     psf_glyph_enum_t genum;
     gs_font_info_t info;
