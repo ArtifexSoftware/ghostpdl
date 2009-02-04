@@ -1469,7 +1469,11 @@ currentdict /PDF2PS_matrix_key undef
     dup /Annots knownoget {
       0 1 2 index length 1 sub
        { 1 index exch oget
-         dup /Subtype oget annottypes exch .knownget { exec } { pop } ifelse
+         dup type /dicttype eq {
+           dup /Subtype oget annottypes exch .knownget { exec } { pop } ifelse
+         } {
+           pop
+         } ifelse
        }
       for pop
     } if

@@ -713,10 +713,10 @@ int
 pdf_convert_truetype_font_descriptor(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 {
     pdf_font_descriptor_t *pfd = pdfont->FontDescriptor;
-    int num_CIDs = 256;
-    int length_CIDSet = num_CIDs / 8;
-    int length_CIDToGIDMap = num_CIDs * sizeof(ushort);
     pdf_base_font_t *pbfont = pfd->base_font;
+    int num_CIDs = pbfont->num_glyphs;
+    int length_CIDSet = (num_CIDs + 7) / 8;
+    int length_CIDToGIDMap = num_CIDs * sizeof(ushort);
     gs_font *pfont = (gs_font *)pbfont->copied;
     gs_char ch;
     /* Save the simple font descriptor data because CID font data overlap them. */

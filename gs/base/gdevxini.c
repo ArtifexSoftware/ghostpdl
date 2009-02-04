@@ -604,7 +604,6 @@ x_set_buffer(gx_device_X * xdev)
 	COPY_PROC(begin_typed_image);
 	COPY_PROC(create_compositor);
 	COPY_PROC(text_begin);
-	COPY_PROC(fillpage);
 #undef COPY_PROC
 	if (xdev->is_buffered) {
     	    check_device_separable((gx_device *)xdev);
@@ -912,6 +911,18 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
 	if (xdev->is_open)
 	    gs_closedevice(dev);
 	xdev->pwin = (Window) pwin;
+    }
+    /* Restore the original page size if it was set by Ghostview */
+    /* This gives the Ghostview user control over the /setpage entry */
+    if (xdev->is_open && xdev->ghostview) {
+       dev->width = values.width;
+       dev->height = values.height;
+       dev->x_pixels_per_inch = values.x_pixels_per_inch;
+       dev->y_pixels_per_inch = values.y_pixels_per_inch;
+       dev->HWResolution[0] = values.HWResolution[0];
+       dev->HWResolution[1] = values.HWResolution[1];
+       dev->MediaSize[0] = values.MediaSize[0];
+       dev->MediaSize[1] = values.MediaSize[1];
     }
     /* If the device is open, resize the window. */
     /* Don't do this if Ghostview is active. */

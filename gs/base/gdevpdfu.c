@@ -300,8 +300,19 @@ pdf_open_document(gx_device_pdf * pdev)
 	pdev->binary_ok = !pdev->params.ASCII85EncodePages;
 	if (pdev->ForOPDFRead && pdev->OPDFReadProcsetPath.size) {
 	    int code, status;
+	    char BBox[256];
+	    int width = (int)(pdev->width * 72.0 / pdev->HWResolution[0] + 0.5);
+	    int height = (int)(pdev->height * 72.0 / pdev->HWResolution[1] + 0.5);
 	    
 	    stream_write(s, (byte *)"%!PS-Adobe-2.0\r", 15);
+	    sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\r", width, height);
+	    stream_write(s, (byte *)BBox, strlen(BBox));
+	    if(pdev->SetPageSize)
+		stream_puts(s, "/SetPageSize true def\n");
+	    if(pdev->RotatePages)
+		stream_puts(s, "/RotatePages true def\n");
+	    if(pdev->FitPages)
+		stream_puts(s, "/FitPages true def\n");
 	    if (pdev->params.CompressPages || pdev->CompressEntireFile) {
 		/*  When CompressEntireFile is true and ASCII85EncodePages is false,
 		    the ASCII85Encode filter is applied, rather one may expect the opposite.

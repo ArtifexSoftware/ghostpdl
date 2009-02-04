@@ -650,6 +650,9 @@ struct gx_device_pdf_s {
     void *find_resource_param; /* WARNING : not visible for garbager. */
     int last_charpath_op; /* true or false state of last charpath */
     bool type3charpath;
+    bool SetPageSize;
+    bool RotatePages;
+    bool FitPages;
 };
 
 #define is_in_page(pdev)\

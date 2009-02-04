@@ -1316,8 +1316,10 @@ psw_stroke_path(gx_device * dev, const gs_imager_state * pis,
 					  pcpath);
 	set_ctm = (bool)gdev_vector_stroke_scaling(vdev, pis, &scale, &mat);
 	gdev_vector_update_clip_path(vdev, pcpath);
-	gdev_vector_prepare_stroke((gx_device_vector *)pdev, pis, params,
+	code = gdev_vector_prepare_stroke((gx_device_vector *)pdev, pis, params,
 				   pdcolor, scale);
+	if (code < 0)
+	    return code;
 	s = pdev->strm;
 	if (set_ctm) {
 	    stream_puts(s, "q");

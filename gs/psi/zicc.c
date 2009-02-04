@@ -152,7 +152,10 @@ zseticcspace(i_ctx_t * i_ctx_p)
     float                   range_buff[8];
     static const float      dflt_range[8] = { 0, 1,   0, 1,   0, 1,   0, 1 };
 
-    dict_find_string(op, "N", &pnval);
+    code = dict_find_string(op, "N", &pnval);
+    if (code < 0)
+	return code;
+
     ncomps = pnval->value.intval;
 
     if (2*ncomps > sizeof(range_buff)/sizeof(range_buff[0]))

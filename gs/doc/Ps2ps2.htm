@@ -208,9 +208,13 @@ of the target printer's virtual memory to control its behavior while
 executing a job generated with <code>ps2ps2</code>.
 
 <p>
-Currently Ghostscript does not provide a method for 
-incorporating these in a print job.
-Users should refer to the printer's documentation.
+These keys can be set when executing ps2ps2 (or using the ps2write device), 
+this 'fixes' the resulting behaviour according to which key has been set. 
+If these keys are not defined during conversion, the resulting PostScript 
+will not attempt any form of media selection. 
+
+In this case the behaviour can then be modified by setting the keys, either by modifying the resulting 
+PostScript or setting the values in some other manner on the target device.
 
 <hr>
 
@@ -259,7 +263,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 8.63, 1 August 2008
+<small>Ghostscript version 8.64, 3 February 2009
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

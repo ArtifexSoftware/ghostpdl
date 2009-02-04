@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2007 Artifex Software, Inc.
+#  Copyright (C) 2001-2009 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -128,11 +128,11 @@
 #		selectively included in or excluded from a configuration,
 #		but the above are the ones that are most likely to be of
 #		interest.
-#	COMPILE_INITS - normally 0; if set to 1, compiles the PostScript
-#	    language initialization files (gs_init.ps et al) into the
-#	    executable, eliminating the need for these files to be present
-#	    at run time. Files will be placed in the %rom% device as files.
-#	    Also the 'Resource/*' files will be built into the %rom% device.
+#	COMPILE_INITS - normally 1; compiles the PostScript language
+#	    initialization files (gs_init.ps et al) and Resource/* tree
+#	    into the executable, eliminating the need for these files
+#	    to be present at run time. Files will be placed in the 
+#	    %rom% device.
 #	BAND_LIST_STORAGE - normally file; if set to memory, stores band
 #	    lists in memory (with compression if needed).
 #	BAND_LIST_COMPRESSOR - normally zlib: selects the compression method

@@ -232,6 +232,9 @@ pdf_is_same_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 
     if ((pdev->clip_path != 0) != (pcpath != 0))
 	return 0;
+    /* Both clip paths are empty, so the same */
+    if (pdev->clip_path == 0)
+	return 1;
     code = gx_path_enum_init(&penum, pdev->clip_path);
     if (code < 0)
 	return code;

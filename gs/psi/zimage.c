@@ -455,7 +455,7 @@ image_file_continue(i_ctx_t *i_ctx_p)
 	int code;
 	int px;
 	const ref *pp;
-	bool at_eof = false;
+	int at_eof_count = 0;
 
 	/*
 	 * Do a first pass through the files to ensure that at least
@@ -481,7 +481,7 @@ image_file_continue(i_ctx_t *i_ctx_p)
 		    s_process_read_buf(s);
 		    continue;
 		case EOFC:
-		    at_eof = true;
+		    at_eof_count++;
 		    break;	/* with no data available */
 		case INTC:
 		case CALLC:
@@ -526,7 +526,7 @@ image_file_continue(i_ctx_t *i_ctx_p)
 	    if (code == e_RemapColor)
 		return code;
 	}
-	if (at_eof)
+	if (at_eof_count >= num_sources)
 	    code = 1;
 	if (code) {
 	    int code1;

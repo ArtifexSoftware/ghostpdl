@@ -2941,6 +2941,9 @@ static void escv_write_data(gx_device *dev, int bits, char *buf, int bsize, int 
   char                        obuf[128];
   int				size;
   char			*tmps, *p;
+  unsigned char                *rgbbuf;
+  unsigned char                *ucp;
+  double                        gray8;
 
   if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
 
@@ -2966,6 +2969,23 @@ static void escv_write_data(gx_device *dev, int bits, char *buf, int bsize, int 
       buf = tmps;
     }
 
+    if(bits == 24) {		/* 8bit RGB */
+      tmps = gs_alloc_bytes(vdev->memory, bsize / 3, "escv_write_data(tmp)");
+
+      /* convert 24bit RGB to 8bit Grayscale */
+      rgbbuf = buf;
+      ucp = tmps;
+      for (size = 0; size < bsize; size = size + 3) {
+	gray8 = (0.299L * rgbbuf[size]) + (0.587L * rgbbuf[size + 1]) + (0.114L * rgbbuf[size + 2]);
+	if ( gray8 > 255L )
+	  *ucp = 255;
+	else
+	  *ucp = gray8;
+	ucp++;
+      }
+      bsize = bsize / 3;
+      buf = tmps;
+    }
 
     if(bits == 1){
       if (strcmp(pdev->dname, "lp1800") == 0 || \
@@ -2981,7 +3001,7 @@ static void escv_write_data(gx_device *dev, int bits, char *buf, int bsize, int 
 
     put_bytes(s, buf, bsize);
 
-    if (bits == 12 || bits == 4) {
+    if (bits == 12 || bits == 4 || bits == 24) {
       gs_free_object(vdev->memory, tmps, "escv_write_data(tmp)");
     }
 

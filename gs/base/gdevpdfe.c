@@ -891,6 +891,14 @@ int
 pdf_font_metadata(gx_device_pdf *pdev, const pdf_base_font_t *pbfont, 
 		  const byte *digest, int digest_length, gs_id *metadata_object_id)
 {  
+    /* Acrobat Distiller does not create font Metadata, and the ISO spec says 
+     * only that files 'should' contain font Metadata. Attempts to include 
+     * font metadata cause Acrobat to complain about XMP schemas (because 
+     * the ISO spec uses non-existent tags).
+     * For now we disable writing of font Metadata
+     */
+    return 0;
+
     *metadata_object_id = gs_no_id;
     if (pdev->CompatibilityLevel < 1.4)
 	return 0;

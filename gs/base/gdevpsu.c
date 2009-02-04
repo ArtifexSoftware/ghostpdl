@@ -239,7 +239,23 @@ psw_end_file(FILE *f, const gx_device *dev,
 	    long save_pos = ftell(f);
 
 	    fseek(f, pdpc->bbox_position, SEEK_SET);
-	    psw_print_bbox(f, pbbox);
+	    /* Theoretically the bbox device should fill in the bounding box
+	     * but this does nothing because we don't write on the page.
+	     * So if bbox = 0 0 0 0, replace with the device page size.
+	     */
+	    if(pbbox->p.x == 0 && pbbox->p.y == 0 
+		&& pbbox->q.x == 0 && pbbox->q.y == 0) {
+		gs_rect bbox;
+		int width = (int)(dev->width * 72.0 / dev->HWResolution[0] + 0.5);
+		int height = (int)(dev->height * 72.0 / dev->HWResolution[1] + 0.5);
+
+		bbox.p.x = 0;
+		bbox.p.y = 0;
+		bbox.q.x = width;
+		bbox.q.y = height;
+		psw_print_bbox(f, &bbox);
+	    } else 
+		psw_print_bbox(f, pbbox);
             fputc('%', f);
             if (ferror(f))
                 return_error(gs_error_ioerror);
@@ -265,8 +281,14 @@ psw_write_page_header(stream *s, const gx_device *dev,
                       bool do_scale, long page_ord, int dictsize)
 {
     long page = dev->PageCount + 1;
+    int width = (int)(dev->width * 72.0 / dev->HWResolution[0] + 0.5);
+    int height = (int)(dev->height * 72.0 / dev->HWResolution[1] + 0.5);
 
-    pprintld2(s, "%%%%Page: %ld %ld\n%%%%BeginPageSetup\n", page, page_ord);
+    pprintld2(s, "%%%%Page: %ld %ld\n", page, page_ord);
+    if (!pdpc->ProduceEPS)
+	pprintld2(s, "%%%%PageBoundingBox: 0 0 %ld %ld\n", width, height);
+
+    stream_puts(s, "%%%%BeginPageSetup\n");
     /*
      * Adobe's documentation says that page setup must be placed outside the
      * save/restore that encapsulates the page contents, and that the
@@ -279,15 +301,13 @@ psw_write_page_header(stream *s, const gx_device *dev,
     psw_put_procset_name(s, dev, pdpc);
     stream_puts(s, " begin\n");
     if (!pdpc->ProduceEPS) {
-	int width = (int)(dev->width * 72.0 / dev->HWResolution[0] + 0.5);
-	int height = (int)(dev->height * 72.0 / dev->HWResolution[1] + 0.5);
 	typedef struct ps_ {
 	    const char *size_name;
 	    int width, height;
 	} page_size;
 	static const page_size sizes[] = {
 	    {"/11x17", 792, 1224},
-	    {"/a3", 842, 1190},
+	    {"/a3", 842, 1191},
 	    {"/a4", 595, 842},
 	    {"/b5", 501, 709},
 	    {"/ledger", 1224, 792},
@@ -297,9 +317,16 @@ psw_write_page_header(stream *s, const gx_device *dev,
 	};
 	const page_size *p = sizes;
 
-	while (p->size_name[0] == '/' &&
-	       (p->width != width || p->height != height))
-	    ++p;
+	while (p->size_name[0] == '/') {
+	    if((p->width - 5) <= width && (p->width + 5) >= width) {
+		if((p->height - 5) <= height && (p->height + 5) >= height) {
+		    break;
+		} else 
+		    ++p;
+	    }
+	    else
+		++p;
+	}
 	pprintd2(s, "%d %d ", width, height);
 	pprints1(s, "%s setpagesize\n", p->size_name);
     }
