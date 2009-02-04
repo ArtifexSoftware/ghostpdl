@@ -307,7 +307,7 @@ psw_write_page_header(stream *s, const gx_device *dev,
 	} page_size;
 	static const page_size sizes[] = {
 	    {"/11x17", 792, 1224},
-	    {"/a3", 842, 1190},
+	    {"/a3", 842, 1191},
 	    {"/a4", 595, 842},
 	    {"/b5", 501, 709},
 	    {"/ledger", 1224, 792},
@@ -317,9 +317,16 @@ psw_write_page_header(stream *s, const gx_device *dev,
 	};
 	const page_size *p = sizes;
 
-	while (p->size_name[0] == '/' &&
-	       (p->width != width || p->height != height))
-	    ++p;
+	while (p->size_name[0] == '/') {
+	    if((p->width - 5) <= width && (p->width + 5) >= width) {
+		if((p->height - 5) <= height && (p->height + 5) >= height) {
+		    break;
+		} else 
+		    ++p;
+	    }
+	    else
+		++p;
+	}
 	pprintd2(s, "%d %d ", width, height);
 	pprints1(s, "%s setpagesize\n", p->size_name);
     }
