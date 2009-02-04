@@ -24,6 +24,16 @@ import string, re
 import xml.parsers.expat
 import sys, codecs, os
 
+def html_escape(string):
+  table = { '&': '&amp;',
+            '"': '&quot;',
+            '>': '&gt;',
+            '<': '&lt;'}
+  new = []
+  for char in string:
+    new.append(table.get(char,char))
+  return "".join(new)
+
 class Entry:
 	'''a class representing a single changelog entry'''
 	data = {}
@@ -77,7 +87,7 @@ class Entry:
 			if not details and self.r.search(line): break
 			if self.c.search(line): break
 			if self.d.search(line): break
-			file.write(line.encode('utf8'))
+			file.write(html_escape(line.encode('utf8')))
 		except KeyError:
 		  line = '(empty)'
 		  file.write(line.encode('utf8'))

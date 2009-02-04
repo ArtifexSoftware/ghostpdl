@@ -29,7 +29,7 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
-<li><a href="#Version8.64">Version 8.64 (2009-01-26)</a>
+<li><a href="#Version8.64">Version 8.64 (2009-02-03)</a>
 <li><a href="#Version8.63">Version 8.63 (2008-08-01)</a>
 <li><a href="#Version8.62">Version 8.62 (2008-02-29)</a>
 <li><a href="#Version8.61">Version 8.61 (2007-11-21)</a>
@@ -80,10 +80,7 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h2><a name="Version8.64"></a>Version 8.64 (2009-01-26)</h2>
-
-<p>
-This is a release candidate for testing.
+<h2><a name="Version8.64"></a>Version 8.64 (2009-02-02)</h2>
 
 <p>
 This is the fifth scheduled release in the stable Ghostscript 8.6x 
@@ -106,6 +103,12 @@ support for using the system's default paper size on unix.
 <p>
 The interpreter's handling of color spaces has been moved from 
 PostScript code to C.
+
+<p>
+A number of the included printer drivers and cups wrappers have been 
+updated to support a PDF-based workflow. Also fixed are several 
+long-standing bugs in the pcl drivers with respect to duplex, resolution 
+and paper tray selection.
 
 <p> The following <a href="http://bugs.ghostscript.com/">bugs</a> were
 open at the time of the last release: <blockquote>
@@ -502,7 +505,6 @@ open at the time of the last release: <blockquote>
 690068,
 690069,
 690073,
-690081,
 690083,
 690084,
 690085,
@@ -530,6 +532,7 @@ open at the time of the last release: <blockquote>
 690174,
 690176,
 690180,
+690182,
 690183,
 690184,
 690185,
@@ -547,7 +550,6 @@ open at the time of the last release: <blockquote>
 690214,
 690216,
 690218,
-690222,
 690224,
 690225,
 690226,
@@ -560,7 +562,6 @@ open at the time of the last release: <blockquote>
 690237,
 690238,
 690239,
-690240,
 690241,
 690246,
 690247,
@@ -568,17 +569,16 @@ open at the time of the last release: <blockquote>
 690249,
 690250,
 690251,
-690253.
+690253,
+690256,
+690259,
+690261,
+690262,
+690263,
+690264.
 </blockquote>
 
 <h3><a name="8.64_Incompatible_changes"></a>Incompatible changes</h3>
-
-<p>
-There are known issues with the x11alpha device in this release. 
-Multipage documents may do properly clear the page area between pages, 
-and some images render as white rectangles or fail completely with an 
-error. This is an outstanding bug, rather than a permanent change.
-Pass -sDEVICE=x11 as a work around for these issues.
 
 <p>
 In this release the C source files have been split into two new 
@@ -594,6 +594,147 @@ version from the 8.11 release. This is the same set which was
 recommended prior to the 8.63.
 
 <h3><a name="8.64_changelog"></a>Changelog</h3>
+
+<p><strong><a name="2009-02-02T085811.805173Z"></a>
+2009-02-02T08:58:11.805173Z Ray Johnston</strong> (<a href="Details8.htm#2009-02-02T085811.805173Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix broken bbox device caused by the 'fillpage' commit of rev 9288. This
+resolves bug 690260 and other cases where the bbox was all 0's.
+
+</pre>
+<p>[base/gdevbbox.c]</p>
+</blockquote>
+
+<p><strong><a name="2009-02-02T085201.582216Z"></a>
+2009-02-02T08:52:01.582216Z Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Revert the patch of 9314 that caused a problem with the Ubuntu bug 160203
+(https://bugs.launchpad.net/ubuntu/+source/ghostscript/+bug/160203). This
+patch appears to be a fix for a much older (~2004) version of gs and should
+not be needed as of rev 8161 that resolved segfaults when there is a NULL
+get_color_mapping_procs pointer. The mapping of 'black' and 'white' is
+needed to properly allow for non-white painting in the bbox device to
+avoid 0 0 0 0 BoundingBox.
+</pre>
+<p>[base/gdevbbox.c]</p>
+</blockquote>
+
+<p><strong><a name="2009-01-30T211055.690493Z"></a>
+2009-01-30T21:10:55.690493Z Russell Lang</strong></p>
+<blockquote>
+<pre>
+Add the default papersize module to the OS/2 build.
+</pre>
+<p>[psi/os2.mak]</p>
+</blockquote>
+
+<p><strong><a name="2009-01-27T230437.869301Z"></a>
+2009-01-27T23:04:37.869301Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update the directory listing the license for the source code
+reorganization.
+</pre>
+<p>[LICENSE]</p>
+</blockquote>
+
+<p><strong><a name="2009-01-27T224023.384111Z"></a>
+2009-01-27T22:40:23.384111Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update internal copyright string.
+</pre>
+<p>[base/gscdef.c]</p>
+</blockquote>
+
+<p><strong><a name="2009-01-27T210023.120021Z"></a>
+2009-01-27T21:00:23.120021Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update changelogs and release dates for 8.64rc2.
+</pre>
+<p>[doc/History7.htm doc/Projects.htm doc/History8.htm man/dvipdf.1 man/ps2ascii.1 doc/Use.htm doc/Readme.htm doc/Source.htm doc/Deprecated.htm man/ps2epsi.1 doc/Install.htm doc/Changes.htm doc/API.htm doc/Issues.htm doc/DLL.htm doc/Drivers.htm man/pfbtopfa.1 doc/Release.htm doc/Commprod.htm doc/Xfonts.htm doc/Devices.htm doc/Language.htm man/gs.1 man/pf2afm.1 doc/Ps2ps2.htm doc/Fonts.htm man/printafm.1 doc/Ps2pdf.htm doc/Develop.htm doc/Helpers.htm man/pdf2dsc.1 doc/Psfiles.htm doc/Lib.htm doc/gs-vms.hlp man/font2c.1 man/gsnd.1 base/version.mak man/pdfopt.1 doc/News.htm man/pdf2ps.1 man/ps2pdf.1 doc/Make.htm doc/Details8.htm doc/Unix-lpr.htm doc/C-style.htm doc/Ps-style.htm doc/History1.htm doc/History2.htm man/gslp.1 man/wftopfa.1 doc/History3.htm man/ps2ps.1 doc/Details.htm doc/Ps2epsi.htm doc/History4.htm man/ps2pdfwr.1 doc/History5.htm doc/History6.htm]</p>
+</blockquote>
+
+<p><strong><a name="2009-01-27T205054.789641Z"></a>
+2009-01-27T20:50:54.789641Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update the release notes for 8.64rc2.
+
+The x11alpha issue has been worked around.
+
+Add some comments from Till Kamppeter.
+</pre>
+<p>[doc/News.htm]</p>
+</blockquote>
+
+<p><strong><a name="2009-01-27T204339.460217Z"></a>
+2009-01-27T20:43:39.460217Z Ralph Giles</strong> (<a href="Details8.htm#2009-01-27T204339.460217Z">details</a>)</p>
+<blockquote>
+<pre>
+Fix fillpage in the x11alpha device.
+
+This reverts an incorrect code change which prevented the fillpage
+method of the x11alpha device from clearing the buffer. Bug 690255.
+
+</pre>
+<p>[base/gdevxini.c]</p>
+</blockquote>
+
+<p><strong><a name="2009-01-27T204337.567128Z"></a>
+2009-01-27T20:43:37.567128Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update documentation on the COMPILE_INITS makefile variable.
+In particular, it's normally no longer 0.
+
+Thanks to Ken Sharp for pointing this out.
+</pre>
+<p>[base/gs.mak]</p>
+</blockquote>
+
+<p><strong><a name="2009-01-27T204333.967975Z"></a>
+2009-01-27T20:43:33.967975Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Escape significant characters when generating html changelog entries.
+</pre>
+<p>[toolbin/split_changelog.py]</p>
+</blockquote>
+
+<p><strong><a name="2009-01-27T001829.136711Z"></a>
+2009-01-27T00:18:29.136711Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Remove $(GS_LIB)\Resource directory from the search path in the msvc 
+build to shadowing the compiled in version.
+
+GS_LIB is set in the Windows registery by the installer, but it does not 
+currently install a duplicate copy of the Resource tree in the 
+filesystem. Having this directory in the search path caused Ghostscript 
+to use it for Resource lookup to the exclusion of the %rom% version, and 
+since the files weren't installed there, Ghostscript would error out in 
+the initialization phase.
+
+Files like cidfmap and available fonts can still be overridden by 
+putting them in $(GS_LIB)\lib and $(GS_LIB)\fonts.
+
+Patch from Russell Lang.
+</pre>
+<p>[psi/dwsetup.cpp]</p>
+</blockquote>
+
+<p><strong><a name="2009-01-26T192528.295228Z"></a>
+2009-01-26T19:25:28.295228Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update changelogs for 8.64rc1.
+</pre>
+<p>[doc/Changes.htm doc/History8.htm doc/News.htm doc/Details8.htm doc/Details.htm]</p>
+</blockquote>
 
 <p><strong><a name="2009-01-26T185939.072673Z"></a>
 2009-01-26T18:59:39.072673Z Ralph Giles</strong></p>
@@ -1199,6 +1340,10 @@ Fix a problem with Brother 7x0 GDI, contributed to Debian by B. Janssen.
 <blockquote>
 <pre>
 Fix segmentation fault on -sDEVICE=bbox, contributed to Debian by Yaroslav Halchenko.
+
+Original issue reported in
+http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=250290 and
+http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=254877
 </pre>
 <p>[base/gdevbbox.c]</p>
 </blockquote>
@@ -4035,8 +4180,6 @@ Update change logs for the 8.53 release.
 </pre>
 <p>[doc/Changes.htm doc/History8.htm doc/Details8.htm doc/Details.htm]</p>
 </blockquote>
-
-
 
 <h2><a name="Version8.63"></a>Version 8.63 (2008-08-01)</h2>
 
@@ -53546,7 +53689,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 8.64, 26 January 2009
+<small>Ghostscript version 8.64, 3 February 2009
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
