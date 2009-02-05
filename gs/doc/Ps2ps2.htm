@@ -193,12 +193,17 @@ especially for fonts which Ghostscript had converted into bitmaps
 See <a href="#Options">Options</a> about the <code>PageSize</code> entry of the <b><tt>Policies</tt></b>
 dictionary while the conversion step). 
 Default value : <em>false</em>.
-Must be <em>false</em> if <code>-dSetPageSize=true</code>.
+Must be <em>false</em> if <code>-dSetPageSize=true</code> or <code>-dCenterPages=true</code>.
+
+<dt><code>-dCenterPages=</code><em>boolean</em>. 
+<dd>The printer will center the page image on the selected media. Compatible with <code>-dRotatePages=true</code>, which may rotate the image on the media if it fits better, and then center it. 
+Default value : <em>false</em>.
+Must be <em>false</em> if <code>-dSetPageSize=true</code> or <code>-dFitPages=true</code>.
 
 <dt><code>-dSetPageSize=</code><em>boolean</em>. 
 <dd>The printer will try to set page size from the job. 
 Only use with printers which can handle random <em>PageSize</em>.
-Must be <em>false</em> if <code>-dRotatePages=true</code> or <b><tt>-dFitPages=true</tt></b>.
+Must be <em>false</em> if <code>-dRotatePages=true</code>, <code>-dCenterPages=true</code> or <code>-dFitPages=true</code>.
 
 </dl>
 
