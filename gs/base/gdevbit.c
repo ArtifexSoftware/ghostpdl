@@ -653,7 +653,7 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
 		     pdev->color_info.depth == 32 ? cmyk_8bit_map_cmyk_color :
 		     bit_map_cmyk_color);
     }
-    /* Reset the sparable and linear shift, masks, bits. */
+    /* Reset the separable and linear shift, masks, bits. */
     set_linear_color_bits_mask_shift(pdev);
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
     ((gx_device_bit *)pdev)->FirstLine = FirstLine;
@@ -671,16 +671,18 @@ bit_print_page(gx_device_printer * pdev, FILE * prn_stream)
     byte *in = gs_alloc_bytes(pdev->memory, line_size, "bit_print_page(in)");
     byte *data;
     int nul = !strcmp(pdev->fname, "nul") || !strcmp(pdev->fname, "/dev/null");
-    int lnum = ((gx_device_bit *)pdev)->FirstLine;
-    int bottom = ((gx_device_bit *)pdev)->LastLine;
+    int lnum = ((gx_device_bit *)pdev)->FirstLine >= pdev->height ?  pdev->height - 1 :
+		 ((gx_device_bit *)pdev)->FirstLine;
+    int bottom = ((gx_device_bit *)pdev)->LastLine >= pdev->height ?  pdev->height - 1 :
+		 ((gx_device_bit *)pdev)->LastLine;
     int line_count = any_abs(bottom - lnum);
     int i, step = lnum > bottom ? -1 : 1;
 
     if (in == 0)
 	return_error(gs_error_VMerror);
     if ((lnum == 0) && (bottom == 0))
-	bottom = pdev->height - 1;
-    for (i = 0; i < line_count; i++, lnum += step) {
+	line_count = pdev->height - 1;		/* default when LastLine == 0, FirstLine == 0 */
+    for (i = 0; i <= line_count; i++, lnum += step) {
 	gdev_prn_get_bits(pdev, lnum, in, &data);
 	if (!nul)
 	    fwrite(data, 1, line_size, prn_stream);
