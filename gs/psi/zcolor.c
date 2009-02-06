@@ -49,6 +49,7 @@
 #include "zcolor.h"	/* For the PS_colour_space_t structure */
 #include "zcie.h"	/* For CIE space function declarations */
 #include "zicc.h"	/* For declaration of seticc */
+#include "gscspace.h"   /* Needed for checking if current pgs colorspace is CIE */
 
 /* imported from gsht.c */
 extern  void    gx_set_effective_transfer(gs_state *);
@@ -342,7 +343,7 @@ zsetcolor(i_ctx_t * i_ctx_p)
  * especially CIE based color spaces, it can significantly improve
  * performance if the same space is frequently re-used.
  */
-static int is_same_colorspace(i_ctx_t * i_ctx_p, ref *space1, ref *space2)
+static int is_same_colorspace(i_ctx_t * i_ctx_p, ref *space1, ref *space2, bool isCIE)
 {
     PS_colour_space_t *oldcspace = 0, *newcspace = 0;
     ref oldspace, *poldspace = &oldspace, newspace, *pnewspace = &newspace;
@@ -376,6 +377,29 @@ static int is_same_colorspace(i_ctx_t * i_ctx_p, ref *space1, ref *space2)
 	if (!oldcspace->compareproc(i_ctx_p, poldspace, pnewspace))
 	    return 0;
 
+        /* See if current space is CIE based (which could happen
+           if UseCIE had been true previously), but UseCIE is false
+           and incoming space is device based.  This can occur
+           when we are now processing a soft mask, which should not
+           use the UseCIEColor option.  
+           
+           Need to detect this case at both transitions
+
+            Device Color UseCIEColor true
+            Soft mask 
+	            Device color UseCIEColor false
+            Soft mask
+            Device color UseCIEColor true
+            */
+
+        if ( name_is_device_color(newcspace->name) ){
+            if ( gs_color_space_is_CIE(i_ctx_p->pgs->color_space) ){
+                if ( !isCIE ) return 0; /*  The color spaces will be different */
+            } else {
+                if ( isCIE ) return 0; /*  The color spaces will be different */
+            }
+        }       
+
 	/* The current space is OK, if there is no alternate, then that's
 	 * good enough. 
 	 */
@@ -398,6 +422,19 @@ static int is_same_colorspace(i_ctx_t * i_ctx_p, ref *space1, ref *space2)
     return 1;
 }
 
+/* This is used to detect color space changes due
+   to the changing of UseCIEColor during transparency
+   soft mask processing */
+
+static bool name_is_device_color( char *name )
+{
+
+    return( (strcmp(name, "DeviceGray") == 0) || 
+        (strcmp(name, "DeviceRGB") == 0) || (strcmp(name, "DeviceCMYK") == 0));
+
+}
+
+
 /*
  *  <array>   setcolorspace   -
  *
@@ -412,6 +449,7 @@ zsetcolorspace(i_ctx_t * i_ctx_p)
     os_ptr  op = osp;
     es_ptr ep = esp;
     int code, depth;
+    bool is_CIE;
 
     /* Make sure we have an operand... */
     check_op(1);
@@ -424,8 +462,10 @@ zsetcolorspace(i_ctx_t * i_ctx_p)
     if (code < 0)
 	return code;
 
+    is_CIE = istate->use_cie_color.value.boolval;
+
     /* See if its the same as the current space */
-    if (is_same_colorspace(i_ctx_p, op, &istate->colorspace.array)) {
+    if (is_same_colorspace(i_ctx_p, op, &istate->colorspace.array, is_CIE)) {
 	PS_colour_space_t *cspace;
 
 	/* Even if its the same space, we still need to set the correct
