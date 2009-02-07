@@ -337,6 +337,19 @@ zsetcolor(i_ctx_t * i_ctx_p)
     return o_push_estack;
 }
 
+/* This is used to detect color space changes due
+   to the changing of UseCIEColor during transparency
+   soft mask processing */
+
+static bool name_is_device_color( char *name )
+{
+
+    return( (strcmp(name, "DeviceGray") == 0) || 
+        (strcmp(name, "DeviceRGB") == 0) || (strcmp(name, "DeviceCMYK") == 0));
+
+}
+
+
 /*
  * Given two color space arrays, attempts to determine if they are the 
  * same space by comparing their contents recursively. For some spaces,
@@ -422,17 +435,6 @@ static int is_same_colorspace(i_ctx_t * i_ctx_p, ref *space1, ref *space2, bool 
     return 1;
 }
 
-/* This is used to detect color space changes due
-   to the changing of UseCIEColor during transparency
-   soft mask processing */
-
-static bool name_is_device_color( char *name )
-{
-
-    return( (strcmp(name, "DeviceGray") == 0) || 
-        (strcmp(name, "DeviceRGB") == 0) || (strcmp(name, "DeviceCMYK") == 0));
-
-}
 
 
 /*
