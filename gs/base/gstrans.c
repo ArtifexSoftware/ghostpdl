@@ -204,7 +204,10 @@ gs_begin_transparency_group(gs_state *pgs,
        Store some information so that we know what the color space is
        so that we can adjust according later during the clist reader */ 
 
-    if(!gs_color_space_is_CIE(pgs->color_space)){
+    /* Note that we currently will use the concrete space for any space other than a 
+        device space.  However, if the device is a sep device it will blend
+        in DeviceN color space as required.  */
+    if (gs_color_space_get_index(pgs->color_space) <= gs_color_space_index_DeviceCMYK) {
 
         blend_color_space = pgs->color_space;
 
@@ -239,9 +242,14 @@ gs_begin_transparency_group(gs_state *pgs,
             params.group_color_numcomps = 4; 
         break;
         default:
-            /* ToDo:  Need to see about sep color spaces
-               and transparency */
-        return_error(gs_error_rangecheck);
+            
+            /* We can end up here if we are in
+               a deviceN color space and 
+               we have a sep output device */
+
+            params.group_color = DEVICEN;
+            params.group_color_numcomps = cs_num_components(blend_color_space);
+
         break;
 
      }  

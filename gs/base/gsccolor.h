@@ -73,6 +73,7 @@ typedef enum {
     DEVICE_RGB,
     DEVICE_CMYK,
     CIE_XYZ,
+    DEVICEN,
     OTHER
 } gs_transparency_color_t;
 
