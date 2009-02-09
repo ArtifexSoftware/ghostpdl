@@ -1637,6 +1637,20 @@ currentdict /PDF2PS_matrix_key undef
   } forall
 } bind def
 
+% Check if transparency is used in a Pattern
+/patternusestransparency {	% <Pattern dict> patternusestransparency <bool>
+  //false exch		% Assume no transparency
+  {
+    4 dict 1 index resourceusestransparency
+	{ pop not exit } if
+    dup /ExtGState knownoget { extgstateusestransparency
+	{ pop not exit } if
+    } if
+    pop
+  } loop
+} bind def
+
+
 % Check the Resources of a page or Form. Check for loops in the resource chain.
 /resourceusestransparency {	% <dict> <dict> resourceusestransparency <bool>
   {	% Use loop to provide an exitable context.
@@ -1652,6 +1666,12 @@ currentdict /PDF2PS_matrix_key undef
     2 copy //true put              % In the current chain.
     dup /ExtGState knownoget {
       extgstateusestransparency
+      { pop //true exit } if
+    } if
+    dup /Pattern knownoget {
+      //false exch
+      { exch pop oforce patternusestransparency { pop //true exit } if
+      } forall
       { pop //true exit } if
     } if
     dup /XObject knownoget {

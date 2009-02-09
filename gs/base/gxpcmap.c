@@ -886,12 +886,23 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
     if (saved->pattern_cache == 0)
 	saved->pattern_cache = pis->pattern_cache;
     gs_setdevice_no_init(saved, (gx_device *)adev);
+    if (pinst->template.uses_transparency) {
+        /*  This should not occur from PS or PDF, but is provided for other clients (XPS) */
+	if_debug0('v', "gx_pattern_load: pushing the pdf14 compositor device into this graphics state\n");
+	if ((code = gs_push_pdf14trans_device(saved)) < 0)
+	    return code;
+    }
     code = (*pinst->template.PaintProc)(&pdc->ccolor, saved);
     if (code < 0) {
 	dev_proc(adev, close_device)((gx_device *)adev);
-	/* Freeing the state will free the device. */
+	/* Freeing the state will free the device and the pdf14 compositor (if any). */
 	gs_state_free(saved);
 	return code;
+    }
+    if (pinst->template.uses_transparency) {
+	if_debug0('v', "gx_pattern_load: popping the pdf14 compositor device from this graphics state\n");
+	if ((code = gs_pop_pdf14trans_device(saved)) < 0)
+	    return code;
     }
     /* We REALLY don't like the following cast.... */
     code = gx_pattern_cache_add_entry((gs_imager_state *)pis, 
