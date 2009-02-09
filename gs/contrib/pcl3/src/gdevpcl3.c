@@ -1315,7 +1315,7 @@ static int pcl3_open_device(gx_device *device)
 	"%s  page setup requested by the document as being for `",
 	epref, epref);
       if (ms_find_name_from_code(buffer, sizeof(buffer),
-	  dev->eprn.code, flag_description) == 0) eprintf(buffer);
+	  dev->eprn.code, flag_description) == 0) eprintf1("%s", buffer);
       else eprintf("UNKNOWN");	/* should never happen */
       eprintf3("' (%.0f x %.0f bp).\n"
 	"%s  The driver does not know how to do this in PCL.\n",
