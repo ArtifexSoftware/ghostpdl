@@ -1348,8 +1348,8 @@ currentdict /eexec_pdf_param_dict .undef
     concatstrings concatstrings
     cvn
     QUIET not {
-      (Substituting CID font resource ) print dup ==only
-      ( for ) print 1 index ==only (.\n) print
+      (Substituting CID font ) print dup ==only
+      ( for ) print 1 index ==only (, see doc/Use.htm#CIDFontSubstitution.) =
     } if
     exch pop
     dup /CIDFont resourcestatus {
