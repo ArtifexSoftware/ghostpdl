@@ -612,6 +612,7 @@ gx_image3x_plane_data(gx_image_enum_common_t * info,
 	return 0;
 #else
         return 1;
+#endif
 
     /* Handle masks from separate sources. */
     for (i = 0; i < NUM_MASKS; ++i)
