@@ -49,7 +49,7 @@ pdftoraster: $(PDFTORASTER_XE)
 pdftoraster_=cups/pdftoraster.c
 
 $(PDFTORASTER_XE): $(pdftoraster_)
-	$(GLCC) `cups-config --image --libs` -DBINDIR='"$(bindir)"' -DGS='"$(GS)"' -o $@ $(pdftoraster_)
+	$(GLCC) $(LDFLAGS) -DBINDIR='"$(bindir)"' -DGS='"$(GS)"' -o $@ $(pdftoraster_) `cups-config --image --libs`
 
 install:	install-cups
 
