@@ -333,9 +333,8 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 	return code;
     }
     pair->FontType = font->FontType;
-    /* The OSF/1 compiler doesn't like casting a pointer to */
-    /* a shorter int.... */
-    pair->hash = (uint) (ulong) pair % 549;	/* scramble bits */
+    pair->hash = (uint) (dir->hash % 549);	/* scramble bits */
+    dir->hash += 371;
     pair->mxx = mxx, pair->mxy = mxy;
     pair->myx = myx, pair->myy = myy;
     pair->num_chars = 0;

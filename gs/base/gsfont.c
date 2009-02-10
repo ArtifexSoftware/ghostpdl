@@ -269,6 +269,7 @@ gs_font_dir_alloc2_limits(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
     pdir->san = 0;
     pdir->global_glyph_code = NULL;
     pdir->text_enum_id = 0;
+    pdir->hash = 42;  /* initialize the hash to a randomly picked number */
     return pdir;
 }
 

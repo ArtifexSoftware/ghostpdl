@@ -300,6 +300,8 @@ struct gs_font_dir_s {
     uint enum_index;		/* index (N) */
     uint enum_offset;		/* ccache.table[offset] is N'th non-zero entry */
 
+    uint hash;
+
     /* User parameter AlignToPixels. */
     bool align_to_pixels;
 
