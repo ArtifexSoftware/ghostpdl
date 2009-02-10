@@ -52,7 +52,8 @@
 #define VD_PAINT_ALPHA 1
 
 #if RAW_DUMP
-unsigned char global_index = 0;
+unsigned int global_index = 0;
+unsigned int clist_band_count = 0;
 #endif
 
 /*
@@ -1118,7 +1119,7 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
                 "PDF14_PUTIMAGE",pdev->ctx->stack->data);
 
     global_index++;
-
+    clist_band_count++;
 
 #endif
 
@@ -1200,6 +1201,7 @@ pdf14_cmykspot_put_image(gx_device * dev, gs_imager_state * pis, gx_device * tar
                 "CMYK_SPOT_PUTIMAGE",pdev->ctx->stack->data);
 
     global_index++;
+    clist_band_count++;
 
 
 #endif

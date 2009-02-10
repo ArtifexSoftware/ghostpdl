@@ -22,7 +22,8 @@
 typedef int art_s32;
 
 #if RAW_DUMP
-extern unsigned char global_index;
+extern unsigned int global_index;
+extern unsigned int clist_band_count;
 #endif
 
 /* This function is used for mapping the SMask source to a
@@ -1426,6 +1427,11 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
     int z,y;
     byte *buff_ptr;
     int max_bands;
+
+   /* clist_band_count is incremented at every pdf14putimage */
+   /* Useful for catching this thing and only dumping */
+   /* during a particular band if we have a large file */
+   /* if (clist_band_count != 80) return; */
 
     buff_ptr = Buffer;
 
