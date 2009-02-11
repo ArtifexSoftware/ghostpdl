@@ -137,7 +137,7 @@ const gx_device_bit gs_bitrgb_device =
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
 		 0, 0, 0, 0,	/* margins */
-		 3, 4, 1, 1, 2, 2, bit_print_page)
+		 3, 3, 1, 1, 2, 2, bit_print_page)
 };
 
 static const gx_device_procs bitcmyk_procs =
