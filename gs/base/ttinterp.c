@@ -3856,7 +3856,11 @@ static int nInstrCount=0;
     if ( BOUNDS( args[0], CUR.zp0.n_points ) ||
          BOUNDS( args[1], CUR.cvtSize )      )
     {
-      CUR.error = TT_Err_Invalid_Reference;
+	/* Ignore these errors, abort the instruction
+	 * and continue. This restores the FreeType 
+	 * behaviour when pedantic_hinting is false. For bug
+	 * #689471, see also Ins_SHC above and bug #688501.
+	 */
       return;
     }
 
