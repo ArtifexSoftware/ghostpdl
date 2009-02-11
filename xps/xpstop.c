@@ -117,8 +117,6 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     ctx->srgb = gs_cspace_new_DeviceRGB(ctx->memory);
     ctx->scrgb = gs_cspace_new_DeviceRGB(ctx->memory);
 
-    ctx->part_table = xps_hash_new(ctx);
-
     instance->pre_page_action = 0;
     instance->pre_page_closure = 0;
     instance->post_page_action = 0;
@@ -261,6 +259,8 @@ xps_imp_init_job(pl_interp_instance_t *pinstance)
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     xps_context_t *ctx = instance->ctx;
 
+    ctx->part_table = xps_hash_new(ctx);
+    ctx->first_part = NULL;
     ctx->last_part = NULL;
 
     ctx->start_part = NULL;
@@ -328,6 +328,12 @@ xps_imp_dnit_job(pl_interp_instance_t *pinstance)
 	    xps_free_part(ctx, part);
 	    part = next;
 	}
+
+	ctx->first_part = NULL;
+	ctx->last_part = NULL;
+
+	xps_hash_free(ctx, ctx->part_table);
+	ctx->part_table = NULL;
 
 	xps_free_fixed_pages(ctx);
 	xps_free_fixed_documents(ctx);
