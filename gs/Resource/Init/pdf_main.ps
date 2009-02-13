@@ -1641,12 +1641,9 @@ currentdict /PDF2PS_matrix_key undef
 /patternusestransparency {	% <Pattern dict> patternusestransparency <bool>
   //false exch		% Assume no transparency
   {
-    4 dict 1 index resourceusestransparency
-	{ pop not exit } if
-    dup /ExtGState knownoget { extgstateusestransparency
-	{ pop not exit } if
-    } if
-    pop
+    4 dict 1 index resourceusestransparency { pop not exit } if
+    dup /ExtGState knownoget { extgstateusestransparency { pop not exit } if } if
+    pop exit
   } loop
 } bind def
 
