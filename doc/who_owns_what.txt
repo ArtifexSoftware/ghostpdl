@@ -30,24 +30,24 @@ cfax.dev: ray and henry
 cfd.dev: alex
 cfe.dev alex
 cfe.dev: alex
-cff.dev: igor
-cidfont.dev: igor
-cidlib.dev: igor
+cff.dev: ken
+cidfont.dev: ken
+cidlib.dev: ken
 cie.dev: micheal
 cielib.dev: michael
-clfile.dev: igor
-clist.dev: igor
+clfile.dev: ray
+clist.dev: ray
 cljet5.dev: ray and henry
 cljet5c.dev: ray and henry
-cljet5pr.dev: ray and stefan
-clmemory.dev: igor
-cmaplib.dev: igor
-cmapread.dev: igor
+cljet5pr.dev: ray and henry
+clmemory.dev: ray
+cmaplib.dev: ken
+cmapread.dev: ken
 cmyklib.dev: michael
 cmykread.dev michael
 colimlib.dev: michael
 color.dev: michael
-compfont.dev: igor
+compfont.dev: ken
 crc32.dev: ken
 cspixel.dev: michael
 cspixlib.dev: michael
@@ -73,9 +73,9 @@ epsf.dev: alex
 epson.dev: ralph
 epsonc.dev: ralph
 epswrite.dev: ken
-fapi.dev: igor
-fapif.dev: igor
-fapiu.dev: igor
+fapi.dev: ken
+fapif.dev: ken
+fapiu.dev: ken
 farc4.dev: ken
 fax.dev: ray and henry
 faxg3.dev: ray and henry
@@ -87,15 +87,15 @@ filter.dev: alex
 fimscale.dev: alex
 fmd5.dev: ken
 frsd.dev: alex
-func.dev: igor
-func4.dev: igor
-func4lib.dev: igor
-funclib.dev: igor
+func.dev: alex
+func4.dev: alex
+func4lib.dev: alex
+funclib.dev: alex
 fzlib.dev: alex
 gsiodevs.dev: ray and henry
 gsnogc.dev: obsolete
-gxfapiu.dev: igor
-gxfapiu1.dev: igor
+gxfapiu.dev: ken
+gxfapiu1.dev: ken
 hpgl2.dev: henry
 hpgl2c.dev: henry
 htxlib.dev: ralph
@@ -108,7 +108,7 @@ imasklib.dev: alex
 imdi.dev: ray
 iodevice.dev: ray and henry
 iscale.dev: alex
-isupport.dev: igor
+isupport.dev: ray
 jasper.dev: ralph
 jasper_0.dev: ralph
 jbig2.dev: ralph
@@ -123,7 +123,7 @@ laserjet.dev: ray and henry
 ldf_jb2.dev: ralph
 libcore.dev:
 
-    gsalloc, gsmalloc, gsmemlok, gsmemory, gsmemret: igor
+    gsalloc, gsmalloc, gsmemlok, gsmemory, gsmemret: ralph and ray
 
     stream strmio: alex
 
@@ -135,7 +135,7 @@ libcore.dev:
     gsbitcom, gsbitops, gsbittab: ?
 
     gschar, gsfont, gstext, gscedata, gscencs, gsgdata, gsgcache,
-    gxccache, gxccman, gxchar, gxfdrop: igor
+    gxccache, gxccman, gxchar, gxfdrop: ken
 
     gswts, gxwts: ray (probably don't belong in libcore)
 
@@ -148,7 +148,7 @@ libcore.dev:
 
     gsimpath, gsline, gspaint, gspath, gxclip, gxcpath, gxfill,
     gxacpath, gxpaint, gxpath, gxpdash, gxpflat, gxstroke, gxpath2,
-    gxpcopy: igor
+    gxpcopy: henry
 libd.dev: ray
 libpng.dev: third party
 lj5gray.dev: ray and henry
@@ -168,11 +168,11 @@ macres.dev: ralph
 macroman.dev: ralph
 page.dev: ray and henry
 pagedev.dev: ray and henry
-path1.dev: igor
-path1lib.dev: igor
-patlib.dev: igor
-patread.dev: igor
-pattern.dev: igor
+path1.dev: henry
+path1lib.dev: henry
+patlib.dev: michael
+patread.dev: michael
+pattern.dev: michael
 pbm.dev: ray and henry
 pbmraw.dev: ray and henry
 pcl5.dev: henry
@@ -224,11 +224,11 @@ psbase.dev: alex
 psdcmyk.dev: ralph
 psdf.dev: ken
 psdrgb.dev: ray and henry
-psf.dev: igor
-psf0lib.dev: igor
-psf0read.dev: igor
-psf1lib.dev: igor
-psf2lib.dev: igor
+psf.dev: ken
+psf0lib.dev: ken
+psf0read.dev: ken
+psf1lib.dev: ken
+psf2lib.dev: ken
 psgray.dev: ken
 psi.dev: ray and henry
 psl2cs.dev: michael
@@ -254,7 +254,7 @@ seexec.dev: alex and ralph (ralph for gscrypt)
 sepr.dev: michael
 seprlib.dev: michael
 sfile.dev: ray and henry
-shadelib.dev: igor
+shadelib.dev: michael
 sicclib.dev: michael
 simscale.dev: alex
 sjbig2.dev: ralph
@@ -291,16 +291,16 @@ tracedev.dev: ken
 translib.dev: ralph
 transpar.dev: ralph
 traplib.dev: ralph
-ttflib.dev: igor
-ttfont.dev: igor
-type1.dev: igor
-type2.dev: igor
-type32.dev: igor
-type42.dev: igor
+ttflib.dev: ken
+ttfont.dev: ken
+type1.dev: ken
+type2.dev: ken
+type32.dev: ken
+type42.dev: ken
 ufst.dev: henry
 uniprint.dev: ray and henry
 unix_.dev: ?
-upath.dev: igor
+upath.dev: henry
 usparam.dev: ray and henry
 vector.dev: ken
 wtscmyk.dev: ray
@@ -322,15 +322,15 @@ General (high level) Ownership
 --------------------
 
 color:michael
-fonts:igor
+fonts:ken
 gslite:henry
 images:alex
-memory:igor
+memory:ray
 non windows makefiles:ralph
 pcl, pxl, pl:henry
 pdf interpreter:alex
 ps, pdf, eps write:ken
-paths:igor
+paths:henry
 windows makefiles:ray
 xps:tor
 
