@@ -475,7 +475,7 @@ clist_begin_typed_image(gx_device * dev,
 	 * worthwhile.
 	 */
 	gx_color_index all =
-	    ((gx_color_index)1 << dev->color_info.depth) - 1;
+	    ((gx_color_index)1 << cdev->clist_color_info.depth) - 1;
 
 	if (bits_per_pixel > 4 || pim->Interpolate || num_components > 1)
 	    colors_used = all;
