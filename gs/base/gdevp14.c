@@ -1385,12 +1385,33 @@ pdf14_fill_path(gx_device *dev,	const gs_imager_state *pis,
 {
     gs_imager_state new_is = *pis;
 
+
+   if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor)) {
+
+ 	gs_pattern2_instance_t *pinst =
+	    (gs_pattern2_instance_t *)pdcolor->ccolor.pattern;
+           gs_imager_state *pis_saved = (gs_imager_state *)(pinst->saved);
+           pis_saved->has_transparency = true;
+
+           /* The transparency color space operations are driven
+              by the pdf14 clist writer device.  */
+
+           pinst->saved->trans_device = dev;
+
+    }
+
+
+
     /*
      * The blend operations are not idempotent.  Force non-idempotent
      * filling and stroking operations.
      */
     new_is.log_op |= lop_pdf14;
     pdf14_set_marking_params(dev, pis);
+
+    new_is.trans_device = dev;
+    new_is.has_transparency = true;
+
     return gx_default_fill_path(dev, &new_is, ppath, params, pdcolor, pcpath);
 }
 
