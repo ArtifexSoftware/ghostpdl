@@ -232,6 +232,7 @@ typedef struct gs_devicen_color_map_s {
 	uint text_rendering_mode;\
 	gs_transparency_state_t *transparency_stack;\
         bool has_transparency;   /* used to keep from doing shading fills in device color space */\
+        gx_device *trans_device;  /* trans device has all mappings to group color space */\
 	bool overprint;\
 	int overprint_mode;\
 	int effective_overprint_mode;\
@@ -273,7 +274,7 @@ struct gs_imager_state_s {
    { (float)(scale), 0.0, 0.0, (float)(-(scale)), 0.0, 0.0 },\
   false, {0, 0}, {0, 0}, false, \
   lop_default, gx_max_color_value, BLEND_MODE_Compatible,\
-  { 1.0 }, { 1.0 }, 0, 0/*false*/, 0, 0, 0/*false*/, 0/*false*/, 0, 0, 1.0,  \
+  { 1.0 }, { 1.0 }, 0, 0/*false*/, 0, 0, 0, 0, 0/*false*/, 0, 0, 1.0,  \
    { fixed_half, fixed_half }, 0/*false*/, 0/*false*/, 0/*false*/, 1.0,\
   1, INIT_CUSTOM_COLOR_PTR	/* 'Custom color' callback pointer */  \
   gx_default_get_cmap_procs

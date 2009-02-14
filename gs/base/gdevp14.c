@@ -2920,16 +2920,36 @@ pdf14_cmap_gray_direct_group(frac gray, gx_device_color * pdc, const gs_imager_s
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
+    gx_device *trans_device;
+
+     /*  We may be coming from the clist writer 
+         which often forwards us the target device.
+         If this occurs we actually need to get to
+         the color space defined by the transparency group
+         and we use the operators defined by the transparency device 
+         to do the job.  
+       */
+
+    if (pis->trans_device != NULL){
+
+        trans_device = pis->trans_device;
+
+    } else {
+
+        trans_device = dev;
+    }
+ 
+    ncomps = trans_device->color_info.num_components;
 
    /* If we are doing concretization of colors in an SMask or isolated group 
        then just return the color as is */
 
-   if (dev->color_info.num_components == 1 ){
+   if (ncomps == 1 ){
 
 	cv[0] = frac2cv(gray);
 
         /* encode as a color index */
-        color = pdf14_encode_smask_color(dev,cv,1);
+        color = pdf14_encode_smask_color(trans_device,cv,1);
 
         /* check if the encoding was successful; we presume failure is rare */
          if (color != gx_no_color_index)
@@ -2938,13 +2958,13 @@ pdf14_cmap_gray_direct_group(frac gray, gx_device_color * pdc, const gs_imager_s
     } else {
 
         /* map to the color model */
-        dev_proc(dev, get_color_mapping_procs)(dev)->map_gray(dev, gray, cm_comps);
+        dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_gray(trans_device, gray, cm_comps);
 
         for (i = 0; i < ncomps; i++)
 	    cv[i] = frac2cv(cm_comps[i]);
 
         /* encode as a color index */
-        color = dev_proc(dev, encode_color)(dev, cv);
+        color = dev_proc(trans_device, encode_color)(trans_device, cv);
 
         /* check if the encoding was successful; we presume failure is rare */
         if (color != gx_no_color_index)
@@ -2963,46 +2983,66 @@ pdf14_cmap_rgb_direct_group(frac r, frac g, frac b, gx_device_color *	pdc,
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
+    gx_device *trans_device;
 
-
-     /* If we are doing remap concretization of colors in an SMask 
-       then just return the color as is, IF the number of components is correct.
-       It may not be correct if the original concretization was from gray to RGB
-       which could occur if the device is truely RGB.  For example, if we had
-       -dUseCIEColor and an RGB device with an RGB CRD.  If the Smask were gray
-       then during the mono image handling code, it will concretize the gray to 
-       RGB.  This will occur even if the current color space is CMYK.  The mapping
-       to device CMYK would occur here in this case as we went to the "device colors"
-       Generally we don't want to map Smask colors
-       to the "device model"  but here it is OK.
+     /*  We may be coming from the clist writer 
+         which often forwards us the target device.
+         If this occurs we actually need to get to
+         the color space defined by the transparency group
+         and we use the operators defined by the transparency device 
+         to do the job.  
        */
 
-    if (dev->color_info.num_components == 3 ){
-	cv[0] = frac2cv(r);
-	cv[1] = frac2cv(g);
-	cv[2] = frac2cv(b);
+    if (pis->trans_device != NULL){
 
-        /* encode as a color index */
-        color = pdf14_encode_smask_color(dev,cv,3);
-
-        /* check if the encoding was successful; we presume failure is rare */
-         if (color != gx_no_color_index)
-	    color_set_pure(pdc, color);    
+        trans_device = pis->trans_device;
 
     } else {
 
-        /* map to the color model */
-        dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, pis, r, g, b, cm_comps);
+        trans_device = dev;
+    }
+ 
+    ncomps = trans_device->color_info.num_components;
 
-        for (i = 0; i < ncomps; i++)
-	    cv[i] = frac2cv(cm_comps[i]);
+    if ( ncomps == 3 ){
+
+        cv[0] = frac2cv(r);
+        cv[1] = frac2cv(g);
+        cv[2] = frac2cv(b);
 
         /* encode as a color index */
-        color = dev_proc(dev, encode_color)(dev, cv);
+        color = pdf14_encode_smask_color(trans_device,cv,3);
+
+       /* check if the encoding was successful; we presume failure is rare */
+         if (color != gx_no_color_index)
+        color_set_pure(pdc, color);    
+
+    } else {
+
+        /* map to the device color model */
+        /* We can end up here, if for example we had a DeviceN
+           color space with a CIE based alternate space and
+           a output device that was  RGB but a blending
+           space that was CMYK.  The proper way to solve this
+           is to introduce another color space for the graphic
+           state that has its own Joint CIE Cache between the
+           source and a CMYK CRD (the transparency color space).
+           The problem is that we can
+           only have one CRD, which is defined by the output
+           device.  We will fix these issues with the
+           new ICC base color architecture. */
+
+        dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_rgb(trans_device, pis, r, g, b, cm_comps);
+
+        for (i = 0; i < ncomps; i++)
+            cv[i] = frac2cv(cm_comps[i]);
+
+        /* encode as a color index */
+        color = dev_proc(trans_device, encode_color)(trans_device, cv);
 
         /* check if the encoding was successful; we presume failure is rare */
         if (color != gx_no_color_index)
-	    color_set_pure(pdc, color);
+            color_set_pure(pdc, color);
 
     }
 }
@@ -3016,11 +3056,28 @@ pdf14_cmap_cmyk_direct_group(frac c, frac m, frac y, frac k, gx_device_color * p
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
+    gx_device *trans_device;
 
-   /* If we are doing concretization of colors in an SMask or isolated group 
-       then just return the color as is */
+     /*  We may be coming from the clist writer 
+         which often forwards us the target device.
+         If this occurs we actually need to get to
+         the color space defined by the transparency group
+         and we use the operators defined by the transparency device 
+         to do the job.  
+       */
 
-    if (dev->color_info.num_components == 4 ){
+    if (pis->trans_device != NULL){
+
+        trans_device = pis->trans_device;
+
+    } else {
+
+        trans_device = dev;
+    }
+ 
+    ncomps = trans_device->color_info.num_components;
+
+    if (ncomps == 4 ){
 
         cv[0] = frac2cv(c);
         cv[1] = frac2cv(m);
@@ -3028,7 +3085,7 @@ pdf14_cmap_cmyk_direct_group(frac c, frac m, frac y, frac k, gx_device_color * p
         cv[3] = frac2cv(k);
 
          /* encode as a color index */
-        color = pdf14_encode_smask_color(dev,cv,4);
+        color = pdf14_encode_smask_color(trans_device,cv,4);
 
         /* check if the encoding was successful; we presume failure is rare */
         if (color != gx_no_color_index)
@@ -3037,12 +3094,12 @@ pdf14_cmap_cmyk_direct_group(frac c, frac m, frac y, frac k, gx_device_color * p
     } else {
 
         /* map to the color model */
-        dev_proc(dev, get_color_mapping_procs)(dev)->map_cmyk(dev, c, m, y, k, cm_comps);
+        dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_cmyk(trans_device, c, m, y, k, cm_comps);
 
         for (i = 0; i < ncomps; i++)
 	    cv[i] = frac2cv(cm_comps[i]);
 
-        color = dev_proc(dev, encode_color)(dev, cv);
+        color = dev_proc(trans_device, encode_color)(trans_device, cv);
         if (color != gx_no_color_index) 
 	    color_set_pure(pdc, color);
 
@@ -3053,13 +3110,33 @@ static	void
 pdf14_cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha,	gx_device_color	* pdc,
      const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
 {
-    int i, ncomps = dev->color_info.num_components;
+    int i, ncomps;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv_alpha, cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
+    gx_device *trans_device;
+
+     /*  We may be coming from the clist writer 
+         which often forwards us the target device.
+         If this occurs we actually need to get to
+         the color space defined by the transparency group
+         and we use the operators defined by the transparency device 
+         to do the job.  
+       */
+
+    if (pis->trans_device != NULL){
+
+        trans_device = pis->trans_device;
+
+    } else {
+
+        trans_device = dev;
+    }
+ 
+    ncomps = trans_device->color_info.num_components;
 
     /* map to the color model */
-    dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, pis, r, g, b, cm_comps);
+    dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_rgb(trans_device, pis, r, g, b, cm_comps);
 
     /* pre-multiply to account for the alpha weighting */
     if (alpha != frac_1) {
@@ -3077,11 +3154,13 @@ pdf14_cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha,	gx_device_color	
 	cv[i] = frac2cv(cm_comps[i]);
 
     /* encode as a color index */
-    if (dev_proc(dev, map_rgb_alpha_color) != gx_default_map_rgb_alpha_color &&
+   /* if (dev_proc(dev, map_rgb_alpha_color) != gx_default_map_rgb_alpha_color &&
 	 (cv_alpha = frac2cv(alpha)) != gx_max_color_value)
-	color = dev_proc(dev, map_rgb_alpha_color)(dev, cv[0], cv[1], cv[2], cv_alpha);
     else
-	color = dev_proc(dev, encode_color)(dev, cv);
+	color = dev_proc(dev, encode_color)(dev, cv);  */
+
+    color = dev_proc(trans_device, encode_color)(trans_device, cv); 
+
 
     /* check if the encoding was successful; we presume failure is rare */
     if (color != gx_no_color_index)
@@ -3145,12 +3224,32 @@ pdf14_cmap_devicen_direct(const	frac * pcc,
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
+    gx_device *trans_device;
+
+     /*  We may be coming from the clist writer 
+         which often forwards us the target device.
+         If this occurs we actually need to get to
+         the color space defined by the transparency group
+         and we use the operators defined by the transparency device 
+         to do the job.  
+       */
+
+    if (pis->trans_device != NULL){
+
+        trans_device = pis->trans_device;
+
+    } else {
+
+        trans_device = dev;
+    }
+ 
+    ncomps = trans_device->color_info.num_components;
 
     /* map to the color model */
     map_components_to_colorants(pcc, &(pis->color_component_map), cm_comps);;
 
     /* apply the transfer function(s); convert to color values */
-    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+    if (trans_device->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
 	for (i = 0; i < ncomps; i++)
 	    cv[i] = frac2cv(gx_map_color_frac(pis,
 				cm_comps[i], effective_transfer[i]));
@@ -3160,7 +3259,7 @@ pdf14_cmap_devicen_direct(const	frac * pcc,
 			(frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
 
     /* encode as a color index */
-    color = dev_proc(dev, encode_color)(dev, cv);
+    color = dev_proc(trans_device, encode_color)(trans_device, cv);
 
     /* check if the encoding was successful; we presume failure is rare */
     if (color != gx_no_color_index)
@@ -4840,6 +4939,7 @@ pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_imager_state * pis
     return code;
 }
 
+
 /*
  * fill_path routine for the PDF 1.4 transaprency compositor device for
  * writing the clist.
@@ -4869,7 +4969,9 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
        do the shading in the device color space. It must occur in
        the source space.  To handle it in the device space would 
        require knowing all the nested transparency group color spaces
-       as well as the transparency.  */
+       as well as the transparency.  Some of the shading code
+       ignores this, so we have to pass on the clist_writer device
+       to enable proper mapping to the transparency group color space. */
 
     if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor) && pdev->trans_group_parent_cmap_procs != NULL) {
 
@@ -4878,6 +4980,11 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
            gs_imager_state *pis_saved = (gs_imager_state *)(pinst->saved);
            pis_saved->has_transparency = true;
 
+           /* The transparency color space operations are driven
+              by the pdf14 clist writer device.  */
+
+           pinst->saved->trans_device = dev;
+
     }
 
     /*
@@ -4885,6 +4992,9 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
      * filling and stroking operations.
      */
     new_is.log_op |= lop_pdf14;
+    new_is.trans_device = dev;
+    new_is.has_transparency = true;
+
     return gx_forward_fill_path(dev, &new_is, ppath, params, pdcolor, pcpath);
 }
 
