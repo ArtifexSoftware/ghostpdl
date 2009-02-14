@@ -139,7 +139,7 @@ pdf14_unpack_custom(int num_comp, gx_color_index color,
 }
 
 #if RAW_DUMP
-extern unsigned char global_index;
+extern unsigned int global_index;
 #endif
 
 void
