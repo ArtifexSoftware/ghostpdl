@@ -653,6 +653,7 @@ struct gx_device_pdf_s {
     bool SetPageSize;
     bool RotatePages;
     bool FitPages;
+    bool CenterPages;
 };
 
 #define is_in_page(pdev)\

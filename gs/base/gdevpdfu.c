@@ -313,6 +313,8 @@ pdf_open_document(gx_device_pdf * pdev)
 		stream_puts(s, "/RotatePages true def\n");
 	    if(pdev->FitPages)
 		stream_puts(s, "/FitPages true def\n");
+	    if(pdev->CenterPages)
+		stream_puts(s, "/CenterPages true def\n");
 	    if (pdev->params.CompressPages || pdev->CompressEntireFile) {
 		/*  When CompressEntireFile is true and ASCII85EncodePages is false,
 		    the ASCII85Encode filter is applied, rather one may expect the opposite.
