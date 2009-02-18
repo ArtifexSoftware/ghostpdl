@@ -231,7 +231,9 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     int nos_shape_offset = n_chan * nos_planestride;
     bool nos_has_shape = nos->has_shape;
     byte *mask_tr_fn = NULL; /* Quiet compiler. */
+#if RAW_DUMP
     byte *composed_ptr = NULL;
+#endif
 
     rect_merge(nos->bbox, tos->bbox);
 

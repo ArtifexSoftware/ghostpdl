@@ -18,10 +18,12 @@
    using the ICC based linked mappings with the external CMS. This is far from 
    efficient at this point, but gets the job done */
 
+#include "string_.h"
 #include "stdpre.h"
 #include "gstypes.h"
 #include "gsmemory.h"
 #include "gxblend.h"
+#include "gscolorbuffer.h"
 
 #define float_color_to_byte_color(float_color) ( (0.0 < float_color && float_color < 1.0) ? \
     ((unsigned char) (float_color*255.0)) :  ( (float_color <= 0.0) ? 0x00 : 0xFF  ))
@@ -138,6 +140,7 @@ gs_transform_color_buffer_generic(byte *inputbuffer, int row_stride, int plane_s
 
             default:
             
+                color_remap = NULL; /* quite compiler */
                 /* Should never be here.  Groups must
                    be gray, rgb or CMYK.   Exception
                    may be ICC with XPS */
