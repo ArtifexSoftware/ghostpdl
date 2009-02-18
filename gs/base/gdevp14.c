@@ -673,7 +673,6 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
     int x0, x1, y0, y1;
     byte *new_data_buf;
     int num_noncolor_planes, new_num_planes;
-    pdf14_parent_color_t *parent_color = &(ctx->stack->parent_color_info_procs);
 
     if (nos == NULL)
 	return_error(gs_error_rangecheck);
@@ -1169,7 +1168,6 @@ pdf14_cmykspot_put_image(gx_device * dev, gs_imager_state * pis, gx_device * tar
     pdf14_device * pdev = (pdf14_device *)dev;
     pdf14_buf *buf = pdev->ctx->stack;
     gs_int_rect rect = buf->rect;
-    int x0 = rect.p.x, y0 = rect.p.y;
     int x1, y1, width, height;
     gs_devn_params * pdevn_params = &pdev->devn_params;
     gs_separations * pseparations = &pdevn_params->separations;
@@ -2447,7 +2445,6 @@ pdf14_push_parent_color(gx_device *dev, const gs_imager_state *pis)
 {
 
     pdf14_device *pdev = (pdf14_device *)dev;
-    pdf14_parent_color_t *parent_color_info = pdev->trans_group_parent_cmap_procs;
     pdf14_parent_color_t *new_parent_color;
 
     if_debug0('v', "[v]pdf14_push_parent_color\n");
@@ -2614,7 +2611,6 @@ pdf14_mark_fill_rectangle(gx_device * dev,
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
     bool overprint = pdev->overprint;
     gx_color_index drawn_comps = pdev->drawn_comps;
-    bool overprint_mode = pdev->overprint_mode;
     gx_color_index comps;
     byte shape = 0; /* Quiet compiler. */
     byte src_alpha;
