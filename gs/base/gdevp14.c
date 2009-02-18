@@ -3133,7 +3133,7 @@ pdf14_cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha,	gx_device_color	
 {
     int i, ncomps;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
-    gx_color_value cv_alpha, cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
     gx_device *trans_device;
 

@@ -184,7 +184,9 @@ gs_begin_transparency_group(gs_state *pgs,
 			    const gs_rect *pbbox)
 {
     gs_pdf14trans_params_t params = { 0 };
-    gs_color_space *blend_color_space;
+    const gs_color_space *blend_color_space;
+    gs_imager_state * pis = (gs_imager_state *)pgs;
+
 
     /*
      * Put parameters into a compositor parameter and then call the
@@ -224,7 +226,7 @@ gs_begin_transparency_group(gs_state *pgs,
        concrete space for the ICC space, which is defined by
        the output (or default) CRD. */
 
-        blend_color_space = cs_concrete_space(pgs->color_space, pgs);
+        blend_color_space = cs_concrete_space(pgs->color_space, pis);
 
     }
 
@@ -372,7 +374,8 @@ gs_begin_transparency_mask(gs_state * pgs,
     gs_pdf14trans_params_t params = { 0 };
     const int l = sizeof(params.Background[0]) * ptmp->Background_components;
     int i;
-    gs_color_space *blend_color_space;
+    const gs_color_space *blend_color_space;
+    gs_imager_state * pis = (gs_imager_state *)pgs;
 
     params.pdf14_op = PDF14_BEGIN_TRANS_MASK;
     params.bbox = *pbbox;
@@ -427,8 +430,8 @@ gs_begin_transparency_mask(gs_state * pgs,
 
         /* Install Color Space to go to CIEXYZ */
         
-        int ok;
-        ok = gx_cie_to_xyz_alloc2(pgs->color_space,pgs);
+        /* int ok;
+        ok = gx_cie_to_xyz_alloc2(pgs->color_space,pgs); */  /* quite compiler */
         params.group_color_numcomps = 3;  /* CIEXYZ */
 
         /* Mark the proper spaces so that we make
@@ -462,7 +465,7 @@ gs_begin_transparency_mask(gs_state * pgs,
            concrete space for the ICC space, which is defined by
            the output (or default) CRD. */
 
-            blend_color_space = cs_concrete_space(pgs->color_space, pgs);
+            blend_color_space = cs_concrete_space(pgs->color_space, pis);
 
         }
 
