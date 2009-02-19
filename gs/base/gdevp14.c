@@ -1382,14 +1382,15 @@ pdf14_fill_path(gx_device *dev,	const gs_imager_state *pis,
 			   const gx_clip_path *pcpath)
 {
     gs_imager_state new_is = *pis;
+    int code;
+    gs_pattern2_instance_t *pinst = NULL;
 
 
    if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor)) {
 
- 	gs_pattern2_instance_t *pinst =
+ 	pinst =
 	    (gs_pattern2_instance_t *)pdcolor->ccolor.pattern;
-           gs_imager_state *pis_saved = (gs_imager_state *)(pinst->saved);
-           pis_saved->has_transparency = true;
+           pinst->saved->has_transparency = true;
 
            /* The transparency color space operations are driven
               by the pdf14 clist writer device.  */
@@ -1410,7 +1411,16 @@ pdf14_fill_path(gx_device *dev,	const gs_imager_state *pis,
     new_is.trans_device = dev;
     new_is.has_transparency = true;
 
-    return gx_default_fill_path(dev, &new_is, ppath, params, pdcolor, pcpath);
+    code = gx_default_fill_path(dev, &new_is, ppath, params, pdcolor, pcpath);
+
+    new_is.trans_device = NULL;
+    new_is.has_transparency = false;
+
+    if (pinst != NULL){
+        pinst->saved->trans_device = NULL;
+    }
+
+    return code;
 }
 
 static	int
@@ -4970,6 +4980,7 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
     pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
     gs_imager_state new_is = *pis;
     int code;
+    gs_pattern2_instance_t *pinst = NULL;
 
     /*
      * Ensure that that the PDF 1.4 reading compositor will have the current
@@ -4992,10 +5003,9 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
 
     if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor) && pdev->trans_group_parent_cmap_procs != NULL) {
 
- 	gs_pattern2_instance_t *pinst =
+ 	pinst =
 	    (gs_pattern2_instance_t *)pdcolor->ccolor.pattern;
-           gs_imager_state *pis_saved = (gs_imager_state *)(pinst->saved);
-           pis_saved->has_transparency = true;
+           pinst->saved->has_transparency = true;
 
            /* The transparency color space operations are driven
               by the pdf14 clist writer device.  */
@@ -5012,7 +5022,16 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
     new_is.trans_device = dev;
     new_is.has_transparency = true;
 
-    return gx_forward_fill_path(dev, &new_is, ppath, params, pdcolor, pcpath);
+    code = gx_forward_fill_path(dev, &new_is, ppath, params, pdcolor, pcpath);
+
+    new_is.trans_device = NULL;
+    new_is.has_transparency = false;
+
+    if (pinst != NULL){
+        pinst->saved->trans_device = NULL;
+    }
+
+    return code;
 }
 
 /*
