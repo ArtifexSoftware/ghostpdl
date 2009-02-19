@@ -65,18 +65,77 @@ typedef struct sgi_cursor_s {
   int lnum;
 } sgi_cursor;
 
+/* write a short int to disk as big-endean */
+static int putshort(unsigned int val, FILE *outf)
+{
+	unsigned char buf[2];
+
+	buf[0] = (val>>8);
+	buf[1] = val;
+	return fwrite(buf,2,1,outf);
+}
+
+/* write an int to disk as big-endean */
+static int putint(unsigned int val, FILE *outf)
+{
+	unsigned char buf[4];
+
+	buf[0] = (val>>24);
+	buf[1] = (val>>16);
+	buf[2] = (val>>8);
+	buf[3] = val;
+	return fwrite(buf,4,1,outf);
+}
+
+/* write the header field by field in big-endian */
+static void putheader(IMAGE *header, FILE *outf)
+{
+	int i;
+	char filler= '\0';
+
+	putshort(header->imagic, outf);
+	fputc(1, outf); /* RLE */
+	fputc(1, outf); /* bpp */
+	putshort(header->dim, outf);
+	putshort(header->xsize, outf);
+	putshort(header->ysize, outf);
+	putshort(header->zsize, outf);
+
+	putint(header->min_color, outf);
+	putint(header->max_color, outf);
+	putint(header->wastebytes, outf);
+
+	fwrite(header->name,80,1,outf);
+
+	putint(header->colormap, outf);
+
+   /* put the filler for the rest */
+    for (i=0; i<404; i++)
+        fputc(filler,outf);
+ }
+
 static int
 sgi_begin_page(gx_device_printer *bdev, FILE *pstream, sgi_cursor *pcur)
 {
-     uint line_size = gdev_mem_bytes_per_scan_line((gx_device_printer*)bdev);
-     byte *data = (byte*)gs_malloc(bdev->memory, line_size, 1, "sgi_begin_page");
-     IMAGE *header= (IMAGE*)gs_malloc(bdev->memory, sizeof(IMAGE),1,"sgi_begin_page");
-     char filler= '\0';
-     int i;
+     uint line_size;
+     byte *data;
+     IMAGE *header;
 
-     if ((data == (byte*)0)||(header == (IMAGE*)0)) return -1;
+     if (bdev->PageCount >= 1 && !bdev->file_is_new) { /* support single page only */
+          eprintf("sgi rgb format only supports one page per file.\n"
+                  "Please use the '%%d' OutputFile option to create one file for each page.\n");
+	  return_error(gs_error_rangecheck);
+     }
+     line_size = gdev_mem_bytes_per_scan_line((gx_device_printer*)bdev);
+     data = (byte*)gs_malloc(bdev->memory, line_size, 1, "sgi_begin_page");
+     header= (IMAGE*)gs_malloc(bdev->memory, sizeof(IMAGE),1,"sgi_begin_page");
 
-     bzero(header,sizeof(IMAGE));
+     if ((data == (byte*)0)||(header == (IMAGE*)0)) {
+        gs_free(bdev->memory, data, line_size, 1, "sgi_begin_page");
+        gs_free(bdev->memory, header, sizeof(IMAGE),1,"sgi_begin_page");
+	return_error(gs_error_VMerror);
+     }
+     memset(header,0, sizeof(IMAGE));
      header->imagic = IMAGIC;
      header->type = RLE(1);
      header->dim = 3;
@@ -89,8 +148,7 @@ sgi_begin_page(gx_device_printer *bdev, FILE *pstream, sgi_cursor *pcur)
      strncpy(header->name,"gs picture",80);
      header->colormap = CM_NORMAL;
      header->dorev=0;
-     fwrite(header,sizeof(IMAGE),1,pstream);
-     for (i=0; i<512-sizeof(IMAGE); i++) fputc(filler,pstream);
+     putheader(header,pstream);
      pcur->dev = bdev;
      pcur->bpp = bdev->color_info.depth;
      pcur->line_size = line_size;
@@ -115,16 +173,24 @@ sgi_print_page(gx_device_printer *pdev, FILE *pstream)
        int code = sgi_begin_page(bdev, pstream, &cur);
        uint bpe, mask;
        int separation;
-       long *rowsizes=(long*)gs_malloc(pdev->memory, 4,3*bdev->height,"sgi_print_page");
+       int *rowsizes;
        byte *edata ;
        long lastval;
        int rownumber;
-#define aref2(a,b) a*bdev->height+b
+
+       if (pdev->PageCount >= 1 && !pdev->file_is_new)
+	  return_error(gs_error_rangecheck);  /* support single page only, can't happen */
+
+#define aref2(a,b) (a)*bdev->height+(b)
+	   rowsizes=(int*)gs_malloc(pdev->memory, sizeof(int),3*bdev->height,"sgi_print_page");
        edata =  (byte*)gs_malloc(pdev->memory, cur.line_size, 1, "sgi_begin_page");
-       if((code<0)||(rowsizes==(long*)NULL)||(edata==(byte*)NULL)) return(-1);
-       fwrite(rowsizes,sizeof(long),3*bdev->height,pstream); /* rowstarts */
-       fwrite(rowsizes,sizeof(long),3*bdev->height,pstream); /* rowsizes */
-       lastval = 512+sizeof(long)*6*bdev->height;
+
+       if((code<0)||(rowsizes==(int*)NULL)||(edata==(byte*)NULL)) {
+           code = gs_note_error(gs_error_VMerror);
+           goto free_mem;
+       }
+
+       lastval = 512+4*6*bdev->height; /* skip offset table */
        fseek(pstream,lastval,0);
        for (separation=0; separation < 3; separation++)
 	 {
@@ -144,11 +210,11 @@ sgi_print_page(gx_device_printer *pdev, FILE *pstream)
 	       for (bp = cur.data, x=0, shift = 8 - cur.bpp;
 		    x < bdev->width;
 		    )
-		 { ulong pixel = 0;
+		 { uint pixel = 0;
 		   uint r, g, b;
 		   switch (cur.bpp >> 3)
 		     {
-		     case 3: pixel = (ulong)*bp << 16; bp++;
+		     case 3: pixel = (uint)*bp << 16; bp++;
 		     case 2: pixel += (uint)*bp << 8; bp++;
 		     case 1: pixel += *bp; bp++; break;
 		     case 0: pixel = *bp >> shift;
@@ -197,24 +263,22 @@ sgi_print_page(gx_device_printer *pdev, FILE *pstream)
 	       }
                *optr++ = 0;
 	       rowsizes[aref2(separation,rownumber++)] = optr-startcol;
-	       fwrite(startcol,1,optr-startcol,pstream);
+	       if (fwrite(startcol,1,optr-startcol,pstream) != optr-startcol) {
+                   code = gs_note_error(gs_error_ioerror);
+                   goto free_mem;
+               }
 	     }
 	 }
        fseek(pstream,512L,0);
        for(separation=0; separation<3; separation++)
 	 for(rownumber=0; rownumber<bdev->height; rownumber++)
-	   {fputc((char)(lastval>>24),pstream);
-	    fputc((char)(lastval>>16),pstream);
-	    fputc((char)(lastval>>8),pstream);
-	    fputc((char)(lastval),pstream);
+	   {putint(lastval,pstream);
 	    lastval+=rowsizes[aref2(separation,rownumber)];}
        for(separation=0; separation<3; separation++)
 	 for(rownumber=0; rownumber<bdev->height; rownumber++)
 	   {lastval=rowsizes[aref2(separation,rownumber)];
-	    fputc((char)(lastval>>24),pstream);
-	    fputc((char)(lastval>>16),pstream);
-	    fputc((char)(lastval>>8),pstream);
-	    fputc((char)(lastval),pstream);}
+	    putint(lastval,pstream);}
+     free_mem:
        gs_free(pdev->memory, (char*)cur.data, cur.line_size, 1,
 		 "sgi_print_page(done)");
        gs_free(pdev->memory, (char*)edata, cur.line_size, 1, "sgi_print_page(done)");
