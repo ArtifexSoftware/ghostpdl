@@ -80,7 +80,8 @@ UFST_LIB_EXT=.lib
 # Define conditinal name for FreeType bridge :
 !ifdef FT_ROOT
 FT_BRIDGE = 1
-FT_LIB_EXT=.lib
+FT_CFLAGS=$(I_)$(FT_ROOT)$(D)$(include)$(D)freetype$(_I)
+FT_LIBS=$(FT_ROOT)$(D)build$(D)libfreetype.lib
 !endif
 
 # Define the files to be removed by `make clean'.

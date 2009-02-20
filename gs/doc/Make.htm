@@ -2785,28 +2785,38 @@ libraries must be built before building Ghostscript with the FreeType
 bridge.
 
 <p>
-To build Ghostscript with FreeType, specify additional options for "make":
+Note that Ghostscript requires FreeType to be built with the optional 
+incremental font support. Check that FT_CONFIG_OPTION_INCREMENTAL is 
+defined in the headers for your FreeType build. 
+<p>
+To build Ghostscript with FreeType, specify these additional options for 
+"make" either on the command line, or in the top-level makefile:
 
 <dl>
 <dt><code>FT_BRIDGE=1</code>
-<dd>forces the FreeType bridge to build.
+<dd>Enables the FreeType bridge.
 
-<dt><code>FT_ROOT=path</code>
-<dd>specifies the path to FreeType root directory or folder.
+<dt><code>FT_CFLAGS=<i>options</i></code>
+<dd>Specifies C compiler include directives and options for FreeType 
+library. Refer to the FreeType manual for information about them.
 
-<dt><code>FT_CFLAGS=options</code>
-<dd>specifies C compiler options for FreeType library. Refer to FreeType manual for information about them.
-
-<dt><code>FT_LIB_EXT=extension</code>
-<dd>sets the file name extension for object libraries. You must use the appropriate one for your platform and linker.
+<dt><code>FT_LIBS=<i>link-options</i></code>
+<dd>Specifies the path the the object library or options for linking 
+with FreeType. You must use the appropriate one for your platform and 
+linker.
 </dl>
 
 <p>An example for Unix/GCC :
 <blockquote>
-<tt>FT_BRIDGE=1 FT_ROOT=../FreeType FT_CFLAGS=-DGCCx86 FT_LIB_EXT=.a</tt>
+<tt>make FT_BRIDGE=1 FT_CFLAGS=-Ifreetype/include FT_LIBS=freetype/objs/libfreetype.a</tt>
+</blockquote>
+or
+<blockquote>
+<tt>make FT_BRIDGE=1 FT_CFLAGS=`pkg-config --cflags freetype2` FT_LIBS=`pkg-config --libs freetype2`</tt>
 </blockquote>
 
-<p>For Windows/MSVC you need only specify FT_ROOT.
+<p>For Windows/MSVC you need only specify FT_ROOT to be the path to the 
+top level source directory of your FreeType build.
 msvc32.mak sets the other options automatically.
 
 <p>
