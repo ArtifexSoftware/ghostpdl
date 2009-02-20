@@ -112,7 +112,7 @@
 <li><a href="#QNX">QNX</a>
 </ul>
 <li><a href="#UFST_build">How to build Ghostscript with UFST</a>
-<li><a href="#FT_build">How to build Ghostscript with Free Type</a>
+<li><a href="#FT_build">How to build Ghostscript with FreeType</a>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -2764,34 +2764,38 @@ msvc32.mak sets the other options automatically.
 
 <p>
 
-<h2><a name="FT_build"></a>How to build Ghostscript with Free Type</h2>
+<h2><a name="FT_build"></a>How to build Ghostscript with FreeType</h2>
 
 <p>
-<em>Note: This section is only for users who wish to use Ghostscript with Free Type font renderer.
+<em>Note: This section is only for users who wish to use Ghostscript with FreeType font renderer.
 Other users please skip this section.
 </em>
 
 <p>
-Ghostscript sources do not include Free Type sources. You need to obtain them from Free Type group.
-Ghostscript includes only some source modules that provide a bridge to Free Type.
+Ghostscript sources do not include a copy of the FreeType sources.
+You need to obtain them from the 
+<a href="http://freetype.org/">FreeType Project</a>. 
+Ghostscript includes only some source modules that provide a 
+bridge to FreeType.
 
 <p>
-Ghostscript makefiles do not include any script for building Free Type libraries.
-Refer to Free Type manual how to build them. Free Type object libraries must be built
-before building Ghostscript with the Free Type bridge.
+Ghostscript makefiles do not include any script for building FreeType 
+libraries. Refer to FreeType manual how to build them. FreeType object 
+libraries must be built before building Ghostscript with the FreeType 
+bridge.
 
 <p>
-To build Ghostscript with Free Type, specify additional options for "make":
+To build Ghostscript with FreeType, specify additional options for "make":
 
 <dl>
 <dt><code>FT_BRIDGE=1</code>
-<dd>forces the Free Type bridge to build.
+<dd>forces the FreeType bridge to build.
 
 <dt><code>FT_ROOT=path</code>
-<dd>specifies the path to Free Type root directory or folder.
+<dd>specifies the path to FreeType root directory or folder.
 
 <dt><code>FT_CFLAGS=options</code>
-<dd>specifies C compiler options for Free Type library. Refer to Free Type manual for information about them.
+<dd>specifies C compiler options for FreeType library. Refer to FreeType manual for information about them.
 
 <dt><code>FT_LIB_EXT=extension</code>
 <dd>sets the file name extension for object libraries. You must use the appropriate one for your platform and linker.
