@@ -1827,7 +1827,7 @@ $(PSOBJ)write_t1.$(OBJ) : $(PSSRC)write_t1.c $(AK)\
 	$(PSCC) $(FT_CFLAGS) $(FT_INC) $(PSO_)write_t1.$(OBJ) $(C_) $(PSSRC)write_t1.c
 
 $(PSOBJ)write_t2.$(OBJ) : $(PSSRC)write_t2.c $(AK)\
- $(wrfont_h) $(write_t2_h) $(stdio_h)
+ $(wrfont_h) $(write_t2_h) $(ghost_h) $(gxfont_h) $(gxfont1_h)
 	$(PSCC) $(FT_CFLAGS) $(FT_INC) $(PSO_)write_t2.$(OBJ) $(C_) $(PSSRC)write_t2.c
 
 $(PSOBJ)wrfont.$(OBJ) : $(PSSRC)wrfont.c $(AK)\
