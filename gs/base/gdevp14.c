@@ -1559,13 +1559,18 @@ static	pdf14_default_colorspace_t
 pdf14_determine_default_blend_cs(gx_device * pdev)
 {
     if (pdev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+
 	/*
 	 * Note:  We do not allow the SeparationOrder device parameter for
 	 * additive devices.  Thus we always have 1 colorant for DeviceGray
-	 * and 3 colorants for DeviceRGB.  We do not currently support
-	 * blending in a DeviceGray color space.  Thus we oniy use DeviceRGB.
+	 * and 3 colorants for DeviceRGB. 
 	 */
-	return PDF14_DeviceRGB;
+
+         if (pdev->color_info.num_components == 1)
+             return PDF14_DeviceGray;
+         else
+            return PDF14_DeviceRGB;
+
     else {
 	/*
 	 * Check if the device is CMYK only or CMYK plus spot colors.
