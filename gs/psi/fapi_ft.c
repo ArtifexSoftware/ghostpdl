@@ -28,11 +28,10 @@ Started by Graham Asher, 6th June 2002.
 #include "gserror.h"
 
 /* FreeType headers */
-#include "freetype/freetype.h"
-#include "freetype/ftincrem.h"
-#include "freetype/ftglyph.h"
-#include "freetype/ftoutln.h"
-#include "freetype/fttrigon.h"
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_INCREMENTAL_H
+#include FT_GLYPH_H
 
 /* Note: structure definitions here start with FF_, which stands for 'FAPI FreeType". */
 

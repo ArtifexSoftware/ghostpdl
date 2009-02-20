@@ -1819,11 +1819,6 @@ $(PSD)fapif1.dev : $(INT_MAK) $(ECHOGS_XE) \
 
 $(PSOBJ)fapi_ft.$(OBJ) : $(PSSRC)fapi_ft.c $(AK)\
  $(stdio__h) $(math__h) $(ifapi_h) $(gserror_h)\
- $(FT_ROOT)$(D)include$(D)freetype$(D)freetype.h\
- $(FT_ROOT)$(D)include$(D)freetype$(D)ftincrem.h\
- $(FT_ROOT)$(D)include$(D)freetype$(D)ftglyph.h\
- $(FT_ROOT)$(D)include$(D)freetype$(D)ftoutln.h\
- $(FT_ROOT)$(D)include$(D)freetype$(D)fttrigon.h\
  $(write_t1_h) $(write_t2_h)
 	$(PSCC) $(FT_CFLAGS) $(FT_INC) $(PSO_)fapi_ft.$(OBJ) $(C_) $(PSSRC)fapi_ft.c
 
