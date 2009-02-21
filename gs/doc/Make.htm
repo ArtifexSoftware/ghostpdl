@@ -2817,7 +2817,11 @@ or
 
 <p>For Windows/MSVC you need only specify FT_ROOT to be the path to the 
 top level source directory of your FreeType build.
-msvc32.mak sets the other options automatically.
+msvc32.mak sets the other options automatically. However,
+because the freetype project files for MSVC embed the version and build
+type in the library filename, it may be necessary to override the default
+library name, by passing for example FT_LIB=freetype241MT. FT_LIB only
+has an effect on the MSVC build, unlike FT_LIBS which is used by all the builds.
 
 <p>
 
