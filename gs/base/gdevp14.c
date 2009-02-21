@@ -5206,6 +5206,15 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
 	     * transfer functions will be applied at the end after we have done
 	     * our PDF 1.4 blend operations.
 	     */
+
+            /* Also if the bit depth is not 8 per channel we need to adjust 
+               as all the pdf14 compositing code is for 8 bits per channel.  The
+               clist writer device uses this information to make sure the proper
+               bit depth is written */
+
+            if (cdev->clist_color_info.num_components * 8 != cdev->clist_color_info.depth)
+                cdev->clist_color_info.depth = cdev->clist_color_info.num_components * 8;
+
 	    p14dev = (pdf14_clist_device *)(*pcdev);
 	    p14dev->saved_target_color_info = dev->color_info;
 	    dev->color_info = (*pcdev)->color_info;
