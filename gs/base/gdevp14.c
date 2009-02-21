@@ -5148,6 +5148,7 @@ pdf14_clist_begin_typed_image(gx_device	* dev, const gs_imager_state * pis,
 {
     pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
     int code;
+    gs_imager_state * pis_noconst = pis; /* Break 'const'. */
 
     /*
      * Ensure that that the PDF 1.4 reading compositor will have the current
@@ -5161,8 +5162,22 @@ pdf14_clist_begin_typed_image(gx_device	* dev, const gs_imager_state * pis,
 	return code;
 
     /* Pass image to the target */
+
+    /* Do a quick change to the imager state
+       so that if we can return with -1 in
+       case the clist writer cannot handle
+       this image itself.  In such a case,
+       we want to make sure we dont use the
+       target device.  I don't necc. like
+       doing it this way.  Probably need to
+       go back and do something a bit
+       more elegant. */
+
+    pis_noconst->has_transparency = true;
     code = gx_forward_begin_typed_image(dev, pis, pmat,
 			    pic, prect, pdcolor, pcpath, mem, pinfo); 
+
+    pis_noconst->has_transparency = false;
 
     if (code < 0)
         return gx_default_begin_typed_image(dev, pis, pmat, pic, prect,

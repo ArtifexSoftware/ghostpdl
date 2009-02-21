@@ -539,12 +539,19 @@ clist_begin_typed_image(gx_device * dev,
      * We couldn't handle the image.  It is up to the caller to
      /* use the default algorithms, which
      * break the image up into rectangles or small pixmaps.
-     * It is done this way to provide the option of NOT using
-     * the target device if the caller was doing a bx_forward_begin_typed_image
+     * If we are doing the PDF14 transparency device
+     * then we want to make sure we do NOT use the target 
+     * device.  In this case we return -1.
      */
 use_default:
     gs_free_object(mem, pie, "clist_begin_typed_image");
-    return -1;
+
+    if (pis->has_transparency){
+        return -1;
+    } else {
+        return gx_default_begin_typed_image(dev, pis, pmat, pic, prect,
+					    pdcolor, pcpath, mem, pinfo);
+    }
 }
 
 /* Error cleanup for clist_image_plane_data. */
