@@ -682,6 +682,13 @@ pbm_print_page_loop(gx_device_printer * pdev, char magic, FILE * pstream,
 	case '7':		/* pam */
 	case '9':		/* plan9bm */
 	    break;
+        case '3':               /* pkm */
+        case '6':               /* pkmraw */
+	    if (fprintf(pstream, "%d\n", 255) < 0) {
+                code = gs_note_error(gs_error_ioerror);
+                goto punt;
+            }
+            break;
 	default:
 	    if (fprintf(pstream, "%d\n", pdev->color_info.max_gray) < 0) {
                 code = gs_note_error(gs_error_ioerror);
@@ -992,9 +999,9 @@ pkm_print_row_4(gx_device_printer * pdev, byte * data, int depth,
 	gx_color_value rgb[3];
 
 	cmyk_1bit_map_color_rgb((gx_device *)pdev, (gx_color_index)i, rgb);
-	rv[i] = rgb[0] / gx_max_color_value;
-	gv[i] = rgb[1] / gx_max_color_value;
-	bv[i] = rgb[2] / gx_max_color_value;
+	rv[i] = rgb[0] / gx_max_color_value * 0xff;
+	gv[i] = rgb[1] / gx_max_color_value * 0xff;
+	bv[i] = rgb[2] / gx_max_color_value * 0xff;
     }
     /*
      * Contrary to what the documentation implies, gcc compiles putc
