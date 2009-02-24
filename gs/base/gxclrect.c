@@ -166,7 +166,7 @@ cmd_write_page_rect_cmd(gx_device_clist_writer * cldev, int op)
 static inline byte * 
 cmd_put_frac31_color(gx_device_clist_writer * cldev, const frac31 *c, byte *dp)
 {
-    int num_components = cldev->color_info.num_components;
+    int num_components = cldev->clist_color_info.num_components;
     int j;
 
     for (j = 0; j < num_components; j++)
@@ -178,7 +178,7 @@ static inline int
 cmd_size_frac31_color(gx_device_clist_writer * cldev, const frac31 *c)
 {
     int j, s = 0;
-    int num_components = cldev->color_info.num_components;
+    int num_components = cldev->clist_color_info.num_components;
 
     for (j = 0; j < num_components; j++)
 	s += cmd_size_frac31(c[j]);

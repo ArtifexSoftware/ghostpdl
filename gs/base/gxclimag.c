@@ -1497,7 +1497,7 @@ cmd_image_plane_data(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	code = cmd_put_set_data_x(cldev, pcls, data_x);
 	if (code < 0)
 	    return code;
-	offset = ((data_x & ~7) * cldev->color_info.depth) >> 3;
+	offset = ((data_x & ~7) * cldev->clist_color_info.depth) >> 3;
     }
     code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_image_data, len);
     if (code < 0)
