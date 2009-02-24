@@ -5175,17 +5175,20 @@ pdf14_clist_begin_typed_image(gx_device	* dev, const gs_imager_state * pis,
 
     pis_noconst->has_transparency = true;
     code = gx_forward_begin_typed_image(dev, pis, pmat,
-			    pic, prect, pdcolor, pcpath, mem, pinfo); 
+			    pic, prect, pdcolor, pcpath, mem, pinfo);  
+    if (code < 0){
 
-    pis_noconst->has_transparency = false;
+        code = gx_default_begin_typed_image(dev, pis, pmat, pic, prect,
+					pdcolor, pcpath, mem, pinfo);
+        pis_noconst->has_transparency = false;
+        return code;
 
-    if (code < 0)
-        return gx_default_begin_typed_image(dev, pis, pmat, pic, prect,
-					pdcolor, pcpath, mem, pinfo); 
-    else return code;
+    } else {
+        
+        pis_noconst->has_transparency = false;
+        return code;
 
-
-
+    }
 }
 
 /*
