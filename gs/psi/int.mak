@@ -1801,43 +1801,37 @@ $(PSD)fapiu.dev : $(INT_MAK) $(ECHOGS_XE)
 
 # FreeType bridge :
 
-FT_LIB=$(FT_ROOT)$(D)objs$(D)freetype214MT_D
-FT_INC=$(I_)$(FT_ROOT)$(D)include$(_I)
+# the top-level makefile should define
+# FT_CFLAGS for the include directive and other switches, and
+# FT_LIBS for the the library link command
 
 wrfont_h=$(stdpre_h) $(PSSRC)wrfont.h
 write_t1_h=$(ifapi_h) $(PSSRC)write_t1.h
 write_t2_h=$(ifapi_h) $(PSSRC)write_t2.h
 
-$(PSD)fapif1.dev : $(INT_MAK) $(ECHOGS_XE) \
- $(FT_LIB)$(FT_LIB_EXT) \
- $(PSOBJ)fapi_ft.$(OBJ) \
+$(PSD)fapif1.dev : $(INT_MAK) $(ECHOGS_XE) $(PSOBJ)fapi_ft.$(OBJ) \
  $(PSOBJ)write_t1.$(OBJ) $(PSOBJ)write_t2.$(OBJ) $(PSOBJ)wrfont.$(OBJ)
 	$(SETMOD) $(PSD)fapif1 $(PSOBJ)fapi_ft.$(OBJ) $(PSOBJ)write_t1.$(OBJ)
 	$(ADDMOD) $(PSD)fapif1 $(PSOBJ)write_t2.$(OBJ) $(PSOBJ)wrfont.$(OBJ)
 	$(ADDMOD) $(PSD)fapif1 -plugin fapi_ft
-	$(ADDMOD) $(PSD)fapif1 -link $(FT_LIB)$(FT_LIB_EXT)
+	$(ADDMOD) $(PSD)fapif1 -link $(FT_LIBS)
 
 $(PSOBJ)fapi_ft.$(OBJ) : $(PSSRC)fapi_ft.c $(AK)\
  $(stdio__h) $(math__h) $(ifapi_h) $(gserror_h)\
- $(FT_ROOT)$(D)include$(D)freetype$(D)freetype.h\
- $(FT_ROOT)$(D)include$(D)freetype$(D)ftincrem.h\
- $(FT_ROOT)$(D)include$(D)freetype$(D)ftglyph.h\
- $(FT_ROOT)$(D)include$(D)freetype$(D)ftoutln.h\
- $(FT_ROOT)$(D)include$(D)freetype$(D)fttrigon.h\
  $(write_t1_h) $(write_t2_h)
-	$(PSCC) $(FT_CFLAGS) $(FT_INC) $(PSO_)fapi_ft.$(OBJ) $(C_) $(PSSRC)fapi_ft.c
+	$(PSCC) $(FT_CFLAGS) $(PSO_)fapi_ft.$(OBJ) $(C_) $(PSSRC)fapi_ft.c
 
 $(PSOBJ)write_t1.$(OBJ) : $(PSSRC)write_t1.c $(AK)\
  $(wrfont_h) $(write_t1_h) 
-	$(PSCC) $(FT_CFLAGS) $(FT_INC) $(PSO_)write_t1.$(OBJ) $(C_) $(PSSRC)write_t1.c
+	$(PSCC) $(FT_CFLAGS) $(PSO_)write_t1.$(OBJ) $(C_) $(PSSRC)write_t1.c
 
 $(PSOBJ)write_t2.$(OBJ) : $(PSSRC)write_t2.c $(AK)\
- $(wrfont_h) $(write_t2_h) $(stdio_h)
-	$(PSCC) $(FT_CFLAGS) $(FT_INC) $(PSO_)write_t2.$(OBJ) $(C_) $(PSSRC)write_t2.c
+ $(wrfont_h) $(write_t2_h) $(ghost_h) $(gxfont_h) $(gxfont1_h)
+	$(PSCC) $(FT_CFLAGS) $(PSO_)write_t2.$(OBJ) $(C_) $(PSSRC)write_t2.c
 
 $(PSOBJ)wrfont.$(OBJ) : $(PSSRC)wrfont.c $(AK)\
  $(wrfont_h) $(stdio_h)
-	$(PSCC) $(FT_CFLAGS) $(FT_INC) $(PSO_)wrfont.$(OBJ) $(C_) $(PSSRC)wrfont.c
+	$(PSCC) $(FT_CFLAGS) $(PSO_)wrfont.$(OBJ) $(C_) $(PSSRC)wrfont.c
 
 # stub for FreeType bridge :
 

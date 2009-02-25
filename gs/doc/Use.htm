@@ -521,9 +521,6 @@ program by using the special file name '<code>-</code>' which is interpreted as 
 </blockquote>
 
 <p>
-<em>Ghostscript cannot read PDF files from standard input or a pipe because the PDF language inherently requires random access to the file. Thus '<tt>-</tt>' only works with PostScript documents.</em>
-
-<p>
 When Ghostscript finishes reading from the pipe, it quits rather than
 going into interactive mode.  Because of this, options and files after the '<tt>-</tt>' in the command line will be ignored.
 
@@ -2509,9 +2506,8 @@ another program is "driving" Ghostscript.
 <dl>
 <dt><code>-dNOPROMPT</code>
 <dd>Disables the prompt printed by Ghostscript when it expects interactive
-input, as well as the end-of-page prompt (<code>-dNOPAGEPROMPT</code>);
-also disables the implicit <code>flushpage</code> that normally occurs
-each time Ghostscript asks for more input.  This allows piping input
+input, as well as the end-of-page prompt (<code>-dNOPAGEPROMPT</code>).
+This allows piping input
 directly into Ghostscript, as long as the data doesn't refer to
 <code>currentfile</code>.
 </dl>
