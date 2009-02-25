@@ -483,7 +483,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		      }
 
 		      /* multiple symbols are handled as a text region */
-		      jbig2_decode_text_region(ctx, segment, tparams, (const Jbig2SymbolDict * const *)refagg_dicts, 
+		      jbig2_decode_text_region(ctx, segment, tparams, (const Jbig2SymbolDict * const *)refagg_dicts,
 			  n_refagg_dicts, image, data, size, GR_stats, as, (Jbig2WordStream *)NULL);
 
 		      SDNEWSYMS->glyphs[NSYMSDECODED] = image;
@@ -699,7 +699,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         code = jbig2_arith_int_decode(IAEX, as, &exrunlength);
       for(k = 0; k < exrunlength; k++)
         if (exflag) {
-          SDEXSYMS->glyphs[j++] = (i < m) ? 
+          SDEXSYMS->glyphs[j++] = (i < m) ?
             jbig2_image_clone(ctx, params->SDINSYMS->glyphs[i]) :
             jbig2_image_clone(ctx, SDNEWSYMS->glyphs[i-m]);
           i++;

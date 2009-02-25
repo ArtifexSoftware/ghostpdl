@@ -78,7 +78,7 @@ if test -r Makefile.am; then
         echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/"
 	exit 1
   }
-fi  
+fi
 
 
 echo "Generating configuration files for $package, please wait...."
@@ -111,9 +111,9 @@ cat >config_types.h.in <<EOF
 #  endif /* JBIG2_REPLACE_STDINT */
 #endif /* HAVE_STDINT_H */
 EOF
-    
+
 echo "  $AUTOMAKE --add-missing $AUTOMAKE_FLAGS"
-$AUTOMAKE --add-missing $AUTOMAKE_FLAGS 
+$AUTOMAKE --add-missing $AUTOMAKE_FLAGS
 
 echo "  autoconf"
 autoconf

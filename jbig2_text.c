@@ -364,7 +364,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	    /* (3c.ix) */
 #ifdef JBIG2_DEBUG
 	    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-			"composing glyph id %d: %dx%d @ (%d,%d) symbol %d/%d", 
+			"composing glyph id %d: %dx%d @ (%d,%d) symbol %d/%d",
 			ID, IB->width, IB->height, x, y, NINSTANCES + 1,
 			params->SBNUMINSTANCES);
 #endif

@@ -7,7 +7,7 @@
     be copied, modified or distributed except as expressly
     authorized under the terms of the license contained in
     the file LICENSE in this distribution.
-                                                                                
+
     For information on commercial licensing, go to
     http://www.artifex.com/licensing/ or contact
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
