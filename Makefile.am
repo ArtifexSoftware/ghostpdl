@@ -1,4 +1,3 @@
-# $Id$
 ## process this file with automake to generate Makefile.in
 
 # require automake 1.7

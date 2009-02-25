@@ -12,8 +12,6 @@
     http://www.artifex.com/licensing/ or contact
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
-
-    $Id: jbig2_text.c 420 2005-07-27 23:55:54Z giles $
 */
 
 /* JBIG2 Pattern Dictionary and Halftone Region decoding */

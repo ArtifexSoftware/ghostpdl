@@ -1,8 +1,6 @@
 #!/bin/sh
 # Run this to set up the build system: configure, makefiles, etc.
 
-# $Id$
-
 package="jbig2dec"
 AUTOMAKE_FLAGS="$AUTOMAKE_FLAGS"
 

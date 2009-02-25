@@ -1,4 +1,4 @@
-# $Id: Jamfile $
+# Build specification for the 'jam' tool
 #
 # You still need to run configure to generate config.h
 # 
