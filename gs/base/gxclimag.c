@@ -537,7 +537,7 @@ clist_begin_typed_image(gx_device * dev,
 
     /*
      * We couldn't handle the image.  It is up to the caller to
-     /* use the default algorithms, which
+     * use the default algorithms, which
      * break the image up into rectangles or small pixmaps.
      * If we are doing the PDF14 transparency device
      * then we want to make sure we do NOT use the target 
