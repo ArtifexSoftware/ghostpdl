@@ -631,4 +631,3 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 
   return code;
 }
-

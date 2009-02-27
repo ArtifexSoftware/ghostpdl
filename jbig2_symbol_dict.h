@@ -12,9 +12,9 @@
     http://www.artifex.com/licensing/ or contact
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+*/
 
-    symbol dictionary header
- */
+/* symbol dictionary header */
 
 /* the results of decoding a symbol dictionary */
 typedef struct {
