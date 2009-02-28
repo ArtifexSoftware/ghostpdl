@@ -25,8 +25,7 @@
 RESOURCE_LIST=CIDFont$(D) CMap$(D) ColorSpace$(D) Decoding$(D) Encoding$(D) Font$(D) IdiomSet$(D) Init$(D) ProcSet$(D) SubstCID$(D)
 
 #	Note: gs_cet.ps is only needed to match Adobe CPSI defaults
-PS_ROMFS_ARGS=-c -P $(PSRESDIR)$(D) -d Resource/ $(RESOURCE_LIST) \
-   -d lib/ -P $(PSLIBDIR)$(D) $(EXTRA_INIT_FILES)
+PS_ROMFS_ARGS=-c -P $(PSRESDIR)$(D) -d Resource/ $(RESOURCE_LIST) -d lib/ -P $(PSLIBDIR)$(D) $(EXTRA_INIT_FILES)
 
 # We'd really like to have all of the files in Resourc/Init/ be dependencies
 # for COMPILE_INITS=1, but we settle for just the main one. "touch" it if
