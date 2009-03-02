@@ -15,11 +15,11 @@
 
 % $Id: viewrgb.ps 6300 2005-12-28 19:56:24Z giles $
 % viewrgb.ps
-% Display a raw CMYK file.
-% Requires the colorimage operator.
+% Display a raw RGB file created by  -sDEVICE=bitrgb.
 % If SCALE is defined, maps input pixels to output pixels with that scale;
 % if SCALE is undefined, scales the image to fit the page.
-% If BITS is defined, it is the number of bits per sample (1,2,4,8,12);
+% If BITS is defined, it is the number of bits per sample (1,2,8,12).
+% NB: BITS=1 (corresponding to -dGrayValues=16) is not supported.
 % if BITS is undefined, its default value is 1.
 
 /viewrgb {			% <filename> <width> viewrgb -
@@ -30,15 +30,13 @@
   /f fname (r) file def
   mark fname status pop pop pop /flen exch def cleartomark
   /h flen
-(flen = ) print dup = flush
-  w bpc dup 1 eq { pop 4 } { 3 mul } ifelse
-(bits per sample: ) print dup =
-  mul
-(bits per line: ) print dup =
-  7 add 8 idiv
-(line width: ) print dup = flush
-  idiv def
-  (Dimensions: ) print [w h] == flush
+  w [ 0 4 8 0 0 0 0 0 24 ] bpc get
+  dup 0 eq {
+    (*** -dBITS=) print bpc =print ( is not supported. ***) = flush
+    quit
+  } if
+  mul 7 add 8 idiv idiv def
+  QUIET not { (Dimensions: ) print [w h] == flush } if
 		% Set up scaling.
   /SCALE where {
     pop
@@ -52,7 +50,6 @@
     3 1 roll exch sub w div .min dup
   } ifelse scale
   bpc 1 eq {
-(1 bit per component, using Indexed) = flush
     [ /Indexed /DeviceRGB 15 <
 	000000
 	0000FF
@@ -74,8 +71,52 @@
     ] setcolorspace
     /BPC 4 def			% change to 4 bit indexed
   } {
-    /DeviceRGB setcolorspace
-    /BPC bpc def
+    bpc 2 eq {
+    [ /Indexed /DeviceRGB 255 <
+	000000 000055 0000AA 0000FF
+	005500 005555 0055AA 0055FF
+	00AA00 00AA55 00AAAA 00AAFF
+	00FF00 00FF55 00FFAA 00FFFF
+        550000 550055 5500AA 5500FF
+        555500 555555 5555AA 5555FF
+        55AA00 55AA55 55AAAA 55AAFF
+        55FF00 55FF55 55FFAA 55FFFF
+        AA0000 AA0055 AA00AA AA00FF
+        AA5500 AA5555 AA55AA AA55FF
+        AAAA00 AAAA55 AAAAAA AAAAFF
+        AAFF00 AAFF55 AAFFAA AAFFFF
+        FF0000 FF0055 FF00AA FF00FF
+        FF5500 FF5555 FF55AA FF55FF
+        FFAA00 FFAA55 FFAAAA FFAAFF
+        FFFF00 FFFF55 FFFFAA FFFFFF
+
+	000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 
+	000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 
+	000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 
+	000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 
+
+	000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 
+	000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 
+	000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 
+	000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 
+
+	000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 
+	000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 
+	000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 
+	000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 
+
+	000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 
+	000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 
+	000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 
+	000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 
+      >
+    ] setcolorspace
+    /BPC 8 def			% change to 4 bit indexed
+    } {
+      /DeviceRGB setcolorspace
+      /BPC bpc def
+    }
+    ifelse
   }
   ifelse
   << 	/ImageType 1
@@ -85,7 +126,7 @@
 	/ImageMatrix [1 0 0 -1 0 h]
 	/DataSource f
 	/MultipleDataSources false
-	bpc 1 eq { /Decode [ 0 15 ] } { /Decode [ 0 1 0 1 0 1 ] } ifelse
+	bpc 4 lt { /Decode [ 0 [ 0 15 255 ] bpc get ] } { /Decode [ 0 1 0 1 0 1 ] } ifelse
   >> image
   showpage
   f closefile
@@ -98,8 +139,10 @@
     cvi viewrgb
   } {
     cleartomark
-    (Usage: gs -- viewrgb.ps filename.rgb width\n) print
+    (\nUsage: gs -- viewrgb.ps filename.rgb width\n) print
     ( e.g.: gs -- viewrgb.ps my.rgb 2550\n) print flush
+    (  -dSCALE=### sets specific scaling \(default = 1.0\)) = flush
+    (  -dBITS=# sets the BitsPerComponent \(1, 2, 8, 12] \(default = 1\)) = flush
   } ifelse
 } {
   pop
