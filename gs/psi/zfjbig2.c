@@ -77,11 +77,8 @@ z_jbig2decode(i_ctx_t * i_ctx_p)
     }
     	
     /* we pass npop=0, since we've no arguments left to consume */
-    /* we pass 0 instead of the usual rspace(sop) which will allocate storage
-       for filter state from the same memory pool as the stream it's coding.
-       this causes no trouble because we maintain no pointers */
     return filter_read(i_ctx_p, 0, &s_jbig2decode_template,
-		       (stream_state *) & state, 0);
+		       (stream_state *) & state, (sop ? r_space(sop) : 0));
 }
 
 
