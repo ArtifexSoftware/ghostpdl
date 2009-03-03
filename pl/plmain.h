@@ -49,7 +49,6 @@ typedef struct pl_main_instance_s {
     bool saved_hwres;
     float hwres[2];
     bool viewer; /* speed optimizations for viewer; NB MAY not always be correct! */
-    bool mem_cleanup;
     char pcl_personality[6];      /* a character string to set pcl's
                                      personality - rtl, pcl5c, pcl5e, and
                                      pcl == default.  NB doesn't belong here. */

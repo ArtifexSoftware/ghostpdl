@@ -73,16 +73,14 @@ extern pl_interp_implementation_t const * const pdl_implementation[];	/* zero-te
 /* Define the usage message. */
 static const char *pl_usage = "\
 Usage: %s [option* file]+...\n\
-Options: -dNOPAUSE -E[#] -h -C -L<PCL|PCLXL> -n -K<maxK> -P<PCL5C|PCL5E|RTL> -Z...\n\
+Options: -dNOPAUSE -E[#] -h -C -L<PCL|PCLXL> -K<maxK> -P<PCL5C|PCL5E|RTL> -Z...\n\
          -sDEVICE=<dev> -g<W>x<H> -r<X>[x<Y>] -d{First|Last}Page=<#>\n\
 	 -sOutputFile=<file> (-s<option>=<string> | -d<option>[=<value>])*\n\
          -J<PJL commands>\n";
 
 /* ---------------- Static data for memory management ------------------ */
 
-#ifdef PSI_INCLUDED
 static gs_gc_root_t device_root;
-#endif
 
 #if defined(DEBUG) && defined(ALLOW_VD_TRACE)
 void *hwndtext; /* Hack: Should be of HWND type. */
@@ -472,9 +470,6 @@ pl_main(
 	dprintf("Final time" );
     pl_platform_dnit(0);
 
-    if ( inst.mem_cleanup ) {
-        pl_mem_node_free_all_remaining(mem);
-    }
     return 0;
 }
 
@@ -578,15 +573,10 @@ pl_main_universe_dnit(
 
     /* dealloc device if sel'd */
     if (universe->curr_device) {
-#ifdef PSI_INCLUDED
 	gs_unregister_root(universe->curr_device->memory, &device_root, "pl_main_universe_select");
 	/* ps allocator retain's the device, pl_alloc doesn't */
 	gx_device_retain(universe->curr_device, false);
 	universe->curr_device = NULL;
-#else	
-	gs_free_object(universe->mem, universe->curr_device,
-		       "pl_main_universe_dnit(gx_device)");
-#endif
     }
 
     return 0;
@@ -631,9 +621,7 @@ pl_main_universe_select(
 		return 0;
 	    } else {
 		/* Delete the device. */
-#		ifdef PSI_INCLUDED
 		gs_unregister_root(universe->curr_device->memory, &device_root, "pl_main_universe_select");
-#		endif
 		gs_free_object(universe->curr_device->memory,
 			       universe->curr_device, "pl_main_universe_select(gx_device)");
 		universe->curr_device = 0;
@@ -743,7 +731,6 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
     pti->last_page = max_int;
     pti->page_count = 0;
     pti->saved_hwres = false;
-    pti->mem_cleanup = true;
     pti->interpolate = false;
     strncpy(&pti->pcl_personality[0], "PCL", sizeof(pti->pcl_personality)-1);
 }
@@ -760,26 +747,22 @@ pl_top_create_device(pl_main_instance_t *pti, int index, bool is_default)
     if ( !is_default || !pti->device ) { 
 	const gx_device **list;
 
-#	ifdef PSI_INCLUDED
 	/* We assume that nobody else changes pti->device,
 	   and this function is called from this module only.
 	   Due to that device_root is always consistent with pti->device,
-	   and it is regisrtered if and only if pti-<device != NULL. 
+	   and it is regisrtered if and only if pti->device != NULL. 
 	*/
 	if (pti->device != NULL) {
 	    pti->device = NULL;
 	    gs_unregister_root(pti->device_memory, &device_root, "pl_main_universe_select");
 	}
-#	endif
-
 	gs_lib_device_list((const gx_device * const **)&list, NULL);
 	code = gs_copydevice(&pti->device, list[index],
                              pti->device_memory);
-#	ifdef PSI_INCLUDED
-	    if (pti->device != NULL)
-		gs_register_struct_root(pti->device_memory, &device_root,
+	if (pti->device != NULL)
+	  gs_register_struct_root(pti->device_memory, &device_root,
 				    &pti->device, "pl_top_create_device");
-#	endif
+
     }
     return code;
 }
@@ -948,6 +931,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
             break;
 	case 'K':		/* max memory in K */
 	    {
+#ifdef OLD_ALLOCATOR
 		int maxk;
 		gs_malloc_memory_t *rawheap = gs_malloc_wrapped_contents(pmi->memory);
 
@@ -956,12 +940,10 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 		    return -1;
 		}
 		rawheap->limit = (long)maxk << 10;
+#endif
 	    }
 	    break;
-        case 'n':
-        case 'N':
-            pmi->mem_cleanup = false;
-            break;
+
 	case 'p':
 	case 'P':
 	    {
