@@ -3725,11 +3725,11 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
 	     * so that our continuation is ahead of the sub-proc's continuation.
 	     */
 	    check_estack(1);
+	    push(1);
 	    /* The push_op_estack macro increments esp before use, so we don't need to */
 	    push_op_estack(devicencolorants_cont);
 
 	    make_int(pstage, 1);
-	    push(1);
 	    *op = space[1];
 	    code = zsetcolorspace(i_ctx_p);
 	    if (code != 0)
@@ -5606,6 +5606,8 @@ setdevicecolor_cont(i_ctx_t *i_ctx_p)
      * so that our continuation is ahead of the sub-proc's continuation.
      */
     check_estack(1);
+    /* May need to push a /Device... name on the stack so make sure we have space */
+    check_ostack(1);
     /* The push_op_estack macro increments esp before use, so we don't need to */
     push_op_estack(setdevicecolor_cont);
 
