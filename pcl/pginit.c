@@ -138,6 +138,9 @@ hpgl_do_reset(
 	/* intialize subpolygon started hack flag */
 	pcs->g.subpolygon_started = false;
 
+        /* indicates a line down operation has been done in polygon
+           mode */
+        pcs->g.have_drawn_in_path = false;
 	/* execute only the implicit portion of IN */
 	hpgl_IN_implicit(pcs);
 

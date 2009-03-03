@@ -1224,6 +1224,9 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
     int i;
     floatp arccoord_x, arccoord_y;
     
+    if ( hpgl_plot_is_draw(draw) )
+        pgls->g.have_drawn_in_path = true;
+        
     (void)hpgl_compute_arc_coords(radius, center_x, center_y,
                                   start_angle,
                                   &arccoord_x, &arccoord_y);
