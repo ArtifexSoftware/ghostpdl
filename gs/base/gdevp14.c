@@ -303,9 +303,10 @@ static const pdf14_nonseparable_blending_procs_t custom_blending_procs = {
 };
 
 const pdf14_device gs_pdf14_Gray_device	= {
-    std_device_color_stype_body(pdf14_device, &pdf14_Gray_procs, "pdf14gray",
+    std_device_std_color_full_body_type(pdf14_device, &pdf14_Gray_procs, "pdf14gray",
 				&st_pdf14_device,
-				XSIZE, YSIZE, X_DPI, Y_DPI, 8, 255, 256),
+				XSIZE, YSIZE, X_DPI, Y_DPI, 8, 
+	                        0, 0, 0, 0, 0, 0),
     { 0 },			/* Procs */
     NULL,			/* target */
     { 0 },			/* devn_params - not used */
@@ -882,13 +883,15 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 #if RAW_DUMP
   
     /* Dump the current buffer to see what we have. */
+    
+    if (ctx->stack->planestride > 0 ){
+        dump_raw_buffer(ctx->stack->rect.q.y-ctx->stack->rect.p.y, 
+                    ctx->stack->rowstride, ctx->stack->n_planes,
+                    ctx->stack->planestride, ctx->stack->rowstride, 
+                    "Raw_Buf_PreSmask",ctx->stack->data);
 
-    dump_raw_buffer(ctx->stack->rect.q.y-ctx->stack->rect.p.y, 
-                ctx->stack->rowstride, ctx->stack->n_planes,
-                ctx->stack->planestride, ctx->stack->rowstride, 
-                "Raw_Buf_PreSmask",ctx->stack->data);
-
-    global_index++;
+        global_index++;
+    }
 
 
 #endif
@@ -1638,6 +1641,22 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
     switch (dev_cs) {
 	case PDF14_DeviceGray:
 	    *pdevproto = (pdf14_device *)&gs_pdf14_Gray_device;
+
+            /* We want gray to be single channel.  Low level 
+               initialization of gray device prototype is 
+               peculiar in that in dci_std_color_num_components
+               the comment is
+              "A device is monochrome only if it is bi-level"
+
+              Here we want monochrome anytime we have a gray device.
+              To avoid breaking things elsewhere, we will overide
+              the prototype intialization here */
+               
+            *ptempdevproto = **pdevproto;
+            ptempdevproto->color_info.max_components = 1;
+            ptempdevproto->color_info.num_components = ptempdevproto->color_info.max_components;
+            *pdevproto = ptempdevproto;
+
 	    break;
 	case PDF14_DeviceRGB:
 	    *pdevproto = (pdf14_device *)&gs_pdf14_RGB_device;
@@ -2027,6 +2046,7 @@ pdf14_begin_transparency_group(gx_device *dev,
         code = pdf14_update_device_color_procs(dev,ptgp->group_color,pis);
         group_color_numcomps = ptgp->group_color_numcomps;
     } else {
+        code = 0;
         group_color_numcomps = pdev->color_info.num_components;
     }
 
@@ -2125,7 +2145,6 @@ pdf14_update_device_color_procs(gx_device *dev,
     pdf14_device *pdev = (pdf14_device *)dev;
     const pdf14_procs_t *new_14procs;
     pdf14_parent_color_t *parent_color_info = &(pdev->ctx->stack->parent_color_info_procs);
-    bool update_color_info;
     gx_color_polarity_t new_polarity;
     int new_num_comps;
     bool new_additive;
@@ -2134,7 +2153,7 @@ pdf14_update_device_color_procs(gx_device *dev,
     if_debug0('v', "[v]pdf14_update_device_color_procs\n");
 
 
-   /* Check if we need to alter the device procs at this
+   /* Update the device procs at this
        stage.  Many of the procs are based upon the color
        space of the device.  We want to remain in 
        the color space defined by the color space of
@@ -2152,55 +2171,41 @@ pdf14_update_device_color_procs(gx_device *dev,
 	parent_color_info->get_cmap_procs = NULL;
         parent_color_info->parent_color_mapping_procs = NULL;
         parent_color_info->parent_color_comp_index = NULL;
-        update_color_info = false;
 
         switch (group_color) {
 
             case GRAY_SCALE:
 
-                  if (pdev->color_info.num_components != 1){ 
+                new_polarity = GX_CINFO_POLARITY_ADDITIVE;
+                new_num_comps = 1;
+                pdevproto = (pdf14_device *)&gs_pdf14_Gray_device;
+                new_additive = true;
+                new_14procs = &gray_pdf14_procs;
+                new_depth = 8;
 
-                    update_color_info = true;
-                    new_polarity = GX_CINFO_POLARITY_ADDITIVE;
-                    new_num_comps = 1;
-                    pdevproto = (pdf14_device *)&gs_pdf14_Gray_device;
-                    new_additive = true;
-                    new_14procs = &gray_pdf14_procs;
-                    new_depth = 8;
-
-                }
 
                 break;
 
             case DEVICE_RGB:			 	
             case CIE_XYZ:				
 
-                if (pdev->color_info.num_components != 3){ 
-
-                    update_color_info = true;
-                    new_polarity = GX_CINFO_POLARITY_ADDITIVE;
-                    new_num_comps = 3;
-                    pdevproto = (pdf14_device *)&gs_pdf14_RGB_device;
-                    new_additive = true;
-                    new_14procs = &rgb_pdf14_procs;
-                    new_depth = 24;
-                }
+                new_polarity = GX_CINFO_POLARITY_ADDITIVE;
+                new_num_comps = 3;
+                pdevproto = (pdf14_device *)&gs_pdf14_RGB_device;
+                new_additive = true;
+                new_14procs = &rgb_pdf14_procs;
+                new_depth = 24;
 
                 break; 
 
             case DEVICE_CMYK:				
 
-                if (pdev->color_info.num_components != 4){ 
-
-                    update_color_info = true;
-                    new_polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
-                    new_num_comps = 4;
-                    pdevproto = (pdf14_device *)&gs_pdf14_CMYK_device;
-                    new_additive = false;
-                    new_14procs = &cmyk_pdf14_procs;
-                    new_depth = 32;
-
-                }
+                new_polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
+                new_num_comps = 4;
+                pdevproto = (pdf14_device *)&gs_pdf14_CMYK_device;
+                new_additive = false;
+                new_14procs = &cmyk_pdf14_procs;
+                new_depth = 32;
 
                 break;
 
@@ -2210,47 +2215,40 @@ pdf14_update_device_color_procs(gx_device *dev,
 
          }    
 
-         if (update_color_info){
+        if_debug2('v', "[v]pdf14_update_device_color_procs,num_components_old = %d num_components_new = %d\n", 
+            pdev->color_info.num_components,new_num_comps);
 
-            if_debug2('v', "[v]pdf14_update_device_color_procs,num_components_old = %d num_components_new = %d\n", 
-                pdev->color_info.num_components,new_num_comps);
+        /* Save the old information */
 
-            /* Save the old information */
+        parent_color_info->get_cmap_procs = pis->get_cmap_procs;
+        parent_color_info->parent_color_mapping_procs = 
+            pdev->procs.get_color_mapping_procs;
+        parent_color_info->parent_color_comp_index = 
+            pdev->procs.get_color_comp_index;
+        parent_color_info->parent_blending_procs = pdev->blend_procs;
+        parent_color_info->polarity = pdev->color_info.polarity;
+        parent_color_info->num_components = pdev->color_info.num_components;
+        parent_color_info->isadditive = pdev->ctx->additive;
+        parent_color_info->unpack_procs = pdev->pdf14_procs;
+        parent_color_info->depth = pdev->color_info.depth;
 
-            parent_color_info->get_cmap_procs = pis->get_cmap_procs;
-            parent_color_info->parent_color_mapping_procs = 
-                pdev->procs.get_color_mapping_procs;
-            parent_color_info->parent_color_comp_index = 
-                pdev->procs.get_color_comp_index;
-            parent_color_info->parent_blending_procs = pdev->blend_procs;
-            parent_color_info->polarity = pdev->color_info.polarity;
-            parent_color_info->num_components = pdev->color_info.num_components;
-            parent_color_info->isadditive = pdev->ctx->additive;
-            parent_color_info->unpack_procs = pdev->pdf14_procs;
-            parent_color_info->depth = pdev->color_info.depth;
+        /* Set new information */
 
-            /* Set new information */
+        pis->get_cmap_procs = pdf14_get_cmap_procs_group;
+        gx_set_cmap_procs(pis, dev);
+        pdev->procs.get_color_mapping_procs = 
+            pdevproto->static_procs->get_color_mapping_procs;
+        pdev->procs.get_color_comp_index = 
+            pdevproto->static_procs->get_color_comp_index;
+        pdev->blend_procs = pdevproto->blend_procs;
+        pdev->color_info.polarity = new_polarity;
+        pdev->color_info.num_components = new_num_comps;
+        pdev->ctx->additive = new_additive; 
+        pdev->pdf14_procs = new_14procs;
+        pdev->color_info.depth = new_depth;
 
-            pis->get_cmap_procs = pdf14_get_cmap_procs_group;
-            gx_set_cmap_procs(pis, dev);
-            pdev->procs.get_color_mapping_procs = 
-                pdevproto->static_procs->get_color_mapping_procs;
-            pdev->procs.get_color_comp_index = 
-                pdevproto->static_procs->get_color_comp_index;
-            pdev->blend_procs = pdevproto->blend_procs;
-            pdev->color_info.polarity = new_polarity;
-            pdev->color_info.num_components = new_num_comps;
-            pdev->ctx->additive = new_additive; 
-            pdev->pdf14_procs = new_14procs;
-            pdev->color_info.depth = new_depth;
+        return(1);  /* Lets us detect that we did do an update */
 
-            return(1);  /* Lets us detect that we did do an update */
-
-         }
-
-         if_debug0('v', "[v]procs not updated\n");
-
-         return 0;
 }
 
 
@@ -2551,7 +2549,8 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     if_debug1('v', "pdf14_begin_transparency_mask, bg_alpha = %d\n", bg_alpha);
     memcpy(transfer_fn, ptmp->transfer_fn, size_of(ptmp->transfer_fn));
 
-    /* If needed, update the color mapping procs */
+    /* Always update the color mapping procs.  Otherwise we end up
+       fowarding to the target device. */
     code = pdf14_update_device_color_procs(dev,ptmp->group_color,pis);
     if (code < 0)
 	return code;
@@ -4194,6 +4193,22 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
     switch (dev_cs) {
 	case PDF14_DeviceGray:
 	    *pdevproto = (pdf14_clist_device *)&pdf14_clist_Gray_device;
+
+           /* We want gray to be single channel.  Low level 
+               initialization of gray device prototype is 
+               peculiar in that in dci_std_color_num_components
+               the comment is
+              "A device is monochrome only if it is bi-level"
+
+              Here we want monochrome anytime we have a gray device.
+              To avoid breaking things elsewhere, we will overide
+              the prototype intialization here */
+               
+            *ptempdevproto = **pdevproto;
+            ptempdevproto->color_info.max_components = 1;
+            ptempdevproto->color_info.num_components = ptempdevproto->color_info.max_components;
+            *pdevproto = ptempdevproto;
+
 	    break;
 	case PDF14_DeviceRGB:
 	    *pdevproto = (pdf14_clist_device *)&pdf14_clist_RGB_device;
