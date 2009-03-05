@@ -4071,8 +4071,8 @@ static	dev_proc_begin_typed_image(pdf14_clist_begin_typed_image);
 static	const gx_device_procs pdf14_clist_Gray_procs =
 	pdf14_clist_procs(gx_default_DevGray_get_color_mapping_procs,
 			gx_default_DevGray_get_color_comp_index,
-			gx_default_8bit_map_gray_color,
-			gx_default_8bit_map_color_gray);
+			pdf14_encode_color,
+			pdf14_decode_color);
 
 static	const gx_device_procs pdf14_clist_RGB_procs =
 	pdf14_clist_procs(gx_default_DevRGB_get_color_mapping_procs,
