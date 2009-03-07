@@ -420,6 +420,9 @@ dnl look for CUPS...
 AC_ARG_ENABLE([cups], AC_HELP_STRING([--disable-cups],
     [Don't include CUPS support]))
 
+AC_ARG_WITH([pdftoraster], AC_HELP_STRING([--without-pdftoraster],
+    [Don't include CUPS' pdftoraster filter]))
+
 CUPSDEV=""
 CUPSINCLUDE=""
 CUPSCFLAGS=""
@@ -429,6 +432,8 @@ CUPSCONFIG="${CUPSCONFIG:=}"
 CUPSSERVERBIN=""
 CUPSSERVERROOT=""
 CUPSDATA=""
+CUPSVERSION="0"
+CUPSPDFTORASTER="0"
 
 if ( test -d cups ); then
     if test x$enable_cups != xno; then
@@ -446,6 +451,12 @@ if ( test -d cups ); then
 	    CUPSDATA="`$CUPSCONFIG --datadir`"
 	    CUPSINCLUDE="include cups/cups.mak"
 	    CUPSDEV="\$(DD)cups.dev"
+	    CUPSVERSION="`$CUPSCONFIG --version`"
+	    if ( test x$with_pdftoraster != xno ); then
+	        if test "$CUPSVERSION" ">" "1.2"; then
+		    CUPSPDFTORASTER="1"
+		fi
+	    fi
 	fi
     fi
 fi
@@ -458,6 +469,7 @@ AC_SUBST(CUPSINCLUDE)
 AC_SUBST(CUPSSERVERBIN)
 AC_SUBST(CUPSSERVERROOT)
 AC_SUBST(CUPSDATA)
+AC_SUBST(CUPSPDFTORASTER)
 
 
 dnl look for IJS implementation
