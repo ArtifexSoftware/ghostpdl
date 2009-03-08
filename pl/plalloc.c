@@ -14,12 +14,15 @@
 gs_memory_t *
 pl_alloc_init()
 {
-    gs_memory_t *mem    = gs_malloc_init(NULL);
+    gs_memory_t *mem = gs_malloc_init(NULL);
+    gs_memory_t *pl_mem;
+
+    if (mem == NULL) return NULL;
+
     /* fix me... the second parameter (chunk size) should be a member of
        pl_main_instance_t */
-    gs_memory_t *pl_mem = ialloc_alloc_state(mem, 20000);
+    pl_mem = ialloc_alloc_state(mem, 20000);
 
-    if ( (mem == NULL) || (pl_mem == NULL) ) return NULL;
-
+    /* if ialloc fails we return NULL here */
     return pl_mem;
 }
