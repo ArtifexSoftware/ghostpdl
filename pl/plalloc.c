@@ -21,7 +21,7 @@ pl_alloc_init()
 
     /* fix me... the second parameter (chunk size) should be a member of
        pl_main_instance_t */
-    pl_mem = ialloc_alloc_state(mem, 20000);
+    pl_mem = (gs_memory_t *)ialloc_alloc_state(mem, 20000);
 
     /* if ialloc fails we return NULL here */
     return pl_mem;
