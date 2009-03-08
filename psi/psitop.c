@@ -309,7 +309,7 @@ ps_impl_get_device_memory(
 
     *pmem = mem->stable_memory;
     /* Lock against alloc_restore_all to release the device when called from gsapi_exit : */
-    ((gs_ref_memory_t *)mem)->num_contexts++;
+    mem->num_contexts++;
     return 0;
 }
 
