@@ -207,6 +207,7 @@ zbegintransparencygroup(i_ctx_t *i_ctx_p)
     os_ptr dop = op - 4;
     gs_transparency_group_params_t params;
     gs_rect bbox;
+    ref *dummy;
     int code;
 
     check_type(*dop, t_dictionary);
@@ -220,7 +221,14 @@ zbegintransparencygroup(i_ctx_t *i_ctx_p)
     code = rect_param(&bbox, op);
     if (code < 0)
 	return code;
-    params.ColorSpace = gs_currentcolorspace(igs);
+    /* If the CS is not given in the transparency group dict, set to NULL   */
+    /* so that the transparency code knows to inherit from the parent layer */
+    if (dict_find_string(dop, "CS", &dummy) <= 0) {
+	params.ColorSpace = NULL;
+    } else {
+	/* the PDF interpreter set the colorspace, so use it */
+	params.ColorSpace = gs_currentcolorspace(igs);
+    }
     code = gs_begin_transparency_group(igs, &params, &bbox);
     if (code < 0)
 	return code;
