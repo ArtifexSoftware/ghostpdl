@@ -608,13 +608,13 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect,
     the color space + an alpha channel. NOT the device size
     or the previous ctx size. */
 
-	/* The second parameter in pdf14_buf_new decides if we should
-	   add a GROUP alpha channel to the buffer.  If it is NOT isolated, then this
-	   buffer will be added.  If it is isolated, then the buffer will not be added.
-	   I question the redundancy here of the alpha and the group alpha channel, but
-	   that will need to be looked at later. */
+    /* The second parameter in pdf14_buf_new decides if we should
+       add a GROUP alpha channel to the buffer.  If it is NOT isolated, then this
+       buffer will be added.  If it is isolated, then the buffer will not be added.
+       I question the redundancy here of the alpha and the group alpha channel, but
+       that will need to be looked at later. */
 
-	buf = pdf14_buf_new(rect, !isolated, has_shape, idle, numcomps+1, ctx->memory);
+    buf = pdf14_buf_new(rect, !isolated, has_shape, idle, numcomps+1, ctx->memory);
     if_debug3('v', "[v]push buf: %d x %d, %d channels\n", buf->rect.q.x - buf->rect.p.x, buf->rect.q.y - buf->rect.p.y, buf->n_chan);
     if (buf == NULL)
 	return_error(gs_error_VMerror);
@@ -2027,6 +2027,7 @@ pdf14_begin_transparency_group(gx_device *dev,
     bool isolated;
     bool sep_target = (strcmp(pdev->dname, "PDF14cmykspot") == 0);
     int group_color_numcomps;
+    gs_transparency_color_t group_color;
 
     /* If the target device supports separations, then 
        we should should NOT create the group.  The exception to this 
@@ -2039,12 +2040,53 @@ pdf14_begin_transparency_group(gx_device *dev,
     if_debug4('v', "[v]pdf14_begin_transparency_group, I = %d, K = %d, alpha = %g, bm = %d\n",
 	      ptgp->Isolated, ptgp->Knockout, alpha, pis->blend_mode);
 
-     /* If needed, update the color mapping procs. But only if we dont have a sep device.
+    /* If the group color is unknown, then we must use the previous group color
+       space or the device process color space */
+        
+    if (ptgp->group_color == UNKNOWN){
+
+        if (pdev->ctx->stack){
+            /* Use previous group color space */
+            group_color_numcomps = pdev->ctx->stack->n_chan-1;  /* Remove alpha */
+        } else {
+            /* Use process color space */
+            group_color_numcomps = pdev->color_info.num_components;
+        }
+
+        switch (group_color_numcomps) {
+            case 1:				
+                group_color = GRAY_SCALE;       
+                break;
+            case 3:				
+                group_color = DEVICE_RGB;       
+                break;
+            case 4:				
+                group_color = DEVICE_CMYK;       
+            break;
+            default:
+                
+                /* We can end up here if we are in
+                   a deviceN color space and 
+                   we have a sep output device */
+
+                group_color = DEVICEN;
+
+            break;
+
+         }  
+    
+    } else {
+
+        group_color_numcomps = ptgp->group_color_numcomps;
+        group_color = ptgp->group_color;
+
+    }
+
+    /* If needed, update the color mapping procs. But only if we dont have a sep device.
         The exception would be if we are in doing the group for a soft mask */
 
     if (!sep_target) {
-        code = pdf14_update_device_color_procs(dev,ptgp->group_color,pis);
-        group_color_numcomps = ptgp->group_color_numcomps;
+        code = pdf14_update_device_color_procs(dev,group_color,pis);
     } else {
         code = 0;
         group_color_numcomps = pdev->color_info.num_components;

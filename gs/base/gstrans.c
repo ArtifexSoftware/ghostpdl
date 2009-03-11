@@ -209,6 +209,7 @@ gs_begin_transparency_group(gs_state *pgs,
     /* Note that we currently will use the concrete space for any space other than a 
         device space.  However, if the device is a sep device it will blend
         in DeviceN color space as required.  */
+
     if (gs_color_space_get_index(pgs->color_space) <= gs_color_space_index_DeviceCMYK) {
 
         blend_color_space = pgs->color_space;
@@ -230,31 +231,48 @@ gs_begin_transparency_group(gs_state *pgs,
 
     }
 
-    switch (cs_num_components(blend_color_space)) {
-        case 1:				
-            params.group_color = GRAY_SCALE;       
-            params.group_color_numcomps = 1;  /* Need to check */
+    /* Note that if the /CS parameter was not present in the push 
+       of the transparency group, then we must actually inherent 
+       the previous group color space, or the color space of the
+       target device (process color model).  Note here we just want
+       to set it as a unknown type for clist writing, as we .  We will later 
+       during clist reading 
+       */
+
+    if (ptgp->ColorSpace == NULL) {
+
+        params.group_color = UNKNOWN;
+        params.group_color_numcomps = 0;
+    
+    } else {
+
+        switch (cs_num_components(blend_color_space)) {
+            case 1:				
+                params.group_color = GRAY_SCALE;       
+                params.group_color_numcomps = 1;  /* Need to check */
+                break;
+            case 3:				
+                params.group_color = DEVICE_RGB;       
+                params.group_color_numcomps = 3; 
+                break;
+            case 4:				
+                params.group_color = DEVICE_CMYK;       
+                params.group_color_numcomps = 4; 
             break;
-        case 3:				
-            params.group_color = DEVICE_RGB;       
-            params.group_color_numcomps = 3; 
+            default:
+                
+                /* We can end up here if we are in
+                   a deviceN color space and 
+                   we have a sep output device */
+
+                params.group_color = DEVICEN;
+                params.group_color_numcomps = cs_num_components(blend_color_space);
+
             break;
-        case 4:				
-            params.group_color = DEVICE_CMYK;       
-            params.group_color_numcomps = 4; 
-        break;
-        default:
-            
-            /* We can end up here if we are in
-               a deviceN color space and 
-               we have a sep output device */
 
-            params.group_color = DEVICEN;
-            params.group_color_numcomps = cs_num_components(blend_color_space);
+         }  
 
-        break;
-
-     }  
+    }
 
 #ifdef DEBUG
     if (gs_debug_c('v')) {
@@ -469,29 +487,48 @@ gs_begin_transparency_mask(gs_state * pgs,
 
         }
 
-        switch (cs_num_components(blend_color_space)) {
 
-            case 1:				
-                params.group_color = GRAY_SCALE;       
-                params.group_color_numcomps = 1;  /* Need to check */
-                break;
-            case 3:				
-                params.group_color = DEVICE_RGB;       
-                params.group_color_numcomps = 3; 
-                break;
-            case 4:				
-                params.group_color = DEVICE_CMYK;       
-                params.group_color_numcomps = 4; 
-	        break;
-            default:
-                /* Transparency soft mask spot
-                   colors are NEVER available. 
-                   We must use the alternate tint
-                   transform */
-	        return_error(gs_error_rangecheck);
-	        break;
+        /* Note that if the /CS parameter was not present in the push 
+        of the transparency group, then we must actually inherent 
+        the previous group color space, or the color space of the
+        target device (process color model).  Note here we just want
+        to set it as a unknown type for clist writing, as we .  We will later 
+        during clist reading 
+        */
 
-         }    
+        if (ptmp->ColorSpace == NULL) {
+
+            params.group_color = UNKNOWN;
+            params.group_color_numcomps = 0;
+
+        } else {
+
+
+            switch (cs_num_components(blend_color_space)) {
+
+                case 1:				
+                    params.group_color = GRAY_SCALE;       
+                    params.group_color_numcomps = 1;  /* Need to check */
+                    break;
+                case 3:				
+                    params.group_color = DEVICE_RGB;       
+                    params.group_color_numcomps = 3; 
+                    break;
+                case 4:				
+                    params.group_color = DEVICE_CMYK;       
+                    params.group_color_numcomps = 4; 
+	            break;
+                default:
+                    /* Transparency soft mask spot
+                       colors are NEVER available. 
+                       We must use the alternate tint
+                       transform */
+	            return_error(gs_error_rangecheck);
+	            break;
+
+             }    
+
+        }
 
     }
 
