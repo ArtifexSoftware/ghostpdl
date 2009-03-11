@@ -79,7 +79,7 @@ typedef struct gs_function_s gs_function_t;
 
 /* (Update gs_trans_group_params_init if these change.) */
 typedef struct gs_transparency_group_params_s {
-    const gs_color_space *ColorSpace;  /* I can't see where this is ever used */  
+    const gs_color_space *ColorSpace;
     bool Isolated;
     bool Knockout;
     bool image_with_SMask;
@@ -101,6 +101,7 @@ typedef enum {
 /* See the gx_transparency_mask_params_t type below */
 /* (Update gs_trans_mask_params_init if these change.) */
 typedef struct gs_transparency_mask_params_s {
+    const gs_color_space *ColorSpace;
     gs_transparency_mask_subtype_t subtype;
     int Background_components;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];

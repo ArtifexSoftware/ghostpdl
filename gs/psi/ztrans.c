@@ -297,6 +297,19 @@ zbegintransparencymaskgroup(i_ctx_t *i_ctx_p)
     code = rect_param(&bbox, op);
     if (code < 0)
 	return code;
+    
+    if (dict_find_string(dop, "G", &pparam) <= 0)
+	return_error(e_undefined);
+    if (dict_find_string(pparam, "Group", &pparam) <= 0)
+	return_error(e_undefined);
+    /* If the CS is not given in the transparency group dict, set to NULL   */
+    /* so that the transparency code knows to inherit from the parent layer */
+    if (dict_find_string(pparam, "CS", &pparam) <= 0) {
+	params.ColorSpace = NULL;
+    } else {
+	/* the PDF interpreter set the colorspace, so use it */
+	params.ColorSpace = gs_currentcolorspace(igs);
+    }
     code = gs_begin_transparency_mask(igs, &params, &bbox, false);
     if (code < 0)
 	return code;
@@ -311,11 +324,16 @@ zbegintransparencymaskimage(i_ctx_t *i_ctx_p)
     gs_transparency_mask_params_t params;
     gs_rect bbox = { { 0, 0} , { 1, 1} };
     int code;
+    gs_color_space *gray_cs = gs_cspace_new_DeviceGray(imemory);
 
+    if (!gray_cs)
+	return_error(e_VMerror);
+    params.ColorSpace = gray_cs;	/* per PDF spec, Image SMask is alway DeviceGray */
     gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
     code = gs_begin_transparency_mask(igs, &params, &bbox, true);
     if (code < 0)
 	return code;
+    rc_decrement(gray_cs, "zbegintransparencymaskimage");
     return code;
 }
 
