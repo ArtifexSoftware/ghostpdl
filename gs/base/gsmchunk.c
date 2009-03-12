@@ -487,10 +487,11 @@ chunk_resize_object(gs_memory_t * mem, void *ptr, uint new_num_elements, client_
     /* get the type from the old object */
     chunk_obj_node_t *obj = ((chunk_obj_node_t *)ptr) - 1;
     uint new_size = (obj->type->ssize * new_num_elements);
+    gs_memory_type_ptr_t type = obj->type;
 
     /* This isn't particularly efficient, but it is rarely used */
     chunk_free_object(mem, ptr, cname);
-    return chunk_obj_alloc(mem, new_size, obj->type, cname);
+    return chunk_obj_alloc(mem, new_size, type, cname);
 }
 	
 static void
