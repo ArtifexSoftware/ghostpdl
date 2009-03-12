@@ -1438,6 +1438,7 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_imager_state * pis,
 	    pis->get_cmap_procs = p14dev->save_get_cmap_procs;
 	    gx_set_cmap_procs(pis, p14dev->target);
 	    /* Send image out raster data to output device */
+            {
 		/* Make a copy so we can change the ROP */
 		gs_imager_state new_is = *pis;
 
