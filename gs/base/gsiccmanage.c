@@ -20,6 +20,9 @@
 #include "gsiccmanage.h"
 #include "gxistate.h"
 #include "gsicc_littlecms.h"
+#include "gscie.h"
+#include "smd5.h"  
+
 
 #define ICC_CACHE_MAXLINKS 50;  /* Note that the the external memory used to 
                                     maintain links in the CMS is generally not visible
@@ -74,7 +77,7 @@ gsicc_cache_new(int cachesize, gs_memory_t *memory)
 
 
 void
-gsicc_add_link(gsicc_link_cache_t *link_cache, void *LinkHandle,void *ContextPtr, int LinkHashCode, gs_memory_t *memory)
+gsicc_add_link(gsicc_link_cache_t *link_cache, void *LinkHandle,void *ContextPtr, int64_t LinkHashCode, gs_memory_t *memory)
 {
 
     gsicc_link_t *result, *Nextlink;
@@ -254,22 +257,127 @@ gsicc_load_default_input_profile(int numchannels)
 
 }
 
-/* Compute a hash code for the current transformation case */
 
-static int
+int
+gsicc_get_color_info(gsicc_colorspace_t *colorspace,unsigned char *color, int *size_color){
+
+    switch(colorspace->ColorType){
+
+	case DEVICETYPE:
+
+            color = (unsigned char*) &(colorspace->DeviceType);
+            *size_color = sizeof(gs_icc_devicecolor_t);
+
+            break;
+	case ICCTYPE:				
+
+            color = (unsigned char*) &(colorspace->ProfileData);
+            *size_color = colorspace->ProfileData->iccheader.size;
+
+            break;
+	case CRDTYPE:				
+
+            color = (unsigned char*) (colorspace->pcrd);
+            *size_color = sizeof(gs_cie_render);
+
+            break;
+
+        case CIEATYPE:				
+
+            color = (unsigned char*) (colorspace->pcie_a);
+            *size_color = sizeof(gs_cie_a);
+
+            break;
+
+
+        case CIEABCTYPE:				
+
+            color = (unsigned char*) (colorspace->pcie_abc);
+            *size_color = sizeof(gs_cie_abc);
+
+            break;
+
+
+        case CIEDEFTYPE:				
+
+             color = (unsigned char*) (colorspace->pcie_def);
+            *size_color = sizeof(gs_cie_def);
+
+            break;
+
+
+        case CIEDEFGTYPE:				
+
+             color = (unsigned char*) (colorspace->pcie_defg);
+            *size_color = sizeof(gs_cie_defg);
+
+            break;
+
+	default:			/* Should never occur */
+	    return_error(gs_error_rangecheck);
+	    break;
+
+    }
+
+    return(0);
+
+
+}
+
+
+/* Compute a hash code for the current transformation case.
+    This just computes a 64bit xor of upper and lower portions of
+    md5 for the input, output
+    and rendering params structure.  We may change this later */
+
+static int64_t
 gsicc_compute_hash(gsicc_colorspace_t *input_colorspace, 
                    gsicc_colorspace_t *output_colorspace, 
                    gsicc_rendering_param_t *rendering_params)
 
 {
+   
+    unsigned char *color1=NULL,*color2=NULL;
+    int size_color1,size_color2;
+    int ok;
+    gs_md5_state_t md5;
+    byte digest[16];
+    int k,shift;
+    int64_t word1,word2,result;
 
+   /* first get the appropriate item from the structures */
+   
+    ok = gsicc_get_color_info(input_colorspace,color1,&size_color1);
+    ok = gsicc_get_color_info(output_colorspace,color2,&size_color2);
 
-    return(0);
+    /* We could probably do something faster than this. But use this for now. */
+    gs_md5_init(&md5);
+    gs_md5_append(&md5, color1, size_color1);
+    gs_md5_append(&md5, color2, size_color2);
+    gs_md5_append(&md5, (gs_md5_byte_t*) rendering_params, sizeof(gsicc_rendering_param_t));
+    gs_md5_finish(&md5, digest);
+
+    /* xor this into 64 bit hash */
+
+    word1 = 0;
+    word2 = 0;
+    shift = 0;
+
+    for( k = 0; k<8; k++){
+    
+       word1 += digest[k] << shift;
+       word2 += digest[k+8] << shift;
+       shift += 8;
+
+    }
+
+    result = word1 ^ word2; 
+    return(result);
 
 }
 
 static gsicc_link_t*
-FindCacheLink(int hashcode,gsicc_link_cache_t *icc_cache)
+FindCacheLink(int64_t hashcode,gsicc_link_cache_t *icc_cache)
 {
 
     gsicc_link_t *curr_pos1,*curr_pos2;
@@ -319,9 +427,9 @@ gsicc_get_link(gs_imager_state * pis, gsicc_colorspace_t  *input_colorspace,
                     gsicc_rendering_param_t *rendering_params, gs_memory_t *memory)
 {
 
-    int hashcode;
+    int64_t hashcode;
     gsicc_link_t *link;
-    void **contextptr;
+    void **contextptr = NULL;
     int ok;
     gsicc_manager_t *icc_manager = pis->icc_manager;
     gsicc_link_cache_t *icc_cache = pis->icc_cache;

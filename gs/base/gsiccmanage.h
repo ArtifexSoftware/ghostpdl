@@ -18,6 +18,8 @@
 #ifndef gsiccmanage_INCLUDED
 #  define gsiccmanage_INCLUDED
 
+#include "stdint_.h"
+#include "scommon.h"
 #include "gscdefs.h"
 #include "gsstruct.h"
 #include "gsutil.h"         /* Need for the object types */
@@ -104,16 +106,29 @@ typedef struct gsicc_profile_s {
 } gsicc_profile_t;
 
 
+
 /*  These are the types that we can
     potentially have linked together
     by the CMS.  If the CMS does
     not have understanding of PS
     color space types, then we 
     will need to convert them to 
-    an ICC type */
+    an ICC type. */
+
+
+typedef enum {
+    DEVICETYPE,
+    ICCTYPE,
+    CRDTYPE,
+    CIEATYPE,
+    CIEABCTYPE,
+    CIEDEFTYPE,
+    CIEDEFGTYPE
+} gs_colortype_t;
 
 typedef struct gsiccmanage_colorspace_s {
 
+    gs_colortype_t ColorType;
     gs_icc_devicecolor_t DeviceType;
     gsicc_profile_t *ProfileData;
     gs_cie_render *pcrd;
@@ -125,6 +140,10 @@ typedef struct gsiccmanage_colorspace_s {
 } gsicc_colorspace_t;
 
 
+
+
+
+
 /* The link object. */
 
 
@@ -134,7 +153,7 @@ typedef struct gsiic_link_s {
 
     void *LinkHandle;
     void *ContextPtr;
-    int LinkHashCode;
+    int64_t LinkHashCode;
     int ref_count;
     gsicc_link_t *NextLink;
     gsicc_link_t *PrevLink;
