@@ -362,8 +362,13 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
     }
     if (current == NULL) {
 	/* No chunks with enough space, allocate one */
-	if (chunk_mem_node_add(cmem, newsize, &current) < 0)
+	if (chunk_mem_node_add(cmem, newsize, &current) < 0) {
+#ifdef DEBUG
+	if (gs_debug_c('a'))
+	    dlprintf1("[a+]chunk_obj_alloc(chunk_mem_node_add)(%u) Failed.\n", size);
+#endif
 	    return NULL;
+	}
     }
     /* Find the first free area in the current chunk that is big enough */
     /* LATER: might be better to find the 'best fit' */
@@ -423,6 +428,11 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
     }
 
     /* return the client area of the object we allocated */
+#ifdef DEBUG
+    if (gs_debug_c('A'))
+	dlprintf3("[a+]chunk_obj_alloc (%s)(%u) = 0x%lx: OK.\n",
+		  client_name_string(cname), size, (ulong) newobj);
+#endif
     return (byte *)(newobj) + sizeof(chunk_obj_node_t);
 }
 
@@ -484,14 +494,21 @@ chunk_alloc_struct_array(gs_memory_t * mem, uint num_elements,
 static void *
 chunk_resize_object(gs_memory_t * mem, void *ptr, uint new_num_elements, client_name_t cname)
 {
-    /* get the type from the old object */
-    chunk_obj_node_t *obj = ((chunk_obj_node_t *)ptr) - 1;
-    uint new_size = (obj->type->ssize * new_num_elements);
-    gs_memory_type_ptr_t type = obj->type;
-
     /* This isn't particularly efficient, but it is rarely used */
+    chunk_obj_node_t *obj = ((chunk_obj_node_t *)ptr) - 1;
+    ulong new_size = (obj->type->ssize * new_num_elements);
+    ulong old_size = obj->size;
+    /* get the type from the old object */
+    gs_memory_type_ptr_t type = obj->type;
+    void *new_ptr;
+
+    if (new_size == old_size)
+	return ptr;
+    if ((new_ptr = chunk_obj_alloc(mem, new_size, type, cname)) == 0)
+	return 0;
+    memcpy(new_ptr, ptr, min(old_size, new_size));
     chunk_free_object(mem, ptr, cname);
-    return chunk_obj_alloc(mem, new_size, type, cname);
+    return new_ptr;
 }
 	
 static void
@@ -542,6 +559,9 @@ chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	    current->objlist = obj->next;
 	else 
 	    prev_obj->next = obj->next;
+
+	if_debug3('A', "[a-]chunk_free_object(%s) 0x%lx(%u)\n",
+		  client_name_string(cname), (ulong) ptr, obj->size);
 
 	/* Add this object's space (including the header) to the free list */
 
