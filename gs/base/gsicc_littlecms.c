@@ -31,6 +31,7 @@ gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t input_buf
 {
 
 
+
 }
 
 /* Transform a single color.
@@ -53,13 +54,15 @@ gscms_transform_color(gsicc_link_t *icclink,
 */
 
 /* Get the link from the CMS */
-void
-gscms_get_link(gsicc_link_t *icclink, gsiccmanage_colorspace_t  input_colorspace, 
-                    gsiccmanage_colorspace_t output_colorspace, 
-                    gsicc_rendering_param_t rendering_params,void **contextptr)
+int
+gscms_get_link(gsicc_link_t *icclink, gsicc_colorspace_t  *input_colorspace, 
+                    gsicc_colorspace_t *output_colorspace, 
+                    gsicc_rendering_param_t *rendering_params,void **contextptr)
 {
 
 
+  
+return(0);
 }
 
 /* Get the CIELAB value and if present the device value

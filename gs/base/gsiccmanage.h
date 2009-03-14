@@ -24,10 +24,7 @@
 #include "gsiccmanage.h"
 #include "gscolor2.h"       /* Need for CRD support */
 #include "gscspace.h"       /* Need for PS and PDF CIE color space support */
-
-#define MAX_LINK 10
-typedef void* ICCdata;
-
+#include "icc.h"
   
 /*  The buffer description.  We
     may need to handle a variety
@@ -90,8 +87,21 @@ typedef enum {
     DEVICE_GRAY,
     DEVICE_RGB,
     DEVICE_CMYK,
-    DEVICE_N
+    DEVICE_N,
+    NONDEVICE
 } gs_icc_devicecolor_t;
+
+/* A structure for holding ICC profile info */
+typedef struct gsicc_profile_s {
+
+    void *ProfileData;      /* A raw buffer of ICC profile data */
+    int ProfileHashCode;    /* A hash code for the icc profile */
+
+    /* Pull out the header, since it has useful stuff for us */
+
+    icHeader iccheader;
+
+} gsicc_profile_t;
 
 
 /*  These are the types that we can
@@ -105,39 +115,41 @@ typedef enum {
 typedef struct gsiccmanage_colorspace_s {
 
     gs_icc_devicecolor_t DeviceType;
-    ICCdata ProfileData;
+    gsicc_profile_t *ProfileData;
     gs_cie_render *pcrd;
     gs_cie_a *pcie_a;
     gs_cie_abc *pcie_abc;
     gs_cie_def *pcie_def;
     gs_cie_defg *pcie_defg;   
 
-} gsiccmanage_colorspace_t;
+} gsicc_colorspace_t;
 
 
-/* A structure for holding ICC profile info */
-typedef struct gsicc_profile_s {
+/* The link object. */
 
-    void *ProfileData;      /* A raw buffer of ICC profile data */
-    int ProfileHashCode;    /* A hash code for the above buffer */
 
-} gsicc_profile_t;
+typedef struct gsiic_link_s gsicc_link_t;
 
-/* The link object */
 typedef struct gsiic_link_s {
 
-    void **LinkHandle;
-    int LinkHashCode;
+    void *LinkHandle;
     void *ContextPtr;
+    int LinkHashCode;
+    int ref_count;
+    gsicc_link_t *NextLink;
+    gsicc_link_t *PrevLink;
 
 } gsicc_link_t;
 
-/* The link array */
+
+/* ICC Cache. The size of the cache is limited
+   by max_memory_size.  Links are added if there
+   is sufficient memory.  If not, then */
 
 typedef struct gsicc_link_cache_s {
 
-    gsicc_link_t ICCLink[MAX_LINK];
-    unsigned char num_links;
+    gsicc_link_t *ICCLink;
+    int max_num_links;
 
 } gsicc_link_cache_t;
 
@@ -155,12 +167,13 @@ typedef struct gsicc_manager_s {
     gsicc_profile_t ProofProfile;   /* Profiling profile */
     gsicc_profile_t OutputLink;     /* Output device Link profile */
 
+
 } gsicc_manager_t;
 
 typedef struct gsicc_rendering_param_s {
 
     gs_icc_rendering_intents_t rendering_intent;
-    gs_object_tag_type_t object_type;
+    gs_object_tag_type_t    object_type;
     gs_icc_black_point_comp_t black_point_comp;
 
 } gsicc_rendering_param_t;
