@@ -96,7 +96,7 @@ typedef enum {
 /* A structure for holding ICC profile info */
 typedef struct gsicc_profile_s {
 
-    void *ProfileData;      /* A raw buffer of ICC profile data */
+    void *ProfileRawBuf;      /* A raw buffer of ICC profile data */
     int ProfileHashCode;    /* A hash code for the icc profile */
 
     /* Pull out the header, since it has useful stuff for us */
@@ -189,11 +189,19 @@ typedef struct gsicc_manager_s {
 
 } gsicc_manager_t;
 
+/* Note that since the link transform depends upon
+    the input and output word width (8 or 16 or DBL) we
+    include that here to differentiate  between them
+    and avoid issues with one using another */
+    
 typedef struct gsicc_rendering_param_s {
 
     gs_icc_rendering_intents_t rendering_intent;
     gs_object_tag_type_t    object_type;
     gs_icc_black_point_comp_t black_point_comp;
+    int input_subpixbytesize;
+    int output_subpixbytesize;
+    
 
 } gsicc_rendering_param_t;
 

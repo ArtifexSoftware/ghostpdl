@@ -38,7 +38,7 @@
 
 gs_private_st_ptrs1(st_icc_profile, gsicc_profile_t, "gsiccmanage_profile",
 		    icc_pro_enum_ptrs, icc_pro_reloc_ptrs,
-		    ProfileData);
+		    ProfileRawBuf);
 
 gs_private_st_ptrs6(st_icc_colorspace, gsicc_colorspace_t, "gsicc_colorspace",
 		    icc_clr_enum_ptrs, icc_clr_reloc_ptrs,
