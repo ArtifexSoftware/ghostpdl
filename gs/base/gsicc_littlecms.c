@@ -26,8 +26,7 @@ void
 gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t input_buff_desc,
                              gsicc_bufferdesc_t output_buff_des, 
                              void *inputbuffer,
-                             void *outputbuffer,
-                             void **contextptr)
+                             void *outputbuffer)
 {
 
 
@@ -57,7 +56,7 @@ gscms_transform_color(gsicc_link_t *icclink,
 int
 gscms_get_link(gsicc_link_t *icclink, gsicc_colorspace_t  *input_colorspace, 
                     gsicc_colorspace_t *output_colorspace, 
-                    gsicc_rendering_param_t *rendering_params,void **contextptr)
+                    gsicc_rendering_param_t *rendering_params)
 {
 
 
@@ -93,7 +92,7 @@ gscms_destroy(void **contextptr)
 
 /* Have the CMS release the link */
 void
-gscms_release_link(gsicc_link_t *icclink, void **contextptr)
+gscms_release_link(gsicc_link_t *icclink)
 {
 
 

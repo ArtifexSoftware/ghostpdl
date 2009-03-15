@@ -24,7 +24,7 @@
 #include "smd5.h"  
 
 
-#define ICC_CACHE_MAXLINKS 50;  /* Note that the the external memory used to 
+#define ICC_CACHE_MAXLINKS 50   /* Note that the the external memory used to 
                                     maintain links in the CMS is generally not visible
                                     to GS.  For most CMS's the  links are 33x33x33x33x4 bytes
                                     at worst for a CMYK to CMYK MLUT which is about 4.5Mb per link.
@@ -69,7 +69,7 @@ gsicc_cache_new(int cachesize, gs_memory_t *memory)
     result = gs_alloc_struct(memory, gsicc_link_cache_t, &st_icc_linkcache,
 			     "gsiccmanage_linkcache_new");
     result->ICCLink = NULL;
-    result->max_num_links = ICC_CACHE_MAXLINKS;
+    result->num_links = 0;
 
     return(result);
 
@@ -115,6 +115,8 @@ gsicc_add_link(gsicc_link_cache_t *link_cache, void *LinkHandle,void *ContextPtr
     
     }
 
+    link_cache->num_links++;
+
 }
 
 
@@ -122,8 +124,23 @@ gsicc_add_link(gsicc_link_cache_t *link_cache, void *LinkHandle,void *ContextPtr
 void
 gsicc_cache_free(gsicc_link_cache_t *icc_cache, gs_memory_t *memory)
 {
+
+    /* ToDo: Need to free all the links and release them from the CMS first */
+
     gs_free_object(memory, icc_cache, "gsiccmanage_linkcache_free");
 }
+
+
+
+void
+gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory)
+{
+
+    gscms_release_link(icc_link);
+    gs_free_object(memory, icc_link, "gsiccmanage_link_free");
+
+}
+
 
 
 /*  Initialize the CMS 
@@ -417,9 +434,79 @@ FindCacheLink(int64_t hashcode,gsicc_link_cache_t *icc_cache)
 
 }
 
+
+/* Find entry with zero ref count and remove it */
+/* may need to lock cache during this time to avoid */
+/* issue in multi-threaded case */
+
+static gsicc_link_t*
+gsicc_find_zeroref_cache(gsicc_link_cache_t *icc_cache){
+
+    gsicc_link_t *curr_pos1,*curr_pos2;
+    bool foundit = 0;
+
+    /* Look through the cache for zero ref count */
+
+    curr_pos1 = icc_cache->ICCLink;
+    curr_pos2 = curr_pos1;
+
+    while (curr_pos1 != NULL ){
+
+        if (curr_pos1->ref_count == 0){
+
+            return(curr_pos1);
+
+        }
+
+        curr_pos1 = curr_pos1->PrevLink;
+
+    }
+
+    while (curr_pos2 != NULL ){
+
+        if (curr_pos2->ref_count == 0){
+
+            return(curr_pos2);
+
+        }
+
+        curr_pos2 = curr_pos2->NextLink;
+
+    }
+
+    return(NULL);
+
+}
+
+/* Remove link from cache.  Notify CMS and free */
+
+static void
+gsicc_remove_link(gsicc_link_t *link,gsicc_link_cache_t *icc_cache, gs_memory_t *memory){
+
+
+    gsicc_link_t *prevlink,*nextlink;
+
+    prevlink = link->PrevLink;
+    nextlink = link->NextLink;
+
+    if (prevlink != NULL){
+        prevlink->NextLink = nextlink;
+    }
+
+    if (nextlink != NULL){
+        nextlink->PrevLink = prevlink;
+    }
+
+    gsicc_link_free(link, memory);
+
+}
+
+
 /* This is the main function called to obtain a linked transform from the ICC manager
    If the manager has the link ready, it will return it.  If not, it will request 
-   one from the CMS and then return it.*/
+   one from the CMS and then return it.  We may need to do some cache locking during
+   this process to avoid multi-threaded issues (e.g. someone deleting while someone
+   is updating a reference count) */
 
 gsicc_link_t* 
 gsicc_get_link(gs_imager_state * pis, gsicc_colorspace_t  *input_colorspace, 
@@ -454,7 +541,33 @@ gsicc_get_link(gs_imager_state * pis, gsicc_colorspace_t  *input_colorspace,
     /* If not, then lets create a new one if there is room or return NULL */
     /* Caller will need to try later */
 
-    ok = gscms_get_link(link,input_colorspace,output_colorspace,rendering_params,contextptr);
+    /* First see if we have space */
+
+    if (icc_cache->num_links > ICC_CACHE_MAXLINKS){
+
+        /* If not, see if there is anything we can remove from cache */
+
+        link = gsicc_find_zeroref_cache(icc_cache);
+        if ( link == NULL){
+
+            return(NULL);
+
+        } else {
+
+            gsicc_remove_link(link,icc_cache, memory);
+
+        }
+      
+    } 
+
+    /* ToDo: If we are OK, then get the link.  But first convert all to ICC type */
+
+    
+
+
+    /* Now get the link */
+
+    ok = gscms_get_link(link,input_colorspace,output_colorspace,rendering_params);
     
     if (ok){
 
