@@ -394,7 +394,7 @@ gsicc_compute_hash(gsicc_colorspace_t *input_colorspace,
 }
 
 static gsicc_link_t*
-FindCacheLink(int64_t hashcode,gsicc_link_cache_t *icc_cache)
+FindCacheLink(int64_t hashcode,gsicc_link_cache_t *icc_cache, bool includes_proof)
 {
 
     gsicc_link_t *curr_pos1,*curr_pos2;
@@ -407,7 +407,7 @@ FindCacheLink(int64_t hashcode,gsicc_link_cache_t *icc_cache)
 
     while (curr_pos1 != NULL ){
 
-        if (curr_pos1->LinkHashCode == hashcode){
+        if (curr_pos1->LinkHashCode == hashcode && includes_proof == curr_pos1->includes_softproof){
 
             return(curr_pos1);
 
@@ -419,7 +419,7 @@ FindCacheLink(int64_t hashcode,gsicc_link_cache_t *icc_cache)
 
     while (curr_pos2 != NULL ){
 
-        if (curr_pos2->LinkHashCode == hashcode){
+        if (curr_pos2->LinkHashCode == hashcode && includes_proof == curr_pos2->includes_softproof){
 
             return(curr_pos2);
 
@@ -511,7 +511,7 @@ gsicc_remove_link(gsicc_link_t *link,gsicc_link_cache_t *icc_cache, gs_memory_t 
 gsicc_link_t* 
 gsicc_get_link(gs_imager_state * pis, gsicc_colorspace_t  *input_colorspace, 
                     gsicc_colorspace_t *output_colorspace, 
-                    gsicc_rendering_param_t *rendering_params, gs_memory_t *memory)
+                    gsicc_rendering_param_t *rendering_params, gs_memory_t *memory, bool include_softproof)
 {
 
     int64_t hashcode;
@@ -525,9 +525,9 @@ gsicc_get_link(gs_imager_state * pis, gsicc_colorspace_t  *input_colorspace,
 
     hashcode = gsicc_compute_hash(input_colorspace, output_colorspace, rendering_params);
 
-    /* Check the cache for a hit */
+    /* Check the cache for a hit.  Need to check if softproofing was used */
 
-    link = FindCacheLink(hashcode,icc_cache);
+    link = FindCacheLink(hashcode,icc_cache,include_softproof);
     
     /* Got a hit, update the reference count, return link */
     

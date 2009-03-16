@@ -30,6 +30,16 @@ gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t input_buf
 {
 
 
+    
+
+
+
+
+
+
+
+
+
 
 }
 
@@ -60,7 +70,7 @@ gscms_get_link(gsicc_link_t *icclink, gsicc_colorspace_t  *input_colorspace,
                     gsicc_rendering_param_t *rendering_params)
 {
 
-    cmsHPROFILE lcms_srchandle, lscms_deshandle;
+    cmsHPROFILE lcms_srchandle, lcms_deshandle;
     cmsHTRANSFORM lcms_link;
     DWORD src_data_type,des_data_type;
     icColorSpaceSignature src_color_space,des_color_space;
@@ -75,12 +85,12 @@ gscms_get_link(gsicc_link_t *icclink, gsicc_colorspace_t  *input_colorspace,
     streams. */
 
     lcms_srchandle = cmsOpenProfileFromMem(input_buf,input_size);
-    lscms_deshandle = cmsOpenProfileFromMem(output_buf,output_size);
+    lcms_deshandle = cmsOpenProfileFromMem(output_buf,output_size);
 
 /* Get the data types */
 
     src_color_space  = cmsGetColorSpace(lcms_srchandle);  
-    des_color_space  = cmsGetColorSpace(lscms_deshandle); 
+    des_color_space  = cmsGetColorSpace(lcms_deshandle); 
 
     src_nChannels = _cmsChannelsOf(src_color_space);
     des_nChannels = _cmsChannelsOf(des_color_space);
@@ -92,15 +102,77 @@ gscms_get_link(gsicc_link_t *icclink, gsicc_colorspace_t  *input_colorspace,
 
     /* TODO:  Make intent variable */
 
-    lcms_link = cmsCreateTransform(lcms_srchandle, src_data_type, lscms_deshandle, des_data_type, INTENT_PERCEPTUAL, cmsFLAGS_LOWRESPRECALC);			
+    lcms_link = cmsCreateTransform(lcms_srchandle, src_data_type, lcms_deshandle, des_data_type, 
+        INTENT_PERCEPTUAL, cmsFLAGS_LOWRESPRECALC);			
 
 /* Close the profile handles. We need to think about if we want to cache these. */
 
     cmsCloseProfile(lcms_srchandle);
-    cmsCloseProfile(lscms_deshandle);
+    cmsCloseProfile(lcms_deshandle);
   
 return(0);
 }
+
+
+
+/* Get the link from the CMS, but include proofing. 
+    We need to note 
+    that as an option in the rendering params.  If we are doing
+    transparency, that would only occur at the top of the stack 
+TODO:  Add error checking */
+
+int
+gscms_get_link_proof(gsicc_link_t *icclink, gsicc_colorspace_t  *input_colorspace, 
+                    gsicc_colorspace_t *output_colorspace, gsicc_colorspace_t *proof_colorspace, 
+                    gsicc_rendering_param_t *rendering_params)
+{
+
+    cmsHPROFILE lcms_srchandle, lcms_deshandle, lcms_proofhandle;
+    cmsHTRANSFORM lcms_link;
+    DWORD src_data_type,des_data_type;
+    icColorSpaceSignature src_color_space,des_color_space;
+    int src_nChannels,des_nChannels;
+    void* input_buf = input_colorspace->ProfileData->ProfileRawBuf;
+    void* output_buf = output_colorspace->ProfileData->ProfileRawBuf;
+    void* proof_buf = proof_colorspace->ProfileData->ProfileRawBuf;
+    int input_size = input_colorspace->ProfileData->iccheader.size;
+    int output_size = output_colorspace->ProfileData->iccheader.size;
+    int proof_size = proof_colorspace->ProfileData->iccheader.size;
+
+/* At this stage we have the ICC profiles as buffers.
+    we may later change some of this to deal with 
+    streams. */
+
+    lcms_srchandle = cmsOpenProfileFromMem(input_buf,input_size);
+    lcms_deshandle = cmsOpenProfileFromMem(output_buf,output_size);
+    lcms_proofhandle = cmsOpenProfileFromMem(proof_buf,proof_size);
+
+
+/* Get the data types */
+
+    src_color_space  = cmsGetColorSpace(lcms_srchandle);  
+    des_color_space  = cmsGetColorSpace(lcms_deshandle); 
+
+    src_nChannels = _cmsChannelsOf(src_color_space);
+    des_nChannels = _cmsChannelsOf(des_color_space);
+
+    src_data_type= (CHANNELS_SH(src_nChannels)|BYTES_SH(rendering_params->input_subpixbytesize)); 
+    des_data_type= (CHANNELS_SH(des_nChannels)|BYTES_SH(rendering_params->output_subpixbytesize)); 
+
+/* Create the link.  Note the gamut check alarm */
+
+    lcms_link = cmsCreateProofingTransform(lcms_srchandle, src_data_type, lcms_deshandle, des_data_type, 
+        lcms_proofhandle,INTENT_PERCEPTUAL, INTENT_ABSOLUTE_COLORIMETRIC, cmsFLAGS_GAMUTCHECK | cmsFLAGS_SOFTPROOFING );			
+
+/* Close the profile handles. We need to think about if we want to cache these. */
+
+    cmsCloseProfile(lcms_srchandle);
+    cmsCloseProfile(lcms_deshandle);
+    cmsCloseProfile(lcms_proofhandle);
+  
+return(0);
+}
+
 
 /* Get the CIELAB value and if present the device value
    for the device name.  Supply the named color profile.
@@ -133,6 +205,8 @@ void
 gscms_release_link(gsicc_link_t *icclink)
 {
 
+    if (icclink->LinkHandle !=NULL )
+        cmsDeleteTransform(icclink->LinkHandle);
 
 }
 

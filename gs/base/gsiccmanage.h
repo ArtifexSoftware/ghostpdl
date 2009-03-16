@@ -157,6 +157,7 @@ typedef struct gsiic_link_s {
     int ref_count;
     gsicc_link_t *NextLink;
     gsicc_link_t *PrevLink;
+    bool includes_softproof;
 
 } gsicc_link_t;
 
