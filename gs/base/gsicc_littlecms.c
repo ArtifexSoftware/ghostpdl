@@ -23,22 +23,100 @@
 
 /* Transform an entire buffer */
 void
-gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t input_buff_desc,
-                             gsicc_bufferdesc_t output_buff_des, 
+gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_buff_desc,
+                             gsicc_bufferdesc_t *output_buff_desc, 
                              void *inputbuffer,
                              void *outputbuffer)
 {
+    
+    cmsHTRANSFORM hTransform = (cmsHTRANSFORM) icclink->LinkHandle;
+    DWORD dwInputFormat,dwOutputFormat,curr_input,curr_output;
+    int planar,numbytes,little_endian,hasalpha,k;
+    unsigned char *inputpos, *outputpos;
 
+    /* Although little CMS does  make assumptions about data types in its transformations
+        you can change it after the fact.  */
+    /* Set us to the proper output type */
+
+    /* Note, we could speed this up by passing back the encoded data type
+        to the caller so that we could avoid having to go through this 
+        computation each time if they are doing multiple calls to this 
+        operation */
+
+    _LPcmsTRANSFORM p = (_LPcmsTRANSFORM) (LPSTR) hTransform;
+    curr_input = p->InputFormat;
+    curr_output = p->OutputFormat;
+
+    /* Color space MUST be the same */
+
+    dwInputFormat = COLORSPACE_SH(T_COLORSPACE(curr_input));
+    dwOutputFormat = COLORSPACE_SH(T_COLORSPACE(curr_output));
+
+    /* Now set if we have planar, num bytes, endian case, and alpha data to skip */
+
+    /* Planar -- pdf14 case for example */
+    planar = input_buff_desc->is_planar;
+    dwInputFormat = dwInputFormat | PLANAR_SH(planar);
+    planar = output_buff_desc->is_planar;
+    dwOutputFormat = dwOutputFormat | PLANAR_SH(planar);
+
+    /* 8 or 16 byte input and output */
+    numbytes = input_buff_desc->bytes_per_chan;
+    if (numbytes>2) numbytes = 0;  /* littleCMS encodes float with 0 ToDO. Doublecheck this. */
+    dwInputFormat = dwInputFormat | BYTES_SH(numbytes);
+    numbytes = output_buff_desc->bytes_per_chan;
+    if (numbytes>2) numbytes = 0;  
+    dwOutputFormat = dwOutputFormat | BYTES_SH(numbytes);
+
+    /* endian */
+    little_endian = input_buff_desc->little_endian;
+    dwInputFormat = dwInputFormat | ENDIAN16_SH(little_endian);
+    little_endian = output_buff_desc->little_endian;
+    dwOutputFormat = dwOutputFormat | ENDIAN16_SH(little_endian);
+
+    /* alpha, which is passed through unmolested */
+    /* ToDo:  Right now we always must have alpha last */
+    /* This is really only going to be an issue when we have
+       interleaved alpha data */
+
+    hasalpha = input_buff_desc->has_alpha;
+    dwInputFormat = dwInputFormat | EXTRA_SH(hasalpha);
+    dwOutputFormat = dwOutputFormat | EXTRA_SH(hasalpha);
+
+    /* Change the formaters */
+
+    cmsChangeBuffersFormat(hTransform,dwInputFormat,dwOutputFormat);
+
+    /* littleCMS knows nothing about word boundarys.  As such, we need to do this row
+       by row adjusting for our stride.  Output buffer must already be allocated.
+       ToDo:  Check issues with plane and row stride and word boundry */
 
     
+    inputpos = (unsigned char *) inputbuffer;
+    outputpos = (unsigned char *) outputbuffer;
 
+    if(input_buff_desc->is_planar){
 
+        /* Do entire buffer.  Care must be taken here 
+           with respect to row stride, word boundry and number
+           of source versus output channels.  We may 
+           need to take a closer look at this. */
+        
+        cmsDoTransform(hTransform,inputpos,outputpos,input_buff_desc->plane_stride); 
 
+    } else {
 
+        /* Do row by row. */    
+    
+        for(k = 0; k < input_buff_desc->num_rows ; k++){
 
+            cmsDoTransform(hTransform,inputpos,outputpos,input_buff_desc->pixels_per_row);
+            inputpos += input_buff_desc->row_stride;
+            outputpos += output_buff_desc->row_stride;
+    
+        }
 
-
-
+    }
 
 
 }
@@ -95,8 +173,10 @@ gscms_get_link(gsicc_link_t *icclink, gsicc_colorspace_t  *input_colorspace,
     src_nChannels = _cmsChannelsOf(src_color_space);
     des_nChannels = _cmsChannelsOf(des_color_space);
 
-    src_data_type= (CHANNELS_SH(src_nChannels)|BYTES_SH(rendering_params->input_subpixbytesize)); 
-    des_data_type= (CHANNELS_SH(des_nChannels)|BYTES_SH(rendering_params->output_subpixbytesize)); 
+       /* For now, just do single byte data, interleaved.  We can change this when we
+       use the transformation. */
+    src_data_type= (CHANNELS_SH(src_nChannels)|BYTES_SH(1)); 
+    des_data_type= (CHANNELS_SH(des_nChannels)|BYTES_SH(1)); 
 
 /* Create the link */
 
@@ -156,8 +236,11 @@ gscms_get_link_proof(gsicc_link_t *icclink, gsicc_colorspace_t  *input_colorspac
     src_nChannels = _cmsChannelsOf(src_color_space);
     des_nChannels = _cmsChannelsOf(des_color_space);
 
-    src_data_type= (CHANNELS_SH(src_nChannels)|BYTES_SH(rendering_params->input_subpixbytesize)); 
-    des_data_type= (CHANNELS_SH(des_nChannels)|BYTES_SH(rendering_params->output_subpixbytesize)); 
+    /* For now, just do single byte data, interleaved.  We can change this when we
+       use the transformation. */
+
+    src_data_type= (CHANNELS_SH(src_nChannels)|BYTES_SH(1)); 
+    des_data_type= (CHANNELS_SH(des_nChannels)|BYTES_SH(1)); 
 
 /* Create the link.  Note the gamut check alarm */
 
