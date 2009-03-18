@@ -773,7 +773,7 @@ currentdict end readonly def
   exch //false resolvestream pdfopdict .pdfruncontext
 
   countdictstack exch sub dup 0 gt { 
-     (   **** Warning: Pattern stream has imbalanced q/Q operators (too many q's)\n)
+     (   **** Warning: Pattern stream has unbalanced q/Q operators (too many q's)\n)
      pdfformaterror
      { Q } repeat
    } {

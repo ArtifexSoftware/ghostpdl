@@ -1539,7 +1539,7 @@ currentdict /PDF2PS_matrix_key undef
   % Some PDF files don't have matching q/Q (gsave/grestore) so we need
   % to clean up any left over dicts from the dictstack
   countdictstack PDFdictstackcount sub dup 0 ne { 
-    (   **** Warning: File has imbalanced q/Q operators \(too many q's\)\n)
+    (   **** Warning: File has unbalanced q/Q operators \(too many q's\)\n)
     pdfformaterror
     { end } repeat
   } {
