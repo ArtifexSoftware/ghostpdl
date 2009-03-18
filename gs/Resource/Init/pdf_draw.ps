@@ -445,11 +445,13 @@ def
   false .setuseciecolor		% SMask gets processed without UseCIEColor
   dup /Group oget /CS knownoget {
     resolvecolorspace dup setgcolorspace csput
+    //true		% use currentcolorspace
   } {
     % inheriting the colorspace -- make sure Device* spaces are not CIEBased
     forceDefaultCS currentcolorspace 0 get .knownget { exec } if
+    //false		% no defined colorspace
   } ifelse
-  exch dup /BBox get aload pop .begintransparencymaskgroup {
+  3 -1 roll dup /BBox get aload pop .begintransparencymaskgroup {
     dup /Resources knownoget { oforce } { 0 dict } ifelse
     exch false resolvestream
     .execgroup .endtransparencymask
