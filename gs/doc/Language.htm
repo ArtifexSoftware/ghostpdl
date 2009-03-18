@@ -1227,10 +1227,25 @@ at the beginning of the procedure.
 
 <dl>
 <dt><code>&lt;string&gt; &lt;boolean&gt; .setdebug -</code>
-<dd>If the Ghostscript interpreter was built with the <code>DEBUG</code>
-flag set, sets or resets any subset of the debugging flags normally
-controlled by <code>-Z</code> in the command line.  Has no effect
-otherwise.
+<dd>Sets or clears any subset of the debugging flags included in
+<code>&lt;string&gt;</code> based on the value of
+<code>&lt;boolean&gt;</code>. These correspond to the debug
+flags set by <code>-Z</code> on the command line and enable
+debug and tracing output from various internal modules.
+
+<p>Note that most tracing output is only produced if the Ghostscript
+interpreter was built with the <code>DEBUG</code> preprocessor
+symbol defined.
+
+<p>The <code>zsetdebug()</code> C function, which implements this
+operator, is a useful breakpoint for debuggers.
+Inserting '<code>() true .setdebug</code>' in the interpreted code will
+trigger a breakpoint at that location without side effects. The
+current  flag state is available in C as the <code>gs_debug[]</code>
+array, indexed by character value. The <code>zsetdebug</code> function will
+be entered, and <code>gs_debug[]</code> updated, whether or not Ghostscript
+is built with the <code>DEBUG</code> preprocessor symbol defined, so this
+is useful even with release builds.
 </dl>
 
 <dl>

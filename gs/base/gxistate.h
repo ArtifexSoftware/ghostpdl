@@ -215,6 +215,7 @@ typedef struct gs_devicen_color_map_s {
  * than &pis->ctm.
  */
 #define gs_imager_state_common\
+	bool is_gstate;	/* is this imager state part of gstate ? */\
 	gs_memory_t *memory;\
 	void *client_data;\
 	gx_line_params line_params;\
@@ -269,8 +270,8 @@ struct gs_imager_state_s {
 };
 
 /* Initialization for gs_imager_state */
-#define gs_imager_state_initial(scale)\
-  0, 0, { gx_line_params_initial },\
+#define gs_imager_state_initial(scale, is_gstate)\
+  is_gstate, 0, 0, { gx_line_params_initial },\
    { (float)(scale), 0.0, 0.0, (float)(-(scale)), 0.0, 0.0 },\
   false, {0, 0}, {0, 0}, false, \
   lop_default, gx_max_color_value, BLEND_MODE_Compatible,\

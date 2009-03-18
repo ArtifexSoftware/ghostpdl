@@ -247,7 +247,7 @@ void
 gdev_vector_reset(gx_device_vector * vdev)
 {
     static const gs_imager_state state_initial =
-    {gs_imager_state_initial(1)};
+    {gs_imager_state_initial(1, false)};
 
     vdev->state = state_initial;
     gx_hld_saved_color_init(&vdev->saved_fill_color);

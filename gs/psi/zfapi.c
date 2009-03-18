@@ -1405,15 +1405,18 @@ retry_oversampling:
     cr.char_codes_count = 1;
     if (bCID) {
         if (font_file_path != NULL) {
-            ref *Decoding, *SubstNWP, src_type, dst_type;
+            ref *Decoding, *TT_cmap, *SubstNWP;
+            ref src_type, dst_type;
 	    uint c;
 
             if (dict_find_string(pdr, "Decoding", &Decoding) <= 0 || !r_has_type(Decoding, t_dictionary))
                 return_error(e_invalidfont);
             if (dict_find_string(pdr, "SubstNWP", &SubstNWP) <= 0 || !r_has_type(SubstNWP, t_array))
                 return_error(e_invalidfont);
+            if (dict_find_string(pdr, "TT_cmap", &TT_cmap) <= 0 || !r_has_type(TT_cmap, t_dictionary))
+		return_error(e_invalidfont);
 
-	    code = cid_to_TT_charcode(imemory, Decoding, NULL, SubstNWP, 
+	    code = cid_to_TT_charcode(imemory, Decoding, TT_cmap, SubstNWP,
 				      client_char_code, &c, &src_type, &dst_type);
 	    if (code < 0)
 		return code;

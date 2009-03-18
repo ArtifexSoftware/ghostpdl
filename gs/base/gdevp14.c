@@ -1763,12 +1763,14 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_imager_state * pis,
 	    pis->get_cmap_procs = p14dev->save_get_cmap_procs;
 	    gx_set_cmap_procs(pis, p14dev->target);
 	    /* Send image out raster data to output device */
-	    {	/* hack: Reset lop_pdf14, which could be set by 
-		   pdf14_fill_path, pdf14_stroke_path
-		   to prevent a failure ingx_image_enum_begin. */
+            {
+		/* Make a copy so we can change the ROP */
 		gs_imager_state new_is = *pis;
 
-		new_is.log_op &= ~lop_pdf14;
+		/* We don't use the imager state log_op since this is for the */
+		/* clist playback. Putting the image (band in the case of the */
+		/* clist) only needs to use the default ROP to copy the data  */
+		new_is.log_op = rop3_default;
 		p14dev->pdf14_procs->put_image(pdev, &new_is, p14dev->target);
 	    }
 	    pdf14_disable_device(pdev);

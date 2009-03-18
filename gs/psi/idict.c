@@ -444,12 +444,11 @@ dict_put(ref * pdref /* t_dictionary */ , const ref * pkey, const ref * pvalue,
     gs_memory_t *pmem = dict_mem(pdict);
     int rcode = 0;
     int code;
-    ref *pvslot;
+    ref *pvslot, kname;
 
     /* Check the value. */
     store_check_dest(pdref, pvalue);
   top:if ((code = dict_find(pdref, pkey, &pvslot)) <= 0) {	/* not found *//* Check for overflow */
-	ref kname;
 	uint index;
 
 	switch (code) {

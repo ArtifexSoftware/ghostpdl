@@ -26,6 +26,7 @@ Started by Graham Asher, 6th June 2002.
 #include "write_t2.h"
 #include "math_.h"
 #include "gserror.h"
+#include "gxfixed.h"
 
 /* FreeType headers */
 #include <ft2build.h>
@@ -752,40 +753,82 @@ typedef struct FF_path_info_
 static int move_to(FT_Vector* aTo,void* aObject)
 	{
 	FF_path_info* p = (FF_path_info*)aObject;
-	p->m_x = aTo->x;
-	p->m_y = aTo->y;
-	return p->m_path->moveto(p->m_path,aTo->x,aTo->y) ? -1 : 0;
+
+	/* FAPI expects that co-ordinates will be as implied by frac_shift
+	 * in our case 16.16 fixed precision. True for 'low level' FT 
+	 * routines (apparently), it isn't true for these routines where
+	 * FT returns a 26.6 format. Rescale to 16.16 so that FAPI will
+	 * be able to convert to GS co-ordinates properly.
+	 */
+	p->m_x = aTo->x << 10;
+	p->m_y = aTo->y << 10;
+
+	return p->m_path->moveto(p->m_path,p->m_x,p->m_y) ? -1 : 0;
 	}
 
 static int line_to(FT_Vector* aTo,void* aObject)
 	{
 	FF_path_info* p = (FF_path_info*)aObject;
-	p->m_x = aTo->x;
-	p->m_y = aTo->y;
-	return p->m_path->lineto(p->m_path,aTo->x,aTo->y) ? -1 : 0;
+
+	/* See move_to() above */
+	p->m_x = aTo->x << 10;
+	p->m_y = aTo->y << 10;
+
+	return p->m_path->lineto(p->m_path,p->m_x,p->m_y) ? -1 : 0;
 	}
 
 static int conic_to(FT_Vector* aControl,FT_Vector* aTo,void* aObject)
 	{
 	FF_path_info* p = (FF_path_info*)aObject;
-	p->m_x = aTo->x;
-	p->m_y = aTo->y;
+	floatp x, y, Controlx, Controly, Control1x, Control1y, Control2x, Control2y;
+
+	/* More complivated than above, we need to do arithmetic on the
+	 * co-ordinates, so we want them as floats and we will convert the
+	 * result into 16.16 fixed precision for FAPI
+	 */
+	/* NB this code is funcitonally the same as the original, but I don't believe
+	 * the comment (below) to be what the code is actually doing....
+	 */
 	/*
 	Convert a quadratic spline to a cubic. Do this by changing the three points
 	A, B and C to A, 1/3(B,A), 1/3(B,C), C - that is, the two cubic control points are
 	a third of the way from the single quadratic control point to the end points. This
 	gives the same curve as the original quadratic.
 	*/
-	return p->m_path->curveto(p->m_path,(p->m_x + aControl->x * 2) / 3,
-						      (p->m_y + aControl->y * 2) / 3,
-						      (aTo->x + aControl->x * 2) / 3,
-						      (aTo->y + aControl->y * 2) / 3,
-						      aTo->x,aTo->y) ? -1 : 0;
+	x = aTo->x / 64;
+	p->m_x = float2fixed(x) << 8;
+	y = aTo->y / 64;
+	p->m_y = float2fixed(y) << 8;
+	Controlx = aControl->x / 64;
+	Controly = aControl->y / 64;
+
+	Control1x = float2fixed((x + Controlx * 2) / 3) << 8;
+	Control1y = float2fixed((y + Controly * 2) / 3) << 8;
+	Control2x = float2fixed((x + Controlx * 2) / 3) << 8;
+	Control2y = float2fixed((y + Controly * 2) / 3) << 8;
+
+	return p->m_path->curveto(p->m_path, Control1x,
+					Control1y,
+					Control2x,
+					Control2y,
+					p->m_x,p->m_y) ? -1 : 0;
 	}
 
 static int cubic_to(FT_Vector* aControl1,FT_Vector* aControl2,FT_Vector* aTo,void* aObject)
 	{
 	FF_path_info* p = (FF_path_info*)aObject;
+	unsigned long Control1x, Control1y, Control2x, Control2y;
+
+	/* See move_to() above */
+	p->m_x = aTo->x << 10;
+	p->m_y = aTo->y << 10;
+
+	Control1x = aControl1->x << 10;
+	Control1y = aControl1->y << 10;
+	Control2x = aControl2->x << 10;
+	Control2y = aControl2->y << 10;
+	return p->m_path->curveto(p->m_path,Control1x,Control1y,Control2x,Control2y,p->m_x,p->m_y) ? -1 : 0;
+
 	p->m_x = aTo->x;
 	p->m_y = aTo->y;
 	return p->m_path->curveto(p->m_path,aControl1->x,aControl1->y,aControl2->x,aControl2->y,aTo->x,aTo->y) ? -1 : 0;
