@@ -204,7 +204,7 @@ image_outline_char(
             npts = (segtype == 3 ? 3 : 1);
             for (ip = 0; ip < npts; ip++, ++pcoord) {
                 pt[ip].x = (pcoord->x << ishift) + tx;
-                pt[ip].y = (pcoord->y << ishift) + ty;
+                pt[ip].y = (-pcoord->y << ishift) + ty;
             }
 
             switch (segtype) {
@@ -294,7 +294,8 @@ pl_ufst_make_char(
          status != ERR_fixed_space                          ) {
 
         /* if too large for a bitmap, try an outline */
-        if (status >= ERR_bm_gt_oron && status <= ERRdu_pix_range) {
+        if ((status >= ERR_bm_gt_oron && status <= ERRdu_pix_range) ||
+            (status == ERR_bm_buff)) {
             pfc->format = (pfc->format & ~FC_BITMAP_TYPE) | FC_CUBIC_TYPE;
             if ((status = CGIFfont(FSA pfc)) == 0) {
                 CGIFchIdptr(FSA (VOID *)&chIdloc, NULL);
