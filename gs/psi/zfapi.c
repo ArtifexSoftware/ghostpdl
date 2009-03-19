@@ -1051,10 +1051,13 @@ static int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
     if (pfont->FontType == ft_CID_encrypted && v == NULL) {
         if ((code = build_proc_name_refs(imemory, &build, ".FAPIBuildGlyph9", ".FAPIBuildGlyph9")) < 0)
 	    return code;
+	pop(1);
+	return 0;
     } else
         if ((code = build_proc_name_refs(imemory, &build, ".FAPIBuildChar", ".FAPIBuildGlyph")) < 0)
 	    return code;
-    if (name_index(imemory, &pdata->BuildChar) == name_index(imemory, &build.BuildChar)) {
+    if (pdata->BuildChar.value.pname && build.BuildChar.value.pname &&
+	name_index(imemory, &pdata->BuildChar) == name_index(imemory, &build.BuildChar)) {
         /* Already rebuilt - maybe a substituted font. */
     } else {
         ref_assign_new(&pdata->BuildChar, &build.BuildChar);
