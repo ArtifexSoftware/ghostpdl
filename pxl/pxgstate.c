@@ -357,8 +357,19 @@ px_image_color_space(gs_image_t *pim,
         }
 	pcs->base_space = pbase_pcs;
 	pcs->params.indexed.hival = (1 << depth) - 1;
-	pcs->params.indexed.lookup.table.data = palette->data;
 	pcs->params.indexed.lookup.table.size = palette->size;
+        {
+            uint  n = palette->size;
+            byte *p = gs_alloc_string(pgs->memory, n,
+                           "px_image_color_space(palette)");
+            if ( p == 0 ) {
+                rc_decrement(pbase_pcs, "px_image_color_space");
+                return_error(errorInsufficientMemory);
+
+            }
+            memcpy(p, palette->data, n);
+            pcs->params.indexed.lookup.table.data = p;
+        }
 	pcs->params.indexed.use_proc = 0;
     } else {
         pcs = pbase_pcs;
