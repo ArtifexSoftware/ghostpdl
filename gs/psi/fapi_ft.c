@@ -729,6 +729,7 @@ static FAPI_retcode get_char_raster(FAPI_server *a_server,FAPI_raster *a_raster)
 	a_raster->line_step = s->m_bitmap_glyph->bitmap.pitch;
 	a_raster->orig_x = s->m_bitmap_glyph->left * 16;
 	a_raster->orig_y = s->m_bitmap_glyph->top * 16;
+	a_raster->left_indent = a_raster->top_indent = a_raster->black_height = a_raster->black_width = 0;
 	return 0;
 	}
 
