@@ -1158,7 +1158,7 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
 	    return code;
     } else {
         int code = I->get_char_raster(I, &rast);
-        if (code == e_limitcheck) {
+        if (code == e_limitcheck || pbfont->PaintType) {
             /* The server provides an outline instead the raster. */
             gs_imager_state *pis = (gs_imager_state *)pgs->show_gstate;
             gs_point pt;
