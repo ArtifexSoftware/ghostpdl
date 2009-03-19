@@ -877,6 +877,16 @@ static FAPI_retcode release_typeface(FAPI_server* a_server,void* a_server_font_d
 	return 0;
 	}
 
+static FAPI_retcode check_cmap_for_GID(FAPI_server *server, uint *index)
+{
+    FF_server* s = (FF_server*)server;
+    FF_face* face = (FF_face*)(server->ff.server_font_data);
+    FT_Face ft_face = face->m_ft_face;
+
+    *index = FT_Get_Char_Index(ft_face, *index);
+    return 0;
+}
+
 static void gs_freetype_destroy(i_plugin_instance* a_instance,i_plugin_client_memory* a_memory);
 
 static const i_plugin_descriptor TheFreeTypeDescriptor =
@@ -905,7 +915,8 @@ static const FAPI_server TheFreeTypeServer =
     get_char_outline_metrics,
     get_char_outline,
     release_char_data,
-    release_typeface
+    release_typeface,
+    check_cmap_for_GID
 	};
 
 plugin_instantiation_proc(gs_fapi_ft_instantiate);

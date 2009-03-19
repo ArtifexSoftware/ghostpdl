@@ -1416,13 +1416,43 @@ retry_oversampling:
                 return_error(e_invalidfont);
             if (dict_find_string(pdr, "SubstNWP", &SubstNWP) <= 0 || !r_has_type(SubstNWP, t_array))
                 return_error(e_invalidfont);
-            if (dict_find_string(pdr, "TT_cmap", &TT_cmap) <= 0 || !r_has_type(TT_cmap, t_dictionary))
-		return_error(e_invalidfont);
+	    if (dict_find_string(pdr, "TT_cmap", &TT_cmap) <= 0 || !r_has_type(TT_cmap, t_dictionary)) {
+		ref *DecodingArray, char_code, char_code1, ih, *glyph_index;
+		int i = client_char_code % 256, n;
 
-	    code = cid_to_TT_charcode(imemory, Decoding, TT_cmap, SubstNWP,
+		make_int(&ih, client_char_code / 256);
+		/* Check the Decoding array for this block of CIDs */
+		if (dict_find(Decoding, &ih, &DecodingArray) <= 0 || 
+			!r_has_type(DecodingArray, t_array) ||
+			array_get(imemory, DecodingArray, i, &char_code) < 0)
+		    return_error(e_invalidfont);
+		
+		/* Check the Decoding entry */
+		if (r_has_type(&char_code, t_integer))
+		    n = 1; 
+		else if (r_has_type(&char_code, t_array)) {
+		    DecodingArray = &char_code;
+		    i = 0;
+		    n = r_size(DecodingArray);
+		} else
+		    return_error(e_invalidfont);
+
+		for (;n--; i++) {
+		    if (array_get(imemory, DecodingArray, i, &char_code1) < 0 ||
+			!r_has_type(&char_code1, t_integer))
+			return_error(e_invalidfont);
+
+		    c = char_code1.value.intval;
+		    I->check_cmap_for_GID(I, &c);
+		    if (c != 0)
+		        break;
+		}
+	    } else {
+		code = cid_to_TT_charcode(imemory, Decoding, TT_cmap, SubstNWP,
 				      client_char_code, &c, &src_type, &dst_type);
-	    if (code < 0)
-		return code;
+		if (code < 0)
+		    return code;
+	    }
 	    cr.char_codes[0] = c;
 	    cr.is_glyph_index = (code == 0);
             /* fixme : process the narrow/wide/proportional mapping type,

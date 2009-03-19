@@ -182,6 +182,7 @@ struct FAPI_server_s {
     FAPI_retcode (*get_char_outline)(FAPI_server *server, FAPI_path *p);
     FAPI_retcode (*release_char_data)(FAPI_server *server);
     FAPI_retcode (*release_typeface)(FAPI_server *server, void *server_font_data);
+    FAPI_retcode (*check_cmap_for_GID)(FAPI_server *server, uint *index);
     /*  Some people get confused with terms "font cache" and "character cache".
         "font cache" means a cache for scaled font objects, which mainly
         keep the font header information and rules for adjusting it to specific raster.
