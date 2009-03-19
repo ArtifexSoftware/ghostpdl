@@ -71,7 +71,6 @@ pdl-pg: UGCC_TOP_DIR
 pdl-product: UGCC_TOP_DIR
 	$(MAKE) -f $(firstword $(MAKEFILE)) GENOPT='' GCFLAGS='$(GCFLAGS)' CFLAGS='-O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)' pdl-default
 
-# NB not complete, remove genarch and other miscellany.
 pdl-clean:
 	$(RMN_) $(GENDIR)/*.dev $(GENDIR)/devs*.tr $(GENDIR)/gconfig*.h
 	$(RMN_) $(GENDIR)/gconfx*.h $(GENDIR)/j*.h
@@ -79,6 +78,9 @@ pdl-clean:
 	$(RMN_) $(GENDIR)/*.$(OBJ)
 	$(RMN_) $(GENDIR)/*.h
 	$(RMN_) $(GENDIR)/*.c
+	$(RMN_) $(GENARCH_XE)
+	$(RMN_) $(ECHOGS_XE)
+	$(RMN_) $(GENCONF_XE)
 	$(RMN_) $(TARGET_XE)$(XE)
 
 # Build the configuration file.
