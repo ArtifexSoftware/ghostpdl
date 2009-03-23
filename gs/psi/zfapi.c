@@ -1303,15 +1303,15 @@ static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, 
     } else
         check_type(*op, t_integer);
 
-    /* Compute the sacle : */
+    if (penum == 0)
+        return_error(e_undefined);
+    /* Compute the scale : */
     if (!SHOW_IS(penum, TEXT_DO_NONE) && !igs->in_charpath) {
         gs_currentcharmatrix(igs, NULL, 1); /* make char_tm valid */
         penum_s->fapi_log2_scale.x = -1;
         gx_compute_text_oversampling(penum_s, (gs_font *)pbfont, alpha_bits, &log2_scale);
         penum_s->fapi_log2_scale = log2_scale;
     }
-    if (penum == 0)
-        return_error(e_undefined);
     scale = 1 << I->frac_shift;
 retry_oversampling:
     if (I->face.font_id != pbfont->id ||
