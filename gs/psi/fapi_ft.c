@@ -383,6 +383,7 @@ static void make_rotation(FT_Matrix* a_transform,const FT_Vector* a_vector)
 Divide a transformation into a scaling part and a rotation-and-shear part.
 The scaling part is used for setting the pixel size for hinting.
 */
+#if IGOR
 static void transform_decompose(FT_Matrix* a_transform,
 								FT_Fixed* a_x_scale,FT_Fixed* a_y_scale)
 	{
@@ -435,7 +436,27 @@ static void transform_decompose(FT_Matrix* a_transform,
 		transform_concat(a_transform,&rotation);
 		}
 	}
+#else
+static void transform_decompose(FT_Matrix* a_transform,
+								FT_Fixed* a_x_scale,FT_Fixed* a_y_scale)
+{
 
+	float a = a_transform->xx / 65536.0;
+	float b = a_transform->xy / 65536.0;
+	float c = a_transform->yx / 65536.0;
+	float d = a_transform->yy / 65536.0;
+
+	float scale = sqrt(fabs(a * d - b * c));
+
+	a_transform->xx = a / scale * 65536.0;
+	a_transform->xy = b / scale * 65536.0;
+	a_transform->yx = c / scale * 65536.0;
+	a_transform->yy = d / scale * 65536.0;
+
+	*a_x_scale = scale * 65536.0;
+	*a_y_scale = scale * 65536.0;
+}
+#endif
 /**
 Open a font and set its size.
 */
@@ -589,19 +610,24 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,
 		derived from the current transformation matrix and so are of no use.
 		*/
 		ft_transform.xx = a_font_scale->matrix[0];
-		ft_transform.xy = a_font_scale->matrix[1];
-		ft_transform.yx = -a_font_scale->matrix[2];
-		ft_transform.yy = -a_font_scale->matrix[3];
+		ft_transform.xy = a_font_scale->matrix[2];
+		ft_transform.yx = a_font_scale->matrix[1];
+		ft_transform.yy = a_font_scale->matrix[3];
+//		FT_Matrix_Multiply(&ft_reflection,&ft_transform);
 
 		/*
 		Split the transform into scale factors and a rotation-and-shear
 		transform.
 		*/
+#if 1
 		transform_decompose(&ft_transform,&width,&height);
 
 		/* Convert width and height to 64ths of pixels and set the FreeType sizes. */
 		width >>= 10;
 		height >>= 10;
+#else
+		width=height=64;
+#endif
 		ft_error = FT_Set_Char_Size(face->m_ft_face,width,height,
 									a_font_scale->HWResolution[0] >> 16,
 									a_font_scale->HWResolution[1] >> 16);
@@ -617,7 +643,7 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,
 		produces a glyph that is upside down in FreeType terms, with its
 		first row at the bottom. That is what GhostScript needs.
 		*/
-		FT_Matrix_Multiply(&ft_reflection,&ft_transform);
+//		FT_Matrix_Multiply(&ft_reflection,&ft_transform);
 		
 		FT_Set_Transform(face->m_ft_face,&ft_transform,NULL);
 		}
