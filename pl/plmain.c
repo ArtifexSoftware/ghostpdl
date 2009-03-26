@@ -29,6 +29,7 @@
 #include "gp.h"
 #include "gsdevice.h"
 #include "gxdevice.h"
+#include "gsnogc.h"
 #include "gsparam.h"
 #include "gslib.h"
 #include "pjtop.h"
@@ -721,6 +722,24 @@ void
 pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
 {	
     pti->memory = mem;
+    { 
+        int i;
+        for ( i = 0; i < countof(pti->spaces.memories.indexed); ++i )
+	    pti->spaces.memories.indexed[i] = 0;
+        pti->spaces.memories.named.local =
+            pti->spaces.memories.named.global =
+	    (gs_ref_memory_t *)mem;
+    }
+
+    /* NB - gs_nogc_reclaim does a bit more than expected.  It has the
+       side effect of resetting the string memory procedures in the
+       memory "procs" table and other setup business prerequisite to
+       the nogc.dev allocator functioning properly.  It also
+       reclaims/consolidates memory. */
+    {
+        vm_spaces *spaces = &pti->spaces;
+        gs_nogc_reclaim(spaces, true);
+    }
     pti->error_report = -1;
     pti->pause = true;
     pti->print_page_count = false;
