@@ -19,7 +19,7 @@ pcl:
 	$(MAKE) -C main -f pcl6_gcc.mak	pdl-product # build PCL and PCLXL. 
 
 pcl-debug: 
-	$(MAKE) -C main -f pcl6_gcc.mak pdl-debug
+	$(MAKE) -C main -f pcl6_gcc.mak pdl-debug GENDIR="./debugobj"
 
 fonts:
 	mkdir -p /windows/fonts/	# make a font directory. 2 
