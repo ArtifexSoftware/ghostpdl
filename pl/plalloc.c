@@ -19,14 +19,9 @@ pl_alloc_init()
 
     if (mem == NULL) return NULL;
 
-#ifndef DEBUG
     /* fix me... the second parameter (chunk size) should be a member of
        pl_main_instance_t */
     pl_mem = (gs_memory_t *)ialloc_alloc_state(mem, 20000);
-#else
-    pl_mem = gs_malloc_init(mem);
-#endif
-
     /* if ialloc fails we return NULL here */
     return pl_mem;
 }
