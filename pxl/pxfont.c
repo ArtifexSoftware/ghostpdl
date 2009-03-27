@@ -231,7 +231,22 @@ px_define_font(px_font_t *pxfont, byte *header, ulong size, gs_id id, px_state_t
 	    code = px_fill_in_font((gs_font *)pfont, pxfont, pxs);
 	    if ( code < 0 )
 	      return code;
+            {
+                /* some pcl xl drivers generate an incorrect sfnt
+                   version, in particular they will use a true type
+                   collection header where truetype was intended.  The
+                   hp printer does not detect this problem.  Brutishly,
+                   we write in what the driver writers intended here
+                   and bypass and avoid later failures that would
+                   result from an incorrect header. */
+                static const byte version1_0[4] = {0, 1, 0, 0};
+                /* offset to the sfnt version.   */
+                uint offs = pxfont->offsets.GT +
+                    (pxfont->large_sizes ? 6 : 4);
 
+                if (gs_object_size(mem, header) >= offs + sizeof(version1_0))
+                    memcpy(header + offs, version1_0, sizeof(version1_0));
+            }
 	    code = pl_fill_in_tt_font(pfont, NULL, id);
             if ( code < 0 )
                 return code;
