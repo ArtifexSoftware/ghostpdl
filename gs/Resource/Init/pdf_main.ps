@@ -1655,15 +1655,21 @@ currentdict /PDF2PS_matrix_key undef
       { pop //true exit } if
     } if
     dup /XObject knownoget {
-      //false exch {
-	exch pop oforce dup /Subtype get
-	dup /Image eq { 1 index /SMask known { pop pop not exit } if } if
-	/Form eq {
-	  3 index exch resourceusestransparency { not exit } if
-	} {
-	  pop
-	} ifelse
-      } forall { pop //true exit } if
+      dup type /dicttype eq {
+        //false exch {
+	  exch pop oforce dup /Subtype get
+	  dup /Image eq { 1 index /SMask known { pop pop not exit } if } if
+	  /Form eq {
+	    3 index exch resourceusestransparency { not exit } if
+	  } {
+	    pop
+	  } ifelse
+        } forall { pop //true exit } if
+      } {
+        (   **** Ignoring non-dictionary /XObject attribute.\n)
+        pdfformaterror
+        pop
+      } ifelse
     } if
     2 copy //false put             % Visited but not in the current chain.
     pop //false exit
@@ -1748,9 +1754,13 @@ currentdict /PDF2PS_matrix_key undef
       { exch pop oforce /ColorSpace oget 3 index colorspacespotcolors } forall
     } if
     /XObject knownoget {
-      { exch pop oforce dup
-        /Subtype get /Form eq { resourcespotcolors } { pop } ifelse
-      } forall
+      dup type /dicttype eq {
+        { exch pop oforce dup
+          /Subtype get /Form eq { resourcespotcolors } { pop } ifelse
+        } forall
+      } {
+        pop % Just ignore here, already reported by resourceusestransparency.
+      } ifelse
     } if
     exit
   } loop
