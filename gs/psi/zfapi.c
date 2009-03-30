@@ -1144,12 +1144,18 @@ static const int frac_pixel_shift = 4;
 static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_server *I)
 {   gs_text_enum_t *penum = op_show_find(i_ctx_p);
     gs_show_enum *penum_s = (gs_show_enum *)penum;
-    gs_state *pgs = penum_s->pgs;
+    gs_state *pgs;
     gx_device *dev1 = gs_currentdevice_inline(pgs); /* Possibly changed by zchar_set_cache. */
-    gx_device *dev = penum_s->dev;
+    gx_device *dev;
     const int import_shift_v = _fixed_shift - I->frac_shift;
     FAPI_raster rast;
     int code;
+
+    if(penum == NULL) {
+	return_error(e_undefined);
+    }
+    dev = penum_s->dev;
+    pgs = penum_s->pgs;
 
     if (SHOW_IS(penum, TEXT_DO_NONE)) {
         /* do nothing */
