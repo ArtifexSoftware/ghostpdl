@@ -1141,7 +1141,7 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
 {   gs_text_enum_t *penum = op_show_find(i_ctx_p);
     gs_show_enum *penum_s = (gs_show_enum *)penum;
     gs_state *pgs;
-    gx_device *dev1 = gs_currentdevice_inline(pgs); /* Possibly changed by zchar_set_cache. */
+    gx_device *dev1;
     gx_device *dev;
     const int import_shift_v = _fixed_shift - I->frac_shift;
     FAPI_raster rast;
@@ -1152,6 +1152,7 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
     }
     dev = penum_s->dev;
     pgs = penum_s->pgs;
+    dev1 = gs_currentdevice_inline(pgs); /* Possibly changed by zchar_set_cache. */
 
     if (SHOW_IS(penum, TEXT_DO_NONE)) {
         /* do nothing */
