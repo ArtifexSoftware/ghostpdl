@@ -462,6 +462,9 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
             params.sbrat[2] = segment_data[offset + 2];
             params.sbrat[3] = segment_data[offset + 3];
             offset += 4;
+	  } else {
+	    /* zero these for the sake of later debug messages */
+	    memset(params.sbrat, 0, sizeof(params.sbrat));
 	  }
       }
 
