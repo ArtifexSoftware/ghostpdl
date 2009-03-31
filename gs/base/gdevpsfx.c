@@ -508,6 +508,8 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 	case ce1_callothersubr:
 	    if (*csp == int2fixed(3))
 		replace_hints = true;
+	    if (*csp == int2fixed(12) || *csp == int2fixed(13))
+		cis.os_count -= fixed2int(csp[-1]);
 	    cis.os_count -= 2;
 	    continue;
 	case CE_OFFSET + ce1_dotsection:
