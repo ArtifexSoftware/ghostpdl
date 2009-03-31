@@ -976,7 +976,10 @@ pdf_print_resource_statistics(gx_device_pdf * pdev)
 long
 pdf_open_separate(gx_device_pdf * pdev, long id)
 {
-    pdf_open_document(pdev);
+    int code;
+    code = pdf_open_document(pdev);
+    if (code < 0)
+	return code;
     pdev->asides.save_strm = pdev->strm;
     pdev->strm = pdev->asides.strm;
     return pdf_open_obj(pdev, id);
