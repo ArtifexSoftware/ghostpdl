@@ -22,6 +22,7 @@
 #include "os_types.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef JBIG2_DEBUG
 #include <stdio.h>
@@ -284,7 +285,7 @@ if (RANGELEN)
 Jbig2HuffmanTable *
 jbig2_build_huffman_table (Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
 {
-  int LENCOUNT[1 << LOG_TABLE_SIZE_MAX];
+  int *LENCOUNT;
   int LENMAX = -1;
   const Jbig2HuffmanLine *lines = params->lines;
   int n_lines = params->n_lines;
@@ -297,6 +298,15 @@ jbig2_build_huffman_table (Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
   int firstcode = 0;
   int CURCODE;
   int CURTEMP;
+
+  LENCOUNT = jbig2_alloc(ctx->allocator,
+    sizeof(*LENCOUNT)*(1 << LOG_TABLE_SIZE_MAX));
+  if (LENCOUNT== NULL) {
+    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
+      "couldn't allocate storage for huffman histogram");
+    return NULL;
+  }
+  memset(LENCOUNT, 0, sizeof(*LENCOUNT)*(1 << LOG_TABLE_SIZE_MAX));
 
   /* B.3, 1. */
   for (i = 0; i < params->n_lines; i++)
@@ -353,6 +363,7 @@ jbig2_build_huffman_table (Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
 		  end_j, max_j);
 		jbig2_free(ctx->allocator, result->entries);
 		jbig2_free(ctx->allocator, result);
+		jbig2_free(ctx->allocator, LENCOUNT);
 		return NULL;
 	      }
 	      /* todo: build extension tables */
@@ -386,6 +397,8 @@ jbig2_build_huffman_table (Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
 	    }
 	}
     }
+
+  jbig2_free(ctx->allocator, LENCOUNT);
 
   return result;
 }
