@@ -1419,7 +1419,7 @@ retry_oversampling:
             if (dict_find_string(pdr, "SubstNWP", &SubstNWP) <= 0 || !r_has_type(SubstNWP, t_array))
                 return_error(e_invalidfont);
 	    if (dict_find_string(pdr, "TT_cmap", &TT_cmap) <= 0 || !r_has_type(TT_cmap, t_dictionary)) {
-		ref *DecodingArray, char_code, char_code1, ih, *glyph_index;
+		ref *DecodingArray, char_code, char_code1, ih;
 		int i = client_char_code % 256, n;
 
 		make_int(&ih, client_char_code / 256);
