@@ -1642,7 +1642,9 @@ pdf_obtain_font_resource_encoded(gx_device_pdf *pdev, gs_font *font,
 	    same_encoding = ((base_font->procs.same_font(base_font, font, 
 	                      FONT_SAME_ENCODING) & FONT_SAME_ENCODING) != 0);
 	/* Find or make font resource. */
-	pdf_attached_font_resource(pdev, base_font, ppdfont, NULL, NULL, NULL, NULL);
+	code = pdf_attached_font_resource(pdev, base_font, ppdfont, NULL, NULL, NULL, NULL);
+	if (code < 0)
+	    return code;
 	if (*ppdfont != NULL && base_font != font) {
 	    if (pdfont_not_allowed == *ppdfont)
 		*ppdfont = NULL;	
