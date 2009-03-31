@@ -15,7 +15,6 @@
 /* Font API client */
 
 #include "memory_.h"
-#include "string_.h"
 #include "math_.h"
 #include "ghost.h"
 #include "gp.h"
@@ -36,8 +35,6 @@
 #include "dstack.h"
 #include "ichar.h"
 #include "idict.h"
-#include "iddict.h"
-#include "idparam.h"
 #include "iname.h"
 #include "ifont.h"
 #include "icid.h"
@@ -49,7 +46,6 @@
 #include "gzstate.h"
 #include "gdevpsf.h"
 #include "stream.h"		/* for files.h */
-#include "files.h"
 #include "gscrypt1.h"
 #include "gxfcid.h"
 

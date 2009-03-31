@@ -16,7 +16,6 @@
 
 #include "math_.h"
 #include "memory_.h"
-#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsutil.h"

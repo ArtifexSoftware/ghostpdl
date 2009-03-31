@@ -14,7 +14,6 @@
 /* $Id$ */
 /* Get/put parameters for PDF-writing driver */
 #include "memory_.h"
-#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gdevpdfx.h"

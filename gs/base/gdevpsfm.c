@@ -20,7 +20,6 @@
 #include "spprint.h"
 #include "spsdf.h"
 #include "gdevpsf.h"
-#include "memory_.h"
 
 /* ---------------- Utilities ---------------- */
 

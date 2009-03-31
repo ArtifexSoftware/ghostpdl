@@ -14,7 +14,6 @@
 /* $Id$ */
 /* Image-writing utilities for pdfwrite driver */
 #include "memory_.h"
-#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gdevpdfx.h"

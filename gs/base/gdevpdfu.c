@@ -15,7 +15,6 @@
 /* Output utilities for PDF-writing driver */
 #include "memory_.h"
 #include "jpeglib_.h"		/* for sdct.h */
-#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gscdefs.h"

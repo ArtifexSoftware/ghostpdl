@@ -28,7 +28,6 @@
 #include "gxfont1.h"
 #include "gxfcid.h"
 #include "stream.h"
-#include "sfilter.h"
 #include "gdevpsf.h"
 
 /* Define additional opcodes used in Dicts, but not in CharStrings. */

@@ -14,7 +14,6 @@
 /* $Id$ */
 /* Composite and CID-based text processing for pdfwrite. */
 #include "memory_.h"
-#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gxfcmap.h"

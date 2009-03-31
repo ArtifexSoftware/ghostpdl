@@ -15,7 +15,6 @@
 /* pdfmark processing for PDF-writing driver */
 #include "math_.h"
 #include "memory_.h"
-#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsutil.h"		/* for bytes_compare */

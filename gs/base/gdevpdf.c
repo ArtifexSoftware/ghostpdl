@@ -15,7 +15,6 @@
 /* PDF-writing driver */
 #include "fcntl_.h"
 #include "memory_.h"
-#include "string_.h"
 #include "time_.h"
 #include "unistd_.h"
 #include "gx.h"
