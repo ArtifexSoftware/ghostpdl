@@ -898,7 +898,7 @@ pdf_font_metadata(gx_device_pdf *pdev, const pdf_base_font_t *pbfont,
      * For now we disable writing of font Metadata
      */
     return 0;
-
+#if 0
     *metadata_object_id = gs_no_id;
     if (pdev->CompatibilityLevel < 1.4)
 	return 0;
@@ -930,4 +930,5 @@ pdf_font_metadata(gx_device_pdf *pdev, const pdf_base_font_t *pbfont,
 	*metadata_object_id = pres->object->id;
     }
     return 0;
+#endif
 }
