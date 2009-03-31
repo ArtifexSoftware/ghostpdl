@@ -951,7 +951,9 @@ pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font *subfont,
 {
     int code = 0;
 
-    pdf_attached_font_resource(pdev, subfont, ppdsubf, NULL, NULL, NULL, NULL);
+    code = pdf_attached_font_resource(pdev, subfont, ppdsubf, NULL, NULL, NULL, NULL);
+    if (code < 0)
+	return code;
     if (*ppdsubf != NULL) {
 	const gs_font_base *cfont = pdf_font_resource_font(*ppdsubf, false);
 
