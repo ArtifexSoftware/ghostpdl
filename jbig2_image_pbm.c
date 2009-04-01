@@ -71,6 +71,8 @@ Jbig2Image *jbig2_image_read_pbm_file(Jbig2Ctx *ctx, char *filename)
 
     image = jbig2_image_read_pbm(ctx, in);
 
+    fclose(in);
+
     return (image);
 }
 
