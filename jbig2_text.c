@@ -290,7 +290,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		Jbig2RefinementRegionParams rparams;
 		Jbig2Image *IBO;
 		int32_t RDW, RDH, RDX, RDY;
-		Jbig2Image *image;
+		Jbig2Image *refimage;
 		int BMSIZE = 0;
 
 		/* 6.4.11 (1, 2, 3, 4) */
@@ -310,8 +310,8 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 
 		/* 6.4.11 (6) */
 		IBO = IB;
-		image = jbig2_image_new(ctx, IBO->width + RDW,
-					     IBO->height + RDH);
+		refimage = jbig2_image_new(ctx, IBO->width + RDW,
+						IBO->height + RDH);
 
 		/* Table 12 */
 		rparams.GRTEMPLATE = params->SBRTEMPLATE;
@@ -321,8 +321,8 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		rparams.TPGRON = 0;
 		memcpy(rparams.grat, params->sbrat, 4);
 		jbig2_decode_refinement_region(ctx, segment,
-		    &rparams, as, image, GR_stats);
-		IB = image;
+		    &rparams, as, refimage, GR_stats);
+		IB = refimage;
 
 		jbig2_image_release(ctx, IBO);
 
