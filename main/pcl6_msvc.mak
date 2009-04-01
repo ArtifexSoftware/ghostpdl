@@ -328,7 +328,8 @@ FEATURE_DEVS    = $(DD)\dps2lib.dev   \
 		  $(DD)\psf0lib.dev   \
                   $(DD)\sdctd.dev     \
                   $(DD)\psf2lib.dev   \
-	          $(DD)\lzwd.dev
+	          $(DD)\lzwd.dev \
+	          $(DD)\gsnogc.dev
 !endif
 
 
