@@ -322,9 +322,6 @@ jbig2_build_huffman_table (Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
 		}
       LENCOUNT[PREFLEN]++;
 
-	jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1,
-	  "PREFLEN %d", PREFLEN);
-
       lts = PREFLEN + lines[i].RANGELEN;
       if (lts > LOG_TABLE_SIZE_MAX)
 		lts = PREFLEN;
