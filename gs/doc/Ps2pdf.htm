@@ -245,6 +245,14 @@ wide variety of uses, possibly at the expense of a larger output file.
 
 </ul>
 
+<dt><code>-dNumCopies</code>
+<dd>When present, causes pdfwrite to use the #copies or /NumCopies entry in the page
+device dictionary to duplicate each page in the output PDF file as many times as
+the 'copies' value. This is intended for use by workflow applications like CUPS
+and should not be used for generating general purpose PDF files. In particular any
+pdfmark operations which rely on page numbers, such as Link or Outline annotations
+will not work correctly with this flag.
+
 </dl>
 
 <p>

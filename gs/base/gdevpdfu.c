@@ -1218,7 +1218,7 @@ pdf_write_and_free_all_resource_objects(gx_device_pdf *pdev)
  * Sets page->{procsets, resource_ids[]}.
  */
 int
-pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page)
+pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_usage)
 {
     int i;
 
@@ -1247,7 +1247,8 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page)
 		    }
 		    pprints1(s, "/%s\n", pres->rname);
 		    pprintld1(s, "%ld 0 R", id);
-		    pres->where_used -= pdev->used_mask;
+		    if (clear_usage)
+			pres->where_used -= pdev->used_mask;
 		}
 	    }
 	}
