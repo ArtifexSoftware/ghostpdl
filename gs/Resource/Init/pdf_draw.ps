@@ -406,7 +406,11 @@ end
       /GrayBackground exch 3 2 roll
     } if
     dup /TR knownoget {
-      resolveidfnproc /TransferFunction exch 3 2 roll
+      dup /Identity eq {
+        pop
+      } {
+        resolvefnproc /TransferFunction exch 3 2 roll
+      } ifelse
     } if    
     dup /G oget dup /BBox oget /BBox exch 4 2 roll
     /.execmaskgroup cvx 2 packedarray cvx /Draw exch 3 2 roll
