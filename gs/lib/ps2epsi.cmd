@@ -11,6 +11,10 @@ if %2/==/ goto usage
 set infile=%1
 set outfile=%2
 
+rem First we need to determine the bounding box. ps2epsi.ps below will pick
+rem the result up from %outfile%
+gsos2 -q -dNOPAUSE -dBATCH -dSAFER -dDELAYSAFER -sDEVICE=bbox -sOutputFile=NUL %infile% 2> %outfile%
+
 rem Ghostscript uses %outfile% to define the output file
 gsos2 -q -dNOPAUSE -dSAFER -dDELAYSAFER -sDEVICE=bit -sOutputFile=NUL ps2epsi.ps < %infile%
 

@@ -1,3 +1,4 @@
+
 %    Copyright (C) 1990, 2000 Aladdin Enterprises.  All rights reserved.
 % 
 % This software is provided AS-IS with no warranty, either express or
@@ -53,7 +54,13 @@ ps2edict begin
 
 				% The main procedure
   /ps2epsi
-   {				% Open the file
+   {			
+	% bbox written to outfile by bbox device from ps2epsi command file
+	outfile (r) file /epsifile exch def
+	/BBoxString epsifile 256 string readline pop def
+	/HiresBBoxString epsifile 256 string readline pop def
+	epsifile closefile
+			% Open the file
      outfile (w) file /epsifile exch def
 					% Get the device parameters
      currentdevice getdeviceprops .dicttomark 
@@ -160,17 +167,8 @@ ps2edict begin
 	  dup rm gt
           % If the new index is greater, we save index and element
           { /rm exch def } { pop } ifelse
-	} {
-          pop
-        } ifelse
+	} if
       } for
-
-     % Calculate the bounding box values.
-     % Note that these must be corrected to produce closed-open intervals.
-     /llx lm def
-     /lly devheight bm sub 1 sub def
-     /urx rm 1 add def
-     /ury devheight tm sub def
 
     % Write out the magic string and bounding box information
      epsifile (%!PS-Adobe-2.0 EPSF-1.2\n) writestring
@@ -195,11 +193,8 @@ ps2edict begin
 	 epsifile (\n) writestring
      epsifile flushfile
 
-     epsifile (%%BoundingBox: ) writestring
-     epsifile llx write==only epsifile ( ) writestring
-     epsifile lly write==only epsifile ( ) writestring
-     epsifile urx write==only epsifile ( ) writestring
-     epsifile ury write==
+	epsifile BBoxString writestring epsifile (\r) writestring
+	epsifile HiresBBoxString writestring epsifile (\r) writestring
 
     % Define character and bit widths for the output line buffer:
      /cwidth rm lm sub 1 add def

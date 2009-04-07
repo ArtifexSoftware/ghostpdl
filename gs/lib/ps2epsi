@@ -50,6 +50,8 @@ else
 	outfile=$2
 fi
 
+"$GS_EXECUTABLE" -q -dBATCH -dNOPAUSE -dSAFER -dDELAYSAFER -sDEVICE=bbox -sOutputFile=/dev/null "${infile}" 2>${outfile}
+
 ls -l "${infile}" |
 awk 'F==1	{
 		cd="%%CreationDate: " $6 " " $7 " " $8;
@@ -70,12 +72,27 @@ awk 'F==1	{
 		print "/epsicreator (" c "\\n) def";
 		print "/epsicrdt (" cd "\\n) def";
 		print "/epsifor (" f "\\n) def";
-		print "end";
 		exit(0);
 		}
 	' U="$USERNAME$LOGNAME"  F=1 - F=2 "${infile}" >"$tmpfile"
 
-"$GS_EXECUTABLE" -q -sPAPERSIZE=a0 -dNOPAUSE -dSAFER -dDELAYSAFER -r72 -sDEVICE=bit -sOutputFile=/dev/null "$tmpfile" ps2epsi.ps "$tmpfile" <"${infile}" 1>&2
+ls -l "${outfile}" |
+awk 'F==1	{
+		b="%%BoundingBox: 0 0 0 0\\n";
+		}
+		/^%%BoundingBox:/	{b=$0; next;}
+		/^%%HiResBoundingBox:/	{ 
+		hb=$0;
+		print "ps2edict where {pop} {/ps2edict 30 dict def} ifelse";
+		print "ps2edict begin";
+		print "/BBoxString (" b "\\n) def";
+		print "/HiresBBoxString (" hb "\\n) def";
+		print "end";
+		exit(0);
+		}
+	' F=1 - F=2 "${outfile}" >>"$tmpfile"
+
+"$GS_EXECUTABLE" -q -dNOPAUSE -dSAFER -dDELAYSAFER -r72 -sDEVICE=bit -sOutputFile=/dev/null "$tmpfile" ps2epsi.ps "$tmpfile" <"${infile}" 1>&2
 rm -f "$tmpfile"
 rm -rf "$tmpdir"
 
