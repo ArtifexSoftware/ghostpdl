@@ -168,9 +168,11 @@ gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
 	dev->cached_colors = target->cached_colors;
     }
     if (dev->color_info.depth == 1) {
-	gdev_mem_mono_set_inverted(dev,
-				   (target == 0 || 
-                                    dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE));
+	gx_color_value cv[3];
+
+       cv[0] = cv[1] = cv[2] = 0;
+	gdev_mem_mono_set_inverted(dev, (target == 0 ||
+				   (*dev_proc(dev, map_rgb_color))((gx_device *)dev, cv) != 0));
     }
     check_device_separable((gx_device *)dev);
     gx_device_fill_in_procs((gx_device *)dev);
