@@ -337,3 +337,7 @@ int pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
 
 #endif /* gdevpdfg_INCLUDED */
 
+/* ---------------- Exported by gdevpdfe.c ---------------- */
+
+/* Write metadata */
+int pdf_document_metadata(gx_device_pdf *pdev);
