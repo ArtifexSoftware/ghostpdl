@@ -369,8 +369,13 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
 		    )
 		    goto nyi;
 	}
-	in_line = context == PDF_IMAGE_DEFAULT &&
-	    can_write_image_in_line(pdev, pim1);
+        /* A hack for an issue when we have a pattern with transparency */
+        /* There is in issue if the image is written out inline and 
+           we have a transparency in a pattern.  To avoid, make it write
+           out the image as a resource. Fixes crash with bug688728.pdf */
+ 	 /* in_line = context == PDF_IMAGE_DEFAULT &&
+	    can_write_image_in_line(pdev, pim1); */
+
 	image[0].type1 = *pim1;
 	break;
     }
