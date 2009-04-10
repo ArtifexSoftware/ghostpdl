@@ -14,7 +14,6 @@
 /* $Id$ */
 /* Bitmap font implementation for pdfwrite */
 #include "memory_.h"
-#include "string_.h"
 #include "gx.h"
 #include "gxpath.h"
 #include "gserrors.h"

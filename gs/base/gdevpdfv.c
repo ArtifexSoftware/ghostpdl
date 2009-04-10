@@ -426,8 +426,8 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
      * We don't have to worry about color space scaling: the color
      * space is always a Device space.
      */
-    code = pdf_color_space(pdev, &cs_value, NULL, pcs_Device,
-			   &pdf_color_space_names, true);
+    code = pdf_color_space_named(pdev, &cs_value, NULL, pcs_Device,
+			   &pdf_color_space_names, true, NULL, 0);
     if (code < 0)
 	return code;
     if (!have_pattern_streams) {
@@ -494,8 +494,8 @@ pdf_put_shading_common(cos_dict_t *pscd, const gs_shading_t *psh,
     if (code < 0 ||
 	(psh->params.AntiAlias &&
 	 (code = cos_dict_put_c_strings(pscd, "/AntiAlias", "true")) < 0) ||
-	(code = pdf_color_space(pscd->pdev, &cs_value, ppranges, pcs,
-				&pdf_color_space_names, false)) < 0 ||
+	(code = pdf_color_space_named(pscd->pdev, &cs_value, ppranges, pcs,
+				&pdf_color_space_names, false, NULL, 0)) < 0 ||
 	(code = cos_dict_put_c_key(pscd, "/ColorSpace", &cs_value)) < 0
 	)
 	return code;

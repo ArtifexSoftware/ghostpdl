@@ -652,6 +652,11 @@ setglobal
                 % Yet another case of broken PDF's that Adobe Reader accepts.
       1 index dup /FontName known {
         /FontName oget
+        dup type /nametype ne {
+          (   **** /FontName attribute in FontDescriptor is not a name.\n)
+          pdfformaterror
+          cvn
+        } if
       } {
         (   **** FontDescriptor missing required /FontName key. BaseFont name used.\n)
         pdfformaterror

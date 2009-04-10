@@ -658,9 +658,9 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
 	     */
 	    cos_c_string_value(&cs_value, names->DeviceRGB);
         } else {
-	    code = pdf_color_space(pdev, &cs_value, &pranges,
+	    code = pdf_color_space_named(pdev, &cs_value, &pranges,
 				     pcs,
-				     names, in_line);
+				     names, in_line, NULL, 0);
 	    if (code < 0)
 	        convert_to_process_colors = true;
         }

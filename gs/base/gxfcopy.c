@@ -1976,7 +1976,11 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
     memset(&info, 0, sizeof(info));
     info.Flags_requested = ~0;
     code = font->procs.font_info(font, NULL, ~0, &info);
-    if (code < 0)
+
+    /* We can ignore a lack of FontInfo for TrueType fonts which 
+     * are descendants of CID fonts
+     */
+    if (code < 0 && !(font->FontType == ft_CID_TrueType))
 	return code;
 
     /* Allocate the generic copied information. */

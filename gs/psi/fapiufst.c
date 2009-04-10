@@ -1265,6 +1265,11 @@ static FAPI_retcode release_typeface(FAPI_server *server, void *font_data)
     return code;
 }
 
+static FAPI_retcode check_cmap_for_GID(FAPI_server *server, uint index)
+{
+    return 0;
+}
+
 /* --------------------- The plugin definition : ------------------------- */
 
 
@@ -1295,7 +1300,8 @@ static const FAPI_server If0 = {
     get_char_outline_metrics,
     get_char_outline,
     release_char_data,
-    release_typeface
+    release_typeface,
+    check_cmap_for_GID
 };
 
 plugin_instantiation_proc(gs_fapiufst_instantiate);      /* check prototype */

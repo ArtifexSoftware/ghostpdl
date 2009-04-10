@@ -255,8 +255,8 @@ pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
     case gs_color_space_index_DeviceCMYK:
 	break;			/* implicit (default) */
     default:
-	if ((code = pdf_color_space(pdev, &v, NULL, pcs_alt,
-				    &pdf_color_space_names, false)) < 0 ||
+	if ((code = pdf_color_space_named(pdev, &v, NULL, pcs_alt,
+				    &pdf_color_space_names, false, NULL, 0)) < 0 ||
 	    (code = cos_dict_put_c_key(cos_stream_dict(pcstrm), "/Alternate",
 				       &v)) < 0
 	    )

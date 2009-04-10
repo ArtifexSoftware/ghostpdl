@@ -103,8 +103,8 @@ pdf_make_group_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams
     if (gstate != NULL) {
 	const gs_color_space *cs = gstate->color_space;
 
-	code = pdf_color_space(pdev, &cs_value, NULL, cs,
-		&pdf_color_space_names, false);
+	code = pdf_color_space_named(pdev, &cs_value, NULL, cs,
+		&pdf_color_space_names, false, NULL, 0);
 	if (code < 0)
 	    return code;
 	code = cos_dict_put_c_key(group_dict, "/CS", &cs_value);

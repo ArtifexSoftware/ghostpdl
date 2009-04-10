@@ -328,13 +328,19 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
     /* Track the dominant text rotation. */
     {
 	gs_matrix tmat;
+	gs_point p;
 	int i;
 
-	gs_matrix_multiply(&font->FontMatrix, &ctm_only(pis), &tmat);
-	if (is_xxyy(&tmat))
-	    i = (tmat.xx >= 0 ? 0 : 2);
-	else if (is_xyyx(&tmat))
-	    i = (tmat.xy >= 0 ? 1 : 3);
+ 	gs_matrix_multiply(&font->FontMatrix, &ctm_only(pis), &tmat);
+	gs_distance_transform(1, 0, &tmat, &p);
+	if (p.x > fabs(p.y))
+	    i = 0;
+	else if (p.x < -fabs(p.y))
+	    i = 2;
+	else if (p.y > fabs(p.x))
+	    i = 1;
+	else if (p.y < -fabs(p.x))
+	    i = 3;
 	else
 	    i = 4;
 	pdf_current_page(pdev)->text_rotation.counts[i] += text->size;
@@ -945,7 +951,9 @@ pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font *subfont,
 {
     int code = 0;
 
-    pdf_attached_font_resource(pdev, subfont, ppdsubf, NULL, NULL, NULL, NULL);
+    code = pdf_attached_font_resource(pdev, subfont, ppdsubf, NULL, NULL, NULL, NULL);
+    if (code < 0)
+	return code;
     if (*ppdsubf != NULL) {
 	const gs_font_base *cfont = pdf_font_resource_font(*ppdsubf, false);
 
@@ -1636,7 +1644,9 @@ pdf_obtain_font_resource_encoded(gx_device_pdf *pdev, gs_font *font,
 	    same_encoding = ((base_font->procs.same_font(base_font, font, 
 	                      FONT_SAME_ENCODING) & FONT_SAME_ENCODING) != 0);
 	/* Find or make font resource. */
-	pdf_attached_font_resource(pdev, base_font, ppdfont, NULL, NULL, NULL, NULL);
+	code = pdf_attached_font_resource(pdev, base_font, ppdfont, NULL, NULL, NULL, NULL);
+	if (code < 0)
+	    return code;
 	if (*ppdfont != NULL && base_font != font) {
 	    if (pdfont_not_allowed == *ppdfont)
 		*ppdfont = NULL;	

@@ -83,10 +83,11 @@ systemdict /DumpMediaSizes known
     /Resources pget {
       /Font knownoget {
 	{ exch pop oforce
-	  dup
-	  /FontDescriptor knownoget
-	  {
-	    dup /FontFile known 1 index /FontFile2 known or exch /FontFile3 known or
+          dup /DescendantFonts knownoget {
+            exch pop 0 get oforce
+          } if
+       	  dup /FontDescriptor knownoget {
+            dup /FontFile known 1 index /FontFile2 known or exch /FontFile3 known or
 	    /ShowEmbeddedFonts where { pop pop false} if {
 	      pop			% skip embedded fonts
 	    } {
@@ -107,7 +108,7 @@ systemdict /DumpMediaSizes known
 
 systemdict /DumpFontsUsed known
 {
-  (\nFonts Used:) =
+  (\nFont or CIDFont resources used:) =
   getPDFfonts { = } forall
 } if
 

@@ -252,9 +252,7 @@ private gx_device_procs	cups_procs =
    NULL,				/* image_data */
    NULL,				/* end_image */
    NULL,				/* strip_tile_rectangle */
-   NULL					/* strip_copy_rop */
-#ifdef dev_t_proc_encode_color
-   ,
+   NULL,				/* strip_copy_rop */
    NULL,				/* get_clipping_box */
    NULL,				/* begin_typed_image */
    NULL,				/* get_bits_rectangle */
@@ -268,11 +266,26 @@ private gx_device_procs	cups_procs =
    NULL,				/* begin_transparency_mask */
    NULL,				/* end_transparency_mask */
    NULL,				/* discard_transparency_layer */
+#ifdef dev_t_proc_encode_color
    cups_get_color_mapping_procs,
-   NULL,				/* get_color_comp_index */
+   gx_error_get_color_comp_index,	/* Dummy to avoid segfault */
    cups_encode_color,
-   cups_decode_color
+   cups_decode_color,
+#else
+   NULL,                                /* get_color_mapping_procs */
+   NULL,                                /* get_color_comp_index */
+   NULL,                                /* encode_color */
+   NULL,                                /* decode_color */
 #endif /* dev_t_proc_encode_color */
+   NULL,				/* pattern_manage */
+   NULL,				/* fill_rectangle_hl_color */
+   NULL,				/* include_color_space */
+   NULL,				/* fill_linear_color_scanline */
+   NULL,				/* fill_linear_color_trapezoid */
+   NULL,				/* fill_linear_color_triangle */
+   NULL,				/* update_spot_equivalent_colors */
+   NULL,				/* ret_devn_params */
+   NULL 				/* fillpage */
 };
 
 #define prn_device_body_copies(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_pages)\
@@ -367,7 +380,8 @@ gx_device_cups	gs_cups_device =
     "",                                 /* cupsRenderingIntent */
     "Letter"                            /* cupsPageSizeName */
 #endif /* CUPS_RASTER_SYNCv1 */
-  }
+  },
+  0                                     /* landscape */
 };
 
 /*
@@ -1556,14 +1570,16 @@ cups_map_rgb(gx_device             *pdev,
 private gx_color_index			/* O - Color index */
 cups_map_cmyk_color(gx_device      *pdev,
 					/* I - Device info */
-                    gx_color_value c,	/* I - Cyan value */
-                    gx_color_value m,	/* I - Magenta value */
-                    gx_color_value y,	/* I - Yellow value */
-		    gx_color_value k)	/* I - Black value */
+                    const gx_color_value cv[4])/* I - CMYK color values */
 {
   gx_color_index	i;		/* Temporary index */
+  gx_color_value	c, m, y, k;
   gx_color_value	ic, im, iy, ik;	/* Integral CMYK values */
 
+  c = cv[0];
+  m = cv[1];
+  y = cv[2];
+  k = cv[3];
 
 #ifdef DEBUG
   dprintf5("DEBUG2: cups_map_cmyk_color(%p, %d, %d, %d, %d)\n", pdev,
@@ -1722,7 +1738,7 @@ cups_map_color_rgb(gx_device      *pdev,/* I - Device info */
 					/* O - RGB values */
 {
   unsigned char		c0, c1, c2, c3;	/* Color index components */
-  gx_color_value	k, divk;	/* Black & divisor */
+  gx_color_value	c, m, y, k, divk; /* Colors, Black & divisor */
 
 
 #ifdef DEBUG
@@ -1966,11 +1982,10 @@ cups_map_color_rgb(gx_device      *pdev,/* I - Device info */
 
 private gx_color_index			/* O - Color index */
 cups_map_rgb_color(gx_device      *pdev,/* I - Device info */
-                   gx_color_value r,	/* I - Red value */
-                   gx_color_value g,	/* I - Green value */
-                   gx_color_value b)	/* I - Blue value */
+                   const gx_color_value cv[3])/* I - RGB color values */
 {
   gx_color_index	i;		/* Temporary index */
+  gx_color_value        r, g, b;
   gx_color_value	ic, im, iy, ik;	/* Integral CMYK values */
   gx_color_value	mk;		/* Maximum K value */
   int			tc, tm, ty;	/* Temporary color values */
@@ -1981,6 +1996,9 @@ cups_map_rgb_color(gx_device      *pdev,/* I - Device info */
 			ciel, ciea, cieb;
 					/* CIE Lab colors */
 
+  r = cv[0];
+  g = cv[1];
+  b = cv[2];
 
 #ifdef DEBUG
   dprintf4("DEBUG2: cups_map_rgb_color(%p, %d, %d, %d)\n", pdev, r, g, b);

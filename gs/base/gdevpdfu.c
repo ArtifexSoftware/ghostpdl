@@ -15,7 +15,6 @@
 /* Output utilities for PDF-writing driver */
 #include "memory_.h"
 #include "jpeglib_.h"		/* for sdct.h */
-#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gscdefs.h"
@@ -977,7 +976,10 @@ pdf_print_resource_statistics(gx_device_pdf * pdev)
 long
 pdf_open_separate(gx_device_pdf * pdev, long id)
 {
-    pdf_open_document(pdev);
+    int code;
+    code = pdf_open_document(pdev);
+    if (code < 0)
+	return code;
     pdev->asides.save_strm = pdev->strm;
     pdev->strm = pdev->asides.strm;
     return pdf_open_obj(pdev, id);
@@ -1216,7 +1218,7 @@ pdf_write_and_free_all_resource_objects(gx_device_pdf *pdev)
  * Sets page->{procsets, resource_ids[]}.
  */
 int
-pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page)
+pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_usage)
 {
     int i;
 
@@ -1245,7 +1247,8 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page)
 		    }
 		    pprints1(s, "/%s\n", pres->rname);
 		    pprintld1(s, "%ld 0 R", id);
-		    pres->where_used -= pdev->used_mask;
+		    if (clear_usage)
+			pres->where_used -= pdev->used_mask;
 		}
 	    }
 	}

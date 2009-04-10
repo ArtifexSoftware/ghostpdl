@@ -679,7 +679,7 @@ ztempfile(i_ctx_t *i_ctx_p)
     uint fnlen;
     FILE *sfile;
     stream *s;
-    byte *buf;
+    byte *buf, *sbody;
 
     if (code < 0)
 	return code;
@@ -720,15 +720,21 @@ ztempfile(i_ctx_t *i_ctx_p)
 	return_error(e_invalidfileaccess);
     }
     fnlen = strlen(fname);
+    sbody = ialloc_string(fnlen, ".tempfile(fname)");
+    if (sbody == 0) {
+	gs_free_object(imemory, buf, "ztempfile(buffer)");
+	return_error(e_VMerror);
+    }
+    memcpy(sbody, fname, fnlen);
     file_init_stream(s, sfile, fmode, buf, file_default_buffer_size);
     code = ssetfilename(s, (const unsigned char*) fname, fnlen);
     if (code < 0) {
 	sclose(s);
 	iodev_default->procs.delete_file(iodev_default, fname);
+	ifree_string(sbody, fnlen, ".tempfile(fname)");
 	return_error(e_VMerror);
     }
-    make_const_string(op - 1, a_readonly | icurrent_space, fnlen,
-		      s->file_name.data);
+    make_string(op - 1, a_readonly | icurrent_space, fnlen, sbody);
     make_stream_file(op, s, fmode);
     return code;
 }

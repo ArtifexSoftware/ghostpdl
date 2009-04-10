@@ -171,13 +171,8 @@ level2dict begin
   % the default policy to "7" (impose) to avoid numerous problems with
   % printing within CUPS...
   %
-  NOMEDIAATTRS {
-    /PolicyNotFound 7
-    /PageSize 7
-  } {
-    /PolicyNotFound 1
-    /PageSize 0
-  } ifelse
+  /PageSize NOMEDIAATTRS { 7 } { 0 } ifelse
+  /PolicyNotFound 1
   /PolicyReport {
     dup /.LockSafetyParams known {
 	% Only possible error is invalidaccess

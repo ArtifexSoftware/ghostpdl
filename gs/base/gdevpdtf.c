@@ -14,7 +14,6 @@
 /* $Id$ */
 /* Font and CMap resource implementation for pdfwrite text */
 #include "memory_.h"
-#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsutil.h"		/* for bytes_compare */

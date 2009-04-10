@@ -849,6 +849,10 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	case W('k','e','r','n'):
 	case W('p','r','e','p'):
 	    break;		/* always copy these if present */
+	case W('E','B','D','T'):
+	case W('E','B','L','C'):
+	case W('E','B','S','C'):
+	    continue;
 	default:
 	    if (writing_cid)
 		continue;

@@ -288,7 +288,7 @@ psw_write_page_header(stream *s, const gx_device *dev,
     if (!pdpc->ProduceEPS)
 	pprintld2(s, "%%%%PageBoundingBox: 0 0 %ld %ld\n", width, height);
 
-    stream_puts(s, "%%%%BeginPageSetup\n");
+    stream_puts(s, "%%BeginPageSetup\n");
     /*
      * Adobe's documentation says that page setup must be placed outside the
      * save/restore that encapsulates the page contents, and that the

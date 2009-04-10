@@ -510,6 +510,12 @@ pdf_write_contents_cid2(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 	}
     }
 
+    if (map_id == 0 && pdev->PDFA) {
+	code = stream_puts(pdev->strm, "/CIDToGIDMap /Identity\n");
+	if (code < 0)
+	    return code;
+    }
+
     code = write_contents_cid_common(pdev, pdfont, 2);
     if (code < 0)
 	return code;

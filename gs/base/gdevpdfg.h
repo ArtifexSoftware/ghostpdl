@@ -87,11 +87,6 @@ int pdf_cspace_init_Device(gs_memory_t *mem, gs_color_space **ppcs, int num_comp
  * to be scaled (to convert a CIEBased space to ICCBased), store a pointer
  * to the ranges in *ppranges, otherwise set *ppranges to 0.
  */
-int pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
-		    const gs_range_t **ppranges,
-		    const gs_color_space *pcs,
-		    const pdf_color_space_names_t *pcsn,
-		    bool by_name);
 int pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 		    const gs_range_t **ppranges,
 		    const gs_color_space *pcs,
@@ -346,5 +341,3 @@ int pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
 
 /* Write metadata */
 int pdf_document_metadata(gx_device_pdf *pdev);
-int pdf_font_metadata(gx_device_pdf *pdev, const pdf_base_font_t *pbfont, 
-		  const byte *digest, int digest_length, gs_id *metadata_object_id);

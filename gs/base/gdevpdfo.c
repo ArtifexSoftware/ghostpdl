@@ -14,7 +14,6 @@
 /* $Id$ */
 /* Cos object support */
 #include "memory_.h"
-#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsparam.h"
