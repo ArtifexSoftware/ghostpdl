@@ -720,6 +720,10 @@ currentdict /no_debug_dict undef
      (   **** Operator 'endobj' is misspelled as 'endjobj'.\n) pdfformaterror
      endobj exit
   } bind
+  /enbobj { % Bug 690397.
+     (   **** Operator 'endobj' is misspelled as 'enbobj'.\n) pdfformaterror
+     endobj exit
+  } bind
                 % OmniForm generates PDF file with endobj missing in some
                 % objects. AR ignores this. So we have to do it too.
   /obj { pop pop endobj exit } bind
