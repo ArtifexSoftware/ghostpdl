@@ -760,8 +760,21 @@ pcl_cs_indexed_update_lookup_tbl(
     if (code <= 0)
         return code;
 
-    rc_decrement(pindexed->pcspace, "pcl_cs_indexed_update_lookup_tbl");
+    /* a positive return code indicates we have to rebuild the
+       palette.  First copy the paletted data, it will be freed when
+       the color space is released. */
+    {
+        uint size = 3 * pcl_cs_indexed_palette_size;
+        byte *bp = gs_alloc_string(pindexed->rc.memory, size,
+                                   "pcl_cs_indexed_update_lookup_tbl");
+        if ( bp == NULL )
+            return e_Memory;
+        memcpy(bp, pindexed->palette.data, 3 * pcl_cs_indexed_palette_size);
+        rc_decrement(pindexed->pcspace, "pcl_cs_indexed_update_lookup_tbl");
+        pindexed->palette.data = bp;
+    }
 
+    /* now rebuild it */
     return gs_cspace_build_Indexed( &(pindexed->pcspace),
                                     pindexed->pbase->pcspace,
                                     pcl_cs_indexed_palette_size,
