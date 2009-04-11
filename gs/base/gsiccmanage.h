@@ -142,11 +142,7 @@ typedef struct gsiccmanage_colorspace_s {
 
 
 
-
-
-
 /* The link object. */
-
 
 typedef struct gsiic_link_s gsicc_link_t;
 
@@ -159,6 +155,7 @@ typedef struct gsiic_link_s {
     gsicc_link_t *NextLink;
     gsicc_link_t *PrevLink;
     bool includes_softproof;
+    bool IsIdentity;  /* Used for noting that this is an identity profile */
 
 } gsicc_link_t;
 
@@ -184,10 +181,8 @@ typedef struct gsicc_manager_s {
     gsicc_profile_t DefaultGray;    /* Default gray profile for device gray */
     gsicc_profile_t DefaultRGB;     /* Default RGB profile for device RGB */
     gsicc_profile_t DefaultCMYK;    /* Default CMYK profile for device CMKY */
-
     gsicc_profile_t ProofProfile;   /* Profiling profile */
     gsicc_profile_t OutputLink;     /* Output device Link profile */
-
 
 } gsicc_manager_t;
 
@@ -195,8 +190,7 @@ typedef struct gsicc_rendering_param_s {
 
     gs_icc_rendering_intents_t rendering_intent;
     gs_object_tag_type_t    object_type;
-    gs_icc_black_point_comp_t black_point_comp;
-    
+    gs_icc_black_point_comp_t black_point_comp;    
 
 } gsicc_rendering_param_t;
 

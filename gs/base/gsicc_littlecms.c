@@ -11,8 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* gsicc interface to littleCMS  Initial stubbing of functions.  */
-
+/* gsicc interface to littleCMS */
 
 #include "math_.h"
 #include "memory_.h"
@@ -20,6 +19,7 @@
 #include "gserrors.h"
 #include "gsiccmanage.h"
 #include "lcms.h"
+#include "gxcvalue.h"
 
 /* Transform an entire buffer */
 void
@@ -126,7 +126,10 @@ gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_bu
    How to do description of color.
    Is it passing a gx_device_color?
    Is it 16 bit, 8 bit, will need
-   to know if gray,RGB,CMYK, or N chan
+   to know if gray,RGB,CMYK, or N chan.
+   
+   For now, we will make them all the precision of
+
    */
 /*
 void
@@ -183,7 +186,9 @@ gscms_get_link(gsicc_link_t *icclink, gsicc_colorspace_t  *input_colorspace,
     /* TODO:  Make intent variable */
 
     lcms_link = cmsCreateTransform(lcms_srchandle, src_data_type, lcms_deshandle, des_data_type, 
-        INTENT_PERCEPTUAL, cmsFLAGS_LOWRESPRECALC);			
+        INTENT_PERCEPTUAL, cmsFLAGS_LOWRESPRECALC);	
+
+    icclink->LinkHandle = lcms_link;
 
 /* Close the profile handles. We need to think about if we want to cache these. */
 
@@ -247,6 +252,8 @@ gscms_get_link_proof(gsicc_link_t *icclink, gsicc_colorspace_t  *input_colorspac
     lcms_link = cmsCreateProofingTransform(lcms_srchandle, src_data_type, lcms_deshandle, des_data_type, 
         lcms_proofhandle,INTENT_PERCEPTUAL, INTENT_ABSOLUTE_COLORIMETRIC, cmsFLAGS_GAMUTCHECK | cmsFLAGS_SOFTPROOFING );			
 
+    icclink->LinkHandle = lcms_link;
+
 /* Close the profile handles. We need to think about if we want to cache these. */
 
     cmsCloseProfile(lcms_srchandle);
@@ -257,22 +264,12 @@ return(0);
 }
 
 
-/* Get the CIELAB value and if present the device value
-   for the device name.  Supply the named color profile.
-   Note that this need not be an ICC named color profile
-   but can be a proprietary type table */
-void
-gscms_get_named_color(void **contextptr)  /* need to think about this a bit more */
-{
-
-
-}
-
 /* Do any initialization if needed to the CMS */
 void
 gscms_create(void **contextptr)
 {
 
+    /* Nothing to do here for lcms */
 }
 
 /* Do any clean up when done with the CMS if needed */
@@ -281,6 +278,7 @@ void
 gscms_destroy(void **contextptr)
 {
 
+    /* Nothing to do here for lcms */
 }
 
 /* Have the CMS release the link */
@@ -293,7 +291,138 @@ gscms_release_link(gsicc_link_t *icclink)
 
 }
 
+/* Named color, color management */
+/* Get a CIELAB value for the named color or the device value
+   for the named color.  Since there exist named color
+   ICC profiles and littleCMS supports them, we will use
+   that format in this example.  However it should be noted
+   that this object need not be an ICC named color profile
+   but can be a proprietary type table. Some CMMs do not 
+   support named color profiles.  In that case, or if
+   the named color is not found, the caller should use an alternate
+   tint transform or other method. If a proprietary
+   format (nonICC) is being used, the operators given below must
+   be implemented. In every case that I can imagine, this should be 
+   straight forward.  Note that we allow the passage of a tint
+   value also.  Currently the ICC named color profile does not provide
+   tint related information, only a value for 100% coverage.  
+   It is provided here for use in proprietary 
+   methods, which may be able to provide the desired effect.  We will
+   at the current time apply a direct tint operation to the returned
+   device value.
+   Right now I don't see any reason to have the named color profile
+   ever return CIELAB. It will either return device values directly or
+   it will return values defined by the output device profile */
 
+/* Transform the named color to whatever space was specified in this link */
 
+int
+gscms_xform_named_color(gsicc_link_t *icclink,  float tint_value, const char* ColorName, 
+                        gx_color_value device_values[] )  
+{
+
+    cmsHPROFILE hTransform = icclink->LinkHandle; 
+    unsigned short *deviceptr = device_values;
+    int index;
+
+    /* Check if name is present in the profile */
+    /* If it is not return -1.  Caller will need to
+       use an alternate method */
+
+    if((index = cmsNamedColorIndex(hTransform, ColorName)) < 0) return -1;
+
+    /* Get the device value. */
+
+   cmsDoTransform(hTransform,&index,deviceptr,1);
+   return(0);
+
+}
+
+/* Create a link to return device values inside the named color profile or link it with a destination
+    profile and potentially a proofing profile.  If the output_colorspace and the proof_color
+    space are NULL, then we will be returning the device values that are contained in the
+    named color profile.  i.e. in namedcolor_information.  Note that an ICC named color profile
+    need NOT contain the device values but must contain the CIELAB values. */
+
+void
+gscms_get_name2device_link(gsicc_link_t *icclink, gsicc_profile_t  *namedcolor_profile, 
+                    gsicc_colorspace_t *output_colorspace, gsicc_colorspace_t *proof_colorspace, 
+                    gsicc_rendering_param_t *rendering_params)
+{
+
+    cmsHPROFILE hTransform; 
+    _LPcmsTRANSFORM p;
+    cmsHPROFILE lcms_srchandle, lcms_deshandle, lcms_proofhandle;
+    void* input_buf = namedcolor_profile->ProfileRawBuf;
+    int input_size = namedcolor_profile->iccheader.size;
+    int output_size,proof_size;
+    void* output_buf = NULL;
+    void* proof_buf = NULL;
+    DWORD dwOutputFormat;
+    DWORD lcms_proof_flag;
+    int number_colors;
+
+    /* NOTE:  We need to add a test here to check that we even HAVE
+    device values in here and NOT just CIELAB values */
+
+    lcms_srchandle = cmsOpenProfileFromMem(input_buf,input_size);
+
+    /* Otherwise go ahead and use the output and possibly proofing profile */
+
+    if(output_colorspace == NULL && proof_colorspace == NULL){
+
+        lcms_deshandle = NULL;
+        lcms_proofhandle = NULL;
+
+    } else {
+        output_buf = output_colorspace->ProfileData->ProfileRawBuf;
+        output_size = output_colorspace->ProfileData->iccheader.size;
+
+        if ( proof_colorspace != NULL){
+
+            proof_buf = proof_colorspace->ProfileData->ProfileRawBuf;
+            proof_size = proof_colorspace->ProfileData->iccheader.size;
+            lcms_proofhandle = cmsOpenProfileFromMem(proof_buf,proof_size);
+            lcms_proof_flag = cmsFLAGS_GAMUTCHECK | cmsFLAGS_SOFTPROOFING;
+
+        } else {
+
+            lcms_proofhandle = NULL;
+            lcms_proof_flag = 0;
+
+        }
+
+        lcms_deshandle = cmsOpenProfileFromMem(output_buf,output_size);
+    }
+
+    /* Create the transform */
+        
+    /* ToDo:  Adjust rendering intent */
+
+    hTransform = cmsCreateProofingTransform(lcms_srchandle, TYPE_NAMED_COLOR_INDEX, lcms_deshandle, TYPE_CMYK_8, 
+        lcms_proofhandle,INTENT_PERCEPTUAL, INTENT_ABSOLUTE_COLORIMETRIC,lcms_proof_flag);	
+
+    
+    /* In littleCMS there is no easy way to find out the size of the device
+        space returned by the named color profile until after the transform is made.
+        Hence we adjust our output format after creating the transform.  It is
+        set to CMYK8 initially. */
+
+    p = (_LPcmsTRANSFORM) hTransform;
+    number_colors = p->NamedColorList->ColorantCount;
+
+    /* NOTE: Output 2 byte colors with no color space type check */
+    dwOutputFormat =  (CHANNELS_SH(number_colors)|BYTES_SH(2));
+
+    /* Change the formaters */
+    cmsChangeBuffersFormat(hTransform,TYPE_NAMED_COLOR_INDEX,dwOutputFormat);
+
+    icclink->LinkHandle = hTransform;
+
+    cmsCloseProfile(lcms_srchandle);
+
+    return;
+  
+}
 
 
