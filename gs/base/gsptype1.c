@@ -1471,7 +1471,7 @@ gx_dc_pattern_read_raster(gx_color_tile *ptile, const gx_dc_serialized_tile_t *b
 	dp += l;
     }
     if (left == 0)
-	return 0;
+	return size;	/* we've consumed it all */
     if (offset1 <= sizeof(gx_dc_serialized_tile_t) + size_b) {
 	int l = min(sizeof(gx_dc_serialized_tile_t) + size_b - offset1, left);
 
@@ -1495,7 +1495,7 @@ gx_dc_pattern_read_raster(gx_color_tile *ptile, const gx_dc_serialized_tile_t *b
 	dp += l;
     }
     if (left == 0)
-	return 0;
+	return size;
     if (offset1 <= sizeof(gx_dc_serialized_tile_t) + size_b + size_c) {
 	int l = min(sizeof(gx_dc_serialized_tile_t) + size_b + size_c - offset1, left);
 
