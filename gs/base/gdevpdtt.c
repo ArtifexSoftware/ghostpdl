@@ -740,7 +740,7 @@ pdf_check_encoding_compatibility(const pdf_font_resource_t *pdfont,
 }
 
 /* 
- * Check цруерук the Encoding has listed glyphs.
+ * Check whether the Encoding has listed glyphs.
  */
 static bool
 pdf_check_encoding_has_glyphs(const pdf_font_resource_t *pdfont, 
