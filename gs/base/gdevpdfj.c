@@ -23,6 +23,7 @@
 #include "gsiparm4.h"
 #include "gdevpsds.h"
 #include "spngpx.h"
+#include "stdlib.h" /* for atoi */
 
 #define CHECK(expr)\
   BEGIN if ((code = (expr)) < 0) return code; END
@@ -450,7 +451,7 @@ pdf_end_image_binary(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h)
 	cos_value_t *value;
 	value = (cos_value_t *)cos_dict_find(cos_stream_dict(piw->data),
 				      (const byte *)piw->pin->Height, strlen(piw->pin->Height));
-	if (value->contents.chars.size > 255)
+	if (!value || value->contents.chars.size > 255)
 	    return(gs_error_rangecheck);
 	strncpy((char *)&data, (const char *)value->contents.chars.data, value->contents.chars.size);
 	data[value->contents.chars.size] = 0x00;

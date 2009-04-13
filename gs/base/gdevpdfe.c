@@ -24,7 +24,6 @@
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"
-#include "gdevpdtf.h"
 #include "ConvertUTF.h"
 
 
