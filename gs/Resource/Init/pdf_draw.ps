@@ -1142,16 +1142,18 @@ end
 
 /doimagesmask { % <imagemask> doimagesmask -
   PDFusingtransparency { currentdict /SMask knownoget } { false } ifelse {
-    .begintransparencymaskimage
-    PDFfile fileposition exch
-    gsave //nodict begin
-    null /SoftMask gput
-    1 .setopacityalpha 1 .setshapealpha
-    /Compatible .setblendmode
-    DoImage
-    end grestore
-    PDFfile exch setfileposition
-    0 .endtransparencymask
+    currentdevice .devicename /pdfwrite ne { 
+      .begintransparencymaskimage
+      PDFfile fileposition exch
+      gsave //nodict begin
+      null /SoftMask gput
+      1 .setopacityalpha 1 .setshapealpha
+      /Compatible .setblendmode
+      DoImage
+      end grestore
+      PDFfile exch setfileposition
+      0 .endtransparencymask
+    } if
     << /Subtype /Group /Isolated true 
       /.image_with_SMask true % pdfwrite needs : see gs/src/ztrans.c, gs/src/gdevpdft.c 
     >> 0 0 1 1 .begintransparencygroup
