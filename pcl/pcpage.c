@@ -954,6 +954,32 @@ pcl_media_type(
 }
 
 /*
+ * Logical Page Setup (From HP D640 Technical Manual)
+ */
+
+typedef struct pcl_logical_page_s {
+    byte LeftOffset[2];
+    byte TopOffset[2];
+    byte Orientation;
+    byte Reserved;
+    byte Width[2];
+    byte Height[2];
+} pcl_logical_page_t;
+    
+ static int
+set_logical_page(
+    pcl_args_t *    pargs,
+    pcl_state_t *   pcs
+)
+{
+    uint count = uint_arg(pargs);
+    const pcl_logical_page_t *plogpage = arg_data(pargs);
+    if (count != 10)
+        return e_Range;
+    return 0;
+}
+
+/*
  * (From PCL5 Comparison Guide, p. 1-99)
  *
  * ESC * o <quality> Q 
@@ -1071,6 +1097,13 @@ pcpage_do_registration(
 	PCL_COMMAND( "Media Type",
                      pcl_media_type,
 		     pca_neg_ok | pca_big_ignore
+                     )
+    },
+    {
+        'a', 'W',
+	PCL_COMMAND( "Set Logical Page",
+                     set_logical_page,
+		     pca_bytes
                      )
     },
     END_CLASS
