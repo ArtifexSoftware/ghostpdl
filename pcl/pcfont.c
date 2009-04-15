@@ -236,7 +236,8 @@ pcl_stroke_weight(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 	if ( weight != pcs->font_selection[set].params.stroke_weight )
 	  {
 	    pcs->font_selection[set].params.stroke_weight = weight;
-	    pcl_decache_font(pcs, set);
+	    if ( (int)pcs->font_selection[set].selected_id < 0)
+                pcl_decache_font(pcs, set);
 	  }
 	return 0;
 }
