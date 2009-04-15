@@ -453,6 +453,9 @@ gscms_get_name2device_link(gsicc_link_t *icclink, gsicc_profile_t  *namedcolor_p
 
     cmsCloseProfile(lcms_srchandle);
 
+    if(lcms_deshandle) cmsCloseProfile(lcms_deshandle);
+    if(lcms_proofhandle) cmsCloseProfile(lcms_proofhandle);
+
     return;
   
 }
