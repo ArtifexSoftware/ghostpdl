@@ -24,9 +24,6 @@
 #include "gsstruct.h"
 #include "gsutil.h"         /* Need for the object types */
 #include "gsiccmanage.h"
-#include "gscolor2.h"       /* Need for CRD support */
-#include "gscspace.h"       /* Need for PS and PDF CIE color space support */
-#include "icc.h"
   
 /*  The buffer description.  We
     may need to handle a variety
@@ -94,18 +91,22 @@ typedef enum {
     NONDEVICE
 } gs_icc_devicecolor_t;
 
-/* A structure for holding ICC profile info */
-typedef struct gsicc_profile_s {
+/* A structure that is a member variable of the gs color space.
+   See 
 
-    void *ProfileRawBuf;      /* A raw buffer of ICC profile data */
-    int ProfileHashCode;    /* A hash code for the icc profile */
+/* A structure for holding profile information.  A member variable
+   of the ghostscript color structure. */
+typedef struct cmm_profile_s {
 
-    /* Pull out the header, since it has useful stuff for us */
+    void *ProfileHandle;        /* The profile handle to be used in linking */
+    void *buffer;               /* A buffer with ICC profile content */
+    int64_t ProfileHashCode;    /* A hash code for the icc profile */
 
-    icHeader iccheader;
+} cmm_profile_t;
 
-} gsicc_profile_t;
-
+#ifndef cmm_profile_DEFINED
+#define cmm_profile_DEFINED
+#endif
 
 
 /*  These are the types that we can
@@ -126,21 +127,6 @@ typedef enum {
     CIEDEFTYPE,
     CIEDEFGTYPE
 } gs_colortype_t;
-
-typedef struct gsiccmanage_colorspace_s {
-
-    gs_colortype_t ColorType;
-    gs_icc_devicecolor_t DeviceType;
-    gsicc_profile_t *ProfileData;
-    gs_cie_render *pcrd;
-    gs_cie_a *pcie_a;
-    gs_cie_abc *pcie_abc;
-    gs_cie_def *pcie_def;
-    gs_cie_defg *pcie_defg;   
-
-} gsicc_colorspace_t;
-
-
 
 /* The link object. */
 
@@ -175,14 +161,14 @@ typedef struct gsicc_link_cache_s {
 
 typedef struct gsicc_manager_s {
 
-    gsicc_profile_t DeviceProfile;  /* The actual profile for the device */
-    gsicc_profile_t DeviceNamed;    /* The named color profile for the device */
-    gsicc_profile_t LABProfile;     /* CIELAB to CIELAB profile */
-    gsicc_profile_t DefaultGray;    /* Default gray profile for device gray */
-    gsicc_profile_t DefaultRGB;     /* Default RGB profile for device RGB */
-    gsicc_profile_t DefaultCMYK;    /* Default CMYK profile for device CMKY */
-    gsicc_profile_t ProofProfile;   /* Profiling profile */
-    gsicc_profile_t OutputLink;     /* Output device Link profile */
+    cmm_profile_t DeviceProfile;  /* The actual profile for the device */
+    cmm_profile_t DeviceNamed;    /* The named color profile for the device */
+    cmm_profile_t LABProfile;     /* CIELAB to CIELAB profile */
+    cmm_profile_t DefaultGray;    /* Default gray profile for device gray */
+    cmm_profile_t DefaultRGB;     /* Default RGB profile for device RGB */
+    cmm_profile_t DefaultCMYK;    /* Default CMYK profile for device CMKY */
+    cmm_profile_t ProofProfile;   /* Profiling profile */
+    cmm_profile_t OutputLink;     /* Output device Link profile */
 
 } gsicc_manager_t;
 

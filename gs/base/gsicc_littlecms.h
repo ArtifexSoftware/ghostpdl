@@ -28,8 +28,8 @@ gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t input_buf
 
 
 int
-gscms_get_link(gsicc_link_t *icclink, gsicc_colorspace_t  *input_colorspace, 
-                    gsicc_colorspace_t *output_colorspace, 
+gscms_get_link(gsicc_link_t *icclink, gs_color_space  *input_colorspace, 
+                    gs_color_space *output_colorspace, 
                     gsicc_rendering_param_t *rendering_params);
 
 

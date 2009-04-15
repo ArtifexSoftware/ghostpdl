@@ -22,7 +22,7 @@
 #include "gsicc_littlecms.h"
 #include "gscie.h"
 #include "smd5.h"  
-
+#include "gscspace.h"
 
 #define ICC_CACHE_MAXLINKS 50   /* Note that the the external memory used to 
                                     maintain links in the CMS is generally not visible
@@ -34,15 +34,12 @@
                                     This will be done later.  For now, just limit the number
                                     of links. */
 
+
 /* Structure pointer information */
 
-gs_private_st_ptrs1(st_icc_profile, gsicc_profile_t, "gsiccmanage_profile",
+gs_private_st_ptrs2(st_icc_profile, cmm_profile_t, "gsiccmanage_profile",
 		    icc_pro_enum_ptrs, icc_pro_reloc_ptrs,
-		    ProfileRawBuf);
-
-gs_private_st_ptrs6(st_icc_colorspace, gsicc_colorspace_t, "gsicc_colorspace",
-		    icc_clr_enum_ptrs, icc_clr_reloc_ptrs,
-		    ProfileData, pcrd, pcie_a, pcie_abc, pcie_def, pcie_defg); 
+		    ProfileHandle,buffer);
 
 
 gs_private_st_ptrs4(st_icc_link, gsicc_link_t, "gsiccmanage_link",
@@ -172,7 +169,7 @@ gsicc_destroy()
     member variable in the ICC manager */
 
 void 
-gsicc_set_gray_profile(gsicc_profile_t graybuffer)
+gsicc_set_gray_profile(cmm_profile_t graybuffer)
 {
 
 
@@ -184,7 +181,7 @@ gsicc_set_gray_profile(gsicc_profile_t graybuffer)
     member variable in the ICC manager */
 
 void 
-gsicc_set_rgb_profile(gsicc_profile_t rgbbuffer)
+gsicc_set_rgb_profile(cmm_profile_t rgbbuffer)
 {
 
 
@@ -196,7 +193,7 @@ gsicc_set_rgb_profile(gsicc_profile_t rgbbuffer)
     member variable in the ICC manager */
 
 void 
-gsicc_set_cmyk_profile(gsicc_profile_t cmykbuffer)
+gsicc_set_cmyk_profile(cmm_profile_t cmykbuffer)
 {
 
 
@@ -212,7 +209,7 @@ gsicc_set_cmyk_profile(gsicc_profile_t cmykbuffer)
     device */
 
 void 
-gsicc_set_device_profile(gsicc_profile_t deviceprofile)
+gsicc_set_device_profile(cmm_profile_t deviceprofile)
 {
 
 
@@ -222,7 +219,7 @@ gsicc_set_device_profile(gsicc_profile_t deviceprofile)
 /* Set the named color profile in the Device manager */
 
 void 
-gsicc_set_device_named_color_profile(gsicc_profile_t nameprofile)
+gsicc_set_device_named_color_profile(cmm_profile_t nameprofile)
 {
 
 
@@ -231,7 +228,7 @@ gsicc_set_device_named_color_profile(gsicc_profile_t nameprofile)
 /* Set the ouput device linked profile */
 
 void 
-gsicc_set_device_linked_profile(gsicc_profile_t outputlinkedprofile )
+gsicc_set_device_linked_profile(cmm_profile_t outputlinkedprofile )
 {
 
 }
@@ -240,7 +237,7 @@ gsicc_set_device_linked_profile(gsicc_profile_t outputlinkedprofile )
    its hash code */
 
 void 
-gsicc_set_proof_profile(gsicc_profile_t proofprofile )
+gsicc_set_proof_profile(cmm_profile_t proofprofile )
 {
 
 }
@@ -276,9 +273,9 @@ gsicc_load_default_input_profile(int numchannels)
 
 
 int
-gsicc_get_color_info(gsicc_colorspace_t *colorspace,unsigned char *color, int *size_color){
+gsicc_get_color_info(gs_color_space *colorspace,unsigned char *color, int *size_color){
 
-    switch(colorspace->ColorType){
+  /*  switch(colorspace->ColorType){
 
 	case DEVICETYPE:
 
@@ -330,11 +327,11 @@ gsicc_get_color_info(gsicc_colorspace_t *colorspace,unsigned char *color, int *s
 
             break;
 
-	default:			/* Should never occur */
+	default:			
 	    return_error(gs_error_rangecheck);
 	    break;
 
-    }
+    }  */
 
     return(0);
 
@@ -348,8 +345,8 @@ gsicc_get_color_info(gsicc_colorspace_t *colorspace,unsigned char *color, int *s
     and rendering params structure.  We may change this later */
 
 static int64_t
-gsicc_compute_hash(gsicc_colorspace_t *input_colorspace, 
-                   gsicc_colorspace_t *output_colorspace, 
+gsicc_compute_hash(gs_color_space *input_colorspace, 
+                   gs_color_space *output_colorspace, 
                    gsicc_rendering_param_t *rendering_params)
 
 {
@@ -509,8 +506,8 @@ gsicc_remove_link(gsicc_link_t *link,gsicc_link_cache_t *icc_cache, gs_memory_t 
    is updating a reference count) */
 
 gsicc_link_t* 
-gsicc_get_link(gs_imager_state * pis, gsicc_colorspace_t  *input_colorspace, 
-                    gsicc_colorspace_t *output_colorspace, 
+gsicc_get_link(gs_imager_state * pis, gs_color_space  *input_colorspace, 
+                    gs_color_space *output_colorspace, 
                     gsicc_rendering_param_t *rendering_params, gs_memory_t *memory, bool include_softproof)
 {
 

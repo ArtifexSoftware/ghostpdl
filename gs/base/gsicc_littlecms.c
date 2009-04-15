@@ -18,8 +18,63 @@
 #include "gx.h"
 #include "gserrors.h"
 #include "gsiccmanage.h"
-#include "lcms.h"
 #include "gxcvalue.h"
+#include "lcms.h"
+#include "gscspace.h"
+
+
+
+/* Get the size of the ICC profile that is in the buffer */
+int
+cmsGetProfileSizeFromMem(void *buffer)
+{
+
+    return(0);
+
+}
+
+
+ /*  If we have a profile handle in the color space already, then we use that.  
+     If we do not have one, then we check if there is data in the buffer.  A
+     handle is created from that data and also stored in the gs color space.
+     If we do not have a handle nor any ICC data, then we will use data based
+     upon the current color space. */
+
+
+ cmsHPROFILE
+ GetProfileHandle(gs_color_space *gs_colorspace)
+ {
+     cmsHPROFILE profilehandle = gs_colorspace->cmm_icc_profile_data->ProfileHandle;
+     void *buffer = gs_colorspace->cmm_icc_profile_data->buffer;
+     int input_size;
+
+     if( profilehandle != NULL ){
+        return(profilehandle);
+     }
+
+     if( buffer != NULL){
+        input_size = cmsGetProfileSizeFromMem(buffer);
+        profilehandle = cmsOpenProfileFromMem(buffer,input_size);
+        gs_colorspace->cmm_icc_profile_data->ProfileHandle = profilehandle;
+        return(profilehandle);
+     }
+
+     /* Now get a colorspace handle based upon the colorspace type */
+
+     /* See if this is a PS or PDF CIE color space */
+
+
+     /* See if this is a device color space */
+
+
+
+    return(0);
+
+
+
+
+ }
+
 
 /* Transform an entire buffer */
 void
@@ -178,27 +233,22 @@ gscms_transform_color(gsicc_link_t *icclink,
 
 /* Get the link from the CMS. TODO:  Add error checking */
 int
-gscms_get_link(gsicc_link_t *icclink, gsicc_colorspace_t  *input_colorspace, 
-                    gsicc_colorspace_t *output_colorspace, 
+gscms_get_link(gsicc_link_t *icclink, gs_color_space  *input_colorspace, 
+                    gs_color_space *output_colorspace, 
                     gsicc_rendering_param_t *rendering_params)
 {
-
     cmsHPROFILE lcms_srchandle, lcms_deshandle;
     cmsHTRANSFORM lcms_link;
     DWORD src_data_type,des_data_type;
     icColorSpaceSignature src_color_space,des_color_space;
     int src_nChannels,des_nChannels;
-    void* input_buf = input_colorspace->ProfileData->ProfileRawBuf;
-    void* output_buf = output_colorspace->ProfileData->ProfileRawBuf;
-    int input_size = input_colorspace->ProfileData->iccheader.size;
-    int output_size = output_colorspace->ProfileData->iccheader.size;
 
-/* At this stage we have the ICC profiles as buffers.
-    we may later change some of this to deal with 
-    streams. */
+    /* Get the handles for the profiles.  A hiearchy is
+       used here.  See function for details.  */
+/* Profile handles are released when color space is deleted */
 
-    lcms_srchandle = cmsOpenProfileFromMem(input_buf,input_size);
-    lcms_deshandle = cmsOpenProfileFromMem(output_buf,output_size);
+    lcms_srchandle = GetProfileHandle(input_colorspace);
+    lcms_deshandle = GetProfileHandle(output_colorspace);
 
 /* Get the data types */
 
@@ -221,11 +271,6 @@ gscms_get_link(gsicc_link_t *icclink, gsicc_colorspace_t  *input_colorspace,
         INTENT_PERCEPTUAL, cmsFLAGS_LOWRESPRECALC);	
 
     icclink->LinkHandle = lcms_link;
-
-/* Close the profile handles. We need to think about if we want to cache these. */
-
-    cmsCloseProfile(lcms_srchandle);
-    cmsCloseProfile(lcms_deshandle);
   
 return(0);
 }
@@ -239,8 +284,8 @@ return(0);
 TODO:  Add error checking */
 
 int
-gscms_get_link_proof(gsicc_link_t *icclink, gsicc_colorspace_t  *input_colorspace, 
-                    gsicc_colorspace_t *output_colorspace, gsicc_colorspace_t *proof_colorspace, 
+gscms_get_link_proof(gsicc_link_t *icclink, gs_color_space  *input_colorspace, 
+                    gs_color_space *output_colorspace, gs_color_space *proof_colorspace, 
                     gsicc_rendering_param_t *rendering_params)
 {
 
@@ -249,21 +294,14 @@ gscms_get_link_proof(gsicc_link_t *icclink, gsicc_colorspace_t  *input_colorspac
     DWORD src_data_type,des_data_type;
     icColorSpaceSignature src_color_space,des_color_space;
     int src_nChannels,des_nChannels;
-    void* input_buf = input_colorspace->ProfileData->ProfileRawBuf;
-    void* output_buf = output_colorspace->ProfileData->ProfileRawBuf;
-    void* proof_buf = proof_colorspace->ProfileData->ProfileRawBuf;
-    int input_size = input_colorspace->ProfileData->iccheader.size;
-    int output_size = output_colorspace->ProfileData->iccheader.size;
-    int proof_size = proof_colorspace->ProfileData->iccheader.size;
 
-/* At this stage we have the ICC profiles as buffers.
-    we may later change some of this to deal with 
-    streams. */
+   /* Get the handles for the profiles.  A hiearchy is
+       used here.  See function for details.  */
+/* Profile handles are released when color space is deleted */
 
-    lcms_srchandle = cmsOpenProfileFromMem(input_buf,input_size);
-    lcms_deshandle = cmsOpenProfileFromMem(output_buf,output_size);
-    lcms_proofhandle = cmsOpenProfileFromMem(proof_buf,proof_size);
-
+    lcms_srchandle = GetProfileHandle(input_colorspace);
+    lcms_deshandle = GetProfileHandle(output_colorspace);
+    lcms_proofhandle = GetProfileHandle(proof_colorspace);
 
 /* Get the data types */
 
@@ -286,11 +324,6 @@ gscms_get_link_proof(gsicc_link_t *icclink, gsicc_colorspace_t  *input_colorspac
 
     icclink->LinkHandle = lcms_link;
 
-/* Close the profile handles. We need to think about if we want to cache these. */
-
-    cmsCloseProfile(lcms_srchandle);
-    cmsCloseProfile(lcms_deshandle);
-    cmsCloseProfile(lcms_proofhandle);
   
 return(0);
 }
@@ -377,27 +410,22 @@ gscms_xform_named_color(gsicc_link_t *icclink,  float tint_value, const char* Co
     need NOT contain the device values but must contain the CIELAB values. */
 
 void
-gscms_get_name2device_link(gsicc_link_t *icclink, gsicc_profile_t  *namedcolor_profile, 
-                    gsicc_colorspace_t *output_colorspace, gsicc_colorspace_t *proof_colorspace, 
+gscms_get_name2device_link(gsicc_link_t *icclink, gs_color_space  *namedcolor_profile, 
+                    gs_color_space *output_colorspace, gs_color_space *proof_colorspace, 
                     gsicc_rendering_param_t *rendering_params)
 {
 
     cmsHPROFILE hTransform; 
     _LPcmsTRANSFORM p;
     cmsHPROFILE lcms_srchandle, lcms_deshandle, lcms_proofhandle;
-    void* input_buf = namedcolor_profile->ProfileRawBuf;
-    int input_size = namedcolor_profile->iccheader.size;
-    int output_size,proof_size;
-    void* output_buf = NULL;
-    void* proof_buf = NULL;
-    DWORD dwOutputFormat;
+     DWORD dwOutputFormat;
     DWORD lcms_proof_flag;
     int number_colors;
 
     /* NOTE:  We need to add a test here to check that we even HAVE
     device values in here and NOT just CIELAB values */
 
-    lcms_srchandle = cmsOpenProfileFromMem(input_buf,input_size);
+    lcms_srchandle = GetProfileHandle(namedcolor_profile);
 
     /* Otherwise go ahead and use the output and possibly proofing profile */
 
@@ -407,14 +435,10 @@ gscms_get_name2device_link(gsicc_link_t *icclink, gsicc_profile_t  *namedcolor_p
         lcms_proofhandle = NULL;
 
     } else {
-        output_buf = output_colorspace->ProfileData->ProfileRawBuf;
-        output_size = output_colorspace->ProfileData->iccheader.size;
-
+ 
         if ( proof_colorspace != NULL){
 
-            proof_buf = proof_colorspace->ProfileData->ProfileRawBuf;
-            proof_size = proof_colorspace->ProfileData->iccheader.size;
-            lcms_proofhandle = cmsOpenProfileFromMem(proof_buf,proof_size);
+            lcms_proofhandle = GetProfileHandle(proof_colorspace);
             lcms_proof_flag = cmsFLAGS_GAMUTCHECK | cmsFLAGS_SOFTPROOFING;
 
         } else {
@@ -424,7 +448,7 @@ gscms_get_name2device_link(gsicc_link_t *icclink, gsicc_profile_t  *namedcolor_p
 
         }
 
-        lcms_deshandle = cmsOpenProfileFromMem(output_buf,output_size);
+        lcms_deshandle = GetProfileHandle(output_colorspace);
     }
 
     /* Create the transform */
