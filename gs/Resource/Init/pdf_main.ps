@@ -955,15 +955,22 @@ pdfdict begin
  { Trailer /Root oget /Pages oget
    dup /Count knownoget {
      dup 0 le {
-       pop (   **** Warning:  Invalid Page count.\n) pdfformaterror
-       % find the last page and use that as the Count
-       1 1 999999999 {
-         dup pdffindpage?
-	 exch pop
-         //null eq { exit } { pop } ifelse
-       } for
-       1 sub		% decrement to last page that we were able to find
-       2 copy /Count exch put
+       pop 
+       dup /Kids knownoget {
+         pop
+         (   **** Warning:  Invalid Page count.\n) pdfformaterror
+         % find the last page and use that as the Count
+         1 1 999999999 {
+           dup pdffindpage?
+	   exch pop
+           //null eq { exit } { pop } ifelse
+         } for
+         1 sub		% decrement to last page that we were able to find
+         2 copy /Count exch put
+       } {
+         0 % return 0 and keep 0 page count.
+         (   **** Warning:  PDF document has no pages.\n) pdfformaterror
+       } ifelse
      } if
      exch pop
    } {
