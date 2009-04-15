@@ -973,7 +973,9 @@ set_logical_page(
 )
 {
     uint count = uint_arg(pargs);
-    const pcl_logical_page_t *plogpage = arg_data(pargs);
+    const pcl_logical_page_t *plogpage =
+        (pcl_logical_page_t *)arg_data(pargs);
+
     if (count != 10)
         return e_Range;
     return 0;
