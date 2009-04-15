@@ -122,26 +122,58 @@ gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_bu
 }
 
 /* Transform a single color.
-   Need to think about this.
-   How to do description of color.
-   Is it passing a gx_device_color?
-   Is it 16 bit, 8 bit, will need
-   to know if gray,RGB,CMYK, or N chan.
-   
-   For now, we will make them all the precision of
-
+   We assume we have 
+   passed to us the proper number
+   of elements of size gx_device_color.
+   It is up to the caller to make sure
+   the proper allocations for the colors are
+   there.
    */
-/*
+
 void
 gscms_transform_color(gsicc_link_t *icclink,  
                              void *inputcolor,
                              void *outputcolor,
                              void **contextptr)
-{
 
+{
+    cmsHTRANSFORM hTransform = (cmsHTRANSFORM) icclink->LinkHandle;
+    DWORD dwInputFormat,dwOutputFormat,curr_input,curr_output;
+    int numbytes;
+
+    /* As above, we will want to set the transform to handle the proper
+       sized data (size of gx_color_value) */
+
+    _LPcmsTRANSFORM p = (_LPcmsTRANSFORM) (LPSTR) hTransform;
+    curr_input = p->InputFormat;
+    curr_output = p->OutputFormat;
+
+    /* Color space MUST be the same (i.e not change) */
+
+    dwInputFormat = COLORSPACE_SH(T_COLORSPACE(curr_input));
+    dwOutputFormat = COLORSPACE_SH(T_COLORSPACE(curr_output));
+ 
+    numbytes = sizeof(gx_color_value);
+    if (numbytes>2) numbytes = 0;  /* littleCMS encodes float with 0 ToDO. Doublecheck this. */
+    dwInputFormat = dwInputFormat | BYTES_SH(numbytes);
+    dwOutputFormat = dwOutputFormat | BYTES_SH(numbytes);
+
+    /* endian */
+    #if !arch_is_big_endian
+    dwInputFormat = dwInputFormat | ENDIAN16_SH(1);
+    dwOutputFormat = dwOutputFormat | ENDIAN16_SH(1);
+    #endif
+
+    /* Change the formaters */
+
+    cmsChangeBuffersFormat(hTransform,dwInputFormat,dwOutputFormat);
+
+    /* Do conversion */
+
+    cmsDoTransform(hTransform,inputcolor,outputcolor,1); 
 
 }
-*/
+
 
 
 /* Get the link from the CMS. TODO:  Add error checking */
@@ -411,8 +443,8 @@ gscms_get_name2device_link(gsicc_link_t *icclink, gsicc_profile_t  *namedcolor_p
     p = (_LPcmsTRANSFORM) hTransform;
     number_colors = p->NamedColorList->ColorantCount;
 
-    /* NOTE: Output 2 byte colors with no color space type check */
-    dwOutputFormat =  (CHANNELS_SH(number_colors)|BYTES_SH(2));
+    /* NOTE: Output size of gx_color_value with no color space type check */
+    dwOutputFormat =  (CHANNELS_SH(number_colors)|BYTES_SH(sizeof(gx_color_value)));
 
     /* Change the formaters */
     cmsChangeBuffersFormat(hTransform,TYPE_NAMED_COLOR_INDEX,dwOutputFormat);
