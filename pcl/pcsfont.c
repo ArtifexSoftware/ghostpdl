@@ -501,8 +501,14 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
                   format != pcfh_truetype_large)
                  )
                 return e_Range;
+
             width = pl_get_uint16(data + 10);
+            if (width < 1  || width > 16384)
+                return e_Range;
             height = pl_get_uint16(data + 12);
+            if (height < 1 || height > 16384)
+                return e_Range;
+
             switch ( data[3] ) {
             case 1:             /* uncompressed bitmap */
                 font_data_size = 16 + (((width + 7) >> 3) * height);
