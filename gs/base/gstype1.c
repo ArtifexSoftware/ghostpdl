@@ -283,6 +283,19 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		goto cc;
 	    case cx_endchar:
                 if (pcis->seac_accent < 0) {
+		    if(!pcis->sb_set && !pcis->width_set) {
+			/* No sbw/hsbw op, error condition but Adobe interpreters ignore it.
+			   Rewind the data pointer to the beginning of the glyph, re-initialise
+			   the hinter, execute a '0' sbw op, and then carry on as if we had
+			   actually received one. */
+			cip = pgd->bits.data;
+			t1_hinter__init(h, pcis->path);
+			code = t1_hinter__sbw(h, fixed_0, fixed_0, fixed_0, fixed_0);
+			if (code < 0)
+			    return code;
+			gs_type1_sbw(pcis, fixed_0, fixed_0, fixed_0, fixed_0);
+			goto rsbw;
+		    }
                     code = t1_hinter__endglyph(h);
 		    if (code < 0)
 			return code;

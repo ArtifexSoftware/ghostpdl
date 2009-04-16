@@ -573,7 +573,12 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	code = pdata->interpret(&cis, &gdata, &value);
 	switch (code) {
 	case 0:		/* done with no [h]sbw, error */
-	    code = gs_note_error(gs_error_invalidfont);
+	                /* Adobe interpreters ignore the error! */
+	    info->width[wmode].x = 0;
+	    info->width[wmode].y = 0;
+	    info->v.x = 0;
+	    info->v.y = 0;
+	    break;
 	default:		/* code < 0, error */
 	    return code;
 	case type1_result_callothersubr:	/* unknown OtherSubr */
