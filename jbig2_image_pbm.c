@@ -123,7 +123,10 @@ Jbig2Image *jbig2_image_read_pbm(Jbig2Ctx *ctx, FILE *in)
                 buf[i++] = c;
             }
             buf[i] = '\0';
-            sscanf(buf, "%d", &dim[done]);
+            if (sscanf(buf, "%d", &dim[done]) != 1) {
+                fprintf(stderr, "couldn't read pbm image dimensions\n");
+                return NULL;
+            }
             i = 0;
             done++;
         }
