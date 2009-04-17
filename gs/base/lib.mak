@@ -1314,7 +1314,7 @@ $(GLOBJ)sdcte.$(OBJ) : $(GLSRC)sdcte.c $(AK)\
 $(GLOBJ)sjpege.$(OBJ) : $(GLSRC)sjpege.c $(AK)\
  $(stdio__h) $(string__h) $(gx_h)\
  $(jerror__h) $(jpeglib__h)\
- $(gserrors_h) $(sjpeg_h) $(sdct_h) $(strimpl_h)
+ $(sjpeg_h) $(sdct_h) $(strimpl_h)
 	$(GLJCC) $(GLO_)sjpege.$(OBJ) $(C_) $(GLSRC)sjpege.c
 
 # sdeparam is used by the filter operator and the PS/PDF writer.
@@ -1344,7 +1344,7 @@ $(GLOBJ)sdctd.$(OBJ) : $(GLSRC)sdctd.c $(AK)\
 $(GLOBJ)sjpegd.$(OBJ) : $(GLSRC)sjpegd.c $(AK)\
  $(stdio__h) $(string__h) $(gx_h)\
  $(jerror__h) $(jpeglib__h)\
- $(gserrors_h) $(sjpeg_h) $(sdct_h) $(strimpl_h)
+ $(sjpeg_h) $(sdct_h) $(strimpl_h)
 	$(GLJCC) $(GLO_)sjpegd.$(OBJ) $(C_) $(GLSRC)sjpegd.c
 
 # sddparam is used by the filter operator.
