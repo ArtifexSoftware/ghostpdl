@@ -23,7 +23,7 @@
 #include "gsiparm4.h"
 #include "gdevpsds.h"
 #include "spngpx.h"
-#include "stdlib.h" /* for atoi */
+#include <stdlib.h> /* for atoi */
 
 #define CHECK(expr)\
   BEGIN if ((code = (expr)) < 0) return code; END
