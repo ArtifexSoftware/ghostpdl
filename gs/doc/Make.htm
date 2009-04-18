@@ -662,31 +662,38 @@ memory requirements, and may be essential if you are planning on putting
 Ghostscript into ROM.
 
 <p>
-To compile the initialization files (<code>lib/gs_init.ps</code>, etc.)
-into the executable, change the <code>0</code> to a <b><tt>1</tt></b> in
-the line
+By default, most top level make files now default to compiling the initialization
+files (<code>lib/gs_init.ps</code>, etc.) into the executable. To disable this,
+change the <code>1</code> to a <b><tt>0</tt></b> in the line
 
 <blockquote><code>
-COMPILE_INITS=0
+COMPILE_INITS=1
 </code></blockquote>
 
 <p>
-Compiled initialization includes the default font map.
-It is used only if Ghostscript cannot find or open the default font
-map file at run time. 
+Files are now compiled into the executable as a %rom% file system that can
+be searched, opened, etc. as with the normal (%os%) file system. The data
+is (mostly) compressed. The set of files built into the %rom% file system
+is specified in the <code>psi/psromfs.mak</code> file. Refer to the file
+<code>base/mkromfs.c</code> for a description of the parameters that
+control source and destination pathnames, file enumeration exclusion,
+compression, etc.
 
 <p>
-To compile fonts into the executable, see <a
-href="Fonts.htm#Precompiling">Precompiling fonts</a>. 
+While fonts normally are compiled into the executable using <code>mkromfs</code>
+(above) from the Resource/Font/ directory, it is possible to compile Type 1 fonts
+into the executable using an older method that converts Type 1 fonts into C code.
+See <a href="Fonts.htm#Precompiling">Precompiling fonts</a>. 
 
 <p>
-To compile threshold-array halftones into the executable, see the "Compiled
-halftone" section of <code>int.mak</code> for a sample makefile fragment,
-<code>genht.c</code> for the syntax of halftone data files, and
-<code>lib/ht_ccsto.ps</code> for a sample data file.  Note that even
-though the data files use PostScript syntax, compiled halftones do not
-require the PostScript interpreter and may be used with the graphics library
-alone.
+Similarly, Halftone resources can be compiled into the executable using
+<code>mkromfs</code>, but also threshold-array halftones can be compiled
+into the executable. See the "Compiled halftone" section of <code>int.mak</code>
+for a sample makefile fragment, <code>genht.c</code> for the syntax of
+halftone data files, and <code>lib/ht_ccsto.ps</code> for a sample data file.
+ Note that even though the data files use PostScript syntax, compiled halftones
+do not require the PostScript interpreter and may be used with the graphics
+library alone.
 
 <h4><a name="GNU_readline"></a>GNU readline</h4>
 
