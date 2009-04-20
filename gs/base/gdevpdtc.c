@@ -625,7 +625,7 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
 		pte->text.operation = save_op;
 	    }
 	    pte->current_font = subfont0;
-	    if (!subfont0)
+	    if (!subfont0 || !pdsubf0)
 		/* This should be impossible */
 		return_error(gs_error_invalidfont);
 
