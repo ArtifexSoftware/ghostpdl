@@ -625,6 +625,10 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
 		pte->text.operation = save_op;
 	    }
 	    pte->current_font = subfont0;
+	    if (!subfont0)
+		/* This should be impossible */
+		return_error(gs_error_invalidfont);
+
 	    code = gs_matrix_multiply(&subfont0->FontMatrix, &font->FontMatrix, &m3); 
 	    /* We thought that it should be gs_matrix_multiply(&font->FontMatrix, &subfont0->FontMatrix, &m3); */
 	    if (code < 0) 
