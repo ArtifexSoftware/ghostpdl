@@ -1141,8 +1141,16 @@ end
 } bdef
 
 /doimagesmask { % <imagemask> doimagesmask -
-  PDFusingtransparency { currentdict /SMask knownoget } { false } ifelse {
-    currentdevice .devicename /pdfwrite ne { 
+  PDFusingtransparency {
+    currentdict /SMask knownoget
+  } {
+    false
+  } ifelse
+  {	% We are doing transparency and SMask is present in the image
+	% stack: <imagemask> <SMask>
+    currentdevice .devicename /pdfwrite eq {
+      pop	% pdfwrite will process SMask directly during 'doimage'
+    } {
       .begintransparencymaskimage
       PDFfile fileposition exch
       gsave //nodict begin
@@ -1153,7 +1161,7 @@ end
       end grestore
       PDFfile exch setfileposition
       0 .endtransparencymask
-    } if
+    } ifelse
     << /Subtype /Group /Isolated true 
       /.image_with_SMask true % pdfwrite needs : see gs/src/ztrans.c, gs/src/gdevpdft.c 
     >> 0 0 1 1 .begintransparencygroup
@@ -1161,6 +1169,7 @@ end
     .endtransparencygroup
   } {
     SoftMask //null ne {
+      % the image doesn't have an SMask, but the ExtGState does, force a group.
       << /Subtype /Group /Isolated true >> 0 0 1 1 .begintransparencygroup
       doimage
       .endtransparencygroup
@@ -1205,9 +1214,7 @@ end
     % which is done under a rush of 8.63 release.
     % The purpose is to disable a conversion of an image with soft mask
     % into a Type 103 image, which currently allocates a full mask buffer
-    % before writing clist. Note that imagemask installs
-    % the transparency mask anyway (likely another bug), 
-    % so the image is still masked.
+    % before writing clist.
     % With this workaround the Matte color is not working (ignored).
     is_big_mask not 
   } {

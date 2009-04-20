@@ -1331,8 +1331,11 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_imager_state *pis,
 	if (code < 0)
 	    return code;
     }
-    return cos_dict_put_c_key_object(cos_stream_dict(pmcs), "/SMask",
-				     pmie->writer.pres->object);
+/* Don't put SMask here because pmie->writer.pres->object may be substituted
+ * after the image stream is accummulated. pdf_end_and_do_image will set
+ * SMask with the right value. Bug 690345.
+ */ 
+    return 0;
 }
 
 pdf_resource_t *pdf_substitute_pattern(pdf_resource_t *pres)
