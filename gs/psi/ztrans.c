@@ -207,6 +207,7 @@ zbegintransparencygroup(i_ctx_t *i_ctx_p)
     os_ptr dop = op - 4;
     gs_transparency_group_params_t params;
     gs_rect bbox;
+    ref *dummy;
     int code;
 
     check_type(*dop, t_dictionary);
@@ -220,7 +221,14 @@ zbegintransparencygroup(i_ctx_t *i_ctx_p)
     code = rect_param(&bbox, op);
     if (code < 0)
 	return code;
-    params.ColorSpace = gs_currentcolorspace(igs);
+    /* If the CS is not given in the transparency group dict, set to NULL   */
+    /* so that the transparency code knows to inherit from the parent layer */
+    if (dict_find_string(dop, "CS", &dummy) <= 0) {
+	params.ColorSpace = NULL;
+    } else {
+	/* the PDF interpreter set the colorspace, so use it */
+	params.ColorSpace = gs_currentcolorspace(igs);
+    }
     code = gs_begin_transparency_group(igs, &params, &bbox);
     if (code < 0)
 	return code;
@@ -244,7 +252,8 @@ zendtransparencygroup(i_ctx_t *i_ctx_p)
     return gs_end_transparency_group(igs);
 }
 
-/* <paramdict> <llx> <lly> <urx> <ury> .begintransparencymaskgroup - */
+/* <cs_set?> <paramdict> <llx> <lly> <urx> <ury> .begintransparencymaskgroup -	*/
+/*             cs_set == false if we are inheriting the colorspace		*/
 static int tf_using_function(floatp, float *, void *);
 static int
 zbegintransparencymaskgroup(i_ctx_t *i_ctx_p)
@@ -269,16 +278,14 @@ zbegintransparencymaskgroup(i_ctx_t *i_ctx_p)
     params.replacing = true;
     if ((code = dict_floats_param(imemory, dop, "Background",
 		    cs_num_components(gs_currentcolorspace(i_ctx_p->pgs)),
-				  params.Background, NULL)) < 0
-	)
+				  params.Background, NULL)) < 0)
 	return code;
     else if (code > 0)
 	params.Background_components = code;
     if ((code = dict_floats_param(imemory, dop, "GrayBackground",
-		    1, &params.GrayBackground, NULL)) < 0
-	)
+		    1, &params.GrayBackground, NULL)) < 0)
 	return code;
-    if (dict_find_string(dop, "TransferFunction", &pparam) >0) {
+    if (dict_find_string(dop, "TransferFunction", &pparam) > 0) {
 	gs_function_t *pfn = ref_function(pparam);
 
 	if (pfn == 0 || pfn->params.m != 1 || pfn->params.n != 1)
@@ -289,10 +296,16 @@ zbegintransparencymaskgroup(i_ctx_t *i_ctx_p)
     code = rect_param(&bbox, op);
     if (code < 0)
 	return code;
+    /* Is the colorspace set for this mask ? */
+    if (op[-5].value.boolval) {
+		params.ColorSpace = gs_currentcolorspace(igs);
+    } else {
+	params.ColorSpace = NULL;
+    }
     code = gs_begin_transparency_mask(igs, &params, &bbox, false);
     if (code < 0)
 	return code;
-    pop(5);
+    pop(6);
     return code;
 }
 
@@ -303,11 +316,16 @@ zbegintransparencymaskimage(i_ctx_t *i_ctx_p)
     gs_transparency_mask_params_t params;
     gs_rect bbox = { { 0, 0} , { 1, 1} };
     int code;
+    gs_color_space *gray_cs = gs_cspace_new_DeviceGray(imemory);
 
+    if (!gray_cs)
+	return_error(e_VMerror);
+    params.ColorSpace = gray_cs;	/* per PDF spec, Image SMask is alway DeviceGray */
     gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
     code = gs_begin_transparency_mask(igs, &params, &bbox, true);
     if (code < 0)
 	return code;
+    rc_decrement(gray_cs, "zbegintransparencymaskimage");
     return code;
 }
 

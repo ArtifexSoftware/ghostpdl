@@ -41,6 +41,7 @@ typedef struct gs_pattern1_template_s {
     gs_pattern_template_common;
     int PaintType;
     int TilingType;
+    bool uses_transparency;
     gs_rect BBox;
     float XStep;
     float YStep;

@@ -190,6 +190,8 @@ is_linear_color_applicable(const patch_fill_state_t *pfs)
 	return false;
     if (pfs->dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN)
 	return false;
+    if (pfs->pis->has_transparency == true)
+        return false; /* set in pdf14 dev if we are in a trans group */
     if (gx_get_cmap_procs(pfs->pis, pfs->dev)->is_halftoned(pfs->pis, pfs->dev))
 	return false;
     return true;

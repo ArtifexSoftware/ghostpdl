@@ -475,7 +475,7 @@ clist_begin_typed_image(gx_device * dev,
 	 * worthwhile.
 	 */
 	gx_color_index all =
-	    ((gx_color_index)1 << dev->color_info.depth) - 1;
+	    ((gx_color_index)1 << cdev->clist_color_info.depth) - 1;
 
 	if (bits_per_pixel > 4 || pim->Interpolate || num_components > 1)
 	    colors_used = all;
@@ -536,13 +536,22 @@ clist_begin_typed_image(gx_device * dev,
     return 0;
 
     /*
-     * We couldn't handle the image.  Use the default algorithms, which
+     * We couldn't handle the image.  It is up to the caller to
+     * use the default algorithms, which
      * break the image up into rectangles or small pixmaps.
+     * If we are doing the PDF14 transparency device
+     * then we want to make sure we do NOT use the target 
+     * device.  In this case we return -1.
      */
 use_default:
     gs_free_object(mem, pie, "clist_begin_typed_image");
-    return gx_default_begin_typed_image(dev, pis, pmat, pic, prect,
-					pdcolor, pcpath, mem, pinfo);
+
+    if (pis->has_transparency){
+        return -1;
+    } else {
+        return gx_default_begin_typed_image(dev, pis, pmat, pic, prect,
+					    pdcolor, pcpath, mem, pinfo);
+    }
 }
 
 /* Error cleanup for clist_image_plane_data. */
@@ -1488,7 +1497,7 @@ cmd_image_plane_data(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	code = cmd_put_set_data_x(cldev, pcls, data_x);
 	if (code < 0)
 	    return code;
-	offset = ((data_x & ~7) * cldev->color_info.depth) >> 3;
+	offset = ((data_x & ~7) * cldev->clist_color_info.depth) >> 3;
     }
     code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_image_data, len);
     if (code < 0)

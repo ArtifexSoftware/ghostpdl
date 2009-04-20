@@ -369,8 +369,13 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
 		    )
 		    goto nyi;
 	}
-	in_line = context == PDF_IMAGE_DEFAULT &&
-	    can_write_image_in_line(pdev, pim1);
+        /* A hack for an issue when we have a pattern with transparency */
+        /* There is in issue if the image is written out inline and 
+           we have a transparency in a pattern.  To avoid, make it write
+           out the image as a resource. Fixes crash with bug688728.pdf */
+ 	 /* in_line = context == PDF_IMAGE_DEFAULT &&
+	    can_write_image_in_line(pdev, pim1); */
+
 	image[0].type1 = *pim1;
 	break;
     }
@@ -1326,8 +1331,11 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_imager_state *pis,
 	if (code < 0)
 	    return code;
     }
-    return cos_dict_put_c_key_object(cos_stream_dict(pmcs), "/SMask",
-				     pmie->writer.pres->object);
+/* Don't put SMask here because pmie->writer.pres->object may be substituted
+ * after the image stream is accummulated. pdf_end_and_do_image will set
+ * SMask with the right value. Bug 690345.
+ */ 
+    return 0;
 }
 
 pdf_resource_t *pdf_substitute_pattern(pdf_resource_t *pres)

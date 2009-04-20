@@ -166,7 +166,7 @@ cmd_write_page_rect_cmd(gx_device_clist_writer * cldev, int op)
 static inline byte * 
 cmd_put_frac31_color(gx_device_clist_writer * cldev, const frac31 *c, byte *dp)
 {
-    int num_components = cldev->color_info.num_components;
+    int num_components = cldev->clist_color_info.num_components;
     int j;
 
     for (j = 0; j < num_components; j++)
@@ -178,7 +178,7 @@ static inline int
 cmd_size_frac31_color(gx_device_clist_writer * cldev, const frac31 *c)
 {
     int j, s = 0;
-    int num_components = cldev->color_info.num_components;
+    int num_components = cldev->clist_color_info.num_components;
 
     for (j = 0; j < num_components; j++)
 	s += cmd_size_frac31(c[j]);
@@ -494,7 +494,7 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
 	&((gx_device_clist *)dev)->writer;
     int depth =
 	(color1 == gx_no_color_index && color0 == gx_no_color_index ?
-	 dev->color_info.depth : 1);
+	 cdev->clist_color_info.depth : 1);
     gx_color_index colors_used =
 	(color1 == gx_no_color_index && color0 == gx_no_color_index ?
 	 /* We can't know what colors will be used: assume the worst. */
@@ -695,7 +695,8 @@ clist_copy_color(gx_device * dev,
 {
     gx_device_clist_writer * const cdev =
 	&((gx_device_clist *)dev)->writer;
-    int depth = dev->color_info.depth;
+    int depth = cdev->clist_color_info.depth; /* Could be different than target
+                                                 if 1.4 device */
     int y0;
     int data_x_bit;
     /* We can't know what colors will be used: assume the worst. */
@@ -946,8 +947,8 @@ clist_strip_copy_rop(gx_device * dev,
     const gx_strip_bitmap *tiles = textures;
     int y0;
     /* Compute the set of possible colors that this operation can generate. */
-    gx_color_index all = ((gx_color_index)1 << dev->color_info.depth) - 1;
-    bool subtractive = dev->color_info.num_components == 4; /****** HACK ******/
+    gx_color_index all = ((gx_color_index)1 << cdev->clist_color_info.depth) - 1;
+    bool subtractive = dev->color_info.num_components >= 4; /****** HACK ******/
     gx_color_index S =
 	(scolors ? scolors[0] | scolors[1] : sdata ? all : 0);
     gx_color_index T =
@@ -1017,7 +1018,7 @@ clist_strip_copy_rop(gx_device * dev,
 		    do {
 			code = clist_change_tile(cdev, re.pcls, tiles,
 						 (tcolors != 0 ? 1 :
-						  dev->color_info.depth));
+						  cdev->clist_color_info.depth));
 		    } while (RECT_RECOVER(code));
 		    if (code < 0 && !(code == gs_error_limitcheck) && SET_BAND_CODE(code))
 			goto error_in_rect;
@@ -1062,7 +1063,7 @@ clist_strip_copy_rop(gx_device * dev,
 			       when tile_space_phase < rep_width && tile_space_phase + rwidth > rep_width, 
 			       each line to be converted into 2 ones.
 			    */
-			    int depth = dev->color_info.depth;
+			    int depth = cdev->clist_color_info.depth;
 
 #			    if 0
 			    /* Align bitmap data : */
