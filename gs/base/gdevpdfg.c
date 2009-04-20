@@ -812,6 +812,7 @@ pdf_write_spot_function(gx_device_pdf *pdev, const gx_ht_order *porder,
     uint i;
     int code = 0;
 
+    params.array_size = 0;
     params.m = 2;
     params.Domain = domain_spot;
     params.n = 1;
