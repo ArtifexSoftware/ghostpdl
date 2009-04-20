@@ -23,7 +23,7 @@
 #include "gscdefs.h"
 #include "gsstruct.h"
 #include "gsutil.h" */        /* Need for the object types */
-//#include "gsiccmanage.h"
+/* #include "gsiccmanage.h" */
 
 #include "memory_.h"
 #include "gx.h"

@@ -25,11 +25,11 @@
 #include "gscspace.h"
 */
 
-//#include "memory_.h"
-//#include "gx.h"
-//#include "gserrors.h"
-//#include "gscspace.h"
-//#include "gxcspace.h"
+/* #include "memory_.h"
+#include "gx.h"
+#include "gserrors.h"
+#include "gscspace.h"
+#include "gxcspace.h" */
 #include "gscms.h"
 #include "gsiccmanage.h"
 #include "gsicc_littlecms.h"
