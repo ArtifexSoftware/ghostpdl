@@ -827,7 +827,8 @@ end readonly def                % .loadttfontdict
     } if
     /ttc_offset 0 def
   } ifelse
-  /tables f offsets 4 getu16 16 mul string readstring pop def
+        % Peek because table counter may be incorrect.
+  /tables f offsets 4 getu16 16 mul string .peekstring pop def
   /tabdict tables length 16 idiv dict def
 	% tabs = tables we want to keep, sorted by file position.
   /tabs [ 0 16 tables length 1 sub {
@@ -868,7 +869,7 @@ mark
 % Read data.  Updates offsets, tabs; stores data in tabdict.
 /.readttdata {
   /file_table_pos 10 dict def
-  /fpos offsets length tables length add ttc_offset add def
+  /fpos offsets length ttc_offset add def
   /sfpos offsets length tabs length 16 mul add def
   offsets 4 tabs length putu16
   tabs {
