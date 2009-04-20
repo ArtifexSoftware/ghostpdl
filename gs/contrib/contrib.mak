@@ -50,6 +50,7 @@ CONTRIBSRC=$(CONTRIBDIR)$(D)
 #       cdj880   HP DeskJet 880
 #       cdj890   HP DeskJet 890
 #       cdj970   HP DeskJet 970
+#	cdnj500  HP DesignJet 500
 #	chp2200  HP Business Inkjet 2200
 #       dl2100   DEC DL2100
 #	dmprt	 dot matrix printer driver for Ghostscript (it can use 
@@ -231,6 +232,14 @@ $(GLOBJ)gdevdj9.$(OBJ) : $(CONTRIBSRC)gdevdj9.c $(PDEVH) $(math__h) $(string__h)
  $(gsparam_h) $(gxlum_h) $(gdevpcl_h)
 	$(GLCC) $(GLO_)gdevdj9.$(OBJ) $(C_) $(CONTRIBSRC)gdevdj9.c
  
+
+### -------------- cdnj500 - HP DesignJet 500 ------------- ###
+
+### NOTE:  Same as chp2200 (some PJL and CRD changes).
+
+$(DD)cdnj500.dev : $(cdeskjet8_) $(DD)page.dev
+	$(SETPDEV2) $(DD)cdnj500 $(cdeskjet8_)
+
 
 ### -------------- chp2200 - HP Business Inkjet 2200 ------------- ###
 
