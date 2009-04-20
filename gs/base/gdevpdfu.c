@@ -1423,8 +1423,10 @@ pdf_unclip(gx_device_pdf * pdev)
 void
 pdf_store_default_Producer(char buf[PDF_MAX_PRODUCER])
 {
-    sprintf(buf, ((gs_revision % 100) == 0 ? "(%s %1.1f)" : "(%s %1.2f)"),
-	    gs_product, gs_revision / 100.0);
+    if ((gs_revision % 100) == 0)
+	sprintf(buf, "(%s %1.1f)", gs_product, gs_revision / 100.0);
+    else
+	sprintf(buf, "(%s %1.2f)", gs_product, gs_revision / 100.0);
 }
 
 /* Write matrix values. */
