@@ -210,6 +210,9 @@ pdf_open_temp_file(gx_device_pdf *pdev, pdf_temp_file_t *ptf)
 {
     char fmode[4];
 
+    if (strlen(gp_fmode_binary_suffix) > 2)
+	return_error(gs_error_invalidfileaccess);
+
     strcpy(fmode, "w+");
     strcat(fmode, gp_fmode_binary_suffix);
     ptf->file =
