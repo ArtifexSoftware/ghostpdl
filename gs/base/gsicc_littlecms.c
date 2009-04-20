@@ -13,68 +13,46 @@
 
 /* gsicc interface to littleCMS */
 
-#include "math_.h"
+/*#include "math_.h"
 #include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsiccmanage.h"
-#include "gxcvalue.h"
-#include "lcms.h"
+#include "gscms.h"
 #include "gscspace.h"
+#include "gsicc_littlecms.h"*/
 
+#include "memory_.h"
+#include "gx.h"
+#include "gserrors.h"
+#include "gxcvalue.h"
+#include "gscms.h"
+#include "gsicc_littlecms.h"
 
 
 /* Get the size of the ICC profile that is in the buffer */
-int
+static unsigned int
 cmsGetProfileSizeFromMem(void *buffer)
 {
-
-    return(0);
+    /* First four bytes in big-endian is the profile size */
+    unsigned char *bytebuf = buffer;
+ 
+    return( (bytebuf[0]<<24) + (bytebuf[1]<<16) + (bytebuf[2]<<8) + bytebuf[3] );
 
 }
 
 
- /*  If we have a profile handle in the color space already, then we use that.  
-     If we do not have one, then we check if there is data in the buffer.  A
-     handle is created from that data and also stored in the gs color space.
-     If we do not have a handle nor any ICC data, then we will use data based
-     upon the current color space. */
+/* Get ICC Profile handle from buffer */
 
+cmsHPROFILE
+gscms_get_profile_handle(unsigned char *buffer)
+{
+    unsigned int input_size;
 
- cmsHPROFILE
- GetProfileHandle(gs_color_space *gs_colorspace)
- {
-     cmsHPROFILE profilehandle = gs_colorspace->cmm_icc_profile_data->ProfileHandle;
-     void *buffer = gs_colorspace->cmm_icc_profile_data->buffer;
-     int input_size;
+    input_size = cmsGetProfileSizeFromMem(buffer);
+    return(cmsOpenProfileFromMem(buffer,input_size));
 
-     if( profilehandle != NULL ){
-        return(profilehandle);
-     }
-
-     if( buffer != NULL){
-        input_size = cmsGetProfileSizeFromMem(buffer);
-        profilehandle = cmsOpenProfileFromMem(buffer,input_size);
-        gs_colorspace->cmm_icc_profile_data->ProfileHandle = profilehandle;
-        return(profilehandle);
-     }
-
-     /* Now get a colorspace handle based upon the colorspace type */
-
-     /* See if this is a PS or PDF CIE color space */
-
-
-     /* See if this is a device color space */
-
-
-
-    return(0);
-
-
-
-
- }
-
+}
 
 /* Transform an entire buffer */
 void
@@ -233,26 +211,18 @@ gscms_transform_color(gsicc_link_t *icclink,
 
 /* Get the link from the CMS. TODO:  Add error checking */
 int
-gscms_get_link(gsicc_link_t *icclink, gs_color_space  *input_colorspace, 
-                    gs_color_space *output_colorspace, 
-                    gsicc_rendering_param_t *rendering_params)
+gscms_get_link(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle, 
+                    gcmmhprofile_t lcms_deshandle, 
+                    gsicc_rendering_param_t *rendering_params, gsicc_manager_t *icc_manager)
 {
-    cmsHPROFILE lcms_srchandle, lcms_deshandle;
     cmsHTRANSFORM lcms_link;
     DWORD src_data_type,des_data_type;
     icColorSpaceSignature src_color_space,des_color_space;
     int src_nChannels,des_nChannels;
 
-    /* Get the handles for the profiles.  A hiearchy is
-       used here.  See function for details.  */
-/* Profile handles are released when color space is deleted */
-
-    lcms_srchandle = GetProfileHandle(input_colorspace);
-    lcms_deshandle = GetProfileHandle(output_colorspace);
-
 /* Get the data types */
 
-    src_color_space  = cmsGetColorSpace(lcms_srchandle);  
+    src_color_space  = cmsGetColorSpace(lcms_srchandle); 
     des_color_space  = cmsGetColorSpace(lcms_deshandle); 
 
     src_nChannels = _cmsChannelsOf(src_color_space);
@@ -284,24 +254,15 @@ return(0);
 TODO:  Add error checking */
 
 int
-gscms_get_link_proof(gsicc_link_t *icclink, gs_color_space  *input_colorspace, 
-                    gs_color_space *output_colorspace, gs_color_space *proof_colorspace, 
-                    gsicc_rendering_param_t *rendering_params)
+gscms_get_link_proof(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle, 
+                    gcmmhprofile_t lcms_deshandle, gcmmhprofile_t lcms_proofhandle, 
+                    gsicc_rendering_param_t *rendering_params, gsicc_manager_t *icc_manager)
 {
 
-    cmsHPROFILE lcms_srchandle, lcms_deshandle, lcms_proofhandle;
     cmsHTRANSFORM lcms_link;
     DWORD src_data_type,des_data_type;
     icColorSpaceSignature src_color_space,des_color_space;
     int src_nChannels,des_nChannels;
-
-   /* Get the handles for the profiles.  A hiearchy is
-       used here.  See function for details.  */
-/* Profile handles are released when color space is deleted */
-
-    lcms_srchandle = GetProfileHandle(input_colorspace);
-    lcms_deshandle = GetProfileHandle(output_colorspace);
-    lcms_proofhandle = GetProfileHandle(proof_colorspace);
 
 /* Get the data types */
 
@@ -410,45 +371,28 @@ gscms_xform_named_color(gsicc_link_t *icclink,  float tint_value, const char* Co
     need NOT contain the device values but must contain the CIELAB values. */
 
 void
-gscms_get_name2device_link(gsicc_link_t *icclink, gs_color_space  *namedcolor_profile, 
-                    gs_color_space *output_colorspace, gs_color_space *proof_colorspace, 
-                    gsicc_rendering_param_t *rendering_params)
+gscms_get_name2device_link(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle, 
+                    gcmmhprofile_t lcms_deshandle, gcmmhprofile_t lcms_proofhandle, 
+                    gsicc_rendering_param_t *rendering_params, gsicc_manager_t *icc_manager)
 {
 
     cmsHPROFILE hTransform; 
     _LPcmsTRANSFORM p;
-    cmsHPROFILE lcms_srchandle, lcms_deshandle, lcms_proofhandle;
      DWORD dwOutputFormat;
     DWORD lcms_proof_flag;
     int number_colors;
 
     /* NOTE:  We need to add a test here to check that we even HAVE
     device values in here and NOT just CIELAB values */
+  
+    if ( lcms_proofhandle != NULL ){
 
-    lcms_srchandle = GetProfileHandle(namedcolor_profile);
-
-    /* Otherwise go ahead and use the output and possibly proofing profile */
-
-    if(output_colorspace == NULL && proof_colorspace == NULL){
-
-        lcms_deshandle = NULL;
-        lcms_proofhandle = NULL;
+        lcms_proof_flag = cmsFLAGS_GAMUTCHECK | cmsFLAGS_SOFTPROOFING;
 
     } else {
- 
-        if ( proof_colorspace != NULL){
 
-            lcms_proofhandle = GetProfileHandle(proof_colorspace);
-            lcms_proof_flag = cmsFLAGS_GAMUTCHECK | cmsFLAGS_SOFTPROOFING;
+        lcms_proof_flag = 0;
 
-        } else {
-
-            lcms_proofhandle = NULL;
-            lcms_proof_flag = 0;
-
-        }
-
-        lcms_deshandle = GetProfileHandle(output_colorspace);
     }
 
     /* Create the transform */

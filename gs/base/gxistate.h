@@ -30,7 +30,7 @@
 #include "gscspace.h"
 #include "gstrans.h"
 #include "gsnamecl.h"
-#include "gsiccmanage.h"
+/* #include "gsiccmanage.h" */
 
 /*
   Define the subset of the PostScript graphics state that the imager library
@@ -242,8 +242,8 @@ typedef struct gs_devicen_color_map_s {
 	bool have_pattern_streams;\
 	float smoothness;\
 	int renderingintent; /* See gsstate.c */\
-        gsicc_manager_t *icc_manager;  /* ICC color manager, profiles */\
-        gsicc_link_cache_t *icc_cache;  /* ICC linked transforms */\
+  /*      gsicc_manager_t *icc_manager; */ /* ICC color manager, profiles */\
+  /*      gsicc_link_cache_t *icc_cache; */ /* ICC linked transforms */\
 	CUSTOM_COLOR_PTR	/* Pointer to custom color callback struct */\
 	const gx_color_map_procs *\
 	  (*get_cmap_procs)(const gs_imager_state *, const gx_device *);\

@@ -18,36 +18,49 @@
 #ifndef gsicc_littlecms_INCLUDED
 #  define gsicc_littlecms_INCLUDED
 
+#include "gxcvalue.h"
+#include "gscms.h"
 
+typedef cmsHPROFILE gcmmhprofile_t;
 
-void
-gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t input_buff_desc,
-                             gsicc_bufferdesc_t output_buff_des, 
+/* Prototypes */
+static unsigned int cmsGetProfileSizeFromMem(void *buffer);
+
+cmsHPROFILE gscms_get_profile_handle(unsigned char *buffer);
+
+void gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_buff_desc,
+                             gsicc_bufferdesc_t *output_buff_desc, 
                              void *inputbuffer,
                              void *outputbuffer);
 
 
-int
-gscms_get_link(gsicc_link_t *icclink, gs_color_space  *input_colorspace, 
-                    gs_color_space *output_colorspace, 
-                    gsicc_rendering_param_t *rendering_params);
+void gscms_transform_color(gsicc_link_t *icclink,  
+                             void *inputcolor,
+                             void *outputcolor,
+                             void **contextptr);
+
+int gscms_get_link(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle, 
+                    gcmmhprofile_t lcms_deshandle, 
+                    gsicc_rendering_param_t *rendering_params, gsicc_manager_t *icc_manager);
 
 
 
-void
-gscms_get_named_color(void **contextptr);
+int gscms_get_link_proof(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle, 
+                    gcmmhprofile_t lcms_deshandle, gcmmhprofile_t lcms_proofhandle, 
+                    gsicc_rendering_param_t *rendering_params, gsicc_manager_t *icc_manager);
 
-void
-gscms_create(void **contextptr);
+void gscms_create(void **contextptr);
 
-void
-gscms_destroy(void **contextptr);
+void gscms_destroy(void **contextptr);
 
-void
-gscms_release_link(gsicc_link_t *icclink);
+void gscms_release_link(gsicc_link_t *icclink);
 
+int gscms_xform_named_color(gsicc_link_t *icclink,  float tint_value, const char* ColorName, 
+                        gx_color_value device_values[] ); 
 
-
+void gscms_get_name2device_link(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle, 
+                    gcmmhprofile_t lcms_deshandle, gcmmhprofile_t lcms_proofhandle, 
+                    gsicc_rendering_param_t *rendering_params, gsicc_manager_t *icc_manager);
 
 
 #endif

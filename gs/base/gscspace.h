@@ -311,7 +311,7 @@ struct gs_color_space_s {
     gs_id                      id;
     gs_color_space             *base_space;
     client_color_space_data_t  *pclient_color_space_data;
-    cmm_profile_t              *cmm_icc_profile_data;
+  /*  cmm_profile_t              *cmm_icc_profile_data;*/
     union {
 	gs_device_pixel_params   pixel;
 	gs_cie_defg *            defg;
