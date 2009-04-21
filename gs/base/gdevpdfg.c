@@ -187,6 +187,8 @@ pdf_viewer_state_from_imager_state(gx_device_pdf * pdev,
     pdf_viewer_state_from_imager_state_aux(&vs, pis);
     gx_hld_save_color(pis, pdevc, &vs.saved_fill_color);
     gx_hld_save_color(pis, pdevc, &vs.saved_stroke_color);
+    vs.fill_used_process_color = 0;
+    vs.stroke_used_process_color = 0;
     pdf_load_viewer_state(pdev, &vs);
 }
 
