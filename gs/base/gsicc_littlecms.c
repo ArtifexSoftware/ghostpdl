@@ -13,22 +13,7 @@
 
 /* gsicc interface to littleCMS */
 
-/*#include "math_.h"
-#include "memory_.h"
-#include "gx.h"
-#include "gserrors.h"
-#include "gsiccmanage.h"
-#include "gscms.h"
-#include "gscspace.h"
-#include "gsicc_littlecms.h"*/
-
-#include "memory_.h"
-#include "gx.h"
-#include "gserrors.h"
-#include "gxcvalue.h"
-#include "gscms.h"
 #include "gsicc_littlecms.h"
-
 
 /* Get the size of the ICC profile that is in the buffer */
 static unsigned int

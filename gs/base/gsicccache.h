@@ -18,18 +18,7 @@
 #ifndef gsicccache_INCLUDED
 #  define gsicccache_INCLUDED
 
-/* #include "stdint_.h"
-#include "scommon.h"
-#include "gscdefs.h"
-#include "gsstruct.h"
-#include "gsutil.h" */        /* Need for the object types */
-/* #include "gsiccmanage.h" */
-
-#include "memory_.h"
 #include "gx.h"
-#include "gserrors.h"
-#include "stdint_.h"
-#include "gscms.h"
 
 gsicc_link_cache_t* gsicc_cache_new(int cachesize, gs_memory_t *memory);
 

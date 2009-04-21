@@ -12,28 +12,8 @@
 */
 /*  GS ICC Manager.  Initial stubbing of functions.  */
 
-
-/*#include "math_.h"
-#include "memory_.h"
-#include "gx.h"
-#include "gserrors.h"
-#include "gsiccmanage.h"
-#include "gxistate.h"
-#include "gscms.h"
-#include "gscie.h"
-#include "smd5.h"  
-#include "gscspace.h"
-*/
-
-/* #include "memory_.h"
-#include "gx.h"
-#include "gserrors.h"
-#include "gscspace.h"
-#include "gxcspace.h" */
 #include "gscms.h"
 #include "gsiccmanage.h"
-#include "gsicc_littlecms.h"
-
 
 /*  Initialize the CMS 
     Prepare the ICC Manager

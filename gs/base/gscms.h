@@ -18,22 +18,12 @@
 #ifndef gscms_INCLUDED
 #  define gscms_INCLUDED
 
-/* #include "stdint_.h"
-#include "scommon.h"
-#include "gscdefs.h"
-#include "gsstruct.h"
-#include "gsutil.h" */        /* Need for the object types */
-
-#include "memory_.h"
-#include "gx.h"
-#include "gserrors.h"
-#include "stdint_.h"
-#include "scommon.h"
-#include "gscdefs.h"
-#include "gsstruct.h"  
+#include "std.h"
+#include "stdpre.h"
+#include "gstypes.h"
 #include "gsutil.h"       /* Need for the object types */
-#include "lcms.h"
 #include "stdint_.h"
+#include "lcms.h"
 
 typedef cmsHPROFILE gcmmhprofile_t;
 

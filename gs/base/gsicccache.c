@@ -12,24 +12,15 @@
 */
 /*  GS ICC link cache.  Initial stubbing of functions.  */
 
-
-/*#include "math_.h"
-#include "memory_.h"
-#include "gx.h"
-#include "gserrors.h"
-#include "gsiccmanage.h"
-#include "gxistate.h"
+#include "std.h"
+#include "stdpre.h"
+#include "gstypes.h"
+#include "gsmemory.h"
+#include "gsstruct.h"  
+#include "scommon.h"
+#include "smd5.h" 
 #include "gscms.h"
-#include "gscie.h"
-#include "smd5.h"  
-#include "gscspace.h"
-#include "gscms.h"*/
-
-#include "memory_.h"
-#include "gx.h"
-#include "gserrors.h"
-#include "smd5.h"  
-#include "gscms.h"
+#include "gsicc_littlecms.h" 
 #include "gsicccache.h"
 
 #define ICC_CACHE_MAXLINKS 50   /* Note that the the external memory used to 
@@ -391,8 +382,11 @@ gsicc_get_link(gs_imager_state * pis, gs_color_space  *input_colorspace,
     gsicc_link_t *link;
     void **contextptr = NULL;
     int ok;
-    gsicc_manager_t *icc_manager = pis->icc_manager;
-    gsicc_link_cache_t *icc_cache = pis->icc_cache;
+/*    gsicc_manager_t *icc_manager = pis->icc_manager;
+    gsicc_link_cache_t *icc_cache = pis->icc_cache; */
+
+    gsicc_manager_t *icc_manager = NULL;
+    gsicc_link_cache_t *icc_cache = NULL; 
 
     /* First compute the hash code for the incoming case */
 
@@ -440,7 +434,8 @@ gsicc_get_link(gs_imager_state * pis, gs_color_space  *input_colorspace,
 
     /* Now get the link */
 
-    ok = gscms_get_link(link,input_colorspace,output_colorspace,rendering_params, pis->icc_manager);
+//    ok = gscms_get_link(link,input_colorspace,output_colorspace,rendering_params, pis->icc_manager);
+      ok = gscms_get_link(link,input_colorspace,output_colorspace,rendering_params, NULL);
     
     if (ok){
 

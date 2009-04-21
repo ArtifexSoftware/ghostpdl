@@ -18,17 +18,6 @@
 #ifndef gsiccmanage_INCLUDED
 #  define gsiccmanage_INCLUDED
 
-/*#include "stdint_.h"
-#include "scommon.h"
-#include "gscdefs.h"
-#include "gsstruct.h"
-#include "gsutil.h"       */  /* Need for the object types */
-
-#include "memory_.h"
-#include "gx.h"
-#include "gserrors.h"
-#include "gscms.h"
-
 /* Prototypes */
 
 void gsicc_create();
