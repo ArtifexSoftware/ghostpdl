@@ -450,6 +450,7 @@ gxpcolor_h=$(GLSRC)gxpcolor.h\
 gscolor_h=$(GLSRC)gscolor.h $(gxtmap_h)
 gsstate_h=$(GLSRC)gsstate.h\
  $(gscolor_h) $(gscpm_h) $(gscsel_h) $(gsdevice_h) $(gsht_h) $(gsline_h)
+gscolorbuffer_h=$(GLSRC)gscolorbuffer.h
 
 gzacpath_h=$(GLSRC)gzacpath.h $(GLSRC)gxcpath.h
 gzcpath_h=$(GLSRC)gzcpath.h $(gxcpath_h) $(gzpath_h)
@@ -2477,6 +2478,12 @@ $(GLOBJ)gsncdummy.$(OBJ) : $(GLSRC)gsncdummy.c $(GXERR) $(math__h)\
 	$(memory__h) $(gscdefs_h) $(gscspace_h) $(gscie_h) $(gsicc_h)\
 	$(gxdevice_h) $(gzstate_h) $(gsutil_h) $(gxcie_h) $(gsncdummy_h)
 	$(GLCC) $(GLO_)gsncdummy.$(OBJ) $(C_) $(GLSRC)gsncdummy.c
+	
+# ---------------- Color Buffer Proc. Support Used In Trans. ---------------- #
+
+$(GLOBJ)gscolorbuffer.$(OBJ) : $(GLSRC)gscolorbuffer.c $(GXERR)\
+	$(stdpre_h) $(gstypes_h) $(gsmemory_h) $(gxblend_h)
+	$(GLCC) $(GLO_)gscolorbuffer.$(OBJ) $(C_) $(GLSRC)gscolorbuffer.c
 
 # ================ Display Postscript extensions ================ #
 
@@ -2560,15 +2567,15 @@ $(GLD)traplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(traplib_)
 
 # ---------------- Transparency ---------------- #
 
-gstrans_h=$(GLSRC)gstrans.h $(gstparam_h) $(gxcomp_h) $(gsmatrix_h)
+gstrans_h=$(GLSRC)gstrans.h $(gstparam_h) $(gxcomp_h) $(gsmatrix_h) $(gxblend_h)
 gsipar3x_h=$(GLSRC)gsipar3x.h $(gsiparam_h) $(gsiparm3_h)
 gximag3x_h=$(GLSRC)gximag3x.h $(gsipar3x_h) $(gxiparam_h)
-gxblend_h=$(GLSRC)gxblend.h $(gxcindex_h) $(gxcvalue_h) $(gxxfrac_h)
+gxblend_h=$(GLSRC)gxblend.h $(gxcindex_h) $(gxcvalue_h) $(gxxfrac_h) $(gxdevcli_h)
 gdevp14_h=$(GLSRC)gdevp14.h $(GLSRC)gxcmap.h
 
 $(GLOBJ)gstrans.$(OBJ) : $(GLSRC)gstrans.c $(GXERR)\
- $(math__h) $(memory__h) $(gdevp14_h)\
- $(gstrans_h) $(gsutil_h) $(gxdevcli_h) $(gzstate_h)
+ $(math__h) $(memory__h) $(gdevp14_h) $(gstrans_h)\
+ $(gsutil_h) $(gxdevcli_h) $(gzstate_h) $(gscspace_h)
 	$(GLCC) $(GLO_)gstrans.$(OBJ) $(C_) $(GLSRC)gstrans.c
 
 $(GLOBJ)gximag3x.$(OBJ) : $(GLSRC)gximag3x.c $(GXERR) $(math__h) $(memory__h)\
@@ -2578,24 +2585,25 @@ $(GLOBJ)gximag3x.$(OBJ) : $(GLSRC)gximag3x.c $(GXERR) $(math__h) $(memory__h)\
 	$(GLCC) $(GLO_)gximag3x.$(OBJ) $(C_) $(GLSRC)gximag3x.c
 
 $(GLOBJ)gxblend.$(OBJ) : $(GLSRC)gxblend.c $(GX) $(memory__h)\
- $(gstparam_h) $(gxblend_h)
+ $(gstparam_h) $(gxblend_h) $(gxcolor2_h) 
 	$(GLCC) $(GLO_)gxblend.$(OBJ) $(C_) $(GLSRC)gxblend.c
 
 $(GLOBJ)gxblend1.$(OBJ) : $(GLSRC)gxblend1.c $(GX) $(memory__h)\
  $(gstparam_h) $(gxrect_h) $(gxdcconv_h) $(gxblend_h) $(gxdevcli_h) $(gxistate_h)\
- $(gdevdevn_h) $(gdevp14_h) $(vdtrace_h)
+ $(gdevdevn_h) $(gdevp14_h) $(vdtrace_h) $(gxdcconv_h)
 	$(GLCC) $(GLO_)gxblend1.$(OBJ) $(C_) $(GLSRC)gxblend1.c
 
 $(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(GXERR) $(math__h) $(memory__h)\
  $(gscdefs_h) $(gxdevice_h) $(gsdevice_h) $(gsstruct_h) $(gscoord_h) $(gxistate_h) $(gxdcolor_h)\
  $(gxiparam_h) $(gstparam_h) $(gxblend_h) $(gxtext_h) $(gsdfilt_h) $(gsimage_h)\
  $(gsrect_h) $(gzstate_h) $(gdevdevn_h) $(gdevp14_h) $(gsovrc_h) $(gxcmap_h) $(gscolor1_h)\
- $(gstrans_h) $(gsutil_h) $(gxcldev_h) $(gxclpath_h) $(gxdcconv_h) $(vdtrace_h)
+ $(gstrans_h) $(gsutil_h) $(gxcldev_h) $(gxclpath_h) $(gxdcconv_h) $(vdtrace_h)\
+ $(gscolorbuffer_h) $(gsptype2_h)
 	$(GLCC) $(GLO_)gdevp14.$(OBJ) $(C_) $(GLSRC)gdevp14.c
 
 translib_=$(GLOBJ)gstrans.$(OBJ) $(GLOBJ)gximag3x.$(OBJ)\
  $(GLOBJ)gxblend.$(OBJ) $(GLOBJ)gxblend1.$(OBJ) $(GLOBJ)gdevp14.$(OBJ) $(GLOBJ)gdevdevn.$(OBJ)\
- $(GLOBJ)gdevdcrd.$(OBJ)
+ $(GLOBJ)gdevdcrd.$(OBJ) $(GLOBJ)gscolorbuffer.$(OBJ)
 $(GLD)translib.dev : $(LIB_MAK) $(ECHOGS_XE) $(translib_)\
  $(GLD)cspixlib.dev $(GLD)bboxutil.dev $(GLD)cielib.dev
 	$(SETMOD) $(GLD)translib $(translib_)

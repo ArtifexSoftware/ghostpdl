@@ -82,7 +82,8 @@ read_color_index(gx_color_index * pcindex, const byte * data, uint size)
         if (++nbytes > size)
             return_error(gs_error_rangecheck);
         else {
-            int     c = *data;
+            unsigned char byte = *data;
+            gx_color_index c = byte;
 
             cindex += (c & 0x7f) << shift;
             if ((c & 0x80) == 0)

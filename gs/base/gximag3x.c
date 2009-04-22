@@ -599,8 +599,20 @@ gx_image3x_plane_data(gx_image_enum_common_t * info,
     h = min(height, h1);
     /* Initialized rows_used in case we get an error. */
     *rows_used = 0;
+
+/* FIX_ME.  In the soft mask branch
+   the file associated with bug 689290
+   gets into an endless loop.  This
+   is related to the size mismatch of the 
+   soft mask which is 1x1 and the 
+   image size */
+
     if (h <= 0)
+#ifdef ENDLESS_LOOP     
 	return 0;
+#else
+        return 1;
+#endif
 
     /* Handle masks from separate sources. */
     for (i = 0; i < NUM_MASKS; ++i)

@@ -24,6 +24,7 @@
 #include "gdevdevn.h"
 #include "gdevp14.h"
 #include "vdtrace.h"
+#include "gxdcconv.h"
 
 #ifdef DUMP_TO_PNG
 #include "png_.h"
@@ -32,8 +33,7 @@
 /*
  * Unpack a device color.  This routine is similar to the device's
  * decode_color procedure except for two things.  The procedure produces 1
- * byte values instead of gx_color_values (2 bytes) and the output values
- * are inverted for subtractive color spaces (like CMYK).  A separate
+ * byte values instead of gx_color_values (2 bytes).  A separate
  * procedure is used instead of the decode_color to minimize execution time.
  */
 void
@@ -138,11 +138,14 @@ pdf14_unpack_custom(int num_comp, gx_color_index color,
 	out[i] = 0xff - gx_color_value_to_byte(cm_values[i]);
 }
 
-
+#if RAW_DUMP
+extern unsigned int global_index;
+#endif
 
 void
 pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool has_shape)
 {
+
     /* make copy of backdrop for compositing */
     int x0 = max(buf->rect.p.x, tos->rect.p.x);
     int x1 = min(buf->rect.q.x, tos->rect.q.x);
@@ -154,7 +157,8 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool has_shape)
 	byte *buf_plane = buf->data + x0 - buf->rect.p.x + (y0 - buf->rect.p.y) * buf->rowstride;
 	byte *tos_plane = tos->data + x0 - tos->rect.p.x + (y0 - tos->rect.p.y) * tos->rowstride;
 	int i;
-	int n_chan_copy = buf->n_chan + (tos->has_shape ? 1 : 0);
+	/*int n_chan_copy = buf->n_chan + (tos->has_shape ? 1 : 0);*/
+	int n_chan_copy = tos->n_chan + (tos->has_shape ? 1 : 0);
 
 	for (i = 0; i < n_chan_copy; i++) {
 		byte *buf_ptr = buf_plane;
@@ -172,7 +176,28 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool has_shape)
 	if (has_shape && !tos->has_shape)
 	    memset (buf_plane, 0, buf->planestride);
     }
+
+
+#if RAW_DUMP
+
+    if (x0 < x1 && y0 < y1) {
+        
+        byte *buf_plane = buf->data + x0 - buf->rect.p.x + 
+            (y0 - buf->rect.p.y) * buf->rowstride;
+
+        dump_raw_buffer(y1-y0, x1 - x0, buf->n_planes,
+                    buf->planestride, buf->rowstride, 
+                    "BackDropInit",buf_plane);
+
+        global_index++;
+
+    }
+
+#endif
+
 }
+
+
 
 void
 pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf, 
@@ -206,6 +231,9 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     int nos_shape_offset = n_chan * nos_planestride;
     bool nos_has_shape = nos->has_shape;
     byte *mask_tr_fn = NULL; /* Quiet compiler. */
+#if RAW_DUMP
+    byte *composed_ptr = NULL;
+#endif
 
     rect_merge(nos->bbox, tos->bbox);
 
@@ -223,6 +251,28 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
 	mask_bg_alpha = maskbuf->alpha;
 	mask_tr_fn = maskbuf->transfer_fn;
     }
+
+#if RAW_DUMP
+
+    composed_ptr = nos_ptr;
+
+    dump_raw_buffer(y1-y0, width, tos->n_planes,
+            tos_planestride, tos->rowstride, 
+            "ImageTOS",tos_ptr);
+
+    dump_raw_buffer(y1-y0, width, nos->n_planes,
+                nos_planestride, nos->rowstride, 
+                "ImageNOS",nos_ptr);
+
+    if(maskbuf != NULL){
+
+        dump_raw_buffer(y1-y0, width, maskbuf->n_planes,
+                        maskbuf->planestride, maskbuf->rowstride, 
+                        "Mask",mask_ptr);
+    }
+
+#endif
+
 
     for (y = y0; y < y1; ++y) {
 	for (x = 0; x < width; ++x) {
@@ -244,28 +294,9 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
 	    }
 
 	    if (mask_ptr != NULL) {
-		int mask_alpha = mask_ptr[x + num_comp * mask_planestride];
+
+                byte mask = mask_ptr[x];
 		int tmp;
-		byte mask;
-
-		    /*
-		    * The mask data is really monochrome.  Thus for additive (RGB)
-		    * we use the R channel for alpha since R = G = B.  For
-		    * subtractive (CMYK) we use the K channel.
-		    */
-		if (mask_alpha == 255) {
-		    /* todo: rgba->mask */
-		    mask = additive ? mask_ptr[x]
-				    : 255 - mask_ptr[x + 3 * mask_planestride];
-		} else if (mask_alpha == 0)
-		    mask = mask_bg_alpha;
-		else {
-		    int t2 = additive ? mask_ptr[x]
-				    : 255 - mask_ptr[x + 3 * mask_planestride];
-
-		    t2 = (t2 - mask_bg_alpha) * mask_alpha + 0x80;
-		    mask = mask_bg_alpha + ((t2 + (t2 >> 8)) >> 8);
-		}
 		mask = mask_tr_fn[mask];
 		tmp = pix_alpha * mask + 0x80;
 		pix_alpha = (tmp + (tmp >> 8)) >> 8;
@@ -332,7 +363,60 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
 	if (mask_ptr != NULL)
 	    mask_ptr += maskbuf->rowstride;
     }
+
+
+    /* Lets look at composed result */
+
+
+#if RAW_DUMP
+
+	/* The group alpha should disappear */
+    dump_raw_buffer(y1-y0, width, tos->n_planes - tos->has_alpha_g,
+                nos_planestride, nos->rowstride, 
+                "Composed",composed_ptr);
+
+    global_index++;
+
+
+#endif
+
 }
+
+/*
+ * Encode a list of smask colorant values into a gx_color_index_value.
+ * This has its own encoder as it may have a different number of colorants
+ * compared to the actual device.
+ */
+gx_color_index
+pdf14_encode_smask_color(gx_device *dev, const gx_color_value	colors[],int ncomp)
+{
+    int drop = sizeof(gx_color_value) * 8 - 8;
+    gx_color_index color = 0;
+    int i;
+
+    for (i = 0; i < ncomp; i++) {
+	color <<= 8;
+	color |= (colors[i] >> drop);
+    }
+    return (color == gx_no_color_index ? color ^ 1 : color);
+}
+
+/*
+ * Decode a gx_color_index value back to a list of colorant values.
+  * This has its own decoder as it may have a different number of colorants
+ * compared to the actual device.*/
+int
+pdf14_decode_smask_color(gx_device * dev, gx_color_index color, gx_color_value * out, int ncomp)
+{
+    int i;
+
+    for (i = 0; i < ncomp; i++) {
+	out[ncomp - i - 1] = (gx_color_value) ((color & 0xff) * 0x101);
+	color >>= 8;
+    }
+    return 0;
+}
+
 
 /*
  * Encode a list of colorant values into a gx_color_index_value.

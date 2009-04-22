@@ -55,7 +55,7 @@ colored_halftone_colors_used(gx_device_clist_writer *cldev,
      * standard CMYK color mapping function.
      */
     if (dev_proc(cldev, map_cmyk_color) != cmyk_1bit_map_cmyk_color)
-	return ((gx_color_index)1 << cldev->color_info.depth) - 1;
+	return ((gx_color_index)1 << cldev->color_info.depth) - 1;  /* What about tranparency?  Need to check this */
     /*
      * Note that c_base[0], and the low-order bit of plane_mask,
      * correspond to cyan: this requires reversing the bit order of
@@ -226,7 +226,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     } while (left);
 
     /* should properly calculate colors_used, but for now just punt */
-    pcls->colors_used.or = ((gx_color_index)1 << cldev->color_info.depth) - 1;
+    pcls->colors_used.or = ((gx_color_index)1 << cldev->clist_color_info.depth) - 1;
 
     /* Here we can't know whether a pattern paints colors besides 
        black and white, so assume that it does.
@@ -273,7 +273,7 @@ cmd_drawing_colors_used(gx_device_clist_writer *cldev,
     else if (gx_dc_is_colored_halftone(pdcolor))
 	return colored_halftone_colors_used(cldev, pdcolor);
     else
-	return ((gx_color_index)1 << cldev->color_info.depth) - 1;
+	return ((gx_color_index)1 << cldev->clist_color_info.depth) - 1;
 }
 
 

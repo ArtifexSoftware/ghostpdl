@@ -110,6 +110,10 @@ zbuildpattern1(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
     
+    code = dict_bool_param(op1, ".pattern_uses_transparency", 0, &template.uses_transparency);
+    if (code < 0)
+        return code;
+
     code = dict_floats_param(imemory, op1, "BBox", 4, BBox, NULL);
     if (code < 0)
         return code;
@@ -231,9 +235,14 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
 	return code;
     }
     /* gx_set_device_only(pgs, (gx_device *) pdev); */
-    if (internal_accum)
+    if (internal_accum) {
 	gs_setdevice_no_init(pgs, (gx_device *)pdev);
-    else {
+	if (pinst->template.uses_transparency) {
+	    if_debug0('v', "   pushing the pdf14 compositor device into this graphics state\n");
+	    if ((code = gs_push_pdf14trans_device(pgs)) < 0)
+		return code;
+	}
+    } else {
 	gs_matrix m;
 	gs_rect bbox;
 	gs_fixed_rect clip_box;
@@ -279,11 +288,22 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
 {
     int o_stack_adjust = ref_stack_count(&o_stack) - esp->value.intval;
     gx_device_forward *pdev = r_ptr(esp - 1, gx_device_forward);
+    gs_pattern1_instance_t *pinst =
+	(gs_pattern1_instance_t *)gs_currentcolor(igs->saved)->pattern;
 
     if (pdev != NULL) {
 	gx_color_tile *ctile;
-	int code = gx_pattern_cache_add_entry((gs_imager_state *)igs,
-					  pdev, &ctile);
+	int code;
+
+	if (pinst->template.uses_transparency) {
+	    gs_state *pgs = igs;
+	    int code;
+
+	    if_debug0('v', "   popping the pdf14 compositor device into this graphics state\n");
+	    if ((code = gs_pop_pdf14trans_device(pgs)) < 0)
+		return code;
+	} 
+	code = gx_pattern_cache_add_entry((gs_imager_state *)igs, pdev, &ctile);
 	if (code < 0)
 	    return code;
     }

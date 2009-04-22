@@ -281,6 +281,14 @@ struct gx_device_clist_writer_s {
     uint mask_id;
     uint temp_mask_id; /* Mask id of a mask of an image with SMask. */
     bool is_fillpage;
+    gx_device_color_info clist_color_info; /* color information to be used during clist writing.  
+                                           It may be different than the target device if we 
+                                           are in a transparency group.  Since the fill rect 
+                                           commands use the forward procs and we have no 
+                                           access to the graphic state information in those
+                                           routines, this is the logical place to put this
+                                           information */
+
 };
 #ifndef gx_device_clist_writer_DEFINED
 #define gx_device_clist_writer_DEFINED

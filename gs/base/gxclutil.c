@@ -500,7 +500,8 @@ cmd_put_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	    return code;
     } else {
 	/* Check if the "delta" mode command can be used. */
-	int num_bytes = (cldev->color_info.depth + 7) >> 3;
+	int num_bytes = (cldev->clist_color_info.depth + 7) >> 3;  /* clist_color_info may be different than target device
+                                                                      due to transparency group during clist writing phase */
 	int delta_bytes = (num_bytes + 1) / 2;
 	gx_color_index delta_offset = cmd_delta_offsets[num_bytes];
 	gx_color_index delta_mask = cmd_delta_masks[num_bytes];

@@ -31,6 +31,58 @@ typedef enum {
 typedef struct pdf14_buf_s pdf14_buf;
 #endif
 
+/*
+ * This structure contains procedures for processing routine which differ
+ * between the different blending color spaces.
+ */
+typedef struct {
+    /*
+     * Unpack a device color.  This routine is similar to the device's
+     * decode_color procedure except for two things.  The procedure produces
+     * 1 byte values instead of gx_color_values (2 bytes) and the output
+     * values are inverted for subtractive color spaces (like CMYK).
+     * A separate procedure is used instead of the decode_color to minimize
+     * execution time.
+     */
+    void (* unpack_color)(int num_comp, gx_color_index color,
+			       	pdf14_device * p14dev, byte * out);
+    /*
+     * This procedure sends the final rasterized transparency data to the
+     * output device as an image.
+     */
+    int (* put_image)(gx_device * dev,
+		    gs_imager_state * pis, gx_device * target);
+} pdf14_procs_s;
+
+typedef pdf14_procs_s pdf14_procs_t;
+
+/* A structure to hold information
+ * about the parent color related
+ * procs and other information.
+ * These may change depending upon
+ * if the blending space is different
+ * than the base space.  The structure
+ * is a list that is updated upon
+ * every transparency group push and pop */
+
+typedef struct pdf14_parent_color_s pdf14_parent_color_t;
+
+typedef struct pdf14_parent_color_s {
+
+    int num_components;
+    bool isadditive;
+    gx_color_polarity_t polarity;
+    byte depth;  /* used in clist writer cmd_put_color */
+    const gx_color_map_procs *(*get_cmap_procs)(const gs_imager_state *,
+						     const gx_device *);
+    const gx_cm_color_map_procs *(*parent_color_mapping_procs)(const gx_device *);
+    int (*parent_color_comp_index)(gx_device *, const char *, int, int); 
+    const pdf14_procs_t * unpack_procs;
+    const pdf14_nonseparable_blending_procs_t * parent_blending_procs;
+    pdf14_parent_color_t *previous;
+ 
+};
+
 typedef struct pdf14_ctx_s pdf14_ctx;
 
 struct pdf14_buf_s {
@@ -60,7 +112,14 @@ struct pdf14_buf_s {
     gs_int_rect bbox;
     pdf14_buf *maskbuf; /* Save pdf14_ctx_s::maksbuf. */
     bool idle;
+
+    bool SMask_is_CIE;
+    gs_transparency_mask_subtype_t SMask_SubType;
+
     uint mask_id;
+    pdf14_parent_color_t parent_color_info_procs;
+
+    gs_transparency_color_t color_space;  /* Different groups can have different spaces for blending */
 };
 
 struct pdf14_ctx_s {
@@ -97,30 +156,7 @@ typedef struct gs_pdf14trans_params_s gs_pdf14trans_params_t;
 typedef struct pdf14_device_s pdf14_device;
 #endif
 
-/*
- * This structure contains procedures for processing routine which differ
- * between the different blending color spaces.
- */
-typedef struct {
-    /*
-     * Unpack a device color.  This routine is similar to the device's
-     * decode_color procedure except for two things.  The procedure produces
-     * 1 byte values instead of gx_color_values (2 bytes) and the output
-     * values are inverted for subtractive color spaces (like CMYK).
-     * A separate procedure is used instead of the decode_color to minimize
-     * execution time.
-     */
-    void (* unpack_color)(int num_comp, gx_color_index color,
-			       	pdf14_device * p14dev, byte * out);
-    /*
-     * This procedure sends the final rasterized transparency data to the
-     * output device as an image.
-     */
-    int (* put_image)(gx_device * dev,
-		    gs_imager_state * pis, gx_device * target);
-} pdf14_procs_s;
 
-typedef pdf14_procs_s pdf14_procs_t;
 
 /*
  * Define the default post-clist (clist reader) PDF 1.4 compositing device.
@@ -155,6 +191,9 @@ typedef struct pdf14_device_s {
     dev_proc_decode_color(*my_decode_color);
     dev_proc_get_color_mapping_procs(*my_get_color_mapping_procs);
     dev_proc_get_color_comp_index(*my_get_color_comp_index);
+    
+    pdf14_parent_color_t *trans_group_parent_cmap_procs;
+
 } pdf14_device_t;
 
 /*

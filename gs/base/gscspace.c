@@ -193,6 +193,12 @@ bool gs_color_space_is_CIE(const gs_color_space * pcs)
 
 }
 
+/* See if the space is ICC based */
+bool gs_color_space_is_ICC(const gs_color_space * pcs)
+{
+    return(gs_color_space_get_index(pcs) == gs_color_space_index_CIEICC);
+}
+
 
 /* Get the number of components in a color space. */
 int

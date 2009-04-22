@@ -211,6 +211,8 @@ pdf_end_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev)
 {
     int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
 
+    if (!is_in_page(pdev)) 
+	return 0;	/* corresponds to check in pdf_begin_transparency_group */
     if (pdev->image_with_SMask) {
 	/* An internal group for the image implementation. 
 	   See pdf_begin_transparency_group. */
@@ -396,6 +398,7 @@ gdev_pdf_begin_transparency_mask(gx_device *dev,
 
 int
 gdev_pdf_end_transparency_mask(gx_device *dev,
+    gs_imager_state *pis,
     gs_transparency_mask_t **pptm)
 {
     return 0;

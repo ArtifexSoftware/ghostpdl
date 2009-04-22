@@ -1633,16 +1633,26 @@ currentdict /PDF2PS_matrix_key undef
 /extgstateusestransparency {	% <gstate dict> extgstateusestransparency <bool>
   //false exch		% Assume no transparency
   {			% establish loop context
-    exch pop oforce
     dup /BM knownoget { dup /Normal ne exch /Compatible ne and
 	                    { pop not exit } if
                           } if
     dup /ca knownoget { 1 ne { pop not exit } if } if
     dup /CA knownoget { 1 ne { pop not exit } if } if
     dup /SMask knownoget { /None ne { pop not exit } if } if
-    pop
-  } forall
+    pop exit
+  } loop
 } bind def
+
+% Check if transparency is used in a Pattern
+/patternusestransparency {	% <Pattern dict> patternusestransparency <bool>
+  //false exch		% Assume no transparency
+  {
+    4 dict 1 index resourceusestransparency { pop not exit } if
+    dup /ExtGState knownoget { extgstateusestransparency { pop not exit } if } if
+    pop exit
+  } loop
+} bind def
+
 
 % Check the Resources of a page or Form. Check for loops in the resource chain.
 /resourceusestransparency {	% <dict> <dict> resourceusestransparency <bool>
@@ -1658,7 +1668,15 @@ currentdict /PDF2PS_matrix_key undef
     } if
     2 copy //true put              % In the current chain.
     dup /ExtGState knownoget {
-      extgstateusestransparency
+      //false exch
+      { exch pop oforce extgstateusestransparency { pop //true exit } if
+      } forall
+      { pop //true exit } if
+    } if
+    dup /Pattern knownoget {
+      //false exch
+      { exch pop oforce patternusestransparency { pop //true exit } if
+      } forall
       { pop //true exit } if
     } if
     dup /XObject knownoget {

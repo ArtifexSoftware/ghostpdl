@@ -111,6 +111,7 @@ void
 gs_pattern1_init(gs_pattern1_template_t * ppat)
 {
     gs_pattern_common_init((gs_pattern_template_t *)ppat, &gs_pattern1_type);
+    ppat->uses_transparency = 0;	/* false */
 }
 
 /* Make an instance of a PatternType 1 pattern. */
@@ -169,8 +170,8 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     if_debug6('t', "[t]step_matrix=[%g %g %g %g %g %g]\n",
 	      inst.step_matrix.xx, inst.step_matrix.xy, inst.step_matrix.yx, 
 	      inst.step_matrix.yy, inst.step_matrix.tx, inst.step_matrix.ty);
-    if_debug4('t', "[t]bbox=(%g,%g),(%g,%g)\n",
-	      bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
+    if_debug5('t', "[t]bbox=(%g,%g),(%g,%g), uses_transparency=%d\n",
+	      bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y, inst.template.uses_transparency);
     {
 	float bbw = bbox.q.x - bbox.p.x;
 	float bbh = bbox.q.y - bbox.p.y;

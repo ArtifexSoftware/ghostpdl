@@ -85,6 +85,8 @@ typedef struct gs_transparency_group_params_s {
     bool image_with_SMask;
     bool idle;
     uint mask_id;
+    int group_color_numcomps;
+    gs_transparency_color_t group_color;
 } gs_transparency_group_params_t;
 
 /* Define the parameter structure for a transparency mask. */
@@ -99,6 +101,7 @@ typedef enum {
 /* See the gx_transparency_mask_params_t type below */
 /* (Update gs_trans_mask_params_init if these change.) */
 typedef struct gs_transparency_mask_params_s {
+    const gs_color_space *ColorSpace;
     gs_transparency_mask_subtype_t subtype;
     int Background_components;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
@@ -113,6 +116,9 @@ typedef struct gs_transparency_mask_params_s {
 /* The post clist version of transparency mask parameters */
 typedef struct gx_transparency_mask_params_s {
     gs_transparency_mask_subtype_t subtype;
+    bool SMask_is_CIE;
+    int group_color_numcomps;
+    gs_transparency_color_t group_color;
     int Background_components;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
     float GrayBackground;

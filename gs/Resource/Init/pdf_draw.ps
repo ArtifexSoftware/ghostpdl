@@ -397,12 +397,12 @@ end
 			% Stack: mark ... smaskdict
     dup /BC knownoget {
       dup /Background exch 4 2 roll
-      gsave
+      gsave //nodict begin
         1 index /G oget /Group oget /CS knownoget {
 	  resolvecolorspace dup setgcolorspace csput
 	} if
         aload pop setcolor [ currentgray ]
-      grestore
+      end grestore
       /GrayBackground exch 3 2 roll
     } if
     dup /TR knownoget {
@@ -418,16 +418,44 @@ end
   } ifelse SMask
 } bdef
 
+% Functions specific to the Device* colorspaces to force the switch to
+% the Device* colorspace so that the SMask will not get a CIEBased* colorspace
+% in the case when UseCIEColor changes the Device* colorspace to something else.
+% Also see the logic in pdf_main.ps:pdfopen that similarly defines these resources.
+/forceDefaultCS <<
+  {
+    currentcolorspace setcolorspace	% this will switch to Device colorspace
+  } bind
+  /DeviceGray exch
+  /DeviceRGB 1 index
+  /DeviceCMYK 1 index
+>>
+def
+
 % This procedure is called to actually render the soft mask.
 /.execmaskgroup {	% <masknum> <paramdict> <formdict> .execmaskgroup -
-	% Save our place in PDFfile, and do a gsave to avoid resetting
-	% the color space.
-  currentcolorspace 4 1 roll
+    % Save our place in PDFfile. Do not use gsave-grestore when creating
+    % a soft mask with .begintransparencygroup because high level devices
+    % need to modify the graphic state by storing the soft mask ID.
+    % Save the ExtGState (//nodict begin) BEFORE changing the colorspace
+  mark currentcolor counttomark dup 4 add exch roll pop
+  currentcolorspace 4 1 roll .getuseciecolor 4 1 roll //nodict begin
   PDFfile fileposition 4 1 roll
 	% We have to select the group's color space so that the
 	% background color will be interpreted correctly.
-  dup /Group oget /CS knownoget { resolvecolorspace dup setgcolorspace csput } if
-  exch dup /BBox get aload pop .begintransparencymaskgroup {
+	% [save/restore]DefaultCS make sure that the SMask logic sees
+	% the Device* spaces, not CIEBased* that UseCIEColor may have
+	% established.
+  false .setuseciecolor		% SMask gets processed without UseCIEColor
+  dup /Group oget /CS knownoget {
+    resolvecolorspace dup setgcolorspace csput
+    //true		% use currentcolorspace
+  } {
+    % inheriting the colorspace -- make sure Device* spaces are not CIEBased
+    forceDefaultCS currentcolorspace 0 get .knownget { exec } if
+    //false		% no defined colorspace
+  } ifelse
+  3 -1 roll dup /BBox get aload pop .begintransparencymaskgroup {
     dup /Resources knownoget { oforce } { 0 dict } ifelse
     exch false resolvestream
     .execgroup .endtransparencymask
@@ -435,12 +463,12 @@ end
     .discardtransparencymask stop
   } if
   PDFfile exch setfileposition 
-  setcolorspace
+  .setuseciecolor setcolorspace setcolor end	% restore colorspace, color and ExtGState (end)
 } bdef
 % Paint a Form+Group XObject, either for a transparency mask or for a Do.
 /.execgroup {		% <resdict> <stream> .execgroup -
   gsave //nodict begin
-  null SMask
+  newpath null SMask
   1 .setopacityalpha 1 .setshapealpha
   /Compatible .setblendmode
 	% Execute the body of the Form, similar to DoForm.
@@ -824,6 +852,7 @@ currentdict end readonly def
     2 index /Resources knownoget { oforce } { 0 dict } ifelse
     /.pdfpaintproc cvx
   ] cvx put
+  dup /.pattern_uses_transparency  1 index patternusestransparency put
   PDFDEBUG { pdfdict /PDFSTEPcount .knownget { 1 le } { true } ifelse { (%Pattern: ) print dup === flush } if } if
 } bdef
 
@@ -1112,24 +1141,41 @@ end
 } bdef
 
 /doimagesmask { % <imagemask> doimagesmask -
-  PDFusingtransparency { currentdict /SMask knownoget } { false } ifelse {
-    .begintransparencymaskimage
-    PDFfile fileposition exch
-    gsave //nodict begin
-    null /SoftMask gput
-    1 .setopacityalpha 1 .setshapealpha
-    /Compatible .setblendmode
-    DoImage
-    end grestore
-    PDFfile exch setfileposition
-    0 .endtransparencymask
+  PDFusingtransparency {
+    currentdict /SMask knownoget
+  } {
+    false
+  } ifelse
+  {	% We are doing transparency and SMask is present in the image
+	% stack: <imagemask> <SMask>
+    currentdevice .devicename /pdfwrite eq {
+      pop	% pdfwrite will process SMask directly during 'doimage'
+    } {
+      .begintransparencymaskimage
+      PDFfile fileposition exch
+      gsave //nodict begin
+      null /SoftMask gput
+      1 .setopacityalpha 1 .setshapealpha
+      /Compatible .setblendmode
+      DoImage
+      end grestore
+      PDFfile exch setfileposition
+      0 .endtransparencymask
+    } ifelse
     << /Subtype /Group /Isolated true 
       /.image_with_SMask true % pdfwrite needs : see gs/src/ztrans.c, gs/src/gdevpdft.c 
     >> 0 0 1 1 .begintransparencygroup
     doimage
     .endtransparencygroup
   } {
-    doimage
+    SoftMask //null ne {
+      % the image doesn't have an SMask, but the ExtGState does, force a group.
+      << /Subtype /Group /Isolated true >> 0 0 1 1 .begintransparencygroup
+      doimage
+      .endtransparencygroup
+    }
+    { doimage }
+    ifelse
   } ifelse
 } bdef
 
@@ -1168,9 +1214,7 @@ end
     % which is done under a rush of 8.63 release.
     % The purpose is to disable a conversion of an image with soft mask
     % into a Type 103 image, which currently allocates a full mask buffer
-    % before writing clist. Note that imagemask installs
-    % the transparency mask anyway (likely another bug), 
-    % so the image is still masked.
+    % before writing clist.
     % With this workaround the Matte color is not working (ignored).
     is_big_mask not 
   } {

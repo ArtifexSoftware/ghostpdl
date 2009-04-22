@@ -17,12 +17,202 @@
 #include "gx.h"
 #include "gstparam.h"
 #include "gxblend.h"
+#include "gxcolor2.h"
 
 typedef int art_s32;
 
 #if RAW_DUMP
-extern unsigned char global_index;
+extern unsigned int global_index;
+extern unsigned int clist_band_count;
 #endif
+
+/* This function is used for mapping the SMask source to a
+   monochrome luminosity value which basically is the alpha value 
+   Note, that separation colors are not allowed here.  Everything
+   must be in CMYK, RGB or monochrome.  */
+
+/* Note, data is planar */
+
+void 
+Smask_Luminosity_Mapping(int num_rows, int num_cols, int n_chan, int row_stride, 
+                         int plane_stride, byte *dst, const byte *src, bool isadditive,
+                         bool SMask_is_CIE, gs_transparency_mask_subtype_t SMask_SubType)
+{
+
+    int x,y;
+    int mask_alpha_offset,mask_C_offset,mask_M_offset,mask_Y_offset,mask_K_offset;
+    int mask_R_offset,mask_G_offset,mask_B_offset;
+    byte *dstptr;
+
+#if RAW_DUMP
+
+    dump_raw_buffer(num_rows, row_stride, n_chan,
+                plane_stride, row_stride, 
+                "Raw_Mask", src);
+
+    global_index++;
+
+#endif
+
+    dstptr = dst;
+
+    /* If we are CIE AND subtype is Luminosity then we should just grab the Y channel */
+
+    if ( SMask_is_CIE && SMask_SubType == TRANSPARENCY_MASK_Luminosity ){
+
+ 
+        memcpy(dst, &(src[plane_stride]), plane_stride);
+        return;
+
+    }
+
+    /* If we are alpha type, then just grab that */ 
+    /* We need to optimize this so that we are only drawing alpha in the rect fills */
+
+    if ( SMask_SubType == TRANSPARENCY_MASK_Alpha ){
+
+        mask_alpha_offset = (n_chan - 1) * plane_stride;
+        memcpy(dst, &(src[mask_alpha_offset]), plane_stride);
+        return;
+
+    }
+
+    /* To avoid the if statement inside this loop, 
+    decide on additive or subractive now */
+
+    if (isadditive || n_chan == 2)
+    {
+
+        /* Now we need to split Gray from RGB */
+
+        if( n_chan == 2 )
+        {
+            /* Gray Scale case */
+
+           mask_alpha_offset = (n_chan - 1) * plane_stride;
+           mask_R_offset = 0;
+
+            for ( y = 0; y < num_rows; y++ )
+            {
+     
+                for ( x = 0; x < num_cols; x++ ){
+
+                    /* With the current design this will indicate if 
+                    we ever did a fill at this pixel. if not then move on.
+                    This could have some serious optimization */
+                               
+	            if (src[x + mask_alpha_offset] != 0x00) {
+
+                        dstptr[x] = src[x + mask_R_offset];
+
+                    } 
+
+                }
+
+               dstptr += row_stride;
+               mask_alpha_offset += row_stride;
+               mask_R_offset += row_stride;
+
+            }
+
+        } else {
+
+
+
+            /* RGB case */
+
+           mask_R_offset = 0;
+           mask_G_offset = plane_stride;
+           mask_B_offset = 2 * plane_stride;
+           mask_alpha_offset = (n_chan - 1) * plane_stride;
+
+            for ( y = 0; y < num_rows; y++ )
+            {
+     
+               for ( x = 0; x < num_cols; x++ ){
+
+                    /* With the current design this will indicate if 
+                    we ever did a fill at this pixel. if not then move on */
+                               
+	            if (src[x + mask_alpha_offset] != 0x00) {
+
+	                /* Get luminosity of Device RGB value */
+
+                        float temp;
+
+                        temp = ( 0.30 * src[x + mask_R_offset] + 
+                            0.59 * src[x + mask_G_offset] + 
+                            0.11 * src[x + mask_B_offset] );
+     
+                        temp = temp * (1.0 / 255.0 );  /* May need to be optimized */
+	                dstptr[x] = float_color_to_byte_color(temp);
+
+                    } 
+
+                }
+
+               dstptr += row_stride;
+               mask_alpha_offset += row_stride;
+               mask_R_offset += row_stride;
+               mask_G_offset += row_stride;
+               mask_B_offset += row_stride;
+
+            }
+            
+        }
+
+    } else {
+
+       /* CMYK case */
+
+       mask_alpha_offset = (n_chan - 1) * plane_stride;
+       mask_C_offset = 0;
+       mask_M_offset = plane_stride;
+       mask_Y_offset = 2 * plane_stride;
+       mask_K_offset = 3 * plane_stride;
+
+       for ( y = 0; y < num_rows; y++ ){
+
+            for ( x = 0; x < num_cols; x++ ){
+
+                /* With the current design this will indicate if 
+                we ever did a fill at this pixel. if not then move on */
+                            
+	        if (src[x + mask_alpha_offset] != 0x00){
+
+                  /* PDF spec says to use Y = 0.30 (1 - C)(1 - K) + 
+                  0.59 (1 - M)(1 - K) + 0.11 (1 - Y)(1 - K) */
+                    /* For device CMYK */
+
+                    float temp;
+
+                    temp = ( 0.30 * ( 0xff - src[x + mask_C_offset]) + 
+                        0.59 * ( 0xff - src[x + mask_M_offset]) + 
+                        0.11 * ( 0xff - src[x + mask_Y_offset]) ) * 
+                        ( 0xff - src[x + mask_K_offset]);
+
+                    temp = temp * (1.0 / 65025.0 );  /* May need to be optimized */
+
+	            dstptr[x] = float_color_to_byte_color(temp);
+
+                } 
+ 
+            }
+
+           dstptr += row_stride;
+           mask_alpha_offset += row_stride;
+           mask_C_offset += row_stride;
+           mask_M_offset += row_stride;
+           mask_Y_offset += row_stride;
+           mask_K_offset += row_stride;
+
+        }
+
+
+    }
+
+
+}
 
 void
 art_blend_luminosity_rgb_8(int n_chan, byte *dst, const byte *backdrop,
@@ -1236,13 +1426,20 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
     FILE *fid;
     int z,y;
     byte *buff_ptr;
+    int max_bands;
+
+   /* clist_band_count is incremented at every pdf14putimage */
+   /* Useful for catching this thing and only dumping */
+   /* during a particular band if we have a large file */
+   /* if (clist_band_count != 80) return; */
 
     buff_ptr = Buffer;
 
-    sprintf(full_file_name,"%d)%s_%dx%dx%d.raw",global_index,filename,width,num_rows,n_chan);
+    max_bands = ( n_chan < 57 ? n_chan : 56);   /* Photoshop handles at most 56 bands */
+    sprintf(full_file_name,"%d)%s_%dx%dx%d.raw",global_index,filename,width,num_rows,max_bands);
     fid = fopen(full_file_name,"wb");
 
-    for (z = 0; z < n_chan; ++z) {
+    for (z = 0; z < max_bands; ++z) {
 
         /* grab pointer to the next plane */
 
