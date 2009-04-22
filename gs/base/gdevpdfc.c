@@ -565,7 +565,8 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
         /*
 	 * Take a special early exit for unrecognized ICCBased color spaces,
 	 * or for PDF 1.2 output (ICCBased color spaces date from PDF 1.3).
-	 */
+	 */ /* MJV To DO */
+#if 0
         if (pcs->params.icc.picc_info->picc == 0 ||
 	    pdev->CompatibilityLevel < 1.3
 	    ) {
@@ -575,6 +576,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
                                     pcs->base_space,
                                     pcsn, by_name);
 	}
+#endif
         break;
     default:
 	break;

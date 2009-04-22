@@ -50,7 +50,7 @@ struct _icmFileGs {
 static void
 cie_icc_finalize(void * pvicc_info)
 {
-    gs_cie_icc *    picc_info = (gs_cie_icc *)pvicc_info;
+ /*   gs_cie_icc *    picc_info = (gs_cie_icc *)pvicc_info;
 
     if (picc_info->plu != NULL) {
         picc_info->plu->del(picc_info->plu);
@@ -63,7 +63,7 @@ cie_icc_finalize(void * pvicc_info)
     if (picc_info->pfile != NULL) {
         picc_info->pfile->del(picc_info->pfile);
         picc_info->pfile = NULL;
-    }
+    } */
 }
 
 private_st_cie_icc();
@@ -201,12 +201,17 @@ gx_restrict_CIEICC(gs_client_color * pcc, const gs_color_space * pcs)
 static const gs_color_space *
 gx_concrete_space_CIEICC(const gs_color_space * pcs, const gs_imager_state * pis)
 {
-    if (pcs->params.icc.picc_info->picc == NULL) {
+  /* MJV to FIX */
+  /*  if (pcs->params.icc.picc_info->picc == NULL) {
         const gs_color_space *  pacs = pcs->base_space;
 
         return cs_concrete_space(pacs, pis);
     } else
-        return gx_concrete_space_CIE(NULL, pis);
+        return gx_concrete_space_CIE(NULL, pis); */
+
+        const gs_color_space *  pacs = pcs->base_space;
+
+        return cs_concrete_space(pacs, pis);
 }
 
 /*
@@ -219,6 +224,11 @@ gx_concretize_CIEICC(
     frac *                  pconc,
     const gs_imager_state * pis )
 {
+
+/* MJV to FIX */
+
+#if 0
+
     const gs_icc_params *   picc_params = &pcs->params.icc;
     const gs_cie_icc *      picc_info = picc_params->picc_info;
     stream *                instrp = picc_info->instrp;
@@ -308,6 +318,9 @@ gx_concretize_CIEICC(
     vlmn.w = float2cie_cached(outv[2]);
 
     gx_cie_remap_finish(vlmn, pconc, pis, pcs);
+
+#endif
+
     return 0;
 }
 
@@ -433,6 +446,11 @@ gx_load_icc_profile(gs_cie_icc *picc_info)
     icc *           picc;
     icmLuBase * plu = NULL;
     icmFile *pfile = NULL;
+
+/* MJV to FIX */
+
+
+#if 0
 
 #if   SAVEICCPROFILE
 
@@ -601,6 +619,10 @@ gx_load_icc_profile(gs_cie_icc *picc_info)
     if (pfile != NULL)
 	pfile->del(pfile);
     return_error(gs_error_rangecheck);
+
+#endif
+
+    return 0;
 }
 
 /*
@@ -659,6 +681,11 @@ gs_cspace_build_CIEICC(
      * separate build routine that provided its own reference count freeing
      * procedure).
      */
+
+/* MJV to FIX */
+
+#if 0
+
     picc_info = gx_build_cie_space( ppcspace,
                                     &gs_color_space_type_CIEICC,
                                     &st_cie_icc,
@@ -687,6 +714,9 @@ gs_cspace_build_CIEICC(
 
     pcs = *ppcspace;
     pcs->params.icc.picc_info = picc_info;
+
+#endif
+
     return 0;
 }
 

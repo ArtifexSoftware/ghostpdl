@@ -31,8 +31,8 @@
  * The following two opaque declarations are used to get around this
  * limitation.
  */
-struct _icc;
-struct _icmLuBase;
+/* struct _icc;
+struct _icmLuBase; */
 
 /*
  * ICCBased color spaces are a feature of PDF 1.3. They are effectively a
@@ -120,13 +120,13 @@ struct gs_cie_icc_s {
     bool                pcs_is_cielab;
 
     /* top-level icclib data structure for the profile */
-    struct _icc *       picc;
+ /*   struct _icc *       picc; */
 
     /* "lookup" data structure in the ICC profile */
-    struct _icmLuBase * plu;
+ /*   struct _icmLuBase * plu; */
 
     /* icclib file object for ICC stream */
-    struct _icmFile   * pfile;
+   /* struct _icmFile   * pfile; */
 };
 
 /*

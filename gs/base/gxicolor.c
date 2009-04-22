@@ -252,8 +252,8 @@ do3:	if(spp == 3 && pcs->type->index == gs_color_space_index_CIEICC)
 			 We need to check if it is an LAB image */
 
 			picc_info = pcs->params.icc.picc_info;
-
-			if( picc_info->plu->e_inSpace == icSigLabData )
+/* MJV TO FIX */
+#if 0		        if( picc_info->plu->e_inSpace == icSigLabData )
 			{
 
 				/* It is a CIELAB image.  For now, put in true CIELAB float values rather than normalized 0 to 1 floats */
@@ -266,7 +266,8 @@ do3:	if(spp == 3 && pcs->type->index == gs_color_space_index_CIEICC)
 				decode_sample(next.v[2], cc, 2);
 				cc.paint.values[2] = 255.0*cc.paint.values[2] - 128.0;
 
-			} else {
+                        } else { 
+#endif
 
 				/* To floats */
 
@@ -274,7 +275,7 @@ do3:	if(spp == 3 && pcs->type->index == gs_color_space_index_CIEICC)
 				decode_sample(next.v[1], cc, 1);
 				decode_sample(next.v[2], cc, 2);
 
-			}
+			/*} */
 
 		} else {
 
