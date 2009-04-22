@@ -84,6 +84,9 @@ px_state_init(px_state_t *pxs, gs_state *pgs)
 	px_dict_init(&pxs->stream_dict, pxs->memory, NULL);
 	px_dict_init(&pxs->builtin_font_dict, pxs->memory, px_free_font);
 	px_dict_init(&pxs->font_dict, pxs->memory, px_free_font);
+        px_dict_init(&pxs->page_pattern_dict, pxs->memory, px_free_pattern);
+        px_dict_init(&pxs->session_pattern_dict, pxs->memory, px_free_pattern);
+        pxs->have_page = false;
 	pxs->warning_length = 0;
 }
 
