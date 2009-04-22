@@ -35,6 +35,10 @@
 
 int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 {
+
+    /* MJV to Fix */
+#if 0
+
     os_ptr                  op = osp;
     int edepth = ref_stack_count(&e_stack);
     int                     code, reuse_op = 0;
@@ -110,6 +114,9 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
                            &istate->colorspace.procs.cie,
                            edepth,
                            code );
+
+#endif
+    return 0;
 }
 
 /*
