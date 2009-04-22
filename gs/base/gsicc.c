@@ -32,7 +32,7 @@
 typedef struct _icmFileGs icmFileGs;
 
 struct _icmFileGs {
-    ICM_FILE_BASE
+   /* ICM_FILE_BASE */ /* MJV to Fix */
 
     /* Private: */
     stream *strp;
@@ -364,6 +364,7 @@ gx_final_CIEICC(const gs_color_space * pcs)
     rc_decrement_only(pcs->params.icc.picc_info, "gx_final_CIEICC");
 }
 
+#if 0 /* MJV to Fix */
 static int
 icmFileGs_seek(icmFile *pp, long int offset)
 {
@@ -406,6 +407,7 @@ icmFileGs_delete(icmFile *pp)
     free(pp);
     return 0;
 }
+#endif
 
 /**
  * gx_wrap_icc_stream: Wrap a Ghostscript stream as an icclib file.
@@ -422,6 +424,8 @@ icmFileGs_delete(icmFile *pp)
  * Return value: the stream wrapped as an icmFile object, or NULL on
  * error.
  **/
+
+#if 0 /*MJV to Fix */
 static icmFile *
 gx_wrap_icc_stream(stream *strp)
 {
@@ -439,14 +443,15 @@ gx_wrap_icc_stream(stream *strp)
 
     return (icmFile *)p;
 }
+#endif
 
 int
 gx_load_icc_profile(gs_cie_icc *picc_info)
 {
     stream *        instrp = picc_info->instrp;
-    icc *           picc;
+/*     icc *           picc; 
     icmLuBase * plu = NULL;
-    icmFile *pfile = NULL;
+    icmFile *pfile = NULL; */  /* MJV to Fix */
 
 /* MJV to FIX */
 

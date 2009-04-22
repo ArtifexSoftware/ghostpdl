@@ -23,9 +23,6 @@
 #include "gstypes.h"
 #include "gsutil.h"       /* Need for the object types */
 #include "stdint_.h"
-#include "lcms.h"
-
-typedef cmsHPROFILE gcmmhprofile_t;
 
 /*  The buffer description.  We
     may need to handle a variety
@@ -85,13 +82,13 @@ typedef enum {
     order and number of 
     colorants.  */
 
-typedef enum {
+/* typedef enum {
     DEVICE_GRAY,
     DEVICE_RGB,
     DEVICE_CMYK,
     DEVICE_N,
     NONDEVICE
-} gs_icc_devicecolor_t;
+} gs_icc_devicecolor_t; */
 
 /* A structure that is a member variable of the gs color space.
    See 

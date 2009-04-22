@@ -20,6 +20,8 @@
 
 /* Prototypes */
 
+#include "gsicc_littlecms.h"
+
 void gsicc_create();
 void gsicc_destroy();
 void gsicc_set_gray_profile(cmm_profile_t graybuffer);

@@ -64,7 +64,9 @@ ENUM_PTRS_BEGIN(imager_state_enum_ptrs)
     ENUM_PTR(0, gs_imager_state, client_data);
     ENUM_PTR(1, gs_imager_state, transparency_stack);
     ENUM_PTR(2, gs_imager_state, trans_device); 
-#define E1(i,elt) ENUM_PTR(i+3,gs_imager_state,elt);
+    ENUM_PTR(3, gs_imager_state, icc_manager);
+    ENUM_PTR(4, gs_imager_state, icc_cache);
+#define E1(i,elt) ENUM_PTR(i+5,gs_imager_state,elt);
     gs_cr_state_do_ptrs(E1)
 #undef E1
 ENUM_PTRS_END
@@ -74,6 +76,8 @@ static RELOC_PTRS_BEGIN(imager_state_reloc_ptrs)
     RELOC_PTR(gs_imager_state, client_data);
     RELOC_PTR(gs_imager_state, transparency_stack);
     RELOC_PTR(gs_imager_state, trans_device);
+    RELOC_PTR(gs_imager_state, icc_manager);
+    RELOC_PTR(gs_imager_state, icc_cache);
 #define R1(i,elt) RELOC_PTR(gs_imager_state,elt);
     gs_cr_state_do_ptrs(R1)
 #undef R1
@@ -128,6 +132,8 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
     pis->have_pattern_streams = false;
     pis->devicergb_cs = gs_cspace_new_DeviceRGB(mem);
     pis->devicecmyk_cs = gs_cspace_new_DeviceCMYK(mem);
+    pis->icc_cache = 0;
+    pis->icc_manager = 0;
     return 0;
 }
 

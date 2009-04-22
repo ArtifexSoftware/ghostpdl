@@ -19,6 +19,7 @@
 #  define gsicc_littlecms_INCLUDED
 
 #include "gxcvalue.h"
+#include "lcms.h"
 #include "gscms.h"
 
 typedef cmsHPROFILE gcmmhprofile_t;
