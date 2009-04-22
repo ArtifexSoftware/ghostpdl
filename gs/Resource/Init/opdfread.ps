@@ -152,6 +152,7 @@ end % A dictionary for local binding
 /TTFDEBUG DefaultSwitch
 /RotatePages DefaultSwitch
 /FitPages DefaultSwitch
+/CenterPages DefaultSwitch
 /SetPageSize DefaultSwitch
 
 /error  %  mark <object> .... error -
@@ -167,10 +168,16 @@ end % A dictionary for local binding
 } bind def
 
 //SetPageSize {
-  //RotatePages //FitPages or {
-    mark (/RotatePages, /FitPages are not allowed with /SetPageSize) //error exec
+  //RotatePages //FitPages or //CenterPages or{
+    mark (/RotatePages, /FitPages and CenterPages are not allowed with /SetPageSize) //error exec
   } if
-} if
+} 
+{
+  //FitPages //CenterPages and {
+    mark (CenterPages is not allowed with /FitPages) //error exec
+  } if
+}
+ifelse
 
 % ===================== Utilities =========================================
 
@@ -851,23 +858,43 @@ currentdict end readonly def
   } {
     false
   } ifelse
-  { //FitPages {
-      1 index 5 index div 1 index 7 index div           % bw bh px0 py0 pw ph sx sy
-      2 copy gt {
-        exch
+  { //CenterPages {
+        //PDFR_DEBUG {
+          (Rotating page, and then centering it) ==
+        } if
+        90 rotate
+        0 5 index neg translate
+        5 index 1 index exch sub 2 div  
+        2 index 6 index sub 2 div neg                   % bw bh px0 py0 pw ph lm bm
+        translate
+    } {
+      //FitPages {
+        1 index 5 index div 1 index 7 index div         % bw bh px0 py0 pw ph sx sy
+        2 copy gt {
+          exch
+        } if
+        pop dup scale                                   % bw bh px0 py0 pw ph
       } if
-      pop dup scale                                     % bw bh px0 py0 pw ph
-    } if
-    90 rotate
-    0 5 index neg translate
+      90 rotate
+      0 5 index neg translate
+    } ifelse
   } {
-    //FitPages {
-      1 index 6 index div 1 index 6 index div           % bw bh px0 py0 pw ph sx sy
-      2 copy gt {
-        exch
+    //CenterPages {
+        //PDFR_DEBUG {
+          (Ccentering page) ==
+        } if
+        1 index 6 index sub 2 div 
+        1 index 6 index sub 2 div                       % bw bh px0 py0 pw ph lm bm
+        translate
+    } {
+      //FitPages {
+        1 index 6 index div 1 index 6 index div         % bw bh px0 py0 pw ph sx sy
+        2 copy gt {
+          exch
+        } if
+        pop dup scale                                   % bw bh px0 py0 pw ph
       } if
-      pop dup scale                                     % bw bh px0 py0 pw ph
-    } if
+    } ifelse
   } ifelse                                               
   pop pop                                               % bw bh px0 py0
   translate                                             % bw bh

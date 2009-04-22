@@ -59,12 +59,7 @@ to Portable Document Format (PDF) files.
 <p>
 <code>ps2pdf</code> is implemented as a very small command script (batch
 file) that invokes Ghostscript, selecting a special "output device" called
-<code>pdfwrite</code>.  In order to use <b><tt>ps2pdf</tt></b>, the
-<code>pdfwrite</code> device must be included in the makefile when
-Ghostscript was compiled; see the <a
-href="Make.htm#Features_and_devices">documentation on building
-Ghostscript</a> for details: this is currently the case on all platforms, in
-Ghostscript as we distribute it.
+<code>pdfwrite</code>.
 
 <hr>
 
@@ -244,6 +239,14 @@ Acrobat Distiller "eBook" setting.
 wide variety of uses, possibly at the expense of a larger output file.
 
 </ul>
+
+<dt><code>-dNumCopies</code>
+<dd>When present, causes pdfwrite to use the #copies or /NumCopies entry in the page
+device dictionary to duplicate each page in the output PDF file as many times as
+the 'copies' value. This is intended for use by workflow applications like CUPS
+and should not be used for generating general purpose PDF files. In particular any
+pdfmark operations which rely on page numbers, such as Link or Outline annotations
+will not work correctly with this flag.
 
 </dl>
 

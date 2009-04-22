@@ -14,7 +14,6 @@
 /* $Id$ */
 /* Named object pdfmark processing */
 #include "memory_.h"
-#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsutil.h"		/* for bytes_compare */

@@ -26,13 +26,13 @@ Started by Graham Asher, 6th June 2002.
 #include "write_t2.h"
 #include "math_.h"
 #include "gserror.h"
+#include "gxfixed.h"
 
 /* FreeType headers */
-#include "freetype/freetype.h"
-#include "freetype/ftincrem.h"
-#include "freetype/ftglyph.h"
-#include "freetype/ftoutln.h"
-#include "freetype/fttrigon.h"
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_INCREMENTAL_H
+#include FT_GLYPH_H
 
 /* Note: structure definitions here start with FF_, which stands for 'FAPI FreeType". */
 
@@ -385,56 +385,22 @@ The scaling part is used for setting the pixel size for hinting.
 */
 static void transform_decompose(FT_Matrix* a_transform,
 								FT_Fixed* a_x_scale,FT_Fixed* a_y_scale)
-	{
-	FT_Matrix rotation;
-	bool have_rotation = false;
-	FT_Vector v;
+{
+	float a = a_transform->xx / 65536.0;
+	float b = a_transform->xy / 65536.0;
+	float c = a_transform->yx / 65536.0;
+	float d = a_transform->yy / 65536.0;
 
-	/*
-	Set v to the result of applying the matrix to the (1,0) vector
-	and reverse the direction of rotation by negating the y coordinate.
-	*/
-	v.x = a_transform->xx;
-	v.y = -a_transform->yx;
-	if (v.y || v.x < 0)
-		{
-		have_rotation = true;
+	float scale = sqrt(fabs(a * d - b * c));
 
-		/* Get the inverse of the rotation. */
-		make_rotation(&rotation,&v);
+	a_transform->xx = a / scale * 65536.0;
+	a_transform->xy = b / scale * 65536.0;
+	a_transform->yx = c / scale * 65536.0;
+	a_transform->yy = d / scale * 65536.0;
 
-		/* Remove the rotation. */
-		transform_concat(a_transform,&rotation);
-		}
-
-	/* Separate the scales from the transform. */
-	*a_x_scale = a_transform->xx;
-	if (*a_x_scale < 0)
-		{
-		*a_x_scale = -*a_x_scale;
-		a_transform->xx = -65536;
-		}
-	else
-		a_transform->xx = 65536;
-	*a_y_scale = a_transform->yy;
-	if (*a_y_scale < 0)
-		{
-		*a_y_scale = -*a_y_scale;
-		a_transform->yy = -65536;
-		}
-	else
-		a_transform->yy = 65536;
-	a_transform->yx = FT_DivFix(a_transform->yx,*a_x_scale);
-	a_transform->xy = FT_DivFix(a_transform->xy,*a_y_scale);
-
-	if (have_rotation)
-		{
-		/* Add back the rotation. */
-		rotation.xy = -rotation.xy;
-		rotation.yx = -rotation.yx;
-		transform_concat(a_transform,&rotation);
-		}
-	}
+	*a_x_scale = scale * 65536.0;
+	*a_y_scale = scale * 65536.0;
+}
 
 /**
 Open a font and set its size.
@@ -589,9 +555,9 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,
 		derived from the current transformation matrix and so are of no use.
 		*/
 		ft_transform.xx = a_font_scale->matrix[0];
-		ft_transform.xy = a_font_scale->matrix[1];
-		ft_transform.yx = -a_font_scale->matrix[2];
-		ft_transform.yy = -a_font_scale->matrix[3];
+		ft_transform.xy = a_font_scale->matrix[2];
+		ft_transform.yx = a_font_scale->matrix[1];
+		ft_transform.yy = a_font_scale->matrix[3];
 
 		/*
 		Split the transform into scale factors and a rotation-and-shear
@@ -617,7 +583,6 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,
 		produces a glyph that is upside down in FreeType terms, with its
 		first row at the bottom. That is what GhostScript needs.
 		*/
-		FT_Matrix_Multiply(&ft_reflection,&ft_transform);
 		
 		FT_Set_Transform(face->m_ft_face,&ft_transform,NULL);
 		}
@@ -729,6 +694,7 @@ static FAPI_retcode get_char_raster(FAPI_server *a_server,FAPI_raster *a_raster)
 	a_raster->line_step = s->m_bitmap_glyph->bitmap.pitch;
 	a_raster->orig_x = s->m_bitmap_glyph->left * 16;
 	a_raster->orig_y = s->m_bitmap_glyph->top * 16;
+	a_raster->left_indent = a_raster->top_indent = a_raster->black_height = a_raster->black_width = 0;
 	return 0;
 	}
 
@@ -753,40 +719,82 @@ typedef struct FF_path_info_
 static int move_to(FT_Vector* aTo,void* aObject)
 	{
 	FF_path_info* p = (FF_path_info*)aObject;
-	p->m_x = aTo->x;
-	p->m_y = aTo->y;
-	return p->m_path->moveto(p->m_path,aTo->x,aTo->y) ? -1 : 0;
+
+	/* FAPI expects that co-ordinates will be as implied by frac_shift
+	 * in our case 16.16 fixed precision. True for 'low level' FT 
+	 * routines (apparently), it isn't true for these routines where
+	 * FT returns a 26.6 format. Rescale to 16.16 so that FAPI will
+	 * be able to convert to GS co-ordinates properly.
+	 */
+	p->m_x = aTo->x << 10;
+	p->m_y = aTo->y << 10;
+
+	return p->m_path->moveto(p->m_path,p->m_x,p->m_y) ? -1 : 0;
 	}
 
 static int line_to(FT_Vector* aTo,void* aObject)
 	{
 	FF_path_info* p = (FF_path_info*)aObject;
-	p->m_x = aTo->x;
-	p->m_y = aTo->y;
-	return p->m_path->lineto(p->m_path,aTo->x,aTo->y) ? -1 : 0;
+
+	/* See move_to() above */
+	p->m_x = aTo->x << 10;
+	p->m_y = aTo->y << 10;
+
+	return p->m_path->lineto(p->m_path,p->m_x,p->m_y) ? -1 : 0;
 	}
 
 static int conic_to(FT_Vector* aControl,FT_Vector* aTo,void* aObject)
 	{
 	FF_path_info* p = (FF_path_info*)aObject;
-	p->m_x = aTo->x;
-	p->m_y = aTo->y;
+	floatp x, y, Controlx, Controly, Control1x, Control1y, Control2x, Control2y;
+
+	/* More complivated than above, we need to do arithmetic on the
+	 * co-ordinates, so we want them as floats and we will convert the
+	 * result into 16.16 fixed precision for FAPI
+	 */
+	/* NB this code is funcitonally the same as the original, but I don't believe
+	 * the comment (below) to be what the code is actually doing....
+	 */
 	/*
 	Convert a quadratic spline to a cubic. Do this by changing the three points
 	A, B and C to A, 1/3(B,A), 1/3(B,C), C - that is, the two cubic control points are
 	a third of the way from the single quadratic control point to the end points. This
 	gives the same curve as the original quadratic.
 	*/
-	return p->m_path->curveto(p->m_path,(p->m_x + aControl->x * 2) / 3,
-						      (p->m_y + aControl->y * 2) / 3,
-						      (aTo->x + aControl->x * 2) / 3,
-						      (aTo->y + aControl->y * 2) / 3,
-						      aTo->x,aTo->y) ? -1 : 0;
+	x = aTo->x / 64;
+	p->m_x = float2fixed(x) << 8;
+	y = aTo->y / 64;
+	p->m_y = float2fixed(y) << 8;
+	Controlx = aControl->x / 64;
+	Controly = aControl->y / 64;
+
+	Control1x = float2fixed((x + Controlx * 2) / 3) << 8;
+	Control1y = float2fixed((y + Controly * 2) / 3) << 8;
+	Control2x = float2fixed((x + Controlx * 2) / 3) << 8;
+	Control2y = float2fixed((y + Controly * 2) / 3) << 8;
+
+	return p->m_path->curveto(p->m_path, Control1x,
+					Control1y,
+					Control2x,
+					Control2y,
+					p->m_x,p->m_y) ? -1 : 0;
 	}
 
 static int cubic_to(FT_Vector* aControl1,FT_Vector* aControl2,FT_Vector* aTo,void* aObject)
 	{
 	FF_path_info* p = (FF_path_info*)aObject;
+	unsigned long Control1x, Control1y, Control2x, Control2y;
+
+	/* See move_to() above */
+	p->m_x = aTo->x << 10;
+	p->m_y = aTo->y << 10;
+
+	Control1x = aControl1->x << 10;
+	Control1y = aControl1->y << 10;
+	Control2x = aControl2->x << 10;
+	Control2y = aControl2->y << 10;
+	return p->m_path->curveto(p->m_path,Control1x,Control1y,Control2x,Control2y,p->m_x,p->m_y) ? -1 : 0;
+
 	p->m_x = aTo->x;
 	p->m_y = aTo->y;
 	return p->m_path->curveto(p->m_path,aControl1->x,aControl1->y,aControl2->x,aControl2->y,aTo->x,aTo->y) ? -1 : 0;
@@ -835,6 +843,16 @@ static FAPI_retcode release_typeface(FAPI_server* a_server,void* a_server_font_d
 	return 0;
 	}
 
+static FAPI_retcode check_cmap_for_GID(FAPI_server *server, uint *index)
+{
+    FF_server* s = (FF_server*)server;
+    FF_face* face = (FF_face*)(server->ff.server_font_data);
+    FT_Face ft_face = face->m_ft_face;
+
+    *index = FT_Get_Char_Index(ft_face, *index);
+    return 0;
+}
+
 static void gs_freetype_destroy(i_plugin_instance* a_instance,i_plugin_client_memory* a_memory);
 
 static const i_plugin_descriptor TheFreeTypeDescriptor =
@@ -863,7 +881,8 @@ static const FAPI_server TheFreeTypeServer =
     get_char_outline_metrics,
     get_char_outline,
     release_char_data,
-    release_typeface
+    release_typeface,
+    check_cmap_for_GID
 	};
 
 plugin_instantiation_proc(gs_fapi_ft_instantiate);

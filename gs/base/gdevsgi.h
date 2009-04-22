@@ -46,11 +46,11 @@ typedef struct {
     unsigned short 	xsize;
     unsigned short 	ysize;
     unsigned short 	zsize;
-    unsigned long 	min_color;
-    unsigned long 	max_color;
-    unsigned long	wastebytes;	
+    unsigned int 	min_color;
+    unsigned int 	max_color;
+    unsigned int	wastebytes;
     char 		name[80];
-    unsigned long	colormap;
+    unsigned int	colormap;
 
     long 		file;		/* stuff used in core only */
     unsigned short 	flags;

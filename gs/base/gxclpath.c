@@ -186,7 +186,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	}
     }
 
-    while (left) {
+    do {
 	prefix_size = 2 + 1 + (offset > 0 ? enc_u_sizew(offset) : 0);
 	req_size = left + prefix_size + enc_u_sizew(left);
 	code = cmd_get_buffer_space(cldev, pcls, req_size);
@@ -223,7 +223,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	}
 	offset += portion_size;
 	left -= portion_size;
-    }
+    } while (left);
 
     /* should properly calculate colors_used, but for now just punt */
     pcls->colors_used.or = ((gx_color_index)1 << cldev->color_info.depth) - 1;

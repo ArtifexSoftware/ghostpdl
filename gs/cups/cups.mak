@@ -33,6 +33,7 @@ cups_=	$(GLOBJ)gdevcups.$(OBJ)
 # CUPSSERVERBIN=`cups-config --serverbin`
 # CUPSSERVERROOT=`cups-config --serverroot`
 # CUPSDATA=`cups-config --datadir`
+# CUPSPDFTORASTER= 1 if CUPS is new enough (cups-config --version)
 
 $(DD)cups.dev : $(CUPS_MAK) $(cups_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)cups $(cups_)
@@ -49,18 +50,24 @@ pdftoraster: $(PDFTORASTER_XE)
 pdftoraster_=cups/pdftoraster.c
 
 $(PDFTORASTER_XE): $(pdftoraster_)
-	$(GLCC) `cups-config --image --libs` -DBINDIR='"$(bindir)"' -DGS='"$(GS)"' -o $@ $(pdftoraster_)
+	if [ "$(CUPSPDFTORASTER)" = "1" ]; then \
+	    $(GLCC) $(LDFLAGS) -DBINDIR='"$(bindir)"' -DGS='"$(GS)"' -o $@ $(pdftoraster_) `cups-config --image --libs`; \
+	fi
 
 install:	install-cups
 
 install-cups: cups
 	-mkdir -p $(DESTDIR)$(CUPSSERVERBIN)/filter
 	$(INSTALL_PROGRAM) cups/pstoraster $(DESTDIR)$(CUPSSERVERBIN)/filter
-	$(INSTALL_PROGRAM) $(PDFTORASTER_XE) $(DESTDIR)$(CUPSSERVERBIN)/filter
+	if [ "$(CUPSPDFTORASTER)" = "1" ]; then \
+	    $(INSTALL_PROGRAM) $(PDFTORASTER_XE) $(DESTDIR)$(CUPSSERVERBIN)/filter; \
+	fi
 	$(INSTALL_PROGRAM) cups/pstopxl $(DESTDIR)$(CUPSSERVERBIN)/filter
 	-mkdir -p $(DESTDIR)$(CUPSSERVERROOT)
 	$(INSTALL_DATA) cups/pstoraster.convs $(DESTDIR)$(CUPSSERVERROOT)
-	$(INSTALL_DATA) cups/pdftoraster.convs $(DESTDIR)$(CUPSSERVERROOT)
+	if [ "$(CUPSPDFTORASTER)" = "1" ]; then \
+	    $(INSTALL_DATA) cups/pdftoraster.convs $(DESTDIR)$(CUPSSERVERROOT); \
+	fi
 	-mkdir -p $(DESTDIR)$(CUPSDATA)/model
 	$(INSTALL_DATA) cups/pxlcolor.ppd $(DESTDIR)$(CUPSDATA)/model
 	$(INSTALL_DATA) cups/pxlmono.ppd $(DESTDIR)$(CUPSDATA)/model

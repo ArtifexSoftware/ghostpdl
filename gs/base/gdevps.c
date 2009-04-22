@@ -15,7 +15,6 @@
 /* PostScript-writing driver */
 #include "math_.h"
 #include "memory_.h"
-#include "string_.h"
 #include "time_.h"
 #include "gx.h"
 #include "gserrors.h"

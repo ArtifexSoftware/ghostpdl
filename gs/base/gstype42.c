@@ -258,8 +258,23 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
 	   the bug 688467 fails otherwise.
 	 */
 	/* pfont->key_name.chars is ASCIIZ due to copy_font_name. */
+	char buf[gs_font_name_max + 2];
+
+	if (pfont->key_name.size) {
+	    int l = min(sizeof(buf) - 1, pfont->key_name.size);
+
+	    memcpy(buf, pfont->key_name.chars, l);
+	    buf[l] = 0;
+	} else if (pfont->font_name.size) {
+	    int l = min(sizeof(buf) - 1, pfont->font_name.size);
+
+	    memcpy(buf, pfont->font_name.chars, l);
+	    buf[pfont->font_name.size] = 0;
+	} else
+	    buf[0] = 0;
+
 	eprintf3("Warning: 'loca' length %d is greater than numGlyphs %d in the font %s.\n", 
-		pfont->data.numGlyphs + 1, pfont->data.trueNumGlyphs, pfont->key_name.chars);
+		pfont->data.numGlyphs + 1, pfont->data.trueNumGlyphs, buf);
 	if (loca_size > pfont->data.trueNumGlyphs + 1) {
 	    /* Bug 689516 demonstrates a font, in which numGlyps is smaller than loca size,
 	       and there are useful glyphs behind maxp.numGlyphs. */

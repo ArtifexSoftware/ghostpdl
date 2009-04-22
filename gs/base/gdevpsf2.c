@@ -28,7 +28,6 @@
 #include "gxfont1.h"
 #include "gxfcid.h"
 #include "stream.h"
-#include "sfilter.h"
 #include "gdevpsf.h"
 
 /* Define additional opcodes used in Dicts, but not in CharStrings. */
@@ -1639,8 +1638,11 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
     fdselect_size = cff_FDSelect_size(&writer, &genum, &fdselect_format);
 
     /* Compute the size of the CharStrings Index. */
-    charstrings_size =
-	cff_write_CharStrings_offsets(&writer, &genum, &charstrings_count);
+    /* Compute the size of the CharStrings Index. */
+    code = cff_write_CharStrings_offsets(&writer, &genum, &charstrings_count);
+    if (code < 0)
+	return code;
+    charstrings_size = (uint)code;
 
     /* Compute the size of the (local) Subrs Indexes. */
     for (j = 0; j < num_fonts; ++j) {

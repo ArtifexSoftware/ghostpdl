@@ -653,6 +653,8 @@ struct gx_device_pdf_s {
     bool SetPageSize;
     bool RotatePages;
     bool FitPages;
+    bool CenterPages;
+    bool DoNumCopies;
 };
 
 #define is_in_page(pdev)\
@@ -887,7 +889,7 @@ int pdf_write_and_free_all_resource_objects(gx_device_pdf *pdev);
  * Store the resource sets for a content stream (page or XObject).
  * Sets page->{procsets, resource_ids[], fonts_id}.
  */
-int pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page);
+int pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_usage);
 
 /* Copy data from a temporary file to a stream. */
 void pdf_copy_data(stream *s, FILE *file, long count, stream_arcfour_state *ss);

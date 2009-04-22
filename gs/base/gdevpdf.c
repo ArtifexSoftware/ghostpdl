@@ -15,7 +15,6 @@
 /* PDF-writing driver */
 #include "fcntl_.h"
 #include "memory_.h"
-#include "string_.h"
 #include "time_.h"
 #include "unistd_.h"
 #include "gx.h"
@@ -210,6 +209,9 @@ static int
 pdf_open_temp_file(gx_device_pdf *pdev, pdf_temp_file_t *ptf)
 {
     char fmode[4];
+
+    if (strlen(gp_fmode_binary_suffix) > 2)
+	return_error(gs_error_invalidfileaccess);
 
     strcpy(fmode, "w+");
     strcat(fmode, gp_fmode_binary_suffix);
@@ -784,11 +786,11 @@ pdf_print_orientation(gx_device_pdf * pdev, pdf_page_t *page)
 
 /* Close the current page. */
 static int
-pdf_close_page(gx_device_pdf * pdev)
+pdf_close_page(gx_device_pdf * pdev, int num_copies)
 {
-    int page_num = ++(pdev->next_page);
+    int page_num;
     pdf_page_t *page;
-    int code;
+    int code, i;
 
     /*
      * If the very first page is blank, we need to open the document
@@ -806,89 +808,99 @@ pdf_close_page(gx_device_pdf * pdev)
     }
     pdf_close_contents(pdev, true);
 
-    /*
-     * We can't write the page object or the annotations array yet, because
-     * later pdfmarks might add elements to them.  Write the other objects
-     * that the page references, and record what we'll need later.
-     *
-     * Start by making sure the pages array element exists.
-     */
+    if (!pdev->DoNumCopies)
+	num_copies = 1;
 
-    pdf_page_id(pdev, page_num);
-    page = &pdev->pages[page_num - 1];
-    page->MediaBox.x = pdev->MediaSize[0];
-    page->MediaBox.y = pdev->MediaSize[1];
-    page->contents_id = pdev->contents_id;
-    page->NumCopies_set = pdev->NumCopies_set;
-    page->NumCopies = pdev->NumCopies;
-    /* pdf_store_page_resources sets procsets, resource_ids[]. */
-    code = pdf_store_page_resources(pdev, page);
-    if (code < 0)
-	return code;
+    for(i=0;i<num_copies;i++) {
+	bool clear_resource_use = i < num_copies - 1 ? 0 : 1;
 
-    /* Write the Functions. */
+	page_num = ++(pdev->next_page);
+        /*
+         * We can't write the page object or the annotations array yet, because
+         * later pdfmarks might add elements to them.  Write the other objects
+         * that the page references, and record what we'll need later.
+         *
+         * Start by making sure the pages array element exists.
+         */
 
-    code = pdf_write_resource_objects(pdev, resourceFunction);
-    if (code < 0)
-	return code;
+        pdf_page_id(pdev, page_num);
+        page = &pdev->pages[page_num - 1];
+        page->MediaBox.x = pdev->MediaSize[0];
+        page->MediaBox.y = pdev->MediaSize[1];
+        page->contents_id = pdev->contents_id;
+        page->NumCopies_set = pdev->NumCopies_set;
+        page->NumCopies = pdev->NumCopies;
+        /* pdf_store_page_resources sets procsets, resource_ids[]. */
+        code = pdf_store_page_resources(pdev, page, clear_resource_use);
+        if (code < 0)
+	    return code;
 
-    /* Save viewer's memory with cleaning resources. */
+        /* Write the Functions. */
 
-    if (pdev->MaxViewerMemorySize < 10000000) {
-	/* fixme: the condition above and the cleaning algorithm
-	   may be improved with counting stored resource size
-	   and creating multiple streams per page. */
+        code = pdf_write_resource_objects(pdev, resourceFunction);
+        if (code < 0)
+	    return code;
 
-	if (pdev->ForOPDFRead) {
-	    pdf_resource_t *pres = pdf_find_resource_by_resource_id(pdev, resourcePage, pdev->contents_id);
+        /* Save viewer's memory with cleaning resources. */
+
+        if (pdev->MaxViewerMemorySize < 10000000) {
+	    /* fixme: the condition above and the cleaning algorithm
+		may be improved with counting stored resource size
+		and creating multiple streams per page. */
+
+	    if (pdev->ForOPDFRead) {
+		pdf_resource_t *pres = pdf_find_resource_by_resource_id(pdev, resourcePage, pdev->contents_id);
 	    
-	    if (pres != NULL) {
-		code = cos_dict_put_c_strings((cos_dict_t *)pres->object, "/.CleanResources", "/All");
-		if (code < 0)
-		    return code;
+		if (pres != NULL) {
+		    code = cos_dict_put_c_strings((cos_dict_t *)pres->object, "/.CleanResources", "/All");
+		    if (code < 0)
+			return code;
+		}
 	    }
+	    code = pdf_close_text_document(pdev);
+	    if (code < 0)
+		return code;
+	    code = pdf_write_and_free_all_resource_objects(pdev);
+	    if (code < 0)
+		return code;
 	}
-	code = pdf_close_text_document(pdev);
-	if (code < 0)
-	    return code;
-	code = pdf_write_and_free_all_resource_objects(pdev);
-	if (code < 0)
-	    return code;
-    }
 
-    /* Close use of text on the page. */
+        /* Close use of text on the page. */
 
-    pdf_close_text_page(pdev);
+        pdf_close_text_page(pdev);
 
-    /* Accumulate text rotation. */
+	/* Accumulate text rotation. */
 
-    page->text_rotation.Rotate =
-	(pdev->params.AutoRotatePages == arp_PageByPage ?
-	 pdf_dominant_rotation(&page->text_rotation) : -1);
-    {
-	int i;
+	page->text_rotation.Rotate =
+	    (pdev->params.AutoRotatePages == arp_PageByPage ?
+	    pdf_dominant_rotation(&page->text_rotation) : -1);
+	{
+	    int i;
 
-	for (i = 0; i < countof(page->text_rotation.counts); ++i)
-	    pdev->text_rotation.counts[i] += page->text_rotation.counts[i];
-    }
+	    for (i = 0; i < countof(page->text_rotation.counts); ++i)
+		pdev->text_rotation.counts[i] += page->text_rotation.counts[i];
+	}
 
-    /* Record information from DSC comments. */
+	/* Record information from DSC comments. */
 
-    page->dsc_info = pdev->page_dsc_info;
-    if (page->dsc_info.orientation < 0)
-	page->dsc_info.orientation = pdev->doc_dsc_info.orientation;
+	page->dsc_info = pdev->page_dsc_info;
+	if (page->dsc_info.orientation < 0)
+	    page->dsc_info.orientation = pdev->doc_dsc_info.orientation;
 #ifdef Bug688793
-    if (page->dsc_info.viewing_orientation < 0)
-       page->dsc_info.viewing_orientation =
+	if (page->dsc_info.viewing_orientation < 0)
+	page->dsc_info.viewing_orientation =
            pdev->doc_dsc_info.viewing_orientation;
 #endif
-    if (page->dsc_info.bounding_box.p.x >= page->dsc_info.bounding_box.q.x ||
-	page->dsc_info.bounding_box.p.y >= page->dsc_info.bounding_box.q.y
-	)
-	page->dsc_info.bounding_box = pdev->doc_dsc_info.bounding_box;
+	if (page->dsc_info.bounding_box.p.x >= page->dsc_info.bounding_box.q.x ||
+	    page->dsc_info.bounding_box.p.y >= page->dsc_info.bounding_box.q.y
+	    )
+	    page->dsc_info.bounding_box = pdev->doc_dsc_info.bounding_box;
 
-    /* Finish up. */
+	/* Finish up. */
 
+	if(pdf_ferror(pdev))
+	    return(gs_note_error(gs_error_ioerror));
+    }
     pdf_reset_page(pdev);
     return (pdf_ferror(pdev) ? gs_note_error(gs_error_ioerror) : 0);
 }
@@ -1030,7 +1042,7 @@ static int
 pdf_output_page(gx_device * dev, int num_copies, int flush)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *) dev;
-    int code = pdf_close_page(pdev);
+    int code = pdf_close_page(pdev, num_copies);
 
     return (code < 0 ? code :
 	    pdf_ferror(pdev) ? gs_note_error(gs_error_ioerror) :
@@ -1067,7 +1079,7 @@ pdf_close(gx_device * dev)
 	    return code;
     }
     if (pdev->contents_id != 0)
-	pdf_close_page(pdev);
+	pdf_close_page(pdev, 1);
 
     /* Write the page objects. */
 
@@ -1122,7 +1134,6 @@ pdf_close(gx_device * dev)
     if (code >= 0)
 	code = code1;
 
-
     /* Create the Pages tree. */
 
     pdf_open_obj(pdev, Pages_id);
@@ -1134,7 +1145,7 @@ pdf_close(gx_device * dev)
     {
 	int i;
 
-	for (i = 0; i < pdev->next_page; ++i)
+	for (i = 0; i < pdev->next_page; ++i) 
 	    pprintld1(s, "%ld 0 R\n", pdev->pages[i].Page->id);
     }
     pprintd1(s, "] /Count %d\n", pdev->next_page);

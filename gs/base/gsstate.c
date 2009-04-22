@@ -192,7 +192,7 @@ gstate_copy_client_data(gs_state * pgs, void *dto, void *dfrom,
 
 /* Define the initial value of the graphics state. */
 static const gs_imager_state gstate_initial = {
-    gs_imager_state_initial(1.0)
+    gs_imager_state_initial(1.0, true)		/* is_gstate == true */
 };
 
 /*
@@ -218,7 +218,7 @@ gs_state_alloc(gs_memory_t * mem)
     if (pgs == 0)
 	return 0;
     pgs->saved = 0;
-    *(gs_imager_state *)pgs = gstate_initial;
+    *(gs_imager_state *)pgs = gstate_initial;	/* this sets is_gstate == true */
 
     /*
      * Just enough of the state is initialized at this point

@@ -18,7 +18,6 @@
 #include "jpeglib_.h"
 #include "jerror_.h"
 #include "gx.h"
-#include "gserrors.h"
 #include "strimpl.h"
 #include "sdct.h"
 #include "sjpeg.h"

@@ -406,7 +406,11 @@ end
       /GrayBackground exch 3 2 roll
     } if
     dup /TR knownoget {
-      resolveidfnproc /TransferFunction exch 3 2 roll
+      dup /Identity eq {
+        pop
+      } {
+        resolvefnproc /TransferFunction exch 3 2 roll
+      } ifelse
     } if    
     dup /G oget dup /BBox oget /BBox exch 4 2 roll
     /.execmaskgroup cvx 2 packedarray cvx /Draw exch 3 2 roll
@@ -773,7 +777,7 @@ currentdict end readonly def
   exch //false resolvestream pdfopdict .pdfruncontext
 
   countdictstack exch sub dup 0 gt { 
-     (   **** Warning: Pattern stream has imbalanced q/Q operators (too many q's)\n)
+     (   **** Warning: Pattern stream has unbalanced q/Q operators \(too many q's\)\n)
      pdfformaterror
      { Q } repeat
    } {
@@ -1298,6 +1302,8 @@ end
   oforce //unabbrevtypedict 1 index type .knownget { exec } if
 } bdef
 
+/is_space_dict << 0 0 9 9 10 10 12 12 13 13 32 32 >> readonly def
+
 drawopdict begin
   /BI { mark } bdef
   /ID {
@@ -1314,22 +1320,33 @@ drawopdict begin
 	% between the last byte of valid data and an EOL.
         % Some files (PDFOUT v3.8d by GenText) have EI immediately following
         % the stream. Some have no EOL and garbage bytes.
-        % Therefore, we skip all bytes before EI or EOL 
-    0
-      { PDFsource read not { //true exit } if
-        dup 10 eq 1 index 13 eq or
-          { pop PDFsource token pop /EI ne exit
-          }
-        if
-        exch 69 eq 1 index 73 eq and { //false exit } if  % 'EI'
-      }
-    loop
-    exch pop
-      { /ID cvx /syntaxerror signalerror
-      }
-    if
+        % Sometimes (bug 690300) CCITTDecode filter consumes 'E' in 'EI'.
+        % Therefore, we search for <start>I<sp|end> or <start|sp>EI<sp|end> 
+    PDFsource read not {
+      /ID cvx /syntaxerror signalerror
+    } if
+    dup 73 eq {
+      pop 10 69 73     % Seed to: <sp>EI
+    } {
+      10 10 3 -1 roll  % Seed to: <sp><sp><any>
+    } ifelse
+    { PDFsource read not dup { 10 exch } if
+      //is_space_dict 2 index known
+      3 index 73 eq and 4 index 69 eq and
+      //is_space_dict 6 index known and {
+        pop pop pop pop pop exit
+      } {
+          {
+            pop pop pop /ID cvx /syntaxerror signalerror
+          } {
+            4 -1 roll pop
+          } ifelse
+      } ifelse
+    } loop
   } bdef
 end
+
+currentdict /is_space_dict undef
 
 % ================================ Text ================================ %
 

@@ -171,13 +171,8 @@ level2dict begin
   % the default policy to "7" (impose) to avoid numerous problems with
   % printing within CUPS...
   %
-  NOMEDIAATTRS {
-    /PolicyNotFound 7
-    /PageSize 7
-  } {
-    /PolicyNotFound 1
-    /PageSize 0
-  } ifelse
+  /PageSize NOMEDIAATTRS { 7 } { 0 } ifelse
+  /PolicyNotFound 1
   /PolicyReport {
     dup /.LockSafetyParams known {
 	% Only possible error is invalidaccess
@@ -810,20 +805,17 @@ SETPDDEBUG { (Installing.) = pstack flush } if
 		% NB: This shoud be the only use of the .setuseciecolor
 		%     operator anywhere.
 		%
-		% If UseCIEColor is transitioned to false, set some
-		% color space other than /DeviceGray, to insure that
-		% initgraphics will actually perform a setcolorspace
+		% Set some color space other than /DeviceGray, to insure 
+		% that initgraphics will actually perform a setcolorspace
 		% operation (there is an optimization in setcolorspace
 		% that does nothing if the operand and current color
-		% spaces are the same, and UseCIEColor is false).
+		% spaces are the same)
 
     /.setuseciecolor where
       {
         pop 1 index /UseCIEColor .knownget
           {
-            dup .setuseciecolor not
-              { /DeviceRGB setcolorspace }
-            if
+            .setuseciecolor /DeviceRGB setcolorspace
           }
         if
       }

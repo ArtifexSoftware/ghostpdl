@@ -782,6 +782,7 @@ gx_cpath_enum_init(gs_cpath_enum * penum, const gx_clip_path * pcpath)
     if ((penum->using_path = pcpath->path_valid)) {
 	gx_path_enum_init(&penum->path_enum, &pcpath->path);
 	penum->rp = penum->visit = 0;
+	penum->first_visit = visit_left;
     } else {
 	gx_path empty_path;
 	gx_clip_list *clp = gx_cpath_list_private(pcpath);
@@ -791,6 +792,7 @@ gx_cpath_enum_init(gs_cpath_enum * penum, const gx_clip_path * pcpath)
 	/* Initialize the pointers in the path_enum properly. */
 	gx_path_init_local(&empty_path, pcpath->path.memory);
 	gx_path_enum_init(&penum->path_enum, &empty_path);
+	penum->first_visit = visit_left;
 	penum->visit = head;
 	for (rp = head; rp != 0; rp = rp->next)
 	    rp->to_visit =

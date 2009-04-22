@@ -14,7 +14,6 @@
 /* $Id$ */
 /* Image-writing utilities for pdfwrite driver */
 #include "memory_.h"
-#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gdevpdfx.h"
@@ -24,6 +23,7 @@
 #include "gsiparm4.h"
 #include "gdevpsds.h"
 #include "spngpx.h"
+#include <stdlib.h> /* for atoi */
 
 #define CHECK(expr)\
   BEGIN if ((code = (expr)) < 0) return code; END
@@ -445,9 +445,32 @@ pdf_end_image_binary(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h)
     else
 	code = psdf_end_binary(&piw->binary[0]);
     /* If the image ended prematurely, update the Height. */
-    if (data_h != piw->height)
-	code1 = cos_dict_put_c_key_int(cos_stream_dict(piw->data),
+    if (data_h != piw->height) {
+	char data[255];
+	int OutHeight;
+	cos_value_t *value;
+	value = (cos_value_t *)cos_dict_find(cos_stream_dict(piw->data),
+				      (const byte *)piw->pin->Height, strlen(piw->pin->Height));
+	if (!value || value->contents.chars.size > 255)
+	    return(gs_error_rangecheck);
+	strncpy((char *)&data, (const char *)value->contents.chars.data, value->contents.chars.size);
+	data[value->contents.chars.size] = 0x00;
+	OutHeight = atoi(data);
+	if (OutHeight != piw->height) {
+	    /* Looks like we are downsampling, so we can't use the number
+	     * of rows of data actually received, we must divide those by
+	     * the sampling factor.
+	     */
+	    float factor = (float)OutHeight / piw->height;
+	    OutHeight = (int)(factor * data_h);
+	    code1 = cos_dict_put_c_key_int(cos_stream_dict(piw->data),
+				      piw->pin->Height, OutHeight);
+	} else {
+	
+	    code1 = cos_dict_put_c_key_int(cos_stream_dict(piw->data),
 				      piw->pin->Height, data_h);
+	}
+    }
     return code < 0 ? code : code1;
 }
 

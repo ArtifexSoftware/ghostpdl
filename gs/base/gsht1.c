@@ -344,8 +344,10 @@ process_transfer(gx_ht_order * porder, gs_state * pgs,
     pmap->proc = proc;		/* 0 => use closure */
     pmap->closure = *pmc;
     pmap->id = gs_next_ids(mem, 1);
-    load_transfer_map(pgs, pmap, 0.0);
     porder->transfer = pmap;
+    if (proc == gs_mapped_transfer)
+        return 0; /* nothing to load, the source is uninitialzed */
+    load_transfer_map(pgs, pmap, 0.0);
     return 0;
 }
 

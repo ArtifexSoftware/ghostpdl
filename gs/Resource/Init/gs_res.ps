@@ -349,6 +349,15 @@ ne {
 } if
 pop pop
 
+pssystemparams dup /GenericResourceDir get exch /GenericResourcePathSep get
+(Init) exch (gs_init.ps) concatstrings concatstrings concatstrings 
+status {
+  pop pop pop pop
+} {
+  (\n*** Warning: GenericResourceDir doesn't point to a valid resource directory.) =
+  (               the -sGenericResourceDir=... option can be used to set this.\n) =
+} ifelse
+
 % Define the generic algorithm for computing resource file names.
 /.rfnstring 8192 string def
 /.genericrfn		% <key> <scratch> <prefix> .genericrfn <filename>

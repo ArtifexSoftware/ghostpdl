@@ -112,7 +112,7 @@
 <li><a href="#QNX">QNX</a>
 </ul>
 <li><a href="#UFST_build">How to build Ghostscript with UFST</a>
-<li><a href="#FT_build">How to build Ghostscript with Free Type</a>
+<li><a href="#FT_build">How to build Ghostscript with FreeType</a>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -662,31 +662,38 @@ memory requirements, and may be essential if you are planning on putting
 Ghostscript into ROM.
 
 <p>
-To compile the initialization files (<code>lib/gs_init.ps</code>, etc.)
-into the executable, change the <code>0</code> to a <b><tt>1</tt></b> in
-the line
+By default, most top level make files now default to compiling the initialization
+files (<code>lib/gs_init.ps</code>, etc.) into the executable. To disable this,
+change the <code>1</code> to a <b><tt>0</tt></b> in the line
 
 <blockquote><code>
-COMPILE_INITS=0
+COMPILE_INITS=1
 </code></blockquote>
 
 <p>
-Compiled initialization includes the default font map.
-It is used only if Ghostscript cannot find or open the default font
-map file at run time. 
+Files are now compiled into the executable as a %rom% file system that can
+be searched, opened, etc. as with the normal (%os%) file system. The data
+is (mostly) compressed. The set of files built into the %rom% file system
+is specified in the <code>psi/psromfs.mak</code> file. Refer to the file
+<code>base/mkromfs.c</code> for a description of the parameters that
+control source and destination pathnames, file enumeration exclusion,
+compression, etc.
 
 <p>
-To compile fonts into the executable, see <a
-href="Fonts.htm#Precompiling">Precompiling fonts</a>. 
+While fonts normally are compiled into the executable using <code>mkromfs</code>
+(above) from the Resource/Font/ directory, it is possible to compile Type 1 fonts
+into the executable using an older method that converts Type 1 fonts into C code.
+See <a href="Fonts.htm#Precompiling">Precompiling fonts</a>. 
 
 <p>
-To compile threshold-array halftones into the executable, see the "Compiled
-halftone" section of <code>int.mak</code> for a sample makefile fragment,
-<code>genht.c</code> for the syntax of halftone data files, and
-<code>lib/ht_ccsto.ps</code> for a sample data file.  Note that even
-though the data files use PostScript syntax, compiled halftones do not
-require the PostScript interpreter and may be used with the graphics library
-alone.
+Similarly, Halftone resources can be compiled into the executable using
+<code>mkromfs</code>, but also threshold-array halftones can be compiled
+into the executable. See the "Compiled halftone" section of <code>int.mak</code>
+for a sample makefile fragment, <code>genht.c</code> for the syntax of
+halftone data files, and <code>lib/ht_ccsto.ps</code> for a sample data file.
+ Note that even though the data files use PostScript syntax, compiled halftones
+do not require the PostScript interpreter and may be used with the graphics
+library alone.
 
 <h4><a name="GNU_readline"></a>GNU readline</h4>
 
@@ -2764,46 +2771,64 @@ msvc32.mak sets the other options automatically.
 
 <p>
 
-<h2><a name="FT_build"></a>How to build Ghostscript with Free Type</h2>
+<h2><a name="FT_build"></a>How to build Ghostscript with FreeType</h2>
 
 <p>
-<em>Note: This section is only for users who wish to use Ghostscript with Free Type font renderer.
+<em>Note: This section is only for users who wish to use Ghostscript with FreeType font renderer.
 Other users please skip this section.
 </em>
 
 <p>
-Ghostscript sources do not include Free Type sources. You need to obtain them from Free Type group.
-Ghostscript includes only some source modules that provide a bridge to Free Type.
+Ghostscript sources do not include a copy of the FreeType sources.
+You need to obtain them from the 
+<a href="http://freetype.org/">FreeType Project</a>. 
+Ghostscript includes only some source modules that provide a 
+bridge to FreeType.
 
 <p>
-Ghostscript makefiles do not include any script for building Free Type libraries.
-Refer to Free Type manual how to build them. Free Type object libraries must be built
-before building Ghostscript with the Free Type bridge.
+Ghostscript makefiles do not include any script for building FreeType 
+libraries. Refer to FreeType manual how to build them. FreeType object 
+libraries must be built before building Ghostscript with the FreeType 
+bridge.
 
 <p>
-To build Ghostscript with Free Type, specify additional options for "make":
+Note that Ghostscript requires FreeType to be built with the optional 
+incremental font support. Check that FT_CONFIG_OPTION_INCREMENTAL is 
+defined in the headers for your FreeType build. 
+<p>
+To build Ghostscript with FreeType, specify these additional options for 
+"make" either on the command line, or in the top-level makefile:
 
 <dl>
 <dt><code>FT_BRIDGE=1</code>
-<dd>forces the Free Type bridge to build.
+<dd>Enables the FreeType bridge.
 
-<dt><code>FT_ROOT=path</code>
-<dd>specifies the path to Free Type root directory or folder.
+<dt><code>FT_CFLAGS=<i>options</i></code>
+<dd>Specifies C compiler include directives and options for FreeType 
+library. Refer to the FreeType manual for information about them.
 
-<dt><code>FT_CFLAGS=options</code>
-<dd>specifies C compiler options for Free Type library. Refer to Free Type manual for information about them.
-
-<dt><code>FT_LIB_EXT=extension</code>
-<dd>sets the file name extension for object libraries. You must use the appropriate one for your platform and linker.
+<dt><code>FT_LIBS=<i>link-options</i></code>
+<dd>Specifies the path the the object library or options for linking 
+with FreeType. You must use the appropriate one for your platform and 
+linker.
 </dl>
 
 <p>An example for Unix/GCC :
 <blockquote>
-<tt>FT_BRIDGE=1 FT_ROOT=../FreeType FT_CFLAGS=-DGCCx86 FT_LIB_EXT=.a</tt>
+<tt>make FT_BRIDGE=1 FT_CFLAGS=-Ifreetype/include FT_LIBS=freetype/objs/libfreetype.a</tt>
+</blockquote>
+or
+<blockquote>
+<tt>make FT_BRIDGE=1 FT_CFLAGS=`pkg-config --cflags freetype2` FT_LIBS=`pkg-config --libs freetype2`</tt>
 </blockquote>
 
-<p>For Windows/MSVC you need only specify FT_ROOT.
-msvc32.mak sets the other options automatically.
+<p>For Windows/MSVC you need only specify FT_ROOT to be the path to the 
+top level source directory of your FreeType build.
+msvc32.mak sets the other options automatically. However,
+because the freetype project files for MSVC embed the version and build
+type in the library filename, it may be necessary to override the default
+library name, by passing for example FT_LIB=freetype241MT. FT_LIB only
+has an effect on the MSVC build, unlike FT_LIBS which is used by all the builds.
 
 <p>
 

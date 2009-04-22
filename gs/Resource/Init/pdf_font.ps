@@ -652,6 +652,11 @@ setglobal
                 % Yet another case of broken PDF's that Adobe Reader accepts.
       1 index dup /FontName known {
         /FontName oget
+        dup type /nametype ne {
+          (   **** /FontName attribute in FontDescriptor is not a name.\n)
+          pdfformaterror
+          cvn
+        } if
       } {
         (   **** FontDescriptor missing required /FontName key. BaseFont name used.\n)
         pdfformaterror
@@ -735,9 +740,43 @@ setglobal
 % The whole type1 stream can be executed directly. There's no need to process
 % Length1, 2, 3 keys.
 
-/readtype1dict 5 dict dup begin
+/readtype1dict 8 dict dup begin
   /definefont {
     exch pop
+
+    /topFontDict where {
+      { /FontType    % in PLRM order
+        /FontMatrix
+        /FontName
+        /FontInfo
+        /WMode
+        /Encoding
+        /FontBBox
+        /UniqueID 
+        /XUID
+        /PaintType
+        /StrokeWidth
+        /Metrics
+        /Metrics2
+        /CDevProc
+        /CharStrings
+        /Private
+        /WeightVector
+      } {
+        2 copy .knownget {
+          % Stack: font topFontDict /key val
+          3 index 3 1 roll put
+          dup /MisplacedKey 0 put
+        } {
+          pop
+        } ifelse
+      } forall
+      /MisplacedKey known {
+        (   **** Warning: Type 1 font defines some of the keys in the external scope.\n)
+        pdfformaterror
+      } if
+    } if
+
     dup /UniqueID .knownget {
       dup dup 0 lt exch 16#ffffff gt or {
         (   **** Warning: Ignoring invalid /UniqueID = ) exch =string cvs
@@ -793,10 +832,19 @@ setglobal
     pdfformaterror
   } ifelse } .bind def
 
-  currentdict dup dup
-  /undef_proc_warning undef
-  /missing-type1-procs undef
-  /readonly-op-dict undef
+  /prev_get /get load def
+
+  /get {
+    dup /FontName eq {
+      % No warning, probably FontName is defined elsewhere; see definefont above.
+      .knownget not { /Missing } if
+    } {
+      prev_get
+    } ifelse
+  } bdef 
+
+  { /undef_proc_warning /missing-type1-procs /readonly-op-dict }
+  { currentdict exch undef } forall
 
 end readonly def
 
@@ -1348,8 +1396,8 @@ currentdict /eexec_pdf_param_dict .undef
     concatstrings concatstrings
     cvn
     QUIET not {
-      (Substituting CID font resource ) print dup ==only
-      ( for ) print 1 index ==only (.\n) print
+      (Substituting CID font ) print dup ==only
+      ( for ) print 1 index ==only (, see doc/Use.htm#CIDFontSubstitution.) =
     } if
     exch pop
     dup /CIDFont resourcestatus {

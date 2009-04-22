@@ -15,7 +15,6 @@
 /* Font API client */
 
 #include "memory_.h"
-#include "string_.h"
 #include "math_.h"
 #include "ghost.h"
 #include "gp.h"
@@ -36,8 +35,6 @@
 #include "dstack.h"
 #include "ichar.h"
 #include "idict.h"
-#include "iddict.h"
-#include "idparam.h"
 #include "iname.h"
 #include "ifont.h"
 #include "icid.h"
@@ -49,7 +46,6 @@
 #include "gzstate.h"
 #include "gdevpsf.h"
 #include "stream.h"		/* for files.h */
-#include "files.h"
 #include "gscrypt1.h"
 #include "gxfcid.h"
 
@@ -1051,10 +1047,13 @@ static int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
     if (pfont->FontType == ft_CID_encrypted && v == NULL) {
         if ((code = build_proc_name_refs(imemory, &build, ".FAPIBuildGlyph9", ".FAPIBuildGlyph9")) < 0)
 	    return code;
+	pop(1);
+	return 0;
     } else
         if ((code = build_proc_name_refs(imemory, &build, ".FAPIBuildChar", ".FAPIBuildGlyph")) < 0)
 	    return code;
-    if (name_index(imemory, &pdata->BuildChar) == name_index(imemory, &build.BuildChar)) {
+    if (pdata->BuildChar.value.pname && build.BuildChar.value.pname &&
+	name_index(imemory, &pdata->BuildChar) == name_index(imemory, &build.BuildChar)) {
         /* Already rebuilt - maybe a substituted font. */
     } else {
         ref_assign_new(&pdata->BuildChar, &build.BuildChar);
@@ -1141,12 +1140,19 @@ static const int frac_pixel_shift = 4;
 static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_server *I)
 {   gs_text_enum_t *penum = op_show_find(i_ctx_p);
     gs_show_enum *penum_s = (gs_show_enum *)penum;
-    gs_state *pgs = penum_s->pgs;
-    gx_device *dev1 = gs_currentdevice_inline(pgs); /* Possibly changed by zchar_set_cache. */
-    gx_device *dev = penum_s->dev;
+    gs_state *pgs;
+    gx_device *dev1;
+    gx_device *dev;
     const int import_shift_v = _fixed_shift - I->frac_shift;
     FAPI_raster rast;
     int code;
+
+    if(penum == NULL) {
+	return_error(e_undefined);
+    }
+    dev = penum_s->dev;
+    pgs = penum_s->pgs;
+    dev1 = gs_currentdevice_inline(pgs); /* Possibly changed by zchar_set_cache. */
 
     if (SHOW_IS(penum, TEXT_DO_NONE)) {
         /* do nothing */
@@ -1155,7 +1161,7 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
 	    return code;
     } else {
         int code = I->get_char_raster(I, &rast);
-        if (code == e_limitcheck) {
+        if (code == e_limitcheck || pbfont->PaintType) {
             /* The server provides an outline instead the raster. */
             gs_imager_state *pis = (gs_imager_state *)pgs->show_gstate;
             gs_point pt;
@@ -1300,15 +1306,15 @@ static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, 
     } else
         check_type(*op, t_integer);
 
-    /* Compute the sacle : */
+    if (penum == 0)
+        return_error(e_undefined);
+    /* Compute the scale : */
     if (!SHOW_IS(penum, TEXT_DO_NONE) && !igs->in_charpath) {
         gs_currentcharmatrix(igs, NULL, 1); /* make char_tm valid */
         penum_s->fapi_log2_scale.x = -1;
         gx_compute_text_oversampling(penum_s, (gs_font *)pbfont, alpha_bits, &log2_scale);
         penum_s->fapi_log2_scale = log2_scale;
     }
-    if (penum == 0)
-        return_error(e_undefined);
     scale = 1 << I->frac_shift;
 retry_oversampling:
     if (I->face.font_id != pbfont->id ||
@@ -1405,18 +1411,51 @@ retry_oversampling:
     cr.char_codes_count = 1;
     if (bCID) {
         if (font_file_path != NULL) {
-            ref *Decoding, *SubstNWP, src_type, dst_type;
+            ref *Decoding, *TT_cmap, *SubstNWP;
+            ref src_type, dst_type;
 	    uint c;
 
             if (dict_find_string(pdr, "Decoding", &Decoding) <= 0 || !r_has_type(Decoding, t_dictionary))
                 return_error(e_invalidfont);
             if (dict_find_string(pdr, "SubstNWP", &SubstNWP) <= 0 || !r_has_type(SubstNWP, t_array))
                 return_error(e_invalidfont);
+	    if (dict_find_string(pdr, "TT_cmap", &TT_cmap) <= 0 || !r_has_type(TT_cmap, t_dictionary)) {
+		ref *DecodingArray, char_code, char_code1, ih;
+		int i = client_char_code % 256, n;
 
-	    code = cid_to_TT_charcode(imemory, Decoding, NULL, SubstNWP, 
+		make_int(&ih, client_char_code / 256);
+		/* Check the Decoding array for this block of CIDs */
+		if (dict_find(Decoding, &ih, &DecodingArray) <= 0 || 
+			!r_has_type(DecodingArray, t_array) ||
+			array_get(imemory, DecodingArray, i, &char_code) < 0)
+		    return_error(e_invalidfont);
+		
+		/* Check the Decoding entry */
+		if (r_has_type(&char_code, t_integer))
+		    n = 1; 
+		else if (r_has_type(&char_code, t_array)) {
+		    DecodingArray = &char_code;
+		    i = 0;
+		    n = r_size(DecodingArray);
+		} else
+		    return_error(e_invalidfont);
+
+		for (;n--; i++) {
+		    if (array_get(imemory, DecodingArray, i, &char_code1) < 0 ||
+			!r_has_type(&char_code1, t_integer))
+			return_error(e_invalidfont);
+
+		    c = char_code1.value.intval;
+		    I->check_cmap_for_GID(I, &c);
+		    if (c != 0)
+		        break;
+		}
+	    } else {
+		code = cid_to_TT_charcode(imemory, Decoding, TT_cmap, SubstNWP,
 				      client_char_code, &c, &src_type, &dst_type);
-	    if (code < 0)
-		return code;
+		if (code < 0)
+		    return code;
+	    }
 	    cr.char_codes[0] = c;
 	    cr.is_glyph_index = (code == 0);
             /* fixme : process the narrow/wide/proportional mapping type,

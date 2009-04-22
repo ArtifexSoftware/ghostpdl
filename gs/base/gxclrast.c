@@ -172,6 +172,12 @@ top_up_cbuf(command_buf_t *pcb, const byte **pcbp)
     pcb->end_status = sgets(pcb->s, cb_top, nread, &nread);
     if ( nread == 0 ) {
 	/* No data for this band at all. */
+	if (cb_top >= pcb->end) {
+	    /* should not happen */
+	    *pcbp = pcb->data;
+	    pcb->data[0] = cmd_opv_end_run;
+	    return_error(gs_error_ioerror);
+	}
 	*cb_top = cmd_opv_end_run;
 	nread = 1;
     }
@@ -619,7 +625,7 @@ in:				/* Initialize for a new page. */
 	/* Make sure the buffer contains a full command. */
 	if (cbp >= cbuf.limit) {
 	    if (cbuf.end_status < 0) {	/* End of file or error. */
-		if (cbp == cbuf.end) {
+		if (cbp >= cbuf.end) {
 		    code = (cbuf.end_status == EOFC ? 0 :
 			    gs_note_error(gs_error_ioerror));
 		    break;

@@ -34,11 +34,8 @@ param_read_password(gs_param_list * plist, const char *kstr, password * ppass)
 {
     gs_param_string ps;
     long ipass;
-    int code;
+    int code = param_read_string(plist, kstr, &ps);
 
-    ps.data = (const byte *)ppass->data, ps.size = ppass->size,
-	ps.persistent = false;
-    code = param_read_string(plist, kstr, &ps);
     switch (code) {
 	case 0:		/* OK */
 	    if (ps.size > MAX_PASSWORD)

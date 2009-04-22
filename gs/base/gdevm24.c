@@ -24,11 +24,10 @@
 /*
  * Define whether to use the library's memset.
  */
-/*#define USE_MEMSET*/
+#define USE_MEMSET
+
 /*
- * Define whether to use memcpy for very wide fills.  We thought this
- * made a big difference, but it turned out to be an artifact of the
- * profiler.
+ * Define whether to use memcpy for very wide fills.
  */
 /*#define USE_MEMCPY*/
 

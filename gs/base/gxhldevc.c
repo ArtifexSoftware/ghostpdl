@@ -44,10 +44,9 @@ void gx_hld_saved_color_init(gx_hl_saved_color * psc)
  */
 const gs_state * gx_hld_get_gstate_ptr(const gs_imager_state * pis)
 {
-    extern_st(st_gs_state);		/* only for testing */
 
-    /* Check to verify the structure type is really st_gs_state */
-    if (pis == NULL || gs_object_type(pis->memory, pis) != &st_gs_state)
+    /* Check to verify the structure type is really (gs_state *) */
+    if (pis == NULL || pis->is_gstate == false)
 	return NULL;
 
     return (const gs_state *) pis;

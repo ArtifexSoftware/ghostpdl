@@ -15,7 +15,6 @@
 /* Output utilities for PDF-writing driver */
 #include "memory_.h"
 #include "jpeglib_.h"		/* for sdct.h */
-#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gscdefs.h"
@@ -313,6 +312,8 @@ pdf_open_document(gx_device_pdf * pdev)
 		stream_puts(s, "/RotatePages true def\n");
 	    if(pdev->FitPages)
 		stream_puts(s, "/FitPages true def\n");
+	    if(pdev->CenterPages)
+		stream_puts(s, "/CenterPages true def\n");
 	    if (pdev->params.CompressPages || pdev->CompressEntireFile) {
 		/*  When CompressEntireFile is true and ASCII85EncodePages is false,
 		    the ASCII85Encode filter is applied, rather one may expect the opposite.
@@ -975,7 +976,10 @@ pdf_print_resource_statistics(gx_device_pdf * pdev)
 long
 pdf_open_separate(gx_device_pdf * pdev, long id)
 {
-    pdf_open_document(pdev);
+    int code;
+    code = pdf_open_document(pdev);
+    if (code < 0)
+	return code;
     pdev->asides.save_strm = pdev->strm;
     pdev->strm = pdev->asides.strm;
     return pdf_open_obj(pdev, id);
@@ -1214,7 +1218,7 @@ pdf_write_and_free_all_resource_objects(gx_device_pdf *pdev)
  * Sets page->{procsets, resource_ids[]}.
  */
 int
-pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page)
+pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_usage)
 {
     int i;
 
@@ -1243,7 +1247,8 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page)
 		    }
 		    pprints1(s, "/%s\n", pres->rname);
 		    pprintld1(s, "%ld 0 R", id);
-		    pres->where_used -= pdev->used_mask;
+		    if (clear_usage)
+			pres->where_used -= pdev->used_mask;
 		}
 	    }
 	}
@@ -1418,8 +1423,10 @@ pdf_unclip(gx_device_pdf * pdev)
 void
 pdf_store_default_Producer(char buf[PDF_MAX_PRODUCER])
 {
-    sprintf(buf, ((gs_revision % 100) == 0 ? "(%s %1.1f)" : "(%s %1.2f)"),
-	    gs_product, gs_revision / 100.0);
+    if ((gs_revision % 100) == 0)
+	sprintf(buf, "(%s %1.1f)", gs_product, gs_revision / 100.0);
+    else
+	sprintf(buf, "(%s %1.2f)", gs_product, gs_revision / 100.0);
 }
 
 /* Write matrix values. */

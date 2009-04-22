@@ -665,18 +665,28 @@ currentdict /.pdf_hook_DSC_Creator undef
   /MonoImageResolution { }
 		% Font embedding parameters
   /AlwaysEmbed
-   { dup length 0 gt
-      { dup 0 get false eq
+   { dup length 0 gt 
+      { dup 0 get type /booleantype eq } { false } ifelse
+      { dup 0 get
+         { dup length 1 sub 1 exch getinterval
+         }
          { dup length 1 sub 1 exch getinterval exch pop /~AlwaysEmbed exch
-         } if
-      } if
+         } ifelse
+       }
+      { exch pop /.AlwaysEmbed exch
+      } ifelse
    }
   /NeverEmbed
-   { dup length 0 gt
-      { dup 0 get false eq
-         { dup length 1 sub 1 exch getinterval exch pop /~NeverEmbed exch
-         } if
-      } if
+  { dup length 0 gt 
+     { dup 0 get type /booleantype eq } { false } ifelse
+     { dup 0 get
+        { dup length 1 sub 1 exch getinterval
+        }
+        { dup length 1 sub 1 exch getinterval exch pop /~NeverEmbed exch
+        } ifelse
+     }
+     { exch pop /.NeverEmbed exch
+     } ifelse
    }
   /CannotEmbedFontPolicy { }
   /EmbedAllFonts { }

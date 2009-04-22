@@ -37,7 +37,8 @@ systemdict /.makeglyph32 .undef
 		% Define a string large enough to hold the metrics,
 		% an uncompressed bitmap (worst case = 5x expansion),
 		% and the 2 RTC codes (3 bytes).
-    dup length 4 index length 5 mul add 10 add string
+    dup length 4 index length 5 mul add 10 add
+    65535 .min string
 		% Stack: metrics bitmap cid font metstr buffer
     dup 0 3 index putinterval
     dup 2 index length 1 index length 1 index sub getinterval

@@ -465,7 +465,11 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
             params.sbrat[2] = segment_data[offset + 2];
             params.sbrat[3] = segment_data[offset + 3];
             offset += 4;
-	  }
+          } else {
+              /* sbrat is meaningless if SBRTEMPLATE is true, but set a value
+                 to avoid confusion if anybody looks */ 
+              memset(params.sbrat, 0, sizeof(params.sbrat));
+          }
       }
     
     /* 7.4.3.1.4 */

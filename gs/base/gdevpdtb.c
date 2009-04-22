@@ -15,7 +15,6 @@
 /* BaseFont implementation for pdfwrite */
 #include "memory_.h"
 #include "ctype_.h"
-#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsutil.h"		/* for bytes_compare */
@@ -27,7 +26,6 @@
 #include "gdevpdfx.h"
 #include "gdevpdfo.h"
 #include "gdevpdtb.h"
-#include "gdevpdfg.h"
 #include "gdevpdtf.h"
 #include "smd5.h"
 
@@ -632,17 +630,6 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, font_type 
 	    return code;
 	}
 	code = pdf_end_fontfile(pdev, &writer);
-	if (pdev->PDFA && code >= 0) {
-	    gs_id metadata_object_id;
-
-	    code = pdf_font_metadata(pdev, pbfont, digest, sizeof(digest), &metadata_object_id);
-	    if (metadata_object_id && code >= 0) {
-		char buf[20];
-
-		sprintf(buf, "%ld 0 R", metadata_object_id);
-		code = cos_dict_put_string_copy(*ppcd, "/Metadata", buf);
-	    }
-	}
 	break;
 
     default:

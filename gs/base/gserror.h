@@ -60,7 +60,7 @@ int gs_throw_imp(const char *func, const char *file, int line,
 /* Use throw at origin of error
 */
 #define gs_throw_code(code) \
-    gs_throw((code), gs_errstr((code)))
+    gs_throw1((code), "%s", gs_errstr((code)))
 
 #define gs_throw(code, fmt) \
     gs_throw_imp(__func__, __FILE__, __LINE__, 0, code, fmt)
@@ -87,7 +87,7 @@ int gs_throw_imp(const char *func, const char *file, int line,
 /* Bubble the code up the stack
 */
 #define gs_rethrow_code(code) \
-    gs_rethrow((code), gs_errstr((code)))
+    gs_rethrow1((code), "%s", gs_errstr((code)))
 
 #define gs_rethrow(code, fmt) \
     gs_throw_imp(__func__, __FILE__, __LINE__, 1, code, fmt)

@@ -521,9 +521,6 @@ program by using the special file name '<code>-</code>' which is interpreted as 
 </blockquote>
 
 <p>
-<em>Ghostscript cannot read PDF files from standard input or a pipe because the PDF language inherently requires random access to the file. Thus '<tt>-</tt>' only works with PostScript documents.</em>
-
-<p>
 When Ghostscript finishes reading from the pipe, it quits rather than
 going into interactive mode.  Because of this, options and files after the '<tt>-</tt>' in the command line will be ignored.
 
@@ -834,9 +831,12 @@ switches</a> in the command line, if any;
 <li>The directories specified by the <code>GS_LIB</code>
 environment variable, if any;
 
-<li>The directories specified by the
-<code>GS_LIB_DEFAULT</code> macro (if any) in the makefile
-when this executable was built.
+<li>If built with COMPILE_INITS=1 (currently the default build) the files in the
+<code>%rom%Resource/Init/</code> and <code>%rom%lib/</code> file system built
+into the executable ;
+
+<li>The directories specified by the <code>GS_LIB_DEFAULT</code> macro
+(if any) in the makefile when this executable was built.
 </ol>
 
 <p>
@@ -856,11 +856,9 @@ in the current directory first by using the
 
 <p>
 Note that Ghostscript does not use this file searching algorithm for the
-<code>run</code> or <b><tt>file</tt></b>
-operators: for these operators, it simply opens the file with the name
-given.  To run a file using the searching algorithm, use
-<code>runlibfile</code> instead of
-<code>run</code>.
+<b><tt>run</tt></b> or <b><tt>file</tt></b> operators: for these operators, it
+simply opens the file with the name given.  To run a file using the searching
+algorithm, use <code>runlibfile</code> instead of <code>run</code>.
 
 <h3><a name="PS_resources"></a>Finding PostScript Level 2 resources</h3>
 
@@ -877,12 +875,16 @@ specifies an absolute path. The user may set it as explained in
 
 <p>
 If the user doesn't set the system parameter <code>GenericResourceDir</code>,
-Ghostscript creates a default value for it with
-attaching the string <code>../Resource</code>
-to directory paths explained in 
-<a href="#Finding_files">How Ghostscript finds files</a>,
-except the current directory.
-The first successful combination is used.
+or use the <code>-sGenericResourceDir=</code> command line option, Ghostscript
+creates a default value for it by looking on the directory paths explained in
+<a href="#Finding_files">How Ghostscript finds files</a>, excluding the current directory. 
+The first path with <code>Resource</code> in it is used, including any prefix
+up to the path separator character following the string <code>Resource</code>.
+For example, when COMPILE_INITS=1 (the current default build), if the first path
+is <code>%rom%Resource/Init/</code>, then the <code>GenericResourceDir</code>
+systemparam will be set to <code>%rom%Resource/</code> by default.
+
+
 
 <p>
 If the value of the system parameter <code>GenericResourceDir</code>
@@ -2509,9 +2511,8 @@ another program is "driving" Ghostscript.
 <dl>
 <dt><code>-dNOPROMPT</code>
 <dd>Disables the prompt printed by Ghostscript when it expects interactive
-input, as well as the end-of-page prompt (<code>-dNOPAGEPROMPT</code>);
-also disables the implicit <code>flushpage</code> that normally occurs
-each time Ghostscript asks for more input.  This allows piping input
+input, as well as the end-of-page prompt (<code>-dNOPAGEPROMPT</code>).
+This allows piping input
 directly into Ghostscript, as long as the data doesn't refer to
 <code>currentfile</code>.
 </dl>
@@ -3244,6 +3245,8 @@ guide to international paper sizes can be found at
         <td>&nbsp;<td align=right>8.5<td>&nbsp;<td align=right>13.0<td>&nbsp;<td align=right>216<td>&nbsp;<td align=right>330<td>&nbsp;<td align=right>612<td>&nbsp;<td align=right>936<td>&nbsp;<td>European foolscap
 <tr>    <td>halfletter
         <td>&nbsp;<td align=right>5.5<td>&nbsp;<td align=right>8.5<td>&nbsp;<td align=right>140<td>&nbsp;<td align=right>216<td>&nbsp;<td align=right>396<td>&nbsp;<td align=right>612<td>&nbsp;<td>&nbsp;
+<tr>    <td>hagaki
+        <td>&nbsp;<td align=right>3.9<td>&nbsp;<td align=right>5.8<td>&nbsp;<td align=right>100<td>&nbsp;<td align=right>148<td>&nbsp;<td align=right>283<td>&nbsp;<td align=right>420<td>&nbsp;<td>Japanese postcard
 </table>
 
 <p>

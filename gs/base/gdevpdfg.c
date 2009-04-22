@@ -376,8 +376,8 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 	        scn:
 		    command = ppscc->setcolorn;
 		    if (!gx_hld_saved_color_same_cspace(&temp, psc)) {
-			code = pdf_color_space(pdev, &cs_value, NULL, pcs,
-					&pdf_color_space_names, true);
+			code = pdf_color_space_named(pdev, &cs_value, NULL, pcs,
+					&pdf_color_space_names, true, NULL, 0);
 			/* fixme : creates redundant PDF objects. */
 			if (code == gs_error_rangecheck) {
 			    /* The color space can't write to PDF. */
@@ -812,6 +812,7 @@ pdf_write_spot_function(gx_device_pdf *pdev, const gx_ht_order *porder,
     uint i;
     int code = 0;
 
+    params.array_size = 0;
     params.m = 2;
     params.Domain = domain_spot;
     params.n = 1;

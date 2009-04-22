@@ -190,7 +190,7 @@ clist_init_io_procs(gx_device_clist *pclist_dev, bool in_memory)
 /* Initialization for imager state. */
 /* The initial scale is arbitrary. */
 const gs_imager_state clist_imager_state_initial =
-{gs_imager_state_initial(300.0 / 72.0)};
+{gs_imager_state_initial(300.0 / 72.0, false)};
 
 /*
  * The buffer area (data, data_size) holds a bitmap cache when both writing

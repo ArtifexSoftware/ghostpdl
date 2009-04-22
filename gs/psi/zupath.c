@@ -652,15 +652,14 @@ zgetpath(i_ctx_t *i_ctx_p)
                     k = 0;
                     ref_assign(&leaf_ref[j], operators[pe]);
                     pe = gs_path_enum_next(&penum, pts);
-                    if (pe == 0)
-                        goto out;
+                    if (pe <= 0)
+                        return pe;
                     if (pe >= 5)
                         return_error(e_unregistered);
                 }
             }
         }
      }
-  out:
   return 0;
 }
 

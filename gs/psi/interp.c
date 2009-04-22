@@ -688,7 +688,9 @@ set_gc_signal(i_ctx_t *i_ctx_p, int *psignal, int value)
     }
 }
 
-/* Copy the contents of an overflowed stack into a (local) array. */
+/* Copy top elements of an overflowed stack into a (local) array. */
+/* Adobe copies only 500 top elements, we copy up to 65535 top elements */
+/* for better debugging, PLRM compliance, and backward compatibility. */
 static int
 copy_stack(i_ctx_t *i_ctx_p, const ref_stack_t * pstack, int skip, ref * arr)
 {
@@ -696,6 +698,8 @@ copy_stack(i_ctx_t *i_ctx_p, const ref_stack_t * pstack, int skip, ref * arr)
     uint save_space = ialloc_space(idmemory);
     int code;
 
+    if (size > 65535)
+        size = 65535;
     ialloc_set_space(idmemory, avm_local);
     code = ialloc_ref_array(arr, a_all, size, "copy_stack");
     if (code >= 0)
