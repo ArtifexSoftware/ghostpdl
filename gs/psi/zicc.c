@@ -32,12 +32,10 @@
 #include "icie.h"
 #include "ialloc.h"
 #include "zicc.h"
+#include "icc34.h"
 
 int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 {
-
-    /* MJV to Fix */
-#if 0
 
     os_ptr                  op = osp;
     int edepth = ref_stack_count(&e_stack);
@@ -55,10 +53,12 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         return_error(e_undefined);
     check_read_file(s, pstrmval);
 
+
     /* build the color space object */
     code = gs_cspace_build_CIEICC(&pcs, NULL, gs_state_memory(igs));
     if (code < 0)
         return code;
+
     picc_info = pcs->params.icc.picc_info;
     picc_info->num_components = ncomps;
     picc_info->instrp = s;
@@ -79,7 +79,9 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 
     /* If the input space to this profile is CIELAB, then we need to adjust the limits */
     /* See ICC spec ICC.1:2004-10 Section 6.3.4.2 and 6.4 */
-    if(picc_info->plu->e_inSpace == icSigLabData)
+/*    Need to revisit this with new flow */
+
+    if(picc_info->cs_signature == icSigLabData)
     {
         picc_info->Range.ranges[0].rmin = 0.0;
         picc_info->Range.ranges[0].rmax = 100.0;
@@ -92,7 +94,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 
     } 
     /* If the input space is icSigXYZData, then we should do the limits based upon the white point of the profile.  */
-    if(picc_info->plu->e_inSpace == icSigXYZData)
+    if(picc_info->cs_signature == icSigXYZData)
     {
 	for (i = 0; i < 3; i++) 
 	{
@@ -115,7 +117,6 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
                            edepth,
                            code );
 
-#endif
     return 0;
 }
 

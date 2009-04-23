@@ -19,6 +19,7 @@
 #  define gsicc_INCLUDED
 
 #include "gscie.h"
+#include "icc34.h"
 
 /*
  * The gs_cie_icc_s structure will exist in all instantiations of the
@@ -108,7 +109,7 @@ struct gs_cie_icc_s {
 
     /* number of components, and their associated range */
     uint                num_components;
-    gs_range4           Range;
+    gs_range15          Range;
 
     /* stream object, and the associated read id */
     unsigned short      file_id;
@@ -118,6 +119,11 @@ struct gs_cie_icc_s {
 
     /* must the profile connection space undergo an L*a*b* ==> XYZ conversion */
     bool                pcs_is_cielab;
+
+    /* Input colorspace.  Need to access this to know how to set all the range
+       elements that ghostscript likes to use */
+
+    icColorSpaceSignature cs_signature;
 
     /* top-level icclib data structure for the profile */
  /*   struct _icc *       picc; */
