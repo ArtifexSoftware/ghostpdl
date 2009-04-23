@@ -179,10 +179,10 @@ gsicc_setbuffer_desc(gsicc_bufferdesc_t *buffer_desc,unsigned char num_chan,
  gcmmhprofile_t
  GetProfileHandle(gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager)
  {
-#if 0 
+
      gcmmhprofile_t profilehandle = gs_colorspace->cmm_icc_profile_data->ProfileHandle;
      void *buffer = gs_colorspace->cmm_icc_profile_data->buffer;
-     gs_color_space_index color_space_index = gs_colorspace->type->index;
+     gs_color_space_index color_space_index = gs_color_space_get_index(gs_colorspace);
 
      if( profilehandle != NULL ){
         return(profilehandle);
@@ -283,7 +283,7 @@ gsicc_setbuffer_desc(gsicc_bufferdesc_t *buffer_desc,unsigned char num_chan,
             break;
 
      } 
-#endif
+
 
     return(0);
 

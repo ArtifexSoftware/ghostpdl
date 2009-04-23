@@ -18,6 +18,8 @@
 #include "gsmemory.h"
 #include "gsstruct.h"  
 #include "scommon.h"
+#include "gx.h"
+#include "gxistate.h"
 #include "smd5.h" 
 #include "gscms.h"
 #include "gsicc_littlecms.h" 
@@ -373,7 +375,7 @@ gsicc_remove_link(gsicc_link_t *link,gsicc_link_cache_t *icc_cache, gs_memory_t 
    is updating a reference count) */
 
 gsicc_link_t* 
-gsicc_get_link(gs_imager_state * pis, gs_color_space  *input_colorspace, 
+gsicc_get_link(gs_imager_state *pis, gs_color_space  *input_colorspace, 
                     gs_color_space *output_colorspace, 
                     gsicc_rendering_param_t *rendering_params, gs_memory_t *memory, bool include_softproof)
 {
@@ -382,11 +384,8 @@ gsicc_get_link(gs_imager_state * pis, gs_color_space  *input_colorspace,
     gsicc_link_t *link;
     void **contextptr = NULL;
     int ok;
-/*    gsicc_manager_t *icc_manager = pis->icc_manager;
-    gsicc_link_cache_t *icc_cache = pis->icc_cache; */
-
-    gsicc_manager_t *icc_manager = NULL;
-    gsicc_link_cache_t *icc_cache = NULL; 
+    gsicc_manager_t *icc_manager = pis->icc_manager; 
+    gsicc_link_cache_t *icc_cache = pis->icc_cache;
 
     /* First compute the hash code for the incoming case */
 
@@ -427,15 +426,9 @@ gsicc_get_link(gs_imager_state * pis, gs_color_space  *input_colorspace,
       
     } 
 
-    /* ToDo: If we are OK, then get the link.  But first convert all to ICC type */
-
-    
-
-
     /* Now get the link */
-
-//    ok = gscms_get_link(link,input_colorspace,output_colorspace,rendering_params, pis->icc_manager);
-      ok = gscms_get_link(link,input_colorspace,output_colorspace,rendering_params, NULL);
+    
+    ok = gscms_get_link(link,input_colorspace,output_colorspace,rendering_params, pis->icc_manager);
     
     if (ok){
 
