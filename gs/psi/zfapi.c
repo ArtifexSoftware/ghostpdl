@@ -48,6 +48,8 @@
 #include "stream.h"		/* for files.h */
 #include "gscrypt1.h"
 #include "gxfcid.h"
+#include "gsstype.h"
+#include "gxchar.h"		/* for st_gs_show_enum */
 
 /* -------------------------------------------------------- */
 
@@ -1146,12 +1148,27 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
     const int import_shift_v = _fixed_shift - I->frac_shift;
     FAPI_raster rast;
     int code;
+    extern_st(st_gs_show_enum);
+    extern_st(st_gs_state);
 
     if(penum == NULL) {
 	return_error(e_undefined);
     }
     dev = penum_s->dev;
-    pgs = penum_s->pgs;
+
+    /* Ensure that pis points to a st_gs_gstate (graphics state) structure */
+    if (gs_object_type(penum->memory, penum->pis) != &st_gs_state) {
+	/* If pis is not a graphics state, see if the text enumerator is a 
+	 * show enumerator, in which case we have a pointer to the graphics state there
+	 */
+	if (gs_object_type(penum->memory, penum) == &st_gs_show_enum) {
+	    pgs = penum_s->pgs;
+	} else
+	    /* No graphics state, give up... */
+	    return_error(e_undefined);
+    } else 
+	pgs = (gs_state *)penum->pis;
+
     dev1 = gs_currentdevice_inline(pgs); /* Possibly changed by zchar_set_cache. */
 
     if (SHOW_IS(penum, TEXT_DO_NONE)) {
@@ -1210,19 +1227,31 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
 				dy + rast.top_indent, dy + rast.top_indent + rast.black_height - dev1->height);
 		    if ((code = fapi_copy_mono(dev1, &rast, dx, dy)) < 0)
 			return code;
-		    penum_s->cc->offset.x += float2fixed(penum_s->fapi_glyph_shift.x);
-		    penum_s->cc->offset.y += float2fixed(penum_s->fapi_glyph_shift.y);
+
+		    if (gs_object_type(penum->memory, penum) == &st_gs_show_enum) {
+			penum_s->cc->offset.x += float2fixed(penum_s->fapi_glyph_shift.x);
+			penum_s->cc->offset.y += float2fixed(penum_s->fapi_glyph_shift.y);
+		    }
 		}
             } else { /* Not using GS cache */
 	        const gx_clip_path * pcpath = i_ctx_p->pgs->clip_path; 
                 const gx_drawing_color * pdcolor = penum->pdcolor;
 
-		if ((code = gx_image_fill_masked(dev, rast.p, 0, rast.line_step, 0,
-			          (int)(penum_s->pgs->ctm.tx + (double)rast_orig_x / (1 << frac_pixel_shift) + penum_s->fapi_glyph_shift.x + 0.5), 
-			          (int)(penum_s->pgs->ctm.ty + (double)rast_orig_y / (1 << frac_pixel_shift) + penum_s->fapi_glyph_shift.y + 0.5), 
+		if (gs_object_type(penum->memory, penum) == &st_gs_show_enum) {
+		    if ((code = gx_image_fill_masked(dev, rast.p, 0, rast.line_step, 0,
+			          (int)(pgs->ctm.tx + (double)rast_orig_x / (1 << frac_pixel_shift) + penum_s->fapi_glyph_shift.x + 0.5), 
+			          (int)(pgs->ctm.ty + (double)rast_orig_y / (1 << frac_pixel_shift) + penum_s->fapi_glyph_shift.y + 0.5), 
 			          rast.width, rast.height,
 			          pdcolor, 1, rop3_default, pcpath)) < 0)
 				    return code;
+		} else {
+		    if ((code = gx_image_fill_masked(dev, rast.p, 0, rast.line_step, 0,
+			          (int)(pgs->ctm.tx + (double)rast_orig_x / (1 << frac_pixel_shift) + 0.5), 
+			          (int)(pgs->ctm.ty + (double)rast_orig_y / (1 << frac_pixel_shift) + 0.5), 
+			          rast.width, rast.height,
+			          pdcolor, 1, rop3_default, pcpath)) < 0)
+				    return code;
+		}
             }
         }
     }
