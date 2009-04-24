@@ -28,8 +28,8 @@
 #define nil ((void*)0)
 
 /*
- * ERROR 
- * is used to go up the stack and 
+ * ERROR
+ * is used to go up the stack and
  * eventually return_error(gs_error_Fatal) to gs.
  */
 #define ERROR (-2)
@@ -98,7 +98,7 @@ inferno_device far_data gs_inferno_device =
  * ghostscript asks us how to convert between
  * rgb and color map entries
  */
-static gx_color_index 
+static gx_color_index
 inferno_rgb2cmap(gx_device *dev, const gx_color_value cv[]) {
 	int shift;
 	inferno_device *bdev = (inferno_device*) dev;
@@ -128,7 +128,7 @@ inferno_rgb2cmap(gx_device *dev, const gx_color_value cv[]) {
 	/*
 	 * we keep track of what ldepth bitmap this is by watching
 	 * what colors gs asks for.
-	 * 
+	 *
 	 * one catch: sometimes print_page gets called more than one
 	 * per page (for multiple copies) without cmap calls inbetween.
 	 * if bdev->cmapcall is 0 when print_page gets called, it uses
@@ -149,7 +149,7 @@ inferno_rgb2cmap(gx_device *dev, const gx_color_value cv[]) {
 	return ((((blue<<4)|green)<<4)|red);
 }
 
-static int 
+static int
 inferno_cmap2rgb(gx_device *dev, gx_color_index color,
   gx_color_value rgb[3]) {
 	int shift, i;
@@ -186,10 +186,10 @@ inferno_cmap2rgb(gx_device *dev, gx_color_index color,
 #define Glevs	16
 #define Blevs	16
 #define Mlevs	16
-#define Rfactor 1		/* multiple of red level in p9color[] index */
+#define Rfactor 1		/* multiple of red level in e cp9color[] index */
 #define Gfactor Rlevs
 #define Bfactor	(Rlevs*Glevs)
-			
+
 ulong p9color[Rlevs*Glevs*Blevs];	/* index blue most sig, red least sig */
 
 void init_p9color(void)		/* init at run time since p9color[] is so big */
@@ -236,7 +236,7 @@ inferno_open(gx_device *dev)
 	return gdev_prn_open(dev);
 }
 
-/* 
+/*
  * inferno_close() is called at the end, once everything
  * is finished.  we have nothing to do.
  */
@@ -314,7 +314,7 @@ inferno_print_page(gx_device_printer *pdev, FILE *f)
 					r<<=4;
 					g<<=4;
 					b<<=4;
-					p[x] = rgb2cmap(r,g,b);	
+					p[x] = rgb2cmap(r,g,b);
 				}
 				if(1){
 					u = p9color[us];
@@ -356,7 +356,7 @@ inferno_print_page(gx_device_printer *pdev, FILE *f)
 
 /*
  * this is a modified version of the image compressor
- * from fb/bit2enc.  it is modified only in that it 
+ * from fb/bit2enc.  it is modified only in that it
  * now compiles as part of gs.
  */
 
@@ -402,7 +402,7 @@ struct WImage {
 	/*
 	 * ibase is the pointer to where the beginning of
 	 * the input "is" in memory.  whenever we "slide" the
-	 * buffer N bytes, what we are actually doing is 
+	 * buffer N bytes, what we are actually doing is
 	 * decrementing ibase by N.
 	 * the ulongs in the Hlist structures are just
 	 * pointers relative to ibase.
@@ -537,7 +537,7 @@ gobbleline(WImage *w)
 		/* hash table lookup */
 		for(hp=w->hash[w->h].next;hp;hp=hp->next){
 			/*
-			 * the next block is an optimization of 
+			 * the next block is an optimization of
 			 * for(s=p, t=w->ibase+hp->p; s<es && *s == *t; s++, t++)
 			 * 	;
 			 */
@@ -563,7 +563,7 @@ gobbleline(WImage *w)
 		}
 
 		/*
-		 * if we didn't find a long enough run, append to 
+		 * if we didn't find a long enough run, append to
 		 * the raw dump buffer
 		 */
 		if(runlen<NMATCH){
@@ -704,7 +704,7 @@ writeimageblock(WImage *w, uchar *data, int ndata)
 }
 
 /*
- * functions from the Plan9/Brazil drawing libraries 
+ * functions from the Plan9/Brazil drawing libraries
  */
 static int
 bytesperline(Rectangle r, int ld)
