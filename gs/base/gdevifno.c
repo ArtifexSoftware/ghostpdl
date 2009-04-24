@@ -55,6 +55,8 @@ static int bytesperline(Rectangle, int);
 static int rgb2cmap(int, int, int);
 static long cmap2rgb(int);
 
+void init_p9color(void);
+
 #define X_DPI	100
 #define Y_DPI	100
 
