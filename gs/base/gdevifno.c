@@ -55,7 +55,7 @@ static int bytesperline(Rectangle, int);
 static int rgb2cmap(int, int, int);
 /* static long cmap2rgb(int); */ /* not currently used */
 
-void init_p9color(void);
+void init_p9color(ulong *p9color);
 
 #define X_DPI	100
 #define Y_DPI	100
@@ -74,7 +74,15 @@ typedef struct inferno_device_s {
 	int color, gray;
 	int cmapcall;
 	int nbits;
+	ulong *p9color;	/* index blue most sig, red least sig */
 } inferno_device;
+
+/* structure descriptor for the garbage collector */
+/* we must use the final version because gx_device_common requires
+   a finalisation call, but such procedures aren't inherited. */
+gs_private_st_suffix_add1_final(st_inferno_device, inferno_device,
+        "inferno_device", inferno_device_enum_ptrs, inferno_device_reloc_ptrs,
+                          gx_device_finalize, st_device_printer, p9color);
 
 static const gx_device_procs inferno_procs =
 	prn_color_params_procs(inferno_open, gdev_prn_output_page, inferno_close,
@@ -83,7 +91,8 @@ static const gx_device_procs inferno_procs =
 
 
 inferno_device far_data gs_inferno_device =
-{ prn_device_body(inferno_device, inferno_procs, "inferno",
+{ prn_device_stype_body(inferno_device, inferno_procs, "inferno",
+	&st_inferno_device,
 	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	X_DPI, Y_DPI,
 	0,0,0,0,	/* margins */
@@ -191,10 +200,9 @@ inferno_cmap2rgb(gx_device *dev, gx_color_index color,
 #define Rfactor 1		/* multiple of red level in e cp9color[] index */
 #define Gfactor Rlevs
 #define Bfactor	(Rlevs*Glevs)
+#define p9color_size (sizeof(ulong)*Rlevs*Glevs*Blevs)
 
-ulong p9color[Rlevs*Glevs*Blevs];	/* index blue most sig, red least sig */
-
-void init_p9color(void)		/* init at run time since p9color[] is so big */
+void init_p9color(ulong *p9color)	/* init at run time since p9color[] is so big */
 {
 	int r, g, b, o;
 	ulong* cur = p9color;
@@ -234,7 +242,10 @@ inferno_open(gx_device *dev)
 	bdev->ldepth = 3;
 	bdev->nbits = 4;	/* 4 bits per color per pixel (12 bpp, then we dither) */
 				/* if you change this, change the entry in gs_inferno_device */
-	init_p9color();
+	bdev->p9color = (ulong *)gs_alloc_bytes(bdev->memory, p9color_size, "plan 9 colour cube");
+	if (bdev->p9color == NULL)
+		return_error(gs_error_VMerror);
+	init_p9color(bdev->p9color);
 	return gdev_prn_open(dev);
 }
 
@@ -245,7 +256,11 @@ inferno_open(gx_device *dev)
 static int
 inferno_close(gx_device *dev)
 {
+	inferno_device *bdev = (inferno_device*) dev;
 	int code;
+
+	gs_free_object(dev->memory, bdev->p9color, "plan 9 colour cube");
+
 	code = gdev_prn_close(dev);
 	if(code < 0)
 		return_error(code);
@@ -319,7 +334,7 @@ inferno_print_page(gx_device_printer *pdev, FILE *f)
 					p[x] = rgb2cmap(r,g,b);
 				}
 				if(1){
-					u = p9color[us];
+					u = bdev->p9color[us];
 					/* the ulong in p9color is a 2x2 matrix.  pull the entry
 					 * u[x%2][y%2], more or less.
 					 */
