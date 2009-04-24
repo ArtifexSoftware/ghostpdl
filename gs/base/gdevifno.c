@@ -275,7 +275,7 @@ inferno_close(gx_device *dev)
 static int
 inferno_print_page(gx_device_printer *pdev, FILE *f)
 {
-	uchar buf[16384];	/* == 8192 dots across */
+	uchar *buf;
 	uchar *p;
 	WImage *w;
 	int bpl, y;
@@ -291,7 +291,7 @@ inferno_print_page(gx_device_printer *pdev, FILE *f)
 	Rectangle r;
 
 	gsbpl = gdev_prn_raster(pdev);
-	if(gsbpl > sizeof(buf)) {
+	if(gsbpl > 16384) {	/* == 8192 dots across */
 		errprintf("bitmap far too wide for inferno\n");
 		return_error(gs_error_Fatal);
 	}
@@ -311,6 +311,12 @@ inferno_print_page(gx_device_printer *pdev, FILE *f)
 	if(w == nil) {
 		errprintf("initwriteimage failed\n");
 		return_error(gs_error_Fatal);
+	}
+
+	buf = gs_alloc_bytes(bdev->memory, gsbpl, "inferno line buffer");
+	if(buf == NULL) {
+		errprintf("couldn't allocate line buffer\n");
+		return_error(gs_error_VMerror);
 	}
 
 	/*
@@ -362,11 +368,15 @@ inferno_print_page(gx_device_printer *pdev, FILE *f)
 		xmod = pdev->width % ppb[ldepth];
 		if(xmod)
 			p[(x-1)/ppb[ldepth]] <<= ((ppb[ldepth]-xmod)*bpp[ldepth]);
-		if(writeimageblock(w, p, bpl) == ERROR)
+		if(writeimageblock(w, p, bpl) == ERROR) {
+			gs_free_object(bdev->memory, buf, "inferno line buffer");
 			return_error(gs_error_Fatal);
+		}
 	}
-	if(writeimageblock(w, nil, 0) == ERROR)
+	gs_free_object(bdev->memory, buf, "inferno line buffer");
+	if(writeimageblock(w, nil, 0) == ERROR) {
 		return_error(gs_error_Fatal);
+	}
 
 	return 0;
 }
@@ -375,6 +385,7 @@ inferno_print_page(gx_device_printer *pdev, FILE *f)
  * this is a modified version of the image compressor
  * from fb/bit2enc.  it is modified only in that it
  * now compiles as part of gs.
+ * some updates have been made to use dynamic memory.
  */
 
 /*
