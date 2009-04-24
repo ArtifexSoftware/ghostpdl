@@ -406,9 +406,23 @@ extern const gx_device_procs prn_std_procs;
 	  (float)((rm) * 72.0), (float)((tm) * 72.0)\
 	),\
 	prn_device_body_rest_(print_page)
+#define prn_device_margins_stype_body(dtype, procs, dname, stype, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
+	std_device_full_body_type(dtype, &procs, dname, stype,\
+	  (int)((float)(w10) * (xdpi) / 10 + 0.5),\
+	  (int)((float)(h10) * (ydpi) / 10 + 0.5),\
+	  xdpi, ydpi,\
+	  ncomp, depth, mg, mc, dg, dc,\
+	  (float)(-(lo) * (xdpi)), (float)(-(to) * (ydpi)),\
+	  (float)((lm) * 72.0), (float)((bm) * 72.0),\
+	  (float)((rm) * 72.0), (float)((tm) * 72.0)\
+	),\
+	prn_device_body_rest_(print_page)
 
 #define prn_device_body(dtype, procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
   prn_device_margins_body(dtype, procs, dname, w10, h10, xdpi, ydpi,\
+    lm, tm, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)
+#define prn_device_stype_body(dtype, procs, dname, stype, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
+  prn_device_margins_stype_body(dtype, procs, dname, stype, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)
 
 #define prn_device_margins_body_extended(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, ef, cn, print_page)\
