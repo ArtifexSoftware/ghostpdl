@@ -49,8 +49,8 @@ struct Rectangle {
 };
 static Point ZP = { 0, 0 };
 
-static WImage* initwriteimage(FILE *f, Rectangle r, int ldepth);
-static int writeimageblock(WImage *w, uchar *data, int ndata);
+static WImage* initwriteimage(FILE *f, Rectangle r, int ldepth, gs_memory_t *mem);
+static int writeimageblock(WImage *w, uchar *data, int ndata, gs_memory_t *mem);
 static int bytesperline(Rectangle, int);
 static int rgb2cmap(int, int, int);
 /* static long cmap2rgb(int); */ /* not currently used */
@@ -307,7 +307,7 @@ inferno_print_page(gx_device_printer *pdev, FILE *f)
 	r.max.x = pdev->width;
 	r.max.y = pdev->height;
 	bpl = bytesperline(r, ldepth);
-	w = initwriteimage(f, r, ldepth);
+	w = initwriteimage(f, r, ldepth, bdev->memory);
 	if(w == nil) {
 		errprintf("initwriteimage failed\n");
 		return_error(gs_error_Fatal);
@@ -368,13 +368,14 @@ inferno_print_page(gx_device_printer *pdev, FILE *f)
 		xmod = pdev->width % ppb[ldepth];
 		if(xmod)
 			p[(x-1)/ppb[ldepth]] <<= ((ppb[ldepth]-xmod)*bpp[ldepth]);
-		if(writeimageblock(w, p, bpl) == ERROR) {
+		if(writeimageblock(w, p, bpl, bdev->memory) == ERROR) {
 			gs_free_object(bdev->memory, buf, "inferno line buffer");
+			/* w leaks here */
 			return_error(gs_error_Fatal);
 		}
 	}
 	gs_free_object(bdev->memory, buf, "inferno line buffer");
-	if(writeimageblock(w, nil, 0) == ERROR) {
+	if(writeimageblock(w, nil, 0, bdev->memory) == ERROR) {
 		return_error(gs_error_Fatal);
 	}
 
@@ -664,7 +665,7 @@ shiftwindow(WImage *w, uchar *data, uchar *edata)
 }
 
 static WImage*
-initwriteimage(FILE *f, Rectangle r, int ldepth)
+initwriteimage(FILE *f, Rectangle r, int ldepth, gs_memory_t *mem)
 {
 	WImage *w;
 	int n, bpl;
@@ -676,7 +677,7 @@ initwriteimage(FILE *f, Rectangle r, int ldepth)
 	}
 
 	n = NMEM+NMATCH+NRUN+bpl*2;
-	w = malloc(n+sizeof(*w));
+	w = (WImage*)gs_alloc_bytes(mem, n+sizeof(*w), "inferno image");
 	if(w == nil)
 		return nil;
 	w->inbuf = (uchar*) &w[1];
@@ -701,7 +702,7 @@ initwriteimage(FILE *f, Rectangle r, int ldepth)
 }
 
 static int
-writeimageblock(WImage *w, uchar *data, int ndata)
+writeimageblock(WImage *w, uchar *data, int ndata, gs_memory_t *mem)
 {
 	uchar *edata;
 
@@ -713,7 +714,7 @@ writeimageblock(WImage *w, uchar *data, int ndata)
 		if(w->r.min.y != w->origr.max.y) {
 			errprintf("not enough data supplied to writeimage\n");
 		}
-		free(w);
+		gs_free_object(mem, w, "inferno image");
 		return 0;
 	}
 
