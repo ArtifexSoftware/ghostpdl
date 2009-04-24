@@ -53,7 +53,7 @@ static WImage* initwriteimage(FILE *f, Rectangle r, int ldepth);
 static int writeimageblock(WImage *w, uchar *data, int ndata);
 static int bytesperline(Rectangle, int);
 static int rgb2cmap(int, int, int);
-static long cmap2rgb(int);
+/* static long cmap2rgb(int); */ /* not currently used */
 
 void init_p9color(void);
 
