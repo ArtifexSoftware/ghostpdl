@@ -131,8 +131,8 @@ struct gs_cie_icc_s {
     /* "lookup" data structure in the ICC profile */
  /*   struct _icmLuBase * plu; */
 
-    /* icclib file object for ICC stream */
-   /* struct _icmFile   * pfile; */
+    /* file object for ICC stream */
+    struct _icmFile   * pfile;
 };
 
 /*

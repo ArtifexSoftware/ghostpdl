@@ -24,10 +24,10 @@
 
 typedef cmsHPROFILE gcmmhprofile_t;
 
-/* Prototypes */
-static unsigned int cmsGetProfileSizeFromMem(void *buffer);
 
-cmsHPROFILE gscms_get_profile_handle(unsigned char *buffer);
+/* Prototypes */
+
+cmsHPROFILE gscms_get_profile_handle_mem(unsigned char *buffer, unsigned int input_size);
 
 void gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_buff_desc,
                              gsicc_bufferdesc_t *output_buff_desc, 

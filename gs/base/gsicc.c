@@ -24,7 +24,7 @@
 #include "gxarith.h"
 #include "gxcie.h"
 #include "gzstate.h"
-#include "icc.h"		/* must precede icc.h */
+/* #include "icc.h" */		/* must precede icc.h */
 #include "gsicc.h"
 
 #define SAVEICCPROFILE 0
@@ -144,7 +144,6 @@ static const gs_color_space_type gs_color_space_type_CIEICC = {
     gx_serialize_CIEICC,            /* serialize */
     gx_cspace_is_linear_default
 };
-
 
 /*
  * Return the number of components used by a ICCBased color space - 1, 3, or 4
@@ -349,6 +348,7 @@ gx_remap_ICCBased(const gs_client_color * pc, const gs_color_space * pcs,
     /* Use default routine for non custom color processing. */
     return gx_default_remap_color(pc, pcs, pdc, pis, dev, select);
 }
+
 #endif
 
 /*
@@ -364,7 +364,8 @@ gx_final_CIEICC(const gs_color_space * pcs)
     rc_decrement_only(pcs->params.icc.picc_info, "gx_final_CIEICC");
 }
 
-#if 0 /* MJV to Fix */
+#if 0 
+
 static int
 icmFileGs_seek(icmFile *pp, long int offset)
 {
@@ -407,6 +408,7 @@ icmFileGs_delete(icmFile *pp)
     free(pp);
     return 0;
 }
+
 #endif
 
 /**
@@ -425,11 +427,11 @@ icmFileGs_delete(icmFile *pp)
  * error.
  **/
 
-#if 0 /*MJV to Fix */
+#if 0
 static icmFile *
 gx_wrap_icc_stream(stream *strp)
 {
-    icmFileGs *p;
+ /*   icmFileGs *p;
 
     if ((p = (icmFileGs *) calloc(1,sizeof(icmFileGs))) == NULL)
 	return NULL;
@@ -441,8 +443,9 @@ gx_wrap_icc_stream(stream *strp)
 
     p->strp = strp;
 
-    return (icmFile *)p;
+    return (icmFile *)p; */
 }
+
 #endif
 
 int
@@ -688,10 +691,6 @@ gs_cspace_build_CIEICC(
      * procedure).
      */
 
-/* MJV to FIX */
-
-#if 0
-
     picc_info = gx_build_cie_space( ppcspace,
                                     &gs_color_space_type_CIEICC,
                                     &st_cie_icc,
@@ -701,6 +700,9 @@ gs_cspace_build_CIEICC(
         return_error(gs_error_VMerror);
 
     gx_set_common_cie_defaults(&picc_info->common, client_data);
+
+#if 0 
+     /* MJV to fix */
     /*
      * Now set the D50 WhitePoint. The above function does not set any
      * valid WhitepPoint since PostScript always requires this, but ICC

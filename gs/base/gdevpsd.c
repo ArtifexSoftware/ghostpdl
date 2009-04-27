@@ -22,7 +22,7 @@
 #include "gxlum.h"
 #include "gdevdcrd.h"
 #include "gstypes.h"
-#include "icc.h"
+/* #include "icc.h" */
 #include "gxdcconv.h"
 #include "gdevdevn.h"
 #include "gsequivc.h"
@@ -80,15 +80,15 @@ typedef struct psd_device_s {
 
     /* ICC color profile objects, for color conversion. */
     char profile_rgb_fn[256];
-    icmLuBase *lu_rgb;
+   /* icmLuBase *lu_rgb;  MJV TO FIX */
     int lu_rgb_outn;
 
     char profile_cmyk_fn[256];
-    icmLuBase *lu_cmyk;
+   /* icmLuBase *lu_cmyk; MJV TO FIX */
     int lu_cmyk_outn;
 
     char profile_out_fn[256];
-    icmLuBase *lu_out;
+    /* icmLuBase *lu_out;  MJV TO FIX */
 } psd_device;
 
 /* GC procedures */
@@ -416,11 +416,12 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
     psd_device *xdev = (psd_device *)dev;
     int n = xdev->devn_params.separations.num_separations;
-    icmLuBase *luo = xdev->lu_cmyk;
+  /*  icmLuBase *luo = xdev->lu_cmyk;  MJV TO FIX */
+    void *luo = NULL;
     int i;
 
     if (luo != NULL) {
-	double in[4];
+	/* double in[4];
 	double tmp[MAX_CHAN];
 	int outn = xdev->lu_cmyk_outn;
 
@@ -432,7 +433,7 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 	for (i = 0; i < outn; i++)
 	    out[i] = float2frac(tmp[i]);
 	for (; i < n + 4; i++)
-	    out[i] = 0;
+	    out[i] = 0;   MJV TO FIX */
     } else {
 	/* If no profile given, assume CMYK */
 	out[0] = c;
@@ -456,11 +457,12 @@ rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
 {
     psd_device *xdev = (psd_device *)dev;
     int n = xdev->devn_params.separations.num_separations;
-    icmLuBase *luo = xdev->lu_rgb;
+   /* icmLuBase *luo = xdev->lu_rgb; MJV TO FIX */
+    void *luo = NULL;
     int i;
 
     if (luo != NULL) {
-	double in[3];
+	/* double in[3];
 	double tmp[MAX_CHAN];
 	int outn = xdev->lu_rgb_outn;
 
@@ -471,7 +473,7 @@ rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
 	for (i = 0; i < outn; i++)
 	    out[i] = float2frac(tmp[i]);
 	for (; i < n + 4; i++)
-	    out[i] = 0;
+	    out[i] = 0;   MJV TO FIX */
     } else {
 	frac cmyk[4];
 
@@ -1071,6 +1073,7 @@ psd_write_header(psd_write_ctx *xc, psd_device *pdev)
     return code;
 }
 
+/* MJV TO FIX 
 static void
 psd_calib_row(psd_write_ctx *xc, byte **tile_data, const byte *row, 
 		int channel, icmLuBase *luo)
@@ -1098,6 +1101,8 @@ psd_calib_row(psd_write_ctx *xc, byte **tile_data, const byte *row,
 	}
     }
 }
+
+*/
 
 /*
  * Output the image data for the PSD device.  The data for the PSD is
@@ -1128,7 +1133,8 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
     int base_bytes_pp = xc->base_bytes_pp;
     int chan_idx;
     psd_device *xdev = (psd_device *)pdev;
-    icmLuBase *luo = xdev->lu_out;
+   /*  icmLuBase *luo = xdev->lu_out;  MJV TO FIX */
+    void *luo = NULL;
     byte * row, * unpacked;
     int width = pdev->width;
     int non_encodable_count = 0;
@@ -1165,7 +1171,7 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
 		        }
 		    }
 	        } else {
-		    psd_calib_row(xc, &sep_line, unpacked, data_pos, luo);
+		    /* psd_calib_row(xc, &sep_line, unpacked, data_pos, luo);  MJV TO FIX */
 	        }	
 	        psd_write(xc, sep_line, xc->width);
 	    } else {

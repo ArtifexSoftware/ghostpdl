@@ -34,6 +34,11 @@ void gsicc_set_proof_profile(cmm_profile_t proofprofile );
 void gsicc_load_default_device_profile(int numchannels);
 void gsicc_load_default_input_profile(int numchannels);
 
+cmm_profile_t* gsicc_profile_new(gs_color_space *gs_colorspace, stream *s, gs_memory_t *memory);
+
+static int gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, gs_memory_t *memory);
+unsigned int gsicc_getprofilesize(unsigned char *buffer);
+
 void gsicc_setbuffer_desc(gsicc_bufferdesc_t *buffer_desc,unsigned char num_chan,
     unsigned char bytes_per_chan,
     bool has_alpha,
@@ -42,7 +47,7 @@ void gsicc_setbuffer_desc(gsicc_bufferdesc_t *buffer_desc,unsigned char num_chan
     bool is_planar,
     gs_icc_colorbuffer_t buffercolor);
 
- gcmmhprofile_t GetProfileHandle(gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager);
+ gcmmhprofile_t gsicc_get_profile_handle(gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager);
 
 
 

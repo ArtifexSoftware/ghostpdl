@@ -12,8 +12,44 @@
 */
 /*  GS ICC Manager.  Initial stubbing of functions.  */
 
+#include "std.h"
+#include "stdpre.h"
+#include "gstypes.h"
+#include "gsmemory.h"
+#include "gsstruct.h"  
+#include "scommon.h"
+#include "strmio.h"
+#include "gx.h"
+#include "gxcspace.h"
 #include "gscms.h"
 #include "gsiccmanage.h"
+
+
+/* profile data structure */
+
+gs_private_st_ptrs2(st_gsicc_cmm, cmm_profile_t, "cmm_profile",
+		    cmm_profile_enum_ptrs, cmm_profile_reloc_ptrs,
+		    ProfileHandle, buffer);
+
+
+static const gs_color_space_type gs_color_space_type_icc = {
+    gs_color_space_index_CIEICC,    /* index */
+    true,                           /* can_be_base_space */
+    true,                           /* can_be_alt_space */
+    NULL                            /* This is going to be outside the norm. struct union*/
+
+}; 
+
+
+
+/* Get the size of the ICC profile that is in the buffer */
+static unsigned int gsicc_getprofilesize(unsigned char *buffer)
+{
+
+    return( (buffer[0]<<24) + (buffer[1]<<16) + (buffer[2]<<8) + buffer[3] );
+
+}
+
 
 /*  Initialize the CMS 
     Prepare the ICC Manager
@@ -26,7 +62,6 @@ gsicc_create()
 
 
 }
-
 
 /*  Shut down the  CMS 
     and the ICC Manager
@@ -168,6 +203,73 @@ gsicc_setbuffer_desc(gsicc_bufferdesc_t *buffer_desc,unsigned char num_chan,
 
 }
 
+cmm_profile_t *
+gsicc_profile_new(gs_color_space *gs_colorspace, stream *s, gs_memory_t *memory)
+{
+
+    cmm_profile_t *result;
+    int code;
+
+  /*  gs_colorspace = gs_cspace_alloc(memory,&gs_color_space_type_icc);  */
+    
+    result = gs_alloc_struct(memory, cmm_profile_t, &st_gsicc_cmm,
+			     "cmm_profile_new");
+    if (result == NULL)
+	return result;  
+
+    code = gsicc_load_profile_buffer(result, s, memory);
+    if (code < 0) {
+
+        gs_free_object(memory, result, "cmm_profile_new");
+        return NULL;
+
+    } 
+
+    result->ProfileHandle = NULL;
+    
+
+    return(result);
+
+}
+
+/* Allocates and loads the icc buffer from the stream. */
+static int
+gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, gs_memory_t *memory)
+{
+       
+    int                     num_bytes,profile_size;
+    unsigned char           buffer_size[4];
+    unsigned char           *buffer_ptr;
+
+
+    buffer_ptr = &(buffer_size[0]);
+    num_bytes = sfread(buffer_ptr,sizeof(unsigned char),4,s);
+    profile_size = gsicc_getprofilesize(buffer_ptr);
+
+    /* Allocate the buffer, stuff with the profile */
+
+   buffer_ptr = gs_alloc_bytes(memory, profile_size,
+					"gsicc_load_profile");
+
+   if (buffer_ptr == NULL){
+        return(-1);
+   }
+
+   srewind(s);
+   num_bytes = sfread(buffer_ptr,sizeof(unsigned char),profile_size,s);
+
+   if( num_bytes != profile_size){
+    
+       gs_free_object(memory, buffer_ptr, "gsicc_load_profile");
+       return(-1);
+
+   }
+
+   profile->buffer = buffer_ptr;
+
+   return(0);
+
+}
 
  /*  If we have a profile handle in the color space already, then we use that.  
      If we do not have one, then we check if there is data in the buffer.  A
@@ -177,19 +279,21 @@ gsicc_setbuffer_desc(gsicc_bufferdesc_t *buffer_desc,unsigned char num_chan,
 
 
  gcmmhprofile_t
- GetProfileHandle(gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager)
+ gsicc_get_profile_handle(gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager)
  {
 
      gcmmhprofile_t profilehandle = gs_colorspace->cmm_icc_profile_data->ProfileHandle;
-     void *buffer = gs_colorspace->cmm_icc_profile_data->buffer;
+     unsigned char *buffer = gs_colorspace->cmm_icc_profile_data->buffer;
      gs_color_space_index color_space_index = gs_color_space_get_index(gs_colorspace);
+     unsigned int profile_size;
 
      if( profilehandle != NULL ){
         return(profilehandle);
      }
 
      if( buffer != NULL){
-         return(gscms_get_profile_handle(buffer));
+         profile_size = gsicc_getprofilesize(buffer);
+         return(gscms_get_profile_handle_mem(buffer, profile_size));
      }
 
      /* Now get a colorspace handle based upon the colorspace type */

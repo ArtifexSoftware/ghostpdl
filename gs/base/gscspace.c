@@ -120,6 +120,7 @@ gs_cspace_alloc_with_id(gs_memory_t *mem, ulong id,
     pcs->id = id;
     pcs->base_space = NULL;
     pcs->pclient_color_space_data = NULL;
+    pcs->cmm_icc_profile_data = NULL;
     return pcs;
 }
 
@@ -685,3 +686,4 @@ RELOC_PTRS_WITH(color_space_reloc_ptrs, gs_color_space *pcs)
     RELOC_USING(*pcs->type->stype, vptr, size);
 }
 RELOC_PTRS_END
+

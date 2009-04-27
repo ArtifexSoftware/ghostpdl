@@ -33,7 +33,7 @@
 #include "gxdevmem.h"
 #include "gxcpath.h"
 #include "gximage.h"
-#include "icc.h"			
+/* #include "icc.h" */			
 #include "gsicc.h"
 
 typedef union {

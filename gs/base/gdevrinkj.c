@@ -22,13 +22,17 @@
 #include "gxlum.h"
 #include "gdevdcrd.h"
 #include "gstypes.h"
-#include "icc.h"
+/* #include "icc.h" */
 #include "gxdcconv.h"
 
 #include "rinkj/rinkj-device.h"
 #include "rinkj/rinkj-byte-stream.h"
 #include "rinkj/rinkj-screen-eb.h"
 #include "rinkj/rinkj-epson870.h"
+
+#ifndef MAX_CHAN
+#   define MAX_CHAN 15
+#endif
 
 /* Define the device parameters. */
 #ifndef X_DPI
@@ -110,7 +114,7 @@ typedef struct rinkj_device_s {
 
     /* ICC color profile objects, for color conversion. */
     char profile_out_fn[256];
-    icmLuBase *lu_out;
+   /* icmLuBase *lu_out;  MJV TO FIX */
 
     char setup_fn[256];
 } rinkj_device;
@@ -427,6 +431,7 @@ rinkj_map_color_rgb(gx_device *dev, gx_color_index color, gx_color_value rgb[3])
     return 0;
 }
 
+/* MJV TO FIX 
 static int
 rinkj_open_profile(rinkj_device *rdev, char *profile_fn, icmLuBase **pluo,
 		 int *poutn)
@@ -453,15 +458,15 @@ rinkj_open_profile(rinkj_device *rdev, char *profile_fn, icmLuBase **pluo,
     luo->spaces(luo, NULL, NULL, NULL, poutn, NULL, NULL, NULL, NULL);
     return 0;
 }
-
+*/
 static int
 rinkj_open_profiles(rinkj_device *rdev)
 {
     int code = 0;
-    if (rdev->lu_out == NULL && rdev->profile_out_fn[0]) {
+  /*  if (rdev->lu_out == NULL && rdev->profile_out_fn[0]) {
 	code = rinkj_open_profile(rdev, rdev->profile_out_fn,
 				    &rdev->lu_out, NULL);
-    }
+    }  MJV TO FIX */
     return code;
 }
 
@@ -994,7 +999,8 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
     int n_planes_out = 4;
     int i;
     int y;
-    icmLuBase *luo = rdev->lu_out;
+   /*  icmLuBase *luo = rdev->lu_out;  MJV to FIX */
+    void *luo = NULL;
     int code = 0;
     rinkj_color_cache_entry *cache = NULL;
 
@@ -1006,14 +1012,18 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
 	plane_data[i] = gs_alloc_bytes(pdev->memory, xsb, "rinkj_write_image_data");
 
     if (luo != NULL) {
+        /* MJV TO FIX
 	cache = (rinkj_color_cache_entry *)gs_alloc_bytes(pdev->memory, RINKJ_CCACHE_SIZE * sizeof(rinkj_color_cache_entry), "rinkj_write_image_data");
 	if (cache == NULL)
 	    return gs_note_error(gs_error_VMerror);
-
+        */
 	/* Set up cache so that none of the keys will hit. */
+
+        /* MJV TO FIX 
 	cache[0].key = 1;
 	for (i = 1; i < RINKJ_CCACHE_SIZE; i++)
 	    cache[i].key = 0;
+            */
     }
 
     /* do CMYK -> CMYKcmk ink split by plane replication */
@@ -1055,7 +1065,7 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
 
 		    for (i = 0; i < 3; i++)
 			in[i] = cbuf[i] * (1.0 / 255);
-		    luo->lookup(luo, out, in);
+		    /* luo->lookup(luo, out, in);  MJV TO FIX */
 		    for (i = 0; i < 4; i++)
 			vbuf[i] = (int)(0.5 + 255 * out[i]);
 		    cache[hash].key = color;
@@ -1082,7 +1092,7 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
 		    ((bits32 *)cbuf)[0] = color;
 		    for (i = 0; i < 4; i++)
 			in[i] = cbuf[i] * (1.0 / 255);
-		    luo->lookup(luo, out, in);
+		    /* luo->lookup(luo, out, in);  MJV TO FIX */
 		    for (i = 0; i < 4; i++)
 			vbuf[i] = (int)(0.5 + 255 * out[i]);
 		    cache[hash].key = color;
@@ -1113,7 +1123,7 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
 
 		    for (i = 0; i < 4; i++)
 			in[i] = cbuf[i] * (1.0 / 255);
-		    luo->lookup(luo, out, in);
+		    /* luo->lookup(luo, out, in);  MJV TO FIX */
 		    for (i = 0; i < 4; i++)
 			vbuf[i] = (int)(0.5 + 255 * out[i]);
 		    cache[hash].key = color;

@@ -15,29 +15,18 @@
 
 #include "gsicc_littlecms.h"
 
-/* Get the size of the ICC profile that is in the buffer */
-static unsigned int
-cmsGetProfileSizeFromMem(void *buffer)
-{
-    /* First four bytes in big-endian is the profile size */
-    unsigned char *bytebuf = buffer;
- 
-    return( (bytebuf[0]<<24) + (bytebuf[1]<<16) + (bytebuf[2]<<8) + bytebuf[3] );
 
-}
 
 
 /* Get ICC Profile handle from buffer */
 
 cmsHPROFILE
-gscms_get_profile_handle(unsigned char *buffer)
+gscms_get_profile_handle_mem(unsigned char *buffer, unsigned int input_size)
 {
-    unsigned int input_size;
-
-    input_size = cmsGetProfileSizeFromMem(buffer);
     return(cmsOpenProfileFromMem(buffer,input_size));
 
 }
+
 
 /* Transform an entire buffer */
 void

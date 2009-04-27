@@ -24,6 +24,7 @@
 #include "gsutil.h"       /* Need for the object types */
 #include "stdint_.h"
 
+
 /*  The buffer description.  We
     may need to handle a variety
     of different types */
@@ -97,9 +98,9 @@ typedef enum {
    of the ghostscript color structure. */
 typedef struct cmm_profile_s {
 
-    void *ProfileHandle;        /* The profile handle to be used in linking */
-    void *buffer;               /* A buffer with ICC profile content */
-    int64_t ProfileHashCode;    /* A hash code for the icc profile */
+    void *ProfileHandle;                /* The profile handle to be used in linking */
+    unsigned char *buffer;              /* A buffer with ICC profile content */
+    int64_t ProfileHashCode;            /* A hash code for the icc profile */
 
 } cmm_profile_t;
 

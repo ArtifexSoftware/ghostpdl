@@ -23,7 +23,7 @@
 #include "stream.h"
 #include "files.h"
 #include "gscolor2.h"
-#include "icc.h"			
+/* #include "icc.h" */			
 #include "gsicc.h"
 #include "estack.h"
 #include "idict.h"
@@ -33,6 +33,7 @@
 #include "ialloc.h"
 #include "zicc.h"
 #include "icc34.h"
+#include "gsiccmanage.h"
 
 int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 {
@@ -46,6 +47,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     gs_cie_icc *            picc_info;
     ref *                   pstrmval;
     stream *                s = 0L;
+    cmm_profile_t           *icc_profile;
 
     palt_cs = gs_currentcolorspace(igs);
     /* verify the DataSource entry */
@@ -58,6 +60,20 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     code = gs_cspace_build_CIEICC(&pcs, NULL, gs_state_memory(igs));
     if (code < 0)
         return code;
+  
+
+        /* For now, dump the profile into a buffer
+       and obtain handle from the buffer when we need it. 
+       We may want to change this later.
+       This depends to some degree on what the CMS is capable of doing.
+       I don't want to get bogged down on stream I/O at this point.
+       Note also, if we are going to be putting these into the clist we will 
+       want to have this buffer. */
+
+    icc_profile = NULL;
+    icc_profile = gsicc_profile_new(pcs, s, gs_state_memory(igs));
+
+#if 0
 
     picc_info = pcs->params.icc.picc_info;
     picc_info->num_components = ncomps;
@@ -68,6 +84,8 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         picc_info->Range.ranges[i].rmax = range_buff[2 * i + 1];
 
     }
+
+
 
     /* record the current space as the alternative color space */
     pcs->base_space = palt_cs;
@@ -116,6 +134,8 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
                            &istate->colorspace.procs.cie,
                            edepth,
                            code );
+
+    #endif
 
     return 0;
 }
