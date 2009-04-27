@@ -397,8 +397,8 @@ def
 	        {			% If StrF is present ...
 		  dup /Identity eq not	% Check if StrF != Identity
 	  	   { /StdCF eq
-		       { Trailer /Encryption oget /StdCF oget /CFM oget
-			 /AESV2 eq
+		       { Trailer /Encrypt oget /CF oget
+                         /StdCF oget /CFM oget /AESV2 eq
 			   % Decrypt string
 			   { 1 index aesdecode }
 			   { 1 index arc4decode }
