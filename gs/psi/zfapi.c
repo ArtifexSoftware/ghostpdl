@@ -50,6 +50,8 @@
 #include "gxfcid.h"
 #include "gsstype.h"
 #include "gxchar.h"		/* for st_gs_show_enum */
+#include "ipacked.h"	    /* for packed_next */
+#include "iddict.h"
 
 /* -------------------------------------------------------- */
 
@@ -934,24 +936,36 @@ static int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, c
 
     if (code > 0) {
 	/* Refine FontBBox : */
-	ref *v, x0, y0, x1, y1;
+	ref *v, mat[4], arr;
 
 	pbfont->FontBBox.p.x = (double)BBox[0] * size1 / size;
 	pbfont->FontBBox.p.y = (double)BBox[1] * size1 / size;
 	pbfont->FontBBox.q.x = (double)BBox[2] * size1 / size;
 	pbfont->FontBBox.q.y = (double)BBox[3] * size1 / size;
-	if (dict_find_string(op, "FontBBox", &v) <= 0 || !r_has_type(v, t_array))
+	if (dict_find_string(op, "FontBBox", &v) <= 0 || (!r_has_type(v, t_array) 
+	    && !r_has_type(v, t_shortarray)))
 	    return_error(e_invalidfont);
 	if (r_size(v) < 4)
 	    return_error(e_invalidfont);
-	make_real(&x0, pbfont->FontBBox.p.x);
-	make_real(&y0, pbfont->FontBBox.p.y);
-	make_real(&x1, pbfont->FontBBox.q.x);
-	make_real(&y1, pbfont->FontBBox.q.y);
-	ref_assign_old(v, v->value.refs + 0, &x0, "FAPI_refine_font_BBox");
-	ref_assign_old(v, v->value.refs + 1, &y0, "FAPI_refine_font_BBox");
-	ref_assign_old(v, v->value.refs + 2, &x1, "FAPI_refine_font_BBox");
-	ref_assign_old(v, v->value.refs + 3, &y1, "FAPI_refine_font_BBox");
+
+	make_real(&mat[0], pbfont->FontBBox.p.x);
+	make_real(&mat[1], pbfont->FontBBox.p.y);
+	make_real(&mat[2], pbfont->FontBBox.q.x);
+	make_real(&mat[3], pbfont->FontBBox.q.y);
+	if(r_has_type(v, t_shortarray)) {
+	    /* Create a new full blown array in case the values are reals */
+	    code = ialloc_ref_array(&arr, a_all, 4, "array");
+	    if (code < 0)
+		return code;
+	    v = &arr;
+	    code = idict_put_string(op, "FontBBox", &arr);
+	    if (code < 0)
+		return code;
+	}
+	ref_assign_old(v, v->value.refs + 0, &mat[0], "FAPI_refine_font_BBox");
+	ref_assign_old(v, v->value.refs + 1, &mat[1], "FAPI_refine_font_BBox");
+	ref_assign_old(v, v->value.refs + 2, &mat[2], "FAPI_refine_font_BBox");
+	ref_assign_old(v, v->value.refs + 3, &mat[3], "FAPI_refine_font_BBox");
     }
 
     /* Assign a Decoding : */
@@ -1902,6 +1916,7 @@ static int do_FAPIpassfont(i_ctx_t *i_ctx_p, char *font_file_path, bool *success
     char *xlatmap = NULL;
     FAPI_font_scale font_scale = {{1, 0, 0, 1, 0, 0}, {0, 0}, {1, 1}, true};
     const char *decodingID = NULL;
+
 
     if (code < 0)
 	return code;
