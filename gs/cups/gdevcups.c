@@ -2948,6 +2948,10 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
            i --, size ++)
 	if (fabs(cups->MediaSize[1] - size->length) < 5.0 &&
             fabs(cups->MediaSize[0] - size->width) < 5.0 &&
+#ifdef CUPS_RASTER_SYNCv1
+	    ((strlen(cups->header.cupsPageSizeName) == 0) ||
+	     (strcasecmp(cups->header.cupsPageSizeName, size->name) == 0)) &&
+#endif
 	    (!margins_set ||
 	     (fabs(cups->HWMargins[0] - size->left) < 1.0 &&
 	      fabs(cups->HWMargins[1] - size->bottom) < 1.0)))
@@ -2980,6 +2984,10 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
              i --, size ++)
 	  if (fabs(cups->MediaSize[0] - size->length) < 5.0 &&
               fabs(cups->MediaSize[1] - size->width) < 5.0 &&
+#ifdef CUPS_RASTER_SYNCv1
+	      ((strlen(cups->header.cupsPageSizeName) == 0) ||
+	       (strcasecmp(cups->header.cupsPageSizeName, size->name) == 0)) &&
+#endif
 	      (!margins_set ||
 	       (fabs(cups->HWMargins[0] - size->left) < 1.0 &&
 		fabs(cups->HWMargins[1] - size->bottom) < 1.0)))
