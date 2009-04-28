@@ -740,7 +740,7 @@ setglobal
 % The whole type1 stream can be executed directly. There's no need to process
 % Length1, 2, 3 keys.
 
-/readtype1dict 8 dict dup begin
+/readtype1dict 10 dict dup begin
   /definefont {
     exch pop
 
@@ -841,7 +841,14 @@ setglobal
     } {
       prev_get
     } ifelse
-  } bdef 
+  } bdef
+
+  /prev_begin /begin load def
+
+  /begin {
+    dup //systemdict eq { pop 0 dict } if
+    prev_begin
+  } bdef
 
   { /undef_proc_warning /missing-type1-procs /readonly-op-dict }
   { currentdict exch undef } forall
