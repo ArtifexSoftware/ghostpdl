@@ -428,6 +428,8 @@ static unsigned char	cupsRevLower1[16] =
 			  0x20, 0x60, 0xa0, 0xe0, 0x30, 0x70, 0xb0, 0xf0
 			};
 
+static int              last_num_copies = 1; /* Save number of copies for extra
+						page when duplex peinrinf */
 
 /*
  * Local functions...
@@ -451,7 +453,19 @@ static void	cups_print_planar(gx_device_printer *, unsigned char *,
 private int
 cups_close(gx_device *pdev)		/* I - Device info */
 {
+  ppd_attr_t    *evenduplex = NULL;
+
   dprintf1("DEBUG2: cups_close(%p)\n", pdev);
+
+  if (cupsPPD)
+  {
+    evenduplex = ppdFindAttr(cupsPPD, "cupsEvenDuplex", NULL);
+    if (evenduplex && !strcasecmp(evenduplex->value, "True") &&
+	!(cups->page & 1)) {
+      dprintf1("DEBUG2: %d pages -> odd number, \"cupsEvenDuplex\" set -> printing extra blank page\n", cups->page - 1);
+      cups_print_pages((gx_device_printer *)pdev, NULL, last_num_copies);
+    }
+  }
 
   if (cups->stream != NULL)
   {
@@ -2644,6 +2658,8 @@ cups_print_pages(gx_device_printer *pdev,
 
 
   (void)fp; /* reference unused file pointer to prevent compiler warning */
+
+  last_num_copies = num_copies;
 
   dprintf3("DEBUG2: cups_print_pages(%p, %p, %d)\n", pdev, fp,
           num_copies);
