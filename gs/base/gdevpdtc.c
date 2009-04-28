@@ -253,6 +253,10 @@ attach_cmap_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
     pdf_resource_t *pcmres = 0;	/* CMap */
     int code;
 
+    /* Make sure cmap names is properly initialised. Silences Coverity warning */
+    if (!pcmn)
+	return_error(gs_error_unknownerror);
+
     /*
      * If the CMap isn't standard, write it out if necessary.
      */
