@@ -782,7 +782,7 @@ $(DD)inferno.dev : $(inferno_) $(DD)page.dev
 	$(SETPDEV) $(DD)inferno $(inferno_)
 
 $(GLOBJ)gdevifno.$(OBJ) : $(GLSRC)gdevifno.c $(PDEVH)\
- $(gsparam_h) $(gxlum_h)
+ $(gsparam_h)
 	$(GLCC) $(GLO_)gdevifno.$(OBJ) $(C_) $(GLSRC)gdevifno.c
 
 ### --------------------------- MGR devices ---------------------------- ###

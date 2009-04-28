@@ -22,7 +22,6 @@
 
 #include "gdevprn.h"
 #include "gsparam.h"
-#include "gxlum.h"
 
 #define nil ((void*)0)
 
