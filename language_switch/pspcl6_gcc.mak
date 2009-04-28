@@ -63,6 +63,7 @@ FEATURE_DEVS    ?= \
           $(DD)roplib.dev	\
 	  $(DD)ttfont.dev	\
 	  $(DD)pipe.dev         \
+          $(DD)gsnogc.dev       \
 	  $(DD)fapi.dev
 
 # extra objects.

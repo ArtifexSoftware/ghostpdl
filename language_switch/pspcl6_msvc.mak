@@ -199,6 +199,7 @@ FEATURE_CORE    = \
           $(DD)\htxlib.dev	\
           $(DD)\roplib.dev	\
 	  $(DD)\ttfont.dev	\
+          $(DD)\gsnogc.dev       \
 	  $(DD)\pipe.dev
 
 FEATURE_DEVS    = $(FEATURE_CORE) $(DD)\fapi.dev 
