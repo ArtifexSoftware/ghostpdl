@@ -36,7 +36,7 @@
  * TrueType are subsetted.  We do the latter, except that we always
  * subset large TrueType fonts.
  */
-#define MAX_NO_SUBSET_GLYPHS 500	/* arbitrary */
+#define MAX_NO_SUBSET_GLYPHS 4096	/* arbitrary */
 
 /* ---------------- Private ---------------- */
 
