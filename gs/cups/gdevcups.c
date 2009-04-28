@@ -606,6 +606,8 @@ private void
 cups_get_matrix(gx_device *pdev,	/* I - Device info */
                 gs_matrix *pmat)	/* O - Physical transform matrix */
 {
+  ppd_attr_t *backside = NULL;
+
   dprintf2("DEBUG2: cups_get_matrix(%p, %p)\n", pdev, pmat);
 
  /*
@@ -624,7 +626,12 @@ cups_get_matrix(gx_device *pdev,	/* I - Device info */
 
   if (cupsPPD)
   {
+    backside = ppdFindAttr(cupsPPD, "cupsBackSide", NULL); 
     dprintf1("DEBUG2: cupsPPD = %p\n", cupsPPD);
+    if (backside) {
+       dprintf1("DEBUG2: cupsBackSide = %s\n", backside->value);
+       cupsPPD->flip_duplex = 0;
+    }
     dprintf1("DEBUG2: cupsPPD->flip_duplex = %d\n", cupsPPD->flip_duplex);
   }
 
@@ -634,29 +641,89 @@ cups_get_matrix(gx_device *pdev,	/* I - Device info */
     * Do landscape orientation...
     */
 
-    if (cups->header.Duplex && !cups->header.Tumble &&
-	cupsPPD && cupsPPD->flip_duplex && !(cups->page & 1))
+    if (cups->header.Duplex && cupsPPD &&
+	(cups->header.Tumble &&
+	 (backside && !strcasecmp(backside->value, "Flipped"))) &&
+	!(cups->page & 1))
     {
       pmat->xx = 0.0;
-      pmat->xy = (float)cups->header.HWResolution[0] / 72.0;
-      pmat->yx = -(float)cups->header.HWResolution[1] / 72.0;
+      pmat->xy = (float)cups->header.HWResolution[1] / 72.0;
+      pmat->yx = (float)cups->header.HWResolution[0] / 72.0;
+      pmat->yy = 0.0;
+      pmat->tx = -(float)cups->header.HWResolution[0] * pdev->HWMargins[2] / 72.0;
+      pmat->ty = -(float)cups->header.HWResolution[1] * pdev->HWMargins[1] / 72.0;
+    }
+    else if (cups->header.Duplex && cupsPPD &&
+	     (!cups->header.Tumble &&
+	      (backside && !strcasecmp(backside->value, "Flipped"))) &&
+	     !(cups->page & 1))
+    {
+      pmat->xx = 0.0;
+      pmat->xy = -(float)cups->header.HWResolution[1] / 72.0;
+      pmat->yx = (float)cups->header.HWResolution[0] / 72.0;
+      pmat->yy = 0.0;
+      pmat->tx = -(float)cups->header.HWResolution[0] * pdev->HWMargins[0] / 72.0;
+      pmat->ty = (float)cups->header.HWResolution[1] *
+	         ((float)cups->header.PageSize[0] - pdev->HWMargins[3]) / 72.0;
+    }
+    else if (cups->header.Duplex && cupsPPD &&
+	     ((!cups->header.Tumble &&
+	       (cupsPPD->flip_duplex ||
+		(backside && !strcasecmp(backside->value, "Rotated")))) ||
+	      (cups->header.Tumble &&
+	       (backside && !strcasecmp(backside->value, "ManualTumble")))) &&
+	   !(cups->page & 1))
+    {
+      pmat->xx = 0.0;
+      pmat->xy = -(float)cups->header.HWResolution[1] / 72.0;
+      pmat->yx = (float)cups->header.HWResolution[0] / 72.0;
       pmat->yy = 0.0;
       pmat->tx = -(float)cups->header.HWResolution[0] * pdev->HWMargins[2] / 72.0;
       pmat->ty = (float)cups->header.HWResolution[1] *
-                 ((float)cups->header.PageSize[0] - pdev->HWMargins[3]) / 72.0;
+	         ((float)cups->header.PageSize[0] - pdev->HWMargins[3]) / 72.0;
     }
     else
     {
       pmat->xx = 0.0;
-      pmat->xy = (float)cups->header.HWResolution[0] / 72.0;
-      pmat->yx = (float)cups->header.HWResolution[1] / 72.0;
+      pmat->xy = (float)cups->header.HWResolution[1] / 72.0;
+      pmat->yx = (float)cups->header.HWResolution[0] / 72.0;
       pmat->yy = 0.0;
       pmat->tx = -(float)cups->header.HWResolution[0] * pdev->HWMargins[0] / 72.0;
       pmat->ty = -(float)cups->header.HWResolution[1] * pdev->HWMargins[1] / 72.0;
     }
   }
-  else if (cups->header.Duplex && !cups->header.Tumble &&
-           cupsPPD && cupsPPD->flip_duplex && !(cups->page & 1))
+  else if (cups->header.Duplex && cupsPPD &&
+	   (cups->header.Tumble &&
+	    (backside && !strcasecmp(backside->value, "Flipped"))) &&
+	   !(cups->page & 1))
+  {
+    pmat->xx = (float)cups->header.HWResolution[0] / 72.0;
+    pmat->xy = 0.0;
+    pmat->yx = 0.0;
+    pmat->yy = -(float)cups->header.HWResolution[1] / 72.0;
+    pmat->tx = -(float)cups->header.HWResolution[0] * pdev->HWMargins[2] / 72.0;
+    pmat->ty = (float)cups->header.HWResolution[1] *
+               ((float)cups->header.PageSize[1] - pdev->HWMargins[3]) / 72.0;
+  }
+  else if (cups->header.Duplex && cupsPPD &&
+	   (!cups->header.Tumble &&
+	    (backside && !strcasecmp(backside->value, "Flipped"))) &&
+	   !(cups->page & 1))
+  {
+    pmat->xx = (float)cups->header.HWResolution[0] / 72.0;
+    pmat->xy = 0.0;
+    pmat->yx = 0.0;
+    pmat->yy = (float)cups->header.HWResolution[1] / 72.0;
+    pmat->tx = -(float)cups->header.HWResolution[0] * pdev->HWMargins[0] / 72.0;
+    pmat->ty = -(float)cups->header.HWResolution[1] * pdev->HWMargins[3] / 72.0;
+  }
+  else if (cups->header.Duplex && cupsPPD &&
+	   ((!cups->header.Tumble &&
+	     (cupsPPD->flip_duplex ||
+	     (backside && !strcasecmp(backside->value, "Rotated")))) ||
+	    (cups->header.Tumble &&
+	     (backside && !strcasecmp(backside->value, "ManualTumble")))) &&
+	   !(cups->page & 1))
   {
     pmat->xx = (float)cups->header.HWResolution[0] / 72.0;
     pmat->xy = 0.0;
@@ -3594,10 +3661,21 @@ cups_print_chunked(gx_device_printer *pdev,
 		*dstptr;		/* Pointer to bits */
   int		count;			/* Count for loop */
   int		flip;			/* Flip scanline? */
+  ppd_attr_t    *backside = NULL;
 
-
-  if (cups->header.Duplex && !cups->header.Tumble &&
-      cupsPPD && cupsPPD->flip_duplex && !(cups->page & 1))
+  if (cupsPPD) {
+    backside = ppdFindAttr(cupsPPD, "cupsBackSide", NULL);
+    if (backside)
+      cupsPPD->flip_duplex = 0;
+  }
+  if (cups->header.Duplex && cupsPPD &&
+      ((!cups->header.Tumble &&
+	(cupsPPD->flip_duplex ||
+	 (backside && !strcasecmp(backside->value, "Rotated")))) ||
+       (cups->header.Tumble &&
+	(backside && (!strcasecmp(backside->value, "Flipped") ||
+		      !strcasecmp(backside->value, "ManualTumble"))))) &&
+      !(cups->page & 1))
     flip = 1;
   else
     flip = 0;
@@ -3777,10 +3855,21 @@ cups_print_banded(gx_device_printer *pdev,
   unsigned char	*cptr, *mptr, *yptr,	/* Pointer to components */
 		*kptr, *lcptr, *lmptr;	/* ... */
   int		flip;			/* Flip scanline? */
+  ppd_attr_t    *backside = NULL;
 
-
-  if (cups->header.Duplex && !cups->header.Tumble &&
-      cupsPPD && cupsPPD->flip_duplex && !(cups->page & 1))
+  if (cupsPPD) {
+    backside = ppdFindAttr(cupsPPD, "cupsBackSide", NULL);
+    if (backside)
+      cupsPPD->flip_duplex = 0;
+  }
+  if (cups->header.Duplex && cupsPPD &&
+      ((!cups->header.Tumble &&
+	(cupsPPD->flip_duplex ||
+	 (backside && !strcasecmp(backside->value, "Rotated")))) ||
+       (cups->header.Tumble &&
+	(backside && (!strcasecmp(backside->value, "Flipped") ||
+		      !strcasecmp(backside->value, "ManualTumble"))))) &&
+      !(cups->page & 1))
     flip = 1;
   else
     flip = 0;
