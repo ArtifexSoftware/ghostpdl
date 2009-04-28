@@ -729,7 +729,9 @@ pdf_document_metadata(gx_device_pdf *pdev)
 	if (code < 0)
 	    return code;
 	sprintf(buf, "%ld 0 R", pres->object->id);
-	cos_dict_put_c_key_object(pdev->Catalog, "/Metadata", pres->object);
+	code = cos_dict_put_c_key_object(pdev->Catalog, "/Metadata", pres->object);
+	if (code < 0)
+	    return code;
     }
     return 0;
 }
