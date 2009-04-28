@@ -23,7 +23,6 @@
 #include "gdevprn.h"
 #include "gsparam.h"
 #include "gxlum.h"
-#include <stdlib.h>
 
 #define nil ((void*)0)
 
