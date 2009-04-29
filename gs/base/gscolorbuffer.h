@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -19,7 +19,7 @@
    using the ICC based linked mappings with the external CMS.  */
 
 /* This just does planar data for now */
-void gs_transform_color_buffer_generic(byte *inputbuffer, int rowstride, int planestride,
-            int input_num_color, gs_int_rect rect,byte *outputbuffer, 
-            int output_num_color,int num_noncolor_planes);
- 
+void gs_transform_color_buffer_generic(byte *inputbuffer,
+	    int rowstride, int planestride,
+	    int input_num_color, gs_int_rect rect,byte *outputbuffer,
+	    int output_num_color,int num_noncolor_planes);
