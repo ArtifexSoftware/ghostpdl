@@ -112,7 +112,7 @@ gs_transform_color_buffer_generic(byte *inputbuffer, int row_stride, int plane_s
 
 {
     int num_rows, num_cols, x, y, z;
-    void (* color_remap)(byte input[],byte output[]);
+    void (* color_remap)(byte input[],byte output[]) = NULL;
     byte input_vector[4],output_vector[4];
     int plane_offset[PDF14_MAX_PLANES],alpha_offset_in,max_num_channels;
 
@@ -140,7 +140,6 @@ gs_transform_color_buffer_generic(byte *inputbuffer, int row_stride, int plane_s
 
             default:
             
-                color_remap = NULL; /* quite compiler */
                 /* Should never be here.  Groups must
                    be gray, rgb or CMYK.   Exception
                    may be ICC with XPS */
