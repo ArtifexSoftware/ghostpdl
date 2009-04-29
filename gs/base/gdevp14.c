@@ -443,7 +443,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape, bool idle,
 
 	/* Note that alpha_g is the alpha for the GROUP */
 	/* This is distinct from the alpha that may also exist */
-	/* for the objects within the group.  Hence it can introduce 
+	/* for the objects within the group.  Hence it can introduce */
 	/* yet another plane */
 
     pdf14_buf *result;
