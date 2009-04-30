@@ -664,8 +664,8 @@ cups_get_matrix(gx_device *pdev,	/* I - Device info */
       pmat->xy = (float)cups->header.HWResolution[1] / 72.0;
       pmat->yx = (float)cups->header.HWResolution[0] / 72.0;
       pmat->yy = 0.0;
-      pmat->tx = -(float)cups->header.HWResolution[0] * pdev->HWMargins[2] / 72.0;
-      pmat->ty = -(float)cups->header.HWResolution[1] * pdev->HWMargins[1] / 72.0;
+      pmat->tx = -(float)cups->header.HWResolution[0] * pdev->HWMargins[1] / 72.0;
+      pmat->ty = -(float)cups->header.HWResolution[1] * pdev->HWMargins[0] / 72.0;
     }
     else if (cups->header.Duplex && cupsPPD &&
 	     (!cups->header.Tumble &&
@@ -676,9 +676,9 @@ cups_get_matrix(gx_device *pdev,	/* I - Device info */
       pmat->xy = -(float)cups->header.HWResolution[1] / 72.0;
       pmat->yx = (float)cups->header.HWResolution[0] / 72.0;
       pmat->yy = 0.0;
-      pmat->tx = -(float)cups->header.HWResolution[0] * pdev->HWMargins[0] / 72.0;
+      pmat->tx = -(float)cups->header.HWResolution[0] * pdev->HWMargins[1] / 72.0;
       pmat->ty = (float)cups->header.HWResolution[1] *
-	         ((float)cups->header.PageSize[0] - pdev->HWMargins[3]) / 72.0;
+	         ((float)cups->header.PageSize[0] - pdev->HWMargins[2]) / 72.0;
     }
     else if (cups->header.Duplex && cupsPPD &&
 	     ((!cups->header.Tumble &&
@@ -692,9 +692,9 @@ cups_get_matrix(gx_device *pdev,	/* I - Device info */
       pmat->xy = -(float)cups->header.HWResolution[1] / 72.0;
       pmat->yx = (float)cups->header.HWResolution[0] / 72.0;
       pmat->yy = 0.0;
-      pmat->tx = -(float)cups->header.HWResolution[0] * pdev->HWMargins[2] / 72.0;
+      pmat->tx = -(float)cups->header.HWResolution[0] * pdev->HWMargins[1] / 72.0;
       pmat->ty = (float)cups->header.HWResolution[1] *
-	         ((float)cups->header.PageSize[0] - pdev->HWMargins[3]) / 72.0;
+	         ((float)cups->header.PageSize[0] - pdev->HWMargins[2]) / 72.0;
     }
     else
     {
@@ -702,8 +702,8 @@ cups_get_matrix(gx_device *pdev,	/* I - Device info */
       pmat->xy = (float)cups->header.HWResolution[1] / 72.0;
       pmat->yx = (float)cups->header.HWResolution[0] / 72.0;
       pmat->yy = 0.0;
-      pmat->tx = -(float)cups->header.HWResolution[0] * pdev->HWMargins[0] / 72.0;
-      pmat->ty = -(float)cups->header.HWResolution[1] * pdev->HWMargins[1] / 72.0;
+      pmat->tx = -(float)cups->header.HWResolution[0] * pdev->HWMargins[1] / 72.0;
+      pmat->ty = -(float)cups->header.HWResolution[1] * pdev->HWMargins[0] / 72.0;
     }
   }
   else if (cups->header.Duplex && cupsPPD &&
@@ -715,7 +715,7 @@ cups_get_matrix(gx_device *pdev,	/* I - Device info */
     pmat->xy = 0.0;
     pmat->yx = 0.0;
     pmat->yy = -(float)cups->header.HWResolution[1] / 72.0;
-    pmat->tx = -(float)cups->header.HWResolution[0] * pdev->HWMargins[2] / 72.0;
+    pmat->tx = -(float)cups->header.HWResolution[0] * pdev->HWMargins[0] / 72.0;
     pmat->ty = (float)cups->header.HWResolution[1] *
                ((float)cups->header.PageSize[1] - pdev->HWMargins[3]) / 72.0;
   }
@@ -729,7 +729,7 @@ cups_get_matrix(gx_device *pdev,	/* I - Device info */
     pmat->yx = 0.0;
     pmat->yy = (float)cups->header.HWResolution[1] / 72.0;
     pmat->tx = -(float)cups->header.HWResolution[0] * pdev->HWMargins[0] / 72.0;
-    pmat->ty = -(float)cups->header.HWResolution[1] * pdev->HWMargins[3] / 72.0;
+    pmat->ty = -(float)cups->header.HWResolution[1] * pdev->HWMargins[1] / 72.0;
   }
   else if (cups->header.Duplex && cupsPPD &&
 	   ((!cups->header.Tumble &&
@@ -743,8 +743,8 @@ cups_get_matrix(gx_device *pdev,	/* I - Device info */
     pmat->xy = 0.0;
     pmat->yx = 0.0;
     pmat->yy = (float)cups->header.HWResolution[1] / 72.0;
-    pmat->tx = -(float)cups->header.HWResolution[0] * pdev->HWMargins[2] / 72.0;
-    pmat->ty = -(float)cups->header.HWResolution[1] * pdev->HWMargins[3] / 72.0;
+    pmat->tx = -(float)cups->header.HWResolution[0] * pdev->HWMargins[0] / 72.0;
+    pmat->ty = -(float)cups->header.HWResolution[1] * pdev->HWMargins[1] / 72.0;
   }
   else
   {
@@ -2810,7 +2810,10 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   gdev_prn_space_params	sp;		/* Space parameter data */
   int			width,		/* New width of page */
 			height;		/* New height of page */
-
+  ppd_attr_t            *backside = NULL;
+  float                 swap;
+  int                   xflip = 0,
+                        yflip = 0;
 
   dprintf2("DEBUG2: cups_put_params(%p, %p)\n", pdev, plist);
 
@@ -3022,6 +3025,50 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
     if (cupsPPD != NULL)
     {
+      dprintf1("DEBUG2: cups->header.Duplex = %d\n", cups->header.Duplex);
+      dprintf1("DEBUG2: cups->page = %d\n", cups->page);
+      dprintf1("DEBUG2: cupsPPD = %p\n", cupsPPD);
+
+      backside = ppdFindAttr(cupsPPD, "cupsBackSide", NULL); 
+      if (backside) {
+	dprintf1("DEBUG2: cupsBackSide = %s\n", backside->value);
+	cupsPPD->flip_duplex = 0;
+      }
+      dprintf1("DEBUG2: cupsPPD->flip_duplex = %d\n", cupsPPD->flip_duplex);
+
+      if (cups->header.Duplex &&
+	  (cups->header.Tumble &&
+	   (backside && !strcasecmp(backside->value, "Flipped"))) &&
+	  !(cups->page & 1))
+      {
+	xflip = 1;
+	yflip = 0;
+      }
+      else if (cups->header.Duplex &&
+	       (!cups->header.Tumble &&
+		(backside && !strcasecmp(backside->value, "Flipped"))) &&
+	       !(cups->page & 1))
+      {
+	xflip = 0;
+	yflip = 1;
+      }
+      else if (cups->header.Duplex &&
+	       ((!cups->header.Tumble &&
+		 (cupsPPD->flip_duplex ||
+		  (backside && !strcasecmp(backside->value, "Rotated")))) ||
+		(cups->header.Tumble &&
+		 (backside && !strcasecmp(backside->value, "ManualTumble")))) &&
+	       !(cups->page & 1))
+      { 
+	xflip = 1;
+	yflip = 1;
+      }
+      else
+      {
+	xflip = 0;
+	yflip = 0;
+      }
+
      /*
       * Find the matching page size...
       */
@@ -3054,6 +3101,14 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	margins[1] = size->bottom / 72.0;
 	margins[2] = (size->width - size->right) / 72.0;
 	margins[3] = (size->length - size->top) / 72.0;
+	if (xflip == 1)
+	{
+	  swap = margins[0]; margins[0] = margins[2]; margins[2] = swap;
+	}
+	if (yflip == 1)
+	{
+	  swap = margins[1]; margins[1] = margins[3]; margins[3] = swap;
+	}
       }
       else
       {
@@ -3088,10 +3143,18 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
           cups->landscape = 1;
 
-	  margins[0] = size->left / 72.0;
-	  margins[1] = size->bottom / 72.0;
-	  margins[2] = (size->width - size->right) / 72.0;
-	  margins[3] = (size->length - size->top) / 72.0;
+	  margins[0] = (size->length - size->top) / 72.0;
+	  margins[1] = size->left / 72.0;
+	  margins[2] = size->bottom / 72.0;
+	  margins[3] = (size->width - size->right) / 72.0;
+	  if (xflip == 1)
+	  {
+	    swap = margins[1]; margins[1] = margins[3]; margins[3] = swap;
+	  }
+	  if (yflip == 1)
+	  {
+	    swap = margins[0]; margins[0] = margins[2]; margins[2] = swap;
+	  }
 	}
 	else
 	{
@@ -3129,9 +3192,9 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   cups->header.cupsPageSize[1] = pdev->MediaSize[1];
 
   cups->header.cupsImagingBBox[0] = pdev->HWMargins[0];
-  cups->header.cupsImagingBBox[1] = pdev->HWMargins[3];
+  cups->header.cupsImagingBBox[1] = pdev->HWMargins[1];
   cups->header.cupsImagingBBox[2] = pdev->MediaSize[0] - pdev->HWMargins[2];
-  cups->header.cupsImagingBBox[3] = pdev->MediaSize[1] - pdev->HWMargins[1];
+  cups->header.cupsImagingBBox[3] = pdev->MediaSize[1] - pdev->HWMargins[3];
 
   if ((sf = cups->header.cupsBorderlessScalingFactor) < 1.0)
     sf = 1.0;
@@ -3143,11 +3206,11 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   cups->header.PageSize[1] = pdev->MediaSize[1] * sf;
 
   cups->header.ImagingBoundingBox[0] = pdev->HWMargins[0] * sf;
-  cups->header.ImagingBoundingBox[1] = pdev->HWMargins[3] * sf;
+  cups->header.ImagingBoundingBox[1] = pdev->HWMargins[1] * sf;
   cups->header.ImagingBoundingBox[2] = (pdev->MediaSize[0] -
                                         pdev->HWMargins[2]) * sf;
   cups->header.ImagingBoundingBox[3] = (pdev->MediaSize[1] -
-                                        pdev->HWMargins[1]) * sf;
+                                        pdev->HWMargins[3]) * sf;
 #else
   cups->header.Margins[0] = pdev->HWMargins[0];
   cups->header.Margins[1] = pdev->HWMargins[1];
@@ -3174,9 +3237,9 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
     if (cups->landscape)
     {
-      width  = (pdev->MediaSize[1] - pdev->HWMargins[0] - pdev->HWMargins[2]) *
+      width  = (pdev->MediaSize[1] - pdev->HWMargins[1] - pdev->HWMargins[3]) *
                pdev->HWResolution[0] / 72.0f + 0.499f;
-      height = (pdev->MediaSize[0] - pdev->HWMargins[1] - pdev->HWMargins[3]) *
+      height = (pdev->MediaSize[0] - pdev->HWMargins[0] - pdev->HWMargins[2]) *
                pdev->HWResolution[1] / 72.0f + 0.499f;
     }
     else
