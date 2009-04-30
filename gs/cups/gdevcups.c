@@ -2810,7 +2810,8 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   gdev_prn_space_params	sp;		/* Space parameter data */
   int			width,		/* New width of page */
 			height;		/* New height of page */
-  ppd_attr_t            *backside = NULL;
+  ppd_attr_t            *backside = NULL,
+                        *backsiderequiresflippedmargins = NULL;
   float                 swap;
   int                   xflip = 0,
                         yflip = 0;
@@ -3036,13 +3037,23 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
       }
       dprintf1("DEBUG2: cupsPPD->flip_duplex = %d\n", cupsPPD->flip_duplex);
 
+      backsiderequiresflippedmargins =
+	ppdFindAttr(cupsPPD, "APDuplexRequiresFlippedMargin", NULL);
+      if (backsiderequiresflippedmargins)
+	dprintf1("DEBUG2: APDuplexRequiresFlippedMargin = %s\n",
+		 backsiderequiresflippedmargins->value);
+
       if (cups->header.Duplex &&
 	  (cups->header.Tumble &&
 	   (backside && !strcasecmp(backside->value, "Flipped"))) &&
 	  !(cups->page & 1))
       {
 	xflip = 1;
-	yflip = 0;
+	if (backsiderequiresflippedmargins &&
+	    !strcasecmp(backsiderequiresflippedmargins->value, "False"))
+	  yflip = 0;
+	else
+	  yflip = 1;
       }
       else if (cups->header.Duplex &&
 	       (!cups->header.Tumble &&
@@ -3050,7 +3061,11 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	       !(cups->page & 1))
       {
 	xflip = 0;
-	yflip = 1;
+	if (backsiderequiresflippedmargins &&
+	    !strcasecmp(backsiderequiresflippedmargins->value, "False"))
+	  yflip = 1;
+	else
+	  yflip = 0;
       }
       else if (cups->header.Duplex &&
 	       ((!cups->header.Tumble &&
@@ -3061,7 +3076,11 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	       !(cups->page & 1))
       { 
 	xflip = 1;
-	yflip = 1;
+	if (backsiderequiresflippedmargins &&
+	    !strcasecmp(backsiderequiresflippedmargins->value, "True"))
+	  yflip = 0;
+	else
+	  yflip = 1;
       }
       else
       {
@@ -3166,6 +3185,14 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
 	  for (i = 0; i < 4; i ++)
             margins[i] = cupsPPD->custom_margins[i] / 72.0;
+	  if (xflip == 1)
+	  {
+	    swap = margins[0]; margins[0] = margins[2]; margins[2] = swap;
+	  }
+	  if (yflip == 1)
+	  {
+	    swap = margins[1]; margins[1] = margins[3]; margins[3] = swap;
+	  }
 	}
       }
 
