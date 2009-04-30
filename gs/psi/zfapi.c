@@ -572,7 +572,12 @@ static int get_GlyphDirectory_data_ptr(const gs_memory_t *mem,
 	    && r_type(glyph) == t_string) {
         *ptr = glyph->value.const_bytes;
 	return r_size(glyph);
-    }
+    } else
+	/* We have a GlyphDirectory, but couldnt find the glyph. If we return -1
+	 * then we will attempt to use glyf and loca which will fail. Instead
+	 * return 0, so we execute an 'empty' glyph.
+	 */
+	return 0;
     }
     return -1;
 }
@@ -660,7 +665,11 @@ static ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort 
         } else {
             gs_font_type42 *pfont42 = (gs_font_type42 *)ff->client_font_data;
             ulong offset0, offset1;
-            bool error = sfnt_get_glyph_offset(pdr, pfont42, char_code, &offset0, &offset1);
+	    bool error;
+
+            error = sfnt_get_glyph_offset(pdr, pfont42, char_code, &offset0, &offset1);
+	    if (error)
+		return -1;
 
             glyph_length = (error ? -1 : offset1 - offset0);
             if (buf != 0 && !error) {
