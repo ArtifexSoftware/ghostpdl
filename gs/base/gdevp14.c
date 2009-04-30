@@ -2582,6 +2582,8 @@ pdf14_begin_transparency_mask(gx_device	*dev,
 					       "pdf14_begin_transparency_mask");
     gs_int_rect rect;
     int code;
+    int group_color_numcomps;
+    gs_transparency_color_t group_color; 
 
     if (transfer_fn == NULL)
 	return_error(gs_error_VMerror);
@@ -2593,9 +2595,52 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     if_debug1('v', "pdf14_begin_transparency_mask, bg_alpha = %d\n", bg_alpha);
     memcpy(transfer_fn, ptmp->transfer_fn, size_of(ptmp->transfer_fn));
 
+   /* If the group color is unknown, then we must use the previous group color
+       space or the device process color space */
+        
+    if (ptmp->group_color == UNKNOWN){
+
+        if (pdev->ctx->stack){
+            /* Use previous group color space */
+            group_color_numcomps = pdev->ctx->stack->n_chan-1;  /* Remove alpha */
+        } else {
+            /* Use process color space */
+            group_color_numcomps = pdev->color_info.num_components;
+        }
+
+        switch (group_color_numcomps) {
+            case 1:				
+                group_color = GRAY_SCALE;       
+                break;
+            case 3:				
+                group_color = DEVICE_RGB;       
+                break;
+            case 4:				
+                group_color = DEVICE_CMYK;       
+            break;
+            default:
+                
+                /* We can end up here if we are in
+                   a deviceN color space and 
+                   we have a sep output device */
+
+                group_color = DEVICEN;
+
+            break;
+
+         }  
+    
+    } else {
+
+        group_color = ptmp->group_color;
+        group_color_numcomps = ptmp->group_color_numcomps;
+
+    }
+
+
     /* Always update the color mapping procs.  Otherwise we end up
        fowarding to the target device. */
-    code = pdf14_update_device_color_procs(dev,ptmp->group_color,pis);
+    code = pdf14_update_device_color_procs(dev,group_color,pis);
     if (code < 0)
 	return code;
 
@@ -2605,7 +2650,7 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     return pdf14_push_transparency_mask(pdev->ctx, &rect, bg_alpha,
 					transfer_fn, ptmp->idle, ptmp->replacing,
 					ptmp->mask_id, ptmp->subtype, 
-                                        ptmp->SMask_is_CIE, ptmp->group_color_numcomps);
+                                        ptmp->SMask_is_CIE, group_color_numcomps);
 }
 
 static	int
@@ -2624,24 +2669,27 @@ pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
      * to a mismatch between the Smask color space
      * and the Smask blending space */
 
-    parent_color = &(pdev->ctx->stack->parent_color_info_procs);
+    if (pdev->ctx->stack != NULL ) {
 
-    if (!(parent_color->parent_color_mapping_procs == NULL && 
-        parent_color->parent_color_comp_index == NULL)) {
+        parent_color = &(pdev->ctx->stack->parent_color_info_procs);
 
-            pis->get_cmap_procs = parent_color->get_cmap_procs;;
-            gx_set_cmap_procs(pis, dev);
-            pdev->procs.get_color_mapping_procs = parent_color->parent_color_mapping_procs;
-            pdev->procs.get_color_comp_index = parent_color->parent_color_comp_index;
-            pdev->color_info.polarity = parent_color->polarity;
-            pdev->color_info.num_components = parent_color->num_components;
-            pdev->color_info.depth = parent_color->depth;
-            pdev->blend_procs = parent_color->parent_blending_procs;
-            pdev->ctx->additive = parent_color->isadditive;
-            pdev->pdf14_procs = parent_color->unpack_procs;
-            parent_color->get_cmap_procs = NULL;
-            parent_color->parent_color_comp_index = NULL;
-            parent_color->parent_color_mapping_procs = NULL;
+        if (!(parent_color->parent_color_mapping_procs == NULL && 
+            parent_color->parent_color_comp_index == NULL)) {
+
+                pis->get_cmap_procs = parent_color->get_cmap_procs;;
+                gx_set_cmap_procs(pis, dev);
+                pdev->procs.get_color_mapping_procs = parent_color->parent_color_mapping_procs;
+                pdev->procs.get_color_comp_index = parent_color->parent_color_comp_index;
+                pdev->color_info.polarity = parent_color->polarity;
+                pdev->color_info.num_components = parent_color->num_components;
+                pdev->color_info.depth = parent_color->depth;
+                pdev->blend_procs = parent_color->parent_blending_procs;
+                pdev->ctx->additive = parent_color->isadditive;
+                pdev->pdf14_procs = parent_color->unpack_procs;
+                parent_color->get_cmap_procs = NULL;
+                parent_color->parent_color_comp_index = NULL;
+                parent_color->parent_color_mapping_procs = NULL;
+        }
     }
 
     return ok;
