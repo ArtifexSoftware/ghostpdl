@@ -1274,11 +1274,17 @@ end
   /.paintform cvx
   ] cvx /PaintProc exch put
     % Adjust pdfemptycount since we have an extra dictionary on the stack
-  pdfemptycount exch
-  /pdfemptycount where pop count 2 sub /pdfemptycount exch put
-  q execform Q			% gsave / grestore around the Form
+  pdfemptycount countdictstack  3 -1 roll
+  /pdfemptycount count 1 sub store
+  q execform  			% gsave / grestore around the Form
     % Restore pdfemptycount
-  /pdfemptycount where pop exch /pdfemptycount exch put
+  countdictstack exch sub
+  dup 1 gt {
+    (   **** Warning: Pattern stream has unbalanced q/Q operators \(too many q's\)\n)
+    pdfformaterror
+  } if
+  { Q } repeat
+  /pdfemptycount exch store
 } bdef
 
 /_dops_save 1 array def
