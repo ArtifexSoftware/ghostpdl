@@ -252,11 +252,11 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
             strcat( tmp_path_copy, pattern );
 
 	    /* enumerate all files on the current path */
-	    fe = gp_enumerate_files_init( tmp_path_copy,
+	    fe = gs_enumerate_files_init( tmp_path_copy,
 					  strlen( tmp_path_copy ), mem );
 
 	    /* loop through the files */
-	    while ( ( code = gp_enumerate_files_next( fe,
+	    while ( ( code = gs_enumerate_files_next( fe,
 						      tmp_path_copy,
 						      sizeof( tmp_path_copy ) ) ) >= 0 ) {
 		char buffer[1024];

@@ -108,7 +108,7 @@ static const pjl_envir_var_t pjl_factory_defaults[] = {
    there is some unnecessary overlap in the factory default and font
    source table. */
 static const pjl_fontsource_t pjl_fontsource_table[] = {
-    { "I", "fonts/;urwfonts/;/windows/fonts/;/win95/fonts/;/winnt/fonts/" },
+    { "I", "%rom%ttfonts/;fonts/;urwfonts/;/windows/fonts/;/win95/fonts/;/winnt/fonts/" },
     { "C", "CART0/", "" },
     { "C1", "CART1/", "" },
     { "C2", "CART2/", "" },
@@ -338,16 +338,16 @@ pjl_check_font_path(char *path_list, gs_memory_t *mem)
 	file_enum *fe;
 	strcpy(tmp_path_and_pattern, dirname);
 	strcat(tmp_path_and_pattern, pattern);
-	fe = gp_enumerate_files_init(tmp_path_and_pattern, strlen(tmp_path_and_pattern), mem);
-	if ( (gp_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH) ) == -1 ) {
+	fe = gs_enumerate_files_init(tmp_path_and_pattern, strlen(tmp_path_and_pattern), mem);
+	if ( (gs_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH) ) == -1 ) {
 	    tmp_pathp = NULL;
 	} else {
 	    /* wind through the rest of the files.  This should close
                things up as well.  All we need to do is clean up but
-               gp_enumerate_files_close() does not close the current
+               gs_enumerate_files_close() does not close the current
                directory */
 	    while ( 1 ) {
-		int fstatus = (int)gp_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH);
+		int fstatus = (int)gs_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH);
 		/* we don't care if the file does not fit (return +1) */
 		if ( fstatus == -1 )
 		    break;
@@ -568,10 +568,10 @@ pjl_search_for_file(pjl_parser_state_t *pst, char *pathname, char *filename, cha
     /* should check length */
     strcpy(fontfilename, pathname);
     strcat(fontfilename, "/*");
-    fe = gp_enumerate_files_init(fontfilename, strlen(fontfilename), pst->mem);
+    fe = gs_enumerate_files_init(fontfilename, strlen(fontfilename), pst->mem);
     if ( fe ) {
 	do {
-	    uint fstatus = gp_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH);
+	    uint fstatus = gs_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH);
 	    /* done */
 	    if ( fstatus == ~(uint)0 )
 		return 0;
@@ -599,10 +599,10 @@ pjl_fsdirlist(pjl_parser_state_t *pst, char *pathname, int entry, int count)
     pjl_parsed_filename_to_string(fontfilename, pathname);
     /* if this is a directory add * for the directory listing NB fix */
     strcat(fontfilename, "/*");
-    fe = gp_enumerate_files_init(fontfilename, strlen(fontfilename), pst->mem);
+    fe = gs_enumerate_files_init(fontfilename, strlen(fontfilename), pst->mem);
     if ( fe ) {
 	do {
-	    uint fstatus = gp_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH);
+	    uint fstatus = gs_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH);
 	    /* done */
 	    if ( fstatus == ~(uint)0 )
 		return 0;
