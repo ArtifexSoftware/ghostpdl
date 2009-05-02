@@ -175,6 +175,12 @@ int gs_putdevparams(gx_io_device *, gs_param_list *);
 /* if opening a file fails. */
 int gs_fopen_errno_to_code(int);
 
+/* Interface functions for clients that want iodev independent access to */
+/* the gp_enumerate functions */
+file_enum *gs_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem);
+uint gs_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen);
+void gs_enumerate_files_close(file_enum * pfen);
+
 /* Test whether a string is equal to a character. */
 /* (This is used for access testing in file_open procedures.) */
 #define streq1(str, chr)\

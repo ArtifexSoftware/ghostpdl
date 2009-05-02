@@ -182,12 +182,14 @@ s_block_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     int compression = ((get_u32_big_endian(node) & 0x80000000) != 0) ? 1 : 0;
     uint32_t filelen = get_u32_big_endian(node) & 0x7fffffff;	/* ignore compression bit */
     uint32_t blocks = (filelen+ROMFS_BLOCKSIZE-1)/ ROMFS_BLOCKSIZE;
-    int iblock = (s->position + s->file_offset + pw->ptr + 1 - s->cbuf) / ROMFS_BLOCKSIZE;
+    int iblock = (s->position + s->file_offset + s->cursor.r.ptr + 1 - s->cbuf) / ROMFS_BLOCKSIZE;
     unsigned long block_length = get_u32_big_endian(node+1+(2*iblock));
     unsigned const long block_offset = get_u32_big_endian(node+2+(2*iblock));
     unsigned const char *block_data = ((unsigned char *)node) + block_offset;
     int count = iblock < (blocks - 1) ? ROMFS_BLOCKSIZE : filelen - (ROMFS_BLOCKSIZE * iblock);
 
+    if (s->position == filelen)
+	return EOFC;			/* at EOF */
     if (count > max_count) {
 	return ERRC;			/* should not happen */
     }
@@ -200,9 +202,6 @@ s_block_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 	if (count > limit_count)
 	    count = limit_count;
     }
-
-    if (count < ROMFS_BLOCKSIZE || iblock == (blocks - 1))
-	status = EOFC;			/* at EOF when not filling entire buffer */
     /* get the block into the buffer */
     if (compression) {
 	unsigned long buflen = ROMFS_BLOCKSIZE;
