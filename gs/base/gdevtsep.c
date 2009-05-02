@@ -38,24 +38,20 @@
 
 /* ------ The tiffgray device ------ */
 
-typedef struct gx_device_tiff_s {
-    gx_device_common;
-    gx_prn_device_common;
-    gdev_tiff_state tiff;
-} gx_device_tiff;
-
 static dev_proc_print_page(tiffgray_print_page);
 
 static const gx_device_procs tiffgray_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-		gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
+prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+		gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb,
+		tiff_get_params, tiff_put_params);
 
-const gx_device_printer gs_tiffgray_device = {
+const gx_device_tiff gs_tiffgray_device = {
     prn_device_body(gx_device_tiff, tiffgray_procs, "tiffgray",
 			DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 			X_DPI, Y_DPI,
 			0, 0, 0, 0,	/* Margins */
-			1, 8, 255, 0, 256, 0, tiffgray_print_page)
+			1, 8, 255, 0, 256, 0, tiffgray_print_page),
+    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/      
 };
 
 /* ------ Private definitions ------ */
@@ -93,15 +89,19 @@ tiffgray_print_page(gx_device_printer * pdev, FILE * file)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
+    bool swap_bytes = tfdev->BigEndian != arch_is_big_endian;
+    tiff_gray_values val_gray_swapped = val_gray_template;
+    if (swap_bytes)
+        SWAP_SHORT(val_gray_swapped.bps[0]);
 
     if (pdev->height > (max_long - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
 	return_error(gs_error_rangecheck);  /* this will overflow max_long */
     /* Write the page directory. */
     code = gdev_tiff_begin_page(pdev, &tfdev->tiff, file,
 				(const TIFF_dir_entry *)&dir_gray_template,
-			  sizeof(dir_gray_template) / sizeof(TIFF_dir_entry),
-				(const byte *)&val_gray_template,
-				sizeof(val_gray_template), 0);
+			        sizeof(dir_gray_template) / sizeof(TIFF_dir_entry),
+				(const byte *)&val_gray_swapped,
+				sizeof(val_gray_swapped), 0, swap_bytes);
     if (code < 0)
 	return code;
 
@@ -121,7 +121,7 @@ tiffgray_print_page(gx_device_printer * pdev, FILE * file)
 	    fwrite((char *)row, raster, 1, file);
 	}
 	gdev_tiff_end_strip(&tfdev->tiff, file);
-	gdev_tiff_end_page(&tfdev->tiff, file);
+	gdev_tiff_end_page(&tfdev->tiff, file, swap_bytes);
 	gs_free_object(pdev->memory, line, "tiffgray_print_page");
     }
 
@@ -135,7 +135,7 @@ static dev_proc_print_page(tiff32nc_print_page);
 #define cmyk_procs(p_map_color_rgb, p_map_cmyk_color)\
     gdev_prn_open, NULL, NULL, gdev_prn_output_page, gdev_prn_close,\
     NULL, p_map_color_rgb, NULL, NULL, NULL, NULL, NULL, NULL,\
-    gdev_prn_get_params, gdev_prn_put_params,\
+    tiff_get_params, tiff_put_params,\
     p_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device
 
 /* 8-bit-per-plane separated CMYK color. */
@@ -144,12 +144,13 @@ static const gx_device_procs tiff32nc_procs = {
     cmyk_procs(cmyk_8bit_map_color_cmyk, cmyk_8bit_map_cmyk_color)
 };
 
-const gx_device_printer gs_tiff32nc_device = {
+const gx_device_tiff gs_tiff32nc_device = {
     prn_device_body(gx_device_tiff, tiff32nc_procs, "tiff32nc",
 			DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 			X_DPI, Y_DPI,
 			0, 0, 0, 0,	/* Margins */
-			4, 32, 255, 255, 256, 256, tiff32nc_print_page)
+			4, 32, 255, 255, 256, 256, tiff32nc_print_page),
+    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/      
 };
 
 /* ------ Private definitions ------ */
@@ -189,15 +190,23 @@ tiff32nc_print_page(gx_device_printer * pdev, FILE * file)
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
     ulong cur_size = gdev_prn_file_is_new(pdev) ? 0 : tfdev->tiff.dir_off;
+    tiff_cmyk_values val_cmyk_swapped = val_cmyk_template;
+    bool swap_bytes = tfdev->BigEndian != arch_is_big_endian;
+    if (swap_bytes)
+    {
+        int i;
+        for (i=0; i<4; i++)
+            SWAP_SHORT(val_cmyk_swapped.bps[i]);
+    }
 
     if (pdev->height > (max_long - cur_size)/(pdev->width*4)) /* note width is never 0 in print_page */
 	return_error(gs_error_rangecheck);  /* this will overflow max_long */
     /* Write the page directory. */
     code = gdev_tiff_begin_page(pdev, &tfdev->tiff, file,
 				(const TIFF_dir_entry *)&dir_cmyk_template,
-			  sizeof(dir_cmyk_template) / sizeof(TIFF_dir_entry),
-				(const byte *)&val_cmyk_template,
-				sizeof(val_cmyk_template), 0);
+			        sizeof(dir_cmyk_template) / sizeof(TIFF_dir_entry),
+				(const byte *)&val_cmyk_swapped,
+				sizeof(val_cmyk_swapped), 0, swap_bytes);
     if (code < 0)
 	return code;
 
@@ -217,7 +226,7 @@ tiff32nc_print_page(gx_device_printer * pdev, FILE * file)
 	    fwrite((char *)row, raster, 1, file);
 	}
 	gdev_tiff_end_strip(&tfdev->tiff, file);
-	gdev_tiff_end_page(&tfdev->tiff, file);
+	gdev_tiff_end_page(&tfdev->tiff, file, swap_bytes);
 	gs_free_object(pdev->memory, line, "tiff32nc_print_page");
     }
 
@@ -259,6 +268,7 @@ typedef struct tiffsep_device_s {
 				/* tiff state for separation files */
     gdev_tiff_state tiff[GX_DEVICE_COLOR_MAX_COMPONENTS];
     FILE * sep_file[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    bool  BigEndian;            /* true = big endian; false = little endian */
     gs_devn_params devn_params;		/* DeviceN generated parameters */
     equivalent_cmyk_color_params equiv_cmyk_colors;
 } tiffsep_device;
@@ -392,7 +402,8 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
 	prn_device_body_rest_(tiffsep_print_page),\
 	{ 0 },			/* tiff state for comp file */\
 	{{ 0 }},		/* tiff state for separation files */\
-	{ 0 }			/* separation files */
+	{ 0 },			/* separation files */\
+	arch_is_big_endian      /* true = big endian; false = little endian */
 
 /*
  * Select the default number of components based upon the number of bits
@@ -579,12 +590,16 @@ static int
 tiffsep_get_params(gx_device * pdev, gs_param_list * plist)
 {
     int code = gdev_prn_get_params(pdev, plist);
-
     if (code < 0)
 	return code;
-    return devn_get_params(pdev, plist,
+	
+    code = devn_get_params(pdev, plist,
 	    	&(((tiffsep_device *)pdev)->devn_params),
     		&(((tiffsep_device *)pdev)->equiv_cmyk_colors));
+    if (code < 0)
+	return code;
+    
+    return param_write_bool(plist, "BigEndian", &((tiffsep_device *)pdev)->BigEndian);
 }
 
 /* Set parameters.  We allow setting the number of bits per component. */
@@ -592,7 +607,19 @@ static int
 tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
 {
     tiffsep_device * const pdevn = (tiffsep_device *) pdev;
-
+    int code;
+    const char *param_name;
+   
+    /* Read BigEndian option as bool */ 
+    switch (code = param_read_bool(plist, (param_name = "BigEndian"), &pdevn->BigEndian)) {
+	default:
+	    param_signal_error(plist, param_name, code);
+	    return code;
+        case 0:
+	case 1:
+	    break;
+    }
+    
     return devn_printer_put_params(pdev, plist,
 		&(pdevn->devn_params), &(pdevn->equiv_cmyk_colors));
 }
@@ -956,6 +983,14 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
     const char *fmt;
     gs_parsed_file_name_t parsed;
     int non_encodable_count = 0;
+    tiff_cmyk_values val_cmyk_swapped = val_cmyk_template;
+    bool swap_bytes = tfdev->BigEndian != arch_is_big_endian;
+    if (swap_bytes)
+    {
+        int i;
+        for (i=0; i<4; i++)
+            SWAP_SHORT(val_cmyk_swapped.bps[i]);
+    }
 
     build_comp_to_sep_map(tfdev, map_comp_to_sep);
 
@@ -979,9 +1014,9 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 	return_error(gs_error_rangecheck);  /* this will overflow max_long */
     code = gdev_tiff_begin_page(pdev, &tfdev->tiff_comp, file,
 				(const TIFF_dir_entry *)&dir_cmyk_template,
-			  sizeof(dir_cmyk_template) / sizeof(TIFF_dir_entry),
-				(const byte *)&val_cmyk_template,
-				sizeof(val_cmyk_template), 0);
+			        sizeof(dir_cmyk_template) / sizeof(TIFF_dir_entry),
+				(const byte *)&val_cmyk_swapped,
+				sizeof(val_cmyk_swapped), 0, swap_bytes);
     pdev->color_info.depth = save_depth;
     if (code < 0)
 	return code;
@@ -1023,8 +1058,8 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 			tfdev->sep_file[comp_num],
 		 	(const TIFF_dir_entry *)&dir_gray_template,
 			sizeof(dir_gray_template) / sizeof(TIFF_dir_entry),
-			(const byte *)&val_gray_template,
-			sizeof(val_gray_template), 0);
+			(const byte *)&val_cmyk_swapped,
+			sizeof(val_cmyk_swapped), 0, swap_bytes);
 	pdev->color_info.depth = save_depth;
         if (code < 0)
 	    return code;
@@ -1076,12 +1111,12 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 	}
 	/* Update the strip data */
 	gdev_tiff_end_strip(&(tfdev->tiff_comp), file);
-	gdev_tiff_end_page(&(tfdev->tiff_comp), file);
+	gdev_tiff_end_page(&(tfdev->tiff_comp), file, swap_bytes);
         for (comp_num = 0; comp_num < num_comp; comp_num++ ) {
 	    gdev_tiff_end_strip(&(tfdev->tiff[comp_num]),
 					tfdev->sep_file[comp_num]);
 	    gdev_tiff_end_page(&(tfdev->tiff[comp_num]),
-					tfdev->sep_file[comp_num]);
+					tfdev->sep_file[comp_num], swap_bytes);
 	}
 	gs_free_object(pdev->memory, line, "tiffsep_print_page");
 	gs_free_object(pdev->memory, sep_line, "tiffsep_print_page");

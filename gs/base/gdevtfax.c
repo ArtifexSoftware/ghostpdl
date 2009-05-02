@@ -38,6 +38,7 @@ struct gx_device_tfax_s {
     long MaxStripSize;		/* 0 = no limit, other is UNCOMPRESSED limit */
                                 /* The type and range of FillOrder follows TIFF 6 spec  */
     int  FillOrder;             /* 1 = lowest column in the high-order bit, 2 = reverse */
+    bool  BigEndian;            /* true = big endian; false = little endian*/
     gdev_tiff_state tiff;	/* for TIFF output only */
 };
 typedef struct gx_device_tfax_s gx_device_tfax;
@@ -51,7 +52,8 @@ static const gx_device_procs gdev_tfax_std_procs =
 {\
     FAX_DEVICE_BODY(gx_device_tfax, gdev_tfax_std_procs, dname, print_page),\
     0				/* unlimited strip size byte count */,\
-    1                           /* lowest column in the high-order bit */\
+    1                           /* lowest column in the high-order bit */,\
+    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/\
 }
 
 const gx_device_tfax gs_tiffcrle_device =
@@ -78,6 +80,8 @@ tfax_get_params(gx_device * dev, gs_param_list * plist)
         ecode = code;
     if ((code = param_write_int(plist, "FillOrder", &tfdev->FillOrder)) < 0)
         ecode = code;
+    if ((code = param_write_bool(plist, "BigEndian", &tfdev->BigEndian)) < 0)
+        ecode = code;
     return ecode;
 }
 static int
@@ -89,6 +93,7 @@ tfax_put_params(gx_device * dev, gs_param_list * plist)
     long mss = tfdev->MaxStripSize;
     int fill_order = tfdev->FillOrder;
     const char *param_name;
+    bool big_endian = tfdev->BigEndian;
 
     switch (code = param_read_long(plist, (param_name = "MaxStripSize"), &mss)) {
         case 0:
@@ -119,6 +124,16 @@ tfax_put_params(gx_device * dev, gs_param_list * plist)
 	case 1:
 	    break;
     }
+    
+    /* Read BigEndian option as bool */ 
+    switch (code = param_read_bool(plist, (param_name = "BigEndian"), &big_endian)) {
+	default:
+	    ecode = code;
+	    param_signal_error(plist, param_name, ecode);
+        case 0:
+	case 1:
+	    break;
+    }
 
     if (ecode < 0)
 	return ecode;
@@ -128,6 +143,7 @@ tfax_put_params(gx_device * dev, gs_param_list * plist)
 
     tfdev->MaxStripSize = mss;
     tfdev->FillOrder = fill_order;
+    tfdev->BigEndian = big_endian;
     return code;
 }
 
@@ -195,19 +211,27 @@ static dev_proc_print_page(tifflzw_print_page);
 static dev_proc_print_page(tiffpack_print_page);
 
 const gx_device_tfax gs_tifflzw_device = {
-    prn_device_std_body(gx_device_tfax, prn_std_procs, "tifflzw",
+    prn_device_std_body(gx_device_tfax, gdev_tfax_std_procs, "tifflzw",
 			DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 			X_DPI, Y_DPI,
 			0, 0, 0, 0,	/* margins */
-			1, tifflzw_print_page)
+			1, tifflzw_print_page),
+    1				/* AdjustWidth, not used */,
+    0				/* unlimited strip size byte count */,
+    1                           /* lowest column in the high-order bit, not used */,
+    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/
 };
 
 const gx_device_tfax gs_tiffpack_device = {
-    prn_device_std_body(gx_device_tfax, prn_std_procs, "tiffpack",
+    prn_device_std_body(gx_device_tfax, gdev_tfax_std_procs, "tiffpack",
 			DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 			X_DPI, Y_DPI,
 			0, 0, 0, 0,	/* margins */
-			1, tiffpack_print_page)
+			1, tiffpack_print_page),
+    1				/* AdjustWidth, not used */,
+    0				/* unlimited strip size byte count */,
+    1                           /* lowest column in the high-order bit, not used */,
+    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/
 };
 
 /* Define the TIFF directory we use, beyond the standard entries. */
@@ -249,7 +273,7 @@ tifff_print_page(gx_device_printer * dev, FILE * prn_stream,
     tfax_begin_page(tfdev, prn_stream, pdir, pstate->Columns);
     pstate->FirstBitLowOrder = tfdev->FillOrder == 2;
     code = gdev_fax_print_page_stripped(dev, prn_stream, pstate, tfdev->tiff.rows);
-    gdev_tiff_end_page(&tfdev->tiff, prn_stream);
+    gdev_tiff_end_page(&tfdev->tiff, prn_stream, tfdev->BigEndian != arch_is_big_endian);
     return code;
 }
 static int
@@ -332,7 +356,7 @@ tifflzw_print_page(gx_device_printer * dev, FILE * prn_stream)
     state.EarlyChange = 1;	/* PLRM is sort of confusing, but this is correct */
     code = gdev_stream_print_page(dev, prn_stream, &s_LZWE_template,
 				  (stream_state *) & state);
-    gdev_tiff_end_page(&tfdev->tiff, prn_stream);
+    gdev_tiff_end_page(&tfdev->tiff, prn_stream, tfdev->BigEndian != arch_is_big_endian);
     return code;
 }
 
@@ -353,7 +377,7 @@ tiffpack_print_page(gx_device_printer * dev, FILE * prn_stream)
     state.record_size = gdev_mem_bytes_per_scan_line((gx_device *) dev);
     code = gdev_stream_print_page(dev, prn_stream, &s_RLE_template,
 				  (stream_state *) & state);
-    gdev_tiff_end_page(&tfdev->tiff, prn_stream);
+    gdev_tiff_end_page(&tfdev->tiff, prn_stream, tfdev->BigEndian != arch_is_big_endian);
     return code;
 }
 
@@ -371,7 +395,7 @@ tfax_begin_page(gx_device_tfax * tfdev, FILE * fp,
 				&tfdev->tiff, fp,
 				(const TIFF_dir_entry *)pdir,
 				sizeof(*pdir) / sizeof(TIFF_dir_entry),
-				NULL, 0, tfdev->MaxStripSize);
+				NULL, 0, tfdev->MaxStripSize, tfdev->BigEndian != arch_is_big_endian);
     tfdev->width = save_width;
     return code;
 }
