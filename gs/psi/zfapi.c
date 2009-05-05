@@ -665,11 +665,7 @@ static ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort 
         } else {
             gs_font_type42 *pfont42 = (gs_font_type42 *)ff->client_font_data;
             ulong offset0, offset1;
-	    bool error;
-
-            error = sfnt_get_glyph_offset(pdr, pfont42, char_code, &offset0, &offset1);
-	    if (error)
-		return -1;
+	    bool error = sfnt_get_glyph_offset(pdr, pfont42, char_code, &offset0, &offset1);
 
             glyph_length = (error ? -1 : offset1 - offset0);
             if (buf != 0 && !error) {
