@@ -73,6 +73,15 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     icc_profile = NULL;
     icc_profile = gsicc_profile_new(pcs, s, gs_state_memory(igs));
 
+    /* If we have not populated the icc_managers device profile yet, go ahead 
+       and take care of that now.  We will likely want to move this out of
+       here and into an intialization section later.  Do it now though
+       so that we can do some testing. */
+
+
+
+
+
 #if 0
 
     picc_info = pcs->params.icc.picc_info;

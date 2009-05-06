@@ -38,19 +38,16 @@
 
 /* Structure pointer information */
 
-gs_private_st_ptrs2(st_icc_profile, cmm_profile_t, "gsiccmanage_profile",
-		    icc_pro_enum_ptrs, icc_pro_reloc_ptrs,
-		    ProfileHandle,buffer);
 
 
 gs_private_st_ptrs4(st_icc_link, gsicc_link_t, "gsiccmanage_link",
 		    icc_link_enum_ptrs, icc_link_reloc_ptrs,
-		    LinkHandle, ContextPtr, NextLink, PrevLink);
+		    link_handle, contextptr, nextlink, prevlink);
 
 
 gs_private_st_ptrs1(st_icc_linkcache, gsicc_link_cache_t, "gsiccmanage_linkcache",
 		    icc_linkcache_enum_ptrs, icc_linkcache_reloc_ptrs,
-		    ICCLink);
+		    icc_link);
 
 
 /**
@@ -66,7 +63,7 @@ gsicc_cache_new(int cachesize, gs_memory_t *memory)
 
     result = gs_alloc_struct(memory, gsicc_link_cache_t, &st_icc_linkcache,
 			     "gsiccmanage_linkcache_new");
-    result->ICCLink = NULL;
+    result->icc_link = NULL;
     result->num_links = 0;
 
     return(result);
@@ -75,41 +72,41 @@ gsicc_cache_new(int cachesize, gs_memory_t *memory)
 
 
 static void
-gsicc_add_link(gsicc_link_cache_t *link_cache, void *LinkHandle,void *ContextPtr, int64_t LinkHashCode, gs_memory_t *memory)
+gsicc_add_link(gsicc_link_cache_t *link_cache, void *link_handle,void *contextptr, int64_t link_hashcode, gs_memory_t *memory)
 {
 
-    gsicc_link_t *result, *Nextlink;
+    gsicc_link_t *result, *nextlink;
 
     result = gs_alloc_struct(memory, gsicc_link_t, &st_icc_link,
 			     "gsiccmanage_link_new");
 
-    result->ContextPtr = ContextPtr;
-    result->LinkHandle = LinkHandle;
-    result->LinkHashCode = LinkHashCode;
+    result->contextptr = contextptr;
+    result->link_handle = link_handle;
+    result->link_hashcode = link_hashcode;
     result->ref_count = 1;
     
-    if (link_cache->ICCLink != NULL){
+    if (link_cache->icc_link != NULL){
 
         /* Add where ever we are right
            now.  Later we may want to
            do this differently.  */
         
-        Nextlink = link_cache->ICCLink->NextLink;
-        link_cache->ICCLink->NextLink = result;
-        result->PrevLink = link_cache->ICCLink;
-        result->NextLink = Nextlink;
+        nextlink = link_cache->icc_link->nextlink;
+        link_cache->icc_link->nextlink = result;
+        result->prevlink = link_cache->icc_link;
+        result->nextlink = nextlink;
         
-        if (Nextlink != NULL){
+        if (nextlink != NULL){
 
-            Nextlink->PrevLink = result;
+            nextlink->prevlink = result;
 
         }
 
     } else {
 
-        result->NextLink = NULL;
-        result->PrevLink = NULL;
-        link_cache->ICCLink = result;
+        result->nextlink = NULL;
+        result->prevlink = NULL;
+        link_cache->icc_link = result;
     
     }
 
@@ -268,30 +265,30 @@ FindCacheLink(int64_t hashcode,gsicc_link_cache_t *icc_cache, bool includes_proo
 
     /* Look through the cache for the hashcode */
 
-    curr_pos1 = icc_cache->ICCLink;
+    curr_pos1 = icc_cache->icc_link;
     curr_pos2 = curr_pos1;
 
     while (curr_pos1 != NULL ){
 
-        if (curr_pos1->LinkHashCode == hashcode && includes_proof == curr_pos1->includes_softproof){
+        if (curr_pos1->link_hashcode == hashcode && includes_proof == curr_pos1->includes_softproof){
 
             return(curr_pos1);
 
         }
 
-        curr_pos1 = curr_pos1->PrevLink;
+        curr_pos1 = curr_pos1->prevlink;
 
     }
 
     while (curr_pos2 != NULL ){
 
-        if (curr_pos2->LinkHashCode == hashcode && includes_proof == curr_pos2->includes_softproof){
+        if (curr_pos2->link_hashcode == hashcode && includes_proof == curr_pos2->includes_softproof){
 
             return(curr_pos2);
 
         }
 
-        curr_pos2 = curr_pos2->NextLink;
+        curr_pos2 = curr_pos2->nextlink;
 
     }
 
@@ -313,7 +310,7 @@ gsicc_find_zeroref_cache(gsicc_link_cache_t *icc_cache){
 
     /* Look through the cache for zero ref count */
 
-    curr_pos1 = icc_cache->ICCLink;
+    curr_pos1 = icc_cache->icc_link;
     curr_pos2 = curr_pos1;
 
     while (curr_pos1 != NULL ){
@@ -324,7 +321,7 @@ gsicc_find_zeroref_cache(gsicc_link_cache_t *icc_cache){
 
         }
 
-        curr_pos1 = curr_pos1->PrevLink;
+        curr_pos1 = curr_pos1->prevlink;
 
     }
 
@@ -336,7 +333,7 @@ gsicc_find_zeroref_cache(gsicc_link_cache_t *icc_cache){
 
         }
 
-        curr_pos2 = curr_pos2->NextLink;
+        curr_pos2 = curr_pos2->nextlink;
 
     }
 
@@ -352,15 +349,15 @@ gsicc_remove_link(gsicc_link_t *link,gsicc_link_cache_t *icc_cache, gs_memory_t 
 
     gsicc_link_t *prevlink,*nextlink;
 
-    prevlink = link->PrevLink;
-    nextlink = link->NextLink;
+    prevlink = link->prevlink;
+    nextlink = link->nextlink;
 
     if (prevlink != NULL){
-        prevlink->NextLink = nextlink;
+        prevlink->nextlink = nextlink;
     }
 
     if (nextlink != NULL){
-        nextlink->PrevLink = prevlink;
+        nextlink->prevlink = prevlink;
     }
 
     gsicc_link_free(link, memory);

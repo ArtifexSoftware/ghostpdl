@@ -639,6 +639,7 @@ gx_device_fill_in_procs(register gx_device * dev)
 	}
     }
 
+    dev->color_info.icc_profile[0] = '\0';  /* Initialization for ICC profile file name */
     set_dev_proc(dev, decode_color, get_decode_color(dev));
     fill_dev_proc(dev, map_color_rgb, gx_default_map_color_rgb);
 

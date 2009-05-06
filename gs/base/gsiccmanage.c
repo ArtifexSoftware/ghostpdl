@@ -27,10 +27,14 @@
 
 /* profile data structure */
 
-gs_private_st_ptrs2(st_gsicc_cmm, cmm_profile_t, "cmm_profile",
-		    cmm_profile_enum_ptrs, cmm_profile_reloc_ptrs,
-		    ProfileHandle, buffer);
+gs_private_st_ptrs2(st_gsicc_profile, cmm_profile_t, "gsicc_profile",
+		    gsicc_profile_enum_ptrs, gsicc_profile_reloc_ptrs,
+		    profile_handle, buffer);
 
+gs_private_st_ptrs7(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
+		    gsicc_manager_enum_ptrs, gsicc_manager_profile_reloc_ptrs,
+		    device_profile, device_named, default_gray, default_rgb,
+                    default_cmyk, proof_profile, output_link);
 
 static const gs_color_space_type gs_color_space_type_icc = {
     gs_color_space_index_CIEICC,    /* index */
@@ -212,23 +216,48 @@ gsicc_profile_new(gs_color_space *gs_colorspace, stream *s, gs_memory_t *memory)
 
   /*  gs_colorspace = gs_cspace_alloc(memory,&gs_color_space_type_icc);  */
     
-    result = gs_alloc_struct(memory, cmm_profile_t, &st_gsicc_cmm,
-			     "cmm_profile_new");
+    result = gs_alloc_struct(memory, cmm_profile_t, &st_gsicc_profile,
+			     "gsicc_profile_new");
     if (result == NULL)
 	return result;  
 
     code = gsicc_load_profile_buffer(result, s, memory);
     if (code < 0) {
 
-        gs_free_object(memory, result, "cmm_profile_new");
+        gs_free_object(memory, result, "gsicc_profile_new");
         return NULL;
 
     } 
 
-    result->ProfileHandle = NULL;
+    result->profile_handle = NULL;
     
 
     return(result);
+
+}
+
+
+gsicc_manager_t *
+gsicc_manager_new(gs_memory_t *memory)
+{
+
+    gsicc_manager_t *result;
+    int code;
+    
+    result = gs_alloc_struct(memory, gsicc_manager_t, &st_gsicc_manager,
+			     "gsicc_manager_new");
+    if (result == NULL)
+	return result;  
+
+   result->default_cmyk = NULL;
+   result->default_gray = NULL;
+   result->default_rgb = NULL;
+   result->device_named = NULL;
+   result->output_link = NULL;
+   result->device_profile = NULL;
+   result->proof_profile = NULL;
+
+   return(result);
 
 }
 
@@ -282,7 +311,7 @@ gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, gs_memory_t *memory
  gsicc_get_profile_handle(gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager)
  {
 
-     gcmmhprofile_t profilehandle = gs_colorspace->cmm_icc_profile_data->ProfileHandle;
+     gcmmhprofile_t profilehandle = gs_colorspace->cmm_icc_profile_data->profile_handle;
      unsigned char *buffer = gs_colorspace->cmm_icc_profile_data->buffer;
      gs_color_space_index color_space_index = gs_color_space_get_index(gs_colorspace);
      unsigned int profile_size;
@@ -302,19 +331,19 @@ gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, gs_memory_t *memory
 
 	case gs_color_space_index_DeviceGray:
 
-            return(gs_colorspace->cmm_icc_profile_data = &(icc_manager->DefaultGray));
+            return(gs_colorspace->cmm_icc_profile_data = &(icc_manager->default_gray));
 
             break;
 
 	case gs_color_space_index_DeviceRGB:
 
-            return(gs_colorspace->cmm_icc_profile_data = &(icc_manager->DefaultRGB));
+            return(gs_colorspace->cmm_icc_profile_data = &(icc_manager->default_rgb));
 
             break;
 
 	case gs_color_space_index_DeviceCMYK:
 
-            return(gs_colorspace->cmm_icc_profile_data = &(icc_manager->DefaultCMYK));
+            return(gs_colorspace->cmm_icc_profile_data = &(icc_manager->default_cmyk));
 
             break;
 

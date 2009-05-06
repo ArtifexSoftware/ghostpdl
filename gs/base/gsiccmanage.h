@@ -34,6 +34,7 @@ void gsicc_set_proof_profile(cmm_profile_t proofprofile );
 void gsicc_load_default_device_profile(int numchannels);
 void gsicc_load_default_input_profile(int numchannels);
 
+gsicc_manager_t* gsicc_manager_new(gs_memory_t *memory);
 cmm_profile_t* gsicc_profile_new(gs_color_space *gs_colorspace, stream *s, gs_memory_t *memory);
 
 static int gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, gs_memory_t *memory);

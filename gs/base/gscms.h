@@ -98,9 +98,9 @@ typedef enum {
    of the ghostscript color structure. */
 typedef struct cmm_profile_s {
 
-    void *ProfileHandle;                /* The profile handle to be used in linking */
+    void *profile_handle;                /* The profile handle to be used in linking */
     unsigned char *buffer;              /* A buffer with ICC profile content */
-    int64_t ProfileHashCode;            /* A hash code for the icc profile */
+    int64_t profile_hashcode;            /* A hash code for the icc profile */
 
 } cmm_profile_t;
 
@@ -134,14 +134,14 @@ typedef struct gsiic_link_s gsicc_link_t;
 
 typedef struct gsiic_link_s {
 
-    void *LinkHandle;
-    void *ContextPtr;
-    int64_t LinkHashCode;
+    void *link_handle;
+    void *contextptr;
+    int64_t link_hashcode;
     int ref_count;
-    gsicc_link_t *NextLink;
-    gsicc_link_t *PrevLink;
+    gsicc_link_t *nextlink;
+    gsicc_link_t *prevlink;
     bool includes_softproof;
-    bool IsIdentity;  /* Used for noting that this is an identity profile */
+    bool is_identity;  /* Used for noting that this is an identity profile */
 
 } gsicc_link_t;
 
@@ -152,7 +152,7 @@ typedef struct gsiic_link_s {
 
 typedef struct gsicc_link_cache_s {
 
-    gsicc_link_t *ICCLink;
+    gsicc_link_t *icc_link;
     int num_links;
 
 } gsicc_link_cache_t;
@@ -161,14 +161,13 @@ typedef struct gsicc_link_cache_s {
 
 typedef struct gsicc_manager_s {
 
-    cmm_profile_t DeviceProfile;  /* The actual profile for the device */
-    cmm_profile_t DeviceNamed;    /* The named color profile for the device */
-    cmm_profile_t LABProfile;     /* CIELAB to CIELAB profile */
-    cmm_profile_t DefaultGray;    /* Default gray profile for device gray */
-    cmm_profile_t DefaultRGB;     /* Default RGB profile for device RGB */
-    cmm_profile_t DefaultCMYK;    /* Default CMYK profile for device CMKY */
-    cmm_profile_t ProofProfile;   /* Profiling profile */
-    cmm_profile_t OutputLink;     /* Output device Link profile */
+    cmm_profile_t *device_profile;  /* The actual profile for the device */
+    cmm_profile_t *device_named;    /* The named color profile for the device */
+    cmm_profile_t *default_gray;    /* Default gray profile for device gray */
+    cmm_profile_t *default_rgb;     /* Default RGB profile for device RGB */
+    cmm_profile_t *default_cmyk;    /* Default CMYK profile for device CMKY */
+    cmm_profile_t *proof_profile;   /* Profiling profile */
+    cmm_profile_t *output_link;     /* Output device Link profile */
 
 } gsicc_manager_t;
 

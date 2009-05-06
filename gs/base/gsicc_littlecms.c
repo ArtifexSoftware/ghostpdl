@@ -36,7 +36,7 @@ gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_bu
                              void *outputbuffer)
 {
     
-    cmsHTRANSFORM hTransform = (cmsHTRANSFORM) icclink->LinkHandle;
+    cmsHTRANSFORM hTransform = (cmsHTRANSFORM) icclink->link_handle;
     DWORD dwInputFormat,dwOutputFormat,curr_input,curr_output;
     int planar,numbytes,little_endian,hasalpha,k;
     unsigned char *inputpos, *outputpos;
@@ -144,7 +144,7 @@ gscms_transform_color(gsicc_link_t *icclink,
                              void **contextptr)
 
 {
-    cmsHTRANSFORM hTransform = (cmsHTRANSFORM) icclink->LinkHandle;
+    cmsHTRANSFORM hTransform = (cmsHTRANSFORM) icclink->link_handle;
     DWORD dwInputFormat,dwOutputFormat,curr_input,curr_output;
     int numbytes;
 
@@ -214,7 +214,7 @@ gscms_get_link(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle,
     lcms_link = cmsCreateTransform(lcms_srchandle, src_data_type, lcms_deshandle, des_data_type, 
         INTENT_PERCEPTUAL, cmsFLAGS_LOWRESPRECALC);	
 
-    icclink->LinkHandle = lcms_link;
+    icclink->link_handle = lcms_link;
   
 return(0);
 }
@@ -257,7 +257,7 @@ gscms_get_link_proof(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle,
     lcms_link = cmsCreateProofingTransform(lcms_srchandle, src_data_type, lcms_deshandle, des_data_type, 
         lcms_proofhandle,INTENT_PERCEPTUAL, INTENT_ABSOLUTE_COLORIMETRIC, cmsFLAGS_GAMUTCHECK | cmsFLAGS_SOFTPROOFING );			
 
-    icclink->LinkHandle = lcms_link;
+    icclink->link_handle = lcms_link;
 
   
 return(0);
@@ -286,8 +286,8 @@ void
 gscms_release_link(gsicc_link_t *icclink)
 {
 
-    if (icclink->LinkHandle !=NULL )
-        cmsDeleteTransform(icclink->LinkHandle);
+    if (icclink->link_handle !=NULL )
+        cmsDeleteTransform(icclink->link_handle);
 
 }
 
@@ -321,7 +321,7 @@ gscms_xform_named_color(gsicc_link_t *icclink,  float tint_value, const char* Co
                         gx_color_value device_values[] )  
 {
 
-    cmsHPROFILE hTransform = icclink->LinkHandle; 
+    cmsHPROFILE hTransform = icclink->link_handle; 
     unsigned short *deviceptr = device_values;
     int index;
 
@@ -391,7 +391,7 @@ gscms_get_name2device_link(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle
     /* Change the formaters */
     cmsChangeBuffersFormat(hTransform,TYPE_NAMED_COLOR_INDEX,dwOutputFormat);
 
-    icclink->LinkHandle = hTransform;
+    icclink->link_handle = hTransform;
 
     cmsCloseProfile(lcms_srchandle);
 
