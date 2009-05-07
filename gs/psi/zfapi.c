@@ -1447,7 +1447,8 @@ retry_oversampling:
 	ref *Encoding;
 	int_param(op, 0xFF, &client_char_code);
         if (dict_find_string(pdr, "Encoding", &Encoding) > 0 && 
-            (r_has_type(Encoding, t_array) || r_has_type(Encoding, t_shortarray))) {
+            (r_has_type(Encoding, t_array) || 
+	    r_has_type(Encoding, t_shortarray) || r_has_type(Encoding, t_mixedarray))) {
 	    if (array_get(imemory, Encoding, client_char_code, &char_name) < 0)
 	        if ((code = name_ref(imemory, (const byte *)".notdef", 7, &char_name, -1)) < 0)
 		    return code;
