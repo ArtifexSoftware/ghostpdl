@@ -20,7 +20,7 @@
 
 #include "gx.h"
 
-gsicc_link_cache_t* gsicc_cache_new(int cachesize, gs_memory_t *memory);
+gsicc_link_cache_t* gsicc_cache_new(gs_memory_t *memory);
 
 static void gsicc_add_link(gsicc_link_cache_t *link_cache, void *link_handle,
                void *ContextPtr, int64_t link_hashcode, gs_memory_t *memory);

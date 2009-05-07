@@ -132,7 +132,7 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
     pis->have_pattern_streams = false;
     pis->devicergb_cs = gs_cspace_new_DeviceRGB(mem);
     pis->devicecmyk_cs = gs_cspace_new_DeviceCMYK(mem);
-    pis->icc_cache = 0;
+    pis->icc_cache = gsicc_cache_new(pis->memory);
     pis->icc_manager = gsicc_manager_new(pis->memory);
     return 0;
 }

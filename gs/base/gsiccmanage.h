@@ -27,7 +27,7 @@ void gsicc_destroy();
 void gsicc_set_gray_profile(cmm_profile_t graybuffer);
 void gsicc_set_rgb_profile(cmm_profile_t rgbbuffer);
 void gsicc_set_cmyk_profile(cmm_profile_t cmykbuffer);
-void gsicc_set_device_profile(cmm_profile_t deviceprofile);
+void gsicc_set_device_profile(gs_imager_state *pis, gx_device * pdev, gs_memory_t * mem);
 void gsicc_set_device_named_color_profile(cmm_profile_t nameprofile);
 void gsicc_set_device_linked_profile(cmm_profile_t outputlinkedprofile );
 void gsicc_set_proof_profile(cmm_profile_t proofprofile );
@@ -35,7 +35,7 @@ void gsicc_load_default_device_profile(int numchannels);
 void gsicc_load_default_input_profile(int numchannels);
 
 gsicc_manager_t* gsicc_manager_new(gs_memory_t *memory);
-cmm_profile_t* gsicc_profile_new(gs_color_space *gs_colorspace, stream *s, gs_memory_t *memory);
+cmm_profile_t* gsicc_profile_new(stream *s, gs_memory_t *memory);
 
 static int gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, gs_memory_t *memory);
 unsigned int gsicc_getprofilesize(unsigned char *buffer);
@@ -49,6 +49,7 @@ void gsicc_setbuffer_desc(gsicc_bufferdesc_t *buffer_desc,unsigned char num_chan
     gs_icc_colorbuffer_t buffercolor);
 
  gcmmhprofile_t gsicc_get_profile_handle(gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager);
+ gcmmhprofile_t gsicc_get_profile_handle_buffer(unsigned char *buffer);
 
 
 

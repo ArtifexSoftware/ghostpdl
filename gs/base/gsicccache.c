@@ -56,7 +56,7 @@ gs_private_st_ptrs1(st_icc_linkcache, gsicc_link_cache_t, "gsiccmanage_linkcache
  **/
 
 gsicc_link_cache_t *
-gsicc_cache_new(int cachesize, gs_memory_t *memory)
+gsicc_cache_new(gs_memory_t *memory)
 {
 
     gsicc_link_cache_t *result;
