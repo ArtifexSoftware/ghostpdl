@@ -5330,9 +5330,9 @@ static int iccrange(i_ctx_t * i_ctx_p, ref *space, float *ptr)
 	    if (code < 0)
 		return code;
 	    if (r_has_type(&valref, t_integer))
-		ptr[i * 2] = (float)valref.value.intval;
+		ptr[i] = (float)valref.value.intval;
 	    else
-		ptr[i * 2] = (float)valref.value.realval;
+		ptr[i] = (float)valref.value.realval;
 	}
     } else {
 	for (i=0;i<components;i++) {
