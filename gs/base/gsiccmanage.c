@@ -24,6 +24,7 @@
 #include "gxcspace.h"
 #include "gscms.h"
 #include "gsiccmanage.h"
+#include "gsicccache.h"
 
 
 /* profile data structure */
@@ -157,12 +158,11 @@ gsicc_set_device_profile(gs_imager_state *pis, gx_device * pdev, gs_memory_t * m
 
                 icc_profile->profile_handle = gsicc_get_profile_handle_buffer(icc_profile->buffer);
 
-                /* Set the hash code of the profile. */
-                
-                
-                
-                
+                /* Compute the hash code of the profile. Everything in the ICC manager will have 
+                   it's hash code precomputed */
 
+                gsicc_get_icc_buff_hash(icc_profile->buffer, &(icc_profile->hashcode));
+                icc_profile->hash_is_valid = true;
 
             }
   
@@ -272,7 +272,7 @@ gsicc_profile_new(stream *s, gs_memory_t *memory)
     } 
 
     result->profile_handle = NULL;
-    
+    result->hash_is_valid = false;
 
     return(result);
 

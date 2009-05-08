@@ -50,7 +50,7 @@ gsicc_link_t* gsicc_get_link(gs_imager_state * pis, gs_color_space  *input_color
 void gsicc_release_link(gsicc_link_t *icclink);
 
 
-static void gsicc_get_icc_buff_hash(unsigned char *buffer, int64_t *hash);
+void gsicc_get_icc_buff_hash(unsigned char *buffer, int64_t *hash);
 
 static void gsicc_get_buff_hash(unsigned char *data,unsigned int num_bytes,int64_t *hash);
 

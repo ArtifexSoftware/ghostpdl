@@ -205,7 +205,7 @@ gsicc_mash_hash(gsicc_hashlink_t *hash){
 
 }
 
-static void 
+void 
 gsicc_get_icc_buff_hash(unsigned char *buffer, int64_t *hash)
 {
 
@@ -220,8 +220,8 @@ gsicc_get_buff_hash(unsigned char *data,unsigned int num_bytes,int64_t *hash)
 
     gs_md5_state_t md5;
     byte digest[16];
-    int k,shift;
-    int64_t word1,word2;
+    int k;
+    int64_t word1,word2,shift;
 
    /* We could probably do something faster than this. But use this for now. */
     gs_md5_init(&md5);
@@ -234,10 +234,13 @@ gsicc_get_buff_hash(unsigned char *data,unsigned int num_bytes,int64_t *hash)
     word2 = 0;
     shift = 0;
 
+    /* need to do it this way because of 
+       potential word boundary issues */
+
     for( k = 0; k<8; k++){
     
-       word1 += digest[k] << shift;
-       word2 += digest[k+8] << shift;
+       word1 += ((int64_t) digest[k]) << shift;
+       word2 += ((int64_t) digest[k+8]) << shift;
        shift += 8;
 
     }
