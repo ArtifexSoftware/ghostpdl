@@ -23,6 +23,7 @@
 #include "smd5.h" 
 #include "gscms.h"
 #include "gsicc_littlecms.h" 
+#include "gsiccmanage.h"
 #include "gsicccache.h"
 
 #define ICC_CACHE_MAXLINKS 50   /* Note that the the external memory used to 
@@ -72,7 +73,7 @@ gsicc_cache_new(gs_memory_t *memory)
 
 
 static void
-gsicc_add_link(gsicc_link_cache_t *link_cache, void *link_handle,void *contextptr, int64_t link_hashcode, gs_memory_t *memory)
+gsicc_add_link(gsicc_link_cache_t *link_cache, void *link_handle,void *contextptr, gsicc_hashlink_t hashcode, gs_memory_t *memory)
 {
 
     gsicc_link_t *result, *nextlink;
@@ -82,7 +83,10 @@ gsicc_add_link(gsicc_link_cache_t *link_cache, void *link_handle,void *contextpt
 
     result->contextptr = contextptr;
     result->link_handle = link_handle;
-    result->link_hashcode = link_hashcode;
+    result->hashcode.link_hashcode = hashcode.link_hashcode;
+    result->hashcode.des_hash = hashcode.des_hash;
+    result->hashcode.src_hash = hashcode.src_hash;
+    result->hashcode.rend_hash = hashcode.rend_hash;
     result->ref_count = 1;
     
     if (link_cache->icc_link != NULL){
@@ -138,106 +142,48 @@ gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory)
 
 
 
-int
-gsicc_get_color_info(gs_color_space *colorspace,unsigned char *color, int *size_color){
+static void 
+gsicc_get_gscs_hash(gs_color_space *colorspace, int64_t *hash){
 
-  /*  switch(colorspace->ColorType){
+    const gs_color_space_type *pcst = colorspace->type;
 
-	case DEVICETYPE:
+      switch(pcst->index){
 
-            color = (unsigned char*) &(colorspace->DeviceType);
-            *size_color = sizeof(gs_icc_devicecolor_t);
-
-            break;
-	case ICCTYPE:				
-
-            color = (unsigned char*) &(colorspace->ProfileData);
-            *size_color = colorspace->ProfileData->iccheader.size;
-
-            break;
-	case CRDTYPE:				
-
-            color = (unsigned char*) (colorspace->pcrd);
-            *size_color = sizeof(gs_cie_render);
+	case gs_color_space_index_DeviceGray:
 
             break;
 
-        case CIEATYPE:				
+	case gs_color_space_index_DeviceRGB:				
 
-            color = (unsigned char*) (colorspace->pcie_a);
-            *size_color = sizeof(gs_cie_a);
 
             break;
 
+        case gs_color_space_index_DeviceCMYK:				
 
-        case CIEABCTYPE:				
-
-            color = (unsigned char*) (colorspace->pcie_abc);
-            *size_color = sizeof(gs_cie_abc);
 
             break;
 
-
-        case CIEDEFTYPE:				
-
-             color = (unsigned char*) (colorspace->pcie_def);
-            *size_color = sizeof(gs_cie_def);
-
-            break;
-
-
-        case CIEDEFGTYPE:				
-
-             color = (unsigned char*) (colorspace->pcie_defg);
-            *size_color = sizeof(gs_cie_defg);
-
-            break;
+            /* NEED TO ADD IN ALL THE PS CIE Color spaces */
 
 	default:			
-	    return_error(gs_error_rangecheck);
+	    
 	    break;
 
-    }  */
+    }  
 
-    return(0);
 
 
 }
 
+static void
+gsicc_mash_hash(gsicc_hashlink_t *hash){
 
-/* Compute a hash code for the current transformation case.
-    This just computes a 64bit xor of upper and lower portions of
-    md5 for the input, output
-    and rendering params structure.  We may change this later */
-
-static int64_t
-gsicc_compute_hash(gs_color_space *input_colorspace, 
-                   gs_color_space *output_colorspace, 
-                   gsicc_rendering_param_t *rendering_params)
-
-{
-   
-    unsigned char *color1=NULL,*color2=NULL;
-    int size_color1,size_color2;
-    int ok;
-    gs_md5_state_t md5;
-    byte digest[16];
+ /*   
+ 
+ 
+     int ok;
     int k,shift;
     int64_t word1,word2,result;
-
-   /* first get the appropriate item from the structures */
-   
-    ok = gsicc_get_color_info(input_colorspace,color1,&size_color1);
-    ok = gsicc_get_color_info(output_colorspace,color2,&size_color2);
-
-    /* We could probably do something faster than this. But use this for now. */
-    gs_md5_init(&md5);
-    gs_md5_append(&md5, color1, size_color1);
-    gs_md5_append(&md5, color2, size_color2);
-    gs_md5_append(&md5, (gs_md5_byte_t*) rendering_params, sizeof(gsicc_rendering_param_t));
-    gs_md5_finish(&md5, digest);
-
-    /* xor this into 64 bit hash */
 
     word1 = 0;
     word2 = 0;
@@ -253,15 +199,123 @@ gsicc_compute_hash(gs_color_space *input_colorspace,
 
     result = word1 ^ word2; 
     return(result);
+    hash->link_hashcode = 
+
+    return;*/
 
 }
 
+static void 
+gsicc_get_icc_buff_hash(unsigned char *buffer, int64_t *hash)
+{
+
+    int profile_size = gsicc_getprofilesize(buffer);
+    gsicc_get_buff_hash(buffer,profile_size,hash);
+
+}
+
+static void 
+gsicc_get_buff_hash(unsigned char *data,unsigned int num_bytes,int64_t *hash)
+{
+
+    gs_md5_state_t md5;
+    byte digest[16];
+    int k,shift;
+    int64_t word1,word2;
+
+   /* We could probably do something faster than this. But use this for now. */
+    gs_md5_init(&md5);
+    gs_md5_append(&md5, data, num_bytes);
+    gs_md5_finish(&md5, digest);
+
+    /* For now, xor this into 64 bit word */
+
+    word1 = 0;
+    word2 = 0;
+    shift = 0;
+
+    for( k = 0; k<8; k++){
+    
+       word1 += digest[k] << shift;
+       word2 += digest[k+8] << shift;
+       shift += 8;
+
+    }
+
+    *hash = word1 ^ word2; 
+
+}
+
+
+/* Compute a hash code for the current transformation case.
+    This just computes a 64bit xor of upper and lower portions of
+    md5 for the input, output
+    and rendering params structure.  We may change this later */
+
+static void
+gsicc_compute_linkhash(gs_color_space *input_colorspace, 
+                   gs_color_space *output_colorspace, 
+                   gsicc_rendering_param_t *rendering_params, gsicc_hashlink_t *hash)
+{
+   
+   /* first get the hash codes for the color spaces */
+
+    gsicc_get_gscs_hash(input_colorspace,&(hash->src_hash));
+    gsicc_get_gscs_hash(output_colorspace,&(hash->des_hash));
+
+    /* now for the rendering paramaters */
+
+    gsicc_get_buff_hash((unsigned char *) rendering_params,
+        sizeof(gsicc_rendering_param_t),&(hash->rend_hash));
+
+   /* for now, mash all of these into a link hash */
+
+   gsicc_mash_hash(hash);
+
+}
+
+
+
+static void
+gsicc_get_cspace_hash(gs_color_space *colorspace,int64_t *hash){
+
+    if ( colorspace->cmm_icc_profile_data->hash_is_valid ){
+
+        *hash = colorspace->cmm_icc_profile_data->hashcode;
+        return;
+
+    } else {
+
+        /* We need to compute for this color space */
+
+        if (colorspace->cmm_icc_profile_data->buffer != NULL){
+
+            gsicc_get_icc_buff_hash(colorspace->cmm_icc_profile_data->buffer, hash);
+            return;
+
+        } else {
+
+            /* Get hash code for this space.  */
+
+            gsicc_get_gscs_hash(colorspace, hash);
+            return;
+
+
+        }
+
+    }
+
+
+}
+
+
 static gsicc_link_t*
-FindCacheLink(int64_t hashcode,gsicc_link_cache_t *icc_cache, bool includes_proof)
+gsicc_findcachelink(gsicc_hashlink_t hash,gsicc_link_cache_t *icc_cache, bool includes_proof)
 {
 
     gsicc_link_t *curr_pos1,*curr_pos2;
     bool foundit = 0;
+    int64_t hashcode = hash.link_hashcode;
 
     /* Look through the cache for the hashcode */
 
@@ -270,7 +324,7 @@ FindCacheLink(int64_t hashcode,gsicc_link_cache_t *icc_cache, bool includes_proo
 
     while (curr_pos1 != NULL ){
 
-        if (curr_pos1->link_hashcode == hashcode && includes_proof == curr_pos1->includes_softproof){
+        if (curr_pos1->hashcode.link_hashcode == hashcode && includes_proof == curr_pos1->includes_softproof){
 
             return(curr_pos1);
 
@@ -282,7 +336,7 @@ FindCacheLink(int64_t hashcode,gsicc_link_cache_t *icc_cache, bool includes_proo
 
     while (curr_pos2 != NULL ){
 
-        if (curr_pos2->link_hashcode == hashcode && includes_proof == curr_pos2->includes_softproof){
+        if (curr_pos1->hashcode.link_hashcode == hashcode && includes_proof == curr_pos2->includes_softproof){
 
             return(curr_pos2);
 
@@ -377,7 +431,7 @@ gsicc_get_link(gs_imager_state *pis, gs_color_space  *input_colorspace,
                     gsicc_rendering_param_t *rendering_params, gs_memory_t *memory, bool include_softproof)
 {
 
-    int64_t hashcode;
+    gsicc_hashlink_t hash;
     gsicc_link_t *link;
     void **contextptr = NULL;
     int ok;
@@ -386,11 +440,11 @@ gsicc_get_link(gs_imager_state *pis, gs_color_space  *input_colorspace,
 
     /* First compute the hash code for the incoming case */
 
-    hashcode = gsicc_compute_hash(input_colorspace, output_colorspace, rendering_params);
+    gsicc_compute_linkhash(input_colorspace, output_colorspace, rendering_params, &hash);
 
     /* Check the cache for a hit.  Need to check if softproofing was used */
 
-    link = FindCacheLink(hashcode,icc_cache,include_softproof);
+    link = gsicc_findcachelink(hash,icc_cache,include_softproof);
     
     /* Got a hit, update the reference count, return link */
     
@@ -429,7 +483,7 @@ gsicc_get_link(gs_imager_state *pis, gs_color_space  *input_colorspace,
     
     if (ok){
 
-       gsicc_add_link(icc_cache, link,contextptr, hashcode, memory);
+       gsicc_add_link(icc_cache, link,contextptr, hash, memory);
        return(link);
 
     } else {

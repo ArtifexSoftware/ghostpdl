@@ -98,9 +98,10 @@ typedef enum {
    of the ghostscript color structure. */
 typedef struct cmm_profile_s {
 
-    void *profile_handle;                /* The profile handle to be used in linking */
-    unsigned char *buffer;              /* A buffer with ICC profile content */
-    int64_t profile_hashcode;            /* A hash code for the icc profile */
+    void *profile_handle;                          /* The profile handle to be used in linking */
+    unsigned char *buffer;                         /* A buffer with ICC profile content */
+    int64_t hashcode;                               /* A hash code for the icc profile */
+    bool hash_is_valid;
 
 } cmm_profile_t;
 
@@ -132,11 +133,20 @@ typedef enum {
 
 typedef struct gsiic_link_s gsicc_link_t;
 
+typedef struct gsicc_hashlink_s {
+
+    int64_t link_hashcode;  
+    int64_t src_hash;
+    int64_t des_hash;
+    int64_t rend_hash;
+
+} gsicc_hashlink_t;
+
 typedef struct gsiic_link_s {
 
     void *link_handle;
     void *contextptr;
-    int64_t link_hashcode;
+    gsicc_hashlink_t hashcode;
     int ref_count;
     gsicc_link_t *nextlink;
     gsicc_link_t *prevlink;

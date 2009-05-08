@@ -48,7 +48,7 @@ static const gs_color_space_type gs_color_space_type_icc = {
 
 
 /* Get the size of the ICC profile that is in the buffer */
-static unsigned int gsicc_getprofilesize(unsigned char *buffer)
+unsigned int gsicc_getprofilesize(unsigned char *buffer)
 {
 
     return( (buffer[0]<<24) + (buffer[1]<<16) + (buffer[2]<<8) + buffer[3] );
@@ -155,9 +155,12 @@ gsicc_set_device_profile(gs_imager_state *pis, gx_device * pdev, gs_memory_t * m
 
                 /* Get the profile handle */
 
+                icc_profile->profile_handle = gsicc_get_profile_handle_buffer(icc_profile->buffer);
 
-                /* Set the hash code of the profile */
-
+                /* Set the hash code of the profile. */
+                
+                
+                
                 
 
 
@@ -281,7 +284,6 @@ gsicc_manager_new(gs_memory_t *memory)
 {
 
     gsicc_manager_t *result;
-    int code;
     
     result = gs_alloc_struct(memory, gsicc_manager_t, &st_gsicc_manager,
 			     "gsicc_manager_new");
@@ -372,7 +374,6 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer){
      gcmmhprofile_t profilehandle = gs_colorspace->cmm_icc_profile_data->profile_handle;
      unsigned char *buffer = gs_colorspace->cmm_icc_profile_data->buffer;
      gs_color_space_index color_space_index = gs_color_space_get_index(gs_colorspace);
-     unsigned int profile_size;
 
      if( profilehandle != NULL ){
         return(profilehandle);
@@ -388,21 +389,21 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer){
 
 	case gs_color_space_index_DeviceGray:
 
-            gs_colorspace->cmm_icc_profile_data = &(icc_manager->default_gray);
+            gs_colorspace->cmm_icc_profile_data = icc_manager->default_gray;
             return(gs_colorspace->cmm_icc_profile_data->profile_handle);
 
             break;
 
 	case gs_color_space_index_DeviceRGB:
 
-            gs_colorspace->cmm_icc_profile_data = &(icc_manager->default_rgb);
+            gs_colorspace->cmm_icc_profile_data = icc_manager->default_rgb;
             return(gs_colorspace->cmm_icc_profile_data->profile_handle);
 
             break;
 
 	case gs_color_space_index_DeviceCMYK:
 
-            gs_colorspace->cmm_icc_profile_data = &(icc_manager->default_cmyk);
+            gs_colorspace->cmm_icc_profile_data = icc_manager->default_cmyk;
             return(gs_colorspace->cmm_icc_profile_data->profile_handle);
 
             break;

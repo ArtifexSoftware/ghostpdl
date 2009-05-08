@@ -23,7 +23,7 @@
 gsicc_link_cache_t* gsicc_cache_new(gs_memory_t *memory);
 
 static void gsicc_add_link(gsicc_link_cache_t *link_cache, void *link_handle,
-               void *ContextPtr, int64_t link_hashcode, gs_memory_t *memory);
+               void *ContextPtr, gsicc_hashlink_t hashcode, gs_memory_t *memory);
 
 void gsicc_cache_free(gsicc_link_cache_t *icc_cache, gs_memory_t *memory);
 
@@ -31,11 +31,11 @@ void gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory);
 
 int gsicc_get_color_info(gs_color_space *colorspace,unsigned char *color, int *size_color);
 
-static int64_t gsicc_compute_hash(gs_color_space *input_colorspace, 
+static void gsicc_compute_linkhash(gs_color_space *input_colorspace, 
                    gs_color_space *output_colorspace, 
-                   gsicc_rendering_param_t *rendering_params);
+                   gsicc_rendering_param_t *rendering_params, gsicc_hashlink_t *hash);
 
-static gsicc_link_t* FindCacheLink(int64_t hashcode,gsicc_link_cache_t *icc_cache, 
+static gsicc_link_t* gsicc_findcachelink(gsicc_hashlink_t hashcode,gsicc_link_cache_t *icc_cache, 
                                    bool includes_proof);
 
 static gsicc_link_t* gsicc_find_zeroref_cache(gsicc_link_cache_t *icc_cache);
@@ -49,6 +49,10 @@ gsicc_link_t* gsicc_get_link(gs_imager_state * pis, gs_color_space  *input_color
 
 void gsicc_release_link(gsicc_link_t *icclink);
 
+
+static void gsicc_get_icc_buff_hash(unsigned char *buffer, int64_t *hash);
+
+static void gsicc_get_buff_hash(unsigned char *data,unsigned int num_bytes,int64_t *hash);
 
 #endif
 
