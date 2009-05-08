@@ -652,25 +652,33 @@ int ch;
 void
 text_drag_drop(TW *tw, HDROP hdrop)
 {
-    char szFile[256];
+    char *szFile;
     int i, cFiles;
+    unsigned int Len, error;
     const char *p;
     if ( (tw->DragPre==NULL) || (tw->DragPost==NULL) )
 	    return;
 
     cFiles = DragQueryFile(hdrop, (UINT)(-1), (LPSTR)NULL, 0);
     for (i=0; i<cFiles; i++) {
-	DragQueryFile(hdrop, i, szFile, 80);
-	for (p=tw->DragPre; *p; p++)
-		SendMessage(tw->hwnd,WM_CHAR,*p,1L);
-	for (p=szFile; *p; p++) {
-	    if (*p == '\\')
-		SendMessage(tw->hwnd,WM_CHAR,'/',1L);
-	    else 
-		SendMessage(tw->hwnd,WM_CHAR,*p,1L);
+	Len = DragQueryFile(hdrop, i, NULL, 0);
+	szFile = (char *)malloc(Len+1);
+	if (szFile != 0) {
+	    error = DragQueryFile(hdrop, i, szFile, Len+1);
+	    if (error != 0) {
+		for (p=tw->DragPre; *p; p++)
+		    SendMessage(tw->hwnd,WM_CHAR,*p,1L);
+		for (p=szFile; *p; p++) {
+		    if (*p == '\\')
+			SendMessage(tw->hwnd,WM_CHAR,'/',1L);
+		    else 
+			SendMessage(tw->hwnd,WM_CHAR,*p,1L);
+		}
+		for (p=tw->DragPost; *p; p++)
+		    SendMessage(tw->hwnd,WM_CHAR,*p,1L);
+	    }
+	    free(szFile);
 	}
-	for (p=tw->DragPost; *p; p++)
-		SendMessage(tw->hwnd,WM_CHAR,*p,1L);
     }
     DragFinish(hdrop);
 }
