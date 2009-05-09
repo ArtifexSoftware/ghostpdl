@@ -35,6 +35,9 @@
 #include "ivmem2.h"
 #include "store.h"
 #include "gsnamecl.h"
+#include "igstate.h"
+#include "gscms.h"
+#include "gsiccmanage.h"
 
 /* The (global) font directory */
 extern gs_font_dir *ifont_dir;	/* in zfont.c */
@@ -207,9 +210,12 @@ current_RealFormat(i_ctx_t *i_ctx_p, gs_param_string * pval)
     pval->size = strlen(rfs);
     pval->persistent = true;
 }
+
+
+
 static const string_param_def_t system_string_params[] =
 {
-    {"RealFormat", current_RealFormat, NULL}
+    {"RealFormat", current_RealFormat, NULL},
 };
 
 /* The system parameter set */
@@ -440,6 +446,66 @@ set_GridFitTT(i_ctx_t *i_ctx_p, long val)
     gs_setgridfittt(ifont_dir, (uint)val);
     return 0;
 }
+
+static void
+current_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    static const char *const rfs = "./my_icc_profiles/gray.icm";
+    pval->data = (const byte *)rfs;
+    pval->size = strlen(rfs);
+    pval->persistent = true;
+}
+
+static int
+set_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    int code;
+
+    code = gsicc_set_default_profile((gs_imager_state *) igs,pval,DEFAULT_GRAY);
+
+    return(code);
+
+}
+
+static void
+current_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    static const char *const rfs = "./my_icc_profiles/srgb.icm";
+    pval->data = (const byte *)rfs;
+    pval->size = strlen(rfs);
+    pval->persistent = true;
+}
+
+static int
+set_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    int code;
+
+    code = gsicc_set_default_profile((gs_imager_state *) igs,pval,DEFAULT_RGB);
+
+    return(code);
+
+}
+
+static void
+current_default_cmyk_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    static const char *const rfs = "./my_icc_profiles/cmyk.icm";
+    pval->data = (const byte *)rfs;
+    pval->size = strlen(rfs);
+    pval->persistent = true;
+}
+
+static int
+set_default_cmyk_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    int code;
+
+    code = gsicc_set_default_profile((gs_imager_state *) igs,pval,DEFAULT_CMYK);
+
+    return(code);
+
+}
 static const long_param_def_t user_long_params[] =
 {
     {"JobTimeout", 0, MAX_UINT_PARAM,
@@ -469,6 +535,14 @@ static const long_param_def_t user_long_params[] =
      current_AlignToPixels, set_AlignToPixels},
     {"GridFitTT", 0, 3, 
      current_GridFitTT, set_GridFitTT}
+};
+
+static const string_param_def_t user_string_params[] =
+{
+    {"DefaultGrayProfile", current_default_gray_icc, set_default_gray_icc},
+    {"DefaultRGBProfile", current_default_rgb_icc, set_default_rgb_icc},
+    {"DefaultCMKYProfile", current_default_cmyk_icc, set_default_cmyk_icc}
+
 };
 
 /* Boolean values */
@@ -533,7 +607,7 @@ static const param_set user_param_set =
 {
     user_long_params, countof(user_long_params),
     user_bool_params, countof(user_bool_params),
-    0, 0 
+    user_string_params, countof(user_string_params)
 };
 
 /* <dict> .setuserparams - */
@@ -640,7 +714,24 @@ setparams(i_ctx_t *i_ctx_p, gs_param_list * plist, const param_set * pset)
 	if (code < 0)
 	    return code;
     }
-/****** WE SHOULD DO STRINGS AND STRING ARRAYS, BUT WE DON'T YET ******/
+
+    for (i = 0; i < pset->string_count; i++) {
+	const string_param_def_t *pdef = &pset->string_defs[i];
+	gs_param_string val;
+
+	if (pdef->set == NULL)
+	    continue;
+	code = param_read_string(plist, pdef->pname, &val);
+	switch (code) {
+	    default:		
+		return code;
+	    case 0:
+		code = (*pdef->set)(i_ctx_p, &val);
+		if (code < 0)
+		    return code;
+	}
+    }
+
     return 0;
 }
 

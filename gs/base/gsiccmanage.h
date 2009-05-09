@@ -24,9 +24,8 @@
 
 void gsicc_create();
 void gsicc_destroy();
-void gsicc_set_gray_profile(cmm_profile_t graybuffer);
-void gsicc_set_rgb_profile(cmm_profile_t rgbbuffer);
-void gsicc_set_cmyk_profile(cmm_profile_t cmykbuffer);
+int gsicc_set_default_profile(const gs_imager_state * pis, gs_param_string * pval, 
+                          gsicc_devicecolor_t defaulttype);
 void gsicc_set_device_profile(gs_imager_state *pis, gx_device * pdev, gs_memory_t * mem);
 void gsicc_set_device_named_color_profile(cmm_profile_t nameprofile);
 void gsicc_set_device_linked_profile(cmm_profile_t outputlinkedprofile );
@@ -46,7 +45,7 @@ void gsicc_setbuffer_desc(gsicc_bufferdesc_t *buffer_desc,unsigned char num_chan
     bool alpha_first,
     bool little_endian,
     bool is_planar,
-    gs_icc_colorbuffer_t buffercolor);
+    gsicc_colorbuffer_t buffercolor);
 
  gcmmhprofile_t gsicc_get_profile_handle(gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager);
  gcmmhprofile_t gsicc_get_profile_handle_buffer(unsigned char *buffer);

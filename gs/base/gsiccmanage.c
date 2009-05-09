@@ -81,39 +81,101 @@ gsicc_destroy()
 
 /*  This computes the hash code for the
     ICC data and assigns the code
-    and the profile to DefaultGray
+    and the profile to either DefaultGray,
+    DefaultRGB, or DefaultCMYK
     member variable in the ICC manager */
 
-void 
-gsicc_set_gray_profile(cmm_profile_t graybuffer)
+int 
+gsicc_set_default_profile(const gs_imager_state * pis, gs_param_string * pval, gsicc_devicecolor_t defaulttype)
 {
 
+    gsicc_manager_t *icc_manager = pis->icc_manager;
+    cmm_profile_t *icc_profile;
+    cmm_profile_t **mananger_default_profile;
+    stream *str;
+    const char *profile_file;
+    byte * pdata;
+    gs_memory_t *mem = pis->memory;
+    int code;
 
+    pdata = gs_alloc_bytes(mem, pval->size,
+		   		 "gsicc_set_default_profile");
+
+    profile_file = (const char *)pdata;
+ 
+    /* For now only let this be set once. 
+       We could have this changed dynamically
+       in which case we need to do some 
+       deaallocations prior to replacing 
+       it */
+
+    switch(defaulttype){
+
+        case DEFAULT_GRAY:
+
+            mananger_default_profile = &(icc_manager->default_gray);
+
+            break;
+
+        case DEFAULT_RGB:
+
+            mananger_default_profile = &(icc_manager->default_rgb);
+
+            break;
+
+        case DEFAULT_CMYK:
+            
+             mananger_default_profile = &(icc_manager->default_cmyk);
+
+             break;
+
+    }
+
+    /* If it is not NULL then it has already been set
+       for now we will just let the defaults to be 
+       set one time.  We could allow them to be changed
+       at will, but we need to add a deallocation here */
+
+    if ((*mananger_default_profile) == NULL){
+
+        /* We need to do a bit of work here with 
+           respect to path names. MJV ToDo.  */
+
+        str = sfopen(profile_file, "rb", mem);
+
+        if (str != NULL){
+
+            icc_profile = gsicc_profile_new(str, mem);
+            code = sfclose(str);
+            *mananger_default_profile = icc_profile;
+
+            /* Get the profile handle */
+
+            icc_profile->profile_handle = gsicc_get_profile_handle_buffer(icc_profile->buffer);
+
+            /* Compute the hash code of the profile. Everything in the ICC manager will have 
+               it's hash code precomputed */
+
+            gsicc_get_icc_buff_hash(icc_profile->buffer, &(icc_profile->hashcode));
+            icc_profile->hash_is_valid = true;
+
+             gs_free_object(mem, (byte *)pdata,
+	                "gsicc_set_default_profile");
+             
+            return(0);
+           
+        }
+
+    }
+
+     gs_free_object(mem, (byte *)pdata,
+            "gsicc_set_default_profile");
+     
+     return(1);
+
+    
 }
 
-/*  This computes the hash code for the
-    ICC data and assigns the code
-    and the profile to DefaultRGB
-    member variable in the ICC manager */
-
-void 
-gsicc_set_rgb_profile(cmm_profile_t rgbbuffer)
-{
-
-
-}
-
-/*  This computes the hash code for the
-    ICC data and assigns the code
-    and the profile to DefaultCMYK
-    member variable in the ICC manager */
-
-void 
-gsicc_set_cmyk_profile(cmm_profile_t cmykbuffer)
-{
-
-
-}
 
 /*  This computes the hash code for the
     device profile and assigns the code
@@ -131,6 +193,7 @@ gsicc_set_device_profile(gs_imager_state *pis, gx_device * pdev, gs_memory_t * m
     cmm_profile_t *icc_profile;
     stream *str;
     const char *profile = &(pdev->color_info.icc_profile[0]);
+    int code;
 
     if (icc_manager->device_profile == NULL){
 
@@ -151,7 +214,7 @@ gsicc_set_device_profile(gs_imager_state *pis, gx_device * pdev, gs_memory_t * m
 
             if (str != NULL){
                 icc_profile = gsicc_profile_new(str, mem);
-                sfclose(str);
+                code = sfclose(str);
                 icc_manager->device_profile = icc_profile;
 
                 /* Get the profile handle */
@@ -239,7 +302,7 @@ gsicc_setbuffer_desc(gsicc_bufferdesc_t *buffer_desc,unsigned char num_chan,
     bool alpha_first,
     bool little_endian,
     bool is_planar,
-    gs_icc_colorbuffer_t buffercolor)
+    gsicc_colorbuffer_t buffercolor)
 {
     buffer_desc->num_chan = num_chan;
     buffer_desc->bytes_per_chan = bytes_per_chan;

@@ -630,6 +630,19 @@ currentuserparams /WaitTimeout known
 %pagestackorder
 %setpagestackorder
 
+
+% -------- ICC manger -------- %
+% All color management is going
+% through ICC flow.  We need
+% to have the default device
+% spaces gray, RGB and CMYK
+% defined by ICC profiles
+
+//systemdict /DefaultRGBProfile .knownget{
+mark exch /DefaultRGBProfile exch .dicttomark
+.setuserparams
+} if
+
 pop		% currentsystemparams
 
 % Flag the current dictionary so it will be swapped when we

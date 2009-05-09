@@ -36,7 +36,7 @@ typedef enum {
     gsNCHANNEL,
     gsCIEXYZ,
     gsCIELAB
-} gs_icc_colorbuffer_t;
+} gsicc_colorbuffer_t;
 
 typedef struct gsicc_bufferdesc_s {
 
@@ -50,7 +50,7 @@ typedef struct gsicc_bufferdesc_s {
     int row_stride;
     int num_rows;
     int pixels_per_row; 
-    gs_icc_colorbuffer_t buffercolor;
+    gsicc_colorbuffer_t buffercolor;
 
 } gsicc_bufferdesc_t;
 
@@ -61,7 +61,7 @@ typedef enum {
     gsRELATIVECOLORIMETRIC,
     gsSATURATION,
     gsABSOLUTECOLORIMETRIC
-} gs_icc_rendering_intents_t;
+} gsicc_rendering_intents_t;
 
 /*  Doing this an an enum type for now.
     There is alot going on with respect
@@ -70,7 +70,7 @@ typedef enum {
 typedef enum {
     BP_ON,
     BP_OFF,
-} gs_icc_black_point_comp_t;
+} gsicc_black_point_comp_t;
 
 /* Used so that we can specify
     if we want to link with
@@ -83,13 +83,11 @@ typedef enum {
     order and number of 
     colorants.  */
 
-/* typedef enum {
-    DEVICE_GRAY,
-    DEVICE_RGB,
-    DEVICE_CMYK,
-    DEVICE_N,
-    NONDEVICE
-} gs_icc_devicecolor_t; */
+typedef enum {
+    DEFAULT_GRAY,
+    DEFAULT_RGB,
+    DEFAULT_CMYK
+} gsicc_devicecolor_t;
 
 /* A structure that is a member variable of the gs color space.
    See 
@@ -183,9 +181,9 @@ typedef struct gsicc_manager_s {
 
 typedef struct gsicc_rendering_param_s {
 
-    gs_icc_rendering_intents_t rendering_intent;
+    gsicc_rendering_intents_t rendering_intent;
     gs_object_tag_type_t    object_type;
-    gs_icc_black_point_comp_t black_point_comp;    
+    gsicc_black_point_comp_t black_point_comp;    
 
 } gsicc_rendering_param_t;
 
