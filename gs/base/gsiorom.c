@@ -148,6 +148,7 @@ s_block_read_seek(register stream * s, long pos)
 	s->position = pos - offset;
 	pw.ptr = s->cbuf - 1;
 	pw.limit = pw.ptr + s->cbsize;
+	s->srptr = s->srlimit = s->cbuf - 1;
 	if ((s->end_status = s_block_read_process((stream_state *)s, NULL, &pw, 0)) == ERRC)
 	    return ERRC;
 	if (s->end_status == 1)
@@ -181,23 +182,18 @@ s_block_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     int status = 1;
     int compression = ((get_u32_big_endian(node) & 0x80000000) != 0) ? 1 : 0;
     uint32_t filelen = get_u32_big_endian(node) & 0x7fffffff;	/* ignore compression bit */
-    uint32_t blocks = (filelen+ROMFS_BLOCKSIZE-1)/ ROMFS_BLOCKSIZE;
-    int iblock = (s->position + s->file_offset + s->cursor.r.ptr + 1 - s->cbuf) / ROMFS_BLOCKSIZE;
-    unsigned long block_length = get_u32_big_endian(node+1+(2*iblock));
-    unsigned const long block_offset = get_u32_big_endian(node+2+(2*iblock));
+    uint32_t blocks = (filelen+ROMFS_BLOCKSIZE-1) / ROMFS_BLOCKSIZE;
+    uint32_t iblock = (s->position + s->file_offset + (s->srlimit + 1 - s->cbuf)) / ROMFS_BLOCKSIZE;
+    uint32_t block_length = get_u32_big_endian(node+1+(2*iblock));
+    uint32_t block_offset = get_u32_big_endian(node+2+(2*iblock));
     unsigned const char *block_data = ((unsigned char *)node) + block_offset;
     int count = iblock < (blocks - 1) ? ROMFS_BLOCKSIZE : filelen - (ROMFS_BLOCKSIZE * iblock);
 
-    if (s->position == filelen)
+    if (s->position == filelen || block_data == NULL)
 	return EOFC;			/* at EOF */
-    if (count > max_count) {
-	return ERRC;			/* should not happen */
-    }
-    if (block_data == NULL) {
-	return EOFC;
-    }
     if (s->file_limit < max_long) {
-	long limit_count = s->file_offset + s->file_limit - s->position;
+	/* Adjust count for subfile limit */
+	uint32_t limit_count = s->file_offset + s->file_limit - s->position;
 
 	if (count > limit_count)
 	    count = limit_count;
@@ -205,16 +201,39 @@ s_block_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     /* get the block into the buffer */
     if (compression) {
 	unsigned long buflen = ROMFS_BLOCKSIZE;
+	const byte *dest = (pw->ptr + 1);	/* destination for unpack */
+	int need_copy = false;
 
+	/* If the dest is not in our buffer, we can only use it if there */
+	/* is enough space in it					 */
+	if ((dest < s->cbuf) || (dest >= (s->cbuf + s->cbsize))) {
+	    /* the destination is _not_ in our buffer. If the area isn't */
+	    /* big enough we need to ucompress to our buffer, then copy  */
+	    /* the data afterward. INVARIANT: if the buffer is outside   */
+	    /* the cbuf, then the cbuf must be empty.			 */
+	    if (max_count < count) {
+#ifdef DEBUG
+		if ((sbufptr(s)) != s->srlimit)
+		    eprintf("cbuf not empty as expected\n.");
+#endif
+		dest = s->cbuf;
+		need_copy = true;
+	    }
+	}
 	/* Decompress the data into this block */
-	code = uncompress (pw->ptr+1, &buflen, block_data, block_length);
-	if (count != buflen) {
+	code = uncompress (dest, &buflen, block_data, block_length);
+	if (count != buflen)
 	    return ERRC;
+	if (need_copy) {
+	    memcpy(pw->ptr+1, dest, max_count);
+	    count = max_count;
 	}
     } else {
 	/* not compressed -- just copy it */
-	memcpy(pw->ptr+1, block_data, block_length);
 	count = block_length;
+	if (count > max_count)
+	    count = max_count;
+	memcpy(pw->ptr+1, block_data, count);
     }
     if (count < 0)
 	count = 0;
@@ -352,7 +371,7 @@ romfs_enumerate_next(file_enum *pfen, char *ptr, uint maxlen)
     while (gs_romfs[penum->list_index] != 0) {
 	const uint32_t *node = gs_romfs[penum->list_index];
 	uint32_t filelen = get_u32_big_endian(node) & 0x7fffffff;	/* ignore compression bit */
-	long blocks = (filelen+ROMFS_BLOCKSIZE-1)/ ROMFS_BLOCKSIZE;
+	uint32_t blocks = (filelen+ROMFS_BLOCKSIZE-1)/ ROMFS_BLOCKSIZE;
 	char *filename = (char *)(&(node[1+(2*blocks)]));
 
 	penum->list_index++;		/* bump to next unconditionally */
