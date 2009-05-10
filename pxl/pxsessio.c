@@ -84,7 +84,9 @@ static const struct {
     { "c5", eC5Envelope },
     { "dl", eDLEnvelope },
     { "jisb4", eJB4Paper },
-    { "jisb5", eJB5Paper },       
+    { "jis b4", eJB4Paper },
+    { "jisb5", eJB5Paper }, 
+    { "jis b5", eJB5Paper },      
     { "b5", eB5Envelope },
     { "b5paper", eB5Paper }, /* 3.0 not sure about pjl name */
     { "jpost", eJPostcard },
