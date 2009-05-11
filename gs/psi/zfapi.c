@@ -419,20 +419,21 @@ static ushort FAPI_FF_get_word(FAPI_font *ff, fapi_font_feature var_id, int inde
         case FAPI_FONT_FEATURE_ForceBold: return pfont->data.ForceBold;
         case FAPI_FONT_FEATURE_LanguageGroup: return pfont->data.LanguageGroup;
         case FAPI_FONT_FEATURE_lenIV: return (ff->need_decrypt ? 0 : pfont->data.lenIV);
+        case FAPI_FONT_FEATURE_GlobalSubrs_count: 
+            {   ref *Private, *GlobalSubrs;
+                if (dict_find_string(pdr, "Private", &Private) <= 0)
+                    return 0;
+                if (dict_find_string(Private, "GlobalSubrs", &GlobalSubrs) <= 0)
+                    return 0;;
+                return r_size(GlobalSubrs);
+            }
         case FAPI_FONT_FEATURE_Subrs_count: 
-            {   ref *Private, *Subrs, *GlobalSubrs;
-                int n1, n2;
+            {   ref *Private, *Subrs;
                 if (dict_find_string(pdr, "Private", &Private) <= 0)
                     return 0;
                 if (dict_find_string(Private, "Subrs", &Subrs) <= 0)
-                    Subrs = NULL;
-                if (dict_find_string(Private, "GlobalSubrs", &GlobalSubrs) <= 0)
-                    GlobalSubrs = NULL;
-                n1 = (Subrs != NULL ? r_size(Subrs) : 0);
-                n2 = (GlobalSubrs != NULL ? r_size(GlobalSubrs) : 0);
-                /* trick : we return twice maximum of n1, n2 to pass both Subrs and GlobalSubrs in same array.
-                */
-                return (n1 < n2 ? n2 : n1) * 2;
+                    return 0;
+                return r_size(Subrs);
             }
     }
     return 0;
@@ -518,30 +519,29 @@ static ushort get_type1_data(FAPI_font *ff, const ref *type1string,
     return length;
 }
 
+static ushort FAPI_FF_get_gsubr(FAPI_font *ff, int index, byte *buf, ushort buf_length)
+{   ref *pdr = (ref *)ff->client_font_data2;
+    ref *Private, *GlobalSubrs, subr;
+
+    if (dict_find_string(pdr, "Private", &Private) <= 0)
+        return 0;
+    if (dict_find_string(Private, "GlobalSubrs", &GlobalSubrs) <= 0)
+	return 0;
+    if (array_get(ff->memory, 
+	      GlobalSubrs, index, &subr) < 0 || r_type(&subr) != t_string)
+        return 0;
+    return get_type1_data(ff, &subr, buf, buf_length);
+}
+
 static ushort FAPI_FF_get_subr(FAPI_font *ff, int index, byte *buf, ushort buf_length)
 {   ref *pdr = (ref *)ff->client_font_data2;
-    ref *Private, *Subrs, *GlobalSubrs, subr;
-    int n1, n2, n;
+    ref *Private, *Subrs, subr;
 
     if (dict_find_string(pdr, "Private", &Private) <= 0)
         return 0;
     if (dict_find_string(Private, "Subrs", &Subrs) <= 0)
-        Subrs = NULL;
-    if (dict_find_string(Private, "GlobalSubrs", &GlobalSubrs) <= 0)
-        GlobalSubrs = NULL;
-    n1 = (Subrs != NULL ? r_size(Subrs) : 0);
-    n2 = (GlobalSubrs != NULL ? r_size(GlobalSubrs) : 0);
-    /* trick : we use the maximum of n1, n2 to pass both Subrs and GlobalSubrs in same array.
-    */
-    n = (n1 < n2 ? n2 : n1);
-    if (index < n && Subrs != NULL) {
-        if (array_get(ff->memory, Subrs, index, &subr) < 0 || r_type(&subr) != t_string)
-            return 0;
-    } else if (index >= n && GlobalSubrs != NULL) {
-        if (array_get(ff->memory, 
-		      GlobalSubrs, index - n, &subr) < 0 || r_type(&subr) != t_string)
-            return 0;
-    } else
+	return 0;
+    if (array_get(ff->memory, Subrs, index, &subr) < 0 || r_type(&subr) != t_string)
         return 0;
     return get_type1_data(ff, &subr, buf, buf_length);
 }
@@ -701,6 +701,7 @@ static const FAPI_font ff_stub = {
     FAPI_FF_get_word,
     FAPI_FF_get_long,
     FAPI_FF_get_float,
+    FAPI_FF_get_gsubr,
     FAPI_FF_get_subr,
     FAPI_FF_get_glyph,
     FAPI_FF_serialize_tt_font

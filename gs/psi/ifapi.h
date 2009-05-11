@@ -58,6 +58,7 @@ typedef enum {
     FAPI_FONT_FEATURE_ForceBold,
     FAPI_FONT_FEATURE_LanguageGroup,
     FAPI_FONT_FEATURE_lenIV,
+    FAPI_FONT_FEATURE_GlobalSubrs_count,
     FAPI_FONT_FEATURE_Subrs_count,
     FAPI_FONT_FEATURE_Subrs_total_size,
     FAPI_FONT_FEATURE_TT_size
@@ -106,6 +107,7 @@ struct FAPI_font_s {
     unsigned short (*get_word )(FAPI_font *ff, fapi_font_feature var_id, int index);
     unsigned long  (*get_long )(FAPI_font *ff, fapi_font_feature var_id, int index);
     float          (*get_float)(FAPI_font *ff, fapi_font_feature var_id, int index);
+    unsigned short (*get_gsubr) (FAPI_font *ff, int index,     byte *buf, ushort buf_length);
     unsigned short (*get_subr) (FAPI_font *ff, int index,     byte *buf, ushort buf_length);
     unsigned short (*get_glyph)(FAPI_font *ff, int char_code, byte *buf, ushort buf_length);
     unsigned short (*serialize_tt_font)(FAPI_font *ff, void *buf, int buf_size);
