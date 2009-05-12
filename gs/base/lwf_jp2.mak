@@ -171,7 +171,6 @@ lwf_jp2_HDRS = \
 	$(LWF_JP2_SRC)jp2t_memory.h			\
 	$(LWF_JP2_SRC)jp2t_progression.h		\
 	$(LWF_JP2_SRC)jp2t_transcoder.h			\
-	$(LWF_JP2_SRC)lwf_jp2_geo.h			\
 	$(LWF_JP2_SRC)lwf_jp2.h
 
 # switch in the selected library .dev
