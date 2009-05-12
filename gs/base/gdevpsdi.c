@@ -132,50 +132,52 @@ choose_DCT_params(gx_device *pdev, const gs_color_space *pcs,
     set_linear_color_bits_mask_shift((gx_device *)&mdev);
     mdev.color_info.separable_and_linear = GX_CINFO_SEP_LIN;
 
-    /* Check for an RGB-like color space.  
-       To recognize that we make a matrix as it were a linear operator,
-       suppress an ununiformity by subtracting the image of {0,0,0},
-       and then check for giagonal domination.  */
-    cc.paint.values[0] = cc.paint.values[1] = cc.paint.values[2] = MIN_FLOAT;
-    convert_color((gx_device *)&mdev, pcs, pis, &cc, c[3]);
-    cc.paint.values[0] = MAX_FLOAT; cc.paint.values[1] = MIN_FLOAT; cc.paint.values[2] = MIN_FLOAT;
-    convert_color((gx_device *)&mdev, pcs, pis, &cc, c[0]);
-    cc.paint.values[0] = MIN_FLOAT; cc.paint.values[1] = MAX_FLOAT; cc.paint.values[2] = MIN_FLOAT;
-    convert_color((gx_device *)&mdev, pcs, pis, &cc, c[1]);
-    cc.paint.values[0] = MIN_FLOAT; cc.paint.values[1] = MIN_FLOAT; cc.paint.values[2] = MAX_FLOAT;
-    convert_color((gx_device *)&mdev, pcs, pis, &cc, c[2]);
-    c[0][0] -= c[3][0]; c[0][1] -= c[3][1]; c[0][2] -= c[3][2];
-    c[1][0] -= c[3][0]; c[1][1] -= c[3][1]; c[1][2] -= c[3][2];
-    c[2][0] -= c[3][0]; c[2][1] -= c[3][1]; c[2][2] -= c[3][2];
-    c[0][0] = any_abs(c[0][0]); c[0][1] = any_abs(c[0][1]); c[0][2] = any_abs(c[0][2]);
-    c[1][0] = any_abs(c[1][0]); c[1][1] = any_abs(c[1][1]); c[1][2] = any_abs(c[1][2]);
-    c[2][0] = any_abs(c[2][0]); c[2][1] = any_abs(c[2][1]); c[2][2] = any_abs(c[2][2]);
-    if (c[0][0] * domination > c[0][1] && c[0][0] * domination > c[0][2] &&
-	c[1][1] * domination > c[1][0] && c[1][1] * domination > c[1][2] &&
-	c[2][2] * domination > c[2][0] && c[2][2] * domination > c[2][1]) {
-	/* Yes, it looks like an RGB color space. 
-	   Replace ColorTransform with 1. */
-	code = param_write_int((gs_param_list *)list, "ColorTransform", &one);
-	if (code < 0)
-	    return code;
-	goto done;
-    }
+    if (pis) {
+	/* Check for an RGB-like color space.  
+	   To recognize that we make a matrix as it were a linear operator,
+	   suppress an ununiformity by subtracting the image of {0,0,0},
+	   and then check for giagonal domination.  */
+	cc.paint.values[0] = cc.paint.values[1] = cc.paint.values[2] = MIN_FLOAT;
+	convert_color((gx_device *)&mdev, pcs, pis, &cc, c[3]);
+	cc.paint.values[0] = MAX_FLOAT; cc.paint.values[1] = MIN_FLOAT; cc.paint.values[2] = MIN_FLOAT;
+	convert_color((gx_device *)&mdev, pcs, pis, &cc, c[0]);
+	cc.paint.values[0] = MIN_FLOAT; cc.paint.values[1] = MAX_FLOAT; cc.paint.values[2] = MIN_FLOAT;
+	convert_color((gx_device *)&mdev, pcs, pis, &cc, c[1]);
+	cc.paint.values[0] = MIN_FLOAT; cc.paint.values[1] = MIN_FLOAT; cc.paint.values[2] = MAX_FLOAT;
+	convert_color((gx_device *)&mdev, pcs, pis, &cc, c[2]);
+	c[0][0] -= c[3][0]; c[0][1] -= c[3][1]; c[0][2] -= c[3][2];
+	c[1][0] -= c[3][0]; c[1][1] -= c[3][1]; c[1][2] -= c[3][2];
+	c[2][0] -= c[3][0]; c[2][1] -= c[3][1]; c[2][2] -= c[3][2];
+	c[0][0] = any_abs(c[0][0]); c[0][1] = any_abs(c[0][1]); c[0][2] = any_abs(c[0][2]);
+	c[1][0] = any_abs(c[1][0]); c[1][1] = any_abs(c[1][1]); c[1][2] = any_abs(c[1][2]);
+	c[2][0] = any_abs(c[2][0]); c[2][1] = any_abs(c[2][1]); c[2][2] = any_abs(c[2][2]);
+	if (c[0][0] * domination > c[0][1] && c[0][0] * domination > c[0][2] &&
+	    c[1][1] * domination > c[1][0] && c[1][1] * domination > c[1][2] &&
+	    c[2][2] * domination > c[2][0] && c[2][2] * domination > c[2][1]) {
+	    /* Yes, it looks like an RGB color space. 
+	       Replace ColorTransform with 1. */
+	    code = param_write_int((gs_param_list *)list, "ColorTransform", &one);
+	    if (code < 0)
+		return code;
+	    goto done;
+	}
 
-    /* Check for a Lab-like color space.
-       Colors {v,0,0} should map to grays. */
-    cc.paint.values[0] = MAX_FLOAT; cc.paint.values[1] = cc.paint.values[2] = 0;
-    convert_color((gx_device *)&mdev, pcs, pis, &cc, c[0]);
-    cc.paint.values[0] /= 2;
-    convert_color((gx_device *)&mdev, pcs, pis, &cc, c[1]);
-    cc.paint.values[0] /= 2;
-    convert_color((gx_device *)&mdev, pcs, pis, &cc, c[2]);
-    c[0][1] -= c[0][0]; c[0][2] -= c[0][0];
-    c[1][1] -= c[1][0]; c[1][2] -= c[1][0];
-    c[2][1] -= c[2][0]; c[2][2] -= c[2][0];
-    c[0][1] = any_abs(c[0][1]); c[0][2] = any_abs(c[0][2]);
-    c[1][1] = any_abs(c[1][1]); c[1][2] = any_abs(c[1][2]);
-    c[2][1] = any_abs(c[2][1]); c[2][2] = any_abs(c[2][2]);
-    if (c[0][0] * domination > c[0][1] && c[0][0] * domination > c[0][2] &&
+	/* Check for a Lab-like color space.
+	   Colors {v,0,0} should map to grays. */
+	cc.paint.values[0] = MAX_FLOAT; cc.paint.values[1] = cc.paint.values[2] = 0;
+	convert_color((gx_device *)&mdev, pcs, pis, &cc, c[0]);
+	cc.paint.values[0] /= 2;
+	convert_color((gx_device *)&mdev, pcs, pis, &cc, c[1]);
+	cc.paint.values[0] /= 2;
+	convert_color((gx_device *)&mdev, pcs, pis, &cc, c[2]);
+	c[0][1] -= c[0][0]; c[0][2] -= c[0][0];
+	c[1][1] -= c[1][0]; c[1][2] -= c[1][0];
+	c[2][1] -= c[2][0]; c[2][2] -= c[2][0];
+	c[0][1] = any_abs(c[0][1]); c[0][2] = any_abs(c[0][2]);
+	c[1][1] = any_abs(c[1][1]); c[1][2] = any_abs(c[1][2]);
+	c[2][1] = any_abs(c[2][1]); c[2][2] = any_abs(c[2][2]);
+    }
+    if (pis && c[0][0] * domination > c[0][1] && c[0][0] * domination > c[0][2] &&
 	c[1][0] * domination > c[1][1] && c[1][0] * domination > c[1][2] &&
 	c[2][0] * domination > c[2][1] && c[2][0] * domination > c[2][2]) {
 	/* Yes, it looks like an Lab color space. 
