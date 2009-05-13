@@ -328,16 +328,17 @@ def
   pop
     % this step is for the AES cipher only
     Trailer /Encrypt oget
-    dup /StmF known
-     {
-      dup /StmF oget
-      exch /CF oget exch oget /CFM oget
-      /AESV2 eq {
-        (sAlT) concatstrings
-      } if
-     }
-     { pop }
-    ifelse
+    dup /StmF knownoget {
+      exch /CF knownoget {
+        exch oget /CFM oget /AESV2 eq {
+          (sAlT) concatstrings
+        } if
+      } {
+        pop
+      } ifelse
+    } {
+      pop
+    } ifelse
   md5 0 FileKey length 5 add 2 index length .min getinterval
 } bind def
 
@@ -397,12 +398,15 @@ def
 	        {			% If StrF is present ...
 		  dup /Identity eq not	% Check if StrF != Identity
 	  	   { /StdCF eq
-		       { Trailer /Encrypt oget /CF oget
-                         /StdCF oget /CFM oget /AESV2 eq
-			   % Decrypt string
-			   { 1 index aesdecode }
-			   { 1 index arc4decode }
-			 ifelse
+		       { Trailer /Encrypt oget /CF knownoget {
+                           /StdCF oget /CFM oget /AESV2 eq
+                         } {
+                           //false
+                         } ifelse {     % Decrypt string
+			   1 index aesdecode
+                         } {
+                           1 index arc4decode
+                         } ifelse
 		       }
 		       { 1 index arc4decode }
 		     ifelse		% If StrF != StdCF
@@ -477,8 +481,10 @@ currentdict /PDFScanRules_null undef
       } if
 	% Check if the stream encryption handler (StmF) == Identity.
       PDFDEBUG {
-	Trailer /Encrypt oget /CF get /StdCF get /CFM get
-	(Encrypt StmF is StdCF with CFM ) print =
+	Trailer /Encrypt oget /CF knownoget {
+          /StdCF oget /CFM oget
+	  (Encrypt StmF is StdCF with CFM ) print =
+        } if
       } if
       /StmF knownoget			% Get StmF (if present)
       not { /Identity } if		% If StmF not present default = Identity
@@ -504,13 +510,13 @@ currentdict /PDFScanRules_null undef
       exch 
 	% Stack: readdata? dict parms filternames file/string
       3 index /StreamKey get
-      Trailer /Encrypt oget dup /StmF 
-      known
-       {
-	dup /StmF oget		% stack: key Encrypt StmF
-	exch /CF oget
-	exch oget /CFM oget	% stack: key StmF-CFM
-	/AESV2 eq
+      Trailer /Encrypt oget
+      dup /StmF knownoget
+       {                        % stack: key Encrypt StmF
+	exch /CF knownoget {
+	  exch oget /CFM oget	% stack: key StmF-CFM
+	  /AESV2 eq
+        } { pop //false } ifelse
 	 { aesdecodefilter }	% install the requested filter
 	 { arc4decodefilter }
 	ifelse
