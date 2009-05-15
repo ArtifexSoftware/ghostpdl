@@ -435,6 +435,105 @@ static ushort FAPI_FF_get_word(FAPI_font *ff, fapi_font_feature var_id, int inde
                     return 0;
                 return r_size(Subrs);
             }
+	    /* Multiple Master specific */
+        case FAPI_FONT_FEATURE_DollarBlend: 
+	    {   ref *DBlend; 
+		if (dict_find_string(pdr, "$Blend", &DBlend) <= 0)
+		    return 0;
+		return 1;
+	    }
+        case FAPI_FONT_FEATURE_BlendAxisTypes_count: 
+	    {   ref *Info, *Axes; 
+		if (dict_find_string(pdr, "FontInfo", &Info) <= 0)
+		    return 0;
+		if (dict_find_string(Info, "BlendAxisTypes", &Axes) <= 0)
+		    return 0;
+		return r_size(Axes);
+	    }
+        case FAPI_FONT_FEATURE_BlendFontInfo_count: 
+	    {   ref *Info, *FontInfo; 
+		if (dict_find_string(pdr, "Blend", &Info) <= 0)
+		    return 0;
+		if (dict_find_string(Info, "FontInfo", &FontInfo) <= 0)
+		    return 0;
+		return dict_length(FontInfo);
+	    }
+        case FAPI_FONT_FEATURE_BlendPrivate_count: 
+	    {   ref *Info, *Private; 
+		if (dict_find_string(pdr, "Blend", &Info) <= 0)
+		    return 0;
+		if (dict_find_string(Info, "Private", &Private) <= 0)
+		    return 0;
+		return dict_length(Private);
+	    }
+        case FAPI_FONT_FEATURE_WeightVector_count: 
+	    {   ref *Array; 
+		if (dict_find_string(pdr, "WeightVector", &Array) <= 0)
+		    return 0;
+		return r_size(Array);
+	    }
+        case FAPI_FONT_FEATURE_BlendDesignPositionsArrays_count: 
+	    {   ref *Info, *Array; 
+		if (dict_find_string(pdr, "FontInfo", &Info) <= 0)
+		    return 0;
+		if (dict_find_string(Info, "BlendDesignPositions", &Array) <= 0)
+		    return 0;
+		return r_size(Array);
+	    }
+        case FAPI_FONT_FEATURE_BlendDesignMapArrays_count: 
+	    {   ref *Info, *Array; 
+		if (dict_find_string(pdr, "FontInfo", &Info) <= 0)
+		    return 0;
+		if (dict_find_string(Info, "BlendDesignMap", &Array) <= 0)
+		    return 0;
+		return r_size(Array);
+	    }
+        case FAPI_FONT_FEATURE_BlendDesignMapSubArrays_count: 
+	    {   ref *Info, *Array, SubArray; 
+		if (dict_find_string(pdr, "FontInfo", &Info) <= 0)
+		    return 0;
+		if (dict_find_string(Info, "BlendDesignMap", &Array) <= 0)
+		    return 0;
+		if (array_get(ff->memory, Array, index, &SubArray) < 0)
+		    return 0;
+		return r_size(&SubArray);
+	    }
+	case FAPI_FONT_FEATURE_DollarBlend_length:
+	    {   ref *DBlend, Element, name, string; 
+		int i, length = 0, type, size;
+		char Buffer[32];
+		if (dict_find_string(pdr, "$Blend", &DBlend) <= 0)
+		    return 0;
+		for (i = 0;i < r_size(DBlend);i++) {
+		    if (array_get(ff->memory, DBlend, i, &Element) < 0)
+			return 0;
+		    switch (r_btype(&Element)) {
+			case t_name:
+			    name_string_ref(ff->memory, &name, &string);
+			    length += r_size(&string) + 1;
+			    break;
+			case t_real:
+			    sprintf(Buffer, "%f", Element.value.realval);
+			    length += strlen(Buffer) + 1;
+			    break;
+			case t_integer:
+			    sprintf(Buffer, "%f", Element.value.intval);
+			    length += strlen(Buffer) + 1;
+			    break;
+			case t_operator:
+			    { op_def const *op;
+
+			    op = op_index_def(r_size(&Element));
+			    length += strlen(op->oname + 1) + 1;
+			    }
+			    break;
+			default:
+			    break;
+		    }
+		}
+		return length;
+	    }
+	    /* End MM specifics */
     }
     return 0;
 }
@@ -471,6 +570,7 @@ static ulong FAPI_FF_get_long(FAPI_font *ff, fapi_font_feature var_id, int index
 
 static float FAPI_FF_get_float(FAPI_font *ff, fapi_font_feature var_id, int index)
 {   gs_font_base *pbfont = (gs_font_base *)ff->client_font_data;
+    ref *pdr = (ref *)ff->client_font_data2;
 
     switch((int)var_id) {
         case FAPI_FONT_FEATURE_FontMatrix:
@@ -484,10 +584,142 @@ static float FAPI_FF_get_float(FAPI_font *ff, fapi_font_feature var_id, int inde
                     case 5 : return pbfont->base->FontMatrix.ty / FontMatrix_div;
                 }
             } 
+        case FAPI_FONT_FEATURE_WeightVector: 
+	    {   ref *Array, value; 
+
+		if (dict_find_string(pdr, "WeightVector", &Array) <= 0)
+		    return 0;
+		if (array_get(ff->memory, Array, index, &value) < 0)
+		    return 0;
+		if (!r_has_type(&value, t_integer)) {
+		    if (r_has_type(&value, t_real)) {
+			return value.value.realval;
+		    } else
+			return 0;
+		}
+		else
+		    return (float)value.value.intval;
+	    }
+	case FAPI_FONT_FEATURE_BlendDesignPositionsArrayValue:
+	    {	ref *Info, *Array, SubArray, value;
+		int array_index = index / 8;
+		index %= 8;
+		if (dict_find_string(pdr, "FontInfo", &Info) <= 0)
+		    return 0;
+		if (dict_find_string(Info, "BlendDesignPositions", &Array) <= 0)
+		    return 0;
+		if (array_get(ff->memory, Array, array_index, &SubArray) < 0)
+		    return 0;
+		if (array_get(ff->memory, &SubArray, index, &value) < 0)
+		    return 0;
+		if (!r_has_type(&value, t_integer)) {
+		    if (r_has_type(&value, t_real)) {
+			return value.value.realval;
+		    } else
+			return 0;
+		}
+		else
+		    return (float)value.value.intval;
+	    }
+	case FAPI_FONT_FEATURE_BlendDesignMapArrayValue:
+	    {	ref *Info, *Array, SubArray, SubSubArray, value;
+		int array_index = index / 64, subarray_index = (index %64) / 8;
+		index %= 8;
+		if (dict_find_string(pdr, "FontInfo", &Info) <= 0)
+		    return 0;
+		if (dict_find_string(Info, "BlendDesignMap", &Array) <= 0)
+		    return 0;
+		if (array_get(ff->memory, Array, array_index, &SubArray) < 0)
+		    return 0;
+		if (array_get(ff->memory, &SubArray, index, &SubSubArray) < 0)
+		    return 0;
+		if (array_get(ff->memory, &SubSubArray, index, &value) < 0)
+		    return 0;
+		if (!r_has_type(&value, t_integer)) {
+		    if (r_has_type(&value, t_real)) {
+			return value.value.realval;
+		    } else
+			return 0;
+		}
+		else
+		    return (float)value.value.intval;
+	    }
     }
     return 0;
 }
 
+static int FAPI_FF_get_name(FAPI_font *ff, fapi_font_feature var_id, int index, char *Buffer, int len)
+{
+    ref name, string, *pdr = (ref *)ff->client_font_data2;
+    dict *pdict = pdr->value.pdict;
+
+    switch((int)var_id) {
+	case FAPI_FONT_FEATURE_BlendAxisTypes:
+	    {   ref *Info, *Axes; 
+		if (dict_find_string(pdr, "FontInfo", &Info) <= 0)
+		    return 0;
+		if (dict_find_string(Info, "BlendAxisTypes", &Axes) <= 0)
+		    return 0;
+		if(!r_has_type(Axes, t_array))
+		    return 0;
+		if (array_get(ff->memory, Axes, index, &name) < 0)
+		    return 0;
+	    }
+    }
+    name_string_ref(ff->memory, &name, &string);
+    if(r_size(&string) >= len)
+	return 0;
+    memcpy(Buffer, string.value.const_bytes, r_size(&string));
+    Buffer[r_size(&string)] = 0x00;
+    return 1;
+}
+
+static int FAPI_FF_get_proc(FAPI_font *ff, fapi_font_feature var_id, int index, char *Buffer)
+{
+    ref name, string, *pdr = (ref *)ff->client_font_data2;
+    char *ptr = Buffer;
+
+    if (!Buffer)
+	return 0;
+
+    switch((int)var_id) {
+	case FAPI_FONT_FEATURE_DollarBlend:
+	    {   ref *DBlend, Element, name, string; 
+		int i, length = 0, type, size;
+		char Buf[32];
+		if (dict_find_string(pdr, "$Blend", &DBlend) <= 0)
+		    return 0;
+		for (i = 0;i < r_size(DBlend);i++) {
+		    *ptr++ = 0x20;
+		    if (array_get(ff->memory, DBlend, i, &Element) < 0)
+			return 0;
+		    switch (r_btype(&Element)) {
+			case t_real:
+			    sprintf(Buf, "%f", Element.value.realval);
+			    strcpy(ptr, Buf);
+			    ptr += strlen(Buf);
+			    break;
+			case t_integer:
+			    sprintf(Buf, "%d", Element.value.intval);
+			    strcpy(ptr, Buf);
+			    ptr += strlen(Buf);
+			    break;
+			case t_operator:
+			    { op_def const *op;
+
+			    op = op_index_def(r_size(&Element));
+			    strcpy(ptr, op->oname + 1);
+			    ptr += strlen(op->oname + 1);
+			    }
+			    break;
+			default:
+			    break;
+		    }
+		}
+	    }
+    }
+    return ptr - Buffer;
+}
 static inline void decode_bytes(byte *p, const byte *s, int l, int lenIV)
 {   ushort state = 4330;
 
@@ -701,6 +933,8 @@ static const FAPI_font ff_stub = {
     FAPI_FF_get_word,
     FAPI_FF_get_long,
     FAPI_FF_get_float,
+    FAPI_FF_get_name,
+    FAPI_FF_get_proc,
     FAPI_FF_get_gsubr,
     FAPI_FF_get_subr,
     FAPI_FF_get_glyph,
