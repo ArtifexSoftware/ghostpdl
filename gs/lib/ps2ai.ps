@@ -25,7 +25,7 @@
 % redefine it. This can be used by other programs to overwrite
 % some settings from externally
 %  
-/cdef { 1 index where { pop pop pop } { def } ifelse } def
+/cdef { 1 index where { pop pop pop } { def } ifelse } bind def
 %
 %xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 %
@@ -131,18 +131,19 @@
 %                  Nothing of Interest below here
 %xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 matrix identmatrix setmatrix %   make ctm [1 0 0 1 0 0]
+/bdef {bind def} bind def
 /oldgsave {} def /oldgrestore {} def
 /initgraphics {} def /initmatrix {} def 
 % undefine PPD PageSizes to be more printer independant
 /letter {} def /legal {} def /a4 {} def /b5 {} def /lettersmall {} def
-/setpagedevice { pop } def % for level 2 PPD PageSizes
+/setpagedevice { pop } bdef % for level 2 PPD PageSizes
 /Courier findfont 12 scalefont setfont % handle no setfont
 /initclip {0 0 moveto 0 792 lineto 612 792 lineto 612 0 lineto closepath
-           clip newpath } def
-/xdef {exch def} def
-/trx {transform exch} def
-/cbdef {cvx bind def} def
-/jltz {dup abs 0.0001 lt {pop 0} if} def % get rid of scientific notation bug
+           clip newpath } bdef
+/xdef {exch def} bdef
+/trx {transform exch} bdef
+/cbdef {cvx bind def} bdef
+/jltz {dup abs 0.0001 lt {pop 0} if} bdef % get rid of scientific notation bug
 /clstate false def        % closepath state
 /dpth false def           % destroy path (ie newpath)
 /fclp false def           % first paint after clip
@@ -165,7 +166,7 @@ matrix identmatrix setmatrix %   make ctm [1 0 0 1 0 0]
    /green {1 mag blk ccomp sub} def
    /blue {1 yel blk ccomp sub} def
    red green blue setrgbcolor
-  } def
+  } bdef
 } ifelse
 /currentcmykcolor where {pop}
  {/currentcmykcolor {
@@ -180,7 +181,7 @@ matrix identmatrix setmatrix %   make ctm [1 0 0 1 0 0]
    /yel  rawY blk sub  def
    /blk blk def
    cyan mag yel blk
-  } def
+  } bdef
 } ifelse
 % If using Mac Ghostscript 
 jMacGS { 
@@ -193,10 +194,9 @@ jout {joutput (w) file /joutput xdef} if
 %
 %              Output
 %
-jout {/jp { joutput exch writestring } bind def }{/jp {print}bind def} ifelse
-/jpnum {jltz ( ) jp =string cvs jp } bind def
-/jpmat { dup /jarry exch def length 1 sub /j_num exch def
- (\[) jp 0 1 j_num {jarry exch get jpnum} for (\]) jp } def
+jout {/jp { joutput exch writestring } bdef }{/jp {print} bdef} ifelse
+/jpnum {jltz ( ) jp =string cvs jp } bdef
+/jpmat { (\[) jp { jpnum } forall (\]) jp } bdef
 %
 %              Stack to Paths converters
 %
@@ -207,20 +207,20 @@ jout {/jp { joutput exch writestring } bind def }{/jp {print}bind def} ifelse
   spth 1 eq {clstate {(s\n) jp }{(S\n) jp } ifelse} if
   spth 2 eq {clstate {(f\n) jp }{(F\n) jp } ifelse} if
      } if
-} def
+} bdef
 /jpm {
   ckpnt
   /dpth true def
-  transform 2 copy /yst xdef /xst xdef exch jpnum jpnum ( m\n) jp } bind def
-/jpl { trx jpnum jpnum ( l\n) jp } bind def
+  transform 2 copy /yst xdef /xst xdef exch jpnum jpnum ( m\n) jp } bdef
+/jpl { trx jpnum jpnum ( l\n) jp } bdef
 /jpc {  6 4 roll trx jpnum jpnum 4 2 roll trx jpnum jpnum trx
-    jpnum jpnum ( c\n) jp } bind def
-/jpp {xst jpnum yst jpnum ( l\n) jp /clstate true def} def
+    jpnum jpnum ( c\n) jp } bdef
+/jpp {xst jpnum yst jpnum ( l\n) jp /clstate true def} bdef
 /cntpaths { % count paths on stack
   oldgsave
   {pop pop /jnump jnump 1 add def} {pop pop} {6 {pop} repeat}{} pathforall
   oldgrestore
-} def
+} bdef
 /ppforall {
  cntpaths % find out how many paths are on the stack
  jnump 1 gt { (*u\n) jp } if
@@ -229,34 +229,34 @@ jout {/jp { joutput exch writestring } bind def }{/jp {print}bind def} ifelse
  jnump 1 gt { (*U\n) jp } if
  /jnump 0 def /clstate false def /dpth false def /fclp false def
   oldnewpath
-} bind def
+} bdef
 %
 %              Painting Operators
 %
 /oldnewpath [/newpath load] cbdef
-/newpath { (\n) jp /spth 0 def ppforall} def 
-/stroke { (\n) jp /spth 1 def ppforall } def 
-/fill   {(\n) jp /spth 2 def ppforall } def 
-/eofill {(1 D\n) jp fill (0 D\n) jp} def
+/newpath { (\n) jp /spth 0 def ppforall} bdef 
+/stroke { (\n) jp /spth 1 def ppforall } bdef 
+/fill   {(\n) jp /spth 2 def ppforall } bdef 
+/eofill {(1 D\n) jp fill (0 D\n) jp} bdef
 /clip {clarry gcnt get {(Q\nq\n) jp}{(q\n) jp} ifelse 
-                   /fclp true def clarry gcnt true put} def
-/eoclip {(1 D\n) jp clip (0 D\n) jp} def
+                   /fclp true def clarry gcnt true put} bdef
+/eoclip {(1 D\n) jp clip (0 D\n) jp} bdef
 %
 %               Text Operators
 %
 /oldshow [/show load] cbdef
-/curpt {stringwidth pop jx add jy} def 
+/curpt {stringwidth pop jx add jy} bdef 
 /jNN {dup 0 eq {pop oldgsave currentfont /FontMatrix get setmatrix kscl
                 oldgrestore} if
-} def
+} bdef
 /curftmatrix {
  currentfont /FontMatrix get dup 0 get jNN abs /norm exch def 
  dup 0 get norm div exch dup
  1 get norm div exch dup 2 get norm div exch dup 3 get norm div exch dup
  4 get exch 5 get 6 array astore matrix currentmatrix matrix concatmatrix
-} def
+} bdef
 % AI does not support negitive font sizes
-/curftsize {currentfont /FontMatrix get 0 get jNN abs 1000 mul} def
+/curftsize {currentfont /FontMatrix get 0 get jNN abs 1000 mul} bdef
 /hstr (X) def
 /vbar (|) 0 get def /undsc (_) 0 get def
 /ftnamefix { % handle font names with |,_ (previously encoded)
@@ -268,10 +268,10 @@ jstr cvs
             } ifelse
         } ifelse
    } forall   flush
-} bind def
-%/curftname {currentfont /FontName get ftnamefix}def
+} bdef
+%/curftname {currentfont /FontName get ftnamefix} bdef
 /curftname { currentfont /FontName known {currentfont /FontName get}
-           { (Times-Roman)} ifelse ftnamefix } def
+           { (Times-Roman)} ifelse ftnamefix } bdef
 /lftpar (\() 0 get def
 /rhtpar (\)) 0 get def
 /bckslsh (\\) 0 get def
@@ -286,11 +286,11 @@ jstr cvs
             } ifelse
         } ifelse
    } forall (\)) jp flush
-} bind def
+} bdef
 % AI 3 text format pieces
 jtxt3 {
 /j3txt { j3ftxt {(0 Ts 100 Tz 0 Tt 0 TA 0 0 5 TC 100 100 200 TW 0 0 0 Ti\n) jp
-                (0 Ta 0 Tq 0 0 TI 0 Tc 0 Tw\n) jp} if } def
+                (0 Ta 0 Tq 0 0 TI 0 Tc 0 Tw\n) jp} if } bdef
 /show {oldgsave  (0 To\n) jp 
   currentpoint 2 copy /jy exch def /jx exch def translate 
   curftmatrix /jitm exch def
@@ -299,8 +299,8 @@ jtxt3 {
   (0) jp j_ax  curftsize div 100 mul jpnum ( 100 TC\n) jp %  percent(?)
   dup curpt moveto mark exch handft ( Tx\n) jp (TO\n) jp /j3ftxt false def
   cleartomark currentpoint oldgrestore moveto
-} def  
-/ashow {exch pop exch /j_ax exch def show /j_ax {0} def } def
+} bdef  
+/ashow {exch pop exch /j_ax exch def show /j_ax {0} def } bdef
 } 
  {
 /show {oldgsave (u\n) jp currentpoint 2 copy /jy exch def /jx exch def translate
@@ -308,19 +308,19 @@ jtxt3 {
   curftsize dup jpnum  jpnum ( 0 0 z\n) jp
   curftmatrix jpmat ( e\n) jp
   dup curpt moveto mark exch handft ( t T U\n) jp
-  cleartomark currentpoint oldgrestore moveto} def
+  cleartomark currentpoint oldgrestore moveto} bdef
 /ashow {oldgsave (u\n) jp currentpoint translate (\/) jp curftname jstr cvs jp
   curftsize dup jpnum jpnum  exch kscl mul jpnum ( 0 z\n) jp
   curftmatrix jpmat ( e\n) jp dup curpt moveto mark exch handft
-  ( t T U\n) jp cleartomark currentpoint oldgrestore moveto} def
+  ( t T U\n) jp cleartomark currentpoint oldgrestore moveto} bdef
 } ifelse
-/widthshow { show pop pop pop} def
-/awidthshow {ashow pop pop pop} def
-/kshow {show pop} def
-%/show {true charpath fill} bind def   % get outline of charactor
+/widthshow { show pop pop pop} bdef
+/awidthshow {ashow pop pop pop} bdef
+/kshow {show pop} bdef
+%/show {true charpath fill} bdef   % get outline of charactor
 joutln {/show { true charpath currentpoint 
-     /jy exch def /jx exch def fill jx jy moveto} bind def} if
-%/show {oldshow} def    % do nothing different
+     /jy exch def /jx exch def fill jx jy moveto} bdef} if
+%/show {oldshow} bdef    % do nothing different
 %
 %               Color Operators
 %
@@ -328,11 +328,11 @@ joutln {/show { true charpath currentpoint
 /setcmykcolor {oldsetcmykcolor 
 currentcmykcolor 4 -1 roll jpnum 3 -1 roll jpnum 2 -1 roll jpnum jpnum ( k\n) jp
 currentcmykcolor 4 -1 roll jpnum 3 -1 roll jpnum 2 -1 roll jpnum jpnum ( K\n) jp
- } def
+ } bdef
 /oldsetgray [/setgray load] cbdef
-/setgray {0 0 0 4 -1 roll 1 exch sub setcmykcolor} def
+/setgray {0 0 0 4 -1 roll 1 exch sub setcmykcolor} bdef
 /oldsethsbcolor [/sethsbcolor load] cbdef
-/sethsbcolor {oldsethsbcolor currentcmykcolor setcmykcolor} def
+/sethsbcolor {oldsethsbcolor currentcmykcolor setcmykcolor} bdef
 /oldsetrgbcolor [/setrgbcolor load] cbdef
 /setrgbcolor {oldsetrgbcolor currentrgbcolor /bval xdef /gval xdef /rval xdef
  /rawC 1 rval sub def /rawM 1 gval sub def /rawY 1 bval sub def
@@ -344,24 +344,24 @@ currentcmykcolor 4 -1 roll jpnum 3 -1 roll jpnum 2 -1 roll jpnum jpnum ( K\n) jp
  /mag  rawM blk sub  def
  /yel  rawY blk sub  def
  /blk blk def
- cyan mag yel blk setcmykcolor } def
+ cyan mag yel blk setcmykcolor } bdef
 %
 %                State Operators
 %
 /oldsetlinewidth [/setlinewidth load] cbdef
 /setlinewidth {kscl abs mul jltz  oldsetlinewidth
- currentlinewidth jpnum ( w\n) jp } def
+ currentlinewidth jpnum ( w\n) jp } bdef
 /oldsetlinecap [/setlinecap load] cbdef
-/setlinecap {dup oldsetlinecap jpnum ( J\n) jp} def
+/setlinecap {dup oldsetlinecap jpnum ( J\n) jp} bdef
 /oldsetlinejoin [/setlinejoin load] cbdef
-/setlinejoin {dup oldsetlinejoin jpnum ( j\n) jp} def
+/setlinejoin {dup oldsetlinejoin jpnum ( j\n) jp} bdef
 /oldsetmiterlimit [/setmiterlimit load] cbdef
-/setmiterlimit {dup oldsetmiterlimit jpnum ( M\n) jp}def
+/setmiterlimit {dup oldsetmiterlimit jpnum ( M\n) jp}bdef
 /oldsetdash [/setdash load] cbdef
 /setdash {exch [ exch {kscl abs mul} forall ] exch kscl abs mul oldsetdash
-  currentdash exch jpmat jpnum ( d\n) jp } def
+  currentdash exch jpmat jpnum ( d\n) jp } bdef
 /oldsetflat [/setflat load] cbdef
-/setflat {dup oldsetflat jpnum ( i\n) jp } def
+/setflat {dup oldsetflat jpnum ( i\n) jp } bdef
 %
 %                More State Operators
 %
@@ -372,12 +372,12 @@ currentcmykcolor 4 -1 roll jpnum 3 -1 roll jpnum 2 -1 roll jpnum jpnum ( K\n) jp
  1 0 moveto currentpoint transform
  dup mul exch dup mul add sqrt 10000 mul round 10000 div
  oldgrestore
-} def
+} bdef
 /currentstate {currentcmykcolor setcmykcolor
  currentflat jpnum ( i) jp currentlinecap jpnum ( J) jp
  currentlinejoin jpnum ( j) jp currentlinewidth jpnum ( w) jp
  currentmiterlimit jpnum ( M ) jp currentdash exch jpmat jpnum ( d\n) jp 
-} def
+} bdef
 /jdifG {
  currentcmykcolor /jok xdef /joy xdef /jom xdef /joc xdef
  currentflat /jof xdef currentlinecap /jolc xdef currentlinejoin /jolj xdef
@@ -394,18 +394,18 @@ currentcmykcolor 4 -1 roll jpnum 3 -1 roll jpnum 2 -1 roll jpnum jpnum ( K\n) jp
  false joad {true exit} forall {pop pop true}{false} ifelse
  false jnad {true exit} forall {pop pop true}{false} ifelse ne
  jood jnod ne 10 {or} repeat {currentstate} if
-} def
+} bdef
 /oldgsave [/gsave load] cbdef
-/gsave {oldgsave /gcnt gcnt 1 add def } def % clarry gcnt false put} def
-%  (%%Note:gsave ) jp gcnt jpnum (\n) jp} def
+/gsave {oldgsave /gcnt gcnt 1 add def } bdef % clarry gcnt false put} bdef
+%  (%%Note:gsave ) jp gcnt jpnum (\n) jp} bdef
 /oldgrestore [/grestore load] cbdef
 /grestore {dpth {newpath} if clarry gcnt get {(Q\n) jp clarry gcnt false put} if 
- jdifG /gcnt gcnt 1 sub def } def
-% oldgrestore currentstate } def
-% (%%Note:grestore ) jp gcnt 1 add jpnum (\n) jp} def
+ jdifG /gcnt gcnt 1 sub def } bdef
+% oldgrestore currentstate } bdef
+% (%%Note:grestore ) jp gcnt 1 add jpnum (\n) jp} bdef
 /oldrestore [/restore load] cbdef
 % a kludgy way of saving the clipping path status information
-/restore {clarry aload pop 11 -1 roll oldrestore clarry astore pop} def
+/restore {clarry aload pop 11 -1 roll oldrestore clarry astore pop} bdef
 /showpage {  0 1 9 {clarry exch get {(Q\n) jp} if } for
  (%%Note: If Error, make sure there are matched pairs of 'q's and 'Q's\n) jp
  (%%Note: in the file. Add 'Q's before '%%Trailer' until equal\n) jp
@@ -424,7 +424,7 @@ currentcmykcolor 4 -1 roll jpnum 3 -1 roll jpnum 2 -1 roll jpnum jpnum ( K\n) jp
         (Adobe_packedarray /terminate get exec\n) jp 
        } ifelse
 ( showpage\n%EOF\n%%EndDocument\n) jp
- jout {joutput closefile} if jMacGS not {quit} if /j3ftxt true def } def 
+ jout {joutput closefile} if jMacGS not {quit} if /j3ftxt true def } bdef 
 %
 %                Error handling
 %
@@ -432,13 +432,13 @@ errordict begin
 % Attempt to handle the error caused by bitmap fonts (TeX,Windows.ps,etc)
 % this is a big-time kludge
 jbiterr {
- /undefined {pop pop (Times-Roman)} def
- /typecheck {pop pop} def
+ /undefined {pop pop (Times-Roman)} bdef
+ /typecheck {pop pop} bdef
 } if
 jerr {
  /handleerror {
   (%%Note: ps2ai error, aborting rest of conversion\n) jp showpage
- } def
+ } bdef
 } if
 end
 %
@@ -447,22 +447,22 @@ end
 /jmacimp { % stroked line instead of thin filled boxes
  /@a {  3 -1 roll 2 div dup 3 -1 roll add exch 3 -1 roll add exch moveto
       3 -1 roll 2 div dup 3 -1 roll add exch 3 -1 roll exch sub exch lineto
-      abs setlinewidth  stroke pop pop} def
+      abs setlinewidth  stroke pop pop} bdef
  /@b { 3 -1 roll 2 div dup 3 -1 roll add exch 3 -1 roll add exch moveto
       pop
       3 -1 roll 2 div dup 3 -1 roll add exch 3 -1 roll add exch lineto
-      abs setlinewidth  stroke} def
- /endp {showpage pm restore} def % because the restore stops clean up
-} def
+      abs setlinewidth  stroke} bdef
+ /endp {showpage pm restore} bdef % because the restore stops clean up
+} bdef
 %
 %                Handle (some) PS Level 2
 %
 /rectstroke { 4 2 roll moveto 1 index 0 rlineto 0 exch rlineto neg 0 rlineto
-  closepath stroke} def
+  closepath stroke} bdef
 /rectfill { 4 2 roll moveto 1 index 0 rlineto 0 exch rlineto neg 0 rlineto
-  fill } def
+  fill } bdef
 /rectclip { 4 2 roll moveto 1 index 0 rlineto 0 exch rlineto neg 0 rlineto
-  closepath clip newpath jMacfix {jmacimp} if } def
+  closepath clip newpath jMacfix {jmacimp} if } bdef
 %
 % Add a header prolog to the output file so it is still view/print-able
 %
