@@ -378,7 +378,7 @@ gx_device_cups	gs_cups_device =
                                         /* cupsString */
     "",                                 /* cupsMarkerType */
     "",                                 /* cupsRenderingIntent */
-    "Letter"                            /* cupsPageSizeName */
+    ""                                  /* cupsPageSizeName */
 #endif /* CUPS_RASTER_SYNCv1 */
   },
   0                                     /* landscape */
@@ -2798,6 +2798,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   float                 swap;
   int                   xflip = 0,
                         yflip = 0;
+  int                   found = 0;
 
   dprintf2("DEBUG2: cups_put_params(%p, %p)\n", pdev, plist);
 
@@ -3070,6 +3071,25 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	xflip = 0;
 	yflip = 0;
       }
+
+#ifdef CUPS_RASTER_SYNCv1
+     /*
+      * Chack whether cupsPageSizeName has a valid value
+      */
+
+      if (strlen(cups->header.cupsPageSizeName) != 0) {
+	found = 0;
+	for (i = cupsPPD->num_sizes, size = cupsPPD->sizes;
+	     i > 0;
+	     i --, size ++)
+	  if (strcasecmp(cups->header.cupsPageSizeName, size->name) == 0) {
+	    found = 1;
+	    break;
+	  }
+	if (found == 0) cups->header.cupsPageSizeName[0] = '\0';
+      }
+      dprintf1("DEBUG2: cups->header.cupsPageSizeName = %s\n", cups->header.cupsPageSizeName);
+#endif
 
      /*
       * Find the matching page size...
