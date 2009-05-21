@@ -181,11 +181,14 @@ JBIG2_LIB=jbig2dec
 SHARE_JBIG2=@SHARE_JBIG2@
 JBIG2SRCDIR=@JBIG2DIR@
 
-# uncomment the following to compile in the Luratech ldf_jb2 codec
+# uncomment the following three lines and one of the last two to
+# compile in the Luratech ldf_jb2 codec
 #JBIG2_LIB=luratech
 #SHARE_JBIG2=0
 #JBIG2SRCDIR=ldf_jb2
-#JBIG2_CFLAGS=-DUSE_LDF_JB2
+#JBIG2_CFLAGS=-DUSE_LDF_JB2 -DLINUX
+#JBIG2_CFLAGS=-DUSE_LDF_JB2 -DMAC -DMAC_OS_X_BUILD
+
 
 # Choose the library to use for (JPXDecode support)
 # whether to link to an external build or compile in from source
@@ -195,11 +198,13 @@ SHARE_JPX=@SHARE_JASPER@
 JPXSRCDIR=@JASPERDIR@
 JPX_CFLAGS=-DJAS_CONFIGURE
 
-# uncomment the following to compile in the Luratech lwf_jp2 codec
+# uncomment the following three lines and one of the last two to
+# compile in the Luratech lwf_jp2 codec
 #JPX_LIB=luratech
 #SHARE_JPX=0
 #JPXSRCDIR=lwf_jp2
 #JPX_CFLAGS=-DUSE_LWF_JP2 -DLINUX
+#JPX_CFLAGS=-DUSE_LWF_JP2 -DMAC -DMAC_OS_X_BUILD
 
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
