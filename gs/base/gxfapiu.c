@@ -31,7 +31,7 @@
 
 /* -------------------- UFST callback dispatcher ------------- */
 
-/*  This code provides dispatching UFST callbacks to the PDL */
+/* This code provides dispatching UFST callbacks to the PDL */
 
 struct IF_STATE;
 

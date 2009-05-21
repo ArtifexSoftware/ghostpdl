@@ -805,9 +805,9 @@ static int get_GlyphDirectory_data_ptr(const gs_memory_t *mem,
         *ptr = glyph->value.const_bytes;
 	return r_size(glyph);
     } else
-	/* We have a GlyphDirectory, but couldnt find the glyph. If we return -1
-	 * then we will attempt to use glyf and loca which will fail. Instead
-	 * return 0, so we execute an 'empty' glyph.
+	/* We have a GlyphDirectory, but couldn't find the glyph. If we 
+	 * return -1 then we will attempt to use glyf and loca which 
+	 * will fail. Instead return 0, so we execute an 'empty' glyph.
 	 */
 	return 0;
     }
@@ -827,20 +827,19 @@ static bool get_MetricsCount(FAPI_font *ff)
 
 static ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort buf_length)
 {   /* 
-     * We assume that renderer requests glyph data with multiple consequtive
-     * calls to this function. 
+     * We assume that renderer requests glyph data with multiple
+     * consecutive calls to this function.
      *
-     * For a simple glyph it calls this
-     * function exactly twice : first with buf == NULL for requesting
-     * the necessary buffer length, and second with
-     * buf != NULL for requesting the data (the second call may be skept
-     * if the renderer discontinues the rendering on an exception).
+     * For a simple glyph it calls this function exactly twice: first
+     * with buf == NULL for requesting the necessary buffer length, and
+     * second with buf != NULL for requesting the data (the second call
+     * may be skipped if the renderer discontinues the rendering).
      *
      * For a composite glyph it calls this function 2 * (N + 1)
-     * times : 2 calls for the main glyph (same as above) followed with 
-     * 2 * N calls for subglyphs, where N is less or equal to the number of
-     * subglyphs ( N may be less if the renderer caches glyph data,
-     * or discontinues the rendering on an exception).
+     * times: 2 calls for the main glyph (same as above) followed with
+     * 2 * N calls for subglyphs, where N is less or equal to the number
+     * of subglyphs (N may be less if the renderer caches glyph data,
+     * or discontinues rendering on an exception).
      */
     ref *pdr = (ref *)ff->client_font_data2;
     ushort glyph_length;
