@@ -318,7 +318,6 @@ trace_stroke_path(gx_device * dev, const gs_imager_state * pis,
 
 typedef struct trace_image_enum_s {
     gx_image_enum_common;
-    gs_memory_t *memory;
     int rows_left;
 } trace_image_enum_t;
 gs_private_st_suffix_add0(st_trace_image_enum, trace_image_enum_t,
