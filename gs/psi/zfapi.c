@@ -500,7 +500,7 @@ static ushort FAPI_FF_get_word(FAPI_font *ff, fapi_font_feature var_id, int inde
 	    }
 	case FAPI_FONT_FEATURE_DollarBlend_length:
 	    {   ref *DBlend, Element, name, string; 
-		int i, length = 0, type, size;
+		int i, length = 0;
 		char Buffer[32];
 		if (dict_find_string(pdr, "$Blend", &DBlend) <= 0)
 		    return 0;
@@ -651,7 +651,6 @@ static float FAPI_FF_get_float(FAPI_font *ff, fapi_font_feature var_id, int inde
 static int FAPI_FF_get_name(FAPI_font *ff, fapi_font_feature var_id, int index, char *Buffer, int len)
 {
     ref name, string, *pdr = (ref *)ff->client_font_data2;
-    dict *pdict = pdr->value.pdict;
 
     switch((int)var_id) {
 	case FAPI_FONT_FEATURE_BlendAxisTypes:
@@ -676,7 +675,7 @@ static int FAPI_FF_get_name(FAPI_font *ff, fapi_font_feature var_id, int index, 
 
 static int FAPI_FF_get_proc(FAPI_font *ff, fapi_font_feature var_id, int index, char *Buffer)
 {
-    ref name, string, *pdr = (ref *)ff->client_font_data2;
+    ref *pdr = (ref *)ff->client_font_data2;
     char *ptr = Buffer;
 
     if (!Buffer)
@@ -684,8 +683,8 @@ static int FAPI_FF_get_proc(FAPI_font *ff, fapi_font_feature var_id, int index, 
 
     switch((int)var_id) {
 	case FAPI_FONT_FEATURE_DollarBlend:
-	    {   ref *DBlend, Element, name, string; 
-		int i, length = 0, type, size;
+	    {   ref *DBlend, Element; 
+		int i;
 		char Buf[32];
 		if (dict_find_string(pdr, "$Blend", &DBlend) <= 0)
 		    return 0;
