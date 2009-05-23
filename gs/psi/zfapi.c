@@ -517,7 +517,7 @@ static ushort FAPI_FF_get_word(FAPI_font *ff, fapi_font_feature var_id, int inde
 			    length += strlen(Buffer) + 1;
 			    break;
 			case t_integer:
-			    sprintf(Buffer, "%f", Element.value.intval);
+			    sprintf(Buffer, "%d", Element.value.intval);
 			    length += strlen(Buffer) + 1;
 			    break;
 			case t_operator:
