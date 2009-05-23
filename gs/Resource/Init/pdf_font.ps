@@ -1682,9 +1682,15 @@ currentdict /bndef undef
                                           % /key res res desc stream
         dup //null ne {
           PDFfile fileposition 
-          1 index //true resolvestream dup
-          4 string readstring pop
-	  exch closefile
+          mark {
+            2 index //true resolvestream dup
+            4 string readstring pop
+	    exch closefile
+          } stopped {
+            cleartomark /bad_stream
+          } {
+            exch pop
+          } ifelse
           PDFfile 3 -1 roll setfileposition
           dup length 4 lt { pop /bad_stream } if
         } {
