@@ -1472,7 +1472,7 @@ $(GLD)sjpx_jasper.dev : $(LIB_MAK) $(ECHOGS_XE) \
 # jasper.dev is created in jasper.mak
 
 $(GLOBJ)sjpx.$(OBJ) : $(GLSRC)sjpx.c $(AK) \
- $(memory__h) $(gsmalloc_h) $(gserror_h) $(gserrors_h) \
+ $(memory__h) $(gsmalloc_h) $(gserror_h) \
  $(gdebug_h) $(strimpl_h) $(sjpx_h)
 	$(GLJASCC) $(GLO_)sjpx.$(OBJ) $(C_) $(GLSRC)sjpx.c
 
