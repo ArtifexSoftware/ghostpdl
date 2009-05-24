@@ -195,7 +195,7 @@ XLIBS?=Xt SM ICE Xext X11
 
 CCLD?=gcc
 
-DD=$(GLGENDIR)/
+DD?=$(GLGENDIR)/
 
 
 DEVICES_DEVS?=$(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev\
@@ -223,14 +223,14 @@ ifeq ($(CYGWIN), TRUE)
 SYNC=nosync
 CFLAGS+=-DHAVE_STDINT_H
 STDLIBS=-lm
-DEVICE_DEVS=$(DEVICES_DEVS)
+DEVICE_DEVS?=$(DEVICES_DEVS)
 
 else
 
 SYNC=posync
 # some systems may need -ldl as well as pthread
 STDLIBS=-lm -lpthread -ldl
-DEVICE_DEVS=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11mono.dev $(DD)x11cmyk.dev $(DEVICES_DEVS)
+DEVICE_DEVS?=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11mono.dev $(DD)x11cmyk.dev $(DEVICES_DEVS)
 endif
 
 #miscellaneous
