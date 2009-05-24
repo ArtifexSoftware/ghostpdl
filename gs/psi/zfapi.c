@@ -1696,6 +1696,7 @@ retry_oversampling:
         if (font_file_path != NULL) {
             ref *Decoding, *TT_cmap, *SubstNWP;
             ref src_type, dst_type;
+	    bool is_glyph_index = true;
 	    uint c;
 
             if (dict_find_string(pdr, "Decoding", &Decoding) <= 0 || !r_has_type(Decoding, t_dictionary))
@@ -1738,9 +1739,16 @@ retry_oversampling:
 				      client_char_code, &c, &src_type, &dst_type);
 		if (code < 0)
 		    return code;
+
+		/* cid_to_TT_charcode() returns 1 if it found a 
+                 * matching character code. Otherwise it returns
+                 * zero after setting c to zero (.notdef glyph id)
+                 * or a negative value on error. */
+		if (code > 0)
+		    is_glyph_index = false;
 	    }
 	    cr.char_codes[0] = c;
-	    cr.is_glyph_index = (code == 0);
+	    cr.is_glyph_index = is_glyph_index;
             /* fixme : process the narrow/wide/proportional mapping type,
 	       using src_type, dst_type. Should adjust the 'matrix' above.
                Call get_font_proportional_feature for proper choice.
