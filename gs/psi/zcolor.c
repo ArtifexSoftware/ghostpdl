@@ -50,6 +50,7 @@
 #include "zcie.h"	/* For CIE space function declarations */
 #include "zicc.h"	/* For declaration of seticc */
 #include "gscspace.h"   /* Needed for checking if current pgs colorspace is CIE */
+#include "iddict.h"	/* for idict_put_string */
 
 /* imported from gsht.c */
 extern  void    gx_set_effective_transfer(gs_state *);
@@ -5211,20 +5212,32 @@ static int validateiccspace(i_ctx_t * i_ctx_p, ref **r)
     } else {
 	switch (components) {
 	    case 1:
-		code = name_enter_string(imemory, "DeviceGray", *r);
+		code = name_enter_string(imemory, "DeviceGray", tempref);
 		break;
 	    case 3:
-		code = name_enter_string(imemory, "DeviceRGB", *r);
+		code = name_enter_string(imemory, "DeviceRGB", tempref);
 		break;
 	    case 4:
-		code = name_enter_string(imemory, "DeviceCMYK", *r);
+		code = name_enter_string(imemory, "DeviceCMYK", tempref);
 		break;
 	    default:
 		return_error(e_rangecheck);
 	}
+	/* In case this space is the /ALternate for a previous ICCBased space
+	 * insert the named space into the ICC dictionary. If we simply returned
+	 * the named space, as before, then we are replacing the second ICCBased
+	 * space in the first ICCBased space with the named space!
+	 */
+	code = idict_put_string(&ICCdict, "Alternate", tempref);
+	if (code < 0)
+	    return code;
+
+	/* And now revalidate with the newly updated dictionary */
+	return validateiccspace(i_ctx_p, r);
     }
     return code;
 }
+
 static int iccalternatespace(i_ctx_t * i_ctx_p, ref *space, ref **r, int *CIESubst)
 {
     int components, code = 0;
