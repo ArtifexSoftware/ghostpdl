@@ -38,6 +38,7 @@
 #include "store.h"
 #include "gzstate.h"
 #include "memory_.h"
+#include "gdevp14.h"
 
 /* Imported from gspcolor.c */
 extern const gs_color_space_type gs_color_space_type_Pattern;
@@ -290,6 +291,8 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
     gx_device_forward *pdev = r_ptr(esp - 1, gx_device_forward);
     gs_pattern1_instance_t *pinst =
 	(gs_pattern1_instance_t *)gs_currentcolor(igs->saved)->pattern;
+    gx_device_pattern_accum const *padev = (const gx_device_pattern_accum *) pdev;
+
 
     if (pdev != NULL) {
 	gx_color_tile *ctile;
@@ -298,11 +301,20 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
 	if (pinst->template.uses_transparency) {
 	    gs_state *pgs = igs;
 	    int code;
+ 
+            /* Get PDF14 buffer information */
 
-	    if_debug0('v', "   popping the pdf14 compositor device into this graphics state\n");
-	    if ((code = gs_pop_pdf14trans_device(pgs)) < 0)
-		return code;
-	} 
+            code = pdf14_get_buffer_information(pgs->device,padev->transbuff);
+	    if (code < 0)
+	        return code;
+
+            /* Do not pop the device.  Instead go ahead and and disable it.
+               We will later free it when the pattern cache entry is freed. 
+               The ctile maintains a pointer to the device */
+
+            pdf14_disable_device(pgs->device);
+
+        } 
 	code = gx_pattern_cache_add_entry((gs_imager_state *)igs, pdev, &ctile);
 	if (code < 0)
 	    return code;

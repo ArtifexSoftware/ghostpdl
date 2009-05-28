@@ -1579,7 +1579,7 @@ pdf14_forward_device_procs(gx_device * dev)
  * method.)  However it is no-op'ed when the PDF 1.4 device is popped.  This
  * routine implements that action.
  */
-static	int
+int
 pdf14_disable_device(gx_device * dev)
 {
     gx_device_forward * pdev = (gx_device_forward *)dev;

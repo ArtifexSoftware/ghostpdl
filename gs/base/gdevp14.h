@@ -18,6 +18,7 @@
 
 #include "gxcmap.h"
 #include "gxpcolor.h"
+#include "gdevdevn.h"
 
 typedef enum {
     PDF14_DeviceGray = 0,
@@ -230,5 +231,9 @@ pdf14_put_devn_params(gx_device * pdev, gs_devn_params * pdevn_params,
    pattern contains transparency */
 
 int pdf14_get_buffer_information(const gx_device * dev, gx_pattern_trans_t *transbuff);
+
+/* Not static due to call from pattern logic */
+int
+pdf14_disable_device(gx_device * dev);
 
 #endif /* gdevp14_INCLUDED */
