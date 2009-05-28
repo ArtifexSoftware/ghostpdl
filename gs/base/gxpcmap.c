@@ -67,6 +67,7 @@ private_st_color_tile();
 private_st_color_tile_element();
 private_st_pattern_cache();
 private_st_device_pattern_accum();
+private_st_pattern_trans();
 
 /* ------ Pattern rendering ------ */
 
@@ -333,6 +334,24 @@ pattern_accum_open(gx_device * dev)
     PDSET(padev);
     padev->color_info = target->color_info;
 
+    /* If we have transparency, then fix the color info 
+       now so that the mem device allocates the proper
+       buffer space for the pattern template.  We can
+       do this since the transparency code all */
+
+    if(pinst->template.uses_transparency){
+
+        /* Allocate structure that we will use for the trans pattern */
+        padev->transbuff = gs_alloc_struct(mem,gx_pattern_trans_t,&st_pattern_trans,"pattern_accum_open(trans)");
+        padev->transbuff->transbytes = NULL;
+        padev->transbuff->pdev14 = NULL;
+
+    } else {
+
+        padev->transbuff = NULL;
+
+    }
+
     if (pinst->uses_mask) {
         mask = gs_alloc_struct( mem,
                                 gx_device_memory,
@@ -549,6 +568,7 @@ gx_pattern_alloc_cache(gs_memory_t * mem, uint num_tiles, ulong max_bits)
 	tiles->tmask.data = 0;
 	tiles->index = i;
 	tiles->cdev = NULL;
+        tiles->ttrans = NULL;
     }
     return pcache;
 }
@@ -630,6 +650,18 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 	    dev_proc(&ctile->cdev->common, close_device)((gx_device *)&ctile->cdev->common);
 	    ctile->cdev = NULL;
 	}
+
+        if (ctile->ttrans != NULL) {
+         
+	    dev_proc(ctile->ttrans->pdev14, close_device)((gx_device *)ctile->ttrans->pdev14);
+            ctile->ttrans->pdev14 = NULL;  /* should be ok due to pdf14_close */
+            ctile->ttrans->transbytes = NULL;  /* should be ok due to pdf14_close */
+	    gs_free_object(mem, ctile->ttrans,
+			   "free_pattern_cache_entry(ttrans)");
+            ctile->ttrans = NULL;
+
+        }
+
 	pcache->tiles_used--;
 	pcache->bits_used -= used;
 	ctile->id = gx_no_bitmap_id;
@@ -819,6 +851,7 @@ gx_pattern_cache_add_dummy_entry(gs_imager_state *pis,
     ctile->tbits.id = gs_no_bitmap_id;
     memset(&ctile->tmask, 0 , sizeof(ctile->tmask));
     ctile->cdev = NULL;
+    ctile->ttrans = NULL;
     pcache->tiles_used++;
     return 0;
 }
