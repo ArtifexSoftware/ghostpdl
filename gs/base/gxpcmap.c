@@ -372,29 +372,44 @@ pattern_accum_open(gx_device * dev)
     }
 
     if (code >= 0) {
-	switch (pinst->template.PaintType) {
-	    case 2:		/* uncolored */
-		gx_device_set_target((gx_device_forward *)padev, target);
-		break;
-	    case 1:		/* colored */
-		bits = gs_alloc_struct(mem, gx_device_memory,
-				       &st_device_memory,
-				       "pattern_accum_open(bits)");
-		if (bits == 0)
-		    code = gs_note_error(gs_error_VMerror);
-		else {
-		    gs_make_mem_device(bits,
-			gdev_mem_device_for_bits(target->color_info.depth),
-				       mem, -1, target);
-		    PDSET(bits);
-#undef PDSET
-		    bits->color_info = target->color_info;
-		    bits->bitmap_memory = mem;
-		    code = (*dev_proc(bits, open_device)) ((gx_device *) bits);
-		    gx_device_set_target((gx_device_forward *)padev,
-					 (gx_device *)bits);
-		}
-	}
+
+        if (pinst->template.uses_transparency){
+            
+            /* In this case, we will grab the buffer created
+               by the graphic state's device (which is pdf14) and
+               we will be tiling that into a transparency group buffer
+               to blend with the pattern accumulator's target.  Since
+               all the transparency stuff is planar format, it is
+               best just to keep the data in that form */
+
+	    gx_device_set_target((gx_device_forward *)padev, target);
+
+        } else {
+
+	    switch (pinst->template.PaintType) {
+	        case 2:		/* uncolored */
+		    gx_device_set_target((gx_device_forward *)padev, target);
+		    break;
+	        case 1:		/* colored */
+		    bits = gs_alloc_struct(mem, gx_device_memory,
+				           &st_device_memory,
+				           "pattern_accum_open(bits)");
+		    if (bits == 0)
+		        code = gs_note_error(gs_error_VMerror);
+		    else {
+		        gs_make_mem_device(bits,
+			    gdev_mem_device_for_bits(padev->color_info.depth),
+				           mem, -1, target);
+		        PDSET(bits);
+    #undef PDSET
+		        bits->color_info = padev->color_info;
+		        bits->bitmap_memory = mem;
+		        code = (*dev_proc(bits, open_device)) ((gx_device *) bits);
+		        gx_device_set_target((gx_device_forward *)padev,
+					     (gx_device *)bits);
+		    }
+	    }
+        }
     }
     if (code < 0) {
 	if (bits != 0)
@@ -681,13 +696,15 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
 {
     gx_pattern_cache *pcache;
     const gs_pattern1_instance_t *pinst;
-    ulong used = 0, mask_used = 0;
+    ulong used = 0, mask_used = 0, trans_used = 0;
     gx_bitmap_id id;
     gx_color_tile *ctile;
     int code = ensure_pattern_cache(pis);
     extern dev_proc_open_device(pattern_clist_open_device);
     gx_device_memory *mmask = NULL;
     gx_device_memory *mbits = NULL;
+    gx_pattern_trans_t *trans = NULL;
+
 
     if (code < 0)
 	return code;
@@ -698,6 +715,8 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
 	mbits = padev->bits;
 	mmask = padev->mask;
 	pinst = padev->instance;
+        trans = padev->transbuff;
+
 	/*
 	 * Check whether the pattern completely fills its box.
 	 * If so, we can avoid the expensive masking operations
@@ -720,12 +739,18 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
 	    mmask = 0;
 	  keep:;
 	}
+        /* Need to get size of buffers that are being added to the cache */
 	if (mbits != 0)
 	    gdev_mem_bitmap_size(mbits, &used);
 	if (mmask != 0) {
 	    gdev_mem_bitmap_size(mmask, &mask_used);
 	    used += mask_used;
 	}
+        if (trans != 0) {
+            trans_used = trans->planestride*trans->n_chan;
+            used += trans_used;
+        }
+
     } else {
 	gx_device_clist *cdev = (gx_device_clist *)fdev;
 	gx_device_clist_writer * cldev = (gx_device_clist_writer *)cdev;
@@ -743,6 +768,7 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
     id = pinst->id;
     ctile = &pcache->tiles[id % pcache->num_tiles];
     gx_pattern_cache_free_entry(pcache, ctile);
+    /* If too large then start freeing entries */
     while (pcache->bits_used + used > pcache->max_bits &&
 	   pcache->bits_used != 0	/* allow 1 oversized entry (?) */
 	) {
@@ -768,6 +794,10 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
 	    mmask->bitmap_memory = 0;	/* don't free the bits */
 	} else
 	    ctile->tmask.data = 0;
+        if (trans != 0) {
+            ctile->ttrans = trans;
+        }
+            
 	ctile->cdev = NULL;
 	pcache->bits_used += used;
     } else {
