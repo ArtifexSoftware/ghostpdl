@@ -24,6 +24,8 @@
 #include "gxdevmem.h"
 #include "gxpcache.h"
 
+#define RAW_PATTERN_DUMP 0
+
 #ifndef gx_device_clist_DEFINED
 #define gx_device_clist_DEFINED
 typedef union gx_device_clist_s gx_device_clist;

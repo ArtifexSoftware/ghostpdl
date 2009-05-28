@@ -32,6 +32,10 @@
 #include "gxcldev.h"
 #include "gzstate.h"
 
+#if RAW_PATTERN_DUMP
+unsigned int global_pat_index = 0;
+#endif
+
 /* Define the default size of the Pattern cache. */
 #define max_cached_patterns_LARGE 50
 #define max_pattern_bits_LARGE 100000
@@ -818,6 +822,36 @@ gx_pattern_cache_add_dummy_entry(gs_imager_state *pis,
     pcache->tiles_used++;
     return 0;
 }
+
+#if RAW_PATTERN_DUMP
+
+/* Debug dump of pattern image data. Saved in
+   interleaved form with global indexing in
+   file name */
+
+static void
+dump_raw_pattern(int height, int width, int n_chan,
+                byte *Buffer)
+
+{
+    char full_file_name[50];
+    FILE *fid;
+    int max_bands;
+
+
+    max_bands = ( n_chan < 57 ? n_chan : 56);   /* Photoshop handles at most 56 bands */
+    sprintf(full_file_name,"%d)PATTERN_%dx%dx%d.raw",global_pat_index,width,height,max_bands);
+    fid = fopen(full_file_name,"wb");
+
+    fwrite(Buffer , 1 , max_bands*height*width , fid );
+
+    fclose(fid);
+
+}
+
+
+#endif
+
 static void
 make_bitmap(register gx_strip_bitmap * pbm, const gx_device_memory * mdev,
 	    gx_bitmap_id id)
@@ -828,6 +862,19 @@ make_bitmap(register gx_strip_bitmap * pbm, const gx_device_memory * mdev,
     pbm->rep_height = pbm->size.y = mdev->height;
     pbm->id = id;
     pbm->rep_shift = pbm->shift = 0;
+
+        /* Lets dump this for debug purposes */
+
+#if RAW_PATTERN_DUMP
+
+        dump_raw_pattern(pbm->rep_height, pbm->rep_width, mdev->color_info.num_components,
+            (unsigned char*) mdev->base);
+
+        global_pat_index++;
+ 
+
+#endif
+
 }
 
 /* Purge selected entries from the pattern cache. */
