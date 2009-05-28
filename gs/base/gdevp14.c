@@ -45,6 +45,7 @@
 #include "vdtrace.h"
 #include "gscolorbuffer.h"
 #include "gsptype2.h"
+#include "gxpcolor.h"
 
 /* Visual  trace options : set one to 1. */
 #define VD_PAINT_MASK 0
@@ -1017,6 +1018,42 @@ static const gx_cm_color_map_procs *
 pdf14_cmykspot_get_color_mapping_procs(const gx_device * dev)
 {
     return &pdf14_DeviceCMYKspot_procs;
+}
+
+
+/* Used to passed along information about the buffer created by the
+   pdf14 device.  This is used by the pattern accumulator when the
+   pattern contains transparency */
+int 
+pdf14_get_buffer_information(const gx_device * dev, gx_pattern_trans_t *transbuff){
+
+    const pdf14_device * pdev = (pdf14_device *)dev;
+    pdf14_buf *buf = pdev->ctx->stack;
+    gs_int_rect rect = buf->rect;
+    int x1,y1,width,height;
+    byte *buf_ptr;
+
+    rect_intersect(rect, buf->bbox);
+    x1 = min(pdev->width, rect.q.x);
+    y1 = min(pdev->height, rect.q.y);
+    width = x1 - rect.p.x;
+    height = y1 - rect.p.y;
+    if (width <= 0 || height <= 0 || buf->data == NULL)
+	return 0;
+    buf_ptr = buf->data + rect.p.y * buf->rowstride + rect.p.x;
+
+    transbuff->pdev14 = pdev;
+    transbuff->n_chan = buf->n_chan;
+    transbuff->planestride = buf->planestride;
+    transbuff->rowstride = buf->rowstride;
+    transbuff->transbytes = buf_ptr;
+    transbuff->width = width;
+    transbuff->height = height;
+
+    transbuff->rect = rect;
+
+    return(0);
+
 }
 
 /**

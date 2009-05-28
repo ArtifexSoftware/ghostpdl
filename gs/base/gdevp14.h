@@ -17,6 +17,7 @@
 #  define gdevp14_INCLUDED
 
 #include "gxcmap.h"
+#include "gxpcolor.h"
 
 typedef enum {
     PDF14_DeviceGray = 0,
@@ -223,5 +224,11 @@ int send_pdf14trans(gs_imager_state * pis, gx_device * dev,
 int
 pdf14_put_devn_params(gx_device * pdev, gs_devn_params * pdevn_params,
 	       				gs_param_list * plist);
+
+/* Used to passed along information about the buffer created by the
+   pdf14 device.  This is used by the pattern accumulator when the
+   pattern contains transparency */
+
+int pdf14_get_buffer_information(const gx_device * dev, gx_pattern_trans_t *transbuff);
 
 #endif /* gdevp14_INCLUDED */
