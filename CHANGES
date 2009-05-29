@@ -1,3 +1,7 @@
+Version 0.11 (unreleased)
+
+ * no changes recorded
+
 Version 0.10 (2009 May 28)
 
  * Security fix for malicious symbol dictionaries CVE-2009-0196
@@ -5,8 +9,8 @@ Version 0.10 (2009 May 28)
  * Dynamically allocate huffman symbol length histogram to save space
  * Support aggregate symbol coding
  * Work around invalid Xerox WorkCentre streams which write the
-   final segment length as -1.
- * Fix an issue with huffman table runcodes.
+   final segment length as -1
+ * Fix an issue with huffman table runcodes
 
 Version 0.9 (2006 July 27)
 
