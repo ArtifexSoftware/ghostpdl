@@ -446,6 +446,12 @@ pattern_accum_close(gx_device * dev)
         gs_free_object(mem, padev->mask, "pattern_accum_close(mask)");
         padev->mask = 0;
     }
+
+    if (padev->transbuff != 0) {
+        gs_free_object(mem,padev->target,"pattern_accum_colose(transbuff)");
+        padev->transbuff = NULL;
+    }
+
     /* Un-retain the device now, so reference counting will free it. */
     gx_device_retain(dev, false);
     return 0;
