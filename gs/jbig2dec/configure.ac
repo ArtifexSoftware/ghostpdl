@@ -1,16 +1,15 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT([jbig2dec], [0.9pre], [jbig2-dev@ghostscript.com])
+AC_INIT([jbig2dec], [0.10], [jbig2-dev@ghostscript.com])
 AC_PREREQ(2.53)
 AC_CONFIG_SRCDIR([jbig2dec.c])
 
 AM_INIT_AUTOMAKE([-Wall])
 AM_CONFIG_HEADER(config.h)
 
-dnl AC_REVISION([$Rev$])
-
 # Checks for programs.
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_RANLIB
 
 # platform specific compiler flags

@@ -1,22 +1,19 @@
 /*
     jbig2dec
-    
+
     Copyright (C) 2002-2005 Artifex Software, Inc.
-    
+
     This software is provided AS-IS with no warranty,
     either express or implied.
-                                                                                
+
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
     authorized under the terms of the license contained in
     the file LICENSE in this distribution.
-                                                                                
-    For information on commercial licensing, go to
-    http://www.artifex.com/licensing/ or contact
-    Artifex Software, Inc.,  101 Lucas Valley Road #110,
+
+    For further licensing information refer to http://artifex.com/ or
+    contact Artifex Software, Inc., 7 Mt. Lassen Drive - Suite A-134,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
-                                                                                
-    $Id$
 */
 
 /**
@@ -25,7 +22,7 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif 
+#endif
 #include "os_types.h"
 
 #include <stddef.h>
@@ -540,7 +537,7 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
   return -1;
 }
 
-/** 
+/**
  * Handler for immediate generic region segments
  */
 int
@@ -602,7 +599,7 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
   jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
     "allocated %d x %d image buffer for region decode results",
         rsi.width, rsi.height);
-    
+
   if (params.MMR)
     {
       code = jbig2_decode_generic_mmr(ctx, segment, &params,
@@ -627,10 +624,9 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
       jbig2_free(ctx->allocator, GB_stats);
     }
 
-  jbig2_page_add_result(ctx, &ctx->pages[ctx->current_page], 
+  jbig2_page_add_result(ctx, &ctx->pages[ctx->current_page],
 			image, rsi.x, rsi.y, JBIG2_COMPOSE_OR);
   jbig2_image_release(ctx, image);
-  
+
   return code;
 }
-

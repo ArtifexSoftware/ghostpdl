@@ -1,22 +1,19 @@
 /*
     jbig2dec
-    
+
     Copyright (C) 2004 Artifex Software, Inc.
-    
+
     This software is provided AS-IS with no warranty,
     either express or implied.
-                                                                                
+
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
     authorized under the terms of the license contained in
     the file LICENSE in this distribution.
-                                                                                
-    For information on commercial licensing, go to
-    http://www.artifex.com/licensing/ or contact
-    Artifex Software, Inc.,  101 Lucas Valley Road #110,
+
+    For further licensing information refer to http://artifex.com/ or
+    contact Artifex Software, Inc., 7 Mt. Lassen Drive - Suite A-134,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
-                                                                                
-    $Id$
 */
 
 /**
@@ -25,7 +22,7 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif 
+#endif
 #include "os_types.h"
 
 #include <stddef.h>
@@ -37,7 +34,6 @@
 #include "jbig2_priv.h"
 #include "jbig2_arith.h"
 #include "jbig2_generic.h"
-#include "jbig2_mmr.h"
 #include "jbig2_image.h"
 
 static int
@@ -72,11 +68,11 @@ jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
   for (y = 0; y < GRH; y++) {
     for (x = 0; x < GRW; x++) {
       CONTEXT = 0;
-      CONTEXT |= jbig2_image_get_pixel(image, x - 1, y + 0) << 0; 
-      CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 1) << 1; 
-      CONTEXT |= jbig2_image_get_pixel(image, x + 0, y - 1) << 2; 
-      CONTEXT |= jbig2_image_get_pixel(image, x + params->grat[0], 
-	y + params->grat[1]) << 3; 
+      CONTEXT |= jbig2_image_get_pixel(image, x - 1, y + 0) << 0;
+      CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 1) << 1;
+      CONTEXT |= jbig2_image_get_pixel(image, x + 0, y - 1) << 2;
+      CONTEXT |= jbig2_image_get_pixel(image, x + params->grat[0],
+	y + params->grat[1]) << 3;
       CONTEXT |= jbig2_image_get_pixel(ref, x-dx+1, y-dy+1) << 4;
       CONTEXT |= jbig2_image_get_pixel(ref, x-dx+0, y-dy+1) << 5;
       CONTEXT |= jbig2_image_get_pixel(ref, x-dx-1, y-dy+1) << 6;
@@ -85,13 +81,13 @@ jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
       CONTEXT |= jbig2_image_get_pixel(ref, x-dx-1, y-dy+0) << 9;
       CONTEXT |= jbig2_image_get_pixel(ref, x-dx+1, y-dy-1) << 10;
       CONTEXT |= jbig2_image_get_pixel(ref, x-dx+0, y-dy-1) << 11;
-      CONTEXT |= jbig2_image_get_pixel(ref, x-dx+params->grat[2], 
+      CONTEXT |= jbig2_image_get_pixel(ref, x-dx+params->grat[2],
 	y-dy+params->grat[3]) << 12;
       bit = jbig2_arith_decode(as, &GR_stats[CONTEXT]);
       jbig2_image_set_pixel(image, x, y, bit);
     }
   }
-#ifdef JBIG2_DEBUG
+#ifdef JBIG2_DEBUG_DUMP
   {
     static count = 0;
     char name[32];
@@ -127,10 +123,10 @@ jbig2_decode_refinement_template1_unopt(Jbig2Ctx *ctx,
   for (y = 0; y < GRH; y++) {
     for (x = 0; x < GRW; x++) {
       CONTEXT = 0;
-      CONTEXT |= jbig2_image_get_pixel(image, x - 1, y + 0) << 0; 
-      CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 1) << 1; 
-      CONTEXT |= jbig2_image_get_pixel(image, x + 0, y - 1) << 2; 
-      CONTEXT |= jbig2_image_get_pixel(image, x - 1, y - 1) << 3; 
+      CONTEXT |= jbig2_image_get_pixel(image, x - 1, y + 0) << 0;
+      CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 1) << 1;
+      CONTEXT |= jbig2_image_get_pixel(image, x + 0, y - 1) << 2;
+      CONTEXT |= jbig2_image_get_pixel(image, x - 1, y - 1) << 3;
       CONTEXT |= jbig2_image_get_pixel(ref, x-dx+1, y-dy+1) << 4;
       CONTEXT |= jbig2_image_get_pixel(ref, x-dx+0, y-dy+1) << 5;
       CONTEXT |= jbig2_image_get_pixel(ref, x-dx+1, y-dy+0) << 6;
@@ -142,7 +138,7 @@ jbig2_decode_refinement_template1_unopt(Jbig2Ctx *ctx,
     }
   }
 
-#ifdef JBIG2_DEBUG
+#ifdef JBIG2_DEBUG_DUMP
   {
     static count = 0;
     char name[32];
@@ -197,9 +193,9 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
       const int minor_width = GRW - x > 8 ? 8 : GRW - x;
 
       if (y >= 1) {
-	line_m1 = (line_m1 << 8) | 
+	line_m1 = (line_m1 << 8) |
 	  (x + 8 < GRW ? grreg_line[-stride + (x >> 3) + 1] : 0);
-	refline_m1 = (refline_m1 << 8) | 
+	refline_m1 = (refline_m1 << 8) |
 	  (x + 8 < GRW ? grref_line[-refstride + (x >> 3) + 1] << 2 : 0);
       }
 
@@ -275,7 +271,7 @@ jbig2_decode_refinement_region(Jbig2Ctx *ctx,
     return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
         "decode_refinement_region: typical prediction coding NYI");
   if (params->GRTEMPLATE)
-    return jbig2_decode_refinement_template1_unopt(ctx, segment, params, 
+    return jbig2_decode_refinement_template1_unopt(ctx, segment, params,
                                              as, image, GR_stats);
   else
     return jbig2_decode_refinement_template0_unopt(ctx, segment, params,
@@ -294,7 +290,7 @@ jbig2_region_find_referred(Jbig2Ctx *ctx,Jbig2Segment *segment)
   int index;
 
   for (index = 0; index < nsegments; index++) {
-    rsegment = jbig2_find_segment(ctx, 
+    rsegment = jbig2_find_segment(ctx,
       segment->referred_to_segments[index]);
     if (rsegment == NULL) {
       jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
@@ -317,7 +313,7 @@ jbig2_region_find_referred(Jbig2Ctx *ctx,Jbig2Segment *segment)
   return NULL;
 }
 
-/** 
+/**
  * Handler for generic refinement region segments
  */
 int
@@ -328,7 +324,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
   Jbig2RegionSegmentInfo rsi;
   int offset = 0;
   byte seg_flags;
-  
+
   /* 7.4.7 */
   if (segment->data_length < 18)
     return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
@@ -362,7 +358,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     params.grat[2] = segment_data[offset + 2];
     params.grat[3] = segment_data[offset + 3];
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
-                   "grat1: (%d, %d) grat2: (%d, %d)", 
+                   "grat1: (%d, %d) grat2: (%d, %d)",
                    params.grat[0], params.grat[1],
                    params.grat[2], params.grat[3]);
     offset += 4;
@@ -376,7 +372,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     if (ref == NULL)
       return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
         "could not find reference bitmap!");
-    /* the reference bitmap is the result of a previous 
+    /* the reference bitmap is the result of a previous
        intermediate region segment; the reference selection
        rules say to use the first one available, and not to
        reuse any intermediate result, so we simply clone it
@@ -388,7 +384,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
       "found reference bitmap in segment %d", ref->number);
   } else {
     /* the reference is just (a subset of) the page buffer */
-    params.reference = jbig2_image_clone(ctx, 
+    params.reference = jbig2_image_clone(ctx,
       ctx->pages[ctx->current_page].image);
     /* TODO: subset the image if appropriate */
   }

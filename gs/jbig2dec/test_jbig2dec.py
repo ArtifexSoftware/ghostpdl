@@ -1,12 +1,60 @@
 #! /usr/bin/env python
 
 # this is the testtest script for jbig2dec
-# $Id$
 
 import os, re
-import unittest
+import sys, time
 
-class KnownFileHash(unittest.TestCase):
+class SelfTest:
+  'generic class for self tests'
+  def __init__(self):
+    self.result = 'unrun'
+    self.msg = ''
+  def shortDescription(self):
+    'returns a short name for the test'
+    return "generic self test"
+  def runTest(self):
+    'call this to execute the test'
+    pass
+  def fail(self, msg=None):
+    self.result = 'FAIL'
+    self.msg = msg
+  def failIf(self, check, msg=None):
+    if check: self.fail(msg)
+  def assertEqual(self, a, b, msg=None):
+    if a != b: self.fail(msg)
+
+class SelfTestSuite:
+  'generic class for running a collection of SelfTest instances'
+  def __init__(self, stream=sys.stderr):
+    self.stream = stream
+    self.tests = []
+    self.fails = []
+    self.xfails = []
+    self.errors = []
+  def addTest(self, test):
+    self.tests.append(test)
+  def run(self):
+    starttime = time.time()
+    for test in self.tests:
+      self.stream.write("%s ... " % test.shortDescription())
+      test.result = 'ok'
+      test.runTest()
+      if test.result != 'ok':
+        self.fails.append(test)
+      self.stream.write("%s\n" % test.result)
+    stoptime = time.time()
+    self.stream.write('-'*72 + '\n')
+    self.stream.write('ran %d tests in %.3f seconds\n\n' % 
+	(len(self.tests), stoptime - starttime))
+    if len(self.fails):
+      self.stream.write('FAILED %d of %d tests\n' % 
+	(len(self.fails),len(self.tests)))
+    else:
+      self.stream.write('PASSED all %d tests\n' % len(self.tests))
+
+class KnownFileHash(SelfTest):
+  'self test to check for correct decode of known test files'
 
   # hashes of known test inputs
   known_042_DECODED = "ebfdf6e2fc5ff3ee2271c2fa19de0e52712046e8"
@@ -101,10 +149,10 @@ class KnownFileHash(unittest.TestCase):
                         "ff373f070f5f405b732c53ffffff087eff22ff5b") )
 
   def __init__(self, file, file_hash, decode_hash):
+    SelfTest.__init__(self)
     self.file = file
     self.file_hash = file_hash
     self.decode_hash = decode_hash
-    unittest.TestCase.__init__(self)
 
   def shortDescription(self):
     return "Checking '%s' for correct decoded document hash" % self.file
@@ -126,7 +174,7 @@ class KnownFileHash(unittest.TestCase):
         return
     self.fail('document hash was not found in the output')
 
-suite = unittest.TestSuite()
+suite = SelfTestSuite()
 for filename, file_hash, decode_hash in KnownFileHash.known_hashes:
   # only add tests for files we can find
   if not os.access(filename, os.R_OK): continue
@@ -135,8 +183,5 @@ for filename, file_hash, decode_hash in KnownFileHash.known_hashes:
 
 # run the defined tests if we're called as a script
 if __name__ == "__main__":
-    import sys
-    verbosity = 2
-    runner = unittest.TextTestRunner(verbosity=verbosity)
-    result = runner.run(suite)
-    sys.exit(not result.wasSuccessful())
+    result = suite.run()
+    sys.exit(not result)

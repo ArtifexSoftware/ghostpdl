@@ -1,24 +1,21 @@
 /*
     jbig2dec
-    
+
     Copyright (C) 2002-2008 Artifex Software, Inc.
-    
+
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
     authorized under the terms of the license contained in
     the file LICENSE in this distribution.
-                                                                                
-    For information on commercial licensing, go to
-    http://www.artifex.com/licensing/ or contact
-    Artifex Software, Inc.,  101 Lucas Valley Road #110,
-    San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-    $Id$
+    For further licensing information refer to http://artifex.com/ or
+    contact Artifex Software, Inc., 7 Mt. Lassen Drive - Suite A-134,
+    San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif 
+#endif
 #include "os_types.h"
 
 #include <stddef.h>
@@ -79,14 +76,14 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     Jbig2HuffmanTable *SBSYMCODES = NULL;
     int code = 0;
     int RI;
-    
+
     SBNUMSYMS = 0;
     for (index = 0; index < n_dicts; index++) {
         SBNUMSYMS += dicts[index]->n_symbols;
     }
     jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
         "symbol list contains %d glyphs in %d dictionaries", SBNUMSYMS, n_dicts);
-    
+
     if (params->SBHUFF) {
 	Jbig2HuffmanTable *runcodes;
 	Jbig2HuffmanParams runcodeparams;
@@ -141,14 +138,14 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	    len = code;
 	    range = 1;
 	  } else {
-	    if (index < 1) {
-	      jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-		"error decoding symbol id table: run length with no antecedent!");
-	      /* todo: memory cleanup */
-	      return -1;
-	    }
 	    if (code == 32) {
 	      len = symcodelengths[index-1].PREFLEN;
+	      if (index < 1) {
+		jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	 	  "error decoding symbol id table: run length with no antecedent!");
+	        /* todo: memory cleanup */
+	        return -1;
+	      }
 	    } else {
 	      len = 0; /* code == 33 or 34 */
 	    }
@@ -165,8 +162,8 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	    range = SBNUMSYMS - index;
 	  }
 	  for (r = 0; r < range; r++) {
-	    symcodelengths[index+r].PREFLEN = len; 
-	    symcodelengths[index+r].RANGELEN = 0; 
+	    symcodelengths[index+r].PREFLEN = len;
+	    symcodelengths[index+r].RANGELEN = 0;
 	    symcodelengths[index+r].RANGELOW = index + r;
 	  }
 	  index += r;
@@ -198,7 +195,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 
     /* 6.4.5 (1) */
     jbig2_image_clear(ctx, image, params->SBDEFPIXEL);
-    
+
     /* 6.4.6 */
     if (params->SBHUFF) {
         STRIPT = jbig2_huffman_get(hs, params->SBHUFFDT, &code);
@@ -210,7 +207,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     STRIPT *= -(params->SBSTRIPS);
     FIRSTS = 0;
     NINSTANCES = 0;
-    
+
     /* 6.4.5 (3) */
     while (NINSTANCES < params->SBNUMINSTANCES) {
         /* (3b) */
@@ -221,7 +218,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
         }
         DT *= params->SBSTRIPS;
         STRIPT += DT;
-       
+
 	first_symbol = TRUE;
 	/* 6.4.5 (3c) - decode symbols in strip */
 	for (;;) {
@@ -293,7 +290,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		Jbig2RefinementRegionParams rparams;
 		Jbig2Image *IBO;
 		int32_t RDW, RDH, RDX, RDY;
-		Jbig2Image *image;
+		Jbig2Image *refimage;
 		int BMSIZE = 0;
 
 		/* 6.4.11 (1, 2, 3, 4) */
@@ -313,8 +310,8 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 
 		/* 6.4.11 (6) */
 		IBO = IB;
-		image = jbig2_image_new(ctx, IBO->width + RDW,
-					     IBO->height + RDH);
+		refimage = jbig2_image_new(ctx, IBO->width + RDW,
+						IBO->height + RDH);
 
 		/* Table 12 */
 		rparams.GRTEMPLATE = params->SBRTEMPLATE;
@@ -324,8 +321,8 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		rparams.TPGRON = 0;
 		memcpy(rparams.grat, params->sbrat, 4);
 		jbig2_decode_refinement_region(ctx, segment,
-		    &rparams, as, image, GR_stats);
-		IB = image;
+		    &rparams, as, refimage, GR_stats);
+		IB = refimage;
 
 		jbig2_image_release(ctx, IBO);
 
@@ -335,17 +332,17 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		}
 
 	    }
-        
+
 	    /* (3c.vi) */
 	    if ((!params->TRANSPOSED) && (params->REFCORNER > 1)) {
 		CURS += IB->width - 1;
 	    } else if ((params->TRANSPOSED) && !(params->REFCORNER & 1)) {
 		CURS += IB->height - 1;
 	    }
-        
+
 	    /* (3c.vii) */
 	    S = CURS;
-        
+
 	    /* (3c.viii) */
 	    if (!params->TRANSPOSED) {
 		switch (params->REFCORNER) {  /* FIXME: double check offsets */
@@ -362,23 +359,23 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		case JBIG2_CORNER_BOTTOMRIGHT: y = S - IB->width + 1; x = T - IB->height + 1; break;
 		}
 	    }
-        
+
 	    /* (3c.ix) */
 #ifdef JBIG2_DEBUG
 	    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-			"composing glyph id %d: %dx%d @ (%d,%d) symbol %d/%d", 
+			"composing glyph id %d: %dx%d @ (%d,%d) symbol %d/%d",
 			ID, IB->width, IB->height, x, y, NINSTANCES + 1,
 			params->SBNUMINSTANCES);
 #endif
 	    jbig2_image_compose(ctx, image, IB, x, y, params->SBCOMBOP);
-        
+
 	    /* (3c.x) */
 	    if ((!params->TRANSPOSED) && (params->REFCORNER < 2)) {
 		CURS += IB->width -1 ;
 	    } else if ((params->TRANSPOSED) && (params->REFCORNER & 1)) {
 		CURS += IB->height - 1;
 	    }
-        
+
 	    /* (3c.xi) */
 	    NINSTANCES++;
 
@@ -390,8 +387,8 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 
     if (params->SBHUFF) {
       jbig2_release_huffman_table(ctx, SBSYMCODES);
-    } 
-    
+    }
+
     return 0;
 }
 
@@ -411,22 +408,22 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     uint16_t huffman_flags = 0;
     Jbig2ArithCx *GR_stats = NULL;
     int code = 0;
-    Jbig2WordStream *ws = NULL; 
-    Jbig2ArithState *as = NULL; 
-    
+    Jbig2WordStream *ws = NULL;
+    Jbig2ArithState *as = NULL;
+
     /* 7.4.1 */
     if (segment->data_length < 17)
         goto too_short;
     jbig2_get_region_segment_info(&region_info, segment_data);
     offset += 17;
-    
+
     /* 7.4.3.1.1 */
     flags = jbig2_get_int16(segment_data + offset);
     offset += 2;
 
     jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
 	"text region header flags 0x%04x", flags);
-    
+
     params.SBHUFF = flags & 0x0001;
     params.SBREFINE = flags & 0x0002;
     params.LOGSBSTRIPS = (flags & 0x000c) >> 2;
@@ -450,7 +447,7 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         /* 7.4.3.1.2 */
         huffman_flags = jbig2_get_int16(segment_data + offset);
         offset += 2;
-        
+
         if (huffman_flags & 0x8000)
             jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
                 "reserved bit 15 of text region huffman flags is not zero");
@@ -465,20 +462,19 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
             params.sbrat[2] = segment_data[offset + 2];
             params.sbrat[3] = segment_data[offset + 3];
             offset += 4;
-          } else {
-              /* sbrat is meaningless if SBRTEMPLATE is true, but set a value
-                 to avoid confusion if anybody looks */ 
-              memset(params.sbrat, 0, sizeof(params.sbrat));
-          }
+	  } else {
+	    /* zero these for the sake of later debug messages */
+	    memset(params.sbrat, 0, sizeof(params.sbrat));
+	  }
       }
-    
+
     /* 7.4.3.1.4 */
     params.SBNUMINSTANCES = jbig2_get_int32(segment_data + offset);
     offset += 4;
-    
+
     if (params.SBHUFF) {
         /* 7.4.3.1.5 - Symbol ID Huffman table */
-	/* ...this is handled in the segment body decoder */	
+	/* ...this is handled in the segment body decoder */
 
         /* 7.4.3.1.6 - Other Huffman table selection */
 	switch (huffman_flags & 0x0003) {
@@ -630,12 +626,12 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 		"text region uses custom RSIZE huffman table (NYI)");
 	    break;
 	}
-	
+
         if (huffman_flags & 0x8000) {
 	  jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
  	    "text region huffman flags bit 15 is set, contrary to spec");
 	}
-        
+
         /* 7.4.3.1.7 */
         /* For convenience this is done in the body decoder routine */
     }
@@ -644,7 +640,7 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         "text region: %d x %d @ (%d,%d) %d symbols",
         region_info.width, region_info.height,
         region_info.x, region_info.y, params.SBNUMINSTANCES);
-    
+
     /* 7.4.3.2 (2) - compose the list of symbol dictionaries */
     n_dicts = jbig2_sd_count_referred(ctx, segment);
     if (n_dicts != 0) {
@@ -660,7 +656,7 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     } else {
 	int index;
 	if (dicts[0] == NULL) {
-	    return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, 
+	    return jbig2_error(ctx, JBIG2_SEVERITY_WARNING,
 			segment->number,
                         "unable to find first referenced symbol dictionary!");
 	}
@@ -749,17 +745,17 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         segment->result = image;
     } else {
         /* otherwise composite onto the page */
-        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, 
+        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
             "composing %dx%d decoded text region onto page at (%d, %d)",
             region_info.width, region_info.height, region_info.x, region_info.y);
 	jbig2_page_add_result(ctx, &ctx->pages[ctx->current_page], image,
 			      region_info.x, region_info.y, region_info.op);
         jbig2_image_release(ctx, image);
     }
-    
-    /* success */            
+
+    /* success */
     return 0;
-    
+
     too_short:
         return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
                     "Segment too short");
