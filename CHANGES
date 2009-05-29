@@ -1,4 +1,4 @@
-Version 0.10 (unreleased)
+Version 0.10 (2009 May 28)
 
  * Security fix for malicious symbol dictionaries CVE-2009-0196
  * Fix various resource leaks and error handling issues
