@@ -24,12 +24,9 @@
 
 void gsicc_create();
 void gsicc_destroy();
-int gsicc_set_default_profile(const gs_imager_state * pis, gs_param_string * pval, 
-                          gsicc_devicecolor_t defaulttype);
+int gsicc_set_profile(const gs_imager_state * pis, gs_param_string * pval, 
+                          gsicc_profile_t profilettype);
 void gsicc_set_device_profile(gs_imager_state *pis, gx_device * pdev, gs_memory_t * mem);
-void gsicc_set_device_named_color_profile(cmm_profile_t nameprofile);
-void gsicc_set_device_linked_profile(cmm_profile_t outputlinkedprofile );
-void gsicc_set_proof_profile(cmm_profile_t proofprofile );
 void gsicc_load_default_device_profile(int numchannels);
 void gsicc_load_default_input_profile(int numchannels);
 

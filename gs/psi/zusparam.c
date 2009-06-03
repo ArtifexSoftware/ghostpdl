@@ -38,6 +38,7 @@
 #include "igstate.h"
 #include "gscms.h"
 #include "gsiccmanage.h"
+#include "gsparamx.h"
 
 /* The (global) font directory */
 extern gs_font_dir *ifont_dir;	/* in zfont.c */
@@ -447,10 +448,41 @@ set_GridFitTT(i_ctx_t *i_ctx_p, long val)
     return 0;
 }
 
+/* No default for the proofing profile.  It would
+   seem that I should be able to set the default
+   operator to NULL but this introduces issues */
+
+static void
+current_default_proof_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    static const char *const rfs = "NULL";
+    pval->data = (const byte *)rfs;
+    pval->size = strlen(rfs);
+    pval->persistent = true;
+}
+
+static int
+set_proof_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    int code;
+
+    /* Check if it was "NULL" */
+
+    if( !gs_param_string_eq(pval,"NULL") ){
+
+        code = gsicc_set_profile((gs_imager_state *) igs,pval,PROOF_TYPE);
+        return(code);
+
+    }
+
+    return(0);
+
+}
+
 static void
 current_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    static const char *const rfs = "./my_icc_profiles/gray.icm";
+    static const char *const rfs = "./my_icc_profiles/sgray.icc";
     pval->data = (const byte *)rfs;
     pval->size = strlen(rfs);
     pval->persistent = true;
@@ -461,7 +493,7 @@ set_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
     int code;
 
-    code = gsicc_set_default_profile((gs_imager_state *) igs,pval,DEFAULT_GRAY);
+    code = gsicc_set_profile((gs_imager_state *) igs,pval,DEFAULT_GRAY);
 
     return(code);
 
@@ -470,7 +502,7 @@ set_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 static void
 current_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    static const char *const rfs = "./my_icc_profiles/srgb.icm";
+    static const char *const rfs = "./my_icc_profiles/srgb.icc";
     pval->data = (const byte *)rfs;
     pval->size = strlen(rfs);
     pval->persistent = true;
@@ -481,16 +513,75 @@ set_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
     int code;
 
-    code = gsicc_set_default_profile((gs_imager_state *) igs,pval,DEFAULT_RGB);
+    code = gsicc_set_profile((gs_imager_state *) igs,pval,DEFAULT_RGB);
 
     return(code);
 
 }
 
+
+static void
+current_default_link_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    static const char *const rfs = "NULL";
+    pval->data = (const byte *)rfs;
+    pval->size = strlen(rfs);
+    pval->persistent = true;
+}
+
+static int
+set_link_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    int code;
+
+    /* Check if it was "NULL" */
+
+    if( !gs_param_string_eq(pval,"NULL") ){
+
+        code = gsicc_set_profile((gs_imager_state *) igs,pval,LINKED_TYPE);
+        return(code);
+
+    }
+
+    return(0);
+
+}
+
+
+static void
+current_default_named_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    static const char *const rfs = "NULL";
+    pval->data = (const byte *)rfs;
+    pval->size = strlen(rfs);
+    pval->persistent = true;
+}
+
+static int
+set_named_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+
+    int code;
+
+    /* Check if it was "NULL" */
+
+    if( !gs_param_string_eq(pval,"NULL") ){
+
+        code = gsicc_set_profile((gs_imager_state *) igs,pval,NAMED_TYPE);
+        return(code);
+
+    }
+
+    return(0);
+
+}
+
+
+
 static void
 current_default_cmyk_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    static const char *const rfs = "./my_icc_profiles/cmyk.icm";
+    static const char *const rfs = "./my_icc_profiles/swopcmyk.icc";
     pval->data = (const byte *)rfs;
     pval->size = strlen(rfs);
     pval->persistent = true;
@@ -501,7 +592,7 @@ set_default_cmyk_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
     int code;
 
-    code = gsicc_set_default_profile((gs_imager_state *) igs,pval,DEFAULT_CMYK);
+    code = gsicc_set_profile((gs_imager_state *) igs,pval,DEFAULT_CMYK);
 
     return(code);
 
@@ -541,7 +632,10 @@ static const string_param_def_t user_string_params[] =
 {
     {"DefaultGrayProfile", current_default_gray_icc, set_default_gray_icc},
     {"DefaultRGBProfile", current_default_rgb_icc, set_default_rgb_icc},
-    {"DefaultCMKYProfile", current_default_cmyk_icc, set_default_cmyk_icc}
+    {"DefaultCMKYProfile", current_default_cmyk_icc, set_default_cmyk_icc},
+    {"ProofProfile", current_default_proof_icc, set_proof_profile_icc},
+    {"NamedProfile", current_default_named_icc, set_named_profile_icc},
+    {"DeviceLinkProfile", current_default_link_icc, set_link_profile_icc}
 
 };
 
@@ -680,7 +774,8 @@ const op_def zusparam_op_defs[] =
 static int
 setparams(i_ctx_t *i_ctx_p, gs_param_list * plist, const param_set * pset)
 {
-    int i, code;
+    int code;
+    unsigned int i;
 
     for (i = 0; i < pset->long_count; i++) {
 	const long_param_def_t *pdef = &pset->long_defs[i];
@@ -750,7 +845,8 @@ current_param_list(i_ctx_t *i_ctx_p, const param_set * pset,
 {
     stack_param_list list;
     gs_param_list *const plist = (gs_param_list *)&list;
-    int i, code = 0;
+    int code = 0;
+    unsigned int i;
 
     stack_param_list_write(&list, &o_stack, NULL, iimemory);
     for (i = 0; i < pset->long_count; i++) {

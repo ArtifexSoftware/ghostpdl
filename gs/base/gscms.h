@@ -86,8 +86,12 @@ typedef enum {
 typedef enum {
     DEFAULT_GRAY,
     DEFAULT_RGB,
-    DEFAULT_CMYK
-} gsicc_devicecolor_t;
+    DEFAULT_CMYK,
+    PROOF_TYPE,
+    NAMED_TYPE,
+    LINKED_TYPE
+
+} gsicc_profile_t;
 
 /* A structure that is a member variable of the gs color space.
    See 
@@ -97,7 +101,7 @@ typedef enum {
 typedef struct cmm_profile_s {
 
     void *profile_handle;                          /* The profile handle to be used in linking */
-    unsigned char *buffer;                         /* A buffer with ICC profile content */
+    byte *buffer;                         /* A buffer with ICC profile content */
     int64_t hashcode;                               /* A hash code for the icc profile */
     bool hash_is_valid;
 
@@ -176,6 +180,8 @@ typedef struct gsicc_manager_s {
     cmm_profile_t *default_cmyk;    /* Default CMYK profile for device CMKY */
     cmm_profile_t *proof_profile;   /* Profiling profile */
     cmm_profile_t *output_link;     /* Output device Link profile */
+    gs_memory_t *memory;            
+
 
 } gsicc_manager_t;
 

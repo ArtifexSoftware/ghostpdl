@@ -28,10 +28,10 @@
 
 
 /* profile data structure */
+/* profile_handle should NOT be garbage collected */
 
-gs_private_st_ptrs2(st_gsicc_profile, cmm_profile_t, "gsicc_profile",
-		    gsicc_profile_enum_ptrs, gsicc_profile_reloc_ptrs,
-		    profile_handle, buffer);
+gs_private_st_ptrs1(st_gsicc_profile, cmm_profile_t, "gsicc_profile",
+		    gsicc_profile_enum_ptrs, gsicc_profile_reloc_ptrs,buffer);
 
 gs_private_st_ptrs7(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
 		    gsicc_manager_enum_ptrs, gsicc_manager_profile_reloc_ptrs,
@@ -81,12 +81,11 @@ gsicc_destroy()
 
 /*  This computes the hash code for the
     ICC data and assigns the code
-    and the profile to either DefaultGray,
-    DefaultRGB, or DefaultCMYK
+    and the profile to the appropriate
     member variable in the ICC manager */
 
 int 
-gsicc_set_default_profile(const gs_imager_state * pis, gs_param_string * pval, gsicc_devicecolor_t defaulttype)
+gsicc_set_profile(const gs_imager_state * pis, gs_param_string * pval, gsicc_profile_t defaulttype)
 {
 
     gsicc_manager_t *icc_manager = pis->icc_manager;
@@ -98,9 +97,11 @@ gsicc_set_default_profile(const gs_imager_state * pis, gs_param_string * pval, g
     gs_memory_t *mem = pis->memory;
     int code;
 
-    pdata = gs_alloc_bytes(mem, pval->size,
-		   		 "gsicc_set_default_profile");
+    pdata = gs_alloc_bytes(mem, pval->size+1,
+		   		 "gsicc_set_profile");
 
+    memcpy(pdata,pval->data,pval->size);
+    pdata[pval->size] = 0;
     profile_file = (const char *)pdata;
  
     /* For now only let this be set once. 
@@ -129,6 +130,24 @@ gsicc_set_default_profile(const gs_imager_state * pis, gs_param_string * pval, g
 
              break;
 
+        case PROOF_TYPE:
+
+             mananger_default_profile = &(icc_manager->proof_profile);
+
+             break;
+
+        case NAMED_TYPE:
+
+             mananger_default_profile = &(icc_manager->device_named);
+
+             break;
+
+        case LINKED_TYPE:
+
+             mananger_default_profile = &(icc_manager->output_link);
+
+             break;
+
     }
 
     /* If it is not NULL then it has already been set
@@ -143,11 +162,12 @@ gsicc_set_default_profile(const gs_imager_state * pis, gs_param_string * pval, g
 
         str = sfopen(profile_file, "rb", mem);
 
-        if (str != NULL){
+       if (str != NULL){
 
             icc_profile = gsicc_profile_new(str, mem);
             code = sfclose(str);
-            *mananger_default_profile = icc_profile;
+            //*mananger_default_profile = icc_profile;
+
 
             /* Get the profile handle */
 
@@ -160,7 +180,7 @@ gsicc_set_default_profile(const gs_imager_state * pis, gs_param_string * pval, g
             icc_profile->hash_is_valid = true;
 
              gs_free_object(mem, (byte *)pdata,
-	                "gsicc_set_default_profile");
+	                "gsicc_set_profile");
              
             return(0);
            
@@ -168,8 +188,7 @@ gsicc_set_default_profile(const gs_imager_state * pis, gs_param_string * pval, g
 
     }
 
-     gs_free_object(mem, (byte *)pdata,
-            "gsicc_set_default_profile");
+    gs_free_object(mem, (byte *)pdata,"gsicc_set_profile");
      
      return(1);
 
@@ -237,31 +256,7 @@ gsicc_set_device_profile(gs_imager_state *pis, gx_device * pdev, gs_memory_t * m
     
 }
 
-/* Set the named color profile in the Device manager */
 
-void 
-gsicc_set_device_named_color_profile(cmm_profile_t nameprofile)
-{
-
-
-}
-
-/* Set the ouput device linked profile */
-
-void 
-gsicc_set_device_linked_profile(cmm_profile_t outputlinkedprofile )
-{
-
-}
-
-/* Set the proofing profile, extract the header and compute
-   its hash code */
-
-void 
-gsicc_set_proof_profile(cmm_profile_t proofprofile )
-{
-
-}
 
 /*  This will occur only if the device did not
     return a profie when asked for one.  This
@@ -332,7 +327,7 @@ gsicc_profile_new(stream *s, gs_memory_t *memory)
         gs_free_object(memory, result, "gsicc_profile_new");
         return NULL;
 
-    } 
+    }
 
     result->profile_handle = NULL;
     result->hash_is_valid = false;
@@ -360,6 +355,7 @@ gsicc_manager_new(gs_memory_t *memory)
    result->output_link = NULL;
    result->device_profile = NULL;
    result->proof_profile = NULL;
+   result->memory = NULL;
 
    return(result);
 
