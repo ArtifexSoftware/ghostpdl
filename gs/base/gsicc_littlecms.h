@@ -56,6 +56,8 @@ void gscms_destroy(void **contextptr);
 
 void gscms_release_link(gsicc_link_t *icclink);
 
+void gscms_release_profile(void *profile);
+
 int gscms_xform_named_color(gsicc_link_t *icclink,  float tint_value, const char* ColorName, 
                         gx_color_value device_values[] ); 
 

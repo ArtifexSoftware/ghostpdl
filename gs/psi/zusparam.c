@@ -39,6 +39,9 @@
 #include "gscms.h"
 #include "gsiccmanage.h"
 #include "gsparamx.h"
+#include "gx.h"
+#include "gxistate.h"
+
 
 /* The (global) font directory */
 extern gs_font_dir *ifont_dir;	/* in zfont.c */
@@ -465,12 +468,26 @@ static int
 set_proof_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
     int code;
+    char *pname;
+    int namelen = (pval->size)+1;
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+    gs_memory_t *mem = pis->memory; 
 
     /* Check if it was "NULL" */
 
     if( !gs_param_string_eq(pval,"NULL") ){
 
-        code = gsicc_set_profile((gs_imager_state *) igs,pval,PROOF_TYPE);
+        pname = gs_alloc_bytes(mem, namelen,
+		   		     "set_proof_profile_icc");
+
+        memcpy(pname,pval->data,namelen-1);
+        pname[namelen-1] = 0;
+
+        code = gsicc_set_profile(pis, (const char*) pname, namelen, PROOF_TYPE);
+
+        gs_free_object(mem, pname,
+                "set_proof_profile_icc");
+
         return(code);
 
     }
@@ -492,8 +509,21 @@ static int
 set_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
     int code;
+    char *pname;
+    int namelen = (pval->size)+1;
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+    gs_memory_t *mem = pis->memory; 
 
-    code = gsicc_set_profile((gs_imager_state *) igs,pval,DEFAULT_GRAY);
+    pname = gs_alloc_bytes(mem, namelen,
+	   		     "set_default_gray_icc");
+
+    memcpy(pname,pval->data,namelen-1);
+    pname[namelen-1] = 0;
+
+    code = gsicc_set_profile((gs_imager_state *) igs, (const char*) pname, namelen, DEFAULT_GRAY);
+
+    gs_free_object(mem, pname,
+        "set_default_gray_icc");
 
     return(code);
 
@@ -512,8 +542,21 @@ static int
 set_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
     int code;
+    char *pname;
+    int namelen = (pval->size)+1;
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+    gs_memory_t *mem = pis->memory; 
 
-    code = gsicc_set_profile((gs_imager_state *) igs,pval,DEFAULT_RGB);
+    pname = gs_alloc_bytes(mem, namelen,
+	   		     "set_default_rgb_icc");
+
+    memcpy(pname,pval->data,namelen-1);
+    pname[namelen-1] = 0;
+
+    code = gsicc_set_profile((gs_imager_state *) igs, (const char*) pname, namelen, DEFAULT_RGB);
+
+    gs_free_object(mem, pname,
+        "set_default_rgb_icc");
 
     return(code);
 
@@ -533,12 +576,27 @@ static int
 set_link_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
     int code;
+    char* pname;
+    int namelen = (pval->size)+1;
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+    gs_memory_t *mem = pis->memory; 
 
     /* Check if it was "NULL" */
 
     if( !gs_param_string_eq(pval,"NULL") ){
 
-        code = gsicc_set_profile((gs_imager_state *) igs,pval,LINKED_TYPE);
+        pname = gs_alloc_bytes(mem, namelen,
+	   		         "set_link_profile_icc");
+
+        memcpy(pname,pval->data,namelen-1);
+        pname[namelen-1] = 0;
+
+        code = gsicc_set_profile((gs_imager_state *) igs, (const char*) pname, namelen, LINKED_TYPE);
+
+        gs_free_object(mem, pname,
+                "set_link_profile_icc");
+
+
         return(code);
 
     }
@@ -560,14 +618,27 @@ current_default_named_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 static int
 set_named_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-
     int code;
+    char* pname;
+    int namelen = (pval->size)+1;
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+    gs_memory_t *mem = pis->memory; 
 
     /* Check if it was "NULL" */
 
     if( !gs_param_string_eq(pval,"NULL") ){
 
-        code = gsicc_set_profile((gs_imager_state *) igs,pval,NAMED_TYPE);
+        pname = gs_alloc_bytes(mem, namelen,
+	   		         "set_named_profile_icc");
+
+        memcpy(pname,pval->data,namelen-1);
+        pname[namelen-1] = 0;
+
+        code = gsicc_set_profile((gs_imager_state *) igs, (const char*) pname, namelen, NAMED_TYPE);
+
+        gs_free_object(mem, pname,
+                "set_named_profile_icc");
+
         return(code);
 
     }
@@ -591,8 +662,21 @@ static int
 set_default_cmyk_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
     int code;
+    char* pname;
+    int namelen = (pval->size)+1;
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+    gs_memory_t *mem = pis->memory; 
 
-    code = gsicc_set_profile((gs_imager_state *) igs,pval,DEFAULT_CMYK);
+    pname = gs_alloc_bytes(mem, namelen,
+	   		     "set_default_cmyk_icc");
+
+    memcpy(pname,pval->data,namelen-1);
+    pname[namelen-1] = 0;
+
+    code = gsicc_set_profile((gs_imager_state *) igs, (const char*) pname, namelen, DEFAULT_CMYK);
+
+    gs_free_object(mem, pname,
+                "set_default_cmyk_icc");
 
     return(code);
 
@@ -635,7 +719,7 @@ static const string_param_def_t user_string_params[] =
     {"DefaultCMKYProfile", current_default_cmyk_icc, set_default_cmyk_icc},
     {"ProofProfile", current_default_proof_icc, set_proof_profile_icc},
     {"NamedProfile", current_default_named_icc, set_named_profile_icc},
-    {"DeviceLinkProfile", current_default_link_icc, set_link_profile_icc}
+    {"DeviceLinkProfile", current_default_link_icc, set_link_profile_icc} 
 
 };
 
@@ -818,8 +902,10 @@ setparams(i_ctx_t *i_ctx_p, gs_param_list * plist, const param_set * pset)
 	    continue;
 	code = param_read_string(plist, pdef->pname, &val);
 	switch (code) {
-	    default:		
+	    default:		/* invalid */
 		return code;
+	    case 1:		/* missing */
+		break;
 	    case 0:
 		code = (*pdef->set)(i_ctx_p, &val);
 		if (code < 0)

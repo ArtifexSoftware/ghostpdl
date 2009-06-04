@@ -77,7 +77,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
        want to have this buffer. */
 
     icc_profile = NULL;
-    icc_profile = gsicc_profile_new(s, gs_state_memory(igs));
+    icc_profile = gsicc_profile_new(s, gs_state_memory(igs),NULL,0);
 
     /* If we have not populated the icc_managers device profile yet, go ahead 
        and take care of that now.  We will likely want to move this out of

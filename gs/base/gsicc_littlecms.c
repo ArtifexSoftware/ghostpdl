@@ -291,6 +291,21 @@ gscms_release_link(gsicc_link_t *icclink)
 
 }
 
+
+/* Have the CMS release the profile handle */
+void
+gscms_release_profile(void *profile)
+{
+
+    cmsHPROFILE profile_handle;
+    LCMSBOOL notok;
+
+    profile_handle = (cmsHPROFILE) profile;
+    notok = cmsCloseProfile(profile_handle);
+
+}
+
+
 /* Named color, color management */
 /* Get a CIELAB value for the named color or the device value
    for the named color.  Since there exist named color

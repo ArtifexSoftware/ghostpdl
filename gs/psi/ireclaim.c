@@ -160,11 +160,6 @@ gs_vmreclaim(gs_dual_memory_t *dmem, bool global)
 
     *systemdict = *ref_stack_index(&d_stack, ref_stack_count(&d_stack) - 1);
 
-    /* Reload the context state. */
-
-    code = context_state_load(i_ctx_p);
-    /****** ABORT IF code < 0 ******/
-
     /* Update the cached value pointers in names. */
 
     dicts_gc_cleanup();
@@ -173,6 +168,15 @@ gs_vmreclaim(gs_dual_memory_t *dmem, bool global)
 
     for (i = 0; i < nmem; ++i)
 	alloc_open_chunk(memories[i]);
+
+    /* Reload the context state.  Note this should be done
+       AFTER the chunks are reopened, since the context state
+       load could do allocations that must remain.   
+       If it were done while the chunks were still closed, 
+       we would lose those allocations when the chunks were opened */
+
+    code = context_state_load(i_ctx_p);
+
 }
 
 /* ------ Initialization procedure ------ */

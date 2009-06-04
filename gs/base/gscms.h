@@ -97,14 +97,20 @@ typedef enum {
    See 
 
 /* A structure for holding profile information.  A member variable
-   of the ghostscript color structure. */
+   of the ghostscript color structure.   The item is reference counted. */
 typedef struct cmm_profile_s {
 
-    void *profile_handle;                          /* The profile handle to be used in linking */
-    byte *buffer;                         /* A buffer with ICC profile content */
-    int64_t hashcode;                               /* A hash code for the icc profile */
-    bool hash_is_valid;
-
+    void *profile_handle;   /* The profile handle to be used in linking */
+    byte *buffer;           /* A buffer with ICC profile content */
+    int64_t hashcode;       /* A hash code for the icc profile */
+    bool hash_is_valid;     /* Is the code valid? */
+    rc_header rc;           /* Reference count.  So we know when to free */ 
+    int name_length;        /* Length of file name */
+    char *name;             /* Name of file name (if there is one) where profile is found.
+                               If it was embedded in the stream, there will not be a file
+                               name.  This is primarily here for the system profiles, and
+                               so that we avoid resetting them everytime the user params
+                               are reloaded. */
 } cmm_profile_t;
 
 #ifndef cmm_profile_DEFINED

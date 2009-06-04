@@ -28,15 +28,15 @@
 
 
 /* profile data structure */
-/* profile_handle should NOT be garbage collected */
+/* profile_handle should NOT be garbage collected since it is allocated by the external CMS */
 
-gs_private_st_ptrs1(st_gsicc_profile, cmm_profile_t, "gsicc_profile",
-		    gsicc_profile_enum_ptrs, gsicc_profile_reloc_ptrs,buffer);
+gs_private_st_ptrs2(st_gsicc_profile, cmm_profile_t, "gsicc_profile",
+		    gsicc_profile_enum_ptrs, gsicc_profile_reloc_ptrs, buffer, name);
 
 gs_private_st_ptrs7(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
 		    gsicc_manager_enum_ptrs, gsicc_manager_profile_reloc_ptrs,
 		    device_profile, device_named, default_gray, default_rgb,
-                    default_cmyk, proof_profile, output_link);
+                    default_cmyk, proof_profile, output_link); 
 
 static const gs_color_space_type gs_color_space_type_icc = {
     gs_color_space_index_CIEICC,    /* index */
@@ -85,24 +85,15 @@ gsicc_destroy()
     member variable in the ICC manager */
 
 int 
-gsicc_set_profile(const gs_imager_state * pis, gs_param_string * pval, gsicc_profile_t defaulttype)
+gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, gsicc_profile_t defaulttype)
 {
 
     gsicc_manager_t *icc_manager = pis->icc_manager;
     cmm_profile_t *icc_profile;
-    cmm_profile_t **mananger_default_profile;
+    cmm_profile_t **manager_default_profile;
     stream *str;
-    const char *profile_file;
-    byte * pdata;
-    gs_memory_t *mem = pis->memory;
+    gs_memory_t *mem_gc = pis->memory; 
     int code;
-
-    pdata = gs_alloc_bytes(mem, pval->size+1,
-		   		 "gsicc_set_profile");
-
-    memcpy(pdata,pval->data,pval->size);
-    pdata[pval->size] = 0;
-    profile_file = (const char *)pdata;
  
     /* For now only let this be set once. 
        We could have this changed dynamically
@@ -114,83 +105,92 @@ gsicc_set_profile(const gs_imager_state * pis, gs_param_string * pval, gsicc_pro
 
         case DEFAULT_GRAY:
 
-            mananger_default_profile = &(icc_manager->default_gray);
+            manager_default_profile = &(icc_manager->default_gray);
 
             break;
 
         case DEFAULT_RGB:
 
-            mananger_default_profile = &(icc_manager->default_rgb);
+            manager_default_profile = &(icc_manager->default_rgb);
 
             break;
 
         case DEFAULT_CMYK:
             
-             mananger_default_profile = &(icc_manager->default_cmyk);
+             manager_default_profile = &(icc_manager->default_cmyk);
 
              break;
 
         case PROOF_TYPE:
 
-             mananger_default_profile = &(icc_manager->proof_profile);
+             manager_default_profile = &(icc_manager->proof_profile);
 
              break;
 
         case NAMED_TYPE:
 
-             mananger_default_profile = &(icc_manager->device_named);
+             manager_default_profile = &(icc_manager->device_named);
 
              break;
 
         case LINKED_TYPE:
 
-             mananger_default_profile = &(icc_manager->output_link);
+             manager_default_profile = &(icc_manager->output_link);
 
              break;
 
     }
 
-    /* If it is not NULL then it has already been set
-       for now we will just let the defaults to be 
-       set one time.  We could allow them to be changed
-       at will, but we need to add a deallocation here */
+    /* If it is not NULL then it has already been set.
+       If it is different than what we already have then
+       we will want to free it.  Since other imager states
+       could have different default profiles, this is done via
+       reference counting.  If it is the same as what we
+       already have then we DONT increment, since that is
+       done when the imager state is duplicated.  It could
+       be the same, due to a resetting of the user params.
+       To avoid recreating the profile data, we compare the 
+       string names. */
 
-    if ((*mananger_default_profile) == NULL){
+    if ((*manager_default_profile) != NULL){
 
-        /* We need to do a bit of work here with 
-           respect to path names. MJV ToDo.  */
+        /* Check if this is what we already have */
 
-        str = sfopen(profile_file, "rb", mem);
+        icc_profile = *manager_default_profile;
 
-       if (str != NULL){
+        if ( namelen == icc_profile->name_length )
+            if( memcmp(pname, icc_profile->name, namelen) == 0) return 0;
 
-            icc_profile = gsicc_profile_new(str, mem);
-            code = sfclose(str);
-            //*mananger_default_profile = icc_profile;
-
-
-            /* Get the profile handle */
-
-            icc_profile->profile_handle = gsicc_get_profile_handle_buffer(icc_profile->buffer);
-
-            /* Compute the hash code of the profile. Everything in the ICC manager will have 
-               it's hash code precomputed */
-
-            gsicc_get_icc_buff_hash(icc_profile->buffer, &(icc_profile->hashcode));
-            icc_profile->hash_is_valid = true;
-
-             gs_free_object(mem, (byte *)pdata,
-	                "gsicc_set_profile");
-             
-            return(0);
-           
-        }
+        rc_decrement(icc_profile,"gsicc_profile");
 
     }
 
-    gs_free_object(mem, (byte *)pdata,"gsicc_set_profile");
+    /* We need to do a bit of work here with 
+       respect to path names. MJV ToDo.  */
+
+    str = sfopen(pname, "rb", mem_gc);
+
+   if (str != NULL){
+
+        icc_profile = gsicc_profile_new(str, mem_gc, pname, namelen);
+        code = sfclose(str);
+        *manager_default_profile = icc_profile;
+
+        /* Get the profile handle */
+
+        icc_profile->profile_handle = gsicc_get_profile_handle_buffer(icc_profile->buffer);
+
+        /* Compute the hash code of the profile. Everything in the ICC manager will have 
+           it's hash code precomputed */
+
+        gsicc_get_icc_buff_hash(icc_profile->buffer, &(icc_profile->hashcode));
+        icc_profile->hash_is_valid = true;
+         
+        return(0);
+       
+    }
      
-     return(1);
+    return(1);
 
     
 }
@@ -232,7 +232,7 @@ gsicc_set_device_profile(gs_imager_state *pis, gx_device * pdev, gs_memory_t * m
             str = sfopen(profile, "rb", mem);
 
             if (str != NULL){
-                icc_profile = gsicc_profile_new(str, mem);
+                icc_profile = gsicc_profile_new(str, mem, profile, strlen(profile));
                 code = sfclose(str);
                 icc_manager->device_profile = icc_profile;
 
@@ -310,16 +310,33 @@ gsicc_setbuffer_desc(gsicc_bufferdesc_t *buffer_desc,unsigned char num_chan,
 }
 
 cmm_profile_t *
-gsicc_profile_new(stream *s, gs_memory_t *memory)
+gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname, int namelen)
 {
+
 
     cmm_profile_t *result;
     int code;
-    
+    char *nameptr;
+
     result = gs_alloc_struct(memory, cmm_profile_t, &st_gsicc_profile,
 			     "gsicc_profile_new");
-    if (result == NULL)
-	return result;  
+
+    if (result == NULL) return result; 
+
+    if (namelen > 0){
+
+        nameptr = gs_alloc_bytes(memory, namelen,
+	   		     "gsicc_profile_new");
+        memcpy(nameptr, pname, namelen);
+        result->name = nameptr;
+
+    } else {
+    
+        result->name = NULL;
+
+    }
+
+    result->name_length = namelen;
 
     code = gsicc_load_profile_buffer(result, s, memory);
     if (code < 0) {
@@ -329,6 +346,8 @@ gsicc_profile_new(stream *s, gs_memory_t *memory)
 
     }
 
+    rc_init_free(result, memory, 1, rc_free_icc_profile);
+
     result->profile_handle = NULL;
     result->hash_is_valid = false;
 
@@ -337,14 +356,63 @@ gsicc_profile_new(stream *s, gs_memory_t *memory)
 }
 
 
+
+static void
+rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
+{
+    cmm_profile_t *profile = (cmm_profile_t *)ptr_in;
+
+    if (profile->rc.ref_count <= 1 ){
+
+        /* Clear out the buffer if it is full */
+
+        if(profile->buffer != NULL){
+
+            gs_free_object(mem, profile->buffer, cname);
+            profile->buffer = NULL;
+
+        }
+
+        /* Release this handle if it has been set */
+
+        if(profile->profile_handle != NULL){
+
+            gscms_release_profile(profile->profile_handle);
+            profile->profile_handle = NULL;
+
+        }
+
+        /* Release the name if it has been set */
+
+        if(profile->name != NULL){
+
+            gs_free_object(mem,profile->name,cname);
+            profile->name = NULL;
+            profile->name_length = 0;
+
+        }
+
+        profile->hash_is_valid = 0;
+
+	gs_free_object(mem, profile, cname);
+        profile = NULL;
+
+    }
+}
+
+
+
 gsicc_manager_t *
 gsicc_manager_new(gs_memory_t *memory)
 {
 
     gsicc_manager_t *result;
-    
+
+    /* Allocated in gc memory */
+      
     result = gs_alloc_struct(memory, gsicc_manager_t, &st_gsicc_manager,
 			     "gsicc_manager_new");
+
     if (result == NULL)
 	return result;  
 
@@ -355,7 +423,7 @@ gsicc_manager_new(gs_memory_t *memory)
    result->output_link = NULL;
    result->device_profile = NULL;
    result->proof_profile = NULL;
-   result->memory = NULL;
+   result->memory = memory;
 
    return(result);
 
