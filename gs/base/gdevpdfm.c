@@ -107,7 +107,8 @@ pdfmark_page_number(gx_device_pdf * pdev, const gs_param_string * pnstr)
 {
     int page = pdev->next_page + 1;
 
-    if (pnstr->data == 0);
+    if (pnstr->data == 0)
+	page -= 1;
     else if (pdf_key_eq(pnstr, "/Next"))
 	++page;
     else if (pdf_key_eq(pnstr, "/Prev"))
