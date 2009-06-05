@@ -195,7 +195,7 @@ scan_bos(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
 
 	if (top_size == 0) {
 	    /* Extended header (2-byte array size, 4-byte length) */
-	    ulong lsize;
+	    uint lsize;
 
 	    if (rcnt < 7) {
 		s_end_inline(s, p - 1, rlimit);
@@ -203,7 +203,7 @@ scan_bos(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
 		return scan_Refill;
 	    }
 	    pbs->top_size = top_size = sdecodeushort(p + 2, num_format);
-	    pbs->lsize = lsize = sdecodelong(p + 4, num_format);
+	    pbs->lsize = lsize = sdecodeint32(p + 4, num_format);
 	    if ((size = lsize) != lsize) {
 		scan_bos_error(pstate, "bin obj seq length too large");
 		return_error(e_limitcheck);
@@ -534,8 +534,7 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
     for (; index < max_array_index; p += SIZEOF_BIN_SEQ_OBJ, index++) {
 	ref *op = abase + index;
 	uint osize;
-	long value;
-	uint atype, attrs;
+	int value, atype, attrs;
 
 	s_end_inline(s, p, rlimit);	/* in case of error */
 	if (rlimit - p < SIZEOF_BIN_SEQ_OBJ) {
@@ -555,7 +554,7 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
 	 * syntaxerror if any unused field is non-zero (per PLRM).
 	 */
   	osize = sdecodeushort(p + 3, num_format);
-	value = sdecodelong(p + 5, num_format);
+	value = sdecodeint32(p + 5, num_format);
 	switch (p[1] & 0x7f) {
 	    case BS_TYPE_NULL:
 		if (osize | value) { /* unused */
