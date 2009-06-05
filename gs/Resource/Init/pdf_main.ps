@@ -1222,9 +1222,18 @@ end readonly def
   /Link {
     mark exch
     dup /C knownoget { /Color exch 3 -1 roll } if
-     { /Rect /Border }
-     { 2 copy knownoget { 3 -1 roll } { pop } ifelse }
-    forall dup /A knownoget {
+    dup /Rect knownoget { /Rect exch 3 -1 roll } if
+    dup /Border knownoget {
+      dup type /arraytype eq {
+        dup length 3 lt
+      } {
+        //true
+      } ifelse {
+        pop [ 0 0 0 ] % Following AR5 use invisible border.
+      } if
+      /Border exch 3 -1 roll
+    } if
+    dup /A knownoget {
       dup /URI known {
         /A mark 3 2 roll    % <<>> /A [ <<action>>
         { oforce } forall

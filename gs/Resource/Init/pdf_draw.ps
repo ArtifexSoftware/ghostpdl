@@ -1470,38 +1470,42 @@ end
 /drawborder {		% <annot> drawborder -
   gsave
   dup /BS known 1 index /Border known or {
-  dup /BS knownoget {
+    dup /BS knownoget {
       dup type /dicttype ne   % <annot> <border> <bad?>
     } {
       dup /Border oget 
-      dup type /arraytype ne  % <annot> [border] <bad?>
-    } ifelse
-    { 
-      (   **** Warning: Wrong type of annotation border object.\n)
+      dup type /arraytype eq {
+        dup length 3 lt
+      } {
+        //true
+      } ifelse                % <annot> [border] <bad?>
+    } ifelse { 
+      (   **** Warning: Wrong annotation border object, no border is drawn.\n)
       pdfformaterror
+      pop { 0 0 0 }
     } if
     dup type /dicttype eq {
-    dup /W knownoget not { 1 } if
+      dup /W knownoget not { 1 } if
       % Per PDF1.6 Reference table 8.13, /W in the border style dictionary is
       % expressed in points (an absolute unit), so compensate here for any
       % scaling of the PostScript user space done due to /UserUnit.
       % Scaling due to -dPDFFitPage is not undone, to keep the correct border width
       % compared to the size of the surrounding marks.
-      //systemdict /NoUserUnit .knownget not { false } if not
+      //systemdict /NoUserUnit .knownget not { //false } if not
       //systemdict /PDFFitPage known not and {	% UserUnit is ignored if -dPDFFitPage
         Page /UserUnit knownoget { div } if
       } if
-    [] 2 index /S knownoget {
-      /D eq { 2 index /D knownoget not { [3] } if exch pop } if
-    } if 3 -1 roll pop strokeborder
-  } {
+      {} 2 index /S knownoget {
+        /D eq { 2 index /D knownoget not { {3} } if exch pop } if
+      } if 3 -1 roll pop strokeborder
+    } {
       dup 2 get
-      exch dup length 3 gt { 3 get } { pop [] } ifelse
+      exch dup length 3 gt { 3 get } { pop {} } ifelse
       strokeborder
     } ifelse
-    } {
-      1 [] strokeborder
-    } ifelse
+  } {
+    1 {} strokeborder
+  } ifelse
   grestore
 } bdef
 
