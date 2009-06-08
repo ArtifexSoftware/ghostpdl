@@ -1356,11 +1356,18 @@ set_driver_configuration(
 	}
 	break;
     case 4:
+        /* driver arguments 3 & 6 are parsed, but not implemented.  In
+           our model where all data is treated as sRGB and color
+           conversion is expected to be done by the device, vivid
+           graphics (argument == 3) should set a device parameter to
+           disable color conversion.  We don't think there is any
+           demand for this feature, and it is not currently
+           supported. */
         if ( driver->arguments == 3 ) {
-            pcs->useciecolor = false;
+            ;
         }
         else if ( driver->arguments == 6 ) {
-            pcs->useciecolor = true;
+            ;
         } else
             return e_Range;
         break;
