@@ -1012,8 +1012,12 @@ scan_contour(line_list *ll, contour_cursor *q)
 		ll->y_break = p.fi->ly1;
 	    if (p.monotonic_y && p.dir == DIR_HORIZONTAL && 
 		    !fo->pseudo_rasterization && 
+#ifdef FILL_ZERO_WIDTH
+		    (fo->adjust_below | fo->adjust_above) != 0) {
+#else
 		    fixed2int_pixround(p.pseg->pt.y - fo->adjust_below) <
 		    fixed2int_pixround(p.pseg->pt.y + fo->adjust_above)) {
+#endif
 		/* Add it here to avoid double processing in process_h_segments. */
 		code = add_y_line(p.prev, p.pseg, DIR_HORIZONTAL, ll);
 		if (code < 0)
