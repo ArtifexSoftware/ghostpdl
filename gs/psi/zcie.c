@@ -31,6 +31,7 @@
 #include "ivmspace.h"
 #include "store.h"		/* for make_null */
 #include "zcie.h"
+#include "gsicc_create.h"
 
 /* Empty procedures */
 static const ref empty_procs[4] =
@@ -431,6 +432,21 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict)
 	return code;
     pcie = pcs->params.abc;
     code = cie_abc_param(imemory, CIEDict, pcie, &procs);
+
+    /* At this point, we have all the parameters in pcie.
+       Go ahead and create the ICC profile for this thing.
+       Later we will want to disable the creation of the CIE joint cache.
+       MJV to do.  Also,  we will likely want to wait on 
+       creating this until we obtain a request to actually
+       do the transformation.  We are doing it here for now
+       for testing purposes.  The union member pcs->params
+       will have all the data that we will need like it is here
+       in pcie. */
+
+     
+    gsicc_create_fromabc(pcie, NULL, imemory);
+
+
     if (code < 0 ||
 	(code = cie_cache_joint(i_ctx_p, &istate->colorrendering.procs, (gs_cie_common *)pcie, igs)) < 0 ||	/* do this last */
 	(code = cie_cache_push_finish(i_ctx_p, cie_abc_finish, imem, pcie)) < 0 ||
