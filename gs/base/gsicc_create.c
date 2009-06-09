@@ -145,6 +145,30 @@ ulong swapbytes32(ulong input)
 
 }
     
+static void
+write_bigendian_4bytes(unsigned char *curr_ptr,ulong input)
+{
+
+#if !arch_is_big_endian
+
+   *curr_ptr ++= ((0x000000ff) & (input >> 24));
+   *curr_ptr ++= ((0x000000ff) & (input >> 16));
+   *curr_ptr ++= ((0x000000ff) & (input >> 8));
+   *curr_ptr ++= ((0x000000ff) & (input));
+
+#else
+   
+   
+   *curr_ptr ++= ((0x000000ff) & (input));
+   *curr_ptr ++= ((0x000000ff) & (input >> 8));
+   *curr_ptr ++= ((0x000000ff) & (input >> 16));
+   *curr_ptr ++= ((0x000000ff) & (input >> 24));
+
+#endif
+
+
+}
+
 
 static void
 setdatetime(icDateTimeNumber *datetime)
@@ -253,19 +277,79 @@ static void
 copy_header(unsigned char *buffer,icHeader *header)
 {
 
-    
+    unsigned char *curr_ptr;
 
+    curr_ptr = buffer;
+
+    write_bigendian_4bytes(curr_ptr,header->size);
+    curr_ptr += 4;
+
+    memset(curr_ptr,0,4);
+    curr_ptr += 4;
+
+    write_bigendian_4bytes(curr_ptr,header->version);
+    curr_ptr += 4;
+
+    write_bigendian_4bytes(curr_ptr,header->deviceClass);
+    curr_ptr += 4;
+
+    write_bigendian_4bytes(curr_ptr,header->colorSpace);
+    curr_ptr += 4;
+
+    write_bigendian_4bytes(curr_ptr,header->pcs);
+    curr_ptr += 4;
+
+    /* Date and time */
+    memset(curr_ptr,0,12);
+    curr_ptr += 12;
+
+    write_bigendian_4bytes(curr_ptr,header->magic);
+    curr_ptr += 4;
+
+    write_bigendian_4bytes(curr_ptr,header->platform);
+    curr_ptr += 4;
+
+    memset(curr_ptr,0,24);
+    curr_ptr += 24;
+
+    write_bigendian_4bytes(curr_ptr,header->illuminant.X);
+    curr_ptr += 4;
+    write_bigendian_4bytes(curr_ptr,header->illuminant.Y);
+    curr_ptr += 4;
+    write_bigendian_4bytes(curr_ptr,header->illuminant.Z);
+    curr_ptr += 4;
+  
+    memset(curr_ptr,0,48);
 
 
 }
 
 
 static void
-copy_tagtable(unsigned char *buffer,icTag *tag_list, int num_tags)
+copy_tagtable(unsigned char *buffer,icTag *tag_list, ulong num_tags)
 {
 
+    unsigned int k;
+    unsigned char *curr_ptr;
+
+    curr_ptr = buffer;
+
+    write_bigendian_4bytes(curr_ptr,num_tags);
+    curr_ptr += 4;
+
+    for (k = 0; k < num_tags; k++){
+
+        write_bigendian_4bytes(curr_ptr,tag_list[k].sig);
+        curr_ptr += 4;
+
+        write_bigendian_4bytes(curr_ptr,tag_list[k].offset);
+        curr_ptr += 4;
+
+        write_bigendian_4bytes(curr_ptr,tag_list[k].size);
+        curr_ptr += 4;
 
 
+    }
 
 
 }
@@ -279,31 +363,6 @@ get_XYZ(icS15Fixed16Number XYZ[], gs_vector3 vector)
     XYZ[2] = double2XYZtype(vector.w);
 
 }
-
-static void
-write_bigendian_4bytes(unsigned char *curr_ptr,ulong input)
-{
-
-#if !arch_is_big_endian
-
-   *curr_ptr ++= ((0x000000ff) & (input >> 24));
-   *curr_ptr ++= ((0x000000ff) & (input >> 16));
-   *curr_ptr ++= ((0x000000ff) & (input >> 8));
-   *curr_ptr ++= ((0x000000ff) & (input));
-
-#else
-   
-   
-   *curr_ptr ++= ((0x000000ff) & (input));
-   *curr_ptr ++= ((0x000000ff) & (input >> 8));
-   *curr_ptr ++= ((0x000000ff) & (input >> 16));
-   *curr_ptr ++= ((0x000000ff) & (input >> 24));
-
-#endif
-
-
-}
-
 
 
 static void
