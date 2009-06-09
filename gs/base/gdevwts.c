@@ -649,9 +649,8 @@ wtsimdi_fill_rectangle(gx_device * dev,
 		    int i;
 
 		    dst[0] &= (0xff << (8 - (x & 7)));
-		    for (i = 1; i < nfill; i++)
-			dst[i] = 0;
-		    dst[i] &= ((1 << (7 - (end_x & 7))) - 1);
+                    memset(&dst[1], 0, nfill-1);
+		    dst[nfill] &= ((1 << (7 - (end_x & 7))) - 1);
 		}
 	    } else if (comp_value == 0xff) {
 		if (nfill == 0) {
@@ -661,9 +660,8 @@ wtsimdi_fill_rectangle(gx_device * dev,
 		    int i;
 
 		    dst[0] |= ~(0xff << (8 - (x & 7)));
-		    for (i = 1; i < nfill; i++)
-			dst[i] = 0xff;
-		    dst[i] |= ~((1 << (7 - (end_x & 7))) - 1);
+                    memset(&dst[1], 0xff, nfill-1);
+		    dst[nfill] |= ~((1 << (7 - (end_x & 7))) - 1);
 		}
 	    } else {
 		byte save_left = dst[0];
