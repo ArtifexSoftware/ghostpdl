@@ -125,6 +125,7 @@ Note: All profile data must be encoded as big-endian
 #include "gscspace.h"
 #include "gscie.h"
 
+#define SAVEICCPROFILE 1
 #define HEADER_SIZE 128
 #define TAG_SIZE 12
 #define XYZPT_SIZE 12
@@ -132,6 +133,37 @@ Note: All profile data must be encoded as big-endian
 #define CURVE_SIZE 512
 #define NUMBER_COMMON_TAGS 3 
 
+
+#if SAVEICCPROFILE
+unsigned int icc_debug_index = 0;
+#endif
+
+
+
+#if SAVEICCPROFILE
+
+/* Debug dump of internally created ICC profile for testing */
+
+static void
+save_profile(unsigned char *buffer, char filename[], int buffer_size)
+
+{
+    char full_file_name[50];
+    FILE *fid;
+
+    sprintf(full_file_name,"%d)Profile_%s.icc",icc_debug_index,filename);
+    fid = fopen(full_file_name,"wb");
+
+    fwrite(buffer,sizeof(unsigned char),buffer_size,fid);
+
+    fclose(fid);
+
+    icc_debug_index++;
+
+}
+
+
+#endif
 
 static 
 ulong swapbytes32(ulong input)
@@ -390,6 +422,7 @@ add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[])
 
 
 
+
 /* The ABC matrix and decode ABC parameters
    are optional in the PS spec.  If they
    are not present, we will use a standard
@@ -415,6 +448,8 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
     int last_tag;
     icS15Fixed16Number temp_XYZ[3];
     int tag_location;
+    icTagSignature TRC_Tags[3] = {icSigRedTRCTag, icSigGreenTRCTag, icSigBlueTRCTag};
+    int trc_tag_size;
 
     /* Fill in the common stuff */
 
@@ -463,9 +498,26 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
         init_tag(tag_list, &last_tag, icSigMediaWhitePointTag, XYZPT_SIZE);
         init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
 
-        init_tag(tag_list, &last_tag, icSigRedTRCTag, CURVE_SIZE*2+4);
-        init_tag(tag_list, &last_tag, icSigGreenTRCTag, CURVE_SIZE*2+4);
-        init_tag(tag_list, &last_tag, icSigBlueTRCTag, CURVE_SIZE*2+4);
+        /* Check it the procs are the identity.  If so, no need to create a 
+           large curve, encode with gamma = 1.0 */
+
+        for (k = 0; k < 3; k++){
+
+            if (pcie->common.DecodeLMN.procs[k] == common_identity){
+
+                /* when n = 0 we assume identity! */
+
+                trc_tag_size = 12;
+
+            } else {
+
+                trc_tag_size = CURVE_SIZE*2+12;  /* curv type */
+ 
+            }
+
+            init_tag(tag_list, &last_tag, TRC_Tags[k], trc_tag_size);
+
+        }
 
         for(k = 0; k < num_tags; k++){
 
@@ -520,9 +572,26 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
 
         /* Now we need to create the curves from the PS procedures */
 
+        /* Check for the case when they are the identity */
 
-  
+        for (k = 0; k < 3; k++){
 
+            if (pcie->common.DecodeLMN.procs[k] == common_identity){
+
+                /* No points! */
+                
+                write_bigendian_4bytes(curr_ptr,icSigCurveType);
+                curr_ptr+=4;
+                memset(curr_ptr,0,8); /* reserved + number points */
+                
+            } else {
+    
+                /* Must sample the proc into a curve buffer */
+
+
+            }
+
+        }
 
     } else {
 
@@ -533,6 +602,15 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
 
 
     }
+
+
+#if SAVEICCPROFILE
+
+    /* Dump the buffer to a file for testing if its a valid ICC profile */
+
+    save_profile(buffer,"fromabc",profile_size);
+
+#endif
 
 
 }

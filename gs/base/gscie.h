@@ -841,4 +841,9 @@ int gx_serialize_cie_common_elements(const gs_color_space * pcs, stream * s);
 
 bool gx_color_space_needs_cie_caches(const gs_color_space * pcs);
 
+/* made available for gsicc_create */
+
+float
+common_identity(floatp in, const gs_cie_common * pcie);
+
 #endif /* gscie_INCLUDED */

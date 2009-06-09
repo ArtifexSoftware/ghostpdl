@@ -230,7 +230,7 @@ defg_from_cache_3(floatp in, const gs_cie_defg * pcie)
     return gs_cie_cached_value(in, &pcie->caches_defg.DecodeDEFG[3].floats);
 }
 
-static float
+float
 common_identity(floatp in, const gs_cie_common * pcie)
 {
     return in;
