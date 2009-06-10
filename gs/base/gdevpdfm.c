@@ -107,8 +107,7 @@ pdfmark_page_number(gx_device_pdf * pdev, const gs_param_string * pnstr)
 {
     int page = pdev->next_page + 1;
 
-    if (pnstr->data == 0)
-	page -= 1;
+    if (pnstr->data == 0);
     else if (pdf_key_eq(pnstr, "/Next"))
 	++page;
     else if (pdf_key_eq(pnstr, "/Prev"))
@@ -132,10 +131,12 @@ pdfmark_make_dest(char dstr[MAX_DEST_STRING], gx_device_pdf * pdev,
     int present =
 	pdfmark_find_key(Page_key, pairs, count, &page_string) +
 	pdfmark_find_key(View_key, pairs, count, &view_string);
-    int page = pdfmark_page_number(pdev, &page_string);
+    int page=0;
     gs_param_string action;
     int len;
 
+    if (present)
+	page = pdfmark_page_number(pdev, &page_string);
     if (view_string.size == 0)
 	param_string_from_string(view_string, "[/XYZ null null null]");
     if (page == 0)
