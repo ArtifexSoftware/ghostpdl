@@ -845,5 +845,6 @@ bool gx_color_space_needs_cie_caches(const gs_color_space * pcs);
 
 float common_identity(floatp in, const gs_cie_common * pcie);
 float abc_identity(floatp in, const gs_cie_abc * pcie);
+float a_identity(floatp in, const gs_cie_a * pcie);
 
 #endif /* gscie_INCLUDED */

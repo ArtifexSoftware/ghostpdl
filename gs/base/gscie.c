@@ -151,7 +151,7 @@ if_debug_matrix3(const char *str, const gs_matrix3 *mat)
 
 /* Default transformation procedures. */
 
-static float
+float
 a_identity(floatp in, const gs_cie_a * pcie)
 {
     return in;

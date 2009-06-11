@@ -443,7 +443,6 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict)
        will have all the data that we will need like it is here
        in pcie. */
 
-     
     gsicc_create_fromabc(pcie, NULL, imemory);
 
 
@@ -490,10 +489,23 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict)
     if (code < 0)
 	return code;
     pcie = pcs->params.a;
-    if ((code = dict_floats_param(imemory, CIEdict, "RangeA", 2, (float *)&pcie->RangeA, (const float *)&RangeA_default)) < 0 ||
-	(code = dict_floats_param(imemory, CIEdict, "MatrixA", 3, (float *)&pcie->MatrixA, (const float *)&MatrixA_default)) < 0 ||
-	(code = cie_lmnp_param(imemory, CIEdict, &pcie->common, &procs)) < 0 ||
-	(code = cie_cache_joint(i_ctx_p, &istate->colorrendering.procs, (gs_cie_common *)pcie, igs)) < 0 ||	/* do this last */
+
+    code = dict_floats_param(imemory, CIEdict, "RangeA", 2, (float *)&pcie->RangeA, (const float *)&RangeA_default);
+    if (code < 0)
+	return code;
+    code = dict_floats_param(imemory, CIEdict, "MatrixA", 3, (float *)&pcie->MatrixA, (const float *)&MatrixA_default);
+    if (code < 0)
+	return code;
+    code = cie_lmnp_param(imemory, CIEdict, &pcie->common, &procs);
+    if (code < 0)
+	return code;
+
+    /* Pulled the above out of the if below to make some ICC conversion testing easier */
+
+    gsicc_create_froma(pcie, NULL, imemory);
+
+
+    if ((code = cie_cache_joint(i_ctx_p, &istate->colorrendering.procs, (gs_cie_common *)pcie, igs)) < 0 ||	/* do this last */
 	(code = cie_cache_push_finish(i_ctx_p, cie_a_finish, imem, pcie)) < 0 ||
 	(code = cie_prepare_cache(i_ctx_p, &pcie->RangeA, &procs.Decode.A, &pcie->caches.DecodeA.floats, pcie, imem, "Decode.A")) < 0 ||
 	(code = cache_common(i_ctx_p, &pcie->common, &procs, pcie, imem)) < 0

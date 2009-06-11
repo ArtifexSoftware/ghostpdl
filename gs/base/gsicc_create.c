@@ -125,6 +125,7 @@ Note: All profile data must be encoded as big-endian
 #include "gscspace.h"
 #include "gscie.h"
 #include "gsicc_create.h"
+#include "gxarith.h"
 
 #define SAVEICCPROFILE 1
 #define HEADER_SIZE 128
@@ -163,6 +164,16 @@ get_padding(int x)
 
 }
 
+
+/* For some weird reason I cant link to the one in gscie.c */
+static void
+gsicc_matrix_init(register gs_matrix3 * mat)
+{
+    mat->is_identity =
+	mat->cu.u == 1.0 && is_fzero2(mat->cu.v, mat->cu.w) &&
+	mat->cv.v == 1.0 && is_fzero2(mat->cv.u, mat->cv.w) &&
+	mat->cw.w == 1.0 && is_fzero2(mat->cw.u, mat->cw.v);
+}
 /* Debug dump of internally created ICC profile for testing */
 
 static void
@@ -547,6 +558,9 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
     icTagSignature TRC_Tags[3] = {icSigRedTRCTag, icSigGreenTRCTag, icSigBlueTRCTag};
     int trc_tag_size;
 
+    gsicc_matrix_init(&(pcie->common.MatrixLMN));  /* Need this set now */
+    gsicc_matrix_init(&(pcie->MatrixABC));          /* Need this set now */
+
     /* Fill in the common stuff */
 
     setheader_common(header);
@@ -758,6 +772,15 @@ gsicc_create_fromdefg(gs_cie_defg *pcie, unsigned char *buffer, gs_memory_t *mem
 
 }
 
+/* CIEA PS profiles can result in a surprisingly complex ICC profile.
+   The Decode A and Matrix A (which
+   is diagonal) are optional.  The Decode LMN and MatrixLMN are
+   also optional.  If the Matrix LMN is present, this will map the
+   gray value to CIEXYZ.  In any of those are present, we will need
+   to do an MLUT.  If all are absent, we end up doing a linear
+   mapping between the black point and the white point.  A very simple
+   gray input profile with a linear TRC curve */
+
 
 void
 gsicc_create_froma(gs_cie_a *pcie, unsigned char *buffer, gs_memory_t *memory)
@@ -765,10 +788,124 @@ gsicc_create_froma(gs_cie_a *pcie, unsigned char *buffer, gs_memory_t *memory)
 
     icProfile iccprofile;
     icHeader  *header = &(iccprofile.header);
+    int profile_size,k;
+    int num_tags;
+    gsicc_tag *tag_list;
+    int tag_offset = 0;
+    unsigned char *curr_ptr;
+    int last_tag;
+    icS15Fixed16Number temp_XYZ[3];
+    int tag_location;
+    int trc_tag_size;
+
+    gsicc_matrix_init(&(pcie->common.MatrixLMN));  /* Need this set now */
+
+    /* Fill in the common stuff */
 
     setheader_common(header);
- 
 
+    /* We will use an input type class 
+       which keeps us from having to
+       create an inverse. */
+
+    header->deviceClass = icSigInputClass;
+    header->colorSpace = icSigGrayData;
+    header->pcs = icSigXYZData;  /* If MLUT do we want CIELAB? */
+
+    profile_size = HEADER_SIZE;
+
+    /* Check if we have no LMN or A methods.  A simple profile  */
+
+    if(pcie->MatrixA.u == 1.0 && pcie->MatrixA.v == 1.0 && pcie->MatrixA.w == 1.0 && pcie->DecodeA == a_identity 
+        && pcie->common.MatrixLMN.is_identity && pcie->common.DecodeLMN.procs[0] == common_identity
+        && pcie->common.DecodeLMN.procs[1] == common_identity && pcie->common.DecodeLMN.procs[2] == common_identity){
+
+        num_tags = 5;  /* common (2) + grayTRC,bkpt,wtpt */     
+        tag_list = (gsicc_tag*) gs_alloc_bytes(memory,sizeof(gsicc_tag)*num_tags,"gsicc_create_froma");
+
+        /* Let us precompute the sizes of everything and all our offsets */
+
+        profile_size += TAG_SIZE*num_tags;
+        profile_size += 4; /* number of tags.... */
+
+        last_tag = -1;
+        init_common_tags(tag_list, num_tags, &last_tag);  
+
+        init_tag(tag_list, &last_tag, icSigMediaWhitePointTag, XYZPT_SIZE);
+        init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
+
+        trc_tag_size = 4;
+
+        init_tag(tag_list, &last_tag, icSigGrayTRCTag, trc_tag_size);
+
+        for(k = 0; k < num_tags; k++){
+
+            profile_size += tag_list[k].size;
+
+        }
+
+        /* Now we can go ahead and fill our buffer with the data */
+
+        buffer = gs_alloc_bytes(memory,profile_size,"gsicc_create_fromabc");
+        curr_ptr = buffer;
+
+        /* The header */
+
+        header->size = profile_size;
+        copy_header(curr_ptr,header);
+        curr_ptr += HEADER_SIZE;
+
+        /* Tag table */
+
+        copy_tagtable(curr_ptr,tag_list,num_tags);
+        curr_ptr += TAG_SIZE*num_tags;
+        curr_ptr += 4;
+
+        /* Now the data.  Must be in same order as we created the tag table */
+
+        /* First the common tags */
+
+        add_common_tag_data(curr_ptr, tag_list);
+        
+        for (k = 0; k< NUMBER_COMMON_TAGS; k++)
+        {
+            curr_ptr += tag_list[k].size;
+        }
+
+        tag_location = NUMBER_COMMON_TAGS;
+
+        /* Need to adjust for the D65/D50 issue */
+        get_XYZ(temp_XYZ,pcie->common.points.WhitePoint);
+        add_xyzdata(curr_ptr,temp_XYZ);
+        curr_ptr += tag_list[tag_location].size;
+        tag_location++;
+
+        get_XYZ(temp_XYZ,pcie->common.points.BlackPoint);
+        add_xyzdata(curr_ptr,temp_XYZ);
+        curr_ptr += tag_list[tag_location].size;
+
+        write_bigendian_4bytes(curr_ptr,icSigCurveType);
+        curr_ptr+=4;
+        memset(curr_ptr,0,8); /* reserved + number points */
+        curr_ptr+=8;
+
+
+    } else {
+
+        /* We will need to create a small 2x2 MLUT */
+
+
+
+
+    }
+ 
+#if SAVEICCPROFILE
+
+    /* Dump the buffer to a file for testing if its a valid ICC profile */
+
+    save_profile(buffer,"froma",profile_size);
+
+#endif
 
 
 }
