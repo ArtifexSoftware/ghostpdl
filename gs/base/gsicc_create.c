@@ -124,6 +124,7 @@ Note: All profile data must be encoded as big-endian
 #include "gstypes.h"
 #include "gscspace.h"
 #include "gscie.h"
+#include "gsicc_create.h"
 
 #define SAVEICCPROFILE 1
 #define HEADER_SIZE 128
@@ -131,7 +132,7 @@ Note: All profile data must be encoded as big-endian
 #define XYZPT_SIZE 12
 #define DATATYPE_SIZE 8
 #define CURVE_SIZE 512
-#define NUMBER_COMMON_TAGS 3 
+#define NUMBER_COMMON_TAGS 2 
 
 
 #if SAVEICCPROFILE
@@ -141,6 +142,26 @@ unsigned int icc_debug_index = 0;
 
 
 #if SAVEICCPROFILE
+
+static const char desc_name[] = "Ghostscript Internal Profile";
+static const char copy_right[] = "Copyright Artifex Software 2009";
+
+typedef struct {
+    icTagSignature      sig;            /* The tag signature */
+    icUInt32Number      offset;         /* Start of tag relative to 
+                                         * start of header, Spec 
+                                         * Clause 5 */
+    icUInt32Number      size;           /* Size in bytes */
+    unsigned char       byte_padding;
+} gsicc_tag;
+
+static int
+get_padding(int x)
+{
+
+    return( (4 -x%4)%4 ); 
+
+}
 
 /* Debug dump of internally created ICC profile for testing */
 
@@ -227,7 +248,7 @@ double2XYZtype(float number_in){
 }
 
 static
-void  init_common_tags(icTag tag_list[],int num_tags, int *last_tag)
+void  init_common_tags(gsicc_tag tag_list[],int num_tags, int *last_tag)
 {
 
 
@@ -235,7 +256,7 @@ void  init_common_tags(icTag tag_list[],int num_tags, int *last_tag)
        copyrightTag
        mediaWhitePointTag  */
 
-    int curr_tag;
+    int curr_tag, temp_size;
 
     if (*last_tag < 0)
     {
@@ -247,26 +268,100 @@ void  init_common_tags(icTag tag_list[],int num_tags, int *last_tag)
 
     }
  
-    tag_list[curr_tag].offset = HEADER_SIZE+num_tags*TAG_SIZE;
+    tag_list[curr_tag].offset = HEADER_SIZE+num_tags*TAG_SIZE + 4;
     tag_list[curr_tag].sig = icSigProfileDescriptionTag;
-    tag_list[curr_tag].size = DATATYPE_SIZE + strlen("GhostScript Profile");
+    temp_size = DATATYPE_SIZE + 4 + strlen(desc_name) + 1 + 4 + 4 + 3 + 67;
+    /* +1 for NULL + 4 + 4 for unicode + 3 + 67 script code */
+    tag_list[curr_tag].byte_padding = get_padding(temp_size);
+    tag_list[curr_tag].size = temp_size + tag_list[curr_tag].byte_padding;
+
     curr_tag++;
 
     tag_list[curr_tag].offset = tag_list[curr_tag-1].offset + tag_list[curr_tag-1].size;
     tag_list[curr_tag].sig = icSigCopyrightTag;
-    tag_list[curr_tag].size = DATATYPE_SIZE + strlen("Copyright Artifex Software 2009");
-    curr_tag++;
-
-    tag_list[curr_tag].offset = tag_list[curr_tag-1].offset + tag_list[curr_tag-1].size;
-    tag_list[curr_tag].sig = icSigMediaWhitePointTag;
-    tag_list[curr_tag].size = DATATYPE_SIZE + XYZPT_SIZE;
+    temp_size = DATATYPE_SIZE + strlen(desc_name) + 1;
+    tag_list[curr_tag].byte_padding = get_padding(temp_size);
+    tag_list[curr_tag].size = temp_size + tag_list[curr_tag].byte_padding;
 
     *last_tag = curr_tag;
 
 }
 
+static void
+add_desc_tag(unsigned char *buffer,const char text[], gsicc_tag tag_list[], int curr_tag)
+{
+    ulong value;
+    unsigned char *curr_ptr;
+
+    curr_ptr = buffer;
+
+    write_bigendian_4bytes(curr_ptr,icSigProfileDescriptionTag);
+    curr_ptr += 4;
+
+    memset(curr_ptr,0,4);
+    curr_ptr += 4;
+
+    value = strlen(text);
+    write_bigendian_4bytes(curr_ptr,value+1); /* count includes NULL */
+    curr_ptr += 4;
+
+    memcpy(curr_ptr,text,value);
+    curr_ptr += value;
+
+    memset(curr_ptr,0,79);  /* Null + Unicode and Scriptcode */
+    curr_ptr += value;
+
+    memset(curr_ptr,0,tag_list[curr_tag].byte_padding);  /* padding */
+    
+
+
+}
+
+
+static void
+add_text_tag(unsigned char *buffer,const char text[], gsicc_tag tag_list[], int curr_tag)
+{
+    ulong value;
+    unsigned char *curr_ptr;
+
+    curr_ptr = buffer;
+
+    write_bigendian_4bytes(curr_ptr,icSigTextType);
+    curr_ptr += 4;
+
+    memset(curr_ptr,0,4);
+    curr_ptr += 4;
+
+    value = strlen(text);
+    memcpy(curr_ptr,text,value);
+    curr_ptr += value;
+
+    memset(curr_ptr,0,1);  /* Null */    
+    curr_ptr++;
+
+    memset(curr_ptr,0,tag_list[curr_tag].byte_padding);  /* padding */
+
+}
+
+static void
+add_common_tag_data(unsigned char *buffer,gsicc_tag tag_list[])
+{
+
+    unsigned char *curr_ptr;
+
+    curr_ptr = buffer;
+
+    add_desc_tag(curr_ptr, desc_name, tag_list, 0);
+    curr_ptr += tag_list[0].size;
+
+    add_text_tag(curr_ptr, copy_right, tag_list, 1);
+
+    
+}
+
+
 static
-void  init_tag(icTag tag_list[], int *last_tag, icTagSignature tagsig, int datasize)
+void  init_tag(gsicc_tag tag_list[], int *last_tag, icTagSignature tagsig, int datasize)
 {
 
     /* This should never be called first.  Common tags should be first taken care of */
@@ -275,7 +370,9 @@ void  init_tag(icTag tag_list[], int *last_tag, icTagSignature tagsig, int datas
 
     tag_list[curr_tag].offset = tag_list[curr_tag-1].offset + tag_list[curr_tag-1].size;
     tag_list[curr_tag].sig = tagsig;
-    tag_list[curr_tag].size = DATATYPE_SIZE + datasize;
+    tag_list[curr_tag].byte_padding = get_padding(DATATYPE_SIZE + datasize);
+    tag_list[curr_tag].size = DATATYPE_SIZE + datasize + tag_list[curr_tag].byte_padding;
+
     *last_tag = curr_tag;
 
 }
@@ -289,7 +386,7 @@ setheader_common(icHeader *header)
     header->cmmId = 0;
     header->version = 0x03400000;  /* Back during a simplier time.... */
     setdatetime(&(header->date));
-    header->magic = 0x61637379;
+    header->magic = icMagicNumber;
     header->platform = icSigMacintosh;
     header->flags = 0;
     header->manufacturer = 0;
@@ -358,7 +455,7 @@ copy_header(unsigned char *buffer,icHeader *header)
 
 
 static void
-copy_tagtable(unsigned char *buffer,icTag *tag_list, ulong num_tags)
+copy_tagtable(unsigned char *buffer,gsicc_tag *tag_list, ulong num_tags)
 {
 
     unsigned int k;
@@ -382,7 +479,6 @@ copy_tagtable(unsigned char *buffer,icTag *tag_list, ulong num_tags)
 
 
     }
-
 
 }
 
@@ -442,7 +538,7 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
     icHeader  *header = &(iccprofile.header);
     int profile_size,k;
     int num_tags;
-    icTag *tag_list;
+    gsicc_tag *tag_list;
     int tag_offset = 0;
     unsigned char *curr_ptr;
     int last_tag;
@@ -477,16 +573,18 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
 
     /* Check if we only have LMN methods */
 
-    if(pcie->MatrixABC.is_identity /* && pcie->DecodeABC == DecodeABC_default */){
+    if(pcie->MatrixABC.is_identity && pcie->DecodeABC.procs[0] == abc_identity 
+        && pcie->DecodeABC.procs[1] == abc_identity && pcie->DecodeABC.procs[2] == abc_identity){
 
         /* Only LMN parameters, we can do this with a very simple ICC profile */
 
-        num_tags = 11;  /* common + rXYZ,gXYZ,bXYZ,rTRC,gTRC,bTRC,wtpt,bkpt */     
-        tag_list = (icTag*) gs_alloc_bytes(memory,sizeof(icTag)*num_tags,"gsicc_create_fromabc");
+        num_tags = 10;  /* common (2) + rXYZ,gXYZ,bXYZ,rTRC,gTRC,bTRC,bkpt,wtpt */     
+        tag_list = (gsicc_tag*) gs_alloc_bytes(memory,sizeof(gsicc_tag)*num_tags,"gsicc_create_fromabc");
 
         /* Let us precompute the sizes of everything and all our offsets */
 
         profile_size += TAG_SIZE*num_tags;
+        profile_size += 4; /* number of tags.... */
 
         last_tag = -1;
         init_common_tags(tag_list, num_tags, &last_tag);  
@@ -499,7 +597,7 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
         init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
 
         /* Check it the procs are the identity.  If so, no need to create a 
-           large curve, encode with gamma = 1.0 */
+           large curve. Just set num points to zero */
 
         for (k = 0; k < 3; k++){
 
@@ -507,11 +605,11 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
 
                 /* when n = 0 we assume identity! */
 
-                trc_tag_size = 12;
+                trc_tag_size = 4;
 
             } else {
 
-                trc_tag_size = CURVE_SIZE*2+12;  /* curv type */
+                trc_tag_size = CURVE_SIZE*2+4;  /* curv type */
  
             }
 
@@ -540,10 +638,20 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
 
         copy_tagtable(curr_ptr,tag_list,num_tags);
         curr_ptr += TAG_SIZE*num_tags;
+        curr_ptr += 4;
 
         /* Now the data.  Must be in same order as we created the tag table */
 
-        tag_location = NUMBER_COMMON_TAGS-1;
+        /* First the common tags */
+
+        add_common_tag_data(curr_ptr, tag_list);
+        
+        for (k = 0; k< NUMBER_COMMON_TAGS; k++)
+        {
+            curr_ptr += tag_list[k].size;
+        }
+
+        tag_location = NUMBER_COMMON_TAGS;
 
         get_XYZ(temp_XYZ,pcie->common.MatrixLMN.cu);
         add_xyzdata(curr_ptr,temp_XYZ);
@@ -560,6 +668,7 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
         curr_ptr += tag_list[tag_location].size;
         tag_location++;
 
+        /* Need to adjust for the D65/D50 issue */
         get_XYZ(temp_XYZ,pcie->common.points.WhitePoint);
         add_xyzdata(curr_ptr,temp_XYZ);
         curr_ptr += tag_list[tag_location].size;
@@ -583,7 +692,8 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
                 write_bigendian_4bytes(curr_ptr,icSigCurveType);
                 curr_ptr+=4;
                 memset(curr_ptr,0,8); /* reserved + number points */
-                
+                curr_ptr+=8;
+              
             } else {
     
                 /* Must sample the proc into a curve buffer */

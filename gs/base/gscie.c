@@ -162,7 +162,7 @@ a_from_cache(floatp in, const gs_cie_a * pcie)
     return gs_cie_cached_value(in, &pcie->caches.DecodeA.floats);
 }
 
-static float
+float
 abc_identity(floatp in, const gs_cie_abc * pcie)
 {
     return in;

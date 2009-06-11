@@ -16,11 +16,17 @@
 #ifndef gsicc_create_INCLUDED
 #  define gsicc_create_INCLUDED
 
+#include "icc34.h"
+
 
 void gsicc_create_fromcrd(unsigned char *buffer, gs_memory_t *memory);
 void gsicc_create_froma(gs_cie_a *pcie, unsigned char *buffer, gs_memory_t *memory);
 void gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memory);
 void gsicc_create_fromdefg(gs_cie_defg *pcie, unsigned char *buffer, gs_memory_t *memory);
 void gsicc_create_fromdef(gs_cie_def *pcie, unsigned char *buffer, gs_memory_t *memory);
+
+
+static void
+add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[]);
 
 #endif
