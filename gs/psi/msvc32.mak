@@ -352,6 +352,9 @@ MSVC_VERSION=8
 !if "$(_NMAKE_VER)" == "9.00.21022.08"
 MSVC_VERSION=9
 !endif
+!if "$(_NMAKE_VER)" == "9.00.30729.01"
+MSVC_VERSION=9
+!endif
 !endif
 
 !ifndef MSVC_VERSION
