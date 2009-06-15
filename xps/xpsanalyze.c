@@ -40,7 +40,64 @@ xps_resource_dictionary_has_transparency(xps_context_t *ctx, xps_item_t *root)
 	// TODO: ... all kinds of stuff can be here, brushes, elements, whatnot
     }
 
-    return 0;
+    return 1;
+}
+
+int
+xps_gradient_stops_have_transparency(xps_context_t *ctx, xps_item_t *root)
+{
+    xps_item_t *node;
+    gs_color_space *colorspace;
+    char *color_att;
+    float samples[32];
+
+    for (node = xps_down(root); node; node = xps_next(node))
+    {
+	if (!strcmp(xps_tag(node), "GradientStop"))
+	{
+	    color_att = xps_att(node, "Color");
+	    if (color_att)
+	    {
+		xps_parse_color(ctx, color_att, &colorspace, samples);
+		if (samples[0] < 1.0)
+		{
+		    //dputs("page has transparency: GradientStop has alpha\n");
+		    return 1;
+		}
+	    }
+	}
+    }
+}
+
+int
+xps_gradient_brush_has_transparency(xps_context_t *ctx, xps_item_t *root)
+{
+    xps_item_t *node;
+    char *opacity_att;
+
+    opacity_att = xps_att(root, "Opacity");
+    if (opacity_att)
+    {
+	if (atof(opacity_att) < 1.0)
+	{
+	    //dputs("page has transparency: GradientBrush Opacity\n");
+	    return 1;
+	}
+    }
+
+    for (node = xps_down(root); node; node = xps_next(node))
+    {
+	if (!strcmp(xps_tag(node), "RadialGradientBrush.GradientStops"))
+	{
+	    if (xps_gradient_stops_have_transparency(ctx, node))
+		return 1;
+	}
+	if (!strcmp(xps_tag(node), "LinearGradientBrush.GradientStops"))
+	{
+	    if (xps_gradient_stops_have_transparency(ctx, node))
+		return 1;
+	}
+    }
 }
 
 int
@@ -99,9 +156,24 @@ xps_brush_has_transparency(xps_context_t *ctx, xps_item_t *root)
 	}
     }
 
-    // TODO: ImageBrush
-    // TODO: LinearGradientBrush
-    // TODO: RadialGradientBrush
+
+    if (!strcmp(xps_tag(root), "ImageBrush"))
+    {
+	if (xps_image_brush_has_transparency(ctx, root))
+	    return 1;
+    }
+
+    if (!strcmp(xps_tag(root), "LinearGradientBrush"))
+    {
+	if (xps_gradient_brush_has_transparency(ctx, root))
+	    return 1;
+    }
+
+    if (!strcmp(xps_tag(root), "RadialGradientBrush"))
+    {
+	if (xps_gradient_brush_has_transparency(ctx, root))
+	    return 1;
+    }
 
     return 0;
 }

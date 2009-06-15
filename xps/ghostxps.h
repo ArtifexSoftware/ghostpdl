@@ -397,6 +397,7 @@ int xps_parse_icc_profile(xps_context_t *ctx, gs_color_space **csp, byte *data, 
 
 int xps_element_has_transparency(xps_context_t *ctx, xps_item_t *node);
 int xps_resource_dictionary_has_transparency(xps_context_t *ctx, xps_item_t *node);
+int xps_image_brush_has_transparency(xps_context_t *ctx, xps_item_t *root);
 
 
 /*

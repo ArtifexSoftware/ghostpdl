@@ -13,6 +13,11 @@
 
 /* XPS interpreter - image support */
 
+/* TODO: we should be smarter here and do incremental decoding
+ * and rendering instead of uncompressing the whole image to
+ * memory before drawing.
+ */
+
 #include "ghostxps.h"
 
 static void
@@ -269,8 +274,8 @@ xps_paint_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
     return 0;
 }
 
-int
-xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
+static int
+xps_find_image_brush_source_part(xps_context_t *ctx, xps_item_t *root, xps_part_t **partp)
 {
     xps_part_t *part;
     char *image_source_att;
@@ -313,6 +318,7 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 
     if (!image_name)
 	return gs_throw1(-1, "cannot parse image resource name '%s'", image_source_att);
+
     if (profile_name)
 	dprintf2("warning: ignoring color profile '%s' associated with image '%s'\n",
 		profile_name, image_name);
@@ -321,6 +327,20 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
     part = xps_find_part(ctx, partname);
     if (!part)
 	return gs_throw1(-1, "cannot find image resource part '%s'", partname);
+
+    *partp = part;
+    return 0;
+}
+
+int
+xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
+{
+    xps_part_t *part;
+    int code;
+
+    code = xps_find_image_brush_source_part(ctx, root, &part);
+    if (code < 0)
+	return gs_rethrow(code, "cannot find image source");
 
     if (!part->image)
     {
@@ -335,7 +355,35 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 
     xps_parse_tiling_brush(ctx, dict, root, xps_paint_image_brush, part->image);
 
+    /* TODO: free the image data here if the image is only used once on the page */
+
     return 0;
+}
+
+int
+xps_image_brush_has_transparency(xps_context_t *ctx, xps_item_t *root)
+{
+    xps_part_t *part;
+    int code;
+
+    code = xps_find_image_brush_source_part(ctx, root, &part);
+    if (code < 0)
+	return gs_rethrow(code, "cannot find image source");
+
+    /* Hmm, we should be smarter here and only look at the image header */
+
+    if (!part->image)
+    {
+	part->image = xps_alloc(ctx, sizeof(xps_image_t));
+	if (!part->image)
+	    return gs_throw(-1, "out of memory: image struct");
+
+	code = xps_decode_image(ctx, part, part->image);
+	if (code < 0)
+	    return gs_rethrow(-1, "cannot decode image resource");
+    }
+
+    return part->image->alpha;
 }
 
 void
