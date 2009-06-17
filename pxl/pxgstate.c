@@ -615,11 +615,21 @@ pxSetCharScale(px_args_t *par, px_state_t *pxs)
 const byte apxSetCharShear[] = {
   pxaCharShear, 0, 0
 };
+
+ /* experiments indicate the character shearing operands are
+    clamped after range checking though it is not documented in
+    the HP manual. */
+
+#define SHEAR_LIMIT 16383.0
+
 int
 pxSetCharShear(px_args_t *par, px_state_t *pxs)
 {	real x_shear = real_value(par->pv[0], 0);
 	real y_shear = real_value(par->pv[0], 1);
 	px_gstate_t *pxgs = pxs->pxgs;
+
+        x_shear = x_shear > SHEAR_LIMIT ? SHEAR_LIMIT : x_shear;
+        y_shear = y_shear > SHEAR_LIMIT ? SHEAR_LIMIT : y_shear;
 
 	if ( x_shear != pxgs->char_shear.x || y_shear != pxgs->char_shear.y ||
 	     pxgs->char_transforms[0] != pxct_shear
