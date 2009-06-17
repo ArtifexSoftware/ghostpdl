@@ -1,0 +1,53 @@
+.TH jbig2dec 1 "12 June 2009" "Version 0.10" "jbig2dec Manual"
+
+.SH NAME
+jbig2dec \- File format converter specialized in JBIG encoding
+
+.SH SYNOPSIS
+.B jbig2dec [
+.I options 
+\fR ] [
+.I file 
+.R ] [
+.I global-stream 
+.R ] [
+.I page-stream 
+.R ]
+
+.SH DESCRIPTION
+The
+.B jbig2dec
+command converts JBIG2 files to png or pbm files. The options are as
+follows:
+.TP
+\fB \-o \fI<file>\fR
+Store the decoded output in file \fI<file>\fR. Defaults to the input with a
+different extension. Set to \fI-\fR for standard output.
+.TP
+\fB \-t \fI<type>\fR
+Force a particular output file format. Supported are \fIpng\fR and
+\fIpbm\fR.
+.TP
+\fB \-d\fR or \fB\-\-dump\fR
+Print the structer of the JBIG2 file rather than explicitly decoding it.
+.TP
+\fB \-\-hash\fR
+Print a hash of the decode document.
+.TP
+\fB \-q\fR or \fB\-\-quiet\fR
+Supress diagnostic output.
+.TP
+\fB \-v\fR or \fB\-\-verbose\fR
+Increase the verbosity level.
+.TP
+\fB \-\-version\fR
+Show program version information.
+.TP
+\fB \-h\fR or \fB\-\-help\fR
+Show usage summary.
+
+.SH AUTHOR
+jbig2-dev <jbig2-dev@ghostscript.com>
+This manpage was initially written by Sebastian Rasmussen
+<sebras@hotmail.com> for jbig2dec and the Debian Project.
+
