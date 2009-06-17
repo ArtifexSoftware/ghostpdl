@@ -1,49 +1,63 @@
-.TH jbig2dec 1 "12 June 2009" "Version 0.10" "jbig2dec Manual"
+.TH jbig2dec 1 "2009 June 17" "Version 0.10" "jbig2dec Manual"
 
 .SH NAME
-jbig2dec \- File format converter specialized in JBIG encoding
+jbig2dec \- File format converter specialized in JBIG2 decoding
 
 .SH SYNOPSIS
-.B jbig2dec [
-.I options 
-\fR ] [
-.I file 
-.R ] [
-.I global-stream 
-.R ] [
-.I page-stream 
-.R ]
+.B jbig2dec
+.RI [ options ]
+.I file.jbig2
+.br
+.B jbig2dec
+.RI [ options ]
+.I global-stream page-stream
 
 .SH DESCRIPTION
 The
 .B jbig2dec
-command converts JBIG2 files to png or pbm files. The options are as
-follows:
+command converts JBIG2 files to png or pbm files.
+
+When passed a single
+.I file
+argument it is interpreted as a JBIG2 file stream, with either
+sequential or random-access organization.
+
+When passed two stream arguments, they are interpreted as the
+global and page-specific portions of an embedded organzation,
+as used in PDF. If a particular page references no global
+segment stream, /dev/null can be passed for the
+.I global-stream
+argument to request the embedded parser.
+
+.SH OPTIONS
+The options are as follows:
 .TP
-\fB \-o \fI<file>\fR
-Store the decoded output in file \fI<file>\fR. Defaults to the input with a
-different extension. Set to \fI-\fR for standard output.
+.BI -o " file"
+Store the decoded output in
+.IR file .
+Defaults to the input with a different extension.
+Set to \fI-\fR for standard output.
 .TP
-\fB \-t \fI<type>\fR
+.BI -t " type"
 Force a particular output file format. Supported are \fIpng\fR and
 \fIpbm\fR.
 .TP
-\fB \-d\fR or \fB\-\-dump\fR
-Print the structer of the JBIG2 file rather than explicitly decoding it.
+.BR -d " or " --dump
+Print the structure of the JBIG2 file rather than explicitly decoding it.
 .TP
-\fB \-\-hash\fR
+.BR --hash
 Print a hash of the decode document.
 .TP
-\fB \-q\fR or \fB\-\-quiet\fR
-Supress diagnostic output.
+.BR -q " or " --quiet
+Suppress warnings and other diagnostic output.
 .TP
-\fB \-v\fR or \fB\-\-verbose\fR
-Increase the verbosity level.
+.BR -v " or " --verbose
+Report additional information about the decoding process.
 .TP
-\fB \-\-version\fR
+.BR --version
 Show program version information.
 .TP
-\fB \-h\fR or \fB\-\-help\fR
+.BR -h " or " --help
 Show usage summary.
 
 .SH AUTHOR
