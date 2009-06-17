@@ -127,7 +127,7 @@ dynamic_grow(da_ptr pda, byte * next, uint max_size)
     int code;
 
     pda->next = next;
-    if (old_size == max_size)
+    if (old_size >= max_size)
 	return_error(e_limitcheck);
     while ((code = dynamic_resize(pda, new_size)) < 0 &&
 	   new_size > old_size
