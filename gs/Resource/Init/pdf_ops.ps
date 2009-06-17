@@ -65,11 +65,12 @@ userdict /GS_PDF_ProcSet 127 dict dup begin
 %	FontMatrixNonHV % TextFont.FontMatrix alters horz/vert glyph advance vector direction
 
 /nodict 1 dict def
-nodict /self { //nodict } executeonly put
+nodict /self { //nodict } executeonly put % to avoid recursion in dumps
 nodict readonly pop
 
 /dictbeginpage {	% <initialdict> dictbeginpage -
-  //nodict 20 dict .copydict begin { def } forall
+  20 dict copy dup begin
+  1 packedarray cvx executeonly /self exch def
   graphicsbeginpage textbeginpage
 } bdef
 /endpage {	% - endpage -
@@ -86,12 +87,7 @@ nodict readonly pop
 
 /gput		% <value> <key> gput -
  { exch currentdict //nodict eq { /self dup load end 5 dict begin def } if
-		% If we're in a Level 1 system, we need to grow the
-		% dictionary explicitly.
-   currentdict length currentdict maxlength ge %eq
-    { currentdict dup length 3 mul 2 idiv 1 add dict .copydict end begin 
-    }
-   if def
+   def
  } bdef
 
 /q {
