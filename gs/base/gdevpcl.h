@@ -29,6 +29,7 @@
 #define PAPER_SIZE_LETTER 2	/* 8.5" x 11" */
 #define PAPER_SIZE_LEGAL 3	/* 8.5" x 14" */
 #define PAPER_SIZE_LEDGER 6	/* 11" x 17" */
+#define PAPER_SIZE_A5 25	/* 14.8 cm x 21.0 cm */
 #define PAPER_SIZE_A4 26	/* 21.0 cm x 29.7 cm */
 #define PAPER_SIZE_A3 27	/* 29.7 cm x 42.0 cm */
 #define PAPER_SIZE_A2 28
