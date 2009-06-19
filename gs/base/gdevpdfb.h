@@ -245,6 +245,8 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,				/* type3charpath */
  0,				/* SetPageSize */
  0,				/* RotatePages */
- 0				/* Fit Pages */
+ 0,				/* Fit Pages */
+ 0,				/* CenterPages */
+ 0				/* DoNumCopies */
 };
 
