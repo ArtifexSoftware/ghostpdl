@@ -23,6 +23,7 @@
 #include "gxdcolor.h"
 #include "gxpcolor.h"
 #include "gxhldevc.h"
+#include "gxchar.h"
 
 /* We need this color space type for constructing temporary color spaces. */
 extern const gs_color_space_type gs_color_space_type_Indexed;
@@ -115,7 +116,6 @@ set_image_color(gx_device_pdf *pdev, gx_color_index c)
 			    &psdf_set_stroke_color_commands);
 }
 
-/* Copy a monochrome bitmap or mask. */
 static int
 pdf_copy_mono(gx_device_pdf *pdev,
 	      const byte *base, int sourcex, int raster, gx_bitmap_id id,
@@ -133,6 +133,9 @@ pdf_copy_mono(gx_device_pdf *pdev,
     pdf_resource_t *pres = 0;
     byte invert = 0;
     bool in_line = false;
+    gs_show_enum *show_enum = (gs_show_enum *)pdev->pte;
+		double width;
+		int x_offset, y_offset;
 
     /* Update clipping. */
     if (pdf_must_put_clip_path(pdev, pcpath)) {
@@ -149,32 +152,39 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	    return 0;
 	/* If a mask has an id, assume it's a character. */
 	if (id != gx_no_bitmap_id && sourcex == 0) {
+	    pdf_char_proc_t *pcp;
+
+	    if (show_enum->use_wxy_float)
+	        pdev->char_width.x = show_enum->wxy_float.x;
+	    else
+	        pdev->char_width.x = fixed2float(show_enum->wxy.x);
 	    pres = pdf_find_resource_by_gs_id(pdev, resourceCharProc, id);
 	    if (pres == 0) {	/* Define the character in an embedded font. */
-		pdf_char_proc_t *pcp;
-		double x_offset;
-		int y_offset;
-
 		gs_image_t_init_mask(&image, false);
 		invert = 0xff;
+		x_offset = x - (int)show_enum->pis->current_point.x;
+		y_offset = y - (int)show_enum->pis->current_point.y;
+		x -= x_offset;
+		y -= y_offset;
+		y -= h;
 		pdf_make_bitmap_image(&image, x, y, w, h);
-		y_offset = pdf_char_image_y_offset(pdev, x, y, h);
+		y+= h;
 		/*
 		 * The Y axis of the text matrix is inverted,
 		 * so we need to negate the Y offset appropriately.
 		 */
-		code = pdf_begin_char_proc(pdev, w, h, 0, y_offset, id,
+		code = pdf_begin_char_proc(pdev, w, h, 0, y_offset, x_offset, id,
 					   &pcp, &ipos);
 		if (code < 0)
 		    return code;
 		y_offset = -y_offset;
-		x_offset = psdf_round(pdev->char_width.x, 100, 10); /* See 
+		width = psdf_round(pdev->char_width.x, 100, 10); /* See 
 			pdf_write_Widths about rounding. We need to provide 
 			a compatible data for Tj. */
-		pprintg1(pdev->strm, "%g ", x_offset);
-		pprintd3(pdev->strm, "0 0 %d %d %d d1\n", y_offset, w, h + y_offset);
-		pprintd3(pdev->strm, "%d 0 0 %d 0 %d cm\n", w, h,
-			 y_offset);
+		pprintg1(pdev->strm, "%g ", width);
+		pprintd4(pdev->strm, "0 %d %d %d %d d1\n",  x_offset, -h + y_offset, w + x_offset, y_offset);
+		pprintd4(pdev->strm, "%d 0 0 %d %d %d cm\n", w, h, x_offset,
+			 -h + y_offset);
 		pdf_image_writer_init(&writer);
 		code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, true);
 		if (code < 0)
@@ -185,7 +195,12 @@ pdf_copy_mono(gx_device_pdf *pdev,
 		/* We're under pdf_text_process. It set a high level color. */
 	    } else
 		set_image_color(pdev, one);
-	    pdf_make_bitmap_matrix(&image.ImageMatrix, x, y, w, h, h);
+	    pcp = (pdf_char_proc_t *) pres;
+	    x -= pdf_charproc_x_offset(pcp);
+	    y -= pdf_charproc_y_offset(pcp);
+	    y -= h;
+	    pdf_make_bitmap_image(&image, x, y, w, h);
+	    y += h;
 	    goto rx;
 	}
 	set_image_color(pdev, one);
