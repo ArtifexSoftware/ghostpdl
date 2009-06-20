@@ -1288,16 +1288,26 @@ end readonly def
   } if
 } bind def
 
+/get_any_box { % <pagedict> get_any_box <box name> <box>
+  //systemdict /UseTrimBox .knownget dup { and } if {
+    /TrimBox pget { /TrimBox exch } if
+  } if
+  dup type /arraytype ne {
+    //systemdict /UseCropBox .knownget dup { and } if {
+      /CropBox pget { /CropBox exch } if
+    } if
+  } if
+  dup type /arraytype ne {
+    /MediaBox exch get_media_box
+  } if
+} bind def
+
 % Compute the matrix that transforms the PDF->PS "default" user space
 /pdf_PDF2PS_matrix {	% <pdfpagedict> -- matrix
   matrix currentmatrix matrix setmatrix exch
   % stack: savedCTM <pdfpagedict>
-  dup /CropBox pget dup {exch pop} if //systemdict /UseCropBox known and {
-    /CropBox 2 copy pget pop
-  } {
-    /MediaBox 1 index get_media_box
-  } ifelse
-  % stack: savedCTM <pdfpagedict> /Crop|MediaBox <Crop|Media Box>
+  dup get_any_box
+  % stack: savedCTM <pdfpagedict> /Trim|Crop|MediaBox <Trim|Crop|Media Box>
   oforce_elems normrect_elems fix_empty_rect_elems 4 array astore
   //systemdict /PDFFitPage known {
     PDFDEBUG { (Fiting PDF to imageable area of the page.) = flush } if
@@ -1388,35 +1398,28 @@ currentdict /PDF2PS_matrix_key undef
   /Orientation 0 def
   currentpagedevice
 	% Stack: pdfpagedict currentpagedevicedict
-  1 index /CropBox pget dup {exch pop} if //systemdict /UseCropBox known and {
-    /CropBox 2 index /CropBox pget % will use the CropBox
+  1 index get_any_box 
+	% Stack: pdfpagedict currentpagedevicedict /BoxName [box]
+  oforce_elems normrect_elems fix_empty_rect_elems boxrect 4 2 roll pop pop
+  3 index /Rotate pget not { 0 } if 90 idiv 1 and 0 ne { exch } if
+  % stack: pdfpagedict currentpagedevicedict boxwidth boxheight
+  //systemdict /PDFFitPage known {
+    % Preserve page size,
+    % but choose portrait/landscape depending on box width:height ratio
+    % (if box width == height, select portrait orientation)
+    gt
+    1 index /PageSize get aload pop
+    2 copy gt
+    4 -1 roll ne { exch } if
   } {
-    /MediaBox 2 index get_media_box true % will use the MediaBox
-  } ifelse
-  {
-    oforce_elems normrect_elems fix_empty_rect_elems boxrect 4 2 roll pop pop
-    3 index /Rotate pget not { 0 } if 90 idiv 1 and 0 ne { exch } if
-    % stack: pdfpagedict currentpagedevicedict boxwidth boxheight
-    //systemdict /PDFFitPage known {
-      % Preserve page size,
-      % but choose portrait/landscape depending on box width:height ratio
-      % (if box width == height, select portrait orientation)
-      gt
-      1 index /PageSize get aload pop
-      2 copy gt
-      4 -1 roll ne { exch } if
-    } {
-      % Set the page size.
-      //systemdict /NoUserUnit .knownget not { false } if not {
-        3 index /UserUnit knownoget {
-          dup 4 -1 roll mul 3 1 roll mul
-        } if
+    % Set the page size.
+    //systemdict /NoUserUnit .knownget not { false } if not {
+      3 index /UserUnit knownoget {
+        dup 4 -1 roll mul 3 1 roll mul
       } if
-    } ifelse
-    2 array astore /PageSize exch def
-  } {
-    pop % pops /Crop|MediaBox
+    } if
   } ifelse
+  2 array astore /PageSize exch def
   % Determine the number of spot colors used on the page.  Note: This searches
   % the pages resources.  It may be high if a spot color is in a resource but
   % is not actually used on the page.

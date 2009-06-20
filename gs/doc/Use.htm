@@ -574,8 +574,9 @@ Ghostscript is normally built to interpret both PostScript and PDF files, examin
 
  <dl>
 <dt><code>-dPDFFitPage</code>
-<dd>Rather than selecting a PageSize given by the PDF MediaBox or
-CropBox (see -dUseCropBox), the PDF file will be scaled to fit
+<dd>Rather than selecting a PageSize given by the PDF MediaBox,
+TrimBox (see -dUseTrimBox), or CropBox (see -dUseCropBox),
+the PDF file will be scaled to fit
 the current device page size (usually the default page size).
 <p>
 This is useful to avoid clipping information on a PDF document when
@@ -606,6 +607,16 @@ Some files have a CropBox that is smaller than the MediaBox and
 may include white space, registration or cutting marks outside
 the CropBox.  Using this option will set the page size 
 appropriately for a viewer.
+</dl>
+
+<dl>
+<dt><code>-dUseTrimBox</code>
+<dd>Sets the page size to the TrimBox rather than the MediaBox.
+The trim box defines the intended dimensions of the finished page
+after trimming. Some files have a TrimBox that is smaller than the
+MediaBox and may include white space, registration or cutting marks
+outside the CropBox. Using this option simulates appearance of the
+finished printed page.
 </dl>
 
 <dl>
