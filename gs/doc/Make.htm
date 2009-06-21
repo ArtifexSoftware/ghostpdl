@@ -1244,62 +1244,18 @@ add these defines to your Visual Studio project.
 <h3><a name="Microsoft_build_64"></a>Microsoft Environment for 64-bit</h3>
 
 Building Ghostscript for 64-bit Windows (AMD64 processor) requires
-Microsoft Visual Studio .NET 2005 on 64-bit Windows,
-or Microsoft Visual Studio .NET 2003 and Windows Server 2003 DDK
-on 32-bit Windows (cross-compile).
+Microsoft Visual Studio .NET 2005 or Microsoft Visual Studio 2008 
+on 64-bit Windows.  Cross compiling on 32-bit Windows is not supported.
 <p>
 Compiling for 64-bit is similar to the 
 <a href="#Microsoft_build">Microsoft Environment</a> instructions above,
 but with the addition of a WIN64 define.
 
-<h4><a name="Microsoft_64on32"></a>Cross compile on 32-bit Windows XP</h4>
-Microsoft Visual Studio .NET 2003 is used for 32-bit compilation
-of auxiliary programs used by the compile process, 
-while Windows Server 2003 Device Driver Kit (DDK)
-is used for 64-bit compilation.
-The DDK cross compilers for the IA64 and AMD64 processors,
-however only AMD64 is supported by the makefile.
-The DDK is not installed correctly by the setup program.
-You need to copy <code>msobj10.dll</code> to the compiler
-directory from a nearby directory.
-<p>
-To make ghostscript use
-<blockquote><code>
-  nmake -f psi/msvc32.mak WIN64=
-</code></blockquote>
-This will fail when it tries to run genconf.exe.
-Move <code>./obj/genconf.exe</code> to 64-bit Windows, then run it
-<blockquote><code>
-  genconf arch.h
-</code></blockquote>
-Move <code>arch.h</code> back to <b><tt>./obj/arch.h</tt></b>.
-(Alternatively, use arch.h created by a 32-bit build and change 
-ARCH_ALIGN_PTR_MOD to 8, 
-ARCH_ALIGN_STRUCT_MOD to 16,
-and ARCH_SIZEOF_PTR to 8).
-Then restart the build
-<blockquote><code>
-  nmake -f psi/msvc32.mak WIN64=
-</code></blockquote>
-
-<p>
-You can also use Microsoft Visual Studio .NET 2005 
-to do a similar cross compile, but you will need to 
-change the DEVSTUDIO path.
-
-<h4><a name="Microsoft_64on64"></a>Compile on 64-bit Windows XP</h4>
 To make ghostscript use
 <blockquote><code>
   nmake -f psi/msvc32.mak WIN64=
 </code></blockquote>
 <p>
-The makefile currently uses the cross compiler (x86_amd64) 
-rather than the native compiler (amd64).
-<p>
-You can install Microsoft Visual Studio .NET 2003 on
-64-bit Windows, but you can't install Windows Server 2003 DDK.
-You may be able to copy the DDK directory <code>c:\winddk</code>
-from a 32-bit system to a 64-bit system and compile GS.
 
 <h4><a name="Self-extracting_executables"></a>Making self-extracting executables</h4>
 

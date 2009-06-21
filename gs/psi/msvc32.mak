@@ -424,15 +424,6 @@ SHAREDBASE=
 !else
 COMPBASE=$(DEVSTUDIO)\Vc7
 SHAREDBASE=$(DEVSTUDIO)\Vc7
-!ifdef WIN64
-# Windows Server 2003 DDK is needed for the 64-bit compiler
-# but it won't install on Windows XP 64-bit.
-DDKBASE=c:\winddk\3790
-COMPDIR64=$(DDKBASE)\bin\win64\x86\amd64
-LINKLIBPATH=/LIBPATH:"$(DDKBASE)\lib\wnet\amd64"
-INCDIR64A=$(DDKBASE)\inc\wnet
-INCDIR64B=$(DDKBASE)\inc\crt
-!endif
 !endif
 !endif
 
@@ -451,7 +442,7 @@ SHAREDBASE=
 COMPBASE=$(DEVSTUDIO)\VC
 SHAREDBASE=$(DEVSTUDIO)\VC
 !ifdef WIN64
-COMPDIR64=$(COMPBASE)\bin\x86_amd64
+COMPDIR64=$(COMPBASE)\bin\amd64
 LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\AMD64"
 !endif
 !endif
@@ -473,7 +464,7 @@ RCDIR=C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin
 COMPBASE=$(DEVSTUDIO)\VC
 SHAREDBASE=$(DEVSTUDIO)\VC
 !ifdef WIN64
-COMPDIR64=$(COMPBASE)\bin\x86_amd64
+COMPDIR64=$(COMPBASE)\bin\amd64
 LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\AMD64"
 !endif
 !endif
@@ -529,7 +520,11 @@ MSINCDIR=$(COMPBASE)\include
 !if "$(COMPBASE)"==""
 LIBDIR=
 !else
+!ifdef WIN64
+LIBDIR=$(COMPBASE)\lib\amd64
+!else
 LIBDIR=$(COMPBASE)\lib
+!endif
 !endif
 !endif
 
@@ -545,7 +540,7 @@ COMPCPP=$(COMP)
 !endif
 !ifndef COMPAUX
 !ifdef WIN64
-COMPAUX="$(COMPBASE)\bin\cl"
+COMPAUX=$(COMP)
 !else
 COMPAUX=$(COMP)
 !endif
