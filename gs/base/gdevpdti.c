@@ -1,3 +1,4 @@
+
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
   
@@ -75,7 +76,7 @@ assign_char_code(gx_device_pdf * pdev, gs_text_enum_t *pte)
 {
     pdf_bitmap_fonts_t *pbfs = pdev->text->bitmap_fonts;
     pdf_font_resource_t *pdfont = pbfs->open_font; /* Type 3 */
-    int i, c, code;
+    int i, c = 0, code;
     uint operation = pte->text.operation;
 
     if (pbfs->bitmap_encoding_id == 0)
