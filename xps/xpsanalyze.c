@@ -67,6 +67,8 @@ xps_gradient_stops_have_transparency(xps_context_t *ctx, xps_item_t *root)
 	    }
 	}
     }
+
+    return 0;
 }
 
 int
@@ -98,6 +100,8 @@ xps_gradient_brush_has_transparency(xps_context_t *ctx, xps_item_t *root)
 		return 1;
 	}
     }
+
+    return 0;
 }
 
 int
