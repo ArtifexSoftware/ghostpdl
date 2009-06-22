@@ -792,7 +792,7 @@ $(SETUP_XE): $(PSOBJ)dwsetup.obj $(PSOBJ)dwinst.obj $(PSOBJ)dwsetup.res $(PSSRC)
 	$(LINK) $(LCT) @$(PSGEN)dwsetup.rsp $(LINKLIBPATH) @$(PSGEN)dwsetup.tr $(PSOBJ)dwsetup.res
 	del $(PSGEN)dwsetup.rsp
 	del $(PSGEN)dwsetup.tr
-!if $(MSVC_VERSION) == 8
+!if $(MSVC_VERSION) >= 8
 !ifdef WIN64
 	mt -nologo -manifest $(PSSRC)dwsetup_x64.manifest -outputresource:$(SETUP_XE);#1
 !else
