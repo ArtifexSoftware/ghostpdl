@@ -46,6 +46,9 @@
 #include "gscolorbuffer.h"
 #include "gsptype2.h"
 #include "gxpcolor.h"
+#include "gsptype1.h"
+#include "gzcpath.h"
+#include "gxpaint.h"
 
 /* Visual  trace options : set one to 1. */
 #define VD_PAINT_MASK 0
@@ -894,7 +897,6 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
         global_index++;
     }
 
-
 #endif
 
     buf->saved = ctx->stack;
@@ -1426,6 +1428,24 @@ pdf14_fill_path(gx_device *dev,	const gs_imager_state *pis,
     gs_pattern2_instance_t *pinst = NULL;
 
 
+    if (pdcolor != NULL && gx_dc_is_pattern1_color(pdcolor)){
+
+        if( gx_pattern1_get_transptr(pdcolor) != NULL){
+
+            /* In this case, we need to push a transparency group 
+               and tile the pattern color, which is stored in 
+               a pdf14 device buffer in the ctile object memember
+               variable ttrans */
+
+            code = pdf14_tile_pattern_fill(dev, &new_is, ppath, 
+                params, pdcolor, pcpath);
+     
+        }
+
+    
+    }
+
+
    if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor)) {
 
  	pinst =
@@ -1480,6 +1500,98 @@ pdf14_stroke_path(gx_device *dev, const	gs_imager_state	*pis,
     return gx_default_stroke_path(dev, &new_is, ppath, params, pdcolor,
 				  pcpath);
 }
+
+
+/* Used for filling rects when we are doing a fill with a pattern that
+   has transparency */
+static int
+pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
+		     gx_path * ppath, const gx_fill_params * params,
+		 const gx_device_color * pdevc, const gx_clip_path * pcpath)
+{
+    int code = 0;
+    gs_imager_state *pis_noconst = (gs_imager_state *)pis; /* Break const. */
+    gs_fixed_rect clip_box;
+    gs_fixed_rect outer_box;
+    pdf14_device * p14dev = (pdf14_device *)pdev;
+    gs_int_rect rect;
+    gx_clip_rect *curr_clip_rect;
+    gx_color_tile *ptile;
+    int k;
+    gx_pattern_trans_t *fill_trans_buffer;
+    int ok;
+
+    gx_clip_path cpath_intersection;
+    const gs_fixed_rect *pcbox = (pcpath == NULL ? NULL : cpath_is_rectangle(pcpath));
+
+    if (pcpath != NULL) {
+        code = gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
+        if (code < 0)
+	    return code;
+    } else {
+        (*dev_proc(pdev, get_clipping_box)) (pdev, &clip_box);
+        gx_cpath_init_local(&cpath_intersection, ppath->memory);
+        code = gx_cpath_from_rectangle(&cpath_intersection, &clip_box);
+    }
+
+    if (ppath != NULL)
+        code = gx_cpath_intersect_with_params(&cpath_intersection, ppath, params->rule, 
+	        pis_noconst, params);
+
+  /* Now let us push a transparency group into which we are
+     going to tile the pattern.  */
+
+    if (ppath != NULL && code >= 0) {
+
+        gx_cpath_outer_box(&cpath_intersection, &outer_box);
+
+        rect.p.x = fixed2int(outer_box.p.x);
+        rect.p.y = fixed2int(outer_box.p.y);
+        rect.q.x = fixed2int_ceiling(outer_box.q.x);
+        rect.q.y = fixed2int_ceiling(outer_box.q.y);
+
+        code = pdf14_push_transparency_group(p14dev->ctx, &rect,
+					 0, 0, 255,255,
+					 pis->blend_mode, 0,
+					 0, p14dev->color_info.num_components);
+
+        /* Now lets go through the rect list and fill with the pattern */
+
+        /* First get the buffer that we will be filling */
+
+        fill_trans_buffer = new_pattern_trans_buff(pis->memory);
+        pdf14_get_buffer_information(pdev, fill_trans_buffer);
+
+        /* fill the rectangles */
+
+        ptile = pdevc->mask.m_tile;
+
+        curr_clip_rect = cpath_intersection.rect_list->list.head->next;
+
+        for( k = 0; k< cpath_intersection.rect_list->list.count; k++){
+
+            ok = gx_trans_pattern_fill_rect(curr_clip_rect, ptile, fill_trans_buffer);
+            curr_clip_rect = curr_clip_rect->next;
+
+        }
+
+        /* free our buffer object */
+
+        gs_free_object(pis->memory, fill_trans_buffer, "pdf14_tile_pattern_fill");
+
+        /* pop our transparency group which will force the blending */
+
+        code = pdf14_pop_transparency_group(p14dev->ctx, p14dev->blend_procs, p14dev->color_info.num_components);
+    
+    }
+
+    return(code);
+
+}
+
+
+
+
 
 static	int
 pdf14_begin_typed_image(gx_device * dev, const gs_imager_state * pis,

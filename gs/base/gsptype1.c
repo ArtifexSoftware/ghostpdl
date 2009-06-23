@@ -493,6 +493,14 @@ gx_dc_is_pattern1_color(const gx_device_color *pdevc)
     return pdevc->type == &gx_dc_pattern;
 }
 
+/* Get transparency object pointer */
+void *
+gx_pattern1_get_transptr(const gx_device_color *pdevc)
+{
+    return pdevc->colors.pattern.p_tile->ttrans;
+}
+
+
 /* Check device color for Pattern Type 1. */
 bool
 gx_dc_is_pattern1_color_clist_based(const gx_device_color *pdevc)

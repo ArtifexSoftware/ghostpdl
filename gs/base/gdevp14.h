@@ -236,4 +236,13 @@ int pdf14_get_buffer_information(const gx_device * dev, gx_pattern_trans_t *tran
 int
 pdf14_disable_device(gx_device * dev);
 
+
+/* Used for filling rects when we are doing a fill with a pattern that
+   has transparency */
+static int
+pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
+		     gx_path * ppath, const gx_fill_params * params,
+		 const gx_device_color * pdevc, const gx_clip_path * pcpath);
+
+
 #endif /* gdevp14_INCLUDED */

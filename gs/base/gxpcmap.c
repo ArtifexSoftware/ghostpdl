@@ -428,6 +428,23 @@ pattern_accum_open(gx_device * dev)
     return code;
 }
 
+gx_pattern_trans_t*
+new_pattern_trans_buff(gs_memory_t *mem)
+{
+
+    gx_pattern_trans_t *result;
+
+
+    /* Allocate structure that we will use for the trans pattern */
+    result = gs_alloc_struct(mem, gx_pattern_trans_t, &st_pattern_trans, "new_pattern_trans_buff");
+    result->transbytes = NULL;
+    result->pdev14 = NULL;
+
+    return(result);
+
+}
+
+
 /* Close an accumulator and free the bits. */
 static int
 pattern_accum_close(gx_device * dev)
@@ -448,7 +465,7 @@ pattern_accum_close(gx_device * dev)
     }
 
     if (padev->transbuff != 0) {
-        gs_free_object(mem,padev->target,"pattern_accum_colose(transbuff)");
+        gs_free_object(mem,padev->target,"pattern_accum_close(transbuff)");
         padev->transbuff = NULL;
     }
 

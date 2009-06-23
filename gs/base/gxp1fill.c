@@ -432,3 +432,17 @@ gx_dc_colored_masked_fill_rect(const gx_device_color * pdevc,
 			     tile_masked_fill);
     }
 }
+
+/* This fills the transparency buffer rectangles with a pattern 
+   buffer that includes transparency */
+
+int 
+gx_trans_pattern_fill_rect(gx_clip_rect *curr_clip_rect, gx_color_tile *ptile, 
+                               gx_pattern_trans_t *fill_trans_buffer)
+{
+
+
+
+return(0);
+
+}
