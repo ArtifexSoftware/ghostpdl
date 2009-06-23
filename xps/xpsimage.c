@@ -288,7 +288,7 @@ xps_find_image_brush_source_part(xps_context_t *ctx, xps_item_t *root, xps_part_
 
     image_source_att = xps_att(root, "ImageSource");
     if (!image_source_att)
-	return gs_throw("missing ImageSource attribute");
+	return gs_throw(-1, "missing ImageSource attribute");
 
     /* "{ColorConvertedBitmap /Resources/Image.tiff /Resources/Profile.icc}" */
     if (strstr(image_source_att, "{ColorConvertedBitmap") == image_source_att)
