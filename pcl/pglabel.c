@@ -193,7 +193,7 @@ hpgl_select_stick_font(hpgl_state_t *pgls)
 	 * The stick font is defined in a cell that's only 2/3
 	 * the size of the actual character.
 	 */
-	pl_fp_set_pitch_cp(&font->params, 100.0*2/3);
+	pl_fp_set_pitch_cp(&font->params, 1000.0*2/3);
 	pfs->font = font;
 	{ 
 	    byte id[2];
@@ -286,14 +286,14 @@ hpgl_get_char_width(const hpgl_state_t *pgls, gs_char ch, hpgl_real_t *width)
                em-square the space character would occupy... */
             if (code == 1) {
                 gs_width.y = 0;
-                gs_width.x = pl_fp_pitch_cp(&pfs->font->params) / 100.0;
+                gs_width.x = pl_fp_pitch_cp(&pfs->font->params) / 1000.0;
             }
                 
 	    if ( !pl_font_is_scalable(pfs->font) ) {
 		if ( code == 0 )
 		    *width = gs_width.x	* inches_2_plu(1.0 / pfs->font->resolution.x); 
 		else
-		    *width = coord_2_plu(pl_fp_pitch_cp(&pfs->font->params) * 10); 
+		    *width = coord_2_plu(pl_fp_pitch_cp(&pfs->font->params));
 		goto add;
 	    }
 	    else if ( code >= 0 ) { 
@@ -618,8 +618,8 @@ hpgl_current_char_scale(const hpgl_state_t *pgls)
                 scale.y = -(ratio * inches_2_plu(1.0 / font->resolution.y));
             }
         } else {
-#define PERCENT_OF_EM ((pl_fp_pitch_cp(&pfs->font->params) / 100.0))
-            scale.x = scale.y = (1.0/PERCENT_OF_EM) * hpgl_points_2_plu(pgls, pl_fp_pitch_cp(&pfs->params) / 100);
+#define PERCENT_OF_EM ((pl_fp_pitch_cp(&pfs->font->params) / 1000.0))
+            scale.x = scale.y = (1.0/PERCENT_OF_EM) * hpgl_points_2_plu(pgls, pl_fp_pitch_cp(&pfs->params) / 100.0);
         }
     } else {
         /*
@@ -821,14 +821,14 @@ hpgl_print_char(
 		if ( pl_font_is_scalable(font) ) {
 		    if (pfs->params.proportional_spacing)
 			space_width = 
-			    (coord_2_plu(pl_fp_pitch_cp(&pfs->font->params)
+			    (coord_2_plu((pl_fp_pitch_cp(&pfs->font->params) / 10)
 					 * pfs->params.height_4ths / 4) ) / scale.x;
 		    else
 			space_width = 1.0; 
 		        /* error! NB scalable fixed pitch space_code == 0 */
 		} else
 		    space_width =
-			    ( coord_2_plu(pl_fp_pitch_cp(&pfs->font->params) * 10.0) ) / scale.x;
+                        coord_2_plu(pl_fp_pitch_cp(&pfs->font->params)) / scale.x;
 		space_width *= (1.0 + hpgl_get_character_extra_space_x(pgls));
             }
 	}
@@ -1235,8 +1235,9 @@ acc_ht:	    hpgl_call(hpgl_get_current_cell_height(pgls, &height));
                                     label_advance = ratio * inches_2_plu(1.0 / pfs->font->resolution.x);
                                 }
                             } else
+                                /*** WRONG ****/
                                 label_advance = hpgl_points_2_plu(pgls, pl_fp_pitch_cp(&pfs->params) /
-                                                                  pl_fp_pitch_cp(&pfs->font->params) );
+                                                                  ((pl_fp_pitch_cp(&pfs->font->params)/10.0)));
                             if ( hpgl_get_character_extra_space_x(pgls) != 0 ) 
                                 label_advance *= 1.0 + hpgl_get_character_extra_space_x(pgls);
                         } else {

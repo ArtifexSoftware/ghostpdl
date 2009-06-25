@@ -404,11 +404,11 @@ pcl_updated_hmi(
     if (pl_font_is_scalable(plfont) && plfont->params.typeface_family != 0) {
         if (plfont->params.proportional_spacing)
             /* Scale the font's pitch by the requested height. */
-            hmi = pl_fp_pitch_cp(&plfont->params) * pfs->params.height_4ths / 4;
+            hmi = pl_fp_pitch_cp(&plfont->params) / 10.0 * pfs->params.height_4ths / 4;
         else
             hmi = pl_fp_pitch_cp(&(pfs->params));
     } else
-        hmi = pl_fp_pitch_cp(&(plfont->params)) * 10.0;
+        hmi = pl_fp_pitch_cp(&(plfont->params));
 
     /*
      * Round to a multiple of the unit of measure (see the "PCL 5 Printer

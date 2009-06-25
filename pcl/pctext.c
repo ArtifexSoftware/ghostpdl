@@ -654,7 +654,7 @@ pcl_text(
 	                         * 0.25 * 7200.0 / ppi;
 	} else {
 	    scale.x = scale.y = pl_fp_pitch_cp(&pfp->params)
-	                         * (100.0 / pl_fp_pitch_cp(&pfp->font->params))
+	                         * (1000.0 / pl_fp_pitch_cp(&pfp->font->params))
 	                         * (7200.0 / (100.0 * ppi));
 
             /* hack for a scalable lineprinter font.  If a real
