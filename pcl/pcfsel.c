@@ -161,13 +161,17 @@ check_support(const pcl_state_t *pcs, uint symbol_set, const pl_font_t *fp,
 	return 1;
 }
 
+/* Identify the internal lineprinter font */
+#define INTERNAL_LPFONT \
+    (fp->params.typeface_family == 0 && fp->storage == pcds_internal)
+
 /* a font may be scalable but we want to treat it a bitmap for the
-   purpose of selection.  Right now lineprinter is the only example of
-   this */
+   purpose of selection.  The internal lineprinter is the only example
+   of this. */
 static bool
 font_is_scalable_selection_wise(const pl_font_t *fp)
 {
-    if (fp->params.typeface_family == 0)
+    if (INTERNAL_LPFONT)
         return false;
     else
         return pl_font_is_scalable(fp);
@@ -320,7 +324,7 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 	 * Lineprinter has a special case, making it harder to accidently select.
 	 */
 
-	if (fp->params.typeface_family == 0)
+	if (INTERNAL_LPFONT)
 	    score[score_fontnumber] = 0x100000 - fp->params.typeface_family; 
 	else
 	    score[score_fontnumber] = 0x200000 - fp->params.typeface_family; 
