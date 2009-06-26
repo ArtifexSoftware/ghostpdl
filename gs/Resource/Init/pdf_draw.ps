@@ -1035,6 +1035,104 @@ end
   } if
 } bdef
 
+% <string> <index> getu16 <integer>
+/getu16 {
+  2 copy get 8 bitshift 3 1 roll 1 add get add
+} bind def
+
+% <string> <index> getu32 <integer>
+/getu32 {
+  2 copy getu16 16 bitshift 3 1 roll 2 add getu16 add
+} bind def
+
+
+% Process jp2 blocks (aka boxes). All procedures have the signature
+% <file> <length> -> ... <file> <flush_length>
+/jp2_tag_dict <<
+  /jp2h { % descend into a sub-stream, never return.
+    () /SubFileDecode filter 0
+  } bind
+  /ihdr {
+    14 sub                               % file len-14
+    1 index 14 string readstring pop     % file len-14 (14)
+    /Components 1 index 8 getu16         % file len-14 (14) /Components NC
+    def                                  % file len-14 (14)
+    10 get 16#7F and 1 add
+    /BitsPerComponent exch def           % file len-14 
+  } bind
+  /colr {
+    3 sub
+    1 index 3 string readstring pop      % file len-3 (3)
+    0 get 1 eq {
+      4 sub                              % file len-7
+      1 index 4 string readstring pop    % file len-16 (4) 
+      0 getu32                           % file len-16 enum
+      dup 16 eq {
+        % Don't set device-independent color space now
+        % to avoid raster differences
+        pop /ColorSpace /DeviceRGB % /sRGB
+        def                              % file len-7
+      } {
+        17 eq {
+          % See above.
+          /ColorSpace /DeviceGray % /sGray
+          def                            % file len-7
+        } if
+      } ifelse
+    } {
+      string 1 index exch readstring pop % file ()
+      /ColorSpace exch                   % file /ColorSpace ()
+      % ICC ColorSpace is not yet implemented
+      pop pop
+      %
+      0                                  % file 0
+    } ifelse
+  } bind
+>> readonly def
+
+
+% Parse jp2 file format to get color space and image depth info.
+% <file> get_jp2_csp -
+/get_jp2_csp {
+  {
+    dup (01234567) readstring pop        % f (LBoxTBox)
+    dup length 8 lt {
+      pop exit
+    } if
+    dup 4 4 getinterval exch             % f (TBox) (LBoxTBox)
+    0 getu32                             % f (TBox) LBox
+    dup 0 eq {
+      pop pop exit % cannot happen
+    } {
+      dup 1 eq {
+        pop 1 index (01234567) readstring pop
+        4 getu32                         % f (TBox) LBox
+        16 sub
+      } {
+        8 sub
+      } ifelse
+    } ifelse                             % f (TBox) LBox-8..16  
+
+    PDFDEBUG {
+      2 copy 2 packedarray ==            % f (TBox) LBox-8..16
+    } if
+   
+    //jp2_tag_dict 3 -1 roll .knownget {
+      exec
+    } if                                  % f flush
+
+    dup 0 ne {
+      1 index exch                        % f f flush
+      () /SubFileDecode filter flushfile % skip unwanted blocks
+    } {
+      pop
+    } ifelse
+  } loop
+  pop
+} bind def
+
+currentdict /jp2_tag_dict .undef
+
 /makeimagedict {	% <resdict> <newdict> makeimagedict <imagemask>
 			% On return, newdict' is currentdict
   begin
@@ -1046,7 +1144,7 @@ end
   makeimagekeys
 } bdef
 /makeimagekeys {	% <resdict> makeimagekeys <imagemask>
-		% newdict is currentdict
+              	% newdict is currentdict
 		% Assumes Width, Height, BPC, Interpolate already copied.
   /ImageType 1 def
   /ImageMatrix Width 0 0
@@ -1060,30 +1158,97 @@ end
     /Decode 2 copy knownoget { 0 2 getinterval } { //01_1 } ifelse def
 		% BitsPerComponent is optional for masks.
     /BitsPerComponent 2 copy known { pop } { 1 def } ifelse
-    true
+		% Even though we're going to read data,
+		% pass false to resolvestream so that
+		% it doesn't try to use Length (which may not be present).
+    //false resolvestream /DataSource exch def
+    //true
   } {
 		% Opaque image
-    dup /ColorSpace knownoget 
-    % JPXDecode filters can omit the /ColorSpace and /BitsPerComponent
-    % keys, in which case the interpreter must retrieve this information
-    % from inside the compressed stream. Here we substitute the most
-    % likely values as a work-around.
-    not {
-      (   **** Warning: assuming JPX image is 8-bit RGB.\n) stderrprint
-      [/DeviceRGB] /BitsPerComponent 8 def
-    } if 
+    dup /ColorSpace oknown 
+    1 index /BitsPerComponent oknown and not {
+      dup /Filter knownoget {
+        dup type /arraytype eq {
+          dup length
+          dup 0 gt {
+            1 sub get oforce
+          } {
+            pop
+          } ifelse
+        } if
+        /JPXDecode eq {
+          % JPXDecode filters can omit the /ColorSpace and /BitsPerComponent
+          % keys, in which case the interpreter must retrieve this information
+          % from inside the compressed stream. Here we substitute the most
+          % likely values as a work-around.
+          dup /IDFlag known {
+            (   **** Warning: PDF spec bans inline JPX images.\n) pdfformaterror
+            % Inline stream is not positionable. Cannot get ColorSpace.
+          } {
+            % Drop the last filter (JPXDecode) from the pipeline
+            dup dup length dict copy
+            dup /Filter oget
+            dup type /arraytype eq {
+              dup length 1 gt {
+                dup length 1 sub 0 exch getinterval
+                1 index exch /Filter exch put
+
+                dup /Params knownoget {
+                  dup type /arraytype eq {
+                    dup length 1 gt {
+                      dup length 1 sub 0 exch getinterval
+                      1 index exch /Params exch put
+                    } {
+                      pop
+                      dup /Params undef
+                    } ifelse
+                  } {
+                    pop
+                    dup /Params undef
+                  } ifelse
+                } if
+              } {
+                pop
+                dup /Filter undef
+                dup /Params undef
+              } ifelse
+            } {
+              pop
+              dup /Filter undef
+              dup /Params undef
+            } ifelse
+
+            //false resolvestream get_jp2_csp
+          } ifelse
+        } if
+      } if
+      currentdict /BitsPerComponent oknown not {
+        (   **** Warning: image has no /BitsPerComponent key; assuming 8 bit.\n)
+        pdfformaterror
+        /BitsPerComponent 8 def
+      } if
+    } if
+
+    currentdict /ColorSpace knownoget not {
+      dup /ColorSpace knownoget not {
+        (   **** Warning: image has no /ColorSpace key; assuming /DeviceRGB.\n)
+        pdfformaterror
+        /DeviceRGB
+      } if
+    } if
     resolvecolorspace /ColorSpace exch def
+
 		% Decode is required for the PostScript image operators.
     /Decode 2 copy knownoget not {
       ColorSpace //defaultdecodedict
       ColorSpace dup type /arraytype eq { 0 get } if get exec
     } if def
-    false
-  } ifelse
 		% Even though we're going to read data,
 		% pass false to resolvestream so that
 		% it doesn't try to use Length (which may not be present).
-  exch false resolvestream /DataSource exch def
+    //false resolvestream /DataSource exch def
+    //false
+  } ifelse
 } bdef
 
 /DoImage {
