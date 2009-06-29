@@ -179,7 +179,8 @@ image_outline_char(
     PIFOUTLINE              pols,
     const gs_matrix_fixed * pmat,
     gx_path *               ppath,
-    gs_font *               pfont )
+    gs_font *               pfont,
+    bool                    outline_sub_for_bitmap)
 {
     UW16                    il, numLoops = pols->ol.num_loops;
     byte *                  pbase = (byte *)&pols->ol.loop;
@@ -204,7 +205,15 @@ image_outline_char(
             npts = (segtype == 3 ? 3 : 1);
             for (ip = 0; ip < npts; ip++, ++pcoord) {
                 pt[ip].x = (pcoord->x << ishift) + tx;
-                pt[ip].y = (-pcoord->y << ishift) + ty;
+                /* apparently when the ufst substitutes an outline for
+                   a bitmap because it is too large the matrix is
+                   mirrored compared with a font that was rendered
+                   directly with an outline. NB, this should be
+                   looked at more carefully when time permits. */
+                if (outline_sub_for_bitmap)
+                    pt[ip].y = (-pcoord->y << ishift) + ty;
+                else
+                    pt[ip].y = (pcoord->y << ishift) + ty;
             }
 
             switch (segtype) {
@@ -283,7 +292,8 @@ pl_ufst_make_char(
     MEM_HANDLE          memhdl;
     UW16                status, chIdloc = chr;
     gs_matrix           sv_ctm, tmp_ctm;
-    int wasValid;
+    bool                outline_sub_for_bitmap = false;
+    int                 wasValid;
 
     /* ignore illegitimate characters */
     if (chr == 0xffff)
@@ -300,6 +310,7 @@ pl_ufst_make_char(
             if ((status = CGIFfont(FSA pfc)) == 0) {
                 CGIFchIdptr(FSA (VOID *)&chIdloc, NULL);
                 status = CGIFchar_handle(FSA chr, &memhdl, 0);
+                outline_sub_for_bitmap = true;
             }
         }
         if (status != 0) {
@@ -408,7 +419,7 @@ pl_ufst_make_char(
              return code;
          }
 
-        code = image_outline_char(pols, &pis->ctm, pgs->path, pfont);
+        code = image_outline_char(pols, &pis->ctm, pgs->path, pfont, outline_sub_for_bitmap);
         if (code >= 0) {
             code = gs_fill(pgs);
         }
