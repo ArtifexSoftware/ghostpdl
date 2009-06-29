@@ -655,6 +655,8 @@ struct gx_device_pdf_s {
     bool FitPages;
     bool CenterPages;
     bool DoNumCopies;
+    bool PreserveSeparation;
+    bool PreserveDeviceN;
 };
 
 #define is_in_page(pdev)\

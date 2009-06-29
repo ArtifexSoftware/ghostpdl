@@ -110,6 +110,8 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("FitPages", gs_param_type_bool, FitPages),
     pi("CenterPages", gs_param_type_bool, CenterPages),
     pi("DoNumCopies", gs_param_type_bool, DoNumCopies),
+    pi("PreserveSeparation", gs_param_type_bool, PreserveSeparation),
+    pi("PreserveDeviceN", gs_param_type_bool, PreserveDeviceN),
 #undef pi
     gs_param_item_end
 };
