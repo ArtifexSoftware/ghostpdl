@@ -57,6 +57,26 @@ typedef struct tile_fill_state_s {
 
 } tile_fill_state_t;
 
+
+/* Define the state for tile filling.
+   This is used for when we have
+   transparency */
+typedef struct tile_fill_trans_state_s {
+
+    /* Original arguments */
+
+    const gx_device_color *pdevc;	/* pattern color */
+    int x0, y0, w0, h0;
+
+    /* Variables set at initialization */
+
+    gx_device *pcdev;		/* original device or &cdev */
+    gs_int_point phase;
+
+    int xoff, yoff;		/* set dynamically */
+
+} tile_fill_trans_state_t;
+
 /* Initialize the filling state. */
 static int
 tile_fill_init(tile_fill_state_t * ptfs, const gx_device_color * pdevc,
@@ -433,15 +453,286 @@ gx_dc_colored_masked_fill_rect(const gx_device_color * pdevc,
     }
 }
 
+
+/*
+ * This is somewhat a clone of the tile_by_steps function but one
+ * that performs filling from and to pdf14dev (transparency) buffers.
+ * At some point it may be desirable to do some optimization here.
+ */
+static int
+tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int h0,
+	      gx_pattern_trans_t *fill_trans_buffer, const gx_color_tile * ptile,
+              FILE *debug_file)
+{
+    int x1 = x0 + w0, y1 = y0 + h0;
+    int i0, i1, j0, j1, i, j;
+    gs_matrix step_matrix;	/* translated by phase */
+    int code = 0;
+    gx_pattern_trans_t *ptrans_pat = ptile->ttrans;
+    unsigned char *buff_out, *buff_in, *ptr_out, *ptr_in;
+    int ii,jj,kk;
+    int buff_y_offset,buff_x_offset;
+    unsigned char value[4];
+
+    /* Blue value with 50% trans for debug */
+    value[0] = 0;
+    value[1] = 0;
+    value[2] = 200;
+    value[3] = 128;
+
+    ptfs->x0 = x0, ptfs->w0 = w0;
+    ptfs->y0 = y0, ptfs->h0 = h0;
+    step_matrix = ptile->step_matrix;
+    step_matrix.tx -= ptfs->phase.x;
+    step_matrix.ty -= ptfs->phase.y;
+    {
+	gs_rect bbox;		/* bounding box in device space */
+	gs_rect ibbox;		/* bounding box in stepping space */
+	double bbw = ptile->bbox.q.x - ptile->bbox.p.x;
+	double bbh = ptile->bbox.q.y - ptile->bbox.p.y;
+	double u0, v0, u1, v1;
+
+	bbox.p.x = x0, bbox.p.y = y0;
+	bbox.q.x = x1, bbox.q.y = y1;
+	gs_bbox_transform_inverse(&bbox, &step_matrix, &ibbox);
+	if_debug10('T',
+	  "[T]x,y=(%d,%d) w,h=(%d,%d) => (%g,%g),(%g,%g), offset=(%g,%g)\n",
+		   x0, y0, w0, h0,
+		   ibbox.p.x, ibbox.p.y, ibbox.q.x, ibbox.q.y,
+		   step_matrix.tx, step_matrix.ty);
+	/*
+	 * If the pattern is partly transparent and XStep/YStep is smaller
+	 * than the device space BBox, we need to ensure that we cover
+	 * each pixel of the rectangle being filled with *every* pattern
+	 * that overlaps it, not just *some* pattern copy.
+	 */
+	u0 = ibbox.p.x - max(ptile->bbox.p.x, 0) - 0.000001;
+	v0 = ibbox.p.y - max(ptile->bbox.p.y, 0) - 0.000001;
+	u1 = ibbox.q.x - min(ptile->bbox.q.x, 0) + 0.000001;
+	v1 = ibbox.q.y - min(ptile->bbox.q.y, 0) + 0.000001;
+	if (!ptile->is_simple)
+	    u0 -= bbw, v0 -= bbh, u1 += bbw, v1 += bbh;
+	i0 = (int)floor(u0);
+	j0 = (int)floor(v0);
+	i1 = (int)ceil(u1);
+	j1 = (int)ceil(v1);
+    }
+    if_debug4('T', "[T]i=(%d,%d) j=(%d,%d)\n", i0, i1, j0, j1);
+    for (i = i0; i < i1; i++)
+	for (j = j0; j < j1; j++) {
+	    int x = (int)floor(step_matrix.xx * i +
+			  step_matrix.yx * j + step_matrix.tx);
+	    int y = (int)floor(step_matrix.xy * i +
+			  step_matrix.yy * j + step_matrix.ty);
+	    int w = ptrans_pat->width;
+	    int h = ptrans_pat->height;
+	    int xoff, yoff;
+
+	    if_debug4('T', "[T]i=%d j=%d x,y=(%d,%d)", i, j, x, y);
+	    if (x < x0)
+		xoff = x0 - x, x = x0, w -= xoff;
+	    else
+		xoff = 0;
+	    if (y < y0)
+		yoff = y0 - y, y = y0, h -= yoff;
+	    else
+		yoff = 0;
+	    if (x + w > x1)
+		w = x1 - x;
+	    if (y + h > y1)
+		h = y1 - y;
+	    if_debug6('T', "=>(%d,%d) w,h=(%d,%d) x/yoff=(%d,%d)\n",
+		      x, y, w, h, xoff, yoff);
+	    if (w > 0 && h > 0) {
+
+	/*	if (ptfs->pcdev == (gx_device *) & ptfs->cdev)
+		    tile_clip_set_phase(&ptfs->cdev,
+				imod(xoff - x, ptfs->tmask->rep_width),
+				imod(yoff - y, ptfs->tmask->rep_height));  */
+
+		/* Set the offsets for colored pattern fills */
+
+		ptfs->xoff = xoff;
+		ptfs->yoff = yoff;
+
+                /* Do the fill */
+                
+                /* This is only temporary while I get the geometry figure out */
+                /* We have to do the blending here.  There is a question about
+                   what the blending mode should be for pattern blending as
+                   well as if we should be complementing the cmyk values for blending*/
+
+                buff_y_offset = y0 - fill_trans_buffer->rect.p.y;
+                buff_x_offset = x0 - fill_trans_buffer->rect.p.x;
+
+                buff_out = fill_trans_buffer->transbytes + 
+                    buff_y_offset * fill_trans_buffer->rowstride + 
+                    buff_x_offset;
+
+                buff_in = ptile->ttrans->transbytes + 
+                    yoff * ptile->ttrans->rowstride + xoff;
+
+                fprintf(debug_file,"TO %d %d %d %d\n",x0,y0,w,h);
+                fprintf(debug_file,"FROM %d %d %d %d\n",xoff,yoff,w,h);
+                
+                for (kk = 0; kk < fill_trans_buffer->n_chan; kk++){
+
+                    ptr_out = buff_out + kk * fill_trans_buffer->planestride;
+                    ptr_in = buff_in + kk * ptile->ttrans->planestride;
+
+                    for (jj = 0; jj < h; jj++){    
+
+                        for (ii = 0; ii < w; ii++) {
+
+                            /* For now, lets stick the value in there with no 
+                            blending of overlapping pattern sections */
+                            
+                            //ptr_out[ii] = ptr_in[ii];
+                            ptr_out[ii] = value[kk];
+
+                        }
+
+                        ptr_out += fill_trans_buffer->rowstride;
+                        ptr_in += ptile->ttrans->rowstride;
+                      
+                    }
+
+                }
+
+ 		if (code < 0)
+		    return code;
+	                
+            }
+	}
+    return 0;
+}
+
+/* This does the case of tiling with simple tiles.  Since it is not commented anywhere note 
+   that simple means that the tile size is the same as the step matrix size and the cross
+   terms in the step matrix are 0.  Hence a simple case of tile replication */
+void 
+tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, gx_color_tile *ptile,
+            gx_pattern_trans_t *fill_trans_buffer)
+{
+    int kk, jj, ii, h, w, buff_y_offset, buff_x_offset;
+    unsigned char *ptr_out, *ptr_in, *buff_out, *buff_in;
+    unsigned char value[4];
+
+    /* Blue value with 50% trans for debug */
+
+    value[0] = 0;
+    value[1] = 0;
+    value[2] = 200;
+    value[3] = 128;
+
+    buff_y_offset = ymin - fill_trans_buffer->rect.p.y;
+    buff_x_offset = xmin - fill_trans_buffer->rect.p.x;
+
+    buff_out = fill_trans_buffer->transbytes + 
+        buff_y_offset * fill_trans_buffer->rowstride + 
+        buff_x_offset;
+
+    buff_in = ptile->ttrans->transbytes + 
+        py * ptile->ttrans->rowstride + px;
+
+    h = ymax - ymin;
+    w = xmax - xmin;
+
+    for (kk = 0; kk < fill_trans_buffer->n_chan; kk++){
+
+        ptr_out = buff_out + kk * fill_trans_buffer->planestride;
+        ptr_in = buff_in + kk * ptile->ttrans->planestride;
+
+        for (jj = 0; jj < h; jj++){    
+
+            for (ii = 0; ii < w; ii++) {
+
+                /* For now, lets stick the value in there with no 
+                blending of overlapping pattern sections */
+                
+                //ptr_out[ii] = ptr_in[ii];
+                ptr_out[ii] = value[kk];
+
+            }
+
+            ptr_out += fill_trans_buffer->rowstride;
+            ptr_in += ptile->ttrans->rowstride;
+          
+        }
+
+    }
+
+
+
+}
+
+
 /* This fills the transparency buffer rectangles with a pattern 
    buffer that includes transparency */
 
 int 
-gx_trans_pattern_fill_rect(gx_clip_rect *curr_clip_rect, gx_color_tile *ptile, 
-                               gx_pattern_trans_t *fill_trans_buffer)
+gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax, gx_color_tile *ptile, 
+                               gx_pattern_trans_t *fill_trans_buffer, FILE *debug_file)
 {
 
 
+    tile_fill_trans_state_t state;
+    int code;
+
+    fprintf(debug_file,"RECT %d %d %d %d\n",xmin,ymin,xmax,ymax);
+
+    if (ptile == 0)		/* null pattern */
+	return 0;
+
+    /* Initialize the fill state */
+
+    state.phase.x = 0;
+    state.phase.y = 0;
+
+    if (ptile->is_simple && ptile->cdev == NULL) {
+        
+        /* A simple case.  Tile is not clist and simple. */
+
+	int px =
+	    imod(-(int)floor(ptile->step_matrix.tx - state.phase.x + 0.5),
+		  ptile->ttrans->width);
+	int py =
+	    imod(-(int)floor(ptile->step_matrix.ty - state.phase.y + 0.5),
+		 ptile->ttrans->height);
+
+        tile_rect_trans_simple(xmin, ymin, xmax, ymax, px, py, ptile,
+            fill_trans_buffer);
+
+    } else {
+
+        if (ptile->cdev == NULL) {
+
+            /* No clist for the pattern */
+            
+            code = tile_by_steps_trans(&state, xmin, ymin, xmax-xmin, ymax-ymin, 
+                fill_trans_buffer, ptile, debug_file);
+
+	} else {
+
+            /* clist for the device */
+
+	/*    gx_device_clist *cdev = ptile->cdev;
+	    gx_device_clist_reader *crdev = (gx_device_clist_reader *)cdev;
+	    gx_strip_bitmap tbits;
+
+	    crdev->yplane.depth = 0; 
+	    crdev->yplane.shift = 0;
+	    crdev->yplane.index = -1;
+	    crdev->pages = NULL;
+	    crdev->num_pages = 1;
+	    state.orig_dev = dev;
+	    tbits = ptile->tbits;
+	    tbits.size.x = crdev->width;
+	    tbits.size.y = crdev->height;
+	    code = tile_by_steps(&state, x, y, w, h, ptile,
+				 &tbits, tile_pattern_clist); */
+	}
+    }
 
 return(0);
 

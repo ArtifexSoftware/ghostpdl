@@ -26,7 +26,7 @@
 #include "gxblend.h"
 #include "gxcpath.h"
 
-#define RAW_PATTERN_DUMP 0
+#define RAW_PATTERN_DUMP 1
 
 #ifndef gx_device_clist_DEFINED
 #define gx_device_clist_DEFINED
@@ -303,8 +303,8 @@ dev_proc_open_device(pattern_clist_open_device);
 
 /* Code to fill a pdf14 transparency rectangles with a pattern trans buffer object */
 
-int gx_trans_pattern_fill_rect(gx_clip_rect *curr_clip_rect, gx_color_tile *ptile, 
-                               gx_pattern_trans_t *fill_trans_buffer);
+int gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax, gx_color_tile *ptile, 
+                               gx_pattern_trans_t *fill_trans_buffer, FILE *debug_file);
 
 gx_pattern_trans_t* new_pattern_trans_buff(gs_memory_t *mem);
 

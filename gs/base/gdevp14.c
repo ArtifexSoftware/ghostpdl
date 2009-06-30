@@ -1042,13 +1042,12 @@ pdf14_get_buffer_information(const gx_device * dev, gx_pattern_trans_t *transbuf
     height = y1 - rect.p.y;
     if (width <= 0 || height <= 0 || buf->data == NULL)
 	return 0;
-    buf_ptr = buf->data + rect.p.y * buf->rowstride + rect.p.x;
 
     transbuff->pdev14 = pdev;
     transbuff->n_chan = buf->n_chan;
     transbuff->planestride = buf->planestride;
     transbuff->rowstride = buf->rowstride;
-    transbuff->transbytes = buf_ptr;
+    transbuff->transbytes = buf->data;
     transbuff->width = width;
     transbuff->height = height;
 
@@ -1437,8 +1436,30 @@ pdf14_fill_path(gx_device *dev,	const gs_imager_state *pis,
                a pdf14 device buffer in the ctile object memember
                variable ttrans */
 
+#if RAW_DUMP
+
+            /* Since we do not get a put_image to view what
+               we have do it now */
+
+            pdf14_device * ppatdev14 = pdcolor->colors.pattern.p_tile->ttrans->pdev14;
+
+            dump_raw_buffer(ppatdev14->ctx->stack->rect.q.y-ppatdev14->ctx->stack->rect.p.y, 
+                        ppatdev14->ctx->stack->rect.q.x-ppatdev14->ctx->stack->rect.p.x, 
+				        ppatdev14->ctx->stack->n_planes,
+                        ppatdev14->ctx->stack->planestride, ppatdev14->ctx->stack->rowstride, 
+                        "Pattern_Fill",ppatdev14->ctx->stack->data);
+
+            global_index++;
+
+#endif
+
             code = pdf14_tile_pattern_fill(dev, &new_is, ppath, 
                 params, pdcolor, pcpath);
+
+            new_is.trans_device = NULL;
+            new_is.has_transparency = false;
+
+            return code;
      
         }
 
@@ -1520,6 +1541,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
     int k;
     gx_pattern_trans_t *fill_trans_buffer;
     int ok;
+    FILE *debug_file;
 
     gx_clip_path cpath_intersection;
     const gs_fixed_rect *pcbox = (pcpath == NULL ? NULL : cpath_is_rectangle(pcpath));
@@ -1551,9 +1573,16 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
         rect.q.y = fixed2int_ceiling(outer_box.q.y);
 
         code = pdf14_push_transparency_group(p14dev->ctx, &rect,
-					 0, 0, 255,255,
+					 1, 0, 255,255,
 					 pis->blend_mode, 0,
 					 0, p14dev->color_info.num_components);
+
+        /* Fix the reversed bbox. No clear on why the push group does that */
+
+        p14dev->ctx->stack->bbox.p.x = p14dev->ctx->rect.p.x;
+        p14dev->ctx->stack->bbox.p.y = p14dev->ctx->rect.p.y;
+        p14dev->ctx->stack->bbox.q.x = p14dev->ctx->rect.q.x;
+        p14dev->ctx->stack->bbox.q.y = p14dev->ctx->rect.q.y;
 
         /* Now lets go through the rect list and fill with the pattern */
 
@@ -1567,13 +1596,24 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
         ptile = pdevc->mask.m_tile;
 
         curr_clip_rect = cpath_intersection.rect_list->list.head->next;
+        
+        debug_file = fopen("Pattern_Geom.txt","w");
+
+        fprintf(debug_file,"OUTBUFFSIZE %d %d %d %d\n",fill_trans_buffer->rect.p.x,
+            fill_trans_buffer->rect.p.y,fill_trans_buffer->rect.q.x,fill_trans_buffer->rect.q.y);
+
+        fprintf(debug_file,"INBUFFSIZE %d %d %d %d\n",ptile->ttrans->rect.p.x,
+            ptile->ttrans->rect.p.y,ptile->ttrans->rect.q.x,ptile->ttrans->rect.q.y);
 
         for( k = 0; k< cpath_intersection.rect_list->list.count; k++){
-
-            ok = gx_trans_pattern_fill_rect(curr_clip_rect, ptile, fill_trans_buffer);
+                    
+            ok = gx_trans_pattern_fill_rect(curr_clip_rect->xmin, curr_clip_rect->ymin, 
+                curr_clip_rect->xmax, curr_clip_rect->ymax, ptile, fill_trans_buffer, debug_file);
             curr_clip_rect = curr_clip_rect->next;
 
         }
+
+        fclose(debug_file);
 
         /* free our buffer object */
 

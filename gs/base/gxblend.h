@@ -21,7 +21,7 @@
 #include "gxfrac.h"
 #include "gxdevcli.h"
 
-#define RAW_DUMP 0
+#define RAW_DUMP 1
 
 /* #define DUMP_TO_PNG */
 
