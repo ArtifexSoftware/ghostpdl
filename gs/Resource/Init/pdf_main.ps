@@ -202,44 +202,47 @@ currentdict /runpdfstring .undef
 } bind def
 
 
-% Copy default subfile to a temporary file and return the file name
-% as a PostScript name to protect it from restore. Return null if
-% there's no default subfile.
+% Copy stream to an external temporary file and
+% return the file name as PS name.
+/copy_embedded_file {
+  //true resolvestream    % strm
+  //null (w) /.tempfile   % strm (name) null (w) /.tempfile
+  .systemvar exec         % strm (name) file
+  3 -1 roll               % (name) file strm
+  32768 string            % (name) file strm (buf)
+  { 3 copy readstring     % (name) file strm (buf) file (data) bool
+    3 1 roll              % (name) file strm (buf) bool file (data)
+    writestring           % (name) file strm (buf) bool
+    not { exit } if
+  } loop                  
+  pop closefile           % (name) file
+  closefile               % (name)
+  cvn                     % /name
+} bind def
+
+
+% Copy selected subfiles to temporary files and return the file names
+% as a PostScript names to protect them from restore.
+% Currently, all files in the Portfolio are extracted and returned.
 %
-% - pdf_collection_files /temp_file_name | null
+% - pdf_collection_files [ /temp_file_name ... /temp_file_name
 /pdf_collection_files {
-  //null
-  Trailer /Root oget /Collection knownoget {
-    /D knownoget { % We have default document in the collection
-      Trailer /Root oget /Names knownoget {
-        /EmbeddedFiles knownoget {
-          exch nameoget dup //null ne {
+  mark
+  Trailer /Root oget /Names knownoget {
+    /EmbeddedFiles knownoget {
+      /Names knownoget {
+        { oforce
+          dup type /dicttype eq {
             /EF knownoget {
               /F knownoget {
-                //true resolvestream    % null strm
-                //null (w) /.tempfile   % null strm (name) null (w) /.tempfile
-                .systemvar exec         % null strm (name) file
-                3 -1 roll               % null (name) file strm
-                32768 string            % null (name) file strm (buf)
-                { 3 copy readstring     % null (name) file strm (buf) file (data) bool
-                  3 1 roll              % null (name) file strm (buf) bool file (data)
-                  writestring           % null (name) file strm (buf) bool
-                  not { exit } if
-                } loop                  
-                pop closefile           % null (name) file
-                closefile               % null (name)
-                exch pop cvn            % /name
+                copy_embedded_file
               } if
             } if
           } {
             pop
           } ifelse
-        } {
-          pop
-        } ifelse
-      } {
-        pop
-      } ifelse
+        } forall
+      } if
     } if
   } if
 } bind def
@@ -247,22 +250,32 @@ currentdict /runpdfstring .undef
 /runpdf {		% <file> runpdf -
   //runpdfbegin exec
   //pdf_collection_files exec
-  dup type /nametype ne {
-    copy_trailer_attrs
-    //runpdfpagerange exec
-    //dopdfpages exec
-  } if
-  //runpdfend exec
-  dup type /nametype eq {
-    .namestring dup (r) file
-    //runpdfbegin exec
+  dup mark eq {
+    pop
     copy_trailer_attrs
     //runpdfpagerange exec
     //dopdfpages exec
     //runpdfend exec
-    deletefile
   } {
-    pop
+    //runpdfend exec
+    ] {
+        dup type /filetype eq {
+          //runpdfbegin exec
+          copy_trailer_attrs
+          //runpdfpagerange exec
+          //dopdfpages exec
+          //runpdfend exec
+          closefile
+        } {
+          .namestring dup (r) file
+          //runpdfbegin exec
+          copy_trailer_attrs
+          //runpdfpagerange exec
+          //dopdfpages exec
+          //runpdfend exec
+          deletefile
+        } ifelse
+    } forall
   } ifelse
 } bind def
 
