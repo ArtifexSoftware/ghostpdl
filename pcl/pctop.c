@@ -376,6 +376,7 @@ pcl_impl_set_device(
     gs_setsourcetransparent(pcli->pcs.pgs, false);
     gs_settexturetransparent(pcli->pcs.pgs, false);
     gs_setaccuratecurves(pcli->pcs.pgs, true);	/* All H-P languages want accurate curves. */
+    gs_setfilladjust(pcli->pcs.pgs, 0, 0);
     stage = Sgsave1;
     if ( (code = gs_gsave(pcli->pcs.pgs)) < 0 )
 	goto pisdEnd;
