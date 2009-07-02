@@ -237,7 +237,7 @@ UFST_LIB=$(UFST_ROOT)\rts\lib
 UFST_ROMFS_ARGS=-b \
 -P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
 -P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
--c
+-c -P $(PSSRCDIR)/../lib/ -d Resource/Init/ FAPIconfig-FCO
 !endif
 
 UFST_BRIDGE=1
