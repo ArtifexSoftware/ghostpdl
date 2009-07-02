@@ -616,14 +616,11 @@ tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, g
 {
     int kk, jj, ii, h, w, buff_y_offset, buff_x_offset;
     unsigned char *ptr_out, *ptr_in, *buff_out, *buff_in;
-    unsigned char value[4];
-
-    /* Blue value with 50% trans for debug */
-
-    value[0] = 0;
-    value[1] = 0;
-    value[2] = 200;
-    value[3] = 128;
+    unsigned char *tile_ptr, *row_ptr;
+    int in_row_offset;
+    int tile_width = ptile->ttrans->width;
+    int tile_height = ptile->ttrans->height;
+    int dx, dy;
 
     buff_y_offset = ymin - fill_trans_buffer->rect.p.y;
     buff_x_offset = xmin - fill_trans_buffer->rect.p.x;
@@ -632,31 +629,35 @@ tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, g
         buff_y_offset * fill_trans_buffer->rowstride + 
         buff_x_offset;
 
-    buff_in = ptile->ttrans->transbytes + 
-        py * ptile->ttrans->rowstride + px;
+    buff_in = ptile->ttrans->transbytes;
 
     h = ymax - ymin;
     w = xmax - xmin;
+
+    dx = (xmin + px) % tile_width;
+    dy = (ymin + py) % tile_height;
 
     for (kk = 0; kk < fill_trans_buffer->n_chan; kk++){
 
         ptr_out = buff_out + kk * fill_trans_buffer->planestride;
         ptr_in = buff_in + kk * ptile->ttrans->planestride;
 
-        for (jj = 0; jj < h; jj++){    
+        for (jj = 0; jj < h; jj++){   
+
+            in_row_offset = (jj + dy) % ptile->ttrans->height;
+            row_ptr = ptr_in + in_row_offset * ptile->ttrans->rowstride;
 
             for (ii = 0; ii < w; ii++) {
 
                 /* For now, lets stick the value in there with no 
                 blending of overlapping pattern sections */
                 
-                //ptr_out[ii] = ptr_in[ii];
-                ptr_out[ii] = value[kk];
+                tile_ptr = row_ptr + (dx + ii) % ptile->ttrans->width;
+                ptr_out[ii] = *tile_ptr;
 
             }
 
             ptr_out += fill_trans_buffer->rowstride;
-            ptr_in += ptile->ttrans->rowstride;
           
         }
 
