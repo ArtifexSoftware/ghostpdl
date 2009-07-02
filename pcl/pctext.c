@@ -366,7 +366,8 @@ pcl_get_width(pcl_state_t *pcs, gs_point *advance_vector, const gs_point *pscale
 	if (!pfp->params.proportional_spacing || is_space)
 	    width = pcl_hmi(pcs);
 	else {
-	    if ( pcs->font->scaling_technology == plfst_TrueType ) {
+	    if (pcs->font->scaling_technology == plfst_TrueType ||
+                pcs->font->scaling_technology == plfst_MicroType) {
 		floatp tmp;
 		tmp = pscale->x / (floatp)pcs->uom_cp + 0.5;
 		tmp -= fmod(tmp, (floatp)1.0);
