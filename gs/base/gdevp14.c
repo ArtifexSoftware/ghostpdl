@@ -1541,7 +1541,6 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
     int k;
     gx_pattern_trans_t *fill_trans_buffer;
     int ok;
-    FILE *debug_file;
 
     gx_clip_path cpath_intersection;
     const gs_fixed_rect *pcbox = (pcpath == NULL ? NULL : cpath_is_rectangle(pcpath));
@@ -1597,23 +1596,13 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
 
         curr_clip_rect = cpath_intersection.rect_list->list.head->next;
         
-        debug_file = fopen("Pattern_Geom.txt","w");
-
-        fprintf(debug_file,"OUTBUFFSIZE %d %d %d %d\n",fill_trans_buffer->rect.p.x,
-            fill_trans_buffer->rect.p.y,fill_trans_buffer->rect.q.x,fill_trans_buffer->rect.q.y);
-
-        fprintf(debug_file,"INBUFFSIZE %d %d %d %d\n",ptile->ttrans->rect.p.x,
-            ptile->ttrans->rect.p.y,ptile->ttrans->rect.q.x,ptile->ttrans->rect.q.y);
-
         for( k = 0; k< cpath_intersection.rect_list->list.count; k++){
                     
             ok = gx_trans_pattern_fill_rect(curr_clip_rect->xmin, curr_clip_rect->ymin, 
-                curr_clip_rect->xmax, curr_clip_rect->ymax, ptile, fill_trans_buffer, debug_file);
+                curr_clip_rect->xmax, curr_clip_rect->ymax, ptile, fill_trans_buffer);
             curr_clip_rect = curr_clip_rect->next;
 
         }
-
-        fclose(debug_file);
 
         /* free our buffer object */
 

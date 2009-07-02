@@ -461,24 +461,13 @@ gx_dc_colored_masked_fill_rect(const gx_device_color * pdevc,
  */
 static int
 tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int h0,
-	      gx_pattern_trans_t *fill_trans_buffer, const gx_color_tile * ptile,
-              FILE *debug_file)
+	      gx_pattern_trans_t *fill_trans_buffer, const gx_color_tile * ptile)
 {
     int x1 = x0 + w0, y1 = y0 + h0;
     int i0, i1, j0, j1, i, j;
     gs_matrix step_matrix;	/* translated by phase */
     int code = 0;
     gx_pattern_trans_t *ptrans_pat = ptile->ttrans;
-    unsigned char *buff_out, *buff_in, *ptr_out, *ptr_in;
-    int ii,jj,kk;
-    int buff_y_offset,buff_x_offset;
-    unsigned char value[4];
-
-    /* Blue value with 50% trans for debug */
-    value[0] = 0;
-    value[1] = 0;
-    value[2] = 200;
-    value[3] = 128;
 
     ptfs->x0 = x0, ptfs->w0 = w0;
     ptfs->y0 = y0, ptfs->h0 = h0;
@@ -527,6 +516,7 @@ tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int 
 	    int w = ptrans_pat->width;
 	    int h = ptrans_pat->height;
 	    int xoff, yoff;
+            int px, py;
 
 	    if_debug4('T', "[T]i=%d j=%d x,y=(%d,%d)", i, j, x, y);
 	    if (x < x0)
@@ -550,57 +540,16 @@ tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int 
 				imod(xoff - x, ptfs->tmask->rep_width),
 				imod(yoff - y, ptfs->tmask->rep_height));  */
 
+                px = imod(xoff - x, ptile->ttrans->width);
+                py = imod(yoff - y, ptile->ttrans->height);
+
 		/* Set the offsets for colored pattern fills */
 
 		ptfs->xoff = xoff;
 		ptfs->yoff = yoff;
 
-                /* Do the fill */
-                
-                /* This is only temporary while I get the geometry figure out */
-                /* We have to do the blending here.  There is a question about
-                   what the blending mode should be for pattern blending as
-                   well as if we should be complementing the cmyk values for blending*/
-
-                buff_y_offset = y0 - fill_trans_buffer->rect.p.y;
-                buff_x_offset = x0 - fill_trans_buffer->rect.p.x;
-
-                buff_out = fill_trans_buffer->transbytes + 
-                    buff_y_offset * fill_trans_buffer->rowstride + 
-                    buff_x_offset;
-
-                buff_in = ptile->ttrans->transbytes + 
-                    yoff * ptile->ttrans->rowstride + xoff;
-
-                fprintf(debug_file,"TO %d %d %d %d\n",x0,y0,w,h);
-                fprintf(debug_file,"FROM %d %d %d %d\n",xoff,yoff,w,h);
-                
-                for (kk = 0; kk < fill_trans_buffer->n_chan; kk++){
-
-                    ptr_out = buff_out + kk * fill_trans_buffer->planestride;
-                    ptr_in = buff_in + kk * ptile->ttrans->planestride;
-
-                    for (jj = 0; jj < h; jj++){    
-
-                        for (ii = 0; ii < w; ii++) {
-
-                            /* For now, lets stick the value in there with no 
-                            blending of overlapping pattern sections */
-                            
-                            //ptr_out[ii] = ptr_in[ii];
-                            ptr_out[ii] = value[kk];
-
-                        }
-
-                        ptr_out += fill_trans_buffer->rowstride;
-                        ptr_in += ptile->ttrans->rowstride;
-                      
-                    }
-
-                }
-
- 		if (code < 0)
-		    return code;
+                tile_rect_trans_simple(x, y, x+w, y+h, px, py, ptile,
+                        fill_trans_buffer);
 	                
             }
 	}
@@ -611,7 +560,7 @@ tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int 
    that simple means that the tile size is the same as the step matrix size and the cross
    terms in the step matrix are 0.  Hence a simple case of tile replication */
 void 
-tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, gx_color_tile *ptile,
+tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, const gx_color_tile *ptile,
             gx_pattern_trans_t *fill_trans_buffer)
 {
     int kk, jj, ii, h, w, buff_y_offset, buff_x_offset;
@@ -667,20 +616,16 @@ tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, g
 
 }
 
-
 /* This fills the transparency buffer rectangles with a pattern 
    buffer that includes transparency */
 
 int 
 gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax, gx_color_tile *ptile, 
-                               gx_pattern_trans_t *fill_trans_buffer, FILE *debug_file)
+                               gx_pattern_trans_t *fill_trans_buffer)
 {
-
 
     tile_fill_trans_state_t state;
     int code;
-
-    fprintf(debug_file,"RECT %d %d %d %d\n",xmin,ymin,xmax,ymax);
 
     if (ptile == 0)		/* null pattern */
 	return 0;
@@ -708,10 +653,13 @@ gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax, gx_color_tile
 
         if (ptile->cdev == NULL) {
 
-            /* No clist for the pattern */
+            /* No clist for the pattern, but a complex case
+               This portion transforms the bounding box by the step matrix
+               and does partial rect fills with tiles that fall into this 
+               transformed bbox */
             
             code = tile_by_steps_trans(&state, xmin, ymin, xmax-xmin, ymax-ymin, 
-                fill_trans_buffer, ptile, debug_file);
+                fill_trans_buffer, ptile);
 
 	} else {
 
