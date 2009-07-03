@@ -193,7 +193,12 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
     int64_t size = (int64_t)raster * pinst->size.y;
     gx_device_forward *fdev;
 
-    if (size < MAX_BITMAP_PATTERN_SIZE || pinst->template.PaintType != 1) {
+    /* Do not allow pattern to be a clist if it uses transparency.  We
+       will want to fix this at some point */
+
+    if ( size < MAX_BITMAP_PATTERN_SIZE || pinst->template.PaintType != 1 || 
+                        pinst->template.uses_transparency ) {
+
 	gx_device_pattern_accum *adev = gs_alloc_struct(mem, gx_device_pattern_accum,
 			&st_device_pattern_accum, cname);
 

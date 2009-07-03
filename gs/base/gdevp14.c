@@ -1030,10 +1030,16 @@ int
 pdf14_get_buffer_information(const gx_device * dev, gx_pattern_trans_t *transbuff){
 
     const pdf14_device * pdev = (pdf14_device *)dev;
-    pdf14_buf *buf = pdev->ctx->stack;
-    gs_int_rect rect = buf->rect;
+    pdf14_buf *buf;
+    gs_int_rect rect;
     int x1,y1,width,height;
-    byte *buf_ptr;
+
+    if ( pdev->ctx == NULL){
+        return 0;  /* this can occur if the pattern is a clist */
+    }
+
+    buf = pdev->ctx->stack;
+    rect = buf->rect;
 
     rect_intersect(rect, buf->bbox);
     x1 = min(pdev->width, rect.q.x);
@@ -5281,6 +5287,50 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
     code = pdf14_clist_update_params(pdev, pis);
     if (code < 0)
 	return code;
+
+    if (pdcolor != NULL && gx_dc_is_pattern1_color(pdcolor) && 0){
+
+        if( gx_pattern1_get_transptr(pdcolor) != NULL){
+
+            /* In this case, we need to push a transparency group 
+               and tile the pattern color, which is stored in 
+               a pdf14 device buffer in the ctile object memember
+               variable ttrans */
+
+#if RAW_DUMP
+
+            /* Since we do not get a put_image to view what
+               we have do it now */
+
+            pdf14_device * ppatdev14 = pdcolor->colors.pattern.p_tile->ttrans->pdev14;
+
+            dump_raw_buffer(ppatdev14->ctx->stack->rect.q.y-ppatdev14->ctx->stack->rect.p.y, 
+                        ppatdev14->ctx->stack->rect.q.x-ppatdev14->ctx->stack->rect.p.x, 
+				        ppatdev14->ctx->stack->n_planes,
+                        ppatdev14->ctx->stack->planestride, ppatdev14->ctx->stack->rowstride, 
+                        "Pattern_Fill",ppatdev14->ctx->stack->data);
+
+            global_index++;
+
+#endif
+
+            code = pdf14_tile_pattern_fill(dev, &new_is, ppath, 
+                params, pdcolor, pcpath);
+
+            new_is.trans_device = NULL;
+            new_is.has_transparency = false;
+
+            return code;
+     
+        }
+
+    
+    }
+
+
+
+
+
 
     /* If we are doing a shading fill and we are in a tranparency
        group of a different color space, then we do not want to 

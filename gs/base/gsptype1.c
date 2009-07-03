@@ -1261,6 +1261,14 @@ gx_dc_colored_masked_equal(const gx_device_color * pdevc1,
 	pdevc1->mask.id == pdevc2->mask.id;
 }
 
+typedef struct tile_trans_clist_info_s {   
+    gs_int_rect rect;
+    int rowstride;
+    int planestride;
+    int n_chan; /* number of pixel planes including alpha */
+    int width;
+    int height;
+} tile_trans_clist_info_t;
 
 typedef struct gx_dc_serialized_tile_s { 
     gs_id id;
@@ -1269,6 +1277,7 @@ typedef struct gx_dc_serialized_tile_s {
     gs_matrix step_matrix;
     gs_rect bbox;
     byte is_clist;
+    byte uses_transparency;
     byte depth;
     byte tiling_type;
     byte is_simple;
@@ -1292,6 +1301,7 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, uint offset, byte *data, uint *
 	gx_dc_serialized_tile_t buf;
 	gx_strip_bitmap buf1;
 
+        buf.uses_transparency = 0;
     	buf.id = ptile->id;
 	buf.size.x = 0; /* fixme: don't write with raster patterns. */
 	buf.size.y = 0; /* fixme: don't write with raster patterns. */
@@ -1355,6 +1365,103 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, uint offset, byte *data, uint *
     return 0;
 }
 
+
+/* This is for the case of writing into the clist the pattern that includes transparency.
+   Transparency with patterns is handled a bit differently since the data is coming from
+   a pdf14 device that includes planar data with an alpha channel */
+
+static int
+gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, uint offset, byte *data, uint *psize)
+{
+    int size, size_h;
+    byte *dp = data;
+    int left = *psize;
+    int offset1 = offset;
+    unsigned char *ptr;
+
+    size_h = sizeof(gx_dc_serialized_tile_t) + sizeof(tile_trans_clist_info_t);
+
+    /* Everything that we need to handle the transparent tile */
+
+    size = size_h + ptile->ttrans->n_chan * ptile->ttrans->planestride;
+
+    /* data is sent with NULL if the clist writer just wanted the size */ 
+    if (data == NULL) {
+	*psize = size;
+	return 0;
+    }
+    if (offset1 == 0) {	/* Serialize tile parameters: */
+	gx_dc_serialized_tile_t buf;
+        tile_trans_clist_info_t trans_info;
+
+        buf.uses_transparency = 1;
+    	buf.id = ptile->id;
+	buf.size.x = 0; /* fixme: don't write with raster patterns. */
+	buf.size.y = 0; /* fixme: don't write with raster patterns. */
+	buf.size_b = size - size_h;
+	buf.size_c = 0;
+	buf.step_matrix = ptile->step_matrix;
+	buf.bbox = ptile->bbox;
+	buf.is_clist = false;
+	buf.depth = ptile->depth;
+	buf.tiling_type = ptile->tiling_type;
+	buf.is_simple = ptile->is_simple;
+	if (sizeof(buf) > left) {
+	    /* For a while we require the client to provide enough buffer size. */
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	}
+	memcpy(dp, &buf, sizeof(buf));
+	left -= sizeof(buf);
+	dp += sizeof(buf);
+	offset1 += sizeof(buf);
+
+        /* Do the transparency information now */
+
+        trans_info.height = ptile->ttrans->height;
+        trans_info.n_chan = ptile->ttrans->n_chan;
+        trans_info.planestride = ptile->ttrans->planestride;
+        trans_info.rect.p.x = ptile->ttrans->rect.p.x;
+        trans_info.rect.p.y = ptile->ttrans->rect.p.y;
+        trans_info.rect.q.x = ptile->ttrans->rect.q.x;
+        trans_info.rect.q.y = ptile->ttrans->rect.q.y;
+        trans_info.rowstride = ptile->ttrans->rowstride;
+        trans_info.width = ptile->ttrans->width;
+	if (sizeof(trans_info) > left) {
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	}
+	memcpy(dp, &trans_info, sizeof(trans_info));
+	left -= sizeof(trans_info);
+	dp += sizeof(trans_info);
+	offset1 += sizeof(trans_info);
+    }
+
+    /* Now do the transparency tile data itself.  Note that it may 
+       be split up in the writing stage if it is large */
+
+    /* check if we have written it all */
+
+    if (offset1 <= size) {
+
+        /* Get the most that we can write */
+
+        int u = min(size, left);
+
+        /* copy that amount */
+
+        ptr = ptile->ttrans->transbytes;
+
+        memcpy(dp, ptr + (offset1 - size_h), u);
+        left -= u;
+        dp += u;
+        offset1 += u;
+
+    }
+
+    return 0;
+}
+
+
+
 /* Write a pattern into command list, possibly dividing intoi portions. */
 int
 gx_dc_pattern_write(
@@ -1389,6 +1496,14 @@ gx_dc_pattern_write(
 	*psize = sizeof(gs_id);
 	return 0;
     }
+
+    /* Check if pattern has transparency object 
+       If so then that is what we will stuff in
+       the clist */
+
+    if (ptile->ttrans != NULL)
+        return gx_dc_pattern_trans_write_raster(ptile, offset, data, psize);
+
     if (ptile->cdev == NULL)
 	return gx_dc_pattern_write_raster(ptile, offset, data, psize);
     size_b = clist_data_size(ptile->cdev, 0);
