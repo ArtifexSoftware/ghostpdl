@@ -254,16 +254,19 @@ tile_clip_copy_color(gx_device * dev,
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
 
-    FOR_RUNS(data_row, txrun, tx, ty) {
-	/* Copy the run. */
-	int code = (*dev_proc(cdev->target, copy_color))
-	(cdev->target, data_row, sourcex + txrun - x, raster,
-	 gx_no_bitmap_id, txrun, ty, tx - txrun, 1);
+    fit_copy(dev, data, sourcex, raster, id, x, y, w, h);
+    {
+	FOR_RUNS(data_row, txrun, tx, ty) {
+	    /* Copy the run. */
+	    int code = (*dev_proc(cdev->target, copy_color))
+	    (cdev->target, data_row, sourcex + txrun - x, raster,
+	     gx_no_bitmap_id, txrun, ty, tx - txrun, 1);
 
-	if (code < 0)
-	    return code;
+	    if (code < 0)
+		return code;
+	}
+	END_FOR_RUNS();
     }
-    END_FOR_RUNS();
     return 0;
 }
 
@@ -275,16 +278,19 @@ tile_clip_copy_alpha(gx_device * dev,
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
 
-    FOR_RUNS(data_row, txrun, tx, ty) {
-	/* Copy the run. */
-	int code = (*dev_proc(cdev->target, copy_alpha))
-	(cdev->target, data_row, sourcex + txrun - x, raster,
-	 gx_no_bitmap_id, txrun, ty, tx - txrun, 1, color, depth);
+    fit_copy(dev, data, sourcex, raster, id, x, y, w, h);
+    {
+	FOR_RUNS(data_row, txrun, tx, ty) {
+	    /* Copy the run. */
+	    int code = (*dev_proc(cdev->target, copy_alpha))
+	    (cdev->target, data_row, sourcex + txrun - x, raster,
+	     gx_no_bitmap_id, txrun, ty, tx - txrun, 1, color, depth);
 
-	if (code < 0)
-	    return code;
+	    if (code < 0)
+		return code;
+	}
+	END_FOR_RUNS();
     }
-    END_FOR_RUNS();
     return 0;
 }
 
@@ -299,16 +305,19 @@ tile_clip_strip_copy_rop(gx_device * dev,
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
 
-    FOR_RUNS(data_row, txrun, tx, ty) {
-	/* Copy the run. */
-	int code = (*dev_proc(cdev->target, strip_copy_rop))
-	(cdev->target, data_row, sourcex + txrun - x, raster,
-	 gx_no_bitmap_id, scolors, textures, tcolors,
-	 txrun, ty, tx - txrun, 1, phase_x, phase_y, lop);
+    fit_copy(dev, data, sourcex, raster, id, x, y, w, h);
+    {
+	FOR_RUNS(data_row, txrun, tx, ty) {
+	    /* Copy the run. */
+	    int code = (*dev_proc(cdev->target, strip_copy_rop))
+	    (cdev->target, data_row, sourcex + txrun - x, raster,
+	     gx_no_bitmap_id, scolors, textures, tcolors,
+	     txrun, ty, tx - txrun, 1, phase_x, phase_y, lop);
 
-	if (code < 0)
-	    return code;
+	    if (code < 0)
+		return code;
+	}
+	END_FOR_RUNS();
     }
-    END_FOR_RUNS();
     return 0;
 }
