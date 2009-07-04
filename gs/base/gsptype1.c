@@ -1632,6 +1632,49 @@ gx_dc_pattern_read_raster(gx_color_tile *ptile, const gx_dc_serialized_tile_t *b
     return size - left;
 }
 
+
+/* This reads in the transparency buffer from the clist */
+static int
+gx_dc_pattern_read_trans_buff(gx_color_tile *ptile, uint offset, 
+                              const byte *data, uint size, gs_memory_t *mem)
+{
+    const byte *dp = data;
+    int left = size;
+    int offset1 = offset;
+    gx_pattern_trans_t *trans_pat = ptile->ttrans;
+    int data_size;
+
+    data_size = trans_pat->planestride * trans_pat->n_chan;
+
+    /* Allocate the bytes */
+
+    if (trans_pat->transbytes == NULL){
+
+        trans_pat->transbytes = gs_alloc_bytes(mem, data_size, "gx_dc_pattern_read_raster");
+        if (trans_pat->transbytes == NULL)
+	        return_error(gs_error_VMerror);
+
+    }
+
+    /* Read transparency buffer */
+    if (offset1 <= sizeof(gx_dc_serialized_tile_t) + sizeof(tile_trans_clist_info_t) + data_size ) {
+
+	int u = min(data_size, left);
+	byte *save = trans_pat->transbytes;
+
+	memcpy( trans_pat->transbytes + offset1 - sizeof(gx_dc_serialized_tile_t) - 
+                                    sizeof(tile_trans_clist_info_t), dp, u);
+	trans_pat->transbytes = save;
+	left -= u;
+	offset1 += u;
+	dp += u;
+    }
+
+     return size - left;
+}
+
+
+
 int
 gx_dc_pattern_read(
     gx_device_color *       pdevc,
@@ -1650,6 +1693,7 @@ gx_dc_pattern_read(
     int offset1 = offset;
     gx_color_tile *ptile;
     int code, l;
+    tile_trans_clist_info_t trans_info;
 
     if (offset == 0) {
 	pdevc->mask.id = gx_no_bitmap_id;
@@ -1694,12 +1738,49 @@ gx_dc_pattern_read(
 	ptile->tiling_type = buf.tiling_type;
 	ptile->is_simple = buf.is_simple;
 	ptile->is_dummy = 0;
+
 	if (!buf.is_clist) {
-	    code = gx_dc_pattern_read_raster(ptile, &buf, offset1, dp, left, mem);
-	    if (code < 0)
-		return code;
-	    return code + sizeof(buf);
+
+            if (buf.uses_transparency){
+
+                /* Make a new ttrans object */
+
+                ptile->ttrans = new_pattern_trans_buff(mem);
+
+	        if (sizeof(buf) + sizeof(tile_trans_clist_info_t) > size) {
+	            return_error(gs_error_unregistered); /* Must not happen. */
+	        }
+
+	        memcpy(&trans_info, dp, sizeof(trans_info));
+	        dp += sizeof(trans_info);
+	        left -= sizeof(trans_info);
+	        offset1 += sizeof(trans_info);
+
+                ptile->ttrans->height = trans_info.height;
+                ptile->ttrans->n_chan = trans_info.n_chan;
+                ptile->ttrans->pdev14 = NULL;
+                ptile->ttrans->planestride = trans_info.planestride;
+                ptile->ttrans->rect.p.x = trans_info.rect.p.x;
+                ptile->ttrans->rect.p.y = trans_info.rect.p.y;
+                ptile->ttrans->rect.q.x = trans_info.rect.q.x;
+                ptile->ttrans->rect.q.y = trans_info.rect.q.y;
+                ptile->ttrans->rowstride = trans_info.rowstride;
+                ptile->ttrans->width = trans_info.width;
+
+       	        code = gx_dc_pattern_read_trans_buff(ptile, offset1, dp, left, mem);
+	        if (code < 0)
+		    return code;
+	        return code + sizeof(buf)+sizeof(trans_info);
+
+            } else {
+	        code = gx_dc_pattern_read_raster(ptile, &buf, offset1, dp, left, mem);
+	        if (code < 0)
+		    return code;
+	        return code + sizeof(buf);
+            }
+
 	}
+
 	size_b = buf.size_b;
 	size_c = buf.size_c;
 	ptile->tbits.size.x = size_b; /* HACK: Use unrelated field for saving size_b between calls. */
@@ -1744,8 +1825,13 @@ gx_dc_pattern_read(
 	}
     } else {
 	ptile = pdevc->colors.pattern.p_tile;
+
+        if (ptile->ttrans != NULL)
+            return gx_dc_pattern_read_trans_buff(ptile, offset1, dp, left, mem);
+
 	if (ptile->cdev == NULL)
 	    return gx_dc_pattern_read_raster(ptile, NULL, offset1, dp, left, mem);
+
 	size_b = ptile->tbits.size.x;
 	size_c = ptile->tbits.size.y;
     }
