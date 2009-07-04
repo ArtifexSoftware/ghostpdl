@@ -387,7 +387,7 @@ end
 % ------ Transparency support ------ %
 
 /gssmask {
-  dup /None eq PDFusingtransparency not or {
+  dup /None eq 1 index //null eq or PDFusingtransparency not or {
     pop null
   } {
 	% Preprocess the SMask value into a parameter dictionary for
