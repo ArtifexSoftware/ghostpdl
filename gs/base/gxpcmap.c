@@ -696,9 +696,19 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 
         if (ctile->ttrans != NULL) {
          
-	    dev_proc(ctile->ttrans->pdev14, close_device)((gx_device *)ctile->ttrans->pdev14);
-            ctile->ttrans->pdev14 = NULL;  /* should be ok due to pdf14_close */
-            ctile->ttrans->transbytes = NULL;  /* should be ok due to pdf14_close */
+            if ( ctile->ttrans->pdev14 == NULL) {
+
+                /* This can happen if we came from the clist */
+                gs_free_object(mem,ctile->ttrans->transbytes,"free_pattern_cache_entry(transbytes)");
+                ctile->ttrans->transbytes = NULL;
+
+            } else {
+
+	        dev_proc(ctile->ttrans->pdev14, close_device)((gx_device *)ctile->ttrans->pdev14);
+                ctile->ttrans->pdev14 = NULL;  /* should be ok due to pdf14_close */
+                ctile->ttrans->transbytes = NULL;  /* should be ok due to pdf14_close */
+            }
+
 	    gs_free_object(mem, ctile->ttrans,
 			   "free_pattern_cache_entry(ttrans)");
             ctile->ttrans = NULL;

@@ -1449,13 +1449,15 @@ pdf14_fill_path(gx_device *dev,	const gs_imager_state *pis,
 
             pdf14_device * ppatdev14 = pdcolor->colors.pattern.p_tile->ttrans->pdev14;
 
-            dump_raw_buffer(ppatdev14->ctx->stack->rect.q.y-ppatdev14->ctx->stack->rect.p.y, 
-                        ppatdev14->ctx->stack->rect.q.x-ppatdev14->ctx->stack->rect.p.x, 
-				        ppatdev14->ctx->stack->n_planes,
-                        ppatdev14->ctx->stack->planestride, ppatdev14->ctx->stack->rowstride, 
-                        "Pattern_Fill",ppatdev14->ctx->stack->data);
+            if (ppatdev14 != NULL) {  /* can occur during clist reading */
+                dump_raw_buffer(ppatdev14->ctx->stack->rect.q.y-ppatdev14->ctx->stack->rect.p.y, 
+                            ppatdev14->ctx->stack->rect.q.x-ppatdev14->ctx->stack->rect.p.x, 
+				            ppatdev14->ctx->stack->n_planes,
+                            ppatdev14->ctx->stack->planestride, ppatdev14->ctx->stack->rowstride, 
+                            "Pattern_Fill",ppatdev14->ctx->stack->data);
 
-            global_index++;
+                global_index++;
+            }
 
 #endif
 
