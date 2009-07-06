@@ -539,7 +539,7 @@ $(GLOBJ)gscdefs.$(OBJ) : $(GLSRC)gscdef.c\
 	$(GLCC) $(GLO_)gscdefs.$(OBJ) $(C_) $(GLGEN)gscdefs.c
 
 $(GLOBJ)gxacpath.$(OBJ) : $(GLSRC)gxacpath.c $(GXERR)\
- $(gsdcolor_h) $(gsrop_h) $(gsstruct_h) $(gsutil_h)\
+ $(gsdcolor_h) $(gsrop_h) $(gsstate_h) $(gsstruct_h) $(gsutil_h)\
  $(gxdevice_h) $(gxfixed_h) $(gxistate_h) $(gxpaint_h)\
  $(gzacpath_h) $(gzcpath_h) $(gzpath_h)
 	$(GLCC) $(GLO_)gxacpath.$(OBJ) $(C_) $(GLSRC)gxacpath.c
