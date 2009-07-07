@@ -1457,7 +1457,20 @@ pdf14_fill_path(gx_device *dev,	const gs_imager_state *pis,
                             "Pattern_Fill",ppatdev14->ctx->stack->data);
 
                 global_index++;
+
+            } else {
+
+                 gx_pattern_trans_t *patt_trans = pdcolor->colors.pattern.p_tile->ttrans;
+                 dump_raw_buffer(patt_trans->rect.q.y-patt_trans->rect.p.y, 
+                            patt_trans->rect.q.x-patt_trans->rect.p.x, 
+				            patt_trans->n_chan,
+                            patt_trans->planestride, patt_trans->rowstride, 
+                            "Pattern_Fill_clist",patt_trans->transbytes);
+
+                global_index++;
+              
             }
+
 
 #endif
 
@@ -1549,6 +1562,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
     int k;
     gx_pattern_trans_t *fill_trans_buffer;
     int ok;
+    gs_int_point phase;  /* Needed during clist rendering for band offset */
 
     gx_clip_path cpath_intersection;
     const gs_fixed_rect *pcbox = (pcpath == NULL ? NULL : cpath_is_rectangle(pcpath));
@@ -1600,16 +1614,25 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
 
         /* fill the rectangles */
 
-        ptile = pdevc->mask.m_tile;
+        ptile = pdevc->colors.pattern.p_tile;
+        phase.x = pdevc->phase.x;
+        phase.y = pdevc->phase.y;
 
-        curr_clip_rect = cpath_intersection.rect_list->list.head->next;
-        
-        for( k = 0; k< cpath_intersection.rect_list->list.count; k++){
-                    
-            ok = gx_trans_pattern_fill_rect(curr_clip_rect->xmin, curr_clip_rect->ymin, 
-                curr_clip_rect->xmax, curr_clip_rect->ymax, ptile, fill_trans_buffer);
-            curr_clip_rect = curr_clip_rect->next;
+        if (cpath_intersection.rect_list->list.head != NULL){
+            curr_clip_rect = cpath_intersection.rect_list->list.head->next;
+            
+            for( k = 0; k< cpath_intersection.rect_list->list.count; k++){  
 
+	        if_debug5('v', "[v]pdf14_tile_pattern_fill, (%d, %d), %d x %d pat_id %d \n", 
+		            curr_clip_rect->xmin, curr_clip_rect->ymin, 
+                            curr_clip_rect->xmax-curr_clip_rect->xmin, 
+                            curr_clip_rect->ymax-curr_clip_rect->ymin, ptile->id);
+
+                ok = gx_trans_pattern_fill_rect(curr_clip_rect->xmin, curr_clip_rect->ymin, 
+                    curr_clip_rect->xmax, curr_clip_rect->ymax, ptile, fill_trans_buffer, phase);
+                curr_clip_rect = curr_clip_rect->next;
+
+            }
         }
 
         /* free our buffer object */
@@ -5289,50 +5312,6 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
     code = pdf14_clist_update_params(pdev, pis);
     if (code < 0)
 	return code;
-
-    if (pdcolor != NULL && gx_dc_is_pattern1_color(pdcolor) && 0){
-
-        if( gx_pattern1_get_transptr(pdcolor) != NULL){
-
-            /* In this case, we need to push a transparency group 
-               and tile the pattern color, which is stored in 
-               a pdf14 device buffer in the ctile object memember
-               variable ttrans */
-
-#if RAW_DUMP
-
-            /* Since we do not get a put_image to view what
-               we have do it now */
-
-            pdf14_device * ppatdev14 = pdcolor->colors.pattern.p_tile->ttrans->pdev14;
-
-            dump_raw_buffer(ppatdev14->ctx->stack->rect.q.y-ppatdev14->ctx->stack->rect.p.y, 
-                        ppatdev14->ctx->stack->rect.q.x-ppatdev14->ctx->stack->rect.p.x, 
-				        ppatdev14->ctx->stack->n_planes,
-                        ppatdev14->ctx->stack->planestride, ppatdev14->ctx->stack->rowstride, 
-                        "Pattern_Fill",ppatdev14->ctx->stack->data);
-
-            global_index++;
-
-#endif
-
-            code = pdf14_tile_pattern_fill(dev, &new_is, ppath, 
-                params, pdcolor, pcpath);
-
-            new_is.trans_device = NULL;
-            new_is.has_transparency = false;
-
-            return code;
-     
-        }
-
-    
-    }
-
-
-
-
-
 
     /* If we are doing a shading fill and we are in a tranparency
        group of a different color space, then we do not want to 

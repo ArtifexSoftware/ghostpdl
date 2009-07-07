@@ -304,11 +304,11 @@ dev_proc_open_device(pattern_clist_open_device);
 /* Code to fill a pdf14 transparency rectangles with a pattern trans buffer object */
 
 int gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax, gx_color_tile *ptile, 
-                               gx_pattern_trans_t *fill_trans_buffer);
+                               gx_pattern_trans_t *fill_trans_buffer, gs_int_point phase);
 
 gx_pattern_trans_t* new_pattern_trans_buff(gs_memory_t *mem);
 
-void tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int xoff, int yoff, const gx_color_tile *ptile,
+void tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, const gx_color_tile *ptile,
                         gx_pattern_trans_t *fill_trans_buffer);
 
 #endif /* gxpcolor_INCLUDED */

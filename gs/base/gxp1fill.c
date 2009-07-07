@@ -535,22 +535,15 @@ tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int 
 		      x, y, w, h, xoff, yoff);
 	    if (w > 0 && h > 0) {
 
-	/*	if (ptfs->pcdev == (gx_device *) & ptfs->cdev)
-		    tile_clip_set_phase(&ptfs->cdev,
-				imod(xoff - x, ptfs->tmask->rep_width),
-				imod(yoff - y, ptfs->tmask->rep_height));  */
-
                 px = imod(xoff - x, ptile->ttrans->width);
                 py = imod(yoff - y, ptile->ttrans->height);
 
-		/* Set the offsets for colored pattern fills */
-
-		ptfs->xoff = xoff;
-		ptfs->yoff = yoff;
-
+		/* Set the offsets for colored pattern fills */		
+                ptfs->xoff = xoff;		
+                ptfs->yoff = yoff;                
+                
                 tile_rect_trans_simple(x, y, x+w, y+h, px, py, ptile,
-                        fill_trans_buffer);
-	                
+                        fill_trans_buffer);	                
             }
 	}
     return 0;
@@ -621,7 +614,7 @@ tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, c
 
 int 
 gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax, gx_color_tile *ptile, 
-                               gx_pattern_trans_t *fill_trans_buffer)
+                               gx_pattern_trans_t *fill_trans_buffer, gs_int_point phase)
 {
 
     tile_fill_trans_state_t state;
@@ -632,8 +625,8 @@ gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax, gx_color_tile
 
     /* Initialize the fill state */
 
-    state.phase.x = 0;
-    state.phase.y = 0;
+    state.phase.x = phase.x;
+    state.phase.y = phase.y;
 
     if (ptile->is_simple && ptile->cdev == NULL) {
         
@@ -663,23 +656,13 @@ gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax, gx_color_tile
 
 	} else {
 
-            /* clist for the device */
+            /* clist for the tile.  Currently this is not implemented
+               for the case when the tile has transparency.  This is
+               on the to do list.  Right now, all tiles with transparency
+               are rendered into the pattern cache or into the clist
+               */
+	    return_error(gs_error_unregistered);
 
-	/*    gx_device_clist *cdev = ptile->cdev;
-	    gx_device_clist_reader *crdev = (gx_device_clist_reader *)cdev;
-	    gx_strip_bitmap tbits;
-
-	    crdev->yplane.depth = 0; 
-	    crdev->yplane.shift = 0;
-	    crdev->yplane.index = -1;
-	    crdev->pages = NULL;
-	    crdev->num_pages = 1;
-	    state.orig_dev = dev;
-	    tbits = ptile->tbits;
-	    tbits.size.x = crdev->width;
-	    tbits.size.y = crdev->height;
-	    code = tile_by_steps(&state, x, y, w, h, ptile,
-				 &tbits, tile_pattern_clist); */
 	}
     }
 
