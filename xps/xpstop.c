@@ -175,6 +175,7 @@ xps_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
 	goto cleanup_setdevice;
 
     gs_setaccuratecurves(ctx->pgs, true);  /* NB not sure */
+    gs_setfilladjust(ctx->pgs, 0, 0);
 
     /* gsave and grestore (among other places) assume that */
     /* there are at least 2 gstates on the graphics stack. */
