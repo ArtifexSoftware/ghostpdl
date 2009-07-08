@@ -1633,6 +1633,22 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
                 curr_clip_rect = curr_clip_rect->next;
 
             }
+        } else if (cpath_intersection.rect_list->list.count == 1) {
+
+            /* The case when there is just a single rect */
+
+            if_debug5('v', "[v]pdf14_tile_pattern_fill, (%d, %d), %d x %d pat_id %d \n", 
+                cpath_intersection.rect_list->list.single.xmin, cpath_intersection.rect_list->list.single.ymin, 
+                        cpath_intersection.rect_list->list.single.xmax-cpath_intersection.rect_list->list.single.xmin, 
+                        cpath_intersection.rect_list->list.single.ymax-cpath_intersection.rect_list->list.single.ymin, 
+                        ptile->id);
+
+            ok = gx_trans_pattern_fill_rect(cpath_intersection.rect_list->list.single.xmin, 
+                                            cpath_intersection.rect_list->list.single.ymin, 
+                                            cpath_intersection.rect_list->list.single.xmax, 
+                                            cpath_intersection.rect_list->list.single.ymax, 
+                                            ptile, fill_trans_buffer, phase);
+
         }
 
         /* free our buffer object */
