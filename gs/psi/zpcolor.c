@@ -331,6 +331,7 @@ pattern_paint_cleanup(i_ctx_t *i_ctx_p)
 	(*dev_proc(pdev, close_device)) ((gx_device *) pdev);
     }
     code = gs_grestore(igs);
+    gx_unset_dev_color(igs);	/* dev_color may need updating if GC ran */
     if (pdev == NULL) {
 	gx_device *cdev = gs_currentdevice_inline(igs);
 	int code1 = dev_proc(cdev, pattern_manage)(cdev, gx_no_bitmap_id, NULL, 
