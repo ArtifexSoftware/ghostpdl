@@ -95,8 +95,6 @@ struct gx_fill_params_s {
     int rule;			/* -1 = winding #, 1 = even/odd */
     gs_fixed_point adjust;
     float flatness;
-    bool fill_zero_width;	/* if true, make zero-width/height */
-    /* rectangles one pixel wide/high */
 };
 
 #define gx_fill_path_only(ppath, dev, pis, params, pdevc, pcpath)\

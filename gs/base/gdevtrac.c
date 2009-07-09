@@ -290,10 +290,9 @@ trace_fill_path(gx_device * dev, const gs_imager_state * pis,
     dputs("fill_path({\n");
     trace_path(ppath);
     trace_drawing_color("}, ", pdcolor);
-    dprintf5(", rule=%d, adjust=(%g,%g), flatness=%g, fill_zero_width=%s",
+    dprintf4(", rule=%d, adjust=(%g,%g), flatness=%g",
 	     params->rule, fixed2float(params->adjust.x),
-	     fixed2float(params->adjust.y), params->flatness,
-	     (params->fill_zero_width ? "true" : "false"));
+	     fixed2float(params->adjust.y), params->flatness);
     trace_clip(dev, pcpath);
     /****** pis ******/
     dputs(")\n");

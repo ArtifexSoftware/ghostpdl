@@ -207,7 +207,6 @@ gx_cpath_intersect_path_slow(gx_clip_path * pcpath, gx_path * ppath,
         params.adjust.x = float2fixed(fadjust.x);
         params.adjust.y = float2fixed(fadjust.y);
 	params.flatness = gs_currentflat_inline(pis);
-	params.fill_zero_width = true;
     }
     code = gx_fill_path_only(ppath, (gx_device *)&adev, pis,
 			     &params, &devc, pcpath);

@@ -598,7 +598,6 @@ in:				/* Initialize for a new page. */
 	gx_set_cmap_procs(&imager_state, tdev);
     gx_imager_setscreenphase(&imager_state, -x0, -y0, gs_color_select_all);
     halftone_type = ht_type_none;
-    fill_params.fill_zero_width = false;
     pcs = gs_cspace_new_DeviceGray(mem);
     if (pcs == NULL) {
 	code = gs_note_error(gs_error_VMerror);
@@ -1777,9 +1776,6 @@ idata:			data_size = 0;
 			fill:
 			    fill_params.adjust = imager_state.fill_adjust;
 			    fill_params.flatness = imager_state.flatness;
-			    fill_params.fill_zero_width =
-				fill_params.adjust.x != 0 ||
-				fill_params.adjust.y != 0;
 			    code = gx_fill_path_only(ppath, tdev,
 						     &imager_state,
 						     &fill_params,

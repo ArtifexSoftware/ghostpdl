@@ -457,12 +457,6 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
     }
     fill_params.rule = gx_rule_winding_number;
     fill_params.flatness = pis->flatness;
-#ifdef USE_FILL_ADJUSTMENT
-    fill_params.fill_zero_width =
-	(pis->fill_adjust.x | pis->fill_adjust.y) != 0;
-#else
-    fill_params.fill_zero_width = false;
-#endif
     if (line_width < 0)
 	line_width = -line_width;
     line_width_and_scale = line_width * (double)int2fixed(1);

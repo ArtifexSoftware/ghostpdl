@@ -1405,7 +1405,6 @@ gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
 	params.rule = 1; /* Not important because the path is a rectange. */
 	params.adjust.x = params.adjust.y = 0;
         params.flatness = pis->flatness;
-	params.fill_zero_width = false;
 	gx_path_init_local(&path, pis->memory);
 	code = gx_path_add_rectangle(&path, rect->p.x, rect->p.y, rect->q.x, rect->q.y);
 	if (code < 0)
