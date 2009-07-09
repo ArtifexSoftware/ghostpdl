@@ -786,13 +786,16 @@ currentdict end readonly def
 
 /.pdfpaintproc {         % <patdict> <resdict> .pdfpaintproc -
   PDFDEBUG { pdfdict /PDFSTEPcount .knownget { 1 le } { true } ifelse { (%Begin PaintProc) print dup === flush } if } if
-	% For uncolored patterns, we have to unbind the current
-	% color and color space before running the PaintProc.
-	% There's no harm in doing this for colored patterns,
-	% so for simplicity, we always do it.
   PDFfile fileposition 3 1 roll
   q
-  //null sc1 //null SC1
+  1 index /PaintType oget 1 eq {
+    % For colored patterns, set default fill and stroke colors.
+    0 g 0 G
+  } {
+    % For uncolored patterns, we have to unbind the current
+    % color and color space before running the PaintProc.
+    //null sc1 //null SC1
+  } ifelse
 
   % Save old values on opstack, set pdfemptycount to new value.
   pdfemptycount countdictstack
