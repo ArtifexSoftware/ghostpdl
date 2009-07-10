@@ -27,6 +27,7 @@
 #include "gxpcolor.h"
 #include "gxp1impl.h"
 #include "gxcldev.h"
+#include "gxblend.h"
 
 /* Define the state for tile filling. */
 typedef struct tile_fill_state_s {
@@ -542,7 +543,7 @@ tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int 
                 ptfs->xoff = xoff;		
                 ptfs->yoff = yoff;                
                 
-                tile_rect_trans_simple(x, y, x+w, y+h, px, py, ptile,
+                tile_rect_trans_blend(x, y, x+w, y+h, px, py, ptile,
                         fill_trans_buffer);	                
             }
 	}
@@ -551,7 +552,7 @@ tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int 
 
 /* This does the case of tiling with simple tiles.  Since it is not commented anywhere note 
    that simple means that the tile size is the same as the step matrix size and the cross
-   terms in the step matrix are 0.  Hence a simple case of tile replication */
+   terms in the step matrix are 0.  Hence a simple case of tile replication. This needs to be optimized.  */
 void 
 tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, const gx_color_tile *ptile,
             gx_pattern_trans_t *fill_trans_buffer)
@@ -605,9 +606,87 @@ tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, c
 
     }
 
+}
 
+
+/* This does the case of tiling with non simple tiles.  In this case, the tiles may overlap and
+   so we really need to do blending within the existing buffer.  This needs some serious optimization. */
+void 
+tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax, int px, int py, const gx_color_tile *ptile,
+            gx_pattern_trans_t *fill_trans_buffer)
+{
+    int kk, jj, ii, h, w, buff_y_offset, buff_x_offset;
+    unsigned char *buff_out, *buff_in;
+    unsigned char *buff_ptr, *row_ptr_in, *row_ptr_out;
+    unsigned char *tile_ptr;
+    int in_row_offset;
+    int tile_width = ptile->ttrans->width;
+    int tile_height = ptile->ttrans->height;
+    int dx, dy;
+    byte src[PDF14_MAX_PLANES];
+    byte dst[PDF14_MAX_PLANES];
+    int num_chan = ptile->ttrans->n_chan;  /* Includes alpha */
+
+    buff_y_offset = ymin - fill_trans_buffer->rect.p.y;
+    buff_x_offset = xmin - fill_trans_buffer->rect.p.x;
+
+    buff_out = fill_trans_buffer->transbytes + 
+        buff_y_offset * fill_trans_buffer->rowstride + 
+        buff_x_offset;
+
+    buff_in = ptile->ttrans->transbytes;
+
+    h = ymax - ymin;
+    w = xmax - xmin;
+
+    dx = (xmin + px) % tile_width;
+    dy = (ymin + py) % tile_height;
+
+    for (jj = 0; jj < h; jj++){   
+
+        in_row_offset = (jj + dy) % ptile->ttrans->height;
+        row_ptr_in = buff_in + in_row_offset * ptile->ttrans->rowstride;
+
+        row_ptr_out = buff_out + jj * fill_trans_buffer->rowstride;
+
+        for (ii = 0; ii < w; ii++) {
+           
+            tile_ptr = row_ptr_in + (dx + ii) % ptile->ttrans->width;
+            buff_ptr = row_ptr_out + ii; 
+
+            /* We need to blend here.  The blending mode from the current
+               imager state is used. 
+            */
+            
+            /* The color values. This needs to be optimized */
+
+            for (kk = 0; kk < num_chan; kk++){
+
+                dst[kk] = *(buff_ptr + kk * fill_trans_buffer->planestride);
+                src[kk] = *(tile_ptr + kk * ptile->ttrans->planestride);
+
+            } 
+
+            /* Blend */
+
+           art_pdf_composite_pixel_alpha_8(dst, src, ptile->ttrans->n_chan-1,
+			   		 ptile->ttrans->blending_mode, ptile->ttrans->blending_procs);
+
+            /* Store the color values */
+
+            for (kk = 0; kk < num_chan; kk++){
+
+                *(buff_ptr + kk * fill_trans_buffer->planestride) = dst[kk];
+
+            } 
+  
+        }
+     
+    }
 
 }
+
+
 
 /* This fills the transparency buffer rectangles with a pattern 
    buffer that includes transparency */

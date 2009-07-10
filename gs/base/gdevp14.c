@@ -1593,10 +1593,32 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
         rect.q.x = fixed2int_ceiling(outer_box.q.x);
         rect.q.y = fixed2int_ceiling(outer_box.q.y);
 
+        /* The color space of this group must be the same as that of the 
+           tile.  Then when we pop the group, if there is a mismatch between
+           the tile color space and the current context we will do the proper
+           conversion.  In this way, we ensure that if the tile has any overlapping
+           occuring it will be blended in the proper manner i.e in the tile
+           underlying color space. */
+
+        ptile = pdevc->colors.pattern.p_tile;
         code = pdf14_push_transparency_group(p14dev->ctx, &rect,
 					 1, 0, 255,255,
 					 pis->blend_mode, 0,
-					 0, p14dev->color_info.num_components);
+					 0, ptile->ttrans->n_chan-1);
+
+        /* Set the blending procs and the is_additive setting based upon the number of channels */
+
+        if (ptile->ttrans->n_chan-1 < 4){
+
+            ptile->ttrans->blending_procs = &rgb_blending_procs;
+            ptile->ttrans->is_additive = true;
+
+        } else {
+
+            ptile->ttrans->blending_procs = &cmyk_blending_procs;
+            ptile->ttrans->is_additive = false;
+
+        }
 
         /* Fix the reversed bbox. No clear on why the push group does that */
 
@@ -1612,9 +1634,12 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
         fill_trans_buffer = new_pattern_trans_buff(pis->memory);
         pdf14_get_buffer_information(pdev, fill_trans_buffer);
 
+        /* Set the blending mode in the ptile based upon the current setting in the imager state */
+
+        ptile->ttrans->blending_mode = pis->blend_mode;
+
         /* fill the rectangles */
 
-        ptile = pdevc->colors.pattern.p_tile;
         phase.x = pdevc->phase.x;
         phase.y = pdevc->phase.y;
 

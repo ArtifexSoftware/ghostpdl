@@ -154,7 +154,7 @@ extern dev_color_proc_get_nonzero_comps(gx_dc_pattern_get_nonzero_comps);
 
 typedef struct gx_pattern_trans_s {
 
-    gx_device *pdev14;
+    gx_device *pdev14; 
     byte *transbytes;
     gs_int_rect rect;
     int rowstride;
@@ -162,6 +162,9 @@ typedef struct gx_pattern_trans_s {
     int n_chan; /* number of pixel planes including alpha */
     int width;
     int height;
+    const pdf14_nonseparable_blending_procs_t *blending_procs;
+    bool is_additive;
+    gs_blend_mode_t blending_mode;
 
 } gx_pattern_trans_t;
 
@@ -309,6 +312,11 @@ int gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax, gx_color_
 gx_pattern_trans_t* new_pattern_trans_buff(gs_memory_t *mem);
 
 void tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, const gx_color_tile *ptile,
+                        gx_pattern_trans_t *fill_trans_buffer);
+
+/* This is used for the case when we may have overlapping tiles.  We need to get better detection for this as 
+   it would be best to avoid doing it if not needed. */
+void tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax, int px, int py, const gx_color_tile *ptile,
                         gx_pattern_trans_t *fill_trans_buffer);
 
 #endif /* gxpcolor_INCLUDED */
