@@ -255,36 +255,6 @@ unclose_path(gx_path * ppath, int count)
 }
 
 /*
- * Tweak the fill adjustment if necessary so that (nearly) empty
- * rectangles are guaranteed to produce some output.  This is a hack
- * to work around a bug in the Microsoft Windows PostScript driver,
- * which draws thin lines by filling zero-width rectangles, and in
- * some other drivers that try to fill epsilon-width rectangles.
- */
-void
-gx_adjust_if_empty(const gs_fixed_rect * pbox, gs_fixed_point * adjust)
-{
-    /*
-     * For extremely large coordinates, the obvious subtractions could
-     * overflow.  We can work around this easily by noting that since
-     * we know q.{x,y} >= p.{x,y}, the subtraction overflows iff the
-     * result is negative.
-     */
-    const fixed
-	  dx = pbox->q.x - pbox->p.x, dy = pbox->q.y - pbox->p.y;
-
-    if (dx < fixed_half && dx > 0 && (dy >= int2fixed(2) || dy < 0)) {
-	adjust->x = arith_rshift_1(fixed_1 + fixed_epsilon - dx);
-	if_debug1('f', "[f]thin adjust_x=%g\n",
-		  fixed2float(adjust->x));
-    } else if (dy < fixed_half && dy > 0 && (dx >= int2fixed(2) || dx < 0)) {
-	adjust->y = arith_rshift_1(fixed_1 + fixed_epsilon - dy);
-	if_debug1('f', "[f]thin adjust_y=%g\n",
-		  fixed2float(adjust->y));
-    }
-}
-
-/*
  * The general fill  path algorithm.
  */
 static int
@@ -330,8 +300,6 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	adjust.x = adjust.y = 0;
     else
 	adjust = params->adjust;
-    if (params->fill_zero_width && !pseudo_rasterization)
-	gx_adjust_if_empty(&ibox, &adjust);
     lst.contour_count = 0;
     lst.windings = NULL;
     lst.bbox_left = fixed2int(ibox.p.x - adjust.x - fixed_epsilon);
@@ -1012,8 +980,12 @@ scan_contour(line_list *ll, contour_cursor *q)
 		ll->y_break = p.fi->ly1;
 	    if (p.monotonic_y && p.dir == DIR_HORIZONTAL && 
 		    !fo->pseudo_rasterization && 
+#ifdef FILL_ZERO_WIDTH
+		    (fo->adjust_below | fo->adjust_above) != 0) {
+#else
 		    fixed2int_pixround(p.pseg->pt.y - fo->adjust_below) <
 		    fixed2int_pixround(p.pseg->pt.y + fo->adjust_above)) {
+#endif
 		/* Add it here to avoid double processing in process_h_segments. */
 		code = add_y_line(p.prev, p.pseg, DIR_HORIZONTAL, ll);
 		if (code < 0)

@@ -1,23 +1,27 @@
 /*
     jbig2dec
-    
-    Copyright (C) 2001-2003 Artifex Software, Inc.
-    
+
+    Copyright (C) 2001-2009 Artifex Software, Inc.
+
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
     authorized under the terms of the license contained in
     the file LICENSE in this distribution.
-                                                                                
-    For information on commercial licensing, go to
-    http://www.artifex.com/licensing/ or contact
-    Artifex Software, Inc.,  101 Lucas Valley Road #110,
-    San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-    $Id$
+    For further licensing information refer to http://artifex.com/ or
+    contact Artifex Software, Inc., 7 Mt. Lassen Drive - Suite A-134,
+    San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
+
+#ifndef PACKAGE
+#define PACKAGE "jbig2dec"
+#endif
+#ifndef VERSION
+#define VERSION "unknown-version"
 #endif
 
 #include <stdio.h>
@@ -86,7 +90,7 @@ hash_print(jbig2dec_params_t *params, FILE *out)
     unsigned char md[SHA1_DIGEST_SIZE];
     char digest[2*SHA1_DIGEST_SIZE + 1];
     int i;
-    
+
     SHA1_Final(params->hash_ctx, md);
     for (i = 0; i < SHA1_DIGEST_SIZE; i++) {
         snprintf(&(digest[2*i]), 3, "%02x", md[i]);
@@ -114,7 +118,7 @@ set_output_format(jbig2dec_params_t *params, const char *format)
 #endif
     /* default to pbm */
     params->output_format=jbig2dec_format_pbm;
-    
+
     return 0;
 }
 
@@ -223,7 +227,7 @@ print_usage (void)
  #endif
     "\n"
   );
-  
+
   return 1;
 }
 
@@ -234,7 +238,7 @@ error_callback(void *error_callback_data, const char *buf, Jbig2Severity severit
     const jbig2dec_params_t *params = error_callback_data;
     char *type;
     char segment[22];
-    
+
     switch (severity) {
         case JBIG2_SEVERITY_DEBUG:
             if (params->verbose < 3) return 0;
@@ -250,7 +254,7 @@ error_callback(void *error_callback_data, const char *buf, Jbig2Severity severit
     }
     if (seg_idx == -1) segment[0] = '\0';
     else snprintf(segment, sizeof(segment), "(segment 0x%02x)", seg_idx);
-    
+
     fprintf(stderr, "jbig2dec %s %s %s\n", type, buf, segment);
 
     return 0;
@@ -262,15 +266,15 @@ make_output_filename(const char *input_filename, const char *extension)
     char *output_filename;
     const char *c, *e;
     int len;
-    
+
     if (extension == NULL) {
         fprintf(stderr, "make_output_filename called with no extension!\n");
         exit (1);
     }
-    
+
     if (input_filename == NULL)
       c = "out";
-    else {  
+    else {
       /* strip any leading path */
       c = strrchr(input_filename, '/'); /* *nix */
       if (c == NULL)
@@ -284,24 +288,24 @@ make_output_filename(const char *input_filename, const char *extension)
     /* make sure we haven't just stripped the last character */
     if (*c == '\0')
       c = "out";
-        
+
     /* strip the extension */
     len = strlen(c);
     e = strrchr(c, '.');
     if (e != NULL)
       len -= strlen(e);
-    
+
     /* allocate enough space for the base + ext */
     output_filename = malloc(len + strlen(extension) + 1);
     if (output_filename == NULL) {
         fprintf(stderr, "couldn't allocate memory for output_filename\n");
         exit (1);
     }
-    
+
     strncpy(output_filename, c, len);
     strncpy(output_filename + len, extension, strlen(extension));
     *(output_filename + len + strlen(extension)) = '\0';
-    
+
     /* return the new string */
     return (output_filename);
 }
@@ -343,7 +347,7 @@ write_page_image(jbig2dec_params_t *params, Jbig2Image *image)
               return 1;
           }
         }
-        
+
   return 0;
 }
 
@@ -351,17 +355,17 @@ static int
 write_document_hash(jbig2dec_params_t *params)
 {
     FILE *out;
-    
+
     if (!strncmp(params->output_file, "-", 2)) {
         out = stderr;
     } else {
         out = stdout;
     }
-    
+
     fprintf(out, "Hash of decoded document: ");
     hash_print(params, out);
     fprintf(out, "\n");
-    
+
     return 0;
 }
 
@@ -373,18 +377,18 @@ main (int argc, char **argv)
   uint8_t buf[4096];
   jbig2dec_params_t params;
   int filearg;
-  
+
   /* set defaults */
   params.mode = render;
   params.verbose = 1;
   params.hash = 0;
   params.output_file = NULL;
   params.output_format = jbig2dec_format_none;
-  
+
   filearg = parse_options(argc, argv, &params);
 
   if (params.hash) hash_init(&params);
-  
+
   switch (params.mode) {
     case usage:
         print_usage();
@@ -394,7 +398,7 @@ main (int argc, char **argv)
         fprintf(stderr, "Sorry, segment dump not yet implemented\n");
         break;
     case render:
-    
+
   if ((argc - filearg) == 1)
   /* only one argument--open as a jbig2 file */
     {
@@ -430,7 +434,7 @@ main (int argc, char **argv)
   else
   /* any other number of arguments */
     return print_usage();
-    
+
   ctx = jbig2_ctx_new(NULL, f_page != NULL ? JBIG2_OPTIONS_EMBEDDED : 0,
 		      NULL,
 		      error_callback, &params);
@@ -469,7 +473,7 @@ main (int argc, char **argv)
     /* work around broken CVision embedded streams */
     if (f_page != NULL)
       jbig2_complete_page(ctx);
-    
+
     if (params.output_file == NULL)
       {
 #ifdef HAVE_LIBPNG
@@ -494,14 +498,14 @@ main (int argc, char **argv)
     }
     if (params.hash) write_document_hash(&params);
   }
-  
+
   jbig2_ctx_free(ctx);
 
   } /* end params.mode switch */
 
   if (params.output_file) free(params.output_file);
   if (params.hash) hash_free(&params);
-  
+
   /* fin */
   return 0;
 }

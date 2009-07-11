@@ -500,7 +500,6 @@ clist_playback_band(clist_playback_action playback_action,
     gs_fixed_rect target_box;
     struct _cas {
 	bool lop_enabled;
-	gs_fixed_point fill_adjust;
 	gx_device_color dcolor;
     } clip_save;
     bool in_clip = false;
@@ -599,7 +598,6 @@ in:				/* Initialize for a new page. */
 	gx_set_cmap_procs(&imager_state, tdev);
     gx_imager_setscreenphase(&imager_state, -x0, -y0, gs_color_select_all);
     halftone_type = ht_type_none;
-    fill_params.fill_zero_width = false;
     pcs = gs_cspace_new_DeviceGray(mem);
     if (pcs == NULL) {
 	code = gs_note_error(gs_error_VMerror);
@@ -1199,15 +1197,11 @@ set_phase:	/*
 						&target_box);
 			tdev = (gx_device *)&clip_accum;
 			clip_save.lop_enabled = state.lop_enabled;
-			clip_save.fill_adjust =
-			    imager_state.fill_adjust;
 			clip_save.dcolor = dev_color;
 			/* temporarily set a solid color */
 			color_set_pure(&dev_color, (gx_color_index)1);
 			state.lop_enabled = false;
 			imager_state.log_op = lop_default;
-			imager_state.fill_adjust.x =
-			    imager_state.fill_adjust.y = fixed_half;
 			break;
 		    case cmd_opv_end_clip:
 			if_debug0('L', "\n");
@@ -1233,8 +1227,6 @@ set_phase:	/*
 			imager_state.log_op =
 			    (state.lop_enabled ? state.lop :
 			     lop_default);
-			imager_state.fill_adjust =
-			    clip_save.fill_adjust;
 			dev_color = clip_save.dcolor;
 			in_clip = false;
 			break;
@@ -1784,9 +1776,6 @@ idata:			data_size = 0;
 			fill:
 			    fill_params.adjust = imager_state.fill_adjust;
 			    fill_params.flatness = imager_state.flatness;
-			    fill_params.fill_zero_width =
-				fill_params.adjust.x != 0 ||
-				fill_params.adjust.y != 0;
 			    code = gx_fill_path_only(ppath, tdev,
 						     &imager_state,
 						     &fill_params,

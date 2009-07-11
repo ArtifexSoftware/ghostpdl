@@ -240,7 +240,12 @@ TEMPLATE_spot_into_trapezoids (line_list *ll, fixed band_mask)
 				int xli = fixed2int_var_pixround(flp->end.x - (!FILL_ADJUST ? 0 : fo.adjust_left));
 				int xi  = fixed2int_var_pixround(alp->end.x + (!FILL_ADJUST ? 0 : fo.adjust_right));
 
+#ifdef FILL_ZERO_WIDTH
+				if ( (xli == xi) && (PSEUDO_RASTERIZATION ||
+				    (FILL_ADJUST && (fo.adjust_right | fo.adjust_left) != 0))) {
+#else
 				if (PSEUDO_RASTERIZATION && xli == xi) {
+#endif
 				    /*
 				    * The scan is empty but we should paint something 
 				    * against a dropout. Choose one of two pixels which 

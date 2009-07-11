@@ -839,7 +839,12 @@ setglobal
       % No warning, probably FontName is defined elsewhere; see definefont above.
       .knownget not { /Missing } if
     } {
-      prev_get
+      dup /UniqueID eq {
+        % We don't want fonts to check /UniqueID and do 'restore'.
+        pop pop 16#FEDCBA98  % Arbitrary and invalid value
+      } {
+        prev_get
+      } ifelse
     } ifelse
   } bdef
 

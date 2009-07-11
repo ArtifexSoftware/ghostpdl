@@ -1,3 +1,4 @@
+
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
   
@@ -35,6 +36,7 @@ struct pdf_char_proc_s {
     pdf_resource_common(pdf_char_proc_t);
     pdf_char_proc_ownership_t *owner_fonts; /* fonts using this charproc. */
     int y_offset;		/* of character (0,0) */
+    int x_offset;		/* of character (0,0) */
     gs_point real_width;        /* Not used with synthesised bitmap fonts. */
     gs_point v;			/* Not used with synthesised bitmap fonts. */
 };
@@ -58,14 +60,6 @@ gs_private_st_strings1_ptrs4(st_pdf_char_proc_ownership, pdf_char_proc_ownership
   "pdf_char_proc_ownership_t", pdf_char_proc_ownership_enum_ptrs,
   pdf_char_proc_ownership_reloc_ptrs, char_name, char_proc, char_next, font_next, font);
 
-/* Define the state structure for tracking bitmap fonts. */
-/*typedef struct pdf_bitmap_fonts_s pdf_bitmap_fonts_t;*/
-struct pdf_bitmap_fonts_s {
-    pdf_font_resource_t *open_font;  /* current Type 3 synthesized font */
-    bool use_open_font;		/* if false, start new open_font */
-    long bitmap_encoding_id;
-    int max_embedded_code;	/* max Type 3 code used */
-};
 gs_private_st_ptrs1(st_pdf_bitmap_fonts, pdf_bitmap_fonts_t,
   "pdf_bitmap_fonts_t", pdf_bitmap_fonts_enum_ptrs,
   pdf_bitmap_fonts_reloc_ptrs, open_font);
@@ -82,7 +76,8 @@ assign_char_code(gx_device_pdf * pdev, gs_text_enum_t *pte)
 {
     pdf_bitmap_fonts_t *pbfs = pdev->text->bitmap_fonts;
     pdf_font_resource_t *pdfont = pbfs->open_font; /* Type 3 */
-    int c, code;
+    int i, c = 0, code;
+    uint operation = pte->text.operation;
 
     if (pbfs->bitmap_encoding_id == 0)
 	pbfs->bitmap_encoding_id = pdf_obj_ref(pdev);
@@ -102,8 +97,8 @@ assign_char_code(gx_device_pdf * pdev, gs_text_enum_t *pte)
 	    strcpy(pdfont->rname, pbfs->open_font->rname);
 	pdfont->u.simple.s.type3.FontBBox.p.x = 0;
 	pdfont->u.simple.s.type3.FontBBox.p.y = 0;
-	pdfont->u.simple.s.type3.FontBBox.q.x = 1000;
-	pdfont->u.simple.s.type3.FontBBox.q.y = 1000;
+	pdfont->u.simple.s.type3.FontBBox.q.x = 0;
+	pdfont->u.simple.s.type3.FontBBox.q.y = 0;
 	pdfont->mark_glyph = NULL;
 	gs_make_identity(&pdfont->u.simple.s.type3.FontMatrix);
 	/*
@@ -116,9 +111,38 @@ assign_char_code(gx_device_pdf * pdev, gs_text_enum_t *pte)
 	    *pc = 'A', pc[1] = 0;
 	pbfs->open_font = pdfont;
 	pbfs->use_open_font = true;
-	pdfont->u.simple.FirstChar = 0;
+	pdfont->u.simple.FirstChar = 255;
     }
-    c = ++(pdfont->u.simple.LastChar);
+    if ((operation & (TEXT_FROM_STRING | TEXT_FROM_BYTES)) ||
+        (operation & (TEXT_FROM_CHARS | TEXT_FROM_SINGLE_CHAR))) {
+	unsigned char p = *pte->text.data.bytes;
+	unsigned char index = p / 8, bit = 0x01 << (p % 8);
+        
+	if (pdfont->used[index] & bit) {
+    	    for (i = 0;i < 256;i++) {
+		index = i / 8;
+		bit = 0x01 << (i % 8);
+		if (!(pdfont->used[index] & bit)) {
+		    c = i;
+		    break;
+		}
+	    }
+	} else 
+	    c = p;
+	pdfont->used[index] |= bit;
+	if (c > pdfont->u.simple.LastChar)
+	    pdfont->u.simple.LastChar = c;
+
+    } else {
+	unsigned char index, bit;
+        c = ++(pdfont->u.simple.LastChar);
+	index = c / 8;
+	bit = 0x01 << (c % 8);
+	pdfont->used[index] |= bit;
+    }
+    if (c < pdfont->u.simple.FirstChar)
+        pdfont->u.simple.FirstChar = c;
+
     pdfont->Widths[c] = psdf_round(pdev->char_width.x, 100, 10); /* See 
 			pdf_write_Widths about rounding. We need to provide 
 			a compatible data for Tj. */
@@ -217,23 +241,16 @@ pdf_close_text_page(gx_device_pdf *pdev)
 	pdev->text->bitmap_fonts->use_open_font = false;
 }
 
-/* Return the Y offset for a bitmap character image. */
 int
-pdf_char_image_y_offset(const gx_device_pdf *pdev, int x, int y, int h)
+pdf_charproc_y_offset(pdf_char_proc_t *pcp)
 {
-    const pdf_text_data_t *const ptd = pdev->text;
-    gs_point pt;
-    int max_off, off;
+    return pcp->y_offset;
+}
 
-    pdf_text_position(pdev, &pt);
-    if (x < pt.x)
-	return 0;
-    max_off = (ptd->bitmap_fonts->open_font == 0 ? 0 :
-	       ptd->bitmap_fonts->open_font->u.simple.s.type3.max_y_offset);
-    off = (y + h) - (int)(pt.y + 0.5);
-    if (off < -max_off || off > max_off)
-	off = 0;
-    return off;
+int
+pdf_charproc_x_offset(pdf_char_proc_t *pcp)
+{
+    return pcp->x_offset;
 }
 
 /* Attach a CharProc to a font. */
@@ -281,16 +298,19 @@ pdf_attach_charproc(gx_device_pdf * pdev, pdf_font_resource_t *pdfont, pdf_char_
 /* Begin a CharProc for a synthesized (bitmap) font. */
 int
 pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
-		    int y_offset, gs_id id, pdf_char_proc_t ** ppcp,
+		    int y_offset, int x_offset, gs_id id, pdf_char_proc_t ** ppcp,
 		    pdf_stream_position_t * ppos)
 {
-    int char_code = assign_char_code(pdev, pdev->pte);
+    int char_code = 0;
     pdf_bitmap_fonts_t *const pbfs = pdev->text->bitmap_fonts; 
-    pdf_font_resource_t *font = pbfs->open_font; /* Type 3 */
+    pdf_font_resource_t *font;
     pdf_resource_t *pres;
     pdf_char_proc_t *pcp;
-    int code = pdf_begin_resource(pdev, resourceCharProc, id, &pres);
+    int code;
 
+    char_code = assign_char_code(pdev, pdev->pte);
+    font = pbfs->open_font; /* Type 3 */
+    code = pdf_begin_resource(pdev, resourceCharProc, id, &pres);
     if (code < 0)
 	return code;
     pcp = (pdf_char_proc_t *) pres;
@@ -315,8 +335,7 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
     if (code < 0)
 	return code;
     pcp->y_offset = y_offset;
-    font->u.simple.s.type3.FontBBox.p.y =
-	min(font->u.simple.s.type3.FontBBox.p.y, y_offset);
+    pcp->x_offset = x_offset;
     font->u.simple.s.type3.FontBBox.q.x =
 	max(font->u.simple.s.type3.FontBBox.q.x, w);
     font->u.simple.s.type3.FontBBox.q.y =
@@ -391,7 +410,6 @@ pdf_do_char_image(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
     values.pdfont = pdfont;
     values.size = 1;
     values.matrix = *pimat;
-    values.matrix.ty -= pcp->y_offset;
     values.render_mode = 0;
     values.word_spacing = 0;
     pdf_set_text_state_values(pdev, &values);

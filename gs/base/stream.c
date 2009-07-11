@@ -1259,9 +1259,9 @@ s_close_disable(stream *s)
 int
 file_close_disable(stream * s)
 {
-    int code = (*s->save_close)(s);
-
-    if (code)
+    int code;
+    
+    if ((*s->save_close != NULL) && ((code = (*s->save_close)(s)) != 0))
 	return code;
     s_close_disable(s);
     return file_close_finish(s);

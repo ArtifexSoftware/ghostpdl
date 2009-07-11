@@ -234,6 +234,8 @@ pdf_end_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev)
 	code = pdf_substitute_resource(pdev, &pres, resourceXObject, NULL, false);
 	if (code < 0)
 	    return code;
+	/* We need to update the 'where_used' field, in case we substituted a resource */
+	pres->where_used |= pdev->used_mask;
 	sputc(pdev->strm,'/');
 	sputs(pdev->strm, (const byte *)pres->rname, strlen(pres->rname), &ignore);
 	sputs(pdev->strm, (const byte *)" Do\n", 4, &ignore);
@@ -304,6 +306,8 @@ pdf_end_transparency_mask(gs_imager_state * pis, gx_device_pdf * pdev,
 	code = pdf_substitute_resource(pdev, &pres, resourceXObject, NULL, false);
 	if (code < 0)
 	    return 0;
+	/* We need to update the 'where_used' field, in case we substituted a resource */
+	pres->where_used |= pdev->used_mask;
 	sprintf(buf, "%ld 0 R", pdf_resource_id(pres));
 	code = cos_dict_put_c_key_string((cos_dict_t *)pdev->pres_soft_mask_dict->object,
 		"/G", (const byte *)buf, strlen(buf));

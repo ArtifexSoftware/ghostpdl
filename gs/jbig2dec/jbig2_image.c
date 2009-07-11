@@ -1,24 +1,21 @@
 /*
     jbig2dec
-    
+
     Copyright (C) 2001-2005 Artifex Software, Inc.
-    
+
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
     authorized under the terms of the license contained in
     the file LICENSE in this distribution.
-                                                                                
-    For information on commercial licensing, go to
-    http://www.artifex.com/licensing/ or contact
-    Artifex Software, Inc.,  101 Lucas Valley Road #110,
-    San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-    $Id$
+    For further licensing information refer to http://artifex.com/ or
+    contact Artifex Software, Inc., 7 Mt. Lassen Drive - Suite A-134,
+    San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif 
+#endif
 #include "os_types.h"
 
 #include <stdio.h>
@@ -35,14 +32,14 @@ Jbig2Image* jbig2_image_new(Jbig2Ctx *ctx, int width, int height)
 {
 	Jbig2Image	*image;
 	int		stride;
-	
+
 	image = (Jbig2Image *)jbig2_alloc(ctx->allocator, sizeof(*image));
 	if (image == NULL) {
 		jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
 			       "could not allocate image structure");
 		return NULL;
 	}
-	
+
 	stride = ((width - 1) >> 3) + 1; /* generate a byte-aligned stride */
 	image->data = (uint8_t *)jbig2_alloc(ctx->allocator, stride*height);
 	if (image->data == NULL) {
@@ -82,7 +79,7 @@ void jbig2_image_free(Jbig2Ctx *ctx, Jbig2Image *image)
 }
 
 /* resize a Jbig2Image */
-Jbig2Image *jbig2_image_resize(Jbig2Ctx *ctx, Jbig2Image *image, 
+Jbig2Image *jbig2_image_resize(Jbig2Ctx *ctx, Jbig2Image *image,
 				int width, int height)
 {
 	if (width == image->width) {
@@ -178,7 +175,7 @@ int jbig2_image_compose_unopt(Jbig2Ctx *ctx,
 }
 
 /* composite one jbig2_image onto another */
-int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, 
+int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
 			int x, int y, Jbig2ComposeOp op)
 {
     int i, j;
@@ -188,7 +185,7 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
     uint8_t *s, *ss;
     uint8_t *d, *dd;
     uint8_t mask, rightmask;
-    
+
     if (op != JBIG2_COMPOSE_OR) {
 	/* hand off the the general routine */
 	return jbig2_image_compose_unopt(ctx, dst, src, x, y, op);
@@ -200,15 +197,15 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
     ss = src->data;
     /* FIXME: this isn't sufficient for the < 0 cases */
     if (x < 0) { w += x; x = 0; }
-    if (y < 0) { h += y; y = 0; } 
+    if (y < 0) { h += y; y = 0; }
     w = (x + w < dst->width) ? w : dst->width - x;
     h = (y + h < dst->height) ? h : dst->height - y;
-#ifdef JBIG2_DEBUG    
+#ifdef JBIG2_DEBUG
     jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1,
-      "composting %dx%d at (%d, %d) afer clipping\n",
+      "composting %dx%d at (%d, %d) after clipping\n",
         w, h, x, y);
 #endif
-    
+
 #if 0
     /* special case complete/strip replacement */
     /* disabled because it's only safe to do when the destination
@@ -222,8 +219,8 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
     leftbyte = x >> 3;
     rightbyte = (x + w - 1) >> 3;
     shift = x & 7;
-    
-    /* general OR case */    
+
+    /* general OR case */
     s = ss;
     d = dd = dst->data + y*dst->stride + leftbyte;
     if (leftbyte == rightbyte) {
@@ -264,7 +261,7 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
 	    s = (ss += src->stride);
 	}
     }
-            
+
     return 0;
 }
 
@@ -290,7 +287,7 @@ int jbig2_image_get_pixel(Jbig2Image *image, int x, int y)
 
   if ((x < 0) || (x >= w)) return 0;
   if ((y < 0) || (y >= h)) return 0;
-  
+
   return ((image->data[byte]>>bit) & 1);
 }
 

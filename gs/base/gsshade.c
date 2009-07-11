@@ -306,8 +306,6 @@ gs_shading_FfGt_init(gs_shading_t ** ppsh,
 	return code;
     if (bpf < 0)
 	return bpf;
-    if (params->Decode != 0 && params->Decode[0] == params->Decode[1])
-	return_error(gs_error_rangecheck);
     ALLOC_SHADING(&st_shading_FfGt, shading_type_Free_form_Gouraud_triangle,
 		  shading_FfGt_procs, "gs_shading_FfGt_init");
     psh->params.BitsPerFlag = bpf;

@@ -58,8 +58,7 @@ dict_int_null_param(const ref * pdict, const char *kstr, int minval,
 		    int maxval, int defaultval, int *pvalue)
 {
     ref *pdval;
-    int code;
-    long ival;
+    int code, ival;
 
     if (pdict == 0 || dict_find_string(pdict, kstr, &pdval) <= 0) {
 	ival = defaultval;
@@ -378,7 +377,7 @@ dict_uid_param(const ref * pdict, gs_uid * puid, int defaultval,
     } else {
 	if (!r_has_type(puniqueid, t_integer))
 	   return_error(e_typecheck);
- 	if (puniqueid->value.intval < 0 || puniqueid->value.intval > 0xffffffL)
+ 	if (puniqueid->value.intval < 0 || puniqueid->value.intval > 0xffffff)
 	   return_error(e_rangecheck);
 	/* Apparently fonts created by Fontographer often have */
 	/* a UniqueID of 0, contrary to Adobe's specifications. */

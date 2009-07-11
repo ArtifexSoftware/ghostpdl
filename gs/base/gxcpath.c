@@ -602,8 +602,6 @@ gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_or
 		if (adjust.x == -1)
 		    adjust_xl = adjust_xu = adjust_yl = adjust_yu = 0;
 		else {
-		    if (params->fill_zero_width)
-			gx_adjust_if_empty(&new_box, &adjust);
 		    adjust_xl = (adjust.x == fixed_half ? fixed_half - fixed_epsilon : adjust.x);
 		    adjust_yl = (adjust.y == fixed_half ? fixed_half - fixed_epsilon : adjust.y);
 		    adjust_xu = adjust.x;

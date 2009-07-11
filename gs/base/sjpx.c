@@ -172,15 +172,30 @@ copy_row_gray(unsigned char *dest, jas_image_t *image,
 {
     int i, p;
     int v;
-    int shift;
+    int shift, bits;
 
     v = jas_image_getcmptbytype(image, JAS_IMAGE_CT_GRAY_Y);
     if (v < 0) return 0; /* no matching component */
-    shift = max(jas_image_cmptprec(image, v) - 8, 0);
 
-    for (i = 1; i <= bytes; i++) {
-	p = jas_image_readcmptsample(image, v, x++, y);
-	dest[i] = p >> shift;
+    bits = jas_image_cmptprec(image, v);
+    if (bits >= 8) {
+	/* shift down to 8 bpp */
+	shift = max(jas_image_cmptprec(image, v) - 8, 0);
+
+	for (i = 1; i <= bytes; i++) {
+	    p = jas_image_readcmptsample(image, v, x++, y);
+	    dest[i] = p >> shift;
+	}
+   } else if (bits == 4) {
+	/* return two packed pixels per byte */
+	for (i = 1; i <= bytes; i++) {
+	    p = jas_image_readcmptsample(image, v, x++, y) << 4;
+	    p |= jas_image_readcmptsample(image, v, x++, y);
+	    dest[i] = p;
+	}
+    } else {
+	/* todo: handle other bit depths */
+	memset(dest + 1, 0x80, bytes);
     }
 
     return bytes;
@@ -404,11 +419,14 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
       if (state->image != NULL) {
 	jas_image_t *image = state->image;
 	int numcmpts = jas_image_numcmpts(image);
+	int bits = jas_image_cmptprec(image, 0);
 	int stride = numcmpts*jas_image_width(image);
 	long image_size = stride*jas_image_height(image);
 	int clrspc = jas_image_clrspc(image);
 	int x, y;
 	long usable, done;
+
+	if (bits == 4) stride = (stride + 1)/2;
 
 	/* copy data out of the decoded image data */
 	/* be lazy and only write the rest of the current row */

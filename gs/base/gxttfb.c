@@ -689,7 +689,6 @@ static int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
 	params.rule = gx_rule_winding_number;
 	params.adjust.x = params.adjust.y = 0;
 	params.flatness = fixed2float(max(bbox.q.x - bbox.p.x, bbox.q.y - bbox.p.y)) / 100.0;
-	params.fill_zero_width = false;
 
 	for (h.transpose = 0; h.transpose < 2; h.transpose++) {
 	    h.midx = (padev->xmin + padev->xmax) / 2;

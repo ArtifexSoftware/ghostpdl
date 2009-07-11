@@ -35,6 +35,8 @@ int cid_to_TT_charcode(const gs_memory_t *mem,
 /* Create a CIDMap from a True Type cmap, Decoding and SubstNWP. */
 int cid_fill_CIDMap(const gs_memory_t *mem, const ref *Decoding, const ref *TT_cmap, const ref *SubstNWP, 
                     int GDBytes, ref *CIDMap);
+/* Create an identity CIDMap. */
+int cid_fill_Identity_CIDMap(const gs_memory_t *mem, ref *CIDMap);
 
 /* <cid9font> <cid> .type9mapcid <charstring> <font_index> */
 int ztype9mapcid(i_ctx_t *i_ctx_p);

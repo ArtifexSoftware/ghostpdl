@@ -797,7 +797,7 @@ number_output_separations(int num_dev_comp, int num_std_colorants,
 static void
 build_comp_to_sep_map(tiffsep_device * pdev, short * map_comp_to_sep)
 {
-    int num_sep = pdev->devn_params.page_spot_colors;
+    int num_sep = pdev->devn_params.separations.num_separations;
     int num_std_colorants = pdev->devn_params.num_std_colorant_names;
     int sep_num;
     int num_channels;

@@ -3111,7 +3111,6 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
     pdev->pdf14_procs->unpack_color(num_comp, color, pdev, src);
 
     src[num_comp] = (byte)floor (255 * pdev->alpha + 0.5);
-    opacity = (byte)floor (255 * pdev->opacity + 0.5);
 
     if (x < buf->rect.p.x) x = buf->rect.p.x;
     if (y < buf->rect.p.y) y = buf->rect.p.y;
@@ -3139,7 +3138,8 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
 		dst[num_comp] = dst_ptr[num_comp * planestride];
 	    }
 	    art_pdf_composite_knockout_simple_8(dst,
-		has_shape ? dst_ptr + shape_off : NULL, src, num_comp, opacity);
+		has_shape ? dst_ptr + shape_off : NULL, src, num_comp, 255);
+            /* ToDo:  Review use of shape and opacity above.   */ 
 	    /* Complement the results for subtractive color spaces */
 	    if (additive) {
 		for (k = 0; k < num_chan; ++k)
@@ -3156,6 +3156,7 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
     }
     return 0;
 }
+
 
 /**
  * Here we have logic to override the cmap_procs with versions that

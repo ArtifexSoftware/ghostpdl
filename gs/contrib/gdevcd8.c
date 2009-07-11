@@ -3377,7 +3377,7 @@ cdnj500_start_raster_mode(gx_device_printer * pdev, int paper_size,
         fprintf(prn_stream, "@PJL SET RET = ON \n");
         fprintf(prn_stream, "@PJL SET MAXDETAIL = ON \n");
     } else {  /* quality == PRESENTATION */
-        fprintf(prn_stream, "@PJL SET RENDERINTENT = SATURATION \n");
+        fprintf(prn_stream, "@PJL SET RENDERINTENT = PERCEPTUAL \n");
         fprintf(prn_stream, "@PJL SET RET = OFF \n");
         fprintf(prn_stream, "@PJL SET MAXDETAIL = ON \n");
     }

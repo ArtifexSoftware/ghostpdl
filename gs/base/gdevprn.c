@@ -973,9 +973,7 @@ gdev_prn_colors_used(gx_device *dev, int y, int height,
     gx_device_clist_writer *cldev;
 
     /* If this isn't a banded device, return default values. */
-    if (dev_proc(dev, get_bits_rectangle) !=
-	  gs_clist_device_procs.get_bits_rectangle
-	) {
+    if (dev_proc(dev, open_device) != gs_clist_device_procs.open_device) {
 	*range_start = 0;
 	colors_used->or = ((gx_color_index)1 << dev->color_info.depth) - 1;
 	return dev->height;

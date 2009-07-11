@@ -470,6 +470,12 @@ currentdict /token_nofail_dict .undef
   } ifelse
 } bind def
 
+% See /knownoget above.
+/oknown {	% <dict> <key> oknown <bool>
+  .knownget { oforce //null ne } { //false } ifelse
+} bind def
+
+
 /knownogetdict { % <dict> <key> knownogetdict <dict> true
 		 % <dict> <key> knownogetdict false
   //knownoget exec dup {
