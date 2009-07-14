@@ -176,6 +176,11 @@ MAIN_OBJ=$(PLOBJDIR)\plmain.$(OBJ) $(PLOBJDIR)\plimpl.$(OBJ) $(PLOBJDIR)\dwtrace
  $(PLOBJDIR)\dwimg.$(OBJ) $(PLOBJDIR)\dwreg.$(OBJ)
 !endif
 !endif
+
+!ifndef PDL_INCLUDE_FLAGS
+# PCL_INCLUDED means pcl + pcl xl
+PDL_INCLUDE_FLAGS=/DPCL_INCLUDED
+
 !ifndef PCL_TOP_OBJ
 PCL_TOP_OBJ=$(PCLOBJDIR)\pctop.$(OBJ)
 !endif
@@ -185,9 +190,6 @@ PXL_TOP_OBJ=$(PXLOBJDIR)\pxtop.$(OBJ)
 !ifndef PSI_TOP_OBJ
 PSI_TOP_OBJ=
 !endif
-
-!ifndef PDL_INCLUDE_FLAGS
-PDL_INCLUDE_FLAGS=/DPCL_INCLUDED
 !endif
 
 !ifdef XPS_INCLUDED
@@ -197,8 +199,6 @@ XCFLAGS=/DXPS_INCLUDED
 !endif
 !endif
 
-# PCL_INCLUDED means pcl + pcl xl
-PDL_INCLUDE_FLAGS=/DPCL_INCLUDED
 XCFLAGS=$(XCFLAGS) $(PDL_INCLUDE_FLAGS)
 
 !ifndef TOP_OBJ
@@ -278,7 +278,11 @@ EXTRALIBS=$(EXPATLIB)
 # Language and configuration.  These are actually platform-independent,
 # but we define them here just to keep all parameters in one place.
 !ifndef TARGET_DEVS
+!if "$(PDL_INCLUDE_FLAGS)" == "/DPCL_INCLUDED"
 TARGET_DEVS=$(PXLOBJDIR)\pjl.dev $(PXLOBJDIR)\pxl.dev $(PCLOBJDIR)\pcl5c.dev $(PCLOBJDIR)\hpgl2c.dev
+!else
+TARGET_DEVS=$(PLOBJDIR)\pjl.dev
+!endif
 !endif
 
 !ifdef XPS_INCLUDED
@@ -357,8 +361,10 @@ config-clean: pl.config-clean pxl.config-clean
 
 # Subsystems
 !include $(PLSRCDIR)\pl.mak
+!if "$(PDL_INCLUDE_FLAGS)" == "/DPCL_INCLUDED"
 !include $(PCLSRCDIR)\pcl.mak
 !include $(PXLSRCDIR)\pxl.mak
+!endif
 
 !ifdef XPS_INCLUDED
 !include $(XPSSRCDIR)\xps.mak
