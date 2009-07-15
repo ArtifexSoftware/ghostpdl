@@ -709,6 +709,7 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
                 ctile->ttrans->transbytes = NULL;  /* should be ok due to pdf14_close */
             }
 
+            used += ctile->ttrans->n_chan*ctile->ttrans->planestride;
 	    gs_free_object(mem, ctile->ttrans,
 			   "free_pattern_cache_entry(ttrans)");
             ctile->ttrans = NULL;
