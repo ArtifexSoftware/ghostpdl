@@ -146,7 +146,6 @@ jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segm
         page->image = jbig2_image_new(ctx, page->width, page->height);
     }
     if (page->image == NULL) {
-        jbig2_free(ctx->allocator, page);
         return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
             "failed to allocate buffer for page image");
     } else {
