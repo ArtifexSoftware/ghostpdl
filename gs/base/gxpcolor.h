@@ -152,7 +152,9 @@ extern dev_color_proc_get_nonzero_comps(gx_dc_pattern_get_nonzero_comps);
   the pattern accumulator and then back to a pdf14 compositor it makes sense
   to keep the data in planar form for the pdf14 compositor action */
 
-typedef struct gx_pattern_trans_s {
+typedef struct gx_pattern_trans_s gx_pattern_trans_t;
+
+struct gx_pattern_trans_s {
 
     gx_device *pdev14; 
     byte *transbytes;
@@ -165,8 +167,11 @@ typedef struct gx_pattern_trans_s {
     const pdf14_nonseparable_blending_procs_t *blending_procs;
     bool is_additive;
     gs_blend_mode_t blending_mode;
+    const void (* pat_trans_fill)(int xmin, int ymin, int xmax, int ymax, int px, int py, const gx_color_tile *ptile,
+            gx_pattern_trans_t *fill_trans_buffer);
+};
 
-} gx_pattern_trans_t;
+
 
 #define private_st_pattern_trans() /* in gxpcmap.c */\
 gs_private_st_ptrs2(st_pattern_trans, gx_pattern_trans_t, "gx_pattern_trans",\
@@ -207,6 +212,7 @@ struct gx_color_tile_s {
 
     gx_device_clist *cdev;	/* not NULL if the graphics is a command list. */
     byte is_simple;		/* true if xstep/ystep = tile size */
+    byte has_overlap;           /* true if step size is smaller than bounding box */
     byte is_dummy;		/* if true, the device manages the pattern, 
                                    and the content of the tile is empty. */
     byte pad[2];		/* structure members alignment. */

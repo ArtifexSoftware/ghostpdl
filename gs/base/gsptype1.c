@@ -166,6 +166,28 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     if (code < 0)
 	goto fsaved;
 
+    /* Check if we will have any overlapping tiles.  If we do and there is 
+       transparency present, then we will need to blend when we tile.  We want
+       to detect this since blending is expensive and we would like to avoid it
+       if possible.  Note that any skew or rotation matrix will make it 
+       neccessary to perform blending */
+
+    { int width = inst.template.BBox.q.x - inst.template.BBox.p.x;
+      int height = inst.template.BBox.q.y - inst.template.BBox.p.y;
+
+      if ( inst.template.XStep < width || inst.template.YStep < height || ctm_only(saved).xy != 0 || 
+          ctm_only(saved).yx != 0 ){
+            
+          inst.has_overlap = true;
+
+      } else {
+
+          inst.has_overlap = false;
+
+      }
+
+    }
+
 #define mat inst.step_matrix
     if_debug6('t', "[t]step_matrix=[%g %g %g %g %g %g]\n",
 	      inst.step_matrix.xx, inst.step_matrix.xy, inst.step_matrix.yx, 
@@ -1281,6 +1303,7 @@ typedef struct gx_dc_serialized_tile_s {
     byte depth;
     byte tiling_type;
     byte is_simple;
+    byte has_overlap;
 } gx_dc_serialized_tile_t;
 
 static int
@@ -1313,6 +1336,7 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, uint offset, byte *data, uint *
 	buf.depth = ptile->depth;
 	buf.tiling_type = ptile->tiling_type;
 	buf.is_simple = ptile->is_simple;
+        buf.has_overlap = ptile->has_overlap;
 	if (sizeof(buf) > left) {
 	    /* For a while we require the client to provide enough buffer size. */
 	    return_error(gs_error_unregistered); /* Must not happen. */
@@ -1406,6 +1430,7 @@ gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, uint offset, byte *data, 
 	buf.depth = ptile->depth;
 	buf.tiling_type = ptile->tiling_type;
 	buf.is_simple = ptile->is_simple;
+        buf.has_overlap = ptile->has_overlap;
 	if (sizeof(buf) > left) {
 	    /* For a while we require the client to provide enough buffer size. */
 	    return_error(gs_error_unregistered); /* Must not happen. */
@@ -1530,6 +1555,7 @@ gx_dc_pattern_write(
 	buf.depth = ptile->depth;
 	buf.tiling_type = ptile->tiling_type;
 	buf.is_simple = ptile->is_simple;
+        buf.has_overlap = ptile->has_overlap;
 	if (sizeof(buf) > left) {
 	    /* For a while we require the client to provide enough buffer size. */
 	    return_error(gs_error_unregistered); /* Must not happen. */
@@ -1737,6 +1763,7 @@ gx_dc_pattern_read(
 	ptile->depth = buf.depth;
 	ptile->tiling_type = buf.tiling_type;
 	ptile->is_simple = buf.is_simple;
+        ptile->has_overlap = buf.has_overlap;
 	ptile->is_dummy = 0;
 
 	if (!buf.is_clist) {

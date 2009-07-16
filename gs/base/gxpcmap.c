@@ -821,6 +821,7 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
     ctile->step_matrix = pinst->step_matrix;
     ctile->bbox = pinst->bbox;
     ctile->is_simple = pinst->is_simple;
+    ctile->has_overlap = pinst->has_overlap;
     ctile->is_dummy = false;
     if (fdev->procs.open_device != pattern_clist_open_device) {
 	if (mbits != 0) {
@@ -914,6 +915,7 @@ gx_pattern_cache_add_dummy_entry(gs_imager_state *pis,
     ctile->step_matrix = pinst->step_matrix;
     ctile->bbox = pinst->bbox;
     ctile->is_simple = pinst->is_simple;
+    ctile->has_overlap = pinst->has_overlap;
     ctile->is_dummy = true;
     memset(&ctile->tbits, 0 , sizeof(ctile->tbits));
     ctile->tbits.size = pinst->size;

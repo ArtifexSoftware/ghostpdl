@@ -13,6 +13,7 @@
 
 /* $Id$ */
 /* PatternType 1 filling algorithms */
+#include "string_.h"
 #include "math_.h"
 #include "gx.h"
 #include "gserrors.h"
@@ -543,7 +544,11 @@ tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int 
                 ptfs->xoff = xoff;		
                 ptfs->yoff = yoff;                
                 
-                tile_rect_trans_blend(x, y, x+w, y+h, px, py, ptile,
+                /* We only go through blending during tiling, if
+                   there was overlap as defined by the step matrix
+                   and the bounding box */
+
+                ptile->ttrans->pat_trans_fill(x, y, x+w, y+h, px, py, ptile,
                         fill_trans_buffer);	                
             }
 	}
@@ -558,12 +563,13 @@ tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, c
             gx_pattern_trans_t *fill_trans_buffer)
 {
     int kk, jj, ii, h, w, buff_y_offset, buff_x_offset;
-    unsigned char *ptr_out, *ptr_in, *buff_out, *buff_in;
-    unsigned char *tile_ptr, *row_ptr;
+    unsigned char *ptr_out, *ptr_in, *buff_out, *buff_in, *ptr_out_temp;
+    unsigned char *row_ptr;
     int in_row_offset;
     int tile_width = ptile->ttrans->width;
     int tile_height = ptile->ttrans->height;
     int dx, dy;
+    int left_rem_end, left_width, num_full_tiles, right_tile_width;  
 
     buff_y_offset = ymin - fill_trans_buffer->rect.p.y;
     buff_x_offset = xmin - fill_trans_buffer->rect.p.x;
@@ -580,6 +586,25 @@ tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, c
     dx = (xmin + px) % tile_width;
     dy = (ymin + py) % tile_height;
 
+    /* To speed this up, the inner loop on the width is implemented with
+       mem copys where we have a left remainder, full tiles and a right remainder.
+       Depending upon the rect that we are filling we may have only one of these
+       three portions, or two or all three.  We compute the parts now outside the loops. */
+
+    /* Left remainder part */
+    
+    left_rem_end = min(dx+w,tile_width-1);
+    left_width = left_rem_end - dx;
+
+    /* Now the middle part */
+
+    num_full_tiles = (int) floor((float) (w - left_width)/ (float) tile_width);
+
+    /* Now the right part */
+
+    right_tile_width = w - num_full_tiles*tile_width - left_width;
+
+
     for (kk = 0; kk < fill_trans_buffer->n_chan; kk++){
 
         ptr_out = buff_out + kk * fill_trans_buffer->planestride;
@@ -590,15 +615,27 @@ tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, c
             in_row_offset = (jj + dy) % ptile->ttrans->height;
             row_ptr = ptr_in + in_row_offset * ptile->ttrans->rowstride;
 
-            for (ii = 0; ii < w; ii++) {
+             /* This is the case when we have no blending. */
 
-                /* For now, lets stick the value in there with no 
-                blending of overlapping pattern sections */
-                
-                tile_ptr = row_ptr + (dx + ii) % ptile->ttrans->width;
-                ptr_out[ii] = *tile_ptr;
+            ptr_out_temp = ptr_out;
+
+            /* Left part */
+
+            memcpy( ptr_out_temp, row_ptr + dx, left_width);
+            ptr_out_temp += left_width;
+
+            /* Now the full tiles */
+
+            for ( ii = 0; ii < num_full_tiles; ii++){
+
+                memcpy( ptr_out_temp, row_ptr, tile_width);
+                ptr_out_temp += tile_width;
 
             }
+
+            /* Now the remainder */
+
+            memcpy( ptr_out_temp, row_ptr, right_tile_width);
 
             ptr_out += fill_trans_buffer->rowstride;
           

@@ -1620,7 +1620,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
 
         }
 
-        /* Fix the reversed bbox. No clear on why the push group does that */
+        /* Fix the reversed bbox. Not clear on why the push group does that */
 
         p14dev->ctx->stack->bbox.p.x = p14dev->ctx->rect.p.x;
         p14dev->ctx->stack->bbox.p.y = p14dev->ctx->rect.p.y;
@@ -1642,6 +1642,21 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
 
         phase.x = pdevc->phase.x;
         phase.y = pdevc->phase.y;
+
+        /* Based upon if the tiles overlap pick the type of rect fill that we will
+           want to use */
+
+        if (ptile->has_overlap) {
+
+            /* This one does blending since there is tile overlap */
+            ptile->ttrans->pat_trans_fill = &tile_rect_trans_blend;
+
+        } else {
+
+            /* This one does no blending since there is no tile overlap */
+            ptile->ttrans->pat_trans_fill = &tile_rect_trans_simple;
+
+        }
 
         if (cpath_intersection.rect_list->list.head != NULL){
             curr_clip_rect = cpath_intersection.rect_list->list.head->next;
