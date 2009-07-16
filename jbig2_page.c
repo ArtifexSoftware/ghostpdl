@@ -294,7 +294,7 @@ Jbig2Image *jbig2_page_out(Jbig2Ctx *ctx)
             ctx->pages[index].state = JBIG2_PAGE_RETURNED;
             jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1,
                 "page %d returned to the client", ctx->pages[index].number);
-            return ctx->pages[index].image;
+            return jbig2_image_clone(ctx, ctx->pages[index].image);
         }
     }
 
@@ -312,7 +312,7 @@ int jbig2_release_page(Jbig2Ctx *ctx, Jbig2Image *image)
     /* find the matching page struct and mark it released */
     for (index = 0; index < ctx->max_page_index; index++) {
         if (ctx->pages[index].image == image) {
-            /* todo: free associated image */
+            jbig2_image_release(ctx, image);
             ctx->pages[index].state = JBIG2_PAGE_RELEASED;
             jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1,
                 "page %d released by the client", ctx->pages[index].number);
