@@ -1054,6 +1054,7 @@ pdf14_get_buffer_information(const gx_device * dev, gx_pattern_trans_t *transbuf
     transbuff->planestride = buf->planestride;
     transbuff->rowstride = buf->rowstride;
     transbuff->transbytes = buf->data;
+    transbuff->has_shape = buf->has_shape;
     transbuff->width = width;
     transbuff->height = height;
 

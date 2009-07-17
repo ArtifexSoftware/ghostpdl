@@ -593,7 +593,7 @@ tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, c
 
     /* Left remainder part */
     
-    left_rem_end = min(dx+w,tile_width-1);
+    left_rem_end = min(dx+w,tile_width);
     left_width = left_rem_end - dx;
 
     /* Now the middle part */
@@ -639,6 +639,22 @@ tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, c
 
             ptr_out += fill_trans_buffer->rowstride;
           
+        }
+
+    }
+
+    /* If the group we are filling has a shape plane fill that now */
+    /* Note:  Since this was a virgin group push we can just blast it with 255 */
+
+    if (fill_trans_buffer->has_shape) {
+
+        ptr_out = buff_out + fill_trans_buffer->n_chan * fill_trans_buffer->planestride;
+
+        for (jj = 0; jj < h; jj++){   
+
+            memset(ptr_out, 255, w);
+            ptr_out += fill_trans_buffer->rowstride;
+
         }
 
     }
@@ -719,6 +735,22 @@ tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax, int px, int py, co
   
         }
      
+    }
+
+    /* If the group we are filling has a shape plane fill that now */
+    /* Note:  Since this was a virgin group push we can just blast it with 255 */
+
+    if (fill_trans_buffer->has_shape) {
+
+        buff_ptr = buff_out + fill_trans_buffer->n_chan * fill_trans_buffer->planestride;
+
+        for (jj = 0; jj < h; jj++){   
+
+            memset(buff_ptr, 255, w);
+            buff_ptr += fill_trans_buffer->rowstride;
+
+        }
+
     }
 
 }
