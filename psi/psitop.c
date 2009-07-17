@@ -174,7 +174,7 @@ ps_impl_allocate_interp_instance(
 	psi->pl.interp = interp;
 	/* Setup pointer to mem used by PostScript */
 	psi->plmemory = mem;
-	psi->minst = gs_main_alloc_instance(mem);
+	psi->minst = gs_main_alloc_instance(mem->non_gc_memory);
 
 #ifdef DEBUG_WITH_EXPERIMENTAL_GSOPTIONS_FILE
 	{   /* Fetch more GS arguments (debug purposes only).
