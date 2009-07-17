@@ -18,7 +18,6 @@ MAKEFILE= $(MAKEFILE) ..\xps\xps_msvc.mak
 # Include XPS support
 !ifndef XPS_INCLUDED
 XPS_INCLUDED=TRUE
-PDL_INCLUDE_FLAGS=/DXPS_INCLUDED
 !endif XPS_INCLUDED
 
 # Font scaler
