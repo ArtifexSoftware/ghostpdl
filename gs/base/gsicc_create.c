@@ -542,7 +542,8 @@ add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[])
    the ICC profile cannot have multiple matrices */
 
 void
-gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memory)
+gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memory, 
+                     bool has_abc_procs, bool has_lmn_procs)
 {
 
     icProfile iccprofile;
@@ -589,8 +590,7 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
 
     /* Check if we only have LMN methods */
 
-    if(pcie->MatrixABC.is_identity && pcie->DecodeABC.procs[0] == abc_identity 
-        && pcie->DecodeABC.procs[1] == abc_identity && pcie->DecodeABC.procs[2] == abc_identity){
+    if ( pcie->MatrixABC.is_identity && !has_abc_procs ){
 
         /* Only LMN parameters, we can do this with a very simple ICC profile */
 
@@ -617,7 +617,7 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
 
         for (k = 0; k < 3; k++){
 
-            if (pcie->common.DecodeLMN.procs[k] == common_identity){
+            if (!has_lmn_procs){
 
                 /* when n = 0 we assume identity! */
 
@@ -701,7 +701,7 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
 
         for (k = 0; k < 3; k++){
 
-            if (pcie->common.DecodeLMN.procs[k] == common_identity){
+            if (!has_lmn_procs){
 
                 /* No points! */
                 
@@ -746,17 +746,14 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
 
 
 void
-gsicc_create_fromdef(gs_cie_def *pcie, unsigned char *buffer, gs_memory_t *memory)
+gsicc_create_fromdef(gs_cie_def *pcie, unsigned char *buffer, gs_memory_t *memory,
+                     bool has_def_procs, bool has_abc_procs, bool has_lmn_procs)
 {
 
     icProfile iccprofile;
     icHeader  *header = &(iccprofile.header);
 
     setheader_common(header);
-
-
-
-
 }
 
 
@@ -764,7 +761,8 @@ gsicc_create_fromdef(gs_cie_def *pcie, unsigned char *buffer, gs_memory_t *memor
 
 
 void
-gsicc_create_fromdefg(gs_cie_defg *pcie, unsigned char *buffer, gs_memory_t *memory)
+gsicc_create_fromdefg(gs_cie_defg *pcie, unsigned char *buffer, gs_memory_t *memory,
+                       bool has_defg_procs, bool has_abc_procs, bool has_lmn_procs)
 {
 
     icProfile iccprofile;
@@ -787,7 +785,8 @@ gsicc_create_fromdefg(gs_cie_defg *pcie, unsigned char *buffer, gs_memory_t *mem
 
 
 void
-gsicc_create_froma(gs_cie_a *pcie, unsigned char *buffer, gs_memory_t *memory)
+gsicc_create_froma(gs_cie_a *pcie, unsigned char *buffer, gs_memory_t *memory, 
+                   bool has_a_proc, bool has_lmn_procs)
 {
 
     icProfile iccprofile;
@@ -822,8 +821,7 @@ gsicc_create_froma(gs_cie_a *pcie, unsigned char *buffer, gs_memory_t *memory)
     /* Check if we have no LMN or A methods.  A simple profile  */
 
     if(pcie->MatrixA.u == 1.0 && pcie->MatrixA.v == 1.0 && pcie->MatrixA.w == 1.0
-        && pcie->common.MatrixLMN.is_identity && pcie->common.DecodeLMN.procs[0] == common_identity
-        && pcie->common.DecodeLMN.procs[1] == common_identity && pcie->common.DecodeLMN.procs[2] == common_identity){
+        && pcie->common.MatrixLMN.is_identity && !has_lmn_procs){
 
         num_tags = 5;  /* common (2) + grayTRC,bkpt,wtpt */     
         tag_list = (gsicc_tag*) gs_alloc_bytes(memory,sizeof(gsicc_tag)*num_tags,"gsicc_create_froma");
@@ -839,13 +837,14 @@ gsicc_create_froma(gs_cie_a *pcie, unsigned char *buffer, gs_memory_t *memory)
         init_tag(tag_list, &last_tag, icSigMediaWhitePointTag, XYZPT_SIZE);
         init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
 
-        if (pcie->DecodeA == a_identity){
+        if (!has_a_proc){
         
             trc_tag_size = 4;
 
         } else {
 
             trc_tag_size = CURVE_SIZE*2+4;  /* curv type */
+            /* This will be populated during by the interpolator */
             debug_catch = 0;
 
         }
@@ -860,7 +859,7 @@ gsicc_create_froma(gs_cie_a *pcie, unsigned char *buffer, gs_memory_t *memory)
 
         /* Now we can go ahead and fill our buffer with the data */
 
-        buffer = gs_alloc_bytes(memory,profile_size,"gsicc_create_fromabc");
+        buffer = gs_alloc_bytes(memory,profile_size,"gsicc_create_froma");
         curr_ptr = buffer;
 
         /* The header */

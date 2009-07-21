@@ -243,32 +243,44 @@ cie_3d_table_param(const ref * ptable, uint count, uint nbytes,
 
 /* Common code for the CIEBased* cases of setcolorspace. */
 static int
-cie_lmnp_param(const gs_memory_t *mem, const ref * pdref, gs_cie_common * pcie, ref_cie_procs * pcprocs)
+cie_lmnp_param(const gs_memory_t *mem, const ref * pdref, gs_cie_common * pcie, 
+               ref_cie_procs * pcprocs, bool *has_lmn_procs)
 {
     int code;
 
     if ((code = dict_range3_param(mem, pdref, "RangeLMN", &pcie->RangeLMN)) < 0 ||
-	(code = dict_proc3_param(mem, pdref, "DecodeLMN", &pcprocs->DecodeLMN)) < 0 ||
 	(code = dict_matrix3_param(mem, pdref, "MatrixLMN", &pcie->MatrixLMN)) < 0 ||
 	(code = cie_points_param(mem, pdref, &pcie->points)) < 0
 	)
 	return code;
+
+    if 	(code = dict_proc3_param(mem, pdref, "DecodeLMN", &pcprocs->DecodeLMN) < 0)
+        return code;
+
+    *has_lmn_procs = !code;  /* Need to know for efficient creation of ICC profile */  
+
     pcie->DecodeLMN = DecodeLMN_default;
     return 0;
 }
 
 /* Common code for the CIEBasedABC/DEF[G] cases of setcolorspace. */
 static int
-cie_abc_param(const gs_memory_t *mem, const ref * pdref, gs_cie_abc * pcie, ref_cie_procs * pcprocs)
+cie_abc_param(const gs_memory_t *mem, const ref * pdref, gs_cie_abc * pcie, ref_cie_procs * pcprocs, 
+              bool *has_abc_procs, bool *has_lmn_procs)
 {
     int code;
 
     if ((code = dict_range3_param(mem, pdref, "RangeABC", &pcie->RangeABC)) < 0 ||
-	(code = dict_proc3_param(mem, pdref, "DecodeABC", &pcprocs->Decode.ABC)) < 0 ||
 	(code = dict_matrix3_param(mem, pdref, "MatrixABC", &pcie->MatrixABC)) < 0 ||
-	(code = cie_lmnp_param(mem, pdref, &pcie->common, pcprocs)) < 0
+	(code = cie_lmnp_param(mem, pdref, &pcie->common, pcprocs, has_lmn_procs)) < 0
 	)
 	return code;
+
+    if (code = dict_proc3_param(mem, pdref, "DecodeABC", &pcprocs->Decode.ABC) < 0 )
+        return code;
+
+    *has_abc_procs = !code;
+
     pcie->DecodeABC = DecodeABC_default;
     return 0;
 }
@@ -310,6 +322,7 @@ ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict)
     gs_cie_defg *pcie;
     int code;
     ref *ptref;
+    bool has_defg_procs, has_abc_procs, has_lmn_procs;
 
     push(1);
     if ((code = dict_find_string(CIEDict, "Table", &ptref)) <= 0)
@@ -324,20 +337,41 @@ ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict)
     pcie = pcs->params.defg;
     pcie->Table.n = 4;
     pcie->Table.m = 3;
-    if ((code = dict_ranges_param(mem, CIEDict, "RangeDEFG", 4, pcie->RangeDEFG.ranges)) < 0 ||
-	(code = dict_proc_array_param(mem, CIEDict, "DecodeDEFG", 4, &procs.PreDecode.DEFG)) < 0 ||
-	(code = dict_ranges_param(mem, CIEDict, "RangeHIJK", 4, pcie->RangeHIJK.ranges)) < 0 ||
-	(code = cie_table_param(ptref, &pcie->Table, mem)) < 0 ||
-	(code = cie_abc_param(imemory, CIEDict, (gs_cie_abc *) pcie, &procs)) < 0 ||
-	(code = cie_cache_joint(i_ctx_p, &istate->colorrendering.procs, (gs_cie_common *)pcie, igs)) < 0 ||	/* do this last */
-	(code = cie_cache_push_finish(i_ctx_p, cie_defg_finish, imem, pcie)) < 0 ||
-	(code = cie_prepare_cache4(i_ctx_p, &pcie->RangeDEFG,
-				   procs.PreDecode.DEFG.value.const_refs,
-				   &pcie->caches_defg.DecodeDEFG[0],
-				   pcie, imem, "Decode.DEFG")) < 0 ||
-	(code = cache_abc_common(i_ctx_p, (gs_cie_abc *)pcie, &procs, pcie, imem)) < 0
-	)
-	DO_NOTHING;
+
+    /* Pull out the ones that we need to create the ICC profile.  This needs to be cleaned up as
+       it is the most readable in this form.  Basically we want to avoid doing any further checks
+       if one fails. */
+
+    if ((code = dict_proc_array_param(mem, CIEDict, "DecodeDEFG", 4, &procs.PreDecode.DEFG)) >= 0){
+
+        has_defg_procs = !code;
+
+        if ( (code = dict_ranges_param(mem, CIEDict, "RangeDEFG", 4, pcie->RangeDEFG.ranges)) < 0 ||
+	    (code = dict_ranges_param(mem, CIEDict, "RangeHIJK", 4, pcie->RangeHIJK.ranges)) < 0 ||
+	    (code = cie_table_param(ptref, &pcie->Table, mem)) < 0  ||
+            (code = cie_abc_param(imemory, CIEDict, (gs_cie_abc *) pcie, &procs, &has_abc_procs, &has_lmn_procs)) < 0 ) 
+            DO_NOTHING;
+
+        else {
+
+           /* Here we have everything we need to create the ICC profile, except the procs */
+
+            gsicc_create_fromdefg(pcie, NULL, imemory, has_defg_procs, has_abc_procs, has_lmn_procs);
+
+           if ( (code = cie_cache_joint(i_ctx_p, &istate->colorrendering.procs, 
+                (gs_cie_common *)pcie, igs)) < 0 ||	/* do this last */
+            (code = cie_cache_push_finish(i_ctx_p, cie_defg_finish, imem, pcie)) < 0 ||
+            (code = cie_prepare_cache4(i_ctx_p, &pcie->RangeDEFG,
+			           procs.PreDecode.DEFG.value.const_refs,
+			           &pcie->caches_defg.DecodeDEFG[0],
+			           pcie, imem, "Decode.DEFG")) < 0 ||
+            (code = cache_abc_common(i_ctx_p, (gs_cie_abc *)pcie, &procs, pcie, imem)) < 0
+            )
+            DO_NOTHING;
+
+        }
+    }
+
     return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
 }
 static int
@@ -367,6 +401,7 @@ ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict)
     gs_cie_def *pcie;
     int code;
     ref *ptref;
+    bool has_def_procs, has_lmn_procs, has_abc_procs;
 
     push(1);
     if ((code = dict_find_string(CIEDict, "Table", &ptref)) <= 0)
@@ -381,20 +416,41 @@ ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict)
     pcie = pcs->params.def;
     pcie->Table.n = 3;
     pcie->Table.m = 3;
-    if ((code = dict_range3_param(mem, CIEDict, "RangeDEF", &pcie->RangeDEF)) < 0 ||
-	(code = dict_proc3_param(mem, CIEDict, "DecodeDEF", &procs.PreDecode.DEF)) < 0 ||
-	(code = dict_range3_param(mem, CIEDict, "RangeHIJ", &pcie->RangeHIJ)) < 0 ||
-	(code = cie_table_param(ptref, &pcie->Table, mem)) < 0 ||
-	(code = cie_abc_param(imemory, CIEDict, (gs_cie_abc *) pcie, &procs)) < 0 ||
-	(code = cie_cache_joint(i_ctx_p, &istate->colorrendering.procs, (gs_cie_common *)pcie, igs)) < 0 ||	/* do this last */
-	(code = cie_cache_push_finish(i_ctx_p, cie_def_finish, imem, pcie)) < 0 ||
-	(code = cie_prepare_cache3(i_ctx_p, &pcie->RangeDEF,
-				   procs.PreDecode.DEF.value.const_refs,
-				   &pcie->caches_def.DecodeDEF[0],
-				   pcie, imem, "Decode.DEF")) < 0 ||
-	(code = cache_abc_common(i_ctx_p, (gs_cie_abc *)pcie, &procs, pcie, imem)) < 0
-	)
-	DO_NOTHING;
+
+    /* Pull out the ones that we need to create the ICC profile.  This needs to be cleaned up as
+       it is the most readable in this form.  Basically we want to avoid doing any further checks
+       if one fails. */
+
+    if ((code = dict_proc3_param(mem, CIEDict, "DecodeDEF", &procs.PreDecode.DEF)) >= 0){
+
+        has_def_procs = !code;
+
+        if ( (code = dict_range3_param(mem, CIEDict, "RangeDEF", &pcie->RangeDEF)) < 0 ||
+	    (code = dict_range3_param(mem, CIEDict, "RangeHIJ", &pcie->RangeHIJ)) < 0 ||
+	    (code = cie_table_param(ptref, &pcie->Table, mem)) < 0  ||
+            (code = cie_abc_param(imemory, CIEDict, (gs_cie_abc *) pcie, &procs, &has_abc_procs, &has_lmn_procs)) < 0 ) 
+            DO_NOTHING;
+
+        else {
+
+           /* Here we have everything we need to create the ICC profile, except the procs */
+
+            gsicc_create_fromdef(pcie, NULL, imemory, has_def_procs, has_abc_procs, has_lmn_procs);
+
+            if ( (code = cie_cache_joint(i_ctx_p, &istate->colorrendering.procs, 
+                (gs_cie_common *)pcie, igs)) < 0 ||	/* do this last */
+	        (code = cie_cache_push_finish(i_ctx_p, cie_def_finish, imem, pcie)) < 0 ||
+	        (code = cie_prepare_cache3(i_ctx_p, &pcie->RangeDEF,
+				           procs.PreDecode.DEF.value.const_refs,
+				           &pcie->caches_def.DecodeDEF[0],
+				           pcie, imem, "Decode.DEF")) < 0 ||
+	        (code = cache_abc_common(i_ctx_p, (gs_cie_abc *)pcie, &procs, pcie, imem)) < 0
+	        )
+	        DO_NOTHING;
+
+        }
+    }
+
     return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
 }
 static int
@@ -424,6 +480,7 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict)
     ref_cie_procs procs;
     gs_cie_abc *pcie;
     int code;
+    bool has_lmn_procs, has_abc_procs;
 
     push(1); /* Sacrificial */
     procs = istate->colorspace.procs.cie;
@@ -431,7 +488,7 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict)
     if (code < 0)
 	return code;
     pcie = pcs->params.abc;
-    code = cie_abc_param(imemory, CIEDict, pcie, &procs);
+    code = cie_abc_param(imemory, CIEDict, pcie, &procs, &has_abc_procs, &has_lmn_procs);
 
     /* At this point, we have all the parameters in pcie.
        Go ahead and create the ICC profile for this thing.
@@ -443,8 +500,7 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict)
        will have all the data that we will need like it is here
        in pcie. */
 
-    gsicc_create_fromabc(pcie, NULL, imemory);
-
+    gsicc_create_fromabc(pcie, NULL, imemory, has_abc_procs, has_lmn_procs);
 
     if (code < 0 ||
 	(code = cie_cache_joint(i_ctx_p, &istate->colorrendering.procs, (gs_cie_common *)pcie, igs)) < 0 ||	/* do this last */
@@ -480,11 +536,19 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict)
     ref_cie_procs procs;
     gs_cie_a *pcie;
     int code;
+    bool has_a_procs;
+    bool has_lmn_procs;
 
     push(1); /* Sacrificial. cie_a_finish does a pop... */
     procs = istate->colorspace.procs.cie;
     if ((code = dict_proc_param(CIEdict, "DecodeA", &procs.Decode.A, true)) < 0)
 	return code;
+
+    /* Note that if code == 1 then there was not a DecodeA procedure */
+    /* If code == 0 then there was a DecodeA procedure */
+
+    has_a_procs = !code;
+
     code = gs_cspace_build_CIEA(&pcs, NULL, mem);
     if (code < 0)
 	return code;
@@ -496,14 +560,13 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict)
     code = dict_floats_param(imemory, CIEdict, "MatrixA", 3, (float *)&pcie->MatrixA, (const float *)&MatrixA_default);
     if (code < 0)
 	return code;
-    code = cie_lmnp_param(imemory, CIEdict, &pcie->common, &procs);
+    code = cie_lmnp_param(imemory, CIEdict, &pcie->common, &procs, &has_lmn_procs);
     if (code < 0)
 	return code;
 
     /* Pulled the above out of the if below to make some ICC conversion testing easier */
 
-    gsicc_create_froma(pcie, NULL, imemory);
-
+    gsicc_create_froma(pcie, NULL, imemory, has_a_procs, has_lmn_procs);
 
     if ((code = cie_cache_joint(i_ctx_p, &istate->colorrendering.procs, (gs_cie_common *)pcie, igs)) < 0 ||	/* do this last */
 	(code = cie_cache_push_finish(i_ctx_p, cie_a_finish, imem, pcie)) < 0 ||

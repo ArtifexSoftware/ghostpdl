@@ -20,10 +20,14 @@
 
 
 void gsicc_create_fromcrd(unsigned char *buffer, gs_memory_t *memory);
-void gsicc_create_froma(gs_cie_a *pcie, unsigned char *buffer, gs_memory_t *memory);
-void gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memory);
-void gsicc_create_fromdefg(gs_cie_defg *pcie, unsigned char *buffer, gs_memory_t *memory);
-void gsicc_create_fromdef(gs_cie_def *pcie, unsigned char *buffer, gs_memory_t *memory);
+void gsicc_create_froma(gs_cie_a *pcie, unsigned char *buffer, gs_memory_t *memory,
+                        bool has_a_proc, bool has_lmn_procs);
+void gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memory,
+                          bool has_abc_procs, bool has_lmn_procs);
+void gsicc_create_fromdefg(gs_cie_defg *pcie, unsigned char *buffer, gs_memory_t *memory,
+                           bool has_defg_procs, bool has_abc_procs, bool has_lmn_procs);
+void gsicc_create_fromdef(gs_cie_def *pcie, unsigned char *buffer, gs_memory_t *memory, 
+                          bool has_def_procs, bool has_abc_procs, bool has_lmn_procs);
 
 
 static void
