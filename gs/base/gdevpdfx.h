@@ -655,6 +655,8 @@ struct gx_device_pdf_s {
     bool FitPages;
     bool CenterPages;
     bool DoNumCopies;
+    bool PreserveSeparation;
+    bool PreserveDeviceN;
 };
 
 #define is_in_page(pdev)\
@@ -1214,7 +1216,7 @@ int pdf_char_image_y_offset(const gx_device_pdf *pdev, int x, int y, int h);
 
 /* Begin a CharProc for an embedded (bitmap) font. */
 int pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
-			int y_offset, gs_id id, pdf_char_proc_t **ppcp,
+			int y_offset, int x_offset, gs_id id, pdf_char_proc_t **ppcp,
 			pdf_stream_position_t * ppos);
 
 /* End a CharProc. */

@@ -67,7 +67,7 @@ typedef pdf14_procs_s pdf14_procs_t;
 
 typedef struct pdf14_parent_color_s pdf14_parent_color_t;
 
-typedef struct pdf14_parent_color_s {
+struct pdf14_parent_color_s {
 
     int num_components;
     bool isadditive;

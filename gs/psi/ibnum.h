@@ -72,7 +72,7 @@ int num_array_get(const gs_memory_t *mem, const ref *, int, uint, ref *);
 int sdecode_number(const byte *, int, ref *);
 int sdecodeshort(const byte *, int);
 uint sdecodeushort(const byte *, int);
-long sdecodelong(const byte *, int);
+int sdecodeint32(const byte *, int);
 int sdecode_float(const byte *, int, float *);
 
 #endif /* ibnum_INCLUDED */

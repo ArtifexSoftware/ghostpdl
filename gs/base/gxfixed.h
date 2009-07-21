@@ -22,12 +22,23 @@
  * quantities: integers lose accuracy in crucial places,
  * and floating point arithmetic is slow.
  */
+#if ARCH_SIZEOF_INT == 4
+typedef int fixed;
+typedef uint ufixed;		/* only used in a very few places */
+# define ARCH_SIZEOF_FIXED ARCH_SIZEOF_INT
+# define max_fixed max_int
+# define min_fixed min_int
+#else
+# if ARCH_SIZEOF_LONG == 4
 typedef long fixed;
 typedef ulong ufixed;		/* only used in a very few places */
 #define ARCH_SIZEOF_FIXED ARCH_SIZEOF_LONG
-
 #define max_fixed max_long
 #define min_fixed min_long
+# endif
+#endif
+
+
 #define fixed_0 0L
 #define fixed_epsilon 1L
 /*
@@ -119,13 +130,9 @@ typedef ulong ufixed;		/* only used in a very few places */
 #define fixed_truncated(x) ((x) < 0 ? fixed_ceiling(x) : fixed_floor(x))
 
 /* Define the largest and smallest integer values that fit in a fixed. */
-#if arch_sizeof_int == arch_sizeof_long
 #  define max_int_in_fixed fixed2int(max_fixed)
 #  define min_int_in_fixed fixed2int(min_fixed)
-#else
-#  define max_int_in_fixed max_int
-#  define min_int_in_fixed min_int
-#endif
+
 /*
  * Define a macro for checking for overflow of the sum of two fixed values
  * and and setting the result to the sum if no overflow.

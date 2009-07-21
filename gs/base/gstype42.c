@@ -269,7 +269,7 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
 	    int l = min(sizeof(buf) - 1, pfont->font_name.size);
 
 	    memcpy(buf, pfont->font_name.chars, l);
-	    buf[pfont->font_name.size] = 0;
+	    buf[l] = 0;
 	} else
 	    buf[0] = 0;
 

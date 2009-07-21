@@ -19,6 +19,7 @@
 #include "gsstruct.h"
 #include "gsutil.h"
 #include "gsdcolor.h"
+#include "gsstate.h"
 #include "gxdevice.h"
 #include "gxfixed.h"
 #include "gxistate.h"
@@ -200,10 +201,12 @@ gx_cpath_intersect_path_slow(gx_clip_path * pcpath, gx_path * ppath,
     if (params0 != 0)
 	params = *params0;
     else {
+        gs_point fadjust;
 	params.rule = rule;
-	params.adjust.x = params.adjust.y = fixed_half;
+        gs_currentfilladjust(pis, &fadjust);
+        params.adjust.x = float2fixed(fadjust.x);
+        params.adjust.y = float2fixed(fadjust.y);
 	params.flatness = gs_currentflat_inline(pis);
-	params.fill_zero_width = true;
     }
     code = gx_fill_path_only(ppath, (gx_device *)&adev, pis,
 			     &params, &devc, pcpath);

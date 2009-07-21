@@ -254,6 +254,8 @@ tile_clip_copy_color(gx_device * dev,
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
 
+    fit_copy(dev, data, sourcex, raster, id, x, y, w, h);
+    {
     FOR_RUNS(data_row, txrun, tx, ty) {
 	/* Copy the run. */
 	int code = (*dev_proc(cdev->target, copy_color))
@@ -264,6 +266,7 @@ tile_clip_copy_color(gx_device * dev,
 	    return code;
     }
     END_FOR_RUNS();
+    }
     return 0;
 }
 
@@ -275,6 +278,8 @@ tile_clip_copy_alpha(gx_device * dev,
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
 
+    fit_copy(dev, data, sourcex, raster, id, x, y, w, h);
+    {
     FOR_RUNS(data_row, txrun, tx, ty) {
 	/* Copy the run. */
 	int code = (*dev_proc(cdev->target, copy_alpha))
@@ -285,6 +290,7 @@ tile_clip_copy_alpha(gx_device * dev,
 	    return code;
     }
     END_FOR_RUNS();
+    }
     return 0;
 }
 
@@ -299,6 +305,8 @@ tile_clip_strip_copy_rop(gx_device * dev,
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
 
+    fit_copy(dev, data, sourcex, raster, id, x, y, w, h);
+    {
     FOR_RUNS(data_row, txrun, tx, ty) {
 	/* Copy the run. */
 	int code = (*dev_proc(cdev->target, strip_copy_rop))
@@ -310,5 +318,6 @@ tile_clip_strip_copy_rop(gx_device * dev,
 	    return code;
     }
     END_FOR_RUNS();
+    }
     return 0;
 }

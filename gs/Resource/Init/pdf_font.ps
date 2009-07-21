@@ -740,7 +740,7 @@ setglobal
 % The whole type1 stream can be executed directly. There's no need to process
 % Length1, 2, 3 keys.
 
-/readtype1dict 8 dict dup begin
+/readtype1dict 10 dict dup begin
   /definefont {
     exch pop
 
@@ -839,9 +839,21 @@ setglobal
       % No warning, probably FontName is defined elsewhere; see definefont above.
       .knownget not { /Missing } if
     } {
+      dup /UniqueID eq {
+        % We don't want fonts to check /UniqueID and do 'restore'.
+        pop pop 16#FEDCBA98  % Arbitrary and invalid value
+      } {
       prev_get
     } ifelse
+    } ifelse
   } bdef 
+
+  /prev_begin /begin load def
+
+  /begin {
+    dup //systemdict eq { pop 0 dict } if
+    prev_begin
+  } bdef
 
   { /undef_proc_warning /missing-type1-procs /readonly-op-dict }
   { currentdict exch undef } forall
@@ -1189,7 +1201,7 @@ currentdict /eexec_pdf_param_dict .undef
            false
            [[ i 2 add 1 i 1 add itemSize add { M exch get } for ]]
          ]
-         /i i 3 add def
+         /i i 2 add itemSize add def
       }
     >> def
 
@@ -1675,9 +1687,15 @@ currentdict /bndef undef
                                           % /key res res desc stream
         dup //null ne {
           PDFfile fileposition 
-          1 index //true resolvestream dup
+          mark {
+            2 index //true resolvestream dup
           4 string readstring pop
 	  exch closefile
+          } stopped {
+            cleartomark /bad_stream
+          } {
+            exch pop
+          } ifelse
           PDFfile 3 -1 roll setfileposition
           dup length 4 lt { pop /bad_stream } if
         } {

@@ -8,12 +8,9 @@
     authorized under the terms of the license contained in
     the file LICENSE in this distribution.
                                                                                 
-    For information on commercial licensing, go to
-    http://www.artifex.com/licensing/ or contact
-    Artifex Software, Inc.,  101 Lucas Valley Road #110,
+    For further licensing information refer to http://artifex.com/ or
+    contact Artifex Software, Inc., 7 Mt. Lassen Drive - Suite A-134,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
-
-    $Id$
 */
 
 /* configuration header file for compiling under Microsoft Windows */
@@ -35,11 +32,10 @@
   /* no uint64_t */
 
 #if defined(_MSC_VER)
-	#if _MSC_VER < 1500  /* Visual Studio 2008 has definition for vsnprintf */
+#   if _MSC_VER < 1500	/* VS 2008 has vsnprintf */
 		#define vsnprintf _vsnprintf
 	#endif
 #endif
-
 #  define snprintf _snprintf
 
 #endif /* _MSC_VER */

@@ -8,16 +8,13 @@
     authorized under the terms of the license contained in
     the file LICENSE in this distribution.
                                                                                 
-    For information on commercial licensing, go to
-    http://www.artifex.com/licensing/ or contact
-    Artifex Software, Inc.,  101 Lucas Valley Road #110,
+    For further licensing information refer to http://artifex.com/ or
+    contact Artifex Software, Inc., 7 Mt. Lassen Drive - Suite A-134,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
-
-    $Id$
-    
-    symbol dictionary segment decode and support
 */
 
+/* symbol dictionary segment decode and support */
+    
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif 
@@ -699,6 +696,15 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         exrunlength = params->SDNUMEXSYMS;
       else
         code = jbig2_arith_int_decode(IAEX, as, &exrunlength);
+      if (exrunlength > params->SDNUMEXSYMS - j) {
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+          "runlength too large in export symbol table (%d > %d - %d)\n",
+          exrunlength, params->SDNUMEXSYMS, j);
+        jbig2_sd_release(ctx, SDEXSYMS);
+        /* skip to the cleanup code and return SDEXSYMS = NULL */
+        SDEXSYMS = NULL;
+        break;
+      }
       for(k = 0; k < exrunlength; k++)
         if (exflag) {
           SDEXSYMS->glyphs[j++] = (i < m) ? 

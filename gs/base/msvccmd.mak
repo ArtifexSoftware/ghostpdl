@@ -37,7 +37,11 @@ QI0f=/QI0f
 !if $(MSVC_VERSION) < 7
 CCAUX_TAIL= /link
 !else
+!ifdef WIN64
+CCAUX_TAIL= /link $(LINKLIBPATH)
+!else
 CCAUX_TAIL= /link /LIBPATH:"$(COMPBASE)\lib"
+!endif
 !endif
 
 !endif

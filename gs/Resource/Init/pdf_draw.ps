@@ -387,7 +387,7 @@ end
 % ------ Transparency support ------ %
 
 /gssmask {
-  dup /None eq PDFusingtransparency not or {
+  dup /None eq 1 index //null eq or PDFusingtransparency not or {
     pop null
   } {
 	% Preprocess the SMask value into a parameter dictionary for
@@ -786,13 +786,16 @@ currentdict end readonly def
 
 /.pdfpaintproc {         % <patdict> <resdict> .pdfpaintproc -
   PDFDEBUG { pdfdict /PDFSTEPcount .knownget { 1 le } { true } ifelse { (%Begin PaintProc) print dup === flush } if } if
-	% For uncolored patterns, we have to unbind the current
-	% color and color space before running the PaintProc.
-	% There's no harm in doing this for colored patterns,
-	% so for simplicity, we always do it.
   PDFfile fileposition 3 1 roll
   q
+  1 index /PaintType oget 1 eq {
+    % For colored patterns, set default fill and stroke colors.
+    0 g 0 G
+  } {
+	% For uncolored patterns, we have to unbind the current
+	% color and color space before running the PaintProc.
   //null sc1 //null SC1
+  } ifelse
 
   % Save old values on opstack, set pdfemptycount to new value.
   pdfemptycount countdictstack
@@ -828,8 +831,7 @@ currentdict end readonly def
     1 index /File get dup fileposition 3 1 roll
 		% Stack: dict savepos pos file
     dup 3 -1 roll setfileposition
-    dup 3 index /Length oget
-
+    dup 3 index /Length knownoget {
     dup 65535 le {
       dup 0 eq {
         pop pop ()
@@ -838,6 +840,9 @@ currentdict end readonly def
       } ifelse
     } {
       () /SubFileDecode filter /ReusableStreamDecode filter
+    } ifelse
+    } {
+      0 (endstream) /SubFileDecode filter /ReusableStreamDecode filter
     } ifelse
 		% Stack: dict savepos file string
     3 1 roll exch setfileposition
@@ -1033,6 +1038,104 @@ end
   } if
 } bdef
 
+% <string> <index> getu16 <integer>
+/getu16 {
+  2 copy get 8 bitshift 3 1 roll 1 add get add
+} bind def
+
+% <string> <index> getu32 <integer>
+/getu32 {
+  2 copy getu16 16 bitshift 3 1 roll 2 add getu16 add
+} bind def
+
+
+% Process jp2 blocks (aka boxes). All procedures have the signature
+% <file> <length> -> ... <file> <flush_length>
+/jp2_tag_dict <<
+  /jp2h { % descend into a sub-stream, never return.
+    () /SubFileDecode filter 0
+  } bind
+  /ihdr {
+    14 sub                               % file len-14
+    1 index 14 string readstring pop     % file len-14 (14)
+    /Components 1 index 8 getu16         % file len-14 (14) /Components NC
+    def                                  % file len-14 (14)
+    10 get 16#7F and 1 add
+    /BitsPerComponent exch def           % file len-14 
+  } bind
+  /colr {
+    3 sub
+    1 index 3 string readstring pop      % file len-3 (3)
+    0 get 1 eq {
+      4 sub                              % file len-7
+      1 index 4 string readstring pop    % file len-16 (4) 
+      0 getu32                           % file len-16 enum
+      dup 16 eq {
+        % Don't set device-independent color space now
+        % to avoid raster differences
+        pop /ColorSpace /DeviceRGB % /sRGB
+        def                              % file len-7
+      } {
+        17 eq {
+          % See above.
+          /ColorSpace /DeviceGray % /sGray
+          def                            % file len-7
+        } if
+      } ifelse
+    } {
+      string 1 index exch readstring pop % file ()
+      /ColorSpace exch                   % file /ColorSpace ()
+      % ICC ColorSpace is not yet implemented
+      pop pop
+      %
+      0                                  % file 0
+    } ifelse
+  } bind
+>> readonly def
+
+
+% Parse jp2 file format to get color space and image depth info.
+% <file> get_jp2_csp -
+/get_jp2_csp {
+  {
+    dup (01234567) readstring pop        % f (LBoxTBox)
+    dup length 8 lt {
+      pop exit
+    } if
+    dup 4 4 getinterval exch             % f (TBox) (LBoxTBox)
+    0 getu32                             % f (TBox) LBox
+    dup 0 eq {
+      pop pop exit % cannot happen
+    } {
+      dup 1 eq {
+        pop 1 index (01234567) readstring pop
+        4 getu32                         % f (TBox) LBox
+        16 sub
+      } {
+        8 sub
+      } ifelse
+    } ifelse                             % f (TBox) LBox-8..16  
+
+    PDFDEBUG {
+      2 copy 2 packedarray ==            % f (TBox) LBox-8..16
+    } if
+   
+    //jp2_tag_dict 3 -1 roll .knownget {
+      exec
+    } if                                  % f flush
+
+    dup 0 ne {
+      1 index exch                        % f f flush
+      () /SubFileDecode filter flushfile % skip unwanted blocks
+    } {
+      pop
+    } ifelse
+  } loop
+  pop
+} bind def
+
+currentdict /jp2_tag_dict .undef
+
 /makeimagedict {	% <resdict> <newdict> makeimagedict <imagemask>
 			% On return, newdict' is currentdict
   begin
@@ -1058,30 +1161,97 @@ end
     /Decode 2 copy knownoget { 0 2 getinterval } { //01_1 } ifelse def
 		% BitsPerComponent is optional for masks.
     /BitsPerComponent 2 copy known { pop } { 1 def } ifelse
-    true
+		% Even though we're going to read data,
+		% pass false to resolvestream so that
+		% it doesn't try to use Length (which may not be present).
+    //false resolvestream /DataSource exch def
+    //true
   } {
 		% Opaque image
-    dup /ColorSpace knownoget 
+    dup /ColorSpace oknown 
+    1 index /BitsPerComponent oknown and not {
+      dup /Filter knownoget {
+        dup type /arraytype eq {
+          dup length
+          dup 0 gt {
+            1 sub get oforce
+          } {
+            pop
+          } ifelse
+        } if
+        /JPXDecode eq {
     % JPXDecode filters can omit the /ColorSpace and /BitsPerComponent
     % keys, in which case the interpreter must retrieve this information
     % from inside the compressed stream. Here we substitute the most
     % likely values as a work-around.
-    not {
-      (   **** Warning: assuming JPX image is 8-bit RGB.\n) stderrprint
-      [/DeviceRGB] /BitsPerComponent 8 def
+          dup /IDFlag known {
+            (   **** Warning: PDF spec bans inline JPX images.\n) pdfformaterror
+            % Inline stream is not positionable. Cannot get ColorSpace.
+          } {
+            % Drop the last filter (JPXDecode) from the pipeline
+            dup dup length dict copy
+            dup /Filter oget
+            dup type /arraytype eq {
+              dup length 1 gt {
+                dup length 1 sub 0 exch getinterval
+                1 index exch /Filter exch put
+
+                dup /Params knownoget {
+                  dup type /arraytype eq {
+                    dup length 1 gt {
+                      dup length 1 sub 0 exch getinterval
+                      1 index exch /Params exch put
+                    } {
+                      pop
+                      dup /Params undef
+                    } ifelse
+                  } {
+                    pop
+                    dup /Params undef
+                  } ifelse
     } if 
+              } {
+                pop
+                dup /Filter undef
+                dup /Params undef
+              } ifelse
+            } {
+              pop
+              dup /Filter undef
+              dup /Params undef
+            } ifelse
+
+            //false resolvestream get_jp2_csp
+          } ifelse
+        } if
+      } if
+      currentdict /BitsPerComponent oknown not {
+        (   **** Warning: image has no /BitsPerComponent key; assuming 8 bit.\n)
+        pdfformaterror
+        /BitsPerComponent 8 def
+      } if
+    } if
+
+    currentdict /ColorSpace knownoget not {
+      dup /ColorSpace knownoget not {
+        (   **** Warning: image has no /ColorSpace key; assuming /DeviceRGB.\n)
+        pdfformaterror
+        /DeviceRGB
+      } if
+    } if
     resolvecolorspace /ColorSpace exch def
+
 		% Decode is required for the PostScript image operators.
     /Decode 2 copy knownoget not {
       ColorSpace //defaultdecodedict
       ColorSpace dup type /arraytype eq { 0 get } if get exec
     } if def
-    false
-  } ifelse
 		% Even though we're going to read data,
 		% pass false to resolvestream so that
 		% it doesn't try to use Length (which may not be present).
-  exch false resolvestream /DataSource exch def
+    //false resolvestream /DataSource exch def
+    //false
+  } ifelse
 } bdef
 
 /DoImage {
@@ -1274,11 +1444,17 @@ end
   /.paintform cvx
   ] cvx /PaintProc exch put
     % Adjust pdfemptycount since we have an extra dictionary on the stack
-  pdfemptycount exch
-  /pdfemptycount where pop count 2 sub /pdfemptycount exch put
-  q execform Q			% gsave / grestore around the Form
+  pdfemptycount countdictstack  3 -1 roll
+  /pdfemptycount count 1 sub store
+  q execform  			% gsave / grestore around the Form
     % Restore pdfemptycount
-  /pdfemptycount where pop exch /pdfemptycount exch put
+  countdictstack exch sub
+  dup 1 gt {
+    (   **** Warning: Pattern stream has unbalanced q/Q operators \(too many q's\)\n)
+    pdfformaterror
+  } if
+  { Q } repeat
+  /pdfemptycount exch store
 } bdef
 
 /_dops_save 1 array def
@@ -1466,11 +1642,15 @@ end
       dup type /dicttype ne   % <annot> <border> <bad?>
     } {
       dup /Border oget 
-      dup type /arraytype ne  % <annot> [border] <bad?>
-    } ifelse
-    { 
-      (   **** Warning: Wrong type of annotation border object.\n)
+      dup type /arraytype eq {
+        dup length 3 lt
+      } {
+        //true
+      } ifelse                % <annot> [border] <bad?>
+    } ifelse { 
+      (   **** Warning: Wrong annotation border object, no border is drawn.\n)
       pdfformaterror
+      pop { 0 0 0 }
     } if
     dup type /dicttype eq {
     dup /W knownoget not { 1 } if
@@ -1479,20 +1659,20 @@ end
       % scaling of the PostScript user space done due to /UserUnit.
       % Scaling due to -dPDFFitPage is not undone, to keep the correct border width
       % compared to the size of the surrounding marks.
-      //systemdict /NoUserUnit .knownget not { false } if not
+      //systemdict /NoUserUnit .knownget not { //false } if not
       //systemdict /PDFFitPage known not and {	% UserUnit is ignored if -dPDFFitPage
         Page /UserUnit knownoget { div } if
       } if
-    [] 2 index /S knownoget {
-      /D eq { 2 index /D knownoget not { [3] } if exch pop } if
+      {} 2 index /S knownoget {
+        /D eq { 2 index /D knownoget not { {3} } if exch pop } if
     } if 3 -1 roll pop strokeborder
   } {
       dup 2 get
-      exch dup length 3 gt { 3 get } { pop [] } ifelse
+      exch dup length 3 gt { 3 get } { pop {} } ifelse
       strokeborder
     } ifelse
     } {
-      1 [] strokeborder
+    1 {} strokeborder
     } ifelse
   grestore
 } bdef

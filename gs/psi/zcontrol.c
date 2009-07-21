@@ -362,7 +362,7 @@ for_pos_int_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     register es_ptr ep = esp;
-    long var = ep[-3].value.intval;
+    int var = ep[-3].value.intval;
 
     if (var > ep[-1].value.intval) {
 	esp -= 5;		/* pop everything */
@@ -381,7 +381,7 @@ for_neg_int_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     register es_ptr ep = esp;
-    long var = ep[-3].value.intval;
+    int var = ep[-3].value.intval;
 
     if (var < ep[-1].value.intval) {
 	esp -= 5;		/* pop everything */
@@ -454,9 +454,9 @@ for_samples_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     es_ptr ep = esp;
-    long var = ep[-4].value.intval;
+    int var = ep[-4].value.intval;
     float a = ep[-3].value.realval;
-    long n = ep[-2].value.intval;
+    int n = ep[-2].value.intval;
     float b = ep[-1].value.realval;
 
     if (var > n) {

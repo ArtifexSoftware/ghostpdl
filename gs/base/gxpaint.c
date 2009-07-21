@@ -45,7 +45,6 @@ gx_fill_path(gx_path * ppath, gx_device_color * pdevc, gs_state * pgs,
     params.adjust.x = adjust_x;
     params.adjust.y = adjust_y;
     params.flatness = (caching_an_outline_font(pgs) ? 0.0 : pgs->flatness);
-    params.fill_zero_width = (adjust_x | adjust_y) != 0;
     return (*dev_proc(dev, fill_path))
 	(dev, (const gs_imager_state *)pgs, ppath, &params, pdevc, pcpath);
 }

@@ -303,7 +303,7 @@ pdf_open_document(gx_device_pdf * pdev)
 	    int width = (int)(pdev->width * 72.0 / pdev->HWResolution[0] + 0.5);
 	    int height = (int)(pdev->height * 72.0 / pdev->HWResolution[1] + 0.5);
 	    
-	    stream_write(s, (byte *)"%!PS-Adobe-2.0\r", 15);
+	    stream_write(s, (byte *)"%!\r", 3);
 	    sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\r", width, height);
 	    stream_write(s, (byte *)BBox, strlen(BBox));
 	    if(pdev->SetPageSize)

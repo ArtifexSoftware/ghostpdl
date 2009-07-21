@@ -352,6 +352,9 @@ MSVC_VERSION=8
 !if "$(_NMAKE_VER)" == "9.00.21022.08"
 MSVC_VERSION=9
 !endif
+!if "$(_NMAKE_VER)" == "9.00.30729.01"
+MSVC_VERSION=9
+!endif
 !endif
 
 !ifndef MSVC_VERSION
@@ -421,15 +424,6 @@ SHAREDBASE=
 !else
 COMPBASE=$(DEVSTUDIO)\Vc7
 SHAREDBASE=$(DEVSTUDIO)\Vc7
-!ifdef WIN64
-# Windows Server 2003 DDK is needed for the 64-bit compiler
-# but it won't install on Windows XP 64-bit.
-DDKBASE=c:\winddk\3790
-COMPDIR64=$(DDKBASE)\bin\win64\x86\amd64
-LINKLIBPATH=/LIBPATH:"$(DDKBASE)\lib\wnet\amd64"
-INCDIR64A=$(DDKBASE)\inc\wnet
-INCDIR64B=$(DDKBASE)\inc\crt
-!endif
 !endif
 !endif
 
@@ -448,7 +442,7 @@ SHAREDBASE=
 COMPBASE=$(DEVSTUDIO)\VC
 SHAREDBASE=$(DEVSTUDIO)\VC
 !ifdef WIN64
-COMPDIR64=$(COMPBASE)\bin\x86_amd64
+COMPDIR64=$(COMPBASE)\bin\amd64
 LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\AMD64"
 !endif
 !endif
@@ -470,7 +464,7 @@ RCDIR=C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin
 COMPBASE=$(DEVSTUDIO)\VC
 SHAREDBASE=$(DEVSTUDIO)\VC
 !ifdef WIN64
-COMPDIR64=$(COMPBASE)\bin\x86_amd64
+COMPDIR64=$(COMPBASE)\bin\amd64
 LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\AMD64"
 !endif
 !endif
@@ -526,7 +520,11 @@ MSINCDIR=$(COMPBASE)\include
 !if "$(COMPBASE)"==""
 LIBDIR=
 !else
+!ifdef WIN64
+LIBDIR=$(COMPBASE)\lib\amd64
+!else
 LIBDIR=$(COMPBASE)\lib
+!endif
 !endif
 !endif
 
@@ -542,7 +540,7 @@ COMPCPP=$(COMP)
 !endif
 !ifndef COMPAUX
 !ifdef WIN64
-COMPAUX="$(COMPBASE)\bin\cl"
+COMPAUX=$(COMP)
 !else
 COMPAUX=$(COMP)
 !endif
@@ -785,7 +783,7 @@ $(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(OBJCNO) $(GS_OBJ).res $(P
 
 !if $(MAKEDLL)
 
-$(SETUP_XE): $(PSOBJ)dwsetup.obj $(PSOBJ)dwinst.obj $(PSOBJ)dwsetup.res $(PSSRC)dwsetup.def
+$(SETUP_XE): $(PSOBJ)dwsetup.obj $(PSOBJ)dwinst.obj $(PSOBJ)dwsetup.res $(PSSRC)dwsetup.def $(PSSRC)dwsetup_x86.manifest $(PSSRC)dwsetup_x64.manifest
 	echo /DEF:$(PSSRC)dwsetup.def /OUT:$(SETUP_XE) > $(PSGEN)dwsetup.rsp
 	echo $(PSOBJ)dwsetup.obj $(PSOBJ)dwinst.obj >> $(PSGEN)dwsetup.rsp
 	copy $(LIBCTR) $(PSGEN)dwsetup.tr
@@ -794,8 +792,15 @@ $(SETUP_XE): $(PSOBJ)dwsetup.obj $(PSOBJ)dwinst.obj $(PSOBJ)dwsetup.res $(PSSRC)
 	$(LINK) $(LCT) @$(PSGEN)dwsetup.rsp $(LINKLIBPATH) @$(PSGEN)dwsetup.tr $(PSOBJ)dwsetup.res
 	del $(PSGEN)dwsetup.rsp
 	del $(PSGEN)dwsetup.tr
+!if $(MSVC_VERSION) >= 8
+!ifdef WIN64
+	mt -nologo -manifest $(PSSRC)dwsetup_x64.manifest -outputresource:$(SETUP_XE);#1
+!else
+	mt -nologo -manifest $(PSSRC)dwsetup_x86.manifest -outputresource:$(SETUP_XE);#1
+!endif
+!endif
 
-$(UNINSTALL_XE): $(PSOBJ)dwuninst.obj $(PSOBJ)dwuninst.res $(PSSRC)dwuninst.def
+$(UNINSTALL_XE): $(PSOBJ)dwuninst.obj $(PSOBJ)dwuninst.res $(PSSRC)dwuninst.def $(PSSRC)dwuninst_x86.manifest $(PSSRC)dwuninst_x64.manifest
 	echo /DEF:$(PSSRC)dwuninst.def /OUT:$(UNINSTALL_XE) > $(PSGEN)dwuninst.rsp
 	echo $(PSOBJ)dwuninst.obj >> $(PSGEN)dwuninst.rsp
 	copy $(LIBCTR) $(PSGEN)dwuninst.tr
@@ -804,6 +809,13 @@ $(UNINSTALL_XE): $(PSOBJ)dwuninst.obj $(PSOBJ)dwuninst.res $(PSSRC)dwuninst.def
 	$(LINK) $(LCT) @$(PSGEN)dwuninst.rsp $(LINKLIBPATH) @$(PSGEN)dwuninst.tr $(PSOBJ)dwuninst.res
 	del $(PSGEN)dwuninst.rsp
 	del $(PSGEN)dwuninst.tr
+!if $(MSVC_VERSION) >= 8
+!ifdef WIN64
+	mt -nologo -manifest $(PSSRC)dwuninst_x64.manifest -outputresource:$(UNINSTALL_XE);#1
+!else
+	mt -nologo -manifest $(PSSRC)dwuninst_x86.manifest -outputresource:$(UNINSTALL_XE);#1
+!endif
+!endif
 
 !endif
 

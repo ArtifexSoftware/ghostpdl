@@ -202,58 +202,71 @@ currentdict /runpdfstring .undef
 } bind def
 
 
-% Copy default subfile to a temporary file and return the file name
-% as a PostScript name to protect it from restore. Return null if
-% there's no default subfile.
+% Copy stream to an external temporary file and
+% return the file name as PS name.
+/copy_embedded_file {
+  //true resolvestream    % strm
+  //null (w) /.tempfile   % strm (name) null (w) /.tempfile
+  .systemvar exec         % strm (name) file
+  3 -1 roll               % (name) file strm
+  32768 string            % (name) file strm (buf)
+  { 3 copy readstring     % (name) file strm (buf) file (data) bool
+    3 1 roll              % (name) file strm (buf) bool file (data)
+    writestring           % (name) file strm (buf) bool
+    not { exit } if
+  } loop                  
+  pop closefile           % (name) file
+  closefile               % (name)
+  cvn                     % /name
+} bind def
+
+
+% Copy selected subfiles to temporary files and return the file names
+% as a PostScript names to protect them from restore.
+% Currently, all files in the Portfolio are extracted and returned.
 %
-% - pdf_collection_files /temp_file_name | null
+% - pdf_collection_files [ /temp_file_name ... /temp_file_name
 /pdf_collection_files {
-  //null
-  Trailer /Root oget /Collection knownoget {
-    /D knownoget { % We have default document in the collection
+  mark
       Trailer /Root oget /Names knownoget {
         /EmbeddedFiles knownoget {
-          exch nameoget dup //null ne {
+      /Names knownoget {
+        { oforce
+          dup type /dicttype eq {
             /EF knownoget {
               /F knownoget {
-                //true resolvestream    % null strm
-                //null (w) /.tempfile   % null strm (name) null (w) /.tempfile
-                .systemvar exec         % null strm (name) file
-                3 -1 roll               % null (name) file strm
-                32768 string            % null (name) file strm (buf)
-                { 3 copy readstring     % null (name) file strm (buf) file (data) bool
-                  3 1 roll              % null (name) file strm (buf) bool file (data)
-                  writestring           % null (name) file strm (buf) bool
-                  not { exit } if
-                } loop                  
-                pop closefile           % null (name) file
-                closefile               % null (name)
-                exch pop cvn            % /name
+                copy_embedded_file
               } if
             } if
           } {
             pop
           } ifelse
-        } {
-          pop
-        } ifelse
-      } {
-        pop
-      } ifelse
+        } forall
     } if
+  } if
   } if
 } bind def
 
 /runpdf {		% <file> runpdf -
   //runpdfbegin exec
   //pdf_collection_files exec
-  dup type /nametype ne {
+  dup mark eq {
+    pop
     copy_trailer_attrs
     //runpdfpagerange exec
     //dopdfpages exec
-  } if
   //runpdfend exec
-  dup type /nametype eq {
+  } {
+    //runpdfend exec
+    ] {
+        dup type /filetype eq {
+          //runpdfbegin exec
+          copy_trailer_attrs
+          //runpdfpagerange exec
+          //dopdfpages exec
+          //runpdfend exec
+          closefile
+        } {
     .namestring dup (r) file
     //runpdfbegin exec
     copy_trailer_attrs
@@ -261,8 +274,8 @@ currentdict /runpdfstring .undef
     //dopdfpages exec
     //runpdfend exec
     deletefile
-  } {
-    pop
+  } ifelse
+    } forall
   } ifelse
 } bind def
 
@@ -1222,9 +1235,18 @@ end readonly def
   /Link {
     mark exch
     dup /C knownoget { /Color exch 3 -1 roll } if
-     { /Rect /Border }
-     { 2 copy knownoget { 3 -1 roll } { pop } ifelse }
-    forall dup /A knownoget {
+    dup /Rect knownoget { /Rect exch 3 -1 roll } if
+    dup /Border knownoget {
+      dup type /arraytype eq {
+        dup length 3 lt
+      } {
+        //true
+      } ifelse {
+        pop [ 0 0 0 ] % Following AR5 use invisible border.
+      } if
+      /Border exch 3 -1 roll
+    } if
+    dup /A knownoget {
       dup /URI known {
         /A mark 3 2 roll    % <<>> /A [ <<action>>
         { oforce } forall
@@ -1279,16 +1301,26 @@ end readonly def
   } if
 } bind def
 
+/get_any_box { % <pagedict> get_any_box <box name> <box>
+  //systemdict /UseTrimBox .knownget dup { and } if {
+    /TrimBox pget { /TrimBox exch } if
+  } if
+  dup type /arraytype ne {
+    //systemdict /UseCropBox .knownget dup { and } if {
+      /CropBox pget { /CropBox exch } if
+    } if
+  } if
+  dup type /arraytype ne {
+    /MediaBox exch get_media_box
+  } if
+} bind def
+
 % Compute the matrix that transforms the PDF->PS "default" user space
 /pdf_PDF2PS_matrix {	% <pdfpagedict> -- matrix
   matrix currentmatrix matrix setmatrix exch
   % stack: savedCTM <pdfpagedict>
-  dup /CropBox pget dup {exch pop} if //systemdict /UseCropBox known and {
-    /CropBox 2 copy pget pop
-  } {
-    /MediaBox 1 index get_media_box
-  } ifelse
-  % stack: savedCTM <pdfpagedict> /Crop|MediaBox <Crop|Media Box>
+  dup get_any_box
+  % stack: savedCTM <pdfpagedict> /Trim|Crop|MediaBox <Trim|Crop|Media Box>
   oforce_elems normrect_elems fix_empty_rect_elems 4 array astore
   //systemdict /PDFFitPage known {
     PDFDEBUG { (Fiting PDF to imageable area of the page.) = flush } if
@@ -1379,12 +1411,8 @@ currentdict /PDF2PS_matrix_key undef
   /Orientation 0 def
   currentpagedevice
 	% Stack: pdfpagedict currentpagedevicedict
-  1 index /CropBox pget dup {exch pop} if //systemdict /UseCropBox known and {
-    /CropBox 2 index /CropBox pget % will use the CropBox
-  } {
-    /MediaBox 2 index get_media_box true % will use the MediaBox
-  } ifelse
-  {
+  1 index get_any_box 
+	% Stack: pdfpagedict currentpagedevicedict /BoxName [box]
     oforce_elems normrect_elems fix_empty_rect_elems boxrect 4 2 roll pop pop
     3 index /Rotate pget not { 0 } if 90 idiv 1 and 0 ne { exch } if
     % stack: pdfpagedict currentpagedevicedict boxwidth boxheight
@@ -1405,9 +1433,6 @@ currentdict /PDF2PS_matrix_key undef
       } if
     } ifelse
     2 array astore /PageSize exch def
-  } {
-    pop % pops /Crop|MediaBox
-  } ifelse
   % Determine the number of spot colors used on the page.  Note: This searches
   % the pages resources.  It may be high if a spot color is in a resource but
   % is not actually used on the page.

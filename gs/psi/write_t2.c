@@ -262,6 +262,49 @@ static void write_charstrings_index(WRF_output* a_output,int a_characters,unsign
 		WRF_wbyte(a_output,1); /* offset = 1 */
 	}
 
+static void write_gsubrs_index(FAPI_font* a_fapi_font,WRF_output* a_output)
+	{
+	unsigned char* cur_offset = 0;
+	unsigned char* data_start = 0;
+	int i;
+	int count = a_fapi_font->get_word(a_fapi_font,FAPI_FONT_FEATURE_GlobalSubrs_count,0);
+
+	WRF_wbyte(a_output,(unsigned char)(count >> 8));
+	WRF_wbyte(a_output,(unsigned char)(count & 0xFF));
+
+	if (count <= 0)
+		return;
+
+	WRF_wbyte(a_output,4); /* offset size = 4 bytes */
+	WRF_wtext(a_output,(const unsigned char *)"\x0\x0\x0\x1",4); /* first offset = 1 */
+
+	if (a_output->m_pos)
+		cur_offset = a_output->m_pos;
+
+	/* Write dummy bytes for the offsets at the end of each data item. */
+	for (i = 0; i < count; i++)
+		WRF_wtext(a_output,(const unsigned char *)"xxxx",4);
+
+	if (a_output->m_pos)
+		data_start = a_output->m_pos;
+
+	for (i = 0; i < count; i++)
+		{
+		long buffer_size = a_output->m_limit - a_output->m_count;
+		long length = a_fapi_font->get_gsubr(a_fapi_font,i,a_output->m_pos,(ushort)buffer_size);
+		if (a_output->m_pos)
+			WRF_wtext(a_output,a_output->m_pos,length);
+		else
+			a_output->m_count += length;
+		if (cur_offset)
+			{
+			long pos = a_output->m_pos - data_start + 1;
+			write_4_byte_int(cur_offset,pos);
+			cur_offset += 4;
+			}
+		}
+	}
+
 static void write_subrs_index(FAPI_font* a_fapi_font,WRF_output* a_output)
 	{
 	unsigned char* cur_offset = 0;
@@ -307,6 +350,7 @@ static void write_subrs_index(FAPI_font* a_fapi_font,WRF_output* a_output)
 
 static void write_private_dict(FAPI_font* a_fapi_font,WRF_output* a_output,unsigned char* a_private_dict_length_ptr)
 	{
+	int count, initial = a_output->m_count;
 	/* Write the offset to the start of the private dictionary to the top dictionary. */
 	unsigned char* start = a_output->m_pos;
 	if (a_output->m_pos)
@@ -342,6 +386,39 @@ static void write_private_dict(FAPI_font* a_fapi_font,WRF_output* a_output,unsig
 	WRF_wbyte(a_output,21);
 	}
 
+	count = a_fapi_font->get_word(a_fapi_font,FAPI_FONT_FEATURE_Subrs_count,0);
+	/* If we have local /Subrs we need to make a new dict ( see calling routine) and
+	 * we also need to add an entry to the Provate dict with an offset to the /Subrs
+	 * dict. This is complicated by the fact that the offset includes the data for
+	 * the offset (its contained in the Private dict) and the size of the data depends 
+	 * on its value (because of number representation).
+	 */
+	if (count) {
+	    int n, n1 = a_output->m_count - initial + 2; /* One for the operator, one for the first try at the data representation */
+
+	    /* We start by assuming one byte is sufficient for the data (less than 107 bytes)
+	     * We run round the loop checking to see if the data is OK to be represented in that many bytes, 
+	     * if it is we stop, otherwise we add the required amount for the representation, and test again.
+	     */
+	    do {
+		n = n1;
+		if (n >= -107 && n <= 107)
+		    n1 = n;
+		else 
+		    if (n >= -32768 && n <= 32767) {   
+			if (n >= 108 && n <= 1131)
+			    n1 = n + 1;
+			else if (n >= -1131 && n <= -108)
+			    n1 = n + 1;
+			else
+			    n1 = n + 2;
+		    } else
+			n1 = n + 3;
+	    } while (n1 != n);
+	    write_type2_int(a_output, n);
+	    WRF_wbyte(a_output,19);
+	}
+
 	/* Write the length in bytes of the private dictionary to the top dictionary. */	
 	if (a_output->m_pos)
 		write_4_byte_int(a_private_dict_length_ptr + 1,a_output->m_pos - start);
@@ -369,10 +446,11 @@ long FF_serialize_type2_font(FAPI_font* a_fapi_font,unsigned char* a_buffer,long
   	/* Write an empty string index. */
   	WRF_wtext(&output,(const unsigned char *)"\x0\x0",2);
 
-	write_subrs_index(a_fapi_font,&output);
+	write_gsubrs_index(a_fapi_font,&output);
 	characters = write_charset(&output,charset_offset_ptr);
 	write_charstrings_index(&output,characters,charstrings_offset_ptr);
 	write_private_dict(a_fapi_font,&output,private_dict_length_ptr);
+	write_subrs_index(a_fapi_font,&output);
 
 	return output.m_count;
 	}

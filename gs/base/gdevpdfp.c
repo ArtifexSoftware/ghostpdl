@@ -110,6 +110,8 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("FitPages", gs_param_type_bool, FitPages),
     pi("CenterPages", gs_param_type_bool, CenterPages),
     pi("DoNumCopies", gs_param_type_bool, DoNumCopies),
+    pi("PreserveSeparation", gs_param_type_bool, PreserveSeparation),
+    pi("PreserveDeviceN", gs_param_type_bool, PreserveDeviceN),
 #undef pi
     gs_param_item_end
 };
@@ -195,12 +197,10 @@ gdev_pdf_get_params(gx_device * dev, gs_param_list * plist)
     float cl = (float)pdev->CompatibilityLevel;
     int code;
     int cdv = CoreDistVersion;
-    int EmbedFontObjects = 1;
 
     pdev->ParamCompatibilityLevel = cl;
     code = gdev_psdf_get_params(dev, plist);
     if (code < 0 ||
-	(code = param_write_int(plist, ".EmbedFontObjects", &EmbedFontObjects)) < 0 ||
 	(code = param_write_int(plist, "CoreDistVersion", &cdv)) < 0 ||
 	(code = param_write_float(plist, "CompatibilityLevel", &cl)) < 0 ||
 	(pdev->is_ps2write && (code = param_write_string(plist, "OPDFReadProcsetPath", &pdev->OPDFReadProcsetPath)) < 0) ||

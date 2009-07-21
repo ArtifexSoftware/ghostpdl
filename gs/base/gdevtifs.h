@@ -43,6 +43,9 @@ typedef unsigned long TIFF_ulong;
 # endif
 #endif
 
+#define SWAP_SHORT(x)\
+     x = x << 8 | x >> 8\
+
 /*
  * Define the TIFF file header.
  */
@@ -197,6 +200,16 @@ typedef struct gdev_tiff_state_s {
     TIFF_ulong *StripByteCounts;
 } gdev_tiff_state;
 
+typedef struct gx_device_tiff_s {
+    gx_device_common;
+    gx_prn_device_common;
+    bool  BigEndian;            /* true = big endian; false = little endian*/
+    gdev_tiff_state tiff;
+} gx_device_tiff;
+
+dev_proc_get_params(tiff_get_params);
+dev_proc_put_params(tiff_put_params);
+
 /*
  * Begin writing a TIFF page.  This procedure supplies a standard set of
  * tags; the client can provide additional tags (pre-sorted) and
@@ -206,7 +219,7 @@ int gdev_tiff_begin_page(gx_device_printer * pdev, gdev_tiff_state * tifs,
 			 FILE * fp,
 			 const TIFF_dir_entry * entries, int entry_count,
 			 const byte * values, int value_size,
-			 long max_strip_size);
+			 long max_strip_size, bool swap_bytes);
 
 /*
  * Finish writing a TIFF strip.  All data written since begin or last
@@ -218,6 +231,6 @@ int gdev_tiff_end_strip(gdev_tiff_state * tifs, FILE * fp);
  * Finish writing a TIFF page.  StripOffsets and StripByteCounts are
  * patched into the file.
  */
-int gdev_tiff_end_page(gdev_tiff_state * tifs, FILE * fp);
+int gdev_tiff_end_page(gdev_tiff_state * tifs, FILE * fp, bool swap_bytes);
 
 #endif /* gdevtifs_INCLUDED */

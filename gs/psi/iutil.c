@@ -492,7 +492,7 @@ other:
 	data = (const byte *)(op->value.boolval ? "true" : "false");
 	break;
     case t_integer:
-	sprintf(buf, "%ld", op->value.intval);
+	sprintf(buf, "%d", op->value.intval);
 	break;
     case t_string:
 	check_read(*op);

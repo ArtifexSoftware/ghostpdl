@@ -19,12 +19,12 @@
 % The standard representation for PostScript compatible fonts is described
 % in the book "Adobe Type 1 Font Format", published by Adobe Systems Inc.
 
-/t1_glyph_equivalence mark
+/t1_glyph_equivalence mark   % Exported for pf2afm.ps
   /Odblacute /Ohungarumlaut
   /Udblacute /Uhungarumlaut
   /odblacute /ohungarumlaut
   /udblacute /uhungarumlaut
-.dicttomark readonly def
+.dicttomark def
 
 % Define an augmented version of .buildfont1 that inserts UnderlinePosition
 % and UnderlineThickness entries in FontInfo if they aren't there already,
@@ -82,8 +82,6 @@
    //.buildfont1
    3 2 roll .setglobal
  } bind def
-
-currentdict /t1_glyph_equivalence .undef
 
 % If the diskfont feature isn't included, define a dummy .loadfontdict.
 /.loadfontdict where

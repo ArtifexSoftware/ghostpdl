@@ -127,7 +127,7 @@ dynamic_grow(da_ptr pda, byte * next, uint max_size)
     int code;
 
     pda->next = next;
-    if (old_size == max_size)
+    if (old_size >= max_size)
 	return_error(e_limitcheck);
     while ((code = dynamic_resize(pda, new_size)) < 0 &&
 	   new_size > old_size
@@ -693,7 +693,7 @@ scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
 		uint size = ref_stack_count_inline(&o_stack) - pstack;
 		ref arr;
 
-		if_debug4('S', "[S}]d=%d, s=%d->%ld, c=%d\n",
+		if_debug4('S', "[S}]d=%d, s=%d->%d, c=%d\n",
 			  pdepth, pstack,
 			  (pstack == pdepth ? 0 :
 			   ref_stack_index(&o_stack, size)->value.intval),

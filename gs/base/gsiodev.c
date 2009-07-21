@@ -20,6 +20,7 @@
 #include "gserrors.h"
 #include "gp.h"
 #include "gscdefs.h"
+#include "gsfname.h"
 #include "gsparam.h"
 #include "gsstruct.h"
 #include "gxiodev.h"
@@ -350,4 +351,85 @@ gs_fopen_errno_to_code(int eno)
 	default:
 	    return_error(gs_error_ioerror);
     }
+}
+
+/* Generic interface for filesystem enumeration given a path that may	*/
+/* include a %iodev% prefix */
+
+typedef struct gs_file_enum_s gs_file_enum;
+struct gs_file_enum_s {
+    gs_memory_t *memory;
+    gx_io_device *piodev;	/* iodev's are static, so don't need GC tracing */
+    file_enum *pfile_enum;
+    int prepend_iodev_name;
+};
+
+gs_private_st_ptrs1(st_gs_file_enum, gs_file_enum, "gs_file_enum",
+		    gs_file_enum_enum_ptrs, gs_file_enum_reloc_ptrs, pfile_enum);
+
+file_enum *
+gs_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
+{
+    file_enum *pfen;
+    gs_file_enum *pgs_file_enum;
+    gx_io_device *iodev = NULL;
+    gs_parsed_file_name_t pfn;
+    int code = 0;
+
+    /* Get the iodevice */
+    code = gs_parse_file_name(&pfn, pat, patlen);
+    if (code < 0)
+	return NULL;
+    iodev = (pfn.iodev == NULL) ? iodev_default : pfn.iodev;
+
+    /* Check for several conditions that just cause us to return success */
+    if (pfn.len == 0 || iodev->procs.enumerate_files == iodev_no_enumerate_files) {
+        return NULL;	/* no pattern, or device not found -- just return */
+    }
+    pfen = iodev->procs.enumerate_files(iodev, (const char *)pfn.fname,
+    		pfn.len, mem);
+    if (pfen == 0)
+	return NULL;
+    pgs_file_enum = gs_alloc_struct(mem, gs_file_enum, &st_gs_file_enum,
+			   "gs_enumerate_files_init");
+    if (pgs_file_enum == 0)
+	return NULL;
+    pgs_file_enum->memory = mem;
+    pgs_file_enum->piodev = iodev;
+    pgs_file_enum->pfile_enum = pfen;
+    pgs_file_enum->prepend_iodev_name = (pfn.iodev != NULL);
+    return (file_enum *)pgs_file_enum;
+}
+
+uint
+gs_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
+{
+    gs_file_enum *pgs_file_enum = (gs_file_enum *)pfen;
+    int iodev_name_len = pgs_file_enum->prepend_iodev_name ?
+			strlen(pgs_file_enum->piodev->dname) : 0;
+    uint return_len;
+
+    if (iodev_name_len > maxlen)
+	return maxlen + 1;	/* signal overflow error */
+    if (iodev_name_len > 0)
+	memcpy(ptr, pgs_file_enum->piodev->dname, iodev_name_len);
+    return_len = pgs_file_enum->piodev->procs.enumerate_next(pgs_file_enum->pfile_enum,
+				ptr + iodev_name_len, maxlen - iodev_name_len);
+    if (return_len == ~0) {
+        gs_memory_t *mem = pgs_file_enum->memory;
+
+        gs_free_object(mem, pgs_file_enum, "gs_enumerate_files_close");
+	return ~0;
+    }
+    return return_len+iodev_name_len;
+}
+
+void
+gs_enumerate_files_close(file_enum * pfen)
+{
+    gs_file_enum *pgs_file_enum = (gs_file_enum *)pfen;
+    gs_memory_t *mem = pgs_file_enum->memory;
+
+    pgs_file_enum->piodev->procs.enumerate_close(pgs_file_enum->pfile_enum);
+    gs_free_object(mem, pgs_file_enum, "gs_enumerate_files_close");
 }

@@ -71,7 +71,7 @@ zcopy_integer(i_ctx_t *i_ctx_p)
     int count, i;
     int code;
 
-    if ((ulong) op->value.intval > (ulong)(op - osbot)) {
+    if ((uint) op->value.intval > (uint)(op - osbot)) {
 	/* There might be enough elements in other blocks. */
 	check_type(*op, t_integer);
         if (op->value.intval >= (int)ref_stack_count(&o_stack)) 
@@ -478,7 +478,7 @@ dict_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     es_ptr obj = esp - 2;
-    int index = (int)esp->value.intval;
+    int index = esp->value.intval;
 
     push(2);			/* make room for key and value */
     if ((index = dict_next(obj, index, op - 1)) >= 0) {	/* continue */

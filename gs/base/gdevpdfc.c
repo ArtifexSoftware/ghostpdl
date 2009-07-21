@@ -785,6 +785,8 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 	break;
 
     case gs_color_space_index_DeviceN:
+	if (!pdev->PreserveDeviceN)
+	    return_error(gs_error_rangecheck);
         if (pdev->CompatibilityLevel < 1.3)
 	    return_error(gs_error_rangecheck);
 	pfn = gs_cspace_get_devn_function(pcs);
@@ -859,6 +861,8 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 	break;
 
     case gs_color_space_index_Separation:
+	if (!pdev->PreserveSeparation)
+	    return_error(gs_error_rangecheck);
 	pfn = gs_cspace_get_sepr_function(pcs);
 	/****** CURRENTLY WE ONLY HANDLE Functions ******/
 	if (pfn == 0)

@@ -99,6 +99,7 @@ lzw_reset_encode(stream_LZW_state *ss)
 static int
 s_LZWE_init(stream_state *st)
 {	ss->bits_left = 8;
+        ss->bits = 0; /* for Purify, the value unimportant due to ss->bits_left == 8 */
 	ss->table.encode = gs_alloc_struct(st->memory,
 			lzw_encode_table, &st_lzwe_table, "LZWEncode init");
 	if ( ss->table.encode == 0 )

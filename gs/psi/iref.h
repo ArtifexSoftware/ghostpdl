@@ -380,7 +380,7 @@ struct ref_s {
     struct tas_s tas;
 
     union v {			/* name the union to keep gdb happy */
-	long intval;
+	int intval;
 	ushort boolval;
 	float realval;
 	ulong saveid;

@@ -21,6 +21,7 @@
 #include "idparam.h"
 #include "store.h"
 #include "oper.h"
+#include "gserrors.h"
 
 /* Get the information from a CIDSystemInfo dictionary. */
 int
@@ -209,6 +210,36 @@ cid_fill_CIDMap(const gs_memory_t *mem,
 		    return code;
 	    }
 	}
+    }
+    return 0;
+}
+
+int
+cid_fill_Identity_CIDMap(const gs_memory_t *mem, 
+                ref *CIDMap)
+{   int dict_enum;
+    ref el[2];
+    int count, i;
+
+    count = r_size(CIDMap);
+    if (count != 3)
+	return_error(gs_error_rangecheck);
+
+    /* Checking the CIDMap structure correctness : */
+    for (i = 0; i < count; i++) {
+	ref s;
+	int code = array_get(mem, CIDMap, i, &s);
+
+	if (code < 0)
+	    return code;
+	check_type(s, t_string); /* fixme : optimize with moving to TT_char_code_from_CID. */
+    }
+    for (i=0; i < 255*255; i++) {
+	int code;
+
+	code = set_CIDMap_element(mem, CIDMap, i, i);
+	if (code < 0)
+	    return code;
     }
     return 0;
 }

@@ -1437,25 +1437,33 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	    if (img->hwndtext)
 		SendMessage(img->hwndtext, message, wParam, lParam);
 	    else {
-		char szFile[256];
+		char *szFile;
 		int i, cFiles;
+		unsigned int Len, error;
 		const char *p;
 		const char *szDragPre = "\r(";
 		const char *szDragPost = ") run\r";
 		HDROP hdrop = (HDROP)wParam;
 		cFiles = DragQueryFile(hdrop, (UINT)(-1), (LPSTR)NULL, 0);
 		for (i=0; i<cFiles; i++) {
-		    DragQueryFile(hdrop, i, szFile, 80);
-		    for (p=szDragPre; *p; p++)
-			    SendMessage(hwnd,WM_CHAR,*p,1L);
-		    for (p=szFile; *p; p++) {
-			if (*p == '\\')
-			    SendMessage(hwnd,WM_CHAR,'/',1L);
-			else
-			    SendMessage(hwnd,WM_CHAR,*p,1L);
+		    Len = DragQueryFile(hdrop, i, NULL, 0);
+		    szFile = malloc(Len+1);
+		    if (szFile != 0) {
+			error = DragQueryFile(hdrop, i, szFile, Len+1);
+			if (error != 0) {
+			    for (p=szDragPre; *p; p++)
+				SendMessage(hwnd,WM_CHAR,*p,1L);
+			    for (p=szFile; *p; p++) {
+				if (*p == '\\')
+				    SendMessage(hwnd,WM_CHAR,'/',1L);
+				else
+				    SendMessage(hwnd,WM_CHAR,*p,1L);
+			    }
+			    for (p=szDragPost; *p; p++)
+				SendMessage(hwnd,WM_CHAR,*p,1L);
+			}
+			free(szFile);
 		    }
-		    for (p=szDragPost; *p; p++)
-			    SendMessage(hwnd,WM_CHAR,*p,1L);
 		}
 		DragFinish(hdrop);
 	    }

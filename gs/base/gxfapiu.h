@@ -20,7 +20,7 @@
 #include "gp.h"
 
 /* Set UFST callbacks. */
-/* Warning : the language switch progect doesn't guarantee
+/* Warning : the language switch project doesn't guarantee
    that this function is called when switching
    to another interpreter. Therefore each interpreter must take
    care for its own callback methods before they 
@@ -29,7 +29,7 @@
  /* Warning : this function may cause a reentrancy problem
     due to a modification of static variables.
     Nevertheless this problem isn't important in a
-    sngle interpreter build because the values
+    single interpreter build because the values
     really change on the first demand only.
     See also a comment in gs_fapiufst_finit.
   */

@@ -539,7 +539,7 @@ $(GLOBJ)gscdefs.$(OBJ) : $(GLSRC)gscdef.c\
 	$(GLCC) $(GLO_)gscdefs.$(OBJ) $(C_) $(GLGEN)gscdefs.c
 
 $(GLOBJ)gxacpath.$(OBJ) : $(GLSRC)gxacpath.c $(GXERR)\
- $(gsdcolor_h) $(gsrop_h) $(gsstruct_h) $(gsutil_h)\
+ $(gsdcolor_h) $(gsrop_h) $(gsstate_h) $(gsstruct_h) $(gsutil_h)\
  $(gxdevice_h) $(gxfixed_h) $(gxistate_h) $(gxpaint_h)\
  $(gzacpath_h) $(gzcpath_h) $(gzpath_h)
 	$(GLCC) $(GLO_)gxacpath.$(OBJ) $(C_) $(GLSRC)gxacpath.c
@@ -1472,7 +1472,7 @@ $(GLD)sjpx_jasper.dev : $(LIB_MAK) $(ECHOGS_XE) \
 # jasper.dev is created in jasper.mak
 
 $(GLOBJ)sjpx.$(OBJ) : $(GLSRC)sjpx.c $(AK) \
- $(memory__h) $(gsmalloc_h) $(gserror_h) $(gserrors_h) \
+ $(memory__h) $(gsmalloc_h) $(gserror_h) \
  $(gdebug_h) $(strimpl_h) $(sjpx_h)
 	$(GLJASCC) $(GLO_)sjpx.$(OBJ) $(C_) $(GLSRC)sjpx.c
 
@@ -2695,7 +2695,7 @@ $(GLGEN)gsromfs1.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs1.c \
 	-X .svn -X CVS $(UFST_ROMFS_ARGS) \
 	$(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS) \
-	$(PS_ROMFS_ARGS)
+	$(PS_ROMFS_ARGS) $(GL_ROMFS_ARGS)
 
 # the following module is only included if the romfs.dev FEATURE is enabled
 $(GLOBJ)gsiorom.$(OBJ) : $(GLSRC)gsiorom.c $(gsiorom_h) \

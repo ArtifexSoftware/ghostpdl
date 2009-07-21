@@ -2926,8 +2926,7 @@ static int t1_hinter__export(t1_hinter * this)
     fixed fx, fy;
 
     for(i = 0; ; i++) {
-        int beg_pole = this->contour[i];
-        int end_pole = this->contour[i + 1] - 2;
+        int end_pole, beg_pole = this->contour[i];
         t1_pole *pole = & this->pole[beg_pole];
 
         g2d(this, pole->ax, pole->ay, &fx, &fy);
@@ -2938,6 +2937,7 @@ static int t1_hinter__export(t1_hinter * this)
 	    break;
 	vd_setcolor(RGB(255,0,0)); 
         vd_moveto(fx,fy);
+        end_pole = this->contour[i + 1] - 2;
         for(j = beg_pole + 1; j <= end_pole; j++) {
             pole = & this->pole[j];
             g2d(this, pole->ax, pole->ay, &fx, &fy);

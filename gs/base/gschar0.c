@@ -402,6 +402,10 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 			if (glyph == gs_no_glyph) {
 			    glyph = gs_min_cid_glyph;
 			    if_debug0('J', "... undefined\n");
+			    /* Must select a descendant font anyway, we can't use the type 0
+			     * even for the /.notdef...
+			     */
+			    select_descendant(pfont, pdata, fidx, fdepth);
 			    goto done;
 			}
 		    } else

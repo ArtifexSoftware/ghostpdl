@@ -58,9 +58,25 @@ typedef enum {
     FAPI_FONT_FEATURE_ForceBold,
     FAPI_FONT_FEATURE_LanguageGroup,
     FAPI_FONT_FEATURE_lenIV,
+    FAPI_FONT_FEATURE_GlobalSubrs_count,
     FAPI_FONT_FEATURE_Subrs_count,
     FAPI_FONT_FEATURE_Subrs_total_size,
-    FAPI_FONT_FEATURE_TT_size
+    FAPI_FONT_FEATURE_TT_size,
+    /* Multiple Master specifics */
+    FAPI_FONT_FEATURE_DollarBlend,
+    FAPI_FONT_FEATURE_DollarBlend_length,
+    FAPI_FONT_FEATURE_BlendAxisTypes_count,
+    FAPI_FONT_FEATURE_BlendAxisTypes,
+    FAPI_FONT_FEATURE_BlendPrivate_count,
+    FAPI_FONT_FEATURE_BlendFontInfo_count,
+    FAPI_FONT_FEATURE_WeightVector_count,
+    FAPI_FONT_FEATURE_WeightVector,
+    FAPI_FONT_FEATURE_BlendDesignPositionsArrays_count,
+    FAPI_FONT_FEATURE_BlendDesignPositionsArrayValue,
+    FAPI_FONT_FEATURE_BlendDesignMapArrays_count,
+    FAPI_FONT_FEATURE_BlendDesignMapSubArrays_count,
+    FAPI_FONT_FEATURE_BlendDesignMapArrayValue,
+    /* End MM specifics */
 } fapi_font_feature;
 
 typedef enum {
@@ -106,6 +122,9 @@ struct FAPI_font_s {
     unsigned short (*get_word )(FAPI_font *ff, fapi_font_feature var_id, int index);
     unsigned long  (*get_long )(FAPI_font *ff, fapi_font_feature var_id, int index);
     float          (*get_float)(FAPI_font *ff, fapi_font_feature var_id, int index);
+    int            (*get_name) (FAPI_font *ff, fapi_font_feature var_id, int index, char *buffer, int len);
+    int		   (*get_proc) (FAPI_font *ff, fapi_font_feature var_id, int index, char *Buffer);
+    unsigned short (*get_gsubr)(FAPI_font *ff, int index,     byte *buf, ushort buf_length);
     unsigned short (*get_subr) (FAPI_font *ff, int index,     byte *buf, ushort buf_length);
     unsigned short (*get_glyph)(FAPI_font *ff, int char_code, byte *buf, ushort buf_length);
     unsigned short (*serialize_tt_font)(FAPI_font *ff, void *buf, int buf_size);

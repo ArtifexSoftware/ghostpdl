@@ -377,6 +377,7 @@ void
 gs_trans_mask_params_init(gs_transparency_mask_params_t *ptmp,
 			  gs_transparency_mask_subtype_t subtype)
 {
+    ptmp->ColorSpace = 0;
     ptmp->subtype = subtype;
     ptmp->Background_components = 0;
     ptmp->TransferFunction = mask_transfer_identity;

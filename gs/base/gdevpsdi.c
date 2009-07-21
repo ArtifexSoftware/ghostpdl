@@ -132,6 +132,7 @@ choose_DCT_params(gx_device *pdev, const gs_color_space *pcs,
     set_linear_color_bits_mask_shift((gx_device *)&mdev);
     mdev.color_info.separable_and_linear = GX_CINFO_SEP_LIN;
 
+    if (pis) {
     /* Check for an RGB-like color space.  
        To recognize that we make a matrix as it were a linear operator,
        suppress an ununiformity by subtracting the image of {0,0,0},
@@ -175,7 +176,8 @@ choose_DCT_params(gx_device *pdev, const gs_color_space *pcs,
     c[0][1] = any_abs(c[0][1]); c[0][2] = any_abs(c[0][2]);
     c[1][1] = any_abs(c[1][1]); c[1][2] = any_abs(c[1][2]);
     c[2][1] = any_abs(c[2][1]); c[2][2] = any_abs(c[2][2]);
-    if (c[0][0] * domination > c[0][1] && c[0][0] * domination > c[0][2] &&
+    }
+    if (pis && c[0][0] * domination > c[0][1] && c[0][0] * domination > c[0][2] &&
 	c[1][0] * domination > c[1][1] && c[1][0] * domination > c[1][2] &&
 	c[2][0] * domination > c[2][1] && c[2][0] * domination > c[2][2]) {
 	/* Yes, it looks like an Lab color space. 

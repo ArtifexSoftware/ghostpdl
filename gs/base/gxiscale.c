@@ -334,7 +334,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 	                for (i = 0; i < pss->params.WidthIn; p -= c, q += c, ++i)
 	                    memcpy(q, p, c);
 	                r.ptr = out - 1;
-	                out = q;
+	                out += round_up(pss->params.WidthIn * c, align_bitmap_mod);
                     }
 
                 } else {

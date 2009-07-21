@@ -28,30 +28,9 @@
 
 /* ---------------- ImageScaleEncode/Decode ---------------- */
 
-typedef float PixelWeight;
-typedef double AccumTmp;
-
-#define num_weight_bits 0		/* Not used for floating point */
-#define fixedScaleFactor 1		/* Straight scaling for floating point */
-#define scale_PixelWeight(factor) (factor)
-#define unscale_AccumTmp(atemp, fraction_bits) ((int)(atemp + 0.5))
-/*#undef NEED_FRACTION_BITS*/
-
-/* Temporary intermediate values */
-typedef byte PixelTmp;
-typedef int PixelTmp2;		/* extra width for clamping sum */
-
-#define minPixelTmp 0
-#define maxPixelTmp 255
-#define unitPixelTmp 255
-
-/* Max of all pixel sizes */
-#define maxSizeofPixel 2
-
 /* Auxiliary structures. */
-
 typedef struct {
-    PixelWeight weight;		/* float or scaled fraction */
+    float weight;		/* float or scaled fraction */
 } CONTRIB;
 
 typedef struct {
@@ -71,7 +50,7 @@ typedef struct stream_IScale_state_s {
     int sizeofPixelOut;		/* bytes per output value, 1 or 2 */
     void /*PixelIn */ *src;
     void /*PixelOut */ *dst;
-    PixelTmp *tmp;
+    byte *tmp;
     CLIST *contrib;
     CONTRIB *items;
     /* The following are updated dynamically. */
@@ -126,7 +105,6 @@ Mitchell_filter(double t)
 
 /*
  * The environment provides the following definitions:
- *      typedef PixelTmp, PixelTmp2
  *      double fproc(double t)
  *      double fWidthIn
  *      PixelTmp {min,max,unit}PixelTmp
@@ -181,7 +159,6 @@ calculate_contrib(
 		     double rescale_factor
 )
 {
-    double scaled_factor = scale_PixelWeight(rescale_factor);
     double WidthIn, fscale;
     bool squeeze;
     int npixels;
@@ -249,7 +226,7 @@ calculate_contrib(
 		int k = n - first_pixel;
 
                 p[k].weight +=
-		    (PixelWeight) (weight * scaled_factor);
+		    (float) (weight * rescale_factor);
 		if_debug2('w', " %d %f", k, (float)p[k].weight);
 	    }
 
@@ -263,7 +240,7 @@ calculate_contrib(
 		int k = n - first_pixel;
 
 		p[k].weight +=
-		    (PixelWeight) (weight * scaled_factor);
+		    (float) (weight * rescale_factor);
 		if_debug2('w', " %d %f", k, (float)p[k].weight);
 	    }
 	}
@@ -275,59 +252,68 @@ calculate_contrib(
 
 /* Apply filter to zoom horizontally from src to tmp. */
 static void
-zoom_x(PixelTmp * tmp, const void /*PixelIn */ *src, int sizeofPixelIn,
+zoom_x(byte * tmp, const void /*PixelIn */ *src, int sizeofPixelIn,
        int tmp_width, int WidthIn, int Colors, const CLIST * contrib,
        const CONTRIB * items)
 {
     int c, i;
-#ifdef NEED_FRACTION_BITS
-    const int fraction_bits =
-	(sizeofPixelIn - sizeof(PixelTmp)) * 8 + num_weight_bits;
-#endif
 
     for (c = 0; c < Colors; ++c) {
-	PixelTmp *tp = tmp + c;
+	byte *tp = tmp + c;
 	const CLIST *clp = contrib;
 
 	if_debug1('W', "[W]zoom_x color %d:", c);
-
-#define zoom_x_loop(PixelIn, PixelIn2)\
-		const PixelIn *raster = (const PixelIn *)src + c;\
-		for ( i = 0; i < tmp_width; tp += Colors, ++clp, ++i )\
-		  {	AccumTmp weight = 0;\
-			{ int j = clp->n;\
-			  const PixelIn *pp = raster + clp->first_pixel;\
-			  const CONTRIB *cp = items + clp->index;\
-			  switch ( Colors )\
-			  {\
-			  case 1:\
-			    for ( ; j > 0; pp += 1, ++cp, --j )\
-			      weight += *pp * cp->weight;\
-			    break;\
-			  case 3:\
-			    for ( ; j > 0; pp += 3, ++cp, --j )\
-			      weight += *pp * cp->weight;\
-			    break;\
-			  default:\
-			    for ( ; j > 0; pp += Colors, ++cp, --j )\
-			      weight += *pp * cp->weight;\
-			  }\
-			}\
-			{ PixelIn2 pixel = unscale_AccumTmp(weight, fraction_bits);\
-			  if_debug1('W', " %lx", (long)pixel);\
-			  *tp =\
-			    (PixelTmp)CLAMP(pixel, minPixelTmp, maxPixelTmp);\
-			}\
-		  }
-
 	if (sizeofPixelIn == 1) {
-	    zoom_x_loop(byte, int)
+	    const byte *raster = (const byte *)src + c;
+
+	    for ( i = 0; i < tmp_width; tp += Colors, ++clp, ++i ) {
+	       	double weight = 0;
+		int pixel, j = clp->n;
+		const byte *pp = raster + clp->first_pixel;
+		const CONTRIB *cp = items + clp->index;
+
+		switch ( Colors ) {
+		  case 1:
+		      for ( ; j > 0; pp += 1, ++cp, --j )
+		          weight += *pp * cp->weight;
+		      break;
+		  case 3:
+		      for ( ; j > 0; pp += 3, ++cp, --j )
+		          weight += *pp * cp->weight;
+		      break;
+		  default:
+		      for ( ; j > 0; pp += Colors, ++cp, --j )
+		          weight += *pp * cp->weight;
+		}
+		pixel = (int)(weight + 0.5);
+		if_debug1('W', " %x", pixel);
+		*tp = (byte)CLAMP(pixel, 0, 255);
+	    }
 	} else {		/* sizeofPixelIn == 2 */
-#if ARCH_INTS_ARE_SHORT
-	    zoom_x_loop(bits16, long)
-#else
-	    zoom_x_loop(bits16, int)
-#endif
+	    const bits16 *raster = (const bits16 *)src + c;
+	    for ( i = 0; i < tmp_width; tp += Colors, ++clp, ++i ) {
+            	double weight = 0;
+		int pixel, j = clp->n;
+		const bits16 *pp = raster + clp->first_pixel;
+		const CONTRIB *cp = items + clp->index;
+
+		switch ( Colors ) {
+		  case 1:
+		      for ( ; j > 0; pp += 1, ++cp, --j )
+		          weight += *pp * cp->weight;
+		      break;
+		  case 3:
+		      for ( ; j > 0; pp += 3, ++cp, --j )
+		          weight += *pp * cp->weight;
+		      break;
+		  default:
+		      for ( ; j > 0; pp += Colors, ++cp, --j )
+		          weight += *pp * cp->weight;
+	}
+		pixel = (int)(weight + 0.5);
+		if_debug1('W', " %x", pixel);
+		*tp = (byte)CLAMP(pixel, 0, 255);
+	    }
 	}
 	if_debug0('W', "\n");
     }
@@ -341,7 +327,7 @@ zoom_x(PixelTmp * tmp, const void /*PixelIn */ *src, int sizeofPixelIn,
  */
 static void
 zoom_y(void /*PixelOut */ *dst, int sizeofPixelOut, uint MaxValueOut,
-       const PixelTmp * tmp, int WidthOut, int tmp_width,
+       const byte * tmp, int WidthOut, int tmp_width,
        int Colors, const CLIST * contrib, const CONTRIB * items)
 {
     int kn = WidthOut * Colors;
@@ -349,42 +335,41 @@ zoom_y(void /*PixelOut */ *dst, int sizeofPixelOut, uint MaxValueOut,
     int first_pixel = contrib->first_pixel;
     const CONTRIB *cbp = items + contrib->index;
     int kc;
-    PixelTmp2 max_weight = MaxValueOut;
-#ifdef NEED_FRACTION_BITS
-    const int fraction_bits =
-	(sizeof(PixelTmp) - sizeofPixelOut) * 8 + num_weight_bits;
-#endif
+    int max_weight = MaxValueOut;
 
     if_debug0('W', "[W]zoom_y: ");
 
-#define zoom_y_loop(PixelOut)\
-	for ( kc = 0; kc < kn; ++kc ) {\
-		AccumTmp weight = 0;\
-		{ const PixelTmp *pp = &tmp[kc + first_pixel];\
-		  int j = cn;\
-		  const CONTRIB *cp = cbp;\
-		  for ( ; j > 0; pp += kn, ++cp, --j )\
-		    weight += *pp * cp->weight;\
-		}\
-		{ PixelTmp2 pixel = unscale_AccumTmp(weight, fraction_bits);\
-		  if_debug1('W', " %lx", (long)pixel);\
-		  ((PixelOut *)dst)[kc] =\
-		    (PixelOut)CLAMP(pixel, 0, max_weight);\
-		}\
-	}
-
     if (sizeofPixelOut == 1) {
-	zoom_y_loop(byte)
+	for ( kc = 0; kc < kn; ++kc ) {
+	    double weight = 0;
+	    const byte *pp = &tmp[kc + first_pixel];
+	    int pixel, j = cn;
+	    const CONTRIB *cp = cbp;
+
+	    for ( ; j > 0; pp += kn, ++cp, --j )
+		weight += *pp * cp->weight;
+	    pixel = (int)(weight + 0.5);
+	    if_debug1('W', " %x", pixel);
+	    ((byte *)dst)[kc] = (byte)CLAMP(pixel, 0, max_weight);
+	}
     } else {			/* sizeofPixelOut == 2 */
-	zoom_y_loop(bits16)
+	for ( kc = 0; kc < kn; ++kc ) {
+	    double weight = 0;
+	    const byte *pp = &tmp[kc + first_pixel];
+	    int pixel, j = cn;
+	    const CONTRIB *cp = cbp;
+
+	    for ( ; j > 0; pp += kn, ++cp, --j )
+		weight += *pp * cp->weight;
+	    pixel = (int)(weight + 0.5);
+	    if_debug1('W', " %x", pixel);
+	    ((bits16 *)dst)[kc] = (bits16)CLAMP(pixel, 0, max_weight);
+    }
     }
     if_debug0('W', "\n");
 }
 
 /* ------ Stream implementation ------ */
-
-#define tmp_width params.WidthOut
-#define tmp_height params.HeightIn
 
 /* Forward references */
 static void s_IScale_release(stream_state * st);
@@ -399,7 +384,7 @@ calculate_dst_contrib(stream_IScale_state * ss, int y)
 		      (double)ss->params.EntireHeightOut / ss->params.EntireHeightIn,
 		      y, ss->src_y_offset, ss->params.EntireHeightOut, ss->params.EntireHeightIn, 
 		      1, ss->params.HeightIn, MAX_ISCALE_SUPPORT, row_size,
-		      (double)ss->params.MaxValueOut / (fixedScaleFactor * unitPixelTmp) );
+		      (double)ss->params.MaxValueOut / 255 );
     int first_index_mod = ss->dst_next_list.first_pixel / row_size;
 
     if_debug2('w', "[W]calculate_dst_contrib for y = %d, y+offset=%d\n", y, y + ss->src_y_offset);
@@ -457,9 +442,9 @@ s_IScale_init(stream_state * st)
     ss->dst_offset = 0;
 
     /* create intermediate image to hold horizontal zoom */
-    ss->tmp = (PixelTmp *) gs_alloc_byte_array(mem,
-					   min(ss->tmp_height, MAX_ISCALE_SUPPORT),
-			      ss->tmp_width * ss->params.Colors * sizeof(PixelTmp),
+    ss->tmp = (byte *) gs_alloc_byte_array(mem,
+					   min(ss->params.HeightIn, MAX_ISCALE_SUPPORT),
+			      ss->params.WidthOut * ss->params.Colors * sizeof(byte),
 					       "image_scale tmp");
     ss->contrib = (CLIST *) gs_alloc_byte_array(mem,
 					   max(ss->params.WidthOut, ss->params.HeightOut),
@@ -485,7 +470,7 @@ s_IScale_init(stream_state * st)
 		      (double)ss->params.EntireWidthOut / ss->params.EntireWidthIn,
 		      0, 0, ss->params.WidthOut, ss->params.WidthIn, 
 		      ss->params.WidthOut, ss->params.WidthIn, ss->params.WidthIn,
-		      ss->params.Colors, (double)unitPixelTmp * fixedScaleFactor / ss->params.MaxValueIn);
+		      ss->params.Colors, 255. / ss->params.MaxValueIn);
 
     /* Prepare the weights for the first output row. */
     calculate_dst_contrib(ss, 0);
@@ -522,7 +507,7 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
 	    }
 	    /* Apply filter to zoom vertically from tmp to dst. */
 	    zoom_y(row, ss->sizeofPixelOut, ss->params.MaxValueOut, ss->tmp,
-		   ss->params.WidthOut, ss->tmp_width, ss->params.Colors,
+		   ss->params.WidthOut, ss->params.WidthOut, ss->params.Colors,
 		   &ss->dst_next_list, ss->dst_items);
 	    /* Idiotic C coercion rules allow T* and void* to be */
 	    /* inter-assigned freely, but not compared! */
@@ -572,8 +557,8 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
 	    if_debug2('w', "[w]zoom_x y = %d to tmp row %d\n",
 		      ss->src_y, (ss->src_y % MAX_ISCALE_SUPPORT));
 	    zoom_x(ss->tmp + (ss->src_y % MAX_ISCALE_SUPPORT) *
-		   ss->tmp_width * ss->params.Colors, row,
-		   ss->sizeofPixelIn, ss->tmp_width, ss->params.WidthIn,
+		   ss->params.WidthOut * ss->params.Colors, row,
+		   ss->sizeofPixelIn, ss->params.WidthOut, ss->params.WidthIn,
 		   ss->params.Colors, ss->contrib, ss->items);
 	    pr->ptr += rcount;
 	    ++(ss->src_y);

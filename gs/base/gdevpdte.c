@@ -317,7 +317,12 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
 	gs_glyph glyph = font->procs.encode_char((gs_font *)font, c, 
 					GLYPH_SPACE_NAME);
 	gs_glyph_info_t info;
-	int code = font->procs.glyph_info((gs_font *)font, glyph, NULL,
+	int code;
+
+	if (glyph == gs_no_glyph)
+	    return_error (gs_error_invalidfont);
+
+	code = font->procs.glyph_info((gs_font *)font, glyph, NULL,
 					    GLYPH_INFO_WIDTH0 << WMode,
 					    &info);
 

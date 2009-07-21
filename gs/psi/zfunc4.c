@@ -172,10 +172,6 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 	case t_integer: {
 	    int i = elt.value.intval;
 
-#if ARCH_SIZEOF_INT < ARCH_SIZEOF_LONG
-	    if (i != elt.value.intval) /* check for truncation */
-		return_error(e_rangecheck);
-#endif
 	    if (i == (byte)i) {
 		*p = PtCr_byte;
 		p[1] = (byte)i;

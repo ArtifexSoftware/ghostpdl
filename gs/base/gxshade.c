@@ -380,7 +380,6 @@ shade_fill_path(const shading_fill_state_t * pfs, gx_path * ppath,
     params.rule = -1;		/* irrelevant */
     params.adjust = *fill_adjust;
     params.flatness = 0;	/* irrelevant */
-    params.fill_zero_width = false;
     return (*dev_proc(pfs->dev, fill_path)) (pfs->dev, pfs->pis, ppath,
 					     &params, pdevc, NULL);
 }

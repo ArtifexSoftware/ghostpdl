@@ -27,36 +27,34 @@
 #define X_DPI 72
 #define Y_DPI 72
 
-typedef struct gx_device_tiff_s {
-    gx_device_common;
-    gx_prn_device_common;
-    gdev_tiff_state tiff;
-} gx_device_tiff;
-
 static dev_proc_print_page(tiff12_print_page);
 static dev_proc_print_page(tiff24_print_page);
 
 static const gx_device_procs tiff12_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
+prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb,
+		tiff_get_params, tiff_put_params);
 static const gx_device_procs tiff24_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
+prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb,
+		tiff_get_params, tiff_put_params);
 
-const gx_device_printer gs_tiff12nc_device = {
+const gx_device_tiff gs_tiff12nc_device = {
     prn_device_std_body(gx_device_tiff, tiff12_procs, "tiff12nc",
 			DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 			X_DPI, Y_DPI,
 			0, 0, 0, 0,
-			24, tiff12_print_page)
+			24, tiff12_print_page),
+    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/      
 };
 
-const gx_device_printer gs_tiff24nc_device = {
+const gx_device_tiff gs_tiff24nc_device = {
     prn_device_std_body(gx_device_tiff, tiff24_procs, "tiff24nc",
 			DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 			X_DPI, Y_DPI,
 			0, 0, 0, 0,
-			24, tiff24_print_page)
+			24, tiff24_print_page),
+    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/      
 };
 
 /* ------ Private definitions ------ */
@@ -97,14 +95,21 @@ static int
 tiff12_print_page(gx_device_printer * pdev, FILE * file)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
-    int code;
+    int code, i;
+    bool swap_bytes = tfdev->BigEndian != arch_is_big_endian;
+    tiff_rgb_values val_12_swapped = val_12_template;
+    if (swap_bytes)
+    {
+        for (i=0; i<3; i++)
+            SWAP_SHORT(val_12_swapped.bps[i]);
+    }
 
     /* Write the page directory. */
     code = gdev_tiff_begin_page(pdev, &tfdev->tiff, file,
 				(const TIFF_dir_entry *)&dir_rgb_template,
 			  sizeof(dir_rgb_template) / sizeof(TIFF_dir_entry),
-				(const byte *)&val_12_template,
-				sizeof(val_12_template), 0);
+				(const byte *)&val_12_swapped,
+				sizeof(val_12_swapped), 0, swap_bytes);
     if (code < 0)
 	return code;
 
@@ -138,7 +143,7 @@ tiff12_print_page(gx_device_printer * pdev, FILE * file)
 	}
 
 	gdev_tiff_end_strip(&tfdev->tiff, file);
-	gdev_tiff_end_page(&tfdev->tiff, file);
+	gdev_tiff_end_page(&tfdev->tiff, file, swap_bytes);
 	gs_free_object(pdev->memory, line, "tiff12_print_page");
     }
 
@@ -149,14 +154,21 @@ static int
 tiff24_print_page(gx_device_printer * pdev, FILE * file)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
-    int code;
+    int code, i;
+    bool swap_bytes = tfdev->BigEndian != arch_is_big_endian;
+    tiff_rgb_values val_24_swapped = val_24_template;
+    if (swap_bytes)
+    {
+        for (i=0; i<3; i++)
+            SWAP_SHORT(val_24_swapped.bps[i]);
+    }
 
     /* Write the page directory. */
     code = gdev_tiff_begin_page(pdev, &tfdev->tiff, file,
 				(const TIFF_dir_entry *)&dir_rgb_template,
 			  sizeof(dir_rgb_template) / sizeof(TIFF_dir_entry),
-				(const byte *)&val_24_template,
-				sizeof(val_24_template), 0);
+				(const byte *)&val_24_swapped,
+				sizeof(val_24_swapped), 0, swap_bytes);
     if (code < 0)
 	return code;
 
@@ -176,7 +188,7 @@ tiff24_print_page(gx_device_printer * pdev, FILE * file)
 	    fwrite((char *)row, raster, 1, file);
 	}
 	gdev_tiff_end_strip(&tfdev->tiff, file);
-	gdev_tiff_end_page(&tfdev->tiff, file);
+	gdev_tiff_end_page(&tfdev->tiff, file, swap_bytes);
 	gs_free_object(pdev->memory, line, "tiff24_print_page");
     }
 

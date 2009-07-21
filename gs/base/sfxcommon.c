@@ -75,8 +75,13 @@ file_open_stream(const char *fname, uint len, const char *file_access,
 	return 0;		/* so this is the same as len == 0, so return NULL */
     code = (*fopen_proc)(iodev, (char *)(*ps)->cbuf, fmode, &file,
 			 (char *)(*ps)->cbuf, (*ps)->bsize);
-    if (code < 0)
+    if (code < 0) {
+	/* discard the stuff we allocated to keep from accumulating stuff needing GC */
+	gs_free_object(mem, (*ps)->cbuf, "file_close(buffer)");
+	gs_free_object(mem, *ps, "file_prepare_stream(stream)");
+	*ps = NULL;
 	return code;
+    }
     file_init_stream(*ps, file, fmode, (*ps)->cbuf, (*ps)->bsize);
     return 0;
 }
@@ -181,6 +186,7 @@ file_prepare_stream(const char *fname, uint len, const char *file_access,
 	buffer[0] = 0;	/* safety */
     s->cbuf = buffer;
     s->bsize = s->cbsize = buffer_size;
+    s->save_close = 0;	    /* in case this stream gets disabled before init finishes */
     *ps = s;
     return 0;
 }

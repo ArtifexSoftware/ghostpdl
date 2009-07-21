@@ -253,6 +253,10 @@ attach_cmap_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
     pdf_resource_t *pcmres = 0;	/* CMap */
     int code;
 
+    /* Make sure cmap names is properly initialised. Silences Coverity warning */
+    if (!pcmn)
+	return_error(gs_error_unknownerror);
+
     /*
      * If the CMap isn't standard, write it out if necessary.
      */
@@ -323,8 +327,8 @@ attach_cmap_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
 	pdfont->u.type0.CMapName.data = chars;
 	pdfont->u.type0.CMapName.size = size;
     } else {
-	if (!pcmn)
-	    /* Should not be possible, if pcmn is NULL then either 
+	if (!*pcmn)
+	    /* Should not be possible, if *pcmn is NULL then either 
 	     * is_identity is true or we create pcmres.
 	     */ 
 	    return_error(gs_error_invalidfont);

@@ -55,6 +55,13 @@ currentdict /super.complete_instance currentdict /complete_instance get put
   currentdict end
 } bind def
 
+/GenerateIdentityCIDMap   % <font> GenerateCIDMap <font>
+{ begin
+    /CIDMap [ 44000 string 44000 string 44000 string] def
+    CIDMap .fillIdentityCIDMap
+  currentdict end
+} bind def
+
 /load_sfnts  % <FontDict> load_sfnts <FontDict> 
 { % Read the True Type file from the path /Path, and buld /sfnts,
   % skipping glyf and loca. 
@@ -83,8 +90,13 @@ currentdict /super.complete_instance currentdict /complete_instance get put
   } {
     pop pop pop
   } ifelse
+  dup /Decoding get /Identity.Unicode eq {
   //ChooseDecoding exec                                    % <font>
+    //GenerateIdentityCIDMap exec                          % <font>
+  } {
+    //ChooseDecoding exec                                  % <font>
   //GenerateCIDMap exec                                    % <font>
+  } ifelse
 } bind def
 
 %-----------TrueType-specific methods for category redefinition : -----------

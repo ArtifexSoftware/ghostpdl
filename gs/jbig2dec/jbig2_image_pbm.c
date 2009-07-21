@@ -1,19 +1,16 @@
 /*
     jbig2dec
     
-    Copyright (C) 2002 Artifex Software, Inc.
+    Copyright (C) 2009 Artifex Software, Inc.
     
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
     authorized under the terms of the license contained in
     the file LICENSE in this distribution.
                                                                                 
-    For information on commercial licensing, go to
-    http://www.artifex.com/licensing/ or contact
-    Artifex Software, Inc.,  101 Lucas Valley Road #110,
+    For further licensing information refer to http://artifex.com/ or
+    contact Artifex Software, Inc., 7 Mt. Lassen Drive - Suite A-134,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
-
-    $Id$
 */
 
 #ifdef HAVE_CONFIG_H
@@ -74,6 +71,8 @@ Jbig2Image *jbig2_image_read_pbm_file(Jbig2Ctx *ctx, char *filename)
     
     image = jbig2_image_read_pbm(ctx, in);
     
+    fclose(in);
+
     return (image);
 }
 
@@ -109,16 +108,25 @@ Jbig2Image *jbig2_image_read_pbm(Jbig2Ctx *ctx, FILE *in)
             while ((c = fgetc(in)) != '\n');
             continue;
         }
+        /* report unexpected eof */
+        if (c == EOF) {
+           fprintf(stderr, "end-of-file parsing pbm header\n");
+           return NULL;
+        }
         if (isdigit(c)) {
             buf[i++] = c;
-            while (isdigit(buf[i++] = fgetc(in))) {
-                if (feof(in) || i >= 32) {
+            while (isdigit(c = fgetc(in))) {
+                if (i >= 32) {
                     fprintf(stderr, "pbm parsing error\n");
                     return NULL;
                 }
+                buf[i++] = c;
             }
             buf[i] = '\0';
-            sscanf(buf, "%d", &dim[done]);
+            if (sscanf(buf, "%d", &dim[done]) != 1) {
+                fprintf(stderr, "couldn't read pbm image dimensions\n");
+                return NULL;
+            }
             i = 0;
             done++;
         }

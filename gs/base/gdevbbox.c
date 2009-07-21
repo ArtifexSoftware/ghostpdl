@@ -760,8 +760,6 @@ bbox_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	    return 0;
 	gx_cpath_inner_box(pcpath, &ibox);
 	adjust = params->adjust;
-	if (params->fill_zero_width)
-	    gx_adjust_if_empty(&ibox, &adjust);
 	adjust_box(&ibox, adjust);
 	BBOX_ADD_RECT(bdev, ibox.p.x, ibox.p.y, ibox.q.x, ibox.q.y);
 	return 0;
@@ -772,8 +770,6 @@ bbox_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	if (gx_path_bbox(ppath, &ibox) < 0)
 	    return 0;
 	adjust = params->adjust;
-	if (params->fill_zero_width)
-	    gx_adjust_if_empty(&ibox, &adjust);
 	adjust_box(&ibox, adjust);
 	/*
 	 * If the path lies within the already accumulated box, just draw

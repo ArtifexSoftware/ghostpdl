@@ -443,7 +443,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape, bool idle,
 
 	/* Note that alpha_g is the alpha for the GROUP */
 	/* This is distinct from the alpha that may also exist */
-	/* for the objects within the group.  Hence it can introduce 
+	/* for the objects within the group.  Hence it can introduce */
 	/* yet another plane */
 
     pdf14_buf *result;
@@ -2582,6 +2582,8 @@ pdf14_begin_transparency_mask(gx_device	*dev,
 					       "pdf14_begin_transparency_mask");
     gs_int_rect rect;
     int code;
+    int group_color_numcomps;
+    gs_transparency_color_t group_color; 
 
     if (transfer_fn == NULL)
 	return_error(gs_error_VMerror);
@@ -2593,9 +2595,52 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     if_debug1('v', "pdf14_begin_transparency_mask, bg_alpha = %d\n", bg_alpha);
     memcpy(transfer_fn, ptmp->transfer_fn, size_of(ptmp->transfer_fn));
 
+   /* If the group color is unknown, then we must use the previous group color
+       space or the device process color space */
+        
+    if (ptmp->group_color == UNKNOWN){
+
+        if (pdev->ctx->stack){
+            /* Use previous group color space */
+            group_color_numcomps = pdev->ctx->stack->n_chan-1;  /* Remove alpha */
+        } else {
+            /* Use process color space */
+            group_color_numcomps = pdev->color_info.num_components;
+        }
+
+        switch (group_color_numcomps) {
+            case 1:				
+                group_color = GRAY_SCALE;       
+                break;
+            case 3:				
+                group_color = DEVICE_RGB;       
+                break;
+            case 4:				
+                group_color = DEVICE_CMYK;       
+            break;
+            default:
+                
+                /* We can end up here if we are in
+                   a deviceN color space and 
+                   we have a sep output device */
+
+                group_color = DEVICEN;
+
+            break;
+
+         }  
+    
+    } else {
+
+        group_color = ptmp->group_color;
+        group_color_numcomps = ptmp->group_color_numcomps;
+
+    }
+
+
     /* Always update the color mapping procs.  Otherwise we end up
        fowarding to the target device. */
-    code = pdf14_update_device_color_procs(dev,ptmp->group_color,pis);
+    code = pdf14_update_device_color_procs(dev,group_color,pis);
     if (code < 0)
 	return code;
 
@@ -2605,7 +2650,7 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     return pdf14_push_transparency_mask(pdev->ctx, &rect, bg_alpha,
 					transfer_fn, ptmp->idle, ptmp->replacing,
 					ptmp->mask_id, ptmp->subtype, 
-                                        ptmp->SMask_is_CIE, ptmp->group_color_numcomps);
+                                        ptmp->SMask_is_CIE, group_color_numcomps);
 }
 
 static	int
@@ -2623,6 +2668,8 @@ pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
     /* May need to reset some color stuff related
      * to a mismatch between the Smask color space
      * and the Smask blending space */
+
+    if (pdev->ctx->stack != NULL ) {
 
     parent_color = &(pdev->ctx->stack->parent_color_info_procs);
 
@@ -2642,6 +2689,7 @@ pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
             parent_color->get_cmap_procs = NULL;
             parent_color->parent_color_comp_index = NULL;
             parent_color->parent_color_mapping_procs = NULL;
+    }
     }
 
     return ok;
@@ -2813,7 +2861,6 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
     pdev->pdf14_procs->unpack_color(num_comp, color, pdev, src);
 
     src[num_comp] = (byte)floor (255 * pdev->alpha + 0.5);
-    opacity = (byte)floor (255 * pdev->opacity + 0.5);
 
     if (x < buf->rect.p.x) x = buf->rect.p.x;
     if (y < buf->rect.p.y) y = buf->rect.p.y;
@@ -2841,7 +2888,8 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
 		dst[num_comp] = dst_ptr[num_comp * planestride];
 	    }
 	    art_pdf_composite_knockout_simple_8(dst,
-		has_shape ? dst_ptr + shape_off : NULL, src, num_comp, opacity);
+		has_shape ? dst_ptr + shape_off : NULL, src, num_comp, 255);
+            /* ToDo:  Review use of shape and opacity above.   */ 
 	    /* Complement the results for subtractive color spaces */
 	    if (additive) {
 		for (k = 0; k < num_chan; ++k)
@@ -2858,6 +2906,7 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
     }
     return 0;
 }
+
 
 /**
  * Here we have logic to override the cmap_procs with versions that

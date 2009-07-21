@@ -112,7 +112,7 @@ zroll(i_ctx_t *i_ctx_p)
 
     check_type(*op1, t_integer);
     check_type(*op, t_integer);
-    if ((ulong) op1->value.intval > (ulong)(op1 - osbot)) {
+    if ((uint) op1->value.intval > (uint)(op1 - osbot)) {
 	/*
 	 * The data might span multiple stack blocks.
 	 * There are efficient ways to handle this situation,

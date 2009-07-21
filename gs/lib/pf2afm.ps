@@ -458,7 +458,9 @@
 % i.e., it analyses the supplied names, appends extensions if needed,
 % and check files:
   /pfbn () def /pfan () def /pfmn () def % initialisation
-
+  [ t1_glyph_equivalence { pop } forall ] { % disable glyph substitution
+    t1_glyph_equivalence exch undef
+  } forall
   ifn pfa_or_pfb? {
       ifn dup length string copy def
       ifn dup length 4 sub 0 exch getinterval /ifn edef

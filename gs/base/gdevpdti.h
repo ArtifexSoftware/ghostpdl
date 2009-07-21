@@ -26,6 +26,15 @@
 
 /* ================ Types and structures ================ */
 
+/* Define the state structure for tracking bitmap fonts. */
+/*typedef struct pdf_bitmap_fonts_s pdf_bitmap_fonts_t;*/
+struct pdf_bitmap_fonts_s {
+    pdf_font_resource_t *open_font;  /* current Type 3 synthesized font */
+    bool use_open_font;		/* if false, start new open_font */
+    long bitmap_encoding_id;
+    int max_embedded_code;	/* max Type 3 code used */
+};
+
 #ifndef pdf_bitmap_fonts_DEFINED
 #  define pdf_bitmap_fonts_DEFINED
 typedef struct pdf_bitmap_fonts_s pdf_bitmap_fonts_t;
@@ -45,9 +54,13 @@ void pdf_close_text_page(gx_device_pdf *pdev);
 /* Return the Y offset for a bitmap character image. */
 int pdf_char_image_y_offset(const gx_device_pdf *pdev, int x, int y, int h);
 
+/* Retrieve the x and y offsets for a charproc */
+int pdf_charproc_y_offset(pdf_char_proc_t *pcp);
+int pdf_charproc_y_offset(pdf_char_proc_t *pcp);
+
 /* Begin a CharProc for an embedded (bitmap) font. */
 int pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
-			int y_offset, gs_id id, pdf_char_proc_t **ppcp,
+			int y_offset, int x_offset, gs_id id, pdf_char_proc_t **ppcp,
 			pdf_stream_position_t * ppos);
 
 /* End a CharProc. */

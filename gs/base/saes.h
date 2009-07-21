@@ -47,8 +47,9 @@ int s_aes_set_key(stream_aes_state * state,
 /* state declaration macro;
    should be updated for the aes_context finalization */
 #define private_st_aes_state()	\
-  gs_private_st_simple(st_aes_state, stream_aes_state,\
-    "aes filter state")
+  gs_private_st_ptrs1(st_aes_state, stream_aes_state, "aes filter state",\
+  aes_state_enum_ptrs, aes_state_reloc_ptrs, ctx)
+
 extern const stream_template s_aes_template;
 
 /* (de)crypt a section of text in a buffer -- the procedure is the same

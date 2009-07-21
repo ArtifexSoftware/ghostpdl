@@ -108,6 +108,11 @@ static void write_subrs(FAPI_font* a_fapi_font,WRF_output* a_output)
 	WRF_wstring(a_output,"ND\n");
 	}
 
+static int is_MM_font(FAPI_font *a_fapi_font)
+{
+    return a_fapi_font->get_word(a_fapi_font,FAPI_FONT_FEATURE_DollarBlend,0);
+}
+
 static void write_private_dictionary(FAPI_font* a_fapi_font,WRF_output* a_output)
 	{
 	a_output->m_encrypt = true;
@@ -138,8 +143,16 @@ static void write_private_dictionary(FAPI_font* a_fapi_font,WRF_output* a_output
 	write_array_entry(a_fapi_font,a_output,"StemSnapH",FAPI_FONT_FEATURE_StemSnapH,16);
 	write_array_entry(a_fapi_font,a_output,"StemSnapV",FAPI_FONT_FEATURE_StemSnapV,16);
 
+	if (is_MM_font(a_fapi_font)) {
+	    WRF_wstring(a_output,"3 index /Blend get /Private get begin\n");
+	    WRF_wstring(a_output,"|-\n");
+	}
 	write_subrs(a_fapi_font,a_output);
 	}
+
+static void write_blend_dictionary(FAPI_font* a_fapi_font,WRF_output* a_output)
+{
+}
 
 static void write_main_dictionary(FAPI_font* a_fapi_font,WRF_output* a_output)
 	{
@@ -167,8 +180,94 @@ static void write_main_dictionary(FAPI_font* a_fapi_font,WRF_output* a_output)
 		WRF_wbyte(a_output,(byte)(i == 3 ? '}' : ' '));
 		}
 	WRF_wbyte(a_output,'\n');
+	if (is_MM_font(a_fapi_font)) {
+	    short x,x2;
+	    float x1;
+	    uint i, j, entries;
+	    char Buffer[255];
+
+	    entries = 0;
+    	    x = a_fapi_font->get_word(a_fapi_font,FAPI_FONT_FEATURE_BlendAxisTypes_count,0);
+	    if (x)
+		entries++;
+	    x = a_fapi_font->get_word(a_fapi_font,FAPI_FONT_FEATURE_BlendDesignPositionsArrays_count,0);
+	    if (x)
+		entries++;
+	    x = a_fapi_font->get_word(a_fapi_font,FAPI_FONT_FEATURE_BlendDesignMapArrays_count,0);
+	    if (x)
+		entries++;
+
+	    sprintf(Buffer, "/FontInfo %d dict dup begin\n", entries);
+	    WRF_wstring(a_output, Buffer);
+	    x = a_fapi_font->get_word(a_fapi_font,FAPI_FONT_FEATURE_BlendAxisTypes_count,0);
+	    if (x) {
+		WRF_wstring(a_output, "/BlendAxisTypes [");
+		for (i = 0;i < x;i++) {
+		    WRF_wstring(a_output," /");
+		    a_fapi_font->get_name(a_fapi_font,FAPI_FONT_FEATURE_BlendAxisTypes,i, (char *)&Buffer,255);
+		    WRF_wstring(a_output,Buffer);
+		}
+		WRF_wstring(a_output,"] def\n");
+	    }
+	    x = a_fapi_font->get_word(a_fapi_font,FAPI_FONT_FEATURE_BlendDesignPositionsArrays_count,0);
+	    if (x) {
+		WRF_wstring(a_output, "/BlendDesignPositions [");
+		x2 = a_fapi_font->get_word(a_fapi_font,FAPI_FONT_FEATURE_BlendAxisTypes_count,0);
+		for (i = 0;i < x; i++) {
+		    WRF_wstring(a_output,"[");
+		    for (j = 0; j < x2; j++) {
+			x1 = a_fapi_font->get_float(a_fapi_font,FAPI_FONT_FEATURE_BlendDesignPositionsArrayValue,i*8+j);
+			sprintf(Buffer, "%f ", x1);
+			WRF_wstring(a_output,Buffer);
+		    }
+		    WRF_wstring(a_output,"]");
+		}
+	    WRF_wstring(a_output, "] def\n");
+	    }
+	    x = a_fapi_font->get_word(a_fapi_font,FAPI_FONT_FEATURE_BlendDesignMapArrays_count,0);
+	    if (x) {
+		WRF_wstring(a_output, "/BlendDesignMap [");
+		for (i = 0;i < x;i++) {
+		    x2 = a_fapi_font->get_word(a_fapi_font,FAPI_FONT_FEATURE_BlendDesignMapSubArrays_count,i);
+		    WRF_wstring(a_output,"[");
+		    for (j = 0; j < x2; j++) {
+			WRF_wstring(a_output,"[");
+			x1 = a_fapi_font->get_float(a_fapi_font,FAPI_FONT_FEATURE_BlendDesignPositionsArrayValue,i*64+j*64);
+			sprintf(Buffer, "%f ", x1);
+			WRF_wstring(a_output,Buffer);
+			x1 = a_fapi_font->get_float(a_fapi_font,FAPI_FONT_FEATURE_BlendDesignPositionsArrayValue,i*64+j*64 + 1);
+			sprintf(Buffer, "%f ", x1);
+			WRF_wstring(a_output,Buffer);
+			WRF_wstring(a_output,"]");
+		    }
+		    WRF_wstring(a_output,"]");
+		}
+		WRF_wstring(a_output, "] def\n");
+	    }
+	    WRF_wstring(a_output,"end readonly def\n");
+	    WRF_wstring(a_output,"/$Blend {");
+	    x = a_fapi_font->get_word(a_fapi_font,FAPI_FONT_FEATURE_DollarBlend_length,0);
+	    if(a_output->m_count)
+		a_output->m_count += x;
+	    x = a_fapi_font->get_proc(a_fapi_font,FAPI_FONT_FEATURE_DollarBlend,0,(char *)a_output->m_pos);
+	    if(a_output->m_pos)
+		a_output->m_pos += x;
+	    WRF_wstring(a_output,"} def\n");
+	    WRF_wstring(a_output,"/$Blend {0.1 mul exch 0.45 mul add exch 0.17 mul add add} def\n");
+	    WRF_wstring(a_output,"/WeightVector [");
+	    x = a_fapi_font->get_word(a_fapi_font,FAPI_FONT_FEATURE_WeightVector_count,0);
+	    for (i = 0;i < x;i++) {
+		x1 = a_fapi_font->get_float(a_fapi_font,FAPI_FONT_FEATURE_WeightVector,i);
+		sprintf(Buffer, "%f ", x1);
+		WRF_wstring(a_output,Buffer);
+	    }
+	    WRF_wstring(a_output,"] def\n");
+	}
 	WRF_wstring(a_output,"currentdict end\ncurrentfile eexec\n");
 	write_private_dictionary(a_fapi_font,a_output);
+	if (is_MM_font(a_fapi_font)) {
+	    write_blend_dictionary(a_fapi_font, a_output);
+	}
 	}
 	
 /**

@@ -33,7 +33,7 @@
 
 /* Set compatibility flag just in case we have GNU iconv.h */
 #ifndef USE_LIBICONV_GNU
-#  define LIBCONV_PLUG
+#  define LIBICONV_PLUG
 #endif
 #include <iconv.h>
 

@@ -50,6 +50,7 @@
 #include "zcie.h"	/* For CIE space function declarations */
 #include "zicc.h"	/* For declaration of seticc */
 #include "gscspace.h"   /* Needed for checking if current pgs colorspace is CIE */
+#include "iddict.h"	/* for idict_put_string */
 
 /* imported from gsht.c */
 extern  void    gx_set_effective_transfer(gs_state *);
@@ -4610,19 +4611,72 @@ static int indexedrange(i_ctx_t * i_ctx_p, ref *space, float *ptr)
 }
 static int indexedbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, int *cont, int *stack_depth)
 {
-    es_ptr ep = ++esp;
-    ref proc;
     int code;
 
     if (*stage == 0) {
+	/* Usefully /Indexed can't be the base of any other space, so we know
+	 * the current space in the graphics state is this one.
+	 */
+        gs_color_space *pcs;
+        pcs = gs_currentcolorspace(igs);
+
+	/* Update the counters */
 	*stage = 1;
 	*cont = 1;
+
+	/* Indexed spaces can have *either* a procedure or a string for the
+	 * lookup.
+	 */
+	if (pcs->params.indexed.use_proc) {
+	    es_ptr ep = ++esp;
+	    ref proc;
+	    
+	    /* We have a procedure, set up the continuation to run the 
+	     * lookup procedure. (The index is already on the operand stack)
+	     */
 	check_estack(1);
 	code = array_get(imemory, space, 3, &proc);
 	if (code < 0)
 	    return code;
         *ep = proc;	/* lookup proc */
 	return o_push_estack;
+    } else {
+	    int i, index;
+	    os_ptr op = osp;
+	    unsigned char *ptr = (unsigned char *)pcs->params.indexed.lookup.table.data;
+
+	*stage = 0;
+	    /* We have a string, start by retrieving the index from the op stack */
+	    /* Make sure its an integer! */
+	    if (!r_has_type(op, t_integer)) 
+		return_error (e_typecheck);
+	    index = op->value.intval;
+	    /* And remove it from the stack. */
+	    pop(1);
+	    op = osp;
+
+	    /* Make sure we have enough space on the op stack to hold 
+	     * one value for each component of the alternate space 
+	     */
+	    push(pcs->params.indexed.n_comps);
+	    op -= pcs->params.indexed.n_comps - 1;
+
+	    /* Move along the lookup table, one byte for each component , the 
+	     * number of times required to get to the lookup for this index
+	     */
+	    ptr += index * pcs->params.indexed.n_comps;
+
+	    /* For all the components of the alternate space, push the value
+	     * of the component on the stack. The value is given by the byte
+	     * from the lookup table divided by 255 to give a value between 
+	     * 0 and 1.
+	     */
+	    for (i = 0; i < pcs->params.indexed.n_comps; i++, op++) {
+		float rval = (*ptr++) / 255.0;
+		make_real(op, rval);
+	    }
+	    return 0;
+	}
     } else {
 	*stage = 0;
 	*cont = 1;
@@ -5211,20 +5265,32 @@ static int validateiccspace(i_ctx_t * i_ctx_p, ref **r)
     } else {
 	switch (components) {
 	    case 1:
-		code = name_enter_string(imemory, "DeviceGray", *r);
+		code = name_enter_string(imemory, "DeviceGray", tempref);
 		break;
 	    case 3:
-		code = name_enter_string(imemory, "DeviceRGB", *r);
+		code = name_enter_string(imemory, "DeviceRGB", tempref);
 		break;
 	    case 4:
-		code = name_enter_string(imemory, "DeviceCMYK", *r);
+		code = name_enter_string(imemory, "DeviceCMYK", tempref);
 		break;
 	    default:
 		return_error(e_rangecheck);
 	}
+	/* In case this space is the /ALternate for a previous ICCBased space
+	 * insert the named space into the ICC dictionary. If we simply returned
+	 * the named space, as before, then we are replacing the second ICCBased
+	 * space in the first ICCBased space with the named space!
+	 */
+	code = idict_put_string(&ICCdict, "Alternate", tempref);
+	if (code < 0)
+	    return code;
+
+	/* And now revalidate with the newly updated dictionary */
+	return validateiccspace(i_ctx_p, r);
     }
     return code;
 }
+
 static int iccalternatespace(i_ctx_t * i_ctx_p, ref *space, ref **r, int *CIESubst)
 {
     int components, code = 0;
@@ -5330,9 +5396,9 @@ static int iccrange(i_ctx_t * i_ctx_p, ref *space, float *ptr)
 	    if (code < 0)
 		return code;
 	    if (r_has_type(&valref, t_integer))
-		ptr[i * 2] = (float)valref.value.intval;
+		ptr[i] = (float)valref.value.intval;
 	    else
-		ptr[i * 2] = (float)valref.value.realval;
+		ptr[i] = (float)valref.value.realval;
 	}
     } else {
 	for (i=0;i<components;i++) {

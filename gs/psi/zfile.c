@@ -381,7 +381,7 @@ file_continue(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     es_ptr pscratch = esp - 2;
     file_enum *pfen = r_ptr(esp - 1, file_enum);
-    long devlen = esp[-3].value.intval;
+    int devlen = esp[-3].value.intval;
     gx_io_device *iodev = r_ptr(esp - 4, gx_io_device);
     uint len = r_size(pscratch);
     uint code;
