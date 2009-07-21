@@ -254,7 +254,7 @@ cie_lmnp_param(const gs_memory_t *mem, const ref * pdref, gs_cie_common * pcie,
 	)
 	return code;
 
-    if 	(code = dict_proc3_param(mem, pdref, "DecodeLMN", &pcprocs->DecodeLMN) < 0)
+    if ((code = dict_proc3_param(mem, pdref, "DecodeLMN", &pcprocs->DecodeLMN)) < 0)
         return code;
 
     *has_lmn_procs = !code;  /* Need to know for efficient creation of ICC profile */  
