@@ -557,6 +557,8 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
     int tag_location;
     icTagSignature TRC_Tags[3] = {icSigRedTRCTag, icSigGreenTRCTag, icSigBlueTRCTag};
     int trc_tag_size;
+    int debug_catch = 1;
+
 
     gsicc_matrix_init(&(pcie->common.MatrixLMN));  /* Need this set now */
     gsicc_matrix_init(&(pcie->MatrixABC));          /* Need this set now */
@@ -711,7 +713,7 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
             } else {
     
                 /* Must sample the proc into a curve buffer */
-
+                debug_catch = 0;
 
             }
 
@@ -723,6 +725,7 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
            to be put into a 2x2 MLUT with TRCs */
 
 
+        debug_catch = 0;
 
 
     }
@@ -732,7 +735,8 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
 
     /* Dump the buffer to a file for testing if its a valid ICC profile */
 
-    save_profile(buffer,"fromabc",profile_size);
+    if(debug_catch)
+        save_profile(buffer,"fromabc",profile_size);
 
 #endif
 
@@ -797,6 +801,7 @@ gsicc_create_froma(gs_cie_a *pcie, unsigned char *buffer, gs_memory_t *memory)
     icS15Fixed16Number temp_XYZ[3];
     int tag_location;
     int trc_tag_size;
+    int debug_catch = 1;
 
     gsicc_matrix_init(&(pcie->common.MatrixLMN));  /* Need this set now */
 
@@ -816,7 +821,7 @@ gsicc_create_froma(gs_cie_a *pcie, unsigned char *buffer, gs_memory_t *memory)
 
     /* Check if we have no LMN or A methods.  A simple profile  */
 
-    if(pcie->MatrixA.u == 1.0 && pcie->MatrixA.v == 1.0 && pcie->MatrixA.w == 1.0 && pcie->DecodeA == a_identity 
+    if(pcie->MatrixA.u == 1.0 && pcie->MatrixA.v == 1.0 && pcie->MatrixA.w == 1.0
         && pcie->common.MatrixLMN.is_identity && pcie->common.DecodeLMN.procs[0] == common_identity
         && pcie->common.DecodeLMN.procs[1] == common_identity && pcie->common.DecodeLMN.procs[2] == common_identity){
 
@@ -834,7 +839,16 @@ gsicc_create_froma(gs_cie_a *pcie, unsigned char *buffer, gs_memory_t *memory)
         init_tag(tag_list, &last_tag, icSigMediaWhitePointTag, XYZPT_SIZE);
         init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
 
-        trc_tag_size = 4;
+        if (pcie->DecodeA == a_identity){
+        
+            trc_tag_size = 4;
+
+        } else {
+
+            trc_tag_size = CURVE_SIZE*2+4;  /* curv type */
+            debug_catch = 0;
+
+        }
 
         init_tag(tag_list, &last_tag, icSigGrayTRCTag, trc_tag_size);
 
@@ -895,6 +909,7 @@ gsicc_create_froma(gs_cie_a *pcie, unsigned char *buffer, gs_memory_t *memory)
         /* We will need to create a small 2x2 MLUT */
 
 
+        debug_catch = 0;
 
 
     }
@@ -903,7 +918,8 @@ gsicc_create_froma(gs_cie_a *pcie, unsigned char *buffer, gs_memory_t *memory)
 
     /* Dump the buffer to a file for testing if its a valid ICC profile */
 
-    save_profile(buffer,"froma",profile_size);
+    if (debug_catch)
+        save_profile(buffer,"froma",profile_size);
 
 #endif
 
