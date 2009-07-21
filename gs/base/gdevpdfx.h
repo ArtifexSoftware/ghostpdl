@@ -657,6 +657,7 @@ struct gx_device_pdf_s {
     bool DoNumCopies;
     bool PreserveSeparation;
     bool PreserveDeviceN;
+    int PDFACompatibilityPolicy;
 };
 
 #define is_in_page(pdev)\

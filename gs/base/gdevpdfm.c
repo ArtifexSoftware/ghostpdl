@@ -467,7 +467,11 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 	    pdfmark_put_c_pair(pcd, "/T", pair + 1);
 	else if (pdf_key_eq(pair, "/Action") || pdf_key_eq(pair, "/A"))
 	    Action = pair;
-	else if (pdf_key_eq(pair, "/File") || pdf_key_eq(pair, "/F"))
+	/* Previously also catered for '/F', but at the top level (outside an
+	 * Action dict which is handled below), a /F can only be the Flags for
+	 * the annotation, not a File or JavaScript action.
+	 */
+	else if (pdf_key_eq(pair, "/File") /* || pdf_key_eq(pair, "/F")*/)
 	    File = pair;
 	else if (pdf_key_eq(pair, "/Dest")) {
 	    Dest = pair[1];
@@ -706,6 +710,44 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     cos_value_t value;
     int code;
 
+    /* Annotations are only permitted in PDF/A if they have the
+     * Print flag enabled, so we need to prescan for that here.
+     */
+    if(pdev->PDFA) {
+	int i, Flags = 0;
+	/* Check all the keys to see if we have a /F (Flags) key/value pair defined */
+	for (i = 0; i < count; i += 2) {
+	    const gs_param_string *pair = &pairs[i];
+
+	    if (pdf_key_eq(pair, "/F")) {
+		sscanf((const char *)pair[1].data, "%ld", &Flags);
+		break;
+	    }
+	}
+	/* Check the Print flag, PDF/A annotations *must* be set to print */
+	if ((Flags & 4) == 0){
+	    switch (pdev->PDFACompatibilityPolicy) {
+		/* Default behaviour matches Adobe Acrobat, warn and continue,
+		 * output file will not be PDF/A compliant
+		 */
+		case 0:
+		    eprintf("Annotation set to non-printing,\n not permitted in PDF/A, reverting to normal PDF output\n");
+		    pdev->PDFA = 0;
+		    break;
+		    /* Since the annotation would break PDF/A compatibility, do not
+		     * include it, but warn the user that it has been dropped.
+		     */
+		case 1:
+		    eprintf("Annotation set to non-printing,\n not permitted in PDF/A, annotation will not be present in output file\n");
+		    return 0;
+		    break;
+		default:
+		    eprintf("Annotation set to non-printing,\n not permitted in PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+		    pdev->PDFA = 0;
+		    break;
+	    }
+	}
+    }
     params.pdev = pdev;
     params.subtype = subtype;
     params.src_pg = -1;
