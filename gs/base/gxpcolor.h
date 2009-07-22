@@ -23,6 +23,10 @@
 #include "gxdevice.h"
 #include "gxdevmem.h"
 #include "gxpcache.h"
+#include "gxblend.h"
+#include "gxcpath.h"
+
+#define RAW_PATTERN_DUMP 0
 
 #ifndef gx_device_clist_DEFINED
 #define gx_device_clist_DEFINED
@@ -142,6 +146,41 @@ extern dev_color_proc_read(gx_dc_pattern_read);
  */
 extern dev_color_proc_get_nonzero_comps(gx_dc_pattern_get_nonzero_comps);
 
+
+/* Used for keeping a buffer of the pattern that containes an alpha channel
+  in a planar form.  Since we must be going from the pdf14 compositor through
+  the pattern accumulator and then back to a pdf14 compositor it makes sense
+  to keep the data in planar form for the pdf14 compositor action */
+
+typedef struct gx_pattern_trans_s gx_pattern_trans_t;
+
+struct gx_pattern_trans_s {
+
+    gx_device *pdev14; 
+    byte *transbytes;
+    gs_int_rect rect;
+    int rowstride;
+    int planestride;
+    int n_chan; /* number of pixel planes including alpha */
+    bool has_shape;  /* extra plane inserted */
+    int width;
+    int height;
+    const pdf14_nonseparable_blending_procs_t *blending_procs;
+    bool is_additive;
+    gs_blend_mode_t blending_mode;
+    const void (* pat_trans_fill)(int xmin, int ymin, int xmax, int ymax, int px, int py, const gx_color_tile *ptile,
+            gx_pattern_trans_t *fill_trans_buffer);
+};
+
+
+
+#define private_st_pattern_trans() /* in gxpcmap.c */\
+gs_private_st_ptrs2(st_pattern_trans, gx_pattern_trans_t, "gx_pattern_trans",\
+		    pattern_trans_enum_ptrs, pattern_trans_reloc_ptrs,\
+		    pdev14, transbytes);
+
+
+
 /*
  * Define a color tile, an entry in the rendered Pattern cache (and
  * eventually in the colored halftone cache).  Note that the depth is
@@ -169,8 +208,12 @@ struct gx_color_tile_s {
     gx_strip_bitmap tbits;	/* data = 0 if uncolored */
     gx_strip_bitmap tmask;	/* data = 0 if no mask */
     /* (i.e., the mask is all 1's) */
+
+    gx_pattern_trans_t *ttrans;  /* !=0 if has trans. in this case tbits == 0 */
+
     gx_device_clist *cdev;	/* not NULL if the graphics is a command list. */
     byte is_simple;		/* true if xstep/ystep = tile size */
+    byte has_overlap;           /* true if step size is smaller than bounding box */
     byte is_dummy;		/* if true, the device manages the pattern, 
                                    and the content of the tile is empty. */
     byte pad[2];		/* structure members alignment. */
@@ -180,8 +223,10 @@ struct gx_color_tile_s {
 };
 
 #define private_st_color_tile()	/* in gxpcmap.c */\
-  gs_private_st_ptrs3(st_color_tile, gx_color_tile, "gx_color_tile",\
-    color_tile_enum_ptrs, color_tile_reloc_ptrs, tbits.data, tmask.data, cdev)
+  gs_private_st_ptrs4(st_color_tile, gx_color_tile, "gx_color_tile",\
+    color_tile_enum_ptrs, color_tile_reloc_ptrs, tbits.data, tmask.data, cdev,\
+    ttrans)
+
 #define private_st_color_tile_element()	/* in gxpcmap.c */\
   gs_private_st_element(st_color_tile_element, gx_color_tile,\
     "gx_color_tile[]", color_tile_elt_enum_ptrs, color_tile_elt_reloc_ptrs,\
@@ -217,13 +262,21 @@ typedef struct gx_device_pattern_accum_s {
     /* open sets these */
     gx_device_memory *bits;	/* target also points to bits */
     gx_device_memory *mask;
+
+    /* If we have transparency, then we will just
+    use the PDF14 buffer directly instead
+    of the memory device.  That is
+    what this pointer is for */
+
+    gx_pattern_trans_t *transbuff;
+
 } gx_device_pattern_accum;
 
 #define private_st_device_pattern_accum() /* in gxpcmap.c */\
-  gs_private_st_suffix_add3_final(st_device_pattern_accum,\
+  gs_private_st_suffix_add4_final(st_device_pattern_accum,\
     gx_device_pattern_accum, "pattern accumulator", pattern_accum_enum,\
     pattern_accum_reloc, gx_device_finalize, st_device_forward,\
-    instance, bits, mask)
+    instance, bits, mask, transbuff)
 
 /* Allocate a pattern accumulator. */
 gx_device_forward * gx_pattern_accum_alloc(gs_memory_t * mem, 
@@ -257,5 +310,20 @@ void gx_pattern_cache_winnow(gx_pattern_cache *,
 bool gx_pattern_tile_is_clist(gx_color_tile *ptile);
 
 dev_proc_open_device(pattern_clist_open_device);
+
+/* Code to fill a pdf14 transparency rectangles with a pattern trans buffer object */
+
+int gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax, gx_color_tile *ptile, 
+                               gx_pattern_trans_t *fill_trans_buffer, gs_int_point phase);
+
+gx_pattern_trans_t* new_pattern_trans_buff(gs_memory_t *mem);
+
+void tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, const gx_color_tile *ptile,
+                        gx_pattern_trans_t *fill_trans_buffer);
+
+/* This is used for the case when we may have overlapping tiles.  We need to get better detection for this as 
+   it would be best to avoid doing it if not needed. */
+void tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax, int px, int py, const gx_color_tile *ptile,
+                        gx_pattern_trans_t *fill_trans_buffer);
 
 #endif /* gxpcolor_INCLUDED */
