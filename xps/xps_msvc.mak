@@ -52,6 +52,10 @@ PSLIBDIR=..\gs\lib
 ICCSRCDIR=..\gs\icclib
 !endif
 
+!ifndef PNGSRCDIR
+PNGSRCDIR=..\gs\libpng
+!endif
+
 !ifndef EXPATSRCDIR
 EXPATSRCDIR=..\gs\expat
 !endif
@@ -62,10 +66,6 @@ SHARE_EXPAT=0
 
 !ifndef EXPAT_CFLAGS
 EXPAT_CFLAGS=/DHAVE_MEMMOVE
-!endif
-
-!ifndef PSRCDIR
-PSRCDIR=..\gs\libpng
 !endif
 
 # PLPLATFORM indicates should be set to 'ps' for language switch
