@@ -271,6 +271,13 @@ PCLXL_ROMFS_ARGS= -P ../urwfonts -d ttfonts /
 !endif
 # end PL_SCALER == afs
 
+# a 64 bit type is needed for devicen color space/model support but
+# carries a performance burden.  Change unsigned long to unsigned long
+# long to enable large color indices.
+!ifndef GX_COLOR_INDEX_DEFINE
+GX_COLOR_INDEX_DEFINE=-DGX_COLOR_INDEX_TYPE="unsigned long"
+!endif
+
 !ifdef XPS_INCLUDED
 EXTRALIBS=$(EXPATLIB)
 !endif

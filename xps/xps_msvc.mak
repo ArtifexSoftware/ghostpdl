@@ -132,11 +132,6 @@ TARGET_XE=$(GENDIR)\gxps
 COMPILE_INITS=0
 !endif
 
-# configuration assumptions
-!ifndef GX_COLOR_INDEX_DEFINE
-GX_COLOR_INDEX_DEFINE=-DGX_COLOR_INDEX_TYPE="unsigned long long"
-!endif
-
 # "Subclassed" makefile
 !include $(MAINSRCDIR)\pcl6_msvc.mak
 
