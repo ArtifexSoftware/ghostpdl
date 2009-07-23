@@ -339,7 +339,7 @@ pjl_check_font_path(char *path_list, gs_memory_t *mem)
 	strcpy(tmp_path_and_pattern, dirname);
 	strcat(tmp_path_and_pattern, pattern);
 	fe = gs_enumerate_files_init(tmp_path_and_pattern, strlen(tmp_path_and_pattern), mem);
-	if ( (gs_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH) ) == -1 ) {
+	if ( fe == NULL || (gs_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH) ) == -1 ) {
 	    tmp_pathp = NULL;
 	} else {
 	    /* wind through the rest of the files.  This should close
