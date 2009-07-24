@@ -184,8 +184,8 @@ gscms_transform_color(gsicc_link_t *icclink,
 
 
 /* Get the link from the CMS. TODO:  Add error checking */
-int
-gscms_get_link(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle, 
+cmsHTRANSFORM
+gscms_get_link(gcmmhprofile_t  lcms_srchandle, 
                     gcmmhprofile_t lcms_deshandle, 
                     gsicc_rendering_param_t *rendering_params, gsicc_manager_t *icc_manager)
 {
@@ -211,12 +211,10 @@ gscms_get_link(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle,
 
     /* TODO:  Make intent variable */
 
-    lcms_link = cmsCreateTransform(lcms_srchandle, src_data_type, lcms_deshandle, des_data_type, 
-        INTENT_PERCEPTUAL, cmsFLAGS_LOWRESPRECALC);	
+    return(cmsCreateTransform(lcms_srchandle, src_data_type, lcms_deshandle, des_data_type, 
+        INTENT_PERCEPTUAL, cmsFLAGS_LOWRESPRECALC));	
 
-    icclink->link_handle = lcms_link;
-  
-return(0);
+
 }
 
 
@@ -227,8 +225,8 @@ return(0);
     transparency, that would only occur at the top of the stack 
 TODO:  Add error checking */
 
-int
-gscms_get_link_proof(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle, 
+cmsHTRANSFORM
+gscms_get_link_proof(gcmmhprofile_t  lcms_srchandle, 
                     gcmmhprofile_t lcms_deshandle, gcmmhprofile_t lcms_proofhandle, 
                     gsicc_rendering_param_t *rendering_params, gsicc_manager_t *icc_manager)
 {
@@ -254,13 +252,10 @@ gscms_get_link_proof(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle,
 
 /* Create the link.  Note the gamut check alarm */
 
-    lcms_link = cmsCreateProofingTransform(lcms_srchandle, src_data_type, lcms_deshandle, des_data_type, 
-        lcms_proofhandle,INTENT_PERCEPTUAL, INTENT_ABSOLUTE_COLORIMETRIC, cmsFLAGS_GAMUTCHECK | cmsFLAGS_SOFTPROOFING );			
+    return(cmsCreateProofingTransform(lcms_srchandle, src_data_type, lcms_deshandle, des_data_type, 
+        lcms_proofhandle,INTENT_PERCEPTUAL, INTENT_ABSOLUTE_COLORIMETRIC, 
+        cmsFLAGS_GAMUTCHECK | cmsFLAGS_SOFTPROOFING ));			
 
-    icclink->link_handle = lcms_link;
-
-  
-return(0);
 }
 
 

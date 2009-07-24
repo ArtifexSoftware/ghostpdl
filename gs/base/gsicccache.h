@@ -22,7 +22,7 @@
 
 gsicc_link_cache_t* gsicc_cache_new(gs_memory_t *memory);
 
-static void gsicc_add_link(gsicc_link_cache_t *link_cache, void *link_handle,
+gsicc_link_t * gsicc_add_link(gsicc_link_cache_t *link_cache, void *link_handle,
                void *ContextPtr, gsicc_hashlink_t hashcode, gs_memory_t *memory);
 
 void gsicc_cache_free(gsicc_link_cache_t *icc_cache, gs_memory_t *memory);
@@ -32,9 +32,9 @@ void gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory);
 int gsicc_get_color_info(gs_color_space *colorspace,unsigned char *color, int *size_color);
 
 static void
-gsicc_get_cspace_hash(gs_imager_state *pis, gs_color_space *colorspace,int64_t *hash);
+gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, gs_color_space *colorspace,int64_t *hash);
 
-static void gsicc_compute_linkhash(gs_imager_state *pis, gs_color_space *input_colorspace, 
+static void gsicc_compute_linkhash(gsicc_manager_t *icc_manager, gs_color_space *input_colorspace, 
                    gs_color_space *output_colorspace, 
                    gsicc_rendering_param_t *rendering_params, gsicc_hashlink_t *hash);
 

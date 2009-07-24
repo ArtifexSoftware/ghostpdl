@@ -23,6 +23,7 @@
 #include "gscms.h"
 
 typedef cmsHPROFILE gcmmhprofile_t;
+typedef cmsHTRANSFORM gcmmhlink_t;
 
 
 /* Prototypes */
@@ -40,13 +41,13 @@ void gscms_transform_color(gsicc_link_t *icclink,
                              void *outputcolor,
                              void **contextptr);
 
-int gscms_get_link(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle, 
+cmsHTRANSFORM gscms_get_link(gcmmhprofile_t  lcms_srchandle, 
                     gcmmhprofile_t lcms_deshandle, 
                     gsicc_rendering_param_t *rendering_params, gsicc_manager_t *icc_manager);
 
 
 
-int gscms_get_link_proof(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle, 
+cmsHTRANSFORM gscms_get_link_proof(gcmmhprofile_t  lcms_srchandle, 
                     gcmmhprofile_t lcms_deshandle, gcmmhprofile_t lcms_proofhandle, 
                     gsicc_rendering_param_t *rendering_params, gsicc_manager_t *icc_manager);
 
