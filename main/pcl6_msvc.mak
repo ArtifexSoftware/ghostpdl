@@ -186,6 +186,7 @@ PXL_TOP_OBJ=$(PXLOBJDIR)\pxtop.$(OBJ)
 PSI_TOP_OBJ=
 !endif
 
+# PCL_INCLUDED means pcl + pcl xl
 !ifndef PDL_INCLUDE_FLAGS
 PDL_INCLUDE_FLAGS=/DPCL_INCLUDED
 !endif
@@ -197,8 +198,6 @@ XCFLAGS=/DXPS_INCLUDED
 !endif
 !endif
 
-# PCL_INCLUDED means pcl + pcl xl
-PDL_INCLUDE_FLAGS=/DPCL_INCLUDED
 XCFLAGS=$(XCFLAGS) $(PDL_INCLUDE_FLAGS)
 
 !ifndef TOP_OBJ
@@ -367,9 +366,6 @@ config-clean: pl.config-clean pxl.config-clean
 !include $(PCLSRCDIR)\pcl.mak
 !include $(PXLSRCDIR)\pxl.mak
 
-!ifdef XPS_INCLUDED
-!include $(XPSSRCDIR)\xps.mak
-!endif
 
 #### Rules for visual tracer window (copied from gs\winint.mak).
 #### Note PLCCC brings /Za, which can't compile Windows headers, so we define and use PLCCC_W instead. :

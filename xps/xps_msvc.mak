@@ -122,10 +122,12 @@ TARGET_XE=$(GENDIR)\gxps
 !endif
 
 # Main file's name
-# this is already in pcl6_gcc.mak
-#XPS_TOP_OBJ=$(XPSOBJDIR)\xpstop.$(OBJ)
-#TOP_OBJ+= $(XPS_TOP_OBJ)
-#XCFLAGS=-DXPS_INCLUDED
+XPS_TOP_OBJ=$(XPSOBJDIR)\xpstop.$(OBJ)
+TOP_OBJ=$(XPS_TOP_OBJ)
+
+# Target XPS
+TARGET_DEVS=$(XPSOBJDIR)\xps.dev
+PDL_INCLUDE_FLAGS=/DXPS_INCLUDED
 
 # Choose COMPILE_INITS=1 for init files and fonts in ROM (otherwise =0)
 !ifndef COMPILE_INITS
@@ -136,6 +138,5 @@ COMPILE_INITS=0
 !include $(MAINSRCDIR)\pcl6_msvc.mak
 
 # Subsystems
-# this is already in pcl6_gcc.mak
-#include $(XPSSRCDIR)\xps.mak
+!include $(XPSSRCDIR)\xps.mak
 !include $(GLSRCDIR)\expat.mak
