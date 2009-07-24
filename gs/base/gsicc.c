@@ -24,11 +24,11 @@
 #include "gxarith.h"
 #include "gxcie.h"
 #include "gzstate.h"
-/* #include "icc.h" */		/* must precede icc.h */
 #include "gsicc.h"
 
 #define SAVEICCPROFILE 0
 
+#if 0
 typedef struct _icmFileGs icmFileGs;
 
 struct _icmFileGs {
@@ -37,6 +37,7 @@ struct _icmFileGs {
     /* Private: */
     stream *strp;
 };
+#endif
 
 /* Garbage collection code */
 
@@ -361,7 +362,7 @@ gx_remap_ICCBased(const gs_client_color * pc, const gs_color_space * pcs,
 static void
 gx_final_CIEICC(const gs_color_space * pcs)
 {
-    rc_decrement_only(pcs->params.icc.picc_info, "gx_final_CIEICC");
+    /* rc_decrement_only(pcs->params.icc.picc_info, "gx_final_CIEICC"); */
 }
 
 #if 0 
@@ -451,8 +452,8 @@ gx_wrap_icc_stream(stream *strp)
 int
 gx_load_icc_profile(gs_cie_icc *picc_info)
 {
-    stream *        instrp = picc_info->instrp;
-/*     icc *           picc; 
+ /*   stream *        instrp = picc_info->instrp;
+     icc *           picc; 
     icmLuBase * plu = NULL;
     icmFile *pfile = NULL; */  /* MJV to Fix */
 
@@ -646,6 +647,7 @@ gx_install_CIEICC(gs_color_space * pcs, gs_state * pgs)
     const gs_icc_params * picc_params = (const gs_icc_params *)&pcs->params.icc;
     gs_cie_icc *    picc_info = picc_params->picc_info;
 
+
 #if ENABLE_CUSTOM_COLOR_CALLBACK
     {
         /*
@@ -679,6 +681,7 @@ gs_cspace_build_CIEICC(
     void *              client_data,
     gs_memory_t *       pmem )
 {
+
     gs_cie_icc *        picc_info;
     gs_color_space *    pcs;
 
@@ -691,6 +694,9 @@ gs_cspace_build_CIEICC(
      * procedure).
      */
 
+   /* gs_color_space *pcspace = gs_cspace_alloc(pmem, &gs_color_space_type_CIEICC);
+    *ppcspace = pcspace; */
+
     picc_info = gx_build_cie_space( ppcspace,
                                     &gs_color_space_type_CIEICC,
                                     &st_cie_icc,
@@ -699,9 +705,9 @@ gs_cspace_build_CIEICC(
     if (picc_info == NULL)
         return_error(gs_error_VMerror);
 
+
     gx_set_common_cie_defaults(&picc_info->common, client_data);
 
-#if 0 
      /* MJV to fix */
     /*
      * Now set the D50 WhitePoint. The above function does not set any
@@ -714,16 +720,14 @@ gs_cspace_build_CIEICC(
     picc_info->common.install_cspace = gx_install_CIEICC;
     picc_info->num_components = 0;
     picc_info->Range = Range4_default;
-    picc_info->instrp = NULL;
+ /*   picc_info->instrp = NULL;
     picc_info->pcs_is_cielab = false;
     picc_info->picc = NULL;
     picc_info->plu = NULL;
-    picc_info->pfile = NULL;
+    picc_info->pfile = NULL; */
 
     pcs = *ppcspace;
     pcs->params.icc.picc_info = picc_info;
-
-#endif
 
     return 0;
 }
@@ -740,6 +744,7 @@ gx_serialize_CIEICC(const gs_color_space * pcs, stream * s)
     long avail, pos, count;
     byte buf[100];
 
+#if 0
     if (code < 0)
 	return code;
     code = gx_serialize_cie_common_elements(pcs, s);
@@ -768,4 +773,6 @@ gx_serialize_CIEICC(const gs_color_space * pcs, stream * s)
 	    return code;
     }
     return sputs(s, (byte *)&picc->pcs_is_cielab, sizeof(picc->pcs_is_cielab), &n);
+#endif
+    return(0);
 }

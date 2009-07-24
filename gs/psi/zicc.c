@@ -45,14 +45,13 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     int                     code, reuse_op = 0;
     gs_color_space *        pcs;
     gs_color_space *  palt_cs;
-    int                     i;
-    gs_cie_icc *            picc_info;
     ref *                   pstrmval;
     stream *                s = 0L;
-    cmm_profile_t           *icc_profile;
-    int                     zz;
+    cmm_profile_t           *picc_profile;
     gs_imager_state *       pis = (gs_imager_state *)igs;
     gx_device *             pdev = gs_currentdevice(igs);
+    int                     i;
+    gs_cie_icc *            picc_info;
 
 
     palt_cs = gs_currentcolorspace(igs);
@@ -66,20 +65,39 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     code = gs_cspace_build_CIEICC(&pcs, NULL, gs_state_memory(igs));
     if (code < 0)
         return code;
+
+    /* This is stuff needed by the legacy icc code */
+
+    picc_info = pcs->params.icc.picc_info;
+    picc_info->num_components = ncomps;
+    for (i = 0; i < ncomps; i++) {
+        picc_info->Range.ranges[i].rmin = range_buff[2 * i];
+        picc_info->Range.ranges[i].rmax = range_buff[2 * i + 1];
+
+    }
+
+    /* We will want to reset some ranges likely */
+
+    /* record the current space as the alternative color space */
+    pcs->base_space = palt_cs;
+    rc_increment(palt_cs);
+
   
+    /*  For now, dump the profile into a buffer
+        and obtain handle from the buffer when we need it. 
+        We may want to change this later.
+        This depends to some degree on what the CMS is capable of doing.
+        I don't want to get bogged down on stream I/O at this point.
+        Note also, if we are going to be putting these into the clist we will 
+        want to have this buffer. */
 
-        /* For now, dump the profile into a buffer
-       and obtain handle from the buffer when we need it. 
-       We may want to change this later.
-       This depends to some degree on what the CMS is capable of doing.
-       I don't want to get bogged down on stream I/O at this point.
-       Note also, if we are going to be putting these into the clist we will 
-       want to have this buffer. */
+    picc_profile = gsicc_profile_new(s, gs_state_memory(igs), NULL, 0);
 
-    icc_profile = NULL;
-    icc_profile = gsicc_profile_new(s, gs_state_memory(igs),NULL,0);
-
-    /* If we have not populated the icc_managers device profile yet, go ahead 
+    code = gsicc_cs_profile(pcs, picc_profile, gs_state_memory(igs));
+    if (code < 0)
+        return code;
+    
+    /* If we have not populated the icc_manager's device profile yet, go ahead 
        and take care of that now.  We will likely want to move this out of
        here and into an intialization section later.  Do it now though
        so that we can do some testing. */
@@ -89,72 +107,10 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         gsicc_set_device_profile(pis, pdev, gs_state_memory(igs));
     }
 
+    /* Set the color space.  We are done.  No joint cache here... */
+    code = gs_setcolorspace(igs, pcs);
 
-#if 0
-
-    picc_info = pcs->params.icc.picc_info;
-    picc_info->num_components = ncomps;
-    picc_info->instrp = s;
-    picc_info->file_id = (s->read_id | s->write_id);
-    for (i = 0; i < ncomps; i++) {
-        picc_info->Range.ranges[i].rmin = range_buff[2 * i];
-        picc_info->Range.ranges[i].rmax = range_buff[2 * i + 1];
-
-    }
-
-
-
-    /* record the current space as the alternative color space */
-    pcs->base_space = palt_cs;
-    rc_increment(palt_cs);
-
-    code = gx_load_icc_profile(picc_info);
-    if (code < 0)
-	return code;
-
-    /* If the input space to this profile is CIELAB, then we need to adjust the limits */
-    /* See ICC spec ICC.1:2004-10 Section 6.3.4.2 and 6.4 */
-/*    Need to revisit this with new flow */
-
-    if(picc_info->cs_signature == icSigLabData)
-    {
-        picc_info->Range.ranges[0].rmin = 0.0;
-        picc_info->Range.ranges[0].rmax = 100.0;
-
-        picc_info->Range.ranges[1].rmin = -128.0;
-        picc_info->Range.ranges[1].rmax = 127.0;
-
-        picc_info->Range.ranges[2].rmin = -128.0;
-        picc_info->Range.ranges[2].rmax = 127.0;
-
-    } 
-    /* If the input space is icSigXYZData, then we should do the limits based upon the white point of the profile.  */
-    if(picc_info->cs_signature == icSigXYZData)
-    {
-	for (i = 0; i < 3; i++) 
-	{
-	    picc_info->Range.ranges[i].rmin = 0;
-	}
-
-	picc_info->Range.ranges[0].rmax = picc_info->common.points.WhitePoint.u;
-	picc_info->Range.ranges[1].rmax = picc_info->common.points.WhitePoint.v;
-    	picc_info->Range.ranges[2].rmax = picc_info->common.points.WhitePoint.w;
-    }
-
-    code = cie_cache_joint(i_ctx_p, &istate->colorrendering.procs,
-			   (gs_cie_common *)picc_info, igs);
-    if (code < 0)
-	return code;
-
-    return cie_set_finish( i_ctx_p,
-                           pcs,
-                           &istate->colorspace.procs.cie,
-                           edepth,
-                           code );
-
-    #endif
-
-    return 0;
+    return code;
 }
 
 /*

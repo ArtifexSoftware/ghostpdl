@@ -174,6 +174,28 @@ gsicc_matrix_init(register gs_matrix3 * mat)
 	mat->cv.v == 1.0 && is_fzero2(mat->cv.u, mat->cv.w) &&
 	mat->cw.w == 1.0 && is_fzero2(mat->cw.u, mat->cw.v);
 }
+
+/* This function maps a gs matrix type to an ICC MLUT.
+   This is required due to the multiple matrix and 1-D LUT
+   forms for postscript management, which the ICC does not
+   support (at least the older versions) */
+
+static void 
+gsicc_matrix_to_mlut(gs_matrix3 mat, icLut16Type *mlut)
+{
+
+    mlut->base.reserved[0] = 0;
+    mlut->base.reserved[1] = 0;
+    mlut->base.reserved[2] = 0;
+    mlut->base.reserved[3] = 0;
+
+    mlut->base.sig = icSigLut16Type;
+
+    /* Much to do here */
+
+}
+
+
 /* Debug dump of internally created ICC profile for testing */
 
 static void
@@ -818,7 +840,8 @@ gsicc_create_froma(gs_cie_a *pcie, unsigned char *buffer, gs_memory_t *memory,
 
     profile_size = HEADER_SIZE;
 
-    /* Check if we have no LMN or A methods.  A simple profile  */
+    /* Check if we have no LMN or A methods.  A simple profile.  The ICC format is 
+       a bit limited in its options for monochrome color. */
 
     if(pcie->MatrixA.u == 1.0 && pcie->MatrixA.v == 1.0 && pcie->MatrixA.w == 1.0
         && pcie->common.MatrixLMN.is_identity && !has_lmn_procs){

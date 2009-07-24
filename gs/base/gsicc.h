@@ -109,21 +109,21 @@ struct gs_cie_icc_s {
 
     /* number of components, and their associated range */
     uint                num_components;
-    gs_range15          Range;
+    gs_range4           Range;
 
     /* stream object, and the associated read id */
-    unsigned short      file_id;
-    stream *            instrp;
+   /* unsigned short      file_id;
+    stream *            instrp; */
 
     /* the following are set when the structure is initialized */
 
     /* must the profile connection space undergo an L*a*b* ==> XYZ conversion */
-    bool                pcs_is_cielab;
+   /* bool                pcs_is_cielab; */
 
     /* Input colorspace.  Need to access this to know how to set all the range
        elements that ghostscript likes to use */
 
-    icColorSpaceSignature cs_signature;
+   /* icColorSpaceSignature cs_signature; */
 
     /* top-level icclib data structure for the profile */
  /*   struct _icc *       picc; */
@@ -132,7 +132,7 @@ struct gs_cie_icc_s {
  /*   struct _icmLuBase * plu; */
 
     /* file object for ICC stream */
-    struct _icmFile   * pfile;
+  /*  struct _icmFile   * pfile; */
 };
 
 /*
@@ -141,15 +141,15 @@ struct gs_cie_icc_s {
  * structure that contains such pointers. We make use of the finalization
  * procedure to handle this task.
  */
+
 #define private_st_cie_icc()    /* in gscsicc.c */            \
-    gs_private_st_suffix_add1_final( st_cie_icc,              \
+    gs_private_st_suffix_add0_final( st_cie_icc,              \
                                      gs_cie_icc,              \
                                      "gs_cie_icc",            \
                                      cie_icc_enum_ptrs,       \
                                      cie_icc_reloc_ptrs,      \
                                      cie_icc_finalize,        \
-                                     st_cie_common_elements_t,\
-                                     instrp )
+                                     st_cie_common_elements_t)
 
 /* typedef struct gs_cie_icc_s gs_cie_icc; */   /* in gscspace.h */
 

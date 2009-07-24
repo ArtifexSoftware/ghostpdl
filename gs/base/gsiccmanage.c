@@ -309,6 +309,40 @@ gsicc_setbuffer_desc(gsicc_bufferdesc_t *buffer_desc,unsigned char num_chan,
 
 }
 
+/* Set the icc profile in the gs_color_space object */
+
+int
+gsicc_cs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile, gs_memory_t * mem)
+{
+
+    if (pcs != NULL){
+
+        if (pcs->cmm_icc_profile_data != NULL) {
+
+            /* There is already a profile set there */
+            /* free it and then set to the new one.  */
+            /* should we check the hash code and retain if the same
+               or place this job on the caller?  */
+
+            rc_free_icc_profile(mem, (void*) pcs->cmm_icc_profile_data, "gsicc_cs_profile");
+            pcs->cmm_icc_profile_data = icc_profile;
+
+            return(0);
+
+        } else {
+
+            pcs->cmm_icc_profile_data = icc_profile;
+            return(0);
+
+        }
+    }
+
+    return(-1);
+
+}
+
+
+
 cmm_profile_t *
 gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname, int namelen)
 {

@@ -32,6 +32,8 @@ void gsicc_load_default_input_profile(int numchannels);
 gsicc_manager_t* gsicc_manager_new(gs_memory_t *memory);
 cmm_profile_t* gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname, int namelen);
 
+int gsicc_cs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile, gs_memory_t * mem);
+
 static int gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, gs_memory_t *memory);
 unsigned int gsicc_getprofilesize(unsigned char *buffer);
 

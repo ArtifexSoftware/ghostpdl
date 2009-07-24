@@ -728,7 +728,7 @@ pdf_iccbased_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	return code;
 
     /* Transfer the profile stream. */
-    code = cos_stream_add_stream_contents(pcstrm, picc_info->instrp);
+   /*  code = cos_stream_add_stream_contents(pcstrm, picc_info->instrp);  MJV to FIX */
     if (code >= 0)
 	code = pdf_finish_iccbased(pcstrm);
     /*
