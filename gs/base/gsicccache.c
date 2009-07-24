@@ -143,7 +143,9 @@ gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory)
 
 
 static void 
-gsicc_get_gscs_hash(gs_color_space *colorspace, int64_t *hash){
+gsicc_get_gscs_hash(gs_imager_state *pis, gs_color_space *colorspace, int64_t *hash){
+
+    /* There may be some work to do here with respect to pattern and indexed spaces */
 
     const gs_color_space_type *pcst = colorspace->type;
 
@@ -151,19 +153,21 @@ gsicc_get_gscs_hash(gs_color_space *colorspace, int64_t *hash){
 
 	case gs_color_space_index_DeviceGray:
 
+            *hash = pis->icc_manager->default_gray->hashcode;
+
             break;
 
 	case gs_color_space_index_DeviceRGB:				
 
+            *hash = pis->icc_manager->default_rgb->hashcode;
 
             break;
 
         case gs_color_space_index_DeviceCMYK:				
 
+            *hash = pis->icc_manager->default_cmyk->hashcode;
 
             break;
-
-            /* NEED TO ADD IN ALL THE PS CIE Color spaces */
 
 	default:			
 	    
@@ -256,15 +260,15 @@ gsicc_get_buff_hash(unsigned char *data,unsigned int num_bytes,int64_t *hash)
     and rendering params structure.  We may change this later */
 
 static void
-gsicc_compute_linkhash(gs_color_space *input_colorspace, 
+gsicc_compute_linkhash(gs_imager_state *pis, gs_color_space *input_colorspace, 
                    gs_color_space *output_colorspace, 
                    gsicc_rendering_param_t *rendering_params, gsicc_hashlink_t *hash)
 {
    
    /* first get the hash codes for the color spaces */
 
-    gsicc_get_gscs_hash(input_colorspace,&(hash->src_hash));
-    gsicc_get_gscs_hash(output_colorspace,&(hash->des_hash));
+    gsicc_get_cspace_hash(pis, input_colorspace, &(hash->src_hash));
+    gsicc_get_cspace_hash(pis, output_colorspace, &(hash->des_hash));
 
     /* now for the rendering paramaters */
 
@@ -280,7 +284,13 @@ gsicc_compute_linkhash(gs_color_space *input_colorspace,
 
 
 static void
-gsicc_get_cspace_hash(gs_color_space *colorspace,int64_t *hash){
+gsicc_get_cspace_hash(gs_imager_state *pis, gs_color_space *colorspace,int64_t *hash){
+
+
+    if (colorspace == NULL ){
+        *hash = pis->icc_manager->device_profile->hashcode;
+        return;
+    }
 
     if ( colorspace->cmm_icc_profile_data->hash_is_valid ){
 
@@ -300,7 +310,7 @@ gsicc_get_cspace_hash(gs_color_space *colorspace,int64_t *hash){
 
             /* Get hash code for this space.  */
 
-            gsicc_get_gscs_hash(colorspace, hash);
+            gsicc_get_gscs_hash(pis, colorspace, hash);
             return;
 
 
@@ -442,8 +452,9 @@ gsicc_get_link(gs_imager_state *pis, gs_color_space  *input_colorspace,
     gsicc_link_cache_t *icc_cache = pis->icc_cache;
 
     /* First compute the hash code for the incoming case */
+    /* If the output color space is NULL we will use the device profile for the output color space */
 
-    gsicc_compute_linkhash(input_colorspace, output_colorspace, rendering_params, &hash);
+    gsicc_compute_linkhash(pis, input_colorspace, output_colorspace, rendering_params, &hash);
 
     /* Check the cache for a hit.  Need to check if softproofing was used */
 
