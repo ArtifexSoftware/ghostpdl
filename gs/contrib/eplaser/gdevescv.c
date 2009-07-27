@@ -1,5 +1,5 @@
 /* Copyright (C) EPSON SOFTWARE DEVELOPMENT LABORATORY, INC. 1999,2000.
-   Copyright (C) SEIKO EPSON CORPORATION 2000-2006.
+   Copyright (C) SEIKO EPSON CORPORATION 2000-2006,2009.
 
    Ghostscript printer driver for EPSON ESC/Page and ESC/Page-Color.
 
@@ -268,7 +268,11 @@ gs_public_st_suffix_add0_final(st_device_escv, gx_device_escv,
        {0,0,0},                 /*  gs_param_string gpsUserName; */\
        {0,0,0},                 /*  gs_param_string gpsHostName; */\
        {0,0,0},                 /*  gs_param_string gpsDocument; */\
-       {0,0,0}                  /*  gs_param_string gpsComment; */
+       {0,0,0},                 /*  gs_param_string gpsComment; */\
+       false,                   /*  bool            modelJP; */\
+       false,                   /*  bool            capFaceUp; */\
+       false,                   /*  bool            capDuplexUnit; */\
+       RES600                   /*  int             capMaxResolution; */
 
 
 /* for ESC/Page-Color */
@@ -318,6 +322,7 @@ gx_device_escv far_data gs_lp9400_device  ={esmv_device_body("lp9400"),  esmv_pr
 gx_device_escv far_data gs_lp9600_device  ={esmv_device_body("lp9600"),  esmv_procs, esmv_init_code};
 gx_device_escv far_data gs_lp9600s_device ={esmv_device_body("lp9600s"), esmv_procs, esmv_init_code};
 gx_device_escv far_data gs_lps4500_device ={esmv_device_body("lps4500"), esmv_procs, esmv_init_code};
+gx_device_escv far_data gs_eplmono_device ={esmv_device_body(ESCPAGE_DEVICENAME_MONO), esmv_procs, esmv_init_code};
 
 /* for ESC/Page-Color */
 gx_device_escv far_data gs_alc1900_device ={escv_device_body("alc1900"), escv_procs, escv_init_code};
@@ -338,6 +343,7 @@ gx_device_escv far_data gs_lp9200c_device ={escv_device_body("lp9200c"), escv_pr
 gx_device_escv far_data gs_lp9500c_device ={escv_device_body("lp9500c"), escv_procs, escv_init_code};
 gx_device_escv far_data gs_lp9800c_device ={escv_device_body("lp9800c"), escv_procs, escv_init_code};
 gx_device_escv far_data gs_lps6500_device ={escv_device_body("lps6500"), escv_procs, escv_init_code};
+gx_device_escv far_data gs_eplcolor_device ={escv_device_body(ESCPAGE_DEVICENAME_COLOR), escv_procs, escv_init_code};
 
 
 /* Vector device implementation */
@@ -1043,8 +1049,26 @@ escv_beginpage(gx_device_vector * vdev)
     }
     lputs(s, "\"\012");
 
-    lputs(s, "@EJL JI DRIVER=\"");
-    {
+
+    if ( ( 0 == strcmp( pdev->dname, ESCPAGE_DEVICENAME_COLOR ) ) ||
+	 ( 0 == strcmp( pdev->dname, ESCPAGE_DEVICENAME_MONO  ) ) )
+      {
+	Local = pdev->modelJP;
+	FaceUp = pdev->capFaceUp;
+	Duplex = pdev->capDuplexUnit;
+	MaxRes = pdev->capMaxResolution;
+
+	lputs(s, "@EJL JI DRIVER=\"");
+	lputs(s, pdev->dname);
+	lputs(s, "\"\012");
+
+	lputs(s, "@EJL JI PRINTER=\"");
+	lputs(s, pdev->dname);
+	lputs(s, "\"\012");
+
+      } else {
+
+
       char _modelname[ ESCPAGE_MODELNAME_MAX + 1 ] = {0,};
       const char *modelname;
       int i;
@@ -1056,6 +1080,7 @@ escv_beginpage(gx_device_vector * vdev)
 	  break;
       }
 
+      lputs(s, "@EJL JI DRIVER=\"");
       if ( (-1) != model_resource[i].resolution ) {
 	MaxRes = model_resource[i].resolution;
 	Local  = model_resource[i].locale;
@@ -1185,10 +1210,16 @@ escv_beginpage(gx_device_vector * vdev)
       lputs(s, " RI=ON");
     }
 
-    if (pdev->MediaType == 1) {
-      lputs(s, " PK=TH");
-    } else if (pdev->MediaType == 2) {
-      lputs(s, " PK=TR");
+    if        (pdev->MediaType == 0) { lputs(s, " PK=NM");
+    } else if (pdev->MediaType == 1) { lputs(s, " PK=TH");
+    } else if (pdev->MediaType == 2) { lputs(s, " PK=TR");
+    } else if (pdev->MediaType == 3) { lputs(s, " PK=TN");
+    } else if (pdev->MediaType == 4) { lputs(s, " PK=LH");
+    } else if (pdev->MediaType == 5) { lputs(s, " PK=CT");
+    } else if (pdev->MediaType == 6) { lputs(s, " PK=ET");
+    } else if (pdev->MediaType == 7) { lputs(s, " PK=HQ");
+    } else if (pdev->MediaType == 8) { lputs(s, " PK=UT");
+    } else if (pdev->MediaType == 9) { lputs(s, " PK=UM");
     } else {
       lputs(s, " PK=NM");
     }
@@ -1836,6 +1867,18 @@ escv_get_params(gx_device * dev, gs_param_list * plist)
   code = gdev_vector_get_params(dev, plist);
   if (code < 0) return code;
 
+  if ((ncode = param_write_bool(plist, ESCPAGE_OPTION_EPLModelJP, &pdev->modelJP)) < 0)
+    code = ncode;
+
+  if ((ncode = param_write_bool(plist, ESCPAGE_OPTION_EPLCapFaceUp, &pdev->capFaceUp)) < 0)
+    code = ncode;
+
+  if ((ncode = param_write_bool(plist, ESCPAGE_OPTION_EPLCapDuplexUnit, &pdev->capDuplexUnit)) < 0)
+    code = ncode;
+
+  if ((ncode = param_write_int(plist, ESCPAGE_OPTION_EPLCapMaxResolution, &pdev->capMaxResolution)) < 0)
+    code = ncode;
+
   if ((ncode = param_write_bool(plist, ESCPAGE_OPTION_MANUALFEED, &pdev->manualFeed)) < 0)
     code = ncode;
 
@@ -1923,12 +1966,65 @@ escv_put_params(gx_device * dev, gs_param_list * plist)
   bool		RITOff = pdev->RITOff;
   int			old_bpp = dev->color_info.depth;
   int			bpp = 0;
+  bool          modelJP = false;
+  bool          capFaceUp = false;
+  bool          capDuplexUnit = false;
+  int           capMaxResolution = 0;
 
   ecode = escv_set_str_param( plist, ESCPAGE_OPTION_JOBID,    pdev->JobID,    ESCPAGE_JOBID_MAX,    ecode );
   ecode = escv_set_str_param( plist, ESCPAGE_OPTION_USERNAME, pdev->UserName, ESCPAGE_USERNAME_MAX, ecode );
   ecode = escv_set_str_param( plist, ESCPAGE_OPTION_HOSTNAME, pdev->HostName, ESCPAGE_HOSTNAME_MAX, ecode );
   ecode = escv_set_str_param( plist, ESCPAGE_OPTION_DOCUMENT, pdev->Document, ESCPAGE_DOCUMENT_MAX, ecode );
   ecode = escv_set_str_param( plist, ESCPAGE_OPTION_COMMENT,  pdev->Comment,  ESCPAGE_COMMENT_MAX,  ecode );
+
+
+  modelJP = pdev->modelJP;
+  param_name = ESCPAGE_OPTION_EPLModelJP;
+  code = param_read_bool(plist, param_name, &modelJP);
+  if (code < 0) {
+    ecode = code;
+    param_signal_error(plist, param_name, ecode);
+  }
+
+  capFaceUp = pdev->capFaceUp;
+  param_name = ESCPAGE_OPTION_EPLCapFaceUp;
+  code = param_read_bool(plist, param_name, &capFaceUp);
+  if (code < 0) {
+    ecode = code;
+    param_signal_error(plist, param_name, ecode);
+  }
+
+  capDuplexUnit = pdev->capDuplexUnit;
+  param_name = ESCPAGE_OPTION_EPLCapDuplexUnit;
+  code = param_read_bool(plist, param_name, &capDuplexUnit);
+  if (code < 0) {
+    ecode = code;
+    param_signal_error(plist, param_name, ecode);
+  }
+
+  capMaxResolution = pdev->capMaxResolution;
+  param_name = ESCPAGE_OPTION_EPLCapMaxResolution;
+  code = param_read_int(plist, param_name, &capMaxResolution);
+  switch ( code )
+    {
+    case 1:
+      break;
+
+    case 0:
+      if ( ( 600 != capMaxResolution ) &&
+	   ( 1200 != capMaxResolution ) ) {
+	ecode = gs_error_limitcheck;
+	goto maxrese;
+      }
+      break;
+
+    default:
+      ecode = code;
+      /* through */
+    maxrese:
+      param_signal_error(plist, param_name, ecode);
+      break;
+    }
 
   if ((code = param_read_bool(plist, (param_name = ESCPAGE_OPTION_MANUALFEED), &mf)) < 0) {
     param_signal_error(plist, param_name, ecode = code);
@@ -1961,10 +2057,28 @@ escv_put_params(gx_device * dev, gs_param_list * plist)
       ecode = gs_error_limitcheck;
     else {		/* Check the validity of ``MediaType'' characters */
 
-      if (strcmp(pmedia.data, "TRANS") == 0) {
-	pdev->MediaType = 2;
-      } else if (strcmp(pmedia.data, "THICK") == 0) {
+      if (strcmp(pmedia.data, "NM") == 0) {
+	pdev->MediaType = 0;
+      } else if ((strcmp(pmedia.data, "THICK") == 0) ||
+		 (strcmp(pmedia.data, "TH") == 0)) {
 	pdev->MediaType = 1;
+      } else if ((strcmp(pmedia.data, "TRANS") == 0) ||
+		 (strcmp(pmedia.data, "TR") == 0)) {
+	pdev->MediaType = 2;
+      } else if (strcmp(pmedia.data, "TN") == 0) {
+	pdev->MediaType = 3;
+      } else if (strcmp(pmedia.data, "LH") == 0) {
+	pdev->MediaType = 4;
+      } else if (strcmp(pmedia.data, "CT") == 0) {
+	pdev->MediaType = 5;
+      } else if (strcmp(pmedia.data, "ET") == 0) {
+	pdev->MediaType = 6;
+      } else if (strcmp(pmedia.data, "HQ") == 0) {
+	pdev->MediaType = 7;
+      } else if (strcmp(pmedia.data, "UT") == 0) {
+	pdev->MediaType = 8;
+      } else if (strcmp(pmedia.data, "UM") == 0) {
+	pdev->MediaType = 9;
       } else {
 	ecode = gs_error_rangecheck;
 	goto pmediae;
@@ -1974,7 +2088,8 @@ escv_put_params(gx_device * dev, gs_param_list * plist)
     goto pmediae;
   default:
     ecode = code;
-  pmediae:param_signal_error(plist, param_name, ecode);
+  pmediae:
+    param_signal_error(plist, param_name, ecode);
   case 1:
     if(!pdev->MediaType){
       pdev->MediaType = 0;
@@ -2054,6 +2169,11 @@ escv_put_params(gx_device * dev, gs_param_list * plist)
   if (ecode < 0) return ecode;
   code = gdev_vector_put_params(dev, plist);
   if (code < 0) return code;
+
+  pdev->modelJP = modelJP;
+  pdev->capFaceUp = capFaceUp;
+  pdev->capDuplexUnit = capDuplexUnit;
+  pdev->capMaxResolution = capMaxResolution;
 
   pdev->manualFeed = mf;
   pdev->cassetFeed = cass;
