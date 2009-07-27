@@ -40,6 +40,7 @@ gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_bu
     DWORD dwInputFormat,dwOutputFormat,curr_input,curr_output;
     int planar,numbytes,little_endian,hasalpha,k;
     unsigned char *inputpos, *outputpos;
+    int numchannels;
 
     /* Although little CMS does  make assumptions about data types in its transformations
         you can change it after the fact.  */
@@ -80,6 +81,13 @@ gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_bu
     dwInputFormat = dwInputFormat | ENDIAN16_SH(little_endian);
     little_endian = output_buff_desc->little_endian;
     dwOutputFormat = dwOutputFormat | ENDIAN16_SH(little_endian);
+
+    /* number of channels */
+    
+    numchannels = input_buff_desc->num_chan;
+    dwInputFormat = dwInputFormat | CHANNELS_SH(numchannels);
+    numchannels = output_buff_desc->num_chan;
+    dwOutputFormat = dwOutputFormat | CHANNELS_SH(numchannels);
 
     /* alpha, which is passed through unmolested */
     /* ToDo:  Right now we always must have alpha last */
@@ -189,23 +197,27 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
                     gcmmhprofile_t lcms_deshandle, 
                     gsicc_rendering_param_t *rendering_params, gsicc_manager_t *icc_manager)
 {
-    cmsHTRANSFORM lcms_link;
     DWORD src_data_type,des_data_type;
     icColorSpaceSignature src_color_space,des_color_space;
     int src_nChannels,des_nChannels;
+    int lcms_src_color_space, lcms_des_color_space;
 
 /* Get the data types */
 
     src_color_space  = cmsGetColorSpace(lcms_srchandle); 
-    des_color_space  = cmsGetColorSpace(lcms_deshandle); 
+    des_color_space  = cmsGetColorSpace(lcms_deshandle);
+
+    lcms_src_color_space = _cmsLCMScolorSpace(src_color_space);
+    lcms_des_color_space = _cmsLCMScolorSpace(des_color_space);
 
     src_nChannels = _cmsChannelsOf(src_color_space);
     des_nChannels = _cmsChannelsOf(des_color_space);
 
        /* For now, just do single byte data, interleaved.  We can change this when we
        use the transformation. */
-    src_data_type= (CHANNELS_SH(src_nChannels)|BYTES_SH(1)); 
-    des_data_type= (CHANNELS_SH(des_nChannels)|BYTES_SH(1)); 
+
+     src_data_type = (COLORSPACE_SH(lcms_src_color_space)|CHANNELS_SH(src_nChannels)|BYTES_SH(1));
+     des_data_type = (COLORSPACE_SH(lcms_des_color_space)|CHANNELS_SH(des_nChannels)|BYTES_SH(1));
 
 /* Create the link */
 
@@ -231,7 +243,6 @@ gscms_get_link_proof(gcmmhprofile_t  lcms_srchandle,
                     gsicc_rendering_param_t *rendering_params, gsicc_manager_t *icc_manager)
 {
 
-    cmsHTRANSFORM lcms_link;
     DWORD src_data_type,des_data_type;
     icColorSpaceSignature src_color_space,des_color_space;
     int src_nChannels,des_nChannels;

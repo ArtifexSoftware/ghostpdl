@@ -541,9 +541,32 @@ gsicc_release_link(gsicc_link_t *icclink)
 
 }
 
+/* Used to initialize the buffer description prior to color conversion */
+
+void
+gsicc_init_buffer(gsicc_bufferdesc_t *buffer_desc, unsigned char num_chan, unsigned char bytes_per_chan,
+                  bool has_alpha, bool alpha_first, bool is_planar, int plane_stride, int row_stride,
+                  int num_rows, int pixels_per_row, gsicc_colorbuffer_t buffercolor)
+{
 
 
+    buffer_desc->num_chan = num_chan;
+    buffer_desc->bytes_per_chan = bytes_per_chan;
+    buffer_desc->has_alpha = has_alpha;
+    buffer_desc->alpha_first = alpha_first;
+    buffer_desc->is_planar = is_planar;
+    buffer_desc->plane_stride = plane_stride;
+    buffer_desc->row_stride = row_stride;
+    buffer_desc->num_rows = num_rows;
+    buffer_desc->pixels_per_row = pixels_per_row; 
+    buffer_desc->buffercolor = buffercolor;
+
+#if arch_is_big_endian
+    buffer_desc->little_endian = false;
+#else
+    buffer_desc->little_endian = true;
+#endif
 
 
-
+}
 

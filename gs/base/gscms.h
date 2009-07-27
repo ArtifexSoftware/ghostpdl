@@ -93,8 +93,6 @@ typedef enum {
 
 } gsicc_profile_t;
 
-/* A structure that is a member variable of the gs color space.
-   See 
 
 /* A structure for holding profile information.  A member variable
    of the ghostscript color structure.   The item is reference counted. */
