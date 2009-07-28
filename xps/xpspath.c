@@ -69,8 +69,16 @@ xps_update_bounds(xps_context_t *ctx, gs_rect *save)
     /* the coordinates of the path segments are already in device space (yay!) */
 
     seg = (segment*)ctx->pgs->path->first_subpath;
-    rc.p.x = rc.q.x = fixed2float(seg->pt.x);
-    rc.p.y = rc.q.y = fixed2float(seg->pt.y);
+    if (seg)
+    {
+	rc.p.x = rc.q.x = fixed2float(seg->pt.x);
+	rc.p.y = rc.q.y = fixed2float(seg->pt.y);
+    }
+    else
+    {
+	rc.p.x = rc.q.x = 0.0;
+	rc.p.y = rc.q.y = 0.0;
+    }
 
     while (seg)
     {
