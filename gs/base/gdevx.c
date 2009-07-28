@@ -565,15 +565,24 @@ x_copy_image(gx_device_X * xdev, const byte * base, int sourcex, int raster,
 	X_SET_FORE_COLOR(xdev, pixel);
 	XDrawPoint(xdev->dpy, xdev->dest, xdev->gc, x, y);
     } else {
-	xdev->image.width = sourcex + w;
+	/* Reduce base, sourcex  */
+	int width = sourcex + w;
+    	int vdepth = xdev->vinfo->depth;
+	xdev->image.width = width;
 	xdev->image.height = h;
 	xdev->image.format = ZPixmap;
 	xdev->image.data = (char *)base;
-	xdev->image.depth = xdev->vinfo->depth;
-	xdev->image.bytes_per_line = raster;
+	xdev->image.depth = vdepth;
+	xdev->image.bitmap_pad = 8;
+	if (width * vdepth < raster * 8)
+	    xdev->image.bytes_per_line = raster;
+	else
+	    xdev->image.bytes_per_line = 0;
 	xdev->image.bits_per_pixel = depth;
-	if (XInitImage(&xdev->image) == 0)
+	if (XInitImage(&xdev->image) == 0){
+	    errprintf("XInitImage failed in x_copy_image.\n");
 	    return_error(gs_error_unknownerror);
+	}
 	XPutImage(xdev->dpy, xdev->dest, xdev->gc, &xdev->image,
 		  sourcex, 0, x, y, w, h);
 	xdev->image.depth = xdev->image.bits_per_pixel = 1;
