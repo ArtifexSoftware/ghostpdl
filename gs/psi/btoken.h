@@ -30,8 +30,8 @@ int create_names_array(ref **ppnames, gs_memory_t *mem,
 		       client_name_t cname); /* in zbseq.c */
 
 /* Convert an object to its representation in a binary object sequence. */
-int encode_binary_token(i_ctx_t *i_ctx_p, const ref *obj, long *ref_offset,
-			long *char_offset, byte *str); /* in iscanbin.c */
+int encode_binary_token(i_ctx_t *i_ctx_p, const ref *obj, int    *ref_offset,
+			int *char_offset, byte *str); /* in iscanbin.c */
 
 /* Define the current binary object format for operators. */
 /* This is a ref so that it can be managed properly by save/restore. */

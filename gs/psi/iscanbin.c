@@ -853,13 +853,13 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, ref * pref,
  * but it always write bytes 0 and 2-7.
  */
 int
-encode_binary_token(i_ctx_t *i_ctx_p, const ref *obj, long *ref_offset,
-		    long *char_offset, byte *str)
+encode_binary_token(i_ctx_t *i_ctx_p, const ref *obj, int *ref_offset,
+		    int *char_offset, byte *str)
 {
     bin_seq_type_t type;
     uint size = 0;
     int format = (int)ref_binary_object_format.value.intval;
-    long value = 0;
+    int value = 0;
     ref nstr;
 
     switch (r_type(obj)) {
@@ -899,7 +899,7 @@ encode_binary_token(i_ctx_t *i_ctx_p, const ref *obj, long *ref_offset,
 	    type = BS_TYPE_DICTIONARY;
 	    size = dict_length(obj) << 1;
 	  aod:value = *ref_offset;
-	    *ref_offset += size * (ulong) SIZEOF_BIN_SEQ_OBJ;
+	    *ref_offset += size * SIZEOF_BIN_SEQ_OBJ;
 	    break;
 	case t_string:
 	    type = BS_TYPE_STRING;
