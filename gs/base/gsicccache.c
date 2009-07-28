@@ -41,9 +41,9 @@
 
 
 
-gs_private_st_ptrs4(st_icc_link, gsicc_link_t, "gsiccmanage_link",
+gs_private_st_ptrs3(st_icc_link, gsicc_link_t, "gsiccmanage_link",
 		    icc_link_enum_ptrs, icc_link_reloc_ptrs,
-		    link_handle, contextptr, nextlink, prevlink);
+		    contextptr, nextlink, prevlink);
 
 
 gs_private_st_ptrs1(st_icc_linkcache, gsicc_link_cache_t, "gsiccmanage_linkcache",
@@ -89,6 +89,7 @@ gsicc_add_link(gsicc_link_cache_t *link_cache, cmsHTRANSFORM link_handle, void *
     result->hashcode.src_hash = hashcode.src_hash;
     result->hashcode.rend_hash = hashcode.rend_hash;
     result->ref_count = 1;
+    result->includes_softproof = 0;  /* Need to enable this at some point */
     
     if (link_cache->icc_link != NULL){
 
@@ -331,7 +332,7 @@ gsicc_findcachelink(gsicc_hashlink_t hash,gsicc_link_cache_t *icc_cache, bool in
 
     while (curr_pos2 != NULL ){
 
-        if (curr_pos1->hashcode.link_hashcode == hashcode && includes_proof == curr_pos2->includes_softproof){
+        if (curr_pos2->hashcode.link_hashcode == hashcode && includes_proof == curr_pos2->includes_softproof){
 
             return(curr_pos2);
 

@@ -16,6 +16,8 @@
 #include "gsicc_littlecms.h"
 
 
+#define DUMP_CMS_BUFFER 0
+
 
 
 /* Get ICC Profile handle from buffer */
@@ -41,6 +43,11 @@ gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_bu
     int planar,numbytes,little_endian,hasalpha,k;
     unsigned char *inputpos, *outputpos;
     int numchannels;
+#if DUMP_BUFFER
+
+    FILE *fid_in, *fid_out;
+
+#endif
 
     /* Although little CMS does  make assumptions about data types in its transformations
         you can change it after the fact.  */
@@ -132,6 +139,21 @@ gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_bu
         }
 
     }
+
+#if DUMP_CMS_BUFFER
+
+    fid_in = fopen("CM_Input.raw","ab");
+    fid_out = fopen("CM_Output.raw","ab");
+
+    fwrite((unsigned char*) inputbuffer,sizeof(unsigned char),input_buff_desc->row_stride,fid_in);
+    fwrite((unsigned char*) outputbuffer,sizeof(unsigned char),output_buff_desc->row_stride,fid_out);
+
+    fclose(fid_in);
+    fclose(fid_out);
+
+#endif
+
+
 
 
 }
