@@ -254,12 +254,10 @@ zbitshift(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_integer);
     check_type(op[-1], t_integer);
-#define MAX_SHIFT (arch_sizeof_long * 8 - 1)
-    if (op->value.intval < -MAX_SHIFT || op->value.intval > MAX_SHIFT)
+    if (op->value.intval < -31 || op->value.intval > 31)
 	op[-1].value.intval = 0;
-#undef MAX_SHIFT
     else if ((shift = op->value.intval) < 0)
-	op[-1].value.intval = ((ulong)(op[-1].value.intval)) >> -shift;
+	op[-1].value.intval = ((uint)(op[-1].value.intval)) >> -shift;
     else
 	op[-1].value.intval <<= shift;
     pop(1);
