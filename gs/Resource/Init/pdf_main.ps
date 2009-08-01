@@ -1303,11 +1303,15 @@ end readonly def
 
 /get_any_box { % <pagedict> get_any_box <box name> <box>
   //systemdict /UseTrimBox .knownget dup { and } if {
-    /TrimBox pget { /TrimBox exch } if
+    dup /TrimBox pget {
+      exch pop /TrimBox exch
+    } if
   } if
   dup type /arraytype ne {
     //systemdict /UseCropBox .knownget dup { and } if {
-      /CropBox pget { /CropBox exch } if
+      dup /CropBox pget {
+        exch pop /CropBox exch
+      } if
     } if
   } if
   dup type /arraytype ne {
