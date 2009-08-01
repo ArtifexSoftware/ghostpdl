@@ -1717,9 +1717,11 @@ static void t1_hinter__compute_y_span(t1_hinter * this)
 	   and doesn't allow a stable recognition 
 	   of the upper side of a dot, comma, etc.. */
 	n--; 
+    } else if (n < 0) {
+        return; /* empty glyph */
     }
     this->ymin = this->ymax = this->pole[0].gy;
-    for (i = 0; i < n; i++) {
+    for (i = 1; i < n; i++) {
 	if (this->ymin > this->pole[i].gy)
 	    this->ymin = this->pole[i].gy;
 	if (this->ymax < this->pole[i].gy)
