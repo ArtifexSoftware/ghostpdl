@@ -803,7 +803,6 @@ static FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyphI
 	    if (x)
 		for (k = 0; k < nPoints + 2; k++)
 		    pts->org_x[k] += x;
-	    pts->cur_x[nPoints + 1] = (pts->cur_x[nPoints + 1] + 32) & -64;
 	    org_to_cur(nPoints + 2, pts);
 	    exec->is_composite = FALSE;
 	    for (k = 0; k < nPoints + 2; k++)
