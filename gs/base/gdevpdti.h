@@ -55,7 +55,7 @@ void pdf_close_text_page(gx_device_pdf *pdev);
 int pdf_char_image_y_offset(const gx_device_pdf *pdev, int x, int y, int h);
 
 /* Retrieve the x and y offsets for a charproc */
-int pdf_charproc_y_offset(pdf_char_proc_t *pcp);
+int pdf_charproc_x_offset(pdf_char_proc_t *pcp);
 int pdf_charproc_y_offset(pdf_char_proc_t *pcp);
 
 /* Begin a CharProc for an embedded (bitmap) font. */

@@ -156,7 +156,7 @@ typedef struct gx_pattern_trans_s gx_pattern_trans_t;
 
 struct gx_pattern_trans_s {
 
-    gx_device *pdev14; 
+    const gx_device *pdev14; 
     byte *transbytes;
     gs_int_rect rect;
     int rowstride;
@@ -168,7 +168,7 @@ struct gx_pattern_trans_s {
     const pdf14_nonseparable_blending_procs_t *blending_procs;
     bool is_additive;
     gs_blend_mode_t blending_mode;
-    const void (* pat_trans_fill)(int xmin, int ymin, int xmax, int ymax, int px, int py, const gx_color_tile *ptile,
+    void (* pat_trans_fill)(int xmin, int ymin, int xmax, int ymax, int px, int py, const gx_color_tile *ptile,
             gx_pattern_trans_t *fill_trans_buffer);
 };
 

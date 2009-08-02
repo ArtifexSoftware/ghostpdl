@@ -1049,7 +1049,7 @@ pdf14_get_buffer_information(const gx_device * dev, gx_pattern_trans_t *transbuf
     if (width <= 0 || height <= 0 || buf->data == NULL)
 	return 0;
 
-    transbuff->pdev14 = pdev;
+    transbuff->pdev14 = dev;
     transbuff->n_chan = buf->n_chan;
     transbuff->planestride = buf->planestride;
     transbuff->rowstride = buf->rowstride;
@@ -3105,7 +3105,6 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
     int num_comp = num_chan - 1;
     int shape_off = num_chan * planestride;
     bool has_shape = buf->has_shape;
-    byte opacity;
     bool additive = pdev->ctx->additive;
 
     if (buf->data == NULL)
@@ -5522,7 +5521,7 @@ pdf14_clist_begin_typed_image(gx_device	* dev, const gs_imager_state * pis,
 {
     pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
     int code;
-    gs_imager_state * pis_noconst = pis; /* Break 'const'. */
+    gs_imager_state * pis_noconst = (gs_imager_state *)pis; /* Break 'const'. */
 
     /*
      * Ensure that that the PDF 1.4 reading compositor will have the current
