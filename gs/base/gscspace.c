@@ -180,7 +180,7 @@ bool gs_color_space_is_CIE(const gs_color_space * pcs)
         case gs_color_space_index_CIEDEF:
         case gs_color_space_index_CIEABC:
         case gs_color_space_index_CIEA:
-        case gs_color_space_index_CIEICC:
+        case gs_color_space_index_ICC:
 
             return true;
 
@@ -197,7 +197,7 @@ bool gs_color_space_is_CIE(const gs_color_space * pcs)
 /* See if the space is ICC based */
 bool gs_color_space_is_ICC(const gs_color_space * pcs)
 {
-    return(gs_color_space_get_index(pcs) == gs_color_space_index_CIEICC);
+    return(gs_color_space_get_index(pcs) == gs_color_space_index_ICC);
 }
 
 

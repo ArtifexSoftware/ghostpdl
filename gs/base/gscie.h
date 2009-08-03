@@ -193,9 +193,6 @@ typedef struct gs_range3_s {
 typedef struct gs_range4_s {
     gs_range ranges[4];
 } gs_range4;
-typedef struct gs_range15_s {
-    gs_range ranges[15];
-} gs_range15;  /* ICC profile input could be up to 15 bands */
 
 /* Client-supplied transformation procedures. */
 typedef struct gs_cie_common_s gs_cie_common;

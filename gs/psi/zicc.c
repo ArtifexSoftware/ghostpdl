@@ -51,8 +51,6 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     gs_imager_state *       pis = (gs_imager_state *)igs;
     gx_device *             pdev = gs_currentdevice(igs);
     int                     i;
-    gs_cie_icc *            picc_info;
-
 
     palt_cs = gs_currentcolorspace(igs);
     /* verify the DataSource entry */
@@ -62,27 +60,14 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 
 
     /* build the color space object */
-    code = gs_cspace_build_CIEICC(&pcs, NULL, gs_state_memory(igs));
+    code = gs_cspace_build_ICC(&pcs, NULL, gs_state_memory(igs));
     if (code < 0)
         return code;
-
-    /* This is stuff needed by the legacy icc code */
-
-    picc_info = pcs->params.icc.picc_info;
-    picc_info->num_components = ncomps;
-    for (i = 0; i < ncomps; i++) {
-        picc_info->Range.ranges[i].rmin = range_buff[2 * i];
-        picc_info->Range.ranges[i].rmax = range_buff[2 * i + 1];
-
-    }
-
-    /* We will want to reset some ranges likely */
 
     /* record the current space as the alternative color space */
     pcs->base_space = palt_cs;
     rc_increment(palt_cs);
 
-  
     /*  For now, dump the profile into a buffer
         and obtain handle from the buffer when we need it. 
         We may want to change this later.
@@ -101,6 +86,15 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
        and take care of that now.  We will likely want to move this out of
        here and into an intialization section later.  Do it now though
        so that we can do some testing. */
+
+    picc_profile->num_comps = ncomps;
+
+    for (i = 0; i < ncomps; i++) {
+
+        picc_profile->Range.ranges[i].rmin = range_buff[2 * i];
+        picc_profile->Range.ranges[i].rmax = range_buff[2 * i + 1];
+
+    } 
 
     if (pis->icc_manager->device_profile == NULL){
 
@@ -174,7 +168,7 @@ zseticcspace(i_ctx_t * i_ctx_p)
      */
     palt_cs = gs_currentcolorspace(igs);
     if ( !palt_cs->type->can_be_alt_space                                ||
-         gs_color_space_get_index(palt_cs) == gs_color_space_index_CIEICC  )
+         gs_color_space_get_index(palt_cs) == gs_color_space_index_ICC  )
         return_error(e_rangecheck);
 
     /*

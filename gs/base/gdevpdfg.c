@@ -355,14 +355,14 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 			switch(gs_color_space_get_index(pcs2)) {
 			    case gs_color_space_index_DevicePixel :
 			    case gs_color_space_index_DeviceN:
-			    case gs_color_space_index_CIEICC:
+			    case gs_color_space_index_ICC:
 				goto write_process_color;
 			    default: 
 				DO_NOTHING;
 			}
 		    }
 		    goto scn;
-		case gs_color_space_index_CIEICC:
+		case gs_color_space_index_ICC:
 		case gs_color_space_index_DevicePixel:
 		case gs_color_space_index_DeviceN:
 		    if (pdev->CompatibilityLevel <= 1.2)

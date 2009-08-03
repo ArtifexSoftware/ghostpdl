@@ -1161,8 +1161,6 @@ cie_cs_common_abc(const gs_color_space *pcs_orig, const gs_cie_abc **ppabc)
 	    return &pcs->params.abc->common;
 	case gs_color_space_index_CIEA:
 	    return &pcs->params.a->common;
-        case gs_color_space_index_CIEICC:
-            return &pcs->params.icc.picc_info->common;
 	default:
             pcs = gs_cspace_base_space(pcs);
             break;
@@ -1589,8 +1587,9 @@ gx_color_space_needs_cie_caches(const gs_color_space * pcs)
     	case gs_color_space_index_CIEDEF:
     	case gs_color_space_index_CIEABC:
     	case gs_color_space_index_CIEA:
-    	case gs_color_space_index_CIEICC:
 	    return true;
+    	case gs_color_space_index_ICC:
+            return false;
 	case gs_color_space_index_DevicePixel:
     	case gs_color_space_index_DeviceN:
     	case gs_color_space_index_Separation:

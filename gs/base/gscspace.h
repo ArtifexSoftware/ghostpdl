@@ -175,7 +175,7 @@ typedef enum {
     gs_color_space_index_Pattern,
 
     /* Supported in PDF 1.3 and later only */
-    gs_color_space_index_CIEICC
+    gs_color_space_index_ICC
 
 } gs_color_space_index;
 
@@ -204,18 +204,6 @@ typedef struct gs_cie_a_s gs_cie_a;
 typedef struct gs_cie_abc_s gs_cie_abc;
 typedef struct gs_cie_def_s gs_cie_def;
 typedef struct gs_cie_defg_s gs_cie_defg;
-
-/*
- * "Regular" base color spaces include all of the small base color space and
- * the ICCBased color space, which includes a small base color space as an
- * alternative color space. See gsicc.h for the structure definition of
- * gs_cie_icc_s.
- */
-typedef struct gs_cie_icc_s gs_cie_icc;
-
-typedef struct gs_cieicc_params_s {
-    gs_cie_icc *                picc_info;
-} gs_icc_params;
 
 #ifndef gs_device_n_map_DEFINED
 #  define gs_device_n_map_DEFINED
@@ -323,7 +311,6 @@ struct gs_color_space_s {
 	gs_device_n_params       device_n;
 	gs_indexed_params        indexed;
 	gs_pattern_params        pattern;
-	gs_icc_params            icc;
 
     } params;
 };

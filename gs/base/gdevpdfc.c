@@ -561,7 +561,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    return 0;
 	}
 	break;
-    case gs_color_space_index_CIEICC:
+    case gs_color_space_index_ICC:
         /*
 	 * Take a special early exit for unrecognized ICCBased color spaces,
 	 * or for PDF 1.2 output (ICCBased color spaces date from PDF 1.3).
@@ -646,7 +646,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 
     switch (csi) {
 
-    case gs_color_space_index_CIEICC:
+    case gs_color_space_index_ICC:
 	code = pdf_iccbased_color_space(pdev, pvalue, pcs, pca);
         break;
 

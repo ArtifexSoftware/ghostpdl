@@ -39,7 +39,7 @@ gs_private_st_ptrs7(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
                     default_cmyk, proof_profile, output_link); 
 
 static const gs_color_space_type gs_color_space_type_icc = {
-    gs_color_space_index_CIEICC,    /* index */
+    gs_color_space_index_ICC,       /* index */
     true,                           /* can_be_base_space */
     true,                           /* can_be_alt_space */
     NULL                            /* This is going to be outside the norm. struct union*/
@@ -628,7 +628,7 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer){
             break;
 
 
-        case gs_color_space_index_CIEICC:
+        case gs_color_space_index_ICC:
 
             /* This should not occur, as the space
                should have had a populated profile handle */

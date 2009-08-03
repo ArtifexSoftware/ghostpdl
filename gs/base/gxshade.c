@@ -345,8 +345,8 @@ top:
 	case gs_color_space_index_CIEA:
 	    ranges = &pcs->params.a->RangeA;
 	    break;
-        case gs_color_space_index_CIEICC:
-            ranges = pcs->params.icc.picc_info->Range.ranges;
+        case gs_color_space_index_ICC:
+            ranges = pcs->cmm_icc_profile_data->Range.ranges;
 	default:
 	    break;
 	}

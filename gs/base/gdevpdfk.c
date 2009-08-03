@@ -715,12 +715,10 @@ pdf_iccbased_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
      * This would arise only in a pdf ==> pdf translation, but we
      * should allow for it anyway.
      */
-    const gs_icc_params * picc_params = &pcs->params.icc;
-    const gs_cie_icc * picc_info = picc_params->picc_info;
     cos_stream_t * pcstrm;
     int code =
-	pdf_make_iccbased(pdev, pca, picc_info->num_components,
-			  picc_info->Range.ranges,
+	pdf_make_iccbased(pdev, pca, pcs->cmm_icc_profile_data->num_comps,
+			  pcs->cmm_icc_profile_data->Range.ranges,
 			  pcs->base_space,
 			  &pcstrm, NULL);
 

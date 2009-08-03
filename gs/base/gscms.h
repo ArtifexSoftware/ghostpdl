@@ -24,6 +24,10 @@
 #include "gsutil.h"       /* Need for the object types */
 #include "stdint_.h"
 
+typedef struct gs_range15_s {
+    gs_range_t ranges[15];
+} gs_range15_t;  /* ICC profile input could be up to 15 bands */
+
 
 /*  The buffer description.  We
     may need to handle a variety
@@ -98,17 +102,19 @@ typedef enum {
    of the ghostscript color structure.   The item is reference counted. */
 typedef struct cmm_profile_s {
 
-    void *profile_handle;   /* The profile handle to be used in linking */
-    byte *buffer;           /* A buffer with ICC profile content */
-    int64_t hashcode;       /* A hash code for the icc profile */
-    bool hash_is_valid;     /* Is the code valid? */
-    rc_header rc;           /* Reference count.  So we know when to free */ 
-    int name_length;        /* Length of file name */
-    char *name;             /* Name of file name (if there is one) where profile is found.
-                               If it was embedded in the stream, there will not be a file
-                               name.  This is primarily here for the system profiles, and
-                               so that we avoid resetting them everytime the user params
-                               are reloaded. */
+    void *profile_handle;       /* The profile handle to be used in linking */
+    unsigned char num_comps;    /* number of device dependent values */
+    gs_range15_t Range;          
+    byte *buffer;               /* A buffer with ICC profile content */
+    int64_t hashcode;           /* A hash code for the icc profile */
+    bool hash_is_valid;         /* Is the code valid? */
+    rc_header rc;               /* Reference count.  So we know when to free */ 
+    int name_length;            /* Length of file name */
+    char *name;                 /* Name of file name (if there is one) where profile is found.
+                                   If it was embedded in the stream, there will not be a file
+                                   name.  This is primarily here for the system profiles, and
+                                   so that we avoid resetting them everytime the user params
+                                   are reloaded. */
 } cmm_profile_t;
 
 #ifndef cmm_profile_DEFINED
