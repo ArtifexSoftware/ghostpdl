@@ -83,9 +83,9 @@ const pcl_init_t *    pcl_init_table[] = {
     &rtraster_init,
     &pcjob_init,
     &pcpage_init,
+    &pcsymbol_init, /* NOTE symbols must be intialized before fonts */
     &pcfont_init,
     &pctext_init,
-    &pcsymbol_init,
     &pcsfont_init,
     &pcmacros_init,
     &pcrect_init,
