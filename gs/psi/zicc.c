@@ -104,6 +104,10 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     /* Set the color space.  We are done.  No joint cache here... */
     code = gs_setcolorspace(igs, pcs);
 
+    /* Remove the ICC dict from the stack */
+
+    pop(1);
+
     return code;
 }
 
