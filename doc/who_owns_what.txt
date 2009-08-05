@@ -325,7 +325,7 @@ color:michael
 fonts:ken
 gslite:henry
 images:alex
-memory:ray
+memory:henry
 non windows makefiles:ralph
 pcl, pxl, pl:henry
 pdf interpreter:alex
@@ -333,4 +333,5 @@ ps, pdf, eps write:ken
 paths:henry
 windows makefiles:ray
 xps:tor
-
+urw type 1 fonts:ken
+urw TrueType fonts:henry
