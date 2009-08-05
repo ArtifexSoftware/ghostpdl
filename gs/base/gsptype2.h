@@ -111,6 +111,9 @@ int gx_dc_pattern2_get_bbox(const gx_device_color * pdevc, gs_fixed_rect *bbox);
 int gx_dc_pattern2_color_has_bbox(const gx_device_color * pdevc);
 
 /* Intersect a clipping path a shading BBox. */
+int gx_dc_pattern2_clip_with_bbox(const gx_device_color * pdevc, gx_device * pdev,
+                                  gx_clip_path *cpath_local, const gx_clip_path **cpath1);
+/* Intersect a clipping path a shading BBox. */
 int gx_dc_pattern2_clip_with_bbox_simple(const gx_device_color * pdevc, gx_device * pdev, 
 				  gx_clip_path *cpath);
 /* Check whether color is a shading with BBox. */
