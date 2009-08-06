@@ -143,7 +143,7 @@ typedef enum {
 
 /* The link object. */
 
-typedef struct gsiic_link_s gsicc_link_t;
+typedef struct gsicc_link_s gsicc_link_t;
 
 typedef struct gsicc_hashlink_s {
 
@@ -154,7 +154,7 @@ typedef struct gsicc_hashlink_s {
 
 } gsicc_hashlink_t;
 
-typedef struct gsiic_link_s {
+struct gsicc_link_s {
 
     void *link_handle;
     void *contextptr;
@@ -165,7 +165,7 @@ typedef struct gsiic_link_s {
     bool includes_softproof;
     bool is_identity;  /* Used for noting that this is an identity profile */
 
-} gsicc_link_t;
+};
 
 
 /* ICC Cache. The size of the cache is limited
