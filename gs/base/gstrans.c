@@ -488,48 +488,34 @@ gs_begin_transparency_mask(gs_state * pgs,
 
         }
 
+        /* For the softmask blend color space, we will always use the above blend_color_space. 
+           Problems can occur if we go all the way back to the device color space,
+           which could be DeviceN for a sep device.  Blending to the luminosity
+           channel for this case would not be defined. */
 
-        /* Note that if the /CS parameter was not present in the push 
-        of the transparency group, then we must actually inherent 
-        the previous group color space, or the color space of the
-        target device (process color model).  Note here we just want
-        to set it as a unknown type for clist writing, as we .  We will later 
-        during clist reading 
-        */
+        switch (cs_num_components(blend_color_space)) {
 
-        if (ptmp->ColorSpace == NULL) {
+            case 1:				
+                params.group_color = GRAY_SCALE;       
+                params.group_color_numcomps = 1;  /* Need to check */
+                break;
+            case 3:				
+                params.group_color = DEVICE_RGB;       
+                params.group_color_numcomps = 3; 
+                break;
+            case 4:				
+                params.group_color = DEVICE_CMYK;       
+                params.group_color_numcomps = 4; 
+            break;
+            default:
+                /* Transparency soft mask spot
+                   colors are NEVER available. 
+                   We must use the alternate tint
+                   transform */
+            return_error(gs_error_rangecheck);
+            break;
 
-            params.group_color = UNKNOWN;
-            params.group_color_numcomps = 0;
-
-        } else {
-
-
-            switch (cs_num_components(blend_color_space)) {
-
-                case 1:				
-                    params.group_color = GRAY_SCALE;       
-                    params.group_color_numcomps = 1;  /* Need to check */
-                    break;
-                case 3:				
-                    params.group_color = DEVICE_RGB;       
-                    params.group_color_numcomps = 3; 
-                    break;
-                case 4:				
-                    params.group_color = DEVICE_CMYK;       
-                    params.group_color_numcomps = 4; 
-	            break;
-                default:
-                    /* Transparency soft mask spot
-                       colors are NEVER available. 
-                       We must use the alternate tint
-                       transform */
-	            return_error(gs_error_rangecheck);
-	            break;
-
-             }    
-
-        }
+         }    
 
     }
 
