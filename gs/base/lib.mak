@@ -27,6 +27,7 @@ GLF_=
 GLCCFLAGS=$(I_)$(GLI_)$(_I) $(GLF_)
 GLCC=$(CC_) $(GLCCFLAGS)
 GLICCCC=$(CC_) $(I_)$(GLI_) $(II)$(ICCI_)$(_I) $(ICCCF_) $(GLF_)
+GLLCMSCC=$(CC_) $(I_)$(GLI_) $(II)$(LCMSSRCDIR)$(D)include$(_I) $(GLF_)
 GLJCC=$(CC_) $(I_)$(GLI_) $(II)$(JI_)$(_I) $(JCF_) $(GLF_)
 GLZCC=$(CC_) $(I_)$(GLI_) $(II)$(ZI_)$(_I) $(ZCF_) $(GLF_)
 GLJBIG2CC=$(CC_) $(I_)$(GLI_) $(II)$(JB2I_)$(_I) $(JB2CF_) $(GLF_)
@@ -2444,11 +2445,15 @@ $(GLOBJ)gxctable.$(OBJ) : $(GLSRC)gxctable.c $(GX)\
 
 # ---------------- ICCBased color ---------------- #
 
+gsicc_=$(GLOBJ)gsiccmanage.$(OBJ) $(GLOBJ)gsicccache.$(OBJ)\
+ $(GLOBJ)gsicc_littlecms.$(OBJ)
+
 sicclib_=$(GLOBJ)gsicc.$(OBJ)
-$(GLD)sicclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(sicclib_) $(GLD)cielib.dev\
- $(ICCGENDIR)$(D)icclib.dev
+$(GLD)sicclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(sicclib_) $(gsicc_)\
+ $(GLD)cielib.dev $(LCMSGENDIR)$(D)lcms.dev
 	$(SETMOD) $(GLD)sicclib $(sicclib_)
-	$(ADDMOD) $(GLD)sicclib -include $(ICCGENDIR)$(D)icclib.dev
+	$(ADDMOD) $(GLD)sicclib $(gsicc_)
+	$(ADDMOD) $(GLD)sicclib -include $(LCMSGENDIR)$(D)lcms.dev
 
 # icc_h is defined in icclib.mak, which is included after lib.mak, so we
 # can't make gsicc.$(OBJ) depend on it.  Instead, we make it depend on
@@ -2457,6 +2462,25 @@ $(GLOBJ)gsicc.$(OBJ) : $(GLSRC)gsicc.c $(GXERR) $(math__h) $(memory__h)\
  $(gsstruct_h) $(stream_h) $(gxcspace_h) $(gxarith_h) $(gxcie_h)\
  $(gzstate_h) $(gsicc_h) $(ICCOBJDIR)$(D)icc.$(OBJ)
 	$(GLICCCC) $(GLO_)gsicc.$(OBJ) $(C_) $(GLSRC)gsicc.c
+
+gscms_h=$(std_h) $(stdpre_h) $(gstypes_h) $(gsutil_h) $(stdint_h)
+gsicc_littlecms_h=$(GLSRC)gsicc_littlecms.h $(gxcvalue_h) $(gscms_h)
+gsiccmanage_h=$(GLSRC)gsiccmanage.h $(gsicc_littlecms_h)
+gsicccache_h=$(GLSRC)gsicccache.h $(GX)
+
+$(GLOBJ)gsiccmanage.$(OBJ) : $(GLSRC)gsiccmanage.c $(GX) $(stdpre_h)\
+ $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(scommon_h) $(strmio_h)\
+ $(gxistate_h) $(gscspace_h) $(gscms_h) $(gsiccmanage_h) $(gsicccache_h)
+	$(GLCC) $(GLO_)gsiccmanage.$(OBJ) $(C_) $(GLSRC)gsiccmanage.c
+
+$(GLOBJ)gsicccache.$(OBJ) : $(GLSRC)gsicccache.c $(GX) $(stdpre_h)\
+ $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(scommon_h) $(smd5_h)\
+ $(gxistate_h) $(gscms_h) $(gsiccmanage_h) $(gsicccache_h)
+	$(GLCC) $(GLO_)gsicccache.$(OBJ) $(C_) $(GLSRC)gsicccache.c
+
+$(GLOBJ)gsicc_littlecms.$(OBJ) : $(GLSRC)gsicc_littlecms.c\
+ $(gsicc_littlecms_h)
+	$(GLLCMSCC) $(GLO_)gsicc_littlecms.$(OBJ) $(C_) $(GLSRC)gsicc_littlecms.c
 
 # ---------------- Separation colors ---------------- #
 

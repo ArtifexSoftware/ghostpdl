@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2008 Artifex Software, Inc.
+#  Copyright (C) 2001-2009 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -1673,7 +1673,7 @@ $(PSOBJ)ztrans.$(OBJ) : $(PSSRC)ztrans.c $(OP) $(memory__h) $(string__h)\
 
 # ---------------- ICCBased color spaces ---------------- #
 
-iccread_=$(PSOBJ)zicc.$(OBJ)
+iccread_=$(PSOBJ)zicc.$(OBJ) $(PSOBJ)gsicc_create.$(OBJ)
 $(PSD)icc.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)cie.dev $(iccread_) \
                 $(GLD)sicclib.dev
 	$(SETMOD) $(PSD)icc $(iccread_)
@@ -1685,7 +1685,12 @@ $(PSOBJ)zicc.$(OBJ) : $(PSSRC)zicc.c  $(OP) $(math__h) $(memory__h)\
  $(gsstruct_h) $(gxcspace_h) $(stream_h) $(files_h) $(gscolor2_h)\
  $(icc_h) $(gsicc_h) $(estack_h) $(idict_h) $(idparam_h) $(igstate_h)\
  $(icie_h) $(ialloc_h) $(zicc_h)
-	$(GLICCCC) $(PSO_)zicc.$(OBJ) $(C_) $(PSSRC)zicc.c
+	$(GLLCMSCC) $(PSO_)zicc.$(OBJ) $(C_) $(PSSRC)zicc.c
+
+$(PSOBJ)gsicc_create.$(OBJ) : $(PSSRC)gsicc_create.c $(GX) $(string__h)\
+ $(gsmemory_h) $(gstypes_h) $(gscspace_h) $(gscie_h) $(gsicc_create_h)\
+ $(gxarith_h)
+	$(GLLCMSCC) $(PSO_)gsicc_create.$(OBJ) $(C_) $(PSSRC)gsicc_create.c
 
 # ---------------- Support for %disk IODevices ---------------- #
 
