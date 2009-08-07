@@ -100,7 +100,7 @@ typedef enum {
 
 /* A structure for holding profile information.  A member variable
    of the ghostscript color structure.   The item is reference counted. */
-typedef struct cmm_profile_s {
+struct cmm_profile_s {
 
     void *profile_handle;       /* The profile handle to be used in linking */
     unsigned char num_comps;    /* number of device dependent values */
@@ -115,9 +115,10 @@ typedef struct cmm_profile_s {
                                    name.  This is primarily here for the system profiles, and
                                    so that we avoid resetting them everytime the user params
                                    are reloaded. */
-} cmm_profile_t;
+};
 
 #ifndef cmm_profile_DEFINED
+typedef struct cmm_profile_s cmm_profile_t;
 #define cmm_profile_DEFINED
 #endif
 
