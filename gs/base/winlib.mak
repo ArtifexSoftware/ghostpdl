@@ -112,6 +112,7 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 !include $(GLSRCDIR)\ldf_jb2.mak
 !include $(GLSRCDIR)\lwf_jp2.mak
 !include $(GLSRCDIR)\icclib.mak
+!include $(GLSRCDIR)\lcms.mak
 !include $(GLSRCDIR)\ijs.mak
 !include $(GLSRCDIR)\devs.mak
 !include $(GLSRCDIR)\contrib.mak
