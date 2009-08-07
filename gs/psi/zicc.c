@@ -36,6 +36,7 @@
 #include "gsiccmanage.h"
 #include "gx.h"
 #include "gxistate.h"
+#include "gserror.h"
 
 int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 {
@@ -62,7 +63,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     /* build the color space object */
     code = gs_cspace_build_ICC(&pcs, NULL, gs_state_memory(igs));
     if (code < 0)
-        return code;
+        return gs_rethrow(code, "building color space object");
 
     /* record the current space as the alternative color space */
     pcs->base_space = palt_cs;
@@ -78,9 +79,16 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 
     picc_profile = gsicc_profile_new(s, gs_state_memory(igs), NULL, 0);
 
+    if (picc_profile == NULL) {
+
+          return gs_throw(e_unknownerror,
+              "couldn't create icc profile from stream");
+
+    }
+
     code = gsicc_cs_profile(pcs, picc_profile, gs_state_memory(igs));
     if (code < 0)
-        return code;
+        return gs_rethrow(code, "installing the profile");
     
     /* If we have not populated the icc_manager's device profile yet, go ahead 
        and take care of that now.  We will likely want to move this out of
@@ -96,9 +104,10 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 
     } 
 
-    if (pis->icc_manager->device_profile == NULL){
+    if (pis->icc_manager->device_profile == NULL) {
 
         gsicc_set_device_profile(pis, pdev, gs_state_memory(igs));
+
     }
 
     /* Set the color space.  We are done.  No joint cache here... */

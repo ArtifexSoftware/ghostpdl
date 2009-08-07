@@ -1685,7 +1685,8 @@ $(PSD)icc.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)cie.dev $(iccread_) \
 $(PSOBJ)zicc.$(OBJ) : $(PSSRC)zicc.c  $(OP) $(math__h) $(memory__h)\
  $(gsstruct_h) $(gxcspace_h) $(stream_h) $(files_h) $(gscolor2_h)\
  $(icc_h) $(gsicc_h) $(estack_h) $(idict_h) $(idparam_h) $(igstate_h)\
- $(icie_h) $(ialloc_h) $(zicc_h)
+ $(icie_h) $(ialloc_h) $(zicc_h) $(gsiccmanage_h) $(GX) $(gxistate_h)\
+ $(gserror_h)
 	$(PSLCMSCC) $(PSO_)zicc.$(OBJ) $(C_) $(PSSRC)zicc.c
 
 $(PSOBJ)gsicc_create.$(OBJ) : $(PSSRC)gsicc_create.c $(GX) $(string__h)\
