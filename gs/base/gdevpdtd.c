@@ -466,7 +466,6 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 	if(strncmp(".notdef", gname.data, gname.size)) {
 	    position = gs_c_decode(glyph_known_enc, 0);
 	    if (position == GS_NO_CHAR || position != index) {
-//	if (gs_c_decode(glyph_known_enc, 0) == gs_no_glyph) {
 		desc.Flags |= FONT_IS_SYMBOLIC;
 		continue;
 	    }
