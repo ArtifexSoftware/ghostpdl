@@ -31,8 +31,9 @@
 #include "gswts.h"
 #include "gxgetbit.h"
 
+/* MJV TO FIX
 #include "icc.h"
-#include "imdi.h"
+#include "imdi.h" */
 
 /* Memory arg is included in ghostpcl branch but not main branch. */
 #define GS_NOTE_ERROR(m, e) gs_note_error(e)
@@ -116,10 +117,11 @@ typedef struct gx_device_wtsimdi_s {
     gx_prn_device_common;
     wts_cooked_halftone wcooked[4];
 
+    /* MJV TO FIX 
     icmFile *fp;
     icc *icco;
     icmLuBase *luo;
-    imdi *mdo;
+    imdi *mdo; */
     cached_color *color_cache;
     cached_color current_color;
 #ifdef DEBUG
@@ -442,8 +444,8 @@ static double outcurve(void *ctx, int ch, double val)
 
 static void mdtable(void *ctx, double *outvals, double *invals)
 {
-    icmLuBase *luo = ctx;
-    luo->lookup(luo, outvals, invals);
+   /* icmLuBase *luo = ctx; MJV TO FIX
+    luo->lookup(luo, outvals, invals);  */
 }
 
 /*
@@ -456,6 +458,10 @@ wtsimdi_open_device(gx_device *dev)
 {
     gx_device_wtsimdi *idev = (gx_device_wtsimdi*)dev;
     int i, code;
+
+/* MJV TO FIX THIS */
+
+#if 0
 
     icColorSpaceSignature ins, outs;
     int inn, outn;
@@ -530,6 +536,9 @@ wtsimdi_open_device(gx_device *dev)
     /* guarantee the device bands */
     ((gx_device_printer *)dev)->space_params.banding_type = BandingAlways;
     return gdev_prn_open(dev);
+
+#endif
+    return(-1);
 }
 
 
@@ -542,10 +551,11 @@ wtsimdi_close_device(gx_device *dev)
 {
     gx_device_wtsimdi *idev = (gx_device_wtsimdi*)dev;
 
+    /* MJV TO FIX 
     idev->mdo->done(idev->mdo);
     idev->luo->del(idev->luo);
     idev->icco->del(idev->icco);
-    idev->fp->del(idev->fp);
+    idev->fp->del(idev->fp); */
     gs_free(dev->memory, idev->color_cache, COLOR_CACHE_SIZE, 
 	sizeof(cached_color), "wtsimdi_close_device(color_cache)");
     return gdev_prn_close(dev);
@@ -582,7 +592,8 @@ wtsimdi_resolve_one(gx_device_wtsimdi *idev, gx_color_index color)
 	    rgb[0] = r / 255.0;
 	    rgb[1] = g / 255.0;
 	    rgb[2] = b / 255.0;
-	    code = idev->luo->lookup(idev->luo, cmyk, rgb);
+	/*    code = idev->luo->lookup(idev->luo, cmyk, rgb); MJV TO FIX */
+            code = -1;
 	    if (code > 1)
 		return_error(gs_error_unknownerror);
 	    idev->current_color.color_index = color;

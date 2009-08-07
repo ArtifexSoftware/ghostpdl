@@ -31,7 +31,8 @@
 #include "gdevprn.h"
 #include "gxfrac.h"
 
-#include "icc.h"
+/* MVJ TO FIX 
+#include "icc.h" */
 #include "imdi.h"
 
 /*
@@ -56,10 +57,12 @@ struct gx_device_imdi_s
     gx_device_common;
     gx_prn_device_common;
 
+/* MJV TO FIX
     icmFile *fp;
     icc *icco;
     icmLuBase *luo;
     imdi *mdo;
+    */
 };
 
 static const gx_device_procs imdi_procs =
@@ -92,8 +95,12 @@ static double outcurve(void *ctx, int ch, double val)
 
 static void mdtable(void *ctx, double *outvals, double *invals)
 {
+ /*  MJV TO FIX
+ 
     icmLuBase *luo = ctx;
     luo->lookup(luo, outvals, invals);
+
+    */
 }
 
 /*
@@ -106,6 +113,10 @@ imdi_open_device(gx_device *dev)
 {
     gx_device_imdi *idev = (gx_device_imdi*)dev;
     int code;
+
+    /* MJV TO FIX */
+
+#if 0
 
     icColorSpaceSignature ins, outs;
     int inn, outn;
@@ -163,6 +174,11 @@ imdi_open_device(gx_device *dev)
     idev->mdo = mdo;
 
     return gdev_prn_open(dev);
+
+#endif
+
+    return(-1);
+
 }
 
 
@@ -175,10 +191,13 @@ imdi_close_device(gx_device *dev)
 {
     gx_device_imdi *idev = (gx_device_imdi*)dev;
 
+    /* MJV TO FIX 
     idev->mdo->done(idev->mdo);
     idev->luo->del(idev->luo);
     idev->icco->del(idev->icco);
     idev->fp->del(idev->fp);
+
+    */
 
     return gdev_prn_close(dev);
 }
@@ -297,7 +316,9 @@ imdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	    {
 		nsame ++; lsame += ex - sx;
 
-		idev->mdo->interp(idev->mdo, outp, inp, 1);
+		/* MJV TO FIX
+                idev->mdo->interp(idev->mdo, outp, inp, 1);
+                */
 		for (x = sx + 1; x < ex; x++)
 		{
 		    dstbuffer[x * 4 + 0] = dstbuffer[sx * 4 + 0];
@@ -322,7 +343,9 @@ imdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
 		ldiff += ex - sx;
 
-		idev->mdo->interp(idev->mdo, outp, inp, ex - sx);
+		/* MJV TO FIX
+                idev->mdo->interp(idev->mdo, outp, inp, ex - sx);
+                */
 	    }
 
 	    sx = ex;

@@ -22,8 +22,11 @@
 #include "gxlum.h"
 #include "gdevdcrd.h"
 #include "gstypes.h"
-#include "icc.h"
 #include "gxdcconv.h"
+
+#ifndef MAX_CHAN
+#   define MAX_CHAN 8
+#endif
 
 /* Define the device parameters. */
 #ifndef X_DPI
@@ -107,16 +110,17 @@ typedef struct xcf_device_s {
     gs_separation_names separation_order;
 
     /* ICC color profile objects, for color conversion. */
+    /* MJV to fix this */
     char profile_rgb_fn[256];
-    icmLuBase *lu_rgb;
+  /*  icmLuBase *lu_rgb; */
     int lu_rgb_outn;
 
     char profile_cmyk_fn[256];
-    icmLuBase *lu_cmyk;
+ /*   icmLuBase *lu_cmyk; */
     int lu_cmyk_outn;
 
     char profile_out_fn[256];
-    icmLuBase *lu_out;
+ /*   icmLuBase *lu_out; */
 } xcf_device;
 
 /*
@@ -339,7 +343,8 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     xcf_device *xdev = (xcf_device *)dev;
     int n = xdev->separation_names.num_names;
-    icmLuBase *luo = xdev->lu_cmyk;
+  /*  icmLuBase *luo = xdev->lu_cmyk;  MJV TO FIX */
+    void *luo = NULL;
     int i;
 
     if (luo != NULL) {
@@ -351,7 +356,7 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 	in[1] = frac2float(m);
 	in[2] = frac2float(y);
 	in[3] = frac2float(k);
-	luo->lookup(luo, tmp, in);
+	/* luo->lookup(luo, tmp, in); */
 	for (i = 0; i < outn; i++)
 	    out[i] = float2frac(tmp[i]);
 	for (; i < n + 4; i++)
@@ -382,7 +387,8 @@ rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     xcf_device *xdev = (xcf_device *)dev;
     int n = xdev->separation_names.num_names;
-    icmLuBase *luo = xdev->lu_rgb;
+    /* icmLuBase *luo = xdev->lu_rgb; MJV TO FIX */
+    void *luo = NULL;
     int i;
 
     if (luo != NULL) {
@@ -393,7 +399,7 @@ rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
 	in[0] = frac2float(r);
 	in[1] = frac2float(g);
 	in[2] = frac2float(b);
-	luo->lookup(luo, tmp, in);
+	/* luo->lookup(luo, tmp, in); */
 	for (i = 0; i < outn; i++)
 	    out[i] = float2frac(tmp[i]);
 	for (; i < n + 4; i++)
@@ -584,6 +590,7 @@ repack_data(byte * source, byte * dest, int depth, int first_bit,
 }
 #endif /* 0 */
 
+#if 0 /* MJV TO FIX */
 static int
 xcf_open_profile(xcf_device *xdev, char *profile_fn, icmLuBase **pluo,
 		 int *poutn)
@@ -627,6 +634,7 @@ xcf_open_profiles(xcf_device *xdev)
     }
     return code;
 }
+#endif
 
 #define set_param_array(a, d, s)\
   (a.data = d, a.size = s, a.persistent = false);
@@ -911,7 +919,7 @@ xcf_put_params(gx_device * pdev, gs_param_list * plist)
 	memcpy(pdevn->profile_cmyk_fn, pcmyk.data, pcmyk.size);
 	pdevn->profile_cmyk_fn[pcmyk.size] = 0;
     }
-    code = xcf_open_profiles(pdevn);
+  /*   code = xcf_open_profiles(pdevn); MJV TO FIX */
 
     return code;
 }
@@ -1203,6 +1211,7 @@ xcf_shuffle_to_tile(xcf_write_ctx *xc, byte **tile_data, const byte *row,
     }
 }
 
+#if 0  /*MJV TO FIX */
 static void
 xcf_icc_to_tile(xcf_write_ctx *xc, byte **tile_data, const byte *row,
 		    int y, icmLuBase *luo)
@@ -1243,6 +1252,7 @@ xcf_icc_to_tile(xcf_write_ctx *xc, byte **tile_data, const byte *row,
 	}
     }
 }
+#endif
 
 static int
 xcf_write_image_data(xcf_write_ctx *xc, gx_device_printer *pdev)
@@ -1257,7 +1267,8 @@ xcf_write_image_data(xcf_write_ctx *xc, gx_device_printer *pdev)
     int bytes_pp = base_bytes_pp + n_extra_channels;
     int chan_idx;
     xcf_device *xdev = (xcf_device *)pdev;
-    icmLuBase *luo = xdev->lu_out;
+   /*  icmLuBase *luo = xdev->lu_out; MJV TO FIX */
+    void *luo = NULL;
 
     line = gs_alloc_bytes(pdev->memory, raster, "xcf_write_image_data");
     tile_data = (byte **)gs_alloc_bytes(pdev->memory,
@@ -1280,8 +1291,8 @@ xcf_write_image_data(xcf_write_ctx *xc, gx_device_printer *pdev)
 	    code = gdev_prn_get_bits(pdev, y, line, &row);
 	    if (luo == NULL)
 		xcf_shuffle_to_tile(xc, tile_data, row, y);
-	    else
-		xcf_icc_to_tile(xc, tile_data, row, y, luo);
+	    /* else */
+		/* xcf_icc_to_tile(xc, tile_data, row, y, luo);  MJV TO FIX */
 	}
 	for (tile_i = 0; tile_i < xc->n_tiles_x; tile_i++) {
 	    int tile_idx = tile_j * xc->n_tiles_x + tile_i;
