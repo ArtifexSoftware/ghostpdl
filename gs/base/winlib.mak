@@ -25,6 +25,7 @@ SHARE_LIBPNG=0
 SHARE_ZLIB=0
 SHARE_JBIG2=0
 SHARE_JPX=0
+SHARE_LCMS=0
 
 # Define the platform name.
 

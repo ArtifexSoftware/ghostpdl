@@ -252,6 +252,12 @@ JPXSRCDIR=jasper
 ICCSRCDIR=icclib
 !endif
 
+# Define the directory where the lcms source is stored.
+# See lcms.mak for more information
+!ifndef LCMSSRCDIR
+LCMSSRCDIR=lcms
+!endif
+
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
 # See ijs.mak for more information.
