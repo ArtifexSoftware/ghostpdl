@@ -73,7 +73,7 @@ gsicc_cache_new(gs_memory_t *memory)
 
 
 gsicc_link_t *
-gsicc_add_link(gsicc_link_cache_t *link_cache, cmsHTRANSFORM link_handle, void *contextptr, 
+gsicc_add_link(gsicc_link_cache_t *link_cache, void *link_handle, void *contextptr, 
                gsicc_hashlink_t hashcode, gs_memory_t *memory)
 {
 

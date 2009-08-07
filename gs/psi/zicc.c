@@ -23,7 +23,6 @@
 #include "stream.h"
 #include "files.h"
 #include "gscolor2.h"
-/* #include "icc.h" */			
 #include "gsicc.h"
 #include "estack.h"
 #include "idict.h"
@@ -32,7 +31,6 @@
 #include "icie.h"
 #include "ialloc.h"
 #include "zicc.h"
-#include "icc34.h"
 #include "gsiccmanage.h"
 #include "gx.h"
 #include "gxistate.h"

@@ -460,7 +460,7 @@ $(PSOBJ)zcolor.$(OBJ) : $(PSSRC)zcolor.c $(OP)\
  $(gxcspace_h) $(gxcolor2_h) $(gxpcolor_h)\
  $(idict_h) $(icolor_h) $(idparam_h) $(iname_h) $(iutil_h) $(icsmap_h)\
  $(ifunc_h) $(zht2_h) $(zcolor_h) $(zcie_h) $(zicc_h) $(gscspace_h)
-	$(PSLCMSCC) $(PSO_)zcolor.$(OBJ) $(C_) $(PSSRC)zcolor.c 
+	$(PSCC) $(PSO_)zcolor.$(OBJ) $(C_) $(PSSRC)zcolor.c 
 
 $(PSOBJ)zdevice.$(OBJ) : $(PSSRC)zdevice.c $(OP) $(string__h)\
  $(ialloc_h) $(idict_h) $(igstate_h) $(iname_h) $(interp_h) $(iparam_h) $(ivmspace_h)\
@@ -994,7 +994,7 @@ $(PSOBJ)zusparam.$(OBJ) : $(PSSRC)zusparam.c $(OP) $(memory__h) $(string__h)\
  $(ialloc_h) $(icontext_h) $(idict_h) $(idparam_h) $(iparam_h)\
  $(iname_h) $(itoken_h) $(iutil2_h) $(ivmem2_h)\
  $(dstack_h) $(estack_h) $(store_h) $(gsnamecl_h)
-	$(PSLCMSCC) $(PSO_)zusparam.$(OBJ) $(C_) $(PSSRC)zusparam.c
+	$(PSCC) $(PSO_)zusparam.$(OBJ) $(C_) $(PSSRC)zusparam.c
 
 # Define full Level 2 support.
 
@@ -1429,7 +1429,7 @@ $(PSOBJ)zcie.$(OBJ) : $(PSSRC)zcie.c $(OP) $(math__h) $(memory__h)\
  $(gscolor2_h) $(gscie_h) $(gsstruct_h) $(gxcspace_h)\
  $(ialloc_h) $(icie_h) $(idict_h) $(idparam_h) $(estack_h)\
  $(isave_h) $(igstate_h) $(ivmspace_h) $(store_h)
-	$(PSLCMSCC) $(PSO_)zcie.$(OBJ) $(C_) $(PSSRC)zcie.c
+	$(PSCC) $(PSO_)zcie.$(OBJ) $(C_) $(PSSRC)zcie.c
 
 $(PSOBJ)zcrd.$(OBJ) : $(PSSRC)zcrd.c $(OP) $(math__h)\
  $(gscrd_h) $(gscrdp_h) $(gscspace_h) $(gscolor2_h) $(gsstruct_h)\
@@ -1684,11 +1684,14 @@ $(PSD)icc.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)cie.dev $(iccread_) \
 
 $(PSOBJ)zicc.$(OBJ) : $(PSSRC)zicc.c  $(OP) $(math__h) $(memory__h)\
  $(gsstruct_h) $(gxcspace_h) $(stream_h) $(files_h) $(gscolor2_h)\
- $(icc_h) $(gsicc_h) $(estack_h) $(idict_h) $(idparam_h) $(igstate_h)\
+ $(gsicc_h) $(estack_h) $(idict_h) $(idparam_h) $(igstate_h)\
  $(icie_h) $(ialloc_h) $(zicc_h) $(gsiccmanage_h) $(GX) $(gxistate_h)\
  $(gserror_h)
-	$(PSLCMSCC) $(PSO_)zicc.$(OBJ) $(C_) $(PSSRC)zicc.c
+	$(PSCC) $(PSO_)zicc.$(OBJ) $(C_) $(PSSRC)zicc.c
 
+# Note that gsicc_create requires compile with lcms to obtain icc34.h 
+# header file that is used for creating ICC structures from PS objects.
+# This is needed even if PDF/PS interpreter is built with a different CMS
 $(PSOBJ)gsicc_create.$(OBJ) : $(PSSRC)gsicc_create.c $(GX) $(string__h)\
  $(gsmemory_h) $(gstypes_h) $(gscspace_h) $(gscie_h) $(gsicc_create_h)\
  $(gxarith_h)

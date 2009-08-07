@@ -117,7 +117,7 @@ Note: All profile data must be encoded as big-endian
    
    */
 
-#include "icc34.h"
+#include "icc34.h"   /* Note this header is needed even if lcms is not compiled as default CMS */
 #include "string_.h"
 #include "gsmemory.h"
 #include "gx.h"
@@ -126,6 +126,9 @@ Note: All profile data must be encoded as big-endian
 #include "gscie.h"
 #include "gsicc_create.h"
 #include "gxarith.h"
+
+static void
+add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[]);
 
 #define SAVEICCPROFILE 1
 #define HEADER_SIZE 128

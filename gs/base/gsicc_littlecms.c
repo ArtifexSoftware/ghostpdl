@@ -14,7 +14,7 @@
 /* gsicc interface to littleCMS */
 
 #include "gsicc_littlecms.h"
-
+#include "lcms.h"
 
 #define DUMP_CMS_BUFFER 0
 
@@ -22,7 +22,7 @@
 
 /* Get ICC Profile handle from buffer */
 
-cmsHPROFILE
+gcmmhprofile_t
 gscms_get_profile_handle_mem(unsigned char *buffer, unsigned int input_size)
 {
     return(cmsOpenProfileFromMem(buffer,input_size));
@@ -214,7 +214,7 @@ gscms_transform_color(gsicc_link_t *icclink,
 
 
 /* Get the link from the CMS. TODO:  Add error checking */
-cmsHTRANSFORM
+gcmmhlink_t
 gscms_get_link(gcmmhprofile_t  lcms_srchandle, 
                     gcmmhprofile_t lcms_deshandle, 
                     gsicc_rendering_param_t *rendering_params, gsicc_manager_t *icc_manager)
@@ -259,7 +259,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     transparency, that would only occur at the top of the stack 
 TODO:  Add error checking */
 
-cmsHTRANSFORM
+gcmmhlink_t
 gscms_get_link_proof(gcmmhprofile_t  lcms_srchandle, 
                     gcmmhprofile_t lcms_deshandle, gcmmhprofile_t lcms_proofhandle, 
                     gsicc_rendering_param_t *rendering_params, gsicc_manager_t *icc_manager)

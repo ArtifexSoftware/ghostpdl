@@ -19,16 +19,15 @@
 #  define gsicc_littlecms_INCLUDED
 
 #include "gxcvalue.h"
-#include "lcms.h"
 #include "gscms.h"
 
-typedef cmsHPROFILE gcmmhprofile_t;
-typedef cmsHTRANSFORM gcmmhlink_t;
+typedef void* gcmmhprofile_t;
+typedef void* gcmmhlink_t;
 
 
 /* Prototypes */
 
-cmsHPROFILE gscms_get_profile_handle_mem(unsigned char *buffer, unsigned int input_size);
+gcmmhprofile_t gscms_get_profile_handle_mem(unsigned char *buffer, unsigned int input_size);
 
 void gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_buff_desc,
                              gsicc_bufferdesc_t *output_buff_desc, 
@@ -41,13 +40,13 @@ void gscms_transform_color(gsicc_link_t *icclink,
                              void *outputcolor,
                              void **contextptr);
 
-cmsHTRANSFORM gscms_get_link(gcmmhprofile_t  lcms_srchandle, 
+gcmmhlink_t gscms_get_link(gcmmhprofile_t  lcms_srchandle, 
                     gcmmhprofile_t lcms_deshandle, 
                     gsicc_rendering_param_t *rendering_params, gsicc_manager_t *icc_manager);
 
 
 
-cmsHTRANSFORM gscms_get_link_proof(gcmmhprofile_t  lcms_srchandle, 
+gcmmhlink_t gscms_get_link_proof(gcmmhprofile_t  lcms_srchandle, 
                     gcmmhprofile_t lcms_deshandle, gcmmhprofile_t lcms_proofhandle, 
                     gsicc_rendering_param_t *rendering_params, gsicc_manager_t *icc_manager);
 
