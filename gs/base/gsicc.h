@@ -19,7 +19,6 @@
 #  define gsicc_INCLUDED
 
 #include "gscie.h"
-#include "icc34.h"
 
 /* 
  * Build an ICCBased color space.
