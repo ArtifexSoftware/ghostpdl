@@ -1686,12 +1686,12 @@ $(PSOBJ)zicc.$(OBJ) : $(PSSRC)zicc.c  $(OP) $(math__h) $(memory__h)\
  $(gsstruct_h) $(gxcspace_h) $(stream_h) $(files_h) $(gscolor2_h)\
  $(icc_h) $(gsicc_h) $(estack_h) $(idict_h) $(idparam_h) $(igstate_h)\
  $(icie_h) $(ialloc_h) $(zicc_h)
-	$(GLLCMSCC) $(PSO_)zicc.$(OBJ) $(C_) $(PSSRC)zicc.c
+	$(PSLCMSCC) $(PSO_)zicc.$(OBJ) $(C_) $(PSSRC)zicc.c
 
 $(PSOBJ)gsicc_create.$(OBJ) : $(PSSRC)gsicc_create.c $(GX) $(string__h)\
  $(gsmemory_h) $(gstypes_h) $(gscspace_h) $(gscie_h) $(gsicc_create_h)\
  $(gxarith_h)
-	$(GLLCMSCC) $(PSO_)gsicc_create.$(OBJ) $(C_) $(PSSRC)gsicc_create.c
+	$(PSLCMSCC) $(PSO_)gsicc_create.$(OBJ) $(C_) $(PSSRC)gsicc_create.c
 
 # ---------------- Support for %disk IODevices ---------------- #
 
