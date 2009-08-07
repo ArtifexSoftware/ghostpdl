@@ -2293,7 +2293,7 @@ $(GLOBJ)gxicolor.$(OBJ) : $(GLSRC)gxicolor.c $(GXERR) $(memory__h) $(gpcheck_h)\
  $(gxdevice_h) $(gxdevmem_h) $(gxfixed_h) $(gxfrac_h)\
  $(gximage_h) $(gxistate_h) $(gxmatrix_h)\
  $(gzstate_h)
-	$(GLICCCC) $(GLO_)gxicolor.$(OBJ) $(C_) $(GLSRC)gxicolor.c
+	$(GLLCMSCC) $(GLO_)gxicolor.$(OBJ) $(C_) $(GLSRC)gxicolor.c
 
 # ---- Level 1 path miscellany (arcs, pathbbox, path enumeration) ---- #
 
@@ -2461,7 +2461,7 @@ $(GLD)sicclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(sicclib_) $(gsicc_)\
 $(GLOBJ)gsicc.$(OBJ) : $(GLSRC)gsicc.c $(GXERR) $(math__h) $(memory__h)\
  $(gsstruct_h) $(stream_h) $(gxcspace_h) $(gxarith_h) $(gxcie_h)\
  $(gzstate_h) $(gsicc_h) $(ICCOBJDIR)$(D)icc.$(OBJ)
-	$(GLICCCC) $(GLO_)gsicc.$(OBJ) $(C_) $(GLSRC)gsicc.c
+	$(GLLCMSCC) $(GLO_)gsicc.$(OBJ) $(C_) $(GLSRC)gsicc.c
 
 gscms_h=$(std_h) $(stdpre_h) $(gstypes_h) $(gsutil_h) $(stdint_h)
 gsicc_littlecms_h=$(GLSRC)gsicc_littlecms.h $(gxcvalue_h) $(gscms_h)
@@ -2471,12 +2471,12 @@ gsicccache_h=$(GLSRC)gsicccache.h $(GX)
 $(GLOBJ)gsiccmanage.$(OBJ) : $(GLSRC)gsiccmanage.c $(GX) $(stdpre_h)\
  $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(scommon_h) $(strmio_h)\
  $(gxistate_h) $(gscspace_h) $(gscms_h) $(gsiccmanage_h) $(gsicccache_h)
-	$(GLCC) $(GLO_)gsiccmanage.$(OBJ) $(C_) $(GLSRC)gsiccmanage.c
+	$(GLLCMSCC) $(GLO_)gsiccmanage.$(OBJ) $(C_) $(GLSRC)gsiccmanage.c
 
 $(GLOBJ)gsicccache.$(OBJ) : $(GLSRC)gsicccache.c $(GX) $(stdpre_h)\
  $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(scommon_h) $(smd5_h)\
  $(gxistate_h) $(gscms_h) $(gsiccmanage_h) $(gsicccache_h)
-	$(GLCC) $(GLO_)gsicccache.$(OBJ) $(C_) $(GLSRC)gsicccache.c
+	$(GLLCMSCC) $(GLO_)gsicccache.$(OBJ) $(C_) $(GLSRC)gsicccache.c
 
 $(GLOBJ)gsicc_littlecms.$(OBJ) : $(GLSRC)gsicc_littlecms.c\
  $(gsicc_littlecms_h)
