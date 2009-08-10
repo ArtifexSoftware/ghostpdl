@@ -940,8 +940,9 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
         double scale;
         float sbw[4], w2[6];
         int ipx, ipy, iqx, iqy;
-        gx_device_memory mdev;
+        gx_device_memory *pmdev;
         bool ctm_modified = false;
+        bool bold_device_created = false;
         gs_matrix save_ctm;
 #define isDownloaded(p42) ((p42)->data.proc_data == 0)
 #ifdef CACHE_TRUETYPE_CHARS
@@ -1035,8 +1036,10 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
             gs_bbox_transform(&sbox, &smat, &sbox);
             ipx = (int)sbox.p.x, ipy = (int)sbox.p.y;
             iqx = (int)ceil(sbox.q.x), iqy = (int)ceil(sbox.q.y);
-            /* Set up the memory device for the bitmap. */
-            gs_make_mem_mono_device(&mdev, pgs->memory, pgs->device);
+            /* Set up the memory device for the bitmap.  NB should check code. */
+            gs_make_mem_mono_device_with_copydevice(&pmdev,
+                                            pgs->memory, pgs->device);
+            bold_device_created = true;
             /* due to rounding, bold added (integer) can be zero while
                bold fraction (float) is non zero in which case we add
                1 scan line.  We do not "0" bold simply because it is
@@ -1044,24 +1047,31 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
                any HP tests which would show measurable difference
                either way (0 or 1). */
             bold_added = max((int)(scale * bold_fraction * 2 + 0.5), 1);
-            mdev.width = iqx - ipx + bold_added;
-            mdev.height = iqy - ipy;
-            mdev.bitmap_memory = pgs->memory;
-            code = (*dev_proc(&mdev, open_device))((gx_device *)&mdev);
+            pmdev->width = iqx - ipx + bold_added;
+            pmdev->height = iqy - ipy;
+            pmdev->bitmap_memory = pgs->memory;
+            code = (*dev_proc(pmdev, open_device))((gx_device *)pmdev);
             if ( code < 0 )
               { gs_grestore(pgs);
                 return code;
               }
+            /* NB we have no idea why opening the device doesn't set
+               the is_open flag, but this meme is repeated in various
+               parts of the code, if it isn't done closing the memory
+               device will not have no effect (release bitmap and
+               mask). */
+            pmdev->is_open = true;
             /* Don't allow gs_setdevice to reset things. */
-            pgs->device = (gx_device *)&mdev;
+            gx_set_device_only(pgs, (gx_device *)pmdev);
+
             { gs_fixed_rect cbox;
               cbox.p.x = cbox.p.y = fixed_0;
-              cbox.q.x = int2fixed(mdev.width);
-              cbox.q.y = int2fixed(mdev.height);
+              cbox.q.x = int2fixed(pmdev->width);
+              cbox.q.y = int2fixed(pmdev->height);
               gx_clip_to_rectangle(pgs, &cbox);
             }
             /* Make sure we clear the entire bitmap. */
-            memset(mdev.base, 0, bitmap_raster(mdev.width) * mdev.height);
+            memset(pmdev->base, 0, bitmap_raster(pmdev->width) * pmdev->height);
             gx_set_device_color_1(pgs); /* write 1's */
             smat.tx = -ipx;
             smat.ty = -ipy;
@@ -1076,6 +1086,7 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
             gs_setmatrix(pgs, &save_ctm);
         if ( bold_added )
           gs_grestore(pgs);
+
         if ( code < 0 || !bold_added )
           return (code < 0 ? code : 0);
 
@@ -1085,7 +1096,7 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
           gs_image_enum *ienum =
             gs_image_enum_alloc(pgs->memory, "pl_tt_build_char");
           byte *bold_lines =
-            alloc_bold_lines(pgs->memory, mdev.width - bold_added, bold_added,
+            alloc_bold_lines(pgs->memory, pmdev->width - bold_added, bold_added,
                              "pl_tt_build_char(bold_lines)");
 
           if ( ienum == 0 || bold_lines == 0 )
@@ -1093,8 +1104,8 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
               goto out;
             }
           gs_image_t_init_mask(&image, true);
-          image.Width = mdev.width;
-          image.Height = mdev.height + bold_added;
+          image.Width = pmdev->width;
+          image.Height = pmdev->height + bold_added;
           gs_make_scaling(scale, scale, &image.ImageMatrix);
           image.ImageMatrix.tx = -ipx;
           image.ImageMatrix.ty = -ipy;
@@ -1102,12 +1113,13 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
           code = gs_setcharwidth(penum, pgs, w2[0], w2[1]);
           if ( code < 0 )
             goto out;
-          code = image_bitmap_char(ienum, &image, mdev.base,
-                                   bitmap_raster(mdev.width), bold_added,
+          code = image_bitmap_char(ienum, &image, pmdev->base,
+                                   bitmap_raster(pmdev->width), bold_added,
                                    bold_lines, pgs);
-out:      gs_free_object(pgs->memory, bold_lines, "pl_tt_build_char(bold_lines)");
+out:      if (bold_device_created)
+              gx_device_retain((gx_device *)pmdev, false);
+          gs_free_object(pgs->memory, bold_lines, "pl_tt_build_char(bold_lines)");
           gs_free_object(pgs->memory, ienum, "pl_tt_build_char(image enum)");
-          gs_free_object(pgs->memory, mdev.base, "pl_tt_build_char(bitmap)");
         }
         return (code < 0 ? code : 0);
 #undef pfont42
