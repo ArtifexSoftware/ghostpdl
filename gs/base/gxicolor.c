@@ -33,7 +33,6 @@
 #include "gxdevmem.h"
 #include "gxcpath.h"
 #include "gximage.h"
-/* #include "icc.h" */			
 #include "gsicc.h"
 #include "gsicccache.h"
 #include "gsicc_littlecms.h"
@@ -376,8 +375,6 @@ err:
 }
 
 
-#if 1
-
 /* Render a color image with 8 or fewer bits per sample. */
 static int
 image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
@@ -521,43 +518,22 @@ map4:	    if (posture != image_skewed && next.all[0] == run.all[0])
 	    if_debug1('B', "[B]cc[3]=%g\n", cc.paint.values[3]);
 do3:	if(spp == 3 && pcs->type->index == gs_color_space_index_ICC)
 		{
-			/* It is 3 channel with an ICC profile.
-			 We need to check if it is an LAB image */
+		/* It is 3 channel with an ICC profile.
+		 We need to check if it is an LAB image */
 
-#if 0
-			picc_info = pcs->params.icc.picc_info;
-/* MJV TO FIX */
-		        if( picc_info->plu->e_inSpace == icSigLabData )
-			{
+		/* To floats */
 
-				/* It is a CIELAB image.  For now, put in true CIELAB float values rather than normalized 0 to 1 floats */
-				/* concretization will handle the proper conversion  this way */
-
-				decode_sample(next.v[0], cc, 0);
-				cc.paint.values[0]*=100.0;
-				decode_sample(next.v[1], cc, 1);
-				cc.paint.values[1] = 255.0*cc.paint.values[1] - 128.0;
-				decode_sample(next.v[2], cc, 2);
-				cc.paint.values[2] = 255.0*cc.paint.values[2] - 128.0;
-
-                        } else { 
-#endif
-
-				/* To floats */
-
-				decode_sample(next.v[0], cc, 0);
-				decode_sample(next.v[1], cc, 1);
-				decode_sample(next.v[2], cc, 2);
-
-			/*} */
+		    decode_sample(next.v[0], cc, 0);
+		    decode_sample(next.v[1], cc, 1);
+		    decode_sample(next.v[2], cc, 2);
 
 		} else {
 
-			/* To floats */
+		    /* To floats */
 
-			decode_sample(next.v[0], cc, 0);
-			decode_sample(next.v[1], cc, 1);
-			decode_sample(next.v[2], cc, 2);
+		    decode_sample(next.v[0], cc, 0);
+		    decode_sample(next.v[1], cc, 1);
+		    decode_sample(next.v[2], cc, 2);
 
 		}
 
@@ -799,5 +775,3 @@ err:
     penum_orig->used.y = 0;
     return code;
 }
-
-#endif
