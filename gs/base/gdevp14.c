@@ -1655,17 +1655,25 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
             *ptempdevproto = **pdevproto;
             ptempdevproto->color_info.max_components = 1;
             ptempdevproto->color_info.num_components = ptempdevproto->color_info.max_components;
+            strcpy(&(ptempdevproto->color_info.icc_profile[0]),"./iccprofiles/default_gray.icc");
             *pdevproto = ptempdevproto;
-
 	    break;
 	case PDF14_DeviceRGB:
 	    *pdevproto = (pdf14_device *)&gs_pdf14_RGB_device;
+            *ptempdevproto = **pdevproto;
+            strcpy(&(ptempdevproto->color_info.icc_profile[0]),"./iccprofiles/default_rgb.icc");
+            *pdevproto = ptempdevproto;
 	    break;
 	case PDF14_DeviceCMYK:
 	    *pdevproto = (pdf14_device *)&gs_pdf14_CMYK_device;
+            *ptempdevproto = **pdevproto;
+            strcpy(&(ptempdevproto->color_info.icc_profile[0]),"./iccprofiles/default_cmyk.icc");
+            *pdevproto = ptempdevproto;
 	    break;
 	case PDF14_DeviceCMYKspot:
 	    *pdevproto = (pdf14_device *)&gs_pdf14_CMYKspot_device;
+            /* Need to figure out how we want to handle the device profile
+               for this case */
 	    /*
 	     * The number of components for the PDF14 device is the sum
 	     * of the process components and the number of spot colors
