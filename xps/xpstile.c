@@ -253,6 +253,12 @@ xps_parse_tiling_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
 	gs_setpattern(ctx->pgs, &gscolor);
 
 	xps_fill(ctx);
+
+	/* gs_makepattern increments the pattern count stored in the color
+	 * structure. We will discard the color struct (its on the stack) so we need to 
+	 * decrement the reference before we throw away the structure.
+	 */
+	gs_pattern_reference(&gscolor, -1);
     }
     else
     {
