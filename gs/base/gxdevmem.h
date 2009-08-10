@@ -243,9 +243,15 @@ int gs_make_mem_mono_device_with_copydevice(gx_device_memory ** mdev,
                                             gs_memory_t * mem,
                                             gx_device * target);
 
+int gs_make_mem_device_with_copydevice(gx_device_memory ** mdev,
+                                       const gx_device_memory * mdproto,
+                                       gs_memory_t * mem,
+                                       int page_device,
+                                       gx_device * target);
+
 /* 
- * TODO replace gs_make_mem_device, gs_make_mem_abuf_device,
- * gs_make_mem_alpha_device with procedures that use copydevice.
+ * TODO replace gs_make_mem_abuf_device, gs_make_mem_alpha_device with
+ * procedures that use copydevice.
  */
 
 /*

@@ -660,19 +660,19 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 {
     if ((ctile->id != gx_no_bitmap_id) && !ctile->is_dummy) {
 	gs_memory_t *mem = pcache->memory;
-	gx_device_memory mdev;
+	gx_device_memory *pmdev;
 	ulong used = 0;
 
 	/*
 	 * We must initialize the memory device properly, even though
 	 * we aren't using it for drawing.
 	 */
-	gs_make_mem_mono_device(&mdev, mem, NULL);
+	gs_make_mem_mono_device_with_copydevice(&pmdev, mem, NULL);
 	if (ctile->tmask.data != 0) {
-	    mdev.width = ctile->tmask.size.x;
-	    mdev.height = ctile->tmask.size.y;
+	    pmdev->width = ctile->tmask.size.x;
+	    pmdev->height = ctile->tmask.size.y;
 	    /*mdev.color_info.depth = 1;*/
-	    gdev_mem_bitmap_size(&mdev, &used);
+	    gdev_mem_bitmap_size(pmdev, &used);
 	    gs_free_object(mem, ctile->tmask.data,
 			   "free_pattern_cache_entry(mask data)");
 	    ctile->tmask.data = 0;	/* for GC */
@@ -680,10 +680,10 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 	if (ctile->tbits.data != 0) {
 	    ulong tbits_used = 0;
 
-	    mdev.width = ctile->tbits.size.x;
-	    mdev.height = ctile->tbits.size.y;
-	    mdev.color_info.depth = ctile->depth;
-	    gdev_mem_bitmap_size(&mdev, &tbits_used);
+	    pmdev->width = ctile->tbits.size.x;
+	    pmdev->height = ctile->tbits.size.y;
+	    pmdev->color_info.depth = ctile->depth;
+	    gdev_mem_bitmap_size(pmdev, &tbits_used);
 	    used += tbits_used;
 	    gs_free_object(mem, ctile->tbits.data,
 			   "free_pattern_cache_entry(bits data)");
@@ -719,6 +719,7 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 	pcache->tiles_used--;
 	pcache->bits_used -= used;
 	ctile->id = gx_no_bitmap_id;
+        gx_device_retain((gx_device *)pmdev, false);
     }
 }
 
