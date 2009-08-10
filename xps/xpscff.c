@@ -649,7 +649,7 @@ xps_post_callback_glyph_data(gs_font_type1 * pfont, gs_glyph glyph, gs_glyph_dat
 
     p = xps_find_cff_index(font->charstrings, font->cffend, glyph, &s, &e);
     if (!p)
-	return gs_rethrow(-1, "cannot find charstring");
+	return gs_rethrow(gs_error_rangecheck, "cannot find charstring");
 
     gs_glyph_data_from_string(pgd, s, e - s, NULL);
 
@@ -668,13 +668,13 @@ xps_post_callback_subr_data(gs_font_type1 * pfont,
     {
 	p = xps_find_cff_index(font->gsubrs, font->cffend, subr_num, &s, &e);
 	if (!p)
-	    return gs_rethrow(-1, "cannot find gsubr");
+	    return gs_rethrow(gs_error_rangecheck, "cannot find gsubr");
     }
     else
     {
 	p = xps_find_cff_index(font->subrs, font->cffend, subr_num, &s, &e);
 	if (!p)
-	    return gs_rethrow(-1, "cannot find subr");
+	    return gs_rethrow(gs_error_rangecheck, "cannot find subr");
     }
 
     gs_glyph_data_from_string(pgd, s, e - s, NULL);
@@ -866,10 +866,10 @@ xps_init_postscript_font(xps_context_t *ctx, xps_font_t *font)
     pt1->procs.define_font = gs_no_define_font;
     pt1->procs.make_font = gs_no_make_font;
     pt1->procs.font_info = gs_default_font_info;
-    // same_font
+    pt1->procs.same_font = gs_default_same_font;
     pt1->procs.encode_char = xps_post_callback_encode_char; 
     pt1->procs.decode_glyph = xps_post_callback_decode_glyph;
-    // enumerate_glyph
+    pt1->procs.enumerate_glyph = gs_no_enumerate_glyph;
     pt1->procs.glyph_info = xps_post_callback_glyph_info;
     pt1->procs.glyph_outline = xps_post_callback_glyph_outline;
     pt1->procs.glyph_name = xps_post_callback_glyph_name;
