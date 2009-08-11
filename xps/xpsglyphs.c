@@ -231,10 +231,11 @@ int xps_flush_text_buffer(xps_context_t *ctx, xps_font_t *font,
 	return gs_throw1(-1, "cannot gs_text_begin() (%d)", code);
 
     code = gs_text_process(textenum);
+    gs_text_release(textenum, "gslt font render");
+
     if (code != 0)
 	return gs_throw1(-1, "cannot gs_text_process() (%d)", code);
 
-    gs_text_release(textenum, "gslt font render");
 #endif
 
     buf->count = 0;
