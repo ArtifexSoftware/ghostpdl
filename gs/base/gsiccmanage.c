@@ -54,10 +54,8 @@ static const gs_color_space_type gs_color_space_type_icc = {
 unsigned int gsicc_getprofilesize(unsigned char *buffer)
 {
 
-    return( (0xff000000 & ( ((unsigned int) buffer[0]) << 24 )) + 
-        (0xff0000 & (((unsigned int) buffer[1]) << 16 )) +
-        (0xff00 & ( ((unsigned int) buffer[2]) <<8 )) + 
-        (0xff & ((unsigned int) buffer[3]) ));
+    return ( (buffer[0] << 24) + (buffer[1] << 16) +
+             (buffer[2] << 8)  +  buffer[3] );
 
 }
 
