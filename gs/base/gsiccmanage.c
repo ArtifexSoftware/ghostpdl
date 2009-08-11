@@ -172,7 +172,7 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
 
     str = sfopen(pname, "rb", mem_gc);
 
-   if (str != NULL){
+    if (str != NULL){
 
         icc_profile = gsicc_profile_new(str, mem_gc, pname, namelen);
         code = sfclose(str);
@@ -192,7 +192,7 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
        
     }
      
-    return(1);
+    return(-1);
 
     
 }
