@@ -26,7 +26,6 @@ GLI_=$(GLGENDIR) $(II)$(GLSRCDIR)
 GLF_=
 GLCCFLAGS=$(I_)$(GLI_)$(_I) $(GLF_)
 GLCC=$(CC_) $(GLCCFLAGS)
-GLLCMSCC=$(CC_) $(I_)$(GLI_) $(II)$(LCMSSRCDIR)$(D)include$(_I) $(GLF_)
 GLJCC=$(CC_) $(I_)$(GLI_) $(II)$(JI_)$(_I) $(JCF_) $(GLF_)
 GLZCC=$(CC_) $(I_)$(GLI_) $(II)$(ZI_)$(_I) $(ZCF_) $(GLF_)
 GLJBIG2CC=$(CC_) $(I_)$(GLI_) $(II)$(JB2I_)$(_I) $(JB2CF_) $(GLF_)
@@ -34,6 +33,11 @@ GLJASCC=$(CC_) $(I_)$(JPXI_) $(II)$(GLI_)$(_I) $(JPXCF_) $(GLF_)
 GLLDFJB2CC=$(CC_) $(I_)$(LDF_JB2I_) $(II)$(GLI_)$(_I) $(JB2CF_) $(GLF_)
 GLLWFJPXCC=$(CC_) $(I_)$(LWF_JPXI_) $(II)$(GLI_)$(_I) $(JPXCF_) $(GLF_)
 GLCCSHARED=$(CC_SHARED) $(GLCCFLAGS)
+# We can't use $(CC_) for GLLCMSCC becuase that includes /Za on
+# msvc builds, and lcms configures itself to depend on msvc extensions
+# (inline asm, including windows.h) when compiled under msvc.
+GLLCMSCC=$(CC) $(I_)$(GLI_) $(II)$(LCMSSRCDIR)$(D)include$(_I) $(GLF_)
+
 # All top-level makefiles define GLD.
 #GLD=$(GLGEN)
 # Define the name of this makefile.

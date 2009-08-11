@@ -73,7 +73,9 @@ lcms.clean-not-config-clean :
 lcms.config-clean :
 	$(RMN_) $(LCMSGEN)$(D)lcms*.dev
 
-LCMS_CC=$(CC_) $(CFLAGS) $(I_)$(LCMSSRCDIR)$(D)include $(LCMSCF_)
+# NB: we can't use the normal $(CC_) here because msvccmd.mak
+# adds /Za which conflicts with the lcms source.
+LCMS_CC=$(CC) $(CFLAGS) $(I_)$(LCMSSRCDIR)$(D)include $(LCMSCF_)
 LCMSO_=$(O_)$(LCMSOBJ)
 
 # switch in the version of lcms.dev we're actually using
