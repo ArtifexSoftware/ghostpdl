@@ -171,12 +171,13 @@ struct gsicc_link_s {
 
 /* ICC Cache. The size of the cache is limited
    by max_memory_size.  Links are added if there
-   is sufficient memory.  If not, then */
+   is sufficient memory.  */
 
 typedef struct gsicc_link_cache_s {
 
     gsicc_link_t *icc_link;
     int num_links;
+    rc_header rc;
 
 } gsicc_link_cache_t;
 
@@ -184,15 +185,16 @@ typedef struct gsicc_link_cache_s {
 
 typedef struct gsicc_manager_s {
 
-    cmm_profile_t *device_profile;  /* The actual profile for the device */
     cmm_profile_t *device_named;    /* The named color profile for the device */
     cmm_profile_t *default_gray;    /* Default gray profile for device gray */
     cmm_profile_t *default_rgb;     /* Default RGB profile for device RGB */
     cmm_profile_t *default_cmyk;    /* Default CMYK profile for device CMKY */
     cmm_profile_t *proof_profile;   /* Profiling profile */
     cmm_profile_t *output_link;     /* Output device Link profile */
-    gs_memory_t *memory;            
+    cmm_profile_t *device_profile;  /* The actual profile for the device */
 
+    gs_memory_t *memory;            
+    rc_header rc;
 
 } gsicc_manager_t;
 

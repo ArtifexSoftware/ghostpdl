@@ -25,6 +25,7 @@
 #include "gsicc_littlecms.h" 
 #include "gsiccmanage.h"
 #include "gsicccache.h"
+#include "gserrors.h"
 
 #define ICC_CACHE_MAXLINKS 50   /* Note that the the external memory used to 
                                     maintain links in the CMS is generally not visible
@@ -62,8 +63,10 @@ gsicc_cache_new(gs_memory_t *memory)
 
     gsicc_link_cache_t *result;
 
-    result = gs_alloc_struct(memory, gsicc_link_cache_t, &st_icc_linkcache,
-			     "gsiccmanage_linkcache_new");
+
+    rc_alloc_struct_1(result, gsicc_link_cache_t, &st_icc_linkcache, memory, 
+                        return(NULL),"gsiccmanage_linkcache_new");
+
     result->icc_link = NULL;
     result->num_links = 0;
 

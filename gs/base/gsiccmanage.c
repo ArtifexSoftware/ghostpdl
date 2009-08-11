@@ -25,6 +25,8 @@
 #include "gscms.h"
 #include "gsiccmanage.h"
 #include "gsicccache.h"
+#include "gserrors.h"
+#include "string_.h"
 
 
 /* profile data structure */
@@ -195,6 +197,49 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
     
 }
 
+void
+gsicc_init_device_profile(gs_state * pgs, gx_device * dev)
+{
+
+    const gs_imager_state * pis = (gs_imager_state*) pgs;
+
+    /* See if the device has a profile */
+
+    if (dev->color_info.icc_profile[0] == '\0'){
+
+        /* Grab a default one */
+
+        switch(dev->color_info.num_components){
+
+            case 1:
+
+                strcpy(dev->color_info.icc_profile, DEFAULT_GRAY_ICC);
+                break;
+
+            case 3:
+
+                strcpy(dev->color_info.icc_profile, DEFAULT_RGB_ICC);
+                break;
+
+            case 4:
+
+                strcpy(dev->color_info.icc_profile, DEFAULT_CMYK_ICC);
+                break;
+
+        }
+
+    } 
+
+    /* Set the manager */
+
+    if (pis->icc_manager->device_profile == NULL) {
+
+        gsicc_set_device_profile(pis->icc_manager, dev, pis->memory);
+
+    }
+
+}
+
 
 /*  This computes the hash code for the
     device profile and assigns the code
@@ -206,9 +251,8 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
     device */
 
 void 
-gsicc_set_device_profile(gs_imager_state *pis, gx_device * pdev, gs_memory_t * mem)
+gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev, gs_memory_t * mem)
 {
-    gsicc_manager_t *icc_manager = pis->icc_manager;
     cmm_profile_t *icc_profile;
     stream *str;
     const char *profile = &(pdev->color_info.icc_profile[0]);
@@ -429,7 +473,6 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
         profile->hash_is_valid = 0;
 
 	gs_free_object(mem, profile, cname);
-        profile = NULL;
 
     }
 }
@@ -444,11 +487,8 @@ gsicc_manager_new(gs_memory_t *memory)
 
     /* Allocated in gc memory */
       
-    result = gs_alloc_struct(memory, gsicc_manager_t, &st_gsicc_manager,
-			     "gsicc_manager_new");
-
-    if (result == NULL)
-	return result;  
+    rc_alloc_struct_1(result, gsicc_manager_t, &st_gsicc_manager, memory, 
+                        return(NULL),"gsicc_manager_new");
 
    result->default_cmyk = NULL;
    result->default_gray = NULL;

@@ -88,11 +88,6 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     if (code < 0)
         return gs_rethrow(code, "installing the profile");
     
-    /* If we have not populated the icc_manager's device profile yet, go ahead 
-       and take care of that now.  We will likely want to move this out of
-       here and into an intialization section later.  Do it now though
-       so that we can do some testing. */
-
     picc_profile->num_comps = ncomps;
 
     for (i = 0; i < ncomps; i++) {
@@ -101,12 +96,6 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         picc_profile->Range.ranges[i].rmax = range_buff[2 * i + 1];
 
     } 
-
-    if (pis->icc_manager->device_profile == NULL) {
-
-        gsicc_set_device_profile(pis, pdev, gs_state_memory(igs));
-
-    }
 
     /* Set the color space.  We are done.  No joint cache here... */
     code = gs_setcolorspace(igs, pcs);

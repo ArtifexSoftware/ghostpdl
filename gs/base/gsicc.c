@@ -214,6 +214,13 @@ gx_remap_ICCBased(const gs_client_color * pc, const gs_color_space * pcs,
 static void
 gx_final_ICC(const gs_color_space * pcs)
 {
+
+    if (pcs->cmm_icc_profile_data != NULL) {
+
+        rc_decrement_only(pcs->cmm_icc_profile_data, "gx_final_ICC");
+
+    }
+
     /* rc_decrement_only(pcs->params.icc.picc_info, "gx_final_ICC"); */
 }
 
@@ -259,13 +266,9 @@ gs_cspace_build_ICC(
     gs_memory_t *       pmem )
 {
 
-    gs_color_space *    pcs;
-
     gs_color_space *pcspace = gs_cspace_alloc(pmem, &gs_color_space_type_ICC);
     *ppcspace = pcspace;
 
-
- 
     return 0;
 }
 

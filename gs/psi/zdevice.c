@@ -462,9 +462,15 @@ zsetdevice(i_ctx_t *i_ctx_p)
        device. */
 
     code = gs_setdevice_no_erase(igs, op->value.pdevice);
-#endif
     if (code < 0)
-	return code;
+        return code;
+
+    /* If the device has a profile, this will get it to the manager.
+       If it does not, then a default one appropriate for the device will be used */
+
+    gsicc_init_device_profile(igs, op->value.pdevice);
+
+#endif
     make_bool(op, code != 0);	/* erase page if 1 */
     clear_pagedevice(istate);
     return code;

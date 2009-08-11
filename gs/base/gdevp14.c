@@ -45,6 +45,7 @@
 #include "vdtrace.h"
 #include "gscolorbuffer.h"
 #include "gsptype2.h"
+#include "gsiccmanage.h"
 
 /* Visual  trace options : set one to 1. */
 #define VD_PAINT_MASK 0
@@ -1655,19 +1656,19 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
             *ptempdevproto = **pdevproto;
             ptempdevproto->color_info.max_components = 1;
             ptempdevproto->color_info.num_components = ptempdevproto->color_info.max_components;
-            strcpy(&(ptempdevproto->color_info.icc_profile[0]),"./iccprofiles/default_gray.icc");
+            strcpy(&(ptempdevproto->color_info.icc_profile[0]), DEFAULT_GRAY_ICC);
             *pdevproto = ptempdevproto;
 	    break;
 	case PDF14_DeviceRGB:
 	    *pdevproto = (pdf14_device *)&gs_pdf14_RGB_device;
             *ptempdevproto = **pdevproto;
-            strcpy(&(ptempdevproto->color_info.icc_profile[0]),"./iccprofiles/default_rgb.icc");
+            strcpy(&(ptempdevproto->color_info.icc_profile[0]), DEFAULT_RGB_ICC);
             *pdevproto = ptempdevproto;
 	    break;
 	case PDF14_DeviceCMYK:
 	    *pdevproto = (pdf14_device *)&gs_pdf14_CMYK_device;
             *ptempdevproto = **pdevproto;
-            strcpy(&(ptempdevproto->color_info.icc_profile[0]),"./iccprofiles/default_cmyk.icc");
+            strcpy(&(ptempdevproto->color_info.icc_profile[0]), DEFAULT_CMYK_ICC);
             *pdevproto = ptempdevproto;
 	    break;
 	case PDF14_DeviceCMYKspot:

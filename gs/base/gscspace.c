@@ -102,7 +102,8 @@ gs_cspace_final(void *vptr)
 		pclient_data->client_adjust_cspace_count( pcs, -1 );
     }
 #endif /*ENABLE_CUSTOM_COLOR_CALLBACK*/
-    
+
+    rc_decrement_only(pcs->cmm_icc_profile_data,"gs_cspace_final");
     rc_decrement_only(pcs->base_space, "gs_cspace_final");
 }
 

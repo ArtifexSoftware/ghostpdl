@@ -499,7 +499,7 @@ set_proof_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 static void
 current_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    static const char *const rfs = "./iccprofiles/default_gray.icc";
+    static const char *const rfs = DEFAULT_GRAY_ICC;
     pval->data = (const byte *)rfs;
     pval->size = strlen(rfs);
     pval->persistent = true;
@@ -532,7 +532,7 @@ set_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 static void
 current_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    static const char *const rfs = "./iccprofiles/default_rgb.icc";
+    static const char *const rfs = DEFAULT_RGB_ICC;
     pval->data = (const byte *)rfs;
     pval->size = strlen(rfs);
     pval->persistent = true;
@@ -650,7 +650,7 @@ set_named_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 static void
 current_default_cmyk_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    static const char *const rfs = "./iccprofiles/default_cmyk.icc";
+    static const char *const rfs = DEFAULT_CMYK_ICC;
     pval->data = (const byte *)rfs;
     pval->size = strlen(rfs);
     pval->persistent = true;

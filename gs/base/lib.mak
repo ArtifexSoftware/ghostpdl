@@ -2470,12 +2470,14 @@ gsicccache_h=$(GLSRC)gsicccache.h $(GX)
 
 $(GLOBJ)gsiccmanage.$(OBJ) : $(GLSRC)gsiccmanage.c $(GX) $(stdpre_h)\
  $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(scommon_h) $(strmio_h)\
- $(gxistate_h) $(gscspace_h) $(gscms_h) $(gsiccmanage_h) $(gsicccache_h)
+ $(gxistate_h) $(gscspace_h) $(gscms_h) $(gsiccmanage_h) $(gsicccache_h)\
+ $(gserrors_h) $(string__h)
 	$(GLCC) $(GLO_)gsiccmanage.$(OBJ) $(C_) $(GLSRC)gsiccmanage.c
 
 $(GLOBJ)gsicccache.$(OBJ) : $(GLSRC)gsicccache.c $(GX) $(stdpre_h)\
  $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(scommon_h) $(smd5_h)\
- $(gxistate_h) $(gscms_h) $(gsiccmanage_h) $(gsicccache_h)
+ $(gxistate_h) $(gscms_h) $(gsiccmanage_h) $(gsicccache_h)\
+ $(gserrors_h)
 	$(GLCC) $(GLO_)gsicccache.$(OBJ) $(C_) $(GLSRC)gsicccache.c
 
 $(GLOBJ)gsicc_littlecms.$(OBJ) : $(GLSRC)gsicc_littlecms.c\
@@ -2622,7 +2624,7 @@ $(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(GXERR) $(math__h) $(memory__h)\
  $(gxiparam_h) $(gstparam_h) $(gxblend_h) $(gxtext_h) $(gsdfilt_h) $(gsimage_h)\
  $(gsrect_h) $(gzstate_h) $(gdevdevn_h) $(gdevp14_h) $(gsovrc_h) $(gxcmap_h) $(gscolor1_h)\
  $(gstrans_h) $(gsutil_h) $(gxcldev_h) $(gxclpath_h) $(gxdcconv_h) $(vdtrace_h)\
- $(gscolorbuffer_h) $(gsptype2_h)
+ $(gscolorbuffer_h) $(gsptype2_h) $(gsiccmanage_h)
 	$(GLCC) $(GLO_)gdevp14.$(OBJ) $(C_) $(GLSRC)gdevp14.c
 
 translib_=$(GLOBJ)gstrans.$(OBJ) $(GLOBJ)gximag3x.$(OBJ)\

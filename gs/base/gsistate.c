@@ -172,6 +172,8 @@ gs_imager_state_copied(gs_imager_state * pis)
     rc_increment(pis->cie_joint_caches);
     rc_increment(pis->devicergb_cs);
     rc_increment(pis->devicecmyk_cs);
+    rc_increment(pis->icc_cache);
+    rc_increment(pis->icc_manager);
 }
 
 /* Adjust reference counts before assigning one imager state to another. */
@@ -195,6 +197,8 @@ gs_imager_state_pre_assign(gs_imager_state *pto, const gs_imager_state *pfrom)
     RCCOPY(halftone);
     RCCOPY(devicergb_cs);
     RCCOPY(devicecmyk_cs);
+    RCCOPY(icc_cache);
+    RCCOPY(icc_manager);
 #undef RCCOPY
 }
 
@@ -227,5 +231,7 @@ gs_imager_state_release(gs_imager_state * pis)
     RCDECR(halftone);
     RCDECR(devicergb_cs);
     RCDECR(devicecmyk_cs);
+    RCDECR(icc_cache);
+    RCDECR(icc_manager);
 #undef RCDECR
 }
