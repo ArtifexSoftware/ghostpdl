@@ -488,22 +488,10 @@ gs_begin_transparency_mask(gs_state * pgs,
 
         }
 
-
-        /* Note that if the /CS parameter was not present in the push 
-        of the transparency group, then we must actually inherent 
-        the previous group color space, or the color space of the
-        target device (process color model).  Note here we just want
-        to set it as a unknown type for clist writing, as we .  We will later 
-        during clist reading 
-        */
-
-        if (ptmp->ColorSpace == NULL) {
-
-            params.group_color = UNKNOWN;
-            params.group_color_numcomps = 0;
-
-        } else {
-
+        /* For the softmask blend color space, we will always use the above blend_color_space. 
+           Problems can occur if we go all the way back to the device color space,
+           which could be DeviceN for a sep device.  Blending to the luminosity
+           channel for this case would not be defined. */
 
             switch (cs_num_components(blend_color_space)) {
 
@@ -530,8 +518,6 @@ gs_begin_transparency_mask(gs_state * pgs,
              }    
 
         }
-
-    }
 
     return gs_state_update_pdf14trans(pgs, &params);
 }

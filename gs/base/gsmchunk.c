@@ -104,6 +104,8 @@ typedef struct gs_memory_chunk_s {
     chunk_mem_node_t *head_chunk;
 #ifdef DEBUG
     unsigned long sequence_counter;
+    unsigned long used;
+    unsigned long max_used;
 #endif
 } gs_memory_chunk_t;
 
@@ -132,6 +134,8 @@ gs_memory_chunk_wrap( gs_memory_t **wrapped,	/* chunk allocator init */
     cmem->head_chunk = NULL;
 #ifdef DEBUG
     cmem->sequence_counter = 0;
+    cmem->used = 0;
+    cmem->max_used = 0;
 #endif
 
     /* Init the chunk management values */
@@ -168,6 +172,7 @@ gs_memory_chunk_dump_memory(const gs_memory_t *mem)
     chunk_mem_node_t *current;
     chunk_mem_node_t *next;
 
+    dprintf2("chunk_dump_memory: current used=%d, max_used=%d\n", cmem->used, cmem->max_used);
     current = head;
     while ( current != NULL ) { 
 	if (current->objlist != NULL) {
@@ -268,6 +273,11 @@ chunk_mem_node_add(gs_memory_chunk_t *cmem, uint size_needed, chunk_mem_node_t *
 
     *newchunk = NULL;
     node = (chunk_mem_node_t *)gs_alloc_bytes_immovable(target, chunk_size, "chunk_mem_node_add");
+#ifdef DEBUG
+    cmem->used += chunk_size;
+    if (cmem->used > cmem->max_used)
+	cmem->max_used = cmem->used;
+#endif
     if ( node == NULL )
         return -1;
     node->size = chunk_size;	/* how much we allocated */
@@ -317,6 +327,9 @@ chunk_mem_node_remove(gs_memory_chunk_t *cmem, chunk_mem_node_t *addr)
         dprintf("FAIL - no nodes to be removed\n" );
         return -1;
     }
+#ifdef DEBUG
+    cmem->used -= addr->size;
+#endif
     if (head == addr) {
         cmem->head_chunk = head->next;
 	gs_free_object(target, head, "chunk_mem_node_remove");
@@ -501,6 +514,10 @@ chunk_resize_object(gs_memory_t * mem, void *ptr, uint new_num_elements, client_
     /* get the type from the old object */
     gs_memory_type_ptr_t type = obj->type;
     void *new_ptr;
+#ifdef DEBUG
+    gs_memory_chunk_t *cmem = (gs_memory_chunk_t *)mem;
+    ulong save_max_used = cmem->max_used;
+#endif
 
     if (new_size == old_size)
 	return ptr;
@@ -508,6 +525,11 @@ chunk_resize_object(gs_memory_t * mem, void *ptr, uint new_num_elements, client_
 	return 0;
     memcpy(new_ptr, ptr, min(old_size, new_size));
     chunk_free_object(mem, ptr, cname);
+#ifdef DEBUG
+    cmem->max_used = save_max_used;
+    if (cmem->used > cmem->max_used)
+	cmem->max_used = cmem->used;
+#endif
     return new_ptr;
 }
 	

@@ -104,7 +104,7 @@ $(PSOBJ)ialloc.$(OBJ) : $(PSSRC)ialloc.c $(AK) $(memory__h) $(gx_h)\
 # but since all the GC enumeration and relocation routines refer to them,
 # it's too hard to separate them out from the Level 1 base.
 $(PSOBJ)igc.$(OBJ) : $(PSSRC)igc.c $(GH) $(memory__h)\
- $(ierrors_h) $(gsexit_h) $(gsmdebug_h) $(gsstruct_h) $(gsutil_h)\
+ $(ierrors_h) $(gsexit_h) $(gsmdebug_h) $(gsstruct_h)\
  $(iastate_h) $(idict_h) $(igc_h) $(igcstr_h) $(inamedef_h)\
  $(ipacked_h) $(isave_h) $(isstate_h) $(istruct_h) $(opdef_h)
 	$(PSCC) $(PSO_)igc.$(OBJ) $(C_) $(PSSRC)igc.c
@@ -1456,7 +1456,7 @@ $(PSOBJ)zpcolor.$(OBJ) : $(PSSRC)zpcolor.c $(OP)\
  $(estack_h)\
  $(ialloc_h) $(icremap_h) $(idict_h) $(idparam_h) $(igstate_h)\
  $(ipcolor_h) $(istruct_h)\
- $(store_h) $(gzstate_h) $(memory__h)
+ $(store_h) $(gzstate_h) $(memory__h) $(gdevp14_h)
 	$(PSCC) $(PSO_)zpcolor.$(OBJ) $(C_) $(PSSRC)zpcolor.c
 
 # ---------------- Separation color ---------------- #

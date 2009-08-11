@@ -262,7 +262,7 @@ pdfdict begin
 } bdef
 
 /resolvehalftone {	% <dict> resolvehalftone <halftone>
-  dup /HalftoneType get
+  dup /HalftoneType oget
   dup //htrdict exch .knownget {
     exch pop exec
   } {

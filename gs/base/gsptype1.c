@@ -166,6 +166,28 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     if (code < 0)
 	goto fsaved;
 
+    /* Check if we will have any overlapping tiles.  If we do and there is 
+       transparency present, then we will need to blend when we tile.  We want
+       to detect this since blending is expensive and we would like to avoid it
+       if possible.  Note that any skew or rotation matrix will make it 
+       neccessary to perform blending */
+
+    { int width = inst.template.BBox.q.x - inst.template.BBox.p.x;
+      int height = inst.template.BBox.q.y - inst.template.BBox.p.y;
+
+      if ( inst.template.XStep < width || inst.template.YStep < height || ctm_only(saved).xy != 0 || 
+          ctm_only(saved).yx != 0 ){
+            
+          inst.has_overlap = true;
+
+      } else {
+
+          inst.has_overlap = false;
+
+      }
+
+    }
+
 #define mat inst.step_matrix
     if_debug6('t', "[t]step_matrix=[%g %g %g %g %g %g]\n",
 	      inst.step_matrix.xx, inst.step_matrix.xy, inst.step_matrix.yx, 
@@ -492,6 +514,14 @@ gx_dc_is_pattern1_color(const gx_device_color *pdevc)
 {
     return pdevc->type == &gx_dc_pattern;
 }
+
+/* Get transparency object pointer */
+void *
+gx_pattern1_get_transptr(const gx_device_color *pdevc)
+{
+    return pdevc->colors.pattern.p_tile->ttrans;
+}
+
 
 /* Check device color for Pattern Type 1. */
 bool
@@ -1253,6 +1283,14 @@ gx_dc_colored_masked_equal(const gx_device_color * pdevc1,
 	pdevc1->mask.id == pdevc2->mask.id;
 }
 
+typedef struct tile_trans_clist_info_s {   
+    gs_int_rect rect;
+    int rowstride;
+    int planestride;
+    int n_chan; /* number of pixel planes including alpha */
+    int width;
+    int height;
+} tile_trans_clist_info_t;
 
 typedef struct gx_dc_serialized_tile_s { 
     gs_id id;
@@ -1261,9 +1299,11 @@ typedef struct gx_dc_serialized_tile_s {
     gs_matrix step_matrix;
     gs_rect bbox;
     byte is_clist;
+    byte uses_transparency;
     byte depth;
     byte tiling_type;
     byte is_simple;
+    byte has_overlap;
 } gx_dc_serialized_tile_t;
 
 static int
@@ -1284,6 +1324,7 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, uint offset, byte *data, uint *
 	gx_dc_serialized_tile_t buf;
 	gx_strip_bitmap buf1;
 
+        buf.uses_transparency = 0;
     	buf.id = ptile->id;
 	buf.size.x = 0; /* fixme: don't write with raster patterns. */
 	buf.size.y = 0; /* fixme: don't write with raster patterns. */
@@ -1295,6 +1336,7 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, uint offset, byte *data, uint *
 	buf.depth = ptile->depth;
 	buf.tiling_type = ptile->tiling_type;
 	buf.is_simple = ptile->is_simple;
+        buf.has_overlap = ptile->has_overlap;
 	if (sizeof(buf) > left) {
 	    /* For a while we require the client to provide enough buffer size. */
 	    return_error(gs_error_unregistered); /* Must not happen. */
@@ -1347,6 +1389,104 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, uint offset, byte *data, uint *
     return 0;
 }
 
+
+/* This is for the case of writing into the clist the pattern that includes transparency.
+   Transparency with patterns is handled a bit differently since the data is coming from
+   a pdf14 device that includes planar data with an alpha channel */
+
+static int
+gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, uint offset, byte *data, uint *psize)
+{
+    int size, size_h;
+    byte *dp = data;
+    int left = *psize;
+    int offset1 = offset;
+    unsigned char *ptr;
+
+    size_h = sizeof(gx_dc_serialized_tile_t) + sizeof(tile_trans_clist_info_t);
+
+    /* Everything that we need to handle the transparent tile */
+
+    size = size_h + ptile->ttrans->n_chan * ptile->ttrans->planestride;
+
+    /* data is sent with NULL if the clist writer just wanted the size */ 
+    if (data == NULL) {
+	*psize = size;
+	return 0;
+    }
+    if (offset1 == 0) {	/* Serialize tile parameters: */
+	gx_dc_serialized_tile_t buf;
+        tile_trans_clist_info_t trans_info;
+
+        buf.uses_transparency = 1;
+    	buf.id = ptile->id;
+	buf.size.x = 0; /* fixme: don't write with raster patterns. */
+	buf.size.y = 0; /* fixme: don't write with raster patterns. */
+	buf.size_b = size - size_h;
+	buf.size_c = 0;
+	buf.step_matrix = ptile->step_matrix;
+	buf.bbox = ptile->bbox;
+	buf.is_clist = false;
+	buf.depth = ptile->depth;
+	buf.tiling_type = ptile->tiling_type;
+	buf.is_simple = ptile->is_simple;
+        buf.has_overlap = ptile->has_overlap;
+	if (sizeof(buf) > left) {
+	    /* For a while we require the client to provide enough buffer size. */
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	}
+	memcpy(dp, &buf, sizeof(buf));
+	left -= sizeof(buf);
+	dp += sizeof(buf);
+	offset1 += sizeof(buf);
+
+        /* Do the transparency information now */
+
+        trans_info.height = ptile->ttrans->height;
+        trans_info.n_chan = ptile->ttrans->n_chan;
+        trans_info.planestride = ptile->ttrans->planestride;
+        trans_info.rect.p.x = ptile->ttrans->rect.p.x;
+        trans_info.rect.p.y = ptile->ttrans->rect.p.y;
+        trans_info.rect.q.x = ptile->ttrans->rect.q.x;
+        trans_info.rect.q.y = ptile->ttrans->rect.q.y;
+        trans_info.rowstride = ptile->ttrans->rowstride;
+        trans_info.width = ptile->ttrans->width;
+	if (sizeof(trans_info) > left) {
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	}
+	memcpy(dp, &trans_info, sizeof(trans_info));
+	left -= sizeof(trans_info);
+	dp += sizeof(trans_info);
+	offset1 += sizeof(trans_info);
+    }
+
+    /* Now do the transparency tile data itself.  Note that it may 
+       be split up in the writing stage if it is large */
+
+    /* check if we have written it all */
+
+    if (offset1 <= size) {
+
+        /* Get the most that we can write */
+
+        int u = min(size, left);
+
+        /* copy that amount */
+
+        ptr = ptile->ttrans->transbytes;
+
+        memcpy(dp, ptr + (offset1 - size_h), u);
+        left -= u;
+        dp += u;
+        offset1 += u;
+
+    }
+
+    return 0;
+}
+
+
+
 /* Write a pattern into command list, possibly dividing intoi portions. */
 int
 gx_dc_pattern_write(
@@ -1381,6 +1521,14 @@ gx_dc_pattern_write(
 	*psize = sizeof(gs_id);
 	return 0;
     }
+
+    /* Check if pattern has transparency object 
+       If so then that is what we will stuff in
+       the clist */
+
+    if (ptile->ttrans != NULL)
+        return gx_dc_pattern_trans_write_raster(ptile, offset, data, psize);
+
     if (ptile->cdev == NULL)
 	return gx_dc_pattern_write_raster(ptile, offset, data, psize);
     size_b = clist_data_size(ptile->cdev, 0);
@@ -1407,6 +1555,7 @@ gx_dc_pattern_write(
 	buf.depth = ptile->depth;
 	buf.tiling_type = ptile->tiling_type;
 	buf.is_simple = ptile->is_simple;
+        buf.has_overlap = ptile->has_overlap;
 	if (sizeof(buf) > left) {
 	    /* For a while we require the client to provide enough buffer size. */
 	    return_error(gs_error_unregistered); /* Must not happen. */
@@ -1509,6 +1658,49 @@ gx_dc_pattern_read_raster(gx_color_tile *ptile, const gx_dc_serialized_tile_t *b
     return size - left;
 }
 
+
+/* This reads in the transparency buffer from the clist */
+static int
+gx_dc_pattern_read_trans_buff(gx_color_tile *ptile, uint offset, 
+                              const byte *data, uint size, gs_memory_t *mem)
+{
+    const byte *dp = data;
+    int left = size;
+    int offset1 = offset;
+    gx_pattern_trans_t *trans_pat = ptile->ttrans;
+    int data_size;
+
+    data_size = trans_pat->planestride * trans_pat->n_chan;
+
+    /* Allocate the bytes */
+
+    if (trans_pat->transbytes == NULL){
+
+        trans_pat->transbytes = gs_alloc_bytes(mem, data_size, "gx_dc_pattern_read_raster");
+        if (trans_pat->transbytes == NULL)
+	        return_error(gs_error_VMerror);
+
+    }
+
+    /* Read transparency buffer */
+    if (offset1 <= sizeof(gx_dc_serialized_tile_t) + sizeof(tile_trans_clist_info_t) + data_size ) {
+
+	int u = min(data_size, left);
+	byte *save = trans_pat->transbytes;
+
+	memcpy( trans_pat->transbytes + offset1 - sizeof(gx_dc_serialized_tile_t) - 
+                                    sizeof(tile_trans_clist_info_t), dp, u);
+	trans_pat->transbytes = save;
+	left -= u;
+	offset1 += u;
+	dp += u;
+    }
+
+     return size - left;
+}
+
+
+
 int
 gx_dc_pattern_read(
     gx_device_color *       pdevc,
@@ -1527,6 +1719,7 @@ gx_dc_pattern_read(
     int offset1 = offset;
     gx_color_tile *ptile;
     int code, l;
+    tile_trans_clist_info_t trans_info;
 
     if (offset == 0) {
 	pdevc->mask.id = gx_no_bitmap_id;
@@ -1570,13 +1763,51 @@ gx_dc_pattern_read(
 	ptile->depth = buf.depth;
 	ptile->tiling_type = buf.tiling_type;
 	ptile->is_simple = buf.is_simple;
+        ptile->has_overlap = buf.has_overlap;
 	ptile->is_dummy = 0;
+
 	if (!buf.is_clist) {
+
+            if (buf.uses_transparency){
+
+                /* Make a new ttrans object */
+
+                ptile->ttrans = new_pattern_trans_buff(mem);
+
+	        if (sizeof(buf) + sizeof(tile_trans_clist_info_t) > size) {
+	            return_error(gs_error_unregistered); /* Must not happen. */
+	        }
+
+	        memcpy(&trans_info, dp, sizeof(trans_info));
+	        dp += sizeof(trans_info);
+	        left -= sizeof(trans_info);
+	        offset1 += sizeof(trans_info);
+
+                ptile->ttrans->height = trans_info.height;
+                ptile->ttrans->n_chan = trans_info.n_chan;
+                ptile->ttrans->pdev14 = NULL;
+                ptile->ttrans->planestride = trans_info.planestride;
+                ptile->ttrans->rect.p.x = trans_info.rect.p.x;
+                ptile->ttrans->rect.p.y = trans_info.rect.p.y;
+                ptile->ttrans->rect.q.x = trans_info.rect.q.x;
+                ptile->ttrans->rect.q.y = trans_info.rect.q.y;
+                ptile->ttrans->rowstride = trans_info.rowstride;
+                ptile->ttrans->width = trans_info.width;
+
+       	        code = gx_dc_pattern_read_trans_buff(ptile, offset1, dp, left, mem);
+	        if (code < 0)
+		    return code;
+	        return code + sizeof(buf)+sizeof(trans_info);
+
+            } else {
 	    code = gx_dc_pattern_read_raster(ptile, &buf, offset1, dp, left, mem);
 	    if (code < 0)
 		return code;
 	    return code + sizeof(buf);
 	}
+
+	}
+
 	size_b = buf.size_b;
 	size_c = buf.size_c;
 	ptile->tbits.size.x = size_b; /* HACK: Use unrelated field for saving size_b between calls. */
@@ -1621,8 +1852,13 @@ gx_dc_pattern_read(
 	}
     } else {
 	ptile = pdevc->colors.pattern.p_tile;
+
+        if (ptile->ttrans != NULL)
+            return gx_dc_pattern_read_trans_buff(ptile, offset1, dp, left, mem);
+
 	if (ptile->cdev == NULL)
 	    return gx_dc_pattern_read_raster(ptile, NULL, offset1, dp, left, mem);
+
 	size_b = ptile->tbits.size.x;
 	size_c = ptile->tbits.size.y;
     }

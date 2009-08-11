@@ -410,6 +410,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 	gs_glyph_info_t info;
 	gs_const_string gname;
 	gs_glyph glyph_known_enc;
+	gs_char position=0;
 
 	code = bfont->procs.glyph_info((gs_font *)bfont, glyph, pmat, members, &info);
 	if (code == gs_error_VMerror)
@@ -459,9 +460,15 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 	    continue;
 	}
 	/* Finally check if the encoded glyph is in Standard Encoding */
-	if (gs_c_decode(glyph_known_enc, 0) == gs_no_glyph) {
+	/* gs_c_decode always fails to find .notdef, its always present so 
+	 * don't worry about it
+	 */
+	if(strncmp(".notdef", (const char *)gname.data, gname.size)) {
+	    position = gs_c_decode(glyph_known_enc, 0);
+	    if (position == GS_NO_CHAR || position != index) {
 	    desc.Flags |= FONT_IS_SYMBOLIC;
 	    continue;
+	}
 	}
         switch (gname.size) {
 	case 5:

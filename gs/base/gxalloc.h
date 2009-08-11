@@ -461,6 +461,10 @@ void debug_print_chunk(const gs_memory_t *mem, const chunk_t * cp);	/* default o
 void debug_dump_memory(const gs_ref_memory_t *mem,
 		       const dump_control_t *control);
 
+/* convenience routine to call debug_dump_memory(), defaults
+   dump_control_t to dump_control_all.  */
+void debug_dump_allocator(const gs_ref_memory_t *mem);
+
 /* Find all the objects that contain a given pointer. */
 void debug_find_pointers(const gs_ref_memory_t *mem, const void *target);
 

@@ -1605,6 +1605,15 @@ currentdict /postalias undef
 	% CIDFontType2 fonts don't have a cmap: they are indexed by CID.
   mark
   .ttkeys
+  /PDFCIDFontName where {        % Only set if called by the PDF interpreter.
+    pop                          % Remove the dictionary where it is defined.
+    /fontname PDFCIDFontName def % Use the substitute name, not the name from the name
+                                 % table or manufactured from XUID.
+    .dicttomark dup              % convert keys to dict and copy dict
+    /FontName fontname put       % replace any definition of /FontName
+    mark exch                    % put a mark on stack
+    {} forall                    % read keys from dict back onto stack
+  } if                           
   .definettcidfont
 } bind def
 

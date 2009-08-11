@@ -813,6 +813,7 @@ setglobal
     //systemdict begin
     readtype1dictcopy begin cvx stopped
 
+    currentfile flushfile % Skip the trailer after return from eexec, bug 690701.
     { currentdict end //missing-type1-procs eq { exit } if } loop
     { stop } if
   } bdef
@@ -1006,8 +1007,11 @@ currentdict /eexec_pdf_param_dict .undef
   true resolvestream readfontfilter
 		% Stack: filepos fontres stream
   1 index /Subtype get /CIDFontType2 eq {
+    1 index /BaseFont get                 % Use the BaseFont name for the font. Otherwise we
+    /PDFCIDFontName exch def              % would use the name table, or a manufactured name.
     .loadttcidfont
 		% Stack: filepos fontres cidfont
+    currentdict /PDFCIDFontName undef     % Remove the name to avoid interference.
   } {
 		                          % filepos fontres stream
     1 index /FontDescriptor oget          % filepos fontres stream fd   

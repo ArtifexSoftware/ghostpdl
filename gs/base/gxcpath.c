@@ -213,6 +213,7 @@ gx_cpath_init_local_shared(gx_clip_path * pcpath, const gx_clip_path * shared,
 	pcpath->path_list = shared->path_list;
 	rc_increment(pcpath->path_list);
 	cpath_share_own_contents(pcpath, shared);
+	pcpath->rule = shared->rule;
     } else {
 	gx_path_init_local(&pcpath->path, mem);
 	rc_init_free(&pcpath->local_list, mem, 1, rc_free_cpath_list_local);

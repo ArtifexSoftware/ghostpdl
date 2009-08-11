@@ -126,7 +126,7 @@
 16#0066 LF010000 f 
 16#0067 LG010000 g 
 16#0068 LH010000 h 
-16#0069 LI010000 idot i 
+16#0069 LI010000 i 
 16#006A LJ010000 j 
 16#006B LK010000 k 
 16#006C LL010000 l 
@@ -255,20 +255,20 @@
 16#00E7 LC110000 ccedilla 
 16#00E8 LC160000 egrave 
 16#00E9 LC150000 eacute 
-16#00EA LC300000 Cdot ecircumflex 
-16#00EB LC290000 cdot edieresis 
+16#00EA LC300000 ecircumflex 
+16#00EB LC290000 edieresis 
 16#00EC LC220000 igrave 
 16#00ED LC210000 iacute 
 16#00EE LD220000 icircumflex 
 16#00EF LD210000 dquoteright idieresis 
-16#00F0 LD620000 Dslash Dbar Dmacron eth 
-16#00F1 LD610000 dbar dslash dmacron ntilde 
+16#00F0 LD620000 Dbar Dmacron eth 
+16#00F1 LD610000 dbar dmacron ntilde 
 16#00F2 LE620000 ograve 
 16#00F3 LE610000 oacute 
 16#00F4 LE240000 ocircumflex 
 16#00F5 LE230000 otilde 
-16#00F6 LE300000 Edot odieresis 
-16#00F7 LE290000 c144 edot divide 
+16#00F6 LE300000 odieresis 
+16#00F7 LE290000 c144 divide 
 16#00F8 LE440000 oslash 
 16#00F9 LE430000 ugrave 
 16#00FA LE220000 uacute 
@@ -277,45 +277,45 @@
 16#00FD LG150000 yacute 
 16#00FE LG240000 thorn 
 16#00FF LG230000 ydieresis 
-16#0100 LG300000 Gdot Amacron 
-16#0101 LG290000 c158 gdot amacron 
-16#0102 LG420000 Gcedilla Abreve 
-16#0103 LG110000 gcedilla abreve 
+16#0100 LG300000 Amacron 
+16#0101 LG290000 c158 amacron 
+16#0102 LG420000 Abreve 
+16#0103 LG110000 abreve 
 16#0104 LH160000 Aogonek 
 16#0105 LH150000 aogonek 
 16#0106 LH620000 Hmacron Cacute 
 16#0107 LH610000 hmacron cacute 
 16#0108 LI200000 Ccircumflex 
 16#0109 LI190000 ccircumflex 
-16#010A LI620000 Cdotaccent 
-16#010B cdotaccent
+16#010A LI620000 Cdot Cdotaccent 
+16#010B cdot cdotaccent
 16#010C LI240000 Ccaron 
 16#010D LI230000 ccaron 
 16#010E LI440000 Dcaron 
 16#010F LI430000 dcaron 
-16#0110 LI300000 Idot Dcroat 
-16#0111 LI610000 dcroat 
+16#0110 LI300000 Dslash Dcroat 
+16#0111 LI610000 dslash dcroat 
 16#0112 Emacron
 16#0113 emacron
 16#0114 LJ160000 Ebreve 
 16#0115 LJ150000 ebreve 
-16#0116 LK420000 Kcedilla Edotaccent 
-16#0117 LK410000 kcedilla edotaccent 
+16#0116 LK420000 Edot Edotaccent 
+16#0117 LK410000 edot edotaccent 
 16#0118 kra Eogonek 
 16#0119 LL120000 eogonek 
 16#011A LL110000 Ecaron 
-16#011B LL420000 Lcedilla ecaron 
-16#011C LL410000 lcedilla Gcircumflex 
+16#011B LL420000 ecaron 
+16#011C LL410000 Gcircumflex 
 16#011D LL220000 gcircumflex 
 16#011E LL210000 Gbreve 
 16#011F LL640000 Ldotaccent gbreve 
-16#0120 LL630000 ldotaccent Gdotaccent 
-16#0121 LL620000 gdotaccent 
-16#0122 LL610000 Gcommaaccent 
-16#0123 LN120000 gcommaaccent 
+16#0120 LL630000 ldotaccent Gdot Gdotaccent 
+16#0121 LL620000 gdot gdotaccent 
+16#0122 LL610000 Gcedilla Gcommaaccent 
+16#0123 LN120000 gcedilla gcommaaccent 
 16#0124 LN110000 Hcircumflex 
-16#0125 LN420000 Ncedilla hcircumflex 
-16#0126 LN410000 ncedilla Hbar 
+16#0125 LN420000 hcircumflex 
+16#0126 LN410000 Hbar 
 16#0127 LN220000 hbar 
 16#0128 LN210000 Itilde 
 16#0129 highcomman itilde 
@@ -325,29 +325,29 @@
 16#012D LO610000 ibreve 
 16#012E LO240000 Iogonek 
 16#012F LO230000 iogonek 
-16#0130 LO260000 Odblacute Idotaccent 
-16#0131 LO250000 odblacute dotlessi 
+16#0130 LO260000 Idot Idotaccent 
+16#0131 LO250000 dotlessi 
 16#0132 LO520000 IJ 
 16#0133 LO510000 ij 
 16#0134 LR120000 Jcircumflex 
 16#0135 LR110000 jcircumflex 
-16#0136 LR420000 Rcedilla Kcommaaccent 
-16#0137 LR410000 rcedilla kcommaaccent 
+16#0136 LR420000 Kcedilla Kcommaaccent 
+16#0137 LR410000 kcedilla kcommaaccent 
 16#0138 LR220000 kgreenlandic 
 16#0139 LR210000 Lacute 
 16#013A LS120000 lacute 
-16#013B LS110000 Lcommaaccent 
-16#013C LS160000 lcommaaccent 
+16#013B LS110000 Lcedilla Lcommaaccent 
+16#013C LS160000 lcedilla lcommaaccent 
 16#013D LS150000 Lcaron 
 16#013E LS420000 lcaron 
 16#013F LS410000 Ldot 
 16#0140 LS220000 ldot 
 16#0141 LS210000 Lslash 
-16#0142 LT420000 Tcedilla lslash 
-16#0143 LT410000 tcedilla Nacute 
+16#0142 LT420000 lslash 
+16#0143 LT410000 Nacute 
 16#0144 LT220000 nacute 
-16#0145 LT210000 tquoteright Ncommaaccent 
-16#0146 LT620000 Tmacron ncommaaccent 
+16#0145 LT210000 Ncedilla tquoteright Ncommaaccent 
+16#0146 LT620000 ncedilla Tmacron ncommaaccent 
 16#0147 LT610000 tmacron Ncaron 
 16#0148 LU200000 ncaron 
 16#0149 LU190000 napostrophe 
@@ -357,26 +357,26 @@
 16#014D LU230000 omacron 
 16#014E LU280000 Obreve 
 16#014F LU270000 obreve 
-16#0150 LU260000 Udblacute Ohungarumlaut 
-16#0151 LU250000 udblacute ohungarumlaut 
+16#0150 LU260000 Odblacute Ohungarumlaut 
+16#0151 LU250000 odblacute ohungarumlaut 
 16#0152 LU440000 OE 
 16#0153 LU430000 oe 
 16#0154 LW160000 Racute 
 16#0155 LW150000 racute 
-16#0156 LY160000 Rcommaaccent 
-16#0157 LY150000 rcommaaccent 
+16#0156 LY160000 Rcedilla Rcommaaccent 
+16#0157 LY150000 rcedilla rcommaaccent 
 16#0158 LY180000 Rcaron 
 16#0159 LZ120000 rcaron 
 16#015A LZ110000 Sacute 
-16#015B LZ300000 sacute Zdot 
-16#015C LZ290000 zdot Scircumflex 
+16#015B LZ300000 sacute  
+16#015C LZ290000 Scircumflex 
 16#015D LZ220000 scircumflex 
-16#015E LZ210000
-16#015F slong
+16#015E LZ210000 Scedilla
+16#015F scedilla slong
 16#0160 bbar Scaron 
 16#0161 Bhook scaron 
-16#0162 Btopbar
-16#0163 btopbar
+16#0162 Tcedilla Btopbar
+16#0163 tcedilla btopbar
 16#0164 Tonesix Tcaron 
 16#0165 tonesix tcaron 
 16#0166 Oopen Tbar 
@@ -389,8 +389,8 @@
 16#016D deltaturn ubreve 
 16#016E Eturn Uring 
 16#016F Schwa uring 
-16#0170 Epsilon1 Uhungarumlaut 
-16#0171 Fhook uhungarumlaut 
+16#0170 Udblacute Epsilon1 Uhungarumlaut 
+16#0171 udblacute Fhook uhungarumlaut 
 16#0172 SC070000 fscript Uogonek 
 16#0173 Ghook uogonek 
 16#0174 Gamma1 Wcircumflex 
@@ -400,8 +400,8 @@
 16#0178 Khook Ydieresis 
 16#0179 khook Zacute 
 16#017A lbar zacute 
-16#017B lambdabar Zdotaccent 
-16#017C mcapturn zdotaccent 
+16#017B lambdabar Zdot Zdotaccent 
+16#017C mcapturn zdot zdotaccent 
 16#017D Nhook Zcaron 
 16#017E nleg zcaron 
 16#017F Obar longs 

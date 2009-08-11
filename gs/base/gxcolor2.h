@@ -75,6 +75,9 @@ struct gs_pattern1_instance_s {
     gs_matrix step_matrix;	/* tiling space -> device space */
     gs_rect bbox;		/* bbox of tile in tiling space */
     bool is_simple;		/* true if xstep/ystep = tile size */
+    bool has_overlap;           /* true if step is smaller than bbox size */
+                                /* This is used to detect if we must do */
+                                /* blending if we have transparency */
     /*
      * uses_mask is always true for PostScript patterns, but is false
      * for bitmap patterns that don't have explicit transparent pixels.

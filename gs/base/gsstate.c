@@ -255,7 +255,7 @@ gs_state_alloc(gs_memory_t * mem)
     gs_setalpha(pgs, 1.0);
     gs_settransfer(pgs, gs_identity_transfer);
     gs_setflat(pgs, 1.0);
-    gs_setfilladjust(pgs, 0.25, 0.25);
+    gs_setfilladjust(pgs, 0.3, 0.3);
     gs_setlimitclamp(pgs, false);
     gs_setstrokeadjust(pgs, true);
     pgs->font = 0;		/* Not right, but acceptable until the */

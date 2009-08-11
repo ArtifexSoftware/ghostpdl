@@ -483,6 +483,11 @@ $(DD)lp9600s.dev : $(escv_) $(DD)page.dev
 $(DD)lps4500.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)lps4500 $(escv_)
 
+$(DD)eplcolor.dev: $(escv_) $(DD)page.dev
+	$(SETPDEV) $(DD)eplcolor $(escv_)
+
+$(DD)eplmono.dev: $(escv_) $(DD)page.dev
+	$(SETPDEV) $(DD)eplmono $(escv_)
 
 # ------ The Lexmark 5700 and 7000 devices ------ #
 

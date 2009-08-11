@@ -203,7 +203,7 @@ gx_cpath_intersect_path_slow(gx_clip_path * pcpath, gx_path * ppath,
     else {
         gs_point fadjust;
 	params.rule = rule;
-        gs_currentfilladjust(pis, &fadjust);
+        gs_currentfilladjust((gs_state *)pis, &fadjust);
         params.adjust.x = float2fixed(fadjust.x);
         params.adjust.y = float2fixed(fadjust.y);
 	params.flatness = gs_currentflat_inline(pis);

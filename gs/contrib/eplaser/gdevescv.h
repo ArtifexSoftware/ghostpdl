@@ -1,5 +1,5 @@
 /* Copyright (C) EPSON SOFTWARE DEVELOPMENT LABORATORY, INC. 1999,2000.
-   Copyright (C) SEIKO EPSON CORPORATION 2000-2006.
+   Copyright (C) SEIKO EPSON CORPORATION 2000-2006,2009.
 
    Ghostscript printer driver for EPSON ESC/Page and ESC/Page-Color.
 
@@ -66,6 +66,10 @@
 #define ESCPAGE_OPTION_DOCUMENT                 "Document"
 #define ESCPAGE_OPTION_HOSTNAME                 "HostName"
 #define ESCPAGE_OPTION_COMMENT                  "eplComment"
+#define ESCPAGE_OPTION_EPLModelJP               "EPLModelJP"
+#define ESCPAGE_OPTION_EPLCapFaceUp             "EPLCapFaceUp"
+#define ESCPAGE_OPTION_EPLCapDuplexUnit         "EPLCapDuplexUnit"
+#define ESCPAGE_OPTION_EPLCapMaxResolution      "EPLCapMaxResolution"
 
 #define ESCPAGE_JOBID_MAX                       255
 #define ESCPAGE_USERNAME_MAX                    255
@@ -101,6 +105,10 @@
 #define X_DPI           600
 #define Y_DPI           600
 #define VCACHE          0x3FF
+
+#define ESCPAGE_DEVICENAME_COLOR                "eplcolor"
+#define ESCPAGE_DEVICENAME_MONO                 "eplmono"
+
 
 /* ---------------- Device definition ---------------- */
 
@@ -160,6 +168,10 @@ typedef struct gx_device_escv_s {
   gs_param_string gpsHostName;
   gs_param_string gpsDocument;
   gs_param_string gpsComment;
+  bool            modelJP;
+  bool            capFaceUp;
+  bool            capDuplexUnit;
+  int             capMaxResolution;
 } gx_device_escv;
 
 typedef struct EPaperTable_s{

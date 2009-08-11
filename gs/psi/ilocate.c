@@ -330,6 +330,7 @@ ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
 				     pre->o_type, gcst)) != 0; ++index) {
 		if (eptr.ptr == 0)
 		    DO_NOTHING;
+                /* NB check other types ptr_string_type, etc. */
 		else if (ptype == ptr_struct_type) {
 		    ialloc_validate_object(eptr.ptr, NULL, gcst);
 #		    if IGC_PTR_STABILITY_CHECK

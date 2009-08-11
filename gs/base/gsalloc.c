@@ -2008,7 +2008,8 @@ debug_print_object(const gs_memory_t *mem, const void *obj, const dump_control_t
 	enum_ptr_t eptr;
 	gs_ptr_type_t ptype;
 
-	if (proc != gs_no_struct_enum_ptrs)
+	if (proc != gs_no_struct_enum_ptrs) {
+            if (proc != 0) {
 	    for (; (ptype = (*proc)(mem, pre + 1, size, index, &eptr, type, NULL)) != 0;
 		 ++index
 		) {
@@ -2016,11 +2017,16 @@ debug_print_object(const gs_memory_t *mem, const void *obj, const dump_control_t
 
 		dprintf1("    ptr %u: ", index);
 		if (ptype == ptr_string_type || ptype == ptr_const_string_type) {
-		    const gs_const_string *str = (const gs_const_string *)ptr;
-
+                        const gs_const_string *str = (const gs_const_string *)&eptr;
+                        if (!str)
+                            dprintf("0x0");
+                        else
 		    dprintf2("0x%lx(%u)", (ulong) str->data, str->size);
 		    if (options & dump_do_pointed_strings) {
 			dputs(" =>\n");
+                            if (!str)
+                                dprintf("(null)\n");
+                            else
 			debug_dump_contents(str->data, str->data + str->size, 6,
 					    true);
 		    } else {
@@ -2031,6 +2037,10 @@ debug_print_object(const gs_memory_t *mem, const void *obj, const dump_control_t
 			      "(0x%lx)\n" : "0x%lx\n"), (ulong) ptr);
 		}
 	    }
+            } else { /* proc == 0 */
+                dprintf("previous line should be a ref\n");
+    }
+        } /* proc != gs_no_struct_enum_ptrs */
     }
     if (options & dump_do_contents) {
 	debug_dump_contents((const byte *)obj, (const byte *)obj + size,
@@ -2099,6 +2109,12 @@ debug_dump_memory(const gs_ref_memory_t * mem, const dump_control_t * control)
     }
 }
 
+void
+debug_dump_allocator(const gs_ref_memory_t *mem)
+{
+    debug_dump_memory(mem, &dump_control_all);
+}
+
 /* Find all the objects that contain a given pointer. */
 void
 debug_find_pointers(const gs_ref_memory_t *mem, const void *target)
@@ -2116,7 +2132,7 @@ debug_find_pointers(const gs_ref_memory_t *mem, const void *target)
 	    uint index = 0;
 	    enum_ptr_t eptr;
 
-	    if (proc)		/* doesn't trace refs */
+	    if (proc)		/* doesn't trace refs NB fix me. */
 		for (; (*proc)((const gs_memory_t *)mem, pre + 1, size, index, 
 			       &eptr, pre->o_type, NULL); 
 		     ++index)

@@ -881,6 +881,18 @@ with the following exceptions :
 are not required in the PDF/A definition file.
 </ul>
 
+There is one additional control for PDF/A output:
+
+<dl>
+<dt><code>PDFACompatibilityPolicy</code> <em>integer</em>
+<dd>When an operation (eg pdfmark) is encountered which cannot be emitted in a PDF/A compliant file, this policy is consulted, there are currently two possible values:
+
+<blockquote>0 - (default) Include the feature or operation in the output file, the file will not be PDF/A compliant. Because the document Catalog is emitted before this is encountered, the file will still contain PDF/A metadata but will not be compliant. A warning will be emitted in this case.
+</blockquote>
+<dd>
+<blockquote>1 - The feature or operation is ignored, the resulting PDF file will be PDF/A compliant. A warning wil be emitted for every elided feature.
+</blockquote>
+</dl>
 
 Here is a sample command line to invoke Ghostscript for generating a PDF/A document :
 <blockquote><code>
@@ -1049,7 +1061,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 8.64, 3 February 2009
+<small>Ghostscript version 8.70, 31 July 2009
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

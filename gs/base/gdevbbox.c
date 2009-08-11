@@ -234,7 +234,7 @@ bbox_copy_params(gx_device_bbox * bdev, bool remap_colors)
 }
 
 #define GX_DC_IS_TRANSPARENT(pdevc, bdev)\
-  (gx_dc_pure_color(pdevc) == (bdev)->transparent && gx_dc_is_pure(pdevc))
+  (gx_dc_is_pure(pdevc) && gx_dc_pure_color(pdevc) == (bdev)->transparent)
 
 static int
 bbox_close_device(gx_device * dev)

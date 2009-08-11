@@ -100,7 +100,7 @@ gx_default_strip_copy_rop(gx_device * dev,
     int depth = dev->color_info.depth;
     gs_memory_t *mem = dev->memory;
     const gx_device_memory *mdproto = gdev_mem_device_for_bits(depth);
-    gx_device_memory mdev;
+    gx_device_memory *pmdev;
     uint draster;
     byte *row = 0;
     gs_int_rect rect;
@@ -128,13 +128,13 @@ gx_default_strip_copy_rop(gx_device * dev,
     if (max_height == 0)
 	max_height = 1;
     block_height = min(height, max_height);
-    gs_make_mem_device(&mdev, mdproto, mem, -1, dev);
-    gx_device_retain((gx_device *)&mdev, true);	/* prevent freeing */
-    mdev.width = width;
-    mdev.height = block_height;
-    mdev.bitmap_memory = mem;
-    mdev.color_info = dev->color_info;
-    code = (*dev_proc(&mdev, open_device))((gx_device *)&mdev);
+    gs_make_mem_device_with_copydevice(&pmdev, mdproto, mem, -1, dev);
+    pmdev->width = width;
+    pmdev->height = block_height;
+    pmdev->bitmap_memory = mem;
+    pmdev->color_info = dev->color_info;
+    code = (*dev_proc(pmdev, open_device))((gx_device *)pmdev);
+    pmdev->is_open = true; /* not sure why we need this, but we do. */
     if (code < 0)
 	return code;
     if (rop3_uses_D(gs_transparent_rop(lop))) {
@@ -164,29 +164,29 @@ gx_default_strip_copy_rop(gx_device * dev,
 		(dev, &rect, &bit_params, NULL);
 	    if (code < 0)
 		break;
-	    code = (*dev_proc(&mdev, copy_color))
-		((gx_device *)&mdev, bit_params.data[0], bit_params.x_offset,
+	    code = (*dev_proc(pmdev, copy_color))
+		((gx_device *)pmdev, bit_params.data[0], bit_params.x_offset,
 		 draster, gx_no_bitmap_id, 0, 0, width,
 		 block_height);
 	    if (code < 0)
 		return code;
 	}
-	code = (*dev_proc(&mdev, strip_copy_rop))
-	    ((gx_device *)&mdev,
+	code = (*dev_proc(pmdev, strip_copy_rop))
+	    ((gx_device *)pmdev,
 	     sdata + (py - y) * sraster, sourcex, sraster,
 	     gx_no_bitmap_id, scolors, textures, tcolors,
 	     0, 0, width, block_height, phase_x + x, phase_y + py, lop);
 	if (code < 0)
 	    break;
 	code = (*dev_proc(dev, copy_color))
-	    (dev, scan_line_base(&mdev, 0), 0, draster, gx_no_bitmap_id,
+	    (dev, scan_line_base(pmdev, 0), 0, draster, gx_no_bitmap_id,
 	     x, py, width, block_height);
 	if (code < 0)
 	    break;
     }
 out:
     gs_free_object(mem, row, "copy_rop row");
-    (*dev_proc(&mdev, close_device))((gx_device *)&mdev);
+    gx_device_retain((gx_device *)pmdev, false);
     return code;
 }
 

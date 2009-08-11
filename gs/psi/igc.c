@@ -19,7 +19,6 @@
 #include "gsexit.h"
 #include "gsmdebug.h"
 #include "gsstruct.h"
-#include "gsutil.h"
 #include "iastate.h"
 #include "isave.h"
 #include "isstate.h"

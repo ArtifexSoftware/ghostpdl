@@ -19,6 +19,10 @@
 #include "png.h"
 #ifdef PNG_WRITE_SUPPORTED
 
+#if defined(_MSC_VER)
+#  define fileno(file) _fileno(file)
+#endif
+
 /* Write the data to whatever output you are using.  The default routine
    writes to a file pointer.  Note that this routine sometimes gets called
    with very small lengths, so you should implement some kind of simple

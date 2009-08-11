@@ -45,6 +45,10 @@
 #include "vdtrace.h"
 #include "gscolorbuffer.h"
 #include "gsptype2.h"
+#include "gxpcolor.h"
+#include "gsptype1.h"
+#include "gzcpath.h"
+#include "gxpaint.h"
 #include "gsiccmanage.h"
 
 /* Visual  trace options : set one to 1. */
@@ -894,7 +898,6 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
         global_index++;
     }
 
-
 #endif
 
     buf->saved = ctx->stack;
@@ -1018,6 +1021,48 @@ static const gx_cm_color_map_procs *
 pdf14_cmykspot_get_color_mapping_procs(const gx_device * dev)
 {
     return &pdf14_DeviceCMYKspot_procs;
+}
+
+
+/* Used to passed along information about the buffer created by the
+   pdf14 device.  This is used by the pattern accumulator when the
+   pattern contains transparency */
+int 
+pdf14_get_buffer_information(const gx_device * dev, gx_pattern_trans_t *transbuff){
+
+    const pdf14_device * pdev = (pdf14_device *)dev;
+    pdf14_buf *buf;
+    gs_int_rect rect;
+    int x1,y1,width,height;
+
+    if ( pdev->ctx == NULL){
+        return 0;  /* this can occur if the pattern is a clist */
+    }
+
+    buf = pdev->ctx->stack;
+    rect = buf->rect;
+
+    rect_intersect(rect, buf->bbox);
+    x1 = min(pdev->width, rect.q.x);
+    y1 = min(pdev->height, rect.q.y);
+    width = x1 - rect.p.x;
+    height = y1 - rect.p.y;
+    if (width <= 0 || height <= 0 || buf->data == NULL)
+	return 0;
+
+    transbuff->pdev14 = dev;
+    transbuff->n_chan = buf->n_chan;
+    transbuff->planestride = buf->planestride;
+    transbuff->rowstride = buf->rowstride;
+    transbuff->transbytes = buf->data;
+    transbuff->has_shape = buf->has_shape;
+    transbuff->width = width;
+    transbuff->height = height;
+
+    transbuff->rect = rect;
+
+    return(0);
+
 }
 
 /**
@@ -1390,6 +1435,61 @@ pdf14_fill_path(gx_device *dev,	const gs_imager_state *pis,
     gs_pattern2_instance_t *pinst = NULL;
 
 
+    if (pdcolor != NULL && gx_dc_is_pattern1_color(pdcolor)){
+
+        if( gx_pattern1_get_transptr(pdcolor) != NULL){
+
+            /* In this case, we need to push a transparency group 
+               and tile the pattern color, which is stored in 
+               a pdf14 device buffer in the ctile object memember
+               variable ttrans */
+
+#if RAW_DUMP
+
+            /* Since we do not get a put_image to view what
+               we have do it now */
+
+            pdf14_device * ppatdev14 = pdcolor->colors.pattern.p_tile->ttrans->pdev14;
+
+            if (ppatdev14 != NULL) {  /* can occur during clist reading */
+                dump_raw_buffer(ppatdev14->ctx->stack->rect.q.y-ppatdev14->ctx->stack->rect.p.y, 
+                            ppatdev14->ctx->stack->rect.q.x-ppatdev14->ctx->stack->rect.p.x, 
+				            ppatdev14->ctx->stack->n_planes,
+                            ppatdev14->ctx->stack->planestride, ppatdev14->ctx->stack->rowstride, 
+                            "Pattern_Fill",ppatdev14->ctx->stack->data);
+
+                global_index++;
+
+            } else {
+
+                 gx_pattern_trans_t *patt_trans = pdcolor->colors.pattern.p_tile->ttrans;
+                 dump_raw_buffer(patt_trans->rect.q.y-patt_trans->rect.p.y, 
+                            patt_trans->rect.q.x-patt_trans->rect.p.x, 
+				            patt_trans->n_chan,
+                            patt_trans->planestride, patt_trans->rowstride, 
+                            "Pattern_Fill_clist",patt_trans->transbytes);
+
+                global_index++;
+              
+            }
+
+
+#endif
+
+            code = pdf14_tile_pattern_fill(dev, &new_is, ppath, 
+                params, pdcolor, pcpath);
+
+            new_is.trans_device = NULL;
+            new_is.has_transparency = false;
+
+            return code;
+     
+        }
+
+    
+    }
+
+
    if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor)) {
 
  	pinst =
@@ -1444,6 +1544,172 @@ pdf14_stroke_path(gx_device *dev, const	gs_imager_state	*pis,
     return gx_default_stroke_path(dev, &new_is, ppath, params, pdcolor,
 				  pcpath);
 }
+
+
+/* Used for filling rects when we are doing a fill with a pattern that
+   has transparency */
+static	int
+pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
+		     gx_path * ppath, const gx_fill_params * params,
+		 const gx_device_color * pdevc, const gx_clip_path * pcpath)
+{
+    int code = 0;
+    gs_imager_state *pis_noconst = (gs_imager_state *)pis; /* Break const. */
+    gs_fixed_rect clip_box;
+    gs_fixed_rect outer_box;
+    pdf14_device * p14dev = (pdf14_device *)pdev;
+    gs_int_rect rect;
+    gx_clip_rect *curr_clip_rect;
+    gx_color_tile *ptile;
+    int k;
+    gx_pattern_trans_t *fill_trans_buffer;
+    int ok;
+    gs_int_point phase;  /* Needed during clist rendering for band offset */
+
+    gx_clip_path cpath_intersection;
+    const gs_fixed_rect *pcbox = (pcpath == NULL ? NULL : cpath_is_rectangle(pcpath));
+
+    if (pcpath != NULL) {
+        code = gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
+        if (code < 0)
+	    return code;
+    } else {
+        (*dev_proc(pdev, get_clipping_box)) (pdev, &clip_box);
+        gx_cpath_init_local(&cpath_intersection, ppath->memory);
+        code = gx_cpath_from_rectangle(&cpath_intersection, &clip_box);
+    }
+
+    if (ppath != NULL)
+        code = gx_cpath_intersect_with_params(&cpath_intersection, ppath, params->rule, 
+	        pis_noconst, params);
+
+  /* Now let us push a transparency group into which we are
+     going to tile the pattern.  */
+
+    if (ppath != NULL && code >= 0) {
+
+        gx_cpath_outer_box(&cpath_intersection, &outer_box);
+
+        rect.p.x = fixed2int(outer_box.p.x);
+        rect.p.y = fixed2int(outer_box.p.y);
+        rect.q.x = fixed2int_ceiling(outer_box.q.x);
+        rect.q.y = fixed2int_ceiling(outer_box.q.y);
+
+        /* The color space of this group must be the same as that of the 
+           tile.  Then when we pop the group, if there is a mismatch between
+           the tile color space and the current context we will do the proper
+           conversion.  In this way, we ensure that if the tile has any overlapping
+           occuring it will be blended in the proper manner i.e in the tile
+           underlying color space. */
+
+        ptile = pdevc->colors.pattern.p_tile;
+        code = pdf14_push_transparency_group(p14dev->ctx, &rect,
+					 1, 0, 255,255,
+					 pis->blend_mode, 0,
+					 0, ptile->ttrans->n_chan-1);
+
+        /* Set the blending procs and the is_additive setting based upon the number of channels */
+
+        if (ptile->ttrans->n_chan-1 < 4){
+
+            ptile->ttrans->blending_procs = &rgb_blending_procs;
+            ptile->ttrans->is_additive = true;
+
+        } else {
+
+            ptile->ttrans->blending_procs = &cmyk_blending_procs;
+            ptile->ttrans->is_additive = false;
+
+        }
+
+        /* Fix the reversed bbox. Not clear on why the push group does that */
+
+        p14dev->ctx->stack->bbox.p.x = p14dev->ctx->rect.p.x;
+        p14dev->ctx->stack->bbox.p.y = p14dev->ctx->rect.p.y;
+        p14dev->ctx->stack->bbox.q.x = p14dev->ctx->rect.q.x;
+        p14dev->ctx->stack->bbox.q.y = p14dev->ctx->rect.q.y;
+
+        /* Now lets go through the rect list and fill with the pattern */
+
+        /* First get the buffer that we will be filling */
+
+        fill_trans_buffer = new_pattern_trans_buff(pis->memory);
+        pdf14_get_buffer_information(pdev, fill_trans_buffer);
+
+        /* Set the blending mode in the ptile based upon the current setting in the imager state */
+
+        ptile->ttrans->blending_mode = pis->blend_mode;
+
+        /* fill the rectangles */
+
+        phase.x = pdevc->phase.x;
+        phase.y = pdevc->phase.y;
+
+        /* Based upon if the tiles overlap pick the type of rect fill that we will
+           want to use */
+
+        if (ptile->has_overlap) {
+
+            /* This one does blending since there is tile overlap */
+            ptile->ttrans->pat_trans_fill = &tile_rect_trans_blend;
+
+        } else {
+
+            /* This one does no blending since there is no tile overlap */
+            ptile->ttrans->pat_trans_fill = &tile_rect_trans_simple;
+
+        }
+
+        if (cpath_intersection.rect_list->list.head != NULL){
+            curr_clip_rect = cpath_intersection.rect_list->list.head->next;
+            
+            for( k = 0; k< cpath_intersection.rect_list->list.count; k++){  
+
+	        if_debug5('v', "[v]pdf14_tile_pattern_fill, (%d, %d), %d x %d pat_id %d \n", 
+		            curr_clip_rect->xmin, curr_clip_rect->ymin, 
+                            curr_clip_rect->xmax-curr_clip_rect->xmin, 
+                            curr_clip_rect->ymax-curr_clip_rect->ymin, ptile->id);
+
+                ok = gx_trans_pattern_fill_rect(curr_clip_rect->xmin, curr_clip_rect->ymin, 
+                    curr_clip_rect->xmax, curr_clip_rect->ymax, ptile, fill_trans_buffer, phase);
+                curr_clip_rect = curr_clip_rect->next;
+
+            }
+        } else if (cpath_intersection.rect_list->list.count == 1) {
+
+            /* The case when there is just a single rect */
+
+            if_debug5('v', "[v]pdf14_tile_pattern_fill, (%d, %d), %d x %d pat_id %d \n", 
+                cpath_intersection.rect_list->list.single.xmin, cpath_intersection.rect_list->list.single.ymin, 
+                        cpath_intersection.rect_list->list.single.xmax-cpath_intersection.rect_list->list.single.xmin, 
+                        cpath_intersection.rect_list->list.single.ymax-cpath_intersection.rect_list->list.single.ymin, 
+                        ptile->id);
+
+            ok = gx_trans_pattern_fill_rect(cpath_intersection.rect_list->list.single.xmin, 
+                                            cpath_intersection.rect_list->list.single.ymin, 
+                                            cpath_intersection.rect_list->list.single.xmax, 
+                                            cpath_intersection.rect_list->list.single.ymax, 
+                                            ptile, fill_trans_buffer, phase);
+
+        }
+
+        /* free our buffer object */
+
+        gs_free_object(pis->memory, fill_trans_buffer, "pdf14_tile_pattern_fill");
+
+        /* pop our transparency group which will force the blending */
+
+        code = pdf14_pop_transparency_group(p14dev->ctx, p14dev->blend_procs, p14dev->color_info.num_components);
+    
+    }
+
+    return(code);
+
+}
+
+
+
+
 
 static	int
 pdf14_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
@@ -1543,7 +1809,7 @@ pdf14_forward_device_procs(gx_device * dev)
  * method.)  However it is no-op'ed when the PDF 1.4 device is popped.  This
  * routine implements that action.
  */
-static	int
+int
 pdf14_disable_device(gx_device * dev)
 {
     gx_device_forward * pdev = (gx_device_forward *)dev;
@@ -2848,7 +3114,6 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
     int num_comp = num_chan - 1;
     int shape_off = num_chan * planestride;
     bool has_shape = buf->has_shape;
-    byte opacity;
     bool additive = pdev->ctx->additive;
 
     if (buf->data == NULL)
@@ -5265,7 +5530,7 @@ pdf14_clist_begin_typed_image(gx_device	* dev, const gs_imager_state * pis,
 {
     pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
     int code;
-    gs_imager_state * pis_noconst = pis; /* Break 'const'. */
+    gs_imager_state * pis_noconst = (gs_imager_state *)pis; /* Break 'const'. */
 
     /*
      * Ensure that that the PDF 1.4 reading compositor will have the current

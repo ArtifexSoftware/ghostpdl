@@ -63,7 +63,9 @@ typedef struct stream_CF_state_s {
 		/* Added by us */\
    (ss)->DecodedByteAlign = 1,\
 	/* Clear pointers */\
-   (ss)->lbuf = 0, (ss)->lprev = 0)
+   (ss)->lbuf = 0, (ss)->lprev = 0,\
+        /* Clear errors */\
+   (ss)->error_string[0] = 0)
 
 /* CCITTFaxEncode */
 typedef struct stream_CFE_state_s {

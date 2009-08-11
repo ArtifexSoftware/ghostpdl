@@ -217,9 +217,7 @@ cid_fill_CIDMap(const gs_memory_t *mem,
 int
 cid_fill_Identity_CIDMap(const gs_memory_t *mem, 
                 ref *CIDMap)
-{   int dict_enum;
-    ref el[2];
-    int count, i;
+{   int count, i;
 
     count = r_size(CIDMap);
     if (count != 3)

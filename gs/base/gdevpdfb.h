@@ -249,6 +249,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,				/* CenterPages */
  0,				/* DoNumCopies */
  true,				/* PreserveSeparation */
- true				/* PreserveDeviceN */
+ true,				/* PreserveDeviceN */
+ 0				/* PDFACompatibilityPolicy */
 };
 

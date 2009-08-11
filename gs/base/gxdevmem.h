@@ -210,7 +210,12 @@ const gx_device_memory *gdev_mem_device_for_bits(int);
 /* Determine the word-oriented memory device for a given depth. */
 const gx_device_memory *gdev_mem_word_device_for_bits(int);
 
-/* Make a memory device. */
+/* 
+ * Make a memory device.  The following 4 procedures will be
+ * deprecated, use gs_make_mem_*_copydevice() below, for future
+ * changes.
+ */
+
 /* mem is 0 if the device is temporary and local, */
 /* or the allocator that was used to allocate it if it is a real object. */
 /* page_device is 1 if the device should be a page device, */
@@ -228,6 +233,26 @@ void gs_make_mem_abuf_device(gx_device_memory * adev, gs_memory_t * mem,
 			     int alpha_bits, int mapped_x);
 void gs_make_mem_alpha_device(gx_device_memory * adev, gs_memory_t * mem,
 			      gx_device * target, int alpha_bits);
+
+/*
+ * Create memory devices with copydevice.  For now the destructor is
+ * simply: gx_device_retain(mdev, false).
+ */
+
+int gs_make_mem_mono_device_with_copydevice(gx_device_memory ** mdev,
+                                            gs_memory_t * mem,
+                                            gx_device * target);
+
+int gs_make_mem_device_with_copydevice(gx_device_memory ** mdev,
+                                       const gx_device_memory * mdproto,
+                                       gs_memory_t * mem,
+                                       int page_device,
+                                       gx_device * target);
+
+/* 
+ * TODO replace gs_make_mem_abuf_device, gs_make_mem_alpha_device with
+ * procedures that use copydevice.
+ */
 
 /*
  * Open a memory device, only setting line pointers to a subset of its
