@@ -813,6 +813,7 @@ setglobal
     //systemdict begin
     readtype1dictcopy begin cvx stopped
 
+    currentfile flushfile % Skip the trailer after return from eexec, bug 690701.
     { currentdict end //missing-type1-procs eq { exit } if } loop
     { stop } if
   } bdef
