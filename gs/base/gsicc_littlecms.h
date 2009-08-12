@@ -34,6 +34,8 @@ void gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *inp
                              void *inputbuffer,
                              void *outputbuffer);
 
+int
+gscms_get_channel_count(gcmmhprofile_t profile);
 
 void gscms_transform_color(gsicc_link_t *icclink,  
                              void *inputcolor,

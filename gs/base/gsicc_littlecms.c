@@ -19,6 +19,79 @@
 #define DUMP_CMS_BUFFER 0
 
 
+/* Get the number of channels for the profile */
+
+int
+gscms_get_channel_count(gcmmhprofile_t profile)
+{
+
+    icColorSpaceSignature colorspace;
+
+    colorspace = cmsGetColorSpace(profile);
+
+    switch(colorspace){
+
+        case icSigGrayData:
+            return(1);
+
+        case icSig2colorData:
+            return(2);
+
+        case icSigXYZData:
+        case icSigLabData:
+        case icSigLuvData:
+        case icSigYCbCrData:
+        case icSigYxyData:
+        case icSigRgbData:
+        case icSigHsvData:
+        case icSigHlsData:
+        case icSig3colorData:
+        case icSigCmyData:
+            return(3);
+
+        case icSigCmykData:
+        case icSig4colorData:
+            return(4);
+
+        case icSig5colorData:
+            return(5);
+
+        case icSig6colorData:
+            return(6);
+
+        case icSig7colorData:
+            return(7);
+
+        case icSig8colorData:
+            return(8);
+
+        case icSig9colorData:
+            return(9);
+
+        case icSig10colorData:
+            return(10);
+
+        case icSig11colorData:
+             return(11);
+
+        case icSig12colorData:
+            return(12);
+
+        case icSig13colorData:
+            return(13);
+
+        case icSig14colorData:
+            return(14);
+
+        case icSig15colorData:
+            return(15);
+
+        default:
+            return(-1);
+
+    }
+
+}
 
 /* Get ICC Profile handle from buffer */
 

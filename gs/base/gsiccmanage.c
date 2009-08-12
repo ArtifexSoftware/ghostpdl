@@ -291,6 +291,10 @@ gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev, gs_memo
                 gsicc_get_icc_buff_hash(icc_profile->buffer, &(icc_profile->hashcode));
                 icc_profile->hash_is_valid = true;
 
+                /* Get the number of channels in the output profile */
+
+                icc_profile->num_comps = gscms_get_channel_count(icc_profile->profile_handle);
+
             }
   
 
