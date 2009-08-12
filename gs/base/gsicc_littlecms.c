@@ -204,6 +204,10 @@ gscms_transform_color(gsicc_link_t *icclink,
     dwInputFormat = (curr_input & (~LCMS_BYTES_MASK))  | BYTES_SH(num_bytes);
     dwOutputFormat = (curr_output & (~LCMS_BYTES_MASK)) | BYTES_SH(num_bytes);
 
+   /* Change the formatters */
+
+    cmsChangeBuffersFormat(hTransform,dwInputFormat,dwOutputFormat);
+
     /* Do conversion */
 
     cmsDoTransform(hTransform,inputcolor,outputcolor,1); 
@@ -241,7 +245,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
      des_data_type = (COLORSPACE_SH(lcms_des_color_space)|CHANNELS_SH(des_nChannels)|BYTES_SH(1));
 
          /* endian */
-    #if !arch_is_big_endian
+    #if arch_is_big_endian
     src_data_type = src_data_type | ENDIAN16_SH(1);
     des_data_type = des_data_type | ENDIAN16_SH(1);
     #endif
