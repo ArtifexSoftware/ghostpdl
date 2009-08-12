@@ -55,14 +55,48 @@ psdf_setlinewidth(gx_device_vector * vdev, floatp width)
 int
 psdf_setlinecap(gx_device_vector * vdev, gs_line_cap cap)
 {
-    pprintd1(gdev_vector_stream(vdev), "%d J\n", cap);
+    switch (cap) {
+	case gs_cap_butt:
+	case gs_cap_round:
+	case gs_cap_square:
+	    pprintd1(gdev_vector_stream(vdev), "%d J\n", cap);
+	    break;
+	case gs_cap_triangle:
+	    /* If we get a PCL triangle cap, substitute with a round cap */
+	    pprintd1(gdev_vector_stream(vdev), "%d J\n", gs_cap_round);
+	    break;
+	default:
+	    /* Ensure we don't write a broken file if we don't recognise the cap */
+	    eprintf1("Unknown line cap enumerator %d, substituting butt\n", cap);
+	    pprintd1(gdev_vector_stream(vdev), "%d J\n", gs_cap_butt);
+	    break;
+    }
     return 0;
 }
 
 int
 psdf_setlinejoin(gx_device_vector * vdev, gs_line_join join)
 {
-    pprintd1(gdev_vector_stream(vdev), "%d j\n", join);
+    switch (join) {
+	case gs_join_miter:
+	case gs_join_round:
+	case gs_join_bevel:
+	    pprintd1(gdev_vector_stream(vdev), "%d j\n", join);
+	    break;
+	case gs_join_none:
+	    /* If we get a PCL triangle join, substitute with a bevel join */
+	    pprintd1(gdev_vector_stream(vdev), "%d j\n", gs_join_bevel);
+	    break;
+	case gs_join_triangle:
+	    /* If we get a PCL triangle join, substitute with a miter join */
+	    pprintd1(gdev_vector_stream(vdev), "%d j\n", gs_join_miter);
+	    break;
+	default:
+	    /* Ensure we don't write a broken file if we don't recognise the join */
+	    eprintf1("Unknown line join enumerator %d, substituting miter\n", join);
+	    pprintd1(gdev_vector_stream(vdev), "%d j\n", gs_join_miter);
+	    break;
+    }
     return 0;
 }
 
