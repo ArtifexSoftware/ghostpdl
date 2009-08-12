@@ -513,6 +513,10 @@ gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, gs_memory_t *memory
     unsigned char           buffer_size[4];
     unsigned char           *buffer_ptr;
 
+    srewind(s);  /* Work around for issue with sfread return 0 bytes
+                    and not doing a retry if there is an issue.  This
+                    is a bug in the stream logic or strmio layer.  Occurs
+                    with smask_withicc.pdf on linux 64 bit system */
 
     buffer_ptr = &(buffer_size[0]);
     num_bytes = sfread(buffer_ptr,sizeof(unsigned char),4,s);

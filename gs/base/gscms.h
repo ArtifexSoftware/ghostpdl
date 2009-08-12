@@ -178,6 +178,7 @@ typedef struct gsicc_link_cache_s {
     gsicc_link_t *icc_link;
     int num_links;
     rc_header rc;
+    gs_memory_t *memory;
 
 } gsicc_link_cache_t;
 

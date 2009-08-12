@@ -63,17 +63,49 @@ gsicc_cache_new(gs_memory_t *memory)
 
     gsicc_link_cache_t *result;
 
+    /* We want this to be maintained in stable_memory.  It should be be effected by the 
+       save and restores */
 
-    rc_alloc_struct_1(result, gsicc_link_cache_t, &st_icc_linkcache, memory, 
-                        return(NULL),"gsiccmanage_linkcache_new");
+    result = gs_alloc_struct(memory->stable_memory, gsicc_link_cache_t, &st_icc_linkcache,
+			     "gsicc_cache_new");
+
+    if ( result == NULL )
+        return(NULL);
+
+    rc_init_free(result, memory->stable_memory, 1, rc_gsicc_cache_free);
 
     result->icc_link = NULL;
     result->num_links = 0;
+    result->memory = memory;
 
     return(result);
 
 }
 
+static void
+rc_gsicc_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
+{
+    /* Ending the entire cache.  The ref counts on all the links should be 0 */
+
+    gsicc_link_cache_t *link_cache = (gsicc_link_cache_t * ) ptr_in;
+    int k;
+    gsicc_link_t *link;
+
+    link = gsicc_find_zeroref_cache(link_cache);
+
+    for( k = 0; k < link_cache->num_links; k++){
+
+        if ( link_cache->icc_link != NULL){
+
+            gsicc_remove_link(link_cache->icc_link,link_cache, mem);
+
+        }
+
+    }
+
+    gs_free_object(mem->stable_memory, link_cache, "rc_gsicc_cache_free");
+
+}
 
 gsicc_link_t *
 gsicc_add_link(gsicc_link_cache_t *link_cache, void *link_handle, void *contextptr, 
@@ -82,7 +114,10 @@ gsicc_add_link(gsicc_link_cache_t *link_cache, void *link_handle, void *contextp
 
     gsicc_link_t *result, *nextlink;
 
-    result = gs_alloc_struct(memory, gsicc_link_t, &st_icc_link,
+    /* The link has to be added in stable memory. We want them
+       to be maintained across the gsave and grestore process */
+
+    result = gs_alloc_struct(memory->stable_memory, gsicc_link_t, &st_icc_link,
 			     "gsiccmanage_link_new");
 
     result->contextptr = contextptr;
@@ -126,24 +161,12 @@ gsicc_add_link(gsicc_link_cache_t *link_cache, void *link_handle, void *contextp
 }
 
 
-
-void
-gsicc_cache_free(gsicc_link_cache_t *icc_cache, gs_memory_t *memory)
-{
-
-    /* ToDo: Need to free all the links and release them from the CMS first */
-
-    gs_free_object(memory, icc_cache, "gsiccmanage_linkcache_free");
-}
-
-
-
 void
 gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory)
 {
 
     gscms_release_link(icc_link);
-    gs_free_object(memory, icc_link, "gsiccmanage_link_free");
+    gs_free_object(memory->stable_memory, icc_link, "gsiccmanage_link_free");
 
 }
 
@@ -397,7 +420,7 @@ gsicc_find_zeroref_cache(gsicc_link_cache_t *icc_cache){
 /* Remove link from cache.  Notify CMS and free */
 
 static void
-gsicc_remove_link(gsicc_link_t *link,gsicc_link_cache_t *icc_cache, gs_memory_t *memory){
+gsicc_remove_link(gsicc_link_t *link, gsicc_link_cache_t *icc_cache, gs_memory_t *memory){
 
 
     gsicc_link_t *prevlink,*nextlink;
