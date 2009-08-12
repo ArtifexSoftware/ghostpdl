@@ -17,6 +17,7 @@
 #include "lcms.h"
 
 #define DUMP_CMS_BUFFER 0
+#define LCMS_BYTES_MASK 0x7
 
 
 /* Get the number of channels for the profile */
@@ -28,68 +29,8 @@ gscms_get_channel_count(gcmmhprofile_t profile)
     icColorSpaceSignature colorspace;
 
     colorspace = cmsGetColorSpace(profile);
+    return(_cmsChannelsOf(colorspace));
 
-    switch(colorspace){
-
-        case icSigGrayData:
-            return(1);
-
-        case icSig2colorData:
-            return(2);
-
-        case icSigXYZData:
-        case icSigLabData:
-        case icSigLuvData:
-        case icSigYCbCrData:
-        case icSigYxyData:
-        case icSigRgbData:
-        case icSigHsvData:
-        case icSigHlsData:
-        case icSig3colorData:
-        case icSigCmyData:
-            return(3);
-
-        case icSigCmykData:
-        case icSig4colorData:
-            return(4);
-
-        case icSig5colorData:
-            return(5);
-
-        case icSig6colorData:
-            return(6);
-
-        case icSig7colorData:
-            return(7);
-
-        case icSig8colorData:
-            return(8);
-
-        case icSig9colorData:
-            return(9);
-
-        case icSig10colorData:
-            return(10);
-
-        case icSig11colorData:
-             return(11);
-
-        case icSig12colorData:
-            return(12);
-
-        case icSig13colorData:
-            return(13);
-
-        case icSig14colorData:
-            return(14);
-
-        case icSig15colorData:
-            return(15);
-
-        default:
-            return(-1);
-
-    }
 
 }
 
@@ -244,39 +185,24 @@ void
 gscms_transform_color(gsicc_link_t *icclink,  
                              void *inputcolor,
                              void *outputcolor,
+                             int num_bytes,
                              void **contextptr)
 
 {
     cmsHTRANSFORM hTransform = (cmsHTRANSFORM) icclink->link_handle;
     DWORD dwInputFormat,dwOutputFormat,curr_input,curr_output;
-    int numbytes;
 
-    /* As above, we will want to set the transform to handle the proper
-       sized data (size of gx_color_value) */
+    /* For a single color, we are going to use the link as it is 
+       with the exception of taking care of the word size. */
 
     _LPcmsTRANSFORM p = (_LPcmsTRANSFORM) (LPSTR) hTransform;
     curr_input = p->InputFormat;
     curr_output = p->OutputFormat;
-
-    /* Color space MUST be the same (i.e not change) */
-
-    dwInputFormat = COLORSPACE_SH(T_COLORSPACE(curr_input));
-    dwOutputFormat = COLORSPACE_SH(T_COLORSPACE(curr_output));
  
-    numbytes = sizeof(gx_color_value);
-    if (numbytes>2) numbytes = 0;  /* littleCMS encodes float with 0 ToDO. Doublecheck this. */
-    dwInputFormat = dwInputFormat | BYTES_SH(numbytes);
-    dwOutputFormat = dwOutputFormat | BYTES_SH(numbytes);
-
-    /* endian */
-    #if !arch_is_big_endian
-    dwInputFormat = dwInputFormat | ENDIAN16_SH(1);
-    dwOutputFormat = dwOutputFormat | ENDIAN16_SH(1);
-    #endif
-
-    /* Change the formaters */
-
-    cmsChangeBuffersFormat(hTransform,dwInputFormat,dwOutputFormat);
+    /* numbytes = sizeof(gx_color_value); */
+    if (num_bytes>2) num_bytes = 0;  /* littleCMS encodes float with 0 ToDO. Doublecheck this. */
+    dwInputFormat = (curr_input & (~LCMS_BYTES_MASK))  | BYTES_SH(num_bytes);
+    dwOutputFormat = (curr_output & (~LCMS_BYTES_MASK)) | BYTES_SH(num_bytes);
 
     /* Do conversion */
 
@@ -313,6 +239,13 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
 
      src_data_type = (COLORSPACE_SH(lcms_src_color_space)|CHANNELS_SH(src_nChannels)|BYTES_SH(1));
      des_data_type = (COLORSPACE_SH(lcms_des_color_space)|CHANNELS_SH(des_nChannels)|BYTES_SH(1));
+
+         /* endian */
+    #if !arch_is_big_endian
+    src_data_type = src_data_type | ENDIAN16_SH(1);
+    des_data_type = des_data_type | ENDIAN16_SH(1);
+    #endif
+
 
 /* Create the link */
 

@@ -25,6 +25,8 @@
 #include "gxcie.h"
 #include "gzstate.h"
 #include "gsicc.h"
+#include "gsicccache.h"
+#include "gsicc_littlecms.h"
 
 #define SAVEICCPROFILE 0
 
@@ -66,6 +68,7 @@ static cs_proc_init_color(gx_init_ICC);
 static cs_proc_restrict_color(gx_restrict_ICC);
 static cs_proc_concrete_space(gx_concrete_space_ICC);
 static cs_proc_concretize_color(gx_concretize_ICC);
+static cs_proc_remap_color(gx_remap_ICC);
 static cs_proc_install_cspace(gx_install_ICC);
 
 #if ENABLE_CUSTOM_COLOR_CALLBACK
@@ -88,7 +91,7 @@ static const gs_color_space_type gs_color_space_type_ICC = {
 #if ENABLE_CUSTOM_COLOR_CALLBACK
     gx_remap_ICCBased,		    /* remap_color */
 #else
-    gx_default_remap_color,         /* remap_color */
+    gx_remap_ICC,                   /* remap_color */
 #endif
     gx_install_ICC,                 /* install_cpsace */
     gx_spot_colors_set_overprint,   /* set_overprint */
@@ -160,6 +163,58 @@ gx_concrete_space_ICC(const gs_color_space * pcs, const gs_imager_state * pis)
     return cs_concrete_space(pacs, pis);
 }
 
+
+/*
+ * To device space
+ */
+int
+gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
+	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+		       gs_color_select_t select)
+{
+
+    gsicc_link_t *icc_link;
+    gsicc_rendering_param_t rendering_params;
+    unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS], psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    int k,i;
+    gx_color_index color;
+
+    /* Define the rendering intents.  MJV to fix */
+    rendering_params.black_point_comp = BP_ON;
+    rendering_params.object_type = GS_PATH_TAG;
+    rendering_params.rendering_intent = gsSATURATION;
+
+     /* This needs to be optimized. And range corrected */
+   for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++){
+    
+        psrc[k] = pcc->paint.values[k]*65535;
+           
+    }
+
+    /* Get a link from the cache, or create if it is not there. Need to get 16 bit profile */
+    icc_link = gsicc_get_link(pis, pcs, NULL, &rendering_params, pis->memory, false);
+
+    /* Transform the color */
+    gscms_transform_color(icc_link, psrc, psrc_cm, 2, NULL);
+
+    /* Release the link */
+    gsicc_release_link(icc_link);
+
+    /* We are already in short form */
+    color = dev_proc(dev, encode_color)(dev, psrc_cm);
+    if (color != gx_no_color_index) 
+	color_set_pure(pdc, color);
+
+    /* Save original color space and color info into dev color */
+    i = pcs->cmm_icc_profile_data->num_comps;
+    for (i--; i >= 0; i--)
+	pdc->ccolor.paint.values[i] = pcc->paint.values[i];
+    pdc->ccolor_valid = true;
+    return 0;
+
+
+}
+
 /*
  * Convert an ICCBased color space to a concrete color space.
  */
@@ -171,8 +226,39 @@ gx_concretize_ICC(
     const gs_imager_state * pis )
 {
 
-/* MJV to FIX */
+    gsicc_link_t *icc_link;
+    gsicc_rendering_param_t rendering_params;
+    unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS], psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    int k;
 
+    /* Define the rendering intents.  MJV to fix */
+    rendering_params.black_point_comp = BP_ON;
+    rendering_params.object_type = GS_PATH_TAG;
+    rendering_params.rendering_intent = gsSATURATION;
+
+     /* This need to be optimized */
+   for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++){
+    
+        psrc[k] = pcc->paint.values[k]*65535;
+           
+    }
+
+    /* Get a link from the cache, or create if it is not there. Get 16 bit profile */
+    icc_link = gsicc_get_link(pis, pcs, NULL, &rendering_params, pis->memory, false);
+
+    /* Transform the color */
+    gscms_transform_color(icc_link, psrc, psrc_cm, 2, NULL);
+
+    /* This needs to be optimized */
+    for (k = 0; k < pis->icc_manager->device_profile->num_comps; k++){
+    
+        pconc[k] = float2frac(((float) psrc_cm[k])/65535.0);
+           
+    }
+
+
+    /* Release the link */
+    gsicc_release_link(icc_link);
 
     return 0;
 }

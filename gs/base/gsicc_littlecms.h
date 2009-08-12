@@ -40,6 +40,7 @@ gscms_get_channel_count(gcmmhprofile_t profile);
 void gscms_transform_color(gsicc_link_t *icclink,  
                              void *inputcolor,
                              void *outputcolor,
+                             int num_bytes,
                              void **contextptr);
 
 gcmmhlink_t gscms_get_link(gcmmhprofile_t  lcms_srchandle, 
