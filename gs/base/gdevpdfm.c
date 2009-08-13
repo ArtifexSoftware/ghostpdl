@@ -372,6 +372,7 @@ pdfmark_bind_named_object(gx_device_pdf *pdev, const gs_const_string *objname,
 	    code = pdf_substitute_resource(pdev, pres, resourceXObject, NULL, false);
 	else
 	    code = pdf_substitute_resource(pdev, pres, resourceXObject, NULL, true);
+	(*pres)->where_used |= pdev->used_mask;
 	if (code < 0)
 	    return code;
     } else {

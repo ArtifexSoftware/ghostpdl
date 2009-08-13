@@ -848,6 +848,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
     		code = pdf_substitute_resource(pdev, &pres_attributes, resourceOther, NULL, true);
 		if (code < 0)
 		    return code;
+		pres_attributes->where_used |= pdev->used_mask;
 		va = &v_attriburtes;
 		COS_OBJECT_VALUE(va, pres_attributes->object);
 	    }

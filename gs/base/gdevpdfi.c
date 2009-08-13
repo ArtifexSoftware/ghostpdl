@@ -1423,6 +1423,7 @@ gdev_pdf_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
 	    if (pres == 0)
 		return gs_error_undefined;
 	    pres = pdf_substitute_pattern(pres);
+	    pres->where_used |= pdev->used_mask;
 	    code = pdf_add_resource(pdev, pdev->substream_Resources, "/Pattern", pres);
 	    if (code < 0)
 		return code;

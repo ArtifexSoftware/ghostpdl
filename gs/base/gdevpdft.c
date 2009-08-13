@@ -115,6 +115,7 @@ pdf_make_group_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams
     code = pdf_substitute_resource(pdev, &pres_group, resourceGroup, NULL, false);
     if (code < 0)
 	return code;
+    pres_group->where_used |= pdev->used_mask;
     *pdict = (cos_dict_t *)pres_group->object;
     return 0;
 }
@@ -317,6 +318,7 @@ pdf_end_transparency_mask(gs_imager_state * pis, gx_device_pdf * pdev,
 					resourceSoftMaskDict, NULL, false);
 	if (code < 0)
 	    return code;
+	pdev->pres_soft_mask_dict->where_used |= pdev->used_mask;
 	pis->soft_mask_id = pdev->pres_soft_mask_dict->object->id;
 	pdev->pres_soft_mask_dict = NULL;
     }
