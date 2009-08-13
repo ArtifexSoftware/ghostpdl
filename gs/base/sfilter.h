@@ -62,6 +62,7 @@ typedef struct stream_exD_state_s {
     long hex_left;		/* # of encoded chars to process as hex */
 				/* if binary == 0 */
     int skip;			/* # of decoded bytes to skip */
+    bool is_leading_space;      /* handle the space as leading space */
 } stream_exD_state;
 
 #define private_st_exD_state()	/* in seexec.c */\

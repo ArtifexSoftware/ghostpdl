@@ -72,6 +72,7 @@ s_exD_set_defaults(stream_state * st)
     /* Clear pointers for GC */
     ss->pfb_state = 0;
     ss->keep_spaces = false;    /* PS mode */
+    ss->is_leading_space = true;
 }
 
 /* Initialize the state for reading and decrypting. */
@@ -171,8 +172,9 @@ hp:	r = *pr;
 	start = r.ptr;
 	if (r.limit - r.ptr > ss->hex_left)
 	    r.limit = r.ptr + ss->hex_left;
-	status = s_hex_process(&r, pw, &ss->odd,
-			       hex_ignore_leading_whitespace);
+	status = s_hex_process(&r, pw, &ss->odd, 
+	  (ss->is_leading_space ? hex_ignore_leading_whitespace : hex_break_on_whitespace));
+        ss->is_leading_space = (status == 2);
 	pr->ptr = r.ptr;
 	ss->hex_left -= r.ptr - start;
 	/*
