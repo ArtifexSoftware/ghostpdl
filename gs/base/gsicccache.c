@@ -573,7 +573,7 @@ gsicc_release_link(gsicc_link_t *icclink)
 void
 gsicc_init_buffer(gsicc_bufferdesc_t *buffer_desc, unsigned char num_chan, unsigned char bytes_per_chan,
                   bool has_alpha, bool alpha_first, bool is_planar, int plane_stride, int row_stride,
-                  int num_rows, int pixels_per_row, gsicc_colorbuffer_t buffercolor)
+                  int num_rows, int pixels_per_row)
 {
 
 
@@ -586,7 +586,6 @@ gsicc_init_buffer(gsicc_bufferdesc_t *buffer_desc, unsigned char num_chan, unsig
     buffer_desc->row_stride = row_stride;
     buffer_desc->num_rows = num_rows;
     buffer_desc->pixels_per_row = pixels_per_row; 
-    buffer_desc->buffercolor = buffercolor;
 
 #if arch_is_big_endian
     buffer_desc->little_endian = false;

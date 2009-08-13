@@ -111,7 +111,6 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
 		   uint w, int h, gx_device * dev)
 {
     const gx_image_enum *const penum = penum_orig; /* const within proc */
-    gx_image_clue *const clues = penum_orig->clues; /* not const */
     const gs_imager_state *pis = penum->pis;
     gs_logical_operation_t lop = penum->log_op;
     gx_dda_fixed_point pnext;
@@ -120,12 +119,8 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
     fixed pdyx, pdyy;		/* edge of parallelogram */
     int vci, vdi;
     const gs_color_space *pcs = penum->pcs;
-    cs_proc_remap_color((*remap_color)) = pcs->type->remap_color;
-    cs_proc_remap_concrete_color((*remap_concrete_color)) =
-	    pcs->type->remap_concrete_color;
     gs_client_color cc;
     bool device_color = penum->device_color;
-    const gx_color_map_procs *cmap_procs = gx_get_cmap_procs(pis, dev);
     bits32 mask = penum->mask_color.mask;
     bits32 test = penum->mask_color.test;
     gx_device_color devc;
@@ -150,6 +145,7 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
     int k;
     gx_color_index color;
     gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    int spp_cm, num_pixels;
 
     pdevc = &devc;
 
@@ -165,17 +161,18 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
     
     icc_link = gsicc_get_link(pis, pcs, NULL, &rendering_params, pis->memory, false);
 
-    /* Set up the buffer descriptors.  Hard coded for my testing of this */
-    /* Need to clean up how to indicate the number of channels in the transform
-       as well as the profile type */
+    /* Set up the buffer descriptors. */
+
+    spp_cm = pis->icc_manager->device_profile->num_comps;
+    num_pixels = w/spp;
 
     gsicc_init_buffer(&input_buff_desc, spp, 1,
                   false, false, false, 0, w,
-                  1, w/spp, gsRGB);
+                  1, num_pixels);
 
-    gsicc_init_buffer(&output_buff_desc, dev->color_info.num_components, 1,
-                  false, false, false, 0, w,
-                  1, w * dev->color_info.num_components/spp, gsRGB);
+    gsicc_init_buffer(&output_buff_desc, spp_cm, 1,
+                  false, false, false, 0, num_pixels * spp_cm,
+                  1, num_pixels);
 
     /* For now, just blast it all through the link. If we had a significant reduction 
        we will want to repack the data first and then do this.  That will be 
@@ -185,9 +182,9 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
        buffer.  We can reuse the old one if the number of channels in the output is
        less than or equal to the new one.  We will do that soon. */
 
-    psrc_cm = gs_alloc_bytes(pis->memory, w * dev->color_info.num_components/spp, "image_render_color");
+    psrc_cm = gs_alloc_bytes(pis->memory,  w * spp_cm/spp, "image_render_color");
     psrc_cm_start = psrc_cm;
-    bufend = psrc_cm + w * dev->color_info.num_components/spp;
+    bufend = psrc_cm +  w * dev->color_info.num_components/spp;
 
     gscms_transform_color_buffer(icc_link, &input_buff_desc, &output_buff_desc, 
                              psrc,psrc_cm);
@@ -242,14 +239,8 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
 
         } else {
 
-            /* No alpha. */
-
-      /*      for ( k = 0; k < spp; k++ ) {
-	        next.v[k] = psrc_cm[k];
-            } */
-
-            memcpy(&(next.v[0]),psrc_cm, spp);
-            psrc_cm += spp;
+            memcpy(&(next.v[0]),psrc_cm, spp_cm);
+            psrc_cm += spp_cm;
 
         }
 
@@ -257,11 +248,10 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
 
         if (posture != image_skewed && next.all[0] == run.all[0])
             goto inc;
-            
-         for ( k = 0; k < spp; k++ ) {
-            decode_sample(next.v[k], cc, k);
-            devc.ccolor.paint.values[k] = cc.paint.values[k];
-            conc[k] = gx_unit_frac(cc.paint.values[k]);
+         
+        /* This needs to be sped up */
+         for ( k = 0; k < spp_cm; k++ ) {
+            conc[k] = gx_color_value_from_byte(next.v[k]);
         }
 
         /* encode as a color index */
@@ -318,7 +308,7 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
 	rsrc = psrc;
 	if ((code = mcode) < 0) goto err;
 
-set:	run = next;
+ 	run = next;
 inc:	xprev = dda_current(pnext.x);
 	yprev = dda_current(pnext.y);	/* harmless if no skew */
     }

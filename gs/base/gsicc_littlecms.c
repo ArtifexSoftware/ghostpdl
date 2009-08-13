@@ -54,7 +54,7 @@ gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_bu
     
     cmsHTRANSFORM hTransform = (cmsHTRANSFORM) icclink->link_handle;
     DWORD dwInputFormat,dwOutputFormat,curr_input,curr_output;
-    int planar,numbytes,little_endian,hasalpha,k;
+    int planar,numbytes,big_endian,hasalpha,k;
     unsigned char *inputpos, *outputpos;
     int numchannels;
 #if DUMP_BUFFER
@@ -98,10 +98,10 @@ gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_bu
     dwOutputFormat = dwOutputFormat | BYTES_SH(numbytes);
 
     /* endian */
-    little_endian = input_buff_desc->little_endian;
-    dwInputFormat = dwInputFormat | ENDIAN16_SH(little_endian);
-    little_endian = output_buff_desc->little_endian;
-    dwOutputFormat = dwOutputFormat | ENDIAN16_SH(little_endian);
+    big_endian = !input_buff_desc->little_endian;
+    dwInputFormat = dwInputFormat | ENDIAN16_SH(big_endian);
+    big_endian = !output_buff_desc->little_endian;
+    dwOutputFormat = dwOutputFormat | ENDIAN16_SH(big_endian);
 
     /* number of channels */
     

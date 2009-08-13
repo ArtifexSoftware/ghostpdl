@@ -354,7 +354,6 @@ gsicc_setbuffer_desc(gsicc_bufferdesc_t *buffer_desc,unsigned char num_chan,
     buffer_desc->alpha_first = alpha_first;
     buffer_desc->little_endian = little_endian;
     buffer_desc->is_planar = is_planar;
-    buffer_desc->buffercolor = buffercolor;
 
 }
 

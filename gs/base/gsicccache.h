@@ -25,7 +25,7 @@ gsicc_link_cache_t* gsicc_cache_new(gs_memory_t *memory);
 void
 gsicc_init_buffer(gsicc_bufferdesc_t *buffer_desc, unsigned char num_chan, unsigned char bytes_per_chan,
                   bool has_alpha, bool alpha_first, bool is_planar, int plane_stride, int row_stride,
-                  int num_rows, int pixels_per_row, gsicc_colorbuffer_t buffercolor);
+                  int num_rows, int pixels_per_row);
 
 gsicc_link_t * gsicc_add_link(gsicc_link_cache_t *link_cache, void *link_handle,
                void *ContextPtr, gsicc_hashlink_t hashcode, gs_memory_t *memory);

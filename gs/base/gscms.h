@@ -24,6 +24,21 @@
 #include "gsutil.h"       /* Need for the object types */
 #include "stdint_.h"
 
+/* Define the preferred size of the output by the CMS */
+/* This can be different than the size of gx_color_value 
+   which can range between 8 and 16.  Here we can only
+   have 8 or 16 bits */
+
+typedef unsigned short icc_output_type;
+
+#define icc_byte_count sizeof(icc_output_type)  
+#define icc_bits_count (icc_byte_count * 8)
+#define icc_max_color_value ((gx_color_value)((1L << icc_bits_count) - 1))
+#define icc_value_to_byte(cv)\
+  ((cv) >> (icc_bits_count - 8))
+#define icc_value_from_byte(cb)\
+  (((cb) << (icc_bits_count - 8)) + ((cb) >> (16 - icc_bits_count)))
+
 typedef struct gs_range15_s {
     gs_range_t ranges[15];
 } gs_range15_t;  /* ICC profile input could be up to 15 bands */
@@ -54,7 +69,6 @@ typedef struct gsicc_bufferdesc_s {
     int row_stride;
     int num_rows;
     int pixels_per_row; 
-    gsicc_colorbuffer_t buffercolor;
 
 } gsicc_bufferdesc_t;
 
