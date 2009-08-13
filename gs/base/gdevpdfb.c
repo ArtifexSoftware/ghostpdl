@@ -153,7 +153,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	if (one == gx_no_color_index)
 	    return 0;
 	/* If a mask has an id, assume it's a character. */
-	if (id != gx_no_bitmap_id && sourcex == 0) {
+	if (id != gx_no_bitmap_id && sourcex == 0 && show_enum) {
 	    pdf_char_proc_t *pcp;
 
 	    if (show_enum->use_wxy_float)
