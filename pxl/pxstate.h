@@ -128,7 +128,6 @@ struct px_state_s {
 	/* Global structures */
   gs_font_dir *font_dir;
   px_font_t *error_page_font;
-  gs_show_enum *error_page_show_enum;
 
 	/* Graphics state */
 

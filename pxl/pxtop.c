@@ -44,11 +44,9 @@
 typedef int  (*px_init_proc) ( px_state_t * );
 
 int pxfont_init(px_state_t *pxs );
-int pxerrors_init(px_state_t *pxs );
 
 const px_init_proc px_init_table[] = {
     &pxfont_init,
-    &pxerrors_init,
     0
 };
 

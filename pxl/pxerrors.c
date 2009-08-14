@@ -10,18 +10,6 @@
    contact Artifex Software, Inc., 101 Lucas Valley Road #110,
    San Rafael, CA  94903, (415)492-9861, for further information. */
 /*$Id$ */
-/* Portions Copyright (C) 2001 artofcode LLC.
-   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
-   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
-   This software is based in part on the work of the Independent JPEG Group.
-   All Rights Reserved.
-
-   This software is distributed under license and may not be copied, modified
-   or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/ or
-   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-   San Rafael, CA  94903, (415)492-9861, for further information. */
-/*$Id$ */
 
 /* pxerrors.c */
 /* PCL XL error reporting */
@@ -55,44 +43,40 @@ px_operator_proc(pxSetPageDefaultCTM);
 
 /* ---------------- Initialization ---------------- */
 
-/* Create the error page font, and preallocate other structures so that */
-/* printing an error message never needs to allocate storage. */
-int
-pxerrors_init(px_state_t *pxs)
-{	px_font_t *pxfont = pl_alloc_font(pxs->memory, "error_page_font");
-	gs_show_enum *penum = gs_show_enum_alloc(pxs->memory, pxs->pgs,
-						 "error_page_show_enum");
-	int code;
-
-	if ( pxfont == 0 || penum == 0 )
-	  code = gs_note_error(errorInsufficientMemory);
-	else
-	  { pxfont->storage = pxfsInternal;
-	    pxfont->font_type = plft_Unicode; /* as good as any */
-	    pxfont->data_are_permanent = true;
-	    code =
-                px_define_font(pxfont, (byte *)px_bitmap_font_header,
-			     px_bitmap_font_header_size,
-			     gs_next_ids(pxs->memory, 1),
-			     pxs);
-	    { const byte *cdata = px_bitmap_font_char_data;
-	      while ( *cdata && code >= 0 )
-		{ code = pl_font_add_glyph(pxfont, *cdata, cdata + 1);
-		  ++cdata;
-		  cdata = cdata + 16 +
-		    ((uint16at(cdata + 10, true) + 7) >> 3) *
-		    uint16at(cdata + 12, true);
-		}
-	    }
-	  }
-	if ( code < 0 )
-	  { gs_free_object(pxs->memory, penum, "pxs->error_page_show_enum");
-	    gs_free_object(pxs->memory, pxfont, "pxs->error_page_font");
-	    return code;
-	  }
-	pxs->error_page_font = pxfont;
-	pxs->error_page_show_enum = penum;
-	return 0;
+/* set the font for the error page */
+static px_font_t *
+px_error_setfont(px_state_t *pxs)
+{	
+    int code;
+    px_font_t *pxfont = pl_alloc_font(pxs->memory, "px_error_setfont");
+    
+    if (pxfont == 0)
+        return NULL;
+    
+    pxfont->storage = pxfsInternal;
+    pxfont->font_type = plft_Unicode; /* as good as any */
+    pxfont->data_are_permanent = true;
+    code = px_define_font(pxfont, (byte *)px_bitmap_font_header,
+                          px_bitmap_font_header_size,
+                          gs_next_ids(pxs->memory, 1),
+                          pxs);
+    { 
+        const byte *cdata = px_bitmap_font_char_data;
+        while ( *cdata && code >= 0 ) {
+            code = pl_font_add_glyph(pxfont, *cdata, cdata + 1);
+            ++cdata;
+            cdata = cdata + 16 +
+                ((uint16at(cdata + 10, true) + 7) >> 3) *
+                uint16at(cdata + 12, true);
+        }
+    }
+    if ( code < 0 ) { 
+        pl_free_font(pxs->memory, pxfont, "px_error_setfont");
+        return NULL;
+    }
+    gs_setfont(pxs->pgs, pxfont->pfont);
+    pxfont->pfont->FontMatrix = pxfont->pfont->orig_FontMatrix;
+    return pxfont;
 }
 
 /* ---------------- Procedures ---------------- */
@@ -249,12 +233,9 @@ px_begin_error_page(px_state_t *pxs)
 	/*pxSetPageDefaultCTM(NULL, pxs);*/
 	{
 	    gs_point pt;
-            gs_font *pfont = pxs->error_page_font->pfont;
 	    px_get_default_media_size(pxs, &pt);
 	    gs_translate(pgs, 0.0, pt.y);
 	    gs_scale(pgs, 1.0, -1.0);
-	    gs_setfont(pgs, pfont);
-            pfont->FontMatrix = pfont->orig_FontMatrix;
 	    return 90;
 	}
 }
@@ -263,37 +244,46 @@ px_begin_error_page(px_state_t *pxs)
 /* Return the updated Y value. */
 int
 px_error_page_show(const char *message, int ytop, px_state_t *pxs)
-{	gs_state *pgs = pxs->pgs;
-	int y = ytop;
-	const char *m = message;
-	const char *p;
-	gs_show_enum *penum = pxs->error_page_show_enum;
-	/* Normalize for a 10-point font. */
+{
+    gs_state *pgs = pxs->pgs;
+    int y = ytop;
+    const char *m = message;
+    const char *p;
+    gs_text_enum_t *penum;
+    gs_text_params_t text;
+    int code;
+    /* Normalize for a 10-point font. */
 #define point_size 10.0
-	double scale = 72.0 / px_bitmap_font_resolution *
-	  point_size / px_bitmap_font_point_size;
-	int code = 0;
+    double scale = 72.0 / px_bitmap_font_resolution *
+        point_size / px_bitmap_font_point_size;
+    px_font_t *pxfont = px_error_setfont(pxs);
 
-	/* Peel off the next line and display it. */
-	for ( p = m; ; m = ++p )
-	  { while ( *p != 0 && *p != '\n' )
-	      ++p;
+    if ( pxfont == NULL )
+        return_error(errorInsufficientMemory);
+
+    text.operation = TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
+    /* Peel off the next line and display it. */
+    for ( p = m; ; m = ++p )
+        { while ( *p != 0 && *p != '\n' )
+                ++p;
 	    gs_moveto(pgs, 36.0, y);
 	    gs_scale(pgs, scale, scale);
-	    code = gs_show_n_init(penum, pgs, m, p - m);
-	    if ( code >= 0 )
-	      { code = gs_show_next(penum);
+            text.data.chars = (gs_char *)m;
+            text.size = p - m;
+            code = gs_text_begin(pgs, &text, pxs->memory, &penum);
+	    if ( code >= 0 ) { 
+                code = gs_text_process(penum);
 		if ( code > 0 )
-		  code = gs_note_error(errorBadFontData);	/* shouldn't happen! */
-	      }
-	    if ( code < 0 )
-	      gs_show_enum_release(penum, NULL);
+                    code = gs_note_error(errorBadFontData);	/* shouldn't happen! */
+                gs_text_release(penum, "pxtext");
+            }
 	    gs_scale(pgs, 1 / scale, 1 / scale);
 	    y += point_size * 8 / 5;
 	    if ( !*p || !p[1] )
-	      break;
-	  }
-	return (code < 0 ? code : y);
+                break;
+        }
+    pl_free_font(pxs->memory, pxfont, "px_error_page_show");
+    return (code < 0 ? code : y);
 }
 
 /* Reset the warning table. */
