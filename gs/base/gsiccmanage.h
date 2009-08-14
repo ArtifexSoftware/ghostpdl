@@ -52,7 +52,7 @@ void gsicc_setbuffer_desc(gsicc_bufferdesc_t *buffer_desc,unsigned char num_chan
     bool is_planar,
     gsicc_colorbuffer_t buffercolor);
 
- gcmmhprofile_t gsicc_get_profile_handle(gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager);
+ cmm_profile_t* gsicc_get_cs_profile(gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager);
  gcmmhprofile_t gsicc_get_profile_handle_buffer(unsigned char *buffer);
 
  static void rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname);

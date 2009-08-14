@@ -35,10 +35,10 @@ void gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory);
 int gsicc_get_color_info(gs_color_space *colorspace,unsigned char *color, int *size_color);
 
 static void
-gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, gs_color_space *colorspace,int64_t *hash);
+gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, cmm_profile_t *profile, int64_t *hash);
 
-static void gsicc_compute_linkhash(gsicc_manager_t *icc_manager, gs_color_space *input_colorspace, 
-                   gs_color_space *output_colorspace, 
+static void gsicc_compute_linkhash(gsicc_manager_t *icc_manager, cmm_profile_t *input_profile, 
+                   cmm_profile_t *output_profile, 
                    gsicc_rendering_param_t *rendering_params, gsicc_hashlink_t *hash);
 
 static gsicc_link_t* gsicc_findcachelink(gsicc_hashlink_t hashcode,gsicc_link_cache_t *icc_cache, 

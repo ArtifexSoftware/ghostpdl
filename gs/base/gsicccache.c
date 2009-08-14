@@ -267,15 +267,15 @@ gsicc_get_buff_hash(unsigned char *data,unsigned int num_bytes,int64_t *hash)
     and rendering params structure.  We may change this later */
 
 static void
-gsicc_compute_linkhash(gsicc_manager_t *icc_manager, gs_color_space *input_colorspace, 
-                   gs_color_space *output_colorspace, 
+gsicc_compute_linkhash(gsicc_manager_t *icc_manager, cmm_profile_t *input_profile, 
+                   cmm_profile_t *output_profile, 
                    gsicc_rendering_param_t *rendering_params, gsicc_hashlink_t *hash)
 {
    
    /* first get the hash codes for the color spaces */
 
-    gsicc_get_cspace_hash(icc_manager, input_colorspace, &(hash->src_hash));
-    gsicc_get_cspace_hash(icc_manager, output_colorspace, &(hash->des_hash));
+    gsicc_get_cspace_hash(icc_manager, input_profile, &(hash->src_hash));
+    gsicc_get_cspace_hash(icc_manager, output_profile, &(hash->des_hash));
 
     /* now for the rendering paramaters */
 
@@ -291,39 +291,27 @@ gsicc_compute_linkhash(gsicc_manager_t *icc_manager, gs_color_space *input_color
 
 
 static void
-gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, gs_color_space *colorspace,int64_t *hash){
+gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, cmm_profile_t *cmm_icc_profile_data, int64_t *hash){
 
 
-    if (colorspace == NULL ){
+    if (cmm_icc_profile_data == NULL ){
         *hash = icc_manager->device_profile->hashcode;
         return;
     }
 
-    if ( colorspace->cmm_icc_profile_data->hash_is_valid ){
+    if (cmm_icc_profile_data->hash_is_valid ){
 
-        *hash = colorspace->cmm_icc_profile_data->hashcode;
+        *hash = cmm_icc_profile_data->hashcode;
         return;
 
     } else {
 
         /* We need to compute for this color space */
 
-        if (colorspace->cmm_icc_profile_data->buffer != NULL){
-
-            gsicc_get_icc_buff_hash(colorspace->cmm_icc_profile_data->buffer, hash);
-            colorspace->cmm_icc_profile_data->hashcode = *hash;
-            colorspace->cmm_icc_profile_data->hash_is_valid = true;
-            return;
-
-        } else {
-
-            /* Get hash code for this space.  */
-
-            gsicc_get_gscs_hash(icc_manager, colorspace, hash);
-            return;
-
-
-        }
+        gsicc_get_icc_buff_hash(cmm_icc_profile_data->buffer, hash);
+        cmm_icc_profile_data->hashcode = *hash;
+        cmm_icc_profile_data->hash_is_valid = true;
+        return;
 
     }
 
@@ -441,8 +429,8 @@ gsicc_remove_link(gsicc_link_t *link, gsicc_link_cache_t *icc_cache, gs_memory_t
 }
 
 
-/* This is the main function called to obtain a linked transform from the ICC manager
-   If the manager has the link ready, it will return it.  If not, it will request 
+/* This is the main function called to obtain a linked transform from the ICC cache
+   If the cache has the link ready, it will return it.  If not, it will request 
    one from the CMS and then return it.  We may need to do some cache locking during
    this process to avoid multi-threaded issues (e.g. someone deleting while someone
    is updating a reference count) */
@@ -459,13 +447,40 @@ gsicc_get_link(gs_imager_state *pis, gs_color_space  *input_colorspace,
     void **contextptr = NULL;
     gsicc_manager_t *icc_manager = pis->icc_manager; 
     gsicc_link_cache_t *icc_cache = pis->icc_cache;
-    gcmmhprofile_t *input_profile;
-    gcmmhprofile_t *output_profile;
+    gcmmhprofile_t *cms_input_profile;
+    gcmmhprofile_t *cms_output_profile;
+    cmm_profile_t *gs_input_profile;
+    cmm_profile_t *gs_output_profile;
+
+    if ( input_colorspace->cmm_icc_profile_data == NULL ) {
+
+        /* Use default type */
+
+        gs_input_profile = gsicc_get_cs_profile(input_colorspace, pis->icc_manager); 
+
+    } else {
+        
+        gs_input_profile = input_colorspace->cmm_icc_profile_data;
+
+    }
+
+
+    if ( output_colorspace != NULL ) {
+
+        gs_output_profile = output_colorspace->cmm_icc_profile_data;
+
+    } else {
+
+        /* Use the device profile */
+        gs_output_profile = pis->icc_manager->device_profile;
+
+    }
+
 
     /* First compute the hash code for the incoming case */
     /* If the output color space is NULL we will use the device profile for the output color space */
 
-    gsicc_compute_linkhash(icc_manager, input_colorspace, output_colorspace, rendering_params, &hash);
+    gsicc_compute_linkhash(icc_manager, gs_input_profile, gs_output_profile, rendering_params, &hash);
 
     /* Check the cache for a hit.  Need to check if softproofing was used */
 
@@ -504,41 +519,48 @@ gsicc_get_link(gs_imager_state *pis, gs_color_space  *input_colorspace,
 
     /* Now get the link */
 
-    input_profile = input_colorspace->cmm_icc_profile_data->profile_handle;
-    if (input_profile == NULL){
+    cms_input_profile = gs_input_profile->profile_handle;
 
-        if (input_colorspace->cmm_icc_profile_data->buffer != NULL){
-            input_profile = gsicc_get_profile_handle_buffer(input_colorspace->cmm_icc_profile_data->buffer);
-            input_colorspace->cmm_icc_profile_data->profile_handle = input_profile;
+    if (cms_input_profile == NULL){
+
+        if (gs_input_profile->buffer != NULL){
+
+            cms_input_profile = 
+                gsicc_get_profile_handle_buffer(gs_input_profile->buffer);
+            gs_input_profile->profile_handle = cms_input_profile;
+
         } else {
-            /* Cant create the link.  No profile present */
+
+            /* Cant create the link.  No profile present, 
+               nor any defaults to use for this */
+
             return(NULL);
         }
 
     }
-    
-    if (output_colorspace == NULL){
+  
+    cms_output_profile = gs_output_profile->profile_handle;
 
-        output_profile = icc_manager->device_profile->profile_handle;
+    if (cms_output_profile == NULL){
 
-    } else {
+        if (gs_output_profile->buffer != NULL){
 
-        output_profile = output_colorspace->cmm_icc_profile_data->profile_handle;
-        if (output_colorspace == NULL){
+            cms_output_profile = 
+                gsicc_get_profile_handle_buffer(gs_output_profile->buffer);
+            gs_output_profile->profile_handle = cms_output_profile;
 
-            if (output_colorspace->cmm_icc_profile_data->buffer != NULL){
-                output_profile = gsicc_get_profile_handle_buffer(output_colorspace->cmm_icc_profile_data->buffer);
-                output_colorspace->cmm_icc_profile_data->profile_handle = output_profile;
-            } else {
-                /* Cant create the link.  No profile present */
-                return(NULL);
-            }
+        } else {
+
+            /* Cant create the link.  No profile present.  Should not
+               occur with defaults defined and device profile defined */
+
+            return(NULL);
+        }
 
     }
 
-    }
-
-    link_handle = gscms_get_link(input_profile, output_profile, rendering_params, pis->icc_manager);
+    link_handle = gscms_get_link(cms_input_profile, cms_output_profile, 
+                                    rendering_params, pis->icc_manager);
     
     if (link_handle != NULL){
 
