@@ -161,33 +161,47 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
     
     icc_link = gsicc_get_link(pis, pcs, NULL, &rendering_params, pis->memory, false);
 
-    /* Set up the buffer descriptors. */
+    /* If the link is the identity, then we don't need to do any color conversions */
 
-    spp_cm = pis->icc_manager->device_profile->num_comps;
-    num_pixels = w/spp;
+    if (icc_link->is_identity ) {
 
-    gsicc_init_buffer(&input_buff_desc, spp, 1,
-                  false, false, false, 0, w,
-                  1, num_pixels);
+        psrc_cm = psrc;
+        spp_cm = spp;
+        bufend = psrc_cm +  w;
+        psrc_cm_start = NULL;
 
-    gsicc_init_buffer(&output_buff_desc, spp_cm, 1,
-                  false, false, false, 0, num_pixels * spp_cm,
-                  1, num_pixels);
+    } else {
 
-    /* For now, just blast it all through the link. If we had a significant reduction 
-       we will want to repack the data first and then do this.  That will be 
-       an optimization shortly.  Also we are going to have to do something here
-       with respect to the decode.  If sdnone is the case, then we are fine but the
-       others will need to be considered.  Also, for now just allocate a new output
-       buffer.  We can reuse the old one if the number of channels in the output is
-       less than or equal to the new one.  We will do that soon. */
+        /* Set up the buffer descriptors. */
 
-    psrc_cm = gs_alloc_bytes(pis->memory,  w * spp_cm/spp, "image_render_color");
-    psrc_cm_start = psrc_cm;
-    bufend = psrc_cm +  w * dev->color_info.num_components/spp;
+        spp_cm = pis->icc_manager->device_profile->num_comps;
+        num_pixels = w/spp;
 
-    gscms_transform_color_buffer(icc_link, &input_buff_desc, &output_buff_desc, 
-                             psrc,psrc_cm);
+        gsicc_init_buffer(&input_buff_desc, spp, 1,
+                      false, false, false, 0, w,
+                      1, num_pixels);
+
+        gsicc_init_buffer(&output_buff_desc, spp_cm, 1,
+                      false, false, false, 0, num_pixels * spp_cm,
+                      1, num_pixels);
+
+        /* For now, just blast it all through the link. If we had a significant reduction 
+           we will want to repack the data first and then do this.  That will be 
+           an optimization shortly.  Also we are going to have to do something here
+           with respect to the decode.  If sdnone is the case, then we are fine but the
+           others will need to be considered.  Also, for now just allocate a new output
+           buffer.  We can reuse the old one if the number of channels in the output is
+           less than or equal to the new one.  We will do that soon. */
+
+        psrc_cm = gs_alloc_bytes(pis->memory,  w * spp_cm/spp, "image_render_color");
+        psrc_cm_start = psrc_cm;
+        bufend = psrc_cm +  w * dev->color_info.num_components/spp;
+
+        gscms_transform_color_buffer(icc_link, &input_buff_desc, &output_buff_desc, 
+                                 psrc,psrc_cm);
+
+
+    }
 
     /* Release the link */
 
@@ -352,8 +366,12 @@ inc:	xprev = dda_current(pnext.x);
 	    }
     }
 
-    /* Free cm buffer */
-    gs_free_object(pis->memory, (byte *)psrc_cm_start, "image_render_color");
+    /* Free cm buffer, if it was used */
+
+    if (psrc_cm_start != NULL) {
+        gs_free_object(pis->memory, (byte *)psrc_cm_start, "image_render_color");
+    }
+
     return (code < 0 ? code : 1);
     /* Save position if error, in case we resume. */
 err:

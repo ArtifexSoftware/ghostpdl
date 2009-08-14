@@ -128,6 +128,17 @@ gsicc_add_link(gsicc_link_cache_t *link_cache, void *link_handle, void *contextp
     result->hashcode.rend_hash = hashcode.rend_hash;
     result->ref_count = 1;
     result->includes_softproof = 0;  /* Need to enable this at some point */
+
+    if ( hashcode.src_hash == hashcode.des_hash ) {
+
+        result->is_identity = true;
+
+    } else {
+
+        result->is_identity = false;
+
+    }
+
     
     if (link_cache->icc_link != NULL){
 
@@ -565,7 +576,7 @@ gsicc_get_link(gs_imager_state *pis, gs_color_space  *input_colorspace,
     if (link_handle != NULL){
 
        link = gsicc_add_link(icc_cache, link_handle,contextptr, hash, memory);
-
+       
     } else {
         
         return(NULL);
