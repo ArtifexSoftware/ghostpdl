@@ -67,7 +67,6 @@ s_exD_set_defaults(stream_state * st)
 
     ss->binary = -1;		/* unknown */
     ss->lenIV = 4;
-    ss->record_left = max_long;
     ss->hex_left = max_long;
     /* Clear pointers for GC */
     ss->pfb_state = 0;
@@ -139,25 +138,17 @@ s_exD_process(stream_state * st, stream_cursor_read * pr,
 		  decoder[p[i]] == ctype_space)
 		) {
 		ss->binary = 1;
-		if (ss->pfb_state != 0) {
-		    /* Stop at the end of the .PFB binary data. */
-		    ss->record_left = ss->pfb_state->record_left;
-		}
 		break;
 	    }
     }
     if (ss->binary) {
-	if (count > ss->record_left) {
-	    count = ss->record_left;
-	    status = 0;
-	}
-	/*
-	 * We pause at the end of the .PFB binary data,
-	 * in an attempt to keep from reading beyond the end of
-	 * the encrypted data.
+	/* 
+	 * There is no need to pause at the end of the binary portion.
+	 * The padding bytes (which are in the text portion, in hexadecimal)
+	 * do their job, provided the write buffer is <= 256 bytes long.
+	 * This is (hopefully) ensured by the comment just above the
+	 * definition of s_exD_template.
 	 */
-	if ((ss->record_left -= count) == 0)
-	    ss->record_left = max_long;
 	pr->ptr = p + count;
     } else {
 	/*
