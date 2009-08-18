@@ -30,9 +30,9 @@
 
 void gsicc_create();
 void gsicc_destroy();
-void gsicc_init_device_profile(gs_state * pgs, gx_device * dev);
+int gsicc_init_device_profile(gs_state * pgs, gx_device * dev);
 int gsicc_set_profile(const gs_imager_state * pis, const char *pname, int namelen, gsicc_profile_t defaulttype);
-void gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev, gs_memory_t * mem);
+int gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev, gs_memory_t * mem);
 void gsicc_load_default_device_profile(int numchannels);
 void gsicc_load_default_input_profile(int numchannels);
 

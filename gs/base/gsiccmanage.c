@@ -203,11 +203,12 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
    device does not have a defined profile, then a default one
    is selected. */
 
-void
+int
 gsicc_init_device_profile(gs_state * pgs, gx_device * dev)
 {
 
     const gs_imager_state * pis = (gs_imager_state*) pgs;
+    int code;
 
     /* See if the device has a profile */
 
@@ -240,7 +241,7 @@ gsicc_init_device_profile(gs_state * pgs, gx_device * dev)
 
     if (pis->icc_manager->device_profile == NULL) {
 
-        gsicc_set_device_profile(pis->icc_manager, dev, pis->memory);
+        code = gsicc_set_device_profile(pis->icc_manager, dev, pis->memory);
 
     }
 
@@ -256,7 +257,7 @@ gsicc_init_device_profile(gs_state * pgs, gx_device * dev)
     which sets the profile on the output
     device */
 
-void 
+int 
 gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev, gs_memory_t * mem)
 {
     cmm_profile_t *icc_profile;
@@ -300,6 +301,10 @@ gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev, gs_memo
 
                 icc_profile->num_comps = gscms_get_channel_count(icc_profile->profile_handle);
 
+            } else {
+
+                return gs_rethrow(-1, "cannot find device profile");
+
             }
   
 
@@ -307,6 +312,8 @@ gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev, gs_memo
 
 
     }
+
+    return(0);
     
 }
 
