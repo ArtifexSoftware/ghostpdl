@@ -152,7 +152,7 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
     /* Define the rendering intents */
     rendering_params.black_point_comp = BP_ON;
     rendering_params.object_type = GS_IMAGE_TAG;
-    rendering_params.rendering_intent = gsPERCEPTUAL;
+    rendering_params.rendering_intent = pis->renderingintent;
 
     if (h == 0)
 	return 0;

@@ -182,7 +182,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     /* Define the rendering intents.  MJV to fix */
     rendering_params.black_point_comp = BP_ON;
     rendering_params.object_type = GS_PATH_TAG;
-    rendering_params.rendering_intent = gsSATURATION;
+    rendering_params.rendering_intent = pis->renderingintent;;
 
      /* This needs to be optimized. And range corrected */
    for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++){
@@ -234,7 +234,7 @@ gx_concretize_ICC(
     /* Define the rendering intents.  MJV to fix */
     rendering_params.black_point_comp = BP_ON;
     rendering_params.object_type = GS_PATH_TAG;
-    rendering_params.rendering_intent = gsSATURATION;
+    rendering_params.rendering_intent = pis->renderingintent;
 
      /* This need to be optimized */
    for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++){

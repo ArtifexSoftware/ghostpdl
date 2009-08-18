@@ -256,7 +256,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     /* TODO:  Make intent variable */
 
     return(cmsCreateTransform(lcms_srchandle, src_data_type, lcms_deshandle, des_data_type, 
-        INTENT_PERCEPTUAL, cmsFLAGS_LOWRESPRECALC));	
+        rendering_params->rendering_intent, cmsFLAGS_LOWRESPRECALC));	
 
 
 }
@@ -296,7 +296,7 @@ gscms_get_link_proof(gcmmhprofile_t  lcms_srchandle,
 /* Create the link.  Note the gamut check alarm */
 
     return(cmsCreateProofingTransform(lcms_srchandle, src_data_type, lcms_deshandle, des_data_type, 
-        lcms_proofhandle,INTENT_PERCEPTUAL, INTENT_ABSOLUTE_COLORIMETRIC, 
+        lcms_proofhandle,rendering_params->rendering_intent, INTENT_ABSOLUTE_COLORIMETRIC, 
         cmsFLAGS_GAMUTCHECK | cmsFLAGS_SOFTPROOFING ));			
 
 }
