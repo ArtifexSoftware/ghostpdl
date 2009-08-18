@@ -468,7 +468,10 @@ zsetdevice(i_ctx_t *i_ctx_p)
     /* If the device has a profile, this will get it to the manager.
        If it does not, then a default one appropriate for the device will be used */
 
-    gsicc_init_device_profile(igs, op->value.pdevice);
+    code = gsicc_init_device_profile(igs, op->value.pdevice);
+    if (code < 0)
+        return code;
+
 
 #endif
     make_bool(op, code != 0);	/* erase page if 1 */

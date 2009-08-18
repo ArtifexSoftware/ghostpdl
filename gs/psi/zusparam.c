@@ -488,6 +488,10 @@ set_proof_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
         gs_free_object(mem, pname,
                 "set_proof_profile_icc");
 
+        if (code < 0)
+            return gs_rethrow(code, "cannot find proofing icc profile");
+
+
         return(code);
 
     }
@@ -525,6 +529,9 @@ set_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     gs_free_object(mem, pname,
         "set_default_gray_icc");
 
+    if (code < 0)
+        return gs_rethrow(code, "cannot find default gray icc profile");
+
     return(code);
 
 }
@@ -557,6 +564,9 @@ set_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 
     gs_free_object(mem, pname,
         "set_default_rgb_icc");
+
+    if (code < 0)
+        return gs_rethrow(code, "cannot find default rgb icc profile");
 
     return(code);
 
@@ -596,6 +606,9 @@ set_link_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
         gs_free_object(mem, pname,
                 "set_link_profile_icc");
 
+
+        if (code < 0)
+            return gs_rethrow(code, "cannot find linked icc profile");
 
         return(code);
 
@@ -639,6 +652,9 @@ set_named_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
         gs_free_object(mem, pname,
                 "set_named_profile_icc");
 
+        if (code < 0)
+            return gs_rethrow(code, "cannot find named color icc profile");
+
         return(code);
 
     }
@@ -675,6 +691,9 @@ set_default_cmyk_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 
     gs_free_object(mem, pname,
                 "set_default_cmyk_icc");
+
+    if (code < 0)
+        return gs_rethrow(code, "cannot find default cmyk icc profile");
 
     return(code);
 

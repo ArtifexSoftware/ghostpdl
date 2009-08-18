@@ -242,8 +242,11 @@ gsicc_init_device_profile(gs_state * pgs, gx_device * dev)
     if (pis->icc_manager->device_profile == NULL) {
 
         code = gsicc_set_device_profile(pis->icc_manager, dev, pis->memory);
+        return(code);
 
     }
+
+    return(0);
 
 }
 
