@@ -209,8 +209,8 @@ gs_heap_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 	gs_alloc_fill(ptr, gs_alloc_fill_alloc, size);
 #ifdef DEBUG
     if (gs_debug_c('a') || msg != ok_msg)
-	dlprintf4("[a+]gs_malloc(%s)(%u) = 0x%lx: %s\n",
-		  client_name_string(cname), size, (ulong) ptr, msg);
+	dlprintf6("[a+]gs_malloc(%s)(%u) = 0x%lx: %s, used=%ld, max=%ld\n",
+		  client_name_string(cname), size, (ulong) ptr, msg, mmem->used, mmem->max_used);
 #endif
     return ptr;
 #undef set_msg
