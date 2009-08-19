@@ -228,23 +228,28 @@ currentdict /runpdfstring .undef
 % - pdf_collection_files [ /temp_file_name ... /temp_file_name
 /pdf_collection_files {
   mark
-  Trailer /Root oget /Names knownoget {
-    /EmbeddedFiles knownoget {
-      /Names knownoget {
-        { oforce
-          dup type /dicttype eq {
-            /EF knownoget {
-              /F knownoget {
-                copy_embedded_file
+  Trailer /Root oget
+  dup /Collection oknown {
+    /Names knownoget {
+      /EmbeddedFiles knownoget {
+        /Names knownoget {
+          { oforce
+            dup type /dicttype eq {
+              /EF knownoget {
+                /F knownoget {
+                  copy_embedded_file
+                } if
               } if
-            } if
-          } {
-            pop
-          } ifelse
-        } forall
+            } {
+              pop
+            } ifelse
+          } forall
+        } if
       } if
     } if
-  } if
+  } {
+    pop
+  } ifelse
 } bind def
 
 /runpdf {		% <file> runpdf -
