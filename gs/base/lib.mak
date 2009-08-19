@@ -2720,7 +2720,7 @@ $(GLD)romfs0.dev :  $(LIB_MAK) $(ECHO_XE)
 
 $(GLGEN)gsromfs1.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs1.c \
-	-X .svn -X CVS $(UFST_ROMFS_ARGS) \
+	-X .svn -X CVS iccprofiles$(D) $(UFST_ROMFS_ARGS) \
 	$(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS) \
 	$(PS_ROMFS_ARGS) $(GL_ROMFS_ARGS)
 
