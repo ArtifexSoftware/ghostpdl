@@ -20,9 +20,9 @@
 
 /* Define the default ICC profiles in the file system */
 
-#define DEFAULT_GRAY_ICC  "./iccprofiles/default_gray.icc"
-#define DEFAULT_RGB_ICC  "./iccprofiles/default_rgb.icc"
-#define DEFAULT_CMYK_ICC  "./iccprofiles/default_cmyk.icc"
+#define DEFAULT_GRAY_ICC  "iccprofiles/default_gray.icc"
+#define DEFAULT_RGB_ICC  "iccprofiles/default_rgb.icc"
+#define DEFAULT_CMYK_ICC  "iccprofiles/default_cmyk.icc"
 
 /* Prototypes */
 
@@ -56,6 +56,10 @@ void gsicc_setbuffer_desc(gsicc_bufferdesc_t *buffer_desc,unsigned char num_chan
  gcmmhprofile_t gsicc_get_profile_handle_buffer(unsigned char *buffer);
 
  static void rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname);
+
+static stream* gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc, gsicc_manager_t *icc_manager);
+
+void gsicc_set_icc_directory(const gs_imager_state *pis, const char* pname, int namelen);
 
 
 #endif

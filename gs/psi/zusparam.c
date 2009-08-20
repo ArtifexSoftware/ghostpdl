@@ -546,6 +546,41 @@ current_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 }
 
 static int
+set_icc_directory(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+
+    char *pname;
+    int namelen = (pval->size)+1;
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+    gs_memory_t *mem = pis->memory; 
+
+    /* Check if it was "NULL" */
+
+    if( !gs_param_string_eq(pval,"NULL") ){
+
+        pname = gs_alloc_bytes(mem, namelen,
+		   		     "set_icc_directory");
+
+        if (pname == NULL)
+            return gs_rethrow(-1, "cannot allocate directory name");
+
+        memcpy(pname,pval->data,namelen-1);
+        pname[namelen-1] = 0;
+
+        gsicc_set_icc_directory(pis, (const char*) pname, namelen);
+
+        gs_free_object(mem, pname,
+                "set_icc_directory");
+
+
+        return(0);
+
+    }
+
+    return(0);
+}
+
+static int
 set_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
     int code;
@@ -581,6 +616,16 @@ current_default_link_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     pval->size = strlen(rfs);
     pval->persistent = true;
 }
+
+static void
+current_default_dir_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    static const char *const rfs = "NULL";
+    pval->data = (const byte *)rfs;
+    pval->size = strlen(rfs);
+    pval->persistent = true;
+}
+
 
 static int
 set_link_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
@@ -736,7 +781,8 @@ static const string_param_def_t user_string_params[] =
     {"DefaultCMKYProfile", current_default_cmyk_icc, set_default_cmyk_icc},
     {"ProofProfile", current_default_proof_icc, set_proof_profile_icc},
     {"NamedProfile", current_default_named_icc, set_named_profile_icc},
-    {"DeviceLinkProfile", current_default_link_icc, set_link_profile_icc} 
+    {"DeviceLinkProfile", current_default_link_icc, set_link_profile_icc},
+    {"ICCProfilesDir", current_default_dir_icc, set_icc_directory} 
 
 };
 

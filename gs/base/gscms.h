@@ -208,6 +208,9 @@ typedef struct gsicc_manager_s {
     cmm_profile_t *output_link;     /* Output device Link profile */
     cmm_profile_t *device_profile;  /* The actual profile for the device */
 
+    char *profiledir;               /* Directory used in searching for ICC profiles */
+    uint namelen;
+
     gs_memory_t *memory;            
     rc_header rc;
 

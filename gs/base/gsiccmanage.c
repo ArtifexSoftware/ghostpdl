@@ -35,10 +35,10 @@
 gs_private_st_ptrs2(st_gsicc_profile, cmm_profile_t, "gsicc_profile",
 		    gsicc_profile_enum_ptrs, gsicc_profile_reloc_ptrs, buffer, name);
 
-gs_private_st_ptrs7(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
+gs_private_st_ptrs8(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
 		    gsicc_manager_enum_ptrs, gsicc_manager_profile_reloc_ptrs,
 		    device_profile, device_named, default_gray, default_rgb,
-                    default_cmyk, proof_profile, output_link); 
+                    default_cmyk, proof_profile, output_link, profiledir); 
 
 static const gs_color_space_type gs_color_space_type_icc = {
     gs_color_space_index_ICC,       /* index */
@@ -81,6 +81,34 @@ gsicc_destroy()
 
 
 }
+
+
+/*  This sets the directory to prepend to the ICC profile names specified for
+    defaultgray, defaultrgb, defaultcmyk, proofing, linking, named color and device */
+
+void
+gsicc_set_icc_directory(const gs_imager_state *pis, const char* pname, int namelen)
+{
+
+    gsicc_manager_t *icc_manager = pis->icc_manager;
+    char *result;
+    gs_memory_t *mem_gc = pis->memory; 
+
+
+    result = gs_alloc_bytes(mem_gc, namelen,
+		   		     "gsicc_set_icc_directory");
+
+    if (result != NULL) {
+
+        strcpy(result, pname);
+
+        icc_manager->profiledir = result;
+        icc_manager->namelen = namelen;
+
+    }
+
+}
+
 
 /*  This computes the hash code for the
     ICC data and assigns the code
@@ -168,10 +196,7 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
 
     }
 
-    /* We need to do a bit of work here with 
-       respect to path names. MJV ToDo.  */
-
-    str = sfopen(pname, "rb", mem_gc);
+    str = gsicc_open_search(pname, namelen, mem_gc, icc_manager);
 
     if (str != NULL){
 
@@ -198,6 +223,62 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
     
 }
 
+/* This is used to try to find the default ICC profile with
+   some reasonable appended relative search paths. This really
+   should be done with respect to GS_LIB but is here to reduce 
+   issues for now. */
+
+
+static stream* 
+gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc, gsicc_manager_t *icc_manager)
+{
+    char *buffer;
+    stream* str;
+
+    /* Check if we need to prepend the file name  */
+
+    if ( icc_manager->profiledir != NULL ){
+        
+        /* If this fails, we are not checking anything else since
+           the user has externally specified this is where it should be. */
+
+        buffer = gs_alloc_bytes(mem_gc, namelen + icc_manager->namelen,
+		   		     "gsicc_open_search");
+
+        strcpy(buffer, icc_manager->profiledir);
+        strcat(buffer, pname);
+
+        str = sfopen(pname, "rb", mem_gc);
+
+        gs_free_object(mem_gc, buffer, "gsicc_open_search");
+
+        return(str);
+
+    } else {
+
+        /* First just try it like it is */
+
+        str = sfopen(pname, "rb", mem_gc);
+
+        if (str != NULL) return(str);
+
+        /* If that fails, try %rom% */
+
+        buffer = gs_alloc_bytes(mem_gc, namelen + 5,
+		   		     "gsicc_open_search");
+
+        strcpy(buffer, "%rom%");
+        strcat(buffer, pname);
+
+        str = sfopen(pname, "rb", mem_gc);
+
+        gs_free_object(mem_gc, buffer, "gsicc_open_search");
+
+        return(str);
+
+    }
+
+}
 
 /* This set the device profile entry of the ICC manager.  If the
    device does not have a defined profile, then a default one
@@ -280,10 +361,7 @@ gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev, gs_memo
 
         if (profile != '\0'){
 
-            /* We need to do a bit of work here with 
-               respect to path names. MJV ToDo.  */
-
-            str = sfopen(profile, "rb", mem);
+            str = gsicc_open_search(profile, strlen(profile), mem, icc_manager);
 
             if (str != NULL){
                 icc_profile = gsicc_profile_new(str, mem, profile, strlen(profile));
@@ -517,6 +595,9 @@ gsicc_manager_new(gs_memory_t *memory)
    result->device_profile = NULL;
    result->proof_profile = NULL;
    result->memory = memory;
+
+   result->profiledir = NULL;
+   result->namelen = 0;
 
    return(result);
 

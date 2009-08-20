@@ -748,6 +748,7 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
 #define gs_private_st_ptrs6(stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6)\
   gs__st_ptrs6(private_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6)
 
+
 	/* Structures with 7 pointers. */
 
 #define gs__st_ptrs7(scope_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7)\
@@ -759,6 +760,18 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
   gs__st_ptrs7(public_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7)
 #define gs_private_st_ptrs7(stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7)\
   gs__st_ptrs7(private_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7)
+
+	/* Structures with 8 pointers. */
+
+#define gs__st_ptrs8(scope_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8)\
+  BASIC_PTRS(penum) {\
+    GC_OBJ_ELT3(stype, e1, e2, e3), GC_OBJ_ELT3(stype, e4, e5, e6), GC_OBJ_ELT2(stype, e7, e8)\
+  };\
+  gs__st_basic(scope_st, stname, stype, sname, penum, preloc)
+#define gs_public_st_ptrs8(stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8)\
+  gs__st_ptrs8(public_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8)
+#define gs_private_st_ptrs8(stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8)\
+  gs__st_ptrs8(private_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8)
 
 	/* Structures with 1 const string and 1 pointer. */
 
