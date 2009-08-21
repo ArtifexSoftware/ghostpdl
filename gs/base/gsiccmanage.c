@@ -271,9 +271,16 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc, gsicc_man
     strcpy(buffer, "%rom%");
     strcat(buffer, pname);
 
-    str = sfopen(pname, "rb", mem_gc);
+    str = sfopen(buffer, "rb", mem_gc);
 
     gs_free_object(mem_gc, buffer, "gsicc_open_search");
+
+    if (str == NULL) {
+
+        gs_warn1("Could not find %s in root directory",pname);
+        gs_warn1("Could not find %s",buffer);
+
+    }
 
     return(str);
 
