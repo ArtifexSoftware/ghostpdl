@@ -223,11 +223,7 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
     
 }
 
-/* This is used to try to find the default ICC profile with
-   some reasonable appended relative search paths. This really
-   should be done with respect to GS_LIB but is here to reduce 
-   issues for now. */
-
+/* This is used to try to find the specified or default ICC profiles */
 
 static stream* 
 gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc, gsicc_manager_t *icc_manager)
@@ -239,8 +235,10 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc, gsicc_man
 
     if ( icc_manager->profiledir != NULL ){
         
-        /* If this fails, we are not checking anything else since
-           the user has externally specified this is where it should be. */
+        /* If this fails, we will still try the file by itself and with %rom%
+           since someone may have left a space some of the spaces as our defaults,
+           even if they defined the directory to use. This will occur only after
+           searching the defined directory.  A warning is noted.  */
 
         buffer = gs_alloc_bytes(mem_gc, namelen + icc_manager->namelen,
 		   		     "gsicc_open_search");
@@ -248,35 +246,36 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc, gsicc_man
         strcpy(buffer, icc_manager->profiledir);
         strcat(buffer, pname);
 
-        str = sfopen(pname, "rb", mem_gc);
+        str = sfopen(buffer, "rb", mem_gc);
 
         gs_free_object(mem_gc, buffer, "gsicc_open_search");
 
-        return(str);
+        if (str != NULL)
+            return(str);
+        else
+            gs_warn2("Could not find %s in %s checking default paths",pname,icc_manager->profiledir);
 
-    } else {
+    } 
 
-        /* First just try it like it is */
+    /* First just try it like it is */
 
-        str = sfopen(pname, "rb", mem_gc);
+    str = sfopen(pname, "rb", mem_gc);
 
-        if (str != NULL) return(str);
+    if (str != NULL) return(str);
 
-        /* If that fails, try %rom% */
+    /* If that fails, try %rom% */
 
-        buffer = gs_alloc_bytes(mem_gc, namelen + 5,
-		   		     "gsicc_open_search");
+    buffer = gs_alloc_bytes(mem_gc, namelen + 5,
+   		         "gsicc_open_search");
 
-        strcpy(buffer, "%rom%");
-        strcat(buffer, pname);
+    strcpy(buffer, "%rom%");
+    strcat(buffer, pname);
 
-        str = sfopen(pname, "rb", mem_gc);
+    str = sfopen(pname, "rb", mem_gc);
 
-        gs_free_object(mem_gc, buffer, "gsicc_open_search");
+    gs_free_object(mem_gc, buffer, "gsicc_open_search");
 
-        return(str);
-
-    }
+    return(str);
 
 }
 
