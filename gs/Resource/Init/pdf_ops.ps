@@ -148,11 +148,11 @@ nodict readonly pop
 /csdevrgb [/DeviceRGB] readonly def
 /csdevcmyk [/DeviceCMYK] readonly def
 /cspattern [/Pattern] readonly def
-/nullpattern1 mark
+/nullpatternproc { pop } bdef
+/nullpattern mark
    /PatternType 1 /PaintType 1 /TilingType 3 /BBox [0 0 1 1]
-   /XStep 1 /YStep 1 /PaintProc { pop } bind
+   /XStep 1 /YStep 1 /PaintProc //nullpatternproc
 .dicttomark readonly def
-/nullpattern2 nullpattern1 dup length dict copy readonly def
 
 % Each entry in the color space dictionary is a procedure of the form
 %	<cspace> -proc- <cspace> <initial-color>
@@ -170,9 +170,9 @@ nodict readonly pop
   /Indexed { 0 } bind
   /Pattern {
     dup type /nametype eq 1 index length 1 eq or {
-      pop //cspattern //nullpattern1 matrix makepattern
+      pop //cspattern //nullpattern matrix makepattern
     } {
-      //nullpattern2 matrix makepattern 1 index 1 get csset
+      //nullpattern matrix makepattern 1 index 1 get csset
 		% Stack: patternspace nullpattern basecolor basespace
       pop [ 3 1 roll dup type /arraytype eq { aload pop } if
       counttomark -1 roll ] cvx
@@ -328,10 +328,13 @@ nodict readonly pop
      dup DefaultQstate .knownget {
        exch pop
      } {
-       dup dup /Matrix knownoget not { { 1 0 0 1 0 0 } } if
-       gsave DefaultQstate setqstate makepattern grestore
-       dup 3 1 roll
-       DefaultQstate exch put
+       % But don't update read-only initial null pattern.
+       dup /PaintProc .knownget { //nullpatternproc ne } { //true } ifelse {
+         dup dup /Matrix knownoget not { { 1 0 0 1 0 0 } } if
+         gsave DefaultQstate setqstate makepattern grestore
+         dup 3 1 roll
+         DefaultQstate exch put
+       } if
      } ifelse
      setcolor
    } bdef
