@@ -24,25 +24,19 @@
 #define DEFAULT_RGB_ICC  "iccprofiles/default_rgb.icc"
 #define DEFAULT_CMYK_ICC  "iccprofiles/default_cmyk.icc"
 
-/* Prototypes */
-
 #include "gsicc_littlecms.h"
 
-void gsicc_create();
-void gsicc_destroy();
+/* Prototypes */
+
 int gsicc_init_device_profile(gs_state * pgs, gx_device * dev);
+
 int gsicc_set_profile(const gs_imager_state * pis, const char *pname, int namelen, gsicc_profile_t defaulttype);
-int gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev, gs_memory_t * mem);
-void gsicc_load_default_device_profile(int numchannels);
-void gsicc_load_default_input_profile(int numchannels);
 
 gsicc_manager_t* gsicc_manager_new(gs_memory_t *memory);
+
 cmm_profile_t* gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname, int namelen);
 
-int gsicc_cs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile, gs_memory_t * mem);
-
-static int gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, gs_memory_t *memory);
-unsigned int gsicc_getprofilesize(unsigned char *buffer);
+int gsicc_set_cs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile, gs_memory_t * mem);
 
 void gsicc_setbuffer_desc(gsicc_bufferdesc_t *buffer_desc,unsigned char num_chan,
     unsigned char bytes_per_chan,
@@ -52,15 +46,18 @@ void gsicc_setbuffer_desc(gsicc_bufferdesc_t *buffer_desc,unsigned char num_chan
     bool is_planar,
     gsicc_colorbuffer_t buffercolor);
 
- cmm_profile_t* gsicc_get_cs_profile(gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager);
- gcmmhprofile_t gsicc_get_profile_handle_buffer(unsigned char *buffer);
+cmm_profile_t* gsicc_get_cs_profile(gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager);
 
- static void rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname);
-
-static stream* gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc, gsicc_manager_t *icc_manager);
+gcmmhprofile_t gsicc_get_profile_handle_buffer(unsigned char *buffer);
 
 void gsicc_set_icc_directory(const gs_imager_state *pis, const char* pname, int namelen);
 
+unsigned int gsicc_getprofilesize(unsigned char *buffer);
+
+static void rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname);
+static int gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, gs_memory_t *memory);
+static stream* gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc, gsicc_manager_t *icc_manager);
+static int gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev, gs_memory_t * mem);
 
 #endif
 

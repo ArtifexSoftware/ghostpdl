@@ -60,28 +60,6 @@ unsigned int gsicc_getprofilesize(unsigned char *buffer)
 }
 
 
-/*  Initialize the CMS 
-    Prepare the ICC Manager
-*/
-void 
-gsicc_create()
-{
-
-
-
-
-}
-
-/*  Shut down the  CMS 
-    and the ICC Manager
-*/
-void 
-gsicc_destroy()
-{
-
-
-}
-
 
 /*  This sets the directory to prepend to the ICC profile names specified for
     defaultgray, defaultrgb, defaultcmyk, proofing, linking, named color and device */
@@ -347,7 +325,7 @@ gsicc_init_device_profile(gs_state * pgs, gx_device * dev)
     which sets the profile on the output
     device */
 
-int 
+static int 
 gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev, gs_memory_t * mem)
 {
     cmm_profile_t *icc_profile;
@@ -405,39 +383,6 @@ gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev, gs_memo
 }
 
 
-
-/*  This will occur only if the device did not
-    return a profie when asked for one.  This
-    will set DeviceProfile member variable to the
-    appropriate default device.  If output device
-    has more than 4 channels you need to use
-    gsicc_set_device_profile with the appropriate
-    ICC profile.  */
-
-void 
-gsicc_load_default_device_profile(int numchannels)
-{
-
-
-
-}
-
-
-/* This is a special case of the functions gsicc_set_gray_profile
-    gsicc_set_rgb_profile and gsicc_set_cmyk_profile. In
-    this function the number of channels is specified and the 
-    appropriate profile contained in Resources/Color/InputProfiles is used */
-
-void 
-gsicc_load_default_input_profile(int numchannels)
-{
-
-
-}
-
-
-
-
 void 
 gsicc_setbuffer_desc(gsicc_bufferdesc_t *buffer_desc,unsigned char num_chan,
     unsigned char bytes_per_chan,
@@ -459,7 +404,7 @@ gsicc_setbuffer_desc(gsicc_bufferdesc_t *buffer_desc,unsigned char num_chan,
 /* Set the icc profile in the gs_color_space object */
 
 int
-gsicc_cs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile, gs_memory_t * mem)
+gsicc_set_cs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile, gs_memory_t * mem)
 {
 
     if (pcs != NULL){
@@ -471,7 +416,7 @@ gsicc_cs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile, gs_memory_t * 
             /* should we check the hash code and retain if the same
                or place this job on the caller?  */
 
-            rc_free_icc_profile(mem, (void*) pcs->cmm_icc_profile_data, "gsicc_cs_profile");
+            rc_free_icc_profile(mem, (void*) pcs->cmm_icc_profile_data, "gsicc_set_cs_profile");
             pcs->cmm_icc_profile_data = icc_profile;
 
             return(0);
