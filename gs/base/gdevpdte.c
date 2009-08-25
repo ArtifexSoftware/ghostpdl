@@ -94,13 +94,16 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
     }
     if (unicode != GS_NO_CHAR) {
 	if (pdfont->cmap_ToUnicode == NULL) {
-	    uint num_codes = 256, key_size = 1;
+	    /* ToUnicode CMaps are always encoded with two byte keys. See
+	     * Technical Note 5411, 'ToUnicode Mapping File Tutorial'
+	     * page 3.
+	     */
+	    uint num_codes = 256, key_size = 2;
 	    
 	    if (font->FontType == ft_CID_encrypted) {
 		gs_font_cid0 *pfcid = (gs_font_cid0 *)font;
 
 		num_codes = pfcid->cidata.common.CIDCount;
-		key_size = 2;
 	    } else if (font->FontType == ft_CID_TrueType) {
 #if 0
 		gs_font_cid2 *pfcid = (gs_font_cid2 *)font;
@@ -114,7 +117,6 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
 		   code count. */
 		num_codes = 65536;
 #endif
-		key_size = 2;
 	    }
 	    code = gs_cmap_ToUnicode_alloc(pdev->pdf_memory, pdfont->rid, num_codes, key_size, 
 					    &pdfont->cmap_ToUnicode);
