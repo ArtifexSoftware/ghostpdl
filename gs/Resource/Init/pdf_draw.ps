@@ -1593,12 +1593,22 @@ drawopdict begin
 
   /Tform { Tform } def  % Text formatting and painting for AcroForm
                         % without appearance streams.
+end
+
+% ======================= Invalid operators ============================ %
+
+drawopdict begin
   /QBT {
     Q BT
     (   **** Warning: invalid operator QBT processed as Q BT .\n)
     pdfformaterror  % Bug 690089
   } def
 
+  /. {
+    0.
+    (   **** Warning: invalid operator . processed as number 0. .\n)
+    pdfformaterror  % Bug 690730
+  } def
 end
 
 % ============================== Annotations ============================== %
