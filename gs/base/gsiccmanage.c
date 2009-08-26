@@ -382,29 +382,10 @@ gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev, gs_memo
     
 }
 
-
-void 
-gsicc_setbuffer_desc(gsicc_bufferdesc_t *buffer_desc,unsigned char num_chan,
-    unsigned char bytes_per_chan,
-    bool has_alpha,
-    bool alpha_first,
-    bool little_endian,
-    bool is_planar,
-    gsicc_colorbuffer_t buffercolor)
-{
-    buffer_desc->num_chan = num_chan;
-    buffer_desc->bytes_per_chan = bytes_per_chan;
-    buffer_desc->has_alpha = has_alpha;
-    buffer_desc->alpha_first = alpha_first;
-    buffer_desc->little_endian = little_endian;
-    buffer_desc->is_planar = is_planar;
-
-}
-
 /* Set the icc profile in the gs_color_space object */
 
 int
-gsicc_set_cs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile, gs_memory_t * mem)
+gsicc_set_gscs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile, gs_memory_t * mem)
 {
 
     if (pcs != NULL){
@@ -416,7 +397,7 @@ gsicc_set_cs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile, gs_memory_
             /* should we check the hash code and retain if the same
                or place this job on the caller?  */
 
-            rc_free_icc_profile(mem, (void*) pcs->cmm_icc_profile_data, "gsicc_set_cs_profile");
+            rc_free_icc_profile(mem, (void*) pcs->cmm_icc_profile_data, "gsicc_set_gscs_profile");
             pcs->cmm_icc_profile_data = icc_profile;
 
             return(0);
@@ -620,7 +601,7 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer){
      the ICC manager that is based upon the current color space. */
 
  cmm_profile_t*
- gsicc_get_cs_profile(gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager)
+ gsicc_get_gscs_profile(gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager)
  {
 
      cmm_profile_t *profile = gs_colorspace->cmm_icc_profile_data;

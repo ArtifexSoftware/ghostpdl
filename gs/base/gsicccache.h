@@ -27,12 +27,10 @@ gsicc_init_buffer(gsicc_bufferdesc_t *buffer_desc, unsigned char num_chan, unsig
                   bool has_alpha, bool alpha_first, bool is_planar, int plane_stride, int row_stride,
                   int num_rows, int pixels_per_row);
 
-gsicc_link_t * gsicc_add_link(gsicc_link_cache_t *link_cache, void *link_handle,
+static gsicc_link_t * gsicc_add_link(gsicc_link_cache_t *link_cache, void *link_handle,
                void *ContextPtr, gsicc_hashlink_t hashcode, gs_memory_t *memory);
 
-void gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory);
-
-int gsicc_get_color_info(gs_color_space *colorspace,unsigned char *color, int *size_color);
+static void gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory);
 
 static void
 gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, cmm_profile_t *profile, int64_t *hash);

@@ -345,8 +345,7 @@ gscms_release_profile(void *profile)
 
 
 /* Named color, color management */
-/* Get a CIELAB value for the named color or the device value
-   for the named color.  Since there exist named color
+/* Get a device value for the named color.  Since there exist named color
    ICC profiles and littleCMS supports them, we will use
    that format in this example.  However it should be noted
    that this object need not be an ICC named color profile
@@ -370,7 +369,7 @@ gscms_release_profile(void *profile)
 /* Transform the named color to whatever space was specified in this link */
 
 int
-gscms_xform_named_color(gsicc_link_t *icclink,  float tint_value, const char* ColorName, 
+gscms_transform_named_color(gsicc_link_t *icclink,  float tint_value, const char* ColorName, 
                         gx_color_value device_values[] )  
 {
 

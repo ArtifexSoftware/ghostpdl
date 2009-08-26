@@ -61,7 +61,7 @@ void gscms_release_link(gsicc_link_t *icclink);
 
 void gscms_release_profile(void *profile);
 
-int gscms_xform_named_color(gsicc_link_t *icclink,  float tint_value, const char* ColorName, 
+int gscms_transform_named_color(gsicc_link_t *icclink,  float tint_value, const char* ColorName, 
                         gx_color_value device_values[] ); 
 
 void gscms_get_name2device_link(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle, 

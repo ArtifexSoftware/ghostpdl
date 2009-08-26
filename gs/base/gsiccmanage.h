@@ -36,17 +36,9 @@ gsicc_manager_t* gsicc_manager_new(gs_memory_t *memory);
 
 cmm_profile_t* gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname, int namelen);
 
-int gsicc_set_cs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile, gs_memory_t * mem);
+int gsicc_set_gscs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile, gs_memory_t * mem);
 
-void gsicc_setbuffer_desc(gsicc_bufferdesc_t *buffer_desc,unsigned char num_chan,
-    unsigned char bytes_per_chan,
-    bool has_alpha,
-    bool alpha_first,
-    bool little_endian,
-    bool is_planar,
-    gsicc_colorbuffer_t buffercolor);
-
-cmm_profile_t* gsicc_get_cs_profile(gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager);
+cmm_profile_t* gsicc_get_gscs_profile(gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager);
 
 gcmmhprofile_t gsicc_get_profile_handle_buffer(unsigned char *buffer);
 

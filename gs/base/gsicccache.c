@@ -107,7 +107,7 @@ rc_gsicc_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
 
 }
 
-gsicc_link_t *
+static gsicc_link_t *
 gsicc_add_link(gsicc_link_cache_t *link_cache, void *link_handle, void *contextptr, 
                gsicc_hashlink_t hashcode, gs_memory_t *memory)
 {
@@ -172,7 +172,7 @@ gsicc_add_link(gsicc_link_cache_t *link_cache, void *link_handle, void *contextp
 }
 
 
-void
+static void
 gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory)
 {
 
@@ -467,7 +467,7 @@ gsicc_get_link(gs_imager_state *pis, gs_color_space  *input_colorspace,
 
         /* Use default type */
 
-        gs_input_profile = gsicc_get_cs_profile(input_colorspace, pis->icc_manager); 
+        gs_input_profile = gsicc_get_gscs_profile(input_colorspace, pis->icc_manager); 
 
     } else {
         

@@ -84,7 +84,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 
     }
 
-    code = gsicc_set_cs_profile(pcs, picc_profile, gs_state_memory(igs));
+    code = gsicc_set_gscs_profile(pcs, picc_profile, gs_state_memory(igs));
     if (code < 0)
         return gs_rethrow(code, "installing the profile");
     
