@@ -4987,6 +4987,296 @@ static int devicepvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_
     return 0;
 }
 
+/* Lab Space */
+
+/* Check that the range of a the ab values is valid */
+static int checkrangeab(i_ctx_t * i_ctx_p, ref *labdict)
+{
+    int code = 0, i;
+    float value[4];
+    ref *tempref, valref;
+
+    code = dict_find_string(labdict, "Range", &tempref);
+    if (code >= 0 && !r_has_type(tempref, t_null)) {
+	if (!r_is_array(tempref))
+	    return_error(e_typecheck);
+	if (r_size(tempref) != 4)
+	    return_error(e_rangecheck);
+
+	for (i=0;i<4;i++) {
+	    code = array_get(imemory, tempref, i, &valref);
+	    if (code < 0)
+		return code;
+	    if (r_has_type(&valref, t_integer))
+		value[i] = (float)valref.value.intval;
+	    else if (r_has_type(&valref, t_real))
+		value[i] = (float)valref.value.realval;
+	    else
+	        return_error(e_typecheck);
+        }
+	if (value[1] < value[0] || value[3] < value[2] )
+	    return_error(e_rangecheck);
+    }
+    return 0;
+}
+
+static int setlabspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
+{
+
+    /* In this case, we will treat this as an ICC color space, with a CIELAB 16 bit profile */
+
+    ref labdict;
+    int code = 0;
+    float                   range_buff[4], white[3], black[3];
+    static const float      dflt_range[4] = { -100, 100, -100, 100 };
+    static const float      dflt_black[3] = {0,0,0}, dflt_white[3] = {0,0,0};
+    int i;
+    gs_client_color cc;
+  
+    *cont = 0;
+    code = array_get(imemory, r, 1, &labdict);
+    if (code < 0)
+	return code;
+
+
+/* Get all the parts */
+
+    code = dict_floats_param( imemory, 
+			      &labdict,
+                              "Range",
+                              4,
+                              range_buff,
+                              dflt_range );
+    for (i = 0; i < 4 && range_buff[i + 1] >= range_buff[i]; i += 2);
+    if (i != 4)
+        return_error(e_rangecheck);
+
+     code = dict_floats_param( imemory, 
+			      &labdict,
+                              "BlackPoint",
+                              3,
+                              black,
+                              dflt_black );
+
+
+     code = dict_floats_param( imemory, 
+			      &labdict,
+                              "WhitePoint",
+                              3,
+                              white,
+                              dflt_white );
+
+     if (white[0] <= 0 || white[1] != 1.0 || white[2] <= 0)
+        return_error(e_rangecheck);
+
+    code = seticclab(i_ctx_p, white, black, range_buff);
+
+    if ( code < 0)
+        return gs_rethrow(code, "setting PDF lab color space");
+
+    cc.pattern = 0x00;
+    for (i=0;i<3;i++) 
+        cc.paint.values[i] = 0;
+    code = gs_setcolor(igs, &cc);
+
+    return code;
+
+}
+
+
+static int validatelabspace(i_ctx_t * i_ctx_p, ref **r)
+{
+    int code=0, components = 0;
+    ref *space, labdict;
+    
+    space = *r;
+    if (!r_is_array(space))
+	return_error(e_typecheck);
+    /* Validate parameters, check we have enough operands */
+    if (r_size(space) < 2)
+	return_error(e_rangecheck);
+
+    code = array_get(imemory, space, 1, &labdict);
+    if (code < 0)
+	return code;
+
+    /* Check the white point, which is required */
+
+    /* We have to have a white point */
+    /* Check white point exists, and is an array of three numbers */
+    code = checkWhitePoint(i_ctx_p, &labdict);
+    if (code != 0)
+	return code;
+
+    /* The rest are optional.  Need to validate though */
+
+    code = checkBlackPoint(i_ctx_p, &labdict);
+    if (code < 0)
+	return code;
+
+    /* Range on a b values */
+
+    code = checkrangeab(i_ctx_p, &labdict);
+    if (code < 0)
+	return code;
+
+    *r = 0;  /* No nested space */
+
+    return 0;
+
+
+}
+
+static int labrange(i_ctx_t * i_ctx_p, ref *space, float *ptr)
+{
+    int i, code;
+    ref     CIEdict, *tempref, valref;
+
+    code = array_get(imemory, space, 1, &CIEdict);
+    if (code < 0)
+	return code;
+
+    /* If we have a Range entry, get the values from that */
+    code = dict_find_string(&CIEdict, "Range", &tempref);
+    if (code >= 0 && !r_has_type(tempref, t_null)) {
+	for (i=0;i<4;i++) {
+	    code = array_get(imemory, tempref, i, &valref);
+	    if (code < 0)
+		return code;
+	    if (r_has_type(&valref, t_integer))
+		ptr[i] = (float)valref.value.intval;
+	    else if (r_has_type(&valref, t_real))
+		ptr[i] = (float)valref.value.realval;
+	    else
+	        return_error(e_typecheck);
+        }
+    } else {
+	/* Default values for Lab */
+	for (i=0;i<2;i++) {
+	    ptr[2 * i] = -100;
+	    ptr[(2 * i) + 1] = 100;
+	}
+    }
+    return 0;
+}
+
+
+static int labdomain(i_ctx_t * i_ctx_p, ref *space, float *ptr)
+{
+    int i, code;
+    ref     CIEdict, *tempref, valref;
+
+    code = array_get(imemory, space, 1, &CIEdict);
+    if (code < 0)
+	return code;
+
+    /* If we have a Range, get the values from that */
+    code = dict_find_string(&CIEdict, "Range", &tempref);
+    if (code >= 0 && !r_has_type(tempref, t_null)) {
+	for (i=0;i<4;i++) {
+	    code = array_get(imemory, tempref, i, &valref);
+	    if (code < 0)
+		return code;
+	    if (r_has_type(&valref, t_integer))
+		ptr[i] = (float)valref.value.intval;
+	    else if (r_has_type(&valref, t_real))
+		ptr[i] = (float)valref.value.realval;
+	    else
+	        return_error(e_typecheck);
+        }
+    } else {
+	/* Default values for Lab */
+	for (i=0;i<2;i++) {
+	    ptr[2 * i] = -100;
+	    ptr[(2 * i) + 1] = 100;
+	}
+    }
+    return 0;
+}
+
+static int labbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, int *cont, int *stack_depth)
+{
+    os_ptr op;
+    int i, components=1;
+
+    components = 3;
+
+    pop(components);
+    op = osp;
+
+    components = 3;
+    push(components);
+
+    op -= components-1;
+    for (i=0;i<components;i++) {
+	make_real(op, (float)0);
+	op++;
+    }
+
+    *stage = 0;
+    *cont = 0;
+    return 0;
+}
+
+static int labvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_comps)
+{
+    os_ptr op = osp;
+    int i;
+
+    if (num_comps < 3)
+	return_error(e_stackunderflow);
+
+    op -= 2;
+    for (i=0;i<3;i++) {
+	if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
+	    return_error(e_typecheck);
+	op++;
+    }
+
+    return 0;
+}
+
+
+
+/* CalGray */
+
+static int setcalgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
+{
+
+    /* To be written */
+    return(0);
+
+}
+static int validatecalgrayspace(i_ctx_t * i_ctx_p, ref **r)
+{
+
+    /* To be written */
+   return(0);
+
+}
+
+
+/* CalRGB */
+
+static int setcalrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
+{
+
+    /* To be written */
+
+    return(0);
+
+}
+
+
+static int validatecalrgbspace(i_ctx_t * i_ctx_p, ref **r)
+{
+    /* To be written */
+
+    return(0);
+
+}
+
+
 /* ICCBased */
 static int iccrange(i_ctx_t * i_ctx_p, ref *space, float *ptr);
 static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
@@ -5478,6 +5768,12 @@ PS_colour_space_t colorProcs[] = {
     devicepbasecolor, 0, devicepvalidate, falsecompareproc, 0},
     {(char *)"ICCBased", seticcspace, validateiccspace, iccalternatespace, icccomponents, iccrange, iccdomain,
     iccbasecolor, 0, iccvalidate, falsecompareproc, 0},
+    {(char *)"Lab", setlabspace, validatelabspace, 0, threecomponent, labrange, labdomain,
+    labbasecolor, 0, labvalidate, truecompareproc, 0},
+    {(char *)"CalGray", setcalgrayspace, validatecalgrayspace, 0, onecomponent, grayrange, graydomain,
+    graybasecolor, 0, grayvalidate, truecompareproc, grayinitialproc},
+    {(char *)"CalRGB", setcalrgbspace, validatecalrgbspace, 0, threecomponent, rgbrange, rgbdomain,
+    rgbbasecolor, 0, rgbvalidate, truecompareproc, rgbinitialproc}
 };
 
 /*

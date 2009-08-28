@@ -743,6 +743,44 @@ set_default_cmyk_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     return(code);
 
 }
+
+static void
+current_default_lab_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    static const char *const rfs = LAB_ICC;
+    pval->data = (const byte *)rfs;
+    pval->size = strlen(rfs);
+    pval->persistent = true;
+}
+
+static int
+set_default_lab_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    int code;
+    char* pname;
+    int namelen = (pval->size)+1;
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+    gs_memory_t *mem = pis->memory; 
+
+    pname = gs_alloc_bytes(mem, namelen,
+	   		     "set_default_lab_icc");
+
+    memcpy(pname,pval->data,namelen-1);
+    pname[namelen-1] = 0;
+
+    code = gsicc_set_profile((gs_imager_state *) igs, (const char*) pname, namelen, LAB_TYPE);
+
+    gs_free_object(mem, pname,
+                "set_default_lab_icc");
+
+    if (code < 0)
+        return gs_rethrow(code, "cannot find default lab icc profile");
+
+    return(code);
+
+}
+
+
 static const long_param_def_t user_long_params[] =
 {
     {"JobTimeout", 0, MAX_UINT_PARAM,
@@ -782,7 +820,8 @@ static const string_param_def_t user_string_params[] =
     {"ProofProfile", current_default_proof_icc, set_proof_profile_icc},
     {"NamedProfile", current_default_named_icc, set_named_profile_icc},
     {"DeviceLinkProfile", current_default_link_icc, set_link_profile_icc},
-    {"ICCProfilesDir", current_default_dir_icc, set_icc_directory} 
+    {"ICCProfilesDir", current_default_dir_icc, set_icc_directory}, 
+    {"LabProfile", current_default_lab_icc, set_default_lab_icc} 
 
 };
 

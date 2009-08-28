@@ -39,16 +39,13 @@
 int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 {
 
-    os_ptr                  op = osp;
-    int edepth = ref_stack_count(&e_stack);
-    int                     code, reuse_op = 0;
+    int                     code;
     gs_color_space *        pcs;
     gs_color_space *  palt_cs;
     ref *                   pstrmval;
     stream *                s = 0L;
     cmm_profile_t           *picc_profile;
     gs_imager_state *       pis = (gs_imager_state *)igs;
-    gx_device *             pdev = gs_currentdevice(igs);
     int                     i;
 
     palt_cs = gs_currentcolorspace(igs);
@@ -85,6 +82,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     }
 
     code = gsicc_set_gscs_profile(pcs, picc_profile, gs_state_memory(igs));
+
     if (code < 0)
         return gs_rethrow(code, "installing the profile");
     
@@ -199,6 +197,76 @@ zseticcspace(i_ctx_t * i_ctx_p)
         return_error(e_rangecheck);
 
     return seticc(i_ctx_p, ncomps, op, range_buff);
+}
+
+
+/* Install a ICC type color space and use the 16 bit ICC LABLUT profile.  We need to resample this to be a 2x2x2 */
+int
+seticclab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff)
+{
+    int                     code;
+    gs_color_space *        pcs;
+    gs_color_space *        palt_cs;
+    gs_imager_state *       pis = (gs_imager_state *)igs;
+    gs_memory_t             *mem = pis->memory; 
+    int                     i;
+    static const char *const rfs = LAB_ICC;
+    gs_param_string val, *pval;    
+
+    val.data = (const byte *)rfs;
+    val.size = strlen(rfs);
+    val.persistent = true;
+    pval = &val;
+
+    palt_cs = gs_currentcolorspace(igs);
+
+    /* build the color space object */
+    code = gs_cspace_build_ICC(&pcs, NULL, gs_state_memory(igs));
+    if (code < 0)
+        return gs_rethrow(code, "building color space object");
+
+    /* record the current space as the alternative color space */
+    pcs->base_space = palt_cs;
+    rc_increment(palt_cs);
+
+    /* Get the lab profile.  It may already be set in the icc manager.
+       If not then lets populate it.  */
+
+    if (pis->icc_manager->lab_profile == NULL ) {
+
+        /* This can't happen as the profile
+           should be initialized during the
+           setting of the user params */
+
+        return gs_rethrow(code, "cannot find lab icc profile");
+
+ 
+    } 
+
+    /* Assign the LAB to LAB profile to this color space */
+
+    code = gsicc_set_gscs_profile(pcs, pis->icc_manager->lab_profile, gs_state_memory(igs));
+    rc_increment(pis->icc_manager->lab_profile);
+    if (code < 0)
+        return gs_rethrow(code, "installing the lab profile");
+    
+    pcs->cmm_icc_profile_data->Range.ranges[0].rmin = 0.0;
+    pcs->cmm_icc_profile_data->Range.ranges[0].rmax = 100.0;
+
+    for (i = 1; i < 3; i++) {
+
+        pcs->cmm_icc_profile_data->Range.ranges[i].rmin = 
+            range_buff[2 * (i-1)];
+        pcs->cmm_icc_profile_data->Range.ranges[i].rmax = 
+            range_buff[2 * (i-1) + 1];
+
+    } 
+
+    /* Set the color space.  We are done.  */
+
+    code = gs_setcolorspace(igs, pcs);
+
+    return code;
 }
 
 

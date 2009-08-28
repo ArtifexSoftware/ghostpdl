@@ -415,7 +415,7 @@ image_params *pip_data, const char *dict_name,
     if (dict_find_string(op, dict_name, &pMaskDict) <= 0)
 	return 1;
     if ((mcode = code = data_image_params(mem, pMaskDict, &pixm->MaskDict,
-					  &ip_mask, false, 1, 16, false)) < 0 ||
+					  &ip_mask, false, 1, 16, false, false)) < 0 ||
 	(code = dict_int_param(pMaskDict, "ImageType", 1, 1, 0, &ignored)) < 0 ||
 	(code = dict_int_param(pMaskDict, "InterleaveType", 1, 3, -1,
 			       &pixm->InterleaveType)) < 0 ||

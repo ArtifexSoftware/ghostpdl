@@ -35,7 +35,7 @@ int data_image_params(const gs_memory_t *mem,
 		      const ref *op, gs_data_image_t *pim,
                       image_params *pip, bool require_DataSource,
                       int num_components, int max_bits_per_component,
-                      bool has_alpha);
+                      bool has_alpha, bool islab);
 int pixel_image_params(i_ctx_t *i_ctx_p, const ref *op,
                        gs_pixel_image_t *pim, image_params * pip,
                        int max_bits_per_component, bool has_alpha,

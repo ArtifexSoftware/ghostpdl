@@ -28,6 +28,9 @@
 #include "gserrors.h"
 #include "string_.h"
 
+#if ICC_DUMP
+unsigned int global_icc_index = 0;
+#endif
 
 /* profile data structure */
 /* profile_handle should NOT be garbage collected since it is allocated by the external CMS */
@@ -35,10 +38,10 @@
 gs_private_st_ptrs2(st_gsicc_profile, cmm_profile_t, "gsicc_profile",
 		    gsicc_profile_enum_ptrs, gsicc_profile_reloc_ptrs, buffer, name);
 
-gs_private_st_ptrs8(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
+gs_private_st_ptrs9(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
 		    gsicc_manager_enum_ptrs, gsicc_manager_profile_reloc_ptrs,
 		    device_profile, device_named, default_gray, default_rgb,
-                    default_cmyk, proof_profile, output_link, profiledir); 
+                    default_cmyk, proof_profile, output_link, lab_profile, profiledir); 
 
 static const gs_color_space_type gs_color_space_type_icc = {
     gs_color_space_index_ICC,       /* index */
@@ -148,6 +151,11 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
 
              break;
 
+        case LAB_TYPE:
+
+             manager_default_profile = &(icc_manager->lab_profile);
+
+
     }
 
     /* If it is not NULL then it has already been set.
@@ -191,6 +199,10 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
 
         gsicc_get_icc_buff_hash(icc_profile->buffer, &(icc_profile->hashcode));
         icc_profile->hash_is_valid = true;
+
+        icc_profile->num_comps = gscms_get_channel_count(icc_profile->profile_handle);
+
+        if (defaulttype == LAB_TYPE) icc_profile->islab = true;
          
         return(0);
        
@@ -200,6 +212,7 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
 
     
 }
+
 
 /* This is used to try to find the specified or default ICC profiles */
 
@@ -390,6 +403,13 @@ gsicc_set_gscs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile, gs_memor
 
     if (pcs != NULL){
 
+#if ICC_DUMP
+
+        dump_icc_buffer(icc_profile->buffer_size, "set_gscs", icc_profile->buffer);
+        global_icc_index++;
+
+#endif
+
         if (pcs->cmm_icc_profile_data != NULL) {
 
             /* There is already a profile set there */
@@ -457,6 +477,7 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname, int namelen
 
     result->profile_handle = NULL;
     result->hash_is_valid = false;
+    result->islab = false;
 
     return(result);
 
@@ -526,6 +547,7 @@ gsicc_manager_new(gs_memory_t *memory)
    result->output_link = NULL;
    result->device_profile = NULL;
    result->proof_profile = NULL;
+   result->lab_profile = NULL;
    result->memory = memory;
 
    result->profiledir = NULL;
@@ -573,6 +595,7 @@ gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, gs_memory_t *memory
    }
 
    profile->buffer = buffer_ptr;
+   profile->buffer_size = num_bytes;
 
    return(0);
 
@@ -711,3 +734,27 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer){
 
  }
 
+
+
+#if ICC_DUMP
+
+/* Debug dump of ICC buffer data */
+
+static void
+dump_icc_buffer(int buffersize, char filename[],byte *Buffer)
+
+{
+    char full_file_name[50];
+    FILE *fid;
+
+    sprintf(full_file_name,"%d)%s_debug.icc",global_icc_index,filename);
+    fid = fopen(full_file_name,"wb");
+
+    fwrite(Buffer,sizeof(unsigned char),buffersize,fid);
+
+    fclose(fid);
+
+}
+
+
+#endif

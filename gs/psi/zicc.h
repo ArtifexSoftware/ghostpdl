@@ -18,5 +18,7 @@
 #  define zicc_INCLUDED
 
 int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff);
+int seticclab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff);
+
 
 #endif /* zicc_INCLUDED */

@@ -18,11 +18,14 @@
 #ifndef gsiccmanage_INCLUDED
 #  define gsiccmanage_INCLUDED
 
+#define ICC_DUMP 0
+
 /* Define the default ICC profiles in the file system */
 
 #define DEFAULT_GRAY_ICC  "iccprofiles/default_gray.icc"
-#define DEFAULT_RGB_ICC  "iccprofiles/default_rgb.icc"
+#define DEFAULT_RGB_ICC   "iccprofiles/default_rgb.icc"
 #define DEFAULT_CMYK_ICC  "iccprofiles/default_cmyk.icc"
+#define LAB_ICC           "iccprofiles/lab.icc"
 
 #include "gsicc_littlecms.h"
 
@@ -50,6 +53,10 @@ static void rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t c
 static int gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, gs_memory_t *memory);
 static stream* gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc, gsicc_manager_t *icc_manager);
 static int gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev, gs_memory_t * mem);
+
+#if ICC_DUMP
+static void dump_icc_buffer(int buffersize, char filename[],byte *Buffer);
+#endif
 
 #endif
 

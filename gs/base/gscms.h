@@ -107,7 +107,8 @@ typedef enum {
     DEFAULT_CMYK,
     PROOF_TYPE,
     NAMED_TYPE,
-    LINKED_TYPE
+    LINKED_TYPE,
+    LAB_TYPE
 
 } gsicc_profile_t;
 
@@ -118,8 +119,12 @@ struct cmm_profile_s {
 
     void *profile_handle;       /* The profile handle to be used in linking */
     unsigned char num_comps;    /* number of device dependent values */
+    bool islab;                 /* Needed since we want to detect this to avoid 
+                                   expensive decode on LAB images.  Is true
+                                   if PDF color space is \Lab*/
     gs_range15_t Range;          
     byte *buffer;               /* A buffer with ICC profile content */
+    int buffer_size;            /* size of ICC profile buffer */
     int64_t hashcode;           /* A hash code for the icc profile */
     bool hash_is_valid;         /* Is the code valid? */
     rc_header rc;               /* Reference count.  So we know when to free */ 
@@ -207,6 +212,7 @@ typedef struct gsicc_manager_s {
     cmm_profile_t *proof_profile;   /* Profiling profile */
     cmm_profile_t *output_link;     /* Output device Link profile */
     cmm_profile_t *device_profile;  /* The actual profile for the device */
+    cmm_profile_t *lab_profile;      /* Colorspace type ICC profile from LAB to LAB */
 
     char *profiledir;               /* Directory used in searching for ICC profiles */
     uint namelen;
