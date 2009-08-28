@@ -273,8 +273,8 @@ const px_attr_value_type_t px_attr_value_types[] = {
 /* 145 */  sc(ul),              /* VUExtension = 145 */
 /* 146 */  none,
 /* 147 */  scub(),              /* VUAttr1 = 147 */
-/* 148 */  none,
-/* 149 */  none,
+/* 148 */  scub(),
+/* 149 */  scub(),
 /* 150 */  none,
 /* 151 */  none,
 /* 152 */  none,
@@ -379,7 +379,7 @@ const char *px_attribute_names[] = {
   0, "SourceType", "UnitsPerMeasure", 0, "StreamName",
 /*140*/
   "StreamDataLength", 0, 0, "ErrorReport", 0,
-  "VUExtension", 0, "VUAttr1", 0, 0,
+  "VUExtension", 0, "VUAttr1", "VUAttr2", "VUAttr3",
 /*150*/
   0, 0, 0, 0, 0,
   0, 0, 0, 0, 0,
