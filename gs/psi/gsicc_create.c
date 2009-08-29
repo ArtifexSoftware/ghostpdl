@@ -168,6 +168,7 @@ get_padding(int x)
 }
 
 
+
 /* For some weird reason I cant link to the one in gscie.c */
 static void
 gsicc_matrix_init(register gs_matrix3 * mat)
@@ -258,6 +259,27 @@ write_bigendian_4bytes(unsigned char *curr_ptr,ulong input)
 
 }
 
+static void
+write_bigendian_2bytes(unsigned char *curr_ptr,ushort input)
+{
+
+#if !arch_is_big_endian
+
+   *curr_ptr ++= ((0x000ff) & (input >> 8));
+   *curr_ptr ++= ((0x000ff) & (input));
+
+#else
+   
+   *curr_ptr ++= ((0x000000ff) & (input));
+   *curr_ptr ++= ((0x000000ff) & (input >> 8));
+
+#endif
+
+
+}
+
+
+
 
 static void
 setdatetime(icDateTimeNumber *datetime)
@@ -282,6 +304,16 @@ double2XYZtype(float number_in){
     m = (unsigned short) ((number_in - s) * 65536.0);
     return((icS15Fixed16Number) ((s << 16) | m) );
 }
+
+static unsigned short
+float2u8Fixed8(float number_in){
+
+    unsigned short m;
+
+    m = (unsigned short) (number_in * 256);
+    return( m );
+}
+
 
 static
 void  init_common_tags(gsicc_tag tag_list[],int num_tags, int *last_tag)
@@ -528,6 +560,46 @@ get_XYZ(icS15Fixed16Number XYZ[], gs_vector3 vector)
 
 }
 
+static void
+get_XYZ_floatptr(icS15Fixed16Number XYZ[], float *vector)
+{
+
+    XYZ[0] = double2XYZtype(vector[0]);
+    XYZ[1] = double2XYZtype(vector[1]);
+    XYZ[2] = double2XYZtype(vector[2]);
+
+}
+
+
+static void
+add_gammadata(unsigned char *input_ptr, unsigned short gamma, icTagSignature curveType)
+{
+
+    unsigned char *curr_ptr;
+
+    curr_ptr = input_ptr;
+    write_bigendian_4bytes(curr_ptr,curveType);
+    curr_ptr += 4;
+
+    memset(curr_ptr,0,4);
+    curr_ptr += 4;
+
+    /* one entry for gamma */
+
+    write_bigendian_4bytes(curr_ptr, 1);
+    curr_ptr += 4;
+
+    /* The encode (8frac8) gamma, with padding */
+
+    write_bigendian_2bytes(curr_ptr, gamma);
+    curr_ptr += 2;
+   
+    /* pad two bytes */
+    memset(curr_ptr,0,2);
+
+}
+
+
 
 static void
 add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[])
@@ -552,7 +624,150 @@ add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[])
 
 }
 
+/* This creates an ICC profile from the PDF CalRGB form */
 
+cmm_profile_t*
+gsicc_create_from_calrgb(float *white, float *black, float *gamma, float *matrix,  gs_memory_t *memory)
+{
+
+    icProfile iccprofile;
+    icHeader  *header = &(iccprofile.header);
+    int profile_size,k;
+    int num_tags;
+    gsicc_tag *tag_list;
+    unsigned short encode_gamma;
+    int tag_offset = 0;
+    unsigned char *curr_ptr;
+    int last_tag;
+    icS15Fixed16Number temp_XYZ[3];
+    int tag_location;
+    icTagSignature TRC_Tags[3] = {icSigRedTRCTag, icSigGreenTRCTag, icSigBlueTRCTag};
+    int trc_tag_size;
+    int debug_catch = 1;
+    unsigned char *buffer;
+    cmm_profile_t *result;
+
+    /* Fill in the common stuff */
+
+    setheader_common(header);
+
+    header->deviceClass = icSigInputClass;
+    header->colorSpace = icSigRgbData;
+    header->pcs = icSigXYZData;
+
+    profile_size = HEADER_SIZE;
+
+    num_tags = 10;  /* common (2) + rXYZ,gXYZ,bXYZ,rTRC,gTRC,bTRC,bkpt,wtpt */     
+    tag_list = (gsicc_tag*) gs_alloc_bytes(memory,sizeof(gsicc_tag)*num_tags,"gsicc_create_from_calrgb");
+
+    /* Let us precompute the sizes of everything and all our offsets */
+
+    profile_size += TAG_SIZE*num_tags;
+    profile_size += 4; /* number of tags.... */
+
+    last_tag = -1;
+    init_common_tags(tag_list, num_tags, &last_tag);  
+
+    init_tag(tag_list, &last_tag, icSigRedColorantTag, XYZPT_SIZE);
+    init_tag(tag_list, &last_tag, icSigGreenColorantTag, XYZPT_SIZE);
+    init_tag(tag_list, &last_tag, icSigBlueColorantTag, XYZPT_SIZE);
+
+    init_tag(tag_list, &last_tag, icSigMediaWhitePointTag, XYZPT_SIZE);
+    init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
+
+    trc_tag_size = 8;  /* 4 for count, 2 for gamma, Extra 2 bytes for 4 byte alignment requirement */
+
+    for (k = 0; k < 3; k++){
+
+        init_tag(tag_list, &last_tag, TRC_Tags[k], trc_tag_size);
+
+    }
+
+    for(k = 0; k < num_tags; k++){
+
+        profile_size += tag_list[k].size;
+
+    }
+
+    /* Now we can go ahead and fill our buffer with the data */
+
+    buffer = gs_alloc_bytes(memory,profile_size,"gsicc_create_fromabc");
+    curr_ptr = buffer;
+
+    /* The header */
+
+    header->size = profile_size;
+    copy_header(curr_ptr,header);
+    curr_ptr += HEADER_SIZE;
+
+    /* Tag table */
+
+    copy_tagtable(curr_ptr,tag_list,num_tags);
+    curr_ptr += TAG_SIZE*num_tags;
+    curr_ptr += 4;
+
+    /* Now the data.  Must be in same order as we created the tag table */
+
+    /* First the common tags */
+
+    add_common_tag_data(curr_ptr, tag_list);
+
+    for (k = 0; k< NUMBER_COMMON_TAGS; k++)
+    {
+        curr_ptr += tag_list[k].size;
+    }
+
+    tag_location = NUMBER_COMMON_TAGS;
+
+    /* The matrix */
+
+    for ( k = 0; k < 3; k++ ){
+
+        get_XYZ_floatptr(temp_XYZ,&(matrix[k*3]));
+        add_xyzdata(curr_ptr,temp_XYZ);
+        curr_ptr += tag_list[tag_location].size;
+        tag_location++;
+
+    }
+
+    /* White and black points */
+    /* Need to adjust for the D65/D50 issue */
+    get_XYZ_floatptr(temp_XYZ,white);
+    add_xyzdata(curr_ptr,temp_XYZ);
+    curr_ptr += tag_list[tag_location].size;
+    tag_location++;
+
+    get_XYZ_floatptr(temp_XYZ,black);
+    add_xyzdata(curr_ptr,temp_XYZ);
+    curr_ptr += tag_list[tag_location].size;
+    tag_location++;
+
+    /* Now the gamma values */
+
+    for ( k = 0; k < 3; k++ ){
+
+        encode_gamma = float2u8Fixed8(gamma[k]);
+        add_gammadata(curr_ptr, encode_gamma, icSigCurveType);
+        curr_ptr += tag_list[tag_location].size;
+        tag_location++;
+
+    }
+
+    result = gsicc_profile_new(NULL, memory, NULL, 0);   
+    result->buffer = buffer;
+    result->buffer_size = profile_size;
+    result->num_comps = 3;
+
+#if SAVEICCPROFILE
+
+    /* Dump the buffer to a file for testing if its a valid ICC profile */
+
+    save_profile(buffer,"from_calRGB",profile_size);
+
+#endif
+
+    return(result);
+}
 
 
 /* The ABC matrix and decode ABC parameters

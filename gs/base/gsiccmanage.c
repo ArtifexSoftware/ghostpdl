@@ -465,11 +465,23 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname, int namelen
 
     result->name_length = namelen;
 
-    code = gsicc_load_profile_buffer(result, s, memory);
-    if (code < 0) {
+    /* We may not have a stream if we are creating this
+       object from our own constructed buffer.  For 
+       example if we are converting CalRGB to an ICC type */
 
-        gs_free_object(memory, result, "gsicc_profile_new");
-        return NULL;
+    if ( s != NULL) {
+
+        code = gsicc_load_profile_buffer(result, s, memory);
+        if (code < 0) {
+
+            gs_free_object(memory, result, "gsicc_profile_new");
+            return NULL;
+
+        }
+    } else {
+
+        result->buffer = NULL;
+        result->buffer_size = 0;
 
     }
 

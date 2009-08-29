@@ -5236,6 +5236,64 @@ static int labvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_comp
     return 0;
 }
 
+/* Check that the Matrix of a CalRGB and CalGray space is valid */
+static int checkCalMatrix(i_ctx_t * i_ctx_p, ref *CIEdict)
+{
+    int code = 0, i;
+    float value[9];
+    ref *tempref, valref;
+
+    code = dict_find_string(CIEdict, "Matrix", &tempref);
+    if (code >= 0 && !r_has_type(tempref, t_null)) {
+	if (!r_is_array(tempref))
+	    return_error(e_typecheck);
+	if (r_size(tempref) != 9)
+	    return_error(e_rangecheck);
+
+	for (i=0;i<9;i++) {
+	    code = array_get(imemory, tempref, i, &valref);
+	    if (code < 0)
+		return code;
+	    if (r_has_type(&valref, t_integer))
+		value[i] = (float)valref.value.intval;
+	    else if (r_has_type(&valref, t_real))
+	        value[i] = (float)valref.value.realval;
+	    else
+	        return_error(e_typecheck);
+        }
+    }
+    return 0;
+}
+
+/* Check that the Gamma of a CalRGB and CalGray space is valid */
+static int checkGamma(i_ctx_t * i_ctx_p, ref *CIEdict, int numvalues)
+{
+    int code = 0, i;
+    float value[3];
+    ref *tempref, valref;
+
+    code = dict_find_string(CIEdict, "Gamma", &tempref);
+    if (code >= 0 && !r_has_type(tempref, t_null)) {
+	if (!r_is_array(tempref))
+	    return_error(e_typecheck);
+	if (r_size(tempref) != numvalues)
+	    return_error(e_rangecheck);
+
+	for (i=0;i<numvalues;i++) {
+	    code = array_get(imemory, tempref, i, &valref);
+	    if (code < 0)
+		return code;
+	    if (r_has_type(&valref, t_integer))
+		value[i] = (float)valref.value.intval;
+	    else if (r_has_type(&valref, t_real))
+	        value[i] = (float)valref.value.realval;
+	    else
+	        return_error(e_typecheck);
+            if (value[i] <= 0) return_error(e_rangecheck);
+        }
+    }
+    return 0;
+}
 
 
 /* CalGray */
@@ -5250,8 +5308,44 @@ static int setcalgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
 static int validatecalgrayspace(i_ctx_t * i_ctx_p, ref **r)
 {
 
-    /* To be written */
-   return(0);
+    int code=0, components = 0;
+    ref *space, calgraydict;
+    
+    space = *r;
+    if (!r_is_array(space))
+	return_error(e_typecheck);
+    /* Validate parameters, check we have enough operands */
+    if (r_size(space) < 2)
+	return_error(e_rangecheck);
+
+    code = array_get(imemory, space, 1, &calgraydict);
+    if (code < 0)
+	return code;
+
+    /* Check the white point, which is required */
+
+    /* We have to have a white point */
+    /* Check white point exists, and is an array of three numbers */
+    code = checkWhitePoint(i_ctx_p, &calgraydict);
+    if (code != 0)
+	return code;
+
+    /* The rest are optional.  Need to validate though */
+
+    code = checkBlackPoint(i_ctx_p, &calgraydict);
+    if (code < 0)
+	return code;
+
+    /* Check Gamma values */
+
+    code = checkGamma(i_ctx_p, &calgraydict, 1);
+    if (code < 0)
+	return code;
+
+    *r = 0;  /* No nested space */
+
+    return 0;
+
 
 }
 
@@ -5261,18 +5355,121 @@ static int validatecalgrayspace(i_ctx_t * i_ctx_p, ref **r)
 static int setcalrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
 {
 
-    /* To be written */
+    /* Here we set up an equivalent ICC form for the CalRGB color space */
 
-    return(0);
+    ref rgbdict;
+    int code = 0;
+    float                   gamma[3], white[3], black[3], matrix[9];
+    static const float      dflt_gamma[3] = { 1.0, 1.0, 1.0 };
+    static const float      dflt_black[3] = {0,0,0}, dflt_white[3] = {0,0,0};
+    static const float      dflt_matrix[9] = {1,0,0,0,1,0,0,0,1};
+    int i;
+    gs_client_color cc;
+  
+    *cont = 0;
+    code = array_get(imemory, r, 1, &rgbdict);
+    if (code < 0)
+	return code;
 
+
+/* Get all the parts */
+
+    code = dict_floats_param( imemory, 
+			      &rgbdict,
+                              "Gamma",
+                              3,
+                              gamma,
+                              dflt_gamma );
+     if (gamma[0] <= 0 || gamma[1] <= 1.0 || gamma[2] <= 0)
+        return_error(e_rangecheck);
+
+     code = dict_floats_param( imemory, 
+			      &rgbdict,
+                              "BlackPoint",
+                              3,
+                              black,
+                              dflt_black );
+
+
+     code = dict_floats_param( imemory, 
+			      &rgbdict,
+                              "WhitePoint",
+                              3,
+                              white,
+                              dflt_white );
+
+     if (white[0] <= 0 || white[1] != 1.0 || white[2] <= 0)
+        return_error(e_rangecheck);
+
+
+     code = dict_floats_param( imemory, 
+			      &rgbdict,
+                              "Matrix",
+                              9,
+                              matrix,
+                              dflt_matrix );
+
+    code = seticc_calrgb(i_ctx_p, white, black, gamma, matrix);
+
+    if ( code < 0)
+        return gs_rethrow(code, "setting CalRGB  color space");
+
+    cc.pattern = 0x00;
+    for (i=0;i<3;i++) 
+        cc.paint.values[i] = 0;
+    code = gs_setcolor(igs, &cc);
+
+    return code;
 }
 
 
 static int validatecalrgbspace(i_ctx_t * i_ctx_p, ref **r)
 {
-    /* To be written */
+    int code=0, components = 0;
+    ref *space, calrgbdict;
+    
+    space = *r;
+    if (!r_is_array(space))
+	return_error(e_typecheck);
+    /* Validate parameters, check we have enough operands */
+    if (r_size(space) < 2)
+	return_error(e_rangecheck);
 
-    return(0);
+    code = array_get(imemory, space, 1, &calrgbdict);
+    if (code < 0)
+	return code;
+
+    /* Check the white point, which is required */
+
+    /* We have to have a white point */
+    /* Check white point exists, and is an array of three numbers */
+    code = checkWhitePoint(i_ctx_p, &calrgbdict);
+    if (code != 0)
+	return code;
+
+    /* The rest are optional.  Need to validate though */
+
+    code = checkBlackPoint(i_ctx_p, &calrgbdict);
+    if (code < 0)
+	return code;
+
+    /* Check Gamma values */
+
+    code = checkGamma(i_ctx_p, &calrgbdict, 3);
+    if (code < 0)
+	return code;
+
+    /* Check Matrix */
+
+    code = checkCalMatrix(i_ctx_p, &calrgbdict);
+    if (code < 0)
+	return code;
+
+
+    *r = 0;  /* No nested space */
+
+    return 0;
+
 
 }
 

@@ -634,7 +634,12 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                     }
 
                     pconcs = cs_concrete_space(pactual_cs, pis);
-	            device_color = (pactual_cs->type->concrete_space) (pactual_cs, pis) == pactual_cs;
+
+                    if (pcs->cmm_icc_profile_data != NULL) {
+                        device_color = false;
+                    } else {
+	                device_color = (pactual_cs->type->concrete_space) (pactual_cs, pis) == pactual_cs;
+                    }
 
                     if (device_color) {
 

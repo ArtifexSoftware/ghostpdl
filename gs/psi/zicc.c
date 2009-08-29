@@ -35,6 +35,7 @@
 #include "gx.h"
 #include "gxistate.h"
 #include "gserror.h"
+#include "gsicc_create.h"
 
 int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 {
@@ -200,7 +201,7 @@ zseticcspace(i_ctx_t * i_ctx_p)
 }
 
 
-/* Install a ICC type color space and use the 16 bit ICC LABLUT profile.  We need to resample this to be a 2x2x2 */
+/* Install a ICC type color space and use the ICC LABLUT profile. */
 int
 seticclab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff)
 {
@@ -268,6 +269,58 @@ seticclab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff)
 
     return code;
 }
+
+int
+seticc_calrgb(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma, float *matrix)
+{
+
+    int                     code;
+    gs_color_space *        pcs;
+    gs_imager_state *       pis = (gs_imager_state *)igs;
+    gs_memory_t             *mem = pis->memory; 
+    int                     i;
+    cmm_profile_t *calrgb_profile;
+
+    /* build the color space object */
+    code = gs_cspace_build_ICC(&pcs, NULL, gs_state_memory(igs));
+    if (code < 0)
+        return gs_rethrow(code, "building color space object");
+
+    /* There is no alternate for this.  Perhaps we should set DeviceRGB? */
+    pcs->base_space = NULL;
+
+    /* Create an ICC profile from the CalRGB parameters */
+
+    calrgb_profile = gsicc_create_from_calrgb(white, black, gamma, matrix, mem);
+
+    /* Assign the LAB to LAB profile to this color space */
+
+    code = gsicc_set_gscs_profile(pcs, calrgb_profile, gs_state_memory(igs));
+    if (code < 0)
+        return gs_rethrow(code, "installing the calrgb profile");
+    
+    for (i = 0; i < 3; i++) {
+
+        pcs->cmm_icc_profile_data->Range.ranges[i].rmin = 0;
+        pcs->cmm_icc_profile_data->Range.ranges[i].rmax = 1;
+
+    } 
+
+    /* Set the color space.  We are done.  */
+
+    code = gs_setcolorspace(igs, pcs);
+
+    return code;
+
+
+
+
+
+
+
+}
+
+
 
 
 const op_def    zicc_ll3_op_defs[] = {

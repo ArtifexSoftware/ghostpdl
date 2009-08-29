@@ -319,7 +319,13 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	default:		/* chunky */
 	    break;
 	}
-	device_color = (*pcst->concrete_space) (pcs, pis) == pcs;
+
+        if (pcs->cmm_icc_profile_data != NULL) {
+            device_color = false;
+        } else {
+	    device_color = (*pcst->concrete_space) (pcs, pis) == pcs;
+        }
+
 	image_init_colors(penum, bps, spp, format, decode, pis, dev,
 			  pcs, &device_color);
 	/* Try to transform non-default RasterOps to something */
