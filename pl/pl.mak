@@ -85,6 +85,7 @@ $(PLOBJ)pjparse.$(OBJ): $(PLSRC)pjparse.c\
         $(scommon_h) \
         $(gdebug_h)  \
         $(gp_h)      \
+        $(gxiodev_h) \
         $(pjparse_h) \
         $(plfont_h)  \
         $(plver_h)
@@ -235,7 +236,8 @@ $(PLOBJ)plulfont.$(OBJ): $(PLSRC)plulfont.c $(pllfont_h) $(uconfig_h) $(AK)\
 $(PLOBJ)pllfont.$(OBJ): $(PLSRC)pllfont.c $(pllfont_h) $(AK)\
 	$(ctype__h) $(stdio__h) $(string__h)\
 	$(gx_h) $(gp_h) $(gsccode_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
-	$(gxfont_h) $(gxfont42_h) $(plfont_h) $(pldict_h) $(plvalue_h) $(plftable_h)
+	$(gxfont_h) $(gxfont42_h) $(gxiodev_h) \
+        $(plfont_h) $(pldict_h) $(plvalue_h) $(plftable_h)
 	$(PLCCC) $(PLSRC)pllfont.c $(PLO_)pllfont.$(OBJ)
 
 # artifex rom font loading module

@@ -19,6 +19,7 @@
 #include "scommon.h"
 #include "gdebug.h"
 #include "gp.h"
+#include "gxiodev.h"
 #include "pjparse.h"
 #include "plfont.h"
 #include "plver.h"		/* PJL_VOLUME_0 PJL_VOLUME_1*/
@@ -338,6 +339,7 @@ pjl_check_font_path(char *path_list, gs_memory_t *mem)
 	file_enum *fe;
 	strcpy(tmp_path_and_pattern, dirname);
 	strcat(tmp_path_and_pattern, pattern);
+
 	fe = gs_enumerate_files_init(tmp_path_and_pattern, strlen(tmp_path_and_pattern), mem);
 	if ( fe == NULL || (gs_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH) ) == -1 ) {
 	    tmp_pathp = NULL;

@@ -16,8 +16,8 @@
 #include "ctype_.h"
 #include "stdio_.h"
 #include "string_.h"
-/* The following are all for gxfont42.h, except for gp.h. */
 #include "gx.h"
+#include "gxiodev.h"
 #include "gp.h"
 #include "gsccode.h"
 #include "gserrors.h"
