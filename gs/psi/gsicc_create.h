@@ -30,5 +30,8 @@ void gsicc_create_fromdef(gs_cie_def *pcie, unsigned char *buffer, gs_memory_t *
 
 cmm_profile_t* gsicc_create_from_calrgb(float *white, float *black, float *gamma, 
                                         float *matrix,  gs_memory_t *memory);
+cmm_profile_t* 
+gsicc_create_from_calgray(float *white, float *black, float *gamma, 
+                          gs_memory_t *memory);
 
 #endif

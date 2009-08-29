@@ -203,7 +203,7 @@ zseticcspace(i_ctx_t * i_ctx_p)
 
 /* Install a ICC type color space and use the ICC LABLUT profile. */
 int
-seticclab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff)
+seticc_lab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff)
 {
     int                     code;
     gs_color_space *        pcs;
@@ -270,8 +270,10 @@ seticclab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff)
     return code;
 }
 
+/* Install an ICC space from the PDF CalRGB or CalGray types */
+
 int
-seticc_calrgb(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma, float *matrix)
+seticc_cal(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma, float *matrix, int num_colorants)
 {
 
     int                     code;
@@ -279,7 +281,7 @@ seticc_calrgb(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma, float
     gs_imager_state *       pis = (gs_imager_state *)igs;
     gs_memory_t             *mem = pis->memory; 
     int                     i;
-    cmm_profile_t *calrgb_profile;
+    cmm_profile_t           *cal_profile;
 
     /* build the color space object */
     code = gs_cspace_build_ICC(&pcs, NULL, gs_state_memory(igs));
@@ -289,17 +291,20 @@ seticc_calrgb(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma, float
     /* There is no alternate for this.  Perhaps we should set DeviceRGB? */
     pcs->base_space = NULL;
 
-    /* Create an ICC profile from the CalRGB parameters */
+    /* Create the ICC profile from the CalRGB or CalGray parameters */
 
-    calrgb_profile = gsicc_create_from_calrgb(white, black, gamma, matrix, mem);
+    if (num_colorants == 3)
+        cal_profile = gsicc_create_from_calrgb(white, black, gamma, matrix, mem);
+    else
+        cal_profile = gsicc_create_from_calgray(white, black, gamma, mem);
 
-    /* Assign the LAB to LAB profile to this color space */
+    /* Assign the profile to this color space */
 
-    code = gsicc_set_gscs_profile(pcs, calrgb_profile, gs_state_memory(igs));
+    code = gsicc_set_gscs_profile(pcs, cal_profile, gs_state_memory(igs));
     if (code < 0)
-        return gs_rethrow(code, "installing the calrgb profile");
+        return gs_rethrow(code, "installing the cal profile");
     
-    for (i = 0; i < 3; i++) {
+    for (i = 0; i < num_colorants; i++) {
 
         pcs->cmm_icc_profile_data->Range.ranges[i].rmin = 0;
         pcs->cmm_icc_profile_data->Range.ranges[i].rmax = 1;
@@ -312,15 +317,7 @@ seticc_calrgb(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma, float
 
     return code;
 
-
-
-
-
-
-
 }
-
-
 
 
 const op_def    zicc_ll3_op_defs[] = {

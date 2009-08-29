@@ -5069,7 +5069,7 @@ static int setlabspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
      if (white[0] <= 0 || white[1] != 1.0 || white[2] <= 0)
         return_error(e_rangecheck);
 
-    code = seticclab(i_ctx_p, white, black, range_buff);
+    code = seticc_lab(i_ctx_p, white, black, range_buff);
 
     if ( code < 0)
         return gs_rethrow(code, "setting PDF lab color space");
@@ -5274,23 +5274,43 @@ static int checkGamma(i_ctx_t * i_ctx_p, ref *CIEdict, int numvalues)
 
     code = dict_find_string(CIEdict, "Gamma", &tempref);
     if (code >= 0 && !r_has_type(tempref, t_null)) {
-	if (!r_is_array(tempref))
-	    return_error(e_typecheck);
-	if (r_size(tempref) != numvalues)
-	    return_error(e_rangecheck);
 
-	for (i=0;i<numvalues;i++) {
-	    code = array_get(imemory, tempref, i, &valref);
-	    if (code < 0)
-		return code;
-	    if (r_has_type(&valref, t_integer))
-		value[i] = (float)valref.value.intval;
-	    else if (r_has_type(&valref, t_real))
-	        value[i] = (float)valref.value.realval;
-	    else
+
+        if (numvalues > 1) {
+
+            /* Array of gammas (RGB) */
+
+	    if (!r_is_array(tempref))
 	        return_error(e_typecheck);
-            if (value[i] <= 0) return_error(e_rangecheck);
+	    if (r_size(tempref) != numvalues)
+	        return_error(e_rangecheck);
+
+	    for (i=0;i<numvalues;i++) {
+	        code = array_get(imemory, tempref, i, &valref);
+	        if (code < 0)
+		    return code;
+	        if (r_has_type(&valref, t_integer))
+		    value[i] = (float)valref.value.intval;
+	        else if (r_has_type(&valref, t_real))
+	            value[i] = (float)valref.value.realval;
+	        else
+	            return_error(e_typecheck);
+                if (value[i] <= 0) return_error(e_rangecheck);
+            }
+
+        } else {
+
+            /* Single gamma (gray) */
+
+            if (r_has_type(tempref, t_real)) 
+                value[0] = (float)(tempref->value.realval);
+            else 
+                return_error(e_typecheck);
+            if (value[0] <= 0) return_error(e_rangecheck);
+
         }
+
+
     }
     return 0;
 }
@@ -5301,8 +5321,55 @@ static int checkGamma(i_ctx_t * i_ctx_p, ref *CIEdict, int numvalues)
 static int setcalgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
 {
 
-    /* To be written */
-    return(0);
+    /* Here we set up an equivalent ICC form for the CalGray color space */
+
+    ref graydict;
+    int code = 0;
+    float                   gamma, white[3], black[3];
+    floatp                  dflt_gamma = 1.0;
+    static const float      dflt_black[3] = {0,0,0}, dflt_white[3] = {0,0,0};
+    gs_client_color cc;
+  
+    *cont = 0;
+    code = array_get(imemory, r, 1, &graydict);
+    if (code < 0)
+	return code;
+
+
+/* Get all the parts */
+
+    code = dict_float_param(&graydict, "Gamma",
+		 dflt_gamma, &gamma);
+    if (gamma <= 0 ) return_error(e_rangecheck);
+
+     code = dict_floats_param( imemory, 
+			      &graydict,
+                              "BlackPoint",
+                              3,
+                              black,
+                              dflt_black );
+
+
+     code = dict_floats_param( imemory, 
+			      &graydict,
+                              "WhitePoint",
+                              3,
+                              white,
+                              dflt_white );
+
+     if (white[0] <= 0 || white[1] != 1.0 || white[2] <= 0)
+        return_error(e_rangecheck);
+
+    code = seticc_cal(i_ctx_p, white, black, &gamma, NULL, 1);
+
+    if ( code < 0)
+        return gs_rethrow(code, "setting CalGray  color space");
+
+    cc.pattern = 0x00;
+    cc.paint.values[0] = 0;
+    code = gs_setcolor(igs, &cc);
+
+    return code;
 
 }
 static int validatecalgrayspace(i_ctx_t * i_ctx_p, ref **r)
@@ -5409,7 +5476,7 @@ static int setcalrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
                               matrix,
                               dflt_matrix );
 
-    code = seticc_calrgb(i_ctx_p, white, black, gamma, matrix);
+    code = seticc_cal(i_ctx_p, white, black, gamma, matrix, 3);
 
     if ( code < 0)
         return gs_rethrow(code, "setting CalRGB  color space");
