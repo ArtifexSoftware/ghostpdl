@@ -45,6 +45,7 @@
 #include "jpeglib_.h"           /* for jpeg filter */
 #include "sdct.h"
 #include "sjpeg.h"
+#include "pxptable.h"
 
 /* Define the "freeing" procedure for patterns in a dictionary. */
 void

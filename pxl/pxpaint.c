@@ -30,6 +30,7 @@
 #include "gxistate.h"
 #include "gxmatrix.h"
 #include "gxpath.h"
+#include "pxptable.h"
 
 /*
  * The published H-P specification says that the single-object painting

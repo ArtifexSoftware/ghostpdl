@@ -38,6 +38,7 @@
 #include "pjtop.h"
 #include "pllfont.h"
 #include "plsrgb.h"
+#include "pxptable.h"
 
 /* Imported operators */
 px_operator_proc(pxCloseDataSource);

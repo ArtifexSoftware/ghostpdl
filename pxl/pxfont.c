@@ -37,6 +37,7 @@
 #include "gxchar.h"
 #include "gxpath.h"
 #include "gzstate.h"
+#include "pxptable.h"
 
 /* ---------------- Initialization ---------------- */
 

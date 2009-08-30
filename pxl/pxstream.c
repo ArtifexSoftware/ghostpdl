@@ -20,6 +20,7 @@
 #include "pxoper.h"
 #include "pxstate.h"
 #include "pxparse.h"
+#include "pxptable.h"
 
 /* ---------------- Internal procedures ---------------- */
 

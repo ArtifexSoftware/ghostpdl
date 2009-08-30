@@ -36,6 +36,7 @@
 #include "gzstate.h"
 #include "gscolor2.h"
 #include "plsrgb.h"
+#include "pxptable.h"
 
 /*
  * There is an apparent bug in the LJ5 and LJ6MP firmware that causes
