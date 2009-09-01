@@ -27,11 +27,7 @@ void gsicc_create_fromdefg(gs_cie_defg *pcie, unsigned char *buffer, gs_memory_t
 void gsicc_create_fromdef(gs_cie_def *pcie, unsigned char *buffer, gs_memory_t *memory, 
                           bool has_def_procs, bool has_abc_procs, bool has_lmn_procs);
 
-
-cmm_profile_t* gsicc_create_from_calrgb(float *white, float *black, float *gamma, 
-                                        float *matrix,  gs_memory_t *memory);
-cmm_profile_t* 
-gsicc_create_from_calgray(float *white, float *black, float *gamma, 
-                          gs_memory_t *memory);
+cmm_profile_t* gsicc_create_from_cal(float *white, float *black, float *gamma, 
+                                     float *matrix, gs_memory_t *memory, int num_colors);
 
 #endif

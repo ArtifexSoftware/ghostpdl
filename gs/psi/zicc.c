@@ -293,10 +293,9 @@ seticc_cal(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma, float *m
 
     /* Create the ICC profile from the CalRGB or CalGray parameters */
 
-    if (num_colorants == 3)
-        cal_profile = gsicc_create_from_calrgb(white, black, gamma, matrix, mem);
-    else
-        cal_profile = gsicc_create_from_calgray(white, black, gamma, mem);
+    cal_profile = gsicc_create_from_cal(white, black, gamma, matrix, mem, num_colorants);
+    if (cal_profile == NULL)
+        return gs_rethrow(-1, "creating the cal profile");
 
     /* Assign the profile to this color space */
 

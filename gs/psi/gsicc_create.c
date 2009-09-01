@@ -121,16 +121,18 @@ Note: All profile data must be encoded as big-endian
 #include "string_.h"
 #include "gsmemory.h"
 #include "gx.h"
+#include "gxistate.h"
 #include "gstypes.h"
 #include "gscspace.h"
 #include "gscie.h"
 #include "gsicc_create.h"
 #include "gxarith.h"
+#include "gsiccmanage.h"
 
 static void
 add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[]);
 
-#define SAVEICCPROFILE 1
+#define SAVEICCPROFILE 0
 #define HEADER_SIZE 128
 #define TAG_SIZE 12
 #define XYZPT_SIZE 12
@@ -143,9 +145,6 @@ add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[]);
 unsigned int icc_debug_index = 0;
 #endif
 
-
-
-#if SAVEICCPROFILE
 
 static const char desc_name[] = "Ghostscript Internal Profile";
 static const char copy_right[] = "Copyright Artifex Software 2009";
@@ -199,6 +198,7 @@ gsicc_matrix_to_mlut(gs_matrix3 mat, icLut16Type *mlut)
 
 }
 
+#if SAVEICCPROFILE
 
 /* Debug dump of internally created ICC profile for testing */
 
@@ -624,130 +624,10 @@ add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[])
 
 }
 
- /* This creates an ICC profile from the PDF CalGray form */
-
-cmm_profile_t* gsicc_create_from_calgray(float *white, float *black, float *gamma, gs_memory_t *memory)
-{
-
-    icProfile iccprofile;
-    icHeader  *header = &(iccprofile.header);
-    int profile_size,k;
-    int num_tags;
-    gsicc_tag *tag_list;
-    unsigned short encode_gamma;
-    int tag_offset = 0;
-    unsigned char *curr_ptr;
-    int last_tag;
-    icS15Fixed16Number temp_XYZ[3];
-    int tag_location;
-    int trc_tag_size;
-    int debug_catch = 1;
-    unsigned char *buffer;
-    cmm_profile_t *result;
-
-    /* Fill in the common stuff */
-
-    setheader_common(header);
-
-    header->deviceClass = icSigInputClass;
-    header->colorSpace = icSigGrayData;
-    header->pcs = icSigXYZData;
-
-    profile_size = HEADER_SIZE;
-
-    num_tags = 5;  /* common (2) + GrayTRC,bkpt,wtpt */     
-    tag_list = (gsicc_tag*) gs_alloc_bytes(memory,sizeof(gsicc_tag)*num_tags,"gsicc_create_from_calgray");
-
-    /* Let us precompute the sizes of everything and all our offsets */
-
-    profile_size += TAG_SIZE*num_tags;
-    profile_size += 4; /* number of tags.... */
-
-    last_tag = -1;
-    init_common_tags(tag_list, num_tags, &last_tag);  
-
-    init_tag(tag_list, &last_tag, icSigMediaWhitePointTag, XYZPT_SIZE);
-    init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
-
-    trc_tag_size = 8;  /* 4 for count, 2 for gamma, Extra 2 bytes for 4 byte alignment requirement */
-
-    init_tag(tag_list, &last_tag, icSigGrayTRCTag, trc_tag_size);
-
-    for(k = 0; k < num_tags; k++){
-
-        profile_size += tag_list[k].size;
-
-    }
-
-    /* Now we can go ahead and fill our buffer with the data */
-
-    buffer = gs_alloc_bytes(memory,profile_size,"gsicc_create_fromcalgray");
-    curr_ptr = buffer;
-
-    /* The header */
-
-    header->size = profile_size;
-    copy_header(curr_ptr,header);
-    curr_ptr += HEADER_SIZE;
-
-    /* Tag table */
-
-    copy_tagtable(curr_ptr,tag_list,num_tags);
-    curr_ptr += TAG_SIZE*num_tags;
-    curr_ptr += 4;
-
-    /* Now the data.  Must be in same order as we created the tag table */
-
-    /* First the common tags */
-
-    add_common_tag_data(curr_ptr, tag_list);
-
-    for (k = 0; k< NUMBER_COMMON_TAGS; k++)
-    {
-        curr_ptr += tag_list[k].size;
-    }
-
-    tag_location = NUMBER_COMMON_TAGS;
-
-    /* White and black points */
-    /* Need to adjust for the D65/D50 issue */
-    get_XYZ_floatptr(temp_XYZ,white);
-    add_xyzdata(curr_ptr,temp_XYZ);
-    curr_ptr += tag_list[tag_location].size;
-    tag_location++;
-
-    get_XYZ_floatptr(temp_XYZ,black);
-    add_xyzdata(curr_ptr,temp_XYZ);
-    curr_ptr += tag_list[tag_location].size;
-    tag_location++;
-
-    /* Now the gamma value */
-
-    encode_gamma = float2u8Fixed8(gamma[0]);
-    add_gammadata(curr_ptr, encode_gamma, icSigCurveType);
-    curr_ptr += tag_list[tag_location].size;
-    tag_location++;
-
-    result = gsicc_profile_new(NULL, memory, NULL, 0);   
-    result->buffer = buffer;
-    result->buffer_size = profile_size;
-    result->num_comps = 1;
-
-#if SAVEICCPROFILE
-
-    /* Dump the buffer to a file for testing if its a valid ICC profile */
-
-    save_profile(buffer,"from_calGray",profile_size);
-
-#endif
-
-    return(result);
-}
-
-/* This creates an ICC profile from the PDF CalRGB form */
+/* This creates an ICC profile from the PDF calGray and calRGB definitions */
 
 cmm_profile_t*
-gsicc_create_from_calrgb(float *white, float *black, float *gamma, float *matrix,  gs_memory_t *memory)
+gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,  gs_memory_t *memory, int num_colors)
 {
 
     icProfile iccprofile;
@@ -770,15 +650,28 @@ gsicc_create_from_calrgb(float *white, float *black, float *gamma, float *matrix
     /* Fill in the common stuff */
 
     setheader_common(header);
-
-    header->deviceClass = icSigInputClass;
-    header->colorSpace = icSigRgbData;
     header->pcs = icSigXYZData;
-
     profile_size = HEADER_SIZE;
+    header->deviceClass = icSigInputClass;
 
-    num_tags = 10;  /* common (2) + rXYZ,gXYZ,bXYZ,rTRC,gTRC,bTRC,bkpt,wtpt */     
-    tag_list = (gsicc_tag*) gs_alloc_bytes(memory,sizeof(gsicc_tag)*num_tags,"gsicc_create_from_calrgb");
+    if (num_colors == 3){
+
+        header->colorSpace = icSigRgbData;
+        num_tags = 10;  /* common (2) + rXYZ,gXYZ,bXYZ,rTRC,gTRC,bTRC,bkpt,wtpt */     
+
+    } else if (num_colors == 1) {
+
+        header->colorSpace = icSigGrayData;
+        num_tags = 5;  /* common (2) + GrayTRC,bkpt,wtpt */   
+        TRC_Tags[0] = icSigGrayTRCTag;
+
+    } else {
+
+        return(NULL);
+
+    }
+
+    tag_list = (gsicc_tag*) gs_alloc_bytes(memory,sizeof(gsicc_tag)*num_tags,"gsicc_create_from_cal");
 
     /* Let us precompute the sizes of everything and all our offsets */
 
@@ -788,16 +681,20 @@ gsicc_create_from_calrgb(float *white, float *black, float *gamma, float *matrix
     last_tag = -1;
     init_common_tags(tag_list, num_tags, &last_tag);  
 
-    init_tag(tag_list, &last_tag, icSigRedColorantTag, XYZPT_SIZE);
-    init_tag(tag_list, &last_tag, icSigGreenColorantTag, XYZPT_SIZE);
-    init_tag(tag_list, &last_tag, icSigBlueColorantTag, XYZPT_SIZE);
+    if (num_colors == 3) {
+
+        init_tag(tag_list, &last_tag, icSigRedColorantTag, XYZPT_SIZE);
+        init_tag(tag_list, &last_tag, icSigGreenColorantTag, XYZPT_SIZE);
+        init_tag(tag_list, &last_tag, icSigBlueColorantTag, XYZPT_SIZE);
+
+    }
 
     init_tag(tag_list, &last_tag, icSigMediaWhitePointTag, XYZPT_SIZE);
     init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
 
     trc_tag_size = 8;  /* 4 for count, 2 for gamma, Extra 2 bytes for 4 byte alignment requirement */
 
-    for (k = 0; k < 3; k++){
+    for (k = 0; k < num_colors; k++){
 
         init_tag(tag_list, &last_tag, TRC_Tags[k], trc_tag_size);
 
@@ -811,7 +708,7 @@ gsicc_create_from_calrgb(float *white, float *black, float *gamma, float *matrix
 
     /* Now we can go ahead and fill our buffer with the data */
 
-    buffer = gs_alloc_bytes(memory,profile_size,"gsicc_create_from_calrgb");
+    buffer = gs_alloc_bytes(memory,profile_size,"gsicc_create_from_cal");
     curr_ptr = buffer;
 
     /* The header */
@@ -841,12 +738,16 @@ gsicc_create_from_calrgb(float *white, float *black, float *gamma, float *matrix
 
     /* The matrix */
 
-    for ( k = 0; k < 3; k++ ){
+    if (num_colors == 3) {
 
-        get_XYZ_floatptr(temp_XYZ,&(matrix[k*3]));
-        add_xyzdata(curr_ptr,temp_XYZ);
-        curr_ptr += tag_list[tag_location].size;
-        tag_location++;
+        for ( k = 0; k < 3; k++ ){
+
+            get_XYZ_floatptr(temp_XYZ,&(matrix[k*3]));
+            add_xyzdata(curr_ptr,temp_XYZ);
+            curr_ptr += tag_list[tag_location].size;
+            tag_location++;
+
+        }
 
     }
 
@@ -864,7 +765,7 @@ gsicc_create_from_calrgb(float *white, float *black, float *gamma, float *matrix
 
     /* Now the gamma values */
 
-    for ( k = 0; k < 3; k++ ){
+    for ( k = 0; k < num_colors; k++ ){
 
         encode_gamma = float2u8Fixed8(gamma[k]);
         add_gammadata(curr_ptr, encode_gamma, icSigCurveType);
@@ -876,13 +777,17 @@ gsicc_create_from_calrgb(float *white, float *black, float *gamma, float *matrix
     result = gsicc_profile_new(NULL, memory, NULL, 0);   
     result->buffer = buffer;
     result->buffer_size = profile_size;
-    result->num_comps = 3;
+    result->num_comps = num_colors;
 
 #if SAVEICCPROFILE
 
     /* Dump the buffer to a file for testing if its a valid ICC profile */
 
-    save_profile(buffer,"from_calRGB",profile_size);
+    if (num_colors == 3)
+        save_profile(buffer,"from_calRGB",profile_size);
+    else
+        save_profile(buffer,"from_calGray",profile_size);
+
 
 #endif
 
