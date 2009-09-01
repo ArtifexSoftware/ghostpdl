@@ -721,7 +721,9 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	    const gs_param_string *pair = &pairs[i];
 
 	    if (pdf_key_eq(pair, "/F")) {
-		sscanf((const char *)pair[1].data, "%ld", &Flags);
+		code = sscanf((const char *)pair[1].data, "%ld", &Flags);
+		if (code != 1)
+		    eprintf("Annotation has an invalid /Flags attribute\n");
 		break;
 	    }
 	}
