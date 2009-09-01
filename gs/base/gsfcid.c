@@ -91,7 +91,7 @@ gs_public_st_element(st_gs_font_type1_ptr_element, gs_font_type1 *,
   font1_ptr_element_reloc_ptrs, st_gs_font_type1_ptr);
 
 /* GC descriptor for allocating FDArray for subst_CID_on_WMode. */
-
+static
 ENUM_PTRS_WITH(subst_CID_on_WMode_enum_ptrs, gs_subst_CID_on_WMode_t *subst) return 0;
     case 0: return ENUM_OBJ(subst->rc.memory);
     case 1: return ENUM_OBJ(subst->data[0]);
@@ -104,7 +104,7 @@ static RELOC_PTRS_WITH(subst_CID_on_WMode_reloc_ptrs, gs_subst_CID_on_WMode_t *s
     RELOC_VAR(subst->rc.memory);
 } RELOC_PTRS_END
 
-static int
+static void
 subst_CID_on_WMode_finalize(void *data)
 {
     gs_subst_CID_on_WMode_t *subst = (gs_subst_CID_on_WMode_t *)data;
@@ -113,7 +113,6 @@ subst_CID_on_WMode_finalize(void *data)
     subst->data[0] = NULL;
     gs_free_object(subst->rc.memory, subst->data + 1, "subst_CID_on_WMode_finalize");
     subst->data[1] = NULL;
-    return 0;
 }
 
 public_st_subst_CID_on_WMode();
