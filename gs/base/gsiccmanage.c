@@ -106,6 +106,7 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
     stream *str;
     gs_memory_t *mem_gc = pis->memory; 
     int code;
+    int k;
  
     /* For now only let this be set once. 
        We could have this changed dynamically
@@ -202,6 +203,15 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
 
         icc_profile->num_comps = gscms_get_channel_count(icc_profile->profile_handle);
         icc_profile->data_cs = gscms_get_profile_data_space(icc_profile->profile_handle);
+
+        /* Initialize the range to default values */
+
+        for ( k = 0; k < icc_profile->num_comps; k++) {
+
+            icc_profile->Range.ranges[k].rmin = 0.0;
+            icc_profile->Range.ranges[k].rmax = 1.0;
+
+        }
 
         if (defaulttype == LAB_TYPE) icc_profile->islab = true;
          
