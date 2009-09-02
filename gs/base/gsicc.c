@@ -182,7 +182,6 @@ gx_remap_concrete_ICC(const frac * pconc, const gs_color_space * pcs,
 
 }
 
-
 /*
  * To device space
  */
@@ -195,10 +194,9 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     gsicc_link_t *icc_link;
     gsicc_rendering_param_t rendering_params;
     unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS], psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
     int k,i;
-    gx_color_index color;
 
-    /* Define the rendering intents.  MJV to fix */
     rendering_params.black_point_comp = BP_ON;
     rendering_params.object_type = GS_PATH_TAG;
     rendering_params.rendering_intent = pis->renderingintent;
@@ -225,10 +223,19 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     /* Release the link */
     gsicc_release_link(icc_link);
 
-    /* We are already in short form */
-    color = dev_proc(dev, encode_color)(dev, psrc_cm);
-    if (color != gx_no_color_index) 
-	color_set_pure(pdc, color);
+    /* Now do the remap for ICC which amounts to the alpha application
+       the transfer function and potentially the halftoning */
+
+    /* Right now we need to go from unsigned short to frac.  I really
+       would like to avoid this sort of stuff.  That will come. */
+
+    for ( k = 0; k< pis->icc_manager->device_profile->num_comps; k++){
+
+        conc[k] = ushort2frac(psrc_cm[k]);
+
+    }
+
+    gx_remap_concrete_ICC(conc, pcs, pdc, pis, dev, select);
 
     /* Save original color space and color info into dev color */
     i = pcs->cmm_icc_profile_data->num_comps;
