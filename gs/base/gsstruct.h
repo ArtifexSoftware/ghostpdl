@@ -512,14 +512,14 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
 /* -------------- Simple structures (no internal pointers). -------------- */
 
 #define gs__st_simple(scope_st, stname, stype, sname)\
-  scope_st stname = { sizeof(stype), sname, 0, 0, gs_no_struct_enum_ptrs, gs_no_struct_reloc_ptrs, 0 }
+  scope_st stname = { sizeof(stype), sname, 0, 0, gs_no_struct_enum_ptrs, gs_no_struct_reloc_ptrs, 0, 0 }
 #define gs_public_st_simple(stname, stype, sname)\
   gs__st_simple(public_st, stname, stype, sname)
 #define gs_private_st_simple(stname, stype, sname)\
   gs__st_simple(private_st, stname, stype, sname)
 
 #define gs__st_simple_final(scope_st, stname, stype, sname, pfinal)\
-  scope_st stname = { sizeof(stype), sname, 0, 0, gs_no_struct_enum_ptrs, gs_no_struct_reloc_ptrs, pfinal }
+  scope_st stname = { sizeof(stype), sname, 0, 0, gs_no_struct_enum_ptrs, gs_no_struct_reloc_ptrs, pfinal, 0 }
 #define gs_public_st_simple_final(stname, stype, sname, pfinal)\
   gs__st_simple_final(public_st, stname, stype, sname, pfinal)
 #define gs_private_st_simple_final(stname, stype, sname, pfinal)\
@@ -537,7 +537,7 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
 	/* enum, reloc, and finalize procedures. */
 
 #define gs__st_complex_only(scope_st, stname, stype, sname, pclear, penum, preloc, pfinal)\
-  scope_st stname = { sizeof(stype), sname, 0, pclear, penum, preloc, pfinal }
+  scope_st stname = { sizeof(stype), sname, 0, pclear, penum, preloc, pfinal, 0 }
 #define gs_public_st_complex_only(stname, stype, sname, pclear, penum, preloc, pfinal)\
   gs__st_complex_only(public_st, stname, stype, sname, pclear, penum, preloc, pfinal)
 #define gs_private_st_complex_only(stname, stype, sname, pclear, penum, preloc, pfinal)\
