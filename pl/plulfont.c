@@ -342,9 +342,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                             dprintf3("scale factor=%d, pitch (cp)=%d per_inch_x100=%d\n", pfDesc->scaleFactor, pitch_cp, (uint)(720000.0/pitch_cp));
 #endif
 
-                        if (resident_table[j].params.symbol_set != 0)
-                            plfont->font_type = plft_8bit;
-
+                        plfont->font_type = residentp->font_type;
                         plfont->storage = storage;
                         plfont->data_are_permanent = false;
                         plfont->params = resident_table[j].params;

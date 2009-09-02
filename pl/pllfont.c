@@ -334,8 +334,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 
 		plfont->storage = storage;
 		plfont->data_are_permanent = false;
-		if ( residentp->params.symbol_set != 0 )
-		    plfont->font_type = plft_8bit;
+                plfont->font_type = residentp->font_type;
                 plfont->params = residentp->params;
 		memcpy(plfont->character_complement,
 		       residentp->character_complement, 8);

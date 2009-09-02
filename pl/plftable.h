@@ -11,6 +11,9 @@
    San Rafael, CA  94903, (415)492-9861, for further information. */
 /*$Id$*/
 
+#ifndef plftable_INCLUDED
+#  define plftable_INCLUDED
+
 /* plftable.h */
 /* resident font table */
 typedef struct font_resident {
@@ -18,6 +21,9 @@ typedef struct font_resident {
     const short unicode_fontname[16]; /* pxl name */
     pl_font_params_t params;
     byte character_complement[8];
+    pl_font_type_t font_type;
 } font_resident_t;
 
 extern const font_resident_t resident_table[];
+
+#endif                       /* plftable_INCLUDED */
