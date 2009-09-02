@@ -53,13 +53,13 @@ gscms_get_profile_data_space(gcmmhprofile_t profile)
 
             return(gsCIELAB);
 
-        case icSigRGBData:
+        case icSigRgbData:
 
             return(gsRGB);
 
         case icSigGrayData:
 
-            return(gsGray);
+            return(gsGRAY);
 
         case icSigCmykData:
 
