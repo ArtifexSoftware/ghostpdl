@@ -46,36 +46,26 @@ cie_icc_finalize(void * pvicc_info)
 
 /*
  * Color space methods for ICCBased color spaces.
- *
- * As documented, ICCBased color spaces may be used as both base and
- * alternative color spaces. Futhermore, they can themselves contain paint
- * color spaces as alternative color space. In this implementation we allow
- * them to be used as base and alternative color spaces, but only to contain
- * "small" base color spaces (CIEBased or smaller). This arrangement avoids
- * breaking the color space heirarchy. Providing a more correct arrangement
- * requires a major change in the color space mechanism.
- *
- * Several of the methods used by ICCBased color space apply as well to
- * DeviceN color spaces, in that they are generic to color spaces having
- * a variable number of components. We have elected not to attempt to
- * extract and combine these operations, because this would save only a
- * small amount of code, and much more could be saved by introducing certain
- * common elements (ranges, number of components, etc.) into the color space
- * root class.
- */
+   ICC spaces are now considered to be concrete in that
+   they always provide a mapping to a specified destination
+   profile.  As such they will have their own remap functions.
+   These will simply potentially implement the transfer function,
+   apply any alpha value, and or end up going through halftoning. 
+   There will not be any heuristic remap of rgb to gray etc */
+
 static cs_proc_num_components(gx_num_components_ICC);
 static cs_proc_init_color(gx_init_ICC);
 static cs_proc_restrict_color(gx_restrict_ICC);
-static cs_proc_concrete_space(gx_concrete_space_ICC);
 static cs_proc_concretize_color(gx_concretize_ICC);
 static cs_proc_remap_color(gx_remap_ICC);
 static cs_proc_install_cspace(gx_install_ICC);
+static cs_proc_remap_concrete_color(gx_remap_concrete_ICC);
+static cs_proc_final(gx_final_ICC);
+static cs_proc_serialize(gx_serialize_ICC);
 
 #if ENABLE_CUSTOM_COLOR_CALLBACK
 static cs_proc_remap_color(gx_remap_ICCBased);
 #endif
-static cs_proc_final(gx_final_ICC);
-static cs_proc_serialize(gx_serialize_ICC);
 
 static const gs_color_space_type gs_color_space_type_ICC = {
     gs_color_space_index_ICC,    /* index */
@@ -85,13 +75,13 @@ static const gs_color_space_type gs_color_space_type_ICC = {
     gx_num_components_ICC,       /* num_components */
     gx_init_ICC,                 /* init_color */
     gx_restrict_ICC,             /* restrict_color */
-    gx_concrete_space_ICC,       /* concrete_space */
+    gx_same_concrete_space,       /* concrete_space */
     gx_concretize_ICC,           /* concreteize_color */
-    NULL,                           /* remap_concrete_color */
+    gx_remap_concrete_ICC,    /* remap_concrete_color */
 #if ENABLE_CUSTOM_COLOR_CALLBACK
     gx_remap_ICCBased,		    /* remap_color */
 #else
-    gx_remap_ICC,                   /* remap_color */
+    gx_remap_ICC,                 /* remap_color */
 #endif
     gx_install_ICC,                 /* install_cpsace */
     gx_spot_colors_set_overprint,   /* set_overprint */
@@ -146,19 +136,49 @@ gx_restrict_ICC(gs_client_color * pcc, const gs_color_space * pcs)
     }
 }
 
-/*
- * The concrete color space depends upon the device profile that is 
- * in the ICC manager.  This is to where we will always remap our colors.
- * 
- */
-static const gs_color_space *
-gx_concrete_space_ICC(const gs_color_space * pcs, const gs_imager_state * pis)
+/* If the color is already concretized, then we are in the color space 
+   defined by the device profile.  The remaining things to do would
+   be to potentially apply alpha, apply the transfer function, and
+   do any halftoning.  The remap is based upon the ICC profile defined
+   in the device profile entry of the profile manager. */
+
+gx_remap_concrete_ICC(const frac * pconc, const gs_color_space * pcs,
+	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+			  gs_color_select_t select)
 {
-  /* MJV to FIX */
+    const gsicc_manager_t *icc_manager = pis->icc_manager;
+    const cmm_profile_t *device_profile = icc_manager->device_profile;
+    int num_colorants = device_profile->num_comps;
+    int code;
 
-   const gs_color_space *  pacs = pcs->base_space;
+    switch( num_colorants ) {
 
-    return cs_concrete_space(pacs, pis);
+        case 1: 
+            
+            code = gx_remap_concrete_DGray(pconc, pcs, pdc, pis, dev, select);
+            break;
+
+        case 3:
+
+            code = gx_remap_concrete_DRGB(pconc, pcs, pdc, pis, dev, select);
+            break;
+
+        case 4:
+
+            code = gx_remap_concrete_DCMYK(pconc, pcs, pdc, pis, dev, select);
+            break;
+
+        default:
+
+            /* Need to do some work on integrating DeviceN and the new ICC flow */
+            /* code = gx_remap_concrete_DeviceN(pconc, pcs, pdc, pis, dev, select); */
+            code = -1;
+            break;
+
+    } 
+
+    return(code);
+
 }
 
 
