@@ -147,18 +147,16 @@ gx_restrict_ICC(gs_client_color * pcc, const gs_color_space * pcs)
 }
 
 /*
- * Return the concrete space to which this color space will map. If the
- * ICCBased color space is being used in native mode, the concrete space
- * will be dependent on the current color rendering dictionary, as it is
- * for all CIE bases. If the alternate color space is being used, then
- * this question is passed on to the appropriate method of that space.
+ * The concrete color space depends upon the device profile that is 
+ * in the ICC manager.  This is to where we will always remap our colors.
+ * 
  */
 static const gs_color_space *
 gx_concrete_space_ICC(const gs_color_space * pcs, const gs_imager_state * pis)
 {
   /* MJV to FIX */
 
-    const gs_color_space *  pacs = pcs->base_space;
+   const gs_color_space *  pacs = pcs->base_space;
 
     return cs_concrete_space(pacs, pis);
 }
@@ -236,11 +234,22 @@ gx_concretize_ICC(
     rendering_params.object_type = GS_PATH_TAG;
     rendering_params.rendering_intent = pis->renderingintent;
 
-     /* This need to be optimized */
-   for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++){
-    
-        psrc[k] = pcc->paint.values[k]*65535;
-           
+     /* This needs to be optimized */
+
+    if (pcs->cmm_icc_profile_data->data_cs == gsCIELAB) {
+
+            psrc[0] = pcc->paint.values[0]*65535.0/100.0;
+            psrc[1] = (pcc->paint.values[1]+128)/255.0*65535.0;
+            psrc[2] = (pcc->paint.values[2]+128)/255.0*65535.0;
+
+    } else {
+
+        for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++){
+
+            psrc[k] = pcc->paint.values[k]*65535.0;
+               
+        }
+
     }
 
     /* Get a link from the cache, or create if it is not there. Get 16 bit profile */

@@ -89,12 +89,53 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     
     picc_profile->num_comps = ncomps;
 
-    for (i = 0; i < ncomps; i++) {
+    /* We have to get the profile handle due to the fact that we need to know
+       if it has a data space that is CIELAB */
 
-        picc_profile->Range.ranges[i].rmin = range_buff[2 * i];
-        picc_profile->Range.ranges[i].rmax = range_buff[2 * i + 1];
+    picc_profile->profile_handle = gsicc_get_profile_handle_buffer(picc_profile->buffer);
+    picc_profile->data_cs = gscms_get_profile_data_space(picc_profile->profile_handle);
 
-    } 
+    /* Set the range according to the data type that is associated with the 
+       ICC input color type.  Occasionally, we will run into CIELAB to CIELAB
+       profiles for spot colors in PDF documents. These spot colors are typically described
+       as separation colors with tint transforms that go from a tint value
+       to a linear mapping between the CIELAB white point and the CIELAB tint
+       color.  This results in a CIELAB value that we need to use to fill.  We
+       need to detect this to make sure we do the proper scaling of the data.  For
+       CIELAB images in PDF, the source is always normal 8 or 16 bit encoded data
+       in the range from 0 to 255 or 0 to 65535.  In that case, there should not
+       be any encoding and decoding to CIELAB.  The PDF content will not include
+       an ICC profile but will set the color space to \Lab.  In this case, we use
+       our seticc_lab operation to install the LAB to LAB profile, but we detect
+       that we did that through the use of the is_lab flag in the profile descriptor.
+       When then avoid the CIELAB encode and decode */
+
+    if (picc_profile->data_cs == gsCIELAB) {
+
+        /* If the input space to this profile is CIELAB, then we need to adjust the limits */
+        /* See ICC spec ICC.1:2004-10 Section 6.3.4.2 and 6.4.  I don't believe we need to
+           worry about CIEXYZ profiles or any of the other odds ones.  Need to check that though
+           at some point. */
+
+        picc_profile->Range.ranges[0].rmin = 0.0;
+        picc_profile->Range.ranges[0].rmax = 100.0;
+
+        picc_profile->Range.ranges[1].rmin = -128.0;
+        picc_profile->Range.ranges[1].rmax = 127.0;
+
+        picc_profile->Range.ranges[2].rmin = -128.0;
+        picc_profile->Range.ranges[2].rmax = 127.0;
+ 
+    } else {
+
+        for (i = 0; i < ncomps; i++) {
+
+            picc_profile->Range.ranges[i].rmin = range_buff[2 * i];
+            picc_profile->Range.ranges[i].rmax = range_buff[2 * i + 1];
+
+        } 
+
+    }
 
     /* Set the color space.  We are done.  No joint cache here... */
     code = gs_setcolorspace(igs, pcs);

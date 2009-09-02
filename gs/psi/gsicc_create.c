@@ -779,6 +779,12 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,  
     result->buffer_size = profile_size;
     result->num_comps = num_colors;
 
+    if (num_colors == 3) {
+        result->data_cs = gsRGB;
+    } else {
+        result->data_cs = gsGRAY;
+    }   
+
 #if SAVEICCPROFILE
 
     /* Dump the buffer to a file for testing if its a valid ICC profile */

@@ -122,6 +122,8 @@ struct cmm_profile_s {
     bool islab;                 /* Needed since we want to detect this to avoid 
                                    expensive decode on LAB images.  Is true
                                    if PDF color space is \Lab*/
+
+    gsicc_colorbuffer_t data_cs; /* The data color space of the profile (not the PCS) */
     gs_range15_t Range;          
     byte *buffer;               /* A buffer with ICC profile content */
     int buffer_size;            /* size of ICC profile buffer */

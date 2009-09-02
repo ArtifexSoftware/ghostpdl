@@ -31,8 +31,48 @@ gscms_get_channel_count(gcmmhprofile_t profile)
     colorspace = cmsGetColorSpace(profile);
     return(_cmsChannelsOf(colorspace));
 
+}
+
+/* Get the device space associated with this profile */
+
+gsicc_colorbuffer_t
+gscms_get_profile_data_space(gcmmhprofile_t profile)
+{
+
+    icColorSpaceSignature colorspace;
+   
+    colorspace = cmsGetColorSpace(profile);
+
+    switch( colorspace ) {
+
+        case icSigXYZData:
+
+            return(gsCIEXYZ);
+
+        case icSigLabData:
+
+            return(gsCIELAB);
+
+        case icSigRGBData:
+
+            return(gsRGB);
+
+        case icSigGrayData:
+
+            return(gsGray);
+
+        case icSigCmykData:
+
+            return(gsCMYK);
+
+        default:
+
+            return(gsNCHANNEL);
+
+    }
 
 }
+
 
 /* Get ICC Profile handle from buffer */
 
@@ -42,7 +82,6 @@ gscms_get_profile_handle_mem(unsigned char *buffer, unsigned int input_size)
     return(cmsOpenProfileFromMem(buffer,input_size));
 
 }
-
 
 /* Transform an entire buffer */
 void
