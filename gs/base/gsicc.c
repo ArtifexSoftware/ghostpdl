@@ -201,9 +201,15 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     /* Define the rendering intents.  MJV to fix */
     rendering_params.black_point_comp = BP_ON;
     rendering_params.object_type = GS_PATH_TAG;
-    rendering_params.rendering_intent = pis->renderingintent;;
+    rendering_params.rendering_intent = pis->renderingintent;
+
+    /* Need to clear out psrc_cm in case we have separation bands that are
+       not color managed */
+
+    memset(psrc_cm,0,sizeof(unsigned short)*GS_CLIENT_COLOR_MAX_COMPONENTS);
 
      /* This needs to be optimized. And range corrected */
+
    for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++){
     
         psrc[k] = pcc->paint.values[k]*65535;

@@ -293,7 +293,9 @@ gsicc_init_device_profile(gs_state * pgs, gx_device * dev)
 
     if (dev->color_info.icc_profile[0] == '\0'){
 
-        /* Grab a default one */
+        /* Grab a default one.  Need to think a bit about duo devices.
+           We  should handle those as separation devices that have
+           empty CMYK planes, but I need to double check that. */
 
         switch(dev->color_info.num_components){
 
@@ -311,6 +313,12 @@ gsicc_init_device_profile(gs_state * pgs, gx_device * dev)
 
                 strcpy(dev->color_info.icc_profile, DEFAULT_CMYK_ICC);
                 break;
+
+            default:
+
+                strcpy(dev->color_info.icc_profile, DEFAULT_CMYK_ICC);
+                break;
+
 
         }
 
