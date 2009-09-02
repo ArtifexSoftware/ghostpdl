@@ -68,32 +68,33 @@ static cs_proc_remap_color(gx_remap_ICCBased);
 #endif
 
 static const gs_color_space_type gs_color_space_type_ICC = {
-    gs_color_space_index_ICC,    /* index */
+    gs_color_space_index_ICC,       /* index */
     true,                           /* can_be_base_space */
     true,                           /* can_be_alt_space */
-    &st_base_color_space,         /* stype - structure descriptor */
-    gx_num_components_ICC,       /* num_components */
-    gx_init_ICC,                 /* init_color */
-    gx_restrict_ICC,             /* restrict_color */
-    gx_same_concrete_space,       /* concrete_space */
-    gx_concretize_ICC,           /* concreteize_color */
-    gx_remap_concrete_ICC,    /* remap_concrete_color */
+    &st_base_color_space,           /* stype - structure descriptor */
+    gx_num_components_ICC,          /* num_components */
+    gx_init_ICC,                    /* init_color */
+    gx_restrict_ICC,                /* restrict_color */
+    gx_same_concrete_space,         /* concrete_space */
+    gx_concretize_ICC,              /* concreteize_color */
+    gx_remap_concrete_ICC,          /* remap_concrete_color */
 #if ENABLE_CUSTOM_COLOR_CALLBACK
     gx_remap_ICCBased,		    /* remap_color */
 #else
-    gx_remap_ICC,                 /* remap_color */
+    gx_remap_ICC,                   /* remap_color */
 #endif
     gx_install_ICC,                 /* install_cpsace */
     gx_spot_colors_set_overprint,   /* set_overprint */
-    gx_final_ICC,                /* final */
+    gx_final_ICC,                   /* final */
     gx_no_adjust_color_count,       /* adjust_color_count */
-    gx_serialize_ICC,            /* serialize */
+    gx_serialize_ICC,               /* serialize */
     gx_cspace_is_linear_default
 };
 
 /*
  * Return the number of components used by a ICCBased color space - 1, 3, or 4
  */
+
 static int
 gx_num_components_ICC(const gs_color_space * pcs)
 {
@@ -284,7 +285,6 @@ gx_concretize_ICC(
         pconc[k] = float2frac(((float) psrc_cm[k])/65535.0);
            
     }
-
 
     /* Release the link */
     gsicc_release_link(icc_link);
