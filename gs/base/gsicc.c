@@ -67,7 +67,7 @@ static cs_proc_serialize(gx_serialize_ICC);
 static cs_proc_remap_color(gx_remap_ICCBased);
 #endif
 
-static const gs_color_space_type gs_color_space_type_ICC = {
+const gs_color_space_type gs_color_space_type_ICC = {
     gs_color_space_index_ICC,       /* index */
     true,                           /* can_be_base_space */
     true,                           /* can_be_alt_space */

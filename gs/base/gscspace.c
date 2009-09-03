@@ -29,6 +29,7 @@
 #include "gzstate.h"
 #include "stream.h"
 #include "gsnamecl.h"  /* Custom color call back define */
+#include "gsicc.h"
 
 static cs_proc_install_cspace(gx_install_DeviceGray);
 static cs_proc_install_cspace(gx_install_DeviceRGB);
@@ -104,6 +105,11 @@ gs_cspace_final(void *vptr)
 #endif /*ENABLE_CUSTOM_COLOR_CALLBACK*/
 
     rc_decrement_only(pcs->base_space, "gs_cspace_final");
+
+    /* No need to decrement the ICC profile data.  It is handled
+       by the finalize of the ICC space which is called above using
+       pcs->type->final(pcs);  */
+
 }
 
 static gs_color_space *
@@ -230,6 +236,15 @@ gx_install_DeviceGray(gs_color_space * pcs, gs_state * pgs)
     if (pcb != NULL) 
 	pcb->client_procs->install_DeviceGray(pcb, pcs, pgs);
 #endif
+
+    if (pcs->cmm_icc_profile_data == NULL) {
+
+        pcs->cmm_icc_profile_data = pgs->icc_manager->default_gray;
+        pcs->type = &gs_color_space_type_ICC;
+        rc_increment(pgs->icc_manager->default_gray);
+
+    }
+
     return 0;
 }
 
@@ -283,6 +298,15 @@ gx_install_DeviceRGB(gs_color_space * pcs, gs_state * pgs)
     if (pcb != NULL) 
 	pcb->client_procs->install_DeviceRGB(pcb, pcs, pgs);
 #endif
+    
+    if (pcs->cmm_icc_profile_data == NULL) {
+
+        pcs->cmm_icc_profile_data = pgs->icc_manager->default_rgb;
+        pcs->type = &gs_color_space_type_ICC;
+        rc_increment(pgs->icc_manager->default_rgb);
+
+    }
+
     return 0;
 }
 
@@ -301,6 +325,15 @@ gx_install_DeviceCMYK(gs_color_space * pcs, gs_state * pgs)
     if (pcb != NULL) 
 	pcb->client_procs->install_DeviceCMYK(pcb, pcs, pgs);
 #endif
+
+    if (pcs->cmm_icc_profile_data == NULL) {
+
+        pcs->cmm_icc_profile_data = pgs->icc_manager->default_cmyk;
+        pcs->type = &gs_color_space_type_ICC;
+        rc_increment(pgs->icc_manager->default_cmyk);
+
+    }
+
     return 0;
 }
 

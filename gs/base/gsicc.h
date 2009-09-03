@@ -19,22 +19,19 @@
 #  define gsicc_INCLUDED
 
 #include "gscie.h"
-
+#include "gxcspace.h"		
 /* 
  * Build an ICCBased color space.
  *
- * As with all of the CIE base color space constructurs, this will build
- * an gs_cie_icc_s structure with a reference count of 1 (not 0). If the
- * color space is passed to gs_setcolorspace, that procedure  will increment
- * the reference count again. To prevent the color space from being allocated
- * permanently, the client should call cs_adjust_count(pcspace, -1).
- * THIS IS A BUG IN THE API.
- *
- * The client is responsible for initializing the alternative color space
- * information.
  */
 extern  int     gs_cspace_build_ICC( gs_color_space **   ppcspace,
 					void *              client_data,
 					gs_memory_t *       pmem );
+
+const gs_color_space_type gs_color_space_type_ICC;
+
+int gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
+	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+		       gs_color_select_t select);
 
 #endif /* gsicc_INCLUDED */

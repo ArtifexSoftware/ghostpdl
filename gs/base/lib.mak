@@ -426,7 +426,7 @@ gxfont_h=$(GLSRC)gxfont.h\
 gxiparam_h=$(GLSRC)gxiparam.h $(gsstype_h) $(gxdevcli_h)
 gximask_h=$(GLSRC)gximask.h $(gxibitmap_h) $(gsropt_h)
 gscie_h=$(GLSRC)gscie.h $(std_h) $(gsrefct_h) $(gsstype_h) $(gstypes_h) $(gxctable_h)
-gsicc_h=$(GLSRC)gsicc.h $(gscie_h)
+gsicc_h=$(GLSRC)gsicc.h $(gscie_h) $(gxcspace_h)
 gscrd_h=$(GLSRC)gscrd.h $(gscie_h)
 gscrdp_h=$(GLSRC)gscrdp.h $(gscie_h) $(gsparam_h)
 gscdevn_h=$(GLSRC)gscdevn.h $(gscspace_h)
@@ -784,7 +784,8 @@ $(GLOBJ)gscparam.$(OBJ) : $(GLSRC)gscparam.c $(GXERR) $(memory__h) $(string__h)\
 $(GLOBJ)gscspace.$(OBJ) : $(GLSRC)gscspace.c $(GXERR) $(memory__h)\
  $(gsstruct_h) $(gsccolor_h) $(gsutil_h)\
  $(gxcmap_h) $(gxcspace_h) $(gxistate_h) $(gsovrc_h) $(gsstate_h)\
- $(gsdevice_h) $(gxdevcli_h) $(gzstate_h) $(gsnamecl_h) $(stream_h)
+ $(gsdevice_h) $(gxdevcli_h) $(gzstate_h) $(gsnamecl_h) $(stream_h)\
+ $(gsicc_h)
 	$(GLCC) $(GLO_)gscspace.$(OBJ) $(C_) $(GLSRC)gscspace.c
 
 $(GLOBJ)gscicach.$(OBJ) : $(GLSRC)gscicach.c $(GXERR)\
