@@ -1922,19 +1922,34 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
             *ptempdevproto = **pdevproto;
             ptempdevproto->color_info.max_components = 1;
             ptempdevproto->color_info.num_components = ptempdevproto->color_info.max_components;
-            strcpy(&(ptempdevproto->color_info.icc_profile[0]), DEFAULT_GRAY_ICC);
+            if (dev->color_info.icc_profile == '\0'){
+                strcpy(&(ptempdevproto->color_info.icc_profile[0]), DEFAULT_GRAY_ICC);
+            } else {
+                strcpy(&(ptempdevproto->color_info.icc_profile[0]), dev->color_info.icc_profile);
+            }
             *pdevproto = ptempdevproto;
 	    break;
 	case PDF14_DeviceRGB:
 	    *pdevproto = (pdf14_device *)&gs_pdf14_RGB_device;
             *ptempdevproto = **pdevproto;
-            strcpy(&(ptempdevproto->color_info.icc_profile[0]), DEFAULT_RGB_ICC);
+            /* PDF14 Device should inherent the ICC color info of the parent.
+               If the parent does not have one, (and it should) then use
+               the default. */
+            if (dev->color_info.icc_profile == '\0'){
+                strcpy(&(ptempdevproto->color_info.icc_profile[0]), DEFAULT_RGB_ICC);
+            } else {
+                strcpy(&(ptempdevproto->color_info.icc_profile[0]), dev->color_info.icc_profile);
+            }
             *pdevproto = ptempdevproto;
 	    break;
 	case PDF14_DeviceCMYK:
 	    *pdevproto = (pdf14_device *)&gs_pdf14_CMYK_device;
             *ptempdevproto = **pdevproto;
-            strcpy(&(ptempdevproto->color_info.icc_profile[0]), DEFAULT_CMYK_ICC);
+            if (dev->color_info.icc_profile == '\0'){
+                strcpy(&(ptempdevproto->color_info.icc_profile[0]), DEFAULT_CMYK_ICC);
+            } else {
+                strcpy(&(ptempdevproto->color_info.icc_profile[0]), dev->color_info.icc_profile);
+            }
             *pdevproto = ptempdevproto;
 	    break;
 	case PDF14_DeviceCMYKspot:
@@ -1959,6 +1974,11 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
 		        ptempdevproto->color_info.max_components;
 		*pdevproto = ptempdevproto;
 	    }
+            if (dev->color_info.icc_profile == '\0'){
+                strcpy(&(ptempdevproto->color_info.icc_profile[0]), DEFAULT_CMYK_ICC);
+            } else {
+                strcpy(&(ptempdevproto->color_info.icc_profile[0]), dev->color_info.icc_profile);
+            }
 	    break;
 	case PDF14_DeviceCustom:
 	    /*
@@ -1969,6 +1989,11 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
 	    *ptempdevproto = gs_pdf14_custom_device;
 	    ptempdevproto->color_info = dev->color_info;
 	    *pdevproto = ptempdevproto;
+            if (dev->color_info.icc_profile == '\0'){
+                strcpy(&(ptempdevproto->color_info.icc_profile[0]), DEFAULT_CMYK_ICC);
+            } else {
+                strcpy(&(ptempdevproto->color_info.icc_profile[0]), dev->color_info.icc_profile);
+            }
 	    break;
 	default:			/* Should not occur */
 	    return_error(gs_error_rangecheck);
