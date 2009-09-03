@@ -1,0 +1,6 @@
+#!/bin/tcsh
+
+setenv SVN_SSH "ssh -i $HOME/.ssh/cluster_key"
+svn co http://svn.ghostscript.com/ghostscript/trunk/ghostpdl
+svn co http://svn.ghostscript.com/ghostscript/tests
+svn co svn+ssh://marcos@svn.ghostscript.com/var/lib/svn-private/ghostpcl/trunk/tests_private
