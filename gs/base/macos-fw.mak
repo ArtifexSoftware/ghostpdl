@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2006 Artifex Software, Inc.
+#  Copyright (C) 2001-2009 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -39,15 +39,14 @@ GSSOC_XE=$(BINDIR)/$(GSSOC_XENAME)
 GSSOC=$(BINDIR)/$(SOBINRELDIR)/$(GSSOC_XENAME)
 
 # shared library
-#SOPREF=.so
-#SOSUF=
-SOPREF=
+SOPREF=lib
+#SOSUF=.so
 SOSUF=.dylib
 
-GS_SONAME_BASE=lib$(GS)$(SOPREF)
+GS_SONAME_BASE=$(SOPREF)$(GS)
 GS_SONAME=$(GS_SONAME_BASE)$(SOSUF)
 GS_SONAME_MAJOR=$(GS_SONAME_BASE).$(GS_VERSION_MAJOR)$(SOSUF)
-GS_SONAME_MAJOR_MINOR= $(GS_SONAME_BASE).$(GS_VERSION_MAJOR).$(GS_VERSION_MINOR)$(SOSUF)
+GS_SONAME_MAJOR_MINOR=$(GS_SONAME_BASE).$(GS_VERSION_MAJOR).$(GS_VERSION_MINOR)$(SOSUF)
 GS_SO=$(BINDIR)/$(GS_SONAME)
 GS_SO_MAJOR=$(BINDIR)/$(GS_SONAME_MAJOR)
 GS_SO_MAJOR_MINOR=$(BINDIR)/$(GS_SONAME_MAJOR_MINOR)
@@ -80,7 +79,7 @@ $(GSSOC_XE): $(GS_SO) $(PSSRC)dxmainc.c
 # if we're going to build them at all. We should also be passing 
 # compatibility versions.
 
-SODEFS=LDFLAGS='$(LDFLAGS) $(CFLAGS_SO)'\
+SODEFS=LDFLAGS='$(LDFLAGS) $(CFLAGS_SO) -dynamiclib'\
  GS_XE=$(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME_MAJOR_MINOR)\
  STDIO_IMPLEMENTATION=c\
  DISPLAY_DEV=$(DD)$(SOOBJRELDIR)/display.dev\
