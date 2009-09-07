@@ -72,13 +72,15 @@ $(GSSOC_XE): $(GS_SO) $(PSSRC)dxmainc.c
 
 # ------------------------- Recursive make targets ------------------------- #
 
-# we pass the framework path under -install_name here rather than /usr/local/lib
-# or whatever. This will effectively break the .dylib build in favor of the
-# Framework. Generally on MacOS X this is what we want, but there should be
-# a separate .dylib target if we're going to build them at all
-# we should also be passing compatibility versions
+# Not that for the framwework build we need to set -install_name
+# differently in unix-dll.mak. We could pass it here under LDFLAGS
+# but that breaks the .dylib build in favor of the Framework, and
+# throws an error linking the example client so the build doesn't
+# complete cleanly. There should probably be a separate .dylib target
+# if we're going to build them at all. We should also be passing 
+# compatibility versions.
 
-SODEFS=LDFLAGS='$(LDFLAGS) $(CFLAGS_SO) -dynamiclib -install_name $(prefix)/$(FRAMEWORK_NAME)'\
+SODEFS=LDFLAGS='$(LDFLAGS) $(CFLAGS_SO)'\
  GS_XE=$(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME_MAJOR_MINOR)\
  STDIO_IMPLEMENTATION=c\
  DISPLAY_DEV=$(DD)$(SOOBJRELDIR)/display.dev\
