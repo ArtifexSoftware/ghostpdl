@@ -67,8 +67,8 @@ $(GS_SO_MAJOR): $(GS_SO_MAJOR_MINOR)
 # Build the small Ghostscript loaders
 # it would be nice if we could link to the framework instead
 
-$(GSSOC_XE): $(GS_SO) $(GLSRC)dxmainc.c
-	$(GLCC) -g -o $(GSSOC_XE) $(GLSRC)dxmainc.c -L$(BINDIR) -l$(GS)
+$(GSSOC_XE): $(GS_SO) $(PSSRC)dxmainc.c
+	$(GLCC) -g -o $(GSSOC_XE) $(PSSRC)dxmainc.c -L$(BINDIR) -l$(GS)
 
 # ------------------------- Recursive make targets ------------------------- #
 
