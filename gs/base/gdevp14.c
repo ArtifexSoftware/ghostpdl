@@ -4576,7 +4576,6 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
 	    break;
 	case PDF14_DeviceCMYKspot:
 	    *pdevproto = (pdf14_clist_device *)&pdf14_clist_CMYKspot_device;
-	    *pdevproto = (pdf14_clist_device *)&pdf14_clist_custom_device;
 	    /*
 	     * The number of components for the PDF14 device is the sum
 	     * of the process components and the number of spot colors
