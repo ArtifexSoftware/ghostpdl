@@ -395,6 +395,7 @@ gs_begin_transparency_mask(gs_state * pgs,
     int i;
     const gs_color_space *blend_color_space;
     gs_imager_state * pis = (gs_imager_state *)pgs;
+    int num_components;
 
     params.pdf14_op = PDF14_BEGIN_TRANS_MASK;
     params.bbox = *pbbox;
@@ -493,7 +494,8 @@ gs_begin_transparency_mask(gs_state * pgs,
            which could be DeviceN for a sep device.  Blending to the luminosity
            channel for this case would not be defined. */
 
-        switch (cs_num_components(blend_color_space)) {
+        num_components = cs_num_components(blend_color_space);
+        switch (abs(num_components)) {
 
             case 1:				
                 params.group_color = GRAY_SCALE;       
