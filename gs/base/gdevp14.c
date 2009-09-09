@@ -2511,10 +2511,19 @@ pdf14_update_device_color_procs(gx_device *dev,
             case DEVICE_CMYK:				
 
                 new_polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
-                new_num_comps = 4;
+                new_num_comps = 4;                
                 pdevproto = (pdf14_device *)&gs_pdf14_CMYK_device;
                 new_additive = false;
-                new_14procs = &cmyk_pdf14_procs;
+
+                /* This is needed due to the mismatched compressed encode decode
+                   between the device procs and the pdf14 procs */
+
+                if (dev->color_info.num_components > 4){
+                    new_14procs = &cmyk_pdf14_procs;
+                } else {
+                    new_14procs = &cmykspot_pdf14_procs;
+                }
+
                 new_depth = 32;
 
                 break;
@@ -2643,7 +2652,16 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
                     new_num_comps = 4;
                     pdevproto = (pdf14_device *)&gs_pdf14_CMYK_device;
                     new_additive = false;
-                    new_14procs = &cmyk_pdf14_procs;
+
+                /* This is needed due to the mismatched compressed encode decode
+                   between the device procs and the pdf14 procs */
+
+                    if (dev->color_info.num_components > 4){
+                        new_14procs = &cmyk_pdf14_procs;
+                    } else {
+                        new_14procs = &cmykspot_pdf14_procs;
+                    }
+
                     new_depth = 32;
 
                 }
