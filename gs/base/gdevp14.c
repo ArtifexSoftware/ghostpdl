@@ -707,7 +707,7 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
     tos->maskbuf = NULL;     /* Clean the pointer sinse the mask ownership is now passed to ctx. */
     if (tos->idle)
 	goto exit;
-    if (maskbuf != NULL && maskbuf->data == NULL)
+    if (maskbuf != NULL && maskbuf->data == NULL && maskbuf->alpha == 255)
 	goto exit;
     if (maskbuf != NULL) {
 	y0 = max(y0, maskbuf->rect.p.y);
@@ -834,11 +834,15 @@ static	int
 pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 			     byte *transfer_fn, bool idle, bool replacing,
 			     uint mask_id, gs_transparency_mask_subtype_t subtype, 
-                             bool SMask_is_CIE, int numcomps)
+                             bool SMask_is_CIE, int numcomps,
+                             int Background_components, float Background[])
 {
 
  
     pdf14_buf *buf;
+    unsigned char *curr_ptr;
+    int k;
+    unsigned char background_init;
     
     if_debug2('v', "[v]pdf14_push_transparency_mask, idle=%d, replacing=%d\n", idle, replacing);
     if (replacing && ctx->maskbuf != NULL) {
@@ -908,8 +912,36 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
     buf->SMask_is_CIE = SMask_is_CIE;
     buf->SMask_SubType = subtype;
 
-    if (buf->data != NULL)
-	memset(buf->data, 0, buf->planestride * buf->n_chan);
+    if (buf->data != NULL){
+
+        /* We need to initialize it to the BC if it existed */
+        /* According to the spec, the CS has to be the same */
+
+        if ( Background_components ) {
+
+            curr_ptr = buf->data;
+            for (k = 0; k < Background_components; k++) {
+                
+                background_init = (unsigned char) (255.0 * Background[k]);
+	        memset(curr_ptr, background_init, buf->planestride);
+                curr_ptr +=  buf->planestride;
+
+            }
+
+	    memset(curr_ptr, 0, buf->planestride * (buf->n_chan - Background_components));
+           
+        } else {
+
+            /* Compose mask with opaque background */
+
+	    memset(buf->data, 0, buf->planestride * buf->n_chan);
+
+        }
+
+
+
+
+    }
     return 0;
 }
 
@@ -930,16 +962,28 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx)
 	tos->maskbuf = NULL;
     }
 
-    if (tos->data == NULL) {
+    if (tos->data == NULL ) {
 
         /* This can occur in clist rendering if the soft mask does
            not intersect the current band.  It would be nice to
            catch this earlier and just avoid creating the structure
            to begin with.  For now we need to delete the structure
-           that was created.  */
+           that was created.  Only delete if the alpha value is not
+           255 */
 
-	pdf14_buf_free(tos, ctx->memory);
-	ctx->maskbuf = NULL;
+        if (tos->alpha == 255) {
+
+	    pdf14_buf_free(tos, ctx->memory);
+	    ctx->maskbuf = NULL;
+
+        } else {
+
+            /* Assign as mask buffer */
+
+            ctx->maskbuf = tos;
+
+        }
+
 
     } else {
 
@@ -2861,7 +2905,7 @@ pdf14_begin_transparency_mask(gx_device	*dev,
 			      gs_memory_t *mem)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
-    byte bg_alpha = 0;
+    byte bg_alpha = 255;
     byte *transfer_fn = (byte *)gs_alloc_bytes(pdev->ctx->memory, 256,
 					       "pdf14_begin_transparency_mask");
     gs_int_rect rect;
@@ -2934,7 +2978,8 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     return pdf14_push_transparency_mask(pdev->ctx, &rect, bg_alpha,
 					transfer_fn, ptmp->idle, ptmp->replacing,
 					ptmp->mask_id, ptmp->subtype, 
-                                        ptmp->SMask_is_CIE, group_color_numcomps);
+                                        ptmp->SMask_is_CIE, group_color_numcomps,
+                                        ptmp->Background_components, ptmp->Background);
 }
 
 static	int

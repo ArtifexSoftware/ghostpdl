@@ -219,7 +219,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     byte mask_bg_alpha = 0; /* Quiet compiler. */
     int width = x1 - x0;
     int x, y;
-    int i;
+    int i, tmp;
     byte tos_pixel[PDF14_MAX_PLANES];
     byte nos_pixel[PDF14_MAX_PLANES];
     bool tos_isolated = tos->isolated;
@@ -244,13 +244,36 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     else
 	nos_alpha_g_ptr = NULL;
 
-    if (maskbuf != NULL) {
-	mask_ptr = maskbuf->data + x0 - maskbuf->rect.p.x +
-		(y0 - maskbuf->rect.p.y) * maskbuf->rowstride;
-	mask_planestride = maskbuf->planestride;
-	mask_bg_alpha = maskbuf->alpha;
-	mask_tr_fn = maskbuf->transfer_fn;
-    }
+    if (maskbuf != NULL) { 
+       
+        mask_tr_fn = maskbuf->transfer_fn;
+
+        if (maskbuf->data != NULL) {
+
+	    mask_ptr = maskbuf->data + x0 - maskbuf->rect.p.x +
+		    (y0 - maskbuf->rect.p.y) * maskbuf->rowstride;
+            mask_planestride = maskbuf->planestride;
+
+        } else {
+
+            /* We may have a case, where we are outside the maskbuf rect. */
+            /* We would have avoided creating the maskbuf->data */
+            /* In that case, we should use the background alpha value */
+            /* See discussion on the BC entry in the PDF spec */
+
+            mask_bg_alpha = maskbuf->alpha;
+
+            /* Adjust alpha by the mask background alpha */
+
+            mask_bg_alpha = mask_tr_fn[mask_bg_alpha];
+            tmp = alpha * mask_bg_alpha + 0x80;
+            alpha = (tmp + (tmp >> 8)) >> 8;
+
+        }
+
+
+    } 
+
 
 #if RAW_DUMP
 
@@ -264,7 +287,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                 nos_planestride, nos->rowstride, 
                 "ImageNOS",nos_ptr);
 
-    if(maskbuf != NULL){
+    if(mask_ptr != NULL){
 
         dump_raw_buffer(y1-y0, width, maskbuf->n_planes,
                         maskbuf->planestride, maskbuf->rowstride, 
@@ -272,7 +295,6 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     }
 
 #endif
-
 
     for (y = y0; y < y1; ++y) {
 	for (x = 0; x < width; ++x) {
@@ -296,14 +318,14 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
 	    if (mask_ptr != NULL) {
 
                 byte mask = mask_ptr[x];
-		int tmp;
+
 		mask = mask_tr_fn[mask];
 		tmp = pix_alpha * mask + 0x80;
 		pix_alpha = (tmp + (tmp >> 8)) >> 8;
 #		    if VD_PAINT_MASK
 		    vd_pixel(int2fixed(x), int2fixed(y), mask);
 #		    endif
-	    }
+            } 
 
 	    if (nos_knockout) {
 		byte *nos_shape_ptr = nos_has_shape ?
