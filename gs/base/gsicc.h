@@ -28,10 +28,6 @@ extern  int     gs_cspace_build_ICC( gs_color_space **   ppcspace,
 					void *              client_data,
 					gs_memory_t *       pmem );
 
-const gs_color_space_type gs_color_space_type_ICC;
-
-int gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
-	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
-		       gs_color_select_t select);
+extern const gs_color_space_type gs_color_space_type_ICC;
 
 #endif /* gsicc_INCLUDED */
