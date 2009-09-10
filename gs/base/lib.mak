@@ -2292,11 +2292,11 @@ $(GLD)colimlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(colimlib_)
 	$(ADDMOD) $(GLD)colimlib -imageclass 4_color
 
 $(GLOBJ)gxicolor.$(OBJ) : $(GLSRC)gxicolor.c $(GXERR) $(memory__h) $(gpcheck_h)\
- $(gsccolor_h) $(gspaint_h)\
- $(gxarith_h) $(gxcmap_h) $(gxcpath_h) $(gxdcconv_h) $(gxdcolor_h)\
- $(gxdevice_h) $(gxdevmem_h) $(gxfixed_h) $(gxfrac_h)\
- $(gximage_h) $(gxistate_h) $(gxmatrix_h)\
- $(gzstate_h)
+ $(gxfixed_h) $(gxfrac_h) $(gxmatrix_h)\
+ $(gsccolor_h) $(gspaint_h) $(gzstate_h)\
+ $(gxdevice_h) $(gxcmap_h) $(gxdcconv_h) $(gxdcolor_h)\
+ $(gxistate_h) $(gxdevmem_h) $(gxcpath_h) $(gximage_h)\
+ $(gsicc_h) $(gsicccache_h) $(gsicc_littlecms_h)
 	$(GLCC) $(GLO_)gxicolor.$(OBJ) $(C_) $(GLSRC)gxicolor.c
 
 # ---- Level 1 path miscellany (arcs, pathbbox, path enumeration) ---- #
