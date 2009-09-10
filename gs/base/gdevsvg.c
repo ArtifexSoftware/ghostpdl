@@ -118,12 +118,13 @@ static dev_proc_put_params(svg_put_params);
         NULL			/* strip_copy_rop */\
 }
 
-gs_public_st_suffix_add0_final(st_device_svg, gx_device_svg,
+gs_public_st_suffix_string2_final(st_device_svg, gx_device_svg,
                                "gx_device_svg",
                                device_svg_enum_ptrs,
 			       device_svg_reloc_ptrs,
                                gx_device_finalize,
-			       st_device_vector);
+			       st_device_vector,
+			       strokecolor, fillcolor);
 
 /* The output device is named 'svg' but we're referred to as the
    'svgwrite' device by the build system to avoid conflicts with
