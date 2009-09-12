@@ -265,7 +265,7 @@ fn_build_sub_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
         }
     }
     if (shading_domain) {
-        /* Each function dictionary’s domain must be a superset of that of
+        /* Each function dictionary's domain must be a superset of that of
          * the shading dictionary. PLRM3 p.265. CET 12-14c. We do this check
          * here because Adobe checks Domain before checking other parameters.
          */
