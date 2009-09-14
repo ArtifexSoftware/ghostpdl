@@ -116,9 +116,8 @@ gs_c_glyph_name(gs_glyph glyph, gs_const_string *pstr)
 bool
 gs_is_c_glyph_name(const byte *str, uint len)
 {
-    return (str >= (const byte *)gs_c_known_encoding_chars &&
-	    (str - (const byte *)gs_c_known_encoding_chars) <
-	      gs_c_known_encoding_total_chars);
+    return str >= (const byte *)gs_c_known_encoding_chars &&
+	   str <  (const byte *)gs_c_known_encoding_chars + gs_c_known_encoding_total_chars;
 }
 
 /*
