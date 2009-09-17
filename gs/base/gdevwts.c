@@ -987,7 +987,6 @@ wtsimdi_create_buf_device(gx_device **pbdev, gx_device *target, int y,
 	   implemented or replaced with a default implementation. The following
 	   three don't have significant usage in testing with Altona.
 	*/
-	set_dev_proc(*pbdev, strip_copy_rop, gx_default_strip_copy_rop);
 	set_dev_proc(*pbdev, copy_alpha, gx_default_copy_alpha);
 	set_dev_proc(*pbdev, copy_color, gx_default_copy_color);
     }
