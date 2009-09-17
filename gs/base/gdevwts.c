@@ -342,6 +342,14 @@ wts_init_halftones(gx_device_wts *wdev, int n_planes)
 	    char wts_fn[256];
 
 	    sprintf(wts_fn, "wts_plane_%d", i);
+            {
+              FILE *f;
+              if ((f=fopen(wts_fn,"r"))) {
+                fclose(f);
+              } else {
+	        sprintf(wts_fn, "/usr/local/lib/ghostscript/wts_plane_%d", i);
+              }
+            }
 	    code = wts_load_halftone(wdev->memory, &wdev->wcooked[i], wts_fn);
 	    if (code < 0)
 		return gs_throw1(code, "could not open file '%s'", wts_fn);
@@ -474,9 +482,20 @@ wtsimdi_open_device(gx_device *dev)
 	wtsimdi_create_buf_device;
     /* Open and read profile */
 
-    fp = new_icmFileStd_name((char *)LINK_ICC_NAME, (char *)"rb");
+    char link_icc_name[256];
+    sprintf(link_icc_name, "%s", LINK_ICC_NAME);
+    {
+      FILE *f;
+      if ((f=fopen(link_icc_name,"r"))) {
+        fclose(f);
+      } else {
+        sprintf(link_icc_name, "/usr/local/lib/ghostscript/%s", LINK_ICC_NAME);
+      }
+    }
+
+    fp = new_icmFileStd_name((char *)link_icc_name, (char *)"rb");
     if (!fp)
-	return gs_throw1(-1, "could not open file '%s'", LINK_ICC_NAME);
+	return gs_throw1(-1, "could not open file '%s'", link_icc_name);
 
     icco = new_icc();
     if (!icco)
