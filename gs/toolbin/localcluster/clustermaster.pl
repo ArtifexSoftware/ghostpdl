@@ -115,7 +115,7 @@ close(F);
 %doneTime=();
 $abort=0;
 $startTime=time;
-print Dumper(\%doneTime) if ($verbose);
+#print Dumper(\%doneTime) if ($verbose);
 print Dumper(\%machines) if ($verbose);
 print "".(scalar(keys %doneTime))." ".(scalar (keys %machines))."\n" if ($verbose);
 while(scalar(keys %doneTime) < scalar(keys %machines)) {
@@ -143,7 +143,7 @@ print "abort=$abort\n" if ($verbose);
 
 my $elapsedTime=time-$startTime;
 
-$s=`date +\"%H:%M:%S\"`;
+$s=`date +\"%D %H:%M:%S\"`;
 chomp $s;
 open (F,">status");
 print F "Regression gs-r$newRev2 / ghostpdl-r$newRev1 started at $startText - finished at $s";
@@ -154,12 +154,20 @@ foreach (keys %machines) {
   $averageTime+=$doneTime{$_}-$startTime;
 }
 $averageTime/=scalar(keys %machines);
+my $shortestTime=99999999;
+foreach (keys %machines) {
+  $shortestTime=$doneTime{$_}-$startTime if ($shortestTime>$doneTime{$_}-$startTime);
+}
 print "averageTime=$averageTime\n" if ($verbose);
-print "startTime=$startTime\n" if ($verbose);
-print Dumper(\%doneTime) if ($verbose);
+print "shortestTime=$shortestTime\n" if ($verbose);
+#print "startTime=$startTime\n" if ($verbose);
+#print Dumper(\%doneTime) if ($verbose);
 print Dumper(\%machineSpeeds) if ($verbose);
 foreach (keys %machines) {
-  $machineSpeeds{$_}*=$averageTime/($doneTime{$_}-$startTime);
+  $machineSpeeds{$_}=$shortestTime/($doneTime{$_}-$startTime);
+}
+foreach (keys %machines) {
+  $machineSpeeds{$_}=(int($machineSpeeds{$_}*100+0.5))/100;
 }
 print Dumper(\%machineSpeeds);
 if (open(F,">machinespeeds.txt")) {
