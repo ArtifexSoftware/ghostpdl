@@ -220,7 +220,8 @@ sub build($$$$) {
     }
     $cmd1.=" -sOutputFile=$outputFilename";
     $cmd1.=" -sDEVICE=pdfwrite";
-    $cmd1.=" -q" if ($product eq 'gs');
+#   $cmd1.=" -q" if ($product eq 'gs');
+    $cmd1.=" -sDEFAULTPAPERSIZE=letter" if ($product eq 'gs');
     $cmd1.=" -dNOPAUSE -dBATCH";  # -Z:
     $cmd1.=" -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f" if ($product eq 'gs');
 
@@ -253,7 +254,9 @@ $cmd.=" ; echo \"$cmd1\" >>$logFilename ";
     $cmd2.=" -sDEVICE=".$a[1];
     $cmd2.=" -dGrayValues=256" if ($a[0] eq 'bitrgb');
     $cmd2.=" -r".$a[2];
-    $cmd2.=" -q -dNOPAUSE -dBATCH -K1000000";  # -Z:
+#   $cmd2.=" -q"
+    $cmd2.=" -sDEFAULTPAPERSIZE=letter" if ($product eq 'gs');
+    $cmd2.=" -dNOPAUSE -dBATCH -K1000000";  # -Z:
     $cmd2.=" -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f";
 
 #   $cmd2.=" -dFirstPage=1 -dLastPage=1";
@@ -292,7 +295,8 @@ $cmd.=" ; echo \"$cmd2\" >>$logFilename ";
     $cmd2.=" -sDEVICE=".$a[0];
     $cmd2.=" -dGrayValues=256" if ($a[0] eq 'bitrgb');
     $cmd2.=" -r".$a[1];
-    $cmd2.=" -q" if ($product eq 'gs');
+#   $cmd2.=" -q" if ($product eq 'gs');
+    $cmd2.=" -sDEFAULTPAPERSIZE=letter" if ($product eq 'gs');
     $cmd2.=" -dNOPAUSE -dBATCH -K1000000";  # -Z:
     $cmd2.=" -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f" if ($product eq 'gs');
 

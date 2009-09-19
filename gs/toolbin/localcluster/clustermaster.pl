@@ -57,6 +57,9 @@ foreach (keys %machines) {
   s/.up//;
   $machines{$_}=1;
 }
+foreach (keys %machines) {
+  delete $machines{$_} if (stat("$_.down"));
+}
 
 print Dumper(\%machines) if ($verbose);
 
@@ -168,35 +171,40 @@ if (open(F,">machinespeeds.txt")) {
 
 
 my $logs="";
+my $tabs="";
 foreach (keys %machines) {
   `touch $_.log`;
   `rm -f $_.log`;
   `gunzip $_.log.gz`;
+  `./readlog.pl $_.log $_.tab $_`;
   $logs.=" $_.log";
+  $tabs.=" $_.tab";
 }
 
 unlink "log";
 `mv previous.tab previous2.tab`;
 `mv current.tab previous.tab`;
-`cat $logs >log`;
-`./readlog.pl log current.tab`;
+`cat $tabs | sort >current.tab`;
+#`cat $logs >log`;
+#`./readlog.pl log current.tab`;
 
 my $machineCount=scalar (keys %machines);
 
 `./compare.pl current.tab previous.tab $elapsedTime $machineCount >email.txt`;
 #`mail marcos.woehrmann\@artifex.com -s \"\`cat revision\`\" <email.txt`;
 `mail gs-regression\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
-`mail marcos.woehrmann\@artifex.com -s \"\`cat revision\`\" <email.txt`;
+#`mail marcos.woehrmann\@artifex.com -s \"\`cat revision\`\" <email.txt`;
 
 `touch archive/$newRev2-$newRev1`;
 `rm -fr archive/$newRev2-$newRev1`;
 `mkdir archive/$newRev2-$newRev1`;
 `mv $logs archive/$newRev2-$newRev1/.`;
 `gzip archive/$newRev2-$newRev1/*log`;
+`cp email.txt archive/$newRev2-$newRev1/.`;
 `cp current.tab archive/$newRev2-$newRev1.tab`;
-`touch archive/$newRev2-$newRev1.tab.gz`;
-unlink "archive/$newRev2-$newRev1.tab.gz";
-`gzip archive/$newRev2-$newRev1.tab`;
+#`touch archive/$newRev2-$newRev1.tab.gz`;
+#unlink "archive/$newRev2-$newRev1.tab.gz";
+#`gzip archive/$newRev2-$newRev1.tab`;
 unlink "log";
 
 }

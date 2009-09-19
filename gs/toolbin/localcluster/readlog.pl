@@ -20,11 +20,12 @@ my %results;
 
 my $input=shift;
 my $output=shift;
+my $machine=shift;
 my $rev=shift;
 
 $rev=0 if (!$rev);
 
-($output) || die "usage: readlog.pl input output [rev]";
+($machine) || die "usage: readlog.pl input output machine [rev]";
 
 open (F,"<$input") || die "file $input not found";
 
@@ -83,7 +84,7 @@ close(F);
 
 open(F,">$output") || die "file $output can't be written to";
 foreach (sort keys %results) {
-  print F "$_\t$results{$_}{'error'}\t$results{$_}{'time1'}\t$results{$_}{'time2'}\t$results{$_}{'time3'}\t$results{$_}{'time4'}\t$results{$_}{'md5'}\t$rev\t$results{$_}{'product'}\n";
+  print F "$_\t$results{$_}{'error'}\t$results{$_}{'time1'}\t$results{$_}{'time2'}\t$results{$_}{'time3'}\t$results{$_}{'time4'}\t$results{$_}{'md5'}\t$rev\t$results{$_}{'product'}\t$machine\n";
 }
 close(F);
 
