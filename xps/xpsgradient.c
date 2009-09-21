@@ -17,7 +17,7 @@
 
 #include "../icclib/icc.h"
 
-#define MAX_STOPS 100
+#define MAX_STOPS 256
 
 enum { SPREAD_PAD, SPREAD_REPEAT, SPREAD_REFLECT };
 
@@ -33,7 +33,8 @@ xps_parse_gradient_stops(xps_context_t *ctx, xps_item_t *node,
 {
     int count = 0;
     gs_color_space *colorspace;
-    float sample[32];
+    float sample[32], f;
+    int i, done;
 
     while (node && count < maxcount)
     {
@@ -75,6 +76,28 @@ xps_parse_gradient_stops(xps_context_t *ctx, xps_item_t *node,
 	}
 
 	node = xps_next(node);
+    }
+
+    /* Sort the gradient stops by offset */
+    done = 0;
+    while (!done)
+    {
+	done = 1;
+	for (i = 1; i < count; i++)
+	{
+	    if (offsets[i - 1] > offsets[i])
+	    {
+		f = offsets[i - 1];
+		offsets[i - 1] = offsets[i];
+		offsets[i] = f;
+
+		memcpy(sample, colors + (i - 1) * 4, sizeof(float) * 4);
+		memcpy(colors + (i - 1) * 4, colors + i * 4, sizeof(float) * 4);
+		memcpy(colors + i * 4, sample, sizeof(float) * 4);
+
+		done = 0;
+	    }
+	}
     }
 
     return count;
