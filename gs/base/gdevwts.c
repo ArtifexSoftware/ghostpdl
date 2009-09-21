@@ -473,6 +473,7 @@ wtsimdi_open_device(gx_device *dev)
     icc *icco;
     icmLuBase *luo;
     imdi *mdo;
+    char link_icc_name[256];
 
     /*
      * We replace create_buf_device so we can replace copy_alpha 
@@ -482,7 +483,6 @@ wtsimdi_open_device(gx_device *dev)
 	wtsimdi_create_buf_device;
     /* Open and read profile */
 
-    char link_icc_name[256];
     sprintf(link_icc_name, "%s", LINK_ICC_NAME);
     {
       FILE *f;
