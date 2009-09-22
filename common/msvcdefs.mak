@@ -89,7 +89,7 @@ LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\L
 
 !if $(MSVC_VERSION) == 9
 ! ifndef DEVSTUDIO
-DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 9
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 9.0
 ! endif
 !endif
 
