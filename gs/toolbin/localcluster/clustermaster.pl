@@ -164,7 +164,7 @@ print "startTime=$startTime\n" if ($verbose);
 print Dumper(\%doneTime) if ($verbose);
 print Dumper(\%machineSpeeds) if ($verbose);
 foreach (keys %machines) {
-  $machineSpeeds{$_}=$shortestTime/($doneTime{$_}-$startTime);
+  $machineSpeeds{$_}=$machineSpeeds{$_}*($shortestTime/($doneTime{$_}-$startTime));
 }
 foreach (keys %machines) {
   $machineSpeeds{$_}=(int($machineSpeeds{$_}*100+0.5))/100;

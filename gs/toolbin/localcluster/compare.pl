@@ -28,6 +28,7 @@ my %archiveCount;
 
 my @filesRemoved;
 my @filesAdded;
+my @allErrors;
 my @brokePrevious;
 my @repairedPrevious;
 my @differencePrevious;
@@ -102,6 +103,9 @@ foreach my $i (sort {$b cmp $a} keys %archives) {
 
 foreach my $t (sort keys %previous) {
   if (exists $current{$t}) {
+    if ($currentError{$t}) {
+      push @allErrors,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t} $currentError{$t}";
+    }
     if ($currentError{$t} && !$previousError{$t}) {
       push @brokePrevious,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t} $currentError{$t}";
     } else {
@@ -179,6 +183,14 @@ if (@filesRemoved) {
 if (@filesAdded) {
   print "The following ".scalar(@filesAdded)." regression file(s) have been added:\n";
   while(my $t=shift @filesAdded) {
+    print "$t\n";
+  }
+  print "\n";
+}
+
+if (@allErrors) {
+  print "The following ".scalar(@allErrors)." regression file(s) are producing errors:\n";
+  while(my $t=shift @allErrors) {
     print "$t\n";
   }
   print "\n";

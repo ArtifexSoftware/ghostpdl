@@ -255,8 +255,16 @@ print "$cmd\n" if ($verbose);
 if (1) {
 $abort=checkAbort;
 if (!$abort) {
+updateStatus('Building GhostPDL');
+$cmd="cd $gpdlSource ; make pcl-clean xps-clean svg-clean -j 12 ; make pcl xps svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" -j 12 >makeppdl.out 2>&1";
+print "$cmd\n" if ($verbose);
+`$cmd`;
+}
+
+$abort=checkAbort;
+if (!$abort) {
 updateStatus('Building GhostPCL');
-$cmd="cd $gpdlSource ; make pcl-clean ; make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" -j 12 >makepcl1.out 2>&1 ; make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" -j 12 >makepcl2.out 2>&1 ; make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl3.out 2>&1";
+$cmd="cd $gpdlSource ; make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1";
 print "$cmd\n" if ($verbose);
 `$cmd`;
 }
@@ -264,16 +272,15 @@ print "$cmd\n" if ($verbose);
 $abort=checkAbort;
 if (!$abort) {
 updateStatus('Building GhostXPS');
-$cmd="cd $gpdlSource ; make xps-clean ; make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" -j 12 >makexps1.out 2>&1 ; make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" -j 12 >makexps2.out 2>&1 ; make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps3.out 2>&1";
+$cmd="cd $gpdlSource ; make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps.out 2>&1";
 print "$cmd\n" if ($verbose);
 `$cmd`;
 }
 
 $abort=checkAbort;
 if (!$abort) {
-
 updateStatus('Building GhostSVG');
-$cmd="cd $gpdlSource ; make svg-clean ; make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" -j 12 >makesvg1.out 2>&1 ; make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" -j 12 >makesvg2.out 2>&1 ; make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg3.out 2>&1";
+$cmd="cd $gpdlSource ; make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg.out 2>&1";
 print "$cmd\n" if ($verbose);
 `$cmd`;
 }
