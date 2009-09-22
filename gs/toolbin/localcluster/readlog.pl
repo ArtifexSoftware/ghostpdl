@@ -58,7 +58,9 @@ while(<F>) {
     $results{$file}{"error"}=$error;
   }
   if (m/killed: timeout/) {
-    $results{$file}{"error"}=3;
+    $error=3 if ($divider==0 && $error==0);
+    $error=4 if ($divider==1 && $error==0);
+    $results{$file}{"error"}=$error;
   }
   if (m/(\d+\.\d+) (\d+\.\d+) (\d+:\d\d\.\d\d) (\d+)%/) {
     $t1=$1;

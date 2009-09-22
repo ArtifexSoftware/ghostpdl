@@ -160,8 +160,8 @@ foreach (keys %machines) {
 }
 print "averageTime=$averageTime\n" if ($verbose);
 print "shortestTime=$shortestTime\n" if ($verbose);
-#print "startTime=$startTime\n" if ($verbose);
-#print Dumper(\%doneTime) if ($verbose);
+print "startTime=$startTime\n" if ($verbose);
+print Dumper(\%doneTime) if ($verbose);
 print Dumper(\%machineSpeeds) if ($verbose);
 foreach (keys %machines) {
   $machineSpeeds{$_}=$shortestTime/($doneTime{$_}-$startTime);

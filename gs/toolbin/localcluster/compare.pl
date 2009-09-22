@@ -7,6 +7,8 @@ use Data::Dumper;
 
 my $previousValues=20;
 
+my @errorDescription=("none","Error_reading_input_file","Error_reading_Ghostscript_produced_PDF_file","Timeout_reading_input_file","Timeout_reading_Ghostscript_produced_PDF_File");
+
 my $current=shift;
 my $previous=shift;
 my $elapsedTime=shift;
@@ -39,7 +41,11 @@ while(<F>) {
   s|__|/|g;
   my @a=split '\t';
   $current{$a[0]}=$a[6];
-  $currentError{$a[0]}=$a[1];
+  $currentError{$a[0]}=0;
+  if ($a[1]!=0) {
+    $currentError{$a[0]}='unknown';
+    $currentError{$a[0]}=$errorDescription[$a[1]] if (exists $errorDescription[$a[1]]);
+  }
   $currentProduct{$a[0]}=$a[8];
   $currentMachine{$a[0]}=$a[9];
 }
@@ -51,7 +57,11 @@ while(<F>) {
   s|__|/|g;
   my @a=split '\t';
   $previous{$a[0]}=$a[6];
-  $previousError{$a[0]}=$a[1];
+  $previousError{$a[0]}=0;
+  if ($a[1]!=0) {
+    $previousError{$a[0]}='unknown';
+    $previousError{$a[0]}=$errorDescription[$a[1]] if (exists $errorDescription[$a[1]]);
+  }
   $previousProduct{$a[0]}=$a[8];
   $previousMachine{$a[0]}=$a[9];
 }
@@ -93,10 +103,10 @@ foreach my $i (sort {$b cmp $a} keys %archives) {
 foreach my $t (sort keys %previous) {
   if (exists $current{$t}) {
     if ($currentError{$t} && !$previousError{$t}) {
-      push @brokePrevious,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t}";
+      push @brokePrevious,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t} $currentError{$t}";
     } else {
       if (!$currentError{$t} && $previousError{$t}) {
-        push @repairedPrevious,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t}";
+        push @repairedPrevious,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t} $previousError{$t}";
       } else {
         if ($current{$t} eq $previous{$t}) {
 #         print "$t match $previous and $current\n";
