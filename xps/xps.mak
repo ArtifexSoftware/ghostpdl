@@ -34,7 +34,7 @@ xps.config-clean: clean_gs
 	$(RM_) $(XPSOBJ)devs.tr5
 
 
-XPSINCLUDES=$(XPSSRC)*.h
+XPSINCLUDES=$(XPSSRC)*.h $(XPSOBJ)arch.h $(XPSOBJ)jpeglib_.h
 
 
 $(XPSOBJ)xpsmem.$(OBJ): $(XPSSRC)xpsmem.c $(XPSINCLUDES)
