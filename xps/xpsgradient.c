@@ -78,6 +78,9 @@ xps_parse_gradient_stops(xps_context_t *ctx, xps_item_t *node,
 	node = xps_next(node);
     }
 
+    if (count == maxcount)
+	dputs("gradient brush exceeded maximum number of gradient stops\n");
+
     /* Sort the gradient stops by offset */
     done = 0;
     while (!done)
