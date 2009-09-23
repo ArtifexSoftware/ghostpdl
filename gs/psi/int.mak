@@ -1716,13 +1716,13 @@ $(PSD)pdf.dev : $(INT_MAK) $(ECHOGS_XE)\
  $(PSD)psbase.dev $(GLD)dps2lib.dev $(PSD)dps2read.dev\
  $(PSD)pdffonts.dev $(PSD)psl3.dev $(PSD)pdfread.dev $(PSD)cff.dev\
  $(PSD)fmd5.dev $(PSD)farc4.dev $(PSD)faes.dev\
- $(PSD)ttfont.dev $(PSD)type2.dev $(PSD)icc.dev
+ $(PSD)ttfont.dev $(PSD)type2.dev $(PSD)icc.dev $(PSD)pdfops.dev 
 	$(SETMOD) $(PSD)pdf -include $(PSD)psbase $(GLD)dps2lib
 	$(ADDMOD) $(PSD)pdf -include $(PSD)dps2read $(PSD)pdffonts $(PSD)psl3
 	$(ADDMOD) $(PSD)pdf -include $(GLD)psl2lib $(PSD)pdfread $(PSD)cff
 	$(ADDMOD) $(PSD)pdf -include $(PSD)fmd5 $(PSD)farc4 $(PSD)faes.dev
 	$(ADDMOD) $(PSD)pdf -include $(PSD)ttfont $(PSD)type2
-	$(ADDMOD) $(PSD)pdf -include $(PSD)icc
+	$(ADDMOD) $(PSD)pdf -include $(PSD)icc $(PSD)pdfops
 	$(ADDMOD) $(PSD)pdf -functiontype 4
 	$(ADDMOD) $(PSD)pdf -emulator PDF
 
@@ -1844,6 +1844,17 @@ $(PSD)fapif.dev : $(INT_MAK) $(ECHOGS_XE)
 $(PSOBJ)zncdummy.$(OBJ) : $(PSSRC)zncdummy.c $(OP) $(GX) $(math_h)\
   $(memory__h) $(gscdefs_h) $(gsnamecl_h) $(malloc__h) $(gsncdummy_h)
 	$(PSCC) $(PSO_)zncdummy.$(OBJ) $(C_) $(PSSRC)zncdummy.c
+
+# ---------------- Custom operators for PDF interpreter ---------------- #
+
+zpdfops_=$(PSOBJ)zpdfops.$(OBJ)
+$(PSD)pdfops.dev : $(INT_MAK) $(ECHOGS_XE) $(zpdfops_)
+	$(SETMOD) $(PSD)pdfops $(zpdfops_)
+	$(ADDMOD) $(PSD)pdfops -oper zpdfops
+
+$(PSOBJ)zpdfops.$(OBJ) : $(PSSRC)zpdfops.c $(OP)\
+ $(igstate_h) $(istack_h) $(iutil_h) $(gspath_h)
+	$(PSCC) $(PSO_)zpdfops.$(OBJ) $(C_) $(PSSRC)zpdfops.c
 
 # ================ Dependencies for auxiliary programs ================ #
 

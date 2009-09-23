@@ -1847,23 +1847,41 @@ end
   } ifelse
 } bdef
 
-/drawlink {			% <annot> drawlink -
-  dup drawborder dup calc_annot_scale 3 -1 roll drawwidget
-} bdef
-
 % Draw an annotation.
 /drawannottypes mark
-  /Link { drawlink } bind
+  /Link { % <annot> -> <false>
+    dup drawborder dup calc_annot_scale 3 -1 roll drawwidget //false
+  } bind
+  /Ink { % <annot> -> <annot> <true>
+         % <annot> -> <false>
+    dup /AP oknown {
+      //true
+    } {
+      0.5 setlinewidth
+      dup annotsetcolor
+      dup calc_annot_scale
+      3 index annotrect pop pop translate
+      scale
+      /InkList knownoget {
+        { oforce 
+          mark exch { oforce } forall
+          .pdfinkpath
+          stroke
+        } forall
+      } if
+      //false
+    } ifelse
+  } bind
 .dicttomark readonly def
+
 /drawannot {		% <annot> drawannot -
   dup annotvisible {
     gsave
     dup dup /Subtype knownoget {
-      //drawannottypes exch .knownget {
-        exec
-      } {
-        dup calc_annot_scale 3 -1 roll drawwidget	% Use drawwidget for everything else
-      } ifelse			% type known
+      //drawannottypes exch .knownget { exec } { //true } ifelse
+      {
+        dup calc_annot_scale 3 -1 roll drawwidget % Draw rejected annots as widgets
+      } if			% type known
     } {
       pop
       (   **** Warning: /Annot dict without required /Subtype entry is ignored.\n)
