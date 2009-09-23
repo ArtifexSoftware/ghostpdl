@@ -251,6 +251,7 @@ struct xps_part_s
     xps_font_t *font; /* parsed font resource */
     xps_image_t *image; /* parsed and decoded image resource */
     gs_color_space *icc; /* parsed icc profile resource */
+    xps_item_t *xml; /* parsed xml document (external resource dictionaries) */
 
     int deobfuscated; /* have we deobfuscated the font data? */
 
@@ -415,6 +416,5 @@ struct xps_resource_s
 xps_resource_t *xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *name);
 xps_resource_t *xps_parse_resource_dictionary(xps_context_t *ctx, xps_item_t *root);
 void xps_free_resource_dictionary(xps_context_t *ctx, xps_resource_t *dict);
-xps_item_t *xps_parse_resource_reference(xps_context_t *ctx, xps_resource_t *dict, char *att);
 int xps_resolve_resource_reference(xps_context_t *ctx, xps_resource_t *dict, char **attp, xps_item_t **tagp);
 

@@ -825,6 +825,8 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
 	}
     }
 
+    /* DiscardControl parts are not used by files in the wild, so we don't bother */
+
     /*
      * For the rest we need to track the relationships
      * and content-types given by the previous two types.

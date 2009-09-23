@@ -112,6 +112,7 @@ xps_new_part(xps_context_t *ctx, char *name, int capacity)
     part->font = NULL;
     part->image = NULL;
     part->icc = NULL;
+    part->xml = NULL;
 
     part->deobfuscated = 0;
 
@@ -150,9 +151,32 @@ xps_new_part(xps_context_t *ctx, char *name, int capacity)
 void
 xps_free_part_caches(xps_context_t *ctx, xps_part_t *part)
 {
-    // if (part->font) { xps_free_font(ctx, part->font); part->font = NULL; }
-    if (part->image) { xps_free_image(ctx, part->image); part->image = NULL; }
-    // if (part->icc) { xps_free_colorspace(ctx, part->icc); part->icc = NULL; }
+#if 0
+    /* Can't free fonts because pdfwrite needs them alive */
+    if (part->font)
+    {
+	xps_free_font(ctx, part->font);
+	part->font = NULL;
+    }
+
+    if (part->icc)
+    {
+	xps_free_colorspace(ctx, part->icc);
+	part->icc = NULL;
+    }
+#endif
+
+    if (part->image)
+    {
+	xps_free_image(ctx, part->image);
+	part->image = NULL;
+    }
+
+    if (part->xml)
+    {
+	xps_free_item(ctx, part->xml);
+	part->xml = NULL;
+    }
 }
 
 void

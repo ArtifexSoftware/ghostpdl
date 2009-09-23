@@ -15,23 +15,7 @@
 
 #include "ghostxps.h"
 
-int
-xps_resolve_resource_reference(xps_context_t *ctx, xps_resource_t *dict,
-	char **attp, xps_item_t **tagp)
-{
-    if (*attp)
-    {
-	xps_item_t *rsrc = xps_parse_resource_reference(ctx, dict, *attp);
-	if (rsrc)
-	{
-	    *attp = NULL;
-	    *tagp = rsrc;
-	}
-    }
-    return 0;
-}
-
-xps_item_t *
+static xps_item_t *
 xps_find_resource(xps_context_t *ctx, xps_resource_t *dict, char *name)
 {
     xps_resource_t *head, *node;
@@ -42,7 +26,7 @@ xps_find_resource(xps_context_t *ctx, xps_resource_t *dict, char *name)
     return NULL;
 }
 
-xps_item_t *
+static xps_item_t *
 xps_parse_resource_reference(xps_context_t *ctx, xps_resource_t *dict, char *att)
 {
     char name[1024];
@@ -59,13 +43,27 @@ xps_parse_resource_reference(xps_context_t *ctx, xps_resource_t *dict, char *att
     return xps_find_resource(ctx, dict, name);
 }
 
+int
+xps_resolve_resource_reference(xps_context_t *ctx, xps_resource_t *dict,
+	char **attp, xps_item_t **tagp)
+{
+    if (*attp)
+    {
+	xps_item_t *rsrc = xps_parse_resource_reference(ctx, dict, *attp);
+	if (rsrc)
+	{
+	    *attp = NULL;
+	    *tagp = rsrc;
+	}
+    }
+    return 0;
+}
+
 xps_resource_t *
 xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *source_att)
 {
     char part_name[1024];
     xps_part_t *part;
-    xps_resource_t *dict;
-    xps_item_t *root;
 
     xps_absolute_path(part_name, ctx->pwd, source_att);
     part = xps_find_part(ctx, part_name);
@@ -75,24 +73,23 @@ xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *source_att)
 	return NULL;
     }
 
-    root = xps_parse_xml(ctx, part->data, part->size);
-    if (!root)
+    if (!part->xml)
     {
-	gs_rethrow(-1, "cannot parse xml");
+	part->xml = xps_parse_xml(ctx, part->data, part->size);
+	if (!part->xml)
+	{
+	    gs_rethrow(-1, "cannot parse xml");
+	    return NULL;
+	}
+    }
+
+    if (strcmp(xps_tag(part->xml), "ResourceDictionary"))
+    {
+	gs_throw1(-1, "expected ResourceDictionary element (found %s)", xps_tag(part->xml));
 	return NULL;
     }
 
-    if (strcmp(xps_tag(root), "ResourceDictionary"))
-    {
-	gs_throw1(-1, "expected ResourceDictionary element (found %s)", xps_tag(root));
-	return NULL;
-    }
-
-    dict = xps_parse_resource_dictionary(ctx, root);
-
-    // TODO: xps_free_item(dict); -- need to add reference counting so dict can keep nodes
-
-    return dict;
+    return xps_parse_resource_dictionary(ctx, part->xml);
 }
 
 xps_resource_t *
