@@ -99,7 +99,13 @@ tile_size_ok(const gx_device_pdf *pdev, const gx_color_tile *p_tile,
 	(p_tile == 0 ? 0 : tile_size(&p_tile->tbits, p_tile->depth));
     uint m_size =
 	(m_tile == 0 ? 0 : tile_size(&m_tile->tmask, 1));
-    return (max(p_size, m_size) <= 65500);
+    /* The image limit only applies to Acrobat versions less than 5
+     * (PDF 1.4).
+     */
+    if (pdev->CompatibilityLevel < 1.4)
+	return (max(p_size, m_size) <= 65500);
+    else
+	return 1;
 }
 
 static int
