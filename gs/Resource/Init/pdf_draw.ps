@@ -470,6 +470,7 @@ def
   gsave //nodict begin
   newpath null SMask
   1 .setopacityalpha 1 .setshapealpha
+  1 CA 1 ca
   /Compatible .setblendmode
 	% Execute the body of the Form, similar to DoForm.
   pdfopdict .pdfruncontext
@@ -1326,6 +1327,7 @@ currentdict /jp2_tag_dict .undef
       gsave //nodict begin
       null /SoftMask gput
       1 .setopacityalpha 1 .setshapealpha
+      1 CA 1 ca
       /Compatible .setblendmode
       DoImage
       end grestore
