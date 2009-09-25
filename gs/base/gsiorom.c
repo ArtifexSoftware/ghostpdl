@@ -179,7 +179,6 @@ s_block_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     stream *s = (stream *)st;	/* no separate state */
     uint32_t *node = (uint32_t *)s->file;
     uint max_count = pw->limit - pw->ptr;
-    int status = 1;
     int compression = ((get_u32_big_endian(node) & 0x80000000) != 0) ? 1 : 0;
     uint32_t filelen = get_u32_big_endian(node) & 0x7fffffff;	/* ignore compression bit */
     uint32_t blocks = (filelen+ROMFS_BLOCKSIZE-1) / ROMFS_BLOCKSIZE;
@@ -187,9 +186,10 @@ s_block_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     uint32_t block_length = get_u32_big_endian(node+1+(2*iblock));
     uint32_t block_offset = get_u32_big_endian(node+2+(2*iblock));
     unsigned const char *block_data = ((unsigned char *)node) + block_offset;
-    int count = iblock < (blocks - 1) ? ROMFS_BLOCKSIZE : filelen - (ROMFS_BLOCKSIZE * iblock);
+    uint count = iblock < (blocks - 1) ? ROMFS_BLOCKSIZE : filelen - (ROMFS_BLOCKSIZE * iblock);
+    int status = (iblock >= blocks - 1 ) ? EOFC : 1;
 
-    if (s->position == filelen || block_data == NULL)
+    if (s->position >= filelen || block_data == NULL)
 	return EOFC;			/* at EOF */
     if (s->file_limit < max_long) {
 	/* Adjust count for subfile limit */
@@ -201,7 +201,7 @@ s_block_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     /* get the block into the buffer */
     if (compression) {
 	unsigned long buflen = ROMFS_BLOCKSIZE;
-	const byte *dest = (pw->ptr + 1);	/* destination for unpack */
+	byte *dest = (pw->ptr + 1);	/* destination for unpack */
 	int need_copy = false;
 
 	/* If the dest is not in our buffer, we can only use it if there */
