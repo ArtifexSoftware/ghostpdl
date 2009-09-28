@@ -733,7 +733,8 @@ gmode_do_reset(
     }
 
     if (type &  pcl_reset_permanent)
-        pcl_end_graphics_mode(pcs);
+        if (pcs->raster_state.graphics_mode)
+            pcl_end_graphics_mode(pcs);
 
 }
 
