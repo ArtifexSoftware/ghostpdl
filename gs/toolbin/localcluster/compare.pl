@@ -13,6 +13,8 @@ my $current=shift;
 my $previous=shift;
 my $elapsedTime=shift;
 my $machineCount=shift || die "usage: compare.pl current.tab previous.tab elapsedTime machineCount";
+my $skipMissing=shift;
+
 my %current;
 my %currentError;
 my %currentProduct;
@@ -170,6 +172,7 @@ if (@repairedPrevious) {
   print "\n";
 }
 
+if (!$skipMissing) {
 
 if (@filesRemoved) {
   print "The following ".scalar(@filesRemoved)." regression file(s) have been removed:\n";
@@ -203,3 +206,5 @@ if (@archiveMatch) {
   }
   print "\n";
 }
+}
+

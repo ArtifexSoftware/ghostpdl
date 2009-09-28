@@ -6,6 +6,9 @@ use warnings;
 use Data::Dumper;
 use POSIX ":sys_wait_h";
 
+my $product=shift;
+die "usage: build.pl (gs|ghostpdl)" if ($product && $product ne "gs" && $product ne "ghostpdl");
+
 
 my $updateTestFiles=1;
 
@@ -20,10 +23,17 @@ my $temp="./temp";
 #$temp="/tmp/space/temp";
 #$temp="/dev/shm/temp";
 
+my %productMap=(
+  'gs' => 'gs',
+  'pcl' => 'ghostpdl',
+  'xps' => 'ghostpdl',
+  'svg' => 'ghostpdl'
+);
+
 my $gsBin=$baseDirectory."gs/bin/gs";
-my $pclBin=$baseDirectory."ghostpdl/main/obj/pcl6";
-my $xpsBin=$baseDirectory."ghostpdl/xps/obj/gxps";
-my $svgBin=$baseDirectory."ghostpdl/svg/obj/gsvg";
+my $pclBin=$baseDirectory."gs/bin/pcl6";
+my $xpsBin=$baseDirectory."gs/bin/gxps";
+my $svgBin=$baseDirectory."gs/bin/gsvg";
 
 my %testSource=(
   $baseDirectory."tests/pdf" => 'gs',
@@ -147,13 +157,11 @@ my %tests=(
 
 #update the regression file source directories
 if ($updateTestFiles) {
-
   foreach my $testSource (sort keys %testSource) {
-  $cmd="cd $testSource ; /usr/local/bin/svn update";
-  print STDERR "$cmd\n" if ($verbose);
-  `$cmd`;
+    $cmd="cd $testSource ; /usr/local/bin/svn update";
+    print STDERR "$cmd\n" if ($verbose);
+    `$cmd`;
   }
-
 }
 
 
@@ -161,11 +169,13 @@ if ($updateTestFiles) {
 # build a list of the source files
 my %testfiles;
 foreach my $testSource (sort keys %testSource) {
-  opendir(DIR, $testSource) || die "can't opendir $testSource: $!";
-  foreach (readdir(DIR)) {
-    $testfiles{$testSource.'/'.$_}=$testSource{$testSource} if (!-d $testSource.'/'.$_ && ! m/^\./ && ! m/.disabled$/);
+  if (!$product || $productMap{$testSource{$testSource}} eq $product) {
+    opendir(DIR, $testSource) || die "can't opendir $testSource: $!";
+    foreach (readdir(DIR)) {
+      $testfiles{$testSource.'/'.$_}=$testSource{$testSource} if (!-d $testSource.'/'.$_ && ! m/^\./ && ! m/.disabled$/);
+    }
+    closedir DIR;
   }
-  closedir DIR;
 }
 
 #print Dumper(\%testfiles);
@@ -332,17 +342,15 @@ $cmd.=" ; echo \"$cmd2\" >>$logFilename ";
 my @commands;
 my @filenames;
 
-
 foreach my $testfile (sort keys %testfiles) {
   foreach my $test (@{$tests{$testfiles{$testfile}}}) {
-# foreach my $test (@{$tests{'gs'}}) {
     my $t=$testfile.".".$test;
-      my $cmd="";
-      my $outputFilenames="";
-      my $filename="";
-      ($cmd,$outputFilenames,$filename)=build($testfiles{$testfile},$testfile,$test,1);
-      push @commands,$cmd;
-      push @filenames,$filename;
+    my $cmd="";
+    my $outputFilenames="";
+    my $filename="";
+    ($cmd,$outputFilenames,$filename)=build($testfiles{$testfile},$testfile,$test,1);
+    push @commands,$cmd;
+    push @filenames,$filename;
   }
 }
 
@@ -353,6 +361,5 @@ while (scalar(@commands)) {
   my $command=$commands[$n];  splice(@commands,$n,1);
   my $filename=$filenames[$n];  splice(@filenames,$n,1);
   print "$filename\t$command\n";
-# print "$command\n";
 }
 

@@ -19,6 +19,28 @@ my $wordSize="64";
 
 
 my $machine=shift || die "usage: run.pl machine_name";
+
+my $user;
+my $product;
+
+if (open(F,"<$machine.start")) {
+  $_=<F>;
+  close(F);
+  chomp;
+  my @a=split ' ';
+  $user=$a[0];
+  $product=$a[1];
+  if ($user && $product) {
+#   print "user=$user product=$product\n";
+  } else {
+#   print "empty user\n";
+  }
+  unlink("$machine.start");
+}
+
+my $host="casper.ghostscript.com";
+
+
 my $desiredRev;
 
 my $maxCount=12;
@@ -28,6 +50,7 @@ my $timeOut=300;
 
 my $baseDirectory=`pwd`;
 chomp $baseDirectory;
+my $usersDir="/home/marcos/cluster/users";
 
 my $temp="./temp";
 my $temp2="./temp.tmp";
@@ -125,7 +148,7 @@ sub spawn($$) {
 }
 
 sub checkAbort {
-  spawn(5,"scp -i ~/.ssh/cluster_key  marcos\@casper.ghostscript.com:/home/marcos/cluster/$machine.abort .");
+  spawn(60,"scp -i ~/.ssh/cluster_key  marcos\@casper.ghostscript.com:/home/marcos/cluster/$machine.abort . >/dev/null 2>/dev/null");
   if (open(F,"<$machine.abort")) {
     close(F);
     return(1);
@@ -141,6 +164,8 @@ sub updateStatus($) {
 
 
 
+if ($user && $product) {
+} else {
 updateStatus('Updating test files');
 
 #update the regression file source directory
@@ -153,9 +178,35 @@ if ($updateTestFiles) {
   }
 
 }
+}
 
 $abort=checkAbort;
 if (!$abort) {
+
+if ($user && $product) {
+# `pkill -9 rsync`; exit;
+# my $s=`ps -ef | grep rsync | grep -v grep`;
+# chomp $s;
+# my @a=split ' ',$s;
+# `kill -9 $a[1]`;
+
+  updateStatus("Fetching $product source from users/$user");
+  mkdir "users";
+  mkdir "users/$user";
+  mkdir "users/$user/ghostpdl";
+  mkdir "users/$user/ghostpdl/gs";
+  if ($product eq 'gs') {
+    $cmd="cd users/$user/ghostpdl ; rsync -vlogDtprxe.iLs --delete -e \"ssh -l marcos -i \$HOME/.ssh/cluster_key\" marcos\@$host:$usersDir/$user/ghostpdl/gs .";
+  } else {
+    $cmd="cd users/$user          ; rsync -vlogDtprxe.iLs --delete -e \"ssh -l marcos -i \$HOME/.ssh/cluster_key\" marcos\@$host:$usersDir/$user/ghostpdl    .";
+  }
+  print "$cmd\n" if ($verbose);
+  `$cmd`;
+
+  $gpdlSource=$baseDirectory."/users/$user/ghostpdl";
+  $gsSource=$gpdlSource."/gs";
+} else {
+
 updateStatus('Updating Ghostscript');
 
 if ($updateGS) {
@@ -210,7 +261,7 @@ if ($s=~m/Last Changed Rev: (\d+)/) {
 #   exit;
   }
 }
-
+}
 }
 
 $cmd="touch $temp2 ; rm -fr $temp2 ; mv $temp $temp2 ; mkdir $temp ; rm -fr $temp2 &";
@@ -237,6 +288,8 @@ close(F2);
 $cmd="mv $gsSource/base/gscdef.tmp $gsSource/base/gscdef.c";
 `$cmd`;
 
+if (!$product || $product eq 'gs') {
+
 updateStatus('Building Ghostscript');
 
 # build ghostscript
@@ -251,12 +304,14 @@ $cmd="rm -fr $gsBin ; cd $gsSource ; make install";
 print "$cmd\n" if ($verbose);
 `$cmd`;
 }
+}
 
+if (!$product || $product eq 'ghostpdl') {
 if (1) {
 $abort=checkAbort;
 if (!$abort) {
-updateStatus('Building GhostPDL');
-$cmd="cd $gpdlSource ; make pcl-clean xps-clean svg-clean -j 12 ; make pcl xps svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" -j 12 >makeppdl.out 2>&1";
+updateStatus('Building GhostPCL/XPS/SVG');
+$cmd="cd $gpdlSource ; make pcl-clean xps-clean svg-clean -j 12 ; make pcl xps svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" -j 12 >makepdl.out 2>&1";
 print "$cmd\n" if ($verbose);
 `$cmd`;
 }
@@ -267,12 +322,18 @@ updateStatus('Building GhostPCL');
 $cmd="cd $gpdlSource ; make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1";
 print "$cmd\n" if ($verbose);
 `$cmd`;
+$cmd="cp -p $gpdlSource/main/obj/pcl6 gs/bin/.";
+print "$cmd\n" if ($verbose);
+`$cmd`;
 }
 
 $abort=checkAbort;
 if (!$abort) {
 updateStatus('Building GhostXPS');
 $cmd="cd $gpdlSource ; make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps.out 2>&1";
+print "$cmd\n" if ($verbose);
+`$cmd`;
+$cmd="cp -p $gpdlSource/xps/obj/gxps gs/bin/.";
 print "$cmd\n" if ($verbose);
 `$cmd`;
 }
@@ -283,9 +344,12 @@ updateStatus('Building GhostSVG');
 $cmd="cd $gpdlSource ; make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg.out 2>&1";
 print "$cmd\n" if ($verbose);
 `$cmd`;
+$cmd="cp -p $gpdlSource/svg/obj/gsvg gs/bin/.";
+print "$cmd\n" if ($verbose);
+`$cmd`;
 }
 }
-
+}
 }
 
 unlink "link.icc","wts_plane_0","wts_plane_1","wts_plane_2","wts_plane_3";

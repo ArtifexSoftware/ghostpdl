@@ -35,11 +35,62 @@ chomp $newRev1;
 chomp $newRev2;
 #print "$currentRev1 $currentRev2 $newRev1 $newRev2\n";
 
-if ($currentRev1!=0 && $currentRev2!=0 && ($currentRev1!=$newRev1 || $currentRev2!=$newRev2)) {
+my $normalRegression=0;
+my $userRegression="";
 
-open(F,">revision");
-print F "local cluster regression gs-r$newRev2 / ghostpdl-r$newRev1 (xefitra)\n";
-close(F);
+if ($currentRev1!=0 && $currentRev2!=0 && ($currentRev1!=$newRev1 || $currentRev2!=$newRev2)) {
+  $normalRegression=1;
+} else {
+  my $usersDir="users";
+
+  opendir(DIR, $usersDir) || die "can't opendir $usersDir: $!";
+  foreach my $user (readdir(DIR)) {
+    if (open(F,"<$usersDir/$user/gs.run")) {
+      close(F);
+      unlink "$usersDir/$user/gs.run";
+      open(F,">>user.run");
+      print F "$user gs\n";
+      close(F);
+    }
+    if (open(F,"<$usersDir/$user/ghostpdl.run")) {
+      close(F);
+      unlink "$usersDir/$user/ghostpdl.run";
+      open(F,">>user.run");
+      print F "$user ghostpdl\n";
+      close(F);
+    }
+  }
+  closedir DIR;
+
+  if (open(F,"<user.run")) {
+    my @a;
+    while(<F>) {
+      chomp;
+      push @a,$_;
+    }
+    close(F);
+    if (scalar(@a)>0) {
+      open(F,">user.run");
+      for (my $i=1;  $i<scalar(@a);  $i++) {
+        print F "$a[$i]\n";
+      }
+      close(F);
+      $userRegression=$a[0];
+    }
+  }
+}
+
+if ($normalRegression==1 || $userRegression ne "") {
+
+if ($userRegression ne "") {
+  print "running: $userRegression\n" if ($verbose);
+}
+
+if ($normalRegression) {
+  open(F,">revision");
+  print F "local cluster regression gs-r$newRev2 / ghostpdl-r$newRev1 (xefitra)\n";
+  close(F);
+}
 
 
 
@@ -92,7 +143,13 @@ foreach (sort keys %machines) {
   $options.=" $_.jobs $machineSpeeds{$_}";
 }
 print "$options\n" if ($verbose);
-`./build.pl >jobs`;
+my $product="";
+if (!$normalRegression) {
+  my @a=split ' ',$userRegression;
+  $product=$a[1];
+  print "product=$product\n" if ($verbose);
+}
+`./build.pl $product >jobs`;
 `./splitjobs.pl jobs $options`;
 unlink "jobs";
 
@@ -103,13 +160,23 @@ print "unlinking $_.abort\n" if ($verbose);
   `gzip $_.jobs`;
   unlink("$_.done");
   unlink("$_.abort");
-  `touch $_.start`;
+  if ($normalRegression) {
+    `touch $_.start`;
+  } else {
+    open(F,">$_.start");
+    print F "$userRegression\n";
+    close(F);
+  }
 }
 
-$startText=`date +\"%H:%M:%S\"`;
+$startText=`date +\"%D %H:%M:%S\"`;
 chomp $startText;
 open (F,">status");
-print F "Regression gs-r$newRev2 / ghostpdl-r$newRev1 started at $startText";
+if ($normalRegression) {
+  print F "Regression gs-r$newRev2 / ghostpdl-r$newRev1 started at $startText";
+} else {
+  print F "Regression $userRegression started at $startText";
+}
 close(F);
 
 %doneTime=();
@@ -143,12 +210,17 @@ print "abort=$abort\n" if ($verbose);
 
 my $elapsedTime=time-$startTime;
 
-$s=`date +\"%D %H:%M:%S\"`;
+$s=`date +\"%H:%M:%S\"`;
 chomp $s;
 open (F,">status");
-print F "Regression gs-r$newRev2 / ghostpdl-r$newRev1 started at $startText - finished at $s";
+if ($normalRegression) {
+  print F "Regression gs-r$newRev2 / ghostpdl-r$newRev1 started at $startText - finished at $s";
+} else {
+  print F "Regression $userRegression started at $startText - finished at $s";
+}
 close(F);
 
+if ($normalRegression) {
 my $averageTime=0;
 foreach (keys %machines) {
   $averageTime+=$doneTime{$_}-$startTime;
@@ -163,11 +235,15 @@ print "shortestTime=$shortestTime\n" if ($verbose);
 print "startTime=$startTime\n" if ($verbose);
 print Dumper(\%doneTime) if ($verbose);
 print Dumper(\%machineSpeeds) if ($verbose);
+my $max=0;
 foreach (keys %machines) {
   $machineSpeeds{$_}=$machineSpeeds{$_}*($shortestTime/($doneTime{$_}-$startTime));
+  $max=$machineSpeeds{$_} if ($max<$machineSpeeds{$_});
 }
 foreach (keys %machines) {
+  $machineSpeeds{$_}/=$max;
   $machineSpeeds{$_}=(int($machineSpeeds{$_}*100+0.5))/100;
+  $machineSpeeds{$_}=0.01 if ($machineSpeeds{$_}==0);
 }
 print Dumper(\%machineSpeeds);
 if (open(F,">machinespeeds.txt")) {
@@ -175,6 +251,7 @@ if (open(F,">machinespeeds.txt")) {
     print F "$_ $machineSpeeds{$_}\n";
   }
   close(F);
+}
 }
 
 
@@ -189,31 +266,41 @@ foreach (keys %machines) {
   $tabs.=" $_.tab";
 }
 
-unlink "log";
-`mv previous.tab previous2.tab`;
-`mv current.tab previous.tab`;
-`cat $tabs | sort >current.tab`;
-#`cat $logs >log`;
-#`./readlog.pl log current.tab`;
-
 my $machineCount=scalar (keys %machines);
+if ($normalRegression) {
+# unlink "log";
+  `mv previous.tab previous2.tab`;
+  `mv current.tab previous.tab`;
+  `cat $tabs | sort >current.tab`;
+  `rm $tabs`;
+#  `cat $logs >log`;
+#  `./readlog.pl log current.tab`;
 
-`./compare.pl current.tab previous.tab $elapsedTime $machineCount >email.txt`;
-#`mail marcos.woehrmann\@artifex.com -s \"\`cat revision\`\" <email.txt`;
-`mail gs-regression\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
-#`mail marcos.woehrmann\@artifex.com -s \"\`cat revision\`\" <email.txt`;
 
-`touch archive/$newRev2-$newRev1`;
-`rm -fr archive/$newRev2-$newRev1`;
-`mkdir archive/$newRev2-$newRev1`;
-`mv $logs archive/$newRev2-$newRev1/.`;
-`gzip archive/$newRev2-$newRev1/*log`;
-`cp email.txt archive/$newRev2-$newRev1/.`;
-`cp current.tab archive/$newRev2-$newRev1.tab`;
-#`touch archive/$newRev2-$newRev1.tab.gz`;
-#unlink "archive/$newRev2-$newRev1.tab.gz";
-#`gzip archive/$newRev2-$newRev1.tab`;
-unlink "log";
+  `./compare.pl current.tab previous.tab $elapsedTime $machineCount >email.txt`;
+#  `mail marcos.woehrmann\@artifex.com -s \"\`cat revision\`\" <email.txt`;
+  `mail -a \"From: marcos.woehrmann\@artifex.com\" gs-regression\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
+
+  `touch archive/$newRev2-$newRev1`;
+  `rm -fr archive/$newRev2-$newRev1`;
+  `mkdir archive/$newRev2-$newRev1`;
+  `mv $logs archive/$newRev2-$newRev1/.`;
+  `gzip archive/$newRev2-$newRev1/*log`;
+  `cp email.txt archive/$newRev2-$newRev1/.`;
+  `cp current.tab archive/$newRev2-$newRev1.tab`;
+#  `touch archive/$newRev2-$newRev1.tab.gz`;
+#  unlink "archive/$newRev2-$newRev1.tab.gz";
+#  `gzip archive/$newRev2-$newRev1.tab`;
+# unlink "log";
+} else {
+  `cat $tabs | sort >temp.tab`;
+  `rm $tabs`;
+
+  `./compare.pl temp.tab current.tab $elapsedTime $machineCount true >email.txt`;
+# `mail marcos.woehrmann\@artifex.com -s \"\`cat revision\`\" <email.txt`;
+# `mail -a \"From: marcos.woehrmann\@artifex.com\" gs-regression\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
+
+}
 
 }
 
