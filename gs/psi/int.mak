@@ -1853,7 +1853,7 @@ $(PSD)pdfops.dev : $(INT_MAK) $(ECHOGS_XE) $(zpdfops_)
 	$(ADDMOD) $(PSD)pdfops -oper zpdfops
 
 $(PSOBJ)zpdfops.$(OBJ) : $(PSSRC)zpdfops.c $(OP)\
- $(igstate_h) $(istack_h) $(iutil_h) $(gspath_h)
+ $(igstate_h) $(istack_h) $(iutil_h) $(gspath_h) $(math__h)
 	$(PSCC) $(PSO_)zpdfops.$(OBJ) $(C_) $(PSSRC)zpdfops.c
 
 # ================ Dependencies for auxiliary programs ================ #

@@ -1859,7 +1859,9 @@ end
     dup /AP oknown {
       //true
     } {
-      0.5 setlinewidth
+      1 setlinewidth
+      1 setlinecap
+      1 setlinejoin
       dup annotsetcolor
       dup calc_annot_scale
       3 index annotrect pop pop translate
