@@ -731,6 +731,10 @@ gmode_do_reset(
         prstate->compression_mode = NO_COMPRESS;
         prstate->y_advance = 1;
     }
+
+    if (type &  pcl_reset_permanent)
+        pcl_end_graphics_mode(pcs);
+
 }
 
 const pcl_init_t    rtgmode_init = { gmode_do_registration, gmode_do_reset, 0 };
