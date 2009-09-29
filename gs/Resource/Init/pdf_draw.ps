@@ -1282,7 +1282,7 @@ currentdict /jp2_tag_dict .undef
     } forall exch pop {
       (\n   **** Warning: Some elements of Mask array are out of range.\n)
       pdfformaterror
-      [ exch { 0 .max 1 BitsPerComponent bitshift 1 sub .min } forall ]
+      [ exch { 1 BitsPerComponent bitshift 1 sub and } forall ] % AR5 does this
     } if
     /MaskColor exch def
   } {
