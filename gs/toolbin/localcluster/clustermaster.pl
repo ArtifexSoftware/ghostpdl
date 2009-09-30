@@ -20,6 +20,16 @@ if (open(F,"<$runningSemaphore")) {
   exit;
 }
 
+my %emails;
+if (open(F,"<emails.tab")) {
+  while(<F>) {
+    chomp;
+    my @a=split '\t';
+    $emails{$a[0]}=$a[1];
+  }
+  close(F);
+}
+
 open(F,">$runningSemaphore");
 close(F);
 
@@ -37,6 +47,8 @@ chomp $newRev2;
 
 my $normalRegression=0;
 my $userRegression="";
+my $product="";
+my $userName="";
 
 if ($currentRev1!=0 && $currentRev2!=0 && ($currentRev1!=$newRev1 || $currentRev2!=$newRev2)) {
   $normalRegression=1;
@@ -143,11 +155,11 @@ foreach (sort keys %machines) {
   $options.=" $_.jobs $machineSpeeds{$_}";
 }
 print "$options\n" if ($verbose);
-my $product="";
 if (!$normalRegression) {
   my @a=split ' ',$userRegression;
+  $userName=$a[0];
   $product=$a[1];
-  print "product=$product\n" if ($verbose);
+  print "userName=$userName product=$product\n" if ($verbose);
 }
 `./build.pl $product >jobs`;
 `./splitjobs.pl jobs $options`;
@@ -296,9 +308,13 @@ if ($normalRegression) {
   `cat $tabs | sort >temp.tab`;
   `rm $tabs`;
 
-  `./compare.pl temp.tab current.tab $elapsedTime $machineCount true >email.txt`;
-# `mail marcos.woehrmann\@artifex.com -s \"\`cat revision\`\" <email.txt`;
-# `mail -a \"From: marcos.woehrmann\@artifex.com\" gs-regression\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
+  `./compare.pl temp.tab current.tab $elapsedTime $machineCount true >$userName.txt`;
+   if (exists $emails{$userName}) {
+    `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"$userRegression regression\" <$userName.txt`;
+    `mail -a \"From: marcos.woehrmann\@artifex.com\" $emails{$userName} -s \"$userRegression regression\" <$userName.txt`;
+   } else {
+    `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"bad username: $userName\" <$userName.txt`;
+   }
 
 }
 

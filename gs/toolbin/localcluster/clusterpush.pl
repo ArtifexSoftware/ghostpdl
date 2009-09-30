@@ -5,15 +5,22 @@ use warnings;
 
 use Data::Dumper;
 
-my $verbose=1;
+my $verbose=0;
+
+my $buildType=shift;
+my $user=shift;
 
 my $host="casper.ghostscript.com";
 my $dir="/home/marcos/cluster/users";
-my $user=`echo \$USER`;
-chomp $user;
+if (!$user) {
+  $user=`echo \$USER`;
+  chomp $user;
+}
 
-my $buildType=`pwd`;
-chomp $buildType;
+if (!$buildType) {
+  $buildType=`pwd`;
+  chomp $buildType;
+}
 
 $buildType =~ s|.+/||;
 print "$user $buildType\n" if ($verbose);
@@ -30,7 +37,7 @@ if ($buildType eq 'gs') {
   $product='ghostpdl';
 }
 
-my $cmd="rsync -avx".
+my $cmd="rsync -avvx".
 " --delete".
 " --exclude .svn --exclude .git".
 " --exclude _darcs --exclude .bzr --exclude .hg".
@@ -50,54 +57,12 @@ print "$cmd\n" if ($verbose);
 `$cmd`;
 
 
+print STDERR "queuing\n";
 `ssh -l marcos -i \$HOME/.ssh/cluster_key $host touch $dir/$user/$product.run`;
 
-#  ./* $HOST:$DEST/$TARGET
-#if test ! $? -eq 0; then
-#  echo "$0 aborted."
-#  exit 1
-#fi
 
 
-#HOST=atfxsw01@tticluster.com
-#DEST=$USER
-#
-## try to use the same directory name on the cluster
-#TARGET=`basename $PWD`
-#
-## determine which build we're doing
-#if test -d gs; then
-#  BUILD_TYPE='ghostpdl'
-#else
-#  BUILD_TYPE='gs'
-#fi
-## fall back to build type if we don't have a target
-#if test -z "$TARGET"; then
-#  TARGET="$BUILD_TYPE"
-#fi
-#
-#
-# try get the current revision
-#REV=''
-#if test -d .svn; then
-#  REV=`svn info | grep Revision | cut -d ' ' -f 2`
-#elif test -d .git; then
-#  REV=`git rev-parse HEAD`
-#fi
-#if test -z "$REV"; then
-#  REV='unknown'
-#fi
-#
-#echo "Pushing to $DEST/$TARGET on the cluster..."
-#
-#echo -n "Copying regression baseline"
-#if test -z "$BUILD_TYPE"; then echo " $0 aborted."; exit 1; fi
-#echo " from $BUILD_TYPE..."
-#ssh $HOST "cp regression/$BUILD_TYPE/reg_baseline.txt $DEST/$TARGET/"
-#if test ! $? -eq 0; then
-#  echo "$0 aborted."
-#  exit 1
-#fi
+
 #
 #echo "Queuing regression test..."
 #echo "cd $DEST/$TARGET && run_regression" | ssh $HOST
