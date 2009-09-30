@@ -733,9 +733,16 @@ gmode_do_reset(
     }
 
     if (type &  pcl_reset_permanent)
-        if (pcs->raster_state.graphics_mode)
+        if (pcs->raster_state.graphics_mode) {
+            /* pcl_end_graphics will call grestore, likely there will
+               be no other graphic states on the stack, because
+               everything has been taken down for permananent reset,
+               if that is the case the grestore will result in a
+               wraparound gsave, see the code in gsstate, thus the
+               need for a subsequent gs_grestore_only. */
             pcl_end_graphics_mode(pcs);
-
+            gs_grestore_only(pcs->pgs);
+        }
 }
 
 const pcl_init_t    rtgmode_init = { gmode_do_registration, gmode_do_reset, 0 };
