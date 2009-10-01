@@ -28,7 +28,7 @@ enum { SPREAD_PAD, SPREAD_REPEAT, SPREAD_REFLECT };
  */
 
 static int
-xps_parse_gradient_stops(xps_context_t *ctx, xps_item_t *node,
+xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
 	float *offsets, float *colors, int maxcount)
 {
     int count = 0;
@@ -46,7 +46,7 @@ xps_parse_gradient_stops(xps_context_t *ctx, xps_item_t *node,
 	    {
 		offsets[count] = atof(offset);
 
-		xps_parse_color(ctx, color, &colorspace, sample);
+		xps_parse_color(ctx, base_uri, color, &colorspace, sample);
 
 		/* Convert color to sRGB by calling ICClib directly */
 
@@ -56,7 +56,7 @@ xps_parse_gradient_stops(xps_context_t *ctx, xps_item_t *node,
 		    double xyz[3];
 		    int i;
 
-		    struct _icc *icc = colorspace->params.icc.picc_info->picc;
+		    // struct _icc *icc = colorspace->params.icc.picc_info->picc;
 		    struct _icmLuBase *lu = colorspace->params.icc.picc_info->plu;
 
 		    for (i = 0; i < cs_num_components(colorspace); i++)
@@ -675,7 +675,7 @@ xps_draw_linear_gradient(xps_context_t *ctx, xps_item_t *root, int spread, gs_fu
  */
 
 static int
-xps_parse_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root,
+xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root,
 	int (*draw)(xps_context_t *, xps_item_t *, int, gs_function_t *))
 {
     xps_item_t *node;
@@ -720,7 +720,7 @@ xps_parse_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *r
 	    stop_tag = xps_down(node);
     }
 
-    xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag);
+    xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag, NULL);
 
     spread_method = SPREAD_PAD;
     if (spread_att)
@@ -742,7 +742,7 @@ xps_parse_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *r
     if (!stop_tag)
 	return gs_throw(-1, "missing gradient stops tag");
 
-    stop_count = xps_parse_gradient_stops(ctx, stop_tag, stop_offsets, stop_colors, MAX_STOPS);
+    stop_count = xps_parse_gradient_stops(ctx, base_uri, stop_tag, stop_offsets, stop_colors, MAX_STOPS);
     if (stop_count == 0)
 	return gs_throw(-1, "no gradient stops found");
 
@@ -764,7 +764,7 @@ xps_parse_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *r
 
     xps_bounds_in_user_space(ctx, &bbox);
 
-    xps_begin_opacity(ctx, dict, opacity_att, NULL);
+    xps_begin_opacity(ctx, base_uri, dict, opacity_att, NULL);
 
     if (ctx->opacity_only)
     {
@@ -793,7 +793,7 @@ xps_parse_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *r
 	}
     }
 
-    xps_end_opacity(ctx, dict, opacity_att, NULL);
+    xps_end_opacity(ctx, base_uri, dict, opacity_att, NULL);
 
     gs_grestore(ctx->pgs);
 
@@ -806,20 +806,20 @@ xps_parse_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *r
 }
 
 int
-xps_parse_linear_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
+xps_parse_linear_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root)
 {
     int code;
-    code = xps_parse_gradient_brush(ctx, dict, root, xps_draw_linear_gradient);
+    code = xps_parse_gradient_brush(ctx, base_uri, dict, root, xps_draw_linear_gradient);
     if (code < 0)
 	return gs_rethrow(code, "cannot parse linear gradient brush");
     return gs_okay;
 }
 
 int
-xps_parse_radial_gradient_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
+xps_parse_radial_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root)
 {
     int code;
-    code = xps_parse_gradient_brush(ctx, dict, root, xps_draw_radial_gradient);
+    code = xps_parse_gradient_brush(ctx, base_uri, dict, root, xps_draw_radial_gradient);
     if (code < 0)
 	return gs_rethrow(code, "cannot parse radial gradient brush");
     return gs_okay;

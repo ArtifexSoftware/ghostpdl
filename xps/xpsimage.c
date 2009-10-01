@@ -25,8 +25,8 @@ xps_convert_16_to_8(xps_context_t *ctx, xps_image_t *image)
 {
 	int n = image->comps;
 	int y, x, k;
-	unsigned short *sp = image->samples;
-	unsigned char  *dp = image->samples;
+	unsigned short *sp = (unsigned short *) image->samples;
+	unsigned char *dp = (unsigned char *) image->samples;
 
 	for (y = 0; y < image->height; y++)
 		for (x = 0; x < image->width; x++)
@@ -234,10 +234,9 @@ xps_paint_image_brush_imp(xps_context_t *ctx, xps_image_t *image, int alpha)
 }
 
 static int
-xps_paint_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root, void *vimage)
+xps_paint_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root, void *vimage)
 {
     xps_image_t *image = vimage;
-    int code;
 
     if (ctx->opacity_only)
     {
@@ -270,12 +269,11 @@ xps_paint_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
     {
 	xps_paint_image_brush_imp(ctx, image, 0);
     }
-
-    return 0;
+return 0;
 }
 
 static int
-xps_find_image_brush_source_part(xps_context_t *ctx, xps_item_t *root, xps_part_t **partp)
+xps_find_image_brush_source_part(xps_context_t *ctx, char *base_uri, xps_item_t *root, xps_part_t **partp)
 {
     xps_part_t *part;
     char *image_source_att;
@@ -284,7 +282,6 @@ xps_find_image_brush_source_part(xps_context_t *ctx, xps_item_t *root, xps_part_
     char *image_name;
     char *profile_name;
     char *p;
-    int code;
 
     image_source_att = xps_att(root, "ImageSource");
     if (!image_source_att)
@@ -325,7 +322,7 @@ xps_find_image_brush_source_part(xps_context_t *ctx, xps_item_t *root, xps_part_
 	dprintf2("warning: ignoring color profile '%s' associated with image '%s'\n",
 		profile_name, image_name);
 
-    xps_absolute_path(partname, ctx->pwd, image_name);
+    xps_absolute_path(partname, base_uri, image_name);
     part = xps_find_part(ctx, partname);
     if (!part)
 	return gs_throw1(-1, "cannot find image resource part '%s'", partname);
@@ -335,12 +332,12 @@ xps_find_image_brush_source_part(xps_context_t *ctx, xps_item_t *root, xps_part_
 }
 
 int
-xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
+xps_parse_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root)
 {
     xps_part_t *part;
     int code;
 
-    code = xps_find_image_brush_source_part(ctx, root, &part);
+    code = xps_find_image_brush_source_part(ctx, base_uri, root, &part);
     if (code < 0)
 	return gs_rethrow(code, "cannot find image source");
 
@@ -355,7 +352,7 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 	    return gs_rethrow(-1, "cannot decode image resource");
     }
 
-    xps_parse_tiling_brush(ctx, dict, root, xps_paint_image_brush, part->image);
+    xps_parse_tiling_brush(ctx, base_uri, dict, root, xps_paint_image_brush, part->image);
 
     /* TODO: free the image data here if the image is only used once on the page */
 
@@ -363,12 +360,12 @@ xps_parse_image_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root
 }
 
 int
-xps_image_brush_has_transparency(xps_context_t *ctx, xps_item_t *root)
+xps_image_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
 {
     xps_part_t *part;
     int code;
 
-    code = xps_find_image_brush_source_part(ctx, root, &part);
+    code = xps_find_image_brush_source_part(ctx, base_uri, root, &part);
     if (code < 0)
 	return gs_rethrow(code, "cannot find image source");
 
@@ -385,7 +382,7 @@ xps_image_brush_has_transparency(xps_context_t *ctx, xps_item_t *root)
 	    return gs_rethrow(-1, "cannot decode image resource");
     }
 
-    return part->image->alpha;
+    return part->image->alpha != NULL;
 }
 
 void

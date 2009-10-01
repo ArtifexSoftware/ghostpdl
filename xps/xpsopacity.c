@@ -16,7 +16,8 @@
 #include "ghostxps.h"
 
 int
-xps_begin_opacity(xps_context_t *ctx, xps_resource_t *dict, char *opacity_att, xps_item_t *opacity_mask_tag)
+xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
+	char *opacity_att, xps_item_t *opacity_mask_tag)
 {
     gs_transparency_group_params_t tgp;
     gs_transparency_mask_params_t tmp;
@@ -56,7 +57,7 @@ xps_begin_opacity(xps_context_t *ctx, xps_resource_t *dict, char *opacity_att, x
 	save = ctx->opacity_only;
 	ctx->opacity_only = 1;
 
-	xps_parse_brush(ctx, dict, opacity_mask_tag);
+	xps_parse_brush(ctx, base_uri, dict, opacity_mask_tag);
 
 	gs_grestore(ctx->pgs);
 
@@ -73,7 +74,8 @@ xps_begin_opacity(xps_context_t *ctx, xps_resource_t *dict, char *opacity_att, x
 }
 
 int
-xps_end_opacity(xps_context_t *ctx, xps_resource_t *dict, char *opacity_att, xps_item_t *opacity_mask_tag)
+xps_end_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
+	char *opacity_att, xps_item_t *opacity_mask_tag)
 {
     if (!opacity_att && !opacity_mask_tag)
 	return 0;

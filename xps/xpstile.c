@@ -25,12 +25,13 @@ enum { TILE_NONE, TILE_TILE, TILE_FLIP_X, TILE_FLIP_Y, TILE_FLIP_X_Y };
 struct tile_closure_s
 {
     xps_context_t *ctx;
+    char *base_uri;
     xps_resource_t *dict;
     xps_item_t *tag;
     gs_rect viewbox;
     int tile_mode;
     void *user;
-    int (*func)(xps_context_t*, xps_resource_t*, xps_item_t*, void*);
+    int (*func)(xps_context_t*, char*, xps_resource_t*, xps_item_t*, void*);
 };
 
 static int
@@ -59,7 +60,7 @@ xps_paint_tiling_brush_clipped(struct tile_closure_s *c)
 
     ctx->bounds = c->viewbox; // transform?
 
-    code = c->func(c->ctx, c->dict, c->tag, c->user);
+    code = c->func(c->ctx, c->base_uri, c->dict, c->tag, c->user);
 
     ctx->bounds = saved_bounds;
 
@@ -114,8 +115,8 @@ xps_paint_tiling_brush(const gs_client_color *pcc, gs_state *pgs)
 }
 
 int
-xps_parse_tiling_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root,
-	int (*func)(xps_context_t*, xps_resource_t*, xps_item_t*, void*), void *user)
+xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root,
+	int (*func)(xps_context_t*, char*, xps_resource_t*, xps_item_t*, void*), void *user)
 {
     xps_item_t *node;
 
@@ -151,7 +152,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
 	    transform_tag = xps_down(node);
     }
 
-    xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag);
+    xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag, NULL);
 
     gs_make_identity(&transform);
     if (transform_att)
@@ -195,7 +196,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
 
     gs_gsave(ctx->pgs);
 
-    xps_begin_opacity(ctx, dict, opacity_att, NULL);
+    xps_begin_opacity(ctx, base_uri, dict, opacity_att, NULL);
 
     if (tile_mode != TILE_NONE)
     {
@@ -206,6 +207,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
 	gs_color_space *cs;
 
 	closure.ctx = ctx;
+	closure.base_uri = base_uri;
 	closure.dict = dict;
 	closure.tag = root;
 	closure.tile_mode = tile_mode;
@@ -280,12 +282,12 @@ xps_parse_tiling_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
 	gs_clip(ctx->pgs);
 	gs_newpath(ctx->pgs);
 
-	func(ctx, dict, root, user);
+	func(ctx, base_uri, dict, root, user);
 
 	xps_unclip(ctx, &saved_bounds);
     }
 
-    xps_end_opacity(ctx, dict, opacity_att, NULL);
+    xps_end_opacity(ctx, base_uri, dict, opacity_att, NULL);
 
     gs_grestore(ctx->pgs);
 

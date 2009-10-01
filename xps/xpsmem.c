@@ -30,7 +30,7 @@ xps_strcasecmp(char *a, char *b)
 	{
 		if (*a++ == 0)
 			return 0;
-		*b++;
+		b++;
 	}
 	return xps_tolower(*a) - xps_tolower(*b);
 }
@@ -104,7 +104,7 @@ xps_clean_path(char *name)
 }
 
 void
-xps_absolute_path(char *output, char *pwd, char *path)
+xps_absolute_path(char *output, char *base_uri, char *path)
 {
     if (path[0] == '/')
     {
@@ -112,7 +112,7 @@ xps_absolute_path(char *output, char *pwd, char *path)
     }
     else
     {
-	strcpy(output, pwd);
+	strcpy(output, base_uri);
 	strcat(output, "/");
 	strcat(output, path);
     }

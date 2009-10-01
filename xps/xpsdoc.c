@@ -259,7 +259,7 @@ void xps_debug_fixdocseq(xps_context_t *ctx)
     }
 }
 
-int
+static int
 xps_add_fixed_document(xps_context_t *ctx, char *name)
 {
     xps_document_t *fixdoc;
@@ -314,7 +314,7 @@ xps_free_fixed_documents(xps_context_t *ctx)
     ctx->last_fixdoc = NULL;
 }
 
-int
+static int
 xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
 {
     xps_page_t *page;
@@ -383,10 +383,10 @@ xps_free_fixed_pages(xps_context_t *ctx)
  * not be drawn more than once.
  */
 
-void
+static void
 xps_free_used_parts(xps_context_t *ctx)
 {
-    /* TODO: actually do what we should. for now we just free cached resources. */
+    /* Free parsed resources that were used on the last page */
     xps_part_t *part = ctx->first_part;
     while (part)
     {
@@ -394,6 +394,10 @@ xps_free_used_parts(xps_context_t *ctx)
 	xps_free_part_caches(ctx, part);
 	part = next;
     }
+
+    /* TODO: Free the data for page parts we have rendered */
+    /* TODO: Free the data for parts we don't recognize */
+    /* TODO: Parse DiscardControl parts to free stuff */
 }
 
 /*
@@ -434,8 +438,6 @@ xps_handle_metadata(void *zp, char *name, char **atts)
     xps_context_t *ctx = zp;
     int i;
 
-#ifdef XPS_LOAD_TYPE_MAPS
-
     if (!strcmp(name, "Default"))
     {
 	char *extension = NULL;
@@ -469,8 +471,6 @@ xps_handle_metadata(void *zp, char *name, char **atts)
 	if (partname && type)
 	    xps_add_override(ctx, partname, type);
     }
-
-#endif
 
     if (!strcmp(name, "Relationship"))
     {
@@ -517,7 +517,7 @@ xps_handle_metadata(void *zp, char *name, char **atts)
 
 	if (source)
 	{
-	    xps_absolute_path(srcbuf, ctx->pwd, source);
+	    xps_absolute_path(srcbuf, ctx->base_uri, source);
 	    xps_add_fixed_document(ctx, srcbuf);
 	}
     }
@@ -541,7 +541,7 @@ xps_handle_metadata(void *zp, char *name, char **atts)
 
 	if (source)
 	{
-	    xps_absolute_path(srcbuf, ctx->pwd, source);
+	    xps_absolute_path(srcbuf, ctx->base_uri, source);
 	    xps_add_fixed_page(ctx, srcbuf, width, height);
 	}
     }
@@ -551,13 +551,16 @@ static int
 xps_process_metadata(xps_context_t *ctx, xps_part_t *part)
 {
     XML_Parser xp;
+    char buf[1024];
     char *s;
 
     /* Save directory name part */
-    strcpy(ctx->pwd, part->name);
-    s = strrchr(ctx->pwd, '/');
+    strcpy(buf, part->name);
+    s = strrchr(buf, '/');
     if (s)
 	s[1] = 0;
+
+    ctx->base_uri = buf;
 
     xp = XML_ParserCreate(NULL);
     if (!xp)
@@ -570,6 +573,8 @@ xps_process_metadata(xps_context_t *ctx, xps_part_t *part)
     (void) XML_Parse(xp, part->data, part->size, 1);
 
     XML_ParserFree(xp);
+
+    ctx->base_uri = NULL;
 
     return 0;
 }
@@ -608,7 +613,7 @@ xps_parse_color_relation(xps_context_t *ctx, char *string)
 	if (ep)
 	{
 	    *ep = 0;
-	    xps_absolute_path(path, ctx->pwd, sp);
+	    xps_absolute_path(path, ctx->base_uri, sp);
 	    xps_trim_url(path);
 	    xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
 	}
@@ -635,7 +640,7 @@ xps_parse_image_relation(xps_context_t *ctx, char *string)
 	    if (ep)
 	    {
 		*ep = 0;
-		xps_absolute_path(path, ctx->pwd, sp);
+		xps_absolute_path(path, ctx->base_uri, sp);
 		xps_trim_url(path);
 		xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
 
@@ -644,7 +649,7 @@ xps_parse_image_relation(xps_context_t *ctx, char *string)
 		if (ep)
 		{
 		    *ep = 0;
-		    xps_absolute_path(path, ctx->pwd, sp);
+		    xps_absolute_path(path, ctx->base_uri, sp);
 		    xps_trim_url(path);
 		    xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
 		}
@@ -653,7 +658,7 @@ xps_parse_image_relation(xps_context_t *ctx, char *string)
     }
     else
     {
-	xps_absolute_path(path, ctx->pwd, string);
+	xps_absolute_path(path, ctx->base_uri, string);
 	xps_trim_url(path);
 	xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
     }
@@ -679,7 +684,7 @@ xps_parse_content_relations_imp(void *zp, char *ns_name, char **atts)
 	{
 	    if (!strcmp(atts[i], "FontUri"))
 	    {
-		xps_absolute_path(path, ctx->pwd, atts[i+1]);
+		xps_absolute_path(path, ctx->base_uri, atts[i+1]);
 		xps_trim_url(path);
 		xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
 	    }
@@ -699,7 +704,7 @@ xps_parse_content_relations_imp(void *zp, char *ns_name, char **atts)
 	{
 	    if (!strcmp(atts[i], "Source"))
 	    {
-		xps_absolute_path(path, ctx->pwd, atts[i+1]);
+		xps_absolute_path(path, ctx->base_uri, atts[i+1]);
 		xps_trim_url(path);
 		xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE_RECURSIVE);
 	    }
@@ -725,8 +730,17 @@ int
 xps_parse_content_relations(xps_context_t *ctx, xps_part_t *part)
 {
     XML_Parser xp;
+    char buf[1024];
+    char *s;
+
+    /* Set current directory for resolving relative path names */
+    strcpy(buf, part->name);
+    s = strrchr(buf, '/');
+    if (s)
+	s[1] = 0;
 
     ctx->state = part->name;
+    ctx->base_uri = buf;
 
     if (xps_doc_trace)
 	dprintf1("doc: parsing relations from content (%s)\n", part->name);
@@ -751,6 +765,7 @@ xps_parse_content_relations(xps_context_t *ctx, xps_part_t *part)
     }
 
     ctx->state = NULL;
+    ctx->base_uri = NULL;
 
     return 0;
 }
@@ -904,12 +919,6 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
 	    xps_relation_t *rel;
 	    int have_resources;
 	    char *s;
-
-	    /* Set current directory for resolving relative path names */
-	    strcpy(ctx->pwd, pagepart->name);
-	    s = strrchr(ctx->pwd, '/');
-	    if (s)
-		s[1] = 0;
 
 	    if (!pagepart->relations_complete)
 	    {

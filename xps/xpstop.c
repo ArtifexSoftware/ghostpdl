@@ -110,6 +110,7 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     ctx->memory = pmem;
     ctx->pgs = pgs;
     ctx->fontdir = NULL;
+    ctx->file = NULL;
 
     /* TODO: load some builtin ICC profiles here */
     ctx->gray = gs_cspace_new_DeviceGray(ctx->memory); /* profile for gray images */
@@ -345,6 +346,12 @@ xps_imp_dnit_job(pl_interp_instance_t *pinstance)
         if (ctx->defaults)
 	    xps_free_type_map(ctx, ctx->defaults);
 	ctx->defaults = NULL;
+    }
+
+    if (ctx->file)
+    {
+	fclose(ctx->file);
+	ctx->file = NULL;
     }
 
     return 0;

@@ -31,6 +31,7 @@ struct xps_parser_s
     xps_item_t *head;
     const char *error;
     int compat;
+    char *base; /* base of relative URIs */
 };
 
 struct xps_item_s

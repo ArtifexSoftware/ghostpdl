@@ -25,16 +25,17 @@ struct userdata
 };
 
 static int
-xps_paint_visual_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root, void *visual_tag)
+xps_paint_visual_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root, void *visual_tag)
 {
-    return xps_parse_element(ctx, dict, (xps_item_t *)visual_tag);
+    return xps_parse_element(ctx, base_uri, dict, (xps_item_t *)visual_tag);
 }
 
 int
-xps_parse_visual_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
+xps_parse_visual_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root)
 {
     xps_item_t *node;
 
+    char *visual_uri;
     char *visual_att;
     xps_item_t *visual_tag = NULL;
 
@@ -46,11 +47,12 @@ xps_parse_visual_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *roo
 	    visual_tag = xps_down(node);
     }
 
-    xps_resolve_resource_reference(ctx, dict, &visual_att, &visual_tag);
+    visual_uri = base_uri;
+    xps_resolve_resource_reference(ctx, dict, &visual_att, &visual_tag, &visual_uri);
 
     if (visual_tag)
     {
-	xps_parse_tiling_brush(ctx, dict, root, xps_paint_visual_brush, visual_tag);
+	xps_parse_tiling_brush(ctx, visual_uri, dict, root, xps_paint_visual_brush, visual_tag);
     }
 
     return 0;

@@ -16,18 +16,26 @@
 #include "ghostxps.h"
 
 static xps_item_t *
-xps_find_resource(xps_context_t *ctx, xps_resource_t *dict, char *name)
+xps_find_resource(xps_context_t *ctx, xps_resource_t *dict, char *name, char **urip)
 {
     xps_resource_t *head, *node;
     for (head = dict; head; head = head->parent)
+    {
 	for (node = head; node; node = node->next)
+	{
 	    if (!strcmp(node->name, name))
+	    {
+		if (urip && head->base_uri)
+		    *urip = head->base_uri;
 		return node->data;
+	    }
+	}
+    }
     return NULL;
 }
 
 static xps_item_t *
-xps_parse_resource_reference(xps_context_t *ctx, xps_resource_t *dict, char *att)
+xps_parse_resource_reference(xps_context_t *ctx, xps_resource_t *dict, char *att, char **urip)
 {
     char name[1024];
     char *s;
@@ -40,16 +48,16 @@ xps_parse_resource_reference(xps_context_t *ctx, xps_resource_t *dict, char *att
     if (s)
 	*s = 0;
 
-    return xps_find_resource(ctx, dict, name);
+    return xps_find_resource(ctx, dict, name, urip);
 }
 
 int
 xps_resolve_resource_reference(xps_context_t *ctx, xps_resource_t *dict,
-	char **attp, xps_item_t **tagp)
+	char **attp, xps_item_t **tagp, char **urip)
 {
     if (*attp)
     {
-	xps_item_t *rsrc = xps_parse_resource_reference(ctx, dict, *attp);
+	xps_item_t *rsrc = xps_parse_resource_reference(ctx, dict, *attp, urip);
 	if (rsrc)
 	{
 	    *attp = NULL;
@@ -60,12 +68,15 @@ xps_resolve_resource_reference(xps_context_t *ctx, xps_resource_t *dict,
 }
 
 xps_resource_t *
-xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *source_att)
+xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *base_uri, char *source_att)
 {
     char part_name[1024];
+    char part_uri[1024];
     xps_part_t *part;
+    char *s;
 
-    xps_absolute_path(part_name, ctx->pwd, source_att);
+    /* External resource dictionaries MUST NOT reference other resource dictionaries */
+    xps_absolute_path(part_name, base_uri, source_att);
     part = xps_find_part(ctx, part_name);
     if (!part)
     {
@@ -89,11 +100,16 @@ xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *source_att)
 	return NULL;
     }
 
-    return xps_parse_resource_dictionary(ctx, part->xml);
+    strcpy(part_uri, part_name);
+    s = strrchr(part_uri, '/');
+    if (s)
+	s[1] = 0;
+
+    return xps_parse_resource_dictionary(ctx, part_uri, part->xml);
 }
 
 xps_resource_t *
-xps_parse_resource_dictionary(xps_context_t *ctx, xps_item_t *root)
+xps_parse_resource_dictionary(xps_context_t *ctx, char *base_uri, xps_item_t *root)
 {
     xps_resource_t *head;
     xps_resource_t *entry;
@@ -103,7 +119,7 @@ xps_parse_resource_dictionary(xps_context_t *ctx, xps_item_t *root)
 
     source = xps_att(root, "Source");
     if (source)
-	return xps_parse_remote_resource_dictionary(ctx, source);
+	return xps_parse_remote_resource_dictionary(ctx, base_uri, source);
 
     head = NULL;
 
@@ -120,6 +136,7 @@ xps_parse_resource_dictionary(xps_context_t *ctx, xps_item_t *root)
 		return head;
 	    }
 	    entry->name = key;
+	    entry->base_uri = NULL;
 	    entry->data = node;
 	    entry->next = head;
 	    entry->parent = NULL;
@@ -127,17 +144,41 @@ xps_parse_resource_dictionary(xps_context_t *ctx, xps_item_t *root)
 	}
     }
 
+    head->base_uri = xps_alloc(ctx, strlen(base_uri) + 1);
+    strcpy(head->base_uri, base_uri);
+
     return head;
 }
 
-void xps_free_resource_dictionary(xps_context_t *ctx, xps_resource_t *dict)
+void
+xps_free_resource_dictionary(xps_context_t *ctx, xps_resource_t *dict)
 {
     xps_resource_t *next;
     while (dict)
     {
 	next = dict->next;
+	if (dict->base_uri)
+	    xps_free(ctx, dict->base_uri);
 	xps_free(ctx, dict);
 	dict = next;
+    }
+}
+
+void
+xps_debug_resource_dictionary(xps_resource_t *dict)
+{
+    while (dict)
+    {
+	if (dict->base_uri)
+	    dprintf1("URI = '%s'\n", dict->base_uri);
+	dprintf2("KEY = '%s' VAL = %p\n", dict->name, dict->data);
+	if (dict->parent)
+	{
+	    dputs("PARENT = {\n");
+	    xps_debug_resource_dictionary(dict->parent);
+	    dputs("}\n");
+	}
+	dict = dict->next;
     }
 }
 

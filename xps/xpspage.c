@@ -15,10 +15,11 @@
 
 #include "ghostxps.h"
 
-int xps_parse_canvas(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
+int xps_parse_canvas(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root)
 {
     xps_resource_t *new_dict = NULL;
     xps_item_t *node;
+    char *opacity_mask_uri;
 
     char *transform_att;
     char *clip_att;
@@ -42,7 +43,7 @@ int xps_parse_canvas(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     {
 	if (!strcmp(xps_tag(node), "Canvas.Resources"))
 	{
-	    new_dict = xps_parse_resource_dictionary(ctx, xps_down(node));
+	    new_dict = xps_parse_resource_dictionary(ctx, base_uri, xps_down(node));
 	    if (new_dict)
 	    {
 		new_dict->parent = dict;
@@ -58,9 +59,10 @@ int xps_parse_canvas(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	    opacity_mask_tag = xps_down(node);
     }
 
-    xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag);
-    xps_resolve_resource_reference(ctx, dict, &clip_att, &clip_tag);
-    xps_resolve_resource_reference(ctx, dict, &opacity_mask_att, &opacity_mask_tag);
+    opacity_mask_uri = base_uri;
+    xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag, NULL);
+    xps_resolve_resource_reference(ctx, dict, &clip_att, &clip_tag, NULL);
+    xps_resolve_resource_reference(ctx, dict, &opacity_mask_att, &opacity_mask_tag, &opacity_mask_uri);
 
     gs_gsave(ctx->pgs);
 
@@ -80,11 +82,11 @@ int xps_parse_canvas(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	xps_clip(ctx, &saved_bounds);
     }
 
-    xps_begin_opacity(ctx, dict, opacity_att, opacity_mask_tag);
+    xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
     for (node = xps_down(root); node; node = xps_next(node))
     {
-	xps_parse_element(ctx, dict, node);
+	xps_parse_element(ctx, base_uri, dict, node);
     }
 
     if (clip_att || clip_tag)
@@ -92,7 +94,7 @@ int xps_parse_canvas(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	xps_unclip(ctx, &saved_bounds);
     }
 
-    xps_end_opacity(ctx, dict, opacity_att, opacity_mask_tag);
+    xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
     gs_grestore(ctx->pgs);
 
@@ -116,8 +118,15 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     gs_point pt0, pt1;
     gs_rect rc;
     int has_transparency;
+    char base_uri[1024];
+    char *s;
 
     /* dprintf1("xps: page %s\n", part->name); */
+
+    strcpy(base_uri, part->name);
+    s = strrchr(base_uri, '/');
+    if (s)
+	s[1] = 0;
 
     root = xps_parse_xml(ctx, part->data, part->size);
     if (!root)
@@ -196,9 +205,9 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     for (node = xps_down(root); node; node = xps_next(node))
     {
 	if (!strcmp(xps_tag(node), "FixedPage.Resources"))
-	    if (xps_resource_dictionary_has_transparency(ctx, xps_down(node)))
+	    if (xps_resource_dictionary_has_transparency(ctx, base_uri, xps_down(node)))
 		has_transparency = 1;
-	if (xps_element_has_transparency(ctx, node))
+	if (xps_element_has_transparency(ctx, base_uri, node))
 	    has_transparency = 1;
     }
 
@@ -222,8 +231,8 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     for (node = xps_down(root); node; node = xps_next(node))
     {
 	if (!strcmp(xps_tag(node), "FixedPage.Resources"))
-	    dict = xps_parse_resource_dictionary(ctx, xps_down(node));
-	xps_parse_element(ctx, dict, node);
+	    dict = xps_parse_resource_dictionary(ctx, base_uri, xps_down(node));
+	xps_parse_element(ctx, base_uri, dict, node);
     }
 
     if (ctx->use_transparency && has_transparency)

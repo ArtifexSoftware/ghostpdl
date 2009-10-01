@@ -16,30 +16,30 @@
 #include "ghostxps.h"
 
 int
-xps_parse_brush(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node)
+xps_parse_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node)
 {
     if (!strcmp(xps_tag(node), "SolidColorBrush"))
-	return xps_parse_solid_color_brush(ctx, dict, node);
+	return xps_parse_solid_color_brush(ctx, base_uri, dict, node);
     if (!strcmp(xps_tag(node), "ImageBrush"))
-	return xps_parse_image_brush(ctx, dict, node);
+	return xps_parse_image_brush(ctx, base_uri, dict, node);
     if (!strcmp(xps_tag(node), "VisualBrush"))
-	return xps_parse_visual_brush(ctx, dict, node);
+	return xps_parse_visual_brush(ctx, base_uri, dict, node);
     if (!strcmp(xps_tag(node), "LinearGradientBrush"))
-	return xps_parse_linear_gradient_brush(ctx, dict, node);
+	return xps_parse_linear_gradient_brush(ctx, base_uri, dict, node);
     if (!strcmp(xps_tag(node), "RadialGradientBrush"))
-	return xps_parse_radial_gradient_brush(ctx, dict, node);
+	return xps_parse_radial_gradient_brush(ctx, base_uri, dict, node);
     return gs_throw1(-1, "unknown brush tag: %s", xps_tag(node));
 }
 
 int
-xps_parse_element(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *node)
+xps_parse_element(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node)
 {
     if (!strcmp(xps_tag(node), "Path"))
-	return xps_parse_path(ctx, dict, node);
+	return xps_parse_path(ctx, base_uri, dict, node);
     if (!strcmp(xps_tag(node), "Glyphs"))
-	return xps_parse_glyphs(ctx, dict, node);
+	return xps_parse_glyphs(ctx, base_uri, dict, node);
     if (!strcmp(xps_tag(node), "Canvas"))
-	return xps_parse_canvas(ctx, dict, node);
+	return xps_parse_canvas(ctx, base_uri, dict, node);
     /* skip unknown tags (like Foo.Resources and similar) */
     return 0;
 }

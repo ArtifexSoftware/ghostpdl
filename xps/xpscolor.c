@@ -62,7 +62,7 @@ static int count_commas(char *s)
 }
 
 int
-xps_parse_color(xps_context_t *ctx, char *string, gs_color_space **csp, float *samples)
+xps_parse_color(xps_context_t *ctx, char *base_uri, char *string, gs_color_space **csp, float *samples)
 {
     xps_part_t *part;
     char *profile, *p;
@@ -151,14 +151,14 @@ xps_parse_color(xps_context_t *ctx, char *string, gs_color_space **csp, float *s
 	if (n == 5) /* alpha + CMYK */
 	    *csp = ctx->cmyk;
 
-#if 0 /* disable ICC profiles for beta */
-
 	/* Find ICC colorspace part */
 
-	xps_absolute_path(partname, ctx->pwd, profile);
+	xps_absolute_path(partname, base_uri, profile);
 	part = xps_find_part(ctx, partname);
 	if (!part)
 	    return gs_throw1(-1, "cannot find icc profile part '%s'", partname);
+
+#if 0 /* disable ICC profiles for beta */
 
 	if (!part->icc)
 	{
@@ -175,11 +175,11 @@ xps_parse_color(xps_context_t *ctx, char *string, gs_color_space **csp, float *s
 
     else
     {
-	return gs_throw1(-1, "cannot parse color (%s)\n", string);
+	return gs_throw1(-1, "cannot parse color (%s)", string);
     }
 }
 
-stream *
+static stream *
 xps_stream_from_buffer(xps_context_t *ctx, byte *data, int length)
 {
     stream *stm;
@@ -233,8 +233,7 @@ xps_parse_icc_profile(xps_context_t *ctx, gs_color_space **csp, byte *data, int 
 }
 
 int
-xps_parse_solid_color_brush(xps_context_t *ctx,
-	xps_resource_t *dict, xps_item_t *node)
+xps_parse_solid_color_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node)
 {
     char *opacity_att;
     char *color_att;
@@ -251,7 +250,7 @@ xps_parse_solid_color_brush(xps_context_t *ctx,
     samples[3] = 0.0;
 
     if (color_att)
-	xps_parse_color(ctx, color_att, &colorspace, samples);
+	xps_parse_color(ctx, base_uri, color_att, &colorspace, samples);
 
     if (opacity_att)
 	samples[0] = atof(opacity_att);

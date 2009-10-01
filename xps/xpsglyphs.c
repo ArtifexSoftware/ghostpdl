@@ -78,7 +78,7 @@ void xps_debug_path(xps_context_t *ctx)
  * Some fonts in XPS are obfuscated by XOR:ing the first 32 bytes of the
  * data with the GUID in the fontname.
  */
-int
+static int
 xps_deobfuscate_font_resource(xps_context_t *ctx, xps_part_t *part)
 {
     byte buf[33];
@@ -124,7 +124,7 @@ xps_deobfuscate_font_resource(xps_context_t *ctx, xps_part_t *part)
     return 0;
 }
 
-int
+static int
 xps_select_best_font_encoding(xps_font_t *font)
 {
     static struct { int pid, eid; } xps_cmap_list[] =
@@ -164,7 +164,8 @@ xps_select_best_font_encoding(xps_font_t *font)
  * Call text drawing primitives.
  */
 
-int xps_flush_text_buffer(xps_context_t *ctx, xps_font_t *font,
+static int
+xps_flush_text_buffer(xps_context_t *ctx, xps_font_t *font,
 	xps_text_buffer_t *buf, int is_charpath)
 {
     gs_text_params_t params;
@@ -325,7 +326,7 @@ xps_parse_glyph_metrics(char *s, float *advance, float *uofs, float *vofs)
     return s;
 }
 
-int
+static int
 xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
 	float originx, float originy, int is_sideways, int bidi_level,
 	char *indices, char *unicode, int is_charpath)
@@ -461,9 +462,13 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
 }
 
 int
-xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
+xps_parse_glyphs(xps_context_t *ctx,
+	char *base_uri, xps_resource_t *dict, xps_item_t *root)
 {
     xps_item_t *node;
+
+    char *fill_uri;
+    char *opacity_mask_uri;
 
     char *bidi_level_att;
     char *caret_stops_att;
@@ -538,10 +543,13 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	    fill_tag = xps_down(node);
     }
 
-    xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag);
-    xps_resolve_resource_reference(ctx, dict, &clip_att, &clip_tag);
-    xps_resolve_resource_reference(ctx, dict, &fill_att, &fill_tag);
-    xps_resolve_resource_reference(ctx, dict, &opacity_mask_att, &opacity_mask_tag);
+    fill_uri = base_uri;
+    opacity_mask_uri = base_uri;
+
+    xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag, NULL);
+    xps_resolve_resource_reference(ctx, dict, &clip_att, &clip_tag, NULL);
+    xps_resolve_resource_reference(ctx, dict, &fill_att, &fill_tag, &fill_uri);
+    xps_resolve_resource_reference(ctx, dict, &opacity_mask_att, &opacity_mask_tag, &opacity_mask_uri);
 
     /*
      * Check that we have all the necessary information.
@@ -563,9 +571,7 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
      * Find and load the font resource
      */
 
-    // TODO: get subfont index from # part of uri
-
-    xps_absolute_path(partname, ctx->pwd, font_uri_att);
+    xps_absolute_path(partname, base_uri, font_uri_att);
     subfont = strrchr(partname, '#');
     if (subfont)
     {
@@ -579,13 +585,9 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     /* deobfuscate if necessary */
     if (!part->deobfuscated)
     {
-#ifdef  XPS_LOAD_TYPE_MAPS
 	parttype = xps_get_content_type(ctx, part->name);
 	if (parttype && !strcmp(parttype, "application/vnd.ms-package.obfuscated-opentype"))
 	    xps_deobfuscate_font_resource(ctx, part);
-#else
-	parttype = NULL;
-#endif
 
 	/* stupid XPS files with content-types after the parts */
 	if (!parttype && strstr(part->name, ".odttf"))
@@ -647,7 +649,7 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     gs_matrix_multiply(&matrix, &font->font->orig_FontMatrix,
                        &font->font->FontMatrix);
 
-    xps_begin_opacity(ctx, dict, opacity_att, opacity_mask_tag);
+    xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
     /*
      * If it's a solid color brush fill/stroke do a simple fill
@@ -664,7 +666,7 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
     {
 	float samples[32];
 	gs_color_space *colorspace;
-	xps_parse_color(ctx, fill_att, &colorspace, samples);
+	xps_parse_color(ctx, base_uri, fill_att, &colorspace, samples);
 	if (fill_opacity_att)
 	    samples[0] = atof(fill_opacity_att);
 	xps_set_color(ctx, colorspace, samples);
@@ -684,10 +686,10 @@ xps_parse_glyphs(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	xps_parse_glyphs_imp(ctx, font, font_size,
 		atof(origin_x_att), atof(origin_y_att),
 		is_sideways, bidi_level, indices_att, unicode_att, 1);
-	xps_parse_brush(ctx, dict, fill_tag);
+	xps_parse_brush(ctx, fill_uri, dict, fill_tag);
     }
 
-    xps_end_opacity(ctx, dict, opacity_att, opacity_mask_tag);
+    xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
     gs_grestore(ctx->pgs);
 

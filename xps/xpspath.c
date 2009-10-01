@@ -852,8 +852,8 @@ xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *ro
 	    transform_tag = xps_down(node);
     }
 
-    xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag);
-    xps_resolve_resource_reference(ctx, dict, &figures_att, &figures_tag);
+    xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag, NULL);
+    xps_resolve_resource_reference(ctx, dict, &figures_att, &figures_tag, NULL);
 
     if (fill_rule_att)
     {
@@ -902,10 +902,14 @@ xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *ro
  */
 
 int
-xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
+xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root)
 {
     xps_item_t *node;
     int code;
+
+    char *fill_uri;
+    char *stroke_uri;
+    char *opacity_mask_uri;
 
     char *transform_att;
     char *clip_att;
@@ -987,12 +991,16 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	    data_tag = xps_down(node);
     }
 
-    xps_resolve_resource_reference(ctx, dict, &data_att, &data_tag);
-    xps_resolve_resource_reference(ctx, dict, &clip_att, &clip_tag);
-    xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag);
-    xps_resolve_resource_reference(ctx, dict, &fill_att, &fill_tag);
-    xps_resolve_resource_reference(ctx, dict, &stroke_att, &stroke_tag);
-    xps_resolve_resource_reference(ctx, dict, &opacity_mask_att, &opacity_mask_tag);
+    fill_uri = base_uri;
+    stroke_uri = base_uri;
+    opacity_mask_uri = base_uri;
+
+    xps_resolve_resource_reference(ctx, dict, &data_att, &data_tag, NULL);
+    xps_resolve_resource_reference(ctx, dict, &clip_att, &clip_tag, NULL);
+    xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag, NULL);
+    xps_resolve_resource_reference(ctx, dict, &fill_att, &fill_tag, &fill_uri);
+    xps_resolve_resource_reference(ctx, dict, &stroke_att, &stroke_tag, &stroke_uri);
+    xps_resolve_resource_reference(ctx, dict, &opacity_mask_att, &opacity_mask_tag, &opacity_mask_uri);
 
     /*
      * Act on the information we have gathered:
@@ -1092,11 +1100,11 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	xps_clip(ctx, &saved_bounds);
     }
 
-    xps_begin_opacity(ctx, dict, opacity_att, opacity_mask_tag);
+    xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
     if (fill_att)
     {
-	xps_parse_color(ctx, fill_att, &colorspace, samples);
+	xps_parse_color(ctx, base_uri, fill_att, &colorspace, samples);
 	if (fill_opacity_att)
 	    samples[0] = atof(fill_opacity_att);
 	xps_set_color(ctx, colorspace, samples);
@@ -1116,14 +1124,14 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	if (data_tag)
 	    xps_parse_path_geometry(ctx, dict, data_tag, 0);
 
-	code = xps_parse_brush(ctx, dict, fill_tag);
+	code = xps_parse_brush(ctx, fill_uri, dict, fill_tag);
 	if (code < 0)
 	    gs_catch(code, "cannot parse fill brush. ignoring error.");
     }
 
     if (stroke_att)
     {
-	xps_parse_color(ctx, stroke_att, &colorspace, samples);
+	xps_parse_color(ctx, base_uri, stroke_att, &colorspace, samples);
 	if (stroke_opacity_att)
 	    samples[0] = atof(stroke_opacity_att);
 	xps_set_color(ctx, colorspace, samples);
@@ -1146,7 +1154,7 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	ctx->fill_rule = 1; /* over-ride fill rule when converting outline to stroked */
 	gs_strokepath(ctx->pgs);
 
-	code = xps_parse_brush(ctx, dict, stroke_tag);
+	code = xps_parse_brush(ctx, stroke_uri, dict, stroke_tag);
 	if (code < 0)
 	    gs_catch(code, "cannot parse stroke brush. ignoring error.");
     }
@@ -1156,7 +1164,7 @@ xps_parse_path(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root)
 	xps_unclip(ctx, &saved_bounds);
     }
 
-    xps_end_opacity(ctx, dict, opacity_att, opacity_mask_tag);
+    xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
     gs_grestore(ctx->pgs);
 
