@@ -189,7 +189,7 @@ s_block_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     unsigned const char *block_data = ((unsigned char *)node) + block_offset;
     int count = iblock < (blocks - 1) ? ROMFS_BLOCKSIZE : filelen - (ROMFS_BLOCKSIZE * iblock);
 
-    if (s->position == filelen || block_data == NULL)
+    if (s->position + (s->cursor.r.limit - s->cbuf + 1) >= filelen || block_data == NULL)
 	return EOFC;			/* at EOF */
     if (s->file_limit < max_long) {
 	/* Adjust count for subfile limit */
@@ -201,7 +201,7 @@ s_block_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     /* get the block into the buffer */
     if (compression) {
 	unsigned long buflen = ROMFS_BLOCKSIZE;
-	const byte *dest = (pw->ptr + 1);	/* destination for unpack */
+	byte *dest = (pw->ptr + 1);	/* destination for unpack */
 	int need_copy = false;
 
 	/* If the dest is not in our buffer, we can only use it if there */
