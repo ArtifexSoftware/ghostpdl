@@ -41,7 +41,7 @@ int xps_parse_canvas(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, x
 
     for (node = xps_down(root); node; node = xps_next(node))
     {
-	if (!strcmp(xps_tag(node), "Canvas.Resources"))
+	if (!strcmp(xps_tag(node), "Canvas.Resources") && xps_down(node))
 	{
 	    new_dict = xps_parse_resource_dictionary(ctx, base_uri, xps_down(node));
 	    if (new_dict)
@@ -204,7 +204,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 
     for (node = xps_down(root); node; node = xps_next(node))
     {
-	if (!strcmp(xps_tag(node), "FixedPage.Resources"))
+	if (!strcmp(xps_tag(node), "FixedPage.Resources") && xps_down(node))
 	    if (xps_resource_dictionary_has_transparency(ctx, base_uri, xps_down(node)))
 		has_transparency = 1;
 	if (xps_element_has_transparency(ctx, base_uri, node))
@@ -230,7 +230,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 
     for (node = xps_down(root); node; node = xps_next(node))
     {
-	if (!strcmp(xps_tag(node), "FixedPage.Resources"))
+	if (!strcmp(xps_tag(node), "FixedPage.Resources") && xps_down(node))
 	    dict = xps_parse_resource_dictionary(ctx, base_uri, xps_down(node));
 	xps_parse_element(ctx, base_uri, dict, node);
     }
