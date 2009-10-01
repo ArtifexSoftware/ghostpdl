@@ -24,10 +24,14 @@ my $temp="./temp";
 #$temp="/dev/shm/temp";
 
 my %productMap=(
-  'gs' => 'gs',
-  'pcl' => 'ghostpdl',
-  'xps' => 'ghostpdl',
-  'svg' => 'ghostpdl'
+  'gs'.'gs' => 1,
+  'pcl'.'gs' => 1,
+  'xps'.'gs' => 1,
+  'svg'.'gs' => 1,
+  'gs'.'ghostpdl' => 1,
+  'pcl'.'ghostpdl' => 1,
+  'xps'.'ghostpdl' => 1,
+  'svg'.'ghostpdl' => 1
 );
 
 my $gsBin=$baseDirectory."gs/bin/gs";
@@ -108,26 +112,26 @@ my %tests=(
 ],
 'xps' => [
 "pbmraw.72.0",
-#"pbmraw.300.0",
-#"pbmraw.300.1",
-"pgmraw.72.0",
-#"pgmraw.300.0",
-#"pgmraw.300.1",
-#"wtsimdi.72.0",
-#"wtsimdi.300.0",
-#"wtsimdi.300.1",
+##"pbmraw.300.0",
+##"pbmraw.300.1",
+#"pgmraw.72.0",
+##"pgmraw.300.0",
+##"pgmraw.300.1",
+##"wtsimdi.72.0",
+##"wtsimdi.300.0",
+##"wtsimdi.300.1",
 "ppmraw.72.0",
-#"ppmraw.300.0",
-#"ppmraw.300.1",
+##"ppmraw.300.0",
+##"ppmraw.300.1",
 "bitrgb.72.0",
-#"bitrgb.300.0",
-#"bitrgb.300.1",
-#"psdcmyk.72.0",
-##"psdcmyk.300.0",
-##"psdcmyk.300.1",
+##"bitrgb.300.0",
+##"bitrgb.300.1",
+##"psdcmyk.72.0",
+###"psdcmyk.300.0",
+###"psdcmyk.300.1",
 "pdf.ppmraw.72.0",
-#"pdf.ppmraw.300.0",
-#"pdf.pkmraw.300.0"
+##"pdf.ppmraw.300.0",
+##"pdf.pkmraw.300.0"
 ],
 'svg' => [
 "pbmraw.72.0",
@@ -169,7 +173,7 @@ if ($updateTestFiles) {
 # build a list of the source files
 my %testfiles;
 foreach my $testSource (sort keys %testSource) {
-  if (!$product || $productMap{$testSource{$testSource}} eq $product) {
+  if (!$product || exists $productMap{$testSource{$testSource}.$product}) {
     opendir(DIR, $testSource) || die "can't opendir $testSource: $!";
     foreach (readdir(DIR)) {
       $testfiles{$testSource.'/'.$_}=$testSource{$testSource} if (!-d $testSource.'/'.$_ && ! m/^\./ && ! m/.disabled$/);

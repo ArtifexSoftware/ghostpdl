@@ -62,6 +62,8 @@ my $gsBin=$baseDirectory."/gs";
 my $abort=0;
 unlink ("$machine.abort");
 
+my $compileFail="";
+
 local $| = 1;
 
 my %testSource=(
@@ -148,6 +150,7 @@ sub spawn($$) {
 }
 
 sub checkAbort {
+  return (1) if ($abort==1);
   spawn(60,"scp -i ~/.ssh/cluster_key  marcos\@casper.ghostscript.com:/home/marcos/cluster/$machine.abort . >/dev/null 2>/dev/null");
   if (open(F,"<$machine.abort")) {
     close(F);
@@ -288,7 +291,7 @@ close(F2);
 $cmd="mv $gsSource/base/gscdef.tmp $gsSource/base/gscdef.c";
 `$cmd`;
 
-if (!$product || $product eq 'gs') {
+if (1 || !$product || $product eq 'gs') {  # always build ghostscript
 
 updateStatus('Building Ghostscript');
 
@@ -303,10 +306,16 @@ updateStatus('Installing Ghostscript');
 $cmd="rm -fr $gsBin ; cd $gsSource ; make install";
 print "$cmd\n" if ($verbose);
 `$cmd`;
+
+if (open(F,"<$gsBin/bin/gs")) {
+  close(F);
+} else {
+  $compileFail.="gs ";
+}
 }
 }
 
-if (!$product || $product eq 'ghostpdl') {
+if (1 || !$product || $product eq 'ghostpdl') {  # always build ghostpdl
 if (1) {
 $abort=checkAbort;
 if (!$abort) {
@@ -322,9 +331,14 @@ updateStatus('Building GhostPCL');
 $cmd="cd $gpdlSource ; make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1";
 print "$cmd\n" if ($verbose);
 `$cmd`;
-$cmd="cp -p $gpdlSource/main/obj/pcl6 gs/bin/.";
+$cmd="cp -p $gpdlSource/main/obj/pcl6 $gsBin/bin/.";
 print "$cmd\n" if ($verbose);
 `$cmd`;
+if (open(F,"<$gsBin/bin/pcl6")) {
+  close(F);
+} else {
+  $compileFail.="pcl6 ";
+}
 }
 
 $abort=checkAbort;
@@ -333,9 +347,14 @@ updateStatus('Building GhostXPS');
 $cmd="cd $gpdlSource ; make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps.out 2>&1";
 print "$cmd\n" if ($verbose);
 `$cmd`;
-$cmd="cp -p $gpdlSource/xps/obj/gxps gs/bin/.";
+$cmd="cp -p $gpdlSource/xps/obj/gxps $gsBin/bin/.";
 print "$cmd\n" if ($verbose);
 `$cmd`;
+if (open(F,"<$gsBin/bin/gxps")) {
+  close(F);
+} else {
+  $compileFail.="gxps ";
+}
 }
 
 $abort=checkAbort;
@@ -344,9 +363,14 @@ updateStatus('Building GhostSVG');
 $cmd="cd $gpdlSource ; make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg.out 2>&1";
 print "$cmd\n" if ($verbose);
 `$cmd`;
-$cmd="cp -p $gpdlSource/svg/obj/gsvg gs/bin/.";
+$cmd="cp -p $gpdlSource/svg/obj/gsvg $gsBin/bin/.";
 print "$cmd\n" if ($verbose);
 `$cmd`;
+if (open(F,"<$gsBin/bin/gsvg")) {
+  close(F);
+} else {
+  $compileFail.="gsvg ";
+}
 }
 }
 }
@@ -357,8 +381,12 @@ $cmd="cp -p ghostpdl/link.icc ghostpdl/wts_plane_0 ghostpdl/wts_plane_1 ghostpdl
 print "$cmd\n" if ($verbose);
 `$cmd`;
 
-
-updateStatus('Starting jobs');
+if ($compileFail ne "") {
+  updateStatus('Compile fail');
+  @commands=();
+} else {
+  updateStatus('Starting jobs');
+}
 
 
 
@@ -525,6 +553,9 @@ system("date") if ($debug2);
 
 open(F2,">$machine.log");
 
+if ($compileFail ne "") {
+  print F2 "compileFail: $compileFail\n";
+}
 foreach my $logfile (keys %logfiles) {
   print F2 "===$logfile===\n";
   open(F,"<$temp/$logfile.log") || die "file $temp/$logfile.log not found";
@@ -545,6 +576,7 @@ foreach my $logfile (keys %logfiles) {
 }
 
 close(F2);
+
 
 
 updateStatus('Uploading log files');

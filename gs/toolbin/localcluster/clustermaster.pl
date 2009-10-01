@@ -267,16 +267,26 @@ if (open(F,">machinespeeds.txt")) {
 }
 
 
+my $buildFail=0;
+my $failMessage="";
 my $logs="";
 my $tabs="";
 foreach (keys %machines) {
   `touch $_.log`;
   `rm -f $_.log`;
   `gunzip $_.log.gz`;
-  `./readlog.pl $_.log $_.tab $_`;
+  my $a=`./readlog.pl $_.log $_.tab $_`;
+  if ($a ne "") {
+    chomp $a;
+    print "$_: $a\n" if ($verbose);
+    $buildFail=1;
+    $failMessage=$a;
+  }
   $logs.=" $_.log";
   $tabs.=" $_.tab";
 }
+
+if (!$buildFail) {
 
 my $machineCount=scalar (keys %machines);
 if ($normalRegression) {
@@ -291,7 +301,6 @@ if ($normalRegression) {
 
   `./compare.pl current.tab previous.tab $elapsedTime $machineCount >email.txt`;
 #  `mail marcos.woehrmann\@artifex.com -s \"\`cat revision\`\" <email.txt`;
-  `mail -a \"From: marcos.woehrmann\@artifex.com\" gs-regression\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
 
   `touch archive/$newRev2-$newRev1`;
   `rm -fr archive/$newRev2-$newRev1`;
@@ -309,13 +318,25 @@ if ($normalRegression) {
   `rm $tabs`;
 
   `./compare.pl temp.tab current.tab $elapsedTime $machineCount true >$userName.txt`;
+
+}
+} else {
+  $userName="email" if ($normalRegression);
+  open (F,">$userName.txt");
+  print F "$failMessage\n";
+  close(F);
+}
+
+if ($normalRegression) {
+  `mail -a \"From: marcos.woehrmann\@artifex.com\" gs-regression\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
+  `./cp.all`;
+} else {
    if (exists $emails{$userName}) {
     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"$userRegression regression\" <$userName.txt`;
     `mail -a \"From: marcos.woehrmann\@artifex.com\" $emails{$userName} -s \"$userRegression regression\" <$userName.txt`;
    } else {
     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"bad username: $userName\" <$userName.txt`;
    }
-
 }
 
 }

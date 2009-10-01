@@ -7,6 +7,7 @@ use Data::Dumper;
 
 my $input=shift;
 my @jobs;
+my @svgJobs;
 
 my @machine;
 my @ratio;
@@ -25,7 +26,11 @@ die "usage: splitjobs.pl input [machine ratio ...]" if (!$input || scalar(@ratio
 open(F,"<$input") || die "file $input not found";
 while(<F>) {
   chomp;
-  push @jobs,$_;
+  if (m/^tests__svg/) {
+    push @svgJobs,$_;
+  } else {
+    push @jobs,$_;
+  }
 }
 close(F);
 
@@ -38,10 +43,10 @@ foreach my $t (@ratio) {
   $total+=$t;
 }
 
-my $remainder=scalar(@jobs);
+my $remainder=scalar(@jobs)+scalar(@svgJobs);
 foreach my $t (@ratio) {
 # print $t/$total."\n";
-  my $c=int($t/$total*scalar(@jobs)+0.5);
+  my $c=int(($t/$total)*(scalar(@jobs)+scalar(@svgJobs))+0.5);
   push @count,$c;
   $remainder-=$c;
 }
@@ -50,7 +55,11 @@ $count[-1]+=$remainder;
 for (my $i=0;  $i<scalar(@machine);  $i++) {
   open(F,">$machine[$i]") || die "can't write to file $machine[$i]";
   while($count[$i]--) {
-    print F (shift @jobs)."\n";
+    if (scalar(@svgJobs)>0) {
+      print F (shift @svgJobs)."\n";
+    } else {
+      print F (shift @jobs)."\n";
+    }
   }
   close(F);
 }

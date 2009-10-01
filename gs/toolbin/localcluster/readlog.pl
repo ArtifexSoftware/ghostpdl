@@ -33,6 +33,12 @@ while(<F>) {
 
   chomp;
 
+  if (m/^compileFail/) {
+    close(F);
+    print "$_\n";
+    exit;
+  }
+
   if (m/===(.+).log===/ || m/===(.+)===/) {
     $file=$1;
     $error=0;
