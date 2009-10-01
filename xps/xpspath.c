@@ -378,8 +378,6 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
     //dprintf1("new path (%.70s)\n", geom);
     gs_newpath(ctx->pgs);
 
-    ctx->fill_rule = 0;
-
     while (*s)
     {
 	if ((*s >= 'A' && *s <= 'Z') || (*s >= 'a' && *s <= 'z'))
@@ -838,8 +836,6 @@ xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *ro
     gs_matrix saved_transform;
     int even_odd = 0;
 
-    ctx->fill_rule = 0;
-
     gs_newpath(ctx->pgs);
 
     figures_att = xps_att(root, "Figures");
@@ -948,6 +944,8 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
     gs_rect saved_bounds;
 
     gs_gsave(ctx->pgs);
+
+    ctx->fill_rule = 0;
 
     /*
      * Extract attributes and extended attributes.
