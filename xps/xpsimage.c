@@ -255,7 +255,7 @@ xps_paint_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, 
 
 	xps_bounds_in_user_space(ctx, &bbox);
 
-	gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Alpha);
+	gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
 	gs_begin_transparency_mask(ctx->pgs, &params, &bbox, 0);
 	xps_paint_image_brush_imp(ctx, image, 1);
 	gs_end_transparency_mask(ctx->pgs, TRANSPARENCY_CHANNEL_Opacity);
@@ -269,7 +269,7 @@ xps_paint_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, 
     {
 	xps_paint_image_brush_imp(ctx, image, 0);
     }
-return 0;
+    return 0;
 }
 
 static int
