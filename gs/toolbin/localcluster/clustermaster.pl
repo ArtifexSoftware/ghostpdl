@@ -15,8 +15,34 @@ my $verbose=1;
 my $runningSemaphore="./running";
 my $maxDownTime=180;  # how many seconds before a machine is considered down
 
+# the concept with checkPID is that if the semaphore file is missing or doesn't
+# contain our PID something bad has happened and we just just exit
+sub checkPID {
+  if (open(F,"<$runningSemaphore")) {
+    my $t=<F>;
+    close(F);
+    chomp $t;
+    if ($t == $$) {
+      return(1);
+    }
+    print "terminating: $t $$\n";
+    exit;
+  }
+  print "terminating: $runningSemaphore missing\n";
+  exit;
+}
+
 if (open(F,"<$runningSemaphore")) {
   close(F);
+  my $fileTime = stat($runningSemaphore)->mtime;
+  my $t=time;
+  if ($t-$fileTime>7200) {
+    print "semaphore file too old, removing\n";
+    open(F,">status");
+    print F "Regression terminated due to timeout";
+    close(F);
+    unlink $runningSemaphore;
+  }
   exit;
 }
 
@@ -31,6 +57,7 @@ if (open(F,"<emails.tab")) {
 }
 
 open(F,">$runningSemaphore");
+print F "$$\n";
 close(F);
 
 my $currentRev1=`/usr/local/bin/svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4} '`;
@@ -94,254 +121,262 @@ if ($currentRev1!=0 && $currentRev2!=0 && ($currentRev1!=$newRev1 || $currentRev
 
 if ($normalRegression==1 || $userRegression ne "") {
 
-if ($userRegression ne "") {
-  print "running: $userRegression\n" if ($verbose);
-}
-
-if ($normalRegression) {
-  open(F,">revision");
-  print F "local cluster regression gs-r$newRev2 / ghostpdl-r$newRev1 (xefitra)\n";
-  close(F);
-}
-
-
-
-my %machines;
-my @machines = <*.up>;
-print "@machines\n" if ($verbose);
-foreach (@machines) {
-# print "$_\n";
-# my $t=time-stat("$_")->ctime;
-# print "$_ $t\n";
-  $machines{$_}=1 if (stat("$_") && (time-stat("$_")->ctime)<$maxDownTime);
-}
-foreach (keys %machines) {
-  delete $machines{$_};
-  s/.up//;
-  $machines{$_}=1;
-}
-foreach (keys %machines) {
-  delete $machines{$_} if (stat("$_.down"));
-}
-
-print Dumper(\%machines) if ($verbose);
-
-my $startTime;
-my %doneTime;
-my $s;
-my $startText;
-my %machineSpeeds;
-
-my $abort=0;
-do {
-
-print "running with ".(scalar keys %machines)." machines\n" if ($verbose);
-
-die "There aren't any cluster machines available" if (scalar keys %machines==0);
-
-if (open(F,"<machinespeeds.txt")) {
-  while(<F>) {
-    chomp;
-    my @a=split '\s';
-    $machineSpeeds{$a[0]}=$a[1];
+  if ($userRegression ne "") {
+    print "running: $userRegression\n" if ($verbose);
   }
-  close(F);
-}
 
-
-my $options="";
-foreach (sort keys %machines) {
-  $machineSpeeds{$_}=1 if (!exists $machineSpeeds{$_});
-  $options.=" $_.jobs $machineSpeeds{$_}";
-}
-print "$options\n" if ($verbose);
-if (!$normalRegression) {
-  my @a=split ' ',$userRegression;
-  $userName=$a[0];
-  $product=$a[1];
-  print "userName=$userName product=$product\n" if ($verbose);
-}
-`./build.pl $product >jobs`;
-`./splitjobs.pl jobs $options`;
-unlink "jobs";
-
-foreach (keys %machines) {
-print "unlinking $_.done\n" if ($verbose);
-print "unlinking $_.abort\n" if ($verbose);
-  unlink("$_.jobs.gz");
-  `gzip $_.jobs`;
-  unlink("$_.done");
-  unlink("$_.abort");
   if ($normalRegression) {
-    `touch $_.start`;
-  } else {
-    open(F,">$_.start");
-    print F "$userRegression\n";
+    open(F,">revision");
+    print F "local cluster regression gs-r$newRev2 / ghostpdl-r$newRev1 (xefitra)\n";
     close(F);
   }
-}
 
-$startText=`date +\"%D %H:%M:%S\"`;
-chomp $startText;
-open (F,">status");
-if ($normalRegression) {
-  print F "Regression gs-r$newRev2 / ghostpdl-r$newRev1 started at $startText";
-} else {
-  print F "Regression $userRegression started at $startText";
-}
-close(F);
-
-%doneTime=();
-$abort=0;
-$startTime=time;
-#print Dumper(\%doneTime) if ($verbose);
-print Dumper(\%machines) if ($verbose);
-print "".(scalar(keys %doneTime))." ".(scalar (keys %machines))."\n" if ($verbose);
-while(scalar(keys %doneTime) < scalar(keys %machines)) {
+  my %machines;
+  my @machines = <*.up>;
+  print "@machines\n" if ($verbose);
+  foreach (@machines) {
+    # print "$_\n";
+    # my $t=time-stat("$_")->ctime;
+    # print "$_ $t\n";
+    $machines{$_}=1 if (stat("$_") && (time-stat("$_")->ctime)<$maxDownTime);
+  }
   foreach (keys %machines) {
-    if (!stat("$_.up") || (time-stat("$_.up")->ctime)>=$maxDownTime) {
-print "$_ is down\n" if ($verbose);
-      $abort=1;
-      delete $machines{$_};
-      %doneTime=();  # avoids a race condition where the machine we just aborted reports done
-    } else {
-      if (open(F,"<$_.done")) {
+    delete $machines{$_};
+    s/.up//;
+    $machines{$_}=1;
+  }
+  foreach (keys %machines) {
+    delete $machines{$_} if (stat("$_.down"));
+  }
+
+  print Dumper(\%machines) if ($verbose);
+
+  my $startTime;
+  my %doneTime;
+  my $s;
+  my $startText;
+  my %machineSpeeds;
+
+  my $abort=0;
+  do {
+
+    print "running with ".(scalar keys %machines)." machines\n" if ($verbose);
+
+    if (scalar keys %machines==0) {
+      unlink $runningSemaphore;
+      die "There aren't any cluster machines available"
+    }
+
+    if (open(F,"<machinespeeds.txt")) {
+      while(<F>) {
+        chomp;
+        my @a=split '\s';
+        $machineSpeeds{$a[0]}=$a[1];
+      }
+      close(F);
+    }
+
+    checkPID();
+    my $options="";
+    foreach (sort keys %machines) {
+      $machineSpeeds{$_}=1 if (!exists $machineSpeeds{$_});
+      $options.=" $_.jobs $machineSpeeds{$_}";
+    }
+    print "$options\n" if ($verbose);
+    if (!$normalRegression) {
+      my @a=split ' ',$userRegression;
+      $userName=$a[0];
+      $product=$a[1];
+      print "userName=$userName product=$product\n" if ($verbose);
+    }
+    `./build.pl $product >jobs`;
+    `./splitjobs.pl jobs $options`;
+    unlink "jobs";
+
+    checkPID();
+    foreach (keys %machines) {
+      print "unlinking $_.done\n" if ($verbose);
+      print "unlinking $_.abort\n" if ($verbose);
+      unlink("$_.jobs.gz");
+      `gzip $_.jobs`;
+      unlink("$_.done");
+      unlink("$_.abort");
+      if ($normalRegression) {
+        `touch $_.start`;
+      } else {
+        open(F,">$_.start");
+        print F "$userRegression\n";
         close(F);
-if ($verbose) {
-print "$_ is reporting done\n" if (!exists $doneTime{$_});
-}
-        $doneTime{$_}=time if (!exists $doneTime{$_});
       }
     }
-    `touch $_.abort` if ($abort);
-  }
-  sleep(1);
-}
-print "abort=$abort\n" if ($verbose);
-} while ($abort);
 
-my $elapsedTime=time-$startTime;
+    checkPID();
+    $startText=`date +\"%D %H:%M:%S\"`;
+    chomp $startText;
+    open (F,">status");
+    if ($normalRegression) {
+      print F "Regression gs-r$newRev2 / ghostpdl-r$newRev1 started at $startText";
+    } else {
+      print F "Regression $userRegression started at $startText";
+    }
+    close(F);
 
-$s=`date +\"%H:%M:%S\"`;
-chomp $s;
-open (F,">status");
-if ($normalRegression) {
-  print F "Regression gs-r$newRev2 / ghostpdl-r$newRev1 started at $startText - finished at $s";
-} else {
-  print F "Regression $userRegression started at $startText - finished at $s";
-}
-close(F);
+    %doneTime=();
+    $abort=0;
+    $startTime=time;
+    #print Dumper(\%doneTime) if ($verbose);
+    print Dumper(\%machines) if ($verbose);
+    print "".(scalar(keys %doneTime))." ".(scalar (keys %machines))."\n" if ($verbose);
+    while(scalar(keys %doneTime) < scalar(keys %machines)) {
+      checkPID();
+      foreach (keys %machines) {
+        if (!stat("$_.up") || (time-stat("$_.up")->ctime)>=$maxDownTime) {
+          print "$_ is down\n" if ($verbose);
+          $abort=1;
+          delete $machines{$_};
+          %doneTime=();  # avoids a race condition where the machine we just aborted reports done
+        } else {
+          if (open(F,"<$_.done")) {
+            close(F);
+            if ($verbose) {
+              print "$_ is reporting done\n" if (!exists $doneTime{$_});
+            }
+            $doneTime{$_}=time if (!exists $doneTime{$_});
+          }
+        }
+        `touch $_.abort` if ($abort);
+      }
+      sleep(1);
+    }
+    print "abort=$abort\n" if ($verbose);
+    } while ($abort);
 
-if ($normalRegression) {
-my $averageTime=0;
-foreach (keys %machines) {
-  $averageTime+=$doneTime{$_}-$startTime;
-}
-$averageTime/=scalar(keys %machines);
-my $shortestTime=99999999;
-foreach (keys %machines) {
-  $shortestTime=$doneTime{$_}-$startTime if ($shortestTime>$doneTime{$_}-$startTime);
-}
-print "averageTime=$averageTime\n" if ($verbose);
-print "shortestTime=$shortestTime\n" if ($verbose);
-print "startTime=$startTime\n" if ($verbose);
-print Dumper(\%doneTime) if ($verbose);
-print Dumper(\%machineSpeeds) if ($verbose);
-my $max=0;
-foreach (keys %machines) {
-  $machineSpeeds{$_}=$machineSpeeds{$_}*($shortestTime/($doneTime{$_}-$startTime));
-  $max=$machineSpeeds{$_} if ($max<$machineSpeeds{$_});
-}
-foreach (keys %machines) {
-  $machineSpeeds{$_}/=$max;
-  $machineSpeeds{$_}=(int($machineSpeeds{$_}*100+0.5))/100;
-  $machineSpeeds{$_}=0.01 if ($machineSpeeds{$_}==0);
-}
-print Dumper(\%machineSpeeds);
-if (open(F,">machinespeeds.txt")) {
-  foreach (sort keys %machineSpeeds) {
-    print F "$_ $machineSpeeds{$_}\n";
+  my $elapsedTime=time-$startTime;
+
+  checkPID();
+  $s=`date +\"%H:%M:%S\"`;
+  chomp $s;
+  open (F,">status");
+  if ($normalRegression) {
+    print F "Regression gs-r$newRev2 / ghostpdl-r$newRev1 started at $startText - finished at $s";
+  } else {
+    print F "Regression $userRegression started at $startText - finished at $s";
   }
   close(F);
-}
-}
 
-
-my $buildFail=0;
-my $failMessage="";
-my $logs="";
-my $tabs="";
-foreach (keys %machines) {
-  `touch $_.log`;
-  `rm -f $_.log`;
-  `gunzip $_.log.gz`;
-  my $a=`./readlog.pl $_.log $_.tab $_`;
-  if ($a ne "") {
-    chomp $a;
-    print "$_: $a\n" if ($verbose);
-    $buildFail=1;
-    $failMessage=$a;
+  checkPID();
+  if ($normalRegression) {
+    my $averageTime=0;
+    foreach (keys %machines) {
+      $averageTime+=$doneTime{$_}-$startTime;
+    }
+    $averageTime/=scalar(keys %machines);
+    my $shortestTime=99999999;
+    foreach (keys %machines) {
+      $shortestTime=$doneTime{$_}-$startTime if ($shortestTime>$doneTime{$_}-$startTime);
+    }
+    print "averageTime=$averageTime\n" if ($verbose);
+    print "shortestTime=$shortestTime\n" if ($verbose);
+    print "startTime=$startTime\n" if ($verbose);
+    print Dumper(\%doneTime) if ($verbose);
+    print Dumper(\%machineSpeeds) if ($verbose);
+    my $max=0;
+    foreach (keys %machines) {
+      $machineSpeeds{$_}=$machineSpeeds{$_}*($shortestTime/($doneTime{$_}-$startTime));
+      $max=$machineSpeeds{$_} if ($max<$machineSpeeds{$_});
+    }
+    foreach (keys %machines) {
+      $machineSpeeds{$_}/=$max;
+      $machineSpeeds{$_}=(int($machineSpeeds{$_}*100+0.5))/100;
+      $machineSpeeds{$_}=0.01 if ($machineSpeeds{$_}==0);
+    }
+    print Dumper(\%machineSpeeds);
+    if (open(F,">machinespeeds.txt")) {
+      foreach (sort keys %machineSpeeds) {
+        print F "$_ $machineSpeeds{$_}\n";
+      }
+      close(F);
+    }
   }
-  $logs.=" $_.log";
-  $tabs.=" $_.tab";
+
+  checkPID();
+  my $buildFail=0;
+  my $failMessage="";
+  my $logs="";
+  my $tabs="";
+  foreach (keys %machines) {
+    `touch $_.log; rm -f $_.log; gunzip $_.log.gz`;
+    `touch $_.out; rm -f $_.out; gunzip $_.out.gz`;
+    my $a=`./readlog.pl $_.log $_.tab $_ $_.out`;
+    if ($a ne "") {
+      chomp $a;
+      print "$_: $a\n" if ($verbose);
+      $buildFail=1;
+      $failMessage.="$_ reports: $a\n";
+    }
+    $logs.=" $_.log $_.out";
+    $tabs.=" $_.tab";
+  }
+
+  checkPID();
+  if (!$buildFail) {
+
+    my $machineCount=scalar (keys %machines);
+    if ($normalRegression) {
+      # unlink "log";
+      `mv previous.tab previous2.tab`;
+      `mv current.tab previous.tab`;
+      `cat $tabs | sort >current.tab`;
+      `rm $tabs`;
+      #  `cat $logs >log`;
+      #  `./readlog.pl log current.tab`;
+
+      checkPID();
+      `./compare.pl current.tab previous.tab $elapsedTime $machineCount >email.txt`;
+     #  `mail marcos.woehrmann\@artifex.com -s \"\`cat revision\`\" <email.txt`;
+
+      checkPID();
+      `touch archive/$newRev2-$newRev1`;
+      `rm -fr archive/$newRev2-$newRev1`;
+      `mkdir archive/$newRev2-$newRev1`;
+      `mv $logs archive/$newRev2-$newRev1/.`;
+      `gzip archive/$newRev2-$newRev1/*log`;
+      `cp email.txt archive/$newRev2-$newRev1/.`;
+      `cp current.tab archive/$newRev2-$newRev1.tab`;
+      #  `touch archive/$newRev2-$newRev1.tab.gz`;
+      #  unlink "archive/$newRev2-$newRev1.tab.gz";
+      #  `gzip archive/$newRev2-$newRev1.tab`;
+      # unlink "log";
+    } else {
+      `cat $tabs | sort >temp.tab`;
+      `rm $tabs`;
+
+      checkPID();
+      `./compare.pl temp.tab current.tab $elapsedTime $machineCount true >$userName.txt`;
+
+    }
+  } else {
+    checkPID();
+    $userName="email" if ($normalRegression);
+    open (F,">$userName.txt");
+    print F "$failMessage\n";
+    close(F);
+  }
+
+  checkPID();
+  if ($normalRegression) {
+    `mail -a \"From: marcos.woehrmann\@artifex.com\" gs-regression\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
+    `./cp.all`;
+  } else {
+    if (exists $emails{$userName}) {
+      `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"$userRegression regression\" <$userName.txt`;
+      `mail -a \"From: marcos.woehrmann\@artifex.com\" $emails{$userName} -s \"$userRegression regression\" <$userName.txt`;
+    } else {
+      `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"bad username: $userName\" <$userName.txt`;
+    }
+  }
+
 }
 
-if (!$buildFail) {
-
-my $machineCount=scalar (keys %machines);
-if ($normalRegression) {
-# unlink "log";
-  `mv previous.tab previous2.tab`;
-  `mv current.tab previous.tab`;
-  `cat $tabs | sort >current.tab`;
-  `rm $tabs`;
-#  `cat $logs >log`;
-#  `./readlog.pl log current.tab`;
-
-
-  `./compare.pl current.tab previous.tab $elapsedTime $machineCount >email.txt`;
-#  `mail marcos.woehrmann\@artifex.com -s \"\`cat revision\`\" <email.txt`;
-
-  `touch archive/$newRev2-$newRev1`;
-  `rm -fr archive/$newRev2-$newRev1`;
-  `mkdir archive/$newRev2-$newRev1`;
-  `mv $logs archive/$newRev2-$newRev1/.`;
-  `gzip archive/$newRev2-$newRev1/*log`;
-  `cp email.txt archive/$newRev2-$newRev1/.`;
-  `cp current.tab archive/$newRev2-$newRev1.tab`;
-#  `touch archive/$newRev2-$newRev1.tab.gz`;
-#  unlink "archive/$newRev2-$newRev1.tab.gz";
-#  `gzip archive/$newRev2-$newRev1.tab`;
-# unlink "log";
-} else {
-  `cat $tabs | sort >temp.tab`;
-  `rm $tabs`;
-
-  `./compare.pl temp.tab current.tab $elapsedTime $machineCount true >$userName.txt`;
-
-}
-} else {
-  $userName="email" if ($normalRegression);
-  open (F,">$userName.txt");
-  print F "$failMessage\n";
-  close(F);
-}
-
-if ($normalRegression) {
-  `mail -a \"From: marcos.woehrmann\@artifex.com\" gs-regression\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
-  `./cp.all`;
-} else {
-   if (exists $emails{$userName}) {
-    `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"$userRegression regression\" <$userName.txt`;
-    `mail -a \"From: marcos.woehrmann\@artifex.com\" $emails{$userName} -s \"$userRegression regression\" <$userName.txt`;
-   } else {
-    `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"bad username: $userName\" <$userName.txt`;
-   }
-}
-
-}
-
-
+checkPID();
 unlink $runningSemaphore;
-
-

@@ -7,7 +7,7 @@ use Data::Dumper;
 
 my $previousValues=20;
 
-my @errorDescription=("none","Error_reading_input_file","Error_reading_Ghostscript_produced_PDF_file","Timeout_reading_input_file","Timeout_reading_Ghostscript_produced_PDF_File");
+my @errorDescription=("none","Error_reading_input_file","Error_reading_Ghostscript_produced_PDF_file","Timeout_reading_input_file","Timeout_reading_Ghostscript_produced_PDF_File","Input_file_missing","Ghostscript_generated_PDF_file_missing","Seg_Fault_during_pdfwrite","Seg_Fault","Internal_error");
 
 my $current=shift;
 my $previous=shift;
@@ -53,7 +53,6 @@ while(<F>) {
   $currentMachine{$a[0]}=$a[9];
 }
 
-
 open(F,"<$previous") || die "file $previous not found";
 while(<F>) {
   chomp;
@@ -80,7 +79,7 @@ closedir DIR;
 
 my $count=$previousValues;
 foreach my $i (sort {$b cmp $a} keys %archives) {
-#print STDERR "$i\n";
+# print STDERR "$i\n";
   if ($count>0) {
     open(F,"<archive/$i") || die "file archive/$i not found";
     while(<F>) {
@@ -102,7 +101,6 @@ foreach my $i (sort {$b cmp $a} keys %archives) {
 
 #print Dumper(\%archive);
 
-
 foreach my $t (sort keys %previous) {
   if (exists $current{$t}) {
     if ($currentError{$t}) {
@@ -115,18 +113,18 @@ foreach my $t (sort keys %previous) {
         push @repairedPrevious,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t} $previousError{$t}";
       } else {
         if ($current{$t} eq $previous{$t}) {
-#         print "$t match $previous and $current\n";
+          #         print "$t match $previous and $current\n";
         } else {
-	  my $match=0;
-	  foreach my $p (sort {$b cmp $a} keys %archive) {
-	    if (!$match && exists $archive{$p}{$t} && $archive{$p}{$t} eq $current{$t}) {
-	      $match=1;
-	      push @archiveMatch,"$t $archiveProduct{$p}{$t} $archiveMachine{$p}{$t} $currentMachine{$t} $p $archiveCount{$p}";
-	    }
-	  }
-	  if (!$match) {
+          my $match=0;
+          foreach my $p (sort {$b cmp $a} keys %archive) {
+            if (!$match && exists $archive{$p}{$t} && $archive{$p}{$t} eq $current{$t}) {
+              $match=1;
+              push @archiveMatch,"$t $archiveProduct{$p}{$t} $archiveMachine{$p}{$t} $currentMachine{$t} $p $archiveCount{$p}";
+            }
+          }
+          if (!$match) {
             push @differencePrevious,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t}";
-	  }
+          }
         }
       }
     }
@@ -142,7 +140,6 @@ foreach my $t (sort keys %current) {
     push @filesAdded,"$t $currentProduct{$t}";
   }
 }
-
 
 print "ran ".scalar(keys %current)." tests in $elapsedTime seconds on $machineCount nodes\n\n";
 
@@ -174,37 +171,36 @@ if (@repairedPrevious) {
 
 if (!$skipMissing) {
 
-if (@filesRemoved) {
-  print "The following ".scalar(@filesRemoved)." regression file(s) have been removed:\n";
-  while(my $t=shift @filesRemoved) {
-    print "$t\n";
+  if (@filesRemoved) {
+    print "The following ".scalar(@filesRemoved)." regression file(s) have been removed:\n";
+    while(my $t=shift @filesRemoved) {
+      print "$t\n";
+    }
+    print "\n";
   }
-  print "\n";
-}
 
-
-if (@filesAdded) {
-  print "The following ".scalar(@filesAdded)." regression file(s) have been added:\n";
-  while(my $t=shift @filesAdded) {
-    print "$t\n";
+  if (@filesAdded) {
+    print "The following ".scalar(@filesAdded)." regression file(s) have been added:\n";
+    while(my $t=shift @filesAdded) {
+      print "$t\n";
+    }
+    print "\n";
   }
-  print "\n";
-}
 
-if (@allErrors) {
-  print "The following ".scalar(@allErrors)." regression file(s) are producing errors:\n";
-  while(my $t=shift @allErrors) {
-    print "$t\n";
+  if (@allErrors) {
+    print "The following ".scalar(@allErrors)." regression file(s) are producing errors:\n";
+    while(my $t=shift @allErrors) {
+      print "$t\n";
+    }
+    print "\n";
   }
-  print "\n";
-}
 
-if (@archiveMatch) {
-  print "The following ".scalar(@archiveMatch)." regression file(s) had md5sum differences but matched at least once in the previous $previousValues runs:\n";
-  while(my $t=shift @archiveMatch) {
-    print "$t\n";
+  if (@archiveMatch) {
+    print "The following ".scalar(@archiveMatch)." regression file(s) had md5sum differences but matched at least once in the previous $previousValues runs:\n";
+    while(my $t=shift @archiveMatch) {
+      print "$t\n";
+    }
+    print "\n";
   }
-  print "\n";
-}
 }
 

@@ -21,11 +21,12 @@ my %results;
 my $input=shift;
 my $output=shift;
 my $machine=shift;
+my $input2=shift;
 my $rev=shift;
 
 $rev=0 if (!$rev);
 
-($machine) || die "usage: readlog.pl input output machine [rev]";
+($machine) || die "usage: readlog.pl input.log output machine [input.out] [rev]";
 
 open (F,"<$input") || die "file $input not found";
 
@@ -68,6 +69,11 @@ while(<F>) {
     $error=4 if ($divider==1 && $error==0);
     $results{$file}{"error"}=$error;
   }
+  if (m/Unable to open/) {
+    $error=5 if ($divider==0 && $error==0);
+    $error=6 if ($divider==1 && $error==0);
+    $results{$file}{"error"}=$error;
+  }
   if (m/(\d+\.\d+) (\d+\.\d+) (\d+:\d\d\.\d\d) (\d+)%/) {
     $t1=$1;
     $t2=$2;
@@ -88,6 +94,25 @@ while(<F>) {
 }
 
 close(F);
+
+if ($input2) {
+  open (F,"<$input2") || die "file $input2 not found";
+  while(<F>) {
+    if (m|Segmentation fault .+ ./temp/(\S+).log 2|) {
+      my $file=$1;
+      my $pdfwrite=0;
+      $pdfwrite=1 if (m/pdfwrite/);
+#     print "$pdfwrite $file\n";
+      if (exists $results{$file}{"error"}) {
+        $results{$file}{"error"}=7 if ($pdfwrite==1);
+        $results{$file}{"error"}=8 if ($pdfwrite==0 && $results{$file}{"error"}%2 == 0);
+      } else {
+#       die "$file not found in ressults";
+      }
+    }
+  }
+  close(F);
+}
 
 
 open(F,">$output") || die "file $output can't be written to";
