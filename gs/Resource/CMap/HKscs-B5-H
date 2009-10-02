@@ -2,8 +2,8 @@
 %%DocumentNeededResources: ProcSet (CIDInit)
 %%IncludeResource: ProcSet (CIDInit)
 %%BeginResource: CMap (HKscs-B5-H)
-%%Title: (HKscs-B5-H Adobe CNS1 5)
-%%Version: 2.005
+%%Title: (HKscs-B5-H Adobe CNS1 6)
+%%Version: 2.006
 %%Copyright: -----------------------------------------------------------
 %%Copyright: Copyright 1990-2009 Adobe Systems Incorporated.
 %%Copyright: All rights reserved.
@@ -51,11 +51,11 @@ begincmap
 /CIDSystemInfo 3 dict dup begin
   /Registry (Adobe) def
   /Ordering (CNS1) def
-  /Supplement 5 def
+  /Supplement 6 def
 end def
 
 /CMapName /HKscs-B5-H def
-/CMapVersion 2.005 def
+/CMapVersion 2.006 def
 /CMapType 1 def
 
 /XUID [1 10 25580] def
@@ -638,6 +638,8 @@ endcidchar
 <20> <7e> 1
 <8740> <8765> 18965
 <8767> <8779> 19003
+<877a> <877e> 19088
+<87a1> <87df> 19093
 <8840> <8855> 17609
 <8856> <887e> 18785
 <88a1> <88a8> 18826
@@ -733,11 +735,11 @@ endcidchar
 <8f6f> <8f78> 14316
 <8f7a> <8f7e> 14327
 <8fa1> <8faf> 14332
-<8fb1> <8fc4> 14348
-<8fc8> <8fc9> 14369
 endcidrange
 
 100 begincidrange
+<8fb1> <8fc4> 14348
+<8fc8> <8fc9> 14369
 <8fcd> <8fd9> 14374
 <8fdb> <8fe2> 14387
 <8fe4> <8ffb> 14396
@@ -836,11 +838,11 @@ endcidrange
 <99af> <99b1> 18265
 <99b3> <99b5> 18268
 <99b7> <99b9> 18271
-<99bb> <99c9> 18274
-<99cb> <99cc> 18289
 endcidrange
 
 100 begincidrange
+<99bb> <99c9> 18274
+<99cb> <99cc> 18289
 <99ce> <99d2> 18291
 <99d4> <99d5> 18296
 <99d7> <99de> 18298
@@ -939,11 +941,11 @@ endcidrange
 <9d7a> <9d7d> 18627
 <9da1> <9da4> 18631
 <9da5> <9da8> 15952
-<9dac> <9dad> 15957
-<9dae> <9daf> 18637
 endcidrange
 
 100 begincidrange
+<9dac> <9dad> 15957
+<9dae> <9daf> 18637
 <9db1> <9db2> 18639
 <9db8> <9dbb> 18643
 <9dbc> <9dbd> 15964
@@ -1042,11 +1044,11 @@ endcidrange
 <a6a1> <a6fe> 972
 <a740> <a77e> 1066
 <a7a1> <a7fe> 1129
-<a840> <a87e> 1223
-<a8a1> <a8fe> 1286
 endcidrange
 
 100 begincidrange
+<a840> <a87e> 1223
+<a8a1> <a8fe> 1286
 <a940> <a97e> 1380
 <a9a1> <a9fe> 1443
 <aa40> <aa7e> 1537
@@ -1145,11 +1147,11 @@ endcidrange
 <cd40> <cd7e> 6623
 <cda1> <cdfe> 6686
 <ce40> <ce7e> 6780
-<cea1> <cefe> 6843
-<cf40> <cf7e> 6937
 endcidrange
 
 100 begincidrange
+<cea1> <cefe> 6843
+<cf40> <cf7e> 6937
 <cfa1> <cffe> 7000
 <d040> <d07e> 7094
 <d0a1> <d0fe> 7157
@@ -1248,11 +1250,11 @@ endcidrange
 <f4b6> <f4fc> 12829
 <f4fd> <f4fe> 12901
 <f540> <f57e> 12903
-<f5a1> <f5fe> 12966
-<f640> <f662> 13060
 endcidrange
 
-65 begincidrange
+67 begincidrange
+<f5a1> <f5fe> 12966
+<f640> <f662> 13060
 <f664> <f67e> 13095
 <f6a1> <f6fe> 13122
 <f740> <f77e> 13216

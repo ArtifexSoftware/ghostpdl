@@ -4,8 +4,8 @@
 %%IncludeResource: ProcSet (CIDInit)
 %%IncludeResource: CMap (ETHK-B5-H)
 %%BeginResource: CMap (ETHK-B5-V)
-%%Title: (ETHK-B5-V Adobe CNS1 5)
-%%Version: 13.003
+%%Title: (ETHK-B5-V Adobe CNS1 6)
+%%Version: 13.004
 %%Copyright: -----------------------------------------------------------
 %%Copyright: Copyright 1990-2009 Adobe Systems Incorporated.
 %%Copyright: All rights reserved.
@@ -55,11 +55,11 @@ begincmap
 /CIDSystemInfo 3 dict dup begin
   /Registry (Adobe) def
   /Ordering (CNS1) def
-  /Supplement 5 def
+  /Supplement 6 def
 end def
 
 /CMapName /ETHK-B5-V def
-/CMapVersion 13.003 def
+/CMapVersion 13.004 def
 /CMapType 1 def
 
 /XUID [1 10 25583] def
