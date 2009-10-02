@@ -81,7 +81,12 @@ struct gs_pdf14trans_params_s {
     int Background_components;
     bool function_is_identity;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    float GrayBackground;
+    float GrayBackground;  /* This is used to determine if the 
+                              softmask's bbox needs to be adjusted
+                              to the parent groups bbox.  Since
+                              the soft mask can affect areas 
+                              outside its own groups bounding
+                              box in such a case */
     gs_function_t *transfer_function;
     byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE];
     /* Individual transparency parameters */

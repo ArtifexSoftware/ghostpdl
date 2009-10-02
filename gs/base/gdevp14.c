@@ -685,13 +685,7 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
     y1 = min(tos->rect.q.y, nos->rect.q.y);
     x0 = max(tos->rect.p.x, nos->rect.p.x);
     x1 = min(tos->rect.q.x, nos->rect.q.x);
-    if (maskbuf != NULL && maskbuf->mask_id != tos->mask_id) {
-	/* We're under clist reader, and it skipped a group,
-	   which is resetting maskbuf. Force freeing the mask.
-	 */
-	ctx->maskbuf = maskbuf;
-	maskbuf = NULL;
-    }
+
     if (ctx->maskbuf) {
 	/* Happens with the test case of bug 689492 with no banding
 	   while rendering the group of an image with a mask.
@@ -703,6 +697,7 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
 	pdf14_buf_free(ctx->maskbuf, ctx->memory);
 	ctx->maskbuf = NULL;
     }
+
     ctx->maskbuf = maskbuf;  /* Restore the mask saved by pdf14_push_transparency_group. */
     tos->maskbuf = NULL;     /* Clean the pointer sinse the mask ownership is now passed to ctx. */
     if (tos->idle)
@@ -2498,11 +2493,22 @@ pdf14_update_device_color_procs(gx_device *dev,
     pdf14_device *pdevproto;
     pdf14_device *pdev = (pdf14_device *)dev;
     const pdf14_procs_t *new_14procs;
-    pdf14_parent_color_t *parent_color_info = &(pdev->ctx->stack->parent_color_info_procs);
+    pdf14_parent_color_t *parent_color_info;
     gx_color_polarity_t new_polarity;
     int new_num_comps;
     bool new_additive;
     byte new_depth;
+
+    if (pdev->ctx->stack != NULL){
+
+        parent_color_info = &(pdev->ctx->stack->parent_color_info_procs);
+
+    } else {
+
+        /* This should not occur */
+        return_error(gs_error_undefined);
+
+    }
 
     if_debug0('v', "[v]pdf14_update_device_color_procs\n");
 
@@ -5273,6 +5279,15 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                code = pdf14_update_device_color_procs_push_c(dev,
 			      pdf14pct->params.group_color,pis);
 
+               /* Also, if the BC is a value that may end up as
+                  something other than transparent. We must
+                  use the parent colors bounding box in
+                  determining the range of bands in which
+                  this mask can affect.  So, if needed change
+                  the masks bounding box at this time */
+
+                  
+
 		break;
 
 
@@ -5701,43 +5716,39 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
 	    {	/* HACK: store mask_id into pparams for subsequent calls of c_pdf14trans_write. */
 		gs_pdf14trans_t * pdf14pct_nolconst = (gs_pdf14trans_t *) pcte; /* Break 'const'. */
 
-		pdf14pct_nolconst->params.mask_id = (cdev->temp_mask_id != 0 ? cdev->temp_mask_id : cdev->mask_id);
-		if_debug2('v', "[v]c_pdf14trans_clist_write_update group mask_id=%d temp_mask_id=%d\n", 
-			    cdev->mask_id, cdev->temp_mask_id);
+                /* What ever the current mask ID is, that is the softmask group through
+                   which this transparency group must be rendered.  Store it now.  */
+
+                pdf14pct_nolconst->params.mask_id = cdev->mask_id;
+
+                if_debug1('v', "[v]c_pdf14trans_clist_write_update group mask_id=%d \n", cdev->mask_id);
 	    }
-	    if (cdev->temp_mask_id)
-		cdev->temp_mask_id = 0;
-	    else
-		cdev->mask_id = 0;
+
 	    break;
 	case PDF14_END_TRANS_GROUP:
 	    code = 0; /* A place for breakpoint. */
 	    break;
 	case PDF14_BEGIN_TRANS_MASK:
-	    {   int save_mask_id = cdev->mask_id;
-		int save_temp_mask_id = cdev->temp_mask_id;
+	    {   int save_mask_id = cdev->mask_id;  
 
-		if (!cdev->mask_id || pdf14pct->params.replacing)
-		    cdev->mask_id = ++cdev->mask_id_count;
-		else
-		    cdev->temp_mask_id = ++cdev->mask_id_count;
+               /* A new mask has been started */
+
+                cdev->mask_id = ++cdev->mask_id_count;
+
+                /* replacing is set everytime that we have a zpushtransparencymaskgroup */
+               
 		{	/* HACK: store mask_id into pparams for subsequent calls of c_pdf14trans_write. */
 		    gs_pdf14trans_t * pdf14pct_nolconst = (gs_pdf14trans_t *) pcte; /* Break 'const'. */
 
-		    pdf14pct_nolconst->params.mask_id = (cdev->temp_mask_id != 0 ? cdev->temp_mask_id : cdev->mask_id);
-		    if_debug2('v', "[v]c_pdf14trans_clist_write_update mask mask_id=%d temp_mask_id=%d\n", 
-				cdev->mask_id, cdev->temp_mask_id);
+		    pdf14pct_nolconst->params.mask_id = cdev->mask_id;
+
+		    if_debug1('v', "[v]c_pdf14trans_clist_write_update mask mask_id=%d \n", cdev->mask_id);
 		}
-		code = clist_writer_push_no_cropping(cdev);
-		/* Delay updating current mask id until the mask is completed,
-		   because the mask may have internal groups and masks. 
-		   clist_writer_pop_cropping will set up the currnt mask id. */
-		cdev->mask_id = save_mask_id;
-		cdev->temp_mask_id = save_temp_mask_id;
+
 	    }
 	    break;
 	case PDF14_END_TRANS_MASK:
-	    code = clist_writer_pop_cropping(cdev);
+	    code = 0; /* A place for breakpoint. */
 	    break;
 	default:
 	    break;		/* do nothing for remaining ops */
@@ -5836,24 +5847,61 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
  * Get cropping for the compositor command.
  */
 static	int
-c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight)
+c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight, int cropping_min, int cropping_max)
 {
     gs_pdf14trans_t * pdf14pct = (gs_pdf14trans_t *) pcte;
     switch (pdf14pct->params.pdf14_op) {
 	case PDF14_PUSH_DEVICE: return 0; /* Applies to all bands. */
 	case PDF14_POP_DEVICE:  return 0; /* Applies to all bands. */
+
 	case PDF14_BEGIN_TRANS_GROUP:
+
 	    {	gs_int_rect rect;
 		int code;
 
 		code = pdf14_compute_group_device_int_rect(&pdf14pct->params.ctm, &pdf14pct->params.bbox, &rect);
-		*ry = rect.p.y;
-		*rheight = rect.q.y - rect.p.y;
-		return 1; /* Push croping. */
+
+                /* We have to crop this by the parent object.   */
+
+                *ry = max(rect.p.y, cropping_min);
+                *rheight = min(rect.q.y, cropping_max) - *ry;
+                return 1; /* Push cropping. */
+
+            }
+
+        case PDF14_BEGIN_TRANS_MASK:
+	    {	gs_int_rect rect;
+		int code;
+
+		code = pdf14_compute_group_device_int_rect(&pdf14pct->params.ctm, &pdf14pct->params.bbox, &rect);
+
+                /* We have to crop this by the parent object and worry about the BC outside the range */
+
+                if (pdf14pct->params.GrayBackground == 0.0 || pdf14pct->params.Background_components == 0) {
+
+                    /* In this case there will not be a background effect to worry about */
+
+                    *ry = max(rect.p.y, cropping_min);
+		    *rheight = min(rect.q.y, cropping_max) - *ry;
+		    return 1; /* Push cropping. */
+
+                }  else {
+
+                    /* We need to make the soft mask range as large as the parent due to the
+                       fact that the background color can have an impact OUTSIDE the bounding
+                       box of the soft mask */
+
+                    *ry = cropping_min;
+		    *rheight = cropping_max - cropping_min;
+		    return 1; /* Push cropping. */
+
+                }
+
 	    }
+
 	case PDF14_END_TRANS_GROUP: return 2; /* Pop cropping. */
-	case PDF14_BEGIN_TRANS_MASK: return 3; /* Same cropping as before. */
-	case PDF14_END_TRANS_MASK: return 3;
+	case PDF14_END_TRANS_MASK: return 2;   /* Pop the cropping */  
+
 	case PDF14_SET_BLEND_PARAMS: return 3;
     }
     return 0;
