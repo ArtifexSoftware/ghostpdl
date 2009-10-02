@@ -348,7 +348,7 @@ gsimage_h=$(GLSRC)gsimage.h $(gsiparam_h)
 gsline_h=$(GLSRC)gsline.h $(gslparam_h)
 gspath_h=$(GLSRC)gspath.h $(gspenum_h)
 gsrop_h=$(GLSRC)gsrop.h $(gsropt_h)
-gstparam_h=$(GLSRC)gstparam.h $(gsccolor_h) $(gsrefct_h)
+gstparam_h=$(GLSRC)gstparam.h $(gsccolor_h) $(gsrefct_h) $(gscspace_h)
 
 gxalpha_h=$(GLSRC)gxalpha.h
 gxbcache_h=$(GLSRC)gxbcache.h $(gxbitmap_h)
@@ -2450,7 +2450,7 @@ $(GLOBJ)gxctable.$(OBJ) : $(GLSRC)gxctable.c $(GX)\
 # ---------------- ICCBased color ---------------- #
 
 gsicc_=$(GLOBJ)gsiccmanage.$(OBJ) $(GLOBJ)gsicccache.$(OBJ)\
- $(GLOBJ)gsicc_littlecms.$(OBJ)
+ $(GLOBJ)gsicc_littlecms.$(OBJ) $(GLOBJ)gsicc_profilecache.$(OBJ)
 
 sicclib_=$(GLOBJ)gsicc.$(OBJ)
 $(GLD)sicclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(sicclib_) $(gsicc_)\
@@ -2468,6 +2468,7 @@ gscms_h=$(std_h) $(stdpre_h) $(gstypes_h) $(gsutil_h) $(stdint_h)
 gsicc_littlecms_h=$(GLSRC)gsicc_littlecms.h $(gxcvalue_h) $(gscms_h)
 gsiccmanage_h=$(GLSRC)gsiccmanage.h $(gsicc_littlecms_h)
 gsicccache_h=$(GLSRC)gsicccache.h $(GX)
+gsicc_profilecache_h=$(GLSRC)gsicc_profilecache.h
 
 $(GLOBJ)gsiccmanage.$(OBJ) : $(GLSRC)gsiccmanage.c $(GX) $(stdpre_h)\
  $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(scommon_h) $(strmio_h)\
@@ -2480,7 +2481,13 @@ $(GLOBJ)gsicccache.$(OBJ) : $(GLSRC)gsicccache.c $(GX) $(stdpre_h)\
  $(gxistate_h) $(gscms_h) $(gsiccmanage_h) $(gsicccache_h)\
  $(gserrors_h)
 	$(GLCC) $(GLO_)gsicccache.$(OBJ) $(C_) $(GLSRC)gsicccache.c
-
+	
+$(GLOBJ)gsicc_profilecache.$(OBJ) : $(GLSRC)gsicc_profilecache.c $(GX) $(std_h)\
+ $(stdpre_h) $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(scommon_h)\
+ $(gscms_h) $(gsicc_profilecache_h)\
+ $(gserrors_h)
+	$(GLCC) $(GLO_)gsicc_profilecache.$(OBJ) $(C_) $(GLSRC)gsicc_profilecache.c
+	
 $(GLOBJ)gsicc_littlecms.$(OBJ) : $(GLSRC)gsicc_littlecms.c\
  $(gsicc_littlecms_h)
 	$(GLLCMSCC) $(GLO_)gsicc_littlecms.$(OBJ) $(C_) $(GLSRC)gsicc_littlecms.c

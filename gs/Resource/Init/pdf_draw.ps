@@ -478,7 +478,7 @@ def
 
 /.beginformgroup {	% groupdict bbox .beginformgroup -
   exch mark exch			% bbox mark groupdict
-  dup /CS knownoget { resolvecolorspace setgcolorspace } if
+  dup /CS knownoget { resolvecolorspace dup setgcolorspace /CS exch 3 2 roll} if
   dup /I knownoget { /Isolated exch 3 2 roll } if
   dup /K knownoget { /Knockout exch 3 2 roll } if
   pop .dicttomark

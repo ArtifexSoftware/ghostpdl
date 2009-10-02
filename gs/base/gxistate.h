@@ -246,7 +246,8 @@ typedef struct gs_devicen_color_map_s {
 	float smoothness;\
 	int renderingintent; /* See gsstate.c */\
         gsicc_manager_t *icc_manager; /* ICC color manager, profile */\
-        gsicc_link_cache_t *icc_cache; /* ICC linked transforms */\
+        gsicc_link_cache_t *icc_link_cache; /* ICC linked transforms */\
+        gsicc_profile_list_t *icc_profile_cache;  /* ICC profiles. */\
 	CUSTOM_COLOR_PTR	/* Pointer to custom color callback struct */\
 	const gx_color_map_procs *\
 	  (*get_cmap_procs)(const gs_imager_state *, const gx_device *);\
@@ -280,7 +281,7 @@ struct gs_imager_state_s {
   lop_default, gx_max_color_value, BLEND_MODE_Compatible,\
   { 1.0 }, { 1.0 }, 0, 0/*false*/, 0, 0, 0, 0, 0/*false*/, 0, 0, 1.0,  \
    { fixed_half, fixed_half }, 0/*false*/, 0/*false*/, 0/*false*/, 1.0,\
-  1, 0, 0, INIT_CUSTOM_COLOR_PTR	/* 'Custom color' callback pointer */  \
+  1, 0, 0, 0, INIT_CUSTOM_COLOR_PTR	/* 'Custom color' callback pointer */  \
   gx_default_get_cmap_procs
 
 /* The imager state structure is public only for subclassing. */

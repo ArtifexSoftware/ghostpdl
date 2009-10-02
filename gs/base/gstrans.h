@@ -99,6 +99,8 @@ struct gs_pdf14trans_params_s {
     bool SMask_is_CIE;
     int group_color_numcomps;
     gs_transparency_color_t group_color;
+    cmm_profile_t *iccprofile;               /* The profile  */
+
 };
 
 #ifndef gs_pdf14trans_params_DEFINED

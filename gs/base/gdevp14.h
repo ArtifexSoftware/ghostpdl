@@ -81,6 +81,7 @@ struct pdf14_parent_color_s {
     int (*parent_color_comp_index)(gx_device *, const char *, int, int); 
     const pdf14_procs_t * unpack_procs;
     const pdf14_nonseparable_blending_procs_t * parent_blending_procs;
+    cmm_profile_t *icc_profile;
     pdf14_parent_color_t *previous;
  
 };
@@ -119,7 +120,7 @@ struct pdf14_buf_s {
     gs_transparency_mask_subtype_t SMask_SubType;
 
     uint mask_id;
-    pdf14_parent_color_t parent_color_info_procs;
+    pdf14_parent_color_t *parent_color_info_procs;
 
     gs_transparency_color_t color_space;  /* Different groups can have different spaces for blending */
 };

@@ -28,6 +28,11 @@
 
 #define PUSH_TS 0
 
+
+gs_private_st_ptrs2(st_gstransparams, gs_transparency_group_params_t, "gs_gstransparams",
+      st_gstransparams_enum_ptrs, st_gstransparams_reloc_ptrs, ColorSpace, iccprofile);
+
+
 /* ------ Transparency-related graphics state elements ------ */
 
 int
@@ -171,11 +176,13 @@ gs_state_update_pdf14trans(gs_state * pgs, gs_pdf14trans_params_t * pparams)
 void
 gs_trans_group_params_init(gs_transparency_group_params_t *ptgp)
 {
-    ptgp->ColorSpace = 0;	/* bogus, but can't do better */
+
+    ptgp->ColorSpace = NULL;	/* bogus, but can't do better */
     ptgp->Isolated = false;
     ptgp->Knockout = false;
     ptgp->image_with_SMask = false;
     ptgp->mask_id = 0;
+    ptgp->iccprofile = NULL;
 }
 
 int
@@ -186,6 +193,7 @@ gs_begin_transparency_group(gs_state *pgs,
     gs_pdf14trans_params_t params = { 0 };
     const gs_color_space *blend_color_space;
     gs_imager_state * pis = (gs_imager_state *)pgs;
+
 
 
     /*
@@ -216,16 +224,10 @@ gs_begin_transparency_group(gs_state *pgs,
 
     } else {
 
-       /* ICC and CIE based color space.  Problem right now is that the 
-       current code does a concretization to the color space
-       defined by the CRD.  This is not the space that we want
-       to blend in.  Instead we want all colors to be mapped TO
-       the ICC color space.  Then when the group is popped they
-       should be converted to the parent space. 
-       That I will need to fix another day with the color changes.  
-       For now we will punt and set our blending space as the 
-       concrete space for the ICC space, which is defined by
-       the output (or default) CRD. */
+       /* ICC and CIE based color space.  With upcoming code changes
+          all CIE based spaces will actually be ICC based spaces and
+          ICC spaces are already concrete. So this will return the
+          ICC color space. */
 
         blend_color_space = cs_concrete_space(pgs->color_space, pis);
 
@@ -246,31 +248,53 @@ gs_begin_transparency_group(gs_state *pgs,
     
     } else {
 
-        switch (cs_num_components(blend_color_space)) {
-            case 1:				
-                params.group_color = GRAY_SCALE;       
-                params.group_color_numcomps = 1;  /* Need to check */
+        if ( gs_color_space_is_ICC(blend_color_space) ) {
+
+            /* Blending space is ICC based.  If we 
+               are doing c-list rendering we will need
+               to write this color space into the clist.
+               MJV ToDo.
+               */
+
+            params.group_color = ICC;
+            params.group_color_numcomps = 
+                blend_color_space->cmm_icc_profile_data->num_comps;
+
+            /* Get the ICC profile */
+
+            params.iccprofile = blend_color_space->cmm_icc_profile_data;
+            rc_increment(params.iccprofile);
+
+
+        } else {
+
+            switch (cs_num_components(blend_color_space)) {
+                case 1:				
+                    params.group_color = GRAY_SCALE;       
+                    params.group_color_numcomps = 1;  /* Need to check */
+                    break;
+                case 3:				
+                    params.group_color = DEVICE_RGB;       
+                    params.group_color_numcomps = 3; 
+                    break;
+                case 4:				
+                    params.group_color = DEVICE_CMYK;       
+                    params.group_color_numcomps = 4; 
                 break;
-            case 3:				
-                params.group_color = DEVICE_RGB;       
-                params.group_color_numcomps = 3; 
+                default:
+                    
+                    /* We can end up here if we are in
+                       a deviceN color space and 
+                       we have a sep output device */
+
+                    params.group_color = DEVICEN;
+                    params.group_color_numcomps = cs_num_components(blend_color_space);
+
                 break;
-            case 4:				
-                params.group_color = DEVICE_CMYK;       
-                params.group_color_numcomps = 4; 
-            break;
-            default:
-                
-                /* We can end up here if we are in
-                   a deviceN color space and 
-                   we have a sep output device */
 
-                params.group_color = DEVICEN;
-                params.group_color_numcomps = cs_num_components(blend_color_space);
+             }  
 
-            break;
-
-         }  
+        }
 
     }
 
@@ -287,6 +311,7 @@ gs_begin_transparency_group(gs_state *pgs,
 		cs_names[(int)gs_color_space_get_index(ptgp->ColorSpace)]);
 	else
 	    dputs("     (no CS)");
+
 	dprintf2("  Isolated = %d  Knockout = %d\n",
 		 ptgp->Isolated, ptgp->Knockout);
     }
@@ -314,6 +339,7 @@ gx_begin_transparency_group(gs_imager_state * pis, gx_device * pdev,
     /* Needed so that we do proper blending */
     tgp.group_color = pparams->group_color;
     tgp.group_color_numcomps = pparams->group_color_numcomps;
+    tgp.iccprofile = pparams->iccprofile;
 
     pis->opacity.alpha = pparams->opacity.alpha;
     pis->shape.alpha = pparams->shape.alpha;
@@ -327,13 +353,15 @@ gx_begin_transparency_group(gs_imager_state * pis, gx_device * pdev,
 
 	dlprintf6("[v](0x%lx)gx_begin_transparency_group [%g %g %g %g] Num_grp_clr_comp = %d\n",
 		  (ulong)pis, bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y,pparams->group_color_numcomps);
-	if (tgp.ColorSpace)
+        if (tgp.ColorSpace)
 	    dprintf1("     CS = %s",
 		cs_names[(int)gs_color_space_get_index(tgp.ColorSpace)]);
 	else
 	    dputs("     (no CS)");
 	dprintf2("  Isolated = %d  Knockout = %d\n",
 		 tgp.Isolated, tgp.Knockout);
+        if (tgp.iccprofile)
+            dprintf("     Have ICC Profile for blending\n");
     }
 #endif
     if (dev_proc(pdev, begin_transparency_group) != 0)
@@ -383,6 +411,8 @@ gs_trans_mask_params_init(gs_transparency_mask_params_t *ptmp,
     ptmp->TransferFunction = mask_transfer_identity;
     ptmp->TransferFunction_data = 0;
     ptmp->replacing = false;
+    ptmp->iccprofile = NULL;
+
 }
 
 int
@@ -444,80 +474,54 @@ gs_begin_transparency_mask(gs_state * pgs,
 
     /* Note:  This function is called during the c-list writer side. */ 
 
+    blend_color_space = pgs->color_space;
 
-    if ( params.SMask_is_CIE && params.subtype == TRANSPARENCY_MASK_Luminosity ){
+    if ( gs_color_space_is_ICC(blend_color_space) ) {
 
-        /* Install Color Space to go to CIEXYZ */
-        
-        /* int ok;
-        ok = gx_cie_to_xyz_alloc2(pgs->color_space,pgs); */  /* quite compiler */
-        params.group_color_numcomps = 3;  /* CIEXYZ */
+    /* Blending space is ICC based.  If we 
+       are doing c-list rendering we will need
+       to write this color space into the clist.
+       MJV ToDo.
+       */
 
-        /* Mark the proper spaces so that we make
-         * the appropriate changes in the device */
+        params.group_color = ICC;
+        params.group_color_numcomps = 
+                blend_color_space->cmm_icc_profile_data->num_comps;
 
-        params.group_color = CIE_XYZ;
+        /* Get the ICC profile */
+
+        params.iccprofile = blend_color_space->cmm_icc_profile_data;
+        rc_increment(params.iccprofile);
+
 
     } else {
 
-    /* Set the group color type, which may be 
-     *  different than the device type.  Note
-        we want to check the concrete space due
-        to the fact that things are done
-        in device space always. */
 
+        switch (cs_num_components(blend_color_space)) {
 
-        if(!gs_color_space_is_CIE(pgs->color_space)){
+            case 1:				
+                params.group_color = GRAY_SCALE;       
+                params.group_color_numcomps = 1;  /* Need to check */
+                break;
+            case 3:				
+                params.group_color = DEVICE_RGB;       
+                params.group_color_numcomps = 3; 
+                break;
+            case 4:				
+                params.group_color = DEVICE_CMYK;       
+                params.group_color_numcomps = 4; 
+            break;
+            default:
+                /* Transparency soft mask spot
+                   colors are NEVER available. 
+                   We must use the alternate tint
+                   transform */
+            return_error(gs_error_rangecheck);
+            break;
 
-            blend_color_space = pgs->color_space;
+         }    
 
-        } else {
-
-           /* ICC or CIE based color space.  Problem right now is that the 
-           current code does a concretization to the color space
-           defined by the CRD.  This is not the space that we want
-           to blend in.  Instead we want all colors to be mapped TO
-           the ICC color space.  Then when the group is popped they
-           should be converted to the parent space. 
-           That I will need to fix another day with the color changes.  
-           For now we will punt and set our blending space as the 
-           concrete space for the ICC space, which is defined by
-           the output (or default) CRD. */
-
-            blend_color_space = cs_concrete_space(pgs->color_space, pis);
-
-        }
-
-        /* For the softmask blend color space, we will always use the above blend_color_space. 
-           Problems can occur if we go all the way back to the device color space,
-           which could be DeviceN for a sep device.  Blending to the luminosity
-           channel for this case would not be defined. */
-
-            switch (cs_num_components(blend_color_space)) {
-
-                case 1:				
-                    params.group_color = GRAY_SCALE;       
-                    params.group_color_numcomps = 1;  /* Need to check */
-                    break;
-                case 3:				
-                    params.group_color = DEVICE_RGB;       
-                    params.group_color_numcomps = 3; 
-                    break;
-                case 4:				
-                    params.group_color = DEVICE_CMYK;       
-                    params.group_color_numcomps = 4; 
-	            break;
-                default:
-                    /* Transparency soft mask spot
-                       colors are NEVER available. 
-                       We must use the alternate tint
-                       transform */
-	            return_error(gs_error_rangecheck);
-	            break;
-
-             }    
-
-        }
+    }
 
     return gs_state_update_pdf14trans(pgs, &params);
 }
@@ -542,6 +546,18 @@ gx_begin_transparency_mask(gs_imager_state * pis, gx_device * pdev,
     tmp.idle = pparams->idle;
     tmp.replacing = pparams->replacing;
     tmp.mask_id = pparams->mask_id;
+    
+    if (tmp.group_color == ICC ) {
+
+        tmp.iccprofile = pparams->iccprofile;
+        /* Do I need to ref count here */
+
+    } else {
+
+        tmp.iccprofile = NULL;
+
+    }
+
     memcpy(tmp.transfer_fn, pparams->transfer_fn, size_of(tmp.transfer_fn));
     if_debug9('v', "[v](0x%lx)gx_begin_transparency_mask [%g %g %g %g]\n\
       subtype = %d  Background_components = %d  Num_grp_clr_comp = %d %s\n",

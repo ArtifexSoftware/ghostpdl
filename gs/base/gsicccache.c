@@ -440,26 +440,12 @@ gsicc_remove_link(gsicc_link_t *link, gsicc_link_cache_t *icc_cache, gs_memory_t
 }
 
 
-/* This is the main function called to obtain a linked transform from the ICC cache
-   If the cache has the link ready, it will return it.  If not, it will request 
-   one from the CMS and then return it.  We may need to do some cache locking during
-   this process to avoid multi-threaded issues (e.g. someone deleting while someone
-   is updating a reference count) */
-
 gsicc_link_t* 
 gsicc_get_link(gs_imager_state *pis, gs_color_space  *input_colorspace, 
                     gs_color_space *output_colorspace, 
                     gsicc_rendering_param_t *rendering_params, gs_memory_t *memory, bool include_softproof)
 {
 
-    gsicc_hashlink_t hash;
-    gsicc_link_t *link;
-    gcmmhprofile_t link_handle = NULL;
-    void **contextptr = NULL;
-    gsicc_manager_t *icc_manager = pis->icc_manager; 
-    gsicc_link_cache_t *icc_cache = pis->icc_cache;
-    gcmmhprofile_t *cms_input_profile;
-    gcmmhprofile_t *cms_output_profile;
     cmm_profile_t *gs_input_profile;
     cmm_profile_t *gs_output_profile;
 
@@ -475,7 +461,6 @@ gsicc_get_link(gs_imager_state *pis, gs_color_space  *input_colorspace,
 
     }
 
-
     if ( output_colorspace != NULL ) {
 
         gs_output_profile = output_colorspace->cmm_icc_profile_data;
@@ -486,6 +471,37 @@ gsicc_get_link(gs_imager_state *pis, gs_color_space  *input_colorspace,
         gs_output_profile = pis->icc_manager->device_profile;
 
     }
+
+    return(gsicc_get_link_profile(pis, gs_input_profile, gs_output_profile, 
+                    rendering_params, memory, include_softproof));
+
+
+
+}
+
+
+
+
+/* This is the main function called to obtain a linked transform from the ICC cache
+   If the cache has the link ready, it will return it.  If not, it will request 
+   one from the CMS and then return it.  We may need to do some cache locking during
+   this process to avoid multi-threaded issues (e.g. someone deleting while someone
+   is updating a reference count) */
+
+gsicc_link_t* 
+gsicc_get_link_profile(gs_imager_state *pis, cmm_profile_t *gs_input_profile, 
+                    cmm_profile_t *gs_output_profile, 
+                    gsicc_rendering_param_t *rendering_params, gs_memory_t *memory, bool include_softproof)
+{
+
+    gsicc_hashlink_t hash;
+    gsicc_link_t *link;
+    gcmmhprofile_t link_handle = NULL;
+    void **contextptr = NULL;
+    gsicc_manager_t *icc_manager = pis->icc_manager; 
+    gsicc_link_cache_t *icc_cache = pis->icc_link_cache;
+    gcmmhprofile_t *cms_input_profile;
+    gcmmhprofile_t *cms_output_profile;
 
 
     /* First compute the hash code for the incoming case */

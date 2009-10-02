@@ -117,7 +117,7 @@ typedef enum {
    of the ghostscript color structure.   The item is reference counted. */
 struct cmm_profile_s {
 
-    void *profile_handle;       /* The profile handle to be used in linking */
+    void *profile_handle;       /* The profile handle */
     unsigned char num_comps;    /* number of device dependent values */
     bool islab;                 /* Needed since we want to detect this to avoid 
                                    expensive decode on LAB images.  Is true
@@ -138,10 +138,48 @@ struct cmm_profile_s {
                                    are reloaded. */
 };
 
+
+
 #ifndef cmm_profile_DEFINED
 typedef struct cmm_profile_s cmm_profile_t;
 #define cmm_profile_DEFINED
 #endif
+
+
+
+/* A linked list structure for storing profiles in a table in which we
+   can store and refer to from the clist and also when creating icc profiles
+   from ps object.  Right now it is not clear to me if we really need a 
+   cache in the traditional sense or a list since I believe the number of entries will
+   in general be very small (i.e. there will not be at MOST more than 2 to 3 internal
+   ICC profiles in a file).  The default GRAY, RGB, and CMYK profiles are not
+   stored here but are maintained in the ICC manager.  This is for profiles
+   that are in the content and for profiles we generate from PS and PDF CIE (NonICC)
+   color spaces.  */
+
+typedef struct gsicc_profile_entry_s gsicc_profile_entry_t;
+
+struct gsicc_profile_entry_s {
+
+    cmm_profile_t *profile;               /* The profile  */
+    gsicc_profile_entry_t *next;          /* next profile */
+    gsicc_profile_entry_t *prev;          /* previous profile */
+
+};
+
+
+/* ProfileList. The size of the list is limited
+   by max_memory_size.  Profiles are added if there
+   is sufficient memory.  */
+
+typedef struct gsicc_profile_list_s {
+
+    gsicc_profile_entry_t *icc_profile_entry;
+    int num_entries;
+    rc_header rc;
+    gs_memory_t *memory;
+
+} gsicc_profile_list_t;
 
 
 /*  These are the types that we can
