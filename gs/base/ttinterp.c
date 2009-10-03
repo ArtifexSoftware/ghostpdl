@@ -3564,7 +3564,9 @@ static int nInstrCount=0;
 
     if ( BOUNDS( p, zp.n_points ) )
     {
-      CUR.error = TT_Err_Invalid_Displacement;
+      /* Don't set error code, just return. */
+      /* Ported from Freetype2 */
+      *refp = 0;
       return FAILURE;
     }
 
