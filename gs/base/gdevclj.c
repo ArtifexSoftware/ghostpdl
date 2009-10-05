@@ -266,8 +266,8 @@ clj_media_size(float mediasize[2], gs_param_list *plist)
     }
 
     if (param_read_int_array(plist, "HWSize", &hwsize) == 0) {
-        mediasize[0] = ((float)hwsize.data[0]) / fres.data[0];
-        mediasize[1] = ((float)hwsize.data[1]) / fres.data[1];
+        mediasize[0] = ((float)hwsize.data[0]) * 72 / fres.data[0];
+        mediasize[1] = ((float)hwsize.data[1]) * 72 / fres.data[1];
 	have_pagesize = 1;
     }
 
