@@ -20,9 +20,12 @@
 #include "gsmemory.h"
 #include "gsstruct.h"  
 #include "scommon.h"
+#include "gx.h"
 #include "gscms.h"
 #include "gsicc_profilecache.h"
 #include "gserrors.h"
+
+
 
 #define ICC_CACHE_MAXPROFILE 50  
 
@@ -54,7 +57,7 @@ gsicc_profilelist_new(gs_memory_t *memory)
     if ( result == NULL )
         return(NULL);
 
- /*   rc_init_free(result, memory->stable_memory, 1, rc_gsicc_profile_list_free);  */
+    rc_init_free(result, memory->stable_memory, 1, rc_gsicc_profile_list_free);
 
     result->icc_profile_entry = NULL;
     result->num_entries = 0;
@@ -69,7 +72,7 @@ rc_gsicc_profile_list_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
 {
     /* Ending the list. */
 
- /*   gsicc_profile_list_t *profile_list = (gsicc_profile_list_t * ) ptr_in;
+    gsicc_profile_list_t *profile_list = (gsicc_profile_list_t * ) ptr_in;
     int k;
     gsicc_profile_entry_t *profile_entry;
 
@@ -79,15 +82,16 @@ rc_gsicc_profile_list_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
 
         if ( profile_entry->next != NULL){
 
-            gsicc_remove_profile(profile_entry,profile_list, mem);
+            gsicc_remove_profile(profile_entry, profile_list, mem);
 
         }
 
     }
 
-    gs_free_object(mem->stable_memory, profile_list, "rc_gsicc_profile_list_free"); */
+    gs_free_object(mem->stable_memory, profile_list, "rc_gsicc_profile_list_free"); 
 
 }
+
 
 static void
 gsicc_add_profile(gsicc_profile_list_t *profile_list, cmm_profile_t *profile, gs_memory_t *memory)
@@ -183,8 +187,6 @@ gsicc_find_zeroref_list(gsicc_profile_list_t *profile_list){
     gsicc_profile_entry_t *curr_pos1,*curr_pos2;
     bool foundit = 0;
 
-    /* Look through the cache for zero ref count */
-
     curr_pos1 = profile_list->icc_profile_entry;
     curr_pos2 = curr_pos1;
 
@@ -199,30 +201,31 @@ gsicc_find_zeroref_list(gsicc_profile_list_t *profile_list){
 
 }
 
-/* Remove link from cache.  Notify CMS and free */
+/* Remove profile from list. */
 
-/*
+
 static void
-gsicc_remove_link(gsicc_link_t *link, gsicc_link_cache_t *icc_cache, gs_memory_t *memory){
+    gsicc_remove_profile(gsicc_profile_entry_t *profile_entry, 
+        gsicc_profile_list_t *profile_list, gs_memory_t *memory){
 
+    gsicc_profile_entry_t *prevprofile,*nextprofile;
 
-    gsicc_link_t *prevlink,*nextlink;
+    prevprofile = profile_entry->prev;
+    nextprofile = profile_entry->next;
 
-    prevlink = link->prevlink;
-    nextlink = link->nextlink;
-
-    if (prevlink != NULL){
-        prevlink->nextlink = nextlink;
+    if (prevprofile != NULL){
+        prevprofile->next = nextprofile;
     }
 
-    if (nextlink != NULL){
-        nextlink->prevlink = prevlink;
+    if (nextprofile != NULL){
+        nextprofile->prev = prevprofile;
     }
 
-    gsicc_link_free(link, memory);
+    rc_decrement(profile_entry->profile, "gsicc_remove_profile");
+
+    gs_free_object(memory->stable_memory, profile_entry, "gsicc_remove_profile");
 
 }
-*/
 
 
 

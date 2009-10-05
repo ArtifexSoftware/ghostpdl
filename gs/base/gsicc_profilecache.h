@@ -31,6 +31,7 @@ static cmm_profile_t* gsicc_findprofile(int64_t hash, gsicc_profile_list_t *prof
 
 static gsicc_profile_entry_t* gsicc_find_zeroref_list(gsicc_profile_list_t *profile_list);
 
-
+static void gsicc_remove_profile(gsicc_profile_entry_t *profile_entry, 
+        gsicc_profile_list_t *profile_list, gs_memory_t *memory);
 #endif
 
