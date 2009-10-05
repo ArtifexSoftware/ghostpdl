@@ -125,19 +125,9 @@ int xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image)
         /* ask libpng to expand palettes to rgb triplets */
         png_set_palette_to_rgb(png);
         image->bits = 8;
-
-        /* libpng will expand to rgba if there is a tRNS chunk */
-        if (png_get_valid(png, info, PNG_INFO_tRNS))
-        {
-            image->comps = 4;
-            image->colorspace = XPS_RGB_A;
-        }
-        else
-        {
-            image->comps = 3;
-            image->colorspace = XPS_RGB;
-        }
-        break;
+	image->comps = 3;
+	image->colorspace = XPS_RGB;
+	break;
 
     case PNG_COLOR_TYPE_RGB:
         image->comps = 3;
@@ -156,6 +146,23 @@ int xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image)
 
     default:
         return gs_throw(-1, "cannot handle this png color type");
+    }
+
+    /* libpng will expand to alpha if there is a tRNS chunk */
+    if (png_get_valid(png, info, PNG_INFO_tRNS))
+    {
+	if (image->comps == 1)
+	{
+	    image->comps = 2;
+	    image->colorspace = XPS_GRAY_A;
+	    png_set_tRNS_to_alpha(png);
+	}
+	if (image->comps == 3)
+	{
+	    image->comps = 4;
+	    image->colorspace = XPS_RGB_A;
+	    png_set_tRNS_to_alpha(png);
+	}
     }
 
     image->stride = (image->width * image->comps * image->bits + 7) / 8;
