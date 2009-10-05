@@ -691,7 +691,7 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
     int x0, x1, y0, y1;
     byte *new_data_buf;
     int num_noncolor_planes, new_num_planes;
-    int num_cols, num_rows;
+    int num_cols, num_rows, num_newcolor_planes;
 
     gsicc_rendering_param_t rendering_params;
     gsicc_link_t *icc_link;
@@ -760,31 +760,13 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
             /* The NOS blending color space is different than that of the
                TOS.  It is necessary to transform the TOS buffer data to the
                color space of the NOS prior to doing the pdf14_compose_group 
-               operation.  For now we are going to do very generic transformations.
-               This will be replaced when we bring in the updated color flow. */
-
-            /* Allocate the new buffer.  If the number of channels in the the new
-              color space was less than or equal to the previous one, we could
-              reuse.  Save that for a later optimization. */
+               operation.  */
 
             num_noncolor_planes = tos->n_planes - curr_num_color_comp;
-            new_num_planes = num_noncolor_planes + nos->parent_color_info_procs->num_components;
-            new_data_buf = gs_alloc_bytes(ctx->memory, tos->planestride*new_num_planes,
-					        "pdf14_buf_new");
-            if (new_data_buf == NULL)	    
-                return_error(gs_error_VMerror);
+            num_newcolor_planes = nos->parent_color_info_procs->num_components;
+            new_num_planes = num_noncolor_planes + num_newcolor_planes;
 
-            /* Initialize with 0.  Need to double check about this...
-               may need to do some adjustments for the shape etc plane */
-            /* i.e. copy over those planes that exist beyond the count
-               of the number of color components */
-
-	    memset(new_data_buf, 0, tos->planestride*new_num_planes); 
-
-            /* Go ahead and do the conversion on the buffer */
-
-            /* later this will be replaced by gscms_transform_color_buffer */
-            /* This simple function is for planar data only.  */
+            /* See if we are doing ICC based conversion */
 
             if (nos->parent_color_info_procs->icc_profile != NULL && curr_icc_profile != NULL){
                 
@@ -804,11 +786,35 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
 
                 /* If the link is the identity, then we don't need to do any color conversions */
 
-                if (icc_link->is_identity ) {
+                if ( !(icc_link->is_identity) ) {
 
-                    memset(new_data_buf, 0, tos->planestride*new_num_planes); 
+                    /* Before we do any allocations check if we can get away with
+                       reusing the existing buffer if it is the same size ( if it is
+                       smaller go ahead and allocate).  We could reuse it in this
+                       case too.  We need to do a bit of testing to determine what
+                       would be best.  */
 
-                } else {
+                    if( num_newcolor_planes != curr_num_color_comp ){
+
+                        /* Different size.  We will need to allocate */
+
+                        new_data_buf = gs_alloc_bytes(ctx->memory, tos->planestride*new_num_planes,
+					                "pdf14_buf_new");
+                        if (new_data_buf == NULL)	    
+                            return_error(gs_error_VMerror);
+
+                        /* Copy over the noncolor planes. */
+
+                        memcpy(new_data_buf + tos->planestride * num_newcolor_planes, 
+                            tos->data + tos->planestride * curr_num_color_comp, tos->planestride * num_noncolor_planes);
+
+                    } else {
+
+                        /* In place color conversion! */
+
+                        new_data_buf = tos->data;
+
+                    }
 
                     /* Set up the buffer descriptors. Note that pdf14 always has
                        the alpha channels at the back end (last planes).  We will just handle that
@@ -837,18 +843,29 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
 
                 gsicc_release_link(icc_link);
 
+                /* free the old object if the color spaces were different sizes */
+
+                if( num_newcolor_planes != curr_num_color_comp ){
+
+                    gs_free_object(ctx->memory, tos->data, "pdf14_buf_free");
+                    tos->data = new_data_buf;
+
+                }
+
             } else {
 
-                gs_transform_color_buffer_generic(tos->data,tos->rowstride,tos->planestride,
-                    curr_num_color_comp,tos->rect,new_data_buf,nos->parent_color_info_procs->num_components,num_noncolor_planes);
+                /* Non ICC based transform */
+
+                gs_transform_color_buffer_generic(tos->data, tos->rowstride, tos->planestride,
+                    curr_num_color_comp, tos->rect,new_data_buf, num_newcolor_planes, num_noncolor_planes);
+
+                 /* Free the old object */
+
+                  gs_free_object(ctx->memory, tos->data, "pdf14_buf_free");
+                  tos->data = new_data_buf;
 
             }
      
-             /* Free the old object */
-
-              gs_free_object(ctx->memory, tos->data, "pdf14_buf_free");
-                 tos->data = new_data_buf;
-
              /* Adjust the plane and channel size now */
 
              tos->n_chan = nos->n_chan;
@@ -856,12 +873,12 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
 
 #if RAW_DUMP
   
-			/* Dump the current buffer to see what we have. */
+	    /* Dump the current buffer to see what we have. */
 
-			dump_raw_buffer(ctx->stack->rect.q.y-ctx->stack->rect.p.y, 
-						ctx->stack->rowstride, ctx->stack->n_planes,
-						ctx->stack->planestride, ctx->stack->rowstride, 
-						"Trans_Group_ColorConv",ctx->stack->data);
+	    dump_raw_buffer(ctx->stack->rect.q.y-ctx->stack->rect.p.y, 
+				    ctx->stack->rowstride, ctx->stack->n_planes,
+				    ctx->stack->planestride, ctx->stack->rowstride, 
+				    "Trans_Group_ColorConv",ctx->stack->data);
 
 #endif
 
@@ -875,6 +892,8 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
 
 
     } else {
+
+        /* Group color spaces are the same.  No color conversions needed */
 
         if (x0 < x1 && y0 < y1)
 	    pdf14_compose_group(tos, nos, maskbuf, x0, x1, y0, y1,nos->n_chan, ctx->additive, pblend_procs);
