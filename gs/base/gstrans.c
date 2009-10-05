@@ -28,11 +28,6 @@
 
 #define PUSH_TS 0
 
-
-gs_private_st_ptrs2(st_gstransparams, gs_transparency_group_params_t, "gs_gstransparams",
-      st_gstransparams_enum_ptrs, st_gstransparams_reloc_ptrs, ColorSpace, iccprofile);
-
-
 /* ------ Transparency-related graphics state elements ------ */
 
 int

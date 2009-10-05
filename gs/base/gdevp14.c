@@ -2407,6 +2407,7 @@ pdf14_begin_transparency_group(gx_device *dev,
     bool sep_target = (strcmp(pdev->dname, "PDF14cmykspot") == 0);
     int group_color_numcomps;
     gs_transparency_color_t group_color;
+    cmm_profile_t *curr_profile;
 
     /* If the target device supports separations, then 
        we should should NOT create the group.  The exception to this 
@@ -2419,38 +2420,38 @@ pdf14_begin_transparency_group(gx_device *dev,
     if_debug4('v', "[v]pdf14_begin_transparency_group, I = %d, K = %d, alpha = %g, bm = %d\n",
 	      ptgp->Isolated, ptgp->Knockout, alpha, pis->blend_mode);
 
-    /* If the group color is unknown, then we must use the previous group color
-       space or the device process color space */
+    /* If the group color is unknown then use the current device profile.  Note
+       that if we have a sep device there may not be a profile */
         
     if (ptgp->group_color == UNKNOWN){
 
         if (pdev->ctx->stack){
             /* Use previous group color space */
             group_color_numcomps = pdev->ctx->stack->n_chan-1;  /* Remove alpha */
+
         } else {
             /* Use process color space */
             group_color_numcomps = pdev->color_info.num_components;
         }
 
-        switch (group_color_numcomps) {
-            case 1:				
-                group_color = GRAY_SCALE;       
-                break;
-            case 3:				
-                group_color = DEVICE_RGB;       
-                break;
-            case 4:				
-                group_color = DEVICE_CMYK;       
-            break;
-            default:
-                
-                /* We can end up here if we are in
-                   a deviceN color space and 
-                   we have a sep output device */
+       /* If we are not going out to a sep device then use
+           the ICC color space defined by the device profile 
+           in the ICC manager.  This is reset for each
+           group push. */
 
-                group_color = DEVICEN;
+        if (group_color_numcomps < 5 ) {
 
-            break;
+            group_color = ICC;
+            curr_profile = pis->icc_manager->device_profile;
+
+        } else {
+
+            /* We can end up here if we are in
+               a deviceN color space and 
+               we have a sep output device */
+
+            group_color = DEVICEN;
+            curr_profile = NULL;
 
          }  
     
@@ -2458,6 +2459,7 @@ pdf14_begin_transparency_group(gx_device *dev,
 
         group_color_numcomps = ptgp->group_color_numcomps;
         group_color = ptgp->group_color;
+        curr_profile = ptgp->iccprofile;
 
     }
 
@@ -2465,7 +2467,7 @@ pdf14_begin_transparency_group(gx_device *dev,
         The exception would be if we are in doing the group for a soft mask */
 
     if (!sep_target) {
-        code = pdf14_update_device_color_procs(dev,group_color,pis,ptgp->iccprofile);
+        code = pdf14_update_device_color_procs(dev, group_color, pis, curr_profile);
     } else {
         code = 0;
         group_color_numcomps = pdev->color_info.num_components;
