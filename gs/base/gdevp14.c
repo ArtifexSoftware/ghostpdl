@@ -856,6 +856,11 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
 
                 /* Non ICC based transform */
 
+                new_data_buf = gs_alloc_bytes(ctx->memory, tos->planestride*new_num_planes,
+			                "pdf14_buf_new");
+                if (new_data_buf == NULL)	    
+                    return_error(gs_error_VMerror);
+
                 gs_transform_color_buffer_generic(tos->data, tos->rowstride, tos->planestride,
                     curr_num_color_comp, tos->rect,new_data_buf, num_newcolor_planes, num_noncolor_planes);
 
@@ -1211,7 +1216,7 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
 
     /*
      * Set color space to either Gray, RGB, or CMYK in preparation for sending
-     * an image.
+     * an image.   
      */
     switch (num_comp) {
 	case 1:				/* DeviceGray */
@@ -1229,6 +1234,12 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
     }
     if (pcs == NULL)
 	return_error(gs_error_VMerror);
+
+    /* Need to set this to avoid color management during the image color render operation */
+
+    pcs->cmm_icc_profile_data = pis->icc_manager->device_profile;
+    rc_increment(pis->icc_manager->device_profile);
+
     gs_image_t_init_adjust(&image, pcs, false);
     image.ImageMatrix.xx = (float)width;
     image.ImageMatrix.yy = (float)height;
@@ -1290,6 +1301,7 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
     rc_decrement_only(pdev, "pdf_14_put_image");
 #endif
 
+    rc_decrement(pis->icc_manager->device_profile, "pdf14_put_image");
     rc_decrement_only(pcs, "pdf14_put_image");
 
     return code;
