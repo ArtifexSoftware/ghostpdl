@@ -83,9 +83,9 @@ int gs_pdf14_device_push(gs_memory_t *, gs_imager_state *, gx_device **,
 
 /* Buffer stack	data structure */
 
-gs_private_st_ptrs4(st_pdf14_buf, pdf14_buf, "pdf14_buf",
+gs_private_st_ptrs5(st_pdf14_buf, pdf14_buf, "pdf14_buf",
 		    pdf14_buf_enum_ptrs, pdf14_buf_reloc_ptrs,
-		    saved, data, transfer_fn, maskbuf);
+		    saved, data, transfer_fn, maskbuf, parent_color_info_procs);
 
 gs_private_st_ptrs2(st_pdf14_ctx, pdf14_ctx, "pdf14_ctx",
 		    pdf14_ctx_enum_ptrs, pdf14_ctx_reloc_ptrs,
@@ -93,7 +93,7 @@ gs_private_st_ptrs2(st_pdf14_ctx, pdf14_ctx, "pdf14_ctx",
 
 gs_private_st_ptrs2(st_pdf14_clr, pdf14_parent_color_t, "pdf14_clr",
 		    pdf14_clr_enum_ptrs, pdf14_clr_reloc_ptrs,
-		    previous, icc_profile);
+		    icc_profile, previous);
 
 /* ------ The device descriptors ------	*/
 
