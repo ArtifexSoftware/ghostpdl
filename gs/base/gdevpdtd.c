@@ -465,7 +465,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 	 */
 	if(strncmp(".notdef", (const char *)gname.data, gname.size)) {
 	    position = gs_c_decode(glyph_known_enc, 0);
-	    if (position == GS_NO_CHAR || position != index) {
+	    if (position == GS_NO_CHAR) {
 		desc.Flags |= FONT_IS_SYMBOLIC;
 		continue;
 	    }
@@ -754,4 +754,18 @@ pdf_convert_truetype_font_descriptor(gx_device_pdf *pdev, pdf_font_resource_t *p
     pdfont->u.cidfont.used2 = NULL;
     pdfont->u.cidfont.v = NULL;
     return 0;
+}
+
+int mark_font_descriptor_symbolic(pdf_font_resource_t *pdfont)
+{
+    pdf_font_descriptor_values_t *desc;
+    
+    if(!pdfont || !pdfont->FontDescriptor)
+	return 0;
+
+    if (!(desc->Flags & FONT_IS_SYMBOLIC)) {
+	desc->Flags |= FONT_IS_SYMBOLIC; 
+	desc->Flags &= ~FONT_IS_ADOBE_ROMAN; 
+    }
+    return 1;
 }

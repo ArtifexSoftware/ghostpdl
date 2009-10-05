@@ -224,6 +224,7 @@ pdf_write_simple_contents(gx_device_pdf *pdev,
 	      pdfont->u.simple.s.type1.is_MM_instance ? "MMType1" : "Type1"));
     pdf_end_separate(pdev);
     if (diff_id) {
+	mark_font_descriptor_symbolic(pdfont);
 	code = pdf_write_encoding(pdev, pdfont, diff_id, ch);
 	if (code < 0)
 	    return code;
