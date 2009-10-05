@@ -763,6 +763,8 @@ int mark_font_descriptor_symbolic(pdf_font_resource_t *pdfont)
     if(!pdfont || !pdfont->FontDescriptor)
 	return 0;
 
+    desc = &pdfont->FontDescriptor->common.values;
+
     if (!(desc->Flags & FONT_IS_SYMBOLIC)) {
 	desc->Flags |= FONT_IS_SYMBOLIC; 
 	desc->Flags &= ~FONT_IS_ADOBE_ROMAN; 
