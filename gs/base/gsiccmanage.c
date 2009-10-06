@@ -510,6 +510,7 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname, int namelen
     result->profile_handle = NULL;
     result->hash_is_valid = false;
     result->islab = false;
+    result->default_match = default_none;
 
     return(result);
 

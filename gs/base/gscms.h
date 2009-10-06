@@ -57,6 +57,22 @@ typedef enum {
     gsCIELAB
 } gsicc_colorbuffer_t;
 
+/*  Used to indicate if
+   the profile matches
+   one of the default 
+   profiles in the 
+   icc manager.  This is useful
+   for reducing clist size since
+   we will encode this value
+   instead of the ICC profile. */
+
+typedef enum {
+    default_none,
+    default_GRAY,
+    default_RGB,
+    default_CMYK
+} gsicc_defaultmatch_t;
+
 typedef struct gsicc_bufferdesc_s {
 
     unsigned char num_chan;
@@ -122,7 +138,7 @@ struct cmm_profile_s {
     bool islab;                 /* Needed since we want to detect this to avoid 
                                    expensive decode on LAB images.  Is true
                                    if PDF color space is \Lab*/
-
+    gsicc_defaultmatch_t default_match;  /* Used for detecting a match to a default space */
     gsicc_colorbuffer_t data_cs; /* The data color space of the profile (not the PCS) */
     gs_range15_t Range;          
     byte *buffer;               /* A buffer with ICC profile content */
