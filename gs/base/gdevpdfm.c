@@ -735,7 +735,8 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 		 */
 		case 0:
 		    eprintf("Annotation set to non-printing,\n not permitted in PDF/A, reverting to normal PDF output\n");
-		    pdev->PDFA = 0;
+		    pdev->AbortPDFAX = true;
+		    pdev->PDFA = false;
 		    break;
 		    /* Since the annotation would break PDF/A compatibility, do not
 		     * include it, but warn the user that it has been dropped.
@@ -746,7 +747,8 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 		    break;
 		default:
 		    eprintf("Annotation set to non-printing,\n not permitted in PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
-		    pdev->PDFA = 0;
+		    pdev->AbortPDFAX = true;
+		    pdev->PDFA = false;
 		    break;
 	    }
 	}
