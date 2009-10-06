@@ -95,6 +95,11 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     picc_profile->profile_handle = gsicc_get_profile_handle_buffer(picc_profile->buffer);
     picc_profile->data_cs = gscms_get_profile_data_space(picc_profile->profile_handle);
 
+    /* Lets go ahead and get the hash code and check if we match one of the default spaces */
+    /* Later we may want to delay this, but for now lets go ahead and do it */
+
+    gsicc_init_hash_cs(picc_profile, pis);
+
     /* Set the range according to the data type that is associated with the 
        ICC input color type.  Occasionally, we will run into CIELAB to CIELAB
        profiles for spot colors in PDF documents. These spot colors are typically described

@@ -107,8 +107,8 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
     gs_memory_t *mem_gc = pis->memory; 
     int code;
     int k;
- 
-    /* For now only let this be set once. 
+        
+       /* For now only let this be set once. 
        We could have this changed dynamically
        in which case we need to do some 
        deaallocations prior to replacing 
@@ -200,6 +200,8 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
 
         gsicc_get_icc_buff_hash(icc_profile->buffer, &(icc_profile->hashcode));
         icc_profile->hash_is_valid = true;
+
+        icc_profile->default_match = defaulttype;
 
         icc_profile->num_comps = gscms_get_channel_count(icc_profile->profile_handle);
         icc_profile->data_cs = gscms_get_profile_data_space(icc_profile->profile_handle);
@@ -510,7 +512,7 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname, int namelen
     result->profile_handle = NULL;
     result->hash_is_valid = false;
     result->islab = false;
-    result->default_match = default_none;
+    result->default_match = DEFAULT_NONE;
 
     return(result);
 
@@ -633,6 +635,60 @@ gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, gs_memory_t *memory
    return(0);
 
 }
+
+/* Check if the profile is the same as any of the default profiles */
+
+static void
+gsicc_set_default_cs_value(cmm_profile_t *picc_profile, gs_imager_state *pis){
+
+    if ( picc_profile->default_match == DEFAULT_NONE ){
+
+        switch ( picc_profile->data_cs ) {
+
+            case gsGRAY:
+
+                if ( picc_profile->hashcode == pis->icc_manager->default_gray->hashcode )
+                    picc_profile->default_match = DEFAULT_GRAY;
+
+                break;
+
+            case gsRGB:
+
+                if ( picc_profile->hashcode == pis->icc_manager->default_gray->hashcode )
+                    picc_profile->default_match = DEFAULT_RGB;
+
+                break;
+
+            case gsCMYK:
+
+                if ( picc_profile->hashcode == pis->icc_manager->default_gray->hashcode )
+                    picc_profile->default_match = DEFAULT_CMYK;
+
+                break;
+
+        }
+
+    }
+
+}
+
+/* Initialize the hash code value */
+
+void
+gsicc_init_hash_cs(cmm_profile_t *picc_profile, gs_imager_state *pis){
+
+
+    if ( !(picc_profile->hash_is_valid) ) {
+
+        gsicc_get_icc_buff_hash(picc_profile->buffer, &(picc_profile->hashcode));
+        picc_profile->hash_is_valid = true;
+
+    }
+
+    gsicc_set_default_cs_value(picc_profile, pis);
+
+}
+
 
 
 gcmmhprofile_t

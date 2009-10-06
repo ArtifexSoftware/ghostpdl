@@ -43,6 +43,10 @@ int gsicc_set_gscs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile, gs_m
 
 cmm_profile_t* gsicc_get_gscs_profile(gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager);
 
+static void gsicc_set_default_cs_value(cmm_profile_t *picc_profile, gs_imager_state *pis);
+
+void gsicc_init_hash_cs(cmm_profile_t *picc_profile, gs_imager_state *pis);
+
 gcmmhprofile_t gsicc_get_profile_handle_buffer(unsigned char *buffer);
 
 void gsicc_set_icc_directory(const gs_imager_state *pis, const char* pname, int namelen);
