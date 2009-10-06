@@ -123,8 +123,11 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
     bool device_color = penum->device_color;
     bits32 mask = penum->mask_color.mask;
     bits32 test = penum->mask_color.test;
-    gx_device_color devc;
+    gx_device_color devc1;
+    gx_device_color devc2;
     gx_device_color *pdevc;
+    gx_device_color *pdevc_next;
+    gx_device_color *ptemp;
     int spp = penum->spp;
     const byte *psrc_initial = buffer + data_x * spp;
     const byte *psrc = psrc_initial;
@@ -147,7 +150,8 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
     gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int spp_cm, num_pixels;
 
-    pdevc = &devc;
+    pdevc = &devc1;
+    pdevc_next = &devc2;
 
     /* Define the rendering intents */
     rendering_params.black_point_comp = BP_ON;
@@ -273,7 +277,7 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
 
     /* check if the encoding was successful; we presume failure is rare */
     if (color != gx_no_color_index)
-        color_set_pure(pdevc, color);
+        color_set_pure(pdevc_next, color);
 
         /* Fill the region between */
 	/* xrun/irun and xprev */
@@ -322,7 +326,13 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
 	rsrc = psrc;
 	if ((code = mcode) < 0) goto err;
 
+        /* Swap around the colors due to a change */
+        ptemp = pdevc;
+        pdevc = pdevc_next;
+        pdevc_next = ptemp;
+
  	run = next;
+
 inc:	xprev = dda_current(pnext.x);
 	yprev = dda_current(pnext.y);	/* harmless if no skew */
     }

@@ -1272,6 +1272,10 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
                 pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride, 
                 "PDF14_PUTIMAGE",pdev->ctx->stack->data);
 
+    dump_raw_buffer(height, width, num_comp+1,
+                pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride, 
+                "PDF14_PUTIMAGE_SMALL",buf_ptr);
+
     global_index++;
     clist_band_count++;
 
