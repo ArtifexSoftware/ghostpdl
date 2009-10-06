@@ -194,6 +194,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     gsicc_link_t *icc_link;
     gsicc_rendering_param_t rendering_params;
     unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS], psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short *psrc_temp;
     frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
     int k,i;
 
@@ -217,8 +218,17 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     /* Get a link from the cache, or create if it is not there. Need to get 16 bit profile */
     icc_link = gsicc_get_link(pis, pcs, NULL, &rendering_params, pis->memory, false);
 
-    /* Transform the color */
-    gscms_transform_color(icc_link, psrc, psrc_cm, 2, NULL);
+    if (icc_link->is_identity) {
+
+        psrc_temp = &(psrc[0]);
+
+    } else {
+
+        /* Transform the color */
+        psrc_temp = &(psrc_cm[0]);
+        gscms_transform_color(icc_link, psrc, psrc_temp, 2, NULL);
+
+    }
 
     /* Release the link */
     gsicc_release_link(icc_link);
@@ -231,7 +241,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
 
     for ( k = 0; k< pis->icc_manager->device_profile->num_comps; k++){
 
-        conc[k] = ushort2frac(psrc_cm[k]);
+        conc[k] = ushort2frac(psrc_temp[k]);
 
     }
 
