@@ -205,25 +205,38 @@ currentdict /runpdfstring .undef
 % Copy stream to an external temporary file and
 % return the file name as PS name.
 /copy_embedded_file {
-  //true resolvestream    % strm
-  //null (w) /.tempfile   % strm (name) null (w) /.tempfile
-  .systemvar exec         % strm (name) file
-  3 -1 roll               % (name) file strm
-  32768 string            % (name) file strm (buf)
-  { 3 copy readstring     % (name) file strm (buf) file (data) bool
-    3 1 roll              % (name) file strm (buf) bool file (data)
-    writestring           % (name) file strm (buf) bool
-    not { exit } if
-  } loop                  
-  pop closefile           % (name) file
-  closefile               % (name)
-  cvn                     % /name
+  //true resolvestream      % strm
+  dup 1023 string .peekstring pop % "1024 string" exceeds current %stdin buffer
+  dup length 400 ge {             % Valid PDF file cannot be smaller than 400 bytes.
+     (%PDF-) search {
+       pop pop pop //true
+     } {
+       pop //false
+     } ifelse
+   } {
+     pop //false
+   } ifelse {
+    //null (w) /.tempfile   % strm (name) null (w) /.tempfile
+    .systemvar exec         % strm (name) file
+    3 -1 roll               % (name) file strm
+    32768 string            % (name) file strm (buf)
+    { 3 copy readstring     % (name) file strm (buf) file (data) bool
+      3 1 roll              % (name) file strm (buf) bool file (data)
+      writestring           % (name) file strm (buf) bool
+      not { exit } if
+    } loop                  
+    pop closefile           % (name) file
+    closefile               % (name)
+    cvn                     % /name
+  } {
+    closefile
+  } ifelse
 } bind def
 
 
 % Copy selected subfiles to temporary files and return the file names
 % as a PostScript names to protect them from restore.
-% Currently, all files in the Portfolio are extracted and returned.
+% Currently, all PDF files in the Portfolio are extracted and returned.
 %
 % - pdf_collection_files [ /temp_file_name ... /temp_file_name
 /pdf_collection_files {
