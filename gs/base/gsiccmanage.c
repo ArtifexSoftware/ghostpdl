@@ -25,6 +25,7 @@
 #include "gscms.h"
 #include "gsiccmanage.h"
 #include "gsicccache.h"
+#include "gsicc_profilecache.h"
 #include "gserrors.h"
 #include "string_.h"
 
@@ -823,6 +824,47 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer){
 
  }
 
+
+static cmm_profile_t*
+gsicc_get_profile( gsicc_profile_t profile_type, gsicc_manager_t *icc_manager ) {
+
+    switch (profile_type) {
+
+        case DEFAULT_GRAY:
+
+            return(icc_manager->default_gray);
+
+        case DEFAULT_RGB:
+
+            return(icc_manager->default_rgb);
+
+        case DEFAULT_CMYK:
+            
+             return(icc_manager->default_cmyk);
+
+        case PROOF_TYPE:
+
+             return(icc_manager->proof_profile);
+
+        case NAMED_TYPE:
+
+             return(icc_manager->device_named);
+
+        case LINKED_TYPE:
+
+             return(icc_manager->output_link);
+
+        case LAB_TYPE:
+
+             return(icc_manager->lab_profile);
+
+    }
+
+    return(NULL);
+
+ }
+
+
  /* Write an icc profile into the command list. */
 
 int
@@ -905,7 +947,7 @@ gsicc_profile_clist_write(
         }
 
 	if (sizeof(profile_data) > left) {
-	    return_error(gs_error_unregistered); /* Must not happen. */
+            return gs_rethrow(-1, "insufficient memory to write icc header in clist");
 	}
 
 	memcpy(data, &profile_data, sizeof(profile_data));
@@ -936,6 +978,126 @@ gsicc_profile_clist_write(
  }
 
 
+int
+gsicc_profile_clist_read(
+    cmm_profile_t         *icc_profile,     
+    const gs_imager_state * pis,
+    uint		    offset,
+    const byte *            data,
+    uint                    size,
+    gs_memory_t *           mem )
+{
+    const byte *dp = data;
+    int left = size;
+    int profile_size, k;
+    gsicc_serialized_profile_t profile_data;
+
+    if (size == sizeof(icc_profile->default_match) && offset == 0 ) {
+
+            /* Profile is one of the default types */
+
+        gsicc_profile_t profile_type; 
+
+        memcpy(&profile_type, dp, sizeof(profile_type));
+
+        icc_profile = gsicc_get_profile( profile_type, pis->icc_manager );
+        rc_increment( icc_profile );
+
+        return size;
+    }
+
+    if (size == sizeof( icc_profile->hashcode ) && offset == 0 ) {
+
+            /* Profile is in the profile cache */
+
+        int64_t hashcode; 
+
+        memcpy(&hashcode, dp, sizeof(hashcode));
+
+        icc_profile = gsicc_findprofile(hashcode, pis->icc_profile_cache);
+
+        if (icc_profile == NULL)
+            return gs_rethrow(-1, "cannot find profile in cache during clist read");
+
+        rc_increment(icc_profile);
+
+        return size;
+
+    }
+
+    if (icc_profile == NULL ){
+
+        /* Allocate a new one and place in the cache.  Call to this should be with 
+            the profile set to NULL. */
+
+        icc_profile = gsicc_profile_new(NULL, pis->memory, NULL, 0);
+        gsicc_add_profile(pis->icc_profile_cache, icc_profile, pis->memory);
+
+        if (sizeof(profile_data) > size) {
+                return gs_rethrow(-1, "insufficient memory to read icc header from clist");
+        }
+
+        memcpy(&profile_data, dp, sizeof(profile_data));
+        dp += sizeof(profile_data);
+        left -= sizeof(profile_data);
+        offset += sizeof(profile_data);
+
+        icc_profile->buffer_size = profile_data.buffer_size;
+        icc_profile->data_cs = profile_data.data_cs;
+        profile_data.default_match = icc_profile->default_match;
+        profile_data.hash_is_valid = icc_profile->hash_is_valid;
+        profile_data.hashcode = icc_profile->hashcode;
+        profile_data.islab = icc_profile->islab;
+        profile_data.num_comps = icc_profile->num_comps;
+           
+        for ( k = 0; k < profile_data.num_comps; k++ ){
+
+            icc_profile->Range.ranges[k].rmax =
+                profile_data.Range.ranges[k].rmax;
+       
+            icc_profile->Range.ranges[k].rmin =
+                profile_data.Range.ranges[k].rmin;
+
+        }
+
+        icc_profile->name_length = 0;
+        icc_profile->name = NULL;
+
+        profile_size = icc_profile->buffer_size;
+
+        if (icc_profile->buffer_size + sizeof(profile_data) > size) {
+            return gs_rethrow(-1, "size mismatch clist reading icc profile");
+        }
+
+        /* Allocate the buffer space */
+
+        if ( icc_profile->buffer == NULL ){
+           icc_profile->buffer = gs_alloc_bytes(pis->memory, profile_size,
+					        "gsicc_profile_clist_read");
+        }
+
+        if (icc_profile->buffer == NULL){
+            return gs_rethrow(-1, "failed to allocate buffer for icc profile in clist");
+        }
+
+    }
+
+    /* Now get the buffer */
+
+    if (offset <= profile_size + sizeof(profile_data)) {
+
+        int u = min(profile_size, left);
+        
+        memcpy( icc_profile->buffer + offset - sizeof(profile_data), dp, u);
+
+        left -= u;
+        offset += u;
+        dp += u;
+
+    }
+
+    return size - left;
+}
 
 
 

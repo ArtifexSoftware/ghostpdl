@@ -24,10 +24,10 @@ gsicc_profile_list_t * gsicc_profilelist_new(gs_memory_t *memory);
 
 static void rc_gsicc_profile_list_free(gs_memory_t * mem, void *ptr_in, client_name_t cname);
 
-static void gsicc_add_profile(gsicc_profile_list_t *profile_list, 
+void gsicc_add_profile(gsicc_profile_list_t *profile_list, 
                               cmm_profile_t *profile, gs_memory_t *memory);
 
-static cmm_profile_t* gsicc_findprofile(int64_t hash, gsicc_profile_list_t *profile_list);
+cmm_profile_t* gsicc_findprofile(int64_t hash, gsicc_profile_list_t *profile_list);
 
 static gsicc_profile_entry_t* gsicc_find_zeroref_list(gsicc_profile_list_t *profile_list);
 

@@ -60,6 +60,7 @@ static void rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t c
 static int gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, gs_memory_t *memory);
 static stream* gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc, gsicc_manager_t *icc_manager);
 static int gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev, gs_memory_t * mem);
+static cmm_profile_t* gsicc_get_profile( gsicc_profile_t profile_type, gsicc_manager_t *icc_manager );
 
 #if ICC_DUMP
 static void dump_icc_buffer(int buffersize, char filename[],byte *Buffer);
