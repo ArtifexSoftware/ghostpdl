@@ -42,15 +42,9 @@ static inline int u32(byte *p)
 
 int xps_init_font_cache(xps_context_t *ctx)
 {
-    const int smax = 50;         /* number of scaled fonts */
-    const int bmax = 500000;     /* space for cached chars */
-    const int mmax = 200;        /* number of cached font/matrix pairs */
-    const int cmax = 5000;       /* number of cached chars */
-    const int upper = 32000;     /* max size of a single cached char */
-
-    ctx->fontdir = gs_font_dir_alloc2_limits(ctx->memory, ctx->memory, smax, bmax, mmax, cmax, upper);
+    ctx->fontdir = gs_font_dir_alloc(ctx->memory);
     if (!ctx->fontdir)
-	return gs_throw(-1, "cannot gs_font_dir_alloc2_limits()");
+	return gs_throw(-1, "cannot gs_font_dir_alloc()");
 
     gs_setaligntopixels(ctx->fontdir, 1); /* no subpixels */
     gs_setgridfittt(ctx->fontdir, 1); /* see gx_ttf_outline in gxttfn.c for values */
