@@ -24,6 +24,9 @@
 #include "gsutil.h"       /* Need for the object types */
 #include "stdint_.h"
 
+
+#define ICC_MAX_CHANNELS 15
+
 /* Define the preferred size of the output by the CMS */
 /* This can be different than the size of gx_color_value 
    which can range between 8 and 16.  Here we can only
@@ -39,9 +42,9 @@ typedef unsigned short icc_output_type;
 #define icc_value_from_byte(cb)\
   (((cb) << (icc_bits_count - 8)) + ((cb) >> (16 - icc_bits_count)))
 
-typedef struct gs_range15_s {
-    gs_range_t ranges[15];
-} gs_range15_t;  /* ICC profile input could be up to 15 bands */
+typedef struct gs_range_icc_s {
+    gs_range_t ranges[ICC_MAX_CHANNELS];
+} gs_range_icc_t;  /* ICC profile input could be up to 15 bands */
 
 
 /*  The buffer description.  We
@@ -119,23 +122,39 @@ typedef enum {
     LAB_TYPE,
 } gsicc_profile_t;
 
+/* A subset of the profile information 
+   which is used when writing and reading
+   out to the c-list */
+
+typedef struct gsicc_serialized_profile_s { 
+    unsigned char num_comps;    
+    bool islab;                 
+    gsicc_profile_t default_match;  
+    gsicc_colorbuffer_t data_cs; 
+    gs_range_icc_t Range;          
+    int64_t hashcode;           
+    bool hash_is_valid;         
+    int buffer_size;            
+} gsicc_serialized_profile_t;
 
 /* A structure for holding profile information.  A member variable
    of the ghostscript color structure.   The item is reference counted. */
 struct cmm_profile_s {
 
-    void *profile_handle;       /* The profile handle */
     unsigned char num_comps;    /* number of device dependent values */
     bool islab;                 /* Needed since we want to detect this to avoid 
                                    expensive decode on LAB images.  Is true
                                    if PDF color space is \Lab*/
     gsicc_profile_t default_match;  /* Used for detecting a match to a default space */
     gsicc_colorbuffer_t data_cs; /* The data color space of the profile (not the PCS) */
-    gs_range15_t Range;          
-    byte *buffer;               /* A buffer with ICC profile content */
-    int buffer_size;            /* size of ICC profile buffer */
+    gs_range_icc_t Range;          
     int64_t hashcode;           /* A hash code for the icc profile */
     bool hash_is_valid;         /* Is the code valid? */
+    int buffer_size;            /* size of ICC profile buffer */
+    byte *buffer;               /* A buffer with ICC profile content */
+
+
+    void *profile_handle;       /* The profile handle */
     rc_header rc;               /* Reference count.  So we know when to free */ 
     int name_length;            /* Length of file name */
     char *name;                 /* Name of file name (if there is one) where profile is found.

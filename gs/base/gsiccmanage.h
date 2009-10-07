@@ -31,6 +31,9 @@
 
 /* Prototypes */
 
+int gsicc_profile_clist_write(cmm_profile_t *icc_profile, uint offset,
+    byte *data, uint *psize );
+
 int gsicc_init_device_profile(gs_state * pgs, gx_device * dev);
 
 int gsicc_set_profile(const gs_imager_state * pis, const char *pname, int namelen, gsicc_profile_t defaulttype);
