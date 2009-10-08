@@ -32,7 +32,9 @@ typedef enum {
     PDF14_END_TRANS_GROUP,
     PDF14_BEGIN_TRANS_MASK,
     PDF14_END_TRANS_MASK,
-    PDF14_SET_BLEND_PARAMS
+    PDF14_SET_BLEND_PARAMS,
+    PDF14_PUSH_TRANS_STATE,
+    PDF14_POP_TRANS_STATE
 } pdf14_compositor_operations;
 
 #define PDF14_OPCODE_NAMES \
@@ -183,6 +185,16 @@ int gx_end_transparency_mask(gs_imager_state * pis, gx_device * pdev,
 				const gs_pdf14trans_params_t * pparams);
 
 int gx_discard_transparency_layer(gs_imager_state *pis);
+
+/* These are used for watching for q Smask Q events.  We need to 
+   send special compositor commands to keep the bands in sync
+   with the current softmask during clist rendering. */
+
+int gs_push_transparency_state(gs_state *pgs);
+
+int gs_pop_transparency_state(gs_state *pgs);
+
+
 
 /*
  * Verify that a compositor data structure is for the PDF 1.4 compositor.

@@ -207,6 +207,18 @@ typedef struct gs_devicen_color_map_s {
 } gs_devicen_color_map;
 
 
+/* These flags are used to keep track of qQ 
+   combinations surrounding a graphic state
+   change that includes a softmask setting.
+   The transparency compositor must be notified
+   when a Q event occurs following a softmask */
+
+typedef struct gs_xstate_trans_flags {
+    bool xstate_pending;
+    bool xstate_change;
+} gs_xstate_trans_flags_t;
+
+
 /* Define the imager state structure itself. */
 /*
  * Note that the ctm member is a gs_matrix_fixed.  As such, it cannot be
@@ -228,6 +240,7 @@ typedef struct gs_devicen_color_map_s {
 	gx_color_value alpha;\
 	gs_blend_mode_t blend_mode;\
 	gs_transparency_source_t opacity, shape;\
+        gs_xstate_trans_flags_t trans_flags;\
 	gs_id soft_mask_id;\
 	bool text_knockout;\
 	uint text_rendering_mode;\
@@ -275,7 +288,7 @@ struct gs_imager_state_s {
    { (float)(scale), 0.0, 0.0, (float)(-(scale)), 0.0, 0.0 },\
   false, {0, 0}, {0, 0}, false, \
   lop_default, gx_max_color_value, BLEND_MODE_Compatible,\
-  { 1.0 }, { 1.0 }, 0, 0/*false*/, 0, 0, 0, 0, 0/*false*/, 0, 0, 1.0,  \
+{ 1.0 }, { 1.0 }, {0, 0}, 0, 0/*false*/, 0, 0, 0, 0, 0/*false*/, 0, 0, 1.0,  \
    { fixed_half, fixed_half }, 0/*false*/, 0/*false*/, 0/*false*/, 1.0,\
   1, INIT_CUSTOM_COLOR_PTR	/* 'Custom color' callback pointer */  \
   gx_default_get_cmap_procs

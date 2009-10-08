@@ -92,6 +92,7 @@ nodict readonly pop
 
 /q {
   gsave //nodict begin
+  PDFusingtransparency {.beginextendedgstate cvx} if
 } bdef
 
 % Some PDF files have excess Q operators!
@@ -114,6 +115,7 @@ nodict readonly pop
   { (\n   **** File has unbalanced q/Q operators \(too many Q's\) ****\n)
     pdfformaterror
   } if
+  PDFusingtransparency {.endextendedgstate cvx} if
 } bdef
 
 % Save PDF gstate
