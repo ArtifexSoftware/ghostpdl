@@ -473,7 +473,7 @@ zpoppdf14devicefilter(i_ctx_t *i_ctx_p)
    this to handle clist processing properly */
 
 static int
-zbeginextendedgstate(i_ctx_t *i_ctx_p)
+zpushextendedgstate(i_ctx_t *i_ctx_p)
 {
     int code;
     code = gs_push_transparency_state(igs);
@@ -486,7 +486,7 @@ zbeginextendedgstate(i_ctx_t *i_ctx_p)
    this to handle clist processing properly */
 
 static int
-zendextendedgstate(i_ctx_t *i_ctx_p)
+zpopextendedgstate(i_ctx_t *i_ctx_p)
 {
     int code;
     code = gs_pop_transparency_state(igs);
@@ -505,8 +505,8 @@ const op_def ztrans1_op_defs[] = {
     {"0.currentshapealpha", zcurrentshapealpha},
     {"1.settextknockout", zsettextknockout},
     {"0.currenttextknockout", zcurrenttextknockout},
-    {"0.beginextendedgstate", zbeginextendedgstate},
-    {"0.endextendedgstate", zendextendedgstate},
+    {"0.pushextendedgstate", zpushextendedgstate},
+    {"0.popextendedgstate", zpopextendedgstate},
     op_def_end(0)
 };
 const op_def ztrans2_op_defs[] = {
