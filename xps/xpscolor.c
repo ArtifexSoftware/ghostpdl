@@ -69,6 +69,7 @@ xps_parse_color(xps_context_t *ctx, char *base_uri, char *string, gs_color_space
     int i, n, code;
 
     char partname[1024];
+    char buf[1024];
 
     samples[0] = 1.0;
     samples[1] = 0.0;
@@ -114,8 +115,9 @@ xps_parse_color(xps_context_t *ctx, char *base_uri, char *string, gs_color_space
     else if (strstr(string, "ContextColor ") == string)
     {
 	/* Crack the string for profile name and sample values */
+	strcpy(buf, string);
 
-	profile = strchr(string, ' ');
+	profile = strchr(buf, ' ');
 	if (profile)
 	{
 	    *profile++ = 0;
