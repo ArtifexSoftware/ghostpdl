@@ -78,6 +78,7 @@ int xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image)
         return gs_throw(-1, "png_create_info_struct");
 
     png_set_read_fn(png, &io, xps_png_read);
+    png_set_crc_action(png, PNG_CRC_WARN_USE, PNG_CRC_WARN_USE);
 
     /*
      * Jump to here on errors.
@@ -95,10 +96,6 @@ int xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image)
 
     png_read_info(png, info);
 
-    image->width = png_get_image_width(png, info);
-    image->height = png_get_image_height(png, info);
-    image->bits = png_get_bit_depth(png, info);
-
     if (png_get_interlace_type(png, info) == PNG_INTERLACE_ADAM7)
     {
         npasses = png_set_interlace_handling(png);
@@ -108,64 +105,45 @@ int xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image)
         npasses = 1;
     }
 
-    if (image->bits == 16)
+    if (png_get_color_type(png, info) == PNG_COLOR_TYPE_PALETTE)
     {
-        png_set_strip_16(png);
-        image->bits = 8;
+	png_set_palette_to_rgb(png);
     }
+
+    if (png_get_valid(png, info, PNG_INFO_tRNS))
+    {
+	/* this will also expand the depth to 8-bits */
+	png_set_tRNS_to_alpha(png);
+    }
+
+    png_read_update_info(png, info);
+
+    image->width = png_get_image_width(png, info);
+    image->height = png_get_image_height(png, info);
+    image->comps = png_get_channels(png, info);
+    image->bits = png_get_bit_depth(png, info);
 
     switch (png_get_color_type(png, info))
     {
     case PNG_COLOR_TYPE_GRAY:
-        image->comps = 1;
         image->colorspace = XPS_GRAY;
         break;
 
-    case PNG_COLOR_TYPE_PALETTE:
-        /* ask libpng to expand palettes to rgb triplets */
-        png_set_palette_to_rgb(png);
-        image->bits = 8;
-	image->comps = 3;
-	image->colorspace = XPS_RGB;
-	break;
-
     case PNG_COLOR_TYPE_RGB:
-        image->comps = 3;
         image->colorspace = XPS_RGB;
         break;
 
     case PNG_COLOR_TYPE_GRAY_ALPHA:
-        image->comps = 2;
         image->colorspace = XPS_GRAY_A;
         break;
 
     case PNG_COLOR_TYPE_RGB_ALPHA:
-        image->comps = 4;
         image->colorspace = XPS_RGB_A;
         break;
 
     default:
         return gs_throw(-1, "cannot handle this png color type");
     }
-
-    /* libpng will expand to alpha if there is a tRNS chunk */
-    if (png_get_valid(png, info, PNG_INFO_tRNS))
-    {
-	if (image->comps == 1)
-	{
-	    image->comps = 2;
-	    image->colorspace = XPS_GRAY_A;
-	    png_set_tRNS_to_alpha(png);
-	}
-	if (image->comps == 3)
-	{
-	    image->comps = 4;
-	    image->colorspace = XPS_RGB_A;
-	    png_set_tRNS_to_alpha(png);
-	}
-    }
-
-    image->stride = (image->width * image->comps * image->bits + 7) / 8;
 
     /*
      * Extract DPI, default to 96 dpi
@@ -189,6 +167,8 @@ int xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image)
     /*
      * Read rows, filling transformed output into image buffer.
      */
+
+    image->stride = (image->width * image->comps * image->bits + 7) / 8;
 
     image->samples = gs_alloc_bytes(mem, image->stride * image->height, "decodepng");
 

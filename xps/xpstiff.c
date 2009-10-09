@@ -500,7 +500,7 @@ xps_unpredict_tiff(byte *line, int width, int comps, int bits)
 }
 
 static void
-xps_invert_tiff(byte *line, int width, int comps, int bits)
+xps_invert_tiff(byte *line, int width, int comps, int bits, int alpha)
 {
     int i, k, v;
     int m = (1 << bits) - 1;
@@ -510,7 +510,8 @@ xps_invert_tiff(byte *line, int width, int comps, int bits)
         for (k = 0; k < comps; k++)
         {
             v = getcomp(line, i * comps + k, bits);
-            v = m - v;
+	    if (!alpha || k < comps - 1)
+		v = m - v;
             putcomp(line, i * comps + k, bits, v);
         }
     }
@@ -745,7 +746,7 @@ xps_decode_tiff_strips(gs_memory_t *mem, xps_tiff_t *tiff, xps_image_t *image)
         byte *p = image->samples;
         for (i = 0; i < image->height; i++)
         {
-            xps_invert_tiff(p, image->width, image->comps, image->bits);
+            xps_invert_tiff(p, image->width, image->comps, image->bits, tiff->extrasamples);
             p += image->stride;
         }
     }
@@ -1009,21 +1010,12 @@ xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image)
     if (tiff->stripbytecounts) gs_free_object(mem, tiff->stripbytecounts, "StripByteCounts");
 
     /*
-     * Byte swap 16-bit images to native if necessary.
+     * Byte swap 16-bit images to big endian if necessary.
      */
     if (image->bits == 16)
     {
-	int native_order;
-	unsigned int a = 0x1234;
-	if (*(unsigned char *)&a == 1)
-	    native_order = TMM;
-	else
-	    native_order = TII;
-
-	if (tiff->order != native_order)
-	{
+	if (tiff->order == TII)
 	    xps_swap_byte_order(image->samples, image->width * image->height * image->comps);
-	}
     }
 
     return gs_okay;
