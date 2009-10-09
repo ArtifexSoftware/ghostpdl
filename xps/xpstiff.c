@@ -451,6 +451,7 @@ getcomp(byte *line, int x, int bpc)
     case 2: return line[x / 4] >> ((3 - (x % 4)) * 2) & 0x03;
     case 4: return line[x / 2] >> ((1 - (x % 2)) * 4) & 0x0f;
     case 8: return line[x];
+    case 16: return ((line[x * 2 + 0]) << 8) | (line[x * 2 + 1]);
     }
     return 0;
 }
@@ -474,6 +475,7 @@ putcomp(byte *line, int x, int bpc, int value)
     case 2: line[x / 4] |= value << ((3 - (x % 4)) * 2); break;
     case 4: line[x / 2] |= value << ((1 - (x % 2)) * 4); break;
     case 8: line[x] = value; break;
+    case 16: line[x * 2 + 0] = value >> 8; line[x * 2 + 1] = value & 0xFF; break;
     }
 }
 
