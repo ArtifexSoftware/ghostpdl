@@ -2770,7 +2770,8 @@ end
     exch                                                % d [] cmap
     1 index length 1 sub -1 0 {                         % d [] cmap code
       dup 3 index exch get exch                         % d [] cmap name code
-      dup 0 eq {
+      dup 0 eq 2 index /.notdef eq or {			  % do not re-encode GID 0, or the
+									  % /.notdef glyph name
         pop pop
       } {
         def
