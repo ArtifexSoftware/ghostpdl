@@ -169,7 +169,7 @@ xps_paint_image_brush_imp(xps_context_t *ctx, xps_image_t *image, int alpha)
     {
 	colorspace = ctx->gray;
 	samples = image->alpha;
-	count = image->width * image->height; /* TODO: bits != 8 */
+	count = (image->width * image->bits + 7) / 8 * image->height;
 	used = 0;
     }
     else
