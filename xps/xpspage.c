@@ -211,11 +211,6 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 	    has_transparency = 1;
     }
 
-    if (has_transparency)
-	dprintf1("xps: page %s has transparency\n", part->name);
-    else
-	dprintf1("xps: page %s does not have transparency\n", part->name);
-
     /* save the state with the original device before we push */
     gs_gsave(ctx->pgs);
 
