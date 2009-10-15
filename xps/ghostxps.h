@@ -62,14 +62,6 @@
 
 #include "zlib.h"
 
-/* override the debug printfs */
-#ifndef DEBUG
-#undef _dpl
-#define _dpl
-#undef dpf
-#define dpf
-#endif
-
 #ifndef MIN
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #endif
