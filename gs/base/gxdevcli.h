@@ -1388,6 +1388,21 @@ typedef struct gs_devn_params_s gs_devn_params;
   int proc(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
 #define dev_proc_fillpage(proc)\
   dev_t_proc_fillpage(proc, gx_device)
+
+
+#define dev_t_proc_push_transparency_state(proc, dev_t)\
+  int proc(gx_device *dev,\
+    gs_imager_state *pis)
+#define dev_proc_push_transparency_state(proc)\
+  dev_t_proc_push_transparency_state(proc, gx_device)
+
+
+#define dev_t_proc_pop_transparency_state(proc, dev_t)\
+  int proc(gx_device *dev,\
+    gs_imager_state *pis)
+#define dev_proc_pop_transparency_state(proc)\
+  dev_t_proc_pop_transparency_state(proc, gx_device)
+
 /* Define the device procedure vector template proper. */
 
 #define gx_device_proc_struct(dev_t)\
@@ -1453,8 +1468,9 @@ typedef struct gs_devn_params_s gs_devn_params;
 	dev_t_proc_update_spot_equivalent_colors((*update_spot_equivalent_colors), dev_t); \
 	dev_t_proc_ret_devn_params((*ret_devn_params), dev_t); \
 	dev_t_proc_fillpage((*fillpage), dev_t); \
+        dev_t_proc_push_transparency_state((*push_transparency_state), dev_t); \
+        dev_t_proc_pop_transparency_state((*pop_transparency_state), dev_t); \
 }
-
 
 /*
  * Provide procedures for passing image data.  image_data and end_image

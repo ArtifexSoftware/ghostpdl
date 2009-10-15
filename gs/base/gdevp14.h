@@ -56,7 +56,37 @@ typedef struct {
 		    gs_imager_state * pis, gx_device * target);
 } pdf14_procs_s;
 
+
 typedef pdf14_procs_s pdf14_procs_t;
+
+/* A stack structure for the softmask buffers. 
+   The mask will be pdf14 buffers that are wrapped
+   in a refernce counted structure.  We need this to
+   be referenced counted since we need to be able to push
+   multiple copies of the same buffer on the
+   stack as we get multiple q operations when
+   a soft mask is present in the graphic state. */
+
+typedef struct pdf14_rcmask_s pdf14_rcmask_t;
+
+struct pdf14_rcmask_s {
+
+    pdf14_buf   *mask_buf;
+    rc_header rc;
+    gs_memory_t *memory;
+     
+};
+
+typedef struct pdf14_mask_s pdf14_mask_t;
+
+struct pdf14_mask_s {
+
+    pdf14_rcmask_t *rc_mask;
+    pdf14_mask_t *previous;
+    gs_memory_t *memory;
+ 
+};
+
 
 /* A structure to hold information
  * about the parent color related
@@ -112,7 +142,7 @@ struct pdf14_buf_s {
     byte *data;
     byte *transfer_fn;
     gs_int_rect bbox;
-    pdf14_buf *maskbuf; /* Save pdf14_ctx_s::maksbuf. */
+    pdf14_mask_t *maskbuf;
     bool idle;
 
     bool SMask_is_CIE;
@@ -126,7 +156,7 @@ struct pdf14_buf_s {
 
 struct pdf14_ctx_s {
     pdf14_buf *stack;
-    pdf14_buf *maskbuf;
+    pdf14_mask_t *maskbuf;
     gs_memory_t *memory;
     gs_int_rect rect;
     bool additive;
@@ -244,5 +274,8 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
 		     gx_path * ppath, const gx_fill_params * params,
 		 const gx_device_color * pdevc, const gx_clip_path * pcpath);
 
+
+static pdf14_mask_t *
+pdf14_mask_element_new(gs_memory_t *memory);
 
 #endif /* gdevp14_INCLUDED */

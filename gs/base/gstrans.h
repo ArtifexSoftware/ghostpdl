@@ -45,7 +45,9 @@ typedef enum {
     "PDF14_END_TRANS_GROUP  ",\
     "PDF14_BEGIN_TRANS_MASK ",\
     "PDF14_END_TRANS_MASK   ",\
-    "PDF14_SET_BLEND_PARAMS "\
+    "PDF14_SET_BLEND_PARAMS ",\
+    "PDF14_PUSH_TRANS_STATE ",\
+    "PDF14_POP_TRANS_STATE  "\
 }
 
 /* Bit definitions for serializing PDF 1.4 parameters */
@@ -188,12 +190,18 @@ int gx_discard_transparency_layer(gs_imager_state *pis);
 
 /* These are used for watching for q Smask Q events.  We need to 
    send special compositor commands to keep the bands in sync
-   with the current softmask during clist rendering. */
+   with the current softmask during clist rendering.  Like the
+   other transparency operations the gs functions occur on the
+   clist writer side and the gx functions occur on the
+   clist reader side */
 
 int gs_push_transparency_state(gs_state *pgs);
 
 int gs_pop_transparency_state(gs_state *pgs);
 
+int gx_push_transparency_state(gs_imager_state * pis, gx_device * pdev);
+
+int gx_pop_transparency_state(gs_imager_state * pis, gx_device * pdev);
 
 
 /*

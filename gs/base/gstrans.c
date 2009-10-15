@@ -377,7 +377,13 @@ gs_push_transparency_state(gs_state *pgs)
        soft masks when we are at this graphic state
        level */
 
-    pis->trans_flags.xstate_pending = true;
+    /* pis->trans_flags.xstate_pending = true; */
+
+    /* Actually I believe the above flag is not 
+       needed.  We really should be watching for
+       the softmask even at the base level.  What
+       we need to watch for are q operations after
+       a soft mask end has occured. */
 
     /* Check if we have a change flag set to true.
        this indicates that a softmask is present.
@@ -396,6 +402,7 @@ gs_push_transparency_state(gs_state *pgs)
     return(0);
 }
 
+
 int
 gs_pop_transparency_state(gs_state *pgs)
 {
@@ -409,8 +416,8 @@ gs_pop_transparency_state(gs_state *pgs)
 
     if ( pis->trans_flags.xstate_change ) {
     
-        if_debug0('v', "[v]gs_push_transparency_state\n");
-        params.pdf14_op = PDF14_PUSH_TRANS_STATE;  
+        if_debug0('v', "[v]gs_pop_transparency_state\n");
+        params.pdf14_op = PDF14_POP_TRANS_STATE;  
         return gs_state_update_pdf14trans(pgs, &params);
 
     } 
@@ -421,6 +428,29 @@ gs_pop_transparency_state(gs_state *pgs)
     return(0);
 
 }
+
+
+int
+gx_pop_transparency_state(gs_imager_state * pis, gx_device * pdev)
+{
+    if_debug0('v', "[v]gx_pop_transparency_state\n");
+    if (dev_proc(pdev, pop_transparency_state) != 0)
+	return (*dev_proc(pdev, pop_transparency_state)) (pdev, pis, NULL);
+    else
+	return 0;
+}
+
+int
+gx_push_transparency_state(gs_imager_state * pis, gx_device * pdev)
+{
+    if_debug0('v', "[v]gx_push_transparency_state\n");
+    if (dev_proc(pdev, push_transparency_state) != 0)
+	return (*dev_proc(pdev, push_transparency_state)) (pdev, pis, NULL);
+    else
+	return 0;
+}
+
+
 
 /*
  * Handler for identity mask transfer functions.
@@ -628,8 +658,17 @@ gs_end_transparency_mask(gs_state *pgs,
 
     /* If we have done a q then set a flag to watch for any Qs */
 
-    if (pis->trans_flags.xstate_pending)
-        pis->trans_flags.xstate_change = true;
+   /* if (pis->trans_flags.xstate_pending)
+        pis->trans_flags.xstate_change = true; */
+
+    /* This should not depend upon if we have encountered a q
+       operation.  We could be setting a softmask, before 
+       there is any q operation.  Unlikely but it could happen.
+       Then if we encouter a q operation (and this flag
+       is true) we will need to 
+       push the mask graphic state (PDF14_PUSH_TRANS_STATE). */
+
+    pis->trans_flags.xstate_change = true;
 
     if_debug2('v', "[v](0x%lx)gs_end_transparency_mask(%d)\n", (ulong)pgs,
 	      (int)csel);
