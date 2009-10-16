@@ -3681,8 +3681,10 @@ end
     } if
     pop
   } if
-  dup /Type get /Pattern ne {
-    mark (Resource ) 4 index ( must have /Type/Pattern .) //error exec
+  dup /Type knownget { % /Type is optional for type 1 pattern dictionaries
+    /Pattern ne {
+      mark (Resource ) 4 index ( must have /Type/Pattern .) //error exec
+    } if
   } if
 } bind def
 
