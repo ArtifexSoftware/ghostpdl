@@ -152,6 +152,55 @@ static const byte bitrev[256] =
     0x1f, 0x9f, 0x5f, 0xdf, 0x3f, 0xbf, 0x7f, 0xff
 };
 
+static void
+xps_debug_tiff(gs_memory_t *mem, xps_tiff_t *tiff)
+{
+    int i, n;
+
+    dputs("TIFF <<\n");
+    dprintf1("\t/NewSubfileType %u\n", tiff->subfiletype);
+    dprintf1("\t/PhotometricInterpretation %u\n", tiff->photometric);
+    dprintf1("\t/Compression %u\n", tiff->compression);
+    dprintf1("\t/ImageWidth %u\n", tiff->imagewidth);
+    dprintf1("\t/ImageLength %u\n", tiff->imagelength);
+    dprintf1("\t/BitsPerSample %u\n", tiff->bitspersample);
+    dprintf1("\t/SamplesPerPixel %u\n", tiff->samplesperpixel);
+    dprintf1("\t/PlanarConfiguration %u\n", tiff->planar);
+    dprintf1("\t/ExtraSamples %u\n", tiff->extrasamples);
+    dprintf1("\t/ColorMap $%p\n", tiff->colormap);
+    dprintf1("\t/XResolution %u\n", tiff->xresolution);
+    dprintf1("\t/YResolution %u\n", tiff->yresolution);
+    dprintf1("\t/ResolutionUnit %u\n", tiff->resolutionunit);
+    dprintf1("\t/FillOrder %u\n", tiff->fillorder);
+    dprintf1("\t/T4Options %u\n", tiff->g3opts);
+    dprintf1("\t/T6Options %u\n", tiff->g4opts);
+    dprintf1("\t/Predictor %u\n", tiff->predictor);
+    dprintf1("\t/JPEGTables %u\n", tiff->jpegtableslen);
+    dprintf2("\t/YCbCrSubSampling %u %u\n", tiff->ycbcrsubsamp[0], tiff->ycbcrsubsamp[1]);
+
+    n = (tiff->imagelength + tiff->rowsperstrip - 1) / tiff->rowsperstrip;
+
+    dprintf1("\t/RowsPerStrip %u\n", tiff->rowsperstrip);
+
+    if (tiff->stripoffsets)
+    {
+        dputs("\t/StripOffsets ");
+	for (i = 0; i < n; i++)
+	    dprintf1("%u ", tiff->stripoffsets[i]);
+	dputs("\n");
+    }
+
+    if (tiff->stripbytecounts)
+    {
+        dputs("\t/StripByteCounts ");
+	for (i = 0; i < n; i++)
+	    dprintf1("%u ", tiff->stripbytecounts[i]);
+	dputs("\n");
+    }
+
+    dputs(">>\n");
+}
+
 static int
 xps_report_error(stream_state * st, const char *str)
 {
@@ -1022,53 +1071,3 @@ xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image)
 
     return gs_okay;
 }
-
-void
-xps_debug_tiff(gs_memory_t *mem, xps_tiff_t *tiff)
-{
-    int i, n;
-
-    dputs("TIFF <<\n");
-    dprintf1("\t/NewSubfileType %u\n", tiff->subfiletype);
-    dprintf1("\t/PhotometricInterpretation %u\n", tiff->photometric);
-    dprintf1("\t/Compression %u\n", tiff->compression);
-    dprintf1("\t/ImageWidth %u\n", tiff->imagewidth);
-    dprintf1("\t/ImageLength %u\n", tiff->imagelength);
-    dprintf1("\t/BitsPerSample %u\n", tiff->bitspersample);
-    dprintf1("\t/SamplesPerPixel %u\n", tiff->samplesperpixel);
-    dprintf1("\t/PlanarConfiguration %u\n", tiff->planar);
-    dprintf1("\t/ExtraSamples %u\n", tiff->extrasamples);
-    dprintf1("\t/ColorMap $%p\n", tiff->colormap);
-    dprintf1("\t/XResolution %u\n", tiff->xresolution);
-    dprintf1("\t/YResolution %u\n", tiff->yresolution);
-    dprintf1("\t/ResolutionUnit %u\n", tiff->resolutionunit);
-    dprintf1("\t/FillOrder %u\n", tiff->fillorder);
-    dprintf1("\t/T4Options %u\n", tiff->g3opts);
-    dprintf1("\t/T6Options %u\n", tiff->g4opts);
-    dprintf1("\t/Predictor %u\n", tiff->predictor);
-    dprintf1("\t/JPEGTables %u\n", tiff->jpegtableslen);
-    dprintf2("\t/YCbCrSubSampling %u %u\n", tiff->ycbcrsubsamp[0], tiff->ycbcrsubsamp[1]);
-
-    n = (tiff->imagelength + tiff->rowsperstrip - 1) / tiff->rowsperstrip;
-
-    dprintf1("\t/RowsPerStrip %u\n", tiff->rowsperstrip);
-
-    if (tiff->stripoffsets)
-    {
-        dputs("\t/StripOffsets ");
-	for (i = 0; i < n; i++)
-	    dprintf1("%u ", tiff->stripoffsets[i]);
-	dputs("\n");
-    }
-
-    if (tiff->stripbytecounts)
-    {
-        dputs("\t/StripByteCounts ");
-	for (i = 0; i < n; i++)
-	    dprintf1("%u ", tiff->stripbytecounts[i]);
-	dputs("\n");
-    }
-
-    dputs(">>\n");
-}
-
