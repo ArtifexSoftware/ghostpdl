@@ -1049,11 +1049,16 @@ end
   2 copy getu16 16 bitshift 3 1 roll 2 add getu16 add
 } bind def
 
-
+/jp2_csp_dict <<
+  16 /sRGB
+  17 /sGray
+  18 /sRGB  % YCC is convertrd to RGB
+>> readonly def
+ 
 % Process jp2 blocks (aka boxes). All procedures have the signature
 % <file> <length> -> ... <file> <flush_length>
 /jp2_tag_dict <<
-  /jp2h { % descend into a sub-stream, never return.
+  /jp2h { % descend into a sub-stream, don't return.
     () /SubFileDecode filter 0
   } bind
   /ihdr {
@@ -1062,36 +1067,44 @@ end
     /Components 1 index 8 getu16         % file len-14 (14) /Components NC
     def                                  % file len-14 (14)
     10 get 16#7F and 1 add
+    8 .min % color depth is reduced in the library
     /BitsPerComponent exch def           % file len-14 
   } bind
   /colr {
-    3 sub
-    1 index 3 string readstring pop      % file len-3 (3)
-    0 get 1 eq {
-      4 sub                              % file len-7
-      1 index 4 string readstring pop    % file len-16 (4) 
-      0 getu32                           % file len-16 enum
-      dup 16 eq {
-        % Don't set device-independent color space now
-        % to avoid raster differences
-        pop /ColorSpace /DeviceRGB % /sRGB
-        def                              % file len-7
+    currentdict /ColorSpace known not {
+      3 sub
+      1 index 3 string readstring pop      % file len-3 (3)
+      0 get dup 1 eq {
+        pop 4 sub                          % file len-7
+        1 index 4 string readstring pop    % file len-16 (4) 
+        0 getu32                           % file len-16 enum
+        //jp2_csp_dict exch .knownget {
+          /ColorSpace exch /ColorSpace findresource
+          def                              % file len-7
+        } {
+          (   **** Warning: Unknown enumerated color space in JPX stream.\n)
+          pdfformaterror
+        } ifelse
       } {
-        17 eq {
-          % See above.
-          /ColorSpace /DeviceGray % /sGray
-          def                            % file len-7
-        } if
+        2 eq {
+          3 dict begin
+          /N /Components load def
+          string 1 index exch readstring pop % file ()
+          /ReusableStreamDecode filter /DataSource exch def
+          currentdict end
+          /ICCBased exch 2 array astore
+          /ColorSpace exch                 % file /ColorSpace [...]
+          def 0                            % file 0
+        } {
+          (   **** Warning: Unknown color space method in JPX stream.\n)
+          pdfformaterror
+        } ifelse
       } ifelse
-    } {
-      string 1 index exch readstring pop % file ()
-      /ColorSpace exch                   % file /ColorSpace ()
-      % ICC ColorSpace is not yet implemented
-      pop pop
-      %
-      0                                  % file 0
-    } ifelse
+    } if
   } bind
+  % Palette colors are decoded by the library.
+  % For now, ignore 'pclr' table.
+  /pclr { }
 >> readonly def
 
 
@@ -1136,6 +1149,7 @@ end
 } bind def
 
 currentdict /jp2_tag_dict .undef
+currentdict /jp2_csp_dict .undef
 
 /makeimagedict {	% <resdict> <newdict> makeimagedict <imagemask>
 			% On return, newdict' is currentdict

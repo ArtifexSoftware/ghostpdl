@@ -19,9 +19,9 @@
 currentglobal true setglobal
 
 /sGray
-[ /CIEBasedA <<
+[ /CIEBasedA
   3 dict begin
-    /WhitePoint [ 0.9505 1 1.0890 ] % D65
+    /WhitePoint [ 0.9505 1 1.0890 ] def % D65
 
     /DecodeLMN [  % sRGB gamma transform 
       { dup 0.03928 le { 12.92321 div } { 0.055 add 1.055 div 2.4 exp } ifelse }
