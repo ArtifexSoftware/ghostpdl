@@ -393,11 +393,16 @@ gs_push_transparency_state(gs_state *pgs)
 
     if (pis->trans_flags.xstate_change) {
 
-        if_debug0('v', "[v]gs_push_transparency_state\n");
+        if_debug0('v', "[v]gs_push_transparency_state sending\n");
         params.pdf14_op = PDF14_PUSH_TRANS_STATE;  
         return gs_state_update_pdf14trans(pgs, &params);
 
-    } 
+    } else {
+
+        if_debug0('v', "[v]gs_push_transparency_state NOT sending\n");
+
+    }
+
 
     return(0);
 }
@@ -416,11 +421,15 @@ gs_pop_transparency_state(gs_state *pgs)
 
     if ( pis->trans_flags.xstate_change ) {
     
-        if_debug0('v', "[v]gs_pop_transparency_state\n");
+        if_debug0('v', "[v]gs_pop_transparency_state sending\n");
         params.pdf14_op = PDF14_POP_TRANS_STATE;  
         return gs_state_update_pdf14trans(pgs, &params);
 
-    } 
+    } else {
+
+        if_debug0('v', "[v]gs_pop_transparency_state NOT sending\n");
+
+    }
 
     /* There is no reason to reset any of the flags since
        they will be reset by the graphic state restore */
@@ -669,6 +678,8 @@ gs_end_transparency_mask(gs_state *pgs,
        push the mask graphic state (PDF14_PUSH_TRANS_STATE). */
 
     pis->trans_flags.xstate_change = true;
+
+    if_debug1('v', "[v]xstate_changed set true, gstate level is %d\n", pgs->level);
 
     if_debug2('v', "[v](0x%lx)gs_end_transparency_mask(%d)\n", (ulong)pgs,
 	      (int)csel);
