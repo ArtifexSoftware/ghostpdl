@@ -371,6 +371,7 @@ gs_push_transparency_state(gs_state *pgs)
 {
     gs_pdf14trans_params_t params = { 0 };
     gs_imager_state * pis = (gs_imager_state *)pgs;
+    int code;
 
     /* Set the pending flag to true, which indicates
        that we need to watch for end transparency 
@@ -395,7 +396,9 @@ gs_push_transparency_state(gs_state *pgs)
 
         if_debug0('v', "[v]gs_push_transparency_state sending\n");
         params.pdf14_op = PDF14_PUSH_TRANS_STATE;  
-        return gs_state_update_pdf14trans(pgs, &params);
+        code = gs_state_update_pdf14trans(pgs, &params);
+        if (code < 0) 
+            return(code);
 
     } else {
 
@@ -413,6 +416,7 @@ gs_pop_transparency_state(gs_state *pgs)
 {
     gs_pdf14trans_params_t params = { 0 };
     gs_imager_state * pis = (gs_imager_state *)pgs;
+    int code;
 
     /* Check if flag is set, which indicates that we have 
        an active softmask for the graphic state.  We
@@ -423,7 +427,9 @@ gs_pop_transparency_state(gs_state *pgs)
     
         if_debug0('v', "[v]gs_pop_transparency_state sending\n");
         params.pdf14_op = PDF14_POP_TRANS_STATE;  
-        return gs_state_update_pdf14trans(pgs, &params);
+        code = gs_state_update_pdf14trans(pgs, &params);
+        if ( code < 0 )
+            return (code);
 
     } else {
 
