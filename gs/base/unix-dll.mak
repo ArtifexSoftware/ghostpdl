@@ -101,12 +101,18 @@ SODEFS=LDFLAGS='$(LDFLAGS) $(LDFLAGS_SO)'\
 
 # Normal shared object
 so: SODIRS
+	@if test -z "$(MAKE)" -o -z "`$(MAKE) --version 2>&1 | grep GNU`";\
+	  then echo "Warning: this target requires gmake";\
+	fi
 	$(MAKE) $(SODEFS) CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix) $(GSSOC) $(GSSOX)
 
 # Debug shared object
 # Note that this is in the same directory as the normal shared
 # object, so you will need to use 'make soclean', 'make sodebug'
 sodebug: SODIRS
+	@if test -z "$(MAKE)" -o -z "`$(MAKE) --version 2>&1 | grep GNU`";\
+	  then echo "Warning: this target requires gmake";\
+	fi
 	$(MAKE) $(SODEFS) GENOPT='-DDEBUG' CFLAGS='$(CFLAGS_DEBUG) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' $(GSSOC) $(GSSOX)
 
 install-so: so
