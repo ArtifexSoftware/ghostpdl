@@ -968,7 +968,9 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
 
 		/* We concatenate directly since gp_file_name_combine_*
 		 * rules are not correct for other devices such as %rom% */
-		gs_parse_file_name(&pname, pstr, plen);
+		code = gs_parse_file_name(&pname, pstr, plen);
+		if (code < 0)
+		    continue;
 		memcpy(buffer, pname.fname, pname.len);
 		memcpy(buffer+pname.len, fname, flen);
 		code = pname.iodev->procs.open_file(pname.iodev, buffer, pname.len + flen, fmode,

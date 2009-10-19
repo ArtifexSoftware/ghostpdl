@@ -441,6 +441,7 @@ struct gx_device_pdf_s {
 			      with pattern color. */
     bool PDFX;		   /* Generate PDF/X */
     bool PDFA;		   /* Generate PDF/A */
+    bool AbortPDFAX;	    /* Abort generation of PDFA or X, produce regular PDF */
     long MaxClipPathSize;  /* The maximal number of elements of a clipping path
 			      that the target viewer|printer can handle. */
     long MaxViewerMemorySize;

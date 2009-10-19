@@ -1925,7 +1925,7 @@ end
   1 exch div exch
   1 exch div exch                                       % wx wy
   1 index 0 setcharwidth
-  o setlinewidth
+  0 setlinewidth
   0 0 moveto
   2 copy rlineto
   1 index 0 rlineto
@@ -2770,7 +2770,8 @@ end
     exch                                                % d [] cmap
     1 index length 1 sub -1 0 {                         % d [] cmap code
       dup 3 index exch get exch                         % d [] cmap name code
-      dup 0 eq {
+      dup 0 eq 2 index /.notdef eq or {			  % do not re-encode GID 0, or the
+									  % /.notdef glyph name
         pop pop
       } {
         def
@@ -3680,8 +3681,10 @@ end
     } if
     pop
   } if
-  dup /Type get /Pattern ne {
+  dup /Type knownget { % /Type is optional for type 1 pattern dictionaries
+    /Pattern ne {
     mark (Resource ) 4 index ( must have /Type/Pattern .) //error exec
+  } if
   } if
 } bind def
 

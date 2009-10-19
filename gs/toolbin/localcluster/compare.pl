@@ -7,7 +7,7 @@ use Data::Dumper;
 
 my $previousValues=20;
 
-my @errorDescription=("none","Error_reading_input_file","Error_reading_Ghostscript_produced_PDF_file","Timeout_reading_input_file","Timeout_reading_Ghostscript_produced_PDF_File");
+my @errorDescription=("none","Error_reading_input_file","Error_reading_Ghostscript_produced_PDF_file","Timeout_reading_input_file","Timeout_reading_Ghostscript_produced_PDF_File","Input_file_missing","Ghostscript_generated_PDF_file_missing","Seg_Fault_during_pdfwrite","Seg_Fault","Internal_error");
 
 my $current=shift;
 my $previous=shift;
@@ -52,7 +52,6 @@ while(<F>) {
   $currentProduct{$a[0]}=$a[8];
   $currentMachine{$a[0]}=$a[9];
 }
-
 
 open(F,"<$previous") || die "file $previous not found";
 while(<F>) {
@@ -102,7 +101,6 @@ foreach my $i (sort {$b cmp $a} keys %archives) {
 
 #print Dumper(\%archive);
 
-
 foreach my $t (sort keys %previous) {
   if (exists $current{$t}) {
     if ($currentError{$t}) {
@@ -143,7 +141,6 @@ foreach my $t (sort keys %current) {
   }
 }
 
-
 print "ran ".scalar(keys %current)." tests in $elapsedTime seconds on $machineCount nodes\n\n";
 
 if (@differencePrevious) {
@@ -181,7 +178,6 @@ if (@filesRemoved) {
   }
   print "\n";
 }
-
 
 if (@filesAdded) {
   print "The following ".scalar(@filesAdded)." regression file(s) have been added:\n";

@@ -6,17 +6,14 @@ use warnings;
 use Data::Dumper;
 use POSIX ":sys_wait_h";
 
-
 my $updateGS=1;
 my $updateTestFiles=1;
-
 
 my $debug=0;
 my $debug2=0;
 my $verbose=0;
 
 my $wordSize="64";
-
 
 my $machine=shift || die "usage: run.pl machine_name";
 
@@ -39,7 +36,6 @@ if (open(F,"<$machine.start")) {
 }
 
 my $host="casper.ghostscript.com";
-
 
 my $desiredRev;
 
@@ -86,7 +82,6 @@ my %testSource=(
 # $baseDirectory."/tests/svg/svgw3c-1.2-tiny/svgHarness" => 'svg',
 # $baseDirectory."/tests/svg/svgw3c-1.2-tiny/svggen" => 'svg'
 );
-
 
 system("date") if ($debug2);
 
@@ -165,8 +160,6 @@ sub updateStatus($) {
   spawn(0,"scp -i ~/.ssh/cluster_key $machine.status marcos\@casper.ghostscript.com:/home/marcos/cluster/$machine.status");
 }
 
-
-
 if ($user && $product) {
 } else {
 updateStatus('Updating test files');
@@ -198,11 +191,11 @@ if ($user && $product) {
   mkdir "users/$user";
   mkdir "users/$user/ghostpdl";
   mkdir "users/$user/ghostpdl/gs";
-  if ($product eq 'gs') {
-    $cmd="cd users/$user/ghostpdl ; rsync -vlogDtprxe.iLs --delete -e \"ssh -l marcos -i \$HOME/.ssh/cluster_key\" marcos\@$host:$usersDir/$user/ghostpdl/gs .";
-  } else {
+# if ($product eq 'gs') {
+#   $cmd="cd users/$user/ghostpdl ; rsync -vlogDtprxe.iLs --delete -e \"ssh -l marcos -i \$HOME/.ssh/cluster_key\" marcos\@$host:$usersDir/$user/ghostpdl/gs .";
+# } else {
     $cmd="cd users/$user          ; rsync -vlogDtprxe.iLs --delete -e \"ssh -l marcos -i \$HOME/.ssh/cluster_key\" marcos\@$host:$usersDir/$user/ghostpdl    .";
-  }
+    # }
   print "$cmd\n" if ($verbose);
   `$cmd`;
 
@@ -271,7 +264,6 @@ $cmd="touch $temp2 ; rm -fr $temp2 ; mv $temp $temp2 ; mkdir $temp ; rm -fr $tem
 print "$cmd\n" if ($verbose);
 `$cmd`;
 
-
 if ($updateGS) {
 if (!$abort) {
 
@@ -319,8 +311,8 @@ if (1 || !$product || $product eq 'ghostpdl') {  # always build ghostpdl
 if (1) {
 $abort=checkAbort;
 if (!$abort) {
-updateStatus('Building GhostPCL/XPS/SVG');
-$cmd="cd $gpdlSource ; make pcl-clean xps-clean svg-clean -j 12 ; make pcl xps svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" -j 12 >makepdl.out 2>&1";
+        updateStatus('Make clean GhostPCL/XPS/SVG');
+        $cmd="cd $gpdlSource ; make pcl-clean xps-clean svg-clean -j 12 >makeclean.out 2>&1";
 print "$cmd\n" if ($verbose);
 `$cmd`;
 }
@@ -328,14 +320,14 @@ print "$cmd\n" if ($verbose);
 $abort=checkAbort;
 if (!$abort) {
 updateStatus('Building GhostPCL');
-$cmd="cd $gpdlSource ; make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1";
+        $cmd="cd $gpdlSource ; make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1 -j 12; make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1";
 print "$cmd\n" if ($verbose);
 `$cmd`;
+        if (open(F,"<$gpdlSource/main/obj/pcl6")) {
+          close(F);
 $cmd="cp -p $gpdlSource/main/obj/pcl6 $gsBin/bin/.";
 print "$cmd\n" if ($verbose);
 `$cmd`;
-if (open(F,"<$gsBin/bin/pcl6")) {
-  close(F);
 } else {
   $compileFail.="pcl6 ";
 }
@@ -344,14 +336,14 @@ if (open(F,"<$gsBin/bin/pcl6")) {
 $abort=checkAbort;
 if (!$abort) {
 updateStatus('Building GhostXPS');
-$cmd="cd $gpdlSource ; make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps.out 2>&1";
+        $cmd="cd $gpdlSource ; make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps.out 2>&1 -j 12; make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makexps.out 2>&1";
 print "$cmd\n" if ($verbose);
 `$cmd`;
+        if (open(F,"<$gpdlSource/xps/obj/gxps")) {
+          close(F);
 $cmd="cp -p $gpdlSource/xps/obj/gxps $gsBin/bin/.";
 print "$cmd\n" if ($verbose);
 `$cmd`;
-if (open(F,"<$gsBin/bin/gxps")) {
-  close(F);
 } else {
   $compileFail.="gxps ";
 }
@@ -360,14 +352,14 @@ if (open(F,"<$gsBin/bin/gxps")) {
 $abort=checkAbort;
 if (!$abort) {
 updateStatus('Building GhostSVG');
-$cmd="cd $gpdlSource ; make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg.out 2>&1";
+        $cmd="cd $gpdlSource ; make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg.out 2>&1 -j 12; make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makesvg.out 2>&1";
 print "$cmd\n" if ($verbose);
 `$cmd`;
+        if (open(F,"<$gpdlSource/svg/obj/gsvg")) {
+          close(F);
 $cmd="cp -p $gpdlSource/svg/obj/gsvg $gsBin/bin/.";
 print "$cmd\n" if ($verbose);
 `$cmd`;
-if (open(F,"<$gsBin/bin/gsvg")) {
-  close(F);
 } else {
   $compileFail.="gsvg ";
 }
@@ -388,8 +380,6 @@ if ($compileFail ne "") {
   updateStatus('Starting jobs');
 }
 
-
-
 my $totalJobs=scalar(@commands);
 my $jobs=0;
 
@@ -399,7 +389,6 @@ my %timeOuts;
 my $startTime=time;
 my $lastPercentage=-1;
 
-
 while (scalar(@commands) && !$abort) {
   my $count=0;
 
@@ -407,11 +396,10 @@ while (scalar(@commands) && !$abort) {
   my @a=split '\n',$a;
   my %children;
   foreach (@a) {
-    if (m/(\d+) +(\d+)/ && !m/<defunct>/) {
+    if (m/\S+ +(\d+) +(\d+)/ && !m/<defunct>/) {
       $children{$2}=$1;
     }
   }
-
 
   foreach my $pid (keys %pids) {
     if (time-$pids{$pid}{'time'} >= $timeOut) {
@@ -506,11 +494,10 @@ do {
   my @a=split '\n',$a;
   my %children;
   foreach (@a) {
-    if (m/(\d+) +(\d+)/ && !m/<defunct>/) {
+      if (m/\S+ +(\d+) +(\d+)/ && !m/<defunct>/) {
       $children{$2}=$1;
     }
   }
-
 
   foreach my $pid (keys %pids) {
     if (time-$pids{$pid}{'time'} >= $timeOut) {
@@ -550,7 +537,6 @@ closedir DIR;
 
 system("date") if ($debug2);
 
-
 open(F2,">$machine.log");
 
 if ($compileFail ne "") {
@@ -577,12 +563,12 @@ foreach my $logfile (keys %logfiles) {
 
 close(F2);
 
-
-
 updateStatus('Uploading log files');
 system("date") if ($debug2);
 `touch $machine.log.gz ; rm -f $machine.log.gz ; gzip $machine.log`;
+  `touch $machine.out.gz ; rm -f $machine.out.gz ; gzip $machine.out`;
 spawn(60,"scp -i ~/.ssh/cluster_key $machine.log.gz marcos\@casper.ghostscript.com:/home/marcos/cluster/$machine.log.gz");
+  spawn(60,"scp -i ~/.ssh/cluster_key $machine.out.gz marcos\@casper.ghostscript.com:/home/marcos/cluster/$machine.out.gz");
 
 system("date") if ($debug2);
 updateStatus('idle');
@@ -602,5 +588,4 @@ foreach my $pid (keys %spawnPIDs) {
 }
 print "\n";
 }
-
 

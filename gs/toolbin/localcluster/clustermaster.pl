@@ -15,8 +15,34 @@ my $verbose=1;
 my $runningSemaphore="./running";
 my $maxDownTime=180;  # how many seconds before a machine is considered down
 
+# the concept with checkPID is that if the semaphore file is missing or doesn't
+# contain our PID something bad has happened and we just just exit
+sub checkPID {
+if (open(F,"<$runningSemaphore")) {
+    my $t=<F>;
+  close(F);
+    chomp $t;
+    if ($t == $$) {
+      return(1);
+    }
+    print "terminating: $t $$\n";
+  exit;
+}
+  print "terminating: $runningSemaphore missing\n";
+  exit;
+}
+
 if (open(F,"<$runningSemaphore")) {
   close(F);
+  my $fileTime = stat($runningSemaphore)->mtime;
+  my $t=time;
+  if ($t-$fileTime>7200) {
+    print "semaphore file too old, removing\n";
+    open(F,">status");
+    print F "Regression terminated due to timeout";
+    close(F);
+    unlink $runningSemaphore;
+  }
   exit;
 }
 
@@ -31,6 +57,7 @@ if (open(F,"<emails.tab")) {
 }
 
 open(F,">$runningSemaphore");
+print F "$$\n";
 close(F);
 
 my $currentRev1=`/usr/local/bin/svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4} '`;
@@ -104,8 +131,6 @@ if ($normalRegression) {
   close(F);
 }
 
-
-
 my %machines;
 my @machines = <*.up>;
 print "@machines\n" if ($verbose);
@@ -137,7 +162,10 @@ do {
 
 print "running with ".(scalar keys %machines)." machines\n" if ($verbose);
 
-die "There aren't any cluster machines available" if (scalar keys %machines==0);
+    if (scalar keys %machines==0) {
+      unlink $runningSemaphore;
+      die "There aren't any cluster machines available"
+    }
 
 if (open(F,"<machinespeeds.txt")) {
   while(<F>) {
@@ -148,7 +176,7 @@ if (open(F,"<machinespeeds.txt")) {
   close(F);
 }
 
-
+    checkPID();
 my $options="";
 foreach (sort keys %machines) {
   $machineSpeeds{$_}=1 if (!exists $machineSpeeds{$_});
@@ -165,6 +193,7 @@ if (!$normalRegression) {
 `./splitjobs.pl jobs $options`;
 unlink "jobs";
 
+    checkPID();
 foreach (keys %machines) {
 print "unlinking $_.done\n" if ($verbose);
 print "unlinking $_.abort\n" if ($verbose);
@@ -181,6 +210,7 @@ print "unlinking $_.abort\n" if ($verbose);
   }
 }
 
+    checkPID();
 $startText=`date +\"%D %H:%M:%S\"`;
 chomp $startText;
 open (F,">status");
@@ -198,6 +228,7 @@ $startTime=time;
 print Dumper(\%machines) if ($verbose);
 print "".(scalar(keys %doneTime))." ".(scalar (keys %machines))."\n" if ($verbose);
 while(scalar(keys %doneTime) < scalar(keys %machines)) {
+      checkPID();
   foreach (keys %machines) {
     if (!stat("$_.up") || (time-stat("$_.up")->ctime)>=$maxDownTime) {
 print "$_ is down\n" if ($verbose);
@@ -222,6 +253,7 @@ print "abort=$abort\n" if ($verbose);
 
 my $elapsedTime=time-$startTime;
 
+  checkPID();
 $s=`date +\"%H:%M:%S\"`;
 chomp $s;
 open (F,">status");
@@ -232,6 +264,7 @@ if ($normalRegression) {
 }
 close(F);
 
+  checkPID();
 if ($normalRegression) {
 my $averageTime=0;
 foreach (keys %machines) {
@@ -266,26 +299,26 @@ if (open(F,">machinespeeds.txt")) {
 }
 }
 
-
+  checkPID();
 my $buildFail=0;
 my $failMessage="";
 my $logs="";
 my $tabs="";
 foreach (keys %machines) {
-  `touch $_.log`;
-  `rm -f $_.log`;
-  `gunzip $_.log.gz`;
-  my $a=`./readlog.pl $_.log $_.tab $_`;
+    `touch $_.log; rm -f $_.log; gunzip $_.log.gz`;
+    `touch $_.out; rm -f $_.out; gunzip $_.out.gz`;
+    my $a=`./readlog.pl $_.log $_.tab $_ $_.out`;
   if ($a ne "") {
     chomp $a;
     print "$_: $a\n" if ($verbose);
     $buildFail=1;
-    $failMessage=$a;
+      $failMessage.="$_ reports: $a\n";
   }
-  $logs.=" $_.log";
+    $logs.=" $_.log $_.out";
   $tabs.=" $_.tab";
 }
 
+  checkPID();
 if (!$buildFail) {
 
 my $machineCount=scalar (keys %machines);
@@ -298,10 +331,11 @@ if ($normalRegression) {
 #  `cat $logs >log`;
 #  `./readlog.pl log current.tab`;
 
-
+      checkPID();
   `./compare.pl current.tab previous.tab $elapsedTime $machineCount >email.txt`;
 #  `mail marcos.woehrmann\@artifex.com -s \"\`cat revision\`\" <email.txt`;
 
+      checkPID();
   `touch archive/$newRev2-$newRev1`;
   `rm -fr archive/$newRev2-$newRev1`;
   `mkdir archive/$newRev2-$newRev1`;
@@ -317,16 +351,19 @@ if ($normalRegression) {
   `cat $tabs | sort >temp.tab`;
   `rm $tabs`;
 
+      checkPID();
   `./compare.pl temp.tab current.tab $elapsedTime $machineCount true >$userName.txt`;
 
 }
 } else {
+    checkPID();
   $userName="email" if ($normalRegression);
   open (F,">$userName.txt");
   print F "$failMessage\n";
   close(F);
 }
 
+  checkPID();
 if ($normalRegression) {
   `mail -a \"From: marcos.woehrmann\@artifex.com\" gs-regression\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
   `./cp.all`;
@@ -341,7 +378,5 @@ if ($normalRegression) {
 
 }
 
-
+checkPID();
 unlink $runningSemaphore;
-
-

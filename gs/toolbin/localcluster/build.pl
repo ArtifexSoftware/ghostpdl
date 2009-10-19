@@ -9,7 +9,6 @@ use POSIX ":sys_wait_h";
 my $product=shift;
 die "usage: build.pl (gs|ghostpdl)" if ($product && $product ne "gs" && $product ne "ghostpdl");
 
-
 my $updateTestFiles=1;
 
 my $verbose=0;
@@ -59,7 +58,6 @@ my %testSource=(
 # $baseDirectory."tests/svg/svgw3c-1.2-tiny/svgHarness" => 'svg',
 # $baseDirectory."tests/svg/svgw3c-1.2-tiny/svggen" => 'svg'
 );
-
 
 my $cmd;
 my $s;
@@ -158,7 +156,6 @@ my %tests=(
 ]
 );
 
-
 #update the regression file source directories
 if ($updateTestFiles) {
   foreach my $testSource (sort keys %testSource) {
@@ -167,8 +164,6 @@ if ($updateTestFiles) {
     `$cmd`;
   }
 }
-
-
 
 # build a list of the source files
 my %testfiles;
@@ -325,7 +320,6 @@ $cmd.=" ; echo \"$cmd2\" >>$logFilename ";
 #   $cmd.=" ; $timeCommand -f \"%U %S %E %P\" $cmd2 >>$logFilename 2>&1";
     $cmd.=" ; $cmd2 >>$logFilename 2>&1";
 
-
   }
   if ($md5sumOnly) {
   } else {
@@ -335,13 +329,8 @@ $cmd.=" ; echo \"$cmd2\" >>$logFilename ";
 
 # $cmd.=" ; gzip -f $outputFilename >>$logFilename 2>&1 ";
 
-  
-
   return($cmd,$outputFilenames,$filename2);
 }
-
-  
-
 
 my @commands;
 my @filenames;
@@ -357,8 +346,6 @@ foreach my $testfile (sort keys %testfiles) {
     push @filenames,$filename;
   }
 }
-
-
 
 while (scalar(@commands)) {
   my $n=rand(scalar @commands);
