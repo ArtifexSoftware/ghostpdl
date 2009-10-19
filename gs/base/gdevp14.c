@@ -896,7 +896,8 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 			     byte *transfer_fn, bool idle, bool replacing,
 			     uint mask_id, gs_transparency_mask_subtype_t subtype, 
                              bool SMask_is_CIE, int numcomps,
-                             int Background_components, float Background[])
+                             int Background_components, float Background[],
+                             float GrayBackground)
 {
 
  
@@ -983,7 +984,10 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
         /* We need to initialize it to the BC if it existed */
         /* According to the spec, the CS has to be the same */
 
-        if ( Background_components ) {
+        /* If the back ground component is black, then don't bother 
+           with this */
+
+        if ( Background_components && GrayBackground != 0.0 ) {
 
             curr_ptr = buf->data;
             for (k = 0; k < Background_components; k++) {
@@ -994,7 +998,11 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 
             }
 
-	    memset(curr_ptr, 0, buf->planestride * (buf->n_chan - Background_components));
+            /* If we have a background component that was not black, then we 
+               need to set the alpha for this mask as if we had drawn in the
+               entire soft mask buffer */
+
+	    memset(curr_ptr, 255, buf->planestride * (buf->n_chan - Background_components));
            
         } else {
 
@@ -3141,7 +3149,8 @@ pdf14_begin_transparency_mask(gx_device	*dev,
 					transfer_fn, ptmp->idle, ptmp->replacing,
 					ptmp->mask_id, ptmp->subtype, 
                                         ptmp->SMask_is_CIE, group_color_numcomps,
-                                        ptmp->Background_components, ptmp->Background);
+                                        ptmp->Background_components, ptmp->Background,
+                                        ptmp->GrayBackground);
 }
 
 static	int
@@ -5928,9 +5937,11 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
 	    break;
 
         case PDF14_PUSH_TRANS_STATE:
+            code = 0; /* A place for breakpoint. */
             break;
 
         case PDF14_POP_TRANS_STATE:
+            code = 0; /* A place for breakpoint. */
             break;
 
 
