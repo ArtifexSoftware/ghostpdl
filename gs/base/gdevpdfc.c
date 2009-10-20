@@ -383,7 +383,7 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     /* PDF doesn't support Indexed color spaces with more than 256 entries. */
     if (num_entries > 256)
 	return_error(gs_error_rangecheck);
-    if (pdev->CompatibilityLevel < 1.3) {
+    if (pdev->CompatibilityLevel < 1.3 && !pdev->ForOPDFRead) {
 	switch (gs_color_space_get_index(pcs)) {
 	    case gs_color_space_index_Pattern:
 	    case gs_color_space_index_Separation:
