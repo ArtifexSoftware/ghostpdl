@@ -14,6 +14,7 @@ my $debug2=0;
 my $verbose=0;
 
 my $wordSize="64";
+my $timeOut=600;
 
 my $machine=shift || die "usage: run.pl machine_name";
 
@@ -42,7 +43,6 @@ my $desiredRev;
 my $maxCount=12;
 $maxCount=16;
 
-my $timeOut=300;
 
 my $baseDirectory=`pwd`;
 chomp $baseDirectory;
@@ -59,6 +59,24 @@ my $abort=0;
 unlink ("$machine.abort");
 
 my $compileFail="";
+my $md5sumFail=`which md5sum`;
+
+#my $md5Command='md5sum';
+#if ($md5sumFail eq "") {
+#  $md5sumFail=`which md5`;
+#  $md5Command='md5';
+#} 
+#if ($md5sumFail eq "") {
+#  $md5sumFail=`which /sbin/md5`;
+#  $md5Command='/sbin/md5';
+#} 
+if ($md5sumFail) {
+  $md5sumFail="";
+}  else {
+  $md5sumFail="md5sum and md5 missing";
+  my $a=`echo \$PATH`;
+  $md5sumFail.="\n$a";
+}
 
 local $| = 1;
 
@@ -92,6 +110,7 @@ chomp $t;
 if ($t =~ m/^\d+$/) {
   $desiredRev=$t;
 } else {
+# $t =~ s/md5sum/$md5Command/g;
   push @commands, $t;
 }
 while(<F>) {
@@ -132,7 +151,7 @@ sub spawn($$) {
           select(undef, undef, undef, 0.1);
           $status=waitpid($pid,WNOHANG);
           $t++;
-          } while($status>=0 && $t<abs($timeout*10));
+        } while($status>=0 && $t<abs($timeout*10));
         $done=1 if ($timeout<0);
         if ($status>=0) {
           kill 9, $pid;
@@ -288,14 +307,14 @@ if ($updateGS) {
       updateStatus('Building Ghostscript');
 
       # build ghostscript
-      $cmd="cd $gsSource ; make distclean ; ./autogen.sh \"CC=gcc -m$wordSize\" --disable-cups --disable-fontconfig --disable-cairo --prefix=$gsBin >autogen.out 2>&1 ; make -j 12 >make1.out 2>&1 ; make  >make2.out 2>&1";
+      $cmd="cd $gsSource ; touch makegs.out ; rm -f makegs.out ; nice make distclean >makedistclean.out 2>&1 ; nice ./autogen.sh \"CC=gcc -m$wordSize\" --disable-cups --disable-fontconfig --disable-cairo --prefix=$gsBin >makegs.out 2>&1 ; nice make -j 12 >>makegs.out 2>&1 ; nice make >>makegs.out 2>&1";
       print "$cmd\n" if ($verbose);
       `$cmd`;
 
       updateStatus('Installing Ghostscript');
 
       #install ghostscript
-      $cmd="rm -fr $gsBin ; cd $gsSource ; make install";
+      $cmd="rm -fr $gsBin ; cd $gsSource ; nice make install";
       print "$cmd\n" if ($verbose);
       `$cmd`;
 
@@ -312,7 +331,7 @@ if ($updateGS) {
       $abort=checkAbort;
       if (!$abort) {
         updateStatus('Make clean GhostPCL/XPS/SVG');
-        $cmd="cd $gpdlSource ; make pcl-clean xps-clean svg-clean -j 12 >makeclean.out 2>&1";
+        $cmd="cd $gpdlSource ; nice make pcl-clean xps-clean svg-clean -j 12 >makeclean.out 2>&1";
         print "$cmd\n" if ($verbose);
         `$cmd`;
       }
@@ -320,7 +339,7 @@ if ($updateGS) {
       $abort=checkAbort;
       if (!$abort) {
         updateStatus('Building GhostPCL');
-        $cmd="cd $gpdlSource ; make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1 -j 12; make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1";
+        $cmd="cd $gpdlSource ; touch makepcl.out ; rm -f makepcl.out ; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1 -j 12; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1";
         print "$cmd\n" if ($verbose);
         `$cmd`;
         if (open(F,"<$gpdlSource/main/obj/pcl6")) {
@@ -336,7 +355,7 @@ if ($updateGS) {
       $abort=checkAbort;
       if (!$abort) {
         updateStatus('Building GhostXPS');
-        $cmd="cd $gpdlSource ; make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps.out 2>&1 -j 12; make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makexps.out 2>&1";
+        $cmd="cd $gpdlSource ; touch makexps.out ; rm -f makexps.out ; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps.out 2>&1 -j 12; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makexps.out 2>&1";
         print "$cmd\n" if ($verbose);
         `$cmd`;
         if (open(F,"<$gpdlSource/xps/obj/gxps")) {
@@ -352,7 +371,7 @@ if ($updateGS) {
       $abort=checkAbort;
       if (!$abort) {
         updateStatus('Building GhostSVG');
-        $cmd="cd $gpdlSource ; make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg.out 2>&1 -j 12; make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makesvg.out 2>&1";
+        $cmd="cd $gpdlSource ; touch makesvg.out ; rm -f makesvg.out ; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg.out 2>&1 -j 12; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makesvg.out 2>&1";
         print "$cmd\n" if ($verbose);
         `$cmd`;
         if (open(F,"<$gpdlSource/svg/obj/gsvg")) {
@@ -373,7 +392,10 @@ $cmd="cp -p ghostpdl/link.icc ghostpdl/wts_plane_0 ghostpdl/wts_plane_1 ghostpdl
 print "$cmd\n" if ($verbose);
 `$cmd`;
 
-if ($compileFail ne "") {
+if ($md5sumFail ne "") {
+  updateStatus('md5sum fail');
+  @commands=();
+} elsif ($compileFail ne "") {
   updateStatus('Compile fail');
   @commands=();
 } else {
@@ -539,8 +561,34 @@ if ($abort) {
 
   open(F2,">$machine.log");
 
+  if ($md5sumFail ne "") {
+    print F2 "md5sumFail: $md5sumFail";
+  }
   if ($compileFail ne "") {
-    print F2 "compileFail: $compileFail\n";
+    print F2 "compileFail: $compileFail\n\n";
+    my $dir="ghostpdl";
+    $dir="users/$user/ghostpdl" if ($user);
+    foreach my $i ('gs/makegs.out','makepcl.out','makexps.out','makesvg.out') {
+      my $count=0;
+      if (open(F3,"<$dir/$i")) {
+        while(<F3>) {
+	  $count++;
+        }
+        close(F3);
+      }
+      $count-=20;
+      print F2 "\n$i (last 20 lines):\n\n";
+      if (open(F3,"<$dir/$i")) {
+        while(<F3>) {
+	  if ($count--<0) {
+            print F2 $_;
+	  }
+        }
+        close(F3);
+      } else {
+        print F2 "missing\n";
+      }
+    }
   }
   foreach my $logfile (keys %logfiles) {
     print F2 "===$logfile===\n";
@@ -567,8 +615,8 @@ if ($abort) {
   system("date") if ($debug2);
   `touch $machine.log.gz ; rm -f $machine.log.gz ; gzip $machine.log`;
   `touch $machine.out.gz ; rm -f $machine.out.gz ; gzip $machine.out`;
-  spawn(60,"scp -i ~/.ssh/cluster_key $machine.log.gz marcos\@casper.ghostscript.com:/home/marcos/cluster/$machine.log.gz");
-  spawn(60,"scp -i ~/.ssh/cluster_key $machine.out.gz marcos\@casper.ghostscript.com:/home/marcos/cluster/$machine.out.gz");
+  spawn(300,"scp -i ~/.ssh/cluster_key $machine.log.gz marcos\@casper.ghostscript.com:/home/marcos/cluster/$machine.log.gz");
+  spawn(300,"scp -i ~/.ssh/cluster_key $machine.out.gz marcos\@casper.ghostscript.com:/home/marcos/cluster/$machine.out.gz");
 
   system("date") if ($debug2);
   updateStatus('idle');

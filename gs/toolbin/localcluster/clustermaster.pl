@@ -178,7 +178,7 @@ if ($normalRegression==1 || $userRegression ne "") {
 
     checkPID();
     my $options="";
-    foreach (sort keys %machines) {
+    foreach (sort {lc $a cmp lc $b} keys %machines) {
       $machineSpeeds{$_}=1 if (!exists $machineSpeeds{$_});
       $options.=" $_.jobs $machineSpeeds{$_}";
     }
@@ -300,7 +300,8 @@ if ($normalRegression==1 || $userRegression ne "") {
   }
 
   checkPID();
-  my $buildFail=0;
+  my $buildFail=0;  # did at least one machine report a build failure?
+  my %buildFail;    # list of machines that did
   my $failMessage="";
   my $logs="";
   my $tabs="";
@@ -313,6 +314,7 @@ if ($normalRegression==1 || $userRegression ne "") {
       print "$_: $a\n" if ($verbose);
       $buildFail=1;
       $failMessage.="$_ reports: $a\n";
+      $buildFail{$_}=1;
     }
     $logs.=" $_.log $_.out";
     $tabs.=" $_.tab";
@@ -360,6 +362,16 @@ if ($normalRegression==1 || $userRegression ne "") {
     $userName="email" if ($normalRegression);
     open (F,">$userName.txt");
     print F "$failMessage\n";
+    foreach (keys %machines) {
+      if ($buildFail{$_}) {
+        print F "\n\n$_ compile log:\n\n";
+        open(F2,"<$_.log");
+        while(<F2>) {
+        print F $_;
+        }
+        close(F2);
+      }
+    }
     close(F);
   }
 

@@ -217,13 +217,13 @@ sub build($$$$) {
 
     $outputFilename="$temp/$tempname.$options.pdf";
     if ($product eq 'gs') {
-      $cmd1.=" $gsBin";
+      $cmd1.="nice $gsBin";
     } elsif ($product eq 'pcl') {
-      $cmd1.=" $pclBin";
+      $cmd1.="nice $pclBin";
     } elsif ($product eq 'xps') {
-      $cmd1.=" $xpsBin";
+      $cmd1.="nice $xpsBin";
     } elsif ($product eq 'svg') {
-      $cmd1.=" $svgBin";
+      $cmd1.="nice $svgBin";
     } else {
       die "unexpected product: $product";
     }

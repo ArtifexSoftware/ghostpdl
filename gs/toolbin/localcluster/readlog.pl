@@ -34,7 +34,7 @@ while(<F>) {
 
   chomp;
 
-  if (m/^compileFail/) {
+  if (m/^compileFail/ || m/^md5sumFail/) {
     close(F);
     print "$_\n";
     exit;
