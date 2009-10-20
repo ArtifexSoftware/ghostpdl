@@ -157,7 +157,13 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
 		if (pseg->type == s_line_close && drawing > 0)
 		    code = gx_path_close_subpath_notes(ppath,
 						 notes & pseg->notes);
-		else if (any_abs(sx - x) + any_abs(sy - y) < fixed_half)
+		else if ((any_abs(sx - x) + any_abs(sy - y) < fixed_half) &&
+		         (udx | udy))
+		    /* If we only need to move a short distance, then output
+		     * dash notes to ensure that the stroke tangent remains
+		     * accurate. There is no point in outputting such dash
+		     * notes if we don't have any useful information to put
+		     * in the note though (if udx == 0 && udy == 0). */
 		    code = gx_path_add_dash_notes(ppath, sx, sy, udx, udy, 
 			    notes & pseg->notes);
 		else
