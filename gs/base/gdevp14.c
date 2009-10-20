@@ -952,6 +952,11 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 	   mask of the containing group. 
 	   Save the containing droup's mask in buf->maskbuf : */
 	buf->maskbuf = ctx->maskbuf;
+
+        if (buf->maskbuf){
+            rc_increment(buf->maskbuf->rc_mask);
+        }
+
     }
 
 
@@ -1027,10 +1032,14 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx)
     tos->saved = NULL;  /* To avoid issues with GC */
 
     if (tos->maskbuf) {
-	/* The maskbuf of the ctx->maskbuf entry is never used, free it now */
-        /* In other words, the Smask will not have an Smask */
-	pdf14_buf_free(tos->maskbuf, ctx->memory);
+
+        /* During the soft mask push, the mask buf was copied
+           (not moved) from the ctx to the tos maskbuf. We 
+           are done with this now */
+            
+        rc_decrement(tos->maskbuf->rc_mask, "pdf14_pop_transparency_mask");
 	tos->maskbuf = NULL;
+
     }
 
     if (tos->data == NULL ) {
