@@ -450,7 +450,7 @@ gx_pop_transparency_state(gs_imager_state * pis, gx_device * pdev)
 {
     if_debug0('v', "[v]gx_pop_transparency_state\n");
     if (dev_proc(pdev, pop_transparency_state) != 0)
-	return (*dev_proc(pdev, pop_transparency_state)) (pdev, pis, NULL);
+	return (*dev_proc(pdev, pop_transparency_state)) (pdev, pis);
     else
 	return 0;
 }
@@ -460,7 +460,7 @@ gx_push_transparency_state(gs_imager_state * pis, gx_device * pdev)
 {
     if_debug0('v', "[v]gx_push_transparency_state\n");
     if (dev_proc(pdev, push_transparency_state) != 0)
-	return (*dev_proc(pdev, push_transparency_state)) (pdev, pis, NULL);
+	return (*dev_proc(pdev, push_transparency_state)) (pdev, pis);
     else
 	return 0;
 }
