@@ -750,15 +750,30 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
     x1 = min(tos->rect.q.x, nos->rect.q.x);
 
     if (ctx->maskbuf) {
-	/* Happens with the test case of bug 689492 with no banding
-	   while rendering the group of an image with a mask.
-	   Not sure why gs/lib processes a mask inside the image droup,
-	   anyway we need to release it safely. 
-	   
-	   See also the comment above.
+
+	/* This can occur when we have a situation
+           where we are ending out of a group that
+           has internal to it a soft mask
+           and another group.  The soft mask
+           left over from the previous trans group
+           pop is put into ctx->masbuf, since it
+           is still active if another trans group
+           push occurs to use it.  If one does
+           not occur, but instead we find ourselves
+           popping from a parent group, then this
+           softmask is no longer needed.  We will
+           rc_decrement and set it to NULL.
 	   */
-	pdf14_buf_free(ctx->maskbuf, ctx->memory);
+
+        rc_decrement(ctx->maskbuf->rc_mask, "pdf14_pop_transparency_group");
+
+        if (ctx->maskbuf->rc_mask == NULL ){
+
+            gs_free_object(ctx->memory, ctx->maskbuf, "pdf14_pop_transparency_group");
+
+        }
 	ctx->maskbuf = NULL;
+
     }
 
     ctx->maskbuf = mask_stack;  /* Restore the mask saved by pdf14_push_transparency_group. */
@@ -878,10 +893,6 @@ exit:
     if_debug1('v', "[v]pop buf, idle=%d\n", tos->idle);
     pdf14_buf_free(tos, ctx->memory);
    
-    /* if (maskbuf != NULL) {
-	rc_decrement(ctx->maskbuf->rc_mask, "pdf14_pop_transparency_group");
-        ctx->maskbuf->rc_mask->mask_buf = NULL;
-    } */
     return 0;
 }
 
