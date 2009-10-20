@@ -6096,9 +6096,10 @@ c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight, int
 
                 /* We have to crop this by the parent object and worry about the BC outside the range */
 
-                if (pdf14pct->params.GrayBackground == 0.0 || pdf14pct->params.Background_components == 0) {
+                if ( pdf14pct->params.GrayBackground == 1.0 ) {
 
-                    /* In this case there will not be a background effect to worry about */
+                    /* In this case there will not be a background effect to worry about.  The mask will
+                       not have any effect outside the bounding box.  This is NOT the default or common case. */
 
                     *ry = max(rect.p.y, cropping_min);
 		    *rheight = min(rect.q.y, cropping_max) - *ry;
