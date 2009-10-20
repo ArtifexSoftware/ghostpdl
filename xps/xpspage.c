@@ -115,7 +115,6 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     char *height_att;
     int code;
     gs_matrix ctm;
-    gs_point pt0, pt1;
     gs_rect rc;
     int has_transparency;
     char base_uri[1024];

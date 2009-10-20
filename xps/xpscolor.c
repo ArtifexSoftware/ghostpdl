@@ -66,7 +66,7 @@ xps_parse_color(xps_context_t *ctx, char *base_uri, char *string, gs_color_space
 {
     xps_part_t *part;
     char *profile, *p;
-    int i, n, code;
+    int i, n;
 
     char partname[1024];
     char buf[1024];
@@ -205,7 +205,6 @@ xps_parse_icc_profile(xps_context_t *ctx, gs_color_space **csp, byte *data, int 
     gs_cie_icc *info;
     stream *stm;
     int code;
-    int i;
 
     // based on zseticcspace
 

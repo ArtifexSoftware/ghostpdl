@@ -171,8 +171,6 @@ xps_read_cff_dict(byte *p, byte *e, xps_font_t *font, gs_font_type1 *pt1)
     struct { int ival; float fval; } args[48];
     int offset;
     int b0, n;
-    float f;
-    int i;
 
     int privatelen = 0;
     int privateofs = 0;
@@ -711,7 +709,6 @@ xps_cff_append(gs_state *pgs, gs_font_type1 *pt1, gs_glyph glyph, int donthint)
     gs_type1_state *const pcis = &cxs.cis;
     gs_imager_state *pgis = (gs_imager_state*)pgs;
     gs_glyph_data_t *pgd = &gd;
-    double wv[4];
     double sbw[4];
     gs_matrix mtx;
 
@@ -766,7 +763,7 @@ xps_post_callback_build_char(gs_text_enum_t *ptextenum, gs_state *pgs,
     gs_show_enum *penum = (gs_show_enum*)ptextenum;
     gs_font_type1 *pt1 = (gs_font_type1*)pfont;
     const gs_rect *pbbox;
-    float sbw[4], w2[6];
+    float w2[6];
     int code;
 
     // get the metrics

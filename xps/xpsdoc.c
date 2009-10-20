@@ -916,10 +916,6 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
 	xps_part_t *pagepart = xps_find_part(ctx, ctx->next_page->name);
 	if (pagepart && pagepart->complete)
 	{
-	    xps_relation_t *rel;
-	    int have_resources;
-	    char *s;
-
 	    if (!pagepart->relations_complete)
 	    {
 		xps_parse_content_relations(ctx, pagepart);
