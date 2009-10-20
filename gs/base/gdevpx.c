@@ -91,6 +91,7 @@ typedef struct gx_device_pclxl_s {
 	ulong used;
     } chars;
     bool font_set;
+    int state_rotated; /* 0, 1, 2, -1, mutiple of 90 deg */
 } gx_device_pclxl;
 
 gs_public_st_suffix_add0_final(st_device_pclxl, gx_device_pclxl,
@@ -191,6 +192,7 @@ pclxl_page_init(gx_device_pclxl * xdev)
     xdev->color_space = eNoColorSpace;
     xdev->palette.size = 0;
     xdev->font_set = false;
+    xdev->state_rotated = 0;
 }
 
 /* Test whether a RGB color is actually a gray shade. */
@@ -1459,8 +1461,14 @@ pclxl_begin_image(gx_device * dev,
      */
     gs_matrix_invert(&pim->ImageMatrix, &mat);
     gs_matrix_multiply(&mat, &ctm_only(pis), &mat);
-    /* Currently we only handle portrait transformations. */
-    if (mat.xx <= 0 || mat.xy != 0 || mat.yx != 0 || mat.yy <= 0 ||
+    /* We can handle rotations of 90 degs + scaling.
+     * These have one of the diagonals being zeros
+     * (and the other diagonals having non-zeros).
+     *
+     * Not to handle reflection (the two >< signs).
+     */
+    if ((!((mat.xx * mat.yy > 0) && (mat.xy == 0) && (mat.yx == 0)) &&
+         !((mat.xx == 0) && (mat.yy == 0) && (mat.xy * mat.yx < 0))) ||
 	(pim->ImageMask ?
 	 (!gx_dc_is_pure(pdcolor) || pim->CombineWithColor) :
 	 (!pclxl_can_handle_color_space(pim->ColorSpace) ||
@@ -1490,6 +1498,45 @@ pclxl_begin_image(gx_device * dev,
 				   (gdev_vector_image_enum_t *)pie);
     if (code < 0)
 	return code;
+
+    /* emit a PXL XL rotation and adjust mat correspondingly */
+    if (mat.xx * mat.yy >  0) {
+        if (mat.xx < 0) {
+            stream *s = pclxl_stream(xdev);
+            mat.xx = -mat.xx;
+            mat.yy = -mat.yy;
+            mat.tx = -mat.tx;
+            mat.ty = -mat.ty;
+            px_put_ss(s,180);
+            xdev->state_rotated = 2;
+            px_put_ac(s, pxaPageAngle, pxtSetPageRotation);
+        }
+        /* leave the matrix alone if it is portrait */
+    } else {
+        /* rotate +90 or -90 */
+        float tmpf;
+        stream *s = pclxl_stream(xdev);
+        if(mat.xy > 0) {
+            mat.xx = mat.xy;
+            mat.yy = -mat.yx;
+            tmpf = mat.tx;
+            mat.tx = mat.ty;
+            mat.ty = -tmpf;
+            px_put_ss(s,-90);
+            xdev->state_rotated = -1;
+        } else {
+            mat.xx = -mat.xy;
+            mat.yy = mat.yx;
+            tmpf = mat.tx;
+            mat.tx = -mat.ty;
+            mat.ty = tmpf;
+            px_put_ss(s,+90);
+            xdev->state_rotated = +1;
+        }
+        mat.xy = mat.yx = 0;
+        px_put_ac(s, pxaPageAngle, pxtSetPageRotation);
+    }
+
     pie->mat = mat;
     pie->rows.data = row_data;
     pie->rows.num_rows = num_rows;
@@ -1701,6 +1748,31 @@ pclxl_image_end_image(gx_image_enum_common_t * info, bool draw_last)
     /* Write the final strip, if any. */
     if (pie->y > pie->rows.first_y && draw_last)
 	code = pclxl_image_write_rows(pie);
+    if (draw_last) {
+        gx_device_pclxl *xdev = (gx_device_pclxl *)info->dev;
+        stream *s = pclxl_stream(xdev);
+        switch(xdev->state_rotated) {
+        case 1:
+            xdev->state_rotated = 0;
+            px_put_ss(s,-90);
+            px_put_ac(s, pxaPageAngle, pxtSetPageRotation);
+            break;
+        case -1:
+            xdev->state_rotated = 0;
+            px_put_ss(s,+90);
+            px_put_ac(s, pxaPageAngle, pxtSetPageRotation);
+            break;
+        case 2:
+            xdev->state_rotated = 0;
+            px_put_ss(s,-180);
+            px_put_ac(s, pxaPageAngle, pxtSetPageRotation);
+            break;
+        case 0:
+        default:
+            /* do nothing */
+            break;
+        }
+    }
     gs_free_object(pie->memory, pie->rows.data, "pclxl_end_image(rows)");
     gx_image_free_enum(&info);
     return code;
