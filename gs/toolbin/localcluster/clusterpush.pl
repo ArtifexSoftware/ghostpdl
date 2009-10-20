@@ -37,7 +37,7 @@ if ($buildType eq 'gs') {
   $product='ghostpdl';
 }
 
-my $cmd="rsync -avvx".
+my $cmd="rsync -avx".
 " --delete".
 " --exclude .svn --exclude .git".
 " --exclude _darcs --exclude .bzr --exclude .hg".
@@ -48,13 +48,19 @@ my $cmd="rsync -avvx".
 " --exclude xps/obj --exclude xps/debugobj".
 " --exclude svg/obj --exclude xps/debugobj".
 " --exclude ufst --exclude ufst-obj".
+" --exclude .ppm --exclude .pkm --exclude .pgm --exclude .pbm".
 " -e \"ssh -l marcos -i \$HOME/.ssh/cluster_key\"".
 " .".
 " marcos\@$host:$dir/$user/$buildType";
 
 print STDERR "syncing\n";
 print "$cmd\n" if ($verbose);
-`$cmd`;
+#`$cmd`;
+open(T,"$cmd |");
+while(<T>) {
+  print $_;
+}
+close(T);
 
 
 print STDERR "queuing\n";
