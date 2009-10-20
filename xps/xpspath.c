@@ -121,7 +121,7 @@ xps_restore_bounds(xps_context_t *ctx, gs_rect *save)
     ctx->bounds.q.y = save->q.y;
 }
 
-void
+static void
 xps_debug_bounds(xps_context_t *ctx)
 {
     gs_matrix mat;
@@ -197,7 +197,7 @@ xps_fill(xps_context_t *ctx)
 static inline void
 xps_draw_arc_segment(xps_context_t *ctx, gs_matrix *mtx, float th0, float th1, int iscw)
 {
-    float x, y, t, a, d;
+    float t, d;
     gs_point p;
 
     while (th1 < th0)
@@ -834,7 +834,6 @@ xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *ro
 
     gs_matrix transform;
     gs_matrix saved_transform;
-    int even_odd = 0;
 
     gs_newpath(ctx->pgs);
 
