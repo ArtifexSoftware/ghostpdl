@@ -1060,7 +1060,8 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx)
 
             /* Assign as mask buffer */
 
-            ctx->maskbuf = tos;
+            ctx->maskbuf = pdf14_mask_element_new(ctx->memory);
+            ctx->maskbuf->rc_mask->mask_buf = tos;
 
         }
 
@@ -1182,7 +1183,10 @@ pdf14_pop_transparency_state(gx_device *dev, gs_imager_state *pis)
         old_mask = ctx->maskbuf;
         ctx->maskbuf = ctx->maskbuf->previous;
 
-        rc_decrement(old_mask->rc_mask, "pdf14_pop_transparency_state");
+        if (old_mask->rc_mask) {
+            rc_decrement(old_mask->rc_mask, "pdf14_pop_transparency_state");
+        }
+
         gs_free_object(old_mask->memory, old_mask, "pdf14_pop_transparency_state");
 
     }
