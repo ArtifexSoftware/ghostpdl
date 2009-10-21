@@ -250,7 +250,7 @@ sub build($$$$) {
     my $inputFilename=$outputFilename;
     $outputFilename="$temp/$filename.$options";
 
-    $cmd2.=" $gsBin";
+    $cmd2.=" nice $gsBin";
     if ($md5sumOnly) {
       $cmd2.=" -sOutputFile='|md5sum >>$md5Filename'";
     } else {
@@ -282,13 +282,13 @@ sub build($$$$) {
   } else {
     $outputFilename="$temp/$filename.$options";
     if ($product eq 'gs') {
-      $cmd2.=" $gsBin";
+      $cmd2.=" nice $gsBin";
     } elsif ($product eq 'pcl') {
-      $cmd2.=" $pclBin";
+      $cmd2.=" nice $pclBin";
     } elsif ($product eq 'xps') {
-      $cmd2.=" $xpsBin";
+      $cmd2.=" nice $xpsBin";
     } elsif ($product eq 'svg') {
-      $cmd2.=" $svgBin";
+      $cmd2.=" nice $svgBin";
     } else {
       die "unexpected product: $product";
     }

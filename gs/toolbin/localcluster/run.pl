@@ -24,14 +24,16 @@ my $product;
 if (open(F,"<$machine.start")) {
   $_=<F>;
   close(F);
-  chomp;
-  my @a=split ' ';
-  $user=$a[0];
-  $product=$a[1];
-  if ($user && $product) {
-    #   print "user=$user product=$product\n";
-  } else {
-    #   print "empty user\n";
+  if ($_) {
+    chomp;
+    my @a=split ' ';
+    $user=$a[0];
+    $product=$a[1];
+    if ($user && $product) {
+      #   print "user=$user product=$product\n";
+    } else {
+      #   print "empty user\n";
+    }
   }
   unlink("$machine.start");
 }

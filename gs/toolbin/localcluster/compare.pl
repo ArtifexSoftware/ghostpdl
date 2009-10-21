@@ -138,6 +138,10 @@ foreach my $t (sort keys %previous) {
 foreach my $t (sort keys %current) {
   if (!exists $previous{$t}) {
     push @filesAdded,"$t $currentProduct{$t}";
+    if ($currentError{$t}) {
+      push @allErrors,"$t $currentMachine{$t} $currentError{$t}";
+      push @brokePrevious,"$t $currentMachine{$t} $currentError{$t}";
+    }
   }
 }
 

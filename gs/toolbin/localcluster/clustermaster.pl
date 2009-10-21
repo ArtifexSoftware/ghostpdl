@@ -32,6 +32,27 @@ sub checkPID {
   exit;
 }
 
+  my $usersDir="users";
+
+  opendir(DIR, $usersDir) || die "can't opendir $usersDir: $!";
+  foreach my $user (readdir(DIR)) {
+    if (open(F,"<$usersDir/$user/gs.run")) {
+      close(F);
+      unlink "$usersDir/$user/gs.run";
+      open(F,">>user.run");
+      print F "$user gs\n";
+      close(F);
+    }
+    if (open(F,"<$usersDir/$user/ghostpdl.run")) {
+      close(F);
+      unlink "$usersDir/$user/ghostpdl.run";
+      open(F,">>user.run");
+      print F "$user ghostpdl\n";
+      close(F);
+    }
+  }
+  closedir DIR;
+
 if (open(F,"<$runningSemaphore")) {
   close(F);
   my $fileTime = stat($runningSemaphore)->mtime;
@@ -80,26 +101,6 @@ my $userName="";
 if ($currentRev1!=0 && $currentRev2!=0 && ($currentRev1!=$newRev1 || $currentRev2!=$newRev2)) {
   $normalRegression=1;
 } else {
-  my $usersDir="users";
-
-  opendir(DIR, $usersDir) || die "can't opendir $usersDir: $!";
-  foreach my $user (readdir(DIR)) {
-    if (open(F,"<$usersDir/$user/gs.run")) {
-      close(F);
-      unlink "$usersDir/$user/gs.run";
-      open(F,">>user.run");
-      print F "$user gs\n";
-      close(F);
-    }
-    if (open(F,"<$usersDir/$user/ghostpdl.run")) {
-      close(F);
-      unlink "$usersDir/$user/ghostpdl.run";
-      open(F,">>user.run");
-      print F "$user ghostpdl\n";
-      close(F);
-    }
-  }
-  closedir DIR;
 
   if (open(F,"<user.run")) {
     my @a;
