@@ -2028,6 +2028,7 @@ pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn, cos_value_t *pvalue)
     code = pdf_substitute_resource(pdev, &pres, resourceFunction, functions_equal, false);
     if (code < 0)
 	return code;
+    pres->where_used |= pdev->used_mask;
     COS_OBJECT_VALUE(pvalue, pres->object);
     return 0;
 }

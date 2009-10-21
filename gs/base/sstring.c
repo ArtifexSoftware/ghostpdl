@@ -402,16 +402,17 @@ s_hex_process(stream_cursor_read * pr, stream_cursor_write * pw,
     if ((val1 = decoder[*++p]) > 0xf) {
 	if (val1 == ctype_space) {
 	    switch (syntax) {
+		case hex_ignore_garbage:
 		case hex_ignore_whitespace:
 		    goto x1;
 		case hex_ignore_leading_whitespace:
 		    if (q == q0 && *odd_digit < 0)
 			goto x1;
+		    /* pass through */
+                case hex_break_on_whitespace:
 		    --p;
-		    code = 1;
+		    code = 2;
 		    goto end1;
-		case hex_ignore_garbage:
-		    goto x1;
 	    }
 	} else if (syntax == hex_ignore_garbage)
 	    goto x1;
@@ -425,17 +426,18 @@ s_hex_process(stream_cursor_read * pr, stream_cursor_write * pw,
     if ((val2 = decoder[*++p]) > 0xf) {
 	if (val2 == ctype_space)
 	    switch (syntax) {
+                case hex_ignore_garbage:
 		case hex_ignore_whitespace:
 		    goto d2;
 		case hex_ignore_leading_whitespace:
 		    if (q == q0)
 			goto d2;
+		    /* pass through */
+                case hex_break_on_whitespace:
 		    --p;
 		    *odd_digit = val1;
-		    code = 1;
+		    code = 2;
 		    goto ended;
-		case hex_ignore_garbage:	/* pacify compilers */
-		    ;
 	    }
 	if (syntax == hex_ignore_garbage)
 	    goto d2;

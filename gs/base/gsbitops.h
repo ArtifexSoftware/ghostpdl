@@ -236,6 +236,7 @@
   if ( (dbpv) < 8 ) {\
     sample_store_flush(dptr, dbit, dbpv, dbbyte);\
     sample_next(dptr, dbit, dbpv);\
+    dbbyte &= ~(0xff << dbit); \
   } else dptr += ((dbpv) >> 3)
 
 /* Finish storing by flushing any partial byte. */

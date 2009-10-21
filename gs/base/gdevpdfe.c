@@ -321,7 +321,24 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
 			 void(*write)(stream *s, const byte *data, int data_length))
 {
     if (pdev->DSCEncodingToUnicode.data == 0) {
-	write(s, data, data_length);
+	int i, j=0;
+	unsigned char *buf0 = data;
+
+	buf0 = (unsigned char *)gs_alloc_bytes(pdev->memory, data_length * sizeof(unsigned char), 
+			"pdf_xmp_write_translated");
+	if (buf0 == NULL)
+	    return_error(gs_error_VMerror);
+	for (i = 0; i < data_length; i++) {
+	    byte c = data[i];
+	    int v;
+
+	    if (c == '\\') 
+		c = decode_escape(data, data_length, &i);
+	    buf0[j] = c;
+	    j++;
+	}
+	write(s, buf0, j);
+	gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
 	return 0;
     } else {
 	UTF16 *buf0;

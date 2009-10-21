@@ -531,7 +531,7 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
 			    memcpy(buf, subfont->font_name.chars, l);
 			    buf[l] = 0;
 			    eprintf3("Missing glyph CID=%d, glyph=%04x in the font %s . The output PDF may fail with some viewers.\n", 
-				    (int)cid, glyph - GS_MIN_CID_GLYPH, buf);
+				    (int)cid, (unsigned int)(glyph - GS_MIN_CID_GLYPH), buf);
 			    pdsubf->used[cid >> 3] |= 0x80 >> (cid & 7);
 			}
 			cid = 0, code = 1;  /* undefined glyph. */

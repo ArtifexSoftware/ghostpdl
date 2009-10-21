@@ -719,7 +719,7 @@ static inline bool check_position(int pos1, int pos2)
     return true;
 }
 
-void remove_table(byte *tables, char *tag, uint *numTables)
+static void remove_table(byte *tables, char *tag, uint *numTables)
 {
     /* Not a high performance implementation because it is called seldom. */
     int i;
@@ -945,8 +945,8 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 		return_error(gs_error_unregistered);
 	    }
 	    loca_length = (enlarged_numGlyphs + 1) << 2;
-	    remove_table(tables, "hdmx", &numTables);
-	    remove_table(tables, "vdmx", &numTables);
+	    remove_table(tables, (char *)"hdmx", &numTables);
+	    remove_table(tables, (char *)"vdmx", &numTables);
 	} else
 	    loca_length = (numGlyphs + 1) << 2;
 	indexToLocFormat = (glyf_length > 0x1fffc);

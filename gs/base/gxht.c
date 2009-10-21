@@ -215,43 +215,6 @@ gx_render_ht_default(gx_ht_cache * pcache, int b_level)
     }
     return bt;
 }
-/* Faster code if num_tiles == 1. */
-static gx_ht_tile *
-gx_render_ht_1_tile(gx_ht_cache * pcache, int b_level)
-{
-    const gx_ht_order *porder = &pcache->order;
-    int level = porder->levels[b_level];
-    gx_ht_tile *bt = &pcache->ht_tiles[0];
-
-    if (bt->level != level) {
-	int code = render_ht(bt, level, porder, pcache->base_id + b_level);
-
-	if (code < 0)
-	    return 0;
-    }
-    return bt;
-}
-/* Faster code if levels_per_tile == 1. */
-static gx_ht_tile *
-gx_render_ht_1_level(gx_ht_cache * pcache, int b_level)
-{
-    const gx_ht_order *porder = &pcache->order;
-    int level = porder->levels[b_level];
-    gx_ht_tile *bt;
-
-    if (pcache->num_cached < porder->num_levels )
-	bt = &pcache->ht_tiles[level / pcache->levels_per_tile];
-    else
-	bt =  &pcache->ht_tiles[b_level];	/* one tile per b_level */
-
-    if (bt->level != level) {
-	int code = render_ht(bt, level, porder, pcache->base_id + b_level);
-
-	if (code < 0)
-	    return 0;
-    }
-    return bt;
-}
 
 /* save information about the operand binary halftone color */
 static void
@@ -784,10 +747,7 @@ gx_ht_init_cache(const gs_memory_t *mem, gx_ht_cache * pcache, const gx_ht_order
 	bt->tiles.rep_height = height;
 	bt->tiles.shift = bt->tiles.rep_shift = shift;
     }
-    pcache->render_ht =
-	(pcache->num_tiles == 1 ? gx_render_ht_1_tile :
-	 pcache->levels_per_tile == 1 ? gx_render_ht_1_level :
-	 gx_render_ht_default);
+    pcache->render_ht = gx_render_ht_default;
 }
 
 /*

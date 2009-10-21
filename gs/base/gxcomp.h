@@ -153,7 +153,7 @@ typedef struct gs_composite_type_procs_s {
      * Get compositor cropping.
      */
 #define composite_get_cropping_proc(proc)\
-  int proc(const gs_composite_t * pcte, int *ry, int *rheight)
+  int proc(const gs_composite_t * pcte, int *ry, int *rheight, int cropping_min, int cropping_max)
     composite_get_cropping_proc((*get_cropping));
 
 } gs_composite_type_procs_t;

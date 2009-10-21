@@ -206,6 +206,16 @@ currentdict /runpdfstring .undef
 % return the file name as PS name.
 /copy_embedded_file {
   //true resolvestream    % strm
+  dup 1023 string .peekstring pop % "1024 string" exceeds current %stdin buffer
+  dup length 400 ge {             % Valid PDF file cannot be smaller than 400 bytes.
+     (%PDF-) search {
+       pop pop pop //true
+     } {
+       pop //false
+     } ifelse
+   } {
+     pop //false
+   } ifelse {
   //null (w) /.tempfile   % strm (name) null (w) /.tempfile
   .systemvar exec         % strm (name) file
   3 -1 roll               % (name) file strm
@@ -218,17 +228,22 @@ currentdict /runpdfstring .undef
   pop closefile           % (name) file
   closefile               % (name)
   cvn                     % /name
+  } {
+    closefile
+  } ifelse
 } bind def
 
 
 % Copy selected subfiles to temporary files and return the file names
 % as a PostScript names to protect them from restore.
-% Currently, all files in the Portfolio are extracted and returned.
+% Currently, all PDF files in the Portfolio are extracted and returned.
 %
 % - pdf_collection_files [ /temp_file_name ... /temp_file_name
 /pdf_collection_files {
   mark
-      Trailer /Root oget /Names knownoget {
+  Trailer /Root oget
+  dup /Collection oknown {
+    /Names knownoget {
         /EmbeddedFiles knownoget {
       /Names knownoget {
         { oforce
@@ -245,6 +260,9 @@ currentdict /runpdfstring .undef
     } if
   } if
   } if
+  } {
+    pop
+  } ifelse
 } bind def
 
 /runpdf {		% <file> runpdf -
@@ -1674,12 +1692,16 @@ currentdict /PDF2PS_matrix_key undef
 
 % Check if transparency is used in a Pattern
 /patternusestransparency {	% <Pattern dict> patternusestransparency <bool>
-  //false exch		% Assume no transparency
+  NOTRANSPARENCY
+  { pop //false } 
+  { //false exch		% Assume no transparency
   {
     4 dict 1 index resourceusestransparency { pop not exit } if
     dup /ExtGState knownoget { extgstateusestransparency { pop not exit } if } if
     pop exit
   } loop
+  }
+  ifelse
 } bind def
 
 

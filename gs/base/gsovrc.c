@@ -414,7 +414,10 @@ static gx_device_procs no_overprint_procs = {
     0,					/* fill_linear_color_triangle */
     0,					/* update_spot_equivalent_colors */
     0,					/* ret_devn_params */
-    gx_forward_fillpage
+    gx_forward_fillpage,
+    0,                                  /* push_transparency_state */
+    0                                   /* pop_transparency_state */
+
 };
 
 /*

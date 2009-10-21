@@ -372,6 +372,7 @@ pdfmark_bind_named_object(gx_device_pdf *pdev, const gs_const_string *objname,
 	    code = pdf_substitute_resource(pdev, pres, resourceXObject, NULL, false);
 	else
 	    code = pdf_substitute_resource(pdev, pres, resourceXObject, NULL, true);
+	(*pres)->where_used |= pdev->used_mask;
 	if (code < 0)
 	    return code;
     } else {
@@ -720,7 +721,9 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	    const gs_param_string *pair = &pairs[i];
 
 	    if (pdf_key_eq(pair, "/F")) {
-		sscanf((const char *)pair[1].data, "%ld", &Flags);
+		code = sscanf((const char *)pair[1].data, "%ld", &Flags);
+		if (code != 1)
+		    eprintf("Annotation has an invalid /Flags attribute\n");
 		break;
 	    }
 	}
@@ -732,7 +735,8 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 		 */
 		case 0:
 		    eprintf("Annotation set to non-printing,\n not permitted in PDF/A, reverting to normal PDF output\n");
-		    pdev->PDFA = 0;
+		    pdev->AbortPDFAX = true;
+		    pdev->PDFA = false;
 		    break;
 		    /* Since the annotation would break PDF/A compatibility, do not
 		     * include it, but warn the user that it has been dropped.
@@ -743,7 +747,8 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 		    break;
 		default:
 		    eprintf("Annotation set to non-printing,\n not permitted in PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
-		    pdev->PDFA = 0;
+		    pdev->AbortPDFAX = true;
+		    pdev->PDFA = false;
 		    break;
 	    }
 	}

@@ -1,0 +1,73 @@
+How to setup a new computer to run regression jobs on the Artifex Cluster:
+
+1.  Get limited access passwordless ssh to casper working:
+
+    Move the included cluster_key file to your ~/.ssh directory.
+
+    Verify that the permission of this file is 600.
+
+    Choose a name for your machine, this has to be unique within the
+    cluster (currently in use names are i7, i7a, imac, macpro, and peeves).
+
+    Inform Marcos of the name so that he can add it to the list
+    of machines allowed to send ssh commands to casper.
+
+    After Marcos lets you know that your machine has been added you
+    should be able to to run a very limited set of command on casper via
+    ssh using the cluster_key without being asking for your password.
+    To test this try (replacing your_machine_name with your previously
+    chosen machine name):
+
+      ssh -i ~/.ssh/cluster_key marcos@casper.ghostscript.com \
+        touch /home/marcos/cluster/your_machine_name.done
+
+    You can verify that an arbitrary command is not allowed by trying:
+
+      ssh -i ~/.ssh/cluster_key marcos@casper.ghostscript.com \
+        touch /home/marcos/cluster/your_machine_name.test
+
+2.  Make a directory where the cluster software can live, the default
+    location is cluster, which is where tar should have installed this
+    file and the others included with it, but if you prefer this can be
+    anywhere you like.  If you've chosen a different directory move the
+    files from this directory to it and cd to it.
+
+3.  Checkout the various test files and source code by executing the
+    setup_cluster script.  You may already have copies of these files
+    on your machine but I'd rather not support having them installed in
+    other directories, so please just live with another copy.
+
+    Note that this will take a while (2+ hours), though the time will
+    vary based on what else casper is doing at the time and your
+    internet connection speed.
+
+4.  Modify the clusterpull.sh script by editing the line:
+
+      set machine=REPLACE_WITH_YOUR_MACHINE_NAME
+
+5.  Add the following to your crontab, this schedules the clusterpull.sh
+    script run once every minute (you'll have to appropriately change
+    the directory name):
+
+    * * * * * cd /home/marcos/cluster ; ./clusterpull.sh
+
+    Note that the clusterpull.sh script is fairly low impact, it sends
+    a heartbeat signal to casper via 'ssh touch' and check to see if a
+    job is ready to run by attempting to scp a file from casper.
+
+6.  Viola!  Sit back, relax, and watch your cpu load climb to the roof
+    the next time someone does a commit.
+
+    Note that the cluster self-balances for load, the initial assumption
+    is that the new node is of average speed (which is a 3.2 GHz i7).
+    After each cluster run is completed the number of jobs assigned to
+    each node is slowly adjusted based on the time it took to complete
+    its jobs.
+
+    Also, if a machine hasn't sent a heartbeat in a while (currently
+    defined to be three minutes) it is assumed that machine is down
+    and it won't be assigned any jobs.  If a machine goes down during
+    a cluster run that will also be detected, all of the jobs will be
+    aborted and a new run will be started with the machines that are
+    up at that time.
+

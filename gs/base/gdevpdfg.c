@@ -1268,6 +1268,7 @@ pdf_end_gstate(gx_device_pdf *pdev, pdf_resource_t *pres)
 	
 	if (code < 0)
 	    return code;
+	pres->where_used |= pdev->used_mask;
 	code = pdf_open_page(pdev, PDF_IN_STREAM);
 	if (code < 0)
 	    return code;

@@ -470,6 +470,7 @@ def
   gsave //nodict begin
   newpath null SMask
   1 .setopacityalpha 1 .setshapealpha
+  1 CA 1 ca
   /Compatible .setblendmode
 	% Execute the body of the Form, similar to DoForm.
   pdfopdict .pdfruncontext
@@ -1008,11 +1009,16 @@ end
   2 copy getu16 16 bitshift 3 1 roll 2 add getu16 add
 } bind def
 
+/jp2_csp_dict <<
+  16 /sRGB
+  17 /sGray
+  18 /sRGB  % YCC is convertrd to RGB
+>> readonly def
 
 % Process jp2 blocks (aka boxes). All procedures have the signature
 % <file> <length> -> ... <file> <flush_length>
 /jp2_tag_dict <<
-  /jp2h { % descend into a sub-stream, never return.
+  /jp2h { % descend into a sub-stream, don't return.
     () /SubFileDecode filter 0
   } bind
   /ihdr {
@@ -1021,36 +1027,44 @@ end
     /Components 1 index 8 getu16         % file len-14 (14) /Components NC
     def                                  % file len-14 (14)
     10 get 16#7F and 1 add
+    8 .min % color depth is reduced in the library
     /BitsPerComponent exch def           % file len-14 
   } bind
   /colr {
+    currentdict /ColorSpace known not {
     3 sub
     1 index 3 string readstring pop      % file len-3 (3)
-    0 get 1 eq {
-      4 sub                              % file len-7
+      0 get dup 1 eq {
+        pop 4 sub                          % file len-7
       1 index 4 string readstring pop    % file len-16 (4) 
       0 getu32                           % file len-16 enum
-      dup 16 eq {
-        % Don't set device-independent color space now
-        % to avoid raster differences
-        pop /ColorSpace /DeviceRGB % /sRGB
+        //jp2_csp_dict exch .knownget {
+          /ColorSpace exch /ColorSpace findresource
         def                              % file len-7
       } {
-        17 eq {
-          % See above.
-          /ColorSpace /DeviceGray % /sGray
-          def                            % file len-7
-        } if
+          (   **** Warning: Unknown enumerated color space in JPX stream.\n)
+          pdfformaterror
       } ifelse
     } {
+        2 eq {
+          3 dict begin
+          /N /Components load def
       string 1 index exch readstring pop % file ()
-      /ColorSpace exch                   % file /ColorSpace ()
-      % ICC ColorSpace is not yet implemented
-      pop pop
-      %
-      0                                  % file 0
+          /ReusableStreamDecode filter /DataSource exch def
+          currentdict end
+          /ICCBased exch 2 array astore
+          /ColorSpace exch                 % file /ColorSpace [...]
+          def 0                            % file 0
+        } {
+          (   **** Warning: Unknown color space method in JPX stream.\n)
+          pdfformaterror
     } ifelse
+      } ifelse
+    } if
   } bind
+  % Palette colors are decoded by the library.
+  % For now, ignore 'pclr' table.
+  /pclr { }
 >> readonly def
 
 
@@ -1095,6 +1109,7 @@ end
 } bind def
 
 currentdict /jp2_tag_dict .undef
+currentdict /jp2_csp_dict .undef
 
 /makeimagedict {	% <resdict> <newdict> makeimagedict <imagemask>
 			% On return, newdict' is currentdict
@@ -1241,7 +1256,7 @@ currentdict /jp2_tag_dict .undef
     } forall exch pop {
       (\n   **** Warning: Some elements of Mask array are out of range.\n)
       pdfformaterror
-      [ exch { 0 .max 1 BitsPerComponent bitshift 1 sub .min } forall ]
+      [ exch { 1 BitsPerComponent bitshift 1 sub and } forall ] % AR5 does this
     } if
     /MaskColor exch def
   } {
@@ -1286,6 +1301,7 @@ currentdict /jp2_tag_dict .undef
       gsave //nodict begin
       null /SoftMask gput
       1 .setopacityalpha 1 .setshapealpha
+      1 CA 1 ca
       /Compatible .setblendmode
       DoImage
       end grestore
@@ -1553,12 +1569,22 @@ drawopdict begin
 
   /Tform { Tform } def  % Text formatting and painting for AcroForm
                         % without appearance streams.
+end
+
+% ======================= Invalid operators ============================ %
+
+drawopdict begin
   /QBT {
     Q BT
     (   **** Warning: invalid operator QBT processed as Q BT .\n)
     pdfformaterror  % Bug 690089
   } def
 
+  /. {
+    0.
+    (   **** Warning: invalid operator . processed as number 0. .\n)
+    pdfformaterror  % Bug 690730
+  } def
 end
 
 % ============================== Annotations ============================== %
@@ -1797,24 +1823,44 @@ end
   } ifelse
 } bdef
 
-/drawlink {			% <annot> drawlink -
-  dup drawborder dup calc_annot_scale 3 -1 roll drawwidget
-} bdef
-
 % Draw an annotation.
 /drawannottypes mark
-  /Link { drawlink } bind
+  /Link { % <annot> -> <false>
+    dup drawborder dup calc_annot_scale 3 -1 roll drawwidget //false
+  } bind
+  /Ink { % <annot> -> <annot> <true>
+         % <annot> -> <false>
+    dup /AP oknown {
+      //true
+    } {
+      1 setlinewidth
+      1 setlinecap
+      1 setlinejoin
+      dup annotsetcolor
+      dup calc_annot_scale
+      3 index annotrect pop pop translate
+      scale
+      /InkList knownoget {
+        { oforce 
+          mark exch { oforce } forall
+          .pdfinkpath
+          stroke
+        } forall
+      } if
+      //false
+    } ifelse
+  } bind
 .dicttomark readonly def
+
 /drawannot {		% <annot> drawannot -
   dup annotvisible {
     gsave
     dup dup /Subtype knownoget {
-      //drawannottypes exch .knownget {
-        exec
+      //drawannottypes exch .knownget { exec } { //true } ifelse
+      {
+        dup calc_annot_scale 3 -1 roll drawwidget % Draw rejected annots as widgets
+      } if			% type known
       } {
-        dup calc_annot_scale 3 -1 roll drawwidget	% Use drawwidget for everything else
-      } ifelse			% type known
-    } {
       pop
       (   **** Warning: /Annot dict without required /Subtype entry is ignored.\n)
       pdfformaterror

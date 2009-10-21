@@ -99,7 +99,13 @@ tile_size_ok(const gx_device_pdf *pdev, const gx_color_tile *p_tile,
 	(p_tile == 0 ? 0 : tile_size(&p_tile->tbits, p_tile->depth));
     uint m_size =
 	(m_tile == 0 ? 0 : tile_size(&m_tile->tmask, 1));
+    /* The image limit only applies to Acrobat versions less than 5
+     * (PDF 1.4).
+     */
+    if (pdev->CompatibilityLevel < 1.4)
     return (max(p_size, m_size) <= 65500);
+    else
+	return 1;
 }
 
 static int
@@ -330,6 +336,7 @@ pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 		stream_puts(pdev->strm, "q q Q Q\n");
 		pdev->AR4_save_bug = true;
 	    }
+	    (*ppres)->where_used |= pdev->used_mask;
 	}
 	cos_value_write(&v, pdev);
 	pprints1(s, " %s ", ppscc->setcolorspace);
@@ -469,6 +476,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     } else {
 	*ppres = pdf_find_resource_by_gs_id(pdev, resourcePattern, p_tile->id);
 	*ppres = pdf_substitute_pattern(*ppres);
+	(*ppres)->where_used |= pdev->used_mask;
     }
     /* pcs_Device will leak (picked up by GC in PS) on error, but we'll
        tolerate that for now. */

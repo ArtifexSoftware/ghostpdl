@@ -1,0 +1,46 @@
+
+The clusterpush.pl script allows you to run a cluster regression using
+code that has not been committed to svn.  It's supposed to be a
+replacement for clusterpush.sh.
+
+Usage:
+
+  clusterpush.pl [type [user]]
+
+Where type is either gs or ghostpdl.  If you do not specify 'type'
+clusterpush.pl will check the current directory name and if it is gs or
+ghostpdl will use that, otherwise it terminates with an error.
+
+And user is one of alex, giles, henrys, ken, marcos, masaki, mvrehl,
+ray, or tor.  If you don't specify 'user' clusterpush.pl uses the value
+of $USER.  This makes sense on Linux and Mac OS X and probably cygwin,
+but I'm not sure what happens when run under Windows.  If you prefer
+a different default username than the one listed above please let me know.
+
+You need to run clusterpush.pl from the top level directory (the same
+directory from where you normally run 'make').  There isn't any error
+checking for this, so be careful.
+
+Results will be sent via email after the run is completed, which takes
+about 15 minuts, presuing the cluster isn't busy. Your code is compared
+to the most recent baseline, so for meaningful results you will want
+to sync your code with head if recent changes to head have resulted in
+regression differences.
+
+BTW, no checking is done to make sure that you actually are the user you
+claim to be, so you can use this script as a primitive denial-of-service
+attack by flooding someone's mailbox with regression results (and by
+'flooding' I mean one email every 15 minutes).
+
+Finally, the first time you run clusterpush.pl it will take a really
+long time to rsync your source to the master machine and then from the
+master to the nodes.  After that things will go much quicker (unless,
+like me, you accidently leave giant .ppm files in the current directory).
+
+One last thing, the code runs the PostScript/EPS/PDF tests for Ghostscript
+changes and the PCL5/PCL6/XPS/SVG tests for GhostPDL changes.  This isn't
+ideal, since a Ghostscript change can break any of the GhostPDL languages
+and it's a waste of time to test XPS if a change is made to the GhostSVG
+specific source.  If enough people complain I'll eventually fix this.
+
+

@@ -156,7 +156,6 @@ zexD(i_ctx_t *i_ctx_p)
 		}
 		pss->binary_to_hex = 0;
 	    }
-	    state.record_left = pss->record_left;
 	} 
     }
     return filter_read(i_ctx_p, code, &s_exD_template, (stream_state *)&state, 0);

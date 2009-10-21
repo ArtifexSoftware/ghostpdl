@@ -130,6 +130,7 @@ pdf_convert_image4_to_image1(gx_device_pdf *pdev,
 			     gx_drawing_color *pdcolor)
 {
     if (pim4->BitsPerComponent == 1 &&
+	pim4->ColorSpace->type->num_components == gx_num_components_1 &&
 	(pim4->MaskColor_is_range ?
 	 pim4->MaskColor[0] | pim4->MaskColor[1] :
 	 pim4->MaskColor[0]) <= 1
@@ -1423,6 +1424,7 @@ gdev_pdf_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
 	    if (pres == 0)
 		return gs_error_undefined;
 	    pres = pdf_substitute_pattern(pres);
+	    pres->where_used |= pdev->used_mask;
 	    code = pdf_add_resource(pdev, pdev->substream_Resources, "/Pattern", pres);
 	    if (code < 0)
 		return code;

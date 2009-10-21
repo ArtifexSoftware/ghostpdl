@@ -1925,7 +1925,7 @@ end
   1 exch div exch
   1 exch div exch                                       % wx wy
   1 index 0 setcharwidth
-  o setlinewidth
+  0 setlinewidth
   0 0 moveto
   2 copy rlineto
   1 index 0 rlineto
@@ -2770,7 +2770,8 @@ end
     exch                                                % d [] cmap
     1 index length 1 sub -1 0 {                         % d [] cmap code
       dup 3 index exch get exch                         % d [] cmap name code
-      dup 0 eq {
+      dup 0 eq 2 index /.notdef eq or {			  % do not re-encode GID 0, or the
+									  % /.notdef glyph name
         pop pop
       } {
         def
@@ -3388,6 +3389,7 @@ end
 { //PDFR_DEBUG {
     (FunctionToProc beg ) print count =
   } if
+  dup type /dicttype eq {
   dup /Domain get length 2 idiv
   {
     dup 1 eq {
@@ -3398,6 +3400,9 @@ end
     } if
     mark (Functions with many arguments aren't implemented yet.) //error exec
   } loop
+  } {
+    //PDFR_DEBUG {(Not a function dict, assume already a procedure.) print } if
+  } ifelse
   //PDFR_DEBUG {
     (FunctionToProc end ) print count =
   } if
@@ -3547,6 +3552,9 @@ end
       exit
       pop
     } if
+    % Check if this is an already substituted space   
+    dup 0 get /CIEBasedA eq {exit} if
+    dup 0 get /CIEBasedABC eq {exit} if
     mark exch (Unimplemented color space ) exch //error exec
   } loop
 } bind def
@@ -3554,11 +3562,26 @@ end
 //SubstitutePDFColorSpaceRec 0 //SubstitutePDFColorSpace put
 
 /ResolveArrayElement  % <array> <index> ResolveArrayElement <array>
-{ 2 copy get xcheck {
-    2 copy get exec
+{ 2 copy get 
+  dup type dup /arraytype eq exch
+  /packedarraytype eq or {             % make sure its a procedure/executable array
+    xcheck {
+      2 copy get		       % Get executable array                       
+      dup 0 get type /integertype eq   % ensure first element is an integer      
+      1 index 1 get type dup /arraytype                                               
+      eq exch
+      /packedarraytype eq or           % ensure second element is executable array
+      and {
+          exec
     2 index 4 1 roll put
   } {
+          pop pop
+      } ifelse
+    } {
     pop
+  } ifelse
+  } {
+    pop pop
   } ifelse
 } bind def
 
@@ -3680,8 +3703,10 @@ end
     } if
     pop
   } if
-  dup /Type get /Pattern ne {
+  dup /Type knownget { % /Type is optional for type 1 pattern dictionaries
+    /Pattern ne {
     mark (Resource ) 4 index ( must have /Type/Pattern .) //error exec
+  } if
   } if
 } bind def
 
@@ -3780,7 +3805,9 @@ currentdict end readonly def
   /DeviceGray { [0 1] } def
   /DeviceRGB { [0 1 0 1 0 1] } def
   /DeviceCMYK { [0 1 0 1 0 1 0 1] } def 
-  /Indexed { dup /ColorSpace get 2 get [ exch 0 exch ] } def
+  /Indexed { 
+  dup /BitsPerComponent get 2 exch exp [exch 0 exch] 
+  } def
   /Separation { [0 1] } def
   /CIEBasedA { [0 1]  /RangeA //GetColorSpaceRange exec } def
   /CIEBasedABC { [0 1 0 1 0 1] /RangeABC //GetColorSpaceRange exec } def

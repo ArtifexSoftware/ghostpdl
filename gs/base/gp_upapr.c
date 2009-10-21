@@ -29,7 +29,12 @@ int
 gp_defaultpapersize(char *ptr, int *plen)
 {
 #ifdef USE_LIBPAPER
-    const char *paper = systempapername();
+    const char *paper;
+
+    paperinit();
+
+    paper = systempapername();
+    if (!paper) paper = defaultpapername();
 
     if (paper) {
 	int len = strlen(paper);
@@ -38,10 +43,12 @@ gp_defaultpapersize(char *ptr, int *plen)
 	    /* string fits */
 	    strcpy(ptr, paper);
 	    *plen = len + 1;
+	    paperdone();
 	    return 0;
 	}
 	/* string doesn't fit */
 	*plen = len + 1;
+	paperdone();
 	return -1;
     }
 #endif

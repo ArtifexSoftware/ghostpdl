@@ -56,9 +56,9 @@ LDFLAGS_SO=-shared -Wl,-soname=$(GS_SONAME_MAJOR)
 #GS_SONAME=$(GS_SONAME_BASE).$(GS_SOEXT)
 #GS_SONAME_MAJOR=$(GS_SONAME_BASE).$(GS_VERSION_MAJOR).$(GS_SOEXT)
 #GS_SONAME_MAJOR_MINOR=$(GS_SONAME_BASE).$(GS_VERSION_MAJOR).$(GS_VERSION_MINOR).$(GS_SOEXT)
-#LDFLAGS_SO=-dynamiclib -flat-namespace
-#LDFLAGS_SO=-dynamiclib -install-name $(GS_SONAME_MAJOR_MINOR)
-#LDFLAGS_SO=-dynamiclib
+#LDFLAGS_SO=-dynamiclib -flat_namespace
+#LDFLAGS_SO=-dynamiclib -install_name $(GS_SONAME_MAJOR_MINOR)
+#LDFLAGS_SO=-dynamiclib -install_name $(FRAMEWORK_NAME)
 
 GS_SO=$(BINDIR)/$(GS_SONAME)
 GS_SO_MAJOR=$(BINDIR)/$(GS_SONAME_MAJOR) 
@@ -101,12 +101,18 @@ SODEFS=LDFLAGS='$(LDFLAGS) $(LDFLAGS_SO)'\
 
 # Normal shared object
 so: SODIRS
+	@if test -z "$(MAKE)" -o -z "`$(MAKE) --version 2>&1 | grep GNU`";\
+	  then echo "Warning: this target requires gmake";\
+	fi
 	$(MAKE) $(SODEFS) CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix) $(GSSOC) $(GSSOX)
 
 # Debug shared object
 # Note that this is in the same directory as the normal shared
 # object, so you will need to use 'make soclean', 'make sodebug'
 sodebug: SODIRS
+	@if test -z "$(MAKE)" -o -z "`$(MAKE) --version 2>&1 | grep GNU`";\
+	  then echo "Warning: this target requires gmake";\
+	fi
 	$(MAKE) $(SODEFS) GENOPT='-DDEBUG' CFLAGS='$(CFLAGS_DEBUG) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' $(GSSOC) $(GSSOX)
 
 install-so: so

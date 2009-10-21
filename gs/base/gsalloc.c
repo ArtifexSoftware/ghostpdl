@@ -545,6 +545,9 @@ i_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 	    return 0;
 	alloc_trace(":+b.", imem, cname, NULL, size, obj);
     }
+#if IGC_PTR_STABILITY_CHECK
+	obj[-1].d.o.space_id = imem->space_id;
+#endif
     return (byte *) obj;
 }
 static byte *
@@ -582,6 +585,9 @@ i_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
 	    return 0;
 	alloc_trace(":+<.", imem, cname, pstype, size, obj);
     }
+#if IGC_PTR_STABILITY_CHECK
+	obj[-1].d.o.space_id = imem->space_id;
+#endif
     return obj;
 }
 static void *

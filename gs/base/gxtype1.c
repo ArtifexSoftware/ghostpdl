@@ -339,7 +339,6 @@ type1_cis_get_metrics(const gs_type1_state * pcis, double psbw[4])
 
 /* ------ Font procedures ------ */
 
-
 /*
  * If a Type 1 character is defined with 'seac', store the character codes
  * in chars[0] and chars[1] and return 1; otherwise, return 0 or <0.
@@ -370,7 +369,7 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
     ip_state_t *ipsp = &ipstack[0];
     const byte *cip;
     crypt_state state;
-    int c;
+    int c, hhints = 0, vhints = 0;
     int code;
     
     CLEAR_CSTACK(cstack, csp);
@@ -408,7 +407,39 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
 #define cnext CLEAR_CSTACK(cstack, csp); goto top
 	switch ((char_command) c) {
 	default:
+	    cnext;
 	    goto out;
+	case c2_shortint:
+	    cip += 2;
+	    break;
+	case c2_hstemhm:
+	    hhints += ((csp - cstack) + 1) / 2;
+	    cnext;
+	    break;
+	case c2_vstemhm:
+	    vhints += ((csp - cstack) + 1) / 2;
+	    cnext;
+	    break;
+	case c2_cntrmask:
+	    cip += (vhints + hhints + 7) / 8;
+	    cnext;
+	    break;
+	case c2_hintmask:
+	    {
+		if (csp > cstack)
+		    vhints += ((csp - cstack) + 1) / 2;
+		cip += (vhints + hhints + 7) / 8;
+		cnext;
+	    }
+	    break;
+	case c2_callgsubr:
+	    /* FIXME
+	     * We should process subr and gsubr routines to see if they contain
+	     * a CFF endchar, and if it is a SEAC (deprecated but possible). Sadly
+	     * we don't have a full type 2 parser, and apparently can't handle gsubr
+	     * routines, so if we find one, assume there is no SEAC.
+	     */
+	    return 0;
 	case c_callsubr:
 	    c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
 	    code = pdata->procs.subr_data
@@ -426,7 +457,13 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
 	    cip = ipsp->ip, state = ipsp->dstate;
 	    goto top;
 	case cx_hstem:
+	    hhints += ((csp - cstack) + 1) / 2;
+	    cnext;
+	    break;
 	case cx_vstem:
+	    vhints += ((csp - cstack) + 1) / 2;
+	    cnext;
+	    break;
 	case c1_hsbw:
 	    cnext;
 	case cx_endchar:
@@ -478,6 +515,7 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
  out:
     return 0;
 }
+
 
 /*
  * Get PIECES and/or NUM_PIECES of a Type 1 glyph.  Sets info->num_pieces

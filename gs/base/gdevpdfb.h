@@ -129,6 +129,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0 /*false*/,			/* PatternImagemask */
  0 /*false*/,			/* PDFX */
  0 /*false*/,			/* PDFA */
+ 0 /*false*/,			/* Abort generation of PDFA or X, produce PDF */
  12000,				/* MaxClipPathSize */ /* HP LaserJet 1320 hangs with 14000. */
  max_long,                      /* MaxViewerMemorySize */
  256000,			/* MaxShadingBitmapSize */

@@ -45,7 +45,6 @@ gdev_pdf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 			gx_color_index color)
 {
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
-    int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
     int code;
 
     code = pdf_open_page(pdev, PDF_IN_STREAM);
@@ -1208,7 +1207,6 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
 	(ppath->last_charpath_segment == ppath->current_subpath->last)) {
 	bool hl_color = pdf_can_handle_hl_color((gx_device_vector *)pdev, pis, pdcolor);
 	const gs_imager_state *pis_for_hl_color = (hl_color ? pis : NULL);
-	int save_render_mode = pdf_get_text_render_mode(pdev->text->text_state);
 	
 	if (pdf_modify_text_render_mode(pdev->text->text_state, 1)) {
 	    /* Set the colour for the stroke */

@@ -1110,14 +1110,26 @@ gx_imager_dev_ht_install(
             lcm_height = (h > max_int / lcm_height ? max_int : lcm_height * h);
 
             if (porder->cache == 0) {
-                uint            tile_bytes, num_tiles;
+                uint            tile_bytes, num_tiles, slots_wanted, rep_raster, rep_count;
                 gx_ht_cache *   pcache;
 
                 tile_bytes = porder->raster
                               * (porder->num_bits / porder->width);
                 num_tiles = 1 + gx_ht_cache_default_bits_size() / tile_bytes;
-                pcache = gx_ht_alloc_cache( pis->memory,
-                                            num_tiles,
+		/*
+		 * Limit num_tiles to a reasonable number allowing for width repition.
+		 * The most we need is one cache slot per bit.
+		 * This prevents allocations of large cache bits that will never
+		 * be used. See rep_count limit in gxht.c
+		 */
+		slots_wanted = 1 + ( porder->width * porder->height ); 
+		rep_raster = ((num_tiles*tile_bytes) / porder->height /
+				slots_wanted) & ~(align_bitmap_mod - 1);
+		rep_count = rep_raster * 8 / porder->width;
+		if (rep_count > sizeof(ulong) * 8 && (num_tiles >
+			1 + ((num_tiles * 8 * sizeof(ulong)) / rep_count) ))
+		    num_tiles = 1 + ((num_tiles * 8 * sizeof(ulong)) / rep_count);
+                pcache = gx_ht_alloc_cache( pis->memory, num_tiles,
                                             tile_bytes * num_tiles );
                 if (pcache == NULL) 
                     code = gs_error_VMerror;

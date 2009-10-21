@@ -386,6 +386,17 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     }
     if (ecode < 0)
 	goto fail;
+    /* PDFA and PDFX are stored in the page device dictionary and therefore
+     * set on every setpagedevice. However, if we have encountered a file which
+     * can't be made this way, and the PDFACompatibilityPolicy is 1, we want to
+     * continue producing the file, but not as a PDF/A or PDF/X file. Its more
+     * or less impossible to alter the setting in the (potentially saved) page
+     * device dictionary, so we use this rather clunky method.
+     */
+    if(pdev->PDFA && pdev->AbortPDFAX)
+	pdev->PDFA = false;
+    if(pdev->PDFX && pdev->AbortPDFAX)
+	pdev->PDFX = false;
     if (pdev->PDFX && pdev->PDFA) {
 	ecode = gs_note_error(gs_error_rangecheck);
 	param_signal_error(plist, "PDFA", ecode);
