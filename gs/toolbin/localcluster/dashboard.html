@@ -1,0 +1,95 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Ghostscript Regression Dashboard</title>
+<link rel=stylesheet href=../style.css>
+<script>
+var debug_cstats = {
+  'status' : 'Regression test example',
+  'nodes' : [
+   { 'name' : 'alef', 'status' : 'idle', 'down' : '' },
+   { 'name' : 'bet', 'status' : 'idle', 'down' : '' },
+   { 'name' : 'gimmel', 'status' : '', 'down' : '--DOWN--' },
+  ]
+};
+
+function update(cstats) {
+  div = document.getElementById('status');
+  para = document.createElement('p');
+  para.appendChild(document.createTextNode(cstats.status));
+  div.replaceChild(para, div.firstElementChild);
+  table = document.createElement('table');
+  c = 1	
+  for (node in cstats.nodes) {
+    row = document.createElement('tr');
+    if (c) {
+      row.setAttribute('style', 'background-color: #eee');
+    }
+    c = 1 - c;
+    key = document.createElement('td');
+    key.appendChild(document.createTextNode(cstats.nodes[node].name));
+    val = document.createElement('td');
+    val.appendChild(document.createTextNode(cstats.nodes[node].down));
+    row.appendChild(key);
+    row.appendChild(val);
+    val = document.createElement('td');
+    val.appendChild(document.createTextNode(cstats.nodes[node].status));
+    row.appendChild(val);
+    table.appendChild(row);
+  }
+  div.replaceChild(table, div.lastElementChild);
+  moddate = document.getElementById('moddate');
+  if (moddate) {
+    moddate.replaceChild(document.createTextNode(Date()), 
+              moddate.firstChild);
+  }
+}
+
+function poll () {
+  var req = new XMLHttpRequest();
+
+  req.open('GET', 'http://ghostscript.com/cgi-bin/clustermonitor.cgi', true);
+  req.onreadystatechange = function(aEvt) {
+    if (req.readyState == 4) {
+      if (req.status == 200) {
+        update(JSON.parse(req.responseText));
+      } else {
+       div = document.getElementById('status');
+       para = document.createElement('p');
+       para.appendChild(document.createTextNode('Error loading status information'));
+       div.appendChild(para);
+      }
+    }
+  }
+  req.send(null);
+}
+</script>
+</head>
+<body onload="poll()">
+<div class=head>
+<h1>
+<img src=../logo.png width=56 height=64 align=right>
+Regression Dashboard
+</h1>
+</div>
+
+<div class=page>
+
+<div id=status>
+<p><strong>This page requires scripting support</strong></p>
+<table></table>
+</div>
+<script>
+setInterval('poll()', 5000);
+</script>
+
+<p><!-- this space is for spacing --></p>
+
+</div>
+
+<div class=foot>
+<p>Last update: <span id=moddate>loading</span></p>
+</div>
+
+</body>
+</html>
