@@ -93,6 +93,15 @@ gs_private_st_ptrs1(st_pdf14_clr, pdf14_parent_color_t, "pdf14_clr",
 		    pdf14_clr_enum_ptrs, pdf14_clr_reloc_ptrs,
 		    previous);
 
+gs_private_st_ptrs2(st_pdf14_mask, pdf14_mask_t, "pdf_mask",
+                    pdf14_mask_enum_ptrs, pdf14_mask_reloc_ptrs,
+                    rc_mask, previous);
+
+gs_private_st_ptrs1(st_pdf14_rcmask, pdf14_rcmask_t, "pdf_rcmask",
+                    pdf14_rcmask_enum_ptrs, pdf14_rcmask_reloc_ptrs,
+                    mask_buf);
+
+
 /* ------ The device descriptors ------	*/
 
 /*
@@ -127,6 +136,8 @@ static	dev_proc_begin_transparency_mask(pdf14_begin_transparency_mask);
 static	dev_proc_end_transparency_mask(pdf14_end_transparency_mask);
 static  dev_proc_pattern_manage(pdf14_pattern_manage);
 static int pdf14_clist_get_param_compressed_color_list(pdf14_device * p14dev);
+static	dev_proc_push_transparency_state(pdf14_push_transparency_state);
+static	dev_proc_pop_transparency_state(pdf14_pop_transparency_state);
 
 static	const gx_color_map_procs *
     pdf14_get_cmap_procs(const gs_imager_state *, const gx_device *);
@@ -199,7 +210,11 @@ static	const gx_color_map_procs *
 	NULL,				/* fill_linear_color_scanline */\
 	NULL,				/* fill_linear_color_trapezoid */\
 	NULL,				/* fill_linear_color_triangle */\
-	gx_forward_update_spot_equivalent_colors	/* update spot */\
+	gx_forward_update_spot_equivalent_colors,	/* update spot */\
+        NULL,                           /* DevN params */\
+        NULL,                           /* fill page */\
+        pdf14_push_transparency_state,\
+        pdf14_pop_transparency_state\
 }
 
 static	const gx_device_procs pdf14_Gray_procs =
@@ -511,10 +526,52 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape, bool idle,
 static	void
 pdf14_buf_free(pdf14_buf *buf, gs_memory_t *memory)
 {
+    gs_free_object(memory, buf->maskbuf, "pdf14_buf_free");
     gs_free_object(memory, buf->transfer_fn, "pdf14_buf_free");
     gs_free_object(memory, buf->data, "pdf14_buf_free");
     gs_free_object(memory, buf, "pdf14_buf_free");
 }
+
+
+static void
+rc_pdf14_maskbuf_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
+{
+    /* Ending the mask buffer. */
+
+    pdf14_rcmask_t *rcmask = (pdf14_rcmask_t * ) ptr_in;
+
+    /* free the pdf14 buffer. */
+
+    if ( rcmask->mask_buf != NULL ){
+        pdf14_buf_free(rcmask->mask_buf, mem);
+    }
+
+    gs_free_object(mem, rcmask, "rc_pdf14_maskbuf_free");
+
+}
+
+
+static	pdf14_rcmask_t *
+pdf14_rcmask_new(gs_memory_t *memory)
+{
+
+    pdf14_rcmask_t *result;
+
+    result = gs_alloc_struct(memory, pdf14_rcmask_t, &st_pdf14_rcmask,
+			     "pdf14_maskbuf_new");
+
+    if ( result == NULL )
+        return(NULL);
+
+    rc_init_free(result, memory, 1, rc_pdf14_maskbuf_free);
+
+    result->mask_buf = NULL;
+    result->memory = memory;
+
+    return(result);
+
+}
+
 
 static	pdf14_ctx *
 pdf14_ctx_new(gs_int_rect *rect, int n_chan, bool additive, gs_memory_t	*memory)
@@ -539,7 +596,7 @@ pdf14_ctx_new(gs_int_rect *rect, int n_chan, bool additive, gs_memory_t	*memory)
 	memset(buf->data, 0, buf->planestride * buf->n_planes);
     buf->saved = NULL;
     result->stack = buf;
-    result->maskbuf = NULL;
+    result->maskbuf = pdf14_mask_element_new(memory);
     result->n_chan = n_chan;
     result->memory = memory;
     result->rect = *rect;
@@ -553,9 +610,8 @@ pdf14_ctx_free(pdf14_ctx *ctx)
     pdf14_buf *buf, *next;
 
     if (ctx->maskbuf) {
-	/* A mask was created but was not used in this band. */ 
-	pdf14_buf_free(ctx->maskbuf, ctx->memory);
-	ctx->maskbuf = NULL;
+	/* A mask was created but was not used in this band. */
+        rc_decrement(ctx->maskbuf->rc_mask, "pdf14_ctx_free"); 
     }
     for (buf = ctx->stack; buf != NULL; buf = next) {
 	next = buf->saved;
@@ -631,7 +687,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect,
 
     buf->maskbuf = ctx->maskbuf; /* Save becasuse the group rendering may set up 
 				    another (nested) mask. */
-    ctx->maskbuf = NULL; /* Clean the mask field for rendring this group. 
+    ctx->maskbuf = NULL; /* Clean the mask field for rendering this group. 
 			    See pdf14_pop_transparency_group how to handle it. */
 
     buf->saved = tos;
@@ -674,10 +730,17 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
 {
     pdf14_buf *tos = ctx->stack;
     pdf14_buf *nos = tos->saved;
-    pdf14_buf *maskbuf = tos->maskbuf;
+    pdf14_mask_t *mask_stack = tos->maskbuf;
+    pdf14_buf *maskbuf;
     int x0, x1, y0, y1;
     byte *new_data_buf;
     int num_noncolor_planes, new_num_planes;
+
+    if ( mask_stack == NULL) {
+        maskbuf = NULL;
+    } else {
+        maskbuf = mask_stack->rc_mask->mask_buf;
+    }
 
     if (nos == NULL)
 	return_error(gs_error_rangecheck);
@@ -685,26 +748,36 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx,
     y1 = min(tos->rect.q.y, nos->rect.q.y);
     x0 = max(tos->rect.p.x, nos->rect.p.x);
     x1 = min(tos->rect.q.x, nos->rect.q.x);
-    if (maskbuf != NULL && maskbuf->mask_id != tos->mask_id) {
-	/* We're under clist reader, and it skipped a group,
-	   which is resetting maskbuf. Force freeing the mask.
-	 */
-	ctx->maskbuf = maskbuf;
-	maskbuf = NULL;
-    }
+
     if (ctx->maskbuf) {
-	/* Happens with the test case of bug 689492 with no banding
-	   while rendering the group of an image with a mask.
-	   Not sure why gs/lib processes a mask inside the image droup,
-	   anyway we need to release it safely. 
-	   
-	   See also the comment above.
+
+	/* This can occur when we have a situation
+           where we are ending out of a group that
+           has internal to it a soft mask
+           and another group.  The soft mask
+           left over from the previous trans group
+           pop is put into ctx->masbuf, since it
+           is still active if another trans group
+           push occurs to use it.  If one does
+           not occur, but instead we find ourselves
+           popping from a parent group, then this
+           softmask is no longer needed.  We will
+           rc_decrement and set it to NULL.
 	   */
-	pdf14_buf_free(ctx->maskbuf, ctx->memory);
+
+        rc_decrement(ctx->maskbuf->rc_mask, "pdf14_pop_transparency_group");
+
+        if (ctx->maskbuf->rc_mask == NULL ){
+
+            gs_free_object(ctx->memory, ctx->maskbuf, "pdf14_pop_transparency_group");
+
+        }
 	ctx->maskbuf = NULL;
+
     }
-    ctx->maskbuf = maskbuf;  /* Restore the mask saved by pdf14_push_transparency_group. */
-    tos->maskbuf = NULL;     /* Clean the pointer sinse the mask ownership is now passed to ctx. */
+
+    ctx->maskbuf = mask_stack;  /* Restore the mask saved by pdf14_push_transparency_group. */
+    tos->maskbuf = NULL;        /* Clean the pointer sinse the mask ownership is now passed to ctx. */
     if (tos->idle)
 	goto exit;
     if (maskbuf != NULL && maskbuf->data == NULL && maskbuf->alpha == 255)
@@ -812,15 +885,14 @@ exit:
 	   the save action done in pdf14_push_transparency_mask
 	   when replacing==false;
 	 */
-	ctx->maskbuf = (maskbuf != NULL ? maskbuf->maskbuf : NULL);
+
+	/* ctx->maskbuf = (maskbuf != NULL ? maskbuf->maskbuf : NULL); */
+
     }
 
     if_debug1('v', "[v]pop buf, idle=%d\n", tos->idle);
     pdf14_buf_free(tos, ctx->memory);
-    if (maskbuf != NULL) {
-	pdf14_buf_free(maskbuf, ctx->memory);
-	ctx->maskbuf = NULL;
-    }
+   
     return 0;
 }
 
@@ -835,7 +907,8 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 			     byte *transfer_fn, bool idle, bool replacing,
 			     uint mask_id, gs_transparency_mask_subtype_t subtype, 
                              bool SMask_is_CIE, int numcomps,
-                             int Background_components, float Background[])
+                             int Background_components, float Background[],
+                             float GrayBackground)
 {
 
  
@@ -845,6 +918,9 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
     unsigned char background_init;
     
     if_debug2('v', "[v]pdf14_push_transparency_mask, idle=%d, replacing=%d\n", idle, replacing);
+
+#if 0
+
     if (replacing && ctx->maskbuf != NULL) {
 	if (ctx->maskbuf->maskbuf != NULL) {
 	    /* Pass here when a mask of an image
@@ -859,6 +935,8 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 	pdf14_buf_free(ctx->maskbuf, ctx->memory);
 	ctx->maskbuf = NULL;
     }
+
+#endif
 
     /* An optimization to consider is that if the SubType is Alpha
        then we really should only be allocating the alpha band and
@@ -885,6 +963,11 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 	   mask of the containing group. 
 	   Save the containing droup's mask in buf->maskbuf : */
 	buf->maskbuf = ctx->maskbuf;
+
+        if (buf->maskbuf){
+            rc_increment(buf->maskbuf->rc_mask);
+        }
+
     }
 
 
@@ -917,7 +1000,10 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
         /* We need to initialize it to the BC if it existed */
         /* According to the spec, the CS has to be the same */
 
-        if ( Background_components ) {
+        /* If the back ground component is black, then don't bother 
+           with this */
+
+        if ( Background_components && GrayBackground != 0.0 ) {
 
             curr_ptr = buf->data;
             for (k = 0; k < Background_components; k++) {
@@ -928,7 +1014,11 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 
             }
 
-	    memset(curr_ptr, 0, buf->planestride * (buf->n_chan - Background_components));
+            /* If we have a background component that was not black, then we 
+               need to set the alpha for this mask as if we had drawn in the
+               entire soft mask buffer */
+
+	    memset(curr_ptr, 255, buf->planestride * (buf->n_chan - Background_components));
            
         } else {
 
@@ -937,9 +1027,6 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 	    memset(buf->data, 0, buf->planestride * buf->n_chan);
 
         }
-
-
-
 
     }
     return 0;
@@ -956,10 +1043,14 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx)
     tos->saved = NULL;  /* To avoid issues with GC */
 
     if (tos->maskbuf) {
-	/* The maskbuf of the ctx->maskbuf entry is never used, free it now */
-        /* In other words, the Smask will not have an Smask */
-	pdf14_buf_free(tos->maskbuf, ctx->memory);
+
+        /* During the soft mask push, the mask buf was copied
+           (not moved) from the ctx to the tos maskbuf. We 
+           are done with this now */
+            
+        rc_decrement(tos->maskbuf->rc_mask, "pdf14_pop_transparency_mask");
 	tos->maskbuf = NULL;
+
     }
 
     if (tos->data == NULL ) {
@@ -980,7 +1071,8 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx)
 
             /* Assign as mask buffer */
 
-            ctx->maskbuf = tos;
+            ctx->maskbuf = pdf14_mask_element_new(ctx->memory);
+            ctx->maskbuf->rc_mask->mask_buf = tos;
 
         }
 
@@ -1017,24 +1109,103 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx)
          tos->n_chan = 1;
          tos->n_planes = 1;
 
-        /* If we were CIE based, clean up the joint cache we created.
-           see comments in gs_begin_transparency_mask */
+        /* Assign as reference counted mask buffer */
 
-      /*  if ( tos->SMask_is_CIE ){
-
-            gs_free_object(mem, pis->cie_joint_caches,
-		   "gx_cie_to_xyz_free(joint caches)");
-
-        } */
-
-        /* Assign as mask buffer */
-
-        ctx->maskbuf = tos;
+        ctx->maskbuf = pdf14_mask_element_new(ctx->memory);
+        ctx->maskbuf->rc_mask->mask_buf = tos;
 
      }
 
     return 0;
 }
+
+static pdf14_mask_t *
+pdf14_mask_element_new(gs_memory_t *memory)
+{
+    pdf14_mask_t *result;
+
+    result = gs_alloc_struct(memory, pdf14_mask_t, &st_pdf14_mask,
+			     "pdf14_mask_element_new");
+
+    /* Get the reference counted mask */
+
+    result->rc_mask = pdf14_rcmask_new(memory);
+    result->previous = NULL;
+    result->memory = memory;
+
+    return(result);
+
+}
+
+
+pdf14_push_transparency_state(gx_device *dev, gs_imager_state *pis)
+{
+    /* We need to push the current soft mask.  We need to
+       be able to recover it if we draw a new one and
+       then obtain a Q operation ( a pop ) */
+    
+    pdf14_device *pdev = (pdf14_device *)dev;
+    int ok;
+    pdf14_ctx *ctx = pdev->ctx;
+    pdf14_mask_t *new_mask;
+
+    if_debug0('v', "pdf14_push_transparency_state\n");
+
+    /* We need to push the current mask buffer   */
+
+    /* Allocate a new element for the stack.
+       Don't do anything if there is no mask present.*/
+
+    if ( ctx->maskbuf != NULL ) { 
+
+        new_mask = pdf14_mask_element_new(ctx->memory);
+
+        /* Duplicate and make the link */
+
+        new_mask->rc_mask = ctx->maskbuf->rc_mask;
+        rc_increment(new_mask->rc_mask);
+        ctx->maskbuf->previous = new_mask;
+
+    }
+
+ return(0);
+}
+
+
+pdf14_pop_transparency_state(gx_device *dev, gs_imager_state *pis)
+{
+
+    /* Pop the soft mask.  It is no longer needed. Likely due to 
+       a Q that has occurred. */
+
+    pdf14_device *pdev = (pdf14_device *)dev;
+    int ok;
+    pdf14_ctx *ctx = pdev->ctx;
+    pdf14_mask_t *old_mask;
+
+    if_debug0('v', "pdf14_pop_transparency_state\n");
+
+    /* rc decrement the current link after we break it from
+       the list, then free the stack element.  Don't do
+       anything if there is no mask present. */
+
+    if ( ctx->maskbuf != NULL ) {
+
+        old_mask = ctx->maskbuf;
+        ctx->maskbuf = ctx->maskbuf->previous;
+
+        if (old_mask->rc_mask) {
+            rc_decrement(old_mask->rc_mask, "pdf14_pop_transparency_state");
+        }
+
+        gs_free_object(old_mask->memory, old_mask, "pdf14_pop_transparency_state");
+
+    }
+
+ return(0);
+}
+
+
 
 static	int
 pdf14_open(gx_device *dev)
@@ -2101,6 +2272,12 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_imager_state * pis,
 	case PDF14_SET_BLEND_PARAMS:
 	    pdf14_set_params(pis, pdev, &pdf14pct->params);
 	    break;
+        case PDF14_PUSH_TRANS_STATE:
+            code = gx_push_transparency_state(pis, pdev);
+            break;
+        case PDF14_POP_TRANS_STATE:
+            code = gx_pop_transparency_state(pis, pdev);
+            break;
     }
     return code;
 }
@@ -2324,6 +2501,13 @@ compute_group_device_int_rect(pdf14_device *pdev, gs_int_rect *rect, const gs_re
     return 0;
 }
 
+
+
+
+
+
+
+
 static	int
 pdf14_begin_transparency_group(gx_device *dev,
 			      const gs_transparency_group_params_t *ptgp,
@@ -2498,11 +2682,22 @@ pdf14_update_device_color_procs(gx_device *dev,
     pdf14_device *pdevproto;
     pdf14_device *pdev = (pdf14_device *)dev;
     const pdf14_procs_t *new_14procs;
-    pdf14_parent_color_t *parent_color_info = &(pdev->ctx->stack->parent_color_info_procs);
+    pdf14_parent_color_t *parent_color_info;
     gx_color_polarity_t new_polarity;
     int new_num_comps;
     bool new_additive;
     byte new_depth;
+
+    if (pdev->ctx->stack != NULL){
+
+        parent_color_info = &(pdev->ctx->stack->parent_color_info_procs);
+
+    } else {
+
+        /* This should not occur */
+        return_error(gs_error_undefined);
+
+    }
 
     if_debug0('v', "[v]pdf14_update_device_color_procs\n");
 
@@ -2613,7 +2808,6 @@ pdf14_update_device_color_procs(gx_device *dev,
         return(1);  /* Lets us detect that we did do an update */
 
 }
-
 
 /* A new version that works with the color_procs stack 
    for transparency groups */
@@ -2979,7 +3173,8 @@ pdf14_begin_transparency_mask(gx_device	*dev,
 					transfer_fn, ptmp->idle, ptmp->replacing,
 					ptmp->mask_id, ptmp->subtype, 
                                         ptmp->SMask_is_CIE, group_color_numcomps,
-                                        ptmp->Background_components, ptmp->Background);
+                                        ptmp->Background_components, ptmp->Background,
+                                        ptmp->GrayBackground);
 }
 
 static	int
@@ -3946,6 +4141,11 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
 		put_value(pbuf, pparams->overprint_mode);
 
 	    break;
+        case PDF14_PUSH_TRANS_STATE:
+            break;
+        case PDF14_POP_TRANS_STATE:
+            break;
+
     }
 
     /* check for fit */
@@ -4019,6 +4219,10 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
 	case PDF14_END_TRANS_GROUP:
 	    code += 0; /* A good place for a breakpoint. */
 	    break;			/* No data */
+        case PDF14_PUSH_TRANS_STATE:
+            break;
+        case PDF14_POP_TRANS_STATE:
+            break;
 	case PDF14_BEGIN_TRANS_GROUP:
 	    /*
 	     * We are currently not using the bbox or the colorspace so they were
@@ -4252,6 +4456,10 @@ c_pdf14trans_is_closing(const gs_composite_t * this, gs_composite_t ** ppcte, gx
 	    return find_opening_op(PDF14_BEGIN_TRANS_GROUP, ppcte, 6);
 	case PDF14_BEGIN_TRANS_MASK: 
 	    return 0;
+        case PDF14_PUSH_TRANS_STATE:
+            return 0;
+        case PDF14_POP_TRANS_STATE:
+            return 0;
 	case PDF14_END_TRANS_MASK: 
 	    if (*ppcte == NULL)
 		return 2;
@@ -4478,7 +4686,9 @@ send_pdf14trans(gs_imager_state	* pis, gx_device * dev,
 	NULL,				/* fill_linear_color_triangle */\
 	gx_forward_update_spot_equivalent_colors,	/* update spot */\
 	NULL,				/* gx_forward_ret_devn_params */\
-	gx_forward_fillpage\
+	gx_forward_fillpage,\
+        pdf14_push_transparency_state,\
+        pdf14_pop_transparency_state\
 }
 
 static	dev_proc_create_compositor(pdf14_clist_create_compositor);
@@ -5273,6 +5483,15 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                code = pdf14_update_device_color_procs_push_c(dev,
 			      pdf14pct->params.group_color,pis);
 
+               /* Also, if the BC is a value that may end up as
+                  something other than transparent. We must
+                  use the parent colors bounding box in
+                  determining the range of bands in which
+                  this mask can affect.  So, if needed change
+                  the masks bounding box at this time */
+
+                  
+
 		break;
 
 
@@ -5305,6 +5524,11 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
 
                 pdf14_pop_parent_color(dev, pis);
 
+                break;
+
+            case PDF14_PUSH_TRANS_STATE:
+                break;
+            case PDF14_POP_TRANS_STATE:
                 break;
 
             default:
@@ -5701,44 +5925,50 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
 	    {	/* HACK: store mask_id into pparams for subsequent calls of c_pdf14trans_write. */
 		gs_pdf14trans_t * pdf14pct_nolconst = (gs_pdf14trans_t *) pcte; /* Break 'const'. */
 
-		pdf14pct_nolconst->params.mask_id = (cdev->temp_mask_id != 0 ? cdev->temp_mask_id : cdev->mask_id);
-		if_debug2('v', "[v]c_pdf14trans_clist_write_update group mask_id=%d temp_mask_id=%d\n", 
-			    cdev->mask_id, cdev->temp_mask_id);
+                /* What ever the current mask ID is, that is the softmask group through
+                   which this transparency group must be rendered.  Store it now.  */
+
+                pdf14pct_nolconst->params.mask_id = cdev->mask_id;
+
+                if_debug1('v', "[v]c_pdf14trans_clist_write_update group mask_id=%d \n", cdev->mask_id);
 	    }
-	    if (cdev->temp_mask_id)
-		cdev->temp_mask_id = 0;
-	    else
-		cdev->mask_id = 0;
+
 	    break;
 	case PDF14_END_TRANS_GROUP:
 	    code = 0; /* A place for breakpoint. */
 	    break;
 	case PDF14_BEGIN_TRANS_MASK:
-	    {   int save_mask_id = cdev->mask_id;
-		int save_temp_mask_id = cdev->temp_mask_id;
+	    {   int save_mask_id = cdev->mask_id;  
 
-		if (!cdev->mask_id || pdf14pct->params.replacing)
-		    cdev->mask_id = ++cdev->mask_id_count;
-		else
-		    cdev->temp_mask_id = ++cdev->mask_id_count;
+               /* A new mask has been started */
+
+                cdev->mask_id = ++cdev->mask_id_count;
+
+                /* replacing is set everytime that we have a zpushtransparencymaskgroup */
+               
 		{	/* HACK: store mask_id into pparams for subsequent calls of c_pdf14trans_write. */
 		    gs_pdf14trans_t * pdf14pct_nolconst = (gs_pdf14trans_t *) pcte; /* Break 'const'. */
 
-		    pdf14pct_nolconst->params.mask_id = (cdev->temp_mask_id != 0 ? cdev->temp_mask_id : cdev->mask_id);
-		    if_debug2('v', "[v]c_pdf14trans_clist_write_update mask mask_id=%d temp_mask_id=%d\n", 
-				cdev->mask_id, cdev->temp_mask_id);
+		    pdf14pct_nolconst->params.mask_id = cdev->mask_id;
+
+		    if_debug1('v', "[v]c_pdf14trans_clist_write_update mask mask_id=%d \n", cdev->mask_id);
 		}
-		code = clist_writer_push_no_cropping(cdev);
-		/* Delay updating current mask id until the mask is completed,
-		   because the mask may have internal groups and masks. 
-		   clist_writer_pop_cropping will set up the currnt mask id. */
-		cdev->mask_id = save_mask_id;
-		cdev->temp_mask_id = save_temp_mask_id;
+
 	    }
 	    break;
 	case PDF14_END_TRANS_MASK:
-	    code = clist_writer_pop_cropping(cdev);
+	    code = 0; /* A place for breakpoint. */
 	    break;
+
+        case PDF14_PUSH_TRANS_STATE:
+            code = 0; /* A place for breakpoint. */
+            break;
+
+        case PDF14_POP_TRANS_STATE:
+            code = 0; /* A place for breakpoint. */
+            break;
+
+
 	default:
 	    break;		/* do nothing for remaining ops */
     }
@@ -5836,24 +6066,65 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
  * Get cropping for the compositor command.
  */
 static	int
-c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight)
+c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight, int cropping_min, int cropping_max)
 {
     gs_pdf14trans_t * pdf14pct = (gs_pdf14trans_t *) pcte;
     switch (pdf14pct->params.pdf14_op) {
 	case PDF14_PUSH_DEVICE: return 0; /* Applies to all bands. */
 	case PDF14_POP_DEVICE:  return 0; /* Applies to all bands. */
+
 	case PDF14_BEGIN_TRANS_GROUP:
+
 	    {	gs_int_rect rect;
 		int code;
 
 		code = pdf14_compute_group_device_int_rect(&pdf14pct->params.ctm, &pdf14pct->params.bbox, &rect);
-		*ry = rect.p.y;
-		*rheight = rect.q.y - rect.p.y;
-		return 1; /* Push croping. */
+
+                /* We have to crop this by the parent object.   */
+
+                *ry = max(rect.p.y, cropping_min);
+                *rheight = min(rect.q.y, cropping_max) - *ry;
+                return 1; /* Push cropping. */
+
+            }
+
+        case PDF14_BEGIN_TRANS_MASK:
+	    {	gs_int_rect rect;
+		int code;
+
+		code = pdf14_compute_group_device_int_rect(&pdf14pct->params.ctm, &pdf14pct->params.bbox, &rect);
+
+                /* We have to crop this by the parent object and worry about the BC outside the range */
+
+                if ( pdf14pct->params.GrayBackground == 1.0 ) {
+
+                    /* In this case there will not be a background effect to worry about.  The mask will
+                       not have any effect outside the bounding box.  This is NOT the default or common case. */
+
+                    *ry = max(rect.p.y, cropping_min);
+		    *rheight = min(rect.q.y, cropping_max) - *ry;
+		    return 1; /* Push cropping. */
+
+                }  else {
+
+                    /* We need to make the soft mask range as large as the parent due to the
+                       fact that the background color can have an impact OUTSIDE the bounding
+                       box of the soft mask */
+
+                    *ry = cropping_min;
+		    *rheight = cropping_max - cropping_min;
+		    return 1; /* Push cropping. */
+
+                }
+
 	    }
+
 	case PDF14_END_TRANS_GROUP: return 2; /* Pop cropping. */
-	case PDF14_BEGIN_TRANS_MASK: return 3; /* Same cropping as before. */
-	case PDF14_END_TRANS_MASK: return 3;
+	case PDF14_END_TRANS_MASK: return 2;   /* Pop the cropping */ 
+
+        case PDF14_PUSH_TRANS_STATE: return 3;
+        case PDF14_POP_TRANS_STATE: return 3;
+
 	case PDF14_SET_BLEND_PARAMS: return 3;
     }
     return 0;

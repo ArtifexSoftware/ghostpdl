@@ -467,6 +467,32 @@ zpoppdf14devicefilter(i_ctx_t *i_ctx_p)
     return gs_pop_pdf14trans_device(igs);
 }
 
+/* This is used to communicate to the transparency compositor
+   when a q (save extended graphic state) occurs.  Since
+   the softmask is part of the graphic state we need to know
+   this to handle clist processing properly */
+
+static int
+zpushextendedgstate(i_ctx_t *i_ctx_p)
+{
+    int code;
+    code = gs_push_transparency_state(igs);
+    return(code);
+}
+
+/* This is used to communicate to the transparency compositor
+   when a Q (restore extended graphic state) occurs.  Since
+   the softmask is part of the graphic state we need to know
+   this to handle clist processing properly */
+
+static int
+zpopextendedgstate(i_ctx_t *i_ctx_p)
+{
+    int code;
+    code = gs_pop_transparency_state(igs);
+    return(code);
+}
+
 /* ------ Initialization procedure ------ */
 
 /* We need to split the table because of the 16-element limit. */
@@ -479,6 +505,8 @@ const op_def ztrans1_op_defs[] = {
     {"0.currentshapealpha", zcurrentshapealpha},
     {"1.settextknockout", zsettextknockout},
     {"0.currenttextknockout", zcurrenttextknockout},
+    {"0.pushextendedgstate", zpushextendedgstate},
+    {"0.popextendedgstate", zpopextendedgstate},
     op_def_end(0)
 };
 const op_def ztrans2_op_defs[] = {

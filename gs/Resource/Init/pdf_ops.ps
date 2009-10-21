@@ -92,10 +92,12 @@ nodict readonly pop
 
 /q {
   gsave //nodict begin
+  PDFusingtransparency {.pushextendedgstate cvx} if
 } bdef
 
 % Some PDF files have excess Q operators!
 /Q {
+  PDFusingtransparency {.popextendedgstate cvx} if
   currentdict /self .knownget {
     exec //nodict eq {
       end

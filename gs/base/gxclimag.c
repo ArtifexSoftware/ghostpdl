@@ -887,10 +887,13 @@ clist_create_compositor(gx_device * dev,
     if (code < 0)
         return code;
 
-    code = pcte->type->procs.get_cropping(pcte, &ry, &rheight);
+    code = pcte->type->procs.get_cropping(pcte, &ry, &rheight, cdev->cropping_min, cdev->cropping_max);
+
     if (code < 0)
 	return code;
+
     cropping_op = code;
+
     if (cropping_op == 1) {
 	first_band = ry / band_height;
 	last_band = (ry + rheight + band_height - 1) / band_height;
@@ -898,10 +901,33 @@ clist_create_compositor(gx_device * dev,
 	first_band = cdev->cropping_min / band_height;
 	last_band = (cdev->cropping_max + band_height - 1) / band_height;
     }
+
     if (last_band - first_band > no_of_bands * 2 / 3) {
 	/* Covering many bands, so write "all bands" command for shorter clist. */
 	cropping_op = 0;
     }
+
+    /* Using 'v' here instead of 'L' since this is used almost exclusively with
+       the transparency code */
+ 
+    if (gs_debug_c('v')) {
+
+        if(cropping_op != 0) {
+
+           dprintf2("[v] cropping_op = %d. Total number of bands is %d \n",
+		     cropping_op, no_of_bands);
+           dprintf2("[v]  Writing out from band %d through band %d \n",
+		     first_band, last_band);
+
+        } else {
+
+           dprintf1("[v] cropping_op = %d. Writing out to all bands \n",
+		     cropping_op);
+
+        }
+
+    }
+   
     if (cropping_op == 0) {
 	/* overprint applies to all bands */
 	size_dummy = size;

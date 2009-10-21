@@ -361,6 +361,12 @@ gdev_pdf_create_compositor(gx_device *dev,
 		return pdf_end_transparency_mask(pis, pdev, params);
 	    case PDF14_SET_BLEND_PARAMS:
 		return pdf_set_blend_params(pis, pdev, params);
+            case PDF14_PUSH_TRANS_STATE:
+                return 0;
+            case PDF14_POP_TRANS_STATE:
+                return 0;
+
+
 	    default :
 		return_error(gs_error_unregistered); /* Must not happen. */
 	}

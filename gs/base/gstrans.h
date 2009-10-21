@@ -32,7 +32,9 @@ typedef enum {
     PDF14_END_TRANS_GROUP,
     PDF14_BEGIN_TRANS_MASK,
     PDF14_END_TRANS_MASK,
-    PDF14_SET_BLEND_PARAMS
+    PDF14_SET_BLEND_PARAMS,
+    PDF14_PUSH_TRANS_STATE,
+    PDF14_POP_TRANS_STATE
 } pdf14_compositor_operations;
 
 #define PDF14_OPCODE_NAMES \
@@ -43,7 +45,9 @@ typedef enum {
     "PDF14_END_TRANS_GROUP  ",\
     "PDF14_BEGIN_TRANS_MASK ",\
     "PDF14_END_TRANS_MASK   ",\
-    "PDF14_SET_BLEND_PARAMS "\
+    "PDF14_SET_BLEND_PARAMS ",\
+    "PDF14_PUSH_TRANS_STATE ",\
+    "PDF14_POP_TRANS_STATE  "\
 }
 
 /* Bit definitions for serializing PDF 1.4 parameters */
@@ -81,7 +85,12 @@ struct gs_pdf14trans_params_s {
     int Background_components;
     bool function_is_identity;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    float GrayBackground;
+    float GrayBackground;  /* This is used to determine if the 
+                              softmask's bbox needs to be adjusted
+                              to the parent groups bbox.  Since
+                              the soft mask can affect areas 
+                              outside its own groups bounding
+                              box in such a case */
     gs_function_t *transfer_function;
     byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE];
     /* Individual transparency parameters */
@@ -178,6 +187,22 @@ int gx_end_transparency_mask(gs_imager_state * pis, gx_device * pdev,
 				const gs_pdf14trans_params_t * pparams);
 
 int gx_discard_transparency_layer(gs_imager_state *pis);
+
+/* These are used for watching for q Smask Q events.  We need to 
+   send special compositor commands to keep the bands in sync
+   with the current softmask during clist rendering.  Like the
+   other transparency operations the gs functions occur on the
+   clist writer side and the gx functions occur on the
+   clist reader side */
+
+int gs_push_transparency_state(gs_state *pgs);
+
+int gs_pop_transparency_state(gs_state *pgs);
+
+int gx_push_transparency_state(gs_imager_state * pis, gx_device * pdev);
+
+int gx_pop_transparency_state(gs_imager_state * pis, gx_device * pdev);
+
 
 /*
  * Verify that a compositor data structure is for the PDF 1.4 compositor.

@@ -164,7 +164,10 @@ const gx_device_procs gs_clist_device_procs = {
     clist_fill_linear_color_triangle,
     gx_forward_update_spot_equivalent_colors,
     gx_forward_ret_devn_params,
-    clist_fillpage
+    clist_fillpage,
+    NULL,                      /* push_transparency_state */
+    NULL                       /* pop_transparency_state */
+
 };
 
 /*------------------- Choose the implementation -----------------------
