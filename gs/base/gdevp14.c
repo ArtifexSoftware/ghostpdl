@@ -4145,6 +4145,25 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
 	    put_value(pbuf, pparams->bbox);
 	    mask_id = pparams->mask_id;
 	    put_value(pbuf, pparams->mask_id);
+            /* Color space information maybe ICC based 
+               in this case we need to store the ICC
+               profile or the ID if it is cached already */
+            if (pparams->group_color == ICC) {
+
+                /* Check if this is a "default" space */
+                
+                /* If yes, write out special ID */
+
+                /* If no, check if it is in the cache, using hash code */
+
+                /* If not in cache, then add the profile */
+
+                /* write out to clist */
+
+                /* Is in cache? Just write out hash code */
+
+            }
+
 	    break;
 	case PDF14_BEGIN_TRANS_MASK:
 	    code = c_pdf14trans_write_ctm(&pbuf, pparams);

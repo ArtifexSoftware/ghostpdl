@@ -12,7 +12,7 @@
 */
 
 
-/*  Header for the profile cache.  Not really a cache in but a double linked
+/*  Header for the profile cache.  Not really a cache but a double linked
     list for now.  We need to see what is going to work best for this.  */
 
 
