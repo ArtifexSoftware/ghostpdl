@@ -37,7 +37,7 @@ if ($buildType eq 'gs') {
   $product='ghostpdl';
 }
 
-my $cmd="rsync -avx".
+my $cmd="rsync -avxc".
 " --delete".
 " --exclude .svn --exclude .git".
 " --exclude _darcs --exclude .bzr --exclude .hg".
