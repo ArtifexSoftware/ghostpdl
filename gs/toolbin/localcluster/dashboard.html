@@ -14,10 +14,12 @@ var debug_cstats = {
 };
 
 function update(cstats) {
-  div = document.getElementById('status');
+  div_current = document.getElementById('status');
+  div = document.createElement('div');
+  div.setAttribute('id', 'status');
   para = document.createElement('p');
   para.appendChild(document.createTextNode(cstats.status));
-  div.replaceChild(para, div.firstElementChild);
+  div.appendChild(para);
   table = document.createElement('table');
   c = 1	
   for (node in cstats.nodes) {
@@ -37,7 +39,30 @@ function update(cstats) {
     row.appendChild(val);
     table.appendChild(row);
   }
-  div.replaceChild(table, div.lastElementChild);
+  div.appendChild(table);
+  para = document.createElement('p');
+  para.appendChild(document.createTextNode('Queued jobs:'));
+  table = document.createElement('table');
+  if (cstats.pending.length) {
+    for (job in cstats.pending) {
+      row = document.createElement('tr');
+      line = document.createElement('td');
+      line.appendChild(document.createTextNode(cstats.pending[job]));
+      row.appendChild(line);
+      table.appendChild(row);
+    }
+  } else {
+    row = document.createElement('tr');
+    line = document.createElement('td');
+    text = document.createElement('i');
+    text.appendChild(document.createTextNode('none pending'));
+    line.appendChild(text);
+    row.appendChild(line);
+    table.appendChild(row);
+  }
+  div.appendChild(para);
+  div.appendChild(table);
+  div_current.parentNode.replaceChild(div, div_current);
   moddate = document.getElementById('moddate');
   if (moddate) {
     moddate.replaceChild(document.createTextNode(Date()), 
@@ -57,7 +82,7 @@ function poll () {
        div = document.getElementById('status');
        para = document.createElement('p');
        para.appendChild(document.createTextNode('Error loading status information'));
-       div.appendChild(para);
+       div.replaceChild(para);
       }
     }
   }
@@ -77,7 +102,6 @@ Regression Dashboard
 
 <div id=status>
 <p><strong>This page requires scripting support</strong></p>
-<table></table>
 </div>
 <script>
 setInterval('poll()', 5000);

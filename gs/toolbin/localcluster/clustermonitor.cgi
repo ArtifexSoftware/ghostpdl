@@ -59,6 +59,12 @@ sub get_status {
     }
   }
 
+  my @jobs = `cat /home/marcos/cluster/user.run`;
+  for (my $i = 0; $i < scalar(@jobs); $i++) {
+    $status{'pending'}{$i} = $jobs[$i];
+    chomp $status{'pending'}{$i};
+  }
+
   return %status;
 }
 
@@ -72,11 +78,17 @@ $json .= "  \"status\" : \"$status{'main'}{'status'}\",\n";
 $json .= "  \"nodes\"  : [\n";
 foreach my $machine (sort keys %status) {
   next if $machine eq 'main';
+  next if $machine eq 'pending';
   $json .= "   {\n";
   $json .= "    \"name\" : \"$machine\",\n";
   $json .= "    \"status\" : \"".$status{$machine}{'status'}."\",\n";
   $json .= "    \"down\"   : \"".$status{$machine}{'down'}."\"\n";
   $json .= "   },\n";
+}
+$json .= "  ],\n";
+$json .= "  \"pending\" : [\n";
+foreach my $job (sort keys %{$status{'pending'}}) {
+  $json .= "  \"".$status{'pending'}{$job}."\",\n";
 }
 $json .= "  ]\n";
 $json .= "}\n";
