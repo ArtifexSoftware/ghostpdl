@@ -2758,9 +2758,9 @@ pdf14_update_device_color_procs(gx_device *dev,
                    between the device procs and the pdf14 procs */
 
                 if (dev->color_info.num_components > 4){
-                    new_14procs = &cmyk_pdf14_procs;
-                } else {
                     new_14procs = &cmykspot_pdf14_procs;
+                } else {
+                    new_14procs = &cmyk_pdf14_procs;
                 }
 
                 new_depth = 32;
@@ -2895,9 +2895,9 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
                    between the device procs and the pdf14 procs */
 
                     if (dev->color_info.num_components > 4){
-                        new_14procs = &cmyk_pdf14_procs;
-                    } else {
                         new_14procs = &cmykspot_pdf14_procs;
+                    } else {
+                        new_14procs = &cmyk_pdf14_procs;
                     }
 
                     new_depth = 32;
