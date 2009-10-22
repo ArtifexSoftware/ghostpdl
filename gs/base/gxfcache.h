@@ -20,7 +20,6 @@
 
 #include "gsccode.h"
 #include "gsuid.h"
-#include "gsrefct.h"
 #include "gsxfont.h"
 #include "gxbcache.h"
 #include "gxfixed.h"
@@ -318,8 +317,6 @@ struct gs_font_dir_s {
     gx_device_spot_analyzer *san;
     int (*global_glyph_code)(const gs_memory_t *mem, gs_const_string *gstr, gs_glyph *pglyph);
     ulong text_enum_id; /* debug purpose only. */
-
-    rc_header rc; /* reference countable */
 };
 
 #define private_st_font_dir()	/* in gsfont.c */\

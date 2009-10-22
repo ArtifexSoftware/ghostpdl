@@ -21,8 +21,6 @@
 #include "gsutil.h"		/* for gs_next_ids */
 #include "gxbitmap.h"
 #include "gxcmap.h"
-#include "gxfcache.h"
-#include "gsfont.h"
 #include "gxdht.h"
 #include "gxistate.h"
 #include "gzht.h"
@@ -64,10 +62,9 @@ static
 ENUM_PTRS_BEGIN(imager_state_enum_ptrs)
     ENUM_SUPER(gs_imager_state, st_line_params, line_params, st_imager_state_num_ptrs - st_line_params_num_ptrs);
     ENUM_PTR(0, gs_imager_state, client_data);
-    ENUM_PTR(1, gs_imager_state, fontdir);
-    ENUM_PTR(2, gs_imager_state, transparency_stack);
-    ENUM_PTR(3, gs_imager_state, trans_device); 
-#define E1(i,elt) ENUM_PTR(i+4,gs_imager_state,elt);
+    ENUM_PTR(1, gs_imager_state, transparency_stack);
+    ENUM_PTR(2, gs_imager_state, trans_device); 
+#define E1(i,elt) ENUM_PTR(i+3,gs_imager_state,elt);
     gs_cr_state_do_ptrs(E1)
 #undef E1
 ENUM_PTRS_END
@@ -76,7 +73,6 @@ static RELOC_PTRS_BEGIN(imager_state_reloc_ptrs)
     RELOC_SUPER(gs_imager_state, st_line_params, line_params);
     RELOC_PTR(gs_imager_state, client_data);
     RELOC_PTR(gs_imager_state, transparency_stack);
-    RELOC_PTR(gs_imager_state, fontdir);
     RELOC_PTR(gs_imager_state, trans_device);
 #define R1(i,elt) RELOC_PTR(gs_imager_state,elt);
     gs_cr_state_do_ptrs(R1)
@@ -98,7 +94,6 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
     int i;
     pis->memory = mem;
     pis->client_data = 0;
-    pis->fontdir = gs_font_dir_alloc(mem);
     pis->transparency_stack = 0;
     pis->trans_device = 0;
     /* Color rendering state */
@@ -159,7 +154,6 @@ gs_imager_state_copy(const gs_imager_state * pis, gs_memory_t * mem)
 void
 gs_imager_state_copied(gs_imager_state * pis)
 {
-    rc_increment(pis->fontdir);
     rc_increment(pis->halftone);
     rc_increment(pis->dev_ht);
     rc_increment(pis->cie_render);
@@ -183,7 +177,6 @@ gs_imager_state_pre_assign(gs_imager_state *pto, const gs_imager_state *pfrom)
 #define RCCOPY(element)\
     rc_pre_assign(pto->element, pfrom->element, cname)
 
-    RCCOPY(fontdir);
     RCCOPY(cie_joint_caches);
     RCCOPY(set_transfer.blue);
     RCCOPY(set_transfer.green);
@@ -209,7 +202,6 @@ gs_imager_state_release(gs_imager_state * pis)
 #define RCDECR(element)\
     rc_decrement(pis->element, cname)
 
-    RCDECR(fontdir);
     RCDECR(cie_joint_caches);
     RCDECR(set_transfer.gray);
     RCDECR(set_transfer.blue);

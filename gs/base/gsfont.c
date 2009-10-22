@@ -243,12 +243,13 @@ gs_font_dir *
 gs_font_dir_alloc2_limits(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
 		     uint smax, uint bmax, uint mmax, uint cmax, uint upper)
 {
-    gs_font_dir *pdir;
+    gs_font_dir *pdir =
+	gs_alloc_struct(struct_mem, gs_font_dir, &st_font_dir,
+			"font_dir_alloc(dir)");
     int code;
 
-    rc_alloc_struct_1(pdir, gs_font_dir, &st_font_dir, struct_mem,
-			return(NULL), "font_dir_alloc(dir)");
-
+    if (pdir == 0)
+	return 0;
     code = gx_char_cache_alloc(struct_mem, bits_mem, pdir,
 			       bmax, mmax, cmax, upper);
     if (code < 0) {
