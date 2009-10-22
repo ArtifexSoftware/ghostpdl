@@ -220,6 +220,42 @@ struct clist_writer_cropping_buffer_s {
 		clist_writer_cropping_buffer_enum_ptrs, clist_writer_cropping_buffer_reloc_ptrs, next)
 
 
+
+/* Define a structure to hold where the ICC profiles are stored in the clist
+   Profiles are added into psuedo bands of the clist these are bands that exist beyond 
+   the edge of the normal band list.  A profile will occupy its own band.  The structure
+   here is atable that relates the hash code of the ICC profile to the pseudoband.  
+   This table will be addded at the end of the clist writing process.  */
+
+typedef struct clist_icctable_entry_s clist_icctable_entry_t;
+
+struct clist_icctable_entry_s {
+
+    int64_t hashcode;               /* A hash code for the icc profile */
+    unsigned int pseudoband;        /* The band location for the profile */
+    clist_icctable_entry_t *next;  /* The next entry in the table */   
+
+};
+
+#define private_st_clist_icctable_entry()\
+  gs_private_st_ptrs1(st_clist_icctable_entry,\
+		clist_icctable_entry_t, "clist_icctable_entry",\
+		clist_icctable_entry_enum_ptrs, clist_icctable_entry_reloc_ptrs, next)
+
+typedef struct clist_icctable_s clist_icctable_t;
+
+struct clist_icctable_s {
+    int tablesize;
+    clist_icctable_entry_t *head; 
+};
+
+#define private_st_clist_icctable()\
+  gs_private_st_ptrs1(st_clist_icctable,\
+		clist_icctable_t, "clist_icctable",\
+		clist_icctable_enum_ptrs, clist_icctable_reloc_ptrs, head)
+
+
+
 /* Define the state of a band list when writing. */
 typedef struct clist_color_space_s {
     byte byte1;			/* see cmd_opv_set_color_space in gxclpath.h */
@@ -288,6 +324,11 @@ struct gx_device_clist_writer_s {
                                            access to the graphic state information in those
                                            routines, this is the logical place to put this
                                            information */
+    clist_icctable_t *icc_table;           /* Table that keeps track of ICC profiles.  It 
+                                              relates the has code to the psuedoband location */
+
+
+
 
 };
 #ifndef gx_device_clist_writer_DEFINED

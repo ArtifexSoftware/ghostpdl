@@ -46,9 +46,10 @@ ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
                      cdev->writer.color_space.space : 0));
 	case 2: return ENUM_OBJ(cdev->writer.pinst);
 	case 3: return ENUM_OBJ(cdev->writer.cropping_stack);
+        case 4: return ENUM_OBJ(cdev->writer.icc_table);
         default:
         return ENUM_USING(st_imager_state, &cdev->writer.imager_state,
-                  sizeof(gs_imager_state), index - 3);
+                  sizeof(gs_imager_state), index - 4);
         }
     }
     else {
@@ -77,6 +78,7 @@ RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
         }
 	RELOC_VAR(cdev->writer.pinst);
 	RELOC_VAR(cdev->writer.cropping_stack);
+        RELOC_VAR(cdev->writer.icc_table);
         RELOC_USING(st_imager_state, &cdev->writer.imager_state,
             sizeof(gs_imager_state));
     } else {
@@ -90,6 +92,9 @@ RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
 } RELOC_PTRS_END
 public_st_device_clist();
 private_st_clist_writer_cropping_buffer();
+private_st_clist_icctable_entry();
+private_st_clist_icctable();
+
 
 /* Forward declarations of driver procedures */
 dev_proc_open_device(clist_open);
@@ -487,6 +492,7 @@ clist_reset(gx_device * dev)
     cdev->cropping_stack = NULL;
     cdev->cropping_level = 0;
     cdev->mask_id_count = cdev->mask_id = cdev->temp_mask_id = 0;
+    cdev->icc_table = NULL;
     return 0;
 }
 /*
