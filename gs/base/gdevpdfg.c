@@ -825,7 +825,12 @@ pdf_write_spot_function(gx_device_pdf *pdev, const gx_ht_order *porder,
      * simplicity, we always use 16.
      */
     if (num_bits > 0x10000)
-	return_error(gs_error_rangecheck);
+	/* rangecheck is a 'special case' in gdev_pdf_fill_path, if this error is encountered
+	 * then it 'falls back' to a different method assuming its handling transparency in an
+	 * old PDF output version. But if we fail to write the halftone, we want to abort
+	 * so use limitcheck instead.
+	 */
+	return_error(gs_error_limitcheck);
     params.BitsPerSample = 16;
     params.Encode = 0;
     /*
@@ -918,7 +923,9 @@ pdf_write_spot_halftone(gx_device_pdf *pdev, const gs_spot_halftone *psht,
  notrec:
     if (i == countof(ht_functions)) {
 	/* Create and write a Function for the spot function. */
-	pdf_write_spot_function(pdev, porder, &spot_id);
+	code = pdf_write_spot_function(pdev, porder, &spot_id);
+	if (code < 0) 
+	    return code;
     }	
     *pid = id = pdf_begin_separate(pdev);
     s = pdev->strm;
