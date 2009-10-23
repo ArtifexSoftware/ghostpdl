@@ -41,7 +41,7 @@ $fileadjust = "../ghostpcl/";
 
 # The path to prepend to each of the above exe's to get the reference
 # version.
-$reference = "REF\\";
+$reference = "..\\ghostpdlREF\\";
 
 
 # Here follows todays lesson. Abandon hope all who enter here. Etc. Etc.
@@ -62,6 +62,10 @@ print $html "}</SCRIPT><BODY>";
 
 # Keep a list of files we've done, so we don't repeat
 %done = ();
+
+# Keep a list of files we fail to find any changes in, so we can list them
+# at the end.
+%nodiffs = ();
 
 # Now run through the list of files
 $images = 0;
@@ -416,9 +420,21 @@ while (<>)
     if ($diffs == 0)
     {
         print "Failed to find any differences on any page!\n";
+        push @nodiffs, $file.":".$exe.":".$res;
     }
 }
 
 # Finish off the HTML file
 print $html "</BODY>";
 close $html;
+
+# List the files that we expected to find differences in, but failed to:
+if (scalar(@nodiffs) != 0)
+{
+  print "Failed to find expected differences in the following:\n";
+  
+  foreach $file (@nodiffs)
+  {
+      print "  ".$file."\n";
+  }
+}
