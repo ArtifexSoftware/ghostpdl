@@ -92,7 +92,7 @@ xps_true_callback_string_proc(gs_font_type42 *p42, ulong offset, uint length, co
     if (offset < 0 || offset + length > font->length)
     {
 	*pdata = NULL;
-	return gs_throw2(-1, "font data access out of bounds (offset=%d size=%d)", offset, length);
+	return gs_throw2(-1, "font data access out of bounds (offset=%lu size=%u)", offset, length);
     }
     *pdata = font->data + offset;
     return 0;
@@ -147,7 +147,7 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
 	}
 	else
 	{
-	    return gs_throw1(-1, "glyph index %d out of range", glyph);
+	    return gs_throw1(-1, "glyph index %lu out of range", (ulong)glyph);
 	}
     }
 
@@ -186,7 +186,7 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
     numGlyphs = u16(postp + 32);
     if ( glyph < 0 || glyph > numGlyphs - 1)
     {
-	return gs_throw1(-1, "glyph index %d out of range", glyph);
+	return gs_throw1(-1, "glyph index %lu out of range", (ulong)glyph);
     }
 
     /* glyph name index starts at post + 34 each entry is 2 bytes */
