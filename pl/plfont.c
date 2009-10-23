@@ -754,7 +754,7 @@ pl_fill_in_intelli_font(gs_font_base *pfont, long unique_id)
 	  gs_make_scaling(1.0/8782, 1.0/8782, &mat);
 	  gs_matrix_translate(&mat, -2980.0, -5380.0, &pfont->orig_FontMatrix);
 	}
-	pfont->FontType = ft_user_defined;
+	pfont->FontType = ft_MicroType;
 	pfont->BitmapWidths = true;
 	pfont->ExactSize = fbit_use_outlines;
 	pfont->InBetweenSize = fbit_use_outlines;
