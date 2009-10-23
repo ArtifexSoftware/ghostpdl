@@ -376,6 +376,138 @@ static void find_changed_bbox(unsigned char *bmp,
     }
 }
 
+static void rediff(unsigned char *bmp,
+                   unsigned char *bmp2,
+                   int            span,
+                   int            bpp,
+                   BBox          *bbox2)
+{
+    int    x, y;
+    int   *isrc, *isrc2;
+    short *ssrc, *ssrc2;
+    BBox   bbox;
+    int    w;
+    int    h;
+
+    w = bbox2->xmax - bbox2->xmin;
+    h = bbox2->ymax - bbox2->ymin;
+    bbox.xmin = w;
+    bbox.ymin = h;
+    bbox.xmax = -1;
+    bbox.ymax = -1;
+
+    if (bpp == 32)
+    {
+        isrc  = (int *)bmp;
+        isrc2 = (int *)bmp2;
+        span >>= 2;
+        isrc  += span*(bbox2->ymin)+bbox2->xmin;
+        isrc2 += span*(bbox2->ymin)+bbox2->xmin;
+        span -= w;
+        for (y = 0; y < h; y++)
+        {
+            for (x = 0; x < w; x++)
+            {
+                if (*isrc++ != *isrc2++)
+                {
+                    if (x < bbox.xmin)
+                        bbox.xmin = x;
+                    if (x > bbox.xmax)
+                        bbox.xmax = x;
+                    if (y < bbox.ymin)
+                        bbox.ymin = y;
+                    if (y > bbox.ymax)
+                        bbox.ymax = y;
+                }
+            }
+            isrc  += span;
+            isrc2 += span;
+        }
+    }
+    else
+    {
+        ssrc  = (short *)bmp;
+        ssrc2 = (short *)bmp2;
+        ssrc  += span*(bbox2->ymin)+bbox2->xmin;
+        ssrc2 += span*(bbox2->ymin)+bbox2->xmin;
+        span >>= 1;
+        span -= w;
+        for (y = 0; y < h; y++)
+        {
+            for (x = 0; x < w; x++)
+            {
+                if (*ssrc++ != *ssrc2++)
+                {
+                    if (x < bbox.xmin)
+                        bbox.xmin = x;
+                    if (x > bbox.xmax)
+                        bbox.xmax = x;
+                    if (y < bbox.ymin)
+                        bbox.ymin = y;
+                    if (y > bbox.ymax)
+                        bbox.ymax = y;
+                }
+            }
+            ssrc  += span;
+            ssrc2 += span;
+        }
+    }
+    bbox.xmin += bbox2->xmin;
+    bbox.ymin += bbox2->ymin;
+    bbox.xmax += bbox2->xmin;
+    bbox.ymax += bbox2->ymin;
+    bbox.xmax++;
+    bbox.ymax++;
+    if ((bbox.xmax-bbox.xmin > 0) &&
+        (bbox.xmax-bbox.xmin < MINX))
+    {
+        int d = MINX;
+        
+        if (d > w)
+            d = w;
+        d -= (bbox.xmax-bbox.xmin);
+        bbox.xmin -= d>>1;
+        bbox.xmax += d-(d>>1);
+        if (bbox.xmin < bbox2->xmin)
+        {
+            bbox.xmax += bbox2->xmin-bbox.xmin;
+            bbox.xmin  = bbox2->xmin;
+        }
+        if (bbox.xmax > bbox2->xmax)
+        {
+            bbox.xmin -= bbox.xmax-bbox2->xmax;
+            bbox.xmax  = bbox2->xmax;
+        }
+    }
+    if ((bbox.ymax-bbox.ymin > 0) &&
+        (bbox.ymax-bbox.ymin < MINY))
+    {
+        int d = MINY;
+        
+        if (d > h)
+            d = h;
+        d -= (bbox.ymax-bbox.ymin);
+        bbox.ymin -= d>>1;
+        bbox.ymax += d-(d>>1);
+        if (bbox.ymin < bbox2->ymin)
+        {
+            bbox.ymax += bbox2->ymin-bbox.ymin;
+            bbox.ymin  = bbox2->ymin;
+        }
+        if (bbox.ymax > bbox2->ymax)
+        {
+            bbox.ymin -= bbox.ymax-bbox2->ymax;
+            bbox.ymax  = bbox2->ymax;
+        }
+    }
+    *bbox2 = bbox;
+}
+
+static int BBox_valid(BBox *bbox)
+{
+    return ((bbox->xmin < bbox->xmax) && (bbox->ymin < bbox->ymax));
+}
+
 static void diff_bmp(unsigned char *bmp,
                      unsigned char *bmp2,
                      int            w,
@@ -560,7 +692,8 @@ int main(int argc, char *argv[])
     int            basenum;
     unsigned char *bmp;
     unsigned char *bmp2;
-    BBox           bbox, bbox2, bbox3;
+    BBox           bbox, bbox2;
+    BBox          *boxlist;
     char           str1[256];
     char           str2[256];
     char           str3[256];
@@ -656,51 +789,56 @@ int main(int argc, char *argv[])
         bbox2.ymax = h;
     }
 
+    /* bbox */
+    boxlist = malloc(sizeof(*boxlist) * nx * ny);
+    if (boxlist == NULL)
+    {
+        fprintf(stderr, "Improbable malloc failure!\n");
+        exit(EXIT_FAILURE);
+    }
+
     /* Now save the changed bmps */
     n = basenum;
+    boxlist--;
     for (w2=0; w2 < nx; w2++)
     {
         for (h2=0; h2 < ny; h2++)
         {
-            bbox3.xmin = bbox2.xmin + MAXX*w2;
-            bbox3.xmax = bbox3.xmin + MAXX;
-            if (bbox3.xmax > bbox2.xmax)
-                bbox3.xmax = bbox2.xmax;
-            if (bbox3.xmin > bbox3.xmax-MINX)
-                bbox3.xmin = bbox3.xmax-MINX;
-            bbox3.ymin = bbox2.ymin + MAXY*h2;
-            bbox3.ymax = bbox3.ymin + MAXY;
-            if (bbox3.ymax > bbox2.ymax)
-                bbox3.ymax = bbox2.ymax;
-            if (bbox3.ymin > bbox3.ymax-MINY)
-                bbox3.ymin = bbox3.ymax-MINY;
+            boxlist++;
+            boxlist->xmin = bbox2.xmin + MAXX*w2;
+            boxlist->xmax = boxlist->xmin + MAXX;
+            if (boxlist->xmax > bbox2.xmax)
+                boxlist->xmax = bbox2.xmax;
+            if (boxlist->xmin > boxlist->xmax-MINX)
+                boxlist->xmin = boxlist->xmax-MINX;
+            boxlist->ymin = bbox2.ymin + MAXY*h2;
+            boxlist->ymax = boxlist->ymin + MAXY;
+            if (boxlist->ymax > bbox2.ymax)
+                boxlist->ymax = bbox2.ymax;
+            if (boxlist->ymin > boxlist->ymax-MINY)
+                boxlist->ymin = boxlist->ymax-MINY;
+            rediff(bmp, bmp2, s, bpp, boxlist);
+            if (!BBox_valid(boxlist))
+                continue;
             sprintf(str1, "%s.%d.bmp", argv[3], n);
             sprintf(str2, "%s.%d.bmp", argv[3], n+1);
-            save_bmp(bmp,  &bbox3, s, bpp, str1);
-            save_bmp(bmp2, &bbox3, s, bpp, str2);
+            save_bmp(bmp,  boxlist, s, bpp, str1);
+            save_bmp(bmp2, boxlist, s, bpp, str2);
             n += 3;
         }
     }
+    boxlist -= nx*ny;
     diff_bmp(bmp, bmp2, w, h, s, bpp);
     n = basenum;
     for (w2=0; w2 < nx; w2++)
     {
         for (h2=0; h2 < ny; h2++)
         {
-            bbox3.xmin = bbox2.xmin + MAXX*w2;
-            bbox3.xmax = bbox3.xmin + MAXX;
-            if (bbox3.xmax > bbox2.xmax)
-                bbox3.xmax = bbox2.xmax;
-            if (bbox3.xmin > bbox3.xmax-MINX)
-                bbox3.xmin = bbox3.xmax-MINX;
-            bbox3.ymin = bbox2.ymin + MAXY*h2;
-            bbox3.ymax = bbox3.ymin + MAXY;
-            if (bbox3.ymax > bbox2.ymax)
-                bbox3.ymax = bbox2.ymax;
-            if (bbox3.ymin > bbox3.ymax-MINY)
-                bbox3.ymin = bbox3.ymax-MINY;
+            boxlist++;
+            if (!BBox_valid(boxlist))
+                continue;
             sprintf(str3, "%s.%d.bmp", argv[3], n+2);
-            save_bmp(bmp, &bbox3, s, bpp, str3);
+            save_bmp(bmp, boxlist, s, bpp, str3);
             n += 3;
         }
     }
