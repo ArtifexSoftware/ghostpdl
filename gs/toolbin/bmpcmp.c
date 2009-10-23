@@ -415,7 +415,18 @@ static void diff_bmp(unsigned char *bmp,
                 }
                 else
                 {
-                    isrc[-1] = 0xFF0000;
+                    int r,g,b,r2,g2,b2;
+
+                    r  = i  & 0x0000FF;
+                    g  = i  & 0x00FF00;
+                    b  = i  & 0xFF0000;
+                    r2 = i2 & 0x0000FF;
+                    g2 = i2 & 0x00FF00;
+                    b2 = i2 & 0xFF0000;
+                    if ((abs(r-r2) <= 3) && (abs(g-g2) <= 0x300) && (abs(b-b2)<= 0x30000))
+                        isrc[-1] = 0x00FF00;
+                    else
+                        isrc[-1] = 0xFF0000;
                 }
             }
             isrc  += span;
@@ -448,7 +459,18 @@ static void diff_bmp(unsigned char *bmp,
                 }
                 else
                 {
-                    ssrc[-1] = 0x001F;
+                    int r,g,b,r2,g2,b2;
+
+                    r  =  s       & 0x1f;
+                    g  = (s >> 5) & 0x3f;
+                    b  = (s >>11) & 0x1f;
+                    r2 =  s2      & 0x1f;
+                    g2 = (s2>> 5) & 0x3f;
+                    b2 = (s2>>11) & 0x1f;
+                    if ((abs(r-r2) <= 1) && (abs(g-g2) <= 3) && (abs(b-b2)<= 1))
+                        ssrc[-1] = 0x07E0;
+                    else
+                        ssrc[-1] = 0x001F;
                 }
             }
             ssrc  += span;
@@ -581,7 +603,8 @@ int main(int argc, char *argv[])
 
     if ((bbox.xmin > bbox.xmax) || (bbox.ymin > bbox.ymax))
     {
-        fprintf(stderr, "No differences found!\n");
+        /* The script will scream for us */
+        /* fprintf(stderr, "No differences found!\n"); */
         /* Unchanged */
         exit(EXIT_SUCCESS);
     }
