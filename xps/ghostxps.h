@@ -265,6 +265,10 @@ void xps_free_relations(xps_context_t *ctx, xps_relation_t *node);
 void xps_free_fixed_pages(xps_context_t *ctx);
 void xps_free_fixed_documents(xps_context_t *ctx);
 
+void xps_debug_parts(xps_context_t *ctx);
+void xps_debug_type_map(xps_context_t *ctx, char *label, xps_type_map_t *node);
+void xps_debug_fixdocseq(xps_context_t *ctx);
+
 /*
  * Various resources.
  */
