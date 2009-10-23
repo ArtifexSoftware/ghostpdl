@@ -726,7 +726,7 @@ xps_parse_content_relations_imp(void *zp, char *ns_name, char **atts)
     }
 }
 
-int
+static int
 xps_parse_content_relations(xps_context_t *ctx, xps_part_t *part)
 {
     XML_Parser xp;

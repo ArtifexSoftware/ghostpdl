@@ -256,6 +256,8 @@ xps_part_t *xps_find_part(xps_context_t *ctx, char *name);
 void xps_free_part(xps_context_t *ctx, xps_part_t *part);
 void xps_free_part_caches(xps_context_t *ctx, xps_part_t *part);
 
+void xps_debug_item(xps_item_t *item, int level);
+
 int xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type);
 
 char *xps_get_content_type(xps_context_t *ctx, char *partname);
@@ -346,6 +348,8 @@ int xps_load_sfnt_name(xps_font_t *font, char *namep);
 int xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font);
 int xps_init_postscript_font(xps_context_t *ctx, xps_font_t *font);
 
+void xps_debug_path(xps_context_t *ctx);
+
 /*
  * XML and content.
  */
@@ -416,3 +420,4 @@ xps_resource_t *xps_parse_resource_dictionary(xps_context_t *ctx, char *base_uri
 void xps_free_resource_dictionary(xps_context_t *ctx, xps_resource_t *dict);
 int xps_resolve_resource_reference(xps_context_t *ctx, xps_resource_t *dict, char **attp, xps_item_t **tagp, char **urip);
 
+void xps_debug_resource_dictionary(xps_resource_t *dict);

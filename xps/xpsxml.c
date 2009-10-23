@@ -206,7 +206,7 @@ static void on_text(void *zp, const char *buf, int len)
     }
 }
 
-xps_item_t *
+static xps_item_t *
 xps_process_compatibility(xps_context_t *ctx, xps_item_t *root)
 {
     dprintf("warning: XPS document uses markup compatibility tags\n");
@@ -305,7 +305,10 @@ static void indent(int n)
 	printf("  ");
 }
 
-void
+/* forward prototype for recursion */
+static void xps_debug_item_imp(xps_item_t *item, int level, int loop);
+
+static void
 xps_debug_item_imp(xps_item_t *item, int level, int loop)
 {
     int i;
