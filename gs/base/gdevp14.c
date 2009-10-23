@@ -3267,8 +3267,14 @@ pdf14_mark_fill_rectangle(gx_device * dev,
     if (has_shape)
 	shape = (byte)floor (255 * pdev->shape + 0.5);
 
-    if (x < buf->rect.p.x) x = buf->rect.p.x;
-    if (y < buf->rect.p.y) y = buf->rect.p.y;
+    if (x < buf->rect.p.x) {
+        w += x - buf->rect.p.x;
+        x = buf->rect.p.x;
+    }
+    if (y < buf->rect.p.y) {
+      h += y - buf->rect.p.y;
+      y = buf->rect.p.y;
+    }
     if (x + w > buf->rect.q.x) w = buf->rect.q.x - x;
     if (y + h > buf->rect.q.y) h = buf->rect.q.y - y;
 
@@ -3385,8 +3391,14 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
 
     src[num_comp] = (byte)floor (255 * pdev->alpha + 0.5);
 
-    if (x < buf->rect.p.x) x = buf->rect.p.x;
-    if (y < buf->rect.p.y) y = buf->rect.p.y;
+    if (x < buf->rect.p.x) {
+        w += x - buf->rect.p.x;
+        x = buf->rect.p.x;
+    }
+    if (y < buf->rect.p.y) {
+      h += y - buf->rect.p.y;
+      y = buf->rect.p.y;
+    }
     if (x + w > buf->rect.q.x) w = buf->rect.q.x - x;
     if (y + h > buf->rect.q.y) h = buf->rect.q.y - y;
 
