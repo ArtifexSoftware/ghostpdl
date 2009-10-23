@@ -340,7 +340,7 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
     float y = originy;
     char *us = unicode;
     char *is = indices;
-    int un;
+    int un = 0;
 
     // dprintf1("string (%s)\n", us);
     // dprintf1("indices %.50s\n", is);
