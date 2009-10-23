@@ -118,31 +118,30 @@ xps_parse_color(xps_context_t *ctx, char *base_uri, char *string, gs_color_space
 	strcpy(buf, string);
 
 	profile = strchr(buf, ' ');
-	if (profile)
-	{
-	    *profile++ = 0;
-	    p = strchr(profile, ' ');
-	    if (p)
-	    {
-		*p++ = 0;
-	    }
+	if (!profile)
+	    return gs_throw1(-1, "cannot find icc profile uri in '%s'", string);
 
-	    n = count_commas(p) + 1;
-	    i = 0;
-	    while (i < n)
-	    {
-		samples[i++] = atof(p);
-		p = strchr(p, ',');
-		if (!p)
-		    break;
+	*profile++ = 0;
+	p = strchr(profile, ' ');
+	if (!p)
+	    return gs_throw1(-1, "cannot find component values in '%s'", profile);
+
+	*p++ = 0;
+	n = count_commas(p) + 1;
+	i = 0;
+	while (i < n)
+	{
+	    samples[i++] = atof(p);
+	    p = strchr(p, ',');
+	    if (!p)
+		break;
+	    p ++;
+	    if (*p == ' ')
 		p ++;
-		if (*p == ' ')
-		    p ++;
-	    }
-	    while (i < n)
-	    {
-		samples[i++] = 0.0;
-	    }
+	}
+	while (i < n)
+	{
+	    samples[i++] = 0.0;
 	}
 
 	/* Default fallbacks if the ICC stuff fails */
@@ -160,7 +159,7 @@ xps_parse_color(xps_context_t *ctx, char *base_uri, char *string, gs_color_space
 	if (!part)
 	    return gs_throw1(-1, "cannot find icc profile part '%s'", partname);
 
-#if 0 /* disable ICC profiles for beta */
+#if 0 /* disable ICC profiles until gsicc_manager is available */
 
 	if (!part->icc)
 	{
