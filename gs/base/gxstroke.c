@@ -238,8 +238,9 @@ gx_default_stroke_path(gx_device * dev, const gs_imager_state * pis,
 /* Fill a partial stroked path.  Free variables: */
 /* to_path, stroke_path_body, fill_params, always_thin, pis, dev, pdevc, */
 /* code, ppath, exit(label). */
-#define FILL_STROKE_PATH(dev, thin, pcpath)\
-  if(to_path==&stroke_path_body && !gx_path_is_void(&stroke_path_body)) {\
+#define FILL_STROKE_PATH(dev, thin, pcpath, final)\
+  if(to_path==&stroke_path_body && !gx_path_is_void(&stroke_path_body) &&\
+     (final || lop_is_idempotent(pis->log_op))) {\
     fill_params.adjust.x = STROKE_ADJUSTMENT(thin, pis, x);\
     fill_params.adjust.y = STROKE_ADJUSTMENT(thin, pis, y);\
     code = gx_fill_path_only(to_path, dev, pis, &fill_params, pdevc, pcpath);\
@@ -765,7 +766,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 				     uniform, join, initial_matrix_reflected);
 		if (code < 0)
 		    goto exit;
-		FILL_STROKE_PATH(pdev, always_thin, pcpath);
+		FILL_STROKE_PATH(pdev, always_thin, pcpath, false);
 	    } else
 		pl_first = pl;
 	    pl_prev = pl;
@@ -787,17 +788,18 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 				 initial_matrix_reflected);
 	    if (code < 0)
 		goto exit;
-	    FILL_STROKE_PATH(pdev, always_thin, pcpath);
+	    FILL_STROKE_PATH(pdev, always_thin, pcpath, false);
 	    if (CPSI_mode && lptr == 0 && pgs_lp->cap != gs_cap_butt) {
 		/* Create the initial cap at last. */
 		code = stroke_add_initial_cap_compat(to_path, &pl_first, index == 1, pdevc, dev, pis);
 		if (code < 0)
 		    goto exit;
-		FILL_STROKE_PATH(pdev, always_thin, pcpath);
+		FILL_STROKE_PATH(pdev, always_thin, pcpath, false);
 	    }
 	}
 	psub = (const subpath *)pseg;
     }
+    FILL_STROKE_PATH(pdev, always_thin, pcpath, true);
   exit:
     if (dev == (gx_device *)&cdev)
 	cdev.target->sgr = cdev.sgr;
