@@ -780,12 +780,16 @@ int main(int argc, char *argv[])
     if (bbox2.xmax > w)
     {
         bbox2.xmin -= bbox2.xmax-w;
+        if (bbox2.xmin < 0)
+            bbox2.xmin = 0;
         bbox2.xmax = w;
     }
     bbox2.ymax += bbox2.ymin;
     if (bbox2.ymax > h)
     {
         bbox2.ymin -= bbox2.ymax-h;
+        if (bbox2.ymin < 0)
+            bbox2.ymin = 0;
         bbox2.ymax = h;
     }
 
