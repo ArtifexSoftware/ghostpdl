@@ -407,9 +407,9 @@ while (<>)
                 unlink $outdir."/out.".($images+2).".bmp";
                 $suffix = ".png";
             }
-            print $html "<TABLE><TR><TD><IMG SRC=\"out.".$images.$suffix."\" onMouseOver=\"swap(".$images.")\" onMouseOut=\"swap(".($images+1).")\" NAME=\"compare".$images."\" BORDER=1></TD>";
-           print $html "<TD><IMG SRC=\"out.".($images+1).$suffix."\" NAME=\"compare".($images+1)."\" BORDER=1></TD>";
-           print $html "<TD><IMG SRC=\"out.".($images+2).$suffix."\" BORDER=1></TD></TR></TABLE><BR>";
+            print $html "<TABLE><TR><TD><IMG SRC=\"out.".$images.$suffix."\" onMouseOver=\"swap(".$images.")\" onMouseOut=\"swap(".($images+1).")\" NAME=\"compare".$images."\" BORDER=1 TITLE=\"Candidate: ".$file." page=".$page." res=".$res."\"></TD>";
+           print $html "<TD><IMG SRC=\"out.".($images+1).$suffix."\" NAME=\"compare".($images+1)."\" BORDER=1 TITLE=\"Reference: ".$file." page=".$page." res=".$res."\"></TD>";
+           print $html "<TD><IMG SRC=\"out.".($images+2).$suffix."\" BORDER=1 TITLE=\"Diff: ".$file." page=".$page." res=".$res."\"></TD></TR></TABLE><BR>";
            $images += 3;
            $diffs++;
         }
