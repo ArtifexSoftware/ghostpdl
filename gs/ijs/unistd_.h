@@ -23,19 +23,20 @@
 **/
 
 /* unistd_.h */
-#if defined(_MSC_VER)
+#if defined(_WIN32)
 #  include <process.h>
 #  include <io.h>
 #  include <fcntl.h>
+#if !defined(__WATCOMC__)
+   /* everything except watcom have _read()/_write(),
+      watcom has read()/write() but not _read()/_write() */
 #  define read(handle, buffer, count) _read(handle, buffer, count)
 #  define write(handle, buffer, count) _write(handle, buffer, count)
+#endif /* !__WATCOMC__ */
+#ifdef _MSC_VER
+   /* MSVC alone require this? */
 #  define close(fd) _close(fd)
-#elif defined(__BORLANDC__) && defined(__WIN32__) 
-#  include <process.h>
-#  include <io.h>
-#  include <fcntl.h>
-#  define read(handle, buffer, count) _read(handle, buffer, count)
-#  define write(handle, buffer, count) _write(handle, buffer, count)
+#endif /* _MSC_VER */
 #else
 #  include <unistd.h>
 #endif
