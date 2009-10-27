@@ -1392,6 +1392,11 @@ pclxl_copy_color(gx_device * dev,
 
 
     source_bit = sourcex * dev->color_info.depth;
+
+    /* side-effect from fill/stroke may have set color space to eGray */
+    if (dev->color_info.num_components == 3)
+        pclxl_set_color_space(xdev, eRGB);
+
     if ((source_bit & 7) != 0)
 	return gx_default_copy_color(dev, base, sourcex, raster, id,
 				     x, y, w, h);
