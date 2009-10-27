@@ -32,6 +32,7 @@
 #include "gdevpxop.h"
 #include "gdevpxut.h"
 #include "gxlum.h"
+#include "gdevpcl.h"
 
 
 /* ---------------- Device definition ---------------- */
@@ -92,6 +93,7 @@ typedef struct gx_device_pclxl_s {
     } chars;
     bool font_set;
     int state_rotated; /* 0, 1, 2, -1, mutiple of 90 deg */
+    int CompressMode; /* std PXL enum: None=0, RLE=1, DeltaRow=3; JPEG=2 not used */
 } gx_device_pclxl;
 
 gs_public_st_suffix_add0_final(st_device_pclxl, gx_device_pclxl,
@@ -476,8 +478,9 @@ pclxl_write_begin_image(gx_device_pclxl * xdev, uint width, uint height,
 
 /* Write rows of an image. */
 /****** IGNORES data_bit ******/
+/* RLE version */
 static void
-pclxl_write_image_data(gx_device_pclxl * xdev, const byte * data, int data_bit,
+pclxl_write_image_data_RLE(gx_device_pclxl * xdev, const byte * data, int data_bit,
 		       uint raster, uint width_bits, int y, int height)
 {
     stream *s = pclxl_stream(xdev);
@@ -556,6 +559,73 @@ pclxl_write_image_data(gx_device_pclxl * xdev, const byte * data, int data_bit,
     for (i = 0; i < height; ++i) {
 	px_put_bytes(s, data + i * raster, width_bytes);
 	px_put_bytes(s, (const byte *)"\000\000\000\000", -(int)width_bytes & 3);
+    }
+}
+/* DeltaRow compression (also called "mode 3"):
+   drawn heavily from gdevcljc.c:cljc_print_page(),
+   This is simplier since PCL XL does not allow
+   compression mix-and-match.
+
+   Worse case of RLE is + 1/128, but worse case of DeltaRow is + 1/8
+ */
+static void
+pclxl_write_image_data_DeltaRow(gx_device_pclxl * xdev, const byte * data, int data_bit,
+		       uint raster, uint width_bits, int y, int height)
+{
+    stream *s = pclxl_stream(xdev);
+    uint width_bytes = (width_bits + 7) >> 3;
+    int worst_case_comp_size = width_bytes + (width_bytes / 8) + 1;
+    byte *cdata = 0;
+    byte *prow = 0;
+    int i;
+    int count;
+
+    /* allocate the worst case scenario; PCL XL has an extra 2 byte per row compared to PCL5 */
+    byte *buf = gs_alloc_bytes(xdev->v_memory, (worst_case_comp_size + 2)* height,
+                               "pclxl_write_image_data_DeltaRow(buf)");
+    prow = gs_alloc_bytes(xdev->v_memory, width_bytes, "pclxl_write_image_data_DeltaRow(prow)");
+    /* the RLE routine can write uncompressed without extra-allocation */
+    if ((buf == 0) || (prow == 0))
+        return pclxl_write_image_data_RLE(xdev, data, data_bit, raster, width_bits, y, height);
+    /* initialize the seed row */
+    memset(prow, 0, width_bytes);
+    cdata = buf;
+    for (i = 0; i < height; i++) {
+        int compressed_size = gdev_pcl_mode3compress(width_bytes, data + i * raster, prow, cdata + 2);
+        /* PCL XL prepends row data with byte count */
+        *cdata = compressed_size & 0xff;
+        *(cdata+1) = compressed_size >> 8;
+        cdata += compressed_size + 2;
+    }
+    px_put_usa(s, y, pxaStartLine);
+    px_put_usa(s, height, pxaBlockHeight);
+    px_put_ub(s, eDeltaRowCompression);
+    px_put_ac(s, pxaCompressMode, pxtReadImage);
+    count = cdata - buf;
+    px_put_data_length(s, count);
+    px_put_bytes(s, buf, count);
+
+    gs_free_object(xdev->v_memory, buf, "pclxl_write_image_data_DeltaRow(buf)");
+    gs_free_object(xdev->v_memory, prow, "pclxl_write_image_data_DeltaRow(prow)");
+    return;
+}
+
+static void
+pclxl_write_image_data(gx_device_pclxl * xdev, const byte * data, int data_bit,
+		       uint raster, uint width_bits, int y, int height)
+{
+    /* If we only have 1 line, it does not make sense to do DeltaRow */
+    if (height < 2)
+    return pclxl_write_image_data_RLE(xdev, data, data_bit, raster, width_bits, y, height);
+
+    switch(xdev->CompressMode){
+    case eDeltaRowCompression:
+        pclxl_write_image_data_DeltaRow(xdev, data, data_bit, raster, width_bits, y, height);
+        break;
+    case eRLECompression:
+    default:
+        pclxl_write_image_data_RLE(xdev, data, data_bit, raster, width_bits, y, height);
+        break;
     }
 }
 
@@ -1813,6 +1883,10 @@ pclxl_get_params(gx_device     *dev,	/* I - Device info */
   if ((code = param_write_bool(plist, "Tumble", &(xdev->Tumble))) < 0)
     return (code);
 
+  if ((code = param_write_int(plist, "CompressMode",
+                              &(xdev->CompressMode))) < 0)
+    return (code);
+
   return (0);
 }
 
@@ -1866,6 +1940,7 @@ pclxl_put_params(gx_device     *dev,	/* I - Device info */
   intoption(MediaPosition, "MediaPosition", int)
   if (code == 0) xdev->MediaPosition_set = true;
   booloption(Tumble, "Tumble")
+  intoption(CompressMode, "CompressMode", int)
 
  /*
   * Then process standard page device parameters...
