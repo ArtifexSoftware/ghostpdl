@@ -985,6 +985,31 @@ clist_create_compositor(gx_device * dev,
 	if (code < 0)
 	    return code;
     }
+
+    /* If needed, write out the ICC profile.  Mark it as being written */
+
+    if (cdev->icc_table != NULL) {
+
+        if (!(cdev->icc_table->final->written)) {
+
+            size = cdev->icc_table->final->size;
+           /* code = set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_extend, size); */
+            
+            if (code >= 0) {
+
+	        size_dummy = size;
+	        dp[1] = cmd_opv_ext_put_icc_profile;
+
+                /* Need to write it out here? */
+
+            }
+
+            cdev->icc_table->final->written = true;
+
+        }
+
+    }
+
     return code;
 }
 

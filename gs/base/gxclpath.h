@@ -159,8 +159,9 @@ typedef enum {
     cmd_opv_ext_put_halftone = 0x02,        /* length of entire halftone */
     cmd_opv_ext_put_ht_seg = 0x03,          /* segment length,
                                              * halftone segment data */
-    cmd_opv_ext_put_drawing_color = 0x04    /* length, color type id,
+    cmd_opv_ext_put_drawing_color = 0x04,    /* length, color type id,
                                              * serialized color */
+    cmd_opv_ext_put_icc_profile = 0x05      /* ICC profile */
 } gx_cmd_ext_op;
 
 #define cmd_segment_op_num_operands_values\

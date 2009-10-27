@@ -934,6 +934,94 @@ clist_copy_band_complexity(gx_band_complexity_t *this, const gx_band_complexity_
     }
 }
 
+
+/* ICC table operations.  See gxclist.h for details */
+
+
+/* This checks the table for a hash code entry */
+
+int 
+clist_search_icctable(gx_device_clist_writer *cdev, int64_t hashcode)
+{
+    clist_icctable_t *icc_table = cdev->icc_table;
+    clist_icctable_entry_t *curr_entry;
+
+    if (icc_table == NULL)
+        return(-1);  /* No entry */
+
+    curr_entry = icc_table->head;
+
+    while(curr_entry != NULL) {
+    
+        if (curr_entry->hashcode == hashcode){
+            
+            return(curr_entry->pseudoband);
+
+        }
+        
+        curr_entry = curr_entry->next;
+
+    }
+
+     return(-1);  /* No entry */
+}
+
+/* This add a new entry into the table */
+
+int
+clist_addentry_icctable(gx_device_clist_writer *cdev, int64_t hashcode)
+{
+
+    clist_icctable_entry_t *entry = gs_alloc_struct(cdev->memory, 
+		clist_icctable_entry_t,
+		&st_clist_icctable_entry, "clist_addentry_icctable");
+
+    clist_icctable_t *icc_table = cdev->icc_table;
+
+    entry->next = NULL;
+    entry->hashcode = hashcode;
+    entry->written = false;
+    entry->size = 0;
+
+    if (entry == NULL) 
+        return gs_rethrow(-1, "insufficient memory to allocate entry in icc table");
+
+    if ( icc_table == NULL ) {
+
+        icc_table = gs_alloc_struct(cdev->memory, 
+		clist_icctable_t,
+		&st_clist_icctable, "clist_addentry_icctable");
+
+        if (icc_table == NULL) 
+            return gs_rethrow(-1, "insufficient memory to allocate icc table");
+
+        icc_table->tablesize = 1;
+        icc_table->head = entry;
+        icc_table->final = entry;
+
+        /* For now, we are just going to put the icc_table itself 
+            at band_range_max + 1.  The ICC profiles will fill in
+            the remainder.  We may want to change this later */
+
+        icc_table->curr_band = cdev->band_range_max + 2;
+        icc_table->head->pseudoband = icc_table->curr_band;
+
+        cdev->icc_table = icc_table;
+
+    } else {
+
+        /* Add a new ICC profile */
+
+        icc_table->final->next = entry;
+        icc_table->final = entry;
+        icc_table->tablesize++;
+        icc_table->curr_band++;
+        icc_table->final->pseudoband = icc_table->curr_band;
+
+    }
+    
+}
+
 int 
 clist_writer_push_no_cropping(gx_device_clist_writer *cdev)
 {

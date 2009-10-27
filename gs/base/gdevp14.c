@@ -4377,6 +4377,8 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
     int mask_size = 0;
     uint mask_id = 0;
     int code;
+    int icc_bandnum = 0;
+    int icc_size = 0;
 
     *pbuf++ = opcode;			/* 1 byte */
     switch (opcode) {
@@ -4406,19 +4408,52 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
             /* Color space information maybe ICC based 
                in this case we need to store the ICC
                profile or the ID if it is cached already */
-            if (pparams->group_color == ICC) {
+            if (pparams->group_color == ICC) {                   
 
                 /* Check if this is a "default" space */
+
+                if (pparams->iccprofile->default_match != DEFAULT_NONE) {
+
+                    /* If yes, write out special ID.  These are negative
+                       encoded number of gsicc_profile_t.  If we have a
+                       positive number that is stored then it is simply
+                       the pseudoband location of the ICC profile.  We
+                       will then read the serialized header in that case. */
+
+                    icc_bandnum = -pparams->iccprofile->default_match;  
+                    put_value(pbuf, icc_bandnum);
+
+                } else {
                 
-                /* If yes, write out special ID */
+                    /* If no, check if it is already in the ICC clist table */
 
-                /* If no, check if it is in the cache, using hash code */
+                    icc_bandnum = clist_search_icctable(cdev, pparams->iccprofile->hashcode);
+                   
+                    if (icc_bandnum < 0) {
 
-                /* If not in cache, then add the profile */
+                        /* Add it to the table */
 
-                /* write out to clist */
+                        clist_addentry_icctable(cdev, pparams->iccprofile->hashcode);
+                        put_value(pbuf, cdev->icc_table->curr_band);
 
-                /* Is in cache? Just write out hash code */
+                        /* We will need to add the icc profile to the pseudo band */
+
+                        icc_size = pparams->iccprofile->buffer_size + sizeof(gsicc_serialized_profile_t);
+                        cdev->icc_table->final->size = icc_size;
+
+                    } else {
+
+                        /* It is in the cache. Just write out the pseudoband location */
+
+                        put_value(pbuf, icc_bandnum);
+
+                    }
+
+                }
+
+            } else {
+
+                put_value(pbuf, icc_bandnum);
 
             }
 
@@ -4485,11 +4520,11 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
     /* If we are writing more than the maximum ever expected,
      * return a rangecheck error.
      */
-    if ( need + 3 > MAX_CLIST_COMPOSITOR_SIZE )
+    if ( need + 3 > (MAX_CLIST_COMPOSITOR_SIZE) )
 	return_error(gs_error_rangecheck);
 
-    /* Copy our serialzed data into the output buffer */
-    memcpy(data, buf, need - mask_size);
+    /* Copy our serialized data into the output buffer */
+    memcpy(data, buf, need - mask_size - icc_size);
     if (mask_size)	/* Include the transfer mask data if present */
 	memcpy(data + need - mask_size, pparams->transfer_fn, mask_size);
     if_debug3('v', "[v] c_pdf14trans_write: opcode = %s mask_id=%d need = %d\n",

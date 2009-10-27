@@ -219,20 +219,20 @@ struct clist_writer_cropping_buffer_s {
 		clist_writer_cropping_buffer_t, "clist_writer_transparency_buffer",\
 		clist_writer_cropping_buffer_enum_ptrs, clist_writer_cropping_buffer_reloc_ptrs, next)
 
-
-
 /* Define a structure to hold where the ICC profiles are stored in the clist
-   Profiles are added into psuedo bands of the clist these are bands that exist beyond 
+   Profiles are added into psuedo bands of the clist, these are bands that exist beyond 
    the edge of the normal band list.  A profile will occupy its own band.  The structure
-   here is atable that relates the hash code of the ICC profile to the pseudoband.  
-   This table will be addded at the end of the clist writing process.  */
+   here is a table that relates the hash code of the ICC profile to the pseudoband.  
+   This table will be added at the end of the clist writing process.  */
 
 typedef struct clist_icctable_entry_s clist_icctable_entry_t;
 
 struct clist_icctable_entry_s {
 
     int64_t hashcode;               /* A hash code for the icc profile */
-    unsigned int pseudoband;        /* The band location for the profile */
+    int pseudoband;        /* The band location for the profile */
+    int size;
+    bool written;
     clist_icctable_entry_t *next;  /* The next entry in the table */   
 
 };
@@ -246,13 +246,15 @@ typedef struct clist_icctable_s clist_icctable_t;
 
 struct clist_icctable_s {
     int tablesize;
-    clist_icctable_entry_t *head; 
+    int curr_band;
+    clist_icctable_entry_t *head;
+    clist_icctable_entry_t *final;
 };
 
 #define private_st_clist_icctable()\
-  gs_private_st_ptrs1(st_clist_icctable,\
+  gs_private_st_ptrs2(st_clist_icctable,\
 		clist_icctable_t, "clist_icctable",\
-		clist_icctable_enum_ptrs, clist_icctable_reloc_ptrs, head)
+		clist_icctable_enum_ptrs, clist_icctable_reloc_ptrs, head, final)
 
 
 
@@ -325,12 +327,10 @@ struct gx_device_clist_writer_s {
                                            routines, this is the logical place to put this
                                            information */
     clist_icctable_t *icc_table;           /* Table that keeps track of ICC profiles.  It 
-                                              relates the has code to the psuedoband location */
-
-
-
+                                              relates the hashcode to the psuedoband location */
 
 };
+
 #ifndef gx_device_clist_writer_DEFINED
 #define gx_device_clist_writer_DEFINED
 typedef struct gx_device_clist_writer_s gx_device_clist_writer;
@@ -481,6 +481,14 @@ int clist_data_size(const gx_device_clist *cdev, int select);
 int clist_get_data(const gx_device_clist *cdev, int select, int offset, byte *buf, int length);
 /* Put command list data. */
 int clist_put_data(const gx_device_clist *cdev, int select, int offset, const byte *buf, int length);
+
+
+/* ICC table prototypes */
+
+/* Seach the table to see if we already have a profile in a pseudo band */
+int clist_search_icctable(gx_device_clist_writer *cdev, int64_t hashcode);
+/* Add an another ICC profile */
+int clist_addentry_icctable(gx_device_clist_writer *cdev, int64_t hashcode);
 
 /* Exports from gxclread used by the multi-threading logic */
 
