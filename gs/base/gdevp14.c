@@ -302,8 +302,8 @@ static const pdf14_procs_t custom_pdf14_procs = {
 };
 
 static const pdf14_nonseparable_blending_procs_t gray_blending_procs = {
-    art_blend_luminosity_rgb_8,
-    art_blend_saturation_rgb_8
+    art_blend_luminosity_custom_8,
+    art_blend_saturation_custom_8
 };
 
 static const pdf14_nonseparable_blending_procs_t rgb_blending_procs = {
