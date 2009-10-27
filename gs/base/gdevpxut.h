@@ -74,6 +74,8 @@ void px_put_l(stream * s, ulong l);
 
 void px_put_r(stream * s, floatp r);  /* no tag */
 void px_put_rl(stream * s, floatp r);  /* pxt_real32 tag */
+void px_put_rp(stream * s, floatp rx, floatp ry);
+void px_put_rpa(stream * s, floatp rx, floatp ry, px_attribute_t a);
 
 void px_put_data_length(stream * s, uint num_bytes);
 

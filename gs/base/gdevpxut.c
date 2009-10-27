@@ -144,19 +144,29 @@ px_write_select_media(stream *s, const gx_device *dev,
     int i;
     pxeMediaSize_t size;
     byte tray = eAutoSelect;
+    bool match_found = false;
 
-    /* The default is eLetterPaper, media size 0. */
+    /* The default is eDefaultPaperSize (=96), but we'll emit CustomMediaSize */
     for (i = countof(media_sizes) - 2; i > 0; --i)
 	if (fabs(media_sizes[i].width - w) < 5.0 / 72 &&
 	    fabs(media_sizes[i].height - h) < 5.0 / 72
-	    )
+	    ) {
+	    match_found = true;
+	    size = media_sizes[i].ms;
 	    break;
-    size = media_sizes[i].ms;
+	}
     /*
-     * According to the PCL XL documentation, MediaSize must always
+     * According to the PCL XL documentation, MediaSize/CustomMediaSize must always
      * be specified, but MediaSource is optional.
      */
-    px_put_uba(s, (byte)size, pxaMediaSize);
+    if (match_found) {
+        /* standard media */
+        px_put_uba(s, (byte)size, pxaMediaSize);
+    } else {
+        /* CustomMediaSize in Inches */
+        px_put_rpa(s, w, h, pxaCustomMediaSize);
+        px_put_uba(s, (byte)eInch, pxaCustomMediaSizeUnits);
+    }
 
     if (media_source != NULL)
 	tray = *media_source;
@@ -304,27 +314,76 @@ px_put_l(stream * s, ulong l)
     px_put_s(s, (uint) (l >> 16));
 }
 
+/*
+    The single-precison IEEE float is represented with 32-bit as follows:
+
+    1      8          23
+    sign | exponent | matissa_bits
+
+    switch(exponent):
+    case 0:
+        (-1)^sign * 2^(-126) * 0.<matissa_bits>_base2
+    case 0xFF:
+        +- infinity
+    default: (0x01 - 0xFE)
+        (-1)^sign * 2^(exponent - 127) * 1.<matissa_bits>_base2
+
+    The "1." part is not coded since it is always "1.".
+
+    To uses frexp, which returns
+        0.<matissa_bits>_base2 * 2^exp
+    We need to think of it as:
+        1.<matissa_bits,drop_MSB>_base2 * 2^(exp-1)
+
+    2009: the older version of this code has always been wrong (since 2000),
+    missing the -1 (the number was wrong by a factor of 2). Checked against
+    inserting hexdump code and compared with python snipplets (and pxldis):
+
+    import struct
+    for x in struct.pack("f", number):
+        hex(ord(x))
+*/
+
 void
 px_put_r(stream * s, floatp r)
 {				/* Convert to single-precision IEEE float. */
     int exp;
     long mantissa = (long)(frexp(r, &exp) * 0x1000000);
 
+    /* we can go a bit lower than -126 and represent:
+           2^(-126) * 0.[22 '0' then '1']_base2 = 2 ^(146) * 0.1_base2
+       but it is simplier for such small number to be zero. */
     if (exp < -126)
 	mantissa = 0, exp = 0;	/* unnormalized */
+    /* put the sign bit in the right place */
     if (mantissa < 0)
 	exp += 128, mantissa = -mantissa;
     /* All quantities are little-endian. */
     spputc(s, (byte) mantissa);
     spputc(s, (byte) (mantissa >> 8));
-    spputc(s, (byte) (((exp + 127) << 7) + ((mantissa >> 16) & 0x7f)));
-    spputc(s, (byte) ((exp + 127) >> 1));
+    spputc(s, (byte) (((exp + 126) << 7) + ((mantissa >> 16) & 0x7f)));
+    spputc(s, (byte) ((exp + 126) >> 1));
 }
 void
 px_put_rl(stream * s, floatp r)
 {
     spputc(s, pxt_real32);
     px_put_r(s, r);
+}
+
+void
+px_put_rp(stream * s, floatp rx, floatp ry)
+{
+    spputc(s, pxt_real32_xy);
+    px_put_r(s, rx);
+    px_put_r(s, ry);
+}
+
+void
+px_put_rpa(stream * s, floatp rx, floatp ry, px_attribute_t a)
+{
+    px_put_rp(s, rx, ry);
+    px_put_a(s, a);
 }
 
 void
