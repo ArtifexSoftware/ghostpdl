@@ -350,7 +350,7 @@ while (<>)
     }
 
     # Output the title
-    print $html "<H1>".$file."</H1></BR>";
+    print $html "<H1>".$file." (".$res."dpi)</H1></BR>";
     
     # Now diff those things
     $page = 1;
