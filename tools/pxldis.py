@@ -179,7 +179,7 @@ pxl_enumerations_dict = {
     'LineCapStyle' : [ 'eButtCap=0' 'eRoundCap=1', 'eSquareCap=2', 'eTriangleCap=3' ],
     'LineJoin' : [ 'eMiterJoin=0', 'eRoundJoin=1', 'eBevelJoin=2', 'eNoJoin=3' ],
     'Measure' : [ 'eInch=0', 'eMillimeter=1', 'eTenthsOfAMillimeter=2' ],
-    'MediaSize' : [ 'eDefault = 96', 'eLetterPaper=0', 'eLegalPaper=1', 'eA4Paper=2',
+    'MediaSize' : [ 'eDefault=96', 'eLetterPaper=0', 'eLegalPaper=1', 'eA4Paper=2',
 		    'eExecPaper=3', 'eLedgerPaper=4', 'eA3Paper=5', 
 		    'eCOM10Envelope=6', 'eMonarchEnvelope=7', 'eC5Envelope=8', 
 		    'eDLEnvelope=9', 'eJB4Paper=10', 'eJB5Paper=11', 'eB5Paper=13',
