@@ -153,6 +153,12 @@ int jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 int jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
                                const byte *segment_data);
 
+int jbig2_pattern_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
+                               const byte *segment_data);
+int jbig2_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
+                               const byte *segment_data);
+
+
 /* The word stream design is a compromise between simplicity and
    trying to amortize the number of method calls. Each ::get_next_word
    invocation pulls 4 bytes from the stream, packed big-endian into a
