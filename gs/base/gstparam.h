@@ -149,7 +149,7 @@ typedef struct gx_transparency_mask_params_s {
 	     sizeof(((gs_pdf14trans_params_t *)0)->GrayBackground))	     
 #define MAX_CLIST_TRANSPARENCY_COMPOSITOR_SIZE (MAX_CLIST_TRANSPARENCY_BUFFER_SIZE + \
 	     sizeof(((gs_pdf14trans_params_t *)0)->transfer_fn)) + \
-             sizeof(int) /* ICC band information */
+             sizeof(int64_t) /* ICC band information */
 #define MAX_CLIST_COMPOSITOR_SIZE MAX_CLIST_TRANSPARENCY_COMPOSITOR_SIZE
 
 /* Select the opacity or shape parameters. */

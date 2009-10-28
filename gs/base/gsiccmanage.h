@@ -31,6 +31,8 @@
 
 /* Prototypes */
 
+void  gsicc_profile_serialize(gsicc_serialized_profile_t *profile_data, cmm_profile_t *iccprofile);
+
 int gsicc_profile_clist_write(cmm_profile_t *icc_profile, uint offset,
     byte *data, uint *psize );
 

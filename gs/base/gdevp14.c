@@ -4377,8 +4377,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
     int mask_size = 0;
     uint mask_id = 0;
     int code;
-    int icc_bandnum = 0;
-    int icc_size = 0;
+    int64_t icc_position = 0;
 
     *pbuf++ = opcode;			/* 1 byte */
     switch (opcode) {
@@ -4420,32 +4419,28 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
                        the pseudoband location of the ICC profile.  We
                        will then read the serialized header in that case. */
 
-                    icc_bandnum = -pparams->iccprofile->default_match;  
-                    put_value(pbuf, icc_bandnum);
+                    icc_position = -pparams->iccprofile->default_match;  
+                    put_value(pbuf, icc_position);
 
                 } else {
                 
                     /* If no, check if it is already in the ICC clist table */
 
-                    icc_bandnum = clist_search_icctable(cdev, pparams->iccprofile->hashcode);
+                    icc_position = clist_search_icctable(cdev, pparams->iccprofile->hashcode);
                    
-                    if (icc_bandnum < 0) {
+                    if (icc_position < 0) {
 
-                        /* Add it to the table */
+                        /* Add it to the table and write out to the cfile */
 
-                        clist_addentry_icctable(cdev, pparams->iccprofile->hashcode);
-                        put_value(pbuf, cdev->icc_table->curr_band);
-
-                        /* We will need to add the icc profile to the pseudo band */
-
-                        icc_size = pparams->iccprofile->buffer_size + sizeof(gsicc_serialized_profile_t);
-                        cdev->icc_table->final->size = icc_size;
+                        icc_position = clist_addprofile(cdev, pparams->iccprofile);  
+                        clist_addentry_icctable(cdev, pparams->iccprofile->hashcode, icc_position);
+                        put_value(pbuf, icc_position);
 
                     } else {
 
-                        /* It is in the cache. Just write out the pseudoband location */
+                        /* It is in the cache. Just write out the location */
 
-                        put_value(pbuf, icc_bandnum);
+                        put_value(pbuf, icc_position);
 
                     }
 
@@ -4453,7 +4448,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
 
             } else {
 
-                put_value(pbuf, icc_bandnum);
+                put_value(pbuf, icc_position);
 
             }
 
@@ -4524,7 +4519,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
 	return_error(gs_error_rangecheck);
 
     /* Copy our serialized data into the output buffer */
-    memcpy(data, buf, need - mask_size - icc_size);
+    memcpy(data, buf, need - mask_size);
     if (mask_size)	/* Include the transfer mask data if present */
 	memcpy(data + need - mask_size, pparams->transfer_fn, mask_size);
     if_debug3('v', "[v] c_pdf14trans_write: opcode = %s mask_id=%d need = %d\n",

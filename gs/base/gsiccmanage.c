@@ -864,6 +864,35 @@ gsicc_get_profile( gsicc_profile_t profile_type, gsicc_manager_t *icc_manager ) 
 
  }
 
+void 
+gsicc_profile_serialize(gsicc_serialized_profile_t *profile_data, cmm_profile_t *icc_profile)
+{
+    
+    int k;
+  
+    if (icc_profile == NULL)
+        return;
+
+    profile_data->buffer_size = icc_profile->buffer_size;
+    profile_data->data_cs = icc_profile->data_cs;
+    profile_data->default_match = icc_profile->default_match;
+    profile_data->hash_is_valid = icc_profile->hash_is_valid;
+    profile_data->hashcode = icc_profile->hashcode;
+    profile_data->islab = icc_profile->islab;
+    profile_data->num_comps = icc_profile->num_comps;
+   
+    for ( k = 0; k < profile_data->num_comps; k++ ){
+
+        profile_data->Range.ranges[k].rmax = 
+            icc_profile->Range.ranges[k].rmax;
+   
+        profile_data->Range.ranges[k].rmin = 
+            icc_profile->Range.ranges[k].rmin;
+
+    }
+
+
+}
 
  /* Write an icc profile into the command list. */
 
