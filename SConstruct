@@ -2,7 +2,7 @@
 
 env = Environment(CPPDEFINES = {'HAVE_STDINT_H' : None,
 				'PACKAGE' : '\\"jbig2dec\\"',
-				'VERSION' : '\\"0.8\\"',
+				'VERSION' : '\\"0.11\\"',
 				'JBIG2_DEBUG' : None,
 				'JBIG2_HALFTONE' : None})
 env.Append(CCFLAGS = ' -g -Wall')
