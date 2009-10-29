@@ -232,11 +232,17 @@ static	const gx_device_procs pdf14_CMYK_procs =
 			gx_default_DevCMYK_get_color_comp_index,
 		       	pdf14_encode_color, pdf14_decode_color);
 
+#if USE_COMPRESSED_ENCODING
 static	const gx_device_procs pdf14_CMYKspot_procs =
 	pdf14_dev_procs(pdf14_cmykspot_get_color_mapping_procs,
 			pdf14_cmykspot_get_color_comp_index,
-		       	pdf14_compressed_encode_color,
-		       	pdf14_compressed_decode_color);
+		       	pdf14_compressed_encode_color, pdf14_compressed_decode_color);
+#else
+static	const gx_device_procs pdf14_CMYKspot_procs =
+	pdf14_dev_procs(pdf14_cmykspot_get_color_mapping_procs,
+			pdf14_cmykspot_get_color_comp_index,
+		       	pdf14_encode_color, pdf14_decode_color);
+#endif
 
 static	const gx_device_procs pdf14_custom_procs =
 	pdf14_dev_procs(gx_forward_get_color_mapping_procs,
@@ -5896,15 +5902,19 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
 	     * our PDF 1.4 blend operations.
 	     */
 
-            /* Also if the bit depth is not 8 per channel we need to adjust 
-               as all the pdf14 compositing code is for 8 bits per channel.  The
-               clist writer device uses this information to make sure the proper
-               bit depth is written */
-
-            if (cdev->clist_color_info.num_components * 8 != cdev->clist_color_info.depth)
+            /* 
+	     * Also if the bit depth is not 8 per channel we need to adjust 
+             * as all the pdf14 compositing code is for 8 bits per channel.  The
+             * clist writer device uses this information to make sure the proper
+             * bit depth is written. If we are using compressed color enconding,
+	     * the color is written in a gx_color_index even for more than 8
+	     * components.
+	     */
+	    p14dev = (pdf14_clist_device *)(*pcdev);
+            if (cdev->clist_color_info.num_components * 8 != cdev->clist_color_info.depth &&
+			p14dev->my_encode_color != pdf14_compressed_encode_color)
                 cdev->clist_color_info.depth = cdev->clist_color_info.num_components * 8;
 
-	    p14dev = (pdf14_clist_device *)(*pcdev);
 	    p14dev->saved_target_color_info = dev->color_info;
 	    dev->color_info = (*pcdev)->color_info;
 	    p14dev->saved_target_encode_color = dev->procs.encode_color;
