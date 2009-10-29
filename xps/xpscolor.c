@@ -155,7 +155,7 @@ xps_parse_color(xps_context_t *ctx, char *base_uri, char *string, gs_color_space
 	/* Find ICC colorspace part */
 
 	xps_absolute_path(partname, base_uri, profile);
-	part = xps_find_part(ctx, partname);
+	part = xps_read_part(ctx, partname);
 	if (!part)
 	    return gs_throw1(-1, "cannot find icc profile part '%s'", partname);
 
@@ -170,6 +170,8 @@ xps_parse_color(xps_context_t *ctx, char *base_uri, char *string, gs_color_space
 
 	*csp = part->icc;
 #endif
+
+	xps_release_part(ctx, part);
 
 	return 0;
     }

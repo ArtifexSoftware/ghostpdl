@@ -53,7 +53,7 @@ int xps_init_font_cache(xps_context_t *ctx)
 }
 
 xps_font_t *
-xps_new_font(xps_context_t *ctx, char *buf, int buflen, int index)
+xps_new_font(xps_context_t *ctx, byte *buf, int buflen, int index)
 {
     xps_font_t *font;
     int code;
@@ -65,7 +65,7 @@ xps_new_font(xps_context_t *ctx, char *buf, int buflen, int index)
 	return NULL;
     }
 
-    font->data = (byte*)buf;
+    font->data = buf;
     font->length = buflen;
     font->font = NULL;
 

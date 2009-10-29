@@ -262,7 +262,7 @@ xps_free_gradient_stop_function(xps_context_t *ctx, gs_function_t *func)
 
     for (i = 0; i < sparams->k; i++)
     {
-	lfunc = sparams->Functions[i];
+	lfunc = (gs_function_t*) sparams->Functions[i]; /* discard const */
 	lparams = (gs_function_ElIn_params_t*) &lfunc->params;
 	xps_free(ctx, (void*)lparams->Domain);
 	xps_free(ctx, (void*)lparams->Range);

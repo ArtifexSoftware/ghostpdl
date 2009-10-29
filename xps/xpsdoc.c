@@ -17,152 +17,16 @@
 
 #include <expat.h>
 
-#define REL_START_PART "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation"
-#define REL_REQUIRED_RESOURCE "http://schemas.microsoft.com/xps/2005/06/required-resource"
-#define REL_REQUIRED_RESOURCE_RECURSIVE "http://schemas.microsoft.com/xps/2005/06/required-resource#recursive"
-
-#define CT_FIXDOC "application/vnd.ms-package.xps-fixeddocument+xml"
-#define CT_FIXDOCSEQ "application/vnd.ms-package.xps-fixeddocumentsequence+xml"
-#define CT_FIXPAGE "application/vnd.ms-package.xps-fixedpage+xml"
-
-int xps_doc_trace = 0;
-
 /*
- * Content types are stored in two lookup tables.
- * One contains Override entries, which map a part name to a type.
- * The other contains Default entries, which map a file extension to a type.
- */
-
-void xps_debug_type_map(xps_context_t *ctx, char *label, xps_type_map_t *node)
-{
-    while (node)
-    {
-	dprintf3("%s name=%s type=%s\n", label, node->name, node->type);
-	node = node->next;
-    }
-}
-
-static xps_type_map_t *
-xps_new_type_map(xps_context_t *ctx, char *name, char *type)
-{
-    xps_type_map_t *node;
-
-    node = xps_alloc(ctx, sizeof(xps_type_map_t));
-    if (!node)
-       goto cleanup;
-
-    node->name = xps_strdup(ctx, name);
-    node->type = xps_strdup(ctx, type);
-    node->next = NULL;
-
-    if (!node->name)
-	goto cleanup;
-    if (!node->type)
-	goto cleanup;
-
-    return node;
-
-cleanup:
-    if (node)
-    {
-	if (node->name)
-	    xps_free(ctx, node->name);
-	if (node->type)
-	    xps_free(ctx, node->type);
-	xps_free(ctx, node);
-    }
-    return NULL;
-}
-
-void
-xps_free_type_map(xps_context_t *ctx, xps_type_map_t *node)
-{
-    xps_type_map_t *next;
-    while (node)
-    {
-	next = node->next;
-	xps_free(ctx, node->name);
-	xps_free(ctx, node->type);
-	xps_free(ctx, node);
-	node = next;
-    }
-}
-
-static char *
-xps_lookup_type_map(xps_type_map_t *node, char *name)
-{
-    while (node)
-    {
-	if (strcmp(node->name, name) == 0)
-	    return node->type;
-	node = node->next;
-    }
-    return NULL;
-}
-
-static void
-xps_add_override(xps_context_t *ctx, char *part_name, char *content_type)
-{
-    xps_type_map_t *node;
-    if (!xps_lookup_type_map(ctx->overrides, part_name))
-    {
-	node = xps_new_type_map(ctx, part_name, content_type);
-	if (node)
-	{
-	    node->next = ctx->overrides;
-	    ctx->overrides = node;
-	}
-    }
-}
-
-static void
-xps_add_default(xps_context_t *ctx, char *extension, char *content_type)
-{
-    xps_type_map_t *node;
-    if (!xps_lookup_type_map(ctx->defaults, extension))
-    {
-	node = xps_new_type_map(ctx, extension, content_type);
-	if (node)
-	{
-	    node->next = ctx->defaults;
-	    ctx->defaults = node;
-	}
-    }
-}
-
-char *
-xps_get_content_type(xps_context_t *ctx, char *partname)
-{
-    char *extension;
-    char *type;
-
-    type = xps_lookup_type_map(ctx->overrides, partname);
-    if (type)
-    {
-	return type;
-    }
-
-    extension = strrchr(partname, '.');
-    if (extension)
-	extension ++;
-
-    type = xps_lookup_type_map(ctx->defaults, extension);
-    if (type)
-    {
-	return type;
-    }
-
-    return NULL;
-}
-
-/*
- * Relationships are stored in a linked list hooked into the part which
- * is the source of the relation.
+ * The part table stores both incomplete (interleaved) and completed parts.
+ * In feed mode the completed parts are buffered until they can be safely freed.
+ * In feed mode, the parts may also be completely empty since they are used to
+ * store relationships between parts that may not yet have been encountered.
  */
 
 void xps_debug_parts(xps_context_t *ctx)
 {
-    xps_part_t *part = ctx->first_part;
+    xps_part_t *part = ctx->part_list;
     xps_relation_t *rel;
     while (part)
     {
@@ -170,6 +34,199 @@ void xps_debug_parts(xps_context_t *ctx)
 	for (rel = part->relations; rel; rel = rel->next)
 	    dprintf2("     target=%s type=%s\n", rel->target, rel->type);
 	part = part->next;
+    }
+}
+
+xps_part_t *
+xps_new_part(xps_context_t *ctx, char *name, int capacity)
+{
+    xps_part_t *part;
+
+    part = xps_alloc(ctx, sizeof(xps_part_t));
+    if (!part)
+	return NULL;
+
+    part->name = NULL;
+    part->size = 0;
+    part->interleave = 0;
+    part->capacity = 0;
+    part->complete = 0;
+    part->data = NULL;
+    part->relations = NULL;
+    part->relations_complete = 0;
+
+    part->font = NULL;
+    part->image = NULL;
+    part->icc = NULL;
+    part->xml = NULL;
+
+    part->deobfuscated = 0;
+
+    part->name = xps_strdup(ctx, name);
+    if (!part->name)
+    {
+	xps_free(ctx, part);
+	return NULL;
+    }
+
+    if (capacity == 0)
+	capacity = 1024;
+
+    part->size = 0;
+    part->capacity = capacity;
+    part->data = xps_alloc(ctx, part->capacity);
+    if (!part->data)
+    {
+	xps_free(ctx, part->name);
+	xps_free(ctx, part);
+	return NULL;
+    }
+
+    part->next = NULL;
+
+    /* add it to the list of parts */
+    part->next = ctx->part_list;
+    ctx->part_list = part;
+
+    /* add it to the hash table of parts */
+    xps_hash_insert(ctx, ctx->part_table, part->name, part);
+
+    return part;
+}
+
+void
+xps_free_part_caches(xps_context_t *ctx, xps_part_t *part)
+{
+#if 0
+    /* Can't free fonts because pdfwrite needs them alive */
+    if (part->font)
+    {
+	xps_free_font(ctx, part->font);
+	part->font = NULL;
+    }
+
+    if (part->icc)
+    {
+	xps_free_colorspace(ctx, part->icc);
+	part->icc = NULL;
+    }
+#endif
+
+    if (part->image)
+    {
+	xps_free_image(ctx, part->image);
+	part->image = NULL;
+    }
+
+    if (part->xml)
+    {
+	xps_free_item(ctx, part->xml);
+	part->xml = NULL;
+    }
+}
+
+void
+xps_free_part_data(xps_context_t *ctx, xps_part_t *part)
+{
+    if (part->data)
+	xps_free(ctx, part->data);
+    part->data = NULL;
+    part->size = 0;
+    part->capacity = 0;
+    part->complete = 0;
+    part->deobfuscated = 0;
+}
+
+void
+xps_release_part(xps_context_t *ctx, xps_part_t *part)
+{
+    /* since fonts need to live for the duration of
+       the job there's no point in freeing them */
+    if (part->font)
+	return;
+
+    /* never free the part data if we're in feed mode,
+       since we may need it later */
+    if (ctx->file)
+	xps_free_part_data(ctx, part);
+
+    /* free any parsed representations */
+    xps_free_part_caches(ctx, part);
+}
+
+void
+xps_free_part(xps_context_t *ctx, xps_part_t *part)
+{
+    xps_free_part_caches(ctx, part);
+    xps_free_part_data(ctx, part);
+
+    /* Nu-uh, can't free fonts because pdfwrite needs them alive */
+    if (part->font)
+	return;
+
+    if (part->name)
+	xps_free(ctx, part->name);
+    part->name = NULL;
+
+    /* TODO: remove from context part list */
+
+    xps_free_relations(ctx, part->relations);
+    xps_free(ctx, part);
+}
+
+/*
+ * Lookup a part in the part table. It may be
+ * unloaded, partially loaded, or loaded.
+ */
+
+xps_part_t *
+xps_find_part(xps_context_t *ctx, char *name)
+{
+    return xps_hash_lookup(ctx->part_table, name);
+}
+
+/*
+ * Find and ensure that the contents of the part have been loaded.
+ * Will return NULL if used on on an incomplete or unloaded part in feed mode.
+ */
+
+xps_part_t *
+xps_read_part(xps_context_t *ctx, char *name)
+{
+    xps_part_t *part;
+    part = xps_hash_lookup(ctx->part_table, name);
+    if (ctx->file)
+    {
+	if (!part)
+	    part = xps_read_zip_part(ctx, name);
+	if (part && !part->complete)
+	    part = xps_read_zip_part(ctx, name);
+	return part;
+    }
+    return part;
+}
+
+/*
+ * Relationships are stored in a linked list hooked into the part which
+ * is the source of the relation.
+ */
+
+void
+xps_part_name_from_relation_part_name(char *output, char *name)
+{
+    char *p, *q;
+    strcpy(output, name);
+    p = strstr(output, "_rels/");
+    q = strstr(name, "_rels/");
+    if (p)
+    {
+	*p = 0;
+	strcat(output, q + 6);
+    }
+    p = strstr(output, ".rels");
+    if (p)
+    {
+	*p = 0;
     }
 }
 
@@ -211,6 +268,11 @@ xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type)
     node->next = part->relations;
     part->relations = node;
 
+    if (xps_doc_trace)
+    {
+	dprintf2("  relation %s -> %s\n", source, target);
+    }
+
     return 0;
 }
 
@@ -229,13 +291,8 @@ xps_free_relations(xps_context_t *ctx, xps_relation_t *node)
 }
 
 /*
- * <DocumentReference> -- fixdocseq
- * <PageContent> -- fixdoc
- *
- * TODO: We should really look at the root StartPart relationship
- * for the FixedDocumentSequence and follow the DocumentReferences
- * therein for the page sequence. For now, we'll cheat and read
- * any PageContent references in the order they are in the file.
+ * The FixedDocumentSequence and FixedDocument parts determine
+ * which parts correspond to actual pages, and the page order.
  */
 
 void xps_debug_fixdocseq(xps_context_t *ctx)
@@ -377,31 +434,7 @@ xps_free_fixed_pages(xps_context_t *ctx)
 }
 
 /*
- * Periodically free old parts and resources that
- * will not be used any more. This looks at discard control
- * information, and assumes that a given fixed page will
- * not be drawn more than once.
- */
-
-static void
-xps_free_used_parts(xps_context_t *ctx)
-{
-    /* Free parsed resources that were used on the last page */
-    xps_part_t *part = ctx->first_part;
-    while (part)
-    {
-	xps_part_t *next = part->next;
-	xps_free_part_caches(ctx, part);
-	part = next;
-    }
-
-    /* TODO: Free the data for page parts we have rendered */
-    /* TODO: Free the data for parts we don't recognize */
-    /* TODO: Parse DiscardControl parts to free stuff */
-}
-
-/*
- * Parse the metadata [Content_Types.xml] and _rels/XXX.rels parts.
+ * Parse the metadata document structure and _rels/XXX.rels parts.
  * These should be parsed eagerly as they are interleaved, so the
  * parsing needs to be able to cope with incomplete xml.
  *
@@ -411,75 +444,23 @@ xps_free_used_parts(xps_context_t *ctx)
  *
  * We hook up unique expat handlers for this, and ignore any expat
  * errors that occur.
+ *
+ * The seekable mode only parses the document structure parts,
+ * and ignores all other metadata.
  */
 
 static void
-xps_part_from_relation(char *output, char *name)
-{
-    char *p, *q;
-    strcpy(output, name);
-    p = strstr(output, "_rels/");
-    q = strstr(name, "_rels/");
-    if (p)
-    {
-	*p = 0;
-	strcat(output, q + 6);
-    }
-    p = strstr(output, ".rels");
-    if (p)
-    {
-	*p = 0;
-    }
-}
-
-static void
-xps_handle_metadata(void *zp, char *name, char **atts)
+xps_parse_metadata_imp(void *zp, char *name, char **atts)
 {
     xps_context_t *ctx = zp;
     int i;
 
-    if (!strcmp(name, "Default"))
-    {
-	char *extension = NULL;
-	char *type = NULL;
-
-	for (i = 0; atts[i]; i += 2)
-	{
-	    if (!strcmp(atts[i], "Extension"))
-		extension = atts[i + 1];
-	    if (!strcmp(atts[i], "ContentType"))
-		type = atts[i + 1];
-	}
-
-	if (extension && type)
-	    xps_add_default(ctx, extension, type);
-    }
-
-    if (!strcmp(name, "Override"))
-    {
-	char *partname = NULL;
-	char *type = NULL;
-
-	for (i = 0; atts[i]; i += 2)
-	{
-	    if (!strcmp(atts[i], "PartName"))
-		partname = atts[i + 1];
-	    if (!strcmp(atts[i], "ContentType"))
-		type = atts[i + 1];
-	}
-
-	if (partname && type)
-	    xps_add_override(ctx, partname, type);
-    }
-
     if (!strcmp(name, "Relationship"))
     {
-	char srcbuf[1024];
+	char realpart[1024];
 	char tgtbuf[1024];
-	char dirbuf[1024];
 	char *target = NULL;
 	char *type = NULL;
-	char *p;
 
 	for (i = 0; atts[i]; i += 2)
 	{
@@ -491,16 +472,9 @@ xps_handle_metadata(void *zp, char *name, char **atts)
 
 	if (target && type)
 	{
-	    xps_part_from_relation(srcbuf, ctx->last_part->name);
-
-	    strcpy(dirbuf, srcbuf);
-	    p = strrchr(dirbuf, '/');
-	    if (p)
-		p[1] = 0;
-
-	    xps_absolute_path(tgtbuf, dirbuf, target);
-
-	    xps_add_relation(ctx, srcbuf, tgtbuf, type);
+	    xps_part_name_from_relation_part_name(realpart, ctx->part_uri);
+	    xps_absolute_path(tgtbuf, ctx->base_uri, target);
+	    xps_add_relation(ctx, realpart, tgtbuf, type);
 	}
     }
 
@@ -547,8 +521,8 @@ xps_handle_metadata(void *zp, char *name, char **atts)
     }
 }
 
-static int
-xps_process_metadata(xps_context_t *ctx, xps_part_t *part)
+int
+xps_parse_metadata(xps_context_t *ctx, xps_part_t *part)
 {
     XML_Parser xp;
     char buf[1024];
@@ -558,9 +532,18 @@ xps_process_metadata(xps_context_t *ctx, xps_part_t *part)
     strcpy(buf, part->name);
     s = strrchr(buf, '/');
     if (s)
-	s[1] = 0;
+	s[0] = 0;
+
+    /* _rels parts are voodoo: their URI references are from
+     * the part they are associated with, not the actual _rels
+     * part being parsed.
+     */
+    s = strstr(buf, "/_rels");
+    if (s)
+	*s = 0;
 
     ctx->base_uri = buf;
+    ctx->part_uri = part->name;
 
     xp = XML_ParserCreate(NULL);
     if (!xp)
@@ -568,19 +551,23 @@ xps_process_metadata(xps_context_t *ctx, xps_part_t *part)
 
     XML_SetUserData(xp, ctx);
     XML_SetParamEntityParsing(xp, XML_PARAM_ENTITY_PARSING_NEVER);
-    XML_SetStartElementHandler(xp, (XML_StartElementHandler)xps_handle_metadata);
+    XML_SetStartElementHandler(xp, (XML_StartElementHandler)xps_parse_metadata_imp);
 
-    (void) XML_Parse(xp, part->data, part->size, 1);
+    (void) XML_Parse(xp, (char*)part->data, part->size, 1);
 
     XML_ParserFree(xp);
 
     ctx->base_uri = NULL;
+    ctx->part_uri = NULL;
 
     return 0;
 }
 
 /*
- * Scan FixedPage XML for required resources:
+ * Parse a FixedPage part and infer the required relationships. The
+ * relationship parts are often placed at the end of the file, so we don't want
+ * to rely on them. This function gets called if a FixedPage part is
+ * encountered and its relationship part has not been parsed yet.
  *
  *   <Glyphs FontUri=... >
  *   <ImageBrush ImageSource=... >
@@ -615,7 +602,7 @@ xps_parse_color_relation(xps_context_t *ctx, char *string)
 	    *ep = 0;
 	    xps_absolute_path(path, ctx->base_uri, sp);
 	    xps_trim_url(path);
-	    xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
+	    xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE);
 	}
     }
 }
@@ -642,7 +629,7 @@ xps_parse_image_relation(xps_context_t *ctx, char *string)
 		*ep = 0;
 		xps_absolute_path(path, ctx->base_uri, sp);
 		xps_trim_url(path);
-		xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
+		xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE);
 
 		sp = ep + 1;
 		ep = strchr(sp, '}');
@@ -651,7 +638,7 @@ xps_parse_image_relation(xps_context_t *ctx, char *string)
 		    *ep = 0;
 		    xps_absolute_path(path, ctx->base_uri, sp);
 		    xps_trim_url(path);
-		    xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
+		    xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE);
 		}
 	    }
 	}
@@ -660,7 +647,7 @@ xps_parse_image_relation(xps_context_t *ctx, char *string)
     {
 	xps_absolute_path(path, ctx->base_uri, string);
 	xps_trim_url(path);
-	xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
+	xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE);
     }
 }
 
@@ -686,7 +673,7 @@ xps_parse_content_relations_imp(void *zp, char *ns_name, char **atts)
 	    {
 		xps_absolute_path(path, ctx->base_uri, atts[i+1]);
 		xps_trim_url(path);
-		xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE);
+		xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE);
 	    }
 	}
     }
@@ -706,7 +693,7 @@ xps_parse_content_relations_imp(void *zp, char *ns_name, char **atts)
 	    {
 		xps_absolute_path(path, ctx->base_uri, atts[i+1]);
 		xps_trim_url(path);
-		xps_add_relation(ctx, ctx->state, path, REL_REQUIRED_RESOURCE_RECURSIVE);
+		xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE_RECURSIVE);
 	    }
 	}
     }
@@ -726,7 +713,7 @@ xps_parse_content_relations_imp(void *zp, char *ns_name, char **atts)
     }
 }
 
-static int
+int
 xps_parse_content_relations(xps_context_t *ctx, xps_part_t *part)
 {
     XML_Parser xp;
@@ -737,9 +724,9 @@ xps_parse_content_relations(xps_context_t *ctx, xps_part_t *part)
     strcpy(buf, part->name);
     s = strrchr(buf, '/');
     if (s)
-	s[1] = 0;
+	s[0] = 0;
 
-    ctx->state = part->name;
+    ctx->part_uri = part->name;
     ctx->base_uri = buf;
 
     if (xps_doc_trace)
@@ -753,191 +740,12 @@ xps_parse_content_relations(xps_context_t *ctx, xps_part_t *part)
     XML_SetParamEntityParsing(xp, XML_PARAM_ENTITY_PARSING_NEVER);
     XML_SetStartElementHandler(xp, (XML_StartElementHandler)xps_parse_content_relations_imp);
 
-    (void) XML_Parse(xp, part->data, part->size, 1);
+    (void) XML_Parse(xp, (char*)part->data, part->size, 1);
 
     XML_ParserFree(xp);
 
-    if (xps_doc_trace)
-    {
-	xps_relation_t *rel;
-	for (rel = part->relations; rel; rel = rel->next)
-	    dprintf1("  relation %s\n", rel->target);
-    }
-
-    ctx->state = NULL;
+    ctx->part_uri = NULL;
     ctx->base_uri = NULL;
-
-    return 0;
-}
-
-static int
-xps_validate_resources(xps_context_t *ctx, xps_part_t *part)
-{
-    xps_relation_t *rel;
-    xps_part_t *subpart;
-
-    for (rel = part->relations; rel; rel = rel->next)
-    {
-	if (!strcmp(rel->type, REL_REQUIRED_RESOURCE_RECURSIVE))
-	{
-	    subpart = xps_find_part(ctx, rel->target);
-	    if (!subpart || !subpart->complete)
-		return 0;
-	    if (!subpart->relations_complete)
-	    {
-		xps_parse_content_relations(ctx, subpart);
-		subpart->relations_complete = 1;
-	    }
-	    if (!xps_validate_resources(ctx, subpart))
-		return 0;
-	}
-
-	if (!strcmp(rel->type, REL_REQUIRED_RESOURCE))
-	{
-	    subpart = xps_find_part(ctx, rel->target);
-	    if (!subpart || !subpart->complete)
-		return 0;
-	}
-    }
-
-    return 1;
-}
-
-int
-xps_process_part(xps_context_t *ctx, xps_part_t *part)
-{
-    xps_document_t *fixdoc;
-
-    if (getenv("XPS_DOC_TRACE"))
-	xps_doc_trace = 1;
-
-    if (xps_doc_trace && part->complete)
-	dprintf2("doc: found part %s %s\n", part->name, part->complete ? "" : "(piece)");
-
-    /*
-     * These two are magic Open Packaging Convention names.
-     */
-
-    if (strstr(part->name, "[Content_Types].xml"))
-    {
-	xps_process_metadata(ctx, part);
-    }
-
-    if (strstr(part->name, "_rels/"))
-    {
-	xps_process_metadata(ctx, part);
-
-	if (part->complete)
-	{
-	    char realname[1024];
-	    xps_part_t *realpart;
-	    xps_part_from_relation(realname, part->name);
-	    realpart = xps_find_part(ctx, realname);
-	    if (realpart)
-	    {
-		realpart->relations_complete = 1;
-	    }
-	}
-    }
-
-    /* DiscardControl parts are not used by files in the wild, so we don't bother */
-
-    /*
-     * For the rest we need to track the relationships
-     * and content-types given by the previous two types.
-     *
-     * We can't do anything until we have the relationship
-     * for the start part.
-     */
-
-    if (!ctx->start_part)
-    {
-	xps_part_t *rootpart;
-	rootpart = xps_find_part(ctx, "/");
-	if (rootpart)
-	{
-	    xps_relation_t *rel;
-	    for (rel = rootpart->relations; rel; rel = rel->next)
-	    {
-		if (!strcmp(rel->type, REL_START_PART))
-		{
-		    xps_part_t *startpart;
-
-		    ctx->start_part = rel->target;
-
-		    if (xps_doc_trace)
-			dprintf1("doc: adding start part '%s'\n", ctx->start_part);
-
-		    startpart = xps_find_part(ctx, rel->target);
-		    if (startpart)
-			xps_process_metadata(ctx, startpart);
-		}
-	    }
-	}
-    }
-
-    /*
-     * Read the start part (which is a FixedDocumentSequence) if it
-     * is the current part.
-     */
-
-    if (ctx->start_part)
-    {
-	if (!strcmp(part->name, ctx->start_part))
-	{
-	    xps_process_metadata(ctx, part);
-	}
-    }
-
-    /*
-     * Follow the FixedDocumentSequence and parse the
-     * listed FixedDocuments that we have available.
-     */
-
-    for (fixdoc = ctx->first_fixdoc; fixdoc; fixdoc = fixdoc->next)
-    {
-	xps_part_t *fixdocpart = xps_find_part(ctx, fixdoc->name);
-	if (fixdocpart)
-	{
-	    xps_process_metadata(ctx, fixdocpart);
-	    if (!fixdocpart->complete)
-		break; /* incomplete fixdocpart, try parsing more later */
-	}
-    }
-
-    /*
-     * If we know which page part is next, check if we
-     * have all the page dependencies. If everything is
-     * ready: parse and render.
-     */
-
-    while (ctx->next_page)
-    {
-	xps_part_t *pagepart = xps_find_part(ctx, ctx->next_page->name);
-	if (pagepart && pagepart->complete)
-	{
-	    if (!pagepart->relations_complete)
-	    {
-		xps_parse_content_relations(ctx, pagepart);
-		pagepart->relations_complete = 1;
-	    }
-
-	    if (xps_validate_resources(ctx, pagepart))
-	    {
-		int code = xps_parse_fixed_page(ctx, pagepart);
-		if (code < 0)
-		    return code;
-
-		ctx->next_page = ctx->next_page->next;
-
-		xps_free_used_parts(ctx);
-
-		continue;
-	    }
-	}
-
-	break;
-    }
 
     return 0;
 }

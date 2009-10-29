@@ -11,15 +11,9 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* XPS interpreter - zip container parsing */
+/* XPS interpreter - zip container parsing in feed mode */
 
 #include "ghostxps.h"
-
-#define ZIP_LOCAL_FILE_SIG 0x04034b50
-#define ZIP_DATA_DESC_SIG 0x08074b50
-#define ZIP_CENTRAL_DIRECTORY_SIG 0x02014b50
-
-int xps_zip_trace = 0;
 
 static inline unsigned int
 scan4(byte *buf)
@@ -91,118 +85,213 @@ xps_zip_free(xps_context_t *ctx, void *ptr)
     xps_free(ctx, ptr);
 }
 
-xps_part_t *
-xps_new_part(xps_context_t *ctx, char *name, int capacity)
+/*
+ * Check that we have all the resources used by a page
+ * already loaded before we parse it.
+ */
+
+static int
+xps_validate_resources(xps_context_t *ctx, xps_part_t *part)
 {
-    xps_part_t *part;
+    xps_relation_t *rel;
+    xps_part_t *subpart;
 
-    part = xps_alloc(ctx, sizeof(xps_part_t));
-    if (!part)
-	return NULL;
-
-    part->name = NULL;
-    part->size = 0;
-    part->interleave = 0;
-    part->capacity = 0;
-    part->complete = 0;
-    part->data = NULL;
-    part->relations = NULL;
-    part->relations_complete = 0;
-
-    part->font = NULL;
-    part->image = NULL;
-    part->icc = NULL;
-    part->xml = NULL;
-
-    part->deobfuscated = 0;
-
-    part->name = xps_strdup(ctx, name);
-    if (!part->name)
+    for (rel = part->relations; rel; rel = rel->next)
     {
-	xps_free(ctx, part);
-	return NULL;
+	if (!strcmp(rel->type, REL_REQUIRED_RESOURCE_RECURSIVE))
+	{
+	    subpart = xps_find_part(ctx, rel->target);
+	    if (!subpart || !subpart->complete)
+		return 0;
+	    if (!subpart->relations_complete)
+	    {
+		xps_parse_content_relations(ctx, subpart);
+		subpart->relations_complete = 1;
+	    }
+	    if (!xps_validate_resources(ctx, subpart))
+		return 0;
+	}
+
+	if (!strcmp(rel->type, REL_REQUIRED_RESOURCE))
+	{
+	    subpart = xps_find_part(ctx, rel->target);
+	    if (!subpart || !subpart->complete)
+		return 0;
+	}
     }
 
-    if (capacity == 0)
-	capacity = 1024;
-
-    part->size = 0;
-    part->capacity = capacity;
-    part->data = xps_alloc(ctx, part->capacity);
-    if (!part->data)
-    {
-	xps_free(ctx, part->name);
-	xps_free(ctx, part);
-	return NULL;
-    }
-
-    part->next = NULL;
-
-    /* add it to the list of parts */
-    part->next = ctx->first_part;
-    ctx->first_part = part;
-
-    /* add it to the hash table of parts */
-    xps_hash_insert(ctx, ctx->part_table, part->name, part);
-
-    return part;
+    return 1;
 }
 
-void
-xps_free_part_caches(xps_context_t *ctx, xps_part_t *part)
+/*
+ * Periodically free old parts and resources that
+ * will not be used any more. This looks at discard control
+ * information, and assumes that a given fixed page will
+ * not be drawn more than once.
+ */
+
+static void
+xps_free_used_parts(xps_context_t *ctx)
 {
-#if 0
-    /* Can't free fonts because pdfwrite needs them alive */
-    if (part->font)
+    /* Free parsed resources that were used on the last page */
+    xps_part_t *part = ctx->part_list;
+    while (part)
     {
-	xps_free_font(ctx, part->font);
-	part->font = NULL;
+	xps_part_t *next = part->next;
+	xps_free_part_caches(ctx, part);
+	part = next;
     }
 
-    if (part->icc)
-    {
-	xps_free_colorspace(ctx, part->icc);
-	part->icc = NULL;
-    }
-#endif
-
-    if (part->image)
-    {
-	xps_free_image(ctx, part->image);
-	part->image = NULL;
-    }
-
-    if (part->xml)
-    {
-	xps_free_item(ctx, part->xml);
-	part->xml = NULL;
-    }
+    /* TODO: Free the data for page parts we have rendered */
+    /* TODO: Free the data for parts we don't recognize */
+    /* TODO: Parse DiscardControl parts to free stuff */
 }
 
-void
-xps_free_part(xps_context_t *ctx, xps_part_t *part)
+/*
+ * Process the latest part. Parse document structure and metadata
+ * parts into relation and fixdoc structs. Buffer and save other
+ * parts for later use. Parse and run the next page when all of its
+ * resources are available.
+ */
+
+static int
+xps_process_part(xps_context_t *ctx, xps_part_t *part)
 {
-    xps_free_part_caches(ctx, part);
+    xps_document_t *fixdoc;
 
-    /* Nu-uh, can't free fonts because pdfwrite needs them alive */
-    if (part->font)
-	return;
+    if (xps_doc_trace && part->complete)
+	dprintf2("doc: found part %s %s\n", part->name, part->complete ? "" : "(piece)");
 
-    if (part->name) xps_free(ctx, part->name);
-    if (part->data) xps_free(ctx, part->data);
+    /*
+     * This is a magic Open Packaging Convention name.
+     */
 
-    part->name = NULL;
-    part->data = NULL;
+    if (strstr(part->name, "_rels/"))
+    {
+	xps_parse_metadata(ctx, part);
 
-    xps_free_relations(ctx, part->relations);
-    xps_free(ctx, part);
+	if (part->complete)
+	{
+	    char realname[1024];
+	    xps_part_t *realpart;
+	    xps_part_name_from_relation_part_name(realname, part->name);
+	    realpart = xps_find_part(ctx, realname);
+	    if (realpart)
+	    {
+		realpart->relations_complete = 1;
+	    }
+	}
+    }
+
+    /* TODO: DiscardControl parts.
+     * They are not used by files in the wild, so we don't bother.
+     */
+
+    /*
+     * For the rest we need to track the relationships
+     * and content-types given by the previous two types.
+     *
+     * We can't do anything until we have the relationship
+     * for the start part.
+     */
+
+    if (!ctx->start_part)
+    {
+	xps_part_t *rootpart;
+	rootpart = xps_find_part(ctx, "/");
+	if (rootpart)
+	{
+	    xps_relation_t *rel;
+	    for (rel = rootpart->relations; rel; rel = rel->next)
+	    {
+		if (!strcmp(rel->type, REL_START_PART))
+		{
+		    xps_part_t *startpart;
+
+		    ctx->start_part = rel->target;
+
+		    if (xps_doc_trace)
+			dprintf1("doc: adding fixdocseq %s\n", ctx->start_part);
+
+		    startpart = xps_find_part(ctx, rel->target);
+		    if (startpart)
+			xps_parse_metadata(ctx, startpart);
+		}
+	    }
+	}
+    }
+
+    /*
+     * Read the start part (which is a FixedDocumentSequence) if it
+     * is the current part.
+     */
+
+    if (ctx->start_part)
+    {
+	if (!strcmp(part->name, ctx->start_part))
+	{
+	    xps_parse_metadata(ctx, part);
+	}
+    }
+
+    /*
+     * Follow the FixedDocumentSequence and parse the
+     * listed FixedDocuments that we have available.
+     */
+
+    for (fixdoc = ctx->first_fixdoc; fixdoc; fixdoc = fixdoc->next)
+    {
+	xps_part_t *fixdocpart = xps_find_part(ctx, fixdoc->name);
+	if (fixdocpart)
+	{
+	    xps_parse_metadata(ctx, fixdocpart);
+	    if (!fixdocpart->complete)
+		break; /* incomplete fixdocpart, try parsing more later */
+	}
+    }
+
+    /*
+     * If we know which page part is next, check if we
+     * have all the page dependencies. If everything is
+     * ready: parse and render.
+     */
+
+    while (ctx->next_page)
+    {
+	xps_part_t *pagepart = xps_find_part(ctx, ctx->next_page->name);
+	if (pagepart && pagepart->complete)
+	{
+	    if (!pagepart->relations_complete)
+	    {
+		xps_parse_content_relations(ctx, pagepart);
+		pagepart->relations_complete = 1;
+	    }
+
+	    if (xps_validate_resources(ctx, pagepart))
+	    {
+		int code = xps_parse_fixed_page(ctx, pagepart);
+		if (code < 0)
+		    return code;
+
+		ctx->next_page = ctx->next_page->next;
+
+		xps_free_used_parts(ctx);
+
+		continue;
+	    }
+	}
+
+	break;
+    }
+
+    return 0;
 }
 
-xps_part_t *
-xps_find_part(xps_context_t *ctx, char *name)
-{
-    return xps_hash_lookup(ctx->part_table, name);
-}
+/*
+ * Prepare the part corresponding to the current
+ * ZIP entry being decompressed.
+ * Create new parts and aggregate interleaved data.
+ */
 
 static int
 xps_prepare_part(xps_context_t *ctx)
@@ -240,7 +329,7 @@ xps_prepare_part(xps_context_t *ctx)
 	if (!part)
 	    return gs_rethrow(-1, "cannot create part buffer");
 
-	ctx->last_part = part; /* make it the current part */
+	ctx->current_part = part; /* make it the current part */
     }
     else
     {
@@ -254,10 +343,10 @@ xps_prepare_part(xps_context_t *ctx)
 		return gs_throw(-1, "cannot extend part buffer");
 	}
 
-	ctx->last_part = part;
+	ctx->current_part = part;
     }
 
-    ctx->last_part->complete = last_piece;
+    ctx->current_part->complete = last_piece;
 
     /* init decompression */
     if (ctx->zip_method == 8)
@@ -282,11 +371,18 @@ xps_prepare_part(xps_context_t *ctx)
     }
 }
 
-/* return -1 = fail, 0 = need more data, 1 = finished */
+/*
+ * Call zlib to decompress the ZIP entry data.
+ * Return values:
+ *	-1 = fail
+ *	0 = need more data
+ *	1 = finished
+ */
+
 static int
-xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
+xps_process_part_data(xps_context_t *ctx, stream_cursor_read *buf)
 {
-    xps_part_t *part = ctx->last_part;
+    xps_part_t *part = ctx->current_part;
     unsigned int crc32;
     unsigned int csize;
     unsigned int usize;
@@ -304,7 +400,7 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 		return gs_throw(-1, "out of memory");
 	}
 
-	ctx->zip_stream.next_in = buf->ptr + 1;
+	ctx->zip_stream.next_in = (byte*) buf->ptr + 1; /* discard const */
 	ctx->zip_stream.avail_in = buf->limit - buf->ptr;
 	ctx->zip_stream.next_out = part->data + part->size;
 	ctx->zip_stream.avail_out = part->capacity - part->size;
@@ -372,7 +468,8 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
 
 		    if (csize == usize && usize == part->size - part->interleave - sixteen)
 		    {
-			if (crc32 == xps_crc32(0, part->data + part->interleave, part->size - part->interleave - sixteen))
+			if (crc32 == xps_crc32(0, part->data + part->interleave,
+				    part->size - part->interleave - sixteen))
 			{
 			    part->size -= sixteen;
 			    return 1;
@@ -410,6 +507,13 @@ xps_read_part(xps_context_t *ctx, stream_cursor_read *buf)
     }
 }
 
+/*
+ * Parse a cursor full of data. Read and decompress the
+ * entries in the ZIP stream into the part table.
+ * Aggregate interleaved parts at this level. When a part
+ * is completed, call xps_process_part to process it.
+ */
+
 int
 xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 {
@@ -417,9 +521,6 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
     int code;
 
     /* dprintf1("xps_process_data state=%d\n", ctx->zip_state); */
-
-    if (getenv("XPS_ZIP_TRACE"))
-	xps_zip_trace = 1;
 
     while (1)
     {
@@ -439,13 +540,10 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		signature = read4(ctx, buf);
 		if (signature == ZIP_LOCAL_FILE_SIG)
 		{
-		    if (xps_zip_trace)
-			dputs("zip: local file signature\n");
+		    /* do nothing */
 		}
 		else if (signature == ZIP_DATA_DESC_SIG)
 		{
-		    if (xps_zip_trace)
-			dputs("zip: data desc signature\n");
 		    if (ctx->zip_version >= 45)
 		    {
 			(void) read4(ctx, buf); /* crc32 */
@@ -507,7 +605,7 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 		ctx->zip_file_name[ctx->zip_name_length + 1] = 0;
 
 		if (xps_zip_trace)
-		    dprintf1("zip: entry %s\n", ctx->zip_file_name);
+		    dprintf1("zip: inflating '%s'\n", ctx->zip_file_name + 1);
 	    }
 	    ctx->zip_state ++;
 
@@ -534,7 +632,7 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 
 	    while (ctx->zip_state == 4)
 	    {
-		code = xps_read_part(ctx, buf);
+		code = xps_process_part_data(ctx, buf);
 		if (code < 0)
 		    return gs_throw(-1, "cannot read part");
 		if (code == 0)
@@ -550,12 +648,46 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 	    /* Process contents of part.
 	     * This is the entrance to the real parser.
 	     */
-	    code = xps_process_part(ctx, ctx->last_part);
+	    code = xps_process_part(ctx, ctx->current_part);
 	    if (code < 0)
 		return gs_rethrow(code, "cannot handle part");
 	}
     }
 
     return 0;
+}
+
+int
+xps_process_end_of_data(xps_context_t *ctx)
+{
+    if (xps_doc_trace)
+	dputs("doc: reached end of file; parsing remaining pages\n");
+
+    while (ctx->next_page)
+    {
+        xps_part_t *pagepart;
+	pagepart = xps_find_part(ctx, ctx->next_page->name);
+	if (!pagepart)
+	    dputs("  page part missing\n");
+	else if (!pagepart->complete)
+	    dputs("  page part incomplete\n");
+	else
+	{
+	    xps_relation_t *rel;
+	    for (rel = pagepart->relations; rel; rel = rel->next)
+	    {
+		xps_part_t *subpart = xps_find_part(ctx, rel->target);
+		if (!subpart)
+		    dprintf1("  resource '%s' missing\n", rel->target);
+		else if (!subpart->complete)
+		    dprintf1("  resource '%s' incomplete\n", rel->target);
+		// TODO: recursive resource check...
+	    }
+	}
+
+        ctx->next_page = ctx->next_page->next;
+    }
+
+    return gs_okay;
 }
 

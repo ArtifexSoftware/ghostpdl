@@ -310,7 +310,7 @@ xps_find_image_brush_source_part(xps_context_t *ctx, char *base_uri, xps_item_t 
 		profile_name, image_name);
 
     xps_absolute_path(partname, base_uri, image_name);
-    part = xps_find_part(ctx, partname);
+    part = xps_read_part(ctx, partname);
     if (!part)
 	return gs_throw1(-1, "cannot find image resource part '%s'", partname);
 
@@ -341,7 +341,7 @@ xps_parse_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, 
 
     xps_parse_tiling_brush(ctx, base_uri, dict, root, xps_paint_image_brush, part->image);
 
-    /* TODO: free the image data here if the image is only used once on the page */
+    xps_release_part(ctx, part);
 
     return 0;
 }

@@ -15,6 +15,14 @@
 
 #include "ghostxps.h"
 
+void *
+xps_realloc_imp(xps_context_t *ctx, void *ptr, int size, const char *func)
+{
+    if (!ptr)
+	return gs_alloc_bytes(ctx->memory, size, func);
+    return gs_resize_object(ctx->memory, ptr, size, func);
+}
+
 static inline int
 xps_tolower(int c)
 {

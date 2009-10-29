@@ -120,7 +120,8 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     char base_uri[1024];
     char *s;
 
-    /* dprintf1("xps: page %s\n", part->name); */
+    if (xps_doc_trace)
+	dprintf1("doc: parsing page %s\n", part->name);
 
     strcpy(base_uri, part->name);
     s = strrchr(base_uri, '/');

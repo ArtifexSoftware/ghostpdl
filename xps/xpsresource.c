@@ -72,12 +72,13 @@ xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *base_uri, char *s
 {
     char part_name[1024];
     char part_uri[1024];
+    xps_resource_t *dict;
     xps_part_t *part;
     char *s;
 
     /* External resource dictionaries MUST NOT reference other resource dictionaries */
     xps_absolute_path(part_name, base_uri, source_att);
-    part = xps_find_part(ctx, part_name);
+    part = xps_read_part(ctx, part_name);
     if (!part)
     {
 	gs_throw1(-1, "cannot find remote resource part '%s'", part_name);
@@ -105,7 +106,16 @@ xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *base_uri, char *s
     if (s)
 	s[1] = 0;
 
-    return xps_parse_resource_dictionary(ctx, part_uri, part->xml);
+    dict = xps_parse_resource_dictionary(ctx, part_uri, part->xml);
+    if (!dict)
+    {
+	gs_rethrow1(-1, "cannot parse remote resource dictionary %s", part_uri);
+	return NULL;
+    }
+
+    xps_release_part(ctx, part);
+
+    return dict;
 }
 
 xps_resource_t *

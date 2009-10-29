@@ -121,6 +121,7 @@ xps_restore_bounds(xps_context_t *ctx, gs_rect *save)
     ctx->bounds.q.y = save->q.y;
 }
 
+#if 0
 static void
 xps_debug_bounds(xps_context_t *ctx)
 {
@@ -153,6 +154,7 @@ xps_debug_bounds(xps_context_t *ctx)
 
     gs_grestore(ctx->pgs);
 }
+#endif
 
 int
 xps_unclip(xps_context_t *ctx, gs_rect *saved_bounds)

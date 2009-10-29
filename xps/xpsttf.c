@@ -21,12 +21,12 @@
  * Some extra TTF parsing magic that isn't covered by the graphics library.
  */
 
-static inline int u16(byte *p)
+static inline int u16(const byte *p)
 {
         return (p[0] << 8) | p[1];
 }
 
-static inline int u32(byte *p)
+static inline int u32(const byte *p)
 {
         return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
 }
@@ -127,8 +127,8 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
 {
     /* This funciton is copied verbatim from plfont.c */
 
-    uint table_length;
-    ulong table_offset;
+    int table_length;
+    int table_offset;
 
     ulong format;
     uint numGlyphs;
@@ -141,8 +141,8 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
 	glyph -= 29;
 	if ( glyph >= 0 && glyph < 258 )
 	{
-	    pstr->data = pl_mac_names[glyph];
-	    pstr->size = strlen(pstr->data);
+	    pstr->data = (byte*) pl_mac_names[glyph];
+	    pstr->size = strlen((char*)pstr->data);
 	    return 0;
 	}
 	else
@@ -176,9 +176,9 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
     {
 	/* Invent a name if we don't know the table format. */
 	char buf[16];
-	sprintf(buf, "glyph%d", glyph);
-	pstr->data = buf;
-	pstr->size = strlen(pstr->data);
+	sprintf(buf, "glyph%d", (int)glyph);
+	pstr->data = (byte*)buf;
+	pstr->size = strlen((char*)pstr->data);
 	return 0;
     }
 
@@ -200,15 +200,15 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
     if ( glyph_name_index < 258 )
     {
 	// dprintf2("glyph name (mac) %d = %s\n", glyph, pl_mac_names[glyph_name_index]);
-	pstr->data = pl_mac_names[glyph_name_index];
-	pstr->size = strlen(pstr->data);
+	pstr->data = (byte*) pl_mac_names[glyph_name_index];
+	pstr->size = strlen((char*)pstr->data);
 	return 0;
     }
 
     /* not mac */
     else
     {
-	char *mydata;
+	byte *mydata;
 
 	/* and here's the tricky part */
 	const byte *pascal_stringp = postp + 34 + (numGlyphs * 2);
@@ -251,10 +251,9 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
 }
 
 static int
-xps_true_callback_build_char(gs_text_enum_t *ptextenum, gs_state *pgs, gs_font *pfont,
+xps_true_callback_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	gs_char chr, gs_glyph glyph)
 {
-    gs_show_enum *penum = (gs_show_enum*)ptextenum;
     gs_font_type42 *p42 = (gs_font_type42*)pfont;
     const gs_rect *pbbox;
     float sbw[4], w2[6];
@@ -291,7 +290,7 @@ xps_true_callback_build_char(gs_text_enum_t *ptextenum, gs_state *pgs, gs_font *
 
     code = gs_type42_append(glyph, pgs,
 	    gx_current_path(pgs),
-	    ptextenum, (gs_font*)p42,
+	    (gs_text_enum_t*)penum, (gs_font*)p42,
 	    gs_show_in_charpath(penum) != cpm_show);
     if (code < 0)
 	return code;
@@ -361,12 +360,12 @@ int xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font)
 	p42->procs.build_char = xps_true_callback_build_char;
 
 	memset(p42->font_name.chars, 0, sizeof(p42->font_name.chars));
-	xps_load_sfnt_name(font, p42->font_name.chars);
-	p42->font_name.size = strlen(p42->font_name.chars);
+	xps_load_sfnt_name(font, (char*)p42->font_name.chars);
+	p42->font_name.size = strlen((char*)p42->font_name.chars);
 
 	memset(p42->key_name.chars, 0, sizeof(p42->key_name.chars));
-	strcpy(p42->key_name.chars, p42->font_name.chars);
-	p42->key_name.size = strlen(p42->key_name.chars);
+	strcpy((char*)p42->key_name.chars, (char*)p42->font_name.chars);
+	p42->key_name.size = strlen((char*)p42->key_name.chars);
 
 	/* Base font specific: */
 

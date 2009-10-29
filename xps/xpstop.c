@@ -23,6 +23,9 @@
 #include "gxht.h" /* gsht1.h is incomplete, we need storage size of gs_halftone */
 #include "gsht1.h"
 
+int xps_zip_trace = 0;
+int xps_doc_trace = 0;
+
 static int xps_install_halftone(xps_context_t *ctx, gx_device *pdevice);
 
 #define XPS_PARSER_MIN_INPUT_SIZE 8192
@@ -44,6 +47,9 @@ struct xps_interp_instance_s
     void *post_page_closure;		/* closure to call post_page_action with */
 
     xps_context_t *ctx;
+
+    FILE *tempfile;
+    char tempname[gp_file_name_sizeof];
 };
 
 /* version and build date are not currently used */
@@ -111,6 +117,7 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     ctx->pgs = pgs;
     ctx->fontdir = NULL;
     ctx->file = NULL;
+    ctx->zip_table = NULL;
 
     /* TODO: load some builtin ICC profiles here */
     ctx->gray = gs_cspace_new_DeviceGray(ctx->memory); /* profile for gray images */
@@ -128,6 +135,25 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     xps_init_font_cache(ctx);
 
     *ppinstance = (pl_interp_instance_t *)instance;
+
+    strcpy(instance->tempname, "");
+    instance->tempfile = NULL;
+
+    if (getenv("XPS_ZIP_SEEK"))
+    {
+	instance->tempfile = gp_open_scratch_file(gp_scratch_file_name_prefix,
+		instance->tempname, "wb+");
+	if (!instance->tempfile)
+	    gs_warn("cannot open temporary buffer file; switching to streaming mode");
+    }
+
+    if (xps_zip_trace)
+    {
+	if (instance->tempfile)
+	    dprintf1("zip: seek mode on temp file '%s'\n", instance->tempname);
+	else
+	    dputs("zip: feed mode on data stream\n");
+    }
 
     return 0;
 }
@@ -216,13 +242,41 @@ xps_imp_get_device_memory(pl_interp_instance_t *pinstance, gs_memory_t **ppmem)
     return 0;
 }
 
+/* Parse an entire random access file */
+static int
+xps_imp_process_file(pl_interp_instance_t *pinstance, FILE *file)
+{
+    xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
+    xps_context_t *ctx = instance->ctx;
+    int code;
+
+    code = xps_process_file(ctx, file);
+    if (code)
+	gs_catch(code, "cannot process xps file");
+
+    return code;
+}
+
 /* Parse a cursor-full of data */
 static int
 xps_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *pcursor)
 {
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     xps_context_t *ctx = instance->ctx;
-    return xps_process_data(ctx, pcursor);
+    int code;
+
+    if (instance->tempfile)
+    {
+	fwrite(pcursor->ptr + 1, pcursor->limit - pcursor->ptr, 1, instance->tempfile);
+	pcursor->ptr = pcursor->limit;
+	return 0;
+    }
+
+    code = xps_process_data(ctx, pcursor);
+    if (code < 0)
+	gs_catch(code, "cannot process xps data");
+
+    return code;
 }
 
 /* Skip to end of job.
@@ -240,6 +294,23 @@ xps_imp_flush_to_eoj(pl_interp_instance_t *pinstance, stream_cursor_read *pcurso
 static int
 xps_imp_process_eof(pl_interp_instance_t *pinstance)
 {
+    xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
+    xps_context_t *ctx = instance->ctx;
+    int code;
+
+    if (instance->tempfile)
+    {
+	xps_imp_process_file(pinstance, instance->tempfile);
+	fclose(instance->tempfile);
+	unlink(instance->tempname);
+    }
+    else
+    {
+	code = xps_process_end_of_data(ctx);
+	if (code)
+	    gs_catch(code, "cannot process xps file");
+    }
+
     return 0;
 }
 
@@ -261,9 +332,14 @@ xps_imp_init_job(pl_interp_instance_t *pinstance)
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     xps_context_t *ctx = instance->ctx;
 
+    if (gs_debug_c('|'))
+	xps_zip_trace = 1;
+    if (gs_debug_c('|'))
+	xps_doc_trace = 1;
+
     ctx->part_table = xps_hash_new(ctx);
-    ctx->first_part = NULL;
-    ctx->last_part = NULL;
+    ctx->part_list = NULL;
+    ctx->current_part = NULL;
 
     ctx->start_part = NULL;
 
@@ -286,44 +362,14 @@ xps_imp_dnit_job(pl_interp_instance_t *pinstance)
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     xps_context_t *ctx = instance->ctx;
 
-    while (ctx->next_page)
-    {
-        xps_part_t *pagepart;
-	pagepart = xps_find_part(ctx, ctx->next_page->name);
-	if (!pagepart)
-	    dputs("  page part missing\n");
-	else if (!pagepart->complete)
-	    dputs("  page part incomplete\n");
-	else
-	{
-	    xps_relation_t *rel;
-	    for (rel = pagepart->relations; rel; rel = rel->next)
-	    {
-		xps_part_t *subpart = xps_find_part(ctx, rel->target);
-		if (!subpart)
-		    dprintf1("  resource '%s' missing\n", rel->target);
-		else if (!subpart->complete)
-		    dprintf1("  resource '%s' incomplete\n", rel->target);
-		// TODO: recursive resource check...
-	    }
-	}
-
-        ctx->next_page = ctx->next_page->next;
-    }
-
-    if (getenv("XPS_DEBUG_PARTS"))
+    if (gs_debug_c('|'))
         xps_debug_parts(ctx);
-    if (getenv("XPS_DEBUG_TYPES"))
-    {
-        xps_debug_type_map(ctx, "Default", ctx->defaults);
-        xps_debug_type_map(ctx, "Override", ctx->overrides);
-    }
-    if (getenv("XPS_DEBUG_PAGES"))
+    if (gs_debug_c('|'))
         xps_debug_fixdocseq(ctx);
 
     /* Free XPS parsing stuff */
     {
-	xps_part_t *part = ctx->first_part;
+	xps_part_t *part = ctx->part_list;
 	while (part)
 	{
 	    xps_part_t *next = part->next;
@@ -331,27 +377,13 @@ xps_imp_dnit_job(pl_interp_instance_t *pinstance)
 	    part = next;
 	}
 
-	ctx->first_part = NULL;
-	ctx->last_part = NULL;
-
 	xps_hash_free(ctx, ctx->part_table);
 	ctx->part_table = NULL;
+	ctx->part_list = NULL;
+	ctx->current_part = NULL;
 
 	xps_free_fixed_pages(ctx);
 	xps_free_fixed_documents(ctx);
-
-        if (ctx->overrides)
-	    xps_free_type_map(ctx, ctx->overrides);
-	ctx->overrides = NULL;
-        if (ctx->defaults)
-	    xps_free_type_map(ctx, ctx->defaults);
-	ctx->defaults = NULL;
-    }
-
-    if (ctx->file)
-    {
-	fclose(ctx->file);
-	ctx->file = NULL;
     }
 
     return 0;
@@ -476,7 +508,7 @@ identity_transfer(floatp tint, const gx_transfer_map *ignore_map)
 
 /* The following is a 45 degree spot screen with the spots enumerated
  * in a defined order. */
-static const byte order16x16[256] = {
+static byte order16x16[256] = {
     38, 11, 14, 32, 165, 105, 90, 171, 38, 12, 14, 33, 161, 101, 88, 167,
     30, 6, 0, 16, 61, 225, 231, 125, 30, 6, 1, 17, 63, 222, 227, 122,
     27, 3, 8, 19, 71, 242, 205, 110, 28, 4, 9, 20, 74, 246, 208, 106,

@@ -29,7 +29,7 @@ struct xps_parser_s
     xps_context_t *ctx;
     xps_item_t *root;
     xps_item_t *head;
-    const char *error;
+    char *error;
     int compat;
     char *base; /* base of relative URIs */
 };
@@ -51,7 +51,7 @@ static char *skip_namespace(char *s)
     return s;
 }
 
-static void on_open_tag(void *zp, const char *ns_name, const char **atts)
+static void on_open_tag(void *zp, char *ns_name, char **atts)
 {
     xps_parser_t *parser = zp;
     xps_context_t *ctx = parser->ctx;
@@ -155,7 +155,7 @@ static void on_open_tag(void *zp, const char *ns_name, const char **atts)
     parser->head = item;
 }
 
-static void on_close_tag(void *zp, const char *name)
+static void on_close_tag(void *zp, char *name)
 {
     xps_parser_t *parser = zp;
 
@@ -171,7 +171,7 @@ static inline int is_xml_space(int c)
     return c == ' ' || c == '\t' || c == '\r' || c == '\n';
 }
 
-static void on_text(void *zp, const char *buf, int len)
+static void on_text(void *zp, char *buf, int len)
 {
     xps_parser_t *parser = zp;
     xps_context_t *ctx = parser->ctx;
@@ -214,7 +214,7 @@ xps_process_compatibility(xps_context_t *ctx, xps_item_t *root)
 }
 
 xps_item_t *
-xps_parse_xml(xps_context_t *ctx, char *buf, int len)
+xps_parse_xml(xps_context_t *ctx, byte *buf, int len)
 {
     xps_parser_t parser;
     XML_Parser xp;
@@ -235,11 +235,11 @@ xps_parse_xml(xps_context_t *ctx, char *buf, int len)
 
     XML_SetUserData(xp, &parser);
     XML_SetParamEntityParsing(xp, XML_PARAM_ENTITY_PARSING_NEVER);
-    XML_SetStartElementHandler(xp, on_open_tag);
-    XML_SetEndElementHandler(xp, on_close_tag);
-    XML_SetCharacterDataHandler(xp, on_text);
+    XML_SetStartElementHandler(xp, (XML_StartElementHandler)on_open_tag);
+    XML_SetEndElementHandler(xp, (XML_EndElementHandler)on_close_tag);
+    XML_SetCharacterDataHandler(xp, (XML_CharacterDataHandler)on_text);
 
-    code = XML_Parse(xp, buf, len, 1);
+    code = XML_Parse(xp, (char*)buf, len, 1);
     if (code == 0)
     {
 	if (parser.root)
@@ -276,7 +276,7 @@ xps_tag(xps_item_t *item)
 }
 
 char *
-xps_att(xps_item_t *item, const char *att)
+xps_att(xps_item_t *item, char *att)
 {
     int i;
     for (i = 0; item->atts[i]; i += 2)

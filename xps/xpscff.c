@@ -757,10 +757,9 @@ xps_cff_append(gs_state *pgs, gs_font_type1 *pt1, gs_glyph glyph, int donthint)
 }
 
 static int
-xps_post_callback_build_char(gs_text_enum_t *ptextenum, gs_state *pgs,
+xps_post_callback_build_char(gs_show_enum *penum, gs_state *pgs,
 	gs_font *pfont, gs_char chr, gs_glyph glyph)
 {
-    gs_show_enum *penum = (gs_show_enum*)ptextenum;
     gs_font_type1 *pt1 = (gs_font_type1*)pfont;
     const gs_rect *pbbox;
     float w2[6];
@@ -874,8 +873,8 @@ xps_init_postscript_font(xps_context_t *ctx, xps_font_t *font)
     pt1->procs.next_char_glyph = gs_default_next_char_glyph;
     pt1->procs.build_char = xps_post_callback_build_char;
 
-    strcpy(pt1->font_name.chars, "PostScriptFont");
-    pt1->font_name.size = strlen(pt1->font_name.chars);
+    strcpy((char*)pt1->font_name.chars, "PostScriptFont");
+    pt1->font_name.size = strlen((char*)pt1->font_name.chars);
 
     pt1->key_name.size = 0;
 

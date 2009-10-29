@@ -109,18 +109,6 @@ xps_deobfuscate_font_resource(xps_context_t *ctx, xps_part_t *part)
 	part->data[i+16] ^= key[15-i];
     }
 
-    if (getenv("XPS_SAVE_FONTS"))
-    {
-	static int id = 0;
-	char buf[25];
-	FILE *fp;
-	sprintf(buf, "font%d.otf", id++);
-	dprintf1("saving font data to %s\n", buf);
-	fp = fopen(buf, "wb");
-	fwrite(part->data, part->size, 1, fp);
-	fclose(fp);
-    }
-
     return 0;
 }
 
@@ -497,7 +485,6 @@ xps_parse_glyphs(xps_context_t *ctx,
     xps_font_t *font;
 
     char partname[1024];
-    char *parttype;
     char *subfont;
 
     gs_matrix matrix;
@@ -578,23 +565,17 @@ xps_parse_glyphs(xps_context_t *ctx,
 	subfontid = atoi(subfont + 1);
 	*subfont = 0;
     }
-    part = xps_find_part(ctx, partname);
+    part = xps_read_part(ctx, partname);
     if (!part)
 	return gs_throw1(-1, "cannot find font resource part '%s'", partname);
 
     /* deobfuscate if necessary */
     if (!part->deobfuscated)
     {
-	parttype = xps_get_content_type(ctx, part->name);
-	if (parttype && !strcmp(parttype, "application/vnd.ms-package.obfuscated-opentype"))
+	if (strstr(part->name, ".odttf"))
 	    xps_deobfuscate_font_resource(ctx, part);
-
-	/* stupid XPS files with content-types after the parts */
-	if (!parttype && strstr(part->name, ".odttf"))
+	if (strstr(part->name, ".ODTTF"))
 	    xps_deobfuscate_font_resource(ctx, part);
-	if (!parttype && strstr(part->name, ".ODTTF"))
-	    xps_deobfuscate_font_resource(ctx, part);
-
 	part->deobfuscated = 1;
     }
 
@@ -697,6 +678,8 @@ xps_parse_glyphs(xps_context_t *ctx,
     {
 	xps_unclip(ctx, &saved_bounds);
     }
+
+    xps_release_part(ctx, part);
 
     return 0;
 }

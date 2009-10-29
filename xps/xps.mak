@@ -64,6 +64,9 @@ $(XPSOBJ)xpshdp.$(OBJ): $(XPSSRC)xpshdp.c $(XPSINCLUDES)
 $(XPSOBJ)xpszip.$(OBJ): $(XPSSRC)xpszip.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpszip.c $(XPSO_)xpszip.$(OBJ)
 
+$(XPSOBJ)xpszipseek.$(OBJ): $(XPSSRC)xpszipseek.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xpszipseek.c $(XPSO_)xpszipseek.$(OBJ)
+
 $(XPSOBJ)xpsxml.$(OBJ): $(XPSSRC)xpsxml.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpsxml.c $(XPSO_)xpsxml.$(OBJ)
 
@@ -130,6 +133,7 @@ XPS_OBJS=\
     $(XPSOBJ)xpstiff.$(OBJ) \
     $(XPSOBJ)xpshdp.$(OBJ) \
     $(XPSOBJ)xpszip.$(OBJ) \
+    $(XPSOBJ)xpszipseek.$(OBJ) \
     $(XPSOBJ)xpsxml.$(OBJ) \
     $(XPSOBJ)xpsdoc.$(OBJ) \
     $(XPSOBJ)xpspage.$(OBJ) \

@@ -18,6 +18,11 @@
 #include "stream.h"
 #include "strimpl.h"
 #include "gsstate.h"
+
+/* silence a warning where #if SHARE_LIBPNG is used when it's undefined */
+#ifndef SHARE_LIBPNG
+#define SHARE_LIBPNG 0
+#endif
 #include "png_.h"
 
 /*
