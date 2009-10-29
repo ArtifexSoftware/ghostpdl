@@ -244,7 +244,6 @@ typedef struct clist_icctable_entry_s clist_icctable_entry_t;
 struct clist_icctable_entry_s {
 
     clist_icc_serial_entry_t serial_data;
-    bool written;
     clist_icctable_entry_t *next;  /* The next entry in the table */   
 
 };
@@ -337,7 +336,10 @@ struct gx_device_clist_writer_s {
                                            routines, this is the logical place to put this
                                            information */
     clist_icctable_t *icc_table;           /* Table that keeps track of ICC profiles.  It 
-                                              relates the hashcode to the psuedoband location */
+                                              relates the hashcode to the cfile file location.
+                                              I did not put this into gx_device_clist_common_members
+                                              since I dont see where those pointers are ever defined
+                                              for GC. */
 
 };
 
@@ -375,6 +377,11 @@ typedef struct gx_device_clist_reader_s {
     byte *main_thread_data;		/* saved data pointer of main thread */
     int curr_render_thread;		/* index into array */
     int thread_lookahead_direction;	/* +1 or -1 */
+    clist_icctable_t *icc_table;           /* Table that keeps track of ICC profiles.  It 
+                                              relates the hashcode to the cfile file location.
+                                              I did not put this into gx_device_clist_common_members
+                                              since I dont see where those pointers are ever defined
+                                              for GC. */
 } gx_device_clist_reader;
 
 union gx_device_clist_s {
@@ -492,20 +499,22 @@ int clist_get_data(const gx_device_clist *cdev, int select, int offset, byte *bu
 /* Put command list data. */
 int clist_put_data(const gx_device_clist *cdev, int select, int offset, const byte *buf, int length);
 
-
 /* ICC table prototypes */
 
 /* Write out the table of profile entries */
-int clist_writeprofiletable(gx_device_clist_writer *cldev);
+int clist_icc_writetable(gx_device_clist_writer *cldev);
 
 /* Write out the profile to the clist */
-int64_t clist_addprofile(gx_device_clist_writer *cdev, cmm_profile_t *iccprofile);
+int64_t clist_icc_addprofile(gx_device_clist_writer *cdev, cmm_profile_t *iccprofile, int *iccsize);
 
 /* Seach the table to see if we already have a profile in the cfile */
-int64_t clist_search_icctable(gx_device_clist_writer *cdev, int64_t hashcode);
+int64_t clist_icc_searchtable(gx_device_clist_writer *cdev, int64_t hashcode);
 
-/* Add an another ICC profile */
-int clist_addentry_icctable(gx_device_clist_writer *cdev, int64_t hashcode, int64_t position);
+/* Add another entry into the icc profile table */
+int clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode, int64_t position, int size);
+
+/* Free the table and its entries */
+int clist_icc_freetable(clist_icctable_t *icc_table, gs_memory_t *memory);
 
 /* Exports from gxclread used by the multi-threading logic */
 

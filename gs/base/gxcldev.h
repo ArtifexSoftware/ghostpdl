@@ -744,7 +744,7 @@ int clist_writer_check_empty_cropping_stack(gx_device_clist_writer *cdev);
 
 /* Special write out for the serialized icc profile table */
 
-int cmd_write_icc_table(gx_device_clist_writer * cldev, unsigned char *pbuf, int data_size);
+int cmd_write_icctable(gx_device_clist_writer * cldev, unsigned char *pbuf, int data_size);
 
 /* Enumeration of psuedo band offsets for extra c-list data.
    This includes the ICC profile table and may later include

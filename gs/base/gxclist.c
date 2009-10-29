@@ -30,6 +30,12 @@
 extern dev_proc_open_device(pattern_clist_open_device);
 
 /* GC information */
+/*  Where is the GC information for the common objects that are
+    shared between the reader and writer.  I see pointers in
+    there, but they don't seem to be GC.  This is why I have
+    put the icc_table in the reader and the writer rather than
+    the common */
+
 extern_st(st_imager_state);
 static
 ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
@@ -60,10 +66,13 @@ ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
          * runs under gdev_prn_output_page which is an atomic function of the
          * interpreter. We do this as this situation may change in the future.
          */
+
         if (index == 0)
             return ENUM_OBJ(cdev->reader.band_complexity_array);
         else if (index == 1)
 	    return ENUM_OBJ(cdev->reader.offset_map);
+        else if (index == 2)
+            return ENUM_OBJ(cdev->reader.icc_table);
 	else
             return 0;
     }
@@ -89,6 +98,8 @@ RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
          */
         RELOC_VAR(cdev->reader.band_complexity_array);
         RELOC_VAR(cdev->reader.offset_map);
+        RELOC_VAR(cdev->reader.icc_table);
+
     }
 } RELOC_PTRS_END
 public_st_device_clist();
@@ -738,8 +749,15 @@ clist_end_page(gx_device_clist_writer * cldev)
 
     if ( cldev->icc_table != NULL ) {
 
-        code = clist_writeprofiletable(cldev);
-        
+        /* Save the table */
+
+        code = clist_icc_writetable(cldev);
+
+        /* Free the table */
+
+        clist_icc_freetable(cldev->icc_table, cldev->memory);
+        cldev->icc_table = NULL;
+
     }
 
     code = cmd_write_buffer(cldev, cmd_opv_end_page);
@@ -954,7 +972,7 @@ clist_copy_band_complexity(gx_band_complexity_t *this, const gx_band_complexity_
 /* This checks the table for a hash code entry */
 
 int64_t 
-clist_search_icctable(gx_device_clist_writer *cdev, int64_t hashcode)
+clist_icc_searchtable(gx_device_clist_writer *cdev, int64_t hashcode)
 {
     clist_icctable_t *icc_table = cdev->icc_table;
     clist_icctable_entry_t *curr_entry;
@@ -979,10 +997,39 @@ clist_search_icctable(gx_device_clist_writer *cdev, int64_t hashcode)
      return(-1);  /* No entry */
 }
 
+/* Free the table */
+
+int 
+clist_icc_freetable(clist_icctable_t *icc_table, gs_memory_t *memory)
+{
+
+    int number_entries;
+    clist_icctable_entry_t *curr_entry, *next_entry;
+    int k;
+
+    if (icc_table == NULL)
+        return(0);
+
+    number_entries = icc_table->tablesize;
+    curr_entry = icc_table->head;
+
+    for (k = 0; k < number_entries; k++) {
+
+        next_entry = curr_entry->next;
+        gs_free_object(memory, curr_entry, "clist_icc_freetable");
+        curr_entry = next_entry;
+
+    }
+
+    gs_free_object(memory, icc_table, "clist_icc_freetable");
+
+}
+
+
 /* This serializes the ICC table and writes it out for maxband+1 */
 
 int
-clist_writeprofiletable(gx_device_clist_writer *cldev)
+clist_icc_writetable(gx_device_clist_writer *cldev)
 {
 
     unsigned char *pbuf, *buf;
@@ -992,12 +1039,11 @@ clist_writeprofiletable(gx_device_clist_writer *cldev)
     clist_icctable_entry_t *curr_entry;
     int size_data;
 
-
     /* First serialize the data */
 
     size_data = number_entries*sizeof(clist_icc_serial_entry_t) + sizeof(number_entries);
 
-    buf = gs_alloc_bytes(cldev->memory, size_data, "clist_writeprofiletable");
+    buf = gs_alloc_bytes(cldev->memory, size_data, "clist_icc_writetable");
 
     if (buf == NULL)
         return gs_rethrow(-1, "insufficient memory for icc table buffer");
@@ -1019,9 +1065,9 @@ clist_writeprofiletable(gx_device_clist_writer *cldev)
 
     /* Now go ahead and put it out */
 
-    cmd_write_icc_table(cldev, pbuf, size_data);
+    cmd_write_icctable(cldev, buf, size_data);
 
-    gs_free_object(cldev->memory, buf, "clist_writeprofiletable");
+    gs_free_object(cldev->memory, buf, "clist_icc_writetable");
 
     return(0);
 
@@ -1030,13 +1076,13 @@ clist_writeprofiletable(gx_device_clist_writer *cldev)
 /* This write the actual data out to the cfile */
 
 int64_t
-clist_addprofile(gx_device_clist_writer *cldev, cmm_profile_t *iccprofile)
+clist_icc_addprofile(gx_device_clist_writer *cldev, cmm_profile_t *iccprofile, int *size)
 {
     
     clist_file_ptr cfile = cldev->page_cfile;
     int64_t fileposit;
     gsicc_serialized_profile_t profile_data;
-    int count;
+    int count1, count2;
 
     /* Get the current position */
     fileposit = cldev->page_info.io_procs->ftell(cfile);
@@ -1047,13 +1093,15 @@ clist_addprofile(gx_device_clist_writer *cldev, cmm_profile_t *iccprofile)
 
     /* Write the header */
 
-    count = cldev->page_info.io_procs->fwrite_chars(&profile_data, sizeof(cmm_profile_t), cfile);
+    count1 = cldev->page_info.io_procs->fwrite_chars(&profile_data, sizeof(cmm_profile_t), cfile);
 
     /* Now write the profile */
 
-    count = cldev->page_info.io_procs->fwrite_chars(iccprofile->buffer, iccprofile->buffer_size, cfile);
+    count2 = cldev->page_info.io_procs->fwrite_chars(iccprofile->buffer, iccprofile->buffer_size, cfile);
 
     /* Return where we wrote this in the cfile */
+
+    *size = count1 + count2;
 
     return(fileposit);
 }
@@ -1061,19 +1109,18 @@ clist_addprofile(gx_device_clist_writer *cldev, cmm_profile_t *iccprofile)
 /* This add a new entry into the table */
 
 int
-clist_addentry_icctable(gx_device_clist_writer *cdev, int64_t hashcode, int64_t position)
+clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode, int64_t position, int size)
 {
 
     clist_icctable_entry_t *entry = gs_alloc_struct(cdev->memory, 
 		clist_icctable_entry_t,
-		&st_clist_icctable_entry, "clist_addentry_icctable");
+		&st_clist_icctable_entry, "clist_icc_addentry");
 
     clist_icctable_t *icc_table = cdev->icc_table;
 
     entry->next = NULL;
     entry->serial_data.hashcode = hashcode;
-    entry->written = false;
-    entry->serial_data.size = 0;
+    entry->serial_data.size = size;
     entry->serial_data.file_position = position;
 
     if (entry == NULL) 
@@ -1083,7 +1130,7 @@ clist_addentry_icctable(gx_device_clist_writer *cdev, int64_t hashcode, int64_t 
 
         icc_table = gs_alloc_struct(cdev->memory, 
 		clist_icctable_t,
-		&st_clist_icctable, "clist_addentry_icctable");
+		&st_clist_icctable, "clist_icc_addentry");
 
         if (icc_table == NULL) 
             return gs_rethrow(-1, "insufficient memory to allocate icc table");

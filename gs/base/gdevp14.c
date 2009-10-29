@@ -51,6 +51,7 @@
 #include "gxpaint.h"
 #include "gsiccmanage.h"
 #include "gsicccache.h"
+#include "gxclist.h"
 
 /* Visual  trace options : set one to 1. */
 #define VD_PAINT_MASK 0
@@ -4378,6 +4379,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
     uint mask_id = 0;
     int code;
     int64_t icc_position = 0;
+    int icc_size;
 
     *pbuf++ = opcode;			/* 1 byte */
     switch (opcode) {
@@ -4426,14 +4428,14 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
                 
                     /* If no, check if it is already in the ICC clist table */
 
-                    icc_position = clist_search_icctable(cdev, pparams->iccprofile->hashcode);
+                    icc_position = clist_icc_searchtable(cdev, pparams->iccprofile->hashcode);
                    
                     if (icc_position < 0) {
 
                         /* Add it to the table and write out to the cfile */
 
-                        icc_position = clist_addprofile(cdev, pparams->iccprofile);  
-                        clist_addentry_icctable(cdev, pparams->iccprofile->hashcode, icc_position);
+                        icc_position = clist_icc_addprofile(cdev, pparams->iccprofile, &icc_size);  
+                        clist_icc_addentry(cdev, pparams->iccprofile->hashcode, icc_position, icc_size);
                         put_value(pbuf, icc_position);
 
                     } else {

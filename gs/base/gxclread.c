@@ -41,6 +41,9 @@
 /* forward decl */
 static int gx_clist_reader_read_band_complexity(gx_device_clist *dev);
 
+private_st_clist_icctable_entry();
+private_st_clist_icctable();
+
 /* ------ Band file reading stream ------ */
 
 #ifdef DEBUG
@@ -351,11 +354,170 @@ clist_close_writer_and_init_reader(gx_device_clist *cldev)
     return code;
 }
 
+/* Used to find the command block information in the bfile
+   that is related to extra information stored in a psuedo band.
+   Currently application of this is storage of the ICC profile
+   table.  We may eventually use this for storing other information
+   like compressed images.   */
+
+static int
+clist_find_pseudoband(gx_device_clist_reader *crdev, int band, cmd_block *cb)
+{
+
+    clist_file_ptr bfile = crdev->page_info.bfile;
+    int64_t save_pos = crdev->page_info.bfile_end_pos;
+    int max_band = crdev->nbands;
+    int64_t start_pos;
+
+    /* Go to the start of the last command block */
+
+    start_pos = crdev->page_info.bfile_end_pos - sizeof(cmd_block);
+    crdev->page_info.io_procs->fseek(bfile, start_pos, SEEK_SET, crdev->page_info.bfname);
+
+    while( 1 ) {
+
+        crdev->page_info.io_procs->fread_chars(cb, sizeof(cmd_block), bfile);
+
+        if (cb->band_max == band && cb->band_min == band) {
+
+            crdev->page_info.io_procs->fseek(bfile, save_pos, SEEK_SET, crdev->page_info.bfname);
+            return(0);  /* Found it */
+            
+        } 
+
+        start_pos -= sizeof(cmd_block);
+
+        if (start_pos < 0) {
+
+           crdev->page_info.io_procs->fseek(bfile, save_pos, SEEK_SET, crdev->page_info.bfname);
+           return(-1);  /* Did not find it before getting into other stuff in normal bands */
+
+        }
+
+        crdev->page_info.io_procs->fseek(bfile, start_pos, SEEK_SET, crdev->page_info.bfname);
+
+    }
+    
+}
+
+/* Unserialize the icc table information stored in the cfile and
+   place it in the reader device */
+
+static int
+clist_unserialize_icctable(gx_device_clist_reader *crdev, cmd_block *cb)
+{
+    clist_file_ptr cfile = crdev->page_info.cfile;
+    clist_icctable_t *icc_table = crdev->icc_table;
+    int64_t save_pos;
+    int number_entries, size_data;
+    unsigned char *buf;
+    clist_icctable_entry_t *curr_entry;
+    int k;
+
+    if ( icc_table != NULL ) 
+        return(0);
+
+    save_pos = crdev->page_info.io_procs->ftell(cfile);
+
+    crdev->page_info.io_procs->fseek(cfile, cb->pos, SEEK_SET, crdev->page_info.cfname);
+
+    /* First four bytes tell us the number of entries */
+
+    crdev->page_info.io_procs->fread_chars(&number_entries, sizeof(number_entries), cfile);
+
+    /* Allocate the space */
+
+    size_data = number_entries*sizeof(clist_icc_serial_entry_t);
+
+    buf = gs_alloc_bytes(crdev->memory, size_data, "clist_read_icctable");
+
+    if (buf == NULL)
+        return gs_rethrow(-1, "insufficient memory for icc table buffer reader");
+
+    crdev->page_info.io_procs->fread_chars(buf, size_data, cfile);
+
+    icc_table = gs_alloc_struct(crdev->memory, 
+		clist_icctable_t,
+		&st_clist_icctable, "clist_read_icctable");
+
+    if (icc_table == NULL)
+        return gs_rethrow(-1, "insufficient memory for icc table buffer reader");
+
+    icc_table->head = NULL;
+    icc_table->final = NULL;
+
+   /* Allocate and fill each entry */
+    icc_table->tablesize = number_entries;
+    crdev->icc_table = icc_table;
+
+    for (k = 0; k < number_entries; k++) {
+
+        curr_entry = gs_alloc_struct(crdev->memory, 
+		clist_icctable_entry_t,
+		&st_clist_icctable_entry, "clist_read_icctable");
+
+        if (curr_entry == NULL)
+            return gs_rethrow(-1, "insufficient memory for icc table entry");
+
+        memcpy(&(curr_entry->serial_data), buf, sizeof(clist_icc_serial_entry_t));
+        buf += sizeof(clist_icc_serial_entry_t);
+
+        if ( icc_table->head == NULL ) {
+
+            icc_table->head = curr_entry;
+            icc_table->final = curr_entry;
+
+        } else {
+
+            icc_table->final->next = curr_entry;
+            icc_table->final = curr_entry;
+
+        }
+
+        curr_entry->next = NULL;
+
+    }
+
+    crdev->page_info.io_procs->fseek(cfile, save_pos, SEEK_SET, crdev->page_info.cfname);
+
+    return(0);
+
+}
+
+/* Get the ICC profile table information from the clist */
+
+static int
+clist_read_icctable(gx_device_clist_reader *crdev)
+{
+    
+    /* Look for the command block of the ICC Profile. */
+
+    cmd_block cb;
+    int code;
+
+    /* First get the command block which will tell us where the 
+       information is stored in the cfile */
+
+    code = clist_find_pseudoband(crdev, crdev->nbands + ICC_BAND_OFFSET - 1, &cb);
+
+    if (code < 0)
+        return(0);   /* No ICC information */
+
+    /* Unserialize the icc_table from the cfile */
+
+    code = clist_unserialize_icctable(crdev, &cb);
+
+    return(code);
+
+}
+
+
 /* Initialize for reading. */
 int
 clist_render_init(gx_device_clist *dev)
 {
     gx_device_clist_reader * const crdev = &dev->reader;
+    int code;
 
     crdev->ymin = crdev->ymax = 0;
     crdev->yplane.index = -1;
@@ -364,8 +526,18 @@ clist_render_init(gx_device_clist *dev)
     crdev->num_pages = 0;
     crdev->band_complexity_array = NULL;
     crdev->offset_map = NULL;
+    crdev->icc_table = NULL;
     crdev->render_threads = NULL;
-    return gx_clist_reader_read_band_complexity(dev);
+
+    code = gx_clist_reader_read_band_complexity(dev);
+    if (code < 0)
+        return(code);
+
+     /* Check for and get ICC profile table */
+
+    code = clist_read_icctable(crdev);
+
+    return code;
 }
 
 
