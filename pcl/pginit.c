@@ -116,13 +116,7 @@ hpgl_do_reset(
                                      pcs->memory,
                                      "hpgl_do_reset polygon buffer"
                                      );
-
-	    /*
-             * HAS This is required for GL/2 but probably should
-             * be maintained locally in gl/2's state machinery
-             */
 	    gs_setlimitclamp(pcs->pgs, true);
-	    gs_setcurvejoin(pcs->pgs, gs_join_bevel);
 	} else
             gx_path_new(&pcs->g.polygon.buffer.path);
 

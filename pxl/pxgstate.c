@@ -262,7 +262,6 @@ px_initgraphics(px_state_t *pxs)
 	  /* We need the H-P interpretation of zero-length lines */
 	  /* and of using bevel joins for the segments of flattened curves. */
 	  gs_setdotlength(pgs, 72.0 / 300, true);
-          gs_setcurvejoin(pgs, gs_join_bevel);
 	}
 	/* we always clamp coordinates hp does not seem to report
            limit checks in paths */
