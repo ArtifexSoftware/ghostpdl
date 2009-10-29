@@ -1,7 +1,5 @@
 # Build specification for the 'jam' tool
 
-include $(HOME)/.jamrules ;
-
 OPTIM = -g -O2 ;
 CCFLAGS = -Wall ;
 
