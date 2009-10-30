@@ -155,7 +155,7 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 				break;
                         case 'v':
                                 if (optarg) params->verbose = atoi(optarg);
-                                else params->verbose = 9;
+                                else params->verbose = 2;
                                 break;
 			case 'h':
 			case '?':
