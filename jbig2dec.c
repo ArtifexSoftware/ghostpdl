@@ -215,7 +215,7 @@ print_usage (void)
     "    -d --dump      print the structure of the jbig2 file\n"
     "                   rather than explicitly decoding\n"
     "       --version   program name and version information\n"
-    "       --hash      print a hash of the decode document\n"
+    "       --hash      print a hash of the decoded document\n"
     "    -o <file>      send decoded output to <file>\n"
     "                   Defaults to the the input with a different\n"
     "                   extension. Pass '-' for stdout.\n"
