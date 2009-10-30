@@ -162,8 +162,8 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 				params->mode = usage;
                                 break;
                         case 'V':
-                                /* the GNU Coding Standards suggest --version should
-                                   override all other options */
+                                /* the GNU Coding Standards suggest --version
+                                   should override all other options */
                                 print_version();
                                 exit(0);
                                 break;
