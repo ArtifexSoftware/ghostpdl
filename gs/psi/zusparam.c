@@ -500,6 +500,89 @@ set_proof_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 
 }
 
+/* No default for the deviceN profile. */
+
+static void
+current_default_devicen_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    static const char *const rfs = "NULL";
+    pval->data = (const byte *)rfs;
+    pval->size = strlen(rfs);
+    pval->persistent = true;
+}
+
+static int
+set_devicen_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    int code;
+    char *pname, *pstr, *pstrend;
+    int namelen = (pval->size)+1;
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+    gs_memory_t *mem = pis->memory; 
+
+
+    /* Check if it was "NULL" */
+
+    if( !gs_param_string_eq(pval,"NULL") ){
+
+        /* The DeviceN name can have multiple files 
+           in it.  This way we can define all the 
+           DeviceN color spaces with ICC profiles.
+           divide using , and ; delimeters as well as 
+           remove leading and ending spaces (file names
+           can have internal spaces). */
+
+        pname = gs_alloc_bytes(mem, namelen,
+		   		     "set_devicen_profile_icc");
+
+        memcpy(pname,pval->data,namelen-1);
+        pname[namelen-1] = 0;
+
+        pstr = strtok(pname, ",;");
+        while (pstr != NULL) {
+
+            namelen = strlen(pstr);
+
+            /* Remove leading and trailing spaces from the name */
+
+            while ( namelen > 0 && pstr[0] == 0x20) {
+                pstr++;
+                namelen--;
+            }
+
+            namelen = strlen(pstr);
+            pstrend = &(pstr[namelen-1]);
+
+            while ( namelen > 0 && pstrend[0] == 0x20) {
+                pstrend--;
+                namelen--;
+            }
+           
+            code = gsicc_set_profile(pis, (const char*) pstr, namelen, DEVICEN_TYPE);
+
+            if (code < 0)
+                return gs_rethrow(code, "cannot find devicen icc profile");
+
+            pstr = strtok(NULL, ",;");
+
+
+        }
+
+        gs_free_object(mem, pname,
+        "set_devicen_profile_icc");
+
+         return(code);
+
+    }
+
+    return(0);
+
+}
+
+
+
+
+
 static void
 current_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
@@ -821,7 +904,8 @@ static const string_param_def_t user_string_params[] =
     {"NamedProfile", current_default_named_icc, set_named_profile_icc},
     {"DeviceLinkProfile", current_default_link_icc, set_link_profile_icc},
     {"ICCProfilesDir", current_default_dir_icc, set_icc_directory}, 
-    {"LabProfile", current_default_lab_icc, set_default_lab_icc} 
+    {"LabProfile", current_default_lab_icc, set_default_lab_icc},
+    {"DeviceNProfile", current_default_devicen_icc, set_devicen_profile_icc} 
 
 };
 

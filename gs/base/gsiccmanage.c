@@ -42,7 +42,14 @@ gs_private_st_ptrs2(st_gsicc_profile, cmm_profile_t, "gsicc_profile",
 gs_private_st_ptrs9(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
 		    gsicc_manager_enum_ptrs, gsicc_manager_profile_reloc_ptrs,
 		    device_profile, device_named, default_gray, default_rgb,
-                    default_cmyk, proof_profile, output_link, lab_profile, profiledir); 
+                    default_cmyk, proof_profile, output_link, lab_profile, profiledir,
+                    device_n); 
+
+gs_private_st_ptrs2(st_gsicc_devicen, gsicc_devicen_t, "gsicc_devicen",
+		gsicc_devicen_enum_ptrs, gsicc_devicen_reloc_ptrs, head, final);
+
+gs_private_st_ptrs2(st_gsicc_devicen_entry, gsicc_devicen_entry_t, "gsicc_devicen_entry",
+		gsicc_devicen_entry_enum_ptrs, gsicc_devicen_entry_reloc_ptrs, iccprofile, next);
 
 static const gs_color_space_type gs_color_space_type_icc = {
     gs_color_space_index_ICC,       /* index */
@@ -90,6 +97,55 @@ gsicc_set_icc_directory(const gs_imager_state *pis, const char* pname, int namel
     }
 
 }
+
+static int
+gsicc_new_devicen(gsicc_manager_t *icc_manager)
+{
+
+/* Allocate a new deviceN ICC profile entry in the deviceN list */
+
+    gsicc_devicen_entry_t *device_n_entry = gs_alloc_struct(icc_manager->memory, 
+		gsicc_devicen_entry_t,
+		&st_gsicc_devicen_entry, "gsicc_new_devicen");
+
+    if (device_n_entry == NULL)
+            return gs_rethrow(-1, "insufficient memory to allocate device n profile");
+
+    device_n_entry->next = NULL;
+    device_n_entry->iccprofile = NULL;
+
+/* Check if we already have one in the manager */
+
+    if ( icc_manager->device_n == NULL ) {
+
+        /* First one.  Need to allocate the DeviceN main object */
+
+        icc_manager->device_n = gs_alloc_struct(icc_manager->memory, 
+            gsicc_devicen_t, &st_gsicc_devicen, "gsicc_new_devicen");
+
+        if (icc_manager->device_n == NULL)
+            return gs_rethrow(-1, "insufficient memory to allocate device n profile");
+
+        icc_manager->device_n->head = device_n_entry;
+        icc_manager->device_n->final = device_n_entry;
+        icc_manager->device_n->count = 1;
+
+        return(0);
+
+    } else {
+        
+        /* We have one or more in the list. */
+
+        icc_manager->device_n->final->next = device_n_entry;
+        icc_manager->device_n->final = device_n_entry;
+        icc_manager->device_n->count++;
+
+        return(0);
+  
+    }
+
+}
+
 
 
 /*  This computes the hash code for the
@@ -157,6 +213,24 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
 
              manager_default_profile = &(icc_manager->lab_profile);
 
+             break;
+
+        case DEVICEN_TYPE:
+
+            code = gsicc_new_devicen(icc_manager);
+
+            if (code == 0) {
+
+                manager_default_profile = &(icc_manager->device_n->final->iccprofile);
+
+            } else {
+
+                return(code);
+
+            }
+
+            break;
+
 
     }
 
@@ -180,7 +254,32 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
         if ( namelen == icc_profile->name_length )
             if( memcmp(pname, icc_profile->name, namelen) == 0) return 0;
 
-        rc_decrement(icc_profile,"gsicc_profile");
+        rc_decrement(icc_profile,"gsicc_set_profile");
+
+    }
+
+    /* We need to do a special check for DeviceN since we have
+       a linked list of profiles */
+
+    if ( defaulttype == DEVICEN_TYPE ) {
+
+        gsicc_devicen_entry_t *current_entry = icc_manager->device_n->head;
+
+        for ( k = 0; k < icc_manager->device_n->count; k++ ){
+
+            if ( current_entry->iccprofile != NULL ){
+
+                icc_profile = current_entry->iccprofile;
+
+                if ( namelen == icc_profile->name_length )
+                    if( memcmp(pname, icc_profile->name, namelen) == 0) return 0;
+
+            }
+
+            current_entry = current_entry->next;
+
+        }
+
 
     }
 
@@ -584,6 +683,7 @@ gsicc_manager_new(gs_memory_t *memory)
    result->device_profile = NULL;
    result->proof_profile = NULL;
    result->lab_profile = NULL;
+   result->device_n = NULL;
    result->memory = memory;
 
    result->profiledir = NULL;
@@ -858,6 +958,10 @@ gsicc_get_profile( gsicc_profile_t profile_type, gsicc_manager_t *icc_manager ) 
 
              return(icc_manager->lab_profile);
 
+        case DEVICEN_TYPE:
+
+            /* TO DO */
+            return(NULL);
     }
 
     return(NULL);

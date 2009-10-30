@@ -120,6 +120,7 @@ typedef enum {
     NAMED_TYPE,
     LINKED_TYPE,
     LAB_TYPE,
+    DEVICEN_TYPE
 } gsicc_profile_t;
 
 /* A subset of the profile information 
@@ -267,7 +268,43 @@ typedef struct gsicc_link_cache_s {
 
 } gsicc_link_cache_t;
 
-/* Tha manager object */
+/* A linked list structure to keep DeviceN ICC profiles
+   that the user wishes to use to achieve accurate rendering
+   with DeviceN (typically non CMYK or CMYK + spot) colors.
+   The ICC profiles used for this will require a special
+   private tag in the ICC profile that defines the colorant
+   names and they must match those in the DeviceN color
+   space.  Note this is not to say that DeviceN color
+   management can only be achieved with ICC profiles.  If
+   a customer has a proprietary mixing model for inks, they
+   will be able to hook in their method in the location
+   in the code where the DeviceN colors are processed.  If
+   there is no ICC color management of the DeviceN colors
+   and the DeviceN colors are NOT the native colors
+   for the device, then the colors will be transformed to 
+   the alternate CS using the alternate tint transform */
+
+typedef struct gsicc_devicen_entry_s gsicc_devicen_entry_t;
+
+struct gsicc_devicen_entry_s {
+
+    cmm_profile_t *iccprofile;
+    gsicc_devicen_entry_t *next;
+
+};
+
+
+typedef struct gsicc_devicen_s gsicc_devicen_t;
+
+struct gsicc_devicen_s {
+
+    gsicc_devicen_entry_t *head;
+    gsicc_devicen_entry_t *final;
+    int count;
+
+};
+
+/* The manager object */
 
 typedef struct gsicc_manager_s {
 
@@ -279,6 +316,7 @@ typedef struct gsicc_manager_s {
     cmm_profile_t *output_link;     /* Output device Link profile */
     cmm_profile_t *device_profile;  /* The actual profile for the device */
     cmm_profile_t *lab_profile;      /* Colorspace type ICC profile from LAB to LAB */
+    gsicc_devicen_t *device_n;       /* A linked list of profiles used for DeviceN support */ 
 
     char *profiledir;               /* Directory used in searching for ICC profiles */
     uint namelen;
