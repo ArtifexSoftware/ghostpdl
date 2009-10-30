@@ -244,14 +244,15 @@ typedef struct clist_icctable_entry_s clist_icctable_entry_t;
 struct clist_icctable_entry_s {
 
     clist_icc_serial_entry_t serial_data;
-    clist_icctable_entry_t *next;  /* The next entry in the table */   
+    clist_icctable_entry_t *next;  /* The next entry in the table */ 
+    cmm_profile_t *icc_profile;    /* The profile.  This is written out at the end of the writer phase */
 
 };
 
 #define private_st_clist_icctable_entry()\
-  gs_private_st_ptrs1(st_clist_icctable_entry,\
+  gs_private_st_ptrs2(st_clist_icctable_entry,\
 		clist_icctable_entry_t, "clist_icctable_entry",\
-		clist_icctable_entry_enum_ptrs, clist_icctable_entry_reloc_ptrs, next)
+		clist_icctable_entry_enum_ptrs, clist_icctable_entry_reloc_ptrs, next, icc_profile)
 
 typedef struct clist_icctable_s clist_icctable_t;
 
@@ -508,10 +509,11 @@ int clist_icc_writetable(gx_device_clist_writer *cldev);
 int64_t clist_icc_addprofile(gx_device_clist_writer *cdev, cmm_profile_t *iccprofile, int *iccsize);
 
 /* Seach the table to see if we already have a profile in the cfile */
-int64_t clist_icc_searchtable(gx_device_clist_writer *cdev, int64_t hashcode);
+bool clist_icc_searchtable(gx_device_clist_writer *cdev, int64_t hashcode);
 
 /* Add another entry into the icc profile table */
-int clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode, int64_t position, int size);
+int clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode, 
+                       cmm_profile_t *icc_profile);
 
 /* Free the table and its entries */
 int clist_icc_freetable(clist_icctable_t *icc_table, gs_memory_t *memory);

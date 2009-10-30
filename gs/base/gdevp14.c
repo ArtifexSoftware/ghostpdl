@@ -4378,8 +4378,9 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
     int mask_size = 0;
     uint mask_id = 0;
     int code;
-    int64_t icc_position = 0;
+    bool found_icc;
     int icc_size;
+    int64_t hashcode = 0;
 
     *pbuf++ = opcode;			/* 1 byte */
     switch (opcode) {
@@ -4421,28 +4422,28 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
                        the pseudoband location of the ICC profile.  We
                        will then read the serialized header in that case. */
 
-                    icc_position = -pparams->iccprofile->default_match;  
-                    put_value(pbuf, icc_position);
+                    hashcode = -pparams->iccprofile->default_match;
+                    put_value(pbuf, hashcode);
 
                 } else {
                 
                     /* If no, check if it is already in the ICC clist table */
 
-                    icc_position = clist_icc_searchtable(cdev, pparams->iccprofile->hashcode);
+                    hashcode = pparams->iccprofile->hashcode;
+                    found_icc = clist_icc_searchtable(cdev, hashcode);
                    
-                    if (icc_position < 0) {
+                    if (!found_icc) {
 
-                        /* Add it to the table and write out to the cfile */
+                        /* Add it to the table */
 
-                        icc_position = clist_icc_addprofile(cdev, pparams->iccprofile, &icc_size);  
-                        clist_icc_addentry(cdev, pparams->iccprofile->hashcode, icc_position, icc_size);
-                        put_value(pbuf, icc_position);
+                        clist_icc_addentry(cdev, hashcode, pparams->iccprofile);
+                        put_value(pbuf, hashcode);
 
                     } else {
 
-                        /* It is in the cache. Just write out the location */
+                        /* It will be in the clist. Just write out the hashcode */
 
-                        put_value(pbuf, icc_position);
+                        put_value(pbuf, hashcode);
 
                     }
 
@@ -4450,7 +4451,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
 
             } else {
 
-                put_value(pbuf, icc_position);
+                put_value(pbuf, hashcode);
 
             }
 
@@ -4554,6 +4555,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
     gs_pdf14trans_params_t params = {0};
     const byte * start = data;
     int used, code = 0;
+    int64_t icc_hash;
 
     if (size < 1)
 	return_error(gs_error_rangecheck);
@@ -4594,6 +4596,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
 	    read_value(data, params.shape.alpha);
 	    read_value(data, params.bbox);
 	    read_value(data, params.mask_id);
+            read_value(data, params.icc_hash);
 	    break;
 	case PDF14_BEGIN_TRANS_MASK:
 		/* This is the largest transparency parameter at this time (potentially

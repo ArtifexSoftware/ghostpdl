@@ -744,8 +744,8 @@ clist_end_page(gx_device_clist_writer * cldev)
     int ecode = 0;
 
 
-    /* If we have ICC profiles present in the cfile save the table now.
-       Table is stored in band maxband + 1. */
+    /* If we have ICC profiles present in the cfile save the table now,
+       along with the ICC profiles. Table is stored in band maxband + 1. */
 
     if ( cldev->icc_table != NULL ) {
 
@@ -971,14 +971,14 @@ clist_copy_band_complexity(gx_band_complexity_t *this, const gx_band_complexity_
 
 /* This checks the table for a hash code entry */
 
-int64_t 
+bool 
 clist_icc_searchtable(gx_device_clist_writer *cdev, int64_t hashcode)
 {
     clist_icctable_t *icc_table = cdev->icc_table;
     clist_icctable_entry_t *curr_entry;
 
     if (icc_table == NULL)
-        return(-1);  /* No entry */
+        return(false);  /* No entry */
 
     curr_entry = icc_table->head;
 
@@ -986,7 +986,7 @@ clist_icc_searchtable(gx_device_clist_writer *cdev, int64_t hashcode)
     
         if (curr_entry->serial_data.hashcode == hashcode){
             
-            return(curr_entry->serial_data.file_position);
+            return(true);
 
         }
         
@@ -994,7 +994,7 @@ clist_icc_searchtable(gx_device_clist_writer *cdev, int64_t hashcode)
 
     }
 
-     return(-1);  /* No entry */
+     return(false);  /* No entry */
 }
 
 /* Free the table */
@@ -1035,11 +1035,26 @@ clist_icc_writetable(gx_device_clist_writer *cldev)
     unsigned char *pbuf, *buf;
     clist_icctable_t *icc_table = cldev->icc_table;
     int number_entries = icc_table->tablesize;
-    int k;
     clist_icctable_entry_t *curr_entry;
     int size_data;
+    int k;
 
-    /* First serialize the data */
+    /* First we need to write out the ICC profiles themselves and update
+       in the table where they will be stored and their size. */
+
+    curr_entry = icc_table->head;
+
+    for ( k = 0; k < number_entries; k++ ){
+    
+        curr_entry->serial_data.file_position = clist_icc_addprofile(cldev, curr_entry->icc_profile, &size_data);
+        curr_entry->serial_data.size = size_data;
+        rc_decrement(curr_entry->icc_profile, "clist_icc_writetable");
+        curr_entry->icc_profile = NULL;
+        curr_entry = curr_entry->next;
+
+    }
+
+    /* Now serialize the table data */
 
     size_data = number_entries*sizeof(clist_icc_serial_entry_t) + sizeof(number_entries);
 
@@ -1063,7 +1078,7 @@ clist_icc_writetable(gx_device_clist_writer *cldev)
 
     }
 
-    /* Now go ahead and put it out */
+    /* Now go ahead and save the table data */
 
     cmd_write_icctable(cldev, buf, size_data);
 
@@ -1109,7 +1124,7 @@ clist_icc_addprofile(gx_device_clist_writer *cldev, cmm_profile_t *iccprofile, i
 /* This add a new entry into the table */
 
 int
-clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode, int64_t position, int size)
+clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode, cmm_profile_t *icc_profile)
 {
 
     clist_icctable_entry_t *entry = gs_alloc_struct(cdev->memory, 
@@ -1120,8 +1135,10 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode, int64_t posit
 
     entry->next = NULL;
     entry->serial_data.hashcode = hashcode;
-    entry->serial_data.size = size;
-    entry->serial_data.file_position = position;
+    entry->serial_data.size = -1;
+    entry->serial_data.file_position = -1;
+    entry->icc_profile = icc_profile;
+    rc_increment(icc_profile);
 
     if (entry == NULL) 
         return gs_rethrow(-1, "insufficient memory to allocate entry in icc table");
