@@ -200,13 +200,125 @@ end
 
 % ------ ImageTypes 3 and 4 (masked images) ------ %
 
+% Put the new data source in the requested dictionary.
+% Copy the updated dictionary because it nay be used elsewhere.
+% <dict> <data> <name> update_image3 <dict'>
+/update_image3 {
+  3 -1 roll dup length dict copy dup  % [data] /name <<image>> <<image>>
+  2 index get                         % [data] /name <<image>> <<sub-image>>
+  dup length dict copy dup            % [data] /name <<image>> <<sub-image>> <<sub-image>>
+  /DataSource 6 -1 roll put           % /name <<image>> <<sub-image>>
+  exch dup                            % /name <<sub-image>> <<image>> <<image>>
+  4 2 roll                            % <<image>> <<image>> /name <<sub-image>>
+  put                                 % <<image>>
+} bind def
+
+% Data type vs. mask type decission table.
+% All procedures have the signature:
+% <image dict> <data DataSource> <mask DataSource> proc <image dict'>
+/data_mask_dict mark
+  /stringtype mark % data is a string
+    /stringtype { pop pop } bind
+    /arraytype { % convert data to proc
+      pop
+      dup type dup /arraytype eq exch /packedarraytype eq or {
+        [ exch { 1 array astore cvx } forall ]
+      } {
+        1 array astore cvx
+      } ifelse
+      /DataDict //update_image3 exec
+    } bind
+    /packedarraytype 1 index
+    /filetype { % convert data to file
+      pop
+      dup type dup /arraytype eq exch /packedarraytype eq or {
+        [ exch { 1 array astore cvx 0 () /SubFileDecode filter } forall ]
+      } {
+        1 array astore cvx () /SubFileDecode filter
+      } ifelse
+      /DataDict //update_image3 exec
+    } bind
+  .dicttomark readonly
+  /arraytype mark  % data is a proc
+    /stringtype { % convert mask to proc
+      exch pop
+      dup type dup /arraytype eq exch /packedarraytype eq or {
+        [ exch { 1 array astore cvx } forall ]
+      } {
+        1 array astore cvx
+      } ifelse
+      /MaskDict //update_image3 exec
+    } bind
+    /arraytype { pop pop } bind
+    /packedarraytype 1 index
+    /filetype { % convert mask to proc
+      exch pop
+      dup type dup /arraytype eq exch /packedarraytype eq or {
+        [ exch { 1000 string { readstring pop } aload pop 4 array astore cvx } forall ]
+      } {
+        1000 string { readstring pop } aload pop 4 array astore cvx
+      } ifelse
+      /MaskDict //update_image3 exec
+    } bind
+  .dicttomark readonly
+  /packedarraytype 1 index
+  /filetype mark  % data is a file
+    /stringtype { % convert mask to file
+      exch pop
+      dup type dup /arraytype eq exch /packedarraytype eq or {
+        [ exch { 1 array astore cvx 0 () /SubFileDecode filter } forall ]
+      } {
+        1 array astore cvx 0 () /SubFileDecode filter
+      } ifelse
+      /MaskDict //update_image3 exec
+    } bind
+    /arraytype { % convert data to proc
+      pop
+      dup type dup /arraytype eq exch /packedarraytype eq or {
+        [ exch { 1000 string { readstring pop } aload pop 4 array astore cvx } forall ]
+      } {
+        1000 string { readstring pop } aload pop 4 array astore cvx
+      } ifelse
+      /DataDict //update_image3 exec
+    } bind
+    /packedarraytype 1 index
+    /filetype { pop pop } bind
+  .dicttomark readonly
+.dicttomark readonly def
+
 .imagetypes
-  dup 3 /.image3 load put
+  dup 3 {
+    dup /InterleaveType get 3 eq {
+      % .image3 requires data sources of the image and mask to be of the
+      % same type. Work around this restriction here.
+      dup /DataDict get /DataSource get
+      1 index /MaskDict get /DataSource get  % <<>> data mask
+      dup dup type dup /arraytype eq exch /packedarraytype eq or {
+        0 get
+      } if type                              % <<>> data mask mask_type
+      2 index dup type dup /arraytype eq exch /packedarraytype eq or {
+        0 get
+      } if type                              % <<>> data mask mask_type data_type
+      //data_mask_dict exch .knownget {
+        exch .knownget {
+          exec
+        } {
+          pop pop   % pass wrong type as is to .image3
+        } ifelse
+      } {
+        pop pop pop % pass wrong type as is to .image3
+      } ifelse
+    } if
+    .image3
+  } bind put
   dup 4 /.image4 load put
 % We also detect ImageType 103 here: it isn't worth making a separate file
 % just for this.
   /.image3x where { pop dup 103 /.image3x load put } if
 pop
+
+currentdict /data_mask_dict undef
+currentdict /update_image3 undef
 
 % ------ Functions ------ %
 
