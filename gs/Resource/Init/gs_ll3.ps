@@ -234,7 +234,7 @@ end
       dup type dup /arraytype eq exch /packedarraytype eq or {
         [ exch { 1 array astore cvx 0 () /SubFileDecode filter } forall ]
       } {
-        1 array astore cvx () /SubFileDecode filter
+        1 array astore cvx 0 () /SubFileDecode filter
       } ifelse
       /DataDict //update_image3 exec
     } bind
