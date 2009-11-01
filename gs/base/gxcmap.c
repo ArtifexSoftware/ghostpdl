@@ -845,6 +845,8 @@ cmap_gray_halftoned(frac gray, gx_device_color * pdc,
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
     /* map to the color model */
+    for (i=0; i < ncomps; i++)
+	cm_comps[i] = 0;
     dev_proc(dev, get_color_mapping_procs)(dev)->map_gray(dev, gray, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
@@ -886,6 +888,8 @@ cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_imager_state * pis,
     gx_color_index color;
 
     /* map to the color model */
+    for (i=0; i < ncomps; i++)
+	cm_comps[i] = 0;
     dev_proc(dev, get_color_mapping_procs)(dev)->map_gray(dev, gray, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
@@ -933,6 +937,8 @@ cmap_rgb_halftoned(frac r, frac g, frac b, gx_device_color * pdc,
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
     /* map to the color model */
+    for (i=0; i < ncomps; i++)
+	cm_comps[i] = 0;
     dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, pis, r, g, b, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
@@ -960,6 +966,8 @@ cmap_rgb_direct(frac r, frac g, frac b, gx_device_color * pdc,
     gx_color_index color;
 
     /* map to the color model */
+    for (i=0; i < ncomps; i++)
+	cm_comps[i] = 0;
     dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, pis, r, g, b, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
@@ -995,6 +1003,8 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     gx_color_index color;
 
     /* map to the color model */
+    for (i=0; i < ncomps; i++)
+	cm_comps[i] = 0;
     dev_proc(dev, get_color_mapping_procs)(dev)->map_cmyk(dev, c, m, y, k, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
@@ -1039,6 +1049,8 @@ cmap_rgb_alpha_halftoned(frac r, frac g, frac b, frac alpha,
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
     /* map to the color model */
+    for (i=0; i < ncomps; i++)
+	cm_comps[i] = 0;
     dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, pis, r, g, b, cm_comps);
 
     /* pre-multiply to account for the alpha weighting */
@@ -1078,6 +1090,8 @@ cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha, gx_device_color * pdc,
     gx_color_index color;
 
     /* map to the color model */
+    for (i=0; i < ncomps; i++)
+	cm_comps[i] = 0;
     dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, pis, r, g, b, cm_comps);
 
     /* pre-multiply to account for the alpha weighting */
@@ -1161,6 +1175,8 @@ cmap_separation_halftoned(frac all, gx_device_color * pdc,
     frac comp_value = all;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
+    for (i=0; i < ncomps; i++)
+	cm_comps[i] = 0;
     if (pis->color_component_map.sep_type == SEP_ALL) {
 	/*
 	 * Invert the photometric interpretation for additive
@@ -1205,6 +1221,8 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
 
+    for (i=0; i < ncomps; i++)
+	cm_comps[i] = 0;
     if (pis->color_component_map.sep_type == SEP_ALL) {
 	/*
 	 * Invert the photometric interpretation for additive
@@ -1259,6 +1277,8 @@ cmap_devicen_halftoned(const frac * pcc,
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
     /* map to the color model */
+    for (i=0; i < ncomps; i++)
+	cm_comps[i] = 0;
     map_components_to_colorants(pcc, &(pis->color_component_map), cm_comps);
 
     /* apply the transfer function(s); convert to color values */
@@ -1293,6 +1313,8 @@ cmap_devicen_direct(const frac * pcc,
     gx_color_index color;
 
     /* map to the color model */
+    for (i=0; i < ncomps; i++)
+	cm_comps[i] = 0;
     map_components_to_colorants(pcc, &(pis->color_component_map), cm_comps);;
 
     /* apply the transfer function(s); convert to color values */
