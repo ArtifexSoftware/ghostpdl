@@ -967,16 +967,39 @@ pdfdict begin
 /rget {			% <resname> <pagedict> <restype> rget <value> -true-
 			% <resname> <pagedict> <restype> rget -false-
   LocalResources 1 index knownoget {
-     3 index knownoget
+     dup type /dicttype eq {
+       3 index knownoget
+     } {
+       //false exch {
+         4 index knownoget {
+           exch not exit
+         } if
+       } forall
+     } ifelse
   } {
-    false
+    //false
   } ifelse {
-    exch pop exch pop exch pop true
+    exch pop exch pop exch pop //true
   } {
     exch /Resources pget {
-      exch knownoget { exch knownoget } { pop false } ifelse
+      exch knownoget {                 % /Name [<<>> ...]
+          dup type /dicttype eq {
+            exch knownoget
+          } {
+            % GS uses array of dicts if resources don't fit in one dict.
+            //false 3 1 roll {         % false /Name <<>>
+              1 index knownoget {      % false /Name val
+                exch pop exch not % i.e. true
+                0 exit
+              } if
+            } forall
+            pop
+          } ifelse
+      } {
+        pop //false
+      } ifelse
     } {
-      pop pop false
+      pop pop //false
     } ifelse
   } ifelse
 } bind def
@@ -1487,13 +1510,15 @@ currentdict /PDF2PS_matrix_key undef
 /.free_page_resources {   % - .free_page_resources -
   Page /Resources pget {
     /Shading knownoget {
-      { dup type /dicttype eq {
-          dup /.shading_dict known {
-            dup /.shading_dict undef
+      { {
+          dup type /dicttype eq {
+            dup /.shading_dict known {
+              dup /.shading_dict undef
+            } if
           } if
-        } if
-        pop pop
-      } forall
+          pop pop
+        } forall
+      } big-res-forall
     } if
   } if
 } bind def
@@ -1720,27 +1745,35 @@ currentdict /PDF2PS_matrix_key undef
     2 copy //true put              % In the current chain.
     dup /ExtGState knownoget {
       //false exch
-      { exch pop oforce extgstateusestransparency { pop //true exit } if
-      } forall
+      { { exch pop oforce extgstateusestransparency { pop //true exit } if
+        } forall
+        dup { exit } if
+      } big-res-forall
       { pop //true exit } if
     } if
     dup /Pattern knownoget {
       //false exch
-      { exch pop oforce patternusestransparency { pop //true exit } if
-      } forall
+      { { exch pop oforce patternusestransparency { pop //true exit } if
+        } forall
+        dup { exit } if
+      } big-res-forall
       { pop //true exit } if
     } if
     dup /XObject knownoget {
-      dup type /dicttype eq {
-        //false exch {
-	  exch pop oforce dup /Subtype get
-	  dup /Image eq { 1 index /SMask known { pop pop not exit } if } if
-	  /Form eq {
-	    3 index exch resourceusestransparency { not exit } if
-	  } {
-	    pop
-	  } ifelse
-        } forall { pop //true exit } if
+      dup type dup /dicttype eq exch /arraytype eq or {
+        //false exch
+        { {
+	    exch pop oforce dup /Subtype get
+	    dup /Image eq { 1 index /SMask known { pop pop not exit } if } if
+	    /Form eq {
+	      3 index exch resourceusestransparency { not exit } if
+	    } {
+	      pop
+	    } ifelse
+          } forall
+          dup { exit } if
+        } big-res-forall
+        { pop //true exit } if
       } {
         (   **** Ignoring non-dictionary /XObject attribute.\n)
         pdfformaterror
@@ -1802,6 +1835,13 @@ currentdict /PDF2PS_matrix_key undef
   pop pop
 } bind def
 
+% Enumerate resource dictionary or an array of dictionaries
+% <object> <proc> big-res-forall - 
+/big-res-forall {
+  1 index type /dicttype eq { 0 get } if
+  forall
+} bind def
+
 % Check the Resources of a page, form, or annotation.  Determine which spot
 % colors are used within the resource  Note: The spot color dict will include
 % all colors used in Separation or DeviceN color spaces.  Thus it may include
@@ -1821,19 +1861,20 @@ currentdict /PDF2PS_matrix_key undef
 
     % Scan resources that might contain a color space.
     dup /ColorSpace knownoget {
-      { exch pop oforce 3 index colorspacespotcolors } forall
+      { { exch pop oforce 3 index colorspacespotcolors } forall } big-res-forall
     } if
     dup /Pattern knownoget {
-      { exch pop oforce 4 copy exch pop resourcespotcolors pop pop pop } forall
+      { { exch pop oforce 4 copy exch pop resourcespotcolors pop pop pop } forall } big-res-forall
     } if
     dup /Shading knownoget {
-      { exch pop oforce /ColorSpace oget 3 index colorspacespotcolors } forall
+      { { exch pop oforce /ColorSpace oget 3 index colorspacespotcolors } forall } big-res-forall
     } if
     /XObject knownoget {
-      dup type /dicttype eq {
-        { exch pop oforce dup
-          /Subtype get /Form eq { resourcespotcolors } { pop } ifelse
-        } forall
+      dup type dup /dicttype eq exch /arraytype eq or {
+        { { exch pop oforce dup
+            /Subtype get /Form eq { resourcespotcolors } { pop } ifelse
+          } forall
+        } big-res-forall
       } {
         pop % Just ignore here, already reported by resourceusestransparency.
       } ifelse
