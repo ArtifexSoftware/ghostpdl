@@ -14,7 +14,11 @@ my $debug2=0;
 my $verbose=0;
 
 my $wordSize="64";
-my $timeOut=600;
+my $timeOut=180;
+my $maxTimeout=10;
+
+my %pids;
+my %timeOuts;
 
 my $machine=shift || die "usage: run.pl machine_name";
 
@@ -37,6 +41,7 @@ if (open(F,"<$machine.start")) {
   }
   unlink("$machine.start");
 }
+
 
 my $host="casper.ghostscript.com";
 
@@ -62,6 +67,7 @@ unlink ("$machine.abort");
 
 my $compileFail="";
 my $md5sumFail=`which md5sum`;
+my $timeoutFail="";
 
 #my $md5Command='md5sum';
 #if ($md5sumFail eq "") {
@@ -130,6 +136,28 @@ my $newRev2=99999;
 
 my %spawnPIDs;
 
+sub killAll() {
+print "in killAll()\n";
+  my $a=`ps -ef`;
+  my @a=split '\n',$a;
+  my %children;
+  foreach (@a) {
+    if (m/\S+ +(\d+) +(\d+)/ && !m/<defunct>/) {
+      $children{$2}=$1;
+    }
+  }
+
+    foreach my $pid (keys %pids) {
+        #     kill 1, $pid;
+        my $p=$pid;
+        while (exists $children{$p}) {
+          print "$p->$children{$p}\n";
+          $p=$children{$p};
+        }
+        kill 1, $p;
+    }
+}
+
 sub spawn($$) {
   my $timeout=shift;
   my $s=shift;
@@ -170,6 +198,7 @@ sub checkAbort {
   spawn(60,"scp -i ~/.ssh/cluster_key  marcos\@casper.ghostscript.com:/home/marcos/cluster/$machine.abort . >/dev/null 2>/dev/null");
   if (open(F,"<$machine.abort")) {
     close(F);
+    killAll();
     return(1);
   }
   return(0);
@@ -407,8 +436,6 @@ if ($md5sumFail ne "") {
 my $totalJobs=scalar(@commands);
 my $jobs=0;
 
-my %pids;
-my %timeOuts;
 
 my $startTime=time;
 my $lastPercentage=-1;
@@ -436,7 +463,15 @@ while (scalar(@commands) && !$abort) {
       kill 1, $p;
 
       $timeOuts{$pids{$pid}{'filename'}}=1;
-      print "\nkilled:  $p ($pid) $pids{$pid}{'filename'}\n";
+      my $count=scalar (keys %timeOuts);
+      print "\nkilled:  $p ($pid) $pids{$pid}{'filename'}  total $count\n";
+      if ($count>=$maxTimeout) {
+        $timeoutFail="too many timeouts";
+        updateStatus('Timeout fail');
+        @commands=();
+        $maxCount=0;
+        killAll();
+      }
     } else {
 #print "\n$pids{$pid}{'filename'} ".(time-$pids{$pid}{'time'}) if ((time-$pids{$pid}{'time'})>20);
     }
@@ -447,7 +482,8 @@ while (scalar(@commands) && !$abort) {
   }
   if ($count<$maxCount) {
     my $n=rand(scalar @commands);
-    my @a=split '\t',$commands[$n];  splice(@commands,$n,1);
+    my @a=split '\t',$commands[$n];
+    splice(@commands,$n,1);
     my $filename=$a[0];
     my $cmd=$a[1];
     $jobs++;
@@ -469,7 +505,7 @@ while (scalar(@commands) && !$abort) {
       my $t2=convertTime($elapsedTime * $totalJobs/$jobs - $elapsedTime);
       my $t3=convertTime($elapsedTime * $totalJobs/$jobs);
       my $percentage=int($jobs/$totalJobs * 100 + 0.5);
-      if ($percentage != $lastPercentage && ($percentage % 5) == 0) {
+      if ($percentage != $lastPercentage && ($percentage % 2) == 0) {
         my $t=sprintf "%2d%% completed",$percentage;
         updateStatus($t);
         $lastPercentage=$percentage;
@@ -534,7 +570,15 @@ if ($abort) {
         kill 1, $p;
 
         $timeOuts{$pids{$pid}{'filename'}}=1;
-        print "\nkilled:  $p ($pid) $pids{$pid}{'filename'}\n";
+	my $count=scalar (keys %timeOuts);
+        print "\nkilled:  $p ($pid) $pids{$pid}{'filename'}  total $count\n";
+        if ($count>=$maxTimeout) {
+          $timeoutFail="too many timeouts";
+          updateStatus('Timeout fail');
+          @commands=();
+          $maxCount=0;
+	  killAll();
+        }
       } else {
 #print "\n$pids{$pid}{'filename'} ".(time-$pids{$pid}{'time'}) if ((time-$pids{$pid}{'time'})>20);
       }
@@ -591,6 +635,9 @@ if ($abort) {
         print F2 "missing\n";
       }
     }
+  }
+  if ($timeoutFail ne "") {
+    print F2 "timeoutFail: $timeoutFail\n";
   }
   foreach my $logfile (keys %logfiles) {
     print F2 "===$logfile===\n";

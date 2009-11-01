@@ -34,7 +34,7 @@ while(<F>) {
 
   chomp;
 
-  if (m/^compileFail/ || m/^md5sumFail/) {
+  if (m/^compileFail/ || m/^md5sumFail/ || m/^timeoutFail/) {
     close(F);
     print "$_\n";
     exit;
@@ -105,7 +105,7 @@ if ($input2) {
 #     print "$pdfwrite $file\n";
       if (exists $results{$file}{"error"}) {
         $results{$file}{"error"}=7 if ($pdfwrite==1);
-        $results{$file}{"error"}=8 if ($pdfwrite==0 && $results{$file}{"error"}%2 == 0);
+        $results{$file}{"error"}=8 if ($pdfwrite==0 && ($results{$file}{"error"} % 2 == 0 || $results{$file}{"error"} == -1));
       } else {
 #       die "$file not found in ressults";
       }

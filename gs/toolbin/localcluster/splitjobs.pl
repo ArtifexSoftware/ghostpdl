@@ -26,7 +26,7 @@ die "usage: splitjobs.pl input [machine ratio ...]" if (!$input || scalar(@ratio
 open(F,"<$input") || die "file $input not found";
 while(<F>) {
   chomp;
-  if (m/^tests__svg/) {
+  if (m/__svg__/ || m/__pcl__/ || m/__xps__/) {
     push @svgJobs,$_;
   } else {
     push @jobs,$_;
