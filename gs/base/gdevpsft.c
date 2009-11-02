@@ -304,7 +304,8 @@ write_cmap_0(stream *s, byte* entries /*[CMAP_ENTRIES_SIZE]*/, uint num_glyphs)
 {
     int i;
 
-    memset(entries + 2 * num_glyphs, 0, CMAP_ENTRIES_SIZE - 2 * num_glyphs);
+    if (CMAP_ENTRIES_SIZE - 2 * num_glyphs>0)
+      memset(entries + 2 * num_glyphs, 0, CMAP_ENTRIES_SIZE - 2 * num_glyphs);
     stream_write(s, cmap_initial_0, sizeof(cmap_initial_0));
     for (i = 0; i <= 0xff; ++i)
 	sputc(s, (byte)entries[2 * i + 1]);
