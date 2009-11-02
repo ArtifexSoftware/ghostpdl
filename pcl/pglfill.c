@@ -455,14 +455,20 @@ hpgl_PW(
         }
     }
 
-    /* width is maintained in plu only */
-    width_plu = ( (pgls->g.pen.width_relative)
-                    ? ( (param / 100.0) * hpgl_compute_distance( pgls->g.P1.x,
-                                                                 pgls->g.P1.y,
-							         pgls->g.P2.x,
-                                                                 pgls->g.P2.y
-                                                                 ) )
-                    : mm_2_plu(param) * pf_factor );
+    if (param == 0) {
+        /* assymetric resolutions aren't documented */
+        width_plu =
+            inches_2_plu(1.0 / gs_currentdevice(pgls->pgs)->HWResolution[0]);
+    } else {
+        /* width is maintained in plu only */
+        width_plu = ( (pgls->g.pen.width_relative)
+                      ? ( (param / 100.0) * hpgl_compute_distance( pgls->g.P1.x,
+                                                                   pgls->g.P1.y,
+                                                                   pgls->g.P2.x,
+                                                                   pgls->g.P2.y
+                                                                   ) )
+                      : mm_2_plu(param) * pf_factor );
+    }
 
     /*
      * PCLTRM 22-38 metric widths scaled scaled by the ratio of
