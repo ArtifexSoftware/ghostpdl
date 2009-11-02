@@ -132,6 +132,7 @@ s_init_state(stream_state *st, const stream_template *template,
     st->memory = mem;
     st->report_error = s_no_report_error;
     st->min_left = 0;
+    st->error_string[0] = 0;
 }
 stream_state *
 s_alloc_state(gs_memory_t * mem, gs_memory_type_ptr_t stype,
