@@ -1143,7 +1143,7 @@ pdf14_mask_element_new(gs_memory_t *memory)
 
 }
 
-
+static int
 pdf14_push_transparency_state(gx_device *dev, gs_imager_state *pis)
 {
     /* We need to push the current soft mask.  We need to
@@ -1177,7 +1177,7 @@ pdf14_push_transparency_state(gx_device *dev, gs_imager_state *pis)
  return(0);
 }
 
-
+static int
 pdf14_pop_transparency_state(gx_device *dev, gs_imager_state *pis)
 {
 
