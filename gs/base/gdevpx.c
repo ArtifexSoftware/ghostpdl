@@ -325,6 +325,14 @@ pclxl_set_paints(gx_device_pclxl * xdev, gx_path_type_t type)
     }
 }
 
+static void
+pclxl_set_page_origin(stream *s, int x, int y)
+{
+    px_put_ssp(s, x, y);
+    px_put_ac(s, pxaPageOrigin, pxtSetPageOrigin);
+    return;
+}
+
 /* Set the cursor. */
 static int
 pclxl_set_cursor(gx_device_pclxl * xdev, int x, int y)
