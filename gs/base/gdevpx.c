@@ -94,6 +94,9 @@ typedef struct gx_device_pclxl_s {
     bool font_set;
     int state_rotated; /* 0, 1, 2, -1, mutiple of 90 deg */
     int CompressMode; /* std PXL enum: None=0, RLE=1, DeltaRow=3; JPEG=2 not used */
+    bool scaled;
+    floatp x_scale; /* chosen so that max(x) is scaled to 0x7FFF, to give max distinction between x values */
+    floatp y_scale;
 } gx_device_pclxl;
 
 gs_public_st_suffix_add0_final(st_device_pclxl, gx_device_pclxl,
@@ -330,6 +333,33 @@ pclxl_set_page_origin(stream *s, int x, int y)
 {
     px_put_ssp(s, x, y);
     px_put_ac(s, pxaPageOrigin, pxtSetPageOrigin);
+    return;
+}
+
+static void
+pclxl_set_page_scale(gx_device_pclxl * xdev, floatp x_scale, floatp y_scale)
+{
+    stream *s = pclxl_stream(xdev);
+    if (xdev->scaled) {
+        xdev->x_scale = x_scale;
+        xdev->y_scale = y_scale;
+        px_put_rp(s, x_scale, y_scale);
+        px_put_ac(s, pxaPageScale, pxtSetPageScale);
+    }
+    return;
+}
+
+static void
+pclxl_unset_page_scale(gx_device_pclxl * xdev)
+{
+    stream *s = pclxl_stream(xdev);
+    if (xdev->scaled) {
+        px_put_rp(s, 1/xdev->x_scale, 1/xdev->y_scale);
+        px_put_ac(s, pxaPageScale, pxtSetPageScale);
+        xdev->scaled = false;
+        xdev->x_scale = 1;
+        xdev->y_scale = 1;
+    }
     return;
 }
 
