@@ -17,6 +17,9 @@
 #  define gdevp14_INCLUDED
 
 #include "gxcmap.h"
+#include "gsmatrix.h"
+#include "gxcolor2.h"
+#include "gxdcolor.h"
 #include "gxpcolor.h"
 #include "gdevdevn.h"
 
