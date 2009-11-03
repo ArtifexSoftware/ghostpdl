@@ -2572,8 +2572,7 @@ gsipar3x_h=$(GLSRC)gsipar3x.h $(gsiparam_h) $(gsiparm3_h)
 gximag3x_h=$(GLSRC)gximag3x.h $(gsipar3x_h) $(gxiparam_h)
 gxblend_h=$(GLSRC)gxblend.h $(gxcindex_h) $(gxcvalue_h) $(gxxfrac_h) $(gxdevcli_h)
 gdevp14_h=$(GLSRC)gdevp14.h $(GLSRC)gxcmap.h $(gxmatrix_h) \
- $(gxcolor2_h) $(gxdcolor_h) $(gxpcolor_h)
-$(gdevdevn_h)
+ $(gxcolor2_h) $(gxdcolor_h) $(gxpcolor_h) $(gdevdevn_h)
 
 $(GLOBJ)gstrans.$(OBJ) : $(GLSRC)gstrans.c $(GXERR)\
  $(math__h) $(memory__h) $(gdevp14_h) $(gstrans_h)\
