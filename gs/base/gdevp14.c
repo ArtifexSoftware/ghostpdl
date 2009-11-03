@@ -1157,7 +1157,6 @@ pdf14_push_transparency_state(gx_device *dev, gs_imager_state *pis)
        then obtain a Q operation ( a pop ) */
     
     pdf14_device *pdev = (pdf14_device *)dev;
-    int ok;
     pdf14_ctx *ctx = pdev->ctx;
     pdf14_mask_t *new_mask;
 
@@ -1191,7 +1190,6 @@ pdf14_pop_transparency_state(gx_device *dev, gs_imager_state *pis)
        a Q that has occurred. */
 
     pdf14_device *pdev = (pdf14_device *)dev;
-    int ok;
     pdf14_ctx *ctx = pdev->ctx;
     pdf14_mask_t *old_mask;
 
@@ -1793,7 +1791,6 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
     gs_int_point phase;  /* Needed during clist rendering for band offset */
 
     gx_clip_path cpath_intersection;
-    const gs_fixed_rect *pcbox = (pcpath == NULL ? NULL : cpath_is_rectangle(pcpath));
 
     if (pcpath != NULL) {
         code = gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
@@ -5901,20 +5898,20 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
 	    /*
 	     * Set the color_info of the clist device to match the compositing
 	     * device.  We will restore it when the compositor is popped.
-	     * See pdf14_clist_create_compositor for the restore.  Do the same
-	     * with the imager state's get_cmap_procs.  We do not want the
-	     * imager state to use transfer functions on our color values.  The
-	     * transfer functions will be applied at the end after we have done
-	     * our PDF 1.4 blend operations.
+	     * See pdf14_clist_create_compositor for the restore.  Do the
+	     * same with the imager state's get_cmap_procs.  We do not want
+	     * the imager state to use transfer functions on our color values.
+	     * The transfer functions will be applied at the end after we
+	     * have done our PDF 1.4 blend operations.
 	     */
 
             /* 
 	     * Also if the bit depth is not 8 per channel we need to adjust 
-             * as all the pdf14 compositing code is for 8 bits per channel.  The
-             * clist writer device uses this information to make sure the proper
-             * bit depth is written. If we are using compressed color enconding,
-	     * the color is written in a gx_color_index even for more than 8
-	     * components.
+             * as all the pdf14 compositing code is for 8 bits per channel.
+             * The clist writer device uses this information to make sure
+             * the proper bit depth is written. If we are using compressed
+             * color enconding, the color is written in a gx_color_index
+             * even for more than 8 components.
 	     */
 	    p14dev = (pdf14_clist_device *)(*pcdev);
             if (cdev->clist_color_info.num_components * 8 != cdev->clist_color_info.depth &&
@@ -5935,6 +5932,7 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
 	    pis->get_cmap_procs = pdf14_get_cmap_procs;
 	    gx_set_cmap_procs(pis, dev);
 	    return code;
+
 	case PDF14_POP_DEVICE:
 #	    if 0 /* Disabled because pdf14_clist_create_compositor does so. */
 	    /*
@@ -5943,47 +5941,57 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
 	     */
             if (pis->dev_ht)
                 code = cmd_put_halftone((gx_device_clist_writer *)
-                              (((pdf14_clist_device *)dev)->target), pis->dev_ht);
+                           (((pdf14_clist_device *)dev)->target), pis->dev_ht);
 #	    else 
 	    code = 0;
 #	    endif
 	    code = clist_writer_check_empty_cropping_stack(cdev);
 	    break;
+
 	case PDF14_BEGIN_TRANS_GROUP:
-	    {	/* HACK: store mask_id into pparams for subsequent calls of c_pdf14trans_write. */
-		gs_pdf14trans_t * pdf14pct_nolconst = (gs_pdf14trans_t *) pcte; /* Break 'const'. */
+	    {	/* HACK: store mask_id into our params for subsequent
+		   calls of c_pdf14trans_write. To do this we must
+		   break const. */
+		gs_pdf14trans_t * pdf14pct_noconst;
+		
+		pdf14pct_noconst = (gs_pdf14trans_t *) pcte;
 
-                /* What ever the current mask ID is, that is the softmask group through
-                   which this transparency group must be rendered.  Store it now.  */
+                /* What ever the current mask ID is, that is the
+                   softmask group through which this transparency
+                   group must be rendered. Store it now. */
 
-                pdf14pct_nolconst->params.mask_id = cdev->mask_id;
+                pdf14pct_noconst->params.mask_id = cdev->mask_id;
 
                 if_debug1('v', "[v]c_pdf14trans_clist_write_update group mask_id=%d \n", cdev->mask_id);
 	    }
 
 	    break;
+
 	case PDF14_END_TRANS_GROUP:
 	    code = 0; /* A place for breakpoint. */
 	    break;
+
 	case PDF14_BEGIN_TRANS_MASK:
-	    {   int save_mask_id = cdev->mask_id;  
+            /* A new mask has been started */
 
-               /* A new mask has been started */
+            cdev->mask_id = ++cdev->mask_id_count;
 
-                cdev->mask_id = ++cdev->mask_id_count;
+            /* replacing is set everytime that we 
+               have a zpushtransparencymaskgroup */
 
-                /* replacing is set everytime that we have a zpushtransparencymaskgroup */
-               
-		{	/* HACK: store mask_id into pparams for subsequent calls of c_pdf14trans_write. */
-		    gs_pdf14trans_t * pdf14pct_nolconst = (gs_pdf14trans_t *) pcte; /* Break 'const'. */
+	    {	/* HACK: store mask_id into our params for subsequent
+		   calls of c_pdf14trans_write. To do this we must
+		   break const. */
+		gs_pdf14trans_t * pdf14pct_noconst;
+		
+		pdf14pct_noconst = (gs_pdf14trans_t *) pcte;
 
-		    pdf14pct_nolconst->params.mask_id = cdev->mask_id;
+		pdf14pct_noconst->params.mask_id = cdev->mask_id;
 
-		    if_debug1('v', "[v]c_pdf14trans_clist_write_update mask mask_id=%d \n", cdev->mask_id);
-		}
-
+		if_debug1('v', "[v]c_pdf14trans_clist_write_update mask mask_id=%d \n", cdev->mask_id);
 	    }
 	    break;
+
 	case PDF14_END_TRANS_MASK:
 	    code = 0; /* A place for breakpoint. */
 	    break;
@@ -6003,9 +6011,13 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
     *pcdev = dev;
     if (code < 0)
 	return code;
-    code = gs_imager_setmatrix(&cdev->imager_state, &pdf14pct->params.ctm); /* See
-		c_pdf14trans_write, c_pdf14trans_adjust_ctm, apply_create_compositor. */
-    cmd_clear_known(cdev, ctm_known); /* Wrote another ctm than from imager state. */
+
+    /* See c_pdf14trans_write, c_pdf14trans_adjust_ctm, and 
+       apply_create_compositor. */
+    code = gs_imager_setmatrix(&cdev->imager_state, &pdf14pct->params.ctm);
+    /* Wrote an extra ctm. */
+    cmd_clear_known(cdev, ctm_known);
+
     return code;
 }
 
@@ -6078,15 +6090,18 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
 		}
 	    }
 	    break;
+
 	case PDF14_POP_DEVICE:
 #	    if 0 /* Disabled because *p14dev has no forwarding methods during the clist playback. 
 		    This code is not executed while clist writing. */
 	    cdev->color_info = p14dev->saved_target_color_info;
 #	    endif
 	    break;
+
 	default:
 	    break;		/* do nothing for remaining ops */
     }
+
     return 0;
 }
 
