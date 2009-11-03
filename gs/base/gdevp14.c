@@ -919,8 +919,9 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 			     byte *transfer_fn, bool idle, bool replacing,
 			     uint mask_id, gs_transparency_mask_subtype_t subtype, 
                              bool SMask_is_CIE, int numcomps,
-                             int Background_components, float Background[],
-                             float GrayBackground)
+                             int Background_components,
+                             const float Background[],
+                             const float GrayBackground)
 {
 
  
@@ -5976,7 +5977,7 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
 
             cdev->mask_id = ++cdev->mask_id_count;
 
-            /* replacing is set everytime that we 
+            /* replacing is set everytime that we
                have a zpushtransparencymaskgroup */
 
 	    {	/* HACK: store mask_id into our params for subsequent
@@ -6012,7 +6013,7 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
     if (code < 0)
 	return code;
 
-    /* See c_pdf14trans_write, c_pdf14trans_adjust_ctm, and 
+    /* See c_pdf14trans_write, c_pdf14trans_adjust_ctm, and
        apply_create_compositor. */
     code = gs_imager_setmatrix(&cdev->imager_state, &pdf14pct->params.ctm);
     /* Wrote an extra ctm. */
