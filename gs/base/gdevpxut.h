@@ -55,8 +55,8 @@ void px_put_ac(stream *s, px_attribute_t a, px_tag_t op);
 void px_put_ub(stream * s, byte b);
 void px_put_uba(stream *s, byte b, px_attribute_t a);
 
-#define DS(i) (byte)(i), (byte)((i) >> 8)
-void px_put_s(stream * s, uint i);
+#define DS(i) (byte)(i), (byte)(((i) > 0 ? (i) : ((i)|0x8000)) >> 8)
+void px_put_s(stream * s, int i);
 
 #define DUS(i) pxt_uint16, DS(i)
 void px_put_us(stream * s, uint i);

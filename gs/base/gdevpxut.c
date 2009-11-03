@@ -251,9 +251,11 @@ px_put_uba(stream *s, byte b, px_attribute_t a)
 }
 
 void
-px_put_s(stream * s, uint i)
+px_put_s(stream * s, int i)
 {
     sputc(s, (byte) i);
+    if (i < 0)
+       i |= 0x8000;
     sputc(s, (byte) (i >> 8));
 }
 void
@@ -298,21 +300,23 @@ void
 px_put_ss(stream * s, int i)
 {
     sputc(s, pxt_sint16);
-    px_put_s(s, (uint) i);
+    px_put_s(s, i);
 }
 void
 px_put_ssp(stream * s, int ix, int iy)
 {
     sputc(s, pxt_sint16_xy);
-    px_put_s(s, (uint) ix);
-    px_put_s(s, (uint) iy);
+    px_put_s(s, ix);
+    px_put_s(s, iy);
 }
 
 void
 px_put_l(stream * s, ulong l)
 {
-    px_put_s(s, (uint) l);
-    px_put_s(s, (uint) (l >> 16));
+    sputc(s, (byte) l);
+    sputc(s, (byte) (l >> 8));
+    sputc(s, (byte) (l >> 16));
+    sputc(s, (byte) (l >> 24));
 }
 
 /*
