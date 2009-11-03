@@ -42,7 +42,7 @@ px_write_file_header(stream *s, const gx_device *dev)
     static const char *const resolution_2400 = "2400";
     static const char *const file_header =
 	"\n@PJL ENTER LANGUAGE = PCLXL\n\
-) HP-PCL XL;2;1;Comment Copyright Artifex Sofware, Inc. 2005\000\n";
+) HP-PCL XL;1;1;Comment Copyright Artifex Sofware, Inc. 2005\000\n";
     static const byte stream_header[] = {
 	DA(pxaUnitsPerMeasure),
 	DUB(0), DA(pxaMeasure),
