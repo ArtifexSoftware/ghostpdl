@@ -32,6 +32,9 @@
  * The graphic library is, unfortunately, not equipped to produce accurate
  * PCL rectangles on its own. These rectangles must always be rendered with
  * the same pixel dimensions, regardless of location (ignoring clipping), 
+ * in the "grid intersection" pixel placement mode, must always add one
+ * additional pixel in the "right" and "down" directions, relative to print
+ * direction 0.
  *
  * To accomplish these tasks, it is necessary to properly adjust the rectangle
  * dimensions provided to the graphic layer. That task is accomplished by
@@ -65,25 +68,18 @@ adjust_render_rectangle(
     rect.p.x = floor(rect.p.x + 0.5);
     rect.p.y = floor(rect.p.y + 0.5);
 
-    /*
-     * Set the dimensions to be a multiple of pixels.
-     *
-     * For reasons discussed in the comment below, the interpretation of the
-     * rectangle dimensions is a bit peculiar.  To fit this interpretation
-     * into the context of the graphic library, it is necessary to shift the
-     * rectangle position if the transformed dimension is negative.
-     */
+    /* set the dimensions to be a multiple of pixels */
     gs_dtransform(pgs, (floatp)w, (floatp)h, &dims);
     if (dims.x >= 0)
         rect.q.x = rect.p.x + ceil(dims.x);
     else {
-        rect.q.x = rect.p.x += 1;
+        rect.q.x = rect.p.x;
         rect.p.x += floor(dims.x);
     }
     if (dims.y >= 0)
         rect.q.y = rect.p.y + ceil(dims.y);
     else {
-        rect.q.y = rect.p.y += 1;
+        rect.q.y = rect.p.y;
         rect.p.y += floor(dims.y);
     }
 
@@ -93,29 +89,7 @@ adjust_render_rectangle(
      * not 0; rectangles with a zero dimension are never rendered, irrespective
      * of pixle placement mode.
      *
-     * This is a case in which HP's documentation is rather unclear, as it
-     * discusses rectangles defined by two points, while PCL rectangles are
-     * always defined via a location ((x, y) and a width (w) and height (h).
-     * The natrual interpretation of the defining points of the rectangle
-     * being (x, y) and (x + w, y + h) does not match actual behavior, as
-     * under that interpretation a rectangle of height 1 pixel located at
-     * an integral pixel position y should print under either pixel placement
-     * mode: it might be 2 pixels high for pixel placement mode 0, but would
-     * always be 1 pixel hight for pixel placement mode 1.  What actually
-     * occurs on an HP printer is that the rectangle is always 1 pixel high
-     * for pixel placement mode 0, and disappears (has height 0) for pixel
-     * placement mode 1.
-     *
-     * An interpretation that more closely matches these results is to assume
-     * that the defining points of the rectangle are (x, y) and
-     * (x + w - 1, y + h - 1) (for positive w and h; if either is negative,
-     * substitute w + 1 and/or h + 1 as appropriate).  Under pixel placement
-     * mode 0, the resulting rectangle is interpreted as (topologically) closed,
-     * so if h = 1, the rectangle "touches" pixels (x, y), (x + 1, y), ...
-     * (x + w - 1, y).  Under pixel placement mode 1 the rectangle is
-     * interpreted as open, so if h = 1 it touches no pixels.
-     *
-     * The trickiest part of this decrease in dimension concerns correction
+     * This trickiest part of this increase in dimension concerns correction
      * for the device orientation relative to print direction 0. The output
      * produced needs to be the same for pages produced with either long-edge
      * -feed or short-edge-feed printers, so it is not possible to add one
