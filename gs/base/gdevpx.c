@@ -1637,20 +1637,11 @@ pclxl_begin_image(gx_device * dev,
 	    pclxl_set_color_palette(xdev, eGray, palette, 2);
 	} else {
             if (bits_per_pixel == 24 ) {
-                stream *s = pclxl_stream(xdev);
                 if (dev->color_info.num_components == 1) {
                     pclxl_set_color_space(xdev, eGray);
-                    px_put_uba(s, (byte) 0x00, pxaGrayLevel);
                 } else {
                     pclxl_set_color_space(xdev, eRGB);
-                    spputc(s, pxt_ubyte_array);
-                    px_put_ub(s, 3);
-                    spputc(s, (byte) 0x00);
-                    spputc(s, (byte) 0x00);
-                    spputc(s, (byte) 0x00);
-                    px_put_a(s, pxaRGBColor);
                 }
-                spputc(s, (byte) pxtSetBrushSource);
             } else {
 	    int bpc = pim->BitsPerComponent;
 	    int num_components = pie->plane_depths[0] * pie->num_planes / bpc;
