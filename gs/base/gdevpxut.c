@@ -147,9 +147,10 @@ px_write_select_media(stream *s, const gx_device *dev,
     bool match_found = false;
 
     /* The default is eDefaultPaperSize (=96), but we'll emit CustomMediaSize */
+    /* 0.05 = 30@r600 - one of the test files is 36 off and within 5.0/72@600 */
     for (i = countof(media_sizes) - 2; i > 0; --i)
-	if (fabs(media_sizes[i].width - w) < 5.0 / 72 &&
-	    fabs(media_sizes[i].height - h) < 5.0 / 72
+	if (fabs(media_sizes[i].width - w) < 0.05 &&
+	    fabs(media_sizes[i].height - h) < 0.05
 	    ) {
 	    match_found = true;
 	    size = media_sizes[i].ms;
