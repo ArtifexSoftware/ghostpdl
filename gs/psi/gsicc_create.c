@@ -128,6 +128,7 @@ Note: All profile data must be encoded as big-endian
 #include "gsicc_create.h"
 #include "gxarith.h"
 #include "gsiccmanage.h"
+#include "math_.h"
 
 static void
 add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[]);
@@ -145,6 +146,13 @@ add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[]);
 unsigned int icc_debug_index = 0;
 #endif
 
+typedef struct cielab_s {
+
+    float lstar;
+    float astar;
+    float bstar;
+
+} cielab_t;
 
 static const char desc_name[] = "Ghostscript Internal Profile";
 static const char copy_right[] = "Copyright Artifex Software 2009";
@@ -314,6 +322,38 @@ float2u8Fixed8(float number_in){
     return( m );
 }
 
+static unsigned short
+lstar2_16bit(float number_in){
+
+    unsigned short returnval; 
+    float temp;
+
+    temp = number_in/((float) 100.0);
+
+    if (temp > 1) temp = 1;
+    if (temp < 0) temp = 0;
+
+    returnval = (unsigned short) ( (float) temp * (float) 0xff00);
+
+    return(returnval);
+}
+
+static unsigned short
+abstar2_16bit(float number_in){
+
+    float temp;
+
+    temp = number_in + ((float) 128.0);
+
+    if (temp < 0) temp = 0;
+
+    temp = (0x8000 * temp)/ (float) 128.0;
+
+    if (temp > 0xffff) temp = 0xffff;
+
+    return((unsigned short) temp);
+}
+
 
 static
 void  init_common_tags(gsicc_tag tag_list[],int num_tags, int *last_tag)
@@ -347,7 +387,7 @@ void  init_common_tags(gsicc_tag tag_list[],int num_tags, int *last_tag)
 
     tag_list[curr_tag].offset = tag_list[curr_tag-1].offset + tag_list[curr_tag-1].size;
     tag_list[curr_tag].sig = icSigCopyrightTag;
-    temp_size = DATATYPE_SIZE + strlen(desc_name) + 1;
+    temp_size = DATATYPE_SIZE + strlen(copy_right) + 1;
     tag_list[curr_tag].byte_padding = get_padding(temp_size);
     tag_list[curr_tag].size = temp_size + tag_list[curr_tag].byte_padding;
 
@@ -570,6 +610,40 @@ get_XYZ_floatptr(icS15Fixed16Number XYZ[], float *vector)
 
 }
 
+static void
+get_matrix_floatptr(icS15Fixed16Number matrix_fixed[], float *matrix)
+{
+
+    int k;
+
+    for (k = 0; k < 9; k++) {
+
+        matrix_fixed[k] = double2XYZtype(matrix[k]);
+
+    }
+
+}
+
+
+static void
+add_matrixdata(unsigned char *input_ptr, icS15Fixed16Number matrix_fixed[])
+{
+
+    int j;
+    unsigned char *curr_ptr;
+
+    curr_ptr = input_ptr;
+
+    for (j = 0; j < 9; j++){
+
+        write_bigendian_4bytes(curr_ptr, matrix_fixed[j]);
+        curr_ptr += 4;
+
+    }
+
+}
+
+
 
 static void
 add_gammadata(unsigned char *input_ptr, unsigned short gamma, icTagSignature curveType)
@@ -623,6 +697,123 @@ add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[])
     }
 
 }
+
+
+static void
+add_clut_labdata_16bit(unsigned char *input_ptr, cielab_t *cielab, int num_colors, int num_samples)
+{
+
+    int k;
+    unsigned short encoded_value;
+    unsigned char *curr_ptr;
+    long mlut_size;
+
+    mlut_size = (long) pow((float) num_samples, (long) num_colors);
+
+    curr_ptr = input_ptr;
+
+    for ( k = 0; k < mlut_size; k++){
+        
+        encoded_value = lstar2_16bit(cielab[k].lstar);
+        write_bigendian_2bytes( curr_ptr, encoded_value);
+        curr_ptr += 2;
+
+        encoded_value = abstar2_16bit(cielab[k].astar);
+        write_bigendian_2bytes( curr_ptr, encoded_value);
+        curr_ptr += 2;
+
+        encoded_value = abstar2_16bit(cielab[k].bstar);
+        write_bigendian_2bytes( curr_ptr, encoded_value);
+        curr_ptr += 2;
+
+    }
+
+}
+
+/* Add 16bit CLUT data that is in CIELAB color space */
+
+static void
+add_tabledata(unsigned char *input_ptr, cielab_t *cielab, int num_colors, int num_samples)
+{
+
+   int gridsize, numin, numout, numinentries, numoutentries;
+   unsigned char *curr_ptr;
+   icS15Fixed16Number matrix_fixed[9];
+   float ident[] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+   int mlut_size;
+   int k;
+
+   gridsize = num_samples;  /* Sampling points in MLUT */
+   numin = num_colors;      /* Number of input colorants */
+   numout = 3;              /* Number of output colorants */
+   numinentries = 2;        /* input 1-D LUT samples */
+   numoutentries = 2;       /* output 1-D LUT samples */
+
+
+   /* Signature */
+    curr_ptr = input_ptr;
+    write_bigendian_4bytes(curr_ptr,icSigLut16Type);
+    curr_ptr += 4;
+
+    /* Reserved */
+    memset(curr_ptr,0,4);
+    curr_ptr += 4;
+
+    /* Padded sizes */
+    *curr_ptr++ = numin;
+    *curr_ptr++ = numout;
+    *curr_ptr++ = gridsize;
+    *curr_ptr++ = 0;
+   
+   /* Identity Matrix */
+
+    get_matrix_floatptr(matrix_fixed,(float*) &(ident[0]));
+    add_matrixdata(curr_ptr,matrix_fixed);
+    curr_ptr += 4*9;
+
+    /* 1-D LUT sizes */
+
+    write_bigendian_2bytes(curr_ptr, numinentries);
+    curr_ptr += 2;
+
+    write_bigendian_2bytes(curr_ptr, numoutentries);
+    curr_ptr += 2;
+
+    /* Now the input curve data */
+
+    for (k = 0; k < num_colors; k++) {
+
+        write_bigendian_2bytes(curr_ptr, 0);
+        curr_ptr += 2;
+
+        write_bigendian_2bytes(curr_ptr, 0xFFFF);
+        curr_ptr += 2;
+
+    }
+
+    /* Now the CLUT data */
+
+    add_clut_labdata_16bit(curr_ptr, cielab, num_colors, num_samples); 
+    mlut_size = (int) pow((float) num_samples, (int) num_colors) * 2 * numout;
+    curr_ptr += mlut_size;
+
+    /* Now the output curve data */
+ 
+    for (k = 0; k < numout; k++) {
+
+        write_bigendian_2bytes(curr_ptr, 0);
+        curr_ptr += 2;
+
+        write_bigendian_2bytes(curr_ptr, 0xFFFF);
+        curr_ptr += 2;
+
+    }
+
+
+
+}
+
+
 
 /* This creates an ICC profile from the PDF calGray and calRGB definitions */
 

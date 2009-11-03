@@ -1694,7 +1694,7 @@ $(PSOBJ)zicc.$(OBJ) : $(PSSRC)zicc.c  $(OP) $(math__h) $(memory__h)\
 # This is needed even if PDF/PS interpreter is built with a different CMS
 $(PSOBJ)gsicc_create.$(OBJ) : $(PSSRC)gsicc_create.c $(GX) $(string__h)\
  $(gsmemory_h) $(gx_h) $(gxistate_h) $(gstypes_h) $(gscspace_h)\
- $(gscie_h) $(gsicc_create_h) $(gxarith_h) $(gsiccmanage_h)
+ $(gscie_h) $(gsicc_create_h) $(gxarith_h) $(gsiccmanage_h) $(math__h)
 	$(PSLCMSCC) $(PSO_)gsicc_create.$(OBJ) $(C_) $(PSSRC)gsicc_create.c
 
 # ---------------- Support for %disk IODevices ---------------- #
