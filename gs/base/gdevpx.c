@@ -1751,7 +1751,7 @@ pclxl_image_write_rows(pclxl_image_enum_t *pie)
             for (i=0;  i<rows_raster;  i++) {
               *out = (byte)( ((*(in+0) * (ulong) lum_red_weight) + 
                               (*(in+1) * (ulong) lum_green_weight) + 
-                              (*(in+3) * (ulong) lum_blue_weight) + 
+                              (*(in+2) * (ulong) lum_blue_weight) + 
                               (lum_all_weights / 2)) / lum_all_weights);
               in+=3;
               out++;
