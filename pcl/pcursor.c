@@ -259,7 +259,7 @@ pcl_set_cap_y(
         coord   y0 = pcs->cap.y;
 
         while (y > max_y) {
-            int    code = pcl_end_page_always(pcs);
+            int    code = pcl_end_page_if_marked(pcs);
 
             if (code < 0)
                 return code;
