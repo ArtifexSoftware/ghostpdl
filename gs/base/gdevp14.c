@@ -74,10 +74,16 @@ unsigned int clist_band_count = 0;
 
 # define INCR(v) DO_NOTHING
 
-/* Prototypes to quiet gcc warnings */
+/* Forward prototypes */
 void pdf14_cmyk_cs_to_cmyk_cm(gx_device *, frac, frac, frac, frac, frac *);
 int gs_pdf14_device_push(gs_memory_t *, gs_imager_state *, gx_device **,
 			gx_device *, const gs_pdf14trans_t *);
+static int pdf14_tile_pattern_fill(gx_device * pdev,
+                const gs_imager_state * pis, gx_path * ppath,
+                const gx_fill_params * params,
+                const gx_device_color * pdevc, const gx_clip_path * pcpath);
+static pdf14_mask_t * pdf14_mask_element_new(gs_memory_t * memory);
+
 
 /* Buffer stack	data structure */
 

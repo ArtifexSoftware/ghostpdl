@@ -266,19 +266,6 @@ pdf14_put_devn_params(gx_device * pdev, gs_devn_params * pdevn_params,
 int pdf14_get_buffer_information(const gx_device * dev, gx_pattern_trans_t *transbuff);
 
 /* Not static due to call from pattern logic */
-int
-pdf14_disable_device(gx_device * dev);
-
-
-/* Used for filling rects when we are doing a fill with a pattern that
-   has transparency */
-static int
-pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
-		     gx_path * ppath, const gx_fill_params * params,
-		 const gx_device_color * pdevc, const gx_clip_path * pcpath);
-
-
-static pdf14_mask_t *
-pdf14_mask_element_new(gs_memory_t *memory);
+int pdf14_disable_device(gx_device * dev);
 
 #endif /* gdevp14_INCLUDED */
