@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ICC_Creator", "ICC_Creator\ICC_Creator.vcproj", "{8107155A-C329-494E-8FFC-0FA00E64E587}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8107155A-C329-494E-8FFC-0FA00E64E587}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8107155A-C329-494E-8FFC-0FA00E64E587}.Debug|Win32.Build.0 = Debug|Win32
+		{8107155A-C329-494E-8FFC-0FA00E64E587}.Release|Win32.ActiveCfg = Release|Win32
+		{8107155A-C329-494E-8FFC-0FA00E64E587}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
