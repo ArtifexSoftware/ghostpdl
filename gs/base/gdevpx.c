@@ -376,7 +376,7 @@ pclxl_set_cursor(gx_device_pclxl * xdev, int x, int y)
     floatp y_scale = 1;
     /* Points must be one of ubyte/uint16/sint16;
        Here we play with PageScale (one of ubyte/uint16/real32_xy) to go higher.
-       his gives us 32768 x 3.4e38 in UnitsPerMeasure.
+       This gives us 32768 x 3.4e38 in UnitsPerMeasure.
        If we ever need to go higher, we play with UnitsPerMeasure. */
     if (abs(x) > 0x7FFF) {
         x_scale = ((floatp) abs(x))/0x7FFF;
@@ -417,7 +417,48 @@ pclxl_flush_points(gx_device_pclxl * xdev)
 	pxeDataType_t data_type;
 	int i, di;
 	byte diffs[NUM_POINTS * 2];
+	floatp x_scale = 1;
+	floatp y_scale = 1;
+	int temp_origin_x = 0, temp_origin_y = 0;
+	int count_smalls = 0;
 
+	if (xdev->points.type != POINTS_NONE) {
+	    for (i = 0; i < count; ++i) {
+		if ((abs(xdev->points.data[i].x) > 0x7FFF) || (abs(xdev->points.data[i].y) > 0x7FFF))
+		    xdev->scaled = true;
+		if ((abs(xdev->points.data[i].x) < 0x8000) && (abs(xdev->points.data[i].y) < 0x8000)) {
+		    if ((temp_origin_x != xdev->points.data[i].x) || (temp_origin_y != xdev->points.data[i].y)) {
+			temp_origin_x = xdev->points.data[i].x;
+			temp_origin_y = xdev->points.data[i].y;
+			count_smalls++;
+		    }
+		}
+	    }
+	    if (xdev->scaled) {
+		/* if there are some points with small co-ordinates, we set origin to it
+		   before scaling, an unset afterwards. This works around problems
+		   for small co-ordinates being moved snapped to 32767 x 32767 grid points;
+		   if there are more than 1, the other points
+		   will be in-accurate, unfortunately */
+		if (count_smalls) {
+		    pclxl_set_page_origin(s, temp_origin_x, temp_origin_y);
+		}
+		for (i = 0; i < count; ++i) {
+		    x_scale = max(((floatp) abs(xdev->points.data[i].x - temp_origin_x))/0x7FFF , x_scale);
+		    y_scale = max(((floatp) abs(xdev->points.data[i].y - temp_origin_y))/0x7FFF , y_scale);
+		}
+		for (i = 0; i < count; ++i) {
+		    xdev->points.data[i].x = (xdev->points.data[i].x - temp_origin_x)/x_scale + 0.5;
+		    xdev->points.data[i].y = (xdev->points.data[i].y - temp_origin_y)/y_scale + 0.5;
+		}
+		x = (x - temp_origin_x)/x_scale + 0.5;
+		y = (y - temp_origin_y)/y_scale + 0.5;
+		pclxl_set_page_scale(xdev, x_scale, y_scale);
+	    } else {
+		/* don't reset origin if we did not scale */
+		count_smalls = 0;
+	    }
+	}
 	/*
 	 * Writing N lines using a point list requires 11 + 4*N or 11 +
 	 * 2*N bytes, as opposed to 8*N bytes using separate commands;
@@ -441,6 +482,9 @@ pclxl_flush_points(gx_device_pclxl * xdev)
 			px_put_a(s, pxaEndPoint);
 			spputc(s, (byte)op);
 		    }
+		    pclxl_unset_page_scale(xdev);
+		    if (count_smalls)
+			pclxl_set_page_origin(s, -temp_origin_x, -temp_origin_y);
 		    goto zap;
 		}
 		/* See if we can use byte values. */
@@ -466,6 +510,9 @@ pclxl_flush_points(gx_device_pclxl * xdev)
 		spputc(s, (byte)op);
 		px_put_data_length(s, count * 2);	/* 2 bytes per point */
 		px_put_bytes(s, diffs, count * 2);
+		pclxl_unset_page_scale(xdev);
+		if (count_smalls)
+		    pclxl_set_page_origin(s, -temp_origin_x, -temp_origin_y);
 		goto zap;
 	    case POINTS_CURVES:
 		op = pxtBezierPath;
@@ -508,6 +555,9 @@ pclxl_flush_points(gx_device_pclxl * xdev)
 	    px_put_s(s, xdev->points.data[i].x);
 	    px_put_s(s, xdev->points.data[i].y);
 	}
+	pclxl_unset_page_scale(xdev);
+	if (count_smalls)
+	    pclxl_set_page_origin(s, -temp_origin_x, -temp_origin_y);
       zap:xdev->points.type = POINTS_NONE;
 	xdev->points.count = 0;
     }
