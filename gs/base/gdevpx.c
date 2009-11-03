@@ -33,6 +33,7 @@
 #include "gdevpxut.h"
 #include "gxlum.h"
 #include "gdevpcl.h"
+#include <stdlib.h> /* abs() */
 
 
 /* ---------------- Device definition ---------------- */
@@ -198,6 +199,9 @@ pclxl_page_init(gx_device_pclxl * xdev)
     xdev->palette.size = 0;
     xdev->font_set = false;
     xdev->state_rotated = 0;
+    xdev->scaled = false;
+    xdev->x_scale = 1;
+    xdev->y_scale = 1;
 }
 
 /* Test whether a RGB color is actually a gray shade. */
@@ -368,9 +372,26 @@ static int
 pclxl_set_cursor(gx_device_pclxl * xdev, int x, int y)
 {
     stream *s = pclxl_stream(xdev);
-
+    floatp x_scale = 1;
+    floatp y_scale = 1;
+    /* Points must be one of ubyte/uint16/sint16;
+       Here we play with PageScale (one of ubyte/uint16/real32_xy) to go higher.
+       his gives us 32768 x 3.4e38 in UnitsPerMeasure.
+       If we ever need to go higher, we play with UnitsPerMeasure. */
+    if (abs(x) > 0x7FFF) {
+        x_scale = ((floatp) abs(x))/0x7FFF;
+        x = (x > 0 ? 0x7FFF : -0x7FFF);
+        xdev->scaled = true;
+    }
+    if (abs(y) > 0x7FFF) {
+        y_scale = ((floatp) abs(y))/0x7FFF;
+        y = (y > 0 ? 0x7FFF : -0x7FFF);
+        xdev->scaled = true;
+    }
+    pclxl_set_page_scale(xdev, x_scale, y_scale);
     px_put_ssp(s, x, y);
     px_put_ac(s, pxaPoint, pxtSetCursor);
+    pclxl_unset_page_scale(xdev);
     return 0;
 }
 
