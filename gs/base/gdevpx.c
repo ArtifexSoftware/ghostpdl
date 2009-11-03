@@ -886,7 +886,7 @@ pclxl_setlinewidth(gx_device_vector * vdev, floatp width)
 {
     stream *s = gdev_vector_stream(vdev);
 
-    px_put_us(s, (uint) width);
+    px_put_us(s, (uint) (width+0.5));
     px_put_ac(s, pxaPenWidth, pxtSetPenWidth);
     return 0;
 }
@@ -1061,8 +1061,8 @@ pclxl_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
     if (code < 0)
 	return code;
     return pclxl_set_cursor(xdev,
-			    xdev->points.current.x = (int)x,
-			    xdev->points.current.y = (int)y);
+			    xdev->points.current.x = (int)(x+0.5),
+			    xdev->points.current.y = (int)(y+0.5));
 }
 
 static int
@@ -1080,13 +1080,13 @@ pclxl_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 	    if (code < 0)
 		return code;
 	}
-	xdev->points.current.x = (int)x0;
-	xdev->points.current.y = (int)y0;
+	xdev->points.current.x = (int)(x0+0.5);
+	xdev->points.current.y = (int)(y0+0.5);
 	xdev->points.type = POINTS_LINES;
     } {
 	gs_int_point *ppt = &xdev->points.data[xdev->points.count++];
 
-	ppt->x = (int)x, ppt->y = (int)y;
+	ppt->x = (int)(x+0.5), ppt->y = (int)(y+0.5);
     }
     return 0;
 }
@@ -1107,16 +1107,16 @@ pclxl_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
 	    if (code < 0)
 		return code;
 	}
-	xdev->points.current.x = (int)x0;
-	xdev->points.current.y = (int)y0;
+	xdev->points.current.x = (int)(x0+0.5);
+	xdev->points.current.y = (int)(y0+0.5);
 	xdev->points.type = POINTS_CURVES;
     }
     {
 	gs_int_point *ppt = &xdev->points.data[xdev->points.count];
 
-	ppt->x = (int)x1, ppt->y = (int)y1, ++ppt;
-	ppt->x = (int)x2, ppt->y = (int)y2, ++ppt;
-	ppt->x = (int)x3, ppt->y = (int)y3;
+	ppt->x = (int)(x1+0.5), ppt->y = (int)(y1+0.5), ++ppt;
+	ppt->x = (int)(x2+0.5), ppt->y = (int)(y2+0.5), ++ppt;
+	ppt->x = (int)(x3+0.5), ppt->y = (int)(y3+0.5);
     }
     xdev->points.count += 3;
     return 0;
@@ -1133,8 +1133,8 @@ pclxl_closepath(gx_device_vector * vdev, floatp x, floatp y,
     if (code < 0)
 	return code;
     spputc(s, pxtCloseSubPath);
-    xdev->points.current.x = (int)x_start;
-    xdev->points.current.y = (int)y_start;
+    xdev->points.current.x = (int)(x_start+0.5);
+    xdev->points.current.y = (int)(y_start+0.5);
     return 0;
 }
 
