@@ -129,6 +129,13 @@ gs_output_page(gs_state * pgs, int num_copies, int flush)
 {
     gx_device *dev = gs_currentdevice(pgs);
 
+    /* for devices that hook 'fill_path' in order to pick up imager state */
+    /* values such as dev_ht (such as tiffsep1), make a dummy call here   */
+    /* to make sure that it has been called at least once		  */
+    gs_newpath(pgs);
+    gs_moveto(pgs, 0.0, 0.0);
+    gs_fill(pgs);
+
     if (dev->IgnoreNumCopies)
 	num_copies = 1;
     return (*dev_proc(dev, output_page)) (dev, num_copies, flush);

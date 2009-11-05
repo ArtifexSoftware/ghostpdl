@@ -178,6 +178,7 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	tiff24nc  TIFF 24-bit RGB, no compression (NeXT standard format)
 #	tiff32nc  TIFF 32-bit CMYK
 #	tiffsep   Creates tiffgray for each colorant plus a CMYK composite
+#	tiffsep1  Creates halftoned tiff 1-bit per pixel for each colorant
 #	tifflzw  TIFF LZW (tag = 5) (monochrome)
 #	tiffpack  TIFF PackBits (tag = 32773) (monochrome)
 
@@ -1719,4 +1720,11 @@ tiffsep_=$(tiffgray_) $(GLOBJ)gdevdevn.$(OBJ) $(GLOBJ)gsequivc.$(OBJ)
 $(DD)tiffsep.dev : $(DEVS_MAK) $(tiffgray_) $(DD)tiffs.dev
 	$(SETPDEV2) $(DD)tiffsep $(tiffsep_)
 	$(ADDMOD) $(DD)tiffsep -include $(DD)tiffs
+
+#
+# Create separation files (tiff 1-bit) 
+
+$(DD)tiffsep1.dev : $(DEVS_MAK) $(tiffgray_) $(DD)tiffs.dev
+	$(SETPDEV2) $(DD)tiffsep1 $(tiffsep_)
+	$(ADDMOD) $(DD)tiffsep1 -include $(DD)tiffs
 
