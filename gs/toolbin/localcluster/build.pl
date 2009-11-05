@@ -6,11 +6,23 @@ use warnings;
 use Data::Dumper;
 use POSIX ":sys_wait_h";
 
-my $product=shift;
-die "usage: build.pl (gs|ghostpdl)" if ($product && $product ne "gs" && $product ne "ghostpdl");
+my %allowedProducts=(
+  'gs'  => 1,
+  'pcl' => 1,
+  'xps' => 1,
+  'svg' => 1
+);
+
+my %products;
+
+my $t;
+
+while ($t=shift) {
+  $products{$t}=1;
+  die "usage: build.pl [gs] [pcl] [xps] [svg]" if (!exists $allowedProducts{$t});
+}
 
 my $updateTestFiles=1;
-
 my $verbose=0;
 
 local $| = 1;
@@ -21,17 +33,6 @@ $baseDirectory='./';
 my $temp="./temp";
 #$temp="/tmp/space/temp";
 #$temp="/dev/shm/temp";
-
-my %productMap=(
-  'gs'.'gs' => 1,
-  'pcl'.'gs' => 1,
-  'xps'.'gs' => 1,
-  'svg'.'gs' => 1,
-  'gs'.'ghostpdl' => 1,
-  'pcl'.'ghostpdl' => 1,
-  'xps'.'ghostpdl' => 1,
-  'svg'.'ghostpdl' => 1
-  );
 
 my $gsBin=$baseDirectory."gs/bin/gs";
 my $pclBin=$baseDirectory."gs/bin/pcl6";
@@ -45,13 +46,22 @@ my %testSource=(
   $baseDirectory."tests_private/ps/ps3cet" => 'gs',
   $baseDirectory."tests_private/comparefiles" => 'gs',
   $baseDirectory."tests_private/pdf/PDFIA1.7_SUBSET" => 'gs',
+
   $baseDirectory."tests/pcl" => 'pcl',
+# $baseDirectory."tests_private/customer_tests" => 'pcl',
   $baseDirectory."tests_private/pcl/pcl5cfts" => 'pcl',
   $baseDirectory."tests_private/pcl/pcl5efts" => 'pcl',
+  $baseDirectory."tests_private/pcl/pcl5ccet" => 'pcl',
   $baseDirectory."tests_private/xl/pxlfts3.0" => 'pcl',
-  $baseDirectory."tests/xps" => 'xps',
+  $baseDirectory."tests_private/xl/pcl6cet" => 'pcl',
+  $baseDirectory."tests_private/xl/pcl6cet3.0" => 'pcl',
+  $baseDirectory."tests_private/xl/pxlfts" => 'pcl',
+  $baseDirectory."tests_private/xl/pxlfts2.0" => 'pcl',
+
+# $baseDirectory."tests/xps" => 'xps',
   $baseDirectory."tests_private/xps/xpsfts-a4" => 'xps',
-  # $baseDirectory."tests/svg/svgw3c-1.1-full/svg" => 'svg',
+
+  $baseDirectory."tests/svg/svgw3c-1.1-full/svg" => 'svg',
   # $baseDirectory."tests/svg/svgw3c-1.1-full/svgHarness" => 'svg',
   # $baseDirectory."tests/svg/svgw3c-1.1-full/svggen" => 'svg',
 # $baseDirectory."tests/svg/svgw3c-1.2-tiny/svg" => 'svg',
@@ -101,7 +111,7 @@ my %tests=(
     "bitrgb.75.0",
     "bitrgb.600.0",
     "bitrgb.600.1",
-    "psdcmyk.75.0",
+    #"psdcmyk.75.0",
 ##"psdcmyk.600.0",
 ##"psdcmyk.600.1",
     "pdf.ppmraw.75.0",
@@ -124,7 +134,7 @@ my %tests=(
     "bitrgb.72.0",
 ##"bitrgb.300.0",
 ##"bitrgb.300.1",
-    "psdcmyk.72.0",
+##"psdcmyk.72.0",
 ###"psdcmyk.300.0",
 ###"psdcmyk.300.1",
     "pdf.ppmraw.72.0",
@@ -147,7 +157,7 @@ my %tests=(
     "bitrgb.72.0",
     #"bitrgb.300.0",
     #"bitrgb.300.1",
-    "psdcmyk.72.0",
+    #"psdcmyk.72.0",
 ##"psdcmyk.300.0",
 ##"psdcmyk.300.1",
     "pdf.ppmraw.72.0",
@@ -168,7 +178,7 @@ if ($updateTestFiles) {
 # build a list of the source files
 my %testfiles;
 foreach my $testSource (sort keys %testSource) {
-  if (!$product || exists $productMap{$testSource{$testSource}.$product}) {
+  if (scalar keys %products==0 || exists $products{$testSource{$testSource}}) {
     opendir(DIR, $testSource) || die "can't opendir $testSource: $!";
     foreach (readdir(DIR)) {
       $testfiles{$testSource.'/'.$_}=$testSource{$testSource} if (!-d $testSource.'/'.$_ && ! m/^\./ && ! m/.disabled$/);
@@ -347,6 +357,13 @@ foreach my $testfile (sort keys %testfiles) {
   }
 }
 
+if (scalar keys %products>0) {
+  print "pdl=";
+  foreach (keys %products) {
+    print "$_ ";
+  }
+  print "\n";
+}
 while (scalar(@commands)) {
   my $n=rand(scalar @commands);
   my $command=$commands[$n];  splice(@commands,$n,1);

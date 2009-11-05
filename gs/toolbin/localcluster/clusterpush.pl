@@ -66,26 +66,3 @@ close(T);
 print STDERR "queuing\n";
 `ssh -l marcos -i \$HOME/.ssh/cluster_key $host touch $dir/$user/$product.run`;
 
-
-
-
-#
-#echo "Queuing regression test..."
-#echo "cd $DEST/$TARGET && run_regression" | ssh $HOST
-#if test ! $? -eq 0; then
-#  echo "$0 aborted."
-#  exit 1
-#fi
-#
-#REPORT=`ssh $HOST ls $DEST/$TARGET \| egrep '^regression-[0-9]+.log$' \| sort -r \| head -1`
-#echo "Pulling $REPORT..."
-#scp -q $HOST:$DEST/$TARGET/$REPORT .
-#if test ! $? -eq 0; then
-#  echo "$0 aborted."
-#  exit 1
-#fi
-#cat $REPORT
-#if test ! $? -eq 0; then
-#  echo "$0 aborted."
-#  exit 1
-#fi

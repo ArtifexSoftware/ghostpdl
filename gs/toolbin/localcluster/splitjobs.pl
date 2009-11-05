@@ -23,13 +23,18 @@ die "usage: splitjobs.pl input [machine ratio ...]" if (!$input || scalar(@ratio
 #print Dumper(\@machine);
 #print Dumper(\@ratio);
 
+my $header="";
 open(F,"<$input") || die "file $input not found";
 while(<F>) {
   chomp;
-  if (m/__svg__/ || m/__pcl__/ || m/__xps__/) {
-    push @svgJobs,$_;
+  if (m/^pdl=/) {
+    $header=$_;
   } else {
-    push @jobs,$_;
+    if (m/__svg__/ || m/__pcl__/ || m/__xl__/ || m/__xps__/) {
+      push @svgJobs,$_;
+    } else {
+      push @jobs,$_;
+    }
   }
 }
 close(F);
@@ -54,6 +59,7 @@ $count[-1]+=$remainder;
 
 for (my $i=0;  $i<scalar(@machine);  $i++) {
   open(F,">$machine[$i]") || die "can't write to file $machine[$i]";
+  print F "$header\n" if ($header);
   while($count[$i]--) {
     if (scalar(@svgJobs)>0) {
       print F (shift @svgJobs)."\n";

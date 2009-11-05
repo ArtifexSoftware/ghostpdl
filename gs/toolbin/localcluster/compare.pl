@@ -7,7 +7,18 @@ use Data::Dumper;
 
 my $previousValues=20;
 
-my @errorDescription=("none","Error_reading_input_file","Error_reading_Ghostscript_produced_PDF_file","Timeout_reading_input_file","Timeout_reading_Ghostscript_produced_PDF_File","Input_file_missing","Ghostscript_generated_PDF_file_missing","Seg_Fault_during_pdfwrite","Seg_Fault","Internal_error");
+my @errorDescription=(
+"none",
+"Error_reading_input_file",
+"Error_reading_Ghostscript_produced_PDF_file",
+"Timeout_reading_input_file",
+"Timeout_reading_Ghostscript_produced_PDF_File",
+"Input_file_missing",
+"Ghostscript_generated_PDF_file_missing",
+"Seg_Fault_during_pdfwrite",
+"Seg_Fault",
+"Seg_Fault_reading_Ghostscript_produced_PDF_File",
+"Internal_error");
 
 my $current=shift;
 my $previous=shift;

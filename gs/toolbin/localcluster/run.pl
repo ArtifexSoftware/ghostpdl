@@ -23,7 +23,9 @@ my %timeOuts;
 my $machine=shift || die "usage: run.pl machine_name";
 
 my $user;
-my $product;
+#my $product;
+
+my $products="gs pcl svg xps";
 
 if (open(F,"<$machine.start")) {
   $_=<F>;
@@ -32,12 +34,12 @@ if (open(F,"<$machine.start")) {
     chomp;
     my @a=split ' ';
     $user=$a[0];
-    $product=$a[1];
-    if ($user && $product) {
-      #   print "user=$user product=$product\n";
-    } else {
-      #   print "empty user\n";
-    }
+#   $product=$a[1];
+#   if ($user && $product) {
+#     #   print "user=$user product=$product\n";
+#   } else {
+#     #   print "empty user\n";
+#   }
   }
   unlink("$machine.start");
 }
@@ -117,8 +119,9 @@ my $t=<F>;
 chomp $t;
 if ($t =~ m/^\d+$/) {
   $desiredRev=$t;
+} elsif ($t =~m/^pdl=(.+)/) {
+  $products=$1;
 } else {
-# $t =~ s/md5sum/$md5Command/g;
   push @commands, $t;
 }
 while(<F>) {
@@ -126,6 +129,13 @@ while(<F>) {
   push @commands, $_;
 }
 close(F);
+
+my %products;
+my @products=split ' ',$products;
+foreach (@products) {
+  $products{$_}=1;
+}
+
 
 my $cmd;
 my $s;
@@ -210,7 +220,7 @@ sub updateStatus($) {
   spawn(0,"scp -i ~/.ssh/cluster_key $machine.status marcos\@casper.ghostscript.com:/home/marcos/cluster/$machine.status");
 }
 
-if ($user && $product) {
+if ($user) {
 } else {
   updateStatus('Updating test files');
 
@@ -229,14 +239,14 @@ if ($user && $product) {
 $abort=checkAbort;
 if (!$abort) {
 
-  if ($user && $product) {
+  if ($user) {
     # `pkill -9 rsync`; exit;
     # my $s=`ps -ef | grep rsync | grep -v grep`;
     # chomp $s;
     # my @a=split ' ',$s;
     # `kill -9 $a[1]`;
 
-    updateStatus("Fetching $product source from users/$user");
+    updateStatus("Fetching source from users/$user");
     mkdir "users";
     mkdir "users/$user";
     mkdir "users/$user/ghostpdl";
@@ -333,7 +343,8 @@ if ($updateGS) {
     $cmd="mv $gsSource/base/gscdef.tmp $gsSource/base/gscdef.c";
     `$cmd`;
 
-    if (1 || !$product || $product eq 'gs') {  # always build ghostscript
+#   if (1 || !$product || $product eq 'gs') {  # always build ghostscript
+    if ($products{'gs'}) {
 
       updateStatus('Building Ghostscript');
 
@@ -357,8 +368,8 @@ if ($updateGS) {
     }
   }
 
-  if (1 || !$product || $product eq 'ghostpdl') {  # always build ghostpdl
-    if (1) {
+# if (1 || !$product || $product eq 'ghostpdl') {  # always build ghostpdl
+#   if (1) {
       $abort=checkAbort;
       if (!$abort) {
         updateStatus('Make clean GhostPCL/XPS/SVG');
@@ -368,7 +379,7 @@ if ($updateGS) {
       }
 
       $abort=checkAbort;
-      if (!$abort) {
+      if ($products{'pcl'} && !$abort) {
         updateStatus('Building GhostPCL');
         $cmd="cd $gpdlSource ; touch makepcl.out ; rm -f makepcl.out ; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1 -j 12; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1";
         print "$cmd\n" if ($verbose);
@@ -384,7 +395,7 @@ if ($updateGS) {
       }
 
       $abort=checkAbort;
-      if (!$abort) {
+      if ($products{'xps'} && !$abort) {
         updateStatus('Building GhostXPS');
         $cmd="cd $gpdlSource ; touch makexps.out ; rm -f makexps.out ; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps.out 2>&1 -j 12; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makexps.out 2>&1";
         print "$cmd\n" if ($verbose);
@@ -400,7 +411,7 @@ if ($updateGS) {
       }
 
       $abort=checkAbort;
-      if (!$abort) {
+      if ($products{'svg'} && !$abort) {
         updateStatus('Building GhostSVG');
         $cmd="cd $gpdlSource ; touch makesvg.out ; rm -f makesvg.out ; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg.out 2>&1 -j 12; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makesvg.out 2>&1";
         print "$cmd\n" if ($verbose);
@@ -414,8 +425,8 @@ if ($updateGS) {
           $compileFail.="gsvg ";
         }
       }
-    }
-  }
+#   }
+# }
 }
 
 unlink "link.icc","wts_plane_0","wts_plane_1","wts_plane_2","wts_plane_3";

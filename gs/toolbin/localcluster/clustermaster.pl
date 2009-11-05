@@ -15,6 +15,8 @@ my $verbose=1;
 my $runningSemaphore="./running";
 my $maxDownTime=180;  # how many seconds before a machine is considered down
 
+my $footer="";
+
 # the concept with checkPID is that if the semaphore file is missing or doesn't
 # contain our PID something bad has happened and we just just exit
 sub checkPID {
@@ -81,9 +83,87 @@ open(F,">$runningSemaphore");
 print F "$$\n";
 close(F);
 
+my $product="";
+
+
+#gs/base, gs/Resource: all languages
+#gs/psi: ps, pdf
+#psi: language switch
+#pl, main, common: pcl, pxl, xps, svg, language switch
+#pcl, pxl, urwfonts: pcl, pxl
+#xps: xps
+#svg: svg
+
+# svg: 1000
+# xps: 0100
+# pcl: 0010
+# ps : 0001
+
+my %tests=(
+  'gs'  => 1,
+  'pcl' => 2,
+  'xps' => 4,
+  'svg' => 8
+);
+
+
+my %rules=(
+ 'xps' => 4,
+ 'svg' => 8,
+ 'pcl' => 2,
+ 'pxl' => 2,
+ 'urwfonts' => 2,
+ 'pl' => 15,
+ 'main' => 15,
+ 'common' => 15,
+ 'gs/psi' => 1,
+ 'gs/base' => 15,
+ 'gs/Resource' => 15
+);
+
+
 my $currentRev1=`/usr/local/bin/svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4} '`;
 my $currentRev2=`/usr/local/bin/svn info ghostpdl/gs | grep "Last Changed Rev" | awk '{ print \$4} '`;
-`/usr/local/bin/svn update ghostpdl`;
+
+$footer.="\nupdated files:\n";
+my $a=`/usr/local/bin/svn update ghostpdl`;
+#print "$a";
+my @a=split '\n',$a;
+my $set=0;
+for (my $i=0;  $i<scalar(@a);  $i++) {
+  my $s=$a[$i];
+  chomp $s;
+
+  if ($s =~ m|/|) {
+#   print "$s\n";
+    $s=~ s|ghostpdl/||;
+    if ($s =~ m|. +(.+)/|) {
+      print "$s\n";
+$footer.="$s\n";
+      my $t=$1;
+      print "$t ";
+      if (exists $rules{$t}) {
+        print "$rules{$t}";
+        $set|=$rules{$t};
+      } else {
+        print "missing";
+      }
+      print "\n";
+    }
+  }
+}
+
+#print "$set\n";
+foreach my $i (keys %tests) {
+  $product .= "$i " if ($set & $tests{$i});
+}
+print "$product\n" if (length($product) && $verbose);
+
+$footer.="\nproducts to be tested: $product\n";
+
+# $product="gs pcl xps svg";
+
+#`/usr/local/bin/svn update ghostpdl`;
 my $newRev1=`/usr/local/bin/svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4} '`;
 my $newRev2=`/usr/local/bin/svn info ghostpdl/gs | grep "Last Changed Rev" | awk '{ print \$4} '`;
 
@@ -95,10 +175,9 @@ chomp $newRev2;
 
 my $normalRegression=0;
 my $userRegression="";
-my $product="";
 my $userName="";
 
-if ($currentRev1!=0 && $currentRev2!=0 && ($currentRev1!=$newRev1 || $currentRev2!=$newRev2)) {
+if (length($product)>0 && $currentRev1!=0 && $currentRev2!=0 && ($currentRev1!=$newRev1 || $currentRev2!=$newRev2)) {
   $normalRegression=1;
 } else {
 
@@ -187,7 +266,7 @@ if ($normalRegression==1 || $userRegression ne "") {
     if (!$normalRegression) {
       my @a=split ' ',$userRegression;
       $userName=$a[0];
-      $product=$a[1];
+      $product="gs pcl xps svg"; # always test everything for users
       print "userName=$userName product=$product\n" if ($verbose);
     }
     `./build.pl $product >jobs`;
@@ -325,14 +404,24 @@ if ($normalRegression==1 || $userRegression ne "") {
   }
 
   checkPID();
+  $userName="email" if ($normalRegression);
   if (!$buildFail) {
 
     my $machineCount=scalar (keys %machines);
     if ($normalRegression) {
       # unlink "log";
+      my @a=split ' ',$product;
+      my $filter="cat current.tab";
+      foreach (@a) {
+        $filter.=" | grep -v \"\t$_\t\"";
+      }
+      $filter.=">t.tab";
+      print "$filter\n" if ($verbose);
+      `$filter`;
+
       `mv previous.tab previous2.tab`;
       `mv current.tab previous.tab`;
-      `cat $tabs | sort >current.tab`;
+      `cat $tabs t.tab | sort >current.tab`;
       `rm $tabs`;
       #  `cat $logs >log`;
       #  `./readlog.pl log current.tab`;
@@ -356,7 +445,16 @@ if ($normalRegression==1 || $userRegression ne "") {
       #  `gzip archive/$newRev2-$newRev1.tab`;
       # unlink "log";
     } else {
-      `cat $tabs | sort >temp.tab`;
+      my @a=split ' ',$product;
+      my $filter="cat current.tab";
+      foreach (@a) {
+        $filter.=" | grep -v \"\t$_\t\"";
+      }
+      $filter.=">t.tab";
+      print "$filter\n" if ($verbose);
+      `$filter`;
+
+      `cat $tabs t.tab | sort >temp.tab`;
       `rm $tabs`;
 
       checkPID();
@@ -369,9 +467,8 @@ if ($normalRegression==1 || $userRegression ne "") {
     }
   } else {
     checkPID();
-    $userName="email" if ($normalRegression);
     open (F,">$userName.txt");
-    print F "$failMessage\n";
+    print F "An error occurred that prevented the local cluster run from finishing:\n\n$failMessage\n";
     foreach (keys %machines) {
       if ($buildFail{$_}) {
         print F "\n\n$_ log:\n\n";
@@ -381,7 +478,23 @@ if ($normalRegression==1 || $userRegression ne "") {
           print F $_;
         }
         close(F2);
+        print F "\n\n$_ stdout:\n\n";
+	`tail -100 $_.out >temp.out`;
+        open(F2,"<temp.out");
+        while(<F2>) {
+          print F $_;
+        }
+        close(F2);
       }
+    }
+    close(F);
+  }
+
+  {
+    my @t=split '\n',$footer;
+    open(F,">>$userName.txt");
+    foreach (@t) {
+      print F "$_\n";
     }
     close(F);
   }
@@ -389,13 +502,17 @@ if ($normalRegression==1 || $userRegression ne "") {
   checkPID();
   if ($normalRegression) {
     `mail -a \"From: marcos.woehrmann\@artifex.com\" gs-regression\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
+#   `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
     `./cp.all`;
   } else {
     if (exists $emails{$userName}) {
-      `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"$userRegression regression\" <$userName.txt`;
-      `mail -a \"From: marcos.woehrmann\@artifex.com\" $emails{$userName} -s \"$userRegression \`cat revision\`\" <$userName.txt`;
+#     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"$userRegression regression\" <$userName.txt`;
+#     `mail -a \"From: marcos.woehrmann\@artifex.com\" $emails{$userName} -s \"$userRegression \`cat revision\`\" <$userName.txt`;
+      `mail marcos.woehrmann\@artifex.com -s \"$userRegression regression\" <$userName.txt`;
+      `mail $emails{$userName} -s \"$userRegression \`cat revision\`\" <$userName.txt`;
     } else {
-      `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"bad username: $userName\" <$userName.txt`;
+#     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"bad username: $userName\" <$userName.txt`;
+      `mail marcos.woehrmann\@artifex.com -s \"bad username: $userName\" <$userName.txt`;
     }
   }
 
