@@ -88,6 +88,7 @@ typedef struct gs_transparency_group_params_s {
     uint mask_id;
     int group_color_numcomps;
     gs_transparency_color_t group_color;
+    int64_t icc_hashcode;                    /* Needed when we are doing clist reading */
     cmm_profile_t *iccprofile;               /* The profile  */    
 } gs_transparency_group_params_t;
 

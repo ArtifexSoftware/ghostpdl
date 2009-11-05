@@ -28,6 +28,7 @@
 #define LAB_ICC           "iccprofiles/lab.icc"
 
 #include "gsicc_littlecms.h"
+#include "gxclist.h"
 
 /* Prototypes */
 
@@ -54,6 +55,8 @@ gcmmhprofile_t gsicc_get_profile_handle_buffer(unsigned char *buffer);
 void gsicc_set_icc_directory(const gs_imager_state *pis, const char* pname, int namelen);
 
 unsigned int gsicc_getprofilesize(unsigned char *buffer);
+
+cmm_profile_t* gsicc_read_serial_icc(gx_device_clist_reader *pcrdev, int64_t icc_hashcode);
 
 static void rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname);
 static int gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, gs_memory_t *memory);

@@ -260,7 +260,7 @@ static int pdf14_custom_put_image(gx_device * dev, gs_imager_state * pis,
 
 /* Used to alter device color mapping procs based upon group or softmask color space */
 static int pdf14_update_device_color_procs(gx_device *dev,
-			      gs_transparency_color_t group_color,
+			      gs_transparency_color_t group_color, int64_t icc_hashcode,
 			      gs_imager_state *pis, cmm_profile_t *iccprofile);
 
 
@@ -1247,7 +1247,6 @@ pdf14_push_transparency_state(gx_device *dev, gs_imager_state *pis)
        then obtain a Q operation ( a pop ) */
     
     pdf14_device *pdev = (pdf14_device *)dev;
-    int ok;
     pdf14_ctx *ctx = pdev->ctx;
     pdf14_mask_t *new_mask;
 
@@ -1281,7 +1280,6 @@ pdf14_pop_transparency_state(gx_device *dev, gs_imager_state *pis)
        a Q that has occurred. */
 
     pdf14_device *pdev = (pdf14_device *)dev;
-    int ok;
     pdf14_ctx *ctx = pdev->ctx;
     pdf14_mask_t *old_mask;
 
@@ -2440,7 +2438,7 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_imager_state * pis,
 static	int
 pdf14_forward_create_compositor(gx_device * dev, gx_device * * pcdev,
 	const gs_composite_t * pct, gs_imager_state * pis,
-	gs_memory_t * mem)
+	gs_memory_t * mem, gx_device *cdev)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
     gx_device * tdev = pdev->target;
@@ -2455,7 +2453,7 @@ pdf14_forward_create_compositor(gx_device * dev, gx_device * * pcdev,
 	    return gx_update_pdf14_compositor(dev, pis, pdf14pct, mem);
 	return 0;
     }
-    code = dev_proc(tdev, create_compositor)(tdev, &ndev, pct, pis, mem);
+    code = dev_proc(tdev, create_compositor)(tdev, &ndev, pct, pis, mem, cdev);
     if (code < 0)
 	return code;
     pdev->target = ndev;
@@ -2470,7 +2468,7 @@ pdf14_forward_create_compositor(gx_device * dev, gx_device * * pcdev,
 static	int
 pdf14_create_compositor(gx_device * dev, gx_device * * pcdev,
 	const gs_composite_t * pct, gs_imager_state * pis,
-	gs_memory_t * mem)
+	gs_memory_t * mem, gx_device *cdev)
 {
 	pdf14_device *p14dev = (pdf14_device *)dev;
 
@@ -2478,6 +2476,15 @@ pdf14_create_compositor(gx_device * dev, gx_device * * pcdev,
 	const gs_pdf14trans_t * pdf14pct = (const gs_pdf14trans_t *) pct;
 
 	*pcdev = dev;
+
+        /* cdev, may be the clist reader device which may contain
+           information that we will need related to the ICC color
+           spaces that define transparency groups.  We want this
+           propogated through all the pdf14 functions.  Store 
+           a pointer to it in the pdf14 device */
+
+        p14dev->pclist_device = cdev;
+
 	return gx_update_pdf14_compositor(dev, pis, pdf14pct, mem);
     } else if (gs_is_overprint_compositor(pct)) {
 		/* If we had an overprint compositer action, then the 
@@ -2501,7 +2508,7 @@ pdf14_create_compositor(gx_device * dev, gx_device * * pcdev,
 		*pcdev = dev;
 		return 0;
     } else
-	return gx_no_create_compositor(dev, pcdev, pct, pis, mem);
+	return gx_no_create_compositor(dev, pcdev, pct, pis, mem, cdev);
 }
 
 static	int
@@ -2731,7 +2738,7 @@ pdf14_begin_transparency_group(gx_device *dev,
         The exception would be if we are in doing the group for a soft mask */
 
     if (!sep_target) {
-        code = pdf14_update_device_color_procs(dev, group_color, pis, curr_profile);
+        code = pdf14_update_device_color_procs(dev, group_color, ptgp->icc_hashcode, pis, curr_profile);
     } else {
         code = 0;
         group_color_numcomps = pdev->color_info.num_components;
@@ -2824,7 +2831,7 @@ pdf14_end_transparency_group(gx_device *dev,
 
 static int
 pdf14_update_device_color_procs(gx_device *dev,
-			      gs_transparency_color_t group_color,
+			      gs_transparency_color_t group_color, int64_t icc_hashcode,
 			      gs_imager_state *pis, cmm_profile_t *iccprofile)
 {
 
@@ -2836,6 +2843,7 @@ pdf14_update_device_color_procs(gx_device *dev,
     int new_num_comps;
     bool new_additive;
     byte new_depth;
+    gx_device_clist_reader *pcrdev;
 
     if (pdev->ctx->stack != NULL){
 
@@ -2917,7 +2925,19 @@ pdf14_update_device_color_procs(gx_device *dev,
 
             case ICC:
 
-                /* We need to store the ICC profile  */
+                /* If we are coming from the clist reader, then we need to get the ICC data now  */
+
+                if (iccprofile == NULL && pdev->pclist_device != NULL) {
+
+                    /* Get the serialized data from the clist.  Not the whole profile. */
+
+                    pcrdev = (gx_device_clist_reader *)(pdev->pclist_device);
+                    iccprofile = gsicc_read_serial_icc(pcrdev, icc_hashcode);
+
+                    if (iccprofile == NULL)
+                        return gs_rethrow(-1,"ICC data not found in clist");
+   
+                } 
 
                 new_num_comps = iccprofile->num_comps;
                 new_depth = new_num_comps * 8;
@@ -3455,7 +3475,7 @@ pdf14_begin_transparency_mask(gx_device	*dev,
 
     /* Always update the color mapping procs.  Otherwise we end up
        fowarding to the target device. */
-    code = pdf14_update_device_color_procs(dev,group_color,pis,ptmp->iccprofile);
+    code = pdf14_update_device_color_procs(dev,group_color,0,pis,ptmp->iccprofile);
     if (code < 0)
 	return code;
 
@@ -4379,7 +4399,6 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
     uint mask_id = 0;
     int code;
     bool found_icc;
-    int icc_size;
     int64_t hashcode = 0;
 
     *pbuf++ = opcode;			/* 1 byte */
@@ -4555,7 +4574,6 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
     gs_pdf14trans_params_t params = {0};
     const byte * start = data;
     int used, code = 0;
-    int64_t icc_hash;
 
     if (size < 1)
 	return_error(gs_error_rangecheck);
@@ -4954,7 +4972,7 @@ send_pdf14trans(gs_imager_state	* pis, gx_device * dev,
     code = gs_create_pdf14trans(&pct, pparams, mem);
     if (code < 0)
 	return code;
-    code = dev_proc(dev, create_compositor) (dev, pcdev, pct, pis, mem);
+    code = dev_proc(dev, create_compositor) (dev, pcdev, pct, pis, mem, NULL);
 
     gs_free_object(pis->memory, pct, "send_pdf14trans");
 
@@ -5762,7 +5780,7 @@ pdf14_put_devn_params(gx_device * pdev, gs_devn_params * pdevn_params,
  */
 static	int
 pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
-    const gs_composite_t * pct, gs_imager_state * pis, gs_memory_t * mem)
+    const gs_composite_t * pct, gs_imager_state * pis, gs_memory_t * mem, gx_device *cdev)
 {
     pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
     int code;
@@ -5803,7 +5821,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
 
 		    pctemp.type = &gs_composite_pdf14trans_no_clist_writer_type;
 		    code = dev_proc(pdev->target, create_compositor)
-				(pdev->target, pcdev, &pctemp, pis, mem);
+				(pdev->target, pcdev, &pctemp, pis, mem, cdev);
 		    *pcdev = dev;
 		    return code;
 		}
@@ -5947,7 +5965,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
 	}
     }
     code = dev_proc(pdev->target, create_compositor)
-			(pdev->target, pcdev, pct, pis, mem);
+			(pdev->target, pcdev, pct, pis, mem, cdev);
     if (*pcdev != pdev->target)
 	rc_assign(pdev->target, *pcdev, "pdf14_clist_create_compositor");
     *pcdev = dev;
@@ -5965,7 +5983,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
 static	int
 pdf14_clist_forward_create_compositor(gx_device	* dev, gx_device * * pcdev,
 	const gs_composite_t * pct, gs_imager_state * pis,
-	gs_memory_t * mem)
+	gs_memory_t * mem, gx_device *cdev)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
     gx_device * tdev = pdev->target;
@@ -5977,10 +5995,10 @@ pdf14_clist_forward_create_compositor(gx_device	* dev, gx_device * * pcdev,
 	const gs_pdf14trans_t * pdf14pct = (const gs_pdf14trans_t *) pct;
 
 	if (pdf14pct->params.pdf14_op == PDF14_PUSH_DEVICE)
-	    return pdf14_clist_create_compositor(dev, &ndev, pct, pis, mem);
+	    return pdf14_clist_create_compositor(dev, &ndev, pct, pis, mem, cdev);
 	return 0;
     }
-    code = dev_proc(tdev, create_compositor)(tdev, &ndev, pct, pis, mem);
+    code = dev_proc(tdev, create_compositor)(tdev, &ndev, pct, pis, mem, cdev);
     if (code < 0)
 	return code;
     pdev->target = ndev;

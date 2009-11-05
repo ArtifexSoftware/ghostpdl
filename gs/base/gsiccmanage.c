@@ -28,6 +28,7 @@
 #include "gsicc_profilecache.h"
 #include "gserrors.h"
 #include "string_.h"
+#include "gxclist.h"
 
 #if ICC_DUMP
 unsigned int global_icc_index = 0;
@@ -39,7 +40,7 @@ unsigned int global_icc_index = 0;
 gs_private_st_ptrs2(st_gsicc_profile, cmm_profile_t, "gsicc_profile",
 		    gsicc_profile_enum_ptrs, gsicc_profile_reloc_ptrs, buffer, name);
 
-gs_private_st_ptrs9(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
+gs_private_st_ptrs10(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
 		    gsicc_manager_enum_ptrs, gsicc_manager_profile_reloc_ptrs,
 		    device_profile, device_named, default_gray, default_rgb,
                     default_cmyk, proof_profile, output_link, lab_profile, profiledir,
@@ -146,7 +147,17 @@ gsicc_new_devicen(gsicc_manager_t *icc_manager)
 
 }
 
+/* Populate the color names entries that should
+   be contained in the DeviceN ICC profile */
 
+static void 
+gsicc_get_devicen_names(cmm_profile_t *icc_profile)
+{
+
+
+
+
+}
 
 /*  This computes the hash code for the
     ICC data and assigns the code
@@ -316,6 +327,24 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
         }
 
         if (defaulttype == LAB_TYPE) icc_profile->islab = true;
+
+        if ( defaulttype == DEVICEN_TYPE ) {
+
+            /* Lets get the name information out of the profile.
+               The names are contained in the icSigNamedColor2Tag
+               item.  The table is in the A2B0Tag item.
+               The names are in the order such that the fastest
+               index in the table is the first name */
+
+            gsicc_get_devicen_names(icc_profile);
+
+
+                              
+               
+
+
+
+        }
          
         return(0);
        
@@ -967,6 +996,66 @@ gsicc_get_profile( gsicc_profile_t profile_type, gsicc_manager_t *icc_manager ) 
     return(NULL);
 
  }
+
+static int64_t
+gsicc_search_icc_table(clist_icctable_t *icc_table, int64_t icc_hashcode, int *size)
+{
+
+    int tablesize = icc_table->tablesize, k;
+    clist_icctable_entry_t *curr_entry;
+
+    curr_entry = icc_table->head;
+    for (k = 0; k < tablesize; k++ ){
+    
+        if ( curr_entry->serial_data.hashcode == icc_hashcode ) {
+
+            *size = curr_entry->serial_data.size;
+            return(curr_entry->serial_data.file_position);
+
+        }
+
+    }
+
+    /* Did not find it! */
+
+    *size = 0;
+    return(-1);
+
+
+}
+
+
+/* This is used to get only the serial data from the clist.  We don't bother
+   with the whole profile until we actually need it.  It may be that the link
+   that we need is already in the link cache */
+
+cmm_profile_t*
+gsicc_read_serial_icc(gx_device_clist_reader *pcrdev, int64_t icc_hashcode)
+{
+
+    cmm_profile_t *profile;
+    int64_t position;
+    int size;
+        
+    /* Create a new ICC profile structure */
+    profile = gsicc_profile_new(NULL, pcrdev->memory, NULL, 0);
+
+    if (profile == NULL)
+        return(NULL);  
+
+    /* Check ICC table for hash code and get the whole size icc raw buffer
+       plus serialized header information */ 
+
+    position = gsicc_search_icc_table(pcrdev->icc_table, icc_hashcode, &size);
+    if ( position < 0 ) return(NULL);
+    
+    /* Get the serialized portion of the ICC profile information */
+
+    clist_read_chunk(pcrdev, position, sizeof(gsicc_serialized_profile_t), (unsigned char *) profile);
+
+    return(profile);
+
+}
 
 void 
 gsicc_profile_serialize(gsicc_serialized_profile_t *profile_data, cmm_profile_t *icc_profile)

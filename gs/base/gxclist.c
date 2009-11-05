@@ -26,6 +26,7 @@
 #include "gsparams.h"
 #include "gxdcolor.h"
 #include "gscms.h"
+#include "gsiccmanage.h"
 
 extern dev_proc_open_device(pattern_clist_open_device);
 
@@ -1023,6 +1024,8 @@ clist_icc_freetable(clist_icctable_t *icc_table, gs_memory_t *memory)
 
     gs_free_object(memory, icc_table, "clist_icc_freetable");
 
+    return(0);
+
 }
 
 
@@ -1171,6 +1174,8 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode, cmm_profile_t
         icc_table->tablesize++;
 
     }
+
+    return(0);
     
 }
 

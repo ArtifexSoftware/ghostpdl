@@ -617,7 +617,8 @@ gs_state_update_overprint(gs_state * pgs, const gs_overprint_params_t * pparams)
                                                    &ovptdev,
                                                    pct,
                                                    pis,
-                                                   pgs->memory )) >= 0   ) {
+                                                   pgs->memory,
+                                                   NULL)) >= 0   ) {
         if (ovptdev != dev)
             gx_set_device_only(pgs, ovptdev);
     }

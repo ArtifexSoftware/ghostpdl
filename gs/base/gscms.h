@@ -123,35 +123,42 @@ typedef enum {
     DEVICEN_TYPE
 } gsicc_profile_t;
 
+
+#define gsicc_serial_data\
+    unsigned char num_comps;    /* number of device dependent values */\
+    bool islab;                 /* Needed since we want to detect this to avoid */\
+                                /*  expensive decode on LAB images.  Is true */\
+                                /* if PDF color space is \Lab */\
+    gsicc_profile_t default_match;  /* Used for detecting a match to a default space */\
+    gsicc_colorbuffer_t data_cs; /* The data color space of the profile (not the PCS) */\
+    gs_range_icc_t Range;\
+    int64_t hashcode;           /* A hash code for the icc profile */\
+    bool hash_is_valid;         /* Is the code valid? */\
+    int buffer_size            /* size of ICC profile buffer */
+
 /* A subset of the profile information 
    which is used when writing and reading
    out to the c-list */
 
-typedef struct gsicc_serialized_profile_s { 
-    unsigned char num_comps;    
-    bool islab;                 
-    gsicc_profile_t default_match;  
-    gsicc_colorbuffer_t data_cs; 
-    gs_range_icc_t Range;          
-    int64_t hashcode;           
-    bool hash_is_valid;         
-    int buffer_size;            
+typedef struct gsicc_serialized_profile_s {
+
+    gsicc_serial_data;
+
 } gsicc_serialized_profile_t;
+
+
+struct gsicc_color_names_s {
+
+    char *name;
+    int length;
+
+};
 
 /* A structure for holding profile information.  A member variable
    of the ghostscript color structure.   The item is reference counted. */
 struct cmm_profile_s {
 
-    unsigned char num_comps;    /* number of device dependent values */
-    bool islab;                 /* Needed since we want to detect this to avoid 
-                                   expensive decode on LAB images.  Is true
-                                   if PDF color space is \Lab*/
-    gsicc_profile_t default_match;  /* Used for detecting a match to a default space */
-    gsicc_colorbuffer_t data_cs; /* The data color space of the profile (not the PCS) */
-    gs_range_icc_t Range;          
-    int64_t hashcode;           /* A hash code for the icc profile */
-    bool hash_is_valid;         /* Is the code valid? */
-    int buffer_size;            /* size of ICC profile buffer */
+    gsicc_serial_data;
     byte *buffer;               /* A buffer with ICC profile content */
 
 
@@ -163,6 +170,7 @@ struct cmm_profile_s {
                                    name.  This is primarily here for the system profiles, and
                                    so that we avoid resetting them everytime the user params
                                    are reloaded. */
+
 };
 
 

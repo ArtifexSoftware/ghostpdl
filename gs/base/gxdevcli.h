@@ -1116,7 +1116,7 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_t_proc_create_compositor(proc, dev_t)\
   int proc(dev_t *dev,\
     gx_device **pcdev, const gs_composite_t *pcte,\
-    gs_imager_state *pis, gs_memory_t *memory)
+    gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev)
 #define dev_proc_create_compositor(proc)\
   dev_t_proc_create_compositor(proc, gx_device)\
 

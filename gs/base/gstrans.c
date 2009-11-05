@@ -335,6 +335,7 @@ gx_begin_transparency_group(gs_imager_state * pis, gx_device * pdev,
     tgp.group_color = pparams->group_color;
     tgp.group_color_numcomps = pparams->group_color_numcomps;
     tgp.iccprofile = pparams->iccprofile;
+    tgp.icc_hashcode = pparams->icc_hash;
 
     pis->opacity.alpha = pparams->opacity.alpha;
     pis->shape.alpha = pparams->shape.alpha;

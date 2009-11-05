@@ -518,6 +518,13 @@ int clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode,
 /* Free the table and its entries */
 int clist_icc_freetable(clist_icctable_t *icc_table, gs_memory_t *memory);
 
+/* Generic read function used with ICC and could be used with others.
+   A different of this and clist_get_data is that here we reset the
+   cfile position when we are done and this only reads from the cfile
+   not the bfile or cfile */
+
+int clist_read_chunk(gx_device_clist_reader *crdev, int64_t position, int size, unsigned char *buf);
+
 /* Exports from gxclread used by the multi-threading logic */
 
 /* Initialize for reading. */

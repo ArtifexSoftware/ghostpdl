@@ -400,6 +400,36 @@ clist_find_pseudoband(gx_device_clist_reader *crdev, int band, cmd_block *cb)
     
 }
 
+/* A procedure to read a chunk of data from the cfile at a particular location into buff */
+
+int
+clist_read_chunk(gx_device_clist_reader *crdev, int64_t position, int size, unsigned char *buf)
+{
+
+    clist_file_ptr cfile = crdev->page_info.cfile;
+    int64_t save_pos;
+
+    /* Save our current location */
+
+    save_pos = crdev->page_info.io_procs->ftell(cfile);
+
+    /* Go to our new position */
+
+    crdev->page_info.io_procs->fseek(cfile, position, SEEK_SET, crdev->page_info.cfname);
+
+    /* Get the data */
+
+    crdev->page_info.io_procs->fread_chars(buf, size, cfile);
+
+    /* Restore our position */
+
+    crdev->page_info.io_procs->fseek(cfile, save_pos, SEEK_SET, crdev->page_info.cfname);
+
+    return(0);
+
+
+}
+
 /* Unserialize the icc table information stored in the cfile and
    place it in the reader device */
 
@@ -421,7 +451,7 @@ clist_unserialize_icctable(gx_device_clist_reader *crdev, cmd_block *cb)
 
     crdev->page_info.io_procs->fseek(cfile, cb->pos, SEEK_SET, crdev->page_info.cfname);
 
-    /* First four bytes tell us the number of entries */
+    /* First four bytes tell us the number of entries. */
 
     crdev->page_info.io_procs->fread_chars(&number_entries, sizeof(number_entries), cfile);
 
@@ -434,7 +464,9 @@ clist_unserialize_icctable(gx_device_clist_reader *crdev, cmd_block *cb)
     if (buf == NULL)
         return gs_rethrow(-1, "insufficient memory for icc table buffer reader");
 
-    crdev->page_info.io_procs->fread_chars(buf, size_data, cfile);
+    /* Get the data */
+
+    clist_read_chunk(crdev, cb->pos + 4, size_data, buf);
 
     icc_table = gs_alloc_struct(crdev->memory, 
 		clist_icctable_t,
