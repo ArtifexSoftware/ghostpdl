@@ -1748,6 +1748,10 @@ pclxl_begin_image(gx_device * dev,
 	    pclxl_set_color_palette(xdev, eGray, palette, 2);
 	} else {
             if (bits_per_pixel == 24 ) {
+                code = gdev_vector_update_log_op
+                    (vdev, (pim->CombineWithColor ? lop : rop3_know_T_0(lop)));
+                if (code < 0)
+                    goto fail;
                 if (dev->color_info.num_components == 1) {
                     pclxl_set_color_space(xdev, eGray);
                 } else {
