@@ -20,16 +20,20 @@
 $gsexe     = "gs\\debugbin\\gswin32c.exe";
 $pclexe    = "main\\obj\\pcl6.exe";
 $xpsexe    = "xps\\obj\\gxps.exe";
+$svgexe    = "svg\\obj\\gsvg.exe";
 $bmpcmpexe = "..\\bmpcmp\\bmpcmp\\Debug\\bmpcmp.exe";
 $convertexe= "convert.exe"; # ImageMagick
 
 # The args fed to the different exes. Probably won't need to play with these.
-$gsargs    = "-sDEVICE=bmp16m -dNOPAUSE -dBATCH -q";
+$gsargs    = "-sDEVICE=bmp16m -dNOPAUSE -dBATCH -q -sDEFAULTPAPERSIZE=letter";
+$gsargsPS  = " %rom%Resource/Init/gs_cet.ps";
 $pclargs   = "-sDEVICE=bmp16m -dNOPAUSE";
 $xpsargs   = "-sDEVICE=bmp16m -dNOPAUSE";
+$svgargs   = "-sDEVICE=bmp16m -dNOPAUSE";
 $pwgsargs  = "-sDEVICE=pdfwrite -dNOPAUSE -dBATCH -q";
 $pwpclargs = "-sDEVICE=pdfwrite -dNOPAUSE";
 $pwxpsargs = "-sDEVICE=pdfwrite -dNOPAUSE";
+$pwsvgargs = "-sDEVICE=pdfwrite -dNOPAUSE";
 
 # Set the following to true to convert bmps to pngs (useful to save space
 # if you want to show people this across the web).
@@ -109,6 +113,7 @@ while (<>)
         $cmd .= " ".$gsargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
+        if ($file =~ m/\.PS$/) { $cmd .= " ".$gsargsPS };
         $cmd .= " ".$file;
         $ret = system($cmd);
         if ($ret != 0)
@@ -121,6 +126,7 @@ while (<>)
         $cmd .= " ".$gsargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
+        if ($file =~ m/\.PS$/) { $cmd .= " ".$gsargsPS }
         $cmd .= " ".$file;
         $ret = system($cmd);
         if ($ret != 0)
@@ -184,12 +190,40 @@ while (<>)
             next;
         }
     }
+    elsif ($exe eq "svg")
+    {
+        $cmd  =     $svgexe;
+        $cmd .= " ".$svgargs;
+        $cmd .= " -r".$res;
+        $cmd .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
+        $cmd .= " ".$file;
+        $ret = system($cmd);
+        if ($ret != 0)
+        {
+            print "New bitmap generation failed with exit code ".$ret."\n";
+            print "Command was: ".$cmd;
+            next;
+        }
+        $cmd  = $reference.$svgexe;
+        $cmd .= " ".$svgargs;
+        $cmd .= " -r".$res;
+        $cmd .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
+        $cmd .= " ".$file;
+        $ret = system($cmd);
+        if ($ret != 0)
+        {
+            print "Ref bitmap generation failed with exit code ".$ret."\n";
+            print "Command was: ".$cmd;
+            next;
+        }
+    }
     elsif ($exe eq "pwgs")
     {
         $cmd  =     $gsexe;
         $cmd .= " ".$pwgsargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1.pdf";
+        if ($file2 =~ m/\.PS$/) { $cmd .= " ".$gsargsPS; }
         $cmd .= " ".$file2;
         $ret = system($cmd);
         if ($ret != 0)
@@ -202,6 +236,7 @@ while (<>)
         $cmd .= " ".$pwgsargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp2.pdf";
+        if ($file2 =~ m/\.PS$/) { $cmd .= " ".$gsargsPS; }
         $cmd .= " ".$file2;
         $ret = system($cmd);
         if ($ret != 0)
@@ -306,6 +341,59 @@ while (<>)
         }
         $cmd  = $reference.$xpsexe;
         $cmd .= " ".$pwxpsargs;
+        $cmd .= " -r".$res;
+        $cmd .= " -sOutputFile=".$outdir."/tmp2.pdf";
+        $cmd .= " ".$file2;
+        $ret = system($cmd);
+        if ($ret != 0)
+        {
+            print "Ref bitmap generation failed with exit code ".$ret."\n";
+            print "Command was: ".$cmd;
+            next;
+        }
+        $cmd  =     $gsexe;
+        $cmd .= " ".$gsargs;
+        $cmd .= " -r".$res;
+        $cmd .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
+        $cmd .= " ".$outdir."/tmp1.pdf";
+        $ret = system($cmd);
+        if ($ret != 0)
+        {
+            print "New bitmap generation failed with exit code ".$ret."\n";
+            print "Command was: ".$cmd;
+            next;
+        }
+        $cmd  = $reference.$gsexe;
+        $cmd .= " ".$gsargs;
+        $cmd .= " -r".$res;
+        $cmd .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
+        $cmd .= " ".$outdir."/tmp2.pdf";
+        $ret = system($cmd);
+        if ($ret != 0)
+        {
+            print "Ref bitmap generation failed with exit code ".$ret."\n";
+            print "Command was: ".$cmd;
+            next;
+        }
+        unlink $outdir."/tmp1.pdf";
+        unlink $outdir."/tmp2.pdf";
+    }
+    elsif ($exe eq "pwsvg")
+    {
+        $cmd  =     $svgexe;
+        $cmd .= " ".$pwsvgargs;
+        $cmd .= " -r".$res;
+        $cmd .= " -sOutputFile=".$outdir."/tmp1.pdf";
+        $cmd .= " ".$file2;
+        $ret = system($cmd);
+        if ($ret != 0)
+        {
+            print "New bitmap generation failed with exit code ".$ret."\n";
+            print "Command was: ".$cmd;
+            next;
+        }
+        $cmd  = $reference.$svgexe;
+        $cmd .= " ".$pwsvgargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp2.pdf";
         $cmd .= " ".$file2;
