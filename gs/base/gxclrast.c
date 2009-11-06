@@ -1783,6 +1783,7 @@ idata:			data_size = 0;
 			    break;
 			case cmd_opv_stroke:
 			    stroke_params.flatness = imager_state.flatness;
+			    stroke_params.traditional = false;
 			    code = gx_stroke_path_only(ppath,
 						       (gx_path *) 0, tdev,
 					      &imager_state, &stroke_params,

@@ -61,6 +61,7 @@ gx_stroke_fill(gx_path * ppath, gs_state * pgs)
     if (code < 0)
 	return code;
     params.flatness = (caching_an_outline_font(pgs) ? 0.0 : pgs->flatness);
+    params.traditional = false;
     return (*dev_proc(dev, stroke_path))
 	(dev, (const gs_imager_state *)pgs, ppath, &params,
 	 pgs->dev_color, pcpath);
@@ -68,11 +69,12 @@ gx_stroke_fill(gx_path * ppath, gs_state * pgs)
 
 int
 gx_stroke_add(gx_path * ppath, gx_path * to_path,
-	      const gs_state * pgs)
+	      const gs_state * pgs, bool traditional)
 {
     gx_stroke_params params;
 
     params.flatness = (caching_an_outline_font(pgs) ? 0.0 : pgs->flatness);
+    params.traditional = traditional;
     return gx_stroke_path_only(ppath, to_path, pgs->device,
 			       (const gs_imager_state *)pgs,
 			       &params, NULL, NULL);
@@ -85,6 +87,7 @@ gx_imager_stroke_add(gx_path *ppath, gx_path *to_path,
     gx_stroke_params params;
 
     params.flatness = pis->flatness;
+    params.traditional = false;
     return gx_stroke_path_only(ppath, to_path, dev, pis,
 			       &params, NULL, NULL);
 }

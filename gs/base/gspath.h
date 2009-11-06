@@ -66,6 +66,7 @@ int gs_currentpoint(gs_state *, gs_point *),
       gs_flattenpath(gs_state *),
       gs_reversepath(gs_state *),
       gs_strokepath(gs_state *);
+      gs_strokepath2(gs_state *);
 
 /* The extra argument for gs_upathbbox controls whether to include */
 /* a trailing moveto in the bounding box. */

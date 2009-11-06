@@ -1151,7 +1151,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
 	    xps_parse_path_geometry(ctx, dict, data_tag, 1);
 
 	ctx->fill_rule = 1; /* over-ride fill rule when converting outline to stroked */
-	gs_strokepath(ctx->pgs);
+	gs_strokepath2(ctx->pgs);
 
 	code = xps_parse_brush(ctx, stroke_uri, dict, stroke_tag);
 	if (code < 0)

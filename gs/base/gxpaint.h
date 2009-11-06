@@ -48,7 +48,7 @@ typedef struct gx_device_color_s gx_device_color;
 int gx_fill_path(gx_path * ppath, gx_device_color * pdevc, gs_state * pgs,
 		 int rule, fixed adjust_x, fixed adjust_y);
 int gx_stroke_fill(gx_path * ppath, gs_state * pgs);
-int gx_stroke_add(gx_path *ppath, gx_path *to_path, const gs_state * pgs);
+int gx_stroke_add(gx_path *ppath, gx_path *to_path, const gs_state * pgs, bool traditional);
 /*
  * gx_imager_stroke_add needs a device for the sake of absolute-length
  * dots (and for no other reason).
@@ -107,6 +107,7 @@ typedef struct gx_stroke_params_s gx_stroke_params;
 #endif
 struct gx_stroke_params_s {
     float flatness;
+    bool  traditional;
 };
 
 int gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * dev,

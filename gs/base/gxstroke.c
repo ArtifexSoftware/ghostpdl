@@ -291,9 +291,10 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		 const gx_device_color * pdevc, const gx_clip_path * pcpath)
 {
     extern bool CPSI_mode;
+    bool traditional = CPSI_mode | params->traditional;
     stroke_line_proc_t line_proc =
 	(to_path == 0 && !gx_dc_is_pattern1_color_clist_based(pdevc) 
-		? stroke_fill : CPSI_mode ? stroke_add_compat : stroke_add);
+		? stroke_fill : traditional ? stroke_add_compat : stroke_add);
     gs_fixed_rect ibox, cbox;
     gx_device_clip cdev;
     gx_device *dev = pdev;
@@ -789,7 +790,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	    if (code < 0)
 		goto exit;
 	    FILL_STROKE_PATH(pdev, always_thin, pcpath, false);
-	    if (CPSI_mode && lptr == 0 && pgs_lp->cap != gs_cap_butt) {
+	    if (traditional && lptr == 0 && pgs_lp->cap != gs_cap_butt) {
 		/* Create the initial cap at last. */
 		code = stroke_add_initial_cap_compat(to_path, &pl_first, index == 1, pdevc, dev, pis);
 		if (code < 0)

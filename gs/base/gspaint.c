@@ -442,7 +442,7 @@ gs_stroke(gs_state * pgs)
 	     * entire path as a single unit.
 	     */
 	    gx_path_init_local(&spath, pgs->memory);
-	    code = gx_stroke_add(pgs->path, &spath, pgs);
+	    code = gx_stroke_add(pgs->path, &spath, pgs, false);
 	    gs_setlinewidth(pgs, orig_width);
 	    scale_dash_pattern(pgs, 1.0 / scale);
 	    if (code >= 0)
@@ -465,14 +465,14 @@ gs_stroke(gs_state * pgs)
 }
 
 /* Compute the stroked outline of the current path */
-int
-gs_strokepath(gs_state * pgs)
+static int
+gs_strokepath_aux(gs_state * pgs, bool traditional)
 {
     gx_path spath;
     int code;
 
     gx_path_init_local(&spath, pgs->path->memory);
-    code = gx_stroke_add(pgs->path, &spath, pgs);
+    code = gx_stroke_add(pgs->path, &spath, pgs, traditional);
     if (code < 0) {
 	gx_path_free(&spath, "gs_strokepath");
 	return code;
@@ -488,4 +488,16 @@ gs_strokepath(gs_state * pgs)
         gx_setcurrentpoint(pgs, fixed2float(spath.position.x), fixed2float(spath.position.y));
     return 0;
 
+}
+
+int
+gs_strokepath(gs_state * pgs)
+{
+    return gs_strokepath_aux(pgs, true);
+}
+
+int
+gs_strokepath2(gs_state * pgs)
+{
+    return gs_strokepath_aux(pgs, false);
 }
