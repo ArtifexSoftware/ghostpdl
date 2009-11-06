@@ -268,17 +268,34 @@ gx_path_translate(gx_path * ppath, fixed dx, fixed dy)
     return 0;
 }
 
-/* Scale an existing path by a power of 2 (positive or negative). */
+/* Scale an existing path by a power of 2 (positive or negative).
+ * Currently the path drawing routines can't handle values
+ * close to the edge of the representable space.
+ * Also see clamp_point() in gspath.c .
+ */
 void
 gx_point_scale_exp2(gs_fixed_point * pt, int sx, int sy)
 {
-    if (sx >= 0)
-	pt->x <<= sx;
-    else
+    int v;
+
+    if (sx > 0) {
+        v = (max_int - int2fixed(1000)) >> sx; /* arbitrary */
+        if (pt->x > v)
+            pt->x = v;
+        else if (pt->x < -v)
+            pt->x = -v;
+        pt->x <<= sx;
+    } else
 	pt->x >>= -sx;
-    if (sy >= 0)
-	pt->y <<= sy;
-    else
+
+    if (sy > 0) {
+        v = (max_int - int2fixed(1000)) >> sy;
+        if (pt->y > v)
+            pt->y = v;
+        else if (pt->y < -v)
+            pt->y = -v;
+        pt->y <<= sy;
+    } else
 	pt->y >>= -sy;
 }
 void
