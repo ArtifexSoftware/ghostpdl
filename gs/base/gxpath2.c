@@ -310,7 +310,8 @@ gx_path_scale_exp2_shared(gx_path * ppath, int log2_scale_x, int log2_scale_y,
 {
     segment *pseg;
 
-    gx_rect_scale_exp2(&ppath->bbox, log2_scale_x, log2_scale_y);
+    if (ppath->bbox_set)
+        gx_rect_scale_exp2(&ppath->bbox, log2_scale_x, log2_scale_y);
 #define SCALE_XY(pt) gx_point_scale_exp2(&pt, log2_scale_x, log2_scale_y)
     SCALE_XY(ppath->position);
     if (!segments_shared) {
