@@ -213,13 +213,23 @@ end
   put                                 % <<image>>
 } bind def
 
+% Copy mask data source to a reusable stream
+% <dict> <source> buffer_mask <dict> <file>
+/buffer_mask {
+  1 index /MaskDict get
+  dup /Width get
+  1 index /BitsPerComponent get mul 7 add 8 idiv
+  exch /Height get mul () /SubFileDecode filter
+  /ReusableStreamDecode filter
+} bind def
+
 % Data type vs. mask type decission table.
 % All procedures have the signature:
 % <image dict> <data DataSource> <mask DataSource> proc <image dict'>
 /data_mask_dict mark
   /stringtype mark % data is a string
     /stringtype { pop pop } bind
-    /arraytype { % convert data to proc
+    /arraytype { % convert data to proc, don't buffer mask
       pop
       dup type dup /arraytype eq exch /packedarraytype eq or {
         [ exch { 1 array astore cvx } forall ]
@@ -229,7 +239,7 @@ end
       /DataDict //update_image3 exec
     } bind
     /packedarraytype 1 index
-    /filetype { % convert data to file
+    /filetype { % convert data to file, don't buffer mask
       pop
       dup type dup /arraytype eq exch /packedarraytype eq or {
         [ exch { 1 array astore cvx 0 () /SubFileDecode filter } forall ]
@@ -242,47 +252,42 @@ end
   /arraytype mark  % data is a proc
     /stringtype { % convert mask to proc
       exch pop
-      dup type dup /arraytype eq exch /packedarraytype eq or {
-        [ exch { 1 array astore cvx } forall ]
-      } {
-        1 array astore cvx
-      } ifelse
+      1 array astore cvx
       /MaskDict //update_image3 exec
     } bind
-    /arraytype { pop pop } bind
-    /packedarraytype 1 index
-    /filetype { % convert mask to proc
+    /arraytype { % buffer mask in reusable stream and convert back to proc
       exch pop
-      dup type dup /arraytype eq exch /packedarraytype eq or {
-        [ exch { 1000 string { readstring pop } aload pop 4 array astore cvx } forall ]
-      } {
-        1000 string { readstring pop } aload pop 4 array astore cvx
-      } ifelse
+      //buffer_mask exec
+      500 string
+      { readstring pop } aload pop
+      4 packedarray cvx
       /MaskDict //update_image3 exec
     } bind
+    /packedarraytype 1 index
+    /filetype 1 index
   .dicttomark readonly
   /packedarraytype 1 index
   /filetype mark  % data is a file
     /stringtype { % convert mask to file
       exch pop
-      dup type dup /arraytype eq exch /packedarraytype eq or {
-        [ exch { 1 array astore cvx 0 () /SubFileDecode filter } forall ]
-      } {
-        1 array astore cvx 0 () /SubFileDecode filter
-      } ifelse
+      1 array astore cvx 0 () /SubFileDecode filter
       /MaskDict //update_image3 exec
     } bind
-    /arraytype { % convert data to proc
-      pop
-      dup type dup /arraytype eq exch /packedarraytype eq or {
-        [ exch { 1000 string { readstring pop } aload pop 4 array astore cvx } forall ]
-      } {
-        1000 string { readstring pop } aload pop 4 array astore cvx
-      } ifelse
-      /DataDict //update_image3 exec
+    /arraytype { % buffer the mask and convert to file
+      exch pop
+      //buffer_mask exec
+      /MaskDict //update_image3 exec
     } bind
     /packedarraytype 1 index
-    /filetype { pop pop } bind
+    /filetype {
+      //systemdict /userdict get /PDFTopSave known {
+        pop pop   % mask is already buffered by PDF interpreter
+      } {
+        exch pop  % buffer the mask
+        //buffer_mask exec
+        /MaskDict //update_image3 exec
+      } ifelse
+    } bind
   .dicttomark readonly
 .dicttomark readonly def
 
@@ -293,12 +298,12 @@ end
       % same type. Work around this restriction here.
       dup /DataDict get /DataSource get
       1 index /MaskDict get /DataSource get  % <<>> data mask
-      dup dup type dup /arraytype eq exch /packedarraytype eq or {
-        0 get
-      } if type                              % <<>> data mask mask_type
-      2 index dup type dup /arraytype eq exch /packedarraytype eq or {
-        0 get
-      } if type                              % <<>> data mask mask_type data_type
+      dup type                               % <<>> data mask mask_type
+      2 index
+      4 index /DataDict get /MultipleDataSources .knownget {
+        { 0 get } if
+      } if
+      type                                   % <<>> data mask mask_type data_type
       //data_mask_dict exch .knownget {
         exch .knownget {
           exec
@@ -319,6 +324,7 @@ pop
 
 currentdict /data_mask_dict undef
 currentdict /update_image3 undef
+currentdict /buffer_mask undef
 
 % ------ Functions ------ %
 
