@@ -32,7 +32,7 @@
 #include "gdevpxop.h"
 #include "gdevpxut.h"
 #include "gxlum.h"
-#include "gdevpcl.h"
+#include "gdevpcl.h" /* for gdev_pcl_mode3compress() */
 #include <stdlib.h> /* abs() */
 
 
