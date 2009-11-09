@@ -323,7 +323,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
     gx_device_pdf *const pdev = (gx_device_pdf *)dev;
     gx_path *path = path0;
     pdf_text_enum_t *penum;
-    int code;
+    int code, user_defined = 0;
 
     /* Track the dominant text rotation. */
     {
@@ -352,8 +352,45 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	    pdev->last_charpath_op = text->operation & TEXT_DO_ANY_CHARPATH;
     }
 
-    if (font->FontType != ft_user_defined || !(text->operation & TEXT_DO_ANY_CHARPATH)) {
-        if (font->FontType == ft_user_defined &&
+    if(font->FontType == ft_user_defined)
+	user_defined = 1;
+
+    /* We need to know whether any of the glyphs in a string using a composite font
+     * use a descendant font which is a type 3 (user-defined) so that we can properly
+     * skip the caching below.
+     */
+    if(font->FontType == ft_composite && ((gs_font_type0 *)font)->data.FMapType != fmap_CMap)
+    {
+	int font_code;
+	gs_char chr;
+	gs_glyph glyph;
+
+	rc_alloc_struct_1(penum, pdf_text_enum_t, &st_pdf_text_enum, mem,
+		      return_error(gs_error_VMerror), "gdev_pdf_text_begin");
+	penum->rc.free = rc_free_text_enum;
+	penum->pte_default = 0; 
+	penum->charproc_accum = false;
+	penum->cdevproc_callout = false;
+	penum->returned.total_width.x = penum->returned.total_width.y = 0;
+	penum->cgp = NULL;
+	penum->output_char_code = GS_NO_CHAR;
+	code = gs_text_enum_init((gs_text_enum_t *)penum, &pdf_text_procs,
+			     dev, pis, text, font, path, pdcolor, pcpath, mem);
+	do {
+	    font_code = penum->orig_font->procs.next_char_glyph
+		(penum, &chr, &glyph);   
+	    if (font_code == 1){
+		if (penum->fstack.items[penum->fstack.depth].font->FontType == 3) {
+		    user_defined = 1;
+		    break;
+		}
+	    }
+	} while(font_code != 2);
+	gs_text_release(penum, "pdf_text_process");
+    }
+
+    if (!user_defined || !(text->operation & TEXT_DO_ANY_CHARPATH)) {
+        if (user_defined &&
 	    (text->operation & TEXT_DO_NONE) && (text->operation & TEXT_RETURN_WIDTH)) {
 	    /* This is stringwidth, see gx_default_text_begin.
 	     * We need to prevent writing characters to PS cache,
