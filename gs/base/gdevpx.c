@@ -1394,6 +1394,8 @@ pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
     int code;
     stream *s;
     gx_color_index color0 = zero, color1 = one;
+    gx_color_index white = (1 << dev->color_info.depth) - 1;
+    gx_color_index black = 0;
     gs_logical_operation_t lop;
     byte palette[2 * 3];
     int palette_size;
@@ -1422,15 +1424,54 @@ pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
     /*
      * The following doesn't work if we're writing white with a mask.
      * We'll fix it eventually.
+     *
+     * The logic goes like this: non-white + mask (transparent)
+     * works by setting the mask color to white and also declaring
+     * white-is-transparent. This doesn't work for drawing white + mask,
+     * since everything is then white+white-and-transparent. So instead
+     * we set mask color to black, invert and draw the destination/background
+     * through it, as well as drawing the white color.
+     *
+     * In rop3 terms, this is (D & ~S) | S
+     *
+     * This also only works in the case of the drawing color is white,
+     * because we need the inversion to not draw anything, (especially
+     * not the complimentary color/shade). So we have two different code paths,
+     * white + mask and non-whites + mask.
+     *
+     * There is a further refinement to this algorithm - it appears that
+     * black+mask is treated specially by the vector driver core (rendered
+     * as transparent on white), and does not work as non-white + mask. 
+     * So Instead we set mask color to white and do (S & D) (i.e. draw
+     * background on mask, instead of transparent on mask).
+     *
      */
     if (zero == gx_no_color_index) {
 	if (one == gx_no_color_index)
 	    return 0;
+	if (one != white) {
+	    if (one == black) {
+	        lop = (rop3_S & rop3_D);
+	    } else {
 	lop = rop3_S | lop_S_transparent;
-	color0 = (1 << dev->color_info.depth) - 1;
+	    }
+	    color0 = white;
+	} else {
+	    lop = rop3_S | (rop3_D & rop3_not(rop3_S));
+	    color0 = black;
+	}
     } else if (one == gx_no_color_index) {
+	if (zero != white) {
+	    if (zero == black) {
+	        lop = (rop3_S & rop3_D);
+	    } else {
 	lop = rop3_S | lop_S_transparent;
-	color1 = (1 << dev->color_info.depth) - 1;
+	    }
+	    color1 = white;
+	} else {
+	    lop = rop3_S | (rop3_D & rop3_not(rop3_S));
+	    color1 = black;
+	}
     } else {
 	lop = rop3_S;
     }
