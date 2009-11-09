@@ -502,10 +502,12 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	    hpgl_call(gs_bbox_transform(&pcl_clip_box,
 					&pcl_ctm,
 					&dev_clip_box));
-	    /* the clip box defined by the picture frame appears to be
-               open and the clip box defined by IW is closed */
+	    /* HP cheats and expands the clip box's extant by at least
+               one device pixel in all directions */
 	    dev_clip_box.q.x += 1.0;
 	    dev_clip_box.q.y += 1.0;
+            dev_clip_box.p.x -= 1.0;
+            dev_clip_box.p.y -= 1.0;
 	    /* if the clipping window is active calculate the new clip
                box derived from IW and the intersection of the device
                space boxes replace the current box.  Note that IW
