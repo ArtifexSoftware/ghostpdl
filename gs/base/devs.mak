@@ -1074,7 +1074,7 @@ $(GLOBJ)gdevpdtw.$(OBJ) : $(GLSRC)gdevpdtw.c $(gx_h) $(gserrors_h) $(memory__h)\
 
 # High-level PCL XL writer
 
-pxl_=$(GLOBJ)gdevpx.$(OBJ) $(GLOBJ)gdevpxut.$(OBJ)
+pxl_=$(GLOBJ)gdevpx.$(OBJ) $(GLOBJ)gdevpxut.$(OBJ) $(HPPCL)
 $(DD)pxlmono.dev : $(DEVS_MAK) $(pxl_) $(GDEV) $(GLD)vector.dev
 	$(SETDEV2) $(DD)pxlmono $(pxl_)
 	$(ADDMOD) $(DD)pxlmono -include $(GLD)vector
