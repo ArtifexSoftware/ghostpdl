@@ -1422,30 +1422,17 @@ pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
     /*
      * The following doesn't work if we're writing white with a mask.
      * We'll fix it eventually.
-     *
-     * This is a slightly better version than before (see bug 688372).
      */
-    if (zero == one) {
-        if (zero == gx_no_color_index) {
-          /* one != gx_no_color_index */
-	    lop = rop3_S | lop_S_transparent;
-	    color0 = (1 << dev->color_info.depth) - 1;
-        } else if (one == gx_no_color_index) {
-          /* zero != gx_no_color_index */
-	    lop = rop3_S | lop_S_transparent;
-	    color1 = (1 << dev->color_info.depth) - 1;
-        } else {
-          /* both != no_color_index */
-	    lop = rop3_S;
-        }
+    if (zero == gx_no_color_index) {
+	if (one == gx_no_color_index)
+	    return 0;
+	lop = rop3_S | lop_S_transparent;
+	color0 = (1 << dev->color_info.depth) - 1;
+    } else if (one == gx_no_color_index) {
+	lop = rop3_S | lop_S_transparent;
+	color1 = (1 << dev->color_info.depth) - 1;
     } else {
-        if_debug3('b', "zero %d one %d noidx %08X\n", zero, one, gx_no_color_index);
-	if ((zero == gx_no_color_index) &&
-	    (one == gx_no_color_index))
-	  return 0;
-	lop = lop_T_transparent  |rop3_S;
-	color1 = one;
-	color0 = one;
+	lop = rop3_S;
     }
 
     if (dev->color_info.num_components == 1 ||
