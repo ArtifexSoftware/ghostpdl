@@ -38,6 +38,8 @@ add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[]);
 #define CURVE_SIZE 512
 #define NUMBER_COMMON_TAGS 2 
 
+#define icSigColorantTableTag (icTagSignature) 0x636c7274L  /* 'clrt' */
+#define icSigColorantTableType (icTagSignature) 0x636c7274L /* clrt */
 
 static const float D50WhitePoint[] = {(float)0.9642, 1, (float)0.8249};
 static const float BlackPoint[] = {0, 0, 0};
@@ -70,7 +72,6 @@ static void
 save_profile(unsigned char *buffer, char filename[], int buffer_size)
 
 {
-    char full_file_name[50];
     FILE *fid;
 
     fid = fopen(filename,"wb");
@@ -342,7 +343,8 @@ setheader_common(icHeader *header)
 {
     /* This needs to all be predefined for a simple copy. MJV todo */
     header->cmmId = 0;
-    header->version = 0x03400000;  /* Back during a simplier time.... */
+ //   header->version = 0x03400000;  /* Back during a simplier time.... */
+    header->version = 0x04200000;
     setdatetime(&(header->date));
     header->magic = icMagicNumber;
     header->platform = icSigMacintosh;
@@ -568,6 +570,77 @@ add_clut_labdata_16bit(unsigned char *input_ptr, cielab_t *cielab, int num_color
     }
 
 }
+
+static void
+add_colorantdata(unsigned char *input_ptr, colornames_t *colorant_names, int num_colors,  cielab_t *cielab, int num_samples)
+{
+    unsigned char *curr_ptr;
+    int k, name_len;
+    int offset1, offset2, offset;
+    unsigned short encoded_value;
+
+    curr_ptr = input_ptr;
+
+    /* Signature */
+    curr_ptr = input_ptr;
+    write_bigendian_4bytes(curr_ptr,icSigColorantTableType);
+    curr_ptr += 4;
+
+    /* Reserved */
+    memset(curr_ptr,0,4);
+    curr_ptr += 4;
+
+    /* Number of colors */
+    write_bigendian_4bytes(curr_ptr,num_colors);
+    curr_ptr += 4;
+
+    /* Now write out each name and the encoded 16bit CIELAB value */
+
+    offset1 = 1;
+    offset2 = num_samples;
+
+    for ( k = 0; k < num_colors; k++){
+
+        name_len = colorant_names[k].length;
+        
+        if (name_len > 31){
+
+            memcpy(curr_ptr, &(colorant_names[k].name[0]), 31);
+
+        } else {
+
+            memcpy(curr_ptr, &(colorant_names[k].name[0]), name_len);
+
+        }
+
+        *(curr_ptr+name_len) = 0x0;
+        curr_ptr += 32;
+
+        /* Now the CIELAB data */
+
+        offset = offset2 - offset1;
+        offset2 = offset2 * num_samples;
+        offset1 = offset1 * num_samples;
+
+        encoded_value = lstar2_16bit(cielab[offset].lstar);
+        write_bigendian_2bytes( curr_ptr, encoded_value);
+        curr_ptr += 2;
+
+        encoded_value = abstar2_16bit(cielab[offset].astar);
+        write_bigendian_2bytes( curr_ptr, encoded_value);
+        curr_ptr += 2;
+
+        encoded_value = abstar2_16bit(cielab[offset].bstar);
+        write_bigendian_2bytes( curr_ptr, encoded_value);
+        curr_ptr += 2;
+
+    }
+
+
+}
+
+
+
 
 static void
 add_namesdata(unsigned char *input_ptr, colornames_t *colorant_names, int num_colors,  cielab_t *cielab, int num_samples)
@@ -855,8 +928,13 @@ create_devicen_profile(cielab_t *cielab, colornames_t *colorant_names, int num_c
 
     /* Now add the names Tag */
 
-    tag_size = 84  + (32 + 6) * num_colors;
-    init_tag(tag_list, &last_tag, icSigNamedColor2Tag, tag_size);
+    /* tag_size = 84  + (32 + 6) * num_colors;
+    init_tag(tag_list, &last_tag, icSigNamedColor2Tag, tag_size); */
+
+    /* Lets not use the names tag but the newer clrt tag  */
+
+    tag_size = 12  + (32 + 6) * num_colors;
+    init_tag(tag_list, &last_tag, icSigColorantTableTag, tag_size); 
 
     /* Now the ATOB0 Tag */
 
@@ -915,9 +993,15 @@ create_devicen_profile(cielab_t *cielab, colornames_t *colorant_names, int num_c
 
     /* Now add the names tag data */
 
-    add_namesdata(curr_ptr, colorant_names, num_colors, cielab, num_samples);
+    /* add_namesdata(curr_ptr, colorant_names, num_colors, cielab, num_samples);
     curr_ptr += tag_list[tag_location].size;
-    tag_location++;
+    tag_location++; */
+
+    /* Instead let use the newer clrt tag */
+
+    add_colorantdata(curr_ptr, colorant_names, num_colors, cielab, num_samples);
+    curr_ptr += tag_list[tag_location].size;
+    tag_location++; 
 
     /* Now the ATOB0 */
 
