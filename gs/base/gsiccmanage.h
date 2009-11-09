@@ -54,9 +54,19 @@ gcmmhprofile_t gsicc_get_profile_handle_buffer(unsigned char *buffer);
 
 void gsicc_set_icc_directory(const gs_imager_state *pis, const char* pname, int namelen);
 
+static gsicc_namelist_t* gsicc_new_namelist(gs_memory_t *memory);
+
+static gsicc_colorname_t* gsicc_new_colorname(gs_memory_t *memory);
+
+static void gsicc_copy_colorname( const char *cmm_name, gsicc_colorname_t *colorname, gs_memory_t *memory );
+
+static gsicc_namelist_t* gsicc_get_spotnames(gcmmhprofile_t profile, gs_memory_t *memory);
+
 unsigned int gsicc_getprofilesize(unsigned char *buffer);
 
 cmm_profile_t* gsicc_read_serial_icc(gx_device_clist_reader *pcrdev, int64_t icc_hashcode);
+
+cmm_profile_t* gsicc_finddevicen(const gs_color_space *pcs, gsicc_manager_t *icc_manager);
 
 static void rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname);
 static int gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, gs_memory_t *memory);

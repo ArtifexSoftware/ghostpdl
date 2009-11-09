@@ -37,8 +37,15 @@ unsigned int global_icc_index = 0;
 /* profile data structure */
 /* profile_handle should NOT be garbage collected since it is allocated by the external CMS */
 
-gs_private_st_ptrs2(st_gsicc_profile, cmm_profile_t, "gsicc_profile",
-		    gsicc_profile_enum_ptrs, gsicc_profile_reloc_ptrs, buffer, name);
+
+gs_private_st_ptrs2(st_gsicc_colorname, gsicc_colorname_t, "gsicc_colorname",
+		    gsicc_colorname_enum_ptrs, gsicc_colorname_reloc_ptrs, name, next);
+
+gs_private_st_ptrs1(st_gsicc_namelist, gsicc_namelist_t, "gsicc_namelist",
+		    gsicc_namelist_enum_ptrs, gsicc_namelist_reloc_ptrs, head);
+
+gs_private_st_ptrs3(st_gsicc_profile, cmm_profile_t, "gsicc_profile",
+		    gsicc_profile_enum_ptrs, gsicc_profile_reloc_ptrs, buffer, name, spotnames);
 
 gs_private_st_ptrs10(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
 		    gsicc_manager_enum_ptrs, gsicc_manager_profile_reloc_ptrs,
@@ -147,17 +154,211 @@ gsicc_new_devicen(gsicc_manager_t *icc_manager)
 
 }
 
+cmm_profile_t*
+gsicc_finddevicen(const gs_color_space *pcs, gsicc_manager_t *icc_manager)
+{
+
+    int k,j;
+    gsicc_devicen_entry_t *curr_entry;
+    int num_comps;
+    const gs_separation_name *names = pcs->params.device_n.names;
+    unsigned char *pname;
+    int name_size;
+    gsicc_devicen_t *devicen_profiles = icc_manager->device_n;
+    gsicc_colorname_t *icc_spot_entry;
+    int match_count = 0;
+
+    num_comps = gs_color_space_num_components(pcs);
+
+    /* Go through the list looking for a match */
+
+    curr_entry = devicen_profiles->head;
+
+    for ( k = 0; k < devicen_profiles->count; k++ ) {
+
+        if (curr_entry->iccprofile->num_comps == num_comps ) {
+
+            /* Now check the names.  The order is important
+               since this is supposed to be the laydown order.
+               If the order is off, the ICC profile will likely
+               not be accurate */
+
+            icc_spot_entry = curr_entry->iccprofile->spotnames->head;
+    
+            for ( j = 0; j < num_comps; j++){
+
+	        /*
+	         * Get the character string and length for the component name.
+	         */
+
+	        pcs->params.device_n.get_colorname_string(icc_manager->memory, names[j], &pname, &name_size);
+
+                /* Compare to the jth entry in the ICC profile */
+
+                if( strncmp(pname, icc_spot_entry->name, name_size) != 0 ) {
+
+                    /* This one did not match */
+
+                    break;
+
+                } else {
+
+                    match_count++;
+
+                }
+
+                
+            }
+
+            if ( match_count == num_comps) 
+                return(curr_entry->iccprofile);
+
+            match_count = 0;
+
+        }
+
+    }
+
+    return(NULL);
+
+}
+
+
 /* Populate the color names entries that should
    be contained in the DeviceN ICC profile */
 
-static void 
-gsicc_get_devicen_names(cmm_profile_t *icc_profile)
+static gsicc_namelist_t*
+gsicc_get_spotnames(gcmmhprofile_t profile, gs_memory_t *memory)
 {
 
+    int k;
+    gsicc_namelist_t *list;
+    gsicc_colorname_t *name;
+    gsicc_colorname_t **curr_entry;
+    int num_colors;
+    char *clr_name;
 
+    num_colors = gscms_get_numberclrtnames(profile);
 
+    if (num_colors == 0 ) return(NULL);
+
+    /* Allocate structure for managing this */
+
+    list = gsicc_new_namelist(memory);
+
+    if (list == NULL) return(NULL);
+
+    curr_entry = &(list->head);
+
+    for ( k = 0; k < num_colors; k++) {
+
+       /* Allocate a new name object */
+
+        name = gsicc_new_colorname(memory);
+        *curr_entry = name;
+
+        /* Get the name */
+
+        clr_name = gscms_get_clrtname(profile, k);
+
+        gsicc_copy_colorname(clr_name, *curr_entry, memory);
+
+        curr_entry = &((*curr_entry)->next);
+
+    }
+
+    list->count = num_colors;
+
+    return(list);
 
 }
+
+static void 
+gsicc_get_devicen_names(cmm_profile_t *icc_profile, gs_memory_t *memory)
+{
+
+    /* The names are contained in the 
+       named color tag.  We use the
+       CMM to extract the data from the
+       profile */
+
+    if (icc_profile->profile_handle == NULL) {
+
+        if (icc_profile->buffer != NULL) {
+
+            icc_profile->profile_handle = gsicc_get_profile_handle_buffer(icc_profile->buffer);
+
+        } else {
+
+            return;
+
+        }
+
+    }
+
+    icc_profile->spotnames = gsicc_get_spotnames(icc_profile->profile_handle, memory);
+
+    return;
+
+}
+
+
+/* Allocate new spot name list object.  */
+
+static gsicc_namelist_t* 
+gsicc_new_namelist(gs_memory_t *memory)
+{
+
+    gsicc_namelist_t *result;
+
+    result = gs_alloc_struct(memory,gsicc_namelist_t,
+		&st_gsicc_namelist, "gsicc_new_namelist");
+
+    result->count = 0;
+    result->head = NULL;
+
+    return(result);
+
+}
+
+/* Allocate new spot name.  */
+
+static gsicc_colorname_t* 
+gsicc_new_colorname(gs_memory_t *memory)
+{
+
+    gsicc_colorname_t *result;
+
+    result = gs_alloc_struct(memory,gsicc_colorname_t,
+		&st_gsicc_colorname, "gsicc_new_colorname");
+
+    result->length = 0;
+    result->name = NULL;
+    result->next = NULL;
+
+    return(result);
+
+}
+
+/* Copy the name from the CMM dependent stucture to ours */
+
+void
+gsicc_copy_colorname( const char *cmm_name, gsicc_colorname_t *colorname, gs_memory_t *memory )
+{
+
+    int length;
+
+    length = strlen(cmm_name);
+
+    colorname->name = (char*) gs_alloc_bytes(memory, length,
+					"gsicc_copy_colorname");
+
+    strcpy(colorname->name, cmm_name);
+
+    colorname->length = length;
+
+}
+
 
 /*  This computes the hash code for the
     ICC data and assigns the code
@@ -336,13 +537,7 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
                The names are in the order such that the fastest
                index in the table is the first name */
 
-            gsicc_get_devicen_names(icc_profile);
-
-
-                              
-               
-
-
+            gsicc_get_devicen_names(icc_profile, pis->memory);
 
         }
          
@@ -642,6 +837,7 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname, int namelen
     result->hash_is_valid = false;
     result->islab = false;
     result->default_match = DEFAULT_NONE;
+    result->spotnames = NULL;
 
     return(result);
 
@@ -653,6 +849,8 @@ static void
 rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
 {
     cmm_profile_t *profile = (cmm_profile_t *)ptr_in;
+    int k;
+    gsicc_colorname_t *curr_name, *next_name;
 
     if (profile->rc.ref_count <= 1 ){
 
@@ -685,6 +883,35 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
         }
 
         profile->hash_is_valid = 0;
+
+        /* If we had a DeviceN profile with names 
+           deallocate that now */
+
+        if (profile->spotnames != NULL){
+
+            curr_name = profile->spotnames->head;
+
+            for ( k = 0; k < profile->spotnames->count; k++) {
+
+                next_name = curr_name->next;
+
+                /* Free the name */
+
+                gs_free_object(mem, curr_name->name, "rc_free_icc_profile");
+
+                /* Free the name structure */
+
+                gs_free_object(mem, curr_name, "rc_free_icc_profile");
+
+                curr_name = next_name;
+
+            }
+
+            /* Free the main object */
+
+            gs_free_object(mem, profile->spotnames, "rc_free_icc_profile");
+
+        }
 
 	gs_free_object(mem, profile, cname);
 

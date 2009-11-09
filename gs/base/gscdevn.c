@@ -35,6 +35,7 @@
 #include "gsovrc.h"
 #include "stream.h"
 #include "gsnamecl.h"  /* Custom color call back define */
+#include "gsiccmanage.h"
 
 /* ---------------- Color space ---------------- */
 
@@ -351,28 +352,40 @@ gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
      * Check if we need to map into the alternate color space.
      * We must preserve tcode for implementing a semi-hack in the interpreter.
      */
+
     if (pis->color_component_map.use_alt_cspace) {
-	    /* Check the 1-element cache first. */
-	if (map->cache_valid) {
-	    int i;
 
-	    for (i = pcs->params.device_n.num_components; --i >= 0;) {
-		if (map->tint[i] != pc->paint.values[i])
-		    break;
-	    }
-	    if (i < 0) {
-		int num_out = gs_color_space_num_components(pacs);
+        /*  If we have an nclr ICC profile that 
+            can be used with this DeviceN color
+            space then don't use the alternate
+            tint transform */
 
-		for (i = 0; i < num_out; ++i)
-		    pconc[i] = map->conc[i];
-		return 0;
+        if ( pcs->cmm_icc_profile_data == NULL) {
+
+	        /* Check the 1-element cache first. */
+	    if (map->cache_valid) {
+	        int i;
+
+	        for (i = pcs->params.device_n.num_components; --i >= 0;) {
+		    if (map->tint[i] != pc->paint.values[i])
+		        break;
+	        }
+	        if (i < 0) {
+		    int num_out = gs_color_space_num_components(pacs);
+
+		    for (i = 0; i < num_out; ++i)
+		        pconc[i] = map->conc[i];
+		    return 0;
+	        }
 	    }
-	}
-        tcode = (*pcs->params.device_n.map->tint_transform)
-	     (pc->paint.values, &cc.paint.values[0],
-	     pis, pcs->params.device_n.map->tint_transform_data);
-        if (tcode < 0)
-	    return tcode;
+            tcode = (*pcs->params.device_n.map->tint_transform)
+	         (pc->paint.values, &cc.paint.values[0],
+	         pis, pcs->params.device_n.map->tint_transform_data);
+            if (tcode < 0)
+	        return tcode;
+
+        } 
+
 	code = cs_concretize_color(&cc, pacs, pconc, pis);
     }
     else {
@@ -527,6 +540,19 @@ gx_install_DeviceN(gs_color_space * pcs, gs_state * pgs)
     code = check_DeviceN_component_names(pcs, pgs);
     if (code < 0)
        return code;
+
+    /* See if we have an ICC profile that we can associate with
+       this DeviceN color space */
+
+    if (pgs->icc_manager->device_n != NULL) {
+
+        /* An nclr profile is in the manager.  Grab one
+           that matches.  */
+
+        pcs->cmm_icc_profile_data = gsicc_finddevicen(pcs, pgs->icc_manager);
+
+    }
+
     /* {csrc} was pgs->color_space->params.device_n.use_alt_cspace */
     ((gs_color_space *)pcs)->params.device_n.use_alt_cspace =
 	using_alt_color_space(pgs);

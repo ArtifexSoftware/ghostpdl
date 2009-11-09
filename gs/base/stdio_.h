@@ -39,7 +39,7 @@
  * if they do, the declaration will be compatible with this one, as long
  * as const has not been disabled by defining it to be the empty string.
  */
-int unlink(const char *);
+//int unlink(const char *);
 #endif
 
 #endif

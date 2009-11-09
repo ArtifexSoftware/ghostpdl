@@ -2466,7 +2466,8 @@ $(GLOBJ)gsicc.$(OBJ) : $(GLSRC)gsicc.c $(GXERR) $(math__h) $(memory__h)\
 	$(GLCC) $(GLO_)gsicc.$(OBJ) $(C_) $(GLSRC)gsicc.c
 
 gscms_h=$(std_h) $(stdpre_h) $(gstypes_h) $(gsutil_h) $(stdint_h)
-gsicc_littlecms_h=$(GLSRC)gsicc_littlecms.h $(gxcvalue_h) $(gscms_h)
+gsicc_littlecms_h=$(GLSRC)gsicc_littlecms.h $(gxcvalue_h) $(gscms_h)\
+ $(std_h) $(gsmemory_h)
 gsiccmanage_h=$(GLSRC)gsiccmanage.h $(gsicc_littlecms_h) $(gxclist_h)
 gsicccache_h=$(GLSRC)gsicccache.h $(GX)
 gsicc_profilecache_h=$(GLSRC)gsicc_profilecache.h
@@ -2567,7 +2568,8 @@ $(GLD)dpnxtlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(dpnxtlib_)
 $(GLOBJ)gscdevn.$(OBJ) : $(GLSRC)gscdevn.c $(GXERR) $(memory__h) $(string__h)\
  $(gscdevn_h) $(gsfunc_h) $(gsmatrix_h) $(gsrefct_h) $(gsstruct_h)\
  $(gxcspace_h) $(gxcdevn_h) $(gxfarith_h) $(gxfrac_h) $(gsnamecl_h) $(gxcmap_h)\
- $(gxistate_h) $(gscoord_h) $(gzstate_h) $(gxdevcli_h) $(gsovrc_h) $(stream_h)
+ $(gxistate_h) $(gscoord_h) $(gzstate_h) $(gxdevcli_h) $(gsovrc_h) $(stream_h)\
+ $(gsiccmanage_h)
 	$(GLCC) $(GLO_)gscdevn.$(OBJ) $(C_) $(GLSRC)gscdevn.c
 
 $(GLOBJ)gxdevndi.$(OBJ) : $(GLSRC)gxdevndi.c $(GX)\

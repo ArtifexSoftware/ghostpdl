@@ -33,6 +33,35 @@ gscms_get_channel_count(gcmmhprofile_t profile)
 
 }
 
+/* Get the number of colorant names in the clrt tag */
+
+int
+gscms_get_numberclrtnames(gcmmhprofile_t profile)
+{
+    LPcmsNAMEDCOLORLIST lcms_names;
+  
+    lcms_names = cmsReadColorantTable(profile, icSigColorantTableTag);
+
+    return(lcms_names->nColors);
+
+}
+
+/* Get the nth colorant name in the clrt tag */
+char*
+gscms_get_clrtname(gcmmhprofile_t profile, int colorcount)
+{
+
+    LPcmsNAMEDCOLORLIST lcms_names;
+
+    lcms_names = cmsReadColorantTable(profile, icSigColorantTableTag);
+
+    if (colorcount+1 > lcms_names->nColors) return(NULL);
+
+    return(lcms_names->List[colorcount].Name);
+
+
+}
+
 /* Get the device space associated with this profile */
 
 gsicc_colorbuffer_t

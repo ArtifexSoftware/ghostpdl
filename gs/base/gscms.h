@@ -147,11 +147,23 @@ typedef struct gsicc_serialized_profile_s {
 } gsicc_serialized_profile_t;
 
 
-struct gsicc_color_names_s {
+typedef struct gsicc_colorname_s gsicc_colorname_t;
+
+struct gsicc_colorname_s {
 
     char *name;
     int length;
+    gsicc_colorname_t *next;
 
+};
+
+typedef struct gsicc_namelist_s gsicc_namelist_t;
+
+struct gsicc_namelist_s {
+
+    int count;
+    gsicc_colorname_t *head;
+    
 };
 
 /* A structure for holding profile information.  A member variable
@@ -161,7 +173,7 @@ struct cmm_profile_s {
     gsicc_serial_data;
     byte *buffer;               /* A buffer with ICC profile content */
 
-
+    gsicc_namelist_t *spotnames;  /* Only used with NCLR ICC input profiles with named color tag */
     void *profile_handle;       /* The profile handle */
     rc_header rc;               /* Reference count.  So we know when to free */ 
     int name_length;            /* Length of file name */
