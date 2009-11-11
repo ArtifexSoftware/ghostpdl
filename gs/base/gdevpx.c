@@ -630,7 +630,7 @@ pclxl_write_image_data_RLE(gx_device_pclxl * xdev, const byte * base, int data_b
     int i;
     /* cannot handle data_bit not multiple of 8, but we don't invoke this routine that way */
     int offset = data_bit >> 3;
-    byte *data = base + offset;
+    const byte *data = base + offset;
 
     px_put_usa(s, y, pxaStartLine);
     px_put_usa(s, height, pxaBlockHeight);
@@ -724,7 +724,7 @@ pclxl_write_image_data_DeltaRow(gx_device_pclxl * xdev, const byte * base, int d
     int count;
     /* cannot handle data_bit not multiple of 8, but we don't invoke this routine that way */
     int offset = data_bit >> 3;
-    byte *data = base + offset;
+    const byte *data = base + offset;
 
     /* allocate the worst case scenario; PCL XL has an extra 2 byte per row compared to PCL5 */
     byte *buf = gs_alloc_bytes(xdev->v_memory, (worst_case_comp_size + 2)* height,
