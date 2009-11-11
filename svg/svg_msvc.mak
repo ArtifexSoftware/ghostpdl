@@ -69,7 +69,7 @@ PSRCDIR=..\gs\libpng
 !endif
 
 !ifndef TIFFSRCDIR
-TIFFSRCDIR=tiff$(D)
+TIFFSRCDIR=..\gs\tiff
 TIFFCONFIG_SUFFIX=.vc
 TIFFPLATFORM=win32
 !endif

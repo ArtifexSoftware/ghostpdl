@@ -315,7 +315,7 @@ JCF_=$(D_)SHARE_JPEG=$(SHARE_JPEG)$(_D)
 PI_=$(PNGSRCDIR) $(II)$(ZSRCDIR)
 # PF_ should include PNG_USE_CONST, but this doesn't work.
 #PF_=-DPNG_USE_CONST
-TI_=$(TIFFSRCDIR)libtiff $(II)$(JGENDIR)  $(II)$(ZSRCDIR)
+TI_=$(TIFFSRCDIR)$(D)libtiff $(II)$(JGENDIR)  $(II)$(ZSRCDIR)
 PF_=
 PCF_=$(D_)SHARE_LIBPNG=$(SHARE_LIBPNG)$(_D)
 ZI_=$(ZSRCDIR)
