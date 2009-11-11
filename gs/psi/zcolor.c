@@ -1148,7 +1148,7 @@ static int setgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
 		    pcc->pattern = 0;		/* for GC */
 		    gx_unset_dev_color(igs);
 		}
-		rc_decrement_only(pcs, "zsetdevcspace");
+		rc_decrement_only_cs(pcs, "zsetdevcspace");
 		*cont = 0;
 		*stage = 0;
 		break;
@@ -1373,7 +1373,7 @@ static int setrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 		    pcc->pattern = 0;		/* for GC */
 		    gx_unset_dev_color(igs);
 		}
-		rc_decrement_only(pcs, "zsetdevcspace");
+		rc_decrement_only_cs(pcs, "zsetdevcspace");
 		*cont = 0;
 		*stage = 0;
 		break;
@@ -1708,7 +1708,7 @@ static int setcmykspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
 		    pcc->pattern = 0;		/* for GC */
 		    gx_unset_dev_color(igs);
 		}
-		rc_decrement_only(pcs, "zsetdevcspace");
+		rc_decrement_only_cs(pcs, "zsetdevcspace");
 		*cont = 0;
 		*stage = 0;
 		break;
@@ -3414,7 +3414,7 @@ static int setseparationspace(i_ctx_t * i_ctx_p, ref *sepspace, int *stage, int 
     if (code >= 0)
 	code = gs_setcolorspace(igs, pcs);
     /* release reference from construction */
-    rc_decrement_only(pcs, "setseparationspace");
+    rc_decrement_only_cs(pcs, "setseparationspace");
     if (code < 0) {
 	istate->colorspace = cspace_old;
 	return code;
@@ -3960,7 +3960,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
 	    if (code >= 0)
 		code = gs_setcolorspace(igs, pcs);
 	    /* release reference from construction */
-	    rc_decrement_only(pcs, "setseparationspace");
+	    rc_decrement_only_cs(pcs, "setseparationspace");
 	    if (code < 0) {
 		istate->colorspace = cspace_old;
 		return code;
@@ -3989,7 +3989,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
 		case t_string:
 		    code = name_from_string(imemory, &sname, &sname);
 		    if (code < 0) {
-			rc_decrement(pcs, "setdevicenspace");
+			rc_decrement_cs(pcs, "setdevicenspace");
 			return code;
 		    }
 		    /* falls through */
@@ -3997,7 +3997,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
 		    names[i] = name_index(imemory, &sname);
 		    break;
 		default:
-		    rc_decrement(pcs, "setdevicenspace");
+		    rc_decrement_cs(pcs, "setdevicenspace");
 		    return_error(e_typecheck);
 	    }
 	}
@@ -4014,7 +4014,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
     gs_cspace_set_devn_function(pcs, pfn);
     code = gs_setcolorspace(igs, pcs);
     /* release reference from construction */
-    rc_decrement_only(pcs, "setdevicenspace");
+    rc_decrement_only_cs(pcs, "setdevicenspace");
     if (code < 0) {
 	istate->colorspace = cspace_old;
 	return code;
@@ -4476,7 +4476,7 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
 	    return_error(e_rangecheck);
 	pcs = gs_cspace_alloc(imemory, &gs_color_space_type_Indexed);
 	pcs->base_space = pcs_base;
-	rc_increment(pcs_base);
+	rc_increment_cs(pcs_base);
 	pcs->params.indexed.lookup.table.data = lookup.value.const_bytes;
 	pcs->params.indexed.lookup.table.size = num_values;
 	pcs->params.indexed.use_proc = 0;
@@ -4496,7 +4496,7 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
 	    return code;
 	pcs = gs_cspace_alloc(imemory, &gs_color_space_type_Indexed);
 	pcs->base_space = pcs_base;
-	rc_increment(pcs_base);
+	rc_increment_cs(pcs_base);
 	pcs->params.indexed.use_proc = 1;
 	*pproc = lookup;
 	map->proc.lookup_index = lookup_indexed_map;
@@ -4506,7 +4506,7 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
     pcs->params.indexed.n_comps = cs_num_components(pcs_base);
     code = gs_setcolorspace(igs, pcs);
     /* release reference from construction */
-    rc_decrement_only(pcs, "setindexedspace");
+    rc_decrement_only_cs(pcs, "setindexedspace");
     if (code < 0) {
 	istate->colorspace = cspace_old;
 	ref_stack_pop_to(&e_stack, edepth);
@@ -4744,10 +4744,10 @@ static int setpatternspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
     pcs = gs_cspace_alloc(imemory, &gs_color_space_type_Pattern);
     pcs->base_space = pcs_base;
     pcs->params.pattern.has_base_space = (pcs_base != NULL);
-    rc_increment(pcs_base);
+    rc_increment_cs(pcs_base);
     code = gs_setcolorspace(igs, pcs);
     /* release reference from construction */
-    rc_decrement_only(pcs, "zsetpatternspace");
+    rc_decrement_only_cs(pcs, "zsetpatternspace");
     if (code < 0) {
 	ref_stack_pop_to(&e_stack, edepth);
 	return code;
@@ -4922,7 +4922,7 @@ static int setdevicepspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
     code = gs_setcolorspace(igs, pcs);
     /* release reference from construction */
     *stage = 0;
-    rc_decrement_only(pcs, "setseparationspace");
+    rc_decrement_only_cs(pcs, "setseparationspace");
     return code;
 }
 static int validatedevicepspace(i_ctx_t * i_ctx_p, ref **space)

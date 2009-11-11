@@ -58,7 +58,7 @@ gs_setcmykcolor(gs_state * pgs, floatp c, floatp m, floatp y, floatp k)
         pcc->pattern = 0;		/* for GC */
         gx_unset_dev_color(pgs);
     }
-    rc_decrement_only(pcs, "gs_setcmykcolor");
+    rc_decrement_only_cs(pcs, "gs_setcmykcolor");
     return code;
 }
 

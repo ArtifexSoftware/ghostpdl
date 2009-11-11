@@ -41,15 +41,15 @@ gs_setcolorspace(gs_state * pgs, gs_color_space * pcs)
 	return_error(gs_error_undefined);
 
     if (pcs->id != pgs->color_space->id) {
-        rc_increment(pcs);
+        rc_increment_cs(pcs);
         pgs->color_space = pcs;
         if ( (code = pcs->type->install_cspace(pcs, pgs)) < 0          ||
               (pgs->overprint && (code = gs_do_set_overprint(pgs)) < 0)  ) {
             pgs->color_space = cs_old;
-            rc_decrement_only(pcs, "gs_setcolorspace");
+            rc_decrement_only_cs(pcs, "gs_setcolorspace");
         } else {
 	    cs_old->type->adjust_color_count(&cc_old, cs_old, -1);
-	    rc_decrement_only(cs_old, "gs_setcolorspace");
+	    rc_decrement_only_cs(cs_old, "gs_setcolorspace");
 	}
     }
 
@@ -361,7 +361,7 @@ gs_cspace_build_Indexed(
 	pindexed->use_proc = false;
     }
     pcspace->base_space = pbase_cspace;
-    rc_increment(pbase_cspace);
+    rc_increment_cs(pbase_cspace);
     pindexed->hival = num_entries - 1;
     pindexed->n_comps = cs_num_components(pbase_cspace);
     *ppcspace = pcspace;

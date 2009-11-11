@@ -353,11 +353,11 @@ static void
 gx_final_ICC(const gs_color_space * pcs)
 {
 
-    if (pcs->cmm_icc_profile_data != NULL) {
+  /*  if (pcs->cmm_icc_profile_data != NULL) {
 
         rc_decrement_only(pcs->cmm_icc_profile_data, "gx_final_ICC");
 
-    }
+    } */
 
     /* rc_decrement_only(pcs->params.icc.picc_info, "gx_final_ICC"); */
 }

@@ -111,7 +111,7 @@ gs_shfill(gs_state * pgs, const gs_shading_t * psh)
 	    code = gx_fill_path(NULL, &devc, pgs, gx_rule_winding_number,
 				pgs->fill_adjust.x, pgs->fill_adjust.y);
     }
-    rc_decrement(pcs, "gs_shfill");
+    rc_decrement_cs(pcs, "gs_shfill");
     gs_pattern_reference(&cc, -1);
     return code;
 }

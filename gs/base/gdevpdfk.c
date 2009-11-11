@@ -612,7 +612,7 @@ pdf_convert_cie_to_iccbased(gx_device_pdf *pdev, cos_array_t *pca,
     pdf_cspace_init_Device(pdev->memory, &alt_space, ncomps);	/* can't fail */
     code = pdf_make_iccbased(pdev, pca, ncomps, prange, alt_space,
 			     &pcstrm, pprange);
-    rc_decrement(alt_space, "pdf_convert_cie_to_iccbased");
+    rc_decrement_cs(alt_space, "pdf_convert_cie_to_iccbased");
     if (code < 0)
 	return code;
 

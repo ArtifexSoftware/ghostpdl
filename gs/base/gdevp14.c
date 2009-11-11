@@ -1472,7 +1472,7 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
 						NULL, NULL, NULL,
 						pis->memory, &info);
     if (code < 0) {
-	rc_decrement_only(pcs, "pdf14_put_image");
+	rc_decrement_only_cs(pcs, "pdf14_put_image");
 	return code;
     }
 
@@ -1520,7 +1520,7 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
 #endif
 
     rc_decrement(pis->icc_manager->device_profile, "pdf14_put_image");
-    rc_decrement_only(pcs, "pdf14_put_image");
+    rc_decrement_only_cs(pcs, "pdf14_put_image");
 
     return code;
 }

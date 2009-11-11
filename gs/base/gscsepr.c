@@ -211,7 +211,7 @@ gs_cspace_new_Separation(
 	return_error(code);
     }
     pcs->base_space = palt_cspace;
-    rc_increment(palt_cspace);
+    rc_increment_cs(palt_cspace);
     *ppcs = pcs;
     return 0;
 }

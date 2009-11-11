@@ -104,7 +104,7 @@ gs_cspace_final(void *vptr)
     }
 #endif /*ENABLE_CUSTOM_COLOR_CALLBACK*/
 
-    rc_decrement_only(pcs->base_space, "gs_cspace_final");
+    rc_decrement_only_cs(pcs->base_space, "gs_cspace_final");
 
     /* No need to decrement the ICC profile data.  It is handled
        by the finalize of the ICC space which is called above using
@@ -241,7 +241,7 @@ gx_install_DeviceGray(gs_color_space * pcs, gs_state * pgs)
 
         pcs->cmm_icc_profile_data = pgs->icc_manager->default_gray;
         pcs->type = &gs_color_space_type_ICC;
-        rc_increment(pgs->icc_manager->default_gray);
+        rc_adjust(pgs->icc_manager->default_gray, pcs->rc.ref_count, "gx_install_DeviceGray");	
 
     }
 
@@ -274,6 +274,78 @@ gs_cspace_base_space(const gs_color_space * pcspace)
     return pcspace->base_space;
 }
 
+
+/* Abstract the reference counting for color spaces
+   so that we can also increment the ICC profile
+   if there is one associated with the color space */
+
+void rc_increment_cs(gs_color_space *pcs)
+{
+
+    rc_increment(pcs);
+
+    if (pcs->cmm_icc_profile_data != NULL) {
+
+        rc_increment(pcs->cmm_icc_profile_data);
+
+    }
+
+}
+
+void rc_decrement_cs(gs_color_space *pcs, const char *cname) {
+
+    if (pcs) {
+        
+        if (pcs->cmm_icc_profile_data != NULL) {
+
+            rc_decrement(pcs->cmm_icc_profile_data, cname);
+
+        }
+
+        rc_decrement(pcs, cname);
+
+    }
+
+
+}
+
+void rc_decrement_only_cs(gs_color_space *pcs, const char *cname)
+{
+
+    if (pcs) {
+
+        if (pcs->cmm_icc_profile_data != NULL) {
+
+            rc_decrement(pcs->cmm_icc_profile_data, cname);
+
+        }
+
+        rc_decrement_only(pcs, cname);
+    }
+
+
+}
+
+void cs_adjust_counts_icc(gs_state *pgs, int delta)
+{
+    
+    gs_color_space *pcs = pgs->color_space;
+
+    if (pcs) {
+
+        if (pcs->cmm_icc_profile_data != NULL) {
+
+            rc_adjust(pcs->cmm_icc_profile_data, delta, "cs_adjust_counts_icc");	
+
+
+        }
+
+        cs_adjust_counts(pgs, delta);
+    }
+
+}
+
+
 /* ------ Other implementation procedures ------ */
 
 /* Null color space installation procedure. */
@@ -303,7 +375,7 @@ gx_install_DeviceRGB(gs_color_space * pcs, gs_state * pgs)
 
         pcs->cmm_icc_profile_data = pgs->icc_manager->default_rgb;
         pcs->type = &gs_color_space_type_ICC;
-        rc_increment(pgs->icc_manager->default_rgb);
+        rc_adjust(pgs->icc_manager->default_rgb, pcs->rc.ref_count, "gx_install_DeviceRGB");	
 
     }
 
@@ -330,7 +402,7 @@ gx_install_DeviceCMYK(gs_color_space * pcs, gs_state * pgs)
 
         pcs->cmm_icc_profile_data = pgs->icc_manager->default_cmyk;
         pcs->type = &gs_color_space_type_ICC;
-        rc_increment(pgs->icc_manager->default_cmyk);
+        rc_adjust(pgs->icc_manager->default_cmyk, pcs->rc.ref_count, "gx_install_DeviceCMYK");	
 
     }
 

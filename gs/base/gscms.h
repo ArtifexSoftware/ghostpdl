@@ -134,7 +134,9 @@ typedef enum {
     gs_range_icc_t Range;\
     int64_t hashcode;           /* A hash code for the icc profile */\
     bool hash_is_valid;         /* Is the code valid? */\
+    int devicen_permute[ICC_MAX_CHANNELS]; /* Permutation vector for deviceN laydown order */\
     int buffer_size            /* size of ICC profile buffer */
+    
 
 /* A subset of the profile information 
    which is used when writing and reading
@@ -182,6 +184,7 @@ struct cmm_profile_s {
                                    name.  This is primarily here for the system profiles, and
                                    so that we avoid resetting them everytime the user params
                                    are reloaded. */
+    
 
 };
 

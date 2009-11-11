@@ -370,6 +370,16 @@ void gs_color_space_restrict_color(gs_client_color *, const gs_color_space *);
  */
 const gs_color_space *gs_cspace_base_space(const gs_color_space * pcspace);
 
+/* Abstract the rc_increment and rc_decrement for color spaces so that we also rc_increment 
+   the ICC profile if there is one associated with the color space */
+
+void rc_increment_cs(gs_color_space *pcs);
+
+void rc_decrement_cs(gs_color_space *pcs, const char *cname);
+
+void rc_decrement_only_cs(gs_color_space *pcs, const char *cname);
+
+
 /* backwards compatibility */
 #define gs_color_space_indexed_base_space(pcspace)\
     gs_cspace_base_space(pcspace)

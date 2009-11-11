@@ -158,7 +158,7 @@ cmm_profile_t*
 gsicc_finddevicen(const gs_color_space *pcs, gsicc_manager_t *icc_manager)
 {
 
-    int k,j;
+    int k,j,i;
     gsicc_devicen_entry_t *curr_entry;
     int num_comps;
     const gs_separation_name *names = pcs->params.device_n.names;
@@ -181,33 +181,43 @@ gsicc_finddevicen(const gs_color_space *pcs, gsicc_manager_t *icc_manager)
             /* Now check the names.  The order is important
                since this is supposed to be the laydown order.
                If the order is off, the ICC profile will likely
-               not be accurate */
+               not be accurate.  The ICC profile drives the laydown
+               order here.  A permutation vector is used to 
+               reorganize the data prior to the transform application */
 
-            icc_spot_entry = curr_entry->iccprofile->spotnames->head;
     
             for ( j = 0; j < num_comps; j++){
 
 	        /*
 	         * Get the character string and length for the component name.
-	         */
+	         */                
 
 	        pcs->params.device_n.get_colorname_string(icc_manager->memory, names[j], &pname, &name_size);
 
                 /* Compare to the jth entry in the ICC profile */
 
-                if( strncmp(pname, icc_spot_entry->name, name_size) != 0 ) {
+                icc_spot_entry = curr_entry->iccprofile->spotnames->head;
 
-                    /* This one did not match */
+                for ( i = 0; i < num_comps; i++){
 
-                    break;
+                    if( strncmp(pname, icc_spot_entry->name, name_size) == 0 ) {
 
-                } else {
+                        /* Found a match */
 
-                    match_count++;
+                        match_count++;
+                        curr_entry->iccprofile->devicen_permute[j] = i;
+                        break;
+
+                    } else {
+
+                        icc_spot_entry = icc_spot_entry->next;
+
+                    }
 
                 }
 
-                
+                if (match_count < j+1) return(NULL);
+
             }
 
             if ( match_count == num_comps) 

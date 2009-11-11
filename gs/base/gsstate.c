@@ -940,7 +940,7 @@ gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
     } else {
 	GSTATE_ASSIGN_PARTS(pgs, &parts);
     }
-    cs_adjust_counts(pgs, 1);
+    cs_adjust_counts_icc(pgs, 1);
     return pgs;
   fail:
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
@@ -976,7 +976,7 @@ gstate_free_contents(gs_state * pgs)
     rc_decrement(pgs->device, cname);
     clip_stack_rc_adjust(pgs->clip_stack, -1, cname);
     rc_decrement(pgs->dfilter_stack, cname);
-    cs_adjust_counts(pgs, -1);
+    cs_adjust_counts_icc(pgs, -1);
     if (pgs->client_data != 0)
 	(*pgs->client_procs.free) (pgs->client_data, mem);
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
@@ -1005,7 +1005,7 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
      * at least 2 (pto and somewhere else) initially.
      * Handle references from contents.
      */
-    cs_adjust_counts(pto, -1);
+    cs_adjust_counts_icc(pto, -1);
     gx_path_assign_preserve(pto->path, pfrom->path);
     gx_cpath_assign_preserve(pto->clip_path, pfrom->clip_path);
     /*
@@ -1055,7 +1055,7 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
 	}
     }
     GSTATE_ASSIGN_PARTS(pto, &parts);
-    cs_adjust_counts(pto, 1);
+    cs_adjust_counts_icc(pto, 1);
     pto->show_gstate =
 	(pfrom->show_gstate == pfrom ? pto : 0);
     return 0;

@@ -36,6 +36,7 @@
 #include "stream.h"
 #include "gsnamecl.h"  /* Custom color call back define */
 #include "gsiccmanage.h"
+#include "gsicc.h"
 
 /* ---------------- Color space ---------------- */
 
@@ -130,7 +131,7 @@ gs_cspace_new_DeviceN(
 	return_error(gs_error_VMerror);
     }
     pcs->base_space = palt_cspace;
-    rc_increment(palt_cspace);
+    rc_increment_cs(palt_cspace);
     pcsdevn->names = pnames;
     pcsdevn->num_components = num_components;
     *ppcs = pcs;
@@ -184,7 +185,7 @@ gs_attachattributecolorspace(gs_separation_name sep_name, gs_state * pgs)
     /* Point our attribute list entry to the attribute color space */
     patt->colorant_name = sep_name;
     patt->cspace = pgs->color_space;
-    rc_increment(pgs->color_space);
+    rc_increment_cs(pgs->color_space);
 
     /* Link our new attribute color space to the DeviceN color space */
     patt->next = pdevncs->params.device_n.colorants;
@@ -384,9 +385,18 @@ gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
             if (tcode < 0)
 	        return tcode;
 
-        } 
+	    code = cs_concretize_color(&cc, pacs, pconc, pis);
 
-	code = cs_concretize_color(&cc, pacs, pconc, pis);
+        } else {
+
+            /* We have an nclr ICC profile that can be used with
+               this DeviceN color space.  This takes us directly
+               to the device space NOT the alternate CS. */
+
+            code = cs_concretize_color(pc, pacs, pconc, pis); 
+
+
+        }
     }
     else {
 	int i;
@@ -547,18 +557,41 @@ gx_install_DeviceN(gs_color_space * pcs, gs_state * pgs)
     if (pgs->icc_manager->device_n != NULL) {
 
         /* An nclr profile is in the manager.  Grab one
-           that matches.  */
+           that matches */
 
         pcs->cmm_icc_profile_data = gsicc_finddevicen(pcs, pgs->icc_manager);
+
+        if (pcs->cmm_icc_profile_data != NULL)
+            rc_adjust(pcs->cmm_icc_profile_data, pcs->rc.ref_count, "gs_install_DeviceN");
 
     }
 
     /* {csrc} was pgs->color_space->params.device_n.use_alt_cspace */
     ((gs_color_space *)pcs)->params.device_n.use_alt_cspace =
 	using_alt_color_space(pgs);
-    if (pcs->params.device_n.use_alt_cspace)
+
+    if (pcs->params.device_n.use_alt_cspace && pcs->cmm_icc_profile_data == NULL ) {
+
+        /* No nclr ICC profile */
+
         code = (pcs->base_space->type->install_cspace)
 	    (pcs->base_space, pgs);
+
+    } else if (pcs->params.device_n.use_alt_cspace) {
+
+        gs_color_space *nclr_pcs;
+
+        /* Need to install the nclr cspace */
+        code = gs_cspace_build_ICC(&nclr_pcs, NULL, pgs->memory);
+        nclr_pcs->cmm_icc_profile_data = pcs->cmm_icc_profile_data;
+        rc_increment_cs(nclr_pcs);
+
+        rc_decrement_cs(pcs->base_space, "gx_install_DeviceN");
+
+        pcs->base_space = nclr_pcs;
+
+    }
+
     /*
      * Give the device an opportunity to capture equivalent colors for any
      * spot colors which might be present in the color space.
@@ -614,7 +647,7 @@ gx_final_DeviceN(const gs_color_space * pcs)
     rc_decrement_only(pcs->params.device_n.map, "gx_adjust_DeviceN");
     while (patt != NULL) {
 	pnextatt = patt->next;
-	rc_decrement(patt->cspace, "gx_final_DeviceN");
+	rc_decrement_cs(patt->cspace, "gx_final_DeviceN");
         rc_decrement(patt, "gx_adjust_DeviceN");
 	patt = pnextatt;
     }

@@ -2069,7 +2069,7 @@ idata:			data_size = 0;
 	if (code == 0)
 	    code = code1;
     }
-    rc_decrement(pcs, "clist_playback_band");
+    rc_decrement_cs(pcs, "clist_playback_band");
     gx_cpath_free(&clip_path, "clist_render_band exit");
     gx_path_free(&path, "clist_render_band exit");
     if (imager_state.pattern_cache != NULL) {
@@ -2468,7 +2468,7 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
 
 	pcs_indexed = gs_cspace_alloc(mem, &gs_color_space_type_Indexed);
 	if (pcs_indexed == 0) {
-	    rc_decrement(pcs, "read_set_color_space");
+	    rc_decrement_cs(pcs, "read_set_color_space");
 	    code = gs_note_error(gs_error_VMerror);
 	    goto out;
 	}
@@ -2485,7 +2485,7 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
 
 	    code = alloc_indexed_map(&map, num_values, mem, "indexed map");
 	    if (code < 0) {
-		rc_decrement(pcs, "read_set_color_space");
+		rc_decrement_cs(pcs, "read_set_color_space");
 		goto out;
 	    }
 	    map->proc.lookup_index = lookup_indexed_map;
@@ -2497,7 +2497,7 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
 
 	    if (table == 0) {
 		code = gs_note_error(gs_error_VMerror);
-		rc_decrement(pcs, "read_set_color_space");
+		rc_decrement_cs(pcs, "read_set_color_space");
 		goto out;
 	    }
 	    pcs->params.indexed.lookup.table.data = table;
@@ -2510,7 +2510,7 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
 	pcs->params.indexed.use_proc = use_proc;
     }
     /* Release reference to old color space before installing new one. */
-    rc_decrement_only(*ppcs, "read_set_color_space");
+    rc_decrement_only_cs(*ppcs, "read_set_color_space");
     *ppcs = pcs;
 out:
     pcb->ptr = cbp;

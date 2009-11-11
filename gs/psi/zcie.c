@@ -293,7 +293,7 @@ cie_set_finish(i_ctx_t *i_ctx_p, gs_color_space * pcs,
     if (code >= 0)
 	code = gs_setcolorspace(igs, pcs);
     /* Delete the extra reference to the parameter tables. */
-    rc_decrement_only(pcs, "cie_set_finish");
+    rc_decrement_only_cs(pcs, "cie_set_finish");
     if (code < 0) {
 	ref_stack_pop_to(&e_stack, edepth);
 	return code;

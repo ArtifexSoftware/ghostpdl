@@ -325,7 +325,7 @@ zbegintransparencymaskimage(i_ctx_t *i_ctx_p)
     code = gs_begin_transparency_mask(igs, &params, &bbox, true);
     if (code < 0)
 	return code;
-    rc_decrement(gray_cs, "zbegintransparencymaskimage");
+    rc_decrement_cs(gray_cs, "zbegintransparencymaskimage");
     return code;
 }
 

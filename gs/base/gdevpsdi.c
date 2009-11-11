@@ -594,7 +594,7 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 	    gs_memory_t *mem = pdev->v_memory;
 
 	    /* {csrc} decref old colorspace? */
-	    rc_decrement_only(pim->ColorSpace, "psdf_setup_image_filters");
+	    rc_decrement_only_cs(pim->ColorSpace, "psdf_setup_image_filters");
 	    pim->ColorSpace = gs_cspace_new_DeviceRGB(mem);
 	}
 	if (params.Depth == -1)

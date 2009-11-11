@@ -63,7 +63,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 
     /* record the current space as the alternative color space */
     pcs->base_space = palt_cs;
-    rc_increment(palt_cs);
+    rc_increment_cs(palt_cs);
 
     /*  For now, dump the profile into a buffer
         and obtain handle from the buffer when we need it. 
@@ -274,7 +274,7 @@ seticc_lab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff)
 
     /* record the current space as the alternative color space */
     pcs->base_space = palt_cs;
-    rc_increment(palt_cs);
+    rc_increment_cs(palt_cs);
 
     /* Get the lab profile.  It may already be set in the icc manager.
        If not then lets populate it.  */
