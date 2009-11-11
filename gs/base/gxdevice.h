@@ -299,6 +299,8 @@ dev_proc_decode_color(cmyk_1bit_map_color_cmyk);
 dev_proc_map_cmyk_color(cmyk_8bit_map_cmyk_color);
 dev_proc_map_color_rgb(cmyk_8bit_map_color_rgb);
 dev_proc_decode_color(cmyk_8bit_map_color_cmyk);
+dev_proc_map_cmyk_color(cmyk_16bit_map_cmyk_color);
+dev_proc_decode_color(cmyk_16bit_map_color_cmyk);
 dev_proc_encode_color(gx_default_8bit_map_gray_color);
 dev_proc_decode_color(gx_default_8bit_map_color_gray);
 

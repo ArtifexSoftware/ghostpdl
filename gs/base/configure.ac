@@ -416,6 +416,69 @@ AC_SUBST(SHARE_LIBPNG)
 AC_SUBST(LIBPNGDIR)
 AC_SUBST(PNGDEVS)
 
+
+dnl look for libtiff, it also requires lib
+dnl png for the png output device; it also requires zlib
+AC_ARG_WITH([system-libtiff], AC_HELP_STRING([--with-system-libtiff],
+					     [Force using the systems libtiff]),
+	    [], [with_system_libtiff=check])
+TIFFDEVS=''
+TIFFDEVS_ALL='$(DD)tiffs $(DD)tiff12nc $(DD)tiff24nc $(DD)tiff48nc $(DD)tiff32nc $(DD)tiff64nc $(DD)tiffcrle $(DD)tifflzw $(DD)tiffpack $(DD)tiffgray $(DD)tiffsep'
+case "x$with_system_libtiff" in
+    xcheck)
+	if test -d tiff; then
+	    LIBTIFFDIR=tiff
+	    LOCAL_LIBTIFF_VERSION=`sed -n -r 's/^#define\s+TIFFLIB_VERSION\s+([0-9]+)\s*.*$/\1/p' $LIBTIFFDIR/libtiff/tiffvers.h`
+	    SHARE_LIBTIFF=0
+	fi
+	AC_CHECK_LIB(tiff, TIFFOpen,
+		     [AC_CHECK_HEADERS(tiff.h, [HAVE_SYSTEM_LIBTIFF=1;SHARE_LIBTIFF=1])],
+		     [], [-ljpeg])
+	if test -z $LOCAL_LIBTIFF_VERSION && test "x$HAVE_SYSTEM_LIBTIFF" == x; then
+	    AC_MSG_NOTICE([Could not find a copy of libtiff on your system.
+Disabling tiff output devices.])
+	else
+	    TIFFDEVS="$TIFFDEVS_ALL"
+	fi
+	if test ! -z $LOCAL_LIBTIFF_VERSION && test "x$HAVE_SYSTEM_LIBTIFF" != x; then
+	    AC_TRY_COMPILE([#include <tiffvers.h>
+			    #if TIFFLIB_VERSION < $LOCAL_LIBTIFF_VERSION
+			    #error system libtiff is older
+			    #endif], [],
+			    [SHARE_LIBTIFF=1], [SHARE_LIBTIFF=0])
+	fi
+	;;
+    xyes)
+	AC_CHECK_LIB(tiff, TIFFOpen,
+		     [AC_CHECK_HEADERS(tiff.h, [HAVE_SYSTEM_LIBTIFF=1;SHARE_LIBTIFF=1])],
+		     [], [-ljpeg])
+	if test "x$HAVE_SYSTEM_LIBTIFF" != x; then
+	    SHARE_LIBTIFF=1
+	    TIFFDEVS="$TIFFDEVS_ALL"
+	else
+	    AC_MSG_NOTICE([Could not find a copy of libtiff on your system.
+Disabling tiff output devices.])
+	fi
+	;;
+    xno)
+	AC_MSG_CHECKING([for local libtiff source])
+        if test -d tiff; then
+	    AC_MSG_RESULT([yes])
+	    LIBTIFFDIR=tiff
+	    SHARE_LIBTIFF=0
+	    TIFFDEVS="$TIFFDEVS_ALL"
+	else
+	    AC_MSG_RESULT([no])
+	    AC_MSG_NOTICE([Could not find local copy of libtiff.
+Disabling tiff output devices.])
+	fi
+	;;
+esac
+AC_SUBST(SHARE_LIBTIFF)
+AC_SUBST(TIFFDEVS)
+AC_SUBST(LIBTIFFDIR)
+
+
 dnl look for CUPS...
 AC_ARG_ENABLE([cups], AC_HELP_STRING([--disable-cups],
     [Don't include CUPS support]))
@@ -812,7 +875,7 @@ BMP_DEVS="bmpmono bmpgray bmpsep1 bmpsep8 bmp16 bmp256 bmp16m bmp32b"
 FAX_DEVS="cfax dfaxlow dfaxhigh fax tfax tiffg3 tiffg32d tiffg4 faxg3 faxg32d faxg4"
 JPEG_DEVS="jpeg jpeggray jpegcmyk"
 PNG_DEVS="png16 png16m png256 pngalpha pnggray pngmono"
-TIFF_DEVS="tiffs tiff12nc tiff24nc tiff32nc tiffcrle tifflzw tiffpack tiffgray tiffsep tiffsep1"
+TIFF_DEVS="tiffs tiff12nc tiff24nc tiff48nc tiff32nc tiff64nc tiffcrle tifflzw tiffpack tiffgray tiffsep tiffsep1"
 PCX_DEVS="pcxmono pcxgray pcx16 pcx256 pcx24b pcxcmyk pcx2up"
 PBM_DEVS="pbm pbmraw pgm pgmraw pgnm pgnmraw pnm pnmraw ppm ppmraw pkm pkmraw pksm pksmraw pam"
 PS_DEVS="psdf psdcmyk psdrgb pdfwrite pswrite ps2write epswrite psgray psmono psrgb bbox"

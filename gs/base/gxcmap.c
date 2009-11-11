@@ -1604,6 +1604,18 @@ cmyk_8bit_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
     return (color == gx_no_color_index ? color ^ 1 : color);
 }
 
+gx_color_index
+cmyk_16bit_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
+{
+    gx_color_index color =
+	(uint64_t)cv[3] +
+	((uint64_t)cv[2] << 16) +
+	((uint64_t)cv[1] << 32) +
+	((uint64_t)cv[0] << 48);
+
+    return (color == gx_no_color_index ? color ^ 1 : color);
+}
+
 /* Shouldn't be called: decode_color should be cmyk_8bit_map_color_cmyk */
 int
 cmyk_8bit_map_color_rgb(gx_device * dev, gx_color_index color,
@@ -1631,6 +1643,18 @@ cmyk_8bit_map_color_cmyk(gx_device * dev, gx_color_index color,
     pcv[3] = gx_color_value_from_byte(color & 0xff);
     return 0;
 }
+
+int
+cmyk_16bit_map_color_cmyk(gx_device * dev, gx_color_index color,
+			  gx_color_value pcv[4])
+{
+    pcv[0] = (color >> 48) & 0xffff;
+    pcv[1] = (color >> 32) & 0xffff;
+    pcv[2] = (color >> 16) & 0xffff;
+    pcv[3] = (color) & 0xffff;
+    return 0;
+}
+
 
 /* Default mapping between RGB+alpha and RGB. */
 

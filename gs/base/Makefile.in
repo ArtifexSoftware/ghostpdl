@@ -168,6 +168,13 @@ SHARE_LIBPNG=@SHARE_LIBPNG@
 PNGSRCDIR=@LIBPNGDIR@
 LIBPNG_NAME=png
 
+# libtiff
+SHARE_LIBTIFF=@SHARE_LIBTIFF@
+TIFFSRCDIR=@LIBTIFFDIR@
+TIFFPLATFORM=unix
+TIFFCONFIG_SUFFIX=
+LIBTIFF_NAME=tiff
+
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
@@ -415,7 +422,7 @@ DISPLAY_DEV=$(DD)bbox.dev
 #DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev $(DD)pcxcmyk.dev
 #DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev $(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev
 #DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
-#DEVICE_DEVS11=$(DD)tiff12nc.dev $(DD)tiff24nc.dev $(DD)tiffgray.dev $(DD)tiff32nc.dev $(DD)tiffsep.dev $(DD)tiffsep1.dev
+#DEVICE_DEVS11=$(DD)tiff12nc.dev $(DD)tiff24nc.dev $(DD)tiff48nc.dev $(DD)tiffgray.dev $(DD)tiff32nc.dev $(DD)tiff64nc $(DD)tiffsep.dev $(DD)tiffsep1.dev
 #DEVICE_DEVS12=$(DD)psmono.dev $(DD)psgray.dev $(DD)psrgb.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
 #DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev
 #DEVICE_DEVS13=@PNGDEVS@
@@ -493,6 +500,7 @@ include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
+include $(GLSRCDIR)/libtiff.mak
 include $(GLSRCDIR)/jbig2.mak
 include $(GLSRCDIR)/jasper.mak
 include $(GLSRCDIR)/ldf_jb2.mak

@@ -22,6 +22,7 @@
 
 SHARE_JPEG=0
 SHARE_LIBPNG=0
+SHARE_LIBTIFF=0
 SHARE_ZLIB=0
 SHARE_JBIG2=0
 SHARE_JPX=0
@@ -106,6 +107,7 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 # zlib.mak must precede libpng.mak
 !include $(GLSRCDIR)\zlib.mak
 !include $(GLSRCDIR)\libpng.mak
+!include $(GLSRCDIR)\libtiff.mak
 !include $(GLSRCDIR)\jbig2.mak
 !include $(GLSRCDIR)\jasper.mak
 !include $(GLSRCDIR)\ldf_jb2.mak

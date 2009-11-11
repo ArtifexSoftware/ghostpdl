@@ -93,6 +93,20 @@ gdev_fax_put_params(gx_device * dev, gs_param_list * plist)
     return code;
 }
 
+int
+gdev_fax_adjusted_width(int width)
+{
+    /* Adjust the page width to a legal value for fax systems. */
+    if (width >= 1680 && width <= 1736)
+	/* Adjust width for A4 paper. */
+	return 1728;
+    else if (width >= 2000 && width <= 2056)
+	/* Adjust width for B4 paper. */
+	return 2048;
+    else
+	return width;
+}
+
 /* Initialize the stream state with a set of default parameters. */
 /* These select the same defaults as the CCITTFaxEncode filter, */
 /* except we set BlackIs1 = true. */
@@ -105,17 +119,10 @@ gdev_fax_init_state_adjust(stream_CFE_state *ss,
     ss->Columns = fdev->width;
     ss->Rows = fdev->height;
     ss->BlackIs1 = true;
-    if (adjust_width > 0) {
-	/* Adjust the page width to a legal value for fax systems. */
-	if (ss->Columns >= 1680 && ss->Columns <= 1736) {
-	    /* Adjust width for A4 paper. */
-	    ss->Columns = 1728;
-	} else if (ss->Columns >= 2000 && ss->Columns <= 2056) {
-	    /* Adjust width for B4 paper. */
-	    ss->Columns = 2048;
-	}
-    }
+    if (adjust_width > 0)
+	ss->Columns = gdev_fax_adjusted_width(ss->Columns);
 }
+
 void
 gdev_fax_init_state(stream_CFE_state *ss, const gx_device_fax *fdev)
 {
