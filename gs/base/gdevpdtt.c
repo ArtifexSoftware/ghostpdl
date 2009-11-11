@@ -385,7 +385,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 		    break;
 		}
 	    }
-	} while(font_code != 2);
+	} while(font_code != 2 && font_code >= 0);
 	gs_text_release(penum, "pdf_text_process");
     }
 
