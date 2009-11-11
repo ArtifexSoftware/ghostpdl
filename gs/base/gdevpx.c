@@ -1442,7 +1442,11 @@ pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
     if (code < 0)
 	return code;
 
-    if (data_x !=0 )
+    /* write_image_data() needs byte-alignment,
+     * and gx_default_copy_* is more efficient than pxlcl_*
+     * for small rasters. See details in copy_color().
+     */
+    if ( ((data_x & 7) != 0) || (h == 1) || (w == 1) )
         return gx_default_copy_mono(dev, data, data_x, raster, id, 
   				    x, y, w, h, zero, one);
 
@@ -1573,7 +1577,19 @@ pclxl_copy_color(gx_device * dev,
     if (dev->color_info.num_components == 3)
         pclxl_set_color_space(xdev, eRGB);
 
-    if ((source_bit & 7) != 0)
+    /* write_image_data() needs byte-alignment,
+     * and gx_default_copy_* is more efficient than pxlcl_*
+     * for small rasters.
+     *
+     * SetBrushSource + Rectangle = 21 byte for 1x1 RGB
+     * SetCursor+ BeginImage + ReadImage + EndImage = 56 bytes for 1x1 RGB
+     * 3x1 RGB at 3 different colors takes 62 bytes for pxlcl_*
+     * but gx_default_copy_* uses 63 bytes. Below 3 pixels, gx_default_copy_*
+     * is better than pxlcl_*; above 3 pixels, it is less clear;
+     * in practice, single-lines seems better coded as painted rectangles
+     * than images.
+     */
+    if ( ((source_bit & 7) != 0) || (w == 1) || (h == 1) )
 	return gx_default_copy_color(dev, base, sourcex, raster, id,
 				     x, y, w, h);
     gdev_vector_update_log_op(vdev, rop3_S);
@@ -1610,7 +1626,11 @@ pclxl_fill_mask(gx_device * dev,
     stream *s;
 
     fit_copy(dev, data, data_x, raster, id, x, y, w, h);
-    if ((data_x & 7) != 0 || !gx_dc_is_pure(pdcolor) || depth > 1)
+    /* write_image_data() needs byte-alignment,
+     * and gx_default_copy_* is more efficient than pxlcl_*
+     * for small rasters. See details in copy_color().
+     */
+    if ((data_x & 7) != 0 || !gx_dc_is_pure(pdcolor) || depth > 1 || (w == 1) || (h == 1) )
 	return gx_default_fill_mask(dev, data, data_x, raster, id,
 				    x, y, w, h, pdcolor, depth,
 				    lop, pcpath);
