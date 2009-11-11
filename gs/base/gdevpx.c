@@ -617,9 +617,10 @@ pclxl_write_begin_image(gx_device_pclxl * xdev, uint width, uint height,
 
 /* Write rows of an image. */
 /****** IGNORES data_bit ******/
+/* 2009: we try to cope with the case of data_bit being multiple of 8 now */
 /* RLE version */
 static void
-pclxl_write_image_data_RLE(gx_device_pclxl * xdev, const byte * data, int data_bit,
+pclxl_write_image_data_RLE(gx_device_pclxl * xdev, const byte * base, int data_bit,
 		       uint raster, uint width_bits, int y, int height)
 {
     stream *s = pclxl_stream(xdev);
@@ -627,6 +628,9 @@ pclxl_write_image_data_RLE(gx_device_pclxl * xdev, const byte * data, int data_b
     uint num_bytes = ROUND_UP(width_bytes, 4) * height;
     bool compress = num_bytes >= 8;
     int i;
+    /* cannot handle data_bit not multiple of 8, but we don't invoke this routine that way */
+    int offset = data_bit >> 3;
+    byte *data = base + offset;
 
     px_put_usa(s, y, pxaStartLine);
     px_put_usa(s, height, pxaBlockHeight);
@@ -708,7 +712,7 @@ pclxl_write_image_data_RLE(gx_device_pclxl * xdev, const byte * data, int data_b
    Worse case of RLE is + 1/128, but worse case of DeltaRow is + 1/8
  */
 static void
-pclxl_write_image_data_DeltaRow(gx_device_pclxl * xdev, const byte * data, int data_bit,
+pclxl_write_image_data_DeltaRow(gx_device_pclxl * xdev, const byte * base, int data_bit,
 		       uint raster, uint width_bits, int y, int height)
 {
     stream *s = pclxl_stream(xdev);
@@ -718,6 +722,9 @@ pclxl_write_image_data_DeltaRow(gx_device_pclxl * xdev, const byte * data, int d
     byte *prow = 0;
     int i;
     int count;
+    /* cannot handle data_bit not multiple of 8, but we don't invoke this routine that way */
+    int offset = data_bit >> 3;
+    byte *data = base + offset;
 
     /* allocate the worst case scenario; PCL XL has an extra 2 byte per row compared to PCL5 */
     byte *buf = gs_alloc_bytes(xdev->v_memory, (worst_case_comp_size + 2)* height,
