@@ -98,6 +98,8 @@ typedef struct gx_device_pclxl_s {
     bool scaled;
     floatp x_scale; /* chosen so that max(x) is scaled to 0x7FFF, to give max distinction between x values */
     floatp y_scale;
+    bool pen_null;
+    bool brush_null;
 } gx_device_pclxl;
 
 gs_public_st_suffix_add0_final(st_device_pclxl, gx_device_pclxl,
@@ -202,6 +204,8 @@ pclxl_page_init(gx_device_pclxl * xdev)
     xdev->scaled = false;
     xdev->x_scale = 1;
     xdev->y_scale = 1;
+    xdev->pen_null = false;
+    xdev->brush_null = false;
 }
 
 /* Test whether a RGB color is actually a gray shade. */
@@ -246,6 +250,33 @@ pclxl_set_color_palette(gx_device_pclxl * xdev, pxeColorSpace_t color_space,
     }
 }
 
+/* For caching either NullPen or NullBrush, which happens a lot for
+ * drawing masks in the PS3 CET test set.
+ *
+ * The expected null_source/op combos are:
+ * pxaNullPen/pxtSetPenSource and pxaNullBrush/pxtSetBrushSource
+ */
+static int
+pclxl_set_cached_nulls(gx_device_pclxl * xdev, px_attribute_t null_source, px_tag_t op)
+{
+    stream *s = pclxl_stream(xdev);
+    if (op == pxtSetPenSource) {
+        if (xdev->pen_null)
+            return 0;
+        else
+            xdev->pen_null = true;
+    }
+    if (op == pxtSetBrushSource) {
+        if (xdev->brush_null)
+            return 0;
+        else 
+            xdev->brush_null = true;
+    }
+    px_put_uba(s, 0, (byte)null_source);
+    spputc(s, (byte)op);
+    return 0;
+}
+
 /* Set a drawing RGB color. */
 static int
 pclxl_set_color(gx_device_pclxl * xdev, const gx_drawing_color * pdc,
@@ -255,6 +286,9 @@ pclxl_set_color(gx_device_pclxl * xdev, const gx_drawing_color * pdc,
 
     if (gx_dc_is_pure(pdc)) {
 	gx_color_index color = gx_dc_pure_color(pdc);
+
+	if (op == pxtSetPenSource)   xdev->pen_null   = false;
+	if (op == pxtSetBrushSource) xdev->brush_null = false;
 
 	if (xdev->color_info.num_components == 1 || RGB_IS_GRAY(color)) {
 	    pclxl_set_color_space(xdev, eGray);
@@ -268,9 +302,12 @@ pclxl_set_color(gx_device_pclxl * xdev, const gx_drawing_color * pdc,
 	    spputc(s, (byte) color);
 	    px_put_a(s, pxaRGBColor);
 	}
-    } else if (gx_dc_is_null(pdc) || !color_is_set(pdc))
-	px_put_uba(s, 0, null_source);
-    else
+    } else if (gx_dc_is_null(pdc) || !color_is_set(pdc)) {
+	if (op == pxtSetPenSource || op == pxtSetBrushSource)
+	    return pclxl_set_cached_nulls(xdev, null_source, op);
+	else
+	    px_put_uba(s, 0, null_source);
+    } else
 	return_error(gs_error_rangecheck);
     spputc(s, (byte)op);
     return 0;
@@ -306,11 +343,7 @@ pclxl_set_paints(gx_device_pclxl * xdev, gx_path_type_t type)
 	!gx_dc_is_null(&xdev->saved_fill_color.saved_dev_color) 
 	)
 	) {
-	static const byte nac_[] = {
-	    DUB(0), DA(pxaNullBrush), pxtSetBrushSource
-	};
-
-	PX_PUT_LIT(s, nac_);
+	pclxl_set_cached_nulls(xdev, pxaNullBrush, pxtSetBrushSource);
 	color_set_null(&xdev->saved_fill_color.saved_dev_color);
 	if (rule != xdev->fill_rule) {
 	    px_put_ub(s, (byte)(rule == gx_path_type_even_odd ? eEvenOdd :
@@ -324,11 +357,7 @@ pclxl_set_paints(gx_device_pclxl * xdev, gx_path_type_t type)
 	!gx_dc_is_null(&xdev->saved_fill_color.saved_dev_color)
 	 )
 	) {
-	static const byte nac_[] = {
-	    DUB(0), DA(pxaNullPen), pxtSetPenSource
-	};
-
-	PX_PUT_LIT(s, nac_);
+	pclxl_set_cached_nulls(xdev, pxaNullPen, pxtSetPenSource);
 	color_set_null(&xdev->saved_stroke_color.saved_dev_color);
     }
 }
