@@ -1071,7 +1071,7 @@ cups_map_cmyk(gx_device *pdev,		/* I - Device info */
 	      frac      k,		/* I - Black value */
 	      frac      *out)		/* O - Device colors */
 {
-  int	c0, c1, c2;			/* Temporary color values */
+  int	c0, c1, c2, c3;			/* Temporary color values */
   float	rr, rg, rb,			/* Real RGB colors */
 	ciex, ciey, ciez,		/* CIE XYZ colors */
 	ciey_yn,			/* Normalized luminance */
@@ -1090,44 +1090,56 @@ cups_map_cmyk(gx_device *pdev,		/* I - Device info */
   switch (cups->header.cupsColorSpace)
   {
     case CUPS_CSPACE_W :
-        c0 = frac_1 - (c * 31 + m * 61 + y * 8) / 100 - k;
-
+        c0 = (c * 31 + m * 61 + y * 8) / 100 + k;
+	
 	if (c0 < 0)
-	  out[0] = 0;
+	  c0 = 0;
 	else if (c0 > frac_1)
-	  out[0] = (frac)cupsDensity[frac_1];
-	else
-	  out[0] = (frac)cupsDensity[c0];
+	  c0 = frac_1;
+	out[0] = frac_1 - (frac)cupsDensity[c0];
         break;
 
     case CUPS_CSPACE_RGBA :
         out[3] = frac_1;
 
     case CUPS_CSPACE_RGB :
-        c0 = frac_1 - c - k;
-	c1 = frac_1 - m - k;
-	c2 = frac_1 - y - k;
+    case CUPS_CSPACE_RGBW :
+        if (cups->header.cupsColorSpace == CUPS_CSPACE_RGBW) {
+	  c0 = c;
+	  c1 = m;
+	  c2 = y;
+	  c3 = k;
+	} else {
+	  c0 = c + k;
+	  c1 = m + k;
+	  c2 = y + k;
+	}
 
         if (c0 < 0)
-	  out[0] = 0;
+	  c0 = 0;
 	else if (c0 > frac_1)
-	  out[0] = (frac)cupsDensity[frac_1];
-	else
-	  out[0] = (frac)cupsDensity[c0];
+	  c0 = frac_1;
+	out[0] = frac_1 - (frac)cupsDensity[c0];
 
         if (c1 < 0)
-	  out[1] = 0;
+	  c1 = 0;
 	else if (c1 > frac_1)
-	  out[1] = (frac)cupsDensity[frac_1];
-	else
-	  out[1] = (frac)cupsDensity[c1];
+	  c1 = frac_1;
+	out[1] = frac_1 - (frac)cupsDensity[c1];
 
         if (c2 < 0)
-	  out[2] = 0;
+	  c2 = 0;
 	else if (c2 > frac_1)
-	  out[2] = (frac)cupsDensity[frac_1];
-	else
-	  out[2] = (frac)cupsDensity[c2];
+	  c2 = frac_1;
+	out[2] = frac_1 - (frac)cupsDensity[c2];
+
+        if (cups->header.cupsColorSpace == CUPS_CSPACE_RGBW) {
+	  if (c3 < 0)
+	    c3 = 0;
+	  else if (c3 > frac_1)
+	    c3 = frac_1;
+	  out[3] = frac_1 - (frac)cupsDensity[c3];
+	}
         break;
 
     default :
@@ -1196,11 +1208,6 @@ cups_map_cmyk(gx_device *pdev,		/* I - Device info */
 	  out[2] = (frac)cupsDensity[c2];
         break;
 
-    case CUPS_CSPACE_RGBW :
-        c = frac_1 - c;
-        m = frac_1 - m;
-        y = frac_1 - y;
-        k = frac_1 - k;
     case CUPS_CSPACE_CMYK :
         if (c < 0)
 	  out[0] = 0;
