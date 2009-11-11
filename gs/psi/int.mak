@@ -255,7 +255,7 @@ bfont_h=$(PSSRC)bfont.h $(ifont_h)
 icontext_h=$(PSSRC)icontext.h $(gsstype_h) $(icstate_h)
 ifilter_h=$(PSSRC)ifilter.h $(istream_h) $(ivmspace_h)
 igstate_h=$(PSSRC)igstate.h $(gsstate_h) $(gxstate_h) $(imemory_h) $(istruct_h) $(gxcindex_h)
-iscan_h=$(PSSRC)iscan.h $(sa85x_h) $(sstring_h)
+iscan_h=$(PSSRC)iscan.h $(sa85x_h) $(sstring_h) $(inamestr_h)
 sbhc_h=$(PSSRC)sbhc.h $(shc_h)
 zfile_h=$(PSSRC)zfile.h
 # Include files for optional features
