@@ -34,6 +34,11 @@ JSRCDIR=..\gs\jpeg
 !ifndef PNGSRCDIR
 PNGSRCDIR=..\gs\libpng
 !endif
+!ifndef TIFFSRCDIR
+TIFFSRCDIR=..\gs\tiff
+TIFFCONFIG_SUFFIX=.vc
+TIFFPLATFORM=win32
+!endif
 !ifndef ZSRCDIR
 ZSRCDIR=..\gs\zlib
 !endif

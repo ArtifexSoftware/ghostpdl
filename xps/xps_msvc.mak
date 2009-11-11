@@ -56,6 +56,12 @@ ICCSRCDIR=..\gs\icclib
 PNGSRCDIR=..\gs\libpng
 !endif
 
+!ifndef TIFFSRCDIR
+TIFFSRCDIR=..\gs\tiff
+TIFFCONFIG_SUFFIX=.vc
+TIFFPLATFORM=win32
+!endif
+
 !ifndef EXPATSRCDIR
 EXPATSRCDIR=..\gs\expat
 !endif

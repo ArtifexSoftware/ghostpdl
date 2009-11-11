@@ -68,6 +68,12 @@ EXPAT_CFLAGS=/DHAVE_MEMMOVE
 PSRCDIR=..\gs\libpng
 !endif
 
+!ifndef TIFFSRCDIR
+TIFFSRCDIR=tiff$(D)
+TIFFCONFIG_SUFFIX=.vc
+TIFFPLATFORM=win32
+!endif
+
 # PLPLATFORM indicates should be set to 'ps' for language switch
 # builds and null otherwise.
 !ifndef PLPLATFORM
