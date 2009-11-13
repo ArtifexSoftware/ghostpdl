@@ -303,6 +303,10 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     lcms_src_color_space = _cmsLCMScolorSpace(src_color_space);
     lcms_des_color_space = _cmsLCMScolorSpace(des_color_space);
 
+    /* littlecms returns -1 for types it does not (but should) understand */
+    if (lcms_src_color_space < 0) lcms_src_color_space = 0;
+    if (lcms_des_color_space < 0) lcms_des_color_space = 0;
+
     src_nChannels = _cmsChannelsOf(src_color_space);
     des_nChannels = _cmsChannelsOf(des_color_space);
 
