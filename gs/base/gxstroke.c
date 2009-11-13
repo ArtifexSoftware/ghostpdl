@@ -220,7 +220,9 @@ static int line_join_points(const gx_line_params * pgs_lp,
 static void compute_caps(pl_ptr);
 static int add_points(gx_path *, const gs_fixed_point *,
 		       int, bool);
+static int add_pie_join(gx_path *, pl_ptr, pl_ptr, bool);
 static int add_round_cap(gx_path *, const_ep_ptr);
+static int add_pie_cap(gx_path *, const_ep_ptr);
 static int cap_points(gs_line_cap, const_ep_ptr,
 		       gs_fixed_point * /*[3] */ );
 
@@ -711,6 +713,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		    /* user space, still unscaled. */
 		    dpt.x *= wl;
 		    dpt.y *= wl;
+		    
 		    /*
 		     * We now compute both perpendicular
 		     * and (optionally) parallel half-widths,
@@ -1278,7 +1281,7 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
     if (first == 0 && pgs_lp->cap == gs_cap_round) {
 	vd_moveto(plp->o.co.x, plp->o.co.y);
 	if ((code = gx_path_add_point(ppath, plp->o.co.x, plp->o.co.y)) < 0 ||
-	    (code = add_round_cap(ppath, &plp->o)) < 0)
+	    (code = add_pie_cap(ppath, &plp->o)) < 0)
 	    return code;
 	npoints = 0;
 	moveto_first = false;
@@ -1294,21 +1297,21 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 	    ++npoints;
 	    if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
 		return code;
-	    code = add_round_cap(ppath, &plp->e);
+	    code = add_pie_cap(ppath, &plp->e);
 	    goto done;
 	}
 	code = cap_points(pgs_lp->cap, &plp->e, points + npoints);
-    } else if (join == gs_join_round) {
+    } else if (nplp->thin)	/* no join */
+	code = cap_points(gs_cap_butt, &plp->e, points + npoints);
+    else if (join == gs_join_round) {
 	ASSIGN_POINT(&points[npoints], plp->e.co);
 	vd_lineto(points[npoints].x, points[npoints].y);
 	++npoints;
 	if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
 	    return code;
-	code = add_round_cap(ppath, &plp->e);
+        code = add_pie_join(ppath, plp, nplp, reflected);
 	goto done;
-    } else if (nplp->thin)	/* no join */
-	code = cap_points(gs_cap_butt, &plp->e, points + npoints);
-    else			/* non-round join */
+    } else			/* non-round join */
 	code = line_join_points(pgs_lp, plp, nplp, points + npoints,
 				(uniform ? (gs_matrix *) 0 : &ctm_only(pis)),
 				join, reflected);
@@ -1760,6 +1763,122 @@ add_round_cap(gx_path * ppath, const_ep_ptr endp)
 	)
 	return code;
     vd_lineto(xe, ye);
+    return 0;
+}
+
+/* Add a semicircular cap to a path. */
+/* Assume the current point is the cap origin (endp->co). */
+static int
+add_pie_cap(gx_path * ppath, const_ep_ptr endp)
+{
+    int code;
+
+    /* RJW: The final call to gx_path_add_line may not be required, but
+     * I've left in in to cover us if gx_path_add_partial_arc doesn't quite
+     * connect. Check if this is required. */
+    if ((code = gx_path_add_partial_arc(ppath, px + cdx, py + cdy,
+                                        xo + cdx, yo + cdy,
+                                        quarter_arc_fraction)) < 0 ||
+        (code = gx_path_add_partial_arc(ppath, xe, ye, xe + cdx, ye + cdy,
+                                        quarter_arc_fraction)) < 0 ||
+        /* The final point must be (xe,ye). */
+        (code = gx_path_add_line(ppath, xe, ye)) < 0
+        )
+        return code;
+    vd_lineto(xe, ye);
+    return 0;
+}
+
+/* Add a pie shaped join to a path. */
+/* Assume the current point is the cap origin (endp->co). */
+static int
+add_pie_join(gx_path * ppath, pl_ptr plp, pl_ptr nplp, bool reflected)
+{
+    int code;
+    double rad_squared, dist_squared, F;
+    gs_fixed_point current, final, tangent, tangmeet;
+    double l, r;
+    bool ccw;
+
+    l = (double)(plp->width.x) /* x1 */ * (nplp->width.y) /* y2 */;
+    r = (double)(nplp->width.x) /* x2 */ * (plp->width.y) /* y1 */;
+    
+    if (l == r)
+        return add_pie_cap(ppath, &plp->e);
+    
+    ccw = (l > r);
+
+    ccw ^= reflected;
+
+    /* At this point, the current point is plp->e.co */
+    if (ccw) {
+        final.x   = nplp->o.ce.x;
+        final.y   = nplp->o.ce.y;
+        current.x =  plp->e.co.x;
+        current.y =  plp->e.co.y;
+        /* Check for no join required */
+        if (current.x == final.x && current.y == final.y) {
+            return gx_path_add_line(ppath, plp->e.ce.x, plp->e.ce.y);
+        }
+    } else {
+        final.x   = nplp->o.co.x;
+        final.y   = nplp->o.co.y;
+        current.x =  plp->e.ce.x;
+        current.y =  plp->e.ce.y;
+        code = gx_path_add_line(ppath, current.x, current.y);
+        if (code < 0)
+            return code;
+        if (current.x == final.x && current.y == final.y)
+            return 0;
+    }
+    tangent.x =  plp->e.cdelta.x;
+    tangent.y =  plp->e.cdelta.y;
+
+    /* Is the join more than 90 degrees? */
+    if ((double)plp->e.cdelta.x * (double)nplp->e.cdelta.x +
+        (double)plp->e.cdelta.y * (double)nplp->e.cdelta.y < 0) {
+        /* Yes, so do a quarter turn. */
+        code = gx_path_add_partial_arc(ppath,
+                                       plp->e.p.x + plp->e.cdelta.x,
+                                       plp->e.p.y + plp->e.cdelta.y,
+                                       /* Point where tangents meet */
+                                       current.x + plp->e.cdelta.x,
+                                       current.y + plp->e.cdelta.y,
+                                       quarter_arc_fraction);
+        if (code < 0)
+            return code;
+        current.x = plp->e.p.x + plp->e.cdelta.x;
+        current.y = plp->e.p.y + plp->e.cdelta.y;
+        tangent.x = plp->e.cdelta.y;
+        tangent.y = -plp->e.cdelta.x;
+    }
+    
+    /* Now we are guaranteed that the remaining arc is 90 degrees or
+     * less. Find where the tangents meet for this final section. */
+
+    DISCARD(line_intersect(&current, &tangent,
+                           &final, &nplp->o.cdelta, &tangmeet));
+    current.x -= tangmeet.x;
+    current.y -= tangmeet.y;
+    dist_squared  = ((double)current.x)*current.x+
+                    ((double)current.y)*current.y;
+    rad_squared = plp->width.x * plp->width.x + plp->width.y * plp->width.y;
+    dist_squared /= rad_squared;
+    F = (4.0/3.0)*(1/(1+sqrt(1+dist_squared)));
+    code = gx_path_add_partial_arc(ppath, final.x, final.y,
+                                   tangmeet.x, tangmeet.y, F);
+    if (code < 0)
+        return code;
+    if (ccw) {
+        if ((code = gx_path_add_line(ppath, plp->e.ce.x, plp->e.ce.y)) < 0)
+            return code;
+    } else {
+        if ((code = gx_path_add_line(ppath, plp->e.p.x, plp->e.p.y)) < 0 ||
+            (code = gx_path_add_line(ppath, plp->e.ce.x, plp->e.ce.y)) < 0)
+            return code;
+    }
+
+    vd_lineto(plp->e.ce.x, plp->e.ce.y);
     return 0;
 }
 
