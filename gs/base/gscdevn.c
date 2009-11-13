@@ -53,6 +53,7 @@ static cs_proc_restrict_color(gx_restrict_DeviceN);
 static cs_proc_concrete_space(gx_concrete_space_DeviceN);
 static cs_proc_concretize_color(gx_concretize_DeviceN);
 static cs_proc_remap_concrete_color(gx_remap_concrete_DeviceN);
+static cs_proc_remap_color(gx_remap_DeviceN);
 static cs_proc_install_cspace(gx_install_DeviceN);
 static cs_proc_set_overprint(gx_set_overprint_DeviceN);
 static cs_proc_final(gx_final_DeviceN);
@@ -63,7 +64,7 @@ const gs_color_space_type gs_color_space_type_DeviceN = {
     gx_init_DeviceN, gx_restrict_DeviceN,
     gx_concrete_space_DeviceN,
     gx_concretize_DeviceN, gx_remap_concrete_DeviceN,
-    gx_default_remap_color, gx_install_DeviceN,
+    gx_remap_DeviceN, gx_install_DeviceN,
     gx_set_overprint_DeviceN,
     gx_final_DeviceN, gx_no_adjust_color_count,
     gx_serialize_DeviceN,
@@ -331,6 +332,59 @@ gx_concrete_space_DeviceN(const gs_color_space * pcs,
     return pcs;
 }
 
+static int
+gx_remap_DeviceN(const gs_client_color * pcc, const gs_color_space * pcs,
+	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+		       gs_color_select_t select)
+{
+    frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    const gs_color_space *pconcs;
+    int i = pcs->type->num_components(pcs),k;
+    int code;
+    const gs_color_space *pacs = pcs->base_space;
+    gs_client_color temp;
+
+    if ( pcs->cmm_icc_profile_data != NULL && pis->color_component_map.use_alt_cspace) {
+
+        /* If needed, reorganize the data.  The ICC colorants tag drives the 
+           the laydown order */
+
+        if (pcs->cmm_icc_profile_data->devicen_permute_needed){
+
+            for ( k = 0; k < i; k++){
+                
+                temp.paint.values[k] = pcc->paint.values[pcs->cmm_icc_profile_data->devicen_permute[k]];
+
+            }
+
+            code = pacs->type->remap_color(&temp, pacs, pdc, pis, dev, select);
+
+        } else {
+
+            code = pacs->type->remap_color(pcc, pacs, pdc, pis, dev, select);
+
+        }
+        return(code);
+
+    } else {
+
+        code = (*pcs->type->concretize_color)(pcc, pcs, conc, pis);
+
+        if (code < 0)
+	    return code;
+        pconcs = cs_concrete_space(pcs, pis);
+        code = (*pconcs->type->remap_concrete_color)(conc, pconcs, pdc, pis, dev, select);
+
+        /* Save original color space and color info into dev color */
+        i = any_abs(i);
+        for (i--; i >= 0; i--)
+	    pdc->ccolor.paint.values[i] = pcc->paint.values[i];
+        pdc->ccolor_valid = true;
+        return code;
+
+    }
+}
+
 
 static int
 gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
@@ -356,47 +410,30 @@ gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
 
     if (pis->color_component_map.use_alt_cspace) {
 
-        /*  If we have an nclr ICC profile that 
-            can be used with this DeviceN color
-            space then don't use the alternate
-            tint transform */
+        /* Check the 1-element cache first. */
+        if (map->cache_valid) {
+            int i;
 
-        if ( pcs->cmm_icc_profile_data == NULL) {
+            for (i = pcs->params.device_n.num_components; --i >= 0;) {
+	        if (map->tint[i] != pc->paint.values[i])
+	            break;
+            }
+            if (i < 0) {
+	        int num_out = gs_color_space_num_components(pacs);
 
-	        /* Check the 1-element cache first. */
-	    if (map->cache_valid) {
-	        int i;
-
-	        for (i = pcs->params.device_n.num_components; --i >= 0;) {
-		    if (map->tint[i] != pc->paint.values[i])
-		        break;
-	        }
-	        if (i < 0) {
-		    int num_out = gs_color_space_num_components(pacs);
-
-		    for (i = 0; i < num_out; ++i)
-		        pconc[i] = map->conc[i];
-		    return 0;
-	        }
-	    }
-            tcode = (*pcs->params.device_n.map->tint_transform)
-	         (pc->paint.values, &cc.paint.values[0],
-	         pis, pcs->params.device_n.map->tint_transform_data);
-            if (tcode < 0)
-	        return tcode;
-
-	    code = cs_concretize_color(&cc, pacs, pconc, pis);
-
-        } else {
-
-            /* We have an nclr ICC profile that can be used with
-               this DeviceN color space.  This takes us directly
-               to the device space NOT the alternate CS. */
-
-            code = cs_concretize_color(pc, pacs, pconc, pis); 
-
-
+	        for (i = 0; i < num_out; ++i)
+	            pconc[i] = map->conc[i];
+	        return 0;
+            }
         }
+            tcode = (*pcs->params.device_n.map->tint_transform)
+             (pc->paint.values, &cc.paint.values[0],
+             pis, pcs->params.device_n.map->tint_transform_data);
+            if (tcode < 0)
+            return tcode;
+
+        code = cs_concretize_color(&cc, pacs, pconc, pis);
+
     }
     else {
 	int i;

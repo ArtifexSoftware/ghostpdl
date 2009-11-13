@@ -134,7 +134,8 @@ typedef enum {
     gs_range_icc_t Range;\
     int64_t hashcode;           /* A hash code for the icc profile */\
     bool hash_is_valid;         /* Is the code valid? */\
-    int devicen_permute[ICC_MAX_CHANNELS]; /* Permutation vector for deviceN laydown order */\
+    int devicen_permute[ICC_MAX_CHANNELS];  /* Permutation vector for deviceN laydown order */\
+    bool devicen_permute_needed;            /* Check if we need to permute the DeviceN values */\
     int buffer_size            /* size of ICC profile buffer */
     
 

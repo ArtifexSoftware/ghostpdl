@@ -167,6 +167,7 @@ gsicc_finddevicen(const gs_color_space *pcs, gsicc_manager_t *icc_manager)
     gsicc_devicen_t *devicen_profiles = icc_manager->device_n;
     gsicc_colorname_t *icc_spot_entry;
     int match_count = 0;
+    bool permute_needed = false;
 
     num_comps = gs_color_space_num_components(pcs);
 
@@ -206,6 +207,15 @@ gsicc_finddevicen(const gs_color_space *pcs, gsicc_manager_t *icc_manager)
 
                         match_count++;
                         curr_entry->iccprofile->devicen_permute[j] = i;
+
+                        if ( j != i){
+
+                            /* Document ink order does not match ICC profile ink order */
+
+                            permute_needed = true;
+
+                        }
+
                         break;
 
                     } else {
@@ -220,8 +230,19 @@ gsicc_finddevicen(const gs_color_space *pcs, gsicc_manager_t *icc_manager)
 
             }
 
-            if ( match_count == num_comps) 
+            if ( match_count == num_comps) {
+
+                /* We have a match.  Order of components does not match laydown
+                   order specified by the ICC profile.  Set a flag.  This may
+                   be an issue if we are using 2 DeviceN color spaces with the
+                   same colorants but with different component orders.  The problem
+                   comes about since we would be sharing the profile in the 
+                   DeviceN entry of the icc manager. */
+
+                curr_entry->iccprofile->devicen_permute_needed = permute_needed;
                 return(curr_entry->iccprofile);
+
+            }
 
             match_count = 0;
 
