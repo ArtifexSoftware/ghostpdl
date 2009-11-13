@@ -19,8 +19,8 @@ input when we have N=2 colors with M=6 samples.  You will also need a file that 
 names of the colorants as they are used for the DeviceN color space in the document.  The
 order of the names must be related to the rate of change of the CIELAB data in the 
 hypercube of measurements.  The first name relates to the device value that
-changes more rapidly in the CIELAB data, while the last name relates to the device value
-that changes more slowly in the CIELAB data.  To include the DeviceN ICC profiles in ghostscript
+changes more slowly in the CIELAB data, while the last name relates to the device value
+that changes more rapidly in the CIELAB data.  To include the DeviceN ICC profiles in ghostscript
 when processing a PDF or PS file that includes those spaces, use -sDeviceNProfile="5channel.icc; 6channel.icc; duotone.icc". 
 
   

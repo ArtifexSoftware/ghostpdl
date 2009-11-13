@@ -343,8 +343,8 @@ setheader_common(icHeader *header)
 {
     /* This needs to all be predefined for a simple copy. MJV todo */
     header->cmmId = 0;
- //   header->version = 0x03400000;  /* Back during a simplier time.... */
-    header->version = 0x04200000;
+    header->version = 0x03400000;  /* Back during a simplier time.... */
+   /* header->version = 0x04200000;  */
     setdatetime(&(header->date));
     header->magic = icMagicNumber;
     header->platform = icSigMacintosh;
@@ -938,7 +938,7 @@ create_devicen_profile(cielab_t *cielab, colornames_t *colorant_names, int num_c
 
     /* Now the ATOB0 Tag */
 
-    mlut_size = (int) pow((float) num_samples, (int) numinentries);
+    mlut_size = (int) pow((float) num_samples, (int) num_colors);
     
     tag_size = 52+num_colors*numinentries*2+numout*numoutentries*2+mlut_size*numout*2;
 
