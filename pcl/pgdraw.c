@@ -987,14 +987,14 @@ fill:
 	      /* pcl5e does not care about the current pen it always uses black (1). */
 	      if ( pgls->personality == pcl5e )
 		  code = set_proc( pgls,
-				   pgls->g.fill.param.user_defined.pattern_index,
+				   -pgls->g.fill.param.user_defined.pattern_index,
 				   1 );
 	      else
 		  code = set_proc( pgls,
-				   pgls->g.fill.param.user_defined.pattern_index,
-				   (pgls->g.fill.param.user_defined.use_current_pen
-				    ? hpgl_get_selected_pen(pgls)
-				    : -hpgl_get_selected_pen(pgls))
+                                   (pgls->g.fill.param.user_defined.use_current_pen
+                                    ? -pgls->g.fill.param.user_defined.pattern_index
+                                    : pgls->g.fill.param.user_defined.pattern_index),
+                                   hpgl_get_selected_pen(pgls)
 				   );
 
             break;
@@ -1029,10 +1029,10 @@ fill:
 
           case hpgl_SV_pattern_RF:
             code = set_proc( pgls,
-                             pgls->g.screen.param.user_defined.pattern_index,
                              (pgls->g.screen.param.user_defined.use_current_pen
-                                  ? hpgl_get_selected_pen(pgls)
-			          : -hpgl_get_selected_pen(pgls))
+                              ? -pgls->g.screen.param.user_defined.pattern_index
+                              : pgls->g.screen.param.user_defined.pattern_index),
+                             hpgl_get_selected_pen(pgls)
                              );
             break;
 

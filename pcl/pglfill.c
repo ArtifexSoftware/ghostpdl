@@ -496,6 +496,63 @@ hpgl_PW(
  * 0 or 1: if so, the pattern is an uncolored pattern; otherwise it is a colored
  * pattern.
  */
+
+/* 
+ * RF helper procedure to construct a mask if the input is only 1's
+ * and 0's.  Note we store the original pattern in a dictionary keyed
+ * on the index, the mask is stored simultaneously keyed on the
+ * negation of the index.  We don't know which, mask or colored
+ * pattern, will be needed until FT or SV are set.
+ */
+
+static int
+hpgl_RF_build_mask(byte *data, uint index, uint height, uint width, hpgl_state_t *pgls)
+{
+    uint     raster = (width + 7) / 8;
+    byte *   mdata = gs_alloc_bytes(pgls->memory,
+                                   height * raster,
+                                   "hpgl mask raster fill"
+                                   );
+    byte *   pb1 = data;
+    byte *   pb2 = mdata;
+    int      i, code;
+
+    gs_depth_bitmap mask;
+
+    if (mdata == 0) {
+        return e_Memory;
+    }
+    for (i = 0; i < height; i++) {
+        int     mask = 0x80;
+        int     outval = 0;
+        int     j;
+
+        for (j = 0; j < width; j++) {
+            if (*pb1++ != 0)
+                outval |= mask;
+            if ((mask >>= 1) == 0) {
+                *pb2++ = outval;
+                outval = 0;
+                mask = 0x80;
+            }
+        }
+
+        if (mask != 0x80)
+            *pb2++ = outval;
+    }
+    mask.data = mdata;
+    mask.raster = raster;
+    mask.pix_depth = 1;
+    mask.size.x = width;
+    mask.size.y = height;
+    mask.id = 0;
+    mask.num_comps = 1;
+    code = pcl_pattern_RF(-index, &mask, pgls);
+    if (code < 0)
+        gs_free_object(pgls->memory, mdata, "hpgl_RF_build_mask");
+    return code;
+}
+
   int
 hpgl_RF(
     hpgl_args_t *   pargs,
@@ -571,60 +628,32 @@ hpgl_RF(
 
     if ( pgls->personality == pcl5e )
 	is_mask = true; /* always for a monochrome configuration */
+
     /* if the pattern is uncolored, collapse it to 1-bit per pixel */
     if (is_mask) {
-        int     raster = (width + 7) / 8;
-        byte *  mdata = gs_alloc_bytes( pgls->memory,
-                                        height * raster,
-                                        "hpgl mask raster fill"
-                                        );
-        byte *  pb1 = data;
-        byte *  pb2 = mdata;
-        int     i;
-
-        if (mdata == 0) {
+        code = hpgl_RF_build_mask(data, index, height, width, pgls);
+        if (code < 0) {
             gs_free_object(pgls->memory, data, "hpgl raster fill");
-            return e_Memory;
+            return code;
         }
-
-        for (i = 0; i < height; i++) {
-            int     mask = 0x80;
-            int     outval = 0;
-            int     j;
-
-            for (j = 0; j < width; j++) {
-                if (*pb1++ != 0)
-                    outval |= mask;
-                if ((mask >>= 1) == 0) {
-                    *pb2++ = outval;
-                    outval = 0;
-                    mask = 0x80;
-		}
-            }
-
-            if (mask != 0x80)
-                *pb2++ = outval;
-        }
-
-        gs_free_object(pgls->memory, data, "hpgl raster fill");
-        pixmap.data = mdata;
-        pixmap.raster = raster;
-        pixmap.pix_depth = 1;
-
-    } else {
-        pixmap.data = data;
-        pixmap.raster = width;
-        pixmap.pix_depth = 8;
     }
 
-    /* set up the pixmap */
+    pixmap.data = data;
+    pixmap.raster = width;
+    pixmap.pix_depth = 8;
     pixmap.size.x = width;
     pixmap.size.y = height;
     pixmap.id = 0;
     pixmap.num_comps = 1;
 
-    if ((code = pcl_pattern_RF(index, &pixmap, pgls)) < 0)
+    if ((code = pcl_pattern_RF(index, &pixmap, pgls)) < 0) {
         gs_free_object(pgls->memory, data, "hpgl raster fill");
+        if (is_mask) {
+            /* if a mask was built, realease it.  We ignore the return
+               value since we are already in an error state. */
+            pcl_pattern_RF(-index, NULL, pgls);
+        }
+    }
     pgls->g.raster_fill.data = 0;
     return code;;
 }
