@@ -143,7 +143,16 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 			     * to avoid a division by zero.
 			     */
 			    if (ex == 0 || ey == 0)
-				k = 0;
+                                if (ex != 0) {
+                                    flat = fixed_mult_quo(fixed_flatness, ex,
+                                                          ex + expansion.x);
+                                    k = gx_curve_log2_samples(x0,y0,pc,flat);
+                                } else if (ey != 0) {
+                                    flat = fixed_mult_quo(fixed_flatness, ey,
+                                                          ey + expansion.y);
+                                    k = gx_curve_log2_samples(x0,y0,pc,flat);
+                                } else
+                                    k = 0;
 			    else {
 				flat_x =
 				    fixed_mult_quo(fixed_flatness, ex,
