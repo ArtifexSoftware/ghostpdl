@@ -2847,7 +2847,7 @@ pdf14_update_device_color_procs(gx_device *dev,
 
     if (pdev->ctx->stack != NULL){
 
-        parent_color_info = &(pdev->ctx->stack->parent_color_info_procs);
+        parent_color_info = pdev->ctx->stack->parent_color_info_procs;
 
     } else {
 
