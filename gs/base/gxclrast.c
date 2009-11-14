@@ -51,6 +51,7 @@
 #include "gzht.h"
 #include "gxshade.h"
 #include "gxshade4.h"
+#include "gsiccmanage.h"
 
 extern_gx_device_halftone_list();
 extern_gx_image_type_table();
@@ -591,8 +592,19 @@ in:				/* Initialize for a new page. */
 	(*dev_proc(target, get_clipping_box))(target, &target_box);
     imager_state = clist_imager_state_initial;
     code = gs_imager_state_initialize(&imager_state, mem);
+
     if (code < 0)
 	goto out;
+
+    /* Initialize the ICC manger with the output device profile.
+       The default profiles must be packed in the cfile. */
+
+    if (target != 0)
+        code = gsicc_init_device_profile(&imager_state, target);
+
+    if (code < 0)
+	goto out;
+
     imager_state.line_params.dash.pattern = dash_pattern;
     if (tdev != 0)
 	gx_set_cmap_procs(&imager_state, tdev);

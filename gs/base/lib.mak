@@ -1711,7 +1711,8 @@ $(GLOBJ)gxclrast.$(OBJ) : $(GLSRC)gxclrast.c $(GXERR)\
  $(gxpaint_h) $(gxhttile_h) $(gxiparam_h) $(gximask_h)\
  $(gzpath_h) $(gxcpath_h) $(gzacpath_h)\
  $(stream_h) $(strimpl_h) $(gxcomp_h)\
- $(gsserial_h) $(gxdhtserial_h) $(gzht_h) $(gxshade_h) $(gxshade4_h)
+ $(gsserial_h) $(gxdhtserial_h) $(gzht_h)\
+ $(gxshade_h) $(gxshade4_h) $(gsiccmanage_h)
 	$(GLCC) $(GLO_)gxclrast.$(OBJ) $(C_) $(GLSRC)gxclrast.c
 
 $(GLOBJ)gxclread.$(OBJ) : $(GLSRC)gxclread.c $(GXERR)\
