@@ -959,8 +959,14 @@ gsicc_manager_new(gs_memory_t *memory)
 
     /* Allocated in gc memory */
       
-    rc_alloc_struct_1(result, gsicc_manager_t, &st_gsicc_manager, memory, 
-                        return(NULL),"gsicc_manager_new");
+    result = gs_alloc_struct(memory, gsicc_manager_t, &st_gsicc_manager,
+			     "gsicc_manager_new");
+
+    if ( result == NULL )
+        return(NULL);
+
+    rc_init_free(result, memory, 1, rc_gsicc_manager_free);
+
 
    result->default_cmyk = NULL;
    result->default_gray = NULL;
@@ -977,6 +983,51 @@ gsicc_manager_new(gs_memory_t *memory)
    result->namelen = 0;
 
    return(result);
+
+}
+
+static void
+rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
+{
+    /* Ending the manager.  Decrement the ref counts of the profiles
+       and then free the structure */
+
+    gsicc_manager_t *icc_manager = (gsicc_manager_t * ) ptr_in;
+    int k;
+    gsicc_devicen_entry_t *device_n, *device_n_next;
+
+   rc_decrement(icc_manager->default_cmyk, "rc_gsicc_manager_free");
+   rc_decrement(icc_manager->default_gray, "rc_gsicc_manager_free");
+   rc_decrement(icc_manager->default_rgb, "rc_gsicc_manager_free");
+   rc_decrement(icc_manager->device_named, "rc_gsicc_manager_free");
+   rc_decrement(icc_manager->output_link, "rc_gsicc_manager_free");
+   rc_decrement(icc_manager->device_profile, "rc_gsicc_manager_free");
+   rc_decrement(icc_manager->proof_profile, "rc_gsicc_manager_free");
+   rc_decrement(icc_manager->lab_profile, "rc_gsicc_manager_free");
+
+   /* Loop through the DeviceN profiles */
+
+   if ( icc_manager->device_n != NULL) {
+   
+       device_n = icc_manager->device_n->head;
+
+       for ( k = 0; k < icc_manager->device_n->count; k++) {
+
+           rc_decrement(device_n->iccprofile, "rc_gsicc_manager_free");
+
+           device_n_next = device_n->next;
+           gs_free_object(icc_manager->memory, device_n, "rc_gsicc_manager_free");            
+           device_n = device_n_next;
+
+       }
+
+       gs_free_object(icc_manager->memory, icc_manager->device_n, "rc_gsicc_manager_free");
+
+   }
+
+   gs_free_object(icc_manager->memory, icc_manager->profiledir, "rc_gsicc_manager_free");
+   
+   gs_free_object(icc_manager->memory, icc_manager, "rc_gsicc_manager_free");
 
 }
 

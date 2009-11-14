@@ -68,6 +68,7 @@ cmm_profile_t* gsicc_read_serial_icc(gx_device_clist_reader *pcrdev, int64_t icc
 
 cmm_profile_t* gsicc_finddevicen(const gs_color_space *pcs, gsicc_manager_t *icc_manager);
 
+static void rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in, client_name_t cname);
 static void rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname);
 static int gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, gs_memory_t *memory);
 static stream* gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc, gsicc_manager_t *icc_manager);
