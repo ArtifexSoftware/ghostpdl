@@ -1568,21 +1568,22 @@ currentdict /postalias undef
   pop
 } bind def
 
-% -mark- <key> <value> ... .definettcidfont <font>
+% <dict> .definettcidfont <font>
 /.definettcidfont {
-  /CIDFontName fontname
-  /CIDFontType 2
-  /CIDSystemInfo mark
+  dup begin
+  /CIDFontName fontname def
+  /CIDFontType 2 def
+  /CIDSystemInfo mark 
     /Registry (Adobe)
     /Ordering (Japan1)		% adhoc
     /Supplement 0
-  .dicttomark
-  /CharStrings mark /.notdef 0 .dicttomark
+  .dicttomark def
+  /CharStrings mark /.notdef 0 .dicttomark def
 		% The cmap isn't of any use even if it is present.
 		% Just construct an identity CIDMap covering all the glyphs.
 
   /CIDCount numloca % Wrong if a CIDFontType2 embedded into PDF with a non-Identity CIDToGIDMap.
-                    % processCIDToGIDMap may replace.
+  def               % processCIDToGIDMap may replace.
   /CIDMap numloca maxstring le {
                 % Use a single string.
       numloca 2 mul string 0 .fill_identity_cmap
@@ -1592,28 +1593,28 @@ currentdict /postalias undef
       numloca maxstring sub 2 mul string maxstring .fill_identity_cmap
       2 array astore
   } ifelse
+  def
 
-  /GDBytes 2
-  .dicttomark
+  /GDBytes 2 def
+  end
+
   end end dup /CIDFontName get exch /CIDFont defineresource
 } bind def
 
-% <file> .loadttcidfont <cidtype2font>
+% <file> <Substite name> .loadttcidfont <cidtype2font>
 /.loadttcidfont {
+  exch
   //false 0 .loadttfonttables
   .makesfnts
 	% CIDFontType2 fonts don't have a cmap: they are indexed by CID.
   mark
   .ttkeys
-  /PDFCIDFontName where {        % Only set if called by the PDF interpreter.
-    pop                          % Remove the dictionary where it is defined.
-    /fontname PDFCIDFontName def % Use the substitute name, not the name from the name
-                                 % table or manufactured from XUID.
-    .dicttomark dup              % convert keys to dict and copy dict
-    /FontName fontname put       % replace any definition of /FontName
-    mark exch                    % put a mark on stack
-    {} forall                    % read keys from dict back onto stack
-  } if                           
+  .dicttomark dup              % convert keys to dict and copy dict
+  3 -1 roll                    % Bring PDF substitute name to top of stack
+  
+  dup
+  /fontname exch def
+  /FontName exch put           % replace any definition of /FontName
   .definettcidfont
 } bind def
 

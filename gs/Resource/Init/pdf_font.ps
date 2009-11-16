@@ -1008,10 +1008,9 @@ currentdict /eexec_pdf_param_dict .undef
 		% Stack: filepos fontres stream
   1 index /Subtype get /CIDFontType2 eq {
     1 index /BaseFont get                 % Use the BaseFont name for the font. Otherwise we
-    /PDFCIDFontName exch def              % would use the name table, or a manufactured name.
+                                          % would use the name table, or a manufactured name.
     .loadttcidfont
-		% Stack: filepos fontres cidfont
-    currentdict /PDFCIDFontName undef     % Remove the name to avoid interference.
+		                          % Stack: filepos fontres cidfont
   } {
 		                          % filepos fontres stream
     1 index /FontDescriptor oget          % filepos fontres stream fd   
