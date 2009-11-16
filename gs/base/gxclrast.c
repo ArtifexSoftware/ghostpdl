@@ -532,6 +532,8 @@ clist_playback_band(clist_playback_action playback_action,
     gx_device_clip clipper_dev;
     bool clipper_dev_open;
     patch_fill_state_t pfs;
+    int op;
+
 #ifdef DEBUG
     stream_state *st = s->state; /* Save because s_close resets s->state. */
 #endif
@@ -623,7 +625,6 @@ in:				/* Initialize for a new page. */
 	goto out;
     }
     while (code >= 0) {
-	int op;
 	int compress;
 	int depth = 0x7badf00d; /* Initialize against indeterminizm. */
 	int raster = 0x7badf00d; /* Initialize against indeterminizm. */
@@ -2101,8 +2102,8 @@ idata:			data_size = 0;
 	return_error(code);
     }
     /* Check whether we have more pages to process. */
-    if (playback_action != playback_action_setup && 
-	(cbp < cbuf.end || !seofp(s))
+    if ((playback_action != playback_action_setup && 
+	(cbp < cbuf.end || !seofp(s)) && (op != cmd_opv_end_page) )
 	)
 	goto in;
     if (pfs.dev != NULL)

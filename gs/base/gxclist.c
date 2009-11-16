@@ -744,6 +744,7 @@ clist_end_page(gx_device_clist_writer * cldev)
     cmd_block cb;
     int ecode = 0;
 
+    code = cmd_write_buffer(cldev, cmd_opv_end_page);
 
     /* If we have ICC profiles present in the cfile save the table now,
        along with the ICC profiles. Table is stored in band maxband + 1. */
@@ -760,8 +761,6 @@ clist_end_page(gx_device_clist_writer * cldev)
         cldev->icc_table = NULL;
 
     }
-
-    code = cmd_write_buffer(cldev, cmd_opv_end_page);
 
     if (code >= 0) {
 	/*
@@ -1110,6 +1109,8 @@ clist_icc_addprofile(gx_device_clist_writer *cldev, cmm_profile_t *iccprofile, i
     gsicc_profile_serialize(&profile_data, iccprofile);
 
     /* Write the header */
+
+    if_debug1('l', "[l]writing icc profile in cfile at pos %ld\n",fileposit);
 
     count1 = cldev->page_info.io_procs->fwrite_chars(&profile_data, sizeof(cmm_profile_t), cfile);
 
