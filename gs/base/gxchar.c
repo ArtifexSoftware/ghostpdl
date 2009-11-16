@@ -163,7 +163,6 @@ gx_default_text_begin(gx_device * dev, gs_imager_state * pis,
 	    (propagate_charpath ? pgs->in_charpath : cpm_show);
     penum->cc = 0;
     penum->continue_proc = continue_show;
-    /* Note: show_state_setup may reset can_cache. */
     switch (penum->charpath_flag) {
     case cpm_false_charpath: case cpm_true_charpath:
 	penum->can_cache = -1; break;
