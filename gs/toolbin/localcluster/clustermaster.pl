@@ -38,18 +38,33 @@ sub checkPID {
 
   opendir(DIR, $usersDir) || die "can't opendir $usersDir: $!";
   foreach my $user (readdir(DIR)) {
+    my $product="";
+    my $s="";
     if (open(F,"<$usersDir/$user/gs.run")) {
       close(F);
       unlink "$usersDir/$user/gs.run";
-      open(F,">>user.run");
-      print F "$user gs\n";
-      close(F);
+      $product="$user gs pcl xps svg";
     }
     if (open(F,"<$usersDir/$user/ghostpdl.run")) {
       close(F);
       unlink "$usersDir/$user/ghostpdl.run";
+      $product="$user gs pcl xps svg";
+    }
+    if (open(F,"<$usersDir/$user/ghostpdl/cluster_command.run")) {
+      $product=<F>;
+      chomp $product;
+      close(F);
+      unlink "$usersDir/$user/ghostpdl/cluster_command.run";
+    }
+    if (open(F,"<$usersDir/$user/ghostpdl/gs/cluster_command.run")) {
+      $product=<F>;
+      chomp $product;
+      close(F);
+      unlink "$usersDir/$user/ghostpdl/gs/cluster_command.run";
+    }
+    if ($product) {
       open(F,">>user.run");
-      print F "$user ghostpdl\n";
+      print F "$product\n";
       close(F);
     }
   }
@@ -142,6 +157,8 @@ for (my $i=0;  $i<scalar(@a);  $i++) {
 $footer.="$s\n";
       my $t=$1;
       print "$t ";
+      $t="gs/$1" if ($t =~ m|gs/(.+?)/|);
+print "($t) ";
       if (exists $rules{$t}) {
         print "$rules{$t}";
         $set|=$rules{$t};
@@ -264,12 +281,18 @@ if ($normalRegression==1 || $userRegression ne "") {
     }
     print "$options\n" if ($verbose);
     if (!$normalRegression) {
-      my @a=split ' ',$userRegression;
+      my @a=split ' ',$userRegression,2;
       $userName=$a[0];
-      $product="gs pcl xps svg"; # always test everything for users
+#     $product="gs pcl xps svg"; # always test everything for users
+      $product=$a[1];
       print "userName=$userName product=$product\n" if ($verbose);
     }
     `./build.pl $product >jobs`;
+    if ($? != 0) {
+      # horrible hack, fix later
+      unlink  $runningSemaphore;
+      exit;
+    }
     `./splitjobs.pl jobs $options`;
     unlink "jobs";
 
@@ -316,8 +339,8 @@ if ($normalRegression==1 || $userRegression ne "") {
           %doneTime=();  # avoids a race condition where the machine we just aborted reports done
           foreach my $n (keys %machines) {
             `touch $n.abort`;
-            delete $machines{$n};
 	  }
+          delete $machines{$m};
 	  sleep 60;  # hack
         } else {
           if (open(F,"<$m.done")) {
@@ -363,15 +386,33 @@ if ($normalRegression==1 || $userRegression ne "") {
     print "startTime=$startTime\n" if ($verbose);
     print Dumper(\%doneTime) if ($verbose);
     print Dumper(\%machineSpeeds) if ($verbose);
+    my $totalSpeed=0;
+    my $totalTime=0;
     my $max=0;
     foreach (keys %machines) {
-      $machineSpeeds{$_}=$machineSpeeds{$_}*($shortestTime/($doneTime{$_}-$startTime));
+      $totalSpeed+=$machineSpeeds{$_};
+      $totalTime+=$doneTime{$_}-$startTime;
+    }
+print "totalSpeed=$totalSpeed totalTime=$totalTime\n" if ($verbose);
+    foreach (keys %machines) {
+printf "%s %f %f %f ",$_,($machineSpeeds{$_}/$totalSpeed),(($doneTime{$_}-$startTime)/$totalTime),$machineSpeeds{$_} if ($verbose);
+      $machineSpeeds{$_}=($machineSpeeds{$_}/$totalSpeed)/(($doneTime{$_}-$startTime)/$totalTime);
+printf "%f\n",$machineSpeeds{$_} if ($verbose);
       $max=$machineSpeeds{$_} if ($max<$machineSpeeds{$_});
+    }
+    if (0) {
+    foreach (keys %machines) {
+printf "%s %f %f\n",$_,$doneTime{$_}-$startTime,$machineSpeeds{$_} if ($verbose);
+      $machineSpeeds{$_}=$machineSpeeds{$_}*($shortestTime/($doneTime{$_}-$startTime));
+printf "%s %f %f\n",$_,$doneTime{$_}-$startTime,$machineSpeeds{$_} if ($verbose);
+      $max=$machineSpeeds{$_} if ($max<$machineSpeeds{$_});
+    }
     }
     foreach (keys %machines) {
       $machineSpeeds{$_}/=$max;
       $machineSpeeds{$_}=(int($machineSpeeds{$_}*100+0.5))/100;
       $machineSpeeds{$_}=0.01 if ($machineSpeeds{$_}==0);
+printf "%s %f %f\n",$_,$doneTime{$_}-$startTime,$machineSpeeds{$_} if ($verbose);
     }
     print Dumper(\%machineSpeeds);
     if (open(F,">machinespeeds.txt")) {
@@ -469,20 +510,20 @@ if ($normalRegression==1 || $userRegression ne "") {
     checkPID();
     open (F,">$userName.txt");
     print F "An error occurred that prevented the local cluster run from finishing:\n\n$failMessage\n";
-    foreach (keys %machines) {
-      if ($buildFail{$_}) {
-        print F "\n\n$_ log:\n\n";
-	`tail -100 $_.log >temp.log`;
+    foreach my $machine (keys %machines) {
+      if ($buildFail{$machine}) {
+        print F "\n\n$machine log:\n\n";
+	`tail -100 $machine.log >temp.log`;
         open(F2,"<temp.log");
         while(<F2>) {
-          print F $_;
+          print F $machine;
         }
         close(F2);
-        print F "\n\n$_ stdout:\n\n";
-	`tail -100 $_.out >temp.out`;
+        print F "\n\n$machine stdout:\n\n";
+	`tail -100 $machine.out >temp.out`;
         open(F2,"<temp.out");
         while(<F2>) {
-          print F $_;
+          print F $machine;
         }
         close(F2);
       }

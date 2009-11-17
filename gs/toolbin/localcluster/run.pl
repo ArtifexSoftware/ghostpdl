@@ -14,8 +14,8 @@ my $debug2=0;
 my $verbose=0;
 
 my $wordSize="64";
-my $timeOut=180;
-my $maxTimeout=10;
+my $timeOut=300;
+my $maxTimeout=20;
 
 my %pids;
 my %timeOuts;
@@ -26,6 +26,46 @@ my $user;
 #my $product;
 
 my $products="gs pcl svg xps";
+
+
+my $runningSemaphore="./run.pid";
+
+# the concept with checkPID is that if the semaphore file is missing or doesn't
+# contain our PID something bad has happened and we just just exit
+sub checkPID {
+  if (open(F,"<$runningSemaphore")) {
+    my $t=<F>;
+    close(F);
+    chomp $t;
+    if ($t == $$) {
+      return(1);
+    }
+    print "terminating: $t $$\n";
+    exit;
+  }
+  print "terminating: $runningSemaphore missing\n";
+  exit;
+}
+
+if (0) {
+if (open(F,"<$runningSemaphore")) {
+  close(F);
+  my $fileTime = stat($runningSemaphore)->mtime;
+  my $t=time;
+  if ($t-$fileTime>7200) {
+    print "semaphore file too old, removing\n";
+    open(F,">status");
+    print F "Regression terminated due to timeout";
+    close(F);
+    unlink $runningSemaphore;
+  }
+  exit;
+}
+}
+
+open(F,">$runningSemaphore");
+print F "$$\n";
+close(F);
 
 if (open(F,"<$machine.start")) {
   $_=<F>;
@@ -91,25 +131,9 @@ if ($md5sumFail) {
 local $| = 1;
 
 my %testSource=(
-  $baseDirectory."/tests/pdf" => 'gs',
-  $baseDirectory."/tests/ps" => 'gs',
-  $baseDirectory."/tests/eps" => 'gs',
-  $baseDirectory."/tests_private/ps/ps3cet" => 'gs',
-  $baseDirectory."/tests_private/comparefiles" => 'gs',
-  $baseDirectory."/tests_private/pdf/PDFIA1.7_SUBSET" => 'gs',
-  $baseDirectory."/tests/pcl" => 'pcl',
-  $baseDirectory."/tests_private/pcl/pcl5cfts" => 'pcl',
-  $baseDirectory."/tests_private/pcl/pcl5efts" => 'pcl',
-  $baseDirectory."/tests_private/xl/pxlfts3.0" => 'pcl',
-  $baseDirectory."/tests/xps" => 'xps',
-  $baseDirectory."/tests_private/xps/xpsfts-a4" => 'xps',
-  $baseDirectory."/tests/svg/svgw3c-1.1-full/svg" => 'svg',
-  # $baseDirectory."/tests/svg/svgw3c-1.1-full/svgHarness" => 'svg',
-  # $baseDirectory."/tests/svg/svgw3c-1.1-full/svggen" => 'svg',
-  # $baseDirectory."/tests/svg/svgw3c-1.2-tiny/svg" => 'svg',
-  # $baseDirectory."/tests/svg/svgw3c-1.2-tiny/svgHarness" => 'svg',
-  # $baseDirectory."/tests/svg/svgw3c-1.2-tiny/svggen" => 'svg'
-  );
+  $baseDirectory."/tests/" => '1',
+  $baseDirectory."/tests_private/" => '1'
+);
 
 system("date") if ($debug2);
 
@@ -204,6 +228,7 @@ sub spawn($$) {
 }
 
 sub checkAbort {
+  checkPID();
   return (1) if ($abort==1);
   spawn(60,"scp -i ~/.ssh/cluster_key  marcos\@casper.ghostscript.com:/home/marcos/cluster/$machine.abort . >/dev/null 2>/dev/null");
   if (open(F,"<$machine.abort")) {
@@ -686,6 +711,8 @@ spawn(10,"ssh -i ~/.ssh/cluster_key marcos\@casper.ghostscript.com \"touch /home
 system("date") if ($debug2);
 #`rm -fr $temp`;
 system("date") if ($debug2);
+
+unlink $runningSemaphore;
 
 if (0) {
   foreach my $pid (keys %spawnPIDs) {

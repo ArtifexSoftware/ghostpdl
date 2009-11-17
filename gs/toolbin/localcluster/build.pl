@@ -50,6 +50,7 @@ my %testSource=(
   $baseDirectory."tests/pcl" => 'pcl',
 # $baseDirectory."tests_private/customer_tests" => 'pcl',
   $baseDirectory."tests_private/pcl/pcl5cfts" => 'pcl',
+  $baseDirectory."tests_private/pcl/pcl5cats/Subset" => 'pcl',
   $baseDirectory."tests_private/pcl/pcl5efts" => 'pcl',
   $baseDirectory."tests_private/pcl/pcl5ccet" => 'pcl',
   $baseDirectory."tests_private/xl/pxlfts3.0" => 'pcl',
@@ -96,27 +97,27 @@ my %tests=(
     "pdf.pkmraw.300.0"
     ],
   'pcl' => [
-    "pbmraw.75.0",
-    "pbmraw.600.0",
+#   "pbmraw.75.0",
+#   "pbmraw.600.0",
     "pbmraw.600.1",
-    "pgmraw.75.0",
-    "pgmraw.600.0",
+#   "pgmraw.75.0",
+#   "pgmraw.600.0",
     "pgmraw.600.1",
     #"wtsimdi.75.0",
     #"wtsimdi.600.0",
     #"wtsimdi.600.1",
-    "ppmraw.75.0",
-    "ppmraw.600.0",
+#   "ppmraw.75.0",
+#   "ppmraw.600.0",
     "ppmraw.600.1",
-    "bitrgb.75.0",
-    "bitrgb.600.0",
+#   "bitrgb.75.0",
+#   "bitrgb.600.0",
     "bitrgb.600.1",
     #"psdcmyk.75.0",
 ##"psdcmyk.600.0",
 ##"psdcmyk.600.1",
-    "pdf.ppmraw.75.0",
-    "pdf.ppmraw.600.0",
-    "pdf.pkmraw.600.0"
+#   "pdf.ppmraw.75.0",
+    "pdf.ppmraw.600.0"
+#   "pdf.pkmraw.600.0"
     ],
   'xps' => [
     "pbmraw.72.0",
@@ -142,10 +143,10 @@ my %tests=(
 ##"pdf.pkmraw.300.0"
     ],
   'svg' => [
-    "pbmraw.72.0",
+#   "pbmraw.72.0",
     #"pbmraw.300.0",
     #"pbmraw.300.1",
-    "pgmraw.72.0",
+#   "pgmraw.72.0",
     #"pgmraw.300.0",
     #"pgmraw.300.1",
     #"wtsimdi.72.0",
@@ -154,13 +155,13 @@ my %tests=(
     "ppmraw.72.0",
     #"ppmraw.300.0",
     #"ppmraw.300.1",
-    "bitrgb.72.0",
+#   "bitrgb.72.0",
     #"bitrgb.300.0",
     #"bitrgb.300.1",
     #"psdcmyk.72.0",
-##"psdcmyk.300.0",
-##"psdcmyk.300.1",
-    "pdf.ppmraw.72.0",
+    #"psdcmyk.300.0",
+    #"psdcmyk.300.1",
+#   "pdf.ppmraw.72.0",
     #"pdf.ppmraw.300.0",
     #"pdf.pkmraw.300.0"
     ]
@@ -366,6 +367,7 @@ if (scalar keys %products>0) {
 }
 while (scalar(@commands)) {
   my $n=rand(scalar @commands);
+  $n=0;
   my $command=$commands[$n];  splice(@commands,$n,1);
   my $filename=$filenames[$n];  splice(@filenames,$n,1);
   print "$filename\t$command\n";

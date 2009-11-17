@@ -7,7 +7,12 @@ use Data::Dumper;
 
 my $verbose=0;
 
-my $buildType=shift;
+my %products=('gs' =>1,
+              'pcl'=>1,
+              'svg'=>1,
+              'xps'=>1);
+
+my $product=shift;
 my $user=shift;
 
 my $host="casper.ghostscript.com";
@@ -17,24 +22,28 @@ if (!$user) {
   chomp $user;
 }
 
-if (!$buildType) {
-  $buildType=`pwd`;
-  chomp $buildType;
-}
+my $directory=`pwd`;
+chomp $directory;
 
-$buildType =~ s|.+/||;
-print "$user $buildType\n" if ($verbose);
+$directory =~ s|.+/||;
+print "$user $directory $product\n" if ($verbose);
 
-die "clusterpush.pl must be run from gs or ghostpdl directory" if ($buildType ne 'gs' && $buildType ne 'ghostpdl');
+die "clusterpush.pl must be run from gs or ghostpdl directory" if ($directory ne 'gs' && $directory ne 'ghostpdl');
 
 #           rsync -av -e "ssh -l ssh-user" rsync-user@host::module /dest
 
-my $product="";
-if ($buildType eq 'gs') {
-  $buildType="ghostpdl/".$buildType;
-  $product='gs';
-} else {
-  $product='ghostpdl';
+if ($directory eq 'gs') {
+  $directory='ghostpdl/gs';
+}
+
+
+$product='gs pcl svg xps' if (!$product);
+my @a=split ' ',$product;
+foreach my $i (@a) {
+  if (!exists $products{$i}) {
+    print STDERR "illegal product: $i\n";
+    exit;
+  }
 }
 
 my $cmd="rsync -avxc".
@@ -51,9 +60,13 @@ my $cmd="rsync -avxc".
 " --exclude .ppm --exclude .pkm --exclude .pgm --exclude .pbm".
 " -e \"ssh -l marcos -i \$HOME/.ssh/cluster_key\"".
 " .".
-" marcos\@$host:$dir/$user/$buildType";
+" marcos\@$host:$dir/$user/$directory";
 
-print STDERR "syncing\n";
+open(F,">cluster_command.run");
+print F "$user $product\n";
+close(F);
+
+print STDERR "syncing and queuing\n";
 print "$cmd\n" if ($verbose);
 #`$cmd`;
 open(T,"$cmd |");
@@ -62,7 +75,10 @@ while(<T>) {
 }
 close(T);
 
+unlink "cluster_command.run";
 
-print STDERR "queuing\n";
-`ssh -l marcos -i \$HOME/.ssh/cluster_key $host touch $dir/$user/$product.run`;
+
+#`ssh -l marcos -i \$HOME/.ssh/cluster_key $host touch $dir/$user/$product.run`;
+
+#`scp -i ~/.ssh/cluster_key -q user.tmp marcos\@casper.ghostscript.com:/home/marcos/cluster/users/$user/user.run . >/dev/null 2>/dev/null`;
 

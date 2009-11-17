@@ -202,6 +202,7 @@ if (!$skipMissing) {
     print "\n";
   }
 
+if (0) {
   if (@allErrors) {
     print "The following ".scalar(@allErrors)." regression file(s) are producing errors:\n";
     while(my $t=shift @allErrors) {
@@ -209,6 +210,7 @@ if (!$skipMissing) {
     }
     print "\n";
   }
+}
 
   if (@archiveMatch) {
     print "The following ".scalar(@archiveMatch)." regression file(s) had md5sum differences but matched at least once in the previous $previousValues runs:\n";
