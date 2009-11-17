@@ -474,6 +474,21 @@ Disabling tiff output devices.])
 	fi
 	;;
 esac
+
+if test $SHARE_LIBTIFF -eq 0; then
+      echo
+      echo "Running libtiff configure script..."
+      olddir=`pwd`
+      cd $LIBTIFFDIR && ./configure
+      status=$?
+      if test "$status" -ne 0 ; then
+        AC_MSG_ERROR([libtiff configure script failed], $status)
+      fi
+      cd $olddir
+      echo
+      echo "Continuing with Ghostscript configuration..."
+fi
+
 AC_SUBST(SHARE_LIBTIFF)
 AC_SUBST(TIFFDEVS)
 AC_SUBST(LIBTIFFDIR)
