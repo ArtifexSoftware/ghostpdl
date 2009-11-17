@@ -700,7 +700,7 @@ tiffsep1_prn_close(gx_device * pdev)
 	    tfdev->sep_file[comp_num] = NULL;
 	}
 	if (tfdev->tiff[comp_num]) {
-	    TIFFClose(tfdev->tiff[comp_num]);
+	    TIFFCleanup(tfdev->tiff[comp_num]);
 	    tfdev->tiff[comp_num] = NULL;
 	}
     }
@@ -944,7 +944,7 @@ tiffsep_close_sep_file(tiffsep_device *tfdev, const char *fn, int comp_num)
     int code;
 
     if (tfdev->tiff[comp_num])
-	TIFFClose(tfdev->tiff[comp_num]);
+	TIFFCleanup(tfdev->tiff[comp_num]);
 
     code = gx_device_close_output_file((gx_device *)tfdev,
                                        fn,
@@ -972,7 +972,7 @@ tiffsep_prn_close(gx_device * pdev)
 					num_order, num_spot);
 
     if (pdevn->tiff_comp)
-	TIFFClose(pdevn->tiff_comp);
+	TIFFCleanup(pdevn->tiff_comp);
     code = gdev_prn_close(pdev);
     if (code < 0)
 	return code;
@@ -1487,7 +1487,7 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
 		return code;
 	    tfdev->sep_file[comp_num] = NULL;
 	    if (tfdev->tiff[comp_num]) {
-		TIFFClose(tfdev->tiff[comp_num]);
+		TIFFCleanup(tfdev->tiff[comp_num]);
 		tfdev->tiff[comp_num] = NULL;
 	    }
 	}

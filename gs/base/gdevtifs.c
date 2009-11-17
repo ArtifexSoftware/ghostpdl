@@ -95,7 +95,7 @@ tiff_close(gx_device * pdev)
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
 
     if (tfdev->tif)
-	TIFFClose(tfdev->tif);
+	TIFFCleanup(tfdev->tif);
 
     return gdev_prn_close(pdev);
 }
