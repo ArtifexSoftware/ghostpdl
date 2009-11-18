@@ -34,6 +34,21 @@
 unsigned int global_icc_index = 0;
 #endif
 
+/* Static prototypes */
+
+static void gsicc_set_default_cs_value(cmm_profile_t *picc_profile, gs_imager_state *pis);
+static gsicc_namelist_t* gsicc_new_namelist(gs_memory_t *memory);
+static gsicc_colorname_t* gsicc_new_colorname(gs_memory_t *memory);
+static void gsicc_copy_colorname( const char *cmm_name, gsicc_colorname_t *colorname, gs_memory_t *memory );
+static gsicc_namelist_t* gsicc_get_spotnames(gcmmhprofile_t profile, gs_memory_t *memory);
+static void rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in, client_name_t cname);
+static void rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname);
+static int gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, gs_memory_t *memory);
+static stream* gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc, gsicc_manager_t *icc_manager);
+static int gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev, gs_memory_t * mem);
+static cmm_profile_t* gsicc_get_profile( gsicc_profile_t profile_type, gsicc_manager_t *icc_manager );
+
+
 /* profile data structure */
 /* profile_handle should NOT be garbage collected since it is allocated by the external CMS */
 

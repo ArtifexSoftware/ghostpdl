@@ -143,6 +143,7 @@ gx_restrict_ICC(gs_client_color * pcc, const gs_color_space * pcs)
    do any halftoning.  The remap is based upon the ICC profile defined
    in the device profile entry of the profile manager. */
 
+int
 gx_remap_concrete_ICC(const frac * pconc, const gs_color_space * pcs,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 			  gs_color_select_t select)

@@ -38,6 +38,34 @@
                                     of links. */
 
 
+
+
+/* Static prototypes */
+
+
+static gsicc_link_t * gsicc_add_link(gsicc_link_cache_t *link_cache, void *link_handle,
+               void *ContextPtr, gsicc_hashlink_t hashcode, gs_memory_t *memory);
+
+static void gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory);
+
+static void gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, cmm_profile_t *profile, int64_t *hash);
+
+static void gsicc_compute_linkhash(gsicc_manager_t *icc_manager, cmm_profile_t *input_profile, 
+                   cmm_profile_t *output_profile, 
+                   gsicc_rendering_param_t *rendering_params, gsicc_hashlink_t *hash);
+
+static gsicc_link_t* gsicc_findcachelink(gsicc_hashlink_t hashcode,gsicc_link_cache_t *icc_cache, 
+                                   bool includes_proof);
+
+static gsicc_link_t* gsicc_find_zeroref_cache(gsicc_link_cache_t *icc_cache);
+
+static void gsicc_remove_link(gsicc_link_t *link,gsicc_link_cache_t *icc_cache, 
+                              gs_memory_t *memory);
+
+static void gsicc_get_buff_hash(unsigned char *data,unsigned int num_bytes,int64_t *hash);
+
+static void rc_gsicc_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname);
+
 /* Structure pointer information */
 
 

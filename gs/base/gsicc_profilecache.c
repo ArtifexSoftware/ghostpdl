@@ -27,7 +27,17 @@
 
 
 
-#define ICC_CACHE_MAXPROFILE 50  
+#define ICC_CACHE_MAXPROFILE 50 
+
+/* Static prototypes */
+
+static void rc_gsicc_profile_list_free(gs_memory_t * mem, void *ptr_in, client_name_t cname);
+
+static gsicc_profile_entry_t* gsicc_find_zeroref_list(gsicc_profile_list_t *profile_list);
+
+static void gsicc_remove_profile(gsicc_profile_entry_t *profile_entry, 
+        gsicc_profile_list_t *profile_list, gs_memory_t *memory);
+
 
 gs_private_st_ptrs3(st_profile_entry, gsicc_profile_entry_t, "gsicc_profile_entry",
 		    profile_entry_enum_ptrs, profile_entry_reloc_ptrs,
