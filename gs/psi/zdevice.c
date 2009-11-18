@@ -31,6 +31,7 @@
 #include "gxalloc.h"
 #include "gxgetbit.h"
 #include "store.h"
+#include "gsiccmanage.h"
 
 /* <device> <keep_open> .copydevice2 <newdevice> */
 static int

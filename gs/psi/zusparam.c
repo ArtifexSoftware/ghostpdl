@@ -514,7 +514,7 @@ current_default_devicen_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 static int
 set_devicen_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    int code;
+    int code = 0;
     char *pname, *pstr, *pstrend;
     int namelen = (pval->size)+1;
     const gs_imager_state * pis = (gs_imager_state *) igs;

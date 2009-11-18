@@ -524,7 +524,6 @@ gs_begin_transparency_mask(gs_state * pgs,
     const int l = sizeof(params.Background[0]) * ptmp->Background_components;
     int i;
     const gs_color_space *blend_color_space;
-    gs_imager_state * pis = (gs_imager_state *)pgs;
     int num_components;
 
     params.pdf14_op = PDF14_BEGIN_TRANS_MASK;

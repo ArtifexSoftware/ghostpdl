@@ -255,7 +255,6 @@ seticc_lab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff)
     gs_color_space *        pcs;
     gs_color_space *        palt_cs;
     gs_imager_state *       pis = (gs_imager_state *)igs;
-    gs_memory_t             *mem = pis->memory; 
     int                     i;
     static const char *const rfs = LAB_ICC;
     gs_param_string val, *pval;    

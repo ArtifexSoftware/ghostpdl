@@ -120,9 +120,6 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
     int vci, vdi;
     const gs_color_space *pcs = penum->pcs;
     gs_client_color cc;
-    bool device_color = penum->device_color;
-    bits32 mask = penum->mask_color.mask;
-    bits32 test = penum->mask_color.test;
     gx_device_color devc1;
     gx_device_color devc2;
     gx_device_color *pdevc;
@@ -138,7 +135,6 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
     color_samples run;		/* run value */
     color_samples next;		/* next sample value */
     byte *bufend;
-    bool use_cache = spp * penum->bps <= 12;
     int code = 0, mcode = 0;
     gsicc_rendering_param_t rendering_params;
     gsicc_link_t *icc_link;
@@ -169,7 +165,7 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
 
     if (icc_link->is_identity ) {
 
-        psrc_cm = psrc;
+        psrc_cm = (unsigned char *) psrc;
         spp_cm = spp;
         bufend = psrc_cm +  w;
         psrc_cm_start = NULL;

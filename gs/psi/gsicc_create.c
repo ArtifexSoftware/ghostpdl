@@ -234,10 +234,10 @@ save_profile(unsigned char *buffer, char filename[], int buffer_size)
 static 
 ulong swapbytes32(ulong input)
 {
-    ulong output = ((0x000000ff) & (input >> 24)
-                    | (0x0000ff00) & (input >> 8)
-                    | (0x00ff0000) & (input << 8)
-                    | (0xff000000) & (input << 24));
+    ulong output = (((0x000000ff) & (input >> 24))
+                    | ((0x0000ff00) & (input >> 8))
+                    | ((0x00ff0000) & (input << 8))
+                    | ((0xff000000) & (input << 24)));
 
     return output;
 
@@ -827,14 +827,12 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,  
     int num_tags;
     gsicc_tag *tag_list;
     unsigned short encode_gamma;
-    int tag_offset = 0;
     unsigned char *curr_ptr;
     int last_tag;
     icS15Fixed16Number temp_XYZ[3];
     int tag_location;
     icTagSignature TRC_Tags[3] = {icSigRedTRCTag, icSigGreenTRCTag, icSigBlueTRCTag};
     int trc_tag_size;
-    int debug_catch = 1;
     unsigned char *buffer;
     cmm_profile_t *result;
 
@@ -1013,7 +1011,6 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
     int profile_size,k;
     int num_tags;
     gsicc_tag *tag_list;
-    int tag_offset = 0;
     unsigned char *curr_ptr;
     int last_tag;
     icS15Fixed16Number temp_XYZ[3];
@@ -1256,7 +1253,6 @@ gsicc_create_froma(gs_cie_a *pcie, unsigned char *buffer, gs_memory_t *memory,
     int profile_size,k;
     int num_tags;
     gsicc_tag *tag_list;
-    int tag_offset = 0;
     unsigned char *curr_ptr;
     int last_tag;
     icS15Fixed16Number temp_XYZ[3];

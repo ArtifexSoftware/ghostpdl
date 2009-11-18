@@ -5086,7 +5086,7 @@ static int setlabspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 
 static int validatelabspace(i_ctx_t * i_ctx_p, ref **r)
 {
-    int code=0, components = 0;
+    int code=0;
     ref *space, labdict;
     
     space = *r;
@@ -5375,7 +5375,7 @@ static int setcalgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
 static int validatecalgrayspace(i_ctx_t * i_ctx_p, ref **r)
 {
 
-    int code=0, components = 0;
+    int code=0;
     ref *space, calgraydict;
     
     space = *r;
@@ -5492,7 +5492,7 @@ static int setcalrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
 
 static int validatecalrgbspace(i_ctx_t * i_ctx_p, ref **r)
 {
-    int code=0, components = 0;
+    int code=0;
     ref *space, calrgbdict;
     
     space = *r;

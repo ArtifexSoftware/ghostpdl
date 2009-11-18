@@ -464,7 +464,7 @@ $(PSOBJ)zcolor.$(OBJ) : $(PSSRC)zcolor.c $(OP)\
 
 $(PSOBJ)zdevice.$(OBJ) : $(PSSRC)zdevice.c $(OP) $(string__h)\
  $(ialloc_h) $(idict_h) $(igstate_h) $(iname_h) $(interp_h) $(iparam_h) $(ivmspace_h)\
- $(gsmatrix_h) $(gsstate_h) $(gxdevice_h) $(gxgetbit_h) $(store_h)
+ $(gsmatrix_h) $(gsstate_h) $(gxdevice_h) $(gxgetbit_h) $(store_h) $(gsiccmanage_h)
 	$(PSCC) $(PSO_)zdevice.$(OBJ) $(C_) $(PSSRC)zdevice.c
 
 $(PSOBJ)zdfilter.$(OBJ) : $(PSSRC)zdfilter.c $(OP) $(string__h) $(ghost_h) $(oper_h)\

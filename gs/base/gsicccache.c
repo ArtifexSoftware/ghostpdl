@@ -441,7 +441,7 @@ gsicc_remove_link(gsicc_link_t *link, gsicc_link_cache_t *icc_cache, gs_memory_t
 
 
 gsicc_link_t* 
-gsicc_get_link(gs_imager_state *pis, gs_color_space  *input_colorspace, 
+gsicc_get_link(const gs_imager_state *pis, const gs_color_space  *input_colorspace, 
                     gs_color_space *output_colorspace, 
                     gsicc_rendering_param_t *rendering_params, gs_memory_t *memory, bool include_softproof)
 {
