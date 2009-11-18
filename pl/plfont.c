@@ -353,7 +353,7 @@ pl_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *pstr)
             pstr->size = strlen(pstr->data);
             return 0;
         } else {
-	    dprintf1("glyph index %lx out of range", (ulong)glyph);
+	    dprintf1("glyph index %lx out of range\n", (ulong)glyph);
 	    return -1; 
         }
     }
@@ -385,7 +385,7 @@ pl_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *pstr)
         /* skip over the post header */
         numGlyphs = u16(postp + 32);
         if ( glyph < 0 || glyph > numGlyphs - 1) {
-            dprintf1("glyph index %lx out of range", glyph);
+            dprintf1("glyph index %lx out of range\n", glyph);
             return -1;
         }
         /* glyph name index starts at post + 34 each entry is 2 bytes */
