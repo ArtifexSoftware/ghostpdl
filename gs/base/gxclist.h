@@ -272,6 +272,7 @@ struct clist_icctable_s {
 typedef struct clist_color_space_s {
     byte byte1;			/* see cmd_opv_set_color_space in gxclpath.h */
     gs_id id;			/* space->id for comparisons */
+    int64_t icc_hash;           /* hash code for icc profile */
     const gs_color_space *space;
 } clist_color_space_t;
 struct gx_device_clist_writer_s {

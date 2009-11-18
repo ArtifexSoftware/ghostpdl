@@ -391,8 +391,9 @@ clist_begin_typed_image(gx_device * dev,
 	!USE_HL_IMAGES ||	/* Always use the default. */
 	(cdev->disable_mask & clist_disable_hl_image) || 
 	cdev->image_enum_id != gs_no_id ||  /* Can't handle nested images */
-	/****** CAN'T HANDLE CIE COLOR YET ******/
-	base_index > gs_color_space_index_DeviceCMYK ||
+	/****** Can only handle Gray, RGB, CMYK and ICC ******/
+	( base_index > gs_color_space_index_DeviceCMYK &&
+        base_index != gs_color_space_index_ICC ) ||
 	/****** CAN'T HANDLE IMAGES WITH ALPHA YET ******/
 	has_alpha ||
 	/****** CAN'T HANDLE IMAGES WITH IRREGULAR DEPTHS ******/
@@ -426,6 +427,7 @@ clist_begin_typed_image(gx_device * dev,
 	pie->uses_color = uses_color;
 	if (masked) {
 	    pie->color_space.byte1 = 0;  /* arbitrary */
+            pie->color_space.icc_hash = 0;
 	    pie->color_space.space = 0;
 	    pie->color_space.id = gs_no_id;
 	} else {
@@ -433,6 +435,21 @@ clist_begin_typed_image(gx_device * dev,
 		(indexed ? (pim->ColorSpace->params.indexed.use_proc ? 12 : 8) : 0);
 	    pie->color_space.id =
 		(pie->color_space.space = pim->ColorSpace)->id;
+
+            /* Get the hash code of the ICC space */
+
+            if ( base_index == gs_color_space_index_ICC) {
+
+                pie->color_space.icc_hash = pim->ColorSpace->cmm_icc_profile_data->hashcode;
+                clist_icc_addentry(cdev, pim->ColorSpace->cmm_icc_profile_data->hashcode, 
+                    pim->ColorSpace->cmm_icc_profile_data);
+
+            } else {
+
+                pie->color_space.icc_hash = 0;
+
+            }
+
 	}
 	pie->y = pie->rect.p.y;
 

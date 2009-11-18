@@ -241,7 +241,7 @@ static int read_set_bits(command_buf_t *pcb, tile_slot *bits,
 static int read_set_misc2(command_buf_t *pcb, gs_imager_state *pis,
                            segment_notes *pnotes);
 static int read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
-                                 gs_color_space **ppcs,
+                                 gs_color_space **ppcs, gx_device_clist_reader *cdev,
                                  gs_memory_t *mem);
 static int read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
                              gs_color_space *pcs);
@@ -1246,7 +1246,7 @@ set_phase:	/*
 		    case cmd_opv_set_color_space:
 			cbuf.ptr = cbp;
 			code = read_set_color_space(&cbuf, &imager_state,
-						    &pcs, mem);
+						    &pcs, cdev, mem);
 			cbp = cbuf.ptr;
 			if (code < 0) {
 			    if (code == gs_error_rangecheck)
@@ -2445,13 +2445,16 @@ read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)
 
 static int
 read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
-		     gs_color_space **ppcs, gs_memory_t *mem)
+		     gs_color_space **ppcs, gx_device_clist_reader *cdev,
+                     gs_memory_t *mem)
 {
     const byte *cbp = pcb->ptr;
     byte b = *cbp++;
     int index = b >> 4;
     gs_color_space *pcs;
     int code = 0;
+    int64_t hash_code;
+    cmm_profile_t *picc_profile;
 
     if_debug3('L', " %d%s%s\n", index,
 	      (b & 8 ? " (indexed)" : ""),
@@ -2466,6 +2469,25 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
     case gs_color_space_index_DeviceCMYK:
         pcs = gs_cspace_new_DeviceCMYK(mem);
 	break;
+    case gs_color_space_index_ICC:
+
+        /* Get the hash code.  Used to look
+           up profile in clist */
+
+        memcpy(&hash_code, cbp, sizeof(hash_code));
+
+        /* build the color space object */
+        code = gs_cspace_build_ICC(&pcs, NULL, mem);
+
+        /* Get the profile information from the clist */
+        picc_profile = gsicc_read_serial_icc(cdev, hash_code);
+
+        /* We probably need to read the buffer too */
+
+        /* Assign it to the colorspace */
+        code = gsicc_set_gscs_profile(pcs, picc_profile, mem);
+
+        break;
     default:
 	code = gs_note_error(gs_error_rangecheck);	/* others are NYI */
 	goto out;
@@ -2522,6 +2544,7 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
 	pcs->params.indexed.hival = hival;
 	pcs->params.indexed.use_proc = use_proc;
     }
+
     /* Release reference to old color space before installing new one. */
     rc_decrement_only_cs(*ppcs, "read_set_color_space");
     *ppcs = pcs;

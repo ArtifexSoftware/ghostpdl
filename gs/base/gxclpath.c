@@ -642,7 +642,9 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		return code;
 	    memcpy(cmd_put_w(hival, dp + 2), map_data, map_size);
 	} else {
-	    code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_color_space, 2);
+	    code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_color_space, 
+                2 + sizeof(cldev->color_space.icc_hash));
+            memcpy(dp+2, &(cldev->color_space.icc_hash), sizeof(cldev->color_space.icc_hash));
 	    if (code < 0)
 		return code;
 	}
