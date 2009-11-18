@@ -1488,18 +1488,73 @@ currentdict /jp2_csp_dict .undef
 
 currentdict /_dops_save undef
 
-drawopdict begin
-  /Do {
-    setfillblend
-    PDFfile fileposition exch
-    dup Page /XObject rget { 
-      exch pop dup /Subtype get xobjectprocs exch get
-		% Don't leave extra objects on the stack while executing
-		% the definition of the form.
-      3 -1 roll 2 .execn
+/ocg_pocs 4 dict begin
+  /AllOn {
+    //true exch {
+      oforce dup type /dicttype eq {
+        /OFF known not and
+      } {
+        pop
+      } ifelse
+    } forall
+  } bdef  
+  /AnyOn {
+    //false exch {
+      oforce dup type /dicttype eq {
+        /OFF known not or
+      } {
+        pop
+      } ifelse
+    } forall
+  } bdef
+  /AnyOff {
+    //AllOn exec not
+  } bdef
+  /AllOff {
+    //AnyOn exec not
+  } bdef
+currentdict end readonly def
+
+
+% Check whether OCG or OCMD is visible
+% <dict> oc-is-visible <bool>
+/ocg-is-visible {
+  dup /Type knownoget {
+    /OCMD eq {
+      dup /OCGs knownoget not { {} } if      % OC OCGs
+      dup type /dicttype eq { 1 array astore } if
+      //true 1 index { //null eq and } forall {
+         pop pop //true  % all nulls => show 
+      } {
+        exch /P knownoget not { /AnyOn } if  % OCGs P
+        //ocg_pocs exch get exec             % bool
+      } ifelse
     } {
-		% This should cause an error, but Acrobat Reader can
-		% continue, so we do too.
+      /OFF known not % OFF is inserted by process_trailer_attrs
+    } ifelse
+  } {
+    /OFF known not % OFF is inserted by process_trailer_attrs
+  } ifelse
+} bdef
+
+drawopdict begin
+  /Do {                                              % /Name
+    setfillblend
+    PDFfile fileposition exch                      % pos /Name
+    dup Page /XObject rget { 
+      exch pop                                     % pos obj
+      dup /OC knownoget { ocg-is-visible } { //true } ifelse {
+        dup /Subtype get //xobjectprocs exch get   % pos obj {proc}
+        % Don't leave extra objects on the stack while executing
+        % the definition of the form.
+        3 -1 roll                                  % obj {proc} pos
+        2 .execn                                   % pos
+      } {
+        pop                                        % pos
+      } ifelse
+    } {
+        % This should cause an error, but Acrobat Reader can
+        % continue, so we do too.
       (   **** Undefined XObject resource: ) 
       exch =string cvs concatstrings (\n) concatstrings
       pdfformaterror
@@ -1507,6 +1562,9 @@ drawopdict begin
     PDFfile exch setfileposition
   } bdef
 end
+
+currentdict /xobjectprocs .undef
+currentdict /ocg_pocs .undef
 
 % ---------------- In-line images ---------------- %
 

@@ -134,6 +134,44 @@ nodict readonly pop
   } ifelse
 } bdef
 
+% Save most of graphic state attributes.
+% - get-gs-attrs ...
+/get-gs-attrs {
+  currentsmoothness
+  currentflat
+  currentoverprint
+  currentstrokeadjust
+  currentdash
+  currentmiterlimit
+  currentlinejoin
+  currentlinecap
+  currentlinewidth
+  currentfont
+  currentcolor
+  currentcolorspace
+  { currentpoint } stopped
+  matrix currentmatrix
+} bdef
+
+% Restore most of graphic state attributes.
+% ... get-gs-attrs -
+/set-gs-attrs {
+  setmatrix
+  { newpath } { moveto } ifelse
+  setcolorspace
+  setcolor
+  setfont
+  setlinewidth
+  setlinecap
+  setlinejoin
+  setmiterlimit
+  setdash
+  setstrokeadjust
+  setoverprint
+  setflat
+  setsmoothness
+} bdef
+
 % ---------------- Color setting ---------------- %
 
 /fcput		% <color> <colorspace> fcput -
