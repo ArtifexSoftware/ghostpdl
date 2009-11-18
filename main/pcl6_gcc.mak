@@ -158,16 +158,9 @@ ifeq ($(PL_SCALER), afs)
 UFST_BRIDGE?=
 # The mkromfs arguments for including the PCL fonts if COMPILE_INITS=1
 PCLXL_ROMFS_ARGS?= -P ../urwfonts -d ttfonts /
-
 XLDFLAGS=
 EXTRALIBS=
 UFST_OBJ=
-ifeq ($(ROMFONTS), true)
-PL_SCALER=afs
-XLDFLAGS=-L../pl/ 
-EXTRALIBS=-lttffont
-endif # ROMFONTS
-
 endif # PL_SCALER = afs
 
 # a 64 bit type is needed for devicen color space/model support but

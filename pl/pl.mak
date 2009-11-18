@@ -240,14 +240,6 @@ $(PLOBJ)pllfont.$(OBJ): $(PLSRC)pllfont.c $(pllfont_h) $(AK)\
         $(plfont_h) $(pldict_h) $(plvalue_h) $(plftable_h)
 	$(PLCCC) $(PLSRC)pllfont.c $(PLO_)pllfont.$(OBJ)
 
-# artifex rom font loading module
-$(PLOBJ)pllrfont.$(OBJ): $(PLSRC)pllrfont.c $(pllfont_h) $(romfnttab_h) $(AK)\
-	$(ctype__h) $(stdio__h) $(string__h)\
-	$(gx_h) $(gp_h) $(gsccode_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
-	$(gxfont_h) $(gxfont42_h) $(plfont_h) $(pldict_h) $(plvalue_h)\
-	$(plftable_h) $(zlib_h)
-	$(PLCCC) $(PLSRC)pllrfont.c $(PLO_)pllrfont.$(OBJ)
-
 pl_obj1=$(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plht.$(OBJ) $(PLOBJ)plsrgb.$(OBJ)
 pl_obj2=$(PLOBJ)plvocab.$(OBJ) $(PLOBJ)pltop.$(OBJ) $(PLOBJ)pltoputl.$(OBJ)
 pl_obj3=$(PLOBJ)plplatf$(PLPLATFORM).$(OBJ) $(PLOBJ)plalloc.$(OBJ)
