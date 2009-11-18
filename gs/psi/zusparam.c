@@ -477,7 +477,7 @@ set_proof_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 
     if( !gs_param_string_eq(pval,"NULL") ){
 
-        pname = gs_alloc_bytes(mem, namelen,
+        pname = (char *)gs_alloc_bytes(mem, namelen,
 		   		     "set_proof_profile_icc");
 
         memcpy(pname,pval->data,namelen-1);
@@ -532,7 +532,7 @@ set_devicen_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
            remove leading and ending spaces (file names
            can have internal spaces). */
 
-        pname = gs_alloc_bytes(mem, namelen,
+        pname = (char *)gs_alloc_bytes(mem, namelen,
 		   		     "set_devicen_profile_icc");
 
         memcpy(pname,pval->data,namelen-1);
@@ -601,7 +601,7 @@ set_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     const gs_imager_state * pis = (gs_imager_state *) igs;
     gs_memory_t *mem = pis->memory; 
 
-    pname = gs_alloc_bytes(mem, namelen,
+    pname = (char *)gs_alloc_bytes(mem, namelen,
 	   		     "set_default_gray_icc");
 
     memcpy(pname,pval->data,namelen-1);
@@ -641,7 +641,7 @@ set_icc_directory(i_ctx_t *i_ctx_p, gs_param_string * pval)
 
     if( !gs_param_string_eq(pval,"NULL") ){
 
-        pname = gs_alloc_bytes(mem, namelen,
+        pname = (char *)gs_alloc_bytes(mem, namelen,
 		   		     "set_icc_directory");
 
         if (pname == NULL)
@@ -672,7 +672,7 @@ set_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     const gs_imager_state * pis = (gs_imager_state *) igs;
     gs_memory_t *mem = pis->memory; 
 
-    pname = gs_alloc_bytes(mem, namelen,
+    pname = (char *)gs_alloc_bytes(mem, namelen,
 	   		     "set_default_rgb_icc");
 
     memcpy(pname,pval->data,namelen-1);
@@ -723,7 +723,7 @@ set_link_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 
     if( !gs_param_string_eq(pval,"NULL") ){
 
-        pname = gs_alloc_bytes(mem, namelen,
+        pname = (char *)gs_alloc_bytes(mem, namelen,
 	   		         "set_link_profile_icc");
 
         memcpy(pname,pval->data,namelen-1);
@@ -769,7 +769,7 @@ set_named_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 
     if( !gs_param_string_eq(pval,"NULL") ){
 
-        pname = gs_alloc_bytes(mem, namelen,
+        pname = (char *)gs_alloc_bytes(mem, namelen,
 	   		         "set_named_profile_icc");
 
         memcpy(pname,pval->data,namelen-1);
@@ -809,7 +809,7 @@ set_default_cmyk_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     const gs_imager_state * pis = (gs_imager_state *) igs;
     gs_memory_t *mem = pis->memory; 
 
-    pname = gs_alloc_bytes(mem, namelen,
+    pname = (char *)gs_alloc_bytes(mem, namelen,
 	   		     "set_default_cmyk_icc");
 
     memcpy(pname,pval->data,namelen-1);
@@ -845,7 +845,7 @@ set_default_lab_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     const gs_imager_state * pis = (gs_imager_state *) igs;
     gs_memory_t *mem = pis->memory; 
 
-    pname = gs_alloc_bytes(mem, namelen,
+    pname = (char *)gs_alloc_bytes(mem, namelen,
 	   		     "set_default_lab_icc");
 
     memcpy(pname,pval->data,namelen-1);
