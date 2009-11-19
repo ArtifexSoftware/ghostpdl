@@ -482,8 +482,20 @@ pdf14_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
 gx_color_index
 pdf14_compressed_encode_color(gx_device *dev, const gx_color_value colors[])
 {
-    return devn_encode_compressed_color(dev, colors,
-		    &(((pdf14_device *)dev)->devn_params));
+    gs_devn_params *pdevn_params = NULL;
+
+    if (dev->procs.ret_devn_params != NULL)
+	pdevn_params = dev_proc(dev, ret_devn_params)(dev);
+    /* If there was no dev_proc or it returned NULL, assume pdf14 device devn_params */
+    if (pdevn_params == NULL) {
+#ifdef DEBUG
+	if (strncmp(dev->dname, "pdf14", 5))
+	    eprintf1("pdf14_compressed_encode_color devn_params not from pdf14 device, device = '%s'\n",
+			dev->dname);
+#endif
+    	pdevn_params = &(((pdf14_device *)dev)->devn_params);
+    }
+    return devn_encode_compressed_color(dev, colors, pdevn_params);
 }
 
 /*
@@ -495,8 +507,20 @@ int
 pdf14_compressed_decode_color(gx_device * dev, gx_color_index color,
 	       						gx_color_value * out)
 {
-    return devn_decode_compressed_color(dev, color, out,
-		    &(((pdf14_device *)dev)->devn_params));
+    gs_devn_params *pdevn_params = NULL;
+
+    if (dev->procs.ret_devn_params != NULL)
+	pdevn_params = dev_proc(dev, ret_devn_params)(dev);
+    /* If there was no dev_proc or it returned NULL, assume pdf14 device devn_params */
+    if (pdevn_params == NULL) {
+#ifdef DEBUG
+	if (strncmp(dev->dname, "pdf14", 5))
+	    eprintf1("pdf14_compressed_decode_color devn_params not from pdf14 device, device = '%s'\n",
+			dev->dname);
+#endif
+    	pdevn_params = &(((pdf14_device *)dev)->devn_params);
+    }
+    return devn_decode_compressed_color(dev, color, out, pdevn_params);
 }
 
 void

@@ -358,7 +358,7 @@ const pdf14_device gs_pdf14_RGB_device = {
 
 const pdf14_device gs_pdf14_CMYK_device	= {
     std_device_std_color_full_body_type(pdf14_device, &pdf14_CMYK_procs,
-	    "PDF14cmyk", &st_pdf14_device, XSIZE, YSIZE, X_DPI, Y_DPI, 32,
+	    "pdf14cmyk", &st_pdf14_device, XSIZE, YSIZE, X_DPI, Y_DPI, 32,
 	    0, 0, 0, 0, 0, 0),
     { 0 },			/* Procs */
     NULL,			/* target */
@@ -368,7 +368,7 @@ const pdf14_device gs_pdf14_CMYK_device	= {
 };
 
 const pdf14_device gs_pdf14_CMYKspot_device	= {
-    std_device_part1_(pdf14_device, &pdf14_CMYKspot_procs, "PDF14cmykspot", &st_pdf14_device, open_init_closed),
+    std_device_part1_(pdf14_device, &pdf14_CMYKspot_procs, "pdf14cmykspot", &st_pdf14_device, open_init_closed),
     dci_values(GX_DEVICE_COLOR_MAX_COMPONENTS,64,255,255,256,256),
     std_device_part2_(XSIZE, YSIZE, X_DPI, Y_DPI),
     offset_margin_values(0, 0, 0, 0, 0, 0),
@@ -401,7 +401,7 @@ const pdf14_device gs_pdf14_CMYKspot_device	= {
  * about how to treat these blending modes.
  */
 const pdf14_device gs_pdf14_custom_device = {
-    std_device_part1_(pdf14_device, &pdf14_custom_procs, "PDF14custom", &st_pdf14_device, open_init_closed),
+    std_device_part1_(pdf14_device, &pdf14_custom_procs, "pdf14custom", &st_pdf14_device, open_init_closed),
     dci_values(GX_DEVICE_COLOR_MAX_COMPONENTS,64,255,255,256,256),
     std_device_part2_(XSIZE, YSIZE, X_DPI, Y_DPI),
     offset_margin_values(0, 0, 0, 0, 0, 0),
@@ -1389,7 +1389,7 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
                 pdev->ctx->stack->rect.q.x-pdev->ctx->stack->rect.p.x, 
 				pdev->ctx->stack->n_planes,
                 pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride, 
-                "PDF14_PUTIMAGE",pdev->ctx->stack->data);
+                "pdF14_putimage",pdev->ctx->stack->data);
 
     global_index++;
     clist_band_count++;
@@ -2531,7 +2531,7 @@ pdf14_begin_transparency_group(gx_device *dev,
     gs_int_rect rect;
     int code;
     bool isolated;
-    bool sep_target = (strcmp(pdev->dname, "PDF14cmykspot") == 0);
+    bool sep_target = (strcmp(pdev->dname, "pdf14cmykspot") == 0);
     int group_color_numcomps;
     gs_transparency_color_t group_color;
 
@@ -4707,7 +4707,7 @@ send_pdf14trans(gs_imager_state	* pis, gx_device * dev,
 	NULL,				/* fill_linear_color_trapezoid */\
 	NULL,				/* fill_linear_color_triangle */\
 	gx_forward_update_spot_equivalent_colors,	/* update spot */\
-	NULL,				/* gx_forward_ret_devn_params */\
+	gx_forward_ret_devn_params,	/* gx_forward_ret_devn_params */\
 	gx_forward_fillpage,\
         pdf14_push_transparency_state,\
         pdf14_pop_transparency_state\
@@ -4774,7 +4774,7 @@ const pdf14_clist_device pdf14_clist_RGB_device	= {
 
 const pdf14_clist_device pdf14_clist_CMYK_device = {
     std_device_std_color_full_body_type(pdf14_clist_device,
-			&pdf14_clist_CMYK_procs, "PDF14clistcmyk",
+			&pdf14_clist_CMYK_procs, "pdf14clistcmyk",
 			&st_pdf14_device, XSIZE, YSIZE, X_DPI, Y_DPI, 32,
 			0, 0, 0, 0, 0, 0),
     { 0 },			/* Procs */
@@ -4785,7 +4785,7 @@ const pdf14_clist_device pdf14_clist_CMYK_device = {
 };
 
 const pdf14_clist_device pdf14_clist_CMYKspot_device = {
-    std_device_part1_(pdf14_device, &pdf14_clist_CMYKspot_procs, "PDF14clistcmykspot", &st_pdf14_device, open_init_closed),
+    std_device_part1_(pdf14_device, &pdf14_clist_CMYKspot_procs, "pdf14clistcmykspot", &st_pdf14_device, open_init_closed),
     dci_values(GX_DEVICE_COLOR_MAX_COMPONENTS,64,255,255,256,256),
     std_device_part2_(XSIZE, YSIZE, X_DPI, Y_DPI),
     offset_margin_values(0, 0, 0, 0, 0, 0),
@@ -4807,7 +4807,7 @@ const pdf14_clist_device pdf14_clist_CMYKspot_device = {
 };
 
 const pdf14_clist_device pdf14_clist_custom_device = {
-    std_device_part1_(pdf14_device, &pdf14_clist_CMYKspot_procs, "PDF14clistcustom", &st_pdf14_device, open_init_closed),
+    std_device_part1_(pdf14_device, &pdf14_clist_CMYKspot_procs, "pdf14clistcustom", &st_pdf14_device, open_init_closed),
     dci_values(GX_DEVICE_COLOR_MAX_COMPONENTS,64,255,255,256,256),
     std_device_part2_(XSIZE, YSIZE, X_DPI, Y_DPI),
     offset_margin_values(0, 0, 0, 0, 0, 0),
@@ -5466,7 +5466,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                 /* Now update the device procs. Not 
                    if we have a sep target though */
 
-                sep_target = (strcmp(pdev->dname, "PDF14clistcustom") == 0) || (strcmp(pdev->dname, "PDF14clistcmykspot") == 0);
+                sep_target = (strcmp(pdev->dname, "pdf14clistcustom") == 0) || (strcmp(pdev->dname, "pdf14clistcmykspot") == 0);
 
                 if (!sep_target)
                    code = pdf14_update_device_color_procs_push_c(dev,
