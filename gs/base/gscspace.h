@@ -379,6 +379,7 @@ void rc_decrement_cs(gs_color_space *pcs, const char *cname);
 
 void rc_decrement_only_cs(gs_color_space *pcs, const char *cname);
 
+void cs_adjust_counts_icc(gs_state *pgs, int delta);
 
 /* backwards compatibility */
 #define gs_color_space_indexed_base_space(pcspace)\

@@ -25,6 +25,7 @@
 #include "gxpcache.h"
 #include "gxblend.h"
 #include "gxcpath.h"
+#include "gxdcolor.h"
 
 #define RAW_PATTERN_DUMP 0
 

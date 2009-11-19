@@ -53,15 +53,26 @@
 #include "gsicccache.h"
 #include "gxclist.h"
 
-/* Visual  trace options : set one to 1. */
-#define VD_PAINT_MASK 0
-#define VD_PAINT_COLORS 0
-#define VD_PAINT_ALPHA 1
 
 #if RAW_DUMP
 unsigned int global_index = 0;
 unsigned int clist_band_count = 0;
 #endif
+
+
+/* Static prototypes */
+
+
+/* Used for filling rects when we are doing a fill with a pattern that
+   has transparency */
+static int
+pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
+		     gx_path * ppath, const gx_fill_params * params,
+		 const gx_device_color * pdevc, const gx_clip_path * pcpath);
+
+
+static pdf14_mask_t *
+pdf14_mask_element_new(gs_memory_t *memory);
 
 /*
  * We chose the blending color space based upon the process color model of the
@@ -1239,7 +1250,7 @@ pdf14_mask_element_new(gs_memory_t *memory)
 
 }
 
-
+int
 pdf14_push_transparency_state(gx_device *dev, gs_imager_state *pis)
 {
     /* We need to push the current soft mask.  We need to
@@ -1272,7 +1283,7 @@ pdf14_push_transparency_state(gx_device *dev, gs_imager_state *pis)
  return(0);
 }
 
-
+int
 pdf14_pop_transparency_state(gx_device *dev, gs_imager_state *pis)
 {
 
@@ -1892,7 +1903,6 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
     gs_int_point phase;  /* Needed during clist rendering for band offset */
 
     gx_clip_path cpath_intersection;
-    const gs_fixed_rect *pcbox = (pcpath == NULL ? NULL : cpath_is_rectangle(pcpath));
 
     if (pcpath != NULL) {
         code = gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);

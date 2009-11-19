@@ -450,7 +450,8 @@ gxcspace_h=$(GLSRC)gxcspace.h\
 gxht_h=$(GLSRC)gxht.h $(gsht1_h) $(gsrefct_h) $(gxhttype_h) $(gxtmap_h) $(gscspace_h)
 gxcie_h=$(GLSRC)gxcie.h $(gscie_h)
 gxpcolor_h=$(GLSRC)gxpcolor.h\
- $(gspcolor_h) $(gxcspace_h) $(gxdevice_h) $(gxdevmem_h) $(gxpcache_h) $(gxblend_h) $(gxcpath_h)
+ $(gspcolor_h) $(gxcspace_h) $(gxdevice_h) $(gxdevmem_h) $(gxpcache_h) $(gxblend_h)\
+ $(gxcpath_h) $(gxdcolor_h)
 gscolor_h=$(GLSRC)gscolor.h $(gxtmap_h)
 gsstate_h=$(GLSRC)gsstate.h\
  $(gscolor_h) $(gscpm_h) $(gscsel_h) $(gsdevice_h) $(gsht_h) $(gsline_h)
@@ -875,7 +876,8 @@ $(GLOBJ)gsiodev.$(OBJ) : $(GLSRC)gsiodev.c $(GXERR)\
 
 $(GLOBJ)gsistate.$(OBJ) : $(GLSRC)gsistate.c $(GXERR)\
  $(gscie_h) $(gscspace_h) $(gsstruct_h) $(gsutil_h)\
- $(gxbitmap_h) $(gxcmap_h) $(gxdht_h) $(gxistate_h) $(gzht_h) $(gzline_h)
+ $(gxbitmap_h) $(gxcmap_h) $(gxdht_h) $(gxistate_h) $(gzht_h) $(gzline_h)\
+ $(gsicccache_h) $(gsiccmanage_h) $(gsicc_profilecache_h)
 	$(GLCC) $(GLO_)gsistate.$(OBJ) $(C_) $(GLSRC)gsistate.c
 
 $(GLOBJ)gsline.$(OBJ) : $(GLSRC)gsline.c $(GXERR) $(math__h) $(memory__h)\

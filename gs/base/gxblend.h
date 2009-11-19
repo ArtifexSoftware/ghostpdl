@@ -21,6 +21,11 @@
 #include "gxfrac.h"
 #include "gxdevcli.h"
 
+/* Visual  trace options : set one to 1. */
+#define VD_PAINT_MASK 0
+#define VD_PAINT_COLORS 0
+#define VD_PAINT_ALPHA 1
+
 #define RAW_DUMP 0
 
 /* #define DUMP_TO_PNG */

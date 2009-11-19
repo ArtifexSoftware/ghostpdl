@@ -26,6 +26,9 @@
 #include "gzht.h"
 #include "gzline.h"
 #include "gxfmap.h"
+#include "gsicccache.h"
+#include "gsiccmanage.h"
+#include "gsicc_profilecache.h"
 
 /******************************************************************************
  * See gsstate.c for a discussion of graphics/imager state memory management. *

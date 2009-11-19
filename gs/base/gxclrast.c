@@ -2712,7 +2712,7 @@ static int apply_create_compositor(gx_device_clist_reader *cdev, gs_imager_state
      * Apply the compositor to the target device; note that this may
      * change the target device.
      */
-    code = dev_proc(tdev, create_compositor)(tdev, &tdev, pcomp, pis, mem, cdev);
+    code = dev_proc(tdev, create_compositor)(tdev, &tdev, pcomp, pis, mem, (gx_device*) cdev);
     if (code >= 0 && tdev != *ptarget) {
         rc_increment(tdev);
         *ptarget = tdev;

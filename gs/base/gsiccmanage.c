@@ -107,7 +107,7 @@ gsicc_set_icc_directory(const gs_imager_state *pis, const char* pname, int namel
     gs_memory_t *mem_gc = pis->memory; 
 
 
-    result = gs_alloc_bytes(mem_gc, namelen,
+    result = (char*) gs_alloc_bytes(mem_gc, namelen,
 		   		     "gsicc_set_icc_directory");
 
     if (result != NULL) {
@@ -848,7 +848,7 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname, int namelen
 
     if (namelen > 0){
 
-        nameptr = gs_alloc_bytes(memory, namelen,
+        nameptr = (char*) gs_alloc_bytes(memory, namelen,
 	   		     "gsicc_profile_new");
         memcpy(nameptr, pname, namelen);
         result->name = nameptr;

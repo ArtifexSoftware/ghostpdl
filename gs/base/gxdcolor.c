@@ -716,7 +716,6 @@ gx_dc_write_color(
     byte *              pdata,
     uint *              psize )
 {
-    int                 depth = dev->color_info.depth;
     int                 num_bytes;   /* NB: +8, not +7 */
 
     /* gx_no_color_index is encoded as a single byte */

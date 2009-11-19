@@ -27,5 +27,8 @@ void gsicc_add_profile(gsicc_profile_list_t *profile_list,
 
 cmm_profile_t* gsicc_findprofile(int64_t hash, gsicc_profile_list_t *profile_list);
 
+gsicc_profile_list_t *gsicc_profilelist_new(gs_memory_t *memory);
+
+
 #endif
 
