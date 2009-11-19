@@ -273,10 +273,9 @@ struct xps_part_s
     xps_relation_t *relations;
     int relations_complete; /* is corresponding .rels part finished? */
 
+    /* Some resource types have to persist across the lifetime of a job. */
     xps_font_t *font; /* parsed font resource */
-    xps_image_t *image; /* parsed and decoded image resource */
     gs_color_space *icc; /* parsed icc profile resource */
-    xps_item_t *xml; /* parsed xml document (external resource dictionaries) */
 
     int deobfuscated; /* have we deobfuscated the font data? */
 
@@ -447,6 +446,7 @@ struct xps_resource_s
 {
     char *name;
     char *base_uri; /* only used in the head nodes */
+    xps_item_t *base_xml; /* only used in the head nodes, to free the xml document */
     xps_item_t *data;
     xps_resource_t *next;
     xps_resource_t *parent; /* up to the previous dict in the stack */

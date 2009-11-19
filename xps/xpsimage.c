@@ -322,24 +322,24 @@ int
 xps_parse_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root)
 {
     xps_part_t *part;
+    xps_image_t *image;
     int code;
 
     code = xps_find_image_brush_source_part(ctx, base_uri, root, &part);
     if (code < 0)
 	return gs_rethrow(code, "cannot find image source");
 
-    if (!part->image)
-    {
-	part->image = xps_alloc(ctx, sizeof(xps_image_t));
-	if (!part->image)
-	    return gs_throw(-1, "out of memory: image struct");
+    image = xps_alloc(ctx, sizeof(xps_image_t));
+    if (!image)
+	return gs_throw(-1, "out of memory: image struct");
 
-	code = xps_decode_image(ctx, part, part->image);
-	if (code < 0)
-	    return gs_rethrow(-1, "cannot decode image resource");
-    }
+    code = xps_decode_image(ctx, part, image);
+    if (code < 0)
+	return gs_rethrow(-1, "cannot decode image resource");
 
-    xps_parse_tiling_brush(ctx, base_uri, dict, root, xps_paint_image_brush, part->image);
+    xps_parse_tiling_brush(ctx, base_uri, dict, root, xps_paint_image_brush, image);
+
+    xps_free_image(ctx, image);
 
     xps_release_part(ctx, part);
 
@@ -350,7 +350,9 @@ int
 xps_image_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
 {
     xps_part_t *part;
+    xps_image_t *image;
     int code;
+    int has_alpha;
 
     code = xps_find_image_brush_source_part(ctx, base_uri, root, &part);
     if (code < 0)
@@ -358,18 +360,19 @@ xps_image_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t 
 
     /* Hmm, we should be smarter here and only look at the image header */
 
-    if (!part->image)
-    {
-	part->image = xps_alloc(ctx, sizeof(xps_image_t));
-	if (!part->image)
-	    return gs_throw(-1, "out of memory: image struct");
+    image = xps_alloc(ctx, sizeof(xps_image_t));
+    if (!image)
+	return gs_throw(-1, "out of memory: image struct");
 
-	code = xps_decode_image(ctx, part, part->image);
-	if (code < 0)
-	    return gs_rethrow(-1, "cannot decode image resource");
-    }
+    code = xps_decode_image(ctx, part, image);
+    if (code < 0)
+	return gs_rethrow(-1, "cannot decode image resource");
 
-    return part->image->alpha != NULL;
+    has_alpha = image->alpha != NULL;
+
+    xps_free_image(ctx, image);
+
+    return has_alpha;
 }
 
 void

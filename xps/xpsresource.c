@@ -74,6 +74,7 @@ xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *base_uri, char *s
     char part_uri[1024];
     xps_resource_t *dict;
     xps_part_t *part;
+    xps_item_t *xml;
     char *s;
 
     /* External resource dictionaries MUST NOT reference other resource dictionaries */
@@ -85,19 +86,16 @@ xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *base_uri, char *s
 	return NULL;
     }
 
-    if (!part->xml)
+    xml = xps_parse_xml(ctx, part->data, part->size);
+    if (!xml)
     {
-	part->xml = xps_parse_xml(ctx, part->data, part->size);
-	if (!part->xml)
-	{
-	    gs_rethrow(-1, "cannot parse xml");
-	    return NULL;
-	}
+	gs_rethrow(-1, "cannot parse xml");
+	return NULL;
     }
 
-    if (strcmp(xps_tag(part->xml), "ResourceDictionary"))
+    if (strcmp(xps_tag(xml), "ResourceDictionary"))
     {
-	gs_throw1(-1, "expected ResourceDictionary element (found %s)", xps_tag(part->xml));
+	gs_throw1(-1, "expected ResourceDictionary element (found %s)", xps_tag(xml));
 	return NULL;
     }
 
@@ -106,12 +104,14 @@ xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *base_uri, char *s
     if (s)
 	s[1] = 0;
 
-    dict = xps_parse_resource_dictionary(ctx, part_uri, part->xml);
+    dict = xps_parse_resource_dictionary(ctx, part_uri, xml);
     if (!dict)
     {
 	gs_rethrow1(-1, "cannot parse remote resource dictionary %s", part_uri);
 	return NULL;
     }
+
+    dict->base_xml = xml; /* pass on ownership */
 
     xps_release_part(ctx, part);
 
@@ -147,6 +147,7 @@ xps_parse_resource_dictionary(xps_context_t *ctx, char *base_uri, xps_item_t *ro
 	    }
 	    entry->name = key;
 	    entry->base_uri = NULL;
+	    entry->base_xml = NULL;
 	    entry->data = node;
 	    entry->next = head;
 	    entry->parent = NULL;
@@ -167,6 +168,8 @@ xps_free_resource_dictionary(xps_context_t *ctx, xps_resource_t *dict)
     while (dict)
     {
 	next = dict->next;
+	if (dict->base_xml)
+	    xps_free_item(ctx, dict->base_xml);
 	if (dict->base_uri)
 	    xps_free(ctx, dict->base_uri);
 	xps_free(ctx, dict);

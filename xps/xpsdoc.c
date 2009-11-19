@@ -56,9 +56,7 @@ xps_new_part(xps_context_t *ctx, char *name, int capacity)
     part->relations_complete = 0;
 
     part->font = NULL;
-    part->image = NULL;
     part->icc = NULL;
-    part->xml = NULL;
 
     part->deobfuscated = 0;
 
@@ -95,37 +93,6 @@ xps_new_part(xps_context_t *ctx, char *name, int capacity)
 }
 
 void
-xps_free_part_caches(xps_context_t *ctx, xps_part_t *part)
-{
-#if 0
-    /* Can't free fonts because pdfwrite needs them alive */
-    if (part->font)
-    {
-	xps_free_font(ctx, part->font);
-	part->font = NULL;
-    }
-
-    if (part->icc)
-    {
-	xps_free_colorspace(ctx, part->icc);
-	part->icc = NULL;
-    }
-#endif
-
-    if (part->image)
-    {
-	xps_free_image(ctx, part->image);
-	part->image = NULL;
-    }
-
-    if (part->xml)
-    {
-	xps_free_item(ctx, part->xml);
-	part->xml = NULL;
-    }
-}
-
-void
 xps_free_part_data(xps_context_t *ctx, xps_part_t *part)
 {
     if (part->data)
@@ -140,28 +107,24 @@ xps_free_part_data(xps_context_t *ctx, xps_part_t *part)
 void
 xps_release_part(xps_context_t *ctx, xps_part_t *part)
 {
-    /* since fonts need to live for the duration of
-       the job there's no point in freeing them */
-    if (part->font)
+    /* since fonts and colorspaces need to live for the duration of
+       the job there's no point in freeing those parts */
+    if (part->font || part->icc)
 	return;
 
     /* never free the part data if we're in feed mode,
        since we may need it later */
     if (ctx->file)
 	xps_free_part_data(ctx, part);
-
-    /* free any parsed representations */
-    xps_free_part_caches(ctx, part);
 }
 
 void
 xps_free_part(xps_context_t *ctx, xps_part_t *part)
 {
-    xps_free_part_caches(ctx, part);
     xps_free_part_data(ctx, part);
 
     /* Nu-uh, can't free fonts because pdfwrite needs them alive */
-    if (part->font)
+    if (part->font || part->icc)
 	return;
 
     if (part->name)

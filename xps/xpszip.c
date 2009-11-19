@@ -133,18 +133,9 @@ xps_validate_resources(xps_context_t *ctx, xps_part_t *part)
 static void
 xps_free_used_parts(xps_context_t *ctx)
 {
-    /* Free parsed resources that were used on the last page */
-    xps_part_t *part = ctx->part_list;
-    while (part)
-    {
-	xps_part_t *next = part->next;
-	xps_free_part_caches(ctx, part);
-	part = next;
-    }
-
-    /* TODO: Free the data for page parts we have rendered */
     /* TODO: Free the data for parts we don't recognize */
-    /* TODO: Parse DiscardControl parts to free stuff */
+    /* TODO: Free the data for page parts we have rendered */
+    /* TODO: Parse DiscardControl parts to free resources */
 }
 
 /*
@@ -519,8 +510,6 @@ xps_process_data(xps_context_t *ctx, stream_cursor_read *buf)
 {
     unsigned int signature;
     int code;
-
-    /* dprintf1("xps_process_data state=%d\n", ctx->zip_state); */
 
     while (1)
     {
