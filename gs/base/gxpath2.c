@@ -440,6 +440,105 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath)
     return 0;
 }
 
+int
+gx_path_append_reversed(const gx_path * ppath_old, gx_path * ppath)
+{
+    const subpath *psub = ppath_old->current_subpath;
+
+#ifdef DEBUG
+    if (gs_debug_c('P'))
+	gx_dump_path(ppath_old, "before reversepath");
+#endif
+ nsp:
+    if (psub) {
+	const segment *prev = psub->last;
+	const segment *pseg;
+	segment_notes notes =
+	    (prev == (const segment *)psub ? sn_none :
+	     psub->next->notes);
+	segment_notes prev_notes;
+	int code;
+
+	if (!psub->is_closed) {
+	    code = gx_path_add_line(ppath, prev->pt.x, prev->pt.y);
+	    if (code < 0)
+		return code;
+	}
+	/*
+	 * The do ... while structure of this loop is artificial,
+	 * designed solely to keep compilers from complaining about
+	 * 'statement not reached' or 'end-of-loop code not reached'.
+	 * The normal exit from this loop is the goto statement in
+	 * the s_start arm of the switch.
+	 */
+	do {
+	    pseg = prev;
+	    prev_notes = notes;
+	    prev = pseg->prev;
+	    notes = pseg->notes;
+	    prev_notes = (prev_notes & sn_not_first) |
+		(notes & ~sn_not_first);
+	    switch (pseg->type) {
+		case s_start:
+		    /* Finished subpath */
+		    if (psub->is_closed) {
+			code =
+			    gx_path_close_subpath_notes(ppath, prev_notes);
+			if (code < 0)
+			    return code;
+		    }
+		    do {
+			psub = (const subpath *)psub->prev;
+		    } while (psub && psub->type != s_start);
+		    goto nsp;
+		case s_curve:
+		    {
+			const curve_segment *pc =
+			(const curve_segment *)pseg;
+
+			code = gx_path_add_curve_notes(ppath,
+						       pc->p2.x, pc->p2.y,
+						       pc->p1.x, pc->p1.y,
+					prev->pt.x, prev->pt.y, prev_notes);
+			break;
+		    }
+		case s_line:
+		    code = gx_path_add_line_notes(ppath,
+					prev->pt.x, prev->pt.y, prev_notes);
+		    break;
+		case s_line_close:
+		    /* Skip the closing line. */
+		    code = gx_path_add_point(ppath, prev->pt.x,
+					     prev->pt.y);
+		    break;
+		default:	/* not possible */
+		    return_error(gs_error_Fatal);
+	    }
+	} while (code >= 0);
+	return code;		/* only reached if code < 0 */
+    }
+#undef sn_not_end
+    /*
+     * In the Adobe implementations, reversepath discards a trailing
+     * moveto unless the path consists only of a moveto.  We reproduce
+     * this behavior here, even though we consider it a bug.
+     */
+    if (ppath_old->first_subpath == 0 &&
+	path_last_is_moveto(ppath_old)
+	) {
+	int code = gx_path_add_point(ppath, ppath_old->position.x,
+				     ppath_old->position.y);
+
+	if (code < 0)
+	    return code;
+    }
+#ifdef DEBUG
+    if (gs_debug_c('P'))
+	gx_dump_path(ppath, "after reversepath");
+#endif
+    return 0;
+}
+
 /* ------ Path enumeration ------ */
 
 /* Allocate a path enumerator. */

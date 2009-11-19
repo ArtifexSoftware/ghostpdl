@@ -217,10 +217,22 @@ static int line_join_points(const gx_line_params * pgs_lp,
 			     gs_fixed_point * join_points,
 			     const gs_matrix * pmat, gs_line_join join,
 			     bool reflected);
+static int line_join_points_fast_cw(const gx_line_params * pgs_lp,
+                                    pl_ptr plp, pl_ptr nplp,
+                                    gs_fixed_point * rjoin_points,
+                                    const gs_matrix * pmat,
+                                    gs_line_join join);
+static int line_join_points_fast_ccw(const gx_line_params * pgs_lp,
+                                     pl_ptr plp, pl_ptr nplp,
+                                     gs_fixed_point * join_points,
+                                     const gs_matrix * pmat,
+                                     gs_line_join join);
 static void compute_caps(pl_ptr);
 static int add_points(gx_path *, const gs_fixed_point *,
 		       int, bool);
 static int add_pie_join(gx_path *, pl_ptr, pl_ptr, bool);
+static int add_pie_join_fast_cw(gx_path *, pl_ptr, pl_ptr);
+static int add_pie_join_fast_ccw(gx_path *, pl_ptr, pl_ptr);
 static int add_round_cap(gx_path *, const_ep_ptr);
 static int add_pie_cap(gx_path *, const_ep_ptr);
 static int cap_points(gs_line_cap, const_ep_ptr,
@@ -245,6 +257,10 @@ gx_default_stroke_path(gx_device * dev, const gs_imager_state * pis,
      (final || lop_is_idempotent(pis->log_op))) {\
     fill_params.adjust.x = STROKE_ADJUSTMENT(thin, pis, x);\
     fill_params.adjust.y = STROKE_ADJUSTMENT(thin, pis, y);\
+    if (to_path_reverse != NULL) {\
+        code = gx_join_path_and_reverse(to_path, to_path_reverse);\
+        if(code < 0) goto exit;\
+    }\
     code = gx_fill_path_only(to_path, dev, pis, &fill_params, pdevc, pcpath);\
     gx_path_free(&stroke_path_body, "fill_stroke_path");\
     if ( code < 0 ) goto exit;\
@@ -259,14 +275,15 @@ gx_default_stroke_path(gx_device * dev, const gs_imager_state * pis,
  * with an appropriate cap.
  */
 #define stroke_line_proc(proc)\
-  int proc(gx_path *, int, pl_ptr, pl_ptr, const gx_device_color *,\
-	   gx_device *, const gs_imager_state *,\
+  int proc(gx_path *, gx_path *, bool ensure_closed, int, pl_ptr, pl_ptr,\
+           const gx_device_color *, gx_device *, const gs_imager_state *,\
 	   const gx_stroke_params *, const gs_fixed_rect *, int,\
-	   gs_line_join, bool)
+	   gs_line_join, bool, bool)
 typedef stroke_line_proc((*stroke_line_proc_t));
 
 static stroke_line_proc(stroke_add);
 static stroke_line_proc(stroke_add_compat);
+static stroke_line_proc(stroke_add_fast);
 static stroke_line_proc(stroke_fill);
 static int stroke_add_initial_cap_compat(gx_path * ppath, pl_ptr plp, bool adlust_longitude,
 	   const gx_device_color * pdevc, gx_device * dev,
@@ -278,6 +295,32 @@ typedef enum {
     orient_portrait,		/* [xx 0 0 yy tx ty] */
     orient_landscape		/* [0 xy yx 0 tx ty] */
 } orientation;
+
+/*
+ * Internal function used to merge the 2 sides of a stroked path.
+ * path contains the 'forward' side, rpath contains the 'reversed' side.
+ * Reverse rpath, then append it to path.
+ *
+ * If path is closed, then rpath should be too. If path is open, then the
+ * starting and ending points of both paths should be the same, so as to
+ * guarantee a closed path.
+ */
+static int
+gx_join_path_and_reverse(gx_path * path, gx_path * rpath)
+{
+    int code;
+
+    if (gx_path_is_void(rpath))
+        return 0;
+     code = gx_path_append_reversed(rpath, path);
+    if (code < 0)
+        return code;
+        
+    gx_path_free(rpath, "gx_join_path_and_reverse");
+    gx_path_init_local(rpath, path->memory);
+        
+    return gx_path_close_subpath(path);
+}
 
 /*
  * Stroke a path.  If to_path != 0, append the stroke outline to it;
@@ -295,8 +338,9 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
     extern bool CPSI_mode;
     bool traditional = CPSI_mode | params->traditional;
     stroke_line_proc_t line_proc =
-	(to_path == 0 && !gx_dc_is_pattern1_color_clist_based(pdevc) 
-		? stroke_fill : traditional ? stroke_add_compat : stroke_add);
+               ((to_path == 0 && !gx_dc_is_pattern1_color_clist_based(pdevc))
+                      ? stroke_fill :
+                        (traditional ? stroke_add_compat : stroke_add_fast));
     gs_fixed_rect ibox, cbox;
     gx_device_clip cdev;
     gx_device *dev = pdev;
@@ -306,6 +350,8 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
     int dash_count = pgs_lp->dash.pattern_size;
     gx_path fpath, dpath;
     gx_path stroke_path_body;
+    gx_path stroke_path_reverse;
+    gx_path *to_path_reverse = NULL;
     const gx_path *spath;
     float xx = pis->ctm.xx, xy = pis->ctm.xy;
     float yx = pis->ctm.yx, yy = pis->ctm.yy;
@@ -551,6 +597,10 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	to_path = &stroke_path_body;
 	gx_path_init_local(&stroke_path_body, ppath->memory);
     }
+    if (line_proc == stroke_add_fast) {
+        to_path_reverse = &stroke_path_reverse;
+        gx_path_init_local(&stroke_path_reverse, ppath->memory);
+    }
     for (psub = spath->first_subpath; psub != 0;) {
 	int index = 0;
 	const segment *pseg = (const segment *)psub;
@@ -754,6 +804,8 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		    (pseg->notes & not_first ? curve_join : pgs_lp->join);
 		int first;
 		pl_ptr lptr;
+                bool from_arc;
+                bool ensure_closed;
 
 		if (join == gs_join_none) {
 		    /* Fake the end of a subpath so we get */
@@ -765,9 +817,15 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		    first = (is_closed ? 1 : index - 2);
 		    lptr = &pl;
 		}
-		code = (*line_proc) (to_path, first, &pl_prev, lptr,
+                ensure_closed = ((to_path == &stroke_path_body &&
+                                  lop_is_idempotent(pis->log_op)) ||
+                                 (lptr == NULL ? true : lptr->thin));
+                from_arc = ((pseg->notes & sn_not_first) != 0);
+                code = (*line_proc) (to_path, to_path_reverse, ensure_closed,
+		                     first, &pl_prev, lptr,
 				     pdevc, dev, pis, params, &cbox,
-				     uniform, join, initial_matrix_reflected);
+				     uniform, join, initial_matrix_reflected,
+				     from_arc);
 		if (code < 0)
 		    goto exit;
 		FILL_STROKE_PATH(pdev, always_thin, pcpath, false);
@@ -778,18 +836,23 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	}
 	if (index) {
 	    /* If closed, join back to start, else cap. */
-	    gs_line_join join =
-		((pseg == 0 ? (const segment *)spath->first_subpath :
-		  pseg)->notes & not_first ? curve_join : pgs_lp->join);
+            segment_notes notes = (pseg == 0 ?
+	                           (const segment *)spath->first_subpath :
+                                   pseg)->notes;
+            gs_line_join join = (notes & not_first ? curve_join :
+	                         pgs_lp->join);
+            bool from_arc;
 	    /* For some reason, the Borland compiler requires the cast */
 	    /* in the following statement. */
 	    pl_ptr lptr =
 		(!is_closed || join == gs_join_none || zero_length ?
 		 (pl_ptr) 0 : (pl_ptr) & pl_first);
 
-	    code = (*line_proc) (to_path, index - 1, &pl_prev, lptr, pdevc,
+            from_arc = ((notes & sn_not_first) != 0);
+	    code = (*line_proc) (to_path, to_path_reverse, true,
+	                         index - 1, &pl_prev, lptr, pdevc,
 				 dev, pis, params, &cbox, uniform, join, 
-				 initial_matrix_reflected);
+				 initial_matrix_reflected, from_arc);
 	    if (code < 0)
 		goto exit;
 	    FILL_STROKE_PATH(pdev, always_thin, pcpath, false);
@@ -803,12 +866,16 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	}
 	psub = (const subpath *)pseg;
     }
+    if (to_path_reverse != NULL)
+        code = gx_join_path_and_reverse(to_path, to_path_reverse);
     FILL_STROKE_PATH(pdev, always_thin, pcpath, true);
   exit:
     if (dev == (gx_device *)&cdev)
 	cdev.target->sgr = cdev.sgr;
     if (to_path == &stroke_path_body)
 	gx_path_free(&stroke_path_body, "gx_stroke_path_only error");	/* (only needed if error) */
+    if (to_path_reverse == &stroke_path_reverse)
+        gx_path_free(&stroke_path_reverse, "gx_stroke_path_only error");
     if (dash_count)
 	gx_path_free(&dpath, "gx_stroke_path exit(dash path)");
   exf:
@@ -1157,12 +1224,13 @@ set_thin_widths(register pl_ptr plp)
 
 /* Draw a line on the device. */
 /* Treat no join the same as a bevel join. */
+/* rpath should always be NULL, hence ensure_closed can be ignored */
 static int
-stroke_fill(gx_path * ppath, int first, register pl_ptr plp, pl_ptr nplp,
-	    const gx_device_color * pdevc, gx_device * dev,
-	    const gs_imager_state * pis, const gx_stroke_params * params,
-	    const gs_fixed_rect * pbbox, int uniform, gs_line_join join,
-	    bool reflected)
+stroke_fill(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
+            register pl_ptr plp, pl_ptr nplp, const gx_device_color * pdevc,
+            gx_device * dev, const gs_imager_state * pis,
+            const gx_stroke_params * params, const gs_fixed_rect * pbbox,
+            int uniform, gs_line_join join, bool reflected, bool from_arc)
 {
     const fixed lix = plp->o.p.x;
     const fixed liy = plp->o.p.y;
@@ -1252,17 +1320,19 @@ stroke_fill(gx_path * ppath, int first, register pl_ptr plp, pl_ptr nplp,
     }
     /* General case: construct a path for the fill algorithm. */
  general:
-    return stroke_add(ppath, first, plp, nplp, pdevc, dev, pis, params,
-		      pbbox, uniform, join, reflected);
+    return stroke_add(ppath, rpath, ensure_closed, first, plp, nplp, pdevc,
+                      dev, pis, params, pbbox, uniform, join, reflected,
+                      from_arc);
 }
 
 /* Add a segment to the path.  This handles all the complex cases. */
 static int
-stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
-	   const gx_device_color * pdevc, gx_device * dev,
-	   const gs_imager_state * pis, const gx_stroke_params * params,
-	   const gs_fixed_rect * ignore_pbbox, int uniform, gs_line_join join,
-	   bool reflected)
+stroke_add(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
+           pl_ptr plp, pl_ptr nplp, const gx_device_color * pdevc,
+           gx_device * dev, const gs_imager_state * pis,
+           const gx_stroke_params * params,
+           const gs_fixed_rect * ignore_pbbox, int uniform,
+           gs_line_join join, bool reflected, bool from_arc)
 {
     const gx_line_params *pgs_lp = gs_currentlineparams_inline(pis);
     gs_fixed_point points[8];
@@ -1325,13 +1395,198 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
     return gx_path_close_subpath(ppath);
 }
 
+/* Add a segment to the path.
+ * This works by crafting 2 paths, one for each edge, that will later be
+ * merged together. */
+static int
+stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
+           pl_ptr plp, pl_ptr nplp, const gx_device_color * pdevc,
+           gx_device * dev, const gs_imager_state * pis,
+           const gx_stroke_params * params,
+           const gs_fixed_rect * ignore_pbbox, int uniform,
+           gs_line_join join, bool reflected, bool from_arc)
+{
+    const gx_line_params *pgs_lp = gs_currentlineparams_inline(pis);
+    gs_fixed_point points[8];
+    gs_fixed_point rpoints[8];
+    int npoints  = 0;
+    int nrpoints = 0;
+    int code;
+    bool moveto_first  = false;
+    bool rmoveto_first = false;
+    gs_line_cap cap;
+
+    if (plp->thin) {
+	/* We didn't set up the endpoint parameters before, */
+	/* because the line was thin.  Do it now. */
+	set_thin_widths(plp);
+	adjust_stroke(dev, plp, pis, true, first == 0 && nplp == 0);
+	compute_caps(plp);
+    }
+    cap = pgs_lp->cap;
+    /* If we're starting a new rpath here, we need to fake a new cap.
+     * Don't interfere if we would have been doing a cap anyway. */
+    if (gx_path_is_void(rpath) && (first != 0)) {
+        first = 0;
+        cap = gs_cap_butt;
+        moveto_first  = true;
+        rmoveto_first = true;
+    }
+    if (first == 0) {
+        /* Create an initial cap. */
+        if (cap == gs_cap_round) {
+            vd_moveto(plp->o.co.x, plp->o.co.y);
+            if ((code = gx_path_add_point(ppath, plp->o.co.x, plp->o.co.y)) < 0 ||
+	        (code = add_pie_cap(ppath, &plp->o)) < 0)
+                return code;
+            moveto_first = false;
+        } else {
+            if ((npoints = cap_points(pgs_lp->cap, &plp->o, points)) < 0)
+                return npoints;
+            moveto_first = true;
+        }
+        rmoveto_first = true;
+        ASSIGN_POINT(&rpoints[0], plp->o.co);
+        nrpoints = 1;
+    }
+    /* Add points to move us along the edges of this stroke */
+    ASSIGN_POINT(&points [npoints ], plp->e.co);
+    ASSIGN_POINT(&rpoints[nrpoints], plp->e.ce);
+    npoints++;
+    nrpoints++;
+    if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
+        return code;
+    if ((code = add_points(rpath, rpoints, nrpoints, rmoveto_first)) < 0)
+        return code;
+    npoints  = 0;
+    nrpoints = 0;
+    
+    if (nplp == 0) { /* Add a final cap. */
+	if (pgs_lp->cap == gs_cap_round) {
+	    code = add_pie_cap(ppath, &plp->e);
+	} else {
+            code = cap_points(pgs_lp->cap, &plp->e, points);
+            npoints = code;
+        }
+    } else if (nplp->thin) { /* no join */
+	code = cap_points(gs_cap_butt, &plp->e, points);
+	npoints = code;
+    } else {
+        /* We need to do a join */
+        double l, r;
+        
+        l = (double)(plp->width.x) /* x1 */ * (nplp->width.y) /* y2 */;
+        r = (double)(nplp->width.x) /* x2 */ * (plp->width.y) /* y1 */;
+    
+        if ((l == r) && (join == gs_join_round))
+            return add_pie_cap(ppath, &plp->e);
+        else if ((l > r) ^ reflected) {
+            /* CCW rotation. Join in the forward path. "Underjoin" in the
+             * reverse path. */
+            /* RJW: Ideally we should include the "|| from_arc" clause in
+             * the following condition. This forces all joins between
+             * line segments generated from arcs to be round. This would
+             * solve some flatness issues, but makes some pathological
+             * cases incredibly slow. */
+            if ((join == gs_join_round) /* || from_arc */) {
+                code = add_pie_join_fast_ccw(ppath, plp, nplp);
+            } else { /* non-round join */
+                code = line_join_points_fast_ccw(pgs_lp, plp, nplp,
+                                                 points,
+                                                 (uniform ? (gs_matrix *) 0 :
+                                                            &ctm_only(pis)),
+                                                 join);
+                npoints = code;
+            }
+            if (code < 0)
+                return code;
+            /* The underjoin */
+            if (!from_arc) {
+                /* RJW: This is an approximation. We ought to draw a line
+                 * back to nplp->o.p, and then independently fill any exposed
+                 * region under the curve with a round join. Sadly, that's
+                 * a) really hard to do, and b) makes certain pathological
+                 * filling cases MUCH slower due to the greater number of
+                 * "cross-segment" line segments this produces. Instead,
+                 * we just skip the line to the middle, and join across the
+                 * bottom instead. This is akin to what other graphics libs
+                 * do (such as fitz, libart, etc). It's not perfect but in
+                 * most cases it's close, and results in faster to fill
+                 * paths.
+                 */
+                code = gx_path_add_line(rpath, nplp->o.p.x, nplp->o.p.y);
+                if (code < 0)
+                    return code;
+            }
+            code = gx_path_add_line(rpath, nplp->o.co.x, nplp->o.co.y);
+        } else {
+            /* CW rotation. Join in the reverse path. "Underjoin" in the
+             * forward path. */
+            /* RJW: Ideally we should include the "|| from_arc" clause in
+             * the following condition. This forces all joins between
+             * line segments generated from arcs to be round. This would
+             * solve some flatness issues, but makes some pathological
+             * cases incredibly slow. */
+            if ((join == gs_join_round) /* || from_arc */) {
+                code = add_pie_join_fast_cw(rpath, plp, nplp);
+            } else { /* non-round join */
+                code = line_join_points_fast_cw(pgs_lp, plp, nplp,
+                                                rpoints,
+                                                (uniform ? (gs_matrix *) 0 :
+                                                           &ctm_only(pis)),
+                                                join);
+                nrpoints = code;
+            }
+            if (code < 0)
+                return code;
+            /* The underjoin */
+            if (!from_arc) {
+                /* RJW: This is an approximation. We ought to draw a line
+                 * back to nplp->o.p, and then independently fill any exposed
+                 * region under the curve with a round join. Sadly, that's
+                 * a) really hard to do, and b) makes certain pathological
+                 * filling cases MUCH slower due to the greater number of
+                 * "cross-segment" line segments this produces. Instead,
+                 * we just skip the line to the middle, and join across the
+                 * bottom instead. This is akin to what other graphics libs
+                 * do (such as fitz, libart, etc). It's not perfect but in
+                 * most cases it's close, and results in faster to fill
+                 * paths.
+                 */
+                code = gx_path_add_line(ppath, nplp->o.p.x, nplp->o.p.y);
+                if (code < 0)
+                    return code;
+            }
+            code = gx_path_add_line(ppath, nplp->o.ce.x, nplp->o.ce.y);
+        }
+    }
+    if (code < 0)
+        return code;
+    if (npoints > 0) {
+        code = add_points(ppath, points, npoints, false);
+        if (code < 0)
+	    return code;
+    }
+    if (nrpoints > 0) {
+        code = add_points(rpath, rpoints, nrpoints, false);
+        if (code < 0)
+	    return code;
+    }
+    vd_closepath;
+    if (ensure_closed)
+        return gx_join_path_and_reverse(ppath, rpath);
+    return 0;
+}
+
 /* Add a CPSI-compatible segment to the path.  This handles all the complex cases. */
 static int
-stroke_add_compat(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
-	   const gx_device_color * pdevc, gx_device * dev,
-	   const gs_imager_state * pis, const gx_stroke_params * params,
-	   const gs_fixed_rect * ignore_pbbox, int uniform, gs_line_join join,
-	   bool reflected)
+stroke_add_compat(gx_path * ppath, gx_path *rpath, bool ensure_closed,
+                  int first, pl_ptr plp, pl_ptr nplp,
+                  const gx_device_color * pdevc, gx_device * dev,
+                  const gs_imager_state * pis,
+                  const gx_stroke_params * params,
+                  const gs_fixed_rect * ignore_pbbox, int uniform,
+                  gs_line_join join, bool reflected, bool from_arc)
 {
     /* Actually it adds 2 contours : one for the segment itself,
        and another one for line join or for the ending cap. 
@@ -1699,6 +1954,301 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
     }
     return 4;
 }
+
+static int
+line_join_points_fast_cw(const gx_line_params * pgs_lp,
+                         pl_ptr plp, pl_ptr nplp,
+                         gs_fixed_point * rjoin_points,
+                         const gs_matrix * pmat,
+                         gs_line_join join)
+{
+    /* rjoin_points will be added to a path that is currently at plp->e.ce.
+     */
+
+    /* Join will be between plp->e.ce and nplp->o.co */
+    if (join == gs_join_triangle)
+    {
+        gs_fixed_point tp;
+
+        tp.x = plp->e.ce.x - nplp->o.p.x + nplp->o.co.x;
+        tp.y = plp->e.ce.y - nplp->o.p.y + nplp->o.co.y;
+        ASSIGN_POINT(&rjoin_points[0], tp);
+        ASSIGN_POINT(&rjoin_points[1], nplp->o.co);
+        return 2;
+    }
+    
+    /* Set up for a Bevel join */
+    ASSIGN_POINT(&rjoin_points[0], nplp->o.co);
+    
+    /*
+     * Don't bother with the miter check if the two
+     * points to be joined are very close together,
+     * namely, in the same square half-pixel.
+     */
+    if (join == gs_join_miter &&
+	!(fixed2long(plp->e.ce.x << 1) == fixed2long(nplp->o.co.x << 1) &&
+	  fixed2long(plp->e.ce.y << 1) == fixed2long(nplp->o.co.y << 1))
+	) {
+	/*
+	 * Check whether a miter join is appropriate.
+	 * Let a, b be the angles of the two lines.
+	 * We check tan(a-b) against the miter_check
+	 * by using the following formula:
+	 *      If tan(a)=u1/v1 and tan(b)=u2/v2, then
+	 *      tan(a-b) = (u1*v2 - u2*v1) / (u1*u2 + v1*v2).
+	 *
+	 * We can do all the computations unscaled,
+	 * because we're only concerned with ratios.
+	 * However, if we have a non-uniform coordinate
+	 * system (indicated by pmat != 0), we must do the
+	 * computations in user space.
+	 */
+	float check = pgs_lp->miter_check;
+	double u1 = plp->vector.y, v1 = plp->vector.x;
+	double u2 = -nplp->vector.y, v2 = -nplp->vector.x;
+	double num, denom;
+	int code;
+	bool ccw0;
+
+	if (pmat) {
+	    gs_point pt;
+
+	    code = gs_distance_transform_inverse(v1, u1, pmat, &pt);
+	    if (code < 0)
+		return code;
+	    v1 = pt.x, u1 = pt.y;
+	    code = gs_distance_transform_inverse(v2, u2, pmat, &pt);
+	    if (code < 0)
+		return code;
+	    v2 = pt.x, u2 = pt.y;
+	    /*
+	     * We need to recompute ccw according to the
+	     * relative positions of the lines in user space.
+	     * We repeat the computation described above,
+	     * using the cdelta values instead of the widths.
+	     * Because the definition of ccw above is inverted
+	     * from the intuitive one (for historical reasons),
+	     * we actually have to do the test backwards.
+	     */
+	    ccw0 = v1 * u2 < v2 * u1;
+#ifdef DEBUG
+	    {
+		double a1 = atan2(u1, v1), a2 = atan2(u2, v2), dif = a1 - a2;
+
+		if (dif < 0)
+		    dif += 2 * M_PI;
+		else if (dif >= 2 * M_PI)
+		    dif -= 2 * M_PI;
+		if (dif != 0 && (dif < M_PI) != ccw0)
+		    lprintf7("ccw wrong: tan(a1=%g)=%g/%g, tan(a2=%g)=%g,%g, dif=%g, ccw=0\n",
+			     a1, u1, v1, a2, u2, v2, dif);
+	    }
+#endif
+	}
+	num = u1 * v2 - u2 * v1;
+	denom = u1 * u2 + v1 * v2;
+	/*
+	 * We will want either tan(a-b) or tan(b-a)
+	 * depending on the orientations of the lines.
+	 * Fortunately we know the relative orientations already.
+	 */
+	if (!ccw0)		/* have plp - nplp, want vice versa */
+	    num = -num;
+#ifdef DEBUG
+	if (gs_debug_c('O')) {
+	    dlprintf4("[o]Miter check: u1/v1=%f/%f, u2/v2=%f/%f,\n",
+		      u1, v1, u2, v2);
+	    dlprintf3("        num=%f, denom=%f, check=%f\n",
+		      num, denom, check);
+	}
+#endif
+	/*
+	 * If we define T = num / denom, then we want to use
+	 * a miter join iff arctan(T) >= arctan(check).
+	 * We know that both of these angles are in the 1st
+	 * or 2nd quadrant, and since arctan is monotonic
+	 * within each quadrant, we can do the comparisons
+	 * on T and check directly, taking signs into account
+	 * as follows:
+	 *              sign(T) sign(check)     atan(T) >= atan(check)
+	 *              ------- -----------     ----------------------
+	 *              +       +               T >= check
+	 *              -       +               true
+	 *              +       -               false
+	 *              -       -               T >= check
+	 */
+	if (num == 0 && denom == 0)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	if (denom < 0)
+	    num = -num, denom = -denom;
+	/* Now denom >= 0, so sign(num) = sign(T). */
+	if (check > 0 ?
+	    (num < 0 || num >= denom * check) :
+	    (num < 0 && num >= denom * check)
+	    ) {
+	    /* OK to use a miter join. */
+	    gs_fixed_point mpt;
+
+	    if_debug0('O', "	... passes.\n");
+	    /* Compute the intersection of */
+	    /* the extended edge lines. */
+	    if (line_intersect(&plp->e.ce, &plp->e.cdelta, &nplp->o.co,
+			       &nplp->o.cdelta, &mpt) == 0) {
+                ASSIGN_POINT(&rjoin_points[0], mpt);
+                ASSIGN_POINT(&rjoin_points[1], nplp->o.co);
+                return 2;
+            }
+	}
+    }
+    return 1;
+}
+
+static int
+line_join_points_fast_ccw(const gx_line_params * pgs_lp,
+                          pl_ptr plp, pl_ptr nplp,
+                          gs_fixed_point * join_points,
+                          const gs_matrix * pmat,
+                          gs_line_join join)
+{
+    /* join_points will be added to a path that is currently at plp->e.co.
+     */
+    /* Join will be between plp->e.co and nplp->o.ce */
+    if (join == gs_join_triangle)
+    {
+        gs_fixed_point tp;
+
+        tp.x = plp->e.co.x - nplp->o.p.x + nplp->o.ce.x;
+        tp.y = plp->e.co.y - nplp->o.p.y + nplp->o.ce.y;
+        ASSIGN_POINT(&join_points[0], tp);
+        ASSIGN_POINT(&join_points[1], nplp->o.ce);
+        return 2;
+    }
+    
+    /* Set up for a Bevel join */
+    ASSIGN_POINT(&join_points[0], nplp->o.ce);
+
+    /*
+     * Don't bother with the miter check if the two
+     * points to be joined are very close together,
+     * namely, in the same square half-pixel.
+     */
+    if (join == gs_join_miter &&
+	!(fixed2long(plp->e.co.x << 1) == fixed2long(nplp->o.ce.x << 1) &&
+	  fixed2long(plp->e.co.y << 1) == fixed2long(nplp->o.ce.y << 1))
+	) {
+	/*
+	 * Check whether a miter join is appropriate.
+	 * Let a, b be the angles of the two lines.
+	 * We check tan(a-b) against the miter_check
+	 * by using the following formula:
+	 *      If tan(a)=u1/v1 and tan(b)=u2/v2, then
+	 *      tan(a-b) = (u1*v2 - u2*v1) / (u1*u2 + v1*v2).
+	 *
+	 * We can do all the computations unscaled,
+	 * because we're only concerned with ratios.
+	 * However, if we have a non-uniform coordinate
+	 * system (indicated by pmat != 0), we must do the
+	 * computations in user space.
+	 */
+	float check = pgs_lp->miter_check;
+	double u1 = plp->vector.y, v1 = plp->vector.x;
+	double u2 = -nplp->vector.y, v2 = -nplp->vector.x;
+	double num, denom;
+	int code;
+	bool ccw0;
+
+	if (pmat) {
+	    gs_point pt;
+
+	    code = gs_distance_transform_inverse(v1, u1, pmat, &pt);
+	    if (code < 0)
+		return code;
+	    v1 = pt.x, u1 = pt.y;
+	    code = gs_distance_transform_inverse(v2, u2, pmat, &pt);
+	    if (code < 0)
+		return code;
+	    v2 = pt.x, u2 = pt.y;
+	    /*
+	     * We need to recompute ccw according to the
+	     * relative positions of the lines in user space.
+	     * We repeat the computation described above,
+	     * using the cdelta values instead of the widths.
+	     * Because the definition of ccw above is inverted
+	     * from the intuitive one (for historical reasons),
+	     * we actually have to do the test backwards.
+	     */
+	    ccw0 = v1 * u2 < v2 * u1;
+#ifdef DEBUG
+	    {
+		double a1 = atan2(u1, v1), a2 = atan2(u2, v2), dif = a1 - a2;
+
+		if (dif < 0)
+		    dif += 2 * M_PI;
+		else if (dif >= 2 * M_PI)
+		    dif -= 2 * M_PI;
+		if (dif != 0 && (dif < M_PI) != ccw0)
+		    lprintf7("ccw wrong: tan(a1=%g)=%g/%g, tan(a2=%g)=%g,%g, dif=%g, ccw=1\n",
+			     a1, u1, v1, a2, u2, v2, dif);
+	    }
+#endif
+	}
+	num = u1 * v2 - u2 * v1;
+	denom = u1 * u2 + v1 * v2;
+	/*
+	 * We will want either tan(a-b) or tan(b-a)
+	 * depending on the orientations of the lines.
+	 * Fortunately we know the relative orientations already.
+	 */
+	if (!ccw0)		/* have plp - nplp, want vice versa */
+	    num = -num;
+#ifdef DEBUG
+	if (gs_debug_c('O')) {
+	    dlprintf4("[o]Miter check: u1/v1=%f/%f, u2/v2=%f/%f,\n",
+		      u1, v1, u2, v2);
+	    dlprintf3("        num=%f, denom=%f, check=%f\n",
+		      num, denom, check);
+	}
+#endif
+	/*
+	 * If we define T = num / denom, then we want to use
+	 * a miter join iff arctan(T) >= arctan(check).
+	 * We know that both of these angles are in the 1st
+	 * or 2nd quadrant, and since arctan is monotonic
+	 * within each quadrant, we can do the comparisons
+	 * on T and check directly, taking signs into account
+	 * as follows:
+	 *              sign(T) sign(check)     atan(T) >= atan(check)
+	 *              ------- -----------     ----------------------
+	 *              +       +               T >= check
+	 *              -       +               true
+	 *              +       -               false
+	 *              -       -               T >= check
+	 */
+	if (num == 0 && denom == 0)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	if (denom < 0)
+	    num = -num, denom = -denom;
+	/* Now denom >= 0, so sign(num) = sign(T). */
+	if (check > 0 ?
+	    (num < 0 || num >= denom * check) :
+	    (num < 0 && num >= denom * check)
+	    ) {
+	    /* OK to use a miter join. */
+	    gs_fixed_point mpt;
+
+	    if_debug0('O', "	... passes.\n");
+	    /* Compute the intersection of */
+	    /* the extended edge lines. */
+	    if (line_intersect(&plp->e.co, &plp->e.cdelta, &nplp->o.ce,
+			       &nplp->o.cdelta, &mpt) == 0 ) {
+                ASSIGN_POINT(&join_points[0], mpt);
+                ASSIGN_POINT(&join_points[1], nplp->o.ce);
+                return 2;
+            }
+	}
+    }
+    return 1;
+}
 /* ---------------- Cap computations ---------------- */
 
 /* Compute the endpoints of the two caps of a segment. */
@@ -1773,17 +2323,12 @@ add_pie_cap(gx_path * ppath, const_ep_ptr endp)
 {
     int code;
 
-    /* RJW: The final call to gx_path_add_line may not be required, but
-     * I've left in in to cover us if gx_path_add_partial_arc doesn't quite
-     * connect. Check if this is required. */
     if ((code = gx_path_add_partial_arc(ppath, px + cdx, py + cdy,
                                         xo + cdx, yo + cdy,
                                         quarter_arc_fraction)) < 0 ||
         (code = gx_path_add_partial_arc(ppath, xe, ye, xe + cdx, ye + cdy,
                                         quarter_arc_fraction)) < 0 ||
-        /* The final point must be (xe,ye). */
-        (code = gx_path_add_line(ppath, xe, ye)) < 0
-        )
+        (code = gx_path_add_line(ppath, xe, ye)) < 0)
         return code;
     vd_lineto(xe, ye);
     return 0;
@@ -1880,6 +2425,106 @@ add_pie_join(gx_path * ppath, pl_ptr plp, pl_ptr nplp, bool reflected)
 
     vd_lineto(plp->e.ce.x, plp->e.ce.y);
     return 0;
+}
+
+/* Add a pie shaped join to a path. */
+static int
+add_pie_join_fast_cw(gx_path * rpath, pl_ptr plp, pl_ptr nplp)
+{
+    int code;
+    double rad_squared, dist_squared, F;
+    gs_fixed_point current, tangent, tangmeet;
+
+    /* At this point, the current point is plp->e.ce */
+    current.x =  plp->e.ce.x;
+    current.y =  plp->e.ce.y;
+    if (current.x == nplp->o.co.x && current.y == nplp->o.co.y)
+        return 0;
+    tangent.x =  plp->e.cdelta.x;
+    tangent.y =  plp->e.cdelta.y;
+
+    /* Is the join more than 90 degrees? */
+    if ((double)plp->e.cdelta.x * (double)nplp->e.cdelta.x +
+        (double)plp->e.cdelta.y * (double)nplp->e.cdelta.y < 0) {
+        /* Yes, so do a quarter turn. */
+        code = gx_path_add_partial_arc(rpath,
+                                       plp->e.p.x + plp->e.cdelta.x,
+                                       plp->e.p.y + plp->e.cdelta.y,
+                                       /* Point where tangents meet */
+                                       current.x + plp->e.cdelta.x,
+                                       current.y + plp->e.cdelta.y,
+                                       quarter_arc_fraction);
+        if (code < 0)
+            return code;
+        current.x = plp->e.p.x + plp->e.cdelta.x;
+        current.y = plp->e.p.y + plp->e.cdelta.y;
+        tangent.x = plp->e.cdelta.y;
+        tangent.y = -plp->e.cdelta.x;
+    }
+    
+    /* Now we are guaranteed that the remaining arc is 90 degrees or
+     * less. Find where the tangents meet for this final section. */
+    DISCARD(line_intersect(&current, &tangent,
+                           &nplp->o.co, &nplp->o.cdelta, &tangmeet));
+    current.x -= tangmeet.x;
+    current.y -= tangmeet.y;
+    dist_squared  = ((double)current.x)*current.x+
+                    ((double)current.y)*current.y;
+    rad_squared = plp->width.x * plp->width.x + plp->width.y * plp->width.y;
+    dist_squared /= rad_squared;
+    F = (4.0/3.0)*(1/(1+sqrt(1+dist_squared)));
+    return gx_path_add_partial_arc(rpath, nplp->o.co.x, nplp->o.co.y,
+                                   tangmeet.x, tangmeet.y, F);
+}
+
+static int
+add_pie_join_fast_ccw(gx_path * ppath, pl_ptr plp, pl_ptr nplp)
+{
+    int code;
+    double rad_squared, dist_squared, F;
+    gs_fixed_point current, tangent, tangmeet;
+
+    /* At this point, the current point is plp->e.co */
+    current.x =  plp->e.co.x;
+    current.y =  plp->e.co.y;
+    /* Check for no join required */
+    if (current.x == nplp->o.ce.x && current.y == nplp->o.ce.y)
+        return 0;
+    tangent.x =  plp->e.cdelta.x;
+    tangent.y =  plp->e.cdelta.y;
+
+    /* Is the join more than 90 degrees? */
+    if ((double)plp->e.cdelta.x * (double)nplp->e.cdelta.x +
+        (double)plp->e.cdelta.y * (double)nplp->e.cdelta.y < 0) {
+        /* Yes, so do a quarter turn. */
+        code = gx_path_add_partial_arc(ppath,
+                                       plp->e.p.x + plp->e.cdelta.x,
+                                       plp->e.p.y + plp->e.cdelta.y,
+                                       /* Point where tangents meet */
+                                       current.x + plp->e.cdelta.x,
+                                       current.y + plp->e.cdelta.y,
+                                       quarter_arc_fraction);
+        if (code < 0)
+            return code;
+        current.x = plp->e.p.x + plp->e.cdelta.x;
+        current.y = plp->e.p.y + plp->e.cdelta.y;
+        tangent.x = plp->e.cdelta.y;
+        tangent.y = -plp->e.cdelta.x;
+    }
+    
+    /* Now we are guaranteed that the remaining arc is 90 degrees or
+     * less. Find where the tangents meet for this final section. */
+    DISCARD(line_intersect(&current, &tangent,
+                           &nplp->o.ce, &nplp->o.cdelta, &tangmeet));
+    current.x -= tangmeet.x;
+    current.y -= tangmeet.y;
+    dist_squared  = ((double)current.x)*current.x+
+                    ((double)current.y)*current.y;
+    rad_squared = plp->width.x * plp->width.x + plp->width.y * plp->width.y;
+    dist_squared /= rad_squared;
+    F = (4.0/3.0)*(1/(1+sqrt(1+dist_squared)));
+    return gx_path_add_partial_arc(ppath, nplp->o.ce.x, nplp->o.ce.y,
+                                   tangmeet.x, tangmeet.y, F);
 }
 
 /* Compute the points for a non-round cap. */
