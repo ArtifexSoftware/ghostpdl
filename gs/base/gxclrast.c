@@ -2476,6 +2476,7 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
            up profile in clist */
 
         memcpy(&hash_code, cbp, sizeof(hash_code));
+        cbp = cbp+sizeof(hash_code);
 
         /* build the color space object */
         code = gs_cspace_build_ICC(&pcs, NULL, mem);
