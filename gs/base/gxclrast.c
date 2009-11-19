@@ -2484,7 +2484,12 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
         /* Get the profile information from the clist */
         picc_profile = gsicc_read_serial_icc(cdev, hash_code);
 
-        /* We probably need to read the buffer too */
+        /* Store the clist reader address in the profile
+           structure so that we can get to the buffer
+           data if we really neeed it.  Ideally, we
+           will use a cached link and only acess this once. */
+
+        picc_profile->dev = (gx_device*) cdev;
 
         /* Assign it to the colorspace */
         code = gsicc_set_gscs_profile(pcs, picc_profile, mem);

@@ -47,6 +47,7 @@ static int gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, gs_memor
 static stream* gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc, gsicc_manager_t *icc_manager);
 static int gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev, gs_memory_t * mem);
 static cmm_profile_t* gsicc_get_profile( gsicc_profile_t profile_type, gsicc_manager_t *icc_manager );
+static int64_t gsicc_search_icc_table(clist_icctable_t *icc_table, int64_t icc_hashcode, int *size);
 
 
 /* profile data structure */
@@ -59,8 +60,8 @@ gs_private_st_ptrs2(st_gsicc_colorname, gsicc_colorname_t, "gsicc_colorname",
 gs_private_st_ptrs1(st_gsicc_namelist, gsicc_namelist_t, "gsicc_namelist",
 		    gsicc_namelist_enum_ptrs, gsicc_namelist_reloc_ptrs, head);
 
-gs_private_st_ptrs3(st_gsicc_profile, cmm_profile_t, "gsicc_profile",
-		    gsicc_profile_enum_ptrs, gsicc_profile_reloc_ptrs, buffer, name, spotnames);
+gs_private_st_ptrs4(st_gsicc_profile, cmm_profile_t, "gsicc_profile",
+		    gsicc_profile_enum_ptrs, gsicc_profile_reloc_ptrs, buffer, dev, name, spotnames);
 
 gs_private_st_ptrs10(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
 		    gsicc_manager_enum_ptrs, gsicc_manager_profile_reloc_ptrs,
@@ -888,6 +889,7 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname, int namelen
     result->islab = false;
     result->default_match = DEFAULT_NONE;
     result->spotnames = NULL;
+    result->dev = NULL;
 
     return(result);
 
@@ -1161,6 +1163,54 @@ gsicc_init_hash_cs(cmm_profile_t *picc_profile, gs_imager_state *pis){
     }
 
     gsicc_set_default_cs_value(picc_profile, pis);
+
+}
+
+/* Interface code to get the profile handle for data
+   stored in the clist device */
+
+gcmmhprofile_t
+gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile, gs_memory_t *memory){
+
+    gcmmhprofile_t profile_handle = NULL;
+    unsigned int profile_size;
+    int size;
+    gx_device_clist_reader *pcrdev = (gx_device_clist_reader*) picc_profile->dev;
+    unsigned char *buffer_ptr;
+    int64_t position;
+
+     if( pcrdev != NULL){
+
+        /* Check ICC table for hash code and get the whole size icc raw buffer
+           plus serialized header information */ 
+
+        position = gsicc_search_icc_table(pcrdev->icc_table, picc_profile->hashcode, &size);
+        if ( position < 0 ) return(0);  /* Not found. */
+    
+        /* Get the ICC buffer.  We really want to avoid this transfer.  I need to write 
+           an interface to the CMM to do this through the clist ioprocs */
+
+        /* Allocate the buffer */
+
+        profile_size = size - sizeof(gsicc_serialized_profile_t);
+
+        buffer_ptr = gs_alloc_bytes(memory, profile_size,
+					    "gsicc_get_profile_handle_clist");
+
+        if (buffer_ptr == NULL){
+            return(0);
+        }
+
+        picc_profile->buffer = buffer_ptr;
+
+        clist_read_chunk(pcrdev, position+sizeof(gsicc_serialized_profile_t), profile_size, (unsigned char *) buffer_ptr);
+
+        profile_handle = gscms_get_profile_handle_mem(buffer_ptr, profile_size);
+        return(profile_handle);
+
+     }
+
+     return(0);
 
 }
 

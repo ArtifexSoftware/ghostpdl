@@ -22,6 +22,7 @@
 #include "stdpre.h"
 #include "gstypes.h"
 #include "gsutil.h"       /* Need for the object types */
+#include "gsdevice.h"     /* Need to carry pointer to clist reader */
 #include "stdint_.h"
 
 
@@ -175,6 +176,9 @@ struct cmm_profile_s {
 
     gsicc_serial_data;
     byte *buffer;               /* A buffer with ICC profile content */
+    gx_device *dev;             /* A pointer to the clist device in 
+                                   which the ICC data may be contained */
+                                   
 
     gsicc_namelist_t *spotnames;  /* Only used with NCLR ICC input profiles with named color tag */
     void *profile_handle;       /* The profile handle */

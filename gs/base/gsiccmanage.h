@@ -48,6 +48,8 @@ cmm_profile_t* gsicc_get_gscs_profile(const gs_color_space *gs_colorspace, gsicc
 
 void gsicc_init_hash_cs(cmm_profile_t *picc_profile, gs_imager_state *pis);
 
+gcmmhprofile_t gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile, gs_memory_t *memory);
+
 gcmmhprofile_t gsicc_get_profile_handle_buffer(unsigned char *buffer);
 
 void gsicc_set_icc_directory(const gs_imager_state *pis, const char* pname, int namelen);

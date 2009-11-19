@@ -1112,7 +1112,7 @@ clist_icc_addprofile(gx_device_clist_writer *cldev, cmm_profile_t *iccprofile, i
 
     if_debug1('l', "[l]writing icc profile in cfile at pos %ld\n",fileposit);
 
-    count1 = cldev->page_info.io_procs->fwrite_chars(&profile_data, sizeof(cmm_profile_t), cfile);
+    count1 = cldev->page_info.io_procs->fwrite_chars(&profile_data, sizeof(gsicc_serialized_profile_t), cfile);
 
     /* Now write the profile */
 

@@ -2469,7 +2469,8 @@ $(GLOBJ)gsicc.$(OBJ) : $(GLSRC)gsicc.c $(GXERR) $(math__h) $(memory__h)\
  $(gzstate_h) $(gsicc_h) $(gsicccache_h) $(gsicc_littlecms_h)
 	$(GLCC) $(GLO_)gsicc.$(OBJ) $(C_) $(GLSRC)gsicc.c
 
-gscms_h=$(std_h) $(stdpre_h) $(gstypes_h) $(gsutil_h) $(stdint_h)
+gscms_h=$(std_h) $(stdpre_h) $(gstypes_h) $(gsutil_h)\
+ $(gsdevice_h) $(stdint_h)
 gsicc_littlecms_h=$(GLSRC)gsicc_littlecms.h $(gxcvalue_h) $(gscms_h)\
  $(std_h) $(gsmemory_h)
 gsiccmanage_h=$(GLSRC)gsiccmanage.h $(gsicc_littlecms_h) $(gxclist_h)
