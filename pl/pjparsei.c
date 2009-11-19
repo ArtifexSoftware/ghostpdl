@@ -388,6 +388,7 @@ pjl_implementation_t pjl_implementation = {
     pjl_impl_set_post_page_action,
     pjl_impl_set_device,
     pjl_impl_init_job,
+    NULL, /* process_file */
     pjl_impl_process,
     pjl_impl_flush_to_eoj,
     pjl_impl_process_eof,

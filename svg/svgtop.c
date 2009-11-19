@@ -227,6 +227,55 @@ svg_imp_get_device_memory(pl_interp_instance_t *pinstance, gs_memory_t **ppmem)
     return 0;
 }
 
+static int
+svg_imp_process_file(pl_interp_instance_t *pinstance, char *filename)
+{
+    svg_interp_instance_t *instance = (svg_interp_instance_t *)pinstance;
+    svg_context_t *ctx = instance->ctx;
+    svg_item_t *root;
+    FILE *file;
+    int code;
+    char buf[4096];
+    int n;
+
+    dprintf1("svg_imp_process_file %s\n", filename);
+
+    file = fopen(filename, "rb");
+    if (!file)
+	return gs_error_ioerror;
+
+    while (!feof(file))
+    {
+	n = fread(buf, 1, sizeof buf, file);
+	if (n == 0)
+	    if (ferror(file))
+		return gs_error_ioerror;
+	code = svg_feed_xml_parser(ctx, buf, n);
+	if (code < 0)
+	{
+	    gs_catch(code, "cannot parse SVG document");
+	    fclose(file);
+	    return code;
+	}
+    }
+
+    root = svg_close_xml_parser(ctx);
+    if (!root)
+    {
+	gs_catch(-1, "cannot parse xml document");
+	fclose(file);
+	return -1;
+    }
+
+    code = svg_parse_document(ctx, root);
+    if (code < 0)
+	gs_catch(code, "cannot parse SVG document");
+
+    svg_free_item(ctx, root);
+    fclose(file);
+    return code;
+}
+
 /* Parse a cursor-full of data */
 static int
 svg_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *buf)
@@ -236,6 +285,8 @@ svg_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *buf)
     int code;
 
     code = svg_feed_xml_parser(ctx, (const char*)buf->ptr + 1, buf->limit - buf->ptr);
+    if (code < 0)
+	gs_catch(code, "cannot parse SVG document");
 
     buf->ptr = buf->limit;
 
@@ -251,6 +302,30 @@ svg_imp_flush_to_eoj(pl_interp_instance_t *pinstance, stream_cursor_read *pcurso
     /* assume SVG cannot be pjl embedded */
     pcursor->ptr = pcursor->limit;
     return 0;
+}
+
+/* Parser action for end-of-file */
+static int
+svg_imp_process_eof(pl_interp_instance_t *pinstance)
+{
+    svg_interp_instance_t *instance = (svg_interp_instance_t *)pinstance;
+    svg_context_t *ctx = instance->ctx;
+    svg_item_t *root;
+    int code;
+
+    dputs("-- svg_imp_process_eof --\n");
+
+    root = svg_close_xml_parser(ctx);
+    if (!root)
+	return gs_rethrow(-1, "cannot parse xml document");
+
+    code = svg_parse_document(ctx, root);
+    if (code < 0)
+	gs_catch(code, "cannot parse SVG document");
+
+    svg_free_item(ctx, root);
+
+    return code;
 }
 
 /* Report any errors after running a job */
@@ -274,28 +349,6 @@ svg_imp_init_job(pl_interp_instance_t *pinstance)
     dputs("-- svg_imp_init_job --\n");
 
     return svg_open_xml_parser(ctx);
-}
-
-/* Parser action for end-of-file */
-static int
-svg_imp_process_eof(pl_interp_instance_t *pinstance)
-{
-    svg_interp_instance_t *instance = (svg_interp_instance_t *)pinstance;
-    svg_context_t *ctx = instance->ctx;
-    svg_item_t *root;
-    int code;
-
-    dputs("-- svg_imp_process_eof --\n");
-
-    root = svg_close_xml_parser(ctx);
-    if (!root)
-	return gs_rethrow(-1, "cannot parse xml document");
-
-    code = svg_parse_document(ctx, root);
-
-    svg_free_item(ctx, root);
-
-    return code;
 }
 
 /* Wrap up interp instance after a "job" */
@@ -369,6 +422,7 @@ const pl_interp_implementation_t svg_implementation =
     svg_imp_set_post_page_action,
     svg_imp_set_device,
     svg_imp_init_job,
+    svg_imp_process_file,
     svg_imp_process,
     svg_imp_flush_to_eoj,
     svg_imp_process_eof,

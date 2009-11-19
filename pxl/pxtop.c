@@ -642,6 +642,7 @@ const pl_interp_implementation_t pxl_implementation = {
   pxl_impl_set_post_page_action,
   pxl_impl_set_device,
   pxl_impl_init_job,
+  NULL, /* process_file */
   pxl_impl_process,
   pxl_impl_flush_to_eoj,
   pxl_impl_process_eof,

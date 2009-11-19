@@ -634,6 +634,7 @@ const pl_interp_implementation_t pcl_implementation = {
   pcl_impl_set_post_page_action,
   pcl_impl_set_device,
   pcl_impl_init_job,
+  NULL, /* process_file */
   pcl_impl_process,
   pcl_impl_flush_to_eoj,
   pcl_impl_process_eof,

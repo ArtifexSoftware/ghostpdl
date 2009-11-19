@@ -396,6 +396,25 @@ pl_main(
 		new_job = false;
 	    }
 	    if ( curr_instance ) {
+
+		/* Special case when the job resides in a seekable file and
+		   the implementation has a function to process a file at a
+		   time. */
+		if (curr_instance->interp->implementation->proc_process_file &&
+		    r.strm != mem->gs_lib_ctx->fstdin) {
+		    if_debug1('|', "processing job from file (%s)\n", filename);
+		    code = pl_process_file(curr_instance, filename);
+		    if (code < 0) {
+			dprintf1("Warning interpreter exited with error code %d\n", code);
+			if (close_job(&universe, &inst) < 0) {
+			    dprintf("Unable to deinit PJL.\n");
+			    return -1;
+			}
+		    }
+		    if_debug0('|', "exiting job and proceeding to next file\n");
+		    break; /* break out of the loop to process the next file */
+		}
+
 	        code = pl_process(curr_instance, &r.cursor);
 		if_debug1('|', "processing (%s) job\n", 
 			  pl_characteristics(curr_instance->interp->implementation)->language);

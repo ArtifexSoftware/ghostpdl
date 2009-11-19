@@ -28,7 +28,7 @@ int xps_doc_trace = 0;
 
 static int xps_install_halftone(xps_context_t *ctx, gx_device *pdevice);
 
-#define XPS_PARSER_MIN_INPUT_SIZE 8192
+#define XPS_PARSER_MIN_INPUT_SIZE (8192 * 4)
 
 /*
  * The XPS interpeter is identical to pl_interp_t.
@@ -47,9 +47,6 @@ struct xps_interp_instance_s
     void *post_page_closure;		/* closure to call post_page_action with */
 
     xps_context_t *ctx;
-
-    FILE *tempfile;
-    char tempname[gp_file_name_sizeof];
 };
 
 /* version and build date are not currently used */
@@ -135,25 +132,6 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     xps_init_font_cache(ctx);
 
     *ppinstance = (pl_interp_instance_t *)instance;
-
-    strcpy(instance->tempname, "");
-    instance->tempfile = NULL;
-
-    if (getenv("XPS_ZIP_SEEK"))
-    {
-	instance->tempfile = gp_open_scratch_file(gp_scratch_file_name_prefix,
-		instance->tempname, "wb+");
-	if (!instance->tempfile)
-	    gs_warn("cannot open temporary buffer file; switching to streaming mode");
-    }
-
-    if (xps_zip_trace)
-    {
-	if (instance->tempfile)
-	    dprintf1("zip: seek mode on temp file '%s'\n", instance->tempname);
-	else
-	    dputs("zip: feed mode on data stream\n");
-    }
 
     return 0;
 }
@@ -244,15 +222,22 @@ xps_imp_get_device_memory(pl_interp_instance_t *pinstance, gs_memory_t **ppmem)
 
 /* Parse an entire random access file */
 static int
-xps_imp_process_file(pl_interp_instance_t *pinstance, FILE *file)
+xps_imp_process_file(pl_interp_instance_t *pinstance, char *filename)
 {
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     xps_context_t *ctx = instance->ctx;
+    FILE *file;
     int code;
+
+    file = fopen(filename, "rb");
+    if (!file)
+	return gs_error_ioerror;
 
     code = xps_process_file(ctx, file);
     if (code)
-	gs_catch(code, "cannot process xps file");
+	gs_catch1(code, "cannot process xps file (%s)", filename);
+
+    fclose(file);
 
     return code;
 }
@@ -264,13 +249,6 @@ xps_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *pcursor)
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     xps_context_t *ctx = instance->ctx;
     int code;
-
-    if (instance->tempfile)
-    {
-	fwrite(pcursor->ptr + 1, pcursor->limit - pcursor->ptr, 1, instance->tempfile);
-	pcursor->ptr = pcursor->limit;
-	return 0;
-    }
 
     code = xps_process_data(ctx, pcursor);
     if (code < 0)
@@ -298,18 +276,9 @@ xps_imp_process_eof(pl_interp_instance_t *pinstance)
     xps_context_t *ctx = instance->ctx;
     int code;
 
-    if (instance->tempfile)
-    {
-	xps_imp_process_file(pinstance, instance->tempfile);
-	fclose(instance->tempfile);
-	unlink(instance->tempname);
-    }
-    else
-    {
-	code = xps_process_end_of_data(ctx);
-	if (code)
-	    gs_catch(code, "cannot process xps file");
-    }
+    code = xps_process_end_of_data(ctx);
+    if (code)
+	gs_catch(code, "cannot process xps file");
 
     return 0;
 }
@@ -447,6 +416,7 @@ const pl_interp_implementation_t xps_implementation =
     xps_imp_set_post_page_action,
     xps_imp_set_device,
     xps_imp_init_job,
+    xps_imp_process_file,
     xps_imp_process,
     xps_imp_flush_to_eoj,
     xps_imp_process_eof,

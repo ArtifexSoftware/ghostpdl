@@ -606,6 +606,7 @@ const pl_interp_implementation_t ps_implementation = {
   ps_impl_set_post_page_action,
   ps_impl_set_device,
   ps_impl_init_job,
+  NULL, /* process_file */
   ps_impl_process,
   ps_impl_flush_to_eoj,
   ps_impl_process_eof,

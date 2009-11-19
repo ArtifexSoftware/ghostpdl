@@ -132,6 +132,20 @@ pl_init_job(
 	return instance->interp->implementation->proc_init_job(instance);
 }
 
+/* Parse a random access seekable file.
+   This function is mutually exclusive with pl_process and pl_flush_to_eoj,
+   and is only called if the file is seekable and the function pointer is
+   not NULL.
+ */
+int
+pl_process_file(
+	pl_interp_instance_t *instance,
+	char *filename
+)
+{
+    return instance->interp->implementation->proc_process_file(instance, filename);
+}
+
 /* Parse a cursor-full of data */
 int	/* The parser reads data from the input
      * buffer and returns either:

@@ -134,6 +134,14 @@ typedef int (*pl_interp_proc_set_device_t)(pl_interp_instance_t *, gx_device *);
 int pl_init_job(pl_interp_instance_t *);
 typedef int (*pl_interp_proc_init_job_t)(pl_interp_instance_t *);
 
+/* The process_file function is an optional optimized path
+   for languages that want to use a random access file. If this
+   function is called for a job, pl_process, pl_flush_to_eoj and
+   pl_process_eof are not called.
+ */
+int pl_process_file(pl_interp_instance_t *, char *);
+typedef int (*pl_interp_proc_process_file_t)(pl_interp_instance_t *, char *);
+
 int pl_process(pl_interp_instance_t *, stream_cursor_read *);
 typedef int (*pl_interp_proc_process_t)(pl_interp_instance_t *, stream_cursor_read *);
 
@@ -176,6 +184,7 @@ struct pl_interp_implementation_s {
   pl_interp_proc_set_post_page_action_t       proc_set_post_page_action;
   pl_interp_proc_set_device_t                 proc_set_device;
   pl_interp_proc_init_job_t                   proc_init_job;
+  pl_interp_proc_process_file_t               proc_process_file;
   pl_interp_proc_process_t                    proc_process;
   pl_interp_proc_flush_to_eoj_t               proc_flush_to_eoj;
   pl_interp_proc_process_eof_t                proc_process_eof;
