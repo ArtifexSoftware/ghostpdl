@@ -34,7 +34,7 @@
 
 void  gsicc_profile_serialize(gsicc_serialized_profile_t *profile_data, cmm_profile_t *iccprofile);
 
-int gsicc_init_device_profile(gs_state * pgs, gx_device * dev);
+int gsicc_init_device_profile(const gs_imager_state * pis, gx_device * dev);
 
 int gsicc_set_profile(const gs_imager_state * pis, const char *pname, int namelen, gsicc_profile_t defaulttype);
 
@@ -44,7 +44,7 @@ cmm_profile_t* gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pna
 
 int gsicc_set_gscs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile, gs_memory_t * mem);
 
-cmm_profile_t* gsicc_get_gscs_profile(gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager);
+cmm_profile_t* gsicc_get_gscs_profile(const gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager);
 
 void gsicc_init_hash_cs(cmm_profile_t *picc_profile, gs_imager_state *pis);
 
@@ -57,6 +57,10 @@ unsigned int gsicc_getprofilesize(unsigned char *buffer);
 cmm_profile_t* gsicc_read_serial_icc(gx_device_clist_reader *pcrdev, int64_t icc_hashcode);
 
 cmm_profile_t* gsicc_finddevicen(const gs_color_space *pcs, gsicc_manager_t *icc_manager);
+
+int gsicc_profile_clist_read(cmm_profile_t *icc_profile, const gs_imager_state * pis,
+    uint offset, const byte *data, uint size, gs_memory_t *mem);
+
 
 #if ICC_DUMP
 static void dump_icc_buffer(int buffersize, char filename[],byte *Buffer);

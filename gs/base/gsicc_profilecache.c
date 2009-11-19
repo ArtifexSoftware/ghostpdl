@@ -150,7 +150,6 @@ gsicc_findprofile(int64_t hash, gsicc_profile_list_t *profile_list)
 {
 
     gsicc_profile_entry_t *curr_pos1,*curr_pos2;
-    bool foundit = 0;
 
     /* Look through the cache for the hashcode */
 
@@ -195,7 +194,6 @@ static gsicc_profile_entry_t*
 gsicc_find_zeroref_list(gsicc_profile_list_t *profile_list){
 
     gsicc_profile_entry_t *curr_pos1,*curr_pos2;
-    bool foundit = 0;
 
     curr_pos1 = profile_list->icc_profile_entry;
     curr_pos2 = curr_pos1;

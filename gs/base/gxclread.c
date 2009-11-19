@@ -366,7 +366,6 @@ clist_find_pseudoband(gx_device_clist_reader *crdev, int band, cmd_block *cb)
 
     clist_file_ptr bfile = crdev->page_info.bfile;
     int64_t save_pos = crdev->page_info.bfile_end_pos;
-    int max_band = crdev->nbands;
     int64_t start_pos;
 
     /* Go to the start of the last command block */

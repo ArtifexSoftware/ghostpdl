@@ -881,7 +881,7 @@ clist_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 int
 clist_create_compositor(gx_device * dev,
 			gx_device ** pcdev, const gs_composite_t * pcte,
-			gs_imager_state * pis, gs_memory_t * mem)
+			gs_imager_state * pis, gs_memory_t * mem, gx_device *cldev)
 {
     byte * dp;
     uint size = 0, size_dummy;

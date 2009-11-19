@@ -178,7 +178,7 @@ gsicc_finddevicen(const gs_color_space *pcs, gsicc_manager_t *icc_manager)
     int num_comps;
     const gs_separation_name *names = pcs->params.device_n.names;
     unsigned char *pname;
-    int name_size;
+    unsigned int name_size;
     gsicc_devicen_t *devicen_profiles = icc_manager->device_n;
     gsicc_colorname_t *icc_spot_entry;
     int match_count = 0;
@@ -216,7 +216,7 @@ gsicc_finddevicen(const gs_color_space *pcs, gsicc_manager_t *icc_manager)
 
                 for ( i = 0; i < num_comps; i++){
 
-                    if( strncmp(pname, icc_spot_entry->name, name_size) == 0 ) {
+                    if( strncmp((const char *) pname, icc_spot_entry->name, name_size) == 0 ) {
 
                         /* Found a match */
 
@@ -417,7 +417,7 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
 
     gsicc_manager_t *icc_manager = pis->icc_manager;
     cmm_profile_t *icc_profile;
-    cmm_profile_t **manager_default_profile;
+    cmm_profile_t **manager_default_profile = NULL; /* quite compiler */
     stream *str;
     gs_memory_t *mem_gc = pis->memory; 
     int code;
@@ -489,6 +489,11 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
 
             break;
 
+        case DEFAULT_NONE:
+
+            return(0);
+
+            break;
 
     }
 
@@ -614,7 +619,7 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc, gsicc_man
            even if they defined the directory to use. This will occur only after
            searching the defined directory.  A warning is noted.  */
 
-        buffer = gs_alloc_bytes(mem_gc, namelen + icc_manager->namelen,
+        buffer = (char *) gs_alloc_bytes(mem_gc, namelen + icc_manager->namelen,
 		   		     "gsicc_open_search");
 
         strcpy(buffer, icc_manager->profiledir);
@@ -639,7 +644,7 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc, gsicc_man
 
     /* If that fails, try %rom% */
 
-    buffer = gs_alloc_bytes(mem_gc, namelen + 5,
+    buffer = (char *) gs_alloc_bytes(mem_gc, namelen + 5,
    		         "gsicc_open_search");
 
     strcpy(buffer, "%rom%");
@@ -665,10 +670,9 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc, gsicc_man
    is selected. */
 
 int
-gsicc_init_device_profile(gs_state * pgs, gx_device * dev)
+gsicc_init_device_profile(const gs_imager_state * pis, gx_device * dev)
 {
 
-    const gs_imager_state * pis = (gs_imager_state*) pgs;
     int code;
 
     /* See if the device has a profile */
@@ -837,7 +841,7 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname, int namelen
     int code;
     char *nameptr;
 
-    result = gs_alloc_struct(memory, cmm_profile_t, &st_gsicc_profile,
+    result = (cmm_profile_t*) gs_alloc_struct(memory, cmm_profile_t, &st_gsicc_profile,
 			     "gsicc_profile_new");
 
     if (result == NULL) return result; 
@@ -1120,6 +1124,23 @@ gsicc_set_default_cs_value(cmm_profile_t *picc_profile, gs_imager_state *pis){
 
                 break;
 
+            case gsCIELAB:
+                if ( picc_profile->hashcode == pis->icc_manager->lab_profile->hashcode )
+                    picc_profile->default_match = LAB_TYPE;
+
+                break;
+
+            case gsCIEXYZ:
+                return;
+
+                break;
+
+            case gsNCHANNEL:
+                return;
+
+                break;
+
+
         }
 
     }
@@ -1167,7 +1188,7 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer){
      the ICC manager that is based upon the current color space. */
 
  cmm_profile_t*
- gsicc_get_gscs_profile(gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager)
+ gsicc_get_gscs_profile(const gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager)
  {
 
      cmm_profile_t *profile = gs_colorspace->cmm_icc_profile_data;
@@ -1315,6 +1336,10 @@ gsicc_get_profile( gsicc_profile_t profile_type, gsicc_manager_t *icc_manager ) 
 
             /* TO DO */
             return(NULL);
+
+        case DEFAULT_NONE:
+
+            return(NULL);
     }
 
     return(NULL);
@@ -1422,8 +1447,9 @@ gsicc_profile_clist_read(
 {
     const byte *dp = data;
     int left = size;
-    int profile_size, k;
+    int k;
     gsicc_serialized_profile_t profile_data;
+    int profile_size = 0;
 
     if (size == sizeof(icc_profile->default_match) && offset == 0 ) {
 

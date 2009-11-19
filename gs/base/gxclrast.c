@@ -52,6 +52,7 @@
 #include "gxshade.h"
 #include "gxshade4.h"
 #include "gsiccmanage.h"
+#include "gsicc.h"
 
 extern_gx_device_halftone_list();
 extern_gx_image_type_table();
@@ -532,7 +533,7 @@ clist_playback_band(clist_playback_action playback_action,
     gx_device_clip clipper_dev;
     bool clipper_dev_open;
     patch_fill_state_t pfs;
-    int op;
+    int op = 0;
 
 #ifdef DEBUG
     stream_state *st = s->state; /* Save because s_close resets s->state. */

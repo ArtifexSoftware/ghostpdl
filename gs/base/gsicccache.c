@@ -363,7 +363,6 @@ gsicc_findcachelink(gsicc_hashlink_t hash,gsicc_link_cache_t *icc_cache, bool in
 {
 
     gsicc_link_t *curr_pos1,*curr_pos2;
-    bool foundit = 0;
     int64_t hashcode = hash.link_hashcode;
 
     /* Look through the cache for the hashcode */
@@ -409,7 +408,6 @@ static gsicc_link_t*
 gsicc_find_zeroref_cache(gsicc_link_cache_t *icc_cache){
 
     gsicc_link_t *curr_pos1,*curr_pos2;
-    bool foundit = 0;
 
     /* Look through the cache for zero ref count */
 
