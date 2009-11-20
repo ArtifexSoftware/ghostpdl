@@ -207,24 +207,14 @@ pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
     cos_array_t * prngca = 0;
     bool std_ranges = true;
     bool scale_inputs = false;
-    int i;
 
-    /* Check the ranges. */
-    if (pprange)
-	*pprange = 0;
-    for (i = 0; i < ncomps; ++i) {
-	double rmin = prange[i].rmin, rmax = prange[i].rmax;
-
-	if (rmin < 0.0 || rmax > 1.0) {
-	    /* We'll have to scale the inputs.  :-( */
-	    if (pprange == 0)
-		return_error(gs_error_rangecheck); /* scaling not allowed */
-	    *pprange = prange;
-	    scale_inputs = true;
-	}
-	else if (rmin > 0.0 || rmax < 1.0)
-	    std_ranges = false;
-    }
+    /* Range values are a bit tricky to check.
+       For example, CIELAB ICC profiles have
+       a unique range.  I am not convinced
+       that a check is needed in the new
+       color architecture as I am carefull
+       to get them properly set during
+       creation of the ICC profile data. */
 
     /* ICCBased color spaces are essentially copied to the output. */
     if ((code = cos_array_add(pca, cos_c_string_value(&v, "/ICCBased"))) < 0)
@@ -241,26 +231,29 @@ pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
     if (code < 0)
 	goto fail;
 
-    /* Indicate the range, if needed. */
-    if (!std_ranges && !scale_inputs) {
-	code = pdf_cie_add_ranges(cos_stream_dict(pcstrm), prange, ncomps, true);
-	if (code < 0)
-	    goto fail;
-    }
+    /* Always add the range */
+    code = pdf_cie_add_ranges(cos_stream_dict(pcstrm), prange, ncomps, true);
+    if (code < 0)
+        goto fail;
 
-    /* Output the alternate color space, if necessary. */
-    switch (gs_color_space_get_index(pcs_alt)) {
-    case gs_color_space_index_DeviceGray:
-    case gs_color_space_index_DeviceRGB:
-    case gs_color_space_index_DeviceCMYK:
-	break;			/* implicit (default) */
-    default:
-	if ((code = pdf_color_space_named(pdev, &v, NULL, pcs_alt,
-				    &pdf_color_space_names, false, NULL, 0)) < 0 ||
-	    (code = cos_dict_put_c_key(cos_stream_dict(pcstrm), "/Alternate",
-				       &v)) < 0
-	    )
-	    goto fail;
+    /* In the new design there may not be a specified alternate color space */
+    if (pcs_alt != NULL){
+
+        /* Output the alternate color space, if necessary. */
+        switch (gs_color_space_get_index(pcs_alt)) {
+        case gs_color_space_index_DeviceGray:
+        case gs_color_space_index_DeviceRGB:
+        case gs_color_space_index_DeviceCMYK:
+	    break;			/* implicit (default) */
+        default:
+	    if ((code = pdf_color_space_named(pdev, &v, NULL, pcs_alt,
+				        &pdf_color_space_names, false, NULL, 0)) < 0 ||
+	        (code = cos_dict_put_c_key(cos_stream_dict(pcstrm), "/Alternate",
+				           &v)) < 0
+	        )
+	        goto fail;
+        }
+
     }
 
     /* Wrap up. */
@@ -725,8 +718,11 @@ pdf_iccbased_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     if (code < 0)
 	return code;
 
-    /* Transfer the profile stream. */
-   /*  code = cos_stream_add_stream_contents(pcstrm, picc_info->instrp);  MJV to FIX */
+    /* Transfer the buffer data  */
+
+    code = cos_stream_add_bytes(pcstrm, pcs->cmm_icc_profile_data->buffer, 
+        pcs->cmm_icc_profile_data->buffer_size);
+
     if (code >= 0)
 	code = pdf_finish_iccbased(pcstrm);
     /*

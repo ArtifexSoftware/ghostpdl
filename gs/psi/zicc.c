@@ -272,8 +272,8 @@ seticc_lab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff)
         return gs_rethrow(code, "building color space object");
 
     /* record the current space as the alternative color space */
-    pcs->base_space = palt_cs;
-    rc_increment_cs(palt_cs);
+    /* pcs->base_space = palt_cs;
+    rc_increment_cs(palt_cs); */
 
     /* Get the lab profile.  It may already be set in the icc manager.
        If not then lets populate it.  */
