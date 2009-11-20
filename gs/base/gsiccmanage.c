@@ -602,6 +602,55 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
     
 }
 
+/* This is used to get the profile handle given a file name  */
+
+cmm_profile_t*
+gsicc_get_profile_handle_file(const char* pname, int namelen, gs_memory_t *mem)
+{
+
+    cmm_profile_t *result;
+    stream* str;
+    int code, k;
+
+    /* First see if we can get the stream.  NOTE  icc directory not used! */
+
+    str = gsicc_open_search(pname, namelen, mem, NULL);
+
+    if (str != NULL){
+
+        result = gsicc_profile_new(str, mem, pname, namelen);
+        code = sfclose(str);
+
+        /* Get the profile handle */
+
+        result->profile_handle = gsicc_get_profile_handle_buffer(result->buffer);
+
+        /* Compute the hash code of the profile. */
+
+        gsicc_get_icc_buff_hash(result->buffer, &(result->hashcode));
+        result->hash_is_valid = true;
+
+        result->default_match = DEFAULT_NONE;
+
+        result->num_comps = gscms_get_channel_count(result->profile_handle);
+        result->data_cs = gscms_get_profile_data_space(result->profile_handle);
+
+        /* Initialize the range to default values */
+
+        for ( k = 0; k < result->num_comps; k++) {
+
+            result->Range.ranges[k].rmin = 0.0;
+            result->Range.ranges[k].rmax = 1.0;
+
+        }
+         
+        return(result);
+       
+    }
+     
+    return(NULL);
+   
+}
 
 /* This is used to try to find the specified or default ICC profiles */
 
@@ -613,29 +662,31 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc, gsicc_man
 
     /* Check if we need to prepend the file name  */
 
-    if ( icc_manager->profiledir != NULL ){
-        
-        /* If this fails, we will still try the file by itself and with %rom%
-           since someone may have left a space some of the spaces as our defaults,
-           even if they defined the directory to use. This will occur only after
-           searching the defined directory.  A warning is noted.  */
+    if ( icc_manager != NULL) {
+        if ( icc_manager->profiledir != NULL ){
+            
+            /* If this fails, we will still try the file by itself and with %rom%
+               since someone may have left a space some of the spaces as our defaults,
+               even if they defined the directory to use. This will occur only after
+               searching the defined directory.  A warning is noted.  */
 
-        buffer = (char *) gs_alloc_bytes(mem_gc, namelen + icc_manager->namelen,
-		   		     "gsicc_open_search");
+            buffer = (char *) gs_alloc_bytes(mem_gc, namelen + icc_manager->namelen,
+		   		         "gsicc_open_search");
 
-        strcpy(buffer, icc_manager->profiledir);
-        strcat(buffer, pname);
+            strcpy(buffer, icc_manager->profiledir);
+            strcat(buffer, pname);
 
-        str = sfopen(buffer, "rb", mem_gc);
+            str = sfopen(buffer, "rb", mem_gc);
 
-        gs_free_object(mem_gc, buffer, "gsicc_open_search");
+            gs_free_object(mem_gc, buffer, "gsicc_open_search");
 
-        if (str != NULL)
-            return(str);
-        else
-            gs_warn2("Could not find %s in %s checking default paths",pname,icc_manager->profiledir);
+            if (str != NULL)
+                return(str);
+            else
+                gs_warn2("Could not find %s in %s checking default paths",pname,icc_manager->profiledir);
 
-    } 
+        } 
+    }
 
     /* First just try it like it is */
 
@@ -1231,7 +1282,8 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer){
      return(0);
 
 }
-                                
+
+                            
 
  /*  If we have a profile for the color space already, then we use that.  
      If we do not have one then we will use data from 

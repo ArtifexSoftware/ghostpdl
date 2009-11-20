@@ -29,6 +29,8 @@ typedef void* gcmmhlink_t;
 
 gcmmhprofile_t gscms_get_profile_handle_mem(unsigned char *buffer, unsigned int input_size);
 
+gcmmhprofile_t gscms_get_profile_handle_file(const char *filename);
+
 void gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_buff_desc,
                              gsicc_bufferdesc_t *output_buff_desc, 
                              void *inputbuffer,

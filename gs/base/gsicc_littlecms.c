@@ -112,6 +112,16 @@ gscms_get_profile_handle_mem(unsigned char *buffer, unsigned int input_size)
 
 }
 
+
+/* Get ICC Profile handle from file ptr */
+
+gcmmhprofile_t
+gscms_get_profile_handle_file(const char *filename)
+{
+    return(cmsOpenProfileFromFile(filename, "r"));
+
+}
+
 /* Transform an entire buffer */
 void
 gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_buff_desc,

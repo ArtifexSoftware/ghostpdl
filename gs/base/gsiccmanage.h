@@ -38,6 +38,8 @@ int gsicc_init_device_profile(const gs_imager_state * pis, gx_device * dev);
 
 int gsicc_set_profile(const gs_imager_state * pis, const char *pname, int namelen, gsicc_profile_t defaulttype);
 
+cmm_profile_t* gsicc_get_profile_handle_file(const char* pname, int namelen, gs_memory_t *mem);
+
 gsicc_manager_t* gsicc_manager_new(gs_memory_t *memory);
 
 cmm_profile_t* gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname, int namelen);
