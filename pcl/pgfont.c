@@ -41,15 +41,11 @@ hpgl_stick_arc_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t not_use
 {	
     int i;
     /* reverse map unicode back to roman 8 */
-    if (chr < 0x00a1)
-	return (gs_glyph)chr;
-    else {
-	for (i = 0x00a1; i < 0x00ff; ++i)
-	    if (chr == map_8U_unicode.codes[i])
-		return (gs_glyph)i;
-
-    }	
-    return (gs_glyph)chr; /* this eventually will be a fail */
+    for (i = 0; i < countof(map_8U_unicode.codes); i++) {
+        if (chr == map_8U_unicode.codes[i])
+            return (gs_glyph)i;
+    }
+    return (gs_glyph)0xffff;
 }
 
 /* The stick font is fixed-pitch. 
