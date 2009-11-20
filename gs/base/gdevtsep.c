@@ -62,10 +62,10 @@ const gx_device_tiff gs_tiffgray_device = {
 /* ------ Private functions ------ */
 
 static void
-tiff_set_gray_fields(TIFF *tif, unsigned short bits_per_sample)
+tiff_set_gray_fields(TIFF *tif, unsigned short bits_per_sample, int compression)
 {
     TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, bits_per_sample);
-    TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+    TIFFSetField(tif, TIFFTAG_COMPRESSION, compression);
     TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
     TIFFSetField(tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
     TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
@@ -84,7 +84,7 @@ tiffgray_print_page(gx_device_printer * pdev, FILE * file)
     if (code < 0)
 	return code;
 
-    tiff_set_gray_fields(tfdev->tif, 8);
+    tiff_set_gray_fields(tfdev->tif, 8, COMPRESSION_LZW);
 
     return tiff_print_page(pdev, tfdev->tif);
 }
@@ -686,15 +686,14 @@ tiffsep1_prn_close(gx_device * pdev)
     build_comp_to_sep_map((tiffsep_device *)tfdev, map_comp_to_sep);
     /* Close the separation files */
     for (comp_num = 0; comp_num < num_comp; comp_num++ ) {
-        if (tfdev->sep_file[comp_num] != NULL) {
+	if (tfdev->sep_file[comp_num] != NULL) {
 	    int sep_num = map_comp_to_sep[comp_num];
 
 	    code = create_separation_file_name((tiffsep_device *)tfdev, name,
 						MAX_FILE_NAME_SIZE, sep_num, true);
 	    if (code < 0)
 		return code;
-	    code = gx_device_close_output_file(pdev, name,
-			    		tfdev->sep_file[comp_num]);
+	    code = gx_device_close_output_file(pdev, name, tfdev->sep_file[comp_num]);
 	    if (code < 0)
 		return code;
 	    tfdev->sep_file[comp_num] = NULL;
@@ -767,19 +766,28 @@ tiffsep_get_color_comp_index(gx_device * dev, const char * pname,
  * meaning under Windows.  This implies that there should be some sort of
  * escape sequence for special characters.  This routine exists as a place
  * to put the handling of that escaping.  However it is not actually
- * implemented.
+ * implemented. Instead we just map them to '_'.
  */
 static void
 copy_separation_name(tiffsep_device * pdev,
 		char * buffer, int max_size, int sep_num)
 {
     int sep_size = pdev->devn_params.separations.names[sep_num].size;
+    int i;
+    int restricted_chars[] = { '/', '\\', ':', 0 };
 
     /* If name is too long then clip it. */
     if (sep_size > max_size - 1)
         sep_size = max_size - 1;
     memcpy(buffer, pdev->devn_params.separations.names[sep_num].data,
 		sep_size);
+    /* Change some of the commonly known restricted characters to '_' */
+    for (i=0; restricted_chars[i] != 0; i++) {
+	char *p = buffer;
+
+	while ((p=memchr(p, restricted_chars[i], sep_size - (p - buffer))) != NULL)
+	    *p = '_';
+    }
     buffer[sep_size] = 0;	/* Terminate string */
 }
 
@@ -943,8 +951,10 @@ tiffsep_close_sep_file(tiffsep_device *tfdev, const char *fn, int comp_num)
 {
     int code;
 
-    if (tfdev->tiff[comp_num])
+    if (tfdev->tiff[comp_num]) {
 	TIFFCleanup(tfdev->tiff[comp_num]);
+	tfdev->tiff[comp_num] = NULL;
+    }
 
     code = gx_device_close_output_file((gx_device *)tfdev,
                                        fn,
@@ -971,8 +981,10 @@ tiffsep_prn_close(gx_device * pdev)
     int num_comp = number_output_separations(num_dev_comp, num_std_colorants,
 					num_order, num_spot);
 
-    if (pdevn->tiff_comp)
+    if (pdevn->tiff_comp) {
 	TIFFCleanup(pdevn->tiff_comp);
+	pdevn->tiff_comp = NULL;
+    }
     code = gdev_prn_close(pdev);
     if (code < 0)
 	return code;
@@ -1337,7 +1349,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 	    return_error(gs_error_rangecheck);  /* this will overflow max_long */
 
 	code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], 0);
-	tiff_set_gray_fields(tfdev->tiff[comp_num], 8);
+	tiff_set_gray_fields(tfdev->tiff[comp_num], 8, COMPRESSION_LZW);
 	pdev->color_info.depth = save_depth;
         if (code < 0)
 	    return code;
@@ -1506,7 +1518,7 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
 
 	pdev->color_info.depth = 8;	/* Create files for 8 bit gray */
 	code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], 0);
-	tiff_set_gray_fields(tfdev->tiff[comp_num], 1);
+	tiff_set_gray_fields(tfdev->tiff[comp_num], 1, COMPRESSION_CCITTFAX4);
 	pdev->color_info.depth = save_depth;
         if (code < 0)
 	    return code;
