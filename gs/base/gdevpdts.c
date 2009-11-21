@@ -580,19 +580,6 @@ pdf_set_text_state_values(gx_device_pdf *pdev,
 	    if (code >= 0)
 	        return 0;
 	}
-	/* If we're doing type 3 bitmap fonts, then we don't want to flush the text
-	 * state unless we have to. We check to see that the current font is 
-	 * a type 3, the saved font is a type 3, that we have an open bitmap
-	 * font, and that the open bitmap font is the same as the current font. We must
-	 * also check to see if we can add one more glyph to the existing type 3 font.
-	 * If so then we don't want to change font or text state. see pdf_copy_mono in
-	 * gdevpdfb.c also.
-	 */
-	if (pts->in.pdfont != ptsv->pdfont &&
-	    (pts->in.pdfont->FontType == ft_user_defined && ptsv->pdfont->FontType == ft_user_defined
-	    && pdev->text->bitmap_fonts->open_font && pts->in.pdfont == pdev->text->bitmap_fonts->open_font)
-	    && ptsv->pdfont->u.simple.LastChar < 255)
-		    return 0;
 	code = sync_text_state(pdev);
 	if (code < 0)
 	    return code;
