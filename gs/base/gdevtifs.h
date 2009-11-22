@@ -28,6 +28,7 @@ typedef struct gx_device_tiff_s {
     gx_device_common;
     gx_prn_device_common;
     bool  BigEndian;            /* true = big endian; false = little endian*/
+    uint16 Compression;		/* same values as TIFFTAG_COMPRESSION */
 
     TIFF *tif;			/* TIFF file opened on gx_device_common.file */
 } gx_device_tiff;
@@ -53,5 +54,20 @@ int gdev_tiff_begin_page(gx_device_tiff *tfdev,
 			 FILE *file,
 			 long max_strip_size);
 
+/*
+ * Returns the gs_param_string that corresponds to the tiff COMPRESSION_* id.
+ */
+int tiff_compression_param_string(gs_param_string *param, uint16 id);
+
+/*
+ * Returns the COMPRESSION_* id which corresponds to 'str'.
+ */
+int tiff_compression_id(uint16 *id, gs_param_string *param);
+
+/*
+ * Returns true if 'compression' can be used for encoding a data with a bit
+ * depth of 'depth'  (crle, g3, and g4 only work on 1-bit devices).
+ */
+int tiff_compression_allowed(uint16 compression, byte depth);
 
 #endif /* gdevtifs_INCLUDED */

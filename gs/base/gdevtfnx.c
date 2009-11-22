@@ -45,7 +45,8 @@ const gx_device_tiff gs_tiff12nc_device = {
 			X_DPI, Y_DPI,
 			0, 0, 0, 0,
 			24, tiff12_print_page),
-    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/      
+    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
+    COMPRESSION_NONE
 };
 
 const gx_device_tiff gs_tiff24nc_device = {
@@ -54,7 +55,8 @@ const gx_device_tiff gs_tiff24nc_device = {
 			X_DPI, Y_DPI,
 			0, 0, 0, 0,
 			24, tiff_rgb_print_page),
-    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/      
+    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
+    COMPRESSION_NONE
 };
 
 const gx_device_tiff gs_tiff48nc_device = {
@@ -63,18 +65,19 @@ const gx_device_tiff gs_tiff48nc_device = {
 			X_DPI, Y_DPI,
 			0, 0, 0, 0,
 			48, tiff_rgb_print_page),
-    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/      
+    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
+    COMPRESSION_NONE
 };
 
 /* ------ Private functions ------ */
 
 static void
-tiff_set_rgb_fields(TIFF *tif)
+tiff_set_rgb_fields(gx_device_tiff *tfdev)
 {
-    TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
-    TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
-    TIFFSetField(tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
-    TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 3);
+    TIFFSetField(tfdev->tif, TIFFTAG_COMPRESSION, tfdev->Compression);
+    TIFFSetField(tfdev->tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+    TIFFSetField(tfdev->tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
+    TIFFSetField(tfdev->tif, TIFFTAG_SAMPLESPERPIXEL, 3);
 }
 
 static int
@@ -94,7 +97,7 @@ tiff12_print_page(gx_device_printer * pdev, FILE * file)
     if (code < 0)
 	return code;
 
-    tiff_set_rgb_fields(tfdev->tif);
+    tiff_set_rgb_fields(tfdev);
     TIFFSetField(tfdev->tif, TIFFTAG_BITSPERSAMPLE, 4);
 
     /* Write the page data. */
@@ -151,7 +154,7 @@ tiff_rgb_print_page(gx_device_printer * pdev, FILE * file)
     if (code < 0)
 	return code;
 
-    tiff_set_rgb_fields(tfdev->tif);
+    tiff_set_rgb_fields(tfdev);
     TIFFSetField(tfdev->tif, TIFFTAG_BITSPERSAMPLE,
 		 pdev->color_info.depth / pdev->color_info.num_components);
 

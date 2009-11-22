@@ -493,6 +493,25 @@ Earlier versions of Ghostscript always generated TIFF files with FillOrder = 2.
 According to the TIFF 6.0 specification, Section 8, page 32, support of
 FillOrder = 2 is not required in a Baseline TIFF compliant reader
 
+<p>
+The compression scheme that is used for the image data can be set for all tiff
+devices with:
+
+<blockquote>
+    <dl>
+	<dt><code>-sCompression=<em>none | crle | g3 | g4 | lzw | pack</em></code></dt>
+	<dd>Change the compression scheme of the tiff device.
+	<code>crle</code>, <code>g3</code>, and <code>g4</code> may only be
+	used with 1 bit devices (including <code>tiffsep1</code>).</dd>
+    </dl>
+</blockquote>
+
+<p>
+For the <code>tiffsep</code> device, it only changes the compression scheme
+of the separation files (which is <code>lzw</code> by default), not the
+composite cmyk file.  It defaults to <code>g4</code> for the
+<code>tiffsep1</code> device.
+
 <h3><a name="fax"></a>FAX</h3>
 
 <p>

@@ -100,16 +100,19 @@ tiff_close(gx_device * pdev)
     return gdev_prn_close(pdev);
 }
 
-/* Get/put the BigEndian parameter. */
 int
 tiff_get_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)dev;
     int code = gdev_prn_get_params(dev, plist);
     int ecode = code;
+    gs_param_string comprstr;
 
     if ((code = param_write_bool(plist, "BigEndian", &tfdev->BigEndian)) < 0)
         ecode = code;
+    if ((code = tiff_compression_param_string(&comprstr, tfdev->Compression)) < 0 ||
+	(code = param_write_string(plist, "Compression", &comprstr)) < 0)
+	ecode = code;
     return ecode;
 }
 
@@ -121,6 +124,8 @@ tiff_put_params(gx_device * dev, gs_param_list * plist)
     int code;
     const char *param_name;
     bool big_endian = tfdev->BigEndian;
+    uint16 compr = tfdev->Compression;
+    gs_param_string comprstr;
 
     /* Read BigEndian option as bool */
     switch (code = param_read_bool(plist, (param_name = "BigEndian"), &big_endian)) {
@@ -131,6 +136,19 @@ tiff_put_params(gx_device * dev, gs_param_list * plist)
 	case 1:
 	    break;
     }
+    /* Read Compression */
+    switch (code = param_read_string(plist, (param_name = "Compression"), &comprstr)) {
+	case 0:
+	    if ((ecode = tiff_compression_id(&compr, &comprstr)) < 0 ||
+		!tiff_compression_allowed(compr, dev->color_info.depth))
+		param_signal_error(plist, param_name, ecode);
+	    break;
+	case 1:
+	    break;
+	default:
+	    ecode = code;
+	    param_signal_error(plist, param_name, ecode);
+    }
 
     if (ecode < 0)
 	return ecode;
@@ -139,6 +157,7 @@ tiff_put_params(gx_device * dev, gs_param_list * plist)
 	return code;
 
     tfdev->BigEndian = big_endian;
+    tfdev->Compression = compr;
     return code;
 }
 
@@ -266,5 +285,54 @@ tiff_print_page(gx_device_printer *dev, TIFF *tif)
 
     TIFFWriteDirectory(tif);
     return code;
+}
+
+
+static struct compression_string {
+    uint16 id;
+    const char *str;
+} compression_strings [] = {
+    { COMPRESSION_NONE, "none" },
+    { COMPRESSION_CCITTRLE, "crle" },
+    { COMPRESSION_CCITTFAX3, "g3" },
+    { COMPRESSION_CCITTFAX4, "g4" },
+    { COMPRESSION_LZW, "lzw" },
+    { COMPRESSION_PACKBITS, "pack" },
+
+    { 0, NULL }
+};
+
+int
+tiff_compression_param_string(gs_param_string *param, uint16 id)
+{
+    struct compression_string *c;
+    for (c = compression_strings; c->str; c++)
+	if (id == c->id) {
+	    param_string_from_string(*param, c->str);
+	    return 0;
+	}
+    return gs_error_undefined;
+}
+
+int
+tiff_compression_id(uint16 *id, gs_param_string *param)
+{
+    struct compression_string *c;
+    for (c = compression_strings; c->str; c++)
+	if (!bytes_compare(param->data, param->size,
+			   (const byte *)c->str, strlen(c->str)))
+	{
+	    *id = c->id;
+	    return 0;
+	}
+    return gs_error_undefined;
+}
+
+int tiff_compression_allowed(uint16 compression, byte depth)
+{
+    return depth == 1 || (compression != COMPRESSION_CCITTRLE &&
+			  compression != COMPRESSION_CCITTFAX3 &&
+			  compression != COMPRESSION_CCITTFAX4);
+
 }
 

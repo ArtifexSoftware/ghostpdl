@@ -55,7 +55,8 @@ const gx_device_tiff gs_tiffgray_device = {
 		    X_DPI, Y_DPI,
 		    0, 0, 0, 0,	/* Margins */
 		    1, 8, 255, 0, 256, 0, tiffgray_print_page),
-    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/      
+    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
+    COMPRESSION_NONE
 };
 
 
@@ -84,7 +85,7 @@ tiffgray_print_page(gx_device_printer * pdev, FILE * file)
     if (code < 0)
 	return code;
 
-    tiff_set_gray_fields(tfdev->tif, 8, COMPRESSION_LZW);
+    tiff_set_gray_fields(tfdev->tif, 8, tfdev->Compression);
 
     return tiff_print_page(pdev, tfdev->tif);
 }
@@ -111,7 +112,8 @@ const gx_device_tiff gs_tiff32nc_device = {
 		    X_DPI, Y_DPI,
 		    0, 0, 0, 0,	/* Margins */
 		    4, 32, 255, 255, 256, 256, tiffcmyk_print_page),
-    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/      
+    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
+    COMPRESSION_NONE
 };
 
 /* 16-bit-per-plane separated CMYK color. */
@@ -126,16 +128,17 @@ const gx_device_tiff gs_tiff64nc_device = {
 		    X_DPI, Y_DPI,
 		    0, 0, 0, 0,	/* Margins */
 		    4, 64, 255, 255, 256, 256, tiffcmyk_print_page),
-    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/      
+    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
+    COMPRESSION_NONE
 };
 
 /* ------ Private functions ------ */
 
 static void
-tiff_set_cmyk_fields(TIFF *tif, short bits_per_sample)
+tiff_set_cmyk_fields(TIFF *tif, short bits_per_sample, uint16 compression)
 {
     TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, bits_per_sample);
-    TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+    TIFFSetField(tif, TIFFTAG_COMPRESSION, compression);
     TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_SEPARATED);
     TIFFSetField(tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
     TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 4);
@@ -154,8 +157,9 @@ tiffcmyk_print_page(gx_device_printer * pdev, FILE * file)
     if (code < 0)
 	return code;
 
-    tiff_set_cmyk_fields(tfdev->tif, pdev->color_info.depth /
-			 pdev->color_info.num_components);
+    tiff_set_cmyk_fields(tfdev->tif,
+			 pdev->color_info.depth / pdev->color_info.num_components,
+			 tfdev->Compression);
 
     return tiff_print_page(pdev, tfdev->tif);
 }
@@ -193,6 +197,8 @@ static dev_proc_fill_path(sep1_fill_path);
     FILE *sep_file[GX_DEVICE_COLOR_MAX_COMPONENTS];\
     TIFF *tiff[GX_DEVICE_COLOR_MAX_COMPONENTS]; \
     bool  BigEndian;            /* true = big endian; false = little endian */\
+    uint16 Compression;		/* for the separation files, same values as
+				   TIFFTAG_COMPRESSION */\
     gs_devn_params devn_params;		/* DeviceN generated parameters */\
     equivalent_cmyk_color_params equiv_cmyk_colors
 
@@ -326,7 +332,7 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
 }
 
 
-#define tiffsep_devices_body(dtype, procs, dname, ncomp, pol, depth, mg, mc, sl, cn, print_page)\
+#define tiffsep_devices_body(dtype, procs, dname, ncomp, pol, depth, mg, mc, sl, cn, print_page, compr)\
     std_device_full_body_type_extended(dtype, &procs, dname,\
 	  &st_tiffsep_device,\
 	  (int)((long)(DEFAULT_WIDTH_10THS) * (X_DPI) / 10),\
@@ -346,7 +352,8 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
 	prn_device_body_rest_(print_page),\
 	{ 0 },			/* tiff state for separation files */\
 	{ 0 },			/* separation files */\
-	arch_is_big_endian      /* true = big endian; false = little endian */\
+	arch_is_big_endian      /* true = big endian; false = little endian */,\
+	compr			/* COMPRESSION_* */
 
 /*
  * Select the default number of components based upon the number of bits
@@ -381,7 +388,7 @@ static const gx_device_procs spot1_cmyk_procs =
 
 const tiffsep_device gs_tiffsep_device =
 {   
-    tiffsep_devices_body(tiffsep_device, spot_cmyk_procs, "tiffsep", NC, GX_CINFO_POLARITY_SUBTRACTIVE, GCIB, MAX_COLOR_VALUE, MAX_COLOR_VALUE, SL, "DeviceCMYK", tiffsep_print_page),
+    tiffsep_devices_body(tiffsep_device, spot_cmyk_procs, "tiffsep", NC, GX_CINFO_POLARITY_SUBTRACTIVE, GCIB, MAX_COLOR_VALUE, MAX_COLOR_VALUE, SL, "DeviceCMYK", tiffsep_print_page, COMPRESSION_LZW),
     /* devn_params specific parameters */
     { 8,			/* Not used - Bits per color */
       DeviceCMYKComponents,	/* Names of color model colorants */
@@ -397,9 +404,9 @@ const tiffsep_device gs_tiffsep_device =
 
 const tiffsep1_device gs_tiffsep1_device =
 {   
-    tiffsep_devices_body(tiffsep1_device, spot1_cmyk_procs, "tiffsep1", NC, GX_CINFO_POLARITY_SUBTRACTIVE, GCIB, MAX_COLOR_VALUE, MAX_COLOR_VALUE, SL, "DeviceCMYK", tiffsep1_print_page),
+    tiffsep_devices_body(tiffsep1_device, spot1_cmyk_procs, "tiffsep1", NC, GX_CINFO_POLARITY_SUBTRACTIVE, GCIB, MAX_COLOR_VALUE, MAX_COLOR_VALUE, SL, "DeviceCMYK", tiffsep1_print_page, COMPRESSION_CCITTFAX4),
     /* devn_params specific parameters */
-    { 8,			/* Not used - Bits per color */
+    { 1,			/* Not used - Bits per color */
       DeviceCMYKComponents,	/* Names of color model colorants */
       4,			/* Number colorants for CMYK */
       0,			/* MaxSeparations has not been specified */
@@ -555,7 +562,11 @@ tiffsep_ret_devn_params(gx_device * dev)
 static int
 tiffsep_get_params(gx_device * pdev, gs_param_list * plist)
 {
+    tiffsep_device * const pdevn = (tiffsep_device *) pdev;
     int code = gdev_prn_get_params(pdev, plist);
+    int ecode = code;
+    gs_param_string comprstr;
+
     if (code < 0)
 	return code;
 	
@@ -564,8 +575,14 @@ tiffsep_get_params(gx_device * pdev, gs_param_list * plist)
     		&(((tiffsep_device *)pdev)->equiv_cmyk_colors));
     if (code < 0)
 	return code;
+
+    if ((code = param_write_bool(plist, "BigEndian", &pdevn->BigEndian)) < 0)
+        ecode = code;
+    if ((code = tiff_compression_param_string(&comprstr, pdevn->Compression)) < 0 ||
+	(code = param_write_string(plist, "Compression", &comprstr)) < 0)
+	ecode = code;
     
-    return param_write_bool(plist, "BigEndian", &((tiffsep_device *)pdev)->BigEndian);
+    return ecode;
 }
 
 /* Set parameters.  We allow setting the number of bits per component. */
@@ -575,6 +592,7 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
     tiffsep_device * const pdevn = (tiffsep_device *) pdev;
     int code;
     const char *param_name;
+    gs_param_string comprstr;
    
     /* Read BigEndian option as bool */ 
     switch (code = param_read_bool(plist, (param_name = "BigEndian"), &pdevn->BigEndian)) {
@@ -584,6 +602,23 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
         case 0:
 	case 1:
 	    break;
+    }
+    /* Read Compression */
+    switch (code = param_read_string(plist, (param_name = "Compression"), &comprstr)) {
+	case 0:
+	    if ((code = tiff_compression_id(&pdevn->Compression, &comprstr)) < 0 ||
+		!tiff_compression_allowed(pdevn->Compression,
+					  pdevn->devn_params.bitspercomponent))
+	    {
+		param_signal_error(plist, param_name, code);
+		return code;
+	    }
+	    break;
+	case 1:
+	    break;
+	default:
+	    param_signal_error(plist, param_name, code);
+	    return code;
     }
     
     return devn_printer_put_params(pdev, plist,
@@ -1307,7 +1342,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 	    return_error(gs_error_invalidfileaccess);
     }
     code = tiff_set_fields_for_printer(pdev, tfdev->tiff_comp, 0);
-    tiff_set_cmyk_fields(tfdev->tiff_comp, 8);
+    tiff_set_cmyk_fields(tfdev->tiff_comp, 8, COMPRESSION_NONE);
     pdev->color_info.depth = save_depth;
     if (code < 0)
 	return code;
@@ -1349,7 +1384,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 	    return_error(gs_error_rangecheck);  /* this will overflow max_long */
 
 	code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], 0);
-	tiff_set_gray_fields(tfdev->tiff[comp_num], 8, COMPRESSION_LZW);
+	tiff_set_gray_fields(tfdev->tiff[comp_num], 8, tfdev->Compression);
 	pdev->color_info.depth = save_depth;
         if (code < 0)
 	    return code;
@@ -1518,7 +1553,7 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
 
 	pdev->color_info.depth = 8;	/* Create files for 8 bit gray */
 	code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], 0);
-	tiff_set_gray_fields(tfdev->tiff[comp_num], 1, COMPRESSION_CCITTFAX4);
+	tiff_set_gray_fields(tfdev->tiff[comp_num], 1, tfdev->Compression);
 	pdev->color_info.depth = save_depth;
         if (code < 0)
 	    return code;
