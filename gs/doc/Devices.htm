@@ -342,7 +342,7 @@ drivers that produce uncompressed output:
 <dd>
 The tiffsep device creates multiple output files.  The device creates a single
 32 bit composite CMYK file (tiff32nc format) and multiple tiffgray files.
-A tiffgray file is created for each separation.
+A tiffgray file compressed with LZW is created for each separation.
 
 <p>
 The file specified via the OutputFile command line parameter will contain 
@@ -409,6 +409,26 @@ This will produce a single separation file for the spot color called 'Name1'.
 It is possible to create an overall CMYK composite for more than 4 colorants 
 by then adding together (via an external application like imagemagick) 
 the composite CMYK output files from the individual Ghostscript passes. 
+
+<a name="tiffsep1"></a><dt><code>tiffsep1</code>
+<dd>
+The tiffsep1 device creates multiple output files, one for each component
+or separation color.  The device creates multiple tiffg4 files (the compression
+can be set using -sCompression= described below).
+
+<p>
+The file specified via the OutputFile command line parameter will not be
+created (it is opened, but deleted prior to finishing each page). 
+
+<p>
+File names for the separations for the CMYK colorants are created by appending 
+'(Cyan).tif', '(Magenta).tif' '(Yellow).tif' or '(Black).tif' to the to the 
+end of the file name specified via the OutputFile parameter. File names 
+for the spot color separation files are created by appending the Spot color
+name in '(' and ').tif' to the filename.
+If the file name specified via the OutputFile parameter ends with the suffix
+'.tif', then the suffix is removed prior to adding the component name in
+'(' and ').tif'.
 
 </dl>
 </blockquote>
@@ -548,8 +568,8 @@ series of devices.
 PSD is the image format used by Adobe Photoshop.
 It is supported by the <tt>psdcmyk</tt> and <tt>psdrgb</tt> devices.
 Of special interest with the <tt>psdcmyk</tt> device is that it supports spot
-colors.  <a href="#tiffsep">See the comments under the tiffsep device
-about the maximum number of spot colors supported by Ghostscript</a>
+colors.  <a href="#tiffsep">See the comments under the tiffsep and tiffsep1 
+device about the maximum number of spot colors supported by Ghostscript</a>
 
 <h2><a name="High-level"></a>High-level devices</h2>
 
