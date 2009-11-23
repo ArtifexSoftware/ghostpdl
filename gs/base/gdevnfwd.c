@@ -128,9 +128,12 @@ gx_forward_close_device(gx_device * dev)
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
-
-    return (tdev == 0) ? gx_default_close_device(dev)
+    int code = (tdev == 0) ? gx_default_close_device(dev)
 		       : dev_proc(tdev, close_device)(tdev);
+
+    if (tdev)
+	tdev->is_open = false;		/* flag corresponds to the state */
+    return code;
 }
 
 void
@@ -284,11 +287,15 @@ gx_forward_put_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
+    bool was_open = tdev->is_open;
     int code;
 
     if (tdev == 0)
 	return gx_default_put_params(dev, plist);
     code = dev_proc(tdev, put_params)(tdev, plist);
+    if (code == 0 && !tdev->is_open) {
+	    code = was_open ? 1 : 0;   /* target device closed */
+    }
     if (code >= 0)
 	gx_device_decache_colors(dev);
     return code;
