@@ -1283,7 +1283,7 @@ $(DD)psdcmyk.dev : $(DEVS_MAK) $(psd_) $(GLD)page.dev
 
 $(GLOBJ)gdevpsd.$(OBJ) : $(GLSRC)gdevpsd.c $(PDEVH) $(math__h)\
  $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h)\
- $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h) $(gsequivc_h)
+ $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h) $(gsequivc_h) $(gscms_h)
 	$(GLCC) $(GLO_)gdevpsd.$(OBJ) $(C_) $(GLSRC)gdevpsd.c
 
 $(GLOBJ)gsequivc.$(OBJ) : $(GLSRC)gsequivc.c $(math__h)\
@@ -1547,7 +1547,8 @@ $(DD)simdi.dev : $(DEVS_MAK) $(simdi_)
 wts_=$(GLOBJ)gdevwts.$(OBJ)
 
 $(GLOBJ)gdevwts.$(OBJ) : $(GLSRC)gdevwts.c $(PDEVH)\
- $(gscdefs_h) $(gscspace_h) $(gxgetbit_h) $(gxiparam_h) $(gxlum_h)
+ $(gscdefs_h) $(gscspace_h) $(gxgetbit_h) $(gxiparam_h) $(gxlum_h)\
+ $(gscms_h) $(gsicccache_h) $(gsiccmanage_h)
 	$(GLCC) -I$(IMDISRCDIR) $(GLO_)gdevwts.$(OBJ) $(C_) $(GLSRC)gdevwts.c
 
 $(DD)wtscmyk.dev : $(DEVS_MAK) $(wts_) $(GLD)page.dev

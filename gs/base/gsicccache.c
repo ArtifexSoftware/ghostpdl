@@ -522,7 +522,7 @@ gsicc_get_link_profile(gs_imager_state *pis, cmm_profile_t *gs_input_profile,
 
     gsicc_hashlink_t hash;
     gsicc_link_t *link;
-    gcmmhprofile_t link_handle = NULL;
+    gcmmhlink_t link_handle = NULL;
     void **contextptr = NULL;
     gsicc_manager_t *icc_manager = pis->icc_manager; 
     gsicc_link_cache_t *icc_cache = pis->icc_link_cache;

@@ -21,9 +21,15 @@
 #include "gxcvalue.h"
 #include "gscms.h"
 
-typedef void* gcmmhprofile_t;
-typedef void* gcmmhlink_t;
+#ifndef cmm_gcmmhprofile_DEFINED
+    #define cmm_gcmmhprofile_DEFINED
+    typedef void* gcmmhprofile_t;
+#endif
 
+#ifndef cmm_gcmmhlink_DEFINED
+    #define cmm_gcmmhlink_DEFINED
+    typedef void* gcmmhlink_t;
+#endif
 
 /* Prototypes */
 
