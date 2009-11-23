@@ -627,7 +627,7 @@ gsicc_get_link_profile(gs_imager_state *pis, cmm_profile_t *gs_input_profile,
     }
 
     link_handle = gscms_get_link(cms_input_profile, cms_output_profile, 
-                                    rendering_params, pis->icc_manager);
+                                    rendering_params);
     
     if (link_handle != NULL){
 
